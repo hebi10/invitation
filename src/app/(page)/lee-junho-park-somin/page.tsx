@@ -10,18 +10,23 @@ import Schedule from '@/components/Schedule';
 import LocationMap from '@/components/LocationMap';
 import Guestbook from '@/components/Guestbook';
 import GiftInfo from '@/components/GiftInfo';
-
-const mockImages = [
-  'https://images.unsplash.com/photo-1465495976277-4387d4b0e4a6?w=400',
-  'https://images.unsplash.com/photo-1519225421980-715cb0215aed?w=400',
-  'https://images.unsplash.com/photo-1606216794074-735e91aa2c92?w=400',
-  'https://images.unsplash.com/photo-1583939003579-730e3918a45a?w=400',
-  'https://images.unsplash.com/photo-1594736797933-d0c6258a3d68?w=400',
-  'https://images.unsplash.com/photo-1511285560929-80b456fea0bc?w=400'
-];
+import { usePageImages } from '@/hooks/usePageImages';
 
 export default function LeeJunhoParkSomin() {
   const [isLoading, setIsLoading] = useState(true);
+  
+  // 🎯 간편한 이미지 사용!
+  const { images, imageUrls, firstImage, hasImages, mainImage, galleryImages } = usePageImages('lee-junho-park-somin');
+  
+  // 기본 갤러리 이미지들
+  const mockImages = [
+    'https://images.unsplash.com/photo-1465495976277-4387d4b0e4a6?w=400',
+    'https://images.unsplash.com/photo-1519225421980-715cb0215aed?w=400',
+    'https://images.unsplash.com/photo-1606216794074-735e91aa2c92?w=400',
+    'https://images.unsplash.com/photo-1583939003579-730e3918a45a?w=400',
+    'https://images.unsplash.com/photo-1594736797933-d0c6258a3d68?w=400',
+    'https://images.unsplash.com/photo-1511285560929-80b456fea0bc?w=400'
+  ];
 
   const handleLoadComplete = () => {
     setIsLoading(false);
@@ -46,12 +51,14 @@ export default function LeeJunhoParkSomin() {
         <meta name="keywords" content="결혼식,웨딩,청첩장,이준호,박소민,2024년 5월" />
         <meta property="og:title" content="이준호 ♥ 박소민 결혼식 초대" />
         <meta property="og:description" content="2024년 5월 18일 일요일 오후 3시, 이준호와 박소민이 사랑으로 하나 되는 특별한 날입니다." />
+        <meta property="og:image" content="https://images.unsplash.com/photo-1511285560929-80b456fea0bc?w=800&h=600&fit=crop" />
         <meta property="og:type" content="website" />
         <meta property="og:locale" content="ko_KR" />
         <meta property="og:site_name" content="모바일 청첩장" />
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:title" content="이준호 ♥ 박소민 결혼식 초대" />
         <meta name="twitter:description" content="2024년 5월 18일 일요일 오후 3시, 이준호와 박소민이 사랑으로 하나 되는 특별한 날입니다." />
+        <meta name="twitter:image" content="https://images.unsplash.com/photo-1511285560929-80b456fea0bc?w=800&h=600&fit=crop" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <meta name="robots" content="noindex, nofollow" />
       </Head>
@@ -59,7 +66,7 @@ export default function LeeJunhoParkSomin() {
       <Cover
         title="Wedding Invitation"
         subtitle="따뜻한 마음으로 초대합니다"
-        imageUrl="https://images.unsplash.com/photo-1465495976277-4387d4b0e4a6?w=400"
+        imageUrl={mainImage?.url || "https://images.unsplash.com/photo-1465495976277-4387d4b0e4a6?w=400"}
         brideName="박소민"
         groomName="이준호"
         weddingDate="2024년 5월 18일 토요일"
@@ -76,8 +83,8 @@ export default function LeeJunhoParkSomin() {
       />
       
       <Gallery
-        title="Our Story"
-        images={mockImages}
+        title="우리의 사랑 이야기"
+        images={galleryImages.length > 0 ? galleryImages.map(img => img.url) : mockImages}
       />
       
       <Schedule

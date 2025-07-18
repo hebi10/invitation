@@ -4,38 +4,56 @@
   align-items: center;
   justify-content: center;
   min-height: 100vh;
-  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+  background: linear-gradient(135deg, var(--background-warm) 0%, var(--accent-color) 50%, #f0e6d6 100%);
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
   z-index: 9999;
+  padding: 2rem;
+  position: relative;
+  overflow: hidden;
+}
+
+.loaderContainer::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: 
+    radial-gradient(circle at 25% 25%, rgba(212, 165, 116, 0.1) 0%, transparent 50%),
+    radial-gradient(circle at 75% 75%, rgba(141, 110, 99, 0.1) 0%, transparent 50%);
+  pointer-events: none;
 }
 
 .heartContainer {
   position: relative;
-  margin-bottom: 2rem;
+  margin-bottom: 2.5rem;
+  z-index: 1;
 }
 
 .heart {
-  width: 60px;
-  height: 54px;
+  width: 80px;
+  height: 72px;
   position: relative;
-  animation: heartbeat 1.2s infinite;
+  animation: heartbeat 1.5s infinite ease-in-out;
 }
 
 .heart::before,
 .heart::after {
   content: '';
-  width: 30px;
-  height: 48px;
+  width: 40px;
+  height: 64px;
   position: absolute;
-  left: 30px;
+  left: 40px;
   transform: rotate(-45deg);
-  background: white;
-  border-radius: 30px 30px 0 0;
+  background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+  border-radius: 40px 40px 0 0;
   transform-origin: 0 100%;
+  box-shadow: 0 4px 15px rgba(212, 165, 116, 0.3);
 }
 
 .heart::after {
@@ -46,16 +64,16 @@
 
 @keyframes heartbeat {
   0% { transform: scale(1); }
-  14% { transform: scale(1.3); }
-  28% { transform: scale(1); }
+  15% { transform: scale(1.2); }
+  30% { transform: scale(1); }
   42% { transform: scale(1.3); }
   70% { transform: scale(1); }
 }
 
 .sparkles {
   position: absolute;
-  width: 120px;
-  height: 120px;
+  width: 150px;
+  height: 150px;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
@@ -63,56 +81,80 @@
 
 .sparkle {
   position: absolute;
-  width: 4px;
-  height: 4px;
-  background: white;
+  width: 6px;
+  height: 6px;
+  background: var(--primary-color);
   border-radius: 50%;
-  animation: sparkle 2s infinite;
+  animation: sparkle 2.5s infinite ease-in-out;
+  box-shadow: 0 0 10px rgba(212, 165, 116, 0.5);
 }
 
 .sparkle:nth-child(1) { top: 0%; left: 50%; animation-delay: 0s; }
-.sparkle:nth-child(2) { top: 25%; right: 0%; animation-delay: 0.5s; }
-.sparkle:nth-child(3) { bottom: 0%; left: 50%; animation-delay: 1s; }
-.sparkle:nth-child(4) { top: 25%; left: 0%; animation-delay: 1.5s; }
-.sparkle:nth-child(5) { top: 75%; right: 25%; animation-delay: 0.25s; }
-.sparkle:nth-child(6) { top: 75%; left: 25%; animation-delay: 0.75s; }
+.sparkle:nth-child(2) { top: 25%; right: 0%; animation-delay: 0.4s; }
+.sparkle:nth-child(3) { bottom: 0%; left: 50%; animation-delay: 0.8s; }
+.sparkle:nth-child(4) { top: 25%; left: 0%; animation-delay: 1.2s; }
+.sparkle:nth-child(5) { top: 75%; right: 25%; animation-delay: 0.2s; }
+.sparkle:nth-child(6) { top: 75%; left: 25%; animation-delay: 0.6s; }
 
 @keyframes sparkle {
-  0%, 100% { opacity: 0; transform: scale(0); }
-  50% { opacity: 1; transform: scale(1); }
+  0%, 100% { opacity: 0; transform: scale(0) rotate(0deg); }
+  50% { opacity: 1; transform: scale(1) rotate(180deg); }
 }
 
 .loadingText {
-  color: white;
-  font-size: 1.2rem;
+  color: var(--text-primary);
+  font-family: var(--font-serif);
+  font-size: 1.3rem;
   margin: 1.5rem 0;
-  font-weight: 300;
+  font-weight: 400;
   text-align: center;
+  line-height: 1.6;
+  position: relative;
+  z-index: 1;
+  text-shadow: 0 2px 4px rgba(139, 110, 99, 0.1);
+}
+
+.loadingText:first-of-type {
+  font-family: var(--font-display);
+  font-size: 1.8rem;
+  font-weight: 600;
+  color: var(--primary-color);
+  margin-bottom: 0.5rem;
 }
 
 @media (min-width: 768px) {
   .loadingText {
     font-size: 1.5rem;
   }
+  
+  .loadingText:first-of-type {
+    font-size: 2.2rem;
+  }
 }
 
 .progressContainer {
-  width: 200px;
-  height: 4px;
-  background: rgba(255, 255, 255, 0.3);
-  border-radius: 2px;
+  width: 250px;
+  height: 6px;
+  background: rgba(212, 165, 116, 0.2);
+  border-radius: 10px;
   overflow: hidden;
+  margin: 2rem 0;
+  box-shadow: inset 0 2px 4px rgba(139, 110, 99, 0.1);
+  position: relative;
+  z-index: 1;
 }
 
 @media (min-width: 768px) {
   .progressContainer {
-    width: 300px;
+    width: 350px;
+    height: 8px;
   }
 }
 
 .progressBar {
   height: 100%;
-  background: white;
-  border-radius: 2px;
-  transition: width 0.3s ease;
+  background: linear-gradient(90deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+  border-radius: 10px;
+  transition: width 0.5s ease;
+  box-shadow: 0 2px 8px rgba(212, 165, 116, 0.4);
 }

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Head from 'next/head';
 import { addComment, getComments, Comment } from '@/services/commentService';
 import styles from './firebase-test.module.css';
 
@@ -137,8 +138,19 @@ export default function FirebaseTestPage() {
   };
 
   return (
-    <div className={styles.container}>
-      <h1 className={styles.title}>Firebase 연결 테스트</h1>
+    <>
+      <Head>
+        <title>Firebase 연결 테스트 - 모바일 청첩장</title>
+        <meta name="description" content="Firebase 연결 상태 및 댓글 시스템 테스트 페이지입니다." />
+        <meta property="og:title" content="Firebase 테스트 페이지" />
+        <meta property="og:description" content="Firebase 연결 및 댓글 시스템 테스트" />
+        <meta property="og:image" content="https://images.unsplash.com/photo-1594736797933-d0c6258a3d68?w=800&h=600&fit=crop" />
+        <meta name="robots" content="noindex, nofollow" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+      </Head>
+      
+      <div className={styles.container}>
+        <h1 className={styles.title}>Firebase 연결 테스트</h1>
       
       <div className={styles.section}>
         <h2>연결 테스트</h2>
@@ -200,5 +212,6 @@ export default function FirebaseTestPage() {
         </div>
       </div>
     </div>
+    </>
   );
 }

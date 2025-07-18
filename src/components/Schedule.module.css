@@ -1,85 +1,138 @@
 .container {
-  padding: 2rem 1rem;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
+  padding: 3rem 2rem;
+  background: linear-gradient(135deg, rgba(245, 230, 211, 0.6) 0%, rgba(255, 255, 255, 0.9) 50%, rgba(232, 221, 212, 0.6) 100%);
+  color: var(--text-primary);
   text-align: center;
-  max-width: 768px;
-  margin: 0 auto;
+  max-width: 700px;
+  margin: 2rem auto;
+  border-radius: 20px;
+  box-shadow: 0 10px 40px rgba(139, 110, 99, 0.2);
+  border: 2px solid var(--border-soft);
+  position: relative;
+  overflow: hidden;
+}
+
+.container::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: 
+    radial-gradient(circle at 20% 80%, rgba(212, 165, 116, 0.1) 0%, transparent 50%),
+    radial-gradient(circle at 80% 20%, rgba(141, 110, 99, 0.1) 0%, transparent 50%);
+  pointer-events: none;
 }
 
 @media (min-width: 768px) {
   .container {
-    padding: 4rem 2rem;
+    padding: 4rem 3rem;
+    margin: 3rem auto;
   }
 }
 
 .title {
-  font-size: 2rem;
-  margin-bottom: 2rem;
-  font-weight: 300;
+  font-family: var(--font-display);
+  font-size: 2.2rem;
+  margin-bottom: 2.5rem;
+  font-weight: 600;
+  color: var(--primary-color);
+  position: relative;
+  z-index: 1;
+  text-shadow: 0 2px 4px rgba(139, 110, 99, 0.1);
+}
+
+.title::after {
+  content: '';
+  display: block;
+  width: 60px;
+  height: 3px;
+  background: linear-gradient(90deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+  margin: 1rem auto 0;
+  border-radius: 2px;
 }
 
 @media (min-width: 768px) {
   .title {
-    font-size: 2.5rem;
+    font-size: 2.8rem;
     margin-bottom: 3rem;
   }
 }
 
 .mainInfo {
-  margin-bottom: 2rem;
+  margin-bottom: 2.5rem;
+  background: rgba(255, 255, 255, 0.7);
+  padding: 2rem;
+  border-radius: 15px;
+  border: 1px solid var(--border-soft);
+  position: relative;
+  z-index: 1;
 }
 
 @media (min-width: 768px) {
   .mainInfo {
     margin-bottom: 3rem;
+    padding: 2.5rem;
   }
 }
 
 .date {
-  font-size: 1.5rem;
-  margin-bottom: 0.75rem;
-  font-weight: 400;
+  font-family: var(--font-display);
+  font-size: 1.6rem;
+  margin-bottom: 1rem;
+  font-weight: 600;
+  color: var(--primary-color);
+  letter-spacing: 0.02em;
 }
 
 @media (min-width: 768px) {
   .date {
-    font-size: 2rem;
-    margin-bottom: 1rem;
+    font-size: 2.2rem;
+    margin-bottom: 1.2rem;
   }
 }
 
 .time {
-  font-size: 1.25rem;
-  margin-bottom: 0.75rem;
+  font-family: var(--font-serif);
+  font-size: 1.3rem;
+  margin-bottom: 1.5rem;
+  color: var(--text-secondary);
+  font-weight: 500;
 }
 
 @media (min-width: 768px) {
   .time {
-    font-size: 1.5rem;
-    margin-bottom: 1rem;
+    font-size: 1.6rem;
+    margin-bottom: 1.5rem;
   }
 }
 
 .venue {
-  font-size: 1.5rem;
-  margin-bottom: 0.5rem;
+  font-family: var(--font-display);
+  font-size: 1.4rem;
+  margin-bottom: 0.8rem;
+  color: var(--text-primary);
+  font-weight: 600;
 }
 
 @media (min-width: 768px) {
   .venue {
     font-size: 1.8rem;
+    margin-bottom: 1rem;
   }
 }
 
 .address {
+  font-family: var(--font-serif);
   font-size: 1rem;
-  opacity: 0.9;
+  color: var(--text-light);
+  font-weight: 400;
 }
 
 @media (min-width: 768px) {
   .address {
-    font-size: 1.1rem;
+    font-size: 1.2rem;
   }
 }
 
@@ -87,7 +140,7 @@
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
-  margin-top: 1.5rem;
+  margin-top: 2rem;
 }
 
 @media (min-width: 768px) {
@@ -95,33 +148,49 @@
     flex-direction: row;
     justify-content: center;
     gap: 3rem;
-    margin-top: 2rem;
+    margin-top: 2.5rem;
   }
 }
 
 .detailItem {
   text-align: center;
+  background: rgba(255, 255, 255, 0.8);
+  padding: 1.5rem;
+  border-radius: 12px;
+  border: 1px solid var(--border-soft);
+  position: relative;
+  z-index: 1;
 }
 
 .detailTitle {
+  font-family: var(--font-sans);
   font-size: 1.1rem;
-  margin-bottom: 0.5rem;
-  color: #f8f9fa;
+  margin-bottom: 0.8rem;
+  color: var(--primary-color);
+  font-weight: 600;
 }
 
 @media (min-width: 768px) {
   .detailTitle {
-    font-size: 1.2rem;
+    font-size: 1.3rem;
+    margin-bottom: 1rem;
   }
 }
 
 .detailInfo {
-  font-size: 0.9rem;
-  opacity: 0.9;
+  font-family: var(--font-serif);
+  font-size: 0.95rem;
+  color: var(--text-secondary);
+  line-height: 1.5;
+  margin-bottom: 0.3rem;
+}
+
+.detailInfo:last-child {
+  margin-bottom: 0;
 }
 
 @media (min-width: 768px) {
   .detailInfo {
-    font-size: 1rem;
+    font-size: 1.1rem;
   }
 }

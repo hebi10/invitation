@@ -1,40 +1,105 @@
 .container {
-  padding: 2rem 1rem;
-  background-color: #fafafa;
+  padding: 3rem 2rem;
+  background: linear-gradient(135deg, rgba(245, 230, 211, 0.4) 0%, rgba(255, 255, 255, 0.9) 100%);
   text-align: center;
-  max-width: 768px;
-  margin: 0 auto;
+  max-width: 700px;
+  margin: 2rem auto;
+  border-radius: 15px;
+  box-shadow: 0 8px 30px rgba(139, 110, 99, 0.15);
+  border: 1px solid var(--border-soft);
+  position: relative;
+  overflow: hidden;
+}
+
+.container::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(circle, rgba(212, 165, 116, 0.05) 0%, transparent 70%);
+  animation: subtle-rotate 20s linear infinite;
+  pointer-events: none;
+}
+
+@keyframes subtle-rotate {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
 }
 
 @media (min-width: 768px) {
   .container {
-    padding: 4rem 2rem;
+    padding: 4rem 3rem;
+    margin: 3rem auto;
   }
 }
 
 .message {
-  font-size: 1rem;
-  line-height: 1.8;
-  color: #2c3e50;
-  margin-bottom: 1.5rem;
+  font-family: var(--font-serif);
+  font-size: 1.1rem;
+  line-height: 2;
+  color: var(--text-primary);
+  margin-bottom: 2rem;
   white-space: pre-line;
+  word-break: keep-all;
+  position: relative;
+  z-index: 1;
+  font-weight: 400;
+  letter-spacing: 0.02em;
+}
+
+.message::before {
+  content: '"';
+  font-family: var(--font-display);
+  font-size: 3rem;
+  color: var(--primary-color);
+  position: absolute;
+  top: -1rem;
+  left: -1rem;
+  opacity: 0.3;
+}
+
+.message::after {
+  content: '"';
+  font-family: var(--font-display);
+  font-size: 3rem;
+  color: var(--primary-color);
+  position: absolute;
+  bottom: -2rem;
+  right: -1rem;
+  opacity: 0.3;
 }
 
 @media (min-width: 768px) {
   .message {
-    font-size: 1.2rem;
-    margin-bottom: 2rem;
+    font-size: 1.3rem;
+    margin-bottom: 2.5rem;
+    padding: 0 1rem;
   }
 }
 
 .author {
-  font-size: 0.9rem;
-  color: #7f8c8d;
-  font-style: italic;
+  font-family: var(--font-serif);
+  font-size: 1rem;
+  color: var(--primary-color);
+  font-weight: 500;
+  position: relative;
+  z-index: 1;
+  letter-spacing: 0.05em;
+}
+
+.author::before,
+.author::after {
+  content: '❀';
+  color: var(--secondary-color);
+  font-size: 0.8em;
+  margin: 0 0.5rem;
+  opacity: 0.7;
 }
 
 @media (min-width: 768px) {
   .author {
-    font-size: 1rem;
+    font-size: 1.1rem;
   }
 }

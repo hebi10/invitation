@@ -10,18 +10,23 @@ import Schedule from '@/components/Schedule';
 import LocationMap from '@/components/LocationMap';
 import Guestbook from '@/components/Guestbook';
 import GiftInfo from '@/components/GiftInfo';
-
-const mockImages = [
-  'https://images.unsplash.com/photo-1520854221256-17451cc331bf?w=400',
-  'https://images.unsplash.com/photo-1519741497674-611481863552?w=400',
-  'https://images.unsplash.com/photo-1520854221256-17451cc331bf?w=400',
-  'https://images.unsplash.com/photo-1511285560929-80b456fea0bc?w=400',
-  'https://images.unsplash.com/photo-1606216794074-735e91aa2c92?w=400',
-  'https://images.unsplash.com/photo-1583939003579-730e3918a45a?w=400'
-];
+import { usePageImages } from '@/hooks/usePageImages';
 
 export default function KimTaehyunChoiYuna() {
   const [isLoading, setIsLoading] = useState(true);
+  
+  // 🎯 간편한 이미지 사용!
+  const { images, imageUrls, firstImage, hasImages, mainImage, galleryImages } = usePageImages('kim-taehyun-choi-yuna');
+  
+  // 기본 갤러리 이미지들
+  const mockImages = [
+    'https://images.unsplash.com/photo-1520854221256-17451cc331bf?w=400',
+    'https://images.unsplash.com/photo-1519741497674-611481863552?w=400',
+    'https://images.unsplash.com/photo-1520854221256-17451cc331bf?w=400',
+    'https://images.unsplash.com/photo-1511285560929-80b456fea0bc?w=400',
+    'https://images.unsplash.com/photo-1606216794074-735e91aa2c92?w=400',
+    'https://images.unsplash.com/photo-1583939003579-730e3918a45a?w=400'
+  ];
 
   const handleLoadComplete = () => {
     setIsLoading(false);
@@ -46,12 +51,14 @@ export default function KimTaehyunChoiYuna() {
         <meta name="keywords" content="결혼식,웨딩,청첩장,김태현,최유나,2024년 6월" />
         <meta property="og:title" content="김태현 ♥ 최유나 결혼식 초대" />
         <meta property="og:description" content="2024년 6월 22일 토요일 오후 1시, 김태현과 최유나가 영원한 약속을 나누는 소중한 순간입니다." />
+        <meta property="og:image" content="https://images.unsplash.com/photo-1520854221256-17451cc331bf?w=800&h=600&fit=crop" />
         <meta property="og:type" content="website" />
         <meta property="og:locale" content="ko_KR" />
         <meta property="og:site_name" content="모바일 청첩장" />
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:title" content="김태현 ♥ 최유나 결혼식 초대" />
         <meta name="twitter:description" content="2024년 6월 22일 토요일 오후 1시, 김태현과 최유나가 영원한 약속을 나누는 소중한 순간입니다." />
+        <meta name="twitter:image" content="https://images.unsplash.com/photo-1520854221256-17451cc331bf?w=800&h=600&fit=crop" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <meta name="robots" content="noindex, nofollow" />
       </Head>
@@ -59,7 +66,7 @@ export default function KimTaehyunChoiYuna() {
       <Cover
         title="Wedding Invitation"
         subtitle="영원한 사랑을 약속합니다"
-        imageUrl="https://images.unsplash.com/photo-1520854221256-17451cc331bf?w=400"
+        imageUrl={mainImage?.url || "https://images.unsplash.com/photo-1520854221256-17451cc331bf?w=400"}
         brideName="최유나"
         groomName="김태현"
         weddingDate="2024년 6월 8일 토요일"
@@ -79,8 +86,8 @@ export default function KimTaehyunChoiYuna() {
       />
       
       <Gallery
-        title="Together Forever"
-        images={mockImages}
+        title="영원히 함께"
+        images={galleryImages.length > 0 ? galleryImages.map(img => img.url) : mockImages}
       />
       
       <Schedule

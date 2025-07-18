@@ -16,7 +16,7 @@ export default function ShinMinJeKimHyunJi() {
   const [isLoading, setIsLoading] = useState(true);
   
   // 🎯 간편한 이미지 사용!
-  const { images, imageUrls, firstImage, hasImages } = usePageImages('shin-minje-kim-hyunji');
+  const { images, imageUrls, firstImage, hasImages, mainImage, galleryImages } = usePageImages('shin-minje-kim-hyunji');
   
   // 기본 갤러리 이미지들
   const mockImages = [
@@ -25,7 +25,7 @@ export default function ShinMinJeKimHyunJi() {
     'https://images.unsplash.com/photo-1520854221256-17451cc331bf?w=400',
     'https://images.unsplash.com/photo-1606216794074-735e91aa2c92?w=400',
     'https://images.unsplash.com/photo-1583939003579-730e3918a45a?w=400',
-    'https://images.unsplash.com/photo-1594736797933-d0c6258a3d68?w=400'
+    'https://images.unsplash.com/photo-1511285560929-80b456fea0bc?w=400'
   ];
 
   const handleLoadComplete = () => {
@@ -51,12 +51,14 @@ export default function ShinMinJeKimHyunJi() {
         <meta name="keywords" content="결혼식,웨딩,청첩장,신민제,김현지,2024년 4월" />
         <meta property="og:title" content="신민제 ♥ 김현지 결혼식 초대" />
         <meta property="og:description" content="2024년 4월 14일 토요일 오후 2시, 신민제와 김현지가 하나 되는 날에 소중한 분들을 초대합니다." />
+        <meta property="og:image" content="https://images.unsplash.com/photo-1519741497674-611481863552?w=800&h=600&fit=crop" />
         <meta property="og:type" content="website" />
         <meta property="og:locale" content="ko_KR" />
         <meta property="og:site_name" content="모바일 청첩장" />
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:title" content="신민제 ♥ 김현지 결혼식 초대" />
         <meta name="twitter:description" content="2024년 4월 14일 토요일 오후 2시, 신민제와 김현지가 하나 되는 날에 소중한 분들을 초대합니다." />
+        <meta name="twitter:image" content="https://images.unsplash.com/photo-1519741497674-611481863552?w=800&h=600&fit=crop" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <meta name="robots" content="noindex, nofollow" />
       </Head>
@@ -64,7 +66,7 @@ export default function ShinMinJeKimHyunJi() {
       <Cover
         title="Wedding Invitation"
         subtitle="우리의 특별한 날에 함께해주세요"
-        imageUrl={firstImage?.url || "https://images.unsplash.com/photo-1519741497674-611481863552?w=400"}
+        imageUrl={mainImage?.url || "https://images.unsplash.com/photo-1519741497674-611481863552?w=400"}
         brideName="김현지"
         groomName="신민제"
         weddingDate="2024년 4월 20일 토요일"
@@ -72,16 +74,16 @@ export default function ShinMinJeKimHyunJi() {
       
       <Greeting
         message={`안녕하세요. 저희 두 사람이 사랑의 결실을 맺어 
-부부의 연을 맺게 되었습니다.
+          부부의 연을 맺게 되었습니다.
 
-늘 받기만 했던 사랑을 이제 함께 나누며 살겠습니다.
-저희의 새로운 시작을 축복해 주시면 감사하겠습니다.`}
+          늘 받기만 했던 사랑을 이제 함께 나누며 살겠습니다.
+          저희의 새로운 시작을 축복해 주시면 감사하겠습니다.`}
         author="신랑 신민제, 신부 김현지"
       />
       
       <Gallery
-        title="Our Memories"
-        images={hasImages ? [...imageUrls, ...mockImages] : mockImages}
+        title="우리의 소중한 순간들"
+        images={galleryImages.length > 0 ? galleryImages.map(img => img.url) : mockImages}
       />
       
       <Schedule

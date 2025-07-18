@@ -19,8 +19,8 @@ export default function GiftInfo({
   brideAccount, 
   message = "축하의 마음을 전하고 싶으시다면 아래 계좌로 송금해주세요." 
 }: GiftInfoProps) {
-  const copyToClipboard = (text: string) => {
-    navigator.clipboard.writeText(text);
+  const copyToClipboard = (bank: string, accountNumber: string) => {
+    navigator.clipboard.writeText(`${bank} ${accountNumber}`);
     alert('계좌번호가 복사되었습니다.');
   };
 
@@ -47,7 +47,7 @@ export default function GiftInfo({
             </div>
             <button 
               className={styles.copyButton}
-              onClick={() => copyToClipboard(groomAccount.accountNumber)}
+              onClick={() => copyToClipboard(groomAccount.bank, groomAccount.accountNumber)}
             >
               계좌번호 복사
             </button>
@@ -71,7 +71,7 @@ export default function GiftInfo({
             </div>
             <button 
               className={styles.copyButton}
-              onClick={() => copyToClipboard(brideAccount.accountNumber)}
+              onClick={() => copyToClipboard(brideAccount.bank, brideAccount.accountNumber)}
             >
               계좌번호 복사
             </button>

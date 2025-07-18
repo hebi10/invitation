@@ -36,6 +36,24 @@ export function usePageImages(pageSlug: string) {
     firstImage: images[0] || null,
     imageUrls: images.map(img => img.url),
     getImageByName: (name: string) => images.find(img => img.name.includes(name)),
-    hasImages: images.length > 0
+    hasImages: images.length > 0,
+    
+    // 특정 이름 패턴의 이미지들
+    mainImage: images.find(img => {
+      const fileName = img.name.toLowerCase();
+      return fileName.startsWith('main.') || fileName.includes('main.');
+    }),
+    galleryImages: images.filter(img => {
+      const fileName = img.name.toLowerCase();
+      return fileName.startsWith('gallery') || fileName.includes('gallery');
+    }).sort((a, b) => {
+      // gallery01, gallery02... 순으로 정렬
+      const aMatch = a.name.match(/gallery(\d+)/i);
+      const bMatch = b.name.match(/gallery(\d+)/i);
+      if (aMatch && bMatch) {
+        return parseInt(aMatch[1]) - parseInt(bMatch[1]);
+      }
+      return a.name.localeCompare(b.name);
+    })
   };
 }

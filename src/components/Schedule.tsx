@@ -27,7 +27,7 @@ export default function Schedule({
 }: ScheduleProps) {
   return (
     <section className={styles.container}>
-      <h2 className={styles.title}>Wedding Schedule</h2>
+      <h2 className={styles.title}>예식 안내</h2>
       <div className={styles.mainInfo}>
         <h3 className={styles.date}>{date}</h3>
         <p className={styles.time}>{time}</p>
@@ -39,14 +39,14 @@ export default function Schedule({
         <div className={styles.detailsContainer}>
           {ceremony && (
             <div className={styles.detailItem}>
-              <h5 className={styles.detailTitle}>Ceremony</h5>
+              <h5 className={styles.detailTitle}>🌹 예식</h5>
               <p className={styles.detailInfo}>{ceremony.time}</p>
               <p className={styles.detailInfo}>{ceremony.location}</p>
             </div>
           )}
           {reception && (
             <div className={styles.detailItem}>
-              <h5 className={styles.detailTitle}>Reception</h5>
+              <h5 className={styles.detailTitle}>🥂 피로연</h5>
               <p className={styles.detailInfo}>{reception.time}</p>
               <p className={styles.detailInfo}>{reception.location}</p>
             </div>

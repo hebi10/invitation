@@ -89,6 +89,9 @@ export default function AdminPage() {
         <Head>
           <title>Admin 로그인 - 모바일 청첩장 관리</title>
           <meta name="description" content="모바일 청첩장 관리자 페이지입니다. 로그인하여 생성된 청첩장들을 확인하고 관리하세요." />
+          <meta property="og:title" content="모바일 청첩장 관리자" />
+          <meta property="og:description" content="청첩장 관리 및 댓글 관리 시스템" />
+          <meta property="og:image" content="https://images.unsplash.com/photo-1583939003579-730e3918a45a?w=800&h=600&fit=crop" />
           <meta name="robots" content="noindex, nofollow" />
           <meta name="viewport" content="width=device-width, initial-scale=1" />
         </Head>
@@ -120,6 +123,9 @@ export default function AdminPage() {
       <Head>
         <title>Admin 대시보드 - 모바일 청첩장 관리</title>
         <meta name="description" content="생성된 청첩장들을 확인하고 관리할 수 있는 관리자 대시보드입니다." />
+        <meta property="og:title" content="모바일 청첩장 관리 대시보드" />
+        <meta property="og:description" content="청첩장, 이미지, 댓글 통합 관리 시스템" />
+        <meta property="og:image" content="https://images.unsplash.com/photo-1583939003579-730e3918a45a?w=800&h=600&fit=crop" />
         <meta name="robots" content="noindex, nofollow" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
       </Head>

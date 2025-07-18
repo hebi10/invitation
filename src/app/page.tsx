@@ -12,12 +12,14 @@ export default function Home() {
         <meta name="keywords" content="모바일청첩장,웨딩,결혼식,청첩장,결혼,웨딩카드" />
         <meta property="og:title" content="모바일 청첩장 - 아름다운 시작을 함께하세요" />
         <meta property="og:description" content="특별한 날을 더욱 특별하게 만들어줄 모바일 청첩장입니다." />
+        <meta property="og:image" content="https://images.unsplash.com/photo-1606216794074-735e91aa2c92?w=800&h=600&fit=crop" />
         <meta property="og:type" content="website" />
         <meta property="og:locale" content="ko_KR" />
         <meta property="og:site_name" content="모바일 청첩장" />
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:title" content="모바일 청첩장 - 아름다운 시작을 함께하세요" />
         <meta name="twitter:description" content="특별한 날을 더욱 특별하게 만들어줄 모바일 청첩장입니다." />
+        <meta name="twitter:image" content="https://images.unsplash.com/photo-1606216794074-735e91aa2c92?w=800&h=600&fit=crop" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <meta name="robots" content="noindex, nofollow" />
       </Head>
@@ -44,7 +46,6 @@ export default function Home() {
             listStyle: 'none', 
             padding: 0,
             marginBottom: '2rem',
-            color: 'white'
           }}>
             <li>📱 반응형 디자인</li>
             <li>🎨 아름다운 템플릿</li>

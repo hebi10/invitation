@@ -5,8 +5,14 @@ rules_version = '2';
 //    /databases/(default)/documents/users/$(request.auth.uid)).data.isAdmin;
 service firebase.storage {
   match /b/{bucket}/o {
+    // 모든 파일 읽기 허용
     match /{allPaths=**} {
-      allow read, write: if false;
+      allow read: if true;
+    }
+    
+    // wedding-images 폴더는 쓰기/삭제도 허용 (관리자용)
+    match /wedding-images/{allPaths=**} {
+      allow read, write, delete: if true;
     }
   }
 }

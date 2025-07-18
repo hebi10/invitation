@@ -17,7 +17,7 @@ export default function LocationMap({
 }: LocationMapProps) {
   return (
     <section className={styles.container}>
-      <h2 className={styles.title}>Location</h2>
+      <h2 className={styles.title}>오시는 길</h2>
       <div className={styles.mapContainer}>
         <iframe
           className={styles.mapFrame}
