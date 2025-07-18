@@ -1,4 +1,32 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 모바일 청첩장 프로젝트
+
+Next.js로 구축된 반응형 모바일 청첩장 웹사이트입니다.
+
+## 주요 기능
+
+- 🎨 반응형 디자인
+- 💬 댓글 시스템 (Firebase Firestore)
+- 🖼️ 이미지 관리
+- 🔐 관리자 인증
+- 📱 모바일 최적화
+
+## 환경 설정
+
+1. 환경변수 파일 생성:
+```bash
+cp .env.example .env.local
+```
+
+2. `.env.local` 파일에서 다음 값들을 설정:
+
+### Firebase 설정
+- Firebase Console에서 프로젝트 생성
+- Firestore Database 생성 (테스트 모드)
+- Firebase Storage 설정
+- Firebase 설정 정보를 환경변수에 입력
+
+### 관리자 설정
+- `NEXT_PUBLIC_ADMIN_PASSWORD`: 관리자 로그인 비밀번호
 
 ## Getting Started
 
