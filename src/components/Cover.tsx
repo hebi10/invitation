@@ -9,6 +9,7 @@ interface CoverProps {
   brideName: string;
   groomName: string;
   weddingDate: string;
+  backgroundImage?: string; // 추가: 선택적 배경 이미지
 }
 
 export default function Cover({ 
@@ -17,10 +18,20 @@ export default function Cover({
   imageUrl, 
   brideName, 
   groomName, 
-  weddingDate 
+  weddingDate,
+  backgroundImage
 }: CoverProps) {
+  const containerStyle = backgroundImage 
+    ? { 
+        backgroundImage: `url(${backgroundImage})`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundRepeat: 'no-repeat'
+      }
+    : {};
+
   return (
-    <div className={styles.container}>
+    <div className={styles.container} style={containerStyle}>
       <h1 className={styles.title}>{title}</h1>
       {subtitle && <p className={styles.subtitle}>{subtitle}</p>}
       <img className={styles.image} src={imageUrl} alt="Wedding couple" />

@@ -220,3 +220,8 @@ export const getAllPageImages = async (): Promise<{ [pageSlug: string]: Uploaded
     return MOCK_IMAGE_CATEGORIES;
   }
 };
+
+// 특정 페이지의 이미지 가져오기 (public 함수)
+export const getPageImages = async (pageSlug: string): Promise<UploadedImage[]> => {
+  return await getImagesByPage(pageSlug);
+};

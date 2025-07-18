@@ -10,18 +10,23 @@ import Schedule from '@/components/Schedule';
 import LocationMap from '@/components/LocationMap';
 import Guestbook from '@/components/Guestbook';
 import GiftInfo from '@/components/GiftInfo';
-
-const mockImages = [
-  'https://images.unsplash.com/photo-1511285560929-80b456fea0bc?w=400',
-  'https://images.unsplash.com/photo-1519741497674-611481863552?w=400',
-  'https://images.unsplash.com/photo-1520854221256-17451cc331bf?w=400',
-  'https://images.unsplash.com/photo-1606216794074-735e91aa2c92?w=400',
-  'https://images.unsplash.com/photo-1583939003579-730e3918a45a?w=400',
-  'https://images.unsplash.com/photo-1594736797933-d0c6258a3d68?w=400'
-];
+import { usePageImages } from '@/hooks/usePageImages';
 
 export default function ShinMinJeKimHyunJi() {
   const [isLoading, setIsLoading] = useState(true);
+  
+  // 🎯 간편한 이미지 사용!
+  const { images, imageUrls, firstImage, hasImages } = usePageImages('shin-minje-kim-hyunji');
+  
+  // 기본 갤러리 이미지들
+  const mockImages = [
+    'https://images.unsplash.com/photo-1511285560929-80b456fea0bc?w=400',
+    'https://images.unsplash.com/photo-1519741497674-611481863552?w=400',
+    'https://images.unsplash.com/photo-1520854221256-17451cc331bf?w=400',
+    'https://images.unsplash.com/photo-1606216794074-735e91aa2c92?w=400',
+    'https://images.unsplash.com/photo-1583939003579-730e3918a45a?w=400',
+    'https://images.unsplash.com/photo-1594736797933-d0c6258a3d68?w=400'
+  ];
 
   const handleLoadComplete = () => {
     setIsLoading(false);
@@ -59,7 +64,7 @@ export default function ShinMinJeKimHyunJi() {
       <Cover
         title="Wedding Invitation"
         subtitle="우리의 특별한 날에 함께해주세요"
-        imageUrl="https://images.unsplash.com/photo-1519741497674-611481863552?w=400"
+        imageUrl={firstImage?.url || "https://images.unsplash.com/photo-1519741497674-611481863552?w=400"}
         brideName="김현지"
         groomName="신민제"
         weddingDate="2024년 4월 20일 토요일"
@@ -76,7 +81,7 @@ export default function ShinMinJeKimHyunJi() {
       
       <Gallery
         title="Our Memories"
-        images={mockImages}
+        images={hasImages ? [...imageUrls, ...mockImages] : mockImages}
       />
       
       <Schedule
