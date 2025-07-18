@@ -8,6 +8,7 @@ import Greeting from '@/components/Greeting';
 import Gallery from '@/components/Gallery';
 import Schedule from '@/components/Schedule';
 import LocationMap from '@/components/LocationMap';
+import WeddingCalendar from '@/components/WeddingCalendar';
 import Guestbook from '@/components/Guestbook';
 import GiftInfo from '@/components/GiftInfo';
 import { usePageImages } from '@/hooks/usePageImages';
@@ -17,6 +18,9 @@ export default function KimTaehyunChoiYuna() {
   
   // 🎯 간편한 이미지 사용!
   const { images, imageUrls, firstImage, hasImages, mainImage, galleryImages } = usePageImages('kim-taehyun-choi-yuna');
+  
+  // 결혼식 날짜 설정
+  const weddingDate = new Date(2024, 5, 8); // 2024년 6월 8일
   
   // 기본 갤러리 이미지들
   const mockImages = [
@@ -110,6 +114,23 @@ export default function KimTaehyunChoiYuna() {
         address="서울시 강남구 논현로 825"
         venueName="엘리시안 웨딩홀"
         description="지하철 7호선 논현역 3번 출구에서 도보 5분"
+      />
+      
+      <WeddingCalendar
+        title="소중한 날을 기억해주세요"
+        weddingDate={weddingDate}
+        currentMonth={weddingDate}
+        events={[
+          {
+            date: weddingDate.getDate(),
+            type: 'wedding',
+            title: '김태현 ♥ 최유나 결혼식',
+            description: '오후 2시 30분 엘리시안 웨딩홀'
+          }
+        ]}
+        onDateClick={(date) => {
+          console.log('선택된 날짜:', date);
+        }}
       />
       
       <Guestbook pageSlug="kim-taehyun-choi-yuna" />

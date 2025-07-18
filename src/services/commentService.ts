@@ -152,10 +152,16 @@ export async function addComment(commentData: CommentInput): Promise<void> {
       createdAt: 'serverTimestamp()'
     });
     
+    // 페이지별 컬렉션 이름 생성 (예: comments-kim-taehyun-choi-yuna)
+    const collectionName = `comments-${commentData.pageSlug}`;
+    console.log('[commentService] 사용할 컬렉션:', collectionName);
+    
     const docRef = await firestoreModules.addDoc(
-      firestoreModules.collection(firestoreModules.db, 'comments'), 
+      firestoreModules.collection(firestoreModules.db, collectionName), 
       {
-        ...commentData,
+        author: commentData.author,
+        message: commentData.message,
+        pageSlug: commentData.pageSlug,
         createdAt: firestoreModules.serverTimestamp()
       }
     );
@@ -206,10 +212,13 @@ export async function getComments(pageSlug: string): Promise<Comment[]> {
 
   try {
     console.log('[commentService] Firestore 쿼리 생성 중...');
-    // where와 orderBy를 함께 사용하면 인덱스 문제가 발생할 수 있으므로 단순화
+    // 페이지별 컬렉션 이름 생성 (예: comments-kim-taehyun-choi-yuna)
+    const collectionName = `comments-${pageSlug}`;
+    console.log('[commentService] 사용할 컬렉션:', collectionName);
+    
     const q = firestoreModules.query(
-      firestoreModules.collection(firestoreModules.db, 'comments')
-      // 일단 where와 orderBy를 제거하고 테스트
+      firestoreModules.collection(firestoreModules.db, collectionName),
+      firestoreModules.orderBy('createdAt', 'desc')
     );
     
     console.log('[commentService] Firestore 쿼리 실행 중...');
@@ -222,20 +231,14 @@ export async function getComments(pageSlug: string): Promise<Comment[]> {
       const data = doc.data();
       console.log('[commentService] 문서 데이터:', { id: doc.id, data });
       
-      // pageSlug 필터링을 클라이언트에서 수행
-      if (data.pageSlug === pageSlug) {
-        comments.push({
-          id: doc.id,
-          author: data.author,
-          message: data.message,
-          createdAt: data.createdAt instanceof firestoreModules!.Timestamp ? data.createdAt.toDate() : new Date(),
-          pageSlug: data.pageSlug
-        });
-      }
+      comments.push({
+        id: doc.id,
+        author: data.author,
+        message: data.message,
+        createdAt: data.createdAt instanceof firestoreModules!.Timestamp ? data.createdAt.toDate() : new Date(),
+        pageSlug: data.pageSlug
+      });
     });
-    
-    // 클라이언트에서 정렬
-    comments.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
     
     console.log('[commentService] 최종 댓글 목록:', comments);
     return comments;
@@ -248,12 +251,12 @@ export async function getComments(pageSlug: string): Promise<Comment[]> {
 }
 
 // 댓글 삭제 (관리자만)
-export async function deleteComment(commentId: string): Promise<void> {
+export async function deleteComment(commentId: string, pageSlug: string): Promise<void> {
   if (!USE_FIREBASE) {
     // Mock comment deletion for development
-    Object.keys(MOCK_COMMENTS).forEach(pageSlug => {
+    if (MOCK_COMMENTS[pageSlug]) {
       MOCK_COMMENTS[pageSlug] = MOCK_COMMENTS[pageSlug].filter(comment => comment.id !== commentId);
-    });
+    }
     console.log('Mock: 댓글 삭제됨:', commentId);
     return;
   }
@@ -265,7 +268,9 @@ export async function deleteComment(commentId: string): Promise<void> {
   }
 
   try {
-    await firestoreModules.deleteDoc(firestoreModules.doc(firestoreModules.db, 'comments', commentId));
+    // 페이지별 컬렉션 이름 생성
+    const collectionName = `comments-${pageSlug}`;
+    await firestoreModules.deleteDoc(firestoreModules.doc(firestoreModules.db, collectionName, commentId));
   } catch (error) {
     console.error('Error deleting comment:', error);
     throw new Error('댓글 삭제에 실패했습니다.');
@@ -295,26 +300,39 @@ export async function getAllComments(): Promise<Comment[]> {
   }
 
   try {
-    const q = firestoreModules.query(
-      firestoreModules.collection(firestoreModules.db, 'comments'),
-      firestoreModules.orderBy('createdAt', 'desc')
-    );
+    // 모든 페이지별 컬렉션에서 댓글 가져오기
+    const pageNames = ['kim-taehyun-choi-yuna', 'shin-minje-kim-hyunji', 'lee-junho-park-somin'];
+    const allComments: Comment[] = [];
     
-    const querySnapshot = await firestoreModules.getDocs(q);
-    const comments: Comment[] = [];
+    for (const pageName of pageNames) {
+      const collectionName = `comments-${pageName}`;
+      
+      try {
+        const q = firestoreModules.query(
+          firestoreModules.collection(firestoreModules.db, collectionName),
+          firestoreModules.orderBy('createdAt', 'desc')
+        );
+        
+        const querySnapshot = await firestoreModules.getDocs(q);
+        
+        querySnapshot.forEach((doc: any) => {
+          const data = doc.data();
+          allComments.push({
+            id: doc.id,
+            author: data.author,
+            message: data.message,
+            createdAt: data.createdAt instanceof firestoreModules!.Timestamp ? data.createdAt.toDate() : new Date(),
+            pageSlug: data.pageSlug
+          });
+        });
+      } catch (collectionError) {
+        console.log(`컬렉션 ${collectionName}이 존재하지 않거나 접근할 수 없습니다:`, collectionError);
+        // 컬렉션이 없어도 계속 진행
+      }
+    }
     
-    querySnapshot.forEach((doc: any) => {
-      const data = doc.data();
-      comments.push({
-        id: doc.id,
-        author: data.author,
-        message: data.message,
-        createdAt: data.createdAt instanceof firestoreModules!.Timestamp ? data.createdAt.toDate() : new Date(),
-        pageSlug: data.pageSlug
-      });
-    });
-    
-    return comments;
+    // 전체 댓글을 날짜순으로 정렬
+    return allComments.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
   } catch (error) {
     console.error('Error getting all comments:', error);
     // Firestore 오류 시 Mock 데이터 반환

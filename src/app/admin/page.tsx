@@ -17,6 +17,10 @@ export default function AdminPage() {
   const [activeTab, setActiveTab] = useState<'pages' | 'images' | 'comments'>('pages');
   const [comments, setComments] = useState<Comment[]>([]);
   const [commentsLoading, setCommentsLoading] = useState(false);
+  
+  // 페이징 관련 상태
+  const [currentPage, setCurrentPage] = useState(1);
+  const COMMENTS_PER_PAGE = 10;
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
@@ -54,18 +58,35 @@ export default function AdminPage() {
     }
   };
 
-  const handleDeleteComment = async (commentId: string) => {
+  const handleDeleteComment = async (commentId: string, pageSlug: string) => {
     if (!confirm('정말 이 댓글을 삭제하시겠습니까?')) {
       return;
     }
 
     try {
-      await deleteComment(commentId);
+      await deleteComment(commentId, pageSlug);
       setComments(prev => prev.filter(comment => comment.id !== commentId));
       alert('댓글이 삭제되었습니다.');
     } catch (error) {
       console.error('댓글 삭제 실패:', error);
       alert('댓글 삭제에 실패했습니다.');
+    }
+  };
+
+  // 페이징 계산
+  const totalPages = Math.ceil(comments.length / COMMENTS_PER_PAGE);
+  const startIndex = (currentPage - 1) * COMMENTS_PER_PAGE;
+  const endIndex = startIndex + COMMENTS_PER_PAGE;
+  const currentComments = comments.slice(startIndex, endIndex);
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+  };
+
+  const handleTabChange = (tab: 'pages' | 'images' | 'comments') => {
+    setActiveTab(tab);
+    if (tab === 'comments') {
+      setCurrentPage(1); // 댓글 탭으로 변경시 페이지를 1로 리셋
     }
   };
 
@@ -166,19 +187,19 @@ export default function AdminPage() {
         <div className={styles.tabContainer}>
           <button 
             className={`${styles.tab} ${activeTab === 'pages' ? styles.active : ''}`}
-            onClick={() => setActiveTab('pages')}
+            onClick={() => handleTabChange('pages')}
           >
             청첩장 페이지
           </button>
           <button 
             className={`${styles.tab} ${activeTab === 'images' ? styles.active : ''}`}
-            onClick={() => setActiveTab('images')}
+            onClick={() => handleTabChange('images')}
           >
             이미지 관리
           </button>
           <button 
             className={`${styles.tab} ${activeTab === 'comments' ? styles.active : ''}`}
-            onClick={() => setActiveTab('comments')}
+            onClick={() => handleTabChange('comments')}
           >
             댓글 관리
           </button>
@@ -188,25 +209,32 @@ export default function AdminPage() {
           {activeTab === 'pages' && (
             <div className={styles.pagesContainer}>
               {loading ? (
-                <div className={styles.noPages}>
-                  <h3>로딩 중...</h3>
+                <div className={styles.loadingContainer}>
+                  <div className={styles.loadingSpinner}></div>
+                  <p>청첩장 목록을 불러오는 중...</p>
                 </div>
               ) : weddingPages.length > 0 ? (
                 <>
-                  <h2 style={{ textAlign: 'center', marginBottom: '2rem', fontSize: '2rem', fontWeight: '300' }}>
-                    생성된 청첩장 목록 ({weddingPages.length}개)
-                  </h2>
+                  <div className={styles.pagesHeader}>
+                    <h2>생성된 청첩장 목록</h2>
+                    <div className={styles.pagesStats}>
+                      <span className={styles.pageCount}>{weddingPages.length}개의 청첩장</span>
+                      <span className={styles.separator}>•</span>
+                      <span className={styles.pageStatus}>모두 활성화됨</span>
+                    </div>
+                  </div>
                   <div className={styles.pagesGrid}>
-                    {weddingPages.map((page) => (
+                    {weddingPages.map((page, index) => (
                       <a key={page.slug} className={styles.pageCard} href={`/${page.slug}`} target="_blank">
-                        <h3 className={styles.cardTitle}>{page.displayName}</h3>
+                        <div className={styles.cardNumber}>#{index + 1}</div>
+                        <h3 className={styles.cardTitle}>💍 {page.displayName}</h3>
                         <p className={styles.cardDescription}>{page.description}</p>
                         <div className={styles.cardMeta}>
-                          <span>{page.date}</span>
-                          <span>{page.venue}</span>
+                          <span>📅 {page.date}</span>
+                          <span>🏛️ {page.venue}</span>
                         </div>
-                        <div style={{ marginTop: '1rem', fontSize: '0.8rem', opacity: '0.7' }}>
-                          URL: /{page.slug}
+                        <div className={styles.cardUrl}>
+                          <span>🔗 /{page.slug}</span>
                         </div>
                       </a>
                     ))}
@@ -214,7 +242,8 @@ export default function AdminPage() {
                 </>
               ) : (
                 <div className={styles.noPages}>
-                  <h3>아직 생성된 청첩장이 없습니다.</h3>
+                  <div className={styles.emptyIcon}>💒</div>
+                  <h3>아직 생성된 청첩장이 없습니다</h3>
                   <p>새로운 청첩장을 만들어보세요!</p>
                 </div>
               )}
@@ -226,46 +255,125 @@ export default function AdminPage() {
           {activeTab === 'comments' && (
             <div className={styles.commentsContainer}>
               <div className={styles.commentsHeader}>
-                <h2>전체 댓글 관리 ({comments.length}개)</h2>
+                <div className={styles.commentsHeaderInfo}>
+                  <h2>전체 댓글 관리</h2>
+                  <div className={styles.commentsStats}>
+                    <span className={styles.commentCount}>{comments.length}개의 댓글</span>
+                    <span className={styles.commentSeparator}>•</span>
+                    <span className={styles.pageCount}>
+                      {[...new Set(comments.map(c => c.pageSlug))].length}개 페이지
+                    </span>
+                    {totalPages > 1 && (
+                      <>
+                        <span className={styles.commentSeparator}>•</span>
+                        <span className={styles.pageInfo}>
+                          {currentPage}/{totalPages} 페이지
+                        </span>
+                      </>
+                    )}
+                  </div>
+                </div>
                 <button 
                   onClick={fetchAllComments} 
                   disabled={commentsLoading}
                   className={styles.refreshButton}
                 >
-                  {commentsLoading ? '로딩 중...' : '새로고침'}
+                  {commentsLoading ? (
+                    <>
+                      <span className={styles.spinner}></span>
+                      로딩 중...
+                    </>
+                  ) : (
+                    <>
+                      🔄 새로고침
+                    </>
+                  )}
                 </button>
               </div>
               
               {commentsLoading ? (
-                <p>댓글을 불러오는 중...</p>
-              ) : (
-                <div className={styles.commentsList}>
-                  {comments.map((comment) => (
-                    <div key={comment.id} className={styles.commentItem}>
-                      <div className={styles.commentHeader}>
-                        <strong>{comment.author}</strong>
-                        <span className={styles.pageSlug}>[{comment.pageSlug}]</span>
-                        <span className={styles.commentDate}>
-                          {comment.createdAt.toLocaleString()}
-                        </span>
-                      </div>
-                      <div className={styles.commentMessage}>
-                        {comment.message}
-                      </div>
-                      <div className={styles.commentActions}>
-                        <button 
-                          onClick={() => handleDeleteComment(comment.id)}
-                          className={styles.deleteButton}
-                        >
-                          삭제
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                  {comments.length === 0 && (
-                    <p className={styles.noComments}>댓글이 없습니다.</p>
-                  )}
+                <div className={styles.loadingContainer}>
+                  <div className={styles.loadingSpinner}></div>
+                  <p>댓글을 불러오는 중...</p>
                 </div>
+              ) : (
+                <>
+                  <div className={styles.commentsList}>
+                    {currentComments.map((comment, index) => (
+                      <div key={comment.id} className={styles.commentItem}>
+                        <div className={styles.commentNumber}>#{comments.length - (startIndex + index)}</div>
+                        <div className={styles.commentHeader}>
+                          <div className={styles.commentAuthor}>
+                            <strong>👤 {comment.author}</strong>
+                          </div>
+                          <div className={styles.commentMeta}>
+                            <span className={styles.pageSlug}>📄 {comment.pageSlug}</span>
+                            <span className={styles.commentDate}>
+                              🕒 {comment.createdAt.toLocaleDateString('ko-KR', {
+                                year: 'numeric',
+                                month: 'short', 
+                                day: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit'
+                              })}
+                            </span>
+                          </div>
+                        </div>
+                        <div className={styles.commentMessage}>
+                          {comment.message}
+                        </div>
+                        <div className={styles.commentActions}>
+                          <button 
+                            onClick={() => handleDeleteComment(comment.id, comment.pageSlug)}
+                            className={styles.deleteButton}
+                          >
+                            🗑️ 삭제
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                    {comments.length === 0 && (
+                      <div className={styles.noComments}>
+                        <div className={styles.emptyIcon}>💬</div>
+                        <h3>아직 댓글이 없습니다</h3>
+                        <p>청첩장 페이지에서 방명록을 작성해보세요!</p>
+                      </div>
+                    )}
+                  </div>
+                  
+                  {/* 페이징 */}
+                  {totalPages > 1 && (
+                    <div className={styles.pagination}>
+                      <button 
+                        className={`${styles.pageButton} ${currentPage === 1 ? styles.disabled : ''}`}
+                        onClick={() => handlePageChange(currentPage - 1)}
+                        disabled={currentPage === 1}
+                      >
+                        ← 이전
+                      </button>
+                      
+                      <div className={styles.pageNumbers}>
+                        {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+                          <button
+                            key={page}
+                            className={`${styles.pageNumber} ${currentPage === page ? styles.active : ''}`}
+                            onClick={() => handlePageChange(page)}
+                          >
+                            {page}
+                          </button>
+                        ))}
+                      </div>
+                      
+                      <button 
+                        className={`${styles.pageButton} ${currentPage === totalPages ? styles.disabled : ''}`}
+                        onClick={() => handlePageChange(currentPage + 1)}
+                        disabled={currentPage === totalPages}
+                      >
+                        다음 →
+                      </button>
+                    </div>
+                  )}
+                </>
               )}
             </div>
           )}

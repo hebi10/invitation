@@ -183,10 +183,15 @@ export default function ImageManager() {
           if (pageImages.length === 0) return null;
           
           return (
-            <div key={pageSlug}>
-              <h2 className={styles.title} style={{ fontSize: '1.5rem', marginTop: '2rem' }}>
-                {pageName} ({pageImages.length}개)
-              </h2>
+            <div key={pageSlug} className={styles.pageSection}>
+              <div className={styles.pageSectionHeader}>
+                <h3 className={styles.pageSectionTitle}>
+                  💍 {pageName}
+                </h3>
+                <div className={styles.imageCount}>
+                  {pageImages.length}개의 이미지
+                </div>
+              </div>
               <div className={styles.imageGrid}>
                 {pageImages.map((image) => (
                   <div key={image.path} className={styles.imageCard}>
@@ -194,12 +199,12 @@ export default function ImageManager() {
                       <img className={styles.image} src={image.url} alt={image.name} />
                     </div>
                     <div className={styles.imageInfo}>
-                      <p className={styles.imageName}>{image.name}</p>
+                      <p className={styles.imageName}>📷 {image.name}</p>
                       <button
                         className={styles.deleteImageButton}
                         onClick={() => handleDelete(image.path, pageSlug)}
                       >
-                        삭제
+                        🗑️ 삭제
                       </button>
                     </div>
                   </div>

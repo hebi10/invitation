@@ -1,0 +1,484 @@
+.container {
+  padding: 2rem 1rem;
+  background: linear-gradient(135deg, 
+    rgba(255, 255, 255, 1) 0%, 
+    rgba(252, 248, 243, 0.8) 50%, 
+    rgba(255, 255, 255, 1) 100%);
+  border-radius: 20px;
+  box-shadow: 0 8px 32px rgba(212, 165, 116, 0.15);
+  border: 1px solid rgba(212, 165, 116, 0.2);
+  margin: 2rem 0;
+  max-width: 700px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+@media (min-width: 768px) {
+  .container {
+    padding: 3rem 2rem;
+  }
+}
+
+/* 헤더 스타일 */
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  margin-bottom: 2rem;
+  text-align: center;
+}
+
+.titleIcon {
+  font-size: 1.5rem;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+}
+
+.title {
+  font-size: 1.8rem;
+  color: var(--primary-color);
+  margin: 0;
+  font-weight: 400;
+  font-family: 'Dancing Script', cursive;
+  text-shadow: 1px 1px 2px rgba(212, 165, 116, 0.3);
+}
+
+/* 달력 래퍼 */
+.calendarWrapper {
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 15px;
+  padding: 1.5rem;
+  box-shadow: 0 4px 20px rgba(212, 165, 116, 0.1);
+  border: 1px solid rgba(212, 165, 116, 0.15);
+}
+
+/* 월 헤더 */
+.monthHeader {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 1.5rem;
+  padding: 0 0.5rem;
+}
+
+.monthTitleContainer {
+  text-align: center;
+}
+
+.monthTitle {
+  font-size: 1.6rem;
+  color: var(--primary-color);
+  margin: 0;
+  font-weight: 700;
+  text-align: center;
+  font-family: 'Dancing Script', cursive;
+  text-shadow: 1px 1px 2px rgba(212, 165, 116, 0.3);
+}
+
+.monthSubtitle {
+  font-size: 1rem;
+  color: var(--secondary-color);
+  margin-top: 0.5rem;
+  font-weight: 500;
+  font-family: 'Noto Serif KR', serif;
+}
+
+/* 요일 헤더 */
+.weekdaysHeader {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+  margin-bottom: 1rem;
+  background: rgba(212, 165, 116, 0.15);
+  border-radius: 8px;
+  padding: 0.75rem;
+  box-shadow: inset 0 2px 4px rgba(212, 165, 116, 0.1);
+}
+
+.weekday {
+  text-align: center;
+  font-weight: 700;
+  color: var(--primary-color);
+  padding: 0.5rem;
+  font-size: 0.95rem;
+  text-shadow: 1px 1px 2px rgba(255, 255, 255, 0.8);
+  font-family: 'Noto Sans KR', sans-serif;
+}
+
+.weekday:first-child {
+  color: #e74c3c; /* 일요일 빨간색 */
+}
+
+.weekday:last-child {
+  color: #3498db; /* 토요일 파란색 */
+}
+
+/* 달력 그리드 */
+.calendarGrid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+  background: rgba(212, 165, 116, 0.15);
+  border-radius: 8px;
+  padding: 0.75rem;
+  box-shadow: inset 0 2px 4px rgba(212, 165, 116, 0.1);
+}
+
+/* 날짜 셀 */
+.dayCell {
+  position: relative;
+  background: white;
+  border-radius: 8px;
+  padding: 0.5rem;
+  min-height: 60px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  border: 1px solid rgba(212, 165, 116, 0.2);
+  box-shadow: 0 2px 8px rgba(212, 165, 116, 0.1);
+}
+
+.dayCell:hover {
+  background: rgba(212, 165, 116, 0.15);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(212, 165, 116, 0.25);
+  border-color: rgba(212, 165, 116, 0.3);
+}
+
+/* 클릭할 수 없는 날짜 */
+.nonClickable {
+  background: rgba(248, 248, 248, 0.8);
+  color: #999;
+  cursor: default;
+  border: 1px solid rgba(200, 200, 200, 0.3);
+}
+
+.nonClickable:hover {
+  background: rgba(248, 248, 248, 0.8);
+  transform: none;
+  box-shadow: 0 2px 8px rgba(212, 165, 116, 0.1);
+  border-color: rgba(200, 200, 200, 0.3);
+}
+
+.nonClickable .dayNumber {
+  color: #999;
+  font-weight: 500;
+}
+
+.emptyDay {
+  min-height: 60px;
+  background: transparent;
+}
+
+.dayNumber {
+  font-weight: 700;
+  color: var(--text-color);
+  font-size: 1.1rem;
+  margin-bottom: 0.25rem;
+  text-shadow: 1px 1px 2px rgba(255, 255, 255, 0.8);
+  font-family: 'Noto Sans KR', sans-serif;
+}
+
+/* 오늘 날짜 */
+.today {
+  background: rgba(212, 165, 116, 0.25);
+  border: 2px solid var(--primary-color);
+  box-shadow: 0 4px 12px rgba(212, 165, 116, 0.3);
+}
+
+.today .dayNumber {
+  color: var(--primary-color);
+  font-weight: 800;
+  font-size: 1.2rem;
+  text-shadow: 1px 1px 3px rgba(255, 255, 255, 0.9);
+}
+
+/* 선택된 날짜 */
+.selectedDay {
+  background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+  color: white;
+  box-shadow: 0 6px 20px rgba(212, 165, 116, 0.5);
+  border: 2px solid var(--primary-color);
+}
+
+.selectedDay .dayNumber {
+  color: white;
+  font-weight: 800;
+  font-size: 1.2rem;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+/* 결혼식 날짜 */
+.weddingDay {
+  background: linear-gradient(135deg, #ff6b6b, #ff8e8e, #ffb3b3);
+  color: white;
+  border: 3px solid #ff4757;
+  box-shadow: 0 8px 25px rgba(255, 71, 87, 0.4);
+  animation: weddingPulse 2s infinite;
+  position: relative;
+  overflow: hidden;
+}
+
+.weddingDay::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+  animation: shimmer 3s infinite;
+}
+
+.weddingDay .dayNumber {
+  color: white;
+  font-weight: 800;
+  font-size: 1.2rem;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+  z-index: 1;
+  position: relative;
+}
+
+.weddingDay:hover {
+  transform: scale(1.05);
+  box-shadow: 0 12px 30px rgba(255, 71, 87, 0.5);
+}
+
+@keyframes weddingPulse {
+  0%, 100% { 
+    transform: scale(1); 
+    border-color: #ff4757;
+  }
+  50% { 
+    transform: scale(1.02); 
+    border-color: #ff6b6b;
+  }
+}
+
+@keyframes shimmer {
+  0% { transform: translateX(-100%) translateY(-100%) rotate(45deg); }
+  100% { transform: translateX(100%) translateY(100%) rotate(45deg); }
+}
+
+@keyframes shimmer {
+  0% { transform: translateX(-100%) translateY(-100%) rotate(45deg); }
+  100% { transform: translateX(100%) translateY(100%) rotate(45deg); }
+}
+
+@keyframes weddingBounce {
+  0%, 100% { 
+    transform: translateY(0) rotate(0deg); 
+  }
+  25% { 
+    transform: translateY(-3px) rotate(2deg); 
+  }
+  50% { 
+    transform: translateY(-1px) rotate(0deg); 
+  }
+  75% { 
+    transform: translateY(-2px) rotate(-2deg); 
+  }
+}
+
+/* 결혼식 아이콘 */
+.weddingIcon {
+  font-size: 1.4rem;
+  margin-top: 0.1rem;
+  animation: weddingBounce 2s infinite;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+  z-index: 1;
+  position: relative;
+}
+
+@keyframes weddingBounce {
+  0%, 100% { 
+    transform: translateY(0) rotate(0deg); 
+  }
+  25% { 
+    transform: translateY(-3px) rotate(2deg); 
+  }
+  50% { 
+    transform: translateY(-1px) rotate(0deg); 
+  }
+  75% { 
+    transform: translateY(-2px) rotate(-2deg); 
+  }
+}
+
+/* 이벤트 인디케이터 */
+.eventIndicators {
+  display: flex;
+  gap: 2px;
+  margin-top: auto;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.eventDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--primary-color);
+}
+
+.eventDot.wedding {
+  background: #ff4757;
+}
+
+.eventDot.event {
+  background: #3498db;
+}
+
+.eventDot.special {
+  background: #2ecc71;
+}
+
+/* 선택된 날짜 표시 */
+.selectedDate {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-top: 1.5rem;
+  padding: 1rem;
+  background: linear-gradient(135deg, rgba(212, 165, 116, 0.1), rgba(255, 255, 255, 0.8));
+  border-radius: 12px;
+  border: 1px solid rgba(212, 165, 116, 0.3);
+}
+
+.selectedIcon {
+  font-size: 1.2rem;
+  animation: sparkle 3s infinite;
+}
+
+@keyframes sparkle {
+  0%, 100% { transform: rotate(0deg) scale(1); opacity: 1; }
+  25% { transform: rotate(5deg) scale(1.05); opacity: 0.8; }
+  50% { transform: rotate(-5deg) scale(1.1); opacity: 1; }
+  75% { transform: rotate(3deg) scale(1.05); opacity: 0.9; }
+}
+
+.selectedText {
+  color: var(--secondary-color);
+  font-family: 'Noto Serif KR', serif;
+  font-weight: 500;
+  font-size: 1rem;
+}
+
+/* 결혼식 정보 */
+.weddingInfo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-top: 1rem;
+  padding: 1rem;
+  background: linear-gradient(135deg, rgba(255, 192, 203, 0.2), rgba(255, 255, 255, 0.8));
+  border-radius: 12px;
+  border: 1px solid rgba(255, 192, 203, 0.4);
+}
+
+.weddingIcon {
+  font-size: 1.2rem;
+  animation: weddingBounce 2s infinite;
+}
+
+.weddingText {
+  color: #8b4c8b;
+  font-family: 'Noto Serif KR', serif;
+  font-weight: 600;
+  font-size: 1rem;
+}
+
+/* 반응형 디자인 */
+@media (max-width: 768px) {
+  .container {
+    padding: 1.5rem 1rem;
+  }
+  
+  .calendarWrapper {
+    padding: 1rem;
+  }
+  
+  .dayCell {
+    min-height: 55px;
+    padding: 0.375rem;
+  }
+  
+  .monthTitle {
+    font-size: 1.4rem;
+  }
+  
+  .monthSubtitle {
+    font-size: 0.9rem;
+  }
+  
+  .weekday {
+    font-size: 0.85rem;
+    padding: 0.375rem;
+    font-weight: 700;
+  }
+  
+  .dayNumber {
+    font-size: 1rem;
+    font-weight: 700;
+  }
+  
+  .calendarGrid {
+    padding: 0.5rem;
+    gap: 1.5px;
+  }
+  
+  .weekdaysHeader {
+    padding: 0.5rem;
+    gap: 1.5px;
+  }
+}
+
+@media (min-width: 768px) {
+  .title {
+    font-size: 2.2rem;
+  }
+  
+  .titleIcon {
+    font-size: 1.8rem;
+  }
+  
+  .selectedText,
+  .weddingText {
+    font-size: 1.1rem;
+  }
+  
+  .dayCell {
+    min-height: 75px;
+    padding: 0.75rem;
+  }
+  
+  .dayNumber {
+    font-size: 1.2rem;
+    font-weight: 700;
+  }
+  
+  .weekday {
+    font-size: 1rem;
+    font-weight: 700;
+  }
+  
+  .calendarGrid {
+    padding: 1rem;
+    gap: 3px;
+  }
+  
+  .weekdaysHeader {
+    padding: 1rem;
+    gap: 3px;
+  }
+}
