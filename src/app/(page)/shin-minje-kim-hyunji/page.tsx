@@ -30,7 +30,7 @@ import { usePageImages } from '@/hooks';export default function ShinMinJeKimHyun
     'https://images.unsplash.com/photo-1606216794074-735e91aa2c92?w=400',
     'https://images.unsplash.com/photo-1583939003579-730e3918a45a?w=400',
     'https://images.unsplash.com/photo-1511285560929-80b456fea0bc?w=400',
-    'https://images.unsplash.com/photo-1465495976277-4387d4b0e4a6?w=400',
+    'https://images.unsplash.com/photo-1545558014-8692077e9b5c?w=400',
     'https://images.unsplash.com/photo-1522673607200-164d1b6ce486?w=400',
     'https://images.unsplash.com/photo-1469371670807-013ccf25f16a?w=400',
     'https://images.unsplash.com/photo-1545558014-8692077e9b5c?w=400',

@@ -87,8 +87,8 @@ export default function Guestbook({ pageSlug }: GuestbookProps) {
     // 관리자나 클라이언트가 아닌 경우 댓글 개수 제한 확인
     if (!isAdminLoggedIn && !isClientLoggedIn) {
       const currentCommentCount = getCommentCount(pageSlug);
-      if (currentCommentCount >= 3) {
-        setError('한 사람당 최대 3개의 댓글만 작성할 수 있습니다.');
+      if (currentCommentCount >= 2) {
+        setError('한 사람당 최대 2개의 댓글만 작성할 수 있습니다.');
         return;
       }
     }
@@ -328,6 +328,9 @@ export default function Guestbook({ pageSlug }: GuestbookProps) {
               rows={5}
             />
           </div>
+          
+          {error && <p className={styles.errorMessage}>{error}</p>}
+          
           <button className={styles.submitButton} type="submit" disabled={isSubmitting}>
             <span className={styles.buttonIcon}>
               {isSubmitting ? '⏳' : '💝'}
@@ -336,8 +339,6 @@ export default function Guestbook({ pageSlug }: GuestbookProps) {
           </button>
         </form>
       </div>
-
-      {error && <p className={styles.errorMessage}>{error}</p>}
 
       <div className={styles.commentsList}>
         {isLoading ? (
