@@ -11,3 +11,6 @@ export * from './imageService';
 
 // 비밀번호 서비스
 export * from './passwordService';
+
+// 노출 기간 서비스
+export * from './displayPeriodService';

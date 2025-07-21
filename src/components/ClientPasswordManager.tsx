@@ -67,7 +67,7 @@ export default function ClientPasswordManager({ isVisible }: ClientPasswordManag
   };
 
   const handleDeletePassword = async (pageSlug: string) => {
-    if (!window.confirm('정말로 이 비밀번호를 삭제하시겠습니까? 삭제하면 기본 비밀번호(1234)로 초기화됩니다.')) {
+    if (!window.confirm('정말로 이 비밀번호를 삭제하시겠습니까? 삭제하면 기본 비밀번호(12344)로 초기화됩니다.')) {
       return;
     }
 
@@ -94,7 +94,7 @@ export default function ClientPasswordManager({ isVisible }: ClientPasswordManag
 
   const getPasswordForPage = (pageSlug: string): string => {
     const found = passwords.find(p => p.pageSlug === pageSlug);
-    return found ? found.password : '1234 (기본값)';
+    return found ? found.password : '12344 (기본값)';
   };
 
   const hasPasswordInDB = (pageSlug: string): boolean => {

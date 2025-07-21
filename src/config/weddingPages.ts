@@ -16,6 +16,12 @@ export interface WeddingPageConfig {
     hour: number;
     minute: number;
   };
+  // 페이지 노출 기간 설정
+  displayPeriod?: {
+    startDate: Date;
+    endDate: Date;
+    isActive: boolean; // 노출 기간 제한 활성화 여부
+  };
 }
 
 export const WEDDING_PAGES_CONFIG: WeddingPageConfig[] = [

@@ -1,7 +1,7 @@
 import type { Metadata, Viewport } from 'next';
 
 // 공유용 이미지 URL
-const WEDDING_IMAGE = 'https://images.unsplash.com/photo-1519741497674-611481863552?w=800&h=600&fit=crop';
+const WEDDING_IMAGE = '/images/thum.jpg';
 const FAVICON_ICON = '/images/favicon.ico';
 
 export const metadata: Metadata = {

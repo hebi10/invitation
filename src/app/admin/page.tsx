@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Head from 'next/head';
-import { ImageManager, ClientPasswordManager } from '@/components';
+import { ImageManager, ClientPasswordManager, DisplayPeriodManager } from '@/components';
 import { getWeddingPagesClient, type WeddingPageInfo } from '@/utils';
 import { getAllComments, deleteComment, type Comment } from '@/services';
 import { useAdmin } from '@/contexts';
@@ -14,7 +14,7 @@ export default function AdminPage() {
   const [error, setError] = useState('');
   const [weddingPages, setWeddingPages] = useState<WeddingPageInfo[]>([]);
   const [loading, setLoading] = useState(false);
-  const [activeTab, setActiveTab] = useState<'pages' | 'images' | 'comments' | 'passwords'>('pages');
+  const [activeTab, setActiveTab] = useState<'pages' | 'images' | 'comments' | 'passwords' | 'periods'>('pages');
   const [comments, setComments] = useState<Comment[]>([]);
   const [commentsLoading, setCommentsLoading] = useState(false);
   
@@ -83,7 +83,7 @@ export default function AdminPage() {
     setCurrentPage(page);
   };
 
-  const handleTabChange = (tab: 'pages' | 'images' | 'comments' | 'passwords') => {
+  const handleTabChange = (tab: 'pages' | 'images' | 'comments' | 'passwords' | 'periods') => {
     setActiveTab(tab);
     if (tab === 'comments') {
       setCurrentPage(1); // 댓글 탭으로 변경시 페이지를 1로 리셋
@@ -208,6 +208,12 @@ export default function AdminPage() {
             onClick={() => handleTabChange('passwords')}
           >
             비밀번호 관리
+          </button>
+          <button 
+            className={`${styles.tab} ${activeTab === 'periods' ? styles.active : ''}`}
+            onClick={() => handleTabChange('periods')}
+          >
+            노출 기간 관리
           </button>
         </div>
 
@@ -386,6 +392,10 @@ export default function AdminPage() {
 
           {activeTab === 'passwords' && (
             <ClientPasswordManager isVisible={true} />
+          )}
+
+          {activeTab === 'periods' && (
+            <DisplayPeriodManager isVisible={true} />
           )}
         </div>
       </div>

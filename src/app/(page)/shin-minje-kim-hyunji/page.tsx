@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { 
   WeddingLoader, 
   Cover, 
@@ -12,11 +12,39 @@ import {
   Guestbook, 
   GiftInfo 
 } from '@/components';
-import { usePageImages } from '@/hooks';export default function ShinMinJeKimHyunJi() {
+import { usePageImages } from '@/hooks';
+import { checkPageAccess, AccessDeniedPage } from '@/utils';
+import { useAdmin } from '@/contexts';
+
+export default function ShinMinJeKimHyunJi() {
   const [isLoading, setIsLoading] = useState(true);
+  const [accessDenied, setAccessDenied] = useState(false);
+  const [accessMessage, setAccessMessage] = useState('');
+  const { isAdminLoggedIn } = useAdmin();
   
   // 🎯 간편한 이미지 사용!
   const { images, imageUrls, firstImage, hasImages, mainImage, galleryImages } = usePageImages('shin-minje-kim-hyunji');
+  
+  // 페이지 접근 권한 확인
+  useEffect(() => {
+    const checkAccess = async () => {
+      try {
+        const result = await checkPageAccess('shin-minje-kim-hyunji', isAdminLoggedIn);
+        if (!result.canAccess) {
+          setAccessDenied(true);
+          setAccessMessage(result.message || '이 페이지에 접근할 수 없습니다.');
+          setIsLoading(false);
+          return;
+        }
+        setAccessDenied(false);
+      } catch (error) {
+        console.error('접근 권한 확인 중 오류:', error);
+        // 오류 발생 시 기본적으로 접근 허용
+      }
+    };
+
+    checkAccess();
+  }, [isAdminLoggedIn]);
   
   // 결혼식 날짜 설정
   const weddingDate = new Date(2024, 3, 14); // 2024년 4월 14일
@@ -43,6 +71,11 @@ import { usePageImages } from '@/hooks';export default function ShinMinJeKimHyun
   const handleLoadComplete = () => {
     setIsLoading(false);
   };
+
+  // 접근 거부 상태 체크
+  if (accessDenied) {
+    return <AccessDeniedPage message={accessMessage} />;
+  }
 
   if (isLoading) {
     return (

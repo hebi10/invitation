@@ -12,3 +12,4 @@ export { default as WeddingLoader } from './WeddingLoader';
 // 관리자 전용 컴포넌트들
 export { default as ImageManager } from './ImageManager';
 export { default as ClientPasswordManager } from './ClientPasswordManager';
+export { default as DisplayPeriodManager } from './DisplayPeriodManager';

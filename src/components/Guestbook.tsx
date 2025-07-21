@@ -58,6 +58,9 @@ export default function Guestbook({ pageSlug }: GuestbookProps) {
   const [clientPassword, setClientPassword] = useState('');
   const [isClientLoggedIn, setIsClientLoggedIn] = useState(false);
 
+  // 모바일 더블탭 처리를 위한 상태
+  const [lastTap, setLastTap] = useState(0);
+
   // 댓글 불러오기
   useEffect(() => {
     loadComments();
@@ -160,6 +163,21 @@ export default function Guestbook({ pageSlug }: GuestbookProps) {
     setClientPassword('');
   };
 
+  // 모바일 더블탭 및 데스크톱 더블클릭 처리
+  const handleTitleInteraction = () => {
+    const now = Date.now();
+    const DOUBLE_TAP_DELAY = 300; // 300ms 이내에 두 번 탭하면 더블탭으로 인식
+    
+    if (lastTap && (now - lastTap) < DOUBLE_TAP_DELAY) {
+      // 더블탭/더블클릭 감지
+      setShowClientManager(!showClientManager);
+      setLastTap(0); // 리셋
+    } else {
+      // 첫 번째 탭
+      setLastTap(now);
+    }
+  };
+
   // 페이징 계산
   const totalPages = Math.ceil(comments.length / COMMENTS_PER_PAGE);
   const startIndex = (currentPage - 1) * COMMENTS_PER_PAGE;
@@ -210,8 +228,11 @@ export default function Guestbook({ pageSlug }: GuestbookProps) {
       <div className={styles.header}>
         <div 
           className={styles.titleSection}
-          onDoubleClick={() => setShowClientManager(!showClientManager)}
-          title="신랑신부님은 여기를 더블클릭하세요"
+          onDoubleClick={handleTitleInteraction}
+          onTouchEnd={handleTitleInteraction}
+          onClick={handleTitleInteraction}
+          title="신랑신부님은 여기를 더블클릭/더블탭하세요"
+          style={{ cursor: 'pointer', userSelect: 'none' }}
         >
           <span className={styles.titleIcon}>💝</span>
           <h2 className={styles.title}>축하 메시지</h2>
@@ -226,13 +247,15 @@ export default function Guestbook({ pageSlug }: GuestbookProps) {
           {!isClientLoggedIn ? (
             <>
               {showClientManager && (
-                <button 
-                  className={styles.clientManagerButton}
-                  onClick={() => setShowClientManager(!showClientManager)}
-                >
-                  <span className={styles.managerIcon}>👰🤵</span>
-                  댓글 관리
-                </button>
+                <div className={styles.clientManagerSection}>
+                  <button 
+                    className={styles.clientManagerButton}
+                    onClick={() => setShowClientManager(false)}
+                  >
+                    <span className={styles.managerIcon}>❌</span>
+                    닫기
+                  </button>
+                </div>
               )}
             </>
           ) : (

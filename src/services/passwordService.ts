@@ -30,12 +30,12 @@ export const initializeDefaultPassword = async (pageSlug: string): Promise<strin
       return existing.password;
     }
 
-    const defaultPassword = '1234';
+    const defaultPassword = '12344';
     await setClientPassword(pageSlug, defaultPassword);
     return defaultPassword;
   } catch (error) {
     console.error('기본 비밀번호 초기화 실패:', error);
-    return '1234'; // 실패시 기본값 반환
+    return '12344'; // 실패시 기본값 반환
   }
 };
 
