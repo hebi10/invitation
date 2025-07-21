@@ -3,24 +3,37 @@
 import React, { useState, useEffect } from 'react';
 import { useAdmin } from '@/contexts';
 import { uploadImage, deleteImage, getAllPageImages, type UploadedImage } from '@/services';
+import { getWeddingPagesClient, type WeddingPageInfo } from '@/utils';
 import styles from './ImageManager.module.css';
-
-const weddingPages = [
-  { slug: 'shin-minje-kim-hyunji', name: '신민제 ♥ 김현지' },
-  { slug: 'lee-junho-park-somin', name: '이준호 ♥ 박소민' },
-  { slug: 'kim-taehyun-choi-yuna', name: '김태현 ♥ 최유나' }
-];
 
 export default function ImageManager() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [selectedPage, setSelectedPage] = useState<string>('shin-minje-kim-hyunji');
+  const [selectedPage, setSelectedPage] = useState<string>('');
   const [previewUrl, setPreviewUrl] = useState<string>('');
   const [images, setImages] = useState<{ [pageSlug: string]: UploadedImage[] }>({});
+  const [weddingPages, setWeddingPages] = useState<WeddingPageInfo[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isUploading, setIsUploading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const { isAdminLoggedIn } = useAdmin();
+
+  useEffect(() => {
+    const loadWeddingPages = async () => {
+      try {
+        const pages = await getWeddingPagesClient();
+        setWeddingPages(pages);
+        // 첫 번째 페이지를 기본 선택으로 설정
+        if (pages.length > 0) {
+          setSelectedPage(pages[0].slug);
+        }
+      } catch (error) {
+        console.error('웨딩 페이지 정보를 불러오는데 실패했습니다:', error);
+      }
+    };
+
+    loadWeddingPages();
+  }, []);
 
   useEffect(() => {
     if (isAdminLoggedIn) {
@@ -135,7 +148,7 @@ export default function ImageManager() {
         >
           {weddingPages.map((page) => (
             <option key={page.slug} value={page.slug}>
-              {page.name}
+              {page.displayName}
             </option>
           ))}
         </select>
@@ -177,7 +190,7 @@ export default function ImageManager() {
         <p className={styles.loadingMessage}>이미지를 불러오는 중...</p>
       ) : (
         Object.keys(images).map((pageSlug) => {
-          const pageName = weddingPages.find(p => p.slug === pageSlug)?.name || pageSlug;
+          const pageName = weddingPages.find(p => p.slug === pageSlug)?.displayName || pageSlug;
           const pageImages = images[pageSlug] || [];
           
           if (pageImages.length === 0) return null;
