@@ -116,8 +116,6 @@ export default function KimTaehyunChoiYuna() {
         address="서울시 강남구 논현로 825"
         venueName="엘리시안 웨딩홀"
         description="지하철 7호선 논현역 3번 출구에서 도보 5분"
-        latitude={37.5172}
-        longitude={127.0234}
       />
       
       <WeddingCalendar
