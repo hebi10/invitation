@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Head from 'next/head';
-import { addComment, getComments, Comment } from '@/services/commentService';
+import { addComment, getComments, type Comment } from '@/services';
 import styles from './firebase-test.module.css';
 
 export default function FirebaseTestPage() {

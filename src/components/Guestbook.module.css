@@ -33,6 +33,20 @@
   justify-content: center;
   gap: 1rem;
   margin-bottom: 1rem;
+  cursor: help;
+  padding: 0.5rem;
+  border-radius: 15px;
+  transition: all 0.3s ease;
+  position: relative;
+}
+
+.titleSection:hover {
+  background: rgba(232, 180, 200, 0.1);
+  transform: scale(1.02);
+}
+
+.titleSection:active {
+  transform: scale(0.98);
 }
 
 .titleIcon {
@@ -294,12 +308,12 @@
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
-  margin-top: 2rem;
+  margin-top: 1rem;
 }
 
 @media (min-width: 768px) {
   .commentsList {
-    gap: 2rem;
+    gap: 1rem;
   }
 }
 
@@ -329,6 +343,7 @@
 }
 
 .commentsCount {
+  display: flex;
   font-size: 1.1rem;
   color: var(--secondary-color);
   font-family: 'Noto Serif KR', serif;
@@ -556,7 +571,6 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 1.5rem;
   padding: 0.75rem 1rem;
   background: linear-gradient(135deg, rgba(212, 165, 116, 0.08), rgba(141, 110, 99, 0.08));
   border-radius: 12px;
@@ -662,11 +676,55 @@
   box-shadow: 0 2px 4px rgba(212, 165, 116, 0.3);
 }
 
+/* Ellipsis 스타일 */
+.ellipsis {
+  color: var(--secondary-color);
+  font-size: 1rem;
+  font-weight: bold;
+  padding: 0.5rem 0.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  user-select: none;
+}
+
+/* 마지막 페이지 버튼 스타일 */
+.lastPageButton {
+  background: linear-gradient(135deg, #ff6b6b, #ff8e8e);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 0.6rem 0.8rem;
+  font-size: 0.85rem;
+  font-family: 'Noto Serif KR', serif;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 4px rgba(255, 107, 107, 0.3);
+  min-width: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: 0.5rem;
+}
+
+.lastPageButton:hover {
+  background: linear-gradient(135deg, #ff5252, #ff6b6b);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(255, 107, 107, 0.4);
+}
+
 @media (min-width: 768px) {
   .pageNumber {
     padding: 0.6rem 0.9rem;
     font-size: 0.9rem;
     min-width: 40px;
+  }
+  
+  .lastPageButton {
+    padding: 0.75rem 1rem;
+    font-size: 0.9rem;
+    min-width: 48px;
   }
 }
 
@@ -685,5 +743,212 @@
     padding: 0.4rem 0.6rem;
     font-size: 0.8rem;
     min-width: 32px;
+  }
+  
+  .lastPageButton {
+    padding: 0.5rem 0.6rem;
+    font-size: 0.8rem;
+    min-width: 36px;
+    margin-left: 0.25rem;
+  }
+  
+  .ellipsis {
+    font-size: 0.9rem;
+    padding: 0.4rem 0.2rem;
+  }
+}
+
+/* 클라이언트 관리 */
+.clientManager {
+  margin-top: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+
+.clientManagerButton {
+  background: linear-gradient(135deg, #e8b4c8, #f4c2c2);
+  color: #8b3a3a;
+  border: none;
+  border-radius: 25px;
+  padding: 0.7rem 1.5rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  box-shadow: 0 4px 12px rgba(232, 180, 200, 0.3);
+}
+
+.clientManagerButton:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(232, 180, 200, 0.4);
+  background: linear-gradient(135deg, #e0a5bb, #edb8b8);
+}
+
+.managerIcon {
+  font-size: 1rem;
+}
+
+.adminClientButton {
+  background: linear-gradient(135deg, #6c757d, #5a6268);
+  color: white;
+  border: none;
+  border-radius: 20px;
+  padding: 0.6rem 1.2rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  box-shadow: 0 4px 12px rgba(108, 117, 125, 0.3);
+}
+
+.adminClientButton:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(108, 117, 125, 0.4);
+  background: linear-gradient(135deg, #5a6268, #495057);
+}
+
+.clientLoggedIn {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  background: linear-gradient(135deg, rgba(139, 58, 58, 0.1), rgba(200, 100, 100, 0.1));
+  border-radius: 20px;
+  padding: 0.8rem 1.5rem;
+  border: 1px solid rgba(139, 58, 58, 0.2);
+}
+
+.clientWelcome {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #8b3a3a;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.welcomeIcon {
+  font-size: 1rem;
+}
+
+.clientLogoutButton {
+  background: rgba(139, 58, 58, 0.1);
+  color: #8b3a3a;
+  border: 1px solid rgba(139, 58, 58, 0.3);
+  border-radius: 15px;
+  padding: 0.4rem 0.8rem;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.clientLogoutButton:hover {
+  background: rgba(139, 58, 58, 0.2);
+  transform: translateY(-1px);
+}
+
+.clientLoginForm {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.95), rgba(252, 248, 243, 0.9));
+  border-radius: 20px;
+  padding: 1.5rem;
+  box-shadow: 0 8px 24px rgba(212, 165, 116, 0.2);
+  border: 1px solid rgba(212, 165, 116, 0.3);
+  width: 100%;
+  max-width: 500px;
+  animation: fadeIn 0.3s ease;
+}
+
+.loginHeader {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+  color: #8b3a3a;
+}
+
+.loginIcon {
+  font-size: 1.1rem;
+}
+
+.loginTitle {
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+.loginInputGroup {
+  display: flex;
+  gap: 0.8rem;
+  flex-direction: column;
+}
+
+.clientPasswordInput {
+  flex: 1;
+  padding: 0.8rem 1rem;
+  border: 2px solid rgba(212, 165, 116, 0.3);
+  border-radius: 15px;
+  font-size: 0.9rem;
+  background: rgba(255, 255, 255, 0.9);
+  transition: all 0.3s ease;
+  outline: none;
+}
+
+.clientPasswordInput:focus {
+  border-color: #d4a574;
+  box-shadow: 0 0 0 3px rgba(212, 165, 116, 0.1);
+}
+
+.clientPasswordInput::placeholder {
+  color: rgba(139, 58, 58, 0.5);
+}
+
+.clientLoginButton {
+  background: linear-gradient(135deg, #d4a574, #c19554);
+  color: white;
+  border: none;
+  border-radius: 15px;
+  padding: 0.8rem 1.5rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(212, 165, 116, 0.3);
+}
+
+.clientLoginButton:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(212, 165, 116, 0.4);
+  background: linear-gradient(135deg, #c19554, #b8863a);
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (min-width: 768px) {
+  .loginInputGroup {
+    flex-direction: row;
+  }
+  
+  .clientPasswordInput {
+    flex: 1;
+  }
+  
+  .clientLoginButton {
+    white-space: nowrap;
   }
 }

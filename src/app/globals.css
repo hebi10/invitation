@@ -233,3 +233,35 @@ html {
 body.no-scroll {
     overflow: hidden;
 }
+
+/* 드래그 선택 방지 - 모든 요소에 적용 */
+* {
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+    -webkit-touch-callout: none;
+    -webkit-tap-highlight-color: transparent;
+}
+
+/* 입력 필드는 선택 가능하게 유지 */
+input,
+textarea,
+[contenteditable="true"],
+.selectable {
+    -webkit-user-select: text;
+    -moz-user-select: text;
+    -ms-user-select: text;
+    user-select: text;
+}
+
+/* 코드 블록이나 특정 텍스트는 선택 가능하게 */
+code,
+pre,
+.code-block,
+.text-selectable {
+    -webkit-user-select: text;
+    -moz-user-select: text;
+    -ms-user-select: text;
+    user-select: text;
+}

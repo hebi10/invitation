@@ -2,10 +2,10 @@
 
 import { useEffect, useState } from 'react';
 import Head from 'next/head';
-import ImageManager from '@/components/ImageManager';
-import { getWeddingPagesClient, WeddingPageInfo } from '@/utils/getWeddingPagesClient';
-import { getAllComments, deleteComment, Comment } from '@/services/commentService';
-import { useAdmin } from '@/contexts/AdminContext';
+import { ImageManager, ClientPasswordManager } from '@/components';
+import { getWeddingPagesClient, type WeddingPageInfo } from '@/utils';
+import { getAllComments, deleteComment, type Comment } from '@/services';
+import { useAdmin } from '@/contexts';
 import styles from './page.module.css';
 
 export default function AdminPage() {
@@ -14,7 +14,7 @@ export default function AdminPage() {
   const [error, setError] = useState('');
   const [weddingPages, setWeddingPages] = useState<WeddingPageInfo[]>([]);
   const [loading, setLoading] = useState(false);
-  const [activeTab, setActiveTab] = useState<'pages' | 'images' | 'comments'>('pages');
+  const [activeTab, setActiveTab] = useState<'pages' | 'images' | 'comments' | 'passwords'>('pages');
   const [comments, setComments] = useState<Comment[]>([]);
   const [commentsLoading, setCommentsLoading] = useState(false);
   
@@ -83,7 +83,7 @@ export default function AdminPage() {
     setCurrentPage(page);
   };
 
-  const handleTabChange = (tab: 'pages' | 'images' | 'comments') => {
+  const handleTabChange = (tab: 'pages' | 'images' | 'comments' | 'passwords') => {
     setActiveTab(tab);
     if (tab === 'comments') {
       setCurrentPage(1); // 댓글 탭으로 변경시 페이지를 1로 리셋
@@ -202,6 +202,12 @@ export default function AdminPage() {
             onClick={() => handleTabChange('comments')}
           >
             댓글 관리
+          </button>
+          <button 
+            className={`${styles.tab} ${activeTab === 'passwords' ? styles.active : ''}`}
+            onClick={() => handleTabChange('passwords')}
+          >
+            비밀번호 관리
           </button>
         </div>
 
@@ -376,6 +382,10 @@ export default function AdminPage() {
                 </>
               )}
             </div>
+          )}
+
+          {activeTab === 'passwords' && (
+            <ClientPasswordManager isVisible={true} />
           )}
         </div>
       </div>

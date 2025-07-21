@@ -1,12 +1,15 @@
 .container {
-  padding: 3rem 2rem;
-  background: linear-gradient(135deg, rgba(245, 230, 211, 0.4) 0%, rgba(255, 255, 255, 0.9) 100%);
+  padding: 2rem 1rem;
+  background: linear-gradient(135deg, 
+    rgba(255, 255, 255, 1) 0%, 
+    rgba(252, 248, 243, 0.8) 50%, 
+    rgba(255, 255, 255, 1) 100%);
   text-align: center;
   max-width: 700px;
   margin: 2rem auto;
-  border-radius: 15px;
-  box-shadow: 0 8px 30px rgba(139, 110, 99, 0.15);
-  border: 1px solid var(--border-soft);
+  border-radius: 20px;
+  box-shadow: 0 8px 32px rgba(212, 165, 116, 0.15);
+  border: 1px solid rgba(212, 165, 116, 0.2);
   position: relative;
   overflow: hidden;
 }
@@ -30,63 +33,107 @@
 
 @media (min-width: 768px) {
   .container {
-    padding: 4rem 3rem;
+    padding: 3rem 2rem;
     margin: 3rem auto;
   }
 }
 
-.message {
-  font-family: var(--font-serif);
-  font-size: 1.1rem;
-  line-height: 2;
-  color: var(--text-primary);
-  margin-bottom: 2rem;
-  white-space: pre-line;
-  word-break: keep-all;
+/* 메시지 래퍼 */
+.messageWrapper {
   position: relative;
   z-index: 1;
+  padding: 1rem 0;
+}
+
+.message {
+  font-family: 'Noto Serif KR', serif;
+  font-size: clamp(1rem, 2.5vw, 1.2rem);
+  line-height: 1.8;
+  color: var(--text-color);
+  margin: 0;
+  white-space: pre-line;
+  word-break: keep-all;
+  overflow-wrap: break-word;
+  hyphens: auto;
+  position: relative;
   font-weight: 400;
   letter-spacing: 0.02em;
+  text-align: center;
+  max-width: 100%;
+}
+
+/* 메시지 라인별 스타일 */
+.messageLine {
+  display: inline-block;
+  width: 100%;
+  min-height: 1.8em;
+  text-align: center;
 }
 
 .message::before {
   content: '"';
-  font-family: var(--font-display);
-  font-size: 3rem;
+  font-family: 'Dancing Script', cursive;
+  font-size: clamp(2rem, 5vw, 3rem);
   color: var(--primary-color);
   position: absolute;
-  top: -1rem;
-  left: -1rem;
-  opacity: 0.3;
+  top: -0.5rem;
+  left: -0.5rem;
+  opacity: 0.4;
+  z-index: -1;
 }
 
 .message::after {
   content: '"';
-  font-family: var(--font-display);
-  font-size: 3rem;
+  font-family: 'Dancing Script', cursive;
+  font-size: clamp(2rem, 5vw, 3rem);
   color: var(--primary-color);
   position: absolute;
-  bottom: -2rem;
-  right: -1rem;
-  opacity: 0.3;
+  bottom: -1rem;
+  right: -0.5rem;
+  opacity: 0.4;
+  z-index: -1;
 }
 
-@media (min-width: 768px) {
+/* 반응형 타이포그래피 */
+@media (min-width: 480px) {
   .message {
-    font-size: 1.3rem;
-    margin-bottom: 2.5rem;
     padding: 0 1rem;
   }
 }
 
+@media (min-width: 768px) {
+  .message {
+    padding: 0 2rem;
+    line-height: 2;
+  }
+  
+  .messageWrapper {
+    padding: 1.5rem 0;
+  }
+}
+
+@media (min-width: 1024px) {
+  .message {
+    padding: 0 3rem;
+  }
+}
+
+/* 작가/저자 정보 */
+.authorWrapper {
+  position: relative;
+  z-index: 1;
+  margin-top: 2rem;
+}
+
 .author {
-  font-family: var(--font-serif);
-  font-size: 1rem;
+  font-family: 'Noto Serif KR', serif;
+  font-size: clamp(0.9rem, 2vw, 1rem);
   color: var(--primary-color);
   font-weight: 500;
   position: relative;
-  z-index: 1;
   letter-spacing: 0.05em;
+  margin: 0;
+  font-style: italic;
 }
 
 .author::before,
@@ -96,10 +143,37 @@
   font-size: 0.8em;
   margin: 0 0.5rem;
   opacity: 0.7;
+  font-style: normal;
 }
 
 @media (min-width: 768px) {
   .author {
-    font-size: 1.1rem;
+    margin-top: 0.5rem;
+  }
+}
+
+/* 텍스트 균형 개선 */
+@media (max-width: 480px) {
+  .message {
+    text-align: justify;
+    text-align-last: center;
+  }
+  
+  .messageLine {
+    display: block;
+    margin-bottom: 0.3rem;
+  }
+}
+
+/* 중간 크기에서의 줄바꿈 최적화 */
+@media (min-width: 481px) and (max-width: 767px) {
+  .message {
+    text-align: center;
+    hyphens: none;
+    word-spacing: 0.1em;
+  }
+  
+  .messageLine {
+    display: inline;
   }
 }

@@ -2,16 +2,18 @@
 
 import { useState } from 'react';
 import Head from 'next/head';
-import WeddingLoader from '@/components/WeddingLoader';
-import Cover from '@/components/Cover';
-import Greeting from '@/components/Greeting';
-import Gallery from '@/components/Gallery';
-import Schedule from '@/components/Schedule';
-import LocationMap from '@/components/LocationMap';
-import WeddingCalendar from '@/components/WeddingCalendar';
-import Guestbook from '@/components/Guestbook';
-import GiftInfo from '@/components/GiftInfo';
-import { usePageImages } from '@/hooks/usePageImages';
+import { 
+  WeddingLoader, 
+  Cover, 
+  Greeting, 
+  Gallery, 
+  Schedule, 
+  LocationMap, 
+  WeddingCalendar, 
+  Guestbook, 
+  GiftInfo 
+} from '@/components';
+import { usePageImages } from '@/hooks';
 
 export default function KimTaehyunChoiYuna() {
   const [isLoading, setIsLoading] = useState(true);
@@ -114,6 +116,8 @@ export default function KimTaehyunChoiYuna() {
         address="서울시 강남구 논현로 825"
         venueName="엘리시안 웨딩홀"
         description="지하철 7호선 논현역 3번 출구에서 도보 5분"
+        latitude={37.5172}
+        longitude={127.0234}
       />
       
       <WeddingCalendar

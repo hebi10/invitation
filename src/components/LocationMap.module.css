@@ -1,59 +1,65 @@
 .container {
-  padding: 3rem 2rem;
-  background: linear-gradient(135deg, rgba(245, 230, 211, 0.4) 0%, rgba(255, 255, 255, 0.9) 100%);
+  padding: 2rem 1rem;
+  background: linear-gradient(135deg, 
+    rgba(255, 255, 255, 1) 0%, 
+    rgba(252, 248, 243, 0.8) 50%, 
+    rgba(255, 255, 255, 1) 100%);
   max-width: 800px;
   margin: 2rem auto;
   border-radius: 20px;
-  box-shadow: 0 8px 30px rgba(139, 110, 99, 0.15);
-  border: 1px solid var(--border-soft);
+  box-shadow: 0 8px 32px rgba(212, 165, 116, 0.15);
+  border: 1px solid rgba(212, 165, 116, 0.2);
 }
 
 @media (min-width: 768px) {
   .container {
-    padding: 4rem 3rem;
+    padding: 3rem 2rem;
     margin: 3rem auto;
   }
 }
 
-.title {
+/* 헤더 스타일 */
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  margin-bottom: 2rem;
   text-align: center;
-  font-family: var(--font-display);
-  font-size: 2.2rem;
-  color: var(--primary-color);
-  margin-bottom: 2.5rem;
-  font-weight: 600;
-  position: relative;
 }
 
-.title::after {
-  content: '';
-  display: block;
-  width: 80px;
-  height: 3px;
-  background: linear-gradient(90deg, var(--primary-color) 0%, var(--secondary-color) 100%);
-  margin: 1rem auto 0;
-  border-radius: 2px;
+.title {
+  font-size: 1.8rem;
+  color: var(--primary-color);
+  margin: 0;
+  font-weight: 400;
+  font-family: 'Dancing Script', cursive;
+  text-shadow: 1px 1px 2px rgba(212, 165, 116, 0.3);
 }
 
 @media (min-width: 768px) {
   .title {
-    font-size: 2.8rem;
-    margin-bottom: 3rem;
+    font-size: 2.2rem;
+  }
+  
+  .titleIcon {
+    font-size: 1.8rem;
   }
 }
 
+/* 지도 컨테이너 */
 .mapContainer {
+  position: relative;
   width: 100%;
   margin: 0 auto 2rem;
   border-radius: 15px;
   overflow: hidden;
-  box-shadow: 0 8px 25px rgba(139, 110, 99, 0.2);
-  border: 3px solid var(--accent-color);
+  box-shadow: 0 8px 25px rgba(212, 165, 116, 0.2);
+  border: 2px solid rgba(212, 165, 116, 0.3);
 }
 
 @media (min-width: 768px) {
   .mapContainer {
-    max-width: 700px;
     margin: 0 auto 2.5rem;
   }
 }
@@ -62,6 +68,7 @@
   width: 100%;
   height: 300px;
   border: none;
+  transition: all 0.3s ease;
 }
 
 @media (min-width: 768px) {
@@ -70,52 +77,233 @@
   }
 }
 
+.mapOverlay {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: linear-gradient(to top, rgba(0,0,0,0.7), transparent);
+  color: white;
+  padding: 0.75rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+}
+
+.mapIcon {
+  font-size: 1rem;
+}
+
+.mapText {
+  font-weight: 500;
+}
+
+/* 정보 컨테이너 */
 .infoContainer {
-  text-align: center;
   max-width: 100%;
   margin: 0 auto;
 }
 
 @media (min-width: 768px) {
   .infoContainer {
-    max-width: 600px;
+    max-width: 700px;
   }
 }
 
+/* 장소 정보 */
+.venueInfo {
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 15px;
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+  box-shadow: 0 4px 20px rgba(212, 165, 116, 0.1);
+  border: 1px solid rgba(212, 165, 116, 0.15);
+}
+
 .venueName {
-  font-size: 1.5rem;
-  color: #2c3e50;
-  margin-bottom: 0.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  font-size: 1.4rem;
+  color: var(--primary-color);
+  margin-bottom: 1rem;
+  font-weight: 600;
+  font-family: 'Noto Serif KR', serif;
+}
+
+.venueIcon {
+  font-size: 1.2rem;
 }
 
 @media (min-width: 768px) {
   .venueName {
-    font-size: 1.8rem;
-    margin-bottom: 1rem;
+    font-size: 1.6rem;
+  }
+  
+  .venueIcon {
+    font-size: 1.4rem;
   }
 }
 
+.addressSection {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+}
+
 .address {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
   font-size: 1rem;
-  color: #7f8c8d;
-  margin-bottom: 0.75rem;
+  color: var(--secondary-color);
+  margin: 0;
+  font-weight: 500;
+  text-align: center;
+}
+
+.addressIcon {
+  font-size: 1rem;
+  color: var(--primary-color);
+}
+
+.copyButton {
+  background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 0.5rem;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(212, 165, 116, 0.3);
+}
+
+.copyButton:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(212, 165, 116, 0.4);
 }
 
 @media (min-width: 768px) {
   .address {
-    font-size: 1.2rem;
-    margin-bottom: 1rem;
+    font-size: 1.1rem;
   }
 }
 
 .description {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
   font-size: 0.9rem;
-  color: #95a5a6;
+  color: #666;
   line-height: 1.6;
+  margin: 0;
+  text-align: center;
+}
+
+.descriptionIcon {
+  font-size: 1rem;
+  color: var(--primary-color);
 }
 
 @media (min-width: 768px) {
   .description {
+    font-size: 1rem;
+  }
+}
+
+/* 지도 버튼 섹션 */
+.mapButtons {
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 15px;
+  padding: 1.5rem;
+  box-shadow: 0 4px 20px rgba(212, 165, 116, 0.1);
+  border: 1px solid rgba(212, 165, 116, 0.15);
+}
+
+.mapButtonsTitle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  font-size: 1.1rem;
+  color: var(--primary-color);
+  margin: 0 0 1.5rem 0;
+  font-weight: 600;
+  font-family: 'Noto Serif KR', serif;
+}
+
+.navigationIcon {
+  font-size: 1.2rem;
+  animation: rotate 3s infinite linear;
+}
+
+@keyframes rotate {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.buttonGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 1rem;
+}
+
+@media (min-width: 768px) {
+  .buttonGrid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.5rem;
+  }
+}
+
+.mapButton {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  background: white;
+  border: 2px solid rgba(212, 165, 116, 0.3);
+  border-radius: 12px;
+  padding: 1rem 0.75rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(212, 165, 116, 0.1);
+}
+
+.mapButton:hover {
+  border-color: var(--primary-color);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(212, 165, 116, 0.25);
+}
+
+.buttonIcon {
+  font-size: 1.5rem;
+  margin-bottom: 0.25rem;
+}
+
+.buttonText {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--secondary-color);
+  font-family: 'Noto Sans KR', sans-serif;
+}
+
+@media (min-width: 768px) {
+  .mapButton {
+    padding: 1.25rem 1rem;
+  }
+  
+  .buttonIcon {
+    font-size: 1.8rem;
+  }
+  
+  .buttonText {
     font-size: 1rem;
   }
 }

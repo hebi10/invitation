@@ -2,18 +2,18 @@
 
 import { useState } from 'react';
 import Head from 'next/head';
-import WeddingLoader from '@/components/WeddingLoader';
-import Cover from '@/components/Cover';
-import Greeting from '@/components/Greeting';
-import Gallery from '@/components/Gallery';
-import Schedule from '@/components/Schedule';
-import LocationMap from '@/components/LocationMap';
-import WeddingCalendar from '@/components/WeddingCalendar';
-import Guestbook from '@/components/Guestbook';
-import GiftInfo from '@/components/GiftInfo';
-import { usePageImages } from '@/hooks/usePageImages';
-
-export default function ShinMinJeKimHyunJi() {
+import { 
+  WeddingLoader, 
+  Cover, 
+  Greeting, 
+  Gallery, 
+  Schedule, 
+  LocationMap, 
+  WeddingCalendar, 
+  Guestbook, 
+  GiftInfo 
+} from '@/components';
+import { usePageImages } from '@/hooks';export default function ShinMinJeKimHyunJi() {
   const [isLoading, setIsLoading] = useState(true);
   
   // 🎯 간편한 이미지 사용!
@@ -77,11 +77,14 @@ export default function ShinMinJeKimHyunJi() {
       />
       
       <Greeting
-        message={`안녕하세요. 저희 두 사람이 사랑의 결실을 맺어 
+        message={`
+          안녕하세요. 
+          저희 두 사람이 사랑의 결실을 맺어 
           부부의 연을 맺게 되었습니다.
 
           늘 받기만 했던 사랑을 이제 함께 나누며 살겠습니다.
-          저희의 새로운 시작을 축복해 주시면 감사하겠습니다.`}
+          저희의 새로운 시작을 축복해 주시면 감사하겠습니다.
+          `}
         author="신랑 신민제, 신부 김현지"
       />
       

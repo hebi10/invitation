@@ -1,4 +1,6 @@
 .container {
+  max-width: 1000px;
+  margin: 0 auto;
   min-height: 100vh;
   background: linear-gradient(135deg, var(--background-warm) 0%, var(--accent-color) 50%, #f0e6d6 100%);
   color: var(--text-primary);

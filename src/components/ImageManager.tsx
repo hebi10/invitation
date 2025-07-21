@@ -1,8 +1,8 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { useAdmin } from '@/contexts/AdminContext';
-import { uploadImage, deleteImage, getAllPageImages, UploadedImage } from '@/services/imageService';
+import { useAdmin } from '@/contexts';
+import { uploadImage, deleteImage, getAllPageImages, type UploadedImage } from '@/services';
 import styles from './ImageManager.module.css';
 
 const weddingPages = [
