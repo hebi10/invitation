@@ -41,6 +41,9 @@ time, mark, audio, video {
     font: inherit;
     vertical-align: baseline;
     box-sizing: border-box;
+    /* 한글 텍스트 줄바꿈 최적화 */
+    word-break: keep-all;
+    overflow-wrap: break-word;
 }
 
 article, aside, details, figcaption, figure, 
@@ -63,6 +66,10 @@ body {
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     letter-spacing: -0.02em;
+    /* 한글 텍스트 최적화 */
+    word-break: keep-all;
+    overflow-wrap: break-word;
+    line-height: 1.6;
 }
 
 ol, ul {
@@ -114,6 +121,51 @@ input:focus {
 }
 
 /* 청첩장 전용 스타일 */
+
+/* 한글 제목 최적화 전역 규칙 */
+h1, h2, h3, h4, h5, h6,
+.title, .subtitle, .heading {
+    word-break: keep-all;
+    overflow-wrap: break-word;
+    line-height: 1.3;
+    text-align: center;
+    word-spacing: 0.05em;
+}
+
+/* 모바일에서 제목 줄바꿈 개선 */
+@media (max-width: 480px) {
+    h1, h2, h3, h4, h5, h6,
+    .title, .subtitle, .heading {
+        line-height: 1.4;
+        word-spacing: 0.1em;
+        text-align: center;
+    }
+}
+
+/* 중간 크기 화면에서 텍스트 최적화 */
+@media (min-width: 481px) and (max-width: 767px) {
+    h1, h2, h3, h4, h5, h6,
+    .title, .subtitle, .heading {
+        word-spacing: 0.08em;
+        text-align: center;
+    }
+}
+
+/* 본문 텍스트 최적화 */
+p, span, div {
+    word-break: keep-all;
+    overflow-wrap: break-word;
+    line-height: 1.6;
+}
+
+/* 모바일에서 본문 텍스트 정렬 개선 */
+@media (max-width: 480px) {
+    p {
+        text-align: justify;
+        text-align-last: center;
+        word-spacing: 0.02em;
+    }
+}
 
 /* 제목과 헤딩 스타일 */
 .wedding-title {

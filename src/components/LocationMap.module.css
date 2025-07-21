@@ -29,21 +29,33 @@
 }
 
 .title {
-  font-size: 1.8rem;
+  font-size: clamp(1.4rem, 4vw, 1.8rem);
   color: var(--primary-color);
   margin: 0;
   font-weight: 400;
   font-family: 'Dancing Script', cursive;
   text-shadow: 1px 1px 2px rgba(212, 165, 116, 0.3);
+  word-break: keep-all;
+  overflow-wrap: break-word;
+  line-height: 1.3;
+  text-align: center;
 }
 
 @media (min-width: 768px) {
   .title {
-    font-size: 2.2rem;
+    font-size: clamp(1.8rem, 5vw, 2.2rem);
   }
   
   .titleIcon {
     font-size: 1.8rem;
+  }
+}
+
+/* 모바일에서 제목 줄바꿈 개선 */
+@media (max-width: 480px) {
+  .title {
+    line-height: 1.4;
+    word-spacing: 0.1em;
   }
 }
 

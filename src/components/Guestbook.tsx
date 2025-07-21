@@ -188,31 +188,73 @@ export default function Guestbook({ pageSlug }: GuestbookProps) {
     setCurrentPage(page);
   };
 
-  // 페이지 번호 배열 생성 (최대 5개)
+  // 페이지 번호 배열 생성 (반응형)
+  // 키보드 네비게이션 지원
+  const handleKeyDown = (event: React.KeyboardEvent, page: number) => {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      handlePageChange(page);
+    }
+  };
+
+  // 페이지 변경 애니메이션
+  const handlePageChangeWithAnimation = (page: number) => {
+    if (page === currentPage) return;
+    
+    // 부드러운 스크롤 효과
+    const commentsSection = document.querySelector(`.${styles.commentsSection}`);
+    if (commentsSection) {
+      commentsSection.scrollIntoView({ 
+        behavior: 'smooth', 
+        block: 'start' 
+      });
+    }
+    
+    setTimeout(() => {
+      handlePageChange(page);
+    }, 150);
+  };
+
+  // 모바일 감지 hook
+  const [isMobile, setIsMobile] = useState(false);
+  
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth <= 768);
+    };
+    
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
   const getPageNumbers = () => {
-    const maxPages = 5;
+    const maxPages = isMobile ? 3 : 5; // 모바일에서는 3개, 데스크톱에서는 5개
     const pages = [];
     
     if (totalPages <= maxPages) {
-      // 총 페이지가 5개 이하면 모든 페이지 표시
+      // 총 페이지가 maxPages 이하면 모든 페이지 표시
       for (let i = 1; i <= totalPages; i++) {
         pages.push(i);
       }
     } else {
-      // 총 페이지가 5개 초과인 경우
-      if (currentPage <= 3) {
-        // 현재 페이지가 1, 2, 3인 경우: 1, 2, 3, 4, 5
-        for (let i = 1; i <= 5; i++) {
+      // 총 페이지가 maxPages 초과인 경우
+      const sidePages = Math.floor((maxPages - 1) / 2);
+      
+      if (currentPage <= sidePages + 1) {
+        // 현재 페이지가 앞쪽에 있는 경우
+        for (let i = 1; i <= maxPages; i++) {
           pages.push(i);
         }
-      } else if (currentPage >= totalPages - 2) {
-        // 현재 페이지가 마지막 3개 페이지 중 하나인 경우: n-4, n-3, n-2, n-1, n
-        for (let i = totalPages - 4; i <= totalPages; i++) {
+      } else if (currentPage >= totalPages - sidePages) {
+        // 현재 페이지가 뒤쪽에 있는 경우
+        for (let i = totalPages - maxPages + 1; i <= totalPages; i++) {
           pages.push(i);
         }
       } else {
-        // 중간인 경우: 현재 페이지 기준 앞뒤 2개씩
-        for (let i = currentPage - 2; i <= currentPage + 2; i++) {
+        // 중간인 경우: 현재 페이지 기준 양쪽으로
+        for (let i = currentPage - sidePages; i <= currentPage + sidePages; i++) {
           pages.push(i);
         }
       }
@@ -435,27 +477,35 @@ export default function Guestbook({ pageSlug }: GuestbookProps) {
             
             {/* 페이징 */}
             {totalPages > 1 && (
-              <div className={styles.pagination}>
+              <div className={styles.pagination} role="navigation" aria-label="페이지 네비게이션">
+                {/* 이전 버튼 */}
                 <button 
                   className={`${styles.pageButton} ${currentPage === 1 ? styles.disabled : ''}`}
-                  onClick={() => handlePageChange(currentPage - 1)}
+                  onClick={() => handlePageChangeWithAnimation(currentPage - 1)}
+                  onKeyDown={(e) => handleKeyDown(e, currentPage - 1)}
                   disabled={currentPage === 1}
+                  aria-label="이전 페이지로 이동"
+                  tabIndex={currentPage === 1 ? -1 : 0}
                 >
-                  ← 이전
+                  <span className={styles.pageButtonIcon}>←</span>
+                  <span className={styles.pageButtonText}>이전</span>
                 </button>
                 
                 <div className={styles.pageNumbers}>
-                  {/* 첫 페이지 */}
-                  {totalPages > 5 && currentPage > 3 && (
+                  {/* 첫 페이지 (필요시) */}
+                  {totalPages > (isMobile ? 3 : 5) && pageNumbers[0] > 1 && (
                     <>
                       <button
                         className={styles.pageNumber}
-                        onClick={() => handlePageChange(1)}
+                        onClick={() => handlePageChangeWithAnimation(1)}
+                        onKeyDown={(e) => handleKeyDown(e, 1)}
+                        aria-label="첫 페이지로 이동"
+                        tabIndex={0}
                       >
                         1
                       </button>
-                      {currentPage > 4 && (
-                        <span className={styles.ellipsis}>...</span>
+                      {pageNumbers[0] > 2 && (
+                        <span className={styles.ellipsis} aria-hidden="true">···</span>
                       )}
                     </>
                   )}
@@ -465,21 +515,28 @@ export default function Guestbook({ pageSlug }: GuestbookProps) {
                     <button
                       key={page}
                       className={`${styles.pageNumber} ${currentPage === page ? styles.active : ''}`}
-                      onClick={() => handlePageChange(page)}
+                      onClick={() => handlePageChangeWithAnimation(page)}
+                      onKeyDown={(e) => handleKeyDown(e, page)}
+                      aria-label={`${page}페이지로 이동`}
+                      aria-current={currentPage === page ? 'page' : undefined}
+                      tabIndex={0}
                     >
                       {page}
                     </button>
                   ))}
                   
-                  {/* 마지막 페이지 */}
-                  {totalPages > 5 && currentPage < totalPages - 2 && (
+                  {/* 마지막 페이지 (필요시) */}
+                  {totalPages > (isMobile ? 3 : 5) && pageNumbers[pageNumbers.length - 1] < totalPages && (
                     <>
-                      {currentPage < totalPages - 3 && (
-                        <span className={styles.ellipsis}>...</span>
+                      {pageNumbers[pageNumbers.length - 1] < totalPages - 1 && (
+                        <span className={styles.ellipsis} aria-hidden="true">···</span>
                       )}
                       <button
                         className={styles.pageNumber}
-                        onClick={() => handlePageChange(totalPages)}
+                        onClick={() => handlePageChangeWithAnimation(totalPages)}
+                        onKeyDown={(e) => handleKeyDown(e, totalPages)}
+                        aria-label="마지막 페이지로 이동"
+                        tabIndex={0}
                       >
                         {totalPages}
                       </button>
@@ -487,12 +544,17 @@ export default function Guestbook({ pageSlug }: GuestbookProps) {
                   )}
                 </div>
                 
+                {/* 다음 버튼 */}
                 <button 
                   className={`${styles.pageButton} ${currentPage === totalPages ? styles.disabled : ''}`}
-                  onClick={() => handlePageChange(currentPage + 1)}
+                  onClick={() => handlePageChangeWithAnimation(currentPage + 1)}
+                  onKeyDown={(e) => handleKeyDown(e, currentPage + 1)}
                   disabled={currentPage === totalPages}
+                  aria-label="다음 페이지로 이동"
+                  tabIndex={currentPage === totalPages ? -1 : 0}
                 >
-                  다음 →
+                  <span className={styles.pageButtonText}>다음</span>
+                  <span className={styles.pageButtonIcon}>→</span>
                 </button>
               </div>
             )}
