@@ -218,7 +218,7 @@ npm run deploy:firebase
 - **Backend**: Firebase (Firestore, Storage)
 - **State Management**: React Query
 - **Date Handling**: date-fns
-- **Map Integration**: Google Maps, 네이버 지도, 카카오맵
+- **Map Integration**: Google Maps
 
 ## 📄 라이선스
 

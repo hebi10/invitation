@@ -5,7 +5,6 @@ import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { useState } from 'react';
 import { AdminProvider } from '@/contexts/AdminContext';
 import './globals.css';
-import Head from 'next/head';
 import { Noto_Sans } from 'next/font/google';
 
 const notoSans = Noto_Sans({
@@ -19,9 +18,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 
   return (
     <html lang="ko">
-      <Head>
+      <head>
         <link rel="icon" href="/images/favicon.ico" />
-      </Head>
+        <link rel="shortcut icon" href="/images/favicon.ico" />
+        <link rel="apple-touch-icon" href="/images/favicon.ico" />
+      </head>
       <body className={notoSans.className}>
         <QueryClientProvider client={queryClient}>
           <AdminProvider>

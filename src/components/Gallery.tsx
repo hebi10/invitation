@@ -10,9 +10,12 @@ interface GalleryProps {
 
 export default function Gallery({ images, title = "소중한 순간들" }: GalleryProps) {
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [visibleCount, setVisibleCount] = useState(6); // 초기에 6장만 표시
   
-  // galleryImages는 이미 필터링된 상태이므로 모든 이미지를 표시
-  const displayImages = images;
+  // 표시할 이미지들 (visibleCount만큼)
+  const displayImages = images.slice(0, visibleCount);
+  const hasMoreImages = images.length > visibleCount;
+  const remainingCount = images.length - visibleCount;
   
   const openPopup = (image: string) => {
     setSelectedImage(image);
@@ -26,6 +29,16 @@ export default function Gallery({ images, title = "소중한 순간들" }: Galle
     if (e.target === e.currentTarget) {
       closePopup();
     }
+  };
+
+  // 더보기 버튼 클릭 시 6장씩 추가
+  const showMoreImages = () => {
+    setVisibleCount(prev => Math.min(prev + 6, images.length));
+  };
+
+  // 접기 버튼 클릭 시 처음 6장으로 돌아가기
+  const showLessImages = () => {
+    setVisibleCount(6);
   };
 
   // ESC 키로 팝업 닫기
@@ -67,11 +80,36 @@ export default function Gallery({ images, title = "소중한 순간들" }: Galle
               key={index} 
               className={styles.imageItem}
               src={image} 
-              alt={`Gallery image ${index + 2}`}
+              alt={`Gallery image ${index + 1}`}
               onClick={() => openPopup(image)}
             />
           ))}
         </div>
+        
+        {/* 더보기/접기 버튼들 */}
+        {images.length > 6 && (
+          <div className={styles.buttonContainer}>
+            {hasMoreImages && (
+              <button 
+                className={styles.moreButton} 
+                onClick={showMoreImages}
+              >
+                <span className={styles.buttonIcon}>📷</span>
+                더보기 ({remainingCount}장 더)
+              </button>
+            )}
+            
+            {visibleCount > 6 && (
+              <button 
+                className={styles.lessButton} 
+                onClick={showLessImages}
+              >
+                <span className={styles.buttonIcon}>📁</span>
+                접기
+              </button>
+            )}
+          </div>
+        )}
       </section>
       
       {/* 이미지 팝업 */}

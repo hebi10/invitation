@@ -53,6 +53,9 @@ export default function KimTaehyunChoiYuna() {
     <div>
       <Head>
         <title>김태현 ♥ 최유나 결혼식에 초대합니다</title>
+        <link rel="icon" href="/images/favicon.ico" />
+        <link rel="shortcut icon" href="/images/favicon.ico" />
+        <link rel="apple-touch-icon" href="/images/favicon.ico" />
         <meta name="description" content="2024년 6월 22일 토요일 오후 1시, 김태현과 최유나가 영원한 약속을 나누는 소중한 순간입니다. 저희의 사랑의 여정을 함께 지켜봐 주세요." />
         <meta name="keywords" content="결혼식,웨딩,청첩장,김태현,최유나,2024년 6월" />
         <meta property="og:title" content="김태현 ♥ 최유나 결혼식 초대" />

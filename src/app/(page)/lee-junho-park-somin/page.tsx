@@ -53,6 +53,9 @@ export default function LeeJunhoParkSomin() {
     <div>
       <Head>
         <title>이준호 ♥ 박소민 결혼식에 초대합니다</title>
+        <link rel="icon" href="/images/favicon.ico" />
+        <link rel="shortcut icon" href="/images/favicon.ico" />
+        <link rel="apple-touch-icon" href="/images/favicon.ico" />
         <meta name="description" content="2024년 5월 18일 일요일 오후 3시, 이준호와 박소민이 사랑으로 하나 되는 특별한 날입니다. 저희의 행복한 출발을 함께 축복해 주세요." />
         <meta name="keywords" content="결혼식,웨딩,청첩장,이준호,박소민,2024년 5월" />
         <meta property="og:title" content="이준호 ♥ 박소민 결혼식 초대" />

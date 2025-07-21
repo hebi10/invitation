@@ -7,13 +7,14 @@ import { getWeddingPagesClient, type WeddingPageInfo } from '@/utils';
 import styles from './ImageManager.module.css';
 
 export default function ImageManager() {
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [selectedPage, setSelectedPage] = useState<string>('');
-  const [previewUrl, setPreviewUrl] = useState<string>('');
+  const [previewUrls, setPreviewUrls] = useState<string[]>([]);
   const [images, setImages] = useState<{ [pageSlug: string]: UploadedImage[] }>({});
   const [weddingPages, setWeddingPages] = useState<WeddingPageInfo[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isUploading, setIsUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState<{ [fileName: string]: boolean }>({});
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const { isAdminLoggedIn } = useAdmin();
@@ -55,34 +56,56 @@ export default function ImageManager() {
   };
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      // 파일 크기 검증 (5MB 제한)
-      if (file.size > 5 * 1024 * 1024) {
-        setError('파일 크기는 5MB 이하여야 합니다.');
-        return;
+    const files = e.target.files;
+    if (files && files.length > 0) {
+      const fileArray = Array.from(files);
+      const validFiles: File[] = [];
+      const newPreviewUrls: string[] = [];
+      let hasError = false;
+
+      // 각 파일 검증
+      for (const file of fileArray) {
+        // 파일 크기 검증 (5MB 제한)
+        if (file.size > 5 * 1024 * 1024) {
+          setError(`파일 ${file.name}의 크기가 5MB를 초과합니다.`);
+          hasError = true;
+          break;
+        }
+
+        // 파일 타입 검증
+        if (!file.type.startsWith('image/')) {
+          setError(`${file.name}은(는) 이미지 파일이 아닙니다.`);
+          hasError = true;
+          break;
+        }
+
+        validFiles.push(file);
       }
 
-      // 파일 타입 검증
-      if (!file.type.startsWith('image/')) {
-        setError('이미지 파일만 업로드 가능합니다.');
-        return;
+      if (!hasError && validFiles.length > 0) {
+        setSelectedFiles(validFiles);
+        setError('');
+        
+        // 미리보기 생성
+        validFiles.forEach(file => {
+          const reader = new FileReader();
+          reader.onload = (e) => {
+            newPreviewUrls.push(e.target?.result as string);
+            if (newPreviewUrls.length === validFiles.length) {
+              setPreviewUrls(newPreviewUrls);
+            }
+          };
+          reader.readAsDataURL(file);
+        });
+      } else if (!hasError) {
+        setSelectedFiles([]);
+        setPreviewUrls([]);
       }
-
-      setSelectedFile(file);
-      setError('');
-      
-      // 미리보기 생성
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        setPreviewUrl(e.target?.result as string);
-      };
-      reader.readAsDataURL(file);
     }
   };
 
   const handleUpload = async () => {
-    if (!selectedFile || !selectedPage) {
+    if (!selectedFiles.length || !selectedPage) {
       setError('파일과 페이지를 선택해주세요.');
       return;
     }
@@ -91,11 +114,33 @@ export default function ImageManager() {
       setIsUploading(true);
       setError('');
       
-      await uploadImage(selectedFile, selectedPage);
+      // 각 파일별 업로드 진행 상태 초기화
+      const initialProgress: { [fileName: string]: boolean } = {};
+      selectedFiles.forEach(file => {
+        initialProgress[file.name] = false;
+      });
+      setUploadProgress(initialProgress);
       
-      setSuccess('이미지가 성공적으로 업로드되었습니다!');
-      setSelectedFile(null);
-      setPreviewUrl('');
+      // 병렬로 모든 파일 업로드
+      const uploadPromises = selectedFiles.map(async (file) => {
+        try {
+          await uploadImage(file, selectedPage);
+          setUploadProgress(prev => ({
+            ...prev,
+            [file.name]: true
+          }));
+        } catch (error) {
+          console.error(`파일 ${file.name} 업로드 실패:`, error);
+          throw error;
+        }
+      });
+
+      await Promise.all(uploadPromises);
+      
+      setSuccess(`${selectedFiles.length}개의 이미지가 성공적으로 업로드되었습니다!`);
+      setSelectedFiles([]);
+      setPreviewUrls([]);
+      setUploadProgress({});
       
       // 이미지 목록 새로고침
       await loadAllImages();
@@ -103,7 +148,7 @@ export default function ImageManager() {
       // 성공 메시지 3초 후 제거
       setTimeout(() => setSuccess(''), 3000);
     } catch (error) {
-      setError('이미지 업로드에 실패했습니다.');
+      setError('일부 이미지 업로드에 실패했습니다.');
       console.error(error);
     } finally {
       setIsUploading(false);
@@ -158,26 +203,66 @@ export default function ImageManager() {
           id="file-upload"
           type="file"
           accept="image/*"
+          multiple
           onChange={handleFileSelect}
         />
         <label className={styles.fileInputLabel} htmlFor="file-upload">
-          이미지 선택
+          이미지 선택 (여러 장 가능)
         </label>
         
-        {selectedFile && (
-          <button
-            className={styles.uploadButton}
-            onClick={handleUpload}
-            disabled={isUploading}
-          >
-            {isUploading ? '업로드 중...' : '업로드'}
-          </button>
+        {selectedFiles.length > 0 && (
+          <div className={styles.uploadInfo}>
+            <p className={styles.selectedFilesCount}>
+              선택된 파일: {selectedFiles.length}개
+            </p>
+            <button
+              className={styles.uploadButton}
+              onClick={handleUpload}
+              disabled={isUploading}
+            >
+              {isUploading ? '업로드 중...' : `${selectedFiles.length}개 파일 업로드`}
+            </button>
+          </div>
         )}
         
-        {previewUrl && (
-          <div>
-            <img className={styles.previewImage} src={previewUrl} alt="미리보기" />
-            <p>{selectedFile?.name}</p>
+        {/* 업로드 진행 상태 */}
+        {isUploading && Object.keys(uploadProgress).length > 0 && (
+          <div className={styles.uploadProgress}>
+            <h4>업로드 진행 상황:</h4>
+            {Object.entries(uploadProgress).map(([fileName, completed]) => (
+              <div key={fileName} className={styles.progressItem}>
+                <span className={styles.fileName}>{fileName}</span>
+                <span className={`${styles.progressStatus} ${completed ? styles.completed : styles.uploading}`}>
+                  {completed ? '✅ 완료' : '⏳ 업로드 중...'}
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
+        
+        {/* 미리보기 */}
+        {previewUrls.length > 0 && (
+          <div className={styles.previewContainer}>
+            <h4>미리보기:</h4>
+            <div className={styles.previewGrid}>
+              {previewUrls.map((url, index) => (
+                <div key={index} className={styles.previewItem}>
+                  <img className={styles.previewImage} src={url} alt={`미리보기 ${index + 1}`} />
+                  <p className={styles.previewFileName}>{selectedFiles[index]?.name}</p>
+                  <button
+                    className={styles.removePreviewButton}
+                    onClick={() => {
+                      const newFiles = selectedFiles.filter((_, i) => i !== index);
+                      const newUrls = previewUrls.filter((_, i) => i !== index);
+                      setSelectedFiles(newFiles);
+                      setPreviewUrls(newUrls);
+                    }}
+                  >
+                    ❌ 제거
+                  </button>
+                </div>
+              ))}
+            </div>
           </div>
         )}
       </div>
