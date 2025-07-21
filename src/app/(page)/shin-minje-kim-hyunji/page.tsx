@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import Head from 'next/head';
 import { 
   WeddingLoader, 
   Cover, 
@@ -58,27 +57,6 @@ import { usePageImages } from '@/hooks';export default function ShinMinJeKimHyun
 
   return (
     <div>
-      <Head>
-        <title>신민제 ♥ 김현지 결혼식에 초대합니다</title>
-        <link rel="icon" href="/images/favicon.ico" />
-        <link rel="shortcut icon" href="/images/favicon.ico" />
-        <link rel="apple-touch-icon" href="/images/favicon.ico" />
-        <meta name="description" content="2024년 4월 14일 토요일 오후 2시, 신민제와 김현지가 하나 되는 날에 소중한 분들을 초대합니다. 저희의 새로운 시작을 함께 축복해 주세요." />
-        <meta name="keywords" content="결혼식,웨딩,청첩장,신민제,김현지,2024년 4월" />
-        <meta property="og:title" content="신민제 ♥ 김현지 결혼식 초대" />
-        <meta property="og:description" content="2024년 4월 14일 토요일 오후 2시, 신민제와 김현지가 하나 되는 날에 소중한 분들을 초대합니다." />
-        <meta property="og:image" content="https://images.unsplash.com/photo-1519741497674-611481863552?w=800&h=600&fit=crop" />
-        <meta property="og:type" content="website" />
-        <meta property="og:locale" content="ko_KR" />
-        <meta property="og:site_name" content="모바일 청첩장" />
-        <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:title" content="신민제 ♥ 김현지 결혼식 초대" />
-        <meta name="twitter:description" content="2024년 4월 14일 토요일 오후 2시, 신민제와 김현지가 하나 되는 날에 소중한 분들을 초대합니다." />
-        <meta name="twitter:image" content="https://images.unsplash.com/photo-1519741497674-611481863552?w=800&h=600&fit=crop" />
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <meta name="robots" content="noindex, nofollow" />
-      </Head>
-      
       <Cover
         title="Wedding Invitation"
         subtitle="우리의 특별한 날에 함께해주세요"
