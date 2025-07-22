@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { 
   WeddingLoader, 
   Cover, 
@@ -16,9 +16,10 @@ import { usePageImages } from '@/hooks';
 
 export default function LeeJunhoParkSomin() {
   const [isLoading, setIsLoading] = useState(true);
+  const [imagePreloaded, setImagePreloaded] = useState(false);
   
   // 🎯 간편한 이미지 사용!
-  const { images, imageUrls, firstImage, hasImages, mainImage, galleryImages } = usePageImages('lee-junho-park-somin');
+  const { images, imageUrls, firstImage, hasImages, mainImage, galleryImages, loading: imagesLoading } = usePageImages('lee-junho-park-somin');
   
   // 결혼식 날짜 설정
   const weddingDate = new Date(2024, 4, 18); // 2024년 5월 18일
@@ -33,9 +34,32 @@ export default function LeeJunhoParkSomin() {
     'https://images.unsplash.com/photo-1511285560929-80b456fea0bc?w=400'
   ];
 
+  // 메인 이미지 URL 결정
+  const mainImageUrl = mainImage?.url || "https://images.unsplash.com/photo-1465495976277-4387d4b0e4a6?w=400";
+
+  // 이미지 프리로딩
+  useEffect(() => {
+    const preloadImage = new Image();
+    preloadImage.onload = () => setImagePreloaded(true);
+    preloadImage.src = mainImageUrl;
+  }, [mainImageUrl]);
+
   const handleLoadComplete = () => {
-    setIsLoading(false);
+    // 이미지가 프리로드되었을 때만 로딩 완료
+    if (imagePreloaded) {
+      setIsLoading(false);
+    }
   };
+
+  // 이미지 프리로딩이 완료되면 자동으로 로딩 완료
+  useEffect(() => {
+    if (imagePreloaded && !imagesLoading) {
+      const timer = setTimeout(() => {
+        setIsLoading(false);
+      }, 1500); // 최소 1.5초는 로딩 화면 유지
+      return () => clearTimeout(timer);
+    }
+  }, [imagePreloaded, imagesLoading]);
 
   if (isLoading) {
     return (
@@ -53,10 +77,11 @@ export default function LeeJunhoParkSomin() {
       <Cover
         title="Wedding Invitation"
         subtitle="따뜻한 마음으로 초대합니다"
-        imageUrl={mainImage?.url || "https://images.unsplash.com/photo-1465495976277-4387d4b0e4a6?w=400"}
+        imageUrl={mainImageUrl}
         brideName="박소민"
         groomName="이준호"
         weddingDate="2024년 5월 18일 토요일"
+        preloadComplete={imagePreloaded && !imagesLoading}
       />
       
       <Greeting

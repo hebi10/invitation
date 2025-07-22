@@ -1,5 +1,6 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import styles from './Cover.module.css';
 
 interface CoverProps {
@@ -10,6 +11,7 @@ interface CoverProps {
   groomName: string;
   weddingDate: string;
   backgroundImage?: string; // 추가: 선택적 배경 이미지
+  preloadComplete?: boolean; // 페이지 로딩 완료 상태
 }
 
 export default function Cover({ 
@@ -19,8 +21,15 @@ export default function Cover({
   brideName, 
   groomName, 
   weddingDate,
-  backgroundImage
+  backgroundImage,
+  preloadComplete = false
 }: CoverProps) {
+  const [imageLoaded, setImageLoaded] = useState(false);
+  const [imageError, setImageError] = useState(false);
+
+  // 페이지 로딩이 완료되었을 때만 이미지 로딩 상태를 표시
+  const showImageLoader = !preloadComplete || (!imageLoaded && !imageError);
+
   const containerStyle = backgroundImage 
     ? { 
         backgroundImage: `url(${backgroundImage})`,
@@ -30,11 +39,43 @@ export default function Cover({
       }
     : {};
 
+  const handleImageLoad = () => {
+    setImageLoaded(true);
+  };
+
+  const handleImageError = () => {
+    setImageError(true);
+  };
+
+  // 이미지 프리로딩이 완료되면 즉시 이미지 로딩 완료로 처리
+  useEffect(() => {
+    if (preloadComplete) {
+      setImageLoaded(true);
+    }
+  }, [preloadComplete]);
+
   return (
     <div className={styles.container} style={containerStyle}>
       <h1 className={styles.title}>{title}</h1>
       {subtitle && <p className={styles.subtitle}>{subtitle}</p>}
-      <img className={styles.image} src={imageUrl} alt="Wedding couple" />
+      <div className={styles.imageContainer}>
+        <img 
+          className={`${styles.image} ${imageLoaded ? styles.imageLoaded : ''}`}
+          src={imageUrl} 
+          alt="Wedding couple"
+          onLoad={handleImageLoad}
+          onError={handleImageError}
+          style={{
+            opacity: imageLoaded || preloadComplete ? 1 : 0,
+            transition: 'opacity 0.3s ease-in-out'
+          }}
+        />
+        {showImageLoader && !preloadComplete && (
+          <div className={styles.imagePlaceholder}>
+            <div className={styles.loadingSpinner}></div>
+          </div>
+        )}
+      </div>
       <h2 className={styles.coupleNames}>{groomName} ♥ {brideName}</h2>
       <p className={styles.weddingDate}>{weddingDate}</p>
     </div>

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { 
   WeddingLoader, 
   Cover, 
@@ -16,9 +16,10 @@ import { usePageImages } from '@/hooks';
 
 export default function KimTaehyunChoiYuna() {
   const [isLoading, setIsLoading] = useState(true);
+  const [imagePreloaded, setImagePreloaded] = useState(false);
   
   // 🎯 간편한 이미지 사용!
-  const { images, imageUrls, firstImage, hasImages, mainImage, galleryImages } = usePageImages('kim-taehyun-choi-yuna');
+  const { images, imageUrls, firstImage, hasImages, mainImage, galleryImages, loading: imagesLoading } = usePageImages('kim-taehyun-choi-yuna');
   
   // 결혼식 날짜 설정
   const weddingDate = new Date(2024, 5, 8); // 2024년 6월 8일
@@ -33,10 +34,34 @@ export default function KimTaehyunChoiYuna() {
     'https://images.unsplash.com/photo-1583939003579-730e3918a45a?w=400'
   ];
 
+  // 메인 이미지 URL 결정
+  const mainImageUrl = mainImage?.url || "https://images.unsplash.com/photo-1520854221256-17451cc331bf?w=400";
+
+  // 이미지 프리로딩
+  useEffect(() => {
+    const preloadImage = new Image();
+    preloadImage.onload = () => setImagePreloaded(true);
+    preloadImage.src = mainImageUrl;
+  }, [mainImageUrl]);
+
   const handleLoadComplete = () => {
-    setIsLoading(false);
+    // 이미지가 프리로드되었을 때만 로딩 완료
+    if (imagePreloaded) {
+      setIsLoading(false);
+    }
   };
 
+  // 이미지 프리로딩이 완료되면 자동으로 로딩 완료
+  useEffect(() => {
+    if (imagePreloaded && !imagesLoading) {
+      const timer = setTimeout(() => {
+        setIsLoading(false);
+      }, 1500); // 최소 1.5초는 로딩 화면 유지
+      return () => clearTimeout(timer);
+    }
+  }, [imagePreloaded, imagesLoading]);
+
+  // 이미지 로딩과 페이지 로딩 둘 다 확인
   if (isLoading) {
     return (
       <WeddingLoader
@@ -53,10 +78,11 @@ export default function KimTaehyunChoiYuna() {
       <Cover
         title="Wedding Invitation"
         subtitle="영원한 사랑을 약속합니다"
-        imageUrl={mainImage?.url || "https://images.unsplash.com/photo-1520854221256-17451cc331bf?w=400"}
+        imageUrl={mainImageUrl}
         brideName="최유나"
         groomName="김태현"
         weddingDate="2024년 6월 8일 토요일"
+        preloadComplete={imagePreloaded && !imagesLoading}
       />
       
       <Greeting
