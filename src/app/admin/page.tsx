@@ -21,6 +21,9 @@ export default function AdminPage() {
   // 페이징 관련 상태
   const [currentPage, setCurrentPage] = useState(1);
   const COMMENTS_PER_PAGE = 10;
+  
+  // 댓글 필터링 상태
+  const [selectedPageSlug, setSelectedPageSlug] = useState<string>('all');
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
@@ -74,10 +77,14 @@ export default function AdminPage() {
   };
 
   // 페이징 계산
-  const totalPages = Math.ceil(comments.length / COMMENTS_PER_PAGE);
+  const filteredComments = selectedPageSlug === 'all' 
+    ? comments 
+    : comments.filter(comment => comment.pageSlug === selectedPageSlug);
+  
+  const totalPages = Math.ceil(filteredComments.length / COMMENTS_PER_PAGE);
   const startIndex = (currentPage - 1) * COMMENTS_PER_PAGE;
   const endIndex = startIndex + COMMENTS_PER_PAGE;
-  const currentComments = comments.slice(startIndex, endIndex);
+  const currentComments = filteredComments.slice(startIndex, endIndex);
 
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
@@ -87,7 +94,13 @@ export default function AdminPage() {
     setActiveTab(tab);
     if (tab === 'comments') {
       setCurrentPage(1); // 댓글 탭으로 변경시 페이지를 1로 리셋
+      setSelectedPageSlug('all'); // 필터도 초기화
     }
+  };
+
+  const handlePageFilterChange = (pageSlug: string) => {
+    setSelectedPageSlug(pageSlug);
+    setCurrentPage(1); // 필터 변경시 페이지를 1로 리셋
   };
 
   useEffect(() => {
@@ -270,10 +283,13 @@ export default function AdminPage() {
                 <div className={styles.commentsHeaderInfo}>
                   <h2>전체 댓글 관리</h2>
                   <div className={styles.commentsStats}>
-                    <span className={styles.commentCount}>{comments.length}개의 댓글</span>
+                    <span className={styles.commentCount}>{filteredComments.length}개의 댓글</span>
                     <span className={styles.commentSeparator}>•</span>
                     <span className={styles.pageCount}>
-                      {[...new Set(comments.map(c => c.pageSlug))].length}개 페이지
+                      {selectedPageSlug === 'all' 
+                        ? `${[...new Set(comments.map(c => c.pageSlug))].length}개 페이지` 
+                        : `${selectedPageSlug} 페이지`
+                      }
                     </span>
                     {totalPages > 1 && (
                       <>
@@ -285,25 +301,37 @@ export default function AdminPage() {
                     )}
                   </div>
                 </div>
-                <button 
-                  onClick={fetchAllComments} 
-                  disabled={commentsLoading}
-                  className={styles.refreshButton}
-                >
-                  {commentsLoading ? (
-                    <>
-                      <span className={styles.spinner}></span>
-                      로딩 중...
-                    </>
-                  ) : (
-                    <>
-                      🔄 새로고침
-                    </>
-                  )}
-                </button>
-              </div>
-              
-              {commentsLoading ? (
+                <div className={styles.commentsControls}>
+                  <select 
+                    value={selectedPageSlug} 
+                    onChange={(e) => handlePageFilterChange(e.target.value)}
+                    className={styles.pageFilter}
+                  >
+                    <option value="all">전체 페이지</option>
+                    {[...new Set(comments.map(c => c.pageSlug))].sort().map(pageSlug => (
+                      <option key={pageSlug} value={pageSlug}>
+                        {pageSlug} ({comments.filter(c => c.pageSlug === pageSlug).length}개)
+                      </option>
+                    ))}
+                  </select>
+                  <button 
+                    onClick={fetchAllComments} 
+                    disabled={commentsLoading}
+                    className={styles.refreshButton}
+                  >
+                    {commentsLoading ? (
+                      <>
+                        <span className={styles.spinner}></span>
+                        로딩 중...
+                      </>
+                    ) : (
+                      <>
+                        🔄 새로고침
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>              {commentsLoading ? (
                 <div className={styles.loadingContainer}>
                   <div className={styles.loadingSpinner}></div>
                   <p>댓글을 불러오는 중...</p>
@@ -313,7 +341,7 @@ export default function AdminPage() {
                   <div className={styles.commentsList}>
                     {currentComments.map((comment, index) => (
                       <div key={comment.id} className={styles.commentItem}>
-                        <div className={styles.commentNumber}>#{comments.length - (startIndex + index)}</div>
+                        <div className={styles.commentNumber}>#{filteredComments.length - (startIndex + index)}</div>
                         <div className={styles.commentHeader}>
                           <div className={styles.commentAuthor}>
                             <strong>👤 {comment.author}</strong>

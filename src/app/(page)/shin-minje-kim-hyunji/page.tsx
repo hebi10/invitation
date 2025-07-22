@@ -155,6 +155,7 @@ export default function ShinMinJeKimHyunJi() {
         venueName={pageData.ceremony.location}
         address={pageData.ceremony.address}
         description="지하철 이용 시 더케이웨딩홀까지 편리하게 오실 수 있습니다"
+        mapUrl="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d25314.40229051596!2d127.01265801385874!3d37.52441811794768!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x357ca4784ed95631%3A0x12a8bf0e6438ac7!2z642U7YG0656Y7Iqk7LKt64u0!5e0!3m2!1sko!2skr!4v1753176333092!5m2!1sko!2skr"
       />
       <Guestbook pageSlug="shin-minje-kim-hyunji" />
       <GiftInfo 
