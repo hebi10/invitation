@@ -5,12 +5,35 @@ import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { useState } from 'react';
 import { AdminProvider } from '@/contexts/AdminContext';
 import './globals.css';
-import { Noto_Sans } from 'next/font/google';
+import { Inter, Noto_Serif_KR, Noto_Sans_KR, Cormorant_Garamond } from 'next/font/google';
 
-const notoSans = Noto_Sans({
-  subsets: ['latin'], // 한글 포함시 'latin'과 'korean' 같이 지정
-  weight: ['400', '700'], // 사용할 폰트 두께
-  display: 'swap', // FOUT 방지
+const inter = Inter({
+  subsets: ['latin'],
+  weight: ['300', '400', '500', '600'],
+  display: 'swap',
+  variable: '--font-inter',
+});
+
+const notoSerifKR = Noto_Serif_KR({
+  subsets: ['latin'],
+  weight: ['300', '400', '500', '600'],
+  display: 'swap',
+  variable: '--font-noto-serif',
+});
+
+const notoSansKR = Noto_Sans_KR({
+  subsets: ['latin'],
+  weight: ['300', '400', '500', '600'],
+  display: 'swap',
+  variable: '--font-noto-sans',
+});
+
+const cormorantGaramond = Cormorant_Garamond({
+  subsets: ['latin'],
+  weight: ['400', '500', '600'],
+  style: ['normal', 'italic'],
+  display: 'swap',
+  variable: '--font-cormorant',
 });
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
@@ -23,7 +46,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <link rel="shortcut icon" href="/images/favicon.ico" />
         <link rel="apple-touch-icon" href="/images/favicon.ico" />
       </head>
-      <body className={notoSans.className}>
+      <body className={`${inter.variable} ${notoSerifKR.variable} ${notoSansKR.variable} ${cormorantGaramond.variable}`}>
         <QueryClientProvider client={queryClient}>
           <AdminProvider>
             {children}

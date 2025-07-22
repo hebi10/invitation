@@ -25,16 +25,19 @@ const WeddingLoader: React.FC<WeddingLoaderProps> = ({
   ];
 
   useEffect(() => {
+    const startTime = Date.now();
+    
     const progressInterval = setInterval(() => {
-      setProgress(prev => {
-        if (prev >= 100) {
-          clearInterval(progressInterval);
-          setTimeout(onLoadComplete, 500);
-          return 100;
-        }
-        return prev + (100 / (duration / 100));
-      });
-    }, 100);
+      const elapsed = Date.now() - startTime;
+      const calculatedProgress = Math.min((elapsed / duration) * 100, 100);
+      
+      setProgress(calculatedProgress);
+      
+      if (calculatedProgress >= 100) {
+        clearInterval(progressInterval);
+        setTimeout(onLoadComplete, 200); // 더 빠른 응답을 위해 500ms에서 200ms로 단축
+      }
+    }, 50); // 더 부드러운 애니메이션을 위해 100ms에서 50ms로 단축
 
     const messageInterval = setInterval(() => {
       setCurrentMessage(prev => (prev + 1) % loadingMessages.length);

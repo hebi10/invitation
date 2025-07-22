@@ -40,6 +40,9 @@ export default function ShinMinJeKimHyunJi() {
     'https://images.unsplash.com/photo-1519741497674-611481863552?w=400',
     'https://images.unsplash.com/photo-1520854221256-17451cc331bf?w=400',
     'https://images.unsplash.com/photo-1606216794074-735e91aa2c92?w=400',
+    'https://images.unsplash.com/photo-1583939003579-730e3918a45a?w=400',
+    'https://images.unsplash.com/photo-1520854221256-17451cc331bf?w=400',
+    'https://images.unsplash.com/photo-1606216794074-735e91aa2c92?w=400',
     'https://images.unsplash.com/photo-1583939003579-730e3918a45a?w=400'
   ];
 
@@ -54,19 +57,17 @@ export default function ShinMinJeKimHyunJi() {
   }, [mainImageUrl]);
 
   const handleLoadComplete = () => {
-    // 이미지가 프리로드되었을 때만 로딩 완료
-    if (imagePreloaded) {
+    // 로더가 완료되고 이미지가 프리로드되었을 때만 로딩 완료
+    if (imagePreloaded && !imagesLoading) {
       setIsLoading(false);
     }
   };
 
-  // 이미지 프리로딩이 완료되면 자동으로 로딩 완료
+  // 이미지 프리로딩이 완료되면 자동으로 로딩 완료 준비
   useEffect(() => {
     if (imagePreloaded && !imagesLoading) {
-      const timer = setTimeout(() => {
-        setIsLoading(false);
-      }, 1500); // 최소 1.5초는 로딩 화면 유지
-      return () => clearTimeout(timer);
+      // 이미지가 준비되었음을 표시하지만 로더가 완료될 때까지 기다림
+      console.log('Images ready, waiting for loader completion');
     }
   }, [imagePreloaded, imagesLoading]);
 
