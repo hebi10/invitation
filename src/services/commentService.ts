@@ -229,7 +229,6 @@ export async function getComments(pageSlug: string): Promise<Comment[]> {
     
     querySnapshot.forEach((doc: any) => {
       const data = doc.data();
-      console.log('[commentService] 문서 데이터:', { id: doc.id, data });
       
       comments.push({
         id: doc.id,
@@ -240,7 +239,6 @@ export async function getComments(pageSlug: string): Promise<Comment[]> {
       });
     });
     
-    console.log('[commentService] 최종 댓글 목록:', comments);
     return comments;
   } catch (error) {
     console.error('[commentService] Error getting comments:', error);

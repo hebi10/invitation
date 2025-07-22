@@ -27,8 +27,8 @@ export default function Cover({
   const [imageLoaded, setImageLoaded] = useState(false);
   const [imageError, setImageError] = useState(false);
 
-  // 페이지 로딩이 완료되었을 때만 이미지 로딩 상태를 표시
-  const showImageLoader = !preloadComplete || (!imageLoaded && !imageError);
+  // 페이지 로딩이 완료되었을 때는 이미지 로딩 상태를 표시하지 않음
+  const showImageLoader = !preloadComplete && !imageLoaded && !imageError;
 
   const containerStyle = backgroundImage 
     ? { 
@@ -70,7 +70,7 @@ export default function Cover({
             transition: 'opacity 0.3s ease-in-out'
           }}
         />
-        {showImageLoader && !preloadComplete && (
+        {showImageLoader && (
           <div className={styles.imagePlaceholder}>
             <div className={styles.loadingSpinner}></div>
           </div>

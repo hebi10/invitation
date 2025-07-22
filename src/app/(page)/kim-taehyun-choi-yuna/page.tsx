@@ -119,6 +119,7 @@ export default function KimTaehyunChoiYuna() {
         imageUrl={mainImageUrl}
         brideName={pageData.brideName}
         groomName={pageData.groomName}
+        preloadComplete={true}
       />
       <Greeting 
         message="두 사람이 사랑으로 하나가 되는 순간을 함께해 주시는 모든 분들께 감사드립니다. 새로운 시작을 따뜻한 마음으로 축복해 주시면 더없는 기쁨이겠습니다."

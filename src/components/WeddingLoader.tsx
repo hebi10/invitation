@@ -22,6 +22,7 @@ const WeddingLoader: React.FC<WeddingLoaderProps> = ({
   const [currentMessage, setCurrentMessage] = useState(0);
   const [imagesLoaded, setImagesLoaded] = useState(false);
   const [minTimeElapsed, setMinTimeElapsed] = useState(false);
+  const [startTime] = useState(Date.now());
 
   const loadingMessages = [
     '사랑스러운 순간을 준비하고 있어요...',
@@ -65,14 +66,15 @@ const WeddingLoader: React.FC<WeddingLoaderProps> = ({
   }, [mainImage, preloadImages]);
 
   useEffect(() => {
-    const startTime = Date.now();
-    
     const progressInterval = setInterval(() => {
       const elapsed = Date.now() - startTime;
       const timeProgress = Math.min((elapsed / duration) * 100, 100);
       
-      // 단순한 진행률: 시간 기반으로만 계산
-      setProgress(timeProgress);
+      // 진행률을 단조증가하도록 보장 (절대 감소하지 않음)
+      setProgress(prev => {
+        const newProgress = Math.max(prev, timeProgress);
+        return newProgress;
+      });
       
       // 최소 시간 체크
       if (elapsed >= 2000) {
@@ -94,7 +96,7 @@ const WeddingLoader: React.FC<WeddingLoaderProps> = ({
       clearInterval(progressInterval);
       clearInterval(messageInterval);
     };
-  }, [duration, onLoadComplete, loadingMessages.length, imagesLoaded, minTimeElapsed]);
+  }, [startTime, duration, onLoadComplete, loadingMessages.length, imagesLoaded, minTimeElapsed]);
 
   return (
     <div className={styles.loaderContainer}>

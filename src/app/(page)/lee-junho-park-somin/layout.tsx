@@ -6,8 +6,8 @@ const FAVICON_ICON = '/images/favicon.ico';
 
 export const metadata: Metadata = {
   title: '이준호 ♥ 박소민 결혼식에 초대합니다',
-  description: '2024년 5월 18일 일요일 오후 3시, 이준호와 박소민이 사랑으로 하나 되는 특별한 날입니다. 저희의 행복한 출발을 함께 축복해 주세요.',
-  keywords: ['결혼식', '웨딩', '청첩장', '이준호', '박소민', '2024년 5월'],
+  description: '2026년 6월 20일 토요일 오후 2시, 이준호와 박소민이 사랑으로 하나 되는 특별한 날입니다. 저희의 행복한 출발을 함께 축복해 주세요.',
+  keywords: ['결혼식', '웨딩', '청첩장', '이준호', '박소민', '2026년 6월'],
   icons: [
     {
       rel: 'icon',
@@ -24,7 +24,7 @@ export const metadata: Metadata = {
   ],
   openGraph: {
     title: '이준호 ♥ 박소민 결혼식 초대',
-    description: '2024년 5월 18일 일요일 오후 3시, 이준호와 박소민이 사랑으로 하나 되는 특별한 날입니다.',
+    description: '2026년 6월 20일 토요일 오후 2시, 이준호와 박소민이 사랑으로 하나 되는 특별한 날입니다.',
     images: [
       {
         url: WEDDING_IMAGE,
@@ -42,7 +42,7 @@ export const metadata: Metadata = {
     // X (구 Twitter) 카드
     'twitter:card': 'summary_large_image',
     'twitter:title': '이준호 ♥ 박소민 결혼식 초대',
-    'twitter:description': '2024년 5월 18일 일요일 오후 3시, 이준호와 박소민이 사랑으로 하나 되는 특별한 날입니다.',
+    'twitter:description': '2026년 6월 20일 토요일 오후 2시, 이준호와 박소민이 사랑으로 하나 되는 특별한 날입니다.',
     'twitter:image': WEDDING_IMAGE,
   },
   robots: 'noindex, nofollow',
