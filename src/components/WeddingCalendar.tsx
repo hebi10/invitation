@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import styles from './WeddingCalendar.module.css';
+import WeddingCountdown from './WeddingCountdown';
 
 interface CalendarEvent {
   date: number;
@@ -16,6 +17,8 @@ interface WeddingCalendarProps {
   currentMonth?: Date;
   events?: CalendarEvent[];
   onDateClick?: (date: Date) => void;
+  showCountdown?: boolean;
+  countdownTitle?: string;
 }
 
 export default function WeddingCalendar({
@@ -23,13 +26,14 @@ export default function WeddingCalendar({
   weddingDate,
   currentMonth = new Date(),
   events = [],
-  onDateClick
+  onDateClick,
+  showCountdown = false,
+  countdownTitle = "결혼식까지"
 }: WeddingCalendarProps) {
   const [selectedDate, setSelectedDate] = useState<Date | null>(weddingDate || null);
   const [displayMonth, setDisplayMonth] = useState(currentMonth);
 
   const handleDateClick = (date: Date) => {
-    // 결혼식 날짜만 클릭 가능하도록 제한
     if (weddingDate && date.toDateString() === weddingDate.toDateString()) {
       setSelectedDate(date);
       if (onDateClick) {
@@ -59,14 +63,12 @@ export default function WeddingCalendar({
     const firstDay = getFirstDayOfMonth(displayMonth);
     const days = [];
 
-    // 이전 달의 빈 칸들
     for (let i = 0; i < firstDay; i++) {
       days.push(
         <div key={`empty-${i}`} className={styles.emptyDay}></div>
       );
     }
 
-    // 현재 달의 날짜들
     for (let day = 1; day <= daysInMonth; day++) {
       const currentDate = new Date(displayMonth.getFullYear(), displayMonth.getMonth(), day);
       const isWeddingDay = weddingDate && 
@@ -74,9 +76,8 @@ export default function WeddingCalendar({
       const isSelected = selectedDate && 
         currentDate.toDateString() === selectedDate.toDateString();
       const isToday = currentDate.toDateString() === new Date().toDateString();
-      const isClickable = isWeddingDay; // 결혼식 날짜만 클릭 가능
+      const isClickable = isWeddingDay;
 
-      // 해당 날짜의 이벤트 찾기
       const dayEvents = events.filter(event => event.date === day);
 
       days.push(
@@ -125,7 +126,6 @@ export default function WeddingCalendar({
       </div>
       
       <div className={styles.calendarWrapper}>
-        {/* 달력 헤더 - 월 표시만 (네비게이션 제거) */}
         <div className={styles.monthHeader}>
           <div className={styles.monthTitleContainer}>
             <h4 className={styles.monthTitle}>
@@ -137,7 +137,6 @@ export default function WeddingCalendar({
           </div>
         </div>
 
-        {/* 요일 헤더 */}
         <div className={styles.weekdaysHeader}>
           {weekdays.map(day => (
             <div key={day} className={styles.weekday}>
@@ -146,24 +145,18 @@ export default function WeddingCalendar({
           ))}
         </div>
 
-        {/* 달력 그리드 */}
         <div className={styles.calendarGrid}>
           {renderCalendarDays()}
         </div>
       </div>
       
-      {selectedDate && (
-        <div className={styles.selectedDate}>
-          <span className={styles.selectedIcon}>✨</span>
-          <span className={styles.selectedText}>
-            선택된 날짜: {selectedDate.toLocaleDateString('ko-KR', {
-              year: 'numeric',
-              month: 'long',
-              day: 'numeric'
-            })}
-          </span>
-        </div>
-      )}
+      {showCountdown && weddingDate ? (
+        <WeddingCountdown 
+          targetDate={weddingDate} 
+          title={countdownTitle}
+          showIcon={true}
+        />
+      ) : null}
       
       {weddingDate && (
         <div className={styles.weddingInfo}>

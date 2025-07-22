@@ -11,6 +11,7 @@ interface GalleryProps {
 export default function Gallery({ images, title = "소중한 순간들" }: GalleryProps) {
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [visibleCount, setVisibleCount] = useState(6); // 초기에 6장만 표시
+  const [imageSize, setImageSize] = useState({ width: 'auto', height: 'auto' });
   
   // 표시할 이미지들 (visibleCount만큼)
   const displayImages = images.slice(0, visibleCount);
@@ -19,10 +20,42 @@ export default function Gallery({ images, title = "소중한 순간들" }: Galle
   
   const openPopup = (image: string) => {
     setSelectedImage(image);
+    
+    // 이미지 크기 계산
+    const img = new Image();
+    img.onload = () => {
+      const viewportWidth = window.innerWidth;
+      const viewportHeight = window.innerHeight;
+      const padding = window.innerWidth >= 768 ? 80 : 40;
+      
+      const maxWidth = viewportWidth - padding;
+      const maxHeight = viewportHeight - padding;
+      
+      let newWidth = img.naturalWidth;
+      let newHeight = img.naturalHeight;
+      
+      // 비율을 유지하면서 크기 조정
+      if (newWidth > maxWidth) {
+        newHeight = (newHeight * maxWidth) / newWidth;
+        newWidth = maxWidth;
+      }
+      
+      if (newHeight > maxHeight) {
+        newWidth = (newWidth * maxHeight) / newHeight;
+        newHeight = maxHeight;
+      }
+      
+      setImageSize({
+        width: `${newWidth}px`,
+        height: `${newHeight}px`
+      });
+    };
+    img.src = image;
   };
   
   const closePopup = () => {
     setSelectedImage(null);
+    setImageSize({ width: 'auto', height: 'auto' });
   };
   
   const handleBackgroundClick = (e: React.MouseEvent) => {
@@ -41,7 +74,7 @@ export default function Gallery({ images, title = "소중한 순간들" }: Galle
     setVisibleCount(6);
   };
 
-  // ESC 키로 팝업 닫기
+  // ESC 키로 팝업 닫기 및 윈도우 리사이즈 처리
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape' && selectedImage) {
@@ -49,9 +82,17 @@ export default function Gallery({ images, title = "소중한 순간들" }: Galle
       }
     };
 
+    const handleResize = () => {
+      if (selectedImage) {
+        // 리사이즈 시 이미지 크기 재계산
+        openPopup(selectedImage);
+      }
+    };
+
     if (selectedImage) {
       // 이벤트 리스너 등록
       document.addEventListener('keydown', handleKeyDown);
+      window.addEventListener('resize', handleResize);
       
       // body 스크롤 방지 - CSS 클래스 사용
       document.body.classList.add('no-scroll');
@@ -59,6 +100,7 @@ export default function Gallery({ images, title = "소중한 순간들" }: Galle
 
     return () => {
       document.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('resize', handleResize);
       document.body.classList.remove('no-scroll');
     };
   }, [selectedImage]);
@@ -123,6 +165,13 @@ export default function Gallery({ images, title = "소중한 순간들" }: Galle
               src={selectedImage} 
               alt="확대 이미지" 
               className={styles.popupImage}
+              style={{ 
+                maxWidth: '100%', 
+                maxHeight: '100%',
+                width: imageSize.width,
+                height: imageSize.height,
+                objectFit: 'contain'
+              }}
             />
           </div>
         </div>

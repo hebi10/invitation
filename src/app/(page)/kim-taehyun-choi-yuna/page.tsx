@@ -9,121 +9,126 @@ import {
   Schedule, 
   LocationMap, 
   WeddingCalendar, 
+  Guestbook, 
   GiftInfo 
 } from '@/components';
 import { usePageImages } from '@/hooks';
 
 export default function KimTaehyunChoiYuna() {
   const [isLoading, setIsLoading] = useState(true);
-  const [imagePreloaded, setImagePreloaded] = useState(false);
   
-  // 🎯 간편한 이미지 사용!
   const { images, imageUrls, firstImage, hasImages, mainImage, galleryImages, loading: imagesLoading } = usePageImages('kim-taehyun-choi-yuna');
   
-  // 결혼식 날짜 설정
   const weddingDate = new Date(2024, 5, 8); // 2024년 6월 8일
   
-  // 기본 갤러리 이미지들
-  const mockImages = [
-    'https://images.unsplash.com/photo-1520854221256-17451cc331bf?w=400',
-    'https://images.unsplash.com/photo-1519741497674-611481863552?w=400',
-    'https://images.unsplash.com/photo-1520854221256-17451cc331bf?w=400',
-    'https://images.unsplash.com/photo-1511285560929-80b456fea0bc?w=400',
-    'https://images.unsplash.com/photo-1606216794074-735e91aa2c92?w=400',
-    'https://images.unsplash.com/photo-1583939003579-730e3918a45a?w=400'
-  ];
+  // 메인 이미지 URL 결정 (Firebase 이미지만 사용)
+  const mainImageUrl = mainImage?.url || "";
 
-  // 메인 이미지 URL 결정
-  const mainImageUrl = mainImage?.url || "https://images.unsplash.com/photo-1520854221256-17451cc331bf?w=400";
+  // 프리로드할 이미지들 (Firebase 갤러리 이미지만 사용)
+  const preloadImages = galleryImages.map(img => img.url);
 
-  // 이미지 프리로딩
-  useEffect(() => {
-    const preloadImage = new Image();
-    preloadImage.onload = () => setImagePreloaded(true);
-    preloadImage.src = mainImageUrl;
-  }, [mainImageUrl]);
-
-  const handleLoadComplete = () => {
-    // 로더가 완료되고 이미지가 프리로드되었을 때만 로딩 완료
-    if (imagePreloaded && !imagesLoading) {
-      setIsLoading(false);
+  const pageData = {
+    title: "김태현 ♡ 최유나",
+    subtitle: "영원한 사랑을 약속합니다",
+    coupleNames: "김태현 ♡ 최유나",
+    weddingDate: "2024년 6월 8일 토요일 오후 2시",
+    groomName: "김태현",
+    brideName: "최유나",
+    groomFamily: {
+      father: "김진수",
+      mother: "이미경",
+      relation: "차남"
+    },
+    brideFamily: {
+      father: "최경호",
+      mother: "박선희", 
+      relation: "장녀"
+    },
+    ceremony: {
+      date: "2024년 6월 8일 토요일",
+      time: "오후 2:00",
+      location: "로즈가든 웨딩홀",
+      address: "서울특별시 강남구 압구정로 456",
+      contact: "02-2345-6789"
+    },
+    reception: {
+      date: "2024년 6월 8일 토요일", 
+      time: "오후 3:30",
+      location: "로즈가든 웨딩홀 리셉션홀",
+      address: "서울특별시 강남구 압구정로 456"
+    },
+    contact: {
+      groom: {
+        name: "김태현",
+        phone: "010-2345-6789"
+      },
+      bride: {
+        name: "최유나", 
+        phone: "010-9876-5432"
+      },
+      groomParents: {
+        father: { name: "김진수", phone: "010-1111-3333" },
+        mother: { name: "이미경", phone: "010-4444-5555" }
+      },
+      brideParents: {
+        father: { name: "최경호", phone: "010-6666-7777" },
+        mother: { name: "박선희", phone: "010-8888-9999" }
+      }
+    },
+    accountInfo: {
+      groom: {
+        name: "김태현",
+        bank: "신한은행",
+        account: "110-123-456789"
+      },
+      bride: {
+        name: "최유나",
+        bank: "우리은행", 
+        account: "1002-234-567890"
+      },
+      groomParents: {
+        father: { name: "김진수", bank: "NH농협은행", account: "222-333-444555" },
+        mother: { name: "이미경", bank: "KB국민은행", account: "666-777-888999" }
+      },
+      brideParents: {
+        father: { name: "최경호", bank: "기업은행", account: "111-222-333444" },
+        mother: { name: "박선희", bank: "하나은행", account: "555-666-777888" }
+      }
     }
   };
 
-  // 이미지 프리로딩이 완료되면 자동으로 로딩 완료 준비
-  useEffect(() => {
-    if (imagePreloaded && !imagesLoading) {
-      // 이미지가 준비되었음을 표시하지만 로더가 완료될 때까지 기다림
-      console.log('Images ready, waiting for loader completion');
-    }
-  }, [imagePreloaded, imagesLoading]);
-
-  // 이미지 로딩과 페이지 로딩 둘 다 확인
   if (isLoading) {
     return (
-      <WeddingLoader
-        brideName="최유나"
+      <WeddingLoader 
         groomName="김태현"
-        onLoadComplete={handleLoadComplete}
+        brideName="최유나"
+        onLoadComplete={() => setIsLoading(false)}
+        mainImage={mainImageUrl}
+        preloadImages={preloadImages}
         duration={3000}
       />
     );
   }
 
   return (
-    <div>
-      <Cover
-        title="Wedding Invitation"
-        subtitle="영원한 사랑을 약속합니다"
+    <main>
+      <Cover 
+        title={pageData.title}
+        subtitle={pageData.subtitle} 
+        weddingDate={pageData.weddingDate}
         imageUrl={mainImageUrl}
-        brideName="최유나"
-        groomName="김태현"
-        weddingDate="2024년 6월 8일 토요일"
-        preloadComplete={imagePreloaded && !imagesLoading}
+        brideName={pageData.brideName}
+        groomName={pageData.groomName}
       />
-      
-      <Greeting
-        message={`
-            여러분의 사랑으로 성장한 저희가
-            이제 한 가정을 이루려고 합니다.
-
-            늘 곁에서 사랑으로 돌봐주신 분들이 계셨기에
-            오늘의 저희가 있을 수 있었습니다.
-
-            저희의 첫걸음을 지켜봐 주세요.
-        `}
-        author="김태현 & 최유나"
+      <Greeting 
+        message="두 사람이 사랑으로 하나가 되는 순간을 함께해 주시는 모든 분들께 감사드립니다. 새로운 시작을 따뜻한 마음으로 축복해 주시면 더없는 기쁨이겠습니다."
+        author="김태현 · 최유나"
       />
-      
-      <Gallery
-        title="영원히 함께"
-        images={galleryImages.length > 0 ? galleryImages.map(img => img.url) : mockImages}
+      <Gallery 
+        images={galleryImages.map(img => img.url)}
       />
-      
-      <Schedule
-        date="2024년 6월 8일 토요일"
-        time="오후 1시"
-        venue="엘리시안 웨딩홀"
-        address="서울시 강남구 논현로 825"
-        ceremony={{
-          time: "오후 1:00",
-          location: "B1층 엘리시안홀"
-        }}
-        reception={{
-          time: "오후 2:30",
-          location: "1층 가든파티룸"
-        }}
-      />
-      
-      <LocationMap
-        mapUrl="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3165.1234567890!2d127.123456!3d37.123456!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zMzfCsDA3JzI0LjQiTiAxMjfCsDA3JzI0LjQiRQ!5e0!3m2!1sko!2skr!4v1234567890123"
-        address="서울시 강남구 논현로 825"
-        venueName="엘리시안 웨딩홀"
-        description="지하철 7호선 논현역 3번 출구에서 도보 5분"
-      />
-      
-      <WeddingCalendar
-        title="소중한 날을 기억해주세요"
+      <WeddingCalendar 
+        title="행복한 순간을 함께하세요"
         weddingDate={weddingDate}
         currentMonth={weddingDate}
         events={[
@@ -131,27 +136,40 @@ export default function KimTaehyunChoiYuna() {
             date: weddingDate.getDate(),
             type: 'wedding',
             title: '김태현 ♥ 최유나 결혼식',
-            description: '오후 2시 30분 엘리시안 웨딩홀'
+            description: '오후 2시 로즈가든 웨딩홀'
           }
         ]}
+        showCountdown={true}
+        countdownTitle="결혼식까지"
         onDateClick={(date) => {
           console.log('선택된 날짜:', date);
         }}
       />
-      
-      <GiftInfo
+      <Schedule 
+        date={pageData.ceremony.date}
+        time={pageData.ceremony.time}
+        venue={pageData.ceremony.location}
+        address={pageData.ceremony.address}
+      />
+      <LocationMap 
+        venueName={pageData.ceremony.location}
+        address={pageData.ceremony.address}
+        description="지하철 이용 시 로즈가든 웨딩홀까지 편리하게 오실 수 있습니다"
+      />
+      <Guestbook pageSlug="kim-taehyun-choi-yuna" />
+      <GiftInfo 
         groomAccount={{
-          bank: "신한은행",
-          accountNumber: "110-456-789012",
-          accountHolder: "김태현"
+          bank: pageData.accountInfo.groom.bank,
+          accountNumber: pageData.accountInfo.groom.account,
+          accountHolder: pageData.accountInfo.groom.name
         }}
         brideAccount={{
-          bank: "카카오뱅크",
-          accountNumber: "3333-01-1234567",
-          accountHolder: "최유나"
+          bank: pageData.accountInfo.bride.bank,
+          accountNumber: pageData.accountInfo.bride.account,
+          accountHolder: pageData.accountInfo.bride.name
         }}
-        message="참석만으로도 큰 축복입니다. 따뜻한 마음 감사히 받겠습니다."
+        message="마음만으로도 충분합니다. 축하의 뜻으로 전해주시는 축의금은 소중히 받겠습니다."
       />
-    </div>
+    </main>
   );
 }

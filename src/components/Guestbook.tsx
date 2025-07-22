@@ -201,18 +201,8 @@ export default function Guestbook({ pageSlug }: GuestbookProps) {
   const handlePageChangeWithAnimation = (page: number) => {
     if (page === currentPage) return;
     
-    // 부드러운 스크롤 효과
-    const commentsSection = document.querySelector(`.${styles.commentsSection}`);
-    if (commentsSection) {
-      commentsSection.scrollIntoView({ 
-        behavior: 'smooth', 
-        block: 'start' 
-      });
-    }
-    
-    setTimeout(() => {
-      handlePageChange(page);
-    }, 150);
+    // 스크롤 없이 바로 페이지 변경
+    handlePageChange(page);
   };
 
   // 모바일 감지 hook

@@ -1,5 +1,6 @@
 /* CSS 변수 정의 - 청첩장 컬러 팔레트 */
 :root {
+  /* 기본 Classic 테마 변수 */
   --primary-color: #d4a574;        /* 따뜻한 골드 */
   --secondary-color: #8d6e63;      /* 우아한 브라운 */
   --accent-color: #f5e6d3;         /* 부드러운 크림 */
@@ -53,7 +54,8 @@ body {
     max-width: 100vw;
     overflow-x: hidden;
     line-height: 1.6;
-    background-color: var(--background-warm);
+    background-color: var(--theme-backgroundWarm);
+    transition: background-color 0.3s ease;
 }
 
 body {
@@ -67,6 +69,7 @@ body {
     word-break: keep-all;
     overflow-wrap: break-word;
     line-height: 1.65;
+    transition: color 0.3s ease;
 }
 
 ol, ul {

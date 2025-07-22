@@ -9,133 +9,126 @@ import {
   Schedule, 
   LocationMap, 
   WeddingCalendar, 
-  Guestbook, 
-  GiftInfo 
+  GiftInfo, 
+  Guestbook
 } from '@/components';
 import { usePageImages } from '@/hooks';
 
 export default function ShinMinJeKimHyunJi() {
   const [isLoading, setIsLoading] = useState(true);
-  const [imagePreloaded, setImagePreloaded] = useState(false);
   
-  // 🎯 간편한 이미지 사용!
   const { images, imageUrls, firstImage, hasImages, mainImage, galleryImages, loading: imagesLoading } = usePageImages('shin-minje-kim-hyunji');
   
-  // 결혼식 날짜 설정
-  const weddingDate = new Date(2024, 3, 14); // 2024년 4월 14일
+  const weddingDate = new Date(2026, 3, 14);
   
-  // 기본 갤러리 이미지들 (테스트용 - 더 많은 이미지 추가)
-  const mockImages = [
-    'https://images.unsplash.com/photo-1511285560929-80b456fea0bc?w=400',
-    'https://images.unsplash.com/photo-1519741497674-611481863552?w=400',
-    'https://images.unsplash.com/photo-1520854221256-17451cc331bf?w=400',
-    'https://images.unsplash.com/photo-1606216794074-735e91aa2c92?w=400',
-    'https://images.unsplash.com/photo-1583939003579-730e3918a45a?w=400',
-    'https://images.unsplash.com/photo-1511285560929-80b456fea0bc?w=400',
-    'https://images.unsplash.com/photo-1545558014-8692077e9b5c?w=400',
-    'https://images.unsplash.com/photo-1522673607200-164d1b6ce486?w=400',
-    'https://images.unsplash.com/photo-1469371670807-013ccf25f16a?w=400',
-    'https://images.unsplash.com/photo-1545558014-8692077e9b5c?w=400',
-    'https://images.unsplash.com/photo-1511285560929-80b456fea0bc?w=400',
-    'https://images.unsplash.com/photo-1519741497674-611481863552?w=400',
-    'https://images.unsplash.com/photo-1520854221256-17451cc331bf?w=400',
-    'https://images.unsplash.com/photo-1606216794074-735e91aa2c92?w=400',
-    'https://images.unsplash.com/photo-1583939003579-730e3918a45a?w=400',
-    'https://images.unsplash.com/photo-1520854221256-17451cc331bf?w=400',
-    'https://images.unsplash.com/photo-1606216794074-735e91aa2c92?w=400',
-    'https://images.unsplash.com/photo-1583939003579-730e3918a45a?w=400'
-  ];
+  // 메인 이미지 URL 결정 (Firebase 이미지만 사용)
+  const mainImageUrl = mainImage?.url || "";
 
-  // 메인 이미지 URL 결정
-  const mainImageUrl = mainImage?.url || "https://images.unsplash.com/photo-1519741497674-611481863552?w=400";
+  // 프리로드할 이미지들 (Firebase 갤러리 이미지만 사용)
+  const preloadImages = galleryImages.map(img => img.url);
 
-  // 이미지 프리로딩
-  useEffect(() => {
-    const preloadImage = new Image();
-    preloadImage.onload = () => setImagePreloaded(true);
-    preloadImage.src = mainImageUrl;
-  }, [mainImageUrl]);
-
-  const handleLoadComplete = () => {
-    // 로더가 완료되고 이미지가 프리로드되었을 때만 로딩 완료
-    if (imagePreloaded && !imagesLoading) {
-      setIsLoading(false);
+  const pageData = {
+    title: "신민제 ♡ 김현지",
+    subtitle: "두 사람이 사랑으로 하나가 되는 날",
+    coupleNames: "신민제 ♡ 김현지",
+    weddingDate: "2026년 4월 14일 토요일 오후 3시",
+    groomName: "신민제",
+    brideName: "김현지",
+    groomFamily: {
+      father: "신동현",
+      mother: "박미영",
+      relation: "장남"
+    },
+    brideFamily: {
+      father: "김태준",
+      mother: "이소영", 
+      relation: "장녀"
+    },
+    ceremony: {
+      date: "2026년 4월 14일 토요일",
+      time: "오후 3:00",
+      location: "더케이웨딩홀",
+      address: "서울특별시 강남구 테헤란로 123",
+      contact: "02-1234-5678"
+    },
+    reception: {
+      date: "2026년 4월 14일 토요일", 
+      time: "오후 4:30",
+      location: "더케이웨딩홀 리셉션홀",
+      address: "서울특별시 강남구 테헤란로 123"
+    },
+    contact: {
+      groom: {
+        name: "신민제",
+        phone: "010-1234-5678"
+      },
+      bride: {
+        name: "김현지", 
+        phone: "010-8765-4321"
+      },
+      groomParents: {
+        father: { name: "신동현", phone: "010-1111-2222" },
+        mother: { name: "박미영", phone: "010-3333-4444" }
+      },
+      brideParents: {
+        father: { name: "김태준", phone: "010-5555-6666" },
+        mother: { name: "이소영", phone: "010-7777-8888" }
+      }
+    },
+    accountInfo: {
+      groom: {
+        name: "신민제",
+        bank: "국민은행",
+        account: "123456-78-901234"
+      },
+      bride: {
+        name: "김현지",
+        bank: "신한은행", 
+        account: "567890-12-345678"
+      },
+      groomParents: {
+        father: { name: "신동현", bank: "우리은행", account: "111-222-333444" },
+        mother: { name: "박미영", bank: "하나은행", account: "555-666-777888" }
+      },
+      brideParents: {
+        father: { name: "김태준", bank: "KB국민은행", account: "999-000-111222" },
+        mother: { name: "이소영", bank: "기업은행", account: "333-444-555666" }
+      }
     }
   };
 
-  // 이미지 프리로딩이 완료되면 자동으로 로딩 완료 준비
-  useEffect(() => {
-    if (imagePreloaded && !imagesLoading) {
-      // 이미지가 준비되었음을 표시하지만 로더가 완료될 때까지 기다림
-      console.log('Images ready, waiting for loader completion');
-    }
-  }, [imagePreloaded, imagesLoading]);
-
   if (isLoading) {
     return (
-      <WeddingLoader
-        brideName="김현지"
+      <WeddingLoader 
         groomName="신민제"
-        onLoadComplete={handleLoadComplete}
+        brideName="김현지"
+        onLoadComplete={() => setIsLoading(false)}
+        mainImage={mainImageUrl}
+        preloadImages={preloadImages}
         duration={3000}
       />
     );
   }
 
   return (
-    <div>
-      <Cover
-        title="Wedding Invitation"
-        subtitle="우리의 특별한 날에 함께해주세요"
+    <main>
+      <Cover 
+        title={pageData.title}
+        subtitle={pageData.subtitle} 
+        weddingDate={pageData.weddingDate}
         imageUrl={mainImageUrl}
-        brideName="김현지"
-        groomName="신민제"
-        weddingDate="2024년 4월 14일 일요일"
-        preloadComplete={imagePreloaded && !imagesLoading}
+        brideName={pageData.brideName}
+        groomName={pageData.groomName}
       />
-      
-      <Greeting
-        message={`
-            소중한 분들을 초대합니다.
-            
-            서로 다른 길을 걸어온 저희가
-            이제 하나의 길을 함께 걸어가려 합니다.
-            
-            저희의 새로운 시작을
-            축복해 주시면 감사하겠습니다.
-        `}
-        author="신민제 & 김현지"
+      <Greeting 
+        message="두 사람이 사랑으로 하나가 되는 순간을 함께해 주시는 모든 분들께 감사드립니다. 새로운 시작을 따뜻한 마음으로 축복해 주시면 더없는 기쁨이겠습니다."
+        author="신민제 · 김현지"
       />
-      
-      <Gallery
-        title="우리의 이야기"
-        images={galleryImages.length > 0 ? galleryImages.map(img => img.url) : mockImages}
+      <Gallery 
+        images={galleryImages.map(img => img.url)}
       />
-      
-      <Schedule
-        date="2024년 4월 14일 일요일"
-        time="오후 2시"
-        venue="드림웨딩홀"
-        address="서울시 서초구 서초대로 78길 15"
-        ceremony={{
-          time: "오후 2:00",
-          location: "3층 드림홀"
-        }}
-        reception={{
-          time: "오후 3:30",
-          location: "2층 연회장"
-        }}
-      />
-      
-      <LocationMap
-        mapUrl="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3165.4567890123!2d127.098765!3d37.456789!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zMzfCsDA3JzI0LjQiTiAxMjfCsDA3JzI0LjQiRQ!5e0!3m2!1sko!2skr!4v1234567890123"
-        address="서울시 서초구 서초대로 78길 15"
-        venueName="드림웨딩홀"
-        description="지하철 2호선 서초역 4번 출구에서 도보 7분"
-      />
-      
-      <WeddingCalendar
-        title="우리가 만나는 특별한 날"
+      <WeddingCalendar 
+        title="행복한 순간을 함께하세요"
         weddingDate={weddingDate}
         currentMonth={weddingDate}
         events={[
@@ -143,29 +136,40 @@ export default function ShinMinJeKimHyunJi() {
             date: weddingDate.getDate(),
             type: 'wedding',
             title: '신민제 ♥ 김현지 결혼식',
-            description: '오후 2시 드림웨딩홀'
+            description: '오후 3시 더케이웨딩홀'
           }
         ]}
+        showCountdown={true}
+        countdownTitle="결혼식까지"
         onDateClick={(date) => {
           console.log('선택된 날짜:', date);
         }}
       />
-      
+      <Schedule 
+        date={pageData.ceremony.date}
+        time={pageData.ceremony.time}
+        venue={pageData.ceremony.location}
+        address={pageData.ceremony.address}
+      />
+      <LocationMap 
+        venueName={pageData.ceremony.location}
+        address={pageData.ceremony.address}
+        description="지하철 이용 시 더케이웨딩홀까지 편리하게 오실 수 있습니다"
+      />
       <Guestbook pageSlug="shin-minje-kim-hyunji" />
-      
-      <GiftInfo
+      <GiftInfo 
         groomAccount={{
-          bank: "우리은행",
-          accountNumber: "1002-567-890123",
-          accountHolder: "신민제"
+          bank: pageData.accountInfo.groom.bank,
+          accountNumber: pageData.accountInfo.groom.account,
+          accountHolder: pageData.accountInfo.groom.name
         }}
         brideAccount={{
-          bank: "국민은행",
-          accountNumber: "456789-01-234567",
-          accountHolder: "김현지"
+          bank: pageData.accountInfo.bride.bank,
+          accountNumber: pageData.accountInfo.bride.account,
+          accountHolder: pageData.accountInfo.bride.name
         }}
-        message="소중한 마음만으로도 충분합니다. 함께해 주셔서 감사합니다."
+        message="마음만으로도 충분합니다. 축하의 뜻으로 전해주시는 축의금은 소중히 받겠습니다."
       />
-    </div>
+    </main>
   );
 }

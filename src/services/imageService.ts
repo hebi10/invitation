@@ -44,7 +44,6 @@ const initFirebase = async () => {
           deleteObject: storageModule.deleteObject,
           listAll: storageModule.listAll
         };
-        console.log('✅ Firebase storage modules initialized successfully');
         return;
       }
       
@@ -59,37 +58,8 @@ const initFirebase = async () => {
   }
 };
 
-// 목록 페이지용 이미지 목데이터
-const MOCK_IMAGE_CATEGORIES = {
-  "greeting": [
-    {
-      name: "greeting-1.jpg",
-      url: "/images/greeting-1.jpg",
-      path: "wedding-images/greeting/greeting-1.jpg",
-      uploadedAt: new Date('2024-01-01')
-    },
-    {
-      name: "greeting-2.jpg",
-      url: "/images/greeting-2.jpg",
-      path: "wedding-images/greeting/greeting-2.jpg",
-      uploadedAt: new Date('2024-01-02')
-    }
-  ],
-  "gallery": [
-    {
-      name: "gallery-1.jpg",
-      url: "/images/gallery-1.jpg",
-      path: "wedding-images/gallery/gallery-1.jpg",
-      uploadedAt: new Date('2024-01-01')
-    },
-    {
-      name: "gallery-2.jpg",
-      url: "/images/gallery-2.jpg",
-      path: "wedding-images/gallery/gallery-2.jpg",
-      uploadedAt: new Date('2024-01-02')
-    }
-  ]
-};
+// 목록 페이지용 이미지 목데이터 (Firebase 전용 모드에서는 사용하지 않음)
+const MOCK_IMAGE_CATEGORIES = {};
 
 export const uploadImage = async (file: File, pageSlug: string): Promise<UploadedImage> => {
   if (!USE_FIREBASE) {
@@ -129,15 +99,15 @@ export const uploadImage = async (file: File, pageSlug: string): Promise<Uploade
 
 export const getImagesByPage = async (pageSlug: string): Promise<UploadedImage[]> => {
   if (!USE_FIREBASE) {
-    // Mock 데이터 반환
-    return MOCK_IMAGE_CATEGORIES[pageSlug as keyof typeof MOCK_IMAGE_CATEGORIES] || [];
+    // Firebase가 비활성화된 경우 빈 배열 반환
+    return [];
   }
 
   await initFirebase();
   
   if (!firebaseModules?.storage) {
-    console.warn('Firebase가 초기화되지 않았습니다. Mock 데이터를 반환합니다.');
-    return MOCK_IMAGE_CATEGORIES[pageSlug as keyof typeof MOCK_IMAGE_CATEGORIES] || [];
+    console.warn('Firebase가 초기화되지 않았습니다.');
+    return [];
   }
 
   try {
@@ -159,8 +129,8 @@ export const getImagesByPage = async (pageSlug: string): Promise<UploadedImage[]
     return images.sort((a, b) => a.uploadedAt.getTime() - b.uploadedAt.getTime());
   } catch (error) {
     console.error('이미지 목록 조회 중 오류 발생:', error);
-    // Firebase 오류 시 Mock 데이터 반환
-    return MOCK_IMAGE_CATEGORIES[pageSlug as keyof typeof MOCK_IMAGE_CATEGORIES] || [];
+    // Firebase 오류 시 빈 배열 반환
+    return [];
   }
 };
 
@@ -188,15 +158,15 @@ export const deleteImage = async (imagePath: string): Promise<void> => {
 
 export const getAllPageImages = async (): Promise<{ [pageSlug: string]: UploadedImage[] }> => {
   if (!USE_FIREBASE) {
-    // Mock 데이터 반환
-    return MOCK_IMAGE_CATEGORIES;
+    // Firebase가 비활성화된 경우 빈 객체 반환
+    return {};
   }
 
   await initFirebase();
   
   if (!firebaseModules?.storage) {
-    console.warn('Firebase가 초기화되지 않았습니다. Mock 데이터를 반환합니다.');
-    return MOCK_IMAGE_CATEGORIES;
+    console.warn('Firebase가 초기화되지 않았습니다.');
+    return {};
   }
 
   try {
@@ -216,8 +186,8 @@ export const getAllPageImages = async (): Promise<{ [pageSlug: string]: Uploaded
     return allPageImages;
   } catch (error) {
     console.error('전체 이미지 목록 조회 중 오류 발생:', error);
-    // Firebase 오류 시 Mock 데이터 반환
-    return MOCK_IMAGE_CATEGORIES;
+    // Firebase 오류 시 빈 객체 반환
+    return {};
   }
 };
 

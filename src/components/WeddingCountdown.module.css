@@ -1,0 +1,134 @@
+.countdownContainer {
+  background: linear-gradient(135deg, 
+    rgba(255, 255, 255, 1) 0%, 
+    rgba(252, 248, 243, 0.8) 50%, 
+    rgba(255, 255, 255, 1) 100%);
+  border-radius: 16px;
+  padding: 1.5rem;
+  margin: 1rem 0;
+  text-align: center;
+  box-shadow: 0 4px 16px rgba(212, 165, 116, 0.1);
+  border: 1px solid rgba(212, 165, 116, 0.15);
+}
+
+.icon {
+  font-size: 1.2rem;
+  margin-bottom: 0.5rem;
+  display: inline-block;
+  opacity: 0.7;
+}
+
+.content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+
+.title {
+  font-size: 1rem;
+  font-weight: 400;
+  color: var(--text-primary);
+  margin: 0;
+  font-family: var(--font-serif);
+  letter-spacing: 0.3px;
+}
+
+.timeDisplay {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.timeUnit {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 50px;
+  padding: 0.75rem 0.5rem;
+  background: rgba(255, 255, 255, 0.8);
+  border-radius: 8px;
+  border: 1px solid rgba(212, 165, 116, 0.15);
+  box-shadow: 0 1px 4px rgba(212, 165, 116, 0.05);
+}
+
+.timeNumber {
+  font-size: 1.5rem;
+  font-weight: 500;
+  color: var(--primary-color);
+  font-family: var(--font-sans);
+  line-height: 1;
+}
+
+.timeLabel {
+  font-size: 0.7rem;
+  color: var(--text-light);
+  font-weight: 400;
+  margin-top: 0.2rem;
+  font-family: var(--font-sans);
+}
+
+.separator {
+  font-size: 1rem;
+  font-weight: 300;
+  color: var(--text-secondary);
+  margin: 0 0.1rem;
+  opacity: 0.5;
+}
+
+.subtitle {
+  font-size: 0.85rem;
+  color: var(--text-light);
+  margin: 0;
+  font-family: var(--font-sans);
+}
+
+/* 반응형 디자인 */
+@media (max-width: 768px) {
+  .countdownContainer {
+    padding: 1.25rem 1rem;
+    margin: 0.75rem 0;
+  }
+
+  .timeDisplay {
+    gap: 0.5rem;
+  }
+
+  .timeUnit {
+    min-width: 45px;
+    padding: 0.625rem 0.375rem;
+  }
+
+  .timeNumber {
+    font-size: 1.3rem;
+  }
+
+  .timeLabel {
+    font-size: 0.65rem;
+  }
+
+  .title {
+    font-size: 0.9rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .timeUnit {
+    min-width: 40px;
+    padding: 0.5rem 0.25rem;
+  }
+
+  .timeNumber {
+    font-size: 1.1rem;
+  }
+
+  .timeLabel {
+    font-size: 0.6rem;
+  }
+
+  .timeDisplay {
+    gap: 0.375rem;
+  }
+}

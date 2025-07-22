@@ -4,7 +4,7 @@
   align-items: center;
   justify-content: center;
   min-height: 100vh;
-  background: linear-gradient(135deg, #faf8f5 0%, #f5e6d3 50%, #e8ddd4 100%);
+  background: rgba(212, 165, 116, 0.15);
   text-align: center;
   padding: 2rem 1rem;
   max-width: 768px;
@@ -20,8 +20,12 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background-image: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grain" width="100" height="100" patternUnits="userSpaceOnUse"><circle cx="50" cy="50" r="0.5" fill="%23d4a574" opacity="0.1"/></pattern></defs><rect width="100" height="100" fill="url(%23grain)"/></svg>');
+  background-image: 
+    radial-gradient(circle at 15% 85%, rgba(241, 221, 196, 0.4) 0%, transparent 40%),
+    radial-gradient(circle at 85% 15%, rgba(241, 221, 196, 0.3) 0%, transparent 35%),
+    radial-gradient(circle at 50% 50%, rgba(248, 243, 234, 0.5) 0%, transparent 30%);
   pointer-events: none;
+  opacity: 0.8;
 }
 
 @media (min-width: 768px) {

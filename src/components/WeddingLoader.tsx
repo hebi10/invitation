@@ -6,38 +6,85 @@ interface WeddingLoaderProps {
   groomName: string;
   onLoadComplete: () => void;
   duration?: number;
+  preloadImages?: string[]; // 프리로드할 이미지 URL 배열
+  mainImage?: string; // 메인 이미지 URL
 }
 
 const WeddingLoader: React.FC<WeddingLoaderProps> = ({
   brideName,
   groomName,
   onLoadComplete,
-  duration = 3000
+  duration = 3000,
+  preloadImages = [],
+  mainImage
 }) => {
   const [progress, setProgress] = useState(0);
   const [currentMessage, setCurrentMessage] = useState(0);
+  const [imagesLoaded, setImagesLoaded] = useState(false);
+  const [minTimeElapsed, setMinTimeElapsed] = useState(false);
 
   const loadingMessages = [
     '사랑스러운 순간을 준비하고 있어요...',
-    '아름다운 청첩장을 만들고 있어요...',
+    '아름다운 이미지를 불러오고 있어요...',
     '특별한 날을 위한 설정 중...',
     '행복한 순간이 곧 시작됩니다!'
   ];
+
+  // 이미지 프리로딩
+  useEffect(() => {
+    const imagesToLoad = [];
+    if (mainImage) imagesToLoad.push(mainImage);
+    imagesToLoad.push(...preloadImages);
+
+    if (imagesToLoad.length === 0) {
+      setImagesLoaded(true);
+      return;
+    }
+
+    let loadedCount = 0;
+    const totalImages = imagesToLoad.length;
+
+    const preloadPromises = imagesToLoad.map((imageUrl) => {
+      return new Promise((resolve, reject) => {
+        const img = new Image();
+        img.onload = () => {
+          loadedCount++;
+          resolve(imageUrl);
+        };
+        img.onerror = () => {
+          loadedCount++;
+          resolve(imageUrl); // 실패해도 진행
+        };
+        img.src = imageUrl;
+      });
+    });
+
+    Promise.all(preloadPromises).then(() => {
+      setImagesLoaded(true);
+    });
+  }, [mainImage, preloadImages]);
 
   useEffect(() => {
     const startTime = Date.now();
     
     const progressInterval = setInterval(() => {
       const elapsed = Date.now() - startTime;
-      const calculatedProgress = Math.min((elapsed / duration) * 100, 100);
+      const timeProgress = Math.min((elapsed / duration) * 100, 100);
       
-      setProgress(calculatedProgress);
+      // 단순한 진행률: 시간 기반으로만 계산
+      setProgress(timeProgress);
       
-      if (calculatedProgress >= 100) {
-        clearInterval(progressInterval);
-        setTimeout(onLoadComplete, 200); // 더 빠른 응답을 위해 500ms에서 200ms로 단축
+      // 최소 시간 체크
+      if (elapsed >= 2000) {
+        setMinTimeElapsed(true);
       }
-    }, 50); // 더 부드러운 애니메이션을 위해 100ms에서 50ms로 단축
+      
+      // 이미지 로딩 완료 + 최소 시간 경과 + 진행률 100% 시 완료
+      if (imagesLoaded && minTimeElapsed && timeProgress >= 100) {
+        clearInterval(progressInterval);
+        setTimeout(onLoadComplete, 300);
+      }
+    }, 50);
 
     const messageInterval = setInterval(() => {
       setCurrentMessage(prev => (prev + 1) % loadingMessages.length);
@@ -47,7 +94,7 @@ const WeddingLoader: React.FC<WeddingLoaderProps> = ({
       clearInterval(progressInterval);
       clearInterval(messageInterval);
     };
-  }, [duration, onLoadComplete, loadingMessages.length]);
+  }, [duration, onLoadComplete, loadingMessages.length, imagesLoaded, minTimeElapsed]);
 
   return (
     <div className={styles.loaderContainer}>

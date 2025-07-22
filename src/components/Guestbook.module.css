@@ -723,7 +723,7 @@
   font-family: 'Noto Serif KR', serif;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.2s ease;
   min-width: 44px;
   display: flex;
   align-items: center;
@@ -736,8 +736,7 @@
 .pageNumber:hover {
   background: rgba(212, 165, 116, 0.15);
   border-color: var(--primary-color);
-  transform: translateY(-2px) scale(1.05);
-  box-shadow: 0 4px 12px rgba(212, 165, 116, 0.3);
+  box-shadow: 0 2px 8px rgba(212, 165, 116, 0.2);
 }
 
 .pageNumber:focus {
@@ -746,45 +745,14 @@
 }
 
 .pageNumber:active {
-  transform: translateY(-1px) scale(1.02);
+  transform: scale(0.95);
 }
 
 .pageNumber.active {
-  background: linear-gradient(135deg, var(--primary-color), rgba(212, 165, 116, 0.9));
+  background: var(--primary-color);
   color: white;
   border-color: var(--primary-color);
-  box-shadow: 0 4px 16px rgba(212, 165, 116, 0.4);
-  transform: scale(1.1);
-  animation: activePagePulse 2s infinite;
-}
-
-.pageNumber.active::after {
-  content: '';
-  position: absolute;
-  top: -2px;
-  left: -2px;
-  right: -2px;
-  bottom: -2px;
-  border-radius: 12px;
-  background: linear-gradient(45deg, var(--primary-color), rgba(212, 165, 116, 0.6));
-  z-index: -1;
-  animation: shimmer 2s infinite;
-}
-
-@keyframes activePagePulse {
-  0%, 100% { 
-    transform: scale(1.1);
-    box-shadow: 0 4px 16px rgba(212, 165, 116, 0.4);
-  }
-  50% { 
-    transform: scale(1.15);
-    box-shadow: 0 6px 20px rgba(212, 165, 116, 0.5);
-  }
-}
-
-@keyframes shimmer {
-  0%, 100% { opacity: 0.5; }
-  50% { opacity: 1; }
+  box-shadow: 0 2px 8px rgba(212, 165, 116, 0.3);
 }
 
 /* Ellipsis 스타일 개선 */
@@ -798,24 +766,11 @@
   justify-content: center;
   user-select: none;
   opacity: 0.7;
-  animation: ellipsisPulse 2s infinite;
-  transition: all 0.3s ease;
 }
 
 .ellipsis:hover {
   opacity: 1;
   transform: scale(1.1);
-}
-
-@keyframes ellipsisPulse {
-  0%, 100% { 
-    opacity: 0.7;
-    transform: scale(1);
-  }
-  50% { 
-    opacity: 1;
-    transform: scale(1.05);
-  }
 }
 
 /* 로딩 애니메이션 */

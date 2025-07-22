@@ -8,6 +8,7 @@ export { default as Guestbook } from './Guestbook';
 export { default as GiftInfo } from './GiftInfo';
 export { default as WeddingCalendar } from './WeddingCalendar';
 export { default as WeddingLoader } from './WeddingLoader';
+export { default as WeddingCountdown } from './WeddingCountdown';
 
 // 관리자 전용 컴포넌트들
 export { default as ImageManager } from './ImageManager';
