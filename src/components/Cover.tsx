@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import styles from './Cover.module.css';
 
 interface CoverProps {
@@ -14,7 +14,7 @@ interface CoverProps {
   preloadComplete?: boolean; // 페이지 로딩 완료 상태
 }
 
-export default function Cover({ 
+const Cover = React.memo(function Cover({ 
   title, 
   subtitle, 
   imageUrl, 
@@ -80,4 +80,6 @@ export default function Cover({
       <p className={styles.weddingDate}>{weddingDate}</p>
     </div>
   );
-}
+});
+
+export default Cover;

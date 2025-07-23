@@ -49,22 +49,12 @@
   transform: scale(0.98);
 }
 
-.titleIcon {
-  font-size: 1.5rem;
-  animation: pulse 2s infinite;
-}
-
-@keyframes pulse {
-  0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.1); }
-}
-
 .title {
   font-size: clamp(1.6rem, 5vw, 2.2rem);
   color: var(--primary-color);
   margin: 0;
   font-weight: 400;
-  font-family: 'Dancing Script', cursive;
+  font-family: var(--font-serif);
   text-shadow: 1px 1px 2px rgba(212, 165, 116, 0.3);
   word-break: keep-all;
   overflow-wrap: break-word;

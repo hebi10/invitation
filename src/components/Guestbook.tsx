@@ -266,9 +266,7 @@ export default function Guestbook({ pageSlug }: GuestbookProps) {
           title="신랑신부님은 여기를 더블클릭/더블탭하세요"
           style={{ cursor: 'pointer', userSelect: 'none' }}
         >
-          <span className={styles.titleIcon}>💝</span>
           <h2 className={styles.title}>축하 메시지</h2>
-          <span className={styles.titleIcon}>💝</span>
         </div>
         <p className={styles.subtitle}>
           저희의 소중한 날을 함께 축하해 주세요

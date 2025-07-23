@@ -120,9 +120,7 @@ export default function WeddingCalendar({
   return (
     <div className={styles.container}>
       <div className={styles.header}>
-        <span className={styles.titleIcon}>💝</span>
-        <h3 className={styles.title}>{title}</h3>
-        <span className={styles.titleIcon}>💝</span>
+        <h2 className={styles.title}>{title}</h2>
       </div>
       
       <div className={styles.calendarWrapper}>

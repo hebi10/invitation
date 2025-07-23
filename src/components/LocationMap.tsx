@@ -69,9 +69,7 @@ export default function LocationMap({
       {mapUrl ? (
         <div className={styles.container}>
           <div className={styles.header}>
-            <span className={styles.titleIcon}>🗺️</span>
             <h2 className={styles.title}>오시는 길</h2>
-            <span className={styles.titleIcon}>🗺️</span>
           </div>
 
           <div className={styles.mapContainer}>

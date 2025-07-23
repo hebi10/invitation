@@ -84,9 +84,9 @@ const WeddingLoader: React.FC<WeddingLoaderProps> = ({
       // 이미지 로딩 완료 + 최소 시간 경과 + 진행률 100% 시 완료
       if (imagesLoaded && minTimeElapsed && timeProgress >= 100) {
         clearInterval(progressInterval);
-        setTimeout(onLoadComplete, 300);
+        setTimeout(onLoadComplete, 200); // 300ms에서 200ms로 단축
       }
-    }, 50);
+    }, 100); // 50ms에서 100ms로 변경하여 CPU 사용량 감소
 
     const messageInterval = setInterval(() => {
       setCurrentMessage(prev => (prev + 1) % loadingMessages.length);

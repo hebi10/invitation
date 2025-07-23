@@ -8,6 +8,10 @@ export interface UploadedImage {
 // Firebase 사용 여부 확인
 const USE_FIREBASE = process.env.NEXT_PUBLIC_USE_FIREBASE === 'true';
 
+// 이미지 캐시
+const imageCache = new Map<string, UploadedImage[]>();
+const CACHE_DURATION = 5 * 60 * 1000; // 5분
+
 // Dynamic Firebase imports
 let firebaseModules: {
   storage: any;
@@ -98,6 +102,13 @@ export const uploadImage = async (file: File, pageSlug: string): Promise<Uploade
 };
 
 export const getImagesByPage = async (pageSlug: string): Promise<UploadedImage[]> => {
+  // 캐시 확인
+  const cacheKey = `${pageSlug}_${Date.now()}`;
+  const cachedData = imageCache.get(pageSlug);
+  if (cachedData) {
+    return cachedData;
+  }
+
   if (!USE_FIREBASE) {
     // Firebase가 비활성화된 경우 빈 배열 반환
     return [];
@@ -126,7 +137,17 @@ export const getImagesByPage = async (pageSlug: string): Promise<UploadedImage[]
       })
     );
 
-    return images.sort((a, b) => a.uploadedAt.getTime() - b.uploadedAt.getTime());
+    const sortedImages = images.sort((a, b) => a.uploadedAt.getTime() - b.uploadedAt.getTime());
+    
+    // 캐시에 저장
+    imageCache.set(pageSlug, sortedImages);
+    
+    // 캐시 자동 정리 (5분 후)
+    setTimeout(() => {
+      imageCache.delete(pageSlug);
+    }, CACHE_DURATION);
+
+    return sortedImages;
   } catch (error) {
     console.error('이미지 목록 조회 중 오류 발생:', error);
     // Firebase 오류 시 빈 배열 반환
