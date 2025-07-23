@@ -57,7 +57,7 @@ export default function WeddingCountdown({
   if (isExpired) {
     return (
       <div className={styles.countdownContainer}>
-        {showIcon && <span className={styles.icon}>�</span>}
+        {showIcon && <span className={styles.icon}>💒</span>}
         <div className={styles.content}>
           <h4 className={styles.title}>축하합니다!</h4>
           <p className={styles.subtitle}>행복한 결혼식이 이미 시작되었습니다</p>

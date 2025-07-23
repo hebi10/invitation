@@ -148,7 +148,7 @@ export default function ShinMinJeKimHyunJi() {
             description: '오후 3시 더케이웨딩홀'
           }
         ]}
-        showCountdown={true}
+        showCountdown={true} // 카운트다운 표시
         countdownTitle="결혼식까지"
         onDateClick={(date) => {
           console.log('선택된 날짜:', date);

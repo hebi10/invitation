@@ -150,7 +150,7 @@ export default function LeeJunhoParkSomin() {
             description: '오후 2시 롯데호텔 웨딩홀'
           }
         ]}
-        showCountdown={true}
+        showCountdown={true} // 카운트다운 표시
         countdownTitle="결혼식까지"
         onDateClick={(date) => {
           console.log('선택된 날짜:', date);

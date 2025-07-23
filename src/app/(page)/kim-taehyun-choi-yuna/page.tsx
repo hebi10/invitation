@@ -152,7 +152,7 @@ export default function KimTaehyunChoiYuna() {
             description: '오후 2시 로즈가든 웨딩홀'
           }
         ]}
-        showCountdown={true}
+        showCountdown={false}
         countdownTitle="결혼식까지"
         onDateClick={(date) => {
           console.log('선택된 날짜:', date);
@@ -169,7 +169,6 @@ export default function KimTaehyunChoiYuna() {
         address={pageData.ceremony.address}
         description="지하철 이용 시 로즈가든 웨딩홀까지 편리하게 오실 수 있습니다"
       />
-      <Guestbook pageSlug="kim-taehyun-choi-yuna" />
       <GiftInfo 
         groomAccount={{
           bank: pageData.accountInfo.groom.bank,

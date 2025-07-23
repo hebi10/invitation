@@ -71,12 +71,18 @@ export default function Layout({
       
       {children}
       
-      {/* 카카오톡 공유 버튼 */}
-      <KakaoShareButton 
-        title="이준호 ♥ 박소민 결혼식에 초대합니다"
-        description="2026년 6월 20일 토요일 오후 2시\n웨딩팰리스에서 열리는 저희의 결혼식에 초대합니다."
-        imageUrl={WEDDING_IMAGE}
-      />
+      {/* 카카오톡 공유 버튼 - 상단에 배치 */}
+      <div style={{ 
+        backgroundColor: '#fff', 
+        borderBottom: '1px solid #f0f0f0',
+        padding: '10px 0'
+      }}>
+        <KakaoShareButton 
+          title="이준호 ♥ 박소민 결혼식에 초대합니다"
+          description="2026년 6월 20일 토요일 오후 2시\n웨딩팰리스에서 열리는 저희의 결혼식에 초대합니다."
+          imageUrl={WEDDING_IMAGE}
+        />
+      </div>
     </>
   );
 }

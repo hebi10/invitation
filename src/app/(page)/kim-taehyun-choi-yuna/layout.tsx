@@ -61,22 +61,7 @@ export default function Layout({
 }) {
   return (
     <>
-      {/* 카카오 JavaScript SDK */}
-      <Script 
-        src="https://t1.kakaocdn.net/kakao_js_sdk/2.7.2/kakao.min.js" 
-        integrity="sha384-TiCUE00h649CAMonG018J2ujOgDKW/kVWlChEuu4jK2vxfAAD0eZxzCKakxg55G4" 
-        crossOrigin="anonymous"
-        strategy="beforeInteractive"
-      />
-      
       {children}
-      
-      {/* 카카오톡 공유 버튼 */}
-      <KakaoShareButton 
-        title="김태현 ♥ 최유나 결혼식에 초대합니다"
-        description="2024년 6월 8일 토요일 오후 2시\n블루오션웨딩홀에서 열리는 저희의 결혼식에 초대합니다."
-        imageUrl={WEDDING_IMAGE}
-      />
     </>
   );
 }

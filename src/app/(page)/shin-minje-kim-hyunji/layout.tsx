@@ -72,11 +72,17 @@ export default function Layout({
       {children}
       
       {/* 카카오톡 공유 버튼 */}
-      <KakaoShareButton 
-        title="신민제 ♥ 김현지 결혼식에 초대합니다"
-        description="2026년 4월 14일 토요일 오후 3시\n더케이웨딩홀에서 열리는 저희의 결혼식에 초대합니다."
-        imageUrl={WEDDING_IMAGE}
-      />
+      <div style={{ 
+        backgroundColor: '#fff', 
+        borderBottom: '1px solid #f0f0f0',
+        padding: '10px 0'
+      }}>
+        <KakaoShareButton 
+          title="신민제 ♥ 김현지 결혼식에 초대합니다"
+          description="2026년 4월 14일 토요일 오후 3시\n더케이웨딩홀에서 열리는 저희의 결혼식에 초대합니다."
+          imageUrl={WEDDING_IMAGE}
+        />
+      </div>
     </>
   );
 }
