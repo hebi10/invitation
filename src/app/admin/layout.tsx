@@ -16,7 +16,6 @@ export const metadata: Metadata = {
     title: '모바일 청첩장 - 아름다운 시작을 함께하세요',
     description: '특별한 날을 더욱 특별하게 만들어줄 모바일 청첩장입니다.',
   },
-  robots: 'noindex, nofollow',
 };
 
 export const viewport: Viewport = {

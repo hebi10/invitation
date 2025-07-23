@@ -1,5 +1,5 @@
 .container {
-  padding: clamp(1.5rem, 4vw, 2rem) clamp(0.8rem, 2vw, 1rem);
+  padding: clamp(1rem, 3vw, 1.5rem) clamp(0.75rem, 3vw, 1rem);
   background: linear-gradient(135deg, 
     rgba(255, 255, 255, 1) 0%, 
     rgba(252, 248, 243, 0.8) 50%, 
@@ -7,16 +7,18 @@
   max-width: 768px;
   margin: 0 auto;
   position: relative;
+  min-height: 100vh;
 }
 
 @media (min-width: 768px) {
   .container {
     padding: clamp(2rem, 5vw, 4rem) clamp(1rem, 3vw, 2rem);
+    min-height: auto;
   }
 }
 
 .header {
-  margin-bottom: 3rem;
+  margin-bottom: 2rem;
   text-align: center;
 }
 
@@ -31,22 +33,57 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 1rem;
+  gap: 0.75rem;
   margin-bottom: 1rem;
   cursor: help;
   padding: 0.5rem;
-  border-radius: 15px;
+  border-radius: 12px;
   transition: all 0.3s ease;
   position: relative;
 }
 
 .titleSection:hover {
-  background: rgba(232, 180, 200, 0.1);
-  transform: scale(1.02);
+  background: rgba(232, 180, 200, 0.08);
+  transform: scale(1.01);
 }
 
 .titleSection:active {
-  transform: scale(0.98);
+  transform: scale(0.99);
+}
+
+.titleIcon {
+  font-size: clamp(1.2rem, 4vw, 1.6rem);
+  opacity: 0.8;
+  animation: float 3s ease-in-out infinite;
+}
+
+.titleIcon:first-child {
+  animation-delay: 0s;
+}
+
+.titleIcon:last-child {
+  animation-delay: 1.5s;
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-3px); }
+}
+
+@media (min-width: 768px) {
+  .titleSection {
+    gap: 1rem;
+    border-radius: 15px;
+  }
+  
+  .titleSection:hover {
+    background: rgba(232, 180, 200, 0.1);
+    transform: scale(1.02);
+  }
+  
+  .titleSection:active {
+    transform: scale(0.98);
+  }
 }
 
 .title {
@@ -98,12 +135,12 @@
 
 /* 폼 컨테이너 */
 .formContainer {
-  margin-bottom: 3rem;
+  margin-bottom: 2rem;
   background: linear-gradient(135deg, rgba(255, 255, 255, 0.95), rgba(252, 248, 243, 0.9));
-  border-radius: 20px;
-  padding: 2rem;
-  box-shadow: 0 8px 32px rgba(212, 165, 116, 0.15);
-  border: 1px solid rgba(212, 165, 116, 0.2);
+  border-radius: 16px;
+  padding: 1.5rem;
+  box-shadow: 0 4px 20px rgba(212, 165, 116, 0.12);
+  border: 1px solid rgba(212, 165, 116, 0.15);
   backdrop-filter: blur(10px);
 }
 
@@ -111,19 +148,31 @@
   .formContainer {
     margin-bottom: 4rem;
     padding: 2.5rem;
+    border-radius: 20px;
+    box-shadow: 0 8px 32px rgba(212, 165, 116, 0.15);
   }
 }
 
 .formHeader {
   text-align: center;
-  margin-bottom: 2rem;
+  margin-bottom: 1.5rem;
 }
 
 .formIcon {
-  font-size: 2rem;
+  font-size: 1.8rem;
   display: block;
   margin-bottom: 0.5rem;
   animation: sparkle 3s infinite;
+}
+
+@media (min-width: 768px) {
+  .formHeader {
+    margin-bottom: 2rem;
+  }
+  
+  .formIcon {
+    font-size: 2rem;
+  }
 }
 
 @keyframes sparkle {
@@ -134,11 +183,12 @@
 }
 
 .formTitle {
-  font-size: 1.3rem;
+  font-size: 1.15rem;
   color: var(--secondary-color);
   margin: 0;
-  font-family: 'Noto Serif KR', serif;
+  font-family: var(--font-serif);
   font-weight: 400;
+  line-height: 1.4;
 }
 
 @media (min-width: 768px) {
@@ -152,75 +202,154 @@
 }
 
 .formRow {
-  margin-bottom: 1.5rem;
+  margin-bottom: 1.25rem;
 }
 
 .label {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  margin-bottom: 0.75rem;
+  margin-bottom: 0.6rem;
   font-weight: 500;
   color: var(--secondary-color);
-  font-family: 'Noto Serif KR', serif;
-  font-size: 1rem;
+  font-family: var(--font-serif);
+  font-size: 0.95rem;
 }
 
 .labelIcon {
-  font-size: 1.1rem;
+  font-size: 1rem;
 }
 
 @media (min-width: 768px) {
+  .formRow {
+    margin-bottom: 1.5rem;
+  }
+  
   .label {
     font-size: 1rem;
+    margin-bottom: 0.75rem;
+  }
+  
+  .labelIcon {
+    font-size: 1.1rem;
   }
 }
 
 .input, .textarea {
   width: 100%;
-  padding: 1rem;
-  border: 2px solid rgba(212, 165, 116, 0.3);
-  border-radius: 12px;
-  font-size: 1rem;
-  font-family: 'Noto Serif KR', serif;
+  padding: 0.875rem;
+  border: 1.5px solid rgba(212, 165, 116, 0.25);
+  border-radius: 10px;
+  font-size: 0.95rem;
+  font-family: var(--font-serif);
   background: rgba(255, 255, 255, 0.9);
   transition: all 0.3s ease;
   box-sizing: border-box;
+  line-height: 1.5;
 }
 
 .input:focus, .textarea:focus {
   outline: none;
   border-color: var(--primary-color);
   background: rgba(255, 255, 255, 1);
-  box-shadow: 0 0 0 3px rgba(212, 165, 116, 0.1);
+  box-shadow: 0 0 0 3px rgba(212, 165, 116, 0.08);
   transform: translateY(-1px);
 }
 
 .textarea {
-  min-height: 120px;
+  min-height: 100px;
   resize: vertical;
-  line-height: 1.6;
+  line-height: 1.5;
 }
 
 @media (min-width: 768px) {
   .textarea {
     min-height: 140px;
+    line-height: 1.6;
   }
   
   .input, .textarea {
     padding: 1.2rem;
     font-size: 1.05rem;
+    border-radius: 12px;
+    border-width: 2px;
+  }
+}
+
+/* 안내 문구 스타일 */
+.guideText {
+  margin-top: 0.6rem;
+  margin-bottom: 1.25rem;
+  padding: 0.875rem;
+  background: linear-gradient(135deg, 
+    rgba(255, 255, 255, 0.9) 0%, 
+    rgba(252, 248, 243, 0.7) 100%);
+  border: 1px solid rgba(212, 165, 116, 0.15);
+  border-radius: 10px;
+  box-shadow: 0 2px 6px rgba(212, 165, 116, 0.08);
+}
+
+.guideMessage, .limitMessage {
+  margin: 0;
+  font-size: 0.85rem;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  line-height: 1.4;
+}
+
+.guideMessage {
+  color: var(--primary-color);
+  font-weight: 500;
+  margin-bottom: 0.4rem;
+}
+
+.limitMessage {
+  color: rgba(212, 165, 116, 0.8);
+  font-weight: 400;
+}
+
+.guideIcon, .limitIcon {
+  font-size: 0.9rem;
+  flex-shrink: 0;
+}
+
+@media (min-width: 768px) {
+  .guideText {
+    padding: 1.2rem;
+    margin-top: 0.75rem;
+    margin-bottom: 1.5rem;
+    border-radius: 12px;
+  }
+  
+  .guideMessage, .limitMessage {
+    font-size: 1rem;
+    gap: 0.5rem;
+  }
+  
+  .guideMessage {
+    margin-bottom: 0.5rem;
+  }
+  
+  .guideIcon, .limitIcon {
+    font-size: 1.1rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .limitMessage, .guideMessage {
+    text-align-last: left;
   }
 }
 
 .submitButton {
   background: linear-gradient(135deg, var(--primary-color), rgba(212, 165, 116, 0.8));
   color: white;
-  padding: 1rem 2rem;
+  padding: 0.875rem 1.5rem;
   border: none;
-  border-radius: 25px;
-  font-size: 1.1rem;
-  font-family: 'Noto Serif KR', serif;
+  border-radius: 20px;
+  font-size: 1rem;
+  font-family: var(--font-serif);
   font-weight: 500;
   cursor: pointer;
   transition: all 0.3s ease;
@@ -239,6 +368,7 @@
     width: auto;
     padding: 1.2rem 2.5rem;
     font-size: 1.15rem;
+    border-radius: 25px;
   }
 }
 
@@ -309,13 +439,13 @@
 .commentsList {
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
+  gap: 1.25rem;
   margin-top: 1rem;
 }
 
 @media (min-width: 768px) {
   .commentsList {
-    gap: 1rem;
+    gap: 1.5rem;
   }
 }
 
@@ -323,8 +453,15 @@
 .commentsGrid {
   display: grid;
   grid-template-columns: 1fr;
-  gap: 1.5rem;
-  margin-top: 1.5rem;
+  gap: 1rem;
+  margin-top: 1.25rem;
+}
+
+@media (min-width: 768px) {
+  .commentsGrid {
+    gap: 1.5rem;
+    margin-top: 1.5rem;
+  }
 }
 
 /* 댓글 헤더 개선 */
@@ -368,11 +505,11 @@
 }
 
 .commentCard {
-  padding: 1.5rem;
+  padding: 1.25rem;
   background: linear-gradient(135deg, rgba(255, 255, 255, 0.95), rgba(252, 248, 243, 0.8));
-  border-radius: 16px;
-  border: 1px solid rgba(212, 165, 116, 0.2);
-  box-shadow: 0 4px 20px rgba(212, 165, 116, 0.1);
+  border-radius: 12px;
+  border: 1px solid rgba(212, 165, 116, 0.15);
+  box-shadow: 0 3px 15px rgba(212, 165, 116, 0.08);
   transition: all 0.3s ease;
   position: relative;
   overflow: hidden;
@@ -383,19 +520,30 @@
   position: absolute;
   top: 0;
   left: 0;
-  width: 4px;
+  width: 3px;
   height: 100%;
   background: linear-gradient(180deg, var(--primary-color), rgba(212, 165, 116, 0.6));
 }
 
 .commentCard:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 30px rgba(212, 165, 116, 0.15);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 25px rgba(212, 165, 116, 0.12);
 }
 
 @media (min-width: 768px) {
   .commentCard {
     padding: 2rem;
+    border-radius: 16px;
+    box-shadow: 0 4px 20px rgba(212, 165, 116, 0.1);
+  }
+  
+  .commentCard::before {
+    width: 4px;
+  }
+  
+  .commentCard:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 30px rgba(212, 165, 116, 0.15);
   }
 }
 
@@ -403,9 +551,16 @@
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  margin-bottom: 1rem;
+  margin-bottom: 0.875rem;
   flex-wrap: wrap;
-  gap: 0.5rem;
+  gap: 0.4rem;
+}
+
+@media (min-width: 768px) {
+  .commentHeader {
+    margin-bottom: 1rem;
+    gap: 0.5rem;
+  }
 }
 
 .commentAuthorSection {

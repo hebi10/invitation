@@ -51,7 +51,7 @@ export default function Guestbook({ pageSlug }: GuestbookProps) {
   
   // 페이징 관련 상태
   const [currentPage, setCurrentPage] = useState(1);
-  const COMMENTS_PER_PAGE = 5;
+  const COMMENTS_PER_PAGE = 3;
   
   // 클라이언트 관리 기능 상태
   const [showClientManager, setShowClientManager] = useState(false);
@@ -266,7 +266,9 @@ export default function Guestbook({ pageSlug }: GuestbookProps) {
           title="신랑신부님은 여기를 더블클릭/더블탭하세요"
           style={{ cursor: 'pointer', userSelect: 'none' }}
         >
+          <span className={styles.titleIcon}>✉️</span>
           <h2 className={styles.title}>축하 메시지</h2>
+          <span className={styles.titleIcon}>✉️</span>
         </div>
         <p className={styles.subtitle}>
           저희의 소중한 날을 함께 축하해 주세요
@@ -375,11 +377,22 @@ export default function Guestbook({ pageSlug }: GuestbookProps) {
               id="message"
               value={message}
               onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setMessage(e.target.value)}
-              placeholder="진심 어린 축하 메시지를 남겨주세요...&#10;&#10;예시:&#10;• 결혼을 진심으로 축하드립니다!&#10;• 평생 행복하시길 바라요&#10;• 사랑이 가득한 가정 이루시길"
+              placeholder="진심 어린 축하 메시지를 남겨주세요. 예시: 결혼을 진심으로 축하드립니다!"
               disabled={isSubmitting}
               required
               rows={5}
+              maxLength={200}
             />
+            <div className={styles.guideText}>
+              <p className={styles.guideMessage}>
+                <span className={styles.guideIcon}>📝</span>
+                최대 200자까지 작성 가능합니다 ({message.length}/200자)
+              </p>
+              <p className={styles.limitMessage}>
+                <span className={styles.limitIcon}>⚠️</span>
+                한 분당 최대 2개의 댓글만 작성할 수 있습니다
+              </p>
+            </div>
           </div>
           
           {error && <p className={styles.errorMessage}>{error}</p>}

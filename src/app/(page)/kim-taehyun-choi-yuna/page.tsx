@@ -15,17 +15,28 @@ import {
 import { usePageImages } from '@/hooks';
 
 export default function KimTaehyunChoiYuna() {
+  // 브라우저에서 페이지 제목 설정
+  useEffect(() => {
+    document.title = '김태현 ♡ 최유나 결혼식 - 2024년 6월 8일';
+  }, []);
+  
   const [isLoading, setIsLoading] = useState(true);
   
-  const { images, imageUrls, firstImage, hasImages, mainImage, galleryImages, loading: imagesLoading } = usePageImages('kim-taehyun-choi-yuna');
+  const { images, imageUrls, firstImage, hasImages, mainImage, galleryImages, loading: imagesLoading, error } = usePageImages('kim-taehyun-choi-yuna');
   
   const weddingDate = new Date(2024, 5, 8); // 2024년 6월 8일
   
   // 메인 이미지 URL 결정 (Firebase 이미지만 사용)
   const mainImageUrl = mainImage?.url || "";
 
-  // 프리로드할 이미지들 (Firebase 갤러리 이미지만 사용)
-  const preloadImages = galleryImages.map(img => img.url);
+  // 프리로드할 이미지들 (Firebase 갤러리 이미지만 사용) - 최대 6개로 제한
+  const preloadImages = galleryImages.slice(0, 6).map(img => img.url);
+
+  // 에러 상태 처리
+  if (error) {
+    console.warn('이미지 로딩 중 오류 발생:', error);
+    // 에러가 있어도 기본 이미지로 진행
+  }
 
   const pageData = {
     title: "김태현 ♡ 최유나",
@@ -97,7 +108,8 @@ export default function KimTaehyunChoiYuna() {
     }
   };
 
-  if (isLoading) {
+  // 이미지 로딩이 완료되지 않은 경우 로더 표시
+  if (isLoading || imagesLoading) {
     return (
       <WeddingLoader 
         groomName="김태현"
@@ -105,13 +117,13 @@ export default function KimTaehyunChoiYuna() {
         onLoadComplete={() => setIsLoading(false)}
         mainImage={mainImageUrl}
         preloadImages={preloadImages}
-        duration={3000}
+        duration={2500} // 로딩 시간 단축
       />
     );
   }
 
   return (
-    <main>
+    <main role="main" aria-label="김태현과 최유나의 결혼식 청첩장">
       <Cover 
         title={pageData.title}
         subtitle={pageData.subtitle} 

@@ -187,7 +187,7 @@
 
 .weddingDate {
   font-family: var(--font-serif);
-  font-size: 1.2rem;
+  font-size: min(1.2rem, 4.7vw);
   color: var(--text-primary);
   font-weight: 500;
   position: relative;

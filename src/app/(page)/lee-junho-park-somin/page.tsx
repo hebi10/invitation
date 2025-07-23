@@ -1,33 +1,42 @@
 'use client';
 
-import { useState } from 'react';
-import { 
-  WeddingLoader, 
-  Cover, 
-  Greeting, 
-  Gallery, 
-  Schedule, 
-  LocationMap, 
-  WeddingCalendar, 
-  GiftInfo, 
+import { useState, useEffect } from 'react';
+import {
+  WeddingLoader,
+  Cover,
+  Greeting,
+  Gallery,
+  Schedule,
+  LocationMap,
+  WeddingCalendar,
+  GiftInfo,
   Guestbook
 } from '@/components';
 import { usePageImages } from '@/hooks';
 
 export default function LeeJunhoParkSomin() {
+  // 브라우저에서 페이지 제목 설정
+  useEffect(() => {
+    document.title = '이준호 ♡ 박소민 결혼식 - 2026년 6월 20일';
+  }, []);
+  
   const [isLoading, setIsLoading] = useState(true);
   
-  const { images, imageUrls, firstImage, hasImages, mainImage, galleryImages, loading: imagesLoading } = usePageImages('lee-junho-park-somin');
+  const { images, imageUrls, firstImage, hasImages, mainImage, galleryImages, loading: imagesLoading, error } = usePageImages('lee-junho-park-somin');
   
   const weddingDate = new Date(2026, 5, 20);
   
   // 메인 이미지 URL 결정 (Firebase 이미지만 사용)
   const mainImageUrl = mainImage?.url || "";
 
-  // 프리로드할 이미지들 (Firebase 갤러리 이미지만 사용)
-  const preloadImages = galleryImages.map(img => img.url);
+  // 프리로드할 이미지들 (Firebase 갤러리 이미지만 사용) - 최대 6개로 제한
+  const preloadImages = galleryImages.slice(0, 6).map(img => img.url);
 
-  const pageData = {
+  // 에러 상태 처리
+  if (error) {
+    console.warn('이미지 로딩 중 오류 발생:', error);
+    // 에러가 있어도 기본 이미지로 진행
+  }  const pageData = {
     title: "이준호 ♡ 박소민",
     subtitle: "두 사람이 사랑으로 하나가 되는 날",
     coupleNames: "이준호 ♡ 박소민",
@@ -97,21 +106,22 @@ export default function LeeJunhoParkSomin() {
     }
   };
 
-  if (isLoading) {
+  // 이미지 로딩이 완료되지 않은 경우 로더 표시
+  if (isLoading || imagesLoading) {
     return (
-      <WeddingLoader 
+      <WeddingLoader
         groomName="이준호"
         brideName="박소민"
         onLoadComplete={() => setIsLoading(false)}
         mainImage={mainImageUrl}
         preloadImages={preloadImages}
-        duration={3000}
+        duration={2500} // 로딩 시간 단축
       />
     );
   }
 
   return (
-    <main>
+    <main role="main" aria-label="이준호와 박소민의 결혼식 청첩장">
       <Cover 
         title={pageData.title}
         subtitle={pageData.subtitle} 

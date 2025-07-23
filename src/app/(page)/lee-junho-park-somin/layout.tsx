@@ -1,7 +1,7 @@
 import type { Metadata, Viewport } from 'next';
 
 // 공유용 이미지 URL
-const WEDDING_IMAGE = '/images/thum.jpg';
+const WEDDING_IMAGE = 'https://firebasestorage.googleapis.com/v0/b/invitation-35d60.firebasestorage.app/o/wedding-images%2Fshin-minje-kim-hyunji%2Fthum.jpg?alt=media&token=c5eef8b5-a83b-4a4c-b5bb-2491feaba51c';
 const FAVICON_ICON = '/images/favicon.ico';
 
 export const metadata: Metadata = {
@@ -45,7 +45,6 @@ export const metadata: Metadata = {
     'twitter:description': '2026년 6월 20일 토요일 오후 2시, 이준호와 박소민이 사랑으로 하나 되는 특별한 날입니다.',
     'twitter:image': WEDDING_IMAGE,
   },
-  robots: 'noindex, nofollow',
 };
 
 export const viewport: Viewport = {
