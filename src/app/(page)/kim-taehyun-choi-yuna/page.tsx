@@ -152,7 +152,7 @@ export default function KimTaehyunChoiYuna() {
             description: '오후 2시 로즈가든 웨딩홀'
           }
         ]}
-        showCountdown={false}
+        showCountdown={false} // 카운트다운
         countdownTitle="결혼식까지"
         onDateClick={(date) => {
           console.log('선택된 날짜:', date);
