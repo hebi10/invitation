@@ -39,7 +39,6 @@ export const metadata: Metadata = {
     locale: 'ko_KR',
     siteName: '모바일 청첩장',
   },
-  // X (구 Twitter) 메타데이터 - 인스타그램은 OpenGraph 사용
   other: {
     // X (구 Twitter) 카드
     'twitter:card': 'summary_large_image',

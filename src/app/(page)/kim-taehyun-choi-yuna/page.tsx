@@ -40,12 +40,12 @@ export default function KimTaehyunChoiYuna() {
 
   useEffect(() => {
     const kakaoShare = document.querySelector<HTMLDivElement>('.kakao_share');
-    console.log('kakaoShare:', kakaoShare);
+    if (!kakaoShare) return;
     // 로딩, 접근 거부일 땐 숨김
     if (access === null || (access && !access.canAccess)) {
-      if (kakaoShare) kakaoShare.style.display = 'none';
+      kakaoShare.style.display = 'none';
     } else if (!isLoading) {
-      if (kakaoShare) kakaoShare.style.display = 'block';
+      kakaoShare.style.display = 'block';
     }
   }, [access, isLoading]);
   
@@ -138,10 +138,6 @@ export default function KimTaehyunChoiYuna() {
 
   // 이미지 로딩이 완료되지 않은 경우 로더 표시
   if (isLoading || imagesLoading) {
-    const kakaoShare = document.querySelector<HTMLDivElement>('.kakao_share');
-    if (kakaoShare) {
-      kakaoShare.style.display = 'none';
-    }
     return (
       <WeddingLoader 
         groomName="김태현"

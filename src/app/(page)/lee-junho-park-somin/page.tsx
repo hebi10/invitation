@@ -40,12 +40,12 @@ export default function page() {
 
   useEffect(() => {
     const kakaoShare = document.querySelector<HTMLDivElement>('.kakao_share');
-    console.log('kakaoShare:', kakaoShare);
+    if (!kakaoShare) return;
     // 로딩, 접근 거부일 땐 숨김
     if (access === null || (access && !access.canAccess)) {
-      if (kakaoShare) kakaoShare.style.display = 'none';
+      kakaoShare.style.display = 'none';
     } else if (!isLoading) {
-      if (kakaoShare) kakaoShare.style.display = 'block';
+      kakaoShare.style.display = 'block';
     }
   }, [access, isLoading]);
   
