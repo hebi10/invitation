@@ -13,16 +13,44 @@ import {
   Guestbook
 } from '@/components';
 import { usePageImages } from '@/hooks';
+import { AccessDeniedPage, checkPageAccess } from '@/utils';
+import { useAdmin } from '@/contexts';
 
-export default function LeeJunhoParkSomin() {
-  // 브라우저에서 페이지 제목 설정
-  useEffect(() => {
-    document.title = '이준호 ♡ 박소민 결혼식 - 2026년 6월 20일';
-  }, []);
-  
+const WEDDING_SLUG = "lee-junho-park-somin";
+
+export default function page() {
+  const [access, setAccess] = useState<{ canAccess: boolean; message?: string } | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const { images, imageUrls, firstImage, hasImages, mainImage, galleryImages, loading: imagesLoading, error } = 
+  usePageImages(WEDDING_SLUG);
+
+  const { isAdminLoggedIn } = useAdmin();
+
+  useEffect(() => {
+    let canceled = false;
+    document.title = '이준호 ♡ 박소민 결혼식 - 2026년 6월 20일';
+    console.log('isAdminLoggedIn:', isAdminLoggedIn);
+    checkPageAccess(WEDDING_SLUG, isAdminLoggedIn).then(result => {
+      if (!canceled) setAccess(result);
+    });
+    return () => {
+      canceled = true;
+    };
+  }, [isAdminLoggedIn]);
+
+  useEffect(() => {
+    const kakaoShare = document.querySelector<HTMLDivElement>('.kakao_share');
+    console.log('kakaoShare:', kakaoShare);
+    // 로딩, 접근 거부일 땐 숨김
+    if (access === null || (access && !access.canAccess)) {
+      if (kakaoShare) kakaoShare.style.display = 'none';
+    } else if (!isLoading) {
+      if (kakaoShare) kakaoShare.style.display = 'block';
+    }
+  }, [access, isLoading]);
   
-  const { images, imageUrls, firstImage, hasImages, mainImage, galleryImages, loading: imagesLoading, error } = usePageImages('lee-junho-park-somin');
+  if (access === null) return null;
+  if (!access.canAccess) return <AccessDeniedPage message={access.message} />;
   
   const weddingDate = new Date(2026, 5, 20);
   
@@ -168,7 +196,7 @@ export default function LeeJunhoParkSomin() {
         description="지하철 2호선 을지로입구역에서 도보 5분 거리입니다"
         mapUrl="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3162.543492849434!2d126.98165331568618!3d37.56515197979826!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x357ca2f7dabc1b29%3A0x68e324964fb8e04c!2z66Gv642w7Zi464qU!5e0!3m2!1sko!2skr!4v1642645644356!5m2!1sko!2skr"
       />
-      <Guestbook pageSlug="lee-junho-park-somin" />
+      <Guestbook pageSlug={WEDDING_SLUG} />
       <GiftInfo 
         groomAccount={{
           bank: pageData.accountInfo.groom.bank,

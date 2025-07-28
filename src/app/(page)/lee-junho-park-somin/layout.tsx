@@ -72,7 +72,7 @@ export default function Layout({
       {children}
       
       {/* 카카오톡 공유 버튼 - 상단에 배치 */}
-      <div style={{ 
+      <div className='kakao_share' style={{ 
         backgroundColor: '#fff', 
         borderBottom: '1px solid #f0f0f0',
         padding: '10px 0'

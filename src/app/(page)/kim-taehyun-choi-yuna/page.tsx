@@ -13,16 +13,44 @@ import {
   GiftInfo 
 } from '@/components';
 import { usePageImages } from '@/hooks';
+import { AccessDeniedPage, checkPageAccess } from '@/utils';
+import { useAdmin } from '@/contexts';
+
+const WEDDING_SLUG = "kim-taehyun-choi-yuna";
 
 export default function KimTaehyunChoiYuna() {
-  // 브라우저에서 페이지 제목 설정
-  useEffect(() => {
-    document.title = '김태현 ♡ 최유나 결혼식 - 2024년 6월 8일';
-  }, []);
-  
+  const [access, setAccess] = useState<{ canAccess: boolean; message?: string }>({ canAccess: true });
   const [isLoading, setIsLoading] = useState(true);
+  const { images, imageUrls, firstImage, hasImages, mainImage, galleryImages, loading: imagesLoading, error } = 
+  usePageImages(WEDDING_SLUG);
   
-  const { images, imageUrls, firstImage, hasImages, mainImage, galleryImages, loading: imagesLoading, error } = usePageImages('kim-taehyun-choi-yuna');
+  const { isAdminLoggedIn } = useAdmin();
+
+  useEffect(() => {
+    let canceled = false;
+    document.title = '김태현 ♡ 최유나 결혼식 - 2024년 6월 8일';
+    console.log('isAdminLoggedIn:', isAdminLoggedIn);
+    checkPageAccess(WEDDING_SLUG, isAdminLoggedIn).then(result => {
+      if (!canceled) setAccess(result);
+    });
+    return () => {
+      canceled = true;
+    };
+  }, [isAdminLoggedIn]);
+
+  useEffect(() => {
+    const kakaoShare = document.querySelector<HTMLDivElement>('.kakao_share');
+    console.log('kakaoShare:', kakaoShare);
+    // 로딩, 접근 거부일 땐 숨김
+    if (access === null || (access && !access.canAccess)) {
+      if (kakaoShare) kakaoShare.style.display = 'none';
+    } else if (!isLoading) {
+      if (kakaoShare) kakaoShare.style.display = 'block';
+    }
+  }, [access, isLoading]);
+  
+  if (access === null) return null;
+  if (!access.canAccess) return <AccessDeniedPage message={access.message} />;
   
   const weddingDate = new Date(2024, 5, 8); // 2024년 6월 8일
   
@@ -110,6 +138,10 @@ export default function KimTaehyunChoiYuna() {
 
   // 이미지 로딩이 완료되지 않은 경우 로더 표시
   if (isLoading || imagesLoading) {
+    const kakaoShare = document.querySelector<HTMLDivElement>('.kakao_share');
+    if (kakaoShare) {
+      kakaoShare.style.display = 'none';
+    }
     return (
       <WeddingLoader 
         groomName="김태현"

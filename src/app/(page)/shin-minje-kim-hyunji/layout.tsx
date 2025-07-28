@@ -72,10 +72,11 @@ export default function Layout({
       {children}
       
       {/* 카카오톡 공유 버튼 */}
-      <div style={{ 
+      <div className='kakao_share' style={{ 
         backgroundColor: '#fff', 
         borderBottom: '1px solid #f0f0f0',
-        padding: '10px 0'
+        padding: '10px 0',
+        display: 'none'
       }}>
         <KakaoShareButton 
           title="신민제 ♥ 김현지 결혼식에 초대합니다"

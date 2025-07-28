@@ -13,15 +13,44 @@ import {
   Guestbook
 } from '@/components';
 import { usePageImages } from '@/hooks';
+import { AccessDeniedPage, checkPageAccess } from '@/utils';
+import { useAdmin } from '@/contexts';
+
+const WEDDING_SLUG = "shin-minje-kim-hyunji";
 
 export default function ShinMinJeKimHyunJi() {
-  // 브라우저에서 페이지 제목 설정
-  useEffect(() => {
-    document.title = '신민제 ♡ 김현지 결혼식 - 2026년 4월 14일';
-  }, []);
+  const [access, setAccess] = useState<{ canAccess: boolean; message?: string }>({ canAccess: true });
   const [isLoading, setIsLoading] = useState(true);
+  const { images, imageUrls, firstImage, hasImages, mainImage, galleryImages, loading: imagesLoading, error } = 
+  usePageImages('WEDDING_SLUG');
+
+  const { isAdminLoggedIn } = useAdmin();
+
+  useEffect(() => {
+    let canceled = false;
+    document.title = '신민제 ♡ 김현지 결혼식 - 2026년 4월 14일';
+    console.log('isAdminLoggedIn:', isAdminLoggedIn);
+    checkPageAccess(WEDDING_SLUG, isAdminLoggedIn).then(result => {
+      if (!canceled) setAccess(result);
+    });
+    return () => {
+      canceled = true;
+    };
+  }, [isAdminLoggedIn]);
+
+  useEffect(() => {
+    const kakaoShare = document.querySelector<HTMLDivElement>('.kakao_share');
+    console.log('kakaoShare:', kakaoShare);
+    // 로딩, 접근 거부일 땐 숨김
+    if (access === null || (access && !access.canAccess)) {
+      if (kakaoShare) kakaoShare.style.display = 'none';
+    } else if (!isLoading) {
+      if (kakaoShare) kakaoShare.style.display = 'block';
+    }
+  }, [access, isLoading]);
   
-  const { images, imageUrls, firstImage, hasImages, mainImage, galleryImages, loading: imagesLoading, error } = usePageImages('shin-minje-kim-hyunji');
+  if (access === null) return null;
+  if (!access.canAccess) return <AccessDeniedPage message={access.message} />;
   
   const weddingDate = new Date(2026, 3, 14);
   
@@ -169,7 +198,7 @@ export default function ShinMinJeKimHyunJi() {
         description="지하철 이용 시 더케이웨딩홀까지 편리하게 오실 수 있습니다"
         mapUrl="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d25314.40229051596!2d127.01265801385874!3d37.52441811794768!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x357ca4784ed95631%3A0x12a8bf0e6438ac7!2z642U7YG0656Y7Iqk7LKt64u0!5e0!3m2!1sko!2skr!4v1753176333092!5m2!1sko!2skr"
       />
-      <Guestbook pageSlug="shin-minje-kim-hyunji" />
+      <Guestbook pageSlug={WEDDING_SLUG} />
       <GiftInfo 
         groomAccount={{
           bank: pageData.accountInfo.groom.bank,
