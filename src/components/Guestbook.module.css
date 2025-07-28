@@ -54,7 +54,6 @@
 .titleIcon {
   font-size: clamp(1.2rem, 4vw, 1.6rem);
   opacity: 0.8;
-  animation: float 3s ease-in-out infinite;
 }
 
 .titleIcon:first-child {
@@ -63,11 +62,6 @@
 
 .titleIcon:last-child {
   animation-delay: 1.5s;
-}
-
-@keyframes float {
-  0%, 100% { transform: translateY(0px); }
-  50% { transform: translateY(-3px); }
 }
 
 @media (min-width: 768px) {

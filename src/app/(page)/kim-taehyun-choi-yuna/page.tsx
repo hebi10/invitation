@@ -168,6 +168,7 @@ export default function KimTaehyunChoiYuna() {
         venueName={pageData.ceremony.location}
         address={pageData.ceremony.address}
         description="지하철 이용 시 로즈가든 웨딩홀까지 편리하게 오실 수 있습니다"
+        mapUrl="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d50630.96716468714!2d126.96250319480897!3d37.52123135365749!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x357ca6b3e6117f19%3A0x35d3fc16da2c62ff!2z7Juo65Sp67aB!5e0!3m2!1sko!2skr!4v1753321837544!5m2!1sko!2skr"
       />
       <GiftInfo 
         groomAccount={{
