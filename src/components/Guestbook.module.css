@@ -986,12 +986,8 @@
   .pageButton {
     padding: 0.6rem 0.8rem;
     font-size: 0.8rem;
-    min-width: 70px;
+    min-width: 40px;
     border-radius: 10px;
-  }
-
-  .pageButtonText {
-    font-size: 0.75rem;
   }
 
   .pageButtonIcon {
@@ -1040,6 +1036,17 @@
     padding: 0.55rem 0.8rem;
     font-size: 0.85rem;
     min-width: 40px;
+  }
+}
+
+/* 모바일 최적화 반응형 스타일 */
+@media (max-width: 500px) {
+  .pageButtonText {
+    display: none;
+  }
+
+  .pageButton {
+    min-width: 30px;
   }
 }
 

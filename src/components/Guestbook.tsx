@@ -171,9 +171,8 @@ export default function Guestbook({ pageSlug }: GuestbookProps) {
     if (lastTap && (now - lastTap) < DOUBLE_TAP_DELAY) {
       // 더블탭/더블클릭 감지
       setShowClientManager(!showClientManager);
-      setLastTap(0); // 리셋
+      setLastTap(0);
     } else {
-      // 첫 번째 탭
       setLastTap(now);
     }
   };
