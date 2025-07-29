@@ -1,12 +1,11 @@
 import { useState, useEffect } from 'react';
+import { verifyAdminPassword } from '@/services/adminAuth';
 
-// 간단한 관리자 인증 서비스
+// Firestore 기반 관리자 인증 서비스
 class AdminAuthService {
   private authenticated = false;
-  private readonly ADMIN_PASSWORD = process.env.NEXT_PUBLIC_ADMIN_PASSWORD;
 
   constructor() {
-    // 페이지 로드 시 sessionStorage에서 인증 상태 복원
     if (typeof window !== 'undefined') {
       const stored = sessionStorage.getItem('admin_auth');
       this.authenticated = stored === 'true';
@@ -17,8 +16,8 @@ class AdminAuthService {
     return this.authenticated;
   }
 
-  login(password: string): boolean {
-    const isValid = password === this.ADMIN_PASSWORD;
+  async login(password: string): Promise<boolean> {
+    const isValid = await verifyAdminPassword(password);
     if (isValid) {
       this.authenticated = true;
       if (typeof window !== 'undefined') {
@@ -36,7 +35,6 @@ class AdminAuthService {
   }
 }
 
-// 싱글톤 인스턴스
 const adminAuthService = new AdminAuthService();
 
 export function useAdminAuth() {
@@ -47,8 +45,8 @@ export function useAdminAuth() {
     setIsAdmin(adminAuthService.isAuthenticated);
   }, []);
 
-  const login = (password: string): boolean => {
-    const success = adminAuthService.login(password);
+  const login = async (password: string): Promise<boolean> => {
+    const success = await adminAuthService.login(password);
     if (success) {
       setIsAdmin(true);
       setShowLoginModal(false);

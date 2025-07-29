@@ -25,9 +25,9 @@ export default function AdminPage() {
   // 댓글 필터링 상태
   const [selectedPageSlug, setSelectedPageSlug] = useState<string>('all');
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    const success = login(password);
+    const success = await login(password);
     if (success) {
       setError('');
       fetchWeddingPages();

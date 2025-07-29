@@ -2,9 +2,9 @@
 
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 
-interface AdminContextType {
+export interface AdminContextType {
   isAdminLoggedIn: boolean;
-  login: (password: string) => boolean;
+  login: (password: string) => Promise<boolean>;
   logout: () => void;
 }
 
@@ -21,14 +21,16 @@ export function AdminProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  const login = (password: string): boolean => {
-    const correctPassword = process.env.NEXT_PUBLIC_ADMIN_PASSWORD;
-    if (password === correctPassword) {
+  const login = async (password: string): Promise<boolean> => {
+    // Firestore 기반 인증
+    const { verifyAdminPassword, ensureAdminPasswordExists } = await import('@/services/adminAuth');
+    await ensureAdminPasswordExists();
+    const isValid = await verifyAdminPassword(password);
+    if (isValid) {
       setIsAdminLoggedIn(true);
       localStorage.setItem('admin_auth', 'true');
-      return true;
     }
-    return false;
+    return isValid;
   };
 
   const logout = () => {

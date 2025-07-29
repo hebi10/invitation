@@ -245,7 +245,7 @@ export default function ClientPasswordManager({ isVisible }: ClientPasswordManag
         <div className={styles.noticeText}>
           <strong>안내사항:</strong>
           <ul>
-            <li>비밀번호가 설정되지 않은 페이지는 기본값 <code>1234</code>를 사용합니다</li>
+            <li>비밀번호가 설정되지 않은 페이지는 기본값 <code>12344</code>를 사용합니다</li>
             <li>신랑신부만 이 비밀번호로 댓글 관리가 가능합니다</li>
             <li>관리자는 별도의 관리자 로그인으로 모든 댓글을 관리할 수 있습니다</li>
           </ul>

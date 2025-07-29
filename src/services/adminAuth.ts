@@ -1,6 +1,8 @@
 // adminAuth.ts
 
 import { useState, useEffect } from 'react';
+import { db } from '../lib/firebase';
+import { collection, doc, getDoc, setDoc } from 'firebase/firestore';
 
 // 관리자 인증 인터페이스 (필수는 아님, 타입 참고용)
 export interface AdminAuth {
@@ -10,9 +12,33 @@ export interface AdminAuth {
 }
 
 // 관리자 인증 서비스 클래스
-class AdminAuthService {
-  private readonly ADMIN_PASSWORD = process.env.NEXT_PUBLIC_ADMIN_PASSWORD;
 
+const ADMIN_COLLECTION = 'admin-password';
+const ADMIN_DOC_ID = 'main';
+// Firestore에서만 비밀번호를 관리하며, 코드에는 직접 노출하지 않음
+
+export async function ensureAdminPasswordExists() {
+  const docRef = doc(db, ADMIN_COLLECTION, ADMIN_DOC_ID);
+  const snapshot = await getDoc(docRef);
+  if (!snapshot.exists()) {
+    // 최초 생성 시, 환경변수 또는 별도 관리값을 사용하거나, 직접 Firestore에서만 관리
+    await setDoc(docRef, { password: '' }); // 빈 값으로 생성 (관리자가 직접 Firestore에서 설정)
+  }
+}
+
+export async function verifyAdminPassword(inputPassword: string): Promise<boolean> {
+  const docRef = doc(db, ADMIN_COLLECTION, ADMIN_DOC_ID);
+  const snapshot = await getDoc(docRef);
+  if (!snapshot.exists()) {
+    // Firestore에 비밀번호가 없으면 무조건 false 반환
+    return false;
+  }
+  const data = snapshot.data();
+  // Firestore에 저장된 password와 입력값 비교
+  return inputPassword === data.password;
+}
+
+class AdminAuthService {
   get isAuthenticated(): boolean {
     if (typeof window !== 'undefined') {
       return sessionStorage.getItem('admin_auth') === 'true';
@@ -20,8 +46,8 @@ class AdminAuthService {
     return false;
   }
 
-  login(password: string): boolean {
-    const isValid = password === this.ADMIN_PASSWORD;
+  async login(password: string): Promise<boolean> {
+    const isValid = await verifyAdminPassword(password);
     if (isValid && typeof window !== 'undefined') {
       sessionStorage.setItem('admin_auth', 'true');
     }
@@ -52,8 +78,8 @@ export function useAdminAuth() {
     return () => window.removeEventListener('storage', syncAuth);
   }, []);
 
-  const login = (password: string): boolean => {
-    const success = adminAuth.login(password);
+  const login = async (password: string): Promise<boolean> => {
+    const success = await adminAuth.login(password);
     setIsAuthenticated(adminAuth.isAuthenticated); // 항상 최신값 반영
     if (success) setShowLoginModal(false);
     return success;
