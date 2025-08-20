@@ -1,5 +1,5 @@
 'use client';
-
+/* 웨딩 페이지 설정: /config/weddingPages.ts에서 관리됩니다 */
 import { useState, useEffect } from 'react';
 import { 
   WeddingLoader, 
@@ -17,14 +17,14 @@ import { AccessDeniedPage, checkPageAccess } from '@/utils';
 import { useAdmin } from '@/contexts';
 import { getWeddingPageBySlug } from '@/config/weddingPages';
 
-const WEDDING_SLUG = "shin-minje-kim-hyunji";
+const WEDDING_SLUG = "kim-minjun-park-sohee";
 const pageConfig = getWeddingPageBySlug(WEDDING_SLUG);
 
 if (!pageConfig) {
   throw new Error(`Wedding page config not found for slug: ${WEDDING_SLUG}`);
 }
 
-export default function ShinMinJeKimHyunJi() {
+export default function KimMinJunParkSoHee() {
   const [access, setAccess] = useState<{ canAccess: boolean; message?: string }>({ canAccess: true });
   const [isLoading, setIsLoading] = useState(true);
   const { images, imageUrls, firstImage, hasImages, mainImage, galleryImages, loading: imagesLoading, error } = 

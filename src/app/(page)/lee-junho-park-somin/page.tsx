@@ -15,8 +15,14 @@ import {
 import { usePageImages } from '@/hooks';
 import { AccessDeniedPage, checkPageAccess } from '@/utils';
 import { useAdmin } from '@/contexts';
+import { getWeddingPageBySlug } from '@/config/weddingPages';
 
 const WEDDING_SLUG = "lee-junho-park-somin";
+const pageConfig = getWeddingPageBySlug(WEDDING_SLUG);
+
+if (!pageConfig) {
+  throw new Error(`Wedding page config not found for slug: ${WEDDING_SLUG}`);
+}
 
 export default function page() {
   const [access, setAccess] = useState<{ canAccess: boolean; message?: string } | null>(null);
@@ -28,7 +34,7 @@ export default function page() {
 
   useEffect(() => {
     let canceled = false;
-    document.title = '이준호 ♡ 박소민 결혼식 - 2026년 6월 20일';
+    document.title = `${pageConfig?.groomName || ''} ♡ ${pageConfig?.brideName || ''} 결혼식 - ${pageConfig?.date || ''}`;
     console.log('isAdminLoggedIn:', isAdminLoggedIn);
     checkPageAccess(WEDDING_SLUG, isAdminLoggedIn).then(result => {
       if (!canceled) setAccess(result);

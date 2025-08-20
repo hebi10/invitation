@@ -232,17 +232,14 @@ export default function Guestbook({ pageSlug }: GuestbookProps) {
       const sidePages = Math.floor((maxPages - 1) / 2);
       
       if (currentPage <= sidePages + 1) {
-        // 현재 페이지가 앞쪽에 있는 경우
         for (let i = 1; i <= maxPages; i++) {
           pages.push(i);
         }
       } else if (currentPage >= totalPages - sidePages) {
-        // 현재 페이지가 뒤쪽에 있는 경우
         for (let i = totalPages - maxPages + 1; i <= totalPages; i++) {
           pages.push(i);
         }
       } else {
-        // 중간인 경우: 현재 페이지 기준 양쪽으로
         for (let i = currentPage - sidePages; i <= currentPage + sidePages; i++) {
           pages.push(i);
         }

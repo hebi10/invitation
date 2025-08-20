@@ -1,53 +1,18 @@
 import type { Metadata, Viewport } from 'next';
 import Script from 'next/script';
 import KakaoShareButton from './KakaoShareButton';
+import { generateMetadata as generateWeddingMetadata, getWeddingPageBySlug } from '@/config/weddingPages';
 
-// 공유용 이미지 URL
-const WEDDING_IMAGE = 'https://firebasestorage.googleapis.com/v0/b/invitation-35d60.firebasestorage.app/o/wedding-images%2Fshin-minje-kim-hyunji%2Fthum.jpg?alt=media&token=c5eef8b5-a83b-4a4c-b5bb-2491feaba51c';
-const FAVICON_ICON = '/images/favicon.ico';
+const WEDDING_SLUG = 'kim-taehyun-choi-yuna';
+const pageConfig = getWeddingPageBySlug(WEDDING_SLUG);
 
-export const metadata: Metadata = {
-  title: '김태현 ♥ 최유나 결혼식에 초대합니다',
-  description: '2024년 6월 22일 토요일 오후 1시, 김태현과 최유나가 영원한 약속을 나누는 소중한 순간입니다. 저희의 사랑의 여정을 함께 지켜봐 주세요.',
-  keywords: ['결혼식', '웨딩', '청첩장', '김태현', '최유나', '2024년 6월'],
-  icons: [
-    {
-      rel: 'icon',
-      url: FAVICON_ICON,
-    },
-    {
-      rel: 'shortcut icon',
-      url: FAVICON_ICON,
-    },
-    {
-      rel: 'apple-touch-icon',
-      url: FAVICON_ICON,
-    },
-  ],
-  openGraph: {
-    title: '김태현 ♥ 최유나 결혼식 초대',
-    description: '2024년 6월 22일 토요일 오후 1시, 김태현과 최유나가 영원한 약속을 나누는 소중한 순간입니다.',
-    images: [
-      {
-        url: WEDDING_IMAGE,
-        width: 800,
-        height: 600,
-        alt: '김태현 ♥ 최유나 결혼식',
-      },
-    ],
-    type: 'website',
-    locale: 'ko_KR',
-    siteName: '모바일 청첩장',
-  },
-  // X (구 Twitter) 메타데이터 - 인스타그램은 OpenGraph 사용
-  other: {
-    // X (구 Twitter) 카드
-    'twitter:card': 'summary_large_image',
-    'twitter:title': '김태현 ♥ 최유나 결혼식 초대',
-    'twitter:description': '2024년 6월 22일 토요일 오후 1시, 김태현과 최유나가 영원한 약속을 나누는 소중한 순간입니다.',
-    'twitter:image': WEDDING_IMAGE,
-  },
-};
+if (!pageConfig) {
+  throw new Error(`Wedding page config not found for slug: ${WEDDING_SLUG}`);
+}
+
+const WEDDING_IMAGE = pageConfig.metadata.images.wedding;
+
+export const metadata: Metadata = generateWeddingMetadata(WEDDING_SLUG);
 
 export const viewport: Viewport = {
   width: 'device-width',
@@ -61,7 +26,29 @@ export default function Layout({
 }) {
   return (
     <>
+      {/* 카카오 JavaScript SDK */}
+      <Script 
+        src="https://t1.kakaocdn.net/kakao_js_sdk/2.7.2/kakao.min.js" 
+        integrity="sha384-TiCUE00h649CAMonG018J2ujOgDKW/kVWlChEuu4jK2vxfAAD0eZxzCKakxg55G4" 
+        crossOrigin="anonymous"
+        strategy="beforeInteractive"
+      />
+      
       {children}
+      
+      {/* 카카오톡 공유 버튼 */}
+      <div className='kakao_share' style={{ 
+        backgroundColor: '#fff', 
+        borderBottom: '1px solid #f0f0f0',
+        padding: '10px 0',
+        display: 'none'
+      }}>
+        <KakaoShareButton 
+          title={pageConfig?.metadata.title || '결혼식에 초대합니다'}
+          description={`${pageConfig?.date || ''}\n${pageConfig?.venue || ''}에서 열리는 저희의 결혼식에 초대합니다.`}
+          imageUrl={WEDDING_IMAGE}
+        />
+      </div>
     </>
   );
 }

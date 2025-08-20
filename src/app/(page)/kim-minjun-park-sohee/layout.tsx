@@ -3,7 +3,7 @@ import Script from 'next/script';
 import KakaoShareButton from './KakaoShareButton';
 import { generateMetadata as generateWeddingMetadata, getWeddingPageBySlug } from '@/config/weddingPages';
 
-const WEDDING_SLUG = 'shin-minje-kim-hyunji';
+const WEDDING_SLUG = 'kim-minjun-park-sohee';
 const pageConfig = getWeddingPageBySlug(WEDDING_SLUG);
 
 if (!pageConfig) {
