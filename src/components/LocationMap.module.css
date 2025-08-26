@@ -21,11 +21,78 @@
 /* 헤더 스타일 */
 .header {
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
   gap: 1rem;
   margin-bottom: 2rem;
   text-align: center;
+}
+
+/* 지도 타입 선택 탭 */
+.mapTabs {
+  display: flex;
+  gap: 0.5rem;
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 12px;
+  padding: 0.3rem;
+  box-shadow: 0 2px 8px rgba(212, 165, 116, 0.15);
+  border: 1px solid rgba(212, 165, 116, 0.2);
+}
+
+.mapTab {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: transparent;
+  border: none;
+  border-radius: 8px;
+  padding: 0.6rem 1rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #6b7280;
+  position: relative;
+  overflow: hidden;
+}
+
+.mapTab:hover {
+  background: rgba(212, 165, 116, 0.1);
+  color: var(--primary-color);
+  transform: translateY(-1px);
+}
+
+.mapTab.active {
+  background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+  color: white;
+  box-shadow: 0 2px 8px rgba(212, 165, 116, 0.3);
+  transform: translateY(-1px);
+}
+
+.tabIcon {
+  font-size: 1rem;
+  transition: transform 0.3s ease;
+}
+
+.mapTab:hover .tabIcon {
+  transform: scale(1.1);
+}
+
+@media (min-width: 768px) {
+  .mapTabs {
+    gap: 0.8rem;
+    padding: 0.4rem;
+  }
+  
+  .mapTab {
+    padding: 0.8rem 1.5rem;
+    font-size: 1rem;
+  }
+  
+  .tabIcon {
+    font-size: 1.2rem;
+  }
 }
 
 .title {
@@ -291,6 +358,7 @@
 .mapContainer {
   position: relative;
   width: 100%;
+  height: 300px;
   margin: 0 auto 2rem;
   border-radius: 15px;
   overflow: hidden;
@@ -312,8 +380,102 @@
 }
 
 @media (min-width: 768px) {
+  .mapContainer {
+    height: 400px;
+  }
+
   .mapFrame {
     height: 400px;
+  }
+}
+
+/* 지도 배지 */
+.mapBadge {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 20px;
+  padding: 0.5rem 1rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.badgeIcon {
+  font-size: 0.9rem;
+}
+
+.badgeText {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #374151;
+}
+
+/* 지도 로딩 상태 */
+.mapLoading {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 12px;
+  padding: 1rem 1.5rem;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #6b7280;
+  backdrop-filter: blur(10px);
+}
+
+.mapLoading::before {
+  content: '🗺️';
+  font-size: 1.2rem;
+  animation: pulse 1.5s infinite;
+}
+
+/* 지도 폴백 */
+.mapFallback {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 300px;
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  color: #6b7280;
+  text-align: center;
+  padding: 2rem;
+}
+
+.fallbackIcon {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+  opacity: 0.7;
+}
+
+.fallbackMessage {
+  font-size: 1rem;
+  font-weight: 500;
+  margin: 0;
+}
+
+@media (min-width: 768px) {
+  .mapFallback {
+    height: 400px;
+  }
+  
+  .fallbackIcon {
+    font-size: 4rem;
+  }
+  
+  .fallbackMessage {
+    font-size: 1.1rem;
   }
 }
 
