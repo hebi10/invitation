@@ -5,7 +5,7 @@ import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { useState } from 'react';
 import { AdminProvider } from '@/contexts/AdminContext';
 import './globals.css';
-import { Inter, Noto_Serif_KR, Noto_Sans_KR, Cormorant_Garamond } from 'next/font/google';
+import { Inter, Noto_Serif_KR, Noto_Sans_KR, Cormorant_Garamond, Alex_Brush } from 'next/font/google';
 
 const inter = Inter({
   subsets: ['latin'],
@@ -36,6 +36,13 @@ const cormorantGaramond = Cormorant_Garamond({
   variable: '--font-cormorant',
 });
 
+const alexBrush = Alex_Brush({
+  subsets: ['latin'],
+  weight: ['400'], // Alex Brush는 400만 지원
+  display: 'swap',
+  variable: '--font-alex-brush',
+});
+
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   const [queryClient] = useState(() => new QueryClient());
 
@@ -46,7 +53,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <link rel="shortcut icon" href="/images/favicon.ico" />
         <link rel="apple-touch-icon" href="/images/favicon.ico" />
       </head>
-      <body className={`${inter.variable} ${notoSerifKR.variable} ${notoSansKR.variable} ${cormorantGaramond.variable}`}>
+      <body className={`${inter.variable} ${notoSerifKR.variable} ${notoSansKR.variable} ${cormorantGaramond.variable} ${alexBrush.variable}`}>
         <QueryClientProvider client={queryClient}>
           <AdminProvider>
             {children}

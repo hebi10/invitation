@@ -35,7 +35,6 @@ export default function ShinMinJeKimHyunJi() {
   useEffect(() => {
     let canceled = false;
     document.title = `${pageConfig?.groomName || ''} ♡ ${pageConfig?.brideName || ''} 결혼식 - ${pageConfig?.date || ''}`;
-    console.log('isAdminLoggedIn:', isAdminLoggedIn);
     checkPageAccess(WEDDING_SLUG, isAdminLoggedIn).then(result => {
       if (!canceled) setAccess(result);
     });

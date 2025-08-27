@@ -56,7 +56,7 @@ const Cover = React.memo(function Cover({
 
   return (
     <div className={styles.container} style={containerStyle}>
-      <h1 className={styles.title}>{title}</h1>
+      <h1 className={styles.title}>Our Wedding Day</h1>
       {subtitle && <p className={styles.subtitle}>{subtitle}</p>}
       <div className={styles.imageContainer}>
         <img 
@@ -76,7 +76,11 @@ const Cover = React.memo(function Cover({
           </div>
         )}
       </div>
-      <h2 className={styles.coupleNames}>{groomName} ♥ {brideName}</h2>
+      <h2 className={styles.coupleNames}>
+        {groomName} 
+        <span className={styles.pointColor}>♥</span> 
+        {brideName}
+        </h2>
       <p className={styles.weddingDate}>{weddingDate}</p>
     </div>
   );

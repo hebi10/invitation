@@ -10,7 +10,7 @@ import {
   getDocs,
   deleteDoc 
 } from 'firebase/firestore';
-import { db } from '../lib/firebase';
+import { ensureFirebaseInit } from '../lib/firebase';
 
 export interface DisplayPeriod {
   id?: string;
@@ -26,6 +26,8 @@ const COLLECTION_NAME = 'display-periods';
 
 // 노출 기간 조회
 export const getDisplayPeriod = async (pageSlug: string): Promise<DisplayPeriod | null> => {
+  const { db } = await ensureFirebaseInit();
+
   try {
     const q = query(
       collection(db, COLLECTION_NAME),
@@ -63,6 +65,7 @@ export const setDisplayPeriod = async (
   endDate: Date, 
   isActive: boolean
 ): Promise<void> => {
+  const { db } = await ensureFirebaseInit();
   try {
     const existing = await getDisplayPeriod(pageSlug);
     const now = new Date();
@@ -96,6 +99,7 @@ export const setDisplayPeriod = async (
 
 // 모든 노출 기간 조회 (관리자용)
 export const getAllDisplayPeriods = async (): Promise<DisplayPeriod[]> => {
+  const { db } = await ensureFirebaseInit();
   try {
     const querySnapshot = await getDocs(collection(db, COLLECTION_NAME));
     const periods: DisplayPeriod[] = [];
@@ -141,6 +145,7 @@ export const isPageVisible = async (pageSlug: string): Promise<boolean> => {
 
 // 노출 기간 삭제
 export const deleteDisplayPeriod = async (pageSlug: string): Promise<void> => {
+  const { db } = await ensureFirebaseInit();
   try {
     const existing = await getDisplayPeriod(pageSlug);
     if (existing && existing.id) {

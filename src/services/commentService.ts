@@ -15,12 +15,6 @@ export interface CommentInput {
 // Firebase 사용 여부 확인
 const USE_FIREBASE = process.env.NEXT_PUBLIC_USE_FIREBASE === 'true';
 
-// 디버깅용 로그
-if (typeof window !== 'undefined') {
-  console.log('🔥 NEXT_PUBLIC_USE_FIREBASE:', process.env.NEXT_PUBLIC_USE_FIREBASE);
-  console.log('🔥 USE_FIREBASE:', USE_FIREBASE);
-}
-
 // Dynamic Firebase imports
 let firestoreModules: {
   db: any;
@@ -37,29 +31,20 @@ let firestoreModules: {
 } | null = null;
 
 const initFirestore = async () => {
-  console.log('[commentService] initFirestore 시작');
-  console.log('[commentService] window 체크:', typeof window !== 'undefined');
-  console.log('[commentService] USE_FIREBASE:', USE_FIREBASE);
-  console.log('[commentService] firestoreModules 존재:', !!firestoreModules);
-  
+
   if (typeof window === 'undefined' || !USE_FIREBASE || firestoreModules) {
     console.log('[commentService] initFirestore 조기 종료');
     return;
   }
 
   try {
-    console.log('[commentService] ensureFirebaseInit 호출 중...');
     const { ensureFirebaseInit } = await import('@/lib/firebase');
     await ensureFirebaseInit();
     
-    console.log('[commentService] Firebase 모듈 import 중...');
     const [firebaseModule, firestoreModule] = await Promise.all([
       import('@/lib/firebase'),
       import('firebase/firestore')
     ]);
-
-    console.log('[commentService] 모듈 import 완료');
-    console.log('[commentService] firebaseModule.db:', !!firebaseModule.db);
 
     if (firebaseModule.db) {
       firestoreModules = {
@@ -75,7 +60,6 @@ const initFirestore = async () => {
         serverTimestamp: firestoreModule.serverTimestamp,
         Timestamp: firestoreModule.Timestamp
       };
-      console.log('✅ Firestore modules initialized successfully');
       return;
     } else {
       throw new Error('Firebase db is null after initialization');
@@ -115,9 +99,6 @@ const MOCK_COMMENTS: { [pageSlug: string]: Comment[] } = {
 
 // 댓글 추가
 export async function addComment(commentData: CommentInput): Promise<void> {
-  console.log('[commentService] addComment 시작:', commentData);
-  console.log('[commentService] USE_FIREBASE:', USE_FIREBASE);
-  
   if (!USE_FIREBASE) {
     // Mock comment addition for development
     const newComment: Comment = {
@@ -134,11 +115,7 @@ export async function addComment(commentData: CommentInput): Promise<void> {
     return;
   }
 
-  console.log('[commentService] Firebase 모드 - initFirestore 호출');
   await initFirestore();
-  
-  console.log('[commentService] firestoreModules 상태:', !!firestoreModules);
-  console.log('[commentService] firestoreModules.db 상태:', !!firestoreModules?.db);
   
   if (!firestoreModules?.db) {
     console.error('[commentService] Firestore가 초기화되지 않았습니다.');
@@ -154,7 +131,6 @@ export async function addComment(commentData: CommentInput): Promise<void> {
     
     // 페이지별 컬렉션 이름 생성 (예: comments-kim-taehyun-choi-yuna)
     const collectionName = `comments-${commentData.pageSlug}`;
-    console.log('[commentService] 사용할 컬렉션:', collectionName);
     
     const docRef = await firestoreModules.addDoc(
       firestoreModules.collection(firestoreModules.db, collectionName), 
@@ -165,7 +141,6 @@ export async function addComment(commentData: CommentInput): Promise<void> {
         createdAt: firestoreModules.serverTimestamp()
       }
     );
-    console.log('[commentService] Firestore에 댓글 추가 성공:', docRef.id);
   } catch (error: any) {
     console.error('[commentService] Error adding comment:', error);
     console.error('[commentService] Error details:', {
@@ -190,20 +165,13 @@ export async function addComment(commentData: CommentInput): Promise<void> {
 
 // 특정 페이지의 댓글 가져오기
 export async function getComments(pageSlug: string): Promise<Comment[]> {
-  console.log('[commentService] getComments 시작:', pageSlug);
-  console.log('[commentService] USE_FIREBASE:', USE_FIREBASE);
-  
   if (!USE_FIREBASE) {
     // Mock 데이터 반환
     console.log('[commentService] Mock 모드 - 데이터 반환');
     return MOCK_COMMENTS[pageSlug] || [];
   }
 
-  console.log('[commentService] Firebase 모드 - initFirestore 호출');
   await initFirestore();
-  
-  console.log('[commentService] firestoreModules 상태:', !!firestoreModules);
-  console.log('[commentService] firestoreModules.db 상태:', !!firestoreModules?.db);
   
   if (!firestoreModules?.db) {
     console.warn('[commentService] Firestore가 초기화되지 않았습니다. Mock 데이터를 반환합니다.');
@@ -211,21 +179,16 @@ export async function getComments(pageSlug: string): Promise<Comment[]> {
   }
 
   try {
-    console.log('[commentService] Firestore 쿼리 생성 중...');
     // 페이지별 컬렉션 이름 생성 (예: comments-kim-taehyun-choi-yuna)
     const collectionName = `comments-${pageSlug}`;
-    console.log('[commentService] 사용할 컬렉션:', collectionName);
     
     const q = firestoreModules.query(
       firestoreModules.collection(firestoreModules.db, collectionName),
       firestoreModules.orderBy('createdAt', 'desc')
     );
     
-    console.log('[commentService] Firestore 쿼리 실행 중...');
     const querySnapshot = await firestoreModules.getDocs(q);
     const comments: Comment[] = [];
-    
-    console.log('[commentService] 쿼리 결과 처리 중... 문서 수:', querySnapshot.size);
     
     querySnapshot.forEach((doc: any) => {
       const data = doc.data();

@@ -384,7 +384,7 @@ export default function Guestbook({ pageSlug }: GuestbookProps) {
               </p>
               <p className={styles.limitMessage}>
                 <span className={styles.limitIcon}>⚠️</span>
-                한 분당 최대 2개의 댓글만 작성할 수 있습니다
+                한 분당 최대 2개의 방명록을 작성할 수 있습니다
               </p>
             </div>
           </div>

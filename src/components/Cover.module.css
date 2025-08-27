@@ -99,28 +99,27 @@
 }
 
 .title {
-  font-family: var(--font-display);
-  font-size: clamp(1.6rem, 4.5vw, 2.2rem);
+  font-family: var(--font-alex-brush);
+  font-size: clamp(2.4rem, 7vw, 3.6rem); /* 모바일에서도 더 크게 */
   color: var(--primary-color);
-  margin-bottom: 1rem;
+  margin-bottom: 1.2rem;
   font-weight: 500;
-  text-shadow: 0 1px 2px rgba(139, 110, 99, 0.08);
+  text-shadow: 0 2px 4px rgba(139, 110, 99, 0.12); /* 그림자 조금 강화 */
   position: relative;
   z-index: 1;
-  letter-spacing: 0.01em;
+  letter-spacing: 0.03em; /* 살짝 더 띄워 고급스러움 */
   word-break: keep-all;
   overflow-wrap: break-word;
-  line-height: 1.4;
+  line-height: 1.35;
   white-space: nowrap;
   text-align: center;
-  font-style: italic;
 }
 
 @media (min-width: 768px) {
   .title {
-    font-size: clamp(2.2rem, 5vw, 2.8rem);
-    margin-bottom: 1.5rem;
-    line-height: 1.3;
+    font-size: clamp(3.4rem, 7vw, 4.4rem); /* 데스크탑에서 더 크게 */
+    margin-bottom: 2.2rem;
+    line-height: 1.25;
   }
 }
 
@@ -151,6 +150,11 @@
     margin-bottom: 2.5rem;
     max-width: 400px;
   }
+}
+
+.pointColor{
+  color: #ff4757;
+  padding: 0 8px;
 }
 
 .coupleNames {
