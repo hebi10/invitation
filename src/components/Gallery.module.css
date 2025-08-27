@@ -19,7 +19,7 @@
 
 .title {
   text-align: center;
-  font-family: var(--font-serif);
+  font-family: var(--font-gowun-dodum);
   font-size: clamp(1.4rem, 4vw, 1.8rem);
   color: var(--primary-color);
   margin-bottom: 2.5rem;

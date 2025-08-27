@@ -74,7 +74,7 @@
 }
 
 .subtitle {
-  font-family: var(--font-serif);
+  font-family: var(--font-gowun-dodum);
   font-size: clamp(1rem, 3vw, 1.3rem);
   color: var(--text-secondary);
   margin-bottom: 2rem;
@@ -168,7 +168,7 @@
 }
 
 .pageDescription {
-  font-family: var(--font-serif);
+  font-family: var(--font-gowun-dodum);
   font-size: 0.95rem;
   color: var(--text-secondary);
   margin-bottom: 1rem;
@@ -187,7 +187,7 @@
 .pageMeta {
   display: flex;
   justify-content: space-between;
-  font-family: var(--font-sans);
+  font-family: var(--font-gowun-dodum);
   font-size: 0.85rem;
   color: var(--text-light);
   flex-wrap: wrap;
@@ -210,7 +210,7 @@
   border: 2px solid var(--primary-color);
   border-radius: 25px;
   text-decoration: none;
-  font-family: var(--font-sans);
+  font-family: var(--font-gowun-dodum);
   font-size: 0.95rem;
   font-weight: 500;
   transition: all 0.3s ease;
@@ -236,7 +236,7 @@
 .noPages {
   color: var(--text-secondary);
   text-align: center;
-  font-family: var(--font-serif);
+  font-family: var(--font-gowun-dodum);
   padding: 2rem;
   background: rgba(255, 255, 255, 0.8);
   border-radius: 15px;

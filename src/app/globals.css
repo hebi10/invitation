@@ -13,9 +13,10 @@
   
   /* 폰트 패밀리 - Next.js 폰트 변수 활용 */
   --font-serif: var(--font-noto-serif), 'Noto Serif KR', serif;
-  --font-sans: var(--font-inter), var(--font-noto-sans), 'Inter', 'Noto Sans KR', system-ui, sans-serif;
+  --font-sans: var(--font-inter), var(--font-gowun-dodum), 'Inter', 'Noto Sans KR', system-ui, sans-serif;
   --font-script: var(--font-cormorant), 'Cormorant Garamond', serif;
   --font-display: var(--font-cormorant), 'Cormorant Garamond', serif;
+  --font-gowun: var(--font-gowun-dodum), 'Gowun Dodum', sans-serif;
 }
 
 /* Reset CSS */
@@ -54,12 +55,12 @@ body {
     max-width: 100vw;
     overflow-x: hidden;
     line-height: 1.6;
-    background-color: var(--theme-backgroundWarm);
+    background-color: var(--font-gowun-dodum);
     transition: background-color 0.3s ease;
 }
 
 body {
-    font-family: var(--font-sans);
+    font-family: var(--font-gowun-dodum);
     font-weight: 400;
     color: var(--text-primary);
     -webkit-font-smoothing: antialiased;
@@ -125,7 +126,7 @@ input:focus {
 /* 한글 제목 최적화 전역 규칙 */
 h1, h2, h3, h4, h5, h6,
 .title, .subtitle, .heading {
-    font-family: var(--font-serif);
+    font-family: var(--font-gowun-dodum);
     font-weight: 500;
     word-break: keep-all;
     overflow-wrap: break-word;
@@ -206,7 +207,7 @@ p, span, div {
 }
 
 .wedding-text {
-    font-family: var(--font-serif);
+    font-family: var(--font-gowun-dodum);
     line-height: 1.8;
     color: var(--text-primary);
     text-align: center;
@@ -225,7 +226,7 @@ p, span, div {
     border: none;
     padding: 0.75rem 2rem;
     border-radius: 25px;
-    font-family: var(--font-sans);
+    font-family: var(--font-gowun-dodum);
     font-weight: 500;
     cursor: pointer;
     transition: all 0.3s ease;

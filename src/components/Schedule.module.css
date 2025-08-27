@@ -113,7 +113,7 @@
 }
 
 .time {
-  font-family: var(--font-serif);
+  font-family: var(--font-gowun-dodum);
   font-size: 1.3rem;
   margin-bottom: 1.5rem;
   color: var(--text-secondary);
@@ -143,7 +143,7 @@
 }
 
 .address {
-  font-family: var(--font-serif);
+  font-family: var(--font-gowun-dodum);
   font-size: 1rem;
   color: var(--text-light);
   font-weight: 400;
@@ -182,7 +182,7 @@
 }
 
 .detailTitle {
-  font-family: var(--font-sans);
+  font-family: var(--font-gowun-dodum);
   font-size: 1.1rem;
   margin-bottom: 0.8rem;
   color: var(--primary-color);
@@ -197,7 +197,7 @@
 }
 
 .detailInfo {
-  font-family: var(--font-serif);
+  font-family: var(--font-gowun-dodum);
   font-size: 0.95rem;
   color: var(--text-secondary);
   line-height: 1.5;
