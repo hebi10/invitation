@@ -203,7 +203,13 @@
   }
 }
 
-.adminButton {
+.buttonGroup {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+}
+
+.adminButton, .linkButton {
   background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
   color: white;
   padding: 0.9rem 2rem;
@@ -221,7 +227,7 @@
 }
 
 @media (min-width: 768px) {
-  .adminButton {
+  .adminButton, .linkButton {
     padding: 1.1rem 2.5rem;
     font-size: 1rem;
   }

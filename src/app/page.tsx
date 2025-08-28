@@ -10,7 +10,19 @@ export default function Home() {
           <h1 className={styles.title}>Wedding Invitation</h1>
           <p className={styles.subtitle}>청첩장 템플릿 시스템</p>
           <p className={styles.subtitle}>맞춤형 디지털 청첩장을 만들어보세요</p>
-          <a className={styles.adminButton} href="/admin">Admin 페이지</a>
+          <div className={styles.buttonGroup}>
+            <a className={styles.adminButton} href="/admin">Admin 페이지</a>
+            <a
+              className={styles.linkButton}
+              href="#"
+              onClick={(e) => {
+                e.preventDefault();
+                alert("준비 중입니다.");
+              }}
+            >
+              판매 페이지
+            </a>
+          </div>
         </header>
         
         <section>

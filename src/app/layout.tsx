@@ -38,12 +38,12 @@ const cormorantGaramond = Cormorant_Garamond({
 
 const alexBrush = Alex_Brush({
   subsets: ['latin'],
-  weight: ['400'], // Alex Brush는 400만 지원
+  weight: ['400'],
   display: 'swap',
   variable: '--font-alex-brush',
 });
 
-// ★ Gowun Dodum 추가
+// Gowun Dodum
 const gowunDodum = Gowun_Dodum({
   subsets: ['latin'],
   weight: ['400'],
