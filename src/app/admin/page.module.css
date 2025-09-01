@@ -355,7 +355,7 @@
 
 @media (min-width: 768px) {
   .pagesContainer {
-    max-width: 1200px;
+    max-width: 768px;
   }
 }
 
@@ -594,7 +594,7 @@
 
 /* 댓글 관리 스타일 */
 .commentsContainer {
-  max-width: 1200px;
+  max-width: 768px;
   margin: 0 auto;
   position: relative;
   z-index: 1;

@@ -1,0 +1,174 @@
+.loaderContainer {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+
+.logoContainer {
+  margin-bottom: 2rem;
+}
+
+.logo {
+  position: relative;
+  width: 80px;
+  height: 80px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.circle {
+  width: 60px;
+  height: 60px;
+  border: 3px solid #2c3e50;
+  border-radius: 50%;
+  animation: rotate 2s linear infinite;
+}
+
+.dot {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  background: #2c3e50;
+  border-radius: 50%;
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes rotate {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes pulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.5);
+    opacity: 0.7;
+  }
+}
+
+.coupleNames {
+  font-family: 'Georgia', serif;
+  font-size: clamp(2rem, 6vw, 2.8rem);
+  color: #2c3e50;
+  margin-bottom: 0.5rem;
+  font-weight: 300;
+  letter-spacing: 1px;
+  text-align: center;
+}
+
+.subtitle {
+  font-family: 'Arial', sans-serif;
+  font-size: clamp(1rem, 3vw, 1.2rem);
+  color: #6c757d;
+  margin-bottom: 3rem;
+  font-weight: 400;
+  text-align: center;
+  letter-spacing: 0.5px;
+}
+
+.progressContainer {
+  width: 280px;
+  height: 4px;
+  background: rgba(108, 117, 125, 0.2);
+  border-radius: 2px;
+  overflow: hidden;
+  margin-bottom: 2rem;
+}
+
+.progressBar {
+  height: 100%;
+  background: linear-gradient(90deg, #2c3e50, #34495e);
+  border-radius: 2px;
+  transition: width 0.3s ease;
+}
+
+.loadingMessage {
+  font-family: 'Arial', sans-serif;
+  font-size: clamp(0.9rem, 2.5vw, 1rem);
+  color: #495057;
+  text-align: center;
+  font-weight: 400;
+  margin: 0;
+  animation: fadeInOut 2s ease-in-out infinite;
+}
+
+@keyframes fadeInOut {
+  0%, 100% {
+    opacity: 0.7;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+@media (min-width: 768px) {
+  .logoContainer {
+    margin-bottom: 2.5rem;
+  }
+  
+  .logo {
+    width: 100px;
+    height: 100px;
+  }
+  
+  .circle {
+    width: 80px;
+    height: 80px;
+    border-width: 4px;
+  }
+  
+  .dot {
+    width: 10px;
+    height: 10px;
+  }
+  
+  .progressContainer {
+    width: 320px;
+    height: 5px;
+    margin-bottom: 2.5rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .logoContainer {
+    margin-bottom: 1.5rem;
+  }
+  
+  .logo {
+    width: 60px;
+    height: 60px;
+  }
+  
+  .circle {
+    width: 45px;
+    height: 45px;
+    border-width: 2px;
+  }
+  
+  .dot {
+    width: 6px;
+    height: 6px;
+  }
+  
+  .progressContainer {
+    width: 240px;
+    height: 3px;
+    margin-bottom: 1.5rem;
+  }
+}

@@ -1,0 +1,104 @@
+.container {
+  padding: 3rem 1rem;
+  max-width: 800px;
+  margin: 0 auto;
+  background: #ffffff;
+}
+
+.card {
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 3rem 2rem;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06);
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  position: relative;
+}
+
+.card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 60px;
+  height: 4px;
+  background: linear-gradient(90deg, #6c757d, #495057);
+  border-radius: 2px;
+}
+
+.messageWrapper {
+  margin-bottom: 2rem;
+}
+
+.message {
+  font-family: 'Georgia', serif;
+  font-size: clamp(1rem, 2.8vw, 1.2rem);
+  line-height: 1.8;
+  color: #2c3e50;
+  text-align: center;
+  margin: 0;
+  white-space: pre-line;
+  word-break: keep-all;
+  overflow-wrap: break-word;
+  font-weight: 400;
+  letter-spacing: 0.3px;
+}
+
+.messageLine {
+  display: inline-block;
+  width: 100%;
+}
+
+.authorWrapper {
+  text-align: center;
+  padding-top: 1.5rem;
+  border-top: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.author {
+  font-family: 'Arial', sans-serif;
+  font-size: clamp(0.9rem, 2.2vw, 1rem);
+  color: #6c757d;
+  font-weight: 400;
+  margin: 0;
+  letter-spacing: 0.5px;
+}
+
+@media (min-width: 768px) {
+  .container {
+    padding: 4rem 2rem;
+  }
+  
+  .card {
+    padding: 4rem 3rem;
+  }
+  
+  .message {
+    padding: 0 2rem;
+    line-height: 2;
+  }
+  
+  .messageWrapper {
+    margin-bottom: 2.5rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .container {
+    padding: 2rem 1rem;
+  }
+  
+  .card {
+    padding: 2rem 1.5rem;
+  }
+  
+  .message {
+    text-align: justify;
+    text-align-last: center;
+  }
+  
+  .messageLine {
+    display: block;
+    margin-bottom: 0.2rem;
+  }
+}

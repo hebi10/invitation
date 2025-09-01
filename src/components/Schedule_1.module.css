@@ -1,0 +1,197 @@
+.container {
+  padding: 3rem 1rem;
+  max-width: 600px;
+  margin: 0 auto;
+  background: #ffffff;
+}
+
+.card {
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 3rem 2rem;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06);
+  border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.title {
+  font-family: 'Georgia', serif;
+  font-size: clamp(1.8rem, 5vw, 2.2rem);
+  color: #2c3e50;
+  text-align: center;
+  margin-bottom: 2.5rem;
+  font-weight: 400;
+  letter-spacing: 0.5px;
+  position: relative;
+}
+
+.title::after {
+  content: '';
+  position: absolute;
+  bottom: -10px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 50px;
+  height: 2px;
+  background: linear-gradient(90deg, #6c757d, #495057);
+  border-radius: 1px;
+}
+
+.mainInfo {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.dateTimeWrapper {
+  margin-bottom: 2rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.date {
+  font-family: 'Georgia', serif;
+  font-size: clamp(1.4rem, 4vw, 1.8rem);
+  color: #2c3e50;
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+  letter-spacing: 0.3px;
+}
+
+.time {
+  font-family: 'Arial', sans-serif;
+  font-size: clamp(1.1rem, 3vw, 1.3rem);
+  color: #495057;
+  margin: 0;
+  font-weight: 400;
+}
+
+.venueWrapper {
+  margin-bottom: 1.5rem;
+}
+
+.venue {
+  font-family: 'Georgia', serif;
+  font-size: clamp(1.3rem, 3.5vw, 1.6rem);
+  color: #2c3e50;
+  margin-bottom: 0.8rem;
+  font-weight: 500;
+  letter-spacing: 0.3px;
+}
+
+.address {
+  font-family: 'Arial', sans-serif;
+  font-size: clamp(0.95rem, 2.5vw, 1.1rem);
+  color: #6c757d;
+  margin: 0;
+  line-height: 1.5;
+  font-weight: 400;
+}
+
+.detailsContainer {
+  margin-top: 2.5rem;
+  padding-top: 2rem;
+  border-top: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.detailItem {
+  margin-bottom: 1.5rem;
+  padding: 1.5rem;
+  background: rgba(248, 249, 250, 0.8);
+  border-radius: 12px;
+  border-left: 4px solid #6c757d;
+}
+
+.detailItem:last-child {
+  margin-bottom: 0;
+}
+
+.detailHeader {
+  display: flex;
+  align-items: center;
+  margin-bottom: 0.8rem;
+}
+
+.detailIcon {
+  color: #6c757d;
+  font-size: 0.8rem;
+  margin-right: 0.8rem;
+}
+
+.detailTitle {
+  font-family: 'Georgia', serif;
+  font-size: clamp(1.1rem, 3vw, 1.3rem);
+  color: #2c3e50;
+  margin: 0;
+  font-weight: 500;
+  letter-spacing: 0.3px;
+}
+
+.detailContent {
+  margin-left: 1.6rem;
+}
+
+.detailInfo {
+  font-family: 'Arial', sans-serif;
+  font-size: clamp(0.9rem, 2.3vw, 1rem);
+  color: #495057;
+  margin: 0.3rem 0;
+  line-height: 1.4;
+  font-weight: 400;
+}
+
+.detailInfo:first-child {
+  margin-top: 0;
+}
+
+.detailInfo:last-child {
+  margin-bottom: 0;
+}
+
+@media (min-width: 768px) {
+  .container {
+    padding: 4rem 2rem;
+  }
+  
+  .card {
+    padding: 4rem 3rem;
+  }
+  
+  .dateTimeWrapper {
+    margin-bottom: 2.5rem;
+    padding-bottom: 2rem;
+  }
+  
+  .venueWrapper {
+    margin-bottom: 2rem;
+  }
+  
+  .detailsContainer {
+    margin-top: 3rem;
+    padding-top: 2.5rem;
+  }
+  
+  .detailItem {
+    padding: 2rem;
+  }
+  
+  .detailContent {
+    margin-left: 2rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .container {
+    padding: 2rem 1rem;
+  }
+  
+  .card {
+    padding: 2rem 1.5rem;
+  }
+  
+  .detailItem {
+    padding: 1.2rem;
+  }
+  
+  .detailContent {
+    margin-left: 1.4rem;
+  }
+}

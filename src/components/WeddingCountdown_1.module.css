@@ -1,0 +1,110 @@
+.countdownContainer {
+  background: rgba(248, 249, 250, 0.8);
+  border-radius: 12px;
+  padding: 2rem;
+  margin-top: 2rem;
+  text-align: center;
+  border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.title {
+  font-family: 'Georgia', serif;
+  font-size: clamp(1.2rem, 3.5vw, 1.5rem);
+  color: #2c3e50;
+  margin: 0;
+  font-weight: 500;
+  letter-spacing: 0.3px;
+}
+
+.subtitle {
+  font-family: 'Arial', sans-serif;
+  font-size: clamp(1rem, 2.8vw, 1.2rem);
+  color: #495057;
+  margin: 0;
+  font-weight: 400;
+}
+
+.timeDisplay {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.timeUnit {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 60px;
+}
+
+.timeNumber {
+  font-family: 'Georgia', serif;
+  font-size: clamp(1.8rem, 5vw, 2.4rem);
+  font-weight: 600;
+  color: #2c3e50;
+  line-height: 1;
+}
+
+.timeLabel {
+  font-family: 'Arial', sans-serif;
+  font-size: clamp(0.8rem, 2.2vw, 0.9rem);
+  color: #6c757d;
+  margin-top: 0.3rem;
+  font-weight: 500;
+}
+
+.separator {
+  font-size: clamp(1.2rem, 3.5vw, 1.5rem);
+  color: #6c757d;
+  font-weight: 600;
+  margin: 0 0.2rem;
+}
+
+@media (min-width: 768px) {
+  .countdownContainer {
+    padding: 2.5rem;
+  }
+  
+  .content {
+    gap: 2rem;
+  }
+  
+  .timeDisplay {
+    gap: 1.5rem;
+  }
+  
+  .timeUnit {
+    min-width: 80px;
+  }
+  
+  .separator {
+    margin: 0 0.5rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .countdownContainer {
+    padding: 1.5rem;
+  }
+  
+  .timeDisplay {
+    gap: 0.8rem;
+  }
+  
+  .timeUnit {
+    min-width: 50px;
+  }
+  
+  .separator {
+    margin: 0 0.1rem;
+  }
+}

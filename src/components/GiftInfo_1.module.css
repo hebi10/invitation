@@ -1,0 +1,200 @@
+.container {
+  padding: 3rem 1rem;
+  max-width: 800px;
+  margin: 0 auto;
+  background: #ffffff;
+}
+
+.card {
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 3rem 2rem;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06);
+  border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.title {
+  font-family: 'Georgia', serif;
+  font-size: clamp(1.8rem, 5vw, 2.2rem);
+  color: #2c3e50;
+  text-align: center;
+  margin-bottom: 1.5rem;
+  font-weight: 400;
+  letter-spacing: 0.5px;
+  position: relative;
+}
+
+.title::after {
+  content: '';
+  position: absolute;
+  bottom: -10px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 50px;
+  height: 2px;
+  background: linear-gradient(90deg, #6c757d, #495057);
+  border-radius: 1px;
+}
+
+.message {
+  font-family: 'Arial', sans-serif;
+  font-size: clamp(1rem, 2.8vw, 1.1rem);
+  color: #495057;
+  text-align: center;
+  margin-bottom: 3rem;
+  line-height: 1.6;
+  font-weight: 400;
+}
+
+.accountsContainer {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 2rem;
+  max-width: 700px;
+  margin: 0 auto;
+}
+
+.accountCard {
+  background: rgba(248, 249, 250, 0.8);
+  border-radius: 12px;
+  padding: 2rem;
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  text-align: center;
+}
+
+.accountTitle {
+  font-family: 'Georgia', serif;
+  font-size: clamp(1.2rem, 3.5vw, 1.4rem);
+  color: #2c3e50;
+  margin-bottom: 1.5rem;
+  font-weight: 500;
+  letter-spacing: 0.3px;
+}
+
+.accountInfo {
+  margin-bottom: 1.5rem;
+}
+
+.accountDetail {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.8rem;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.accountDetail:last-child {
+  border-bottom: none;
+  margin-bottom: 0;
+}
+
+.accountLabel {
+  font-family: 'Arial', sans-serif;
+  font-size: 0.9rem;
+  color: #6c757d;
+  font-weight: 600;
+  flex-shrink: 0;
+  min-width: 60px;
+}
+
+.accountValue {
+  font-family: 'Arial', sans-serif;
+  font-size: 0.95rem;
+  color: #2c3e50;
+  font-weight: 500;
+  text-align: right;
+  word-break: break-all;
+}
+
+.copyButton {
+  background: #2c3e50;
+  color: white;
+  border: none;
+  padding: 0.8rem 1.5rem;
+  border-radius: 8px;
+  font-family: 'Arial', sans-serif;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  width: 100%;
+}
+
+.copyButton:hover {
+  background: #34495e;
+  transform: translateY(-2px);
+}
+
+.copyButton:active {
+  transform: translateY(0);
+}
+
+@media (min-width: 768px) {
+  .container {
+    padding: 4rem 2rem;
+  }
+  
+  .card {
+    padding: 4rem 3rem;
+  }
+  
+  .message {
+    margin-bottom: 3.5rem;
+  }
+  
+  .accountsContainer {
+    gap: 2.5rem;
+  }
+  
+  .accountCard {
+    padding: 2.5rem;
+  }
+  
+  .accountTitle {
+    margin-bottom: 2rem;
+  }
+  
+  .accountInfo {
+    margin-bottom: 2rem;
+  }
+  
+  .accountDetail {
+    margin-bottom: 1rem;
+    padding: 0.8rem 0;
+  }
+  
+  .copyButton {
+    padding: 1rem 2rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .container {
+    padding: 2rem 1rem;
+  }
+  
+  .card {
+    padding: 2rem 1.5rem;
+  }
+  
+  .accountsContainer {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+  }
+  
+  .accountCard {
+    padding: 1.5rem;
+  }
+  
+  .accountDetail {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.3rem;
+  }
+  
+  .accountValue {
+    text-align: left;
+    word-break: break-all;
+  }
+}

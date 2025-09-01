@@ -1,0 +1,385 @@
+.container {
+  padding: 3rem 1rem;
+  max-width: 800px;
+  margin: 0 auto;
+  background: #ffffff;
+}
+
+.card {
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 3rem 2rem;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06);
+  border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.title {
+  font-family: 'Georgia', serif;
+  font-size: clamp(1.8rem, 5vw, 2.2rem);
+  color: #2c3e50;
+  text-align: center;
+  margin-bottom: 1rem;
+  font-weight: 400;
+  letter-spacing: 0.5px;
+  position: relative;
+}
+
+.title::after {
+  content: '';
+  position: absolute;
+  bottom: -10px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 50px;
+  height: 2px;
+  background: linear-gradient(90deg, #6c757d, #495057);
+  border-radius: 1px;
+}
+
+.subtitle {
+  font-family: 'Arial', sans-serif;
+  font-size: clamp(1rem, 2.8vw, 1.1rem);
+  color: #6c757d;
+  text-align: center;
+  margin-bottom: 3rem;
+  line-height: 1.6;
+  font-weight: 400;
+}
+
+.form {
+  margin-bottom: 3rem;
+  padding: 2rem;
+  background: rgba(248, 249, 250, 0.6);
+  border-radius: 12px;
+  border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.formRow {
+  margin-bottom: 1.5rem;
+}
+
+.formRow:last-child {
+  margin-bottom: 0;
+}
+
+.label {
+  display: block;
+  font-family: 'Arial', sans-serif;
+  font-size: 0.9rem;
+  color: #495057;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+
+.input,
+.textarea {
+  width: 100%;
+  padding: 0.8rem 1rem;
+  border: 1px solid #dee2e6;
+  border-radius: 8px;
+  font-family: 'Arial', sans-serif;
+  font-size: 0.95rem;
+  color: #495057;
+  background: white;
+  transition: all 0.3s ease;
+  box-sizing: border-box;
+}
+
+.input:focus,
+.textarea:focus {
+  outline: none;
+  border-color: #2c3e50;
+  box-shadow: 0 0 0 3px rgba(44, 62, 80, 0.1);
+}
+
+.textarea {
+  resize: vertical;
+  min-height: 100px;
+  line-height: 1.5;
+}
+
+.charCount {
+  font-family: 'Arial', sans-serif;
+  font-size: 0.8rem;
+  color: #6c757d;
+  text-align: right;
+  margin-top: 0.3rem;
+}
+
+.errorMessage {
+  color: #dc3545;
+  font-family: 'Arial', sans-serif;
+  font-size: 0.9rem;
+  margin: 0.5rem 0;
+  padding: 0.5rem;
+  background: rgba(220, 53, 69, 0.1);
+  border-radius: 6px;
+  border-left: 3px solid #dc3545;
+}
+
+.submitButton {
+  width: 100%;
+  background: #2c3e50;
+  color: white;
+  border: none;
+  padding: 1rem 2rem;
+  border-radius: 8px;
+  font-family: 'Arial', sans-serif;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  margin-top: 1rem;
+}
+
+.submitButton:hover:not(:disabled) {
+  background: #34495e;
+  transform: translateY(-2px);
+}
+
+.submitButton:disabled {
+  background: #6c757d;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.commentsList {
+  margin-top: 2rem;
+}
+
+.loadingMessage {
+  text-align: center;
+  font-family: 'Arial', sans-serif;
+  color: #6c757d;
+  padding: 2rem;
+  font-size: 0.95rem;
+}
+
+.emptyState {
+  text-align: center;
+  padding: 3rem 2rem;
+  background: rgba(248, 249, 250, 0.6);
+  border-radius: 12px;
+  border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.emptyMessage {
+  font-family: 'Georgia', serif;
+  font-size: 1.1rem;
+  color: #495057;
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+}
+
+.emptySubMessage {
+  font-family: 'Arial', sans-serif;
+  font-size: 0.9rem;
+  color: #6c757d;
+  margin: 0;
+}
+
+.commentsHeader {
+  margin-bottom: 2rem;
+  text-align: center;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.commentsCount {
+  font-family: 'Arial', sans-serif;
+  font-size: 0.95rem;
+  color: #495057;
+  font-weight: 500;
+}
+
+.commentsGrid {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.commentItem {
+  background: rgba(248, 249, 250, 0.6);
+  border-radius: 12px;
+  padding: 1.5rem;
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  transition: all 0.3s ease;
+}
+
+.commentItem:hover {
+  background: rgba(248, 249, 250, 0.8);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+}
+
+.commentHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+  padding-bottom: 0.8rem;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.commentAuthor {
+  font-family: 'Arial', sans-serif;
+  font-size: 0.95rem;
+  color: #2c3e50;
+  font-weight: 600;
+}
+
+.commentActions {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.commentDate {
+  font-family: 'Arial', sans-serif;
+  font-size: 0.8rem;
+  color: #6c757d;
+}
+
+.deleteButton {
+  background: #dc3545;
+  color: white;
+  border: none;
+  padding: 0.3rem 0.8rem;
+  border-radius: 6px;
+  font-family: 'Arial', sans-serif;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.deleteButton:hover {
+  background: #c82333;
+}
+
+.commentMessage {
+  font-family: 'Arial', sans-serif;
+  font-size: 0.95rem;
+  color: #495057;
+  line-height: 1.6;
+  margin: 0;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 1rem;
+  margin-top: 2rem;
+}
+
+.pageButton {
+  background: #2c3e50;
+  color: white;
+  border: none;
+  padding: 0.6rem 1.2rem;
+  border-radius: 6px;
+  font-family: 'Arial', sans-serif;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.pageButton:hover:not(.disabled) {
+  background: #34495e;
+}
+
+.pageButton.disabled {
+  background: #6c757d;
+  cursor: not-allowed;
+}
+
+.pageNumbers {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.pageNumber {
+  background: #f8f9fa;
+  color: #495057;
+  border: 1px solid #dee2e6;
+  padding: 0.6rem 1rem;
+  border-radius: 6px;
+  font-family: 'Arial', sans-serif;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  min-width: 40px;
+}
+
+.pageNumber:hover {
+  background: #e9ecef;
+}
+
+.pageNumber.active {
+  background: #2c3e50;
+  color: white;
+  border-color: #2c3e50;
+}
+
+@media (min-width: 768px) {
+  .container {
+    padding: 4rem 2rem;
+  }
+  
+  .card {
+    padding: 4rem 3rem;
+  }
+  
+  .form {
+    padding: 2.5rem;
+  }
+  
+  .commentItem {
+    padding: 2rem;
+  }
+  
+  .commentsGrid {
+    gap: 2rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .container {
+    padding: 2rem 1rem;
+  }
+  
+  .card {
+    padding: 2rem 1.5rem;
+  }
+  
+  .form {
+    padding: 1.5rem;
+  }
+  
+  .commentHeader {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+  
+  .commentActions {
+    gap: 0.5rem;
+  }
+  
+  .pagination {
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+  
+  .pageNumbers {
+    gap: 0.3rem;
+  }
+  
+  .pageNumber {
+    padding: 0.5rem 0.8rem;
+    min-width: 35px;
+  }
+}

@@ -1071,7 +1071,7 @@
 }
 
 /* 대형 화면 최적화 */
-@media (min-width: 1200px) {
+@media (min-width: 768px) {
   .pagination {
     gap: 0.8rem;
     padding: 1.4rem;
