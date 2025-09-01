@@ -14,11 +14,8 @@ export default function Home() {
             <a className={styles.adminButton} href="/admin">Admin 페이지</a>
             <a
               className={styles.linkButton}
-              href="#"
-              onClick={(e) => {
-                e.preventDefault();
-                alert("준비 중입니다.");
-              }}
+              href="https://kmong.com/gig/686626"
+              target='_blank'
             >
               판매 페이지
             </a>

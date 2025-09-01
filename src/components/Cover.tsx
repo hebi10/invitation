@@ -24,7 +24,7 @@ const Cover = React.memo(function Cover({
   backgroundImage,
   preloadComplete = false
 }: CoverProps) {
-  const [imageLoaded, setImageLoaded] = useState(false);
+  const [imageLoaded, setImageLoaded] = useState(preloadComplete);
   const [imageError, setImageError] = useState(false);
 
   // 페이지 로딩이 완료되었을 때는 이미지 로딩 상태를 표시하지 않음

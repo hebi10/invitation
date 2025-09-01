@@ -62,8 +62,11 @@ export default function KimMinJunParkSoHee() {
   // 메인 이미지 URL 결정 (Firebase 이미지만 사용)
   const mainImageUrl = mainImage?.url || "";
 
-  // 프리로드할 이미지들 (Firebase 갤러리 이미지만 사용) - 최대 6개로 제한
-  const preloadImages = galleryImages.slice(0, 6).map(img => img.url);
+  // 프리로드할 이미지들 (메인 이미지 + Firebase 갤러리 이미지 상위 5개) - 최대 6개로 제한
+  const preloadImages = [
+    ...(mainImageUrl ? [mainImageUrl] : []), // Cover 이미지 포함
+    ...galleryImages.slice(0, 5).map(img => img.url)
+  ].slice(0, 6);
 
   // 에러 상태 처리
   if (error) {
