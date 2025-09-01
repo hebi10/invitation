@@ -207,6 +207,69 @@ export default function LocationMap({
             </div>
           )}
         </div>
+
+        {/* 예식장 정보 섹션 */}
+        <div className={styles.venueInfoSection}>
+          <div className={styles.venueInfoHeader}>
+            <span className={styles.venueInfoIcon}>💒</span>
+            <h3 className={styles.venueInfoTitle}>예식장 정보</h3>
+          </div>
+          
+          <div className={styles.venueDetails}>
+            <div className={styles.venueMainInfo}>
+              <div className={styles.venueNameSection}>
+                <span className={styles.venueIcon}>🏛️</span>
+                <span className={styles.venueName}>{venueName}</span>
+              </div>
+              
+              <div className={styles.venueAddressSection}>
+                <span className={styles.addressIcon}>📍</span>
+                <span className={styles.venueAddress}>{address}</span>
+              </div>
+              
+              {description && (
+                <div className={styles.venueDescriptionSection}>
+                  <span className={styles.descIcon}>🚇</span>
+                  <span className={styles.venueDescription}>{description}</span>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* 길찾기 버튼 섹션 */}
+        <div className={styles.navigationSection}>
+          <div className={styles.navigationHeader}>
+            <span className={styles.navigationIcon}>🧭</span>
+            <h3 className={styles.navigationTitle}>길찾기</h3>
+          </div>
+          
+          <div className={styles.navigationButtons}>
+            <button 
+              className={styles.navButton}
+              onClick={() => window.open(`https://map.naver.com/v5/search/${encodeURIComponent(address)}`, '_blank')}
+            >
+              <span className={styles.navButtonIcon}>🟢</span>
+              <span className={styles.navButtonText}>네이버 지도</span>
+            </button>
+            
+            <button 
+              className={styles.navButton}
+              onClick={() => window.open(`https://map.kakao.com/link/search/${encodeURIComponent(address)}`, '_blank')}
+            >
+              <span className={styles.navButtonIcon}>🟡</span>
+              <span className={styles.navButtonText}>카카오맵</span>
+            </button>
+            
+            <button 
+              className={styles.navButton}
+              onClick={() => window.open(`https://www.google.com/maps/search/${encodeURIComponent(address)}`, '_blank')}
+            >
+              <span className={styles.navButtonIcon}>🔵</span>
+              <span className={styles.navButtonText}>구글 지도</span>
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   );
