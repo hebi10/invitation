@@ -1,7 +1,7 @@
 .countdownContainer {
   background: rgba(248, 249, 250, 0.8);
   border-radius: 12px;
-  padding: 2rem;
+  padding: 1.5rem;
   margin-top: 2rem;
   text-align: center;
   border: 1px solid rgba(0, 0, 0, 0.05);
@@ -15,7 +15,7 @@
 }
 
 .title {
-  font-family: 'Georgia', serif;
+  font-family: var(--font-gowun-dodum);
   font-size: clamp(1.2rem, 3.5vw, 1.5rem);
   color: #2c3e50;
   margin: 0;
@@ -34,7 +34,6 @@
 .timeDisplay {
   display: flex;
   align-items: center;
-  gap: 1rem;
   justify-content: center;
   flex-wrap: wrap;
 }
@@ -43,12 +42,12 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  min-width: 60px;
+  min-width: 50px;
 }
 
 .timeNumber {
-  font-family: 'Georgia', serif;
-  font-size: clamp(1.8rem, 5vw, 2.4rem);
+  font-family: var(--font-gowun-dodum);
+  font-size: clamp(1.2rem, 3.5vw, 1.6rem);
   font-weight: 600;
   color: #2c3e50;
   line-height: 1;
@@ -63,27 +62,23 @@
 }
 
 .separator {
-  font-size: clamp(1.2rem, 3.5vw, 1.5rem);
+  font-size: clamp(1rem, 3vw, 1.2rem);
   color: #6c757d;
   font-weight: 600;
-  margin: 0 0.2rem;
+  margin: 0 0.1rem;
 }
 
 @media (min-width: 768px) {
   .countdownContainer {
-    padding: 2.5rem;
+    padding: 2rem;
   }
   
   .content {
     gap: 2rem;
   }
   
-  .timeDisplay {
-    gap: 1.5rem;
-  }
-  
   .timeUnit {
-    min-width: 80px;
+    min-width: 70px;
   }
   
   .separator {
@@ -93,11 +88,7 @@
 
 @media (max-width: 480px) {
   .countdownContainer {
-    padding: 1.5rem;
-  }
-  
-  .timeDisplay {
-    gap: 0.8rem;
+    padding: 1rem;
   }
   
   .timeUnit {

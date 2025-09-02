@@ -14,7 +14,7 @@
 }
 
 .title {
-  font-family: 'Georgia', serif;
+  font-family: var(--font-gowun-dodum);
   font-size: clamp(1.8rem, 5vw, 2.2rem);
   color: #2c3e50;
   text-align: center;
@@ -164,7 +164,7 @@
 }
 
 .emptyMessage {
-  font-family: 'Georgia', serif;
+  font-family: var(--font-gowun-dodum);
   font-size: 1.1rem;
   color: #495057;
   margin-bottom: 0.5rem;
@@ -324,6 +324,16 @@
   border-color: #2c3e50;
 }
 
+.ellipsis {
+  display: flex;
+  align-items: center;
+  padding: 0.6rem 0.5rem;
+  color: #6c757d;
+  font-family: 'Arial', sans-serif;
+  font-size: 0.9rem;
+  user-select: none;
+}
+
 @media (min-width: 768px) {
   .container {
     padding: 4rem 2rem;
@@ -376,10 +386,22 @@
   
   .pageNumbers {
     gap: 0.3rem;
+    flex-wrap: wrap;
   }
   
   .pageNumber {
     padding: 0.5rem 0.8rem;
     min-width: 35px;
+    font-size: 0.8rem;
+  }
+  
+  .pageButton {
+    padding: 0.5rem 0.8rem;
+    font-size: 0.8rem;
+  }
+  
+  .ellipsis {
+    padding: 0.5rem 0.3rem;
+    font-size: 0.8rem;
   }
 }

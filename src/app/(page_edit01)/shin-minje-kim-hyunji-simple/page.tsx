@@ -16,6 +16,7 @@ import { usePageImages } from '@/hooks';
 import { AccessDeniedPage, checkPageAccess } from '@/utils';
 import { useAdmin } from '@/contexts';
 import { getWeddingPageBySlug } from '@/config/weddingPages';
+import KakaoShareButton from './KakaoShareButton';
 
 const WEDDING_SLUG = "shin-minje-kim-hyunji";
 const pageConfig = getWeddingPageBySlug(WEDDING_SLUG);
@@ -143,6 +144,11 @@ export default function ShinMinJeKimHyunJi_Simple() {
           accountHolder: pageConfig?.brideName || ''
         }}
         message="마음만으로도 충분합니다. 축하의 뜻으로 전해주시는 축의금은 소중히 받겠습니다."
+      />
+      <KakaoShareButton 
+        title={`${pageConfig?.groomName || ''} ♡ ${pageConfig?.brideName || ''} 결혼식 (심플 버전)`}
+        description={`${pageConfig?.date || ''} ${pageConfig?.pageData?.ceremonyTime || ''} ${pageConfig?.venue || ''}에서 열리는 결혼식에 초대합니다.`}
+        imageUrl={mainImageUrl || "/images/thum.jpg"}
       />
     </main>
   );

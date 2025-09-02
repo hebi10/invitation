@@ -14,7 +14,7 @@
 }
 
 .title {
-  font-family: 'Georgia', serif;
+  font-family: var(--font-gowun-dodum);
   font-size: clamp(1.8rem, 5vw, 2.2rem);
   color: #2c3e50;
   text-align: center;
@@ -48,7 +48,7 @@
 }
 
 .monthTitle {
-  font-family: 'Georgia', serif;
+  font-family: var(--font-gowun-dodum);
   font-size: clamp(1.3rem, 3.8vw, 1.6rem);
   color: #2c3e50;
   margin: 0 0 0.5rem 0;
@@ -146,7 +146,8 @@
 .weddingIcon {
   position: absolute;
   bottom: 2px;
-  right: 2px;
+  right: 50%;
+  transform: translateX(50%);
   font-size: 0.7rem;
   z-index: 2;
 }

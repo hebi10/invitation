@@ -90,6 +90,53 @@ export default function Guestbook_1({ pageSlug }: GuestbookProps) {
     setCurrentPage(page);
   };
 
+  // 모바일 감지 및 페이지 번호 계산
+  const [isMobile, setIsMobile] = useState(false);
+  
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth <= 768);
+    };
+    
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
+  const getPageNumbers = () => {
+    const maxPages = isMobile ? 3 : 5; // 모바일: 3개, 데스크톱: 5개
+    const pages = [];
+    
+    if (totalPages <= maxPages) {
+      // 총 페이지가 maxPages 이하면 모든 페이지 표시
+      for (let i = 1; i <= totalPages; i++) {
+        pages.push(i);
+      }
+    } else {
+      // 총 페이지가 maxPages 초과인 경우
+      const sidePages = Math.floor((maxPages - 1) / 2);
+      
+      if (currentPage <= sidePages + 1) {
+        for (let i = 1; i <= maxPages; i++) {
+          pages.push(i);
+        }
+      } else if (currentPage >= totalPages - sidePages) {
+        for (let i = totalPages - maxPages + 1; i <= totalPages; i++) {
+          pages.push(i);
+        }
+      } else {
+        for (let i = currentPage - sidePages; i <= currentPage + sidePages; i++) {
+          pages.push(i);
+        }
+      }
+    }
+    
+    return pages;
+  };
+
+  const pageNumbers = getPageNumbers();
+
   return (
     <section className={styles.container}>
       <div className={styles.card}>
@@ -188,7 +235,23 @@ export default function Guestbook_1({ pageSlug }: GuestbookProps) {
                   </button>
                   
                   <div className={styles.pageNumbers}>
-                    {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+                    {/* 첫 페이지 (필요시) */}
+                    {totalPages > (isMobile ? 3 : 5) && pageNumbers[0] > 1 && (
+                      <>
+                        <button
+                          className={styles.pageNumber}
+                          onClick={() => handlePageChange(1)}
+                        >
+                          1
+                        </button>
+                        {pageNumbers[0] > 2 && (
+                          <span className={styles.ellipsis}>...</span>
+                        )}
+                      </>
+                    )}
+                    
+                    {/* 페이지 번호들 */}
+                    {pageNumbers.map(page => (
                       <button
                         key={page}
                         className={`${styles.pageNumber} ${currentPage === page ? styles.active : ''}`}
@@ -197,6 +260,21 @@ export default function Guestbook_1({ pageSlug }: GuestbookProps) {
                         {page}
                       </button>
                     ))}
+                    
+                    {/* 마지막 페이지 (필요시) */}
+                    {totalPages > (isMobile ? 3 : 5) && pageNumbers[pageNumbers.length - 1] < totalPages && (
+                      <>
+                        {pageNumbers[pageNumbers.length - 1] < totalPages - 1 && (
+                          <span className={styles.ellipsis}>...</span>
+                        )}
+                        <button
+                          className={styles.pageNumber}
+                          onClick={() => handlePageChange(totalPages)}
+                        >
+                          {totalPages}
+                        </button>
+                      </>
+                    )}
                   </div>
                   
                   <button 

@@ -6,7 +6,7 @@
 }
 
 .title {
-  font-family: 'Georgia', serif;
+  font-family: var(--font-gowun-dodum);
   font-size: clamp(1.8rem, 5vw, 2.2rem);
   color: #2c3e50;
   text-align: center;

@@ -31,7 +31,7 @@
 }
 
 .message {
-  font-family: 'Georgia', serif;
+  font-family: var(--font-gowun-dodum);
   font-size: clamp(1rem, 2.8vw, 1.2rem);
   line-height: 1.8;
   color: #2c3e50;

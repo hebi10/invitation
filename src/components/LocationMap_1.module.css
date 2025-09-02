@@ -23,7 +23,7 @@
 }
 
 .title {
-  font-family: 'Georgia', serif;
+  font-family: var(--font-gowun-dodum);
   font-size: clamp(1.8rem, 5vw, 2.2rem);
   color: #2c3e50;
   text-align: center;
@@ -151,7 +151,7 @@
 }
 
 .venueTitle {
-  font-family: 'Georgia', serif;
+  font-family: var(--font-gowun-dodum);
   font-size: clamp(1.2rem, 3.5vw, 1.5rem);
   color: #2c3e50;
   margin-bottom: 1.5rem;
@@ -193,7 +193,7 @@
 }
 
 .navigationTitle {
-  font-family: 'Georgia', serif;
+  font-family: var(--font-gowun-dodum);
   font-size: clamp(1.2rem, 3.5vw, 1.5rem);
   color: #2c3e50;
   margin-bottom: 1.5rem;

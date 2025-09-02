@@ -63,7 +63,7 @@
 }
 
 .coupleNames {
-  font-family: 'Georgia', serif;
+  font-family: var(--font-gowun-dodum);
   font-size: clamp(2rem, 6vw, 2.8rem);
   color: #2c3e50;
   margin-bottom: 0.5rem;
