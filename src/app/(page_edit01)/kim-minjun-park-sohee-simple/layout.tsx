@@ -13,10 +13,7 @@ if (!pageConfig) {
 
 const WEDDING_IMAGE = pageConfig.metadata.images.wedding;
 
-export const metadata: Metadata = {
-  ...generateWeddingMetadata(WEDDING_SLUG),
-  title: `${pageConfig?.groomName || ''} ♡ ${pageConfig?.brideName || ''} 결혼식 - ${pageConfig?.date || ''} (심플 버전)`,
-};
+export const metadata: Metadata = generateWeddingMetadata(WEDDING_SLUG);
 
 export const viewport: Viewport = {
   width: 'device-width',

@@ -1,36 +1,54 @@
-import { ReactNode } from 'react';
+import type { Metadata, Viewport } from 'next';
 import Script from 'next/script';
-import { Metadata } from 'next';
 import KakaoShareButton from './KakaoShareButton';
+import { generateMetadata as generateWeddingMetadata, getWeddingPageBySlug } from '@/config/weddingPages';
 
-export const metadata: Metadata = {
-  title: "신민제 ♡ 김현지 결혼식 (심플 버전)",
-  description: "2024년 9월 14일 (토) 11:00 부산 베스트웨스턴 호텔에서 열리는 결혼식에 초대합니다.",
-  openGraph: {
-    title: "신민제 ♡ 김현지 결혼식 (심플 버전)",
-    description: "2024년 9월 14일 (토) 11:00 부산 베스트웨스턴 호텔에서 열리는 결혼식에 초대합니다.",
-    images: ["/images/thum.jpg"],
-    url: '/shin-minje-kim-hyunji',
-  },
+const WEDDING_SLUG = 'shin-minje-kim-hyunji';
+const pageConfig = getWeddingPageBySlug(WEDDING_SLUG);
+
+if (!pageConfig) {
+  throw new Error(`Wedding page config not found for slug: ${WEDDING_SLUG}`);
+}
+
+const WEDDING_IMAGE = pageConfig.metadata.images.wedding;
+
+export const metadata: Metadata = generateWeddingMetadata(WEDDING_SLUG);
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
 };
 
-export default function ShinMinJeKimHyunJiSimpleLayout({
+export default function Layout({
   children,
 }: {
-  children: ReactNode;
+  children: React.ReactNode;
 }) {
   return (
     <>
-      <Script
-        src="https://developers.kakao.com/sdk/js/kakao.js"
+      {/* 카카오 JavaScript SDK */}
+      <Script 
+        src="https://t1.kakaocdn.net/kakao_js_sdk/2.7.2/kakao.min.js" 
+        integrity="sha384-TiCUE00h649CAMonG018J2ujOgDKW/kVWlChEuu4jK2vxfAAD0eZxzCKakxg55G4" 
+        crossOrigin="anonymous"
         strategy="beforeInteractive"
       />
+      
       {children}
-      <KakaoShareButton 
-        title="신민제 ♡ 김현지 결혼식 (심플 버전)"
-        description="2024년 9월 14일 (토) 11:00 부산 베스트웨스턴 호텔에서 열리는 결혼식에 초대합니다."
-        imageUrl="/images/thum.jpg"
-      />
+      
+      {/* 카카오톡 공유 버튼 */}
+      <div className='kakao_share' style={{ 
+        backgroundColor: '#fff', 
+        borderBottom: '1px solid #f0f0f0',
+        padding: '10px 0',
+        display: 'none'
+      }}>
+        <KakaoShareButton 
+          title={pageConfig?.metadata.title || '결혼식에 초대합니다'}
+          description={`${pageConfig?.date || ''}\n${pageConfig?.venue || ''}에서 열리는 저희의 결혼식에 초대합니다.`}
+          imageUrl={WEDDING_IMAGE}
+        />
+      </div>
     </>
   );
 }

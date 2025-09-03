@@ -9,8 +9,8 @@ import {
   Schedule_1, 
   LocationMap_1, 
   WeddingCalendar_1, 
-  GiftInfo_1, 
-  Guestbook_1
+  Guestbook_1, 
+  GiftInfo_1 
 } from '@/components';
 import { usePageImages } from '@/hooks';
 import { AccessDeniedPage, checkPageAccess } from '@/utils';
@@ -24,12 +24,12 @@ if (!pageConfig) {
   throw new Error(`Wedding page config not found for slug: ${WEDDING_SLUG}`);
 }
 
-export default function ShinMinJeKimHyunJi_Simple() {
+export default function KimTaehyunChoiYuna_Simple() {
   const [access, setAccess] = useState<{ canAccess: boolean; message?: string }>({ canAccess: true });
   const [isLoading, setIsLoading] = useState(true);
   const { images, imageUrls, firstImage, hasImages, mainImage, galleryImages, loading: imagesLoading, error } = 
   usePageImages(WEDDING_SLUG);
-
+  
   const { isAdminLoggedIn } = useAdmin();
 
   useEffect(() => {
@@ -56,7 +56,7 @@ export default function ShinMinJeKimHyunJi_Simple() {
   if (access === null) return null;
   if (!access.canAccess) return <AccessDeniedPage message={access.message} />;
   
-  const weddingDate = new Date(2026, 3, 14);
+  const weddingDate = new Date(2024, 5, 8); // 2024년 6월 8일
   
   const mainImageUrl = mainImage?.url || "";
 
@@ -83,10 +83,10 @@ export default function ShinMinJeKimHyunJi_Simple() {
   }
 
   return (
-    <main role="main" aria-label={`${pageConfig?.groomName || ''}와 ${pageConfig?.brideName || ''}의 결혼식 청첩장 (심플 버전)`}>
+    <main role="main" aria-label={`${pageConfig?.groomName || ''}과 ${pageConfig?.brideName || ''}의 결혼식 청첩장 (심플 버전)`}>
       <Cover_1 
         title={pageConfig?.displayName || ''}
-        subtitle={pageConfig?.pageData?.subtitle || '두 사람이 사랑으로 하나가 되는 날'} 
+        subtitle={pageConfig?.pageData?.subtitle || '영원한 사랑을 약속합니다'} 
         weddingDate={`${pageConfig?.date || ''} ${pageConfig?.pageData?.ceremonyTime || ''}`}
         imageUrl={mainImageUrl}
         brideName={pageConfig?.brideName || ''}
@@ -94,8 +94,11 @@ export default function ShinMinJeKimHyunJi_Simple() {
         preloadComplete={true}
       />
       <Greeting_1 
-        message={pageConfig?.pageData?.greetingMessage || '두 사람이 사랑으로 하나가 되는 순간을 함께해 주시는 모든 분들께 감사드립니다. 새로운 시작을 따뜻한 마음으로 축복해 주시면 더없는 기쁨이겠습니다.'}
+        message={pageConfig?.pageData?.greetingMessage || '사랑하는 가족과 친구들과 함께 영원한 약속을 나누고자 합니다. 저희의 사랑의 여정을 따뜻하게 지켜봐 주세요.'}
         author={pageConfig?.pageData?.greetingAuthor || `${pageConfig?.groomName || ''} · ${pageConfig?.brideName || ''}`}
+      />
+      <Gallery_1 
+        images={galleryImages.map(img => img.url)}
       />
       <WeddingCalendar_1 
         title="행복한 순간을 함께하세요"
@@ -109,14 +112,11 @@ export default function ShinMinJeKimHyunJi_Simple() {
             description: `${pageConfig?.pageData?.ceremonyTime || ''} ${pageConfig?.venue || ''}`
           }
         ]}
-        showCountdown={true}
+        showCountdown={false}
         countdownTitle="결혼식까지"
         onDateClick={(date) => {
           console.log('선택된 날짜:', date);
         }}
-      />
-      <Gallery_1 
-        images={galleryImages.map(img => img.url)}
       />
       <Schedule_1 
         date={pageConfig?.date || ''}
@@ -133,13 +133,13 @@ export default function ShinMinJeKimHyunJi_Simple() {
       <Guestbook_1 pageSlug={WEDDING_SLUG} />
       <GiftInfo_1 
         groomAccount={{
-          bank: "국민은행",
-          accountNumber: "123456-78-901234",
+          bank: "신한은행",
+          accountNumber: "110-123-456789",
           accountHolder: pageConfig?.groomName || ''
         }}
         brideAccount={{
-          bank: "신한은행",
-          accountNumber: "567890-12-345678",
+          bank: "우리은행",
+          accountNumber: "1002-234-567890",
           accountHolder: pageConfig?.brideName || ''
         }}
         message="마음만으로도 충분합니다. 축하의 뜻으로 전해주시는 축의금은 소중히 받겠습니다."
