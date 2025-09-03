@@ -130,7 +130,7 @@
   letter-spacing: 0.3px;
 }
 
-@media (min-width: 768px) {
+@media (min-width: 700px) {
   .content {
     padding: 3rem;
   }

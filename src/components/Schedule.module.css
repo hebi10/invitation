@@ -27,7 +27,7 @@
   pointer-events: none;
 }
 
-@media (min-width: 768px) {
+@media (min-width: 700px) {
   .container {
     padding: 4rem 3rem;
     margin: 3rem auto;
@@ -59,7 +59,7 @@
   border-radius: 2px;
 }
 
-@media (min-width: 768px) {
+@media (min-width: 700px) {
   .title {
     font-size: clamp(2.2rem, 6vw, 2.8rem);
     margin-bottom: 3rem;
@@ -85,7 +85,7 @@
   z-index: 1;
 }
 
-@media (min-width: 768px) {
+@media (min-width: 700px) {
   .mainInfo {
     margin-bottom: 3rem;
     padding: 2.5rem;
@@ -105,7 +105,7 @@
   text-align: center;
 }
 
-@media (min-width: 768px) {
+@media (min-width: 700px) {
   .date {
     font-size: clamp(1.6rem, 5vw, 2.2rem);
     margin-bottom: 1.2rem;
@@ -120,7 +120,7 @@
   font-weight: 500;
 }
 
-@media (min-width: 768px) {
+@media (min-width: 700px) {
   .time {
     font-size: 1.6rem;
     margin-bottom: 1.5rem;
@@ -135,7 +135,7 @@
   font-weight: 600;
 }
 
-@media (min-width: 768px) {
+@media (min-width: 700px) {
   .venue {
     font-size: 1.8rem;
     margin-bottom: 1rem;
@@ -149,7 +149,7 @@
   font-weight: 400;
 }
 
-@media (min-width: 768px) {
+@media (min-width: 700px) {
   .address {
     font-size: 1.2rem;
   }
@@ -162,7 +162,7 @@
   margin-top: 2rem;
 }
 
-@media (min-width: 768px) {
+@media (min-width: 700px) {
   .detailsContainer {
     flex-direction: row;
     justify-content: center;
@@ -189,7 +189,7 @@
   font-weight: 600;
 }
 
-@media (min-width: 768px) {
+@media (min-width: 700px) {
   .detailTitle {
     font-size: 1.3rem;
     margin-bottom: 1rem;
@@ -208,7 +208,7 @@
   margin-bottom: 0;
 }
 
-@media (min-width: 768px) {
+@media (min-width: 700px) {
   .detailInfo {
     font-size: 1.1rem;
   }

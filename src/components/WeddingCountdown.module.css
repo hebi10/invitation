@@ -86,7 +86,7 @@
 }
 
 /* 반응형 디자인 */
-@media (max-width: 768px) {
+@media (max-width: 700px) {
   .countdownContainer {
     padding: 1.25rem 1rem;
     margin: 0.75rem 0;

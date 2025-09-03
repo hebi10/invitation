@@ -90,33 +90,33 @@ export default function KakaoShareButton({ title, description, imageUrl }: Kakao
       justifyContent: 'center',
       margin: '20px 0'
     }}>
-      <button
+      <button 
         onClick={handleKakaoShare}
         style={{
-          backgroundColor: '#FEE500',
+          display: 'block',
+          background: '#FEE500',
           border: 'none',
-          borderRadius: '25px',
-          padding: '10px 24px',
-          fontSize: '14px',
-          fontWeight: 'bold',
-          color: '#3C1E1E',
+          padding: '0.8rem 1.5rem',
+          margin: '0 auto',
+          color: '#000',
+          fontWeight: '600',
           cursor: 'pointer',
+          fontSize: '0.9rem',
+          transition: 'all 0.3s ease',
           boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '8px',
-          transition: 'all 0.3s ease'
+          width: '100%',
+          maxWidth: '700px'
         }}
-        onMouseEnter={(e) => {
-          e.currentTarget.style.transform = 'translateY(-1px)';
-          e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.15)';
+        onMouseOver={(e) => {
+          e.currentTarget.style.background = '#E8D000';
+          e.currentTarget.style.transform = 'translateY(-2px)';
         }}
-        onMouseLeave={(e) => {
+        onMouseOut={(e) => {
+          e.currentTarget.style.background = '#FEE500';
           e.currentTarget.style.transform = 'translateY(0)';
-          e.currentTarget.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.1)';
         }}
       >
-        💬 카카오톡으로 공유하기
+        카카오톡 공유
       </button>
     </div>
   );

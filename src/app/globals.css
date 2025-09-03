@@ -256,7 +256,7 @@ p, span, div {
 }
 
 /* 반응형 타이포그래피 */
-@media (max-width: 768px) {
+@media (max-width: 700px) {
     .wedding-section {
         padding: 2rem 1rem;
         margin-bottom: 1.5rem;

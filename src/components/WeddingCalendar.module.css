@@ -14,7 +14,7 @@
   margin-right: auto;
 }
 
-@media (min-width: 768px) {
+@media (min-width: 700px) {
   .container {
     padding: 3rem 2rem;
   }
@@ -61,7 +61,7 @@
   }
 }
 
-@media (min-width: 768px) {
+@media (min-width: 700px) {
   .title {
     font-size: clamp(1.8rem, 5vw, 2.2rem);
   }
@@ -418,7 +418,7 @@
 }
 
 /* 반응형 디자인 */
-@media (max-width: 768px) {
+@media (max-width: 700px) {
   .container {
     padding: 1.5rem 1rem;
   }
@@ -462,7 +462,7 @@
   }
 }
 
-@media (min-width: 768px) {
+@media (min-width: 700px) {
   .title {
     font-size: 2.2rem;
   }
