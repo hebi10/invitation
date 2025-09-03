@@ -1,7 +1,7 @@
 /* 노출 기간 관리 컴포넌트 스타일 */
 
 .container {
-  max-width: 768px;
+  max-width: 700px;
   margin: 0 auto;
   padding: 20px;
   background: #fff;

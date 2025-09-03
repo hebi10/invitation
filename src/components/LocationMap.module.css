@@ -1,10 +1,11 @@
 .container {
+  width: calc(100% - 12px);
+  max-width: 700px;
   padding: 2rem 1rem;
   background: linear-gradient(135deg, 
     rgba(255, 255, 255, 1) 0%, 
     rgba(252, 248, 243, 0.8) 50%, 
     rgba(255, 255, 255, 1) 100%);
-  max-width: 800px;
   margin: 2rem auto;
   border-radius: 20px;
   box-shadow: 0 8px 32px rgba(212, 165, 116, 0.15);
@@ -129,7 +130,7 @@
 /* LocationMap 컴포넌트 래퍼 스타일 */
 .wrapper {
   margin: clamp(1rem, 3vw, 2rem) auto;
-  max-width: 800px;
+  max-width: 700px;
 }
 
 /* 지도 타입 선택기 */
