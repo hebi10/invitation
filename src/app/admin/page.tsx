@@ -180,12 +180,14 @@ export default function AdminPage() {
 
         <div className={styles.statsContainer}>
           <div className={styles.statCard}>
-            <div className={styles.statNumber}>{weddingPages.length}</div>
+            <div className={styles.statNumber}>
+              {weddingPages.length + weddingPages.filter(page => page.variants?.simple?.available).length}
+            </div>
             <div className={styles.statLabel}>총 청첩장 수</div>
           </div>
           <div className={styles.statCard}>
-            <div className={styles.statNumber}>{new Date().getFullYear()}</div>
-            <div className={styles.statLabel}>현재 연도</div>
+            <div className={styles.statNumber}>{weddingPages.filter(page => page.variants?.simple?.available).length}</div>
+            <div className={styles.statLabel}>심플 버전</div>
           </div>
           <div className={styles.statCard}>
             <div className={styles.statNumber}>7</div>
@@ -243,14 +245,20 @@ export default function AdminPage() {
                   <div className={styles.pagesHeader}>
                     <h2>생성된 청첩장 목록</h2>
                     <div className={styles.pagesStats}>
-                      <span className={styles.pageCount}>{weddingPages.length}개의 청첩장</span>
+                      <span className={styles.pageCount}>
+                        {weddingPages.length}개의 일반 버전
+                      </span>
+                      <span className={styles.separator}>•</span>
+                      <span className={styles.pageCount}>
+                        {weddingPages.filter(page => page.variants?.simple?.available).length}개의 심플 버전
+                      </span>
                       <span className={styles.separator}>•</span>
                       <span className={styles.pageStatus}>모두 활성화됨</span>
                     </div>
                   </div>
                   <div className={styles.pagesGrid}>
                     {weddingPages.map((page, index) => (
-                      <a key={page.slug} className={styles.pageCard} href={`/${page.slug}`} target="_blank">
+                      <div key={page.slug} className={styles.pageCard}>
                         <div className={styles.cardNumber}>#{index + 1}</div>
                         <h3 className={styles.cardTitle}>💍 {page.displayName}</h3>
                         <p className={styles.cardDescription}>{page.description}</p>
@@ -258,10 +266,27 @@ export default function AdminPage() {
                           <span>📅 {page.date}</span>
                           <span>🏛️ {page.venue}</span>
                         </div>
-                        <div className={styles.cardUrl}>
-                          <span>🔗 /{page.slug}</span>
+                        
+                        {/* 버전 선택 버튼들 */}
+                        <div className={styles.versionButtons}>
+                          <a 
+                            href={`/${page.slug}`} 
+                            target="_blank" 
+                            className={`${styles.versionButton} ${styles.normalButton}`}
+                          >
+                            🎨 일반 버전
+                          </a>
+                          {page.variants?.simple?.available && (
+                            <a 
+                              href={page.variants.simple.path} 
+                              target="_blank" 
+                              className={`${styles.versionButton} ${styles.simpleButton}`}
+                            >
+                              ✨ 심플 버전
+                            </a>
+                          )}
                         </div>
-                      </a>
+                      </div>
                     ))}
                   </div>
                 </>

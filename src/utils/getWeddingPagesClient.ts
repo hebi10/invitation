@@ -7,6 +7,13 @@ export interface WeddingPageInfo {
   description?: string;
   date?: string;
   venue?: string;
+  variants?: {
+    simple?: {
+      available: boolean;
+      path: string;
+      displayName: string;
+    };
+  };
 }
 
 /**
@@ -19,7 +26,8 @@ export function getWeddingPagesClient(): WeddingPageInfo[] {
     displayName: config.displayName,
     description: config.description,
     date: config.date,
-    venue: config.venue
+    venue: config.venue,
+    variants: config.variants
   }));
 }
 
@@ -35,7 +43,8 @@ export function getWeddingPageBySlug(slug: string): WeddingPageInfo | undefined 
     displayName: config.displayName,
     description: config.description,
     date: config.date,
-    venue: config.venue
+    venue: config.venue,
+    variants: config.variants
   };
 }
 

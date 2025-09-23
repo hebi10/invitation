@@ -443,15 +443,64 @@
   }
 }
 
-.pageCard:hover {
-  transform: translateY(-5px);
-  background: rgba(255, 255, 255, 1);
-  box-shadow: 0 8px 30px rgba(139, 110, 99, 0.25);
-  border-color: var(--primary-color);
+/* 버전 선택 버튼 컨테이너 */
+.versionButtons {
+  display: flex;
+  gap: 0.8rem;
+  margin-top: 1.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border-soft);
 }
 
-.pageCard:hover::before {
-  width: 8px;
+@media (max-width: 700px) {
+  .versionButtons {
+    flex-direction: column;
+    gap: 0.6rem;
+  }
+}
+
+/* 버전 선택 버튼 기본 스타일 */
+.versionButton {
+  flex: 1;
+  padding: 0.8rem 1.2rem;
+  border-radius: 12px;
+  text-decoration: none;
+  font-family: var(--font-gowun-dodum);
+  font-size: 0.9rem;
+  font-weight: 600;
+  text-align: center;
+  transition: all 0.3s ease;
+  border: 2px solid transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+/* 일반 버전 버튼 */
+.normalButton {
+  background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+  color: white;
+  box-shadow: 0 3px 12px rgba(139, 110, 99, 0.3);
+}
+
+.normalButton:hover {
+  background: linear-gradient(135deg, #c19660, var(--primary-color));
+  transform: translateY(-2px);
+  box-shadow: 0 5px 18px rgba(139, 110, 99, 0.4);
+}
+
+/* 심플 버전 버튼 */
+.simpleButton {
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  color: white;
+  box-shadow: 0 3px 12px rgba(99, 102, 241, 0.3);
+}
+
+.simpleButton:hover {
+  background: linear-gradient(135deg, #5048e5, #7c3aed);
+  transform: translateY(-2px);
+  box-shadow: 0 5px 18px rgba(99, 102, 241, 0.4);
 }
 
 .cardNumber {
