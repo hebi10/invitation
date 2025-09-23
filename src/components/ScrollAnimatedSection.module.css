@@ -1,0 +1,61 @@
+.animatedSection {
+  opacity: 0;
+  transform: translateY(var(--animation-distance, 50px));
+  transition: all var(--animation-duration, 800ms) cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  transition-delay: var(--animation-delay, 0ms);
+  will-change: opacity, transform;
+}
+
+.animatedSection.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* 성능 최적화를 위한 GPU 가속 */
+.animatedSection {
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  perspective: 1000px;
+}
+
+/* 다양한 애니메이션 타입을 위한 추가 클래스 */
+.animatedSection.fadeInUp {
+  transform: translateY(var(--animation-distance, 50px));
+}
+
+.animatedSection.fadeInUp.visible {
+  transform: translateY(0);
+}
+
+.animatedSection.fadeInLeft {
+  transform: translateX(-var(--animation-distance, 50px));
+}
+
+.animatedSection.fadeInLeft.visible {
+  transform: translateX(0);
+}
+
+.animatedSection.fadeInRight {
+  transform: translateX(var(--animation-distance, 50px));
+}
+
+.animatedSection.fadeInRight.visible {
+  transform: translateX(0);
+}
+
+.animatedSection.fadeInScale {
+  transform: scale(0.8);
+}
+
+.animatedSection.fadeInScale.visible {
+  transform: scale(1);
+}
+
+/* 모바일 디바이스에서의 성능 최적화 */
+@media (prefers-reduced-motion: reduce) {
+  .animatedSection {
+    transition: none;
+    opacity: 1;
+    transform: none;
+  }
+}

@@ -10,7 +10,8 @@ import {
   LocationMap, 
   WeddingCalendar, 
   GiftInfo, 
-  Guestbook
+  Guestbook,
+  ScrollAnimatedSection
 } from '@/components';
 import { usePageImages } from '@/hooks';
 import { AccessDeniedPage, checkPageAccess } from '@/utils';

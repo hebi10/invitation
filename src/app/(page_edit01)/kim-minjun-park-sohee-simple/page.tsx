@@ -10,7 +10,8 @@ import {
   LocationMap_1, 
   WeddingCalendar_1, 
   GiftInfo_1, 
-  Guestbook_1
+  Guestbook_1,
+  ScrollAnimatedSection
 } from '@/components';
 import { usePageImages } from '@/hooks';
 import { AccessDeniedPage, checkPageAccess } from '@/utils';
@@ -99,44 +100,63 @@ export default function KimMinJunParkSoHee_1() {
         groomName={pageConfig?.groomName || ''}
         preloadComplete={true}
       />
-      <Greeting_1 
-        message={pageConfig?.pageData?.greetingMessage || '두 사람이 사랑으로 하나가 되는 순간을 함께해 주시는 모든 분들께 감사드립니다. 새로운 시작을 따뜻한 마음으로 축복해 주시면 더없는 기쁨이겠습니다.'}
-        author={pageConfig?.pageData?.greetingAuthor || `${pageConfig?.groomName || ''} · ${pageConfig?.brideName || ''}`}
-      />
-      <WeddingCalendar_1 
-        title="행복한 순간을 함께하세요"
-        weddingDate={weddingDate}
-        currentMonth={weddingDate}
-        events={[
-          {
-            date: weddingDate.getDate(),
-            type: 'wedding',
-            title: `${pageConfig?.groomName || ''} ♥ ${pageConfig?.brideName || ''} 결혼식`,
-            description: `${pageConfig?.pageData?.ceremonyTime || ''} ${pageConfig?.venue || ''}`
-          }
-        ]}
-        showCountdown={true} // 카운트다운 표시
-        countdownTitle="결혼식까지"
-        onDateClick={(date) => {
-          console.log('선택된 날짜:', date);
-        }}
-      />
-      <Gallery_1 
-        images={galleryImages.map(img => img.url)}
-      />
-      <Schedule_1 
-        date={pageConfig?.date || ''}
-        time={pageConfig?.pageData?.ceremonyTime || ''}
-        venue={pageConfig?.venue || ''}
-        address={pageConfig?.pageData?.ceremonyAddress || ''}
-      />
-      <LocationMap_1 
-        venueName={pageConfig?.venue || ''}
-        address={pageConfig?.pageData?.ceremonyAddress || ''}
-        description={pageConfig?.pageData?.mapDescription || '지하철 이용 시 편리하게 오실 수 있습니다'}
-        mapUrl={pageConfig?.pageData?.mapUrl || ''}
-      />
-      <Guestbook_1 pageSlug={WEDDING_SLUG} />
+      
+      <ScrollAnimatedSection delay={100}>
+        <Greeting_1 
+          message={pageConfig?.pageData?.greetingMessage || '두 사람이 사랑으로 하나가 되는 순간을 함께해 주시는 모든 분들께 감사드립니다. 새로운 시작을 따뜻한 마음으로 축복해 주시면 더없는 기쁨이겠습니다.'}
+          author={pageConfig?.pageData?.greetingAuthor || `${pageConfig?.groomName || ''} · ${pageConfig?.brideName || ''}`}
+        />
+      </ScrollAnimatedSection>
+      
+      <ScrollAnimatedSection delay={200}>
+        <WeddingCalendar_1 
+          title="행복한 순간을 함께하세요"
+          weddingDate={weddingDate}
+          currentMonth={weddingDate}
+          events={[
+            {
+              date: weddingDate.getDate(),
+              type: 'wedding',
+              title: `${pageConfig?.groomName || ''} ♥ ${pageConfig?.brideName || ''} 결혼식`,
+              description: `${pageConfig?.pageData?.ceremonyTime || ''} ${pageConfig?.venue || ''}`
+            }
+          ]}
+          showCountdown={true} // 카운트다운 표시
+          countdownTitle="결혼식까지"
+          onDateClick={(date) => {
+            console.log('선택된 날짜:', date);
+          }}
+        />
+      </ScrollAnimatedSection>
+      
+      <ScrollAnimatedSection delay={300}>
+        <Gallery_1 
+          images={galleryImages.map(img => img.url)}
+        />
+      </ScrollAnimatedSection>
+      
+      <ScrollAnimatedSection delay={400}>
+        <Schedule_1 
+          date={pageConfig?.date || ''}
+          time={pageConfig?.pageData?.ceremonyTime || ''}
+          venue={pageConfig?.venue || ''}
+          address={pageConfig?.pageData?.ceremonyAddress || ''}
+        />
+      </ScrollAnimatedSection>
+      
+      <ScrollAnimatedSection delay={500}>
+        <LocationMap_1 
+          venueName={pageConfig?.venue || ''}
+          address={pageConfig?.pageData?.ceremonyAddress || ''}
+          description={pageConfig?.pageData?.mapDescription || '지하철 이용 시 편리하게 오실 수 있습니다'}
+          mapUrl={pageConfig?.pageData?.mapUrl || ''}
+        />
+      </ScrollAnimatedSection>
+      
+      <ScrollAnimatedSection delay={600}>
+        <Guestbook_1 pageSlug={WEDDING_SLUG} />
+      </ScrollAnimatedSection>
+      
       <GiftInfo_1 
         groomAccount={{
           bank: "국민은행",
