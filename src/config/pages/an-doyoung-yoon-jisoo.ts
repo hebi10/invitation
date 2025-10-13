@@ -5,7 +5,7 @@ export const anDoyoungYoonJisooConfig: WeddingPageConfig = {
   displayName: '안도영 ♥ 윤지수',
   description: '2025년 11월 30일 토요일 오후 11시, 안도영과 윤지수가 하나 되는 날에 소중한 분들을 초대합니다.',
   date: '2025년 11월 30일',
-  venue: '더케이웨딩홀',
+  venue: '소노펠리체 델피노',
   groomName: '안도영',
   brideName: '윤지수',
   weddingDateTime: {
@@ -23,7 +23,7 @@ export const anDoyoungYoonJisooConfig: WeddingPageConfig = {
     }
   },
   metadata: {
-    title: '안도영 ♡ 윤지수 결혼식에 초대합니다',
+    title: '안도영 ♡ 윤지수 결혼합니다',
     description: '2025년 11월 30일 토요일 오후 11시, 안도영과 윤지수가 하나 되는 날에 소중한 분들을 초대합니다. 저희의 새로운 시작을 함께 축복해 주세요.',
     keywords: ['결혼식', '웨딩', '청첩장', '안도영', '윤지수', '2025년 11월'],
     images: {
@@ -48,12 +48,12 @@ export const anDoyoungYoonJisooConfig: WeddingPageConfig = {
     greetingMessage: '처음엔 우연이었고,<br>지금은 이유가 되었어요.<br><br>함께 있는 게<br>가장 자연스러운 사람,<br><br>그래서 평생을 함께하기로 했습니다.<br><br>우리의 시작,<br>따뜻한 마음으로 함께해 주세요.',
     greetingAuthor: '안도영 · 윤지수',
     mapUrl: 'https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3134.9915961581096!2d128.4978166!3d38.2100918!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x5fd8bd4279e92d49%3A0xc1835ca41f296517!2z6rCV7JuQ7Yq567OE7J6Q7LmI64-EIOqzoOyEseq1sCDthqDshLHrqbQg66-47Iuc66C57Jib6ri4IDExNTM!5e0!3m2!1sko!2skr!4v1760341368999!5m2!1sko!2skr',
-    mapDescription: '지하철 이용 시 더케이웨딩홀까지 편리하게 오실 수 있습니다',
+    mapDescription: '지하철 이용 시 소노펠리체 델피노까지 편리하게 오실 수 있습니다',
     kakaoMap: {
       latitude: 38.2100918,   // 강원 고성 좌표
       longitude: 128.4978166,
       level: 4,  // 외곽 지역이라 좀 더 넓게
-      markerTitle: '알펜시아 리조트'
+      markerTitle: '소노펠리체 델피노'
     }
   }
 };

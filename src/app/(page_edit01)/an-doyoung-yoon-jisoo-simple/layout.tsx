@@ -44,8 +44,8 @@ export default function Layout({
         display: 'none'
       }}>
         <KakaoShareButton 
-          title={pageConfig?.metadata.title || '결혼식에 초대합니다'}
-          description={`${pageConfig?.date || ''}\n${pageConfig?.venue || ''}에서 열리는 저희의 결혼식에 초대합니다.`}
+          title={pageConfig?.metadata.title || '결혼합니다'}
+          description={`${pageConfig?.date || ''}\n${pageConfig?.venue || ''}에서 열리는\n저희의 결혼식에 초대합니다.`}
           imageUrl={WEDDING_IMAGE}
         />
       </div>

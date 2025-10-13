@@ -58,7 +58,13 @@ export default function KimMinJunParkSoHee_1() {
   if (access === null) return null;
   if (!access.canAccess) return <AccessDeniedPage message={access.message} />;
   
-  const weddingDate = new Date(2026, 3, 14);
+  const weddingDate = new Date(
+    pageConfig?.weddingDateTime.year || 2024,
+    pageConfig?.weddingDateTime.month || 0,
+    pageConfig?.weddingDateTime.day || 1,
+    pageConfig?.weddingDateTime.hour || 0,
+    pageConfig?.weddingDateTime.minute || 0
+  );
   
   // 메인 이미지 URL 결정 (Firebase 이미지만 사용)
   const mainImageUrl = mainImage?.url || "";

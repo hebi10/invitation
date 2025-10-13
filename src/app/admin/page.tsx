@@ -257,7 +257,7 @@ export default function AdminPage() {
                     </div>
                   </div>
                   <div className={styles.pagesGrid}>
-                    {weddingPages.map((page, index) => (
+                    {[...weddingPages].reverse().map((page, index) => (
                       <div key={page.slug} className={styles.pageCard}>
                         <div className={styles.cardNumber}>#{index + 1}</div>
                         <h3 className={styles.cardTitle}>💍 {page.displayName}</h3>

@@ -56,7 +56,13 @@ export default function KimTaehyunChoiYuna_Simple() {
   if (access === null) return null;
   if (!access.canAccess) return <AccessDeniedPage message={access.message} />;
   
-  const weddingDate = new Date(2024, 5, 8); // 2024년 6월 8일
+  const weddingDate = new Date(
+    pageConfig?.weddingDateTime.year || 2024,
+    pageConfig?.weddingDateTime.month || 0,
+    pageConfig?.weddingDateTime.day || 1,
+    pageConfig?.weddingDateTime.hour || 0,
+    pageConfig?.weddingDateTime.minute || 0
+  );
   
   const mainImageUrl = mainImage?.url || "";
 
