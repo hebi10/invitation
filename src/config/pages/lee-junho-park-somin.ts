@@ -46,7 +46,13 @@ export const leeJunhoParkSominConfig: WeddingPageConfig = {
     ceremonyContact: '02-5678-9012',
     greetingMessage: '서로를 아끼고 사랑하는 두 사람이 인생의 동반자가 되어 한 걸음씩 나아가고자 합니다. 저희의 출발을 따뜻한 마음으로 축복해 주시면 감사하겠습니다.',
     greetingAuthor: '이준호 · 박소민',
-    mapUrl: 'https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d25314.40229051596!2d127.01265801385874!3d37.52441811794768!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x357ca4784ed95631%3A0x12a8bf0e6438ac8!2z7Luo67Kk7Iqx7YWo7Iqk64u4!5e0!3m2!1sko!2skr!4v1753176333093!5m2!1sko!2skr',
-    mapDescription: '컨벤션센터 인근으로 대중교통으로 편리하게 오실 수 있습니다'
+    mapUrl: 'https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d25314.40229051596!2d127.01265801385874!3d37.52441811794768!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x357ca4784ed95631%3A0x12a8bf0e6438ac8!2z7Lao67Kk7Iqx7YWo7Iqk64u4!5e0!3m2!1sko!2skr!4v1753176333093!5m2!1sko!2skr',
+    mapDescription: '컨벤션센터 인근으로 대중교통으로 편리하게 오실 수 있습니다',
+    kakaoMap: {
+      latitude: 37.4900,
+      longitude: 127.0100,
+      level: 3,
+      markerTitle: '컨벤션웨딩홀'
+    }
   }
 };

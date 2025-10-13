@@ -17,6 +17,7 @@ export default function ImageManager() {
   const [uploadProgress, setUploadProgress] = useState<{ [fileName: string]: boolean }>({});
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [expandedPages, setExpandedPages] = useState<{ [pageSlug: string]: boolean }>({});
   const { isAdminLoggedIn } = useAdmin();
 
   useEffect(() => {
@@ -171,6 +172,25 @@ export default function ImageManager() {
     }
   };
 
+  const togglePageExpand = (pageSlug: string) => {
+    setExpandedPages(prev => ({
+      ...prev,
+      [pageSlug]: !prev[pageSlug]
+    }));
+  };
+
+  const expandAll = () => {
+    const allExpanded: { [key: string]: boolean } = {};
+    Object.keys(images).forEach(slug => {
+      allExpanded[slug] = true;
+    });
+    setExpandedPages(allExpanded);
+  };
+
+  const collapseAll = () => {
+    setExpandedPages({});
+  };
+
   if (!isAdminLoggedIn) {
     return (
       <div className={styles.container}>
@@ -274,43 +294,76 @@ export default function ImageManager() {
       {isLoading ? (
         <p className={styles.loadingMessage}>이미지를 불러오는 중...</p>
       ) : (
-        Object.keys(images).map((pageSlug) => {
-          const pageName = weddingPages.find(p => p.slug === pageSlug)?.displayName || pageSlug;
-          const pageImages = images[pageSlug] || [];
-          
-          if (pageImages.length === 0) return null;
-          
-          return (
-            <div key={pageSlug} className={styles.pageSection}>
-              <div className={styles.pageSectionHeader}>
-                <h3 className={styles.pageSectionTitle}>
-                  💍 {pageName}
-                </h3>
-                <div className={styles.imageCount}>
-                  {pageImages.length}개의 이미지
-                </div>
-              </div>
-              <div className={styles.imageGrid}>
-                {pageImages.map((image) => (
-                  <div key={image.path} className={styles.imageCard}>
-                    <div className={styles.imageWrapper}>
-                      <img className={styles.image} src={image.url} alt={image.name} />
-                    </div>
-                    <div className={styles.imageInfo}>
-                      <p className={styles.imageName}>📷 {image.name}</p>
-                      <button
-                        className={styles.deleteImageButton}
-                        onClick={() => handleDelete(image.path, pageSlug)}
-                      >
-                        🗑️ 삭제
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
+        <>
+          {/* 전체 펼치기/접기 버튼 */}
+          {Object.keys(images).length > 0 && (
+            <div className={styles.bulkActions}>
+              <button 
+                className={styles.bulkActionButton} 
+                onClick={expandAll}
+              >
+                📂 전체 펼치기
+              </button>
+              <button 
+                className={styles.bulkActionButton} 
+                onClick={collapseAll}
+              >
+                📁 전체 접기
+              </button>
             </div>
-          );
-        })
+          )}
+          
+          {Object.keys(images).reverse().map((pageSlug) => {
+            const pageName = weddingPages.find(p => p.slug === pageSlug)?.displayName || pageSlug;
+            const pageImages = images[pageSlug] || [];
+            const isExpanded = expandedPages[pageSlug] || false;
+            
+            if (pageImages.length === 0) return null;
+            
+            return (
+              <div key={pageSlug} className={styles.pageSection}>
+                <div 
+                  className={styles.pageSectionHeader}
+                  onClick={() => togglePageExpand(pageSlug)}
+                  style={{ cursor: 'pointer' }}
+                >
+                  <div className={styles.pageSectionHeaderLeft}>
+                    <span className={styles.expandIcon}>
+                      {isExpanded ? '🔽' : '▶️'}
+                    </span>
+                    <h3 className={styles.pageSectionTitle}>
+                      💍 {pageName}
+                    </h3>
+                  </div>
+                  <div className={styles.imageCount}>
+                    {pageImages.length}개의 이미지
+                  </div>
+                </div>
+                
+                {isExpanded && (
+                  <div className={styles.imageGrid}>
+                    {pageImages.map((image) => (
+                      <div key={image.path} className={styles.imageCard}>
+                        <div className={styles.imageWrapper}>
+                          <img className={styles.image} src={image.url} alt={image.name} />
+                        </div>
+                        <div className={styles.imageInfo}>
+                          <p className={styles.imageName}>📷 {image.name}</p>
+                          <button
+                            className={styles.deleteImageButton}
+                            onClick={() => handleDelete(image.path, pageSlug)}
+                          >
+                            🗑️ 삭제
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </>
       )}
     </div>
   );

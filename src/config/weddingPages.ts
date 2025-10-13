@@ -7,6 +7,7 @@ import { kimMinjunParkSoheeConfig } from './pages/kim-minjun-park-sohee';
 import { shinMinjeKimHyunjiConfig } from './pages/shin-minje-kim-hyunji';
 import { leeJunhoParkSominConfig } from './pages/lee-junho-park-somin';
 import { kimTaehyunChoiYunaConfig } from './pages/kim-taehyun-choi-yuna';
+import { anDoyoungYoonJisooConfig } from './pages/an-doyoung-yoon-jisoo';
 
 export interface WeddingPageConfig {
   slug: string;
@@ -65,6 +66,14 @@ export interface WeddingPageConfig {
     greetingAuthor?: string;
     mapUrl?: string;
     mapDescription?: string;
+    venueName?: string; // 예식장 이름 (기본값: venue 또는 '웨딩홀')
+    // 카카오맵 설정
+    kakaoMap?: {
+      latitude: number;   // 위도
+      longitude: number;  // 경도
+      level?: number;     // 지도 확대 레벨 (1~14, 기본값: 3)
+      markerTitle?: string; // 마커 타이틀 (기본값: venueName 또는 venue)
+    };
   };
 }
 
@@ -72,7 +81,8 @@ export const WEDDING_PAGES_CONFIG: WeddingPageConfig[] = [
   kimMinjunParkSoheeConfig,
   shinMinjeKimHyunjiConfig,
   leeJunhoParkSominConfig,
-  kimTaehyunChoiYunaConfig
+  kimTaehyunChoiYunaConfig,
+  anDoyoungYoonJisooConfig
 ];
 
 // 편의 함수들

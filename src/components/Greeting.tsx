@@ -10,12 +10,15 @@ interface GreetingProps {
 export default function Greeting({ message, author }: GreetingProps) {
   // 메시지를 문장별로 나누어 더 자연스러운 줄바꿈 처리
   const formatMessage = (text: string) => {
-    return text
+    // <br> 태그를 먼저 \n으로 변환 (HTML 태그 지원)
+    const normalizedText = text.replace(/<br\s*\/?>/gi, '\n');
+    
+    return normalizedText
       .split('\n')
       .map((line, index) => (
         <span key={index} className={styles.messageLine}>
           {line}
-          {index < text.split('\n').length - 1 && <br />}
+          {index < normalizedText.split('\n').length - 1 && <br />}
         </span>
       ));
   };

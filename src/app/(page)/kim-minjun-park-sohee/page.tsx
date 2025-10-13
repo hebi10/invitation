@@ -150,6 +150,7 @@ export default function KimMinJunParkSoHee() {
           address={pageConfig?.pageData?.ceremonyAddress || ''}
           description={pageConfig?.pageData?.mapDescription || '지하철 이용 시 편리하게 오실 수 있습니다'}
           mapUrl={pageConfig?.pageData?.mapUrl || ''}
+          kakaoMapConfig={pageConfig?.pageData?.kakaoMap}
         />
       </ScrollAnimatedSection>
       

@@ -295,6 +295,25 @@
   border-radius: 20px;
   box-shadow: 0 4px 20px rgba(139, 110, 99, 0.15);
   border: 1px solid var(--border-soft);
+  transition: all 0.3s ease;
+}
+
+.pageSectionHeader:hover {
+  background: rgba(255, 255, 255, 1);
+  box-shadow: 0 6px 25px rgba(139, 110, 99, 0.2);
+  border-color: var(--primary-color);
+}
+
+.pageSectionHeaderLeft {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+}
+
+.expandIcon {
+  font-size: 1.2rem;
+  transition: transform 0.3s ease;
+  display: inline-block;
 }
 
 .pageSectionTitle {
@@ -317,6 +336,41 @@
   box-shadow: 0 2px 8px rgba(139, 110, 99, 0.3);
 }
 
+.bulkActions {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  margin-bottom: 2rem;
+  padding: 1rem;
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 20px;
+  box-shadow: 0 4px 20px rgba(139, 110, 99, 0.15);
+  border: 1px solid var(--border-soft);
+}
+
+.bulkActionButton {
+  padding: 0.8rem 1.5rem;
+  background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+  color: white;
+  border: none;
+  border-radius: 20px;
+  cursor: pointer;
+  font-family: var(--font-gowun-dodum);
+  font-weight: 500;
+  font-size: 0.95rem;
+  transition: all 0.3s ease;
+  box-shadow: 0 3px 12px rgba(139, 110, 99, 0.25);
+}
+
+.bulkActionButton:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 5px 18px rgba(139, 110, 99, 0.35);
+}
+
+.bulkActionButton:active {
+  transform: translateY(0);
+}
+
 @media (max-width: 700px) {
   .pageSectionHeader {
     flex-direction: column;
@@ -330,6 +384,15 @@
   
   .imageCount {
     align-self: flex-start;
+  }
+
+  .bulkActions {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .bulkActionButton {
+    width: 100%;
   }
 }
 

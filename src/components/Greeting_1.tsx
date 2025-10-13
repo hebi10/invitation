@@ -9,12 +9,15 @@ interface GreetingProps {
 
 export default function Greeting_1({ message, author }: GreetingProps) {
   const formatMessage = (text: string) => {
-    return text
+    // <br> 태그를 먼저 \n으로 변환 (HTML 태그 지원)
+    const normalizedText = text.replace(/<br\s*\/?>/gi, '\n');
+    
+    return normalizedText
       .split('\n')
       .map((line, index) => (
         <span key={index} className={styles.messageLine}>
           {line}
-          {index < text.split('\n').length - 1 && <br />}
+          {index < normalizedText.split('\n').length - 1 && <br />}
         </span>
       ));
   };

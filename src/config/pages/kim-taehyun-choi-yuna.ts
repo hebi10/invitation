@@ -47,6 +47,12 @@ export const kimTaehyunChoiYunaConfig: WeddingPageConfig = {
     greetingMessage: '오랜 시간 서로를 이해하고 사랑해온 두 사람이 이제 한 가정을 이루고자 합니다. 저희의 새로운 출발을 지켜봐 주시고 축복해 주시기 바랍니다.',
     greetingAuthor: '김태현 · 최유나',
     mapUrl: 'https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d25314.40229051596!2d127.01265801385874!3d37.52441811794768!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x357ca4784ed95631%3A0x12a8bf0e6438ac9!2z7JeY66as7Iuc7JWI7Iqk64u4!5e0!3m2!1sko!2skr!4v1753176333094!5m2!1sko!2skr',
-    mapDescription: '월드컵공원 인근으로 주차공간이 넉넉하게 준비되어 있습니다'
+    mapDescription: '월드컵공원 인근으로 주차공간이 넉넉하게 준비되어 있습니다',
+    kakaoMap: {
+      latitude: 37.5663,
+      longitude: 126.8997,
+      level: 3,
+      markerTitle: '엘리시안웨딩홀'
+    }
   }
 };

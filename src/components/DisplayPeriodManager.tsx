@@ -282,7 +282,7 @@ export default function DisplayPeriodManager({ isVisible }: DisplayPeriodManager
           </div>
         ) : (
           <div className={styles.periodsList}>
-            {weddingPages.map((page) => {
+            {[...weddingPages].reverse().map((page) => {
               const period = getPeriodForPage(page.slug);
               return (
                 <div key={page.slug} className={styles.periodItem}>

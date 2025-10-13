@@ -129,7 +129,7 @@ export default function ClientPasswordManager({ isVisible }: ClientPasswordManag
         </div>
       ) : (
         <div className={styles.passwordList}>
-          {weddingPages.map((page) => (
+          {[...weddingPages].reverse().map((page) => (
             <div key={page.slug} className={styles.passwordItem}>
               <div className={styles.pageInfo}>
                 <h4 className={styles.pageName}>

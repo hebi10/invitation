@@ -42,7 +42,7 @@ export default function Guestbook_1({ pageSlug }: GuestbookProps) {
     e.preventDefault();
     
     if (!author.trim() || !message.trim()) {
-      setError('이름과 메시지를 모두 입력해주세요.');
+      setError('성함과 메시지를 모두 입력해주세요.');
       return;
     }
 
@@ -145,7 +145,7 @@ export default function Guestbook_1({ pageSlug }: GuestbookProps) {
         
         <form className={styles.form} onSubmit={handleSubmit}>
           <div className={styles.formRow}>
-            <label className={styles.label} htmlFor="author">이름</label>
+            <label className={styles.label} htmlFor="author">성함</label>
             <input
               className={styles.input}
               id="author"

@@ -8,6 +8,12 @@ interface LocationMapProps {
   venueName: string;
   address: string;
   description?: string;
+  kakaoMapConfig?: {
+    latitude: number;
+    longitude: number;
+    level?: number;
+    markerTitle?: string;
+  };
 }
 
 declare global {
@@ -21,7 +27,8 @@ export default function LocationMap({
   mapUrl, 
   venueName, 
   address, 
-  description 
+  description,
+  kakaoMapConfig
 }: LocationMapProps) {
   const [isClient, setIsClient] = useState(false);
   const [activeMapType, setActiveMapType] = useState<'google' | 'kakao'>('google');
@@ -57,46 +64,79 @@ export default function LocationMap({
     const container = document.getElementById('kakao-map');
     if (!container) return;
 
+    // config가 있으면 config 사용, 없으면 기본 서울 좌표
+    const defaultLat = kakaoMapConfig?.latitude || 37.5665;
+    const defaultLng = kakaoMapConfig?.longitude || 126.9780;
+    const mapLevel = kakaoMapConfig?.level || 3;
+
     const options = {
-      center: new window.kakao.maps.LatLng(37.5665, 126.9780), 
-      level: 3
+      center: new window.kakao.maps.LatLng(defaultLat, defaultLng), 
+      level: mapLevel
     };
 
     const map = new window.kakao.maps.Map(container, options);
-    const geocoder = new window.kakao.maps.services.Geocoder();
 
-    // 주소로 좌표 검색
-    geocoder.addressSearch(address, (result: any, status: any) => {
-      if (status === window.kakao.maps.services.Status.OK) {
-        const coords = new window.kakao.maps.LatLng(result[0].y, result[0].x);
+    // kakaoMapConfig가 있으면 직접 좌표 사용, 없으면 주소 검색
+    if (kakaoMapConfig) {
+      const coords = new window.kakao.maps.LatLng(kakaoMapConfig.latitude, kakaoMapConfig.longitude);
+      
+      map.setCenter(coords);
 
+      const marker = new window.kakao.maps.Marker({
+        map: map,
+        position: coords
+      });
+
+      const markerTitle = kakaoMapConfig.markerTitle || venueName;
+      const infowindow = new window.kakao.maps.InfoWindow({
+        content: `<div style="width:200px;text-align:center;padding:6px 0;font-size:12px;font-weight:bold;">${markerTitle}</div>`
+      });
+
+      infowindow.open(map, marker);
+
+      setTimeout(() => {
+        map.relayout();
         map.setCenter(coords);
+      }, 0);
 
-        const marker = new window.kakao.maps.Marker({
-          map: map,
-          position: coords
-        });
+      window.kakaoMapInstance = map;
+      map.setZoomable(false);
+      setKakaoMapLoaded(true);
+    } else {
+      // 기존 주소 검색 방식
+      const geocoder = new window.kakao.maps.services.Geocoder();
 
-        const infowindow = new window.kakao.maps.InfoWindow({
-          content: `<div style="width:200px;text-align:center;padding:6px 0;font-size:12px;font-weight:bold;">${venueName}</div>`
-        });
+      geocoder.addressSearch(address, (result: any, status: any) => {
+        if (status === window.kakao.maps.services.Status.OK) {
+          const coords = new window.kakao.maps.LatLng(result[0].y, result[0].x);
 
-        infowindow.open(map, marker);
-
-        setTimeout(() => {
-          map.relayout();
           map.setCenter(coords);
-        }, 0);
 
-        // ✅ 카카오맵 인스턴스 저장
-        window.kakaoMapInstance = map;
-        map.setZoomable(false);   // ← 처음부터 확대/축소 OFF
-        setKakaoMapLoaded(true);  // ← 로딩 끝났으니 true로
-      } else {
-        console.error('Kakao Maps 주소 검색 실패:', status);
-        setKakaoMapLoaded(true);
-      }
-    });
+          const marker = new window.kakao.maps.Marker({
+            map: map,
+            position: coords
+          });
+
+          const infowindow = new window.kakao.maps.InfoWindow({
+            content: `<div style="width:200px;text-align:center;padding:6px 0;font-size:12px;font-weight:bold;">${venueName}</div>`
+          });
+
+          infowindow.open(map, marker);
+
+          setTimeout(() => {
+            map.relayout();
+            map.setCenter(coords);
+          }, 0);
+
+          window.kakaoMapInstance = map;
+          map.setZoomable(false);
+          setKakaoMapLoaded(true);
+        } else {
+          console.error('Kakao Maps 주소 검색 실패:', status);
+          setKakaoMapLoaded(true);
+        }
+      });
+    }
   };
 
   // ✅ 확대/축소 토글
