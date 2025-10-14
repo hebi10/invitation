@@ -4,7 +4,7 @@
   min-height: 100vh;
   background: linear-gradient(135deg, var(--background-warm) 0%, var(--accent-color) 50%, #f0e6d6 100%);
   color: var(--text-primary);
-  padding: 2rem 1rem;
+  padding: 1rem;
   position: relative;
   overflow: hidden;
 }

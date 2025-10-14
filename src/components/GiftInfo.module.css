@@ -1,6 +1,6 @@
 .container {
   width: calc(100% - 12px);
-  padding: 2rem 1rem;
+  padding: 1rem;
   background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%);
   max-width: 700px;
   margin: 0 auto;

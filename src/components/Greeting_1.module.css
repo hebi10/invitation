@@ -24,7 +24,7 @@
   top: 0;
   left: 50%;
   transform: translateX(-50%);
-  width: 60px;
+  width: 100px;
   height: 4px;
   background: linear-gradient(90deg, #6c757d, #495057);
   border-radius: 2px;
@@ -89,7 +89,7 @@
 
 @media (max-width: 480px) {
   .container {
-    padding: 2rem 1rem;
+    padding: 1rem;
   }
   
   .card {

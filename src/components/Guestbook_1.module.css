@@ -269,6 +269,7 @@
   margin: 0;
   white-space: pre-wrap;
   word-break: break-word;
+  text-align-last: left;
 }
 
 .pagination {
@@ -377,7 +378,7 @@
 
 @media (max-width: 480px) {
   .container {
-    padding: 2rem 1rem;
+    padding: 1rem;
   }
   
   .card {

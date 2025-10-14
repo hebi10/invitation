@@ -10,7 +10,8 @@ import {
   LocationMap_1, 
   WeddingCalendar_1, 
   Guestbook_1, 
-  GiftInfo_1 
+  GiftInfo_1,
+  BackgroundMusic
 } from '@/components';
 import { usePageImages } from '@/hooks';
 import { AccessDeniedPage, checkPageAccess } from '@/utils';
@@ -27,6 +28,7 @@ if (!pageConfig) {
 export default function KimTaehyunChoiYuna_Simple() {
   const [access, setAccess] = useState<{ canAccess: boolean; message?: string }>({ canAccess: true });
   const [isLoading, setIsLoading] = useState(true);
+  const [showCopyright, setShowCopyright] = useState(false);
   const { images, imageUrls, firstImage, hasImages, mainImage, galleryImages, loading: imagesLoading, error } = 
   usePageImages(WEDDING_SLUG);
   
@@ -118,7 +120,7 @@ export default function KimTaehyunChoiYuna_Simple() {
             description: `${pageConfig?.pageData?.ceremonyTime || ''} ${pageConfig?.venue || ''}`
           }
         ]}
-        showCountdown={false}
+        showCountdown={true}
         countdownTitle="결혼식까지"
         onDateClick={(date) => {
           console.log('선택된 날짜:', date);
@@ -149,8 +151,75 @@ export default function KimTaehyunChoiYuna_Simple() {
           accountNumber: "302-2058-7429-31",
           accountHolder: pageConfig?.brideName || ''
         }}
-        message="마음만으로도 충분합니다. 축하의 뜻으로 전해주시는 축의금은 소중히 받겠습니다."
+        message={`마음만으로도 충분합니다.
+축하의 뜻으로 전해주시는 축의금은
+소중히 받겠습니다.`}
       />
+
+      {/* 배경음악 저작권 표기 */}
+      <div style={{
+        textAlign: 'center',
+        padding: '1rem',
+        color: '#999',
+        fontSize: '0.75rem',
+        lineHeight: '1.6',
+        backgroundColor: '#fafafa',
+        borderTop: '1px solid #eee'
+      }}>
+        <button
+          onClick={() => setShowCopyright(!showCopyright)}
+          style={{
+            background: 'transparent',
+            border: 'none',
+            color: '#666',
+            fontSize: '0.8rem',
+            cursor: 'pointer',
+            padding: '0.5rem',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '0.5rem',
+            margin: '0 auto'
+          }}
+        >
+          <span>🎵 Music Copyright</span>
+          <span style={{ 
+            transform: showCopyright ? 'rotate(180deg)' : 'rotate(0deg)'
+          }}>▼</span>
+        </button>
+        
+        {showCopyright && (
+          <div style={{
+            marginTop: '1rem',
+            paddingTop: '1rem',
+            borderTop: '1px solid #eee'
+          }} className="wedding-fade-in">
+            <p style={{ margin: '0.3rem 0' }}>Music from Free To Use</p>
+            <p style={{ margin: '0.3rem 0' }}>
+              Source: <a 
+                href="https://freetouse.com/music" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                style={{ color: '#666', textDecoration: 'none' }}
+              >
+                https://freetouse.com/music
+              </a>
+            </p>
+            <p style={{ margin: '0.3rem 0' }}>Glamorous by Pufino</p>
+            <p style={{ margin: '0.3rem 0' }}>Loving by Pufino</p>
+            <p style={{ margin: '0.3rem 0' }}>Nervous by Pufino</p>
+            <p style={{ margin: '0.3rem 0' }}>Relief by Pufino</p>
+          </div>
+        )}
+      </div>
+      
+      {/* 배경음악 플레이어 */}
+      <BackgroundMusic 
+        autoPlay={true}
+        volume={0.3}
+        musicUrl="https://firebasestorage.googleapis.com/v0/b/invitation-35d60.firebasestorage.app/o/music%2FPufino%20-%20Glamorous%20(freetouse.com).mp3?alt=media&token=812dca6d-a992-4584-8ff0-2176f3eae2ef"
+      />
+     
     </main>
   );
 }

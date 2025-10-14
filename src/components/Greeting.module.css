@@ -1,7 +1,7 @@
 .container {
   width: calc(100% - 12px);
   margin: 0 auto;
-  padding: 2rem 1rem;
+  padding: 1rem;
   background: linear-gradient(135deg, 
     rgba(255, 255, 255, 1) 0%, 
     rgba(252, 248, 243, 0.8) 50%, 

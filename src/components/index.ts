@@ -29,3 +29,6 @@ export { default as DisplayPeriodManager } from './DisplayPeriodManager';
 
 // 애니메이션 컴포넌트
 export { default as ScrollAnimatedSection } from './ScrollAnimatedSection';
+
+// 배경음악 컴포넌트
+export { default as BackgroundMusic } from './BackgroundMusic';

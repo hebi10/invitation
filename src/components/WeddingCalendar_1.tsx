@@ -93,9 +93,6 @@ export default function WeddingCalendar_1({
               ))}
             </div>
           )}
-          {isWeddingDay && (
-            <div className={styles.weddingIcon}>♡</div>
-          )}
         </div>
       );
     }

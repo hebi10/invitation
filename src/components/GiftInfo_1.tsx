@@ -24,11 +24,21 @@ export default function GiftInfo_1({
     alert('계좌번호가 복사되었습니다.');
   };
 
+  // \n을 줄바꿈으로 변환
+  const formatMessage = (text: string) => {
+    return text.split('\n').map((line, index, array) => (
+      <span key={index}>
+        {line}
+        {index < array.length - 1 && <br />}
+      </span>
+    ));
+  };
+
   return (
     <section className={styles.container}>
       <div className={styles.card}>
         <h2 className={styles.title}>축의금 안내</h2>
-        <p className={styles.message}>{message}</p>
+        <p className={styles.message}>{formatMessage(message)}</p>
         
         <div className={styles.accountsContainer}>
           {groomAccount && (

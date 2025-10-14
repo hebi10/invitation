@@ -31,7 +31,7 @@ export default function LocationMap_1({
   kakaoMapConfig
 }: LocationMapProps) {
   const [isClient, setIsClient] = useState(false);
-  const [activeMapType, setActiveMapType] = useState<'google' | 'kakao'>('google');
+  const [activeMapType, setActiveMapType] = useState<'google' | 'kakao'>('kakao');
   const [kakaoMapLoaded, setKakaoMapLoaded] = useState(false);
   const [zoomable, setZoomable] = useState(false);
 
@@ -161,16 +161,16 @@ export default function LocationMap_1({
         
         <div className={styles.mapTabs}>
           <button 
-            className={`${styles.mapTab} ${activeMapType === 'google' ? styles.active : ''}`}
-            onClick={() => setActiveMapType('google')}
-          >
-            Google
-          </button>
-          <button 
             className={`${styles.mapTab} ${activeMapType === 'kakao' ? styles.active : ''}`}
             onClick={() => setActiveMapType('kakao')}
           >
             Kakao
+          </button>
+          <button 
+            className={`${styles.mapTab} ${activeMapType === 'google' ? styles.active : ''}`}
+            onClick={() => setActiveMapType('google')}
+          >
+            Google
           </button>
         </div>
 

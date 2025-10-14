@@ -52,7 +52,7 @@ export const anDoyoungYoonJisooConfig: WeddingPageConfig = {
     kakaoMap: {
       latitude: 38.2100918,   // 강원 고성 좌표
       longitude: 128.4978166,
-      level: 4,  // 외곽 지역이라 좀 더 넓게
+      level: 5,  // 외곽 지역이라 좀 더 넓게
       markerTitle: '소노펠리체 델피노'
     }
   }

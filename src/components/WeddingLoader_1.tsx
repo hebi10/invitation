@@ -25,10 +25,10 @@ const WeddingLoader_1: React.FC<WeddingLoaderProps> = ({
   const [startTime] = useState(Date.now());
 
   const loadingMessages = [
-    '초대장을 준비하고 있습니다...',
-    '이미지를 불러오고 있습니다...',
-    '페이지 설정 중...',
-    '곧 시작됩니다!'
+    '설렘을 차곡차곡 담는 중입니다…',
+    '추억 사진을 정리하는 중입니다…',
+    '마음을 전할 페이지를 완성 중입니다…',
+    '잠시 후 초대장을 열어드립니다!'
   ];
 
   useEffect(() => {
