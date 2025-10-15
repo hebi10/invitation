@@ -74,6 +74,11 @@ export interface WeddingPageConfig {
       level?: number;     // 지도 확대 레벨 (1~14, 기본값: 3)
       markerTitle?: string; // 마커 타이틀 (기본값: venueName 또는 venue)
     };
+    // 예식장 안내
+    venueGuide?: {
+      title: string;
+      content: string;
+    }[];
   };
 }
 

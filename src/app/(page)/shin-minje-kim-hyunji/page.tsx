@@ -58,7 +58,13 @@ export default function ShinMinJeKimHyunJi() {
   if (access === null) return null;
   if (!access.canAccess) return <AccessDeniedPage message={access.message} />;
   
-  const weddingDate = new Date(2026, 3, 14);
+  const weddingDate = new Date(
+    pageConfig?.weddingDateTime.year || 2024,
+    pageConfig?.weddingDateTime.month || 0,
+    pageConfig?.weddingDateTime.day || 1,
+    pageConfig?.weddingDateTime.hour || 0,
+    pageConfig?.weddingDateTime.minute || 0
+  );
   
   // 메인 이미지 URL 결정 (Firebase 이미지만 사용)
   const mainImageUrl = mainImage?.url || "";
@@ -130,25 +136,30 @@ export default function ShinMinJeKimHyunJi() {
         time={pageConfig?.pageData?.ceremonyTime || ''}
         venue={pageConfig?.venue || ''}
         address={pageConfig?.pageData?.ceremonyAddress || ''}
+        venueGuide={pageConfig?.pageData?.venueGuide}
       />
       <LocationMap 
         venueName={pageConfig?.venue || ''}
         address={pageConfig?.pageData?.ceremonyAddress || ''}
         description={pageConfig?.pageData?.mapDescription || '지하철 이용 시 편리하게 오실 수 있습니다'}
-        mapUrl={pageConfig?.pageData?.mapUrl || ''}
+        contact={pageConfig?.pageData?.ceremonyContact}
       />
       <Guestbook pageSlug={WEDDING_SLUG} />
       <GiftInfo 
-        groomAccount={{
-          bank: "국민은행",
-          accountNumber: "123456-78-901234",
-          accountHolder: pageConfig?.groomName || ''
-        }}
-        brideAccount={{
-          bank: "신한은행",
-          accountNumber: "567890-12-345678",
-          accountHolder: pageConfig?.brideName || ''
-        }}
+        groomAccounts={[
+          {
+            bank: "국민은행",
+            accountNumber: "123456-78-901234",
+            accountHolder: pageConfig?.groomName || ''
+          }
+        ]}
+        brideAccounts={[
+          {
+            bank: "신한은행",
+            accountNumber: "567890-12-345678",
+            accountHolder: pageConfig?.brideName || ''
+          }
+        ]}
         message="마음만으로도 충분합니다. 축하의 뜻으로 전해주시는 축의금은 소중히 받겠습니다."
       />
     </main>

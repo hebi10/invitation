@@ -147,6 +147,7 @@ export default function KimMinJunParkSoHee_1() {
           time={pageConfig?.pageData?.ceremonyTime || ''}
           venue={pageConfig?.venue || ''}
           address={pageConfig?.pageData?.ceremonyAddress || ''}
+          venueGuide={pageConfig?.pageData?.venueGuide}
         />
       </ScrollAnimatedSection>
       
@@ -155,7 +156,6 @@ export default function KimMinJunParkSoHee_1() {
           venueName={pageConfig?.venue || ''}
           address={pageConfig?.pageData?.ceremonyAddress || ''}
           description={pageConfig?.pageData?.mapDescription || '지하철 이용 시 편리하게 오실 수 있습니다'}
-          mapUrl={pageConfig?.pageData?.mapUrl || ''}
           kakaoMapConfig={pageConfig?.pageData?.kakaoMap}
         />
       </ScrollAnimatedSection>
@@ -165,16 +165,20 @@ export default function KimMinJunParkSoHee_1() {
       </ScrollAnimatedSection>
       
       <GiftInfo_1 
-        groomAccount={{
-          bank: "국민은행",
-          accountNumber: "123456-78-901234",
-          accountHolder: pageConfig?.groomName || ''
-        }}
-        brideAccount={{
-          bank: "신한은행",
-          accountNumber: "567890-12-345678",
-          accountHolder: pageConfig?.brideName || ''
-        }}
+        groomAccounts={[
+          {
+            bank: "국민은행",
+            accountNumber: "123456-78-901234",
+            accountHolder: pageConfig?.groomName || ''
+          }
+        ]}
+        brideAccounts={[
+          {
+            bank: "신한은행",
+            accountNumber: "567890-12-345678",
+            accountHolder: pageConfig?.brideName || ''
+          }
+        ]}
         message="마음만으로도 충분합니다. 축하의 뜻으로 전해주시는 축의금은 소중히 받겠습니다."
       />
     </main>

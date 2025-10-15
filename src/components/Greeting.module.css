@@ -158,7 +158,6 @@
 /* 텍스트 균형 개선 */
 @media (max-width: 480px) {
   .message {
-    text-align: justify;
     text-align-last: center;
   }
   

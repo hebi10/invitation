@@ -199,7 +199,7 @@ geocoder.addressSearch('서울특별시 강남구 테헤란로 123', (result, st
 
 3. **페이지 파일들**
    - `src/app/(page)/kim-minjun-park-sohee/page.tsx` - Config 전달
-   - `src/app/(page_edit01)/kim-minjun-park-sohee-simple/page.tsx` - Config 전달
+   - `src/app/(page_simple)/kim-minjun-park-sohee-simple/page.tsx` - Config 전달
 
 ## 🚀 다음 단계
 

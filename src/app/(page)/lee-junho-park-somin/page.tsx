@@ -57,7 +57,13 @@ export default function page() {
   if (access === null) return null;
   if (!access.canAccess) return <AccessDeniedPage message={access.message} />;
   
-  const weddingDate = new Date(2026, 5, 20);
+  const weddingDate = new Date(
+    pageConfig?.weddingDateTime.year || 2024,
+    pageConfig?.weddingDateTime.month || 0,
+    pageConfig?.weddingDateTime.day || 1,
+    pageConfig?.weddingDateTime.hour || 0,
+    pageConfig?.weddingDateTime.minute || 0
+  );
   
   // 메인 이미지 URL 결정 (Firebase 이미지만 사용)
   const mainImageUrl = mainImage?.url || "";
@@ -197,25 +203,30 @@ export default function page() {
         time={pageData.ceremony.time}
         venue={pageData.ceremony.location}
         address={pageData.ceremony.address}
+        venueGuide={pageConfig?.pageData?.venueGuide}
       />
       <LocationMap 
         venueName={pageData.ceremony.location}
         address={pageData.ceremony.address}
         description="지하철 2호선 을지로입구역에서 도보 5분 거리입니다"
-        mapUrl="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3162.543492849434!2d126.98165331568618!3d37.56515197979826!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x357ca2f7dabc1b29%3A0x68e324964fb8e04c!2z66Gv642w7Zi464qU!5e0!3m2!1sko!2skr!4v1642645644356!5m2!1sko!2skr"
+        contact={pageConfig?.pageData?.ceremonyContact}
       />
       <Guestbook pageSlug={WEDDING_SLUG} />
       <GiftInfo 
-        groomAccount={{
-          bank: pageData.accountInfo.groom.bank,
-          accountNumber: pageData.accountInfo.groom.account,
-          accountHolder: pageData.accountInfo.groom.name
-        }}
-        brideAccount={{
-          bank: pageData.accountInfo.bride.bank,
-          accountNumber: pageData.accountInfo.bride.account,
-          accountHolder: pageData.accountInfo.bride.name
-        }}
+        groomAccounts={[
+          {
+            bank: pageData.accountInfo.groom.bank,
+            accountNumber: pageData.accountInfo.groom.account,
+            accountHolder: pageData.accountInfo.groom.name
+          }
+        ]}
+        brideAccounts={[
+          {
+            bank: pageData.accountInfo.bride.bank,
+            accountNumber: pageData.accountInfo.bride.account,
+            accountHolder: pageData.accountInfo.bride.name
+          }
+        ]}
         message="마음만으로도 충분합니다. 축하의 뜻으로 전해주시는 축의금은 소중히 받겠습니다."
       />
     </main>

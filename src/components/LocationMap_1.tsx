@@ -4,10 +4,10 @@ import { useEffect, useState } from 'react';
 import styles from './LocationMap_1.module.css';
 
 interface LocationMapProps {
-  mapUrl?: string;
   venueName: string;
   address: string;
   description?: string;
+  contact?: string;
   kakaoMapConfig?: {
     latitude: number;
     longitude: number;
@@ -24,23 +24,22 @@ declare global {
 }
 
 export default function LocationMap_1({ 
-  mapUrl, 
   venueName, 
   address, 
   description,
+  contact,
   kakaoMapConfig
 }: LocationMapProps) {
   const [isClient, setIsClient] = useState(false);
-  const [activeMapType, setActiveMapType] = useState<'google' | 'kakao'>('kakao');
   const [kakaoMapLoaded, setKakaoMapLoaded] = useState(false);
-  const [zoomable, setZoomable] = useState(false);
+  const [controlEnabled, setControlEnabled] = useState(false);
 
   useEffect(() => {
     setIsClient(true);
   }, []);
 
   useEffect(() => {
-    if (!isClient || activeMapType !== 'kakao') return;
+    if (!isClient) return;
 
     const script = document.createElement('script');
     script.async = true;
@@ -57,7 +56,7 @@ export default function LocationMap_1({
     return () => {
       document.head.removeChild(script);
     };
-  }, [isClient, activeMapType, address, venueName]);
+  }, [isClient, address, venueName]);
 
   const initializeKakaoMap = () => {
     const container = document.getElementById('kakao-map');
@@ -98,6 +97,7 @@ export default function LocationMap_1({
 
       window.kakaoMapInstance = map;
       map.setZoomable(false);
+      map.setDraggable(false);
       setKakaoMapLoaded(true);
     } else {
       const geocoder = new window.kakao.maps.services.Geocoder();
@@ -126,6 +126,7 @@ export default function LocationMap_1({
 
           window.kakaoMapInstance = map;
           map.setZoomable(false);
+          map.setDraggable(false);
           setKakaoMapLoaded(true);
         } else {
           console.error('Kakao Maps 주소 검색 실패:', status);
@@ -135,13 +136,14 @@ export default function LocationMap_1({
     }
   };
 
-  const toggleZoomable = () => {
+  const toggleControl = () => {
     const map = window.kakaoMapInstance;
     if (!map) return;
 
-    const newState = !zoomable;
+    const newState = !controlEnabled;
     map.setZoomable(newState);
-    setZoomable(newState);
+    map.setDraggable(newState);
+    setControlEnabled(newState);
   };
 
   if (!isClient) {
@@ -158,52 +160,31 @@ export default function LocationMap_1({
     <div className={styles.wrapper}>
       <div className={styles.container}>
         <h2 className={styles.title}>오시는 길</h2>
-        
-        <div className={styles.mapTabs}>
-          <button 
-            className={`${styles.mapTab} ${activeMapType === 'kakao' ? styles.active : ''}`}
-            onClick={() => setActiveMapType('kakao')}
-          >
-            Kakao
-          </button>
-          <button 
-            className={`${styles.mapTab} ${activeMapType === 'google' ? styles.active : ''}`}
-            onClick={() => setActiveMapType('google')}
-          >
-            Google
-          </button>
-        </div>
 
         <div className={styles.mapContainer}>
-          {activeMapType === 'google' && mapUrl && (
-            <iframe
-              src={mapUrl}
+          <div className={styles.kakaoMapWrapper}>
+            <div 
+              id="kakao-map" 
               className={styles.mapFrame}
-              allowFullScreen
-              loading="lazy"
-              referrerPolicy="no-referrer-when-downgrade"
             />
-          )}
-
-          {activeMapType === 'kakao' && (
-            <div className={styles.kakaoMapWrapper}>
-              <div 
-                id="kakao-map" 
-                className={styles.mapFrame}
-              />
-              {!kakaoMapLoaded && (
-                <div className={styles.mapLoading}>
-                  <span>카카오맵 로딩 중...</span>
-                </div>
-              )}
-              <button 
-                onClick={toggleZoomable}
-                className={styles.zoomButton}
-              >
-                {zoomable ? '확대/축소 ON' : '확대/축소 OFF'}
-              </button>
-            </div>
-          )}
+            {!kakaoMapLoaded && (
+              <div className={styles.mapLoading}>
+                <span>카카오맵 로딩 중...</span>
+              </div>
+            )}
+            
+            {/* 컨트롤 OFF일 때 터치 차단 오버레이 */}
+            {!controlEnabled && (
+              <div className={styles.mapOverlay} />
+            )}
+            
+            <button 
+              onClick={toggleControl}
+              className={styles.zoomButton}
+            >
+              {controlEnabled ? '컨트롤 ON' : '컨트롤 OFF'}
+            </button>
+          </div>
         </div>
 
         <div className={styles.venueInfo}>
@@ -217,6 +198,14 @@ export default function LocationMap_1({
               <span className={styles.venueLabel}>주소</span>
               <span className={styles.venueText}>{address}</span>
             </div>
+            {contact && (
+              <div className={styles.venueItem}>
+                <span className={styles.venueLabel}>전화</span>
+                <a href={`tel:${contact.replace(/-/g, '')}`} className={styles.venueContact}>
+                  {contact}
+                </a>
+              </div>
+            )}
             {description && (
               <div className={styles.venueItem}>
                 <span className={styles.venueLabel}>교통</span>

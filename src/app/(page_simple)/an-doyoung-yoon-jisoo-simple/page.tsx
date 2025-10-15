@@ -131,26 +131,40 @@ export default function KimTaehyunChoiYuna_Simple() {
         time={pageConfig?.pageData?.ceremonyTime || ''}
         venue={pageConfig?.venue || ''}
         address={pageConfig?.pageData?.ceremonyAddress || ''}
+        venueGuide={pageConfig?.pageData?.venueGuide}
       />
       <LocationMap_1 
         venueName={pageConfig?.pageData?.venueName || pageConfig?.venue || '웨딩홀'}
         address={pageConfig?.pageData?.ceremonyAddress || ''}
-        description={pageConfig?.pageData?.mapDescription || '지하철 이용 시 편리하게 오실 수 있습니다'}
-        mapUrl={pageConfig?.pageData?.mapUrl || ''}
+        description={pageConfig?.pageData?.mapDescription}
         kakaoMapConfig={pageConfig?.pageData?.kakaoMap}
       />
       <Guestbook_1 pageSlug={WEDDING_SLUG} />
       <GiftInfo_1 
-        groomAccount={{
-          bank: "국민은행",
-          accountNumber: "016702-04-506376",
-          accountHolder: pageConfig?.groomName || ''
-        }}
-        brideAccount={{
-          bank: "농협은행",
-          accountNumber: "302-2058-7429-31",
-          accountHolder: pageConfig?.brideName || ''
-        }}
+        groomAccounts={[
+          {
+            bank: "국민",
+            accountNumber: "016702-04-506376",
+            accountHolder: "안도영"
+          },
+          {
+            bank: "농협",
+            accountNumber: "325015-52-107296",
+            accountHolder: "안근일"
+          }
+        ]}
+        brideAccounts={[
+          {
+            bank: "농협",
+            accountNumber: "302-2058-7429-31",
+            accountHolder: "윤지수"
+          },
+          {
+            bank: "농협",
+            accountNumber: "225038-52-000811",
+            accountHolder: "윤석종"
+          }
+        ]}
         message={`마음만으로도 충분합니다.
 축하의 뜻으로 전해주시는 축의금은
 소중히 받겠습니다.`}
@@ -185,7 +199,7 @@ export default function KimTaehyunChoiYuna_Simple() {
           <span>🎵 Music Copyright</span>
           <span style={{ 
             transform: showCopyright ? 'rotate(180deg)' : 'rotate(0deg)'
-          }}>▼</span>
+          }}>⮟</span>
         </button>
         
         {showCopyright && (

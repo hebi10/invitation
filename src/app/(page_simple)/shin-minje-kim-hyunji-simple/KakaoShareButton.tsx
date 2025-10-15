@@ -1,8 +1,6 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { usePathname } from 'next/navigation';
-import { usePageImages } from '@/hooks';
 
 interface KakaoShareButtonProps {
   title: string;
@@ -19,14 +17,6 @@ declare global {
 
 export default function KakaoShareButton({ title, description, imageUrl }: KakaoShareButtonProps) {
   const [isKakaoReady, setIsKakaoReady] = useState(false);
-  const pathname = usePathname();
-  
-  // pathname에서 slug 추출 (예: "/kim-minjun-park-sohee-simple" -> "kim-minjun-park-sohee")
-  const pageSlug = pathname.split('/').pop()?.replace('-simple', '') || '';
-  const { mainImage } = usePageImages(pageSlug);
-  
-  // 실제 이미지가 있으면 그것을 사용하고, 없으면 기본 이미지 사용
-  const actualImageUrl = mainImage?.url || imageUrl;
 
   useEffect(() => {
     const initKakao = () => {
@@ -72,7 +62,7 @@ export default function KakaoShareButton({ title, description, imageUrl }: Kakao
         content: {
           title,
           description,
-          imageUrl: actualImageUrl, // 실제 이미지 URL 사용
+          imageUrl,
           link: {
             mobileWebUrl: window.location.href,
             webUrl: window.location.href,
@@ -98,7 +88,7 @@ export default function KakaoShareButton({ title, description, imageUrl }: Kakao
       width: '100%',
       display: 'flex',
       justifyContent: 'center',
-      margin: '20px 0'
+      margin: '20px 0 0'
     }}>
       <button 
         onClick={handleKakaoShare}

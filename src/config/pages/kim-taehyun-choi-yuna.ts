@@ -46,13 +46,22 @@ export const kimTaehyunChoiYunaConfig: WeddingPageConfig = {
     ceremonyContact: '02-9012-3456',
     greetingMessage: '오랜 시간 서로를 이해하고 사랑해온 두 사람이 이제 한 가정을 이루고자 합니다. 저희의 새로운 출발을 지켜봐 주시고 축복해 주시기 바랍니다.',
     greetingAuthor: '김태현 · 최유나',
-    mapUrl: 'https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d25314.40229051596!2d127.01265801385874!3d37.52441811794768!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x357ca4784ed95631%3A0x12a8bf0e6438ac9!2z7JeY66as7Iuc7JWI7Iqk64u4!5e0!3m2!1sko!2skr!4v1753176333094!5m2!1sko!2skr',
     mapDescription: '월드컵공원 인근으로 주차공간이 넉넉하게 준비되어 있습니다',
     kakaoMap: {
       latitude: 37.5663,
       longitude: 126.8997,
       level: 3,
       markerTitle: '엘리시안웨딩홀'
-    }
+    },
+    venueGuide: [
+      {
+        title: '신부 대기실',
+        content: '신부대기실은 예식 시작 10분 전\n오후 12시 50분 에 마감될 예정이오니\n신부와의 만남을 원하는 신부 측\n하객분들께서는 마감 시간 전까지\n방문해주시면 감사하겠습니다.'
+      },
+      {
+        title: '식사',
+        content: '식사는 뷔페식으로 진행되며\n예식 30분 전부터 이용할 수 있습니다.\n한식·일식·양식으로 아낌없이 준비되어 있으며\n음료를 포함한 주류도 무제한 이용 가능하니\n마음껏 식사를 즐겨주시기 바랍니다.\n(12:30 - 14:30)'
+      }
+    ]
   }
 };

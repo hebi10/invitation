@@ -52,7 +52,7 @@
 ## 3. 코드에 적용
 
 ### 페이지 파일 수정
-예시: `src/app/(page_edit01)/an-doyoung-yoon-jisoo-simple/page.tsx`
+예시: `src/app/(page_simple)/an-doyoung-yoon-jisoo-simple/page.tsx`
 
 ```tsx
 // 주석 해제하고 musicUrl에 복사한 URL 붙여넣기

@@ -118,7 +118,7 @@ export default function KimTaehyunChoiYuna_Simple() {
             description: `${pageConfig?.pageData?.ceremonyTime || ''} ${pageConfig?.venue || ''}`
           }
         ]}
-        showCountdown={false}
+        showCountdown={true}
         countdownTitle="결혼식까지"
         onDateClick={(date) => {
           console.log('선택된 날짜:', date);
@@ -129,25 +129,29 @@ export default function KimTaehyunChoiYuna_Simple() {
         time={pageConfig?.pageData?.ceremonyTime || ''}
         venue={pageConfig?.venue || ''}
         address={pageConfig?.pageData?.ceremonyAddress || ''}
+        venueGuide={pageConfig?.pageData?.venueGuide}
       />
       <LocationMap_1 
         venueName={pageConfig?.venue || ''}
         address={pageConfig?.pageData?.ceremonyAddress || ''}
         description={pageConfig?.pageData?.mapDescription || '지하철 이용 시 편리하게 오실 수 있습니다'}
-        mapUrl={pageConfig?.pageData?.mapUrl || ''}
       />
       <Guestbook_1 pageSlug={WEDDING_SLUG} />
       <GiftInfo_1 
-        groomAccount={{
-          bank: "신한은행",
-          accountNumber: "110-123-456789",
-          accountHolder: pageConfig?.groomName || ''
-        }}
-        brideAccount={{
-          bank: "우리은행",
-          accountNumber: "1002-234-567890",
-          accountHolder: pageConfig?.brideName || ''
-        }}
+        groomAccounts={[
+          {
+            bank: "신한은행",
+            accountNumber: "110-123-456789",
+            accountHolder: pageConfig?.groomName || ''
+          }
+        ]}
+        brideAccounts={[
+          {
+            bank: "우리은행",
+            accountNumber: "1002-234-567890",
+            accountHolder: pageConfig?.brideName || ''
+          }
+        ]}
         message="마음만으로도 충분합니다. 축하의 뜻으로 전해주시는 축의금은 소중히 받겠습니다."
       />
     </main>

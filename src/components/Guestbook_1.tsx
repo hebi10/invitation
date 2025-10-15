@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useAdmin } from '@/contexts';
-import { addComment, getComments, deleteComment, type Comment } from '@/services';
+import { addComment, getComments, deleteComment, verifyClientPassword, type Comment } from '@/services';
 import styles from './Guestbook_1.module.css';
 
 interface GuestbookProps {
@@ -20,6 +20,14 @@ export default function Guestbook_1({ pageSlug }: GuestbookProps) {
   
   const [currentPage, setCurrentPage] = useState(1);
   const COMMENTS_PER_PAGE = 3;
+  
+  // 클라이언트 관리 기능 상태
+  const [showClientManager, setShowClientManager] = useState(false);
+  const [clientPassword, setClientPassword] = useState('');
+  const [isClientLoggedIn, setIsClientLoggedIn] = useState(false);
+
+  // 모바일 더블탭 처리를 위한 상태
+  const [lastTap, setLastTap] = useState(0);
 
   useEffect(() => {
     loadComments();
@@ -78,6 +86,44 @@ export default function Guestbook_1({ pageSlug }: GuestbookProps) {
     } catch (error) {
       setError('댓글 삭제에 실패했습니다.');
       console.error(error);
+    }
+  };
+
+  // 클라이언트 로그인 처리
+  const handleClientLogin = async () => {
+    try {
+      const isValid = await verifyClientPassword(pageSlug, clientPassword);
+      if (isValid) {
+        setIsClientLoggedIn(true);
+        setShowClientManager(false);
+        setClientPassword('');
+        setError('');
+      } else {
+        setError('비밀번호가 올바르지 않습니다.');
+      }
+    } catch (error) {
+      setError('로그인 중 오류가 발생했습니다.');
+      console.error('클라이언트 로그인 오류:', error);
+    }
+  };
+
+  // 클라이언트 로그아웃 처리
+  const handleClientLogout = () => {
+    setIsClientLoggedIn(false);
+    setClientPassword('');
+  };
+
+  // 모바일 더블탭 및 데스크톱 더블클릭 처리
+  const handleTitleInteraction = () => {
+    const now = Date.now();
+    const DOUBLE_TAP_DELAY = 300; // 300ms 이내에 두 번 탭하면 더블탭으로 인식
+    
+    if (lastTap && (now - lastTap) < DOUBLE_TAP_DELAY) {
+      // 더블탭/더블클릭 감지
+      setShowClientManager(!showClientManager);
+      setLastTap(0);
+    } else {
+      setLastTap(now);
     }
   };
 
@@ -140,8 +186,73 @@ export default function Guestbook_1({ pageSlug }: GuestbookProps) {
   return (
     <section className={styles.container}>
       <div className={styles.card}>
-        <h2 className={styles.title}>축하 메시지</h2>
+        <div 
+          className={styles.titleSection}
+          onDoubleClick={handleTitleInteraction}
+          onTouchEnd={handleTitleInteraction}
+          onClick={handleTitleInteraction}
+          title="신랑신부님은 여기를 더블클릭/더블탭하세요"
+          style={{ userSelect: 'none' }}
+        >
+          <h2 className={styles.title}>축하 메시지</h2>
+        </div>
         <p className={styles.subtitle}>저희의 소중한 날을 함께 축하해 주세요</p>
+        
+        {/* 클라이언트 관리 섹션 */}
+        <div className={styles.clientManager}>
+          {!isClientLoggedIn ? (
+            <>
+              {showClientManager && (
+                <div className={styles.clientManagerSection}>
+                  <button 
+                    className={styles.clientManagerButton}
+                    onClick={() => setShowClientManager(false)}
+                  >
+                    닫기
+                  </button>
+                </div>
+              )}
+            </>
+          ) : (
+            <div className={styles.clientLoggedIn}>
+              <span className={styles.clientWelcome}>
+                💕 댓글 관리 모드
+              </span>
+              <button 
+                className={styles.clientLogoutButton}
+                onClick={handleClientLogout}
+              >
+                로그아웃
+              </button>
+            </div>
+          )}
+          
+          {/* 클라이언트 로그인 폼 */}
+          {showClientManager && !isClientLoggedIn && (
+            <div className={styles.clientLoginForm}>
+              <div className={styles.loginHeader}>
+                <span className={styles.loginIcon}>🔐</span>
+                <span className={styles.loginTitle}>신랑신부 전용</span>
+              </div>
+              <div className={styles.loginInputGroup}>
+                <input
+                  type="password"
+                  value={clientPassword}
+                  onChange={(e) => setClientPassword(e.target.value)}
+                  placeholder="비밀번호를 입력하세요"
+                  className={styles.clientPasswordInput}
+                  onKeyPress={(e) => e.key === 'Enter' && handleClientLogin()}
+                />
+                <button 
+                  onClick={handleClientLogin}
+                  className={styles.clientLoginButton}
+                >
+                  로그인
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
         
         <form className={styles.form} onSubmit={handleSubmit}>
           <div className={styles.formRow}>
@@ -208,7 +319,7 @@ export default function Guestbook_1({ pageSlug }: GuestbookProps) {
                         <span className={styles.commentDate}>
                           {comment.createdAt.toLocaleDateString('ko-KR')}
                         </span>
-                        {isAdminLoggedIn && (
+                        {(isAdminLoggedIn || isClientLoggedIn) && (
                           <button 
                             className={styles.deleteButton} 
                             onClick={() => handleDelete(comment.id)}

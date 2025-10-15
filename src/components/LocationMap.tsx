@@ -4,10 +4,10 @@ import { useEffect, useState } from 'react';
 import styles from './LocationMap.module.css';
 
 interface LocationMapProps {
-  mapUrl?: string;
   venueName: string;
   address: string;
   description?: string;
+  contact?: string;
   kakaoMapConfig?: {
     latitude: number;
     longitude: number;
@@ -24,16 +24,15 @@ declare global {
 }
 
 export default function LocationMap({ 
-  mapUrl, 
   venueName, 
   address, 
   description,
+  contact,
   kakaoMapConfig
 }: LocationMapProps) {
   const [isClient, setIsClient] = useState(false);
-  const [activeMapType, setActiveMapType] = useState<'google' | 'kakao'>('google');
   const [kakaoMapLoaded, setKakaoMapLoaded] = useState(false);
-  const [zoomable, setZoomable] = useState(false); // ✅ 확대/축소 상태
+  const [controlEnabled, setControlEnabled] = useState(false); // ✅ 컨트롤 상태
 
   useEffect(() => {
     setIsClient(true);
@@ -41,7 +40,7 @@ export default function LocationMap({
 
   // Kakao Maps API 로드
   useEffect(() => {
-    if (!isClient || activeMapType !== 'kakao') return;
+    if (!isClient) return;
 
     const script = document.createElement('script');
     script.async = true;
@@ -58,7 +57,7 @@ export default function LocationMap({
     return () => {
       document.head.removeChild(script);
     };
-  }, [isClient, activeMapType, address, venueName]);
+  }, [isClient, address, venueName]);
 
   const initializeKakaoMap = () => {
     const container = document.getElementById('kakao-map');
@@ -101,6 +100,7 @@ export default function LocationMap({
 
       window.kakaoMapInstance = map;
       map.setZoomable(false);
+      map.setDraggable(false);
       setKakaoMapLoaded(true);
     } else {
       // 기존 주소 검색 방식
@@ -130,6 +130,7 @@ export default function LocationMap({
 
           window.kakaoMapInstance = map;
           map.setZoomable(false);
+          map.setDraggable(false);
           setKakaoMapLoaded(true);
         } else {
           console.error('Kakao Maps 주소 검색 실패:', status);
@@ -139,14 +140,15 @@ export default function LocationMap({
     }
   };
 
-  // ✅ 확대/축소 토글
-  const toggleZoomable = () => {
+  // ✅ 컨트롤 토글 (확대/축소 + 드래그)
+  const toggleControl = () => {
     const map = window.kakaoMapInstance;
     if (!map) return;
 
-    const newState = !zoomable;
+    const newState = !controlEnabled;
     map.setZoomable(newState);
-    setZoomable(newState);
+    map.setDraggable(newState);
+    setControlEnabled(newState);
   };
 
   if (!isClient) {
@@ -170,82 +172,51 @@ export default function LocationMap({
       <div className={styles.container}>
         <div className={styles.header}>
           <h2 className={styles.title}>오시는 길</h2>
-          
-          {/* 지도 타입 선택 탭 */}
-          <div className={styles.mapTabs}>
-            <button 
-              className={`${styles.mapTab} ${activeMapType === 'google' ? styles.active : ''}`}
-              onClick={() => setActiveMapType('google')}
-            >
-              <span className={styles.tabIcon}>🔵</span>
-              Google
-            </button>
-            <button 
-              className={`${styles.mapTab} ${activeMapType === 'kakao' ? styles.active : ''}`}
-              onClick={() => setActiveMapType('kakao')}
-            >
-              <span className={styles.tabIcon}>🟡</span>
-              Kakao
-            </button>
-          </div>
         </div>
 
         <div className={styles.mapContainer}>
-          {/* Google Maps */}
-          {activeMapType === 'google' && mapUrl && (
-            <>
-              <iframe
-                src={mapUrl}
-                className={styles.mapFrame}
-                allowFullScreen
-                loading="lazy"
-                referrerPolicy="no-referrer-when-downgrade"
-              />
-              <div className={styles.mapBadge}>
-                <span className={styles.badgeIcon}>🔵</span>
-                <span className={styles.badgeText}>Google Maps</span>
-              </div>
-            </>
-          )}
-
           {/* Kakao Map */}
-          {activeMapType === 'kakao' && (
-            <div style={{ position: 'relative', width: '100%', height: '100%' }}>
-              <div 
-                id="kakao-map" 
-                className={styles.mapFrame}
-                style={{ width: '100%', height: '100%', borderRadius: '12px' }}
-              />
-              <div className={styles.mapBadge}>
-                <span className={styles.badgeIcon}>🟡</span>
-                <span className={styles.badgeText}>Kakao Map</span>
-              </div>
-              {!kakaoMapLoaded && (
-                <div className={styles.mapLoading}>
-                  <span>카카오맵 로딩 중...</span>
-                </div>
-              )}
-              {/* ✅ 확대/축소 버튼 */}
-              <button 
-                onClick={toggleZoomable}
-                style={{
-                  position: 'absolute',
-                  bottom: '10px',
-                  right: '10px',
-                  zIndex: 10,
-                  background: 'white',
-                  border: '1px solid #ccc',
-                  padding: '6px 12px',
-                  borderRadius: '6px',
-                  fontSize: '12px',
-                  cursor: 'pointer',
-                  boxShadow: '0 2px 6px rgba(0,0,0,0.15)'
-                }}
-              >
-                {zoomable ? '확대/축소 ON' : '확대/축소 OFF'}
-              </button>
+          <div style={{ position: 'relative', width: '100%', height: '100%' }}>
+            <div 
+              id="kakao-map" 
+              className={styles.mapFrame}
+              style={{ width: '100%', height: '100%', borderRadius: '12px' }}
+            />
+            <div className={styles.mapBadge}>
+              <span className={styles.badgeIcon}>🟡</span>
+              <span className={styles.badgeText}>Kakao Map</span>
             </div>
-          )}
+            {!kakaoMapLoaded && (
+              <div className={styles.mapLoading}>
+                <span>카카오맵 로딩 중...</span>
+              </div>
+            )}
+            
+            {/* 컨트롤 OFF일 때 터치 차단 오버레이 */}
+            {!controlEnabled && (
+              <div className={styles.mapOverlay} />
+            )}
+            
+            {/* ✅ 컨트롤 ON/OFF 버튼 */}
+            <button 
+              onClick={toggleControl}
+              style={{
+                position: 'absolute',
+                bottom: '10px',
+                right: '10px',
+                zIndex: 10,
+                background: 'white',
+                border: '1px solid #ccc',
+                padding: '6px 12px',
+                borderRadius: '6px',
+                fontSize: '12px',
+                cursor: 'pointer',
+                boxShadow: '0 2px 6px rgba(0,0,0,0.15)'
+              }}
+            >
+              {controlEnabled ? '컨트롤 ON' : '컨트롤 OFF'}
+            </button>
+          </div>
         </div>
 
         {/* 예식장 정보 섹션 */}
@@ -266,6 +237,15 @@ export default function LocationMap({
                 <span className={styles.addressIcon}>📍</span>
                 <span className={styles.venueAddress}>{address}</span>
               </div>
+              
+              {contact && (
+                <div className={styles.venueContactSection}>
+                  <span className={styles.contactIcon}>📞</span>
+                  <a href={`tel:${contact.replace(/-/g, '')}`} className={styles.venueContact}>
+                    {contact}
+                  </a>
+                </div>
+              )}
               
               {description && (
                 <div className={styles.venueDescriptionSection}>

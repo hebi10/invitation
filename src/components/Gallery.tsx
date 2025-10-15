@@ -10,9 +10,11 @@ interface GalleryProps {
 
 const Gallery = React.memo(function Gallery({ images, title = "소중한 순간들" }: GalleryProps) {
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [selectedIndex, setSelectedIndex] = useState<number>(-1);
   const [visibleCount, setVisibleCount] = useState(6);
   const [imageSize, setImageSize] = useState({ width: 'auto', height: 'auto' });
   const [loadedImages, setLoadedImages] = useState<Set<string>>(new Set());
+  const [isTransitioning, setIsTransitioning] = useState(false);
   
   // 메모이제이션된 계산값들
   const displayImages = useMemo(() => images.slice(0, visibleCount), [images, visibleCount]);
@@ -44,7 +46,10 @@ const Gallery = React.memo(function Gallery({ images, title = "소중한 순간�
   }, []);
 
   const openPopup = useCallback((image: string) => {
+    const index = images.indexOf(image);
+    setSelectedIndex(index);
     setSelectedImage(image);
+    setIsTransitioning(false);
     
     const img = new Image();
     img.onload = () => {
@@ -52,12 +57,54 @@ const Gallery = React.memo(function Gallery({ images, title = "소중한 순간�
       setImageSize(size);
     };
     img.src = image;
-  }, [calculateImageSize]);
+  }, [calculateImageSize, images]);
 
   const closePopup = useCallback(() => {
     setSelectedImage(null);
+    setSelectedIndex(-1);
     setImageSize({ width: 'auto', height: 'auto' });
+    setIsTransitioning(false);
   }, []);
+
+  const goToPrevImage = useCallback(() => {
+    if (selectedIndex <= 0 || isTransitioning) return;
+    
+    setIsTransitioning(true);
+    setTimeout(() => {
+      const newIndex = selectedIndex - 1;
+      const newImage = images[newIndex];
+      setSelectedIndex(newIndex);
+      setSelectedImage(newImage);
+      
+      const img = new Image();
+      img.onload = () => {
+        const size = calculateImageSize(img);
+        setImageSize(size);
+        setTimeout(() => setIsTransitioning(false), 50);
+      };
+      img.src = newImage;
+    }, 200);
+  }, [selectedIndex, images, calculateImageSize, isTransitioning]);
+
+  const goToNextImage = useCallback(() => {
+    if (selectedIndex >= images.length - 1 || isTransitioning) return;
+    
+    setIsTransitioning(true);
+    setTimeout(() => {
+      const newIndex = selectedIndex + 1;
+      const newImage = images[newIndex];
+      setSelectedIndex(newIndex);
+      setSelectedImage(newImage);
+      
+      const img = new Image();
+      img.onload = () => {
+        const size = calculateImageSize(img);
+        setImageSize(size);
+        setTimeout(() => setIsTransitioning(false), 50);
+      };
+      img.src = newImage;
+    }, 200);
+  }, [selectedIndex, images, calculateImageSize, isTransitioning]);
 
   const showMoreImages = useCallback(() => {
     setVisibleCount(prev => Math.min(prev + 6, images.length));
@@ -84,6 +131,10 @@ const Gallery = React.memo(function Gallery({ images, title = "소중한 순간�
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         closePopup();
+      } else if (e.key === 'ArrowLeft') {
+        goToPrevImage();
+      } else if (e.key === 'ArrowRight') {
+        goToNextImage();
       }
     };
 
@@ -105,7 +156,7 @@ const Gallery = React.memo(function Gallery({ images, title = "소중한 순간�
       window.removeEventListener('resize', handleResize);
       document.body.classList.remove('no-scroll');
     };
-  }, [selectedImage, closePopup, calculateImageSize]);
+  }, [selectedImage, closePopup, calculateImageSize, goToPrevImage, goToNextImage]);
 
   // 컴포넌트 언마운트 시 정리
   useEffect(() => {
@@ -173,6 +224,7 @@ const Gallery = React.memo(function Gallery({ images, title = "소중한 순간�
             <button className={styles.closeButton} onClick={closePopup}>
               ✕
             </button>
+            
             <img 
               src={selectedImage} 
               alt="확대된 이미지"
@@ -182,9 +234,34 @@ const Gallery = React.memo(function Gallery({ images, title = "소중한 순간�
                 height: imageSize.height,
                 maxWidth: 'calc(100vw - 40px) !important',
                 maxHeight: 'calc(100vh - 40px) !important',
-                objectFit: 'contain'
+                objectFit: 'contain',
+                opacity: isTransitioning ? 0 : 1,
+                transition: 'opacity 0.2s ease'
               }}
             />
+            
+            {/* 통합 네비게이션 바 */}
+            <div className={styles.navigationBar}>
+              <button 
+                className={`${styles.navArrow} ${styles.prevArrow}`}
+                onClick={goToPrevImage}
+                disabled={isTransitioning || selectedIndex <= 0}
+              >
+                ‹
+              </button>
+              
+              <span className={styles.imageCounter}>
+                {selectedIndex + 1} / {images.length}
+              </span>
+              
+              <button 
+                className={`${styles.navArrow} ${styles.nextArrow}`}
+                onClick={goToNextImage}
+                disabled={isTransitioning || selectedIndex >= images.length - 1}
+              >
+                ›
+              </button>
+            </div>
           </div>
         </div>
       )}

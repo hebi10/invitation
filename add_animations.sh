@@ -9,7 +9,7 @@ pages=(
   "kim-taehyun-choi-yuna"
 )
 
-# 심플 페이지들 (page_edit01)
+# 심플 페이지들 (page_simple)
 simple_pages=(
   "shin-minje-kim-hyunji-simple"
   "lee-junho-park-somin-simple"
@@ -33,7 +33,7 @@ done
 
 # 심플 페이지들 처리  
 for page in "${simple_pages[@]}"; do
-  file_path="c:/Users/gy554/Desktop/개인 포폴 관련/invitation/src/app/(page_edit01)/$page/page.tsx"
+  file_path="c:/Users/gy554/Desktop/개인 포폴 관련/invitation/src/app/(page_simple)/$page/page.tsx"
   if [ -f "$file_path" ]; then
     echo "처리 중: $file_path"
     # ScrollAnimatedSection import 추가 (이미 있는 경우 무시)
