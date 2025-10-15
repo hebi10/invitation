@@ -108,6 +108,8 @@ export default function KimTaehyunChoiYuna() {
       <Greeting 
         message={pageConfig?.pageData?.greetingMessage || '사랑하는 가족과 친구들과 함께 영원한 약속을 나누고자 합니다. 저희의 사랑의 여정을 따뜻하게 지켜봐 주세요.'}
         author={pageConfig?.pageData?.greetingAuthor || `${pageConfig?.groomName || ''} · ${pageConfig?.brideName || ''}`}
+        groom={pageConfig?.pageData?.groom}
+        bride={pageConfig?.pageData?.bride}
       />
       <Gallery 
         images={galleryImages.map(img => img.url)}
@@ -136,6 +138,7 @@ export default function KimTaehyunChoiYuna() {
         venue={pageConfig?.venue || ''}
         address={pageConfig?.pageData?.ceremonyAddress || ''}
         venueGuide={pageConfig?.pageData?.venueGuide}
+        wreathGuide={pageConfig?.pageData?.wreathGuide}
       />
       <LocationMap 
         venueName={pageConfig?.venue || ''}

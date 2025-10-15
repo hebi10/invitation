@@ -47,6 +47,37 @@ export const kimTaehyunChoiYunaConfig: WeddingPageConfig = {
     greetingMessage: '오랜 시간 서로를 이해하고 사랑해온 두 사람이 이제 한 가정을 이루고자 합니다. 저희의 새로운 출발을 지켜봐 주시고 축복해 주시기 바랍니다.',
     greetingAuthor: '김태현 · 최유나',
     mapDescription: '월드컵공원 인근으로 주차공간이 넉넉하게 준비되어 있습니다',
+    // 신랑/신부 가족 정보
+    groom: {
+      name: '김태현',
+      order: '차남',
+      father: {
+        relation: '부',
+        name: '김상욱',
+        phone: '010-7777-8888'
+      },
+      mother: {
+        relation: '모',
+        name: '최정희',
+        phone: '010-8888-9999'
+      },
+      phone: '010-9999-0000'
+    },
+    bride: {
+      name: '최유나',
+      order: '차녀',
+      father: {
+        relation: '부',
+        name: '최민호',
+        phone: '010-1010-1111'
+      },
+      mother: {
+        relation: '모',
+        name: '윤서연',
+        phone: '010-1212-1313'
+      },
+      phone: '010-1414-1515'
+    },
     kakaoMap: {
       latitude: 37.5663,
       longitude: 126.8997,
@@ -61,6 +92,16 @@ export const kimTaehyunChoiYunaConfig: WeddingPageConfig = {
       {
         title: '식사',
         content: '식사는 뷔페식으로 진행되며\n예식 30분 전부터 이용할 수 있습니다.\n한식·일식·양식으로 아낌없이 준비되어 있으며\n음료를 포함한 주류도 무제한 이용 가능하니\n마음껏 식사를 즐겨주시기 바랍니다.\n(12:30 - 14:30)'
+      }
+    ],
+    wreathGuide: [
+      {
+        title: '화환 안내',
+        content: '축하의 뜻을 전하고자 화환을 보내주실 경우\n아래 안내 사항을 참고해 주시기 바랍니다.\n\n예식장: 플라워가든웨딩홀\n예식일시: 2025년 9월 5일 토요일 오전 11시\n수령인: 신랑 김태현 / 신부 최유나\n연락처: 031-5555-6666'
+      },
+      {
+        title: '배송 시간',
+        content: '화환은 예식 전날 오후 또는\n당일 오전 9시까지 도착할 수 있도록\n주문해 주시기 바랍니다.\n\n예식장 측 사정으로 인해\n예식 시작 2시간 전까지는\n반드시 배치가 완료되어야 하오니\n참고 부탁드립니다.'
       }
     ]
   }

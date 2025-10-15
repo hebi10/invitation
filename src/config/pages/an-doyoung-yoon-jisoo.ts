@@ -48,6 +48,37 @@ export const anDoyoungYoonJisooConfig: WeddingPageConfig = {
     greetingMessage: '처음엔 우연이었고,<br>지금은 이유가 되었어요.<br><br>함께 있는 게<br>가장 자연스러운 사람,<br><br>그래서 평생을 함께하기로 했습니다.<br><br>우리의 시작,<br>따뜻한 마음으로 함께해 주세요.',
     greetingAuthor: '안도영 · 윤지수',
     mapDescription: '서울역 2번 출구 및 강릉고속버스터미널에서 셔틀버스가 운행됩니다.',
+    // 신랑/신부 가족 정보
+    groom: {
+      name: '안도영',
+      order: '장남',
+      father: {
+        relation: '부',
+        name: '안재훈',
+        phone: '010-1616-1717'
+      },
+      mother: {
+        relation: '모',
+        name: '강수진',
+        phone: '010-1818-1919'
+      },
+      phone: '010-2020-2121'
+    },
+    bride: {
+      name: '윤지수',
+      order: '장녀',
+      father: {
+        relation: '부',
+        name: '윤태영',
+        phone: '010-2222-2323'
+      },
+      mother: {
+        relation: '모',
+        name: '김은희',
+        phone: '010-2424-2525'
+      },
+      phone: '010-2626-2727'
+    },
     kakaoMap: {
       latitude: 38.2100918,   // 강원 고성 좌표
       longitude: 128.4978166,
@@ -62,6 +93,16 @@ export const anDoyoungYoonJisooConfig: WeddingPageConfig = {
       {
         title: '식사',
         content: '식사는 뷔페식으로 진행되며\n예식 30분 전부터 이용할 수 있습니다.\n한식·일식·양식으로 아낌없이 준비되어 있으며\n음료를 포함한 주류도 무제한 이용 가능하니\n마음껏 식사를 즐겨주시기 바랍니다.\n(10:30 - 12:30)'
+      }
+    ],
+    wreathGuide: [
+      {
+        title: '화환 안내',
+        content: '축하의 뜻을 전하고자 화환을 보내주실 경우\n아래 안내 사항을 참고해 주시기 바랍니다.\n\n예식장: 로얄가든웨딩홀\n예식일시: 2025년 10월 20일 일요일 오후 1시\n수령인: 신랑 안도영 / 신부 윤지수\n연락처: 02-7777-8888'
+      },
+      {
+        title: '배송 시간',
+        content: '화환은 예식 전날 오후 또는\n당일 오전 11시까지 도착할 수 있도록\n주문해 주시기 바랍니다.\n\n예식장 측 사정으로 인해\n예식 시작 2시간 전까지는\n반드시 배치가 완료되어야 하오니\n참고 부탁드립니다.'
       }
     ]
   }

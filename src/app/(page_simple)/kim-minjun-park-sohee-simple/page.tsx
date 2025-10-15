@@ -111,6 +111,8 @@ export default function KimMinJunParkSoHee_1() {
         <Greeting_1 
           message={pageConfig?.pageData?.greetingMessage || '두 사람이 사랑으로 하나가 되는 순간을 함께해 주시는 모든 분들께 감사드립니다. 새로운 시작을 따뜻한 마음으로 축복해 주시면 더없는 기쁨이겠습니다.'}
           author={pageConfig?.pageData?.greetingAuthor || `${pageConfig?.groomName || ''} · ${pageConfig?.brideName || ''}`}
+          groom={pageConfig?.pageData?.groom}
+          bride={pageConfig?.pageData?.bride}
         />
       </ScrollAnimatedSection>
       
@@ -148,6 +150,7 @@ export default function KimMinJunParkSoHee_1() {
           venue={pageConfig?.venue || ''}
           address={pageConfig?.pageData?.ceremonyAddress || ''}
           venueGuide={pageConfig?.pageData?.venueGuide}
+        wreathGuide={pageConfig?.pageData?.wreathGuide}
         />
       </ScrollAnimatedSection>
       

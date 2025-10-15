@@ -9,6 +9,21 @@ import { leeJunhoParkSominConfig } from './pages/lee-junho-park-somin';
 import { kimTaehyunChoiYunaConfig } from './pages/kim-taehyun-choi-yuna';
 import { anDoyoungYoonJisooConfig } from './pages/an-doyoung-yoon-jisoo';
 
+// 가족 정보 인터페이스
+export interface FamilyMember {
+  relation: string; // 부, 모
+  name: string;
+  phone?: string;
+}
+
+export interface PersonInfo {
+  name: string;
+  order?: string; // 장남, 차남, 장녀, 차녀 등
+  father?: FamilyMember;
+  mother?: FamilyMember;
+  phone?: string;
+}
+
 export interface WeddingPageConfig {
   slug: string;
   displayName: string;
@@ -67,6 +82,9 @@ export interface WeddingPageConfig {
     mapUrl?: string;
     mapDescription?: string;
     venueName?: string; // 예식장 이름 (기본값: venue 또는 '웨딩홀')
+    // 신랑/신부 가족 정보
+    groom?: PersonInfo;
+    bride?: PersonInfo;
     // 카카오맵 설정
     kakaoMap?: {
       latitude: number;   // 위도
@@ -76,6 +94,11 @@ export interface WeddingPageConfig {
     };
     // 예식장 안내
     venueGuide?: {
+      title: string;
+      content: string;
+    }[];
+    // 화환 안내
+    wreathGuide?: {
       title: string;
       content: string;
     }[];

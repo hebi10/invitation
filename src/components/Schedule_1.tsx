@@ -8,6 +8,11 @@ interface VenueGuideItem {
   content: string;
 }
 
+interface WreathGuideItem {
+  title: string;
+  content: string;
+}
+
 interface ScheduleProps {
   date: string;
   time: string;
@@ -22,6 +27,7 @@ interface ScheduleProps {
     location: string;
   };
   venueGuide?: VenueGuideItem[];
+  wreathGuide?: WreathGuideItem[];
 }
 
 export default function Schedule_1({ 
@@ -31,11 +37,12 @@ export default function Schedule_1({
   address, 
   ceremony, 
   reception,
-  venueGuide
+  venueGuide,
+  wreathGuide
 }: ScheduleProps) {
-  const [activeTab, setActiveTab] = useState<'schedule' | 'guide'>('schedule');
+  const [activeTab, setActiveTab] = useState<'schedule' | 'guide' | 'wreath'>('schedule');
   const [expandedItems, setExpandedItems] = useState<Set<number>>(new Set());
-  const showTabs = venueGuide && venueGuide.length > 0;
+  const showTabs = (venueGuide && venueGuide.length > 0) || (wreathGuide && wreathGuide.length > 0);
 
   const toggleItem = (index: number) => {
     const newExpanded = new Set(expandedItems);
@@ -60,12 +67,22 @@ export default function Schedule_1({
             >
               예식 일정
             </button>
-            <button 
-              className={`${styles.tab} ${activeTab === 'guide' ? styles.active : ''}`}
-              onClick={() => setActiveTab('guide')}
-            >
-              예식장 안내
-            </button>
+            {venueGuide && venueGuide.length > 0 && (
+              <button 
+                className={`${styles.tab} ${activeTab === 'guide' ? styles.active : ''}`}
+                onClick={() => setActiveTab('guide')}
+              >
+                예식장 안내
+              </button>
+            )}
+            {wreathGuide && wreathGuide.length > 0 && (
+              <button 
+                className={`${styles.tab} ${activeTab === 'wreath' ? styles.active : ''}`}
+                onClick={() => setActiveTab('wreath')}
+              >
+                화환 안내
+              </button>
+            )}
           </div>
         )}
         
@@ -117,6 +134,33 @@ export default function Schedule_1({
         {activeTab === 'guide' && venueGuide && (
           <div className={styles.guideContainer}>
             {venueGuide.map((item, index) => (
+              <div key={index} className={styles.guideItem}>
+                <button
+                  className={styles.guideHeader}
+                  onClick={() => toggleItem(index)}
+                  aria-expanded={expandedItems.has(index)}
+                >
+                  <h5 className={styles.guideTitle}>
+                    <span className={`${styles.guideIcon} ${expandedItems.has(index) ? styles.expanded : ''}`}>
+                      ▷
+                    </span>
+                    {item.title}
+                  </h5>
+                  <span className={styles.toggleIcon}>
+                    {expandedItems.has(index) ? '−' : '+'}
+                  </span>
+                </button>
+                <div className={`${styles.guideContentWrapper} ${expandedItems.has(index) ? styles.expanded : ''}`}>
+                  <p className={styles.guideContent}>{item.content}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {activeTab === 'wreath' && wreathGuide && (
+          <div className={styles.guideContainer}>
+            {wreathGuide.map((item, index) => (
               <div key={index} className={styles.guideItem}>
                 <button
                   className={styles.guideHeader}

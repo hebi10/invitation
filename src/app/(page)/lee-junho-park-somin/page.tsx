@@ -85,6 +85,36 @@ export default function page() {
     weddingDate: "2026년 6월 20일 토요일 오후 2시",
     groomName: "이준호",
     brideName: "박소민",
+    groom: {
+      name: "이준호",
+      order: "장남",
+      father: {
+        relation: "부",
+        name: "이성민",
+        phone: "010-1111-2222"
+      },
+      mother: {
+        relation: "모",
+        name: "김지영",
+        phone: "010-3333-4444"
+      },
+      phone: "010-2345-6789"
+    },
+    bride: {
+      name: "박소민",
+      order: "장녀",
+      father: {
+        relation: "부",
+        name: "박준수",
+        phone: "010-5555-6666"
+      },
+      mother: {
+        relation: "모",
+        name: "최현숙",
+        phone: "010-7777-8888"
+      },
+      phone: "010-3456-7890"
+    },
     groomFamily: {
       father: "이성민",
       mother: "김지영",
@@ -176,6 +206,8 @@ export default function page() {
       <Greeting 
         message="두 사람이 사랑으로 하나가 되는 순간을 함께해 주시는 모든 분들께 감사드립니다. 새로운 시작을 따뜻한 마음으로 축복해 주시면 더없는 기쁨이겠습니다."
         author="이준호 · 박소민"
+        groom={pageData.groom}
+        bride={pageData.bride}
       />
       <Gallery 
         images={galleryImages.map(img => img.url)}
@@ -204,6 +236,7 @@ export default function page() {
         venue={pageData.ceremony.location}
         address={pageData.ceremony.address}
         venueGuide={pageConfig?.pageData?.venueGuide}
+        wreathGuide={pageConfig?.pageData?.wreathGuide}
       />
       <LocationMap 
         venueName={pageData.ceremony.location}
