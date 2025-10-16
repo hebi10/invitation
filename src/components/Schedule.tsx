@@ -41,17 +41,28 @@ export default function Schedule({
   wreathGuide
 }: ScheduleProps) {
   const [activeTab, setActiveTab] = useState<'schedule' | 'guide' | 'wreath'>('schedule');
-  const [expandedItems, setExpandedItems] = useState<Set<number>>(new Set());
+  const [expandedGuideItems, setExpandedGuideItems] = useState<Set<number>>(new Set());
+  const [expandedWreathItems, setExpandedWreathItems] = useState<Set<number>>(new Set());
   const showTabs = (venueGuide && venueGuide.length > 0) || (wreathGuide && wreathGuide.length > 0);
 
-  const toggleItem = (index: number) => {
-    const newExpanded = new Set(expandedItems);
+  const toggleGuideItem = (index: number) => {
+    const newExpanded = new Set(expandedGuideItems);
     if (newExpanded.has(index)) {
       newExpanded.delete(index);
     } else {
       newExpanded.add(index);
     }
-    setExpandedItems(newExpanded);
+    setExpandedGuideItems(newExpanded);
+  };
+
+  const toggleWreathItem = (index: number) => {
+    const newExpanded = new Set(expandedWreathItems);
+    if (newExpanded.has(index)) {
+      newExpanded.delete(index);
+    } else {
+      newExpanded.add(index);
+    }
+    setExpandedWreathItems(newExpanded);
   };
 
   return (
@@ -121,20 +132,20 @@ export default function Schedule({
             <div key={index} className={styles.guideItem}>
               <button
                 className={styles.guideHeader}
-                onClick={() => toggleItem(index)}
-                aria-expanded={expandedItems.has(index)}
+                onClick={() => toggleGuideItem(index)}
+                aria-expanded={expandedGuideItems.has(index)}
               >
                 <h5 className={styles.guideTitle}>
-                  <span className={`${styles.guideIcon} ${expandedItems.has(index) ? styles.expanded : ''}`}>
+                  <span className={`${styles.guideIcon} ${expandedGuideItems.has(index) ? styles.expanded : ''}`}>
                     ▷
                   </span>
                   {item.title}
                 </h5>
                 <span className={styles.toggleIcon}>
-                  {expandedItems.has(index) ? '−' : '+'}
+                  {expandedGuideItems.has(index) ? '−' : '+'}
                 </span>
               </button>
-              <div className={`${styles.guideContentWrapper} ${expandedItems.has(index) ? styles.expanded : ''}`}>
+              <div className={`${styles.guideContentWrapper} ${expandedGuideItems.has(index) ? styles.expanded : ''}`}>
                 <p className={styles.guideContent}>{item.content}</p>
               </div>
             </div>
@@ -148,20 +159,20 @@ export default function Schedule({
             <div key={index} className={styles.guideItem}>
               <button
                 className={styles.guideHeader}
-                onClick={() => toggleItem(index)}
-                aria-expanded={expandedItems.has(index)}
+                onClick={() => toggleWreathItem(index)}
+                aria-expanded={expandedWreathItems.has(index)}
               >
                 <h5 className={styles.guideTitle}>
-                  <span className={`${styles.guideIcon} ${expandedItems.has(index) ? styles.expanded : ''}`}>
+                  <span className={`${styles.guideIcon} ${expandedWreathItems.has(index) ? styles.expanded : ''}`}>
                     ▷
                   </span>
                   {item.title}
                 </h5>
                 <span className={styles.toggleIcon}>
-                  {expandedItems.has(index) ? '−' : '+'}
+                  {expandedWreathItems.has(index) ? '−' : '+'}
                 </span>
               </button>
-              <div className={`${styles.guideContentWrapper} ${expandedItems.has(index) ? styles.expanded : ''}`}>
+              <div className={`${styles.guideContentWrapper} ${expandedWreathItems.has(index) ? styles.expanded : ''}`}>
                 <p className={styles.guideContent}>{item.content}</p>
               </div>
             </div>

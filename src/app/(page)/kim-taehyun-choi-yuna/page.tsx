@@ -145,6 +145,7 @@ export default function KimTaehyunChoiYuna() {
         address={pageConfig?.pageData?.ceremonyAddress || ''}
         description={pageConfig?.pageData?.mapDescription || '지하철 이용 시 편리하게 오실 수 있습니다'}
         contact={pageConfig?.pageData?.ceremonyContact}
+        kakaoMapConfig={pageConfig?.pageData?.kakaoMap}
       />
       <GiftInfo 
         groomAccounts={[

@@ -243,6 +243,7 @@ export default function page() {
         address={pageData.ceremony.address}
         description="지하철 2호선 을지로입구역에서 도보 5분 거리입니다"
         contact={pageConfig?.pageData?.ceremonyContact}
+        kakaoMapConfig={pageConfig?.pageData?.kakaoMap}
       />
       <Guestbook pageSlug={WEDDING_SLUG} />
       <GiftInfo 

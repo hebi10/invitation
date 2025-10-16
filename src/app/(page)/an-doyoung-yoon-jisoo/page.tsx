@@ -146,6 +146,7 @@ export default function ShinMinJeKimHyunJi() {
         address={pageConfig?.pageData?.ceremonyAddress || ''}
         description={pageConfig?.pageData?.mapDescription}
         contact={pageConfig?.pageData?.ceremonyContact}
+        kakaoMapConfig={pageConfig?.pageData?.kakaoMap}
       />
       <Guestbook pageSlug={WEDDING_SLUG} />
       <GiftInfo 

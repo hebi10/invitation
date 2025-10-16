@@ -44,7 +44,7 @@ export const kimMinjunParkSoheeConfig: WeddingPageConfig = {
     ceremonyTime: '오후 3:00',
     ceremonyAddress: '서울특별시 강남구 테헤란로 123',
     ceremonyContact: '02-1234-5678',
-    greetingMessage: '두 사람이 사랑으로 하나가 되는 순간을 함께해 주시는 모든 분들께 감사드립니다. 새로운 시작을 따뜻한 마음으로 축복해 주시면 더없는 기쁨이겠습니다.',
+    greetingMessage: '두 사람이 사랑으로 하나가 되는 순간을\n함께해 주시는 모든 분들께 감사드립니다.\n\n새로운 시작을 따뜻한 마음으로\n축복해 주시면 더없는 기쁨이겠습니다.',
     greetingAuthor: '김민준 · 박소희',
     mapDescription: '지하철 이용 시 더케이웨딩홀까지 편리하게 오실 수 있습니다',
     // 신랑/신부 가족 정보

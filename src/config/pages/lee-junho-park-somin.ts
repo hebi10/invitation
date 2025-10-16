@@ -44,7 +44,7 @@ export const leeJunhoParkSominConfig: WeddingPageConfig = {
     ceremonyTime: '오후 2:00',
     ceremonyAddress: '서울특별시 서초구 서초대로 456',
     ceremonyContact: '02-5678-9012',
-    greetingMessage: '서로를 아끼고 사랑하는 두 사람이 인생의 동반자가 되어 한 걸음씩 나아가고자 합니다. 저희의 출발을 따뜻한 마음으로 축복해 주시면 감사하겠습니다.',
+    greetingMessage: '서로를 아끼고 사랑하는 두 사람이\n인생의 동반자가 되어 한 걸음씩 나아가고자 합니다.\n\n저희의 출발을 따뜻한 마음으로\n축복해 주시면 감사하겠습니다.',
     greetingAuthor: '이준호 · 박소민',
     mapDescription: '컨벤션센터 인근으로 대중교통으로 편리하게 오실 수 있습니다',
     // 신랑/신부 가족 정보

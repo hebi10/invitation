@@ -39,12 +39,12 @@ export const kimTaehyunChoiYunaConfig: WeddingPageConfig = {
       description: '2024년 11월 16일 토요일 오후 1시, 김태현과 최유나가 하나 되는 날에 소중한 분들을 초대합니다.'
     }
   },
-  pageData: {
+  pageData: { // 페이지에 표시할 상세 정보
     subtitle: '진실한 사랑으로 맺어지는 인연',
     ceremonyTime: '오후 1:00',
     ceremonyAddress: '서울특별시 마포구 월드컵로 789',
     ceremonyContact: '02-9012-3456',
-    greetingMessage: '오랜 시간 서로를 이해하고 사랑해온 두 사람이 이제 한 가정을 이루고자 합니다. 저희의 새로운 출발을 지켜봐 주시고 축복해 주시기 바랍니다.',
+    greetingMessage: '오랜 시간 서로를 이해하고 사랑해온\n 두 사람이 이제 한 가정을 이루고자 합니다.\n\n저희의 새로운 출발을 지켜봐 주시고\n축복해 주시기 바랍니다.',
     greetingAuthor: '김태현 · 최유나',
     mapDescription: '월드컵공원 인근으로 주차공간이 넉넉하게 준비되어 있습니다',
     // 신랑/신부 가족 정보
@@ -78,9 +78,9 @@ export const kimTaehyunChoiYunaConfig: WeddingPageConfig = {
       },
       phone: '010-1414-1515'
     },
-    kakaoMap: {
-      latitude: 37.5663,
-      longitude: 126.8997,
+    kakaoMap: { // 카카오맵 설정 
+      latitude: 37.5657,
+      longitude: 126.9025,
       level: 3,
       markerTitle: '엘리시안웨딩홀'
     },

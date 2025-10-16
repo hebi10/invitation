@@ -145,10 +145,12 @@ export default function LocationMap({
     const map = window.kakaoMapInstance;
     if (!map) return;
 
-    const newState = !controlEnabled;
-    map.setZoomable(newState);
-    map.setDraggable(newState);
-    setControlEnabled(newState);
+    setControlEnabled((prev) => {
+      const newState = !prev;
+      map.setZoomable(newState);
+      map.setDraggable(newState);
+      return newState;
+    });
   };
 
   if (!isClient) {
@@ -194,7 +196,19 @@ export default function LocationMap({
             
             {/* 컨트롤 OFF일 때 터치 차단 오버레이 */}
             {!controlEnabled && (
-              <div className={styles.mapOverlay} />
+              <div 
+                style={{
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  width: '100%',
+                  height: '100%',
+                  background: 'transparent',
+                  zIndex: 5,
+                  cursor: 'not-allowed',
+                  pointerEvents: 'auto'
+                }}
+              />
             )}
             
             {/* ✅ 컨트롤 ON/OFF 버튼 */}
@@ -204,14 +218,15 @@ export default function LocationMap({
                 position: 'absolute',
                 bottom: '10px',
                 right: '10px',
-                zIndex: 10,
+                zIndex: 100,
                 background: 'white',
                 border: '1px solid #ccc',
                 padding: '6px 12px',
                 borderRadius: '6px',
                 fontSize: '12px',
                 cursor: 'pointer',
-                boxShadow: '0 2px 6px rgba(0,0,0,0.15)'
+                boxShadow: '0 2px 6px rgba(0,0,0,0.15)',
+                pointerEvents: 'auto'
               }}
             >
               {controlEnabled ? '컨트롤 ON' : '컨트롤 OFF'}

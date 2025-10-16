@@ -35,20 +35,6 @@ export default function Layout({
       />
       
       {children}
-      
-      {/* 카카오톡 공유 버튼 */}
-      <div className='kakao_share' style={{ 
-        backgroundColor: '#fff', 
-        borderBottom: '1px solid #f0f0f0',
-        padding: '10px 0',
-        display: 'none'
-      }}>
-        <KakaoShareButton 
-          title={pageConfig?.metadata.title || '결혼식에 초대합니다'}
-          description={`${pageConfig?.date || ''}\n${pageConfig?.venue || ''}에서 열리는 저희의 결혼식에 초대합니다.`}
-          imageUrl={WEDDING_IMAGE}
-        />
-      </div>
     </>
   );
 }
