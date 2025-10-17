@@ -16,10 +16,20 @@ export const leeJunhoParkSominConfig: WeddingPageConfig = {
     minute: 0
   },
   variants: {
+    emotional: {
+      available: true,
+      path: '/lee-junho-park-somin',
+      displayName: '이준호 ♥ 박소민 (감성 버전)'
+    },
     simple: {
       available: true,
       path: '/lee-junho-park-somin-simple',
       displayName: '이준호 ♥ 박소민 (심플 버전)'
+    },
+    minimal: {
+      available: true,
+      path: '/lee-junho-park-somin-minimal',
+      displayName: '이준호 ♥ 박소민 (미니멀 버전)'
     }
   },
   metadata: {
@@ -103,6 +113,11 @@ export const leeJunhoParkSominConfig: WeddingPageConfig = {
         title: '배송 시간',
         content: '화환은 예식 전날 오후 또는\n당일 오전 11시까지 도착할 수 있도록\n주문해 주시기 바랍니다.\n\n예식장 측 사정으로 인해\n예식 시작 2시간 전까지는\n반드시 배치가 완료되어야 하오니\n참고 부탁드립니다.'
       }
-    ]
+    ],
+    giftInfo: {
+      groomAccounts: [],
+      brideAccounts: [],
+      message: '참석해 주시는 것만으로도 큰 기쁨입니다.'
+    }
   }
 };

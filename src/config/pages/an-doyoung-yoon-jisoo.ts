@@ -16,10 +16,20 @@ export const anDoyoungYoonJisooConfig: WeddingPageConfig = {
     minute: 0
   },
   variants: {
-    simple: {
+    emotional: {
       available: true,
       path: '/an-doyoung-yoon-jisoo',
-      displayName: '안도영 ♥ 윤지수'
+      displayName: '안도영 ♥ 윤지수 (감성 버전)'
+    },
+    simple: {
+      available: true,
+      path: '/an-doyoung-yoon-jisoo-simple',
+      displayName: '안도영 ♥ 윤지수 (심플 버전)'
+    },
+    minimal: {
+      available: true,
+      path: '/an-doyoung-yoon-jisoo-minimal',
+      displayName: '안도영 ♥ 윤지수 (미니멀 버전)'
     }
   },
   metadata: {
@@ -104,6 +114,33 @@ export const anDoyoungYoonJisooConfig: WeddingPageConfig = {
         title: '배송 시간',
         content: '화환은 예식 전날 오후 또는\n당일 오전 11시까지 도착할 수 있도록\n주문해 주시기 바랍니다.\n\n예식장 측 사정으로 인해\n예식 시작 2시간 전까지는\n반드시 배치가 완료되어야 하오니\n참고 부탁드립니다.'
       }
-    ]
+    ],
+    giftInfo: {
+      groomAccounts: [
+        {
+          bank: '국민',
+          accountNumber: '016702-04-506376',
+          accountHolder: '안도영'
+        },
+        {
+          bank: '농협',
+          accountNumber: '325015-52-107296',
+          accountHolder: '안근일'
+        }
+      ],
+      brideAccounts: [
+        {
+          bank: '농협',
+          accountNumber: '302-2058-7429-31',
+          accountHolder: '윤지수'
+        },
+        {
+          bank: '농협',
+          accountNumber: '225038-52-000811',
+          accountHolder: '윤석종'
+        }
+      ],
+      message: '마음만으로도 충분합니다.\n축하의 뜻으로 전해주시는 축의금은\n소중히 받겠습니다.'
+    }
   }
 };

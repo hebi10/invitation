@@ -2,15 +2,15 @@
 /* 웨딩 페이지 설정: /config/weddingPages.ts에서 관리됩니다 */
 import { useState, useEffect } from 'react';
 import { 
-  WeddingLoader_1, 
-  Cover_1, 
-  Greeting_1, 
-  Gallery_1, 
-  Schedule_1, 
-  LocationMap_1, 
-  WeddingCalendar_1, 
-  GiftInfo_1, 
-  Guestbook_1,
+  WeddingLoader, 
+  Cover, 
+  Greeting, 
+  Gallery, 
+  Schedule, 
+  LocationMap, 
+  WeddingCalendar, 
+  GiftInfo, 
+  Guestbook,
   ScrollAnimatedSection
 } from '@/components';
 import { usePageImages } from '@/hooks';
@@ -25,7 +25,7 @@ if (!pageConfig) {
   throw new Error(`Wedding page config not found for slug: ${WEDDING_SLUG}`);
 }
 
-export default function KimMinJunParkSoHee_1() {
+export default function KimMinJunParkSoHee() {
   const [access, setAccess] = useState<{ canAccess: boolean; message?: string }>({ canAccess: true });
   const [isLoading, setIsLoading] = useState(true);
   const { images, imageUrls, firstImage, hasImages, mainImage, galleryImages, loading: imagesLoading, error } = 
@@ -35,7 +35,7 @@ export default function KimMinJunParkSoHee_1() {
 
   useEffect(() => {
     let canceled = false;
-    document.title = `${pageConfig?.groomName || ''} ♡ ${pageConfig?.brideName || ''} 결혼식 - ${pageConfig?.date || ''} (심플 버전)`;
+    document.title = `${pageConfig?.groomName || ''} ♡ ${pageConfig?.brideName || ''} 결혼식 - ${pageConfig?.date || ''}`;
     checkPageAccess(WEDDING_SLUG, isAdminLoggedIn).then(result => {
       if (!canceled) setAccess(result);
     });
@@ -84,7 +84,7 @@ export default function KimMinJunParkSoHee_1() {
   // 이미지 로딩이 완료되지 않은 경우 로더 표시
   if (isLoading || imagesLoading) {
     return (
-      <WeddingLoader_1 
+      <WeddingLoader 
         groomName={pageConfig?.groomName || ''}
         brideName={pageConfig?.brideName || ''}
         onLoadComplete={() => setIsLoading(false)}
@@ -96,8 +96,8 @@ export default function KimMinJunParkSoHee_1() {
   }
 
   return (
-    <main role="main" aria-label={`${pageConfig?.groomName || ''}와 ${pageConfig?.brideName || ''}의 결혼식 청첩장 (심플 버전)`}>
-      <Cover_1 
+    <main role="main" aria-label={`${pageConfig?.groomName || ''}와 ${pageConfig?.brideName || ''}의 결혼식 청첩장`}>
+      <Cover 
         title={pageConfig?.displayName || ''}
         subtitle={pageConfig?.pageData?.subtitle || '두 사람이 사랑으로 하나가 되는 날'} 
         weddingDate={`${pageConfig?.date || ''} ${pageConfig?.pageData?.ceremonyTime || ''}`}
@@ -108,7 +108,7 @@ export default function KimMinJunParkSoHee_1() {
       />
       
       <ScrollAnimatedSection delay={100}>
-        <Greeting_1 
+        <Greeting 
           message={pageConfig?.pageData?.greetingMessage || '두 사람이 사랑으로 하나가 되는 순간을 함께해 주시는 모든 분들께 감사드립니다. 새로운 시작을 따뜻한 마음으로 축복해 주시면 더없는 기쁨이겠습니다.'}
           author={pageConfig?.pageData?.greetingAuthor || `${pageConfig?.groomName || ''} · ${pageConfig?.brideName || ''}`}
           groom={pageConfig?.pageData?.groom}
@@ -117,7 +117,7 @@ export default function KimMinJunParkSoHee_1() {
       </ScrollAnimatedSection>
       
       <ScrollAnimatedSection delay={200}>
-        <WeddingCalendar_1 
+        <WeddingCalendar 
           title="행복한 순간을 함께하세요"
           weddingDate={weddingDate}
           currentMonth={weddingDate}
@@ -138,37 +138,38 @@ export default function KimMinJunParkSoHee_1() {
       </ScrollAnimatedSection>
       
       <ScrollAnimatedSection delay={300}>
-        <Gallery_1 
+        <Gallery 
           images={galleryImages.map(img => img.url)}
         />
       </ScrollAnimatedSection>
       
       <ScrollAnimatedSection delay={400}>
-        <Schedule_1 
+        <Schedule 
           date={pageConfig?.date || ''}
           time={pageConfig?.pageData?.ceremonyTime || ''}
           venue={pageConfig?.venue || ''}
           address={pageConfig?.pageData?.ceremonyAddress || ''}
           venueGuide={pageConfig?.pageData?.venueGuide}
-        wreathGuide={pageConfig?.pageData?.wreathGuide}
+          wreathGuide={pageConfig?.pageData?.wreathGuide}
         />
       </ScrollAnimatedSection>
       
       <ScrollAnimatedSection delay={500}>
-        <LocationMap_1 
+        <LocationMap 
           venueName={pageConfig?.venue || ''}
           address={pageConfig?.pageData?.ceremonyAddress || ''}
           description={pageConfig?.pageData?.mapDescription || '지하철 이용 시 편리하게 오실 수 있습니다'}
+          contact={pageConfig?.pageData?.ceremonyContact}
           kakaoMapConfig={pageConfig?.pageData?.kakaoMap}
         />
       </ScrollAnimatedSection>
       
       <ScrollAnimatedSection delay={600}>
-        <Guestbook_1 pageSlug={WEDDING_SLUG} />
+        <Guestbook pageSlug={WEDDING_SLUG} />
       </ScrollAnimatedSection>
       
       {pageConfig?.pageData?.giftInfo && (pageConfig.pageData.giftInfo.groomAccounts?.length || pageConfig.pageData.giftInfo.brideAccounts?.length) ? (
-        <GiftInfo_1 
+        <GiftInfo 
           groomAccounts={pageConfig.pageData.giftInfo.groomAccounts || []}
           brideAccounts={pageConfig.pageData.giftInfo.brideAccounts || []}
           message={pageConfig.pageData.giftInfo.message || '참석해 주시는 것만으로도 큰 기쁨입니다.'}

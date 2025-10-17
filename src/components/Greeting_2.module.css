@@ -1,0 +1,242 @@
+.container {
+  padding: 4rem 1.5rem;
+  background: #ffffff;
+}
+
+.content {
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.messageSection {
+  margin-bottom: 4rem;
+  text-align: center;
+}
+
+.message {
+  font-family: 'Noto Sans KR', sans-serif;
+  font-size: clamp(0.95rem, 2.5vw, 1.05rem);
+  line-height: 1.8;
+  color: #495057;
+  margin-bottom: 2rem;
+  font-weight: 300;
+}
+
+.author {
+  font-family: var(--font-gowun-dodum), serif;
+  font-size: clamp(0.9rem, 2.3vw, 1rem);
+  color: #6c757d;
+  font-weight: 400;
+  letter-spacing: 1px;
+}
+
+.familySection {
+  padding-top: 3rem;
+  border-top: 1px solid #f1f3f5;
+}
+
+.familyGrid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 3rem;
+}
+
+@media (min-width: 640px) {
+  .familyGrid {
+    grid-template-columns: 1fr 1fr;
+    gap: 4rem;
+  }
+}
+
+.familyColumn {
+  text-align: center;
+}
+
+.roleLabel {
+  font-family: var(--font-gowun-dodum), serif;
+  font-size: clamp(0.95rem, 2.5vw, 1.05rem);
+  color: #212529;
+  font-weight: 500;
+  margin-bottom: 1.5rem;
+  letter-spacing: 0.5px;
+}
+
+.personMain {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid #f8f9fa;
+}
+
+.personName {
+  font-family: var(--font-gowun-dodum), serif;
+  font-size: clamp(1.1rem, 3vw, 1.25rem);
+  color: #212529;
+  font-weight: 500;
+  letter-spacing: 1px;
+}
+
+.personOrder {
+  font-family: 'Noto Sans KR', sans-serif;
+  font-size: clamp(0.85rem, 2.2vw, 0.9rem);
+  color: #868e96;
+  font-weight: 400;
+}
+
+.contactBtn {
+  margin-top: 0.5rem;
+  padding: 0.5rem 1.2rem;
+  background: #f8f9fa;
+  border: 1px solid #dee2e6;
+  border-radius: 20px;
+  font-family: 'Noto Sans KR', sans-serif;
+  font-size: 0.85rem;
+  color: #495057;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.contactBtn:hover {
+  background: #e9ecef;
+  border-color: #ced4da;
+}
+
+.parentsSection {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.parentRow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+}
+
+.parentLabel {
+  font-family: 'Noto Sans KR', sans-serif;
+  font-size: clamp(0.85rem, 2.2vw, 0.9rem);
+  color: #868e96;
+  font-weight: 400;
+  min-width: 30px;
+}
+
+.parentName {
+  font-family: var(--font-gowun-dodum), serif;
+  font-size: clamp(0.95rem, 2.5vw, 1rem);
+  color: #495057;
+  font-weight: 400;
+  letter-spacing: 0.5px;
+}
+
+.parentContactBtn {
+  padding: 0.3rem 0.6rem;
+  background: transparent;
+  border: 1px solid #e9ecef;
+  border-radius: 50%;
+  font-size: 0.85rem;
+  color: #868e96;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.parentContactBtn:hover {
+  background: #f8f9fa;
+  border-color: #dee2e6;
+  color: #495057;
+}
+
+.modalOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 1rem;
+}
+
+.modalContent {
+  background: white;
+  border-radius: 12px;
+  padding: 2rem;
+  max-width: 320px;
+  width: 100%;
+  text-align: center;
+}
+
+.modalTitle {
+  font-family: var(--font-gowun-dodum), serif;
+  font-size: 1.25rem;
+  color: #212529;
+  margin-bottom: 1.5rem;
+  font-weight: 500;
+}
+
+.modalButtons {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.modalButton {
+  padding: 0.85rem 1.5rem;
+  background: #f8f9fa;
+  border: 1px solid #dee2e6;
+  border-radius: 8px;
+  font-family: 'Noto Sans KR', sans-serif;
+  font-size: 0.95rem;
+  color: #495057;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.modalButton:hover {
+  background: #e9ecef;
+  border-color: #ced4da;
+}
+
+.modalClose {
+  width: 100%;
+  padding: 0.75rem;
+  background: transparent;
+  border: 1px solid #dee2e6;
+  border-radius: 8px;
+  font-family: 'Noto Sans KR', sans-serif;
+  font-size: 0.9rem;
+  color: #868e96;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.modalClose:hover {
+  background: #f8f9fa;
+}
+
+@media (max-width: 480px) {
+  .container {
+    padding: 3rem 1rem;
+  }
+  
+  .familySection {
+    padding-top: 2rem;
+  }
+  
+  .familyGrid {
+    gap: 2.5rem;
+  }
+}

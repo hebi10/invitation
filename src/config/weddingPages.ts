@@ -24,6 +24,13 @@ export interface PersonInfo {
   phone?: string;
 }
 
+// 계좌 정보 인터페이스
+export interface BankAccount {
+  bank: string;
+  accountNumber: string;
+  accountHolder: string;
+}
+
 export interface WeddingPageConfig {
   slug: string;
   displayName: string;
@@ -41,10 +48,20 @@ export interface WeddingPageConfig {
   };
   // 페이지 버전 설정
   variants?: {
+    emotional?: {
+      available: boolean;
+      path: string; // 감성 버전 경로 (일반 버전)
+      displayName: string; // 감성 버전 표시명
+    };
     simple?: {
       available: boolean;
       path: string; // 심플 버전 경로
       displayName: string; // 심플 버전 표시명
+    };
+    minimal?: {
+      available: boolean;
+      path: string; // 미니멀 버전 경로
+      displayName: string; // 미니멀 버전 표시명
     };
   };
   // 페이지 노출 기간 설정
@@ -102,6 +119,12 @@ export interface WeddingPageConfig {
       title: string;
       content: string;
     }[];
+    // 축의금 계좌 정보
+    giftInfo?: {
+      groomAccounts?: BankAccount[];
+      brideAccounts?: BankAccount[];
+      message?: string;
+    };
   };
 }
 

@@ -1,0 +1,472 @@
+.container {
+  padding: 4rem 1.5rem;
+  background: #ffffff;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.titleSection {
+  display: inline-block;
+  width: 100%;
+  padding: 0.5rem 0;
+  cursor: pointer;
+}
+
+.title {
+  font-family: var(--font-gowun-dodum), serif;
+  font-size: clamp(1.5rem, 4vw, 1.75rem);
+  color: #212529;
+  text-align: center;
+  margin-bottom: 2.5rem;
+  font-weight: 500;
+  letter-spacing: 0.5px;
+}
+
+/* 클라이언트 관리 섹션 */
+.clientManager {
+  margin-bottom: 2rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.clientLoginForm {
+  width: 100%;
+  max-width: 400px;
+  padding: 1.5rem;
+  background: #f8f9fa;
+  border-radius: 10px;
+  border: 1px solid #e9ecef;
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.loginTitle {
+  font-family: 'Noto Sans KR', sans-serif;
+  font-size: 0.95rem;
+  color: #495057;
+  font-weight: 600;
+  text-align: center;
+  margin-bottom: 1rem;
+}
+
+.loginInputGroup {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.clientPasswordInput {
+  flex: 1;
+  padding: 0.6rem 1rem;
+  border: 1px solid #dee2e6;
+  border-radius: 6px;
+  font-family: 'Noto Sans KR', sans-serif;
+  font-size: 0.9rem;
+  color: #495057;
+  background: white;
+  transition: all 0.3s ease;
+}
+
+.clientPasswordInput:focus {
+  outline: none;
+  border-color: #495057;
+  box-shadow: 0 0 0 3px rgba(73, 80, 87, 0.1);
+}
+
+.clientLoginButton {
+  background: #212529;
+  color: white;
+  border: none;
+  padding: 0.6rem 1.2rem;
+  border-radius: 6px;
+  font-family: 'Noto Sans KR', sans-serif;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.clientLoginButton:hover {
+  background: #343a40;
+}
+
+.clientCloseButton {
+  width: 100%;
+  background: #6c757d;
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  font-family: 'Noto Sans KR', sans-serif;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.clientCloseButton:hover {
+  background: #5a6268;
+}
+
+.clientLoggedIn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  padding: 0.6rem 1.2rem;
+  background: #f8f9fa;
+  border-radius: 8px;
+  border: 1px solid #e9ecef;
+  margin-bottom: 2rem;
+}
+
+.clientWelcome {
+  font-family: 'Noto Sans KR', sans-serif;
+  font-size: 0.9rem;
+  color: #495057;
+  font-weight: 500;
+}
+
+.clientLogoutButton {
+  background: #dc3545;
+  color: white;
+  border: none;
+  padding: 0.4rem 0.8rem;
+  border-radius: 6px;
+  font-family: 'Noto Sans KR', sans-serif;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.clientLogoutButton:hover {
+  background: #c82333;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-bottom: 3rem;
+  padding: 1.5rem;
+  background: #f8f9fa;
+  border-radius: 12px;
+}
+
+.input {
+  padding: 0.9rem 1rem;
+  border: 1px solid #e9ecef;
+  border-radius: 8px;
+  font-family: 'Noto Sans KR', sans-serif;
+  font-size: clamp(0.9rem, 2.3vw, 0.95rem);
+  color: #212529;
+  background: #ffffff;
+  transition: all 0.2s ease;
+}
+
+.input:focus {
+  outline: none;
+  border-color: #adb5bd;
+}
+
+.textarea {
+  padding: 0.9rem 1rem;
+  border: 1px solid #e9ecef;
+  border-radius: 8px;
+  font-family: 'Noto Sans KR', sans-serif;
+  font-size: clamp(0.9rem, 2.3vw, 0.95rem);
+  color: #212529;
+  background: #ffffff;
+  resize: vertical;
+  min-height: 100px;
+  line-height: 1.6;
+  transition: all 0.2s ease;
+}
+
+.textarea:focus {
+  outline: none;
+  border-color: #adb5bd;
+}
+
+.submitButton {
+  padding: 0.9rem 1.5rem;
+  background: #212529;
+  color: #ffffff;
+  border: none;
+  border-radius: 8px;
+  font-family: 'Noto Sans KR', sans-serif;
+  font-size: clamp(0.9rem, 2.3vw, 0.95rem);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-weight: 500;
+}
+
+.submitButton:hover:not(:disabled) {
+  background: #343a40;
+}
+
+.submitButton:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+.submitButton:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.commentsList {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.commentsCount {
+  font-family: var(--font-gowun-dodum), serif;
+  font-size: clamp(0.95rem, 2.5vw, 1rem);
+  color: #495057;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid #f1f3f5;
+  font-weight: 500;
+}
+
+.commentItem {
+  padding: 1.25rem;
+  background: #fafbfc;
+  border-radius: 10px;
+  transition: all 0.2s ease;
+}
+
+.commentHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.75rem;
+  gap: 1rem;
+}
+
+.commentName {
+  font-family: var(--font-gowun-dodum), serif;
+  font-size: clamp(0.95rem, 2.5vw, 1rem);
+  color: #212529;
+  font-weight: 500;
+}
+
+.commentActions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.commentDate {
+  font-family: 'Noto Sans KR', sans-serif;
+  font-size: clamp(0.8rem, 2vw, 0.85rem);
+  color: #868e96;
+  font-weight: 300;
+}
+
+.deleteButton {
+  padding: 0.3rem 0.7rem;
+  background: transparent;
+  border: 1px solid #e9ecef;
+  border-radius: 6px;
+  font-family: 'Noto Sans KR', sans-serif;
+  font-size: clamp(0.75rem, 1.9vw, 0.8rem);
+  color: #6c757d;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-weight: 400;
+}
+
+.deleteButton:hover {
+  background: #f8f9fa;
+  border-color: #dee2e6;
+  color: #495057;
+}
+
+.commentMessage {
+  font-family: 'Noto Sans KR', sans-serif;
+  font-size: clamp(0.9rem, 2.3vw, 0.95rem);
+  color: #495057;
+  line-height: 1.7;
+  white-space: pre-wrap;
+  word-break: break-word;
+  margin: 0;
+  font-weight: 300;
+}
+
+.loadingMessage {
+  text-align: center;
+  padding: 3rem 1.5rem;
+  font-family: 'Noto Sans KR', sans-serif;
+  font-size: clamp(0.9rem, 2.3vw, 0.95rem);
+  color: #adb5bd;
+  line-height: 1.8;
+  font-weight: 300;
+}
+
+.emptyMessage {
+  text-align: center;
+  padding: 3rem 1.5rem;
+  font-family: 'Noto Sans KR', sans-serif;
+  font-size: clamp(0.9rem, 2.3vw, 0.95rem);
+  color: #adb5bd;
+  line-height: 1.8;
+  font-weight: 300;
+}
+
+.modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 1rem;
+}
+
+.modalContent {
+  background: #ffffff;
+  padding: 2rem;
+  border-radius: 12px;
+  max-width: 400px;
+  width: 100%;
+}
+
+.modalTitle {
+  font-family: var(--font-gowun-dodum), serif;
+  font-size: clamp(1.1rem, 3vw, 1.3rem);
+  color: #212529;
+  margin-bottom: 0.75rem;
+  font-weight: 500;
+}
+
+.modalDescription {
+  font-family: 'Noto Sans KR', sans-serif;
+  font-size: clamp(0.9rem, 2.3vw, 0.95rem);
+  color: #6c757d;
+  margin-bottom: 1.5rem;
+  line-height: 1.6;
+  font-weight: 300;
+}
+
+.modalButtons {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 1.5rem;
+}
+
+.cancelButton,
+.confirmButton {
+  flex: 1;
+  padding: 0.9rem 1.5rem;
+  border: none;
+  border-radius: 8px;
+  font-family: 'Noto Sans KR', sans-serif;
+  font-size: clamp(0.9rem, 2.3vw, 0.95rem);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-weight: 400;
+}
+
+.cancelButton {
+  background: #f8f9fa;
+  color: #495057;
+  border: 1px solid #e9ecef;
+}
+
+.cancelButton:hover {
+  background: #e9ecef;
+}
+
+.confirmButton {
+  background: #212529;
+  color: #ffffff;
+}
+
+.confirmButton:hover {
+  background: #343a40;
+}
+
+.cancelButton:active,
+.confirmButton:active {
+  transform: scale(0.98);
+}
+
+/* 페이징 스타일 */
+.pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 1rem;
+  margin-top: 2rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid #e9ecef;
+}
+
+.pageButton {
+  padding: 0.6rem 1.2rem;
+  border: 1px solid #e9ecef;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #212529;
+  font-family: 'Noto Sans KR', sans-serif;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.pageButton:hover:not(:disabled) {
+  background: #f8f9fa;
+  border-color: #adb5bd;
+}
+
+.pageButton:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.pageInfo {
+  font-family: 'Noto Sans KR', sans-serif;
+  font-size: 0.9rem;
+  color: #495057;
+  font-weight: 500;
+}
+
+@media (max-width: 480px) {
+  .container {
+    padding: 3rem 1rem;
+  }
+  
+  .form {
+    padding: 1.25rem;
+  }
+  
+  .commentItem {
+    padding: 1rem;
+  }
+  
+  .commentHeader {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+  
+  .modalContent {
+    padding: 1.5rem;
+  }
+}

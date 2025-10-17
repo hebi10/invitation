@@ -9,27 +9,28 @@ import {
   Schedule, 
   LocationMap, 
   WeddingCalendar, 
-  Guestbook, 
-  GiftInfo 
+  GiftInfo, 
+  Guestbook,
+  ScrollAnimatedSection
 } from '@/components';
 import { usePageImages } from '@/hooks';
 import { AccessDeniedPage, checkPageAccess } from '@/utils';
 import { useAdmin } from '@/contexts';
 import { getWeddingPageBySlug } from '@/config/weddingPages';
 
-const WEDDING_SLUG = "kim-taehyun-choi-yuna";
+const WEDDING_SLUG = "an-doyoung-yoon-jisoo";
 const pageConfig = getWeddingPageBySlug(WEDDING_SLUG);
 
 if (!pageConfig) {
   throw new Error(`Wedding page config not found for slug: ${WEDDING_SLUG}`);
 }
 
-export default function KimTaehyunChoiYuna() {
+export default function ShinMinJeKimHyunJi() {
   const [access, setAccess] = useState<{ canAccess: boolean; message?: string }>({ canAccess: true });
   const [isLoading, setIsLoading] = useState(true);
   const { images, imageUrls, firstImage, hasImages, mainImage, galleryImages, loading: imagesLoading, error } = 
   usePageImages(WEDDING_SLUG);
-  
+
   const { isAdminLoggedIn } = useAdmin();
 
   useEffect(() => {
@@ -95,10 +96,10 @@ export default function KimTaehyunChoiYuna() {
   }
 
   return (
-    <main role="main" aria-label={`${pageConfig?.groomName || ''}과 ${pageConfig?.brideName || ''}의 결혼식 청첩장`}>
+    <main role="main" aria-label={`${pageConfig?.groomName || ''}와 ${pageConfig?.brideName || ''}의 결혼식 청첩장`}>
       <Cover 
         title={pageConfig?.displayName || ''}
-        subtitle={pageConfig?.pageData?.subtitle || '영원한 사랑을 약속합니다'} 
+        subtitle={pageConfig?.pageData?.subtitle || '두 사람이 사랑으로 하나가 되는 날'} 
         weddingDate={`${pageConfig?.date || ''} ${pageConfig?.pageData?.ceremonyTime || ''}`}
         imageUrl={mainImageUrl}
         brideName={pageConfig?.brideName || ''}
@@ -106,13 +107,10 @@ export default function KimTaehyunChoiYuna() {
         preloadComplete={true}
       />
       <Greeting 
-        message={pageConfig?.pageData?.greetingMessage || '사랑하는 가족과 친구들과 함께 영원한 약속을 나누고자 합니다. 저희의 사랑의 여정을 따뜻하게 지켜봐 주세요.'}
+        message={pageConfig?.pageData?.greetingMessage || '두 사람이 사랑으로 하나가 되는 순간을 함께해 주시는 모든 분들께 감사드립니다. 새로운 시작을 따뜻한 마음으로 축복해 주시면 더없는 기쁨이겠습니다.'}
         author={pageConfig?.pageData?.greetingAuthor || `${pageConfig?.groomName || ''} · ${pageConfig?.brideName || ''}`}
         groom={pageConfig?.pageData?.groom}
         bride={pageConfig?.pageData?.bride}
-      />
-      <Gallery 
-        images={galleryImages.map(img => img.url)}
       />
       <WeddingCalendar 
         title="행복한 순간을 함께하세요"
@@ -126,11 +124,14 @@ export default function KimTaehyunChoiYuna() {
             description: `${pageConfig?.pageData?.ceremonyTime || ''} ${pageConfig?.venue || ''}`
           }
         ]}
-        showCountdown={false} // 카운트다운
+        showCountdown={true} // 카운트다운 표시
         countdownTitle="결혼식까지"
         onDateClick={(date) => {
           console.log('선택된 날짜:', date);
         }}
+      />
+      <Gallery 
+        images={galleryImages.map(img => img.url)}
       />
       <Schedule 
         date={pageConfig?.date || ''}
@@ -143,27 +144,18 @@ export default function KimTaehyunChoiYuna() {
       <LocationMap 
         venueName={pageConfig?.venue || ''}
         address={pageConfig?.pageData?.ceremonyAddress || ''}
-        description={pageConfig?.pageData?.mapDescription || '지하철 이용 시 편리하게 오실 수 있습니다'}
+        description={pageConfig?.pageData?.mapDescription}
         contact={pageConfig?.pageData?.ceremonyContact}
         kakaoMapConfig={pageConfig?.pageData?.kakaoMap}
       />
-      <GiftInfo 
-        groomAccounts={[
-          {
-            bank: "신한은행",
-            accountNumber: "110-123-456789",
-            accountHolder: pageConfig?.groomName || ''
-          }
-        ]}
-        brideAccounts={[
-          {
-            bank: "우리은행",
-            accountNumber: "1002-234-567890",
-            accountHolder: pageConfig?.brideName || ''
-          }
-        ]}
-        message="마음만으로도 충분합니다. 축하의 뜻으로 전해주시는 축의금은 소중히 받겠습니다."
-      />
+      <Guestbook pageSlug={WEDDING_SLUG} />
+      {pageConfig?.pageData?.giftInfo && (pageConfig.pageData.giftInfo.groomAccounts?.length || pageConfig.pageData.giftInfo.brideAccounts?.length) ? (
+        <GiftInfo 
+          groomAccounts={pageConfig.pageData.giftInfo.groomAccounts || []}
+          brideAccounts={pageConfig.pageData.giftInfo.brideAccounts || []}
+          message={pageConfig.pageData.giftInfo.message || '참석해 주시는 것만으로도 큰 기쁨입니다.'}
+        />
+      ) : null}
     </main>
   );
 }

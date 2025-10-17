@@ -181,21 +181,39 @@ export default function AdminPage() {
         <div className={styles.statsContainer}>
           <div className={styles.statCard}>
             <div className={styles.statNumber}>
-              {weddingPages.length + weddingPages.filter(page => page.variants?.simple?.available).length}
+              {weddingPages.length}
             </div>
-            <div className={styles.statLabel}>총 청첩장 수</div>
+            <div className={styles.statLabel}>기본 청첩장</div>
           </div>
           <div className={styles.statCard}>
-            <div className={styles.statNumber}>{weddingPages.filter(page => page.variants?.simple?.available).length}</div>
+            <div className={styles.statNumber}>
+              {weddingPages.filter(page => page.variants?.emotional?.available).length}
+            </div>
+            <div className={styles.statLabel}>감성 버전</div>
+          </div>
+          <div className={styles.statCard}>
+            <div className={styles.statNumber}>
+              {weddingPages.filter(page => page.variants?.simple?.available).length}
+            </div>
             <div className={styles.statLabel}>심플 버전</div>
           </div>
           <div className={styles.statCard}>
-            <div className={styles.statNumber}>7</div>
-            <div className={styles.statLabel}>컴포넌트 수</div>
+            <div className={styles.statNumber}>
+              {weddingPages.filter(page => page.variants?.minimal?.available).length}
+            </div>
+            <div className={styles.statLabel}>미니멀 버전</div>
           </div>
           <div className={styles.statCard}>
-            <div className={styles.statNumber}>100%</div>
-            <div className={styles.statLabel}>반응형 지원</div>
+            <div className={styles.statNumber}>
+              {weddingPages.reduce((total, page) => {
+                let count = 0;
+                if (page.variants?.emotional?.available) count++;
+                if (page.variants?.simple?.available) count++;
+                if (page.variants?.minimal?.available) count++;
+                return total + count;
+              }, 0)}
+            </div>
+            <div className={styles.statLabel}>총 페이지 수</div>
           </div>
         </div>
         
@@ -246,11 +264,15 @@ export default function AdminPage() {
                     <h2>생성된 청첩장 목록</h2>
                     <div className={styles.pagesStats}>
                       <span className={styles.pageCount}>
-                        {weddingPages.length}개의 일반 버전
+                        {weddingPages.filter(page => page.variants?.emotional?.available).length}개의 감성 버전
                       </span>
                       <span className={styles.separator}>•</span>
                       <span className={styles.pageCount}>
                         {weddingPages.filter(page => page.variants?.simple?.available).length}개의 심플 버전
+                      </span>
+                      <span className={styles.separator}>•</span>
+                      <span className={styles.pageCount}>
+                        {weddingPages.filter(page => page.variants?.minimal?.available).length}개의 미니멀 버전
                       </span>
                       <span className={styles.separator}>•</span>
                       <span className={styles.pageStatus}>모두 활성화됨</span>
@@ -269,13 +291,15 @@ export default function AdminPage() {
                         
                         {/* 버전 선택 버튼들 */}
                         <div className={styles.versionButtons}>
-                          <a 
-                            href={`/${page.slug}`} 
-                            target="_blank" 
-                            className={`${styles.versionButton} ${styles.normalButton}`}
-                          >
-                            🎨 일반 버전
-                          </a>
+                          {page.variants?.emotional?.available && (
+                            <a 
+                              href={page.variants.emotional.path} 
+                              target="_blank" 
+                              className={`${styles.versionButton} ${styles.normalButton}`}
+                            >
+                              🎨 감성 버전
+                            </a>
+                          )}
                           {page.variants?.simple?.available && (
                             <a 
                               href={page.variants.simple.path} 
@@ -283,6 +307,15 @@ export default function AdminPage() {
                               className={`${styles.versionButton} ${styles.simpleButton}`}
                             >
                               ✨ 심플 버전
+                            </a>
+                          )}
+                          {page.variants?.minimal?.available && (
+                            <a 
+                              href={page.variants.minimal.path} 
+                              target="_blank" 
+                              className={`${styles.versionButton} ${styles.minimalButton}`}
+                            >
+                              ✨ 미니멀 버전
                             </a>
                           )}
                         </div>

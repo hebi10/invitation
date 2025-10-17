@@ -22,6 +22,18 @@ export { default as WeddingCalendar_1 } from './WeddingCalendar_1';
 export { default as WeddingLoader_1 } from './WeddingLoader_1';
 export { default as WeddingCountdown_1 } from './WeddingCountdown_1';
 
+// 미니멀 디자인 컴포넌트들 (_2 버전)
+export { default as Cover_2 } from './Cover_2';
+export { default as Greeting_2 } from './Greeting_2';
+export { default as Gallery_2 } from './Gallery_2';
+export { default as Schedule_2 } from './Schedule_2';
+export { default as LocationMap_2 } from './LocationMap_2';
+export { default as Guestbook_2 } from './Guestbook_2';
+export { default as GiftInfo_2 } from './GiftInfo_2';
+export { default as WeddingCalendar_2 } from './WeddingCalendar_2';
+export { default as WeddingLoader_2 } from './WeddingLoader_2';
+export { default as WeddingCountdown_2 } from './WeddingCountdown_2';
+
 // 관리자 전용 컴포넌트들
 export { default as ImageManager } from './ImageManager';
 export { default as ClientPasswordManager } from './ClientPasswordManager';

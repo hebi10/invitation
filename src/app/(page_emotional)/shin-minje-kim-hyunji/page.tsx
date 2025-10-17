@@ -149,23 +149,13 @@ export default function ShinMinJeKimHyunJi() {
         kakaoMapConfig={pageConfig?.pageData?.kakaoMap}
       />
       <Guestbook pageSlug={WEDDING_SLUG} />
-      <GiftInfo 
-        groomAccounts={[
-          {
-            bank: "국민은행",
-            accountNumber: "123456-78-901234",
-            accountHolder: pageConfig?.groomName || ''
-          }
-        ]}
-        brideAccounts={[
-          {
-            bank: "신한은행",
-            accountNumber: "567890-12-345678",
-            accountHolder: pageConfig?.brideName || ''
-          }
-        ]}
-        message="마음만으로도 충분합니다. 축하의 뜻으로 전해주시는 축의금은 소중히 받겠습니다."
-      />
+      {pageConfig?.pageData?.giftInfo && (pageConfig.pageData.giftInfo.groomAccounts?.length || pageConfig.pageData.giftInfo.brideAccounts?.length) ? (
+        <GiftInfo 
+          groomAccounts={pageConfig.pageData.giftInfo.groomAccounts || []}
+          brideAccounts={pageConfig.pageData.giftInfo.brideAccounts || []}
+          message={pageConfig.pageData.giftInfo.message || '참석해 주시는 것만으로도 큰 기쁨입니다.'}
+        />
+      ) : null}
     </main>
   );
 }

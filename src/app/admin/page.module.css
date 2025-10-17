@@ -503,6 +503,19 @@
   box-shadow: 0 5px 18px rgba(99, 102, 241, 0.4);
 }
 
+/* 미니멀 버전 버튼 */
+.minimalButton {
+  background: linear-gradient(135deg, #212529, #495057);
+  color: white;
+  box-shadow: 0 3px 12px rgba(33, 37, 41, 0.3);
+}
+
+.minimalButton:hover {
+  background: linear-gradient(135deg, #343a40, #6c757d);
+  transform: translateY(-2px);
+  box-shadow: 0 5px 18px rgba(33, 37, 41, 0.4);
+}
+
 .cardNumber {
   position: absolute;
   top: 1rem;

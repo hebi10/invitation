@@ -8,7 +8,17 @@ export interface WeddingPageInfo {
   date?: string;
   venue?: string;
   variants?: {
+    emotional?: {
+      available: boolean;
+      path: string;
+      displayName: string;
+    };
     simple?: {
+      available: boolean;
+      path: string;
+      displayName: string;
+    };
+    minimal?: {
       available: boolean;
       path: string;
       displayName: string;

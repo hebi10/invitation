@@ -1,0 +1,107 @@
+.countdownContainer {
+  padding: 3rem 1.5rem;
+  background: #ffffff;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.content {
+  text-align: center;
+}
+
+.title {
+  font-family: var(--font-gowun-dodum), serif;
+  font-size: clamp(1.2rem, 3.2vw, 1.4rem);
+  color: #212529;
+  margin-bottom: 2rem;
+  font-weight: 500;
+  letter-spacing: 0.5px;
+}
+
+.subtitle {
+  font-family: 'Noto Sans KR', sans-serif;
+  font-size: clamp(1rem, 2.6vw, 1.1rem);
+  color: #495057;
+  line-height: 1.6;
+  margin: 0;
+  font-weight: 300;
+}
+
+.timeDisplay {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.timeUnit {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 60px;
+}
+
+.timeNumber {
+  font-family: 'Georgia', serif;
+  font-size: clamp(2rem, 5vw, 2.5rem);
+  color: #212529;
+  font-weight: 600;
+  line-height: 1;
+}
+
+.timeLabel {
+  font-family: 'Noto Sans KR', sans-serif;
+  font-size: clamp(0.85rem, 2.2vw, 0.9rem);
+  color: #6c757d;
+  font-weight: 300;
+  letter-spacing: 0.3px;
+}
+
+.separator {
+  font-family: 'Georgia', serif;
+  font-size: clamp(1.5rem, 4vw, 2rem);
+  color: #adb5bd;
+  font-weight: 300;
+  margin: 0 0.25rem;
+  line-height: 1;
+  align-self: flex-start;
+  padding-top: 0.5rem;
+}
+
+@media (min-width: 640px) {
+  .countdownContainer {
+    padding: 4rem 1.5rem;
+  }
+  
+  .timeUnit {
+    min-width: 70px;
+  }
+  
+  .timeDisplay {
+    gap: 1rem;
+  }
+  
+  .separator {
+    margin: 0 0.5rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .countdownContainer {
+    padding: 2.5rem 1rem;
+  }
+  
+  .timeUnit {
+    min-width: 50px;
+  }
+  
+  .timeDisplay {
+    gap: 0.5rem;
+  }
+  
+  .separator {
+    margin: 0;
+  }
+}

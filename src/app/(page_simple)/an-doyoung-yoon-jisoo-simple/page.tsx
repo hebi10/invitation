@@ -143,35 +143,13 @@ export default function KimTaehyunChoiYuna_Simple() {
         kakaoMapConfig={pageConfig?.pageData?.kakaoMap}
       />
       <Guestbook_1 pageSlug={WEDDING_SLUG} />
-      <GiftInfo_1 
-        groomAccounts={[
-          {
-            bank: "국민",
-            accountNumber: "016702-04-506376",
-            accountHolder: "안도영"
-          },
-          {
-            bank: "농협",
-            accountNumber: "325015-52-107296",
-            accountHolder: "안근일"
-          }
-        ]}
-        brideAccounts={[
-          {
-            bank: "농협",
-            accountNumber: "302-2058-7429-31",
-            accountHolder: "윤지수"
-          },
-          {
-            bank: "농협",
-            accountNumber: "225038-52-000811",
-            accountHolder: "윤석종"
-          }
-        ]}
-        message={`마음만으로도 충분합니다.
-축하의 뜻으로 전해주시는 축의금은
-소중히 받겠습니다.`}
-      />
+      {pageConfig?.pageData?.giftInfo && (pageConfig.pageData.giftInfo.groomAccounts?.length || pageConfig.pageData.giftInfo.brideAccounts?.length) ? (
+        <GiftInfo_1 
+          groomAccounts={pageConfig.pageData.giftInfo.groomAccounts || []}
+          brideAccounts={pageConfig.pageData.giftInfo.brideAccounts || []}
+          message={pageConfig.pageData.giftInfo.message || '참석해 주시는 것만으로도 큰 기쁨입니다.'}
+        />
+      ) : null}
 
       {/* 배경음악 저작권 표기 */}
       <div style={{

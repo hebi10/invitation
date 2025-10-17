@@ -1,0 +1,206 @@
+.container {
+  padding: 4rem 1.5rem;
+  background: #ffffff;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.title {
+  font-family: var(--font-gowun-dodum), serif;
+  font-size: clamp(1.5rem, 4vw, 1.75rem);
+  color: #212529;
+  text-align: center;
+  margin-bottom: 2rem;
+  font-weight: 500;
+  letter-spacing: 0.5px;
+}
+
+.tabs {
+  display: flex;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-bottom: 2.5rem;
+  border-bottom: 1px solid #f1f3f5;
+  padding-bottom: 0.5rem;
+}
+
+.tab {
+  padding: 0.75rem 1.25rem;
+  background: transparent;
+  border: none;
+  font-family: 'Noto Sans KR', sans-serif;
+  font-size: clamp(0.85rem, 2.2vw, 0.95rem);
+  color: #868e96;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-weight: 400;
+  border-radius: 8px;
+}
+
+.tab.active {
+  color: #212529;
+  background: #f8f9fa;
+  font-weight: 500;
+}
+
+.tab:hover {
+  color: #495057;
+}
+
+.content {
+  text-align: center;
+}
+
+.dateSection {
+  margin-bottom: 2rem;
+  padding-bottom: 2rem;
+  border-bottom: 1px solid #f8f9fa;
+}
+
+.date {
+  font-family: var(--font-gowun-dodum), serif;
+  font-size: clamp(1.1rem, 3vw, 1.3rem);
+  color: #212529;
+  margin-bottom: 0.75rem;
+  font-weight: 500;
+  letter-spacing: 0.5px;
+}
+
+.time {
+  font-family: 'Noto Sans KR', sans-serif;
+  font-size: clamp(1rem, 2.5vw, 1.1rem);
+  color: #495057;
+  font-weight: 400;
+}
+
+.venueSection {
+  margin-bottom: 2rem;
+}
+
+.venue {
+  font-family: var(--font-gowun-dodum), serif;
+  font-size: clamp(1.05rem, 2.8vw, 1.2rem);
+  color: #212529;
+  margin-bottom: 0.75rem;
+  font-weight: 500;
+  letter-spacing: 0.5px;
+}
+
+.address {
+  font-family: 'Noto Sans KR', sans-serif;
+  font-size: clamp(0.9rem, 2.3vw, 0.95rem);
+  color: #6c757d;
+  line-height: 1.6;
+  font-weight: 300;
+}
+
+.detailsContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  margin-top: 2rem;
+  padding-top: 2rem;
+  border-top: 1px solid #f8f9fa;
+}
+
+.detailItem {
+  text-align: center;
+}
+
+.detailLabel {
+  font-family: var(--font-gowun-dodum), serif;
+  font-size: clamp(0.95rem, 2.5vw, 1rem);
+  color: #495057;
+  margin-bottom: 0.75rem;
+  font-weight: 500;
+}
+
+.detailInfo {
+  font-family: 'Noto Sans KR', sans-serif;
+  font-size: clamp(0.9rem, 2.3vw, 0.95rem);
+  color: #6c757d;
+  line-height: 1.6;
+  font-weight: 300;
+}
+
+.guideContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.guideItem {
+  border-bottom: 1px solid #f1f3f5;
+}
+
+.guideHeader {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.25rem 0;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+}
+
+.guideTitle {
+  font-family: var(--font-gowun-dodum), serif;
+  font-size: clamp(0.95rem, 2.5vw, 1.05rem);
+  color: #212529;
+  font-weight: 500;
+  letter-spacing: 0.3px;
+}
+
+.toggleIcon {
+  font-family: Arial, sans-serif;
+  font-size: 1.25rem;
+  color: #868e96;
+  font-weight: 300;
+  transition: transform 0.2s ease;
+}
+
+.guideContent {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.3s ease;
+}
+
+.guideContent.expanded {
+  max-height: 500px;
+  padding-bottom: 1.25rem;
+}
+
+.guideContent p {
+  font-family: 'Noto Sans KR', sans-serif;
+  font-size: clamp(0.9rem, 2.3vw, 0.95rem);
+  color: #6c757d;
+  line-height: 1.8;
+  white-space: pre-line;
+  font-weight: 300;
+  margin: 0;
+}
+
+@media (min-width: 640px) {
+  .detailsContainer {
+    flex-direction: row;
+    justify-content: center;
+    gap: 3rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .container {
+    padding: 3rem 1rem;
+  }
+  
+  .tabs {
+    gap: 0.25rem;
+  }
+  
+  .tab {
+    padding: 0.6rem 1rem;
+    font-size: 0.85rem;
+  }
+}

@@ -16,10 +16,20 @@ export const kimMinjunParkSoheeConfig: WeddingPageConfig = {
     minute: 0
   },
   variants: {
+    emotional: {
+      available: true,
+      path: '/kim-minjun-park-sohee',
+      displayName: '김민준 ♥ 박소희 (감성 버전)'
+    },
     simple: {
       available: true,
       path: '/kim-minjun-park-sohee-simple',
       displayName: '김민준 ♥ 박소희 (심플 버전)'
+    },
+    minimal: {
+      available: true,
+      path: '/kim-minjun-park-sohee-minimal',
+      displayName: '김민준 ♥ 박소희 (미니멀 버전)'
     }
   },
   metadata: {
@@ -104,6 +114,23 @@ export const kimMinjunParkSoheeConfig: WeddingPageConfig = {
         title: '배송 시간',
         content: '화환은 예식 전날 오후 또는\n당일 오전 11시까지 도착할 수 있도록\n주문해 주시기 바랍니다.\n\n예식장 측 사정으로 인해\n예식 시작 2시간 전까지는\n반드시 배치가 완료되어야 하오니\n참고 부탁드립니다.'
       }
-    ]
+    ],
+    giftInfo: {
+      groomAccounts: [
+        {
+          bank: '국민은행',
+          accountNumber: '123456-78-901234',
+          accountHolder: '김민준'
+        }
+      ],
+      brideAccounts: [
+        {
+          bank: '신한은행',
+          accountNumber: '567890-12-345678',
+          accountHolder: '박소희'
+        }
+      ],
+      message: '마음만으로도 충분합니다. 축하의 뜻으로 전해주시는 축의금은 소중히 받겠습니다.'
+    }
   }
 };
