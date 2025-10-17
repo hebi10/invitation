@@ -1,0 +1,456 @@
+.container {
+  position: relative;
+  padding: 5rem 1.5rem;
+  background: linear-gradient(to bottom, #1a1d3d, #0d0f1f, #1a1d3d);
+  overflow: hidden;
+}
+
+/* 우주 배경 */
+.spaceBackground {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.stars {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-image: 
+    radial-gradient(1px 1px at 15% 25%, rgba(255, 255, 255, 0.7), transparent),
+    radial-gradient(1px 1px at 75% 35%, rgba(255, 255, 255, 0.5), transparent),
+    radial-gradient(1px 1px at 35% 65%, rgba(255, 255, 255, 0.6), transparent),
+    radial-gradient(1px 1px at 85% 85%, rgba(255, 255, 255, 0.4), transparent);
+  background-size: 100% 100%;
+  animation: twinkle 3s ease-in-out infinite;
+}
+
+@keyframes twinkle {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 0.8; }
+}
+
+/* 헤더 */
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  margin-bottom: 3rem;
+  position: relative;
+  z-index: 2;
+}
+
+.starIcon {
+  font-size: 1.2rem;
+  color: rgba(142, 197, 252, 0.8);
+  animation: rotate-star 8s linear infinite;
+}
+
+@keyframes rotate-star {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.title {
+  font-family: 'Playfair Display', serif;
+  font-size: clamp(1.8rem, 5vw, 2rem);
+  font-weight: 400;
+  background: linear-gradient(135deg, #e0c3fc 0%, #8ec5fc 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  letter-spacing: 2px;
+}
+
+/* 이미지 그리드 */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 1rem;
+  max-width: 900px;
+  margin: 0 auto 2rem;
+  position: relative;
+  z-index: 2;
+}
+
+.imageItem {
+  position: relative;
+  cursor: pointer;
+  outline: none;
+  aspect-ratio: 1;
+}
+
+.imageWrapper {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  border-radius: 12px;
+  transition: transform 0.3s ease;
+}
+
+.imageItem:hover .imageWrapper {
+  transform: translateY(-4px);
+}
+
+.image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform 0.3s ease;
+}
+
+.imageItem:hover .image {
+  transform: scale(1.05);
+}
+
+/* 이미지 오버레이 */
+.imageOverlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(10, 14, 39, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  border-radius: 12px;
+}
+
+.imageItem:hover .imageOverlay {
+  opacity: 1;
+}
+
+.zoomIcon {
+  color: rgba(255, 255, 255, 0.9);
+  transform: scale(0.8);
+  transition: transform 0.3s ease;
+}
+
+.imageItem:hover .zoomIcon {
+  transform: scale(1);
+}
+
+/* 아이템 글로우 */
+.itemGlow {
+  position: absolute;
+  top: -2px;
+  left: -2px;
+  right: -2px;
+  bottom: -2px;
+  background: linear-gradient(135deg, rgba(142, 197, 252, 0.4), rgba(224, 195, 252, 0.4));
+  border-radius: 12px;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  z-index: -1;
+  filter: blur(8px);
+}
+
+.imageItem:hover .itemGlow {
+  opacity: 1;
+}
+
+/* 더보기/접기 버튼 */
+.buttonWrapper {
+  display: flex;
+  justify-content: center;
+  margin-top: 2rem;
+  position: relative;
+  z-index: 2;
+}
+
+.toggleButton {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  padding: 0.9rem 2rem;
+  background: rgba(26, 29, 61, 0.6);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(142, 197, 252, 0.3);
+  border-radius: 30px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-family: 'Noto Sans KR', sans-serif;
+  box-shadow: 0 0 20px rgba(142, 197, 252, 0.2);
+}
+
+.toggleButton:hover {
+  background: rgba(26, 29, 61, 0.8);
+  border-color: rgba(142, 197, 252, 0.5);
+  box-shadow: 0 0 30px rgba(142, 197, 252, 0.4);
+  transform: translateY(-2px);
+}
+
+.buttonText {
+  font-size: 0.95rem;
+  color: rgba(255, 255, 255, 0.9);
+  font-weight: 300;
+  letter-spacing: 1px;
+}
+
+.buttonIcon {
+  font-size: 0.8rem;
+  color: rgba(142, 197, 252, 0.8);
+  transition: transform 0.3s ease;
+}
+
+.buttonIcon.rotated {
+  transform: rotate(180deg);
+}
+
+/* 모달 */
+.modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.modalBackground {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(10, 14, 39, 0.95);
+  backdrop-filter: blur(10px);
+}
+
+.modalStars {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-image: 
+    radial-gradient(2px 2px at 20px 30px, #eee, transparent),
+    radial-gradient(2px 2px at 60px 70px, #fff, transparent),
+    radial-gradient(1px 1px at 50px 50px, #ddd, transparent),
+    radial-gradient(1px 1px at 130px 80px, #fff, transparent);
+  background-size: 200px 200px;
+  animation: space-drift 60s linear infinite;
+}
+
+@keyframes space-drift {
+  from { transform: translateY(0); }
+  to { transform: translateY(-200px); }
+}
+
+.modalContent {
+  position: relative;
+  max-width: 90%;
+  max-height: 85%;
+  z-index: 10;
+  animation: zoomIn 0.3s ease;
+}
+
+@keyframes zoomIn {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.modalImage {
+  max-width: 100%;
+  max-height: 85vh;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+  border-radius: 8px;
+  display: block;
+}
+
+.imageGlow {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 110%;
+  height: 110%;
+  background: radial-gradient(circle, rgba(142, 197, 252, 0.3), transparent 70%);
+  border-radius: 8px;
+  pointer-events: none;
+  z-index: -1;
+  filter: blur(20px);
+}
+
+/* 닫기 버튼 */
+.closeButton {
+  position: absolute;
+  top: 1.5rem;
+  right: 1.5rem;
+  width: 44px;
+  height: 44px;
+  background: rgba(26, 29, 61, 0.8);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(142, 197, 252, 0.3);
+  border-radius: 50%;
+  cursor: pointer;
+  z-index: 11;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+}
+
+.closeButton:hover {
+  background: rgba(26, 29, 61, 1);
+  border-color: rgba(142, 197, 252, 0.5);
+  box-shadow: 0 0 20px rgba(142, 197, 252, 0.3);
+  transform: rotate(90deg);
+}
+
+.closeIcon {
+  font-size: 1.5rem;
+  color: rgba(255, 255, 255, 0.9);
+  line-height: 1;
+}
+
+/* 네비게이션 버튼 */
+.navButton {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 50px;
+  height: 50px;
+  background: rgba(26, 29, 61, 0.8);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(142, 197, 252, 0.3);
+  border-radius: 50%;
+  cursor: pointer;
+  z-index: 11;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+}
+
+.navButton:hover {
+  background: rgba(26, 29, 61, 1);
+  border-color: rgba(142, 197, 252, 0.5);
+  box-shadow: 0 0 20px rgba(142, 197, 252, 0.3);
+}
+
+.prevButton {
+  left: 1.5rem;
+}
+
+.nextButton {
+  right: 1.5rem;
+}
+
+.navArrow {
+  font-size: 2rem;
+  color: rgba(255, 255, 255, 0.9);
+  line-height: 1;
+}
+
+/* 이미지 카운터 */
+.imageCounter {
+  position: absolute;
+  bottom: 2rem;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 0.6rem 1.5rem;
+  background: rgba(26, 29, 61, 0.8);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(142, 197, 252, 0.3);
+  border-radius: 20px;
+  font-family: 'Noto Sans KR', sans-serif;
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.9);
+  z-index: 11;
+  letter-spacing: 1px;
+}
+
+/* 모바일 최적화 */
+@media (max-width: 768px) {
+  .container {
+    padding: 4rem 1rem;
+  }
+
+  .grid {
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: 0.8rem;
+  }
+
+  .header {
+    margin-bottom: 2.5rem;
+  }
+
+  .closeButton {
+    top: 1rem;
+    right: 1rem;
+    width: 40px;
+    height: 40px;
+  }
+
+  .closeIcon {
+    font-size: 1.3rem;
+  }
+
+  .navButton {
+    width: 44px;
+    height: 44px;
+  }
+
+  .prevButton {
+    left: 0.5rem;
+  }
+
+  .nextButton {
+    right: 0.5rem;
+  }
+
+  .navArrow {
+    font-size: 1.8rem;
+  }
+
+  .imageCounter {
+    bottom: 1rem;
+    font-size: 0.85rem;
+    padding: 0.5rem 1.2rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .grid {
+    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+    gap: 0.6rem;
+  }
+
+  .toggleButton {
+    padding: 0.8rem 1.5rem;
+  }
+
+  .buttonText {
+    font-size: 0.9rem;
+  }
+}

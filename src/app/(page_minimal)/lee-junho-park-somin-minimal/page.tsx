@@ -37,10 +37,10 @@ export default function LeeJunhoParkSomin_2() {
       kakaoShare.style.display = 'block';
     }
   }, [access, isLoading]);
-  
+
   if (access === null) return null;
   if (!access.canAccess) return <AccessDeniedPage message={access.message} />;
-  
+
   const weddingDate = new Date(pageConfig?.weddingDateTime.year || 2024, pageConfig?.weddingDateTime.month || 0, pageConfig?.weddingDateTime.day || 1, pageConfig?.weddingDateTime.hour || 0, pageConfig?.weddingDateTime.minute || 0);
   const mainImageUrl = mainImage?.url || "";
 
@@ -59,16 +59,59 @@ export default function LeeJunhoParkSomin_2() {
 
   return (
     <main role="main" aria-label={`${pageConfig?.groomName || ''}와 ${pageConfig?.brideName || ''}의 결혼식 청첩장 (미니멀 버전)`}>
-      <Cover_2 title={pageConfig?.displayName || ''} subtitle={pageConfig?.pageData?.subtitle || ''} weddingDate={`${pageConfig?.date || ''} ${pageConfig?.pageData?.ceremonyTime || ''}`} imageUrl={mainImageUrl} brideName={pageConfig?.brideName || ''} groomName={pageConfig?.groomName || ''} preloadComplete={true} />
-      <ScrollAnimatedSection delay={100}><Greeting_2 message={pageConfig?.pageData?.greetingMessage || ''} author={pageConfig?.pageData?.greetingAuthor || ''} groom={pageConfig?.pageData?.groom} bride={pageConfig?.pageData?.bride} /></ScrollAnimatedSection>
-      <ScrollAnimatedSection delay={200}><WeddingCalendar_2 weddingDate={weddingDate} /></ScrollAnimatedSection>
-      <ScrollAnimatedSection delay={300}><Gallery_2 images={galleryImages.map(img => img.url)} /></ScrollAnimatedSection>
-      <ScrollAnimatedSection delay={400}><Schedule_2 date={pageConfig?.date || ''} time={pageConfig?.pageData?.ceremonyTime || ''} venue={pageConfig?.venue || ''} address={pageConfig?.pageData?.ceremonyAddress || ''} venueGuide={pageConfig?.pageData?.venueGuide} wreathGuide={pageConfig?.pageData?.wreathGuide} /></ScrollAnimatedSection>
-      <ScrollAnimatedSection delay={500}><LocationMap_2 latitude={pageConfig?.pageData?.kakaoMap?.latitude || 37.5048} longitude={pageConfig?.pageData?.kakaoMap?.longitude || 127.0280} placeName={pageConfig?.venue || ''} address={pageConfig?.pageData?.ceremonyAddress || ''} /></ScrollAnimatedSection>
-      <ScrollAnimatedSection delay={600}><Guestbook_2 pageId={WEDDING_SLUG} /></ScrollAnimatedSection>
+      <Cover_2 
+        title={pageConfig?.displayName || ''} 
+        subtitle={pageConfig?.pageData?.subtitle || ''} 
+        weddingDate={`${pageConfig?.date || ''} ${pageConfig?.pageData?.ceremonyTime || ''}`} 
+        imageUrl={mainImageUrl} 
+        brideName={pageConfig?.brideName || ''} 
+        groomName={pageConfig?.groomName || ''} 
+        preloadComplete={true} 
+      />
+      
+      <ScrollAnimatedSection delay={100}>
+        <Greeting_2 
+          message={pageConfig?.pageData?.greetingMessage || ''} 
+          author={pageConfig?.pageData?.greetingAuthor || ''} 
+          groom={pageConfig?.pageData?.groom} 
+          bride={pageConfig?.pageData?.bride} 
+        />
+      </ScrollAnimatedSection>
+      
+      <ScrollAnimatedSection delay={200}>
+        <WeddingCalendar_2 weddingDate={weddingDate} />
+      </ScrollAnimatedSection>
+      
+      <ScrollAnimatedSection delay={300}>
+        <Gallery_2 images={galleryImages.map(img => img.url)} />
+      </ScrollAnimatedSection>
+      
+      <ScrollAnimatedSection delay={400}>
+        <Schedule_2 
+          date={pageConfig?.date || ''} 
+          time={pageConfig?.pageData?.ceremonyTime || ''} 
+          venue={pageConfig?.venue || ''} 
+          address={pageConfig?.pageData?.ceremonyAddress || ''} 
+          venueGuide={pageConfig?.pageData?.venueGuide} 
+          wreathGuide={pageConfig?.pageData?.wreathGuide} 
+        />
+      </ScrollAnimatedSection>
+      
+      <ScrollAnimatedSection delay={500}>
+        <LocationMap_2 
+          latitude={pageConfig?.pageData?.kakaoMap?.latitude || 37.5048} 
+          longitude={pageConfig?.pageData?.kakaoMap?.longitude || 127.0280} 
+          placeName={pageConfig?.venue || ''} 
+          address={pageConfig?.pageData?.ceremonyAddress || ''} 
+        />
+      </ScrollAnimatedSection>
+      
+      <ScrollAnimatedSection delay={600}>
+        <Guestbook_2 pageId={WEDDING_SLUG} />
+      </ScrollAnimatedSection>
       {pageConfig?.pageData?.giftInfo && (pageConfig.pageData.giftInfo.groomAccounts?.length || pageConfig.pageData.giftInfo.brideAccounts?.length) ? (
         <ScrollAnimatedSection delay={700}>
-          <GiftInfo_2 
+          <GiftInfo_2
             groomName={pageConfig?.groomName || ''}
             brideName={pageConfig?.brideName || ''}
             groomAccounts={pageConfig.pageData.giftInfo.groomAccounts?.map(acc => ({ ...acc, holder: acc.accountHolder })) || []}

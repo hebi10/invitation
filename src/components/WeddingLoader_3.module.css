@@ -1,0 +1,304 @@
+.container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(to bottom, #0a0e27, #1a1d3d, #0a0e27);
+  z-index: 9999;
+  overflow: hidden;
+}
+
+/* 우주 배경 */
+.spaceBackground {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.stars,
+.starsLayer2 {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-repeat: repeat;
+}
+
+.stars {
+  background-image: 
+    radial-gradient(2px 2px at 20px 30px, #eee, transparent),
+    radial-gradient(2px 2px at 60px 70px, #fff, transparent),
+    radial-gradient(1px 1px at 50px 50px, #ddd, transparent),
+    radial-gradient(1px 1px at 130px 80px, #fff, transparent),
+    radial-gradient(2px 2px at 90px 10px, #eee, transparent);
+  background-size: 200px 200px;
+  animation: stars-move 60s linear infinite;
+}
+
+.starsLayer2 {
+  background-image: 
+    radial-gradient(1px 1px at 40px 60px, #fff, transparent),
+    radial-gradient(1px 1px at 110px 90px, #ddd, transparent),
+    radial-gradient(2px 2px at 150px 30px, #eee, transparent);
+  background-size: 250px 250px;
+  animation: stars-move 90s linear infinite;
+}
+
+@keyframes stars-move {
+  from { transform: translateY(0); }
+  to { transform: translateY(-200px); }
+}
+
+/* 콘텐츠 */
+.content {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2rem;
+  z-index: 2;
+  opacity: 0;
+}
+
+.content.fadeIn {
+  animation: fadeIn 1s ease forwards;
+}
+
+@keyframes fadeIn {
+  to { opacity: 1; }
+}
+
+/* 행성 */
+.planetWrapper {
+  position: relative;
+  width: 150px;
+  height: 150px;
+}
+
+.planet {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, #8ec5fc, #5a7fc7, #3a5f97);
+  animation: planet-rotate 4s ease-in-out infinite;
+  box-shadow: 
+    0 0 40px rgba(142, 197, 252, 0.6),
+    inset 0 -20px 40px rgba(0, 0, 0, 0.3);
+}
+
+@keyframes planet-rotate {
+  0%, 100% { transform: rotate(0deg); }
+  50% { transform: rotate(10deg); }
+}
+
+.planetGlow {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 180%;
+  height: 180%;
+  background: radial-gradient(circle, rgba(142, 197, 252, 0.4), transparent 60%);
+  border-radius: 50%;
+  animation: glow-pulse 3s ease-in-out infinite;
+}
+
+@keyframes glow-pulse {
+  0%, 100% { opacity: 0.5; transform: translate(-50%, -50%) scale(1); }
+  50% { opacity: 0.8; transform: translate(-50%, -50%) scale(1.1); }
+}
+
+.planetRing {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) rotateX(75deg);
+  width: 200%;
+  height: 200%;
+  border: 3px solid rgba(224, 195, 252, 0.4);
+  border-radius: 50%;
+  box-shadow: 0 0 20px rgba(224, 195, 252, 0.3);
+  animation: ring-rotate 6s linear infinite;
+}
+
+@keyframes ring-rotate {
+  from { transform: translate(-50%, -50%) rotateX(75deg) rotateZ(0deg); }
+  to { transform: translate(-50%, -50%) rotateX(75deg) rotateZ(360deg); }
+}
+
+/* 텍스트 */
+.textWrapper {
+  text-align: center;
+}
+
+.names {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.8rem;
+  margin-bottom: 0.5rem;
+}
+
+.name {
+  font-family: var(--font-gowun-dodum), serif;
+  font-size: clamp(1.3rem, 3.5vw, 1.5rem);
+  color: rgba(255, 255, 255, 0.95);
+  font-weight: 400;
+  letter-spacing: 1px;
+}
+
+.separator {
+  font-size: 1.2rem;
+  color: rgba(224, 195, 252, 0.8);
+  animation: heartbeat 2s ease-in-out infinite;
+}
+
+@keyframes heartbeat {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.2); }
+}
+
+.subText {
+  font-family: 'Noto Sans KR', sans-serif;
+  font-size: clamp(0.95rem, 2.5vw, 1.05rem);
+  color: rgba(255, 255, 255, 0.8);
+  font-weight: 300;
+  letter-spacing: 0.5px;
+}
+
+/* 로딩 인디케이터 */
+.loadingIndicator {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #e0c3fc, #8ec5fc);
+  animation: dot-bounce 1.4s ease-in-out infinite;
+}
+
+.dot:nth-child(1) {
+  animation-delay: 0s;
+}
+
+.dot:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.dot:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
+@keyframes dot-bounce {
+  0%, 60%, 100% {
+    transform: translateY(0);
+    opacity: 0.7;
+  }
+  30% {
+    transform: translateY(-15px);
+    opacity: 1;
+  }
+}
+
+/* 장식 요소 */
+.decorations {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  overflow: hidden;
+  z-index: 1;
+}
+
+.shootingStar {
+  position: absolute;
+  top: 20%;
+  right: 10%;
+  width: 3px;
+  height: 3px;
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 50%;
+  box-shadow: 
+    0 0 10px rgba(255, 255, 255, 0.8),
+    -30px 10px 15px -10px rgba(255, 255, 255, 0.3);
+  animation: shooting-star 3s ease-in-out 2s infinite;
+}
+
+@keyframes shooting-star {
+  0% {
+    transform: translateX(0) translateY(0);
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+  }
+  80% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateX(-200px) translateY(200px);
+    opacity: 0;
+  }
+}
+
+.floatingPlanet1,
+.floatingPlanet2 {
+  position: absolute;
+  border-radius: 50%;
+  opacity: 0.3;
+}
+
+.floatingPlanet1 {
+  width: 60px;
+  height: 60px;
+  background: radial-gradient(circle at 30% 30%, rgba(224, 195, 252, 0.5), rgba(224, 195, 252, 0.1));
+  top: 15%;
+  left: 10%;
+  animation: float-planet 10s ease-in-out infinite;
+}
+
+.floatingPlanet2 {
+  width: 40px;
+  height: 40px;
+  background: radial-gradient(circle at 30% 30%, rgba(142, 197, 252, 0.5), rgba(142, 197, 252, 0.1));
+  bottom: 20%;
+  right: 15%;
+  animation: float-planet 12s ease-in-out infinite 2s;
+}
+
+@keyframes float-planet {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-30px); }
+}
+
+/* 모바일 최적화 */
+@media (max-width: 480px) {
+  .planetWrapper {
+    width: 120px;
+    height: 120px;
+  }
+
+  .floatingPlanet1 {
+    width: 45px;
+    height: 45px;
+  }
+
+  .floatingPlanet2 {
+    width: 30px;
+    height: 30px;
+  }
+}

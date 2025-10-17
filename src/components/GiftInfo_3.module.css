@@ -1,0 +1,417 @@
+.container {
+  position: relative;
+  padding: 5rem 1.5rem;
+  background: linear-gradient(to bottom, #1a1d3d, #0d0f1f, #1a1d3d);
+  overflow: hidden;
+}
+
+/* 우주 배경 */
+.spaceBackground {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.stars {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-image: 
+    radial-gradient(1px 1px at 15% 25%, rgba(255, 255, 255, 0.6), transparent),
+    radial-gradient(1px 1px at 75% 35%, rgba(255, 255, 255, 0.5), transparent),
+    radial-gradient(1px 1px at 35% 65%, rgba(255, 255, 255, 0.7), transparent),
+    radial-gradient(1px 1px at 85% 85%, rgba(255, 255, 255, 0.4), transparent);
+  background-size: 100% 100%;
+  animation: twinkle 4s ease-in-out infinite;
+}
+
+@keyframes twinkle {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 0.7; }
+}
+
+/* 헤더 */
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  margin-bottom: 2.5rem;
+  position: relative;
+  z-index: 2;
+}
+
+.starIcon {
+  font-size: 1.2rem;
+  color: rgba(142, 197, 252, 0.8);
+  animation: rotate-star 8s linear infinite;
+}
+
+@keyframes rotate-star {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.title {
+  font-family: 'Playfair Display', serif;
+  font-size: clamp(1.8rem, 5vw, 2rem);
+  font-weight: 400;
+  background: linear-gradient(135deg, #e0c3fc 0%, #8ec5fc 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  letter-spacing: 2px;
+}
+
+/* 메시지 카드 */
+.messageCard {
+  position: relative;
+  max-width: 500px;
+  margin: 0 auto 3rem;
+  padding: 2rem;
+  background: rgba(26, 29, 61, 0.4);
+  backdrop-filter: blur(10px);
+  border-radius: 16px;
+  text-align: center;
+  z-index: 2;
+}
+
+.messageCard::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  border-radius: 16px;
+  padding: 1px;
+  background: linear-gradient(135deg, rgba(142, 197, 252, 0.2), rgba(224, 195, 252, 0.2));
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
+.messageGlow {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 100%;
+  height: 100%;
+  background: radial-gradient(circle, rgba(142, 197, 252, 0.1), transparent 70%);
+  border-radius: 16px;
+  pointer-events: none;
+}
+
+.message {
+  font-family: 'Noto Sans KR', sans-serif;
+  font-size: clamp(0.95rem, 2.5vw, 1.05rem);
+  color: rgba(255, 255, 255, 0.85);
+  line-height: 1.8;
+  font-weight: 300;
+  position: relative;
+  z-index: 1;
+}
+
+/* 계좌 정보 래퍼 */
+.accountsWrapper {
+  max-width: 600px;
+  margin: 0 auto 3rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  position: relative;
+  z-index: 2;
+}
+
+/* 계좌 섹션 */
+.accountSection {
+  background: rgba(26, 29, 61, 0.3);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(142, 197, 252, 0.2);
+  border-radius: 16px;
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+.accountSection:hover {
+  border-color: rgba(142, 197, 252, 0.3);
+  box-shadow: 0 0 20px rgba(142, 197, 252, 0.15);
+}
+
+/* 섹션 토글 버튼 */
+.sectionToggle {
+  width: 100%;
+  padding: 1.2rem 1.5rem;
+  background: transparent;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-family: 'Noto Sans KR', sans-serif;
+}
+
+.sectionToggle:hover {
+  background: rgba(142, 197, 252, 0.05);
+}
+
+.toggleLabel {
+  font-size: clamp(1rem, 2.8vw, 1.1rem);
+  color: rgba(255, 255, 255, 0.95);
+  font-weight: 400;
+  letter-spacing: 0.5px;
+}
+
+.toggleIcon {
+  font-size: 0.9rem;
+  color: rgba(142, 197, 252, 0.8);
+  transition: transform 0.3s ease;
+}
+
+.toggleIcon.rotated {
+  transform: rotate(180deg);
+}
+
+/* 계좌 목록 */
+.accountsList {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.4s ease, opacity 0.3s ease;
+  opacity: 0;
+}
+
+.accountsList.expanded {
+  max-height: 1000px;
+  opacity: 1;
+}
+
+/* 계좌 카드 */
+.accountCard {
+  padding: 1.5rem;
+  background: rgba(10, 14, 39, 0.3);
+  margin: 0 1rem 1rem;
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  transition: all 0.3s ease;
+}
+
+.accountCard:hover {
+  background: rgba(10, 14, 39, 0.5);
+  box-shadow: 0 0 15px rgba(142, 197, 252, 0.1);
+}
+
+.accountCard:last-child {
+  margin-bottom: 1.5rem;
+}
+
+/* 계좌 정보 */
+.accountInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+}
+
+.accountRow {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.accountLabel {
+  font-family: 'Noto Sans KR', sans-serif;
+  font-size: 0.9rem;
+  color: rgba(142, 197, 252, 0.8);
+  font-weight: 300;
+  min-width: 60px;
+  letter-spacing: 0.5px;
+}
+
+.accountValue {
+  font-family: 'Noto Sans KR', sans-serif;
+  font-size: 0.95rem;
+  color: rgba(255, 255, 255, 0.9);
+  font-weight: 400;
+}
+
+.accountNumber {
+  font-family: 'Courier New', monospace;
+  font-size: 0.95rem;
+  color: rgba(255, 255, 255, 0.95);
+  font-weight: 500;
+  letter-spacing: 0.5px;
+}
+
+/* 복사 버튼 */
+.copyButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.8rem 1.2rem;
+  background: linear-gradient(135deg, rgba(142, 197, 252, 0.2), rgba(224, 195, 252, 0.2));
+  border: 1px solid rgba(142, 197, 252, 0.3);
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-family: 'Noto Sans KR', sans-serif;
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.9);
+  font-weight: 300;
+  letter-spacing: 0.5px;
+}
+
+.copyButton:hover {
+  background: linear-gradient(135deg, rgba(142, 197, 252, 0.3), rgba(224, 195, 252, 0.3));
+  border-color: rgba(142, 197, 252, 0.5);
+  box-shadow: 0 0 15px rgba(142, 197, 252, 0.2);
+}
+
+.copyIcon,
+.checkIcon {
+  width: 18px;
+  height: 18px;
+  color: rgba(142, 197, 252, 0.9);
+}
+
+.checkIcon {
+  color: rgba(142, 252, 142, 0.9);
+}
+
+/* 푸터 노트 */
+.footerNote {
+  text-align: center;
+  position: relative;
+  z-index: 2;
+}
+
+.noteText {
+  font-family: 'Noto Sans KR', sans-serif;
+  font-size: clamp(0.95rem, 2.5vw, 1.05rem);
+  color: rgba(255, 255, 255, 0.7);
+  font-weight: 300;
+  line-height: 1.6;
+}
+
+/* 장식 요소 */
+.decorations {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.moonDeco {
+  position: absolute;
+  top: 10%;
+  right: 5%;
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 30% 30%, rgba(224, 195, 252, 0.3), rgba(224, 195, 252, 0.1));
+  box-shadow: 0 0 40px rgba(224, 195, 252, 0.2);
+  animation: float-moon 8s ease-in-out infinite;
+}
+
+@keyframes float-moon {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-20px); }
+}
+
+.starDeco1,
+.starDeco2 {
+  position: absolute;
+  font-size: 2rem;
+  color: rgba(142, 197, 252, 0.4);
+  animation: twinkle-deco 3s ease-in-out infinite;
+}
+
+.starDeco1 {
+  top: 30%;
+  left: 8%;
+  animation-delay: 0s;
+}
+
+.starDeco2 {
+  bottom: 25%;
+  right: 10%;
+  animation-delay: 1.5s;
+}
+
+@keyframes twinkle-deco {
+  0%, 100% { opacity: 0.3; transform: scale(1); }
+  50% { opacity: 0.8; transform: scale(1.2); }
+}
+
+/* 모바일 최적화 */
+@media (max-width: 480px) {
+  .container {
+    padding: 4rem 1rem;
+  }
+
+  .messageCard {
+    padding: 1.5rem;
+    margin-bottom: 2.5rem;
+  }
+
+  .accountsWrapper {
+    gap: 1.2rem;
+  }
+
+  .sectionToggle {
+    padding: 1rem 1.2rem;
+  }
+
+  .accountCard {
+    padding: 1.2rem;
+    margin: 0 0.8rem 0.8rem;
+  }
+
+  .accountCard:last-child {
+    margin-bottom: 1.2rem;
+  }
+
+  .accountRow {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.3rem;
+  }
+
+  .accountLabel {
+    min-width: auto;
+    font-size: 0.85rem;
+  }
+
+  .accountValue,
+  .accountNumber {
+    font-size: 0.9rem;
+  }
+
+  .copyButton {
+    padding: 0.7rem 1rem;
+    font-size: 0.85rem;
+  }
+
+  .moonDeco {
+    width: 70px;
+    height: 70px;
+  }
+
+  .starDeco1,
+  .starDeco2 {
+    font-size: 1.5rem;
+  }
+}

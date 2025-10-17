@@ -30,6 +30,11 @@ export const anDoyoungYoonJisooConfig: WeddingPageConfig = {
       available: true,
       path: '/an-doyoung-yoon-jisoo-minimal',
       displayName: '안도영 ♥ 윤지수 (미니멀 버전)'
+    },
+    space: {
+      available: true,
+      path: '/an-doyoung-yoon-jisoo-space',
+      displayName: '안도영 ♥ 윤지수 (우주 버전)'
     }
   },
   metadata: {
@@ -55,7 +60,7 @@ export const anDoyoungYoonJisooConfig: WeddingPageConfig = {
     ceremonyAddress: '강원특별자치도 고성군 토성면 미시령옛길 1153 그랜드 볼룸 1층',
     ceremonyContact: '02-1234-5678',
     venueName: '소노펠리체 델피노',
-    greetingMessage: '처음엔 우연이었고,<br>지금은 이유가 되었어요.<br><br>함께 있는 게<br>가장 자연스러운 사람,<br><br>그래서 평생을 함께하기로 했습니다.<br><br>우리의 시작,<br>따뜻한 마음으로 함께해 주세요.',
+    greetingMessage: '처음엔 우연이었고,\n지금은 이유가 되었어요.\n\n함께 있는 게\n가장 자연스러운 사람,\n\n그래서 평생을 함께하기로 했습니다.\n\n우리의 시작,\n따뜻한 마음으로 함께해 주세요.',
     greetingAuthor: '안도영 · 윤지수',
     mapDescription: '서울역 2번 출구 및 강릉고속버스터미널에서 셔틀버스가 운행됩니다.',
     // 신랑/신부 가족 정보

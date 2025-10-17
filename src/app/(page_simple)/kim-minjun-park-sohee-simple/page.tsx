@@ -107,16 +107,13 @@ export default function KimMinJunParkSoHee_1() {
         preloadComplete={true}
       />
       
-      <ScrollAnimatedSection delay={100}>
         <Greeting_1 
           message={pageConfig?.pageData?.greetingMessage || '두 사람이 사랑으로 하나가 되는 순간을 함께해 주시는 모든 분들께 감사드립니다. 새로운 시작을 따뜻한 마음으로 축복해 주시면 더없는 기쁨이겠습니다.'}
           author={pageConfig?.pageData?.greetingAuthor || `${pageConfig?.groomName || ''} · ${pageConfig?.brideName || ''}`}
           groom={pageConfig?.pageData?.groom}
           bride={pageConfig?.pageData?.bride}
         />
-      </ScrollAnimatedSection>
       
-      <ScrollAnimatedSection delay={200}>
         <WeddingCalendar_1 
           title="행복한 순간을 함께하세요"
           weddingDate={weddingDate}
@@ -135,15 +132,11 @@ export default function KimMinJunParkSoHee_1() {
             console.log('선택된 날짜:', date);
           }}
         />
-      </ScrollAnimatedSection>
       
-      <ScrollAnimatedSection delay={300}>
         <Gallery_1 
           images={galleryImages.map(img => img.url)}
         />
-      </ScrollAnimatedSection>
       
-      <ScrollAnimatedSection delay={400}>
         <Schedule_1 
           date={pageConfig?.date || ''}
           time={pageConfig?.pageData?.ceremonyTime || ''}
@@ -152,20 +145,15 @@ export default function KimMinJunParkSoHee_1() {
           venueGuide={pageConfig?.pageData?.venueGuide}
         wreathGuide={pageConfig?.pageData?.wreathGuide}
         />
-      </ScrollAnimatedSection>
       
-      <ScrollAnimatedSection delay={500}>
         <LocationMap_1 
           venueName={pageConfig?.venue || ''}
           address={pageConfig?.pageData?.ceremonyAddress || ''}
           description={pageConfig?.pageData?.mapDescription || '지하철 이용 시 편리하게 오실 수 있습니다'}
           kakaoMapConfig={pageConfig?.pageData?.kakaoMap}
         />
-      </ScrollAnimatedSection>
       
-      <ScrollAnimatedSection delay={600}>
         <Guestbook_1 pageSlug={WEDDING_SLUG} />
-      </ScrollAnimatedSection>
       
       {pageConfig?.pageData?.giftInfo && (pageConfig.pageData.giftInfo.groomAccounts?.length || pageConfig.pageData.giftInfo.brideAccounts?.length) ? (
         <GiftInfo_1 

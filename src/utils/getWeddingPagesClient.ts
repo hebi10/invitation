@@ -23,6 +23,11 @@ export interface WeddingPageInfo {
       path: string;
       displayName: string;
     };
+    space?: {
+      available: boolean;
+      path: string;
+      displayName: string;
+    };
   };
 }
 

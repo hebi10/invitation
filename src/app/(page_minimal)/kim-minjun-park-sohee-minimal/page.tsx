@@ -81,17 +81,6 @@ export default function KimMinJunParkSoHee_2() {
     // 에러가 있어도 기본 이미지로 진행
   }
 
-  // 이미지 로딩 완료 시 페이지 표시
-  useEffect(() => {
-    if (!imagesLoading && isLoading) {
-      // 최소 1초 로딩 화면 표시 후 전환
-      const timer = setTimeout(() => {
-        setIsLoading(false);
-      }, 1000);
-      return () => clearTimeout(timer);
-    }
-  }, [imagesLoading, isLoading]);
-
   // 이미지 로딩이 완료되지 않은 경우 로더 표시
   if (isLoading || imagesLoading) {
     return (
@@ -158,16 +147,24 @@ export default function KimMinJunParkSoHee_2() {
         <Guestbook_2 pageId={WEDDING_SLUG} />
       </ScrollAnimatedSection>
       
-      {pageConfig?.pageData?.giftInfo && (pageConfig.pageData.giftInfo.groomAccounts?.length || pageConfig.pageData.giftInfo.brideAccounts?.length) ? (
-        <ScrollAnimatedSection delay={700}>
-          <GiftInfo_2 
-            groomName={pageConfig?.groomName || ''}
-            brideName={pageConfig?.brideName || ''}
-            groomAccounts={pageConfig.pageData.giftInfo.groomAccounts?.map(acc => ({ ...acc, holder: acc.accountHolder })) || []}
-            brideAccounts={pageConfig.pageData.giftInfo.brideAccounts?.map(acc => ({ ...acc, holder: acc.accountHolder })) || []}
-          />
-        </ScrollAnimatedSection>
-      ) : null}
+      <GiftInfo_2 
+        groomName={pageConfig?.groomName || ''}
+        brideName={pageConfig?.brideName || ''}
+        groomAccounts={[
+          {
+            bank: "국민은행",
+            accountNumber: "123456-78-901234",
+            holder: pageConfig?.groomName || ''
+          }
+        ]}
+        brideAccounts={[
+          {
+            bank: "신한은행",
+            accountNumber: "567890-12-345678",
+            holder: pageConfig?.brideName || ''
+          }
+        ]}
+      />
     </main>
   );
 }

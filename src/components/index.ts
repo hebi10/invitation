@@ -34,6 +34,17 @@ export { default as WeddingCalendar_2 } from './WeddingCalendar_2';
 export { default as WeddingLoader_2 } from './WeddingLoader_2';
 export { default as WeddingCountdown_2 } from './WeddingCountdown_2';
 
+// 우주 디자인 컴포넌트들 (_3 버전)
+export { default as Cover_3 } from './Cover_3';
+export { default as Greeting_3 } from './Greeting_3';
+export { default as Gallery_3 } from './Gallery_3';
+export { default as Schedule_3 } from './Schedule_3';
+export { default as LocationMap_3 } from './LocationMap_3';
+export { default as Guestbook_3 } from './Guestbook_3';
+export { default as GiftInfo_3 } from './GiftInfo_3';
+export { default as WeddingCalendar_3 } from './WeddingCalendar_3';
+export { default as WeddingLoader_3 } from './WeddingLoader_3';
+
 // 관리자 전용 컴포넌트들
 export { default as ImageManager } from './ImageManager';
 export { default as ClientPasswordManager } from './ClientPasswordManager';

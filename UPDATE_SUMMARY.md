@@ -128,11 +128,9 @@ export default function WeddingPage() {
       {/* 애니메이션 적용 섹션들 */}
       <ScrollAnimatedSection delay={100}>
         <Greeting />
-      </ScrollAnimatedSection>
       
       <ScrollAnimatedSection delay={200}>
         <Gallery />
-      </ScrollAnimatedSection>
       
       {/* 최하단 - 애니메이션 없음 */}
       <GiftInfo />

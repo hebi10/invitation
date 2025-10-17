@@ -30,6 +30,11 @@ export const kimTaehyunChoiYunaConfig: WeddingPageConfig = {
       available: true,
       path: '/kim-taehyun-choi-yuna-minimal',
       displayName: '김태현 ♥ 최유나 (미니멀 버전)'
+    },
+    space: {
+      available: true,
+      path: '/kim-taehyun-choi-yuna-space',
+      displayName: '김태현 ♥ 최유나 (우주 버전)'
     }
   },
   metadata: {

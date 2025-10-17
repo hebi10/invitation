@@ -1,0 +1,407 @@
+.container {
+  position: relative;
+  padding: 5rem 1.5rem;
+  background: linear-gradient(to bottom, #1a1d3d, #0d0f1f, #1a1d3d);
+  overflow: hidden;
+}
+
+/* 우주 배경 */
+.spaceBackground {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.stars {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-image: 
+    radial-gradient(1px 1px at 25% 15%, rgba(255, 255, 255, 0.6), transparent),
+    radial-gradient(1px 1px at 65% 45%, rgba(255, 255, 255, 0.5), transparent),
+    radial-gradient(1px 1px at 45% 75%, rgba(255, 255, 255, 0.7), transparent),
+    radial-gradient(1px 1px at 85% 25%, rgba(255, 255, 255, 0.4), transparent);
+  background-size: 100% 100%;
+  animation: twinkle 4s ease-in-out infinite;
+}
+
+@keyframes twinkle {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 0.7; }
+}
+
+/* 헤더 */
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  margin-bottom: 2rem;
+  position: relative;
+  z-index: 2;
+}
+
+.starIcon {
+  font-size: 1.2rem;
+  color: rgba(142, 197, 252, 0.8);
+  animation: rotate-star 8s linear infinite;
+}
+
+@keyframes rotate-star {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.title {
+  font-family: 'Playfair Display', serif;
+  font-size: clamp(1.8rem, 5vw, 2rem);
+  font-weight: 400;
+  background: linear-gradient(135deg, #e0c3fc 0%, #8ec5fc 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  letter-spacing: 2px;
+}
+
+/* 장소 정보 */
+.locationInfo {
+  text-align: center;
+  margin-bottom: 2.5rem;
+  position: relative;
+  z-index: 2;
+}
+
+.locationName {
+  font-family: 'Noto Sans KR', sans-serif;
+  font-size: clamp(1.2rem, 3.5vw, 1.4rem);
+  color: rgba(255, 255, 255, 0.95);
+  font-weight: 400;
+  margin-bottom: 0.8rem;
+  letter-spacing: 0.5px;
+}
+
+.locationAddress {
+  font-family: 'Noto Sans KR', sans-serif;
+  font-size: clamp(0.95rem, 2.5vw, 1.05rem);
+  color: rgba(255, 255, 255, 0.7);
+  font-weight: 300;
+  line-height: 1.6;
+}
+
+/* 지도 래퍼 */
+.mapWrapper {
+  max-width: 700px;
+  margin: 0 auto;
+  position: relative;
+  z-index: 2;
+}
+
+.mapContainer {
+  position: relative;
+  width: 100%;
+  height: 400px;
+  border-radius: 16px;
+  overflow: hidden;
+  margin-bottom: 1.5rem;
+}
+
+.mapContainer::before {
+  content: '';
+  position: absolute;
+  top: -2px;
+  left: -2px;
+  right: -2px;
+  bottom: -2px;
+  background: linear-gradient(135deg, rgba(142, 197, 252, 0.3), rgba(224, 195, 252, 0.3));
+  border-radius: 16px;
+  z-index: -1;
+  filter: blur(4px);
+}
+
+.map {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  z-index: 1;
+}
+
+/* 터치 컨트롤 오버레이 */
+.mapOverlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(10, 14, 39, 0.7);
+  backdrop-filter: blur(2px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2;
+  cursor: not-allowed;
+}
+
+.overlayMessage {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  text-align: center;
+  padding: 0 2rem;
+  font-family: 'Noto Sans KR', sans-serif;
+  font-size: 0.95rem;
+  color: rgba(255, 255, 255, 0.9);
+  font-weight: 300;
+  letter-spacing: 0.5px;
+}
+
+.touchIcon {
+  width: 40px;
+  height: 40px;
+  color: rgba(142, 197, 252, 0.9);
+  animation: pulse-icon 2s ease-in-out infinite;
+}
+
+@keyframes pulse-icon {
+  0%, 100% { opacity: 0.6; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.1); }
+}
+
+/* 터치 컨트롤 버튼 */
+.controlButton {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.7rem 1rem;
+  background: rgba(26, 29, 61, 0.9);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(142, 197, 252, 0.3);
+  border-radius: 10px;
+  cursor: pointer;
+  z-index: 3;
+  transition: all 0.3s ease;
+  font-family: 'Noto Sans KR', sans-serif;
+}
+
+.controlButton:hover {
+  background: rgba(26, 29, 61, 1);
+  border-color: rgba(142, 197, 252, 0.5);
+  box-shadow: 0 0 20px rgba(142, 197, 252, 0.3);
+}
+
+.controlButton.controlActive {
+  background: rgba(142, 197, 252, 0.2);
+  border-color: rgba(142, 197, 252, 0.5);
+}
+
+.controlIcon {
+  width: 20px;
+  height: 20px;
+  color: rgba(142, 197, 252, 0.9);
+}
+
+.controlText {
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.9);
+  font-weight: 400;
+  letter-spacing: 1px;
+}
+
+/* 지도 버튼들 */
+.mapButtons {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 1rem;
+}
+
+.mapButton {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.5rem;
+  background: rgba(26, 29, 61, 0.5);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(142, 197, 252, 0.3);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-family: 'Noto Sans KR', sans-serif;
+}
+
+.mapButton:hover {
+  background: rgba(26, 29, 61, 0.7);
+  border-color: rgba(142, 197, 252, 0.5);
+  box-shadow: 0 0 20px rgba(142, 197, 252, 0.2);
+  transform: translateY(-2px);
+}
+
+.buttonLabel {
+  font-size: 0.95rem;
+  color: rgba(255, 255, 255, 0.9);
+  font-weight: 300;
+  letter-spacing: 0.5px;
+}
+
+.buttonArrow {
+  width: 18px;
+  height: 18px;
+  color: rgba(142, 197, 252, 0.8);
+  transition: transform 0.3s ease;
+}
+
+.mapButton:hover .buttonArrow {
+  transform: translate(2px, -2px);
+}
+
+/* 장식 요소 */
+.decorations {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  overflow: hidden;
+  z-index: 1;
+}
+
+.comet {
+  position: absolute;
+  top: 20%;
+  right: 10%;
+  width: 3px;
+  height: 3px;
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 50%;
+  box-shadow: 
+    0 0 10px rgba(255, 255, 255, 0.8),
+    -30px 10px 15px -10px rgba(255, 255, 255, 0.3);
+  animation: comet-move 8s ease-in-out infinite;
+}
+
+@keyframes comet-move {
+  0% {
+    transform: translateX(0) translateY(0);
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+  }
+  80% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateX(-200px) translateY(200px);
+    opacity: 0;
+  }
+}
+
+.planetRing {
+  position: absolute;
+  bottom: 15%;
+  left: 5%;
+  width: 200px;
+  height: 200px;
+  border: 1px solid rgba(224, 195, 252, 0.15);
+  border-radius: 50%;
+  animation: rotate-ring 30s linear infinite;
+}
+
+.planetRing::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 150px;
+  height: 150px;
+  border: 1px solid rgba(224, 195, 252, 0.1);
+  border-radius: 50%;
+}
+
+@keyframes rotate-ring {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* 모바일 최적화 */
+@media (max-width: 768px) {
+  .container {
+    padding: 4rem 1rem;
+  }
+
+  .mapContainer {
+    height: 350px;
+  }
+
+  .mapButtons {
+    grid-template-columns: 1fr;
+    gap: 0.8rem;
+  }
+
+  .overlayMessage {
+    font-size: 0.9rem;
+    padding: 0 1.5rem;
+  }
+
+  .touchIcon {
+    width: 36px;
+    height: 36px;
+  }
+
+  .controlButton {
+    padding: 0.6rem 0.9rem;
+  }
+
+  .controlIcon {
+    width: 18px;
+    height: 18px;
+  }
+
+  .controlText {
+    font-size: 0.8rem;
+  }
+
+  .planetRing {
+    width: 150px;
+    height: 150px;
+  }
+
+  .planetRing::before {
+    width: 100px;
+    height: 100px;
+  }
+}
+
+@media (max-width: 480px) {
+  .mapContainer {
+    height: 300px;
+    border-radius: 12px;
+  }
+
+  .mapButton {
+    padding: 0.9rem 1.2rem;
+  }
+
+  .buttonLabel {
+    font-size: 0.9rem;
+  }
+
+  .buttonArrow {
+    width: 16px;
+    height: 16px;
+  }
+
+  .overlayMessage {
+    font-size: 0.85rem;
+    padding: 0 1rem;
+  }
+}

@@ -24,15 +24,6 @@ export default function GiftInfo_2({
 }: GiftInfoProps) {
   const [expandedSide, setExpandedSide] = useState<'groom' | 'bride' | null>(null);
 
-  console.log('GiftInfo_2 렌더링:', {
-    groomName,
-    brideName,
-    groomAccountsLength: groomAccounts.length,
-    brideAccountsLength: brideAccounts.length,
-    groomAccounts,
-    brideAccounts
-  });
-
   const copyToClipboard = (text: string, label: string) => {
     if (navigator.clipboard) {
       navigator.clipboard.writeText(text).then(() => {
@@ -54,11 +45,8 @@ export default function GiftInfo_2({
   };
 
   if (groomAccounts.length === 0 && brideAccounts.length === 0) {
-    console.log('GiftInfo_2: 계좌가 없어서 null 반환');
     return null;
   }
-
-  console.log('GiftInfo_2: 렌더링 진행');
 
   return (
     <section className={styles.container}>

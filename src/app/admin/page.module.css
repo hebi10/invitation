@@ -223,11 +223,14 @@
   margin-bottom: 2.5rem;
   position: relative;
   z-index: 1;
+  max-width: 600px;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 @media (min-width: 700px) {
   .statsContainer {
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(2, 1fr);
     gap: 1.5rem;
     margin-bottom: 3rem;
   }
@@ -443,9 +446,10 @@
   }
 }
 
-/* 버전 선택 버튼 컨테이너 */
+/* 버전 선택 버튼 컨테이너 - 2x2 그리드 */
 .versionButtons {
-  display: flex;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
   gap: 0.8rem;
   margin-top: 1.5rem;
   padding-top: 1rem;
@@ -454,7 +458,6 @@
 
 @media (max-width: 700px) {
   .versionButtons {
-    flex-direction: column;
     gap: 0.6rem;
   }
 }
@@ -514,6 +517,39 @@
   background: linear-gradient(135deg, #343a40, #6c757d);
   transform: translateY(-2px);
   box-shadow: 0 5px 18px rgba(33, 37, 41, 0.4);
+}
+
+/* 우주 버전 버튼 */
+.spaceButton {
+  background: linear-gradient(135deg, #0a0e27, #1a1d3d);
+  color: white;
+  border: 1px solid rgba(142, 197, 252, 0.3);
+  box-shadow: 0 3px 12px rgba(142, 197, 252, 0.3);
+  position: relative;
+  overflow: hidden;
+}
+
+.spaceButton::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(circle, rgba(142, 197, 252, 0.2) 0%, transparent 70%);
+  animation: spaceGlow 3s ease-in-out infinite;
+}
+
+@keyframes spaceGlow {
+  0%, 100% { transform: translate(0, 0); opacity: 0.5; }
+  50% { transform: translate(10px, 10px); opacity: 1; }
+}
+
+.spaceButton:hover {
+  background: linear-gradient(135deg, #1a1d3d, #2a2d5d);
+  transform: translateY(-2px);
+  box-shadow: 0 5px 18px rgba(142, 197, 252, 0.5);
+  border-color: rgba(142, 197, 252, 0.6);
 }
 
 .cardNumber {

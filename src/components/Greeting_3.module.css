@@ -1,0 +1,347 @@
+.container {
+  position: relative;
+  padding: 5rem 1.5rem;
+  background: linear-gradient(to bottom, #1a1d3d, #0f1123, #1a1d3d);
+  overflow: hidden;
+}
+
+/* 별 배경 */
+.starsSmall {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-image: 
+    radial-gradient(1px 1px at 10% 20%, rgba(255, 255, 255, 0.8), transparent),
+    radial-gradient(1px 1px at 80% 30%, rgba(255, 255, 255, 0.6), transparent),
+    radial-gradient(1px 1px at 30% 60%, rgba(255, 255, 255, 0.7), transparent),
+    radial-gradient(1px 1px at 90% 80%, rgba(255, 255, 255, 0.5), transparent),
+    radial-gradient(1px 1px at 50% 10%, rgba(255, 255, 255, 0.8), transparent),
+    radial-gradient(1px 1px at 20% 90%, rgba(255, 255, 255, 0.6), transparent);
+  background-size: 100% 100%;
+  pointer-events: none;
+  animation: twinkle 4s ease-in-out infinite;
+}
+
+@keyframes twinkle {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 0.8; }
+}
+
+/* 타이틀 영역 */
+.titleWrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  margin-bottom: 3rem;
+  position: relative;
+  z-index: 2;
+}
+
+.starIcon {
+  font-size: 1.2rem;
+  color: rgba(142, 197, 252, 0.8);
+  animation: rotate 8s linear infinite;
+}
+
+@keyframes rotate {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.title {
+  font-family: var(--font-gowun-dodum), serif;
+  font-size: clamp(1.8rem, 5vw, 2rem);
+  font-weight: 400;
+  background: linear-gradient(135deg, #e0c3fc 0%, #8ec5fc 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  letter-spacing: 3px;
+}
+
+/* 메시지 박스 */
+.messageBox {
+  position: relative;
+  max-width: 600px;
+  margin: 0 auto 3rem;
+  padding: 2.5rem 2rem;
+  background: rgba(26, 29, 61, 0.6);
+  backdrop-filter: blur(10px);
+  border-radius: 20px;
+  z-index: 2;
+  box-shadow: 
+    0 0 40px rgba(142, 197, 252, 0.1),
+    inset 0 0 60px rgba(142, 197, 252, 0.05);
+}
+
+.messageBox::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  border-radius: 20px;
+  padding: 1px;
+  background: linear-gradient(135deg, rgba(142, 197, 252, 0.3), rgba(224, 195, 252, 0.3));
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
+.message {
+  font-family: 'Noto Sans KR', sans-serif;
+  font-size: clamp(0.95rem, 2.5vw, 1.05rem);
+  line-height: 1.8;
+  color: rgba(255, 255, 255, 0.85);
+  text-align: center;
+  font-weight: 300;
+  white-space: pre-line;
+}
+
+/* 신랑신부 이름 */
+.coupleNames {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 2rem;
+  margin-bottom: 3rem;
+  position: relative;
+  z-index: 2;
+}
+
+.nameItem {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.roleLabel {
+  font-family: 'Noto Sans KR', sans-serif;
+  font-size: 0.85rem;
+  color: rgba(142, 197, 252, 0.8);
+  font-weight: 300;
+  letter-spacing: 2px;
+}
+
+.name {
+  font-family: var(--font-gowun-dodum), serif;
+  font-size: clamp(1.3rem, 3.5vw, 1.5rem);
+  color: rgba(255, 255, 255, 0.95);
+  font-weight: 400;
+  letter-spacing: 1px;
+}
+
+.divider {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.heart {
+  font-size: 1.5rem;
+  color: rgba(224, 195, 252, 0.8);
+  animation: heartbeat 2s ease-in-out infinite;
+}
+
+@keyframes heartbeat {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+}
+
+/* 부모님 정보 */
+.parentsSection {
+  max-width: 500px;
+  margin: 0 auto;
+  position: relative;
+  z-index: 2;
+}
+
+.parentsToggle {
+  width: 100%;
+  padding: 1rem 1.5rem;
+  background: rgba(26, 29, 61, 0.4);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(142, 197, 252, 0.2);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-family: 'Noto Sans KR', sans-serif;
+}
+
+.parentsToggle:hover {
+  background: rgba(26, 29, 61, 0.6);
+  border-color: rgba(142, 197, 252, 0.4);
+  box-shadow: 0 0 20px rgba(142, 197, 252, 0.2);
+}
+
+.toggleText {
+  font-size: 0.95rem;
+  color: rgba(255, 255, 255, 0.8);
+  font-weight: 300;
+  letter-spacing: 1px;
+}
+
+.toggleIcon {
+  font-size: 0.8rem;
+  color: rgba(142, 197, 252, 0.8);
+  transition: transform 0.3s ease;
+}
+
+.toggleIcon.rotated {
+  transform: rotate(180deg);
+}
+
+.parentsContent {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.4s ease, opacity 0.3s ease;
+  opacity: 0;
+  margin-top: 0;
+}
+
+.parentsContent.expanded {
+  max-height: 300px;
+  opacity: 1;
+  margin-top: 1.5rem;
+}
+
+.parentInfo {
+  padding: 1.5rem;
+  background: rgba(26, 29, 61, 0.3);
+  backdrop-filter: blur(10px);
+  border-radius: 12px;
+  text-align: center;
+}
+
+.parentLabel {
+  font-family: 'Noto Sans KR', sans-serif;
+  font-size: 0.85rem;
+  color: rgba(142, 197, 252, 0.8);
+  margin-bottom: 0.8rem;
+  font-weight: 300;
+  letter-spacing: 2px;
+}
+
+.parentNames {
+  font-family: 'Noto Sans KR', sans-serif;
+  font-size: clamp(0.95rem, 2.5vw, 1.05rem);
+  color: rgba(255, 255, 255, 0.85);
+  font-weight: 300;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.dot {
+  color: rgba(142, 197, 252, 0.6);
+}
+
+.sonDaughter {
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.6);
+  margin-left: 0.3rem;
+}
+
+.parentDivider {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(142, 197, 252, 0.3), transparent);
+  margin: 1rem 0;
+}
+
+/* 우주 장식 */
+.decorations {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.orbit1,
+.orbit2 {
+  position: absolute;
+  border: 1px solid rgba(142, 197, 252, 0.1);
+  border-radius: 50%;
+  animation: orbit 20s linear infinite;
+}
+
+.orbit1 {
+  width: 300px;
+  height: 300px;
+  top: 10%;
+  right: -150px;
+}
+
+.orbit2 {
+  width: 200px;
+  height: 200px;
+  bottom: 15%;
+  left: -100px;
+  animation-duration: 15s;
+  animation-direction: reverse;
+}
+
+@keyframes orbit {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* 모바일 최적화 */
+@media (max-width: 480px) {
+  .container {
+    padding: 4rem 1rem;
+  }
+
+  .titleWrapper {
+    gap: 0.8rem;
+    margin-bottom: 2.5rem;
+  }
+
+  .starIcon {
+    font-size: 1rem;
+  }
+
+  .messageBox {
+    padding: 2rem 1.5rem;
+    margin-bottom: 2.5rem;
+  }
+
+  .coupleNames {
+    gap: 1.5rem;
+    margin-bottom: 2.5rem;
+  }
+
+  .parentsToggle {
+    padding: 0.9rem 1.2rem;
+  }
+
+  .parentInfo {
+    padding: 1.2rem;
+  }
+
+  .orbit1 {
+    width: 200px;
+    height: 200px;
+    right: -100px;
+  }
+
+  .orbit2 {
+    width: 150px;
+    height: 150px;
+    left: -75px;
+  }
+}

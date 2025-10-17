@@ -30,6 +30,11 @@ export const shinMinjeKimHyunjiConfig: WeddingPageConfig = {
       available: true,
       path: '/shin-minje-kim-hyunji-minimal',
       displayName: '신민제 ♥ 김현지 (미니멀 버전)'
+    },
+    space: {
+      available: true,
+      path: '/shin-minje-kim-hyunji-space',
+      displayName: '신민제 ♥ 김현지 (우주 버전)'
     }
   },
   metadata: {

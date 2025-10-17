@@ -24,7 +24,7 @@ if (!pageConfig) {
   throw new Error(`Wedding page config not found for slug: ${WEDDING_SLUG}`);
 }
 
-export default function KimTaehyunChoiYuna_Simple() {
+export default function ShinMinjeKimHyunji_Simple() {
   const [access, setAccess] = useState<{ canAccess: boolean; message?: string }>({ canAccess: true });
   const [isLoading, setIsLoading] = useState(true);
   const { images, imageUrls, firstImage, hasImages, mainImage, galleryImages, loading: imagesLoading, error } = 

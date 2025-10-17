@@ -1,0 +1,356 @@
+.container {
+  position: relative;
+  padding: 5rem 1.5rem;
+  background: linear-gradient(to bottom, #1a1d3d, #0d0f1f, #1a1d3d);
+  overflow: hidden;
+}
+
+/* 우주 배경 */
+.cosmicBackground {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: 
+    radial-gradient(ellipse at 20% 30%, rgba(142, 197, 252, 0.15) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 70%, rgba(224, 195, 252, 0.15) 0%, transparent 50%);
+  pointer-events: none;
+  animation: cosmic-pulse 10s ease-in-out infinite;
+}
+
+@keyframes cosmic-pulse {
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 0.8; }
+}
+
+/* 헤더 */
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  margin-bottom: 2rem;
+  position: relative;
+  z-index: 2;
+}
+
+.starDecor {
+  font-size: 1.2rem;
+  color: rgba(142, 197, 252, 0.8);
+  animation: twinkle-star 2s ease-in-out infinite;
+}
+
+@keyframes twinkle-star {
+  0%, 100% { opacity: 0.5; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.2); }
+}
+
+.title {
+  font-family: 'Playfair Display', serif;
+  font-size: clamp(1.8rem, 5vw, 2rem);
+  font-weight: 400;
+  background: linear-gradient(135deg, #e0c3fc 0%, #8ec5fc 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  letter-spacing: 2px;
+}
+
+/* D-Day 배지 */
+.dDayBadge {
+  position: relative;
+  width: fit-content;
+  margin: 0 auto 2rem;
+  padding: 0.8rem 2rem;
+  background: rgba(26, 29, 61, 0.6);
+  backdrop-filter: blur(10px);
+  border-radius: 30px;
+  border: 1px solid rgba(142, 197, 252, 0.3);
+  z-index: 2;
+  box-shadow: 0 0 30px rgba(142, 197, 252, 0.3);
+}
+
+.dDayGlow {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 120%;
+  height: 120%;
+  background: radial-gradient(circle, rgba(142, 197, 252, 0.3), transparent 70%);
+  border-radius: 30px;
+  animation: glow-pulse 2s ease-in-out infinite;
+  pointer-events: none;
+}
+
+@keyframes glow-pulse {
+  0%, 100% { opacity: 0.5; transform: translate(-50%, -50%) scale(1); }
+  50% { opacity: 1; transform: translate(-50%, -50%) scale(1.1); }
+}
+
+.dDayText {
+  position: relative;
+  font-family: 'Montserrat', sans-serif;
+  font-size: clamp(1.1rem, 3vw, 1.3rem);
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.95);
+  letter-spacing: 2px;
+}
+
+/* 달력 래퍼 */
+.calendarWrapper {
+  max-width: 400px;
+  margin: 0 auto 2.5rem;
+  position: relative;
+  z-index: 2;
+}
+
+.calendarCard {
+  background: rgba(26, 29, 61, 0.5);
+  backdrop-filter: blur(10px);
+  border-radius: 20px;
+  padding: 2rem 1.5rem;
+  box-shadow: 
+    0 0 40px rgba(142, 197, 252, 0.1),
+    inset 0 0 60px rgba(142, 197, 252, 0.05);
+}
+
+.calendarCard::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  border-radius: 20px;
+  padding: 1px;
+  background: linear-gradient(135deg, rgba(142, 197, 252, 0.3), rgba(224, 195, 252, 0.3));
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
+/* 월 헤더 */
+.monthHeader {
+  text-align: center;
+  margin-bottom: 1.5rem;
+}
+
+.monthText {
+  font-family: 'Noto Sans KR', sans-serif;
+  font-size: clamp(1.1rem, 3vw, 1.2rem);
+  color: rgba(255, 255, 255, 0.9);
+  font-weight: 400;
+  letter-spacing: 1px;
+}
+
+/* 요일 헤더 */
+.weekDays {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 0.5rem;
+  margin-bottom: 0.8rem;
+}
+
+.weekDay {
+  font-family: 'Noto Sans KR', sans-serif;
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.6);
+  text-align: center;
+  font-weight: 300;
+  padding: 0.5rem 0;
+}
+
+.weekDay.sunday {
+  color: rgba(252, 142, 142, 0.8);
+}
+
+.weekDay.saturday {
+  color: rgba(142, 197, 252, 0.8);
+}
+
+/* 날짜 그리드 */
+.datesGrid {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.week {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 0.5rem;
+}
+
+.dateCell {
+  position: relative;
+  aspect-ratio: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Noto Sans KR', sans-serif;
+  font-size: 0.95rem;
+  color: rgba(255, 255, 255, 0.8);
+  font-weight: 300;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+}
+
+.dateCell.empty {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.dateCell.sunday .dateNumber {
+  color: rgba(252, 142, 142, 0.8);
+}
+
+.dateCell.saturday .dateNumber {
+  color: rgba(142, 197, 252, 0.8);
+}
+
+/* 결혼식 날짜 */
+.dateCell.weddingDate {
+  background: linear-gradient(135deg, rgba(224, 195, 252, 0.3), rgba(142, 197, 252, 0.3));
+  box-shadow: 
+    0 0 20px rgba(142, 197, 252, 0.4),
+    inset 0 0 20px rgba(142, 197, 252, 0.2);
+  animation: wedding-glow 2s ease-in-out infinite;
+}
+
+@keyframes wedding-glow {
+  0%, 100% { 
+    box-shadow: 
+      0 0 20px rgba(142, 197, 252, 0.4),
+      inset 0 0 20px rgba(142, 197, 252, 0.2);
+  }
+  50% { 
+    box-shadow: 
+      0 0 30px rgba(142, 197, 252, 0.6),
+      inset 0 0 30px rgba(142, 197, 252, 0.3);
+  }
+}
+
+.dateNumber {
+  position: relative;
+  z-index: 2;
+}
+
+.weddingMark {
+  position: absolute;
+  bottom: 2px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 0.7rem;
+  color: rgba(224, 195, 252, 0.9);
+  animation: heartbeat 1.5s ease-in-out infinite;
+}
+
+@keyframes heartbeat {
+  0%, 100% { transform: translateX(-50%) scale(1); }
+  50% { transform: translateX(-50%) scale(1.2); }
+}
+
+.weddingGlow {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 150%;
+  height: 150%;
+  background: radial-gradient(circle, rgba(224, 195, 252, 0.3), transparent 70%);
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+/* 날짜 텍스트 */
+.dateText {
+  text-align: center;
+  position: relative;
+  z-index: 2;
+}
+
+.dateDisplay {
+  font-family: 'Noto Sans KR', sans-serif;
+  font-size: clamp(1rem, 2.8vw, 1.1rem);
+  color: rgba(255, 255, 255, 0.85);
+  font-weight: 300;
+  letter-spacing: 1px;
+}
+
+/* 장식 요소 */
+.decorations {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  overflow: hidden;
+  z-index: 1;
+}
+
+.shootingStar1,
+.shootingStar2 {
+  position: absolute;
+  width: 2px;
+  height: 2px;
+  background: rgba(255, 255, 255, 0.8);
+  border-radius: 50%;
+  box-shadow: 0 0 10px rgba(255, 255, 255, 0.8);
+}
+
+.shootingStar1 {
+  top: 20%;
+  right: 10%;
+  animation: shooting-star 3s ease-in-out 2s infinite;
+}
+
+.shootingStar2 {
+  top: 60%;
+  left: 15%;
+  animation: shooting-star 4s ease-in-out 4s infinite;
+}
+
+@keyframes shooting-star {
+  0% {
+    transform: translateX(0) translateY(0);
+    opacity: 1;
+  }
+  100% {
+    transform: translateX(-100px) translateY(100px);
+    opacity: 0;
+  }
+}
+
+/* 모바일 최적화 */
+@media (max-width: 480px) {
+  .container {
+    padding: 4rem 1rem;
+  }
+
+  .calendarCard {
+    padding: 1.5rem 1rem;
+  }
+
+  .weekDay {
+    font-size: 0.75rem;
+    padding: 0.4rem 0;
+  }
+
+  .dateCell {
+    font-size: 0.85rem;
+  }
+
+  .weddingMark {
+    font-size: 0.6rem;
+    bottom: 1px;
+  }
+
+  .dDayBadge {
+    padding: 0.7rem 1.5rem;
+  }
+}

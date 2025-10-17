@@ -181,39 +181,27 @@ export default function AdminPage() {
         <div className={styles.statsContainer}>
           <div className={styles.statCard}>
             <div className={styles.statNumber}>
-              {weddingPages.length}
-            </div>
-            <div className={styles.statLabel}>기본 청첩장</div>
-          </div>
-          <div className={styles.statCard}>
-            <div className={styles.statNumber}>
               {weddingPages.filter(page => page.variants?.emotional?.available).length}
             </div>
-            <div className={styles.statLabel}>감성 버전</div>
+            <div className={styles.statLabel}>🎨 감성 버전</div>
           </div>
           <div className={styles.statCard}>
             <div className={styles.statNumber}>
               {weddingPages.filter(page => page.variants?.simple?.available).length}
             </div>
-            <div className={styles.statLabel}>심플 버전</div>
+            <div className={styles.statLabel}>✨ 심플 버전</div>
           </div>
           <div className={styles.statCard}>
             <div className={styles.statNumber}>
               {weddingPages.filter(page => page.variants?.minimal?.available).length}
             </div>
-            <div className={styles.statLabel}>미니멀 버전</div>
+            <div className={styles.statLabel}>⚫ 미니멀 버전</div>
           </div>
           <div className={styles.statCard}>
             <div className={styles.statNumber}>
-              {weddingPages.reduce((total, page) => {
-                let count = 0;
-                if (page.variants?.emotional?.available) count++;
-                if (page.variants?.simple?.available) count++;
-                if (page.variants?.minimal?.available) count++;
-                return total + count;
-              }, 0)}
+              {weddingPages.filter(page => page.variants?.space?.available).length}
             </div>
-            <div className={styles.statLabel}>총 페이지 수</div>
+            <div className={styles.statLabel}>🌌 우주 버전</div>
           </div>
         </div>
         
@@ -264,15 +252,19 @@ export default function AdminPage() {
                     <h2>생성된 청첩장 목록</h2>
                     <div className={styles.pagesStats}>
                       <span className={styles.pageCount}>
-                        {weddingPages.filter(page => page.variants?.emotional?.available).length}개의 감성 버전
+                        {weddingPages.filter(page => page.variants?.emotional?.available).length}개의 감성
                       </span>
                       <span className={styles.separator}>•</span>
                       <span className={styles.pageCount}>
-                        {weddingPages.filter(page => page.variants?.simple?.available).length}개의 심플 버전
+                        {weddingPages.filter(page => page.variants?.simple?.available).length}개의 심플
                       </span>
                       <span className={styles.separator}>•</span>
                       <span className={styles.pageCount}>
-                        {weddingPages.filter(page => page.variants?.minimal?.available).length}개의 미니멀 버전
+                        {weddingPages.filter(page => page.variants?.minimal?.available).length}개의 미니멀
+                      </span>
+                      <span className={styles.separator}>•</span>
+                      <span className={styles.pageCount}>
+                        {weddingPages.filter(page => page.variants?.space?.available).length}개의 우주
                       </span>
                       <span className={styles.separator}>•</span>
                       <span className={styles.pageStatus}>모두 활성화됨</span>
@@ -289,7 +281,7 @@ export default function AdminPage() {
                           <span>🏛️ {page.venue}</span>
                         </div>
                         
-                        {/* 버전 선택 버튼들 */}
+                        {/* 버전 선택 버튼들 - 2x2 그리드 */}
                         <div className={styles.versionButtons}>
                           {page.variants?.emotional?.available && (
                             <a 
@@ -297,7 +289,7 @@ export default function AdminPage() {
                               target="_blank" 
                               className={`${styles.versionButton} ${styles.normalButton}`}
                             >
-                              🎨 감성 버전
+                              🎨 감성
                             </a>
                           )}
                           {page.variants?.simple?.available && (
@@ -306,7 +298,7 @@ export default function AdminPage() {
                               target="_blank" 
                               className={`${styles.versionButton} ${styles.simpleButton}`}
                             >
-                              ✨ 심플 버전
+                              ✨ 심플
                             </a>
                           )}
                           {page.variants?.minimal?.available && (
@@ -315,7 +307,16 @@ export default function AdminPage() {
                               target="_blank" 
                               className={`${styles.versionButton} ${styles.minimalButton}`}
                             >
-                              ✨ 미니멀 버전
+                              ⚫ 미니멀
+                            </a>
+                          )}
+                          {page.variants?.space?.available && (
+                            <a 
+                              href={page.variants.space.path} 
+                              target="_blank" 
+                              className={`${styles.versionButton} ${styles.spaceButton}`}
+                            >
+                              🌌 우주
                             </a>
                           )}
                         </div>

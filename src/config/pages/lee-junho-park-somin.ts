@@ -30,6 +30,11 @@ export const leeJunhoParkSominConfig: WeddingPageConfig = {
       available: true,
       path: '/lee-junho-park-somin-minimal',
       displayName: '이준호 ♥ 박소민 (미니멀 버전)'
+    },
+    space: {
+      available: true,
+      path: '/lee-junho-park-somin-space',
+      displayName: '이준호 ♥ 박소민 (우주 버전)'
     }
   },
   metadata: {

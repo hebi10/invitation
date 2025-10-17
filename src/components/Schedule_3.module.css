@@ -1,0 +1,400 @@
+.container {
+  position: relative;
+  padding: 5rem 1.5rem;
+  background: linear-gradient(to bottom, #0d0f1f, #1a1d3d, #0d0f1f);
+  overflow: hidden;
+}
+
+/* 우주 배경 */
+.cosmicBg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.starfield {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-image: 
+    radial-gradient(1px 1px at 20% 20%, rgba(255, 255, 255, 0.6), transparent),
+    radial-gradient(1px 1px at 60% 40%, rgba(255, 255, 255, 0.5), transparent),
+    radial-gradient(1px 1px at 40% 70%, rgba(255, 255, 255, 0.7), transparent),
+    radial-gradient(1px 1px at 80% 60%, rgba(255, 255, 255, 0.4), transparent);
+  background-size: 100% 100%;
+  animation: starTwinkle 4s ease-in-out infinite;
+}
+
+@keyframes starTwinkle {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 0.7; }
+}
+
+/* 헤더 */
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  margin-bottom: 3rem;
+  position: relative;
+  z-index: 2;
+}
+
+.constellation {
+  font-size: 1.2rem;
+  color: rgba(142, 197, 252, 0.8);
+  animation: pulse-star 3s ease-in-out infinite;
+}
+
+@keyframes pulse-star {
+  0%, 100% { opacity: 0.5; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.2); }
+}
+
+.title {
+  font-family: 'Playfair Display', serif;
+  font-size: clamp(1.8rem, 5vw, 2rem);
+  font-weight: 400;
+  background: linear-gradient(135deg, #e0c3fc 0%, #8ec5fc 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  letter-spacing: 2px;
+}
+
+/* 메인 카드 */
+.mainCard {
+  position: relative;
+  max-width: 550px;
+  margin: 0 auto 3rem;
+  padding: 2.5rem 2rem;
+  background: rgba(26, 29, 61, 0.5);
+  backdrop-filter: blur(10px);
+  border-radius: 20px;
+  z-index: 2;
+}
+
+.mainCard::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  border-radius: 20px;
+  padding: 1px;
+  background: linear-gradient(135deg, rgba(142, 197, 252, 0.3), rgba(224, 195, 252, 0.3));
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
+.cardGlow {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 100%;
+  height: 100%;
+  background: radial-gradient(circle, rgba(142, 197, 252, 0.1), transparent 70%);
+  border-radius: 20px;
+  pointer-events: none;
+}
+
+/* 날짜/시간 섹션 */
+.dateTimeSection {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  padding: 1.2rem 0;
+}
+
+.iconWrapper {
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(142, 197, 252, 0.1);
+  border-radius: 12px;
+  flex-shrink: 0;
+}
+
+.icon {
+  width: 24px;
+  height: 24px;
+  color: rgba(142, 197, 252, 0.9);
+}
+
+.infoText {
+  flex: 1;
+}
+
+.label {
+  font-family: 'Noto Sans KR', sans-serif;
+  font-size: 0.85rem;
+  color: rgba(142, 197, 252, 0.8);
+  margin-bottom: 0.4rem;
+  font-weight: 300;
+  letter-spacing: 1px;
+}
+
+.value {
+  font-family: 'Noto Sans KR', sans-serif;
+  font-size: clamp(1rem, 2.8vw, 1.1rem);
+  color: rgba(255, 255, 255, 0.95);
+  font-weight: 400;
+  letter-spacing: 0.5px;
+}
+
+.subValue {
+  font-family: 'Noto Sans KR', sans-serif;
+  font-size: 0.95rem;
+  color: rgba(255, 255, 255, 0.8);
+  margin-top: 0.3rem;
+  font-weight: 300;
+}
+
+.address {
+  font-family: 'Noto Sans KR', sans-serif;
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.65);
+  margin-top: 0.5rem;
+  font-weight: 300;
+  line-height: 1.5;
+}
+
+/* 구분선 */
+.divider {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(142, 197, 252, 0.2), transparent);
+  margin: 0.5rem 0;
+}
+
+.separator {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(142, 197, 252, 0.3), transparent);
+  margin: 1.5rem 0;
+}
+
+/* 장소 섹션 */
+.locationSection {
+  display: flex;
+  align-items: flex-start;
+  gap: 1.5rem;
+  padding: 1.2rem 0;
+}
+
+/* 연락처 섹션 */
+.contactSection {
+  max-width: 550px;
+  margin: 0 auto;
+  position: relative;
+  z-index: 2;
+}
+
+.contactTitle {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.contactTitleText {
+  font-family: 'Noto Sans KR', sans-serif;
+  font-size: clamp(1.2rem, 3.5vw, 1.4rem);
+  font-weight: 400;
+  background: linear-gradient(135deg, #e0c3fc 0%, #8ec5fc 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  letter-spacing: 1px;
+}
+
+.contactGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+}
+
+.contactCard {
+  padding: 1.8rem 1.5rem;
+  background: rgba(26, 29, 61, 0.4);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(142, 197, 252, 0.2);
+  border-radius: 16px;
+  transition: all 0.3s ease;
+}
+
+.contactCard:hover {
+  background: rgba(26, 29, 61, 0.6);
+  border-color: rgba(142, 197, 252, 0.4);
+  box-shadow: 0 0 20px rgba(142, 197, 252, 0.2);
+}
+
+.contactHeader {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 1.2rem;
+}
+
+.contactRole {
+  font-family: 'Noto Sans KR', sans-serif;
+  font-size: 0.85rem;
+  color: rgba(142, 197, 252, 0.8);
+  font-weight: 300;
+  letter-spacing: 1px;
+}
+
+.contactName {
+  font-family: 'Noto Sans KR', sans-serif;
+  font-size: clamp(1.1rem, 3vw, 1.2rem);
+  color: rgba(255, 255, 255, 0.95);
+  font-weight: 400;
+}
+
+.phoneButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  padding: 0.8rem 1.2rem;
+  background: rgba(142, 197, 252, 0.15);
+  border: 1px solid rgba(142, 197, 252, 0.3);
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-decoration: none;
+  font-family: 'Noto Sans KR', sans-serif;
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.9);
+  font-weight: 300;
+  letter-spacing: 0.5px;
+}
+
+.phoneButton:hover {
+  background: rgba(142, 197, 252, 0.25);
+  border-color: rgba(142, 197, 252, 0.5);
+  box-shadow: 0 0 15px rgba(142, 197, 252, 0.3);
+}
+
+.phoneIcon {
+  width: 18px;
+  height: 18px;
+  color: rgba(142, 197, 252, 0.9);
+}
+
+/* 장식 요소 */
+.decorations {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.orbit {
+  position: absolute;
+  width: 250px;
+  height: 250px;
+  border: 1px solid rgba(142, 197, 252, 0.1);
+  border-radius: 50%;
+  top: 15%;
+  right: -125px;
+  animation: rotate-orbit 20s linear infinite;
+}
+
+@keyframes rotate-orbit {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.planetDeco1,
+.planetDeco2 {
+  position: absolute;
+  border-radius: 50%;
+  opacity: 0.5;
+}
+
+.planetDeco1 {
+  width: 60px;
+  height: 60px;
+  background: radial-gradient(circle at 30% 30%, rgba(142, 197, 252, 0.4), rgba(142, 197, 252, 0.1));
+  top: 10%;
+  left: 5%;
+  animation: float-planet 8s ease-in-out infinite;
+}
+
+.planetDeco2 {
+  width: 40px;
+  height: 40px;
+  background: radial-gradient(circle at 30% 30%, rgba(224, 195, 252, 0.4), rgba(224, 195, 252, 0.1));
+  bottom: 15%;
+  right: 10%;
+  animation: float-planet 10s ease-in-out infinite 2s;
+}
+
+@keyframes float-planet {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-20px); }
+}
+
+/* 모바일 최적화 */
+@media (max-width: 480px) {
+  .container {
+    padding: 4rem 1rem;
+  }
+
+  .mainCard {
+    padding: 2rem 1.5rem;
+  }
+
+  .dateTimeSection,
+  .locationSection {
+    gap: 1rem;
+  }
+
+  .iconWrapper {
+    width: 44px;
+    height: 44px;
+  }
+
+  .icon {
+    width: 22px;
+    height: 22px;
+  }
+
+  .contactGrid {
+    grid-template-columns: 1fr;
+    gap: 0.8rem;
+  }
+
+  .contactCard {
+    padding: 1.5rem 1.2rem;
+  }
+
+  .orbit {
+    width: 180px;
+    height: 180px;
+    right: -90px;
+  }
+
+  .planetDeco1 {
+    width: 45px;
+    height: 45px;
+  }
+
+  .planetDeco2 {
+    width: 30px;
+    height: 30px;
+  }
+}

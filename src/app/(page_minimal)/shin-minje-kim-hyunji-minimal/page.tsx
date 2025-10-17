@@ -75,15 +75,6 @@ export default function ShinMinjeKimHyunji_2() {
     console.warn('이미지 로딩 중 오류 발생:', error);
   }
 
-  useEffect(() => {
-    if (!imagesLoading && isLoading) {
-      const timer = setTimeout(() => {
-        setIsLoading(false);
-      }, 1000);
-      return () => clearTimeout(timer);
-    }
-  }, [imagesLoading, isLoading]);
-
   if (isLoading || imagesLoading) {
     return <WeddingLoader_2 message="청첩장을 준비하고 있습니다..." />;
   }
@@ -108,15 +99,15 @@ export default function ShinMinjeKimHyunji_2() {
           bride={pageConfig?.pageData?.bride}
         />
       </ScrollAnimatedSection>
-      
+
       <ScrollAnimatedSection delay={200}>
         <WeddingCalendar_2 weddingDate={weddingDate} />
       </ScrollAnimatedSection>
-      
+
       <ScrollAnimatedSection delay={300}>
         <Gallery_2 images={galleryImages.map(img => img.url)} />
       </ScrollAnimatedSection>
-      
+
       <ScrollAnimatedSection delay={400}>
         <Schedule_2 
           date={pageConfig?.date || ''}
@@ -127,7 +118,7 @@ export default function ShinMinjeKimHyunji_2() {
           wreathGuide={pageConfig?.pageData?.wreathGuide}
         />
       </ScrollAnimatedSection>
-      
+
       <ScrollAnimatedSection delay={500}>
         <LocationMap_2 
           latitude={pageConfig?.pageData?.kakaoMap?.latitude || 37.5048}
@@ -141,16 +132,12 @@ export default function ShinMinjeKimHyunji_2() {
         <Guestbook_2 pageId={WEDDING_SLUG} />
       </ScrollAnimatedSection>
       
-      {pageConfig?.pageData?.giftInfo && (pageConfig.pageData.giftInfo.groomAccounts?.length || pageConfig.pageData.giftInfo.brideAccounts?.length) ? (
-        <ScrollAnimatedSection delay={700}>
-          <GiftInfo_2 
-            groomName={pageConfig?.groomName || ''}
-            brideName={pageConfig?.brideName || ''}
-            groomAccounts={pageConfig.pageData.giftInfo.groomAccounts?.map(acc => ({ ...acc, holder: acc.accountHolder })) || []}
-            brideAccounts={pageConfig.pageData.giftInfo.brideAccounts?.map(acc => ({ ...acc, holder: acc.accountHolder })) || []}
-          />
-        </ScrollAnimatedSection>
-      ) : null}
+      <GiftInfo_2 
+        groomName={pageConfig?.groomName || ''}
+        brideName={pageConfig?.brideName || ''}
+        groomAccounts={[]}
+        brideAccounts={[]}
+      />
     </main>
   );
 }
