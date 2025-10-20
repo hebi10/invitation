@@ -20,12 +20,25 @@ export default function Guestbook_3({ pageSlug }: GuestbookProps) {
   const [loginPassword, setLoginPassword] = useState('');
   const [clickCount, setClickCount] = useState(0);
   const [clickTimer, setClickTimer] = useState<NodeJS.Timeout | null>(null);
+  const [isMobile, setIsMobile] = useState(false);
 
   const commentsPerPage = 3;
   const totalPages = Math.ceil(comments.length / commentsPerPage);
   const startIndex = (currentPage - 1) * commentsPerPage;
   const endIndex = startIndex + commentsPerPage;
   const currentComments = comments.slice(startIndex, endIndex);
+
+  // 모바일 감지
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth <= 768);
+    };
+    
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   useEffect(() => {
     loadComments();
@@ -117,6 +130,48 @@ export default function Guestbook_3({ pageSlug }: GuestbookProps) {
     } catch (error) {
       console.error('로그인 실패:', error);
       alert('로그인에 실패했습니다.');
+    }
+  };
+
+  // 페이지 번호 배열 생성 (반응형)
+  const getPageNumbers = () => {
+    const maxPages = isMobile ? 3 : 5; // 모바일에서는 3개, 데스크톱에서는 5개
+    const pages = [];
+    
+    if (totalPages <= maxPages) {
+      // 총 페이지가 maxPages 이하면 모든 페이지 표시
+      for (let i = 1; i <= totalPages; i++) {
+        pages.push(i);
+      }
+    } else {
+      // 총 페이지가 maxPages 초과인 경우
+      const sidePages = Math.floor((maxPages - 1) / 2);
+      
+      if (currentPage <= sidePages + 1) {
+        for (let i = 1; i <= maxPages; i++) {
+          pages.push(i);
+        }
+      } else if (currentPage >= totalPages - sidePages) {
+        for (let i = totalPages - maxPages + 1; i <= totalPages; i++) {
+          pages.push(i);
+        }
+      } else {
+        for (let i = currentPage - sidePages; i <= currentPage + sidePages; i++) {
+          pages.push(i);
+        }
+      }
+    }
+    
+    return pages;
+  };
+
+  const pageNumbers = getPageNumbers();
+
+  // 키보드 네비게이션 지원
+  const handleKeyDown = (event: React.KeyboardEvent, page: number) => {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      setCurrentPage(page);
     }
   };
 
@@ -239,33 +294,82 @@ export default function Guestbook_3({ pageSlug }: GuestbookProps) {
 
             {/* 페이지네이션 */}
             {totalPages > 1 && (
-              <div className={styles.pagination}>
+              <div className={styles.pagination} role="navigation" aria-label="페이지 네비게이션">
+                {/* 이전 버튼 */}
                 <button
                   onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                  onKeyDown={(e) => handleKeyDown(e, Math.max(1, currentPage - 1))}
                   disabled={currentPage === 1}
-                  className={styles.pageButton}
+                  className={`${styles.pageButton} ${currentPage === 1 ? styles.disabled : ''}`}
                   aria-label="이전 페이지"
+                  tabIndex={currentPage === 1 ? -1 : 0}
                 >
                   ‹
                 </button>
 
-                {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-                  <button
-                    key={page}
-                    onClick={() => setCurrentPage(page)}
-                    className={`${styles.pageButton} ${
-                      currentPage === page ? styles.pageButtonActive : ''
-                    }`}
-                  >
-                    {page}
-                  </button>
-                ))}
+                <div className={styles.pageNumbers}>
+                  {/* 첫 페이지 (필요시) */}
+                  {totalPages > (isMobile ? 3 : 5) && pageNumbers[0] > 1 && (
+                    <>
+                      <button
+                        className={styles.pageButton}
+                        onClick={() => setCurrentPage(1)}
+                        onKeyDown={(e) => handleKeyDown(e, 1)}
+                        aria-label="첫 페이지로 이동"
+                        tabIndex={0}
+                      >
+                        1
+                      </button>
+                      {pageNumbers[0] > 2 && (
+                        <span className={styles.ellipsis} aria-hidden="true">···</span>
+                      )}
+                    </>
+                  )}
+                  
+                  {/* 페이지 번호들 */}
+                  {pageNumbers.map((page) => (
+                    <button
+                      key={page}
+                      onClick={() => setCurrentPage(page)}
+                      onKeyDown={(e) => handleKeyDown(e, page)}
+                      className={`${styles.pageButton} ${
+                        currentPage === page ? styles.pageButtonActive : ''
+                      }`}
+                      aria-label={`${page}페이지로 이동`}
+                      aria-current={currentPage === page ? 'page' : undefined}
+                      tabIndex={0}
+                    >
+                      {page}
+                    </button>
+                  ))}
+                  
+                  {/* 마지막 페이지 (필요시) */}
+                  {totalPages > (isMobile ? 3 : 5) && pageNumbers[pageNumbers.length - 1] < totalPages && (
+                    <>
+                      {pageNumbers[pageNumbers.length - 1] < totalPages - 1 && (
+                        <span className={styles.ellipsis} aria-hidden="true">···</span>
+                      )}
+                      <button
+                        className={styles.pageButton}
+                        onClick={() => setCurrentPage(totalPages)}
+                        onKeyDown={(e) => handleKeyDown(e, totalPages)}
+                        aria-label="마지막 페이지로 이동"
+                        tabIndex={0}
+                      >
+                        {totalPages}
+                      </button>
+                    </>
+                  )}
+                </div>
 
+                {/* 다음 버튼 */}
                 <button
                   onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+                  onKeyDown={(e) => handleKeyDown(e, Math.min(totalPages, currentPage + 1))}
                   disabled={currentPage === totalPages}
-                  className={styles.pageButton}
+                  className={`${styles.pageButton} ${currentPage === totalPages ? styles.disabled : ''}`}
                   aria-label="다음 페이지"
+                  tabIndex={currentPage === totalPages ? -1 : 0}
                 >
                   ›
                 </button>

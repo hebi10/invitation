@@ -345,6 +345,20 @@
   gap: 0.5rem;
 }
 
+.pageNumbers {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.ellipsis {
+  font-family: 'Noto Sans KR', sans-serif;
+  font-size: 1rem;
+  color: rgba(255, 255, 255, 0.5);
+  padding: 0 0.3rem;
+  user-select: none;
+}
+
 .pageButton {
   min-width: 40px;
   height: 40px;
@@ -360,13 +374,14 @@
   transition: all 0.3s ease;
 }
 
-.pageButton:hover:not(:disabled) {
+.pageButton:hover:not(:disabled):not(.disabled) {
   background: rgba(26, 29, 61, 0.7);
   border-color: rgba(142, 197, 252, 0.4);
   box-shadow: 0 0 15px rgba(142, 197, 252, 0.2);
 }
 
-.pageButton:disabled {
+.pageButton:disabled,
+.pageButton.disabled {
   opacity: 0.4;
   cursor: not-allowed;
 }
@@ -596,5 +611,11 @@
   .floatingPlanet2 {
     width: 35px;
     height: 35px;
+  }
+
+  /* 모바일에서 이전/다음 버튼 숨기기 */
+  .pagination > .pageButton:first-child,
+  .pagination > .pageButton:last-child {
+    display: none;
   }
 }

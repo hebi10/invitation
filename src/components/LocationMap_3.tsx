@@ -104,10 +104,6 @@ export default function LocationMap_3({
           {!touchEnabled && (
             <div className={styles.mapOverlay}>
               <div className={styles.overlayMessage}>
-                <svg className={styles.touchIcon} viewBox="0 0 24 24" fill="none">
-                  <path d="M12 2C12 2 12 10 12 12M12 12C12 14 12 22 12 22M12 12C14 12 22 12 22 12M12 12C10 12 2 12 2 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-                </svg>
-                <span>지도를 움직이려면 컨트롤을 활성화하세요</span>
               </div>
             </div>
           )}
@@ -132,7 +128,7 @@ export default function LocationMap_3({
               )}
             </svg>
             <span className={styles.controlText}>
-              {touchEnabled ? 'ON' : 'OFF'}
+              컨트롤 {touchEnabled ? 'ON' : 'OFF'}
             </span>
           </button>
         </div>
@@ -152,29 +148,31 @@ export default function LocationMap_3({
             </svg>
           </button>
 
-          {naverMapUrl && (
-            <button
-              onClick={() => window.open(naverMapUrl, '_blank')}
-              className={styles.mapButton}
-            >
-              <span className={styles.buttonLabel}>네이버지도</span>
-              <svg className={styles.buttonArrow} viewBox="0 0 24 24" fill="none">
-                <path d="M7 17L17 7M17 7H7M17 7V17" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-              </svg>
-            </button>
-          )}
+          <button
+            onClick={() => {
+              const naverUrl = naverMapUrl || `https://map.naver.com/v5/search/${encodeURIComponent(address)}`;
+              window.open(naverUrl, '_blank');
+            }}
+            className={styles.mapButton}
+          >
+            <span className={styles.buttonLabel}>네이버지도</span>
+            <svg className={styles.buttonArrow} viewBox="0 0 24 24" fill="none">
+              <path d="M7 17L17 7M17 7H7M17 7V17" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+            </svg>
+          </button>
 
-          {googleMapUrl && (
-            <button
-              onClick={() => window.open(googleMapUrl, '_blank')}
-              className={styles.mapButton}
-            >
-              <span className={styles.buttonLabel}>구글지도</span>
-              <svg className={styles.buttonArrow} viewBox="0 0 24 24" fill="none">
-                <path d="M7 17L17 7M17 7H7M17 7V17" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-              </svg>
-            </button>
-          )}
+          <button
+            onClick={() => {
+              const googleUrl = googleMapUrl || `https://www.google.com/maps/search/${encodeURIComponent(address)}`;
+              window.open(googleUrl, '_blank');
+            }}
+            className={styles.mapButton}
+          >
+            <span className={styles.buttonLabel}>구글지도</span>
+            <svg className={styles.buttonArrow} viewBox="0 0 24 24" fill="none">
+              <path d="M7 17L17 7M17 7H7M17 7V17" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+            </svg>
+          </button>
         </div>
       </div>
 

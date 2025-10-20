@@ -174,7 +174,8 @@
   transition: all 0.3s ease;
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: center;
+  gap: 1rem;
   font-family: 'Noto Sans KR', sans-serif;
 }
 

@@ -251,6 +251,7 @@
   color: rgba(142, 197, 252, 0.8);
   font-weight: 300;
   letter-spacing: 1px;
+  text-align: center;
 }
 
 .contactName {
@@ -258,6 +259,7 @@
   font-size: clamp(1.1rem, 3vw, 1.2rem);
   color: rgba(255, 255, 255, 0.95);
   font-weight: 400;
+  text-align: center;
 }
 
 .phoneButton {

@@ -9,11 +9,12 @@ interface GalleryProps {
 }
 
 export default function Gallery_3({ images }: GalleryProps) {
-  const [showAll, setShowAll] = useState(false);
+  const [visibleCount, setVisibleCount] = useState(6);
   const [selectedImage, setSelectedImage] = useState<number | null>(null);
   const [mounted, setMounted] = useState(false);
 
-  const displayImages = showAll ? images : images.slice(0, 6);
+  const displayImages = images.slice(0, visibleCount);
+  const hasMore = visibleCount < images.length;
 
   useEffect(() => {
     setMounted(true);
@@ -130,12 +131,12 @@ export default function Gallery_3({ images }: GalleryProps) {
           <div
             key={index}
             className={styles.imageItem}
-            onClick={() => setSelectedImage(showAll ? index : images.indexOf(image))}
+            onClick={() => setSelectedImage(images.indexOf(image))}
             role="button"
             tabIndex={0}
             onKeyDown={(e) => {
               if (e.key === 'Enter' || e.key === ' ') {
-                setSelectedImage(showAll ? index : images.indexOf(image));
+                setSelectedImage(images.indexOf(image));
               }
             }}
           >
@@ -165,13 +166,19 @@ export default function Gallery_3({ images }: GalleryProps) {
       {images.length > 6 && (
         <div className={styles.buttonWrapper}>
           <button
-            onClick={() => setShowAll(!showAll)}
+            onClick={() => {
+              if (hasMore) {
+                setVisibleCount(prev => Math.min(prev + 6, images.length));
+              } else {
+                setVisibleCount(6);
+              }
+            }}
             className={styles.toggleButton}
           >
             <span className={styles.buttonText}>
-              {showAll ? '접기' : `더보기 (+${images.length - 6})`}
+              {hasMore ? `더보기 (+${Math.min(6, images.length - visibleCount)})` : '접기'}
             </span>
-            <span className={`${styles.buttonIcon} ${showAll ? styles.rotated : ''}`}>
+            <span className={`${styles.buttonIcon} ${!hasMore ? styles.rotated : ''}`}>
               ▼
             </span>
           </button>

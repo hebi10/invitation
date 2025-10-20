@@ -71,9 +71,9 @@
 /* 이미지 그리드 */
 .grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  max-width: 700px;
+  grid-template-columns: repeat(3, minmax(150px, 1fr));
   gap: 1rem;
-  max-width: 900px;
   margin: 0 auto 2rem;
   position: relative;
   z-index: 2;
