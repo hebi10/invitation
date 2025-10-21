@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
+import Image from 'next/image';
 import styles from './Gallery_3.module.css';
 
 interface GalleryProps {
@@ -75,11 +76,18 @@ export default function Gallery_3({ images }: GalleryProps) {
       </button>
 
       <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
-        <img
-          src={images[selectedImage]}
-          alt={`갤러리 이미지 ${selectedImage + 1}`}
-          className={styles.modalImage}
-        />
+        <div className={styles.modalImageWrapper}>
+          <Image
+            src={images[selectedImage]}
+            alt={`갤러리 이미지 ${selectedImage + 1}`}
+            fill
+            sizes="100vw"
+            quality={85}
+            priority
+            className={styles.modalImage}
+            style={{ objectFit: 'contain' }}
+          />
+        </div>
         <div className={styles.imageGlow}></div>
       </div>
 
@@ -141,11 +149,14 @@ export default function Gallery_3({ images }: GalleryProps) {
             }}
           >
             <div className={styles.imageWrapper}>
-              <img
+              <Image
                 src={image}
                 alt={`갤러리 이미지 ${index + 1}`}
+                fill
+                sizes="(max-width: 768px) 33vw, 25vw"
+                quality={70}
                 className={styles.image}
-                loading="lazy"
+                style={{ objectFit: 'cover' }}
               />
               <div className={styles.imageOverlay}>
                 <div className={styles.zoomIcon}>

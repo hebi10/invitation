@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import Image from 'next/image';
 import styles from './Gallery_1.module.css';
 
 interface GalleryProps {
@@ -50,9 +51,9 @@ const Gallery_1 = React.memo(function Gallery_1({ images, title = "소중한 순
     setSelectedImage(image);
     setIsTransitioning(false);
     
-    const img = new Image();
+    const img = document.createElement('img');
     img.onload = () => {
-      const size = calculateImageSize(img);
+      const size = calculateImageSize(img as HTMLImageElement);
       setImageSize(size);
     };
     img.src = image;
@@ -75,9 +76,9 @@ const Gallery_1 = React.memo(function Gallery_1({ images, title = "소중한 순
       setSelectedIndex(newIndex);
       setSelectedImage(newImage);
       
-      const img = new Image();
+      const img = document.createElement('img');
       img.onload = () => {
-        const size = calculateImageSize(img);
+        const size = calculateImageSize(img as HTMLImageElement);
         setImageSize(size);
         setTimeout(() => setIsTransitioning(false), 50);
       };
@@ -95,9 +96,9 @@ const Gallery_1 = React.memo(function Gallery_1({ images, title = "소중한 순
       setSelectedIndex(newIndex);
       setSelectedImage(newImage);
       
-      const img = new Image();
+      const img = document.createElement('img');
       img.onload = () => {
-        const size = calculateImageSize(img);
+        const size = calculateImageSize(img as HTMLImageElement);
         setImageSize(size);
         setTimeout(() => setIsTransitioning(false), 50);
       };
@@ -137,9 +138,9 @@ const Gallery_1 = React.memo(function Gallery_1({ images, title = "소중한 순
     };
 
     const handleResize = () => {
-      const img = new Image();
+      const img = document.createElement('img');
       img.onload = () => {
-        const size = calculateImageSize(img);
+        const size = calculateImageSize(img as HTMLImageElement);
         setImageSize(size);
       };
       img.src = selectedImage;
@@ -169,18 +170,24 @@ const Gallery_1 = React.memo(function Gallery_1({ images, title = "소중한 순
         <div className={styles.imageGrid}>
           {displayImages.map((image, index) => (
             <div key={index} className={styles.imageWrapper}>
-              <img 
-                className={styles.imageItem}
-                src={image} 
-                alt={`Gallery image ${index + 1}`}
-                onClick={() => openPopup(image)}
-                onLoad={() => handleImageLoad(image)}
-                loading="lazy"
-                style={{
-                  opacity: loadedImages.has(image) ? 1 : 0,
-                  transition: 'opacity 0.3s ease'
-                }}
-              />
+              <div className={styles.imageContainer}>
+                <Image
+                  className={styles.imageItem}
+                  src={image}
+                  alt={`Gallery image ${index + 1}`}
+                  fill
+                  sizes="(max-width: 700px) 50vw, 33vw"
+                  quality={70}
+                  onClick={() => openPopup(image)}
+                  onLoad={() => handleImageLoad(image)}
+                  style={{
+                    objectFit: 'cover',
+                    opacity: loadedImages.has(image) ? 1 : 0,
+                    transition: 'opacity 0.3s ease',
+                    cursor: 'pointer'
+                  }}
+                />
+              </div>
               {!loadedImages.has(image) && (
                 <div className={styles.imagePlaceholder}>
                   <div className={styles.loadingSpinner}></div>
@@ -220,20 +227,22 @@ const Gallery_1 = React.memo(function Gallery_1({ images, title = "소중한 순
               ✕
             </button>
             
-            <img 
-              src={selectedImage} 
-              alt="확대된 이미지"
-              className={styles.popupImage}
-              style={{
-                width: imageSize.width,
-                height: imageSize.height,
-                maxWidth: 'calc(100vw - 40px) !important',
-                maxHeight: 'calc(100vh - 40px) !important',
-                objectFit: 'contain',
-                opacity: isTransitioning ? 0 : 1,
-                transition: 'opacity 0.2s ease'
-              }}
-            />
+            <div className={styles.popupImageWrapper}>
+              <Image
+                src={selectedImage}
+                alt="확대된 이미지"
+                fill
+                sizes="100vw"
+                quality={85}
+                priority
+                className={styles.popupImage}
+                style={{
+                  objectFit: 'contain',
+                  opacity: isTransitioning ? 0 : 1,
+                  transition: 'opacity 0.2s ease'
+                }}
+              />
+            </div>
             
             {/* 통합 네비게이션 바 */}
             <div className={styles.navigationBar}>

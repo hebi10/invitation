@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { getPageImages, UploadedImage } from '@/services/imageService';
+import { preloadImages } from '@/utils/imageOptimization';
 
 export function usePageImages(pageSlug: string) {
   const [images, setImages] = useState<UploadedImage[]>([]);
@@ -15,6 +16,31 @@ export function usePageImages(pageSlug: string) {
         setError(null);
         const fetchedImages = await getPageImages(pageSlug);
         setImages(fetchedImages);
+
+        // 이미지 프리로드 (메인 이미지와 첫 6개 갤러리 이미지)
+        if (fetchedImages.length > 0) {
+          const mainImg = fetchedImages.find(img => {
+            const fileName = img.name.toLowerCase();
+            return fileName.startsWith('main.') || fileName.includes('main.');
+          });
+          
+          const galleryImgs = fetchedImages
+            .filter(img => {
+              const fileName = img.name.toLowerCase();
+              return fileName.startsWith('gallery') || fileName.includes('gallery');
+            })
+            .slice(0, 6);
+
+          const preloadUrls = [
+            ...(mainImg ? [mainImg.url] : []),
+            ...galleryImgs.map(img => img.url)
+          ];
+
+          // 비동기로 프리로드 (UI 블로킹 방지)
+          preloadImages(preloadUrls).catch(err => {
+            console.warn('이미지 프리로드 실패:', err);
+          });
+        }
       } catch (err) {
         console.error('이미지 로드 실패:', err);
         setError('이미지를 불러올 수 없습니다.');

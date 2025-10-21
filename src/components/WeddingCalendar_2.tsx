@@ -2,12 +2,19 @@
 
 import { useState, useEffect } from 'react';
 import styles from './WeddingCalendar_2.module.css';
+import WeddingCountdown_2 from './WeddingCountdown_2';
 
 interface WeddingCalendarProps {
   weddingDate: Date;
+  showCountdown?: boolean;
+  countdownTitle?: string;
 }
 
-export default function WeddingCalendar_2({ weddingDate }: WeddingCalendarProps) {
+export default function WeddingCalendar_2({ 
+  weddingDate,
+  showCountdown = false,
+  countdownTitle = "결혼식까지"
+}: WeddingCalendarProps) {
   const [countdown, setCountdown] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
   const [isClient, setIsClient] = useState(false);
 
@@ -76,30 +83,6 @@ export default function WeddingCalendar_2({ weddingDate }: WeddingCalendarProps)
   return (
     <section className={styles.container}>
       <h2 className={styles.title}>Wedding Day</h2>
-      
-      {isClient && (
-        <div className={styles.countdownSection}>
-          <div className={styles.countdownItem}>
-            <div className={styles.countdownValue}>{countdown.days}</div>
-            <div className={styles.countdownLabel}>Days</div>
-          </div>
-          <div className={styles.countdownDivider}>:</div>
-          <div className={styles.countdownItem}>
-            <div className={styles.countdownValue}>{String(countdown.hours).padStart(2, '0')}</div>
-            <div className={styles.countdownLabel}>Hours</div>
-          </div>
-          <div className={styles.countdownDivider}>:</div>
-          <div className={styles.countdownItem}>
-            <div className={styles.countdownValue}>{String(countdown.minutes).padStart(2, '0')}</div>
-            <div className={styles.countdownLabel}>Minutes</div>
-          </div>
-          <div className={styles.countdownDivider}>:</div>
-          <div className={styles.countdownItem}>
-            <div className={styles.countdownValue}>{String(countdown.seconds).padStart(2, '0')}</div>
-            <div className={styles.countdownLabel}>Seconds</div>
-          </div>
-        </div>
-      )}
 
       <div className={styles.calendar}>
         <div className={styles.calendarHeader}>
@@ -140,6 +123,13 @@ export default function WeddingCalendar_2({ weddingDate }: WeddingCalendarProps)
           ))}
         </div>
       </div>
+
+      {/* 카운트다운 (옵션) */}
+      {showCountdown && (
+        <div style={{ marginTop: '40px' }}>
+          <WeddingCountdown_2 targetDate={weddingDate} title={countdownTitle} />
+        </div>
+      )}
     </section>
   );
 }

@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { createPortal } from 'react-dom';
+import Image from 'next/image';
 import styles from './Gallery_2.module.css';
 
 interface GalleryProps {
@@ -53,9 +54,9 @@ export default function Gallery_2({ images }: GalleryProps) {
     setCurrentIndex(index);
     setIsTransitioning(false);
     
-    const img = new Image();
+    const img = document.createElement('img');
     img.onload = () => {
-      const size = calculateImageSize(img);
+      const size = calculateImageSize(img as HTMLImageElement);
       setImageSize(size);
     };
     img.src = image;
@@ -79,9 +80,9 @@ export default function Gallery_2({ images }: GalleryProps) {
       setCurrentIndex(newIndex);
       setSelectedImage(newImage);
       
-      const img = new Image();
+      const img = document.createElement('img');
       img.onload = () => {
-        const size = calculateImageSize(img);
+        const size = calculateImageSize(img as HTMLImageElement);
         setImageSize(size);
         setTimeout(() => setIsTransitioning(false), 50);
       };
@@ -100,9 +101,9 @@ export default function Gallery_2({ images }: GalleryProps) {
       setCurrentIndex(newIndex);
       setSelectedImage(newImage);
       
-      const img = new Image();
+      const img = document.createElement('img');
       img.onload = () => {
-        const size = calculateImageSize(img);
+        const size = calculateImageSize(img as HTMLImageElement);
         setImageSize(size);
         setTimeout(() => setIsTransitioning(false), 50);
       };
@@ -138,9 +139,9 @@ export default function Gallery_2({ images }: GalleryProps) {
     };
 
     const handleResize = () => {
-      const img = new Image();
+      const img = document.createElement('img');
       img.onload = () => {
-        const size = calculateImageSize(img);
+        const size = calculateImageSize(img as HTMLImageElement);
         setImageSize(size);
       };
       img.src = selectedImage;
@@ -174,20 +175,22 @@ export default function Gallery_2({ images }: GalleryProps) {
               ✕
             </button>
             
-            <img 
-              src={selectedImage} 
-              alt="확대된 이미지"
-              className={styles.popupImage}
-              style={{
-                width: imageSize.width,
-                height: imageSize.height,
-                maxWidth: 'calc(100vw - 40px)',
-                maxHeight: 'calc(100vh - 40px)',
-                objectFit: 'contain',
-                opacity: isTransitioning ? 0 : 1,
-                transition: 'opacity 0.2s ease'
-              }}
-            />
+            <div className={styles.popupImageWrapper}>
+              <Image
+                src={selectedImage}
+                alt="확대된 이미지"
+                fill
+                sizes="100vw"
+                quality={85}
+                priority
+                className={styles.popupImage}
+                style={{
+                  objectFit: 'contain',
+                  opacity: isTransitioning ? 0 : 1,
+                  transition: 'opacity 0.2s ease'
+                }}
+              />
+            </div>
             
             <div className={styles.navigationBar}>
               <button 
@@ -225,11 +228,14 @@ export default function Gallery_2({ images }: GalleryProps) {
               className={styles.imageWrapper}
               onClick={() => openLightbox(image, index)}
             >
-              <img
+              <Image
                 src={image}
                 alt={`Wedding ${index + 1}`}
+                fill
+                sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+                quality={70}
                 className={styles.image}
-                loading="lazy"
+                style={{ objectFit: 'cover' }}
               />
             </div>
           ))}

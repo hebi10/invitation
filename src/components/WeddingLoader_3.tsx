@@ -41,7 +41,7 @@ export default function WeddingLoader_3({ groomName, brideName }: WeddingLoaderP
               {groomName && brideName && <span className={styles.separator}>♥</span>}
               {brideName && <span className={styles.name}>{brideName}</span>}
             </p>
-            <p className={styles.subText}>의 결혼식에 초대합니다</p>
+            <p className={styles.subText}>결혼식에 초대합니다</p>
           </div>
         )}
 

@@ -8,8 +8,7 @@ import {
   Gallery_2, 
   Schedule_2, 
   LocationMap_2, 
-  WeddingCalendar_2,
-  WeddingCountdown_2,
+  WeddingCalendar_2, 
   GiftInfo_2, 
   Guestbook_2,
   ScrollAnimatedSection
@@ -82,6 +81,15 @@ export default function KimMinJunParkSoHee_2() {
     // 에러가 있어도 기본 이미지로 진행
   }
 
+  useEffect(() => {
+    if (!imagesLoading && isLoading) {
+      const timer = setTimeout(() => {
+        setIsLoading(false);
+      }, 1500);
+      return () => clearTimeout(timer);
+    }
+  }, [imagesLoading, isLoading]);
+
   // 이미지 로딩이 완료되지 않은 경우 로더 표시
   if (isLoading || imagesLoading) {
     return (
@@ -115,8 +123,9 @@ export default function KimMinJunParkSoHee_2() {
       <ScrollAnimatedSection delay={200}>
         <WeddingCalendar_2 
           weddingDate={weddingDate}
+          showCountdown={true}
+          countdownTitle="결혼식까지"
         />
-        <WeddingCountdown_2 targetDate={weddingDate} title="결혼식까지" />
       </ScrollAnimatedSection>
       
       <ScrollAnimatedSection delay={300}>

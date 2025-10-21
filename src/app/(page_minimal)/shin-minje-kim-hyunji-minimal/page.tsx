@@ -9,7 +9,6 @@ import {
   Schedule_2, 
   LocationMap_2, 
   WeddingCalendar_2, 
-  WeddingCountdown_2,
   GiftInfo_2, 
   Guestbook_2,
   ScrollAnimatedSection
@@ -76,6 +75,15 @@ export default function ShinMinjeKimHyunji_2() {
     console.warn('이미지 로딩 중 오류 발생:', error);
   }
 
+  useEffect(() => {
+    if (!imagesLoading && isLoading) {
+      const timer = setTimeout(() => {
+        setIsLoading(false);
+      }, 1500);
+      return () => clearTimeout(timer);
+    }
+  }, [imagesLoading, isLoading]);
+
   if (isLoading || imagesLoading) {
     return <WeddingLoader_2 message="청첩장을 준비하고 있습니다..." />;
   }
@@ -102,8 +110,11 @@ export default function ShinMinjeKimHyunji_2() {
       </ScrollAnimatedSection>
 
       <ScrollAnimatedSection delay={200}>
-        <WeddingCalendar_2 weddingDate={weddingDate} />
-        <WeddingCountdown_2 targetDate={weddingDate} title="결혼식까지" />
+        <WeddingCalendar_2 
+          weddingDate={weddingDate}
+          showCountdown={true}
+          countdownTitle="결혼식까지"
+        />
       </ScrollAnimatedSection>
 
       <ScrollAnimatedSection delay={300}>

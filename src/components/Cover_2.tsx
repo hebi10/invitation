@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import Image from 'next/image';
 import styles from './Cover_2.module.css';
 
 interface CoverProps {
@@ -45,11 +46,16 @@ export default function Cover_2({
                 </div>
               </div>
             )}
-            <img
+            <Image
               src={imageUrl}
               alt="Wedding"
+              fill
+              priority
+              sizes="(max-width: 768px) 100vw, 700px"
+              quality={85}
               className={`${styles.image} ${imageLoaded ? styles.loaded : ''}`}
               onLoad={() => setImageLoaded(true)}
+              style={{ objectFit: 'cover' }}
             />
           </div>
         )}

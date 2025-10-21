@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import Image from 'next/image';
 import styles from './Cover_3.module.css';
 
 interface CoverProps {
@@ -51,11 +52,16 @@ export default function Cover_3({
       {/* 메인 이미지 */}
       <div className={`${styles.imageWrapper} ${showContent ? styles.fadeIn : ''}`}>
         {imageUrl && (
-          <img 
-            src={imageUrl} 
+          <Image
+            src={imageUrl}
             alt={`${groomName}와 ${brideName}의 결혼식`}
+            fill
+            priority
+            sizes="100vw"
+            quality={85}
             className={styles.image}
             onLoad={() => setImageLoaded(true)}
+            style={{ objectFit: 'cover' }}
           />
         )}
         <div className={styles.imageOverlay}></div>

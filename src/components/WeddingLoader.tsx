@@ -66,31 +66,33 @@ const WeddingLoader: React.FC<WeddingLoaderProps> = ({
   }, [mainImage, preloadImages]);
 
   useEffect(() => {
+    const minLoadTime = 1500; // 최소 로딩 시간을 1.5초로 단축
+    
     const progressInterval = setInterval(() => {
       const elapsed = Date.now() - startTime;
-      const timeProgress = Math.min((elapsed / duration) * 100, 100);
       
-      // 진행률을 단조증가하도록 보장 (절대 감소하지 않음)
-      setProgress(prev => {
-        const newProgress = Math.max(prev, timeProgress);
-        return newProgress;
-      });
+      // 이미지가 로드되면 진행률을 빠르게 증가
+      const targetDuration = imagesLoaded ? minLoadTime : duration;
+      const timeProgress = Math.min((elapsed / targetDuration) * 100, 100);
+      
+      // 진행률을 단조증가하도록 보장
+      setProgress(prev => Math.max(prev, timeProgress));
       
       // 최소 시간 체크
-      if (elapsed >= 2000) {
+      if (elapsed >= minLoadTime) {
         setMinTimeElapsed(true);
       }
       
-      // 이미지 로딩 완료 + 최소 시간 경과 + 진행률 100% 시 완료
-      if (imagesLoaded && minTimeElapsed && timeProgress >= 100) {
+      // 이미지 로딩 완료 + 최소 시간 경과 시 완료
+      if (imagesLoaded && minTimeElapsed) {
         clearInterval(progressInterval);
-        setTimeout(onLoadComplete, 200); // 300ms에서 200ms로 단축
+        setTimeout(onLoadComplete, 150);
       }
-    }, 100); // 50ms에서 100ms로 변경하여 CPU 사용량 감소
+    }, 50);
 
     const messageInterval = setInterval(() => {
       setCurrentMessage(prev => (prev + 1) % loadingMessages.length);
-    }, duration / 4);
+    }, Math.max(duration / 4, 800));
 
     return () => {
       clearInterval(progressInterval);

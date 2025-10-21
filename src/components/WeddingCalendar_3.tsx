@@ -2,12 +2,19 @@
 
 import { useState, useMemo } from 'react';
 import styles from './WeddingCalendar_3.module.css';
+import WeddingCountdown_3 from './WeddingCountdown_3';
 
 interface WeddingCalendarProps {
   weddingDate: Date;
+  showCountdown?: boolean;
+  countdownTitle?: string;
 }
 
-export default function WeddingCalendar_3({ weddingDate }: WeddingCalendarProps) {
+export default function WeddingCalendar_3({ 
+  weddingDate, 
+  showCountdown = false,
+  countdownTitle = "결혼식까지"
+}: WeddingCalendarProps) {
   const [currentMonth, setCurrentMonth] = useState(new Date(weddingDate));
 
   // 달력 데이터 생성
@@ -166,6 +173,13 @@ export default function WeddingCalendar_3({ weddingDate }: WeddingCalendarProps)
         <div className={styles.shootingStar1}></div>
         <div className={styles.shootingStar2}></div>
       </div>
+
+      {/* 카운트다운 (옵션) */}
+      {showCountdown && (
+        <div style={{ marginTop: '40px' }}>
+          <WeddingCountdown_3 targetDate={weddingDate} title={countdownTitle} />
+        </div>
+      )}
     </section>
   );
 }

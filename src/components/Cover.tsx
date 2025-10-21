@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import Image from 'next/image';
 import styles from './Cover.module.css';
 
 interface CoverProps {
@@ -59,13 +60,18 @@ const Cover = React.memo(function Cover({
       <h1 className={styles.title}>Our Wedding Day</h1>
       {subtitle && <p className={styles.subtitle}>{subtitle}</p>}
       <div className={styles.imageContainer}>
-        <img 
+        <Image
           className={`${styles.image} ${imageLoaded ? styles.imageLoaded : ''}`}
-          src={imageUrl} 
+          src={imageUrl}
           alt="Wedding couple"
+          fill
+          priority
+          sizes="(max-width: 768px) 100vw, 700px"
+          quality={85}
           onLoad={handleImageLoad}
           onError={handleImageError}
           style={{
+            objectFit: 'cover',
             opacity: imageLoaded || preloadComplete ? 1 : 0,
             transition: 'opacity 0.3s ease-in-out'
           }}
