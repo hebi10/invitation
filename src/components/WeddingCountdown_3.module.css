@@ -1,0 +1,309 @@
+.countdownContainer {
+  position: relative;
+  padding: 4rem 2rem;
+  background: linear-gradient(to bottom, #0a0e27, #1a1d3d);
+  overflow: hidden;
+}
+
+/* 우주 배경 */
+.spaceBackground {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.stars {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-image: 
+    radial-gradient(1px 1px at 10% 30%, rgba(255, 255, 255, 0.6), transparent),
+    radial-gradient(1px 1px at 70% 20%, rgba(255, 255, 255, 0.5), transparent),
+    radial-gradient(1px 1px at 30% 60%, rgba(255, 255, 255, 0.7), transparent),
+    radial-gradient(1px 1px at 90% 70%, rgba(255, 255, 255, 0.4), transparent);
+  background-size: 100% 100%;
+  animation: twinkle 4s ease-in-out infinite;
+}
+
+@keyframes twinkle {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 0.7; }
+}
+
+/* 컨텐츠 */
+.content {
+  position: relative;
+  z-index: 2;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+/* 타이틀 */
+.titleWrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  margin-bottom: 2.5rem;
+}
+
+.starIcon {
+  font-size: 1.2rem;
+  color: rgba(142, 197, 252, 0.8);
+  animation: rotate-star 8s linear infinite;
+}
+
+@keyframes rotate-star {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.title {
+  font-family: 'Playfair Display', serif;
+  font-size: clamp(1.3rem, 4vw, 1.6rem);
+  font-weight: 400;
+  background: linear-gradient(135deg, #e0c3fc 0%, #8ec5fc 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  letter-spacing: 2px;
+  margin: 0;
+}
+
+/* 시간 디스플레이 */
+.timeDisplay {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(0.5rem, 2vw, 1.5rem);
+  flex-wrap: wrap;
+}
+
+.timeUnit {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.8rem;
+}
+
+.timeBox {
+  position: relative;
+  min-width: clamp(60px, 15vw, 90px);
+  height: clamp(70px, 18vw, 100px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(26, 29, 61, 0.5);
+  backdrop-filter: blur(10px);
+  border-radius: 12px;
+  border: 1px solid rgba(142, 197, 252, 0.3);
+  overflow: hidden;
+}
+
+.timeBox::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, rgba(142, 197, 252, 0.1), rgba(224, 195, 252, 0.1));
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.timeBox:hover::before {
+  opacity: 1;
+}
+
+.glow {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 80%;
+  height: 80%;
+  background: radial-gradient(circle, rgba(142, 197, 252, 0.2), transparent 70%);
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.timeNumber {
+  font-family: 'Orbitron', 'Roboto Mono', monospace;
+  font-size: clamp(1.8rem, 8vw, 2.5rem);
+  font-weight: 600;
+  background: linear-gradient(135deg, #8ec5fc 0%, #e0c3fc 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  position: relative;
+  z-index: 1;
+  text-shadow: 0 0 20px rgba(142, 197, 252, 0.5);
+}
+
+.separator {
+  font-family: 'Orbitron', 'Roboto Mono', monospace;
+  font-size: clamp(1.5rem, 6vw, 2rem);
+  color: rgba(142, 197, 252, 0.6);
+  font-weight: 400;
+  align-self: flex-start;
+  margin-top: clamp(10px, 3vw, 15px);
+}
+
+.timeLabel {
+  font-family: 'Noto Sans KR', sans-serif;
+  font-size: clamp(0.75rem, 2vw, 0.9rem);
+  color: rgba(255, 255, 255, 0.7);
+  font-weight: 300;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+/* 만료 상태 */
+.expiredWrapper {
+  text-align: center;
+  padding: 3rem 2rem;
+}
+
+.expiredIcon {
+  font-size: 3rem;
+  margin-bottom: 1.5rem;
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+@keyframes pulse-glow {
+  0%, 100% {
+    transform: scale(1);
+    filter: drop-shadow(0 0 10px rgba(142, 197, 252, 0.5));
+  }
+  50% {
+    transform: scale(1.1);
+    filter: drop-shadow(0 0 20px rgba(142, 197, 252, 0.8));
+  }
+}
+
+.expiredTitle {
+  font-family: 'Playfair Display', serif;
+  font-size: clamp(1.8rem, 5vw, 2.2rem);
+  font-weight: 400;
+  background: linear-gradient(135deg, #e0c3fc 0%, #8ec5fc 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin: 0 0 1rem;
+  letter-spacing: 1px;
+}
+
+.expiredSubtitle {
+  font-family: 'Noto Sans KR', sans-serif;
+  font-size: clamp(0.95rem, 3vw, 1.1rem);
+  color: rgba(255, 255, 255, 0.8);
+  font-weight: 300;
+  line-height: 1.6;
+  margin: 0;
+}
+
+/* 장식 요소 */
+.decorations {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.orbit {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: min(90%, 700px);
+  height: min(90%, 700px);
+  border: 1px solid rgba(142, 197, 252, 0.1);
+  border-radius: 50%;
+  animation: rotate-orbit 30s linear infinite;
+}
+
+@keyframes rotate-orbit {
+  from { transform: translate(-50%, -50%) rotate(0deg); }
+  to { transform: translate(-50%, -50%) rotate(360deg); }
+}
+
+.planet {
+  position: absolute;
+  top: 20%;
+  right: 10%;
+  width: 40px;
+  height: 40px;
+  background: radial-gradient(circle at 30% 30%, rgba(224, 195, 252, 0.5), rgba(142, 197, 252, 0.3));
+  border-radius: 50%;
+  opacity: 0.6;
+  animation: float-planet 8s ease-in-out infinite;
+}
+
+@keyframes float-planet {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-20px); }
+}
+
+/* 모바일 최적화 */
+@media (max-width: 480px) {
+  .countdownContainer {
+    padding: 3rem 1rem;
+  }
+
+  .titleWrapper {
+    gap: 0.6rem;
+    margin-bottom: 2rem;
+  }
+
+  .starIcon {
+    font-size: 1rem;
+  }
+
+  .timeDisplay {
+    gap: 0.5rem;
+  }
+
+  .timeBox {
+    min-width: 50px;
+    height: 60px;
+    border-radius: 8px;
+  }
+
+  .separator {
+    margin-top: 8px;
+  }
+
+  .planet {
+    width: 25px;
+    height: 25px;
+  }
+
+  .expiredWrapper {
+    padding: 2rem 1rem;
+  }
+
+  .expiredIcon {
+    font-size: 2.5rem;
+  }
+}
+
+/* 태블릿 */
+@media (min-width: 481px) and (max-width: 768px) {
+  .countdownContainer {
+    padding: 3.5rem 1.5rem;
+  }
+
+  .timeBox {
+    min-width: 70px;
+    height: 80px;
+  }
+}

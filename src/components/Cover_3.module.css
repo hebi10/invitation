@@ -1,6 +1,6 @@
 .container {
   position: relative;
-  min-height: 100vh;
+  height: 100dvh;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -8,6 +8,7 @@
   overflow: hidden;
   background: linear-gradient(to bottom, #0a0e27, #1a1d3d, #2a2d5d);
   padding: 2rem 1.5rem;
+  box-sizing: border-box;
 }
 
 /* 우주 배경 - 별 효과 */
@@ -71,7 +72,7 @@
 /* 이미지 영역 */
 .imageWrapper {
   position: relative;
-  width: 100%;
+  width: 50%;
   max-width: 350px;
   aspect-ratio: 3/4;
   margin-bottom: 3rem;

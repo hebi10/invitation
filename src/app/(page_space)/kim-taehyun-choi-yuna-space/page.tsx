@@ -7,7 +7,8 @@ import {
   Gallery_3 as Gallery, 
   Schedule_3 as Schedule, 
   LocationMap_3 as LocationMap, 
-  WeddingCalendar_3 as WeddingCalendar, 
+  WeddingCalendar_3 as WeddingCalendar,
+  WeddingCountdown_3 as WeddingCountdown,
   GiftInfo_3 as GiftInfo, 
   Guestbook_3 as Guestbook,
   WeddingLoader_3 as WeddingLoader
@@ -121,6 +122,7 @@ export default function KimTaehyunChoiYunaSpace() {
         <WeddingCalendar 
           weddingDate={weddingDate}
         />
+        <WeddingCountdown targetDate={weddingDate} title="결혼식까지" />
         <Gallery images={galleryImages.map(img => img.url)} />
         <Schedule 
           weddingDate={pageConfig?.date || ''}

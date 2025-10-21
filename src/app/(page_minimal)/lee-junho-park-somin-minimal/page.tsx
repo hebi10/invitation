@@ -1,6 +1,6 @@
 'use client';
 import { useState, useEffect } from 'react';
-import { WeddingLoader_2, Cover_2, Greeting_2, Gallery_2, Schedule_2, LocationMap_2, WeddingCalendar_2, GiftInfo_2, Guestbook_2, ScrollAnimatedSection } from '@/components';
+import { WeddingLoader_2, Cover_2, Greeting_2, Gallery_2, Schedule_2, LocationMap_2, WeddingCalendar_2, WeddingCountdown_2, GiftInfo_2, Guestbook_2, ScrollAnimatedSection } from '@/components';
 import { usePageImages } from '@/hooks';
 import { AccessDeniedPage, checkPageAccess } from '@/utils';
 import { useAdmin } from '@/contexts';
@@ -80,6 +80,7 @@ export default function LeeJunhoParkSomin_2() {
       
       <ScrollAnimatedSection delay={200}>
         <WeddingCalendar_2 weddingDate={weddingDate} />
+        <WeddingCountdown_2 targetDate={weddingDate} title="결혼식까지" />
       </ScrollAnimatedSection>
       
       <ScrollAnimatedSection delay={300}>

@@ -44,6 +44,7 @@ export { default as Guestbook_3 } from './Guestbook_3';
 export { default as GiftInfo_3 } from './GiftInfo_3';
 export { default as WeddingCalendar_3 } from './WeddingCalendar_3';
 export { default as WeddingLoader_3 } from './WeddingLoader_3';
+export { default as WeddingCountdown_3 } from './WeddingCountdown_3';
 
 // 관리자 전용 컴포넌트들
 export { default as ImageManager } from './ImageManager';

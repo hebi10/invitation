@@ -8,7 +8,8 @@ import {
   Gallery_2, 
   Schedule_2, 
   LocationMap_2, 
-  WeddingCalendar_2, 
+  WeddingCalendar_2,
+  WeddingCountdown_2,
   GiftInfo_2, 
   Guestbook_2,
   ScrollAnimatedSection
@@ -115,6 +116,7 @@ export default function KimMinJunParkSoHee_2() {
         <WeddingCalendar_2 
           weddingDate={weddingDate}
         />
+        <WeddingCountdown_2 targetDate={weddingDate} title="결혼식까지" />
       </ScrollAnimatedSection>
       
       <ScrollAnimatedSection delay={300}>
