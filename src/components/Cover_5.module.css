@@ -1,0 +1,206 @@
+/* 한지 클래식 테마 변수 */
+.container {
+  --bg: #F5F1E6;
+  --ink: #1C2440;
+  --accent: #C9A14A;
+  
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg);
+  position: relative;
+  padding: 2rem 1rem;
+  
+  /* 한지 텍스처 오버레이 */
+  background-image: 
+    linear-gradient(to bottom, rgba(245, 241, 230, 0.9), rgba(245, 241, 230, 0.95)),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' /%3E%3C/filter%3E%3Crect width='100' height='100' filter='url(%23noise)' opacity='0.05'/%3E%3C/svg%3E");
+}
+
+.content {
+  max-width: 700px;
+  width: 100%;
+  margin: 0 auto;
+  text-align: center;
+  padding: 3rem 1.5rem;
+  position: relative;
+}
+
+.topDecoration,
+.bottomDecoration {
+  width: 200px;
+  height: auto;
+  margin: 0 auto;
+  opacity: 0.85;
+}
+
+.topDecoration {
+  margin-bottom: 2.5rem;
+}
+
+.bottomDecoration {
+  margin-top: 2.5rem;
+}
+
+.title {
+  font-family: 'Noto Serif KR', serif;
+  font-size: 2.25rem;
+  font-weight: 600;
+  color: var(--ink);
+  margin: 0 0 0.75rem 0;
+  letter-spacing: 0.05em;
+  line-height: 1.4;
+}
+
+.subtitle {
+  font-family: 'Noto Sans KR', sans-serif;
+  font-size: 1rem;
+  color: var(--accent);
+  margin: 0 0 2.5rem 0;
+  letter-spacing: 0.1em;
+  font-weight: 400;
+}
+
+.imageContainer {
+  position: relative;
+  width: 100%;
+  max-width: 500px;
+  aspect-ratio: 3 / 4;
+  margin: 0 auto 2.5rem;
+  border: 3px solid var(--accent);
+  border-radius: 2px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.5);
+  box-shadow: 
+    0 4px 12px rgba(28, 36, 64, 0.08),
+    inset 0 0 0 1px rgba(201, 161, 74, 0.2);
+}
+
+.image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  display: block;
+}
+
+.imagePlaceholder {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg);
+}
+
+.loadingSpinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid rgba(201, 161, 74, 0.2);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.coupleInfo {
+  margin-top: 2.5rem;
+}
+
+.names {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.groomName,
+.brideName {
+  font-family: 'Noto Serif KR', serif;
+  font-size: 1.75rem;
+  font-weight: 500;
+  color: var(--ink);
+  letter-spacing: 0.08em;
+}
+
+.divider {
+  font-family: 'Noto Serif KR', serif;
+  font-size: 1.25rem;
+  color: var(--accent);
+  font-weight: 300;
+}
+
+.weddingDate {
+  font-family: 'Noto Sans KR', sans-serif;
+  font-size: 1.125rem;
+  color: var(--ink);
+  margin: 0;
+  letter-spacing: 0.05em;
+  font-weight: 300;
+  opacity: 0.85;
+}
+
+/* 모바일 반응형 */
+@media (max-width: 640px) {
+  .title {
+    font-size: 1.875rem;
+  }
+  
+  .subtitle {
+    font-size: 0.9375rem;
+  }
+  
+  .groomName,
+  .brideName {
+    font-size: 1.5rem;
+  }
+  
+  .divider {
+    font-size: 1.125rem;
+  }
+  
+  .weddingDate {
+    font-size: 1rem;
+  }
+  
+  .imageContainer {
+    max-width: 400px;
+  }
+  
+  .content {
+    padding: 2rem 1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .title {
+    font-size: 1.625rem;
+  }
+  
+  .groomName,
+  .brideName {
+    font-size: 1.25rem;
+  }
+  
+  .divider {
+    font-size: 1rem;
+  }
+  
+  .weddingDate {
+    font-size: 0.9375rem;
+  }
+  
+  .imageContainer {
+    max-width: 320px;
+  }
+}

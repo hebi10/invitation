@@ -118,12 +118,15 @@ export default function KimTaehyunChoiYunaSpace() {
           groomName={pageConfig?.groomName || ''}
           brideName={pageConfig?.brideName || ''}
         />
+        
         <WeddingCalendar 
           weddingDate={weddingDate}
           showCountdown={true}
           countdownTitle="결혼식까지"
         />
+
         <Gallery images={galleryImages.map(img => img.url)} />
+
         <Schedule 
           weddingDate={pageConfig?.date || ''}
           weddingTime={pageConfig?.pageData?.ceremonyTime || ''}
@@ -140,6 +143,7 @@ export default function KimTaehyunChoiYunaSpace() {
             }
           }}
         />
+
         <LocationMap 
           location={pageConfig?.venue || ''}
           address={pageConfig?.pageData?.ceremonyAddress || ''}
@@ -148,7 +152,7 @@ export default function KimTaehyunChoiYunaSpace() {
             lng: pageConfig?.pageData?.kakaoMap?.longitude || 127.0280
           }}
         />
-        <Guestbook pageSlug={WEDDING_SLUG} />
+        
         <GiftInfo 
           groomAccounts={pageConfig?.pageData?.giftInfo?.groomAccounts || []}
           brideAccounts={pageConfig?.pageData?.giftInfo?.brideAccounts || []}

@@ -35,6 +35,16 @@ export const leeJunhoParkSominConfig: WeddingPageConfig = {
       available: true,
       path: '/lee-junho-park-somin-space',
       displayName: '이준호 ♥ 박소민 (우주 버전)'
+    },
+    blue: {
+      available: true,
+      path: '/lee-junho-park-somin-blue',
+      displayName: '이준호 ♥ 박소민 (지중해 블루 버전)'
+    },
+    classic: {
+      available: true,
+      path: '/lee-junho-park-somin-classic',
+      displayName: '이준호 ♥ 박소민 (한지 클래식 버전)'
     }
   },
   metadata: {

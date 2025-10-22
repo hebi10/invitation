@@ -109,10 +109,7 @@ export default function KimTaehyunChoiYuna_2() {
           address={pageConfig?.pageData?.ceremonyAddress || ''} 
         />
       </ScrollAnimatedSection>
-      
-      <ScrollAnimatedSection delay={600}>
-        <Guestbook_2 pageId={WEDDING_SLUG} />
-      </ScrollAnimatedSection>
+
       {pageConfig?.pageData?.giftInfo && (pageConfig.pageData.giftInfo.groomAccounts?.length || pageConfig.pageData.giftInfo.brideAccounts?.length) ? (
         <ScrollAnimatedSection delay={700}>
           <GiftInfo_2 

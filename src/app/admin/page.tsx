@@ -203,6 +203,18 @@ export default function AdminPage() {
             </div>
             <div className={styles.statLabel}>🌌 우주 버전</div>
           </div>
+          <div className={styles.statCard}>
+            <div className={styles.statNumber}>
+              {weddingPages.filter(page => page.variants?.blue?.available).length}
+            </div>
+            <div className={styles.statLabel}>🌊 블루 버전</div>
+          </div>
+          <div className={styles.statCard}>
+            <div className={styles.statNumber}>
+              {weddingPages.filter(page => page.variants?.classic?.available).length}
+            </div>
+            <div className={styles.statLabel}>📜 클래식 버전</div>
+          </div>
         </div>
         
         <div className={styles.tabContainer}>
@@ -267,6 +279,14 @@ export default function AdminPage() {
                         {weddingPages.filter(page => page.variants?.space?.available).length}개의 우주
                       </span>
                       <span className={styles.separator}>•</span>
+                      <span className={styles.pageCount}>
+                        {weddingPages.filter(page => page.variants?.blue?.available).length}개의 블루
+                      </span>
+                      <span className={styles.separator}>•</span>
+                      <span className={styles.pageCount}>
+                        {weddingPages.filter(page => page.variants?.classic?.available).length}개의 클래식
+                      </span>
+                      <span className={styles.separator}>•</span>
                       <span className={styles.pageStatus}>모두 활성화됨</span>
                     </div>
                   </div>
@@ -281,7 +301,7 @@ export default function AdminPage() {
                           <span>🏛️ {page.venue}</span>
                         </div>
                         
-                        {/* 버전 선택 버튼들 - 2x2 그리드 */}
+                        {/* 버전 선택 버튼들 - 2x3 그리드 (6개 버전) */}
                         <div className={styles.versionButtons}>
                           {page.variants?.emotional?.available && (
                             <a 
@@ -317,6 +337,24 @@ export default function AdminPage() {
                               className={`${styles.versionButton} ${styles.spaceButton}`}
                             >
                               🌌 우주
+                            </a>
+                          )}
+                          {page.variants?.blue?.available && (
+                            <a 
+                              href={page.variants.blue.path} 
+                              target="_blank" 
+                              className={`${styles.versionButton} ${styles.blueButton}`}
+                            >
+                              🌊 블루
+                            </a>
+                          )}
+                          {page.variants?.classic?.available && (
+                            <a 
+                              href={page.variants.classic.path} 
+                              target="_blank" 
+                              className={`${styles.versionButton} ${styles.classicButton}`}
+                            >
+                              📜 클래식
                             </a>
                           )}
                         </div>

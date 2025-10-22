@@ -1,0 +1,316 @@
+/* 지중해 블루 테마 - LocationMap - 플랫 디자인 */
+.container {
+  --bg: #FFFFFF;
+  --primary: #1F5AFF;
+  --lemon: #F6C445;
+  --text-primary: #1a1a1a;
+  --text-secondary: #666666;
+  --border: #e5e5e5;
+  
+  width: 100%;
+  max-width: 700px;
+  margin: 0 auto;
+  background: var(--bg);
+  padding: 80px 24px;
+  text-align: center;
+}
+
+.lemonDecoration {
+  font-size: 2.5rem;
+  margin-bottom: 20px;
+  display: inline-block;
+  animation: float 3s ease-in-out infinite;
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-10px) rotate(5deg);
+  }
+}
+
+.title {
+  font-family: var(--font-cormorant-garamond), serif;
+  font-size: 2rem;
+  font-weight: 300;
+  color: var(--primary);
+  margin: 0 0 12px 0;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.subtitle {
+  font-family: var(--font-noto-sans-kr), sans-serif;
+  font-size: 1rem;
+  font-weight: 300;
+  color: var(--text-secondary);
+  margin: 0 0 48px 0;
+}
+
+/* 장소 정보 */
+.venueInfo {
+  max-width: 600px;
+  margin: 0 auto 40px;
+  text-align: center;
+}
+
+.venueName {
+  font-family: var(--font-noto-serif-kr), serif;
+  font-size: 1.5rem;
+  font-weight: 500;
+  color: var(--primary);
+  margin: 0 0 16px 0;
+  letter-spacing: 0.02em;
+}
+
+.address {
+  font-family: var(--font-noto-sans-kr), sans-serif;
+  font-size: 1rem;
+  font-weight: 400;
+  color: var(--text-primary);
+  margin: 0 0 12px 0;
+  line-height: 1.6;
+}
+
+.description {
+  font-family: var(--font-noto-sans-kr), sans-serif;
+  font-size: 0.9375rem;
+  font-weight: 300;
+  color: var(--text-secondary);
+  margin: 0;
+  line-height: 1.6;
+}
+
+/* 지도 컨테이너 */
+.mapContainer {
+  position: relative;
+  max-width: 800px;
+  margin: 0 auto 32px;
+  height: 400px;
+  border: 2px solid var(--primary);
+  overflow: hidden; /* 다시 hidden으로 복구 - 오버레이가 지도 안에 있으므로 */
+}
+
+.map {
+  width: 100%;
+  height: 100%;
+}
+
+.mapLoading {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: var(--bg);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+}
+
+.spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid var(--border);
+  border-top-color: var(--primary);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.mapLoading p {
+  font-family: var(--font-noto-sans-kr), sans-serif;
+  font-size: 0.9375rem;
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+/* 버튼 그리드 */
+.buttonGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  max-width: 600px;
+  margin: 0 auto 32px;
+}
+
+.mapButton {
+  font-family: var(--font-noto-sans-kr), sans-serif;
+  font-size: 0.9375rem;
+  font-weight: 400;
+  padding: 14px 20px;
+  background: transparent;
+  border: 1px solid var(--primary);
+  color: var(--primary);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  letter-spacing: 0.02em;
+}
+
+.mapButton:hover {
+  background: var(--primary);
+  color: white;
+  transform: translateY(-2px);
+}
+
+.mapButton:active {
+  transform: translateY(0);
+}
+
+/* 연락처 */
+.contact {
+  max-width: 600px;
+  margin: 32px auto 0;
+  padding-top: 32px;
+  border-top: 1px solid var(--border);
+  text-align: center;
+}
+
+.contactLabel {
+  font-family: var(--font-noto-serif-kr), serif;
+  font-size: 1rem;
+  font-weight: 500;
+  color: var(--text-primary);
+  margin: 0 0 8px 0;
+}
+
+.contactInfo {
+  font-family: var(--font-noto-sans-kr), sans-serif;
+  font-size: 0.9375rem;
+  font-weight: 300;
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+/* 반응형 */
+@media (max-width: 768px) {
+  .container {
+    padding: 60px 20px;
+  }
+
+  .lemonDecoration {
+    font-size: 2rem;
+  }
+
+  .title {
+    font-size: 1.75rem;
+  }
+
+  .subtitle {
+    font-size: 0.9375rem;
+    margin-bottom: 40px;
+  }
+
+  .venueName {
+    font-size: 1.375rem;
+  }
+
+  .address {
+    font-size: 0.9375rem;
+  }
+
+  .description {
+    font-size: 0.875rem;
+  }
+
+  .mapContainer {
+    height: 350px;
+  }
+
+  .buttonGrid {
+    gap: 10px;
+  }
+
+  .mapButton {
+    font-size: 0.875rem;
+    padding: 12px 16px;
+  }
+}
+
+@media (max-width: 600px) {
+  .container {
+    padding: 50px 16px;
+  }
+
+  .lemonDecoration {
+    font-size: 1.75rem;
+  }
+
+  .title {
+    font-size: 1.5rem;
+  }
+
+  .subtitle {
+    font-size: 0.875rem;
+    margin-bottom: 32px;
+  }
+
+  .venueInfo {
+    margin-bottom: 32px;
+  }
+
+  .venueName {
+    font-size: 1.25rem;
+  }
+
+  .address {
+    font-size: 0.875rem;
+  }
+
+  .description {
+    font-size: 0.8125rem;
+  }
+
+  .mapContainer {
+    height: 300px;
+    border-width: 1px;
+  }
+
+  .buttonGrid {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  .mapButton {
+    font-size: 0.8125rem;
+    padding: 11px 16px;
+  }
+
+  .contact {
+    margin-top: 24px;
+    padding-top: 24px;
+  }
+
+  .contactLabel {
+    font-size: 0.9375rem;
+  }
+
+  .contactInfo {
+    font-size: 0.875rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .mapContainer {
+    height: 280px;
+  }
+
+  .spinner {
+    width: 32px;
+    height: 32px;
+    border-width: 2px;
+  }
+
+  .mapLoading p {
+    font-size: 0.875rem;
+  }
+}

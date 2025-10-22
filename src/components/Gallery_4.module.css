@@ -1,0 +1,438 @@
+/* 지중해 블루 테마 - Gallery */
+.gallery {
+  --bg: #FFFFFF;
+  --primary: #1F5AFF;
+  --lemon: #F6C445;
+  --text-primary: #1a1a1a;
+  --text-secondary: #666666;
+  --border: #e5e5e5;
+  
+  width: 100%;
+  background: var(--bg);
+  padding: 80px 0;
+}
+
+.container {
+  max-width: 700px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+/* 헤더 */
+.header {
+  text-align: center;
+  margin-bottom: 60px;
+}
+
+.lemonDecoration {
+  font-size: 2.5rem;
+  margin-bottom: 20px;
+  animation: float 3s ease-in-out infinite;
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-10px) rotate(5deg);
+  }
+}
+
+.title {
+  font-family: var(--font-cormorant-garamond), serif;
+  font-size: 2rem;
+  font-weight: 300;
+  color: var(--primary);
+  margin: 0 0 16px 0;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.subtitle {
+  font-family: var(--font-noto-sans-kr), sans-serif;
+  font-size: 1rem;
+  font-weight: 300;
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+/* 이미지 그리드 - 플랫 디자인 */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+  margin-bottom: 40px;
+}
+
+.imageCard {
+  position: relative;
+  aspect-ratio: 1;
+  cursor: pointer;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  transition: all 0.3s ease;
+  background: var(--bg);
+}
+
+.imageCard:hover {
+  border-color: var(--primary);
+  transform: translateY(-4px);
+}
+
+.imageCard:active {
+  transform: translateY(-2px);
+}
+
+.imageWrapper {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+.image {
+  transition: transform 0.5s ease;
+  content-visibility: auto;
+}
+
+.imageCard:hover .image {
+  transform: scale(1.05);
+}
+
+.imageOverlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(31, 90, 255, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+}
+
+.imageCard:hover .imageOverlay {
+  opacity: 1;
+}
+
+.zoomIcon {
+  font-size: 2rem;
+  color: white;
+  transform: scale(0.8);
+  transition: transform 0.3s ease;
+}
+
+.imageCard:hover .zoomIcon {
+  transform: scale(1);
+}
+
+/* 더보기 버튼 */
+.loadMoreContainer {
+  text-align: center;
+  margin-top: 40px;
+}
+
+.loadMoreButton {
+  font-family: var(--font-noto-sans-kr), sans-serif;
+  font-size: 1rem;
+  font-weight: 400;
+  padding: 14px 32px;
+  background: transparent;
+  border: 2px solid var(--primary);
+  color: var(--primary);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  letter-spacing: 0.05em;
+}
+
+.loadMoreButton:hover {
+  background: var(--primary);
+  color: white;
+  transform: translateY(-2px);
+}
+
+.loadMoreButton:active {
+  transform: translateY(0);
+}
+
+.loadMoreIcon {
+  display: inline-block;
+  transition: transform 0.3s ease;
+}
+
+.loadMoreButton:hover .loadMoreIcon {
+  transform: translateY(3px);
+}
+
+/* 모달 */
+.modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(255, 255, 255, 0.97);
+  backdrop-filter: blur(10px);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.closeButton {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  width: 48px;
+  height: 48px;
+  background: var(--primary);
+  border: none;
+  color: white;
+  font-size: 24px;
+  cursor: pointer;
+  z-index: 1002;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+  border-radius: 50%;
+}
+
+.closeButton:hover {
+  background: var(--lemon);
+  color: var(--text-primary);
+  transform: rotate(90deg);
+}
+
+.closeButton:active {
+  transform: rotate(90deg) scale(0.95);
+}
+
+.modalContent {
+  position: relative;
+  max-width: 90vw;
+  max-height: 90vh;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.modalImageWrapper {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  max-width: 1200px;
+  max-height: 800px;
+}
+
+.modalImage {
+  object-fit: contain;
+}
+
+/* 네비게이션 버튼 */
+.navButton {
+  position: fixed;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 56px;
+  height: 56px;
+  background: var(--primary);
+  border: none;
+  color: white;
+  font-size: 32px;
+  cursor: pointer;
+  z-index: 1002;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+}
+
+.navButton:hover {
+  background: var(--lemon);
+  color: var(--text-primary);
+  transform: translateY(-50%) scale(1.1);
+}
+
+.navButton:active {
+  transform: translateY(-50%) scale(1);
+}
+
+.prevButton {
+  left: 20px;
+}
+
+.nextButton {
+  right: 20px;
+}
+
+.imageCounter {
+  position: fixed;
+  bottom: 30px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--primary);
+  color: white;
+  padding: 10px 24px;
+  border-radius: 20px;
+  font-family: var(--font-noto-sans-kr), sans-serif;
+  font-size: 0.9375rem;
+  font-weight: 500;
+  z-index: 1002;
+  letter-spacing: 0.05em;
+}
+
+/* 반응형 */
+@media (max-width: 900px) {
+  .grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+  }
+}
+
+@media (max-width: 768px) {
+  .gallery {
+    padding: 60px 0;
+  }
+
+  .container {
+    padding: 0 20px;
+  }
+
+  .header {
+    margin-bottom: 48px;
+  }
+
+  .lemonDecoration {
+    font-size: 2rem;
+    margin-bottom: 16px;
+  }
+
+  .title {
+    font-size: 1.75rem;
+  }
+
+  .subtitle {
+    font-size: 0.9375rem;
+  }
+
+  .grid {
+    gap: 12px;
+  }
+
+  .loadMoreButton {
+    font-size: 0.9375rem;
+    padding: 12px 28px;
+  }
+
+  .closeButton {
+    width: 44px;
+    height: 44px;
+    font-size: 20px;
+  }
+
+  .navButton {
+    width: 48px;
+    height: 48px;
+    font-size: 28px;
+  }
+
+  .prevButton {
+    left: 10px;
+  }
+
+  .nextButton {
+    right: 10px;
+  }
+
+  .imageCounter {
+    bottom: 20px;
+    font-size: 0.875rem;
+    padding: 8px 20px;
+  }
+}
+
+@media (max-width: 480px) {
+  .gallery {
+    padding: 50px 0;
+  }
+
+  .container {
+    padding: 0 16px;
+  }
+
+  .lemonDecoration {
+    font-size: 1.75rem;
+  }
+
+  .title {
+    font-size: 1.5rem;
+  }
+
+  .subtitle {
+    font-size: 0.875rem;
+  }
+
+  .grid {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .loadMoreButton {
+    font-size: 0.875rem;
+    padding: 10px 24px;
+    gap: 6px;
+  }
+
+  .closeButton {
+    top: 10px;
+    right: 10px;
+    width: 40px;
+    height: 40px;
+    font-size: 18px;
+  }
+
+  .navButton {
+    width: 40px;
+    height: 40px;
+    font-size: 24px;
+  }
+
+  .prevButton {
+    left: 5px;
+  }
+
+  .nextButton {
+    right: 5px;
+  }
+
+  .imageCounter {
+    bottom: 15px;
+    font-size: 0.8125rem;
+    padding: 6px 16px;
+  }
+
+  .modal {
+    padding: 10px;
+  }
+}

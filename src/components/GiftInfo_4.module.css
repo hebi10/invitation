@@ -1,0 +1,301 @@
+/* 지중해 블루 테마 - GiftInfo - 플랫 디자인 */
+.container {
+  --bg: #FFFFFF;
+  --primary: #1F5AFF;
+  --lemon: #F6C445;
+  --text-primary: #1a1a1a;
+  --text-secondary: #666666;
+  --border: #e5e5e5;
+  
+  width: 100%;
+  max-width: 700px;
+  margin: 0 auto;
+  background: var(--bg);
+  padding: 80px 24px;
+  text-align: center;
+}
+
+.lemonDecoration {
+  font-size: 2.5rem;
+  margin-bottom: 20px;
+  display: inline-block;
+  animation: float 3s ease-in-out infinite;
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-10px) rotate(5deg);
+  }
+}
+
+.title {
+  font-family: var(--font-cormorant-garamond), serif;
+  font-size: 2rem;
+  font-weight: 300;
+  color: var(--primary);
+  margin: 0 0 12px 0;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.subtitle {
+  font-family: var(--font-noto-serif-kr), serif;
+  font-size: 1.125rem;
+  font-weight: 400;
+  color: var(--text-secondary);
+  margin: 0 0 24px 0;
+}
+
+.message {
+  font-family: var(--font-noto-sans-kr), sans-serif;
+  font-size: 0.9375rem;
+  font-weight: 300;
+  color: var(--text-secondary);
+  line-height: 1.7;
+  margin: 0 0 48px 0;
+  white-space: pre-wrap;
+}
+
+/* 계좌 컨테이너 */
+.accountsContainer {
+  max-width: 800px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 32px;
+}
+
+.accountSection {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.sectionTitle {
+  font-family: var(--font-cormorant-garamond), serif;
+  font-size: 1.5rem;
+  font-weight: 300;
+  color: var(--primary);
+  margin: 0 0 16px 0;
+  text-align: center;
+  letter-spacing: 0.1em;
+}
+
+.accountCard {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  transition: all 0.3s ease;
+}
+
+.accountCard:hover {
+  border-color: var(--primary);
+  transform: translateY(-4px);
+}
+
+.accountInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  text-align: left;
+}
+
+.accountRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+.accountHolder {
+  font-family: var(--font-noto-serif-kr), serif;
+  font-size: 1.125rem;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.accountBank {
+  font-family: var(--font-noto-sans-kr), sans-serif;
+  font-size: 0.9375rem;
+  font-weight: 400;
+  color: var(--text-secondary);
+}
+
+.accountNumber {
+  font-family: var(--font-noto-sans-kr), sans-serif;
+  font-size: 0.9375rem;
+  font-weight: 400;
+  color: var(--text-primary);
+  letter-spacing: 0.02em;
+}
+
+.copyButton {
+  font-family: var(--font-noto-sans-kr), sans-serif;
+  font-size: 0.9375rem;
+  font-weight: 500;
+  padding: 12px;
+  background: transparent;
+  border: 1px solid var(--primary);
+  color: var(--primary);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  letter-spacing: 0.05em;
+}
+
+.copyButton:hover {
+  background: var(--primary);
+  color: white;
+  transform: translateY(-2px);
+}
+
+.copyButton:active {
+  transform: translateY(0);
+}
+
+/* 반응형 */
+@media (max-width: 768px) {
+  .container {
+    padding: 60px 20px;
+  }
+
+  .lemonDecoration {
+    font-size: 2rem;
+  }
+
+  .title {
+    font-size: 1.75rem;
+  }
+
+  .subtitle {
+    font-size: 1rem;
+    margin-bottom: 20px;
+  }
+
+  .message {
+    font-size: 0.875rem;
+    margin-bottom: 40px;
+  }
+
+  .accountsContainer {
+    gap: 24px;
+  }
+
+  .sectionTitle {
+    font-size: 1.375rem;
+    margin-bottom: 12px;
+  }
+
+  .accountCard {
+    padding: 20px;
+  }
+
+  .accountHolder {
+    font-size: 1rem;
+  }
+
+  .accountBank {
+    font-size: 0.875rem;
+  }
+
+  .accountNumber {
+    font-size: 0.875rem;
+  }
+
+  .copyButton {
+    font-size: 0.875rem;
+    padding: 10px;
+  }
+}
+
+@media (max-width: 600px) {
+  .container {
+    padding: 50px 16px;
+  }
+
+  .lemonDecoration {
+    font-size: 1.75rem;
+  }
+
+  .title {
+    font-size: 1.5rem;
+  }
+
+  .subtitle {
+    font-size: 0.9375rem;
+  }
+
+  .message {
+    font-size: 0.8125rem;
+    margin-bottom: 32px;
+  }
+
+  .accountsContainer {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+
+  .sectionTitle {
+    font-size: 1.25rem;
+  }
+
+  .accountCard {
+    padding: 16px;
+    gap: 12px;
+  }
+
+  .accountInfo {
+    gap: 10px;
+  }
+
+  .accountRow {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+  }
+
+  .accountHolder {
+    font-size: 0.9375rem;
+  }
+
+  .accountBank {
+    font-size: 0.8125rem;
+  }
+
+  .accountNumber {
+    font-size: 0.8125rem;
+  }
+
+  .copyButton {
+    font-size: 0.8125rem;
+    padding: 9px;
+  }
+}
+
+@media (max-width: 480px) {
+  .accountCard {
+    padding: 14px;
+  }
+
+  .accountHolder {
+    font-size: 0.875rem;
+  }
+
+  .accountBank {
+    font-size: 0.75rem;
+  }
+
+  .accountNumber {
+    font-size: 0.75rem;
+  }
+
+  .copyButton {
+    font-size: 0.75rem;
+    padding: 8px;
+  }
+}

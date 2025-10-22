@@ -35,6 +35,16 @@ export const anDoyoungYoonJisooConfig: WeddingPageConfig = {
       available: true,
       path: '/an-doyoung-yoon-jisoo-space',
       displayName: '안도영 ♥ 윤지수 (우주 버전)'
+    },
+    blue: {
+      available: true,
+      path: '/an-doyoung-yoon-jisoo-blue',
+      displayName: '안도영 ♥ 윤지수 (지중해 블루 버전)'
+    },
+    classic: {
+      available: true,
+      path: '/an-doyoung-yoon-jisoo-classic',
+      displayName: '안도영 ♥ 윤지수 (한지 클래식 버전)'
     }
   },
   metadata: {

@@ -1,0 +1,459 @@
+/* 지중해 블루 테마 - Schedule - 플랫 디자인 */
+.container {
+  --bg: #FFFFFF;
+  --primary: #1F5AFF;
+  --lemon: #F6C445;
+  --text-primary: #1a1a1a;
+  --text-secondary: #666666;
+  --border: #e5e5e5;
+  
+  width: 100%;
+  max-width: 700px;
+  margin: 0 auto;
+  background: var(--bg);
+  padding: 80px 24px;
+  text-align: center;
+}
+
+.lemonDecoration {
+  font-size: 2.5rem;
+  margin-bottom: 20px;
+  display: inline-block;
+  animation: float 3s ease-in-out infinite;
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-10px) rotate(5deg);
+  }
+}
+
+.title {
+  font-family: var(--font-cormorant-garamond), serif;
+  font-size: 2rem;
+  font-weight: 300;
+  color: var(--primary);
+  margin: 0 0 12px 0;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.subtitle {
+  font-family: var(--font-noto-sans-kr), sans-serif;
+  font-size: 1rem;
+  font-weight: 300;
+  color: var(--text-secondary);
+  margin: 0 0 40px 0;
+}
+
+/* 탭 메뉴 */
+.tabs {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 40px;
+  flex-wrap: wrap;
+}
+
+.tab {
+  font-family: var(--font-noto-sans-kr), sans-serif;
+  font-size: 0.9375rem;
+  font-weight: 400;
+  padding: 10px 24px;
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  letter-spacing: 0.02em;
+}
+
+.tab:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.tab.active {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: white;
+}
+
+/* 스케줄 컨텐츠 */
+.scheduleContent {
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.mainInfo {
+  margin-bottom: 40px;
+}
+
+.dateTimeWrapper {
+  margin-bottom: 32px;
+}
+
+.date {
+  font-family: var(--font-noto-serif-kr), serif;
+  font-size: 1.75rem;
+  font-weight: 500;
+  color: var(--text-primary);
+  margin: 0 0 12px 0;
+  letter-spacing: 0.05em;
+}
+
+.time {
+  font-family: var(--font-noto-sans-kr), sans-serif;
+  font-size: 1.125rem;
+  font-weight: 300;
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+.divider {
+  width: 80px;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    var(--primary),
+    transparent
+  );
+  margin: 32px auto;
+}
+
+.venueWrapper {
+  text-align: center;
+}
+
+.venue {
+  font-family: var(--font-noto-serif-kr), serif;
+  font-size: 1.5rem;
+  font-weight: 500;
+  color: var(--primary);
+  margin: 0 0 12px 0;
+  letter-spacing: 0.02em;
+}
+
+.address {
+  font-family: var(--font-noto-sans-kr), sans-serif;
+  font-size: 1rem;
+  font-weight: 300;
+  color: var(--text-secondary);
+  margin: 0;
+  line-height: 1.6;
+}
+
+/* 상세 정보 */
+.detailsContainer {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  margin-top: 40px;
+}
+
+.detailItem {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  padding: 24px;
+  text-align: center;
+  transition: all 0.3s ease;
+}
+
+.detailItem:hover {
+  border-color: var(--primary);
+  transform: translateY(-4px);
+}
+
+.detailHeader {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.detailIcon {
+  font-size: 2rem;
+  margin-bottom: 12px;
+}
+
+.detailTitle {
+  font-family: var(--font-noto-serif-kr), serif;
+  font-size: 1.125rem;
+  font-weight: 500;
+  color: var(--primary);
+  margin: 0;
+}
+
+.detailContent {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.detailInfo {
+  font-family: var(--font-noto-sans-kr), sans-serif;
+  font-size: 0.9375rem;
+  font-weight: 300;
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+/* 가이드 컨테이너 */
+.guideContainer {
+  max-width: 700px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.guideItem {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+.guideItem:hover {
+  border-color: var(--primary);
+}
+
+.guideHeader {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.3s ease;
+}
+
+.guideHeader:hover {
+  background: rgba(31, 90, 255, 0.03);
+}
+
+.guideTitle {
+  font-family: var(--font-noto-sans-kr), sans-serif;
+  font-size: 1rem;
+  font-weight: 500;
+  color: var(--text-primary);
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.guideIcon {
+  color: var(--primary);
+  transition: transform 0.3s ease;
+  display: inline-block;
+}
+
+.guideIcon.expanded {
+  transform: rotate(90deg);
+}
+
+.toggleIcon {
+  font-size: 1.25rem;
+  color: var(--primary);
+  font-weight: 300;
+}
+
+.guideContentWrapper {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.3s ease, padding 0.3s ease;
+}
+
+.guideContentWrapper.expanded {
+  max-height: 1000px;
+  padding: 0 20px 20px 20px;
+}
+
+.guideContent {
+  font-family: var(--font-noto-sans-kr), sans-serif;
+  font-size: 0.9375rem;
+  font-weight: 300;
+  color: var(--text-secondary);
+  line-height: 1.7;
+  margin: 0;
+  white-space: pre-wrap;
+}
+
+/* 반응형 */
+@media (max-width: 768px) {
+  .container {
+    padding: 60px 20px;
+  }
+
+  .lemonDecoration {
+    font-size: 2rem;
+  }
+
+  .title {
+    font-size: 1.75rem;
+  }
+
+  .subtitle {
+    font-size: 0.9375rem;
+    margin-bottom: 32px;
+  }
+
+  .tabs {
+    gap: 6px;
+  }
+
+  .tab {
+    font-size: 0.875rem;
+    padding: 9px 20px;
+  }
+
+  .date {
+    font-size: 1.5rem;
+  }
+
+  .time {
+    font-size: 1rem;
+  }
+
+  .venue {
+    font-size: 1.25rem;
+  }
+
+  .address {
+    font-size: 0.9375rem;
+  }
+
+  .detailsContainer {
+    gap: 16px;
+  }
+
+  .detailItem {
+    padding: 20px;
+  }
+
+  .detailIcon {
+    font-size: 1.75rem;
+  }
+
+  .detailTitle {
+    font-size: 1rem;
+  }
+
+  .detailInfo {
+    font-size: 0.875rem;
+  }
+
+  .guideHeader {
+    padding: 16px;
+  }
+
+  .guideTitle {
+    font-size: 0.9375rem;
+    gap: 10px;
+  }
+
+  .guideContentWrapper.expanded {
+    padding: 0 16px 16px 16px;
+  }
+
+  .guideContent {
+    font-size: 0.875rem;
+  }
+}
+
+@media (max-width: 600px) {
+  .container {
+    padding: 50px 16px;
+  }
+
+  .lemonDecoration {
+    font-size: 1.75rem;
+  }
+
+  .title {
+    font-size: 1.5rem;
+  }
+
+  .subtitle {
+    font-size: 0.875rem;
+    margin-bottom: 28px;
+  }
+
+  .tabs {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .tab {
+    width: 100%;
+  }
+
+  .detailsContainer {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .detailItem {
+    padding: 16px;
+  }
+}
+
+@media (max-width: 480px) {
+  .date {
+    font-size: 1.375rem;
+  }
+
+  .time {
+    font-size: 0.9375rem;
+  }
+
+  .venue {
+    font-size: 1.125rem;
+  }
+
+  .address {
+    font-size: 0.875rem;
+  }
+
+  .detailIcon {
+    font-size: 1.5rem;
+    margin-bottom: 8px;
+  }
+
+  .detailTitle {
+    font-size: 0.9375rem;
+  }
+
+  .detailInfo {
+    font-size: 0.8125rem;
+  }
+
+  .guideHeader {
+    padding: 14px;
+  }
+
+  .guideTitle {
+    font-size: 0.875rem;
+    gap: 8px;
+  }
+
+  .toggleIcon {
+    font-size: 1.125rem;
+  }
+
+  .guideContentWrapper.expanded {
+    padding: 0 14px 14px 14px;
+  }
+
+  .guideContent {
+    font-size: 0.8125rem;
+  }
+}

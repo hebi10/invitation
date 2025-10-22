@@ -68,6 +68,16 @@ export interface WeddingPageConfig {
       path: string; // 우주 버전 경로
       displayName: string; // 우주 버전 표시명
     };
+    blue?: {
+      available: boolean;
+      path: string; // 지중해 블루 버전 경로
+      displayName: string; // 지중해 블루 버전 표시명
+    };
+    classic?: {
+      available: boolean;
+      path: string; // 한지 클래식 버전 경로
+      displayName: string; // 한지 클래식 버전 표시명
+    };
   };
   // 페이지 노출 기간 설정
   displayPeriod?: {

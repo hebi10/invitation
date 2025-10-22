@@ -9,7 +9,7 @@ export const kimTaehyunChoiYunaConfig: WeddingPageConfig = {
   groomName: '김태현',
   brideName: '최유나',
   weddingDateTime: {
-    year: 2024,
+    year: 2025,
     month: 10, // 0-based (0 = January)
     day: 16,
     hour: 13,
@@ -35,6 +35,16 @@ export const kimTaehyunChoiYunaConfig: WeddingPageConfig = {
       available: true,
       path: '/kim-taehyun-choi-yuna-space',
       displayName: '김태현 ♥ 최유나 (우주 버전)'
+    },
+    blue: {
+      available: true,
+      path: '/kim-taehyun-choi-yuna-blue',
+      displayName: '김태현 ♥ 최유나 (지중해 블루 버전)'
+    },
+    classic: {
+      available: true,
+      path: '/kim-taehyun-choi-yuna-classic',
+      displayName: '김태현 ♥ 최유나 (한지 클래식 버전)'
     }
   },
   metadata: {

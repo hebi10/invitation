@@ -35,6 +35,16 @@ export const kimMinjunParkSoheeConfig: WeddingPageConfig = {
       available: true,
       path: '/kim-minjun-park-sohee-space',
       displayName: '김민준 ♥ 박소희 (우주 버전)'
+    },
+    blue: {
+      available: true,
+      path: '/kim-minjun-park-sohee-blue',
+      displayName: '김민준 ♥ 박소희 (지중해 블루 버전)'
+    },
+    classic: {
+      available: true,
+      path: '/kim-minjun-park-sohee-classic',
+      displayName: '김민준 ♥ 박소희 (한지 클래식 버전)'
     }
   },
   metadata: {

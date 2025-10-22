@@ -28,6 +28,16 @@ export interface WeddingPageInfo {
       path: string;
       displayName: string;
     };
+    blue?: {
+      available: boolean;
+      path: string;
+      displayName: string;
+    };
+    classic?: {
+      available: boolean;
+      path: string;
+      displayName: string;
+    };
   };
 }
 

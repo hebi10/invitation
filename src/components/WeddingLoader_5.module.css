@@ -1,0 +1,206 @@
+/* 한지 클래식 테마 */
+.loader {
+  --bg: #F5F1E6;
+  --ink: #1C2440;
+  --accent: #C9A14A;
+  
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: var(--bg);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  transition: opacity 0.5s ease-out;
+  
+  /* 한지 텍스처 */
+  background-image: 
+    linear-gradient(to bottom, rgba(245, 241, 230, 0.98), rgba(245, 241, 230, 1)),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' /%3E%3C/filter%3E%3Crect width='100' height='100' filter='url(%23noise)' opacity='0.05'/%3E%3C/svg%3E");
+}
+
+.loader.fadeOut {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.background {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: -1;
+}
+
+.topDecoration,
+.bottomDecoration {
+  width: 200px;
+  height: auto;
+  opacity: 0.8;
+  animation: fadeInUp 1s ease-out;
+}
+
+.topDecoration {
+  margin-bottom: 3rem;
+}
+
+.bottomDecoration {
+  margin-top: 3rem;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 0.8;
+    transform: translateY(0);
+  }
+}
+
+.names {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  margin-bottom: 1rem;
+  animation: fadeIn 1s ease-out 0.3s both;
+}
+
+.name {
+  font-family: 'Noto Serif KR', serif;
+  font-size: 2.25rem;
+  font-weight: 500;
+  color: var(--ink);
+  letter-spacing: 0.15em;
+}
+
+.divider {
+  font-family: 'Noto Serif KR', serif;
+  font-size: 1.5rem;
+  color: var(--accent);
+  font-weight: 300;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.subtitle {
+  font-family: 'Noto Serif KR', serif;
+  font-size: 1rem;
+  color: var(--accent);
+  margin: 0 0 4rem 0;
+  letter-spacing: 0.3em;
+  animation: fadeIn 1s ease-out 0.5s both;
+}
+
+.progressContainer {
+  width: 300px;
+  height: 2px;
+  background: rgba(201, 161, 74, 0.2);
+  margin-bottom: 1rem;
+  overflow: hidden;
+  animation: fadeIn 1s ease-out 0.7s both;
+}
+
+.progressBar {
+  height: 100%;
+  background: linear-gradient(to right, var(--accent), rgba(201, 161, 74, 0.8));
+  transition: width 0.3s ease-out;
+}
+
+.progressText {
+  font-family: 'Noto Sans KR', sans-serif;
+  font-size: 0.875rem;
+  color: var(--accent);
+  letter-spacing: 0.1em;
+  animation: fadeIn 1s ease-out 0.9s both;
+}
+
+/* 모바일 */
+@media (max-width: 640px) {
+  .topDecoration,
+  .bottomDecoration {
+    width: 150px;
+  }
+  
+  .topDecoration {
+    margin-bottom: 2.5rem;
+  }
+  
+  .bottomDecoration {
+    margin-top: 2.5rem;
+  }
+  
+  .names {
+    gap: 1rem;
+  }
+  
+  .name {
+    font-size: 1.875rem;
+  }
+  
+  .divider {
+    font-size: 1.25rem;
+  }
+  
+  .subtitle {
+    font-size: 0.9375rem;
+    margin-bottom: 3.5rem;
+  }
+  
+  .progressContainer {
+    width: 250px;
+  }
+}
+
+@media (max-width: 480px) {
+  .topDecoration,
+  .bottomDecoration {
+    width: 120px;
+  }
+  
+  .topDecoration {
+    margin-bottom: 2rem;
+  }
+  
+  .bottomDecoration {
+    margin-top: 2rem;
+  }
+  
+  .names {
+    gap: 0.875rem;
+  }
+  
+  .name {
+    font-size: 1.625rem;
+  }
+  
+  .divider {
+    font-size: 1.125rem;
+  }
+  
+  .subtitle {
+    font-size: 0.875rem;
+    margin-bottom: 3rem;
+  }
+  
+  .progressContainer {
+    width: 200px;
+  }
+  
+  .progressText {
+    font-size: 0.8125rem;
+  }
+}

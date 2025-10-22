@@ -1,0 +1,433 @@
+/* 지중해 블루 테마 - 플랫 디자인 */
+.greeting {
+  --bg: #FFFFFF;
+  --primary: #1F5AFF;
+  --lemon: #F6C445;
+  --text-primary: #1a1a1a;
+  --text-secondary: #666666;
+  --border: #e5e5e5;
+  
+  width: 100%;
+  background: var(--bg);
+  padding: 80px 0;
+}
+
+.container {
+  max-width: 700px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+/* 상단 레몬 장식 */
+.topDecoration {
+  text-align: center;
+  margin-bottom: 40px;
+}
+
+.lemon {
+  font-size: 2.5rem;
+  display: inline-block;
+  animation: float 3s ease-in-out infinite;
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-10px) rotate(5deg);
+  }
+}
+
+/* 인사말 섹션 */
+.messageSection {
+  text-align: center;
+  margin-bottom: 60px;
+}
+
+.title {
+  font-family: var(--font-cormorant-garamond), serif;
+  font-size: 2rem;
+  font-weight: 300;
+  color: var(--primary);
+  margin: 0 0 32px 0;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.message {
+  font-family: var(--font-noto-sans-kr), sans-serif;
+  font-size: 1rem;
+  font-weight: 300;
+  color: var(--text-primary);
+  line-height: 1.8;
+  margin: 0 0 24px 0;
+  white-space: pre-wrap;
+}
+
+.author {
+  font-family: var(--font-noto-serif-kr), serif;
+  font-size: 0.9375rem;
+  font-weight: 400;
+  color: var(--text-secondary);
+  margin: 0;
+  letter-spacing: 0.05em;
+}
+
+/* 웨이브 구분선 */
+.waveDivider {
+  width: 100%;
+  height: 40px;
+  margin: 60px 0;
+  overflow: hidden;
+  text-align: center;
+}
+
+.waveDivider svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.waveDivider path {
+  fill: var(--primary);
+  opacity: 0.08;
+}
+
+/* 가족 정보 섹션 - 플랫 디자인 */
+.familySection {
+  margin-top: 60px;
+}
+
+.familyTitle {
+  font-family: var(--font-cormorant-garamond), serif;
+  font-size: 1.75rem;
+  font-weight: 300;
+  color: var(--primary);
+  text-align: center;
+  margin: 0 0 40px 0;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.familyCards {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+}
+
+/* 가족 카드 - 플랫 디자인 (box-shadow 제거) */
+.familyCard {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  padding: 24px;
+  transition: all 0.3s ease;
+  position: relative;
+}
+
+.familyCard:hover {
+  border-color: var(--primary);
+  transform: translateY(-2px);
+}
+
+.cardHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+.roleLabel {
+  font-family: var(--font-cormorant-garamond), serif;
+  font-size: 1.125rem;
+  font-weight: 400;
+  color: var(--primary);
+  letter-spacing: 0.05em;
+}
+
+.expandButton {
+  width: 28px;
+  height: 28px;
+  border: 1px solid var(--primary);
+  background: transparent;
+  color: var(--primary);
+  border-radius: 50%;
+  font-size: 1.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  padding: 0;
+  line-height: 1;
+}
+
+.expandButton:hover {
+  background: var(--primary);
+  color: white;
+}
+
+.expandButton:active {
+  transform: scale(0.95);
+}
+
+/* 인물 정보 */
+.personInfo {
+  text-align: center;
+  margin-bottom: 16px;
+}
+
+.personName {
+  font-family: var(--font-noto-serif-kr), serif;
+  font-size: 1.25rem;
+  font-weight: 500;
+  color: var(--text-primary);
+  margin: 0 0 12px 0;
+}
+
+.order {
+  font-size: 0.875rem;
+  font-weight: 300;
+  color: var(--text-secondary);
+}
+
+.contactButton {
+  font-family: var(--font-noto-sans-kr), sans-serif;
+  font-size: 0.875rem;
+  padding: 8px 16px;
+  background: transparent;
+  border: 1px solid var(--primary);
+  color: var(--primary);
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.contactButton:hover {
+  background: var(--primary);
+  color: white;
+}
+
+.contactButton:active {
+  transform: scale(0.98);
+}
+
+/* 부모 정보 */
+.parentsInfo {
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border);
+  animation: slideDown 0.3s ease;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.parentItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 0;
+  border-bottom: 1px solid rgba(229, 229, 229, 0.5);
+}
+
+.parentItem:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.relation {
+  font-family: var(--font-noto-sans-kr), sans-serif;
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  flex-shrink: 0;
+}
+
+.parentName {
+  font-family: var(--font-noto-sans-kr), sans-serif;
+  font-size: 0.9375rem;
+  font-weight: 400;
+  color: var(--text-primary);
+  flex: 1;
+  text-align: left;
+}
+
+.phoneButton {
+  width: 32px;
+  height: 32px;
+  border: none;
+  background: transparent;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+  flex-shrink: 0;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.phoneButton:hover {
+  transform: scale(1.15);
+}
+
+.phoneButton:active {
+  transform: scale(0.95);
+}
+
+/* 반응형 */
+@media (max-width: 768px) {
+  .greeting {
+    padding: 60px 0;
+  }
+
+  .container {
+    padding: 0 20px;
+  }
+
+  .topDecoration {
+    margin-bottom: 32px;
+  }
+
+  .lemon {
+    font-size: 2rem;
+  }
+
+  .title {
+    font-size: 1.75rem;
+    margin-bottom: 24px;
+  }
+
+  .message {
+    font-size: 0.9375rem;
+    line-height: 1.7;
+  }
+
+  .author {
+    font-size: 0.875rem;
+  }
+
+  .waveDivider {
+    margin: 48px 0;
+  }
+
+  .familyCards {
+    gap: 20px;
+  }
+
+  .familyCard {
+    padding: 20px;
+  }
+
+  .roleLabel {
+    font-size: 1rem;
+  }
+
+  .personName {
+    font-size: 1.125rem;
+  }
+
+  .contactButton {
+    font-size: 0.8125rem;
+    padding: 7px 14px;
+  }
+}
+
+@media (max-width: 600px) {
+  .greeting {
+    padding: 50px 0;
+  }
+
+  .familyCards {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  .familyCard {
+    padding: 20px;
+  }
+
+  .title {
+    font-size: 1.5rem;
+  }
+
+  .message {
+    font-size: 0.875rem;
+  }
+
+  .familyTitle {
+    font-size: 1.5rem;
+    margin-bottom: 32px;
+  }
+}
+
+@media (max-width: 480px) {
+  .container {
+    padding: 0 16px;
+  }
+
+  .lemon {
+    font-size: 1.75rem;
+  }
+
+  .title {
+    font-size: 1.375rem;
+  }
+
+  .waveDivider {
+    height: 30px;
+    margin: 40px 0;
+  }
+
+  .familyCard {
+    padding: 16px;
+  }
+
+  .cardHeader {
+    margin-bottom: 16px;
+    padding-bottom: 12px;
+  }
+
+  .expandButton {
+    width: 26px;
+    height: 26px;
+    font-size: 1.125rem;
+  }
+
+  .personName {
+    font-size: 1rem;
+  }
+
+  .contactButton {
+    font-size: 0.75rem;
+    padding: 6px 12px;
+  }
+
+  .parentItem {
+    padding: 10px 0;
+  }
+
+  .relation {
+    font-size: 0.8125rem;
+  }
+
+  .parentName {
+    font-size: 0.875rem;
+  }
+
+  .phoneButton {
+    width: 28px;
+    height: 28px;
+    font-size: 0.9375rem;
+  }
+}

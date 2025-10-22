@@ -1,0 +1,124 @@
+/* 지중해 블루 테마 - Countdown */
+.countdown {
+  --bg: #FFFFFF;
+  --primary: #1F5AFF;
+  --lemon: #F6C445;
+  --text-primary: #1a1a1a;
+  --text-secondary: #666666;
+  
+  width: 100%;
+  text-align: center;
+  padding: 40px 0;
+}
+
+.title {
+  font-family: var(--font-noto-serif-kr), serif;
+  font-size: 1.375rem;
+  font-weight: 400;
+  color: var(--primary);
+  margin: 0 0 32px 0;
+  letter-spacing: 0.05em;
+}
+
+.timerGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 20px;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.timerItem {
+  background: var(--bg);
+  border: 2px solid var(--primary);
+  padding: 24px 16px;
+  transition: all 0.3s ease;
+}
+
+.timerItem:hover {
+  background: var(--primary);
+  transform: translateY(-4px);
+}
+
+.timerItem:hover .number {
+  color: white;
+}
+
+.timerItem:hover .label {
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.number {
+  font-family: var(--font-cormorant-garamond), serif;
+  font-size: 2.5rem;
+  font-weight: 400;
+  color: var(--primary);
+  margin: 0 0 8px 0;
+  line-height: 1;
+  transition: color 0.3s ease;
+}
+
+.label {
+  font-family: var(--font-noto-sans-kr), sans-serif;
+  font-size: 0.875rem;
+  font-weight: 300;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  transition: color 0.3s ease;
+}
+
+/* 반응형 */
+@media (max-width: 768px) {
+  .countdown {
+    padding: 32px 0;
+  }
+
+  .title {
+    font-size: 1.25rem;
+    margin-bottom: 24px;
+  }
+
+  .timerGrid {
+    gap: 16px;
+  }
+
+  .timerItem {
+    padding: 20px 12px;
+  }
+
+  .number {
+    font-size: 2rem;
+  }
+
+  .label {
+    font-size: 0.8125rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .countdown {
+    padding: 24px 0;
+  }
+
+  .title {
+    font-size: 1.125rem;
+    margin-bottom: 20px;
+  }
+
+  .timerGrid {
+    gap: 12px;
+  }
+
+  .timerItem {
+    padding: 16px 8px;
+  }
+
+  .number {
+    font-size: 1.75rem;
+  }
+
+  .label {
+    font-size: 0.75rem;
+  }
+}

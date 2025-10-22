@@ -1,0 +1,191 @@
+/* 한지 클래식 테마 */
+.container {
+  --bg: #F5F1E6;
+  --ink: #1C2440;
+  --accent: #C9A14A;
+  
+  background: var(--bg);
+  padding: 4rem 1rem;
+  
+  background-image: 
+    linear-gradient(to bottom, rgba(245, 241, 230, 0.95), rgba(245, 241, 230, 0.98)),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' /%3E%3C/filter%3E%3Crect width='100' height='100' filter='url(%23noise)' opacity='0.05'/%3E%3C/svg%3E");
+}
+
+.topDecoration,
+.bottomDecoration {
+  width: 100px;
+  height: auto;
+  margin: 0 auto 2rem;
+  opacity: 0.8;
+  display: block;
+}
+
+.bottomDecoration {
+  margin: 3rem auto 0;
+}
+
+.title {
+  font-family: 'Noto Serif KR', serif;
+  font-size: 2rem;
+  font-weight: 600;
+  color: var(--ink);
+  margin: 0 0 0.5rem 0;
+  text-align: center;
+  letter-spacing: 0.2em;
+}
+
+.subtitle {
+  font-family: 'Noto Sans KR', sans-serif;
+  font-size: 0.875rem;
+  color: var(--accent);
+  margin: 0 0 2.5rem 0;
+  text-align: center;
+  letter-spacing: 0.3em;
+  font-weight: 400;
+}
+
+.message {
+  max-width: 700px;
+  margin: 0 auto 2.5rem;
+  padding: 0 1.5rem;
+  font-family: 'Noto Sans KR', sans-serif;
+  font-size: 0.9375rem;
+  line-height: 1.8;
+  color: var(--ink);
+  text-align: center;
+  opacity: 0.85;
+}
+
+.accountsContainer {
+  max-width: 700px;
+  margin: 0 auto;
+  padding: 0 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.accountSection {
+  background: rgba(255, 255, 255, 0.3);
+  padding: 2rem;
+  border: 1px solid rgba(201, 161, 74, 0.2);
+}
+
+.sectionTitle {
+  font-family: 'Noto Serif KR', serif;
+  font-size: 1.125rem;
+  color: var(--accent);
+  margin: 0 0 1.5rem 0;
+  text-align: center;
+  letter-spacing: 0.2em;
+  font-weight: 600;
+}
+
+.accountCard {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.25rem 0;
+  border-bottom: 1px dashed rgba(201, 161, 74, 0.15);
+}
+
+.accountCard:last-child {
+  border-bottom: none;
+}
+
+.accountInfo {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.accountRow {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.accountHolder {
+  font-family: 'Noto Serif KR', serif;
+  font-size: 1.125rem;
+  color: var(--ink);
+  font-weight: 500;
+  letter-spacing: 0.05em;
+}
+
+.accountBank {
+  font-family: 'Noto Sans KR', sans-serif;
+  font-size: 0.9375rem;
+  color: var(--accent);
+  min-width: 80px;
+}
+
+.accountNumber {
+  font-family: 'Noto Sans KR', sans-serif;
+  font-size: 0.9375rem;
+  color: var(--ink);
+  opacity: 0.9;
+  letter-spacing: 0.02em;
+}
+
+.copyButton {
+  padding: 0.75rem 1.5rem;
+  background: transparent;
+  border: 1px solid var(--accent);
+  color: var(--accent);
+  font-family: 'Noto Serif KR', serif;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  letter-spacing: 0.1em;
+  white-space: nowrap;
+}
+
+/* 모바일 */
+@media (max-width: 640px) {
+  .container {
+    padding: 3rem 1rem;
+  }
+  
+  .title {
+    font-size: 1.75rem;
+  }
+  
+  .subtitle {
+    font-size: 0.8125rem;
+  }
+  
+  .message {
+    font-size: 0.875rem;
+  }
+  
+  .accountSection {
+    padding: 1.5rem;
+  }
+  
+  .sectionTitle {
+    font-size: 1rem;
+  }
+  
+  .accountCard {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+  
+  .accountHolder {
+    font-size: 1rem;
+  }
+  
+  .accountRow {
+    flex-wrap: wrap;
+  }
+  
+  .copyButton {
+    width: 100%;
+    padding: 0.625rem 1.25rem;
+    font-size: 0.8125rem;
+  }
+}

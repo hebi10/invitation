@@ -1,0 +1,279 @@
+/* 지중해 블루 테마 컬러 토큰 */
+.cover {
+  --bg: #FFFFFF;
+  --primary: #1F5AFF;
+  --lemon: #F6C445;
+  --text-primary: #1a1a1a;
+  --text-secondary: #666666;
+  --shadow: rgba(31, 90, 255, 0.08);
+  
+  position: relative;
+  width: 100%;
+  min-height: 100vh;
+  background: var(--bg);
+  display: flex;
+  flex-direction: column;
+}
+
+/* 이미지 컨테이너 */
+.imageContainer {
+  position: relative;
+  width: 100%;
+  height: 60vh;
+  min-height: 500px;
+  overflow: hidden;
+}
+
+.imageWrapper {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+.mainImage {
+  object-fit: cover;
+  opacity: 0;
+  transition: opacity 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.mainImage.loaded {
+  opacity: 1;
+}
+
+.imageOverlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    180deg,
+    rgba(31, 90, 255, 0) 0%,
+    rgba(31, 90, 255, 0.03) 50%,
+    rgba(31, 90, 255, 0.08) 100%
+  );
+  pointer-events: none;
+}
+
+/* 이미지 위 텍스트 오버레이 */
+.imageTextOverlay {
+  position: absolute;
+  bottom: 40px;
+  left: 0;
+  right: 0;
+  z-index: 2;
+  text-align: center;
+  padding: 0 20px;
+}
+
+.names {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  font-size: 2.5rem;
+  font-weight: 300;
+  color: #ffffff;
+  text-shadow: 
+    0 2px 8px rgba(0, 0, 0, 0.3),
+    0 4px 16px rgba(0, 0, 0, 0.2);
+  letter-spacing: 0.05em;
+  background: rgba(0, 0, 0, 0.35);
+  padding: 0.2rem 1rem;
+  border-radius: 8px;
+  backdrop-filter: blur(8px);
+}
+
+.groom,
+.bride {
+  font-family: var(--font-noto-serif-kr), serif;
+  font-weight: 300;
+}
+
+.ampersand {
+  font-family: Georgia, serif;
+  font-size: 2rem;
+  font-style: italic;
+  opacity: 0.9;
+}
+
+/* 하단 정보 영역 - 플랫 디자인 (카드 제거) */
+.infoSection {
+  position: relative;
+  flex: 1;
+  width: 100%;
+  max-width: 700px;
+  margin: 0 auto;
+  padding: 60px 24px 80px;
+  background: var(--bg);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  /* 카드 스타일 제거: box-shadow, border-radius 없음 */
+}
+
+/* 레몬 악센트 */
+.lemonAccent {
+  font-size: 3rem;
+  margin-bottom: 24px;
+  animation: float 3s ease-in-out infinite;
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+.title {
+  font-family: var(--font-noto-serif-kr), serif;
+  font-size: 1.75rem;
+  font-weight: 400;
+  color: var(--text-primary);
+  margin: 0 0 16px 0;
+  letter-spacing: 0.02em;
+}
+
+.subtitle {
+  font-family: var(--font-noto-sans-kr), sans-serif;
+  font-size: 1rem;
+  font-weight: 300;
+  color: var(--text-secondary);
+  margin: 0 0 32px 0;
+  line-height: 1.6;
+}
+
+/* 구분선 */
+.divider {
+  width: 60px;
+  height: 2px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    var(--primary),
+    transparent
+  );
+  margin: 0 0 32px 0;
+}
+
+.date {
+  font-family: var(--font-noto-sans-kr), sans-serif;
+  font-size: 1.125rem;
+  font-weight: 400;
+  color: var(--primary);
+  letter-spacing: 0.05em;
+}
+
+/* 웨이브 패턴 (산토리니 감성) */
+.wavePattern {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 80px;
+  overflow: hidden;
+  line-height: 0;
+}
+
+.wavePattern svg {
+  position: relative;
+  display: block;
+  width: calc(100% + 1.3px);
+  height: 80px;
+}
+
+.wavePattern path {
+  fill: var(--primary);
+  opacity: 0.05;
+}
+
+/* 반응형 */
+@media (max-width: 768px) {
+  .imageContainer {
+    height: 50vh;
+    min-height: 400px;
+  }
+
+  .names {
+    font-size: 2rem;
+    gap: 12px;
+  }
+
+  .ampersand {
+    font-size: 1.5rem;
+  }
+
+  .imageTextOverlay {
+    bottom: 30px;
+  }
+
+  .infoSection {
+    padding: 48px 20px 60px;
+  }
+
+  .lemonAccent {
+    font-size: 2.5rem;
+    margin-bottom: 20px;
+  }
+
+  .title {
+    font-size: 1.5rem;
+  }
+
+  .subtitle {
+    font-size: 0.9375rem;
+  }
+
+  .date {
+    font-size: 1rem;
+  }
+
+  .wavePattern {
+    height: 60px;
+  }
+
+  .wavePattern svg {
+    height: 60px;
+  }
+}
+
+@media (max-width: 480px) {
+  .imageContainer {
+    height: 45vh;
+    min-height: 350px;
+  }
+
+  .names {
+    font-size: 1.75rem;
+    gap: 10px;
+  }
+
+  .ampersand {
+    font-size: 1.25rem;
+  }
+
+  .infoSection {
+    padding: 40px 16px 50px;
+  }
+
+  .lemonAccent {
+    font-size: 2rem;
+  }
+
+  .title {
+    font-size: 1.25rem;
+  }
+
+  .subtitle {
+    font-size: 0.875rem;
+  }
+
+  .date {
+    font-size: 0.9375rem;
+  }
+}

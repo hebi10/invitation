@@ -46,6 +46,30 @@ export { default as WeddingCalendar_3 } from './WeddingCalendar_3';
 export { default as WeddingLoader_3 } from './WeddingLoader_3';
 export { default as WeddingCountdown_3 } from './WeddingCountdown_3';
 
+// 지중해 블루 디자인 컴포넌트들 (_4 버전)
+export { default as Cover_4 } from './Cover_4';
+export { default as Greeting_4 } from './Greeting_4';
+export { default as Gallery_4 } from './Gallery_4';
+export { default as Schedule_4 } from './Schedule_4';
+export { default as LocationMap_4 } from './LocationMap_4';
+export { default as Guestbook_4 } from './Guestbook_4';
+export { default as GiftInfo_4 } from './GiftInfo_4';
+export { default as WeddingCalendar_4 } from './WeddingCalendar_4';
+export { default as WeddingLoader_4 } from './WeddingLoader_4';
+export { default as WeddingCountdown_4 } from './WeddingCountdown_4';
+
+// 한지 클래식 디자인 컴포넌트들 (_5 버전)
+export { default as Cover_5 } from './Cover_5';
+export { default as Greeting_5 } from './Greeting_5';
+export { default as Gallery_5 } from './Gallery_5';
+export { default as Schedule_5 } from './Schedule_5';
+export { default as LocationMap_5 } from './LocationMap_5';
+export { default as Guestbook_5 } from './Guestbook_5';
+export { default as GiftInfo_5 } from './GiftInfo_5';
+export { default as WeddingCalendar_5 } from './WeddingCalendar_5';
+export { default as WeddingLoader_5 } from './WeddingLoader_5';
+export { default as WeddingCountdown_5 } from './WeddingCountdown_5';
+
 // 관리자 전용 컴포넌트들
 export { default as ImageManager } from './ImageManager';
 export { default as ClientPasswordManager } from './ClientPasswordManager';

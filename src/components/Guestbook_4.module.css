@@ -1,0 +1,545 @@
+/* 지중해 블루 테마 - Guestbook - 플랫 디자인 */
+.container {
+  --bg: #FFFFFF;
+  --primary: #1F5AFF;
+  --lemon: #F6C445;
+  --text-primary: #1a1a1a;
+  --text-secondary: #666666;
+  --border: #e5e5e5;
+  
+  width: 100%;
+  max-width: 700px;
+  margin: 0 auto;
+  background: var(--bg);
+  padding: 80px 24px;
+}
+
+.lemonDecoration {
+  font-size: 2.5rem;
+  margin-bottom: 20px;
+  text-align: center;
+  animation: float 3s ease-in-out infinite;
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-10px) rotate(5deg);
+  }
+}
+
+.title {
+  font-family: var(--font-cormorant-garamond), serif;
+  font-size: 2rem;
+  font-weight: 300;
+  color: var(--primary);
+  text-align: center;
+  margin: 0 0 12px 0;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  cursor: pointer;
+  user-select: none;
+}
+
+.subtitle {
+  font-family: var(--font-noto-sans-kr), sans-serif;
+  font-size: 1rem;
+  font-weight: 300;
+  color: var(--text-secondary);
+  text-align: center;
+  margin: 0 0 48px 0;
+}
+
+/* 작성 폼 */
+.form {
+  max-width: 700px;
+  margin: 0 auto 60px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.input,
+.textarea {
+  font-family: var(--font-noto-sans-kr), sans-serif;
+  font-size: 1rem;
+  padding: 16px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text-primary);
+  transition: all 0.3s ease;
+  outline: none;
+}
+
+.input:focus,
+.textarea:focus {
+  border-color: var(--primary);
+}
+
+.textarea {
+  resize: vertical;
+  min-height: 120px;
+  line-height: 1.6;
+}
+
+.submitButton {
+  font-family: var(--font-noto-sans-kr), sans-serif;
+  font-size: 1rem;
+  font-weight: 500;
+  padding: 16px;
+  background: var(--primary);
+  border: none;
+  color: white;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  letter-spacing: 0.05em;
+}
+
+.submitButton:hover:not(:disabled) {
+  background: var(--lemon);
+  color: var(--text-primary);
+  transform: translateY(-2px);
+}
+
+.submitButton:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.submitButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* 댓글 목록 */
+.commentsList {
+  max-width: 700px;
+  margin: 0 auto;
+}
+
+.commentsHeader {
+  margin-bottom: 24px;
+  text-align: center;
+}
+
+.commentsCount {
+  font-family: var(--font-noto-sans-kr), sans-serif;
+  font-size: 0.9375rem;
+  font-weight: 500;
+  color: var(--primary);
+}
+
+.commentItem {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  padding: 24px;
+  margin-bottom: 16px;
+  transition: all 0.3s ease;
+}
+
+.commentItem:hover {
+  border-color: var(--primary);
+  transform: translateY(-2px);
+}
+
+.commentHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border);
+}
+
+.commentAuthor {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.authorIcon {
+  font-size: 1.25rem;
+}
+
+.authorName {
+  font-family: var(--font-noto-serif-kr), serif;
+  font-size: 1rem;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.commentActions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.commentDate {
+  font-family: var(--font-noto-sans-kr), sans-serif;
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+}
+
+.deleteButton {
+  font-family: var(--font-noto-sans-kr), sans-serif;
+  font-size: 0.8125rem;
+  padding: 4px 12px;
+  background: transparent;
+  border: 1px solid #FF4757;
+  color: #FF4757;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.deleteButton:hover {
+  background: #FF4757;
+  color: white;
+}
+
+.commentMessage {
+  font-family: var(--font-noto-sans-kr), sans-serif;
+  font-size: 0.9375rem;
+  font-weight: 300;
+  color: var(--text-primary);
+  line-height: 1.7;
+  margin: 0;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+/* 빈 상태 */
+.emptyState {
+  text-align: center;
+  padding: 80px 20px;
+}
+
+.emptyIcon {
+  font-size: 4rem;
+  display: block;
+  margin-bottom: 20px;
+}
+
+.emptyText {
+  font-family: var(--font-noto-sans-kr), sans-serif;
+  font-size: 1rem;
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+/* 페이지네이션 */
+.pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  margin-top: 48px;
+}
+
+.pageButton,
+.pageNumber {
+  font-family: var(--font-noto-sans-kr), sans-serif;
+  font-size: 0.9375rem;
+  min-width: 40px;
+  height: 40px;
+  padding: 0 12px;
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.pageButton:hover:not(.disabled),
+.pageNumber:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.pageButton.disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.pageNumber.active {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: white;
+}
+
+/* 모달 */
+.modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+}
+
+.modalContent {
+  background: white;
+  border: 2px solid var(--primary);
+  padding: 40px;
+  max-width: 400px;
+  width: 100%;
+}
+
+.modalTitle {
+  font-family: var(--font-noto-serif-kr), serif;
+  font-size: 1.5rem;
+  font-weight: 500;
+  color: var(--primary);
+  margin: 0 0 24px 0;
+  text-align: center;
+}
+
+.modalInput {
+  font-family: var(--font-noto-sans-kr), sans-serif;
+  width: 100%;
+  padding: 14px;
+  border: 1px solid var(--border);
+  font-size: 1rem;
+  margin-bottom: 24px;
+  outline: none;
+  transition: border-color 0.3s;
+}
+
+.modalInput:focus {
+  border-color: var(--primary);
+}
+
+.modalButtons {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.modalButton {
+  font-family: var(--font-noto-sans-kr), sans-serif;
+  padding: 12px;
+  border: none;
+  background: var(--primary);
+  color: white;
+  font-size: 0.9375rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.modalButton:hover {
+  opacity: 0.9;
+}
+
+.modalButton.cancel {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+}
+
+.modalButton.cancel:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+/* 반응형 */
+@media (max-width: 768px) {
+  .container {
+    padding: 60px 20px;
+  }
+
+  .lemonDecoration {
+    font-size: 2rem;
+  }
+
+  .title {
+    font-size: 1.75rem;
+  }
+
+  .subtitle {
+    font-size: 0.9375rem;
+    margin-bottom: 40px;
+  }
+
+  .form {
+    margin-bottom: 48px;
+  }
+
+  .input,
+  .textarea {
+    font-size: 0.9375rem;
+    padding: 14px;
+  }
+
+  .submitButton {
+    font-size: 0.9375rem;
+    padding: 14px;
+  }
+
+  .commentItem {
+    padding: 20px;
+  }
+
+  .authorIcon {
+    font-size: 1.125rem;
+  }
+
+  .authorName {
+    font-size: 0.9375rem;
+  }
+
+  .commentDate {
+    font-size: 0.8125rem;
+  }
+
+  .commentMessage {
+    font-size: 0.875rem;
+  }
+
+  .pageButton,
+  .pageNumber {
+    min-width: 36px;
+    height: 36px;
+    font-size: 0.875rem;
+  }
+
+  .modalContent {
+    padding: 32px 24px;
+  }
+
+  .modalTitle {
+    font-size: 1.375rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .container {
+    padding: 50px 16px;
+  }
+
+  .lemonDecoration {
+    font-size: 1.75rem;
+  }
+
+  .title {
+    font-size: 1.5rem;
+  }
+
+  .subtitle {
+    font-size: 0.875rem;
+    margin-bottom: 32px;
+  }
+
+  .form {
+    gap: 12px;
+    margin-bottom: 40px;
+  }
+
+  .input,
+  .textarea {
+    font-size: 0.875rem;
+    padding: 12px;
+  }
+
+  .textarea {
+    min-height: 100px;
+  }
+
+  .submitButton {
+    font-size: 0.875rem;
+    padding: 12px;
+  }
+
+  .commentItem {
+    padding: 16px;
+    margin-bottom: 12px;
+  }
+
+  .commentHeader {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .commentActions {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .authorIcon {
+    font-size: 1rem;
+  }
+
+  .authorName {
+    font-size: 0.875rem;
+  }
+
+  .commentDate {
+    font-size: 0.75rem;
+  }
+
+  .deleteButton {
+    font-size: 0.75rem;
+    padding: 3px 10px;
+  }
+
+  .commentMessage {
+    font-size: 0.8125rem;
+  }
+
+  .emptyState {
+    padding: 60px 16px;
+  }
+
+  .emptyIcon {
+    font-size: 3rem;
+  }
+
+  .emptyText {
+    font-size: 0.9375rem;
+  }
+
+  .pagination {
+    gap: 6px;
+    margin-top: 40px;
+  }
+
+  .pageButton,
+  .pageNumber {
+    min-width: 32px;
+    height: 32px;
+    font-size: 0.8125rem;
+    padding: 0 8px;
+  }
+
+  .modalContent {
+    padding: 28px 20px;
+  }
+
+  .modalTitle {
+    font-size: 1.25rem;
+    margin-bottom: 20px;
+  }
+
+  .modalInput {
+    padding: 12px;
+    font-size: 0.9375rem;
+    margin-bottom: 20px;
+  }
+
+  .modalButtons {
+    gap: 8px;
+  }
+
+  .modalButton {
+    padding: 10px;
+    font-size: 0.875rem;
+  }
+}

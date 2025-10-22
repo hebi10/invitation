@@ -1,0 +1,248 @@
+/* 한지 클래식 테마 */
+.gallery {
+  --bg: #F5F1E6;
+  --ink: #1C2440;
+  --accent: #C9A14A;
+  
+  background: var(--bg);
+  padding: 4rem 1rem;
+  
+  background-image: 
+    linear-gradient(to bottom, rgba(245, 241, 230, 0.95), rgba(245, 241, 230, 0.98)),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' /%3E%3C/filter%3E%3Crect width='100' height='100' filter='url(%23noise)' opacity='0.05'/%3E%3C/svg%3E");
+}
+
+.container {
+  max-width: 700px;
+  margin: 0 auto;
+  padding: 0 1.5rem;
+}
+
+.topDecoration,
+.bottomDecoration {
+  display: block;
+  width: 100px;
+  height: auto;
+  margin: 0 auto 2rem;
+  opacity: 0.8;
+}
+
+.bottomDecoration {
+  margin: 3rem auto 0;
+}
+
+.title {
+  font-family: 'Noto Serif KR', serif;
+  font-size: 2rem;
+  font-weight: 600;
+  color: var(--ink);
+  margin: 0 0 0.5rem 0;
+  text-align: center;
+  letter-spacing: 0.2em;
+}
+
+.subtitle {
+  font-family: 'Noto Sans KR', sans-serif;
+  font-size: 0.875rem;
+  color: var(--accent);
+  margin: 0 0 2.5rem 0;
+  text-align: center;
+  letter-spacing: 0.3em;
+  font-weight: 400;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.5rem;
+  margin-bottom: 2rem;
+}
+
+.imageItem {
+  position: relative;
+  aspect-ratio: 1;
+  cursor: pointer;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.3);
+  border: 1px solid rgba(201, 161, 74, 0.2);
+}
+
+.image {
+  transition: transform 0.3s ease;
+}
+
+.loadMoreButton {
+  display: block;
+  margin: 0 auto 2rem;
+  padding: 0.875rem 2rem;
+  background: transparent;
+  border: 1px solid var(--accent);
+  color: var(--accent);
+  font-family: 'Noto Sans KR', sans-serif;
+  font-size: 0.9375rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  letter-spacing: 0.05em;
+}
+
+/* 모달 */
+.modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(28, 36, 64, 0.95);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  padding: 2rem;
+}
+
+.closeButton {
+  position: fixed;
+  top: 1.5rem;
+  right: 1.5rem;
+  width: 48px;
+  height: 48px;
+  background: rgba(245, 241, 230, 0.1);
+  border: 1px solid rgba(201, 161, 74, 0.3);
+  color: var(--bg);
+  font-size: 1.5rem;
+  cursor: pointer;
+  z-index: 10001;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+}
+
+.modalContent {
+  max-width: 90vw;
+  max-height: 90vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.modalImageWrapper {
+  position: relative;
+  width: 90vw;
+  height: 90vh;
+  max-width: 1200px;
+}
+
+.modalImage {
+  object-fit: contain !important;
+}
+
+.navButton {
+  position: fixed;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 56px;
+  height: 56px;
+  background: rgba(245, 241, 230, 0.1);
+  border: 1px solid rgba(201, 161, 74, 0.3);
+  color: var(--bg);
+  font-size: 2rem;
+  cursor: pointer;
+  z-index: 10001;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+}
+
+.prevButton {
+  left: 1.5rem;
+}
+
+.nextButton {
+  right: 1.5rem;
+}
+
+.imageCounter {
+  position: fixed;
+  bottom: 2rem;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(28, 36, 64, 0.8);
+  color: var(--bg);
+  padding: 0.5rem 1.25rem;
+  border-radius: 20px;
+  font-family: 'Noto Sans KR', sans-serif;
+  font-size: 0.875rem;
+  z-index: 10001;
+  letter-spacing: 0.05em;
+  border: 1px solid rgba(201, 161, 74, 0.3);
+}
+
+/* 모바일 */
+@media (max-width: 640px) {
+  .gallery {
+    padding: 3rem 1rem;
+  }
+  
+  .title {
+    font-size: 1.75rem;
+  }
+  
+  .subtitle {
+    font-size: 0.8125rem;
+  }
+  
+  .grid {
+    gap: 0.375rem;
+  }
+  
+  .modal {
+    padding: 1rem;
+  }
+  
+  .closeButton {
+    top: 1rem;
+    right: 1rem;
+    width: 40px;
+    height: 40px;
+    font-size: 1.25rem;
+  }
+  
+  .navButton {
+    width: 44px;
+    height: 44px;
+    font-size: 1.5rem;
+  }
+  
+  .prevButton {
+    left: 0.75rem;
+  }
+  
+  .nextButton {
+    right: 0.75rem;
+  }
+  
+  .imageCounter {
+    bottom: 1rem;
+    font-size: 0.8125rem;
+    padding: 0.4rem 1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .title {
+    font-size: 1.5rem;
+  }
+  
+  .grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .loadMoreButton {
+    font-size: 0.875rem;
+    padding: 0.75rem 1.5rem;
+  }
+}
