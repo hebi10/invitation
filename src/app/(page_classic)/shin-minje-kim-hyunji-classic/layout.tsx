@@ -19,11 +19,11 @@ export const viewport: Viewport = {
   initialScale: 1,
 };
 
-export default function Layout({
+export default function ClassicLayout({
   children,
-}: Readonly<{
+}: {
   children: React.ReactNode;
-}>) {
+}) {
   if (!pageConfig) {
     return <>{children}</>;
   }
@@ -40,7 +40,7 @@ export default function Layout({
       {children}
       
       <KakaoShareButton 
-        title={`${pageConfig!.groomName} ♥ ${pageConfig!.brideName} 결혼식 (지중해 블루 버전)`}
+        title={`${pageConfig!.groomName} ♥ ${pageConfig!.brideName} 결혼식 (한지 클래식 버전)`}
         description={`${pageConfig!.date} ${pageConfig!.pageData?.ceremonyTime || ''} | ${pageConfig!.venue}`}
         imageUrl={WEDDING_IMAGE}
       />
