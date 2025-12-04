@@ -134,14 +134,34 @@ export const shinMinjeKimHyunjiConfig: WeddingPageConfig = {
         {
           bank: '신한은행',
           accountNumber: '110-123-456789',
-          accountHolder: '신민제'
+          accountHolder: '신랑 신민제'
+        },
+        {
+          bank: '신한은행',
+          accountNumber: '110-123-456789',
+          accountHolder: '부 신ㅇㅇ'
+        },
+        {
+          bank: '신한은행',
+          accountNumber: '110-123-456789',
+          accountHolder: '모 이ㅇㅇ'
         }
       ],
       brideAccounts: [
         {
           bank: '우리은행',
           accountNumber: '1002-234-567890',
-          accountHolder: '김현지'
+          accountHolder: '신부 김현지'
+        },
+        {
+          bank: '신한은행',
+          accountNumber: '110-123-456789',
+          accountHolder: '부 김ㅇㅇ'
+        },
+        {
+          bank: '신한은행',
+          accountNumber: '110-123-456789',
+          accountHolder: '모 이ㅇㅇ'
         }
       ],
       message: '마음만으로도 충분합니다. 축하의 뜻으로 전해주시는 축의금은 소중히 받겠습니다.'
