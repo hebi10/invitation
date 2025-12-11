@@ -23,7 +23,7 @@ export default function ImageManager() {
   useEffect(() => {
     const loadWeddingPages = async () => {
       try {
-        const pages = await getWeddingPagesClient();
+        const pages = getWeddingPagesClient();
         setWeddingPages(pages);
         // 첫 번째 페이지를 기본 선택으로 설정
         if (pages.length > 0) {

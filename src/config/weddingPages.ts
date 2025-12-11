@@ -8,6 +8,7 @@ import { shinMinjeKimHyunjiConfig } from './pages/shin-minje-kim-hyunji';
 import { leeJunhoParkSominConfig } from './pages/lee-junho-park-somin';
 import { kimTaehyunChoiYunaConfig } from './pages/kim-taehyun-choi-yuna';
 import { anDoyoungYoonJisooConfig } from './pages/an-doyoung-yoon-jisoo';
+import { leeJonghunChoiInConfig } from './pages/lee-jonghun-choi-in';
 
 // 가족 정보 인터페이스
 export interface FamilyMember {
@@ -148,7 +149,8 @@ export const WEDDING_PAGES_CONFIG: WeddingPageConfig[] = [
   shinMinjeKimHyunjiConfig,
   leeJunhoParkSominConfig,
   kimTaehyunChoiYunaConfig,
-  anDoyoungYoonJisooConfig
+  anDoyoungYoonJisooConfig,
+  leeJonghunChoiInConfig
 ];
 
 // 편의 함수들
