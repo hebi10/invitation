@@ -16,10 +16,30 @@ export default function Gallery_2({ images }: GalleryProps) {
   const [imageSize, setImageSize] = useState({ width: 'auto', height: 'auto' });
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const [loadedImages, setLoadedImages] = useState<Set<string>>(new Set());
+  const [preloadedImages, setPreloadedImages] = useState<Set<string>>(new Set());
+
+  // 이미지 미리 로딩 함수
+  const preloadImages = useCallback(() => {
+    images.forEach((imageSrc) => {
+      if (!preloadedImages.has(imageSrc)) {
+        const img = new window.Image();
+        img.onload = () => {
+          setPreloadedImages(prev => new Set([...prev, imageSrc]));
+        };
+        img.src = imageSrc;
+      }
+    });
+  }, [images, preloadedImages]);
 
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  // 컴포넌트 마운트 시 이미지 미리 로딩
+  useEffect(() => {
+    preloadImages();
+  }, [preloadImages]);
 
   const displayImages = useMemo(() => images.slice(0, visibleCount), [images, visibleCount]);
   const hasMoreImages = useMemo(() => images.length > visibleCount, [images.length, visibleCount]);
@@ -112,8 +132,17 @@ export default function Gallery_2({ images }: GalleryProps) {
   }, [currentIndex, images, calculateImageSize, isTransitioning]);
 
   const showMoreImages = useCallback(() => {
-    setVisibleCount(prev => Math.min(prev + 6, images.length));
-  }, [images.length]);
+    const newVisibleCount = Math.min(visibleCount + 6, images.length);
+    setVisibleCount(newVisibleCount);
+    
+    // 새로 보여질 이미지들의 로딩 상태 즉시 업데이트
+    const newlyVisibleImages = images.slice(visibleCount, newVisibleCount);
+    newlyVisibleImages.forEach(imageSrc => {
+      if (preloadedImages.has(imageSrc)) {
+        setLoadedImages(prev => new Set([...prev, imageSrc]));
+      }
+    });
+  }, [images, visibleCount, preloadedImages]);
 
   const showLessImages = useCallback(() => {
     setVisibleCount(6);
@@ -124,6 +153,10 @@ export default function Gallery_2({ images }: GalleryProps) {
       closeLightbox();
     }
   }, [closeLightbox]);
+
+  const handleImageLoad = useCallback((imageSrc: string) => {
+    setLoadedImages(prev => new Set([...prev, imageSrc]));
+  }, []);
 
   useEffect(() => {
     if (!selectedImage) return;
@@ -235,8 +268,19 @@ export default function Gallery_2({ images }: GalleryProps) {
                 sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
                 quality={70}
                 className={styles.image}
-                style={{ objectFit: 'cover' }}
+                onLoad={() => handleImageLoad(image)}
+                style={{ 
+                  objectFit: 'cover',
+                  opacity: (loadedImages.has(image) || preloadedImages.has(image)) ? 1 : 0,
+                  transition: 'opacity 0.3s ease',
+                  cursor: 'pointer'
+                }}
               />
+              {!(loadedImages.has(image) || preloadedImages.has(image)) && (
+                <div className={styles.imagePlaceholder}>
+                  <div className={styles.loadingSpinner}></div>
+                </div>
+              )}
             </div>
           ))}
         </div>

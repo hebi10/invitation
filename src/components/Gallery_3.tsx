@@ -13,12 +13,37 @@ export default function Gallery_3({ images }: GalleryProps) {
   const [visibleCount, setVisibleCount] = useState(6);
   const [selectedImage, setSelectedImage] = useState<number | null>(null);
   const [mounted, setMounted] = useState(false);
+  const [loadedImages, setLoadedImages] = useState<Set<string>>(new Set());
+  const [preloadedImages, setPreloadedImages] = useState<Set<string>>(new Set());
 
   const displayImages = images.slice(0, visibleCount);
   const hasMore = visibleCount < images.length;
 
+  // 이미지 로딩 처리 함수
+  const handleImageLoad = (imageSrc: string) => {
+    setLoadedImages(prev => new Set([...prev, imageSrc]));
+  };
+
+  // 이미지 미리 로딩 함수
+  const preloadImages = () => {
+    images.forEach((imageSrc) => {
+      if (!preloadedImages.has(imageSrc)) {
+        const img = new window.Image();
+        img.onload = () => {
+          setPreloadedImages(prev => new Set([...prev, imageSrc]));
+        };
+        img.src = imageSrc;
+      }
+    });
+  };
+
   useEffect(() => {
     setMounted(true);
+  }, []);
+
+  // 컴포넌트 마운트 시 이미지 미리 로딩
+  useEffect(() => {
+    preloadImages();
   }, []);
 
   useEffect(() => {
@@ -156,8 +181,18 @@ export default function Gallery_3({ images }: GalleryProps) {
                 sizes="(max-width: 768px) 33vw, 25vw"
                 quality={70}
                 className={styles.image}
-                style={{ objectFit: 'cover' }}
+                onLoad={() => handleImageLoad(image)}
+                style={{ 
+                  objectFit: 'cover',
+                  opacity: (loadedImages.has(image) || preloadedImages.has(image)) ? 1 : 0,
+                  transition: 'opacity 0.3s ease'
+                }}
               />
+              {!(loadedImages.has(image) || preloadedImages.has(image)) && (
+                <div className={styles.imagePlaceholder}>
+                  <div className={styles.loadingSpinner}></div>
+                </div>
+              )}
               <div className={styles.imageOverlay}>
                 <div className={styles.zoomIcon}>
                   <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
@@ -179,7 +214,17 @@ export default function Gallery_3({ images }: GalleryProps) {
           <button
             onClick={() => {
               if (hasMore) {
-                setVisibleCount(prev => Math.min(prev + 6, images.length));
+                const newVisibleCount = Math.min(visibleCount + 6, images.length);
+                const newlyVisibleImages = images.slice(visibleCount, newVisibleCount);
+                
+                // 새로 보여질 이미지들의 로딩 상태 즉시 업데이트
+                newlyVisibleImages.forEach(imageSrc => {
+                  if (preloadedImages.has(imageSrc)) {
+                    setLoadedImages(prev => new Set([...prev, imageSrc]));
+                  }
+                });
+                
+                setVisibleCount(newVisibleCount);
               } else {
                 setVisibleCount(6);
               }
