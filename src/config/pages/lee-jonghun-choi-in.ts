@@ -27,7 +27,7 @@ export const leeJonghunChoiInConfig: WeddingPageConfig = {
     description: '2026년 3월 22일 토요일 오전 11시, 이종훈과 최 인이 하나 되는 날에 소중한 분들을 초대합니다. 저희의 새로운 시작을 함께 축복해 주세요.',
     keywords: ['결혼식', '웨딩', '청첩장', '이종훈', '최 인', '2026년 4월'],
     images: { // 카카오톡 카드 공유 이미지
-      wedding: 'https://firebasestorage.googleapis.com/v0/b/invitation-35d60.firebasestorage.app/o/wedding-images%2Fshin-minje-kim-hyunji%2Fthum.jpg?alt=media&token=c5eef8b5-a83b-4a4c-b5bb-2491feaba51c',
+      wedding: 'https://firebasestorage.googleapis.com/v0/b/invitation-35d60.firebasestorage.app/o/wedding-images%2Flee-jonghun-choi-in%2Fkakao_thum.jpg?alt=media&token=f233363f-5328-409d-bacb-e88a7810323f',
       favicon: '/images/favicon.ico'
     },
     openGraph: {
@@ -54,14 +54,14 @@ export const leeJonghunChoiInConfig: WeddingPageConfig = {
       father: {
         relation: '부',
         name: '이호규',
-        phone: '010-1111-2222'
+        phone: '010-8885-9750'
       },
       mother: {
         relation: '모',
         name: '이호규',
-        phone: '010-2222-3333'
+        phone: '010-3338-6201'
       },
-      phone: '010-3333-4444'
+      phone: '010-8974-9750'
     },
     bride: {
       name: '최 인',
@@ -69,14 +69,14 @@ export const leeJonghunChoiInConfig: WeddingPageConfig = {
       father: {
         relation: '부',
         name: '최우진',
-        phone: '010-4444-5555'
+        phone: '010-9981-4582'
       },
       mother: {
         relation: '모',
         name: '최우진',
-        phone: '010-5555-6666'
+        phone: '010-2844-4580'
       },
-      phone: '010-6666-7777'
+      phone: '010-5292-4580'
     },
     kakaoMap: { // 카카오맵 설정 
       latitude: 37.5427244,
