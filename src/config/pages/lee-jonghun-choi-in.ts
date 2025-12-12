@@ -109,34 +109,34 @@ export const leeJonghunChoiInConfig: WeddingPageConfig = {
         {
           bank: '카카오뱅크',
           accountNumber: '3333-11-7757369',
-          accountHolder: '신랑 이종훈'
+          accountHolder: '(신랑) 이종훈'
         },
         {
           bank: '국민은행',
           accountNumber: '202-01-0925-182',
-          accountHolder: '부 이호규'
+          accountHolder: '(부) 이호규'
         },
         {
           bank: '국민은행',
           accountNumber: '202-21-1777-244',
-          accountHolder: '모 김원연'
+          accountHolder: '(모) 김원연'
         }
       ],
       brideAccounts: [
         {
           bank: '신한은행',
           accountNumber: '1002-234-567890',
-          accountHolder: '신부 최 인'
+          accountHolder: '(신부) 최 인'
         },
         {
           bank: '국민은행',
           accountNumber: '566-12-205058',
-          accountHolder: '부 최우진'
+          accountHolder: '(부) 최우진'
         },
         {
           bank: '우리은행',
           accountNumber: '566-12-205058',
-          accountHolder: '모 이옥희'
+          accountHolder: '(모) 이옥희'
         }
       ],
       message: '참석이 어려우신 분들을 위해 조심스레 계좌를 남깁니다. 따뜻한 축하만으로도 감사합니다.'

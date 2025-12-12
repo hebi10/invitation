@@ -190,9 +190,10 @@ export default function Greeting_1({ message, author, groom, bride }: GreetingPr
           <div className={styles.modalOverlay} onClick={closeContactModal}>
             <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
               <button className={styles.modalClose} onClick={closeContactModal} aria-label="닫기">
-                ✕
+                ×
               </button>
               <h3 className={styles.modalTitle}>{contactModal.person.name}</h3>
+              <div className={styles.phoneNumber}>{contactModal.person.phone}</div>
               <div className={styles.contactButtons}>
                 {contactModal.person.phone && (
                   <>
@@ -200,20 +201,17 @@ export default function Greeting_1({ message, author, groom, bride }: GreetingPr
                       className={styles.modalBtn}
                       onClick={() => handleCall(contactModal.person!.phone!)}
                     >
-                      <span className={styles.btnIcon}>📞</span>
-                      <span className={styles.btnText}>전화</span>
+                      전화
                     </button>
                     <button
                       className={styles.modalBtn}
                       onClick={() => handleSMS(contactModal.person!.phone!)}
                     >
-                      <span className={styles.btnIcon}>💬</span>
-                      <span className={styles.btnText}>문자</span>
+                      문자
                     </button>
                   </>
                 )}
               </div>
-              <div className={styles.phoneNumber}>{contactModal.person.phone}</div>
             </div>
           </div>
         )}

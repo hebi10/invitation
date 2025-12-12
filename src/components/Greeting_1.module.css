@@ -303,12 +303,13 @@
 .modalContent {
   background: #ffffff;
   border-radius: 20px;
-  padding: 2.5rem 2rem;
-  max-width: 350px;
+  padding: 2rem;
+  max-width: 300px;
   width: 100%;
   position: relative;
   box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3);
   animation: slideUp 0.3s ease;
+  text-align: center;
 }
 
 @keyframes slideUp {
@@ -329,7 +330,7 @@
   background: transparent;
   border: none;
   font-size: 1.5rem;
-  color: #6c757d;
+  color: #aaa;
   cursor: pointer;
   width: 32px;
   height: 32px;
@@ -342,69 +343,51 @@
 
 .modalClose:hover {
   background: rgba(0, 0, 0, 0.05);
-  color: #2c3e50;
+  color: #666;
 }
 
 .modalTitle {
   font-family: var(--font-gowun-dodum);
-  font-size: 1.5rem;
+  font-size: 1.3rem;
   color: #2c3e50;
-  text-align: center;
-  margin-bottom: 2rem;
-  font-weight: 600;
-}
-
-.contactButtons {
-  display: flex;
-  gap: 1rem;
-  margin-bottom: 1.5rem;
-}
-
-.modalBtn {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 1.2rem 1rem;
-  background: #2c3e50;
-  border: none;
-  border-radius: 12px;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  box-shadow: 0 4px 12px rgba(44, 62, 80, 0.3);
-}
-
-.modalBtn:hover {
-  background: #1a252f;
-  transform: translateY(-3px);
-  box-shadow: 0 6px 20px rgba(44, 62, 80, 0.4);
-}
-
-.modalBtn:active {
-  transform: translateY(0);
-}
-
-.btnIcon {
-  font-size: 2rem;
-}
-
-.btnText {
-  font-family: 'Arial', sans-serif;
-  font-size: 0.95rem;
-  color: #ffffff;
-  font-weight: 600;
+  margin-bottom: 0.5rem;
+  font-weight: 500;
 }
 
 .phoneNumber {
   font-family: 'Arial', sans-serif;
   font-size: 1rem;
-  color: #6c757d;
-  text-align: center;
-  padding: 0.8rem;
-  background: rgba(248, 249, 250, 0.8);
-  border-radius: 8px;
+  color: #666;
+  margin-bottom: 1.5rem;
   letter-spacing: 0.5px;
+}
+
+.contactButtons {
+  display: flex;
+  gap: 0.8rem;
+}
+
+.modalBtn {
+  flex: 1;
+  padding: 0.8rem 1rem;
+  background: #ffffff;
+  border: 2px solid #e9ecef;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: var(--font-gowun-dodum);
+  font-size: 0.9rem;
+  color: #495057;
+  font-weight: 500;
+}
+
+.modalBtn:hover {
+  border-color: #495057;
+  background: #f8f9fa;
+}
+
+.modalBtn:active {
+  transform: scale(0.98);
 }
 
 @media (min-width: 700px) {
@@ -419,8 +402,8 @@
   }
 
   .modalContent {
-    padding: 3rem 2.5rem;
-    max-width: 400px;
+    padding: 2.5rem;
+    max-width: 320px;
   }
 }
 
@@ -430,11 +413,6 @@
   }
 
   .modalContent {
-    padding: 2rem 1.5rem;
-  }
-
-  .contactBtn {
-    font-size: 0.8rem;
-    padding: 0.4rem 0.8rem;
+    padding: 1.5rem;
   }
 }
