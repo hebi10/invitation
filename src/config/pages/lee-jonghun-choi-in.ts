@@ -129,7 +129,7 @@ export const leeJonghunChoiInConfig: WeddingPageConfig = {
           accountHolder: '(신부) 최 인'
         },
         {
-          bank: '국민은행',
+          bank: '농협은행',
           accountNumber: '566-12-205058',
           accountHolder: '(부) 최우진'
         },
