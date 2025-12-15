@@ -95,8 +95,8 @@ export default function ShinMinjeKimHyunji_Simple() {
         subtitle={pageConfig?.pageData?.subtitle || '영원한 사랑을 약속합니다'} 
         weddingDate={`${pageConfig?.date || ''} ${pageConfig?.pageData?.ceremonyTime || ''}`}
         imageUrl={mainImageUrl}
-        brideName={pageConfig?.brideName || ''}
-        groomName={pageConfig?.groomName || ''}
+        brideName={pageConfig?.groomName || ''}
+        groomName={pageConfig?.brideName || ''}
         preloadComplete={true}
       />
       <Greeting_1 

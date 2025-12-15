@@ -2,10 +2,9 @@ import { WeddingPageConfig } from '../weddingPages';
 
 export const leeJonghunChoiInConfig: WeddingPageConfig = {
   slug: 'lee-jonghun-choi-in',
-  displayName: '이종훈 ♥ 최 인',
+  displayName: '최 인 ♥ 이종훈',
   description: '2026년 3월 22일 토요일 오전 11시, 이종훈과 최 인이 하나 되는 날에 소중한 분들을 초대합니다.',
   date: '2026년 3월 22일',
-  venue: '더케이웨딩홀',
   groomName: '이종훈',
   brideName: '최 인',
   weddingDateTime: {
@@ -19,11 +18,11 @@ export const leeJonghunChoiInConfig: WeddingPageConfig = {
     simple: {
       available: true,
       path: '/lee-jonghun-choi-in-simple',
-      displayName: '이종훈 ♥ 최 인'
+      displayName: '최 인 ♥ 이종훈'
     },
   },
   metadata: {
-    title: '이종훈 ♥ 최 인 결혼식에 초대합니다',
+    title: '최 인 ♥ 이종훈 결혼식에 초대합니다',
     description: '2026년 3월 22일 토요일 오전 11시, 이종훈과 최 인이 하나 되는 날에 소중한 분들을 초대합니다. 저희의 새로운 시작을 함께 축복해 주세요.',
     keywords: ['결혼식', '웨딩', '청첩장', '이종훈', '최 인', '2026년 4월'],
     images: { // 카카오톡 카드 공유 이미지
@@ -31,19 +30,20 @@ export const leeJonghunChoiInConfig: WeddingPageConfig = {
       favicon: '/images/favicon.ico'
     },
     openGraph: {
-      title: '이종훈 ♥ 최 인 결혼식 초대',
+      title: '최 인 ♥ 이종훈 결혼식 초대',
       description: '2026년 3월 22일 토요일 오전 11시, 이종훈과 최 인이 하나 되는 날에 소중한 분들을 초대합니다.'
     },
     twitter: {
-      title: '이종훈 ♥ 최 인 결혼식 초대',
+      title: '최 인 ♥ 이종훈 결혼식 초대',
       description: '2026년 3월 22일 토요일 오전 11시, 이종훈과 최 인이 하나 되는 날에 소중한 분들을 초대합니다.'
     }
   },
+  venue: 'CN웨딩홀 계산점', // 결혼 식장
   pageData: {
     subtitle: '두 사람이 사랑으로 하나가 되는 날',
     ceremonyTime: '오전 11:00',
     ceremonyAddress: '인천광역시 계양구 경명대로 1108, CN웨딩홀 계산점',
-    ceremonyContact: '02-1234-5678',
+    ceremonyContact: '032-546-0070',
     greetingMessage: '각자의 일상을 성실히 보내던 두 사람이\n서로의 일상이 되어주기로 약속합니다.\n\n저희의 새로운 시작을 지켜봐주세요.',
     greetingAuthor: '이종훈 · 최 인',
     mapDescription: '지하철 이용 시 CN웨딩홀 계산점까지 편리하게 오실 수 있습니다.',
@@ -51,6 +51,7 @@ export const leeJonghunChoiInConfig: WeddingPageConfig = {
     groom: {
       name: '이종훈',
       order: '장남',
+      phone: '010-8974-9750',
       father: {
         relation: '부',
         name: '이호규',
@@ -58,14 +59,14 @@ export const leeJonghunChoiInConfig: WeddingPageConfig = {
       },
       mother: {
         relation: '모',
-        name: '이호규',
+        name: '김원연',
         phone: '010-3338-6201'
-      },
-      phone: '010-8974-9750'
+      }
     },
     bride: {
       name: '최 인',
       order: '장녀',
+      phone: '010-5292-4580',
       father: {
         relation: '부',
         name: '최우진',
@@ -73,10 +74,9 @@ export const leeJonghunChoiInConfig: WeddingPageConfig = {
       },
       mother: {
         relation: '모',
-        name: '최우진',
+        name: '이옥희',
         phone: '010-2844-4580'
-      },
-      phone: '010-5292-4580'
+      }
     },
     kakaoMap: { // 카카오맵 설정 
       latitude: 37.5427244,
@@ -118,14 +118,14 @@ export const leeJonghunChoiInConfig: WeddingPageConfig = {
         },
         {
           bank: '국민은행',
-          accountNumber: '202-21-1777-244',
+          accountNumber: '202-01-0925-182',
           accountHolder: '(모) 김원연'
         }
       ],
       brideAccounts: [
         {
           bank: '신한은행',
-          accountNumber: '1002-234-567890',
+          accountNumber: '110-384-669470',
           accountHolder: '(신부) 최 인'
         },
         {
@@ -135,7 +135,7 @@ export const leeJonghunChoiInConfig: WeddingPageConfig = {
         },
         {
           bank: '우리은행',
-          accountNumber: '566-12-205058',
+          accountNumber: '537-112708-02-101',
           accountHolder: '(모) 이옥희'
         }
       ],
