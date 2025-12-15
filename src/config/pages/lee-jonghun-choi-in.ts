@@ -50,7 +50,7 @@ export const leeJonghunChoiInConfig: WeddingPageConfig = {
     // 신랑/신부 가족 정보
     groom: {
       name: '이종훈',
-      order: '장남',
+      order: '아들',
       phone: '010-8974-9750',
       father: {
         relation: '부',
@@ -65,7 +65,7 @@ export const leeJonghunChoiInConfig: WeddingPageConfig = {
     },
     bride: {
       name: '최 인',
-      order: '장녀',
+      order: '딸',
       phone: '010-5292-4580',
       father: {
         relation: '부',
