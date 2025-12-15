@@ -78,8 +78,8 @@ export default function ShinMinjeKimHyunji_Simple() {
   if (isLoading || imagesLoading) {
     return (
       <WeddingLoader_1 
-        groomName={pageConfig?.groomName || ''}
-        brideName={pageConfig?.brideName || ''}
+        groomName={pageConfig?.brideName || ''}
+        brideName={pageConfig?.groomName || ''}
         onLoadComplete={() => setIsLoading(false)}
         mainImage={mainImageUrl}
         preloadImages={preloadImages}
