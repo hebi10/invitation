@@ -3,8 +3,8 @@ import { WeddingPageConfig } from '../weddingPages';
 export const leeJonghunChoiInConfig: WeddingPageConfig = {
   slug: 'lee-jonghun-choi-in',
   displayName: '최 인 ♥ 이종훈',
-  description: '2026년 3월 22일 토요일 오전 11시, 이종훈과 최 인이 하나 되는 날에 소중한 분들을 초대합니다.',
-  date: '2026년 3월 22일',
+  description: '2026년 3월 22일 일요일 오전 11시, 이종훈과 최 인이 하나 되는 날에 소중한 분들을 초대합니다.',
+  date: '2026년 3월 22일 (일)',
   groomName: '이종훈',
   brideName: '최 인',
   weddingDateTime: {
@@ -23,7 +23,7 @@ export const leeJonghunChoiInConfig: WeddingPageConfig = {
   },
   metadata: {
     title: '최 인 ♥ 이종훈 결혼식에 초대합니다',
-    description: '2026년 3월 22일 토요일 오전 11시, 이종훈과 최 인이 하나 되는 날에 소중한 분들을 초대합니다. 저희의 새로운 시작을 함께 축복해 주세요.',
+    description: '2026년 3월 22일 일요일 오전 11시, 이종훈과 최 인이 하나 되는 날에 소중한 분들을 초대합니다. 저희의 새로운 시작을 함께 축복해 주세요.',
     keywords: ['결혼식', '웨딩', '청첩장', '이종훈', '최 인', '2026년 4월'],
     images: { // 카카오톡 카드 공유 이미지
       wedding: 'https://firebasestorage.googleapis.com/v0/b/invitation-35d60.firebasestorage.app/o/wedding-images%2Flee-jonghun-choi-in%2Fkakao_thum.jpg?alt=media&token=f233363f-5328-409d-bacb-e88a7810323f',
@@ -31,18 +31,18 @@ export const leeJonghunChoiInConfig: WeddingPageConfig = {
     },
     openGraph: {
       title: '최 인 ♥ 이종훈 결혼식 초대',
-      description: '2026년 3월 22일 토요일 오전 11시, 이종훈과 최 인이 하나 되는 날에 소중한 분들을 초대합니다.'
+      description: '2026년 3월 22일 일요일 오전 11시, 이종훈과 최 인이 하나 되는 날에 소중한 분들을 초대합니다.'
     },
     twitter: {
       title: '최 인 ♥ 이종훈 결혼식 초대',
-      description: '2026년 3월 22일 토요일 오전 11시, 이종훈과 최 인이 하나 되는 날에 소중한 분들을 초대합니다.'
+      description: '2026년 3월 22일 일요일 오전 11시, 이종훈과 최 인이 하나 되는 날에 소중한 분들을 초대합니다.'
     }
   },
-  venue: 'CN웨딩홀 계산점', // 결혼 식장
+  venue: 'CN웨딩홀 계산점 2층 베르테홀', // 결혼 식장
   pageData: {
     subtitle: '두 사람이 사랑으로 하나가 되는 날',
     ceremonyTime: '오전 11:00',
-    ceremonyAddress: '인천광역시 계양구 경명대로 1108, CN웨딩홀 계산점',
+    ceremonyAddress: '인천광역시 계양구 경명대로 1108, CN웨딩홀 계산점 2층 베르테홀',
     ceremonyContact: '032-546-0070',
     greetingMessage: '각자의 일상을 성실히 보내던 두 사람이\n서로의 일상이 되어주기로 약속합니다.\n\n저희의 새로운 시작을 지켜봐주세요.',
     greetingAuthor: '이종훈 · 최 인',
@@ -97,7 +97,7 @@ export const leeJonghunChoiInConfig: WeddingPageConfig = {
     // wreathGuide: [
     //   {
     //     title: '화환 안내',
-    //     content: '축하의 뜻을 전하고자 화환을 보내주실 경우\n아래 안내 사항을 참고해 주시기 바랍니다.\n\n예식장: 그랜드컨벤션센터\n예식일시: 2025년 6월 21일 토요일 오후 2시\n수령인: 신랑 이종훈 / 신부 최 인\n연락처: 02-9876-5432'
+    //     content: '축하의 뜻을 전하고자 화환을 보내주실 경우\n아래 안내 사항을 참고해 주시기 바랍니다.\n\n예식장: 그랜드컨벤션센터\n예식일시: 2025년 6월 21일 일요일 오후 2시\n수령인: 신랑 이종훈 / 신부 최 인\n연락처: 02-9876-5432'
     //   },
     //   {
     //     title: '배송 시간',
