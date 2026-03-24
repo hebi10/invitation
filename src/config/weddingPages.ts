@@ -25,6 +25,11 @@ export interface PersonInfo {
   phone?: string;
 }
 
+export interface WeddingCoupleInfo {
+  groom: PersonInfo;
+  bride: PersonInfo;
+}
+
 // 계좌 정보 인터페이스
 export interface BankAccount {
   bank: string;
@@ -40,6 +45,7 @@ export interface WeddingPageConfig {
   venue: string;
   groomName: string;
   brideName: string;
+  couple: WeddingCoupleInfo;
   weddingDateTime: {
     year: number;
     month: number; // 0-based (0 = January)
@@ -115,7 +121,7 @@ export interface WeddingPageConfig {
     mapUrl?: string;
     mapDescription?: string;
     venueName?: string; // 예식장 이름 (기본값: venue 또는 '웨딩홀')
-    // 신랑/신부 가족 정보
+    // 신랑/신부 가족 정보 (couple의 파생 값, 하위 호환용)
     groom?: PersonInfo;
     bride?: PersonInfo;
     // 카카오맵 설정
@@ -158,6 +164,15 @@ export function getWeddingPageBySlug(slug: string): WeddingPageConfig | undefine
   return WEDDING_PAGES_CONFIG.find(page => page.slug === slug);
 }
 
+export function getRequiredWeddingPageBySlug(slug: string): WeddingPageConfig {
+  const pageConfig = getWeddingPageBySlug(slug);
+  if (!pageConfig) {
+    throw new Error(`Wedding page config not found for slug: ${slug}`);
+  }
+
+  return pageConfig;
+}
+
 export function getAllWeddingPageSlugs(): string[] {
   return WEDDING_PAGES_CONFIG.map(page => page.slug);
 }
@@ -168,11 +183,7 @@ export function getWeddingPageCount(): number {
 
 // 메타데이터 생성 함수
 export function generateMetadata(slug: string) {
-  const pageConfig = getWeddingPageBySlug(slug);
-  if (!pageConfig) {
-    throw new Error(`Wedding page config not found for slug: ${slug}`);
-  }
-
+  const pageConfig = getRequiredWeddingPageBySlug(slug);
   const { metadata } = pageConfig;
 
   return {

@@ -6,21 +6,22 @@ import styles from './GiftInfo_2.module.css';
 interface Account {
   bank: string;
   accountNumber: string;
-  holder: string;
+  accountHolder?: string;
+  holder?: string;
 }
 
 interface GiftInfoProps {
-  groomName: string;
-  brideName: string;
+  groomName?: string;
+  brideName?: string;
   groomAccounts?: Account[];
   brideAccounts?: Account[];
+  message?: string;
 }
 
 export default function GiftInfo_2({ 
-  groomName, 
-  brideName, 
   groomAccounts = [], 
-  brideAccounts = [] 
+  brideAccounts = [],
+  message
 }: GiftInfoProps) {
   const [expandedSide, setExpandedSide] = useState<'groom' | 'bride' | null>(null);
 
@@ -74,7 +75,7 @@ export default function GiftInfo_2({
               {groomAccounts.map((account, index) => (
                 <div key={index} className={styles.accountItem}>
                   <div className={styles.accountInfo}>
-                    <div className={styles.accountHolder}>{account.holder}</div>
+                    <div className={styles.accountHolder}>{account.accountHolder ?? account.holder}</div>
                     <div className={styles.accountDetail}>
                       {account.bank} {account.accountNumber}
                     </div>
@@ -109,7 +110,7 @@ export default function GiftInfo_2({
               {brideAccounts.map((account, index) => (
                 <div key={index} className={styles.accountItem}>
                   <div className={styles.accountInfo}>
-                    <div className={styles.accountHolder}>{account.holder}</div>
+                    <div className={styles.accountHolder}>{account.accountHolder ?? account.holder}</div>
                     <div className={styles.accountDetail}>
                       {account.bank} {account.accountNumber}
                     </div>
@@ -129,8 +130,21 @@ export default function GiftInfo_2({
       </div>
 
       <p className={styles.notice}>
-        축하의 마음을 담아 보내주신 모든 분들께<br />
-        감사드립니다
+        {message ? (
+          <>
+            {message.split('\n').map((line, index, lines) => (
+              <span key={`${line}-${index}`}>
+                {line}
+                {index < lines.length - 1 && <br />}
+              </span>
+            ))}
+          </>
+        ) : (
+          <>
+            축하의 마음을 담아 보내주신 모든 분들께<br />
+            감사드립니다
+          </>
+        )}
       </p>
     </section>
   );

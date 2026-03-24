@@ -6,10 +6,12 @@ import { useAdmin } from '@/contexts';
 import styles from './Guestbook_2.module.css';
 
 interface GuestbookProps {
-  pageId: string; // pageSlug와 동일하게 사용
+  pageId?: string;
+  pageSlug?: string;
 }
 
-export default function Guestbook_2({ pageId }: GuestbookProps) {
+export default function Guestbook_2({ pageId, pageSlug }: GuestbookProps) {
+  const resolvedPageSlug = pageSlug ?? pageId;
   const [comments, setComments] = useState<Comment[]>([]);
   const [name, setName] = useState('');
   const [message, setMessage] = useState('');
@@ -27,13 +29,21 @@ export default function Guestbook_2({ pageId }: GuestbookProps) {
   const { isAdminLoggedIn } = useAdmin();
 
   useEffect(() => {
+    if (!resolvedPageSlug) {
+      return;
+    }
+
     loadComments();
-  }, [pageId]);
+  }, [resolvedPageSlug]);
 
   const loadComments = async () => {
+    if (!resolvedPageSlug) {
+      return;
+    }
+
     try {
       setIsLoading(true);
-      const fetchedComments = await getComments(pageId);
+      const fetchedComments = await getComments(resolvedPageSlug);
       setComments(fetchedComments);
     } catch (error) {
       console.error('댓글 불러오기 실패:', error);
@@ -44,6 +54,10 @@ export default function Guestbook_2({ pageId }: GuestbookProps) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!resolvedPageSlug) {
+      return;
+    }
     
     if (!name.trim() || !message.trim()) {
       alert('이름과 메시지를 입력해주세요.');
@@ -55,7 +69,7 @@ export default function Guestbook_2({ pageId }: GuestbookProps) {
       await addComment({
         author: name.trim(),
         message: message.trim(),
-        pageSlug: pageId
+        pageSlug: resolvedPageSlug
       });
 
       setName('');
@@ -71,12 +85,16 @@ export default function Guestbook_2({ pageId }: GuestbookProps) {
   };
 
   const handleDelete = async (commentId: string) => {
+    if (!resolvedPageSlug) {
+      return;
+    }
+
     if (!window.confirm('정말로 이 메시지를 삭제하시겠습니까?')) {
       return;
     }
 
     try {
-      await deleteComment(commentId, pageId);
+      await deleteComment(commentId, resolvedPageSlug);
       await loadComments();
       alert('메시지가 삭제되었습니다.');
     } catch (error) {
@@ -87,8 +105,12 @@ export default function Guestbook_2({ pageId }: GuestbookProps) {
 
   // 클라이언트 로그인
   const handleClientLogin = async () => {
+    if (!resolvedPageSlug) {
+      return;
+    }
+
     try {
-      const isValid = await verifyClientPassword(pageId, clientPassword);
+      const isValid = await verifyClientPassword(resolvedPageSlug, clientPassword);
       if (isValid) {
         setIsClientLoggedIn(true);
         setShowClientManager(false);

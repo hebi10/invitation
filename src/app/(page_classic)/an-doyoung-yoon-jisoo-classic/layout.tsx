@@ -1,45 +1,16 @@
-import type { Metadata, Viewport } from 'next';
-import Script from 'next/script';
-import KakaoShareButton from './KakaoShareButton';
-import { generateMetadata as generateWeddingMetadata, getWeddingPageBySlug } from '@/config/weddingPages';
+﻿import type { Metadata, Viewport } from 'next';
+
+import {
+  createWeddingInvitationLayout,
+  getWeddingInvitationMetadata,
+  weddingInvitationViewport,
+} from '@/app/_components/WeddingInvitationLayout';
 
 const WEDDING_SLUG = 'an-doyoung-yoon-jisoo';
-const pageConfig = getWeddingPageBySlug(WEDDING_SLUG);
 
-if (!pageConfig) {
-  throw new Error(`Wedding page config not found for slug: ${WEDDING_SLUG}`);
-}
+export const metadata: Metadata = getWeddingInvitationMetadata(WEDDING_SLUG);
+export const viewport: Viewport = weddingInvitationViewport;
 
-const WEDDING_IMAGE = pageConfig.metadata.images.wedding;
+const Layout = createWeddingInvitationLayout({ slug: WEDDING_SLUG, theme: 'classic' });
 
-export const metadata: Metadata = generateWeddingMetadata(WEDDING_SLUG);
-
-export const viewport: Viewport = {
-  width: 'device-width',
-  initialScale: 1,
-};
-
-export default function ClassicLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
-  return (
-    <>
-      <Script 
-        src="https://t1.kakaocdn.net/kakao_js_sdk/2.7.2/kakao.min.js" 
-        integrity="sha384-TiCUE00h649CAMonG018J2ujOgDKW/kVWlChEuu4jK2vxfAAD0eZxzCKakxg55G4" 
-        crossOrigin="anonymous"
-        strategy="beforeInteractive"
-      />
-      
-      {children}
-      
-      <KakaoShareButton 
-        title={`${pageConfig!.groomName} ♥ ${pageConfig!.brideName} 결혼식 (한지 클래식 버전)`}
-        description={`${pageConfig!.date} ${pageConfig!.pageData?.ceremonyTime || ''} | ${pageConfig!.venue}`}
-        imageUrl={WEDDING_IMAGE}
-      />
-    </>
-  );
-}
+export default Layout;
