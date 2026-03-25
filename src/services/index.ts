@@ -14,3 +14,6 @@ export * from './passwordService';
 
 // 노출 기간 서비스
 export * from './displayPeriodService';
+
+// 추억 페이지 서비스
+export * from './memoryPageService';

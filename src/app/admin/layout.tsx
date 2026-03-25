@@ -1,20 +1,13 @@
 import type { Metadata, Viewport } from 'next';
+import './admin-theme.css';
+import { AdminOverlayProvider } from './_components';
 
 export const metadata: Metadata = {
-  title: '모바일 청첩장 - 아름다운 시작을 함께하세요',
-  description: '특별한 날을 더욱 특별하게 만들어줄 모바일 청첩장입니다. 소중한 분들과 함께 나누는 행복한 순간을 아름답게 전해드립니다.',
-  keywords: ['모바일청첩장', '웨딩', '결혼식', '청첩장', '결혼', '웨딩카드'],
-  openGraph: {
-    title: '모바일 청첩장 - 아름다운 시작을 함께하세요',
-    description: '특별한 날을 더욱 특별하게 만들어줄 모바일 청첩장입니다.',
-    type: 'website',
-    locale: 'ko_KR',
-    siteName: '모바일 청첩장',
-  },
-  twitter: {
-    card: 'summary_large_image',
-    title: '모바일 청첩장 - 아름다운 시작을 함께하세요',
-    description: '특별한 날을 더욱 특별하게 만들어줄 모바일 청첩장입니다.',
+  title: '관리자 대시보드 | 모바일 청첩장',
+  description: '청첩장 페이지, 이미지, 댓글, 비밀번호, 노출 기간을 운영형 UI로 관리하는 관리자 대시보드입니다.',
+  robots: {
+    index: false,
+    follow: false,
   },
 };
 
@@ -28,5 +21,9 @@ export default function Layout({
 }: {
   children: React.ReactNode;
 }) {
-  return children;
+  return (
+    <div data-admin-ui>
+      <AdminOverlayProvider>{children}</AdminOverlayProvider>
+    </div>
+  );
 }

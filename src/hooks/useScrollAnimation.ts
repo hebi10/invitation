@@ -13,7 +13,7 @@ export function useScrollAnimation(options: UseScrollAnimationOptions = {}) {
     triggerOnce = true
   } = options;
 
-  const elementRef = useRef<HTMLDivElement>(null);
+  const elementRef = useRef<HTMLElement | null>(null);
   const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {

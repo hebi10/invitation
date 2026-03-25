@@ -6,5 +6,5 @@ import styles from './Gallery_1.module.css';
 type GalleryProps = Pick<GalleryGridSharedProps, 'images' | 'title'>;
 
 export default function Gallery_1(props: GalleryProps) {
-  return <GalleryGridShared {...props} styles={styles} preloadAllImages />;
+  return <GalleryGridShared {...props} styles={styles} />;
 }

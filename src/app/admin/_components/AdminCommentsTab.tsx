@@ -1,0 +1,213 @@
+import { EmptyState, FilterToolbar, Pagination, StatusBadge } from '.';
+import { COMMENT_AGE_LABELS, COMMENTS_PER_PAGE, formatDateTime, type CommentAgeFilter } from './adminPageUtils';
+import type { Comment } from '@/services';
+import styles from '../page.module.css';
+
+interface AdminCommentsTabProps {
+  commentsLoading: boolean;
+  comments: Comment[];
+  filteredComments: Comment[];
+  currentComments: Comment[];
+  currentPage: number;
+  totalPages: number;
+  commentSearch: string;
+  selectedPageSlug: string;
+  commentAgeFilter: CommentAgeFilter;
+  chips: Array<{ id: string; label: string; onRemove: () => void }>;
+  commentPageOptions: Array<{ value: string; label: string }>;
+  onRefresh: () => void;
+  onQueryChange: (updates: Record<string, string | null>) => void;
+  onDeleteComment: (commentId: string, author: string, pageSlug: string) => void;
+}
+
+export default function AdminCommentsTab({
+  commentsLoading,
+  comments,
+  filteredComments,
+  currentComments,
+  currentPage,
+  totalPages,
+  commentSearch,
+  selectedPageSlug,
+  commentAgeFilter,
+  chips,
+  commentPageOptions,
+  onRefresh,
+  onQueryChange,
+  onDeleteComment,
+}: AdminCommentsTabProps) {
+  const startIndex = (currentPage - 1) * COMMENTS_PER_PAGE;
+
+  return (
+    <div className={styles.panelStack}>
+      <div className={styles.sectionHeader}>
+        <div>
+          <h2 className={styles.sectionTitle}>댓글 관리</h2>
+          <p className={styles.sectionDescription}>
+            검색, 페이지 필터, 최근 댓글 필터를 유지한 채로 스캔하고 삭제까지 이어질 수 있도록 정리했습니다.
+          </p>
+        </div>
+        <p className={styles.sectionMeta}>총 {filteredComments.length}개 댓글</p>
+      </div>
+
+      <FilterToolbar
+        fields={
+          <>
+            <label className="admin-field">
+              <span className="admin-field-label">검색</span>
+              <input
+                className="admin-input"
+                type="search"
+                placeholder="작성자, 메시지, 페이지 slug 검색"
+                value={commentSearch}
+                onChange={(event) => onQueryChange({ commentQ: event.target.value || null, commentPage: '1' })}
+              />
+            </label>
+
+            <label className="admin-field">
+              <span className="admin-field-label">페이지</span>
+              <select className="admin-select" value={selectedPageSlug} onChange={(event) => onQueryChange({ commentPageSlug: event.target.value, commentPage: '1' })}>
+                <option value="all">전체 페이지</option>
+                {commentPageOptions.map((pageOption) => (
+                  <option key={pageOption.value} value={pageOption.value}>
+                    {pageOption.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <label className="admin-field">
+              <span className="admin-field-label">기간</span>
+              <select className="admin-select" value={commentAgeFilter} onChange={(event) => onQueryChange({ commentAge: event.target.value, commentPage: '1' })}>
+                {Object.entries(COMMENT_AGE_LABELS).map(([value, label]) => (
+                  <option key={value} value={value}>
+                    {label}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </>
+        }
+        actions={
+          <>
+            <button type="button" className="admin-button admin-button-secondary" onClick={onRefresh} disabled={commentsLoading}>
+              {commentsLoading ? '새로고침 중...' : '새로고침'}
+            </button>
+            <button
+              type="button"
+              className="admin-button admin-button-ghost"
+              onClick={() => onQueryChange({ commentQ: null, commentPageSlug: null, commentAge: null, commentPage: '1' })}
+            >
+              필터 초기화
+            </button>
+          </>
+        }
+        chips={chips}
+      />
+
+      {commentsLoading ? (
+        <div className={styles.loadingState}>
+          <div className={styles.loadingSpinner}></div>
+          <p className={styles.loadingText}>댓글 목록을 불러오는 중입니다.</p>
+        </div>
+      ) : currentComments.length > 0 ? (
+        <>
+          <div className={styles.tableCard}>
+            <div className={styles.tableScroll}>
+              <table className={styles.dataTable}>
+                <thead>
+                  <tr>
+                    <th>번호</th>
+                    <th>작성자</th>
+                    <th>페이지</th>
+                    <th>메시지</th>
+                    <th>등록일</th>
+                    <th>액션</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {currentComments.map((comment, index) => (
+                    <tr key={comment.id}>
+                      <td className={styles.numberCell}>{filteredComments.length - (startIndex + index)}</td>
+                      <td>
+                        <span className={styles.tableTitle}>{comment.author}</span>
+                      </td>
+                      <td>
+                        <StatusBadge tone="neutral">{comment.pageSlug}</StatusBadge>
+                      </td>
+                      <td>
+                        <p className={styles.messagePreview}>{comment.message}</p>
+                      </td>
+                      <td>
+                        <span className={styles.tableSubtext}>{formatDateTime(comment.createdAt)}</span>
+                      </td>
+                      <td>
+                        <button
+                          type="button"
+                          className="admin-button admin-button-danger"
+                          onClick={() => onDeleteComment(comment.id, comment.author, comment.pageSlug)}
+                        >
+                          삭제
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div className={styles.mobileList}>
+            {currentComments.map((comment, index) => (
+              <article key={comment.id} className={styles.mobileCard}>
+                <div className={styles.mobileCardHead}>
+                  <div>
+                    <h3 className={styles.mobileCardTitle}>{comment.author}</h3>
+                    <p className={styles.mobileCardSlug}>#{filteredComments.length - (startIndex + index)}</p>
+                  </div>
+                  <StatusBadge tone="neutral">{comment.pageSlug}</StatusBadge>
+                </div>
+
+                <p className={styles.mobileCommentMessage}>{comment.message}</p>
+                <p className={styles.mobileCardMetaLine}>{formatDateTime(comment.createdAt)}</p>
+
+                <div className={styles.mobileCardActions}>
+                  <button
+                    type="button"
+                    className="admin-button admin-button-danger"
+                    onClick={() => onDeleteComment(comment.id, comment.author, comment.pageSlug)}
+                  >
+                    삭제
+                  </button>
+                </div>
+              </article>
+            ))}
+          </div>
+
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            totalItems={filteredComments.length}
+            pageSize={COMMENTS_PER_PAGE}
+            onPageChange={(page) => onQueryChange({ commentPage: String(page) })}
+          />
+        </>
+      ) : (
+        <EmptyState
+          title={comments.length === 0 ? '등록된 댓글이 없습니다.' : '조건에 맞는 댓글이 없습니다.'}
+          description={
+            comments.length === 0
+              ? '방명록이 등록되면 이 영역에서 검색과 필터를 통해 빠르게 관리할 수 있습니다.'
+              : '검색어와 필터를 조정하거나 초기화해서 다시 확인해보세요.'
+          }
+          actionLabel={comments.length === 0 ? '새로고침' : '필터 초기화'}
+          onAction={
+            comments.length === 0
+              ? onRefresh
+              : () => onQueryChange({ commentQ: null, commentPageSlug: null, commentAge: null, commentPage: '1' })
+          }
+        />
+      )}
+    </div>
+  );
+}

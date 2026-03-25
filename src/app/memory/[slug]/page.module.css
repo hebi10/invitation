@@ -1,0 +1,258 @@
+.page {
+  min-height: 100vh;
+  padding: 20px 16px 48px;
+  background:
+    radial-gradient(circle at top, rgba(255, 244, 228, 0.55), transparent 34%),
+    linear-gradient(180deg, #f8f5ef 0%, #f3efe8 100%);
+  color: #1f2937;
+}
+
+.shell {
+  width: min(100%, 760px);
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.hero,
+.panel,
+.stateCard {
+  overflow: hidden;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
+}
+
+.heroImage {
+  width: 100%;
+  aspect-ratio: 4 / 5;
+  object-fit: cover;
+}
+
+.heroBody,
+.panel,
+.stateCard {
+  padding: 22px 20px;
+}
+
+.eyebrow,
+.sectionLabel {
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+  padding: 0 10px;
+  border-radius: 999px;
+  background: rgba(148, 163, 184, 0.12);
+  color: #475569;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.heroTitle,
+.sectionTitle,
+.stateTitle {
+  margin-top: 14px;
+  font-size: clamp(1.75rem, 5vw, 2.4rem);
+  line-height: 1.15;
+  letter-spacing: -0.04em;
+  font-weight: 700;
+  color: #111827;
+}
+
+.sectionTitle {
+  font-size: 1.5rem;
+}
+
+.heroSubtitle,
+.heroIntro,
+.stateDescription,
+.thankYouMessage,
+.timelineBody p,
+.galleryCaption {
+  font-size: 0.95rem;
+  line-height: 1.8;
+  color: #4b5563;
+}
+
+.heroMeta,
+.commentMeta,
+.timelineHeader {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.heroMeta {
+  margin-top: 14px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #475569;
+}
+
+.heroIntro {
+  margin-top: 16px;
+}
+
+.sectionHeader {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-bottom: 18px;
+}
+
+.summaryGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.summaryItem {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 14px;
+  border-radius: 18px;
+  background: #f8f5f0;
+}
+
+.summaryWide {
+  grid-column: 1 / -1;
+}
+
+.summaryLabel {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #64748b;
+}
+
+.summaryValue {
+  font-size: 0.95rem;
+  line-height: 1.6;
+  color: #1f2937;
+}
+
+.gallerySections,
+.commentList,
+.timelineList {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.galleryGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.galleryGroupTitle {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #1f2937;
+}
+
+.galleryGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.galleryFigure {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.galleryThumb {
+  width: 100%;
+  aspect-ratio: 1 / 1.2;
+  border-radius: 18px;
+  object-fit: cover;
+  background: #e5e7eb;
+}
+
+.commentCard,
+.timelineItem {
+  padding: 16px;
+  border-radius: 18px;
+  background: #fbfaf7;
+}
+
+.commentMessage {
+  font-size: 0.95rem;
+  line-height: 1.8;
+  color: #1f2937;
+  white-space: pre-wrap;
+}
+
+.commentMeta {
+  margin-top: 14px;
+  font-size: 0.8125rem;
+  color: #64748b;
+  justify-content: space-between;
+}
+
+.timelineItem {
+  display: grid;
+  grid-template-columns: 36px minmax(0, 1fr);
+  gap: 14px;
+}
+
+.timelineIndex {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  background: #111827;
+  color: #ffffff;
+  font-size: 0.875rem;
+  font-weight: 700;
+}
+
+.timelineHeader {
+  justify-content: space-between;
+  font-size: 0.875rem;
+  color: #64748b;
+}
+
+.timelineBody {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.thankYouPanel {
+  text-align: center;
+}
+
+.thankYouMessage {
+  margin-top: 14px;
+}
+
+.stateCard {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  align-items: center;
+  text-align: center;
+}
+
+@media (min-width: 768px) {
+  .page {
+    padding-top: 32px;
+  }
+
+  .heroImage {
+    aspect-ratio: 16 / 10;
+  }
+
+  .galleryGrid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}

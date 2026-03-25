@@ -1,200 +1,132 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import type { RefObject } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
 import Image from 'next/image';
+import { useScrollAnimation } from '@/hooks';
 import styles from './Gallery_5.module.css';
 
 interface GalleryProps {
   images: string[];
 }
 
+function preloadImage(url?: string) {
+  if (!url || typeof window === 'undefined') {
+    return;
+  }
+
+  const image = new window.Image();
+  image.decoding = 'async';
+  image.src = url;
+}
+
 export default function Gallery_5({ images }: GalleryProps) {
+  const { elementRef, isVisible } = useScrollAnimation({ threshold: 0, rootMargin: '700px 0px', triggerOnce: true });
   const [visibleCount, setVisibleCount] = useState(6);
-  const [selectedImage, setSelectedImage] = useState<number | null>(null);
+  const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const [mounted, setMounted] = useState(false);
   const [loadedImages, setLoadedImages] = useState<Set<string>>(new Set());
-  const [preloadedImages, setPreloadedImages] = useState<Set<string>>(new Set());
 
-  const displayImages = images.slice(0, visibleCount);
+  const displayImages = useMemo(() => images.slice(0, visibleCount), [images, visibleCount]);
   const hasMore = visibleCount < images.length;
-
-  // 이미지 로딩 처리 함수
-  const handleImageLoad = (imageSrc: string) => {
-    setLoadedImages(prev => new Set([...prev, imageSrc]));
-  };
-
-  // 이미지 미리 로딩 함수
-  const preloadImages = () => {
-    images.forEach((imageSrc) => {
-      if (!preloadedImages.has(imageSrc)) {
-        const img = new window.Image();
-        img.onload = () => {
-          setPreloadedImages(prev => new Set([...prev, imageSrc]));
-        };
-        img.src = imageSrc;
-      }
-    });
-  };
+  const selectedImage = selectedIndex === null ? null : images[selectedIndex];
 
   useEffect(() => {
     setMounted(true);
   }, []);
 
-  // 컴포넌트 마운트 시 이미지 미리 로딩
   useEffect(() => {
-    preloadImages();
-  }, []);
+    if (isVisible) {
+      displayImages.slice(0, 2).forEach(preloadImage);
+    }
+  }, [displayImages, isVisible]);
 
   useEffect(() => {
-    if (selectedImage !== null) {
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = '';
+    if (selectedIndex === null) {
+      return;
     }
+
+    preloadImage(images[selectedIndex - 1]);
+    preloadImage(images[selectedIndex + 1]);
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setSelectedIndex(null);
+      } else if (event.key === 'ArrowLeft') {
+        setSelectedIndex((current) => (current === null ? current : (current - 1 + images.length) % images.length));
+      } else if (event.key === 'ArrowRight') {
+        setSelectedIndex((current) => (current === null ? current : (current + 1) % images.length));
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    document.body.style.overflow = 'hidden';
+
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+      document.body.style.overflow = '';
+    };
+  }, [images, selectedIndex]);
+
+  useEffect(() => {
     return () => {
       document.body.style.overflow = '';
     };
-  }, [selectedImage]);
+  }, []);
 
-  const handlePrevImage = () => {
-    if (selectedImage !== null) {
-      setSelectedImage((selectedImage - 1 + images.length) % images.length);
-    }
-  };
-
-  const handleNextImage = () => {
-    if (selectedImage !== null) {
-      setSelectedImage((selectedImage + 1) % images.length);
-    }
-  };
-
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Escape') {
-      setSelectedImage(null);
-    } else if (e.key === 'ArrowLeft') {
-      handlePrevImage();
-    } else if (e.key === 'ArrowRight') {
-      handleNextImage();
-    }
-  };
-
-  const modalContent = selectedImage !== null && mounted && (
-    <div
-      className={styles.modal}
-      onClick={() => setSelectedImage(null)}
-      onKeyDown={handleKeyDown}
-      role="dialog"
-      aria-modal="true"
-      tabIndex={-1}
-    >
-      <button
-        className={styles.closeButton}
-        onClick={() => setSelectedImage(null)}
-      >
-        ✕
-      </button>
-
-      <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
-        <div className={styles.modalImageWrapper}>
-          <Image
-            src={images[selectedImage]}
-            alt={`갤러리 이미지 ${selectedImage + 1}`}
-            fill
-            sizes="100vw"
-            quality={85}
-            priority
-            className={styles.modalImage}
-            style={{ objectFit: 'contain' }}
-          />
-        </div>
-      </div>
-
-      <button
-        className={`${styles.navButton} ${styles.prevButton}`}
-        onClick={(e) => {
-          e.stopPropagation();
-          handlePrevImage();
-        }}
-      >
-        ‹
-      </button>
-
-      <button
-        className={`${styles.navButton} ${styles.nextButton}`}
-        onClick={(e) => {
-          e.stopPropagation();
-          handleNextImage();
-        }}
-      >
-        ›
-      </button>
-
-      <div className={styles.imageCounter}>
-        {selectedImage + 1} / {images.length}
-      </div>
-    </div>
-  );
+  if (!images.length) {
+    return null;
+  }
 
   return (
-    <section className={styles.gallery}>
+    <section ref={elementRef as RefObject<HTMLElement>} className={styles.gallery}>
       <div className={styles.container}>
-        {/* 금박 장식 */}
         <svg className={styles.topDecoration} viewBox="0 0 100 10">
           <path d="M 0 5 Q 25 2, 50 5 T 100 5" fill="none" stroke="var(--accent)" strokeWidth="1" />
         </svg>
 
-        <h2 className={styles.title}>寫眞</h2>
+        <h2 className={styles.title}>記錄</h2>
         <p className={styles.subtitle}>Gallery</p>
 
         <div className={styles.grid}>
-          {displayImages.map((image, index) => (
-            <div
-              key={index}
-              className={styles.imageItem}
-              onClick={() => setSelectedImage(index)}
-            >
-              <Image
-                src={image}
-                alt={`Wedding photo ${index + 1}`}
-                fill
-                sizes="(max-width: 640px) 50vw, 33vw"
-                quality={75}
-                className={styles.image}
-                onLoad={() => handleImageLoad(image)}
-                style={{ 
-                  objectFit: 'cover',
-                  opacity: (loadedImages.has(image) || preloadedImages.has(image)) ? 1 : 0,
-                  transition: 'opacity 0.3s ease'
-                }}
-              />
-              {!(loadedImages.has(image) || preloadedImages.has(image)) && (
+          {(isVisible ? displayImages : Array.from({ length: Math.min(6, Math.max(images.length, 4)) }, (_, index) => `placeholder-${index}`)).map((image, index) =>
+            image.startsWith('placeholder-') ? (
+              <div key={image} className={styles.imageItem}>
                 <div className={styles.imagePlaceholder}>
                   <div className={styles.loadingSpinner}></div>
                 </div>
-              )}
-            </div>
-          ))}
+              </div>
+            ) : (
+              <div key={image} className={styles.imageItem} onClick={() => setSelectedIndex(index)}>
+                <Image
+                  src={image}
+                  alt={`Wedding photo ${index + 1}`}
+                  fill
+                  sizes="(max-width: 640px) 50vw, 33vw"
+                  quality={60}
+                  loading={index < 2 ? 'eager' : 'lazy'}
+                  className={styles.image}
+                  onLoad={() => setLoadedImages((current) => new Set([...current, image]))}
+                  style={{
+                    objectFit: 'cover',
+                    opacity: loadedImages.has(image) ? 1 : 0,
+                    transition: 'opacity 0.22s ease',
+                  }}
+                />
+                {!loadedImages.has(image) && (
+                  <div className={styles.imagePlaceholder}>
+                    <div className={styles.loadingSpinner}></div>
+                  </div>
+                )}
+              </div>
+            )
+          )}
         </div>
 
-        {hasMore && (
-          <button
-            className={styles.loadMoreButton}
-            onClick={() => {
-              const newVisibleCount = Math.min(visibleCount + 6, images.length);
-              const newlyVisibleImages = images.slice(visibleCount, newVisibleCount);
-              
-              // 새로 보여진 이미지들의 로딩 상태 즉시 업데이트
-              newlyVisibleImages.forEach(imageSrc => {
-                if (preloadedImages.has(imageSrc)) {
-                  setLoadedImages(prev => new Set([...prev, imageSrc]));
-                }
-              });
-              
-              setVisibleCount(newVisibleCount);
-            }}
-          >
-            더 보기 ({images.length - visibleCount}장 남음)
+        {images.length > 6 && (
+          <button className={styles.loadMoreButton} onClick={() => setVisibleCount(hasMore ? Math.min(visibleCount + 6, images.length) : 6)} type="button">
+            {hasMore ? `더보기 (${images.length - visibleCount}장 남음)` : '접기'}
           </button>
         )}
 
@@ -203,7 +135,32 @@ export default function Gallery_5({ images }: GalleryProps) {
         </svg>
       </div>
 
-      {mounted && createPortal(modalContent, document.body)}
+      {selectedImage && mounted && createPortal(
+        <div className={styles.modal} onClick={() => setSelectedIndex(null)} role="dialog" aria-modal="true" tabIndex={-1}>
+          <button className={styles.closeButton} onClick={() => setSelectedIndex(null)} type="button">
+            ×
+          </button>
+
+          <div className={styles.modalContent} onClick={(event) => event.stopPropagation()}>
+            <div className={styles.modalImageWrapper}>
+              <Image src={selectedImage} alt={`갤러리 이미지 ${selectedIndex + 1}`} fill sizes="100vw" quality={82} priority className={styles.modalImage} style={{ objectFit: 'contain' }} />
+            </div>
+          </div>
+
+          <button className={`${styles.navButton} ${styles.prevButton}`} onClick={(event) => { event.stopPropagation(); setSelectedIndex((current) => (current === null ? current : (current - 1 + images.length) % images.length)); }} type="button">
+            ‹
+          </button>
+
+          <button className={`${styles.navButton} ${styles.nextButton}`} onClick={(event) => { event.stopPropagation(); setSelectedIndex((current) => (current === null ? current : (current + 1) % images.length)); }} type="button">
+            ›
+          </button>
+
+          <div className={styles.imageCounter}>
+            {selectedIndex + 1} / {images.length}
+          </div>
+        </div>,
+        document.body
+      )}
     </section>
   );
 }

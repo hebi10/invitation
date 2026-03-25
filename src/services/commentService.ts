@@ -1,3 +1,5 @@
+import { getAllWeddingPageSlugs } from '@/config/weddingPages';
+
 export interface Comment {
   id: string;
   author: string;
@@ -198,7 +200,7 @@ export async function getComments(pageSlug: string): Promise<Comment[]> {
         author: data.author,
         message: data.message,
         createdAt: data.createdAt instanceof firestoreModules!.Timestamp ? data.createdAt.toDate() : new Date(),
-        pageSlug: data.pageSlug
+        pageSlug: data.pageSlug || pageSlug
       });
     });
     
@@ -261,8 +263,8 @@ export async function getAllComments(): Promise<Comment[]> {
   }
 
   try {
-    // 모든 페이지별 컬렉션에서 댓글 가져오기
-    const pageNames = ['kim-taehyun-choi-yuna', 'shin-minje-kim-hyunji', 'lee-junho-park-somin'];
+    // 현재 설정된 모든 청첩장 페이지 컬렉션에서 댓글 가져오기
+    const pageNames = getAllWeddingPageSlugs();
     const allComments: Comment[] = [];
     
     for (const pageName of pageNames) {
@@ -283,7 +285,7 @@ export async function getAllComments(): Promise<Comment[]> {
             author: data.author,
             message: data.message,
             createdAt: data.createdAt instanceof firestoreModules!.Timestamp ? data.createdAt.toDate() : new Date(),
-            pageSlug: data.pageSlug
+            pageSlug: data.pageSlug || pageName
           });
         });
       } catch (collectionError) {

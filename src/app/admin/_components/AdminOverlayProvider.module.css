@@ -1,0 +1,161 @@
+.overlayRoot {
+  position: relative;
+}
+
+.toastViewport {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 1200;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: min(360px, calc(100vw - 24px));
+}
+
+.toast {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 14px 16px;
+  border-radius: var(--admin-radius-md);
+  border: 1px solid var(--admin-color-border);
+  background: var(--admin-color-surface);
+  box-shadow: var(--admin-shadow-md);
+}
+
+.toastTitle {
+  font-size: 0.875rem;
+  font-weight: 700;
+}
+
+.toastMessage {
+  font-size: 0.8125rem;
+  line-height: 1.6;
+  color: var(--admin-color-text-secondary);
+}
+
+.toneSuccess {
+  border-color: rgba(21, 128, 61, 0.16);
+  background: var(--admin-color-success-soft);
+}
+
+.toneSuccess .toastTitle {
+  color: var(--admin-color-success);
+}
+
+.toneError {
+  border-color: rgba(220, 38, 38, 0.16);
+  background: var(--admin-color-danger-soft);
+}
+
+.toneError .toastTitle {
+  color: var(--admin-color-danger);
+}
+
+.toneInfo {
+  border-color: rgba(37, 99, 235, 0.16);
+  background: var(--admin-color-primary-soft);
+}
+
+.toneInfo .toastTitle {
+  color: var(--admin-color-primary);
+}
+
+.dialogBackdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1300;
+  background: rgba(15, 23, 42, 0.36);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+
+.dialog {
+  width: min(420px, 100%);
+  padding: 24px;
+  border-radius: var(--admin-radius-lg);
+  border: 1px solid var(--admin-color-border);
+  background: var(--admin-color-surface);
+  box-shadow: var(--admin-shadow-md);
+}
+
+.dialogTitle {
+  font-size: 1.125rem;
+  font-weight: 700;
+  line-height: 1.35;
+  color: var(--admin-color-text);
+}
+
+.dialogDescription {
+  margin-top: 10px;
+  font-size: 0.9rem;
+  line-height: 1.7;
+  color: var(--admin-color-text-secondary);
+}
+
+.dialogActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.dialogButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: var(--admin-control-height-md);
+  padding: 0 14px;
+  border-radius: var(--admin-radius-sm);
+  border: 1px solid transparent;
+  font-size: 0.875rem;
+  font-weight: 600;
+  transition: background-color 0.18s ease, border-color 0.18s ease, color 0.18s ease;
+}
+
+.dialogCancel {
+  border-color: var(--admin-color-border);
+  background: var(--admin-color-surface);
+  color: var(--admin-color-text-secondary);
+}
+
+.dialogCancel:hover {
+  background: var(--admin-color-surface-muted);
+}
+
+.dialogConfirm {
+  background: var(--admin-color-primary);
+  color: #ffffff;
+}
+
+.dialogConfirm:hover {
+  background: var(--admin-color-primary-strong);
+}
+
+.dialogConfirmDanger {
+  background: var(--admin-color-danger);
+}
+
+.dialogConfirmDanger:hover {
+  background: #b91c1c;
+}
+
+@media (max-width: 640px) {
+  .toastViewport {
+    top: 12px;
+    right: 12px;
+    left: 12px;
+    width: auto;
+  }
+
+  .dialogActions {
+    flex-direction: column-reverse;
+  }
+
+  .dialogButton {
+    width: 100%;
+  }
+}

@@ -74,6 +74,7 @@ export { default as WeddingCountdown_5 } from './WeddingCountdown_5';
 export { default as ImageManager } from './ImageManager';
 export { default as ClientPasswordManager } from './ClientPasswordManager';
 export { default as DisplayPeriodManager } from './DisplayPeriodManager';
+export { default as MemoryPageManager } from './MemoryPageManager';
 
 // 애니메이션 컴포넌트
 export { default as ScrollAnimatedSection } from './ScrollAnimatedSection';
