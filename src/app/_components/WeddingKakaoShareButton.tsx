@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 import { usePageImages } from '@/hooks';
 
@@ -19,32 +19,39 @@ declare global {
 }
 
 const buttonBaseStyle = {
-  display: 'block',
-  border: 'none',
-  padding: '0.8rem 1.5rem',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  gap: '0.7rem',
+  minHeight: '48px',
+  padding: '0.9rem 1.25rem',
   margin: '0 auto',
-  fontWeight: '600',
+  fontWeight: 600,
   cursor: 'pointer',
-  fontSize: '0.9rem',
-  transition: 'all 0.3s ease',
+  fontSize: '0.95rem',
+  transition: 'all 0.25s ease',
   width: '100%',
   maxWidth: '700px',
+  borderRadius: '16px',
+  border: '1px solid transparent',
 } as const;
 
 const buttonVariantStyles = {
   default: {
-    background: '#FEE500',
-    color: '#000',
-    boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
-    hoverBackground: '#E8D000',
-    hoverBoxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
+    background: 'linear-gradient(135deg, #fff8df 0%, #f6edd0 100%)',
+    color: '#3b2d16',
+    borderColor: 'rgba(87, 67, 32, 0.12)',
+    boxShadow: '0 10px 24px rgba(87, 67, 32, 0.08)',
+    hoverBackground: 'linear-gradient(135deg, #fff3bf 0%, #f3e4b7 100%)',
+    hoverBoxShadow: '0 12px 28px rgba(87, 67, 32, 0.12)',
   },
   space: {
-    background: 'linear-gradient(135deg, #8ec5fc 0%, #e0c3fc 100%)',
-    color: '#0a0e27',
-    boxShadow: '0 4px 15px rgba(142, 197, 252, 0.4)',
-    hoverBackground: 'linear-gradient(135deg, #8ec5fc 0%, #e0c3fc 100%)',
-    hoverBoxShadow: '0 6px 20px rgba(142, 197, 252, 0.6)',
+    background: 'linear-gradient(135deg, rgba(142, 197, 252, 0.18) 0%, rgba(224, 195, 252, 0.22) 100%)',
+    color: '#f5f8ff',
+    borderColor: 'rgba(200, 220, 255, 0.24)',
+    boxShadow: '0 12px 30px rgba(53, 83, 140, 0.22)',
+    hoverBackground: 'linear-gradient(135deg, rgba(142, 197, 252, 0.26) 0%, rgba(224, 195, 252, 0.3) 100%)',
+    hoverBoxShadow: '0 14px 34px rgba(53, 83, 140, 0.32)',
   },
 } as const;
 
@@ -56,6 +63,7 @@ export default function WeddingKakaoShareButton({
   variant = 'default',
 }: WeddingKakaoShareButtonProps) {
   const [isKakaoReady, setIsKakaoReady] = useState(false);
+  const [feedbackMessage, setFeedbackMessage] = useState('');
   const { mainImage } = usePageImages(pageSlug);
   const shareImageUrl = mainImage?.url || imageUrl;
   const variantStyle = buttonVariantStyles[variant];
@@ -97,9 +105,22 @@ export default function WeddingKakaoShareButton({
     };
   }, []);
 
+  useEffect(() => {
+    if (!feedbackMessage) {
+      return;
+    }
+
+    const timer = window.setTimeout(() => setFeedbackMessage(''), 2200);
+    return () => window.clearTimeout(timer);
+  }, [feedbackMessage]);
+
+  const buttonLabel = useMemo(() => {
+    return feedbackMessage || '카카오톡으로 공유';
+  }, [feedbackMessage]);
+
   const handleKakaoShare = () => {
     if (!(window.Kakao && window.Kakao.Share && isKakaoReady)) {
-      alert('카카오톡 공유 기능을 사용할 수 없습니다. 잠시 후 다시 시도해 주세요.');
+      setFeedbackMessage('공유 준비 중입니다');
       return;
     }
 
@@ -124,6 +145,8 @@ export default function WeddingKakaoShareButton({
         },
       ],
     });
+
+    setFeedbackMessage('공유창 열기');
   };
 
   return (
@@ -131,7 +154,9 @@ export default function WeddingKakaoShareButton({
       style={{
         width: '100%',
         display: 'flex',
+        flexDirection: 'column',
         justifyContent: 'center',
+        gap: '0.6rem',
         margin: '20px 0',
       }}
     >
@@ -142,6 +167,7 @@ export default function WeddingKakaoShareButton({
           background: variantStyle.background,
           color: variantStyle.color,
           boxShadow: variantStyle.boxShadow,
+          borderColor: variantStyle.borderColor,
         }}
         onMouseOver={(event) => {
           event.currentTarget.style.background = variantStyle.hoverBackground;
@@ -154,8 +180,36 @@ export default function WeddingKakaoShareButton({
           event.currentTarget.style.boxShadow = variantStyle.boxShadow;
         }}
       >
-        카카오톡 공유
+        <span
+          aria-hidden="true"
+          style={{
+            width: '28px',
+            height: '28px',
+            borderRadius: '999px',
+            display: 'inline-flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            background: variant === 'space' ? 'rgba(255,255,255,0.14)' : 'rgba(59,45,22,0.08)',
+            fontSize: '0.82rem',
+            fontWeight: 700,
+          }}
+        >
+          K
+        </span>
+        <span>{buttonLabel}</span>
       </button>
+      {feedbackMessage && (
+        <p
+          style={{
+            margin: 0,
+            textAlign: 'center',
+            fontSize: '0.84rem',
+            color: variant === 'space' ? 'rgba(245, 248, 255, 0.76)' : 'rgba(59, 45, 22, 0.72)',
+          }}
+        >
+          {feedbackMessage}
+        </p>
+      )}
     </div>
   );
 }

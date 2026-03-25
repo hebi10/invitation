@@ -1,6 +1,9 @@
 'use client';
 
 import { useState } from 'react';
+
+import { copyTextToClipboard } from '@/utils';
+
 import styles from './GiftInfo_2.module.css';
 
 interface Account {
@@ -18,27 +21,24 @@ interface GiftInfoProps {
   message?: string;
 }
 
-export default function GiftInfo_2({ 
-  groomAccounts = [], 
+export default function GiftInfo_2({
+  groomAccounts = [],
   brideAccounts = [],
-  message
+  message,
 }: GiftInfoProps) {
   const [expandedSide, setExpandedSide] = useState<'groom' | 'bride' | null>(null);
+  const [copiedKey, setCopiedKey] = useState<string | null>(null);
 
-  const copyToClipboard = (text: string, label: string) => {
-    if (navigator.clipboard) {
-      navigator.clipboard.writeText(text).then(() => {
-        alert(`${label}이(가) 복사되었습니다.`);
-      });
-    } else {
-      const textarea = document.createElement('textarea');
-      textarea.value = text;
-      document.body.appendChild(textarea);
-      textarea.select();
-      document.execCommand('copy');
-      document.body.removeChild(textarea);
-      alert(`${label}이(가) 복사되었습니다.`);
+  const handleCopy = async (text: string, accountKey: string) => {
+    const copied = await copyTextToClipboard(text);
+    if (!copied) {
+      return;
     }
+
+    setCopiedKey(accountKey);
+    window.setTimeout(() => {
+      setCopiedKey((current) => (current === accountKey ? null : current));
+    }, 2000);
   };
 
   const toggleSection = (side: 'groom' | 'bride') => {
@@ -53,8 +53,9 @@ export default function GiftInfo_2({
     <section className={styles.container}>
       <h2 className={styles.title}>마음 전하실 곳</h2>
       <p className={styles.description}>
-        참석이 어려우신 분들을 위해<br />
-        계좌번호를 기재하였습니다
+        참석이 어려우신 분들을 위해
+        <br />
+        계좌번호를 함께 안내드립니다.
       </p>
 
       <div className={styles.sections}>
@@ -66,29 +67,31 @@ export default function GiftInfo_2({
               aria-expanded={expandedSide === 'groom'}
             >
               <span className={styles.sectionTitle}>신랑측 계좌번호</span>
-              <span className={styles.toggleIcon}>
-                {expandedSide === 'groom' ? '−' : '+'}
-              </span>
+              <span className={styles.toggleIcon}>{expandedSide === 'groom' ? '−' : '+'}</span>
             </button>
-            
+
             <div className={`${styles.accountsList} ${expandedSide === 'groom' ? styles.expanded : ''}`}>
-              {groomAccounts.map((account, index) => (
-                <div key={index} className={styles.accountItem}>
-                  <div className={styles.accountInfo}>
-                    <div className={styles.accountHolder}>{account.accountHolder ?? account.holder}</div>
-                    <div className={styles.accountDetail}>
-                      {account.bank} {account.accountNumber}
+              {groomAccounts.map((account, index) => {
+                const accountKey = `groom-${index}`;
+
+                return (
+                  <div key={accountKey} className={styles.accountItem}>
+                    <div className={styles.accountInfo}>
+                      <div className={styles.accountHolder}>{account.accountHolder ?? account.holder}</div>
+                      <div className={styles.accountDetail}>
+                        {account.bank} {account.accountNumber}
+                      </div>
                     </div>
+                    <button
+                      onClick={() => handleCopy(account.accountNumber, accountKey)}
+                      className={styles.copyButton}
+                      aria-label="계좌번호 복사"
+                    >
+                      {copiedKey === accountKey ? '완료' : '복사'}
+                    </button>
                   </div>
-                  <button
-                    onClick={() => copyToClipboard(account.accountNumber, '계좌번호')}
-                    className={styles.copyButton}
-                    aria-label="계좌번호 복사"
-                  >
-                    복사
-                  </button>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         )}
@@ -101,29 +104,31 @@ export default function GiftInfo_2({
               aria-expanded={expandedSide === 'bride'}
             >
               <span className={styles.sectionTitle}>신부측 계좌번호</span>
-              <span className={styles.toggleIcon}>
-                {expandedSide === 'bride' ? '−' : '+'}
-              </span>
+              <span className={styles.toggleIcon}>{expandedSide === 'bride' ? '−' : '+'}</span>
             </button>
-            
+
             <div className={`${styles.accountsList} ${expandedSide === 'bride' ? styles.expanded : ''}`}>
-              {brideAccounts.map((account, index) => (
-                <div key={index} className={styles.accountItem}>
-                  <div className={styles.accountInfo}>
-                    <div className={styles.accountHolder}>{account.accountHolder ?? account.holder}</div>
-                    <div className={styles.accountDetail}>
-                      {account.bank} {account.accountNumber}
+              {brideAccounts.map((account, index) => {
+                const accountKey = `bride-${index}`;
+
+                return (
+                  <div key={accountKey} className={styles.accountItem}>
+                    <div className={styles.accountInfo}>
+                      <div className={styles.accountHolder}>{account.accountHolder ?? account.holder}</div>
+                      <div className={styles.accountDetail}>
+                        {account.bank} {account.accountNumber}
+                      </div>
                     </div>
+                    <button
+                      onClick={() => handleCopy(account.accountNumber, accountKey)}
+                      className={styles.copyButton}
+                      aria-label="계좌번호 복사"
+                    >
+                      {copiedKey === accountKey ? '완료' : '복사'}
+                    </button>
                   </div>
-                  <button
-                    onClick={() => copyToClipboard(account.accountNumber, '계좌번호')}
-                    className={styles.copyButton}
-                    aria-label="계좌번호 복사"
-                  >
-                    복사
-                  </button>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         )}
@@ -141,8 +146,9 @@ export default function GiftInfo_2({
           </>
         ) : (
           <>
-            축하의 마음을 담아 보내주신 모든 분들께<br />
-            감사드립니다
+            축하의 마음으로 함께해 주시는 모든 분들께
+            <br />
+            진심으로 감사드립니다.
           </>
         )}
       </p>

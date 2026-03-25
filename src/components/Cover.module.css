@@ -99,19 +99,19 @@
 }
 
 .title {
-  font-family: var(--font-alex-brush);
-  font-size: clamp(2.4rem, 7vw, 3.6rem); /* 모바일에서도 더 크게 */
+  font-family: var(--font-display);
+  font-size: clamp(2.3rem, 7vw, 3.4rem);
   color: var(--primary-color);
-  margin-bottom: 1.2rem;
-  font-weight: 500;
-  text-shadow: 0 2px 4px rgba(139, 110, 99, 0.12); /* 그림자 조금 강화 */
+  margin-bottom: 1rem;
+  font-weight: 600;
+  text-shadow: 0 2px 4px rgba(139, 110, 99, 0.12);
   position: relative;
   z-index: 1;
-  letter-spacing: 0.03em; /* 살짝 더 띄워 고급스러움 */
+  letter-spacing: 0.02em;
   word-break: keep-all;
   overflow-wrap: break-word;
-  line-height: 1.35;
-  white-space: nowrap;
+  line-height: 1.2;
+  white-space: normal;
   text-align: center;
 }
 
@@ -189,23 +189,82 @@
   }
 }
 
-.weddingDate {
-  font-family: var(--font-gowun-dodum);
-  font-size: min(1.2rem, 4.7vw);
-  color: var(--text-primary);
-  font-weight: 500;
+.eventMeta {
+  width: min(100%, 420px);
+  margin-top: 0.5rem;
+  padding: 1rem 1.1rem;
+  border-radius: 18px;
+  border: 1px solid rgba(139, 110, 99, 0.18);
+  background: rgba(255, 255, 255, 0.75);
+  backdrop-filter: blur(10px);
   position: relative;
   z-index: 1;
-  background: rgba(245, 230, 211, 0.8);
-  padding: 0.75rem 1.5rem;
-  border-radius: 25px;
-  border: 2px solid var(--primary-color);
-  letter-spacing: 0.02em;
 }
 
-@media (min-width: 700px) {
-  .weddingDate {
-    font-size: 1.4rem;
-    padding: 1rem 2rem;
+.metaRow {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.metaRow + .metaRow {
+  margin-top: 0.7rem;
+  padding-top: 0.7rem;
+  border-top: 1px solid rgba(139, 110, 99, 0.12);
+}
+
+.metaLabel {
+  font-family: var(--font-gowun-dodum);
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--secondary-color);
+  letter-spacing: 0.08em;
+}
+
+.metaValue {
+  font-family: var(--font-gowun-dodum);
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: var(--text-primary);
+  line-height: 1.5;
+  text-align: right;
+}
+
+.primaryAction {
+  min-height: 46px;
+  margin-top: 1rem;
+  padding: 0.85rem 1.5rem;
+  border-radius: 999px;
+  border: 1px solid rgba(139, 110, 99, 0.2);
+  background: linear-gradient(135deg, var(--primary-color), #c89d6d);
+  color: #fff;
+  font-family: var(--font-gowun-dodum);
+  font-size: 0.95rem;
+  font-weight: 600;
+  box-shadow: 0 10px 24px rgba(139, 110, 99, 0.18);
+  position: relative;
+  z-index: 1;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.primaryAction:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 14px 28px rgba(139, 110, 99, 0.24);
+}
+
+@media (max-width: 480px) {
+  .eventMeta {
+    width: 100%;
+    padding: 0.95rem 1rem;
+  }
+
+  .metaRow {
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+
+  .metaValue {
+    text-align: left;
   }
 }

@@ -121,6 +121,45 @@
   letter-spacing: 0.5px;
 }
 
+.eventMeta {
+  width: min(100%, 420px);
+  margin: 0 auto 1.5rem;
+  padding: 1rem 1.1rem;
+  border: 1px solid #e9ecef;
+  border-radius: 14px;
+  background: #fafafa;
+}
+
+.metaRow {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.metaRow + .metaRow {
+  margin-top: 0.7rem;
+  padding-top: 0.7rem;
+  border-top: 1px solid #eceff1;
+}
+
+.metaLabel {
+  font-family: 'Noto Sans KR', sans-serif;
+  font-size: 0.8rem;
+  color: #868e96;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+}
+
+.metaValue {
+  font-family: var(--font-gowun-dodum), serif;
+  font-size: 0.95rem;
+  color: #212529;
+  font-weight: 500;
+  line-height: 1.5;
+  text-align: right;
+}
+
 .names {
   display: flex;
   align-items: center;
@@ -144,6 +183,26 @@
   font-weight: 300;
 }
 
+.primaryAction {
+  min-height: 46px;
+  margin-top: 1.5rem;
+  padding: 0.85rem 1.5rem;
+  border-radius: 999px;
+  background: #212529;
+  color: #fff;
+  border: 1px solid #212529;
+  font-family: 'Noto Sans KR', sans-serif;
+  font-size: 0.95rem;
+  font-weight: 600;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  box-shadow: 0 10px 20px rgba(33, 37, 41, 0.12);
+}
+
+.primaryAction:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 14px 24px rgba(33, 37, 41, 0.18);
+}
+
 @media (min-width: 640px) {
   .container {
     padding: 3rem 2rem;
@@ -165,5 +224,14 @@
   .imageWrapper {
     width: 140px;
     height: 140px;
+  }
+
+  .metaRow {
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+
+  .metaValue {
+    text-align: left;
   }
 }

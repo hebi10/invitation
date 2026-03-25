@@ -2,12 +2,16 @@
 
 import { useEffect, useState } from 'react';
 import Image from 'next/image';
+import { scrollToSection } from '@/utils';
 import styles from './Cover_3.module.css';
 
 interface CoverProps {
   title: string;
   subtitle: string;
   weddingDate: string;
+  ceremonyTime?: string;
+  venueName?: string;
+  primaryActionTargetId?: string;
   imageUrl: string;
   groomName: string;
   brideName: string;
@@ -18,6 +22,9 @@ export default function Cover_3({
   title,
   subtitle,
   weddingDate,
+  ceremonyTime,
+  venueName,
+  primaryActionTargetId = 'wedding-info',
   imageUrl,
   groomName,
   brideName,
@@ -80,6 +87,27 @@ export default function Cover_3({
           <p className={styles.date}>{weddingDate}</p>
           <div className={styles.dateLine}></div>
         </div>
+
+        <div className={styles.infoPanel}>
+          <div className={styles.infoRow}>
+            <span className={styles.infoLabel}>시간</span>
+            <span className={styles.infoValue}>{ceremonyTime ?? '오후 예식'}</span>
+          </div>
+          {venueName && (
+            <div className={styles.infoRow}>
+              <span className={styles.infoLabel}>장소</span>
+              <span className={styles.infoValue}>{venueName}</span>
+            </div>
+          )}
+        </div>
+
+        <button
+          type="button"
+          className={styles.primaryAction}
+          onClick={() => scrollToSection(primaryActionTargetId)}
+        >
+          예식 정보 보기
+        </button>
 
         {/* 행성 장식 */}
         <div className={styles.planets}>

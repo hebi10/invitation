@@ -1,12 +1,15 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+
+import { copyTextToClipboard } from '@/utils';
+
 import styles from './LocationMap_2.module.css';
 
 declare global {
   interface Window {
     kakao: any;
-    kakaoMapInstance_2?: any; // LocationMap_2용 지도 인스턴스
+    kakaoMapInstance_2?: any;
   }
 }
 
@@ -18,118 +21,102 @@ interface LocationMapProps {
   roadAddress?: string;
 }
 
-export default function LocationMap_2({ 
-  latitude, 
-  longitude, 
-  placeName, 
+export default function LocationMap_2({
+  latitude,
+  longitude,
+  placeName,
   address,
-  roadAddress 
+  roadAddress,
 }: LocationMapProps) {
   const mapRef = useRef<HTMLDivElement>(null);
   const [mapError, setMapError] = useState(false);
-  const [controlEnabled, setControlEnabled] = useState(false); // 기본값 OFF
+  const [controlEnabled, setControlEnabled] = useState(false);
+  const [copiedTarget, setCopiedTarget] = useState<string | null>(null);
 
   useEffect(() => {
     let script: HTMLScriptElement | null = null;
-    let mapInstance: any = null;
 
     const initializeKakaoMap = () => {
       try {
         const container = mapRef.current;
         if (!container) {
-          console.error('지도 컨테이너를 찾을 수 없습니다');
           return;
         }
 
-        const options = {
+        const map = new window.kakao.maps.Map(container, {
           center: new window.kakao.maps.LatLng(latitude, longitude),
-          level: 3
-        };
+          level: 3,
+        });
 
-        mapInstance = new window.kakao.maps.Map(container, options);
-        
         const markerPosition = new window.kakao.maps.LatLng(latitude, longitude);
-        const marker = new window.kakao.maps.Marker({
-          position: markerPosition
+        const marker = new window.kakao.maps.Marker({ position: markerPosition });
+        marker.setMap(map);
+
+        const infoWindow = new window.kakao.maps.InfoWindow({
+          content: `<div style="padding:15px;font-size:14px;text-align:center;"><strong>${placeName}</strong></div>`,
+          removable: false,
         });
-        marker.setMap(mapInstance);
+        infoWindow.open(map, marker);
 
-        const iwContent = `<div style="padding:15px;font-size:14px;text-align:center;"><strong>${placeName}</strong></div>`;
-        const infowindow = new window.kakao.maps.InfoWindow({
-          content: iwContent,
-          removable: false
-        });
-        infowindow.open(mapInstance, marker);
-
-        // 지도 인스턴스를 전역에 저장
-        window.kakaoMapInstance_2 = mapInstance;
-        
-        // 기본적으로 줌/드래그 비활성화
-        mapInstance.setZoomable(false);
-        mapInstance.setDraggable(false);
-
-        console.log('LocationMap_2: 카카오맵 로딩 완료');
+        window.kakaoMapInstance_2 = map;
+        map.setZoomable(false);
+        map.setDraggable(false);
       } catch (error) {
-        console.error('LocationMap_2: 카카오맵 로딩 실패:', error);
+        console.error('LocationMap_2 map init failed:', error);
         setMapError(true);
       }
     };
 
-    // 카카오맵 SDK가 이미 로드되어 있는지 확인
-    if (window.kakao && window.kakao.maps) {
-      console.log('LocationMap_2: 카카오맵 SDK 이미 로드됨');
-      window.kakao.maps.load(() => {
-        initializeKakaoMap();
-      });
-    } else {
-      // 스크립트 새로 추가
-      console.log('LocationMap_2: 카카오맵 SDK 로딩 시작');
-      script = document.createElement('script');
-      script.async = true;
-      script.src = '//dapi.kakao.com/v2/maps/sdk.js?appkey=234add558ffec30aa714eb4644df46e3&autoload=false';
-      
-      script.onload = () => {
-        console.log('LocationMap_2: 카카오맵 스크립트 로드 완료');
-        if (window.kakao && window.kakao.maps) {
-          window.kakao.maps.load(() => {
-            initializeKakaoMap();
-          });
-        } else {
-          console.error('LocationMap_2: window.kakao.maps를 찾을 수 없음');
-          setMapError(true);
-        }
-      };
-      
-      script.onerror = () => {
-        console.error('LocationMap_2: 카카오맵 스크립트 로딩 실패');
-        setMapError(true);
-      };
-      
-      document.head.appendChild(script);
+    if (window.kakao?.maps) {
+      window.kakao.maps.load(initializeKakaoMap);
+      return;
     }
 
-    // Cleanup
-    return () => {
-      console.log('LocationMap_2: cleanup 실행');
-      if (mapInstance) {
-        // 지도 인스턴스 정리 (필요시)
-        mapInstance = null;
+    script = document.createElement('script');
+    script.async = true;
+    script.src = '//dapi.kakao.com/v2/maps/sdk.js?appkey=234add558ffec30aa714eb4644df46e3&autoload=false';
+    script.onload = () => {
+      if (!window.kakao?.maps) {
+        setMapError(true);
+        return;
       }
-      // 스크립트는 제거하지 않음 (다른 컴포넌트가 사용할 수 있음)
+
+      window.kakao.maps.load(initializeKakaoMap);
+    };
+    script.onerror = () => setMapError(true);
+    document.head.appendChild(script);
+
+    return () => {
+      if (script?.parentNode) {
+        script.parentNode.removeChild(script);
+      }
     };
   }, [latitude, longitude, placeName]);
 
-  // 컨트롤 토글 함수
   const toggleControl = () => {
     const map = window.kakaoMapInstance_2;
-    if (!map) return;
+    if (!map) {
+      return;
+    }
 
     setControlEnabled((prev) => {
-      const newState = !prev;
-      map.setZoomable(newState);
-      map.setDraggable(newState);
-      return newState;
+      const next = !prev;
+      map.setZoomable(next);
+      map.setDraggable(next);
+      return next;
     });
+  };
+
+  const handleCopyAddress = async (text: string, key: string) => {
+    const copied = await copyTextToClipboard(text);
+    if (!copied) {
+      return;
+    }
+
+    setCopiedTarget(key);
+    window.setTimeout(() => {
+      setCopiedTarget((current) => (current === key ? null : current));
+    }, 2000);
   };
 
   const openKakaoMap = () => {
@@ -137,42 +124,17 @@ export default function LocationMap_2({
     window.open(url, '_blank');
   };
 
-  const openKakaoNavi = () => {
-    const url = `https://map.kakao.com/link/to/${placeName},${latitude},${longitude}`;
-    window.open(url, '_blank');
-  };
-
-  const copyAddress = (text: string) => {
-    if (navigator.clipboard) {
-      navigator.clipboard.writeText(text).then(() => {
-        alert('주소가 복사되었습니다.');
-      });
-    } else {
-      const textarea = document.createElement('textarea');
-      textarea.value = text;
-      document.body.appendChild(textarea);
-      textarea.select();
-      document.execCommand('copy');
-      document.body.removeChild(textarea);
-      alert('주소가 복사되었습니다.');
-    }
-  };
-
   return (
     <section className={styles.container}>
       <h2 className={styles.title}>오시는 길</h2>
-      
+
       <div className={styles.addressSection}>
         <div className={styles.addressItem}>
           <span className={styles.addressLabel}>지번</span>
           <div className={styles.addressContent}>
             <span className={styles.addressText}>{address}</span>
-            <button 
-              onClick={() => copyAddress(address)}
-              className={styles.copyButton}
-              aria-label="주소 복사"
-            >
-              복사
+            <button onClick={() => handleCopyAddress(address, 'address')} className={styles.copyButton} aria-label="주소 복사">
+              {copiedTarget === 'address' ? '완료' : '복사'}
             </button>
           </div>
         </div>
@@ -181,12 +143,12 @@ export default function LocationMap_2({
             <span className={styles.addressLabel}>도로명</span>
             <div className={styles.addressContent}>
               <span className={styles.addressText}>{roadAddress}</span>
-              <button 
-                onClick={() => copyAddress(roadAddress)}
+              <button
+                onClick={() => handleCopyAddress(roadAddress, 'roadAddress')}
                 className={styles.copyButton}
                 aria-label="도로명 주소 복사"
               >
-                복사
+                {copiedTarget === 'roadAddress' ? '완료' : '복사'}
               </button>
             </div>
           </div>
@@ -195,16 +157,13 @@ export default function LocationMap_2({
 
       <div className={styles.mapWrapper}>
         {mapError ? (
-          <div className={styles.mapError}>
-            지도를 불러올 수 없습니다.
-          </div>
+          <div className={styles.mapError}>지도를 불러올 수 없습니다.</div>
         ) : (
           <div style={{ position: 'relative', width: '100%', height: '100%' }}>
             <div ref={mapRef} className={styles.map}></div>
-            
-            {/* 컨트롤 OFF일 때 터치 차단 오버레이 */}
+
             {!controlEnabled && (
-              <div 
+              <div
                 style={{
                   position: 'absolute',
                   top: 0,
@@ -214,13 +173,12 @@ export default function LocationMap_2({
                   background: 'transparent',
                   zIndex: 5,
                   cursor: 'not-allowed',
-                  pointerEvents: 'auto'
+                  pointerEvents: 'auto',
                 }}
               />
             )}
-            
-            {/* 컨트롤 ON/OFF 버튼 */}
-            <button 
+
+            <button
               onClick={toggleControl}
               style={{
                 position: 'absolute',
@@ -234,30 +192,24 @@ export default function LocationMap_2({
                 fontSize: '12px',
                 cursor: 'pointer',
                 boxShadow: '0 2px 6px rgba(0,0,0,0.15)',
-                pointerEvents: 'auto'
+                pointerEvents: 'auto',
               }}
             >
-              {controlEnabled ? '컨트롤 ON' : '컨트롤 OFF'}
+              {controlEnabled ? '지도 고정' : '지도 움직이기'}
             </button>
           </div>
         )}
       </div>
 
       <div className={styles.buttonGroup}>
-        <button 
-          onClick={() => window.open(`https://map.naver.com/v5/search/${encodeURIComponent(address)}`, '_blank')}
-          className={styles.button}
-        >
-          네이버 지도
+        <button onClick={() => window.open(`https://map.naver.com/v5/search/${encodeURIComponent(address)}`, '_blank')} className={styles.button}>
+          네이버지도
         </button>
         <button onClick={openKakaoMap} className={styles.button}>
           카카오맵
         </button>
-        <button 
-          onClick={() => window.open(`https://www.google.com/maps/search/${encodeURIComponent(address)}`, '_blank')}
-          className={styles.button}
-        >
-          구글 지도
+        <button onClick={() => window.open(`https://www.google.com/maps/search/${encodeURIComponent(address)}`, '_blank')} className={styles.button}>
+          구글지도
         </button>
       </div>
     </section>

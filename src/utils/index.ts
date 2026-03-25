@@ -15,4 +15,8 @@ export { checkPageAccess, AccessDeniedPage } from './pageAccess';
 export { optimizeImageUrl, preloadImage, preloadImages, imageLoadTracker, ImageLoadTracker } from './imageOptimization';
 export type { ImageOptimizationOptions } from './imageOptimization';
 
+// 스크롤 유틸
+export { scrollToSection } from './scrollToSection';
+export { copyTextToClipboard } from './copyTextToClipboard';
+
 // 주의: getWeddingPages는 fs를 사용하므로 서버 사이드에서만 직접 import 하세요

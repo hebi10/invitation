@@ -41,7 +41,7 @@
 }
 
 .subtitle {
-  font-family: 'Arial', sans-serif;
+  font-family: var(--font-sans);
   font-size: clamp(0.9rem, 2.5vw, 1.1rem);
   color: #6c757d;
   margin-bottom: 2.5rem;
@@ -117,17 +117,62 @@
   font-size: 0.9em;
 }
 
-.weddingDate {
-  font-family: 'Arial', sans-serif;
-  font-size: clamp(1rem, 3vw, 1.2rem);
-  color: #495057;
-  font-weight: 400;
-  background: rgba(255, 255, 255, 0.8);
-  padding: 0.8rem 1.5rem;
-  border-radius: 8px;
-  display: inline-block;
-  border: 1px solid rgba(108, 117, 125, 0.2);
-  letter-spacing: 0.3px;
+.eventMeta {
+  margin-top: 1rem;
+  padding: 1rem 1.1rem;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.86);
+  border: 1px solid rgba(108, 117, 125, 0.16);
+}
+
+.metaRow {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.metaRow + .metaRow {
+  margin-top: 0.7rem;
+  padding-top: 0.7rem;
+  border-top: 1px solid rgba(108, 117, 125, 0.12);
+}
+
+.metaLabel {
+  font-family: var(--font-sans);
+  font-size: 0.8rem;
+  color: #6c757d;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+}
+
+.metaValue {
+  font-family: var(--font-gowun-dodum);
+  font-size: 0.95rem;
+  color: #2c3e50;
+  font-weight: 500;
+  line-height: 1.5;
+  text-align: right;
+}
+
+.primaryAction {
+  min-height: 46px;
+  margin-top: 1rem;
+  padding: 0.85rem 1.5rem;
+  border-radius: 999px;
+  background: #2c3e50;
+  color: #fff;
+  border: 1px solid #2c3e50;
+  font-family: var(--font-sans);
+  font-size: 0.95rem;
+  font-weight: 600;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  box-shadow: 0 10px 20px rgba(44, 62, 80, 0.12);
+}
+
+.primaryAction:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 14px 26px rgba(44, 62, 80, 0.18);
 }
 
 @media (min-width: 700px) {
@@ -162,5 +207,14 @@
   .imageContainer {
     width: 180px;
     height: 180px;
+  }
+
+  .metaRow {
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+
+  .metaValue {
+    text-align: left;
   }
 }

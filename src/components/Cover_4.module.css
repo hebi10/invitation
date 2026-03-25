@@ -169,6 +169,48 @@
   letter-spacing: 0.05em;
 }
 
+.infoStack {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: center;
+}
+
+.time,
+.venue {
+  font-family: var(--font-noto-sans-kr), sans-serif;
+  font-size: 1rem;
+  font-weight: 400;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.venue {
+  font-family: var(--font-noto-serif-kr), serif;
+  font-size: 1.125rem;
+  color: var(--primary);
+}
+
+.primaryAction {
+  min-height: 46px;
+  margin-top: 28px;
+  padding: 0.85rem 1.6rem;
+  border-radius: 999px;
+  background: var(--primary);
+  border: 1px solid var(--primary);
+  color: #fff;
+  font-family: var(--font-noto-sans-kr), sans-serif;
+  font-size: 0.95rem;
+  font-weight: 600;
+  box-shadow: 0 12px 24px rgba(31, 90, 255, 0.16);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.primaryAction:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 16px 30px rgba(31, 90, 255, 0.22);
+}
+
 /* 웨이브 패턴 (산토리니 감성) */
 .wavePattern {
   position: absolute;
@@ -233,6 +275,11 @@
     font-size: 1rem;
   }
 
+  .time,
+  .venue {
+    font-size: 0.95rem;
+  }
+
   .wavePattern {
     height: 60px;
   }
@@ -275,5 +322,10 @@
 
   .date {
     font-size: 0.9375rem;
+  }
+
+  .time,
+  .venue {
+    font-size: 0.9rem;
   }
 }

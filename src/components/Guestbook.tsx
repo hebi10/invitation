@@ -254,14 +254,7 @@ export default function Guestbook({ pageSlug }: GuestbookProps) {
   return (
     <section className={styles.container}>
       <div className={styles.header}>
-        <div 
-          className={styles.titleSection}
-          onDoubleClick={handleTitleInteraction}
-          onTouchEnd={handleTitleInteraction}
-          onClick={handleTitleInteraction}
-          title="신랑신부님은 여기를 더블클릭/더블탭하세요"
-          style={{ cursor: 'pointer', userSelect: 'none' }}
-        >
+        <div className={styles.titleSection}>
           <h2 className={styles.title}>축하 메시지</h2>
         </div>
         <p className={styles.subtitle}>
@@ -272,6 +265,17 @@ export default function Guestbook({ pageSlug }: GuestbookProps) {
         <div className={styles.clientManager}>
           {!isClientLoggedIn ? (
             <>
+              {!showClientManager && (
+                <div className={styles.clientManagerSection}>
+                  <button 
+                    className={styles.clientManagerButton}
+                    onClick={() => setShowClientManager(true)}
+                  >
+                    <span className={styles.managerIcon}>⚙</span>
+                    방명록 관리
+                  </button>
+                </div>
+              )}
               {showClientManager && (
                 <div className={styles.clientManagerSection}>
                   <button 

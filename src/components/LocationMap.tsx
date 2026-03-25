@@ -1,6 +1,9 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+
+import { copyTextToClipboard } from '@/utils';
+
 import styles from './LocationMap.module.css';
 
 interface LocationMapProps {
@@ -32,6 +35,7 @@ export default function LocationMap({
 }: LocationMapProps) {
   const [isClient, setIsClient] = useState(false);
   const [kakaoMapLoaded, setKakaoMapLoaded] = useState(false);
+  const [isAddressCopied, setIsAddressCopied] = useState(false);
   const [controlEnabled, setControlEnabled] = useState(false); // ✅ 컨트롤 상태
 
   useEffect(() => {
@@ -153,6 +157,16 @@ export default function LocationMap({
     });
   };
 
+  const handleCopyAddress = async () => {
+    const copied = await copyTextToClipboard(address);
+    if (!copied) {
+      return;
+    }
+
+    setIsAddressCopied(true);
+    window.setTimeout(() => setIsAddressCopied(false), 2000);
+  };
+
   if (!isClient) {
     return (
       <div className={styles.wrapper}>
@@ -229,7 +243,7 @@ export default function LocationMap({
                 pointerEvents: 'auto'
               }}
             >
-              {controlEnabled ? '컨트롤 ON' : '컨트롤 OFF'}
+              {controlEnabled ? '지도 고정' : '지도 움직이기'}
             </button>
           </div>
         </div>
@@ -280,6 +294,13 @@ export default function LocationMap({
           </div>
           
           <div className={styles.navigationButtons}>
+            <button 
+              className={styles.navButton}
+              onClick={handleCopyAddress}
+            >
+              <span className={styles.navButtonIcon}>⌘</span>
+              <span className={styles.navButtonText}>{isAddressCopied ? '복사 완료' : '주소 복사'}</span>
+            </button>
             <button 
               className={styles.navButton}
               onClick={() => window.open(`https://map.naver.com/v5/search/${encodeURIComponent(address)}`, '_blank')}

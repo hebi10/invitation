@@ -55,12 +55,12 @@ body {
     max-width: 100vw;
     overflow-x: hidden;
     line-height: 1.6;
-    background-color: var(--font-gowun-dodum);
+    background-color: var(--background-warm);
     transition: background-color 0.3s ease;
 }
 
 body {
-    font-family: var(--font-gowun-dodum);
+    font-family: var(--font-sans);
     font-weight: 400;
     color: var(--text-primary);
     -webkit-font-smoothing: antialiased;
@@ -126,12 +126,12 @@ input:focus {
 /* 한글 제목 최적화 전역 규칙 */
 h1, h2, h3, h4, h5, h6,
 .title, .subtitle, .heading {
-    font-family: var(--font-gowun-dodum);
+    font-family: inherit;
     font-weight: 500;
     word-break: keep-all;
     overflow-wrap: break-word;
     line-height: 1.4;
-    text-align: center;
+    text-align: inherit;
     word-spacing: 0.02em;
     letter-spacing: -0.01em;
 }
@@ -149,7 +149,7 @@ h1, h2, h3, h4, h5, h6,
     .title, .subtitle, .heading {
         line-height: 1.4;
         word-spacing: 0.1em;
-        text-align: center;
+        text-align: inherit;
     }
 }
 
@@ -158,7 +158,7 @@ h1, h2, h3, h4, h5, h6,
     h1, h2, h3, h4, h5, h6,
     .title, .subtitle, .heading {
         word-spacing: 0.08em;
-        text-align: center;
+        text-align: inherit;
     }
 }
 
@@ -172,7 +172,7 @@ p, span, div {
 /* 모바일에서 본문 텍스트 정렬 개선 */
 @media (max-width: 480px) {
     p {
-        text-align-last: center;
+        text-align-last: auto;
         word-spacing: 0.02em;
     }
 }
@@ -297,33 +297,22 @@ body.no-scroll {
 }
 
 /* 드래그 선택 방지 - 모든 요소에 적용 */
-* {
+button,
+[role="button"] {
     -webkit-user-select: none;
     -moz-user-select: none;
     -ms-user-select: none;
     user-select: none;
+}
+
+button,
+a,
+img,
+[role="button"] {
     -webkit-touch-callout: none;
     -webkit-tap-highlight-color: transparent;
 }
 
 /* 입력 필드는 선택 가능하게 유지 */
-input,
-textarea,
-[contenteditable="true"],
-.selectable {
-    -webkit-user-select: text;
-    -moz-user-select: text;
-    -ms-user-select: text;
-    user-select: text;
-}
 
 /* 코드 블록이나 특정 텍스트는 선택 가능하게 */
-code,
-pre,
-.code-block,
-.text-selectable {
-    -webkit-user-select: text;
-    -moz-user-select: text;
-    -ms-user-select: text;
-    user-select: text;
-}

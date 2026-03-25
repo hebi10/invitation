@@ -18,7 +18,7 @@ export default function Greeting_5({ message, author, groom, bride }: GreetingPr
     if (phoneNumber) {
       window.location.href = `tel:${phoneNumber}`;
     } else {
-      alert(`${name}의 연락처가 등록되지 않았습니다.`);
+      console.warn(`${name}의 연락처가 등록되지 않았습니다.`);
     }
   };
 

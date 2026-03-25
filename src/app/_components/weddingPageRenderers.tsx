@@ -181,6 +181,9 @@ export function renderEmotionalPage(state: WeddingPageState) {
         title={state.pageConfig.displayName}
         subtitle={state.pageConfig.pageData?.subtitle ?? '두 사람이 사랑으로 하나가 되는 날'}
         weddingDate={`${state.pageConfig.date} ${state.pageConfig.pageData?.ceremonyTime ?? ''}`}
+        ceremonyTime={state.pageConfig.pageData?.ceremonyTime}
+        venueName={state.pageConfig.venue}
+        primaryActionTargetId="wedding-info"
         imageUrl={state.mainImageUrl}
         brideName={state.pageConfig.brideName}
         groomName={state.pageConfig.groomName}
@@ -211,14 +214,16 @@ export function renderEmotionalPage(state: WeddingPageState) {
         }}
       />
       <Components.Gallery images={state.galleryImageUrls} />
-      <Components.Schedule
-        date={state.pageConfig.date}
-        time={state.pageConfig.pageData?.ceremonyTime ?? ''}
-        venue={state.pageConfig.venue}
-        address={state.pageConfig.pageData?.ceremonyAddress ?? ''}
-        venueGuide={state.pageConfig.pageData?.venueGuide}
-        wreathGuide={state.pageConfig.pageData?.wreathGuide}
-      />
+      <div id="wedding-info">
+        <Components.Schedule
+          date={state.pageConfig.date}
+          time={state.pageConfig.pageData?.ceremonyTime ?? ''}
+          venue={state.pageConfig.venue}
+          address={state.pageConfig.pageData?.ceremonyAddress ?? ''}
+          venueGuide={state.pageConfig.pageData?.venueGuide}
+          wreathGuide={state.pageConfig.pageData?.wreathGuide}
+        />
+      </div>
       <Components.LocationMap
         venueName={state.pageConfig.venue}
         address={state.pageConfig.pageData?.ceremonyAddress ?? ''}
@@ -239,6 +244,9 @@ export function renderSimplePage(state: WeddingPageState) {
         title={state.pageConfig.displayName}
         subtitle={state.pageConfig.pageData?.subtitle ?? '두 사람이 사랑으로 하나가 되는 날'}
         weddingDate={`${state.pageConfig.date} ${state.pageConfig.pageData?.ceremonyTime ?? ''}`}
+        ceremonyTime={state.pageConfig.pageData?.ceremonyTime}
+        venueName={state.pageConfig.venue}
+        primaryActionTargetId="wedding-info"
         imageUrl={state.mainImageUrl}
         brideName={state.pageConfig.brideName}
         groomName={state.pageConfig.groomName}
@@ -269,14 +277,16 @@ export function renderSimplePage(state: WeddingPageState) {
           console.log('선택된 날짜:', date);
         }}
       />
-      <Components.Schedule_1
-        date={state.pageConfig.date}
-        time={state.pageConfig.pageData?.ceremonyTime ?? ''}
-        venue={state.pageConfig.venue}
-        address={state.pageConfig.pageData?.ceremonyAddress ?? ''}
-        venueGuide={state.pageConfig.pageData?.venueGuide}
-        wreathGuide={state.pageConfig.pageData?.wreathGuide}
-      />
+      <div id="wedding-info">
+        <Components.Schedule_1
+          date={state.pageConfig.date}
+          time={state.pageConfig.pageData?.ceremonyTime ?? ''}
+          venue={state.pageConfig.venue}
+          address={state.pageConfig.pageData?.ceremonyAddress ?? ''}
+          venueGuide={state.pageConfig.pageData?.venueGuide}
+          wreathGuide={state.pageConfig.pageData?.wreathGuide}
+        />
+      </div>
       <Components.LocationMap_1
         venueName={state.pageConfig.venue}
         address={state.pageConfig.pageData?.ceremonyAddress ?? ''}
@@ -296,6 +306,9 @@ export function renderMinimalPage(state: WeddingPageState, options: WeddingInvit
         title={state.pageConfig.displayName}
         subtitle={state.pageConfig.pageData?.subtitle ?? ''}
         weddingDate={`${state.pageConfig.date} ${state.pageConfig.pageData?.ceremonyTime ?? ''}`}
+        ceremonyTime={state.pageConfig.pageData?.ceremonyTime}
+        venueName={state.pageConfig.venue}
+        primaryActionTargetId="wedding-info"
         imageUrl={state.mainImageUrl}
         brideName={state.pageConfig.brideName}
         groomName={state.pageConfig.groomName}
@@ -316,14 +329,16 @@ export function renderMinimalPage(state: WeddingPageState, options: WeddingInvit
         <Components.Gallery_2 images={state.galleryImageUrls} />
       </Components.ScrollAnimatedSection>
       <Components.ScrollAnimatedSection delay={400}>
-        <Components.Schedule_2
-          date={state.pageConfig.date}
-          time={state.pageConfig.pageData?.ceremonyTime ?? ''}
-          venue={state.pageConfig.venue}
-          address={state.pageConfig.pageData?.ceremonyAddress ?? ''}
-          venueGuide={state.pageConfig.pageData?.venueGuide}
-          wreathGuide={state.pageConfig.pageData?.wreathGuide}
-        />
+        <div id="wedding-info">
+          <Components.Schedule_2
+            date={state.pageConfig.date}
+            time={state.pageConfig.pageData?.ceremonyTime ?? ''}
+            venue={state.pageConfig.venue}
+            address={state.pageConfig.pageData?.ceremonyAddress ?? ''}
+            venueGuide={state.pageConfig.pageData?.venueGuide}
+            wreathGuide={state.pageConfig.pageData?.wreathGuide}
+          />
+        </div>
       </Components.ScrollAnimatedSection>
       <Components.ScrollAnimatedSection delay={500}>
         <Components.LocationMap_2
@@ -350,6 +365,9 @@ export function renderSpacePage(state: WeddingPageState) {
         title={state.pageConfig.displayName}
         subtitle={state.pageConfig.pageData?.subtitle ?? ''}
         weddingDate={state.pageConfig.date}
+        ceremonyTime={state.pageConfig.pageData?.ceremonyTime}
+        venueName={state.pageConfig.venue}
+        primaryActionTargetId="wedding-info"
         imageUrl={state.mainImageUrl}
         groomName={state.pageConfig.groomName}
         brideName={state.pageConfig.brideName}
@@ -372,22 +390,24 @@ export function renderSpacePage(state: WeddingPageState) {
       />
       <Components.WeddingCalendar_3 weddingDate={state.weddingDate} showCountdown={true} countdownTitle="결혼식까지" />
       <Components.Gallery_3 images={state.galleryImageUrls} />
-      <Components.Schedule_3
-        weddingDate={state.pageConfig.date}
-        weddingTime={state.pageConfig.pageData?.ceremonyTime ?? ''}
-        location={state.pageConfig.venue}
-        address={state.pageConfig.pageData?.ceremonyAddress ?? ''}
-        contact={{
-          groom: {
-            name: state.pageConfig.groomName,
-            phone: state.pageConfig.couple.groom.phone ?? '',
-          },
-          bride: {
-            name: state.pageConfig.brideName,
-            phone: state.pageConfig.couple.bride.phone ?? '',
-          },
-        }}
-      />
+      <div id="wedding-info">
+        <Components.Schedule_3
+          weddingDate={state.pageConfig.date}
+          weddingTime={state.pageConfig.pageData?.ceremonyTime ?? ''}
+          location={state.pageConfig.venue}
+          address={state.pageConfig.pageData?.ceremonyAddress ?? ''}
+          contact={{
+            groom: {
+              name: state.pageConfig.groomName,
+              phone: state.pageConfig.couple.groom.phone ?? '',
+            },
+            bride: {
+              name: state.pageConfig.brideName,
+              phone: state.pageConfig.couple.bride.phone ?? '',
+            },
+          }}
+        />
+      </div>
       <Components.LocationMap_3
         location={state.pageConfig.venue}
         address={state.pageConfig.pageData?.ceremonyAddress ?? ''}
@@ -409,6 +429,9 @@ export function renderBluePage(state: WeddingPageState) {
         title={state.pageConfig.displayName}
         subtitle={state.pageConfig.pageData?.subtitle ?? '영원한 사랑을 약속합니다'}
         weddingDate={`${state.pageConfig.date} ${state.pageConfig.pageData?.ceremonyTime ?? ''}`}
+        ceremonyTime={state.pageConfig.pageData?.ceremonyTime}
+        venueName={state.pageConfig.venue}
+        primaryActionTargetId="wedding-info"
         imageUrl={state.mainImageUrl}
         groomName={state.pageConfig.groomName}
         brideName={state.pageConfig.brideName}
@@ -422,14 +445,16 @@ export function renderBluePage(state: WeddingPageState) {
       />
       <Components.Gallery_4 images={state.galleryImageUrls} />
       <Components.WeddingCalendar_4 weddingDate={state.weddingDate} showCountdown={true} countdownTitle="결혼식까지" />
-      <Components.Schedule_4
-        date={state.pageConfig.date}
-        time={state.pageConfig.pageData?.ceremonyTime ?? ''}
-        venue={state.pageConfig.venue}
-        address={state.pageConfig.pageData?.ceremonyAddress ?? ''}
-        venueGuide={state.pageConfig.pageData?.venueGuide}
-        wreathGuide={state.pageConfig.pageData?.wreathGuide}
-      />
+      <div id="wedding-info">
+        <Components.Schedule_4
+          date={state.pageConfig.date}
+          time={state.pageConfig.pageData?.ceremonyTime ?? ''}
+          venue={state.pageConfig.venue}
+          address={state.pageConfig.pageData?.ceremonyAddress ?? ''}
+          venueGuide={state.pageConfig.pageData?.venueGuide}
+          wreathGuide={state.pageConfig.pageData?.wreathGuide}
+        />
+      </div>
       <Components.LocationMap_4
         venueName={state.pageConfig.venue}
         address={state.pageConfig.pageData?.ceremonyAddress ?? ''}
@@ -449,6 +474,9 @@ export function renderClassicPage(state: WeddingPageState) {
         title={state.pageConfig.displayName}
         subtitle={state.pageConfig.pageData?.subtitle ?? '영원한 사랑을 약속합니다'}
         weddingDate={`${state.pageConfig.date} ${state.pageConfig.pageData?.ceremonyTime ?? ''}`}
+        ceremonyTime={state.pageConfig.pageData?.ceremonyTime}
+        venueName={state.pageConfig.venue}
+        primaryActionTargetId="wedding-info"
         imageUrl={state.mainImageUrl}
         groomName={state.pageConfig.groomName}
         brideName={state.pageConfig.brideName}
@@ -462,14 +490,16 @@ export function renderClassicPage(state: WeddingPageState) {
       />
       <Components.Gallery_5 images={state.galleryImageUrls} />
       <Components.WeddingCalendar_5 weddingDate={state.weddingDate} showCountdown={true} countdownTitle="결혼식까지" />
-      <Components.Schedule_5
-        date={state.pageConfig.date}
-        time={state.pageConfig.pageData?.ceremonyTime ?? ''}
-        venue={state.pageConfig.venue}
-        address={state.pageConfig.pageData?.ceremonyAddress ?? ''}
-        venueGuide={state.pageConfig.pageData?.venueGuide}
-        wreathGuide={state.pageConfig.pageData?.wreathGuide}
-      />
+      <div id="wedding-info">
+        <Components.Schedule_5
+          date={state.pageConfig.date}
+          time={state.pageConfig.pageData?.ceremonyTime ?? ''}
+          venue={state.pageConfig.venue}
+          address={state.pageConfig.pageData?.ceremonyAddress ?? ''}
+          venueGuide={state.pageConfig.pageData?.venueGuide}
+          wreathGuide={state.pageConfig.pageData?.wreathGuide}
+        />
+      </div>
       <Components.LocationMap_5
         venueName={state.pageConfig.venue}
         address={state.pageConfig.pageData?.ceremonyAddress ?? ''}

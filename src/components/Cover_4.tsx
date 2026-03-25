@@ -2,12 +2,16 @@
 
 import { useEffect, useState } from 'react';
 import Image from 'next/image';
+import { scrollToSection } from '@/utils';
 import styles from './Cover_4.module.css';
 
 interface CoverProps {
   title: string;
   subtitle: string;
   weddingDate: string;
+  ceremonyTime?: string;
+  venueName?: string;
+  primaryActionTargetId?: string;
   imageUrl: string;
   brideName: string;
   groomName: string;
@@ -18,6 +22,9 @@ export default function Cover_4({
   title,
   subtitle,
   weddingDate,
+  ceremonyTime,
+  venueName,
+  primaryActionTargetId = 'wedding-info',
   imageUrl,
   brideName,
   groomName,
@@ -72,10 +79,22 @@ export default function Cover_4({
         <p className={styles.subtitle}>{subtitle}</p>
         
         <div className={styles.divider} />
-        
-        <time className={styles.date} dateTime={weddingDate}>
-          {weddingDate}
-        </time>
+
+        <div className={styles.infoStack}>
+          <time className={styles.date} dateTime={weddingDate}>
+            {weddingDate}
+          </time>
+          {ceremonyTime && <p className={styles.time}>{ceremonyTime}</p>}
+          {venueName && <p className={styles.venue}>{venueName}</p>}
+        </div>
+
+        <button
+          type="button"
+          className={styles.primaryAction}
+          onClick={() => scrollToSection(primaryActionTargetId)}
+        >
+          예식 정보 보기
+        </button>
         
         <div className={styles.wavePattern} aria-hidden="true">
           <svg viewBox="0 0 1200 120" preserveAspectRatio="none">

@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { scrollToSection } from '@/utils';
 import styles from './Cover_1.module.css';
 
 interface CoverProps {
@@ -10,6 +11,9 @@ interface CoverProps {
   brideName: string;
   groomName: string;
   weddingDate: string;
+  ceremonyTime?: string;
+  venueName?: string;
+  primaryActionTargetId?: string;
   backgroundImage?: string;
   preloadComplete?: boolean;
 }
@@ -21,6 +25,9 @@ const Cover_1 = React.memo(function Cover_1({
   brideName, 
   groomName, 
   weddingDate,
+  ceremonyTime,
+  venueName,
+  primaryActionTargetId = 'wedding-info',
   backgroundImage,
   preloadComplete = false
 }: CoverProps) {
@@ -81,7 +88,28 @@ const Cover_1 = React.memo(function Cover_1({
           <h2 className={styles.coupleNames}>
             {groomName} <span className={styles.heart}>♡</span> {brideName}
           </h2>
-          <p className={styles.weddingDate}>{weddingDate}</p>
+          <div className={styles.eventMeta}>
+            <div className={styles.metaRow}>
+              <span className={styles.metaLabel}>일시</span>
+              <span className={styles.metaValue}>
+                {weddingDate}
+                {ceremonyTime ? ` · ${ceremonyTime}` : ''}
+              </span>
+            </div>
+            {venueName && (
+              <div className={styles.metaRow}>
+                <span className={styles.metaLabel}>장소</span>
+                <span className={styles.metaValue}>{venueName}</span>
+              </div>
+            )}
+          </div>
+          <button
+            type="button"
+            className={styles.primaryAction}
+            onClick={() => scrollToSection(primaryActionTargetId)}
+          >
+            예식 정보 보기
+          </button>
         </div>
       </div>
     </div>
