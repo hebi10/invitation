@@ -1,4 +1,3 @@
-// 기본 청첩장 컴포넌트들
 export { default as Cover } from './Cover';
 export { default as Greeting } from './Greeting';
 export { default as Gallery } from './Gallery';
@@ -10,7 +9,6 @@ export { default as WeddingCalendar } from './WeddingCalendar';
 export { default as WeddingLoader } from './WeddingLoader';
 export { default as WeddingCountdown } from './WeddingCountdown';
 
-// 심플 디자인 컴포넌트들 (_1 버전)
 export { default as Cover_1 } from './Cover_1';
 export { default as Greeting_1 } from './Greeting_1';
 export { default as Gallery_1 } from './Gallery_1';
@@ -22,7 +20,6 @@ export { default as WeddingCalendar_1 } from './WeddingCalendar_1';
 export { default as WeddingLoader_1 } from './WeddingLoader_1';
 export { default as WeddingCountdown_1 } from './WeddingCountdown_1';
 
-// 미니멀 디자인 컴포넌트들 (_2 버전)
 export { default as Cover_2 } from './Cover_2';
 export { default as Greeting_2 } from './Greeting_2';
 export { default as Gallery_2 } from './Gallery_2';
@@ -34,7 +31,6 @@ export { default as WeddingCalendar_2 } from './WeddingCalendar_2';
 export { default as WeddingLoader_2 } from './WeddingLoader_2';
 export { default as WeddingCountdown_2 } from './WeddingCountdown_2';
 
-// 우주 디자인 컴포넌트들 (_3 버전)
 export { default as Cover_3 } from './Cover_3';
 export { default as Greeting_3 } from './Greeting_3';
 export { default as Gallery_3 } from './Gallery_3';
@@ -46,7 +42,6 @@ export { default as WeddingCalendar_3 } from './WeddingCalendar_3';
 export { default as WeddingLoader_3 } from './WeddingLoader_3';
 export { default as WeddingCountdown_3 } from './WeddingCountdown_3';
 
-// 지중해 블루 디자인 컴포넌트들 (_4 버전)
 export { default as Cover_4 } from './Cover_4';
 export { default as Greeting_4 } from './Greeting_4';
 export { default as Gallery_4 } from './Gallery_4';
@@ -58,7 +53,6 @@ export { default as WeddingCalendar_4 } from './WeddingCalendar_4';
 export { default as WeddingLoader_4 } from './WeddingLoader_4';
 export { default as WeddingCountdown_4 } from './WeddingCountdown_4';
 
-// 한지 클래식 디자인 컴포넌트들 (_5 버전)
 export { default as Cover_5 } from './Cover_5';
 export { default as Greeting_5 } from './Greeting_5';
 export { default as Gallery_5 } from './Gallery_5';
@@ -70,14 +64,10 @@ export { default as WeddingCalendar_5 } from './WeddingCalendar_5';
 export { default as WeddingLoader_5 } from './WeddingLoader_5';
 export { default as WeddingCountdown_5 } from './WeddingCountdown_5';
 
-// 관리자 전용 컴포넌트들
 export { default as ImageManager } from './ImageManager';
 export { default as ClientPasswordManager } from './ClientPasswordManager';
 export { default as DisplayPeriodManager } from './DisplayPeriodManager';
 export { default as MemoryPageManager } from './MemoryPageManager';
 
-// 애니메이션 컴포넌트
 export { default as ScrollAnimatedSection } from './ScrollAnimatedSection';
-
-// 배경음악 컴포넌트
 export { default as BackgroundMusic } from './BackgroundMusic';

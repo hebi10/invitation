@@ -1,3 +1,5 @@
+import { optimizeUploadImage } from '@/utils/imageCompression';
+
 export interface UploadedImage {
   name: string;
   url: string;
@@ -66,12 +68,18 @@ const initFirebase = async () => {
 const MOCK_IMAGE_CATEGORIES = {};
 
 export const uploadImage = async (file: File, pageSlug: string): Promise<UploadedImage> => {
+  const optimizedFile = await optimizeUploadImage(file, {
+    maxWidth: 2200,
+    maxHeight: 2200,
+    quality: 0.82,
+  });
+
   if (!USE_FIREBASE) {
     // Mock upload for development
     const mockImage: UploadedImage = {
-      name: file.name,
-      url: `/images/${file.name}`,
-      path: `wedding-images/${pageSlug}/${file.name}`,
+      name: optimizedFile.name,
+      url: `/images/${optimizedFile.name}`,
+      path: `wedding-images/${pageSlug}/${optimizedFile.name}`,
       uploadedAt: new Date()
     };
     return mockImage;
@@ -84,13 +92,13 @@ export const uploadImage = async (file: File, pageSlug: string): Promise<Uploade
   }
 
   try {
-    const imagePath = `wedding-images/${pageSlug}/${file.name}`;
+    const imagePath = `wedding-images/${pageSlug}/${optimizedFile.name}`;
     const imageRef = firebaseModules.ref(firebaseModules.storage, imagePath);
-    const snapshot = await firebaseModules.uploadBytes(imageRef, file);
+    const snapshot = await firebaseModules.uploadBytes(imageRef, optimizedFile);
     const downloadURL = await firebaseModules.getDownloadURL(snapshot.ref);
 
     return {
-      name: file.name,
+      name: optimizedFile.name,
       url: downloadURL,
       path: imagePath,
       uploadedAt: new Date()

@@ -31,6 +31,7 @@ export default function Gallery_3({ images }: GalleryProps) {
   const displayImages = useMemo(() => images.slice(0, visibleCount), [images, visibleCount]);
   const hasMore = visibleCount < images.length;
   const selectedImage = selectedIndex === null ? null : images[selectedIndex];
+  const activeIndex = selectedIndex ?? 0;
 
   useEffect(() => {
     setMounted(true);
@@ -165,7 +166,7 @@ export default function Gallery_3({ images }: GalleryProps) {
 
           <div className={styles.modalContent} onClick={(event) => event.stopPropagation()}>
             <div className={styles.modalImageWrapper}>
-              <Image src={selectedImage} alt={`갤러리 이미지 ${selectedIndex + 1}`} fill sizes="100vw" quality={82} priority className={styles.modalImage} style={{ objectFit: 'contain' }} />
+              <Image src={selectedImage} alt={`갤러리 이미지 ${activeIndex + 1}`} fill sizes="100vw" quality={82} priority className={styles.modalImage} style={{ objectFit: 'contain' }} />
             </div>
             <div className={styles.imageGlow}></div>
           </div>
@@ -179,7 +180,7 @@ export default function Gallery_3({ images }: GalleryProps) {
           </button>
 
           <div className={styles.imageCounter}>
-            {selectedIndex + 1} / {images.length}
+            {activeIndex + 1} / {images.length}
           </div>
         </div>,
         document.body

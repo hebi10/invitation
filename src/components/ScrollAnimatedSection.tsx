@@ -19,7 +19,7 @@ export default function ScrollAnimatedSection({
   distance = 50,
   animationType = 'fadeInUp'
 }: ScrollAnimatedSectionProps) {
-  const { elementRef, isVisible } = useScrollAnimation({
+  const { elementRef, isVisible } = useScrollAnimation<HTMLDivElement>({
     threshold: 0.1, // 10% 보일 때 애니메이션 시작
     triggerOnce: true
   });

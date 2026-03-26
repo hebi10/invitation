@@ -6,14 +6,14 @@ interface UseScrollAnimationOptions {
   triggerOnce?: boolean; // 한 번만 애니메이션할지 여부
 }
 
-export function useScrollAnimation(options: UseScrollAnimationOptions = {}) {
+export function useScrollAnimation<T extends HTMLElement = HTMLElement>(options: UseScrollAnimationOptions = {}) {
   const {
     threshold = 0.1, // 10%
     rootMargin = '0px',
     triggerOnce = true
   } = options;
 
-  const elementRef = useRef<HTMLElement | null>(null);
+  const elementRef = useRef<T | null>(null);
   const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {

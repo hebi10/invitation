@@ -45,6 +45,7 @@ export default function GalleryGridShared({
   const hasMoreImages = images.length > visibleCount;
   const remainingCount = images.length - visibleCount;
   const selectedImage = selectedIndex === null ? null : images[selectedIndex];
+  const activeIndex = selectedIndex ?? 0;
 
   useEffect(() => {
     if (!shouldRenderImages) {
@@ -56,12 +57,12 @@ export default function GalleryGridShared({
   }, [displayImages, images, preloadAllImages, shouldRenderImages, visibleCount]);
 
   useEffect(() => {
-    if (!selectedImage) {
+    if (selectedIndex === null) {
       return;
     }
 
-    preloadSingleImage(images[selectedIndex! - 1]);
-    preloadSingleImage(images[selectedIndex! + 1]);
+    preloadSingleImage(images[selectedIndex - 1]);
+    preloadSingleImage(images[selectedIndex + 1]);
 
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
@@ -85,7 +86,7 @@ export default function GalleryGridShared({
       document.removeEventListener('keydown', handleKeyDown);
       document.body.classList.remove('no-scroll');
     };
-  }, [selectedImage, selectedIndex, images]);
+  }, [selectedIndex, images]);
 
   useEffect(() => {
     return () => {
@@ -236,7 +237,7 @@ export default function GalleryGridShared({
               </button>
 
               <span className={styles.imageCounter}>
-                {(selectedIndex ?? 0) + 1} / {images.length}
+                {activeIndex + 1} / {images.length}
               </span>
 
               <button

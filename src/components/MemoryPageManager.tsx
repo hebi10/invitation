@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import type { CSSProperties } from 'react';
 import { useEffect, useMemo, useState } from 'react';
@@ -239,6 +239,7 @@ export default function MemoryPageManager() {
     return sourceComments.filter((comment) => `${comment.author} ${comment.message}`.toLowerCase().includes(query));
   }, [commentSearch, sourceComments]);
 
+  const orderedSelectedComments = useMemo(() => sortByOrder(draft?.selectedComments ?? []), [draft?.selectedComments]);
   const visibleSelectedCommentCount = draft?.selectedComments.filter((comment) => comment.isVisible).length ?? 0;
 
   const summaryItems: SummaryCardItem[] = [
@@ -1355,6 +1356,7 @@ export default function MemoryPageManager() {
 
             <div className={styles.commentColumns}>
               <div className={styles.commentPanel}>
+                <div className={styles.commentPanelTop}>
                 <label className="admin-field">
                   <span className="admin-field-label">원본 댓글 검색</span>
                   <input
@@ -1365,6 +1367,12 @@ export default function MemoryPageManager() {
                     placeholder="작성자 또는 메시지 검색"
                   />
                 </label>
+
+                <div className={styles.commentPanelMeta}>
+                  <span className={styles.metaChip}>검색 결과 {filteredSourceComments.length}</span>
+                  <span className={styles.metaChip}>원본 댓글 {sourceComments.length}</span>
+                  <span className={styles.metaChip}>선택됨 {selectedSourceCommentIds.length}</span>
+                </div>
 
                 <div className={styles.selectionToolbar}>
                   <button type="button" className="admin-button admin-button-ghost" onClick={() => setSelectedSourceCommentIds(filteredSourceComments.map((comment) => comment.id))}>
@@ -1377,8 +1385,10 @@ export default function MemoryPageManager() {
                     선택 댓글 추가
                   </button>
                 </div>
+                </div>
 
-                <div className={styles.commentList}>
+                <div className={styles.commentListShell}>
+                  <div className={styles.commentListScrollable}>
                   {filteredSourceComments.length > 0 ? (
                     filteredSourceComments.map((comment) => {
                       const alreadySelected = draft.selectedComments.some((selectedComment) => selectedComment.sourceCommentId === comment.id);
@@ -1406,6 +1416,7 @@ export default function MemoryPageManager() {
                   ) : (
                     <EmptyState title="검색 조건에 맞는 댓글이 없습니다." description="검색어를 바꾸거나 추천 댓글 가져오기를 사용해보세요." />
                   )}
+                  </div>
                 </div>
               </div>
 
@@ -1415,6 +1426,12 @@ export default function MemoryPageManager() {
                     <p className={styles.subsectionTitle}>선택된 댓글</p>
                     <p className={styles.subsectionDescription}>드래그로 순서를 바꾸고, 일괄 노출/숨김/제거까지 한 번에 처리할 수 있습니다.</p>
                   </div>
+                </div>
+
+                <div className={styles.commentPanelMeta}>
+                  <span className={styles.metaChip}>전체 {orderedSelectedComments.length}</span>
+                  <span className={styles.metaChip}>노출 {visibleSelectedCommentCount}</span>
+                  <span className={styles.metaChip}>선택됨 {selectedManagedCommentIds.length}</span>
                 </div>
 
                 <div className={styles.selectionToolbar}>
@@ -1435,9 +1452,10 @@ export default function MemoryPageManager() {
                   </button>
                 </div>
 
-                {draft.selectedComments.length > 0 ? (
-                  <div className={styles.commentList}>
-                    {sortByOrder(draft.selectedComments).map((comment, index) => {
+                <div className={styles.commentListShell}>
+                {orderedSelectedComments.length > 0 ? (
+                  <div className={styles.commentListScrollable}>
+                    {orderedSelectedComments.map((comment, index) => {
                       const isDragging = dragState?.type === 'selectedComment' && dragState.activeId === comment.id;
                       const isDropTarget = dragState?.type === 'selectedComment' && dragState.overId === comment.id;
 
@@ -1509,6 +1527,7 @@ export default function MemoryPageManager() {
                 ) : (
                   <EmptyState title="공개할 댓글이 아직 없습니다." description="원본 댓글 목록에서 공개할 메시지를 선택해 추억 페이지에 담아보세요." />
                 )}
+                </div>
               </div>
             </div>
           </section>
@@ -1678,3 +1697,4 @@ export default function MemoryPageManager() {
     </div>
   );
 }
+

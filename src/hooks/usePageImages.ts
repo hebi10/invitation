@@ -45,7 +45,7 @@ export function usePageImages(pageSlug: string) {
           if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
             (window as Window & { requestIdleCallback: (callback: () => void) => number }).requestIdleCallback(runPreload);
           } else {
-            window.setTimeout(runPreload, 120);
+            globalThis.setTimeout(runPreload, 120);
           }
         }
       } catch (loadError) {

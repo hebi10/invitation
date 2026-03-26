@@ -103,8 +103,8 @@ export function useWeddingInvitationState(
   const galleryImageUrls = galleryImages.map((image) => image.url);
   const preloadImages = [
     ...(mainImageUrl ? [mainImageUrl] : []),
-    ...galleryImageUrls.slice(0, 5),
-  ].slice(0, 6);
+    ...galleryImageUrls.slice(0, 2),
+  ].slice(0, 3);
 
   return {
     access,

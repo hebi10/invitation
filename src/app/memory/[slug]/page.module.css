@@ -22,13 +22,23 @@
   border: 1px solid rgba(15, 23, 42, 0.08);
   border-radius: 24px;
   background: rgba(255, 255, 255, 0.92);
-  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.05);
+}
+
+.heroMediaButton {
+  display: block;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: zoom-in;
 }
 
 .heroImage {
   width: 100%;
   aspect-ratio: 4 / 5;
   object-fit: cover;
+  transition: transform 0.28s ease;
 }
 
 .heroBody,
@@ -37,7 +47,13 @@
   padding: 22px 20px;
 }
 
-.eyebrow,
+.heroChips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.heroChip,
 .sectionLabel {
   display: inline-flex;
   align-items: center;
@@ -72,7 +88,9 @@
 .stateDescription,
 .thankYouMessage,
 .timelineBody p,
-.galleryCaption {
+.galleryCaption,
+.passwordHint,
+.lightboxCaption {
   font-size: 0.95rem;
   line-height: 1.8;
   color: #4b5563;
@@ -80,7 +98,8 @@
 
 .heroMeta,
 .commentMeta,
-.timelineHeader {
+.timelineHeader,
+.lightboxMeta {
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
@@ -143,6 +162,13 @@
   gap: 18px;
 }
 
+.galleryGroup,
+.commentCard,
+.timelineItem {
+  content-visibility: auto;
+  contain-intrinsic-size: 280px;
+}
+
 .galleryGroup {
   display: flex;
   flex-direction: column;
@@ -165,6 +191,11 @@
   display: flex;
   flex-direction: column;
   gap: 8px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  text-align: left;
+  cursor: zoom-in;
 }
 
 .galleryThumb {
@@ -176,7 +207,8 @@
 }
 
 .commentCard,
-.timelineItem {
+.timelineItem,
+.passwordPanel {
   padding: 16px;
   border-radius: 18px;
   background: #fbfaf7;
@@ -235,12 +267,120 @@
   margin-top: 14px;
 }
 
-.stateCard {
+.stateCard,
+.passwordPanel {
   display: flex;
   flex-direction: column;
   gap: 12px;
   align-items: center;
   text-align: center;
+}
+
+.passwordForm {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.passwordInput,
+.passwordButton {
+  width: 100%;
+  min-height: 48px;
+  border-radius: 16px;
+}
+
+.passwordInput {
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  padding: 0 16px;
+  background: #ffffff;
+  color: #111827;
+  font: inherit;
+}
+
+.passwordButton {
+  border: 0;
+  background: #111827;
+  color: #ffffff;
+  font: inherit;
+  font-weight: 700;
+}
+
+.passwordError {
+  color: #dc2626;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.lightboxBackdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(15, 23, 42, 0.84);
+  backdrop-filter: blur(10px);
+}
+
+.lightboxDialog {
+  position: relative;
+  width: min(100%, 920px);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.lightboxClose,
+.lightboxNav {
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+  font: inherit;
+  cursor: pointer;
+}
+
+.lightboxClose {
+  align-self: flex-end;
+  min-height: 40px;
+  padding: 0 14px;
+  border-radius: 999px;
+}
+
+.lightboxNav {
+  position: absolute;
+  top: 50%;
+  width: 44px;
+  height: 44px;
+  border-radius: 999px;
+  transform: translateY(-50%);
+}
+
+.lightboxPrev {
+  left: 12px;
+}
+
+.lightboxNext {
+  right: 12px;
+}
+
+.lightboxImage {
+  width: 100%;
+  max-height: calc(100vh - 180px);
+  border-radius: 20px;
+  object-fit: contain;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.lightboxMeta {
+  justify-content: space-between;
+  color: #f8fafc;
+  font-size: 0.875rem;
+}
+
+.lightboxCaption {
+  color: rgba(248, 250, 252, 0.8);
 }
 
 @media (min-width: 768px) {

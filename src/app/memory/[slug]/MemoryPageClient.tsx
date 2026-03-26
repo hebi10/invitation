@@ -320,6 +320,9 @@ export default function MemoryPageClient({ slug }: MemoryPageClientProps) {
                 className={styles.heroImage}
                 src={heroImage.url}
                 alt={heroImage.name}
+                loading="eager"
+                decoding="async"
+                fetchPriority="high"
                 style={{
                   objectPosition: `${memoryPage.heroImageCrop.focusX}% ${memoryPage.heroImageCrop.focusY}%`,
                   transform: `scale(${memoryPage.heroImageCrop.zoom})`,
@@ -380,7 +383,7 @@ export default function MemoryPageClient({ slug }: MemoryPageClientProps) {
                   <div className={styles.galleryGrid}>
                     {group.images.map((image) => (
                       <button key={image.id} type="button" className={styles.galleryFigure} onClick={() => openLightboxByImage(image)}>
-                        <img className={styles.galleryThumb} src={image.url} alt={image.caption || image.name} loading="lazy" />
+                        <img className={styles.galleryThumb} src={image.url} alt={image.caption || image.name} loading="lazy" decoding="async" />
                         {image.caption ? <span className={styles.galleryCaption}>{image.caption}</span> : null}
                       </button>
                     ))}
@@ -457,7 +460,7 @@ export default function MemoryPageClient({ slug }: MemoryPageClientProps) {
                 </button>
               </>
             ) : null}
-            <img className={styles.lightboxImage} src={lightboxImage.url} alt={lightboxImage.caption || lightboxImage.name} />
+            <img className={styles.lightboxImage} src={lightboxImage.url} alt={lightboxImage.caption || lightboxImage.name} loading="eager" decoding="async" />
             <div className={styles.lightboxMeta}>
               <strong>{GALLERY_CATEGORY_LABELS[lightboxImage.category]}</strong>
               <span>{lightboxIndex !== null ? `${lightboxIndex + 1} / ${orderedImages.length}` : null}</span>

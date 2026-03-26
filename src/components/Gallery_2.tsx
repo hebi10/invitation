@@ -32,6 +32,7 @@ export default function Gallery_2({ images }: GalleryProps) {
   const hasMoreImages = images.length > visibleCount;
   const remainingCount = images.length - visibleCount;
   const selectedImage = selectedIndex === null ? null : images[selectedIndex];
+  const activeIndex = selectedIndex ?? 0;
 
   useEffect(() => {
     setMounted(true);
@@ -90,13 +91,13 @@ export default function Gallery_2({ images }: GalleryProps) {
               </div>
 
               <div className={styles.navigationBar}>
-                <button className={`${styles.navArrow} ${styles.prevArrow}`} onClick={() => setSelectedIndex((current) => (current === null ? current : Math.max(0, current - 1)))} disabled={selectedIndex <= 0} type="button">
+                <button className={`${styles.navArrow} ${styles.prevArrow}`} onClick={() => setSelectedIndex((current) => (current === null ? current : Math.max(0, current - 1)))} disabled={selectedIndex === null || selectedIndex <= 0} type="button">
                   ‹
                 </button>
                 <span className={styles.imageCounter}>
-                  {selectedIndex + 1} / {images.length}
+                  {activeIndex + 1} / {images.length}
                 </span>
-                <button className={`${styles.navArrow} ${styles.nextArrow}`} onClick={() => setSelectedIndex((current) => (current === null ? current : Math.min(images.length - 1, current + 1)))} disabled={selectedIndex >= images.length - 1} type="button">
+                <button className={`${styles.navArrow} ${styles.nextArrow}`} onClick={() => setSelectedIndex((current) => (current === null ? current : Math.min(images.length - 1, current + 1)))} disabled={selectedIndex === null || selectedIndex >= images.length - 1} type="button">
                   ›
                 </button>
               </div>

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import styles from './WeddingLoader_1.module.css';
 
 interface WeddingLoaderProps {
@@ -10,89 +10,99 @@ interface WeddingLoaderProps {
   mainImage?: string;
 }
 
-const WeddingLoader_1: React.FC<WeddingLoaderProps> = ({
+const loadingMessages = [
+  '페이지를 차분히 준비하고 있어요...',
+  '대표 사진을 먼저 불러오고 있어요...',
+  '조금만 기다리면 바로 열립니다...',
+  '곧 초대장을 보여드릴게요.',
+];
+
+function preloadSingleImage(imageUrl: string) {
+  return new Promise<void>((resolve) => {
+    const image = new Image();
+    image.decoding = 'async';
+    image.onload = () => resolve();
+    image.onerror = () => resolve();
+    image.src = imageUrl;
+  });
+}
+
+export default function WeddingLoader_1({
   brideName,
   groomName,
   onLoadComplete,
   duration = 3000,
   preloadImages = [],
-  mainImage
-}) => {
+  mainImage,
+}: WeddingLoaderProps) {
   const [progress, setProgress] = useState(0);
   const [currentMessage, setCurrentMessage] = useState(0);
   const [imagesLoaded, setImagesLoaded] = useState(false);
   const [minTimeElapsed, setMinTimeElapsed] = useState(false);
   const [startTime] = useState(Date.now());
 
-  const loadingMessages = [
-    '설렘을 차곡차곡 담는 중입니다…',
-    '추억 사진을 정리하는 중입니다…',
-    '마음을 전할 페이지를 완성 중입니다…',
-    '잠시 후 초대장을 열어드립니다!'
-  ];
-
   useEffect(() => {
-    const imagesToLoad = [];
-    if (mainImage) imagesToLoad.push(mainImage);
-    imagesToLoad.push(...preloadImages);
+    let cancelled = false;
+    const criticalImages = [mainImage || preloadImages[0]].filter(Boolean) as string[];
+    const deferredImages = preloadImages.filter((imageUrl) => imageUrl && imageUrl !== mainImage).slice(0, 1);
 
-    if (imagesToLoad.length === 0) {
+    if (criticalImages.length === 0) {
       setImagesLoaded(true);
       return;
     }
 
-    let loadedCount = 0;
-    const totalImages = imagesToLoad.length;
-
-    const preloadPromises = imagesToLoad.map((imageUrl) => {
-      return new Promise((resolve, reject) => {
-        const img = new Image();
-        img.onload = () => {
-          loadedCount++;
-          resolve(imageUrl);
-        };
-        img.onerror = () => {
-          loadedCount++;
-          resolve(imageUrl);
-        };
-        img.src = imageUrl;
-      });
+    void Promise.all(criticalImages.map(preloadSingleImage)).then(() => {
+      if (!cancelled) {
+        setImagesLoaded(true);
+      }
     });
 
-    Promise.all(preloadPromises).then(() => {
-      setImagesLoaded(true);
-    });
+    if (deferredImages.length > 0 && typeof window !== 'undefined') {
+      const preloadDeferredImages = () => {
+        deferredImages.forEach((imageUrl) => {
+          void preloadSingleImage(imageUrl);
+        });
+      };
+
+      if ('requestIdleCallback' in window) {
+        (window as Window & { requestIdleCallback: (callback: () => void) => number }).requestIdleCallback(preloadDeferredImages);
+      } else {
+        globalThis.setTimeout(preloadDeferredImages, 400);
+      }
+    }
+
+    return () => {
+      cancelled = true;
+    };
   }, [mainImage, preloadImages]);
 
   useEffect(() => {
-    const progressInterval = setInterval(() => {
+    const progressInterval = window.setInterval(() => {
       const elapsed = Date.now() - startTime;
-      const timeProgress = Math.min((elapsed / duration) * 100, 100);
-      
-      setProgress(prev => {
-        const newProgress = Math.max(prev, timeProgress);
-        return newProgress;
-      });
-      
-      if (elapsed >= 2000) {
+      const targetDuration = imagesLoaded ? 1800 : duration;
+      const timeProgress = Math.min((elapsed / targetDuration) * 100, 100);
+
+      setProgress((previous) => Math.max(previous, timeProgress));
+
+      if (elapsed >= 1800) {
         setMinTimeElapsed(true);
       }
-      
+
       if (imagesLoaded && minTimeElapsed && timeProgress >= 100) {
-        clearInterval(progressInterval);
-        setTimeout(onLoadComplete, 200);
+        window.clearInterval(progressInterval);
+        window.setTimeout(onLoadComplete, 200);
       }
     }, 100);
 
-    const messageInterval = setInterval(() => {
-      setCurrentMessage(prev => (prev + 1) % loadingMessages.length);
-    }, duration / 4);
+    const messageInterval = window.setInterval(() => {
+      setCurrentMessage((previous) => (previous + 1) % loadingMessages.length);
+    }, Math.max(duration / 4, 800));
 
     return () => {
-      clearInterval(progressInterval);
-      clearInterval(messageInterval);
+      window.clearInterval(progressInterval);
+      window.clearInterval(messageInterval);
     };
-  }, [startTime, duration, onLoadComplete, loadingMessages.length, imagesLoaded, minTimeElapsed]);
+  }, [startTime, duration, onLoadComplete, imagesLoaded, minTimeElapsed]);
 
   return (
     <div className={styles.loaderContainer}>
@@ -102,20 +112,17 @@ const WeddingLoader_1: React.FC<WeddingLoaderProps> = ({
           <div className={styles.dot}></div>
         </div>
       </div>
-      
-      <h1 className={styles.coupleNames}>{groomName} & {brideName}</h1>
+
+      <h1 className={styles.coupleNames}>
+        {groomName} &amp; {brideName}
+      </h1>
       <p className={styles.subtitle}>Wedding Invitation</p>
-      
+
       <div className={styles.progressContainer}>
-        <div 
-          className={styles.progressBar} 
-          style={{ width: `${progress}%` }}
-        />
+        <div className={styles.progressBar} style={{ width: `${progress}%` }} />
       </div>
-      
+
       <p className={styles.loadingMessage}>{loadingMessages[currentMessage]}</p>
     </div>
   );
-};
-
-export default WeddingLoader_1;
+}

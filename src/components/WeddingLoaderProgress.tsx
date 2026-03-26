@@ -43,13 +43,26 @@ export default function WeddingLoaderProgress({
     let isMounted = true;
 
     const loadImages = async () => {
-      const allImages = [...(mainImage ? [mainImage] : []), ...imagesToPreload];
+      const criticalImages = [mainImage || imagesToPreload[0]].filter(Boolean) as string[];
+      const deferredImages = imagesToPreload.filter((imageUrl) => imageUrl && imageUrl !== mainImage).slice(0, 1);
 
-      if (allImages.length > 0) {
+      if (criticalImages.length > 0) {
         try {
-          await preloadImages(allImages);
+          await preloadImages(criticalImages);
         } catch (error) {
           console.warn('이미지 프리로드 중 오류:', error);
+        }
+      }
+
+      if (deferredImages.length > 0 && typeof window !== 'undefined') {
+        const preloadDeferredImages = () => {
+          void preloadImages(deferredImages);
+        };
+
+        if ('requestIdleCallback' in window) {
+          (window as Window & { requestIdleCallback: (callback: () => void) => number }).requestIdleCallback(preloadDeferredImages);
+        } else {
+          globalThis.setTimeout(preloadDeferredImages, 400);
         }
       }
 

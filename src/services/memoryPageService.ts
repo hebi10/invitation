@@ -13,6 +13,7 @@ import type {
   MemorySelectedComment,
   MemoryTimelineItem,
 } from '@/types/memoryPage';
+import { optimizeUploadImage } from '@/utils/imageCompression';
 import { DEFAULT_MEMORY_HERO_CROP } from '@/types/memoryPage';
 
 const COLLECTION_NAME = 'memory-pages';
@@ -623,15 +624,20 @@ export async function uploadMemoryImages(
 
   const uploadedImages = await Promise.all(
     files.map(async (file, index) => {
-      const safeFileName = file.name.replace(/\s+/g, '-');
+      const optimizedFile = await optimizeUploadImage(file, {
+        maxWidth: 2200,
+        maxHeight: 2200,
+        quality: 0.82,
+      });
+      const safeFileName = optimizedFile.name.replace(/\s+/g, '-');
       const path = `memory-images/${pageSlug}/${Date.now()}-${index}-${safeFileName}`;
       const storageRef = storageState.modules.ref(storageState.storage, path);
-      const snapshot = await storageState.modules.uploadBytes(storageRef, file);
+      const snapshot = await storageState.modules.uploadBytes(storageRef, optimizedFile);
       const url = await storageState.modules.getDownloadURL(snapshot.ref);
 
       return {
         id: createId('memory-upload'),
-        name: file.name,
+        name: optimizedFile.name,
         url,
         path,
         source: 'memory' as const,
