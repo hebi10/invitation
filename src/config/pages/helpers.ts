@@ -1,9 +1,10 @@
-import type { WeddingPageConfig } from '../weddingPages';
+import type { InvitationPageSeed } from '@/types/invitationPage';
+import { buildInvitationVariants, type InvitationVariantKey } from '@/lib/invitationVariants';
 
-type WeddingPageMetadata = WeddingPageConfig['metadata'];
-type WeddingPageData = NonNullable<WeddingPageConfig['pageData']>;
-type WeddingCoupleInfo = WeddingPageConfig['couple'];
-type WeddingVariants = NonNullable<WeddingPageConfig['variants']>;
+type WeddingPageMetadata = InvitationPageSeed['metadata'];
+type WeddingPageData = NonNullable<InvitationPageSeed['pageData']>;
+type WeddingCoupleInfo = InvitationPageSeed['couple'];
+type WeddingVariants = NonNullable<InvitationPageSeed['variants']>;
 
 export type WeddingVariantKey = keyof WeddingVariants;
 
@@ -16,36 +17,6 @@ const defaultWeddingVariantKeys: readonly WeddingVariantKey[] = [
   'classic',
 ];
 
-const weddingVariantDefinitions: Record<
-  WeddingVariantKey,
-  { pathSuffix: string; label: string }
-> = {
-  emotional: {
-    pathSuffix: '',
-    label: '감성 버전',
-  },
-  simple: {
-    pathSuffix: '-simple',
-    label: '심플 버전',
-  },
-  minimal: {
-    pathSuffix: '-minimal',
-    label: '미니멀 버전',
-  },
-  space: {
-    pathSuffix: '-space',
-    label: '우주 버전',
-  },
-  blue: {
-    pathSuffix: '-blue',
-    label: '지중해 블루 버전',
-  },
-  classic: {
-    pathSuffix: '-classic',
-    label: '한지 클래식 버전',
-  },
-};
-
 export interface WeddingPageMetadataInput {
   title?: string;
   description?: string;
@@ -57,7 +28,7 @@ export interface WeddingPageMetadataInput {
 
 export interface WeddingPageConfigInput
   extends Omit<
-    WeddingPageConfig,
+    InvitationPageSeed,
     'couple' | 'displayName' | 'groomName' | 'brideName' | 'metadata' | 'pageData'
   > {
   couple: WeddingCoupleInfo;
@@ -98,21 +69,24 @@ export function createWeddingVariants({
   enabledVariants = defaultWeddingVariantKeys,
   displayNameOverrides = {},
 }: CreateWeddingVariantsOptions): WeddingVariants {
-  return enabledVariants.reduce<WeddingVariants>((variants, variantKey) => {
-    const variantDefinition = weddingVariantDefinitions[variantKey];
+  const variants = buildInvitationVariants(slug, displayName);
 
-    variants[variantKey] = {
-      available: true,
-      path: `/${slug}${variantDefinition.pathSuffix}`,
-      displayName:
-        displayNameOverrides[variantKey] ?? `${displayName} (${variantDefinition.label})`,
+  return enabledVariants.reduce<WeddingVariants>((accumulator, variantKey) => {
+    const variant = variants[variantKey as InvitationVariantKey];
+    if (!variant) {
+      return accumulator;
+    }
+
+    accumulator[variantKey] = {
+      ...variant,
+      displayName: displayNameOverrides[variantKey] ?? variant.displayName,
     };
 
-    return variants;
+    return accumulator;
   }, {});
 }
 
-export function createWeddingPageConfig(input: WeddingPageConfigInput): WeddingPageConfig {
+export function createWeddingPageConfig(input: WeddingPageConfigInput): InvitationPageSeed {
   const groomName = input.couple.groom.name;
   const brideName = input.couple.bride.name;
   const displayName = input.displayName ?? createWeddingDisplayName(input.couple);

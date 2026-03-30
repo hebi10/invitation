@@ -1,6 +1,6 @@
 import type { CSSProperties } from 'react';
 
-import type { WeddingPageConfig } from '@/config/weddingPages';
+import type { InvitationPage } from '@/types/invitationPage';
 
 export type WeddingThemeKey =
   | 'emotional'
@@ -28,8 +28,8 @@ interface WeddingThemeDefinition {
     className?: string;
     style: CSSProperties;
   };
-  getShareTitle: (pageConfig: WeddingPageConfig) => string;
-  getShareDescription: (pageConfig: WeddingPageConfig) => string;
+  getShareTitle: (pageConfig: InvitationPage) => string;
+  getShareDescription: (pageConfig: InvitationPage) => string;
 }
 
 const defaultShareContainer = {
@@ -52,10 +52,10 @@ const spaceShareContainer = {
   },
 } satisfies WeddingThemeDefinition['shareContainer'];
 
-const invitationDescription = (pageConfig: WeddingPageConfig) =>
+const invitationDescription = (pageConfig: InvitationPage) =>
   `${pageConfig.date}\n${pageConfig.venue}에서 열리는 저희의 결혼식에 초대합니다.`;
 
-const compactDescription = (pageConfig: WeddingPageConfig) =>
+const compactDescription = (pageConfig: InvitationPage) =>
   `${pageConfig.date} ${pageConfig.pageData?.ceremonyTime ?? ''} | ${pageConfig.venue}`;
 
 const themeDefinitions: Record<WeddingThemeKey, WeddingThemeDefinition> = {

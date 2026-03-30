@@ -3,14 +3,8 @@ import Script from 'next/script';
 import type { ReactNode } from 'react';
 
 import {
-  generateMetadata as generateWeddingMetadata,
-  getRequiredWeddingPageBySlug,
-} from '@/config/weddingPages';
-
-import WeddingKakaoShareButton from './WeddingKakaoShareButton';
-import {
-  getWeddingThemeDefinition,
   type WeddingInvitationRouteOptions,
+  getWeddingThemeDefinition,
 } from './weddingThemes';
 
 export const weddingInvitationViewport: Viewport = {
@@ -18,28 +12,21 @@ export const weddingInvitationViewport: Viewport = {
   initialScale: 1,
 };
 
-export function getWeddingInvitationMetadata(slug: string): Metadata {
-  return generateWeddingMetadata(slug);
+const genericInvitationMetadata: Metadata = {
+  title: '모바일 청첩장',
+  description: '모바일 청첩장 페이지입니다.',
+};
+
+export function getWeddingInvitationMetadata(_slug?: string): Metadata {
+  return genericInvitationMetadata;
 }
 
 export function createWeddingInvitationLayout({
-  slug,
   theme,
 }: Pick<WeddingInvitationRouteOptions, 'slug' | 'theme'>) {
-  const pageConfig = getRequiredWeddingPageBySlug(slug);
-  const themeDefinition = getWeddingThemeDefinition(theme);
+  getWeddingThemeDefinition(theme);
 
   function WeddingInvitationLayout({ children }: { children: ReactNode }) {
-    const shareButton = (
-      <WeddingKakaoShareButton
-        title={themeDefinition.getShareTitle(pageConfig)}
-        description={themeDefinition.getShareDescription(pageConfig)}
-        imageUrl={pageConfig.metadata.images.wedding}
-        pageSlug={slug}
-        variant={themeDefinition.shareButtonVariant}
-      />
-    );
-
     return (
       <>
         <Script
@@ -49,21 +36,11 @@ export function createWeddingInvitationLayout({
           strategy="beforeInteractive"
         />
         {children}
-        {themeDefinition.shareContainer ? (
-          <div
-            className={themeDefinition.shareContainer.className}
-            style={themeDefinition.shareContainer.style}
-          >
-            {shareButton}
-          </div>
-        ) : (
-          shareButton
-        )}
       </>
     );
   }
 
-  WeddingInvitationLayout.displayName = `${pageConfig.slug}-${theme}-layout`;
+  WeddingInvitationLayout.displayName = `${theme}-layout`;
 
   return WeddingInvitationLayout;
 }

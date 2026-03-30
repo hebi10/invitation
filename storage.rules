@@ -1,18 +1,25 @@
 rules_version = '2';
 
-// Craft rules based on data in your Firestore database
-// allow write: if firestore.get(
-//    /databases/(default)/documents/users/$(request.auth.uid)).data.isAdmin;
 service firebase.storage {
   match /b/{bucket}/o {
-    // 모든 파일 읽기 허용
-    match /{allPaths=**} {
-      allow read: if true;
+    function isAdmin() {
+      return request.auth != null &&
+        firestore.exists(/databases/(default)/documents/admin-users/$(request.auth.uid)) &&
+        firestore.get(/databases/(default)/documents/admin-users/$(request.auth.uid)).data.enabled != false;
     }
-    
-    // wedding-images 폴더는 쓰기/삭제도 허용 (관리자용)
+
     match /wedding-images/{allPaths=**} {
-      allow read, write, delete: if true;
+      allow read: if true;
+      allow write, delete: if isAdmin();
+    }
+
+    match /memory-images/{allPaths=**} {
+      allow read: if true;
+      allow write, delete: if isAdmin();
+    }
+
+    match /{allPaths=**} {
+      allow read, write: if false;
     }
   }
 }

@@ -1,225 +1,383 @@
-# 🎊 모바일 청첩장 프로젝트
+# Invitation
 
-Next.js 15와 Firebase를 기반으로 구축된 현대적이고 반응형 모바일 청첩장 웹사이트입니다.
+이 저장소의 단일 기준 문서입니다. 기존에 흩어져 있던 기능 메모, 운영 가이드, 사용 예시는 모두 이 문서로 통합했습니다.
 
-## ✨ 주요 기능
+## 1. 프로젝트 개요
 
-### 🎨 UI/UX
-- **반응형 디자인**: 모바일, 태블릿, 데스크톱 최적화
-- **웨딩 테마**: 우아하고 로맨틱한 CSS 모듈 기반 디자인
-- **로딩 애니메이션**: 사용자 맞춤형 웨딩 로더
-- **스무스 인터랙션**: 드래그 방지, 부드러운 전환 효과
+이 프로젝트는 `Next.js 15 + React 19 + Firebase` 기반의 모바일 청첩장 서비스입니다.
 
-### � 기술적 특징
-- **Multi-Page Support**: 여러 커플의 청첩장을 하나의 앱에서 관리
-- **컴포넌트 기반**: 재사용 가능한 모듈형 컴포넌트 시스템
-- **TypeScript**: 완전한 타입 안정성
-- **CSS Modules**: 격리된 스타일링 시스템
+- 배포: `Firebase Hosting`
+- 렌더링: `Next static export`
+- 런타임 데이터: `Firestore`
+- 이미지 저장소: `Firebase Storage`
+- 관리자 인증: `Firebase Auth + admin-users/{uid}`
 
-### 📱 핵심 컴포넌트
-- **Cover**: 커버 페이지 (신랑신부 이름, 날짜)
-- **Greeting**: 인사말 섹션
-- **Gallery**: 이미지 갤러리 (Firebase Storage 연동)
-- **Schedule**: 결혼식 일정 및 시간
-- **LocationMap**: Google Maps 연동 위치 안내
-- **WeddingCalendar**: 달력 형태의 날짜 표시
-- **Guestbook**: 방명록 (댓글 시스템)
-- **GiftInfo**: 축의금 계좌 정보
+정적 배포를 유지하면서도 실제 데이터와 공개 여부는 Firestore 규칙으로 제어하도록 구조를 정리했습니다.
 
-### 🔥 Firebase 통합
-- **Firestore**: 방명록 댓글 시스템
-- **Storage**: 이미지 업로드 및 관리
-- **페이지별 컬렉션**: 각 커플별 독립적인 데이터 관리
-- **실시간 업데이트**: 새 댓글 실시간 반영
+## 2. 현재 아키텍처
 
-### �️ 관리 기능
-- **클라이언트 패스워드 시스템**: 커플별 개별 비밀번호 관리
-- **이미지 매니저**: 갤러리 이미지 업로드/삭제
-- **댓글 관리**: 방명록 댓글 승인/삭제
-- **스팸 방지**: 쿠키 기반 댓글 제한
+### 공개 라우트
 
-### �️ 지도 통합
-- **Google Maps**: iframe 기반 지도 표시
-- **외부 앱 연동**: 네이버 지도, 카카오맵, 구글 지도로 바로 연결
-- **주소 복사**: 원클릭 주소 복사 기능
+- 청첩장: `/{pageSlug}/`
+- 추억 페이지: `/memory/{pageSlug}/`
+- 관리자: `/admin/`
 
-## 🚀 환경 설정
+### 핵심 원칙
 
-### 1. 프로젝트 클론 및 설치
-```bash
-git clone [repository-url]
-cd invitation
-npm install
-```
+- 청첩장 본문 데이터는 코드 번들이 아니라 `invitation-pages` 컬렉션에서 읽습니다.
+- 추억 페이지도 `memory-pages` 컬렉션에서 읽습니다.
+- 추억 페이지 URL은 고정 `pageSlug` 기반입니다.
+- 사용자 정의 slug, 클라이언트 비밀번호 보호, 브라우저 평문 인증은 제거했습니다.
+- `unlisted`는 보안 기능이 아니라 `미노출 + noindex` 운영 정책입니다.
 
-### 2. 환경변수 설정
-`.env.local` 파일을 생성하고 다음 값들을 설정하세요:
+## 3. 데이터 모델
 
-```env
-# Firebase 설정
-NEXT_PUBLIC_FIREBASE_API_KEY=your_api_key
-NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=your_auth_domain
-NEXT_PUBLIC_FIREBASE_PROJECT_ID=your_project_id
-NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=your_storage_bucket
-NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
-NEXT_PUBLIC_FIREBASE_APP_ID=your_app_id
-NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID=your_measurement_id
+### Firestore 컬렉션
 
-# Firebase 사용 여부
-NEXT_PUBLIC_USE_FIREBASE=true
+- `invitation-pages/{pageSlug}`
+  - 청첩장 본문, 메타데이터, 공개 여부, 노출 기간
+- `memory-pages/{pageSlug}`
+  - 추억 페이지 본문, 갤러리, 타임라인, 선택 댓글, SEO 설정
+- `comments/{commentId}`
+  - 방명록 댓글
+  - 필드: `author`, `message`, `pageSlug`, `createdAt`
+- `admin-users/{uid}`
+  - 관리자 허용 목록
+  - `enabled != false` 인 문서만 관리자 권한을 가집니다.
+- `display-periods/**`, `settings/**`
+  - 관리자 전용 운영 데이터
 
-# 관리자 비밀번호
-NEXT_PUBLIC_ADMIN_PASSWORD=your_admin_password
+### Storage 경로
 
-# 카카오맵 API 키 (선택사항)
-NEXT_PUBLIC_KAKAO_MAP_API_KEY=your_kakao_api_key
-```
+- `wedding-images/{pageSlug}/...`
+- `memory-images/{pageSlug}/...`
 
-### 3. Firebase 설정
-1. [Firebase Console](https://console.firebase.google.com/)에서 새 프로젝트 생성
-2. **Firestore Database** 생성 (테스트 모드로 시작)
-3. **Firebase Storage** 활성화
-4. **Web 앱 추가**하여 설정 정보 획득
-5. 환경변수에 Firebase 설정 정보 입력
+## 4. 공개/권한 모델
 
-### 4. 새로운 웨딩 페이지 추가
-`src/config/weddingPages.ts` 파일에서 새 커플 정보를 추가:
+### Firestore 규칙
 
-```typescript
+- `invitation-pages`
+  - 공개 읽기: `published == true`
+  - 그리고 `displayPeriodEnabled != true` 이거나 현재 시점이 노출 기간 안이어야 함
+  - 관리자만 생성/수정/삭제 가능
+- `memory-pages`
+  - 공개 읽기: `enabled == true` 이고 `visibility in ['public', 'unlisted']`
+  - 관리자만 생성/수정/삭제 가능
+- `comments`
+  - 누구나 읽기 가능
+  - 누구나 생성 가능
+  - 관리자만 수정/삭제 가능
+- `admin-users`, `display-periods`, `settings`
+  - 관리자만 접근 가능
+
+### Storage 규칙
+
+- `wedding-images/**`, `memory-images/**`
+  - 누구나 읽기 가능
+  - 관리자만 쓰기/삭제 가능
+
+## 5. 관리자 인증
+
+관리자 로그인은 Firebase Auth 이메일/비밀번호 계정을 사용합니다.
+
+권한 판정은 로그인 자체가 아니라 `admin-users/{uid}` 문서 존재 여부로 결정합니다.
+
+예시:
+
+```json
 {
-  slug: 'groom-name-bride-name', // URL 경로
-  displayName: '신랑 ♥ 신부', // 표시 이름
-  description: '결혼식 설명',
-  date: '2024년 4월 14일',
-  venue: '웨딩홀 이름',
-  groomName: '신랑',
-  brideName: '신부',
-  weddingDateTime: {
-    year: 2024,
-    month: 3, // 0-based (3 = April)
-    day: 14,
-    hour: 15,
-    minute: 0
-  }
+  "enabled": true,
+  "role": "admin"
 }
 ```
 
-## 🛠️ 개발 시작하기
+필수 운영 작업:
 
-### 개발 서버 실행
+1. Firebase Auth에서 관리자 계정을 1개 생성합니다.
+2. 해당 계정의 `uid`로 `admin-users/{uid}` 문서를 만듭니다.
+3. 필요하면 `enabled: false`로 비활성화합니다.
+
+## 6. 환경 변수
+
+`.env.local` 기준:
+
+```env
+NEXT_PUBLIC_USE_FIREBASE=true
+
+NEXT_PUBLIC_FIREBASE_API_KEY=...
+NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=...
+NEXT_PUBLIC_FIREBASE_PROJECT_ID=...
+NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=...
+NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=...
+NEXT_PUBLIC_FIREBASE_APP_ID=...
+NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID=...
+
+NEXT_PUBLIC_KAKAO_MAP_API_KEY=...
+
+NEXT_PUBLIC_ENABLE_DEV_TOOLS=false
+ENABLE_DEV_TOOLS=false
+```
+
+설명:
+
+- `NEXT_PUBLIC_USE_FIREBASE`
+  - `true`: 실제 Firebase 사용
+  - `false`: mock 데이터 모드
+- `NEXT_PUBLIC_KAKAO_MAP_API_KEY`
+  - 카카오 공유 버튼 초기화에 사용
+- `NEXT_PUBLIC_ENABLE_DEV_TOOLS` / `ENABLE_DEV_TOOLS`
+  - 개발 전용 `/firebase-test/` 페이지 노출 제어
+
+## 7. 로컬 실행
+
+```bash
+npm install
+npm run dev
+```
+
+정적 결과 미리보기:
+
+```bash
+npm run build
+npm run preview
+```
+
+## 8. 주요 스크립트
+
 ```bash
 npm run dev
-# 또는
-yarn dev
-# 또는
-pnpm dev
-# 또는
-bun dev
-```
-
-브라우저에서 [http://localhost:3000](http://localhost:3000)을 열어 결과를 확인하세요.
-
-### 사용 가능한 스크립트
-```bash
-npm run dev      # 개발 서버 시작
-npm run build    # 프로덕션 빌드
-npm run start    # 프로덕션 서버 시작
-npm run lint     # ESLint 실행
-npm run export   # 정적 사이트 생성
-npm run deploy:firebase  # Firebase 호스팅 배포
-```
-
-## 📁 프로젝트 구조
-
-```
-src/
-├── app/
-│   ├── (page)/                    # 웨딩 페이지들
-│   │   ├── shin-minje-kim-hyunji/
-│   │   ├── kim-taehyun-choi-yuna/
-│   │   └── lee-junho-park-somin/
-│   ├── globals.css               # 전역 스타일
-│   ├── layout.tsx               # 루트 레이아웃
-│   └── page.tsx                # 홈페이지
-├── components/                  # 재사용 가능한 컴포넌트들
-│   ├── Cover/                  # 커버 페이지
-│   ├── Greeting/              # 인사말
-│   ├── Gallery/               # 갤러리
-│   ├── Schedule/              # 일정
-│   ├── LocationMap/           # 지도
-│   ├── WeddingCalendar/       # 캘린더
-│   ├── Guestbook/             # 방명록
-│   ├── GiftInfo/              # 축의금 정보
-│   ├── WeddingLoader/         # 로딩 컴포넌트
-│   ├── ImageManager/          # 이미지 관리
-│   ├── ClientPasswordManager/ # 클라이언트 패스워드 관리
-│   └── index.ts               # 컴포넌트 내보내기
-├── config/
-│   └── weddingPages.ts        # 웨딩 페이지 설정
-├── hooks/
-│   └── usePageImages.ts       # 이미지 관리 훅
-├── lib/
-│   ├── firebase.ts            # Firebase 설정
-│   └── passwordService.ts     # 패스워드 서비스
-└── services/
-    └── commentService.ts      # 댓글 서비스
-```
-
-## 🎯 사용법
-
-### 1. 새 웨딩 페이지 생성
-1. `src/config/weddingPages.ts`에 새 커플 정보 추가
-2. `src/app/(page)/새로운-슬러그/` 폴더 생성
-3. `page.tsx` 파일 생성 및 컴포넌트 구성
-
-### 2. 이미지 관리
-- 관리자 모드에서 ImageManager 컴포넌트 사용
-- Firebase Storage에 자동 업로드
-- 갤러리에서 즉시 반영
-
-### 3. 방명록 관리
-- 페이지별 독립적인 방명록 운영
-- 댓글 실시간 업데이트
-- 스팸 방지 기능 내장
-
-## 🚀 배포
-
-### Firebase 호스팅
-```bash
-# Firebase CLI 설치
-npm install -g firebase-tools
-
-# Firebase 로그인
-firebase login
-
-# 프로젝트 초기화 (최초 1회)
-firebase init
-
-# 배포
+npm run build
+npm run preview
+npm run lint
+npm run test:e2e
+npm run test:e2e:smoke
+npm run migrate:firebase:static
 npm run deploy:firebase
 ```
 
-### Vercel 배포
-1. [Vercel](https://vercel.com)에 GitHub 저장소 연결
-2. 환경변수 설정
-3. 자동 배포 완료
+## 9. 데이터 준비와 마이그레이션
 
-## 🛡️ 보안 고려사항
+현재 런타임 기준 문서는 Firestore입니다. `src/config/pages/*` 와 관련 설정 파일은 런타임 소스가 아니라 시드 입력 용도로만 봐야 합니다.
 
-- **환경변수**: 민감한 정보는 반드시 환경변수로 관리
-- **Firestore 규칙**: 프로덕션에서는 적절한 보안 규칙 설정
-- **이미지 업로드**: 파일 타입 및 크기 제한
-- **댓글 스팸**: 쿠키 기반 제한 및 관리자 승인
+### 마이그레이션 스크립트
 
-## 📚 기술 스택
+```bash
+node scripts/firebase-static-hosting-migration.mjs analyze
+node scripts/firebase-static-hosting-migration.mjs migrate-comments --execute
+node scripts/firebase-static-hosting-migration.mjs sanitize-memory-pages --execute
+node scripts/firebase-static-hosting-migration.mjs seed-invitations --input scripts/invitation-pages.example.json --execute
+```
 
-- **Frontend**: Next.js 15, React 19, TypeScript
-- **Styling**: CSS Modules
-- **Backend**: Firebase (Firestore, Storage)
-- **State Management**: React Query
-- **Date Handling**: date-fns
-- **Map Integration**: Google Maps
+### 스크립트 동작
 
-## 📄 라이선스
+- `analyze`
+  - 기존 데이터 상태 점검
+- `migrate-comments`
+  - `comments-{pageSlug}` 형태의 레거시 댓글을 `comments` 단일 컬렉션으로 통합
+- `sanitize-memory-pages`
+  - 추억 페이지의 레거시 필드 제거
+  - 제거 대상: `slug`, `passwordProtected`, `passwordHash`, `passwordHint`
+- `seed-invitations`
+  - `invitation-pages` 시드 데이터 업로드
 
-이 프로젝트는 개인 사용을 위한 프로젝트입니다.
+### Admin SDK 인증
+
+스크립트 실행 시 다음 둘 중 하나가 필요합니다.
+
+- `GOOGLE_APPLICATION_CREDENTIALS`
+- `FIREBASE_SERVICE_ACCOUNT_JSON`
+
+## 10. invitation-pages 문서 기준
+
+청첩장 페이지는 최소한 아래 성격의 필드를 가져야 합니다.
+
+- `slug`
+- `displayName`
+- `description`
+- `date`
+- `venue`
+- `groomName`
+- `brideName`
+- `couple`
+- `weddingDateTime`
+- `metadata`
+- `pageData`
+- `published`
+- `displayPeriodEnabled`
+- `displayPeriodStart`
+- `displayPeriodEnd`
+
+위 구조는 [`src/types/invitationPage.ts`](/c:/Users/gy554/Desktop/portfolio/invitation/src/types/invitationPage.ts) 기준입니다.
+
+## 11. memory-pages 문서 기준
+
+추억 페이지는 `pageSlug`가 문서 ID와 동일해야 하며, URL도 `/memory/{pageSlug}/` 로 고정됩니다.
+
+주요 필드:
+
+- `pageSlug`
+- `enabled`
+- `visibility`
+  - `public`
+  - `unlisted`
+  - `private`
+- `title`, `subtitle`, `introMessage`, `thankYouMessage`
+- `heroImage`, `heroImageCrop`, `heroThumbnailUrl`
+- `galleryImages`
+- `selectedComments`
+- `timelineItems`
+- `seoTitle`, `seoDescription`, `seoNoIndex`
+
+기준 타입은 [`src/types/memoryPage.ts`](/c:/Users/gy554/Desktop/portfolio/invitation/src/types/memoryPage.ts) 입니다.
+
+## 12. 관리자 화면 구성
+
+관리자 페이지는 Firebase Auth 로그인 후 탭 기준으로 운영합니다.
+
+- 청첩장 공개/노출 기간 관리
+- 이미지 관리
+- 추억 페이지 관리
+- 댓글 관리
+
+이미지 관리 탭은 페이지별로 묶여 있고, 펼치기/접기와 전체 펼치기/접기를 지원합니다.
+
+## 13. 이미지 운영 가이드
+
+### 청첩장 이미지
+
+- 저장 위치: `wedding-images/{pageSlug}/...`
+- 읽기 훅: [`src/hooks/usePageImages.ts`](/c:/Users/gy554/Desktop/portfolio/invitation/src/hooks/usePageImages.ts)
+
+반환값:
+
+- `images`
+- `loading`
+- `error`
+- `firstImage`
+- `mainImage`
+- `galleryImages`
+- `imageUrls`
+- `getImageByName(name)`
+
+기본 규칙:
+
+- `main.*` 또는 이름에 `main.` 이 포함된 파일은 대표 이미지로 취급
+- `gallery1`, `gallery2` 같은 이름은 갤러리 우선순위에 사용
+
+사용 예시:
+
+```tsx
+const { mainImage, galleryImages, loading } = usePageImages('shin-minje-kim-hyunji');
+```
+
+### 추억 페이지 이미지
+
+- 저장 위치: `memory-images/{pageSlug}/...`
+- 업로드 함수: `uploadMemoryImages(pageSlug, files, category, orderStart)`
+- 업로드 시 이미지 압축 후 Storage에 저장됩니다.
+
+## 14. 배경 음악 사용
+
+배경 음악 컴포넌트는 [`src/components/BackgroundMusic.tsx`](/c:/Users/gy554/Desktop/portfolio/invitation/src/components/BackgroundMusic.tsx) 입니다.
+
+현재 기준으로 `musicUrl` 전달이 필수입니다.
+
+```tsx
+<BackgroundMusic
+  autoPlay={true}
+  volume={0.3}
+  musicUrl="https://firebasestorage.googleapis.com/..."
+/>
+```
+
+운영 메모:
+
+- 음원은 직접 업로드한 URL을 사용합니다.
+- 브라우저 정책상 최초 사용자 인터랙션 이후 재생될 수 있습니다.
+- 저작권 확인된 음원만 사용해야 합니다.
+
+## 15. 카카오 지도/공유 설정
+
+### 지도 데이터
+
+청첩장 문서의 `pageData.kakaoMap` 에 좌표를 넣으면 위치 섹션에서 사용합니다.
+
+```ts
+kakaoMap: {
+  latitude: 37.5048,
+  longitude: 127.0280,
+  level: 3,
+  markerTitle: '웨딩홀 이름'
+}
+```
+
+### 공유
+
+카카오 공유 버튼은 `NEXT_PUBLIC_KAKAO_MAP_API_KEY` 를 사용합니다.
+
+## 16. 스크롤 애니메이션
+
+스크롤 기반 진입 애니메이션은 다음으로 구성되어 있습니다.
+
+- 훅: [`src/hooks/useScrollAnimation.ts`](/c:/Users/gy554/Desktop/portfolio/invitation/src/hooks/useScrollAnimation.ts)
+- 래퍼: [`src/components/ScrollAnimatedSection.tsx`](/c:/Users/gy554/Desktop/portfolio/invitation/src/components/ScrollAnimatedSection.tsx)
+
+사용 예시:
+
+```tsx
+<ScrollAnimatedSection delay={200}>
+  <Gallery />
+</ScrollAnimatedSection>
+```
+
+## 17. 테스트와 검증
+
+정리 후 기준 검증 명령:
+
+```bash
+npm run build
+npm run lint
+npm run test:e2e:smoke
+```
+
+`test:e2e:smoke`의 일부 시나리오는 아래 환경 변수가 없으면 자동으로 skip 됩니다.
+
+```env
+E2E_PUBLIC_PAGE_SLUG=...
+E2E_PRIVATE_MEMORY_SLUG=...
+E2E_ADMIN_EMAIL=...
+E2E_ADMIN_PASSWORD=...
+```
+
+## 18. 배포
+
+Firebase Hosting 기준:
+
+```bash
+npm run build
+npm run deploy:firebase
+```
+
+`next.config.ts` 는 `output: 'export'` 와 `trailingSlash: true` 를 사용합니다. Hosting의 `public` 디렉터리는 `out/` 입니다.
+
+## 19. 운영 체크리스트
+
+배포 전 최소 확인 항목:
+
+1. Firebase Auth 관리자 계정 생성
+2. `admin-users/{uid}` 문서 생성
+3. `invitation-pages` 시드 또는 실제 데이터 반영
+4. 필요 시 기존 댓글/추억 페이지 마이그레이션 실행
+5. `firestore.rules`, `storage.rules`, `firestore.indexes.json` 배포
+6. 공개할 페이지의 `published`, `displayPeriod`, `visibility` 검증
+
+## 20. 문서 정책
+
+이 저장소에서는 이 `README.md` 하나만 문서 기준으로 유지합니다.
+
+- 기능 메모
+- 운영 가이드
+- 마이그레이션 가이드
+- 이미지/음악/카카오 설정 안내
+
+위 내용은 모두 이 파일로 통합했습니다.

@@ -39,7 +39,6 @@ export interface MemoryTimelineItem {
 
 export interface MemoryPage {
   pageSlug: string;
-  slug: string;
   enabled: boolean;
   visibility: MemoryPageVisibility;
   title: string;
@@ -57,9 +56,6 @@ export interface MemoryPage {
   galleryImages: MemoryGalleryImage[];
   selectedComments: MemorySelectedComment[];
   timelineItems: MemoryTimelineItem[];
-  passwordProtected: boolean;
-  passwordHash: string;
-  passwordHint: string;
   seoTitle: string;
   seoDescription: string;
   seoNoIndex: boolean;

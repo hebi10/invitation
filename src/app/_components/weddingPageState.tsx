@@ -2,71 +2,77 @@
 
 import { type Dispatch, type SetStateAction, useEffect, useState } from 'react';
 
-import { useAdmin } from '@/contexts';
-import { type WeddingPageConfig } from '@/config/weddingPages';
+import type { InvitationPage } from '@/types/invitationPage';
 import { usePageImages } from '@/hooks';
-import { checkPageAccess } from '@/utils';
+import { getInvitationPageBySlug } from '@/services/invitationPageService';
+import { useAdmin } from '@/contexts';
 
 import {
   getWeddingThemeDefinition,
   type WeddingInvitationRouteOptions,
 } from './weddingThemes';
 
-export type PageAccessResult = Awaited<ReturnType<typeof checkPageAccess>>;
+export type PageAccessResult =
+  | { canAccess: true }
+  | { canAccess: false; message: string };
 
 export interface WeddingPageState {
   access: PageAccessResult | null;
   isLoading: boolean;
   setIsLoading: Dispatch<SetStateAction<boolean>>;
   imagesLoading: boolean;
-  pageConfig: WeddingPageConfig;
+  pageConfig: InvitationPage;
   weddingDate: Date;
   mainImageUrl: string;
   galleryImageUrls: string[];
   preloadImages: string[];
   hasGiftAccounts: boolean;
-  giftInfo: NonNullable<WeddingPageConfig['pageData']>['giftInfo'];
+  giftInfo: NonNullable<InvitationPage['pageData']>['giftInfo'] | undefined;
 }
 
 export function useWeddingInvitationState(
-  options: WeddingInvitationRouteOptions,
-  pageConfig: WeddingPageConfig
+  options: WeddingInvitationRouteOptions
 ): WeddingPageState {
   const [access, setAccess] = useState<PageAccessResult | null>(null);
+  const [pageConfig, setPageConfig] = useState<InvitationPage | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const { mainImage, galleryImages, loading: imagesLoading, error } = usePageImages(options.slug);
-  const { isAdminLoggedIn } = useAdmin();
+  const { isAdminLoading } = useAdmin();
   const themeDefinition = getWeddingThemeDefinition(options.theme);
 
   useEffect(() => {
-    let canceled = false;
+    if (isAdminLoading) {
+      return;
+    }
 
-    document.title = `${pageConfig.groomName} ♡ ${pageConfig.brideName} 결혼식 - ${pageConfig.date}${themeDefinition.documentTitleSuffix}`;
+    let cancelled = false;
 
-    checkPageAccess(options.slug, isAdminLoggedIn).then((result) => {
-      if (!canceled) {
-        setAccess(result);
+    const loadInvitationPage = async () => {
+      const page = await getInvitationPageBySlug(options.slug);
+      if (cancelled) {
+        return;
       }
-    });
+
+      if (!page) {
+        setPageConfig(null);
+        setAccess({
+          canAccess: false,
+          message: '현재 노출되지 않는 청첩장입니다.',
+        });
+        return;
+      }
+
+      document.title = `${page.groomName} ♡ ${page.brideName} 결혼식 - ${page.date}${themeDefinition.documentTitleSuffix}`;
+      setPageConfig(page);
+      setAccess({ canAccess: true });
+    };
+
+    void loadInvitationPage();
 
     return () => {
-      canceled = true;
+      cancelled = true;
     };
-  }, [isAdminLoggedIn, options.slug, pageConfig, themeDefinition.documentTitleSuffix]);
-
-  useEffect(() => {
-    const kakaoShare = document.querySelector<HTMLDivElement>('.kakao_share');
-    if (!kakaoShare) {
-      return;
-    }
-
-    if (access === null || !access.canAccess) {
-      kakaoShare.style.display = 'none';
-      return;
-    }
-
-    kakaoShare.style.display = isLoading ? 'none' : 'block';
-  }, [access, isLoading]);
+  }, [isAdminLoading, options.slug, themeDefinition.documentTitleSuffix]);
 
   useEffect(() => {
     if (!error) {
@@ -78,7 +84,7 @@ export function useWeddingInvitationState(
 
   useEffect(() => {
     const loadingDelay = options.loadingDelay ?? themeDefinition.defaultLoadingDelay;
-    if (!loadingDelay || imagesLoading || !isLoading) {
+    if (!loadingDelay || imagesLoading || !isLoading || access?.canAccess !== true) {
       return;
     }
 
@@ -89,15 +95,17 @@ export function useWeddingInvitationState(
     return () => {
       window.clearTimeout(timer);
     };
-  }, [imagesLoading, isLoading, options.loadingDelay, themeDefinition.defaultLoadingDelay]);
+  }, [access, imagesLoading, isLoading, options.loadingDelay, themeDefinition.defaultLoadingDelay]);
 
-  const weddingDate = new Date(
-    pageConfig.weddingDateTime.year,
-    pageConfig.weddingDateTime.month,
-    pageConfig.weddingDateTime.day,
-    pageConfig.weddingDateTime.hour,
-    pageConfig.weddingDateTime.minute
-  );
+  const weddingDate = pageConfig
+    ? new Date(
+        pageConfig.weddingDateTime.year,
+        pageConfig.weddingDateTime.month,
+        pageConfig.weddingDateTime.day,
+        pageConfig.weddingDateTime.hour,
+        pageConfig.weddingDateTime.minute
+      )
+    : null;
 
   const mainImageUrl = mainImage?.url || '';
   const galleryImageUrls = galleryImages.map((image) => image.url);
@@ -111,15 +119,15 @@ export function useWeddingInvitationState(
     isLoading,
     setIsLoading,
     imagesLoading,
-    pageConfig,
-    weddingDate,
+    pageConfig: pageConfig as InvitationPage,
+    weddingDate: weddingDate as Date,
     mainImageUrl,
     galleryImageUrls,
     preloadImages,
     hasGiftAccounts: Boolean(
-      pageConfig.pageData?.giftInfo?.groomAccounts?.length ||
-        pageConfig.pageData?.giftInfo?.brideAccounts?.length
+      pageConfig?.pageData?.giftInfo?.groomAccounts?.length ||
+        pageConfig?.pageData?.giftInfo?.brideAccounts?.length
     ),
-    giftInfo: pageConfig.pageData?.giftInfo,
+    giftInfo: pageConfig?.pageData?.giftInfo,
   };
 }

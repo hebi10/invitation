@@ -1,9 +1,10 @@
-import { getRequiredWeddingPageBySlug, getWeddingPageBySlug } from '@/config/weddingPages';
-import { ensureFirebaseInit } from '@/lib/firebase';
+import type { InvitationPage } from '@/types/invitationPage';
+import { ensureFirebaseInit, USE_FIREBASE } from '@/lib/firebase';
 import type { Comment } from '@/services/commentService';
 import { getComments } from '@/services/commentService';
 import type { UploadedImage } from '@/services/imageService';
 import { getPageImages } from '@/services/imageService';
+import { getInvitationPageBySlug } from '@/services/invitationPageService';
 import type {
   MemoryGalleryCategory,
   MemoryGalleryImage,
@@ -13,12 +14,8 @@ import type {
   MemorySelectedComment,
   MemoryTimelineItem,
 } from '@/types/memoryPage';
-import { optimizeUploadImage } from '@/utils/imageCompression';
 import { DEFAULT_MEMORY_HERO_CROP } from '@/types/memoryPage';
-
-const COLLECTION_NAME = 'memory-pages';
-const USE_FIREBASE = process.env.NEXT_PUBLIC_USE_FIREBASE === 'true';
-const MEMORY_PASSWORD_SESSION_PREFIX = 'memory-page-access';
+import { optimizeUploadImage } from '@/utils/imageCompression';
 
 type FirestoreModules = {
   collection: any;
@@ -26,10 +23,7 @@ type FirestoreModules = {
   doc: any;
   getDoc: any;
   getDocs: any;
-  query: any;
   setDoc: any;
-  where: any;
-  Timestamp: any;
 };
 
 type StorageModules = {
@@ -38,6 +32,8 @@ type StorageModules = {
   ref: any;
   uploadBytes: any;
 };
+
+const COLLECTION_NAME = 'memory-pages';
 
 let firestoreModules: FirestoreModules | null = null;
 let storageModules: StorageModules | null = null;
@@ -61,15 +57,19 @@ function toDate(value: unknown, fallback = new Date()) {
     return value;
   }
 
+  if (
+    typeof value === 'object' &&
+    value !== null &&
+    typeof (value as { toDate?: () => Date }).toDate === 'function'
+  ) {
+    return (value as { toDate: () => Date }).toDate();
+  }
+
   if (typeof value === 'string' || typeof value === 'number') {
     const parsed = new Date(value);
     if (!Number.isNaN(parsed.getTime())) {
       return parsed;
     }
-  }
-
-  if (value && typeof value === 'object' && typeof (value as { toDate?: () => Date }).toDate === 'function') {
-    return (value as { toDate: () => Date }).toDate();
   }
 
   return fallback;
@@ -131,14 +131,19 @@ function syncHeroImage(memoryPage: MemoryPage): MemoryGalleryImage | null {
     return sortByOrder(memoryPage.galleryImages)[0];
   }
 
-  return memoryPage.galleryImages.find((image) => image.id === memoryPage.heroImage?.id) ?? sortByOrder(memoryPage.galleryImages)[0];
+  return (
+    memoryPage.galleryImages.find((image) => image.id === memoryPage.heroImage?.id) ??
+    sortByOrder(memoryPage.galleryImages)[0]
+  );
 }
 
 function buildDefaultSeoTitle(page: Pick<MemoryPage, 'title' | 'groomName' | 'brideName'>) {
   return page.title || `${page.groomName} ♥ ${page.brideName}의 결혼식 기록`;
 }
 
-function buildDefaultSeoDescription(page: Pick<MemoryPage, 'introMessage' | 'weddingDate' | 'venueName'>) {
+function buildDefaultSeoDescription(
+  page: Pick<MemoryPage, 'introMessage' | 'weddingDate' | 'venueName'>
+) {
   if (page.introMessage.trim()) {
     return page.introMessage.trim();
   }
@@ -148,12 +153,13 @@ function buildDefaultSeoDescription(page: Pick<MemoryPage, 'introMessage' | 'wed
 
 function normalizeMemoryPage(pageSlug: string, data: Partial<MemoryPage>): MemoryPage {
   const galleryImages = sortByOrder((data.galleryImages ?? []).map(normalizeGalleryImage));
-  const selectedComments = sortByOrder((data.selectedComments ?? []).map(normalizeSelectedComment));
+  const selectedComments = sortByOrder(
+    (data.selectedComments ?? []).map(normalizeSelectedComment)
+  );
   const timelineItems = sortByOrder((data.timelineItems ?? []).map(normalizeTimelineItem));
 
   const normalized: MemoryPage = {
     pageSlug,
-    slug: sanitizeMemorySlug(data.slug ?? pageSlug) || pageSlug,
     enabled: data.enabled ?? false,
     visibility: data.visibility ?? 'private',
     title: data.title ?? '',
@@ -171,9 +177,6 @@ function normalizeMemoryPage(pageSlug: string, data: Partial<MemoryPage>): Memor
     galleryImages,
     selectedComments,
     timelineItems,
-    passwordProtected: data.passwordProtected ?? false,
-    passwordHash: data.passwordHash ?? '',
-    passwordHint: data.passwordHint ?? '',
     seoTitle: data.seoTitle ?? '',
     seoDescription: data.seoDescription ?? '',
     seoNoIndex: data.seoNoIndex ?? false,
@@ -184,12 +187,8 @@ function normalizeMemoryPage(pageSlug: string, data: Partial<MemoryPage>): Memor
   normalized.heroImage = syncHeroImage(normalized);
   normalized.heroThumbnailUrl = normalized.heroThumbnailUrl || normalized.heroImage?.url || '';
   normalized.seoTitle = normalized.seoTitle.trim() || buildDefaultSeoTitle(normalized);
-  normalized.seoDescription = normalized.seoDescription.trim() || buildDefaultSeoDescription(normalized);
-
-  if (!normalized.passwordProtected) {
-    normalized.passwordHash = '';
-    normalized.passwordHint = '';
-  }
+  normalized.seoDescription =
+    normalized.seoDescription.trim() || buildDefaultSeoDescription(normalized);
 
   return normalized;
 }
@@ -212,10 +211,7 @@ async function ensureFirestoreModules() {
       doc: firestore.doc,
       getDoc: firestore.getDoc,
       getDocs: firestore.getDocs,
-      query: firestore.query,
       setDoc: firestore.setDoc,
-      where: firestore.where,
-      Timestamp: firestore.Timestamp,
     };
   }
 
@@ -245,98 +241,24 @@ async function ensureStorageModules() {
   return { storage, modules: storageModules };
 }
 
-export function sanitizeMemorySlug(value: string) {
-  return value
-    .trim()
-    .toLowerCase()
-    .replace(/[^a-z0-9-]+/g, '-')
-    .replace(/-{2,}/g, '-')
-    .replace(/^-+|-+$/g, '');
-}
-
-export function buildMemoryPageUrl(slug: string) {
-  const normalized = sanitizeMemorySlug(slug);
-  return `/memory/${normalized}/`;
-}
-
-export function buildMemoryPasswordSessionKey(slug: string, passwordHash: string) {
-  return `${MEMORY_PASSWORD_SESSION_PREFIX}:${slug}:${passwordHash}`;
-}
-
-export async function hashMemoryAccessPassword(password: string) {
-  const subtle = globalThis.crypto?.subtle;
-  if (!subtle) {
-    throw new Error('브라우저에서 비밀번호 해시를 생성할 수 없습니다.');
-  }
-
-  const hashBuffer = await subtle.digest('SHA-256', new TextEncoder().encode(password.trim()));
-  return Array.from(new Uint8Array(hashBuffer))
-    .map((value) => value.toString(16).padStart(2, '0'))
-    .join('');
-}
-
-async function loadImageElement(imageUrl: string) {
-  return new Promise<HTMLImageElement>((resolve, reject) => {
-    const image = new Image();
-    image.crossOrigin = 'anonymous';
-    image.onload = () => resolve(image);
-    image.onerror = reject;
-    image.src = imageUrl;
-  });
-}
-
-export async function generateMemoryHeroThumbnail(imageUrl: string, crop: MemoryHeroImageCrop, size = 360): Promise<string> {
-  if (!imageUrl || typeof window === 'undefined' || typeof document === 'undefined') {
-    return imageUrl;
-  }
-
-  try {
-    const image = await loadImageElement(imageUrl);
-    const canvas = document.createElement('canvas');
-    const context = canvas.getContext('2d');
-
-    if (!context) {
-      return imageUrl;
-    }
-
-    canvas.width = size;
-    canvas.height = size;
-
-    const safeZoom = clamp(crop.zoom, 1, 2.6);
-    const sourceWidth = image.naturalWidth / safeZoom;
-    const sourceHeight = image.naturalHeight / safeZoom;
-    const centerX = (clamp(crop.focusX, 0, 100) / 100) * image.naturalWidth;
-    const centerY = (clamp(crop.focusY, 0, 100) / 100) * image.naturalHeight;
-    const sourceX = clamp(centerX - sourceWidth / 2, 0, Math.max(0, image.naturalWidth - sourceWidth));
-    const sourceY = clamp(centerY - sourceHeight / 2, 0, Math.max(0, image.naturalHeight - sourceHeight));
-
-    context.drawImage(image, sourceX, sourceY, sourceWidth, sourceHeight, 0, 0, size, size);
-    return canvas.toDataURL('image/jpeg', 0.84);
-  } catch (error) {
-    console.warn('Failed to generate memory hero thumbnail.', error);
-    return imageUrl;
-  }
-}
-
 function buildInvitationGalleryImages(images: UploadedImage[]): MemoryGalleryImage[] {
-  const sortedImages = [...images].sort((left, right) => left.uploadedAt.getTime() - right.uploadedAt.getTime());
-
-  return sortedImages.map((image, index) => ({
-    id: createId('memory-gallery'),
-    name: image.name,
-    url: image.url,
-    path: image.path,
-    source: 'invitation',
-    category: image.name.toLowerCase().includes('snap') ? 'snap' : 'ceremony',
-    caption: '',
-    order: index,
-  }));
+  return [...images]
+    .sort((left, right) => left.uploadedAt.getTime() - right.uploadedAt.getTime())
+    .map((image, index) => ({
+      id: createId('memory-gallery'),
+      name: image.name,
+      url: image.url,
+      path: image.path,
+      source: 'invitation' as const,
+      category: image.name.toLowerCase().includes('snap') ? 'snap' : 'ceremony',
+      caption: '',
+      order: index,
+    }));
 }
 
-function buildDefaultTimeline(pageSlug: string): MemoryTimelineItem[] {
-  const pageConfig = getRequiredWeddingPageBySlug(pageSlug);
-  const ceremonyTime = pageConfig.pageData?.ceremonyTime ?? '';
-  const venueName = pageConfig.pageData?.venueName ?? pageConfig.venue;
+function buildDefaultTimeline(page: InvitationPage): MemoryTimelineItem[] {
+  const ceremonyTime = page.pageData?.ceremonyTime ?? '';
+  const venueName = page.pageData?.venueName ?? page.venue;
 
   return [
     {
@@ -375,67 +297,112 @@ function commentToSelectedComment(comment: Comment, order: number): MemorySelect
   };
 }
 
-async function assertUniqueMemorySlug(pageSlug: string, slug: string) {
-  const normalizedSlug = sanitizeMemorySlug(slug);
+async function loadImageElement(imageUrl: string) {
+  return new Promise<HTMLImageElement>((resolve, reject) => {
+    const image = new Image();
+    image.crossOrigin = 'anonymous';
+    image.onload = () => resolve(image);
+    image.onerror = reject;
+    image.src = imageUrl;
+  });
+}
 
-  if (!normalizedSlug) {
-    throw new Error('공유 주소를 확인해주세요.');
+export function buildMemoryPageUrl(pageSlug: string) {
+  return `/memory/${pageSlug}/`;
+}
+
+export async function generateMemoryHeroThumbnail(
+  imageUrl: string,
+  crop: MemoryHeroImageCrop,
+  size = 360
+): Promise<string> {
+  if (!imageUrl || typeof window === 'undefined' || typeof document === 'undefined') {
+    return imageUrl;
   }
 
-  const reservedPage = getWeddingPageBySlug(normalizedSlug);
-  if (reservedPage && reservedPage.slug !== pageSlug) {
-    throw new Error('다른 청첩장 주소와 겹치는 공유 slug입니다.');
-  }
+  try {
+    const image = await loadImageElement(imageUrl);
+    const canvas = document.createElement('canvas');
+    const context = canvas.getContext('2d');
 
-  const allPages = await getAllMemoryPages();
-  const conflictedPage = allPages.find(
-    (page) => page.pageSlug !== pageSlug && (page.slug === normalizedSlug || page.pageSlug === normalizedSlug)
-  );
+    if (!context) {
+      return imageUrl;
+    }
 
-  if (conflictedPage) {
-    throw new Error('이미 다른 추억 페이지에서 사용 중인 공유 slug입니다.');
+    canvas.width = size;
+    canvas.height = size;
+
+    const safeZoom = clamp(crop.zoom, 1, 2.6);
+    const sourceWidth = image.naturalWidth / safeZoom;
+    const sourceHeight = image.naturalHeight / safeZoom;
+    const centerX = (clamp(crop.focusX, 0, 100) / 100) * image.naturalWidth;
+    const centerY = (clamp(crop.focusY, 0, 100) / 100) * image.naturalHeight;
+    const sourceX = clamp(
+      centerX - sourceWidth / 2,
+      0,
+      Math.max(0, image.naturalWidth - sourceWidth)
+    );
+    const sourceY = clamp(
+      centerY - sourceHeight / 2,
+      0,
+      Math.max(0, image.naturalHeight - sourceHeight)
+    );
+
+    context.drawImage(image, sourceX, sourceY, sourceWidth, sourceHeight, 0, 0, size, size);
+    return canvas.toDataURL('image/jpeg', 0.84);
+  } catch (error) {
+    console.warn('Failed to generate memory hero thumbnail.', error);
+    return imageUrl;
   }
 }
 
-export async function createMemoryPageDraftFromInvitation(pageSlug: string): Promise<MemoryPage> {
-  const pageConfig = getRequiredWeddingPageBySlug(pageSlug);
+export async function createMemoryPageDraftFromInvitation(
+  pageSlug: string
+): Promise<MemoryPage> {
+  const page = await getInvitationPageBySlug(pageSlug);
+  if (!page) {
+    throw new Error('청첩장 데이터를 찾을 수 없습니다.');
+  }
+
   const invitationImages = buildInvitationGalleryImages(await getPageImages(pageSlug));
   const now = new Date();
 
   return normalizeMemoryPage(pageSlug, {
     pageSlug,
-    slug: pageSlug,
     enabled: false,
     visibility: 'private',
-    title: `${pageConfig.groomName} ♥ ${pageConfig.brideName}의 결혼식 기록`,
+    title: `${page.groomName} ♥ ${page.brideName}의 결혼식 기록`,
     subtitle: '함께해주신 마음을 천천히 다시 꺼내보는 추억 페이지입니다.',
-    introMessage: pageConfig.pageData?.greetingMessage ?? '결혼식 하루를 사진과 짧은 기록으로 다시 정리했습니다.',
+    introMessage:
+      page.pageData?.greetingMessage ?? '결혼식 하루를 사진과 짧은 기록으로 다시 정리했습니다.',
     thankYouMessage: '함께해주신 모든 분들께 진심으로 감사드립니다.',
     heroImage: invitationImages[0] ?? null,
     heroImageCrop: DEFAULT_MEMORY_HERO_CROP,
     heroThumbnailUrl: invitationImages[0]?.url ?? '',
-    weddingDate: pageConfig.date,
-    venueName: pageConfig.pageData?.venueName ?? pageConfig.venue,
-    venueAddress: pageConfig.pageData?.ceremonyAddress ?? pageConfig.venue,
-    groomName: pageConfig.groomName,
-    brideName: pageConfig.brideName,
+    weddingDate: page.date,
+    venueName: page.pageData?.venueName ?? page.venue,
+    venueAddress: page.pageData?.ceremonyAddress ?? page.venue,
+    groomName: page.groomName,
+    brideName: page.brideName,
     galleryImages: invitationImages,
     selectedComments: [],
-    timelineItems: buildDefaultTimeline(pageSlug),
-    passwordProtected: false,
-    passwordHash: '',
-    passwordHint: '',
-    seoTitle: `${pageConfig.groomName} ♥ ${pageConfig.brideName}의 결혼식 기록`,
-    seoDescription: `${pageConfig.date} ${pageConfig.venue}에서 함께한 결혼식의 순간을 사진과 메시지로 다시 담은 추억 페이지입니다.`,
+    timelineItems: buildDefaultTimeline(page),
+    seoTitle: `${page.groomName} ♥ ${page.brideName}의 결혼식 기록`,
+    seoDescription: `${page.date} ${page.venue}에서 함께한 결혼식의 순간을 사진과 메시지로 다시 담은 추억 페이지입니다.`,
     seoNoIndex: false,
     createdAt: now,
     updatedAt: now,
   });
 }
 
-export async function mergeInvitationGalleryImages(pageSlug: string, currentImages: MemoryGalleryImage[]): Promise<MemoryGalleryImage[]> {
+export async function mergeInvitationGalleryImages(
+  pageSlug: string,
+  currentImages: MemoryGalleryImage[]
+): Promise<MemoryGalleryImage[]> {
   const importedImages = buildInvitationGalleryImages(await getPageImages(pageSlug));
-  const existingKeys = new Set(currentImages.map((image) => `${image.source}:${image.path || image.url}`));
+  const existingKeys = new Set(
+    currentImages.map((image) => `${image.source}:${image.path || image.url}`)
+  );
   const nextOrderStart = currentImages.length;
 
   const merged = importedImages
@@ -454,12 +421,16 @@ export async function suggestCommentsFromInvitation(
   limit = 3
 ): Promise<MemorySelectedComment[]> {
   const sourceComments = await getComments(pageSlug);
-  const existingIds = new Set(existingComments.map((comment) => comment.sourceCommentId).filter(Boolean));
+  const existingIds = new Set(
+    existingComments.map((comment) => comment.sourceCommentId).filter(Boolean)
+  );
 
   const nextComments = sourceComments
     .filter((comment) => !existingIds.has(comment.id))
     .slice(0, limit)
-    .map((comment, index) => commentToSelectedComment(comment, existingComments.length + index));
+    .map((comment, index) =>
+      commentToSelectedComment(comment, existingComments.length + index)
+    );
 
   return sortByOrder([...existingComments, ...nextComments]);
 }
@@ -474,8 +445,9 @@ export async function getMemoryPageByPageSlug(pageSlug: string): Promise<MemoryP
     return null;
   }
 
-  const docRef = firebase.modules.doc(firebase.db, COLLECTION_NAME, pageSlug);
-  const snapshot = await firebase.modules.getDoc(docRef);
+  const snapshot = await firebase.modules.getDoc(
+    firebase.modules.doc(firebase.db, COLLECTION_NAME, pageSlug)
+  );
 
   if (!snapshot.exists()) {
     return null;
@@ -484,46 +456,15 @@ export async function getMemoryPageByPageSlug(pageSlug: string): Promise<MemoryP
   return normalizeMemoryPage(pageSlug, snapshot.data());
 }
 
-export async function getMemoryPageBySlug(slug: string): Promise<MemoryPage | null> {
-  const normalizedSlug = sanitizeMemorySlug(slug);
-
-  if (!normalizedSlug) {
-    return null;
-  }
-
-  if (!USE_FIREBASE) {
-    return [...mockMemoryPages.values()].find((page) => page.slug === normalizedSlug || page.pageSlug === normalizedSlug) ?? null;
-  }
-
-  const firebase = await ensureFirestoreModules();
-  if (!firebase) {
-    return null;
-  }
-
-  const byPageSlugRef = firebase.modules.doc(firebase.db, COLLECTION_NAME, normalizedSlug);
-  const byPageSlugSnapshot = await firebase.modules.getDoc(byPageSlugRef);
-
-  if (byPageSlugSnapshot.exists()) {
-    return normalizeMemoryPage(byPageSlugSnapshot.id, byPageSlugSnapshot.data());
-  }
-
-  const q = firebase.modules.query(
-    firebase.modules.collection(firebase.db, COLLECTION_NAME),
-    firebase.modules.where('slug', '==', normalizedSlug)
-  );
-  const snapshot = await firebase.modules.getDocs(q);
-
-  if (snapshot.empty) {
-    return null;
-  }
-
-  const firstDoc = snapshot.docs[0];
-  return normalizeMemoryPage(firstDoc.id, firstDoc.data());
+export async function getMemoryPageBySlug(pageSlug: string): Promise<MemoryPage | null> {
+  return getMemoryPageByPageSlug(pageSlug);
 }
 
 export async function getAllMemoryPages(): Promise<MemoryPage[]> {
   if (!USE_FIREBASE) {
-    return [...mockMemoryPages.values()].sort((left, right) => right.updatedAt.getTime() - left.updatedAt.getTime());
+    return [...mockMemoryPages.values()].sort(
+      (left, right) => right.updatedAt.getTime() - left.updatedAt.getTime()
+    );
   }
 
   const firebase = await ensureFirestoreModules();
@@ -531,23 +472,20 @@ export async function getAllMemoryPages(): Promise<MemoryPage[]> {
     return [];
   }
 
-  const snapshot = await firebase.modules.getDocs(firebase.modules.collection(firebase.db, COLLECTION_NAME));
+  const snapshot = await firebase.modules.getDocs(
+    firebase.modules.collection(firebase.db, COLLECTION_NAME)
+  );
+
   return snapshot.docs
-    .map((docSnapshot: { id: string; data: () => Partial<MemoryPage> }) => normalizeMemoryPage(docSnapshot.id, docSnapshot.data()))
+    .map((docSnapshot: { id: string; data: () => Partial<MemoryPage> }) =>
+      normalizeMemoryPage(docSnapshot.id, docSnapshot.data())
+    )
     .sort((left: MemoryPage, right: MemoryPage) => right.updatedAt.getTime() - left.updatedAt.getTime());
 }
 
 export async function saveMemoryPage(memoryPage: MemoryPage): Promise<MemoryPage> {
-  const normalizedSlug = sanitizeMemorySlug(memoryPage.slug || memoryPage.pageSlug) || memoryPage.pageSlug;
-  await assertUniqueMemorySlug(memoryPage.pageSlug, normalizedSlug);
-
-  if (memoryPage.passwordProtected && !memoryPage.passwordHash) {
-    throw new Error('비밀번호 보호를 사용하려면 비밀번호를 먼저 설정해주세요.');
-  }
-
   const normalized = normalizeMemoryPage(memoryPage.pageSlug, {
     ...memoryPage,
-    slug: normalizedSlug,
     heroImage: memoryPage.heroImage ?? memoryPage.galleryImages[0] ?? null,
     heroThumbnailUrl: memoryPage.heroThumbnailUrl || memoryPage.heroImage?.url || '',
     updatedAt: new Date(),
@@ -563,12 +501,18 @@ export async function saveMemoryPage(memoryPage: MemoryPage): Promise<MemoryPage
     throw new Error('Firestore가 초기화되지 않았습니다.');
   }
 
-  const docRef = firebase.modules.doc(firebase.db, COLLECTION_NAME, normalized.pageSlug);
-  await firebase.modules.setDoc(docRef, normalized);
+  await firebase.modules.setDoc(
+    firebase.modules.doc(firebase.db, COLLECTION_NAME, normalized.pageSlug),
+    normalized
+  );
+
   return normalized;
 }
 
-export async function publishMemoryPage(pageSlug: string, visibility: MemoryPageVisibility = 'public'): Promise<MemoryPage> {
+export async function publishMemoryPage(
+  pageSlug: string,
+  visibility: MemoryPageVisibility = 'public'
+): Promise<MemoryPage> {
   const existing = await getMemoryPageByPageSlug(pageSlug);
   if (!existing) {
     throw new Error('추억 페이지 초안이 없습니다.');
@@ -622,7 +566,7 @@ export async function uploadMemoryImages(
     throw new Error('Storage가 초기화되지 않았습니다.');
   }
 
-  const uploadedImages = await Promise.all(
+  return Promise.all(
     files.map(async (file, index) => {
       const optimizedFile = await optimizeUploadImage(file, {
         maxWidth: 2200,
@@ -647,16 +591,10 @@ export async function uploadMemoryImages(
       };
     })
   );
-
-  return uploadedImages;
 }
 
 export async function deleteMemoryImageAsset(image: MemoryGalleryImage): Promise<void> {
-  if (image.source !== 'memory' || !image.path) {
-    return;
-  }
-
-  if (!USE_FIREBASE) {
+  if (image.source !== 'memory' || !image.path || !USE_FIREBASE) {
     return;
   }
 
@@ -665,8 +603,9 @@ export async function deleteMemoryImageAsset(image: MemoryGalleryImage): Promise
     return;
   }
 
-  const imageRef = storageState.modules.ref(storageState.storage, image.path);
-  await storageState.modules.deleteObject(imageRef);
+  await storageState.modules.deleteObject(
+    storageState.modules.ref(storageState.storage, image.path)
+  );
 }
 
 export async function deleteMemoryPage(pageSlug: string): Promise<void> {
@@ -687,10 +626,14 @@ export async function deleteMemoryPage(pageSlug: string): Promise<void> {
     throw new Error('Firestore가 초기화되지 않았습니다.');
   }
 
-  const docRef = firebase.modules.doc(firebase.db, COLLECTION_NAME, pageSlug);
-  await firebase.modules.deleteDoc(docRef);
+  await firebase.modules.deleteDoc(
+    firebase.modules.doc(firebase.db, COLLECTION_NAME, pageSlug)
+  );
 }
 
-export function createSelectedCommentSnapshot(comment: Comment, order: number): MemorySelectedComment {
+export function createSelectedCommentSnapshot(
+  comment: Comment,
+  order: number
+): MemorySelectedComment {
   return commentToSelectedComment(comment, order);
 }

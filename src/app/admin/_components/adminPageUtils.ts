@@ -1,55 +1,61 @@
 import type { DisplayPeriod } from '@/services';
-import type { WeddingPageInfo } from '@/utils';
 import type { StatusTone } from './StatusBadge';
 
-export type AdminTab = 'pages' | 'images' | 'comments' | 'passwords' | 'periods' | 'memory';
+export type AdminTab = 'pages' | 'memory' | 'images' | 'comments' | 'periods';
 export type ShortcutKey = 'emotional' | 'simple' | 'minimal' | 'space' | 'blue' | 'classic';
 export type PageStatusFilter = 'all' | 'complete' | 'partial' | 'empty';
 export type PageSort = 'newest' | 'name' | 'coverage';
 export type CommentAgeFilter = 'all' | 'recent';
-export type PasswordStatusFilter = 'all' | 'default' | 'custom';
 export type PeriodStatusFilter = 'all' | 'dueSoon' | 'active' | 'scheduled' | 'expired' | 'inactive';
 
 export const COMMENTS_PER_PAGE = 10;
 export const TOTAL_SHORTCUT_COUNT = 6;
 export const RECENT_COMMENT_DAYS = 7;
 export const DUE_SOON_DAYS = 7;
-export const DEFAULT_PASSWORD = '12344';
 
 export const TAB_ITEMS: Array<{ key: AdminTab; label: string }> = [
   { key: 'pages', label: '청첩장' },
   { key: 'memory', label: '추억 페이지' },
   { key: 'images', label: '이미지' },
-  { key: 'comments', label: '댓글' },
-  { key: 'passwords', label: '비밀번호' },
+  { key: 'comments', label: '방명록' },
   { key: 'periods', label: '노출 기간' },
 ];
 
 export const SHORTCUT_ITEMS: Array<{ key: ShortcutKey; label: string }> = [
-  { key: 'emotional', label: '감성' },
-  { key: 'simple', label: '심플' },
-  { key: 'minimal', label: '미니멀' },
-  { key: 'space', label: '우주' },
-  { key: 'blue', label: '블루' },
-  { key: 'classic', label: '클래식' },
+  { key: 'emotional', label: 'Emotional' },
+  { key: 'simple', label: 'Simple' },
+  { key: 'minimal', label: 'Minimal' },
+  { key: 'space', label: 'Space' },
+  { key: 'blue', label: 'Blue' },
+  { key: 'classic', label: 'Classic' },
 ];
 
 export const PAGE_STATUS_LABELS: Record<PageStatusFilter, string> = {
   all: '전체 상태',
   complete: '전체 연결',
   partial: '일부 연결',
-  empty: '미설정',
+  empty: '미연결',
 };
 
 export const PAGE_SORT_LABELS: Record<PageSort, string> = {
-  newest: '최신순',
-  name: '이름순',
+  newest: '최근 순',
+  name: '이름 순',
   coverage: '바로가기 많은 순',
 };
 
 export const COMMENT_AGE_LABELS: Record<CommentAgeFilter, string> = {
   all: '전체 기간',
   recent: '최근 7일',
+};
+
+type VariantLink = {
+  available: boolean;
+  path: string;
+  displayName: string;
+};
+
+type VariantCarrier = {
+  variants?: Partial<Record<ShortcutKey, VariantLink>>;
 };
 
 export function formatDateTime(date: Date) {
@@ -62,7 +68,7 @@ export function formatDateTime(date: Date) {
   }).format(date);
 }
 
-export function getAvailableShortcuts(page: WeddingPageInfo) {
+export function getAvailableShortcuts(page: VariantCarrier) {
   return SHORTCUT_ITEMS.filter(({ key }) => page.variants?.[key]?.available).map(({ key, label }) => ({
     key,
     label,
@@ -72,7 +78,7 @@ export function getAvailableShortcuts(page: WeddingPageInfo) {
 
 export function getPageStatusMeta(availableCount: number): { label: string; tone: StatusTone } {
   if (availableCount === 0) {
-    return { label: '미설정', tone: 'neutral' };
+    return { label: '미연결', tone: 'neutral' };
   }
 
   if (availableCount === TOTAL_SHORTCUT_COUNT) {
@@ -86,22 +92,22 @@ export function getPeriodStatusMeta(period: DisplayPeriod): { label: string; ton
   const now = new Date();
 
   if (!period.isActive) {
-    return { label: '제한 없음', tone: 'neutral', description: '비활성화되어 항상 노출됩니다.' };
+    return { label: '비활성', tone: 'neutral', description: '기간 제한이 꺼져 있습니다.' };
   }
 
   if (now < period.startDate) {
-    return { label: '시작 전', tone: 'warning', description: '예약된 기간에 맞춰 노출됩니다.' };
+    return { label: '시작 전', tone: 'warning', description: '예약된 기간이 시작되기 전입니다.' };
   }
 
   if (now > period.endDate) {
-    return { label: '종료됨', tone: 'danger', description: '일반 사용자 노출이 종료된 상태입니다.' };
+    return { label: '만료', tone: 'danger', description: '노출 기간이 종료되었습니다.' };
   }
 
   if (daysBetween(now, period.endDate) <= DUE_SOON_DAYS) {
-    return { label: '종료 임박', tone: 'warning', description: `${DUE_SOON_DAYS}일 이내 종료됩니다.` };
+    return { label: '곧 종료', tone: 'warning', description: `${DUE_SOON_DAYS}일 이내 종료 예정입니다.` };
   }
 
-  return { label: '노출 중', tone: 'success', description: '현재 기간 내에서 정상 노출 중입니다.' };
+  return { label: '노출 중', tone: 'success', description: '현재 공개 가능한 기간입니다.' };
 }
 
 export function parseTab(value: string | null): AdminTab {
@@ -122,10 +128,6 @@ export function parsePageSort(value: string | null): PageSort {
 
 export function parseCommentAge(value: string | null): CommentAgeFilter {
   return value === 'recent' ? 'recent' : 'all';
-}
-
-export function parsePasswordFilter(value: string | null): PasswordStatusFilter {
-  return value === 'default' || value === 'custom' ? value : 'all';
 }
 
 export function parsePeriodFilter(value: string | null): PeriodStatusFilter {

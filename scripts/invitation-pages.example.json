@@ -1,0 +1,47 @@
+[
+  {
+    "slug": "example-couple",
+    "displayName": "Example Couple",
+    "description": "Firestore invitation-pages seed example",
+    "date": "2026-01-01",
+    "venue": "Example Wedding Hall",
+    "groomName": "Example Groom",
+    "brideName": "Example Bride",
+    "couple": {
+      "groom": { "name": "Example Groom" },
+      "bride": { "name": "Example Bride" }
+    },
+    "weddingDateTime": {
+      "year": 2026,
+      "month": 0,
+      "day": 1,
+      "hour": 12,
+      "minute": 0
+    },
+    "published": false,
+    "displayPeriodEnabled": false,
+    "displayPeriodStart": null,
+    "displayPeriodEnd": null,
+    "metadata": {
+      "title": "Example Couple Wedding Invitation",
+      "description": "Example invitation seed",
+      "keywords": [],
+      "images": {
+        "wedding": "",
+        "favicon": "/favicon.ico"
+      },
+      "openGraph": {
+        "title": "Example Couple Wedding Invitation",
+        "description": "Example invitation seed"
+      },
+      "twitter": {
+        "title": "Example Couple Wedding Invitation",
+        "description": "Example invitation seed"
+      }
+    },
+    "pageData": {
+      "venueName": "Example Wedding Hall"
+    },
+    "variants": {}
+  }
+]

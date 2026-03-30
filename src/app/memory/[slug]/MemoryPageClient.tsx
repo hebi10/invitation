@@ -2,9 +2,15 @@
 
 import { notFound } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
-import { useAdmin } from '@/contexts';
-import { buildMemoryPasswordSessionKey, getMemoryPageBySlug, hashMemoryAccessPassword } from '@/services/memoryPageService';
-import type { MemoryGalleryCategory, MemoryGalleryImage, MemoryPage } from '@/types/memoryPage';
+
+import { AdminProvider, useAdmin } from '@/contexts';
+import { getMemoryPageBySlug } from '@/services/memoryPageService';
+import type {
+  MemoryGalleryCategory,
+  MemoryGalleryImage,
+  MemoryPage,
+} from '@/types/memoryPage';
+
 import styles from './page.module.css';
 
 const GALLERY_CATEGORY_LABELS: Record<MemoryGalleryCategory, string> = {
@@ -58,14 +64,17 @@ function upsertCanonicalLink(href: string) {
   link.href = href;
 }
 
-function applyMemoryMetadata(memoryPage: MemoryPage | null, status: 'loading' | 'ready' | 'password' | 'notfound') {
+function applyMemoryMetadata(memoryPage: MemoryPage | null, status: 'loading' | 'ready' | 'notfound') {
   if (typeof document === 'undefined') {
     return;
   }
 
   if (!memoryPage || status !== 'ready') {
     document.title = '추억 페이지';
-    upsertMetaTag('meta[name="description"]', { name: 'description', content: '결혼식 이후의 사진과 기록을 다시 볼 수 있는 추억 페이지입니다.' });
+    upsertMetaTag('meta[name="description"]', {
+      name: 'description',
+      content: '결혼식 이후 사진과 기록을 다시 보는 추억 페이지입니다.',
+    });
     upsertMetaTag('meta[name="robots"]', { name: 'robots', content: 'noindex, nofollow' });
     return;
   }
@@ -73,23 +82,35 @@ function applyMemoryMetadata(memoryPage: MemoryPage | null, status: 'loading' | 
   const title = memoryPage.seoTitle || memoryPage.title;
   const description = memoryPage.seoDescription || memoryPage.introMessage;
   const image = memoryPage.heroImage?.url || memoryPage.galleryImages[0]?.url || '';
-  const shouldIndex = memoryPage.enabled && memoryPage.visibility === 'public' && !memoryPage.passwordProtected && !memoryPage.seoNoIndex;
+  const shouldIndex = memoryPage.enabled && memoryPage.visibility === 'public' && !memoryPage.seoNoIndex;
   const robots = shouldIndex ? 'index, follow' : 'noindex, nofollow';
-  const canonicalUrl = typeof window !== 'undefined' ? `${window.location.origin}${window.location.pathname}` : '';
+  const canonicalUrl =
+    typeof window !== 'undefined' ? `${window.location.origin}${window.location.pathname}` : '';
 
   document.title = title;
   upsertMetaTag('meta[name="description"]', { name: 'description', content: description });
   upsertMetaTag('meta[name="robots"]', { name: 'robots', content: robots });
   upsertMetaTag('meta[property="og:title"]', { property: 'og:title', content: title });
-  upsertMetaTag('meta[property="og:description"]', { property: 'og:description', content: description });
+  upsertMetaTag('meta[property="og:description"]', {
+    property: 'og:description',
+    content: description,
+  });
   upsertMetaTag('meta[property="og:type"]', { property: 'og:type', content: 'website' });
+
   if (image) {
     upsertMetaTag('meta[property="og:image"]', { property: 'og:image', content: image });
     upsertMetaTag('meta[name="twitter:image"]', { name: 'twitter:image', content: image });
   }
-  upsertMetaTag('meta[name="twitter:card"]', { name: 'twitter:card', content: 'summary_large_image' });
+
+  upsertMetaTag('meta[name="twitter:card"]', {
+    name: 'twitter:card',
+    content: 'summary_large_image',
+  });
   upsertMetaTag('meta[name="twitter:title"]', { name: 'twitter:title', content: title });
-  upsertMetaTag('meta[name="twitter:description"]', { name: 'twitter:description', content: description });
+  upsertMetaTag('meta[name="twitter:description"]', {
+    name: 'twitter:description',
+    content: description,
+  });
 
   if (canonicalUrl) {
     upsertMetaTag('meta[property="og:url"]', { property: 'og:url', content: canonicalUrl });
@@ -101,21 +122,21 @@ interface MemoryPageClientProps {
   slug: string;
 }
 
-export default function MemoryPageClient({ slug }: MemoryPageClientProps) {
-  const { isAdminLoggedIn } = useAdmin();
+function MemoryPageClientBody({ slug }: MemoryPageClientProps) {
+  const { isAdminLoggedIn, isAdminLoading } = useAdmin();
   const [memoryPage, setMemoryPage] = useState<MemoryPage | null>(null);
-  const [status, setStatus] = useState<'loading' | 'ready' | 'password' | 'notfound'>('loading');
-  const [passwordInput, setPasswordInput] = useState('');
-  const [passwordError, setPasswordError] = useState('');
-  const [checkingPassword, setCheckingPassword] = useState(false);
+  const [status, setStatus] = useState<'loading' | 'ready' | 'notfound'>('loading');
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
 
   useEffect(() => {
+    if (isAdminLoading) {
+      return;
+    }
+
     let cancelled = false;
 
     const loadMemoryPage = async () => {
       setStatus('loading');
-      setPasswordError('');
       setLightboxIndex(null);
 
       try {
@@ -138,15 +159,6 @@ export default function MemoryPageClient({ slug }: MemoryPageClientProps) {
         }
 
         setMemoryPage(fetchedMemoryPage);
-
-        if (!isAdminLoggedIn && fetchedMemoryPage.passwordProtected) {
-          const sessionKey = buildMemoryPasswordSessionKey(fetchedMemoryPage.slug, fetchedMemoryPage.passwordHash);
-          const hasAccess = typeof window !== 'undefined' && window.sessionStorage.getItem(sessionKey) === fetchedMemoryPage.passwordHash;
-
-          setStatus(hasAccess ? 'ready' : 'password');
-          return;
-        }
-
         setStatus('ready');
       } catch (loadError) {
         console.error(loadError);
@@ -162,7 +174,7 @@ export default function MemoryPageClient({ slug }: MemoryPageClientProps) {
     return () => {
       cancelled = true;
     };
-  }, [slug, isAdminLoggedIn]);
+  }, [isAdminLoading, isAdminLoggedIn, slug]);
 
   useEffect(() => {
     applyMemoryMetadata(memoryPage, status);
@@ -203,11 +215,15 @@ export default function MemoryPageClient({ slug }: MemoryPageClientProps) {
       }
 
       if (event.key === 'ArrowLeft') {
-        setLightboxIndex((prev) => (prev === null ? prev : (prev - 1 + orderedImages.length) % orderedImages.length));
+        setLightboxIndex((prev) =>
+          prev === null ? prev : (prev - 1 + orderedImages.length) % orderedImages.length
+        );
       }
 
       if (event.key === 'ArrowRight') {
-        setLightboxIndex((prev) => (prev === null ? prev : (prev + 1) % orderedImages.length));
+        setLightboxIndex((prev) =>
+          prev === null ? prev : (prev + 1) % orderedImages.length
+        );
       }
     };
 
@@ -237,35 +253,6 @@ export default function MemoryPageClient({ slug }: MemoryPageClientProps) {
     }
   };
 
-  const handlePasswordSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-
-    if (!memoryPage?.passwordProtected) {
-      setStatus('ready');
-      return;
-    }
-
-    try {
-      setCheckingPassword(true);
-      const hashedPassword = await hashMemoryAccessPassword(passwordInput);
-
-      if (hashedPassword !== memoryPage.passwordHash) {
-        setPasswordError('비밀번호가 올바르지 않습니다.');
-        return;
-      }
-
-      window.sessionStorage.setItem(buildMemoryPasswordSessionKey(memoryPage.slug, memoryPage.passwordHash), memoryPage.passwordHash);
-      setPasswordError('');
-      setPasswordInput('');
-      setStatus('ready');
-    } catch (passwordCheckError) {
-      console.error(passwordCheckError);
-      setPasswordError('비밀번호 확인 중 오류가 발생했습니다.');
-    } finally {
-      setCheckingPassword(false);
-    }
-  };
-
   if (status === 'notfound') {
     notFound();
   }
@@ -280,34 +267,6 @@ export default function MemoryPageClient({ slug }: MemoryPageClientProps) {
 
   if (!memoryPage) {
     return null;
-  }
-
-  if (status === 'password') {
-    return (
-      <main className={styles.page}>
-        <div className={styles.shell}>
-          <section className={`${styles.panel} ${styles.passwordPanel}`}>
-            <span className={styles.sectionLabel}>비밀번호 보호</span>
-            <h1 className={styles.sectionTitle}>추억 페이지에 비밀번호가 설정되어 있습니다.</h1>
-            <p className={styles.stateDescription}>공유 받은 비밀번호를 입력하면 결혼식의 기록을 확인할 수 있습니다.</p>
-            {memoryPage.passwordHint ? <p className={styles.passwordHint}>힌트: {memoryPage.passwordHint}</p> : null}
-            <form className={styles.passwordForm} onSubmit={handlePasswordSubmit}>
-              <input
-                className={styles.passwordInput}
-                type="password"
-                placeholder="비밀번호 입력"
-                value={passwordInput}
-                onChange={(event) => setPasswordInput(event.target.value)}
-              />
-              <button className={styles.passwordButton} type="submit" disabled={checkingPassword}>
-                {checkingPassword ? '확인 중...' : '입장하기'}
-              </button>
-            </form>
-            {passwordError ? <p className={styles.passwordError}>{passwordError}</p> : null}
-          </section>
-        </div>
-      </main>
-    );
   }
 
   return (
@@ -333,9 +292,12 @@ export default function MemoryPageClient({ slug }: MemoryPageClientProps) {
           ) : null}
           <div className={styles.heroBody}>
             <div className={styles.heroChips}>
-              {isAdminLoggedIn && (!memoryPage.enabled || memoryPage.visibility === 'private') ? <span className={styles.heroChip}>관리자 미리보기</span> : null}
-              {memoryPage.visibility === 'unlisted' ? <span className={styles.heroChip}>링크 전용</span> : null}
-              {memoryPage.passwordProtected ? <span className={styles.heroChip}>비밀번호 보호</span> : null}
+              {isAdminLoggedIn && (!memoryPage.enabled || memoryPage.visibility === 'private') ? (
+                <span className={styles.heroChip}>관리자 미리보기</span>
+              ) : null}
+              {memoryPage.visibility === 'unlisted' ? (
+                <span className={styles.heroChip}>링크 전용</span>
+              ) : null}
             </div>
             <h1 className={styles.heroTitle}>{memoryPage.title}</h1>
             {memoryPage.subtitle ? <p className={styles.heroSubtitle}>{memoryPage.subtitle}</p> : null}
@@ -360,7 +322,7 @@ export default function MemoryPageClient({ slug }: MemoryPageClientProps) {
               <strong className={styles.summaryValue}>{memoryPage.weddingDate}</strong>
             </div>
             <div className={styles.summaryItem}>
-              <span className={styles.summaryLabel}>식장명</span>
+              <span className={styles.summaryLabel}>예식 장소</span>
               <strong className={styles.summaryValue}>{memoryPage.venueName}</strong>
             </div>
             <div className={`${styles.summaryItem} ${styles.summaryWide}`}>
@@ -439,7 +401,7 @@ export default function MemoryPageClient({ slug }: MemoryPageClientProps) {
 
         <section className={`${styles.panel} ${styles.thankYouPanel}`}>
           <span className={styles.sectionLabel}>감사 인사</span>
-          <h2 className={styles.sectionTitle}>함께해주셔서 감사합니다</h2>
+          <h2 className={styles.sectionTitle}>함께해주셔서 감사합니다.</h2>
           <p className={styles.thankYouMessage}>{memoryPage.thankYouMessage}</p>
         </section>
       </div>
@@ -470,5 +432,13 @@ export default function MemoryPageClient({ slug }: MemoryPageClientProps) {
         </div>
       ) : null}
     </main>
+  );
+}
+
+export default function MemoryPageClient({ slug }: MemoryPageClientProps) {
+  return (
+    <AdminProvider>
+      <MemoryPageClientBody slug={slug} />
+    </AdminProvider>
   );
 }

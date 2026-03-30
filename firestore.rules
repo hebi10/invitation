@@ -2,8 +2,81 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return isSignedIn() &&
+        exists(/databases/$(database)/documents/admin-users/$(request.auth.uid)) &&
+        get(/databases/$(database)/documents/admin-users/$(request.auth.uid)).data.enabled != false;
+    }
+
+    function hasActiveInvitationWindow(data) {
+      return data.displayPeriodEnabled == true &&
+        data.displayPeriodStart is timestamp &&
+        data.displayPeriodEnd is timestamp &&
+        request.time >= data.displayPeriodStart &&
+        request.time <= data.displayPeriodEnd;
+    }
+
+    function isPublicInvitation(data) {
+      return data.published == true &&
+        (
+          data.displayPeriodEnabled != true ||
+          hasActiveInvitationWindow(data)
+        );
+    }
+
+    function isPublicMemoryPage(data) {
+      return data.enabled == true &&
+        (data.visibility == 'public' || data.visibility == 'unlisted');
+    }
+
+    function isValidCommentCreate() {
+      return request.resource.data.keys().hasOnly(['author', 'message', 'pageSlug', 'createdAt']) &&
+        request.resource.data.author is string &&
+        request.resource.data.author.size() > 0 &&
+        request.resource.data.author.size() <= 40 &&
+        request.resource.data.message is string &&
+        request.resource.data.message.size() > 0 &&
+        request.resource.data.message.size() <= 1000 &&
+        request.resource.data.pageSlug is string &&
+        request.resource.data.pageSlug.size() > 0 &&
+        request.resource.data.pageSlug.size() <= 120;
+    }
+
+    match /invitation-pages/{pageSlug} {
+      allow read: if isPublicInvitation(resource.data) || isAdmin();
+      allow create, update, delete: if isAdmin();
+    }
+
+    match /memory-pages/{pageSlug} {
+      allow read: if isPublicMemoryPage(resource.data) || isAdmin();
+      allow create, update, delete: if isAdmin();
+    }
+
+    match /comments/{commentId} {
+      allow read: if true;
+      allow create: if isValidCommentCreate();
+      allow update, delete: if isAdmin();
+    }
+
+    match /admin-users/{userId} {
+      allow read: if isSignedIn() && (request.auth.uid == userId || isAdmin());
+      allow create, update, delete: if isAdmin();
+    }
+
+    match /display-periods/{document=**} {
+      allow read, write: if isAdmin();
+    }
+
+    match /settings/{document=**} {
+      allow read, write: if isAdmin();
+    }
+
     match /{document=**} {
-      allow read, write: if true;
+      allow read, write: if false;
     }
   }
 }

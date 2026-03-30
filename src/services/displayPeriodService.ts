@@ -1,16 +1,8 @@
-import { 
-  collection, 
-  doc, 
-  getDoc, 
-  setDoc, 
-  updateDoc, 
-  addDoc, 
-  query, 
-  where, 
-  getDocs,
-  deleteDoc 
-} from 'firebase/firestore';
-import { ensureFirebaseInit } from '../lib/firebase';
+import {
+  getAllInvitationPages,
+  getInvitationPageBySlug,
+  updateInvitationPageVisibility,
+} from '@/services/invitationPageService';
 
 export interface DisplayPeriod {
   id?: string;
@@ -20,140 +12,96 @@ export interface DisplayPeriod {
   isActive: boolean;
   createdAt: Date;
   updatedAt: Date;
+  published?: boolean;
 }
 
-const COLLECTION_NAME = 'display-periods';
-
-// 노출 기간 조회
-export const getDisplayPeriod = async (pageSlug: string): Promise<DisplayPeriod | null> => {
-  const { db } = await ensureFirebaseInit();
-
-  try {
-    const q = query(
-      collection(db, COLLECTION_NAME),
-      where('pageSlug', '==', pageSlug)
-    );
-    
-    const querySnapshot = await getDocs(q);
-    
-    if (querySnapshot.empty) {
-      return null;
-    }
-    
-    const doc = querySnapshot.docs[0];
-    const data = doc.data();
-    
-    return {
-      id: doc.id,
-      pageSlug: data.pageSlug,
-      startDate: data.startDate?.toDate() || new Date(),
-      endDate: data.endDate?.toDate() || new Date(),
-      isActive: data.isActive || false,
-      createdAt: data.createdAt?.toDate() || new Date(),
-      updatedAt: data.updatedAt?.toDate() || new Date()
-    };
-  } catch (error) {
-    console.error('노출 기간 조회 실패:', error);
+export const getDisplayPeriod = async (
+  pageSlug: string
+): Promise<DisplayPeriod | null> => {
+  const invitationPage = await getInvitationPageBySlug(pageSlug);
+  if (!invitationPage) {
     return null;
   }
+
+  return {
+    id: invitationPage.slug,
+    pageSlug: invitationPage.slug,
+    startDate: invitationPage.displayPeriodStart ?? new Date(),
+    endDate: invitationPage.displayPeriodEnd ?? new Date(),
+    isActive: invitationPage.displayPeriodEnabled,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    published: invitationPage.published,
+  };
 };
 
-// 노출 기간 설정/업데이트
 export const setDisplayPeriod = async (
-  pageSlug: string, 
-  startDate: Date, 
-  endDate: Date, 
+  pageSlug: string,
+  startDate: Date,
+  endDate: Date,
   isActive: boolean
 ): Promise<void> => {
-  const { db } = await ensureFirebaseInit();
-  try {
-    const existing = await getDisplayPeriod(pageSlug);
-    const now = new Date();
-    
-    if (existing && existing.id) {
-      // 기존 노출 기간 업데이트
-      const docRef = doc(db, COLLECTION_NAME, existing.id);
-      await updateDoc(docRef, {
-        startDate,
-        endDate,
-        isActive,
-        updatedAt: now
-      });
-    } else {
-      // 새로운 노출 기간 생성
-      const docRef = doc(collection(db, COLLECTION_NAME));
-      await setDoc(docRef, {
-        pageSlug,
-        startDate,
-        endDate,
-        isActive,
-        createdAt: now,
-        updatedAt: now
-      });
-    }
-  } catch (error) {
-    console.error('노출 기간 설정 실패:', error);
-    throw error;
+  const invitationPage = await getInvitationPageBySlug(pageSlug);
+  if (!invitationPage) {
+    throw new Error('청첩장 문서를 찾을 수 없습니다.');
   }
+
+  await updateInvitationPageVisibility(pageSlug, {
+    published: invitationPage.published,
+    displayPeriodEnabled: isActive,
+    displayPeriodStart: isActive ? startDate : null,
+    displayPeriodEnd: isActive ? endDate : null,
+  });
 };
 
-// 모든 노출 기간 조회 (관리자용)
 export const getAllDisplayPeriods = async (): Promise<DisplayPeriod[]> => {
-  const { db } = await ensureFirebaseInit();
-  try {
-    const querySnapshot = await getDocs(collection(db, COLLECTION_NAME));
-    const periods: DisplayPeriod[] = [];
-    
-    querySnapshot.forEach((doc) => {
-      const data = doc.data();
-      periods.push({
-        id: doc.id,
-        pageSlug: data.pageSlug,
-        startDate: data.startDate?.toDate() || new Date(),
-        endDate: data.endDate?.toDate() || new Date(),
-        isActive: data.isActive || false,
-        createdAt: data.createdAt?.toDate() || new Date(),
-        updatedAt: data.updatedAt?.toDate() || new Date()
-      });
-    });
-    
-    return periods;
-  } catch (error) {
-    console.error('노출 기간 목록 조회 실패:', error);
-    return [];
-  }
+  const pages = await getAllInvitationPages();
+
+  return pages
+    .map((page) => ({
+      id: page.slug,
+      pageSlug: page.slug,
+      startDate: page.displayPeriodStart ?? new Date(),
+      endDate: page.displayPeriodEnd ?? new Date(),
+      isActive: page.displayPeriodEnabled,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      published: page.published,
+    }))
+    .sort((left, right) => left.pageSlug.localeCompare(right.pageSlug, 'ko'));
 };
 
-// 페이지가 현재 노출 가능한지 확인
 export const isPageVisible = async (pageSlug: string): Promise<boolean> => {
-  try {
-    const displayPeriod = await getDisplayPeriod(pageSlug);
-    
-    // 노출 기간 설정이 없거나 비활성화된 경우 항상 표시
-    if (!displayPeriod || !displayPeriod.isActive) {
-      return true;
-    }
-    
-    const now = new Date();
-    return now >= displayPeriod.startDate && now <= displayPeriod.endDate;
-  } catch (error) {
-    console.error('페이지 노출 여부 확인 실패:', error);
-    // 오류 발생 시 기본적으로 표시
+  const invitationPage = await getInvitationPageBySlug(pageSlug);
+
+  if (!invitationPage || !invitationPage.published) {
+    return false;
+  }
+
+  if (!invitationPage.displayPeriodEnabled) {
     return true;
   }
+
+  if (!invitationPage.displayPeriodStart || !invitationPage.displayPeriodEnd) {
+    return false;
+  }
+
+  const now = new Date();
+  return (
+    now >= invitationPage.displayPeriodStart && now <= invitationPage.displayPeriodEnd
+  );
 };
 
-// 노출 기간 삭제
 export const deleteDisplayPeriod = async (pageSlug: string): Promise<void> => {
-  const { db } = await ensureFirebaseInit();
-  try {
-    const existing = await getDisplayPeriod(pageSlug);
-    if (existing && existing.id) {
-      const docRef = doc(db, COLLECTION_NAME, existing.id);
-      await deleteDoc(docRef);
-    }
-  } catch (error) {
-    console.error('노출 기간 삭제 실패:', error);
-    throw error;
+  const invitationPage = await getInvitationPageBySlug(pageSlug);
+  if (!invitationPage) {
+    throw new Error('청첩장 문서를 찾을 수 없습니다.');
   }
+
+  await updateInvitationPageVisibility(pageSlug, {
+    published: invitationPage.published,
+    displayPeriodEnabled: false,
+    displayPeriodStart: null,
+    displayPeriodEnd: null,
+  });
 };

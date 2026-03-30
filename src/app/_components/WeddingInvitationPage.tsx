@@ -1,6 +1,6 @@
 'use client';
 
-import { getRequiredWeddingPageBySlug } from '@/config/weddingPages';
+import { AdminProvider } from '@/contexts';
 import { AccessDeniedPage } from '@/utils';
 
 import {
@@ -14,25 +14,36 @@ import {
 } from './weddingPageRenderers';
 import { useWeddingInvitationState } from './weddingPageState';
 import { type WeddingInvitationRouteOptions } from './weddingThemes';
+import { getWeddingThemeDefinition } from './weddingThemes';
+import WeddingKakaoShareButton from './WeddingKakaoShareButton';
 
-export function createWeddingInvitationPage(options: WeddingInvitationRouteOptions) {
-  const pageConfig = getRequiredWeddingPageBySlug(options.slug);
+function WeddingInvitationPageBody(options: WeddingInvitationRouteOptions) {
+  const state = useWeddingInvitationState(options);
+  const themeDefinition = getWeddingThemeDefinition(options.theme);
 
-  function WeddingInvitationPage() {
-    const state = useWeddingInvitationState(options, pageConfig);
+  if (state.access === null || !state.pageConfig) {
+    return null;
+  }
 
-    if (state.access === null) {
-      return null;
-    }
+  if (!state.access.canAccess) {
+    return <AccessDeniedPage message={state.access.message} />;
+  }
 
-    if (!state.access.canAccess) {
-      return <AccessDeniedPage message={state.access.message} />;
-    }
+  if (state.isLoading || state.imagesLoading || !state.weddingDate) {
+    return renderLoader(options.theme, state);
+  }
 
-    if (state.isLoading || state.imagesLoading) {
-      return renderLoader(options.theme, state);
-    }
+  const shareButton = (
+    <WeddingKakaoShareButton
+      title={themeDefinition.getShareTitle(state.pageConfig)}
+      description={themeDefinition.getShareDescription(state.pageConfig)}
+      imageUrl={state.pageConfig.metadata.images.wedding}
+      pageSlug={options.slug}
+      variant={themeDefinition.shareButtonVariant}
+    />
+  );
 
+  const pageContent = (() => {
     switch (options.theme) {
       case 'simple':
         return renderSimplePage(state);
@@ -48,9 +59,35 @@ export function createWeddingInvitationPage(options: WeddingInvitationRouteOptio
       default:
         return renderEmotionalPage(state);
     }
+  })();
+
+  return (
+    <>
+      {pageContent}
+      {themeDefinition.shareContainer ? (
+        <div
+          className={themeDefinition.shareContainer.className}
+          style={themeDefinition.shareContainer.style}
+        >
+          {shareButton}
+        </div>
+      ) : (
+        shareButton
+      )}
+    </>
+  );
+}
+
+export function createWeddingInvitationPage(options: WeddingInvitationRouteOptions) {
+  function WeddingInvitationPage() {
+    return (
+      <AdminProvider>
+        <WeddingInvitationPageBody {...options} />
+      </AdminProvider>
+    );
   }
 
-  WeddingInvitationPage.displayName = `${pageConfig.slug}-${options.theme}-page`;
+  WeddingInvitationPage.displayName = `${options.slug}-${options.theme}-page`;
 
   return WeddingInvitationPage;
 }

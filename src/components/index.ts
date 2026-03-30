@@ -65,7 +65,6 @@ export { default as WeddingLoader_5 } from './WeddingLoader_5';
 export { default as WeddingCountdown_5 } from './WeddingCountdown_5';
 
 export { default as ImageManager } from './ImageManager';
-export { default as ClientPasswordManager } from './ClientPasswordManager';
 export { default as DisplayPeriodManager } from './DisplayPeriodManager';
 export { default as MemoryPageManager } from './MemoryPageManager';
 

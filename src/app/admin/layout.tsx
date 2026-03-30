@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next';
 import './admin-theme.css';
 import { AdminOverlayProvider } from './_components';
+import { AdminProvider } from '@/contexts';
 
 export const metadata: Metadata = {
   title: '관리자 대시보드 | 모바일 청첩장',
@@ -23,7 +24,9 @@ export default function Layout({
 }) {
   return (
     <div data-admin-ui>
-      <AdminOverlayProvider>{children}</AdminOverlayProvider>
+      <AdminProvider>
+        <AdminOverlayProvider>{children}</AdminOverlayProvider>
+      </AdminProvider>
     </div>
   );
 }
