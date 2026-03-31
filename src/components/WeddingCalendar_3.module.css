@@ -245,9 +245,17 @@
   bottom: 2px;
   left: 50%;
   transform: translateX(-50%);
-  font-size: 0.7rem;
-  color: rgba(224, 195, 252, 0.9);
+  width: 0.75rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   animation: heartbeat 1.5s ease-in-out infinite;
+}
+
+.weddingMarkIcon {
+  width: 100%;
+  height: auto;
+  display: block;
 }
 
 @keyframes heartbeat {

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import HeartIcon_1 from './HeartIcon_1';
 import styles from './Greeting_3.module.css';
 
 interface GreetingProps {
@@ -45,7 +46,9 @@ export default function Greeting_3({
           <span className={styles.name}>{groomName}</span>
         </div>
         <div className={styles.divider}>
-          <div className={styles.heart}>♥</div>
+          <div className={styles.heart} aria-hidden="true">
+            <HeartIcon_1 className={styles.heartImage} />
+          </div>
         </div>
         <div className={styles.nameItem}>
           <span className={styles.roleLabel}>신부</span>

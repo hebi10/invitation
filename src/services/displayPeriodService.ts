@@ -18,7 +18,9 @@ export interface DisplayPeriod {
 export const getDisplayPeriod = async (
   pageSlug: string
 ): Promise<DisplayPeriod | null> => {
-  const invitationPage = await getInvitationPageBySlug(pageSlug);
+  const invitationPage = await getInvitationPageBySlug(pageSlug, {
+    includeSeedFallback: true,
+  });
   if (!invitationPage) {
     return null;
   }
@@ -41,7 +43,9 @@ export const setDisplayPeriod = async (
   endDate: Date,
   isActive: boolean
 ): Promise<void> => {
-  const invitationPage = await getInvitationPageBySlug(pageSlug);
+  const invitationPage = await getInvitationPageBySlug(pageSlug, {
+    includeSeedFallback: true,
+  });
   if (!invitationPage) {
     throw new Error('청첩장 문서를 찾을 수 없습니다.');
   }
@@ -55,7 +59,7 @@ export const setDisplayPeriod = async (
 };
 
 export const getAllDisplayPeriods = async (): Promise<DisplayPeriod[]> => {
-  const pages = await getAllInvitationPages();
+  const pages = await getAllInvitationPages({ includeSeedFallback: true });
 
   return pages
     .map((page) => ({
@@ -93,7 +97,9 @@ export const isPageVisible = async (pageSlug: string): Promise<boolean> => {
 };
 
 export const deleteDisplayPeriod = async (pageSlug: string): Promise<void> => {
-  const invitationPage = await getInvitationPageBySlug(pageSlug);
+  const invitationPage = await getInvitationPageBySlug(pageSlug, {
+    includeSeedFallback: true,
+  });
   if (!invitationPage) {
     throw new Error('청첩장 문서를 찾을 수 없습니다.');
   }

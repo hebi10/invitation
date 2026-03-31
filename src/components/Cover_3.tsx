@@ -28,37 +28,42 @@ export default function Cover_3({
   imageUrl,
   groomName,
   brideName,
-  preloadComplete = false
+  preloadComplete = false,
 }: CoverProps) {
-  const [mounted, setMounted] = useState(false);
-  const [imageLoaded, setImageLoaded] = useState(false);
-  const [showContent, setShowContent] = useState(false);
+  const [imageLoaded, setImageLoaded] = useState(preloadComplete);
+  const [showContent, setShowContent] = useState(preloadComplete);
 
   useEffect(() => {
-    setMounted(true);
     if (preloadComplete) {
-      setTimeout(() => setShowContent(true), 300);
+      setImageLoaded(true);
+      setShowContent(true);
     }
+
+    return undefined;
   }, [preloadComplete]);
 
   useEffect(() => {
     if (imageUrl && imageLoaded && !showContent) {
-      setTimeout(() => setShowContent(true), 300);
+      const timer = window.setTimeout(() => setShowContent(true), 300);
+      return () => window.clearTimeout(timer);
     }
+
+    return undefined;
   }, [imageLoaded, imageUrl, showContent]);
 
   return (
     <section className={styles.container}>
-      {/* 우주 배경 */}
       <div className={styles.spaceBackground}>
         <div className={styles.stars}></div>
         <div className={styles.starsLayer2}></div>
         <div className={styles.starsLayer3}></div>
       </div>
 
-      {/* 메인 이미지 */}
-      <div className={`${styles.imageWrapper} ${showContent ? styles.fadeIn : ''}`}>
-        {imageUrl && (
+      <div
+        className={`${styles.imageWrapper} ${!preloadComplete && showContent ? styles.fadeIn : ''}`}
+        style={preloadComplete ? { opacity: 1, transform: 'scale(1)' } : undefined}
+      >
+        {imageUrl ? (
           <Image
             src={imageUrl}
             alt={`${groomName}와 ${brideName}의 결혼식`}
@@ -70,18 +75,20 @@ export default function Cover_3({
             onLoad={() => setImageLoaded(true)}
             style={{ objectFit: 'cover' }}
           />
-        )}
+        ) : null}
         <div className={styles.imageOverlay}></div>
       </div>
 
-      {/* 텍스트 콘텐츠 */}
-      <div className={`${styles.content} ${showContent ? styles.slideUp : ''}`}>
+      <div
+        className={`${styles.content} ${!preloadComplete && showContent ? styles.slideUp : ''}`}
+        style={preloadComplete ? { opacity: 1, transform: 'translateY(0)' } : undefined}
+      >
         <h1 className={styles.title}>
           <span className={styles.titleGlow}>{title}</span>
         </h1>
-        
+
         <p className={styles.subtitle}>{subtitle}</p>
-        
+
         <div className={styles.dateWrapper}>
           <div className={styles.dateLine}></div>
           <p className={styles.date}>{weddingDate}</p>
@@ -93,12 +100,12 @@ export default function Cover_3({
             <span className={styles.infoLabel}>시간</span>
             <span className={styles.infoValue}>{ceremonyTime ?? '오후 예식'}</span>
           </div>
-          {venueName && (
+          {venueName ? (
             <div className={styles.infoRow}>
               <span className={styles.infoLabel}>장소</span>
               <span className={styles.infoValue}>{venueName}</span>
             </div>
-          )}
+          ) : null}
         </div>
 
         <button
@@ -109,14 +116,12 @@ export default function Cover_3({
           예식 정보 보기
         </button>
 
-        {/* 행성 장식 */}
         <div className={styles.planets}>
           <div className={styles.planet1}></div>
           <div className={styles.planet2}></div>
         </div>
       </div>
 
-      {/* 스크롤 인디케이터 */}
       <div className={styles.scrollIndicator}>
         <div className={styles.scrollArrow}></div>
       </div>

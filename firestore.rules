@@ -62,6 +62,12 @@ service cloud.firestore {
       allow update, delete: if isAdmin();
     }
 
+    match /{legacyCollection}/{commentId} {
+      allow read: if legacyCollection.matches('comments-.*');
+      allow delete: if legacyCollection.matches('comments-.*') && isAdmin();
+      allow create, update: if false;
+    }
+
     match /admin-users/{userId} {
       allow read: if isSignedIn() && (request.auth.uid == userId || isAdmin());
       allow create, update, delete: if isAdmin();

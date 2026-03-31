@@ -25,7 +25,6 @@ export default function Guestbook_2({ pageId, pageSlug }: GuestbookProps) {
         success: '#2d6a4f',
         error: '#c0392b',
       }}
-      emptyIcon="♡"
     />
   );
 }

@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import Image from 'next/image';
 
 import { copyTextToClipboard } from '@/utils';
 
@@ -25,6 +26,14 @@ declare global {
     kakaoMapInstance?: any; // ✅ 카카오맵 인스턴스 저장용
   }
 }
+
+const venueInfoIconPaths = {
+  header: '/images/001.png',
+  venue: '/images/002.png',
+  address: '/images/003.png',
+  contact: '/images/004.png',
+  transit: '/images/005.png',
+} as const;
 
 export default function LocationMap({ 
   venueName, 
@@ -251,25 +260,53 @@ export default function LocationMap({
         {/* 예식장 정보 섹션 */}
         <div className={styles.venueInfoSection}>
           <div className={styles.venueInfoHeader}>
-            <span className={styles.venueInfoIcon}>💒</span>
+            <Image
+              src={venueInfoIconPaths.header}
+              alt=""
+              aria-hidden="true"
+              width={42}
+              height={42}
+              className={styles.venueInfoHeaderIconImage}
+            />
             <h3 className={styles.venueInfoTitle}>예식장 정보</h3>
           </div>
           
           <div className={styles.venueDetails}>
             <div className={styles.venueMainInfo}>
               <div className={styles.venueNameSection}>
-                <span className={styles.venueIcon}>🏛️</span>
+                <Image
+                  src={venueInfoIconPaths.venue}
+                  alt=""
+                  aria-hidden="true"
+                  width={34}
+                  height={34}
+                  className={styles.venueInfoItemIconImage}
+                />
                 <span className={styles.venueName}>{venueName}</span>
               </div>
               
               <div className={styles.venueAddressSection}>
-                <span className={styles.addressIcon}>📍</span>
+                <Image
+                  src={venueInfoIconPaths.address}
+                  alt=""
+                  aria-hidden="true"
+                  width={34}
+                  height={34}
+                  className={styles.venueInfoItemIconImage}
+                />
                 <span className={styles.venueAddress}>{address}</span>
               </div>
               
               {contact && (
                 <div className={styles.venueContactSection}>
-                  <span className={styles.contactIcon}>📞</span>
+                  <Image
+                    src={venueInfoIconPaths.contact}
+                    alt=""
+                    aria-hidden="true"
+                    width={34}
+                    height={34}
+                    className={styles.venueInfoItemIconImage}
+                  />
                   <a href={`tel:${contact.replace(/-/g, '')}`} className={styles.venueContact}>
                     {contact}
                   </a>
@@ -278,7 +315,14 @@ export default function LocationMap({
               
               {description && (
                 <div className={styles.venueDescriptionSection}>
-                  <span className={styles.descIcon}>🚇</span>
+                  <Image
+                    src={venueInfoIconPaths.transit}
+                    alt=""
+                    aria-hidden="true"
+                    width={34}
+                    height={34}
+                    className={styles.venueInfoItemIconImage}
+                  />
                   <span className={styles.venueDescription}>{description}</span>
                 </div>
               )}

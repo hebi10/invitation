@@ -145,9 +145,17 @@
 }
 
 .heart {
-  font-size: 1.5rem;
-  color: rgba(224, 195, 252, 0.8);
+  width: 1.4rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   animation: heartbeat 2s ease-in-out infinite;
+}
+
+.heartImage {
+  width: 100%;
+  height: auto;
+  display: block;
 }
 
 @keyframes heartbeat {

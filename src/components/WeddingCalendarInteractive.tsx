@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
+import HeartIcon from './HeartIcon';
 
 interface CalendarEvent {
   date: number;
@@ -100,7 +101,9 @@ export default function WeddingCalendarInteractive({
             </div>
           )}
           {isWeddingDay && showWeddingIcon && 'weddingIcon' in styles && (
-            <div className={styles.weddingIcon}>♥</div>
+            <div className={styles.weddingIcon}>
+              <HeartIcon className={'weddingIconImage' in styles ? styles.weddingIconImage : undefined} />
+            </div>
           )}
         </div>,
       );
@@ -160,7 +163,9 @@ export default function WeddingCalendarInteractive({
 
       {showWeddingInfo && weddingDate && 'weddingInfo' in styles && 'weddingText' in styles && 'weddingIcon' in styles && (
         <div className={styles.weddingInfo}>
-          <span className={styles.weddingIcon}>♥</span>
+          <span className={styles.weddingIcon}>
+            <HeartIcon className={'weddingIconImage' in styles ? styles.weddingIconImage : undefined} />
+          </span>
           <span className={styles.weddingText}>
             결혼식 날짜:{' '}
             {weddingDate.toLocaleDateString('ko-KR', {

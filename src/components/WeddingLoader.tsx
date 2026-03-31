@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import HeartIcon_1 from './HeartIcon_1';
 import styles from './WeddingLoader.module.css';
 
 interface WeddingLoaderProps {
@@ -11,10 +12,10 @@ interface WeddingLoaderProps {
 }
 
 const loadingMessages = [
-  '설레는 순간을 준비하고 있어요...',
-  '대표 이미지를 불러오고 있어요...',
-  '페이지를 부드럽게 여는 중이에요...',
-  '곧 청첩장을 보여드릴게요.',
+  '소중한 초대를 준비하고 있어요...',
+  '모바일 청첩장을 여는 중이에요...',
+  '두 분의 특별한 순간을 불러오고 있어요...',
+  '곧 청첩장이 열립니다.',
 ];
 
 function preloadSingleImage(imageUrl: string) {
@@ -109,7 +110,9 @@ export default function WeddingLoader({
   return (
     <div className={styles.loaderContainer}>
       <div className={styles.heartContainer}>
-        <div className={styles.heart}></div>
+        <div className={styles.heart}>
+          <HeartIcon_1 className={styles.heartImage} priority />
+        </div>
         <div className={styles.sparkles}>
           <div className={styles.sparkle}></div>
           <div className={styles.sparkle}></div>

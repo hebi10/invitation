@@ -46,11 +46,13 @@ const buttonVariantStyles = {
     hoverBoxShadow: '0 12px 28px rgba(87, 67, 32, 0.12)',
   },
   space: {
-    background: 'linear-gradient(135deg, rgba(142, 197, 252, 0.18) 0%, rgba(224, 195, 252, 0.22) 100%)',
+    background:
+      'linear-gradient(135deg, rgba(142, 197, 252, 0.18) 0%, rgba(224, 195, 252, 0.22) 100%)',
     color: '#f5f8ff',
     borderColor: 'rgba(200, 220, 255, 0.24)',
     boxShadow: '0 12px 30px rgba(53, 83, 140, 0.22)',
-    hoverBackground: 'linear-gradient(135deg, rgba(142, 197, 252, 0.26) 0%, rgba(224, 195, 252, 0.3) 100%)',
+    hoverBackground:
+      'linear-gradient(135deg, rgba(142, 197, 252, 0.26) 0%, rgba(224, 195, 252, 0.3) 100%)',
     hoverBoxShadow: '0 14px 34px rgba(53, 83, 140, 0.32)',
   },
 } as const;
@@ -67,6 +69,10 @@ export default function WeddingKakaoShareButton({
   const { mainImage } = usePageImages(pageSlug);
   const shareImageUrl = mainImage?.url || imageUrl;
   const variantStyle = buttonVariantStyles[variant];
+  const kakaoAppKey =
+    process.env.NEXT_PUBLIC_KAKAO_JAVASCRIPT_KEY ||
+    process.env.NEXT_PUBLIC_KAKAO_MAP_API_KEY ||
+    '';
 
   useEffect(() => {
     const initKakao = () => {
@@ -74,8 +80,13 @@ export default function WeddingKakaoShareButton({
         return;
       }
 
+      if (!kakaoAppKey) {
+        console.warn('[WeddingKakaoShareButton] missing Kakao JavaScript key');
+        return;
+      }
+
       if (!window.Kakao.isInitialized()) {
-        window.Kakao.init(process.env.NEXT_PUBLIC_KAKAO_MAP_API_KEY);
+        window.Kakao.init(kakaoAppKey);
       }
 
       if (window.Kakao.Share) {
@@ -103,7 +114,7 @@ export default function WeddingKakaoShareButton({
       window.clearInterval(checkKakao);
       window.clearTimeout(timeout);
     };
-  }, []);
+  }, [kakaoAppKey]);
 
   useEffect(() => {
     if (!feedbackMessage) {
@@ -119,10 +130,17 @@ export default function WeddingKakaoShareButton({
   }, [feedbackMessage]);
 
   const handleKakaoShare = () => {
-    if (!(window.Kakao && window.Kakao.Share && isKakaoReady)) {
-      setFeedbackMessage('공유 준비 중입니다');
+    if (!kakaoAppKey) {
+      setFeedbackMessage('카카오 공유 키가 설정되지 않았습니다');
       return;
     }
+
+    if (!(window.Kakao && window.Kakao.Share && isKakaoReady)) {
+      setFeedbackMessage('카카오 공유를 준비 중입니다');
+      return;
+    }
+
+    const shareUrl = `${window.location.origin}${window.location.pathname}`;
 
     window.Kakao.Share.sendDefault({
       objectType: 'feed',
@@ -131,22 +149,22 @@ export default function WeddingKakaoShareButton({
         description,
         imageUrl: shareImageUrl,
         link: {
-          mobileWebUrl: window.location.href,
-          webUrl: window.location.href,
+          mobileWebUrl: shareUrl,
+          webUrl: shareUrl,
         },
       },
       buttons: [
         {
           title: '청첩장 보기',
           link: {
-            mobileWebUrl: window.location.href,
-            webUrl: window.location.href,
+            mobileWebUrl: shareUrl,
+            webUrl: shareUrl,
           },
         },
       ],
     });
 
-    setFeedbackMessage('공유창 열기');
+    setFeedbackMessage('카카오 공유창을 열었습니다');
   };
 
   return (
@@ -162,6 +180,7 @@ export default function WeddingKakaoShareButton({
     >
       <button
         onClick={handleKakaoShare}
+        type="button"
         style={{
           ...buttonBaseStyle,
           background: variantStyle.background,
@@ -189,7 +208,8 @@ export default function WeddingKakaoShareButton({
             display: 'inline-flex',
             alignItems: 'center',
             justifyContent: 'center',
-            background: variant === 'space' ? 'rgba(255,255,255,0.14)' : 'rgba(59,45,22,0.08)',
+            background:
+              variant === 'space' ? 'rgba(255,255,255,0.14)' : 'rgba(59,45,22,0.08)',
             fontSize: '0.82rem',
             fontWeight: 700,
           }}
@@ -198,18 +218,21 @@ export default function WeddingKakaoShareButton({
         </span>
         <span>{buttonLabel}</span>
       </button>
-      {feedbackMessage && (
+      {feedbackMessage ? (
         <p
           style={{
             margin: 0,
             textAlign: 'center',
             fontSize: '0.84rem',
-            color: variant === 'space' ? 'rgba(245, 248, 255, 0.76)' : 'rgba(59, 45, 22, 0.72)',
+            color:
+              variant === 'space'
+                ? 'rgba(245, 248, 255, 0.76)'
+                : 'rgba(59, 45, 22, 0.72)',
           }}
         >
           {feedbackMessage}
         </p>
-      )}
+      ) : null}
     </div>
   );
 }

@@ -8,6 +8,8 @@ export default [
       'out/**',
       'node_modules/**',
       'coverage/**',
+      'playwright-report/**',
+      'test-results/**',
     ],
   },
   ...nextCoreWebVitals,

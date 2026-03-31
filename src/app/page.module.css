@@ -92,6 +92,104 @@
   }
 }
 
+.contentSection {
+  width: 100%;
+  max-width: 920px;
+  position: relative;
+  z-index: 1;
+  background: rgba(255, 255, 255, 0.82);
+  border: 1px solid rgba(141, 110, 99, 0.12);
+  border-radius: 28px;
+  padding: 2rem 1.35rem;
+  box-shadow: 0 20px 45px rgba(139, 110, 99, 0.14);
+  backdrop-filter: blur(10px);
+}
+
+@media (min-width: 700px) {
+  .contentSection {
+    padding: 2.75rem 2.5rem;
+  }
+}
+
+.sectionBadge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 1rem;
+  padding: 0.45rem 0.95rem;
+  border-radius: 999px;
+  background: rgba(212, 165, 116, 0.12);
+  border: 1px solid rgba(212, 165, 116, 0.2);
+  color: var(--primary-color);
+  font-family: var(--font-gowun-dodum);
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+}
+
+.sectionTitle {
+  font-family: var(--font-display);
+  font-size: clamp(1.65rem, 5vw, 2.45rem);
+  line-height: 1.35;
+  color: var(--text-primary);
+  margin: 0 0 1rem;
+  word-break: keep-all;
+}
+
+.sectionDescription {
+  font-family: var(--font-gowun-dodum);
+  font-size: clamp(0.98rem, 2.8vw, 1.1rem);
+  line-height: 1.85;
+  color: var(--text-secondary);
+  max-width: 680px;
+  margin: 0 auto 1.75rem;
+  word-break: keep-all;
+}
+
+.featuresGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.85rem;
+  list-style: none;
+  padding: 0;
+  margin: 0 0 1.75rem;
+}
+
+@media (min-width: 700px) {
+  .featuresGrid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 1rem;
+  }
+}
+
+.featureItem {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 88px;
+  padding: 1rem 0.9rem;
+  border-radius: 20px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.92) 0%, rgba(247, 241, 233, 0.98) 100%);
+  border: 1px solid rgba(212, 165, 116, 0.18);
+  box-shadow: 0 10px 22px rgba(139, 110, 99, 0.08);
+  font-family: var(--font-gowun-dodum);
+  font-size: 0.96rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  word-break: keep-all;
+  line-height: 1.5;
+}
+
+.sectionFooter {
+  font-family: var(--font-gowun-dodum);
+  font-size: clamp(0.95rem, 2.6vw, 1.02rem);
+  color: var(--text-secondary);
+  margin: 0;
+  line-height: 1.7;
+  word-break: keep-all;
+}
+
 .pagesGrid {
   display: grid;
   grid-template-columns: 1fr;
@@ -207,6 +305,9 @@
   display: flex;
   justify-content: center;
   gap: 1rem;
+  flex-wrap: wrap;
+  position: relative;
+  z-index: 1;
 }
 
 .adminButton, .linkButton {
@@ -234,6 +335,12 @@
 }
 
 .adminButton:hover {
+  background: linear-gradient(135deg, var(--secondary-color) 0%, var(--primary-color) 100%);
+  transform: translateY(-3px);
+  box-shadow: 0 8px 25px rgba(212, 165, 116, 0.4);
+}
+
+.linkButton:hover {
   background: linear-gradient(135deg, var(--secondary-color) 0%, var(--primary-color) 100%);
   transform: translateY(-3px);
   box-shadow: 0 8px 25px rgba(212, 165, 116, 0.4);

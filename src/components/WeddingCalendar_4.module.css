@@ -122,7 +122,7 @@
 .day:not(.empty):hover {
   background: rgba(31, 90, 255, 0.05);
   border-color: var(--primary);
-  transform: scale(1.05);
+  
 }
 
 .day.empty {
@@ -158,6 +158,12 @@
   left: 50%;
   transform: translateX(-50%);
   font-size: 0.75rem;
+}
+
+.weddingMarkerIcon {
+  width: 0.75rem;
+  height: auto;
+  display: block;
 }
 
 /* 반응형 */
@@ -199,6 +205,10 @@
 
   .weddingMarker {
     font-size: 0.625rem;
+  }
+
+  .weddingMarkerIcon {
+    width: 0.625rem;
   }
 }
 
@@ -255,5 +265,9 @@
   .weddingMarker {
     font-size: 0.5rem;
     bottom: 1px;
+  }
+
+  .weddingMarkerIcon {
+    width: 0.5rem;
   }
 }

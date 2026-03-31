@@ -36,7 +36,10 @@ export default function DisplayPeriodManager({
     try {
       setIsLoading(true);
       setError('');
-      const [nextPeriods, nextPages] = await Promise.all([getAllDisplayPeriods(), getAllInvitationPages()]);
+      const [nextPeriods, nextPages] = await Promise.all([
+        getAllDisplayPeriods(),
+        getAllInvitationPages({ includeSeedFallback: true }),
+      ]);
       setPeriods(nextPeriods);
       setPages(nextPages);
     } catch (loadError) {

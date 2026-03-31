@@ -38,7 +38,7 @@ const defaultShareContainer = {
     backgroundColor: '#fff',
     borderBottom: '1px solid #f0f0f0',
     padding: '10px 0',
-    display: 'none',
+    display: 'block',
   },
 } satisfies WeddingThemeDefinition['shareContainer'];
 
@@ -48,7 +48,7 @@ const spaceShareContainer = {
     backgroundColor: '#0a0e27',
     borderBottom: '1px solid rgba(142, 197, 252, 0.2)',
     padding: '10px 0',
-    display: 'none',
+    display: 'block',
   },
 } satisfies WeddingThemeDefinition['shareContainer'];
 

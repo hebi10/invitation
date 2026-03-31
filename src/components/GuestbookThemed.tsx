@@ -1,8 +1,11 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { type ReactNode, useEffect, useMemo, useState } from 'react';
+
 import { useAdmin } from '@/contexts';
 import { addComment, deleteComment, getComments, type Comment } from '@/services/commentService';
+import HeartIcon from './HeartIcon';
+import HeartIcon_1 from './HeartIcon_1';
 
 interface GuestbookThemedProps {
   pageSlug: string;
@@ -13,7 +16,7 @@ interface GuestbookThemedProps {
     success: string;
     error: string;
   };
-  emptyIcon?: string;
+  emptyIcon?: ReactNode;
 }
 
 type StatusTone = 'success' | 'error';
@@ -26,13 +29,21 @@ function formatDate(date: Date) {
   });
 }
 
+function cx(...classNames: Array<string | undefined | null | false>) {
+  return classNames.filter(Boolean).join(' ');
+}
+
+function hasClass(styles: Record<string, string>, className: string) {
+  return Boolean(styles[className]);
+}
+
 export default function GuestbookThemed({
   pageSlug,
   styles,
   title,
   subtitle,
   statusColors,
-  emptyIcon = '♡',
+  emptyIcon,
 }: GuestbookThemedProps) {
   const { isAdminLoggedIn } = useAdmin();
 
@@ -47,7 +58,27 @@ export default function GuestbookThemed({
 
   const commentsPerPage = 5;
   const totalPages = Math.max(1, Math.ceil(comments.length / commentsPerPage));
-  const currentComments = comments.slice((currentPage - 1) * commentsPerPage, currentPage * commentsPerPage);
+  const currentComments = comments.slice(
+    (currentPage - 1) * commentsPerPage,
+    currentPage * commentsPerPage
+  );
+
+  const commentsSectionClassName = styles.commentsSection;
+  const commentsListClassName = styles.commentsList;
+  const commentsGridClassName = styles.commentsGrid;
+  const commentsCountClassName = styles.commentsCount ?? styles.commentCount;
+  const formShellClassName = cx(styles.formContainer, styles.formCard);
+  const authorIconClassName = styles.authorIcon ?? styles.commentAuthorIcon;
+  const authorNameClassName = styles.authorName ?? styles.commentName ?? styles.commentAuthor;
+  const pageNumberClassName = styles.pageNumber ?? styles.pageButton;
+  const activePageClassName = styles.active ?? styles.pageButtonActive;
+  const resolvedEmptyIcon =
+    emptyIcon ??
+    (
+      <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', lineHeight: 0 }}>
+        <HeartIcon_1 width={14} height={12} />
+      </span>
+    );
 
   const showStatus = (messageText: string, tone: StatusTone) => {
     setStatusTone(tone);
@@ -118,7 +149,7 @@ export default function GuestbookThemed({
     }
   };
 
-  const handleDelete = async (commentId: string) => {
+  const handleDelete = async (comment: Comment) => {
     if (!isAdminLoggedIn) {
       showStatus('관리자만 댓글을 삭제할 수 있습니다.', 'error');
       return;
@@ -129,7 +160,7 @@ export default function GuestbookThemed({
     }
 
     try {
-      await deleteComment(commentId);
+      await deleteComment(comment.id, comment.collectionName);
       await loadComments();
       showStatus('메시지를 삭제했습니다.', 'success');
     } catch (error) {
@@ -150,139 +181,392 @@ export default function GuestbookThemed({
     }
 
     if (currentPage >= totalPages - sidePages) {
-      return Array.from({ length: maxPages }, (_, index) => totalPages - maxPages + index + 1);
+      return Array.from(
+        { length: maxPages },
+        (_, index) => totalPages - maxPages + index + 1
+      );
     }
 
     return Array.from({ length: maxPages }, (_, index) => currentPage - sidePages + index);
   }, [currentPage, isMobile, totalPages]);
 
-  return (
-    <section className={styles.container}>
-      <h2 className={styles.title}>{title}</h2>
-      <p className={styles.subtitle}>{subtitle}</p>
+  const renderStatus = () => {
+    if (!statusMessage) {
+      return null;
+    }
 
-      {isAdminLoggedIn ? (
-        <div
-          style={{
-            display: 'flex',
-            justifyContent: 'center',
-            marginBottom: '1rem',
-          }}
-        >
-          <span
-            style={{
-              fontSize: '0.85rem',
-              fontWeight: 700,
-              color: statusColors.success,
-            }}
-          >
-            Admin mode: delete enabled
+    if (statusTone === 'error' && styles.errorMessage) {
+      return <p className={styles.errorMessage}>{statusMessage}</p>;
+    }
+
+    return (
+      <p
+        style={{
+          margin: '0 0 1rem',
+          textAlign: 'center',
+          color: statusTone === 'error' ? statusColors.error : statusColors.success,
+          fontSize: '0.92rem',
+          fontWeight: 600,
+        }}
+      >
+        {statusMessage}
+      </p>
+    );
+  };
+
+  const renderHeader = () => {
+    const titleContent = (
+      <>
+        <h2 className={styles.title}>{title}</h2>
+      </>
+    );
+
+    const titleBlock = hasClass(styles, 'titleSection') ? (
+      <div className={styles.titleSection}>{titleContent}</div>
+    ) : (
+      titleContent
+    );
+
+    const content = (
+      <>
+        {hasClass(styles, 'lemonDecoration') ? (
+          <div className={styles.lemonDecoration}>🍋</div>
+        ) : null}
+        {titleBlock}
+        <p className={styles.subtitle}>{subtitle}</p>
+      </>
+    );
+
+    return styles.header ? <div className={styles.header}>{content}</div> : content;
+  };
+
+  const renderForm = () => {
+    const content = (
+      <>
+        {hasClass(styles, 'cardGlow') ? <div className={styles.cardGlow} /> : null}
+        {hasClass(styles, 'formHeader') ? (
+          <div className={styles.formHeader}>
+            {hasClass(styles, 'formIcon') ? <span className={styles.formIcon}>✦</span> : null}
+            {hasClass(styles, 'formTitle') ? (
+              <p className={styles.formTitle}>따뜻한 축하의 마음을 남겨주세요</p>
+            ) : null}
+          </div>
+        ) : null}
+
+        <form className={styles.form} onSubmit={handleSubmit}>
+          <div className={cx(styles.formRow, styles.inputGroup)}>
+            {hasClass(styles, 'label') ? (
+              <label className={styles.label}>
+                {hasClass(styles, 'labelIcon') ? (
+                  <span className={styles.labelIcon}>✦</span>
+                ) : null}
+                이름
+              </label>
+            ) : null}
+            <input
+              type="text"
+              className={styles.input}
+              placeholder="이름"
+              value={name}
+              onChange={(event) => setName(event.target.value)}
+              maxLength={20}
+              required
+            />
+          </div>
+
+          <div className={cx(styles.formRow, styles.inputGroup)}>
+            {hasClass(styles, 'label') ? (
+              <label className={styles.label}>
+                {hasClass(styles, 'labelIcon') ? (
+                  <span className={styles.labelIcon}>✎</span>
+                ) : null}
+                메시지
+              </label>
+            ) : null}
+            <textarea
+              className={styles.textarea}
+              placeholder="축하 메시지를 남겨주세요."
+              value={message}
+              onChange={(event) => setMessage(event.target.value)}
+              maxLength={500}
+              rows={4}
+              required
+            />
+          </div>
+
+          {hasClass(styles, 'guideText') ? (
+            <div className={styles.guideText}>
+              <p className={styles.guideMessage}>
+                {hasClass(styles, 'guideIcon') ? (
+                  <span className={styles.guideIcon}>✦</span>
+                ) : null}
+                축하의 마음을 편하게 남겨주세요.
+              </p>
+              <p className={styles.limitMessage}>
+                {hasClass(styles, 'limitIcon') ? (
+                  <span className={styles.limitIcon}>•</span>
+                ) : null}
+                최대 500자까지 작성할 수 있습니다.
+              </p>
+            </div>
+          ) : null}
+
+          <button type="submit" className={styles.submitButton} disabled={loading}>
+            {hasClass(styles, 'buttonIcon') ? (
+              <HeartIcon className={styles.pointHeart} />
+            ) : null}
+            {hasClass(styles, 'buttonText') ? (
+              <span className={styles.buttonText}>
+                {loading ? '등록 중...' : '메시지 남기기'}
+              </span>
+            ) : (
+              loading ? '등록 중...' : '메시지 남기기'
+            )}
+          </button>
+        </form>
+      </>
+    );
+
+    return formShellClassName ? <div className={formShellClassName}>{content}</div> : content;
+  };
+
+  const renderCommentsHeader = () => (
+    <div className={styles.commentsHeader}>
+      {hasClass(styles, 'commentsCountSection') ? (
+        <div className={styles.commentsCountSection}>
+          {hasClass(styles, 'commentsIcon') ? (
+            <span className={styles.commentsIcon}>{resolvedEmptyIcon}</span>
+          ) : null}
+          <span className={commentsCountClassName}>
+            총 <strong>{comments.length}</strong>개의 메시지
           </span>
         </div>
+      ) : (
+        <span className={commentsCountClassName}>
+          총 <strong>{comments.length}</strong>개의 메시지
+        </span>
+      )}
+
+      {styles.pageInfo && totalPages > 1 ? (
+        <span className={styles.pageInfo}>
+          {currentPage} / {totalPages}
+        </span>
       ) : null}
+    </div>
+  );
 
-      {statusMessage ? (
-        <p
-          style={{
-            margin: '0 0 1rem',
-            textAlign: 'center',
-            color: statusTone === 'error' ? statusColors.error : statusColors.success,
-            fontSize: '0.92rem',
-            fontWeight: 600,
-          }}
-        >
-          {statusMessage}
-        </p>
-      ) : null}
+  const renderCommentContent = (comment: Comment) => {
+    const body = hasClass(styles, 'commentContent') ? (
+      <div className={styles.commentContent}>
+        {hasClass(styles, 'commentQuote') ? (
+          <span className={styles.commentQuote}>“</span>
+        ) : null}
+        <p className={styles.commentMessage}>{comment.message}</p>
+        {hasClass(styles, 'commentQuote') ? (
+          <span className={styles.commentQuote}>”</span>
+        ) : null}
+      </div>
+    ) : (
+      <p className={styles.commentMessage}>{comment.message}</p>
+    );
 
-      <form className={styles.form} onSubmit={handleSubmit}>
-        <input
-          type="text"
-          className={styles.input}
-          placeholder="이름"
-          value={name}
-          onChange={(event) => setName(event.target.value)}
-          maxLength={20}
-          required
-        />
-        <textarea
-          className={styles.textarea}
-          placeholder="축하 메시지를 남겨주세요."
-          value={message}
-          onChange={(event) => setMessage(event.target.value)}
-          maxLength={500}
-          rows={4}
-          required
-        />
-        <button type="submit" className={styles.submitButton} disabled={loading}>
-          {loading ? '등록 중...' : '메시지 남기기'}
-        </button>
-      </form>
-
-      <div className={styles.commentsList}>
-        <div className={styles.commentsHeader}>
-          <span className={styles.commentsCount}>총 {comments.length}개의 메시지</span>
-        </div>
-
-        {currentComments.length > 0 ? (
-          currentComments.map((comment) => (
-            <div key={comment.id} className={styles.commentItem}>
-              <div className={styles.commentHeader}>
-                <div className={styles.commentAuthor}>
-                  {'authorIcon' in styles ? <span className={styles.authorIcon}>{emptyIcon}</span> : null}
-                  <span className={styles.authorName ?? styles.commentName ?? styles.commentAuthor}>{comment.author}</span>
-                </div>
-                <div className={styles.commentActions}>
-                  <span className={styles.commentDate}>{formatDate(comment.createdAt)}</span>
-                  {isAdminLoggedIn ? (
-                    <button className={styles.deleteButton} onClick={() => void handleDelete(comment.id)} type="button">
-                      삭제
-                    </button>
-                  ) : null}
-                </div>
-              </div>
-              <p className={styles.commentMessage}>{comment.message}</p>
-            </div>
-          ))
+    const header = (
+      <div className={styles.commentHeader}>
+        {hasClass(styles, 'commentAuthorSection') ? (
+          <div className={styles.commentAuthorSection}>
+            {authorIconClassName ? (
+              <span className={authorIconClassName}>{resolvedEmptyIcon}</span>
+            ) : null}
+            <span className={authorNameClassName}>{comment.author}</span>
+          </div>
         ) : (
-          <div className={styles.emptyState}>
-            {'emptyIcon' in styles ? <span className={styles.emptyIcon}>{emptyIcon}</span> : null}
-            <p className={styles.emptyText}>첫 축하 메시지를 남겨주세요.</p>
+          <div className={styles.commentAuthor}>
+            {authorIconClassName ? <span className={authorIconClassName}>{resolvedEmptyIcon}</span> : null}
+            <span className={authorNameClassName}>{comment.author}</span>
           </div>
         )}
+
+        <div className={styles.commentActions}>
+          {hasClass(styles, 'commentDateSection') ? (
+            <div className={styles.commentDateSection}>
+              <span className={styles.commentDate}>{formatDate(comment.createdAt)}</span>
+            </div>
+          ) : (
+            <span className={styles.commentDate}>{formatDate(comment.createdAt)}</span>
+          )}
+
+          {isAdminLoggedIn ? (
+            <button
+              className={styles.deleteButton}
+              onClick={() => void handleDelete(comment)}
+              type="button"
+            >
+              삭제
+            </button>
+          ) : null}
+        </div>
       </div>
+    );
 
-      {totalPages > 1 ? (
-        <div className={styles.pagination}>
-          <button
-            className={`${styles.pageButton} ${currentPage === 1 ? styles.disabled ?? '' : ''}`}
-            onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
-            disabled={currentPage === 1}
-            type="button"
-          >
-            이전
-          </button>
+    const content = (
+      <>
+        {header}
+        {body}
+      </>
+    );
 
+    if (styles.commentCard) {
+      return (
+        <div
+          key={`${comment.collectionName ?? 'comments'}:${comment.id}`}
+          className={styles.commentItem}
+        >
+          <article className={styles.commentCard}>{content}</article>
+        </div>
+      );
+    }
+
+    return (
+      <article
+        key={`${comment.collectionName ?? 'comments'}:${comment.id}`}
+        className={styles.commentItem}
+      >
+        {content}
+      </article>
+    );
+  };
+
+  const renderEmptyState = () => (
+    <div className={styles.emptyState}>
+      {hasClass(styles, 'emptyIcon') ? <span className={styles.emptyIcon}>{emptyIcon}</span> : null}
+      {hasClass(styles, 'emptyMessage') ? (
+        <p className={styles.emptyMessage}>첫 축하 메시지를 남겨주세요.</p>
+      ) : null}
+      {hasClass(styles, 'emptySubMessage') ? (
+        <p className={styles.emptySubMessage}>따뜻한 마음을 기다리고 있습니다.</p>
+      ) : null}
+      {!hasClass(styles, 'emptyMessage') ? (
+        <p className={styles.emptyText}>첫 축하 메시지를 남겨주세요.</p>
+      ) : null}
+    </div>
+  );
+
+  const renderCommentsBody = () => {
+    if (currentComments.length === 0) {
+      return renderEmptyState();
+    }
+
+    const items = currentComments.map((comment) => renderCommentContent(comment));
+    return commentsGridClassName ? <div className={commentsGridClassName}>{items}</div> : items;
+  };
+
+  const renderPagination = () => {
+    if (totalPages <= 1) {
+      return null;
+    }
+
+    return (
+      <div className={styles.pagination}>
+        <button
+          className={cx(styles.pageButton, currentPage === 1 && styles.disabled)}
+          onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
+          disabled={currentPage === 1}
+          type="button"
+        >
+          {hasClass(styles, 'pageButtonIcon') ? (
+            <span className={styles.pageButtonIcon}>‹</span>
+          ) : null}
+          {hasClass(styles, 'pageButtonText') ? (
+            <span className={styles.pageButtonText}>이전</span>
+          ) : (
+            '이전'
+          )}
+        </button>
+
+        <div className={styles.pageNumbers}>
           {pageNumbers.map((page) => (
             <button
               key={page}
-              className={`${styles.pageNumber ?? styles.pageButton} ${currentPage === page ? styles.active ?? styles.pageButtonActive ?? '' : ''}`}
+              className={cx(pageNumberClassName, currentPage === page && activePageClassName)}
               onClick={() => setCurrentPage(page)}
               type="button"
             >
               {page}
             </button>
           ))}
-
-          <button
-            className={`${styles.pageButton} ${currentPage === totalPages ? styles.disabled ?? '' : ''}`}
-            onClick={() => setCurrentPage((page) => Math.min(totalPages, page + 1))}
-            disabled={currentPage === totalPages}
-            type="button"
-          >
-            다음
-          </button>
         </div>
+
+        <button
+          className={cx(styles.pageButton, currentPage === totalPages && styles.disabled)}
+          onClick={() => setCurrentPage((page) => Math.min(totalPages, page + 1))}
+          disabled={currentPage === totalPages}
+          type="button"
+        >
+          {hasClass(styles, 'pageButtonText') ? (
+            <span className={styles.pageButtonText}>다음</span>
+          ) : (
+            '다음'
+          )}
+          {hasClass(styles, 'pageButtonIcon') ? (
+            <span className={styles.pageButtonIcon}>›</span>
+          ) : null}
+        </button>
+      </div>
+    );
+  };
+
+  const commentsBlock = (
+    <div className={commentsListClassName}>
+      {renderCommentsHeader()}
+      {renderCommentsBody()}
+    </div>
+  );
+
+  return (
+    <section className={styles.container}>
+      {hasClass(styles, 'spaceBackground') ? (
+        <div className={styles.spaceBackground}>
+          {hasClass(styles, 'stars') ? <div className={styles.stars} /> : null}
+        </div>
+      ) : null}
+
+      {hasClass(styles, 'decorations') ? (
+        <div className={styles.decorations}>
+          {hasClass(styles, 'floatingPlanet1') ? <div className={styles.floatingPlanet1} /> : null}
+          {hasClass(styles, 'floatingPlanet2') ? <div className={styles.floatingPlanet2} /> : null}
+        </div>
+      ) : null}
+
+      {hasClass(styles, 'topDecoration') ? (
+        <svg
+          className={styles.topDecoration}
+          viewBox="0 0 100 10"
+          aria-hidden="true"
+          style={{ color: 'var(--accent)' }}
+        >
+          <path d="M 0 5 Q 25 2, 50 5 T 100 5" fill="none" stroke="currentColor" strokeWidth="1" />
+        </svg>
+      ) : null}
+
+      {renderHeader()}
+      {renderStatus()}
+      {renderForm()}
+      {commentsSectionClassName ? (
+        <div className={commentsSectionClassName}>{commentsBlock}</div>
+      ) : (
+        commentsBlock
+      )}
+      {renderPagination()}
+
+      {hasClass(styles, 'bottomDecoration') ? (
+        <svg
+          className={styles.bottomDecoration}
+          viewBox="0 0 100 10"
+          aria-hidden="true"
+          style={{ color: 'var(--accent)' }}
+        >
+          <path d="M 0 5 Q 25 8, 50 5 T 100 5" fill="none" stroke="currentColor" strokeWidth="1" />
+        </svg>
       ) : null}
     </section>
   );

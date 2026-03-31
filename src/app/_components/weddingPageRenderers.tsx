@@ -4,11 +4,11 @@ import {
   type WeddingInvitationRouteOptions,
   type WeddingThemeKey,
 } from './weddingThemes';
-import { type WeddingPageState } from './weddingPageState';
+import { type WeddingPageReadyState } from './weddingPageState';
 
 function renderGiftInfoSection(
   theme: WeddingThemeKey,
-  state: WeddingPageState,
+  state: WeddingPageReadyState,
   delay?: number
 ) {
   const giftInfo = state.giftInfo;
@@ -97,7 +97,7 @@ function renderGiftInfoSection(
   return <Components.ScrollAnimatedSection delay={delay}>{content}</Components.ScrollAnimatedSection>;
 }
 
-function renderGuestbookSection(state: WeddingPageState, theme: WeddingThemeKey) {
+function renderGuestbookSection(state: WeddingPageReadyState, theme: WeddingThemeKey) {
   switch (theme) {
     case 'simple':
       return <Components.Guestbook_1 pageSlug={state.pageConfig.slug} />;
@@ -115,7 +115,7 @@ function renderGuestbookSection(state: WeddingPageState, theme: WeddingThemeKey)
   }
 }
 
-export function renderLoader(theme: WeddingThemeKey, state: WeddingPageState) {
+export function renderLoader(theme: WeddingThemeKey, state: WeddingPageReadyState) {
   switch (theme) {
     case 'simple':
       return (
@@ -174,7 +174,7 @@ export function renderLoader(theme: WeddingThemeKey, state: WeddingPageState) {
   }
 }
 
-export function renderEmotionalPage(state: WeddingPageState) {
+export function renderEmotionalPage(state: WeddingPageReadyState) {
   return (
     <main role="main" aria-label={`${state.pageConfig.groomName}와 ${state.pageConfig.brideName}의 결혼식 청첩장`}>
       <Components.Cover
@@ -203,7 +203,7 @@ export function renderEmotionalPage(state: WeddingPageState) {
           {
             date: state.weddingDate.getDate(),
             type: 'wedding',
-            title: `${state.pageConfig.groomName} ♥ ${state.pageConfig.brideName} 결혼식`,
+            title: `${state.pageConfig.groomName} ♡ ${state.pageConfig.brideName} 결혼식`,
             description: `${state.pageConfig.pageData?.ceremonyTime ?? ''} ${state.pageConfig.venue}`,
           },
         ]}
@@ -237,7 +237,7 @@ export function renderEmotionalPage(state: WeddingPageState) {
   );
 }
 
-export function renderSimplePage(state: WeddingPageState) {
+export function renderSimplePage(state: WeddingPageReadyState) {
   return (
     <main role="main" aria-label={`${state.pageConfig.groomName}와 ${state.pageConfig.brideName}의 결혼식 청첩장 (심플 버전)`}>
       <Components.Cover_1
@@ -299,7 +299,10 @@ export function renderSimplePage(state: WeddingPageState) {
   );
 }
 
-export function renderMinimalPage(state: WeddingPageState, options: WeddingInvitationRouteOptions) {
+export function renderMinimalPage(
+  state: WeddingPageReadyState,
+  options: WeddingInvitationRouteOptions
+) {
   return (
     <main role="main" aria-label={`${state.pageConfig.groomName}와 ${state.pageConfig.brideName}의 결혼식 청첩장 (미니멀 버전)`}>
       <Components.Cover_2
@@ -358,7 +361,7 @@ export function renderMinimalPage(state: WeddingPageState, options: WeddingInvit
   );
 }
 
-export function renderSpacePage(state: WeddingPageState) {
+export function renderSpacePage(state: WeddingPageReadyState) {
   return (
     <main role="main" aria-label={`${state.pageConfig.groomName}와 ${state.pageConfig.brideName}의 결혼식 청첩장 (우주 버전)`}>
       <Components.Cover_3
@@ -422,7 +425,7 @@ export function renderSpacePage(state: WeddingPageState) {
   );
 }
 
-export function renderBluePage(state: WeddingPageState) {
+export function renderBluePage(state: WeddingPageReadyState) {
   return (
     <main role="main" aria-label={`${state.pageConfig.groomName}와 ${state.pageConfig.brideName}의 결혼식 청첩장 (지중해 블루 버전)`}>
       <Components.Cover_4
@@ -467,7 +470,7 @@ export function renderBluePage(state: WeddingPageState) {
   );
 }
 
-export function renderClassicPage(state: WeddingPageState) {
+export function renderClassicPage(state: WeddingPageReadyState) {
   return (
     <main role="main" aria-label={`${state.pageConfig.groomName}와 ${state.pageConfig.brideName}의 결혼식 청첩장 (한지 클래식 버전)`}>
       <Components.Cover_5

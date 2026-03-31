@@ -113,10 +113,6 @@
   backface-visibility: hidden;
 }
 
-.imageContainer:hover .imageItem {
-  transform: scale(1.05);
-}
-
 .imagePlaceholder {
   position: absolute;
   top: 0;

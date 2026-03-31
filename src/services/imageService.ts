@@ -7,14 +7,10 @@ export interface UploadedImage {
   uploadedAt: Date;
 }
 
-// Firebase 사용 여부 확인
 const USE_FIREBASE = process.env.NEXT_PUBLIC_USE_FIREBASE === 'true';
-
-// 이미지 캐시
 const imageCache = new Map<string, UploadedImage[]>();
-const CACHE_DURATION = 5 * 60 * 1000; // 5분
+const CACHE_DURATION = 5 * 60 * 1000;
 
-// Dynamic Firebase imports
 let firebaseModules: {
   storage: any;
   ref: any;
@@ -30,17 +26,15 @@ const initFirebase = async () => {
   }
 
   try {
-    // Firebase가 초기화될 때까지 잠시 대기
     let retries = 0;
     const maxRetries = 10;
-    
+
     while (retries < maxRetries) {
       const [firebaseModule, storageModule] = await Promise.all([
         import('@/lib/firebase'),
-        import('firebase/storage')
+        import('firebase/storage'),
       ]);
 
-      // Firebase가 초기화되었는지 확인
       if (firebaseModule.storage) {
         firebaseModules = {
           storage: firebaseModule.storage,
@@ -48,26 +42,25 @@ const initFirebase = async () => {
           uploadBytes: storageModule.uploadBytes,
           getDownloadURL: storageModule.getDownloadURL,
           deleteObject: storageModule.deleteObject,
-          listAll: storageModule.listAll
+          listAll: storageModule.listAll,
         };
         return;
       }
-      
-      // 100ms 대기 후 재시도
-      await new Promise(resolve => setTimeout(resolve, 100));
-      retries++;
+
+      await new Promise((resolve) => setTimeout(resolve, 100));
+      retries += 1;
     }
-    
+
     throw new Error('Firebase storage initialization timeout');
   } catch (error) {
     console.warn('Firebase initialization failed:', error);
   }
 };
 
-// 목록 페이지용 이미지 목데이터 (Firebase 전용 모드에서는 사용하지 않음)
-const MOCK_IMAGE_CATEGORIES = {};
-
-export const uploadImage = async (file: File, pageSlug: string): Promise<UploadedImage> => {
+export const uploadImage = async (
+  file: File,
+  pageSlug: string
+): Promise<UploadedImage> => {
   const optimizedFile = await optimizeUploadImage(file, {
     maxWidth: 2200,
     maxHeight: 2200,
@@ -75,18 +68,16 @@ export const uploadImage = async (file: File, pageSlug: string): Promise<Uploade
   });
 
   if (!USE_FIREBASE) {
-    // Mock upload for development
-    const mockImage: UploadedImage = {
+    return {
       name: optimizedFile.name,
       url: `/images/${optimizedFile.name}`,
       path: `wedding-images/${pageSlug}/${optimizedFile.name}`,
-      uploadedAt: new Date()
+      uploadedAt: new Date(),
     };
-    return mockImage;
   }
 
   await initFirebase();
-  
+
   if (!firebaseModules?.storage) {
     throw new Error('Firebase가 초기화되지 않았습니다.');
   }
@@ -101,7 +92,7 @@ export const uploadImage = async (file: File, pageSlug: string): Promise<Uploade
       name: optimizedFile.name,
       url: downloadURL,
       path: imagePath,
-      uploadedAt: new Date()
+      uploadedAt: new Date(),
     };
   } catch (error) {
     console.error('이미지 업로드 중 오류 발생:', error);
@@ -109,28 +100,30 @@ export const uploadImage = async (file: File, pageSlug: string): Promise<Uploade
   }
 };
 
-export const getImagesByPage = async (pageSlug: string): Promise<UploadedImage[]> => {
-  // 캐시 확인
-  const cacheKey = `${pageSlug}_${Date.now()}`;
+export const getImagesByPage = async (
+  pageSlug: string
+): Promise<UploadedImage[]> => {
   const cachedData = imageCache.get(pageSlug);
   if (cachedData) {
     return cachedData;
   }
 
   if (!USE_FIREBASE) {
-    // Firebase가 비활성화된 경우 빈 배열 반환
     return [];
   }
 
   await initFirebase();
-  
+
   if (!firebaseModules?.storage) {
     console.warn('Firebase가 초기화되지 않았습니다.');
     return [];
   }
 
   try {
-    const imagesRef = firebaseModules.ref(firebaseModules.storage, `wedding-images/${pageSlug}`);
+    const imagesRef = firebaseModules.ref(
+      firebaseModules.storage,
+      `wedding-images/${pageSlug}`
+    );
     const imagesList = await firebaseModules.listAll(imagesRef);
 
     const images: UploadedImage[] = await Promise.all(
@@ -140,17 +133,17 @@ export const getImagesByPage = async (pageSlug: string): Promise<UploadedImage[]
           name: imageRef.name,
           url,
           path: imageRef.fullPath,
-          uploadedAt: new Date(imageRef.timeCreated || Date.now())
+          uploadedAt: new Date(imageRef.timeCreated || Date.now()),
         };
       })
     );
 
-    const sortedImages = images.sort((a, b) => a.uploadedAt.getTime() - b.uploadedAt.getTime());
-    
-    // 캐시에 저장
+    const sortedImages = images.sort(
+      (left, right) => left.uploadedAt.getTime() - right.uploadedAt.getTime()
+    );
+
     imageCache.set(pageSlug, sortedImages);
-    
-    // 캐시 자동 정리 (5분 후)
+
     setTimeout(() => {
       imageCache.delete(pageSlug);
     }, CACHE_DURATION);
@@ -158,20 +151,18 @@ export const getImagesByPage = async (pageSlug: string): Promise<UploadedImage[]
     return sortedImages;
   } catch (error) {
     console.error('이미지 목록 조회 중 오류 발생:', error);
-    // Firebase 오류 시 빈 배열 반환
     return [];
   }
 };
 
 export const deleteImage = async (imagePath: string): Promise<void> => {
   if (!USE_FIREBASE) {
-    // Mock delete for development
     console.log('Mock: 이미지 삭제 요청:', imagePath);
     return;
   }
 
   await initFirebase();
-  
+
   if (!firebaseModules?.storage) {
     throw new Error('Firebase가 초기화되지 않았습니다.');
   }
@@ -185,14 +176,15 @@ export const deleteImage = async (imagePath: string): Promise<void> => {
   }
 };
 
-export const getAllPageImages = async (): Promise<{ [pageSlug: string]: UploadedImage[] }> => {
+export const getAllPageImages = async (): Promise<{
+  [pageSlug: string]: UploadedImage[];
+}> => {
   if (!USE_FIREBASE) {
-    // Firebase가 비활성화된 경우 빈 객체 반환
     return {};
   }
 
   await initFirebase();
-  
+
   if (!firebaseModules?.storage) {
     console.warn('Firebase가 초기화되지 않았습니다.');
     return {};
@@ -201,7 +193,6 @@ export const getAllPageImages = async (): Promise<{ [pageSlug: string]: Uploaded
   try {
     const allImagesRef = firebaseModules.ref(firebaseModules.storage, 'wedding-images');
     const pagesList = await firebaseModules.listAll(allImagesRef);
-
     const allPageImages: { [pageSlug: string]: UploadedImage[] } = {};
 
     await Promise.all(
@@ -215,12 +206,9 @@ export const getAllPageImages = async (): Promise<{ [pageSlug: string]: Uploaded
     return allPageImages;
   } catch (error) {
     console.error('전체 이미지 목록 조회 중 오류 발생:', error);
-    // Firebase 오류 시 빈 객체 반환
     return {};
   }
 };
 
-// 특정 페이지의 이미지 가져오기 (public 함수)
-export const getPageImages = async (pageSlug: string): Promise<UploadedImage[]> => {
-  return await getImagesByPage(pageSlug);
-};
+export const getPageImages = async (pageSlug: string): Promise<UploadedImage[]> =>
+  getImagesByPage(pageSlug);

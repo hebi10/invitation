@@ -18,7 +18,6 @@ export default function Guestbook({ pageSlug }: GuestbookProps) {
         success: '#2d6a4f',
         error: '#c0392b',
       }}
-      emptyIcon="♡"
     />
   );
 }

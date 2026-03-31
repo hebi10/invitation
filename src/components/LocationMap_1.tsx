@@ -255,7 +255,16 @@ export default function LocationMap_1({
             </div>
             <div className={styles.venueItem}>
               <span className={styles.venueLabel}>주소</span>
-              <span className={styles.venueText}>{address}</span>
+              <div className={styles.addressContent}>
+                <span className={styles.venueText}>{address}</span>
+                <button
+                  className={styles.addressCopyButton}
+                  onClick={handleCopyAddress}
+                  type="button"
+                >
+                  {isAddressCopied ? '복사 완료' : '주소 복사'}
+                </button>
+              </div>
             </div>
             {contact && (
               <div className={styles.venueItem}>
@@ -277,27 +286,24 @@ export default function LocationMap_1({
         <div className={styles.navigationSection}>
           <h3 className={styles.navigationTitle}>길찾기</h3>
           <div className={styles.navigationButtons}>
-            <button 
-              className={styles.navButton}
-              onClick={handleCopyAddress}
-            >
-              {isAddressCopied ? '복사 완료' : '주소 복사'}
-            </button>
-            <button 
+            <button
               className={styles.navButton}
               onClick={() => window.open(`https://map.naver.com/v5/search/${encodeURIComponent(address)}`, '_blank')}
+              type="button"
             >
               네이버 지도
             </button>
-            <button 
+            <button
               className={styles.navButton}
               onClick={() => window.open(`https://map.kakao.com/link/search/${encodeURIComponent(address)}`, '_blank')}
+              type="button"
             >
               카카오맵
             </button>
-            <button 
+            <button
               className={styles.navButton}
               onClick={() => window.open(`https://www.google.com/maps/search/${encodeURIComponent(address)}`, '_blank')}
+              type="button"
             >
               구글 지도
             </button>

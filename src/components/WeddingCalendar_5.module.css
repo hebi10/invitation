@@ -141,6 +141,12 @@
   animation: pulse 2s infinite;
 }
 
+.weddingMarkerIcon {
+  width: 1.35rem;
+  height: auto;
+  display: block;
+}
+
 @keyframes pulse {
   0%, 100% {
     transform: translate(-50%, -50%) scale(1);
@@ -185,6 +191,10 @@
   
   .weddingMarker {
     font-size: 1.25rem;
+  }
+
+  .weddingMarkerIcon {
+    width: 1.15rem;
   }
 }
 

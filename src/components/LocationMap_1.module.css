@@ -189,6 +189,14 @@
   gap: 1rem;
 }
 
+.addressContent {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.65rem;
+}
+
 .venueLabel {
   font-family: 'Arial', sans-serif;
   font-size: 0.9rem;
@@ -219,6 +227,36 @@
 .venueContact:hover {
   color: #34495e;
   text-decoration: underline;
+}
+
+.addressCopyButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  align-self: flex-start;
+  padding: 0.45rem 0.95rem;
+  border: 1px solid rgba(44, 62, 80, 0.14);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.92);
+  color: #2c3e50;
+  font-family: 'Arial', sans-serif;
+  font-size: 0.82rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  box-shadow: 0 2px 8px rgba(44, 62, 80, 0.06);
+}
+
+.addressCopyButton:hover {
+  background: #f8f9fa;
+  border-color: rgba(44, 62, 80, 0.24);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(44, 62, 80, 0.1);
+}
+
+.addressCopyButton:active {
+  transform: translateY(0);
 }
 
 .navigationSection {
@@ -323,10 +361,19 @@
     flex-direction: column;
     gap: 0.3rem;
   }
+
+  .addressContent {
+    width: 100%;
+    gap: 0.55rem;
+  }
   
   .venueLabel {
     min-width: auto;
     font-weight: 700;
+  }
+
+  .addressCopyButton {
+    padding: 0.5rem 0.9rem;
   }
   
   .navigationButtons {

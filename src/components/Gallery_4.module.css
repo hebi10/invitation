@@ -95,10 +95,6 @@
   content-visibility: auto;
 }
 
-.imageCard:hover .image {
-  transform: scale(1.05);
-}
-
 .imageOverlay {
   position: absolute;
   top: 0;

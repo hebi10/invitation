@@ -1,6 +1,7 @@
 'use client';
 
 import type { ReactNode } from 'react';
+import HeartIcon_1 from './HeartIcon_1';
 
 export interface WeddingCalendarSimpleProps {
   weddingDate: Date;
@@ -93,7 +94,11 @@ export default function WeddingCalendarThemed({
                   } ${dayIndex === 6 && currentDay ? styles.saturday : ''} ${!currentDay ? styles.empty : ''}`}
                 >
                   {currentDay || ''}
-                  {currentDay === day && <div className={styles.weddingMarker}>♥</div>}
+                  {currentDay === day && (
+                    <div className={styles.weddingMarker} aria-hidden="true">
+                      <HeartIcon_1 className={styles.weddingMarkerIcon} />
+                    </div>
+                  )}
                 </div>
               ))}
             </div>

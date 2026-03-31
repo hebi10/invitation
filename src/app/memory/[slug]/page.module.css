@@ -71,12 +71,20 @@
 .heroTitle,
 .sectionTitle,
 .stateTitle {
-  margin-top: 14px;
+  margin: 14px 0;
   font-size: clamp(1.75rem, 5vw, 2.4rem);
   line-height: 1.15;
   letter-spacing: -0.04em;
   font-weight: 700;
   color: #111827;
+}
+
+.heroTitleHeartIcon {
+  display: inline-block;
+  width: 40px;
+  height: auto;
+  margin-inline: 0.28em;
+  vertical-align: -0.08em;
 }
 
 .sectionTitle {
@@ -181,6 +189,15 @@
   color: #1f2937;
 }
 
+.gallerySwiper {
+  width: 100%;
+  overflow: visible;
+}
+
+.gallerySlide {
+  height: auto;
+}
+
 .galleryGrid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -226,6 +243,56 @@
   font-size: 0.8125rem;
   color: #64748b;
   justify-content: space-between;
+}
+
+.commentPagination {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.commentPaginationInfo {
+  font-size: 0.82rem;
+  color: #64748b;
+}
+
+.commentPaginationControls,
+.commentPaginationNumbers {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.commentPaginationControls {
+  justify-content: space-between;
+}
+
+.commentPaginationButton {
+  min-width: 40px;
+  min-height: 40px;
+  padding: 0 12px;
+  border: 1px solid rgba(148, 163, 184, 0.24);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.9);
+  color: #1f2937;
+  font: inherit;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+}
+
+.commentPaginationButton:disabled {
+  opacity: 0.42;
+  cursor: not-allowed;
+}
+
+.commentPaginationButtonActive {
+  border-color: #111827;
+  background: #111827;
+  color: #ffffff;
 }
 
 .timelineItem {
@@ -332,6 +399,16 @@
   gap: 14px;
 }
 
+.lightboxSwiper {
+  width: 100%;
+}
+
+.lightboxSlide {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 .lightboxClose,
 .lightboxNav {
   border: 1px solid rgba(255, 255, 255, 0.18);
@@ -383,6 +460,43 @@
   color: rgba(248, 250, 252, 0.8);
 }
 
+.gallerySwiper :global(.swiper-pagination) {
+  position: static;
+  transform: none !important;
+  margin-top: 12px;
+}
+
+.gallerySwiper :global(.swiper-pagination-bullet) {
+  background: rgba(31, 41, 55, 0.32);
+  opacity: 1;
+}
+
+.gallerySwiper :global(.swiper-pagination-bullet-active) {
+  background: #111827;
+}
+
+.lightboxSwiper :global(.swiper-button-prev),
+.lightboxSwiper :global(.swiper-button-next) {
+  width: 44px;
+  height: 44px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+}
+
+.lightboxSwiper :global(.swiper-button-prev::after),
+.lightboxSwiper :global(.swiper-button-next::after) {
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.lightboxSwiper :global(.swiper-pagination-fraction) {
+  color: #f8fafc;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
 @media (min-width: 768px) {
   .page {
     padding-top: 32px;
@@ -394,5 +508,23 @@
 
   .galleryGrid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 767px) {
+  .commentPaginationControls {
+    align-items: stretch;
+  }
+
+  .commentPaginationButton {
+    flex: 0 0 auto;
+  }
+
+  .lightboxBackdrop {
+    padding: 14px;
+  }
+
+  .lightboxDialog {
+    gap: 12px;
   }
 }

@@ -17,7 +17,7 @@ interface AdminCommentsTabProps {
   commentPageOptions: Array<{ value: string; label: string }>;
   onRefresh: () => void;
   onQueryChange: (updates: Record<string, string | null>) => void;
-  onDeleteComment: (commentId: string, author: string, pageSlug: string) => void;
+  onDeleteComment: (comment: Comment) => void;
 }
 
 export default function AdminCommentsTab({
@@ -127,7 +127,7 @@ export default function AdminCommentsTab({
                 </thead>
                 <tbody>
                   {currentComments.map((comment, index) => (
-                    <tr key={comment.id}>
+                    <tr key={`${comment.collectionName ?? 'comments'}:${comment.id}`}>
                       <td className={styles.numberCell}>{filteredComments.length - (startIndex + index)}</td>
                       <td>
                         <span className={styles.tableTitle}>{comment.author}</span>
@@ -145,7 +145,7 @@ export default function AdminCommentsTab({
                         <button
                           type="button"
                           className="admin-button admin-button-danger"
-                          onClick={() => onDeleteComment(comment.id, comment.author, comment.pageSlug)}
+                          onClick={() => onDeleteComment(comment)}
                         >
                           삭제
                         </button>
@@ -159,7 +159,7 @@ export default function AdminCommentsTab({
 
           <div className={styles.mobileList}>
             {currentComments.map((comment, index) => (
-              <article key={comment.id} className={styles.mobileCard}>
+              <article key={`${comment.collectionName ?? 'comments'}:${comment.id}`} className={styles.mobileCard}>
                 <div className={styles.mobileCardHead}>
                   <div>
                     <h3 className={styles.mobileCardTitle}>{comment.author}</h3>
@@ -175,7 +175,7 @@ export default function AdminCommentsTab({
                   <button
                     type="button"
                     className="admin-button admin-button-danger"
-                    onClick={() => onDeleteComment(comment.id, comment.author, comment.pageSlug)}
+                    onClick={() => onDeleteComment(comment)}
                   >
                     삭제
                   </button>

@@ -337,6 +337,8 @@
 .timelineItem {
   display: flex;
   flex-direction: column;
+  padding: 12px 18px;
+  box-sizing: border-box;
 }
 
 .commentCardHeader {

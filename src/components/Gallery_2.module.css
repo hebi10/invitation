@@ -46,10 +46,6 @@
   transition: transform 0.3s ease;
 }
 
-.imageWrapper:hover .image {
-  transform: scale(1.05);
-}
-
 /* 더보기/접기 버튼 */
 .buttonContainer {
   display: flex;
@@ -154,7 +150,7 @@
 
 .closeButton:hover {
   background: rgba(255, 255, 255, 0.2);
-  transform: scale(1.05);
+  
 }
 
 /* 통합 네비게이션 바 */

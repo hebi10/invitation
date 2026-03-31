@@ -33,33 +33,23 @@
   position: relative;
   margin-bottom: 2.5rem;
   z-index: 1;
+  line-height: 0;
 }
 
 .heart {
-  width: 80px;
-  height: 72px;
-  position: relative;
+  width: 88px;
+  height: 75px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   animation: heartbeat 1.5s infinite ease-in-out;
 }
 
-.heart::before,
-.heart::after {
-  content: '';
-  width: 40px;
-  height: 64px;
-  position: absolute;
-  left: 40px;
-  transform: rotate(-45deg);
-  background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
-  border-radius: 40px 40px 0 0;
-  transform-origin: 0 100%;
-  box-shadow: 0 4px 15px rgba(212, 165, 116, 0.3);
-}
-
-.heart::after {
-  left: 0;
-  transform: rotate(45deg);
-  transform-origin: 100% 100%;
+.heartImage {
+  display: block;
+  width: auto;
+  height: 70%;
+  filter: drop-shadow(0 8px 16px rgba(212, 165, 116, 0.28));
 }
 
 @keyframes heartbeat {
@@ -123,6 +113,11 @@
 }
 
 @media (min-width: 700px) {
+  .heart {
+    width: 104px;
+    height: 88px;
+  }
+
   .loadingText {
     font-size: 1.5rem;
   }

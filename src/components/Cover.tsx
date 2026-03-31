@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { scrollToSection } from '@/utils';
+import HeartIcon from './HeartIcon';
 import styles from './Cover.module.css';
 
 interface CoverProps {
@@ -64,7 +65,7 @@ const Cover = React.memo(function Cover({
 
   return (
     <div className={styles.container} style={containerStyle}>
-      <h1 className={styles.title}>{title}</h1>
+      <h1 className={`${styles.title} ${styles.invitationTitle}`}>{title || 'Invitation'}</h1>
       {subtitle && <p className={styles.subtitle}>{subtitle}</p>}
       <div className={styles.imageContainer}>
         <Image
@@ -91,7 +92,9 @@ const Cover = React.memo(function Cover({
       </div>
       <h2 className={styles.coupleNames}>
         {groomName} 
-        <span className={styles.pointColor}>♥</span> 
+        <span className={styles.pointColor}>
+          <HeartIcon className={styles.pointHeart} />
+        </span>
         {brideName}
       </h2>
       <div className={styles.eventMeta}>

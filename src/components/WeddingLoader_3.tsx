@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import HeartIcon_1 from './HeartIcon_1';
 import styles from './WeddingLoader_3.module.css';
 
 interface WeddingLoaderProps {
@@ -38,7 +39,11 @@ export default function WeddingLoader_3({ groomName, brideName }: WeddingLoaderP
           <div className={styles.textWrapper}>
             <p className={styles.names}>
               {groomName && <span className={styles.name}>{groomName}</span>}
-              {groomName && brideName && <span className={styles.separator}>♥</span>}
+              {groomName && brideName && (
+                <span className={styles.separator} aria-hidden="true">
+                  <HeartIcon_1 className={styles.separatorIcon} />
+                </span>
+              )}
               {brideName && <span className={styles.name}>{brideName}</span>}
             </p>
             <p className={styles.subText}>결혼식에 초대합니다</p>

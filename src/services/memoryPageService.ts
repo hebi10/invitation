@@ -16,6 +16,7 @@ import type {
 } from '@/types/memoryPage';
 import { DEFAULT_MEMORY_HERO_CROP } from '@/types/memoryPage';
 import { optimizeUploadImage } from '@/utils/imageCompression';
+import { sanitizeHeartIconPlaceholdersDeep } from '@/utils/textSanitizers';
 
 type FirestoreModules = {
   collection: any;
@@ -138,7 +139,7 @@ function syncHeroImage(memoryPage: MemoryPage): MemoryGalleryImage | null {
 }
 
 function buildDefaultSeoTitle(page: Pick<MemoryPage, 'title' | 'groomName' | 'brideName'>) {
-  return page.title || `${page.groomName} ♥ ${page.brideName}의 결혼식 기록`;
+  return page.title || `${page.groomName} ♡ ${page.brideName}의 결혼식 기록`;
 }
 
 function buildDefaultSeoDescription(
@@ -184,13 +185,15 @@ function normalizeMemoryPage(pageSlug: string, data: Partial<MemoryPage>): Memor
     updatedAt: toDate(data.updatedAt),
   };
 
-  normalized.heroImage = syncHeroImage(normalized);
-  normalized.heroThumbnailUrl = normalized.heroThumbnailUrl || normalized.heroImage?.url || '';
-  normalized.seoTitle = normalized.seoTitle.trim() || buildDefaultSeoTitle(normalized);
-  normalized.seoDescription =
-    normalized.seoDescription.trim() || buildDefaultSeoDescription(normalized);
+  const sanitized = sanitizeHeartIconPlaceholdersDeep(normalized);
 
-  return normalized;
+  sanitized.heroImage = syncHeroImage(sanitized);
+  sanitized.heroThumbnailUrl = sanitized.heroThumbnailUrl || sanitized.heroImage?.url || '';
+  sanitized.seoTitle = sanitized.seoTitle.trim() || buildDefaultSeoTitle(sanitized);
+  sanitized.seoDescription =
+    sanitized.seoDescription.trim() || buildDefaultSeoDescription(sanitized);
+
+  return sanitized;
 }
 
 async function ensureFirestoreModules() {
@@ -297,6 +300,13 @@ function commentToSelectedComment(comment: Comment, order: number): MemorySelect
   };
 }
 
+function normalizeSelectedCommentOrder(comments: MemorySelectedComment[]) {
+  return sortByOrder(comments).map((comment, index) => ({
+    ...comment,
+    order: index,
+  }));
+}
+
 async function loadImageElement(imageUrl: string) {
   return new Promise<HTMLImageElement>((resolve, reject) => {
     const image = new Image();
@@ -359,7 +369,9 @@ export async function generateMemoryHeroThumbnail(
 export async function createMemoryPageDraftFromInvitation(
   pageSlug: string
 ): Promise<MemoryPage> {
-  const page = await getInvitationPageBySlug(pageSlug);
+  const page = await getInvitationPageBySlug(pageSlug, {
+    includeSeedFallback: true,
+  });
   if (!page) {
     throw new Error('청첩장 데이터를 찾을 수 없습니다.');
   }
@@ -371,7 +383,7 @@ export async function createMemoryPageDraftFromInvitation(
     pageSlug,
     enabled: false,
     visibility: 'private',
-    title: `${page.groomName} ♥ ${page.brideName}의 결혼식 기록`,
+    title: `${page.groomName} ♡ ${page.brideName}의 결혼식 기록`,
     subtitle: '함께해주신 마음을 천천히 다시 꺼내보는 추억 페이지입니다.',
     introMessage:
       page.pageData?.greetingMessage ?? '결혼식 하루를 사진과 짧은 기록으로 다시 정리했습니다.',
@@ -387,7 +399,7 @@ export async function createMemoryPageDraftFromInvitation(
     galleryImages: invitationImages,
     selectedComments: [],
     timelineItems: buildDefaultTimeline(page),
-    seoTitle: `${page.groomName} ♥ ${page.brideName}의 결혼식 기록`,
+    seoTitle: `${page.groomName} ♡ ${page.brideName}의 결혼식 기록`,
     seoDescription: `${page.date} ${page.venue}에서 함께한 결혼식의 순간을 사진과 메시지로 다시 담은 추억 페이지입니다.`,
     seoNoIndex: false,
     createdAt: now,
@@ -421,23 +433,13 @@ export async function suggestCommentsFromInvitation(
   limit = 3
 ): Promise<MemorySelectedComment[]> {
   const sourceComments = await getComments(pageSlug);
-  const existingIds = new Set(
-    existingComments.map((comment) => comment.sourceCommentId).filter(Boolean)
-  );
-
-  const nextComments = sourceComments
-    .filter((comment) => !existingIds.has(comment.id))
-    .slice(0, limit)
-    .map((comment, index) =>
-      commentToSelectedComment(comment, existingComments.length + index)
-    );
-
-  return sortByOrder([...existingComments, ...nextComments]);
+  return backfillSelectedComments(existingComments, sourceComments, limit);
 }
 
 export async function getMemoryPageByPageSlug(pageSlug: string): Promise<MemoryPage | null> {
   if (!USE_FIREBASE) {
-    return mockMemoryPages.get(pageSlug) ?? null;
+    const local = mockMemoryPages.get(pageSlug);
+    return local ? normalizeMemoryPage(pageSlug, local) : null;
   }
 
   const firebase = await ensureFirestoreModules();
@@ -462,7 +464,9 @@ export async function getMemoryPageBySlug(pageSlug: string): Promise<MemoryPage 
 
 export async function getAllMemoryPages(): Promise<MemoryPage[]> {
   if (!USE_FIREBASE) {
-    return [...mockMemoryPages.values()].sort(
+    return [...mockMemoryPages.values()]
+      .map((page) => normalizeMemoryPage(page.pageSlug, page))
+      .sort(
       (left, right) => right.updatedAt.getTime() - left.updatedAt.getTime()
     );
   }
@@ -636,4 +640,20 @@ export function createSelectedCommentSnapshot(
   order: number
 ): MemorySelectedComment {
   return commentToSelectedComment(comment, order);
+}
+
+export function backfillSelectedComments(
+  existingComments: MemorySelectedComment[],
+  sourceComments: Comment[],
+  limit?: number
+): MemorySelectedComment[] {
+  const existingIds = new Set(
+    existingComments.map((comment) => comment.sourceCommentId).filter(Boolean)
+  );
+
+  const missingComments = sourceComments.filter((comment) => !existingIds.has(comment.id));
+  const nextComments = (typeof limit === 'number' ? missingComments.slice(0, limit) : missingComments)
+    .map((comment, index) => commentToSelectedComment(comment, existingComments.length + index));
+
+  return normalizeSelectedCommentOrder([...existingComments, ...nextComments]);
 }

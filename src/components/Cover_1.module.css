@@ -112,9 +112,17 @@
 }
 
 .heart {
-  color: #e74c3c;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   margin: 0 0.5rem;
-  font-size: 0.9em;
+  width: 1.05em;
+}
+
+.heartImage {
+  width: 100%;
+  height: auto;
+  display: block;
 }
 
 .eventMeta {

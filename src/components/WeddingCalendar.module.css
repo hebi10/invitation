@@ -267,7 +267,6 @@
 }
 
 .weddingDay:hover {
-  transform: scale(1.05);
   box-shadow: 0 12px 30px rgba(255, 71, 87, 0.5);
 }
 
@@ -309,12 +308,21 @@
 
 /* 결혼식 아이콘 */
 .weddingIcon {
-  font-size: 1.4rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   margin-top: 0.1rem;
   animation: weddingBounce 2s infinite;
-  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
   z-index: 1;
   position: relative;
+  line-height: 0;
+}
+
+.weddingIconImage {
+  display: block;
+  width: auto;
+  height: 0.86rem;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
 }
 
 @keyframes weddingBounce {
@@ -350,6 +358,7 @@
 
 .eventDot.wedding {
   background: #ff4757;
+  margin-bottom: 10px;
 }
 
 .eventDot.event {
@@ -405,16 +414,15 @@
   border: 1px solid rgba(255, 192, 203, 0.4);
 }
 
-.weddingIcon {
-  font-size: 1.2rem;
-  animation: weddingBounce 2s infinite;
-}
-
 .weddingText {
   color: #8b4c8b;
   font-family: 'Noto Serif KR', serif;
   font-weight: 600;
   font-size: 1rem;
+}
+
+.weddingInfo .weddingIconImage {
+  height: 1.05rem;
 }
 
 /* 반응형 디자인 */
@@ -474,6 +482,14 @@
   .selectedText,
   .weddingText {
     font-size: 1.1rem;
+  }
+
+  .weddingIconImage {
+    height: 0.95rem;
+  }
+
+  .weddingInfo .weddingIconImage {
+    height: 1.15rem;
   }
   
   .dayCell {

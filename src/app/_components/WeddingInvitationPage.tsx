@@ -16,28 +16,31 @@ import { useWeddingInvitationState } from './weddingPageState';
 import { type WeddingInvitationRouteOptions } from './weddingThemes';
 import { getWeddingThemeDefinition } from './weddingThemes';
 import WeddingKakaoShareButton from './WeddingKakaoShareButton';
+import type { WeddingPageReadyState } from './weddingPageState';
 
 function WeddingInvitationPageBody(options: WeddingInvitationRouteOptions) {
   const state = useWeddingInvitationState(options);
   const themeDefinition = getWeddingThemeDefinition(options.theme);
 
-  if (state.access === null || !state.pageConfig) {
+  if (state.status === 'blocked') {
+    return <AccessDeniedPage message={state.blockMessage} />;
+  }
+
+  if (state.status !== 'ready') {
     return null;
   }
 
-  if (!state.access.canAccess) {
-    return <AccessDeniedPage message={state.access.message} />;
-  }
+  const readyState: WeddingPageReadyState = state;
 
-  if (state.isLoading || state.imagesLoading || !state.weddingDate) {
-    return renderLoader(options.theme, state);
+  if (readyState.isLoading || readyState.imagesLoading) {
+    return renderLoader(options.theme, readyState);
   }
 
   const shareButton = (
     <WeddingKakaoShareButton
-      title={themeDefinition.getShareTitle(state.pageConfig)}
-      description={themeDefinition.getShareDescription(state.pageConfig)}
-      imageUrl={state.pageConfig.metadata.images.wedding}
+      title={themeDefinition.getShareTitle(readyState.pageConfig)}
+      description={themeDefinition.getShareDescription(readyState.pageConfig)}
+      imageUrl={readyState.pageConfig.metadata.images.wedding}
       pageSlug={options.slug}
       variant={themeDefinition.shareButtonVariant}
     />
@@ -46,18 +49,18 @@ function WeddingInvitationPageBody(options: WeddingInvitationRouteOptions) {
   const pageContent = (() => {
     switch (options.theme) {
       case 'simple':
-        return renderSimplePage(state);
+        return renderSimplePage(readyState);
       case 'minimal':
-        return renderMinimalPage(state, options);
+        return renderMinimalPage(readyState, options);
       case 'space':
-        return renderSpacePage(state);
+        return renderSpacePage(readyState);
       case 'blue':
-        return renderBluePage(state);
+        return renderBluePage(readyState);
       case 'classic':
-        return renderClassicPage(state);
+        return renderClassicPage(readyState);
       case 'emotional':
       default:
-        return renderEmotionalPage(state);
+        return renderEmotionalPage(readyState);
     }
   })();
 

@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
+import HeartIcon_1 from './HeartIcon_1';
 import styles from './WeddingCountdown_3.module.css';
 
 interface WeddingCountdownProps {
@@ -18,14 +19,14 @@ interface TimeLeft {
 
 export default function WeddingCountdown_3({
   targetDate,
-  title = "결혼식까지",
-  showIcon = true
+  title = '결혼식까지',
+  showIcon: _showIcon = true,
 }: WeddingCountdownProps) {
   const [timeLeft, setTimeLeft] = useState<TimeLeft>({
     days: 0,
     hours: 0,
     minutes: 0,
-    seconds: 0
+    seconds: 0,
   });
   const [isExpired, setIsExpired] = useState(false);
   const [isClient, setIsClient] = useState(false);
@@ -35,7 +36,9 @@ export default function WeddingCountdown_3({
   }, []);
 
   useEffect(() => {
-    if (!isClient) return;
+    if (!isClient) {
+      return;
+    }
 
     const calculateTimeLeft = () => {
       const now = new Date().getTime();
@@ -44,7 +47,9 @@ export default function WeddingCountdown_3({
 
       if (difference > 0) {
         const days = Math.floor(difference / (1000 * 60 * 60 * 24));
-        const hours = Math.floor((difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+        const hours = Math.floor(
+          (difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)
+        );
         const minutes = Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60));
         const seconds = Math.floor((difference % (1000 * 60)) / 1000);
 
@@ -59,7 +64,7 @@ export default function WeddingCountdown_3({
     const timer = setInterval(calculateTimeLeft, 1000);
 
     return () => clearInterval(timer);
-  }, [targetDate, isClient]);
+  }, [isClient, targetDate]);
 
   if (!isClient) {
     return (
@@ -115,9 +120,13 @@ export default function WeddingCountdown_3({
         </div>
         <div className={styles.content}>
           <div className={styles.expiredWrapper}>
-            <div className={styles.expiredIcon}>✨</div>
-            <h4 className={styles.expiredTitle}>축하합니다!</h4>
-            <p className={styles.expiredSubtitle}>행복한 결혼식이 이미 시작되었습니다</p>
+            <div className={styles.expiredIcon} aria-hidden="true">
+              <HeartIcon_1 className={styles.expiredIconImage} />
+            </div>
+            <h4 className={styles.expiredTitle}>축하합니다</h4>
+            <p className={styles.expiredSubtitle}>
+              행복한 결혼식이 이미 시작되었습니다.
+            </p>
           </div>
         </div>
       </div>
@@ -146,7 +155,9 @@ export default function WeddingCountdown_3({
           <div className={styles.separator}>:</div>
           <div className={styles.timeUnit}>
             <div className={styles.timeBox}>
-              <div className={styles.timeNumber}>{String(timeLeft.hours).padStart(2, '0')}</div>
+              <div className={styles.timeNumber}>
+                {String(timeLeft.hours).padStart(2, '0')}
+              </div>
               <div className={styles.glow}></div>
             </div>
             <div className={styles.timeLabel}>Hours</div>
@@ -154,7 +165,9 @@ export default function WeddingCountdown_3({
           <div className={styles.separator}>:</div>
           <div className={styles.timeUnit}>
             <div className={styles.timeBox}>
-              <div className={styles.timeNumber}>{String(timeLeft.minutes).padStart(2, '0')}</div>
+              <div className={styles.timeNumber}>
+                {String(timeLeft.minutes).padStart(2, '0')}
+              </div>
               <div className={styles.glow}></div>
             </div>
             <div className={styles.timeLabel}>Minutes</div>
@@ -162,14 +175,15 @@ export default function WeddingCountdown_3({
           <div className={styles.separator}>:</div>
           <div className={styles.timeUnit}>
             <div className={styles.timeBox}>
-              <div className={styles.timeNumber}>{String(timeLeft.seconds).padStart(2, '0')}</div>
+              <div className={styles.timeNumber}>
+                {String(timeLeft.seconds).padStart(2, '0')}
+              </div>
               <div className={styles.glow}></div>
             </div>
             <div className={styles.timeLabel}>Seconds</div>
           </div>
         </div>
       </div>
-      {/* 장식 요소 */}
       <div className={styles.decorations}>
         <div className={styles.orbit}></div>
         <div className={styles.planet}></div>

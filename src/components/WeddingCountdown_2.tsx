@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import styles from './WeddingCountdown_2.module.css';
 
 interface WeddingCountdownProps {
@@ -18,14 +18,14 @@ interface TimeLeft {
 
 export default function WeddingCountdown_2({
   targetDate,
-  title = "결혼식까지",
-  showIcon = true
+  title = '결혼식까지',
+  showIcon: _showIcon = true,
 }: WeddingCountdownProps) {
   const [timeLeft, setTimeLeft] = useState<TimeLeft>({
     days: 0,
     hours: 0,
     minutes: 0,
-    seconds: 0
+    seconds: 0,
   });
   const [isExpired, setIsExpired] = useState(false);
   const [isClient, setIsClient] = useState(false);
@@ -35,7 +35,9 @@ export default function WeddingCountdown_2({
   }, []);
 
   useEffect(() => {
-    if (!isClient) return;
+    if (!isClient) {
+      return;
+    }
 
     const calculateTimeLeft = () => {
       const now = new Date().getTime();
@@ -44,7 +46,9 @@ export default function WeddingCountdown_2({
 
       if (difference > 0) {
         const days = Math.floor(difference / (1000 * 60 * 60 * 24));
-        const hours = Math.floor((difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+        const hours = Math.floor(
+          (difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)
+        );
         const minutes = Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60));
         const seconds = Math.floor((difference % (1000 * 60)) / 1000);
 
@@ -59,7 +63,7 @@ export default function WeddingCountdown_2({
     const timer = setInterval(calculateTimeLeft, 1000);
 
     return () => clearInterval(timer);
-  }, [targetDate, isClient]);
+  }, [isClient, targetDate]);
 
   if (!isClient) {
     return (
@@ -96,8 +100,8 @@ export default function WeddingCountdown_2({
     return (
       <div className={styles.countdownContainer}>
         <div className={styles.content}>
-          <h4 className={styles.title}>축하합니다!</h4>
-          <p className={styles.subtitle}>행복한 결혼식이 이미 시작되었습니다</p>
+          <h4 className={styles.title}>축하합니다</h4>
+          <p className={styles.subtitle}>행복한 결혼식이 이미 시작되었습니다.</p>
         </div>
       </div>
     );
@@ -114,17 +118,23 @@ export default function WeddingCountdown_2({
           </div>
           <div className={styles.separator}>:</div>
           <div className={styles.timeUnit}>
-            <div className={styles.timeNumber}>{String(timeLeft.hours).padStart(2, '0')}</div>
+            <div className={styles.timeNumber}>
+              {String(timeLeft.hours).padStart(2, '0')}
+            </div>
             <div className={styles.timeLabel}>시간</div>
           </div>
           <div className={styles.separator}>:</div>
           <div className={styles.timeUnit}>
-            <div className={styles.timeNumber}>{String(timeLeft.minutes).padStart(2, '0')}</div>
+            <div className={styles.timeNumber}>
+              {String(timeLeft.minutes).padStart(2, '0')}
+            </div>
             <div className={styles.timeLabel}>분</div>
           </div>
           <div className={styles.separator}>:</div>
           <div className={styles.timeUnit}>
-            <div className={styles.timeNumber}>{String(timeLeft.seconds).padStart(2, '0')}</div>
+            <div className={styles.timeNumber}>
+              {String(timeLeft.seconds).padStart(2, '0')}
+            </div>
             <div className={styles.timeLabel}>초</div>
           </div>
         </div>

@@ -31,20 +31,35 @@ export function usePageImages(pageSlug: string) {
             })
             .slice(0, 2);
 
-          const preloadTargets = [
-            ...(mainImage ? [mainImage.url] : []),
-            ...firstGalleryImages.map((image) => image.url),
-          ];
+          const criticalPreloadTargets = [
+            mainImage?.url || fetchedImages[0]?.url,
+          ].filter(Boolean) as string[];
+
+          const deferredPreloadTargets = firstGalleryImages
+            .map((image) => image.url)
+            .filter((url) => url && !criticalPreloadTargets.includes(url));
+
+          if (criticalPreloadTargets.length > 0) {
+            try {
+              await preloadImages(criticalPreloadTargets);
+            } catch (preloadError) {
+              console.warn('대표 이미지 프리로드 실패:', preloadError);
+            }
+          }
 
           const runPreload = () => {
-            preloadImages(preloadTargets).catch((preloadError) => {
-              console.warn('이미지 프리로드 실패:', preloadError);
+            preloadImages(deferredPreloadTargets).catch((preloadError) => {
+              console.warn('추가 이미지 프리로드 실패:', preloadError);
             });
           };
 
-          if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
+          if (
+            deferredPreloadTargets.length > 0 &&
+            typeof window !== 'undefined' &&
+            'requestIdleCallback' in window
+          ) {
             (window as Window & { requestIdleCallback: (callback: () => void) => number }).requestIdleCallback(runPreload);
-          } else {
+          } else if (deferredPreloadTargets.length > 0) {
             globalThis.setTimeout(runPreload, 120);
           }
         }

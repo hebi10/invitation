@@ -43,7 +43,7 @@ export default function AdminPagesTab({
       <div className={styles.sectionHeader}>
         <div>
           <h2 className={styles.sectionTitle}>청첩장 라우트 현황</h2>
-          <p className={styles.sectionDescription}>Firestore에 저장된 invitation-pages 문서를 기준으로 공개 상태와 테마 바로가기를 확인합니다.</p>
+          <p className={styles.sectionDescription}>코드에 정의된 청첩장 라우트와 Firestore invitation-pages 문서를 함께 기준으로 공개 상태와 테마 바로가기를 확인합니다.</p>
         </div>
         <p className={styles.sectionMeta}>{summaryLoading ? '집계 중' : `총 ${filteredPages.length}개 페이지`}</p>
       </div>

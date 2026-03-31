@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { scrollToSection } from '@/utils';
+import HeartIcon_1 from './HeartIcon_1';
 import styles from './Cover_1.module.css';
 
 interface CoverProps {
@@ -89,7 +90,11 @@ const Cover_1 = React.memo(function Cover_1({
         
         <div className={styles.coupleInfo}>
           <h2 className={styles.coupleNames}>
-            {groomName} <span className={styles.heart}>♡</span> {brideName}
+            {groomName}{' '}
+            <span className={styles.heart} aria-hidden="true">
+              <HeartIcon_1 className={styles.heartImage} />
+            </span>{' '}
+            {brideName}
           </h2>
           <div className={styles.eventMeta}>
             <div className={styles.metaRow}>

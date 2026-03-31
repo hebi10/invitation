@@ -88,7 +88,7 @@ export default function AdminPageClient() {
   const fetchPages = async () => {
     setPagesLoading(true);
     try {
-      setPages(await getAllInvitationPages());
+      setPages(await getAllInvitationPages({ includeSeedFallback: true }));
     } catch (fetchError) {
       console.error(fetchError);
       showToast({
@@ -150,7 +150,9 @@ export default function AdminPageClient() {
     });
   };
 
-  const handleDeleteComment = async (commentId: string, author: string) => {
+  const handleDeleteComment = async (comment: Comment) => {
+    const commentId = comment.id;
+    const author = comment.author;
     const approved = await confirm({
       title: '댓글을 삭제할까요?',
       description: `${author} 님의 댓글을 삭제하면 복구할 수 없습니다.`,
@@ -164,8 +166,17 @@ export default function AdminPageClient() {
     }
 
     try {
-      await deleteComment(commentId);
-      setComments((prev) => prev.filter((comment) => comment.id !== commentId));
+      await deleteComment(commentId, comment.collectionName);
+      setComments((prev) =>
+        prev.filter(
+          (entry) =>
+            !(
+              entry.id === commentId &&
+              (entry.collectionName ?? 'comments') ===
+                (comment.collectionName ?? 'comments')
+            )
+        )
+      );
       showToast({
         title: '댓글을 삭제했습니다.',
         tone: 'success',
@@ -429,7 +440,7 @@ export default function AdminPageClient() {
               commentPageOptions={commentPageOptions}
               onRefresh={() => void fetchComments()}
               onQueryChange={updateQuery}
-              onDeleteComment={(commentId, author) => void handleDeleteComment(commentId, author)}
+              onDeleteComment={(comment) => void handleDeleteComment(comment)}
             />
           ) : null}
 

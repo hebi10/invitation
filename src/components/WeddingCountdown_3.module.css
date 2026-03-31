@@ -171,9 +171,18 @@
 }
 
 .expiredIcon {
-  font-size: 3rem;
+  width: clamp(46px, 10vw, 62px);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   margin-bottom: 1.5rem;
   animation: pulse-glow 2s ease-in-out infinite;
+}
+
+.expiredIconImage {
+  width: 100%;
+  height: auto;
+  display: block;
 }
 
 @keyframes pulse-glow {

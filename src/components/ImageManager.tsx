@@ -25,7 +25,10 @@ export default function ImageManager() {
   const loadData = async () => {
     try {
       setIsLoading(true);
-      const [nextImages, nextPages] = await Promise.all([getAllPageImages(), getAllInvitationPages()]);
+      const [nextImages, nextPages] = await Promise.all([
+        getAllPageImages(),
+        getAllInvitationPages({ includeSeedFallback: true }),
+      ]);
       setImages(nextImages);
       setPages(nextPages);
       if (!selectedPage && nextPages.length > 0) {

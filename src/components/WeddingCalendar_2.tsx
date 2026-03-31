@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import styles from './WeddingCalendar_2.module.css';
 import WeddingCountdown_2 from './WeddingCountdown_2';
 
@@ -10,64 +10,46 @@ interface WeddingCalendarProps {
   countdownTitle?: string;
 }
 
-export default function WeddingCalendar_2({ 
+export default function WeddingCalendar_2({
   weddingDate,
   showCountdown = false,
-  countdownTitle = "결혼식까지"
+  countdownTitle = '결혼식까지',
 }: WeddingCalendarProps) {
-  const [countdown, setCountdown] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
   const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {
     setIsClient(true);
   }, []);
 
-  useEffect(() => {
-    if (!isClient) return;
-
-    const calculateCountdown = () => {
-      const now = new Date();
-      const difference = weddingDate.getTime() - now.getTime();
-
-      if (difference > 0) {
-        setCountdown({
-          days: Math.floor(difference / (1000 * 60 * 60 * 24)),
-          hours: Math.floor((difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)),
-          minutes: Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60)),
-          seconds: Math.floor((difference % (1000 * 60)) / 1000)
-        });
-      }
-    };
-
-    calculateCountdown();
-    const timer = setInterval(calculateCountdown, 1000);
-
-    return () => clearInterval(timer);
-  }, [weddingDate, isClient]);
-
   const year = weddingDate.getFullYear();
   const month = weddingDate.getMonth();
   const day = weddingDate.getDate();
-
-  const getDaysInMonth = (year: number, month: number) => {
-    return new Date(year, month + 1, 0).getDate();
-  };
-
-  const getFirstDayOfMonth = (year: number, month: number) => {
-    return new Date(year, month, 1).getDay();
-  };
-
-  const daysInMonth = getDaysInMonth(year, month);
-  const firstDay = getFirstDayOfMonth(year, month);
+  const monthNames = [
+    '1월',
+    '2월',
+    '3월',
+    '4월',
+    '5월',
+    '6월',
+    '7월',
+    '8월',
+    '9월',
+    '10월',
+    '11월',
+    '12월',
+  ];
+  const dayNames = ['일', '월', '화', '수', '목', '금', '토'];
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const firstDay = new Date(year, month, 1).getDay();
   const weeks: (number | null)[][] = [];
   let currentWeek: (number | null)[] = new Array(firstDay).fill(null);
 
-  for (let d = 1; d <= daysInMonth; d++) {
+  for (let date = 1; date <= daysInMonth; date += 1) {
     if (currentWeek.length === 7) {
       weeks.push(currentWeek);
       currentWeek = [];
     }
-    currentWeek.push(d);
+    currentWeek.push(date);
   }
 
   if (currentWeek.length > 0) {
@@ -77,9 +59,6 @@ export default function WeddingCalendar_2({
     weeks.push(currentWeek);
   }
 
-  const monthNames = ['1월', '2월', '3월', '4월', '5월', '6월', '7월', '8월', '9월', '10월', '11월', '12월'];
-  const dayNames = ['일', '월', '화', '수', '목', '금', '토'];
-
   return (
     <section className={styles.container}>
       <h2 className={styles.title}>Wedding Day</h2>
@@ -88,35 +67,33 @@ export default function WeddingCalendar_2({
         <div className={styles.calendarHeader}>
           {year}년 {monthNames[month]}
         </div>
-        
+
         <div className={styles.weekHeader}>
           {dayNames.map((dayName, index) => (
-            <div 
-              key={index} 
-              className={`${styles.dayName} ${index === 0 ? styles.sunday : ''} ${index === 6 ? styles.saturday : ''}`}
+            <div
+              key={dayName}
+              className={`${styles.dayName} ${
+                index === 0 ? styles.sunday : ''
+              } ${index === 6 ? styles.saturday : ''}`}
             >
               {dayName}
             </div>
           ))}
         </div>
-        
+
         <div className={styles.calendarBody}>
           {weeks.map((week, weekIndex) => (
             <div key={weekIndex} className={styles.week}>
-              {week.map((d, dayIndex) => (
+              {week.map((date, dayIndex) => (
                 <div
-                  key={dayIndex}
+                  key={`${weekIndex}-${dayIndex}`}
                   className={`${styles.day} ${
-                    d === day ? styles.weddingDay : ''
-                  } ${
-                    dayIndex === 0 && d ? styles.sunday : ''
-                  } ${
-                    dayIndex === 6 && d ? styles.saturday : ''
-                  } ${
-                    !d ? styles.empty : ''
-                  }`}
+                    date === day ? styles.weddingDay : ''
+                  } ${dayIndex === 0 && date ? styles.sunday : ''} ${
+                    dayIndex === 6 && date ? styles.saturday : ''
+                  } ${!date ? styles.empty : ''}`}
                 >
-                  {d || ''}
+                  {date || ''}
                 </div>
               ))}
             </div>
@@ -124,12 +101,11 @@ export default function WeddingCalendar_2({
         </div>
       </div>
 
-      {/* 카운트다운 (옵션) */}
-      {showCountdown && (
+      {showCountdown && isClient ? (
         <div style={{ marginTop: '40px' }}>
           <WeddingCountdown_2 targetDate={weddingDate} title={countdownTitle} />
         </div>
-      )}
+      ) : null}
     </section>
   );
 }

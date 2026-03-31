@@ -1,8 +1,14 @@
 'use client';
 
 import { notFound } from 'next/navigation';
-import { useEffect, useMemo, useState } from 'react';
+import { Fragment, useEffect, useMemo, useState } from 'react';
+import { Swiper, SwiperSlide } from 'swiper/react';
+import { A11y, Keyboard, Navigation, Pagination } from 'swiper/modules';
+import 'swiper/css';
+import 'swiper/css/navigation';
+import 'swiper/css/pagination';
 
+import HeartIcon_1 from '@/components/HeartIcon_1';
 import { AdminProvider, useAdmin } from '@/contexts';
 import { getMemoryPageBySlug } from '@/services/memoryPageService';
 import type {
@@ -14,12 +20,58 @@ import type {
 import styles from './page.module.css';
 
 const GALLERY_CATEGORY_LABELS: Record<MemoryGalleryCategory, string> = {
-  preWedding: '식전',
+  preWedding: '예식 전',
   ceremony: '본식',
-  afterParty: '식후',
+  afterParty: '애프터',
   snap: '스냅',
   etc: '기타',
 };
+
+const COMMENTS_PER_PAGE = 5;
+const GALLERY_BREAKPOINTS = {
+  0: {
+    slidesPerView: 1.15,
+    spaceBetween: 14,
+  },
+  640: {
+    slidesPerView: 2.1,
+    spaceBetween: 16,
+  },
+  1024: {
+    slidesPerView: 3.05,
+    spaceBetween: 18,
+  },
+} as const;
+
+const HEART_GLYPH_SET = new Set(['♡', '♥', '❤']);
+
+function isHeartGlyph(value: string) {
+  return HEART_GLYPH_SET.has(value);
+}
+
+function renderHeartDecoratedTitle(title: string) {
+  const segments = title.split(/([♡♥❤])/g).filter((segment) => segment.length > 0);
+  const hasHeartGlyph = segments.some((segment) => isHeartGlyph(segment));
+
+  if (!hasHeartGlyph) {
+    return title;
+  }
+
+  return segments.map((segment, index) => {
+    if (isHeartGlyph(segment)) {
+      return (
+        <HeartIcon_1
+          key={`memory-title-heart-${index}`}
+          className={styles.heroTitleHeartIcon}
+          width={20}
+          height={17}
+        />
+      );
+    }
+
+    return <Fragment key={`memory-title-text-${index}`}>{segment}</Fragment>;
+  });
+}
 
 function formatCommentDate(date: Date) {
   return new Intl.DateTimeFormat('ko-KR', {
@@ -54,7 +106,9 @@ function upsertCanonicalLink(href: string) {
     return;
   }
 
-  let link = document.head.querySelector('link[rel="canonical"]') as HTMLLinkElement | null;
+  let link = document.head.querySelector(
+    'link[rel="canonical"]'
+  ) as HTMLLinkElement | null;
   if (!link) {
     link = document.createElement('link');
     link.rel = 'canonical';
@@ -64,7 +118,10 @@ function upsertCanonicalLink(href: string) {
   link.href = href;
 }
 
-function applyMemoryMetadata(memoryPage: MemoryPage | null, status: 'loading' | 'ready' | 'notfound') {
+function applyMemoryMetadata(
+  memoryPage: MemoryPage | null,
+  status: 'loading' | 'ready' | 'notfound'
+) {
   if (typeof document === 'undefined') {
     return;
   }
@@ -73,47 +130,74 @@ function applyMemoryMetadata(memoryPage: MemoryPage | null, status: 'loading' | 
     document.title = '추억 페이지';
     upsertMetaTag('meta[name="description"]', {
       name: 'description',
-      content: '결혼식 이후 사진과 기록을 다시 보는 추억 페이지입니다.',
+      content: '결혼식 이후의 사진과 기록을 다시 보는 추억 페이지입니다.',
     });
-    upsertMetaTag('meta[name="robots"]', { name: 'robots', content: 'noindex, nofollow' });
+    upsertMetaTag('meta[name="robots"]', {
+      name: 'robots',
+      content: 'noindex, nofollow',
+    });
     return;
   }
 
   const title = memoryPage.seoTitle || memoryPage.title;
   const description = memoryPage.seoDescription || memoryPage.introMessage;
   const image = memoryPage.heroImage?.url || memoryPage.galleryImages[0]?.url || '';
-  const shouldIndex = memoryPage.enabled && memoryPage.visibility === 'public' && !memoryPage.seoNoIndex;
+  const shouldIndex =
+    memoryPage.enabled && memoryPage.visibility === 'public' && !memoryPage.seoNoIndex;
   const robots = shouldIndex ? 'index, follow' : 'noindex, nofollow';
   const canonicalUrl =
-    typeof window !== 'undefined' ? `${window.location.origin}${window.location.pathname}` : '';
+    typeof window !== 'undefined'
+      ? `${window.location.origin}${window.location.pathname}`
+      : '';
 
   document.title = title;
-  upsertMetaTag('meta[name="description"]', { name: 'description', content: description });
+  upsertMetaTag('meta[name="description"]', {
+    name: 'description',
+    content: description,
+  });
   upsertMetaTag('meta[name="robots"]', { name: 'robots', content: robots });
-  upsertMetaTag('meta[property="og:title"]', { property: 'og:title', content: title });
+  upsertMetaTag('meta[property="og:title"]', {
+    property: 'og:title',
+    content: title,
+  });
   upsertMetaTag('meta[property="og:description"]', {
     property: 'og:description',
     content: description,
   });
-  upsertMetaTag('meta[property="og:type"]', { property: 'og:type', content: 'website' });
+  upsertMetaTag('meta[property="og:type"]', {
+    property: 'og:type',
+    content: 'website',
+  });
 
   if (image) {
-    upsertMetaTag('meta[property="og:image"]', { property: 'og:image', content: image });
-    upsertMetaTag('meta[name="twitter:image"]', { name: 'twitter:image', content: image });
+    upsertMetaTag('meta[property="og:image"]', {
+      property: 'og:image',
+      content: image,
+    });
+    upsertMetaTag('meta[name="twitter:image"]', {
+      name: 'twitter:image',
+      content: image,
+    });
   }
 
   upsertMetaTag('meta[name="twitter:card"]', {
     name: 'twitter:card',
     content: 'summary_large_image',
   });
-  upsertMetaTag('meta[name="twitter:title"]', { name: 'twitter:title', content: title });
+  upsertMetaTag('meta[name="twitter:title"]', {
+    name: 'twitter:title',
+    content: title,
+  });
   upsertMetaTag('meta[name="twitter:description"]', {
     name: 'twitter:description',
     content: description,
   });
 
   if (canonicalUrl) {
-    upsertMetaTag('meta[property="og:url"]', { property: 'og:url', content: canonicalUrl });
+    upsertMetaTag('meta[property="og:url"]', {
+      property: 'og:url',
+      content: canonicalUrl,
+    });
     upsertCanonicalLink(canonicalUrl);
   }
 }
@@ -126,7 +210,9 @@ function MemoryPageClientBody({ slug }: MemoryPageClientProps) {
   const { isAdminLoggedIn, isAdminLoading } = useAdmin();
   const [memoryPage, setMemoryPage] = useState<MemoryPage | null>(null);
   const [status, setStatus] = useState<'loading' | 'ready' | 'notfound'>('loading');
-  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
+  const [commentPage, setCommentPage] = useState(1);
+  const [lightboxStartIndex, setLightboxStartIndex] = useState<number | null>(null);
+  const [lightboxActiveIndex, setLightboxActiveIndex] = useState(0);
 
   useEffect(() => {
     if (isAdminLoading) {
@@ -137,7 +223,9 @@ function MemoryPageClientBody({ slug }: MemoryPageClientProps) {
 
     const loadMemoryPage = async () => {
       setStatus('loading');
-      setLightboxIndex(null);
+      setCommentPage(1);
+      setLightboxStartIndex(null);
+      setLightboxActiveIndex(0);
 
       try {
         const fetchedMemoryPage = await getMemoryPageBySlug(slug);
@@ -152,7 +240,10 @@ function MemoryPageClientBody({ slug }: MemoryPageClientProps) {
           return;
         }
 
-        if (!isAdminLoggedIn && (!fetchedMemoryPage.enabled || fetchedMemoryPage.visibility === 'private')) {
+        if (
+          !isAdminLoggedIn &&
+          (!fetchedMemoryPage.enabled || fetchedMemoryPage.visibility === 'private')
+        ) {
           setMemoryPage(null);
           setStatus('notfound');
           return;
@@ -180,18 +271,29 @@ function MemoryPageClientBody({ slug }: MemoryPageClientProps) {
     applyMemoryMetadata(memoryPage, status);
   }, [memoryPage, status]);
 
-  const orderedImages = useMemo(() => sortByOrder(memoryPage?.galleryImages ?? []), [memoryPage]);
+  const orderedImages = useMemo(
+    () => sortByOrder(memoryPage?.galleryImages ?? []),
+    [memoryPage]
+  );
   const visibleComments = useMemo(
-    () => sortByOrder((memoryPage?.selectedComments ?? []).filter((comment) => comment.isVisible)),
+    () =>
+      sortByOrder((memoryPage?.selectedComments ?? []).filter((comment) => comment.isVisible)),
     [memoryPage]
   );
   const timelineItems = useMemo(
-    () => sortByOrder((memoryPage?.timelineItems ?? []).filter((item) => item.title || item.description)),
+    () =>
+      sortByOrder(
+        (memoryPage?.timelineItems ?? []).filter(
+          (item) => item.title || item.description
+        )
+      ),
     [memoryPage]
   );
   const galleryGroups = useMemo(
     () =>
-      Object.entries(GALLERY_CATEGORY_LABELS)
+      (Object.entries(GALLERY_CATEGORY_LABELS) as Array<
+        [MemoryGalleryCategory, string]
+      >)
         .map(([category, label]) => ({
           category,
           label,
@@ -200,36 +302,30 @@ function MemoryPageClientBody({ slug }: MemoryPageClientProps) {
         .filter((group) => group.images.length > 0),
     [orderedImages]
   );
-
   const heroImage = memoryPage?.heroImage ?? orderedImages[0] ?? null;
-  const lightboxImage = lightboxIndex !== null ? orderedImages[lightboxIndex] ?? null : null;
+  const totalCommentPages = Math.max(
+    1,
+    Math.ceil(visibleComments.length / COMMENTS_PER_PAGE)
+  );
+  const paginatedComments = visibleComments.slice(
+    (commentPage - 1) * COMMENTS_PER_PAGE,
+    commentPage * COMMENTS_PER_PAGE
+  );
+  const isLightboxOpen = lightboxStartIndex !== null;
+  const lightboxImage =
+    isLightboxOpen && orderedImages.length > 0
+      ? orderedImages[lightboxActiveIndex] ?? orderedImages[lightboxStartIndex ?? 0] ?? null
+      : null;
 
   useEffect(() => {
-    if (lightboxIndex === null) {
-      return;
+    setCommentPage(1);
+  }, [slug]);
+
+  useEffect(() => {
+    if (commentPage > totalCommentPages) {
+      setCommentPage(totalCommentPages);
     }
-
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
-        setLightboxIndex(null);
-      }
-
-      if (event.key === 'ArrowLeft') {
-        setLightboxIndex((prev) =>
-          prev === null ? prev : (prev - 1 + orderedImages.length) % orderedImages.length
-        );
-      }
-
-      if (event.key === 'ArrowRight') {
-        setLightboxIndex((prev) =>
-          prev === null ? prev : (prev + 1) % orderedImages.length
-        );
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [lightboxIndex, orderedImages.length]);
+  }, [commentPage, totalCommentPages]);
 
   useEffect(() => {
     if (typeof document === 'undefined') {
@@ -237,20 +333,26 @@ function MemoryPageClientBody({ slug }: MemoryPageClientProps) {
     }
 
     const previousOverflow = document.body.style.overflow;
-    if (lightboxIndex !== null) {
+
+    if (isLightboxOpen) {
       document.body.style.overflow = 'hidden';
     }
 
     return () => {
       document.body.style.overflow = previousOverflow;
     };
-  }, [lightboxIndex]);
+  }, [isLightboxOpen]);
 
   const openLightboxByImage = (targetImage: MemoryGalleryImage) => {
     const nextIndex = orderedImages.findIndex((image) => image.id === targetImage.id);
     if (nextIndex >= 0) {
-      setLightboxIndex(nextIndex);
+      setLightboxStartIndex(nextIndex);
+      setLightboxActiveIndex(nextIndex);
     }
+  };
+
+  const closeLightbox = () => {
+    setLightboxStartIndex(null);
   };
 
   if (status === 'notfound') {
@@ -274,7 +376,11 @@ function MemoryPageClientBody({ slug }: MemoryPageClientProps) {
       <div className={styles.shell}>
         <section className={styles.hero}>
           {heroImage ? (
-            <button type="button" className={styles.heroMediaButton} onClick={() => openLightboxByImage(heroImage)}>
+            <button
+              type="button"
+              className={styles.heroMediaButton}
+              onClick={() => openLightboxByImage(heroImage)}
+            >
               <img
                 className={styles.heroImage}
                 src={heroImage.url}
@@ -292,15 +398,18 @@ function MemoryPageClientBody({ slug }: MemoryPageClientProps) {
           ) : null}
           <div className={styles.heroBody}>
             <div className={styles.heroChips}>
-              {isAdminLoggedIn && (!memoryPage.enabled || memoryPage.visibility === 'private') ? (
+              {isAdminLoggedIn &&
+              (!memoryPage.enabled || memoryPage.visibility === 'private') ? (
                 <span className={styles.heroChip}>관리자 미리보기</span>
               ) : null}
               {memoryPage.visibility === 'unlisted' ? (
                 <span className={styles.heroChip}>링크 전용</span>
               ) : null}
             </div>
-            <h1 className={styles.heroTitle}>{memoryPage.title}</h1>
-            {memoryPage.subtitle ? <p className={styles.heroSubtitle}>{memoryPage.subtitle}</p> : null}
+            <h1 className={styles.heroTitle}>{renderHeartDecoratedTitle(memoryPage.title)}</h1>
+            {memoryPage.subtitle ? (
+              <p className={styles.heroSubtitle}>{memoryPage.subtitle}</p>
+            ) : null}
             <div className={styles.heroMeta}>
               <span>{memoryPage.weddingDate}</span>
               <span>{memoryPage.venueName}</span>
@@ -313,7 +422,7 @@ function MemoryPageClientBody({ slug }: MemoryPageClientProps) {
           <div className={styles.sectionHeader}>
             <span className={styles.sectionLabel}>결혼식 요약</span>
             <h2 className={styles.sectionTitle}>
-              {memoryPage.groomName} ♥ {memoryPage.brideName}
+              {memoryPage.groomName} · {memoryPage.brideName}
             </h2>
           </div>
           <div className={styles.summaryGrid}>
@@ -342,14 +451,39 @@ function MemoryPageClientBody({ slug }: MemoryPageClientProps) {
               {galleryGroups.map((group) => (
                 <div key={group.category} className={styles.galleryGroup}>
                   <h3 className={styles.galleryGroupTitle}>{group.label}</h3>
-                  <div className={styles.galleryGrid}>
+                  <Swiper
+                    className={styles.gallerySwiper}
+                    modules={[Pagination, A11y]}
+                    pagination={
+                      group.images.length > 1
+                        ? { clickable: true, dynamicBullets: true }
+                        : false
+                    }
+                    grabCursor={group.images.length > 1}
+                    watchOverflow={true}
+                    breakpoints={GALLERY_BREAKPOINTS}
+                  >
                     {group.images.map((image) => (
-                      <button key={image.id} type="button" className={styles.galleryFigure} onClick={() => openLightboxByImage(image)}>
-                        <img className={styles.galleryThumb} src={image.url} alt={image.caption || image.name} loading="lazy" decoding="async" />
-                        {image.caption ? <span className={styles.galleryCaption}>{image.caption}</span> : null}
-                      </button>
+                      <SwiperSlide key={image.id} className={styles.gallerySlide}>
+                        <button
+                          type="button"
+                          className={styles.galleryFigure}
+                          onClick={() => openLightboxByImage(image)}
+                        >
+                          <img
+                            className={styles.galleryThumb}
+                            src={image.url}
+                            alt={image.caption || image.name}
+                            loading="lazy"
+                            decoding="async"
+                          />
+                          {image.caption ? (
+                            <span className={styles.galleryCaption}>{image.caption}</span>
+                          ) : null}
+                        </button>
+                      </SwiperSlide>
                     ))}
-                  </div>
+                  </Swiper>
                 </div>
               ))}
             </div>
@@ -363,7 +497,7 @@ function MemoryPageClientBody({ slug }: MemoryPageClientProps) {
               <h2 className={styles.sectionTitle}>함께 남겨주신 마음</h2>
             </div>
             <div className={styles.commentList}>
-              {visibleComments.map((comment) => (
+              {paginatedComments.map((comment) => (
                 <article key={comment.id} className={styles.commentCard}>
                   <p className={styles.commentMessage}>{comment.message}</p>
                   <div className={styles.commentMeta}>
@@ -373,6 +507,55 @@ function MemoryPageClientBody({ slug }: MemoryPageClientProps) {
                 </article>
               ))}
             </div>
+
+            {totalCommentPages > 1 ? (
+              <div className={styles.commentPagination}>
+                <p className={styles.commentPaginationInfo}>
+                  {visibleComments.length}개 중 {(commentPage - 1) * COMMENTS_PER_PAGE + 1}-
+                  {Math.min(commentPage * COMMENTS_PER_PAGE, visibleComments.length)}개 표시
+                </p>
+                <div className={styles.commentPaginationControls}>
+                  <button
+                    type="button"
+                    className={styles.commentPaginationButton}
+                    onClick={() => setCommentPage((page) => Math.max(1, page - 1))}
+                    disabled={commentPage === 1}
+                  >
+                    이전
+                  </button>
+
+                  <div className={styles.commentPaginationNumbers}>
+                    {Array.from({ length: totalCommentPages }, (_, index) => index + 1).map(
+                      (pageNumber) => (
+                        <button
+                          key={pageNumber}
+                          type="button"
+                          className={`${styles.commentPaginationButton} ${
+                            commentPage === pageNumber
+                              ? styles.commentPaginationButtonActive
+                              : ''
+                          }`}
+                          onClick={() => setCommentPage(pageNumber)}
+                        >
+                          {pageNumber}
+                        </button>
+                      )
+                    )}
+                  </div>
+
+                  <button
+                    type="button"
+                    className={styles.commentPaginationButton}
+                    onClick={() =>
+                      setCommentPage((page) => Math.min(totalCommentPages, page + 1))
+                    }
+                    disabled={commentPage === totalCommentPages}
+                  >
+                    다음
+                  </button>
+                </div>
+              </div>
+            ) : null}
           </section>
         ) : null}
 
@@ -401,33 +584,75 @@ function MemoryPageClientBody({ slug }: MemoryPageClientProps) {
 
         <section className={`${styles.panel} ${styles.thankYouPanel}`}>
           <span className={styles.sectionLabel}>감사 인사</span>
-          <h2 className={styles.sectionTitle}>함께해주셔서 감사합니다.</h2>
+          <h2 className={styles.sectionTitle}>함께해주셔서 감사합니다</h2>
           <p className={styles.thankYouMessage}>{memoryPage.thankYouMessage}</p>
         </section>
       </div>
 
-      {lightboxImage ? (
-        <div className={styles.lightboxBackdrop} role="presentation" onClick={() => setLightboxIndex(null)}>
-          <div className={styles.lightboxDialog} role="dialog" aria-modal="true" onClick={(event) => event.stopPropagation()}>
-            <button type="button" className={styles.lightboxClose} onClick={() => setLightboxIndex(null)}>
+      {isLightboxOpen && lightboxStartIndex !== null ? (
+        <div
+          className={styles.lightboxBackdrop}
+          role="presentation"
+          onClick={closeLightbox}
+        >
+          <div
+            className={styles.lightboxDialog}
+            role="dialog"
+            aria-modal="true"
+            aria-label="추억 페이지 이미지 슬라이드"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <button
+              type="button"
+              className={styles.lightboxClose}
+              onClick={closeLightbox}
+            >
               닫기
             </button>
-            {orderedImages.length > 1 ? (
+
+            <Swiper
+              key={`${slug}-${lightboxStartIndex}`}
+              className={styles.lightboxSwiper}
+              modules={[Navigation, Pagination, Keyboard, A11y]}
+              initialSlide={lightboxStartIndex}
+              navigation={orderedImages.length > 1}
+              pagination={
+                orderedImages.length > 1 ? { type: 'fraction' } : false
+              }
+              keyboard={{ enabled: true }}
+              a11y={{
+                enabled: true,
+                prevSlideMessage: '이전 이미지',
+                nextSlideMessage: '다음 이미지',
+              }}
+              watchOverflow={true}
+              onSwiper={(swiper) => setLightboxActiveIndex(swiper.activeIndex)}
+              onSlideChange={(swiper) => setLightboxActiveIndex(swiper.activeIndex)}
+            >
+              {orderedImages.map((image) => (
+                <SwiperSlide key={image.id} className={styles.lightboxSlide}>
+                  <img
+                    className={styles.lightboxImage}
+                    src={image.url}
+                    alt={image.caption || image.name}
+                    loading="eager"
+                    decoding="async"
+                  />
+                </SwiperSlide>
+              ))}
+            </Swiper>
+
+            {lightboxImage ? (
               <>
-                <button type="button" className={`${styles.lightboxNav} ${styles.lightboxPrev}`} onClick={() => setLightboxIndex((prev) => (prev === null ? 0 : (prev - 1 + orderedImages.length) % orderedImages.length))}>
-                  이전
-                </button>
-                <button type="button" className={`${styles.lightboxNav} ${styles.lightboxNext}`} onClick={() => setLightboxIndex((prev) => (prev === null ? 0 : (prev + 1) % orderedImages.length))}>
-                  다음
-                </button>
+                <div className={styles.lightboxMeta}>
+                  <strong>{GALLERY_CATEGORY_LABELS[lightboxImage.category]}</strong>
+                  <span>{`${lightboxActiveIndex + 1} / ${orderedImages.length}`}</span>
+                </div>
+                {lightboxImage.caption ? (
+                  <p className={styles.lightboxCaption}>{lightboxImage.caption}</p>
+                ) : null}
               </>
             ) : null}
-            <img className={styles.lightboxImage} src={lightboxImage.url} alt={lightboxImage.caption || lightboxImage.name} loading="eager" decoding="async" />
-            <div className={styles.lightboxMeta}>
-              <strong>{GALLERY_CATEGORY_LABELS[lightboxImage.category]}</strong>
-              <span>{lightboxIndex !== null ? `${lightboxIndex + 1} / ${orderedImages.length}` : null}</span>
-            </div>
-            {lightboxImage.caption ? <p className={styles.lightboxCaption}>{lightboxImage.caption}</p> : null}
           </div>
         </div>
       ) : null}

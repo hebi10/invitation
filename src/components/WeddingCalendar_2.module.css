@@ -142,7 +142,6 @@
   background: #212529;
   color: #ffffff !important;
   font-weight: 600;
-  transform: scale(1.05);
 }
 
 @media (min-width: 640px) {
