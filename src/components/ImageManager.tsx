@@ -162,7 +162,7 @@ export default function ImageManager() {
       <div className={styles.header}>
         <div>
           <h2 className={styles.title}>청첩장 이미지 관리</h2>
-          <p className={styles.description}>wedding-images 스토리지 경로를 invitation-pages 문서와 함께 관리합니다.</p>
+          <p className={styles.description}>wedding-images 스토리지 경로를 seed 청첩장 slug 기준으로 관리합니다.</p>
         </div>
       </div>
 

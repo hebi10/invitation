@@ -1,4 +1,3 @@
-import { getAllWeddingPageSlugs } from '@/config/weddingPages';
 import { ensureFirebaseInit, USE_FIREBASE } from '@/lib/firebase';
 
 export interface Comment {
@@ -16,8 +15,13 @@ export interface CommentInput {
   pageSlug: string;
 }
 
+export interface CommentSummary {
+  totalCount: number;
+  recentCount: number;
+}
+
 const COLLECTION_NAME = 'comments';
-const LEGACY_COLLECTION_PREFIX = 'comments-';
+const DEFAULT_RECENT_COMMENT_DAYS = 7;
 
 const mockComments = new Map<string, Comment[]>();
 
@@ -26,6 +30,7 @@ type FirestoreModules = {
   collection: any;
   deleteDoc: any;
   doc: any;
+  getCountFromServer: any;
   getDocs: any;
   query: any;
   serverTimestamp: any;
@@ -51,6 +56,7 @@ async function ensureFirestoreModules() {
       collection: firestore.collection,
       deleteDoc: firestore.deleteDoc,
       doc: firestore.doc,
+      getCountFromServer: firestore.getCountFromServer,
       getDocs: firestore.getDocs,
       query: firestore.query,
       serverTimestamp: firestore.serverTimestamp,
@@ -93,78 +99,14 @@ function normalizeComment(
   };
 }
 
-function getLegacyCollectionName(pageSlug: string) {
-  return `${LEGACY_COLLECTION_PREFIX}${pageSlug}`;
-}
-
-function isPermissionDeniedError(error: unknown) {
-  if (!error || typeof error !== 'object') {
-    return false;
-  }
-
-  const code =
-    'code' in error && typeof (error as { code?: unknown }).code === 'string'
-      ? (error as { code: string }).code
-      : '';
-  const message =
-    'message' in error && typeof (error as { message?: unknown }).message === 'string'
-      ? (error as { message: string }).message
-      : '';
-
-  return (
-    code === 'permission-denied' ||
-    message.toLowerCase().includes('missing or insufficient permissions')
-  );
-}
-
 function sortComments(comments: Comment[]) {
   return [...comments].sort(
     (left, right) => right.createdAt.getTime() - left.createdAt.getTime()
   );
 }
 
-function dedupeComments(comments: Comment[]) {
-  const seenKeys = new Set<string>();
-
-  return comments.filter((comment) => {
-    const key = `${comment.collectionName ?? COLLECTION_NAME}:${comment.id}`;
-    if (seenKeys.has(key)) {
-      return false;
-    }
-
-    seenKeys.add(key);
-    return true;
-  });
-}
-
-async function getCollectionComments(
-  collectionName: string,
-  pageSlug?: string
-): Promise<Comment[]> {
-  const firestore = await ensureFirestoreModules();
-  if (!firestore) {
-    return [];
-  }
-
-  try {
-    const snapshot = await firestore.modules.getDocs(
-      firestore.modules.collection(firestore.db, collectionName)
-    );
-
-    return snapshot.docs.map(
-      (docSnapshot: { id: string; data: () => Record<string, any> }) =>
-        normalizeComment(docSnapshot.id, docSnapshot.data(), {
-          pageSlug,
-          collectionName,
-        })
-    );
-  } catch (error) {
-    console.error(
-      `[commentService] failed to load collection ${collectionName}`,
-      error
-    );
-    return [];
-  }
+function buildRecentThreshold(recentDays: number) {
+  return new Date(Date.now() - recentDays * 24 * 60 * 60 * 1000);
 }
 
 async function getUnifiedComments(pageSlug?: string): Promise<Comment[]> {
@@ -233,29 +175,10 @@ export async function addComment(commentData: CommentInput): Promise<void> {
     createdAt: firestore.modules.serverTimestamp(),
   };
 
-  try {
-    await firestore.modules.addDoc(
-      firestore.modules.collection(firestore.db, COLLECTION_NAME),
-      documentData
-    );
-  } catch (error) {
-    if (!isPermissionDeniedError(error)) {
-      throw error;
-    }
-
-    console.warn(
-      `[commentService] unified comments write denied for ${payload.pageSlug}, falling back to legacy collection`,
-      error
-    );
-
-    await firestore.modules.addDoc(
-      firestore.modules.collection(
-        firestore.db,
-        getLegacyCollectionName(payload.pageSlug)
-      ),
-      documentData
-    );
-  }
+  await firestore.modules.addDoc(
+    firestore.modules.collection(firestore.db, COLLECTION_NAME),
+    documentData
+  );
 }
 
 export async function getComments(pageSlug: string): Promise<Comment[]> {
@@ -263,12 +186,7 @@ export async function getComments(pageSlug: string): Promise<Comment[]> {
     return sortComments([...(mockComments.get(pageSlug) ?? [])]);
   }
 
-  const [unifiedComments, legacyComments] = await Promise.all([
-    getUnifiedComments(pageSlug),
-    getCollectionComments(getLegacyCollectionName(pageSlug), pageSlug),
-  ]);
-
-  return sortComments(dedupeComments([...unifiedComments, ...legacyComments]));
+  return sortComments(await getUnifiedComments(pageSlug));
 }
 
 export async function deleteComment(
@@ -300,17 +218,61 @@ export async function getAllComments(): Promise<Comment[]> {
     return sortComments([...mockComments.values()].flat());
   }
 
-  const legacySlugs = [...new Set(getAllWeddingPageSlugs())];
-  const [unifiedComments, legacyCommentsByCollection] = await Promise.all([
-    getUnifiedComments(),
-    Promise.all(
-      legacySlugs.map((pageSlug) =>
-        getCollectionComments(getLegacyCollectionName(pageSlug), pageSlug)
-      )
-    ),
-  ]);
+  return sortComments(await getUnifiedComments());
+}
 
-  return sortComments(
-    dedupeComments([...unifiedComments, ...legacyCommentsByCollection.flat()])
-  );
+export async function getCommentSummary(
+  recentDays = DEFAULT_RECENT_COMMENT_DAYS
+): Promise<CommentSummary> {
+  const threshold = buildRecentThreshold(recentDays);
+
+  if (!USE_FIREBASE) {
+    const comments = [...mockComments.values()].flat();
+
+    return {
+      totalCount: comments.length,
+      recentCount: comments.filter(
+        (comment) => comment.createdAt.getTime() >= threshold.getTime()
+      ).length,
+    };
+  }
+
+  const firestore = await ensureFirestoreModules();
+  if (!firestore) {
+    throw new Error('Firestore is not initialized.');
+  }
+
+  try {
+    const collectionRef = firestore.modules.collection(
+      firestore.db,
+      COLLECTION_NAME
+    );
+    const [totalSnapshot, recentSnapshot] = await Promise.all([
+      firestore.modules.getCountFromServer(collectionRef),
+      firestore.modules.getCountFromServer(
+        firestore.modules.query(
+          collectionRef,
+          firestore.modules.where('createdAt', '>=', threshold)
+        )
+      ),
+    ]);
+
+    return {
+      totalCount: totalSnapshot.data().count,
+      recentCount: recentSnapshot.data().count,
+    };
+  } catch (error) {
+    console.warn(
+      '[commentService] failed to load comment summary via aggregate query, falling back to full read',
+      error
+    );
+
+    const comments = await getAllComments();
+    return {
+      totalCount: comments.length,
+      recentCount: comments.filter(
+        (comment) => comment.createdAt.getTime() >= threshold.getTime()
+      ).length,
+    };
+  }
 }

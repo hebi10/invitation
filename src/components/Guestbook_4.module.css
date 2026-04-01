@@ -97,11 +97,6 @@
   letter-spacing: 0.05em;
 }
 
-.submitButton:hover:not(:disabled) {
-  background: var(--lemon);
-  color: var(--text-primary);
-  transform: translateY(-2px);
-}
 
 .submitButton:active:not(:disabled) {
   transform: translateY(0);
@@ -138,10 +133,6 @@
   transition: all 0.3s ease;
 }
 
-.commentItem:hover {
-  border-color: var(--primary);
-  transform: translateY(-2px);
-}
 
 .commentHeader {
   display: flex;
@@ -192,10 +183,6 @@
   transition: all 0.3s ease;
 }
 
-.deleteButton:hover {
-  background: #FF4757;
-  color: white;
-}
 
 .commentMessage {
   font-family: var(--font-noto-sans-kr), sans-serif;
@@ -253,11 +240,6 @@
   justify-content: center;
 }
 
-.pageButton:hover:not(.disabled),
-.pageNumber:hover {
-  border-color: var(--primary);
-  color: var(--primary);
-}
 
 .pageButton.disabled {
   opacity: 0.3;
@@ -334,9 +316,6 @@
   transition: all 0.3s ease;
 }
 
-.modalButton:hover {
-  opacity: 0.9;
-}
 
 .modalButton.cancel {
   background: transparent;
@@ -344,10 +323,6 @@
   color: var(--text-secondary);
 }
 
-.modalButton.cancel:hover {
-  border-color: var(--primary);
-  color: var(--primary);
-}
 
 /* 반응형 */
 @media (max-width: 768px) {

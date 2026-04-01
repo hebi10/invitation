@@ -94,10 +94,6 @@
   transition: all 0.3s ease;
 }
 
-.accountCard:hover {
-  border-color: var(--primary);
-  transform: translateY(-4px);
-}
 
 .accountInfo {
   display: flex;
@@ -148,11 +144,6 @@
   letter-spacing: 0.05em;
 }
 
-.copyButton:hover {
-  background: var(--primary);
-  color: white;
-  transform: translateY(-2px);
-}
 
 .copyButton:active {
   transform: translateY(0);

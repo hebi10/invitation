@@ -58,10 +58,6 @@
   transition: background-color 0.2s;
 }
 
-.form button:hover,
-.section > button:hover {
-  background-color: #c19a68;
-}
 
 .form button:disabled,
 .section > button:disabled {
@@ -113,9 +109,6 @@
   font-size: 0.9rem;
 }
 
-.logsHeader button:hover {
-  background-color: #5a6268;
-}
 
 .logs {
   max-height: 400px;
@@ -134,9 +127,6 @@
   word-wrap: break-word;
 }
 
-.logEntry:hover {
-  background-color: #2d2d2d;
-}
 
 /* 로그 레벨별 색상 */
 .logEntry:contains("❌") {

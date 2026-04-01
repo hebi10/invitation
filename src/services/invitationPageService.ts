@@ -4,7 +4,6 @@ import {
   getWeddingPageBySlug,
 } from '@/config/weddingPages';
 import { ensureFirebaseInit, USE_FIREBASE } from '@/lib/firebase';
-import { buildInvitationVariants } from '@/lib/invitationVariants';
 import type { InvitationPage } from '@/types/invitationPage';
 import { sanitizeHeartIconPlaceholdersDeep } from '@/utils/textSanitizers';
 
@@ -23,23 +22,42 @@ export interface InvitationPageSummary {
 
 export interface InvitationPageLookupOptions {
   includeSeedFallback?: boolean;
+  fallbackOnError?: boolean;
+  retryOnPermissionDenied?: boolean;
+  retryCount?: number;
+  retryDelayMs?: number;
 }
 
 type FirestoreState = {
   db: any;
   modules: {
     collection: any;
+    deleteDoc: any;
     doc: any;
     getDoc: any;
     getDocs: any;
+    query: any;
     setDoc: any;
+    where: any;
   };
 };
 
-const INVITATION_COLLECTION = 'invitation-pages';
+type DisplayPeriodRecord = {
+  docId: string;
+  pageSlug: string;
+  isActive: boolean;
+  startDate: Date | null;
+  endDate: Date | null;
+  createdAt: Date | null;
+  updatedAt: Date | null;
+};
 
-function hasOwn(data: Record<string, any>, key: string) {
-  return Object.prototype.hasOwnProperty.call(data, key);
+const DISPLAY_PERIOD_COLLECTION = 'display-periods';
+
+function wait(ms: number) {
+  return new Promise((resolve) => {
+    setTimeout(resolve, ms);
+  });
 }
 
 function toDate(value: unknown): Date | null {
@@ -63,17 +81,52 @@ function toDate(value: unknown): Date | null {
   return Number.isNaN(parsed.getTime()) ? null : parsed;
 }
 
-function buildDisplayName(groomName: string, brideName: string) {
-  if (groomName && brideName) {
-    return `${groomName} & ${brideName}`;
+function buildSeedPage(pageSlug: string): InvitationPage | null {
+  const seed = getWeddingPageBySlug(pageSlug);
+  if (!seed) {
+    return null;
   }
 
-  return groomName || brideName || 'Wedding Invitation';
+  return sanitizeHeartIconPlaceholdersDeep(createInvitationPageFromSeed(seed));
 }
 
-function buildSeedFallbackInvitationPage(pageSlug: string): InvitationPage | null {
-  const seed = getWeddingPageBySlug(pageSlug);
-  return seed ? createInvitationPageFromSeed(seed) : null;
+function normalizeDisplayPeriod(
+  docId: string,
+  data: Record<string, any>
+): DisplayPeriodRecord | null {
+  const pageSlug = typeof data.pageSlug === 'string' && data.pageSlug.trim()
+    ? data.pageSlug.trim()
+    : docId;
+
+  if (!pageSlug) {
+    return null;
+  }
+
+  return {
+    docId,
+    pageSlug,
+    isActive: data.isActive === true,
+    startDate: toDate(data.startDate),
+    endDate: toDate(data.endDate),
+    createdAt: toDate(data.createdAt),
+    updatedAt: toDate(data.updatedAt),
+  };
+}
+
+function mergeDisplayPeriod(
+  page: InvitationPage,
+  period: DisplayPeriodRecord | null
+): InvitationPage {
+  if (!period) {
+    return page;
+  }
+
+  return sanitizeHeartIconPlaceholdersDeep({
+    ...page,
+    displayPeriodEnabled: period.isActive,
+    displayPeriodStart: period.startDate,
+    displayPeriodEnd: period.endDate,
+  });
 }
 
 function toInvitationPageSummary(page: InvitationPage): InvitationPageSummary {
@@ -91,157 +144,9 @@ function toInvitationPageSummary(page: InvitationPage): InvitationPageSummary {
   };
 }
 
-function toFirestoreInvitationPayload(page: InvitationPage): Record<string, any> {
-  return {
-    displayName: page.displayName,
-    description: page.description,
-    date: page.date,
-    venue: page.venue,
-    groomName: page.groomName,
-    brideName: page.brideName,
-    couple: page.couple,
-    weddingDateTime: page.weddingDateTime,
-    published: page.published,
-    displayPeriodEnabled: page.displayPeriodEnabled,
-    displayPeriodStart: page.displayPeriodStart,
-    displayPeriodEnd: page.displayPeriodEnd,
-    metadata: page.metadata,
-    pageData: page.pageData ?? null,
-    variants: page.variants,
-  };
-}
-
-function normalizeInvitationPage(
-  pageSlug: string,
-  data: Record<string, any>,
-  seedFallback: InvitationPage | null = null
-): InvitationPage {
-  const groomName =
-    data.groomName ?? data.couple?.groom?.name ?? seedFallback?.groomName ?? '';
-  const brideName =
-    data.brideName ?? data.couple?.bride?.name ?? seedFallback?.brideName ?? '';
-  const displayName =
-    data.displayName ?? seedFallback?.displayName ?? buildDisplayName(groomName, brideName);
-  const fallbackWeddingDateTime = seedFallback?.weddingDateTime ?? {
-    year: new Date().getFullYear(),
-    month: 0,
-    day: 1,
-    hour: 12,
-    minute: 0,
-  };
-
-  const normalizedPage: InvitationPage = {
-    slug: pageSlug,
-    displayName,
-    description: data.description ?? seedFallback?.description ?? '',
-    date: data.date ?? seedFallback?.date ?? '',
-    venue: data.venue ?? seedFallback?.venue ?? '',
-    groomName,
-    brideName,
-    couple: data.couple ?? {
-      groom: seedFallback?.couple.groom ?? { name: groomName },
-      bride: seedFallback?.couple.bride ?? { name: brideName },
-    },
-    weddingDateTime: {
-      year: Number(data.weddingDateTime?.year ?? fallbackWeddingDateTime.year),
-      month: Number(data.weddingDateTime?.month ?? fallbackWeddingDateTime.month),
-      day: Number(data.weddingDateTime?.day ?? fallbackWeddingDateTime.day),
-      hour: Number(data.weddingDateTime?.hour ?? fallbackWeddingDateTime.hour),
-      minute: Number(data.weddingDateTime?.minute ?? fallbackWeddingDateTime.minute),
-    },
-    published: hasOwn(data, 'published')
-      ? data.published === true
-      : (seedFallback?.published ?? true),
-    displayPeriodEnabled: hasOwn(data, 'displayPeriodEnabled')
-      ? data.displayPeriodEnabled === true
-      : (seedFallback?.displayPeriodEnabled ?? false),
-    displayPeriodStart: hasOwn(data, 'displayPeriodStart')
-      ? toDate(data.displayPeriodStart)
-      : (seedFallback?.displayPeriodStart ?? null),
-    displayPeriodEnd: hasOwn(data, 'displayPeriodEnd')
-      ? toDate(data.displayPeriodEnd)
-      : (seedFallback?.displayPeriodEnd ?? null),
-    metadata: {
-      title:
-        data.metadata?.title ??
-        seedFallback?.metadata.title ??
-        `${displayName} Wedding Invitation`,
-      description:
-        data.metadata?.description ??
-        seedFallback?.metadata.description ??
-        data.description ??
-        seedFallback?.description ??
-        '',
-      keywords: Array.isArray(data.metadata?.keywords)
-        ? data.metadata.keywords
-        : (seedFallback?.metadata.keywords ?? []),
-      images: {
-        wedding:
-          data.metadata?.images?.wedding ?? seedFallback?.metadata.images.wedding ?? '',
-        favicon:
-          data.metadata?.images?.favicon ??
-          seedFallback?.metadata.images.favicon ??
-          '/images/favicon.ico',
-      },
-      openGraph: {
-        title:
-          data.metadata?.openGraph?.title ??
-          seedFallback?.metadata.openGraph.title ??
-          `${displayName} Wedding Invitation`,
-        description:
-          data.metadata?.openGraph?.description ??
-          seedFallback?.metadata.openGraph.description ??
-          data.description ??
-          seedFallback?.description ??
-          '',
-      },
-      twitter: {
-        title:
-          data.metadata?.twitter?.title ??
-          seedFallback?.metadata.twitter.title ??
-          `${displayName} Wedding Invitation`,
-        description:
-          data.metadata?.twitter?.description ??
-          seedFallback?.metadata.twitter.description ??
-          data.description ??
-          seedFallback?.description ??
-          '',
-      },
-    },
-    pageData: data.pageData || seedFallback?.pageData
-      ? {
-          ...(seedFallback?.pageData ?? {}),
-          ...(data.pageData ?? {}),
-          groom:
-            data.pageData?.groom ??
-            seedFallback?.pageData?.groom ??
-            data.couple?.groom ??
-            seedFallback?.couple.groom ??
-            undefined,
-          bride:
-            data.pageData?.bride ??
-            seedFallback?.pageData?.bride ??
-            data.couple?.bride ??
-            seedFallback?.couple.bride ??
-            undefined,
-          venueName:
-            data.pageData?.venueName ??
-            seedFallback?.pageData?.venueName ??
-            data.venue ??
-            seedFallback?.venue ??
-            '',
-        }
-      : undefined,
-    variants:
-      data.variants ?? seedFallback?.variants ?? buildInvitationVariants(pageSlug, displayName),
-  };
-
-  return sanitizeHeartIconPlaceholdersDeep(normalizedPage);
-}
-
 function getSeedSummaries(): InvitationPageSummary[] {
   return getAllWeddingPageSeeds()
-    .map((seed) => createInvitationPageFromSeed(seed))
+    .map((seed) => sanitizeHeartIconPlaceholdersDeep(createInvitationPageFromSeed(seed)))
     .sort((left, right) => left.displayName.localeCompare(right.displayName, 'ko'))
     .map(toInvitationPageSummary);
 }
@@ -262,55 +167,216 @@ async function ensureFirestoreState(): Promise<FirestoreState | null> {
     db: firebase.db,
     modules: {
       collection: firestoreModule.collection,
+      deleteDoc: firestoreModule.deleteDoc,
       doc: firestoreModule.doc,
       getDoc: firestoreModule.getDoc,
       getDocs: firestoreModule.getDocs,
+      query: firestoreModule.query,
       setDoc: firestoreModule.setDoc,
+      where: firestoreModule.where,
     },
   };
+}
+
+function preferDisplayPeriod(
+  current: DisplayPeriodRecord | undefined,
+  nextRecord: DisplayPeriodRecord
+) {
+  if (!current) {
+    return nextRecord;
+  }
+
+  if (nextRecord.docId === nextRecord.pageSlug && current.docId !== current.pageSlug) {
+    return nextRecord;
+  }
+
+  if ((nextRecord.updatedAt?.getTime() ?? 0) > (current.updatedAt?.getTime() ?? 0)) {
+    return nextRecord;
+  }
+
+  return current;
+}
+
+async function getDisplayPeriodMap(firestore: FirestoreState) {
+  const snapshot = await firestore.modules.getDocs(
+    firestore.modules.collection(firestore.db, DISPLAY_PERIOD_COLLECTION)
+  );
+  const periodMap = new Map<string, DisplayPeriodRecord>();
+
+  for (const docSnapshot of snapshot.docs as Array<{
+    id: string;
+    data: () => Record<string, any>;
+  }>) {
+    const normalized = normalizeDisplayPeriod(docSnapshot.id, docSnapshot.data());
+    if (!normalized) {
+      continue;
+    }
+
+    periodMap.set(
+      normalized.pageSlug,
+      preferDisplayPeriod(periodMap.get(normalized.pageSlug), normalized)
+    );
+  }
+
+  return periodMap;
+}
+
+async function getDisplayPeriodByPageSlug(
+  firestore: FirestoreState,
+  pageSlug: string
+) {
+  const directSnapshot = await firestore.modules.getDoc(
+    firestore.modules.doc(firestore.db, DISPLAY_PERIOD_COLLECTION, pageSlug)
+  );
+  if (directSnapshot.exists()) {
+    const normalized = normalizeDisplayPeriod(pageSlug, directSnapshot.data());
+    if (normalized) {
+      return normalized;
+    }
+  }
+
+  const snapshot = await firestore.modules.getDocs(
+    firestore.modules.query(
+      firestore.modules.collection(firestore.db, DISPLAY_PERIOD_COLLECTION),
+      firestore.modules.where('pageSlug', '==', pageSlug)
+    )
+  );
+
+  let preferred: DisplayPeriodRecord | null = null;
+  snapshot.docs.forEach((docSnapshot: { id: string; data: () => Record<string, any> }) => {
+    const normalized = normalizeDisplayPeriod(docSnapshot.id, docSnapshot.data());
+    if (!normalized) {
+      return;
+    }
+
+    preferred = preferDisplayPeriod(preferred ?? undefined, normalized);
+  });
+
+  return preferred;
+}
+
+async function deleteDisplayPeriodDocuments(
+  firestore: FirestoreState,
+  pageSlug: string
+) {
+  const directSnapshot = await firestore.modules.getDoc(
+    firestore.modules.doc(firestore.db, DISPLAY_PERIOD_COLLECTION, pageSlug)
+  );
+
+  if (directSnapshot.exists()) {
+    await firestore.modules.deleteDoc(directSnapshot.ref);
+  }
+
+  const duplicateSnapshot = await firestore.modules.getDocs(
+    firestore.modules.query(
+      firestore.modules.collection(firestore.db, DISPLAY_PERIOD_COLLECTION),
+      firestore.modules.where('pageSlug', '==', pageSlug)
+    )
+  );
+
+  await Promise.all(
+    duplicateSnapshot.docs
+      .filter((docSnapshot: { id: string }) => docSnapshot.id !== pageSlug)
+      .map((docSnapshot: { ref: any }) => firestore.modules.deleteDoc(docSnapshot.ref))
+  );
+}
+
+async function syncDisplayPeriod(
+  firestore: FirestoreState,
+  pageSlug: string,
+  payload: {
+    displayPeriodEnabled: boolean;
+    displayPeriodStart: Date | null;
+    displayPeriodEnd: Date | null;
+  }
+) {
+  if (
+    !payload.displayPeriodEnabled ||
+    !payload.displayPeriodStart ||
+    !payload.displayPeriodEnd
+  ) {
+    await deleteDisplayPeriodDocuments(firestore, pageSlug);
+    return;
+  }
+
+  const docRef = firestore.modules.doc(firestore.db, DISPLAY_PERIOD_COLLECTION, pageSlug);
+  const existingSnapshot = await firestore.modules.getDoc(docRef);
+  const existingCreatedAt = existingSnapshot.exists()
+    ? toDate(existingSnapshot.data().createdAt)
+    : null;
+
+  await firestore.modules.setDoc(
+    docRef,
+    {
+      pageSlug,
+      isActive: true,
+      startDate: payload.displayPeriodStart,
+      endDate: payload.displayPeriodEnd,
+      createdAt: existingCreatedAt ?? new Date(),
+      updatedAt: new Date(),
+    },
+    { merge: true }
+  );
+
+  const duplicateSnapshot = await firestore.modules.getDocs(
+    firestore.modules.query(
+      firestore.modules.collection(firestore.db, DISPLAY_PERIOD_COLLECTION),
+      firestore.modules.where('pageSlug', '==', pageSlug)
+    )
+  );
+
+  await Promise.all(
+    duplicateSnapshot.docs
+      .filter((docSnapshot: { id: string }) => docSnapshot.id !== pageSlug)
+      .map((docSnapshot: { ref: any }) => firestore.modules.deleteDoc(docSnapshot.ref))
+  );
 }
 
 export async function getInvitationPageBySlug(
   pageSlug: string,
   options: InvitationPageLookupOptions = {}
 ): Promise<InvitationPage | null> {
-  const seedFallback = buildSeedFallbackInvitationPage(pageSlug);
-  const firestore = await ensureFirestoreState();
+  const seedPage = buildSeedPage(pageSlug);
+  if (!seedPage) {
+    return null;
+  }
 
+  const firestore = await ensureFirestoreState();
   if (!firestore) {
-    return options.includeSeedFallback
-      ? (seedFallback ? sanitizeHeartIconPlaceholdersDeep(seedFallback) : null)
-      : null;
+    return options.includeSeedFallback === false ? null : seedPage;
   }
 
   try {
-    const snapshot = await firestore.modules.getDoc(
-      firestore.modules.doc(firestore.db, INVITATION_COLLECTION, pageSlug)
-    );
-
-    if (!snapshot.exists()) {
-      return options.includeSeedFallback
-        ? (seedFallback ? sanitizeHeartIconPlaceholdersDeep(seedFallback) : null)
-        : null;
-    }
-
-    return normalizeInvitationPage(snapshot.id, snapshot.data(), seedFallback);
+    const period = await getDisplayPeriodByPageSlug(firestore, pageSlug);
+    return mergeDisplayPeriod(seedPage, period);
   } catch (error) {
-    if (options.includeSeedFallback && seedFallback) {
-      console.warn('[invitationPageService] falling back to local seed for page', pageSlug);
-      return sanitizeHeartIconPlaceholdersDeep(seedFallback);
-    }
-
     const errorCode =
       typeof error === 'object' && error !== null && 'code' in error
         ? String((error as { code?: unknown }).code ?? '')
         : '';
 
-    if (seedFallback && errorCode === 'permission-denied') {
-      return null;
+    if (
+      errorCode === 'permission-denied' &&
+      options.retryOnPermissionDenied &&
+      (options.retryCount ?? 0) > 0
+    ) {
+      await wait(options.retryDelayMs ?? 300);
+      return getInvitationPageBySlug(pageSlug, {
+        ...options,
+        retryCount: (options.retryCount ?? 0) - 1,
+      });
     }
 
-    console.error('[invitationPageService] failed to load page', error);
+    if (options.fallbackOnError) {
+      console.warn(
+        '[invitationPageService] falling back to seed invitation page',
+        pageSlug,
+        error
+      );
+      return seedPage;
+    }
+
+    console.error('[invitationPageService] failed to load display-period', error);
     return null;
   }
 }
@@ -318,51 +384,29 @@ export async function getInvitationPageBySlug(
 export async function getAllInvitationPages(
   options: InvitationPageLookupOptions = {}
 ): Promise<InvitationPageSummary[]> {
-  const firestore = await ensureFirestoreState();
+  const seedPages = getAllWeddingPageSeeds().map((seed) =>
+    sanitizeHeartIconPlaceholdersDeep(createInvitationPageFromSeed(seed))
+  );
 
+  const firestore = await ensureFirestoreState();
   if (!firestore) {
-    return options.includeSeedFallback ? getSeedSummaries() : [];
+    return options.includeSeedFallback === false ? [] : seedPages.map(toInvitationPageSummary);
   }
 
   try {
-    const snapshot = await firestore.modules.getDocs(
-      firestore.modules.collection(firestore.db, INVITATION_COLLECTION)
-    );
-
-    const pageMap = new Map<string, InvitationPage>();
-
-    if (options.includeSeedFallback) {
-      getAllWeddingPageSeeds()
-        .map((seed) => createInvitationPageFromSeed(seed))
-        .forEach((page) => {
-          pageMap.set(page.slug, page);
-        });
-    }
-
-    snapshot.docs.forEach((docSnapshot: { id: string; data: () => Record<string, any> }) => {
-      pageMap.set(
-        docSnapshot.id,
-        normalizeInvitationPage(
-          docSnapshot.id,
-          docSnapshot.data(),
-          buildSeedFallbackInvitationPage(docSnapshot.id)
-        )
-      );
-    });
-
-    return [...pageMap.values()]
+    const periodMap = await getDisplayPeriodMap(firestore);
+    return seedPages
+      .map((page) => mergeDisplayPeriod(page, periodMap.get(page.slug) ?? null))
       .sort((left, right) => left.displayName.localeCompare(right.displayName, 'ko'))
       .map(toInvitationPageSummary);
   } catch (error) {
-    if (options.includeSeedFallback) {
-      console.warn(
-        '[invitationPageService] falling back to local invitation seeds for page list'
-      );
-      return getSeedSummaries();
+    if (options.includeSeedFallback === false) {
+      console.error('[invitationPageService] failed to load invitation pages', error);
+      return [];
     }
 
-    console.error('[invitationPageService] failed to load page list', error);
-    return [];
+    console.warn('[invitationPageService] falling back to seed invitation page list', error);
+    return getSeedSummaries();
   }
 }
 
@@ -375,24 +419,15 @@ export async function updateInvitationPageVisibility(
     displayPeriodEnd: Date | null;
   }
 ) {
+  const seedPage = buildSeedPage(pageSlug);
+  if (!seedPage) {
+    throw new Error('Unknown invitation page slug.');
+  }
+
   const firestore = await ensureFirestoreState();
   if (!firestore) {
     throw new Error('Firestore is not available.');
   }
 
-  const docRef = firestore.modules.doc(firestore.db, INVITATION_COLLECTION, pageSlug);
-  const seedFallback = buildSeedFallbackInvitationPage(pageSlug);
-
-  await firestore.modules.setDoc(
-    docRef,
-    {
-      ...(seedFallback ? toFirestoreInvitationPayload(seedFallback) : {}),
-      published: payload.published,
-      displayPeriodEnabled: payload.displayPeriodEnabled,
-      displayPeriodStart: payload.displayPeriodStart,
-      displayPeriodEnd: payload.displayPeriodEnd,
-      updatedAt: new Date(),
-    },
-    { merge: true }
-  );
+  await syncDisplayPeriod(firestore, pageSlug, payload);
 }

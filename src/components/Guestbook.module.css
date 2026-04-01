@@ -43,11 +43,6 @@
   position: relative;
 }
 
-.titleSection:hover {
-  background: rgba(232, 180, 200, 0.08);
-  transform: scale(1.01);
-}
-
 .titleSection:active {
   transform: scale(0.99);
 }
@@ -70,11 +65,7 @@
     gap: 1rem;
     border-radius: 15px;
   }
-  
-  .titleSection:hover {
-    background: rgba(232, 180, 200, 0.1);
-    transform: scale(1.02);
-  }
+
   
   .titleSection:active {
     transform: scale(0.98);
@@ -372,12 +363,6 @@
   }
 }
 
-.submitButton:hover:not(:disabled) {
-  background: linear-gradient(135deg, #c19660, var(--primary-color));
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(212, 165, 116, 0.4);
-}
-
 .submitButton:disabled {
   background: linear-gradient(135deg, #e0e0e0, #cccccc);
   cursor: not-allowed;
@@ -525,11 +510,6 @@
   background: linear-gradient(180deg, var(--primary-color), rgba(212, 165, 116, 0.6));
 }
 
-.commentCard:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 6px 25px rgba(212, 165, 116, 0.12);
-}
-
 @media (min-width: 700px) {
   .commentCard {
     padding: 2rem;
@@ -540,11 +520,7 @@
   .commentCard::before {
     width: 4px;
   }
-  
-  .commentCard:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 30px rgba(212, 165, 116, 0.15);
-  }
+
 }
 
 .commentHeader {
@@ -687,12 +663,6 @@
   }
 }
 
-.deleteButton:hover {
-  background: linear-gradient(135deg, #c0392b, #a93226);
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(231, 76, 60, 0.4);
-}
-
 .loadingMessage {
   text-align: center;
   color: var(--secondary-color);
@@ -773,11 +743,6 @@
   transition: all 0.3s ease;
 }
 
-.pagination:hover {
-  box-shadow: 0 6px 25px rgba(212, 165, 116, 0.15);
-  background: rgba(255, 255, 255, 0.7);
-}
-
 .pageButton {
   background: linear-gradient(135deg, var(--primary-color), rgba(212, 165, 116, 0.8));
   color: white;
@@ -811,16 +776,6 @@
   transition: left 0.5s;
 }
 
-.pageButton:hover:not(:disabled)::before {
-  left: 100%;
-}
-
-.pageButton:hover:not(:disabled) {
-  background: linear-gradient(135deg, #c19660, var(--primary-color));
-  transform: translateY(-2px);
-  box-shadow: 0 6px 16px rgba(212, 165, 116, 0.4);
-}
-
 .pageButton:active:not(:disabled) {
   transform: translateY(-1px);
 }
@@ -843,10 +798,6 @@
   font-size: 1rem;
   font-weight: bold;
   transition: transform 0.3s ease;
-}
-
-.pageButton:hover:not(:disabled) .pageButtonIcon {
-  transform: scale(1.1);
 }
 
 .pageButtonText {
@@ -882,12 +833,6 @@
   outline: none;
 }
 
-.pageNumber:hover {
-  background: rgba(212, 165, 116, 0.15);
-  border-color: var(--primary-color);
-  box-shadow: 0 2px 8px rgba(212, 165, 116, 0.2);
-}
-
 .pageNumber:focus {
   outline: 2px solid rgba(212, 165, 116, 0.6);
   outline-offset: 2px;
@@ -915,11 +860,6 @@
   justify-content: center;
   user-select: none;
   opacity: 0.7;
-}
-
-.ellipsis:hover {
-  opacity: 1;
-  transform: scale(1.1);
 }
 
 /* 로딩 애니메이션 */
@@ -962,12 +902,6 @@
   align-items: center;
   justify-content: center;
   margin-left: 0.3rem;
-}
-
-.lastPageButton:hover {
-  background: linear-gradient(135deg, #ff5252, #ff6b6b);
-  transform: translateY(-1px);
-  box-shadow: 0 4px 8px rgba(255, 107, 107, 0.4);
 }
 
 @media (min-width: 700px) {
@@ -1119,12 +1053,6 @@
   box-shadow: 0 4px 12px rgba(232, 180, 200, 0.3);
 }
 
-.clientManagerButton:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 16px rgba(232, 180, 200, 0.4);
-  background: linear-gradient(135deg, #e0a5bb, #edb8b8);
-}
-
 .managerIcon {
   font-size: 1rem;
 }
@@ -1143,12 +1071,6 @@
   align-items: center;
   gap: 0.5rem;
   box-shadow: 0 4px 12px rgba(108, 117, 125, 0.3);
-}
-
-.adminClientButton:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 16px rgba(108, 117, 125, 0.4);
-  background: linear-gradient(135deg, #5a6268, #495057);
 }
 
 .clientLoggedIn {
@@ -1183,11 +1105,6 @@
   font-size: 0.8rem;
   cursor: pointer;
   transition: all 0.3s ease;
-}
-
-.clientLogoutButton:hover {
-  background: rgba(139, 58, 58, 0.2);
-  transform: translateY(-1px);
 }
 
 .clientLoginForm {
@@ -1256,12 +1173,6 @@
   cursor: pointer;
   transition: all 0.3s ease;
   box-shadow: 0 4px 12px rgba(212, 165, 116, 0.3);
-}
-
-.clientLoginButton:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 16px rgba(212, 165, 116, 0.4);
-  background: linear-gradient(135deg, #c19554, #b8863a);
 }
 
 @keyframes fadeIn {

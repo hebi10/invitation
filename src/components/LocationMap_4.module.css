@@ -156,11 +156,6 @@
   letter-spacing: 0.02em;
 }
 
-.mapButton:hover {
-  background: var(--primary);
-  color: white;
-  transform: translateY(-2px);
-}
 
 .mapButton:active {
   transform: translateY(0);

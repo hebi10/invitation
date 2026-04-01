@@ -189,11 +189,6 @@
   font-family: 'Noto Sans KR', sans-serif;
 }
 
-.controlButton:hover {
-  background: rgba(26, 29, 61, 1);
-  border-color: rgba(142, 197, 252, 0.5);
-  box-shadow: 0 0 20px rgba(142, 197, 252, 0.3);
-}
 
 .controlButton.controlActive {
   background: rgba(142, 197, 252, 0.2);
@@ -234,12 +229,6 @@
   font-family: 'Noto Sans KR', sans-serif;
 }
 
-.mapButton:hover {
-  background: rgba(26, 29, 61, 0.7);
-  border-color: rgba(142, 197, 252, 0.5);
-  box-shadow: 0 0 20px rgba(142, 197, 252, 0.2);
-  transform: translateY(-2px);
-}
 
 .buttonLabel {
   font-size: 0.95rem;
@@ -255,9 +244,6 @@
   transition: transform 0.3s ease;
 }
 
-.mapButton:hover .buttonArrow {
-  transform: translate(2px, -2px);
-}
 
 /* 장식 요소 */
 .decorations {

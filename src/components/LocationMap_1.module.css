@@ -85,9 +85,6 @@
   border-color: #2c3e50;
 }
 
-.mapTab:hover:not(.active) {
-  background: #e9ecef;
-}
 
 .mapContainer {
   position: relative;
@@ -156,9 +153,6 @@
   pointer-events: auto;
 }
 
-.zoomButton:hover {
-  background: #f8f9fa;
-}
 
 .venueInfo {
   margin-bottom: 2rem;
@@ -224,11 +218,6 @@
   transition: all 0.3s ease;
 }
 
-.venueContact:hover {
-  color: #34495e;
-  text-decoration: underline;
-}
-
 .addressCopyButton {
   display: inline-flex;
   align-items: center;
@@ -246,13 +235,6 @@
   cursor: pointer;
   transition: all 0.25s ease;
   box-shadow: 0 2px 8px rgba(44, 62, 80, 0.06);
-}
-
-.addressCopyButton:hover {
-  background: #f8f9fa;
-  border-color: rgba(44, 62, 80, 0.24);
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(44, 62, 80, 0.1);
 }
 
 .addressCopyButton:active {
@@ -292,10 +274,6 @@
   min-width: 120px;
 }
 
-.navButton:hover {
-  background: #34495e;
-  transform: translateY(-2px);
-}
 
 @media (min-width: 700px) {
   .wrapper {

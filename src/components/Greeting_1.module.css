@@ -148,9 +148,6 @@
   transition: background 0.2s ease;
 }
 
-.familyRow:hover {
-  background: rgba(248, 249, 250, 0.9);
-}
 
 .familyRow.mainPerson {
   background: rgba(44, 62, 80, 0.05);
@@ -212,11 +209,6 @@
   flex-shrink: 0;
 }
 
-.iconBtn:hover {
-  background: #2c3e50;
-  color: #ffffff;
-  border-color: #2c3e50;
-}
 
 .iconBtn:active {
   transform: scale(0.95);
@@ -340,10 +332,6 @@
   transition: all 0.2s ease;
 }
 
-.modalClose:hover {
-  background: rgba(0, 0, 0, 0.05);
-  color: #666;
-}
 
 .modalTitle {
   font-family: var(--font-gowun-dodum);
@@ -380,10 +368,6 @@
   font-weight: 500;
 }
 
-.modalBtn:hover {
-  border-color: #495057;
-  background: #f8f9fa;
-}
 
 .modalBtn:active {
   transform: scale(0.98);

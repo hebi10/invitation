@@ -125,10 +125,6 @@
   position: relative;
 }
 
-.familyCard:hover {
-  border-color: var(--primary);
-  transform: translateY(-2px);
-}
 
 .cardHeader {
   display: flex;
@@ -164,10 +160,6 @@
   line-height: 1;
 }
 
-.expandButton:hover {
-  background: var(--primary);
-  color: white;
-}
 
 .expandButton:active {
   transform: scale(0.95);
@@ -204,10 +196,6 @@
   transition: all 0.3s ease;
 }
 
-.contactButton:hover {
-  background: var(--primary);
-  color: white;
-}
 
 .contactButton:active {
   transform: scale(0.98);
@@ -277,9 +265,6 @@
   justify-content: center;
 }
 
-.phoneButton:hover {
-  transform: scale(1.15);
-}
 
 .phoneButton:active {
   transform: scale(0.95);

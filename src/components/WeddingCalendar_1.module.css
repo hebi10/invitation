@@ -121,9 +121,6 @@
   min-height: 45px;
 }
 
-.dayCell:hover {
-  background: #f8f9fa;
-}
 
 .dayNumber {
   font-family: 'Arial', sans-serif;
@@ -138,9 +135,6 @@
   cursor: pointer;
 }
 
-.weddingDay:hover {
-  background: rgba(220, 53, 69, 0.15);
-}
 
 .weddingDay .dayNumber {
   color: #dc3545;

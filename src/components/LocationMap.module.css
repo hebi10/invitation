@@ -58,11 +58,6 @@
   overflow: hidden;
 }
 
-.mapTab:hover {
-  background: rgba(212, 165, 116, 0.1);
-  color: var(--primary-color);
-  transform: translateY(-1px);
-}
 
 .mapTab.active {
   background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
@@ -76,9 +71,6 @@
   transition: transform 0.3s ease;
 }
 
-.mapTab:hover .tabIcon {
-  transform: scale(1.1);
-}
 
 @media (min-width: 700px) {
   .mapTabs {
@@ -201,16 +193,6 @@
   transition: left 0.5s ease;
 }
 
-.selectorButton:hover::before {
-  left: 100%;
-}
-
-.selectorButton:hover {
-  transform: translateY(-2px);
-  border-color: #007bff;
-  box-shadow: 0 4px 16px rgba(0, 123, 255, 0.15);
-  color: #007bff;
-}
 
 .selectorButton.active {
   background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
@@ -220,20 +202,12 @@
   box-shadow: 0 6px 20px rgba(0, 123, 255, 0.3);
 }
 
-.selectorButton.active:hover {
-  background: linear-gradient(135deg, #0056b3 0%, #004085 100%);
-  transform: translateY(-3px);
-  box-shadow: 0 8px 25px rgba(0, 123, 255, 0.4);
-}
 
 .buttonIcon {
   font-size: clamp(0.9rem, 2vw, 1.1rem);
   transition: transform 0.3s ease;
 }
 
-.selectorButton:hover .buttonIcon {
-  transform: scale(1.1);
-}
 
 /* 폴백 컨테이너 */
 .fallbackContainer {
@@ -587,10 +561,6 @@
   box-shadow: 0 2px 8px rgba(212, 165, 116, 0.3);
 }
 
-.copyButton:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(212, 165, 116, 0.4);
-}
 
 @media (min-width: 700px) {
   .address {
@@ -679,11 +649,6 @@
   box-shadow: 0 2px 8px rgba(212, 165, 116, 0.1);
 }
 
-.mapButton:hover {
-  border-color: var(--primary-color);
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(212, 165, 116, 0.25);
-}
 
 .buttonIcon {
   font-size: 1.5rem;
@@ -725,9 +690,6 @@
   box-shadow: 0 2px 6px rgba(0,0,0,0.15);
 }
 
-#zoomToggleBtn:hover {
-  background: #f5f5f5;
-}
 
 /* 예식장 정보 섹션 */
 .venueInfoSection {
@@ -827,10 +789,6 @@
   transition: all 0.3s ease;
 }
 
-.venueContact:hover {
-  color: var(--accent-dark);
-  text-decoration: underline;
-}
 
 .venueDescription {
   font-size: 0.9rem;
@@ -917,15 +875,6 @@
   transition: left 0.5s ease;
 }
 
-.navButton:hover::before {
-  left: 100%;
-}
-
-.navButton:hover {
-  border-color: var(--primary-color);
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(212, 165, 116, 0.25);
-}
 
 .navButton:active {
   transform: translateY(0);
@@ -938,9 +887,6 @@
   transition: transform 0.3s ease;
 }
 
-.navButton:hover .navButtonIcon {
-  transform: scale(1.1);
-}
 
 .navButtonText {
   font-size: 0.9rem;
@@ -969,7 +915,7 @@
   }
 
   .venueInfoHeaderIconImage {
-    height: 2rem;
+    height: 1.5rem;
   }
 
   .venueInfoItemIconImage {
@@ -1007,13 +953,24 @@
   .venueDescriptionSection {
     gap: 0.6rem;
   }
+  
+  .venueInfoHeader,
+  .venueNameSection,
+  .venueContactSection{
+    justify-content: flex-start;
+  }
+  
+  .venueAddress,
+  .venueDescription{
+    text-align: left;
+  }
 
   .venueInfoHeaderIconImage {
-    width: 2.3rem;
+    height: 1.8rem;
   }
 
   .venueInfoItemIconImage {
-    width: 1.85rem;
+    height: 1.5rem;
   }
   
   .navigationButtons {

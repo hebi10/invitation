@@ -232,11 +232,6 @@
   transition: all 0.3s ease;
 }
 
-.contactCard:hover {
-  background: rgba(26, 29, 61, 0.6);
-  border-color: rgba(142, 197, 252, 0.4);
-  box-shadow: 0 0 20px rgba(142, 197, 252, 0.2);
-}
 
 .contactHeader {
   display: flex;
@@ -281,11 +276,6 @@
   letter-spacing: 0.5px;
 }
 
-.phoneButton:hover {
-  background: rgba(142, 197, 252, 0.25);
-  border-color: rgba(142, 197, 252, 0.5);
-  box-shadow: 0 0 15px rgba(142, 197, 252, 0.3);
-}
 
 .phoneIcon {
   width: 18px;

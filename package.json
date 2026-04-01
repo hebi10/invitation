@@ -5,15 +5,17 @@
   "scripts": {
     "dev": "npm run clean:next && next dev",
     "clean:next": "node -e \"require('fs').rmSync('.next',{recursive:true,force:true})\"",
-    "build": "next build",
+    "sync:memory-metadata": "node scripts/sync-memory-page-metadata.mjs",
+    "build": "npm run sync:memory-metadata && next build && node scripts/postbuild-static-cleanup.mjs",
+    "build:memory-metadata-strict": "npm run sync:memory-metadata -- --strict && next build && node scripts/postbuild-static-cleanup.mjs",
     "start": "serve out -l 3000",
     "preview": "serve out -l 3000",
     "lint": "eslint .",
     "test:e2e": "playwright test",
     "test:e2e:smoke": "playwright test tests/e2e/smoke.spec.ts",
     "migrate:firebase:static": "node scripts/firebase-static-hosting-migration.mjs",
-    "export": "next build",
-    "deploy:firebase": "npm run build && npm run export && firebase deploy"
+    "export": "npm run build",
+    "deploy:firebase": "npm run build:memory-metadata-strict && firebase deploy"
   },
   "dependencies": {
     "@tanstack/react-query": "^5.83.0",

@@ -64,13 +64,6 @@
   transition: transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease, background-color 0.18s ease;
 }
 
-.summaryInteractive:hover {
-  transform: translateY(-1px);
-  border-color: var(--admin-color-border-strong);
-  box-shadow: var(--admin-shadow-md);
-  background: var(--admin-color-surface-elevated);
-}
-
 .summaryLabel {
   font-size: 0.8125rem;
   font-weight: 700;
@@ -244,10 +237,6 @@
   font-size: 0.875rem;
   font-weight: 600;
   transition: background-color 0.18s ease, border-color 0.18s ease, color 0.18s ease;
-}
-
-.pageNumber:hover {
-  background: var(--admin-color-surface-muted);
 }
 
 .pageNumberActive {

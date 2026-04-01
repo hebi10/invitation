@@ -141,10 +141,6 @@
   transition: all 0.3s ease;
 }
 
-.accountSection:hover {
-  border-color: rgba(142, 197, 252, 0.3);
-  box-shadow: 0 0 20px rgba(142, 197, 252, 0.15);
-}
 
 /* 섹션 토글 버튼 */
 .sectionToggle {
@@ -160,9 +156,6 @@
   font-family: 'Noto Sans KR', sans-serif;
 }
 
-.sectionToggle:hover {
-  background: rgba(142, 197, 252, 0.05);
-}
 
 .toggleLabel {
   font-size: clamp(1rem, 2.8vw, 1.1rem);
@@ -206,10 +199,6 @@
   transition: all 0.3s ease;
 }
 
-.accountCard:hover {
-  background: rgba(10, 14, 39, 0.5);
-  box-shadow: 0 0 15px rgba(142, 197, 252, 0.1);
-}
 
 .accountCard:last-child {
   margin-bottom: 1.5rem;
@@ -271,11 +260,6 @@
   letter-spacing: 0.5px;
 }
 
-.copyButton:hover {
-  background: linear-gradient(135deg, rgba(142, 197, 252, 0.3), rgba(224, 195, 252, 0.3));
-  border-color: rgba(142, 197, 252, 0.5);
-  box-shadow: 0 0 15px rgba(142, 197, 252, 0.2);
-}
 
 .copyIcon,
 .checkIcon {

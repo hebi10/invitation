@@ -99,10 +99,6 @@
   transition: all 0.2s ease;
 }
 
-.contactBtn:hover {
-  background: #e9ecef;
-  border-color: #ced4da;
-}
 
 .parentsSection {
   display: flex;
@@ -149,11 +145,6 @@
   justify-content: center;
 }
 
-.parentContactBtn:hover {
-  background: #f8f9fa;
-  border-color: #dee2e6;
-  color: #495057;
-}
 
 .modalOverlay {
   position: fixed;
@@ -205,10 +196,6 @@
   transition: all 0.2s ease;
 }
 
-.modalButton:hover {
-  background: #e9ecef;
-  border-color: #ced4da;
-}
 
 .modalClose {
   width: 100%;
@@ -223,9 +210,6 @@
   transition: all 0.2s ease;
 }
 
-.modalClose:hover {
-  background: #f8f9fa;
-}
 
 @media (max-width: 480px) {
   .container {

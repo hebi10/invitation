@@ -117,9 +117,6 @@
   transition: opacity 0.3s ease;
 }
 
-.timeBox:hover::before {
-  opacity: 1;
-}
 
 .glow {
   position: absolute;

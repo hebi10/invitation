@@ -36,10 +36,6 @@
   transition: all 0.3s ease !important;
 }
 
-.react-datepicker__navigation:hover {
-  background: rgba(255, 255, 255, 0.3) !important;
-  transform: scale(1.1) !important;
-}
 
 .react-datepicker__navigation--previous {
   left: 1rem !important;
@@ -76,10 +72,6 @@
   transition: all 0.3s ease !important;
 }
 
-.react-datepicker__day:hover {
-  background: rgba(212, 165, 116, 0.2) !important;
-  transform: scale(1.1) !important;
-}
 
 /* 선택된 날짜 */
 .react-datepicker__day--selected {
@@ -125,9 +117,6 @@
   transition: all 0.3s ease !important;
 }
 
-.react-datepicker__time-list-item:hover {
-  background: rgba(212, 165, 116, 0.2) !important;
-}
 
 .react-datepicker__time-list-item--selected {
   background: linear-gradient(135deg, var(--primary-color), rgba(212, 165, 116, 0.8)) !important;

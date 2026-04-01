@@ -3,12 +3,18 @@
 import { useEffect, useRef, useState } from 'react';
 
 import { copyTextToClipboard } from '@/utils';
+import {
+  buildGoogleMapSearchUrl,
+  buildKakaoMapPinUrl,
+  buildNaverMapSearchUrl,
+  loadKakaoMapsSdk,
+} from '@/utils/kakaoMaps';
 
 import styles from './LocationMap_2.module.css';
 
 declare global {
   interface Window {
-    kakao: any;
+    kakao?: any;
     kakaoMapInstance_2?: any;
   }
 }
@@ -34,12 +40,10 @@ export default function LocationMap_2({
   const [copiedTarget, setCopiedTarget] = useState<string | null>(null);
 
   useEffect(() => {
-    let script: HTMLScriptElement | null = null;
-
     const initializeKakaoMap = () => {
       try {
         const container = mapRef.current;
-        if (!container) {
+        if (!container || !window.kakao?.maps) {
           return;
         }
 
@@ -67,30 +71,14 @@ export default function LocationMap_2({
       }
     };
 
-    if (window.kakao?.maps) {
-      window.kakao.maps.load(initializeKakaoMap);
-      return;
-    }
-
-    script = document.createElement('script');
-    script.async = true;
-    script.src = '//dapi.kakao.com/v2/maps/sdk.js?appkey=234add558ffec30aa714eb4644df46e3&autoload=false';
-    script.onload = () => {
-      if (!window.kakao?.maps) {
+    void loadKakaoMapsSdk()
+      .then(() => {
+        initializeKakaoMap();
+      })
+      .catch((error) => {
+        console.error('LocationMap_2 map sdk load failed:', error);
         setMapError(true);
-        return;
-      }
-
-      window.kakao.maps.load(initializeKakaoMap);
-    };
-    script.onerror = () => setMapError(true);
-    document.head.appendChild(script);
-
-    return () => {
-      if (script?.parentNode) {
-        script.parentNode.removeChild(script);
-      }
-    };
+      });
   }, [latitude, longitude, placeName]);
 
   const toggleControl = () => {
@@ -120,7 +108,7 @@ export default function LocationMap_2({
   };
 
   const openKakaoMap = () => {
-    const url = `https://map.kakao.com/link/map/${placeName},${latitude},${longitude}`;
+    const url = buildKakaoMapPinUrl(placeName, latitude, longitude);
     window.open(url, '_blank');
   };
 
@@ -202,13 +190,13 @@ export default function LocationMap_2({
       </div>
 
       <div className={styles.buttonGroup}>
-        <button onClick={() => window.open(`https://map.naver.com/v5/search/${encodeURIComponent(address)}`, '_blank')} className={styles.button}>
+        <button onClick={() => window.open(buildNaverMapSearchUrl(address), '_blank')} className={styles.button}>
           네이버지도
         </button>
         <button onClick={openKakaoMap} className={styles.button}>
           카카오맵
         </button>
-        <button onClick={() => window.open(`https://www.google.com/maps/search/${encodeURIComponent(address)}`, '_blank')} className={styles.button}>
+        <button onClick={() => window.open(buildGoogleMapSearchUrl(address), '_blank')} className={styles.button}>
           구글지도
         </button>
       </div>

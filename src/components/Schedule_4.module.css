@@ -71,10 +71,6 @@
   letter-spacing: 0.02em;
 }
 
-.tab:hover {
-  border-color: var(--primary);
-  color: var(--primary);
-}
 
 .tab.active {
   background: var(--primary);
@@ -163,10 +159,6 @@
   transition: all 0.3s ease;
 }
 
-.detailItem:hover {
-  border-color: var(--primary);
-  transform: translateY(-4px);
-}
 
 .detailHeader {
   display: flex;
@@ -218,9 +210,6 @@
   transition: all 0.3s ease;
 }
 
-.guideItem:hover {
-  border-color: var(--primary);
-}
 
 .guideHeader {
   width: 100%;
@@ -235,9 +224,6 @@
   transition: background 0.3s ease;
 }
 
-.guideHeader:hover {
-  background: rgba(31, 90, 255, 0.03);
-}
 
 .guideTitle {
   font-family: var(--font-noto-sans-kr), sans-serif;

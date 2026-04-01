@@ -206,10 +206,6 @@
   transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
-.primaryAction:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 16px 30px rgba(31, 90, 255, 0.22);
-}
 
 /* 웨이브 패턴 (산토리니 감성) */
 .wavePattern {

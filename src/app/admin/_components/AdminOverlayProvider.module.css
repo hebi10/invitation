@@ -122,25 +122,13 @@
   color: var(--admin-color-text-secondary);
 }
 
-.dialogCancel:hover {
-  background: var(--admin-color-surface-muted);
-}
-
 .dialogConfirm {
   background: var(--admin-color-primary);
   color: #ffffff;
 }
 
-.dialogConfirm:hover {
-  background: var(--admin-color-primary-strong);
-}
-
 .dialogConfirmDanger {
   background: var(--admin-color-danger);
-}
-
-.dialogConfirmDanger:hover {
-  background: #b91c1c;
 }
 
 @media (max-width: 640px) {

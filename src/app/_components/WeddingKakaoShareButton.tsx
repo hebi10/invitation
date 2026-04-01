@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 
 import { usePageImages } from '@/hooks';
+import { getPublicKakaoJavaScriptKey } from '@/lib/publicRuntimeConfig';
 
 interface WeddingKakaoShareButtonProps {
   title: string;
@@ -42,8 +43,6 @@ const buttonVariantStyles = {
     color: '#3b2d16',
     borderColor: 'rgba(87, 67, 32, 0.12)',
     boxShadow: '0 10px 24px rgba(87, 67, 32, 0.08)',
-    hoverBackground: 'linear-gradient(135deg, #fff3bf 0%, #f3e4b7 100%)',
-    hoverBoxShadow: '0 12px 28px rgba(87, 67, 32, 0.12)',
   },
   space: {
     background:
@@ -51,9 +50,6 @@ const buttonVariantStyles = {
     color: '#f5f8ff',
     borderColor: 'rgba(200, 220, 255, 0.24)',
     boxShadow: '0 12px 30px rgba(53, 83, 140, 0.22)',
-    hoverBackground:
-      'linear-gradient(135deg, rgba(142, 197, 252, 0.26) 0%, rgba(224, 195, 252, 0.3) 100%)',
-    hoverBoxShadow: '0 14px 34px rgba(53, 83, 140, 0.32)',
   },
 } as const;
 
@@ -69,10 +65,7 @@ export default function WeddingKakaoShareButton({
   const { mainImage } = usePageImages(pageSlug);
   const shareImageUrl = mainImage?.url || imageUrl;
   const variantStyle = buttonVariantStyles[variant];
-  const kakaoAppKey =
-    process.env.NEXT_PUBLIC_KAKAO_JAVASCRIPT_KEY ||
-    process.env.NEXT_PUBLIC_KAKAO_MAP_API_KEY ||
-    '';
+  const kakaoAppKey = getPublicKakaoJavaScriptKey();
 
   useEffect(() => {
     const initKakao = () => {
@@ -187,16 +180,6 @@ export default function WeddingKakaoShareButton({
           color: variantStyle.color,
           boxShadow: variantStyle.boxShadow,
           borderColor: variantStyle.borderColor,
-        }}
-        onMouseOver={(event) => {
-          event.currentTarget.style.background = variantStyle.hoverBackground;
-          event.currentTarget.style.transform = 'translateY(-2px)';
-          event.currentTarget.style.boxShadow = variantStyle.hoverBoxShadow;
-        }}
-        onMouseOut={(event) => {
-          event.currentTarget.style.background = variantStyle.background;
-          event.currentTarget.style.transform = 'translateY(0)';
-          event.currentTarget.style.boxShadow = variantStyle.boxShadow;
         }}
       >
         <span

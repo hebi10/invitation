@@ -214,11 +214,6 @@
   border: 1px solid rgba(212, 165, 116, 0.15);
 }
 
-.familyRow:hover {
-  background: rgba(255, 255, 255, 0.9);
-  border-color: rgba(212, 165, 116, 0.3);
-  transform: translateX(2px);
-}
 
 .familyRow.mainPerson {
   background: rgba(212, 165, 116, 0.08);
@@ -226,10 +221,6 @@
   margin-top: 0.3rem;
 }
 
-.familyRow.mainPerson:hover {
-  background: rgba(212, 165, 116, 0.12);
-  border-color: rgba(212, 165, 116, 0.4);
-}
 
 .label {
   font-family: var(--font-gowun-dodum);
@@ -287,13 +278,6 @@
   box-shadow: 0 2px 6px rgba(212, 165, 116, 0.15);
 }
 
-.iconBtn:hover {
-  background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
-  color: #ffffff;
-  border-color: var(--primary-color);
-  transform: scale(1.1);
-  box-shadow: 0 4px 12px rgba(212, 165, 116, 0.3);
-}
 
 .iconBtn:active {
   transform: scale(0.95);
@@ -421,10 +405,6 @@
   transition: all 0.2s ease;
 }
 
-.modalClose:hover {
-  background: rgba(0, 0, 0, 0.05);
-  color: var(--text-primary);
-}
 
 .modalTitle {
   font-family: var(--font-display);
@@ -456,10 +436,6 @@
   box-shadow: 0 4px 12px rgba(212, 165, 116, 0.3);
 }
 
-.modalBtn:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 6px 20px rgba(212, 165, 116, 0.4);
-}
 
 .modalBtn:active {
   transform: translateY(0);

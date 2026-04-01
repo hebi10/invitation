@@ -15,13 +15,19 @@ export interface DisplayPeriod {
   published?: boolean;
 }
 
-export const getDisplayPeriod = async (
-  pageSlug: string
-): Promise<DisplayPeriod | null> => {
-  const invitationPage = await getInvitationPageBySlug(pageSlug, {
-    includeSeedFallback: true,
-  });
-  if (!invitationPage) {
+function toDisplayPeriod(invitationPage: {
+  slug: string;
+  displayPeriodStart: Date | null;
+  displayPeriodEnd: Date | null;
+  displayPeriodEnabled: boolean;
+  published: boolean;
+}): DisplayPeriod | null {
+  const hasConfiguredPeriod =
+    invitationPage.displayPeriodEnabled ||
+    invitationPage.displayPeriodStart instanceof Date ||
+    invitationPage.displayPeriodEnd instanceof Date;
+
+  if (!hasConfiguredPeriod) {
     return null;
   }
 
@@ -35,6 +41,20 @@ export const getDisplayPeriod = async (
     updatedAt: new Date(),
     published: invitationPage.published,
   };
+}
+
+export const getDisplayPeriod = async (
+  pageSlug: string
+): Promise<DisplayPeriod | null> => {
+  const invitationPage = await getInvitationPageBySlug(pageSlug, {
+    includeSeedFallback: true,
+    fallbackOnError: true,
+  });
+  if (!invitationPage) {
+    return null;
+  }
+
+  return toDisplayPeriod(invitationPage);
 };
 
 export const setDisplayPeriod = async (
@@ -45,6 +65,7 @@ export const setDisplayPeriod = async (
 ): Promise<void> => {
   const invitationPage = await getInvitationPageBySlug(pageSlug, {
     includeSeedFallback: true,
+    fallbackOnError: true,
   });
   if (!invitationPage) {
     throw new Error('청첩장 문서를 찾을 수 없습니다.');
@@ -62,16 +83,8 @@ export const getAllDisplayPeriods = async (): Promise<DisplayPeriod[]> => {
   const pages = await getAllInvitationPages({ includeSeedFallback: true });
 
   return pages
-    .map((page) => ({
-      id: page.slug,
-      pageSlug: page.slug,
-      startDate: page.displayPeriodStart ?? new Date(),
-      endDate: page.displayPeriodEnd ?? new Date(),
-      isActive: page.displayPeriodEnabled,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-      published: page.published,
-    }))
+    .map(toDisplayPeriod)
+    .filter((page): page is DisplayPeriod => page !== null)
     .sort((left, right) => left.pageSlug.localeCompare(right.pageSlug, 'ko'));
 };
 
@@ -99,6 +112,7 @@ export const isPageVisible = async (pageSlug: string): Promise<boolean> => {
 export const deleteDisplayPeriod = async (pageSlug: string): Promise<void> => {
   const invitationPage = await getInvitationPageBySlug(pageSlug, {
     includeSeedFallback: true,
+    fallbackOnError: true,
   });
   if (!invitationPage) {
     throw new Error('청첩장 문서를 찾을 수 없습니다.');

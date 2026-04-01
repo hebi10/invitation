@@ -67,19 +67,11 @@
   transition: all 0.2s ease;
 }
 
-.moreButton:hover,
-.lessButton:hover {
-  background: #495057;
-  transform: translateY(-2px);
-}
 
 .lessButton {
   background: #6c757d;
 }
 
-.lessButton:hover {
-  background: #868e96;
-}
 
 /* 팝업 스타일 (Gallery_1과 동일하게) */
 .popup {
@@ -148,10 +140,6 @@
   z-index: 10001;
 }
 
-.closeButton:hover {
-  background: rgba(255, 255, 255, 0.2);
-  
-}
 
 /* 통합 네비게이션 바 */
 .navigationBar {
@@ -184,10 +172,6 @@
   transition: all 0.2s ease;
 }
 
-.navArrow:hover:not(:disabled) {
-  background: rgba(255, 255, 255, 0.2);
-  transform: scale(1.05);
-}
 
 .navArrow:disabled {
   opacity: 0.3;

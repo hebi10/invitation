@@ -12,22 +12,6 @@ service cloud.firestore {
         get(/databases/$(database)/documents/admin-users/$(request.auth.uid)).data.enabled != false;
     }
 
-    function hasActiveInvitationWindow(data) {
-      return data.displayPeriodEnabled == true &&
-        data.displayPeriodStart is timestamp &&
-        data.displayPeriodEnd is timestamp &&
-        request.time >= data.displayPeriodStart &&
-        request.time <= data.displayPeriodEnd;
-    }
-
-    function isPublicInvitation(data) {
-      return data.published == true &&
-        (
-          data.displayPeriodEnabled != true ||
-          hasActiveInvitationWindow(data)
-        );
-    }
-
     function isPublicMemoryPage(data) {
       return data.enabled == true &&
         (data.visibility == 'public' || data.visibility == 'unlisted');
@@ -46,11 +30,6 @@ service cloud.firestore {
         request.resource.data.pageSlug.size() <= 120;
     }
 
-    match /invitation-pages/{pageSlug} {
-      allow read: if isPublicInvitation(resource.data) || isAdmin();
-      allow create, update, delete: if isAdmin();
-    }
-
     match /memory-pages/{pageSlug} {
       allow read: if isPublicMemoryPage(resource.data) || isAdmin();
       allow create, update, delete: if isAdmin();
@@ -62,19 +41,14 @@ service cloud.firestore {
       allow update, delete: if isAdmin();
     }
 
-    match /{legacyCollection}/{commentId} {
-      allow read: if legacyCollection.matches('comments-.*');
-      allow delete: if legacyCollection.matches('comments-.*') && isAdmin();
-      allow create, update: if false;
-    }
-
     match /admin-users/{userId} {
       allow read: if isSignedIn() && (request.auth.uid == userId || isAdmin());
       allow create, update, delete: if isAdmin();
     }
 
     match /display-periods/{document=**} {
-      allow read, write: if isAdmin();
+      allow read: if true;
+      allow write: if isAdmin();
     }
 
     match /settings/{document=**} {

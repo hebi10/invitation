@@ -86,10 +86,6 @@
   transition: all 0.2s ease;
 }
 
-.accountCard:hover {
-  background: rgba(248, 249, 250, 0.9);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-}
 
 .accountInfo {
   flex: 1;
@@ -141,10 +137,6 @@
   flex-shrink: 0;
 }
 
-.copyButton:hover {
-  background: #34495e;
-  transform: translateY(-1px);
-}
 
 .copyButton:active {
   transform: translateY(0);

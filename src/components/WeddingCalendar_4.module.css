@@ -119,11 +119,6 @@
   cursor: pointer;
 }
 
-.day:not(.empty):hover {
-  background: rgba(31, 90, 255, 0.05);
-  border-color: var(--primary);
-  
-}
 
 .day.empty {
   pointer-events: none;
@@ -146,11 +141,6 @@
   z-index: 1;
 }
 
-.day.weddingDay:hover {
-  background: var(--lemon);
-  color: var(--text-primary);
-  border-color: var(--lemon);
-}
 
 .weddingMarker {
   position: absolute;

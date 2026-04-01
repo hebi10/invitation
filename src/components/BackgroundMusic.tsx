@@ -47,9 +47,8 @@ export default function BackgroundMusic({
         try {
           await audio.play();
           setIsPlaying(true);
-          console.log('자동 재생 성공');
         } catch {
-          console.log('자동 재생 실패, 버튼으로 시작해주세요.');
+          setIsPlaying(false);
         }
       }
     };
@@ -80,14 +79,12 @@ export default function BackgroundMusic({
       if (isPlaying) {
         audio.pause();
         setIsPlaying(false);
-        console.log('음악 정지');
         return;
       }
 
       await audio.play();
       setIsPlaying(true);
       hasAutoPlayedRef.current = true;
-      console.log('음악 재생');
     } catch (error) {
       console.error('재생 오류:', error);
       setIsPlaying(false);

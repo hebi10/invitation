@@ -75,10 +75,6 @@
   background: var(--bg);
 }
 
-.imageCard:hover {
-  border-color: var(--primary);
-  transform: translateY(-4px);
-}
 
 .imageCard:active {
   transform: translateY(-2px);
@@ -110,9 +106,6 @@
   pointer-events: none;
 }
 
-.imageCard:hover .imageOverlay {
-  opacity: 1;
-}
 
 .zoomIcon {
   font-size: 2rem;
@@ -121,9 +114,6 @@
   transition: transform 0.3s ease;
 }
 
-.imageCard:hover .zoomIcon {
-  transform: scale(1);
-}
 
 /* 더보기 버튼 */
 .loadMoreContainer {
@@ -147,11 +137,6 @@
   letter-spacing: 0.05em;
 }
 
-.loadMoreButton:hover {
-  background: var(--primary);
-  color: white;
-  transform: translateY(-2px);
-}
 
 .loadMoreButton:active {
   transform: translateY(0);
@@ -162,9 +147,6 @@
   transition: transform 0.3s ease;
 }
 
-.loadMoreButton:hover .loadMoreIcon {
-  transform: translateY(3px);
-}
 
 /* 모달 */
 .modal {
@@ -211,11 +193,6 @@
   border-radius: 50%;
 }
 
-.closeButton:hover {
-  background: var(--lemon);
-  color: var(--text-primary);
-  transform: rotate(90deg);
-}
 
 .closeButton:active {
   transform: rotate(90deg) scale(0.95);
@@ -264,11 +241,6 @@
   border-radius: 50%;
 }
 
-.navButton:hover {
-  background: var(--lemon);
-  color: var(--text-primary);
-  transform: translateY(-50%) scale(1.1);
-}
 
 .navButton:active {
   transform: translateY(-50%) scale(1);

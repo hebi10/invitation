@@ -51,9 +51,6 @@
   transition: background 0.2s ease;
 }
 
-.sectionHeader:hover {
-  background: #f8f9fa;
-}
 
 .sectionTitle {
   font-family: var(--font-gowun-dodum), serif;
@@ -130,10 +127,6 @@
   white-space: nowrap;
 }
 
-.copyButton:hover {
-  background: #e9ecef;
-  border-color: #dee2e6;
-}
 
 .copyButton:active {
   transform: scale(0.95);

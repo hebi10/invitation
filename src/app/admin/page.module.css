@@ -174,11 +174,6 @@
   transition: background-color 0.18s ease, border-color 0.18s ease, color 0.18s ease;
 }
 
-.tabButton:hover {
-  background: var(--admin-color-surface-muted);
-  color: var(--admin-color-text);
-}
-
 .tabButtonActive {
   background: var(--admin-color-primary-soft);
   border-color: rgba(37, 99, 235, 0.16);
@@ -290,10 +285,6 @@
   border-bottom: 1px solid var(--admin-color-border);
   vertical-align: top;
   background: var(--admin-color-surface);
-}
-
-.dataTable tbody tr:hover td {
-  background: var(--admin-color-surface-elevated);
 }
 
 .dataTable tbody tr:last-child td {

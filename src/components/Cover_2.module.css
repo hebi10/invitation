@@ -198,10 +198,6 @@
   box-shadow: 0 10px 20px rgba(33, 37, 41, 0.12);
 }
 
-.primaryAction:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 14px 24px rgba(33, 37, 41, 0.18);
-}
 
 @media (min-width: 640px) {
   .container {

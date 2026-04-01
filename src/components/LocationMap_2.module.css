@@ -66,10 +66,6 @@
   white-space: nowrap;
 }
 
-.copyButton:hover {
-  background: #e9ecef;
-  border-color: #dee2e6;
-}
 
 .copyButton:active {
   transform: scale(0.95);
@@ -121,9 +117,6 @@
   font-weight: 400;
 }
 
-.button:hover {
-  background: #343a40;
-}
 
 .button:active {
   transform: scale(0.98);

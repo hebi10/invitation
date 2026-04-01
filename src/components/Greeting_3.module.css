@@ -187,11 +187,6 @@
   font-family: 'Noto Sans KR', sans-serif;
 }
 
-.parentsToggle:hover {
-  background: rgba(26, 29, 61, 0.6);
-  border-color: rgba(142, 197, 252, 0.4);
-  box-shadow: 0 0 20px rgba(142, 197, 252, 0.2);
-}
 
 .toggleText {
   font-size: 0.95rem;

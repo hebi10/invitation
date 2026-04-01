@@ -3,6 +3,12 @@
 import { useEffect, useState } from 'react';
 
 import { copyTextToClipboard } from '@/utils';
+import {
+  buildGoogleMapApiSearchUrl,
+  buildKakaoMapSearchUrl,
+  buildNaverMapSearchUrl,
+  loadKakaoMapsSdk,
+} from '@/utils/kakaoMaps';
 
 interface LocationMapThemedProps {
   venueName: string;
@@ -28,7 +34,7 @@ interface LocationMapThemedProps {
 
 declare global {
   interface Window {
-    kakao: any;
+    kakao?: any;
     kakaoMapInstance?: any;
   }
 }
@@ -63,69 +69,67 @@ export default function LocationMapThemed({
       return;
     }
 
-    const script = document.createElement('script');
-    script.async = true;
-    script.src = '//dapi.kakao.com/v2/maps/sdk.js?appkey=234add558ffec30aa714eb4644df46e3&libraries=services&autoload=false';
-
-    script.onload = () => {
-      window.kakao.maps.load(() => {
+    void loadKakaoMapsSdk()
+      .then(() => {
         initializeKakaoMap();
+      })
+      .catch((error) => {
+        console.error('[LocationMapThemed] failed to load Kakao Maps SDK', error);
+        setKakaoMapLoaded(true);
       });
-    };
-
-    document.head.appendChild(script);
-
-    return () => {
-      if (document.head.contains(script)) {
-        document.head.removeChild(script);
-      }
-    };
-  }, [isClient, venueName, kakaoMapConfig]);
+  }, [isClient, mapId, venueName, kakaoMapConfig]);
 
   const initializeKakaoMap = () => {
     const container = document.getElementById(mapId);
-    if (!container) {
+    if (!container || !window.kakao?.maps) {
       return;
     }
 
-    const defaultLat = kakaoMapConfig?.latitude || 37.5665;
-    const defaultLng = kakaoMapConfig?.longitude || 126.978;
-    const mapLevel = kakaoMapConfig?.level || 3;
+    try {
+      container.innerHTML = '';
 
-    const map = new window.kakao.maps.Map(container, {
-      center: new window.kakao.maps.LatLng(defaultLat, defaultLng),
-      level: mapLevel,
-    });
+      const defaultLat = kakaoMapConfig?.latitude || 37.5665;
+      const defaultLng = kakaoMapConfig?.longitude || 126.978;
+      const mapLevel = kakaoMapConfig?.level || 3;
 
-    map.setZoomable(false);
-    map.setDraggable(false);
+      const map = new window.kakao.maps.Map(container, {
+        center: new window.kakao.maps.LatLng(defaultLat, defaultLng),
+        level: mapLevel,
+      });
 
-    const coords = new window.kakao.maps.LatLng(
-      kakaoMapConfig?.latitude || defaultLat,
-      kakaoMapConfig?.longitude || defaultLng,
-    );
+      map.setZoomable(false);
+      map.setDraggable(false);
 
-    map.setCenter(coords);
+      const coords = new window.kakao.maps.LatLng(
+        kakaoMapConfig?.latitude || defaultLat,
+        kakaoMapConfig?.longitude || defaultLng,
+      );
 
-    const marker = new window.kakao.maps.Marker({
-      map,
-      position: coords,
-    });
-
-    const markerTitle = kakaoMapConfig?.markerTitle || venueName || '예식장';
-    const infowindow = new window.kakao.maps.InfoWindow({
-      content: `<div style="width:200px;text-align:center;padding:8px 0;font-size:13px;font-weight:600;color:${markerColor};">${markerTitle}</div>`,
-    });
-
-    infowindow.open(map, marker);
-
-    window.setTimeout(() => {
-      map.relayout();
       map.setCenter(coords);
-    }, 0);
 
-    window.kakaoMapInstance = map;
-    setKakaoMapLoaded(true);
+      const marker = new window.kakao.maps.Marker({
+        map,
+        position: coords,
+      });
+
+      const markerTitle = kakaoMapConfig?.markerTitle || venueName || '예식장';
+      const infowindow = new window.kakao.maps.InfoWindow({
+        content: `<div style="width:200px;text-align:center;padding:8px 0;font-size:13px;font-weight:600;color:${markerColor};">${markerTitle}</div>`,
+      });
+
+      infowindow.open(map, marker);
+
+      window.setTimeout(() => {
+        map.relayout();
+        map.setCenter(coords);
+      }, 50);
+
+      window.kakaoMapInstance = map;
+      setKakaoMapLoaded(true);
+    } catch (error) {
+      console.error('[LocationMapThemed] failed to initialize map instance', error);
+      setKakaoMapLoaded(true);
+    }
   };
 
   const toggleControl = () => {
@@ -234,13 +238,13 @@ export default function LocationMapThemed({
         <button className={styles.mapButton} onClick={copyAddress} type="button">
           {isAddressCopied ? '복사 완료' : '주소 복사'}
         </button>
-        <button className={styles.mapButton} onClick={() => window.open(`https://map.kakao.com/link/search/${encodeURIComponent(address)}`, '_blank')} type="button">
+        <button className={styles.mapButton} onClick={() => window.open(buildKakaoMapSearchUrl(address), '_blank')} type="button">
           카카오맵
         </button>
-        <button className={styles.mapButton} onClick={() => window.open(`https://map.naver.com/v5/search/${encodeURIComponent(address)}`, '_blank')} type="button">
+        <button className={styles.mapButton} onClick={() => window.open(buildNaverMapSearchUrl(address), '_blank')} type="button">
           네이버지도
         </button>
-        <button className={styles.mapButton} onClick={() => window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`, '_blank')} type="button">
+        <button className={styles.mapButton} onClick={() => window.open(buildGoogleMapApiSearchUrl(address), '_blank')} type="button">
           구글지도
         </button>
       </div>

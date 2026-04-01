@@ -2,13 +2,15 @@ import { expect, test } from '@playwright/test';
 
 test.describe('static hosting smoke', () => {
   test('firebase-test route is not exposed in production output', async ({ page }) => {
-    await page.goto('/firebase-test/');
-    await expect(page.getByText('This page could not be found.')).toBeVisible();
+    const response = await page.goto('/firebase-test/');
+    expect(response).not.toBeNull();
+    expect(response?.status()).toBe(404);
   });
 
   test('arbitrary memory slug does not resolve', async ({ page }) => {
-    await page.goto('/memory/this-route-should-not-exist/');
-    await expect(page.getByText('This page could not be found.')).toBeVisible();
+    const response = await page.goto('/memory/this-route-should-not-exist/');
+    expect(response).not.toBeNull();
+    expect(response?.status()).toBe(404);
   });
 });
 

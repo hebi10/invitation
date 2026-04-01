@@ -98,9 +98,6 @@
   white-space: nowrap;
 }
 
-.clientLoginButton:hover {
-  background: #343a40;
-}
 
 .clientCloseButton {
   width: 100%;
@@ -115,9 +112,6 @@
   transition: all 0.2s ease;
 }
 
-.clientCloseButton:hover {
-  background: #5a6268;
-}
 
 .clientLoggedIn {
   display: flex;
@@ -150,9 +144,6 @@
   transition: all 0.2s ease;
 }
 
-.clientLogoutButton:hover {
-  background: #c82333;
-}
 
 .form {
   display: flex;
@@ -212,9 +203,6 @@
   font-weight: 500;
 }
 
-.submitButton:hover:not(:disabled) {
-  background: #343a40;
-}
 
 .submitButton:active:not(:disabled) {
   transform: scale(0.98);
@@ -238,6 +226,10 @@
   padding-bottom: 1rem;
   border-bottom: 1px solid #f1f3f5;
   font-weight: 500;
+}
+
+.commentsCount strong {
+  display: inline-block;
 }
 
 .commentItem {
@@ -288,11 +280,6 @@
   font-weight: 400;
 }
 
-.deleteButton:hover {
-  background: #f8f9fa;
-  border-color: #dee2e6;
-  color: #495057;
-}
 
 .commentMessage {
   font-family: 'Noto Sans KR', sans-serif;
@@ -389,18 +376,12 @@
   border: 1px solid #e9ecef;
 }
 
-.cancelButton:hover {
-  background: #e9ecef;
-}
 
 .confirmButton {
   background: #212529;
   color: #ffffff;
 }
 
-.confirmButton:hover {
-  background: #343a40;
-}
 
 .cancelButton:active,
 .confirmButton:active {
@@ -430,10 +411,6 @@
   transition: all 0.2s ease;
 }
 
-.pageButton:hover:not(:disabled) {
-  background: #f8f9fa;
-  border-color: #adb5bd;
-}
 
 .pageButton:disabled {
   opacity: 0.4;

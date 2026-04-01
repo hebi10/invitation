@@ -35,9 +35,10 @@ const Cover = React.memo(function Cover({
 }: CoverProps) {
   const [imageLoaded, setImageLoaded] = useState(preloadComplete);
   const [imageError, setImageError] = useState(false);
+  const hasImage = Boolean(imageUrl);
 
   // 페이지 로딩이 완료되었을 때는 이미지 로딩 상태를 표시하지 않음
-  const showImageLoader = !preloadComplete && !imageLoaded && !imageError;
+  const showImageLoader = hasImage && !preloadComplete && !imageLoaded && !imageError;
 
   const containerStyle = backgroundImage 
     ? { 
@@ -68,22 +69,24 @@ const Cover = React.memo(function Cover({
       <h1 className={`${styles.title} ${styles.invitationTitle}`}>{title || 'Invitation'}</h1>
       {subtitle && <p className={styles.subtitle}>{subtitle}</p>}
       <div className={styles.imageContainer}>
-        <Image
-          className={`${styles.image} ${imageLoaded ? styles.imageLoaded : ''}`}
-          src={imageUrl}
-          alt="Wedding couple"
-          fill
-          priority
-          sizes="(max-width: 768px) 100vw, 700px"
-          quality={85}
-          onLoad={handleImageLoad}
-          onError={handleImageError}
-          style={{
-            objectFit: 'cover',
-            opacity: imageLoaded || preloadComplete ? 1 : 0,
-            transition: 'opacity 0.3s ease-in-out'
-          }}
-        />
+        {hasImage ? (
+          <Image
+            className={`${styles.image} ${imageLoaded ? styles.imageLoaded : ''}`}
+            src={imageUrl}
+            alt="Wedding couple"
+            fill
+            priority
+            sizes="(max-width: 768px) 100vw, 700px"
+            quality={85}
+            onLoad={handleImageLoad}
+            onError={handleImageError}
+            style={{
+              objectFit: 'cover',
+              opacity: imageLoaded || preloadComplete ? 1 : 0,
+              transition: 'opacity 0.3s ease-in-out'
+            }}
+          />
+        ) : null}
         {showImageLoader && (
           <div className={styles.imagePlaceholder}>
             <div className={styles.loadingSpinner}></div>

@@ -15,7 +15,7 @@ export const AccessDeniedPage = ({
         justifyContent: 'center',
         padding: '20px',
         textAlign: 'center',
-        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+        background: 'rgb(81 81 81 / 80%)',
         color: 'white',
         fontFamily: 'system-ui, -apple-system, sans-serif',
       }}

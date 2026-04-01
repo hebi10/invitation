@@ -96,9 +96,6 @@
   content-visibility: auto;
 }
 
-.imageItem:hover .imageWrapper {
-  transform: translateY(-4px);
-}
 
 .image {
   display: block;
@@ -121,9 +118,6 @@
   border-radius: 12px;
 }
 
-.imageItem:hover .imageOverlay {
-  opacity: 1;
-}
 
 .zoomIcon {
   color: rgba(255, 255, 255, 0.9);
@@ -131,9 +125,6 @@
   transition: transform 0.3s ease;
 }
 
-.imageItem:hover .zoomIcon {
-  transform: scale(1);
-}
 
 /* 아이템 글로우 */
 .itemGlow {
@@ -150,9 +141,6 @@
   filter: blur(8px);
 }
 
-.imageItem:hover .itemGlow {
-  opacity: 1;
-}
 
 /* 더보기/접기 버튼 */
 .buttonWrapper {
@@ -178,12 +166,6 @@
   box-shadow: 0 0 20px rgba(142, 197, 252, 0.2);
 }
 
-.toggleButton:hover {
-  background: rgba(26, 29, 61, 0.8);
-  border-color: rgba(142, 197, 252, 0.5);
-  box-shadow: 0 0 30px rgba(142, 197, 252, 0.4);
-  transform: translateY(-2px);
-}
 
 .buttonText {
   font-size: 0.95rem;
@@ -317,12 +299,6 @@
   transition: all 0.3s ease;
 }
 
-.closeButton:hover {
-  background: rgba(26, 29, 61, 1);
-  border-color: rgba(142, 197, 252, 0.5);
-  box-shadow: 0 0 20px rgba(142, 197, 252, 0.3);
-  transform: rotate(90deg);
-}
 
 .closeIcon {
   font-size: 1.5rem;
@@ -349,11 +325,6 @@
   transition: all 0.3s ease;
 }
 
-.navButton:hover {
-  background: rgba(26, 29, 61, 1);
-  border-color: rgba(142, 197, 252, 0.5);
-  box-shadow: 0 0 20px rgba(142, 197, 252, 0.3);
-}
 
 .prevButton {
   left: 1.5rem;

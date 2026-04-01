@@ -43,7 +43,7 @@ export default function AdminPagesTab({
       <div className={styles.sectionHeader}>
         <div>
           <h2 className={styles.sectionTitle}>청첩장 라우트 현황</h2>
-          <p className={styles.sectionDescription}>코드에 정의된 청첩장 라우트와 Firestore invitation-pages 문서를 함께 기준으로 공개 상태와 테마 바로가기를 확인합니다.</p>
+          <p className={styles.sectionDescription}>코드에 정의된 청첩장 라우트와 Firestore 공개 상태 데이터를 함께 기준으로 공개 상태와 테마 바로가기를 확인합니다.</p>
         </div>
         <p className={styles.sectionMeta}>{summaryLoading ? '집계 중' : `총 ${filteredPages.length}개 페이지`}</p>
       </div>
@@ -143,7 +143,7 @@ export default function AdminPagesTab({
                     <th>청첩장</th>
                     <th>일정 / 장소</th>
                     <th>바로가기 상태</th>
-                    <th>공개</th>
+                    <th>기본 상태</th>
                     <th>테마 링크</th>
                   </tr>
                 </thead>
@@ -179,7 +179,7 @@ export default function AdminPagesTab({
                         </td>
                         <td>
                           <StatusBadge tone={page.published ? 'success' : 'neutral'}>
-                            {page.published ? 'Published' : 'Draft'}
+                            {page.published ? '기본 공개' : '비공개'}
                           </StatusBadge>
                         </td>
                         <td>
@@ -221,7 +221,7 @@ export default function AdminPagesTab({
                   <div className={styles.mobileCardMeta}>
                     <span>{page.date || '일정 정보 없음'}</span>
                     <span>{page.venue || '장소 정보 없음'}</span>
-                    <span>{page.published ? 'Published' : 'Draft'}</span>
+                    <span>{page.published ? '기본 공개' : '비공개'}</span>
                   </div>
 
                   <div className={styles.mobileCardActions}>

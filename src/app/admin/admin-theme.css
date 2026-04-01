@@ -153,19 +153,10 @@
   color: #ffffff;
 }
 
-[data-admin-ui] .admin-button-primary:hover:not(:disabled) {
-  background: var(--admin-color-primary-strong);
-}
-
 [data-admin-ui] .admin-button-secondary {
   background: var(--admin-color-surface);
   border-color: var(--admin-color-border);
   color: var(--admin-color-text);
-}
-
-[data-admin-ui] .admin-button-secondary:hover:not(:disabled) {
-  background: var(--admin-color-surface-muted);
-  border-color: var(--admin-color-border-strong);
 }
 
 [data-admin-ui] .admin-button-ghost {
@@ -174,18 +165,9 @@
   color: var(--admin-color-text-secondary);
 }
 
-[data-admin-ui] .admin-button-ghost:hover:not(:disabled) {
-  background: var(--admin-color-surface-muted);
-  border-color: var(--admin-color-border-strong);
-  color: var(--admin-color-text);
-}
-
 [data-admin-ui] .admin-button-danger {
   background: var(--admin-color-danger-soft);
   border-color: rgba(220, 38, 38, 0.12);
   color: var(--admin-color-danger);
 }
 
-[data-admin-ui] .admin-button-danger:hover:not(:disabled) {
-  background: #fee2e2;
-}

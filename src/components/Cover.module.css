@@ -252,10 +252,6 @@
   transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
-.primaryAction:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 14px 28px rgba(139, 110, 99, 0.24);
-}
 
 @media (max-width: 480px) {
   .eventMeta {

@@ -243,10 +243,6 @@
   position: relative;
 }
 
-.tab:hover {
-  background: rgba(212, 165, 116, 0.1);
-  color: var(--primary-color);
-}
 
 .tab.active {
   background: linear-gradient(135deg, #d4a574 0%, #c89d6d 100%);
@@ -286,10 +282,6 @@
   overflow: hidden;
 }
 
-.guideItem:hover {
-  box-shadow: 0 8px 20px rgba(212, 165, 116, 0.2);
-  border-color: rgba(212, 165, 116, 0.4);
-}
 
 .guideHeader {
   width: 100%;
@@ -304,9 +296,6 @@
   transition: all 0.3s ease;
 }
 
-.guideHeader:hover {
-  background: rgba(212, 165, 116, 0.05);
-}
 
 .guideTitle {
   font-family: var(--font-gowun-dodum);

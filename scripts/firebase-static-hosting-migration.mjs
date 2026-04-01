@@ -1,6 +1,5 @@
 #!/usr/bin/env node
 
-import fs from 'node:fs/promises';
 import process from 'node:process';
 import { applicationDefault, cert, getApps, initializeApp } from 'firebase-admin/app';
 import { FieldValue, getFirestore } from 'firebase-admin/firestore';
@@ -49,8 +48,9 @@ function initializeFirebaseAdmin() {
 async function analyze(db) {
   const collections = await db.listCollections();
   const legacyCommentCollections = collections.filter((collection) => collection.id.startsWith('comments-'));
+  const adminSnapshot = await db.collection('admin-users').get();
+  const displayPeriodSnapshot = await db.collection('display-periods').get();
   const memorySnapshot = await db.collection('memory-pages').get();
-  const invitationSnapshot = await db.collection('invitation-pages').get();
   const commentsSnapshot = await db.collection('comments').get();
 
   const legacyMemoryDocs = memorySnapshot.docs.filter((doc) =>
@@ -58,7 +58,8 @@ async function analyze(db) {
   );
 
   console.log(JSON.stringify({
-    invitationPages: invitationSnapshot.size,
+    adminUsers: adminSnapshot.size,
+    displayPeriods: displayPeriodSnapshot.size,
     comments: commentsSnapshot.size,
     legacyCommentCollections: legacyCommentCollections.map((collection) => collection.id),
     legacyMemoryPageCount: legacyMemoryDocs.length,
@@ -130,31 +131,6 @@ async function sanitizeMemoryPages(db, execute) {
   console.log(`${execute ? 'Sanitized' : 'Would sanitize'} ${updatedCount} memory-pages documents.`);
 }
 
-async function seedInvitationPages(db, inputPath, execute) {
-  if (!inputPath) {
-    throw new Error('Missing --input <path> for seed-invitations command.');
-  }
-
-  const contents = await fs.readFile(inputPath, 'utf8');
-  const records = JSON.parse(contents);
-
-  if (!Array.isArray(records)) {
-    throw new Error('Invitation seed input must be an array.');
-  }
-
-  for (const record of records) {
-    if (!record || typeof record.slug !== 'string' || record.slug.length === 0) {
-      throw new Error('Each invitation seed record must contain a non-empty slug.');
-    }
-
-    if (execute) {
-      await db.collection('invitation-pages').doc(record.slug).set(record, { merge: true });
-    }
-  }
-
-  console.log(`${execute ? 'Seeded' : 'Would seed'} ${records.length} invitation-pages documents.`);
-}
-
 async function main() {
   const { command, options } = parseArgs(process.argv);
   const execute = options.execute === true;
@@ -172,11 +148,6 @@ async function main() {
 
   if (command === 'sanitize-memory-pages') {
     await sanitizeMemoryPages(db, execute);
-    return;
-  }
-
-  if (command === 'seed-invitations') {
-    await seedInvitationPages(db, options.input, execute);
     return;
   }
 

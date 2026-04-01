@@ -1,9 +1,15 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Image from 'next/image';
 
 import { copyTextToClipboard } from '@/utils';
+import {
+  buildGoogleMapSearchUrl,
+  buildKakaoMapSearchUrl,
+  buildNaverMapSearchUrl,
+  loadKakaoMapsSdk,
+} from '@/utils/kakaoMaps';
 
 import styles from './LocationMap.module.css';
 
@@ -22,8 +28,8 @@ interface LocationMapProps {
 
 declare global {
   interface Window {
-    kakao: any;
-    kakaoMapInstance?: any; // ✅ 카카오맵 인스턴스 저장용
+    kakao?: any;
+    kakaoMapInstance?: any;
   }
 }
 
@@ -35,88 +41,90 @@ const venueInfoIconPaths = {
   transit: '/images/005.png',
 } as const;
 
-export default function LocationMap({ 
-  venueName, 
-  address, 
+export default function LocationMap({
+  venueName,
+  address,
   description,
   contact,
-  kakaoMapConfig
+  kakaoMapConfig,
 }: LocationMapProps) {
+  const mapRef = useRef<HTMLDivElement>(null);
   const [isClient, setIsClient] = useState(false);
   const [kakaoMapLoaded, setKakaoMapLoaded] = useState(false);
   const [isAddressCopied, setIsAddressCopied] = useState(false);
-  const [controlEnabled, setControlEnabled] = useState(false); // ✅ 컨트롤 상태
+  const [controlEnabled, setControlEnabled] = useState(false);
 
   useEffect(() => {
     setIsClient(true);
   }, []);
 
-  // Kakao Maps API 로드
   useEffect(() => {
-    if (!isClient) return;
+    if (!isClient) {
+      return;
+    }
 
-    const script = document.createElement('script');
-    script.async = true;
-    script.src = `//dapi.kakao.com/v2/maps/sdk.js?appkey=234add558ffec30aa714eb4644df46e3&libraries=services&autoload=false`;
-    
-    script.onload = () => {
-      window.kakao.maps.load(() => {
+    void loadKakaoMapsSdk()
+      .then(() => {
         initializeKakaoMap();
+      })
+      .catch((error) => {
+        console.error('[LocationMap] failed to load Kakao Maps SDK', error);
+        setKakaoMapLoaded(true);
       });
-    };
-    
-    document.head.appendChild(script);
-
-    return () => {
-      document.head.removeChild(script);
-    };
-  }, [isClient, address, venueName]);
+  }, [isClient, address, venueName, kakaoMapConfig]);
 
   const initializeKakaoMap = () => {
-    const container = document.getElementById('kakao-map');
-    if (!container) return;
+    const container = mapRef.current;
+    if (!container || !window.kakao?.maps) {
+      return;
+    }
 
-    // config가 있으면 config 사용, 없으면 기본 서울 좌표
-    const defaultLat = kakaoMapConfig?.latitude || 37.5665;
-    const defaultLng = kakaoMapConfig?.longitude || 126.9780;
-    const mapLevel = kakaoMapConfig?.level || 3;
+    try {
+      container.innerHTML = '';
 
-    const options = {
-      center: new window.kakao.maps.LatLng(defaultLat, defaultLng), 
-      level: mapLevel
-    };
+      const defaultLat = kakaoMapConfig?.latitude || 37.5665;
+      const defaultLng = kakaoMapConfig?.longitude || 126.9780;
+      const mapLevel = kakaoMapConfig?.level || 3;
 
-    const map = new window.kakao.maps.Map(container, options);
+      const options = {
+        center: new window.kakao.maps.LatLng(defaultLat, defaultLng),
+        level: mapLevel,
+      };
 
-    // kakaoMapConfig가 있으면 직접 좌표 사용, 없으면 주소 검색
-    if (kakaoMapConfig) {
-      const coords = new window.kakao.maps.LatLng(kakaoMapConfig.latitude, kakaoMapConfig.longitude);
-      
-      map.setCenter(coords);
+      const map = new window.kakao.maps.Map(container, options);
 
-      const marker = new window.kakao.maps.Marker({
-        map: map,
-        position: coords
-      });
+      if (kakaoMapConfig) {
+        const coords = new window.kakao.maps.LatLng(
+          kakaoMapConfig.latitude,
+          kakaoMapConfig.longitude
+        );
 
-      const markerTitle = kakaoMapConfig.markerTitle || venueName;
-      const infowindow = new window.kakao.maps.InfoWindow({
-        content: `<div style="width:200px;text-align:center;padding:6px 0;font-size:12px;font-weight:bold;">${markerTitle}</div>`
-      });
-
-      infowindow.open(map, marker);
-
-      setTimeout(() => {
-        map.relayout();
         map.setCenter(coords);
-      }, 0);
 
-      window.kakaoMapInstance = map;
-      map.setZoomable(false);
-      map.setDraggable(false);
-      setKakaoMapLoaded(true);
-    } else {
-      // 기존 주소 검색 방식
+        const marker = new window.kakao.maps.Marker({
+          map,
+          position: coords,
+        });
+
+        const markerTitle = kakaoMapConfig.markerTitle || venueName;
+        const infowindow = new window.kakao.maps.InfoWindow({
+          content: `<div style="width:200px;text-align:center;padding:6px 0;font-size:12px;font-weight:bold;">${markerTitle}</div>`,
+        });
+
+        infowindow.open(map, marker);
+
+        window.setTimeout(() => {
+          map.relayout();
+          map.setCenter(coords);
+        }, 50);
+
+        window.kakaoMapInstance = map;
+        map.setZoomable(false);
+        map.setDraggable(false);
+        setKakaoMapLoaded(true);
+        return;
+      }
+
       const geocoder = new window.kakao.maps.services.Geocoder();
 
       geocoder.addressSearch(address, (result: any, status: any) => {
@@ -126,43 +134,48 @@ export default function LocationMap({
           map.setCenter(coords);
 
           const marker = new window.kakao.maps.Marker({
-            map: map,
-            position: coords
+            map,
+            position: coords,
           });
 
           const infowindow = new window.kakao.maps.InfoWindow({
-            content: `<div style="width:200px;text-align:center;padding:6px 0;font-size:12px;font-weight:bold;">${venueName}</div>`
+            content: `<div style="width:200px;text-align:center;padding:6px 0;font-size:12px;font-weight:bold;">${venueName}</div>`,
           });
 
           infowindow.open(map, marker);
 
-          setTimeout(() => {
+          window.setTimeout(() => {
             map.relayout();
             map.setCenter(coords);
-          }, 0);
+          }, 50);
 
           window.kakaoMapInstance = map;
           map.setZoomable(false);
           map.setDraggable(false);
           setKakaoMapLoaded(true);
-        } else {
-          console.error('Kakao Maps 주소 검색 실패:', status);
-          setKakaoMapLoaded(true);
+          return;
         }
+
+        console.error('[LocationMap] address search failed', status);
+        setKakaoMapLoaded(true);
       });
+    } catch (error) {
+      console.error('[LocationMap] failed to initialize map instance', error);
+      setKakaoMapLoaded(true);
     }
   };
 
-  // ✅ 컨트롤 토글 (확대/축소 + 드래그)
   const toggleControl = () => {
     const map = window.kakaoMapInstance;
-    if (!map) return;
+    if (!map) {
+      return;
+    }
 
     setControlEnabled((prev) => {
-      const newState = !prev;
-      map.setZoomable(newState);
-      map.setDraggable(newState);
-      return newState;
+      const next = !prev;
+      map.setZoomable(next);
+      map.setDraggable(next);
+      return next;
     });
   };
 
@@ -179,14 +192,16 @@ export default function LocationMap({
   if (!isClient) {
     return (
       <div className={styles.wrapper}>
-        <div style={{ 
-          padding: '2rem',
-          textAlign: 'center',
-          backgroundColor: '#f8f9fa',
-          borderRadius: '16px',
-          margin: '1rem'
-        }}>
-          <span>지도 로딩 중...</span>
+        <div
+          style={{
+            padding: '2rem',
+            textAlign: 'center',
+            backgroundColor: '#f8f9fa',
+            borderRadius: '16px',
+            margin: '1rem',
+          }}
+        >
+          <span>지도를 불러오는 중입니다.</span>
         </div>
       </div>
     );
@@ -200,10 +215,9 @@ export default function LocationMap({
         </div>
 
         <div className={styles.mapContainer}>
-          {/* Kakao Map */}
           <div style={{ position: 'relative', width: '100%', height: '100%' }}>
-            <div 
-              id="kakao-map" 
+            <div
+              ref={mapRef}
               className={styles.mapFrame}
               style={{ width: '100%', height: '100%', borderRadius: '12px' }}
             />
@@ -213,13 +227,12 @@ export default function LocationMap({
             </div>
             {!kakaoMapLoaded && (
               <div className={styles.mapLoading}>
-                <span>카카오맵 로딩 중...</span>
+                <span>카카오맵을 불러오는 중입니다.</span>
               </div>
             )}
-            
-            {/* 컨트롤 OFF일 때 터치 차단 오버레이 */}
+
             {!controlEnabled && (
-              <div 
+              <div
                 style={{
                   position: 'absolute',
                   top: 0,
@@ -229,13 +242,12 @@ export default function LocationMap({
                   background: 'transparent',
                   zIndex: 5,
                   cursor: 'not-allowed',
-                  pointerEvents: 'auto'
+                  pointerEvents: 'auto',
                 }}
               />
             )}
-            
-            {/* ✅ 컨트롤 ON/OFF 버튼 */}
-            <button 
+
+            <button
               onClick={toggleControl}
               style={{
                 position: 'absolute',
@@ -249,15 +261,15 @@ export default function LocationMap({
                 fontSize: '12px',
                 cursor: 'pointer',
                 boxShadow: '0 2px 6px rgba(0,0,0,0.15)',
-                pointerEvents: 'auto'
+                pointerEvents: 'auto',
               }}
+              type="button"
             >
               {controlEnabled ? '지도 고정' : '지도 움직이기'}
             </button>
           </div>
         </div>
 
-        {/* 예식장 정보 섹션 */}
         <div className={styles.venueInfoSection}>
           <div className={styles.venueInfoHeader}>
             <Image
@@ -270,7 +282,7 @@ export default function LocationMap({
             />
             <h3 className={styles.venueInfoTitle}>예식장 정보</h3>
           </div>
-          
+
           <div className={styles.venueDetails}>
             <div className={styles.venueMainInfo}>
               <div className={styles.venueNameSection}>
@@ -284,7 +296,7 @@ export default function LocationMap({
                 />
                 <span className={styles.venueName}>{venueName}</span>
               </div>
-              
+
               <div className={styles.venueAddressSection}>
                 <Image
                   src={venueInfoIconPaths.address}
@@ -296,7 +308,7 @@ export default function LocationMap({
                 />
                 <span className={styles.venueAddress}>{address}</span>
               </div>
-              
+
               {contact && (
                 <div className={styles.venueContactSection}>
                   <Image
@@ -307,12 +319,15 @@ export default function LocationMap({
                     height={34}
                     className={styles.venueInfoItemIconImage}
                   />
-                  <a href={`tel:${contact.replace(/-/g, '')}`} className={styles.venueContact}>
+                  <a
+                    href={`tel:${contact.replace(/-/g, '')}`}
+                    className={styles.venueContact}
+                  >
                     {contact}
                   </a>
                 </div>
               )}
-              
+
               {description && (
                 <div className={styles.venueDescriptionSection}>
                   <Image
@@ -330,40 +345,45 @@ export default function LocationMap({
           </div>
         </div>
 
-        {/* 길찾기 버튼 섹션 */}
         <div className={styles.navigationSection}>
           <div className={styles.navigationHeader}>
             <span className={styles.navigationIcon}>🧭</span>
             <h3 className={styles.navigationTitle}>길찾기</h3>
           </div>
-          
+
           <div className={styles.navigationButtons}>
-            <button 
+            <button
               className={styles.navButton}
               onClick={handleCopyAddress}
+              type="button"
             >
               <span className={styles.navButtonIcon}>⌘</span>
-              <span className={styles.navButtonText}>{isAddressCopied ? '복사 완료' : '주소 복사'}</span>
+              <span className={styles.navButtonText}>
+                {isAddressCopied ? '복사 완료' : '주소 복사'}
+              </span>
             </button>
-            <button 
+            <button
               className={styles.navButton}
-              onClick={() => window.open(`https://map.naver.com/v5/search/${encodeURIComponent(address)}`, '_blank')}
+              onClick={() => window.open(buildNaverMapSearchUrl(address), '_blank')}
+              type="button"
             >
               <span className={styles.navButtonIcon}>🟢</span>
               <span className={styles.navButtonText}>네이버 지도</span>
             </button>
-            
-            <button 
+
+            <button
               className={styles.navButton}
-              onClick={() => window.open(`https://map.kakao.com/link/search/${encodeURIComponent(address)}`, '_blank')}
+              onClick={() => window.open(buildKakaoMapSearchUrl(address), '_blank')}
+              type="button"
             >
               <span className={styles.navButtonIcon}>🟡</span>
               <span className={styles.navButtonText}>카카오맵</span>
             </button>
-            
-            <button 
+
+            <button
               className={styles.navButton}
-              onClick={() => window.open(`https://www.google.com/maps/search/${encodeURIComponent(address)}`, '_blank')}
+              onClick={() => window.open(buildGoogleMapSearchUrl(address), '_blank')}
+              type="button"
             >
               <span className={styles.navButtonIcon}>🔵</span>
               <span className={styles.navButtonText}>구글 지도</span>

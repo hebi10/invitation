@@ -35,18 +35,6 @@
   transition: all 0.3s ease;
 }
 
-.timerItem:hover {
-  background: var(--primary);
-  transform: translateY(-4px);
-}
-
-.timerItem:hover .number {
-  color: white;
-}
-
-.timerItem:hover .label {
-  color: rgba(255, 255, 255, 0.9);
-}
 
 .number {
   font-family: var(--font-cormorant-garamond), serif;

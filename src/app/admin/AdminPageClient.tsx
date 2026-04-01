@@ -2,18 +2,24 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+
 import { DisplayPeriodManager, ImageManager, MemoryPageManager } from '@/components';
 import { useAdmin } from '@/contexts';
 import {
+  clearAdminInvitationPreviewCache,
+  writeAdminInvitationPreviewCache,
+} from '@/lib/adminInvitationPreviewCache';
+import {
   deleteComment,
   getAllComments,
-  getAllDisplayPeriods,
+  getCommentSummary,
   getAllInvitationPages,
   getAllMemoryPages,
   type Comment,
-  type DisplayPeriod,
+  type CommentSummary,
   type InvitationPageSummary,
 } from '@/services';
+
 import {
   AdminCommentsTab,
   AdminPagesTab,
@@ -25,8 +31,10 @@ import {
 import {
   TAB_ITEMS,
   COMMENTS_PER_PAGE,
+  DUE_SOON_DAYS,
   PAGE_SORT_LABELS,
   PAGE_STATUS_LABELS,
+  RECENT_COMMENT_DAYS,
   parseCommentAge,
   parsePageSort,
   parsePageStatus,
@@ -34,11 +42,31 @@ import {
   parseShortcut,
   parseTab,
   numberFromParam,
-  isDueSoonPeriod,
   isRecentComment,
   getAvailableShortcuts,
 } from './_components/adminPageUtils';
 import styles from './page.module.css';
+
+function isPageDueSoon(page: InvitationPageSummary) {
+  if (
+    !page.displayPeriodEnabled ||
+    !page.displayPeriodStart ||
+    !page.displayPeriodEnd
+  ) {
+    return false;
+  }
+
+  const now = new Date();
+  const diffDays = Math.ceil(
+    (page.displayPeriodEnd.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)
+  );
+
+  return (
+    now >= page.displayPeriodStart &&
+    now <= page.displayPeriodEnd &&
+    diffDays <= DUE_SOON_DAYS
+  );
+}
 
 export default function AdminPageClient() {
   const { adminUser, isAdminLoggedIn, isAdminLoading, login, logout } = useAdmin();
@@ -53,8 +81,11 @@ export default function AdminPageClient() {
 
   const [pages, setPages] = useState<InvitationPageSummary[]>([]);
   const [comments, setComments] = useState<Comment[]>([]);
-  const [periods, setPeriods] = useState<DisplayPeriod[]>([]);
   const [memoryPublicCount, setMemoryPublicCount] = useState(0);
+  const [commentSummary, setCommentSummary] = useState<CommentSummary>({
+    totalCount: 0,
+    recentCount: 0,
+  });
 
   const [pagesLoading, setPagesLoading] = useState(false);
   const [commentsLoading, setCommentsLoading] = useState(false);
@@ -82,13 +113,18 @@ export default function AdminPageClient() {
       }
     });
 
-    router.replace(`${pathname}${nextParams.toString() ? `?${nextParams.toString()}` : ''}`, { scroll: false });
+    router.replace(
+      `${pathname}${nextParams.toString() ? `?${nextParams.toString()}` : ''}`,
+      { scroll: false }
+    );
   };
 
   const fetchPages = async () => {
     setPagesLoading(true);
     try {
-      setPages(await getAllInvitationPages({ includeSeedFallback: true }));
+      const nextPages = await getAllInvitationPages({ includeSeedFallback: true });
+      setPages(nextPages);
+      writeAdminInvitationPreviewCache(nextPages);
     } catch (fetchError) {
       console.error(fetchError);
       showToast({
@@ -118,18 +154,23 @@ export default function AdminPageClient() {
   const fetchSummarySources = async () => {
     setSummaryLoading(true);
     try {
-      const [nextPeriods, memoryPages] = await Promise.all([getAllDisplayPeriods(), getAllMemoryPages()]);
-      setPeriods(nextPeriods);
-      setMemoryPublicCount(memoryPages.filter((page) => page.enabled && page.visibility !== 'private').length);
+      const [nextPages, memoryPages, nextCommentSummary] = await Promise.all([
+        getAllInvitationPages({ includeSeedFallback: true }),
+        getAllMemoryPages(),
+        getCommentSummary(RECENT_COMMENT_DAYS),
+      ]);
+
+      setPages(nextPages);
+      writeAdminInvitationPreviewCache(nextPages);
+      setMemoryPublicCount(
+        memoryPages.filter((page) => page.enabled && page.visibility !== 'private').length
+      );
+      setCommentSummary(nextCommentSummary);
     } catch (fetchError) {
       console.error(fetchError);
     } finally {
       setSummaryLoading(false);
     }
-  };
-
-  const refreshAllAdminData = async () => {
-    await Promise.all([fetchPages(), fetchComments(), fetchSummarySources()]);
   };
 
   const handleLogin = async (event: React.FormEvent) => {
@@ -143,7 +184,6 @@ export default function AdminPageClient() {
 
     setError('');
     setPassword('');
-    await refreshAllAdminData();
     showToast({
       title: '관리자 로그인에 성공했습니다.',
       tone: 'success',
@@ -177,6 +217,12 @@ export default function AdminPageClient() {
             )
         )
       );
+      setCommentSummary((prev) => ({
+        totalCount: Math.max(0, prev.totalCount - 1),
+        recentCount: isRecentComment(comment.createdAt)
+          ? Math.max(0, prev.recentCount - 1)
+          : prev.recentCount,
+      }));
       showToast({
         title: '댓글을 삭제했습니다.',
         tone: 'success',
@@ -192,10 +238,14 @@ export default function AdminPageClient() {
 
   const handleLogout = async () => {
     await logout();
+    clearAdminInvitationPreviewCache();
     setPages([]);
     setComments([]);
-    setPeriods([]);
     setMemoryPublicCount(0);
+    setCommentSummary({
+      totalCount: 0,
+      recentCount: 0,
+    });
     setEmail('');
     setPassword('');
     setError('');
@@ -207,15 +257,37 @@ export default function AdminPageClient() {
       return;
     }
 
-    void refreshAllAdminData();
+    void fetchSummarySources();
   }, [isAdminLoggedIn]);
+
+  useEffect(() => {
+    if (!isAdminLoggedIn || activeTab !== 'comments' || commentsLoading || comments.length > 0) {
+      return;
+    }
+
+    void fetchComments();
+  }, [activeTab, comments.length, commentsLoading, isAdminLoggedIn]);
+
+  useEffect(() => {
+    if (!isAdminLoggedIn || activeTab !== 'pages' || summaryLoading || pagesLoading || pages.length > 0) {
+      return;
+    }
+
+    void fetchPages();
+  }, [activeTab, isAdminLoggedIn, pages.length, pagesLoading, summaryLoading]);
 
   const filteredPages = useMemo(() => {
     return [...pages]
       .filter((page) => {
         const links = getAvailableShortcuts(page);
-        const matchesSearch = `${page.displayName} ${page.slug} ${page.description ?? ''} ${page.venue ?? ''}`.toLowerCase().includes(pageSearch.trim().toLowerCase());
-        const matchesShortcut = pageShortcutFilter === 'all' || links.some((link) => link.key === pageShortcutFilter);
+        const matchesSearch = `${page.displayName} ${page.slug} ${
+          page.description ?? ''
+        } ${page.venue ?? ''}`
+          .toLowerCase()
+          .includes(pageSearch.trim().toLowerCase());
+        const matchesShortcut =
+          pageShortcutFilter === 'all' ||
+          links.some((link) => link.key === pageShortcutFilter);
         const matchesStatus =
           pageStatusFilter === 'all' ||
           (pageStatusFilter === 'complete' && links.length === 6) ||
@@ -230,7 +302,9 @@ export default function AdminPageClient() {
         }
 
         if (pageSort === 'coverage') {
-          return getAvailableShortcuts(right).length - getAvailableShortcuts(left).length;
+          return (
+            getAvailableShortcuts(right).length - getAvailableShortcuts(left).length
+          );
         }
 
         return right.slug.localeCompare(left.slug, 'ko');
@@ -239,19 +313,36 @@ export default function AdminPageClient() {
 
   const filteredComments = useMemo(() => {
     return comments.filter((comment) => {
-      const matchesSearch = `${comment.author} ${comment.message} ${comment.pageSlug}`.toLowerCase().includes(commentSearch.trim().toLowerCase());
-      const matchesPage = selectedPageSlug === 'all' || comment.pageSlug === selectedPageSlug;
-      const matchesAge = commentAgeFilter === 'all' || isRecentComment(comment.createdAt);
+      const matchesSearch = `${comment.author} ${comment.message} ${comment.pageSlug}`
+        .toLowerCase()
+        .includes(commentSearch.trim().toLowerCase());
+      const matchesPage =
+        selectedPageSlug === 'all' || comment.pageSlug === selectedPageSlug;
+      const matchesAge =
+        commentAgeFilter === 'all' || isRecentComment(comment.createdAt);
       return matchesSearch && matchesPage && matchesAge;
     });
   }, [commentAgeFilter, commentSearch, comments, selectedPageSlug]);
 
-  const totalCommentPages = Math.max(1, Math.ceil(filteredComments.length / COMMENTS_PER_PAGE));
+  const totalCommentPages = Math.max(
+    1,
+    Math.ceil(filteredComments.length / COMMENTS_PER_PAGE)
+  );
   const normalizedCurrentPage = Math.min(currentPage, totalCommentPages);
-  const currentComments = filteredComments.slice((normalizedCurrentPage - 1) * COMMENTS_PER_PAGE, normalizedCurrentPage * COMMENTS_PER_PAGE);
+  const currentComments = filteredComments.slice(
+    (normalizedCurrentPage - 1) * COMMENTS_PER_PAGE,
+    normalizedCurrentPage * COMMENTS_PER_PAGE
+  );
   const pageNameMap = new Map(pages.map((page) => [page.slug, page.displayName]));
-  const commentPageOptions = [...new Set([...pages.map((page) => page.slug), ...comments.map((comment) => comment.pageSlug)])]
-    .sort((left, right) => (pageNameMap.get(left) ?? left).localeCompare(pageNameMap.get(right) ?? right, 'ko'))
+  const commentPageOptions = [
+    ...new Set([
+      ...pages.map((page) => page.slug),
+      ...comments.map((comment) => comment.pageSlug),
+    ]),
+  ]
+    .sort((left, right) =>
+      (pageNameMap.get(left) ?? left).localeCompare(pageNameMap.get(right) ?? right, 'ko')
+    )
     .map((slug) => ({
       value: slug,
       label: pageNameMap.get(slug) ? `${pageNameMap.get(slug)} (${slug})` : slug,
@@ -263,25 +354,31 @@ export default function AdminPageClient() {
     }
   }, [currentPage, normalizedCurrentPage]);
 
-  const publishedCount = pages.filter((page) => page.published).length;
-  const dueSoonCount = periods.filter((period) => isDueSoonPeriod(period)).length;
-  const recentCommentsCount = comments.filter((comment) => isRecentComment(comment.createdAt)).length;
-  const unpublishedCount = pages.filter((page) => !page.published).length;
+  const invitationCount = pages.length;
+  const restrictedCount = pages.filter((page) => page.displayPeriodEnabled).length;
+  const dueSoonCount = pages.filter(isPageDueSoon).length;
+  const recentCommentsCount = commentSummary.recentCount;
 
   const summaryCards: SummaryCardItem[] = [
     {
-      id: 'published',
-      label: '공개 청첩장',
-      value: publishedCount,
-      meta: `${pages.length}개 중 공개 상태 문서 수`,
-      tone: publishedCount > 0 ? 'success' : 'neutral',
+      id: 'invitations',
+      label: '청첩장 페이지',
+      value: invitationCount,
+      meta:
+        restrictedCount > 0
+          ? `기간 제한 사용 ${restrictedCount}개`
+          : '현재 기간 제한이 설정된 페이지가 없습니다.',
+      tone: invitationCount > 0 ? 'success' : 'neutral',
       onClick: () => updateQuery({ tab: 'pages' }),
     },
     {
       id: 'dueSoon',
       label: '곧 종료',
       value: dueSoonCount,
-      meta: dueSoonCount > 0 ? '7일 이내 종료되는 청첩장' : '긴급히 확인할 청첩장이 없습니다.',
+      meta:
+        dueSoonCount > 0
+          ? `${DUE_SOON_DAYS}일 이내 종료되는 청첩장`
+          : '긴급히 확인할 청첩장이 없습니다.',
       tone: dueSoonCount > 0 ? 'warning' : 'neutral',
       onClick: () => updateQuery({ tab: 'periods', periodStatus: 'dueSoon' }),
     },
@@ -289,22 +386,32 @@ export default function AdminPageClient() {
       id: 'recentComments',
       label: '최근 댓글',
       value: recentCommentsCount,
-      meta: recentCommentsCount > 0 ? '최근 7일 이내 등록된 댓글' : '최근 댓글이 없습니다.',
+      meta:
+        recentCommentsCount > 0
+          ? `최근 ${RECENT_COMMENT_DAYS}일 이내 등록된 댓글`
+          : '최근 댓글이 없습니다.',
       tone: recentCommentsCount > 0 ? 'primary' : 'neutral',
-      onClick: () => updateQuery({ tab: 'comments', commentAge: 'recent', commentPage: '1' }),
+      onClick: () =>
+        updateQuery({ tab: 'comments', commentAge: 'recent', commentPage: '1' }),
     },
     {
       id: 'memoryVisible',
       label: '공개 추억 페이지',
       value: memoryPublicCount,
-      meta: unpublishedCount > 0 ? `초안 청첩장 ${unpublishedCount}개` : '모든 청첩장 문서가 공개 상태입니다.',
+      meta: `청첩장 ${invitationCount}개와 별도로 운영됩니다.`,
       tone: memoryPublicCount > 0 ? 'primary' : 'neutral',
       onClick: () => updateQuery({ tab: 'memory' }),
     },
   ];
 
   const pageFilterChips = [
-    pageSearch ? { id: 'page-search', label: `검색: ${pageSearch}`, onRemove: () => updateQuery({ pageQ: null }) } : null,
+    pageSearch
+      ? {
+          id: 'page-search',
+          label: `검색: ${pageSearch}`,
+          onRemove: () => updateQuery({ pageQ: null }),
+        }
+      : null,
     pageShortcutFilter !== 'all'
       ? {
           id: 'page-shortcut',
@@ -313,22 +420,48 @@ export default function AdminPageClient() {
         }
       : null,
     pageStatusFilter !== 'all'
-      ? { id: 'page-status', label: `상태: ${PAGE_STATUS_LABELS[pageStatusFilter]}`, onRemove: () => updateQuery({ pageStatus: null }) }
+      ? {
+          id: 'page-status',
+          label: `상태: ${PAGE_STATUS_LABELS[pageStatusFilter]}`,
+          onRemove: () => updateQuery({ pageStatus: null }),
+        }
       : null,
-    pageSort !== 'newest' ? { id: 'page-sort', label: `정렬: ${PAGE_SORT_LABELS[pageSort]}`, onRemove: () => updateQuery({ pageSort: null }) } : null,
+    pageSort !== 'newest'
+      ? {
+          id: 'page-sort',
+          label: `정렬: ${PAGE_SORT_LABELS[pageSort]}`,
+          onRemove: () => updateQuery({ pageSort: null }),
+        }
+      : null,
   ].filter(Boolean) as Array<{ id: string; label: string; onRemove: () => void }>;
 
   const commentFilterChips = [
-    commentSearch ? { id: 'comment-search', label: `검색: ${commentSearch}`, onRemove: () => updateQuery({ commentQ: null, commentPage: '1' }) } : null,
+    commentSearch
+      ? {
+          id: 'comment-search',
+          label: `검색: ${commentSearch}`,
+          onRemove: () => updateQuery({ commentQ: null, commentPage: '1' }),
+        }
+      : null,
     selectedPageSlug !== 'all'
-      ? { id: 'comment-page', label: `페이지: ${selectedPageSlug}`, onRemove: () => updateQuery({ commentPageSlug: null, commentPage: '1' }) }
+      ? {
+          id: 'comment-page',
+          label: `페이지: ${selectedPageSlug}`,
+          onRemove: () =>
+            updateQuery({ commentPageSlug: null, commentPage: '1' }),
+        }
       : null,
     commentAgeFilter !== 'all'
-      ? { id: 'comment-age', label: '기간: 최근 7일', onRemove: () => updateQuery({ commentAge: null, commentPage: '1' }) }
+      ? {
+          id: 'comment-age',
+          label: `기간: 최근 ${RECENT_COMMENT_DAYS}일`,
+          onRemove: () => updateQuery({ commentAge: null, commentPage: '1' }),
+        }
       : null,
   ].filter(Boolean) as Array<{ id: string; label: string; onRemove: () => void }>;
 
-  const activeTabLabel = TAB_ITEMS.find((tab) => tab.key === activeTab)?.label ?? '청첩장';
+  const activeTabLabel =
+    TAB_ITEMS.find((tab) => tab.key === activeTab)?.label ?? '청첩장';
 
   if (isAdminLoading) {
     return <div className={styles.container} />;
@@ -345,16 +478,30 @@ export default function AdminPageClient() {
             <StatusBadge tone="neutral">Admin Access</StatusBadge>
             <div className={styles.loginHeader}>
               <h1 className={styles.loginTitle}>관리자 로그인</h1>
-              <p className={styles.loginDescription}>Firebase Auth 관리자 계정으로만 로그인할 수 있습니다.</p>
+              <p className={styles.loginDescription}>
+                Firebase Auth 관리자 계정으로만 로그인할 수 있습니다.
+              </p>
             </div>
             <form className={styles.loginForm} onSubmit={handleLogin}>
               <label className="admin-field">
                 <span className="admin-field-label">Email</span>
-                <input className="admin-input" type="email" value={email} onChange={(event) => setEmail(event.target.value)} required />
+                <input
+                  className="admin-input"
+                  type="email"
+                  value={email}
+                  onChange={(event) => setEmail(event.target.value)}
+                  required
+                />
               </label>
               <label className="admin-field">
                 <span className="admin-field-label">Password</span>
-                <input className="admin-input" type="password" value={password} onChange={(event) => setPassword(event.target.value)} required />
+                <input
+                  className="admin-input"
+                  type="password"
+                  value={password}
+                  onChange={(event) => setPassword(event.target.value)}
+                  required
+                />
               </label>
               {error ? <p className={styles.errorBanner}>{error}</p> : null}
               <button className="admin-button admin-button-primary" type="submit">
@@ -377,7 +524,11 @@ export default function AdminPageClient() {
             </a>
             <div className={styles.headerActions}>
               <StatusBadge tone="success">{adminUser?.email ?? 'Admin'}</StatusBadge>
-              <button className="admin-button admin-button-secondary" onClick={() => void handleLogout()} type="button">
+              <button
+                className="admin-button admin-button-secondary"
+                onClick={() => void handleLogout()}
+                type="button"
+              >
                 로그아웃
               </button>
             </div>
@@ -387,11 +538,16 @@ export default function AdminPageClient() {
             <div className={styles.headingBlock}>
               <span className={styles.pageEyebrow}>Invitation Admin</span>
               <h1 className={styles.pageTitle}>운영 대시보드</h1>
-              <p className={styles.pageDescription}>청첩장 공개 상태, 댓글, 이미지, 추억 페이지, 노출 기간을 Firebase 문서 기준으로 관리합니다.</p>
+              <p className={styles.pageDescription}>
+                청첩장 공개 상태, 댓글, 이미지, 추억 페이지, 노출 기간을 Firebase 문서
+                기준으로 관리합니다.
+              </p>
             </div>
             <div className={styles.headerSummary}>
               <StatusBadge tone="primary">{activeTabLabel}</StatusBadge>
-              <p className={styles.headerSummaryText}>현재 탭의 데이터만 필요한 범위로 조회합니다.</p>
+              <p className={styles.headerSummaryText}>
+                현재 탭의 데이터만 필요한 범위로 조회합니다.
+              </p>
             </div>
           </div>
         </header>
@@ -400,7 +556,16 @@ export default function AdminPageClient() {
 
         <nav className={styles.tabBar} aria-label="관리 탭">
           {TAB_ITEMS.map((tab) => (
-            <button key={tab.key} type="button" className={`${styles.tabButton} ${activeTab === tab.key ? styles.tabButtonActive : ''}`} onClick={() => updateQuery({ tab: tab.key === 'pages' ? null : tab.key })}>
+            <button
+              key={tab.key}
+              type="button"
+              className={`${styles.tabButton} ${
+                activeTab === tab.key ? styles.tabButtonActive : ''
+              }`}
+              onClick={() =>
+                updateQuery({ tab: tab.key === 'pages' ? null : tab.key })
+              }
+            >
               {tab.label}
             </button>
           ))}
@@ -444,7 +609,13 @@ export default function AdminPageClient() {
             />
           ) : null}
 
-          {activeTab === 'periods' ? <DisplayPeriodManager isVisible={true} statusFilter={periodStatusFilter} onDataChanged={() => void fetchSummarySources()} /> : null}
+          {activeTab === 'periods' ? (
+            <DisplayPeriodManager
+              isVisible={true}
+              statusFilter={periodStatusFilter}
+              onDataChanged={() => void fetchSummarySources()}
+            />
+          ) : null}
         </section>
       </div>
     </div>

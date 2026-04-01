@@ -371,6 +371,7 @@ export async function createMemoryPageDraftFromInvitation(
 ): Promise<MemoryPage> {
   const page = await getInvitationPageBySlug(pageSlug, {
     includeSeedFallback: true,
+    fallbackOnError: true,
   });
   if (!page) {
     throw new Error('청첩장 데이터를 찾을 수 없습니다.');

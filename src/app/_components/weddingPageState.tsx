@@ -1,9 +1,12 @@
 'use client';
 
-import { type Dispatch, type SetStateAction, useEffect, useState } from 'react';
+import { type Dispatch, type SetStateAction, useEffect, useMemo, useState } from 'react';
 
+import { createInvitationPageFromSeed, getWeddingPageBySlug } from '@/config/weddingPages';
 import { useAdmin } from '@/contexts';
 import { usePageImages } from '@/hooks';
+import { getAdminInvitationPreviewSummary } from '@/lib/adminInvitationPreviewCache';
+import { USE_FIREBASE } from '@/lib/firebase';
 import { getInvitationPageBySlug } from '@/services/invitationPageService';
 import type { InvitationPage } from '@/types/invitationPage';
 
@@ -19,6 +22,7 @@ type WeddingPageBaseState = {
   mainImageUrl: string;
   galleryImageUrls: string[];
   preloadImages: string[];
+  adminNotice: string | null;
 };
 
 export interface WeddingPageLoadingState extends WeddingPageBaseState {
@@ -54,17 +58,93 @@ export type WeddingPageState =
   | WeddingPageReadyState;
 
 const BLOCKED_MESSAGE = '현재 접근할 수 없는 청첩장입니다.';
-const LOAD_FAILED_MESSAGE = '청첩장 정보를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.';
+const LOAD_FAILED_MESSAGE =
+  '청첩장 정보를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.';
+
+function getInitialWeddingPage(slug: string) {
+  if (USE_FIREBASE) {
+    return null;
+  }
+
+  const seed = getWeddingPageBySlug(slug);
+  return seed ? createInvitationPageFromSeed(seed) : null;
+}
+
+function getAdminPreviewInvitationPage(slug: string) {
+  const seed = getWeddingPageBySlug(slug);
+  if (!seed) {
+    return null;
+  }
+
+  const summary = getAdminInvitationPreviewSummary(slug);
+
+  return createInvitationPageFromSeed(seed, {
+    published: summary?.published ?? true,
+    displayPeriodEnabled: summary?.displayPeriodEnabled ?? false,
+    displayPeriodStart: summary?.displayPeriodStart ?? null,
+    displayPeriodEnd: summary?.displayPeriodEnd ?? null,
+  });
+}
+
+function getAdminNotice(page: InvitationPage, isAdminLoggedIn: boolean) {
+  if (!isAdminLoggedIn) {
+    return null;
+  }
+
+  if (!page.published) {
+    return '현재 비공개 상태인 청첩장입니다. 관리자만 볼 수 있습니다.';
+  }
+
+  if (!page.displayPeriodEnabled) {
+    return null;
+  }
+
+  if (!page.displayPeriodStart || !page.displayPeriodEnd) {
+    return '노출 기간 설정이 완전하지 않은 청첩장입니다. 관리자만 볼 수 있습니다.';
+  }
+
+  const now = new Date();
+
+  if (now < page.displayPeriodStart) {
+    return '현재 노출 시작 전인 페이지입니다. 관리자만 볼 수 있습니다.';
+  }
+
+  if (now > page.displayPeriodEnd) {
+    return '현재 노출 종료된 페이지입니다. 관리자만 볼 수 있습니다.';
+  }
+
+  return null;
+}
+
+function isPublicInvitationPage(page: InvitationPage) {
+  if (!page.published) {
+    return false;
+  }
+
+  if (!page.displayPeriodEnabled) {
+    return true;
+  }
+
+  if (!page.displayPeriodStart || !page.displayPeriodEnd) {
+    return false;
+  }
+
+  const now = new Date();
+  return now >= page.displayPeriodStart && now <= page.displayPeriodEnd;
+}
 
 export function useWeddingInvitationState(
   options: WeddingInvitationRouteOptions
 ): WeddingPageState {
-  const [status, setStatus] = useState<WeddingPageState['status']>('loading');
+  const initialPage = useMemo(() => getInitialWeddingPage(options.slug), [options.slug]);
+  const [status, setStatus] = useState<WeddingPageState['status']>(
+    initialPage ? 'ready' : 'loading'
+  );
   const [blockMessage, setBlockMessage] = useState<string | null>(null);
-  const [pageConfig, setPageConfig] = useState<InvitationPage | null>(null);
+  const [pageConfig, setPageConfig] = useState<InvitationPage | null>(initialPage);
   const [isLoading, setIsLoading] = useState(true);
   const { mainImage, galleryImages, loading: imagesLoading, error } = usePageImages(options.slug);
-  const { isAdminLoading } = useAdmin();
+  const { isAdminLoading, isAdminLoggedIn } = useAdmin();
   const themeDefinition = getWeddingThemeDefinition(options.theme);
 
   useEffect(() => {
@@ -74,15 +154,19 @@ export function useWeddingInvitationState(
 
     let cancelled = false;
 
-    setStatus('loading');
+    setStatus(initialPage ? 'ready' : 'loading');
     setBlockMessage(null);
-    setPageConfig(null);
+    setPageConfig(initialPage);
     setIsLoading(true);
 
     const loadInvitationPage = async () => {
       try {
         const page = await getInvitationPageBySlug(options.slug, {
           includeSeedFallback: true,
+          fallbackOnError: !isAdminLoggedIn,
+          retryOnPermissionDenied: isAdminLoggedIn,
+          retryCount: isAdminLoggedIn ? 4 : 0,
+          retryDelayMs: 350,
         });
 
         if (cancelled) {
@@ -90,6 +174,17 @@ export function useWeddingInvitationState(
         }
 
         if (!page) {
+          if (isAdminLoggedIn) {
+            const adminPreviewPage = getAdminPreviewInvitationPage(options.slug);
+
+            if (adminPreviewPage) {
+              setPageConfig(adminPreviewPage);
+              setBlockMessage(null);
+              setStatus('ready');
+              return;
+            }
+          }
+
           setPageConfig(null);
           setBlockMessage(BLOCKED_MESSAGE);
           setStatus('blocked');
@@ -97,7 +192,14 @@ export function useWeddingInvitationState(
           return;
         }
 
-        document.title = `${page.groomName} ♥ ${page.brideName} 결혼식 - ${page.date}${themeDefinition.documentTitleSuffix}`;
+        if (!isAdminLoggedIn && !isPublicInvitationPage(page)) {
+          setPageConfig(null);
+          setBlockMessage(BLOCKED_MESSAGE);
+          setStatus('blocked');
+          setIsLoading(false);
+          return;
+        }
+
         setPageConfig(page);
         setBlockMessage(null);
         setStatus('ready');
@@ -106,6 +208,17 @@ export function useWeddingInvitationState(
 
         if (cancelled) {
           return;
+        }
+
+        if (isAdminLoggedIn) {
+          const adminPreviewPage = getAdminPreviewInvitationPage(options.slug);
+
+          if (adminPreviewPage) {
+            setPageConfig(adminPreviewPage);
+            setBlockMessage(null);
+            setStatus('ready');
+            return;
+          }
         }
 
         setPageConfig(null);
@@ -120,7 +233,7 @@ export function useWeddingInvitationState(
     return () => {
       cancelled = true;
     };
-  }, [isAdminLoading, options.slug, themeDefinition.documentTitleSuffix]);
+  }, [initialPage, isAdminLoading, isAdminLoggedIn, options.slug]);
 
   useEffect(() => {
     if (!error) {
@@ -155,7 +268,7 @@ export function useWeddingInvitationState(
       )
     : null;
 
-  const mainImageUrl = mainImage?.url || '';
+  const mainImageUrl = mainImage?.url || pageConfig?.metadata.images.wedding || '';
   const galleryImageUrls = galleryImages.map((image) => image.url);
   const preloadImages = [
     ...(mainImageUrl ? [mainImageUrl] : []),
@@ -174,6 +287,7 @@ export function useWeddingInvitationState(
     mainImageUrl,
     galleryImageUrls,
     preloadImages,
+    adminNotice: pageConfig ? getAdminNotice(pageConfig, isAdminLoggedIn) : null,
   };
 
   if (status === 'blocked') {

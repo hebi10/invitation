@@ -1,6 +1,14 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+
+import {
+  buildGoogleMapSearchUrl,
+  buildKakaoMapPinUrl,
+  buildNaverMapSearchUrl,
+  loadKakaoMapsSdk,
+} from '@/utils/kakaoMaps';
+
 import styles from './LocationMap_3.module.css';
 
 interface LocationMapProps {
@@ -16,7 +24,7 @@ interface LocationMapProps {
 
 declare global {
   interface Window {
-    kakao: any;
+    kakao?: any;
   }
 }
 
@@ -29,20 +37,11 @@ export default function LocationMap_3({
 }: LocationMapProps) {
   const mapRef = useRef<HTMLDivElement>(null);
   const [touchEnabled, setTouchEnabled] = useState(false);
-  const kakaoAppKey = '234add558ffec30aa714eb4644df46e3';
 
   useEffect(() => {
-    const script = document.createElement('script');
-    script.src = `//dapi.kakao.com/v2/maps/sdk.js?appkey=${kakaoAppKey}&autoload=false`;
-    script.async = true;
-
-    script.onload = () => {
-      if (!window.kakao?.maps || !mapRef.current) {
-        return;
-      }
-
-      window.kakao.maps.load(() => {
-        if (!mapRef.current) {
+    void loadKakaoMapsSdk()
+      .then(() => {
+        if (!window.kakao?.maps || !mapRef.current) {
           return;
         }
 
@@ -67,17 +66,11 @@ export default function LocationMap_3({
         });
 
         infowindow.open(map, marker);
+      })
+      .catch((error) => {
+        console.error('LocationMap_3 map sdk load failed:', error);
       });
-    };
-
-    document.head.appendChild(script);
-
-    return () => {
-      if (script.parentNode) {
-        script.parentNode.removeChild(script);
-      }
-    };
-  }, [coordinates.lat, coordinates.lng, kakaoAppKey, location]);
+  }, [coordinates.lat, coordinates.lng, location]);
 
   return (
     <section className={styles.container}>
@@ -156,7 +149,11 @@ export default function LocationMap_3({
         <div className={styles.mapButtons}>
           <button
             onClick={() => {
-              const kakaoUrl = `https://map.kakao.com/link/map/${location},${coordinates.lat},${coordinates.lng}`;
+              const kakaoUrl = buildKakaoMapPinUrl(
+                location,
+                coordinates.lat,
+                coordinates.lng
+              );
               window.open(kakaoUrl, '_blank');
             }}
             className={styles.mapButton}
@@ -175,7 +172,7 @@ export default function LocationMap_3({
           <button
             onClick={() => {
               const naverUrl =
-                naverMapUrl || `https://map.naver.com/v5/search/${encodeURIComponent(address)}`;
+                naverMapUrl || buildNaverMapSearchUrl(address);
               window.open(naverUrl, '_blank');
             }}
             className={styles.mapButton}
@@ -194,8 +191,7 @@ export default function LocationMap_3({
           <button
             onClick={() => {
               const googleUrl =
-                googleMapUrl ||
-                `https://www.google.com/maps/search/${encodeURIComponent(address)}`;
+                googleMapUrl || buildGoogleMapSearchUrl(address);
               window.open(googleUrl, '_blank');
             }}
             className={styles.mapButton}

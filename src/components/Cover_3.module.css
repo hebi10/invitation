@@ -247,10 +247,6 @@
   transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
-.primaryAction:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 16px 34px rgba(142, 197, 252, 0.28);
-}
 
 /* 행성 장식 */
 .planets {

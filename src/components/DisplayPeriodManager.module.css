@@ -96,11 +96,23 @@
   padding: 20px;
 }
 
+.periodItemEditing {
+  border-color: rgba(37, 99, 235, 0.35);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.08);
+}
+
 .periodHeader {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
   gap: 12px;
+}
+
+.periodBadges {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
 }
 
 .periodPageName {
@@ -147,14 +159,79 @@
   margin-top: 16px;
 }
 
+.inlineEditor {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-top: 18px;
+  padding: 18px;
+  border: 1px solid rgba(37, 99, 235, 0.16);
+  border-radius: var(--admin-radius-md);
+  background: linear-gradient(180deg, #f8fbff 0%, #ffffff 100%);
+}
+
+.inlineEditorHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.inlineEditorTitle {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--admin-color-text);
+}
+
+.inlineEditorHint {
+  margin-top: 6px;
+  font-size: 0.8125rem;
+  color: var(--admin-color-text-muted);
+}
+
+.formGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.checkboxLabel {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.875rem;
+  color: var(--admin-color-text-secondary);
+}
+
+.inlineError {
+  padding: 12px 14px;
+  border: 1px solid rgba(220, 38, 38, 0.16);
+  border-radius: var(--admin-radius-sm);
+  background: var(--admin-color-danger-soft);
+  color: var(--admin-color-danger);
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.formActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
 @media (max-width: 720px) {
   .header,
-  .periodHeader {
+  .periodHeader,
+  .inlineEditorHeader {
     flex-direction: column;
     align-items: flex-start;
   }
 
   .formGrid {
     grid-template-columns: 1fr;
+  }
+
+  .periodBadges {
+    justify-content: flex-start;
   }
 }

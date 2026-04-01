@@ -65,10 +65,6 @@
   transition: all 0.3s ease;
 }
 
-.image:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 12px 48px rgba(0, 0, 0, 0.15);
-}
 
 .imagePlaceholder {
   position: absolute;
@@ -178,10 +174,6 @@
   box-shadow: 0 10px 20px rgba(44, 62, 80, 0.12);
 }
 
-.primaryAction:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 14px 26px rgba(44, 62, 80, 0.18);
-}
 
 @media (min-width: 700px) {
   .content {

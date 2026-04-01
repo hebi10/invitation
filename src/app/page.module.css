@@ -241,12 +241,6 @@
   }
 }
 
-.pageCard:hover {
-  transform: translateY(-8px);
-  background: rgba(255, 255, 255, 0.95);
-  box-shadow: 0 15px 40px rgba(139, 110, 99, 0.25);
-  border-color: var(--primary-color);
-}
 
 .pageTitle {
   font-family: var(--font-display);
@@ -334,17 +328,6 @@
   }
 }
 
-.adminButton:hover {
-  background: linear-gradient(135deg, var(--secondary-color) 0%, var(--primary-color) 100%);
-  transform: translateY(-3px);
-  box-shadow: 0 8px 25px rgba(212, 165, 116, 0.4);
-}
-
-.linkButton:hover {
-  background: linear-gradient(135deg, var(--secondary-color) 0%, var(--primary-color) 100%);
-  transform: translateY(-3px);
-  box-shadow: 0 8px 25px rgba(212, 165, 116, 0.4);
-}
 
 .noPages {
   color: var(--text-secondary);
