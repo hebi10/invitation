@@ -23,27 +23,132 @@ const themeRendererRegistry = {
     () => import('./themeRenderers/simple'),
     { loading: () => null }
   ),
-  minimal: dynamic<WeddingThemeRendererProps>(
-    () => import('./themeRenderers/minimal'),
-    { loading: () => null }
-  ),
-  space: dynamic<WeddingThemeRendererProps>(
-    () => import('./themeRenderers/space'),
-    { loading: () => null }
-  ),
-  blue: dynamic<WeddingThemeRendererProps>(
-    () => import('./themeRenderers/blue'),
-    { loading: () => null }
-  ),
-  classic: dynamic<WeddingThemeRendererProps>(
-    () => import('./themeRenderers/classic'),
-    { loading: () => null }
-  ),
 };
+
+function upsertMetaTag(selector: string, attributes: Record<string, string>) {
+  if (typeof document === 'undefined') {
+    return;
+  }
+
+  let element = document.head.querySelector(selector) as HTMLMetaElement | null;
+  if (!element) {
+    element = document.createElement('meta');
+    document.head.appendChild(element);
+  }
+
+  Object.entries(attributes).forEach(([key, value]) => {
+    element?.setAttribute(key, value);
+  });
+}
+
+function upsertLinkTag(selector: string, attributes: Record<string, string>) {
+  if (typeof document === 'undefined') {
+    return;
+  }
+
+  let element = document.head.querySelector(selector) as HTMLLinkElement | null;
+  if (!element) {
+    element = document.createElement('link');
+    document.head.appendChild(element);
+  }
+
+  Object.entries(attributes).forEach(([key, value]) => {
+    element?.setAttribute(key, value);
+  });
+}
+
+function syncInvitationMetadata(page: WeddingPageReadyState['pageConfig']) {
+  if (typeof document === 'undefined') {
+    return;
+  }
+
+  const title = page.metadata.title || page.displayName;
+  const description = page.metadata.description || page.description;
+  const imageUrl = page.metadata.images.wedding || '';
+  const faviconUrl = page.metadata.images.favicon || '/favicon.ico';
+  const pageUrl =
+    typeof window !== 'undefined'
+      ? `${window.location.origin}${window.location.pathname}`
+      : '';
+
+  document.title = title;
+
+  upsertMetaTag('meta[name="description"]', {
+    name: 'description',
+    content: description,
+  });
+  upsertMetaTag('meta[property="og:title"]', {
+    property: 'og:title',
+    content: page.metadata.openGraph.title || title,
+  });
+  upsertMetaTag('meta[property="og:description"]', {
+    property: 'og:description',
+    content: page.metadata.openGraph.description || description,
+  });
+  upsertMetaTag('meta[property="og:type"]', {
+    property: 'og:type',
+    content: 'website',
+  });
+  upsertMetaTag('meta[name="twitter:card"]', {
+    name: 'twitter:card',
+    content: 'summary_large_image',
+  });
+  upsertMetaTag('meta[name="twitter:title"]', {
+    name: 'twitter:title',
+    content: page.metadata.twitter.title || title,
+  });
+  upsertMetaTag('meta[name="twitter:description"]', {
+    name: 'twitter:description',
+    content: page.metadata.twitter.description || description,
+  });
+
+  if (imageUrl) {
+    upsertMetaTag('meta[property="og:image"]', {
+      property: 'og:image',
+      content: imageUrl,
+    });
+    upsertMetaTag('meta[name="twitter:image"]', {
+      name: 'twitter:image',
+      content: imageUrl,
+    });
+  }
+
+  if (pageUrl) {
+    upsertMetaTag('meta[property="og:url"]', {
+      property: 'og:url',
+      content: pageUrl,
+    });
+    upsertLinkTag('link[rel="canonical"]', {
+      rel: 'canonical',
+      href: pageUrl,
+    });
+  }
+
+  upsertLinkTag('link[rel="icon"]', {
+    rel: 'icon',
+    href: faviconUrl,
+  });
+  upsertLinkTag('link[rel="shortcut icon"]', {
+    rel: 'shortcut icon',
+    href: faviconUrl,
+  });
+  upsertLinkTag('link[rel="apple-touch-icon"]', {
+    rel: 'apple-touch-icon',
+    href: faviconUrl,
+  });
+}
 
 function WeddingInvitationPageBody(options: WeddingInvitationRouteOptions) {
   const state = useWeddingInvitationState(options);
   const themeDefinition = getWeddingThemeDefinition(options.theme);
+
+  useEffect(() => {
+    if (state.status !== 'ready') {
+      return;
+    }
+
+    syncInvitationMetadata(state.pageConfig);
+  }, [state]);
 
   useEffect(() => {
     if (state.status !== 'ready') {
@@ -114,13 +219,17 @@ function WeddingInvitationPageBody(options: WeddingInvitationRouteOptions) {
   );
 }
 
+export function WeddingInvitationRoutePage(options: WeddingInvitationRouteOptions) {
+  return (
+    <AdminProvider>
+      <WeddingInvitationPageBody {...options} />
+    </AdminProvider>
+  );
+}
+
 export function createWeddingInvitationPage(options: WeddingInvitationRouteOptions) {
   function WeddingInvitationPage() {
-    return (
-      <AdminProvider>
-        <WeddingInvitationPageBody {...options} />
-      </AdminProvider>
-    );
+    return <WeddingInvitationRoutePage {...options} />;
   }
 
   WeddingInvitationPage.displayName = `${options.slug}-${options.theme}-page`;

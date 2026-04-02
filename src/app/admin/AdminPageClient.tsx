@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 
 import { DisplayPeriodManager, ImageManager, MemoryPageManager } from '@/components';
@@ -11,16 +11,21 @@ import {
 } from '@/lib/adminInvitationPreviewCache';
 import {
   deleteComment,
+  getAllClientPasswords,
   getAllComments,
-  getCommentSummary,
   getAllInvitationPages,
   getAllMemoryPages,
+  getCommentSummary,
+  setClientPassword,
+  syncClientPasswordAccess,
+  type ClientPassword,
   type Comment,
   type CommentSummary,
   type InvitationPageSummary,
 } from '@/services';
 
 import {
+  AdminClientPasswordsTab,
   AdminCommentsTab,
   AdminPagesTab,
   StatusBadge,
@@ -29,21 +34,22 @@ import {
   type SummaryCardItem,
 } from './_components';
 import {
-  TAB_ITEMS,
   COMMENTS_PER_PAGE,
   DUE_SOON_DAYS,
   PAGE_SORT_LABELS,
   PAGE_STATUS_LABELS,
   RECENT_COMMENT_DAYS,
+  TOTAL_SHORTCUT_COUNT,
+  getAvailableShortcuts,
+  isRecentComment,
+  numberFromParam,
   parseCommentAge,
   parsePageSort,
   parsePageStatus,
   parsePeriodFilter,
   parseShortcut,
   parseTab,
-  numberFromParam,
-  isRecentComment,
-  getAvailableShortcuts,
+  type AdminTab,
 } from './_components/adminPageUtils';
 import styles from './page.module.css';
 
@@ -68,6 +74,25 @@ function isPageDueSoon(page: InvitationPageSummary) {
   );
 }
 
+function getTabLabel(tab: AdminTab) {
+  switch (tab) {
+    case 'pages':
+      return '청첩장';
+    case 'memory':
+      return '추억 페이지';
+    case 'images':
+      return '이미지';
+    case 'comments':
+      return '방명록';
+    case 'passwords':
+      return '비밀번호';
+    case 'periods':
+      return '노출 기간';
+    default:
+      return '관리';
+  }
+}
+
 export default function AdminPageClient() {
   const { adminUser, isAdminLoggedIn, isAdminLoading, login, logout } = useAdmin();
   const router = useRouter();
@@ -81,6 +106,7 @@ export default function AdminPageClient() {
 
   const [pages, setPages] = useState<InvitationPageSummary[]>([]);
   const [comments, setComments] = useState<Comment[]>([]);
+  const [clientPasswords, setClientPasswords] = useState<ClientPassword[]>([]);
   const [memoryPublicCount, setMemoryPublicCount] = useState(0);
   const [commentSummary, setCommentSummary] = useState<CommentSummary>({
     totalCount: 0,
@@ -90,6 +116,14 @@ export default function AdminPageClient() {
   const [pagesLoading, setPagesLoading] = useState(false);
   const [commentsLoading, setCommentsLoading] = useState(false);
   const [summaryLoading, setSummaryLoading] = useState(false);
+  const [passwordsLoading, setPasswordsLoading] = useState(false);
+  const [savingPasswordPageSlug, setSavingPasswordPageSlug] = useState<string | null>(
+    null
+  );
+
+  const [pagesLoaded, setPagesLoaded] = useState(false);
+  const [commentsLoaded, setCommentsLoaded] = useState(false);
+  const [passwordsLoaded, setPasswordsLoaded] = useState(false);
 
   const activeTab = parseTab(searchParams.get('tab'));
   const pageSearch = searchParams.get('pageQ') ?? '';
@@ -102,7 +136,7 @@ export default function AdminPageClient() {
   const currentPage = numberFromParam(searchParams.get('commentPage'), 1);
   const periodStatusFilter = parsePeriodFilter(searchParams.get('periodStatus'));
 
-  const updateQuery = (updates: Record<string, string | null>) => {
+  const updateQuery = useCallback((updates: Record<string, string | null>) => {
     const nextParams = new URLSearchParams(searchParams.toString());
 
     Object.entries(updates).forEach(([key, value]) => {
@@ -117,13 +151,20 @@ export default function AdminPageClient() {
       `${pathname}${nextParams.toString() ? `?${nextParams.toString()}` : ''}`,
       { scroll: false }
     );
-  };
+  }, [pathname, router, searchParams]);
 
-  const fetchPages = async () => {
+  const resetLoadedFlags = useCallback(() => {
+    setPagesLoaded(false);
+    setCommentsLoaded(false);
+    setPasswordsLoaded(false);
+  }, []);
+
+  const fetchPages = useCallback(async () => {
     setPagesLoading(true);
     try {
       const nextPages = await getAllInvitationPages({ includeSeedFallback: true });
       setPages(nextPages);
+      setPagesLoaded(true);
       writeAdminInvitationPreviewCache(nextPages);
     } catch (fetchError) {
       console.error(fetchError);
@@ -134,12 +175,14 @@ export default function AdminPageClient() {
     } finally {
       setPagesLoading(false);
     }
-  };
+  }, [showToast]);
 
-  const fetchComments = async () => {
+  const fetchComments = useCallback(async () => {
     setCommentsLoading(true);
     try {
-      setComments(await getAllComments());
+      const nextComments = await getAllComments();
+      setComments(nextComments);
+      setCommentsLoaded(true);
     } catch (fetchError) {
       console.error(fetchError);
       showToast({
@@ -149,9 +192,27 @@ export default function AdminPageClient() {
     } finally {
       setCommentsLoading(false);
     }
-  };
+  }, [showToast]);
 
-  const fetchSummarySources = async () => {
+  const fetchPasswords = useCallback(async () => {
+    setPasswordsLoading(true);
+    try {
+      await syncClientPasswordAccess();
+      const nextPasswords = await getAllClientPasswords();
+      setClientPasswords(nextPasswords);
+      setPasswordsLoaded(true);
+    } catch (fetchError) {
+      console.error(fetchError);
+      showToast({
+        title: '고객 비밀번호를 불러오지 못했습니다.',
+        tone: 'error',
+      });
+    } finally {
+      setPasswordsLoading(false);
+    }
+  }, [showToast]);
+
+  const fetchSummarySources = useCallback(async () => {
     setSummaryLoading(true);
     try {
       const [nextPages, memoryPages, nextCommentSummary] = await Promise.all([
@@ -161,9 +222,11 @@ export default function AdminPageClient() {
       ]);
 
       setPages(nextPages);
+      setPagesLoaded(true);
       writeAdminInvitationPreviewCache(nextPages);
       setMemoryPublicCount(
-        memoryPages.filter((page) => page.enabled && page.visibility !== 'private').length
+        memoryPages.filter((page) => page.enabled && page.visibility !== 'private')
+          .length
       );
       setCommentSummary(nextCommentSummary);
     } catch (fetchError) {
@@ -171,14 +234,14 @@ export default function AdminPageClient() {
     } finally {
       setSummaryLoading(false);
     }
-  };
+  }, []);
 
   const handleLogin = async (event: React.FormEvent) => {
     event.preventDefault();
 
     const success = await login(email, password);
     if (!success) {
-      setError('이메일 또는 비밀번호를 확인해주세요.');
+      setError('이메일 또는 비밀번호를 확인해 주세요.');
       return;
     }
 
@@ -191,11 +254,9 @@ export default function AdminPageClient() {
   };
 
   const handleDeleteComment = async (comment: Comment) => {
-    const commentId = comment.id;
-    const author = comment.author;
     const approved = await confirm({
-      title: '댓글을 삭제할까요?',
-      description: `${author} 님의 댓글을 삭제하면 복구할 수 없습니다.`,
+      title: '이 댓글을 삭제할까요?',
+      description: `${comment.author} 님의 댓글을 삭제하면 복구할 수 없습니다.`,
       confirmLabel: '삭제',
       cancelLabel: '취소',
       tone: 'danger',
@@ -206,12 +267,12 @@ export default function AdminPageClient() {
     }
 
     try {
-      await deleteComment(commentId, comment.collectionName);
+      await deleteComment(comment.id, comment.collectionName);
       setComments((prev) =>
         prev.filter(
           (entry) =>
             !(
-              entry.id === commentId &&
+              entry.id === comment.id &&
               (entry.collectionName ?? 'comments') ===
                 (comment.collectionName ?? 'comments')
             )
@@ -236,11 +297,32 @@ export default function AdminPageClient() {
     }
   };
 
+  const handleSavePassword = async (pageSlug: string, nextPassword: string) => {
+    setSavingPasswordPageSlug(pageSlug);
+    try {
+      await setClientPassword(pageSlug, nextPassword);
+      await fetchPasswords();
+      showToast({
+        title: '고객 비밀번호를 저장했습니다.',
+        tone: 'success',
+      });
+    } catch (saveError) {
+      console.error(saveError);
+      showToast({
+        title: '고객 비밀번호 저장에 실패했습니다.',
+        tone: 'error',
+      });
+    } finally {
+      setSavingPasswordPageSlug(null);
+    }
+  };
+
   const handleLogout = async () => {
     await logout();
     clearAdminInvitationPreviewCache();
     setPages([]);
     setComments([]);
+    setClientPasswords([]);
     setMemoryPublicCount(0);
     setCommentSummary({
       totalCount: 0,
@@ -249,32 +331,64 @@ export default function AdminPageClient() {
     setEmail('');
     setPassword('');
     setError('');
+    resetLoadedFlags();
     router.replace(pathname, { scroll: false });
   };
 
   useEffect(() => {
     if (!isAdminLoggedIn) {
+      setPages([]);
+      setComments([]);
+      setClientPasswords([]);
+      setMemoryPublicCount(0);
+      setCommentSummary({
+        totalCount: 0,
+        recentCount: 0,
+      });
+      resetLoadedFlags();
       return;
     }
 
     void fetchSummarySources();
-  }, [isAdminLoggedIn]);
+    void syncClientPasswordAccess().catch((syncError) => {
+      console.error(syncError);
+    });
+  }, [fetchSummarySources, isAdminLoggedIn, resetLoadedFlags]);
 
   useEffect(() => {
-    if (!isAdminLoggedIn || activeTab !== 'comments' || commentsLoading || comments.length > 0) {
+    if (!isAdminLoggedIn || activeTab !== 'comments' || commentsLoading || commentsLoaded) {
       return;
     }
 
     void fetchComments();
-  }, [activeTab, comments.length, commentsLoading, isAdminLoggedIn]);
+  }, [activeTab, commentsLoaded, commentsLoading, fetchComments, isAdminLoggedIn]);
 
   useEffect(() => {
-    if (!isAdminLoggedIn || activeTab !== 'pages' || summaryLoading || pagesLoading || pages.length > 0) {
+    if (
+      !isAdminLoggedIn ||
+      activeTab !== 'pages' ||
+      summaryLoading ||
+      pagesLoading ||
+      pagesLoaded
+    ) {
       return;
     }
 
     void fetchPages();
-  }, [activeTab, isAdminLoggedIn, pages.length, pagesLoading, summaryLoading]);
+  }, [activeTab, fetchPages, isAdminLoggedIn, pagesLoaded, pagesLoading, summaryLoading]);
+
+  useEffect(() => {
+    if (
+      !isAdminLoggedIn ||
+      activeTab !== 'passwords' ||
+      passwordsLoading ||
+      passwordsLoaded
+    ) {
+      return;
+    }
+
+    void fetchPasswords();
+  }, [activeTab, fetchPasswords, isAdminLoggedIn, passwordsLoaded, passwordsLoading]);
 
   const filteredPages = useMemo(() => {
     return [...pages]
@@ -290,8 +404,11 @@ export default function AdminPageClient() {
           links.some((link) => link.key === pageShortcutFilter);
         const matchesStatus =
           pageStatusFilter === 'all' ||
-          (pageStatusFilter === 'complete' && links.length === 6) ||
-          (pageStatusFilter === 'partial' && links.length > 0 && links.length < 6) ||
+          (pageStatusFilter === 'complete' &&
+            links.length === TOTAL_SHORTCUT_COUNT) ||
+          (pageStatusFilter === 'partial' &&
+            links.length > 0 &&
+            links.length < TOTAL_SHORTCUT_COUNT) ||
           (pageStatusFilter === 'empty' && links.length === 0);
 
         return matchesSearch && matchesShortcut && matchesStatus;
@@ -341,7 +458,10 @@ export default function AdminPageClient() {
     ]),
   ]
     .sort((left, right) =>
-      (pageNameMap.get(left) ?? left).localeCompare(pageNameMap.get(right) ?? right, 'ko')
+      (pageNameMap.get(left) ?? left).localeCompare(
+        pageNameMap.get(right) ?? right,
+        'ko'
+      )
     )
     .map((slug) => ({
       value: slug,
@@ -352,7 +472,7 @@ export default function AdminPageClient() {
     if (currentPage !== normalizedCurrentPage) {
       updateQuery({ commentPage: String(normalizedCurrentPage) });
     }
-  }, [currentPage, normalizedCurrentPage]);
+  }, [currentPage, normalizedCurrentPage, updateQuery]);
 
   const invitationCount = pages.length;
   const restrictedCount = pages.filter((page) => page.displayPeriodEnabled).length;
@@ -460,8 +580,7 @@ export default function AdminPageClient() {
       : null,
   ].filter(Boolean) as Array<{ id: string; label: string; onRemove: () => void }>;
 
-  const activeTabLabel =
-    TAB_ITEMS.find((tab) => tab.key === activeTab)?.label ?? '청첩장';
+  const activeTabLabel = getTabLabel(activeTab);
 
   if (isAdminLoading) {
     return <div className={styles.container} />;
@@ -539,14 +658,14 @@ export default function AdminPageClient() {
               <span className={styles.pageEyebrow}>Invitation Admin</span>
               <h1 className={styles.pageTitle}>운영 대시보드</h1>
               <p className={styles.pageDescription}>
-                청첩장 공개 상태, 댓글, 이미지, 추억 페이지, 노출 기간을 Firebase 문서
-                기준으로 관리합니다.
+                청첩장 공개 상태, 방명록, 이미지, 고객 비밀번호, 추억 페이지, 노출
+                기간을 한 화면에서 관리합니다.
               </p>
             </div>
             <div className={styles.headerSummary}>
               <StatusBadge tone="primary">{activeTabLabel}</StatusBadge>
               <p className={styles.headerSummaryText}>
-                현재 탭의 데이터만 필요한 범위로 조회합니다.
+                현재 탭에 필요한 범위만 조회합니다.
               </p>
             </div>
           </div>
@@ -555,18 +674,22 @@ export default function AdminPageClient() {
         <SummaryCards items={summaryCards} />
 
         <nav className={styles.tabBar} aria-label="관리 탭">
-          {TAB_ITEMS.map((tab) => (
+          {(
+            ['pages', 'memory', 'images', 'comments', 'passwords', 'periods'] as AdminTab[]
+          ).map((tabKey) => (
             <button
-              key={tab.key}
+              key={tabKey}
               type="button"
               className={`${styles.tabButton} ${
-                activeTab === tab.key ? styles.tabButtonActive : ''
+                activeTab === tabKey ? styles.tabButtonActive : ''
               }`}
               onClick={() =>
-                updateQuery({ tab: tab.key === 'pages' ? null : tab.key })
+                updateQuery({
+                  tab: tabKey === 'pages' ? null : tabKey,
+                })
               }
             >
-              {tab.label}
+              {getTabLabel(tabKey)}
             </button>
           ))}
         </nav>
@@ -584,6 +707,7 @@ export default function AdminPageClient() {
               pageSort={pageSort}
               chips={pageFilterChips}
               onQueryChange={updateQuery}
+              onRefresh={() => void fetchPages()}
             />
           ) : null}
 
@@ -606,6 +730,19 @@ export default function AdminPageClient() {
               onRefresh={() => void fetchComments()}
               onQueryChange={updateQuery}
               onDeleteComment={(comment) => void handleDeleteComment(comment)}
+            />
+          ) : null}
+
+          {activeTab === 'passwords' ? (
+            <AdminClientPasswordsTab
+              loading={passwordsLoading}
+              pages={pages}
+              passwords={clientPasswords}
+              savingPageSlug={savingPasswordPageSlug}
+              onRefresh={() => void fetchPasswords()}
+              onSave={(pageSlug, nextPassword) =>
+                void handleSavePassword(pageSlug, nextPassword)
+              }
             />
           ) : null}
 

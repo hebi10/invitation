@@ -2,12 +2,9 @@ import type { Metadata, Viewport } from 'next';
 import Script from 'next/script';
 import type { ReactNode } from 'react';
 
-import { getWeddingPageBySlug } from '@/config/weddingPages';
+import type { InvitationPage } from '@/types/invitationPage';
 
-import {
-  type WeddingInvitationRouteOptions,
-  getWeddingThemeDefinition,
-} from './weddingThemes';
+import { type WeddingThemeKey, getWeddingThemeDefinition } from './weddingThemes';
 
 export const weddingInvitationViewport: Viewport = {
   width: 'device-width',
@@ -15,8 +12,8 @@ export const weddingInvitationViewport: Viewport = {
 };
 
 const genericInvitationMetadata: Metadata = {
-  title: '모바일 청첩장',
-  description: '모바일 청첩장 페이지입니다.',
+  title: 'Mobile Wedding Invitation',
+  description: 'Wedding invitation page',
   robots: {
     index: true,
     follow: true,
@@ -28,19 +25,14 @@ const genericInvitationMetadata: Metadata = {
   },
 };
 
-export function getWeddingInvitationMetadata(slug?: string): Metadata {
-  if (!slug) {
-    return genericInvitationMetadata;
-  }
-
-  const page = getWeddingPageBySlug(slug);
+export function getWeddingInvitationMetadata(page?: InvitationPage | null): Metadata {
   if (!page) {
     return genericInvitationMetadata;
   }
 
   return {
-    title: page.metadata.title,
-    description: page.metadata.description,
+    title: page.metadata.title || page.displayName,
+    description: page.metadata.description || page.description,
     keywords: page.metadata.keywords,
     robots: genericInvitationMetadata.robots,
     icons: {
@@ -51,8 +43,11 @@ export function getWeddingInvitationMetadata(slug?: string): Metadata {
     openGraph: {
       type: 'website',
       locale: 'ko_KR',
-      title: page.metadata.openGraph.title,
-      description: page.metadata.openGraph.description,
+      title: page.metadata.openGraph.title || page.metadata.title || page.displayName,
+      description:
+        page.metadata.openGraph.description ||
+        page.metadata.description ||
+        page.description,
       images: page.metadata.images.wedding
         ? [
             {
@@ -64,18 +59,17 @@ export function getWeddingInvitationMetadata(slug?: string): Metadata {
     },
     twitter: {
       card: 'summary_large_image',
-      title: page.metadata.twitter.title,
-      description: page.metadata.twitter.description,
-      images: page.metadata.images.wedding
-        ? [page.metadata.images.wedding]
-        : undefined,
+      title: page.metadata.twitter.title || page.metadata.title || page.displayName,
+      description:
+        page.metadata.twitter.description ||
+        page.metadata.description ||
+        page.description,
+      images: page.metadata.images.wedding ? [page.metadata.images.wedding] : undefined,
     },
   };
 }
 
-export function createWeddingInvitationLayout({
-  theme,
-}: Pick<WeddingInvitationRouteOptions, 'slug' | 'theme'>) {
+export function createWeddingInvitationLayout({ theme }: { theme: WeddingThemeKey }) {
   getWeddingThemeDefinition(theme);
 
   function WeddingInvitationLayout({ children }: { children: ReactNode }) {

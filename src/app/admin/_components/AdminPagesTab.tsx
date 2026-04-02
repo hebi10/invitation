@@ -1,10 +1,11 @@
-import { EmptyState, FilterToolbar, StatusBadge } from '.';
 import type { InvitationPageSummary } from '@/services';
+
+import { EmptyState, FilterToolbar, StatusBadge } from '.';
 import {
   PAGE_SORT_LABELS,
   PAGE_STATUS_LABELS,
-  TOTAL_SHORTCUT_COUNT,
   SHORTCUT_ITEMS,
+  TOTAL_SHORTCUT_COUNT,
   type PageSort,
   type PageStatusFilter,
   type ShortcutKey,
@@ -24,6 +25,23 @@ interface AdminPagesTabProps {
   pageSort: PageSort;
   chips: Array<{ id: string; label: string; onRemove: () => void }>;
   onQueryChange: (updates: Record<string, string | null>) => void;
+  onRefresh: () => void;
+}
+
+function getSourceMeta(page: InvitationPageSummary) {
+  if (page.hasCustomConfig || page.dataSource === 'firestore') {
+    return {
+      label: 'Firestore 설정',
+      description: 'config 오버레이 사용 중',
+      tone: 'primary' as const,
+    };
+  }
+
+  return {
+    label: 'Seed 기본값',
+    description: '로컬 config 기준',
+    tone: 'neutral' as const,
+  };
 }
 
 export default function AdminPagesTab({
@@ -37,28 +55,40 @@ export default function AdminPagesTab({
   pageSort,
   chips,
   onQueryChange,
+  onRefresh,
 }: AdminPagesTabProps) {
   return (
     <div className={styles.panelStack}>
       <div className={styles.sectionHeader}>
         <div>
-          <h2 className={styles.sectionTitle}>청첩장 라우트 현황</h2>
-          <p className={styles.sectionDescription}>코드에 정의된 청첩장 라우트와 Firestore 공개 상태 데이터를 함께 기준으로 공개 상태와 테마 바로가기를 확인합니다.</p>
+          <h2 className={styles.sectionTitle}>청첩장 관리</h2>
+          <p className={styles.sectionDescription}>
+            공개 상태, 테마 연결, Firestore 커스텀 설정 여부를 한 번에 확인합니다.
+            현재 구조상 기존 slug만 편집 가능합니다.
+          </p>
         </div>
-        <p className={styles.sectionMeta}>{summaryLoading ? '집계 중' : `총 ${filteredPages.length}개 페이지`}</p>
+        <p className={styles.sectionMeta}>
+          {summaryLoading ? '집계 중' : `총 ${filteredPages.length}개 페이지`}
+        </p>
       </div>
 
       <div className={styles.shortcutStrip}>
         {SHORTCUT_ITEMS.map((shortcut) => {
-          const count = weddingPages.filter((page) => page.variants?.[shortcut.key]?.available).length;
+          const count = weddingPages.filter(
+            (page) => page.variants?.[shortcut.key]?.available
+          ).length;
           const isActive = pageShortcutFilter === shortcut.key;
 
           return (
             <button
               key={shortcut.key}
               type="button"
-              className={`${styles.shortcutPill} ${isActive ? styles.shortcutPillActive : ''}`}
-              onClick={() => onQueryChange({ shortcut: isActive ? null : shortcut.key })}
+              className={`${styles.shortcutPill} ${
+                isActive ? styles.shortcutPillActive : ''
+              }`}
+              onClick={() =>
+                onQueryChange({ shortcut: isActive ? null : shortcut.key })
+              }
             >
               <span>{shortcut.label}</span>
               <strong>{count}</strong>
@@ -77,13 +107,21 @@ export default function AdminPagesTab({
                 type="search"
                 placeholder="이름, slug, 장소 검색"
                 value={pageSearch}
-                onChange={(event) => onQueryChange({ pageQ: event.target.value || null })}
+                onChange={(event) =>
+                  onQueryChange({ pageQ: event.target.value || null })
+                }
               />
             </label>
 
             <label className="admin-field">
               <span className="admin-field-label">상태</span>
-              <select className="admin-select" value={pageStatusFilter} onChange={(event) => onQueryChange({ pageStatus: event.target.value })}>
+              <select
+                className="admin-select"
+                value={pageStatusFilter}
+                onChange={(event) =>
+                  onQueryChange({ pageStatus: event.target.value })
+                }
+              >
                 {Object.entries(PAGE_STATUS_LABELS).map(([value, label]) => (
                   <option key={value} value={value}>
                     {label}
@@ -94,7 +132,13 @@ export default function AdminPagesTab({
 
             <label className="admin-field">
               <span className="admin-field-label">테마</span>
-              <select className="admin-select" value={pageShortcutFilter} onChange={(event) => onQueryChange({ shortcut: event.target.value })}>
+              <select
+                className="admin-select"
+                value={pageShortcutFilter}
+                onChange={(event) =>
+                  onQueryChange({ shortcut: event.target.value })
+                }
+              >
                 <option value="all">전체 테마</option>
                 {SHORTCUT_ITEMS.map((shortcut) => (
                   <option key={shortcut.key} value={shortcut.key}>
@@ -106,7 +150,13 @@ export default function AdminPagesTab({
 
             <label className="admin-field">
               <span className="admin-field-label">정렬</span>
-              <select className="admin-select" value={pageSort} onChange={(event) => onQueryChange({ pageSort: event.target.value })}>
+              <select
+                className="admin-select"
+                value={pageSort}
+                onChange={(event) =>
+                  onQueryChange({ pageSort: event.target.value })
+                }
+              >
                 {Object.entries(PAGE_SORT_LABELS).map(([value, label]) => (
                   <option key={value} value={value}>
                     {label}
@@ -117,13 +167,30 @@ export default function AdminPagesTab({
           </>
         }
         actions={
-          <button
-            type="button"
-            className="admin-button admin-button-ghost"
-            onClick={() => onQueryChange({ pageQ: null, shortcut: null, pageStatus: null, pageSort: null })}
-          >
-            필터 초기화
-          </button>
+          <>
+            <button
+              type="button"
+              className="admin-button admin-button-secondary"
+              onClick={onRefresh}
+              disabled={loading}
+            >
+              {loading ? '새로고침 중...' : '새로고침'}
+            </button>
+            <button
+              type="button"
+              className="admin-button admin-button-ghost"
+              onClick={() =>
+                onQueryChange({
+                  pageQ: null,
+                  shortcut: null,
+                  pageStatus: null,
+                  pageSort: null,
+                })
+              }
+            >
+              필터 초기화
+            </button>
+          </>
         }
         chips={chips}
       />
@@ -143,20 +210,24 @@ export default function AdminPagesTab({
                     <th>청첩장</th>
                     <th>일정 / 장소</th>
                     <th>바로가기 상태</th>
-                    <th>기본 상태</th>
-                    <th>테마 링크</th>
+                    <th>공개 상태</th>
+                    <th>데이터 소스</th>
+                    <th>작업</th>
                   </tr>
                 </thead>
                 <tbody>
                   {filteredPages.map((page, index) => {
                     const links = getAvailableShortcuts(page);
                     const status = getPageStatusMeta(links.length);
+                    const sourceMeta = getSourceMeta(page);
 
                     return (
                       <tr key={page.slug}>
                         <td>
                           <div className={styles.tablePrimary}>
-                            <span className={styles.rowNumber}>{filteredPages.length - index}</span>
+                            <span className={styles.rowNumber}>
+                              {filteredPages.length - index}
+                            </span>
                             <div>
                               <p className={styles.tableTitle}>{page.displayName}</p>
                               <p className={styles.tableSubtext}>{page.slug}</p>
@@ -166,7 +237,9 @@ export default function AdminPagesTab({
                         <td>
                           <div className={styles.metaStack}>
                             <span>{page.date || '일정 정보 없음'}</span>
-                            <span className={styles.tableSubtext}>{page.venue || '장소 정보 없음'}</span>
+                            <span className={styles.tableSubtext}>
+                              {page.venue || '장소 정보 없음'}
+                            </span>
                           </div>
                         </td>
                         <td>
@@ -179,20 +252,40 @@ export default function AdminPagesTab({
                         </td>
                         <td>
                           <StatusBadge tone={page.published ? 'success' : 'neutral'}>
-                            {page.published ? '기본 공개' : '비공개'}
+                            {page.published ? '공개' : '비공개'}
                           </StatusBadge>
                         </td>
                         <td>
+                          <div className={styles.statusCell}>
+                            <StatusBadge tone={sourceMeta.tone}>
+                              {sourceMeta.label}
+                            </StatusBadge>
+                            <span className={styles.tableSubtext}>
+                              {sourceMeta.description}
+                            </span>
+                          </div>
+                        </td>
+                        <td>
                           <div className={styles.tableActions}>
-                            {links.length > 0 ? (
-                              links.map((link) => (
-                                <a key={link.key} href={link.path} target="_blank" rel="noreferrer" className="admin-button admin-button-ghost">
-                                  {link.label}
-                                </a>
-                              ))
-                            ) : (
-                              <span className={styles.tableSubtext}>연결된 링크 없음</span>
-                            )}
+                            {links.map((link) => (
+                              <a
+                                key={link.key}
+                                href={link.path}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="admin-button admin-button-ghost"
+                              >
+                                {link.label}
+                              </a>
+                            ))}
+                            <a
+                              href={`/page-editor/${page.slug}`}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="admin-button admin-button-secondary"
+                            >
+                              편집
+                            </a>
                           </div>
                         </td>
                       </tr>
@@ -207,6 +300,7 @@ export default function AdminPagesTab({
             {filteredPages.map((page) => {
               const links = getAvailableShortcuts(page);
               const status = getPageStatusMeta(links.length);
+              const sourceMeta = getSourceMeta(page);
 
               return (
                 <article key={page.slug} className={styles.mobileCard}>
@@ -221,19 +315,30 @@ export default function AdminPagesTab({
                   <div className={styles.mobileCardMeta}>
                     <span>{page.date || '일정 정보 없음'}</span>
                     <span>{page.venue || '장소 정보 없음'}</span>
-                    <span>{page.published ? '기본 공개' : '비공개'}</span>
+                    <span>{page.published ? '공개' : '비공개'}</span>
+                    <span>{sourceMeta.label}</span>
                   </div>
 
                   <div className={styles.mobileCardActions}>
-                    {links.length > 0 ? (
-                      links.map((link) => (
-                        <a key={link.key} href={link.path} target="_blank" rel="noreferrer" className="admin-button admin-button-ghost">
-                          {link.label}
-                        </a>
-                      ))
-                    ) : (
-                      <span className={styles.tableSubtext}>연결된 링크 없음</span>
-                    )}
+                    {links.map((link) => (
+                      <a
+                        key={link.key}
+                        href={link.path}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="admin-button admin-button-ghost"
+                      >
+                        {link.label}
+                      </a>
+                    ))}
+                    <a
+                      href={`/page-editor/${page.slug}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="admin-button admin-button-secondary"
+                    >
+                      편집
+                    </a>
                   </div>
                 </article>
               );
@@ -243,9 +348,16 @@ export default function AdminPagesTab({
       ) : (
         <EmptyState
           title="조건에 맞는 청첩장이 없습니다."
-          description="검색어나 필터를 조정한 뒤 다시 확인해주세요."
+          description="검색어 또는 필터를 조정해서 다시 확인해 주세요."
           actionLabel="필터 초기화"
-          onAction={() => onQueryChange({ pageQ: null, shortcut: null, pageStatus: null, pageSort: null })}
+          onAction={() =>
+            onQueryChange({
+              pageQ: null,
+              shortcut: null,
+              pageStatus: null,
+              pageSort: null,
+            })
+          }
         />
       )}
     </div>

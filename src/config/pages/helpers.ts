@@ -11,10 +11,6 @@ export type WeddingVariantKey = keyof WeddingVariants;
 const defaultWeddingVariantKeys: readonly WeddingVariantKey[] = [
   'emotional',
   'simple',
-  'minimal',
-  'space',
-  'blue',
-  'classic',
 ];
 
 export interface WeddingPageMetadataInput {

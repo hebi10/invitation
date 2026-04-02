@@ -61,7 +61,14 @@ const BLOCKED_MESSAGE = '현재 접근할 수 없는 청첩장입니다.';
 const LOAD_FAILED_MESSAGE =
   '청첩장 정보를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.';
 
-function getInitialWeddingPage(slug: string) {
+function getInitialWeddingPage(
+  slug: string,
+  initialPageConfig?: InvitationPage | null
+) {
+  if (initialPageConfig) {
+    return initialPageConfig;
+  }
+
   if (USE_FIREBASE) {
     return null;
   }
@@ -136,7 +143,10 @@ function isPublicInvitationPage(page: InvitationPage) {
 export function useWeddingInvitationState(
   options: WeddingInvitationRouteOptions
 ): WeddingPageState {
-  const initialPage = useMemo(() => getInitialWeddingPage(options.slug), [options.slug]);
+  const initialPage = useMemo(
+    () => getInitialWeddingPage(options.slug, options.initialPageConfig),
+    [options.slug, options.initialPageConfig]
+  );
   const [status, setStatus] = useState<WeddingPageState['status']>(
     initialPage ? 'ready' : 'loading'
   );

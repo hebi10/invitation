@@ -1,4 +1,5 @@
 export { default as AdminCommentsTab } from './AdminCommentsTab';
+export { default as AdminClientPasswordsTab } from './AdminClientPasswordsTab';
 export { default as AdminPagesTab } from './AdminPagesTab';
 export { AdminOverlayProvider, useAdminOverlay } from './AdminOverlayProvider';
 export { default as EmptyState } from './EmptyState';

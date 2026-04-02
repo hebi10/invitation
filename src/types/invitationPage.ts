@@ -83,10 +83,6 @@ export interface InvitationPageVariantLink {
 export interface InvitationPageVariants {
   emotional?: InvitationPageVariantLink;
   simple?: InvitationPageVariantLink;
-  minimal?: InvitationPageVariantLink;
-  space?: InvitationPageVariantLink;
-  blue?: InvitationPageVariantLink;
-  classic?: InvitationPageVariantLink;
 }
 
 export interface InvitationPage {

@@ -30,6 +30,46 @@ service cloud.firestore {
         request.resource.data.pageSlug.size() <= 120;
     }
 
+    function hasClientAccess(pageSlug, editorTokenHash) {
+      return pageSlug is string &&
+        editorTokenHash is string &&
+        exists(/databases/$(database)/documents/client-access/$(pageSlug)) &&
+        get(/databases/$(database)/documents/client-access/$(pageSlug)).data.editorTokenHash == editorTokenHash;
+    }
+
+    function isClientCommentDelete() {
+      return resource.data.deleted != true &&
+        request.resource.data.keys().hasOnly([
+          'author',
+          'message',
+          'pageSlug',
+          'createdAt',
+          'deleted',
+          'deletedAt',
+          'deletedBy',
+          'editorTokenHash'
+        ]) &&
+        request.resource.data.author == resource.data.author &&
+        request.resource.data.message == resource.data.message &&
+        request.resource.data.pageSlug == resource.data.pageSlug &&
+        request.resource.data.createdAt == resource.data.createdAt &&
+        request.resource.data.deleted == true &&
+        request.resource.data.deletedBy == 'client' &&
+        hasClientAccess(resource.data.pageSlug, request.resource.data.editorTokenHash);
+    }
+
+    function isClientConfigWrite(pageSlug) {
+      return request.resource.data.slug == pageSlug &&
+        request.resource.data.editorTokenHash is string &&
+        hasClientAccess(pageSlug, request.resource.data.editorTokenHash);
+    }
+
+    function isClientRegistryWrite(pageSlug) {
+      return request.resource.data.pageSlug == pageSlug &&
+        request.resource.data.editorTokenHash is string &&
+        hasClientAccess(pageSlug, request.resource.data.editorTokenHash);
+    }
+
     match /memory-pages/{pageSlug} {
       allow read: if isPublicMemoryPage(resource.data) || isAdmin();
       allow create, update, delete: if isAdmin();
@@ -38,7 +78,29 @@ service cloud.firestore {
     match /comments/{commentId} {
       allow read: if true;
       allow create: if isValidCommentCreate();
-      allow update, delete: if isAdmin();
+      allow update: if isAdmin() || isClientCommentDelete();
+      allow delete: if isAdmin();
+    }
+
+    match /client-passwords/{document=**} {
+      allow read, write: if isAdmin();
+    }
+
+    match /client-access/{pageSlug} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /invitation-page-configs/{pageSlug} {
+      allow read: if true;
+      allow create, update: if isAdmin() || isClientConfigWrite(pageSlug);
+      allow delete: if isAdmin();
+    }
+
+    match /invitation-page-registry/{pageSlug} {
+      allow read: if true;
+      allow create, update: if isAdmin() || isClientRegistryWrite(pageSlug);
+      allow delete: if isAdmin();
     }
 
     match /admin-users/{userId} {

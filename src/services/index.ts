@@ -4,3 +4,4 @@ export * from './displayPeriodService';
 export * from './imageService';
 export * from './invitationPageService';
 export * from './memoryPageService';
+export * from './passwordService';

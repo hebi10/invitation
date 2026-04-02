@@ -1,15 +1,28 @@
 import type { DisplayPeriod } from '@/services';
 import type { StatusTone } from './StatusBadge';
 
-export type AdminTab = 'pages' | 'memory' | 'images' | 'comments' | 'periods';
-export type ShortcutKey = 'emotional' | 'simple' | 'minimal' | 'space' | 'blue' | 'classic';
+export type AdminTab =
+  | 'pages'
+  | 'memory'
+  | 'images'
+  | 'comments'
+  | 'passwords'
+  | 'periods';
+
+export type ShortcutKey = 'emotional' | 'simple';
 export type PageStatusFilter = 'all' | 'complete' | 'partial' | 'empty';
 export type PageSort = 'newest' | 'name' | 'coverage';
 export type CommentAgeFilter = 'all' | 'recent';
-export type PeriodStatusFilter = 'all' | 'dueSoon' | 'active' | 'scheduled' | 'expired' | 'inactive';
+export type PeriodStatusFilter =
+  | 'all'
+  | 'dueSoon'
+  | 'active'
+  | 'scheduled'
+  | 'expired'
+  | 'inactive';
 
 export const COMMENTS_PER_PAGE = 10;
-export const TOTAL_SHORTCUT_COUNT = 6;
+export const TOTAL_SHORTCUT_COUNT = 2;
 export const RECENT_COMMENT_DAYS = 7;
 export const DUE_SOON_DAYS = 7;
 
@@ -18,16 +31,13 @@ export const TAB_ITEMS: Array<{ key: AdminTab; label: string }> = [
   { key: 'memory', label: '추억 페이지' },
   { key: 'images', label: '이미지' },
   { key: 'comments', label: '방명록' },
+  { key: 'passwords', label: '비밀번호' },
   { key: 'periods', label: '노출 기간' },
 ];
 
 export const SHORTCUT_ITEMS: Array<{ key: ShortcutKey; label: string }> = [
   { key: 'emotional', label: 'Emotional' },
   { key: 'simple', label: 'Simple' },
-  { key: 'minimal', label: 'Minimal' },
-  { key: 'space', label: 'Space' },
-  { key: 'blue', label: 'Blue' },
-  { key: 'classic', label: 'Classic' },
 ];
 
 export const PAGE_STATUS_LABELS: Record<PageStatusFilter, string> = {
@@ -38,14 +48,14 @@ export const PAGE_STATUS_LABELS: Record<PageStatusFilter, string> = {
 };
 
 export const PAGE_SORT_LABELS: Record<PageSort, string> = {
-  newest: '최근 순',
-  name: '이름 순',
-  coverage: '바로가기 많은 순',
+  newest: '최신순',
+  name: '이름순',
+  coverage: '연결순',
 };
 
 export const COMMENT_AGE_LABELS: Record<CommentAgeFilter, string> = {
   all: '전체 기간',
-  recent: '최근 7일',
+  recent: `최근 ${RECENT_COMMENT_DAYS}일`,
 };
 
 type VariantLink = {
@@ -69,14 +79,18 @@ export function formatDateTime(date: Date) {
 }
 
 export function getAvailableShortcuts(page: VariantCarrier) {
-  return SHORTCUT_ITEMS.filter(({ key }) => page.variants?.[key]?.available).map(({ key, label }) => ({
-    key,
-    label,
-    path: page.variants?.[key]?.path ?? '#',
-  }));
+  return SHORTCUT_ITEMS.filter(({ key }) => page.variants?.[key]?.available).map(
+    ({ key, label }) => ({
+      key,
+      label,
+      path: page.variants?.[key]?.path ?? '#',
+    })
+  );
 }
 
-export function getPageStatusMeta(availableCount: number): { label: string; tone: StatusTone } {
+export function getPageStatusMeta(
+  availableCount: number
+): { label: string; tone: StatusTone } {
   if (availableCount === 0) {
     return { label: '미연결', tone: 'neutral' };
   }
@@ -88,26 +102,48 @@ export function getPageStatusMeta(availableCount: number): { label: string; tone
   return { label: '일부 연결', tone: 'warning' };
 }
 
-export function getPeriodStatusMeta(period: DisplayPeriod): { label: string; tone: StatusTone; description: string } {
+export function getPeriodStatusMeta(
+  period: DisplayPeriod
+): { label: string; tone: StatusTone; description: string } {
   const now = new Date();
 
   if (!period.isActive) {
-    return { label: '비활성', tone: 'neutral', description: '기간 제한이 꺼져 있습니다.' };
+    return {
+      label: '비활성',
+      tone: 'neutral',
+      description: '기간 제한이 꺼져 있습니다.',
+    };
   }
 
   if (now < period.startDate) {
-    return { label: '시작 전', tone: 'warning', description: '예약된 기간이 시작되기 전입니다.' };
+    return {
+      label: '시작 전',
+      tone: 'warning',
+      description: '예약된 공개 기간이 아직 시작되지 않았습니다.',
+    };
   }
 
   if (now > period.endDate) {
-    return { label: '만료', tone: 'danger', description: '노출 기간이 종료되었습니다.' };
+    return {
+      label: '만료',
+      tone: 'danger',
+      description: '노출 기간이 이미 종료되었습니다.',
+    };
   }
 
   if (daysBetween(now, period.endDate) <= DUE_SOON_DAYS) {
-    return { label: '곧 종료', tone: 'warning', description: `${DUE_SOON_DAYS}일 이내 종료 예정입니다.` };
+    return {
+      label: '곧 종료',
+      tone: 'warning',
+      description: `${DUE_SOON_DAYS}일 이내 종료 예정입니다.`,
+    };
   }
 
-  return { label: '노출 중', tone: 'success', description: '현재 공개 가능한 기간입니다.' };
+  return {
+    label: '노출 중',
+    tone: 'success',
+    description: '현재 공개 가능한 기간입니다.',
+  };
 }
 
 export function parseTab(value: string | null): AdminTab {
@@ -115,11 +151,15 @@ export function parseTab(value: string | null): AdminTab {
 }
 
 export function parseShortcut(value: string | null): 'all' | ShortcutKey {
-  return SHORTCUT_ITEMS.some((shortcut) => shortcut.key === value) ? (value as ShortcutKey) : 'all';
+  return SHORTCUT_ITEMS.some((shortcut) => shortcut.key === value)
+    ? (value as ShortcutKey)
+    : 'all';
 }
 
 export function parsePageStatus(value: string | null): PageStatusFilter {
-  return value === 'complete' || value === 'partial' || value === 'empty' ? value : 'all';
+  return value === 'complete' || value === 'partial' || value === 'empty'
+    ? value
+    : 'all';
 }
 
 export function parsePageSort(value: string | null): PageSort {
@@ -131,7 +171,11 @@ export function parseCommentAge(value: string | null): CommentAgeFilter {
 }
 
 export function parsePeriodFilter(value: string | null): PeriodStatusFilter {
-  return value === 'dueSoon' || value === 'active' || value === 'scheduled' || value === 'expired' || value === 'inactive'
+  return value === 'dueSoon' ||
+    value === 'active' ||
+    value === 'scheduled' ||
+    value === 'expired' ||
+    value === 'inactive'
     ? value
     : 'all';
 }
@@ -147,7 +191,12 @@ export function isRecentComment(date: Date) {
 
 export function isDueSoonPeriod(period: DisplayPeriod) {
   const now = new Date();
-  return period.isActive && now >= period.startDate && now <= period.endDate && daysBetween(now, period.endDate) <= DUE_SOON_DAYS;
+  return (
+    period.isActive &&
+    now >= period.startDate &&
+    now <= period.endDate &&
+    daysBetween(now, period.endDate) <= DUE_SOON_DAYS
+  );
 }
 
 export function daysBetween(start: Date, end: Date) {

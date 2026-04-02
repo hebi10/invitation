@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import styles from './Gallery.module.css';
+import styles from '@/components/templates/emotional/Gallery.module.css';
 
 interface GalleryProps {
   images: string[];

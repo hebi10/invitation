@@ -17,7 +17,7 @@ import { shinMinjeKimHyunjiConfig } from './pages/shin-minje-kim-hyunji';
 export type WeddingPageConfig = InvitationPageSeed;
 export type { BankAccount, FamilyMember, PersonInfo, WeddingCoupleInfo };
 
-export const WEDDING_PAGE_SEEDS: WeddingPageConfig[] = [
+export const WEDDING_PAGE_SAMPLES: WeddingPageConfig[] = [
   kimMinjunParkSoheeConfig,
   shinMinjeKimHyunjiConfig,
   leeJunhoParkSominConfig,
@@ -26,8 +26,12 @@ export const WEDDING_PAGE_SEEDS: WeddingPageConfig[] = [
   leeJonghunChoiInConfig,
 ];
 
+// Backward-compatible alias. These configs now act as sample/default content,
+// not as the runtime source of truth for route generation.
+export const WEDDING_PAGE_SEEDS = WEDDING_PAGE_SAMPLES;
+
 export function getWeddingPageBySlug(slug: string): WeddingPageConfig | undefined {
-  return WEDDING_PAGE_SEEDS.find((page) => page.slug === slug);
+  return WEDDING_PAGE_SAMPLES.find((page) => page.slug === slug);
 }
 
 export function getRequiredWeddingPageBySlug(slug: string): WeddingPageConfig {
@@ -40,11 +44,11 @@ export function getRequiredWeddingPageBySlug(slug: string): WeddingPageConfig {
 }
 
 export function getAllWeddingPageSlugs(): string[] {
-  return WEDDING_PAGE_SEEDS.map((page) => page.slug);
+  return WEDDING_PAGE_SAMPLES.map((page) => page.slug);
 }
 
 export function getWeddingPageCount(): number {
-  return WEDDING_PAGE_SEEDS.length;
+  return WEDDING_PAGE_SAMPLES.length;
 }
 
 export function createInvitationPageFromSeed(
@@ -63,5 +67,5 @@ export function createInvitationPageFromSeed(
 }
 
 export function getAllWeddingPageSeeds(): WeddingPageConfig[] {
-  return [...WEDDING_PAGE_SEEDS];
+  return [...WEDDING_PAGE_SAMPLES];
 }

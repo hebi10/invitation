@@ -30,10 +30,10 @@ type FirestoreModules = {
   collection: any;
   deleteDoc: any;
   doc: any;
-  getCountFromServer: any;
   getDocs: any;
   query: any;
   serverTimestamp: any;
+  updateDoc: any;
   where: any;
 };
 
@@ -56,10 +56,10 @@ async function ensureFirestoreModules() {
       collection: firestore.collection,
       deleteDoc: firestore.deleteDoc,
       doc: firestore.doc,
-      getCountFromServer: firestore.getCountFromServer,
       getDocs: firestore.getDocs,
       query: firestore.query,
       serverTimestamp: firestore.serverTimestamp,
+      updateDoc: firestore.updateDoc,
       where: firestore.where,
     };
   }
@@ -88,7 +88,11 @@ function normalizeComment(
   id: string,
   data: Record<string, any>,
   options: { pageSlug?: string; collectionName?: string } = {}
-): Comment {
+): Comment | null {
+  if (data.deleted === true) {
+    return null;
+  }
+
   return {
     id,
     author: data.author ?? '',
@@ -129,13 +133,14 @@ async function getUnifiedComments(pageSlug?: string): Promise<Comment[]> {
         )
       : await firestore.modules.getDocs(collectionRef);
 
-    return snapshot.docs.map(
-      (docSnapshot: { id: string; data: () => Record<string, any> }) =>
+    return snapshot.docs
+      .map((docSnapshot: { id: string; data: () => Record<string, any> }) =>
         normalizeComment(docSnapshot.id, docSnapshot.data(), {
           pageSlug,
           collectionName: COLLECTION_NAME,
         })
-    );
+      )
+      .filter((comment: Comment | null): comment is Comment => comment !== null);
   } catch (error) {
     console.error('[commentService] failed to load unified comments', error);
     return [];
@@ -170,14 +175,12 @@ export async function addComment(commentData: CommentInput): Promise<void> {
     throw new Error('Firestore is not initialized.');
   }
 
-  const documentData = {
-    ...payload,
-    createdAt: firestore.modules.serverTimestamp(),
-  };
-
   await firestore.modules.addDoc(
     firestore.modules.collection(firestore.db, COLLECTION_NAME),
-    documentData
+    {
+      ...payload,
+      createdAt: firestore.modules.serverTimestamp(),
+    }
   );
 }
 
@@ -187,6 +190,36 @@ export async function getComments(pageSlug: string): Promise<Comment[]> {
   }
 
   return sortComments(await getUnifiedComments(pageSlug));
+}
+
+export async function softDeleteCommentByClient(
+  commentId: string,
+  pageSlug: string,
+  editorTokenHash: string
+): Promise<void> {
+  if (!USE_FIREBASE) {
+    const comments = mockComments.get(pageSlug) ?? [];
+    mockComments.set(
+      pageSlug,
+      comments.filter((comment) => comment.id !== commentId)
+    );
+    return;
+  }
+
+  const firestore = await ensureFirestoreModules();
+  if (!firestore) {
+    throw new Error('Firestore is not initialized.');
+  }
+
+  await firestore.modules.updateDoc(
+    firestore.modules.doc(firestore.db, COLLECTION_NAME, commentId),
+    {
+      deleted: true,
+      deletedAt: firestore.modules.serverTimestamp(),
+      deletedBy: 'client',
+      editorTokenHash,
+    }
+  );
 }
 
 export async function deleteComment(
@@ -225,54 +258,12 @@ export async function getCommentSummary(
   recentDays = DEFAULT_RECENT_COMMENT_DAYS
 ): Promise<CommentSummary> {
   const threshold = buildRecentThreshold(recentDays);
+  const comments = await getAllComments();
 
-  if (!USE_FIREBASE) {
-    const comments = [...mockComments.values()].flat();
-
-    return {
-      totalCount: comments.length,
-      recentCount: comments.filter(
-        (comment) => comment.createdAt.getTime() >= threshold.getTime()
-      ).length,
-    };
-  }
-
-  const firestore = await ensureFirestoreModules();
-  if (!firestore) {
-    throw new Error('Firestore is not initialized.');
-  }
-
-  try {
-    const collectionRef = firestore.modules.collection(
-      firestore.db,
-      COLLECTION_NAME
-    );
-    const [totalSnapshot, recentSnapshot] = await Promise.all([
-      firestore.modules.getCountFromServer(collectionRef),
-      firestore.modules.getCountFromServer(
-        firestore.modules.query(
-          collectionRef,
-          firestore.modules.where('createdAt', '>=', threshold)
-        )
-      ),
-    ]);
-
-    return {
-      totalCount: totalSnapshot.data().count,
-      recentCount: recentSnapshot.data().count,
-    };
-  } catch (error) {
-    console.warn(
-      '[commentService] failed to load comment summary via aggregate query, falling back to full read',
-      error
-    );
-
-    const comments = await getAllComments();
-    return {
-      totalCount: comments.length,
-      recentCount: comments.filter(
-        (comment) => comment.createdAt.getTime() >= threshold.getTime()
-      ).length,
-    };
-  }
+  return {
+    totalCount: comments.length,
+    recentCount: comments.filter(
+      (comment) => comment.createdAt.getTime() >= threshold.getTime()
+    ).length,
+  };
 }

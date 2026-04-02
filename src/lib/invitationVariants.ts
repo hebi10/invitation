@@ -1,12 +1,6 @@
 import type { InvitationPageVariants } from '@/types/invitationPage';
 
-export type InvitationVariantKey =
-  | 'emotional'
-  | 'simple'
-  | 'minimal'
-  | 'space'
-  | 'blue'
-  | 'classic';
+export type InvitationVariantKey = 'emotional' | 'simple';
 
 const variantDefinitions: Record<
   InvitationVariantKey,
@@ -14,27 +8,11 @@ const variantDefinitions: Record<
 > = {
   emotional: {
     pathSuffix: '',
-    label: '감성 버전',
+    label: 'Emotional',
   },
   simple: {
-    pathSuffix: '-simple',
-    label: '심플 버전',
-  },
-  minimal: {
-    pathSuffix: '-minimal',
-    label: '미니멀 버전',
-  },
-  space: {
-    pathSuffix: '-space',
-    label: '우주 버전',
-  },
-  blue: {
-    pathSuffix: '-blue',
-    label: '지중해 블루 버전',
-  },
-  classic: {
-    pathSuffix: '-classic',
-    label: '한지 클래식 버전',
+    pathSuffix: '/simple',
+    label: 'Simple',
   },
 };
 

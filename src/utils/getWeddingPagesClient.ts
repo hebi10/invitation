@@ -3,6 +3,7 @@ import {
   getWeddingPageBySlug as getWeddingSeedBySlug,
   type WeddingPageConfig,
 } from '@/config/weddingPages';
+import type { InvitationPageVariants } from '@/types/invitationPage';
 
 export interface WeddingPageInfo {
   slug: string;
@@ -10,38 +11,7 @@ export interface WeddingPageInfo {
   description?: string;
   date?: string;
   venue?: string;
-  variants?: {
-    emotional?: {
-      available: boolean;
-      path: string;
-      displayName: string;
-    };
-    simple?: {
-      available: boolean;
-      path: string;
-      displayName: string;
-    };
-    minimal?: {
-      available: boolean;
-      path: string;
-      displayName: string;
-    };
-    space?: {
-      available: boolean;
-      path: string;
-      displayName: string;
-    };
-    blue?: {
-      available: boolean;
-      path: string;
-      displayName: string;
-    };
-    classic?: {
-      available: boolean;
-      path: string;
-      displayName: string;
-    };
-  };
+  variants?: InvitationPageVariants;
 }
 
 export function getWeddingPagesClient(): WeddingPageInfo[] {
