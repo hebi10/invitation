@@ -1,14 +1,16 @@
 'use client';
 
-import Cover from '@/components/templates/emotional/Cover';
-import Gallery from '@/components/templates/emotional/Gallery';
-import GiftInfo from '@/components/templates/emotional/GiftInfo';
-import Greeting from '@/components/templates/emotional/Greeting';
-import Guestbook from '@/components/templates/emotional/Guestbook';
-import LocationMap from '@/components/templates/emotional/LocationMap';
-import Schedule from '@/components/templates/emotional/Schedule';
-import WeddingCalendar from '@/components/templates/emotional/WeddingCalendar';
-import WeddingLoader from '@/components/templates/emotional/WeddingLoader';
+import {
+  Cover,
+  Gallery,
+  GiftInfo,
+  Greeting,
+  Guestbook,
+  LocationMap,
+  Schedule,
+  WeddingCalendar,
+  WeddingLoader,
+} from '@/components/sections';
 
 import {
   createWeddingCalendarEvent,

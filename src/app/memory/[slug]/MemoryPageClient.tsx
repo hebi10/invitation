@@ -8,7 +8,7 @@ import 'swiper/css';
 import 'swiper/css/navigation';
 import 'swiper/css/pagination';
 
-import HeartIcon_1 from '@/components/HeartIcon_1';
+import { HeartIconSimple } from '@/components/icons';
 import { AdminProvider, useAdmin } from '@/contexts';
 import { getMemoryPageBySlug } from '@/services/memoryPageService';
 import type {
@@ -60,7 +60,7 @@ function renderHeartDecoratedTitle(title: string) {
   return segments.map((segment, index) => {
     if (isHeartGlyph(segment)) {
       return (
-        <HeartIcon_1
+        <HeartIconSimple
           key={`memory-title-heart-${index}`}
           className={styles.heroTitleHeartIcon}
           width={20}

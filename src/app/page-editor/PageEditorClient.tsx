@@ -34,6 +34,7 @@ import {
 } from './pageEditorUtils';
 
 const TOKEN_STORAGE_PREFIX = 'page-editor-token:';
+const MAX_REPEATABLE_ITEMS = 3;
 
 type NoticeState = { tone: NoticeTone; message: string } | null;
 
@@ -333,6 +334,15 @@ export default function PageEditorClient({
   };
 
   const handleGuideAdd = (kind: GuideKind) => {
+    const currentItems = formState?.pageData?.[kind] ?? [];
+    if (currentItems.length >= MAX_REPEATABLE_ITEMS) {
+      setNotice({
+        tone: 'error',
+        message: `안내 항목은 최대 ${MAX_REPEATABLE_ITEMS}개까지 추가할 수 있습니다.`,
+      });
+      return;
+    }
+
     updateForm((draft) => {
       if (!draft.pageData) {
         return;
@@ -371,6 +381,15 @@ export default function PageEditorClient({
   };
 
   const handleAccountAdd = (kind: AccountKind) => {
+    const currentAccounts = formState?.pageData?.giftInfo?.[kind] ?? [];
+    if (currentAccounts.length >= MAX_REPEATABLE_ITEMS) {
+      setNotice({
+        tone: 'error',
+        message: `계좌는 최대 ${MAX_REPEATABLE_ITEMS}개까지 추가할 수 있습니다.`,
+      });
+      return;
+    }
+
     updateForm((draft) => {
       if (!draft.pageData?.giftInfo) {
         return;

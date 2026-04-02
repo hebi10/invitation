@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 
-import { DisplayPeriodManager, ImageManager, MemoryPageManager } from '@/components';
+import { DisplayPeriodManager, ImageManager, MemoryPageManager } from '@/components/admin';
 import { useAdmin } from '@/contexts';
 import {
   clearAdminInvitationPreviewCache,

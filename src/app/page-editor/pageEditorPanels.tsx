@@ -2,6 +2,8 @@ import type { BankAccount, PersonInfo } from '@/types/invitationPage';
 
 import styles from './page.module.css';
 
+const MAX_REPEATABLE_ITEMS = 3;
+
 type PersonRole = 'groom' | 'bride';
 type ParentRole = 'father' | 'mother';
 type GuideItem = {
@@ -143,6 +145,8 @@ export function GuideSectionPanel({
   onRemove,
   onChange,
 }: GuideSectionPanelProps) {
+  const canAdd = !disabled && items.length < MAX_REPEATABLE_ITEMS;
+
   return (
     <section className={styles.section}>
       <div className={styles.sectionHeader}>
@@ -154,7 +158,7 @@ export function GuideSectionPanel({
           type="button"
           className={styles.ghostButton}
           onClick={() => onAdd(kind)}
-          disabled={disabled}
+          disabled={!canAdd}
         >
           항목 추가
         </button>
@@ -221,6 +225,8 @@ export function AccountSectionPanel({
   onRemove,
   onChange,
 }: AccountSectionPanelProps) {
+  const canAdd = !disabled && accounts.length < MAX_REPEATABLE_ITEMS;
+
   return (
     <div className={styles.subCard}>
       <div className={styles.subCardHeader}>
@@ -232,7 +238,7 @@ export function AccountSectionPanel({
           type="button"
           className={styles.ghostButton}
           onClick={() => onAdd(kind)}
-          disabled={disabled}
+          disabled={!canAdd}
         >
           계좌 추가
         </button>

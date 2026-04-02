@@ -1,14 +1,16 @@
 'use client';
 
-import Cover from '@/components/templates/simple/Cover';
-import Gallery from '@/components/templates/simple/Gallery';
-import GiftInfo from '@/components/templates/simple/GiftInfo';
-import Greeting from '@/components/templates/simple/Greeting';
-import Guestbook from '@/components/templates/simple/Guestbook';
-import LocationMap from '@/components/templates/simple/LocationMap';
-import Schedule from '@/components/templates/simple/Schedule';
-import WeddingCalendar from '@/components/templates/simple/WeddingCalendar';
-import WeddingLoader from '@/components/templates/simple/WeddingLoader';
+import {
+  CoverSimple,
+  GallerySimple,
+  GiftInfoSimple,
+  GreetingSimple,
+  GuestbookSimple,
+  LocationMapSimple,
+  ScheduleSimple,
+  WeddingCalendarSimple,
+  WeddingLoaderSimple,
+} from '@/components/sections';
 
 import {
   createWeddingCalendarEvent,
@@ -21,7 +23,7 @@ import {
 export default createWeddingThemeRenderer({
   ariaLabelSuffix: ' (심플 버전)',
   renderLoader: ({ state }) => (
-    <WeddingLoader
+    <WeddingLoaderSimple
       groomName={state.pageConfig.groomName}
       brideName={state.pageConfig.brideName}
       onLoadComplete={() => state.setIsLoading(false)}
@@ -32,7 +34,7 @@ export default createWeddingThemeRenderer({
   ),
   sections: [
     ({ state }) => (
-      <Cover
+      <CoverSimple
         title={state.pageConfig.displayName}
         subtitle={state.pageConfig.pageData?.subtitle ?? '두 사람이 사랑으로 하나가 되는 날'}
         weddingDate={`${state.pageConfig.date} ${state.pageConfig.pageData?.ceremonyTime ?? ''}`}
@@ -46,7 +48,7 @@ export default createWeddingThemeRenderer({
       />
     ),
     ({ state }) => (
-      <Greeting
+      <GreetingSimple
         message={state.pageConfig.pageData?.greetingMessage ?? ''}
         author={state.pageConfig.pageData?.greetingAuthor ?? ''}
         groom={state.pageConfig.couple.groom}
@@ -54,10 +56,10 @@ export default createWeddingThemeRenderer({
       />
     ),
     ({ state }) => (
-      <Gallery images={state.galleryImageUrls} />
+      <GallerySimple images={state.galleryImageUrls} />
     ),
     ({ state }) => (
-      <WeddingCalendar
+      <WeddingCalendarSimple
         title="행복한 순간을 함께하세요"
         weddingDate={state.weddingDate}
         currentMonth={state.weddingDate}
@@ -68,7 +70,7 @@ export default createWeddingThemeRenderer({
     ),
     ({ state }) => (
       <div id="wedding-info">
-        <Schedule
+        <ScheduleSimple
           date={state.pageConfig.date}
           time={state.pageConfig.pageData?.ceremonyTime ?? ''}
           venue={state.pageConfig.venue}
@@ -79,7 +81,7 @@ export default createWeddingThemeRenderer({
       </div>
     ),
     ({ state }) => (
-      <LocationMap
+      <LocationMapSimple
         venueName={state.pageConfig.venue}
         address={getCeremonyAddress(state.pageConfig)}
         description={getMapDescription(state.pageConfig)}
@@ -87,10 +89,10 @@ export default createWeddingThemeRenderer({
         kakaoMapConfig={state.pageConfig.pageData?.kakaoMap}
       />
     ),
-    ({ state }) => <Guestbook pageSlug={state.pageConfig.slug} />,
+    ({ state }) => <GuestbookSimple pageSlug={state.pageConfig.slug} />,
     ({ state }) =>
       state.giftInfo ? (
-        <GiftInfo
+        <GiftInfoSimple
           groomAccounts={state.giftInfo.groomAccounts ?? []}
           brideAccounts={state.giftInfo.brideAccounts ?? []}
           message={state.giftInfo.message}
