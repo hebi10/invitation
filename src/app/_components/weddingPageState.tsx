@@ -153,7 +153,18 @@ export function useWeddingInvitationState(
   const [blockMessage, setBlockMessage] = useState<string | null>(null);
   const [pageConfig, setPageConfig] = useState<InvitationPage | null>(initialPage);
   const [isLoading, setIsLoading] = useState(true);
-  const { mainImage, galleryImages, loading: imagesLoading, error } = usePageImages(options.slug);
+  const shouldLoadStorageImages = useMemo(() => {
+    if (!pageConfig) {
+      return true;
+    }
+
+    const hasConfiguredGallery = Boolean(pageConfig.pageData?.galleryImages?.length);
+    return !hasConfiguredGallery;
+  }, [pageConfig]);
+  const { mainImage, galleryImages, loading: imagesLoading, error } = usePageImages(
+    options.slug,
+    { enabled: shouldLoadStorageImages }
+  );
   const { isAdminLoading, isAdminLoggedIn } = useAdmin();
   const themeDefinition = getWeddingThemeDefinition(options.theme);
 
@@ -278,8 +289,17 @@ export function useWeddingInvitationState(
       )
     : null;
 
-  const mainImageUrl = mainImage?.url || pageConfig?.metadata.images.wedding || '';
-  const galleryImageUrls = galleryImages.map((image) => image.url);
+  const configuredGalleryImageUrls =
+    pageConfig?.pageData?.galleryImages?.filter((imageUrl) => imageUrl.trim()) ?? [];
+  const mainImageUrl =
+    pageConfig?.metadata.images.wedding ||
+    configuredGalleryImageUrls[0] ||
+    mainImage?.url ||
+    '';
+  const galleryImageUrls =
+    configuredGalleryImageUrls.length > 0
+      ? configuredGalleryImageUrls
+      : galleryImages.map((image) => image.url);
   const preloadImages = [
     ...(mainImageUrl ? [mainImageUrl] : []),
     ...galleryImageUrls.slice(0, 2),

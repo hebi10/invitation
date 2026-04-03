@@ -5,7 +5,11 @@ import {
 } from '@/config/weddingPages';
 import { buildInvitationVariants } from '@/lib/invitationVariants';
 import { ensureFirebaseInit, USE_FIREBASE } from '@/lib/firebase';
-import type { InvitationPage, InvitationPageSeed } from '@/types/invitationPage';
+import type {
+  InvitationPage,
+  InvitationPageSeed,
+  InvitationThemeKey,
+} from '@/types/invitationPage';
 import { sanitizeHeartIconPlaceholdersDeep } from '@/utils/textSanitizers';
 
 export interface InvitationPageSummary {
@@ -15,6 +19,7 @@ export interface InvitationPageSummary {
   date: string;
   venue: string;
   published: boolean;
+  defaultTheme: InvitationThemeKey;
   displayPeriodEnabled: boolean;
   displayPeriodStart: Date | null;
   displayPeriodEnd: Date | null;
@@ -27,13 +32,37 @@ export interface EditableInvitationPageConfig {
   slug: string;
   config: InvitationPageSeed;
   published: boolean;
+  defaultTheme: InvitationThemeKey;
   hasCustomConfig: boolean;
   dataSource: 'seed' | 'firestore';
   lastSavedAt: Date | null;
 }
 
+export interface InvitationPageSeedTemplate {
+  slug: string;
+  displayName: string;
+  groomName: string;
+  brideName: string;
+}
+
+export interface CreateInvitationPageDraftInput {
+  seedSlug: string;
+  slugBase: string;
+  groomName?: string;
+  brideName?: string;
+  published?: boolean;
+  defaultTheme?: InvitationThemeKey;
+  editorTokenHash?: string | null;
+}
+
+export interface CreateInvitationPageDraftResult {
+  slug: string;
+  config: InvitationPageSeed;
+}
+
 export interface InvitationPageLookupOptions {
   includeSeedFallback?: boolean;
+  includeSeedPages?: boolean;
   fallbackOnError?: boolean;
   retryOnPermissionDenied?: boolean;
   retryCount?: number;
@@ -68,6 +97,7 @@ type InvitationPageRegistryRecord = {
   docId: string;
   pageSlug: string;
   published: boolean;
+  defaultTheme: InvitationThemeKey;
   hasCustomConfig: boolean;
   editorTokenHash: string | null;
   createdAt: Date | null;
@@ -83,6 +113,9 @@ type BuiltInvitationPageRecord = {
 const DISPLAY_PERIOD_COLLECTION = 'display-periods';
 const PAGE_CONFIG_COLLECTION = 'invitation-page-configs';
 const PAGE_REGISTRY_COLLECTION = 'invitation-page-registry';
+const PAGE_SLUG_SUFFIX_ALPHABET = 'abcdefghijklmnopqrstuvwxyz';
+const PAGE_SLUG_SUFFIX_LENGTH = 3;
+const DEFAULT_INVITATION_THEME: InvitationThemeKey = 'emotional';
 
 function wait(ms: number) {
   return new Promise((resolve) => {
@@ -121,6 +154,45 @@ function readString(value: unknown, fallback = '') {
 
 function readNumber(value: unknown, fallback = 0) {
   return typeof value === 'number' && Number.isFinite(value) ? value : fallback;
+}
+
+function cloneInvitationPageSeed(seed: InvitationPageSeed): InvitationPageSeed {
+  return sanitizeHeartIconPlaceholdersDeep(
+    JSON.parse(JSON.stringify(seed)) as InvitationPageSeed
+  );
+}
+
+function normalizeInvitationTheme(
+  value: unknown,
+  fallback: InvitationThemeKey = DEFAULT_INVITATION_THEME
+): InvitationThemeKey {
+  return value === 'simple' ? 'simple' : fallback;
+}
+
+function normalizeSlugBase(value: string) {
+  return value
+    .trim()
+    .toLowerCase()
+    .normalize('NFKD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .replace(/-{2,}/g, '-');
+}
+
+export function normalizeInvitationPageSlugBase(value: string) {
+  return normalizeSlugBase(value);
+}
+
+function generateSlugSuffix(length = PAGE_SLUG_SUFFIX_LENGTH) {
+  return Array.from({ length }, () => {
+    const index = Math.floor(Math.random() * PAGE_SLUG_SUFFIX_ALPHABET.length);
+    return PAGE_SLUG_SUFFIX_ALPHABET[index];
+  }).join('');
+}
+
+function createDisplayNameFromNames(groomName: string, brideName: string) {
+  return `${groomName} · ${brideName}`;
 }
 
 function buildSeedPage(pageSlug: string): InvitationPage | null {
@@ -173,6 +245,7 @@ function normalizeRegistryRecord(
     docId,
     pageSlug,
     published: data.published !== false,
+    defaultTheme: normalizeInvitationTheme(data.defaultTheme),
     hasCustomConfig: data.hasCustomConfig === true,
     editorTokenHash:
       typeof data.editorTokenHash === 'string' && data.editorTokenHash.trim()
@@ -282,6 +355,11 @@ function mergeInvitationPageSeed(
     ? {
         ...(base?.pageData ?? {}),
         ...pageDataInput,
+        galleryImages: Array.isArray(pageDataInput.galleryImages)
+          ? pageDataInput.galleryImages.filter(
+              (value): value is string => typeof value === 'string'
+            )
+          : base?.pageData?.galleryImages,
         kakaoMap: pageDataInput.kakaoMap
           ? {
               ...(base?.pageData?.kakaoMap ?? {}),
@@ -453,7 +531,11 @@ function toEditableSeed(page: InvitationPage): InvitationPageSeed {
 
 function toInvitationPageSummary(
   page: InvitationPage,
-  options: { dataSource: 'seed' | 'firestore'; hasCustomConfig: boolean }
+  options: {
+    dataSource: 'seed' | 'firestore';
+    hasCustomConfig: boolean;
+    defaultTheme: InvitationThemeKey;
+  }
 ): InvitationPageSummary {
   return {
     slug: page.slug,
@@ -462,6 +544,7 @@ function toInvitationPageSummary(
     date: page.date,
     venue: page.venue,
     published: page.published,
+    defaultTheme: options.defaultTheme,
     displayPeriodEnabled: page.displayPeriodEnabled,
     displayPeriodStart: page.displayPeriodStart,
     displayPeriodEnd: page.displayPeriodEnd,
@@ -476,8 +559,81 @@ function getSeedSummaries(): InvitationPageSummary[] {
     .map((seed) => sanitizeHeartIconPlaceholdersDeep(createInvitationPageFromSeed(seed)))
     .sort((left, right) => left.displayName.localeCompare(right.displayName, 'ko'))
     .map((page) =>
-      toInvitationPageSummary(page, { dataSource: 'seed', hasCustomConfig: false })
+      toInvitationPageSummary(page, {
+        dataSource: 'seed',
+        hasCustomConfig: false,
+        defaultTheme: DEFAULT_INVITATION_THEME,
+      })
     );
+}
+
+function getSeedTemplates(): InvitationPageSeedTemplate[] {
+  return getAllWeddingPageSeeds()
+    .map((seed) => ({
+      slug: seed.slug,
+      displayName: seed.displayName,
+      groomName: seed.couple.groom.name || seed.groomName,
+      brideName: seed.couple.bride.name || seed.brideName,
+    }))
+    .sort((left, right) => left.displayName.localeCompare(right.displayName, 'ko'));
+}
+
+function buildDraftConfigFromSeed(
+  seed: InvitationPageSeed,
+  overrides: {
+    slug: string;
+    groomName: string;
+    brideName: string;
+  }
+) {
+  const nextSeed = cloneInvitationPageSeed(seed);
+  const displayName = createDisplayNameFromNames(
+    overrides.groomName,
+    overrides.brideName
+  );
+
+  nextSeed.slug = overrides.slug;
+  nextSeed.displayName = displayName;
+  nextSeed.groomName = overrides.groomName;
+  nextSeed.brideName = overrides.brideName;
+  nextSeed.couple.groom.name = overrides.groomName;
+  nextSeed.couple.bride.name = overrides.brideName;
+  nextSeed.metadata.title = `${displayName} 결혼식에 초대합니다`;
+  nextSeed.metadata.openGraph.title = `${displayName} 결혼식 초대`;
+  nextSeed.metadata.twitter.title = `${displayName} 결혼식 초대`;
+  nextSeed.metadata.keywords = Array.from(
+    new Set(
+      [
+        ...nextSeed.metadata.keywords,
+        overrides.groomName,
+        overrides.brideName,
+        '청첩장',
+      ].filter((value) => typeof value === 'string' && value.trim())
+    )
+  );
+  nextSeed.variants = buildInvitationVariants(overrides.slug, displayName);
+
+  if (nextSeed.pageData?.groom) {
+    nextSeed.pageData.groom = {
+      ...nextSeed.pageData.groom,
+      ...nextSeed.couple.groom,
+      name: overrides.groomName,
+    };
+  }
+
+  if (nextSeed.pageData?.bride) {
+    nextSeed.pageData.bride = {
+      ...nextSeed.pageData.bride,
+      ...nextSeed.couple.bride,
+      name: overrides.brideName,
+    };
+  }
+
+  if (nextSeed.pageData) {
+    nextSeed.pageData.greetingAuthor = `${overrides.groomName} · ${overrides.brideName}`;
+  }
+
+  return nextSeed;
 }
 
 async function ensureFirestoreState(): Promise<FirestoreState | null> {
@@ -678,6 +834,48 @@ async function getConfigByPageSlug(
   return normalizeConfigSeed(pageSlug, snapshot.data());
 }
 
+async function isInvitationPageSlugTaken(
+  firestore: FirestoreState,
+  pageSlug: string
+) {
+  if (getWeddingPageBySlug(pageSlug)) {
+    return true;
+  }
+
+  const [configSnapshot, registrySnapshot] = await Promise.all([
+    firestore.modules.getDoc(
+      firestore.modules.doc(firestore.db, PAGE_CONFIG_COLLECTION, pageSlug)
+    ),
+    firestore.modules.getDoc(
+      firestore.modules.doc(firestore.db, PAGE_REGISTRY_COLLECTION, pageSlug)
+    ),
+  ]);
+
+  return configSnapshot.exists() || registrySnapshot.exists();
+}
+
+async function createUniqueInvitationPageSlug(
+  firestore: FirestoreState,
+  slugBase: string
+) {
+  const normalizedSlugBase = normalizeSlugBase(slugBase);
+  if (!normalizedSlugBase) {
+    throw new Error('A valid URL slug base is required.');
+  }
+
+  if (!(await isInvitationPageSlugTaken(firestore, normalizedSlugBase))) {
+    return normalizedSlugBase;
+  }
+
+  let nextSlug = `${normalizedSlugBase}-${generateSlugSuffix()}`;
+
+  while (await isInvitationPageSlugTaken(firestore, nextSlug)) {
+    nextSlug = `${normalizedSlugBase}-${generateSlugSuffix()}`;
+  }
+
+  return nextSlug;
+}
+
 function buildInvitationPageRecord(
   pageSlug: string,
   configSeed: InvitationPageSeed | null,
@@ -710,6 +908,7 @@ async function upsertRegistryRecord(
   pageSlug: string,
   payload: {
     published?: boolean;
+    defaultTheme?: InvitationThemeKey;
     hasCustomConfig?: boolean;
     editorTokenHash?: string | null;
   }
@@ -722,6 +921,8 @@ async function upsertRegistryRecord(
     {
       pageSlug,
       published: payload.published ?? existing?.published ?? true,
+      defaultTheme:
+        payload.defaultTheme ?? existing?.defaultTheme ?? DEFAULT_INVITATION_THEME,
       hasCustomConfig:
         payload.hasCustomConfig ?? existing?.hasCustomConfig ?? false,
       editorTokenHash:
@@ -808,12 +1009,13 @@ export async function getEditableInvitationPageConfig(
     return fallbackConfig
       ? {
           slug: pageSlug,
-          config: fallbackConfig,
-          published: true,
-          hasCustomConfig: false,
-          dataSource: 'seed',
-          lastSavedAt: null,
-        }
+        config: fallbackConfig,
+        published: true,
+        defaultTheme: DEFAULT_INVITATION_THEME,
+        hasCustomConfig: false,
+        dataSource: 'seed',
+        lastSavedAt: null,
+      }
       : null;
   }
 
@@ -837,6 +1039,7 @@ export async function getEditableInvitationPageConfig(
       slug: pageSlug,
       config: editableConfig,
       published: sourceRecord.page.published,
+      defaultTheme: registryRecord?.defaultTheme ?? DEFAULT_INVITATION_THEME,
       hasCustomConfig: sourceRecord.hasCustomConfig,
       dataSource: sourceRecord.dataSource,
       lastSavedAt: registryRecord?.updatedAt ?? null,
@@ -846,12 +1049,13 @@ export async function getEditableInvitationPageConfig(
     return fallbackConfig
       ? {
           slug: pageSlug,
-          config: fallbackConfig,
-          published: true,
-          hasCustomConfig: false,
-          dataSource: 'seed',
-          lastSavedAt: null,
-        }
+        config: fallbackConfig,
+        published: true,
+        defaultTheme: DEFAULT_INVITATION_THEME,
+        hasCustomConfig: false,
+        dataSource: 'seed',
+        lastSavedAt: null,
+      }
       : null;
   }
 }
@@ -860,6 +1064,7 @@ export async function saveInvitationPageConfig(
   config: InvitationPageSeed,
   options: {
     published?: boolean;
+    defaultTheme?: InvitationThemeKey;
     editorTokenHash?: string | null;
   } = {}
 ) {
@@ -894,6 +1099,7 @@ export async function saveInvitationPageConfig(
 
   await upsertRegistryRecord(firestore, normalizedConfig.slug, {
     published: options.published ?? true,
+    defaultTheme: options.defaultTheme ?? DEFAULT_INVITATION_THEME,
     hasCustomConfig: true,
     editorTokenHash: options.editorTokenHash ?? null,
   });
@@ -901,10 +1107,68 @@ export async function saveInvitationPageConfig(
   return existingConfig ?? normalizedConfig;
 }
 
+export function getInvitationPageSeedTemplates() {
+  return getSeedTemplates();
+}
+
+export async function createInvitationPageDraftFromSeed(
+  input: CreateInvitationPageDraftInput
+): Promise<CreateInvitationPageDraftResult> {
+  const firestore = await ensureFirestoreState();
+  if (!firestore) {
+    throw new Error('Firestore is not available.');
+  }
+
+  const seed = getWeddingPageBySlug(input.seedSlug);
+  if (!seed) {
+    throw new Error('Unknown invitation page seed.');
+  }
+
+  const groomName = (input.groomName ?? seed.couple.groom.name ?? seed.groomName).trim();
+  const brideName = (input.brideName ?? seed.couple.bride.name ?? seed.brideName).trim();
+
+  if (!groomName || !brideName) {
+    throw new Error('Groom and bride names are required.');
+  }
+
+  const slug = await createUniqueInvitationPageSlug(firestore, input.slugBase);
+  const config = buildDraftConfigFromSeed(seed, {
+    slug,
+    groomName,
+    brideName,
+  });
+  const now = new Date();
+
+  await firestore.modules.setDoc(
+    firestore.modules.doc(firestore.db, PAGE_CONFIG_COLLECTION, slug),
+    {
+      ...config,
+      seedSourceSlug: seed.slug,
+      editorTokenHash: input.editorTokenHash ?? null,
+      createdAt: now,
+      updatedAt: now,
+    },
+    { merge: true }
+  );
+
+  await upsertRegistryRecord(firestore, slug, {
+    published: input.published ?? false,
+    defaultTheme: input.defaultTheme ?? DEFAULT_INVITATION_THEME,
+    hasCustomConfig: true,
+    editorTokenHash: input.editorTokenHash ?? null,
+  });
+
+  return {
+    slug,
+    config,
+  };
+}
+
 export async function restoreInvitationPageConfig(
   pageSlug: string,
   options: {
     published?: boolean;
+    defaultTheme?: InvitationThemeKey;
     editorTokenHash?: string | null;
   } = {}
 ) {
@@ -920,6 +1184,7 @@ export async function restoreInvitationPageConfig(
 
   await upsertRegistryRecord(firestore, pageSlug, {
     published: options.published ?? true,
+    defaultTheme: options.defaultTheme,
     hasCustomConfig: false,
     editorTokenHash: options.editorTokenHash ?? null,
   });
@@ -929,6 +1194,7 @@ export async function setInvitationPagePublished(
   pageSlug: string,
   published: boolean,
   options: {
+    defaultTheme?: InvitationThemeKey;
     editorTokenHash?: string | null;
   } = {}
 ) {
@@ -948,6 +1214,7 @@ export async function setInvitationPagePublished(
 
   await upsertRegistryRecord(firestore, pageSlug, {
     published,
+    defaultTheme: options.defaultTheme ?? existingRegistry?.defaultTheme,
     hasCustomConfig: existingRegistry?.hasCustomConfig ?? Boolean(existingConfig),
     editorTokenHash: options.editorTokenHash ?? null,
   });
@@ -1014,14 +1281,21 @@ export async function getInvitationPageBySlug(
 export async function getAllInvitationPages(
   options: InvitationPageLookupOptions = {}
 ): Promise<InvitationPageSummary[]> {
-  const seedPages = getAllWeddingPageSeeds().map((seed) =>
-    sanitizeHeartIconPlaceholdersDeep(createInvitationPageFromSeed(seed))
-  );
+  const includeSeedPages = options.includeSeedPages !== false;
+  const seedPages = includeSeedPages
+    ? getAllWeddingPageSeeds().map((seed) =>
+        sanitizeHeartIconPlaceholdersDeep(createInvitationPageFromSeed(seed))
+      )
+    : [];
 
   const firestore = await ensureFirestoreState();
   if (!firestore) {
     return options.includeSeedFallback === false ? [] : seedPages.map((page) =>
-      toInvitationPageSummary(page, { dataSource: 'seed', hasCustomConfig: false })
+      toInvitationPageSummary(page, {
+        dataSource: 'seed',
+        hasCustomConfig: false,
+        defaultTheme: DEFAULT_INVITATION_THEME,
+      })
     );
   }
 
@@ -1033,7 +1307,7 @@ export async function getAllInvitationPages(
     ]);
 
     const pageSlugs = new Set<string>([
-      ...getAllWeddingPageSeeds().map((seed) => seed.slug),
+      ...(includeSeedPages ? getAllWeddingPageSeeds().map((seed) => seed.slug) : []),
       ...registryMap.keys(),
       ...configMap.keys(),
     ]);
@@ -1055,6 +1329,8 @@ export async function getAllInvitationPages(
           {
             dataSource: sourceRecord.dataSource,
             hasCustomConfig: sourceRecord.hasCustomConfig,
+            defaultTheme:
+              registryMap.get(pageSlug)?.defaultTheme ?? DEFAULT_INVITATION_THEME,
           }
         );
       })
@@ -1074,6 +1350,13 @@ export async function getAllInvitationPages(
   }
 }
 
+export async function getAllManagedInvitationPages(): Promise<InvitationPageSummary[]> {
+  return getAllInvitationPages({
+    includeSeedPages: false,
+    includeSeedFallback: false,
+  });
+}
+
 export async function updateInvitationPageVisibility(
   pageSlug: string,
   payload: {
@@ -1091,6 +1374,7 @@ export async function updateInvitationPageVisibility(
   }
 
   const existingConfig = await getConfigByPageSlug(firestore, pageSlug);
+  const existingRegistry = await getRegistryByPageSlug(firestore, pageSlug);
 
   if (!seedPage && !existingConfig) {
     throw new Error('Unknown invitation page slug.');
@@ -1098,6 +1382,7 @@ export async function updateInvitationPageVisibility(
 
   await upsertRegistryRecord(firestore, pageSlug, {
     published: payload.published,
+    defaultTheme: existingRegistry?.defaultTheme,
     hasCustomConfig: Boolean(existingConfig),
   });
 

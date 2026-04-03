@@ -186,7 +186,7 @@ function WeddingInvitationPageBody(options: WeddingInvitationRouteOptions) {
     <WeddingKakaoShareButton
       title={themeDefinition.getShareTitle(readyState.pageConfig)}
       description={themeDefinition.getShareDescription(readyState.pageConfig)}
-      imageUrl={readyState.pageConfig.metadata.images.wedding}
+      imageUrl={readyState.mainImageUrl}
       pageSlug={options.slug}
       variant={themeDefinition.shareButtonVariant}
     />

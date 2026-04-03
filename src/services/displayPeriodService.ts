@@ -1,5 +1,5 @@
 import {
-  getAllInvitationPages,
+  getAllManagedInvitationPages,
   getInvitationPageBySlug,
   updateInvitationPageVisibility,
 } from '@/services/invitationPageService';
@@ -80,7 +80,7 @@ export const setDisplayPeriod = async (
 };
 
 export const getAllDisplayPeriods = async (): Promise<DisplayPeriod[]> => {
-  const pages = await getAllInvitationPages({ includeSeedFallback: true });
+  const pages = await getAllManagedInvitationPages();
 
   return pages
     .map(toDisplayPeriod)

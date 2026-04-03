@@ -10,17 +10,20 @@ import {
   writeAdminInvitationPreviewCache,
 } from '@/lib/adminInvitationPreviewCache';
 import {
+  createInvitationPageDraftFromSeed,
   deleteComment,
   getAllClientPasswords,
   getAllComments,
-  getAllInvitationPages,
+  getAllManagedInvitationPages,
   getAllMemoryPages,
+  getInvitationPageSeedTemplates,
   getCommentSummary,
   setClientPassword,
   syncClientPasswordAccess,
   type ClientPassword,
   type Comment,
   type CommentSummary,
+  type InvitationPageSeedTemplate,
   type InvitationPageSummary,
 } from '@/services';
 
@@ -167,6 +170,15 @@ export default function AdminPageClient() {
   const [savingPasswordPageSlug, setSavingPasswordPageSlug] = useState<string | null>(
     null
   );
+  const seedTemplates = useMemo<InvitationPageSeedTemplate[]>(
+    () => getInvitationPageSeedTemplates(),
+    []
+  );
+  const [createSeedSlug, setCreateSeedSlug] = useState(seedTemplates[0]?.slug ?? '');
+  const [createSlugBase, setCreateSlugBase] = useState(seedTemplates[0]?.slug ?? '');
+  const [createGroomName, setCreateGroomName] = useState(seedTemplates[0]?.groomName ?? '');
+  const [createBrideName, setCreateBrideName] = useState(seedTemplates[0]?.brideName ?? '');
+  const [creatingPage, setCreatingPage] = useState(false);
 
   const [pagesLoaded, setPagesLoaded] = useState(false);
   const [commentsLoaded, setCommentsLoaded] = useState(false);
@@ -209,7 +221,7 @@ export default function AdminPageClient() {
   const fetchPages = useCallback(async () => {
     setPagesLoading(true);
     try {
-      const nextPages = await getAllInvitationPages({ includeSeedFallback: true });
+      const nextPages = await getAllManagedInvitationPages();
       setPages(nextPages);
       setPagesLoaded(true);
       writeAdminInvitationPreviewCache(nextPages);
@@ -263,7 +275,7 @@ export default function AdminPageClient() {
     setSummaryLoading(true);
     try {
       const [nextPages, memoryPages, nextCommentSummary] = await Promise.all([
-        getAllInvitationPages({ includeSeedFallback: true }),
+        getAllManagedInvitationPages(),
         getAllMemoryPages(),
         getCommentSummary(RECENT_COMMENT_DAYS),
       ]);
@@ -282,6 +294,22 @@ export default function AdminPageClient() {
       setSummaryLoading(false);
     }
   }, []);
+
+  const applyCreateTemplate = useCallback(
+    (seedSlug: string) => {
+      const template =
+        seedTemplates.find((entry) => entry.slug === seedSlug) ?? seedTemplates[0] ?? null;
+      if (!template) {
+        return;
+      }
+
+      setCreateSeedSlug(template.slug);
+      setCreateSlugBase(template.slug);
+      setCreateGroomName(template.groomName);
+      setCreateBrideName(template.brideName);
+    },
+    [seedTemplates]
+  );
 
   const handleLogin = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -361,6 +389,55 @@ export default function AdminPageClient() {
       });
     } finally {
       setSavingPasswordPageSlug(null);
+    }
+  };
+
+  const handleCreatePage = async () => {
+    if (!createSeedSlug) {
+      showToast({
+        title: '초기 템플릿을 먼저 선택해 주세요.',
+        tone: 'error',
+      });
+      return;
+    }
+
+    if (!createSlugBase.trim() || !createGroomName.trim() || !createBrideName.trim()) {
+      showToast({
+        title: 'URL 기본값과 신랑·신부 이름을 모두 입력해 주세요.',
+        tone: 'error',
+      });
+      return;
+    }
+
+    setCreatingPage(true);
+
+    try {
+      const created = await createInvitationPageDraftFromSeed({
+        seedSlug: createSeedSlug,
+        slugBase: createSlugBase,
+        groomName: createGroomName,
+        brideName: createBrideName,
+        published: false,
+      });
+
+      await fetchSummarySources();
+      showToast({
+        title: '새 페이지 초안을 만들었습니다.',
+        message: `${created.slug}`,
+        tone: 'success',
+      });
+
+      if (typeof window !== 'undefined') {
+        window.open(`/page-editor/${created.slug}`, '_blank', 'noopener,noreferrer');
+      }
+    } catch (createError) {
+      console.error(createError);
+      showToast({
+        title: '새 페이지를 만들지 못했습니다.',
+        tone: 'error',
+      });
+    } finally {
+      setCreatingPage(false);
     }
   };
 
@@ -768,6 +845,17 @@ export default function AdminPageClient() {
               pageStatusFilter={pageStatusFilter}
               pageSort={pageSort}
               chips={pageFilterChips}
+              seedTemplates={seedTemplates}
+              createSeedSlug={createSeedSlug}
+              createSlugBase={createSlugBase}
+              createGroomName={createGroomName}
+              createBrideName={createBrideName}
+              creatingPage={creatingPage}
+              onCreateSeedSlugChange={applyCreateTemplate}
+              onCreateSlugBaseChange={setCreateSlugBase}
+              onCreateGroomNameChange={setCreateGroomName}
+              onCreateBrideNameChange={setCreateBrideName}
+              onCreatePage={() => void handleCreatePage()}
               onQueryChange={updateQuery}
               onRefresh={() => void fetchPages()}
             />

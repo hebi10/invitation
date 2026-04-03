@@ -1,8 +1,10 @@
 'use client';
 
-import { type ReactNode, useEffect, useMemo, useState } from 'react';
+import { type ChangeEvent, type ReactNode, useEffect, useMemo, useRef, useState } from 'react';
 
 import { useAdmin } from '@/contexts';
+import { USE_FIREBASE } from '@/lib/firebase';
+import { uploadPageEditorImage } from '@/services/imageService';
 import {
   getEditableInvitationPageConfig,
   restoreInvitationPageConfig,
@@ -39,11 +41,13 @@ import {
 
 const TOKEN_STORAGE_PREFIX = 'page-editor-token:';
 const MAX_REPEATABLE_ITEMS = 3;
+const MAX_GALLERY_IMAGES = 3;
 const AUTOSAVE_DELAY_MS = 1500;
 
 type NoticeState = { tone: NoticeTone; message: string } | null;
 type SaveState = 'idle' | 'autosaving' | 'saving' | 'saved' | 'error' | 'publishing';
 type WorkspaceView = 'form' | 'preview';
+type UploadFieldKind = 'wedding' | 'favicon' | 'gallery';
 type EditorStepKey =
   | 'basic'
   | 'schedule'
@@ -386,6 +390,11 @@ function buildStepReviews(formState: InvitationPageSeed | null): Record<EditorSt
   if (!isValidUrl(formState.metadata.images.wedding)) {
     galleryWarnings.push('대표 이미지 주소 형식을 다시 확인해 주세요.');
   }
+  if (
+    (formState.pageData?.galleryImages ?? []).some((imageUrl) => !isValidUrl(imageUrl))
+  ) {
+    galleryWarnings.push('갤러리 이미지 주소 형식을 다시 확인해 주세요.');
+  }
 
   const venueWarnings: string[] = [];
   if (!isValidPhone(formState.pageData?.ceremonyContact)) {
@@ -592,8 +601,13 @@ export default function PageEditorClient({
   const [isStepMenuOpen, setIsStepMenuOpen] = useState(false);
   const [activeStep, setActiveStep] = useState<EditorStepKey | null>('basic');
   const [highlightedStep, setHighlightedStep] = useState<EditorStepKey | null>('basic');
+  const [uploadingField, setUploadingField] = useState<UploadFieldKind | null>(null);
+  const coverUploadInputRef = useRef<HTMLInputElement | null>(null);
+  const faviconUploadInputRef = useRef<HTMLInputElement | null>(null);
+  const galleryUploadInputRef = useRef<HTMLInputElement | null>(null);
 
   const canEdit = isAdminLoggedIn || Boolean(editorTokenHash);
+  const canUploadImages = USE_FIREBASE && canEdit;
   const title = buildEditorTitle(
     formState?.couple.groom.name ?? initialGroomName,
     formState?.couple.bride.name ?? initialBrideName,
@@ -1179,6 +1193,207 @@ export default function PageEditorClient({
     });
   };
 
+  const handleGalleryImageChange = (index: number, value: string) => {
+    updateForm((draft) => {
+      if (!draft.pageData) {
+        return;
+      }
+
+      const nextGalleryImages = [...(draft.pageData.galleryImages ?? [])];
+      nextGalleryImages[index] = value;
+      draft.pageData.galleryImages = nextGalleryImages.slice(0, MAX_GALLERY_IMAGES);
+    });
+  };
+
+  const handleGalleryImageAdd = () => {
+    updateForm((draft) => {
+      if (!draft.pageData) {
+        return;
+      }
+
+      const nextGalleryImages = [...(draft.pageData.galleryImages ?? [])];
+      if (nextGalleryImages.length >= MAX_GALLERY_IMAGES) {
+        return;
+      }
+
+      nextGalleryImages.push('');
+      draft.pageData.galleryImages = nextGalleryImages;
+    });
+  };
+
+  const handleGalleryImageRemove = (index: number) => {
+    updateForm((draft) => {
+      if (!draft.pageData) {
+        return;
+      }
+
+      draft.pageData.galleryImages = (draft.pageData.galleryImages ?? []).filter(
+        (_, imageIndex) => imageIndex !== index
+      );
+    });
+  };
+
+  const handleGalleryImageMove = (index: number, direction: 'up' | 'down') => {
+    updateForm((draft) => {
+      if (!draft.pageData) {
+        return;
+      }
+
+      const nextGalleryImages = [...(draft.pageData.galleryImages ?? [])];
+      const targetIndex = direction === 'up' ? index - 1 : index + 1;
+
+      if (
+        index < 0 ||
+        targetIndex < 0 ||
+        index >= nextGalleryImages.length ||
+        targetIndex >= nextGalleryImages.length
+      ) {
+        return;
+      }
+
+      [nextGalleryImages[index], nextGalleryImages[targetIndex]] = [
+        nextGalleryImages[targetIndex],
+        nextGalleryImages[index],
+      ];
+      draft.pageData.galleryImages = nextGalleryImages;
+    });
+  };
+
+  const handleTriggerImagePicker = (field: UploadFieldKind) => {
+    if (!canUploadImages) {
+      setNotice({
+        tone: 'error',
+        message: '이미지 업로드는 Firebase가 켜진 환경에서 편집 권한이 있을 때만 사용할 수 있습니다.',
+      });
+      return;
+    }
+
+    if (field === 'wedding') {
+      coverUploadInputRef.current?.click();
+      return;
+    }
+
+    if (field === 'favicon') {
+      faviconUploadInputRef.current?.click();
+      return;
+    }
+
+    galleryUploadInputRef.current?.click();
+  };
+
+  const handleUploadAsset = async (
+    field: UploadFieldKind,
+    files: File[]
+  ) => {
+    if (!formState || files.length === 0) {
+      return;
+    }
+
+    if (!canUploadImages) {
+      setNotice({
+        tone: 'error',
+        message: '이미지 업로드를 사용할 수 없는 환경입니다.',
+      });
+      return;
+    }
+
+    const tokenForUpload = isAdminLoggedIn ? null : editorTokenHash;
+    if (!isAdminLoggedIn && !tokenForUpload) {
+      setNotice({
+        tone: 'error',
+        message: '이미지 업로드 전에 먼저 페이지 비밀번호를 확인해 주세요.',
+      });
+      return;
+    }
+
+    setUploadingField(field);
+
+    try {
+      if (field === 'gallery') {
+        const currentGalleryCount = formState.pageData?.galleryImages?.length ?? 0;
+        const remainingSlots = MAX_GALLERY_IMAGES - currentGalleryCount;
+
+        if (remainingSlots <= 0) {
+          setNotice({
+            tone: 'error',
+            message: `갤러리 이미지는 최대 ${MAX_GALLERY_IMAGES}장까지 설정할 수 있습니다.`,
+          });
+          return;
+        }
+
+        const uploadTargets = files.slice(0, remainingSlots);
+        const uploadedImages = await Promise.all(
+          uploadTargets.map((file) =>
+            uploadPageEditorImage(file, slug, 'gallery', tokenForUpload)
+          )
+        );
+
+        updateForm((draft) => {
+          if (!draft.pageData) {
+            return;
+          }
+
+          draft.pageData.galleryImages = [
+            ...(draft.pageData.galleryImages ?? []),
+            ...uploadedImages.map((image) => image.url),
+          ].slice(0, MAX_GALLERY_IMAGES);
+        });
+
+        setNotice({
+          tone: 'success',
+          message:
+            files.length > uploadTargets.length
+              ? `갤러리 이미지 ${uploadTargets.length}장만 추가했습니다. 최대 ${MAX_GALLERY_IMAGES}장까지 설정할 수 있습니다.`
+              : `갤러리 이미지 ${uploadedImages.length}장을 추가했습니다. 자동 저장이 곧 진행됩니다.`,
+        });
+        return;
+      }
+
+      const uploadTarget = files[0];
+      const uploadedImage = await uploadPageEditorImage(
+        uploadTarget,
+        slug,
+        field === 'wedding' ? 'cover' : 'favicon',
+        tokenForUpload
+      );
+
+      updateForm((draft) => {
+        draft.metadata.images[field] = uploadedImage.url;
+      });
+
+      setNotice({
+        tone: 'success',
+        message:
+          field === 'wedding'
+            ? '대표 이미지를 업로드했습니다. 자동 저장이 곧 진행됩니다.'
+            : '파비콘을 업로드했습니다. 자동 저장이 곧 진행됩니다.',
+      });
+    } catch (error) {
+      console.error('[PageEditorClient] failed to upload image asset', error);
+      setNotice({
+        tone: 'error',
+        message: '이미지 업로드에 실패했습니다. Storage 규칙과 네트워크 상태를 확인해 주세요.',
+      });
+    } finally {
+      setUploadingField((current) => (current === field ? null : current));
+    }
+  };
+
+  const handleSingleImageUploadChange = async (
+    field: 'wedding' | 'favicon',
+    event: ChangeEvent<HTMLInputElement>
+  ) => {
+    const files = Array.from(event.target.files ?? []);
+    event.target.value = '';
+    await handleUploadAsset(field, files);
+  };
+
+  const handleGalleryUploadChange = async (event: ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(event.target.files ?? []);
+    event.target.value = '';
+    await handleUploadAsset('gallery', files);
+  };
+
   const handlePersonFieldChange = (
     role: PersonRole,
     field: 'name' | 'order' | 'phone',
@@ -1589,7 +1804,7 @@ export default function PageEditorClient({
 
           <div className={styles.actionColumn}>
             <div className={styles.actionGroup}>
-              <span className={styles.actionGroupLabel}>진행</span>
+              <span className={styles.actionGroupLabel}>다음 진행으로 넘어가기</span>
               <div className={styles.actionRow}>
                 <button
                   type="button"
@@ -2437,6 +2652,11 @@ export default function PageEditorClient({
       return null;
     }
 
+    const galleryImages = formState.pageData?.galleryImages ?? [];
+    const canAddGalleryField = galleryImages.length < MAX_GALLERY_IMAGES;
+    const isUploadingCover = uploadingField === 'wedding';
+    const isUploadingGallery = uploadingField === 'gallery';
+
     return (
       <section className={styles.section}>
         <div className={styles.sectionHeader}>
@@ -2446,17 +2666,65 @@ export default function PageEditorClient({
               <span className={styles.fieldBadgeOptional}>선택</span>
             </div>
             <p className={styles.sectionDescription}>
-              대표 이미지는 첫 화면과 링크 공유 카드에 함께 사용됩니다. 추가 갤러리 사진은 별도 이미지 관리 기준을 따릅니다.
+              대표 이미지는 첫 화면과 공유 카드에 사용되고, 갤러리 이미지는 페이지 사진 영역에 순서대로 노출됩니다.
             </p>
           </div>
         </div>
 
-        <div className={styles.fieldGrid}>
+        <div className={styles.subCard}>
+          <div className={styles.subCardHeader}>
+            <div>
+              <h3 className={styles.subCardTitle}>대표 이미지</h3>
+              <p className={styles.subCardDescription}>
+                표지, 공유 카드, 일부 미리보기에서 먼저 보여줄 이미지를 지정합니다.
+              </p>
+            </div>
+            <div className={styles.inlineField}>
+              <input
+                ref={coverUploadInputRef}
+                className={styles.hiddenFileInput}
+                type="file"
+                accept="image/*"
+                onChange={(event) => void handleSingleImageUploadChange('wedding', event)}
+              />
+              <button
+                type="button"
+                className={styles.secondaryButton}
+                onClick={() => handleTriggerImagePicker('wedding')}
+                disabled={!canUploadImages || isUploadingCover}
+              >
+                {isUploadingCover ? '업로드 중..' : '이미지 업로드'}
+              </button>
+              <button
+                type="button"
+                className={styles.secondaryButton}
+                onClick={() => handleMetadataFieldChange('images', 'wedding', '')}
+                disabled={!formState.metadata.images.wedding}
+              >
+                비우기
+              </button>
+            </div>
+          </div>
+
+          <div className={styles.assetUploadPreview}>
+            {formState.metadata.images.wedding ? (
+              <img
+                className={styles.assetPreviewImage}
+                src={formState.metadata.images.wedding}
+                alt="대표 이미지 미리보기"
+              />
+            ) : (
+              <div className={styles.assetPreviewPlaceholder}>
+                대표 이미지를 업로드하면 여기에서 바로 확인할 수 있습니다.
+              </div>
+            )}
+          </div>
+
           <label className={`${styles.field} ${styles.fieldWide}`}>
             {renderFieldMeta(
               '대표 이미지 주소',
               'optional',
-              '공개 페이지 표지와 공유 카드에 함께 쓰일 대표 이미지를 입력해 주세요.'
+              '직접 업로드하지 않아도 외부 이미지 주소를 붙여 넣어 사용할 수 있습니다.'
             )}
             <input
               className={styles.input}
@@ -2469,15 +2737,124 @@ export default function PageEditorClient({
           </label>
         </div>
 
+        <div className={styles.subCard}>
+          <div className={styles.subCardHeader}>
+            <div>
+              <h3 className={styles.subCardTitle}>갤러리 이미지</h3>
+              <p className={styles.subCardDescription}>
+                고객이 보는 사진 순서대로 최대 {MAX_GALLERY_IMAGES}장까지 배치할 수 있습니다.
+              </p>
+              <p className={styles.countText}>
+                현재 {galleryImages.length} / {MAX_GALLERY_IMAGES}장
+              </p>
+            </div>
+            <div className={styles.inlineField}>
+              <input
+                ref={galleryUploadInputRef}
+                className={styles.hiddenFileInput}
+                type="file"
+                accept="image/*"
+                multiple
+                onChange={(event) => void handleGalleryUploadChange(event)}
+              />
+              <button
+                type="button"
+                className={styles.secondaryButton}
+                onClick={() => handleTriggerImagePicker('gallery')}
+                disabled={!canUploadImages || !canAddGalleryField || isUploadingGallery}
+              >
+                {isUploadingGallery ? '업로드 중..' : '갤러리 업로드'}
+              </button>
+              <button
+                type="button"
+                className={styles.secondaryButton}
+                onClick={handleGalleryImageAdd}
+                disabled={!canAddGalleryField}
+              >
+                URL 직접 추가
+              </button>
+            </div>
+          </div>
+
+          <div className={styles.stackColumn}>
+            {galleryImages.length > 0 ? (
+              galleryImages.map((imageUrl, index) => (
+                <div key={`gallery-image-${index}`} className={styles.assetListItem}>
+                  <div className={styles.assetListPreview}>
+                    {imageUrl ? (
+                      <img
+                        className={styles.assetListImage}
+                        src={imageUrl}
+                        alt={`갤러리 이미지 ${index + 1}`}
+                      />
+                    ) : (
+                      <div className={styles.assetListPlaceholder}>이미지 {index + 1}</div>
+                    )}
+                  </div>
+                  <div className={styles.assetListBody}>
+                    <div className={styles.assetListHeader}>
+                      <strong className={styles.assetListTitle}>갤러리 이미지 {index + 1}</strong>
+                      <div className={styles.assetListActions}>
+                        <button
+                          type="button"
+                          className={styles.textButton}
+                          onClick={() => handleGalleryImageMove(index, 'up')}
+                          disabled={index === 0}
+                        >
+                          위로
+                        </button>
+                        <button
+                          type="button"
+                          className={styles.textButton}
+                          onClick={() => handleGalleryImageMove(index, 'down')}
+                          disabled={index === galleryImages.length - 1}
+                        >
+                          아래로
+                        </button>
+                        <button
+                          type="button"
+                          className={styles.textButton}
+                          onClick={() => handleGalleryImageRemove(index)}
+                        >
+                          제거
+                        </button>
+                      </div>
+                    </div>
+                    <label className={styles.field}>
+                      {renderFieldMeta(
+                        '이미지 주소',
+                        'optional',
+                        '업로드 후 자동 입력되며, 필요하면 외부 이미지 주소로 직접 바꿀 수 있습니다.'
+                      )}
+                      <input
+                        className={styles.input}
+                        value={imageUrl}
+                        placeholder="예: https://.../gallery-01.jpg"
+                        onChange={(event) =>
+                          handleGalleryImageChange(index, event.target.value)
+                        }
+                      />
+                    </label>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div className={styles.emptyCard}>
+                아직 등록된 갤러리 이미지가 없습니다. 업로드하거나 URL을 직접 추가해 주세요.
+              </div>
+            )}
+          </div>
+        </div>
+
         <div className={styles.guideListCard}>
-          <strong className={styles.guideTitle}>업로드 가이드</strong>
+          <strong className={styles.guideTitle}>이미지 가이드</strong>
           <ul className={styles.guideBulletList}>
             {GALLERY_GUIDE_ITEMS.map((item) => (
               <li key={item}>{item}</li>
             ))}
           </ul>
           <p className={styles.sectionDescription}>
-            여러 장의 갤러리 이미지는 업로드된 사진 순서를 따르며, 이 화면에서는 대표 이미지와 공유 이미지를 먼저 정리합니다.
+            이제 파일 이름 규칙이 아니라 설정된 이미지 주소 기준으로 노출합니다. 기존 Firestore 문서도 여기서 바로 수정해 새 구조로 저장할 수 있습니다.
           </p>
         </div>
       </section>
@@ -2610,12 +2987,50 @@ export default function PageEditorClient({
             />
           </label>
 
-          <label className={`${styles.field} ${styles.fieldWide}`}>
+          <div className={`${styles.field} ${styles.fieldWide}`}>
             {renderFieldMeta(
               '파비콘 주소',
               'required',
               '브라우저 탭 아이콘으로 사용됩니다.'
             )}
+            <div className={styles.assetInlineActions}>
+              <input
+                ref={faviconUploadInputRef}
+                className={styles.hiddenFileInput}
+                type="file"
+                accept="image/*"
+                onChange={(event) => void handleSingleImageUploadChange('favicon', event)}
+              />
+              <button
+                type="button"
+                className={styles.secondaryButton}
+                onClick={() => handleTriggerImagePicker('favicon')}
+                disabled={!canUploadImages || uploadingField === 'favicon'}
+              >
+                {uploadingField === 'favicon' ? '업로드 중..' : '파비콘 업로드'}
+              </button>
+              <button
+                type="button"
+                className={styles.secondaryButton}
+                onClick={() => handleMetadataFieldChange('images', 'favicon', '')}
+                disabled={!formState.metadata.images.favicon}
+              >
+                비우기
+              </button>
+            </div>
+            <div className={styles.faviconPreviewRow}>
+              {formState.metadata.images.favicon ? (
+                <img
+                  className={styles.faviconPreviewImage}
+                  src={formState.metadata.images.favicon}
+                  alt="파비콘 미리보기"
+                />
+              ) : (
+                <div className={styles.assetPreviewPlaceholder}>
+                  파비콘을 업로드하면 검색/공유 미리보기에도 함께 반영됩니다.
+                </div>
+              )}
+            </div>
             <input
               className={styles.input}
               value={formState.metadata.images.favicon}
@@ -2624,7 +3039,7 @@ export default function PageEditorClient({
                 handleMetadataFieldChange('images', 'favicon', event.target.value)
               }
             />
-          </label>
+          </div>
         </div>
 
         <details className={styles.detailsGroup}>

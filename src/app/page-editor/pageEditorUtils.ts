@@ -109,6 +109,7 @@ export function normalizeFormConfig(config: InvitationPageSeed): InvitationPageS
       ceremonyTime: nextConfig.pageData?.ceremonyTime ?? '',
       ceremonyAddress: nextConfig.pageData?.ceremonyAddress ?? '',
       ceremonyContact: nextConfig.pageData?.ceremonyContact ?? '',
+      galleryImages: [...(nextConfig.pageData?.galleryImages ?? [])],
       greetingMessage: nextConfig.pageData?.greetingMessage ?? '',
       greetingAuthor,
       mapUrl: nextConfig.pageData?.mapUrl ?? '',
@@ -160,6 +161,10 @@ export function prepareConfigForSave(
       (item) =>
         item.bank.trim() || item.accountNumber.trim() || item.accountHolder.trim()
     ) ?? [];
+  const galleryImages =
+    nextConfig.pageData?.galleryImages
+      ?.map((imageUrl) => imageUrl.trim())
+      .filter(Boolean) ?? [];
 
   return {
     ...nextConfig,
@@ -175,6 +180,7 @@ export function prepareConfigForSave(
     pageData: {
       ...nextConfig.pageData,
       venueName: nextConfig.pageData?.venueName?.trim() || nextConfig.venue,
+      galleryImages,
       greetingAuthor:
         nextConfig.pageData?.greetingAuthor?.trim() ||
         `${nextConfig.couple.groom.name.trim()} · ${nextConfig.couple.bride.name.trim()}`,

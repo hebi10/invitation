@@ -17,6 +17,9 @@
     "migrate:comments:guestbooks": "node scripts/migrate-comments-to-guestbooks.mjs analyze",
     "migrate:comments:guestbooks:execute": "node scripts/migrate-comments-to-guestbooks.mjs migrate --execute",
     "migrate:comments:guestbooks:validate": "node scripts/migrate-comments-to-guestbooks.mjs validate",
+    "seed:invitation-pages": "node --experimental-strip-types --loader ./scripts/ts-path-loader.mjs scripts/seed-invitation-pages.mjs analyze",
+    "seed:invitation-pages:execute": "node --experimental-strip-types --loader ./scripts/ts-path-loader.mjs scripts/seed-invitation-pages.mjs seed --execute",
+    "seed:invitation-pages:validate": "node --experimental-strip-types --loader ./scripts/ts-path-loader.mjs scripts/seed-invitation-pages.mjs validate",
     "export": "next build",
     "deploy:firebase": "npm run build:memory-metadata-strict && firebase deploy"
   },

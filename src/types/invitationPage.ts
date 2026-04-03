@@ -46,6 +46,7 @@ export interface InvitationPageData {
   ceremonyTime?: string;
   ceremonyAddress?: string;
   ceremonyContact?: string;
+  galleryImages?: string[];
   greetingMessage?: string;
   greetingAuthor?: string;
   mapUrl?: string;
@@ -79,6 +80,8 @@ export interface InvitationPageVariantLink {
   path: string;
   displayName: string;
 }
+
+export type InvitationThemeKey = 'emotional' | 'simple';
 
 export interface InvitationPageVariants {
   emotional?: InvitationPageVariantLink;

@@ -9,7 +9,7 @@ import {
 } from '@/app/admin/_components';
 import { useAdmin } from '@/contexts';
 import {
-  getAllInvitationPages,
+  getAllManagedInvitationPages,
   getComments,
   type Comment,
   type InvitationPageSummary,
@@ -112,7 +112,7 @@ export default function MemoryPageManager() {
       setError('');
 
       try {
-        const nextPages = await getAllInvitationPages({ includeSeedFallback: true });
+        const nextPages = await getAllManagedInvitationPages();
         if (cancelled) {
           return;
         }

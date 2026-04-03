@@ -238,6 +238,61 @@
   color: var(--admin-color-text-muted);
 }
 
+.createPanel {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 18px;
+  border: 1px solid var(--admin-color-border);
+  border-radius: var(--admin-radius-md);
+  background: linear-gradient(180deg, #ffffff 0%, #fbfdff 100%);
+  box-shadow: var(--admin-shadow-sm);
+}
+
+.createPanelHeader,
+.createPanelActions {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.createPanelTitle {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--admin-color-text);
+}
+
+.createPanelDescription,
+.createPanelMeta,
+.createPanelHint {
+  font-size: 0.85rem;
+  line-height: 1.65;
+  color: var(--admin-color-text-muted);
+}
+
+.createPanelHint {
+  display: inline-flex;
+  align-items: center;
+  min-height: 36px;
+  padding: 0 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(37, 99, 235, 0.12);
+  background: var(--admin-color-primary-soft);
+  color: var(--admin-color-primary);
+  white-space: nowrap;
+}
+
+.createPanelGrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.createPanelMeta {
+  max-width: 720px;
+}
+
 .shortcutStrip {
   display: flex;
   flex-wrap: wrap;
@@ -506,7 +561,9 @@
 
   .headerTopRow,
   .headerMain,
-  .sectionHeader {
+  .sectionHeader,
+  .createPanelHeader,
+  .createPanelActions {
     flex-direction: column;
     align-items: stretch;
   }
@@ -518,6 +575,10 @@
 
   .headerSummary {
     min-width: 0;
+  }
+
+  .createPanelGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
@@ -541,5 +602,13 @@
   .mobileList {
     display: grid;
     gap: 12px;
+  }
+
+  .createPanelGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .createPanelHint {
+    white-space: normal;
   }
 }

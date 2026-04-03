@@ -4,12 +4,24 @@ import { useEffect, useState } from 'react';
 import { getPageImages, type UploadedImage } from '@/services/imageService';
 import { preloadImages } from '@/utils/imageOptimization';
 
-export function usePageImages(pageSlug: string) {
+interface UsePageImagesOptions {
+  enabled?: boolean;
+}
+
+export function usePageImages(pageSlug: string, options: UsePageImagesOptions = {}) {
+  const enabled = options.enabled !== false;
   const [images, setImages] = useState<UploadedImage[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    if (!enabled || !pageSlug) {
+      setImages([]);
+      setLoading(false);
+      setError(null);
+      return;
+    }
+
     const loadImages = async () => {
       try {
         setLoading(true);
@@ -71,10 +83,8 @@ export function usePageImages(pageSlug: string) {
       }
     };
 
-    if (pageSlug) {
-      void loadImages();
-    }
-  }, [pageSlug]);
+    void loadImages();
+  }, [enabled, pageSlug]);
 
   return {
     images,

@@ -62,8 +62,8 @@ export default function WeddingKakaoShareButton({
 }: WeddingKakaoShareButtonProps) {
   const [isKakaoReady, setIsKakaoReady] = useState(false);
   const [feedbackMessage, setFeedbackMessage] = useState('');
-  const { mainImage } = usePageImages(pageSlug);
-  const shareImageUrl = mainImage?.url || imageUrl;
+  const { mainImage } = usePageImages(pageSlug, { enabled: !imageUrl });
+  const shareImageUrl = imageUrl || mainImage?.url;
   const variantStyle = buttonVariantStyles[variant];
   const kakaoAppKey = getPublicKakaoJavaScriptKey();
 

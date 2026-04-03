@@ -8,7 +8,11 @@ import {
   type WeddingPageConfig,
 } from '@/config/weddingPages';
 import { buildInvitationVariants } from '@/lib/invitationVariants';
-import type { InvitationPage, InvitationPageSeed } from '@/types/invitationPage';
+import type {
+  InvitationPage,
+  InvitationPageSeed,
+  InvitationThemeKey,
+} from '@/types/invitationPage';
 import { sanitizeHeartIconPlaceholdersDeep } from '@/utils/textSanitizers';
 
 import { getServerFirestore } from './firebaseAdmin';
@@ -27,6 +31,7 @@ type InvitationPageRegistryRecord = {
   docId: string;
   pageSlug: string;
   published: boolean;
+  defaultTheme: InvitationThemeKey;
   hasCustomConfig: boolean;
   editorTokenHash: string | null;
   createdAt: Date | null;
@@ -42,6 +47,7 @@ type BuiltInvitationPageRecord = {
 const DISPLAY_PERIOD_COLLECTION = 'display-periods';
 const PAGE_CONFIG_COLLECTION = 'invitation-page-configs';
 const PAGE_REGISTRY_COLLECTION = 'invitation-page-registry';
+const DEFAULT_INVITATION_THEME: InvitationThemeKey = 'emotional';
 
 function isRecord(value: unknown): value is Record<string, any> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -74,6 +80,13 @@ function readString(value: unknown, fallback = '') {
 
 function readNumber(value: unknown, fallback = 0) {
   return typeof value === 'number' && Number.isFinite(value) ? value : fallback;
+}
+
+function normalizeInvitationTheme(
+  value: unknown,
+  fallback: InvitationThemeKey = DEFAULT_INVITATION_THEME
+): InvitationThemeKey {
+  return value === 'simple' ? 'simple' : fallback;
 }
 
 function normalizePageSlugInput(value: unknown) {
@@ -135,6 +148,7 @@ function normalizeRegistryRecord(
     docId,
     pageSlug,
     published: data.published !== false,
+    defaultTheme: normalizeInvitationTheme(data.defaultTheme),
     hasCustomConfig: data.hasCustomConfig === true,
     editorTokenHash:
       typeof data.editorTokenHash === 'string' && data.editorTokenHash.trim()
@@ -244,6 +258,11 @@ function mergeInvitationPageSeed(
     ? {
         ...(base?.pageData ?? {}),
         ...pageDataInput,
+        galleryImages: Array.isArray(pageDataInput.galleryImages)
+          ? pageDataInput.galleryImages.filter(
+              (value): value is string => typeof value === 'string'
+            )
+          : base?.pageData?.galleryImages,
         kakaoMap: pageDataInput.kakaoMap
           ? {
               ...(base?.pageData?.kakaoMap ?? {}),
@@ -572,6 +591,26 @@ export async function getServerInvitationPageBySlug(pageSlug: string | null | un
   }
 
   return getServerInvitationPageBySlugCached(normalizedPageSlug);
+}
+
+export async function getServerInvitationPageDefaultThemeBySlug(
+  pageSlug: string | null | undefined
+) {
+  const normalizedPageSlug = normalizePageSlugInput(pageSlug);
+  if (!normalizedPageSlug) {
+    return DEFAULT_INVITATION_THEME;
+  }
+
+  try {
+    const registryRecord = await getRegistryByPageSlug(normalizedPageSlug);
+    return registryRecord?.defaultTheme ?? DEFAULT_INVITATION_THEME;
+  } catch (error) {
+    console.error(
+      '[invitationPageServerService] failed to load invitation default theme',
+      error
+    );
+    return DEFAULT_INVITATION_THEME;
+  }
 }
 
 export async function getServerInvitationPageSampleBySlug(

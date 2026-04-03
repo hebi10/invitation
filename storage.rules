@@ -8,14 +8,39 @@ service firebase.storage {
         firestore.get(/databases/(default)/documents/admin-users/$(request.auth.uid)).data.enabled != false;
     }
 
-    match /wedding-images/{allPaths=**} {
+    function hasClientAccess(pageSlug, editorTokenHash) {
+      return editorTokenHash is string &&
+        firestore.exists(/databases/(default)/documents/client-access/$(pageSlug)) &&
+        firestore.get(/databases/(default)/documents/client-access/$(pageSlug)).data.editorTokenHash == editorTokenHash;
+    }
+
+    function isDeleteOperation() {
+      return request.resource == null;
+    }
+
+    function isValidClientImageWrite(pageSlug) {
+      return !isDeleteOperation() &&
+        request.resource.size < 10 * 1024 * 1024 &&
+        request.resource.contentType.matches('image/.*') &&
+        request.resource.metadata.editorTokenHash is string &&
+        hasClientAccess(pageSlug, request.resource.metadata.editorTokenHash);
+    }
+
+    function isValidClientImageDelete(pageSlug) {
+      return isDeleteOperation() &&
+        resource != null &&
+        resource.metadata.editorTokenHash is string &&
+        hasClientAccess(pageSlug, resource.metadata.editorTokenHash);
+    }
+
+    match /wedding-images/{pageSlug}/{allPaths=**} {
       allow read: if true;
-      allow write, delete: if isAdmin();
+      allow write: if isAdmin() || isValidClientImageWrite(pageSlug) || isValidClientImageDelete(pageSlug);
     }
 
     match /memory-images/{allPaths=**} {
       allow read: if true;
-      allow write, delete: if isAdmin();
+      allow write: if isAdmin();
     }
 
     match /{allPaths=**} {

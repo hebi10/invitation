@@ -30,6 +30,9 @@ export function buildPreviewPage(
     variants: buildInvitationVariants(slug, formState.displayName),
     pageData: {
       ...formState.pageData,
+      galleryImages: (formState.pageData?.galleryImages ?? [])
+        .map((imageUrl) => imageUrl.trim())
+        .filter(Boolean),
       venueName: formState.pageData?.venueName || formState.venue,
       venueGuide: (formState.pageData?.venueGuide ?? []).filter(hasGuideContent),
       wreathGuide: (formState.pageData?.wreathGuide ?? []).filter(hasGuideContent),
@@ -66,5 +69,9 @@ export function buildWeddingDate(page: InvitationPage) {
 }
 
 export function getPreviewImages(page: InvitationPage) {
+  if (page.pageData?.galleryImages?.length) {
+    return page.pageData.galleryImages;
+  }
+
   return page.metadata.images.wedding ? [page.metadata.images.wedding] : [];
 }

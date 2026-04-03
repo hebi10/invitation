@@ -1,7 +1,10 @@
 import { notFound } from 'next/navigation';
 
 import { WeddingInvitationRoutePage } from '@/app/_components/WeddingInvitationPage';
-import { getServerInvitationPageBySlug } from '@/server/invitationPageServerService';
+import {
+  getServerInvitationPageBySlug,
+  getServerInvitationPageDefaultThemeBySlug,
+} from '@/server/invitationPageServerService';
 
 export const dynamic = 'force-dynamic';
 
@@ -11,18 +14,21 @@ export default async function WeddingInvitationEmotionalPage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const page = await getServerInvitationPageBySlug(slug);
+  const [page, defaultTheme] = await Promise.all([
+    getServerInvitationPageBySlug(slug),
+    getServerInvitationPageDefaultThemeBySlug(slug),
+  ]);
+  const theme = defaultTheme === 'simple' ? 'simple' : 'emotional';
 
-  if (!page?.variants.emotional?.available) {
+  if (!page?.variants[theme]?.available) {
     notFound();
   }
 
   return (
     <WeddingInvitationRoutePage
       slug={slug}
-      theme="emotional"
+      theme={theme}
       initialPageConfig={page}
     />
   );
 }
-

@@ -7,6 +7,14 @@ export interface UploadedImage {
   uploadedAt: Date;
 }
 
+export type PageEditorImageAssetKind = 'cover' | 'favicon' | 'gallery';
+
+interface UploadImageOptions {
+  preserveFileName?: boolean;
+  assetKind?: PageEditorImageAssetKind;
+  editorTokenHash?: string | null;
+}
+
 const USE_FIREBASE = process.env.NEXT_PUBLIC_USE_FIREBASE === 'true';
 const imageCache = new Map<string, UploadedImage[]>();
 const CACHE_DURATION = 5 * 60 * 1000;
@@ -57,21 +65,78 @@ const initFirebase = async () => {
   }
 };
 
+function sanitizeFileNameSegment(value: string) {
+  return value
+    .trim()
+    .toLowerCase()
+    .normalize('NFKD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9.-]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .replace(/-{2,}/g, '-');
+}
+
+function buildStoredFileName(
+  fileName: string,
+  options: UploadImageOptions = {}
+) {
+  if (options.preserveFileName !== false) {
+    return fileName;
+  }
+
+  const extensionIndex = fileName.lastIndexOf('.');
+  const extension =
+    extensionIndex >= 0 ? sanitizeFileNameSegment(fileName.slice(extensionIndex + 1)) : '';
+  const timestamp = Date.now();
+  const randomSuffix = Math.random().toString(36).slice(2, 8);
+  const prefix = sanitizeFileNameSegment(options.assetKind ?? 'image') || 'image';
+
+  return extension
+    ? `${prefix}-${timestamp}-${randomSuffix}.${extension}`
+    : `${prefix}-${timestamp}-${randomSuffix}`;
+}
+
+function buildUploadMetadata(
+  pageSlug: string,
+  sourceFile: File,
+  options: UploadImageOptions = {}
+) {
+  const metadata: Record<string, string> = {
+    pageSlug,
+    originalFileName: sourceFile.name,
+  };
+
+  if (options.assetKind) {
+    metadata.assetKind = options.assetKind;
+  }
+
+  if (options.editorTokenHash) {
+    metadata.editorTokenHash = options.editorTokenHash;
+  }
+
+  return {
+    contentType: sourceFile.type || 'image/jpeg',
+    customMetadata: metadata,
+  };
+}
+
 export const uploadImage = async (
   file: File,
-  pageSlug: string
+  pageSlug: string,
+  options: UploadImageOptions = {}
 ): Promise<UploadedImage> => {
   const optimizedFile = await optimizeUploadImage(file, {
     maxWidth: 2200,
     maxHeight: 2200,
     quality: 0.82,
   });
+  const storedFileName = buildStoredFileName(optimizedFile.name, options);
 
   if (!USE_FIREBASE) {
     return {
-      name: optimizedFile.name,
-      url: `/images/${optimizedFile.name}`,
-      path: `wedding-images/${pageSlug}/${optimizedFile.name}`,
+      name: storedFileName,
+      url: `/images/${storedFileName}`,
+      path: `wedding-images/${pageSlug}/${storedFileName}`,
       uploadedAt: new Date(),
     };
   }
@@ -83,13 +148,17 @@ export const uploadImage = async (
   }
 
   try {
-    const imagePath = `wedding-images/${pageSlug}/${optimizedFile.name}`;
+    const imagePath = `wedding-images/${pageSlug}/${storedFileName}`;
     const imageRef = firebaseModules.ref(firebaseModules.storage, imagePath);
-    const snapshot = await firebaseModules.uploadBytes(imageRef, optimizedFile);
+    const snapshot = await firebaseModules.uploadBytes(
+      imageRef,
+      optimizedFile,
+      buildUploadMetadata(pageSlug, file, options)
+    );
     const downloadURL = await firebaseModules.getDownloadURL(snapshot.ref);
 
     return {
-      name: optimizedFile.name,
+      name: storedFileName,
       url: downloadURL,
       path: imagePath,
       uploadedAt: new Date(),
@@ -99,6 +168,18 @@ export const uploadImage = async (
     throw new Error('이미지 업로드에 실패했습니다.');
   }
 };
+
+export const uploadPageEditorImage = async (
+  file: File,
+  pageSlug: string,
+  assetKind: PageEditorImageAssetKind,
+  editorTokenHash?: string | null
+) =>
+  uploadImage(file, pageSlug, {
+    preserveFileName: false,
+    assetKind,
+    editorTokenHash,
+  });
 
 export const getImagesByPage = async (
   pageSlug: string

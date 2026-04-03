@@ -7,7 +7,7 @@ import {
   uploadImage,
   deleteImage,
   getAllPageImages,
-  getAllInvitationPages,
+  getAllManagedInvitationPages,
   type InvitationPageSummary,
   type UploadedImage,
 } from '@/services';
@@ -42,7 +42,7 @@ export default function ImageManager() {
       setError('');
       const [nextImages, nextPages] = await Promise.all([
         getAllPageImages(),
-        getAllInvitationPages({ includeSeedFallback: true }),
+        getAllManagedInvitationPages(),
       ]);
       setImages(nextImages);
       setPages(nextPages);

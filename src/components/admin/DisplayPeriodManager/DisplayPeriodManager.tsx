@@ -5,7 +5,7 @@ import { useEffect, useMemo, useState } from 'react';
 import {
   deleteDisplayPeriod,
   getAllDisplayPeriods,
-  getAllInvitationPages,
+  getAllManagedInvitationPages,
   setDisplayPeriod,
   type DisplayPeriod,
   type InvitationPageSummary,
@@ -130,7 +130,7 @@ export default function DisplayPeriodManager({
       setLoadError('');
       const [nextPeriods, nextPages] = await Promise.all([
         getAllDisplayPeriods(),
-        getAllInvitationPages({ includeSeedFallback: true }),
+        getAllManagedInvitationPages(),
       ]);
       setPeriods(nextPeriods);
       setPages(nextPages);

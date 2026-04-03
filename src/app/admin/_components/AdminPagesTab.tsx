@@ -1,4 +1,4 @@
-import type { InvitationPageSummary } from '@/services';
+import type { InvitationPageSeedTemplate, InvitationPageSummary } from '@/services';
 
 import { EmptyState, FilterToolbar, StatusBadge } from '.';
 import {
@@ -24,6 +24,17 @@ interface AdminPagesTabProps {
   pageStatusFilter: PageStatusFilter;
   pageSort: PageSort;
   chips: Array<{ id: string; label: string; onRemove: () => void }>;
+  seedTemplates: InvitationPageSeedTemplate[];
+  createSeedSlug: string;
+  createSlugBase: string;
+  createGroomName: string;
+  createBrideName: string;
+  creatingPage: boolean;
+  onCreateSeedSlugChange: (value: string) => void;
+  onCreateSlugBaseChange: (value: string) => void;
+  onCreateGroomNameChange: (value: string) => void;
+  onCreateBrideNameChange: (value: string) => void;
+  onCreatePage: () => void;
   onQueryChange: (updates: Record<string, string | null>) => void;
   onRefresh: () => void;
 }
@@ -71,6 +82,17 @@ export default function AdminPagesTab({
   pageStatusFilter,
   pageSort,
   chips,
+  seedTemplates,
+  createSeedSlug,
+  createSlugBase,
+  createGroomName,
+  createBrideName,
+  creatingPage,
+  onCreateSeedSlugChange,
+  onCreateSlugBaseChange,
+  onCreateGroomNameChange,
+  onCreateBrideNameChange,
+  onCreatePage,
   onQueryChange,
   onRefresh,
 }: AdminPagesTabProps) {
@@ -87,6 +109,84 @@ export default function AdminPagesTab({
         <p className={styles.sectionMeta}>
           {summaryLoading ? '집계 중' : `현재 ${filteredPages.length}개 / 전체 ${weddingPages.length}개`}
         </p>
+      </div>
+
+      <div className={styles.createPanel}>
+        <div className={styles.createPanelHeader}>
+          <div>
+            <h3 className={styles.createPanelTitle}>새 페이지 만들기</h3>
+            <p className={styles.createPanelDescription}>
+              seed 템플릿을 Firestore 초안으로 복제한 뒤 바로 편집기로 이동합니다.
+            </p>
+          </div>
+          <span className={styles.createPanelHint}>
+            URL이 이미 있으면 뒤에 영문 3자가 자동으로 붙습니다.
+          </span>
+        </div>
+
+        <div className={styles.createPanelGrid}>
+          <label className="admin-field">
+            <span className="admin-field-label">초기 템플릿</span>
+            <select
+              className="admin-select"
+              value={createSeedSlug}
+              onChange={(event) => onCreateSeedSlugChange(event.target.value)}
+            >
+              {seedTemplates.map((template) => (
+                <option key={template.slug} value={template.slug}>
+                  {template.displayName} ({template.slug})
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <label className="admin-field">
+            <span className="admin-field-label">URL 기본값</span>
+            <input
+              className="admin-input"
+              type="text"
+              placeholder="shin-minje-kim-hyunji"
+              value={createSlugBase}
+              onChange={(event) => onCreateSlugBaseChange(event.target.value)}
+            />
+          </label>
+
+          <label className="admin-field">
+            <span className="admin-field-label">신랑 이름</span>
+            <input
+              className="admin-input"
+              type="text"
+              placeholder="신랑 이름"
+              value={createGroomName}
+              onChange={(event) => onCreateGroomNameChange(event.target.value)}
+            />
+          </label>
+
+          <label className="admin-field">
+            <span className="admin-field-label">신부 이름</span>
+            <input
+              className="admin-input"
+              type="text"
+              placeholder="신부 이름"
+              value={createBrideName}
+              onChange={(event) => onCreateBrideNameChange(event.target.value)}
+            />
+          </label>
+        </div>
+
+        <div className={styles.createPanelActions}>
+          <p className={styles.createPanelMeta}>
+            생성 직후에는 비공개 초안으로 저장됩니다. 상세 문구와 이미지 경로는 편집기에서 이어서 수정하면 됩니다.
+          </p>
+          <button
+            type="button"
+            className="admin-button admin-button-primary"
+            onClick={onCreatePage}
+            disabled={creatingPage}
+          >
+            {creatingPage ? '생성 중...' : '새 페이지 만들기'}
+          </button>
+        </div>
       </div>
 
       <div className={styles.shortcutStrip}>
