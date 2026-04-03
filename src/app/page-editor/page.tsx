@@ -52,6 +52,17 @@ export default function PageEditorPage() {
           고객용 편집기는 <code>/page-editor/페이지-slug</code> 주소에서만 열립니다.
           관리자 페이지의 편집 버튼을 사용하거나, 전달받은 정확한 주소로 접속해 주세요.
         </p>
+        <p
+          style={{
+            margin: '12px 0 0',
+            fontSize: '0.92rem',
+            lineHeight: 1.7,
+            color: '#64748b',
+          }}
+        >
+          편집 화면에서는 문구를 입력하면서 오른쪽 미리보기로 실제 노출 모습을 바로
+          확인할 수 있습니다.
+        </p>
         <a
           href="/admin"
           style={{

@@ -29,6 +29,7 @@ export interface EditableInvitationPageConfig {
   published: boolean;
   hasCustomConfig: boolean;
   dataSource: 'seed' | 'firestore';
+  lastSavedAt: Date | null;
 }
 
 export interface InvitationPageLookupOptions {
@@ -811,6 +812,7 @@ export async function getEditableInvitationPageConfig(
           published: true,
           hasCustomConfig: false,
           dataSource: 'seed',
+          lastSavedAt: null,
         }
       : null;
   }
@@ -837,6 +839,7 @@ export async function getEditableInvitationPageConfig(
       published: sourceRecord.page.published,
       hasCustomConfig: sourceRecord.hasCustomConfig,
       dataSource: sourceRecord.dataSource,
+      lastSavedAt: registryRecord?.updatedAt ?? null,
     };
   } catch (error) {
     console.error('[invitationPageService] failed to load editable config', error);
@@ -847,6 +850,7 @@ export async function getEditableInvitationPageConfig(
           published: true,
           hasCustomConfig: false,
           dataSource: 'seed',
+          lastSavedAt: null,
         }
       : null;
   }
