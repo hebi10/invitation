@@ -15,6 +15,57 @@
   gap: 18px;
 }
 
+.editorLayout {
+  display: grid;
+  grid-template-columns: 300px minmax(0, 1fr);
+  gap: 18px;
+  align-items: start;
+}
+
+.editorSidebar {
+  min-width: 0;
+}
+
+.editorMain {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.sidebarCard {
+  position: sticky;
+  top: 16px;
+}
+
+.sidebarHeader {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.sidebarMeta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.sidebarGuideList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.sidebarGuideList .guideText {
+  margin: 0;
+}
+
+.sidebarNav {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
 .guideGrid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -128,8 +179,16 @@
 }
 
 .sectionNavLinkActive {
-  border-color: rgba(37, 99, 235, 0.32);
-  box-shadow: 0 16px 30px rgba(37, 99, 235, 0.1);
+  border-color: rgba(37, 99, 235, 0.46);
+  background: linear-gradient(180deg, rgba(239, 246, 255, 0.96), rgba(255, 255, 255, 0.98));
+  box-shadow:
+    inset 3px 0 0 #2563eb,
+    0 18px 32px rgba(37, 99, 235, 0.12);
+}
+
+.sectionNavLinkActive .sectionNavStep {
+  background: #1d4ed8;
+  color: #fff;
 }
 
 .sectionNavStep,
@@ -155,10 +214,29 @@
   min-width: 0;
 }
 
+.sectionNavTitleRow {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
 .sectionNavTitle,
 .sectionGroupTitle {
   color: #0f172a;
   font-size: 0.96rem;
+}
+
+.sectionNavCurrentBadge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  padding: 0 9px;
+  border-radius: 999px;
+  background: rgba(37, 99, 235, 0.14);
+  color: #1d4ed8;
+  font-size: 0.72rem;
+  font-weight: 800;
 }
 
 .sectionNavStateComplete,
@@ -230,6 +308,99 @@
 
 .previewModeCard {
   gap: 16px;
+}
+
+.workspaceCard {
+  gap: 18px;
+}
+
+.workspaceHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.workspaceTitleBlock {
+  min-width: 0;
+}
+
+.workspaceTabBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.workspacePane {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.mobileStepButton {
+  display: none;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  padding: 0 16px;
+  border: 1px solid rgba(148, 163, 184, 0.28);
+  border-radius: 999px;
+  background: #fff;
+  color: #0f172a;
+  font-size: 0.88rem;
+  font-weight: 700;
+}
+
+.mobileStepButtonIcon {
+  font-size: 1rem;
+}
+
+.mobileStepMenuBackdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding: 16px;
+  background: rgba(15, 23, 42, 0.35);
+}
+
+.mobileStepMenu {
+  width: min(100%, 720px);
+  max-height: min(82vh, 760px);
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 22px;
+  border-radius: 28px;
+  background: rgba(255, 255, 255, 0.98);
+  box-shadow: 0 24px 60px rgba(15, 23, 42, 0.24);
+}
+
+.mobileStepMenuHandle {
+  align-self: center;
+  width: 52px;
+  height: 5px;
+  border-radius: 999px;
+  background: rgba(148, 163, 184, 0.45);
+}
+
+.mobileStepMenuHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.mobileStepMenuMeta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
 }
 
 .statusRow {
@@ -721,7 +892,6 @@
 
 .description,
 .sectionDescription,
-.subCardDescription,
 .lockedText {
   margin: 6px 0 0;
   line-height: 1.7;
@@ -751,9 +921,15 @@
   font-size: 1rem;
 }
 
+
+.fieldGrid {
+  display: grid;
+  grid-template-columns: repeat(1, minmax(0, 1fr));
+  gap: 16px;
+}
+
 .summaryGrid,
 .authGrid,
-.fieldGrid,
 .dualGrid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -855,6 +1031,7 @@
   color: #475569;
 }
 
+.subCardDescription,
 .fieldHint {
   font-size: 0.8rem;
   line-height: 1.6;
@@ -939,6 +1116,7 @@
 
 .actionBar {
   display: flex;
+  flex-direction: column;
   align-items: flex-start;
   justify-content: space-between;
   gap: 16px;
@@ -974,6 +1152,20 @@
   min-width: 280px;
 }
 
+.actionGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.actionGroupLabel {
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #64748b;
+}
+
 .utilityRow {
   display: flex;
   flex-direction: column;
@@ -992,6 +1184,18 @@
   font-size: 0.82rem;
   line-height: 1.55;
   color: #64748b;
+}
+
+.bottomBarMeta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.bottomActionRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
 }
 
 .progressTrack {
@@ -1056,6 +1260,9 @@
 }
 
 .ghostButton {
+  position: absolute;
+  top: 8px;
+  right: 8px;
   background: rgba(255, 255, 255, 0.72);
 }
 
@@ -1101,6 +1308,29 @@
   width: 18px;
   height: 18px;
   accent-color: #0f172a;
+}
+
+.actionDetails {
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  border-radius: 20px;
+  background: rgba(248, 250, 252, 0.68);
+}
+
+.actionDetailsSummary {
+  list-style: none;
+  cursor: pointer;
+  padding: 14px 16px;
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: #334155;
+}
+
+.actionDetailsSummary::-webkit-details-marker {
+  display: none;
+}
+
+.actionDetailsBody {
+  padding: 0 16px 16px;
 }
 
 .notice {
@@ -1273,6 +1503,26 @@
 }
 
 @media (max-width: 960px) {
+  .editorLayout {
+    grid-template-columns: 1fr;
+  }
+
+  .editorSidebar {
+    display: none;
+  }
+
+  .mobileStepButton {
+    display: inline-flex;
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    z-index: 100;
+  }
+
+  .sidebarCard {
+    position: static;
+  }
+
   .sectionNav {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -1286,8 +1536,7 @@
   .fieldGrid,
   .dualGrid,
   .guideGrid,
-  .statusGrid,
-  .statusHighlights {
+  .guideGrid {
     grid-template-columns: 1fr;
   }
 
@@ -1296,6 +1545,9 @@
   .sectionHeaderButton,
   .previewHeader,
   .previewDetailHeader,
+  .workspaceHeader,
+  .workspaceTabBar,
+  .mobileStepMenuHeader,
   .sectionGroupHeader,
   .heroAside,
   .sectionHeader,
@@ -1303,11 +1555,47 @@
     flex-direction: column;
     align-items: flex-start;
   }
+
+  .statusHighlights {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .summaryHighlightCard {
+    padding: 14px 16px;
+  }
+
+  .summaryHighlightText {
+    display: none;
+  }
+
+  .statusGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .bottomActionRow {
+    width: 100%;
+  }
+
+  .bottomActionRow > * {
+    flex: 1 1 0;
+  }
 }
 
 @media (max-width: 640px) {
   .page {
     padding: 20px 12px 32px;
+  }
+
+  .mobileStepMenu {
+    position: relative;
+    padding: 18px;
+    border-radius: 24px;
+    z-index: 101;
+  }
+
+  .mobileStepMenuMeta {
+    flex-direction: column;
+    align-items: stretch;
   }
 
   .editorTabs {
@@ -1323,6 +1611,27 @@
     flex: 1 1 0;
   }
 
+  .statusHighlights,
+  .statusGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .summaryHighlightCard,
+  .statusCard {
+    padding: 12px 14px;
+    border-radius: 18px;
+  }
+
+  .summaryHighlightValue,
+  .statusValue {
+    font-size: 0.94rem;
+  }
+
+  .actionGroupLabel,
+  .systemStatusText {
+    font-size: 0.76rem;
+  }
+
   .card,
   .section,
   .lockedCard,
@@ -1334,6 +1643,7 @@
 
   .inlineField,
   .actionRow,
+  .bottomActionRow,
   .previewRow,
   .templateRow {
     flex-direction: column;

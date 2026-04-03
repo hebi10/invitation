@@ -14,6 +14,9 @@
     "test:e2e": "playwright test",
     "test:e2e:smoke": "playwright test tests/e2e/smoke.spec.ts",
     "migrate:firebase:static": "node scripts/firebase-static-hosting-migration.mjs",
+    "migrate:comments:guestbooks": "node scripts/migrate-comments-to-guestbooks.mjs analyze",
+    "migrate:comments:guestbooks:execute": "node scripts/migrate-comments-to-guestbooks.mjs migrate --execute",
+    "migrate:comments:guestbooks:validate": "node scripts/migrate-comments-to-guestbooks.mjs validate",
     "export": "next build",
     "deploy:firebase": "npm run build:memory-metadata-strict && firebase deploy"
   },

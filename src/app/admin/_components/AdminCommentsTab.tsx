@@ -26,6 +26,17 @@ interface AdminCommentsTabProps {
   onDeleteComment: (comment: Comment) => void;
 }
 
+function resetCommentFilters(
+  onQueryChange: (updates: Record<string, string | null>) => void
+) {
+  onQueryChange({
+    commentQ: null,
+    commentPageSlug: null,
+    commentAge: null,
+    commentPage: '1',
+  });
+}
+
 export default function AdminCommentsTab({
   commentsLoading,
   comments,
@@ -50,11 +61,11 @@ export default function AdminCommentsTab({
         <div>
           <h2 className={styles.sectionTitle}>방명록 관리</h2>
           <p className={styles.sectionDescription}>
-            페이지, 검색어, 최근 댓글 필터를 기준으로 한 번에 조회하고 바로 삭제할 수
-            있습니다.
+            검색어와 페이지, 기간 필터로 댓글을 빠르게 좁혀 보고 필요한 댓글만 바로
+            삭제할 수 있습니다.
           </p>
         </div>
-        <p className={styles.sectionMeta}>총 {filteredComments.length}개 댓글</p>
+        <p className={styles.sectionMeta}>현재 {filteredComments.length}개 댓글</p>
       </div>
 
       <FilterToolbar
@@ -65,7 +76,7 @@ export default function AdminCommentsTab({
               <input
                 className="admin-input"
                 type="search"
-                placeholder="작성자, 메시지, slug 검색"
+                placeholder="작성자, 메시지, slug로 찾기"
                 value={commentSearch}
                 onChange={(event) =>
                   onQueryChange({
@@ -126,19 +137,12 @@ export default function AdminCommentsTab({
               onClick={onRefresh}
               disabled={commentsLoading}
             >
-              {commentsLoading ? '새로고침 중...' : '새로고침'}
+              {commentsLoading ? '새로고침 중..' : '새로고침'}
             </button>
             <button
               type="button"
               className="admin-button admin-button-ghost"
-              onClick={() =>
-                onQueryChange({
-                  commentQ: null,
-                  commentPageSlug: null,
-                  commentAge: null,
-                  commentPage: '1',
-                })
-              }
+              onClick={() => resetCommentFilters(onQueryChange)}
             >
               필터 초기화
             </button>
@@ -164,12 +168,15 @@ export default function AdminCommentsTab({
                     <th>페이지</th>
                     <th>메시지</th>
                     <th>등록일</th>
-                    <th>액션</th>
+                    <th>작업</th>
                   </tr>
                 </thead>
                 <tbody>
                   {currentComments.map((comment, index) => (
-                    <tr key={`${comment.collectionName ?? 'comments'}:${comment.id}`}>
+                    <tr
+                      key={`${comment.collectionName ?? 'comments'}:${comment.id}`}
+                      className={styles.tableRowInteractive}
+                    >
                       <td className={styles.numberCell}>
                         {filteredComments.length - (startIndex + index)}
                       </td>
@@ -249,26 +256,33 @@ export default function AdminCommentsTab({
         <EmptyState
           title={
             comments.length === 0
-              ? '등록된 방명록이 없습니다.'
-              : '조건에 맞는 방명록이 없습니다.'
+              ? '아직 등록된 방명록이 없습니다.'
+              : '현재 조건에 맞는 방명록이 없습니다.'
           }
           description={
             comments.length === 0
-              ? '댓글이 등록되면 이곳에서 검색과 삭제를 관리할 수 있습니다.'
-              : '검색어 또는 필터를 조정해서 다시 확인해 주세요.'
+              ? '댓글이 등록되면 이 탭에서 검색과 삭제를 바로 관리할 수 있습니다.'
+              : '검색어나 페이지, 기간 필터가 너무 좁게 잡혀 있을 수 있습니다.'
+          }
+          highlights={
+            comments.length === 0
+              ? [
+                  '페이지와 기간 필터로 댓글을 빠르게 좁혀 볼 수 있습니다.',
+                  '삭제 전에는 작성자와 등록 시각을 한 번 더 확인하는 흐름을 권장합니다.',
+                ]
+              : [
+                  '필터를 초기화하면 전체 댓글 목록으로 다시 돌아갑니다.',
+                  '현재 조건 그대로 다시 조회하려면 새로고침을 사용하세요.',
+                ]
           }
           actionLabel={comments.length === 0 ? '새로고침' : '필터 초기화'}
           onAction={
             comments.length === 0
               ? onRefresh
-              : () =>
-                  onQueryChange({
-                    commentQ: null,
-                    commentPageSlug: null,
-                    commentAge: null,
-                    commentPage: '1',
-                  })
+              : () => resetCommentFilters(onQueryChange)
           }
+          secondaryActionLabel={comments.length === 0 ? undefined : '현재 조건 새로고침'}
+          onSecondaryAction={comments.length === 0 ? undefined : onRefresh}
         />
       )}
     </div>

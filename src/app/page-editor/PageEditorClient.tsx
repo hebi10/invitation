@@ -43,6 +43,7 @@ const AUTOSAVE_DELAY_MS = 1500;
 
 type NoticeState = { tone: NoticeTone; message: string } | null;
 type SaveState = 'idle' | 'autosaving' | 'saving' | 'saved' | 'error' | 'publishing';
+type WorkspaceView = 'form' | 'preview';
 type EditorStepKey =
   | 'basic'
   | 'schedule'
@@ -497,6 +498,19 @@ function getNextStepKey(currentStep: EditorStepKey | null) {
   return EDITOR_STEPS[currentIndex + 1]?.key ?? null;
 }
 
+function getPreviousStepKey(currentStep: EditorStepKey | null) {
+  if (!currentStep) {
+    return null;
+  }
+
+  const currentIndex = EDITOR_STEPS.findIndex((step) => step.key === currentStep);
+  if (currentIndex <= 0) {
+    return null;
+  }
+
+  return EDITOR_STEPS[currentIndex - 1]?.key ?? null;
+}
+
 function getStepCriteriaText(step: StepDefinition, review: StepReview) {
   if (step.isOptional) {
     if (step.key === 'gallery') {
@@ -574,6 +588,8 @@ export default function PageEditorClient({
   const [saveState, setSaveState] = useState<SaveState>('idle');
   const [notice, setNotice] = useState<NoticeState>(null);
   const [previewTheme, setPreviewTheme] = useState<PreviewThemeKey>('emotional');
+  const [workspaceView, setWorkspaceView] = useState<WorkspaceView>('form');
+  const [isStepMenuOpen, setIsStepMenuOpen] = useState(false);
   const [activeStep, setActiveStep] = useState<EditorStepKey | null>('basic');
   const [highlightedStep, setHighlightedStep] = useState<EditorStepKey | null>('basic');
 
@@ -623,6 +639,11 @@ export default function PageEditorClient({
       : 0;
   const currentPreviewHref = previewTheme === 'simple' ? `/${slug}/simple` : `/${slug}`;
   const weddingSummary = formState ? buildWeddingSummary(formState) : '아직 입력되지 않았습니다.';
+  const currentStepKey = activeStep ?? 'basic';
+  const currentStep = STEP_MAP[currentStepKey];
+  const currentReview = stepReviews[currentStepKey];
+  const previousStepKey = useMemo(() => getPreviousStepKey(activeStep), [activeStep]);
+  const previousStep = previousStepKey ? STEP_MAP[previousStepKey] : null;
   const nextStepKey = useMemo(() => getNextStepKey(activeStep), [activeStep]);
   const nextStep = nextStepKey ? STEP_MAP[nextStepKey] : null;
   const primaryActionLabel =
@@ -631,7 +652,7 @@ export default function PageEditorClient({
         ? '발행하기'
         : '비공개로 저장하기'
       : nextStep
-        ? `${nextStep.step}. ${nextStep.title} 작성하기`
+        ? `${nextStep.step} 단계: ${nextStep.title} `
         : '1단계부터 시작하기';
   const primaryActionHint =
     activeStep === 'final'
@@ -650,6 +671,7 @@ export default function PageEditorClient({
     ? `${STEP_MAP[firstInvalidRequiredStep].step} 단계 필수 입력이 남아 있습니다.`
     : '필수 항목이 모두 채워져 발행할 수 있습니다.';
   const systemStatusLabel = hasCustomConfig ? '맞춤 설정 저장됨' : dataSourceLabel;
+  const canCopyPublishedLink = published && !hasPublishChanges;
 
   const applyLoadedConfig = (
     config: Awaited<ReturnType<typeof getEditableInvitationPageConfig>>
@@ -947,12 +969,7 @@ export default function PageEditorClient({
   const handleApplyVisibility = async () => {
     if (published && firstInvalidRequiredStep) {
       const step = STEP_MAP[firstInvalidRequiredStep];
-      setActiveStep(firstInvalidRequiredStep);
-      setHighlightedStep(firstInvalidRequiredStep);
-      document.getElementById(step.key)?.scrollIntoView({
-        behavior: 'smooth',
-        block: 'start',
-      });
+      jumpToStep(firstInvalidRequiredStep);
       setNotice({
         tone: 'error',
         message: `${step.step} 단계의 필수 정보를 먼저 입력해 주세요.`,
@@ -1315,27 +1332,8 @@ export default function PageEditorClient({
   const jumpToStep = (stepKey: EditorStepKey) => {
     setActiveStep(stepKey);
     setHighlightedStep(stepKey);
-    document.getElementById(stepKey)?.scrollIntoView({
-      behavior: 'smooth',
-      block: 'start',
-    });
-  };
-
-  const toggleStep = (stepKey: EditorStepKey) => {
-    let shouldScroll = false;
-
-    setActiveStep((currentStep) => {
-      shouldScroll = currentStep !== stepKey;
-      return currentStep === stepKey ? null : stepKey;
-    });
-    setHighlightedStep(stepKey);
-
-    if (shouldScroll) {
-      document.getElementById(stepKey)?.scrollIntoView({
-        behavior: 'smooth',
-        block: 'start',
-      });
-    }
+    setWorkspaceView('form');
+    setIsStepMenuOpen(false);
   };
 
   const handlePrimaryAction = async () => {
@@ -1350,6 +1348,12 @@ export default function PageEditorClient({
     }
 
     jumpToStep('basic');
+  };
+
+  const handlePreviousStep = () => {
+    if (previousStepKey) {
+      jumpToStep(previousStepKey);
+    }
   };
 
   const resetToBaseline = () => {
@@ -1466,61 +1470,26 @@ export default function PageEditorClient({
     ) : null;
 
   const renderGuideCard = () => (
-    <section className={`${styles.card} ${styles.previewModeCard}`}>
-      <div className={styles.sectionHeader}>
+    <section className={`${styles.card} ${styles.sidebarCard}`}>
+      <div className={styles.sidebarHeader}>
         <div>
-          <p className={styles.sectionEyebrow}>작성 가이드</p>
-          <h2 className={styles.sectionTitle}>아래 세 가지를 확인해 보세요</h2>
+          <p className={styles.sectionEyebrow}>편집 단계</p>
+          <h2 className={styles.sectionTitle}>단계 선택</h2>
           <p className={styles.sectionDescription}>
-            1단계부터 입력 → 미리보기로 확인 → 필수 항목을 확인
+            선택한 단계는 오른쪽에서 입력할 수 있습니다.
           </p>
         </div>
-
-        <div className={styles.editorTabs} role="tablist" aria-label="미리보기 테마 선택">
-          <button
-            type="button"
-            role="tab"
-            aria-selected={previewTheme === 'emotional'}
-            className={`${styles.editorTab} ${
-              previewTheme === 'emotional' ? styles.editorTabActive : ''
-            }`}
-            onClick={() => setPreviewTheme('emotional')}
-          >
-            감성형
-          </button>
-          <button
-            type="button"
-            role="tab"
-            aria-selected={previewTheme === 'simple'}
-            className={`${styles.editorTab} ${
-              previewTheme === 'simple' ? styles.editorTabActive : ''
-            }`}
-            onClick={() => setPreviewTheme('simple')}
-          >
-            심플형
-          </button>
-        </div>
       </div>
 
-      <div className={styles.guideGrid}>
-        <article className={styles.guideItem}>
-          <strong className={styles.guideTitle}>1단계부터 차례대로</strong>
-          <p className={styles.guideText}>이름, 날짜, 장소, 인사말부터 먼저 채워 주세요.</p>
-        </article>
-        <article className={styles.guideItem}>
-          <strong className={styles.guideTitle}>미리보기로 바로 확인</strong>
-          <p className={styles.guideText}>오른쪽 화면에서 실제 노출 위치를 바로 볼 수 있습니다.</p>
-        </article>
-        <article className={styles.guideItem}>
-          <strong className={styles.guideTitle}>필수 입력 후 발행</strong>
-          <p className={styles.guideText}>필수 항목이 끝나면 마지막 단계에서 발행 상태를 확인해 주세요.</p>
-        </article>
+      <div className={styles.sidebarMeta}>
+        <span className={styles.metaChip}>필수 {completedRequiredFields}/{totalRequiredFields}</span>
+        <span className={styles.metaChip}>{saveStatusLabel}</span>
       </div>
 
-      <nav className={styles.sectionNav} aria-label="편집 단계 이동">
+      <nav className={styles.sidebarNav} aria-label="편집 단계 이동">
         {EDITOR_STEPS.map((step) => {
           const review = stepReviews[step.key];
-          const isCurrent = activeStep === step.key;
+          const isCurrent = currentStepKey === step.key;
           const isComplete =
             review.requiredCount === 0 ||
             review.completedRequiredCount === review.requiredCount;
@@ -1536,7 +1505,12 @@ export default function PageEditorClient({
             >
               <span className={styles.sectionNavStep}>{step.step}</span>
               <span className={styles.sectionNavBody}>
-                <strong className={styles.sectionNavTitle}>{step.title}</strong>
+                <span className={styles.sectionNavTitleRow}>
+                  <strong className={styles.sectionNavTitle}>{step.title}</strong>
+                  {isCurrent ? (
+                    <span className={styles.sectionNavCurrentBadge}>현재 편집 중</span>
+                  ) : null}
+                </span>
                 <span className={styles.sectionNavText}>
                   {getStepSummaryText(step, review)}
                 </span>
@@ -1561,235 +1535,436 @@ export default function PageEditorClient({
         position === 'top' ? styles.actionBarSticky : styles.actionBarBottom
       }`}
     >
-      <div className={styles.actionMeta}>
-        <div className={styles.statusHighlights}>
-          <article className={styles.summaryHighlightCard}>
-            <span className={styles.summaryHighlightLabel}>저장 상태</span>
-            <strong className={styles.summaryHighlightValue}>{saveStatusLabel}</strong>
-            <p className={styles.summaryHighlightText}>
-              {saveState === 'error'
-                ? '저장에 실패했습니다. 다시 시도해 주세요.'
-                : isDirty
-                  ? '아직 저장하지 않은 변경 사항이 있습니다.'
-                  : '현재 화면 기준으로 가장 최근 상태가 저장되어 있습니다.'}
-            </p>
-          </article>
-          <article className={styles.summaryHighlightCard}>
-            <span className={styles.summaryHighlightLabel}>공개 상태</span>
-            <strong className={styles.summaryHighlightValue}>{publishStatusLabel}</strong>
-            <p className={styles.summaryHighlightText}>{publishStatusText}</p>
-          </article>
-          <article className={styles.summaryHighlightCard}>
-            <span className={styles.summaryHighlightLabel}>필수 항목 완료</span>
-            <strong className={styles.summaryHighlightValue}>
-              {completedRequiredFields}/{totalRequiredFields} ({progressPercent}%)
-            </strong>
-            <p className={styles.summaryHighlightText}>{completionStatusText}</p>
-          </article>
-        </div>
+      {position === 'top' ? (
+        <>
+          <div className={styles.actionMeta}>
+            <div className={styles.statusHighlights}>
+              <article className={styles.summaryHighlightCard}>
+                <span className={styles.summaryHighlightLabel}>저장 상태</span>
+                <strong className={styles.summaryHighlightValue}>{saveStatusLabel}</strong>
+                <p className={styles.summaryHighlightText}>
+                  {saveState === 'error'
+                    ? '저장에 실패했습니다. 다시 시도해 주세요.'
+                    : isDirty
+                      ? '아직 저장하지 않은 변경 사항이 있습니다.'
+                      : '현재 화면 기준으로 가장 최근 상태가 저장되어 있습니다.'}
+                </p>
+              </article>
+              <article className={styles.summaryHighlightCard}>
+                <span className={styles.summaryHighlightLabel}>공개 상태</span>
+                <strong className={styles.summaryHighlightValue}>{publishStatusLabel}</strong>
+                <p className={styles.summaryHighlightText}>{publishStatusText}</p>
+              </article>
+              <article className={styles.summaryHighlightCard}>
+                <span className={styles.summaryHighlightLabel}>필수 항목 완료</span>
+                <strong className={styles.summaryHighlightValue}>
+                  {completedRequiredFields}/{totalRequiredFields} ({progressPercent}%)
+                </strong>
+                <p className={styles.summaryHighlightText}>{completionStatusText}</p>
+              </article>
+            </div>
 
-        <div className={styles.progressTrack}>
-          <div
-            className={styles.progressFill}
-            style={{ width: `${progressPercent}%` }}
-          />
-        </div>
+            <div className={styles.progressTrack}>
+              <div
+                className={styles.progressFill}
+                style={{ width: `${progressPercent}%` }}
+              />
+            </div>
 
-        <div className={styles.statusGrid}>
-          <div className={styles.statusCard}>
-            <span className={styles.statusKey}>현재 단계</span>
-            <strong className={styles.statusValue}>
-              {activeStep
-                ? `${STEP_MAP[activeStep].step}. ${STEP_MAP[activeStep].title}`
-                : '모든 단계를 접어 둔 상태'}
-            </strong>
+            <div className={styles.statusGrid}>
+              <div className={styles.statusCard}>
+                <span className={styles.statusKey}>현재 단계</span>
+                <strong className={styles.statusValue}>
+                  {`${currentStep.step}. ${currentStep.title}`}
+                </strong>
+              </div>
+              <div className={styles.statusCard}>
+                <span className={styles.statusKey}>마지막 저장</span>
+                <strong className={styles.statusValue}>{formatSavedAt(lastSavedAt)}</strong>
+              </div>
+            </div>
+
+            <p className={styles.systemStatusText}>현재 데이터 기준: {systemStatusLabel}</p>
           </div>
-          <div className={styles.statusCard}>
-            <span className={styles.statusKey}>마지막 저장</span>
-            <strong className={styles.statusValue}>{formatSavedAt(lastSavedAt)}</strong>
+
+          <div className={styles.actionColumn}>
+            <div className={styles.actionGroup}>
+              <span className={styles.actionGroupLabel}>진행</span>
+              <div className={styles.actionRow}>
+                <button
+                  type="button"
+                  className={activeStep === 'final' ? styles.publishButton : styles.primaryButton}
+                  onClick={() => void handlePrimaryAction()}
+                  disabled={!formState || isSaving || isRestoring || isSavingVisibility}
+                >
+                  {activeStep === 'final' && isSavingVisibility
+                    ? '반영하는 중...'
+                    : primaryActionLabel}
+                </button>
+              </div>
+              <p className={styles.actionHint}>{primaryActionHint}</p>
+            </div>
+
+            <div className={styles.actionGroup}>
+              <span className={styles.actionGroupLabel}>보조</span>
+              <div className={styles.actionRow}>
+                <button
+                  type="button"
+                  className={styles.secondaryButton}
+                  onClick={() => void persistDraft('manual')}
+                  disabled={!formState || isSaving || isRestoring}
+                >
+                  {isSaving ? '임시저장 중...' : '임시저장'}
+                </button>
+                <a
+                  className={styles.secondaryButton}
+                  href={currentPreviewHref}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  전체 미리보기
+                </a>
+                <button
+                  type="button"
+                  className={styles.secondaryButton}
+                  onClick={() => void handleCopyPreviewLink()}
+                  disabled={!canCopyPublishedLink}
+                >
+                  공유 링크 복사
+                </button>
+              </div>
+            </div>
+
+            <div className={styles.utilityRow}>
+              <label className={styles.switch}>
+                <input
+                  type="checkbox"
+                  checked={published}
+                  onChange={(event) => setPublished(event.target.checked)}
+                  disabled={!formState || isSaving || isRestoring || isSavingVisibility}
+                />
+                <span>저장 후 공개 페이지로 노출하기</span>
+              </label>
+
+              <details className={styles.actionDetails}>
+                <summary className={styles.actionDetailsSummary}>복구 / 초기화 옵션</summary>
+                <div className={styles.actionDetailsBody}>
+                  <div className={styles.actionRow}>
+                    <button
+                      type="button"
+                      className={styles.ghostButton}
+                      onClick={() => void handleRefresh()}
+                      disabled={!formState || isSaving || isRestoring || isRefreshing}
+                    >
+                      {isRefreshing ? '다시 불러오는 중...' : '다시 불러오기'}
+                    </button>
+                    <button
+                      type="button"
+                      className={styles.ghostButton}
+                      onClick={resetToBaseline}
+                      disabled={!formState || !isDirty || isSaving || isRestoring}
+                    >
+                      변경 취소
+                    </button>
+                    <button
+                      type="button"
+                      className={styles.ghostButton}
+                      onClick={() => void handleRestore()}
+                      disabled={!formState || isSaving || isRestoring}
+                    >
+                      {isRestoring ? '복원 중...' : '기본값 복원'}
+                    </button>
+                  </div>
+                </div>
+              </details>
+            </div>
           </div>
-        </div>
+        </>
+      ) : (
+        <>
+          <div className={styles.bottomBarMeta}>
+            <span className={styles.statusPill}>현재 단계: {currentStep.step}. {currentStep.title}</span>
+            {nextStep ? (
+              <span className={styles.statusPill}>다음 단계: {nextStep.step}. {nextStep.title}</span>
+            ) : (
+              <span className={`${styles.statusPill} ${styles.statusPillSuccess}`}>마지막 단계</span>
+            )}
+          </div>
 
-        <p className={styles.systemStatusText}>현재 데이터 기준: {systemStatusLabel}</p>
-      </div>
-
-      <div className={styles.actionColumn}>
-        <div className={styles.actionRow}>
-          <button
-            type="button"
-            className={activeStep === 'final' ? styles.publishButton : styles.primaryButton}
-            onClick={() => void handlePrimaryAction()}
-            disabled={!formState || isSaving || isRestoring || isSavingVisibility}
-          >
-            {activeStep === 'final' && isSavingVisibility
-              ? '반영하는 중...'
-              : primaryActionLabel}
-          </button>
-          <button
-            type="button"
-            className={styles.secondaryButton}
-            onClick={() => void persistDraft('manual')}
-            disabled={!formState || isSaving || isRestoring}
-          >
-            {isSaving ? '임시저장 중...' : '임시저장'}
-          </button>
-          <a
-            className={styles.secondaryButton}
-            href={currentPreviewHref}
-            target="_blank"
-            rel="noreferrer"
-          >
-            전체 미리보기
-          </a>
-          <button
-            type="button"
-            className={styles.secondaryButton}
-            onClick={() => void handleCopyPreviewLink()}
-          >
-            공유 링크 복사
-          </button>
-        </div>
-
-        <p className={styles.actionHint}>{primaryActionHint}</p>
-
-        <div className={styles.utilityRow}>
-          <label className={styles.switch}>
-            <input
-              type="checkbox"
-              checked={published}
-              onChange={(event) => setPublished(event.target.checked)}
+          <div className={styles.bottomActionRow}>
+            <button
+              type="button"
+              className={styles.ghostButton}
+              onClick={handlePreviousStep}
+              disabled={!previousStep}
+            >
+              {previousStep ? `${previousStep.step}. 이전 단계` : '이전 단계 없음'}
+            </button>
+            <button
+              type="button"
+              className={activeStep === 'final' ? styles.publishButton : styles.primaryButton}
+              onClick={() => void handlePrimaryAction()}
               disabled={!formState || isSaving || isRestoring || isSavingVisibility}
-            />
-            <span>저장 후 공개 페이지로 노출하기</span>
-          </label>
-
-          <div className={styles.actionRow}>
-            <button
-              type="button"
-              className={styles.ghostButton}
-              onClick={() => void handleRefresh()}
-              disabled={!formState || isSaving || isRestoring || isRefreshing}
             >
-              {isRefreshing ? '다시 불러오는 중...' : '다시 불러오기'}
+              {activeStep === 'final' && isSavingVisibility
+                ? '반영하는 중...'
+                : primaryActionLabel}
             </button>
             <button
               type="button"
-              className={styles.ghostButton}
-              onClick={resetToBaseline}
-              disabled={!formState || !isDirty || isSaving || isRestoring}
-            >
-              변경 취소
-            </button>
-            <button
-              type="button"
-              className={styles.ghostButton}
-              onClick={() => void handleRestore()}
+              className={styles.secondaryButton}
+              onClick={() => void persistDraft('manual')}
               disabled={!formState || isSaving || isRestoring}
             >
-              {isRestoring ? '복원 중...' : '기본값 복원'}
+              {isSaving ? '임시저장 중...' : '임시저장'}
             </button>
           </div>
-        </div>
-      </div>
+        </>
+      )}
     </section>
   );
 
-  const renderStepHeader = (stepKey: EditorStepKey) => {
-    const step = STEP_MAP[stepKey];
-    const review = stepReviews[stepKey];
-    const isActive = activeStep === stepKey;
-    const isComplete =
-      review.requiredCount === 0 ||
-      review.completedRequiredCount === review.requiredCount;
-
-    return (
+  const renderPreviewThemeTabs = () => (
+    <div className={styles.editorTabs} role="tablist" aria-label="미리보기 테마 선택">
       <button
         type="button"
-        className={`${styles.sectionHeaderButton} ${
-          isActive ? styles.sectionHeaderButtonActive : ''
+        role="tab"
+        aria-selected={previewTheme === 'emotional'}
+        className={`${styles.editorTab} ${
+          previewTheme === 'emotional' ? styles.editorTabActive : ''
         }`}
-        aria-expanded={isActive}
-        aria-controls={`${stepKey}-panel`}
-        onClick={() => toggleStep(stepKey)}
+        onClick={() => setPreviewTheme('emotional')}
       >
-        <div className={styles.sectionHeaderMain}>
-          <span className={styles.sectionGroupStep}>{step.step}</span>
-          <div className={styles.sectionGroupText}>
-            <div className={styles.sectionTitleRow}>
-              <strong className={styles.sectionGroupTitle}>{step.title}</strong>
-              <span
-                className={
-                  step.isOptional ? styles.fieldBadgeOptional : styles.fieldBadgeRequired
-                }
-              >
-                {step.isOptional ? '선택' : '필수'}
-              </span>
-              <span
-                className={
-                  isComplete ? styles.sectionStateSuccess : styles.sectionStateWarning
-                }
-              >
-                {isComplete
-                  ? '입력 완료'
-                  : step.isOptional
-                    ? '나중에 입력 가능'
-                    : `필수 ${review.completedRequiredCount}/${review.requiredCount}`}
-              </span>
-            </div>
-            <p className={styles.sectionGroupDescription}>{step.description}</p>
-            <p className={styles.sectionCriteriaText}>{getStepCriteriaText(step, review)}</p>
-            {review.missing.length > 0 ? (
-              <p className={styles.sectionIssueText}>
-                아직 필요한 항목: {review.missing.join(', ')}
-              </p>
-            ) : null}
-            {review.warnings.length > 0 ? (
-              <p className={styles.sectionWarningText}>{review.warnings[0]}</p>
-            ) : null}
-          </div>
-        </div>
-        <span className={styles.sectionHeaderToggle}>
-          <span className={styles.sectionHeaderToggleText}>
-            {isActive ? '접기' : '이 단계 작성하기'}
-          </span>
-          <span className={styles.sectionHeaderToggleIcon}>{isActive ? '-' : '+'}</span>
-        </span>
+        감성형
       </button>
-    );
+      <button
+        type="button"
+        role="tab"
+        aria-selected={previewTheme === 'simple'}
+        className={`${styles.editorTab} ${
+          previewTheme === 'simple' ? styles.editorTabActive : ''
+        }`}
+        onClick={() => setPreviewTheme('simple')}
+      >
+        심플형
+      </button>
+    </div>
+  );
+
+  const renderCurrentSectionContent = (stepKey: EditorStepKey): ReactNode => {
+    switch (stepKey) {
+      case 'basic':
+        return renderBasicInfoSection();
+      case 'schedule':
+        return renderScheduleSection();
+      case 'venue':
+        return renderVenueSection();
+      case 'greeting':
+        return renderGreetingSection();
+      case 'gallery':
+        return renderGallerySection();
+      case 'gift':
+        return renderGiftSection();
+      case 'final':
+        return renderFinalSection();
+      default:
+        return null;
+    }
   };
 
-  const renderSplitSection = (stepKey: EditorStepKey, content: ReactNode) => {
-    const step = STEP_MAP[stepKey];
-    const isActive = activeStep === stepKey;
-
-    return (
-      <section id={stepKey} className={styles.sectionGroup}>
-        {renderStepHeader(stepKey)}
-        {isActive ? (
-          <div
-            id={`${stepKey}-panel`}
-            className={styles.sectionSplit}
-            onFocusCapture={() => setHighlightedStep(stepKey)}
-          >
-            <div className={styles.sectionSplitMain}>{content}</div>
-            <div className={styles.sectionSplitPreview}>
-              {formState ? (
-                <PageEditorSectionPreview
-                  section={step.previewSection}
-                  theme={previewTheme}
-                  slug={slug}
-                  formState={formState}
-                  published={published}
-                  highlighted={highlightedStep === stepKey}
-                  onRequestEdit={() => jumpToStep(stepKey)}
-                />
+  const renderWorkspacePanel = () => (
+    <section className={`${styles.card} ${styles.workspaceCard}`}>
+      <div className={styles.workspaceHeader}>
+        <div className={styles.workspaceTitleBlock}>
+          <div className={styles.sectionHeaderMain}>
+            <span className={styles.sectionGroupStep}>{currentStep.step}</span>
+            <div className={styles.sectionGroupText}>
+              <div className={styles.sectionTitleRow}>
+                <strong className={styles.sectionGroupTitle}>{currentStep.title}</strong>
+                <span
+                  className={
+                    currentStep.isOptional
+                      ? styles.fieldBadgeOptional
+                      : styles.fieldBadgeRequired
+                  }
+                >
+                  {currentStep.isOptional ? '선택' : '필수'}
+                </span>
+                <span
+                  className={
+                    currentReview.requiredCount === 0 ||
+                    currentReview.completedRequiredCount === currentReview.requiredCount
+                      ? styles.sectionStateSuccess
+                      : styles.sectionStateWarning
+                  }
+                >
+                  {currentReview.requiredCount === 0 ||
+                  currentReview.completedRequiredCount === currentReview.requiredCount
+                    ? '입력 완료'
+                    : getStepSummaryText(currentStep, currentReview)}
+                </span>
+              </div>
+              <p className={styles.sectionGroupDescription}>{currentStep.description}</p>
+              <p className={styles.sectionCriteriaText}>
+                {getStepCriteriaText(currentStep, currentReview)}
+              </p>
+              {currentReview.missing.length > 0 ? (
+                <p className={styles.sectionIssueText}>
+                  아직 필요한 항목: {currentReview.missing.join(', ')}
+                </p>
+              ) : null}
+              {currentReview.warnings.length > 0 ? (
+                <p className={styles.sectionWarningText}>{currentReview.warnings[0]}</p>
               ) : null}
             </div>
           </div>
-        ) : null}
-      </section>
-    );
-  };
+        </div>
+      </div>
+
+      <div className={styles.workspaceTabBar}>
+        <div className={styles.editorTabs} role="tablist" aria-label="편집 보기 전환">
+          <button
+            type="button"
+            role="tab"
+            aria-selected={workspaceView === 'form'}
+            className={`${styles.editorTab} ${
+              workspaceView === 'form' ? styles.editorTabActive : ''
+            }`}
+            onClick={() => setWorkspaceView('form')}
+          >
+            입력하기
+          </button>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={workspaceView === 'preview'}
+            className={`${styles.editorTab} ${
+              workspaceView === 'preview' ? styles.editorTabActive : ''
+            }`}
+            onClick={() => setWorkspaceView('preview')}
+          >
+            미리보기
+          </button>
+        </div>
+
+        {workspaceView === 'preview' ? (
+          renderPreviewThemeTabs()
+        ) : (
+          <span className={styles.metaChip}>필수 내용을 입력해주세요.</span>
+        )}
+      </div>
+
+      {workspaceView === 'form' ? (
+        <div
+          className={styles.workspacePane}
+          onFocusCapture={() => setHighlightedStep(currentStepKey)}
+        >
+          {renderCurrentSectionContent(currentStepKey)}
+        </div>
+      ) : formState ? (
+        <div className={styles.workspacePane}>
+          <PageEditorSectionPreview
+            section={currentStep.previewSection}
+            theme={previewTheme}
+            slug={slug}
+            formState={formState}
+            published={published}
+            highlighted={highlightedStep === currentStepKey || workspaceView === 'preview'}
+            onRequestEdit={() => setWorkspaceView('form')}
+          />
+        </div>
+      ) : null}
+    </section>
+  );
+
+  const renderFloatingMobileStepButton = () => (
+    <button
+      type="button"
+      className={styles.mobileStepButton}
+      onClick={() => setIsStepMenuOpen(true)}
+      aria-label="편집 단계 선택 메뉴 열기"
+    >
+      <span className={styles.mobileStepButtonIcon}>☰</span>
+      <span>현재 {currentStep.step}단계</span>
+    </button>
+  );
+
+  const renderMobileStepMenu = () =>
+    isStepMenuOpen ? (
+      <div
+        className={styles.mobileStepMenuBackdrop}
+        onClick={() => setIsStepMenuOpen(false)}
+      >
+        <section
+          className={styles.mobileStepMenu}
+          onClick={(event) => event.stopPropagation()}
+        >
+          <div className={styles.mobileStepMenuHandle} />
+          <div className={styles.mobileStepMenuHeader}>
+            <div>
+              <p className={styles.sectionEyebrow}>단계 선택</p>
+              <h2 className={styles.sectionTitle}>편집할 단계를 골라 이동하세요</h2>
+            </div>
+            <button
+              type="button"
+              className={styles.ghostButton}
+              onClick={() => setIsStepMenuOpen(false)}
+            >
+              닫기
+            </button>
+          </div>
+
+          <div className={styles.mobileStepMenuMeta}>
+            <span className={styles.metaChip}>현재 {currentStep.step}. {currentStep.title}</span>
+            <span className={styles.metaChip}>필수 {completedRequiredFields}/{totalRequiredFields}</span>
+            <span className={styles.metaChip}>{saveStatusLabel}</span>
+          </div>
+
+          <nav className={styles.sidebarNav} aria-label="모바일 편집 단계 이동">
+            {EDITOR_STEPS.map((step) => {
+              const review = stepReviews[step.key];
+              const isCurrent = currentStepKey === step.key;
+              const isComplete =
+                review.requiredCount === 0 ||
+                review.completedRequiredCount === review.requiredCount;
+
+              return (
+                <button
+                  key={step.key}
+                  type="button"
+                  className={`${styles.sectionNavLink} ${
+                    isCurrent ? styles.sectionNavLinkActive : ''
+                  }`}
+                  onClick={() => jumpToStep(step.key)}
+                >
+                  <span className={styles.sectionNavStep}>{step.step}</span>
+                  <span className={styles.sectionNavBody}>
+                    <span className={styles.sectionNavTitleRow}>
+                      <strong className={styles.sectionNavTitle}>{step.title}</strong>
+                      {isCurrent ? (
+                        <span className={styles.sectionNavCurrentBadge}>현재 편집 중</span>
+                      ) : null}
+                    </span>
+                    <span className={styles.sectionNavText}>
+                      {getStepSummaryText(step, review)}
+                    </span>
+                    <span
+                      className={
+                        isComplete
+                          ? styles.sectionNavStateComplete
+                          : styles.sectionNavStatePending
+                      }
+                    >
+                      {isComplete ? '준비됨' : '입력 필요'}
+                    </span>
+                  </span>
+                </button>
+              );
+            })}
+          </nav>
+        </section>
+      </div>
+    ) : null;
 
   const renderBasicInfoSection = () => {
     if (!formState) {
@@ -2542,18 +2717,16 @@ export default function PageEditorClient({
           <>
             {renderHeroCard()}
             {renderNotice()}
-            {renderGuideCard()}
-            {renderActionBar('top')}
-
-            {renderSplitSection('basic', renderBasicInfoSection())}
-            {renderSplitSection('schedule', renderScheduleSection())}
-            {renderSplitSection('venue', renderVenueSection())}
-            {renderSplitSection('greeting', renderGreetingSection())}
-            {renderSplitSection('gallery', renderGallerySection())}
-            {renderSplitSection('gift', renderGiftSection())}
-            {renderSplitSection('final', renderFinalSection())}
-
-            {renderActionBar('bottom')}
+            <div className={styles.editorLayout}>
+              <aside className={styles.editorSidebar}>{renderGuideCard()}</aside>
+              <section className={styles.editorMain}>
+                {renderActionBar('top')}
+                {renderWorkspacePanel()}
+                {renderActionBar('bottom')}
+              </section>
+            </div>
+            {renderFloatingMobileStepButton()}
+            {renderMobileStepMenu()}
           </>
         ) : (
           <>

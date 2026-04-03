@@ -359,7 +359,7 @@ export default function DisplayPeriodManager({
                 key={page.slug}
                 className={`${styles.periodItem} ${
                   isEditing ? styles.periodItemEditing : ''
-                }`}
+                } ${styles[`periodItem${status.tone.charAt(0).toUpperCase()}${status.tone.slice(1)}`] ?? ''}`}
               >
                 <div className={styles.periodHeader}>
                   <div>

@@ -41,6 +41,7 @@ yarn-error.log*
 
 # firebase
 .firebase
+invitation-35d60-firebase-adminsdk-fbsvc-541a104160.json
 
 # typescript
 *.tsbuildinfo

@@ -151,6 +151,23 @@
   color: var(--admin-color-text-secondary);
 }
 
+.headerSummaryTitle {
+  font-size: 0.95rem;
+  line-height: 1.5;
+  font-weight: 700;
+  color: var(--admin-color-text);
+}
+
+.headerSummaryMeta {
+  font-size: 0.8rem;
+  line-height: 1.5;
+  color: var(--admin-color-text-muted);
+}
+
+.headerSummaryLegacy {
+  display: none;
+}
+
 .tabBar {
   display: flex;
   flex-wrap: wrap;
@@ -287,6 +304,14 @@
   background: var(--admin-color-surface);
 }
 
+.tableRowInteractive {
+  transition: box-shadow 0.18s ease, transform 0.18s ease;
+}
+
+.tableRowInteractive:hover td {
+  background: linear-gradient(180deg, #ffffff 0%, #fbfcff 100%);
+}
+
 .dataTable tbody tr:last-child td {
   border-bottom: 0;
 }
@@ -316,6 +341,18 @@
   color: var(--admin-color-text);
 }
 
+.primaryCellLink {
+  display: inline-flex;
+  flex-direction: column;
+  color: inherit;
+  text-decoration: none;
+}
+
+.primaryCellLink:hover .tableTitle,
+.primaryCellLink:focus-visible .tableTitle {
+  color: var(--admin-color-primary);
+}
+
 .tableSubtext {
   margin-top: 4px;
   font-size: 0.8125rem;
@@ -329,6 +366,14 @@
   gap: 6px;
 }
 
+.sourceInfo,
+.actionStack,
+.passwordFieldGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
 .metaStack {
   color: var(--admin-color-text-secondary);
   font-size: 0.875rem;
@@ -338,6 +383,21 @@
 .mobileCardActions {
   display: flex;
   flex-wrap: wrap;
+  gap: 8px;
+}
+
+.actionHint,
+.inlineMetaText,
+.toolbarNote {
+  font-size: 0.8125rem;
+  line-height: 1.55;
+  color: var(--admin-color-text-muted);
+}
+
+.inlineInputGroup {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
   gap: 8px;
 }
 

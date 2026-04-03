@@ -96,6 +96,25 @@
   padding: 20px;
 }
 
+.periodItemSuccess {
+  border-color: rgba(21, 128, 61, 0.16);
+  background: linear-gradient(180deg, #ffffff 0%, #f8fdf8 100%);
+}
+
+.periodItemWarning {
+  border-color: rgba(180, 83, 9, 0.18);
+  background: linear-gradient(180deg, #ffffff 0%, #fffcf4 100%);
+}
+
+.periodItemDanger {
+  border-color: rgba(220, 38, 38, 0.18);
+  background: linear-gradient(180deg, #ffffff 0%, #fff7f7 100%);
+}
+
+.periodItemNeutral {
+  border-color: rgba(100, 116, 139, 0.14);
+}
+
 .periodItemEditing {
   border-color: rgba(37, 99, 235, 0.35);
   box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.08);
@@ -156,7 +175,7 @@
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
-  margin-top: 16px;
+  margin-top: 14px;
 }
 
 .inlineEditor {

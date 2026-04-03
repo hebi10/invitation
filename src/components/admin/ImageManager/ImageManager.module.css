@@ -39,6 +39,37 @@
   padding: 20px;
 }
 
+.uploadGuide {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.uploadGuideItem {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 14px;
+  border: 1px solid var(--admin-color-border);
+  border-radius: var(--admin-radius-sm);
+  background: var(--admin-color-surface-muted);
+}
+
+.uploadGuideLabel {
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--admin-color-text-muted);
+}
+
+.uploadGuideValue {
+  font-size: 0.9rem;
+  line-height: 1.6;
+  color: var(--admin-color-text);
+}
+
 .uploadRow {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
@@ -220,6 +251,10 @@
 }
 
 @media (max-width: 720px) {
+  .uploadGuide {
+    grid-template-columns: 1fr;
+  }
+
   .uploadRow,
   .pageSectionHeader {
     grid-template-columns: 1fr;

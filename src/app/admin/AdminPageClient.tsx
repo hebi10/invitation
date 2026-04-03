@@ -93,6 +93,53 @@ function getTabLabel(tab: AdminTab) {
   }
 }
 
+function getTabSummary(tab: AdminTab) {
+  switch (tab) {
+    case 'pages':
+      return {
+        title: '청첩장 공개 상태와 연결 상태를 바로 확인합니다.',
+        description: '공개 여부, 테마 연결, 데이터 기준을 보고 곧바로 편집기로 이동할 수 있습니다.',
+        helper: '핵심 작업: 청첩장 편집',
+      };
+    case 'memory':
+      return {
+        title: '청첩장별 추억 페이지 초안과 연결 데이터를 불러옵니다.',
+        description: '청첩장을 고르면 초안, 댓글, 이미지 상태를 한 번에 이어서 관리할 수 있습니다.',
+        helper: '핵심 작업: 초안 확인 및 공개 상태 조정',
+      };
+    case 'images':
+      return {
+        title: '선택한 청첩장의 이미지를 업로드하고 교체합니다.',
+        description: '페이지를 고른 뒤 현재 이미지 목록을 확인하고 새 이미지를 추가하거나 삭제할 수 있습니다.',
+        helper: '핵심 작업: 이미지 업로드',
+      };
+    case 'comments':
+      return {
+        title: '검색과 필터로 댓글을 찾고 삭제할 수 있습니다.',
+        description: '페이지, 기간, 검색어 기준으로 방명록을 좁혀 보고 필요한 댓글만 빠르게 정리합니다.',
+        helper: '핵심 작업: 댓글 검토 및 삭제',
+      };
+    case 'passwords':
+      return {
+        title: '페이지별 고객 비밀번호를 저장하고 편집기로 이동합니다.',
+        description: '기본은 숨김 상태로 관리되며, 저장 완료 여부를 확인한 뒤 편집기로 안전하게 열 수 있습니다.',
+        helper: '핵심 작업: 비밀번호 저장',
+      };
+    case 'periods':
+      return {
+        title: '공개 기간을 설정하고 만료 상태를 관리합니다.',
+        description: '곧 종료, 노출 중, 만료 상태를 비교하면서 기간 제한을 바로 수정하거나 해제할 수 있습니다.',
+        helper: '핵심 작업: 노출 기간 점검',
+      };
+    default:
+      return {
+        title: '현재 탭에 맞는 관리 작업을 진행합니다.',
+        description: '필요한 범위만 불러와 빠르게 운영 작업을 이어갈 수 있습니다.',
+        helper: '핵심 작업: 관리',
+      };
+  }
+}
+
 export default function AdminPageClient() {
   const { adminUser, isAdminLoggedIn, isAdminLoading, login, logout } = useAdmin();
   const router = useRouter();
@@ -182,7 +229,6 @@ export default function AdminPageClient() {
     try {
       const nextComments = await getAllComments();
       setComments(nextComments);
-      setCommentsLoaded(true);
     } catch (fetchError) {
       console.error(fetchError);
       showToast({
@@ -190,6 +236,7 @@ export default function AdminPageClient() {
         tone: 'error',
       });
     } finally {
+      setCommentsLoaded(true);
       setCommentsLoading(false);
     }
   }, [showToast]);
@@ -356,7 +403,12 @@ export default function AdminPageClient() {
   }, [fetchSummarySources, isAdminLoggedIn, resetLoadedFlags]);
 
   useEffect(() => {
-    if (!isAdminLoggedIn || activeTab !== 'comments' || commentsLoading || commentsLoaded) {
+    if (activeTab !== 'comments') {
+      setCommentsLoaded(false);
+      return;
+    }
+
+    if (!isAdminLoggedIn || commentsLoading || commentsLoaded) {
       return;
     }
 
@@ -489,6 +541,7 @@ export default function AdminPageClient() {
           ? `기간 제한 사용 ${restrictedCount}개`
           : '현재 기간 제한이 설정된 페이지가 없습니다.',
       tone: invitationCount > 0 ? 'success' : 'neutral',
+      actionLabel: '청첩장 관리 열기',
       onClick: () => updateQuery({ tab: 'pages' }),
     },
     {
@@ -500,6 +553,7 @@ export default function AdminPageClient() {
           ? `${DUE_SOON_DAYS}일 이내 종료되는 청첩장`
           : '긴급히 확인할 청첩장이 없습니다.',
       tone: dueSoonCount > 0 ? 'warning' : 'neutral',
+      actionLabel: '노출 기간 보기',
       onClick: () => updateQuery({ tab: 'periods', periodStatus: 'dueSoon' }),
     },
     {
@@ -511,6 +565,7 @@ export default function AdminPageClient() {
           ? `최근 ${RECENT_COMMENT_DAYS}일 이내 등록된 댓글`
           : '최근 댓글이 없습니다.',
       tone: recentCommentsCount > 0 ? 'primary' : 'neutral',
+      actionLabel: '방명록 열기',
       onClick: () =>
         updateQuery({ tab: 'comments', commentAge: 'recent', commentPage: '1' }),
     },
@@ -520,6 +575,7 @@ export default function AdminPageClient() {
       value: memoryPublicCount,
       meta: `청첩장 ${invitationCount}개와 별도로 운영됩니다.`,
       tone: memoryPublicCount > 0 ? 'primary' : 'neutral',
+      actionLabel: '추억 페이지 열기',
       onClick: () => updateQuery({ tab: 'memory' }),
     },
   ];
@@ -581,6 +637,7 @@ export default function AdminPageClient() {
   ].filter(Boolean) as Array<{ id: string; label: string; onRemove: () => void }>;
 
   const activeTabLabel = getTabLabel(activeTab);
+  const activeTabSummary = getTabSummary(activeTab);
 
   if (isAdminLoading) {
     return <div className={styles.container} />;
@@ -664,7 +721,12 @@ export default function AdminPageClient() {
             </div>
             <div className={styles.headerSummary}>
               <StatusBadge tone="primary">{activeTabLabel}</StatusBadge>
-              <p className={styles.headerSummaryText}>
+              <strong className={styles.headerSummaryTitle}>
+                {activeTabSummary.title}
+              </strong>
+              <p className={styles.headerSummaryText}>{activeTabSummary.description}</p>
+              <p className={styles.headerSummaryMeta}>{activeTabSummary.helper}</p>
+              <p className={styles.headerSummaryLegacy}>
                 현재 탭에 필요한 범위만 조회합니다.
               </p>
             </div>

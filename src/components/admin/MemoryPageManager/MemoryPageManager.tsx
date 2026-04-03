@@ -98,6 +98,7 @@ export default function MemoryPageManager() {
   const [uploading, setUploading] = useState(false);
   const [exists, setExists] = useState(false);
   const [error, setError] = useState('');
+  const [recentPageSlugs, setRecentPageSlugs] = useState<string[]>([]);
 
   useEffect(() => {
     if (!isAdminLoggedIn) {
@@ -203,6 +204,17 @@ export default function MemoryPageManager() {
     };
   }, [selectedPageSlug, isAdminLoggedIn]);
 
+  useEffect(() => {
+    if (!selectedPageSlug) {
+      return;
+    }
+
+    setRecentPageSlugs((current) => [
+      selectedPageSlug,
+      ...current.filter((slug) => slug !== selectedPageSlug),
+    ].slice(0, 3));
+  }, [selectedPageSlug]);
+
   const visibilityMeta = getVisibilityMeta(draft);
   const previewPath = draft ? buildMemoryPageUrl(draft.pageSlug) : '';
   const selectedCommentIds = useMemo(
@@ -219,6 +231,15 @@ export default function MemoryPageManager() {
       `${comment.author} ${comment.message}`.toLowerCase().includes(query)
     );
   }, [commentSearch, sourceComments]);
+
+  const quickAccessPages = useMemo(() => {
+    const fallbackPages = pages.slice(0, 3);
+    const mappedRecentPages = recentPageSlugs
+      .map((slug) => pages.find((page) => page.slug === slug) ?? null)
+      .filter((page): page is InvitationPageSummary => page !== null);
+
+    return mappedRecentPages.length > 0 ? mappedRecentPages : fallbackPages;
+  }, [pages, recentPageSlugs]);
 
   const setField = <K extends keyof MemoryPage>(field: K, value: MemoryPage[K]) => {
     setDraft((current) => (current ? { ...current, [field]: value } : current));
@@ -554,6 +575,20 @@ export default function MemoryPageManager() {
             title="청첩장을 선택해주세요."
             description="페이지를 선택하면 추억 페이지 초안과 댓글, 이미지를 불러옵니다."
           />
+          {quickAccessPages.length > 0 ? (
+            <div className={styles.selectionToolbar}>
+              {quickAccessPages.map((page) => (
+                <button
+                  key={page.slug}
+                  type="button"
+                  className="admin-button admin-button-ghost"
+                  onClick={() => setSelectedPageSlug(page.slug)}
+                >
+                  {page.displayName}
+                </button>
+              ))}
+            </div>
+          ) : null}
         </section>
       ) : null}
 

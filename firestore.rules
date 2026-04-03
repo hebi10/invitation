@@ -30,6 +30,11 @@ service cloud.firestore {
         request.resource.data.pageSlug.size() <= 120;
     }
 
+    function isValidCommentCreateForPage(pageSlug) {
+      return isValidCommentCreate() &&
+        request.resource.data.pageSlug == pageSlug;
+    }
+
     function hasClientAccess(pageSlug, editorTokenHash) {
       return pageSlug is string &&
         editorTokenHash is string &&
@@ -70,6 +75,10 @@ service cloud.firestore {
         hasClientAccess(pageSlug, request.resource.data.editorTokenHash);
     }
 
+    function isLegacyCommentCollection(collectionId) {
+      return collectionId.matches('^comments-.+$');
+    }
+
     match /memory-pages/{pageSlug} {
       allow read: if isPublicMemoryPage(resource.data) || isAdmin();
       allow create, update, delete: if isAdmin();
@@ -80,6 +89,23 @@ service cloud.firestore {
       allow create: if isValidCommentCreate();
       allow update: if isAdmin() || isClientCommentDelete();
       allow delete: if isAdmin();
+    }
+
+    match /guestbooks/{pageSlug} {
+      allow read: if true;
+      allow create, update, delete: if isAdmin();
+
+      match /comments/{commentId} {
+        allow read: if true;
+        allow create: if isValidCommentCreateForPage(pageSlug);
+        allow update: if isAdmin() || isClientCommentDelete();
+        allow delete: if isAdmin();
+      }
+    }
+
+    match /{collectionId}/{commentId} {
+      allow read: if isLegacyCommentCollection(collectionId);
+      allow delete: if isLegacyCommentCollection(collectionId) && isAdmin();
     }
 
     match /client-passwords/{document=**} {

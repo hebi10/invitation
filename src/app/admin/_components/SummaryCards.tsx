@@ -8,6 +8,7 @@ export type SummaryCardItem = {
   value: number | string;
   meta: string;
   tone?: SummaryTone;
+  actionLabel?: string;
   onClick?: () => void;
 };
 
@@ -29,6 +30,14 @@ export default function SummaryCards({ items }: SummaryCardsProps) {
               <span className={uiStyles.summaryLabel}>{item.label}</span>
               <strong className={uiStyles.summaryValue}>{item.value}</strong>
               <p className={uiStyles.summaryMeta}>{item.meta}</p>
+              {item.actionLabel ? (
+                <span className={uiStyles.summaryAction}>
+                  {item.actionLabel}
+                  <span className={uiStyles.summaryActionArrow} aria-hidden="true">
+                    →
+                  </span>
+                </span>
+              ) : null}
             </button>
           );
         }
@@ -38,6 +47,14 @@ export default function SummaryCards({ items }: SummaryCardsProps) {
             <span className={uiStyles.summaryLabel}>{item.label}</span>
             <strong className={uiStyles.summaryValue}>{item.value}</strong>
             <p className={uiStyles.summaryMeta}>{item.meta}</p>
+            {item.actionLabel ? (
+              <span className={uiStyles.summaryAction}>
+                {item.actionLabel}
+                <span className={uiStyles.summaryActionArrow} aria-hidden="true">
+                  →
+                </span>
+              </span>
+            ) : null}
           </article>
         );
       })}

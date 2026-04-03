@@ -181,7 +181,12 @@ export default function GuestbookThemed({
       if (isAdminLoggedIn) {
         await deleteComment(comment.id, comment.collectionName);
       } else if (clientTokenHash) {
-        await softDeleteCommentByClient(comment.id, pageSlug, clientTokenHash);
+        await softDeleteCommentByClient(
+          comment.id,
+          pageSlug,
+          clientTokenHash,
+          comment.collectionName
+        );
       }
 
       await loadComments();
