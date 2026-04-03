@@ -330,6 +330,7 @@
 
 .commentsCount {
   font-family: 'Arial', sans-serif;
+  display: flex;
   font-size: 0.95rem;
   color: #495057;
   font-weight: 500;
