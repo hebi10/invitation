@@ -4,6 +4,7 @@ import { type ChangeEvent, type ReactNode, useEffect, useMemo, useRef, useState 
 
 import { useAdmin } from '@/contexts';
 import { USE_FIREBASE } from '@/lib/firebase';
+import { resolveInvitationFeatures } from '@/lib/invitationProducts';
 import { uploadPageEditorImage } from '@/services/imageService';
 import {
   getEditableInvitationPageConfig,
@@ -41,7 +42,6 @@ import {
 
 const TOKEN_STORAGE_PREFIX = 'page-editor-token:';
 const MAX_REPEATABLE_ITEMS = 3;
-const MAX_GALLERY_IMAGES = 3;
 const AUTOSAVE_DELAY_MS = 1500;
 
 type NoticeState = { tone: NoticeTone; message: string } | null;
@@ -627,6 +627,11 @@ export default function PageEditorClient({
   const isDirty = hasConfigChanges || hasPublishChanges;
 
   const stepReviews = useMemo(() => buildStepReviews(formState), [formState]);
+  const invitationFeatures = useMemo(
+    () => resolveInvitationFeatures(formState?.productTier, formState?.features),
+    [formState?.features, formState?.productTier]
+  );
+  const maxGalleryImages = invitationFeatures.maxGalleryImages;
   const firstInvalidRequiredStep = useMemo(
     () => findFirstInvalidRequiredStep(stepReviews),
     [stepReviews]
@@ -1201,7 +1206,7 @@ export default function PageEditorClient({
 
       const nextGalleryImages = [...(draft.pageData.galleryImages ?? [])];
       nextGalleryImages[index] = value;
-      draft.pageData.galleryImages = nextGalleryImages.slice(0, MAX_GALLERY_IMAGES);
+      draft.pageData.galleryImages = nextGalleryImages.slice(0, maxGalleryImages);
     });
   };
 
@@ -1212,7 +1217,7 @@ export default function PageEditorClient({
       }
 
       const nextGalleryImages = [...(draft.pageData.galleryImages ?? [])];
-      if (nextGalleryImages.length >= MAX_GALLERY_IMAGES) {
+      if (nextGalleryImages.length >= maxGalleryImages) {
         return;
       }
 
@@ -1311,12 +1316,12 @@ export default function PageEditorClient({
     try {
       if (field === 'gallery') {
         const currentGalleryCount = formState.pageData?.galleryImages?.length ?? 0;
-        const remainingSlots = MAX_GALLERY_IMAGES - currentGalleryCount;
+        const remainingSlots = maxGalleryImages - currentGalleryCount;
 
         if (remainingSlots <= 0) {
           setNotice({
             tone: 'error',
-            message: `갤러리 이미지는 최대 ${MAX_GALLERY_IMAGES}장까지 설정할 수 있습니다.`,
+            message: `갤러리 이미지는 최대 ${maxGalleryImages}장까지 설정할 수 있습니다.`,
           });
           return;
         }
@@ -1336,14 +1341,14 @@ export default function PageEditorClient({
           draft.pageData.galleryImages = [
             ...(draft.pageData.galleryImages ?? []),
             ...uploadedImages.map((image) => image.url),
-          ].slice(0, MAX_GALLERY_IMAGES);
+          ].slice(0, maxGalleryImages);
         });
 
         setNotice({
           tone: 'success',
           message:
             files.length > uploadTargets.length
-              ? `갤러리 이미지 ${uploadTargets.length}장만 추가했습니다. 최대 ${MAX_GALLERY_IMAGES}장까지 설정할 수 있습니다.`
+              ? `갤러리 이미지 ${uploadTargets.length}장만 추가했습니다. 최대 ${maxGalleryImages}장까지 설정할 수 있습니다.`
               : `갤러리 이미지 ${uploadedImages.length}장을 추가했습니다. 자동 저장이 곧 진행됩니다.`,
         });
         return;
@@ -2653,7 +2658,7 @@ export default function PageEditorClient({
     }
 
     const galleryImages = formState.pageData?.galleryImages ?? [];
-    const canAddGalleryField = galleryImages.length < MAX_GALLERY_IMAGES;
+    const canAddGalleryField = galleryImages.length < maxGalleryImages;
     const isUploadingCover = uploadingField === 'wedding';
     const isUploadingGallery = uploadingField === 'gallery';
 
@@ -2742,10 +2747,10 @@ export default function PageEditorClient({
             <div>
               <h3 className={styles.subCardTitle}>갤러리 이미지</h3>
               <p className={styles.subCardDescription}>
-                고객이 보는 사진 순서대로 최대 {MAX_GALLERY_IMAGES}장까지 배치할 수 있습니다.
+                고객이 보는 사진 순서대로 최대 {maxGalleryImages}장까지 배치할 수 있습니다.
               </p>
               <p className={styles.countText}>
-                현재 {galleryImages.length} / {MAX_GALLERY_IMAGES}장
+                현재 {galleryImages.length} / {maxGalleryImages}장
               </p>
             </div>
             <div className={styles.inlineField}>

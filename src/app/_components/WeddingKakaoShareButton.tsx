@@ -4,12 +4,14 @@ import { useEffect, useMemo, useState } from 'react';
 
 import { usePageImages } from '@/hooks';
 import { getPublicKakaoJavaScriptKey } from '@/lib/publicRuntimeConfig';
+import type { InvitationShareMode } from '@/types/invitationPage';
 
 interface WeddingKakaoShareButtonProps {
   title: string;
   description: string;
   imageUrl: string;
   pageSlug: string;
+  shareMode?: InvitationShareMode;
   variant?: 'default' | 'space';
 }
 
@@ -58,6 +60,7 @@ export default function WeddingKakaoShareButton({
   description,
   imageUrl,
   pageSlug,
+  shareMode = 'card',
   variant = 'default',
 }: WeddingKakaoShareButtonProps) {
   const [isKakaoReady, setIsKakaoReady] = useState(false);
@@ -119,45 +122,65 @@ export default function WeddingKakaoShareButton({
   }, [feedbackMessage]);
 
   const buttonLabel = useMemo(() => {
-    return feedbackMessage || '카카오톡으로 공유';
+    return feedbackMessage || 'Share via KakaoTalk';
   }, [feedbackMessage]);
 
   const handleKakaoShare = () => {
     if (!kakaoAppKey) {
-      setFeedbackMessage('카카오 공유 키가 설정되지 않았습니다');
+      setFeedbackMessage('Kakao share is not configured.');
       return;
     }
 
     if (!(window.Kakao && window.Kakao.Share && isKakaoReady)) {
-      setFeedbackMessage('카카오 공유를 준비 중입니다');
+      setFeedbackMessage('Preparing Kakao share.');
       return;
     }
 
     const shareUrl = `${window.location.origin}${window.location.pathname}`;
 
-    window.Kakao.Share.sendDefault({
-      objectType: 'feed',
-      content: {
-        title,
-        description,
-        imageUrl: shareImageUrl,
+    if (shareMode === 'link') {
+      window.Kakao.Share.sendDefault({
+        objectType: 'text',
+        text: `${title}\n${description}`,
         link: {
           mobileWebUrl: shareUrl,
           webUrl: shareUrl,
         },
-      },
-      buttons: [
-        {
-          title: '청첩장 보기',
+        buttons: [
+          {
+            title: 'Open invitation',
+            link: {
+              mobileWebUrl: shareUrl,
+              webUrl: shareUrl,
+            },
+          },
+        ],
+      });
+    } else {
+      window.Kakao.Share.sendDefault({
+        objectType: 'feed',
+        content: {
+          title,
+          description,
+          imageUrl: shareImageUrl,
           link: {
             mobileWebUrl: shareUrl,
             webUrl: shareUrl,
           },
         },
-      ],
-    });
+        buttons: [
+          {
+            title: 'Open invitation',
+            link: {
+              mobileWebUrl: shareUrl,
+              webUrl: shareUrl,
+            },
+          },
+        ],
+      });
+    }
 
-    setFeedbackMessage('카카오 공유창을 열었습니다');
+    setFeedbackMessage('Kakao share opened.');
   };
 
   return (

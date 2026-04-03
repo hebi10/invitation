@@ -16,6 +16,7 @@ import {
   WeddingCalendar,
   WeddingCalendarSimple,
 } from '@/components/sections';
+import { resolveInvitationFeatures } from '@/lib/invitationProducts';
 import type { InvitationPageSeed } from '@/types/invitationPage';
 
 import {
@@ -221,6 +222,10 @@ export default function PageEditorSectionPreview({
     () => buildPreviewPage(slug, formState, published),
     [formState, published, slug]
   );
+  const previewFeatures = useMemo(
+    () => resolveInvitationFeatures(previewPage.productTier, previewPage.features),
+    [previewPage.features, previewPage.productTier]
+  );
   const weddingDate = useMemo(() => buildWeddingDate(previewPage), [previewPage]);
   const previewImages = useMemo(() => getPreviewImages(previewPage), [previewPage]);
   const groomAccounts = previewPage.pageData?.giftInfo?.groomAccounts ?? [];
@@ -271,7 +276,7 @@ export default function PageEditorSectionPreview({
               weddingDate={weddingDate}
               currentMonth={weddingDate}
               events={[createWeddingCalendarEvent(previewPage, weddingDate, '·')]}
-              showCountdown
+              showCountdown={previewFeatures.showCountdown}
               countdownTitle="결혼식까지"
             />
           ) : (
@@ -280,7 +285,7 @@ export default function PageEditorSectionPreview({
               weddingDate={weddingDate}
               currentMonth={weddingDate}
               events={[createWeddingCalendarEvent(previewPage, weddingDate)]}
-              showCountdown
+              showCountdown={previewFeatures.showCountdown}
               countdownTitle="결혼식까지"
             />
           )}

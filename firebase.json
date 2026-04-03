@@ -12,6 +12,18 @@
       "firebase.json",
       "**/.*",
       "**/node_modules/**"
+    ],
+    "redirects": [
+      {
+        "source": "/lee-jonghun-choi-in-simple",
+        "destination": "/lee-jonghun-choi-in/simple/",
+        "type": 301
+      },
+      {
+        "source": "/lee-jonghun-choi-in-simple/",
+        "destination": "/lee-jonghun-choi-in/simple/",
+        "type": 301
+      }
     ]
   }
 }

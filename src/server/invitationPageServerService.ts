@@ -8,6 +8,12 @@ import {
   type WeddingPageConfig,
 } from '@/config/weddingPages';
 import { buildInvitationVariants } from '@/lib/invitationVariants';
+import {
+  DEFAULT_INVITATION_PRODUCT_TIER,
+  DEFAULT_INVITATION_THEME,
+  normalizeInvitationProductTier,
+  resolveInvitationFeatures,
+} from '@/lib/invitationProducts';
 import type {
   InvitationPage,
   InvitationPageSeed,
@@ -47,7 +53,6 @@ type BuiltInvitationPageRecord = {
 const DISPLAY_PERIOD_COLLECTION = 'display-periods';
 const PAGE_CONFIG_COLLECTION = 'invitation-page-configs';
 const PAGE_REGISTRY_COLLECTION = 'invitation-page-registry';
-const DEFAULT_INVITATION_THEME: InvitationThemeKey = 'emotional';
 
 function isRecord(value: unknown): value is Record<string, any> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -297,6 +302,27 @@ function mergeInvitationPageSeed(
           : base?.pageData?.giftInfo,
       }
     : base?.pageData;
+  const featuresInput = isRecord(candidate.features) ? candidate.features : {};
+  const productTier = normalizeInvitationProductTier(
+    candidate.productTier,
+    base?.productTier ?? DEFAULT_INVITATION_PRODUCT_TIER
+  );
+  const features = resolveInvitationFeatures(productTier, {
+    maxGalleryImages:
+      typeof featuresInput.maxGalleryImages === 'number' &&
+      Number.isFinite(featuresInput.maxGalleryImages)
+        ? featuresInput.maxGalleryImages
+        : undefined,
+    shareMode: featuresInput.shareMode,
+    showCountdown:
+      typeof featuresInput.showCountdown === 'boolean'
+        ? featuresInput.showCountdown
+        : undefined,
+    showGuestbook:
+      typeof featuresInput.showGuestbook === 'boolean'
+        ? featuresInput.showGuestbook
+        : undefined,
+  });
 
   const supportedVariants = buildInvitationVariants(slug, displayName);
 
@@ -360,6 +386,8 @@ function mergeInvitationPageSeed(
     description,
     date,
     venue,
+    productTier,
+    features,
     groomName: readString(candidate.groomName, groom.name).trim(),
     brideName: readString(candidate.brideName, bride.name).trim(),
     couple: {

@@ -11,6 +11,7 @@ import {
   WeddingCalendarSimple,
   WeddingLoaderSimple,
 } from '@/components/sections';
+import { resolveInvitationFeatures } from '@/lib/invitationProducts';
 
 import {
   createWeddingCalendarEvent,
@@ -18,10 +19,11 @@ import {
   getCeremonyAddress,
   getCeremonyContact,
   getMapDescription,
+  shouldShowGiftInfo,
 } from '../weddingPageRenderers';
 
 export default createWeddingThemeRenderer({
-  ariaLabelSuffix: ' (심플 버전)',
+  ariaLabelSuffix: ' (simple)',
   renderLoader: ({ state }) => (
     <WeddingLoaderSimple
       groomName={state.pageConfig.groomName}
@@ -36,7 +38,7 @@ export default createWeddingThemeRenderer({
     ({ state }) => (
       <CoverSimple
         title={state.pageConfig.displayName}
-        subtitle={state.pageConfig.pageData?.subtitle ?? '두 사람이 사랑으로 하나가 되는 날'}
+        subtitle={state.pageConfig.pageData?.subtitle ?? 'A day when two hearts become one'}
         weddingDate={`${state.pageConfig.date} ${state.pageConfig.pageData?.ceremonyTime ?? ''}`}
         ceremonyTime={state.pageConfig.pageData?.ceremonyTime}
         venueName={state.pageConfig.venue}
@@ -55,19 +57,24 @@ export default createWeddingThemeRenderer({
         bride={state.pageConfig.couple.bride}
       />
     ),
-    ({ state }) => (
-      <GallerySimple images={state.galleryImageUrls} />
-    ),
-    ({ state }) => (
-      <WeddingCalendarSimple
-        title="행복한 순간을 함께하세요"
-        weddingDate={state.weddingDate}
-        currentMonth={state.weddingDate}
-        events={[createWeddingCalendarEvent(state.pageConfig, state.weddingDate, '♥')]}
-        showCountdown={true}
-        countdownTitle="결혼식까지"
-      />
-    ),
+    ({ state }) => <GallerySimple images={state.galleryImageUrls} />,
+    ({ state }) => {
+      const features = resolveInvitationFeatures(
+        state.pageConfig.productTier,
+        state.pageConfig.features
+      );
+
+      return (
+        <WeddingCalendarSimple
+          title="Wedding Calendar"
+          weddingDate={state.weddingDate}
+          currentMonth={state.weddingDate}
+          events={[createWeddingCalendarEvent(state.pageConfig, state.weddingDate, '&')]}
+          showCountdown={features.showCountdown}
+          countdownTitle="Until the wedding"
+        />
+      );
+    },
     ({ state }) => (
       <div id="wedding-info">
         <ScheduleSimple
@@ -89,13 +96,22 @@ export default createWeddingThemeRenderer({
         kakaoMapConfig={state.pageConfig.pageData?.kakaoMap}
       />
     ),
-    ({ state }) => <GuestbookSimple pageSlug={state.pageConfig.slug} />,
+    ({ state }) => {
+      const features = resolveInvitationFeatures(
+        state.pageConfig.productTier,
+        state.pageConfig.features
+      );
+
+      return features.showGuestbook ? (
+        <GuestbookSimple pageSlug={state.pageConfig.slug} />
+      ) : null;
+    },
     ({ state }) =>
-      state.giftInfo ? (
+      shouldShowGiftInfo(state) ? (
         <GiftInfoSimple
-          groomAccounts={state.giftInfo.groomAccounts ?? []}
-          brideAccounts={state.giftInfo.brideAccounts ?? []}
-          message={state.giftInfo.message}
+          groomAccounts={state.giftInfo?.groomAccounts ?? []}
+          brideAccounts={state.giftInfo?.brideAccounts ?? []}
+          message={state.giftInfo?.message}
         />
       ) : null,
   ],

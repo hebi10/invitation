@@ -1,17 +1,13 @@
-import { Suspense } from 'react';
-
-import PageWizardClient from './PageWizardClient';
+import InvitationDraftSetupClient from '@/app/_components/InvitationDraftSetupClient';
 
 export const dynamic = 'force-dynamic';
 
-function PageWizardFallback() {
-  return <div style={{ minHeight: '100vh', background: '#f8fafc' }} />;
-}
-
 export default function PageWizardCreatePage() {
   return (
-    <Suspense fallback={<PageWizardFallback />}>
-      <PageWizardClient initialSlug={null} />
-    </Suspense>
+    <InvitationDraftSetupClient
+      editorKind="page-wizard"
+      title="Create a page-wizard draft"
+      description="Start with the template and package you want, create the Firestore draft, and then continue inside the mobile step-based wizard."
+    />
   );
 }

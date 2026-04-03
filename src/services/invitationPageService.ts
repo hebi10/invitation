@@ -5,8 +5,17 @@ import {
 } from '@/config/weddingPages';
 import { buildInvitationVariants } from '@/lib/invitationVariants';
 import { ensureFirebaseInit, USE_FIREBASE } from '@/lib/firebase';
+import {
+  buildInvitationTemplateDefinitions,
+  DEFAULT_INVITATION_PRODUCT_TIER,
+  DEFAULT_INVITATION_THEME,
+  normalizeInvitationProductTier,
+  resolveInvitationFeatures,
+} from '@/lib/invitationProducts';
 import type {
+  InvitationFeatureFlags,
   InvitationPage,
+  InvitationProductTier,
   InvitationPageSeed,
   InvitationThemeKey,
 } from '@/types/invitationPage';
@@ -20,6 +29,8 @@ export interface InvitationPageSummary {
   venue: string;
   published: boolean;
   defaultTheme: InvitationThemeKey;
+  productTier: InvitationProductTier;
+  features: InvitationFeatureFlags;
   displayPeriodEnabled: boolean;
   displayPeriodStart: Date | null;
   displayPeriodEnd: Date | null;
@@ -33,16 +44,21 @@ export interface EditableInvitationPageConfig {
   config: InvitationPageSeed;
   published: boolean;
   defaultTheme: InvitationThemeKey;
+  productTier: InvitationProductTier;
+  features: InvitationFeatureFlags;
   hasCustomConfig: boolean;
   dataSource: 'seed' | 'firestore';
   lastSavedAt: Date | null;
 }
 
 export interface InvitationPageSeedTemplate {
-  slug: string;
+  id: string;
+  seedSlug: string;
+  theme: InvitationThemeKey;
+  productTier: InvitationProductTier;
   displayName: string;
-  groomName: string;
-  brideName: string;
+  description: string;
+  features: InvitationFeatureFlags;
 }
 
 export interface CreateInvitationPageDraftInput {
@@ -52,6 +68,7 @@ export interface CreateInvitationPageDraftInput {
   brideName?: string;
   published?: boolean;
   defaultTheme?: InvitationThemeKey;
+  productTier?: InvitationProductTier;
   editorTokenHash?: string | null;
 }
 
@@ -115,7 +132,6 @@ const PAGE_CONFIG_COLLECTION = 'invitation-page-configs';
 const PAGE_REGISTRY_COLLECTION = 'invitation-page-registry';
 const PAGE_SLUG_SUFFIX_ALPHABET = 'abcdefghijklmnopqrstuvwxyz';
 const PAGE_SLUG_SUFFIX_LENGTH = 3;
-const DEFAULT_INVITATION_THEME: InvitationThemeKey = 'emotional';
 
 function wait(ms: number) {
   return new Promise((resolve) => {
@@ -394,6 +410,27 @@ function mergeInvitationPageSeed(
           : base?.pageData?.giftInfo,
       }
     : base?.pageData;
+  const featuresInput = isRecord(candidate.features) ? candidate.features : {};
+  const productTier = normalizeInvitationProductTier(
+    candidate.productTier,
+    base?.productTier ?? DEFAULT_INVITATION_PRODUCT_TIER
+  );
+  const features = resolveInvitationFeatures(productTier, {
+    maxGalleryImages:
+      typeof featuresInput.maxGalleryImages === 'number' &&
+      Number.isFinite(featuresInput.maxGalleryImages)
+        ? featuresInput.maxGalleryImages
+        : undefined,
+    shareMode: featuresInput.shareMode,
+    showCountdown:
+      typeof featuresInput.showCountdown === 'boolean'
+        ? featuresInput.showCountdown
+        : undefined,
+    showGuestbook:
+      typeof featuresInput.showGuestbook === 'boolean'
+        ? featuresInput.showGuestbook
+        : undefined,
+  });
 
   const supportedVariants = buildInvitationVariants(slug, displayName);
 
@@ -458,6 +495,8 @@ function mergeInvitationPageSeed(
     description,
     date,
     venue,
+    productTier,
+    features,
     groomName: readString(candidate.groomName, groom.name).trim(),
     brideName: readString(candidate.brideName, bride.name).trim(),
     couple: {
@@ -537,6 +576,12 @@ function toInvitationPageSummary(
     defaultTheme: InvitationThemeKey;
   }
 ): InvitationPageSummary {
+  const productTier = normalizeInvitationProductTier(
+    page.productTier,
+    DEFAULT_INVITATION_PRODUCT_TIER
+  );
+  const features = resolveInvitationFeatures(productTier, page.features);
+
   return {
     slug: page.slug,
     displayName: page.displayName,
@@ -545,6 +590,8 @@ function toInvitationPageSummary(
     venue: page.venue,
     published: page.published,
     defaultTheme: options.defaultTheme,
+    productTier,
+    features,
     displayPeriodEnabled: page.displayPeriodEnabled,
     displayPeriodStart: page.displayPeriodStart,
     displayPeriodEnd: page.displayPeriodEnd,
@@ -568,14 +615,13 @@ function getSeedSummaries(): InvitationPageSummary[] {
 }
 
 function getSeedTemplates(): InvitationPageSeedTemplate[] {
-  return getAllWeddingPageSeeds()
-    .map((seed) => ({
-      slug: seed.slug,
-      displayName: seed.displayName,
-      groomName: seed.couple.groom.name || seed.groomName,
-      brideName: seed.couple.bride.name || seed.brideName,
-    }))
-    .sort((left, right) => left.displayName.localeCompare(right.displayName, 'ko'));
+  const defaultSeedSlug = getAllWeddingPageSeeds()[0]?.slug;
+
+  if (!defaultSeedSlug) {
+    return [];
+  }
+
+  return buildInvitationTemplateDefinitions(defaultSeedSlug);
 }
 
 function buildDraftConfigFromSeed(
@@ -584,6 +630,7 @@ function buildDraftConfigFromSeed(
     slug: string;
     groomName: string;
     brideName: string;
+    productTier: InvitationProductTier;
   }
 ) {
   const nextSeed = cloneInvitationPageSeed(seed);
@@ -591,9 +638,12 @@ function buildDraftConfigFromSeed(
     overrides.groomName,
     overrides.brideName
   );
+  const features = resolveInvitationFeatures(overrides.productTier, seed.features);
 
   nextSeed.slug = overrides.slug;
   nextSeed.displayName = displayName;
+  nextSeed.productTier = overrides.productTier;
+  nextSeed.features = features;
   nextSeed.groomName = overrides.groomName;
   nextSeed.brideName = overrides.brideName;
   nextSeed.couple.groom.name = overrides.groomName;
@@ -1003,18 +1053,28 @@ export async function getEditableInvitationPageConfig(
 ): Promise<EditableInvitationPageConfig | null> {
   const seed = getWeddingPageBySlug(pageSlug);
   const fallbackConfig = seed ? sanitizeHeartIconPlaceholdersDeep(seed) : null;
+  const fallbackProductTier = normalizeInvitationProductTier(
+    fallbackConfig?.productTier,
+    DEFAULT_INVITATION_PRODUCT_TIER
+  );
+  const fallbackFeatures = resolveInvitationFeatures(
+    fallbackProductTier,
+    fallbackConfig?.features
+  );
 
   const firestore = await ensureFirestoreState();
   if (!firestore) {
     return fallbackConfig
       ? {
           slug: pageSlug,
-        config: fallbackConfig,
-        published: true,
-        defaultTheme: DEFAULT_INVITATION_THEME,
-        hasCustomConfig: false,
-        dataSource: 'seed',
-        lastSavedAt: null,
+          config: fallbackConfig,
+          published: true,
+          defaultTheme: DEFAULT_INVITATION_THEME,
+          productTier: fallbackProductTier,
+          features: fallbackFeatures,
+          hasCustomConfig: false,
+          dataSource: 'seed',
+          lastSavedAt: null,
       }
       : null;
   }
@@ -1034,12 +1094,19 @@ export async function getEditableInvitationPageConfig(
       sourceRecord.hasCustomConfig && configSeed
         ? sanitizeHeartIconPlaceholdersDeep(configSeed)
         : fallbackConfig ?? toEditableSeed(sourceRecord.page);
+    const productTier = normalizeInvitationProductTier(
+      editableConfig.productTier,
+      DEFAULT_INVITATION_PRODUCT_TIER
+    );
+    const features = resolveInvitationFeatures(productTier, editableConfig.features);
 
     return {
       slug: pageSlug,
       config: editableConfig,
       published: sourceRecord.page.published,
       defaultTheme: registryRecord?.defaultTheme ?? DEFAULT_INVITATION_THEME,
+      productTier,
+      features,
       hasCustomConfig: sourceRecord.hasCustomConfig,
       dataSource: sourceRecord.dataSource,
       lastSavedAt: registryRecord?.updatedAt ?? null,
@@ -1049,12 +1116,14 @@ export async function getEditableInvitationPageConfig(
     return fallbackConfig
       ? {
           slug: pageSlug,
-        config: fallbackConfig,
-        published: true,
-        defaultTheme: DEFAULT_INVITATION_THEME,
-        hasCustomConfig: false,
-        dataSource: 'seed',
-        lastSavedAt: null,
+          config: fallbackConfig,
+          published: true,
+          defaultTheme: DEFAULT_INVITATION_THEME,
+          productTier: fallbackProductTier,
+          features: fallbackFeatures,
+          hasCustomConfig: false,
+          dataSource: 'seed',
+          lastSavedAt: null,
       }
       : null;
   }
@@ -1136,6 +1205,10 @@ export async function createInvitationPageDraftFromSeed(
     slug,
     groomName,
     brideName,
+    productTier: normalizeInvitationProductTier(
+      input.productTier,
+      DEFAULT_INVITATION_PRODUCT_TIER
+    ),
   });
   const now = new Date();
 

@@ -7,6 +7,7 @@ import { useAdmin } from '@/contexts';
 import { usePageImages } from '@/hooks';
 import { getAdminInvitationPreviewSummary } from '@/lib/adminInvitationPreviewCache';
 import { USE_FIREBASE } from '@/lib/firebase';
+import { resolveInvitationFeatures } from '@/lib/invitationProducts';
 import { getInvitationPageBySlug } from '@/services/invitationPageService';
 import type { InvitationPage } from '@/types/invitationPage';
 
@@ -291,6 +292,10 @@ export function useWeddingInvitationState(
 
   const configuredGalleryImageUrls =
     pageConfig?.pageData?.galleryImages?.filter((imageUrl) => imageUrl.trim()) ?? [];
+  const galleryFeatures = resolveInvitationFeatures(
+    pageConfig?.productTier,
+    pageConfig?.features
+  );
   const mainImageUrl =
     pageConfig?.metadata.images.wedding ||
     configuredGalleryImageUrls[0] ||
@@ -298,8 +303,10 @@ export function useWeddingInvitationState(
     '';
   const galleryImageUrls =
     configuredGalleryImageUrls.length > 0
-      ? configuredGalleryImageUrls
-      : galleryImages.map((image) => image.url);
+      ? configuredGalleryImageUrls.slice(0, galleryFeatures.maxGalleryImages)
+      : galleryImages
+          .map((image) => image.url)
+          .slice(0, galleryFeatures.maxGalleryImages);
   const preloadImages = [
     ...(mainImageUrl ? [mainImageUrl] : []),
     ...galleryImageUrls.slice(0, 2),

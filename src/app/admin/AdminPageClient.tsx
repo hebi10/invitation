@@ -147,7 +147,9 @@ export default function AdminPageClient() {
   const { adminUser, isAdminLoggedIn, isAdminLoading, login, logout } = useAdmin();
   const router = useRouter();
   const pathname = usePathname();
+  const safePathname = pathname ?? '/admin';
   const searchParams = useSearchParams();
+  const safeSearchParams = searchParams ?? new URLSearchParams();
   const { confirm, showToast } = useAdminOverlay();
 
   const [email, setEmail] = useState('');
@@ -174,29 +176,46 @@ export default function AdminPageClient() {
     () => getInvitationPageSeedTemplates(),
     []
   );
-  const [createSeedSlug, setCreateSeedSlug] = useState(seedTemplates[0]?.slug ?? '');
-  const [createSlugBase, setCreateSlugBase] = useState(seedTemplates[0]?.slug ?? '');
-  const [createGroomName, setCreateGroomName] = useState(seedTemplates[0]?.groomName ?? '');
-  const [createBrideName, setCreateBrideName] = useState(seedTemplates[0]?.brideName ?? '');
+  const [createSeedSlug, setCreateSeedSlug] = useState(seedTemplates[0]?.seedSlug ?? '');
+  const [createSlugBase, setCreateSlugBase] = useState(seedTemplates[0]?.seedSlug ?? '');
+  const [createGroomName, setCreateGroomName] = useState('');
+  const [createBrideName, setCreateBrideName] = useState('');
   const [creatingPage, setCreatingPage] = useState(false);
 
   const [pagesLoaded, setPagesLoaded] = useState(false);
   const [commentsLoaded, setCommentsLoaded] = useState(false);
   const [passwordsLoaded, setPasswordsLoaded] = useState(false);
 
-  const activeTab = parseTab(searchParams.get('tab'));
-  const pageSearch = searchParams.get('pageQ') ?? '';
-  const pageShortcutFilter = parseShortcut(searchParams.get('shortcut'));
-  const pageStatusFilter = parsePageStatus(searchParams.get('pageStatus'));
-  const pageSort = parsePageSort(searchParams.get('pageSort'));
-  const commentSearch = searchParams.get('commentQ') ?? '';
-  const selectedPageSlug = searchParams.get('commentPageSlug') ?? 'all';
-  const commentAgeFilter = parseCommentAge(searchParams.get('commentAge'));
-  const currentPage = numberFromParam(searchParams.get('commentPage'), 1);
-  const periodStatusFilter = parsePeriodFilter(searchParams.get('periodStatus'));
+  const applyCreateTemplate = useCallback(
+    (value: string) => {
+      setCreateSeedSlug(value);
+
+      const matchedTemplate = seedTemplates.find(
+        (template) => template.seedSlug === value || template.id === value
+      );
+
+      if (!matchedTemplate) {
+        return;
+      }
+
+      setCreateSlugBase((current) => current || matchedTemplate.seedSlug);
+    },
+    [seedTemplates]
+  );
+
+  const activeTab = parseTab(safeSearchParams.get('tab'));
+  const pageSearch = safeSearchParams.get('pageQ') ?? '';
+  const pageShortcutFilter = parseShortcut(safeSearchParams.get('shortcut'));
+  const pageStatusFilter = parsePageStatus(safeSearchParams.get('pageStatus'));
+  const pageSort = parsePageSort(safeSearchParams.get('pageSort'));
+  const commentSearch = safeSearchParams.get('commentQ') ?? '';
+  const selectedPageSlug = safeSearchParams.get('commentPageSlug') ?? 'all';
+  const commentAgeFilter = parseCommentAge(safeSearchParams.get('commentAge'));
+  const currentPage = numberFromParam(safeSearchParams.get('commentPage'), 1);
+  const periodStatusFilter = parsePeriodFilter(safeSearchParams.get('periodStatus'));
 
   const updateQuery = useCallback((updates: Record<string, string | null>) => {
-    const nextParams = new URLSearchParams(searchParams.toString());
+    const nextParams = new URLSearchParams(safeSearchParams.toString());
 
     Object.entries(updates).forEach(([key, value]) => {
       if (value === null || value === '' || value === 'all') {
@@ -207,10 +226,10 @@ export default function AdminPageClient() {
     });
 
     router.replace(
-      `${pathname}${nextParams.toString() ? `?${nextParams.toString()}` : ''}`,
+      `${safePathname}${nextParams.toString() ? `?${nextParams.toString()}` : ''}`,
       { scroll: false }
     );
-  }, [pathname, router, searchParams]);
+  }, [router, safePathname, safeSearchParams]);
 
   const resetLoadedFlags = useCallback(() => {
     setPagesLoaded(false);
@@ -294,22 +313,6 @@ export default function AdminPageClient() {
       setSummaryLoading(false);
     }
   }, []);
-
-  const applyCreateTemplate = useCallback(
-    (seedSlug: string) => {
-      const template =
-        seedTemplates.find((entry) => entry.slug === seedSlug) ?? seedTemplates[0] ?? null;
-      if (!template) {
-        return;
-      }
-
-      setCreateSeedSlug(template.slug);
-      setCreateSlugBase(template.slug);
-      setCreateGroomName(template.groomName);
-      setCreateBrideName(template.brideName);
-    },
-    [seedTemplates]
-  );
 
   const handleLogin = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -456,7 +459,7 @@ export default function AdminPageClient() {
     setPassword('');
     setError('');
     resetLoadedFlags();
-    router.replace(pathname, { scroll: false });
+    router.replace(safePathname, { scroll: false });
   };
 
   useEffect(() => {

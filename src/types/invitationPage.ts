@@ -23,6 +23,16 @@ export interface BankAccount {
   accountHolder: string;
 }
 
+export type InvitationShareMode = 'link' | 'card';
+export type InvitationProductTier = 'standard' | 'deluxe' | 'premium';
+
+export interface InvitationFeatureFlags {
+  maxGalleryImages: number;
+  shareMode: InvitationShareMode;
+  showCountdown: boolean;
+  showGuestbook: boolean;
+}
+
 export interface InvitationPageMetadata {
   title: string;
   description: string;
@@ -108,6 +118,8 @@ export interface InvitationPage {
   displayPeriodEnabled: boolean;
   displayPeriodStart: Date | null;
   displayPeriodEnd: Date | null;
+  productTier?: InvitationProductTier;
+  features?: Partial<InvitationFeatureFlags>;
   metadata: InvitationPageMetadata;
   pageData?: InvitationPageData;
   variants: InvitationPageVariants;

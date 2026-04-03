@@ -1,4 +1,8 @@
 import { getAllWeddingPageSeeds } from '@/config/weddingPages';
+import {
+  DEFAULT_INVITATION_PRODUCT_TIER,
+  resolveInvitationFeatures,
+} from '@/lib/invitationProducts';
 import type { InvitationPageSeed, InvitationThemeKey } from '@/types/invitationPage';
 
 import {
@@ -8,7 +12,9 @@ import {
   prepareConfigForSave,
 } from '../page-editor/pageEditorUtils';
 
-export const MAX_GALLERY_IMAGES = 3;
+export const MAX_GALLERY_IMAGES = resolveInvitationFeatures(
+  DEFAULT_INVITATION_PRODUCT_TIER
+).maxGalleryImages;
 export const MAX_REPEATABLE_ITEMS = 3;
 export const PLACEHOLDER_GROOM = 'Groom';
 export const PLACEHOLDER_BRIDE = 'Bride';
@@ -42,10 +48,10 @@ export const WIZARD_STEPS: WizardStepDefinition[] = [
   {
     key: 'theme',
     number: '01',
-    title: 'Choose Theme',
-    description: 'Pick the default mood for the public invitation page.',
+    title: 'Choose Theme and Package',
+    description: 'Pick the default design and product tier for this invitation.',
     previewSection: 'cover',
-    highlights: ['Default design', 'Cover mood', 'Base public URL theme'],
+    highlights: ['Default design', 'Product tier', 'Feature limit preview'],
   },
   {
     key: 'slug',
@@ -326,6 +332,8 @@ export function createInitialWizardConfig() {
   nextConfig.metadata.keywords = [];
   nextConfig.metadata.images.wedding = '';
   nextConfig.metadata.images.favicon = '/favicon.ico';
+  nextConfig.productTier = DEFAULT_INVITATION_PRODUCT_TIER;
+  nextConfig.features = resolveInvitationFeatures(DEFAULT_INVITATION_PRODUCT_TIER);
   nextConfig.pageData = {
     ...nextConfig.pageData,
     subtitle: '',
@@ -391,11 +399,18 @@ export function buildStepValidation(
   switch (stepKey) {
     case 'theme':
       return {
-        valid: theme === 'emotional' || theme === 'simple',
+        valid:
+          (theme === 'emotional' || theme === 'simple') &&
+          (formState?.productTier === 'standard' ||
+            formState?.productTier === 'deluxe' ||
+            formState?.productTier === 'premium'),
         messages:
-          theme === 'emotional' || theme === 'simple'
+          (theme === 'emotional' || theme === 'simple') &&
+          (formState?.productTier === 'standard' ||
+            formState?.productTier === 'deluxe' ||
+            formState?.productTier === 'premium')
             ? []
-            : ['Choose a theme first.'],
+            : ['Choose both a theme and a product package first.'],
       };
     case 'slug': {
       if (persistedSlug) {

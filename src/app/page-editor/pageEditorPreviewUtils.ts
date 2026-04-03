@@ -1,5 +1,6 @@
 import { createInvitationPageFromSeed } from '@/config/weddingPages';
 import { buildInvitationVariants } from '@/lib/invitationVariants';
+import { resolveInvitationFeatures } from '@/lib/invitationProducts';
 import type { InvitationPage, InvitationPageSeed } from '@/types/invitationPage';
 import { sanitizeHeartIconPlaceholdersDeep } from '@/utils/textSanitizers';
 
@@ -24,6 +25,7 @@ export function buildPreviewPage(
   formState: InvitationPageSeed,
   published: boolean
 ): InvitationPage {
+  const features = resolveInvitationFeatures(formState.productTier, formState.features);
   const previewSeed: InvitationPageSeed = {
     ...formState,
     slug,
@@ -32,7 +34,8 @@ export function buildPreviewPage(
       ...formState.pageData,
       galleryImages: (formState.pageData?.galleryImages ?? [])
         .map((imageUrl) => imageUrl.trim())
-        .filter(Boolean),
+        .filter(Boolean)
+        .slice(0, features.maxGalleryImages),
       venueName: formState.pageData?.venueName || formState.venue,
       venueGuide: (formState.pageData?.venueGuide ?? []).filter(hasGuideContent),
       wreathGuide: (formState.pageData?.wreathGuide ?? []).filter(hasGuideContent),
@@ -70,7 +73,8 @@ export function buildWeddingDate(page: InvitationPage) {
 
 export function getPreviewImages(page: InvitationPage) {
   if (page.pageData?.galleryImages?.length) {
-    return page.pageData.galleryImages;
+    const features = resolveInvitationFeatures(page.productTier, page.features);
+    return page.pageData.galleryImages.slice(0, features.maxGalleryImages);
   }
 
   return page.metadata.images.wedding ? [page.metadata.images.wedding] : [];

@@ -4,6 +4,7 @@ import dynamic from 'next/dynamic';
 import { useEffect } from 'react';
 
 import { AdminProvider } from '@/contexts';
+import { resolveInvitationFeatures } from '@/lib/invitationProducts';
 import { AccessDeniedPage } from '@/utils';
 
 import { useWeddingInvitationState } from './weddingPageState';
@@ -181,6 +182,10 @@ function WeddingInvitationPageBody(options: WeddingInvitationRouteOptions) {
   const readyState: WeddingPageReadyState = state;
   const ThemeRenderer = themeRendererRegistry[options.theme];
   const isLoaderVisible = readyState.isLoading || readyState.imagesLoading;
+  const shareFeatures = resolveInvitationFeatures(
+    readyState.pageConfig.productTier,
+    readyState.pageConfig.features
+  );
 
   const shareButton = (
     <WeddingKakaoShareButton
@@ -188,6 +193,7 @@ function WeddingInvitationPageBody(options: WeddingInvitationRouteOptions) {
       description={themeDefinition.getShareDescription(readyState.pageConfig)}
       imageUrl={readyState.mainImageUrl}
       pageSlug={options.slug}
+      shareMode={shareFeatures.shareMode}
       variant={themeDefinition.shareButtonVariant}
     />
   );

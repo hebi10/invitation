@@ -25,6 +25,7 @@ import {
   type PersonRole,
 } from '@/app/page-editor/pageEditorUtils';
 import { useAdmin } from '@/contexts';
+import { resolveInvitationFeatures } from '@/lib/invitationProducts';
 import { uploadPageEditorImage } from '@/services/imageService';
 import {
   createInvitationPageDraftFromSeed,
@@ -34,13 +35,16 @@ import {
   saveInvitationPageConfig,
 } from '@/services/invitationPageService';
 import { getClientEditorTokenHash } from '@/services/passwordService';
-import type { InvitationPageSeed, InvitationThemeKey } from '@/types/invitationPage';
+import type {
+  InvitationPageSeed,
+  InvitationProductTier,
+  InvitationThemeKey,
+} from '@/types/invitationPage';
 
 import styles from './page.module.css';
 import {
   GREETING_TEMPLATES,
   GUIDE_TEMPLATES,
-  MAX_GALLERY_IMAGES,
   PLACEHOLDER_BRIDE,
   PLACEHOLDER_GROOM,
   WIZARD_STEPS,
@@ -61,11 +65,13 @@ import {
 
 const TOKEN_STORAGE_PREFIX = 'page-wizard-token:';
 const DEFAULT_THEME: InvitationThemeKey = 'emotional';
-const DEFAULT_SEED_SLUG = getInvitationPageSeedTemplates()[0]?.slug ?? null;
+const DEFAULT_SEED_SLUG = getInvitationPageSeedTemplates()[0]?.seedSlug ?? null;
 
 type NoticeTone = 'success' | 'error' | 'neutral';
 type NoticeState = { tone: NoticeTone; message: string } | null;
 type UploadFieldKind = 'cover' | 'gallery';
+
+const PRODUCT_TIERS: InvitationProductTier[] = ['standard', 'deluxe', 'premium'];
 
 interface PageWizardClientProps {
   initialSlug: string | null;
@@ -122,6 +128,10 @@ function formatSavedAt(date: Date | null) {
   }).format(date);
 }
 
+function getProductTierLabel(tier: InvitationProductTier) {
+  return tier.toUpperCase();
+}
+
 export default function PageWizardClient({ initialSlug }: PageWizardClientProps) {
   const { isAdminLoading, isAdminLoggedIn } = useAdmin();
 
@@ -162,6 +172,11 @@ export default function PageWizardClient({ initialSlug }: PageWizardClientProps)
     () => buildReviewSummary(defaultTheme, previewFormState, slugInput, persistedSlug),
     [defaultTheme, persistedSlug, previewFormState, slugInput]
   );
+  const invitationFeatures = useMemo(
+    () => resolveInvitationFeatures(formState?.productTier, formState?.features),
+    [formState?.features, formState?.productTier]
+  );
+  const maxGalleryImages = invitationFeatures.maxGalleryImages;
   const completedRequiredSteps = useMemo(
     () =>
       reviewSummary.filter(
@@ -208,6 +223,13 @@ export default function PageWizardClient({ initialSlug }: PageWizardClientProps)
       const next = cloneConfig(current);
       updater(next);
       return next;
+    });
+  };
+
+  const handleProductTierChange = (tier: InvitationProductTier) => {
+    updateForm((draft) => {
+      draft.productTier = tier;
+      draft.features = resolveInvitationFeatures(tier);
     });
   };
 
@@ -320,6 +342,7 @@ export default function PageWizardClient({ initialSlug }: PageWizardClientProps)
       brideName: previewFormState?.couple.bride.name || PLACEHOLDER_BRIDE,
       published: false,
       defaultTheme,
+      productTier: previewFormState?.productTier,
       editorTokenHash,
     });
 
@@ -629,7 +652,7 @@ export default function PageWizardClient({ initialSlug }: PageWizardClientProps)
         return;
       }
 
-      if (draft.pageData.galleryImages.length >= MAX_GALLERY_IMAGES) {
+      if (draft.pageData.galleryImages.length >= maxGalleryImages) {
         return;
       }
 
@@ -710,7 +733,7 @@ export default function PageWizardClient({ initialSlug }: PageWizardClientProps)
     try {
       const slug = await ensureDraftCreated();
       const currentCount = formState?.pageData?.galleryImages?.length ?? 0;
-      const filesToUpload = files.slice(0, Math.max(MAX_GALLERY_IMAGES - currentCount, 0));
+      const filesToUpload = files.slice(0, Math.max(maxGalleryImages - currentCount, 0));
       const uploadedUrls: string[] = [];
 
       for (const file of filesToUpload) {
@@ -833,27 +856,56 @@ export default function PageWizardClient({ initialSlug }: PageWizardClientProps)
 
     if (stepKey === 'theme') {
       return (
-        <div className={styles.choiceGrid}>
-          {(['emotional', 'simple'] as const).map((theme) => (
-            <button
-              key={theme}
-              type="button"
-              className={`${styles.choiceCard} ${
-                defaultTheme === theme ? styles.choiceCardActive : ''
-              }`}
-              onClick={() => setDefaultTheme(theme)}
-            >
-              <span className={styles.choiceTag}>{theme}</span>
-              <h3 className={styles.choiceTitle}>
-                {theme === 'emotional' ? 'Emotional' : 'Simple'}
-              </h3>
-              <p className={styles.choiceText}>
-                {theme === 'emotional'
-                  ? 'Warm photo-first layout for the main page.'
-                  : 'Clean information-first layout for the main page.'}
-              </p>
-            </button>
-          ))}
+        <div className={styles.fieldGrid}>
+          <div className={styles.choiceGrid}>
+            {(['emotional', 'simple'] as const).map((theme) => (
+              <button
+                key={theme}
+                type="button"
+                className={`${styles.choiceCard} ${
+                  defaultTheme === theme ? styles.choiceCardActive : ''
+                }`}
+                onClick={() => setDefaultTheme(theme)}
+              >
+                <span className={styles.choiceTag}>{theme}</span>
+                <h3 className={styles.choiceTitle}>
+                  {theme === 'emotional' ? 'Emotional' : 'Simple'}
+                </h3>
+                <p className={styles.choiceText}>
+                  {theme === 'emotional'
+                    ? 'Warm photo-first layout for the main page.'
+                    : 'Clean information-first layout for the main page.'}
+                </p>
+              </button>
+            ))}
+          </div>
+
+          <div className={styles.choiceGrid}>
+            {PRODUCT_TIERS.map((tier) => {
+              const tierFeatures = resolveInvitationFeatures(tier);
+              const isActive = formState.productTier === tier;
+
+              return (
+                <button
+                  key={tier}
+                  type="button"
+                  className={`${styles.choiceCard} ${
+                    isActive ? styles.choiceCardActive : ''
+                  }`}
+                  onClick={() => handleProductTierChange(tier)}
+                >
+                  <span className={styles.choiceTag}>{getProductTierLabel(tier)}</span>
+                  <h3 className={styles.choiceTitle}>{getProductTierLabel(tier)}</h3>
+                  <p className={styles.choiceText}>
+                    Gallery up to {tierFeatures.maxGalleryImages}, Kakao{' '}
+                    {tierFeatures.shareMode === 'card' ? 'card' : 'link'} share,
+                    {tierFeatures.showCountdown ? ' countdown' : ' no countdown'},
+                    {tierFeatures.showGuestbook ? ' guestbook' : ' no guestbook'}.
+                  </p>
+                </button>
+              );
+            })}
+          </div>
         </div>
       );
     }
@@ -1249,7 +1301,7 @@ export default function PageWizardClient({ initialSlug }: PageWizardClientProps)
             <div className={styles.uploadHeader}>
               <div>
                 <h3 className={styles.cardTitle}>Gallery images</h3>
-                <p className={styles.cardText}>Up to {MAX_GALLERY_IMAGES} images.</p>
+                <p className={styles.cardText}>Up to {maxGalleryImages} images.</p>
               </div>
               <div className={styles.inlineActions}>
                 <input
@@ -1267,7 +1319,7 @@ export default function PageWizardClient({ initialSlug }: PageWizardClientProps)
                   disabled={
                     !canEdit ||
                     uploadingField === 'gallery' ||
-                    galleryImages.length >= MAX_GALLERY_IMAGES
+                    galleryImages.length >= maxGalleryImages
                   }
                 >
                   {uploadingField === 'gallery' ? 'Uploading' : 'Upload gallery'}
@@ -1276,7 +1328,7 @@ export default function PageWizardClient({ initialSlug }: PageWizardClientProps)
                   type="button"
                   className={styles.secondaryButton}
                   onClick={handleGalleryImageAdd}
-                  disabled={galleryImages.length >= MAX_GALLERY_IMAGES}
+                  disabled={galleryImages.length >= maxGalleryImages}
                 >
                   Add URL
                 </button>
@@ -1565,6 +1617,9 @@ export default function PageWizardClient({ initialSlug }: PageWizardClientProps)
             <div className={styles.topMeta}>
               <span className={styles.metaChip}>Step {activeStep.number}</span>
               <span className={styles.metaChip}>Theme {defaultTheme}</span>
+              <span className={styles.metaChip}>
+                Package {getProductTierLabel(formState.productTier ?? 'premium')}
+              </span>
               <span className={published ? styles.stateSuccess : styles.metaChip}>
                 {published ? 'Publish on save' : 'Draft on save'}
               </span>

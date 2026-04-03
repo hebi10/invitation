@@ -43,14 +43,14 @@ function getSourceMeta(page: InvitationPageSummary) {
   if (page.hasCustomConfig || page.dataSource === 'firestore') {
     return {
       label: 'Firestore 사용자 설정',
-      description: '기본 config 위에 고객 또는 관리자 설정이 덮여 있습니다.',
+      description: '이 페이지는 Firestore에 저장된 설정을 사용하고 있습니다.',
       tone: 'primary' as const,
     };
   }
 
   return {
-    label: 'Seed 기본값',
-    description: '로컬 config 기본값을 그대로 사용 중입니다.',
+    label: '기본 시드',
+    description: '이 페이지는 아직 로컬 시드 기본값을 사용하고 있습니다.',
     tone: 'neutral' as const,
   };
 }
@@ -65,10 +65,10 @@ function getPrimaryPreview(page: InvitationPageSummary) {
     link: primaryLink,
     hint:
       links.length === 0
-        ? '미리보기 경로가 아직 연결되지 않았습니다.'
+        ? '연결된 미리보기 경로가 아직 없습니다.'
         : links.length === TOTAL_SHORTCUT_COUNT
-          ? '감성형과 심플형 두 가지 미리보기를 모두 확인할 수 있습니다.'
-          : `${links[0].label} 미리보기만 연결되어 있습니다.`,
+          ? '모든 미리보기를 사용할 수 있습니다.'
+          : `${links[0].label} 미리보기가 현재 연결되어 있습니다.`,
   };
 }
 
@@ -82,17 +82,17 @@ export default function AdminPagesTab({
   pageStatusFilter,
   pageSort,
   chips,
-  seedTemplates,
-  createSeedSlug,
-  createSlugBase,
-  createGroomName,
-  createBrideName,
-  creatingPage,
-  onCreateSeedSlugChange,
-  onCreateSlugBaseChange,
-  onCreateGroomNameChange,
-  onCreateBrideNameChange,
-  onCreatePage,
+  seedTemplates: _seedTemplates,
+  createSeedSlug: _createSeedSlug,
+  createSlugBase: _createSlugBase,
+  createGroomName: _createGroomName,
+  createBrideName: _createBrideName,
+  creatingPage: _creatingPage,
+  onCreateSeedSlugChange: _onCreateSeedSlugChange,
+  onCreateSlugBaseChange: _onCreateSlugBaseChange,
+  onCreateGroomNameChange: _onCreateGroomNameChange,
+  onCreateBrideNameChange: _onCreateBrideNameChange,
+  onCreatePage: _onCreatePage,
   onQueryChange,
   onRefresh,
 }: AdminPagesTabProps) {
@@ -100,92 +100,30 @@ export default function AdminPagesTab({
     <div className={styles.panelStack}>
       <div className={styles.sectionHeader}>
         <div>
-          <h2 className={styles.sectionTitle}>청첩장 관리</h2>
+          <h2 className={styles.sectionTitle}>청첩장 페이지</h2>
           <p className={styles.sectionDescription}>
-            공개 상태와 테마 연결, 데이터 기준을 확인하고 가장 중요한 작업인 편집으로
-            바로 이동할 수 있습니다.
+            공개 상태, 연결된 미리보기 경로, Firestore 데이터 소스를 한곳에서 확인할 수 있습니다.
           </p>
         </div>
         <p className={styles.sectionMeta}>
-          {summaryLoading ? '집계 중' : `현재 ${filteredPages.length}개 / 전체 ${weddingPages.length}개`}
+          {summaryLoading
+            ? '요약 불러오는 중'
+            : `전체 ${weddingPages.length}개 중 ${filteredPages.length}개 표시`}
         </p>
       </div>
 
-      <div className={styles.createPanel}>
-        <div className={styles.createPanelHeader}>
-          <div>
-            <h3 className={styles.createPanelTitle}>새 페이지 만들기</h3>
-            <p className={styles.createPanelDescription}>
-              seed 템플릿을 Firestore 초안으로 복제한 뒤 바로 편집기로 이동합니다.
-            </p>
-          </div>
-          <span className={styles.createPanelHint}>
-            URL이 이미 있으면 뒤에 영문 3자가 자동으로 붙습니다.
-          </span>
-        </div>
-
-        <div className={styles.createPanelGrid}>
-          <label className="admin-field">
-            <span className="admin-field-label">초기 템플릿</span>
-            <select
-              className="admin-select"
-              value={createSeedSlug}
-              onChange={(event) => onCreateSeedSlugChange(event.target.value)}
-            >
-              {seedTemplates.map((template) => (
-                <option key={template.slug} value={template.slug}>
-                  {template.displayName} ({template.slug})
-                </option>
-              ))}
-            </select>
-          </label>
-
-          <label className="admin-field">
-            <span className="admin-field-label">URL 기본값</span>
-            <input
-              className="admin-input"
-              type="text"
-              placeholder="shin-minje-kim-hyunji"
-              value={createSlugBase}
-              onChange={(event) => onCreateSlugBaseChange(event.target.value)}
-            />
-          </label>
-
-          <label className="admin-field">
-            <span className="admin-field-label">신랑 이름</span>
-            <input
-              className="admin-input"
-              type="text"
-              placeholder="신랑 이름"
-              value={createGroomName}
-              onChange={(event) => onCreateGroomNameChange(event.target.value)}
-            />
-          </label>
-
-          <label className="admin-field">
-            <span className="admin-field-label">신부 이름</span>
-            <input
-              className="admin-input"
-              type="text"
-              placeholder="신부 이름"
-              value={createBrideName}
-              onChange={(event) => onCreateBrideNameChange(event.target.value)}
-            />
-          </label>
-        </div>
-
-        <div className={styles.createPanelActions}>
-          <p className={styles.createPanelMeta}>
-            생성 직후에는 비공개 초안으로 저장됩니다. 상세 문구와 이미지 경로는 편집기에서 이어서 수정하면 됩니다.
-          </p>
-          <button
-            type="button"
-            className="admin-button admin-button-primary"
-            onClick={onCreatePage}
-            disabled={creatingPage}
-          >
-            {creatingPage ? '생성 중...' : '새 페이지 만들기'}
-          </button>
+      <div className={styles.createPanelActions}>
+        <p className={styles.createPanelMeta}>
+          새 페이지 생성은 이제 에디터 진입 페이지에서 시작합니다. 상세 편집으로 들어가기 전에
+          템플릿, 패키지, slug, 신랑·신부 이름을 먼저 설정해 주세요.
+        </p>
+        <div className={styles.tableActions}>
+          <a href="/page-editor" className="admin-button admin-button-primary" target="_blank">
+            새 페이지 에디터 초안
+          </a>
+          <a href="/page-wizard" className="admin-button admin-button-secondary" target="_blank">
+            새 위저드 초안
+          </a>
         </div>
       </div>
 
@@ -222,7 +160,7 @@ export default function AdminPagesTab({
               <input
                 className="admin-input"
                 type="search"
-                placeholder="이름, slug, 예식장으로 찾기"
+                placeholder="제목, slug 또는 예식장명으로 검색"
                 value={pageSearch}
                 onChange={(event) =>
                   onQueryChange({ pageQ: event.target.value || null })
@@ -248,7 +186,7 @@ export default function AdminPagesTab({
             </label>
 
             <label className="admin-field">
-              <span className="admin-field-label">바로가기 종류</span>
+              <span className="admin-field-label">미리보기 유형</span>
               <select
                 className="admin-select"
                 value={pageShortcutFilter}
@@ -256,7 +194,7 @@ export default function AdminPagesTab({
                   onQueryChange({ shortcut: event.target.value })
                 }
               >
-                <option value="all">전체 바로가기</option>
+                <option value="all">전체 미리보기</option>
                 {SHORTCUT_ITEMS.map((shortcut) => (
                   <option key={shortcut.key} value={shortcut.key}>
                     {shortcut.label}
@@ -291,7 +229,7 @@ export default function AdminPagesTab({
               onClick={onRefresh}
               disabled={loading}
             >
-              {loading ? '새로고침 중..' : '새로고침'}
+              {loading ? '새로고침 중' : '새로고침'}
             </button>
             <button
               type="button"
@@ -315,7 +253,7 @@ export default function AdminPagesTab({
       {loading ? (
         <div className={styles.loadingState}>
           <div className={styles.loadingSpinner}></div>
-          <p className={styles.loadingText}>청첩장 목록을 불러오는 중입니다.</p>
+          <p className={styles.loadingText}>청첩장 페이지를 불러오는 중입니다.</p>
         </div>
       ) : filteredPages.length > 0 ? (
         <>
@@ -324,12 +262,12 @@ export default function AdminPagesTab({
               <table className={styles.dataTable}>
                 <thead>
                   <tr>
-                    <th>청첩장</th>
+                    <th>페이지</th>
                     <th>예식 정보</th>
-                    <th>테마 연결 상태</th>
+                    <th>미리보기 연결 상태</th>
                     <th>공개 상태</th>
-                    <th>데이터 기준</th>
-                    <th>주요 작업</th>
+                    <th>데이터 소스</th>
+                    <th>작업</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -359,9 +297,9 @@ export default function AdminPagesTab({
                         </td>
                         <td>
                           <div className={styles.metaStack}>
-                            <span>{page.date || '예식 일정이 아직 없습니다.'}</span>
+                            <span>{page.date || '날짜 미정'}</span>
                             <span className={styles.tableSubtext}>
-                              {page.venue || '예식장 정보가 아직 없습니다.'}
+                              {page.venue || '예식장 정보 없음'}
                             </span>
                           </div>
                         </td>
@@ -369,7 +307,7 @@ export default function AdminPagesTab({
                           <div className={styles.statusCell}>
                             <StatusBadge tone={status.tone}>{status.label}</StatusBadge>
                             <span className={styles.tableSubtext}>
-                              {links.length} / {TOTAL_SHORTCUT_COUNT}개 테마 연결
+                              {links.length} / {TOTAL_SHORTCUT_COUNT}개 미리보기 연결됨
                             </span>
                           </div>
                         </td>
@@ -397,7 +335,15 @@ export default function AdminPagesTab({
                                 rel="noreferrer"
                                 className="admin-button admin-button-primary"
                               >
-                                편집
+                                에디터
+                              </a>
+                              <a
+                                href={`/page-wizard/${page.slug}`}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="admin-button admin-button-secondary"
+                              >
+                                위저드
                               </a>
                               {preview.link ? (
                                 <a
@@ -439,9 +385,9 @@ export default function AdminPagesTab({
                   </div>
 
                   <div className={styles.mobileCardMeta}>
-                    <span>{page.date || '예식 일정 없음'}</span>
+                    <span>{page.date || '날짜 미정'}</span>
                     <span>{page.venue || '예식장 정보 없음'}</span>
-                    <span>{page.published ? '공개 중' : '비공개'}</span>
+                    <span>{page.published ? '공개' : '비공개'}</span>
                     <span>{sourceMeta.label}</span>
                   </div>
 
@@ -453,7 +399,15 @@ export default function AdminPagesTab({
                         rel="noreferrer"
                         className="admin-button admin-button-primary"
                       >
-                        편집
+                        에디터
+                      </a>
+                      <a
+                        href={`/page-wizard/${page.slug}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="admin-button admin-button-secondary"
+                      >
+                        위저드
                       </a>
                       {preview.link ? (
                         <a
@@ -475,11 +429,11 @@ export default function AdminPagesTab({
         </>
       ) : (
         <EmptyState
-          title="조건에 맞는 청첩장이 없습니다."
-          description="검색어나 필터가 너무 좁게 잡혀 있을 수 있습니다. 조건을 풀고 다시 확인해 보세요."
+          title="현재 필터 조건에 맞는 청첩장 페이지가 없습니다."
+          description="검색어 또는 필터 조건이 너무 좁을 수 있습니다. 필터를 조정하거나 목록을 새로고침해 주세요."
           highlights={[
-            '핵심 작업은 편집입니다. 필요한 페이지를 찾으면 바로 편집기로 이동할 수 있습니다.',
-            '바로가기 종류와 연결 상태를 함께 보면 미리보기 누락 페이지를 빠르게 찾을 수 있습니다.',
+            '이 목록에서 바로 에디터 또는 위저드로 기존 페이지를 열 수 있습니다.',
+            '미리보기 연결 상태를 통해 공개 경로가 연결된 페이지를 빠르게 확인할 수 있습니다.',
           ]}
           actionLabel="필터 초기화"
           onAction={() =>
@@ -490,7 +444,7 @@ export default function AdminPagesTab({
               pageSort: null,
             })
           }
-          secondaryActionLabel="현재 조건 새로고침"
+          secondaryActionLabel="현재 화면 새로고침"
           onSecondaryAction={onRefresh}
         />
       )}

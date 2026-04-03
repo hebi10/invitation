@@ -11,6 +11,7 @@ import {
   WeddingCalendar,
   WeddingLoader,
 } from '@/components/sections';
+import { resolveInvitationFeatures } from '@/lib/invitationProducts';
 
 import {
   createWeddingCalendarEvent,
@@ -36,7 +37,7 @@ export default createWeddingThemeRenderer({
     ({ state }) => (
       <Cover
         title={state.pageConfig.displayName}
-        subtitle={state.pageConfig.pageData?.subtitle ?? '두 사람이 사랑으로 하나가 되는 날'}
+        subtitle={state.pageConfig.pageData?.subtitle ?? 'A day when two hearts become one'}
         weddingDate={`${state.pageConfig.date} ${state.pageConfig.pageData?.ceremonyTime ?? ''}`}
         ceremonyTime={state.pageConfig.pageData?.ceremonyTime}
         venueName={state.pageConfig.venue}
@@ -55,16 +56,23 @@ export default createWeddingThemeRenderer({
         bride={state.pageConfig.couple.bride}
       />
     ),
-    ({ state }) => (
-      <WeddingCalendar
-        title="행복한 순간을 함께하세요"
-        weddingDate={state.weddingDate}
-        currentMonth={state.weddingDate}
-        events={[createWeddingCalendarEvent(state.pageConfig, state.weddingDate)]}
-        showCountdown={true}
-        countdownTitle="결혼식까지"
-      />
-    ),
+    ({ state }) => {
+      const features = resolveInvitationFeatures(
+        state.pageConfig.productTier,
+        state.pageConfig.features
+      );
+
+      return (
+        <WeddingCalendar
+          title="Wedding Calendar"
+          weddingDate={state.weddingDate}
+          currentMonth={state.weddingDate}
+          events={[createWeddingCalendarEvent(state.pageConfig, state.weddingDate)]}
+          showCountdown={features.showCountdown}
+          countdownTitle="Until the wedding"
+        />
+      );
+    },
     ({ state }) => <Gallery images={state.galleryImageUrls} />,
     ({ state }) => (
       <div id="wedding-info">
@@ -87,7 +95,14 @@ export default createWeddingThemeRenderer({
         kakaoMapConfig={state.pageConfig.pageData?.kakaoMap}
       />
     ),
-    ({ state }) => <Guestbook pageSlug={state.pageConfig.slug} />,
+    ({ state }) => {
+      const features = resolveInvitationFeatures(
+        state.pageConfig.productTier,
+        state.pageConfig.features
+      );
+
+      return features.showGuestbook ? <Guestbook pageSlug={state.pageConfig.slug} /> : null;
+    },
     ({ state }) =>
       shouldShowGiftInfo(state) ? (
         <GiftInfo
