@@ -13,6 +13,16 @@
   gap: 24px;
 }
 
+.pageCompact {
+  padding: 16px 14px 24px;
+  background: #fff;
+}
+
+.shellCompact {
+  width: min(650px, 100%);
+  gap: 16px;
+}
+
 .heroCard,
 .formCard,
 .emptyCard {
@@ -26,6 +36,13 @@
   padding: 32px;
   display: grid;
   gap: 20px;
+}
+
+.heroCardCompact,
+.formCardCompact {
+  padding: 18px;
+  border-radius: 20px;
+  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.06);
 }
 
 .heroTop {
@@ -389,5 +406,42 @@
   .fieldGrid,
   .templateGrid {
     grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .pageCompact {
+    padding: 12px;
+  }
+
+  .heroCardCompact,
+  .formCardCompact,
+  .emptyCard {
+    padding: 16px;
+    border-radius: 18px;
+  }
+
+  .title {
+    font-size: clamp(1.6rem, 7vw, 2.2rem);
+  }
+
+  .description,
+  .summaryText,
+  .sectionDescription,
+  .featureText,
+  .emptyText {
+    font-size: 0.9rem;
+  }
+
+  .buttonRow,
+  .actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .primaryButton,
+  .secondaryButton,
+  .ghostButton {
+    width: 100%;
   }
 }

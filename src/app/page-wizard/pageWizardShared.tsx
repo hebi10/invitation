@@ -1,0 +1,181 @@
+import type { ChangeEvent } from 'react';
+
+import type {
+  AccountKind,
+  GuideKind,
+  ParentRole,
+  PersonRole,
+} from '@/app/page-editor/pageEditorUtils';
+import { resolveInvitationFeatures } from '@/lib/invitationProducts';
+import type {
+  InvitationPageSeed,
+  InvitationProductTier,
+  InvitationThemeKey,
+} from '@/types/invitationPage';
+
+import styles from './page.module.css';
+import { WIZARD_STEPS, type WizardStepKey } from './pageWizardData';
+
+/* ── Notice types ── */
+
+export type NoticeTone = 'success' | 'error' | 'neutral';
+export type NoticeState = { tone: NoticeTone; message: string } | null;
+
+/* ── UI types ── */
+
+export type UploadFieldKind = 'cover' | 'gallery';
+export type SlideViewMode = 'input' | 'preview';
+export type ChoicePanelKey = 'theme' | 'tier' | null;
+
+/* ── Step component shared props ── */
+
+export interface WizardStepProps {
+  formState: InvitationPageSeed;
+  previewFormState: InvitationPageSeed;
+  updateForm: (updater: (draft: InvitationPageSeed) => void) => void;
+}
+
+export interface ThemeStepProps extends WizardStepProps {
+  defaultTheme: InvitationThemeKey;
+  setDefaultTheme: (theme: InvitationThemeKey) => void;
+  openChoicePanel: ChoicePanelKey;
+  toggleChoicePanel: (panel: Exclude<ChoicePanelKey, null>) => void;
+  onProductTierChange: (tier: InvitationProductTier) => void;
+  setOpenChoicePanel: (panel: ChoicePanelKey) => void;
+}
+
+export interface SlugStepProps {
+  slugInput: string;
+  setSlugInput: (value: string) => void;
+  normalizedSlugInput: string | null;
+  persistedSlug: string | null;
+  previewSlug: string;
+}
+
+export interface BasicStepProps extends WizardStepProps {
+  onPersonFieldChange: (role: PersonRole, field: 'name' | 'order' | 'phone', value: string) => void;
+}
+
+export interface ScheduleStepProps extends WizardStepProps {
+  currentWeddingSummary: string;
+  onDateInputChange: (value: string) => void;
+  onTimeInputChange: (value: string) => void;
+}
+
+export interface VenueStepProps extends WizardStepProps {}
+
+export interface GreetingStepProps extends WizardStepProps {
+  onPersonFieldChange: (role: PersonRole, field: 'name' | 'order' | 'phone', value: string) => void;
+  onParentFieldChange: (role: PersonRole, parentRole: ParentRole, field: 'relation' | 'name' | 'phone', value: string) => void;
+}
+
+export interface ImagesStepProps extends WizardStepProps {
+  canEdit: boolean;
+  maxGalleryImages: number;
+  uploadingField: UploadFieldKind | null;
+  coverUploadInputRef: React.RefObject<HTMLInputElement | null>;
+  galleryUploadInputRef: React.RefObject<HTMLInputElement | null>;
+  onTriggerPicker: (kind: UploadFieldKind) => void;
+  onCoverUpload: (event: ChangeEvent<HTMLInputElement>) => void;
+  onGalleryUpload: (event: ChangeEvent<HTMLInputElement>) => void;
+  onGalleryImageChange: (index: number, value: string) => void;
+  onGalleryImageAdd: () => void;
+  onGalleryImageRemove: (index: number) => void;
+  onGalleryImageMove: (index: number, direction: 'up' | 'down') => void;
+}
+
+export interface ExtraStepProps extends WizardStepProps {
+  onAccountAdd: (kind: AccountKind) => void;
+  onAccountRemove: (kind: AccountKind, index: number) => void;
+  onAccountChange: (kind: AccountKind, index: number, field: 'bank' | 'accountNumber' | 'accountHolder', value: string) => void;
+  onGuideAdd: (kind: GuideKind) => void;
+  onGuideRemove: (kind: GuideKind, index: number) => void;
+  onGuideChange: (kind: GuideKind, index: number, field: 'title' | 'content', value: string) => void;
+  onGuideTemplateApply: (kind: GuideKind, label: string, content: string) => void;
+}
+
+export interface FinalStepProps extends WizardStepProps {
+  published: boolean;
+  setPublished: (value: boolean) => void;
+}
+
+/* ── Label utilities (shared between Client and StepPreview) ── */
+
+export function getThemeLabel(theme: InvitationThemeKey) {
+  return theme === 'emotional' ? '감성형' : '심플형';
+}
+
+export function getThemeDescription(theme: InvitationThemeKey) {
+  return theme === 'emotional'
+    ? '사진과 분위기를 중심으로 보여주는 감성형 레이아웃입니다.'
+    : '정보를 또렷하게 정리해 보여주는 심플형 레이아웃입니다.';
+}
+
+export function getProductTierLabel(tier: InvitationProductTier) {
+  return tier.toUpperCase();
+}
+
+export function getProductTierDescription(tier: InvitationProductTier) {
+  const features = resolveInvitationFeatures(tier);
+  const shareLabel =
+    features.shareMode === 'card' ? '카카오 카드형 공유' : '카카오 링크형 공유';
+
+  return `갤러리 최대 ${features.maxGalleryImages}장, ${shareLabel}, ${
+    features.showCountdown ? '카운트다운 포함' : '카운트다운 미포함'
+  }, ${features.showGuestbook ? '방명록 포함' : '방명록 미포함'}`;
+}
+
+/* ── UI helpers ── */
+
+export function getNoticeClassName(tone: NoticeTone) {
+  if (tone === 'success') {
+    return `${styles.notice} ${styles.noticeSuccess}`;
+  }
+
+  if (tone === 'error') {
+    return `${styles.notice} ${styles.noticeError}`;
+  }
+
+  return `${styles.notice} ${styles.noticeNeutral}`;
+}
+
+export function renderFieldMeta(
+  label: string,
+  requirement: 'required' | 'optional',
+  hint?: string
+) {
+  return (
+    <>
+      <span className={styles.fieldLabelRow}>
+        <span className={styles.fieldLabel}>{label}</span>
+        <span
+          className={
+            requirement === 'required' ? styles.requiredBadge : styles.optionalBadge
+          }
+        >
+          {requirement === 'required' ? '필수' : '선택'}
+        </span>
+      </span>
+      {hint ? <span className={styles.fieldHint}>{hint}</span> : null}
+    </>
+  );
+}
+
+export function formatSavedAt(date: Date | null) {
+  if (!date) {
+    return '아직 저장 기록이 없습니다.';
+  }
+
+  return new Intl.DateTimeFormat('ko-KR', {
+    month: 'long',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+  }).format(date);
+}
+
+export function getStepIndex(stepKey: WizardStepKey) {
+  return WIZARD_STEPS.findIndex((step) => step.key === stepKey);
+}
+
+export const PRODUCT_TIERS: InvitationProductTier[] = ['standard', 'deluxe', 'premium'];

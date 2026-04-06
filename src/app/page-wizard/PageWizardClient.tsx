@@ -7,18 +7,10 @@ import { Pagination } from 'swiper/modules';
 import { Swiper, SwiperSlide } from 'swiper/react';
 
 import {
-  AccountSectionPanel,
-  GuideSectionPanel,
-  PersonEditorCard,
-} from '@/app/page-editor/pageEditorPanels';
-import PageEditorSectionPreview from '@/app/page-editor/PageEditorSectionPreview';
-import {
   cloneConfig,
   createEmptyAccount,
   createEmptyGuideItem,
-  keywordsToText,
   normalizeFormConfig,
-  textToKeywords,
   type AccountKind,
   type GuideKind,
   type ParentRole,
@@ -41,15 +33,13 @@ import type {
   InvitationThemeKey,
 } from '@/types/invitationPage';
 
+import PageWizardStepPreview from './PageWizardStepPreview';
 import styles from './page.module.css';
 import {
-  GREETING_TEMPLATES,
-  GUIDE_TEMPLATES,
   PLACEHOLDER_BRIDE,
   PLACEHOLDER_GROOM,
   WIZARD_STEPS,
   applyDerivedWizardDefaults,
-  buildReviewSummary,
   buildStepValidation,
   buildWeddingDateObject,
   composeDescription,
@@ -62,74 +52,33 @@ import {
   prepareWizardConfigForSave,
   type WizardStepKey,
 } from './pageWizardData';
+import {
+  formatSavedAt,
+  getNoticeClassName,
+  getStepIndex,
+  type ChoicePanelKey,
+  type NoticeState,
+  type SlideViewMode,
+  type UploadFieldKind,
+} from './pageWizardShared';
+import {
+  BasicStep,
+  ExtraStep,
+  FinalStep,
+  GreetingStep,
+  ImagesStep,
+  ScheduleStep,
+  SlugStep,
+  ThemeStep,
+  VenueStep,
+} from './steps';
 
 const TOKEN_STORAGE_PREFIX = 'page-wizard-token:';
 const DEFAULT_THEME: InvitationThemeKey = 'emotional';
 const DEFAULT_SEED_SLUG = getInvitationPageSeedTemplates()[0]?.seedSlug ?? null;
 
-type NoticeTone = 'success' | 'error' | 'neutral';
-type NoticeState = { tone: NoticeTone; message: string } | null;
-type UploadFieldKind = 'cover' | 'gallery';
-
-const PRODUCT_TIERS: InvitationProductTier[] = ['standard', 'deluxe', 'premium'];
-
 interface PageWizardClientProps {
   initialSlug: string | null;
-}
-
-function getNoticeClassName(tone: NoticeTone) {
-  if (tone === 'success') {
-    return `${styles.notice} ${styles.noticeSuccess}`;
-  }
-
-  if (tone === 'error') {
-    return `${styles.notice} ${styles.noticeError}`;
-  }
-
-  return `${styles.notice} ${styles.noticeNeutral}`;
-}
-
-function renderFieldMeta(
-  label: string,
-  requirement: 'required' | 'optional',
-  hint?: string
-) {
-  return (
-    <>
-      <span className={styles.fieldLabelRow}>
-        <span className={styles.fieldLabel}>{label}</span>
-        <span
-          className={
-            requirement === 'required' ? styles.requiredBadge : styles.optionalBadge
-          }
-        >
-          {requirement === 'required' ? 'Required' : 'Optional'}
-        </span>
-      </span>
-      {hint ? <span className={styles.fieldHint}>{hint}</span> : null}
-    </>
-  );
-}
-
-function getStepIndex(stepKey: WizardStepKey) {
-  return WIZARD_STEPS.findIndex((step) => step.key === stepKey);
-}
-
-function formatSavedAt(date: Date | null) {
-  if (!date) {
-    return 'No saved record yet.';
-  }
-
-  return new Intl.DateTimeFormat('ko-KR', {
-    month: 'long',
-    day: 'numeric',
-    hour: 'numeric',
-    minute: '2-digit',
-  }).format(date);
-}
-
-function getProductTierLabel(tier: InvitationProductTier) {
-  return tier.toUpperCase();
 }
 
 export default function PageWizardClient({ initialSlug }: PageWizardClientProps) {
@@ -143,15 +92,16 @@ export default function PageWizardClient({ initialSlug }: PageWizardClientProps)
   const [editorTokenHash, setEditorTokenHash] = useState<string | null>(null);
   const [passwordInput, setPasswordInput] = useState('');
   const [notice, setNotice] = useState<NoticeState>(null);
-  const [dataSourceLabel, setDataSourceLabel] = useState(
-    initialSlug ? 'Loading current config' : 'Creating new draft'
-  );
   const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isUnlocking, setIsUnlocking] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [uploadingField, setUploadingField] = useState<UploadFieldKind | null>(null);
   const [activeStepKey, setActiveStepKey] = useState<WizardStepKey>('theme');
+  const [viewModeByStep, setViewModeByStep] = useState<
+    Partial<Record<WizardStepKey, SlideViewMode>>
+  >({});
+  const [openChoicePanel, setOpenChoicePanel] = useState<ChoicePanelKey>(null);
 
   const swiperRef = useRef<SwiperType | null>(null);
   const coverUploadInputRef = useRef<HTMLInputElement | null>(null);
@@ -168,51 +118,40 @@ export default function PageWizardClient({ initialSlug }: PageWizardClientProps)
     () => (formState ? applyDerivedWizardDefaults(formState) : null),
     [formState]
   );
-  const reviewSummary = useMemo(
-    () => buildReviewSummary(defaultTheme, previewFormState, slugInput, persistedSlug),
-    [defaultTheme, persistedSlug, previewFormState, slugInput]
-  );
   const invitationFeatures = useMemo(
     () => resolveInvitationFeatures(formState?.productTier, formState?.features),
     [formState?.features, formState?.productTier]
   );
   const maxGalleryImages = invitationFeatures.maxGalleryImages;
-  const completedRequiredSteps = useMemo(
-    () =>
-      reviewSummary.filter(
-        (item) => item.step.key !== 'final' && item.validation.valid
-      ).length,
-    [reviewSummary]
-  );
   const activeStep = WIZARD_STEPS[getStepIndex(activeStepKey)] ?? WIZARD_STEPS[0];
-  const activeValidation =
-    reviewSummary.find((item) => item.step.key === activeStep.key)?.validation ?? {
-      valid: false,
-      messages: [],
-    };
-  const title = useMemo(() => {
-    if (!previewFormState) {
-      return 'Invitation Wizard';
+  const activeStepIndex = getStepIndex(activeStep.key);
+  const getValidationForStep = (stepKey: WizardStepKey) =>
+    buildStepValidation(stepKey, defaultTheme, previewFormState, slugInput, persistedSlug);
+  const finalReviewSummary = useMemo(() => {
+    if (!previewFormState || activeStepKey !== 'final') {
+      return [];
     }
 
-    return composeDisplayName(
-      previewFormState.couple.groom.name,
-      previewFormState.couple.bride.name
-    );
-  }, [previewFormState]);
+    return WIZARD_STEPS.map((step) => ({
+      step,
+      validation: getValidationForStep(step.key),
+    }));
+  }, [activeStepKey, defaultTheme, persistedSlug, previewFormState, slugInput]);
 
   const currentWeddingSummary = useMemo(() => {
     if (!previewFormState) {
-      return 'Date not set';
+      return '예식 날짜를 아직 입력하지 않았습니다.';
     }
 
     const weddingDate = buildWeddingDateObject(previewFormState);
     if (!weddingDate) {
-      return 'Date not set';
+      return '예식 날짜를 아직 입력하지 않았습니다.';
     }
 
     return `${formatDateLabel(weddingDate)} ${formatTimeLabel(weddingDate)}`;
   }, [previewFormState]);
+
+  /* ── State updaters ── */
 
   const updateForm = (updater: (draft: InvitationPageSeed) => void) => {
     setFormState((current) => {
@@ -233,6 +172,22 @@ export default function PageWizardClient({ initialSlug }: PageWizardClientProps)
     });
   };
 
+  const getStepViewMode = (stepKey: WizardStepKey): SlideViewMode =>
+    viewModeByStep[stepKey] ?? 'input';
+
+  const setStepViewMode = (stepKey: WizardStepKey, mode: SlideViewMode) => {
+    setViewModeByStep((current) => {
+      if (current[stepKey] === mode) {
+        return current;
+      }
+
+      return {
+        ...current,
+        [stepKey]: mode,
+      };
+    });
+  };
+
   const slideToStep = (stepKey: WizardStepKey) => {
     const index = getStepIndex(stepKey);
     if (index < 0) {
@@ -242,6 +197,12 @@ export default function PageWizardClient({ initialSlug }: PageWizardClientProps)
     swiperRef.current?.slideTo(index);
     setActiveStepKey(stepKey);
   };
+
+  const toggleChoicePanel = (panel: Exclude<ChoicePanelKey, null>) => {
+    setOpenChoicePanel((current) => (current === panel ? null : panel));
+  };
+
+  /* ── Effects ── */
 
   useEffect(() => {
     if (!initialSlug || typeof window === 'undefined') {
@@ -272,7 +233,6 @@ export default function PageWizardClient({ initialSlug }: PageWizardClientProps)
         setSlugInput('');
         setPublished(false);
         setDefaultTheme(DEFAULT_THEME);
-        setDataSourceLabel('Creating new draft');
         setLastSavedAt(null);
         setIsLoading(false);
         return;
@@ -285,7 +245,7 @@ export default function PageWizardClient({ initialSlug }: PageWizardClientProps)
         }
 
         if (!editableConfig) {
-          setNotice({ tone: 'error', message: 'Invitation config was not found.' });
+          setNotice({ tone: 'error', message: '청첩장 설정을 찾을 수 없습니다.' });
           setIsLoading(false);
           return;
         }
@@ -296,16 +256,11 @@ export default function PageWizardClient({ initialSlug }: PageWizardClientProps)
         setSlugInput(initialSlug);
         setPublished(editableConfig.published);
         setDefaultTheme(editableConfig.defaultTheme ?? DEFAULT_THEME);
-        setDataSourceLabel(
-          editableConfig.dataSource === 'firestore'
-            ? 'Firestore custom data'
-            : 'Seed default data'
-        );
         setLastSavedAt(editableConfig.lastSavedAt);
       } catch (error) {
         console.error('[pageWizard] failed to load config', error);
         if (!cancelled) {
-          setNotice({ tone: 'error', message: 'Failed to load invitation config.' });
+          setNotice({ tone: 'error', message: '청첩장 설정을 불러오지 못했습니다.' });
         }
       } finally {
         if (!cancelled) {
@@ -321,18 +276,20 @@ export default function PageWizardClient({ initialSlug }: PageWizardClientProps)
     };
   }, [initialSlug]);
 
+  /* ── Persistence ── */
+
   const ensureDraftCreated = async () => {
     if (persistedSlug) {
       return persistedSlug;
     }
 
     if (!DEFAULT_SEED_SLUG) {
-      throw new Error('Default template was not found.');
+      throw new Error('기본 템플릿을 찾을 수 없습니다.');
     }
 
     const normalizedSlug = normalizeInvitationPageSlugBase(slugInput);
     if (!normalizedSlug) {
-      throw new Error('Enter a valid page slug first.');
+      throw new Error('올바른 페이지 주소를 먼저 입력해 주세요.');
     }
 
     const created = await createInvitationPageDraftFromSeed({
@@ -348,12 +305,11 @@ export default function PageWizardClient({ initialSlug }: PageWizardClientProps)
 
     setPersistedSlug(created.slug);
     setSlugInput(created.slug);
-    setDataSourceLabel('Firestore custom data');
 
     if (created.slug !== normalizedSlug) {
       setNotice({
         tone: 'neutral',
-        message: `Slug was adjusted to ${created.slug} because the original one was already taken.`,
+        message: `입력한 주소가 이미 사용 중이라 ${created.slug}로 자동 조정되었습니다.`,
       });
     }
 
@@ -386,14 +342,12 @@ export default function PageWizardClient({ initialSlug }: PageWizardClientProps)
       setFormState(normalized);
       setPublished(nextPublished);
       setLastSavedAt(new Date());
-      setDataSourceLabel('Firestore custom data');
 
       if (!options?.silent) {
         setNotice({
           tone: 'success',
           message:
-            options?.successMessage ??
-            (nextPublished ? 'Saved and published.' : 'Draft saved.'),
+            options?.successMessage ?? (nextPublished ? '저장 후 공개되었습니다.' : '초안을 저장했습니다.'),
         });
       }
 
@@ -403,7 +357,7 @@ export default function PageWizardClient({ initialSlug }: PageWizardClientProps)
       setNotice({
         tone: 'error',
         message:
-          error instanceof Error ? error.message : 'Failed to save invitation draft.',
+          error instanceof Error ? error.message : '청첩장 초안을 저장하지 못했습니다.',
       });
       return null;
     } finally {
@@ -411,13 +365,15 @@ export default function PageWizardClient({ initialSlug }: PageWizardClientProps)
     }
   };
 
+  /* ── Handlers: Auth ── */
+
   const handleUnlock = async () => {
     if (!initialSlug) {
       return;
     }
 
     if (!passwordInput.trim()) {
-      setNotice({ tone: 'error', message: 'Enter the page password first.' });
+      setNotice({ tone: 'error', message: '페이지 비밀번호를 먼저 입력해 주세요.' });
       return;
     }
 
@@ -427,7 +383,7 @@ export default function PageWizardClient({ initialSlug }: PageWizardClientProps)
       const token = await getClientEditorTokenHash(initialSlug, passwordInput);
 
       if (!token) {
-        setNotice({ tone: 'error', message: 'Password does not match.' });
+        setNotice({ tone: 'error', message: '비밀번호가 일치하지 않습니다.' });
         return;
       }
 
@@ -437,14 +393,16 @@ export default function PageWizardClient({ initialSlug }: PageWizardClientProps)
 
       setEditorTokenHash(token);
       setPasswordInput('');
-      setNotice({ tone: 'success', message: 'Editor access unlocked.' });
+      setNotice({ tone: 'success', message: '편집 권한이 확인되었습니다.' });
     } catch (error) {
       console.error('[pageWizard] failed to verify password', error);
-      setNotice({ tone: 'error', message: 'Failed to verify the page password.' });
+      setNotice({ tone: 'error', message: '페이지 비밀번호를 확인하지 못했습니다.' });
     } finally {
       setIsUnlocking(false);
     }
   };
+
+  /* ── Handlers: Person fields ── */
 
   const handlePersonNameChange = (role: PersonRole, value: string) => {
     updateForm((draft) => {
@@ -520,6 +478,8 @@ export default function PageWizardClient({ initialSlug }: PageWizardClientProps)
     });
   };
 
+  /* ── Handlers: Date/Time ── */
+
   const handleDateInputChange = (value: string) => {
     if (!value) {
       return;
@@ -544,6 +504,8 @@ export default function PageWizardClient({ initialSlug }: PageWizardClientProps)
       draft.weddingDateTime.minute = minute;
     });
   };
+
+  /* ── Handlers: Guide/Account ── */
 
   const handleGuideAdd = (kind: GuideKind) => {
     updateForm((draft) => {
@@ -636,6 +598,8 @@ export default function PageWizardClient({ initialSlug }: PageWizardClientProps)
     });
   };
 
+  /* ── Handlers: Images ── */
+
   const handleGalleryImageChange = (index: number, value: string) => {
     updateForm((draft) => {
       if (!draft.pageData?.galleryImages) {
@@ -708,13 +672,13 @@ export default function PageWizardClient({ initialSlug }: PageWizardClientProps)
         draft.metadata.images.wedding = uploaded.url;
       });
 
-      setNotice({ tone: 'success', message: 'Cover image uploaded.' });
+      setNotice({ tone: 'success', message: '대표 이미지를 업로드했습니다.' });
     } catch (error) {
       console.error('[pageWizard] failed to upload cover image', error);
       setNotice({
         tone: 'error',
         message:
-          error instanceof Error ? error.message : 'Failed to upload the cover image.',
+          error instanceof Error ? error.message : '대표 이미지를 업로드하지 못했습니다.',
       });
     } finally {
       setUploadingField(null);
@@ -749,18 +713,20 @@ export default function PageWizardClient({ initialSlug }: PageWizardClientProps)
         draft.pageData.galleryImages.push(...uploadedUrls);
       });
 
-      setNotice({ tone: 'success', message: 'Gallery images uploaded.' });
+      setNotice({ tone: 'success', message: '갤러리 이미지를 업로드했습니다.' });
     } catch (error) {
       console.error('[pageWizard] failed to upload gallery images', error);
       setNotice({
         tone: 'error',
         message:
-          error instanceof Error ? error.message : 'Failed to upload gallery images.',
+          error instanceof Error ? error.message : '갤러리 이미지를 업로드하지 못했습니다.',
       });
     } finally {
       setUploadingField(null);
     }
   };
+
+  /* ── Handlers: Navigation ── */
 
   const handleMoveNext = async () => {
     const validation = buildStepValidation(
@@ -774,7 +740,7 @@ export default function PageWizardClient({ initialSlug }: PageWizardClientProps)
     if (!validation.valid) {
       setNotice({
         tone: 'error',
-        message: validation.messages[0] ?? 'Check the current step first.',
+        message: validation.messages[0] ?? '현재 단계 입력값을 먼저 확인해 주세요.',
       });
       return;
     }
@@ -782,7 +748,7 @@ export default function PageWizardClient({ initialSlug }: PageWizardClientProps)
     if (activeStep.key === 'slug') {
       const savedSlug = await persistDraft({
         publish: false,
-        successMessage: 'Draft created. Moving to the next step.',
+        successMessage: '초안을 만들었습니다. 다음 단계로 이동합니다.',
       });
 
       if (!savedSlug) {
@@ -801,7 +767,7 @@ export default function PageWizardClient({ initialSlug }: PageWizardClientProps)
     }
 
     slideToStep(nextStep.key);
-    setNotice({ tone: 'neutral', message: `Moved to step ${nextStep.number}.` });
+    setNotice({ tone: 'neutral', message: `${nextStep.number}단계로 이동했습니다.` });
   };
 
   const handleMovePrevious = () => {
@@ -815,31 +781,137 @@ export default function PageWizardClient({ initialSlug }: PageWizardClientProps)
   };
 
   const handleFinalConfirm = async () => {
+    const reviewSummary = WIZARD_STEPS.map((step) => ({
+      step,
+      validation: getValidationForStep(step.key),
+    }));
     const invalidStep = reviewSummary.find((item) => !item.validation.valid);
 
     if (invalidStep) {
       slideToStep(invalidStep.step.key);
       setNotice({
         tone: 'error',
-        message:
-          invalidStep.validation.messages[0] ??
-          `Check step ${invalidStep.step.number} first.`,
+        message: invalidStep.validation.messages[0] ?? `${invalidStep.step.number}단계를 먼저 확인해 주세요.`,
       });
       return;
     }
 
     await persistDraft({
       publish: published,
-      successMessage: published ? 'Saved and published.' : 'Draft saved.',
+      successMessage: published ? '저장 후 공개되었습니다.' : '초안을 저장했습니다.',
     });
   };
 
   const handleSaveCurrent = async () => {
     await persistDraft({
       publish: published,
-      successMessage: 'Current progress saved.',
+      successMessage: '현재 단계 내용을 저장했습니다.',
     });
   };
+
+  /* ── Step content renderer ── */
+
+  const renderStepContent = (stepKey: WizardStepKey) => {
+    if (!formState || !previewFormState) {
+      return null;
+    }
+
+    const sharedProps = { formState, previewFormState, updateForm };
+
+    switch (stepKey) {
+      case 'theme':
+        return (
+          <ThemeStep
+            {...sharedProps}
+            defaultTheme={defaultTheme}
+            setDefaultTheme={setDefaultTheme}
+            openChoicePanel={openChoicePanel}
+            toggleChoicePanel={toggleChoicePanel}
+            onProductTierChange={handleProductTierChange}
+            setOpenChoicePanel={setOpenChoicePanel}
+          />
+        );
+      case 'slug':
+        return (
+          <SlugStep
+            slugInput={slugInput}
+            setSlugInput={setSlugInput}
+            normalizedSlugInput={normalizedSlugInput}
+            persistedSlug={persistedSlug}
+            previewSlug={previewSlug}
+          />
+        );
+      case 'basic':
+        return (
+          <BasicStep
+            {...sharedProps}
+            onPersonFieldChange={handlePersonFieldChange}
+          />
+        );
+      case 'schedule':
+        return (
+          <ScheduleStep
+            {...sharedProps}
+            currentWeddingSummary={currentWeddingSummary}
+            onDateInputChange={handleDateInputChange}
+            onTimeInputChange={handleTimeInputChange}
+          />
+        );
+      case 'venue':
+        return <VenueStep {...sharedProps} />;
+      case 'greeting':
+        return (
+          <GreetingStep
+            {...sharedProps}
+            onPersonFieldChange={handlePersonFieldChange}
+            onParentFieldChange={handleParentFieldChange}
+          />
+        );
+      case 'images':
+        return (
+          <ImagesStep
+            {...sharedProps}
+            canEdit={canEdit}
+            maxGalleryImages={maxGalleryImages}
+            uploadingField={uploadingField}
+            coverUploadInputRef={coverUploadInputRef}
+            galleryUploadInputRef={galleryUploadInputRef}
+            onTriggerPicker={handleTriggerPicker}
+            onCoverUpload={handleCoverUpload}
+            onGalleryUpload={handleGalleryUpload}
+            onGalleryImageChange={handleGalleryImageChange}
+            onGalleryImageAdd={handleGalleryImageAdd}
+            onGalleryImageRemove={handleGalleryImageRemove}
+            onGalleryImageMove={handleGalleryImageMove}
+          />
+        );
+      case 'extra':
+        return (
+          <ExtraStep
+            {...sharedProps}
+            onAccountAdd={handleAccountAdd}
+            onAccountRemove={handleAccountRemove}
+            onAccountChange={handleAccountChange}
+            onGuideAdd={handleGuideAdd}
+            onGuideRemove={handleGuideRemove}
+            onGuideChange={handleGuideChange}
+            onGuideTemplateApply={handleGuideTemplateApply}
+          />
+        );
+      case 'final':
+        return (
+          <FinalStep
+            {...sharedProps}
+            published={published}
+            setPublished={setPublished}
+          />
+        );
+      default:
+        return null;
+    }
+  };
+
+  /* ── Render helpers ── */
 
   const renderNotice = () => {
     if (!notice) {
@@ -849,710 +921,25 @@ export default function PageWizardClient({ initialSlug }: PageWizardClientProps)
     return <div className={getNoticeClassName(notice.tone)}>{notice.message}</div>;
   };
 
-  const renderStepContent = (stepKey: WizardStepKey) => {
-    if (!formState || !previewFormState) {
-      return null;
-    }
-
-    if (stepKey === 'theme') {
-      return (
-        <div className={styles.fieldGrid}>
-          <div className={styles.choiceGrid}>
-            {(['emotional', 'simple'] as const).map((theme) => (
-              <button
-                key={theme}
-                type="button"
-                className={`${styles.choiceCard} ${
-                  defaultTheme === theme ? styles.choiceCardActive : ''
-                }`}
-                onClick={() => setDefaultTheme(theme)}
-              >
-                <span className={styles.choiceTag}>{theme}</span>
-                <h3 className={styles.choiceTitle}>
-                  {theme === 'emotional' ? 'Emotional' : 'Simple'}
-                </h3>
-                <p className={styles.choiceText}>
-                  {theme === 'emotional'
-                    ? 'Warm photo-first layout for the main page.'
-                    : 'Clean information-first layout for the main page.'}
-                </p>
-              </button>
-            ))}
-          </div>
-
-          <div className={styles.choiceGrid}>
-            {PRODUCT_TIERS.map((tier) => {
-              const tierFeatures = resolveInvitationFeatures(tier);
-              const isActive = formState.productTier === tier;
-
-              return (
-                <button
-                  key={tier}
-                  type="button"
-                  className={`${styles.choiceCard} ${
-                    isActive ? styles.choiceCardActive : ''
-                  }`}
-                  onClick={() => handleProductTierChange(tier)}
-                >
-                  <span className={styles.choiceTag}>{getProductTierLabel(tier)}</span>
-                  <h3 className={styles.choiceTitle}>{getProductTierLabel(tier)}</h3>
-                  <p className={styles.choiceText}>
-                    Gallery up to {tierFeatures.maxGalleryImages}, Kakao{' '}
-                    {tierFeatures.shareMode === 'card' ? 'card' : 'link'} share,
-                    {tierFeatures.showCountdown ? ' countdown' : ' no countdown'},
-                    {tierFeatures.showGuestbook ? ' guestbook' : ' no guestbook'}.
-                  </p>
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      );
-    }
-
-    if (stepKey === 'slug') {
-      return (
-        <div className={styles.fieldGrid}>
-          <label className={styles.field}>
-            {renderFieldMeta(
-              'Page slug',
-              'required',
-              'Lowercase letters, numbers, and hyphens only.'
-            )}
-            <input
-              className={styles.input}
-              value={slugInput}
-              placeholder="shin-minje-kim-hyunji"
-              onChange={(event) => setSlugInput(event.target.value)}
-              onBlur={() => {
-                if (!persistedSlug && normalizedSlugInput) {
-                  setSlugInput(normalizedSlugInput);
-                }
-              }}
-              disabled={Boolean(persistedSlug)}
-            />
-          </label>
-
-          <div className={styles.summaryCard}>
-            <span className={styles.summaryLabel}>URL preview</span>
-            <strong className={styles.summaryValue}>/{previewSlug}</strong>
-            <p className={styles.sectionText}>
-              The draft is created when you confirm this step.
-            </p>
-          </div>
-        </div>
-      );
-    }
-
-    if (stepKey === 'basic') {
-      return (
-        <div className={styles.fieldGrid}>
-          <div className={styles.twoColumnGrid}>
-            <label className={styles.field}>
-              {renderFieldMeta('Groom name', 'required')}
-              <input
-                className={styles.input}
-                value={formState.couple.groom.name}
-                placeholder="Groom name"
-                onChange={(event) =>
-                  handlePersonFieldChange('groom', 'name', event.target.value)
-                }
-              />
-            </label>
-            <label className={styles.field}>
-              {renderFieldMeta('Bride name', 'required')}
-              <input
-                className={styles.input}
-                value={formState.couple.bride.name}
-                placeholder="Bride name"
-                onChange={(event) =>
-                  handlePersonFieldChange('bride', 'name', event.target.value)
-                }
-              />
-            </label>
-          </div>
-
-          <label className={styles.field}>
-            {renderFieldMeta('Cover subtitle', 'optional')}
-            <input
-              className={styles.input}
-              value={formState.pageData?.subtitle ?? ''}
-              placeholder="A day when two hearts become one"
-              onChange={(event) =>
-                updateForm((draft) => {
-                  if (draft.pageData) {
-                    draft.pageData.subtitle = event.target.value;
-                  }
-                })
-              }
-            />
-          </label>
-
-          <label className={styles.field}>
-            {renderFieldMeta('Cover title', 'optional')}
-            <input
-              className={styles.input}
-              value={formState.displayName}
-              placeholder={composeDisplayName(
-                previewFormState.couple.groom.name,
-                previewFormState.couple.bride.name
-              )}
-              onChange={(event) =>
-                updateForm((draft) => {
-                  draft.displayName = event.target.value;
-                })
-              }
-            />
-          </label>
-
-          <label className={styles.field}>
-            {renderFieldMeta('Short description', 'optional')}
-            <textarea
-              className={styles.textarea}
-              value={formState.description}
-              placeholder={composeDescription(
-                previewFormState.couple.groom.name,
-                previewFormState.couple.bride.name
-              )}
-              onChange={(event) =>
-                updateForm((draft) => {
-                  draft.description = event.target.value;
-                })
-              }
-            />
-          </label>
-        </div>
-      );
-    }
-
-    if (stepKey === 'schedule') {
-      const weddingDate = buildWeddingDateObject(previewFormState);
-
-      return (
-        <div className={styles.fieldGrid}>
-          <div className={styles.twoColumnGrid}>
-            <label className={styles.field}>
-              {renderFieldMeta('Wedding date', 'required')}
-              <input
-                className={styles.input}
-                type="date"
-                value={
-                  weddingDate
-                    ? `${weddingDate.getFullYear()}-${String(
-                        weddingDate.getMonth() + 1
-                      ).padStart(2, '0')}-${String(weddingDate.getDate()).padStart(
-                        2,
-                        '0'
-                      )}`
-                    : ''
-                }
-                onChange={(event) => handleDateInputChange(event.target.value)}
-              />
-            </label>
-            <label className={styles.field}>
-              {renderFieldMeta('Wedding time', 'required')}
-              <input
-                className={styles.input}
-                type="time"
-                value={
-                  weddingDate
-                    ? `${String(weddingDate.getHours()).padStart(2, '0')}:${String(
-                        weddingDate.getMinutes()
-                      ).padStart(2, '0')}`
-                    : ''
-                }
-                onChange={(event) => handleTimeInputChange(event.target.value)}
-              />
-            </label>
-          </div>
-
-          <div className={styles.summaryCard}>
-            <span className={styles.summaryLabel}>Sentence preview</span>
-            <strong className={styles.summaryValue}>{currentWeddingSummary}</strong>
-          </div>
-        </div>
-      );
-    }
-
-    if (stepKey === 'venue') {
-      return (
-        <div className={styles.fieldGrid}>
-          <label className={styles.field}>
-            {renderFieldMeta('Venue name', 'required')}
-            <input
-              className={styles.input}
-              value={formState.venue}
-              placeholder="The K Wedding Hall"
-              onChange={(event) =>
-                updateForm((draft) => {
-                  draft.venue = event.target.value;
-                  if (draft.pageData) {
-                    draft.pageData.venueName = event.target.value;
-                  }
-                })
-              }
-            />
-          </label>
-
-          <label className={styles.field}>
-            {renderFieldMeta('Address', 'required')}
-            <input
-              className={styles.input}
-              value={formState.pageData?.ceremonyAddress ?? ''}
-              placeholder="Seoul ..."
-              onChange={(event) =>
-                updateForm((draft) => {
-                  if (draft.pageData) {
-                    draft.pageData.ceremonyAddress = event.target.value;
-                  }
-                })
-              }
-            />
-          </label>
-          <div className={styles.twoColumnGrid}>
-            <label className={styles.field}>
-              {renderFieldMeta('Venue contact', 'optional')}
-              <input
-                className={styles.input}
-                value={formState.pageData?.ceremonyContact ?? ''}
-                placeholder="02-1234-5678"
-                onChange={(event) =>
-                  updateForm((draft) => {
-                    if (draft.pageData) {
-                      draft.pageData.ceremonyContact = event.target.value;
-                    }
-                  })
-                }
-              />
-            </label>
-            <label className={styles.field}>
-              {renderFieldMeta('Map URL', 'optional')}
-              <input
-                className={styles.input}
-                value={formState.pageData?.mapUrl ?? ''}
-                placeholder="https://map.kakao.com/..."
-                onChange={(event) =>
-                  updateForm((draft) => {
-                    if (draft.pageData) {
-                      draft.pageData.mapUrl = event.target.value;
-                    }
-                  })
-                }
-              />
-            </label>
-          </div>
-
-          <label className={styles.field}>
-            {renderFieldMeta('Guide text', 'optional')}
-            <textarea
-              className={styles.textarea}
-              value={formState.pageData?.mapDescription ?? ''}
-              placeholder="Parking is available in the building."
-              onChange={(event) =>
-                updateForm((draft) => {
-                  if (draft.pageData) {
-                    draft.pageData.mapDescription = event.target.value;
-                  }
-                })
-              }
-            />
-          </label>
-        </div>
-      );
-    }
-
-    if (stepKey === 'greeting') {
-      return (
-        <div className={styles.fieldGrid}>
-          <label className={styles.field}>
-            {renderFieldMeta('Greeting message', 'required')}
-            <textarea
-              className={styles.textarea}
-              value={formState.pageData?.greetingMessage ?? ''}
-              placeholder="We would love to celebrate with you."
-              onChange={(event) =>
-                updateForm((draft) => {
-                  if (draft.pageData) {
-                    draft.pageData.greetingMessage = event.target.value;
-                  }
-                })
-              }
-            />
-          </label>
-
-          <div className={styles.templateRow}>
-            {GREETING_TEMPLATES.map((template) => (
-              <button
-                key={template.label}
-                type="button"
-                className={styles.templateButton}
-                onClick={() =>
-                  updateForm((draft) => {
-                    if (draft.pageData) {
-                      draft.pageData.greetingMessage = template.value;
-                    }
-                  })
-                }
-              >
-                {template.label}
-              </button>
-            ))}
-          </div>
-
-          <label className={styles.field}>
-            {renderFieldMeta('Greeting author', 'optional')}
-            <input
-              className={styles.input}
-              value={formState.pageData?.greetingAuthor ?? ''}
-              placeholder={composeGreetingAuthor(
-                previewFormState.couple.groom.name,
-                previewFormState.couple.bride.name
-              )}
-              onChange={(event) =>
-                updateForm((draft) => {
-                  if (draft.pageData) {
-                    draft.pageData.greetingAuthor = event.target.value;
-                  }
-                })
-              }
-            />
-          </label>
-
-          <div className={styles.twoColumnGrid}>
-            <PersonEditorCard
-              role="groom"
-              label="Groom"
-              person={formState.couple.groom}
-              disabled={false}
-              onPersonFieldChange={handlePersonFieldChange}
-              onParentFieldChange={handleParentFieldChange}
-            />
-            <PersonEditorCard
-              role="bride"
-              label="Bride"
-              person={formState.couple.bride}
-              disabled={false}
-              onPersonFieldChange={handlePersonFieldChange}
-              onParentFieldChange={handleParentFieldChange}
-            />
-          </div>
-        </div>
-      );
-    }
-
-    if (stepKey === 'images') {
-      const galleryImages = formState.pageData?.galleryImages ?? [];
-
-      return (
-        <div className={styles.fieldGrid}>
-          <section className={styles.uploadCard}>
-            <div className={styles.uploadHeader}>
-              <div>
-                <h3 className={styles.cardTitle}>Cover image</h3>
-                <p className={styles.cardText}>Main image for the cover and share card.</p>
-              </div>
-              <div className={styles.inlineActions}>
-                <input
-                  ref={coverUploadInputRef}
-                  className={styles.hiddenInput}
-                  type="file"
-                  accept="image/*"
-                  onChange={(event) => void handleCoverUpload(event)}
-                />
-                <button
-                  type="button"
-                  className={styles.secondaryButton}
-                  onClick={() => handleTriggerPicker('cover')}
-                  disabled={!canEdit || uploadingField === 'cover'}
-                >
-                  {uploadingField === 'cover' ? 'Uploading' : 'Upload cover'}
-                </button>
-              </div>
-            </div>
-
-            <div className={styles.assetPreview}>
-              {previewFormState.metadata.images.wedding ? (
-                <img
-                  className={styles.assetPreviewImage}
-                  src={previewFormState.metadata.images.wedding}
-                  alt="Cover preview"
-                />
-              ) : (
-                <div className={styles.assetPlaceholder}>Cover preview</div>
-              )}
-            </div>
-
-            <label className={styles.field}>
-              {renderFieldMeta('Cover image URL', 'optional')}
-              <input
-                className={styles.input}
-                value={formState.metadata.images.wedding}
-                placeholder="https://.../cover.jpg"
-                onChange={(event) =>
-                  updateForm((draft) => {
-                    draft.metadata.images.wedding = event.target.value;
-                  })
-                }
-              />
-            </label>
-          </section>
-
-          <section className={styles.uploadCard}>
-            <div className={styles.uploadHeader}>
-              <div>
-                <h3 className={styles.cardTitle}>Gallery images</h3>
-                <p className={styles.cardText}>Up to {maxGalleryImages} images.</p>
-              </div>
-              <div className={styles.inlineActions}>
-                <input
-                  ref={galleryUploadInputRef}
-                  className={styles.hiddenInput}
-                  type="file"
-                  accept="image/*"
-                  multiple
-                  onChange={(event) => void handleGalleryUpload(event)}
-                />
-                <button
-                  type="button"
-                  className={styles.secondaryButton}
-                  onClick={() => handleTriggerPicker('gallery')}
-                  disabled={
-                    !canEdit ||
-                    uploadingField === 'gallery' ||
-                    galleryImages.length >= maxGalleryImages
-                  }
-                >
-                  {uploadingField === 'gallery' ? 'Uploading' : 'Upload gallery'}
-                </button>
-                <button
-                  type="button"
-                  className={styles.secondaryButton}
-                  onClick={handleGalleryImageAdd}
-                  disabled={galleryImages.length >= maxGalleryImages}
-                >
-                  Add URL
-                </button>
-              </div>
-            </div>
-            {galleryImages.length > 0 ? (
-              <div className={styles.assetList}>
-                {galleryImages.map((imageUrl, index) => (
-                  <article key={`gallery-${index}`} className={styles.assetItem}>
-                    {imageUrl ? (
-                      <img
-                        className={styles.assetItemImage}
-                        src={imageUrl}
-                        alt={`Gallery ${index + 1}`}
-                      />
-                    ) : (
-                      <div className={styles.assetPlaceholder}>Image {index + 1}</div>
-                    )}
-                    <div className={styles.assetItemBody}>
-                      <div className={styles.assetItemHeader}>
-                        <strong className={styles.assetItemTitle}>
-                          Gallery image {index + 1}
-                        </strong>
-                        <div className={styles.assetActionRow}>
-                          <button
-                            type="button"
-                            className={styles.textButton}
-                            onClick={() => handleGalleryImageMove(index, 'up')}
-                            disabled={index === 0}
-                          >
-                            Up
-                          </button>
-                          <button
-                            type="button"
-                            className={styles.textButton}
-                            onClick={() => handleGalleryImageMove(index, 'down')}
-                            disabled={index === galleryImages.length - 1}
-                          >
-                            Down
-                          </button>
-                          <button
-                            type="button"
-                            className={styles.textButton}
-                            onClick={() => handleGalleryImageRemove(index)}
-                          >
-                            Remove
-                          </button>
-                        </div>
-                      </div>
-                      <label className={styles.field}>
-                        {renderFieldMeta('Image URL', 'optional')}
-                        <input
-                          className={styles.input}
-                          value={imageUrl}
-                          placeholder="https://.../gallery-01.jpg"
-                          onChange={(event) =>
-                            handleGalleryImageChange(index, event.target.value)
-                          }
-                        />
-                      </label>
-                    </div>
-                  </article>
-                ))}
-              </div>
-            ) : (
-              <div className={styles.assetPlaceholder}>No gallery image yet.</div>
-            )}
-          </section>
-        </div>
-      );
-    }
-
-    if (stepKey === 'extra') {
-      return (
-        <div className={styles.fieldGrid}>
-          <section className={styles.formCard}>
-            <label className={styles.field}>
-              {renderFieldMeta('Gift message', 'optional')}
-              <textarea
-                className={styles.textarea}
-                value={formState.pageData?.giftInfo?.message ?? ''}
-                placeholder="Optional account guide message"
-                onChange={(event) =>
-                  updateForm((draft) => {
-                    if (draft.pageData?.giftInfo) {
-                      draft.pageData.giftInfo.message = event.target.value;
-                    }
-                  })
-                }
-              />
-            </label>
-          </section>
-
-          <div className={styles.twoColumnGrid}>
-            <AccountSectionPanel
-              kind="groomAccounts"
-              title="Groom accounts"
-              description="Up to 3 accounts"
-              accounts={formState.pageData?.giftInfo?.groomAccounts ?? []}
-              disabled={false}
-              onAdd={handleAccountAdd}
-              onRemove={handleAccountRemove}
-              onChange={handleAccountChange}
-            />
-            <AccountSectionPanel
-              kind="brideAccounts"
-              title="Bride accounts"
-              description="Up to 3 accounts"
-              accounts={formState.pageData?.giftInfo?.brideAccounts ?? []}
-              disabled={false}
-              onAdd={handleAccountAdd}
-              onRemove={handleAccountRemove}
-              onChange={handleAccountChange}
-            />
-          </div>
-
-          <section className={styles.formCard}>
-            <div className={styles.templateRow}>
-              {GUIDE_TEMPLATES.map((template) => (
-                <button
-                  key={template.label}
-                  type="button"
-                  className={styles.templateButton}
-                  onClick={() =>
-                    handleGuideTemplateApply('venueGuide', template.label, template.value)
-                  }
-                >
-                  Add {template.label}
-                </button>
-              ))}
-            </div>
-            <GuideSectionPanel
-              kind="venueGuide"
-              title="Venue guide"
-              description="Optional guide items below the schedule."
-              items={formState.pageData?.venueGuide ?? []}
-              disabled={false}
-              onAdd={handleGuideAdd}
-              onRemove={handleGuideRemove}
-              onChange={handleGuideChange}
-            />
-            <GuideSectionPanel
-              kind="wreathGuide"
-              title="Wreath guide"
-              description="Optional wreath delivery guide."
-              items={formState.pageData?.wreathGuide ?? []}
-              disabled={false}
-              onAdd={handleGuideAdd}
-              onRemove={handleGuideRemove}
-              onChange={handleGuideChange}
-            />
-          </section>
-        </div>
-      );
-    }
-
-    return (
-      <div className={styles.fieldGrid}>
-        <label className={styles.field}>
-          {renderFieldMeta('Browser title', 'optional')}
-          <input
-            className={styles.input}
-            value={formState.metadata.title}
-            placeholder={previewFormState.metadata.title}
-            onChange={(event) =>
-              updateForm((draft) => {
-                draft.metadata.title = event.target.value;
-              })
-            }
-          />
-        </label>
-        <label className={styles.field}>
-          {renderFieldMeta('Browser description', 'optional')}
-          <textarea
-            className={styles.textarea}
-            value={formState.metadata.description}
-            placeholder={previewFormState.metadata.description}
-            onChange={(event) =>
-              updateForm((draft) => {
-                draft.metadata.description = event.target.value;
-              })
-            }
-          />
-        </label>
-        <label className={styles.field}>
-          {renderFieldMeta('Keywords', 'optional', 'Comma separated')}
-          <input
-            className={styles.input}
-            value={keywordsToText(formState.metadata.keywords)}
-            placeholder="wedding, invitation"
-            onChange={(event) =>
-              updateForm((draft) => {
-                draft.metadata.keywords = textToKeywords(event.target.value);
-              })
-            }
-          />
-        </label>
-        <label className={styles.switchRow}>
-          <input
-            type="checkbox"
-            checked={published}
-            onChange={(event) => setPublished(event.target.checked)}
-          />
-          Publish after saving
-        </label>
-      </div>
-    );
-  };
+  /* ── Loading state ── */
 
   if (isLoading || isAdminLoading) {
     return (
       <main className={styles.page}>
         <div className={styles.shell}>
           <section className={styles.centerCard}>
-            <p className={styles.eyebrow}>Loading</p>
-            <h1 className={styles.centerTitle}>Preparing the invitation wizard.</h1>
+            <p className={styles.eyebrow}>불러오는 중</p>
+            <h1 className={styles.centerTitle}>청첩장 편집 화면을 준비하고 있습니다.</h1>
             <p className={styles.centerText}>
-              The current config and publish status are being checked.
+              현재 설정과 공개 상태를 확인하고 있습니다.
             </p>
           </section>
         </div>
       </main>
     );
   }
+
+  /* ── Auth/lock state ── */
 
   if (!formState || !previewFormState || !canCreateNew || !canEdit) {
     return (
@@ -1562,10 +949,10 @@ export default function PageWizardClient({ initialSlug }: PageWizardClientProps)
           <section className={styles.centerCard}>
             {initialSlug ? (
               <>
-                <p className={styles.eyebrow}>Unlock Editor</p>
-                <h1 className={styles.centerTitle}>Enter the page password.</h1>
+                <p className={styles.eyebrow}>편집 잠금 해제</p>
+                <h1 className={styles.centerTitle}>페이지 비밀번호를 입력해 주세요.</h1>
                 <p className={styles.centerText}>
-                  Existing customer pages can be edited after password verification.
+                  기존 고객 페이지는 비밀번호를 확인한 뒤에만 수정할 수 있습니다.
                 </p>
                 <div className={styles.lockRow}>
                   <input
@@ -1573,7 +960,7 @@ export default function PageWizardClient({ initialSlug }: PageWizardClientProps)
                     type="password"
                     value={passwordInput}
                     onChange={(event) => setPasswordInput(event.target.value)}
-                    placeholder="Page password"
+                    placeholder="페이지 비밀번호"
                   />
                   <button
                     type="button"
@@ -1581,17 +968,16 @@ export default function PageWizardClient({ initialSlug }: PageWizardClientProps)
                     onClick={() => void handleUnlock()}
                     disabled={isUnlocking}
                   >
-                    {isUnlocking ? 'Checking' : 'Unlock'}
+                    {isUnlocking ? '확인 중' : '잠금 해제'}
                   </button>
                 </div>
               </>
             ) : (
               <>
-                <p className={styles.eyebrow}>Admin Only</p>
-                <h1 className={styles.centerTitle}>New page creation requires admin access.</h1>
+                <p className={styles.eyebrow}>관리자 전용</p>
+                <h1 className={styles.centerTitle}>새 페이지 생성은 관리자만 사용할 수 있습니다.</h1>
                 <p className={styles.centerText}>
-                  Existing pages can use customer passwords, but creating a new page is
-                  an admin-only action.
+                  기존 페이지는 고객 비밀번호로 수정할 수 있지만, 새 페이지 생성은 관리자 전용입니다.
                 </p>
               </>
             )}
@@ -1601,98 +987,29 @@ export default function PageWizardClient({ initialSlug }: PageWizardClientProps)
     );
   }
 
+  /* ── Main wizard ── */
+
   return (
     <main className={styles.page}>
       <div className={styles.shell}>
-        <section className={styles.topCard}>
-          <div className={styles.topHeader}>
-            <div className={styles.topMeta}>
-              <p className={styles.eyebrow}>Mobile Invitation Wizard</p>
-              <h1 className={styles.pageTitle}>{title}</h1>
-              <p className={styles.pageDescription}>
-                Swipe through the steps, confirm each section, and save into the same
-                Firestore config used by the existing editor.
-              </p>
-            </div>
-            <div className={styles.topMeta}>
-              <span className={styles.metaChip}>Step {activeStep.number}</span>
-              <span className={styles.metaChip}>Theme {defaultTheme}</span>
-              <span className={styles.metaChip}>
-                Package {getProductTierLabel(formState.productTier ?? 'premium')}
-              </span>
-              <span className={published ? styles.stateSuccess : styles.metaChip}>
-                {published ? 'Publish on save' : 'Draft on save'}
-              </span>
-            </div>
-          </div>
 
-          <div className={styles.progressBlock}>
-            <div className={styles.progressLabels}>
-              <strong>Required progress</strong>
-              <span>
-                {completedRequiredSteps} / {WIZARD_STEPS.length - 1} ready
-              </span>
-            </div>
-            <div className={styles.progressTrack}>
-              <div
-                className={styles.progressFill}
-                style={{
-                  width: `${Math.round(
-                    (completedRequiredSteps / (WIZARD_STEPS.length - 1)) * 100
-                  )}%`,
-                }}
-              />
-            </div>
+        {/* Progress indicator */}
+        <div className={styles.progressBar}>
+          <div className={styles.progressLabels}>
+            <span className={styles.progressCurrent}>
+              {activeStep.number} / {String(WIZARD_STEPS.length).padStart(2, '0')}
+            </span>
+            <span className={styles.progressTitle}>{activeStep.title}</span>
           </div>
-
-          <div className={styles.statusGrid}>
-            <section className={styles.summaryCard}>
-              <span className={styles.summaryLabel}>URL</span>
-              <strong className={styles.summaryValue}>/{previewSlug}</strong>
-            </section>
-            <section className={styles.summaryCard}>
-              <span className={styles.summaryLabel}>Wedding date</span>
-              <strong className={styles.summaryValue}>{currentWeddingSummary}</strong>
-            </section>
-            <section className={styles.summaryCard}>
-              <span className={styles.summaryLabel}>Data source</span>
-              <strong className={styles.summaryValue}>{dataSourceLabel}</strong>
-            </section>
-            <section className={styles.summaryCard}>
-              <span className={styles.summaryLabel}>Last saved</span>
-              <strong className={styles.summaryValue}>{formatSavedAt(lastSavedAt)}</strong>
-            </section>
+          <div className={styles.progressTrack}>
+            <div
+              className={styles.progressFill}
+              style={{
+                width: `${((activeStepIndex + 1) / WIZARD_STEPS.length) * 100}%`,
+              }}
+            />
           </div>
-
-          <div className={styles.stepNav}>
-            {WIZARD_STEPS.map((step) => {
-              const validation =
-                reviewSummary.find((item) => item.step.key === step.key)?.validation ?? {
-                  valid: false,
-                  messages: [],
-                };
-
-              return (
-                <button
-                  key={step.key}
-                  type="button"
-                  className={`${styles.stepNavButton} ${
-                    activeStep.key === step.key ? styles.stepNavButtonActive : ''
-                  }`}
-                  onClick={() => slideToStep(step.key)}
-                >
-                  <span className={styles.stepNavNumber}>{step.number}</span>
-                  <span className={styles.stepNavTitle}>{step.title}</span>
-                  <span
-                    className={validation.valid ? styles.stateSuccess : styles.stateError}
-                  >
-                    {validation.valid ? 'Ready' : 'Check'}
-                  </span>
-                </button>
-              );
-            })}
-          </div>
-        </section>
+        </div>
 
         {renderNotice()}
 
@@ -1702,6 +1019,7 @@ export default function PageWizardClient({ initialSlug }: PageWizardClientProps)
             pagination={{ clickable: true }}
             spaceBetween={24}
             autoHeight
+            allowTouchMove={false}
             onSwiper={(instance) => {
               swiperRef.current = instance;
             }}
@@ -1712,114 +1030,138 @@ export default function PageWizardClient({ initialSlug }: PageWizardClientProps)
               }
             }}
           >
-            {WIZARD_STEPS.map((step) => {
-              const validation =
-                reviewSummary.find((item) => item.step.key === step.key)?.validation ?? {
-                  valid: false,
-                  messages: [],
-                };
+            {WIZARD_STEPS.map((step, index) => {
+              const validation = getValidationForStep(step.key);
+              const currentViewMode = getStepViewMode(step.key);
+              const shouldRenderBody = Math.abs(index - activeStepIndex) <= 1;
 
               return (
                 <SwiperSlide key={step.key}>
                   <div className={styles.slideInner}>
                     <div className={styles.stepHeader}>
-                      <div className={styles.stepNumber}>{step.number}</div>
-                      <div className={styles.stepHeaderText}>
+                      <div className={styles.stepHeaderTop}>
+                        <div className={styles.stepNumber}>{step.number}</div>
                         <div className={styles.stepMetaRow}>
-                          <span className={styles.metaChip}>{step.title}</span>
                           <span
                             className={
                               validation.valid ? styles.stateSuccess : styles.stateError
                             }
                           >
-                            {validation.valid ? 'Ready' : 'Need input'}
+                            {validation.valid ? '입력 완료' : '입력 필요'}
                           </span>
                         </div>
+                      </div>
+                      <div className={styles.stepHeaderText}>
                         <h2 className={styles.stepTitle}>{step.title}</h2>
                         <p className={styles.stepDescription}>{step.description}</p>
-                        <ul className={styles.highlightList}>
-                          {step.highlights.map((highlight) => (
-                            <li key={`${step.key}-${highlight}`}>{highlight}</li>
-                          ))}
-                        </ul>
                       </div>
                     </div>
 
                     <div className={getNoticeClassName(validation.valid ? 'neutral' : 'error')}>
                       {validation.valid
-                        ? 'Changes in this slide are reflected in the preview immediately.'
-                        : validation.messages[0] ?? 'Check the current step values.'}
+                        ? '이 단계에서 수정한 내용은 저장과 미리보기에 바로 반영됩니다.'
+                        : validation.messages[0] ?? '현재 단계 입력값을 먼저 확인해 주세요.'}
                     </div>
 
-                    <div className={styles.stepGrid}>
-                      <section className={styles.formCard}>{renderStepContent(step.key)}</section>
-                      {step.previewSection ? (
+                    <div className={styles.viewTabs} role="tablist" aria-label={`${step.title} 보기 전환`}>
+                      <button
+                        type="button"
+                        className={`${styles.viewTab} ${
+                          currentViewMode === 'input' ? styles.viewTabActive : ''
+                        }`}
+                        onClick={() => setStepViewMode(step.key, 'input')}
+                      >
+                        입력
+                      </button>
+                      <button
+                        type="button"
+                        className={`${styles.viewTab} ${
+                          currentViewMode === 'preview' ? styles.viewTabActive : ''
+                        }`}
+                        onClick={() => setStepViewMode(step.key, 'preview')}
+                        disabled={!step.previewSection}
+                      >
+                        미리보기
+                      </button>
+                    </div>
+
+                    <div className={styles.slideBody}>
+                      {!shouldRenderBody ? (
+                        <section className={styles.slideIdleCard}>
+                          <p className={styles.slideIdleText}>
+                            이 단계로 이동하면 입력 화면이 열립니다.
+                          </p>
+                        </section>
+                      ) : currentViewMode === 'input' ? (
+                        <section className={styles.formCard}>{renderStepContent(step.key)}</section>
+                      ) : (
                         <div className={styles.previewPane}>
-                          <PageEditorSectionPreview
-                            section={step.previewSection}
+                          <PageWizardStepPreview
+                            stepKey={step.key}
                             theme={defaultTheme}
                             slug={previewSlug}
                             formState={previewFormState}
                             published={published}
-                            highlighted={step.key === activeStep.key}
-                            onRequestEdit={() => slideToStep(step.key)}
+                            reviewSummary={step.key === 'final' ? finalReviewSummary : undefined}
                           />
                         </div>
-                      ) : null}
+                      )}
+                    </div>
+
+                    <div className={styles.slideFooter}>
+                      <div className={styles.footerLeft}>
+                        <span className={styles.footerStepBadge}>
+                          {step.number} / {String(WIZARD_STEPS.length).padStart(2, '0')}
+                        </span>
+                        <p className={styles.footerText}>
+                          {validation.valid
+                            ? `최근 저장: ${formatSavedAt(lastSavedAt)}`
+                            : validation.messages[0] ?? '필수 입력을 먼저 완료해 주세요.'}
+                        </p>
+                      </div>
+                      <div className={styles.footerRight}>
+                        <button
+                          type="button"
+                          className={styles.ghostButton}
+                          onClick={handleMovePrevious}
+                          disabled={index === 0 || isSaving}
+                        >
+                          이전
+                        </button>
+                        <button
+                          type="button"
+                          className={styles.secondaryButton}
+                          onClick={() => void handleSaveCurrent()}
+                          disabled={isSaving}
+                        >
+                          {isSaving ? '저장 중' : '저장'}
+                        </button>
+                        {step.key === 'final' ? (
+                          <button
+                            type="button"
+                            className={styles.publishButton}
+                            onClick={() => void handleFinalConfirm()}
+                            disabled={isSaving}
+                          >
+                            {published ? '저장 후 공개' : '초안 저장'}
+                          </button>
+                        ) : (
+                          <button
+                            type="button"
+                            className={styles.primaryButton}
+                            onClick={() => void handleMoveNext()}
+                            disabled={isSaving}
+                          >
+                            {step.key === 'slug' ? '주소 확인' : '다음'}
+                          </button>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </SwiperSlide>
               );
             })}
           </Swiper>
-        </section>
-
-        <section className={styles.footerBar}>
-          <div className={styles.footerLeft}>
-            <strong>{activeStep.title}</strong>
-            <p className={styles.footerText}>
-              {activeValidation.valid
-                ? 'Confirm this step to move forward.'
-                : activeValidation.messages[0] ?? 'Complete this step first.'}
-            </p>
-          </div>
-          <div className={styles.footerRight}>
-            <button
-              type="button"
-              className={styles.ghostButton}
-              onClick={handleMovePrevious}
-              disabled={getStepIndex(activeStep.key) === 0 || isSaving}
-            >
-              Previous
-            </button>
-            <button
-              type="button"
-              className={styles.secondaryButton}
-              onClick={() => void handleSaveCurrent()}
-              disabled={isSaving}
-            >
-              {isSaving ? 'Saving' : 'Save now'}
-            </button>
-            {activeStep.key === 'final' ? (
-              <button
-                type="button"
-                className={styles.publishButton}
-                onClick={() => void handleFinalConfirm()}
-                disabled={isSaving}
-              >
-                {published ? 'Save and publish' : 'Save draft'}
-              </button>
-            ) : (
-              <button
-                type="button"
-                className={styles.primaryButton}
-                onClick={() => void handleMoveNext()}
-                disabled={isSaving}
-              >
-                {activeStep.key === 'slug' ? 'Confirm slug' : 'Confirm and next'}
-              </button>
-            )}
-          </div>
         </section>
       </div>
     </main>

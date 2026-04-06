@@ -16,8 +16,8 @@ export const MAX_GALLERY_IMAGES = resolveInvitationFeatures(
   DEFAULT_INVITATION_PRODUCT_TIER
 ).maxGalleryImages;
 export const MAX_REPEATABLE_ITEMS = 3;
-export const PLACEHOLDER_GROOM = 'Groom';
-export const PLACEHOLDER_BRIDE = 'Bride';
+export const PLACEHOLDER_GROOM = '신랑';
+export const PLACEHOLDER_BRIDE = '신부';
 
 export type WizardStepKey =
   | 'theme'
@@ -48,107 +48,107 @@ export const WIZARD_STEPS: WizardStepDefinition[] = [
   {
     key: 'theme',
     number: '01',
-    title: 'Choose Theme and Package',
-    description: 'Pick the default design and product tier for this invitation.',
+    title: '디자인과 상품 선택',
+    description: '청첩장 기본 디자인과 상품 구성을 먼저 선택합니다.',
     previewSection: 'cover',
-    highlights: ['Default design', 'Product tier', 'Feature limit preview'],
+    highlights: ['기본 디자인', '상품 등급', '사용 가능 기능 확인'],
   },
   {
     key: 'slug',
     number: '02',
-    title: 'Set Page URL',
-    description: 'Choose the final URL slug for this invitation.',
+    title: '페이지 주소 설정',
+    description: '청첩장에 사용할 최종 URL 주소를 정합니다.',
     previewSection: 'cover',
-    highlights: ['Public URL', 'Auto-fix duplicate slug', 'Create draft after confirm'],
+    highlights: ['공개 URL', '중복 주소 자동 보정', '확인 후 초안 생성'],
   },
   {
     key: 'basic',
     number: '03',
-    title: 'Basic Info',
-    description: 'Fill in names and the short copy shown on the cover.',
+    title: '기본 정보',
+    description: '첫 화면에 보일 이름과 짧은 문구를 입력합니다.',
     previewSection: 'cover',
-    highlights: ['Groom name', 'Bride name', 'Cover subtitle'],
+    highlights: ['신랑 이름', '신부 이름', '표지 부제'],
   },
   {
     key: 'schedule',
     number: '04',
-    title: 'Wedding Schedule',
-    description: 'Fill in the wedding date and time.',
+    title: '예식 일정',
+    description: '예식 날짜와 시간을 입력합니다.',
     previewSection: 'wedding',
-    highlights: ['Date', 'Time', 'Calendar and schedule card'],
+    highlights: ['예식 날짜', '예식 시간', '달력과 일정 카드'],
   },
   {
     key: 'venue',
     number: '05',
-    title: 'Venue and Directions',
-    description: 'Fill in venue name, address, and map guidance.',
+    title: '예식장과 오시는 길',
+    description: '예식장 이름, 주소, 지도 안내를 입력합니다.',
     previewSection: 'wedding',
-    highlights: ['Venue name', 'Address', 'Map link and guide text'],
+    highlights: ['예식장 이름', '주소', '지도 링크와 안내 문구'],
   },
   {
     key: 'greeting',
     number: '06',
-    title: 'Greeting and Family',
-    description: 'Fill in the greeting message and family information.',
+    title: '인사말과 가족 정보',
+    description: '인사말과 양가 정보를 입력합니다.',
     previewSection: 'greeting',
-    highlights: ['Greeting message', 'Bride and groom info', 'Parent contact info'],
+    highlights: ['인사말', '신랑·신부 정보', '혼주 연락처'],
   },
   {
     key: 'images',
     number: '07',
-    title: 'Photos',
-    description: 'Upload the cover image and gallery images.',
+    title: '사진',
+    description: '대표 이미지와 갤러리 이미지를 등록합니다.',
     previewSection: 'gallery',
-    highlights: ['Cover image', 'Gallery order', 'Visible images'],
+    highlights: ['대표 이미지', '갤러리 순서', '노출 이미지'],
   },
   {
     key: 'extra',
     number: '08',
-    title: 'Gift and Extra Guide',
-    description: 'Fill in accounts and optional guide sections only if needed.',
+    title: '축의금과 추가 안내',
+    description: '계좌와 추가 안내 문구를 필요한 만큼 입력합니다.',
     previewSection: 'gift',
-    highlights: ['Gift accounts', 'Venue guide', 'Wreath guide'],
+    highlights: ['축의금 계좌', '예식장 안내', '화환 안내'],
   },
   {
     key: 'final',
     number: '09',
-    title: 'Share Copy and Final Check',
-    description: 'Review share text and decide whether to publish the page.',
+    title: '공유 정보와 최종 확인',
+    description: '공유 문구를 확인하고 페이지 공개 여부를 정합니다.',
     previewSection: 'metadata',
-    highlights: ['Browser title', 'Share description', 'Publish status'],
+    highlights: ['브라우저 제목', '공유 설명', '공개 상태'],
   },
 ];
 
 export const GREETING_TEMPLATES = [
   {
-    label: 'Formal',
+    label: '격식형',
     value:
-      'We would be grateful if you could join us and celebrate the beginning of our new chapter together.',
+      '저희 두 사람이 사랑과 믿음으로 한 가정을 이루게 되었습니다. 소중한 걸음으로 함께하시어 축복해 주시면 감사하겠습니다.',
   },
   {
-    label: 'Warm',
+    label: '따뜻한형',
     value:
-      'We are happy to invite you to the day when our two hearts become one. We would love to celebrate with you.',
+      '서로의 마음을 모아 하나가 되는 날, 소중한 분들과 함께 기쁨을 나누고 싶습니다. 귀한 걸음으로 축복해 주세요.',
   },
   {
-    label: 'Simple',
+    label: '담백형',
     value:
-      'Thank you for being part of our journey. Please join us as we begin our new life together.',
+      '저희의 새로운 시작을 함께 축하해 주시면 더없이 큰 기쁨이겠습니다. 편한 마음으로 자리해 주세요.',
   },
 ];
 
 export const GUIDE_TEMPLATES = [
   {
-    label: 'Parking',
-    value: 'Parking is available in the building parking lot.',
+    label: '주차 안내',
+    value: '예식장 건물 내 주차장을 이용하실 수 있습니다.',
   },
   {
-    label: 'Transit',
-    value: 'The venue is close to public transportation and easy to reach.',
+    label: '대중교통',
+    value: '대중교통 이용 시 도보 이동이 편리한 위치에 있습니다.',
   },
   {
-    label: 'Wreath',
-    value: 'Please follow the venue guidance for congratulatory wreath delivery.',
+    label: '화환 안내',
+    value: '축하 화환은 예식장 안내에 따라 전달 부탁드립니다.',
   },
 ];
 
@@ -159,21 +159,21 @@ export function hasText(value?: string | null) {
 export function composeDisplayName(groomName: string, brideName: string) {
   const groom = groomName.trim() || PLACEHOLDER_GROOM;
   const bride = brideName.trim() || PLACEHOLDER_BRIDE;
-  return `${groom} & ${bride}`;
+  return `${groom} ♥ ${bride}`;
 }
 
 export function composeDescription(groomName: string, brideName: string) {
   if (hasText(groomName) && hasText(brideName)) {
-    return `${groomName.trim()} and ${brideName.trim()} invite you to our wedding day.`;
+    return `${groomName.trim()}님과 ${brideName.trim()}님의 소중한 날에 초대합니다.`;
   }
 
-  return 'You are invited to our wedding day.';
+  return '소중한 예식에 초대합니다.';
 }
 
 export function composeGreetingAuthor(groomName: string, brideName: string) {
   const groom = groomName.trim() || PLACEHOLDER_GROOM;
   const bride = brideName.trim() || PLACEHOLDER_BRIDE;
-  return `${groom} & ${bride}`;
+  return `${groom} · ${bride}`;
 }
 
 export function formatDateLabel(date: Date) {
@@ -393,7 +393,7 @@ export function buildStepValidation(
   persistedSlug: string | null
 ): StepValidation {
   if (!formState && stepKey !== 'theme' && stepKey !== 'slug') {
-    return { valid: false, messages: ['Load page data first.'] };
+    return { valid: false, messages: ['페이지 데이터를 먼저 불러와 주세요.'] };
   }
 
   switch (stepKey) {
@@ -410,7 +410,7 @@ export function buildStepValidation(
             formState?.productTier === 'deluxe' ||
             formState?.productTier === 'premium')
             ? []
-            : ['Choose both a theme and a product package first.'],
+            : ['디자인과 상품 구성을 먼저 선택해 주세요.'],
       };
     case 'slug': {
       if (persistedSlug) {
@@ -419,7 +419,7 @@ export function buildStepValidation(
 
       const rawSlug = slugInput.trim();
       if (!rawSlug) {
-        return { valid: false, messages: ['Enter a page slug.'] };
+        return { valid: false, messages: ['페이지 주소를 입력해 주세요.'] };
       }
 
       const normalizedSlug = rawSlug
@@ -431,7 +431,7 @@ export function buildStepValidation(
       if (!normalizedSlug || normalizedSlug !== rawSlug.toLowerCase()) {
         return {
           valid: false,
-          messages: ['Use lowercase letters, numbers, and hyphens only.'],
+          messages: ['영문 소문자, 숫자, 하이픈만 사용할 수 있습니다.'],
         };
       }
 
@@ -440,53 +440,53 @@ export function buildStepValidation(
     case 'basic': {
       const messages: string[] = [];
       if (!hasText(formState?.couple.groom.name)) {
-        messages.push('Enter the groom name.');
+        messages.push('신랑 이름을 입력해 주세요.');
       }
       if (!hasText(formState?.couple.bride.name)) {
-        messages.push('Enter the bride name.');
+        messages.push('신부 이름을 입력해 주세요.');
       }
       return { valid: messages.length === 0, messages };
     }
     case 'schedule': {
       const messages: string[] = [];
       if (!formState || !buildWeddingDateObject(formState)) {
-        messages.push('Enter a valid wedding date and time.');
+        messages.push('올바른 예식 날짜와 시간을 입력해 주세요.');
       }
       return { valid: messages.length === 0, messages };
     }
     case 'venue': {
       const messages: string[] = [];
       if (!hasText(formState?.venue)) {
-        messages.push('Enter the venue name.');
+        messages.push('예식장 이름을 입력해 주세요.');
       }
       if (!hasText(formState?.pageData?.ceremonyAddress)) {
-        messages.push('Enter the venue address.');
+        messages.push('예식장 주소를 입력해 주세요.');
       }
       if (!isValidUrl(formState?.pageData?.mapUrl)) {
-        messages.push('Map URL must start with http or https.');
+        messages.push('지도 링크는 http 또는 https로 시작해야 합니다.');
       }
       if (!isValidPhone(formState?.pageData?.ceremonyContact)) {
-        messages.push('Check the venue contact number format.');
+        messages.push('예식장 연락처 형식을 확인해 주세요.');
       }
       return { valid: messages.length === 0, messages };
     }
     case 'greeting': {
       const messages: string[] = [];
       if (!hasText(formState?.pageData?.greetingMessage)) {
-        messages.push('Enter the greeting message.');
+        messages.push('인사말을 입력해 주세요.');
       }
       return { valid: messages.length === 0, messages };
     }
     case 'images': {
       const messages: string[] = [];
       if (!hasText(formState?.metadata.images.wedding)) {
-        messages.push('Upload the cover image.');
+        messages.push('대표 이미지를 등록해 주세요.');
       }
       if (!isValidUrl(formState?.metadata.images.wedding)) {
-        messages.push('Check the cover image URL.');
+        messages.push('대표 이미지 주소를 확인해 주세요.');
       }
       if ((formState?.pageData?.galleryImages ?? []).some((value) => !isValidUrl(value))) {
-        messages.push('Check the gallery image URLs.');
+        messages.push('갤러리 이미지 주소를 확인해 주세요.');
       }
       return { valid: messages.length === 0, messages };
     }
@@ -509,7 +509,7 @@ export function buildStepValidation(
       return {
         valid: !hasPartialAccount,
         messages: hasPartialAccount
-          ? ['Complete bank, account number, and holder for each account row.']
+          ? ['계좌를 입력했다면 은행명, 계좌번호, 예금주를 모두 입력해 주세요.']
           : [],
       };
     }
