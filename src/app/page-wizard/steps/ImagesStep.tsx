@@ -5,7 +5,7 @@ export default function ImagesStep({
   formState,
   previewFormState,
   updateForm,
-  canEdit,
+  canUploadImages,
   maxGalleryImages,
   uploadingField,
   coverUploadInputRef,
@@ -42,7 +42,7 @@ export default function ImagesStep({
               type="button"
               className={styles.secondaryButton}
               onClick={() => onTriggerPicker('cover')}
-              disabled={!canEdit || uploadingField === 'cover'}
+              disabled={!canUploadImages || uploadingField === 'cover'}
             >
               {uploadingField === 'cover' ? '업로드 중' : '대표 이미지 올리기'}
             </button>
@@ -98,7 +98,7 @@ export default function ImagesStep({
               className={styles.secondaryButton}
               onClick={() => onTriggerPicker('gallery')}
               disabled={
-                !canEdit ||
+                !canUploadImages ||
                 uploadingField === 'gallery' ||
                 galleryImages.length >= maxGalleryImages
               }

@@ -1,6 +1,3 @@
-import { resolveInvitationFeatures } from '@/lib/invitationProducts';
-import type { InvitationProductTier, InvitationThemeKey } from '@/types/invitationPage';
-
 import styles from '../page.module.css';
 import {
   getProductTierDescription,
@@ -48,9 +45,6 @@ export default function ThemeStep({
             </span>
           </div>
           <span className={styles.choiceSelectArrow}>
-            <span className={styles.choiceSelectActionLabel}>
-              {openChoicePanel === 'theme' ? '목록 접기' : '옵션 펼치기'}
-            </span>
             <span
               className={`${styles.choiceChevron} ${
                 openChoicePanel === 'theme' ? styles.choiceChevronOpen : ''
@@ -120,9 +114,6 @@ export default function ThemeStep({
             </span>
           </div>
           <span className={styles.choiceSelectArrow}>
-            <span className={styles.choiceSelectActionLabel}>
-              {openChoicePanel === 'tier' ? '목록 접기' : '옵션 펼치기'}
-            </span>
             <span
               className={`${styles.choiceChevron} ${
                 openChoicePanel === 'tier' ? styles.choiceChevronOpen : ''

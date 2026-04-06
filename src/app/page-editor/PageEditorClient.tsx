@@ -12,7 +12,14 @@ import {
   saveInvitationPageConfig,
   setInvitationPagePublished,
 } from '@/services/invitationPageService';
-import { getClientEditorTokenHash } from '@/services/passwordService';
+import {
+  getClientEditorEditableConfig,
+  getClientEditorSession,
+  loginClientEditorSession,
+  restoreClientEditorConfig,
+  saveClientEditorConfig,
+  setClientEditorPublishedState,
+} from '@/services/clientEditorSession';
 import type { InvitationPageSeed } from '@/types/invitationPage';
 
 import {
@@ -40,7 +47,6 @@ import {
   type PersonRole,
 } from './pageEditorUtils';
 
-const TOKEN_STORAGE_PREFIX = 'page-editor-token:';
 const MAX_REPEATABLE_ITEMS = 3;
 const AUTOSAVE_DELAY_MS = 1500;
 
@@ -577,7 +583,6 @@ export default function PageEditorClient({
   initialVenue,
 }: PageEditorClientProps) {
   const { isAdminLoading, isAdminLoggedIn } = useAdmin();
-  const storageKey = `${TOKEN_STORAGE_PREFIX}${slug}`;
 
   const [formState, setFormState] = useState<InvitationPageSeed | null>(null);
   const [baselineState, setBaselineState] = useState<InvitationPageSeed | null>(null);
@@ -586,7 +591,7 @@ export default function PageEditorClient({
   const [hasCustomConfig, setHasCustomConfig] = useState(false);
   const [dataSourceLabel, setDataSourceLabel] = useState('기본 샘플 사용 중');
   const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
-  const [editorTokenHash, setEditorTokenHash] = useState<string | null>(null);
+  const [hasClientSession, setHasClientSession] = useState(false);
   const [passwordInput, setPasswordInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isUnlocking, setIsUnlocking] = useState(false);
@@ -606,8 +611,8 @@ export default function PageEditorClient({
   const faviconUploadInputRef = useRef<HTMLInputElement | null>(null);
   const galleryUploadInputRef = useRef<HTMLInputElement | null>(null);
 
-  const canEdit = isAdminLoggedIn || Boolean(editorTokenHash);
-  const canUploadImages = USE_FIREBASE && canEdit;
+  const canEdit = isAdminLoggedIn || hasClientSession;
+  const canUploadImages = USE_FIREBASE && isAdminLoggedIn;
   const title = buildEditorTitle(
     formState?.couple.groom.name ?? initialGroomName,
     formState?.couple.bride.name ?? initialBrideName,
@@ -713,15 +718,32 @@ export default function PageEditorClient({
   };
 
   useEffect(() => {
-    if (typeof window === 'undefined') {
+    if (isAdminLoggedIn) {
+      setHasClientSession(false);
       return;
     }
 
-    const savedToken = window.localStorage.getItem(storageKey);
-    if (savedToken) {
-      setEditorTokenHash(savedToken);
-    }
-  }, [storageKey]);
+    let cancelled = false;
+
+    const loadClientSession = async () => {
+      try {
+        const session = await getClientEditorSession(slug);
+        if (!cancelled) {
+          setHasClientSession(session.authenticated);
+        }
+      } catch {
+        if (!cancelled) {
+          setHasClientSession(false);
+        }
+      }
+    };
+
+    void loadClientSession();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isAdminLoggedIn, slug]);
 
   useEffect(() => {
     if (isAdminLoading || !canEdit) {
@@ -733,7 +755,9 @@ export default function PageEditorClient({
 
     const load = async () => {
       try {
-        const config = await getEditableInvitationPageConfig(slug);
+        const config = isAdminLoggedIn
+          ? await getEditableInvitationPageConfig(slug)
+          : await getClientEditorEditableConfig(slug);
         if (cancelled) {
           return;
         }
@@ -762,7 +786,7 @@ export default function PageEditorClient({
     return () => {
       cancelled = true;
     };
-  }, [canEdit, isAdminLoading, slug]);
+  }, [canEdit, isAdminLoading, isAdminLoggedIn, slug]);
 
   useEffect(() => {
     if (!formState) {
@@ -843,10 +867,15 @@ export default function PageEditorClient({
 
     try {
       const nextConfig = prepareConfigForSave(formState, slug);
-      await saveInvitationPageConfig(nextConfig, {
-        published: baselinePublished,
-        editorTokenHash: isAdminLoggedIn ? null : editorTokenHash,
-      });
+      if (isAdminLoggedIn) {
+        await saveInvitationPageConfig(nextConfig, {
+          published: baselinePublished,
+        });
+      } else {
+        await saveClientEditorConfig(slug, nextConfig, {
+          published: baselinePublished,
+        });
+      }
       setFormState(cloneConfig(nextConfig));
       setBaselineState(cloneConfig(nextConfig));
       setHasCustomConfig(true);
@@ -891,8 +920,8 @@ export default function PageEditorClient({
     setIsUnlocking(true);
 
     try {
-      const token = await getClientEditorTokenHash(slug, trimmedPassword);
-      if (!token) {
+      const session = await loginClientEditorSession(slug, trimmedPassword);
+      if (!session.authenticated) {
         setNotice({
           tone: 'error',
           message: '비밀번호가 올바르지 않습니다. 다시 확인해 주세요.',
@@ -900,11 +929,8 @@ export default function PageEditorClient({
         return;
       }
 
-      setEditorTokenHash(token);
+      setHasClientSession(true);
       setPasswordInput('');
-      if (typeof window !== 'undefined') {
-        window.localStorage.setItem(storageKey, token);
-      }
       setNotice({
         tone: 'success',
         message: '편집 권한을 확인했습니다. 설정 정보를 불러오는 중입니다.',
@@ -925,7 +951,9 @@ export default function PageEditorClient({
     setIsRefreshing(true);
 
     try {
-      const config = await getEditableInvitationPageConfig(slug);
+      const config = isAdminLoggedIn
+        ? await getEditableInvitationPageConfig(slug)
+        : await getClientEditorEditableConfig(slug);
       applyLoadedConfig(config);
       if (successMessage) {
         setNotice({ tone: 'success', message: successMessage });
@@ -968,10 +996,15 @@ export default function PageEditorClient({
     setIsRestoring(true);
 
     try {
-      await restoreInvitationPageConfig(slug, {
-        published: baselinePublished,
-        editorTokenHash: isAdminLoggedIn ? null : editorTokenHash,
-      });
+      if (isAdminLoggedIn) {
+        await restoreInvitationPageConfig(slug, {
+          published: baselinePublished,
+        });
+      } else {
+        await restoreClientEditorConfig(slug, {
+          published: baselinePublished,
+        });
+      }
       await loadLatestConfig('기본 설정으로 복원했습니다.');
     } catch (error) {
       console.error('[PageEditorClient] failed to restore config', error);
@@ -1002,18 +1035,25 @@ export default function PageEditorClient({
     try {
       if (hasConfigChanges && formState) {
         const nextConfig = prepareConfigForSave(formState, slug);
-        await saveInvitationPageConfig(nextConfig, {
-          published,
-          editorTokenHash: isAdminLoggedIn ? null : editorTokenHash,
-        });
+        if (isAdminLoggedIn) {
+          await saveInvitationPageConfig(nextConfig, {
+            published,
+          });
+        } else {
+          await saveClientEditorConfig(slug, nextConfig, {
+            published,
+          });
+        }
         setFormState(cloneConfig(nextConfig));
         setBaselineState(cloneConfig(nextConfig));
         setHasCustomConfig(true);
         setDataSourceLabel('맞춤 설정 사용 중');
       } else {
-        await setInvitationPagePublished(slug, published, {
-          editorTokenHash: isAdminLoggedIn ? null : editorTokenHash,
-        });
+        if (isAdminLoggedIn) {
+          await setInvitationPagePublished(slug, published);
+        } else {
+          await setClientEditorPublishedState(slug, published);
+        }
       }
 
       setBaselinePublished(published);
@@ -1302,8 +1342,8 @@ export default function PageEditorClient({
       return;
     }
 
-    const tokenForUpload = isAdminLoggedIn ? null : editorTokenHash;
-    if (!isAdminLoggedIn && !tokenForUpload) {
+    setUploadingField(field);
+    if (!isAdminLoggedIn && !canUploadImages) {
       setNotice({
         tone: 'error',
         message: '이미지 업로드 전에 먼저 페이지 비밀번호를 확인해 주세요.',
@@ -1328,9 +1368,7 @@ export default function PageEditorClient({
 
         const uploadTargets = files.slice(0, remainingSlots);
         const uploadedImages = await Promise.all(
-          uploadTargets.map((file) =>
-            uploadPageEditorImage(file, slug, 'gallery', tokenForUpload)
-          )
+          uploadTargets.map((file) => uploadPageEditorImage(file, slug, 'gallery'))
         );
 
         updateForm((draft) => {
@@ -1358,8 +1396,7 @@ export default function PageEditorClient({
       const uploadedImage = await uploadPageEditorImage(
         uploadTarget,
         slug,
-        field === 'wedding' ? 'cover' : 'favicon',
-        tokenForUpload
+        field === 'wedding' ? 'cover' : 'favicon'
       );
 
       updateForm((draft) => {

@@ -44,6 +44,15 @@ export type WizardStepDefinition = {
   highlights: string[];
 };
 
+export type SlugStepState = {
+  slugInput: string;
+  persistedSlug: string | null;
+  groomKoreanName: string;
+  brideKoreanName: string;
+  groomEnglishName: string;
+  brideEnglishName: string;
+};
+
 export const WIZARD_STEPS: WizardStepDefinition[] = [
   {
     key: 'theme',
@@ -299,7 +308,7 @@ export function applyDerivedWizardDefaults(config: InvitationPageSeed) {
 export function createInitialWizardConfig() {
   const seed = getAllWeddingPageSeeds()[0];
   if (!seed) {
-    throw new Error('Invitation page seed was not found.');
+    throw new Error('청첩장 기본 템플릿을 찾을 수 없습니다.');
   }
 
   const now = new Date();
@@ -389,8 +398,7 @@ export function buildStepValidation(
   stepKey: WizardStepKey,
   theme: InvitationThemeKey | null,
   formState: InvitationPageSeed | null,
-  slugInput: string,
-  persistedSlug: string | null
+  slugState: SlugStepState
 ): StepValidation {
   if (!formState && stepKey !== 'theme' && stepKey !== 'slug') {
     return { valid: false, messages: ['페이지 데이터를 먼저 불러와 주세요.'] };
@@ -413,13 +421,25 @@ export function buildStepValidation(
             : ['디자인과 상품 구성을 먼저 선택해 주세요.'],
       };
     case 'slug': {
-      if (persistedSlug) {
-        return { valid: true, messages: [] };
+      const messages: string[] = [];
+
+      if (!hasText(slugState.groomKoreanName)) {
+        messages.push('예비 신랑 한글 이름을 입력해 주세요.');
+      }
+      if (!hasText(slugState.brideKoreanName)) {
+        messages.push('예비 신부 한글 이름을 입력해 주세요.');
+      }
+      if (!slugState.persistedSlug && !hasText(slugState.groomEnglishName)) {
+        messages.push('예비 신랑 영문 이름을 입력해 주세요.');
+      }
+      if (!slugState.persistedSlug && !hasText(slugState.brideEnglishName)) {
+        messages.push('예비 신부 영문 이름을 입력해 주세요.');
       }
 
-      const rawSlug = slugInput.trim();
+      const rawSlug = slugState.slugInput.trim();
       if (!rawSlug) {
-        return { valid: false, messages: ['페이지 주소를 입력해 주세요.'] };
+        messages.push('페이지 주소를 입력해 주세요.');
+        return { valid: false, messages };
       }
 
       const normalizedSlug = rawSlug
@@ -429,13 +449,10 @@ export function buildStepValidation(
         .replace(/^-+|-+$/g, '');
 
       if (!normalizedSlug || normalizedSlug !== rawSlug.toLowerCase()) {
-        return {
-          valid: false,
-          messages: ['영문 소문자, 숫자, 하이픈만 사용할 수 있습니다.'],
-        };
+        messages.push('영문 소문자, 숫자, 하이픈만 사용할 수 있습니다.');
       }
 
-      return { valid: true, messages: [] };
+      return { valid: messages.length === 0, messages };
     }
     case 'basic': {
       const messages: string[] = [];
@@ -522,11 +539,10 @@ export function buildStepValidation(
 export function buildReviewSummary(
   theme: InvitationThemeKey | null,
   formState: InvitationPageSeed | null,
-  slugInput: string,
-  persistedSlug: string | null
+  slugState: SlugStepState
 ) {
   return WIZARD_STEPS.map((step) => ({
     step,
-    validation: buildStepValidation(step.key, theme, formState, slugInput, persistedSlug),
+    validation: buildStepValidation(step.key, theme, formState, slugState),
   }));
 }

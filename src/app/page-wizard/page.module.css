@@ -63,6 +63,7 @@
 }
 
 .shell {
+  height: 100%;
   width: min(100%, 650px);
   margin: 0 auto;
   display: flex;
@@ -72,7 +73,6 @@
 }
 
 .topCard,
-.centerCard,
 .formCard,
 .uploadCard,
 .summaryCard,
@@ -619,7 +619,6 @@
   min-height: 30px;
   padding: 0 12px;
   border-radius: 999px;
-  background: rgba(37, 99, 235, 0.08);
   color: #1d4ed8;
   font-size: 0.78rem;
   font-weight: 800;
@@ -890,6 +889,7 @@
 }
 
 .centerCard {
+  text-align: center;
   align-items: flex-start;
   gap: 14px;
 }
@@ -996,7 +996,6 @@
   width: min(100%, 650px);
   gap: 10px;
   padding-top: 10px;
-  padding-bottom: 24px;
 }
 
 .swiperCard {
@@ -1616,8 +1615,6 @@
 .choiceSelectArrow {
   display: grid;
   justify-items: end;
-  gap: 4px;
-  color: #7b5a44;
 }
 
 .choiceSelectActionLabel {
@@ -1635,8 +1632,7 @@
   border-radius: 999px;
   background: rgba(180, 131, 91, 0.12);
   color: #7b5a44;
-  font-size: 0.92rem;
-  transition: transform 0.2s ease;
+  font-size: 1.2rem;
 }
 
 .choiceChevronOpen {
@@ -1675,6 +1671,42 @@
   background: #7b5a44;
 }
 
+.progressBar {
+  gap: 10px;
+  padding: 4px 0 8px;
+}
+
+.progressLabels {
+  align-items: baseline;
+  gap: 10px;
+}
+
+.progressCurrent {
+  color: #2f63f5;
+  font-size: 0.86rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+}
+
+.progressTitle {
+  color: #705745;
+  font-weight: 700;
+}
+
+.progressTrack {
+  height: 10px;
+  padding: 2px;
+  border-radius: 999px;
+  background: linear-gradient(180deg, rgba(223, 228, 236, 0.92), rgba(234, 238, 243, 0.98));
+  box-shadow: inset 0 1px 2px rgba(132, 140, 152, 0.18);
+}
+
+.progressFill {
+  border-radius: 999px;
+  background: linear-gradient(90deg, #2f63f5 0%, #35baf6 100%);
+  box-shadow: 0 6px 16px rgba(47, 99, 245, 0.28);
+}
+
 .slideFooter {
   border: 1px solid rgba(180, 131, 91, 0.16);
   border-radius: 24px;
@@ -1699,6 +1731,26 @@
 
 .publishButton {
   background: linear-gradient(135deg, #8a664f, #b4835b);
+}
+
+.swiperCard :global(.swiper-pagination-bullet) {
+  width: 11px;
+  height: 11px;
+  background: rgba(196, 189, 181, 0.9);
+  opacity: 1;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.72);
+}
+
+.swiperCard :global(.swiper-pagination-bullet-active) {
+  background: #2f63f5;
+  transform: scale(1.08);
+  box-shadow: 0 6px 14px rgba(47, 99, 245, 0.28);
+}
+
+@media (min-width: 640px) {
+  .twoColumnGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 @media (max-width: 359px) {

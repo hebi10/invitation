@@ -331,37 +331,6 @@ export async function getComments(pageSlug: string): Promise<Comment[]> {
   );
 }
 
-export async function softDeleteCommentByClient(
-  commentId: string,
-  pageSlug: string,
-  editorTokenHash: string,
-  collectionName = getGuestbookCollectionPath(pageSlug)
-): Promise<void> {
-  if (!USE_FIREBASE) {
-    const comments = mockComments.get(pageSlug) ?? [];
-    mockComments.set(
-      pageSlug,
-      comments.filter((comment) => comment.id !== commentId)
-    );
-    return;
-  }
-
-  const firestore = await ensureFirestoreModules();
-  if (!firestore) {
-    throw new Error('Firestore is not initialized.');
-  }
-
-  await firestore.modules.updateDoc(
-    firestore.modules.doc(firestore.db, collectionName, commentId),
-    {
-      deleted: true,
-      deletedAt: firestore.modules.serverTimestamp(),
-      deletedBy: 'client',
-      editorTokenHash,
-    }
-  );
-}
-
 export async function deleteComment(
   commentId: string,
   collectionName = LEGACY_UNIFIED_COLLECTION

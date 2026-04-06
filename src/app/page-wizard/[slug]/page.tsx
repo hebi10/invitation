@@ -18,7 +18,9 @@ export default async function PageWizardDetailPage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const page = await getServerInvitationPageBySlug(slug);
+  const page = await getServerInvitationPageBySlug(slug, {
+    includePrivate: true,
+  });
 
   if (!page) {
     notFound();

@@ -1,6 +1,7 @@
 import 'server-only';
 
 import { cache } from 'react';
+import { FieldValue } from 'firebase-admin/firestore';
 
 import {
   createInvitationPageFromSeed,
@@ -15,8 +16,10 @@ import {
   resolveInvitationFeatures,
 } from '@/lib/invitationProducts';
 import type {
+  InvitationFeatureFlags,
   InvitationPage,
   InvitationPageSeed,
+  InvitationProductTier,
   InvitationThemeKey,
 } from '@/types/invitationPage';
 import { sanitizeHeartIconPlaceholdersDeep } from '@/utils/textSanitizers';
@@ -39,7 +42,6 @@ type InvitationPageRegistryRecord = {
   published: boolean;
   defaultTheme: InvitationThemeKey;
   hasCustomConfig: boolean;
-  editorTokenHash: string | null;
   createdAt: Date | null;
   updatedAt: Date | null;
 };
@@ -49,6 +51,18 @@ type BuiltInvitationPageRecord = {
   dataSource: 'sample' | 'firestore';
   hasCustomConfig: boolean;
 };
+
+export interface ServerEditableInvitationPageConfig {
+  slug: string;
+  config: InvitationPageSeed;
+  published: boolean;
+  defaultTheme: InvitationThemeKey;
+  productTier: InvitationProductTier;
+  features: InvitationFeatureFlags;
+  hasCustomConfig: boolean;
+  dataSource: 'sample' | 'firestore';
+  lastSavedAt: Date | null;
+}
 
 const DISPLAY_PERIOD_COLLECTION = 'display-periods';
 const PAGE_CONFIG_COLLECTION = 'invitation-page-configs';
@@ -155,10 +169,6 @@ function normalizeRegistryRecord(
     published: data.published !== false,
     defaultTheme: normalizeInvitationTheme(data.defaultTheme),
     hasCustomConfig: data.hasCustomConfig === true,
-    editorTokenHash:
-      typeof data.editorTokenHash === 'string' && data.editorTokenHash.trim()
-        ? data.editorTokenHash.trim()
-        : null,
     createdAt: toDate(data.createdAt),
     updatedAt: toDate(data.updatedAt),
   };
@@ -450,6 +460,32 @@ function mergeDisplayPeriod(
   });
 }
 
+function isPublicInvitationPage(page: InvitationPage) {
+  if (!page.published) {
+    return false;
+  }
+
+  if (!page.displayPeriodEnabled) {
+    return true;
+  }
+
+  if (!page.displayPeriodStart || !page.displayPeriodEnd) {
+    return false;
+  }
+
+  const now = new Date();
+  return now >= page.displayPeriodStart && now <= page.displayPeriodEnd;
+}
+
+function toEditableSeed(page: InvitationPage): InvitationPageSeed {
+  const seed = { ...page } as Record<string, unknown>;
+  delete seed.published;
+  delete seed.displayPeriodEnabled;
+  delete seed.displayPeriodStart;
+  delete seed.displayPeriodEnd;
+  return sanitizeHeartIconPlaceholdersDeep(seed as InvitationPageSeed);
+}
+
 function buildInvitationPageRecord(
   pageSlug: string,
   configSeed: InvitationPageSeed | null,
@@ -583,12 +619,57 @@ async function getConfigByPageSlug(pageSlug: string) {
   return normalizeConfigSeed(normalizedPageSlug, snapshot.data() ?? {});
 }
 
-const getServerInvitationPageBySlugCached = cache(async (pageSlug: string) => {
+async function upsertRegistryRecord(
+  pageSlug: string,
+  payload: {
+    published?: boolean;
+    defaultTheme?: InvitationThemeKey;
+    hasCustomConfig?: boolean;
+  }
+) {
+  const normalizedPageSlug = normalizePageSlugInput(pageSlug);
+  if (!normalizedPageSlug) {
+    throw new Error('올바른 페이지 주소가 필요합니다.');
+  }
+
+  const db = getServerFirestore();
+  if (!db) {
+    throw new Error('데이터 저장소 연결을 확인하지 못했습니다. 잠시 후 다시 시도해 주세요.');
+  }
+
+  const docRef = db.collection(PAGE_REGISTRY_COLLECTION).doc(normalizedPageSlug);
+  const existingSnapshot = await docRef.get();
+  const existing = existingSnapshot.exists
+    ? normalizeRegistryRecord(normalizedPageSlug, existingSnapshot.data() ?? {})
+    : null;
+  const now = new Date();
+
+  await docRef.set(
+    {
+      pageSlug: normalizedPageSlug,
+      published: payload.published ?? existing?.published ?? true,
+      defaultTheme:
+        payload.defaultTheme ?? existing?.defaultTheme ?? DEFAULT_INVITATION_THEME,
+      hasCustomConfig: payload.hasCustomConfig ?? existing?.hasCustomConfig ?? false,
+      createdAt: existing?.createdAt ?? now,
+      updatedAt: now,
+      editorTokenHash: FieldValue.delete(),
+    },
+    { merge: true }
+  );
+}
+
+const getServerInvitationPageBySlugCached = cache(
+  async (pageSlug: string, includePrivate: boolean) => {
   const samplePage = buildSamplePage(pageSlug);
   const db = getServerFirestore();
 
   if (!db) {
-    return samplePage;
+    if (!samplePage) {
+      return null;
+    }
+
+    return includePrivate || isPublicInvitationPage(samplePage) ? samplePage : null;
   }
 
   try {
@@ -605,20 +686,200 @@ const getServerInvitationPageBySlugCached = cache(async (pageSlug: string) => {
       return null;
     }
 
-    return mergeDisplayPeriod(basePage, displayPeriod);
+    const mergedPage = mergeDisplayPeriod(basePage, displayPeriod);
+    return includePrivate || isPublicInvitationPage(mergedPage) ? mergedPage : null;
   } catch (error) {
     console.error('[invitationPageServerService] failed to load invitation page', error);
-    return samplePage;
-  }
-});
+    if (!samplePage) {
+      return null;
+    }
 
-export async function getServerInvitationPageBySlug(pageSlug: string | null | undefined) {
+    return includePrivate || isPublicInvitationPage(samplePage) ? samplePage : null;
+  }
+  }
+);
+
+export async function getServerInvitationPageBySlug(
+  pageSlug: string | null | undefined,
+  options: {
+    includePrivate?: boolean;
+  } = {}
+) {
   const normalizedPageSlug = normalizePageSlugInput(pageSlug);
   if (!normalizedPageSlug) {
     return null;
   }
 
-  return getServerInvitationPageBySlugCached(normalizedPageSlug);
+  return getServerInvitationPageBySlugCached(
+    normalizedPageSlug,
+    options.includePrivate === true
+  );
+}
+
+export async function getServerEditableInvitationPageConfig(
+  pageSlug: string
+): Promise<ServerEditableInvitationPageConfig | null> {
+  const normalizedPageSlug = normalizePageSlugInput(pageSlug);
+  if (!normalizedPageSlug) {
+    return null;
+  }
+
+  const fallbackConfig = getWeddingPageBySlug(normalizedPageSlug);
+  const fallbackProductTier = normalizeInvitationProductTier(
+    fallbackConfig?.productTier,
+    DEFAULT_INVITATION_PRODUCT_TIER
+  );
+  const fallbackFeatures = resolveInvitationFeatures(
+    fallbackProductTier,
+    fallbackConfig?.features
+  );
+
+  const db = getServerFirestore();
+  if (!db) {
+    return fallbackConfig
+      ? {
+          slug: normalizedPageSlug,
+          config: sanitizeHeartIconPlaceholdersDeep(fallbackConfig),
+          published: true,
+          defaultTheme: DEFAULT_INVITATION_THEME,
+          productTier: fallbackProductTier,
+          features: fallbackFeatures,
+          hasCustomConfig: false,
+          dataSource: 'sample',
+          lastSavedAt: null,
+        }
+      : null;
+  }
+
+  const [registryRecord, configSeed] = await Promise.all([
+    getRegistryByPageSlug(normalizedPageSlug),
+    getConfigByPageSlug(normalizedPageSlug),
+  ]);
+
+  const sourceRecord = buildInvitationPageRecord(
+    normalizedPageSlug,
+    configSeed,
+    registryRecord
+  );
+
+  if (!sourceRecord) {
+    return null;
+  }
+
+  const editableConfig =
+    sourceRecord.hasCustomConfig && configSeed
+      ? sanitizeHeartIconPlaceholdersDeep(configSeed)
+      : fallbackConfig ?? toEditableSeed(sourceRecord.page);
+  const productTier = normalizeInvitationProductTier(
+    editableConfig.productTier,
+    DEFAULT_INVITATION_PRODUCT_TIER
+  );
+  const features = resolveInvitationFeatures(productTier, editableConfig.features);
+
+  return {
+    slug: normalizedPageSlug,
+    config: editableConfig,
+    published: sourceRecord.page.published,
+    defaultTheme: registryRecord?.defaultTheme ?? DEFAULT_INVITATION_THEME,
+    productTier,
+    features,
+    hasCustomConfig: sourceRecord.hasCustomConfig,
+    dataSource: sourceRecord.dataSource,
+    lastSavedAt: registryRecord?.updatedAt ?? null,
+  };
+}
+
+export async function saveServerInvitationPageConfig(
+  config: InvitationPageSeed,
+  options: {
+    published?: boolean;
+    defaultTheme?: InvitationThemeKey;
+  } = {}
+) {
+  const normalizedConfig = mergeInvitationPageSeed(
+    getWeddingPageBySlug(config.slug),
+    config as unknown as Record<string, any>,
+    config.slug
+  );
+
+  if (!normalizedConfig) {
+    throw new Error('초대 페이지 구성이 잘못되었습니다.');
+  }
+
+  const db = getServerFirestore();
+  if (!db) {
+    throw new Error('데이터 저장소 연결을 확인하지 못했습니다. 잠시 후 다시 시도해 주세요.');
+  }
+
+  const docRef = db.collection(PAGE_CONFIG_COLLECTION).doc(normalizedConfig.slug);
+  const existingSnapshot = await docRef.get();
+  const existingCreatedAt = existingSnapshot.exists
+    ? toDate(existingSnapshot.data()?.createdAt)
+    : null;
+  const now = new Date();
+
+  await docRef.set(
+    {
+      ...normalizedConfig,
+      createdAt: existingCreatedAt ?? now,
+      updatedAt: now,
+      editorTokenHash: FieldValue.delete(),
+    },
+    { merge: true }
+  );
+
+  await upsertRegistryRecord(normalizedConfig.slug, {
+    published: options.published ?? true,
+    defaultTheme: options.defaultTheme ?? DEFAULT_INVITATION_THEME,
+    hasCustomConfig: true,
+  });
+}
+
+export async function restoreServerInvitationPageConfig(
+  pageSlug: string,
+  options: {
+    published?: boolean;
+    defaultTheme?: InvitationThemeKey;
+  } = {}
+) {
+  const normalizedPageSlug = normalizePageSlugInput(pageSlug);
+  if (!normalizedPageSlug || !getWeddingPageBySlug(normalizedPageSlug)) {
+    throw new Error('해당 페이지 주소를 찾을 수 없습니다.');
+  }
+
+  await upsertRegistryRecord(normalizedPageSlug, {
+    published: options.published ?? true,
+    defaultTheme: options.defaultTheme,
+    hasCustomConfig: false,
+  });
+}
+
+export async function setServerInvitationPagePublished(
+  pageSlug: string,
+  published: boolean,
+  options: {
+    defaultTheme?: InvitationThemeKey;
+  } = {}
+) {
+  const normalizedPageSlug = normalizePageSlugInput(pageSlug);
+  if (!normalizedPageSlug) {
+    throw new Error('올바른 페이지 주소가 필요합니다.');
+  }
+
+  const [existingConfig, existingRegistry] = await Promise.all([
+    getConfigByPageSlug(normalizedPageSlug),
+    getRegistryByPageSlug(normalizedPageSlug),
+  ]);
+
+  if (!getWeddingPageBySlug(normalizedPageSlug) && !existingConfig && !existingRegistry) {
+    throw new Error('해당 페이지 주소를 찾을 수 없습니다.');
+  }
+
+  await upsertRegistryRecord(normalizedPageSlug, {
+    published,
+    defaultTheme: options.defaultTheme ?? existingRegistry?.defaultTheme,
+    hasCustomConfig: existingRegistry?.hasCustomConfig ?? Boolean(existingConfig),
+  });
 }
 
 export async function getServerInvitationPageDefaultThemeBySlug(

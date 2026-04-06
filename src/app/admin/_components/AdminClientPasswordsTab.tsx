@@ -21,10 +21,10 @@ type PasswordEntry = {
   slug: string;
   displayName: string;
   password: string;
-  savedPassword: string;
   hasPassword: boolean;
+  passwordVersion: number;
+  legacyPlaintextStored: boolean;
   updatedAt: Date | null;
-  hasDraftChange: boolean;
 };
 
 function getPasswordStatus(entry: PasswordEntry, savingPageSlug: string | null) {
@@ -32,32 +32,40 @@ function getPasswordStatus(entry: PasswordEntry, savingPageSlug: string | null) 
     return {
       label: '저장 중',
       tone: 'primary' as const,
-      description: '현재 입력값을 저장하고 있습니다.',
+      description: '새 비밀번호를 저장하고 있습니다.',
     };
   }
 
-  if (entry.hasDraftChange && entry.password.trim()) {
+  if (entry.password.trim()) {
     return {
-      label: '입력 중',
+      label: '재설정 대기',
       tone: 'warning' as const,
-      description: '저장 전 임시 입력 상태입니다.',
+      description: '입력한 값은 저장 전까지 적용되지 않습니다.',
+    };
+  }
+
+  if (entry.legacyPlaintextStored) {
+    return {
+      label: '레거시',
+      tone: 'warning' as const,
+      description: '평문 흔적이 남아 있습니다. 재설정을 권장합니다.',
     };
   }
 
   if (entry.hasPassword) {
     return {
-      label: '저장 완료',
+      label: '설정됨',
       tone: 'success' as const,
       description: entry.updatedAt
-        ? `마지막 저장 ${formatDateTime(entry.updatedAt)}`
-        : '비밀번호가 저장되어 있습니다.',
+        ? `마지막 변경 ${formatDateTime(entry.updatedAt)} · v${entry.passwordVersion}`
+        : `비밀번호가 설정되어 있습니다. · v${entry.passwordVersion}`,
     };
   }
 
   return {
     label: '미설정',
     tone: 'neutral' as const,
-    description: '비밀번호를 저장하면 고객 편집기를 열 수 있습니다.',
+    description: '비밀번호를 새로 설정해야 고객 편집 로그인이 가능합니다.',
   };
 }
 
@@ -74,12 +82,7 @@ export default function AdminClientPasswordsTab({
   const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
-    setDrafts(
-      passwords.reduce<Record<string, string>>((accumulator, passwordRecord) => {
-        accumulator[passwordRecord.pageSlug] = passwordRecord.password;
-        return accumulator;
-      }, {})
-    );
+    setDrafts({});
   }, [passwords]);
 
   const pageNameMap = useMemo(
@@ -99,17 +102,15 @@ export default function AdminClientPasswordsTab({
     return [...allSlugs]
       .map<PasswordEntry>((slug) => {
         const record = passwordRecordMap.get(slug) ?? null;
-        const savedPassword = record?.password ?? '';
-        const draftPassword = drafts[slug] ?? savedPassword;
 
         return {
           slug,
           displayName: pageNameMap.get(slug) ?? slug,
-          password: draftPassword,
-          savedPassword,
-          hasPassword: Boolean(record?.password),
+          password: drafts[slug] ?? '',
+          hasPassword: record?.hasPassword ?? false,
+          passwordVersion: record?.passwordVersion ?? 0,
+          legacyPlaintextStored: record?.legacyPlaintextStored ?? false,
           updatedAt: record?.updatedAt ?? null,
-          hasDraftChange: draftPassword !== savedPassword,
         };
       })
       .filter((entry) =>
@@ -120,14 +121,47 @@ export default function AdminClientPasswordsTab({
       .sort((left, right) => left.displayName.localeCompare(right.displayName, 'ko'));
   }, [drafts, pageNameMap, pages, passwords, searchQuery]);
 
+  const renderPasswordInput = (entry: PasswordEntry, isVisible: boolean) => (
+    <div className={styles.passwordFieldGroup}>
+      <div className={styles.inlineInputGroup}>
+        <input
+          className="admin-input"
+          type={isVisible ? 'text' : 'password'}
+          value={entry.password}
+          placeholder="새 비밀번호 입력"
+          onChange={(event) =>
+            setDrafts((current) => ({
+              ...current,
+              [entry.slug]: event.target.value,
+            }))
+          }
+        />
+        <button
+          type="button"
+          className="admin-button admin-button-ghost"
+          onClick={() =>
+            setVisibleRows((current) => ({
+              ...current,
+              [entry.slug]: !current[entry.slug],
+            }))
+          }
+        >
+          {isVisible ? '숨기기' : '보기'}
+        </button>
+      </div>
+      <span className={styles.inlineMetaText}>
+        현재 비밀번호는 다시 표시되지 않습니다. 저장하면 새 비밀번호로 재설정됩니다.
+      </span>
+    </div>
+  );
+
   return (
     <div className={styles.panelStack}>
       <div className={styles.sectionHeader}>
         <div>
           <h2 className={styles.sectionTitle}>고객 비밀번호</h2>
           <p className={styles.sectionDescription}>
-            페이지별 고객 비밀번호를 저장하고, 저장 완료 상태일 때만 편집기로 안전하게
-            이동할 수 있습니다.
+            평문 조회를 제거하고 재설정만 허용합니다. 저장된 비밀번호는 해시로만 보관됩니다.
           </p>
         </div>
         <p className={styles.sectionMeta}>현재 {entries.length}개 페이지</p>
@@ -141,15 +175,14 @@ export default function AdminClientPasswordsTab({
               <input
                 className="admin-input"
                 type="search"
-                placeholder="이름 또는 slug로 찾기"
+                placeholder="이름 또는 slug 검색"
                 value={searchQuery}
                 onChange={(event) => setSearchQuery(event.target.value)}
               />
             </label>
             <div className={styles.metaStack}>
               <span className={styles.toolbarNote}>
-                기본은 숨김 상태로 표시되며, 저장이 완료된 뒤에만 편집기 열기를
-                권장합니다.
+                비밀번호는 재설정만 가능하며, 기존 값은 관리자에게도 다시 노출되지 않습니다.
               </span>
             </div>
           </>
@@ -162,7 +195,7 @@ export default function AdminClientPasswordsTab({
               onClick={onRefresh}
               disabled={loading}
             >
-              {loading ? '불러오는 중..' : '새로고침'}
+              {loading ? '불러오는 중...' : '새로고침'}
             </button>
             {searchQuery ? (
               <button
@@ -202,25 +235,22 @@ export default function AdminClientPasswordsTab({
                   <tr>
                     <th>페이지</th>
                     <th>상태</th>
-                    <th>비밀번호 입력</th>
+                    <th>새 비밀번호</th>
                     <th>주요 작업</th>
                   </tr>
                 </thead>
                 <tbody>
                   {entries.map((entry, index) => {
                     const status = getPasswordStatus(entry, savingPageSlug);
-                    const canSave =
-                      Boolean(entry.password.trim()) && entry.hasDraftChange;
-                    const canOpenEditor = entry.hasPassword && !entry.hasDraftChange;
+                    const canSave = Boolean(entry.password.trim());
+                    const canOpenEditor = entry.hasPassword;
                     const isVisible = visibleRows[entry.slug] ?? false;
 
                     return (
                       <tr key={entry.slug} className={styles.tableRowInteractive}>
                         <td>
                           <div className={styles.tablePrimary}>
-                            <span className={styles.rowNumber}>
-                              {entries.length - index}
-                            </span>
+                            <span className={styles.rowNumber}>{entries.length - index}</span>
                             <div>
                               <p className={styles.tableTitle}>{entry.displayName}</p>
                               <p className={styles.tableSubtext}>{entry.slug}</p>
@@ -230,48 +260,10 @@ export default function AdminClientPasswordsTab({
                         <td>
                           <div className={styles.statusCell}>
                             <StatusBadge tone={status.tone}>{status.label}</StatusBadge>
-                            <span className={styles.tableSubtext}>
-                              {status.description}
-                            </span>
+                            <span className={styles.tableSubtext}>{status.description}</span>
                           </div>
                         </td>
-                        <td>
-                          <div className={styles.passwordFieldGroup}>
-                            <div className={styles.inlineInputGroup}>
-                              <input
-                                className="admin-input"
-                                type={isVisible ? 'text' : 'password'}
-                                value={entry.password}
-                                placeholder="비밀번호 입력"
-                                onChange={(event) =>
-                                  setDrafts((current) => ({
-                                    ...current,
-                                    [entry.slug]: event.target.value,
-                                  }))
-                                }
-                              />
-                              <button
-                                type="button"
-                                className="admin-button admin-button-ghost"
-                                onClick={() =>
-                                  setVisibleRows((current) => ({
-                                    ...current,
-                                    [entry.slug]: !current[entry.slug],
-                                  }))
-                                }
-                              >
-                                {isVisible ? '숨기기' : '보기'}
-                              </button>
-                            </div>
-                            <span className={styles.inlineMetaText}>
-                              {entry.hasDraftChange
-                                ? '저장 전에는 편집기로 이동할 수 없습니다.'
-                                : entry.hasPassword
-                                  ? '저장된 비밀번호를 기준으로 고객 편집기가 열립니다.'
-                                  : '아직 저장된 비밀번호가 없습니다.'}
-                            </span>
-                          </div>
-                        </td>
+                        <td>{renderPasswordInput(entry, isVisible)}</td>
                         <td>
                           <div className={styles.actionStack}>
                             <div className={styles.tableActions}>
@@ -281,7 +273,11 @@ export default function AdminClientPasswordsTab({
                                 disabled={savingPageSlug === entry.slug || !canSave}
                                 onClick={() => onSave(entry.slug, entry.password.trim())}
                               >
-                                {savingPageSlug === entry.slug ? '저장 중..' : '저장'}
+                                {savingPageSlug === entry.slug
+                                  ? '저장 중...'
+                                  : entry.hasPassword
+                                    ? '재설정'
+                                    : '설정'}
                               </button>
                               {canOpenEditor ? (
                                 <a
@@ -298,14 +294,14 @@ export default function AdminClientPasswordsTab({
                                   className="admin-button admin-button-ghost"
                                   disabled
                                 >
-                                  저장 후 편집
+                                  비밀번호 필요
                                 </button>
                               )}
                             </div>
                             <span className={styles.actionHint}>
-                              {canOpenEditor
-                                ? '저장된 비밀번호 기준으로 고객 편집기를 엽니다.'
-                                : '먼저 비밀번호를 저장하면 편집기를 바로 열 수 있습니다.'}
+                              {entry.hasPassword
+                                ? '현재 비밀번호는 볼 수 없고 새 비밀번호로만 교체할 수 있습니다.'
+                                : '비밀번호를 한 번 설정하면 고객 편집 로그인이 활성화됩니다.'}
                             </span>
                           </div>
                         </td>
@@ -320,8 +316,8 @@ export default function AdminClientPasswordsTab({
           <div className={styles.mobileList}>
             {entries.map((entry) => {
               const status = getPasswordStatus(entry, savingPageSlug);
-              const canSave = Boolean(entry.password.trim()) && entry.hasDraftChange;
-              const canOpenEditor = entry.hasPassword && !entry.hasDraftChange;
+              const canSave = Boolean(entry.password.trim());
+              const canOpenEditor = entry.hasPassword;
               const isVisible = visibleRows[entry.slug] ?? false;
 
               return (
@@ -334,37 +330,10 @@ export default function AdminClientPasswordsTab({
                     <StatusBadge tone={status.tone}>{status.label}</StatusBadge>
                   </div>
 
-                  <div className={styles.passwordFieldGroup}>
-                    <div className={styles.inlineInputGroup}>
-                      <input
-                        className="admin-input"
-                        type={isVisible ? 'text' : 'password'}
-                        value={entry.password}
-                        placeholder="비밀번호 입력"
-                        onChange={(event) =>
-                          setDrafts((current) => ({
-                            ...current,
-                            [entry.slug]: event.target.value,
-                          }))
-                        }
-                      />
-                      <button
-                        type="button"
-                        className="admin-button admin-button-ghost"
-                        onClick={() =>
-                          setVisibleRows((current) => ({
-                            ...current,
-                            [entry.slug]: !current[entry.slug],
-                          }))
-                        }
-                      >
-                        {isVisible ? '숨기기' : '보기'}
-                      </button>
-                    </div>
-                    <span className={styles.inlineMetaText}>{status.description}</span>
-                  </div>
+                  {renderPasswordInput(entry, isVisible)}
 
                   <div className={styles.actionStack}>
+                    <span className={styles.tableSubtext}>{status.description}</span>
                     <div className={styles.mobileCardActions}>
                       <button
                         type="button"
@@ -372,7 +341,11 @@ export default function AdminClientPasswordsTab({
                         disabled={savingPageSlug === entry.slug || !canSave}
                         onClick={() => onSave(entry.slug, entry.password.trim())}
                       >
-                        {savingPageSlug === entry.slug ? '저장 중..' : '저장'}
+                        {savingPageSlug === entry.slug
+                          ? '저장 중...'
+                          : entry.hasPassword
+                            ? '재설정'
+                            : '설정'}
                       </button>
                       {canOpenEditor ? (
                         <a
@@ -389,15 +362,10 @@ export default function AdminClientPasswordsTab({
                           className="admin-button admin-button-ghost"
                           disabled
                         >
-                          저장 후 편집
+                          비밀번호 필요
                         </button>
                       )}
                     </div>
-                    <span className={styles.actionHint}>
-                      {canOpenEditor
-                        ? '저장 완료 상태입니다.'
-                        : '입력값을 저장한 뒤 고객 편집기를 열어 주세요.'}
-                    </span>
                   </div>
                 </article>
               );
@@ -407,10 +375,10 @@ export default function AdminClientPasswordsTab({
       ) : (
         <EmptyState
           title="조건에 맞는 페이지가 없습니다."
-          description="페이지 검색 조건을 다시 확인한 뒤 비밀번호를 저장해 주세요."
+          description="페이지 검색 조건을 다시 확인하거나 비밀번호 상태를 새로고침해 주세요."
           highlights={[
-            '비밀번호는 기본적으로 숨김 상태로 표시됩니다.',
-            '저장 완료 상태에서만 고객 편집기로 바로 이동할 수 있습니다.',
+            '현재 비밀번호는 표시하지 않고 재설정만 허용합니다.',
+            '저장 후에는 해시 정보와 마지막 변경 시각만 남습니다.',
           ]}
           actionLabel={searchQuery ? '검색 초기화' : '새로고침'}
           onAction={searchQuery ? () => setSearchQuery('') : onRefresh}

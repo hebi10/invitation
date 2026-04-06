@@ -7,10 +7,8 @@ import {
   addComment,
   deleteComment,
   getComments,
-  softDeleteCommentByClient,
   type Comment,
 } from '@/services/commentService';
-import { getClientEditorTokenHash } from '@/services/passwordService';
 import { HeartIcon, HeartIconSimple } from '@/components/icons';
 
 interface GuestbookThemedProps {
@@ -63,11 +61,11 @@ export default function GuestbookThemed({
   const [isMobile, setIsMobile] = useState(false);
   const [showClientManager, setShowClientManager] = useState(false);
   const [clientPassword, setClientPassword] = useState('');
-  const [clientTokenHash, setClientTokenHash] = useState<string | null>(null);
+  const [, setClientTokenHash] = useState<string | null>(null);
   const [clientAccessLoading, setClientAccessLoading] = useState(false);
   const [lastTitleInteraction, setLastTitleInteraction] = useState(0);
 
-  const canManageComments = isAdminLoggedIn || Boolean(clientTokenHash);
+  const canManageComments = isAdminLoggedIn;
   const commentsPerPage = 5;
   const totalPages = Math.max(1, Math.ceil(comments.length / commentsPerPage));
   const currentComments = comments.slice(
@@ -178,16 +176,7 @@ export default function GuestbookThemed({
     }
 
     try {
-      if (isAdminLoggedIn) {
-        await deleteComment(comment.id, comment.collectionName);
-      } else if (clientTokenHash) {
-        await softDeleteCommentByClient(
-          comment.id,
-          pageSlug,
-          clientTokenHash,
-          comment.collectionName
-        );
-      }
+      await deleteComment(comment.id, comment.collectionName);
 
       await loadComments();
       showStatus('메시지를 삭제했습니다.', 'success');
@@ -205,7 +194,7 @@ export default function GuestbookThemed({
 
     setClientAccessLoading(true);
     try {
-      const nextTokenHash = await getClientEditorTokenHash(pageSlug, clientPassword);
+      const nextTokenHash = null;
       if (!nextTokenHash) {
         showStatus('비밀번호가 올바르지 않습니다.', 'error');
         return;
@@ -287,7 +276,7 @@ export default function GuestbookThemed({
   };
 
   const renderManagerBlock = () => {
-    if (!showClientManager && !canManageComments) {
+    if (!canManageComments) {
       return null;
     }
 

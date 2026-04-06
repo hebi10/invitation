@@ -35,44 +35,31 @@ service cloud.firestore {
         request.resource.data.pageSlug == pageSlug;
     }
 
-    function hasClientAccess(pageSlug, editorTokenHash) {
+    function hasPublishedInvitationRegistry(pageSlug) {
       return pageSlug is string &&
-        editorTokenHash is string &&
-        exists(/databases/$(database)/documents/client-access/$(pageSlug)) &&
-        get(/databases/$(database)/documents/client-access/$(pageSlug)).data.editorTokenHash == editorTokenHash;
+        exists(/databases/$(database)/documents/invitation-page-registry/$(pageSlug)) &&
+        get(/databases/$(database)/documents/invitation-page-registry/$(pageSlug)).data.published == true;
     }
 
-    function isClientCommentDelete() {
-      return resource.data.deleted != true &&
-        request.resource.data.keys().hasOnly([
-          'author',
-          'message',
-          'pageSlug',
-          'createdAt',
-          'deleted',
-          'deletedAt',
-          'deletedBy',
-          'editorTokenHash'
-        ]) &&
-        request.resource.data.author == resource.data.author &&
-        request.resource.data.message == resource.data.message &&
-        request.resource.data.pageSlug == resource.data.pageSlug &&
-        request.resource.data.createdAt == resource.data.createdAt &&
-        request.resource.data.deleted == true &&
-        request.resource.data.deletedBy == 'client' &&
-        hasClientAccess(resource.data.pageSlug, request.resource.data.editorTokenHash);
+    function hasInvitationDisplayPeriod(pageSlug) {
+      return pageSlug is string &&
+        exists(/databases/$(database)/documents/display-periods/$(pageSlug)) &&
+        get(/databases/$(database)/documents/display-periods/$(pageSlug)).data.isActive == true;
     }
 
-    function isClientConfigWrite(pageSlug) {
-      return request.resource.data.slug == pageSlug &&
-        request.resource.data.editorTokenHash is string &&
-        hasClientAccess(pageSlug, request.resource.data.editorTokenHash);
+    function isWithinInvitationDisplayPeriod(pageSlug) {
+      return !hasInvitationDisplayPeriod(pageSlug) ||
+        (
+          get(/databases/$(database)/documents/display-periods/$(pageSlug)).data.startDate is timestamp &&
+          get(/databases/$(database)/documents/display-periods/$(pageSlug)).data.endDate is timestamp &&
+          request.time >= get(/databases/$(database)/documents/display-periods/$(pageSlug)).data.startDate &&
+          request.time <= get(/databases/$(database)/documents/display-periods/$(pageSlug)).data.endDate
+        );
     }
 
-    function isClientRegistryWrite(pageSlug) {
-      return request.resource.data.pageSlug == pageSlug &&
-        request.resource.data.editorTokenHash is string &&
-        hasClientAccess(pageSlug, request.resource.data.editorTokenHash);
+    function canReadPublicInvitationPage(pageSlug) {
+      return hasPublishedInvitationRegistry(pageSlug) &&
+        isWithinInvitationDisplayPeriod(pageSlug);
     }
 
     function isLegacyCommentCollection(collectionId) {
@@ -87,8 +74,7 @@ service cloud.firestore {
     match /comments/{commentId} {
       allow read: if true;
       allow create: if isValidCommentCreate();
-      allow update: if isAdmin() || isClientCommentDelete();
-      allow delete: if isAdmin();
+      allow update, delete: if isAdmin();
     }
 
     match /guestbooks/{pageSlug} {
@@ -98,8 +84,7 @@ service cloud.firestore {
       match /comments/{commentId} {
         allow read: if true;
         allow create: if isValidCommentCreateForPage(pageSlug);
-        allow update: if isAdmin() || isClientCommentDelete();
-        allow delete: if isAdmin();
+        allow update, delete: if isAdmin();
       }
     }
 
@@ -113,20 +98,17 @@ service cloud.firestore {
     }
 
     match /client-access/{pageSlug} {
-      allow read: if true;
-      allow write: if isAdmin();
+      allow read, write: if isAdmin();
     }
 
     match /invitation-page-configs/{pageSlug} {
-      allow read: if true;
-      allow create, update: if isAdmin() || isClientConfigWrite(pageSlug);
-      allow delete: if isAdmin();
+      allow read: if isAdmin() || canReadPublicInvitationPage(pageSlug);
+      allow create, update, delete: if isAdmin();
     }
 
     match /invitation-page-registry/{pageSlug} {
-      allow read: if true;
-      allow create, update: if isAdmin() || isClientRegistryWrite(pageSlug);
-      allow delete: if isAdmin();
+      allow read: if isAdmin() || canReadPublicInvitationPage(pageSlug);
+      allow create, update, delete: if isAdmin();
     }
 
     match /admin-users/{userId} {
@@ -134,8 +116,8 @@ service cloud.firestore {
       allow create, update, delete: if isAdmin();
     }
 
-    match /display-periods/{document=**} {
-      allow read: if true;
+    match /display-periods/{pageSlug} {
+      allow read: if isAdmin() || canReadPublicInvitationPage(pageSlug);
       allow write: if isAdmin();
     }
 

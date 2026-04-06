@@ -165,7 +165,7 @@ export default function InvitationDraftSetupClient({
             <div className={styles.heroMeta}>
               <span className={styles.chip}>관리자 생성</span>
               <span className={styles.chip}>
-                {editorKind === 'page-wizard' ? '모바일 위저드' : '기본 편집기'}
+                {editorKind === 'page-wizard' ? '모바일 모바일' : '기본 편집기'}
               </span>
               {selectedTemplate ? (
                 <span className={styles.chip}>{selectedTemplate.productTier}</span>

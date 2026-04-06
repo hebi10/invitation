@@ -1,28 +1,40 @@
+import { createClientPasswordHashRecord } from '@/lib/clientPasswordCrypto';
 import { ensureFirebaseInit, USE_FIREBASE } from '@/lib/firebase';
 
 export interface ClientPassword {
   id: string;
   pageSlug: string;
-  password: string;
-  createdAt: Date;
-  updatedAt: Date;
-}
-
-export interface ClientAccessRecord {
-  pageSlug: string;
-  editorTokenHash: string;
+  hasPassword: boolean;
+  passwordVersion: number;
+  legacyPlaintextStored: boolean;
   createdAt: Date;
   updatedAt: Date;
 }
 
 type FirestoreModules = {
   collection: any;
+  deleteDoc: any;
   doc: any;
   getDoc: any;
   getDocs: any;
   query: any;
   setDoc: any;
   where: any;
+  deleteField: any;
+};
+
+type NormalizedClientPasswordDocument = {
+  id: string;
+  pageSlug: string;
+  hasPassword: boolean;
+  passwordHash: string | null;
+  passwordSalt: string | null;
+  passwordIterations: number | null;
+  passwordVersion: number;
+  legacyPassword: string | null;
+  legacyPlaintextStored: boolean;
+  createdAt: Date;
+  updatedAt: Date;
 };
 
 const CLIENT_PASSWORDS_COLLECTION = 'client-passwords';
@@ -61,62 +73,82 @@ async function ensureFirestoreModules() {
     const firestore = await import('firebase/firestore');
     firestoreModules = {
       collection: firestore.collection,
+      deleteDoc: firestore.deleteDoc,
       doc: firestore.doc,
       getDoc: firestore.getDoc,
       getDocs: firestore.getDocs,
       query: firestore.query,
       setDoc: firestore.setDoc,
       where: firestore.where,
+      deleteField: firestore.deleteField,
     };
   }
 
   return { db, modules: firestoreModules };
 }
 
-function normalizeClientPassword(
+function normalizeClientPasswordDocument(
   id: string,
   data: Record<string, any>
-): ClientPassword | null {
-  const pageSlug = typeof data.pageSlug === 'string' ? data.pageSlug.trim() : '';
-  const password = typeof data.password === 'string' ? data.password : '';
+): NormalizedClientPasswordDocument | null {
+  const pageSlug =
+    typeof data.pageSlug === 'string' && data.pageSlug.trim() ? data.pageSlug.trim() : id;
+  const passwordHash =
+    typeof data.passwordHash === 'string' && data.passwordHash.trim()
+      ? data.passwordHash.trim()
+      : null;
+  const passwordSalt =
+    typeof data.passwordSalt === 'string' && data.passwordSalt.trim()
+      ? data.passwordSalt.trim()
+      : null;
+  const passwordIterations =
+    typeof data.passwordIterations === 'number' && Number.isFinite(data.passwordIterations)
+      ? data.passwordIterations
+      : null;
+  const legacyPassword =
+    typeof data.password === 'string' && data.password.trim() ? data.password.trim() : null;
+  const passwordVersion =
+    typeof data.passwordVersion === 'number' && Number.isFinite(data.passwordVersion)
+      ? data.passwordVersion
+      : 1;
+  const hasPassword = Boolean(
+    legacyPassword || (passwordHash && passwordSalt && passwordIterations)
+  );
 
-  if (!pageSlug || !password) {
+  if (!pageSlug || !hasPassword) {
     return null;
   }
 
   return {
     id,
     pageSlug,
-    password,
+    hasPassword,
+    passwordHash,
+    passwordSalt,
+    passwordIterations,
+    passwordVersion,
+    legacyPassword,
+    legacyPlaintextStored: Boolean(legacyPassword),
     createdAt: toDate(data.createdAt),
     updatedAt: toDate(data.updatedAt),
   };
 }
 
-function normalizeClientAccess(
-  id: string,
-  data: Record<string, any>
-): ClientAccessRecord | null {
-  const pageSlug =
-    typeof data.pageSlug === 'string' && data.pageSlug.trim() ? data.pageSlug.trim() : id;
-  const editorTokenHash =
-    typeof data.editorTokenHash === 'string' ? data.editorTokenHash.trim() : '';
-
-  if (!pageSlug || !editorTokenHash) {
-    return null;
-  }
-
+function toClientPassword(record: NormalizedClientPasswordDocument): ClientPassword {
   return {
-    pageSlug,
-    editorTokenHash,
-    createdAt: toDate(data.createdAt),
-    updatedAt: toDate(data.updatedAt),
+    id: record.id,
+    pageSlug: record.pageSlug,
+    hasPassword: record.hasPassword,
+    passwordVersion: record.passwordVersion,
+    legacyPlaintextStored: record.legacyPlaintextStored,
+    createdAt: record.createdAt,
+    updatedAt: record.updatedAt,
   };
 }
 
 function preferClientPassword(
-  current: ClientPassword | undefined,
-  nextRecord: ClientPassword
+  current: NormalizedClientPasswordDocument | undefined,
+  nextRecord: NormalizedClientPasswordDocument
 ) {
   if (!current) {
     return nextRecord;
@@ -129,15 +161,9 @@ function preferClientPassword(
   return nextRecord.updatedAt >= current.updatedAt ? nextRecord : current;
 }
 
-export async function hashClientPassword(password: string) {
-  const normalized = password.trim();
-  const encoded = new TextEncoder().encode(normalized);
-  const digest = await crypto.subtle.digest('SHA-256', encoded);
-  const bytes = Array.from(new Uint8Array(digest));
-  return bytes.map((byte) => byte.toString(16).padStart(2, '0')).join('');
-}
-
-export async function getClientPassword(pageSlug: string): Promise<ClientPassword | null> {
+async function getClientPasswordDocument(
+  pageSlug: string
+): Promise<NormalizedClientPasswordDocument | null> {
   if (!USE_FIREBASE) {
     return null;
   }
@@ -152,7 +178,7 @@ export async function getClientPassword(pageSlug: string): Promise<ClientPasswor
   );
 
   if (directSnapshot.exists()) {
-    const normalized = normalizeClientPassword(pageSlug, directSnapshot.data());
+    const normalized = normalizeClientPasswordDocument(pageSlug, directSnapshot.data());
     if (normalized) {
       return normalized;
     }
@@ -165,10 +191,10 @@ export async function getClientPassword(pageSlug: string): Promise<ClientPasswor
     )
   );
 
-  let preferred: ClientPassword | null = null;
+  let preferred: NormalizedClientPasswordDocument | null = null;
 
   snapshot.docs.forEach((docSnapshot: { id: string; data: () => Record<string, any> }) => {
-    const normalized = normalizeClientPassword(docSnapshot.id, docSnapshot.data());
+    const normalized = normalizeClientPasswordDocument(docSnapshot.id, docSnapshot.data());
     if (!normalized) {
       return;
     }
@@ -177,6 +203,11 @@ export async function getClientPassword(pageSlug: string): Promise<ClientPasswor
   });
 
   return preferred;
+}
+
+export async function getClientPassword(pageSlug: string): Promise<ClientPassword | null> {
+  const record = await getClientPasswordDocument(pageSlug);
+  return record ? toClientPassword(record) : null;
 }
 
 export async function getAllClientPasswords(): Promise<ClientPassword[]> {
@@ -193,10 +224,10 @@ export async function getAllClientPasswords(): Promise<ClientPassword[]> {
     firestore.modules.collection(firestore.db, CLIENT_PASSWORDS_COLLECTION)
   );
 
-  const passwordMap = new Map<string, ClientPassword>();
+  const passwordMap = new Map<string, NormalizedClientPasswordDocument>();
 
   snapshot.docs.forEach((docSnapshot: { id: string; data: () => Record<string, any> }) => {
-    const normalized = normalizeClientPassword(docSnapshot.id, docSnapshot.data());
+    const normalized = normalizeClientPasswordDocument(docSnapshot.id, docSnapshot.data());
     if (!normalized) {
       return;
     }
@@ -207,32 +238,9 @@ export async function getAllClientPasswords(): Promise<ClientPassword[]> {
     );
   });
 
-  return [...passwordMap.values()].sort((left, right) =>
-    left.pageSlug.localeCompare(right.pageSlug, 'ko')
-  );
-}
-
-export async function getClientAccessRecord(
-  pageSlug: string
-): Promise<ClientAccessRecord | null> {
-  if (!USE_FIREBASE) {
-    return null;
-  }
-
-  const firestore = await ensureFirestoreModules();
-  if (!firestore) {
-    return null;
-  }
-
-  const snapshot = await firestore.modules.getDoc(
-    firestore.modules.doc(firestore.db, CLIENT_ACCESS_COLLECTION, pageSlug)
-  );
-
-  if (!snapshot.exists()) {
-    return null;
-  }
-
-  return normalizeClientAccess(pageSlug, snapshot.data());
+  return [...passwordMap.values()]
+    .map(toClientPassword)
+    .sort((left, right) => left.pageSlug.localeCompare(right.pageSlug, 'ko'));
 }
 
 export async function syncClientPasswordAccess(): Promise<ClientPassword[]> {
@@ -248,41 +256,17 @@ export async function syncClientPasswordAccess(): Promise<ClientPassword[]> {
   }
 
   await Promise.all(
-    passwords.map(async (passwordRecord) => {
-      const editorTokenHash = await hashClientPassword(passwordRecord.password);
-
-      await firestore.modules.setDoc(
-        firestore.modules.doc(
-          firestore.db,
-          CLIENT_ACCESS_COLLECTION,
-          passwordRecord.pageSlug
-        ),
-        {
-          pageSlug: passwordRecord.pageSlug,
-          editorTokenHash,
-          createdAt: passwordRecord.createdAt,
-          updatedAt: passwordRecord.updatedAt,
-        },
-        { merge: true }
-      );
-
-      if (passwordRecord.id !== passwordRecord.pageSlug) {
-        await firestore.modules.setDoc(
+    passwords.map((passwordRecord) =>
+      firestore.modules
+        .deleteDoc(
           firestore.modules.doc(
             firestore.db,
-            CLIENT_PASSWORDS_COLLECTION,
+            CLIENT_ACCESS_COLLECTION,
             passwordRecord.pageSlug
-          ),
-          {
-            pageSlug: passwordRecord.pageSlug,
-            password: passwordRecord.password,
-            createdAt: passwordRecord.createdAt,
-            updatedAt: passwordRecord.updatedAt,
-          },
-          { merge: true }
-        );
-      }
-    })
+          )
+        )
+        .catch(() => undefined)
+    )
   );
 
   return passwords;
@@ -303,7 +287,9 @@ export async function setClientPassword(
     return {
       id: normalizedSlug,
       pageSlug: normalizedSlug,
-      password: normalizedPassword,
+      hasPassword: true,
+      passwordVersion: 1,
+      legacyPlaintextStored: false,
       createdAt: new Date(),
       updatedAt: new Date(),
     };
@@ -314,59 +300,39 @@ export async function setClientPassword(
     throw new Error('Firestore is not initialized.');
   }
 
-  const existing = await getClientPassword(normalizedSlug);
+  const existing = await getClientPasswordDocument(normalizedSlug);
   const now = new Date();
   const createdAt = existing?.createdAt ?? now;
-  const editorTokenHash = await hashClientPassword(normalizedPassword);
+  const passwordHashRecord = await createClientPasswordHashRecord(normalizedPassword);
+  const passwordVersion = (existing?.passwordVersion ?? 0) + 1;
 
   await firestore.modules.setDoc(
     firestore.modules.doc(firestore.db, CLIENT_PASSWORDS_COLLECTION, normalizedSlug),
     {
       pageSlug: normalizedSlug,
-      password: normalizedPassword,
+      ...passwordHashRecord,
+      passwordVersion,
       createdAt,
       updatedAt: now,
+      password: firestore.modules.deleteField(),
+      editorTokenHash: firestore.modules.deleteField(),
     },
     { merge: true }
   );
 
-  await firestore.modules.setDoc(
-    firestore.modules.doc(firestore.db, CLIENT_ACCESS_COLLECTION, normalizedSlug),
-    {
-      pageSlug: normalizedSlug,
-      editorTokenHash,
-      createdAt,
-      updatedAt: now,
-    },
-    { merge: true }
-  );
+  await firestore.modules
+    .deleteDoc(
+      firestore.modules.doc(firestore.db, CLIENT_ACCESS_COLLECTION, normalizedSlug)
+    )
+    .catch(() => undefined);
 
   return {
     id: normalizedSlug,
     pageSlug: normalizedSlug,
-    password: normalizedPassword,
+    hasPassword: true,
+    passwordVersion,
+    legacyPlaintextStored: false,
     createdAt,
     updatedAt: now,
   };
-}
-
-export async function getClientEditorTokenHash(
-  pageSlug: string,
-  inputPassword: string
-): Promise<string | null> {
-  const accessRecord = await getClientAccessRecord(pageSlug);
-  if (!accessRecord) {
-    return null;
-  }
-
-  const editorTokenHash = await hashClientPassword(inputPassword);
-  return editorTokenHash === accessRecord.editorTokenHash ? editorTokenHash : null;
-}
-
-export async function verifyClientPassword(
-  pageSlug: string,
-  inputPassword: string
-): Promise<boolean> {
-  const editorTokenHash = await getClientEditorTokenHash(pageSlug, inputPassword);
-  return Boolean(editorTokenHash);
 }

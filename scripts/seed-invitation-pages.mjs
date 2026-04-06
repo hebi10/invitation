@@ -121,13 +121,13 @@ function initializeFirebaseAdmin() {
 
 async function loadWeddingSeeds() {
   const moduleUrl = pathToFileURL(path.join(process.cwd(), 'src/config/weddingPages.ts')).href;
-  const module = await import(moduleUrl);
+  const weddingPagesModule = await import(moduleUrl);
 
-  if (typeof module.getAllWeddingPageSeeds !== 'function') {
+  if (typeof weddingPagesModule.getAllWeddingPageSeeds !== 'function') {
     throw new Error('getAllWeddingPageSeeds export was not found.');
   }
 
-  return module.getAllWeddingPageSeeds();
+  return weddingPagesModule.getAllWeddingPageSeeds();
 }
 
 function cloneSeed(seed) {
@@ -140,7 +140,6 @@ function buildConfigPayload(seed, existingConfig) {
   return {
     ...cloneSeed(seed),
     seedSourceSlug: seed.slug,
-    editorTokenHash: existingConfig?.editorTokenHash ?? null,
     createdAt: existingConfig?.createdAt ?? now,
     updatedAt: now,
   };
@@ -153,7 +152,6 @@ function buildRegistryPayload(seed, existingRegistry) {
     pageSlug: seed.slug,
     published: existingRegistry?.published ?? true,
     hasCustomConfig: true,
-    editorTokenHash: existingRegistry?.editorTokenHash ?? null,
     createdAt: existingRegistry?.createdAt ?? now,
     updatedAt: now,
   };

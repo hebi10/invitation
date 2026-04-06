@@ -12,7 +12,6 @@ export type PageEditorImageAssetKind = 'cover' | 'favicon' | 'gallery';
 interface UploadImageOptions {
   preserveFileName?: boolean;
   assetKind?: PageEditorImageAssetKind;
-  editorTokenHash?: string | null;
 }
 
 const USE_FIREBASE = process.env.NEXT_PUBLIC_USE_FIREBASE === 'true';
@@ -110,10 +109,6 @@ function buildUploadMetadata(
     metadata.assetKind = options.assetKind;
   }
 
-  if (options.editorTokenHash) {
-    metadata.editorTokenHash = options.editorTokenHash;
-  }
-
   return {
     contentType: sourceFile.type || 'image/jpeg',
     customMetadata: metadata,
@@ -172,13 +167,11 @@ export const uploadImage = async (
 export const uploadPageEditorImage = async (
   file: File,
   pageSlug: string,
-  assetKind: PageEditorImageAssetKind,
-  editorTokenHash?: string | null
+  assetKind: PageEditorImageAssetKind
 ) =>
   uploadImage(file, pageSlug, {
     preserveFileName: false,
     assetKind,
-    editorTokenHash,
   });
 
 export const getImagesByPage = async (

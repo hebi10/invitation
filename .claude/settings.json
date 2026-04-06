@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//c/Users/gy554/Desktop/portfolio/invitation/src/components/**)"
+    ]
+  }
+}

@@ -1,14 +1,17 @@
-import InvitationDraftSetupClient from '@/app/_components/InvitationDraftSetupClient';
+import { Suspense } from 'react';
+
+import PageWizardClient from './PageWizardClient';
 
 export const dynamic = 'force-dynamic';
 
+function PageWizardFallback() {
+  return <div style={{ minHeight: '100vh', background: '#f8fafc' }} />;
+}
+
 export default function PageWizardCreatePage() {
   return (
-    <InvitationDraftSetupClient
-      editorKind="page-wizard"
-      title="모바일 위저드로 청첩장 만들기"
-      description="원하는 템플릿과 상품을 고른 뒤 Firestore 초안을 만들고, 단계별 모바일 위저드에서 이어서 편집합니다."
-      compactMode
-    />
+    <Suspense fallback={<PageWizardFallback />}>
+      <PageWizardClient initialSlug={null} />
+    </Suspense>
   );
 }

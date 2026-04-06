@@ -119,10 +119,10 @@ export default function AdminPagesTab({
         </p>
         <div className={styles.tableActions}>
           <a href="/page-editor" className="admin-button admin-button-primary" target="_blank">
-            새 페이지 에디터 초안
+            새 페이지 관리자 생성
           </a>
           <a href="/page-wizard" className="admin-button admin-button-secondary" target="_blank">
-            새 위저드 초안
+            새 페이지 모바일 생성
           </a>
         </div>
       </div>
@@ -343,7 +343,7 @@ export default function AdminPagesTab({
                                 rel="noreferrer"
                                 className="admin-button admin-button-secondary"
                               >
-                                위저드
+                                모바일
                               </a>
                               {preview.link ? (
                                 <a
@@ -407,7 +407,7 @@ export default function AdminPagesTab({
                         rel="noreferrer"
                         className="admin-button admin-button-secondary"
                       >
-                        위저드
+                        모바일
                       </a>
                       {preview.link ? (
                         <a
@@ -432,7 +432,7 @@ export default function AdminPagesTab({
           title="현재 필터 조건에 맞는 청첩장 페이지가 없습니다."
           description="검색어 또는 필터 조건이 너무 좁을 수 있습니다. 필터를 조정하거나 목록을 새로고침해 주세요."
           highlights={[
-            '이 목록에서 바로 에디터 또는 위저드로 기존 페이지를 열 수 있습니다.',
+            '이 목록에서 바로 에디터 또는 모바일로 기존 페이지를 열 수 있습니다.',
             '미리보기 연결 상태를 통해 공개 경로가 연결된 페이지를 빠르게 확인할 수 있습니다.',
           ]}
           actionLabel="필터 초기화"

@@ -69,7 +69,6 @@ export interface CreateInvitationPageDraftInput {
   published?: boolean;
   defaultTheme?: InvitationThemeKey;
   productTier?: InvitationProductTier;
-  editorTokenHash?: string | null;
 }
 
 export interface CreateInvitationPageDraftResult {
@@ -90,6 +89,7 @@ type FirestoreState = {
   db: any;
   modules: {
     collection: any;
+    deleteField: any;
     doc: any;
     getDoc: any;
     getDocs: any;
@@ -116,7 +116,6 @@ type InvitationPageRegistryRecord = {
   published: boolean;
   defaultTheme: InvitationThemeKey;
   hasCustomConfig: boolean;
-  editorTokenHash: string | null;
   createdAt: Date | null;
   updatedAt: Date | null;
 };
@@ -263,10 +262,6 @@ function normalizeRegistryRecord(
     published: data.published !== false,
     defaultTheme: normalizeInvitationTheme(data.defaultTheme),
     hasCustomConfig: data.hasCustomConfig === true,
-    editorTokenHash:
-      typeof data.editorTokenHash === 'string' && data.editorTokenHash.trim()
-        ? data.editorTokenHash.trim()
-        : null,
     createdAt: toDate(data.createdAt),
     updatedAt: toDate(data.updatedAt),
   };
@@ -693,7 +688,7 @@ async function ensureFirestoreState(): Promise<FirestoreState | null> {
 
   const firebase = await ensureFirebaseInit();
   if (!firebase.db) {
-    throw new Error('Firestore is not initialized.');
+    throw new Error('데이터 저장소가 아직 준비되지 않았습니다. 잠시 후 다시 시도해 주세요.');
   }
 
   const firestoreModule = await import('firebase/firestore');
@@ -702,6 +697,7 @@ async function ensureFirestoreState(): Promise<FirestoreState | null> {
     db: firebase.db,
     modules: {
       collection: firestoreModule.collection,
+      deleteField: firestoreModule.deleteField,
       deleteDoc: firestoreModule.deleteDoc,
       doc: firestoreModule.doc,
       getDoc: firestoreModule.getDoc,
@@ -910,7 +906,7 @@ async function createUniqueInvitationPageSlug(
 ) {
   const normalizedSlugBase = normalizeSlugBase(slugBase);
   if (!normalizedSlugBase) {
-    throw new Error('A valid URL slug base is required.');
+    throw new Error('올바른 페이지 주소를 입력해 주세요.');
   }
 
   if (!(await isInvitationPageSlugTaken(firestore, normalizedSlugBase))) {
@@ -960,7 +956,6 @@ async function upsertRegistryRecord(
     published?: boolean;
     defaultTheme?: InvitationThemeKey;
     hasCustomConfig?: boolean;
-    editorTokenHash?: string | null;
   }
 ) {
   const existing = await getRegistryByPageSlug(firestore, pageSlug);
@@ -975,8 +970,7 @@ async function upsertRegistryRecord(
         payload.defaultTheme ?? existing?.defaultTheme ?? DEFAULT_INVITATION_THEME,
       hasCustomConfig:
         payload.hasCustomConfig ?? existing?.hasCustomConfig ?? false,
-      editorTokenHash:
-        payload.editorTokenHash ?? existing?.editorTokenHash ?? null,
+      editorTokenHash: firestore.modules.deleteField(),
       createdAt: existing?.createdAt ?? now,
       updatedAt: now,
     },
@@ -1134,7 +1128,6 @@ export async function saveInvitationPageConfig(
   options: {
     published?: boolean;
     defaultTheme?: InvitationThemeKey;
-    editorTokenHash?: string | null;
   } = {}
 ) {
   const normalizedConfig = mergeInvitationPageSeed(
@@ -1144,12 +1137,12 @@ export async function saveInvitationPageConfig(
   );
 
   if (!normalizedConfig) {
-    throw new Error('Invitation page config is invalid.');
+    throw new Error('초대 페이지 구성이 잘못되었습니다.');
   }
 
   const firestore = await ensureFirestoreState();
   if (!firestore) {
-    throw new Error('Firestore is not available.');
+    throw new Error('데이터 저장소 연결을 확인하지 못했습니다. 잠시 후 다시 시도해 주세요.');
   }
 
   const existingConfig = await getConfigByPageSlug(firestore, normalizedConfig.slug);
@@ -1159,7 +1152,7 @@ export async function saveInvitationPageConfig(
     firestore.modules.doc(firestore.db, PAGE_CONFIG_COLLECTION, normalizedConfig.slug),
     {
       ...normalizedConfig,
-      editorTokenHash: options.editorTokenHash ?? null,
+      editorTokenHash: firestore.modules.deleteField(),
       createdAt: now,
       updatedAt: now,
     },
@@ -1170,7 +1163,6 @@ export async function saveInvitationPageConfig(
     published: options.published ?? true,
     defaultTheme: options.defaultTheme ?? DEFAULT_INVITATION_THEME,
     hasCustomConfig: true,
-    editorTokenHash: options.editorTokenHash ?? null,
   });
 
   return existingConfig ?? normalizedConfig;
@@ -1185,19 +1177,19 @@ export async function createInvitationPageDraftFromSeed(
 ): Promise<CreateInvitationPageDraftResult> {
   const firestore = await ensureFirestoreState();
   if (!firestore) {
-    throw new Error('Firestore is not available.');
+    throw new Error('데이터 저장소 연결을 확인하지 못했습니다. 잠시 후 다시 시도해 주세요.');
   }
 
   const seed = getWeddingPageBySlug(input.seedSlug);
   if (!seed) {
-    throw new Error('Unknown invitation page seed.');
+    throw new Error('청첩장 기본 템플릿을 찾을 수 없습니다.');
   }
 
   const groomName = (input.groomName ?? seed.couple.groom.name ?? seed.groomName).trim();
   const brideName = (input.brideName ?? seed.couple.bride.name ?? seed.brideName).trim();
 
   if (!groomName || !brideName) {
-    throw new Error('Groom and bride names are required.');
+    throw new Error('신랑과 신부 이름을 모두 입력해 주세요.');
   }
 
   const slug = await createUniqueInvitationPageSlug(firestore, input.slugBase);
@@ -1217,7 +1209,7 @@ export async function createInvitationPageDraftFromSeed(
     {
       ...config,
       seedSourceSlug: seed.slug,
-      editorTokenHash: input.editorTokenHash ?? null,
+      editorTokenHash: firestore.modules.deleteField(),
       createdAt: now,
       updatedAt: now,
     },
@@ -1228,7 +1220,6 @@ export async function createInvitationPageDraftFromSeed(
     published: input.published ?? false,
     defaultTheme: input.defaultTheme ?? DEFAULT_INVITATION_THEME,
     hasCustomConfig: true,
-    editorTokenHash: input.editorTokenHash ?? null,
   });
 
   return {
@@ -1242,24 +1233,22 @@ export async function restoreInvitationPageConfig(
   options: {
     published?: boolean;
     defaultTheme?: InvitationThemeKey;
-    editorTokenHash?: string | null;
   } = {}
 ) {
   const seed = getWeddingPageBySlug(pageSlug);
   if (!seed) {
-    throw new Error('Unknown invitation page slug.');
+    throw new Error('해당 페이지 주소를 찾을 수 없습니다.');
   }
 
   const firestore = await ensureFirestoreState();
   if (!firestore) {
-    throw new Error('Firestore is not available.');
+    throw new Error('데이터 저장소 연결을 확인하지 못했습니다. 잠시 후 다시 시도해 주세요.');
   }
 
   await upsertRegistryRecord(firestore, pageSlug, {
     published: options.published ?? true,
     defaultTheme: options.defaultTheme,
     hasCustomConfig: false,
-    editorTokenHash: options.editorTokenHash ?? null,
   });
 }
 
@@ -1268,28 +1257,26 @@ export async function setInvitationPagePublished(
   published: boolean,
   options: {
     defaultTheme?: InvitationThemeKey;
-    editorTokenHash?: string | null;
   } = {}
 ) {
   const seed = getWeddingPageBySlug(pageSlug);
 
   const firestore = await ensureFirestoreState();
   if (!firestore) {
-    throw new Error('Firestore is not available.');
+    throw new Error('데이터 저장소 연결을 확인하지 못했습니다. 잠시 후 다시 시도해 주세요.');
   }
 
   const existingConfig = await getConfigByPageSlug(firestore, pageSlug);
   const existingRegistry = await getRegistryByPageSlug(firestore, pageSlug);
 
   if (!seed && !existingConfig && !existingRegistry) {
-    throw new Error('Unknown invitation page slug.');
+    throw new Error('해당 페이지 주소를 찾을 수 없습니다.');
   }
 
   await upsertRegistryRecord(firestore, pageSlug, {
     published,
     defaultTheme: options.defaultTheme ?? existingRegistry?.defaultTheme,
     hasCustomConfig: existingRegistry?.hasCustomConfig ?? Boolean(existingConfig),
-    editorTokenHash: options.editorTokenHash ?? null,
   });
 }
 
@@ -1443,14 +1430,14 @@ export async function updateInvitationPageVisibility(
 
   const firestore = await ensureFirestoreState();
   if (!firestore) {
-    throw new Error('Firestore is not available.');
+    throw new Error('데이터 저장소 연결을 확인하지 못했습니다. 잠시 후 다시 시도해 주세요.');
   }
 
   const existingConfig = await getConfigByPageSlug(firestore, pageSlug);
   const existingRegistry = await getRegistryByPageSlug(firestore, pageSlug);
 
   if (!seedPage && !existingConfig) {
-    throw new Error('Unknown invitation page slug.');
+    throw new Error('해당 페이지 주소를 찾을 수 없습니다.');
   }
 
   await upsertRegistryRecord(firestore, pageSlug, {
