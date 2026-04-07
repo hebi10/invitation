@@ -32,6 +32,7 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
+firebase-debug.log
 
 # env files (can opt-in for committing if needed)
 .env*
@@ -42,6 +43,10 @@ yarn-error.log*
 # firebase
 .firebase
 invitation-35d60-firebase-adminsdk-fbsvc-541a104160.json
+.firebaserc
+
+# local agent/tooling
+.claude/
 
 # typescript
 *.tsbuildinfo

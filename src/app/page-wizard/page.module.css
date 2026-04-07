@@ -635,7 +635,21 @@
   gap: 10px;
   max-height: 380px;
   overflow-y: auto;
-  padding-right: 2px;
+  padding: 10px;
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  border-radius: 16px;
+  background: linear-gradient(180deg, rgba(248, 250, 252, 0.9), rgba(241, 245, 249, 0.72));
+}
+
+.choiceCard:not(.choiceCardActive) {
+  border-color: rgba(148, 163, 184, 0.24);
+  background: #fff;
+}
+
+.choiceCard:not(.choiceCardActive):hover {
+  border-color: rgba(37, 99, 235, 0.36);
+  background: rgba(239, 246, 255, 0.72);
+  box-shadow: 0 8px 18px rgba(37, 99, 235, 0.08);
 }
 
 .choiceSectionHeader {
@@ -1728,7 +1742,10 @@
 }
 
 .choiceOptions {
-  padding: 4px 2px 2px;
+  padding: 8px;
+  border-color: rgba(180, 131, 91, 0.2);
+  border-radius: 18px;
+  background: linear-gradient(180deg, rgba(255, 250, 244, 0.96), rgba(248, 238, 227, 0.92));
 }
 
 .choiceCard {

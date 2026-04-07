@@ -26,6 +26,12 @@ import {
   normalizeInvitationProductTier,
   resolveInvitationFeatures,
 } from '@/lib/invitationProducts';
+import {
+  clampInvitationMusicVolume,
+  DEFAULT_INVITATION_MUSIC_VOLUME,
+  findFirstActiveInvitationMusicTrack,
+  normalizeInvitationMusicSelection,
+} from '@/lib/musicLibrary';
 import type {
   InvitationFeatureFlags,
   InvitationPage,
@@ -385,6 +391,19 @@ function mergeInvitationPageSeed(
           : base?.pageData?.giftInfo,
       }
     : base?.pageData;
+  const existingMusicStoragePath = readString(base?.musicStoragePath, '').trim();
+  const normalizedMusicSelection = normalizeInvitationMusicSelection({
+    categoryId: readString(candidate.musicCategoryId, base?.musicCategoryId ?? '').trim(),
+    trackId: readString(candidate.musicTrackId, base?.musicTrackId ?? '').trim(),
+    storagePath: readString(candidate.musicStoragePath, existingMusicStoragePath).trim(),
+  });
+  const hasExplicitMusicUrl = typeof candidate.musicUrl === 'string';
+  const hasStoragePathChanged =
+    normalizedMusicSelection.musicStoragePath !== existingMusicStoragePath;
+  const musicUrl = readString(
+    candidate.musicUrl,
+    hasStoragePathChanged && !hasExplicitMusicUrl ? '' : base?.musicUrl ?? ''
+  ).trim();
   const featuresInput = isRecord(candidate.features) ? candidate.features : {};
   const productTier = normalizeInvitationProductTier(
     candidate.productTier,
@@ -489,6 +508,18 @@ function mergeInvitationPageSeed(
     venue,
     productTier,
     features,
+    musicEnabled:
+      typeof candidate.musicEnabled === 'boolean'
+        ? candidate.musicEnabled
+        : base?.musicEnabled ?? false,
+    musicVolume: clampInvitationMusicVolume(
+      candidate.musicVolume,
+      base?.musicVolume ?? DEFAULT_INVITATION_MUSIC_VOLUME
+    ),
+    musicCategoryId: normalizedMusicSelection.musicCategoryId,
+    musicTrackId: normalizedMusicSelection.musicTrackId,
+    musicStoragePath: normalizedMusicSelection.musicStoragePath,
+    musicUrl,
     groomName: readString(candidate.groomName, groom.name).trim(),
     brideName: readString(candidate.brideName, bride.name).trim(),
     couple: {
@@ -633,6 +664,7 @@ function buildDraftConfigFromSeed(
   const nextSeed = cloneInvitationPageSeed(seed);
   const displayName = createDisplayNameFromNames('', '');
   const features = resolveInvitationFeatures(overrides.productTier, seed.features);
+  const defaultMusicTrack = findFirstActiveInvitationMusicTrack();
 
   nextSeed.slug = overrides.slug;
   nextSeed.displayName = '';
@@ -727,6 +759,15 @@ function buildDraftConfigFromSeed(
   nextSeed.metadata.twitter.title = '';
   nextSeed.metadata.twitter.description = '';
   nextSeed.metadata.keywords = [overrides.groomName, overrides.brideName, '청첩장'];
+  nextSeed.musicEnabled = false;
+  nextSeed.musicVolume = clampInvitationMusicVolume(
+    nextSeed.musicVolume,
+    DEFAULT_INVITATION_MUSIC_VOLUME
+  );
+  nextSeed.musicCategoryId = defaultMusicTrack?.categoryId ?? '';
+  nextSeed.musicTrackId = defaultMusicTrack?.id ?? '';
+  nextSeed.musicStoragePath = defaultMusicTrack?.storagePath ?? '';
+  nextSeed.musicUrl = '';
   nextSeed.variants = buildInvitationVariants(overrides.slug, '', {
     availability: createInvitationVariantAvailability([
       overrides.theme as InvitationVariantKey,

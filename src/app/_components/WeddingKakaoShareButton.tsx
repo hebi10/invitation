@@ -77,7 +77,7 @@ export default function WeddingKakaoShareButton({
       }
 
       if (!kakaoAppKey) {
-        console.warn('[WeddingKakaoShareButton] missing Kakao JavaScript key');
+        console.warn('[웨딩카카오공유버튼] 카카오 자바스크립트 키 누락');
         return;
       }
 

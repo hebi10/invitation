@@ -135,6 +135,12 @@ export interface InvitationPage {
   displayPeriodEnd: Date | null;
   productTier?: InvitationProductTier;
   features?: Partial<InvitationFeatureFlags>;
+  musicEnabled?: boolean;
+  musicVolume?: number;
+  musicCategoryId?: string;
+  musicTrackId?: string;
+  musicStoragePath?: string;
+  musicUrl?: string;
   metadata: InvitationPageMetadata;
   pageData?: InvitationPageData;
   variants: InvitationPageVariants;

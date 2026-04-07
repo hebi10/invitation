@@ -9,6 +9,7 @@ import { getAdminInvitationPreviewSummary } from '@/lib/adminInvitationPreviewCa
 import { USE_FIREBASE } from '@/lib/firebase';
 import { resolveInvitationFeatures } from '@/lib/invitationProducts';
 import { resolveInvitationPageDataByTheme } from '@/lib/invitationThemePageData';
+import { getStorageDownloadUrl } from '@/services/imageService';
 import { getInvitationPageBySlug } from '@/services/invitationPageService';
 import type { InvitationPage } from '@/types/invitationPage';
 
@@ -269,6 +270,43 @@ export function useWeddingInvitationState(
 
     console.warn('[weddingPageState] image loading warning', error);
   }, [error]);
+
+  useEffect(() => {
+    if (!pageConfig?.musicStoragePath?.trim() || pageConfig.musicUrl?.trim()) {
+      return;
+    }
+
+    const musicStoragePath = pageConfig.musicStoragePath.trim();
+    let cancelled = false;
+
+    const resolveMusicUrl = async () => {
+      const downloadUrl = await getStorageDownloadUrl(musicStoragePath);
+      if (!downloadUrl || cancelled) {
+        return;
+      }
+
+      setPageConfig((current) => {
+        if (!current || current.musicStoragePath?.trim() !== musicStoragePath) {
+          return current;
+        }
+
+        if (current.musicUrl === downloadUrl) {
+          return current;
+        }
+
+        return {
+          ...current,
+          musicUrl: downloadUrl,
+        };
+      });
+    };
+
+    void resolveMusicUrl();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [pageConfig?.musicStoragePath, pageConfig?.musicUrl]);
 
   useEffect(() => {
     const loadingDelay = options.loadingDelay ?? themeDefinition.defaultLoadingDelay;

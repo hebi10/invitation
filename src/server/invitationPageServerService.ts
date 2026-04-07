@@ -23,6 +23,11 @@ import {
   resolveInvitationFeatures,
 } from '@/lib/invitationProducts';
 import {
+  clampInvitationMusicVolume,
+  DEFAULT_INVITATION_MUSIC_VOLUME,
+  normalizeInvitationMusicSelection,
+} from '@/lib/musicLibrary';
+import {
   isRecord,
   normalizeInvitationTheme,
   readNumber,
@@ -290,6 +295,19 @@ function mergeInvitationPageSeed(
           : base?.pageData?.giftInfo,
       }
     : base?.pageData;
+  const existingMusicStoragePath = readString(base?.musicStoragePath, '').trim();
+  const normalizedMusicSelection = normalizeInvitationMusicSelection({
+    categoryId: readString(candidate.musicCategoryId, base?.musicCategoryId ?? '').trim(),
+    trackId: readString(candidate.musicTrackId, base?.musicTrackId ?? '').trim(),
+    storagePath: readString(candidate.musicStoragePath, existingMusicStoragePath).trim(),
+  });
+  const hasExplicitMusicUrl = typeof candidate.musicUrl === 'string';
+  const hasStoragePathChanged =
+    normalizedMusicSelection.musicStoragePath !== existingMusicStoragePath;
+  const musicUrl = readString(
+    candidate.musicUrl,
+    hasStoragePathChanged && !hasExplicitMusicUrl ? '' : base?.musicUrl ?? ''
+  ).trim();
   const featuresInput = isRecord(candidate.features) ? candidate.features : {};
   const productTier = normalizeInvitationProductTier(
     candidate.productTier,
@@ -394,6 +412,18 @@ function mergeInvitationPageSeed(
     venue,
     productTier,
     features,
+    musicEnabled:
+      typeof candidate.musicEnabled === 'boolean'
+        ? candidate.musicEnabled
+        : base?.musicEnabled ?? false,
+    musicVolume: clampInvitationMusicVolume(
+      candidate.musicVolume,
+      base?.musicVolume ?? DEFAULT_INVITATION_MUSIC_VOLUME
+    ),
+    musicCategoryId: normalizedMusicSelection.musicCategoryId,
+    musicTrackId: normalizedMusicSelection.musicTrackId,
+    musicStoragePath: normalizedMusicSelection.musicStoragePath,
+    musicUrl,
     groomName: readString(candidate.groomName, groom.name).trim(),
     brideName: readString(candidate.brideName, bride.name).trim(),
     couple: {

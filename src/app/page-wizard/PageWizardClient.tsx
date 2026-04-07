@@ -1501,7 +1501,11 @@ export default function PageWizardClient({ initialSlug }: PageWizardClientProps)
                             onClick={() => void handleMoveNext()}
                             disabled={isSaving}
                           >
-                            {step.key === 'slug' ? '주소 확인' : '다음'}
+                            {step.key === 'slug'
+                              ? resolvedPersistedSlug
+                                ? '다음 단계로'
+                                : '페이지 생성'
+                              : '다음'}
                           </button>
                         )}
                       </div>

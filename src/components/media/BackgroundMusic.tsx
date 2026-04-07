@@ -1,6 +1,12 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+
+import {
+  clampInvitationMusicVolume,
+  DEFAULT_INVITATION_MUSIC_VOLUME,
+} from '@/lib/musicLibrary';
+
 import styles from './BackgroundMusic.module.css';
 
 interface BackgroundMusicProps {
@@ -12,7 +18,7 @@ interface BackgroundMusicProps {
 
 export default function BackgroundMusic({
   autoPlay = true,
-  volume = 0.3,
+  volume = DEFAULT_INVITATION_MUSIC_VOLUME,
   musicIndex: _musicIndex = 0,
   musicUrl: customMusicUrl,
 }: BackgroundMusicProps) {
@@ -20,13 +26,44 @@ export default function BackgroundMusic({
   const [isAtTop, setIsAtTop] = useState(true);
   const audioRef = useRef<HTMLAudioElement>(null);
   const hasAutoPlayedRef = useRef(false);
+  const isPlaybackTransitionRef = useRef(false);
+  const previousMusicUrlRef = useRef('');
+  const normalizedMusicUrl = customMusicUrl?.trim() ?? '';
 
-  if (!customMusicUrl) {
-    console.warn(
-      'BackgroundMusic: musicUrl prop이 필요합니다. Firebase Storage에 음악을 업로드하고 URL을 전달해주세요.'
-    );
-    return null;
-  }
+  const pauseAudio = useCallback(() => {
+    const audio = audioRef.current;
+    if (!audio) {
+      return;
+    }
+
+    audio.pause();
+    setIsPlaying(false);
+  }, []);
+
+  const playAudio = useCallback(async () => {
+    const audio = audioRef.current;
+    if (!audio || !normalizedMusicUrl) {
+      return false;
+    }
+
+    if (isPlaybackTransitionRef.current) {
+      return false;
+    }
+
+    isPlaybackTransitionRef.current = true;
+
+    try {
+      await audio.play();
+      setIsPlaying(true);
+      return true;
+    } catch (error) {
+      console.error('재생 오류:', error);
+      setIsPlaying(false);
+      return false;
+    } finally {
+      isPlaybackTransitionRef.current = false;
+    }
+  }, [normalizedMusicUrl]);
 
   useEffect(() => {
     const audio = audioRef.current;
@@ -34,80 +71,121 @@ export default function BackgroundMusic({
       return;
     }
 
-    audio.volume = volume;
+    audio.volume = clampInvitationMusicVolume(
+      volume,
+      DEFAULT_INVITATION_MUSIC_VOLUME
+    );
+  }, [volume]);
 
-    const handleScroll = () => {
-      setIsAtTop(window.scrollY === 0);
-    };
-
-    const handleFirstInteraction = async () => {
-      if (!hasAutoPlayedRef.current && autoPlay && !isPlaying) {
-        hasAutoPlayedRef.current = true;
-
-        try {
-          await audio.play();
-          setIsPlaying(true);
-        } catch {
-          setIsPlaying(false);
-        }
-      }
-    };
-
-    handleScroll();
-    window.addEventListener('scroll', handleScroll, { passive: true });
-
-    const events = ['click', 'touchstart', 'scroll', 'keydown'];
-    events.forEach((eventName) => {
-      document.addEventListener(eventName, handleFirstInteraction, { once: true });
-    });
-
-    return () => {
-      window.removeEventListener('scroll', handleScroll);
-      events.forEach((eventName) => {
-        document.removeEventListener(eventName, handleFirstInteraction);
-      });
-    };
-  }, [autoPlay, isPlaying, volume]);
-
-  const togglePlay = async () => {
+  useEffect(() => {
     const audio = audioRef.current;
     if (!audio) {
       return;
     }
 
-    try {
-      if (isPlaying) {
-        audio.pause();
-        setIsPlaying(false);
+    if (!normalizedMusicUrl) {
+      previousMusicUrlRef.current = '';
+      hasAutoPlayedRef.current = false;
+      pauseAudio();
+      return;
+    }
+
+    if (previousMusicUrlRef.current === normalizedMusicUrl) {
+      return;
+    }
+
+    previousMusicUrlRef.current = normalizedMusicUrl;
+    hasAutoPlayedRef.current = false;
+    pauseAudio();
+    audio.load();
+  }, [normalizedMusicUrl, pauseAudio]);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsAtTop(window.scrollY === 0);
+    };
+
+    handleScroll();
+    window.addEventListener('scroll', handleScroll, { passive: true });
+
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!autoPlay || !normalizedMusicUrl) {
+      return;
+    }
+
+    const handleFirstInteraction = async () => {
+      if (hasAutoPlayedRef.current) {
         return;
       }
 
-      await audio.play();
-      setIsPlaying(true);
       hasAutoPlayedRef.current = true;
-    } catch (error) {
-      console.error('재생 오류:', error);
-      setIsPlaying(false);
+
+      const played = await playAudio();
+      if (!played) {
+        hasAutoPlayedRef.current = false;
+      }
+    };
+
+    const events: Array<keyof DocumentEventMap> = [
+      'click',
+      'touchstart',
+      'scroll',
+      'keydown',
+    ];
+
+    events.forEach((eventName) => {
+      document.addEventListener(eventName, handleFirstInteraction, { once: true });
+    });
+
+    return () => {
+      events.forEach((eventName) => {
+        document.removeEventListener(eventName, handleFirstInteraction);
+      });
+    };
+  }, [autoPlay, normalizedMusicUrl, playAudio]);
+
+  const togglePlay = async () => {
+    if (!normalizedMusicUrl) {
+      return;
+    }
+
+    if (isPlaying) {
+      pauseAudio();
+      return;
+    }
+
+    const played = await playAudio();
+    if (played) {
+      hasAutoPlayedRef.current = true;
     }
   };
+
+  if (!normalizedMusicUrl) {
+    return null;
+  }
 
   return (
     <div className={styles.musicPlayer}>
       <audio
         ref={audioRef}
-        src={customMusicUrl}
+        src={normalizedMusicUrl}
         loop
         preload="auto"
-        onEnded={() => setIsPlaying(false)}
         onPause={() => setIsPlaying(false)}
         onPlay={() => setIsPlaying(true)}
         onError={() => {
-          console.error('음악 로드 실패:', customMusicUrl);
+          console.error('음악 로드 실패:', normalizedMusicUrl);
           setIsPlaying(false);
         }}
       />
 
       <button
+        type="button"
         onClick={togglePlay}
         className={`${styles.toggleButton} ${isPlaying ? styles.on : styles.off}`}
         aria-label={isPlaying ? 'BGM OFF' : 'BGM ON'}

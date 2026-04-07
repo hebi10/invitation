@@ -5,6 +5,11 @@ import type {
   InvitationScheduleDetail,
   PersonInfo,
 } from '@/types/invitationPage';
+import {
+  clampInvitationMusicVolume,
+  DEFAULT_INVITATION_MUSIC_VOLUME,
+  normalizeInvitationMusicSelection,
+} from '@/lib/musicLibrary';
 
 export type NoticeTone = 'success' | 'error' | 'neutral';
 export type GuideKind = 'venueGuide' | 'wreathGuide';
@@ -92,6 +97,11 @@ export function normalizeFormConfig(config: InvitationPageSeed): InvitationPageS
   const greetingAuthor =
     nextConfig.pageData?.greetingAuthor ??
     `${nextConfig.couple.groom.name} · ${nextConfig.couple.bride.name}`;
+  const normalizedMusicSelection = normalizeInvitationMusicSelection({
+    categoryId: nextConfig.musicCategoryId,
+    trackId: nextConfig.musicTrackId,
+    storagePath: nextConfig.musicStoragePath,
+  });
   const ceremony = normalizeScheduleDetail(nextConfig.pageData?.ceremony, {
     time: nextConfig.pageData?.ceremonyTime,
     location: nextConfig.pageData?.ceremonyAddress ?? venueName,
@@ -102,6 +112,16 @@ export function normalizeFormConfig(config: InvitationPageSeed): InvitationPageS
     ...nextConfig,
     groomName: nextConfig.couple.groom.name,
     brideName: nextConfig.couple.bride.name,
+    musicEnabled:
+      typeof nextConfig.musicEnabled === 'boolean' ? nextConfig.musicEnabled : false,
+    musicVolume: clampInvitationMusicVolume(
+      nextConfig.musicVolume,
+      DEFAULT_INVITATION_MUSIC_VOLUME
+    ),
+    musicCategoryId: normalizedMusicSelection.musicCategoryId,
+    musicTrackId: normalizedMusicSelection.musicTrackId,
+    musicStoragePath: normalizedMusicSelection.musicStoragePath,
+    musicUrl: (nextConfig.musicUrl ?? '').trim(),
     metadata: {
       ...nextConfig.metadata,
       keywords: [...(nextConfig.metadata.keywords ?? [])],
@@ -164,6 +184,11 @@ export function prepareConfigForSave(
   slug: string
 ): InvitationPageSeed {
   const nextConfig = normalizeFormConfig(config);
+  const normalizedMusicSelection = normalizeInvitationMusicSelection({
+    categoryId: nextConfig.musicCategoryId,
+    trackId: nextConfig.musicTrackId,
+    storagePath: nextConfig.musicStoragePath,
+  });
   const venueGuide =
     nextConfig.pageData?.venueGuide?.filter(
       (item) => item.title.trim() || item.content.trim()
@@ -210,6 +235,15 @@ export function prepareConfigForSave(
     slug,
     groomName: nextConfig.couple.groom.name.trim(),
     brideName: nextConfig.couple.bride.name.trim(),
+    musicEnabled: Boolean(nextConfig.musicEnabled),
+    musicVolume: clampInvitationMusicVolume(
+      nextConfig.musicVolume,
+      DEFAULT_INVITATION_MUSIC_VOLUME
+    ),
+    musicCategoryId: normalizedMusicSelection.musicCategoryId,
+    musicTrackId: normalizedMusicSelection.musicTrackId,
+    musicStoragePath: normalizedMusicSelection.musicStoragePath,
+    musicUrl: (nextConfig.musicUrl ?? '').trim(),
     metadata: {
       ...nextConfig.metadata,
       keywords: nextConfig.metadata.keywords

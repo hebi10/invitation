@@ -1,7 +1,7 @@
 'use client';
 
 import type { RefObject } from 'react';
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import Image from 'next/image';
 import { useScrollAnimation } from '@/hooks';
 
@@ -40,7 +40,9 @@ export default function GalleryGridShared({
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const [visibleCount, setVisibleCount] = useState(6);
   const [loadedImages, setLoadedImages] = useState<Set<string>>(new Set());
-  const [isTransitioning, setIsTransitioning] = useState(false);
+  const [loadedPopupImages, setLoadedPopupImages] = useState<Set<string>>(new Set());
+  const [isPopupImageLoading, setIsPopupImageLoading] = useState(false);
+  const [popupImageError, setPopupImageError] = useState<string | null>(null);
 
   const shouldRenderImages = isVisible || selectedIndex !== null;
   const displayImages = useMemo(() => images.slice(0, visibleCount), [images, visibleCount]);
@@ -59,9 +61,52 @@ export default function GalleryGridShared({
       return;
     }
 
-    const targets = preloadAllImages ? images.slice(0, Math.min(visibleCount + 2, images.length)) : displayImages.slice(0, 2);
+    const targetCount = preloadAllImages
+      ? Math.min(visibleCount + 3, images.length)
+      : Math.min(displayImages.length, 4);
+    const targets = preloadAllImages ? images.slice(0, targetCount) : displayImages.slice(0, targetCount);
     targets.forEach(preloadSingleImage);
   }, [displayImages, images, preloadAllImages, shouldRenderImages, visibleCount]);
+
+  useEffect(() => {
+    if (!selectedImage || selectedIndex === null) {
+      return;
+    }
+
+    setPopupImageError(null);
+    setIsPopupImageLoading(!loadedPopupImages.has(selectedImage));
+
+    preloadSingleImage(selectedImage);
+    preloadSingleImage(images[selectedIndex - 1]);
+    preloadSingleImage(images[selectedIndex + 1]);
+    preloadSingleImage(images[selectedIndex + 2]);
+  }, [images, loadedPopupImages, selectedImage, selectedIndex]);
+
+  const closePopup = useCallback(() => {
+    setSelectedIndex(null);
+    setIsPopupImageLoading(false);
+    setPopupImageError(null);
+  }, []);
+
+  const goToPrevImage = useCallback(() => {
+    setSelectedIndex((current) => {
+      if (current === null || current <= 0) {
+        return current;
+      }
+
+      return current - 1;
+    });
+  }, []);
+
+  const goToNextImage = useCallback(() => {
+    setSelectedIndex((current) => {
+      if (current === null || current >= images.length - 1) {
+        return current;
+      }
+
+      return current + 1;
+    });
+  }, [images.length]);
 
   useEffect(() => {
     if (selectedIndex === null) {
@@ -93,7 +138,7 @@ export default function GalleryGridShared({
       document.removeEventListener('keydown', handleKeyDown);
       document.body.classList.remove('no-scroll');
     };
-  }, [selectedIndex, images]);
+  }, [selectedIndex, images, closePopup, goToPrevImage, goToNextImage]);
 
   useEffect(() => {
     return () => {
@@ -103,36 +148,8 @@ export default function GalleryGridShared({
 
   const openPopup = (index: number) => {
     setSelectedIndex(index);
-    setIsTransitioning(false);
-  };
-
-  const closePopup = () => {
-    setSelectedIndex(null);
-    setIsTransitioning(false);
-  };
-
-  const goToPrevImage = () => {
-    if (selectedIndex === null || selectedIndex <= 0 || isTransitioning) {
-      return;
-    }
-
-    setIsTransitioning(true);
-    window.setTimeout(() => {
-      setSelectedIndex((current) => (current === null ? current : current - 1));
-      setIsTransitioning(false);
-    }, 120);
-  };
-
-  const goToNextImage = () => {
-    if (selectedIndex === null || selectedIndex >= images.length - 1 || isTransitioning) {
-      return;
-    }
-
-    setIsTransitioning(true);
-    window.setTimeout(() => {
-      setSelectedIndex((current) => (current === null ? current : current + 1));
-      setIsTransitioning(false);
-    }, 120);
+    setPopupImageError(null);
+    setIsPopupImageLoading(!loadedPopupImages.has(images[index]));
   };
 
   return (
@@ -152,8 +169,16 @@ export default function GalleryGridShared({
                     fill
                     sizes="(max-width: 700px) 50vw, 33vw"
                     quality={60}
-                    loading={index < 2 ? 'eager' : 'lazy'}
+                    loading={index < 3 ? 'eager' : 'lazy'}
                     onClick={() => openPopup(index)}
+                    onMouseEnter={() => {
+                      preloadSingleImage(images[index]);
+                      preloadSingleImage(images[index + 1]);
+                    }}
+                    onTouchStart={() => {
+                      preloadSingleImage(images[index]);
+                      preloadSingleImage(images[index + 1]);
+                    }}
                     onLoad={() => setLoadedImages((current) => new Set([...current, image]))}
                     style={{
                       objectFit: 'cover',
@@ -217,18 +242,66 @@ export default function GalleryGridShared({
             </button>
 
             <div className={styles.popupImageWrapper}>
+              {isPopupImageLoading ? (
+                <div
+                  style={{
+                    position: 'absolute',
+                    inset: 0,
+                    display: 'grid',
+                    placeItems: 'center',
+                    background: 'rgba(20, 20, 20, 0.75)',
+                    borderRadius: '12px',
+                    zIndex: 2,
+                  }}
+                >
+                  <div style={{ display: 'grid', gap: '0.65rem', justifyItems: 'center' }}>
+                    <div className={styles.loadingSpinner}></div>
+                    <span style={{ color: '#f3f4f6', fontSize: '0.9rem' }}>이미지 불러오는 중...</span>
+                  </div>
+                </div>
+              ) : null}
+
+              {popupImageError ? (
+                <div
+                  style={{
+                    position: 'absolute',
+                    inset: 0,
+                    display: 'grid',
+                    placeItems: 'center',
+                    background: 'rgba(20, 20, 20, 0.75)',
+                    borderRadius: '12px',
+                    zIndex: 2,
+                    color: '#f3f4f6',
+                    fontSize: '0.95rem',
+                  }}
+                >
+                  이미지 불러오기에 실패했습니다.
+                </div>
+              ) : null}
+
               <Image
+                key={selectedImage}
                 src={selectedImage}
                 alt="선택한 이미지"
                 fill
                 sizes="100vw"
-                quality={80}
+                quality={75}
                 priority
+                fetchPriority="high"
                 className={styles.popupImage}
+                onLoadingComplete={() => {
+                  setLoadedPopupImages((current) => new Set([...current, selectedImage]));
+                  setIsPopupImageLoading(false);
+                  setPopupImageError(null);
+                }}
+                onError={() => {
+                  setIsPopupImageLoading(false);
+                  setPopupImageError('load-failed');
+                }}
                 style={{
                   objectFit: 'contain',
-                  opacity: isTransitioning ? 0 : 1,
-                  transition: 'opacity 0.16s ease',
+                  opacity: isPopupImageLoading || Boolean(popupImageError) ? 0 : 1,
+                  transition: 'opacity 0.18s ease',
                 }}
               />
             </div>
@@ -237,7 +310,7 @@ export default function GalleryGridShared({
               <button
                 className={`${styles.navArrow} ${styles.prevArrow}`}
                 onClick={goToPrevImage}
-                disabled={isTransitioning || selectedIndex === null || selectedIndex <= 0}
+                disabled={selectedIndex === null || selectedIndex <= 0}
                 type="button"
               >
                 ‹
@@ -250,7 +323,7 @@ export default function GalleryGridShared({
               <button
                 className={`${styles.navArrow} ${styles.nextArrow}`}
                 onClick={goToNextImage}
-                disabled={isTransitioning || selectedIndex === null || selectedIndex >= images.length - 1}
+                disabled={selectedIndex === null || selectedIndex >= images.length - 1}
                 type="button"
               >
                 ›

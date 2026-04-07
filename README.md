@@ -352,8 +352,8 @@ ENABLE_DEV_TOOLS=false
 
 주의:
 
-- 현재 관리자 로그인은 `NEXT_PUBLIC_ADMIN_PASSWORD` 같은 env를 쓰지 않습니다.
-- 관리자 인증은 Firebase Auth + `admin-users/{uid}` 기반입니다.
+- 관리자 로그인은 Firebase Auth 계정 + `admin-users/{uid}` 권한 문서로 제어됩니다.
+- 클라이언트 공개 env(`NEXT_PUBLIC_*`)에 관리자 비밀번호를 두지 않습니다.
 
 ### 서버 / 스크립트용 env
 

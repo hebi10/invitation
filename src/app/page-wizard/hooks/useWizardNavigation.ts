@@ -57,13 +57,28 @@ export function useWizardNavigation({
     }
 
     if (activeStep.key === 'slug') {
-      const savedSlug = await persistDraft({
-        publish: false,
-        successMessage: '초안을 만들었습니다. 다음 단계로 이동합니다.',
-      });
+      let nextSlug = resolvedPersistedSlug;
 
-      if (!savedSlug) {
-        return;
+      if (!nextSlug) {
+        const savedSlug = await persistDraft({
+          publish: false,
+          successMessage: '페이지를 생성했습니다. 다음 단계로 이동합니다.',
+        });
+
+        if (!savedSlug) {
+          return;
+        }
+
+        nextSlug = savedSlug;
+      }
+
+      if (nextSlug && typeof window !== 'undefined') {
+        const nextPath = `/page-wizard/${encodeURIComponent(nextSlug)}`;
+        const nextUrl = `${nextPath}${window.location.search}${window.location.hash}`;
+
+        if (window.location.pathname !== nextPath) {
+          window.history.replaceState(null, '', nextUrl);
+        }
       }
     } else if (activeStep.key !== 'theme' && activeStep.key !== 'final') {
       const savedSlug = await persistDraft({ publish: false, silent: true });

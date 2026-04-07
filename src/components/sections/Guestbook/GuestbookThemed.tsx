@@ -337,7 +337,7 @@ export default function GuestbookThemed({
         <div
           style={{
             display: 'flex',
-            justifyContent: 'space-between',
+            justifyContent: 'center',
             alignItems: 'center',
             gap: '0.75rem',
             flexWrap: 'wrap',

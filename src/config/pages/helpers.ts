@@ -6,6 +6,12 @@ import {
   type InvitationVariantKey,
 } from '@/lib/invitationVariants';
 import {
+  clampInvitationMusicVolume,
+  DEFAULT_INVITATION_MUSIC_VOLUME,
+  findFirstActiveInvitationMusicTrack,
+  normalizeInvitationMusicSelection,
+} from '@/lib/musicLibrary';
+import {
   DEFAULT_INVITATION_THEME,
   INVITATION_THEME_REGISTRY,
 } from '@/lib/invitationThemes';
@@ -107,12 +113,27 @@ export function createWeddingPageConfig(input: WeddingPageConfigInput): Invitati
   const brideName = input.couple.bride.name;
   const displayName = input.displayName ?? createWeddingDisplayName(input.couple);
   const metadataTitle = input.metadata.title ?? `${displayName} 결혼식에 초대합니다`;
+  const defaultMusicTrack = findFirstActiveInvitationMusicTrack();
+  const normalizedMusicSelection = normalizeInvitationMusicSelection({
+    categoryId: input.musicCategoryId ?? defaultMusicTrack?.categoryId,
+    trackId: input.musicTrackId ?? defaultMusicTrack?.id,
+    storagePath: input.musicStoragePath ?? defaultMusicTrack?.storagePath,
+  });
 
   return {
     ...input,
     displayName,
     groomName,
     brideName,
+    musicEnabled: typeof input.musicEnabled === 'boolean' ? input.musicEnabled : false,
+    musicVolume: clampInvitationMusicVolume(
+      input.musicVolume,
+      DEFAULT_INVITATION_MUSIC_VOLUME
+    ),
+    musicCategoryId: normalizedMusicSelection.musicCategoryId,
+    musicTrackId: normalizedMusicSelection.musicTrackId,
+    musicStoragePath: normalizedMusicSelection.musicStoragePath,
+    musicUrl: input.musicUrl ?? '',
     couple: input.couple,
     metadata: {
       title: metadataTitle,

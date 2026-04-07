@@ -13,7 +13,17 @@ import {
 import { resolveInvitationFeatures } from '@/lib/invitationProducts';
 import { toUserFacingKoreanErrorMessage } from '@/lib/userFacingErrorMessage';
 import {
+  DEFAULT_INVITATION_MUSIC_VOLUME,
+  clampInvitationMusicVolume,
+  findFirstActiveInvitationMusicTrack,
+  findInvitationMusicTrackById,
+  getInvitationMusicTracksByCategory,
+  INVITATION_MUSIC_LIBRARY,
+  normalizeInvitationMusicSelection,
+} from '@/lib/musicLibrary';
+import {
   getEditableImageUploadHint,
+  getStorageDownloadUrl,
   uploadClientEditorImage,
   uploadPageEditorImage,
   validateEditableImageBatch,
@@ -422,6 +432,21 @@ function buildStepReviews(formState: InvitationPageSeed | null): Record<EditorSt
   ) {
     galleryWarnings.push('갤러리 이미지 주소 형식을 다시 확인해 주세요.');
   }
+  if (formState.musicEnabled) {
+    const selectedTrack = findInvitationMusicTrackById(formState.musicTrackId);
+    if (!hasText(formState.musicStoragePath) && !hasText(formState.musicUrl)) {
+      galleryWarnings.push('배경음악을 켠 경우 사용할 곡을 먼저 선택해 주세요.');
+    }
+    if (hasText(formState.musicTrackId) && !selectedTrack) {
+      galleryWarnings.push('선택한 배경음악이 라이브러리에 없습니다. 곡을 다시 선택해 주세요.');
+    }
+  }
+  if (
+    typeof formState.musicVolume === 'number' &&
+    (formState.musicVolume < 0 || formState.musicVolume > 1)
+  ) {
+    galleryWarnings.push('배경음악 볼륨은 0에서 1 사이 값으로 저장됩니다.');
+  }
 
   const venueWarnings: string[] = [];
   if (!isValidPhone(formState.pageData?.ceremonyContact)) {
@@ -828,6 +853,43 @@ export default function PageEditorClient({
         : firstInvalidRequiredStep ?? 'basic'
     );
   }, [formState, firstInvalidRequiredStep]);
+
+  useEffect(() => {
+    if (!formState?.musicStoragePath?.trim() || formState.musicUrl?.trim()) {
+      return;
+    }
+
+    const musicStoragePath = formState.musicStoragePath.trim();
+    let cancelled = false;
+
+    const resolveMusicUrl = async () => {
+      const downloadUrl = await getStorageDownloadUrl(musicStoragePath);
+      if (!downloadUrl || cancelled) {
+        return;
+      }
+
+      setFormState((current) => {
+        if (!current || current.musicStoragePath?.trim() !== musicStoragePath) {
+          return current;
+        }
+
+        if (current.musicUrl?.trim()) {
+          return current;
+        }
+
+        return {
+          ...current,
+          musicUrl: downloadUrl,
+        };
+      });
+    };
+
+    void resolveMusicUrl();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [formState?.musicStoragePath, formState?.musicUrl]);
 
   useEffect(() => {
     if (
@@ -1300,6 +1362,66 @@ export default function PageEditorClient({
       draft.pageData.kakaoMap[field] = parseNumericInput(
         value,
         draft.pageData.kakaoMap[field] ?? 0
+      );
+    });
+  };
+
+  const handleMusicEnabledChange = (enabled: boolean) => {
+    updateForm((draft) => {
+      const defaultTrack = findFirstActiveInvitationMusicTrack(draft.musicCategoryId);
+      const normalizedSelection = normalizeInvitationMusicSelection({
+        categoryId: draft.musicCategoryId ?? defaultTrack?.categoryId,
+        trackId: draft.musicTrackId ?? defaultTrack?.id,
+        storagePath: draft.musicStoragePath ?? defaultTrack?.storagePath,
+      });
+
+      draft.musicEnabled = enabled;
+      draft.musicVolume = clampInvitationMusicVolume(
+        draft.musicVolume,
+        DEFAULT_INVITATION_MUSIC_VOLUME
+      );
+      draft.musicCategoryId = normalizedSelection.musicCategoryId;
+      draft.musicTrackId = normalizedSelection.musicTrackId;
+      draft.musicStoragePath = normalizedSelection.musicStoragePath;
+    });
+  };
+
+  const handleMusicCategoryChange = (categoryId: string) => {
+    updateForm((draft) => {
+      const normalizedSelection = normalizeInvitationMusicSelection({
+        categoryId,
+        trackId: '',
+        storagePath: '',
+      });
+
+      draft.musicCategoryId = normalizedSelection.musicCategoryId;
+      draft.musicTrackId = normalizedSelection.musicTrackId;
+      draft.musicStoragePath = normalizedSelection.musicStoragePath;
+      draft.musicUrl = '';
+    });
+  };
+
+  const handleMusicTrackChange = (trackId: string) => {
+    updateForm((draft) => {
+      const normalizedSelection = normalizeInvitationMusicSelection({
+        categoryId: draft.musicCategoryId,
+        trackId,
+        storagePath: '',
+      });
+
+      draft.musicCategoryId = normalizedSelection.musicCategoryId;
+      draft.musicTrackId = normalizedSelection.musicTrackId;
+      draft.musicStoragePath = normalizedSelection.musicStoragePath;
+      draft.musicUrl = '';
+    });
+  };
+
+  const handleMusicVolumeChange = (value: string) => {
+    updateForm((draft) => {
+      const parsedVolume = Number(value);
+      draft.musicVolume = clampInvitationMusicVolume(
+        Number.isFinite(parsedVolume) ? parsedVolume : draft.musicVolume,
+        DEFAULT_INVITATION_MUSIC_VOLUME
       );
     });
   };
@@ -2985,6 +3107,23 @@ export default function PageEditorClient({
     const canAddGalleryField = galleryImages.length < maxGalleryImages;
     const isUploadingCover = uploadingField === 'wedding';
     const isUploadingGallery = uploadingField === 'gallery';
+    const defaultMusicTrack = findFirstActiveInvitationMusicTrack();
+    const normalizedMusicSelection = normalizeInvitationMusicSelection({
+      categoryId: formState.musicCategoryId ?? defaultMusicTrack?.categoryId,
+      trackId: formState.musicTrackId ?? defaultMusicTrack?.id,
+      storagePath: formState.musicStoragePath ?? defaultMusicTrack?.storagePath,
+    });
+    const musicCategoryId = normalizedMusicSelection.musicCategoryId;
+    const musicTracks = getInvitationMusicTracksByCategory(musicCategoryId);
+    const selectedMusicTrack =
+      findInvitationMusicTrackById(normalizedMusicSelection.musicTrackId) ??
+      musicTracks[0] ??
+      defaultMusicTrack;
+    const previewMusicUrl = formState.musicUrl?.trim() ?? '';
+    const musicVolume = clampInvitationMusicVolume(
+      formState.musicVolume,
+      DEFAULT_INVITATION_MUSIC_VOLUME
+    );
 
     return (
       <section className={styles.section}>
@@ -3173,6 +3312,100 @@ export default function PageEditorClient({
               </div>
             )}
           </div>
+        </div>
+
+        <div className={styles.subCard}>
+          <div className={styles.subCardHeader}>
+            <div>
+              <h3 className={styles.subCardTitle}>배경음악</h3>
+              <p className={styles.subCardDescription}>
+                방문자가 페이지를 열었을 때 재생할 곡을 선택합니다.
+              </p>
+              <p className={styles.countText}>
+                선택된 곡: {selectedMusicTrack ? `${selectedMusicTrack.title} · ${selectedMusicTrack.artist}` : '없음'}
+              </p>
+            </div>
+          </div>
+
+          <div className={styles.fieldGrid}>
+            <label className={`${styles.field} ${styles.fieldWide} ${styles.switch}`}>
+              <input
+                type="checkbox"
+                checked={Boolean(formState.musicEnabled)}
+                onChange={(event) => handleMusicEnabledChange(event.target.checked)}
+              />
+              <span>배경음악 사용</span>
+            </label>
+
+            <label className={styles.field}>
+              {renderFieldMeta('음악 카테고리', 'optional')}
+              <select
+                className={styles.input}
+                value={musicCategoryId}
+                onChange={(event) => handleMusicCategoryChange(event.target.value)}
+              >
+                {INVITATION_MUSIC_LIBRARY.map((category) => (
+                  <option key={category.id} value={category.id}>
+                    {category.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <label className={`${styles.field} ${styles.fieldWide}`}>
+              {renderFieldMeta('곡 선택', 'optional')}
+              <select
+                className={styles.input}
+                value={selectedMusicTrack?.id ?? ''}
+                onChange={(event) => handleMusicTrackChange(event.target.value)}
+                disabled={musicTracks.length === 0}
+              >
+                {musicTracks.length > 0 ? (
+                  musicTracks.map((track) => (
+                    <option key={track.id} value={track.id}>
+                      {track.title} · {track.artist}
+                    </option>
+                  ))
+                ) : (
+                  <option value="">등록된 곡이 없습니다.</option>
+                )}
+              </select>
+            </label>
+
+            <label className={`${styles.field} ${styles.fieldWide}`}>
+              {renderFieldMeta('볼륨', 'optional', '0은 음소거, 1은 최대 음량입니다.')}
+              <div className={styles.inlineField}>
+                <input
+                  className={styles.input}
+                  type="range"
+                  min={0}
+                  max={1}
+                  step={0.05}
+                  value={musicVolume}
+                  onChange={(event) => handleMusicVolumeChange(event.target.value)}
+                />
+                <span className={styles.countText}>{Math.round(musicVolume * 100)}%</span>
+              </div>
+            </label>
+          </div>
+
+          <div className={styles.summaryHighlightCard}>
+            <span className={styles.summaryHighlightLabel}>선택된 스토리지 경로</span>
+            <strong className={styles.summaryHighlightValue}>
+              {normalizedMusicSelection.musicStoragePath || '설정되지 않음'}
+            </strong>
+            <p className={styles.summaryHighlightText}>
+              직접 URL 입력은 사용하지 않고, 곡 선택에 맞는 Storage 경로를 저장합니다.
+            </p>
+          </div>
+
+          {previewMusicUrl ? (
+            <audio controls preload="none" src={previewMusicUrl} style={{ width: '100%' }} />
+          ) : (
+            <div className={styles.emptyCard}>
+              선택한 곡의 미리듣기 URL을 준비하는 중입니다.
+            </div>
+          )}
         </div>
 
         <div className={styles.guideListCard}>

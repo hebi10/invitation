@@ -4,10 +4,15 @@ import { useEffect } from 'react';
 import type { ComponentType } from 'react';
 
 import { AdminProvider } from '@/contexts';
+import { BackgroundMusic } from '@/components';
 import {
   type InvitationThemeKey,
 } from '@/lib/invitationThemes';
 import { resolveInvitationFeatures } from '@/lib/invitationProducts';
+import {
+  clampInvitationMusicVolume,
+  DEFAULT_INVITATION_MUSIC_VOLUME,
+} from '@/lib/musicLibrary';
 import { AccessDeniedPage } from '@/utils';
 
 import { useWeddingInvitationState } from './weddingPageState';
@@ -181,6 +186,10 @@ function WeddingInvitationPageBody(options: WeddingInvitationRouteOptions) {
   const readyState: WeddingPageReadyState = state;
   const ThemeRenderer = themeRendererRegistry[options.theme];
   const isLoaderVisible = readyState.isLoading || readyState.imagesLoading;
+  const shouldRenderMusic =
+    !isLoaderVisible &&
+    readyState.pageConfig.musicEnabled === true &&
+    Boolean(readyState.pageConfig.musicUrl?.trim());
   const shareFeatures = resolveInvitationFeatures(
     readyState.pageConfig.productTier,
     readyState.pageConfig.features
@@ -208,6 +217,16 @@ function WeddingInvitationPageBody(options: WeddingInvitationRouteOptions) {
         </div>
       ) : null}
       <ThemeRenderer state={readyState} options={options} />
+      {shouldRenderMusic ? (
+        <BackgroundMusic
+          autoPlay
+          volume={clampInvitationMusicVolume(
+            readyState.pageConfig.musicVolume,
+            DEFAULT_INVITATION_MUSIC_VOLUME
+          )}
+          musicUrl={readyState.pageConfig.musicUrl}
+        />
+      ) : null}
       {!isLoaderVisible
         ? themeDefinition.shareContainer ? (
             <div

@@ -22,6 +22,7 @@ interface UploadImageOptions {
 
 const USE_FIREBASE = process.env.NEXT_PUBLIC_USE_FIREBASE === 'true';
 const imageCache = new Map<string, UploadedImage[]>();
+const storageDownloadUrlCache = new Map<string, string>();
 const CACHE_DURATION = 5 * 60 * 1000;
 
 let firebaseModules: {
@@ -69,6 +70,50 @@ const initFirebase = async () => {
     console.warn('Firebase initialization failed:', error);
   }
 };
+
+export async function getStorageDownloadUrl(storagePath: string): Promise<string | null> {
+  const normalizedStoragePath = storagePath.trim();
+
+  if (!normalizedStoragePath) {
+    return null;
+  }
+
+  if (
+    normalizedStoragePath.startsWith('http://') ||
+    normalizedStoragePath.startsWith('https://') ||
+    normalizedStoragePath.startsWith('/')
+  ) {
+    return normalizedStoragePath;
+  }
+
+  const cached = storageDownloadUrlCache.get(normalizedStoragePath);
+  if (cached) {
+    return cached;
+  }
+
+  if (!USE_FIREBASE) {
+    return null;
+  }
+
+  await initFirebase();
+
+  if (!firebaseModules?.storage) {
+    return null;
+  }
+
+  try {
+    const storageRef = firebaseModules.ref(
+      firebaseModules.storage,
+      normalizedStoragePath
+    );
+    const downloadUrl = await firebaseModules.getDownloadURL(storageRef);
+    storageDownloadUrlCache.set(normalizedStoragePath, downloadUrl);
+    return downloadUrl;
+  } catch (error) {
+    console.warn('[imageService] failed to resolve storage path', normalizedStoragePath, error);
+    return null;
+  }
+}
 
 function sanitizeFileNameSegment(value: string) {
   return value
