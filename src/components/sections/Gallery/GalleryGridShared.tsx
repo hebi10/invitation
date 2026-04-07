@@ -51,6 +51,7 @@ export default function GalleryGridShared({
   const selectedImage = selectedIndex === null ? null : images[selectedIndex];
   const activeIndex = selectedIndex ?? 0;
   const hasImages = images.length > 0;
+  const isPopupBusy = isPopupImageLoading;
 
   if (!hasImages && !imagesLoading) {
     return null;
@@ -241,7 +242,11 @@ export default function GalleryGridShared({
               ×
             </button>
 
-            <div className={styles.popupImageWrapper}>
+            <div
+              className={`${styles.popupImageWrapper} ${
+                isPopupBusy ? styles.popupImageWrapperLoading : ''
+              }`}
+            >
               {isPopupImageLoading ? (
                 <div
                   style={{
@@ -256,7 +261,9 @@ export default function GalleryGridShared({
                 >
                   <div style={{ display: 'grid', gap: '0.65rem', justifyItems: 'center' }}>
                     <div className={styles.loadingSpinner}></div>
-                    <span style={{ color: '#f3f4f6', fontSize: '0.9rem' }}>이미지 불러오는 중...</span>
+                    <span style={{ color: '#f3f4f6', fontSize: '0.9rem', whiteSpace: 'nowrap' }}>
+                      이미지 불러오는 중...
+                    </span>
                   </div>
                 </div>
               ) : null}
@@ -283,8 +290,9 @@ export default function GalleryGridShared({
                 key={selectedImage}
                 src={selectedImage}
                 alt="선택한 이미지"
-                fill
-                sizes="100vw"
+                width={1600}
+                height={1067}
+                sizes="(max-width: 767px) 92vw, 86vw"
                 quality={75}
                 priority
                 fetchPriority="high"
@@ -300,13 +308,21 @@ export default function GalleryGridShared({
                 }}
                 style={{
                   objectFit: 'contain',
+                  width: 'auto',
+                  height: 'auto',
+                  maxWidth: '92vw',
+                  maxHeight: '78dvh',
                   opacity: isPopupImageLoading || Boolean(popupImageError) ? 0 : 1,
                   transition: 'opacity 0.18s ease',
                 }}
               />
             </div>
 
-            <div className={styles.navigationBar}>
+            <div
+              className={`${styles.navigationBar} ${
+                isPopupBusy ? styles.navigationBarHidden : ''
+              }`}
+            >
               <button
                 className={`${styles.navArrow} ${styles.prevArrow}`}
                 onClick={goToPrevImage}

@@ -20,6 +20,7 @@ import {
   getInvitationMusicTracksByCategory,
   INVITATION_MUSIC_LIBRARY,
   normalizeInvitationMusicSelection,
+  setInvitationMusicLibrary,
 } from '@/lib/musicLibrary';
 import {
   getEditableImageUploadHint,
@@ -42,6 +43,7 @@ import {
   saveClientEditorConfig,
   setClientEditorPublishedState,
 } from '@/services/clientEditorSession';
+import { getInvitationMusicLibraryFromStorage } from '@/services/musicService';
 import type { InvitationPageSeed, InvitationThemeKey } from '@/types/invitationPage';
 
 import {
@@ -765,6 +767,31 @@ export default function PageEditorClient({
     setLastSavedAt(config.lastSavedAt);
     setSaveState('idle');
   };
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadMusicLibrary = async () => {
+      const storageLibrary = await getInvitationMusicLibraryFromStorage();
+
+      if (cancelled || storageLibrary.length === 0) {
+        return;
+      }
+
+      const applied = setInvitationMusicLibrary(storageLibrary);
+      if (!applied || cancelled) {
+        return;
+      }
+
+      setFormState((current) => (current ? { ...current } : current));
+    };
+
+    void loadMusicLibrary();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   useEffect(() => {
     if (isAdminLoggedIn) {

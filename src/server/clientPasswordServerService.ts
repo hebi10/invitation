@@ -3,6 +3,7 @@ import 'server-only';
 import { FieldValue } from 'firebase-admin/firestore';
 
 import { createClientPasswordHashRecord, verifyClientPasswordHashRecord } from '@/lib/clientPasswordCrypto';
+import { getServerInvitationPageBySlug } from '@/server/invitationPageServerService';
 
 import { getServerFirestore } from './firebaseAdmin';
 
@@ -18,6 +19,7 @@ export interface ServerClientPasswordRecord {
 }
 
 const CLIENT_PASSWORDS_COLLECTION = 'client-passwords';
+const DEFAULT_INITIAL_CLIENT_PASSWORD = '12344';
 
 function toDate(value: unknown) {
   if (
@@ -103,6 +105,54 @@ export async function getServerClientPasswordRecord(pageSlug: string) {
   return normalizePasswordRecord(normalizedPageSlug, snapshot.data() ?? {});
 }
 
+async function ensureServerClientPasswordRecord(pageSlug: string) {
+  const normalizedPageSlug = pageSlug.trim();
+  if (!normalizedPageSlug) {
+    return null;
+  }
+
+  const existing = await getServerClientPasswordRecord(normalizedPageSlug);
+  if (existing) {
+    return existing;
+  }
+
+  const db = getServerFirestore();
+  if (!db) {
+    return null;
+  }
+
+  const page = await getServerInvitationPageBySlug(normalizedPageSlug, {
+    includePrivate: true,
+  });
+
+  if (!page) {
+    return null;
+  }
+
+  const passwordHashRecord = await createClientPasswordHashRecord(
+    DEFAULT_INITIAL_CLIENT_PASSWORD
+  );
+  const now = new Date();
+
+  await db
+    .collection(CLIENT_PASSWORDS_COLLECTION)
+    .doc(normalizedPageSlug)
+    .set(
+      {
+        pageSlug: normalizedPageSlug,
+        ...passwordHashRecord,
+        passwordVersion: 1,
+        createdAt: now,
+        updatedAt: now,
+        password: FieldValue.delete(),
+        editorTokenHash: FieldValue.delete(),
+      },
+      { merge: true }
+    );
+
+  return getServerClientPasswordRecord(normalizedPageSlug);
+}
+
 async function upgradeLegacyPasswordRecord(
   pageSlug: string,
   record: ServerClientPasswordRecord,
@@ -144,7 +194,9 @@ export async function verifyServerClientPassword(pageSlug: string, password: str
     } as const;
   }
 
-  const record = await getServerClientPasswordRecord(normalizedPageSlug);
+  const record =
+    (await getServerClientPasswordRecord(normalizedPageSlug)) ??
+    (await ensureServerClientPasswordRecord(normalizedPageSlug));
   if (!record) {
     return {
       verified: false,

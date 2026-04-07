@@ -2,7 +2,7 @@ export const DEFAULT_INVITATION_MUSIC_VOLUME = 0.35;
 export const INVITATION_MUSIC_VOLUME_MIN = 0;
 export const INVITATION_MUSIC_VOLUME_MAX = 1;
 
-export type InvitationMusicCategoryId = 'romantic' | 'classic' | 'cinematic';
+export type InvitationMusicCategoryId = string;
 
 export interface InvitationMusicTrack {
   id: string;
@@ -88,19 +88,76 @@ const musicLibrarySource: InvitationMusicCategory[] = [
   },
 ];
 
-export const INVITATION_MUSIC_LIBRARY: InvitationMusicCategory[] =
-  musicLibrarySource.map((category) => ({
+function cloneMusicLibrary(source: InvitationMusicCategory[]) {
+  return source.map((category) => ({
     ...category,
-    tracks: [...category.tracks],
+    tracks: category.tracks.map((track) => ({
+      ...track,
+      categoryId: track.categoryId || category.id,
+    })),
   }));
+}
 
-const activeTracks = INVITATION_MUSIC_LIBRARY.flatMap((category) =>
-  category.tracks.filter((track) => track.active)
-);
+function buildMusicTrackIndex(library: InvitationMusicCategory[]) {
+  const activeTrackList = library.flatMap((category) =>
+    category.tracks.filter((track) => track.active)
+  );
 
-const tracksById = new Map<string, InvitationMusicTrack>(
-  activeTracks.map((track) => [track.id, track])
-);
+  return {
+    activeTrackList,
+    tracksByIdMap: new Map<string, InvitationMusicTrack>(
+      activeTrackList.map((track) => [track.id, track])
+    ),
+  };
+}
+
+const defaultMusicLibrary = cloneMusicLibrary(musicLibrarySource);
+
+export let INVITATION_MUSIC_LIBRARY: InvitationMusicCategory[] =
+  cloneMusicLibrary(defaultMusicLibrary);
+
+let { activeTrackList: activeTracks, tracksByIdMap: tracksById } =
+  buildMusicTrackIndex(INVITATION_MUSIC_LIBRARY);
+
+function applyInvitationMusicLibrary(library: InvitationMusicCategory[]) {
+  INVITATION_MUSIC_LIBRARY = cloneMusicLibrary(library);
+
+  const nextIndex = buildMusicTrackIndex(INVITATION_MUSIC_LIBRARY);
+  activeTracks = nextIndex.activeTrackList;
+  tracksById = nextIndex.tracksByIdMap;
+}
+
+export function setInvitationMusicLibrary(library: InvitationMusicCategory[]) {
+  const normalizedLibrary = cloneMusicLibrary(library)
+    .map((category) => ({
+      ...category,
+      id: category.id.trim(),
+      label: category.label.trim() || category.id.trim(),
+      tracks: category.tracks
+        .map((track) => ({
+          ...track,
+          id: track.id.trim(),
+          categoryId: track.categoryId.trim() || category.id.trim(),
+          title: track.title.trim() || track.id.trim(),
+          artist: track.artist.trim() || 'Invitation Studio',
+          storagePath: track.storagePath.trim(),
+          active: track.active !== false,
+        }))
+        .filter((track) => Boolean(track.id) && Boolean(track.storagePath)),
+    }))
+    .filter((category) => Boolean(category.id) && category.tracks.length > 0);
+
+  if (normalizedLibrary.length === 0) {
+    return false;
+  }
+
+  applyInvitationMusicLibrary(normalizedLibrary);
+  return true;
+}
+
+export function resetInvitationMusicLibrary() {
+  applyInvitationMusicLibrary(defaultMusicLibrary);
+}
 
 function hasText(value?: string | null) {
   return Boolean(value?.trim());

@@ -21,9 +21,11 @@ import {
 import { useAdmin } from '@/contexts';
 import { DEFAULT_INVITATION_THEME } from '@/lib/invitationThemes';
 import { resolveInvitationFeatures } from '@/lib/invitationProducts';
+import { setInvitationMusicLibrary } from '@/lib/musicLibrary';
 import { toUserFacingKoreanErrorMessage } from '@/lib/userFacingErrorMessage';
 import { getStorageDownloadUrl } from '@/services/imageService';
 import { searchKakaoLocalAddress } from '@/services/kakaoLocalService';
+import { getInvitationMusicLibraryFromStorage } from '@/services/musicService';
 import {
   getClientEditorEditableConfig,
   getClientEditorSession,
@@ -358,6 +360,31 @@ export default function PageWizardClient({ initialSlug }: PageWizardClientProps)
     setGroomEnglishName(derivedNames.groomEnglishName);
     setBrideEnglishName(derivedNames.brideEnglishName);
   }, [initialSlug]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadMusicLibrary = async () => {
+      const storageLibrary = await getInvitationMusicLibraryFromStorage();
+
+      if (cancelled || storageLibrary.length === 0) {
+        return;
+      }
+
+      const applied = setInvitationMusicLibrary(storageLibrary);
+      if (!applied || cancelled) {
+        return;
+      }
+
+      setFormState((current) => (current ? { ...current } : current));
+    };
+
+    void loadMusicLibrary();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   useEffect(() => {
     if (resolvedPersistedSlug) {
@@ -1343,8 +1370,9 @@ export default function PageWizardClient({ initialSlug }: PageWizardClientProps)
   if (isLoading || isAdminLoading) {
     return (
       <main className={styles.page}>
-        <div className={styles.shell}>
-          <section className={styles.centerCard}>
+        <div className={`${styles.shell} ${styles.gateShell}`}>
+          <section className={`${styles.centerCard} ${styles.gateCard} ${styles.loadingGateCard}`}>
+            <div className={styles.gateLoader} aria-hidden />
             <p className={styles.eyebrow}>불러오는 중</p>
             <h1 className={styles.centerTitle}>청첩장 편집 화면을 준비하고 있습니다.</h1>
             <p className={styles.centerText}>
@@ -1365,9 +1393,9 @@ export default function PageWizardClient({ initialSlug }: PageWizardClientProps)
   if (!formState || !previewFormState || !canCreateNew || !canEdit) {
     return (
       <main className={styles.page}>
-        <div className={styles.shell}>
+        <div className={`${styles.shell} ${styles.gateShell}`}>
           {renderNotice()}
-          <section className={styles.centerCard}>
+          <section className={`${styles.centerCard} ${styles.gateCard}`}>
             {initialSlug ? (
               <>
                 <p className={styles.eyebrow}>편집 잠금 해제</p>
@@ -1375,9 +1403,9 @@ export default function PageWizardClient({ initialSlug }: PageWizardClientProps)
                 <p className={styles.centerText}>
                   기존 고객 페이지는 비밀번호를 확인한 뒤에만 수정할 수 있습니다.
                 </p>
-                <div className={styles.lockRow}>
+                <div className={`${styles.lockRow} ${styles.gateLockRow}`}>
                   <input
-                    className={styles.input}
+                    className={`${styles.input} ${styles.gateInput}`}
                     type="password"
                     value={passwordInput}
                     onChange={(event) => setPasswordInput(event.target.value)}
@@ -1385,7 +1413,7 @@ export default function PageWizardClient({ initialSlug }: PageWizardClientProps)
                   />
                   <button
                     type="button"
-                    className={styles.primaryButton}
+                    className={`${styles.primaryButton} ${styles.gatePrimaryButton}`}
                     onClick={() => void handleUnlock()}
                     disabled={isUnlocking}
                   >
