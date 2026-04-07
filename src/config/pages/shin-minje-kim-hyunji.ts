@@ -41,7 +41,7 @@ const couple = {
   },
 } as const;
 
-const invitationDescription = `2026년 4월 14일 토요일 오후 3시, ${couple.groom.name}와 ${couple.bride.name}가 하나 되는 날에 소중한 분들을 초대합니다.`;
+const invitationDescription = `2026년 4월 14일 오후 3시, ${couple.groom.name}와 ${couple.bride.name}가 하나 되는 날에 소중한 분들을 초대합니다.`;
 const metadataDescription = `${invitationDescription} 저희의 새로운 시작을 함께 축복해 주세요.`;
 
 export const shinMinjeKimHyunjiConfig: WeddingPageConfig = createWeddingPageConfig({
@@ -100,7 +100,7 @@ export const shinMinjeKimHyunjiConfig: WeddingPageConfig = createWeddingPageConf
       {
         title: '화환 안내',
         content:
-          '축하의 뜻을 전하고자 화환을 보내주실 경우\n아래 안내 사항을 참고해 주시기 바랍니다.\n\n예식장: 그랜드컨벤션센터\n예식일시: 2025년 6월 21일 토요일 오후 2시\n수령인: 신랑 신민제 / 신부 김현지\n연락처: 02-9876-5432',
+          '축하의 뜻을 전하고자 화환을 보내주실 경우\n아래 안내 사항을 참고해 주시기 바랍니다.\n\n예식장: 더케이웨딩홀\n예식일시: 2026년 4월 14일 오후 3시\n수령인: 신랑 신민제 / 신부 김현지\n예식장 문의: 02-1234-5678',
       },
       {
         title: '배송 시간',

@@ -19,6 +19,7 @@ import {
   getAllMemoryPages,
   getCommentSummary,
   setClientPassword,
+  setInvitationPagePublished,
   setInvitationPageVariantAvailability,
   syncClientPasswordAccess,
   type ClientPassword,
@@ -65,6 +66,7 @@ export function useAdminData({
   const [summaryLoading, setSummaryLoading] = useState(false);
   const [passwordsLoading, setPasswordsLoading] = useState(false);
   const [savingPasswordPageSlug, setSavingPasswordPageSlug] = useState<string | null>(null);
+  const [updatingPublishedPageSlug, setUpdatingPublishedPageSlug] = useState<string | null>(null);
   const [updatingVariantToken, setUpdatingVariantToken] = useState<string | null>(null);
 
   const [pagesLoaded, setPagesLoaded] = useState(false);
@@ -259,6 +261,48 @@ export function useAdminData({
     [confirm, fetchPasswords, pages, showToast]
   );
 
+  const handleTogglePublished = useCallback(
+    async (page: InvitationPageSummary, nextPublished: boolean) => {
+      if (nextPublished === page.published) {
+        return;
+      }
+
+      const approved = await confirm({
+        title: nextPublished ? '페이지를 공개할까요?' : '페이지를 비공개로 전환할까요?',
+        description: `${page.displayName} 페이지를 ${nextPublished ? '공개' : '비공개'} 상태로 변경합니다.`,
+        confirmLabel: nextPublished ? '공개' : '비공개',
+        cancelLabel: '취소',
+        tone: nextPublished ? 'primary' : 'danger',
+      });
+
+      if (!approved) {
+        return;
+      }
+
+      setUpdatingPublishedPageSlug(page.slug);
+
+      try {
+        await setInvitationPagePublished(page.slug, nextPublished, {
+          defaultTheme: page.defaultTheme,
+        });
+        await refreshPages();
+        showToast({
+          title: nextPublished ? '페이지를 공개했습니다.' : '페이지를 비공개로 전환했습니다.',
+          tone: 'success',
+        });
+      } catch (error) {
+        console.error(error);
+        showToast({
+          title: nextPublished ? '페이지 공개에 실패했습니다.' : '페이지 비공개 전환에 실패했습니다.',
+          tone: 'error',
+        });
+      } finally {
+        setUpdatingPublishedPageSlug(null);
+      }
+    },
+    [confirm, refreshPages, showToast]
+  );
+
   const handleEnableVariant = useCallback(
     async (page: InvitationPageSummary, variantKey: InvitationThemeKey) => {
       const variantLabel = getInvitationThemeAdminLabel(variantKey);
@@ -407,6 +451,7 @@ export function useAdminData({
     summaryLoading,
     passwordsLoading,
     savingPasswordPageSlug,
+    updatingPublishedPageSlug,
     updatingVariantToken,
 
     refreshPages,
@@ -416,6 +461,7 @@ export function useAdminData({
 
     handleDeleteComment,
     handleSavePassword,
+    handleTogglePublished,
     handleEnableVariant,
     handleDisableVariant,
     handleLogout,

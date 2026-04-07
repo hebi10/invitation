@@ -1,12 +1,12 @@
 .container {
   width: calc(100% - 12px);
-  padding: 3rem 1rem;
+  padding: 0;
   max-width: 700px;
   margin: 2rem auto;
-  background: #ffffff;
+  background: transparent;
   border-radius: 16px;
-  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06);
-  border: 1px solid rgba(0, 0, 0, 0.05);
+  box-shadow: none;
+  border: 0;
 }
 
 .card {
@@ -70,7 +70,7 @@
 
 @media (min-width: 700px) {
   .container {
-    padding: 4rem 2rem;
+    padding: 0;
   }
   
   .card {
@@ -379,11 +379,6 @@
     gap: 2rem;
   }
 
-  .familyCard {
-    flex: 1;
-    padding: 2rem;
-  }
-
   .modalContent {
     padding: 2.5rem;
     max-width: 320px;
@@ -391,10 +386,6 @@
 }
 
 @media (max-width: 480px) {
-  .familyCard {
-    padding: 1.5rem;
-  }
-
   .modalContent {
     padding: 1.5rem;
   }

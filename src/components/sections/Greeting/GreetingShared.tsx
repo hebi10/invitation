@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 export interface FamilyMember {
   relation: string;
@@ -55,13 +55,18 @@ function hasPersonContent(person?: PersonInfo) {
 
 export default function GreetingShared({
   message,
+  author,
   groom,
   bride,
   styles,
   wrapInCard = false,
 }: GreetingSharedProps) {
   const [contactModal, setContactModal] = useState<ContactTarget | null>(null);
+  const modalContentRef = useRef<HTMLDivElement | null>(null);
+  const modalCloseButtonRef = useRef<HTMLButtonElement | null>(null);
+  const modalTriggerRef = useRef<HTMLElement | null>(null);
   const hasMessage = hasText(message);
+  const hasAuthor = hasText(author);
   const hasGroomInfo = hasPersonContent(groom);
   const hasBrideInfo = hasPersonContent(bride);
   const showFamilySection = hasGroomInfo || hasBrideInfo;
@@ -82,13 +87,84 @@ export default function GreetingShared({
     ));
   };
 
-  const openContactModal = (person: ContactTarget) => {
+  const openContactModal = (person: ContactTarget, triggerElement?: HTMLElement | null) => {
+    if (triggerElement) {
+      modalTriggerRef.current = triggerElement;
+    } else if (typeof document !== 'undefined' && document.activeElement instanceof HTMLElement) {
+      modalTriggerRef.current = document.activeElement;
+    }
     setContactModal(person);
   };
 
   const closeContactModal = () => {
     setContactModal(null);
   };
+
+  useEffect(() => {
+    if (!contactModal) {
+      const trigger = modalTriggerRef.current;
+      if (trigger && typeof trigger.focus === 'function') {
+        trigger.focus();
+      }
+      modalTriggerRef.current = null;
+      return;
+    }
+
+    modalCloseButtonRef.current?.focus();
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        closeContactModal();
+        return;
+      }
+
+      if (event.key !== 'Tab') {
+        return;
+      }
+
+      const modal = modalContentRef.current;
+      if (!modal) {
+        return;
+      }
+
+      const focusableElements = Array.from(
+        modal.querySelectorAll<HTMLElement>(
+          'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+        )
+      ).filter((element) => element.tabIndex !== -1 && element.offsetParent !== null);
+
+      if (focusableElements.length === 0) {
+        event.preventDefault();
+        modalCloseButtonRef.current?.focus();
+        return;
+      }
+
+      const firstElement = focusableElements[0];
+      const lastElement = focusableElements[focusableElements.length - 1];
+      const activeElement = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+      const isInsideModal = activeElement ? modal.contains(activeElement) : false;
+
+      if (event.shiftKey) {
+        if (!isInsideModal || activeElement === firstElement) {
+          event.preventDefault();
+          lastElement.focus();
+        }
+        return;
+      }
+
+      if (!isInsideModal || activeElement === lastElement) {
+        event.preventDefault();
+        firstElement.focus();
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [contactModal]);
 
   const handleCall = (phone: string) => {
     window.location.href = `tel:${phone}`;
@@ -107,11 +183,11 @@ export default function GreetingShared({
       <button
         type="button"
         className={styles.iconBtn}
-        onClick={() => openContactModal(person)}
+        onClick={(event) => openContactModal(person, event.currentTarget)}
         aria-label={`${person.name} 연락하기`}
         title="연락하기"
       >
-        ✆
+        <span aria-hidden="true">✆</span>
       </button>
     );
   };
@@ -121,6 +197,12 @@ export default function GreetingShared({
       {hasMessage && (
         <div className={styles.messageWrapper}>
           <p className={styles.message}>{formatMessage(message)}</p>
+        </div>
+      )}
+
+      {hasAuthor && (
+        <div className={styles.authorWrapper}>
+          <p className={styles.author}>{author}</p>
         </div>
       )}
 
@@ -202,8 +284,21 @@ export default function GreetingShared({
 
       {contactModal && (
         <div className={styles.modalOverlay} onClick={closeContactModal}>
-          <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
-            <button className={styles.modalClose} onClick={closeContactModal} aria-label="닫기" type="button">
+          <div
+            ref={modalContentRef}
+            className={styles.modalContent}
+            role="dialog"
+            aria-modal="true"
+            aria-label={`${contactModal.name} 연락처`}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              ref={modalCloseButtonRef}
+              className={styles.modalClose}
+              onClick={closeContactModal}
+              aria-label="연락처 모달 닫기"
+              type="button"
+            >
               ×
             </button>
             <h3 className={styles.modalTitle}>{contactModal.name}</h3>

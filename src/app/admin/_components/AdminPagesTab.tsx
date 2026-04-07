@@ -36,8 +36,10 @@ interface AdminPagesTabProps {
   chips: Array<{ id: string; label: string; onRemove: () => void }>;
   onQueryChange: (updates: Record<string, string | null>) => void;
   onRefresh: () => void;
+  onTogglePublished: (page: InvitationPageSummary, nextPublished: boolean) => void;
   onEnableVariant: (page: InvitationPageSummary, variantKey: ShortcutKey) => void;
   onDisableVariant: (page: InvitationPageSummary, variantKey: ShortcutKey) => void;
+  updatingPublishedPageSlug: string | null;
   updatingVariantToken: string | null;
 }
 
@@ -53,8 +55,10 @@ export default function AdminPagesTab({
   chips,
   onQueryChange,
   onRefresh,
+  onTogglePublished,
   onEnableVariant,
   onDisableVariant,
+  updatingPublishedPageSlug,
   updatingVariantToken,
 }: AdminPagesTabProps) {
   const getEnableVariantButtonLabel = (shortcutLabel: string, isUpdating: boolean) =>
@@ -281,6 +285,7 @@ export default function AdminPagesTab({
                 <tbody>
                   {currentInvitationPages.map((page, index) => {
                     const links = getAvailableShortcuts(page);
+                    const isUpdatingPublished = updatingPublishedPageSlug === page.slug;
                     const missingShortcuts = SHORTCUT_ITEMS.filter(
                       (shortcut) => !page.variants?.[shortcut.key]?.available
                     );
@@ -375,9 +380,26 @@ export default function AdminPagesTab({
                           </div>
                         </td>
                         <td>
-                          <StatusBadge tone={page.published ? 'success' : 'neutral'}>
-                            {page.published ? '공개' : '비공개'}
-                          </StatusBadge>
+                          <div className={styles.statusCell}>
+                            <StatusBadge tone={page.published ? 'success' : 'neutral'}>
+                              {page.published ? '공개' : '비공개'}
+                            </StatusBadge>
+                            <select
+                              className={`admin-select ${styles.statusSelect}`}
+                              value={page.published ? 'published' : 'private'}
+                              disabled={isUpdatingPublished}
+                              onChange={(event) =>
+                                onTogglePublished(
+                                  page,
+                                  event.target.value === 'published'
+                                )
+                              }
+                              aria-label={`${page.displayName} 공개 상태`}
+                            >
+                              <option value="published">공개</option>
+                              <option value="private">비공개</option>
+                            </select>
+                          </div>
                         </td>
                         <td>
                           <div className={styles.actionStack}>
@@ -428,9 +450,26 @@ export default function AdminPagesTab({
                         </p>
                       ) : null}
                     </div>
-                    <StatusBadge tone={page.published ? 'success' : 'neutral'}>
-                      {page.published ? '공개' : '비공개'}
-                    </StatusBadge>
+                    <div className={styles.statusCell}>
+                      <StatusBadge tone={page.published ? 'success' : 'neutral'}>
+                        {page.published ? '공개' : '비공개'}
+                      </StatusBadge>
+                      <select
+                        className={`admin-select ${styles.statusSelect}`}
+                        value={page.published ? 'published' : 'private'}
+                        disabled={updatingPublishedPageSlug === page.slug}
+                        onChange={(event) =>
+                          onTogglePublished(
+                            page,
+                            event.target.value === 'published'
+                          )
+                        }
+                        aria-label={`${page.displayName} 공개 상태`}
+                      >
+                        <option value="published">공개</option>
+                        <option value="private">비공개</option>
+                      </select>
+                    </div>
                   </div>
 
                   <div className={styles.mobileCardMeta}>

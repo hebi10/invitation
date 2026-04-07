@@ -183,6 +183,7 @@ export default function AdminPageClient() {
     summaryLoading,
     passwordsLoading,
     savingPasswordPageSlug,
+    updatingPublishedPageSlug,
     updatingVariantToken,
     refreshPages,
     fetchComments,
@@ -190,6 +191,7 @@ export default function AdminPageClient() {
     fetchSummarySources,
     handleDeleteComment,
     handleSavePassword,
+    handleTogglePublished,
     handleEnableVariant,
     handleDisableVariant,
     handleLogout: dataLogout,
@@ -606,12 +608,16 @@ export default function AdminPageClient() {
               chips={pageFilterChips}
               onQueryChange={updateQuery}
               onRefresh={() => void refreshPages()}
+              onTogglePublished={(page, nextPublished) =>
+                void handleTogglePublished(page, nextPublished)
+              }
               onEnableVariant={(page, variantKey) =>
                 void handleEnableVariant(page, variantKey)
               }
               onDisableVariant={(page, variantKey) =>
                 void handleDisableVariant(page, variantKey)
               }
+              updatingPublishedPageSlug={updatingPublishedPageSlug}
               updatingVariantToken={updatingVariantToken}
             />
           ) : null}

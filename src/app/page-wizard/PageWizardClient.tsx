@@ -39,6 +39,7 @@ import {
   normalizeInvitationPageSlugBase,
   saveInvitationPageConfig,
 } from '@/services/invitationPageService';
+import { toDate } from '@/lib/invitationPageNormalization';
 import type {
   InvitationPageSeed,
   InvitationProductTier,
@@ -562,7 +563,7 @@ export default function PageWizardClient({ initialSlug }: PageWizardClientProps)
         setSlugInput(initialSlug);
         setPublished(editableConfig.published);
         setDefaultTheme(editableConfig.defaultTheme ?? DEFAULT_THEME);
-        setLastSavedAt(editableConfig.lastSavedAt);
+        setLastSavedAt(toDate(editableConfig.lastSavedAt));
       } catch {
         if (!cancelled) {
           showErrorNotice('청첩장 설정을 불러오지 못했습니다.');

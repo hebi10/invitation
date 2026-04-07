@@ -2225,6 +2225,7 @@
 }
 
 .gateCard {
+  margin: 0 auto;
   width: min(100%, 560px);
   align-items: center;
   text-align: center;

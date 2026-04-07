@@ -1,7 +1,6 @@
 'use client';
 
-import { notFound } from 'next/navigation';
-import { Fragment, useEffect, useMemo, useState } from 'react';
+import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { A11y, Keyboard, Navigation, Pagination } from 'swiper/modules';
 import 'swiper/css';
@@ -42,6 +41,9 @@ const GALLERY_BREAKPOINTS = {
     spaceBetween: 18,
   },
 } as const;
+
+const LIGHTBOX_FOCUSABLE_SELECTOR =
+  'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
 const HEART_GLYPH_SET = new Set(['♡', '♥', '❤']);
 
@@ -213,6 +215,9 @@ function MemoryPageClientBody({ slug }: MemoryPageClientProps) {
   const [commentPage, setCommentPage] = useState(1);
   const [lightboxStartIndex, setLightboxStartIndex] = useState<number | null>(null);
   const [lightboxActiveIndex, setLightboxActiveIndex] = useState(0);
+  const lightboxDialogRef = useRef<HTMLDivElement | null>(null);
+  const lightboxCloseButtonRef = useRef<HTMLButtonElement | null>(null);
+  const lightboxTriggerRef = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
     if (isAdminLoading) {
@@ -316,6 +321,9 @@ function MemoryPageClientBody({ slug }: MemoryPageClientProps) {
     isLightboxOpen && orderedImages.length > 0
       ? orderedImages[lightboxActiveIndex] ?? orderedImages[lightboxStartIndex ?? 0] ?? null
       : null;
+  const heroImageAlt =
+    heroImage?.caption?.trim() ||
+    `${memoryPage?.groomName ?? ''} ${memoryPage?.brideName ?? ''} 결혼식 대표 사진`.trim();
 
   useEffect(() => {
     setCommentPage(1);
@@ -343,20 +351,106 @@ function MemoryPageClientBody({ slug }: MemoryPageClientProps) {
     };
   }, [isLightboxOpen]);
 
-  const openLightboxByImage = (targetImage: MemoryGalleryImage) => {
-    const nextIndex = orderedImages.findIndex((image) => image.id === targetImage.id);
-    if (nextIndex >= 0) {
+  const openLightboxByImage = useCallback(
+    (targetImage: MemoryGalleryImage, triggerElement?: HTMLElement | null) => {
+      const nextIndex = orderedImages.findIndex((image) => image.id === targetImage.id);
+      if (nextIndex < 0) {
+        return;
+      }
+
+      if (triggerElement) {
+        lightboxTriggerRef.current = triggerElement;
+      } else if (typeof document !== 'undefined' && document.activeElement instanceof HTMLElement) {
+        lightboxTriggerRef.current = document.activeElement;
+      }
+
       setLightboxStartIndex(nextIndex);
       setLightboxActiveIndex(nextIndex);
-    }
-  };
+    },
+    [orderedImages]
+  );
 
-  const closeLightbox = () => {
+  const closeLightbox = useCallback(() => {
     setLightboxStartIndex(null);
-  };
+  }, []);
+
+  useEffect(() => {
+    if (!isLightboxOpen) {
+      const trigger = lightboxTriggerRef.current;
+      if (trigger && typeof trigger.focus === 'function') {
+        trigger.focus();
+      }
+      lightboxTriggerRef.current = null;
+      return;
+    }
+
+    lightboxCloseButtonRef.current?.focus();
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        closeLightbox();
+        return;
+      }
+
+      if (event.key !== 'Tab') {
+        return;
+      }
+
+      const dialog = lightboxDialogRef.current;
+      if (!dialog) {
+        return;
+      }
+
+      const focusableElements = Array.from(
+        dialog.querySelectorAll<HTMLElement>(LIGHTBOX_FOCUSABLE_SELECTOR)
+      ).filter((element) => element.tabIndex !== -1 && element.offsetParent !== null);
+
+      if (focusableElements.length === 0) {
+        event.preventDefault();
+        lightboxCloseButtonRef.current?.focus();
+        return;
+      }
+
+      const firstElement = focusableElements[0];
+      const lastElement = focusableElements[focusableElements.length - 1];
+      const activeElement = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+      const isInsideDialog = activeElement ? dialog.contains(activeElement) : false;
+
+      if (event.shiftKey) {
+        if (!isInsideDialog || activeElement === firstElement) {
+          event.preventDefault();
+          lastElement.focus();
+        }
+        return;
+      }
+
+      if (!isInsideDialog || activeElement === lastElement) {
+        event.preventDefault();
+        firstElement.focus();
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [closeLightbox, isLightboxOpen]);
 
   if (status === 'notfound') {
-    notFound();
+    return (
+      <main className={styles.page}>
+        <div className={styles.shell}>
+          <div className={styles.stateCard}>
+            <h1 className={styles.stateTitle}>추억 페이지를 찾을 수 없습니다.</h1>
+            <p className={styles.stateDescription}>
+              아직 공개되지 않았거나 주소가 잘못되었습니다. 관리자에서 생성 후 공개하면 같은 주소에서 다시 확인할 수 있습니다.
+            </p>
+          </div>
+        </div>
+      </main>
+    );
   }
 
   if (status === 'loading') {
@@ -379,12 +473,12 @@ function MemoryPageClientBody({ slug }: MemoryPageClientProps) {
             <button
               type="button"
               className={styles.heroMediaButton}
-              onClick={() => openLightboxByImage(heroImage)}
+              onClick={(event) => openLightboxByImage(heroImage, event.currentTarget)}
             >
               <img
                 className={styles.heroImage}
                 src={heroImage.url}
-                alt={heroImage.name}
+                alt={heroImageAlt}
                 loading="eager"
                 decoding="async"
                 fetchPriority="high"
@@ -468,7 +562,7 @@ function MemoryPageClientBody({ slug }: MemoryPageClientProps) {
                         <button
                           type="button"
                           className={styles.galleryFigure}
-                          onClick={() => openLightboxByImage(image)}
+                          onClick={(event) => openLightboxByImage(image, event.currentTarget)}
                         >
                           <img
                             className={styles.galleryThumb}
@@ -597,6 +691,7 @@ function MemoryPageClientBody({ slug }: MemoryPageClientProps) {
         >
           <div
             className={styles.lightboxDialog}
+            ref={lightboxDialogRef}
             role="dialog"
             aria-modal="true"
             aria-label="추억 페이지 이미지 슬라이드"
@@ -604,8 +699,10 @@ function MemoryPageClientBody({ slug }: MemoryPageClientProps) {
           >
             <button
               type="button"
+              ref={lightboxCloseButtonRef}
               className={styles.lightboxClose}
               onClick={closeLightbox}
+              aria-label="라이트박스 닫기"
             >
               닫기
             </button>

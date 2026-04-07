@@ -97,7 +97,6 @@
 .thankYouMessage,
 .timelineBody p,
 .galleryCaption,
-.passwordHint,
 .lightboxCaption {
   font-size: 0.95rem;
   line-height: 1.8;
@@ -198,12 +197,6 @@
   height: auto;
 }
 
-.galleryGrid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 12px;
-}
-
 .galleryFigure {
   display: flex;
   flex-direction: column;
@@ -224,8 +217,7 @@
 }
 
 .commentCard,
-.timelineItem,
-.passwordPanel {
+.timelineItem {
   padding: 16px;
   border-radius: 18px;
   background: #fbfaf7;
@@ -334,49 +326,12 @@
   margin-top: 14px;
 }
 
-.stateCard,
-.passwordPanel {
+.stateCard {
   display: flex;
   flex-direction: column;
   gap: 12px;
   align-items: center;
   text-align: center;
-}
-
-.passwordForm {
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.passwordInput,
-.passwordButton {
-  width: 100%;
-  min-height: 48px;
-  border-radius: 16px;
-}
-
-.passwordInput {
-  border: 1px solid rgba(148, 163, 184, 0.35);
-  padding: 0 16px;
-  background: #ffffff;
-  color: #111827;
-  font: inherit;
-}
-
-.passwordButton {
-  border: 0;
-  background: #111827;
-  color: #ffffff;
-  font: inherit;
-  font-weight: 700;
-}
-
-.passwordError {
-  color: #dc2626;
-  font-size: 0.875rem;
-  font-weight: 600;
 }
 
 .lightboxBackdrop {
@@ -409,8 +364,7 @@
   justify-content: center;
 }
 
-.lightboxClose,
-.lightboxNav {
+.lightboxClose {
   border: 1px solid rgba(255, 255, 255, 0.18);
   background: rgba(255, 255, 255, 0.1);
   color: #ffffff;
@@ -423,23 +377,6 @@
   min-height: 40px;
   padding: 0 14px;
   border-radius: 999px;
-}
-
-.lightboxNav {
-  position: absolute;
-  top: 50%;
-  width: 44px;
-  height: 44px;
-  border-radius: 999px;
-  transform: translateY(-50%);
-}
-
-.lightboxPrev {
-  left: 12px;
-}
-
-.lightboxNext {
-  right: 12px;
 }
 
 .lightboxImage {
@@ -504,10 +441,6 @@
 
   .heroImage {
     aspect-ratio: 16 / 10;
-  }
-
-  .galleryGrid {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
 

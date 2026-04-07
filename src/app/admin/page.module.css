@@ -421,6 +421,11 @@
   gap: 6px;
 }
 
+.statusSelect {
+  min-width: 112px;
+  max-width: 132px;
+}
+
 .actionStack,
 .passwordFieldGroup {
   display: flex;
