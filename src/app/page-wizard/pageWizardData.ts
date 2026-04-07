@@ -3,6 +3,7 @@ import {
   DEFAULT_INVITATION_PRODUCT_TIER,
   resolveInvitationFeatures,
 } from '@/lib/invitationProducts';
+import { isInvitationThemeKey } from '@/lib/invitationThemes';
 import type { InvitationPageSeed, InvitationThemeKey } from '@/types/invitationPage';
 
 import {
@@ -395,6 +396,15 @@ export function prepareWizardConfigForSave(config: InvitationPageSeed, slug: str
     },
     slug
   );
+  const features = resolveInvitationFeatures(prepared.productTier, prepared.features);
+  prepared.features = features;
+
+  if (prepared.pageData?.galleryImages) {
+    prepared.pageData.galleryImages = prepared.pageData.galleryImages
+      .map((imageUrl) => imageUrl.trim())
+      .filter(Boolean)
+      .slice(0, features.maxGalleryImages);
+  }
 
   const weddingDate = buildWeddingDateObject(prepared);
   if (weddingDate) {
@@ -430,21 +440,18 @@ export function buildStepValidation(
   }
 
   switch (stepKey) {
-    case 'theme':
+    case 'theme': {
+      const hasValidTheme = isInvitationThemeKey(theme);
+      const hasValidTier =
+        formState?.productTier === 'standard' ||
+        formState?.productTier === 'deluxe' ||
+        formState?.productTier === 'premium';
+
       return {
-        valid:
-          (theme === 'emotional' || theme === 'simple') &&
-          (formState?.productTier === 'standard' ||
-            formState?.productTier === 'deluxe' ||
-            formState?.productTier === 'premium'),
-        messages:
-          (theme === 'emotional' || theme === 'simple') &&
-          (formState?.productTier === 'standard' ||
-            formState?.productTier === 'deluxe' ||
-            formState?.productTier === 'premium')
-            ? []
-            : ['디자인과 상품 구성을 먼저 선택해 주세요.'],
+        valid: hasValidTheme && hasValidTier,
+        messages: hasValidTheme && hasValidTier ? [] : ['디자인과 상품 구성을 먼저 선택해 주세요.'],
       };
+    }
     case 'slug': {
       const messages: string[] = [];
 

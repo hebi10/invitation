@@ -1,6 +1,10 @@
 import { notFound, redirect } from 'next/navigation';
 
-import { WeddingInvitationRoutePage } from '@/app/_components/WeddingInvitationPage';
+import {
+  buildInvitationThemeRoutePath,
+  DEFAULT_INVITATION_THEME,
+  normalizeInvitationThemeKey,
+} from '@/lib/invitationThemes';
 import { resolveAvailableInvitationVariant } from '@/lib/invitationVariants';
 import {
   getServerInvitationPageBySlug,
@@ -9,7 +13,7 @@ import {
 
 export const dynamic = 'force-dynamic';
 
-export default async function WeddingInvitationEmotionalPage({
+export default async function WeddingInvitationSlugPage({
   params,
 }: {
   params: Promise<{ slug: string }>;
@@ -19,22 +23,15 @@ export default async function WeddingInvitationEmotionalPage({
     getServerInvitationPageBySlug(slug),
     getServerInvitationPageDefaultThemeBySlug(slug),
   ]);
-  const preferredTheme = defaultTheme === 'simple' ? 'simple' : 'emotional';
+  const preferredTheme = normalizeInvitationThemeKey(
+    defaultTheme,
+    DEFAULT_INVITATION_THEME
+  );
   const theme = resolveAvailableInvitationVariant(page?.variants, preferredTheme);
 
   if (!page || !theme) {
     notFound();
   }
 
-  if (theme === 'simple') {
-    redirect(`/${slug}/simple`);
-  }
-
-  return (
-    <WeddingInvitationRoutePage
-      slug={slug}
-      theme="emotional"
-      initialPageConfig={page}
-    />
-  );
+  redirect(buildInvitationThemeRoutePath(slug, theme));
 }

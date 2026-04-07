@@ -1,5 +1,9 @@
 import { createInvitationPageFromSeed } from '@/config/weddingPages';
 import {
+  DEFAULT_INVITATION_THEME,
+  type InvitationThemeKey,
+} from '@/lib/invitationThemes';
+import {
   buildInvitationVariants,
   createInvitationVariantAvailability,
   getAvailableInvitationVariantKeys,
@@ -9,7 +13,7 @@ import { resolveInvitationFeatures } from '@/lib/invitationProducts';
 import type { InvitationPage, InvitationPageSeed } from '@/types/invitationPage';
 import { sanitizeHeartIconPlaceholdersDeep } from '@/utils/textSanitizers';
 
-export type PreviewThemeKey = 'emotional' | 'simple';
+export type PreviewThemeKey = InvitationThemeKey;
 
 function hasGuideContent(item: { title?: string; content?: string }) {
   return Boolean(item.title?.trim() || item.content?.trim());
@@ -33,7 +37,8 @@ export function buildPreviewPage(
   const features = resolveInvitationFeatures(formState.productTier, formState.features);
   const availableVariantKeys = getAvailableInvitationVariantKeys(formState.variants);
   const fallbackVariant =
-    resolveAvailableInvitationVariant(formState.variants, 'emotional') ?? 'emotional';
+    resolveAvailableInvitationVariant(formState.variants, DEFAULT_INVITATION_THEME) ??
+    DEFAULT_INVITATION_THEME;
   const enabledVariantKeys =
     availableVariantKeys.length > 0 ? availableVariantKeys : [fallbackVariant];
   const previewSeed: InvitationPageSeed = {

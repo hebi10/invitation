@@ -9,6 +9,7 @@ import {
 } from '@/server/invitationPageServerService';
 import { CLIENT_EDITOR_SESSION_COOKIE } from '@/server/clientEditorSession';
 import { getAuthorizedClientEditorSession } from '@/server/clientEditorSessionAuth';
+import { isInvitationThemeKey } from '@/lib/invitationThemes';
 import type { InvitationPageSeed, InvitationThemeKey } from '@/types/invitationPage';
 
 async function authorizePageSession(pageSlug: string) {
@@ -20,7 +21,7 @@ async function authorizePageSession(pageSlug: string) {
 }
 
 function readTheme(value: unknown) {
-  return value === 'simple' ? 'simple' : undefined;
+  return isInvitationThemeKey(value) ? value : undefined;
 }
 
 export async function GET(

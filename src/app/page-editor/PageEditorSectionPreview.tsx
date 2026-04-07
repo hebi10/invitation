@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo } from 'react';
+import type { ComponentProps, ComponentType } from 'react';
 
 import {
   Cover,
@@ -16,6 +17,10 @@ import {
   WeddingCalendar,
   WeddingCalendarSimple,
 } from '@/components/sections';
+import {
+  DEFAULT_INVITATION_THEME,
+  getInvitationThemeLabel,
+} from '@/lib/invitationThemes';
 import { resolveInvitationFeatures } from '@/lib/invitationProducts';
 import type { InvitationPageSeed } from '@/types/invitationPage';
 
@@ -52,6 +57,50 @@ interface PageEditorSectionPreviewProps {
   published: boolean;
   highlighted?: boolean;
   onRequestEdit?: () => void;
+}
+
+interface PreviewThemeProfile {
+  label: string;
+  surfaceClassName: string;
+  calendarSeparator: string;
+  CoverComponent: ComponentType<ComponentProps<typeof Cover>>;
+  GreetingComponent: ComponentType<ComponentProps<typeof Greeting>>;
+  GalleryComponent: ComponentType<ComponentProps<typeof Gallery>>;
+  GiftInfoComponent: ComponentType<ComponentProps<typeof GiftInfo>>;
+  ScheduleComponent: ComponentType<ComponentProps<typeof Schedule>>;
+  CalendarComponent: ComponentType<ComponentProps<typeof WeddingCalendar>>;
+}
+
+const fallbackPreviewThemeProfile: PreviewThemeProfile = {
+  label: getInvitationThemeLabel('emotional'),
+  surfaceClassName: styles.previewSurfaceEmotional,
+  calendarSeparator: '♡',
+  CoverComponent: Cover,
+  GreetingComponent: Greeting,
+  GalleryComponent: Gallery,
+  GiftInfoComponent: GiftInfo,
+  ScheduleComponent: Schedule,
+  CalendarComponent: WeddingCalendar,
+};
+
+const previewThemeProfiles: Partial<Record<PreviewThemeKey, PreviewThemeProfile>> = {
+  emotional: fallbackPreviewThemeProfile,
+  simple: {
+    label: getInvitationThemeLabel('simple'),
+    surfaceClassName: styles.previewSurfaceSimple,
+    calendarSeparator: '·',
+    CoverComponent: CoverSimple,
+    GreetingComponent: GreetingSimple,
+    GalleryComponent: GallerySimple,
+    GiftInfoComponent: GiftInfoSimple,
+    ScheduleComponent: ScheduleSimple,
+    CalendarComponent: WeddingCalendarSimple,
+  },
+};
+
+function resolvePreviewThemeProfile(theme: PreviewThemeKey) {
+  const defaultProfile = previewThemeProfiles[DEFAULT_INVITATION_THEME];
+  return previewThemeProfiles[theme] ?? defaultProfile ?? fallbackPreviewThemeProfile;
 }
 
 const SECTION_COPY: Record<
@@ -251,24 +300,14 @@ export default function PageEditorSectionPreview({
     previewPageData?.ceremonyTime ?? ''
   }`.trim();
   const sectionCopy = SECTION_COPY[section];
+  const previewThemeProfile = resolvePreviewThemeProfile(theme);
 
   const previewContent = (() => {
     if (section === 'cover') {
-      return theme === 'simple' ? (
-        <CoverSimple
-          title={previewPage.displayName}
-          subtitle={previewPageData?.subtitle ?? ''}
-          weddingDate={previewDateText}
-          ceremonyTime={previewPageData?.ceremonyTime}
-          venueName={previewPage.venue}
-          primaryActionTargetId="page-editor-cover-preview"
-          imageUrl={previewPage.metadata.images.wedding}
-          brideName={previewPage.brideName}
-          groomName={previewPage.groomName}
-          preloadComplete
-        />
-      ) : (
-        <Cover
+      const CoverComponent = previewThemeProfile.CoverComponent;
+
+      return (
+        <CoverComponent
           title={previewPage.displayName}
           subtitle={previewPageData?.subtitle ?? ''}
           weddingDate={previewDateText}
@@ -284,55 +323,37 @@ export default function PageEditorSectionPreview({
     }
 
     if (section === 'wedding') {
+      const CalendarComponent = previewThemeProfile.CalendarComponent;
+      const ScheduleComponent = previewThemeProfile.ScheduleComponent;
+
       return (
         <>
-          {theme === 'simple' ? (
-            <WeddingCalendarSimple
-              title="예식 달력"
-              weddingDate={weddingDate}
-              currentMonth={weddingDate}
-              events={[
-                createWeddingCalendarEvent(previewPage, weddingDate, '·', previewPageData),
-              ]}
-              showCountdown={previewFeatures.showCountdown}
-              countdownTitle="결혼식까지"
-            />
-          ) : (
-            <WeddingCalendar
-              title="예식 달력"
-              weddingDate={weddingDate}
-              currentMonth={weddingDate}
-              events={[
-                createWeddingCalendarEvent(previewPage, weddingDate, '♡', previewPageData),
-              ]}
-              showCountdown={previewFeatures.showCountdown}
-              countdownTitle="결혼식까지"
-            />
-          )}
+          <CalendarComponent
+            title="예식 달력"
+            weddingDate={weddingDate}
+            currentMonth={weddingDate}
+            events={[
+              createWeddingCalendarEvent(
+                previewPage,
+                weddingDate,
+                previewThemeProfile.calendarSeparator,
+                previewPageData
+              ),
+            ]}
+            showCountdown={previewFeatures.showCountdown}
+            countdownTitle="결혼식까지"
+          />
 
-          {theme === 'simple' ? (
-            <ScheduleSimple
-              date={previewPage.date}
-              time={previewPageData?.ceremonyTime ?? ''}
-              venue={previewPage.venue}
-              address={getCeremonyAddress(previewPage, previewPageData)}
-              ceremony={getCeremonySchedule(previewPage, previewPageData)}
-              reception={getReceptionSchedule(previewPage, previewPageData)}
-              venueGuide={previewPageData?.venueGuide}
-              wreathGuide={previewPageData?.wreathGuide}
-            />
-          ) : (
-            <Schedule
-              date={previewPage.date}
-              time={previewPageData?.ceremonyTime ?? ''}
-              venue={previewPage.venue}
-              address={getCeremonyAddress(previewPage, previewPageData)}
-              ceremony={getCeremonySchedule(previewPage, previewPageData)}
-              reception={getReceptionSchedule(previewPage, previewPageData)}
-              venueGuide={previewPageData?.venueGuide}
-              wreathGuide={previewPageData?.wreathGuide}
-            />
-          )}
+          <ScheduleComponent
+            date={previewPage.date}
+            time={previewPageData?.ceremonyTime ?? ''}
+            venue={previewPage.venue}
+            address={getCeremonyAddress(previewPage, previewPageData)}
+            ceremony={getCeremonySchedule(previewPage, previewPageData)}
+            reception={getReceptionSchedule(previewPage, previewPageData)}
+            venueGuide={previewPageData?.venueGuide}
+            wreathGuide={previewPageData?.wreathGuide}
+          />
 
           {renderLocationSummary(
             previewPageData?.venueName ?? previewPage.venue,
@@ -345,15 +366,10 @@ export default function PageEditorSectionPreview({
     }
 
     if (section === 'greeting') {
-      return theme === 'simple' ? (
-        <GreetingSimple
-          message={previewPageData?.greetingMessage ?? ''}
-          author={previewPageData?.greetingAuthor ?? ''}
-          groom={previewPage.couple.groom}
-          bride={previewPage.couple.bride}
-        />
-      ) : (
-        <Greeting
+      const GreetingComponent = previewThemeProfile.GreetingComponent;
+
+      return (
+        <GreetingComponent
           message={previewPageData?.greetingMessage ?? ''}
           author={previewPageData?.greetingAuthor ?? ''}
           groom={previewPage.couple.groom}
@@ -371,11 +387,9 @@ export default function PageEditorSectionPreview({
         );
       }
 
-      return theme === 'simple' ? (
-        <GallerySimple title="대표 이미지 미리보기" images={previewImages} />
-      ) : (
-        <Gallery title="대표 이미지 미리보기" images={previewImages} />
-      );
+      const GalleryComponent = previewThemeProfile.GalleryComponent;
+
+      return <GalleryComponent title="대표 이미지 미리보기" images={previewImages} />;
     }
 
     if (section === 'gift') {
@@ -387,14 +401,10 @@ export default function PageEditorSectionPreview({
         );
       }
 
-      return theme === 'simple' ? (
-        <GiftInfoSimple
-          groomAccounts={groomAccounts}
-          brideAccounts={brideAccounts}
-          message={giftMessage}
-        />
-      ) : (
-        <GiftInfo
+      const GiftInfoComponent = previewThemeProfile.GiftInfoComponent;
+
+      return (
+        <GiftInfoComponent
           groomAccounts={groomAccounts}
           brideAccounts={brideAccounts}
           message={giftMessage}
@@ -431,7 +441,7 @@ export default function PageEditorSectionPreview({
 
           <div className={styles.previewControls}>
             <span className={styles.metaChip}>
-              {theme === 'simple' ? '심플형 미리보기' : '감성형 미리보기'}
+              {previewThemeProfile.label} 미리보기
             </span>
             {previewImages.length > 0 && section !== 'metadata' ? (
               <span className={styles.metaChip}>대표 이미지 반영 중</span>
@@ -449,13 +459,7 @@ export default function PageEditorSectionPreview({
         </div>
 
         <div className={styles.previewViewport}>
-          <div
-            className={`${styles.previewSurface} ${
-              theme === 'simple'
-                ? styles.previewSurfaceSimple
-                : styles.previewSurfaceEmotional
-            }`}
-          >
+          <div className={`${styles.previewSurface} ${previewThemeProfile.surfaceClassName}`}>
             <div className={styles.previewFrame}>{previewContent}</div>
           </div>
         </div>

@@ -420,7 +420,7 @@ function mergeInvitationPageSeed(
     !normalizedSeed.couple.groom.name ||
     !normalizedSeed.couple.bride.name ||
     !normalizedSeed.metadata.images.favicon ||
-    !('emotional' in normalizedSeed.variants || 'simple' in normalizedSeed.variants)
+    getAvailableInvitationVariantKeys(normalizedSeed.variants).length === 0
   ) {
     return null;
   }

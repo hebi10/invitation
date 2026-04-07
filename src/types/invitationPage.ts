@@ -1,3 +1,5 @@
+import type { InvitationThemeKey as RegisteredInvitationThemeKey } from '@/lib/invitationThemes';
+
 export interface FamilyMember {
   relation: string;
   name: string;
@@ -25,7 +27,7 @@ export interface BankAccount {
 
 export type InvitationShareMode = 'link' | 'card';
 export type InvitationProductTier = 'standard' | 'deluxe' | 'premium';
-export type InvitationThemeKey = 'emotional' | 'simple';
+export type InvitationThemeKey = RegisteredInvitationThemeKey;
 
 export interface InvitationFeatureFlags {
   maxGalleryImages: number;
@@ -107,10 +109,9 @@ export interface InvitationPageVariantLink {
   displayName: string;
 }
 
-export interface InvitationPageVariants {
-  emotional?: InvitationPageVariantLink;
-  simple?: InvitationPageVariantLink;
-}
+export type InvitationPageVariants = Partial<
+  Record<InvitationThemeKey, InvitationPageVariantLink>
+>;
 
 export interface InvitationPage {
   slug: string;

@@ -1,27 +1,18 @@
+import {
+  buildInvitationThemeRoutePath,
+  DEFAULT_INVITATION_THEME,
+  getInvitationThemeDefinition,
+  INVITATION_THEME_KEYS,
+  type InvitationThemeKey,
+} from '@/lib/invitationThemes';
 import type { InvitationPageVariants } from '@/types/invitationPage';
 
-export type InvitationVariantKey = 'emotional' | 'simple';
+export type InvitationVariantKey = InvitationThemeKey;
 export type InvitationVariantAvailabilityMap = Partial<
   Record<InvitationVariantKey, boolean>
 >;
 
-const variantDefinitions: Record<
-  InvitationVariantKey,
-  { pathSuffix: string; label: string }
-> = {
-  emotional: {
-    pathSuffix: '',
-    label: 'Emotional',
-  },
-  simple: {
-    pathSuffix: '/simple',
-    label: 'Simple',
-  },
-};
-
-export const INVITATION_VARIANT_KEYS = Object.keys(
-  variantDefinitions
-) as InvitationVariantKey[];
+export const INVITATION_VARIANT_KEYS = [...INVITATION_THEME_KEYS];
 
 export function createInvitationVariantAvailability(
   enabledVariants: readonly InvitationVariantKey[]
@@ -40,7 +31,7 @@ export function getAvailableInvitationVariantKeys(
 
 export function resolveAvailableInvitationVariant(
   variants: InvitationPageVariants | null | undefined,
-  preferred: InvitationVariantKey = 'emotional'
+  preferred: InvitationVariantKey = DEFAULT_INVITATION_THEME
 ): InvitationVariantKey | null {
   if (variants?.[preferred]?.available) {
     return preferred;
@@ -60,12 +51,12 @@ export function buildInvitationVariants(
   const availability = options.availability ?? {};
 
   return INVITATION_VARIANT_KEYS.reduce<InvitationPageVariants>((variants, key) => {
-    const definition = variantDefinitions[key];
+    const definition = getInvitationThemeDefinition(key);
 
     variants[key] = {
       available: availability[key] === true,
-      path: `/${slug}${definition.pathSuffix}`,
-      displayName: `${displayName} (${definition.label})`,
+      path: buildInvitationThemeRoutePath(slug, key),
+      displayName: `${displayName} (${definition.variantLabel})`,
     };
 
     return variants;

@@ -7,6 +7,10 @@ import {
   writeAdminInvitationPreviewCache,
 } from '@/lib/adminInvitationPreviewCache';
 import {
+  getInvitationThemeAdminLabel,
+  type InvitationThemeKey,
+} from '@/lib/invitationThemes';
+import {
   deleteComment,
   getAllClientPasswords,
   getAllComments,
@@ -223,8 +227,8 @@ export function useAdminData({
   );
 
   const handleEnableVariant = useCallback(
-    async (page: InvitationPageSummary, variantKey: 'emotional' | 'simple') => {
-      const variantLabel = variantKey === 'emotional' ? 'Emotional' : 'Simple';
+    async (page: InvitationPageSummary, variantKey: InvitationThemeKey) => {
+      const variantLabel = getInvitationThemeAdminLabel(variantKey);
       const approved = await confirm({
         title: `${variantLabel} 디자인을 추가할까요?`,
         description: `${page.displayName} 페이지에 ${variantLabel} 미리보기를 추가합니다.`,

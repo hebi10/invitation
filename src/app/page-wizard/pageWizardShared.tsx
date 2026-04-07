@@ -6,6 +6,10 @@ import type {
   ParentRole,
   PersonRole,
 } from '@/app/page-editor/pageEditorUtils';
+import {
+  getInvitationThemeLabel,
+  getInvitationThemeWizardDescription,
+} from '@/lib/invitationThemes';
 import { resolveInvitationFeatures } from '@/lib/invitationProducts';
 import type {
   InvitationPageSeed,
@@ -114,13 +118,11 @@ export interface FinalStepProps extends WizardStepProps {
 /* ── Label utilities (shared between Client and StepPreview) ── */
 
 export function getThemeLabel(theme: InvitationThemeKey) {
-  return theme === 'emotional' ? '감성형' : '심플형';
+  return getInvitationThemeLabel(theme);
 }
 
 export function getThemeDescription(theme: InvitationThemeKey) {
-  return theme === 'emotional'
-    ? '사진과 분위기를 중심으로 보여주는 감성형 레이아웃입니다.'
-    : '정보를 또렷하게 정리해 보여주는 심플형 레이아웃입니다.';
+  return getInvitationThemeWizardDescription(theme);
 }
 
 export function getProductTierLabel(tier: InvitationProductTier) {

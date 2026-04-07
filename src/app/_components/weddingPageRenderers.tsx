@@ -7,6 +7,7 @@ import {
   resolveReceptionScheduleDetail,
 } from '@/lib/invitationThemePageData';
 import type { InvitationPage, InvitationScheduleDetail } from '@/types/invitationPage';
+import type { InvitationThemeKey } from '@/lib/invitationThemes';
 
 import type { WeddingPageReadyState } from './weddingPageState';
 import type { WeddingInvitationRouteOptions } from './weddingThemes';
@@ -73,7 +74,7 @@ export function createWeddingCalendarEvent(
   };
 }
 
-export function getThemePageData(page: InvitationPage, theme: 'emotional' | 'simple') {
+export function getThemePageData(page: InvitationPage, theme: InvitationThemeKey) {
   return resolveInvitationPageDataByTheme(page, theme);
 }
 

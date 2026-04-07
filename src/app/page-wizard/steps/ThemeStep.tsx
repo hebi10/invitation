@@ -2,8 +2,8 @@ import styles from '../page.module.css';
 import {
   buildInvitationVariants,
   createInvitationVariantAvailability,
-  type InvitationVariantKey,
 } from '@/lib/invitationVariants';
+import { INVITATION_THEME_KEYS } from '@/lib/invitationThemes';
 import {
   getProductTierDescription,
   getProductTierLabel,
@@ -63,7 +63,7 @@ export default function ThemeStep({
         </button>
         {openChoicePanel === 'theme' ? (
           <div className={styles.choiceOptions}>
-            {(['emotional', 'simple'] as const).map((theme) => {
+            {INVITATION_THEME_KEYS.map((theme) => {
               const isActive = defaultTheme === theme;
 
               return (
@@ -81,9 +81,7 @@ export default function ThemeStep({
                         draft.slug,
                         draft.displayName,
                         {
-                          availability: createInvitationVariantAvailability([
-                            theme as InvitationVariantKey,
-                          ]),
+                          availability: createInvitationVariantAvailability([theme]),
                         }
                       );
                     });

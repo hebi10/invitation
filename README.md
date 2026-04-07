@@ -10,6 +10,10 @@
 - 방명록은 새 구조 `guestbooks/{pageSlug}/comments/{commentId}`로 정리 중이며, 기존 `comments` / `comments-{slug}`도 마이그레이션 기간 동안 읽기 fallback을 유지합니다.
 - 메모리 페이지는 별도 `memory-pages` 컬렉션과 `memory-images` 스토리지를 사용합니다.
 
+## 추가 문서
+
+- 새 디자인(테마) 추가 체크리스트: `docs/new-theme-checklist.md`
+
 ## 1. 기술 스택
 
 - `Next.js 15`

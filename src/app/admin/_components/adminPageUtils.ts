@@ -1,4 +1,10 @@
 import type { DisplayPeriod } from '@/services';
+import {
+  buildInvitationThemeRoutePath,
+  getInvitationThemeAdminLabel,
+  INVITATION_THEME_KEYS,
+  type InvitationThemeKey,
+} from '@/lib/invitationThemes';
 import type { StatusTone } from './StatusBadge';
 
 export type AdminTab =
@@ -9,7 +15,7 @@ export type AdminTab =
   | 'passwords'
   | 'periods';
 
-export type ShortcutKey = 'emotional' | 'simple';
+export type ShortcutKey = InvitationThemeKey;
 export type PageStatusFilter = 'all' | 'complete' | 'partial' | 'empty';
 export type PageSort = 'newest' | 'name' | 'coverage';
 export type CommentAgeFilter = 'all' | 'recent';
@@ -22,7 +28,6 @@ export type PeriodStatusFilter =
   | 'inactive';
 
 export const COMMENTS_PER_PAGE = 10;
-export const TOTAL_SHORTCUT_COUNT = 2;
 export const RECENT_COMMENT_DAYS = 7;
 export const DUE_SOON_DAYS = 7;
 
@@ -35,10 +40,13 @@ export const TAB_ITEMS: Array<{ key: AdminTab; label: string }> = [
   { key: 'periods', label: '노출 기간' },
 ];
 
-export const SHORTCUT_ITEMS: Array<{ key: ShortcutKey; label: string }> = [
-  { key: 'emotional', label: 'Emotional' },
-  { key: 'simple', label: 'Simple' },
-];
+export const SHORTCUT_ITEMS: Array<{ key: ShortcutKey; label: string }> =
+  INVITATION_THEME_KEYS.map((key) => ({
+    key,
+    label: getInvitationThemeAdminLabel(key),
+  }));
+
+export const TOTAL_SHORTCUT_COUNT = SHORTCUT_ITEMS.length;
 
 export const PAGE_STATUS_LABELS: Record<PageStatusFilter, string> = {
   all: '전체 상태',
@@ -70,7 +78,7 @@ type VariantCarrier = {
 };
 
 function getAdminPreviewPath(pageSlug: string, key: ShortcutKey) {
-  return key === 'simple' ? `/${pageSlug}/simple` : `/${pageSlug}/emotional`;
+  return buildInvitationThemeRoutePath(pageSlug, key);
 }
 
 export function formatDateTime(date: Date) {

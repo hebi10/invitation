@@ -4,6 +4,12 @@ import { type ChangeEvent, type ReactNode, useEffect, useMemo, useRef, useState 
 
 import { useAdmin } from '@/contexts';
 import { USE_FIREBASE } from '@/lib/firebase';
+import {
+  buildInvitationThemeRoutePath,
+  DEFAULT_INVITATION_THEME,
+  getInvitationThemeLabel,
+  INVITATION_THEME_KEYS,
+} from '@/lib/invitationThemes';
 import { resolveInvitationFeatures } from '@/lib/invitationProducts';
 import { toUserFacingKoreanErrorMessage } from '@/lib/userFacingErrorMessage';
 import {
@@ -616,8 +622,8 @@ export default function PageEditorClient({
   const [isRestoring, setIsRestoring] = useState(false);
   const [saveState, setSaveState] = useState<SaveState>('idle');
   const [notice, setNotice] = useState<NoticeState>(null);
-  const [defaultTheme, setDefaultTheme] = useState<InvitationThemeKey>('emotional');
-  const [previewTheme, setPreviewTheme] = useState<PreviewThemeKey>('emotional');
+  const [defaultTheme, setDefaultTheme] = useState<InvitationThemeKey>(DEFAULT_INVITATION_THEME);
+  const [previewTheme, setPreviewTheme] = useState<PreviewThemeKey>(DEFAULT_INVITATION_THEME);
   const [workspaceView, setWorkspaceView] = useState<WorkspaceView>('form');
   const [isStepMenuOpen, setIsStepMenuOpen] = useState(false);
   const [activeStep, setActiveStep] = useState<EditorStepKey | null>('basic');
@@ -634,10 +640,10 @@ export default function PageEditorClient({
     formState?.couple.bride.name ?? initialBrideName,
     formState?.displayName || initialDisplayName || slug
   );
-  const previewLinks = [
-    { href: `/${slug}/emotional`, label: '감성형 청첩장 보기' },
-    { href: `/${slug}/simple`, label: '심플형 청첩장 보기' },
-  ];
+  const previewLinks = INVITATION_THEME_KEYS.map((themeKey) => ({
+    href: buildInvitationThemeRoutePath(slug, themeKey),
+    label: `${getInvitationThemeLabel(themeKey)} 청첩장 보기`,
+  }));
 
   const hasConfigChanges = Boolean(
     formState &&
@@ -677,8 +683,7 @@ export default function PageEditorClient({
     totalRequiredFields > 0
       ? Math.round((completedRequiredFields / totalRequiredFields) * 100)
       : 0;
-  const currentPreviewHref =
-    previewTheme === 'simple' ? `/${slug}/simple` : `/${slug}/emotional`;
+  const currentPreviewHref = buildInvitationThemeRoutePath(slug, previewTheme);
   const weddingSummary = formState ? buildWeddingSummary(formState) : '아직 입력되지 않았습니다.';
   const currentStepKey = activeStep ?? 'basic';
   const currentStep = STEP_MAP[currentStepKey];
@@ -2198,28 +2203,20 @@ export default function PageEditorClient({
 
   const renderPreviewThemeTabs = () => (
     <div className={styles.editorTabs} role="tablist" aria-label="미리보기 테마 선택">
-      <button
-        type="button"
-        role="tab"
-        aria-selected={previewTheme === 'emotional'}
-        className={`${styles.editorTab} ${
-          previewTheme === 'emotional' ? styles.editorTabActive : ''
-        }`}
-        onClick={() => setPreviewTheme('emotional')}
-      >
-        감성형
-      </button>
-      <button
-        type="button"
-        role="tab"
-        aria-selected={previewTheme === 'simple'}
-        className={`${styles.editorTab} ${
-          previewTheme === 'simple' ? styles.editorTabActive : ''
-        }`}
-        onClick={() => setPreviewTheme('simple')}
-      >
-        심플형
-      </button>
+      {INVITATION_THEME_KEYS.map((themeKey) => (
+        <button
+          key={themeKey}
+          type="button"
+          role="tab"
+          aria-selected={previewTheme === themeKey}
+          className={`${styles.editorTab} ${
+            previewTheme === themeKey ? styles.editorTabActive : ''
+          }`}
+          onClick={() => setPreviewTheme(themeKey)}
+        >
+          {getInvitationThemeLabel(themeKey)}
+        </button>
+      ))}
     </div>
   );
 

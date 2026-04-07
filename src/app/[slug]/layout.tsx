@@ -6,13 +6,14 @@ import {
   getWeddingInvitationMetadata,
   weddingInvitationViewport,
 } from '@/app/_components/WeddingInvitationLayout';
+import { DEFAULT_INVITATION_THEME } from '@/lib/invitationThemes';
 import { getServerInvitationPageBySlug } from '@/server/invitationPageServerService';
 
 export const dynamic = 'force-dynamic';
 export const viewport: Viewport = weddingInvitationViewport;
 
 const Layout = createWeddingInvitationLayout({
-  theme: 'emotional',
+  theme: DEFAULT_INVITATION_THEME,
 });
 
 export async function generateMetadata({

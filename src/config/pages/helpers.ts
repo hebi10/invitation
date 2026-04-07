@@ -2,8 +2,13 @@ import type { InvitationPageSeed } from '@/types/invitationPage';
 import {
   buildInvitationVariants,
   createInvitationVariantAvailability,
+  INVITATION_VARIANT_KEYS,
   type InvitationVariantKey,
 } from '@/lib/invitationVariants';
+import {
+  DEFAULT_INVITATION_THEME,
+  INVITATION_THEME_REGISTRY,
+} from '@/lib/invitationThemes';
 
 type WeddingPageMetadata = InvitationPageSeed['metadata'];
 type WeddingPageData = NonNullable<InvitationPageSeed['pageData']>;
@@ -12,12 +17,17 @@ type WeddingVariants = NonNullable<InvitationPageSeed['variants']>;
 
 export type WeddingVariantKey = keyof WeddingVariants;
 
-export const ALL_WEDDING_VARIANT_KEYS: readonly WeddingVariantKey[] = [
-  'emotional',
-  'simple',
-];
+export const ALL_WEDDING_VARIANT_KEYS: readonly WeddingVariantKey[] =
+  INVITATION_VARIANT_KEYS as readonly WeddingVariantKey[];
 
-export const SIMPLE_WEDDING_VARIANT_KEYS: readonly WeddingVariantKey[] = ['simple'];
+const simpleThemeKey = INVITATION_THEME_REGISTRY.find(
+  (theme) => theme.pathSuffix === '/simple'
+)?.key;
+
+export const SIMPLE_WEDDING_VARIANT_KEYS: readonly WeddingVariantKey[] =
+  simpleThemeKey
+    ? ([simpleThemeKey] as readonly WeddingVariantKey[])
+    : ([DEFAULT_INVITATION_THEME] as readonly WeddingVariantKey[]);
 
 export interface WeddingPageMetadataInput {
   title?: string;

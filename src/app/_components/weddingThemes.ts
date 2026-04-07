@@ -1,8 +1,13 @@
 import type { CSSProperties } from 'react';
 
+import {
+  getInvitationThemeDefinition,
+  INVITATION_THEME_KEYS,
+  type InvitationThemeKey,
+} from '@/lib/invitationThemes';
 import type { InvitationPage } from '@/types/invitationPage';
 
-export type WeddingThemeKey = 'emotional' | 'simple';
+export type WeddingThemeKey = InvitationThemeKey;
 
 export interface WeddingInvitationRouteOptions {
   slug: string;
@@ -40,25 +45,30 @@ const defaultShareContainer = {
 const invitationDescription = (pageConfig: InvitationPage) =>
   `${pageConfig.date}\n${pageConfig.venue}\n소중한 분들을 모시고 저희의 새로운 시작을 함께하고자 합니다.`;
 
-const themeDefinitions: Record<WeddingThemeKey, WeddingThemeDefinition> = {
-  emotional: {
-    documentTitleSuffix: '',
-    ariaLabelSuffix: '',
-    shareButtonVariant: 'default',
-    shareContainer: defaultShareContainer,
-    getShareTitle: (pageConfig) => pageConfig.metadata.title,
-    getShareDescription: invitationDescription,
-  },
-  simple: {
-    documentTitleSuffix: ' (Simple)',
-    ariaLabelSuffix: ' (Simple)',
-    shareButtonVariant: 'default',
-    shareContainer: defaultShareContainer,
-    getShareTitle: (pageConfig) =>
-      `${pageConfig.groomName} · ${pageConfig.brideName} 결혼식 초대`,
-    getShareDescription: invitationDescription,
-  },
+const shareTitleByMode: Record<
+  ReturnType<typeof getInvitationThemeDefinition>['shareTitleMode'],
+  (pageConfig: InvitationPage) => string
+> = {
+  metadata: (pageConfig) => pageConfig.metadata.title,
+  couple: (pageConfig) => `${pageConfig.groomName} · ${pageConfig.brideName} 결혼식 초대`,
 };
+
+const themeDefinitions = INVITATION_THEME_KEYS.reduce<
+  Record<WeddingThemeKey, WeddingThemeDefinition>
+>((accumulator, theme) => {
+  const definition = getInvitationThemeDefinition(theme);
+
+  accumulator[theme] = {
+    documentTitleSuffix: definition.documentTitleSuffix,
+    ariaLabelSuffix: definition.ariaLabelSuffix,
+    shareButtonVariant: 'default',
+    shareContainer: defaultShareContainer,
+    getShareTitle: shareTitleByMode[definition.shareTitleMode],
+    getShareDescription: invitationDescription,
+  };
+
+  return accumulator;
+}, {} as Record<WeddingThemeKey, WeddingThemeDefinition>);
 
 export function getWeddingThemeDefinition(theme: WeddingThemeKey) {
   return themeDefinitions[theme];

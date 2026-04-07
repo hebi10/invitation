@@ -17,6 +17,7 @@ import {
   type PersonRole,
 } from '@/app/page-editor/pageEditorUtils';
 import { useAdmin } from '@/contexts';
+import { DEFAULT_INVITATION_THEME } from '@/lib/invitationThemes';
 import { resolveInvitationFeatures } from '@/lib/invitationProducts';
 import { toUserFacingKoreanErrorMessage } from '@/lib/userFacingErrorMessage';
 import { searchKakaoLocalAddress } from '@/services/kakaoLocalService';
@@ -84,7 +85,7 @@ import {
   VenueStep,
 } from './steps';
 
-const DEFAULT_THEME: InvitationThemeKey = 'emotional';
+const DEFAULT_THEME: InvitationThemeKey = DEFAULT_INVITATION_THEME;
 const DEFAULT_SEED_SLUG = getInvitationPageSeedTemplates()[0]?.seedSlug ?? null;
 
 interface PageWizardClientProps {
@@ -299,8 +300,15 @@ export default function PageWizardClient({ initialSlug }: PageWizardClientProps)
 
   const handleProductTierChange = useCallback((tier: InvitationProductTier) => {
     updateForm((draft) => {
+      const nextFeatures = resolveInvitationFeatures(tier);
+
       draft.productTier = tier;
-      draft.features = resolveInvitationFeatures(tier);
+      draft.features = nextFeatures;
+
+      if (draft.pageData?.galleryImages) {
+        draft.pageData.galleryImages = draft.pageData.galleryImages
+          .slice(0, nextFeatures.maxGalleryImages);
+      }
     });
   }, [updateForm]);
 

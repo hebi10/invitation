@@ -1,3 +1,8 @@
+import {
+  DEFAULT_INVITATION_THEME as DEFAULT_THEME_KEY,
+  getInvitationThemeLabel,
+  INVITATION_THEME_KEYS,
+} from '@/lib/invitationThemes';
 import type {
   InvitationFeatureFlags,
   InvitationProductTier,
@@ -5,7 +10,7 @@ import type {
   InvitationThemeKey,
 } from '@/types/invitationPage';
 
-export const DEFAULT_INVITATION_THEME: InvitationThemeKey = 'emotional';
+export const DEFAULT_INVITATION_THEME: InvitationThemeKey = DEFAULT_THEME_KEY;
 export const DEFAULT_INVITATION_PRODUCT_TIER: InvitationProductTier = 'premium';
 
 export const INVITATION_PRODUCT_FEATURES: Record<
@@ -85,49 +90,29 @@ export function resolveInvitationFeatures(
 }
 
 export function buildInvitationTemplateDefinitions(seedSlug: string) {
+  const tierDescriptionByProduct: Record<InvitationProductTier, string> = {
+    standard: '기본 레이아웃에 STANDARD 구성을 적용한 템플릿입니다.',
+    deluxe: '레이아웃에 확장 갤러리와 카드형 공유를 포함한 템플릿입니다.',
+    premium: '레이아웃에 모든 PREMIUM 기능을 포함한 템플릿입니다.',
+  };
+
+  const tiers: InvitationProductTier[] = ['standard', 'deluxe', 'premium'];
+
   const definitions: Array<{
     theme: InvitationThemeKey;
     productTier: InvitationProductTier;
     displayName: string;
     description: string;
-  }> = [
-    {
-      theme: 'emotional',
-      productTier: 'standard',
-      displayName: '감성형 STANDARD',
-      description: '감성형 기본 레이아웃에 STANDARD 구성을 적용한 템플릿입니다.',
-    },
-    {
-      theme: 'emotional',
-      productTier: 'deluxe',
-      displayName: '감성형 DELUXE',
-      description: '감성형 레이아웃에 확장 갤러리와 카드형 공유를 포함한 템플릿입니다.',
-    },
-    {
-      theme: 'emotional',
-      productTier: 'premium',
-      displayName: '감성형 PREMIUM',
-      description: '감성형 레이아웃에 모든 PREMIUM 기능을 포함한 템플릿입니다.',
-    },
-    {
-      theme: 'simple',
-      productTier: 'standard',
-      displayName: '심플형 STANDARD',
-      description: '심플형 기본 레이아웃에 STANDARD 구성을 적용한 템플릿입니다.',
-    },
-    {
-      theme: 'simple',
-      productTier: 'deluxe',
-      displayName: '심플형 DELUXE',
-      description: '심플형 레이아웃에 확장 갤러리와 카드형 공유를 포함한 템플릿입니다.',
-    },
-    {
-      theme: 'simple',
-      productTier: 'premium',
-      displayName: '심플형 PREMIUM',
-      description: '심플형 레이아웃에 모든 PREMIUM 기능을 포함한 템플릿입니다.',
-    },
-  ];
+  }> = INVITATION_THEME_KEYS.flatMap((theme) => {
+    const themeLabel = getInvitationThemeLabel(theme);
+
+    return tiers.map((productTier) => ({
+      theme,
+      productTier,
+      displayName: `${themeLabel} ${productTier.toUpperCase()}`,
+      description: `${themeLabel} ${tierDescriptionByProduct[productTier]}`,
+    }));
+  });
 
   return definitions.map((entry) => ({
     id: `${entry.theme}-${entry.productTier}`,

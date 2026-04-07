@@ -1,6 +1,7 @@
 import {
   DEFAULT_INVITATION_THEME,
-} from '@/lib/invitationProducts';
+  normalizeInvitationThemeKey,
+} from '@/lib/invitationThemes';
 import type { InvitationThemeKey } from '@/types/invitationPage';
 
 export function isRecord(value: unknown): value is Record<string, any> {
@@ -40,5 +41,5 @@ export function normalizeInvitationTheme(
   value: unknown,
   fallback: InvitationThemeKey = DEFAULT_INVITATION_THEME
 ): InvitationThemeKey {
-  return value === 'simple' ? 'simple' : fallback;
+  return normalizeInvitationThemeKey(value, fallback);
 }

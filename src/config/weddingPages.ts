@@ -15,6 +15,10 @@ import {
   resolveAvailableInvitationVariant,
   type InvitationVariantKey,
 } from '@/lib/invitationVariants';
+import {
+  DEFAULT_INVITATION_THEME,
+  isInvitationThemeKey,
+} from '@/lib/invitationThemes';
 
 import { anDoyoungYoonJisooConfig } from './pages/an-doyoung-yoon-jisoo';
 import { kimMinjunParkSoheeConfig } from './pages/kim-minjun-park-sohee';
@@ -148,12 +152,11 @@ export function createInvitationPageFromSeed(
   seed: WeddingPageConfig,
   overrides: CreateInvitationPageOverrides = {}
 ): InvitationPage {
-  const hasExplicitFallbackTheme =
-    overrides.fallbackTheme === 'emotional' || overrides.fallbackTheme === 'simple';
+  const hasExplicitFallbackTheme = isInvitationThemeKey(overrides.fallbackTheme);
   const fallbackTheme =
     overrides.fallbackTheme ??
-    resolveAvailableInvitationVariant(seed.variants, 'emotional') ??
-    'emotional';
+    resolveAvailableInvitationVariant(seed.variants, DEFAULT_INVITATION_THEME) ??
+    DEFAULT_INVITATION_THEME;
 
   return {
     ...seed,

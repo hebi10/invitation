@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 
 import { useAdmin } from '@/contexts';
+import { getInvitationThemeLabel } from '@/lib/invitationThemes';
 import {
   createInvitationPageDraftFromSeed,
   getInvitationPageSeedTemplates,
@@ -23,7 +24,7 @@ interface InvitationDraftSetupClientProps {
 
 function describeFeatureLine(template: ReturnType<typeof getInvitationPageSeedTemplates>[number]) {
   return [
-    `디자인: ${template.theme === 'emotional' ? '감성형' : '심플형'}`,
+    `디자인: ${getInvitationThemeLabel(template.theme)}`,
     `상품: ${template.productTier.toUpperCase()}`,
     `갤러리: 최대 ${template.features.maxGalleryImages}장`,
     `공유 방식: ${
@@ -226,7 +227,7 @@ export default function InvitationDraftSetupClient({
                 <div className={styles.templateTop}>
                   <strong className={styles.templateTitle}>{template.displayName}</strong>
                   <span className={styles.chip}>
-                    {template.theme === 'emotional' ? '감성형' : '심플형'}
+                    {getInvitationThemeLabel(template.theme)}
                   </span>
                 </div>
                 <p className={styles.templateDescription}>{template.description}</p>
