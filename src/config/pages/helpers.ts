@@ -1,5 +1,9 @@
 import type { InvitationPageSeed } from '@/types/invitationPage';
-import { buildInvitationVariants, type InvitationVariantKey } from '@/lib/invitationVariants';
+import {
+  buildInvitationVariants,
+  createInvitationVariantAvailability,
+  type InvitationVariantKey,
+} from '@/lib/invitationVariants';
 
 type WeddingPageMetadata = InvitationPageSeed['metadata'];
 type WeddingPageData = NonNullable<InvitationPageSeed['pageData']>;
@@ -65,7 +69,11 @@ export function createWeddingVariants({
   enabledVariants = defaultWeddingVariantKeys,
   displayNameOverrides = {},
 }: CreateWeddingVariantsOptions): WeddingVariants {
-  const variants = buildInvitationVariants(slug, displayName);
+  const variants = buildInvitationVariants(slug, displayName, {
+    availability: createInvitationVariantAvailability(
+      enabledVariants as readonly InvitationVariantKey[]
+    ),
+  });
 
   return enabledVariants.reduce<WeddingVariants>((accumulator, variantKey) => {
     const variant = variants[variantKey as InvitationVariantKey];

@@ -2,9 +2,9 @@ import { useCallback, type ChangeEvent, type RefObject } from 'react';
 
 import { toUserFacingKoreanErrorMessage } from '@/lib/userFacingErrorMessage';
 import {
+  type EditableImageUploadRole,
   getEditableImageUploadHint,
-  uploadClientEditorImage,
-  uploadPageEditorImage,
+  uploadEditablePageImage,
   validateEditableImageBatch,
 } from '@/services/imageService';
 import type { InvitationPageSeed } from '@/types/invitationPage';
@@ -14,7 +14,7 @@ import type { WizardDraftCreationState } from './useWizardPersistence';
 
 export function useImageUpload({
   canUploadImages,
-  isAdminLoggedIn,
+  uploadRole,
   formState,
   maxGalleryImages,
   coverUploadInputRef,
@@ -26,7 +26,7 @@ export function useImageUpload({
   showErrorNotice,
 }: {
   canUploadImages: boolean;
-  isAdminLoggedIn: boolean;
+  uploadRole: EditableImageUploadRole;
   formState: InvitationPageSeed | null;
   maxGalleryImages: number;
   coverUploadInputRef: RefObject<HTMLInputElement | null>;
@@ -83,10 +83,12 @@ export function useImageUpload({
 
       try {
         const draftState = await ensureDraftCreated();
-        const uploadImage = isAdminLoggedIn
-          ? uploadPageEditorImage
-          : uploadClientEditorImage;
-        const uploaded = await uploadImage(file, draftState.slug, 'cover');
+        const uploaded = await uploadEditablePageImage(
+          file,
+          draftState.slug,
+          'cover',
+          uploadRole
+        );
 
         updateForm((draft) => {
           draft.metadata.images.wedding = uploaded.url;
@@ -110,10 +112,10 @@ export function useImageUpload({
     [
       canUploadImages,
       ensureDraftCreated,
-      isAdminLoggedIn,
       setUploadingField,
       showErrorNotice,
       showNotice,
+      uploadRole,
       updateForm,
     ]
   );
@@ -154,12 +156,14 @@ export function useImageUpload({
       try {
         const draftState = await ensureDraftCreated();
         const uploadedUrls: string[] = [];
-        const uploadImage = isAdminLoggedIn
-          ? uploadPageEditorImage
-          : uploadClientEditorImage;
 
         for (const file of filesToUpload) {
-          const uploaded = await uploadImage(file, draftState.slug, 'gallery');
+          const uploaded = await uploadEditablePageImage(
+            file,
+            draftState.slug,
+            'gallery',
+            uploadRole
+          );
           uploadedUrls.push(uploaded.url);
         }
 
@@ -192,11 +196,11 @@ export function useImageUpload({
       canUploadImages,
       ensureDraftCreated,
       formState?.pageData?.galleryImages?.length,
-      isAdminLoggedIn,
       maxGalleryImages,
       setUploadingField,
       showErrorNotice,
       showNotice,
+      uploadRole,
       updateForm,
     ]
   );

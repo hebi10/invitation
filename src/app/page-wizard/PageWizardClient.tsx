@@ -1,6 +1,6 @@
 'use client';
 
-import { type ChangeEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import type { Swiper as SwiperType } from 'swiper';
 import { Pagination } from 'swiper/modules';
@@ -19,12 +19,6 @@ import {
 import { useAdmin } from '@/contexts';
 import { resolveInvitationFeatures } from '@/lib/invitationProducts';
 import { toUserFacingKoreanErrorMessage } from '@/lib/userFacingErrorMessage';
-import {
-  getEditableImageUploadHint,
-  uploadClientEditorImage,
-  uploadPageEditorImage,
-  validateEditableImageBatch,
-} from '@/services/imageService';
 import { searchKakaoLocalAddress } from '@/services/kakaoLocalService';
 import {
   getClientEditorEditableConfig,
@@ -990,206 +984,6 @@ export default function PageWizardClient({ initialSlug }: PageWizardClientProps)
     });
   };
 
-  const legacyHandleTriggerPicker = (kind: UploadFieldKind) => {
-    if (!canUploadImages) {
-      showErrorNotice('이미지 업로드는 관리자 또는 고객 편집 로그인 후 사용할 수 있습니다.');
-      return;
-    }
-    if (!canUploadImages) {
-      showErrorNotice('이미지 업로드는 관리자만 사용할 수 있습니다.');
-      return;
-    }
-
-    if (kind === 'cover') {
-      coverUploadInputRef.current?.click();
-      return;
-    }
-
-    galleryUploadInputRef.current?.click();
-  };
-
-  const legacyHandleCoverUpload = async (event: ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) {
-      return;
-    }
-
-    const handledByNewFlow = await (async () => {
-      event.target.value = '';
-
-      if (!canUploadImages) {
-        showErrorNotice('이미지 업로드는 관리자 또는 고객 편집 로그인 후 사용할 수 있습니다.');
-        return true;
-      }
-
-      const validationError = validateEditableImageBatch([file], 'cover');
-      if (validationError) {
-        showErrorNotice(validationError);
-        return true;
-      }
-
-      setUploadingField('cover');
-
-      try {
-        const draftState = await legacyEnsureDraftCreated();
-        const uploadImage = isAdminLoggedIn ? uploadPageEditorImage : uploadClientEditorImage;
-        const uploaded = await uploadImage(file, draftState.slug, 'cover');
-
-        updateForm((draft) => {
-          draft.metadata.images.wedding = uploaded.url;
-        });
-
-        showNotice(
-          'success',
-          `대표 이미지를 업로드했습니다. ${getEditableImageUploadHint('cover')}`
-        );
-      } catch (error) {
-        showErrorNotice(
-          toUserFacingKoreanErrorMessage(error, '대표 이미지를 업로드하지 못했습니다.')
-        );
-      } finally {
-        setUploadingField(null);
-      }
-
-      return true;
-    })();
-
-    if (handledByNewFlow) {
-      return;
-    }
-
-    if (!canUploadImages) {
-      event.target.value = '';
-      showErrorNotice('이미지 업로드는 관리자만 사용할 수 있습니다.');
-      return;
-    }
-
-    event.target.value = '';
-    setUploadingField('cover');
-
-    try {
-      const draftState = await legacyEnsureDraftCreated();
-      const uploaded = await uploadPageEditorImage(file, draftState.slug, 'cover');
-
-      updateForm((draft) => {
-        draft.metadata.images.wedding = uploaded.url;
-      });
-
-      showNotice('success', '대표 이미지를 업로드했습니다.');
-    } catch (error) {
-      showErrorNotice(
-        toUserFacingKoreanErrorMessage(error, '대표 이미지를 업로드하지 못했습니다.')
-      );
-    } finally {
-      setUploadingField(null);
-    }
-  };
-
-  const legacyHandleGalleryUpload = async (event: ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(event.target.files ?? []);
-    if (files.length === 0) {
-      return;
-    }
-
-    const handledByNewFlow = await (async () => {
-      event.target.value = '';
-
-      if (!canUploadImages) {
-        showErrorNotice('이미지 업로드는 관리자 또는 고객 편집 로그인 후 사용할 수 있습니다.');
-        return true;
-      }
-
-      const draftState = await legacyEnsureDraftCreated();
-      const currentCount = formState?.pageData?.galleryImages?.length ?? 0;
-      const remainingSlots = Math.max(maxGalleryImages - currentCount, 0);
-      const filesToUpload = files.slice(0, remainingSlots);
-      const validationError = validateEditableImageBatch(
-        filesToUpload,
-        'gallery',
-        Math.min(10, remainingSlots)
-      );
-
-      if (validationError) {
-        showErrorNotice(validationError);
-        return true;
-      }
-
-      setUploadingField('gallery');
-
-      try {
-        const uploadedUrls: string[] = [];
-        const uploadImage = isAdminLoggedIn ? uploadPageEditorImage : uploadClientEditorImage;
-
-        for (const file of filesToUpload) {
-          const uploaded = await uploadImage(file, draftState.slug, 'gallery');
-          uploadedUrls.push(uploaded.url);
-        }
-
-        updateForm((draft) => {
-          if (!draft.pageData?.galleryImages) {
-            return;
-          }
-
-          draft.pageData.galleryImages.push(...uploadedUrls);
-        });
-
-        showNotice(
-          'success',
-          `갤러리 이미지 ${uploadedUrls.length}장을 업로드했습니다. ${getEditableImageUploadHint('gallery')}`
-        );
-      } catch (error) {
-        showErrorNotice(
-          toUserFacingKoreanErrorMessage(error, '갤러리 이미지를 업로드하지 못했습니다.')
-        );
-      } finally {
-        setUploadingField(null);
-      }
-
-      return true;
-    })();
-
-    if (handledByNewFlow) {
-      return;
-    }
-
-    if (!canUploadImages) {
-      event.target.value = '';
-      showErrorNotice('이미지 업로드는 관리자만 사용할 수 있습니다.');
-      return;
-    }
-
-    event.target.value = '';
-    setUploadingField('gallery');
-
-    try {
-      const draftState = await legacyEnsureDraftCreated();
-      const currentCount = formState?.pageData?.galleryImages?.length ?? 0;
-      const filesToUpload = files.slice(0, Math.max(maxGalleryImages - currentCount, 0));
-      const uploadedUrls: string[] = [];
-
-      for (const file of filesToUpload) {
-        const uploaded = await uploadPageEditorImage(file, draftState.slug, 'gallery');
-        uploadedUrls.push(uploaded.url);
-      }
-
-      updateForm((draft) => {
-        if (!draft.pageData?.galleryImages) {
-          return;
-        }
-
-        draft.pageData.galleryImages.push(...uploadedUrls);
-      });
-
-      showNotice('success', '갤러리 이미지를 업로드했습니다.');
-    } catch (error) {
-      showErrorNotice(
-        toUserFacingKoreanErrorMessage(error, '갤러리 이미지를 업로드하지 못했습니다.')
-      );
-    } finally {
-      setUploadingField(null);
-    }
-  };
-
   /* ── Handlers: Navigation ── */
 
   const legacyHandleMoveNext = async () => {
@@ -1268,9 +1062,6 @@ export default function PageWizardClient({ initialSlug }: PageWizardClientProps)
     });
   };
 
-  void legacyHandleTriggerPicker;
-  void legacyHandleCoverUpload;
-  void legacyHandleGalleryUpload;
   void legacyHandleMoveNext;
   void legacyHandleMovePrevious;
   void legacyHandleFinalConfirm;
@@ -1298,7 +1089,7 @@ export default function PageWizardClient({ initialSlug }: PageWizardClientProps)
 
   const { handleTriggerPicker, handleCoverUpload, handleGalleryUpload } = useImageUpload({
     canUploadImages,
-    isAdminLoggedIn,
+    uploadRole: isAdminLoggedIn ? 'admin' : 'client',
     formState,
     maxGalleryImages,
     coverUploadInputRef,

@@ -201,6 +201,21 @@ export const uploadPageEditorImage = async (
     assetKind,
   });
 
+export type EditableImageUploadRole = 'admin' | 'client';
+
+export async function uploadEditablePageImage(
+  file: File,
+  pageSlug: string,
+  assetKind: PageEditorImageAssetKind,
+  role: EditableImageUploadRole
+) {
+  if (role === 'admin') {
+    return uploadPageEditorImage(file, pageSlug, assetKind);
+  }
+
+  return uploadClientEditorImage(file, pageSlug, assetKind);
+}
+
 export async function uploadClientEditorImage(
   file: File,
   pageSlug: string,

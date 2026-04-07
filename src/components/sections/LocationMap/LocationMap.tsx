@@ -41,6 +41,28 @@ const venueInfoIconPaths = {
   transit: '/images/005.png',
 } as const;
 
+function hasText(value?: string) {
+  return Boolean(value?.trim());
+}
+
+function hasValidKakaoCoordinates(
+  config?: {
+    latitude: number;
+    longitude: number;
+    level?: number;
+    markerTitle?: string;
+  }
+) {
+  if (!config) {
+    return false;
+  }
+
+  return (
+    Number.isFinite(config.latitude) &&
+    Number.isFinite(config.longitude) &&
+    !(config.latitude === 0 && config.longitude === 0)
+  );
+}
 export default function LocationMap({
   venueName,
   address,
@@ -53,13 +75,15 @@ export default function LocationMap({
   const [kakaoMapLoaded, setKakaoMapLoaded] = useState(false);
   const [isAddressCopied, setIsAddressCopied] = useState(false);
   const [controlEnabled, setControlEnabled] = useState(false);
+  const hasAddress = hasText(address);
+  const hasCoordinates = hasValidKakaoCoordinates(kakaoMapConfig);
 
   useEffect(() => {
     setIsClient(true);
   }, []);
 
   useEffect(() => {
-    if (!isClient) {
+    if (!isClient || (!hasAddress && !hasCoordinates)) {
       return;
     }
 
@@ -71,7 +95,7 @@ export default function LocationMap({
         console.error('[LocationMap] failed to load Kakao Maps SDK', error);
         setKakaoMapLoaded(true);
       });
-  }, [isClient, address, venueName, kakaoMapConfig]);
+  }, [isClient, address, hasAddress, hasCoordinates, venueName, kakaoMapConfig]);
 
   const initializeKakaoMap = () => {
     const container = mapRef.current;
@@ -82,18 +106,18 @@ export default function LocationMap({
     try {
       container.innerHTML = '';
 
-      const defaultLat = kakaoMapConfig?.latitude || 37.5665;
-      const defaultLng = kakaoMapConfig?.longitude || 126.9780;
       const mapLevel = kakaoMapConfig?.level || 3;
 
       const options = {
-        center: new window.kakao.maps.LatLng(defaultLat, defaultLng),
+        center: hasCoordinates
+          ? new window.kakao.maps.LatLng(kakaoMapConfig!.latitude, kakaoMapConfig!.longitude)
+          : new window.kakao.maps.LatLng(37.5665, 126.978),
         level: mapLevel,
       };
 
       const map = new window.kakao.maps.Map(container, options);
 
-      if (kakaoMapConfig) {
+      if (hasCoordinates && kakaoMapConfig) {
         const coords = new window.kakao.maps.LatLng(
           kakaoMapConfig.latitude,
           kakaoMapConfig.longitude
@@ -127,7 +151,7 @@ export default function LocationMap({
 
       const geocoder = new window.kakao.maps.services.Geocoder();
 
-      geocoder.addressSearch(address, (result: any, status: any) => {
+      geocoder.addressSearch(address.trim(), (result: any, status: any) => {
         if (status === window.kakao.maps.services.Status.OK) {
           const coords = new window.kakao.maps.LatLng(result[0].y, result[0].x);
 
@@ -180,6 +204,10 @@ export default function LocationMap({
   };
 
   const handleCopyAddress = async () => {
+    if (!hasAddress) {
+      return;
+    }
+
     const copied = await copyTextToClipboard(address);
     if (!copied) {
       return;
@@ -188,6 +216,10 @@ export default function LocationMap({
     setIsAddressCopied(true);
     window.setTimeout(() => setIsAddressCopied(false), 2000);
   };
+
+  if (!hasAddress && !hasCoordinates) {
+    return null;
+  }
 
   if (!isClient) {
     return (
@@ -297,17 +329,19 @@ export default function LocationMap({
                 <span className={styles.venueName}>{venueName}</span>
               </div>
 
-              <div className={styles.venueAddressSection}>
-                <Image
-                  src={venueInfoIconPaths.address}
-                  alt=""
-                  aria-hidden="true"
-                  width={34}
-                  height={34}
-                  className={styles.venueInfoItemIconImage}
-                />
-                <span className={styles.venueAddress}>{address}</span>
-              </div>
+              {hasAddress && (
+                <div className={styles.venueAddressSection}>
+                  <Image
+                    src={venueInfoIconPaths.address}
+                    alt=""
+                    aria-hidden="true"
+                    width={34}
+                    height={34}
+                    className={styles.venueInfoItemIconImage}
+                  />
+                  <span className={styles.venueAddress}>{address}</span>
+                </div>
+              )}
 
               {contact && (
                 <div className={styles.venueContactSection}>
@@ -345,51 +379,53 @@ export default function LocationMap({
           </div>
         </div>
 
-        <div className={styles.navigationSection}>
-          <div className={styles.navigationHeader}>
-            <span className={styles.navigationIcon}>🧭</span>
-            <h3 className={styles.navigationTitle}>길찾기</h3>
+        {hasAddress && (
+          <div className={styles.navigationSection}>
+            <div className={styles.navigationHeader}>
+              <span className={styles.navigationIcon}>🧭</span>
+              <h3 className={styles.navigationTitle}>길찾기</h3>
+            </div>
+
+            <div className={styles.navigationButtons}>
+              <button
+                className={styles.navButton}
+                onClick={handleCopyAddress}
+                type="button"
+              >
+                <span className={styles.navButtonIcon}>⌘</span>
+                <span className={styles.navButtonText}>
+                  {isAddressCopied ? '복사 완료' : '주소 복사'}
+                </span>
+              </button>
+              <button
+                className={styles.navButton}
+                onClick={() => window.open(buildNaverMapSearchUrl(address), '_blank')}
+                type="button"
+              >
+                <span className={styles.navButtonIcon}>🟢</span>
+                <span className={styles.navButtonText}>네이버 지도</span>
+              </button>
+
+              <button
+                className={styles.navButton}
+                onClick={() => window.open(buildKakaoMapSearchUrl(address), '_blank')}
+                type="button"
+              >
+                <span className={styles.navButtonIcon}>🟡</span>
+                <span className={styles.navButtonText}>카카오맵</span>
+              </button>
+
+              <button
+                className={styles.navButton}
+                onClick={() => window.open(buildGoogleMapSearchUrl(address), '_blank')}
+                type="button"
+              >
+                <span className={styles.navButtonIcon}>🔵</span>
+                <span className={styles.navButtonText}>구글 지도</span>
+              </button>
+            </div>
           </div>
-
-          <div className={styles.navigationButtons}>
-            <button
-              className={styles.navButton}
-              onClick={handleCopyAddress}
-              type="button"
-            >
-              <span className={styles.navButtonIcon}>⌘</span>
-              <span className={styles.navButtonText}>
-                {isAddressCopied ? '복사 완료' : '주소 복사'}
-              </span>
-            </button>
-            <button
-              className={styles.navButton}
-              onClick={() => window.open(buildNaverMapSearchUrl(address), '_blank')}
-              type="button"
-            >
-              <span className={styles.navButtonIcon}>🟢</span>
-              <span className={styles.navButtonText}>네이버 지도</span>
-            </button>
-
-            <button
-              className={styles.navButton}
-              onClick={() => window.open(buildKakaoMapSearchUrl(address), '_blank')}
-              type="button"
-            >
-              <span className={styles.navButtonIcon}>🟡</span>
-              <span className={styles.navButtonText}>카카오맵</span>
-            </button>
-
-            <button
-              className={styles.navButton}
-              onClick={() => window.open(buildGoogleMapSearchUrl(address), '_blank')}
-              type="button"
-            >
-              <span className={styles.navButtonIcon}>🔵</span>
-              <span className={styles.navButtonText}>구글 지도</span>
-            </button>
-          </div>
-        </div>
+        )}
       </div>
     </div>
   );

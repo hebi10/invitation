@@ -1,6 +1,7 @@
 import { notFound } from 'next/navigation';
 
 import { WeddingInvitationRoutePage } from '@/app/_components/WeddingInvitationPage';
+import { resolveAvailableInvitationVariant } from '@/lib/invitationVariants';
 import {
   getServerInvitationPageBySlug,
   getServerInvitationPageDefaultThemeBySlug,
@@ -18,9 +19,10 @@ export default async function WeddingInvitationEmotionalPage({
     getServerInvitationPageBySlug(slug),
     getServerInvitationPageDefaultThemeBySlug(slug),
   ]);
-  const theme = defaultTheme === 'simple' ? 'simple' : 'emotional';
+  const preferredTheme = defaultTheme === 'simple' ? 'simple' : 'emotional';
+  const theme = resolveAvailableInvitationVariant(page?.variants, preferredTheme);
 
-  if (!page?.variants[theme]?.available) {
+  if (!page || !theme) {
     notFound();
   }
 

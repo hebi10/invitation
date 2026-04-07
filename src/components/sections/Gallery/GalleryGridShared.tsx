@@ -7,6 +7,7 @@ import { useScrollAnimation } from '@/hooks';
 
 export interface GalleryGridSharedProps {
   images: string[];
+  imagesLoading?: boolean;
   title?: string;
   styles: Record<string, string>;
   preloadAllImages?: boolean;
@@ -25,6 +26,7 @@ function preloadSingleImage(url: string) {
 
 export default function GalleryGridShared({
   images,
+  imagesLoading = false,
   title = '소중한 순간들',
   styles,
   preloadAllImages = false,
@@ -46,6 +48,11 @@ export default function GalleryGridShared({
   const remainingCount = images.length - visibleCount;
   const selectedImage = selectedIndex === null ? null : images[selectedIndex];
   const activeIndex = selectedIndex ?? 0;
+  const hasImages = images.length > 0;
+
+  if (!hasImages && !imagesLoading) {
+    return null;
+  }
 
   useEffect(() => {
     if (!shouldRenderImages) {
@@ -133,7 +140,7 @@ export default function GalleryGridShared({
       <section ref={elementRef as RefObject<HTMLElement>} className={styles.container}>
         <h2 className={styles.title}>{title}</h2>
 
-        {shouldRenderImages ? (
+        {shouldRenderImages && hasImages ? (
           <div className={styles.imageGrid}>
             {displayImages.map((image, index) => (
               <div key={`${image}-${index}`} className={styles.imageWrapper}>

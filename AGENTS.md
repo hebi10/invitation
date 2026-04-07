@@ -30,15 +30,21 @@
 - TypeScript
 - Firebase Auth, Firestore, Firebase Storage
 - Playwright, ESLint, TypeScript type check
-- 라이브러리 기준
-  - React Query는 TanStack Query 기준
-  - Redux는 Redux Toolkit 기준
-  - HTTP 통신이 필요하면 Axios 우선 검토
-  - 별도 요청이 없으면 바닐라 JavaScript 기준으로 작성
 - 라이브러리 도입 원칙
-  - TanStack Query, Redux Toolkit, Axios는 일반 선호 스택이지만 현재 프로젝트에 이미 도입된 경우에만 해당 기준으로 따른다.
-  - 현재 프로젝트에 미도입 상태라면 필요가 명확할 때만 도입을 제안한다.
   - 새 라이브러리 추가 전에는 기존 구조로 해결 가능한지 먼저 검토한다.
+  - 현재 프로젝트에 미도입 상태인 라이브러리는 필요가 명확할 때만 도입을 제안한다.
+  - 이미 도입된 라이브러리는 해당 라이브러리의 권장 패턴을 따른다.
+
+## 2-1. 디렉토리 역할
+- `src/app/` — App Router 페이지·레이아웃·API 라우트
+- `src/app/*/_components/` — 해당 라우트 전용 UI 컴포넌트
+- `src/app/*/_hooks/` — 해당 라우트 전용 커스텀 훅
+- `src/services/` — 클라이언트에서 호출하는 데이터 서비스 (Firebase 클라이언트 SDK, fetch 등)
+- `src/server/` — 서버 전용 로직 (Firebase Admin SDK, 서버 사이드 서비스)
+- `src/lib/` — 공유 설정·정책 (클라이언트/서버 공용 가능)
+- `src/utils/` — 순수 유틸리티 함수
+- `src/data/` — 시드 데이터·정적 데이터
+- `public/` — 정적 에셋
 
 ## 3. 작업 원칙
 - 모든 답변과 설명은 한국어로 작성한다.
@@ -92,24 +98,40 @@
 - 상태 코드는 의도에 맞게 사용한다.
 - 관리자 인증 흐름과 고객 편집 세션 흐름을 혼동하지 않는다.
 - 외부 API 호출 실패 시 안전한 fallback 또는 명확한 실패 응답을 제공한다.
-- 공개용/서버용 환경 변수를 구분한다.
+- 환경 변수 규칙
+  - `NEXT_PUBLIC_` 접두사가 붙은 변수만 클라이언트 번들에 포함된다.
+  - 서버 전용 변수(Firebase Admin 키, API 시크릿 등)는 `src/server/` 또는 API 라우트에서만 사용한다.
+  - 환경 변수를 새로 추가할 때는 공개/서버 구분을 반드시 명시한다.
 - 민감 정보는 코드, 로그, 커밋에 노출하지 않는다.
 - 사용자용 메시지와 내부 디버깅 로그를 분리한다.
+- 이미지 업로드 이중 경로
+  - 관리자: 클라이언트에서 Firebase Storage에 직접 업로드 (`src/services/imageService.ts`)
+  - 고객 편집기: API 라우트를 경유하여 서버에서 Admin SDK로 업로드 (`src/app/api/` 경유)
+  - 이 경계를 혼동하면 권한 모델이 깨지므로 수정 시 어느 경로인지 먼저 확인한다.
 
 ## 9. 테스트 / 검증 원칙
 - 수정 후 lint, type, build, runtime 관점에서 점검한다.
 - 검증 명령은 package.json에 정의된 실제 스크립트명을 우선 사용한다.
-- typecheck 스크립트가 없으면 `npx tsc --noEmit` 가능 여부를 먼저 확인한 뒤 사용한다.
+  - lint: `npm run lint`
+  - build: `npm run build`
+  - typecheck: 별도 스크립트 없음 → `npx tsc --noEmit` 사용
+  - e2e smoke: `npm run test:e2e:smoke`
+- 에이전트 환경(샌드박스 등)에서 브라우저·Firebase 연동이 불가능하면 lint/type/build까지를 기본 검증 범위로 한다.
 - Playwright 검증은 전체 테스트보다 주요 흐름 smoke 확인을 우선한다.
 - 권장 점검 순서
-  1. lint 스크립트
-  2. typecheck 스크립트 또는 `npx tsc --noEmit`
-  3. build 스크립트
+  1. lint
+  2. typecheck (`npx tsc --noEmit`)
+  3. build
   4. 주요 화면 수동 확인
   5. 필요 시 Playwright smoke
 - 무엇을 확인했는지 체크리스트로 정리한다.
 - 실행하지 못한 검증은 이유를 명시한다.
 - 확실하지 않은 내용은 불확실하다고 표시한다.
+
+## 9-1. 커밋 컨벤션
+- 커밋 메시지 형식: `Update {변경 요약 한국어}`
+- 한 커밋에 관련 변경만 포함한다.
+- 브랜치 전략: main 단일 브랜치 기준, 대규모 작업 시 feature 브랜치 분리 가능.
 
 ## 10. 운영 주의사항
 - 정적 export/배포 방식과 동적 라우트 처리 방식이 충돌하지 않는지 먼저 확인한다.

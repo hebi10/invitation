@@ -6,12 +6,10 @@ import {
   PAGE_SORT_LABELS,
   PAGE_STATUS_LABELS,
   SHORTCUT_ITEMS,
-  TOTAL_SHORTCUT_COUNT,
   type PageSort,
   type PageStatusFilter,
   type ShortcutKey,
   getAvailableShortcuts,
-  getPageStatusMeta,
 } from './adminPageUtils';
 import styles from '../page.module.css';
 
@@ -27,39 +25,6 @@ interface AdminPagesTabProps {
   chips: Array<{ id: string; label: string; onRemove: () => void }>;
   onQueryChange: (updates: Record<string, string | null>) => void;
   onRefresh: () => void;
-}
-
-function getSourceMeta(page: InvitationPageSummary) {
-  if (page.hasCustomConfig || page.dataSource === 'firestore') {
-    return {
-      label: 'Firestore 사용자 설정',
-      description: '이 페이지는 Firestore에 저장된 설정을 사용하고 있습니다.',
-      tone: 'primary' as const,
-    };
-  }
-
-  return {
-    label: '기본 시드',
-    description: '이 페이지는 아직 로컬 시드 기본값을 사용하고 있습니다.',
-    tone: 'neutral' as const,
-  };
-}
-
-function getPrimaryPreview(page: InvitationPageSummary) {
-  const links = getAvailableShortcuts(page);
-  const emotionalLink = links.find((link) => link.key === 'emotional');
-  const simpleLink = links.find((link) => link.key === 'simple');
-  const primaryLink = emotionalLink ?? simpleLink ?? links[0] ?? null;
-
-  return {
-    link: primaryLink,
-    hint:
-      links.length === 0
-        ? '연결된 미리보기 경로가 아직 없습니다.'
-        : links.length === TOTAL_SHORTCUT_COUNT
-          ? '모든 미리보기를 사용할 수 있습니다.'
-          : `${links[0].label} 미리보기가 현재 연결되어 있습니다.`,
-  };
 }
 
 export default function AdminPagesTab({
@@ -81,7 +46,7 @@ export default function AdminPagesTab({
         <div>
           <h2 className={styles.sectionTitle}>청첩장 페이지</h2>
           <p className={styles.sectionDescription}>
-            공개 상태, 연결된 미리보기 경로, Firestore 데이터 소스를 한곳에서 확인할 수 있습니다.
+            공개 상태와 생성된 디자인별 미리보기를 한곳에서 확인할 수 있습니다.
           </p>
         </div>
         <p className={styles.sectionMeta}>
@@ -243,18 +208,14 @@ export default function AdminPagesTab({
                   <tr>
                     <th>페이지</th>
                     <th>예식 정보</th>
-                    <th>미리보기 연결 상태</th>
+                    <th>디자인 미리보기</th>
                     <th>공개 상태</th>
-                    <th>데이터 소스</th>
                     <th>작업</th>
                   </tr>
                 </thead>
                 <tbody>
                   {filteredPages.map((page, index) => {
                     const links = getAvailableShortcuts(page);
-                    const status = getPageStatusMeta(links.length);
-                    const sourceMeta = getSourceMeta(page);
-                    const preview = getPrimaryPreview(page);
 
                     return (
                       <tr key={page.slug} className={styles.tableRowInteractive}>
@@ -288,27 +249,31 @@ export default function AdminPagesTab({
                           </div>
                         </td>
                         <td>
-                          <div className={styles.statusCell}>
-                            <StatusBadge tone={status.tone}>{status.label}</StatusBadge>
-                            <span className={styles.tableSubtext}>
-                              {links.length} / {TOTAL_SHORTCUT_COUNT}개 미리보기 연결됨
-                            </span>
+                          <div className={styles.variantPreviewGrid}>
+                            {links.length > 0 ? (
+                              links.map((link) => (
+                                <a
+                                  key={`${page.slug}-${link.key}`}
+                                  href={link.path}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className={styles.variantPreviewLink}
+                                >
+                                  <span className={styles.variantPreviewLabel}>{link.label}</span>
+                                  <span className={styles.variantPreviewPath}>{link.path}</span>
+                                </a>
+                              ))
+                            ) : (
+                              <span className={styles.tableSubtext}>
+                                생성된 디자인 미리보기가 없습니다.
+                              </span>
+                            )}
                           </div>
                         </td>
                         <td>
                           <StatusBadge tone={page.published ? 'success' : 'neutral'}>
                             {page.published ? '공개' : '비공개'}
                           </StatusBadge>
-                        </td>
-                        <td>
-                          <div className={styles.sourceInfo}>
-                            <StatusBadge tone={sourceMeta.tone}>
-                              {sourceMeta.label}
-                            </StatusBadge>
-                            <span className={styles.tableSubtext}>
-                              {sourceMeta.description}
-                            </span>
-                          </div>
                         </td>
                         <td>
                           <div className={styles.actionStack}>
@@ -329,18 +294,7 @@ export default function AdminPagesTab({
                               >
                                 모바일
                               </a>
-                              {preview.link ? (
-                                <a
-                                  href={preview.link.path}
-                                  target="_blank"
-                                  rel="noreferrer"
-                                  className="admin-button admin-button-ghost"
-                                >
-                                  미리보기
-                                </a>
-                              ) : null}
                             </div>
-                            <span className={styles.actionHint}>{preview.hint}</span>
                           </div>
                         </td>
                       </tr>
@@ -354,9 +308,6 @@ export default function AdminPagesTab({
           <div className={styles.mobileList}>
             {filteredPages.map((page) => {
               const links = getAvailableShortcuts(page);
-              const status = getPageStatusMeta(links.length);
-              const sourceMeta = getSourceMeta(page);
-              const preview = getPrimaryPreview(page);
 
               return (
                 <article key={page.slug} className={styles.mobileCard}>
@@ -370,14 +321,33 @@ export default function AdminPagesTab({
                         </p>
                       ) : null}
                     </div>
-                    <StatusBadge tone={status.tone}>{status.label}</StatusBadge>
+                    <StatusBadge tone={page.published ? 'success' : 'neutral'}>
+                      {page.published ? '공개' : '비공개'}
+                    </StatusBadge>
                   </div>
 
                   <div className={styles.mobileCardMeta}>
                     <span>{page.date || '날짜 미정'}</span>
                     <span>{page.venue || '예식장 정보 없음'}</span>
-                    <span>{page.published ? '공개' : '비공개'}</span>
-                    <span>{sourceMeta.label}</span>
+                  </div>
+
+                  <div className={styles.variantPreviewGrid}>
+                    {links.length > 0 ? (
+                      links.map((link) => (
+                        <a
+                          key={`${page.slug}-mobile-${link.key}`}
+                          href={link.path}
+                          target="_blank"
+                          rel="noreferrer"
+                          className={styles.variantPreviewLink}
+                        >
+                          <span className={styles.variantPreviewLabel}>{link.label}</span>
+                          <span className={styles.variantPreviewPath}>{link.path}</span>
+                        </a>
+                      ))
+                    ) : (
+                      <span className={styles.tableSubtext}>생성된 디자인 미리보기가 없습니다.</span>
+                    )}
                   </div>
 
                   <div className={styles.actionStack}>
@@ -398,18 +368,7 @@ export default function AdminPagesTab({
                       >
                         모바일
                       </a>
-                      {preview.link ? (
-                        <a
-                          href={preview.link.path}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="admin-button admin-button-ghost"
-                        >
-                          미리보기
-                        </a>
-                      ) : null}
                     </div>
-                    <span className={styles.actionHint}>{preview.hint}</span>
                   </div>
                 </article>
               );
@@ -422,7 +381,7 @@ export default function AdminPagesTab({
           description="검색어 또는 필터 조건이 너무 좁을 수 있습니다. 필터를 조정하거나 목록을 새로고침해 주세요."
           highlights={[
             '이 목록에서 바로 에디터 또는 모바일로 기존 페이지를 열 수 있습니다.',
-            '미리보기 연결 상태를 통해 공개 경로가 연결된 페이지를 빠르게 확인할 수 있습니다.',
+            '생성된 디자인별 미리보기를 통해 실제 공개 가능한 경로를 바로 확인할 수 있습니다.',
           ]}
           actionLabel="필터 초기화"
           onAction={() =>

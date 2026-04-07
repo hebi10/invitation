@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { Dispatch, SetStateAction } from 'react';
 
 export interface VenueGuideItem {
@@ -44,6 +44,18 @@ interface ScheduleTabbedThemedProps extends ScheduleProps {
   };
 }
 
+function hasText(value?: string) {
+  return Boolean(value?.trim());
+}
+
+function hasDetailContent(info?: { time: string; location: string }) {
+  return Boolean(info && (hasText(info.time) || hasText(info.location)));
+}
+
+function sanitizeGuideItems<T extends VenueGuideItem | WreathGuideItem>(items?: T[]) {
+  return (items ?? []).filter((item) => hasText(item.title) || hasText(item.content));
+}
+
 export default function ScheduleTabbedThemed({
   date,
   time,
@@ -65,7 +77,30 @@ export default function ScheduleTabbedThemed({
   const [activeTab, setActiveTab] = useState<'schedule' | 'guide' | 'wreath'>('schedule');
   const [expandedGuideItems, setExpandedGuideItems] = useState<Set<number>>(new Set());
   const [expandedWreathItems, setExpandedWreathItems] = useState<Set<number>>(new Set());
-  const showTabs = Boolean((venueGuide && venueGuide.length > 0) || (wreathGuide && wreathGuide.length > 0));
+  const sanitizedVenueGuide = sanitizeGuideItems(venueGuide);
+  const sanitizedWreathGuide = sanitizeGuideItems(wreathGuide);
+  const hasMainInfo =
+    hasText(date) || hasText(time) || hasText(venue) || hasText(address);
+  const hasCeremony = hasDetailContent(ceremony);
+  const hasReception = hasDetailContent(reception);
+  const hasGuideInfo =
+    sanitizedVenueGuide.length > 0 || sanitizedWreathGuide.length > 0;
+  const showTabs = hasGuideInfo;
+
+  useEffect(() => {
+    if (activeTab === 'guide' && sanitizedVenueGuide.length === 0) {
+      setActiveTab('schedule');
+      return;
+    }
+
+    if (activeTab === 'wreath' && sanitizedWreathGuide.length === 0) {
+      setActiveTab('schedule');
+    }
+  }, [activeTab, sanitizedVenueGuide.length, sanitizedWreathGuide.length]);
+
+  if (!hasMainInfo && !hasCeremony && !hasReception && !hasGuideInfo) {
+    return null;
+  }
 
   const toggleExpanded = (index: number, setter: Dispatch<SetStateAction<Set<number>>>) => {
     setter((current) => {
@@ -103,30 +138,39 @@ export default function ScheduleTabbedThemed({
   );
 
   const renderMainInfo = () => {
+    const hasDateTime = hasText(date) || hasText(time);
+    const hasVenueInfo = hasText(venue) || hasText(address);
+
     if (layout === 'stacked') {
       return (
         <div className={styles.mainInfo}>
-          <h3 className={styles.date}>{date}</h3>
-          <p className={styles.time}>{time}</p>
-          <h4 className={styles.venue}>{venue}</h4>
-          <p className={styles.address}>{address}</p>
+          {hasText(date) && <h3 className={styles.date}>{date}</h3>}
+          {hasText(time) && <p className={styles.time}>{time}</p>}
+          {hasText(venue) && <h4 className={styles.venue}>{venue}</h4>}
+          {hasText(address) && <p className={styles.address}>{address}</p>}
         </div>
       );
     }
 
     return (
       <div className={styles.mainInfo}>
-        <div className={styles.dateTimeWrapper}>
-          <h3 className={styles.date}>{date}</h3>
-          <p className={styles.time}>{time}</p>
-        </div>
+        {hasDateTime && (
+          <div className={styles.dateTimeWrapper}>
+            {hasText(date) && <h3 className={styles.date}>{date}</h3>}
+            {hasText(time) && <p className={styles.time}>{time}</p>}
+          </div>
+        )}
 
-        {'divider' in styles && <div className={styles.divider}></div>}
+        {hasDateTime && hasVenueInfo && 'divider' in styles && (
+          <div className={styles.divider}></div>
+        )}
 
-        <div className={styles.venueWrapper}>
-          <h4 className={styles.venue}>{venue}</h4>
-          <p className={styles.address}>{address}</p>
-        </div>
+        {hasVenueInfo && (
+          <div className={styles.venueWrapper}>
+            {hasText(venue) && <h4 className={styles.venue}>{venue}</h4>}
+            {hasText(address) && <p className={styles.address}>{address}</p>}
+          </div>
+        )}
       </div>
     );
   };
@@ -168,12 +212,12 @@ export default function ScheduleTabbedThemed({
           <button className={`${styles.tab} ${activeTab === 'schedule' ? styles.active : ''}`} onClick={() => setActiveTab('schedule')} type="button">
             예식 일정
           </button>
-          {venueGuide && venueGuide.length > 0 && (
+          {sanitizedVenueGuide.length > 0 && (
             <button className={`${styles.tab} ${activeTab === 'guide' ? styles.active : ''}`} onClick={() => setActiveTab('guide')} type="button">
               예식장 안내
             </button>
           )}
-          {wreathGuide && wreathGuide.length > 0 && (
+          {sanitizedWreathGuide.length > 0 && (
             <button className={`${styles.tab} ${activeTab === 'wreath' ? styles.active : ''}`} onClick={() => setActiveTab('wreath')} type="button">
               화환 안내
             </button>
@@ -185,17 +229,27 @@ export default function ScheduleTabbedThemed({
         <div className={'scheduleContent' in styles ? styles.scheduleContent : undefined}>
           {renderMainInfo()}
 
-          {(ceremony || reception) && (
+          {(hasCeremony || hasReception) && (
             <div className={styles.detailsContainer}>
-              {ceremony && renderDetailItem('본식', ceremony, detailIcons?.ceremony)}
-              {reception && renderDetailItem('피로연', reception, detailIcons?.reception)}
+              {hasCeremony && ceremony &&
+                renderDetailItem('본식', ceremony, detailIcons?.ceremony)}
+              {hasReception && reception &&
+                renderDetailItem('피로연', reception, detailIcons?.reception)}
             </div>
           )}
         </div>
       )}
 
-      {activeTab === 'guide' && venueGuide && venueGuide.length > 0 && renderGuideContent(venueGuide, expandedGuideItems, (index) => toggleExpanded(index, setExpandedGuideItems))}
-      {activeTab === 'wreath' && wreathGuide && wreathGuide.length > 0 && renderGuideContent(wreathGuide, expandedWreathItems, (index) => toggleExpanded(index, setExpandedWreathItems))}
+      {activeTab === 'guide' &&
+        sanitizedVenueGuide.length > 0 &&
+        renderGuideContent(sanitizedVenueGuide, expandedGuideItems, (index) =>
+          toggleExpanded(index, setExpandedGuideItems)
+        )}
+      {activeTab === 'wreath' &&
+        sanitizedWreathGuide.length > 0 &&
+        renderGuideContent(sanitizedWreathGuide, expandedWreathItems, (index) =>
+          toggleExpanded(index, setExpandedWreathItems)
+        )}
     </>
   );
 

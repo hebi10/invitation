@@ -421,12 +421,48 @@
   gap: 6px;
 }
 
-.sourceInfo,
 .actionStack,
 .passwordFieldGroup {
   display: flex;
   flex-direction: column;
   gap: 8px;
+}
+
+.variantPreviewGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 8px;
+}
+
+.variantPreviewLink {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 10px 12px;
+  border: 1px solid var(--admin-color-border);
+  border-radius: 10px;
+  background: var(--admin-color-surface-muted);
+  color: var(--admin-color-text);
+  text-decoration: none;
+}
+
+.variantPreviewLink:hover,
+.variantPreviewLink:focus-visible {
+  border-color: rgba(37, 99, 235, 0.32);
+  background: rgba(37, 99, 235, 0.06);
+}
+
+.variantPreviewLabel {
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: var(--admin-color-text);
+}
+
+.variantPreviewPath {
+  font-size: 0.75rem;
+  line-height: 1.4;
+  color: var(--admin-color-text-muted);
+  word-break: break-all;
 }
 
 .metaStack {

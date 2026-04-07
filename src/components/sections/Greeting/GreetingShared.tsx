@@ -33,6 +33,26 @@ interface ContactTarget {
   phone?: string;
 }
 
+function hasText(value?: string) {
+  return Boolean(value?.trim());
+}
+
+function hasFamilyMemberContent(member?: FamilyMember) {
+  return Boolean(
+    hasText(member?.relation) || hasText(member?.name) || hasText(member?.phone)
+  );
+}
+
+function hasPersonContent(person?: PersonInfo) {
+  return Boolean(
+    hasText(person?.name) ||
+      hasText(person?.order) ||
+      hasText(person?.phone) ||
+      hasFamilyMemberContent(person?.father) ||
+      hasFamilyMemberContent(person?.mother)
+  );
+}
+
 export default function GreetingShared({
   message,
   groom,
@@ -41,6 +61,14 @@ export default function GreetingShared({
   wrapInCard = false,
 }: GreetingSharedProps) {
   const [contactModal, setContactModal] = useState<ContactTarget | null>(null);
+  const hasMessage = hasText(message);
+  const hasGroomInfo = hasPersonContent(groom);
+  const hasBrideInfo = hasPersonContent(bride);
+  const showFamilySection = hasGroomInfo || hasBrideInfo;
+
+  if (!hasMessage && !showFamilySection) {
+    return null;
+  }
 
   const formatMessage = (text: string) => {
     const normalizedText = text.replace(/<br\s*\/?>/gi, '\n');
@@ -90,62 +118,78 @@ export default function GreetingShared({
 
   const content = (
     <>
-      <div className={styles.messageWrapper}>
-        <p className={styles.message}>{formatMessage(message)}</p>
-      </div>
+      {hasMessage && (
+        <div className={styles.messageWrapper}>
+          <p className={styles.message}>{formatMessage(message)}</p>
+        </div>
+      )}
 
-      {(groom || bride) && (
+      {showFamilySection && (
         <div className={styles.familySection}>
           <div className={styles.familyGrid}>
-            {groom && (
-              <div className={styles.familyColumn}>
-                <div className={styles.roleLabel}>신랑측</div>
-                {groom.father && (
-                  <div className={styles.familyRow}>
-                    <span className={styles.label}>{groom.father.relation}</span>
-                    <span className={styles.personName}>{groom.father.name}</span>
-                    {renderPhoneButton({ name: groom.father.name, phone: groom.father.phone })}
-                  </div>
-                )}
-                {groom.mother && (
-                  <div className={styles.familyRow}>
-                    <span className={styles.label}>{groom.mother.relation}</span>
-                    <span className={styles.personName}>{groom.mother.name}</span>
-                    {renderPhoneButton({ name: groom.mother.name, phone: groom.mother.phone })}
-                  </div>
-                )}
-                <div className={`${styles.familyRow} ${styles.mainPerson}`}>
-                  {groom.order && <span className={styles.orderBadge}>{groom.order}</span>}
-                  <span className={styles.mainName}>{groom.name}</span>
-                  {renderPhoneButton(groom)}
-                </div>
-              </div>
-            )}
+            {hasGroomInfo && groom && (() => {
+              const groomFather = groom.father;
+              const groomMother = groom.mother;
 
-            {bride && (
-              <div className={styles.familyColumn}>
-                <div className={styles.roleLabel}>신부측</div>
-                {bride.father && (
-                  <div className={styles.familyRow}>
-                    <span className={styles.label}>{bride.father.relation}</span>
-                    <span className={styles.personName}>{bride.father.name}</span>
-                    {renderPhoneButton({ name: bride.father.name, phone: bride.father.phone })}
-                  </div>
-                )}
-                {bride.mother && (
-                  <div className={styles.familyRow}>
-                    <span className={styles.label}>{bride.mother.relation}</span>
-                    <span className={styles.personName}>{bride.mother.name}</span>
-                    {renderPhoneButton({ name: bride.mother.name, phone: bride.mother.phone })}
-                  </div>
-                )}
-                <div className={`${styles.familyRow} ${styles.mainPerson}`}>
-                  {bride.order && <span className={styles.orderBadge}>{bride.order}</span>}
-                  <span className={styles.mainName}>{bride.name}</span>
-                  {renderPhoneButton(bride)}
+              return (
+                <div className={styles.familyColumn}>
+                  <div className={styles.roleLabel}>신랑측</div>
+                  {groomFather && hasFamilyMemberContent(groomFather) && (
+                    <div className={styles.familyRow}>
+                      <span className={styles.label}>{groomFather.relation}</span>
+                      <span className={styles.personName}>{groomFather.name}</span>
+                      {renderPhoneButton({ name: groomFather.name, phone: groomFather.phone })}
+                    </div>
+                  )}
+                  {groomMother && hasFamilyMemberContent(groomMother) && (
+                    <div className={styles.familyRow}>
+                      <span className={styles.label}>{groomMother.relation}</span>
+                      <span className={styles.personName}>{groomMother.name}</span>
+                      {renderPhoneButton({ name: groomMother.name, phone: groomMother.phone })}
+                    </div>
+                  )}
+                  {(hasText(groom.order) || hasText(groom.name) || hasText(groom.phone)) && (
+                    <div className={`${styles.familyRow} ${styles.mainPerson}`}>
+                      {groom.order && <span className={styles.orderBadge}>{groom.order}</span>}
+                      <span className={styles.mainName}>{groom.name}</span>
+                      {renderPhoneButton({ name: groom.name || '신랑', phone: groom.phone })}
+                    </div>
+                  )}
                 </div>
-              </div>
-            )}
+              );
+            })()}
+
+            {hasBrideInfo && bride && (() => {
+              const brideFather = bride.father;
+              const brideMother = bride.mother;
+
+              return (
+                <div className={styles.familyColumn}>
+                  <div className={styles.roleLabel}>신부측</div>
+                  {brideFather && hasFamilyMemberContent(brideFather) && (
+                    <div className={styles.familyRow}>
+                      <span className={styles.label}>{brideFather.relation}</span>
+                      <span className={styles.personName}>{brideFather.name}</span>
+                      {renderPhoneButton({ name: brideFather.name, phone: brideFather.phone })}
+                    </div>
+                  )}
+                  {brideMother && hasFamilyMemberContent(brideMother) && (
+                    <div className={styles.familyRow}>
+                      <span className={styles.label}>{brideMother.relation}</span>
+                      <span className={styles.personName}>{brideMother.name}</span>
+                      {renderPhoneButton({ name: brideMother.name, phone: brideMother.phone })}
+                    </div>
+                  )}
+                  {(hasText(bride.order) || hasText(bride.name) || hasText(bride.phone)) && (
+                    <div className={`${styles.familyRow} ${styles.mainPerson}`}>
+                      {bride.order && <span className={styles.orderBadge}>{bride.order}</span>}
+                      <span className={styles.mainName}>{bride.name}</span>
+                      {renderPhoneButton({ name: bride.name || '신부', phone: bride.phone })}
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
           </div>
         </div>
       )}

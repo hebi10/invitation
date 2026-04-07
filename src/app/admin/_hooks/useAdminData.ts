@@ -220,7 +220,7 @@ export function useAdminData({
     [confirm, fetchPasswords, pages, showToast]
   );
 
-  const handleLogout = useCallback(async () => {
+  const handleLogout = useCallback(() => {
     clearAdminInvitationPreviewCache();
     resetAll();
   }, [resetAll]);
@@ -240,12 +240,7 @@ export function useAdminData({
   }, [fetchSummarySources, isAdminLoggedIn, resetAll]);
 
   useEffect(() => {
-    if (activeTab !== 'comments') {
-      setCommentsLoaded(false);
-      return;
-    }
-
-    if (!isAdminLoggedIn || commentsLoading || commentsLoaded) {
+    if (!isAdminLoggedIn || activeTab !== 'comments' || commentsLoading || commentsLoaded) {
       return;
     }
 

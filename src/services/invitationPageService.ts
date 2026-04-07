@@ -3,8 +3,22 @@ import {
   getAllWeddingPageSeeds,
   getWeddingPageBySlug,
 } from '@/config/weddingPages';
-import { buildInvitationVariants } from '@/lib/invitationVariants';
+import {
+  buildInvitationVariants,
+  createInvitationVariantAvailability,
+  getAvailableInvitationVariantKeys,
+  INVITATION_VARIANT_KEYS,
+  resolveAvailableInvitationVariant,
+  type InvitationVariantKey,
+} from '@/lib/invitationVariants';
 import { ensureFirebaseInit, USE_FIREBASE } from '@/lib/firebase';
+import {
+  isRecord,
+  normalizeInvitationTheme,
+  readNumber,
+  readString,
+  toDate,
+} from '@/lib/invitationPageNormalization';
 import {
   buildInvitationTemplateDefinitions,
   DEFAULT_INVITATION_PRODUCT_TIER,
@@ -140,50 +154,10 @@ function wait(ms: number) {
   });
 }
 
-function isRecord(value: unknown): value is Record<string, any> {
-  return typeof value === 'object' && value !== null && !Array.isArray(value);
-}
-
-function toDate(value: unknown): Date | null {
-  if (value === null || value === undefined) {
-    return null;
-  }
-
-  if (value instanceof Date) {
-    return value;
-  }
-
-  if (
-    typeof value === 'object' &&
-    value !== null &&
-    typeof (value as { toDate?: () => Date }).toDate === 'function'
-  ) {
-    return (value as { toDate: () => Date }).toDate();
-  }
-
-  const parsed = new Date(String(value));
-  return Number.isNaN(parsed.getTime()) ? null : parsed;
-}
-
-function readString(value: unknown, fallback = '') {
-  return typeof value === 'string' ? value : fallback;
-}
-
-function readNumber(value: unknown, fallback = 0) {
-  return typeof value === 'number' && Number.isFinite(value) ? value : fallback;
-}
-
 function cloneInvitationPageSeed(seed: InvitationPageSeed): InvitationPageSeed {
   return sanitizeHeartIconPlaceholdersDeep(
     JSON.parse(JSON.stringify(seed)) as InvitationPageSeed
   );
-}
-
-function normalizeInvitationTheme(
-  value: unknown,
-  fallback: InvitationThemeKey = DEFAULT_INVITATION_THEME
-): InvitationThemeKey {
-  return value === 'simple' ? 'simple' : fallback;
 }
 
 function normalizeSlugBase(value: string) {
@@ -272,7 +246,10 @@ function normalizeRegistryRecord(
 function mergeInvitationPageSeed(
   base: InvitationPageSeed | undefined,
   candidate: Record<string, any>,
-  fallbackSlug?: string
+  fallbackSlug?: string,
+  options: {
+    fallbackTheme?: InvitationThemeKey;
+  } = {}
 ): InvitationPageSeed | null {
   const coupleInput = isRecord(candidate.couple) ? candidate.couple : {};
   const groomInput = isRecord(coupleInput.groom) ? coupleInput.groom : {};
@@ -429,60 +406,77 @@ function mergeInvitationPageSeed(
         : undefined,
   });
 
-  const supportedVariants = buildInvitationVariants(slug, displayName);
+  const sourceVariants = { ...(base?.variants ?? {}), ...variantsInput };
+  const sourceAvailableVariantKeys = getAvailableInvitationVariantKeys(
+    sourceVariants as InvitationPageSeed['variants']
+  );
+  const fallbackTheme = normalizeInvitationTheme(
+    options.fallbackTheme,
+    sourceAvailableVariantKeys[0] ?? DEFAULT_INVITATION_THEME
+  );
+  const hasFullTrueAvailability =
+    sourceAvailableVariantKeys.length === INVITATION_VARIANT_KEYS.length &&
+    INVITATION_VARIANT_KEYS.every((key) => {
+      const variant = sourceVariants[key];
+      return isRecord(variant) && variant.available === true;
+    });
+  const shouldCollapseFullTrueAvailability =
+    hasFullTrueAvailability && typeof options.fallbackTheme === 'string';
+  const supportedVariants = buildInvitationVariants(slug, displayName, {
+    availability: createInvitationVariantAvailability([
+      fallbackTheme as InvitationVariantKey,
+    ]),
+  });
 
-  const normalizedVariants =
-    (() => {
-      const sourceVariants = { ...(base?.variants ?? {}), ...variantsInput };
-      const builtVariants = supportedVariants;
-      const sourceKeys = Object.keys(sourceVariants);
-
-      if (sourceKeys.length === 0) {
-        return builtVariants;
+  const normalizedVariants = INVITATION_VARIANT_KEYS.reduce<InvitationPageSeed['variants']>(
+    (variants, variantKey) => {
+      const builtVariant = supportedVariants[variantKey];
+      if (!builtVariant) {
+        return variants;
       }
 
-      return Object.entries(sourceVariants).reduce(
-        (variants, [variantKey, variantValue]) => {
-          if (!isRecord(variantValue) || !(variantKey in builtVariants)) {
-            return variants;
-          }
+      const sourceVariant = sourceVariants[variantKey];
+      const available = shouldCollapseFullTrueAvailability
+        ? variantKey === fallbackTheme
+        : isRecord(sourceVariant) && typeof sourceVariant.available === 'boolean'
+          ? sourceVariant.available
+          : builtVariant.available;
 
-          const nextVariant = {
-            ...builtVariants[variantKey as keyof typeof builtVariants],
-            ...variantValue,
-            path:
-              builtVariants[variantKey as keyof typeof builtVariants]?.path ??
-              readString(variantValue.path),
-          };
+      if (!isRecord(sourceVariant) && !available) {
+        return variants;
+      }
 
-          variants[variantKey as keyof typeof builtVariants] = nextVariant;
-          return variants;
-        },
-        { ...builtVariants }
-      );
-    })();
+      variants[variantKey] = {
+        ...builtVariant,
+        ...(isRecord(sourceVariant) ? sourceVariant : {}),
+        available,
+        path: builtVariant.path,
+        displayName: readString(
+          isRecord(sourceVariant) ? sourceVariant.displayName : undefined,
+          builtVariant.displayName
+        ),
+      };
 
-  if (supportedVariants.emotional) {
-    normalizedVariants.emotional = {
-      ...supportedVariants.emotional,
-      ...normalizedVariants.emotional,
-      available: true,
-      path: supportedVariants.emotional.path,
-      displayName:
-        normalizedVariants.emotional?.displayName ??
-        supportedVariants.emotional.displayName,
-    };
-  }
+      return variants;
+    },
+    {}
+  );
 
-  if (supportedVariants.simple) {
-    normalizedVariants.simple = {
-      ...supportedVariants.simple,
-      ...normalizedVariants.simple,
-      available: true,
-      path: supportedVariants.simple.path,
-      displayName:
-        normalizedVariants.simple?.displayName ?? supportedVariants.simple.displayName,
-    };
+  if (getAvailableInvitationVariantKeys(normalizedVariants).length === 0) {
+    const fallbackVariant = supportedVariants[fallbackTheme];
+    if (fallbackVariant) {
+      const sourceVariant = sourceVariants[fallbackTheme];
+      normalizedVariants[fallbackTheme] = {
+        ...fallbackVariant,
+        ...(isRecord(sourceVariant) ? sourceVariant : {}),
+        available: true,
+        path: fallbackVariant.path,
+        displayName: readString(
+          isRecord(sourceVariant) ? sourceVariant.displayName : undefined,
+          fallbackVariant.displayName
+        ),
+      };
+    }
   }
 
   const normalizedSeed: InvitationPageSeed = {
@@ -533,7 +527,9 @@ function normalizeConfigSeed(
   data: Record<string, any>
 ): InvitationPageSeed | null {
   const fallbackSeed = getWeddingPageBySlug(docId);
-  return mergeInvitationPageSeed(fallbackSeed, data, docId);
+  return mergeInvitationPageSeed(fallbackSeed, data, docId, {
+    fallbackTheme: normalizeInvitationTheme(data.defaultTheme),
+  });
 }
 
 function mergeDisplayPeriod(
@@ -630,6 +626,7 @@ function buildDraftConfigFromSeed(
     groomName: string;
     brideName: string;
     productTier: InvitationProductTier;
+    theme: InvitationThemeKey;
   }
 ) {
   const nextSeed = cloneInvitationPageSeed(seed);
@@ -695,7 +692,11 @@ function buildDraftConfigFromSeed(
       ].filter((value) => typeof value === 'string' && value.trim())
     )
   );
-  nextSeed.variants = buildInvitationVariants(overrides.slug, displayName);
+  nextSeed.variants = buildInvitationVariants(overrides.slug, displayName, {
+    availability: createInvitationVariantAvailability([
+      overrides.theme as InvitationVariantKey,
+    ]),
+  });
 
   if (nextSeed.pageData?.groom) {
     nextSeed.pageData.groom = {
@@ -725,7 +726,11 @@ function buildDraftConfigFromSeed(
   nextSeed.metadata.twitter.title = '';
   nextSeed.metadata.twitter.description = '';
   nextSeed.metadata.keywords = [overrides.groomName, overrides.brideName, '청첩장'];
-  nextSeed.variants = buildInvitationVariants(overrides.slug, '');
+  nextSeed.variants = buildInvitationVariants(overrides.slug, '', {
+    availability: createInvitationVariantAvailability([
+      overrides.theme as InvitationVariantKey,
+    ]),
+  });
   nextSeed.pageData = {
     ...nextSeed.pageData,
     subtitle: '',
@@ -1211,10 +1216,18 @@ export async function saveInvitationPageConfig(
     defaultTheme?: InvitationThemeKey;
   } = {}
 ) {
+  const fallbackTheme = options.defaultTheme
+    ? normalizeInvitationTheme(options.defaultTheme)
+    : resolveAvailableInvitationVariant(config.variants, DEFAULT_INVITATION_THEME) ??
+      DEFAULT_INVITATION_THEME;
+
   const normalizedConfig = mergeInvitationPageSeed(
     getWeddingPageBySlug(config.slug),
     config as unknown as Record<string, any>,
-    config.slug
+    config.slug,
+    {
+      fallbackTheme,
+    }
   );
 
   if (!normalizedConfig) {
@@ -1282,6 +1295,7 @@ export async function createInvitationPageDraftFromSeed(
       input.productTier,
       DEFAULT_INVITATION_PRODUCT_TIER
     ),
+    theme: normalizeInvitationTheme(input.defaultTheme),
   });
   const now = new Date();
 

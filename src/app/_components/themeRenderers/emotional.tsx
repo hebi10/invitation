@@ -73,7 +73,12 @@ export default createWeddingThemeRenderer({
         />
       );
     },
-    ({ state }) => <Gallery images={state.galleryImageUrls} />,
+    ({ state }) => (
+      <Gallery
+        images={state.galleryImageUrls}
+        imagesLoading={state.imagesLoading}
+      />
+    ),
     ({ state }) => (
       <div id="wedding-info">
         <Schedule

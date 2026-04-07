@@ -57,7 +57,12 @@ export default createWeddingThemeRenderer({
         bride={state.pageConfig.couple.bride}
       />
     ),
-    ({ state }) => <GallerySimple images={state.galleryImageUrls} />,
+    ({ state }) => (
+      <GallerySimple
+        images={state.galleryImageUrls}
+        imagesLoading={state.imagesLoading}
+      />
+    ),
     ({ state }) => {
       const features = resolveInvitationFeatures(
         state.pageConfig.productTier,

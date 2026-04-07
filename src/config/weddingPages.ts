@@ -3,9 +3,18 @@ import type {
   FamilyMember,
   InvitationPage,
   InvitationPageSeed,
+  InvitationThemeKey,
   PersonInfo,
   WeddingCoupleInfo,
 } from '@/types/invitationPage';
+import {
+  buildInvitationVariants,
+  createInvitationVariantAvailability,
+  getAvailableInvitationVariantKeys,
+  INVITATION_VARIANT_KEYS,
+  resolveAvailableInvitationVariant,
+  type InvitationVariantKey,
+} from '@/lib/invitationVariants';
 
 import { anDoyoungYoonJisooConfig } from './pages/an-doyoung-yoon-jisoo';
 import { kimMinjunParkSoheeConfig } from './pages/kim-minjun-park-sohee';
@@ -51,14 +60,94 @@ export function getWeddingPageCount(): number {
   return WEDDING_PAGE_SAMPLES.length;
 }
 
+function normalizeSeedVariants(
+  seed: WeddingPageConfig,
+  fallbackTheme: InvitationThemeKey
+): InvitationPageSeed['variants'] {
+  const sourceVariants = seed.variants ?? {};
+  const sourceAvailableVariantKeys = getAvailableInvitationVariantKeys(sourceVariants);
+  const preferredTheme =
+    resolveAvailableInvitationVariant(sourceVariants, fallbackTheme) ?? fallbackTheme;
+  const hasFullTrueAvailability =
+    sourceAvailableVariantKeys.length === INVITATION_VARIANT_KEYS.length &&
+    INVITATION_VARIANT_KEYS.every((key) => sourceVariants[key]?.available === true);
+
+  const supportedVariants = buildInvitationVariants(seed.slug, seed.displayName, {
+    availability: createInvitationVariantAvailability([
+      preferredTheme as InvitationVariantKey,
+    ]),
+  });
+
+  const normalizedVariants = INVITATION_VARIANT_KEYS.reduce<InvitationPageSeed['variants']>(
+    (variants, variantKey) => {
+      const builtVariant = supportedVariants[variantKey];
+      if (!builtVariant) {
+        return variants;
+      }
+
+      const sourceVariant = sourceVariants[variantKey];
+      const available = hasFullTrueAvailability
+        ? variantKey === preferredTheme
+        : sourceVariant?.available === true;
+
+      if (!sourceVariant && !available) {
+        return variants;
+      }
+
+      variants[variantKey] = {
+        ...builtVariant,
+        ...(sourceVariant ?? {}),
+        available,
+        path: builtVariant.path,
+        displayName:
+          typeof sourceVariant?.displayName === 'string' && sourceVariant.displayName.trim()
+            ? sourceVariant.displayName
+            : builtVariant.displayName,
+      };
+
+      return variants;
+    },
+    {}
+  );
+
+  if (getAvailableInvitationVariantKeys(normalizedVariants).length === 0) {
+    const fallbackVariant = supportedVariants[preferredTheme];
+    if (fallbackVariant) {
+      const sourceVariant = sourceVariants[preferredTheme];
+      normalizedVariants[preferredTheme] = {
+        ...fallbackVariant,
+        ...(sourceVariant ?? {}),
+        available: true,
+        path: fallbackVariant.path,
+        displayName:
+          typeof sourceVariant?.displayName === 'string' && sourceVariant.displayName.trim()
+            ? sourceVariant.displayName
+            : fallbackVariant.displayName,
+      };
+    }
+  }
+
+  return normalizedVariants;
+}
+
+type CreateInvitationPageOverrides = Partial<
+  Pick<
+    InvitationPage,
+    'published' | 'displayPeriodEnabled' | 'displayPeriodStart' | 'displayPeriodEnd'
+  >
+> & {
+  fallbackTheme?: InvitationThemeKey;
+};
+
 export function createInvitationPageFromSeed(
   seed: WeddingPageConfig,
-  overrides: Partial<
-    Pick<InvitationPage, 'published' | 'displayPeriodEnabled' | 'displayPeriodStart' | 'displayPeriodEnd'>
-  > = {}
+  overrides: CreateInvitationPageOverrides = {}
 ): InvitationPage {
+  const fallbackTheme = overrides.fallbackTheme === 'simple' ? 'simple' : 'emotional';
+
   return {
     ...seed,
+    variants: normalizeSeedVariants(seed, fallbackTheme),
     published: overrides.published ?? true,
     displayPeriodEnabled: overrides.displayPeriodEnabled ?? false,
     displayPeriodStart: overrides.displayPeriodStart ?? null,

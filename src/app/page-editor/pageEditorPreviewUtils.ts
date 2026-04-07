@@ -1,5 +1,10 @@
 import { createInvitationPageFromSeed } from '@/config/weddingPages';
-import { buildInvitationVariants } from '@/lib/invitationVariants';
+import {
+  buildInvitationVariants,
+  createInvitationVariantAvailability,
+  getAvailableInvitationVariantKeys,
+  resolveAvailableInvitationVariant,
+} from '@/lib/invitationVariants';
 import { resolveInvitationFeatures } from '@/lib/invitationProducts';
 import type { InvitationPage, InvitationPageSeed } from '@/types/invitationPage';
 import { sanitizeHeartIconPlaceholdersDeep } from '@/utils/textSanitizers';
@@ -26,10 +31,17 @@ export function buildPreviewPage(
   published: boolean
 ): InvitationPage {
   const features = resolveInvitationFeatures(formState.productTier, formState.features);
+  const availableVariantKeys = getAvailableInvitationVariantKeys(formState.variants);
+  const fallbackVariant =
+    resolveAvailableInvitationVariant(formState.variants, 'emotional') ?? 'emotional';
+  const enabledVariantKeys =
+    availableVariantKeys.length > 0 ? availableVariantKeys : [fallbackVariant];
   const previewSeed: InvitationPageSeed = {
     ...formState,
     slug,
-    variants: buildInvitationVariants(slug, formState.displayName),
+    variants: buildInvitationVariants(slug, formState.displayName, {
+      availability: createInvitationVariantAvailability(enabledVariantKeys),
+    }),
     pageData: {
       ...formState.pageData,
       galleryImages: (formState.pageData?.galleryImages ?? [])
