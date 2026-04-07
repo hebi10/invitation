@@ -9,6 +9,11 @@ import {
   getComments,
   type Comment,
 } from '@/services/commentService';
+import {
+  getClientEditorSession,
+  loginClientEditorSession,
+  logoutClientEditorSession,
+} from '@/services/clientEditorSession';
 import { HeartIcon, HeartIconSimple } from '@/components/icons';
 
 interface GuestbookThemedProps {
@@ -61,11 +66,11 @@ export default function GuestbookThemed({
   const [isMobile, setIsMobile] = useState(false);
   const [showClientManager, setShowClientManager] = useState(false);
   const [clientPassword, setClientPassword] = useState('');
-  const [, setClientTokenHash] = useState<string | null>(null);
+  const [hasClientManagerAccess, setHasClientManagerAccess] = useState(false);
   const [clientAccessLoading, setClientAccessLoading] = useState(false);
   const [lastTitleInteraction, setLastTitleInteraction] = useState(0);
 
-  const canManageComments = isAdminLoggedIn;
+  const canManageComments = isAdminLoggedIn || hasClientManagerAccess;
   const commentsPerPage = 5;
   const totalPages = Math.max(1, Math.ceil(comments.length / commentsPerPage));
   const currentComments = comments.slice(
@@ -137,6 +142,32 @@ export default function GuestbookThemed({
     }
   }, [currentPage, totalPages]);
 
+  useEffect(() => {
+    if (isAdminLoggedIn) {
+      setHasClientManagerAccess(false);
+      return;
+    }
+
+    let cancelled = false;
+
+    void (async () => {
+      try {
+        const session = await getClientEditorSession(pageSlug);
+        if (!cancelled) {
+          setHasClientManagerAccess(session.authenticated);
+        }
+      } catch {
+        if (!cancelled) {
+          setHasClientManagerAccess(false);
+        }
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isAdminLoggedIn, pageSlug]);
+
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
 
@@ -194,13 +225,13 @@ export default function GuestbookThemed({
 
     setClientAccessLoading(true);
     try {
-      const nextTokenHash = null;
-      if (!nextTokenHash) {
+      const session = await loginClientEditorSession(pageSlug, clientPassword.trim());
+      if (!session.authenticated) {
         showStatus('비밀번호가 올바르지 않습니다.', 'error');
         return;
       }
 
-      setClientTokenHash(nextTokenHash);
+      setHasClientManagerAccess(true);
       setClientPassword('');
       setShowClientManager(false);
       showStatus('댓글 관리 모드가 활성화되었습니다.', 'success');
@@ -212,14 +243,24 @@ export default function GuestbookThemed({
     }
   };
 
-  const handleClientLogout = () => {
-    setClientTokenHash(null);
+  const handleClientLogout = async () => {
+    try {
+      await logoutClientEditorSession();
+    } catch (error) {
+      console.error('Failed to logout client manager session', error);
+    }
+
+    setHasClientManagerAccess(false);
     setClientPassword('');
     setShowClientManager(false);
     showStatus('댓글 관리 모드를 종료했습니다.', 'success');
   };
 
   const handleTitleInteraction = () => {
+    if (isAdminLoggedIn) {
+      return;
+    }
+
     const now = Date.now();
     if (lastTitleInteraction && now - lastTitleInteraction < 320) {
       setShowClientManager((current) => !current);
@@ -276,7 +317,7 @@ export default function GuestbookThemed({
   };
 
   const renderManagerBlock = () => {
-    if (!canManageComments) {
+    if (!isAdminLoggedIn && !hasClientManagerAccess && !showClientManager) {
       return null;
     }
 
@@ -293,40 +334,42 @@ export default function GuestbookThemed({
           backdropFilter: 'blur(8px)',
         }}
       >
-        {canManageComments ? (
-          <div
-            style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              gap: '0.75rem',
-              flexWrap: 'wrap',
-            }}
-          >
-            <span style={{ fontSize: '0.9rem', fontWeight: 600 }}>
-              {isAdminLoggedIn ? '관리자 댓글 관리 모드' : '신랑신부 댓글 관리 모드'}
-            </span>
-            {!isAdminLoggedIn ? (
-              <button
-                type="button"
-                onClick={handleClientLogout}
-                style={{
-                  minHeight: '38px',
-                  borderRadius: '999px',
-                  border: '1px solid rgba(148, 163, 184, 0.28)',
-                  background: '#fff',
-                  padding: '0 0.85rem',
-                  fontSize: '0.82rem',
-                  fontWeight: 600,
-                }}
-              >
-                로그아웃
-              </button>
-            ) : null}
-          </div>
-        ) : null}
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            gap: '0.75rem',
+            flexWrap: 'wrap',
+          }}
+        >
+          <span style={{ fontSize: '0.9rem', fontWeight: 600 }}>
+            {isAdminLoggedIn
+              ? '관리자 댓글 관리 모드'
+              : hasClientManagerAccess
+                ? '신랑신부 댓글 관리 모드'
+                : '신랑신부 댓글 관리 모드 로그인 필요'}
+          </span>
+          {hasClientManagerAccess && !isAdminLoggedIn ? (
+            <button
+              type="button"
+              onClick={() => void handleClientLogout()}
+              style={{
+                minHeight: '38px',
+                borderRadius: '999px',
+                border: '1px solid rgba(148, 163, 184, 0.28)',
+                background: '#fff',
+                padding: '0 0.85rem',
+                fontSize: '0.82rem',
+                fontWeight: 600,
+              }}
+            >
+              로그아웃
+            </button>
+          ) : null}
+        </div>
 
-        {showClientManager && !canManageComments ? (
+        {showClientManager && !canManageComments && !isAdminLoggedIn ? (
           <div style={{ display: 'grid', gap: '0.6rem' }}>
             <p style={{ margin: 0, fontSize: '0.86rem', lineHeight: 1.6 }}>
               신랑신부 전용 비밀번호를 입력하면 방명록 댓글을 삭제할 수 있습니다.
@@ -388,17 +431,24 @@ export default function GuestbookThemed({
     const content = (
       <>
         {hasClass(styles, 'lemonDecoration') ? (
-          <div className={styles.lemonDecoration}>?뜈</div>
+          <div className={styles.lemonDecoration}>🍋</div>
         ) : null}
         <div
           className={styles.titleSection}
-          onClick={handleTitleInteraction}
-          onDoubleClick={handleTitleInteraction}
-          onTouchEnd={handleTitleInteraction}
+          onDoubleClick={() => {
+            if (!isAdminLoggedIn) {
+              setShowClientManager((current) => !current);
+            }
+          }}
+          onTouchEnd={() => {
+            handleTitleInteraction();
+          }}
           onKeyDown={(event) => {
             if (event.key === 'Enter' || event.key === ' ') {
               event.preventDefault();
-              handleTitleInteraction();
+              if (!isAdminLoggedIn) {
+                setShowClientManager((current) => !current);
+              }
             }
           }}
           role="button"
@@ -422,7 +472,7 @@ export default function GuestbookThemed({
         {hasClass(styles, 'cardGlow') ? <div className={styles.cardGlow} /> : null}
         {hasClass(styles, 'formHeader') ? (
           <div className={styles.formHeader}>
-            {hasClass(styles, 'formIcon') ? <span className={styles.formIcon}>?</span> : null}
+            {hasClass(styles, 'formIcon') ? <span className={styles.formIcon}>♡</span> : null}
             {hasClass(styles, 'formTitle') ? (
               <p className={styles.formTitle}>따뜻한 축하의 마음을 남겨 주세요.</p>
             ) : null}
@@ -434,7 +484,7 @@ export default function GuestbookThemed({
             {hasClass(styles, 'label') ? (
               <label className={styles.label}>
                 {hasClass(styles, 'labelIcon') ? (
-                  <span className={styles.labelIcon}>?</span>
+                  <span className={styles.labelIcon}>♡</span>
                 ) : null}
                 이름
               </label>
@@ -454,7 +504,7 @@ export default function GuestbookThemed({
             {hasClass(styles, 'label') ? (
               <label className={styles.label}>
                 {hasClass(styles, 'labelIcon') ? (
-                  <span className={styles.labelIcon}>?</span>
+                  <span className={styles.labelIcon}>♡</span>
                 ) : null}
                 메시지
               </label>
@@ -474,13 +524,13 @@ export default function GuestbookThemed({
             <div className={styles.guideText}>
               <p className={styles.guideMessage}>
                 {hasClass(styles, 'guideIcon') ? (
-                  <span className={styles.guideIcon}>?</span>
+                  <span className={styles.guideIcon}>♡</span>
                 ) : null}
                 진심을 담은 한마디를 적어 주세요.
               </p>
               <p className={styles.limitMessage}>
                 {hasClass(styles, 'limitIcon') ? (
-                  <span className={styles.limitIcon}>?</span>
+                  <span className={styles.limitIcon}>♡</span>
                 ) : null}
                 최대 500자까지 작성할 수 있습니다.
               </p>
@@ -537,11 +587,11 @@ export default function GuestbookThemed({
     const body = hasClass(styles, 'commentContent') ? (
       <div className={styles.commentContent}>
         {hasClass(styles, 'commentQuote') ? (
-          <span className={styles.commentQuote}>?</span>
+          <span className={styles.commentQuote}>"</span>
         ) : null}
         <p className={styles.commentMessage}>{comment.message}</p>
         {hasClass(styles, 'commentQuote') ? (
-          <span className={styles.commentQuote}>?</span>
+          <span className={styles.commentQuote}>"</span>
         ) : null}
       </div>
     ) : (
@@ -656,7 +706,7 @@ export default function GuestbookThemed({
           type="button"
         >
           {hasClass(styles, 'pageButtonIcon') ? (
-            <span className={styles.pageButtonIcon}>?</span>
+            <span className={styles.pageButtonIcon}>‹</span>
           ) : null}
           {hasClass(styles, 'pageButtonText') ? (
             <span className={styles.pageButtonText}>이전</span>
@@ -690,7 +740,7 @@ export default function GuestbookThemed({
             '다음'
           )}
           {hasClass(styles, 'pageButtonIcon') ? (
-            <span className={styles.pageButtonIcon}>?</span>
+            <span className={styles.pageButtonIcon}>›</span>
           ) : null}
         </button>
       </div>

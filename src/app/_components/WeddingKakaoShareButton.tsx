@@ -122,17 +122,17 @@ export default function WeddingKakaoShareButton({
   }, [feedbackMessage]);
 
   const buttonLabel = useMemo(() => {
-    return feedbackMessage || 'Share via KakaoTalk';
+    return feedbackMessage || '카카오톡 공유하기';
   }, [feedbackMessage]);
 
   const handleKakaoShare = () => {
     if (!kakaoAppKey) {
-      setFeedbackMessage('Kakao share is not configured.');
+      setFeedbackMessage('카카오 공유가 설정되어 있지 않습니다.');
       return;
     }
 
     if (!(window.Kakao && window.Kakao.Share && isKakaoReady)) {
-      setFeedbackMessage('Preparing Kakao share.');
+      setFeedbackMessage('카카오 공유 준비 중.');
       return;
     }
 
@@ -148,7 +148,7 @@ export default function WeddingKakaoShareButton({
         },
         buttons: [
           {
-            title: 'Open invitation',
+            title: '초대장 열기',
             link: {
               mobileWebUrl: shareUrl,
               webUrl: shareUrl,
@@ -170,7 +170,7 @@ export default function WeddingKakaoShareButton({
         },
         buttons: [
           {
-            title: 'Open invitation',
+            title: '초대장 열기',
             link: {
               mobileWebUrl: shareUrl,
               webUrl: shareUrl,
@@ -180,7 +180,7 @@ export default function WeddingKakaoShareButton({
       });
     }
 
-    setFeedbackMessage('Kakao share opened.');
+    setFeedbackMessage('카카오 공유가 열렸습니다.');
   };
 
   return (

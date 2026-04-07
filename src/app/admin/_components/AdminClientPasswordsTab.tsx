@@ -161,7 +161,8 @@ export default function AdminClientPasswordsTab({
         <div>
           <h2 className={styles.sectionTitle}>고객 비밀번호</h2>
           <p className={styles.sectionDescription}>
-            평문 조회를 제거하고 재설정만 허용합니다. 저장된 비밀번호는 해시로만 보관됩니다.
+            평문 조회를 제거하고 재설정만 허용합니다. 저장된 비밀번호는 해시로만 보관되며,
+            미설정 페이지는 기본값 12344로 자동 초기 설정됩니다.
           </p>
         </div>
         <p className={styles.sectionMeta}>현재 {entries.length}개 페이지</p>

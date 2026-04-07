@@ -1,18 +1,18 @@
 'use client';
 
-import dynamic from 'next/dynamic';
 import { useEffect } from 'react';
 import type { ComponentType } from 'react';
 
 import { AdminProvider } from '@/contexts';
 import {
-  INVITATION_THEME_KEYS,
   type InvitationThemeKey,
 } from '@/lib/invitationThemes';
 import { resolveInvitationFeatures } from '@/lib/invitationProducts';
 import { AccessDeniedPage } from '@/utils';
 
 import { useWeddingInvitationState } from './weddingPageState';
+import EmotionalThemeRenderer from './themeRenderers/emotional';
+import SimpleThemeRenderer from './themeRenderers/simple';
 import { type WeddingInvitationRouteOptions } from './weddingThemes';
 import { getWeddingThemeDefinition } from './weddingThemes';
 import WeddingKakaoShareButton from './WeddingKakaoShareButton';
@@ -20,22 +20,10 @@ import type { WeddingPageReadyState } from './weddingPageState';
 import type { WeddingThemeRendererProps } from './weddingPageRenderers';
 import styles from './WeddingInvitationPage.module.css';
 
-function importThemeRenderer(themeKey: InvitationThemeKey) {
-  return import(`./themeRenderers/${themeKey}`) as Promise<{
-    default: ComponentType<WeddingThemeRendererProps>;
-  }>;
-}
-
-const themeRendererRegistry = INVITATION_THEME_KEYS.reduce<
-  Record<InvitationThemeKey, ComponentType<WeddingThemeRendererProps>>
->((accumulator, themeKey) => {
-  accumulator[themeKey] = dynamic<WeddingThemeRendererProps>(
-    () => importThemeRenderer(themeKey),
-    { loading: () => null }
-  );
-
-  return accumulator;
-}, {} as Record<InvitationThemeKey, ComponentType<WeddingThemeRendererProps>>);
+const themeRendererRegistry: Record<InvitationThemeKey, ComponentType<WeddingThemeRendererProps>> = {
+  emotional: EmotionalThemeRenderer,
+  simple: SimpleThemeRenderer,
+};
 
 function upsertMetaTag(selector: string, attributes: Record<string, string>) {
   if (typeof document === 'undefined') {

@@ -311,11 +311,133 @@ async function validate(db) {
   );
 }
 
+function chunk(items, size) {
+  const chunks = [];
+
+  for (let index = 0; index < items.length; index += size) {
+    chunks.push(items.slice(index, index + size));
+  }
+
+  return chunks;
+}
+
+function buildPurgeSummary(sourceEntries, targetEntries) {
+  const targetKeys = new Set(targetEntries.map((entry) => entry.key));
+  const sourceKeys = new Set(sourceEntries.map((entry) => entry.key));
+  const deletableEntries = sourceEntries.filter((entry) => targetKeys.has(entry.key));
+  const blockedEntries = sourceEntries.filter((entry) => !targetKeys.has(entry.key));
+  const collectionMap = new Map();
+
+  sourceEntries.forEach((entry) => {
+    const current =
+      collectionMap.get(entry.sourceCollection) ?? {
+        collectionName: entry.sourceCollection,
+        totalCount: 0,
+        deletableCount: 0,
+      };
+
+    current.totalCount += 1;
+    if (targetKeys.has(entry.key)) {
+      current.deletableCount += 1;
+    }
+
+    collectionMap.set(entry.sourceCollection, current);
+  });
+
+  return {
+    sourceUniqueCount: sourceKeys.size,
+    targetUniqueCount: targetKeys.size,
+    sourceEntryCount: sourceEntries.length,
+    deletableEntryCount: deletableEntries.length,
+    blockedEntryCount: blockedEntries.length,
+    blockedSample: blockedEntries.slice(0, 20).map((entry) => ({
+      key: entry.key,
+      sourceCollection: entry.sourceCollection,
+    })),
+    collectionSummary: [...collectionMap.values()].sort((left, right) =>
+      left.collectionName.localeCompare(right.collectionName)
+    ),
+  };
+}
+
+async function deleteLegacyEntries(db, entries) {
+  let deletedCount = 0;
+
+  for (const batchEntries of chunk(entries, 400)) {
+    const batch = db.batch();
+
+    batchEntries.forEach((entry) => {
+      batch.delete(db.collection(entry.sourceCollection).doc(entry.commentId));
+    });
+
+    await batch.commit();
+    deletedCount += batchEntries.length;
+  }
+
+  return deletedCount;
+}
+
+async function purgeLegacy(db, execute, force = false) {
+  const [sourceResult, targetEntries] = await Promise.all([
+    collectSourceComments(db),
+    collectTargetComments(db),
+  ]);
+
+  const summary = buildPurgeSummary(sourceResult.sourceEntries, targetEntries);
+
+  if (!execute) {
+    console.log(
+      JSON.stringify(
+        {
+          ...summary,
+          mode: 'dry-run',
+          nextCommand:
+            summary.blockedEntryCount === 0
+              ? 'node scripts/migrate-comments-to-guestbooks.mjs purge-legacy --execute'
+              : 'migrate/validate 후 재시도하세요. blockedEntryCount가 0이어야 안전 삭제됩니다.',
+        },
+        null,
+        2
+      )
+    );
+    return;
+  }
+
+  if (summary.blockedEntryCount > 0 && !force) {
+    throw new Error(
+      [
+        `삭제가 차단되었습니다. target에 없는 레거시 댓글이 ${summary.blockedEntryCount}건 있습니다.`,
+        '먼저 migrate/validate를 다시 수행하거나, 의도된 경우 --force 옵션을 사용하세요.',
+      ].join(' ')
+    );
+  }
+
+  const targetKeys = new Set(targetEntries.map((entry) => entry.key));
+  const deletableEntries = sourceResult.sourceEntries.filter((entry) =>
+    targetKeys.has(entry.key)
+  );
+  const deletedCount = await deleteLegacyEntries(db, deletableEntries);
+
+  console.log(
+    JSON.stringify(
+      {
+        mode: 'execute',
+        deletedCount,
+        blockedEntryCount: summary.blockedEntryCount,
+        force,
+      },
+      null,
+      2
+    )
+  );
+}
+
 async function main() {
   loadLocalEnvironment();
 
   const { command, options } = parseArgs(process.argv);
   const execute = options.execute === true;
+  const force = options.force === true;
   const db = initializeFirebaseAdmin();
 
   if (command === 'analyze') {
@@ -330,6 +452,11 @@ async function main() {
 
   if (command === 'validate') {
     await validate(db);
+    return;
+  }
+
+  if (command === 'purge-legacy') {
+    await purgeLegacy(db, execute, force);
     return;
   }
 

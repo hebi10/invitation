@@ -191,6 +191,7 @@ export default function AdminPageClient() {
     handleDeleteComment,
     handleSavePassword,
     handleEnableVariant,
+    handleDisableVariant,
     handleLogout: dataLogout,
   } = useAdminData({ isAdminLoggedIn, activeTab, showToast, confirm });
 
@@ -607,6 +608,9 @@ export default function AdminPageClient() {
               onRefresh={() => void refreshPages()}
               onEnableVariant={(page, variantKey) =>
                 void handleEnableVariant(page, variantKey)
+              }
+              onDisableVariant={(page, variantKey) =>
+                void handleDisableVariant(page, variantKey)
               }
               updatingVariantToken={updatingVariantToken}
             />

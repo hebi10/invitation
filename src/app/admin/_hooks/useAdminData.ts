@@ -11,6 +11,7 @@ import {
   type InvitationThemeKey,
 } from '@/lib/invitationThemes';
 import {
+  DEFAULT_INITIAL_CLIENT_PASSWORD,
   deleteComment,
   getAllClientPasswords,
   getAllComments,
@@ -142,8 +143,40 @@ export function useAdminData({
   const fetchPasswords = useCallback(async () => {
     setPasswordsLoading(true);
     try {
+      const sourcePages =
+        pages.length > 0 ? pages : await getAllManagedInvitationPages();
+
+      if (pages.length === 0 && sourcePages.length > 0) {
+        setPages(sourcePages);
+        setPagesLoaded(true);
+        writeAdminInvitationPreviewCache(sourcePages);
+      }
+
       await syncClientPasswordAccess();
-      const nextPasswords = await getAllClientPasswords();
+      let nextPasswords = await getAllClientPasswords();
+
+      const passwordSlugSet = new Set(nextPasswords.map((entry) => entry.pageSlug));
+      const missingPasswordSlugs = sourcePages
+        .map((page) => page.slug.trim())
+        .filter((slug) => Boolean(slug) && !passwordSlugSet.has(slug));
+
+      if (missingPasswordSlugs.length > 0) {
+        await Promise.all(
+          missingPasswordSlugs.map((pageSlug) =>
+            setClientPassword(pageSlug, DEFAULT_INITIAL_CLIENT_PASSWORD)
+          )
+        );
+
+        await syncClientPasswordAccess();
+        nextPasswords = await getAllClientPasswords();
+
+        showToast({
+          title: '고객 비밀번호 기본값을 자동 설정했습니다.',
+          message: `${missingPasswordSlugs.length}개 페이지에 기본값(12344)을 적용했습니다.`,
+          tone: 'info',
+        });
+      }
+
       setClientPasswords(nextPasswords);
       setPasswordsLoaded(true);
     } catch (fetchError) {
@@ -152,7 +185,7 @@ export function useAdminData({
     } finally {
       setPasswordsLoading(false);
     }
-  }, [showToast]);
+  }, [pages, showToast]);
 
   /* ── Actions ── */
 
@@ -266,6 +299,59 @@ export function useAdminData({
     [confirm, refreshPages, showToast]
   );
 
+  const handleDisableVariant = useCallback(
+    async (page: InvitationPageSummary, variantKey: InvitationThemeKey) => {
+      const variantLabel = getInvitationThemeAdminLabel(variantKey);
+      const availableVariantCount = Object.values(page.variants ?? {}).filter(
+        (variant) => variant?.available === true
+      ).length;
+
+      if (availableVariantCount <= 1) {
+        showToast({
+          title: '최소 1개의 디자인은 유지해야 합니다.',
+          tone: 'error',
+        });
+        return;
+      }
+
+      const approved = await confirm({
+        title: `${variantLabel} 디자인을 삭제할까요?`,
+        description: `${page.displayName} 페이지에서 ${variantLabel} 미리보기를 제거합니다.`,
+        confirmLabel: '삭제',
+        cancelLabel: '취소',
+        tone: 'danger',
+      });
+
+      if (!approved) {
+        return;
+      }
+
+      const token = `${page.slug}:${variantKey}`;
+      setUpdatingVariantToken(token);
+
+      try {
+        await setInvitationPageVariantAvailability(page.slug, variantKey, false, {
+          published: page.published,
+          defaultTheme: page.defaultTheme,
+        });
+        await refreshPages();
+        showToast({
+          title: `${variantLabel} 디자인을 삭제했습니다.`,
+          tone: 'success',
+        });
+      } catch (error) {
+        console.error(error);
+        showToast({
+          title: `${variantLabel} 디자인 삭제에 실패했습니다.`,
+          tone: 'error',
+        });
+      } finally {
+        setUpdatingVariantToken(null);
+      }
+    },
+    [confirm, refreshPages, showToast]
+  );
+
   const handleLogout = useCallback(() => {
     clearAdminInvitationPreviewCache();
     resetAll();
@@ -331,6 +417,7 @@ export function useAdminData({
     handleDeleteComment,
     handleSavePassword,
     handleEnableVariant,
+    handleDisableVariant,
     handleLogout,
   };
 }

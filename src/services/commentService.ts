@@ -1,4 +1,3 @@
-import { getAllWeddingPageSlugs } from '@/config/weddingPages';
 import { ensureFirebaseInit, USE_FIREBASE } from '@/lib/firebase';
 
 export interface Comment {
@@ -23,7 +22,6 @@ export interface CommentSummary {
 
 const GUESTBOOKS_COLLECTION = 'guestbooks';
 const GUESTBOOK_COMMENTS_COLLECTION = 'comments';
-const LEGACY_UNIFIED_COLLECTION = 'comments';
 const DEFAULT_RECENT_COMMENT_DAYS = 7;
 
 const mockComments = new Map<string, Comment[]>();
@@ -89,20 +87,8 @@ function toDate(value: unknown) {
   return Number.isNaN(parsed.getTime()) ? new Date() : parsed;
 }
 
-function isPermissionDeniedError(error: unknown) {
-  if (typeof error !== 'object' || error === null || !('code' in error)) {
-    return false;
-  }
-
-  return String((error as { code?: unknown }).code ?? '') === 'permission-denied';
-}
-
 function getGuestbookCollectionPath(pageSlug: string) {
   return `${GUESTBOOKS_COLLECTION}/${pageSlug}/${GUESTBOOK_COMMENTS_COLLECTION}`;
-}
-
-function getLegacyCollectionName(pageSlug: string) {
-  return `comments-${pageSlug}`;
 }
 
 function normalizeComment(
@@ -136,21 +122,6 @@ function sortComments(comments: Comment[]) {
   return [...comments].sort(
     (left, right) => right.createdAt.getTime() - left.createdAt.getTime()
   );
-}
-
-function mergeComments(...groups: Comment[][]) {
-  const merged = new Map<string, Comment>();
-
-  groups.forEach((group) => {
-    group.forEach((comment) => {
-      const key = `${comment.pageSlug}:${comment.id}`;
-      if (!merged.has(key)) {
-        merged.set(key, comment);
-      }
-    });
-  });
-
-  return [...merged.values()];
 }
 
 function buildRecentThreshold(recentDays: number) {
@@ -199,82 +170,6 @@ async function getGuestbookComments(pageSlug?: string): Promise<Comment[]> {
   }
 }
 
-async function getUnifiedComments(pageSlug?: string): Promise<Comment[]> {
-  const firestore = await ensureFirestoreModules();
-  if (!firestore) {
-    return [];
-  }
-
-  try {
-    const collectionRef = firestore.modules.collection(
-      firestore.db,
-      LEGACY_UNIFIED_COLLECTION
-    );
-    const snapshot = pageSlug
-      ? await firestore.modules.getDocs(
-          firestore.modules.query(
-            collectionRef,
-            firestore.modules.where('pageSlug', '==', pageSlug)
-          )
-        )
-      : await firestore.modules.getDocs(collectionRef);
-
-    return snapshot.docs
-      .map((docSnapshot: { id: string; data: () => Record<string, any> }) =>
-        normalizeComment(docSnapshot.id, docSnapshot.data(), {
-          pageSlug,
-          collectionName: LEGACY_UNIFIED_COLLECTION,
-        })
-      )
-      .filter((comment: Comment | null): comment is Comment => comment !== null);
-  } catch (error) {
-    if (!isPermissionDeniedError(error)) {
-      console.error('[commentService] failed to load unified comments', error);
-    }
-    return [];
-  }
-}
-
-async function getLegacyComments(pageSlug?: string): Promise<Comment[]> {
-  const firestore = await ensureFirestoreModules();
-  if (!firestore) {
-    return [];
-  }
-
-  const targetSlugs = pageSlug ? [pageSlug] : getAllWeddingPageSlugs();
-
-  const commentGroups = await Promise.all(
-    targetSlugs.map(async (slug) => {
-      const collectionName = getLegacyCollectionName(slug);
-
-      try {
-        const snapshot = await firestore.modules.getDocs(
-          firestore.modules.collection(firestore.db, collectionName)
-        );
-
-        return snapshot.docs
-          .map((docSnapshot: { id: string; data: () => Record<string, any> }) =>
-            normalizeComment(docSnapshot.id, docSnapshot.data(), {
-              pageSlug: slug,
-              collectionName,
-            })
-          )
-          .filter((comment: Comment | null): comment is Comment => comment !== null);
-      } catch (error) {
-        if (!isPermissionDeniedError(error)) {
-          console.error(
-            `[commentService] failed to load legacy comments from ${collectionName}`,
-            error
-          );
-        }
-        return [];
-      }
-    })
-  );
-
-  return commentGroups.flat();
-}
-
 export async function addComment(commentData: CommentInput): Promise<void> {
   const payload = {
     author: commentData.author.trim(),
@@ -320,20 +215,12 @@ export async function getComments(pageSlug: string): Promise<Comment[]> {
     return sortComments([...(mockComments.get(pageSlug) ?? [])]);
   }
 
-  const [guestbookComments, unifiedComments, legacyComments] = await Promise.all([
-    getGuestbookComments(pageSlug),
-    getUnifiedComments(pageSlug),
-    getLegacyComments(pageSlug),
-  ]);
-
-  return sortComments(
-    mergeComments(guestbookComments, unifiedComments, legacyComments)
-  );
+  return sortComments(await getGuestbookComments(pageSlug));
 }
 
 export async function deleteComment(
   commentId: string,
-  collectionName = LEGACY_UNIFIED_COLLECTION
+  collectionName?: string
 ): Promise<void> {
   if (!USE_FIREBASE) {
     for (const [pageSlug, comments] of mockComments.entries()) {
@@ -350,6 +237,10 @@ export async function deleteComment(
     throw new Error('Firestore is not initialized.');
   }
 
+  if (!collectionName?.trim()) {
+    throw new Error('Comment collection path is required.');
+  }
+
   await firestore.modules.deleteDoc(
     firestore.modules.doc(firestore.db, collectionName, commentId)
   );
@@ -360,15 +251,7 @@ export async function getAllComments(): Promise<Comment[]> {
     return sortComments([...mockComments.values()].flat());
   }
 
-  const [guestbookComments, unifiedComments, legacyComments] = await Promise.all([
-    getGuestbookComments(),
-    getUnifiedComments(),
-    getLegacyComments(),
-  ]);
-
-  return sortComments(
-    mergeComments(guestbookComments, unifiedComments, legacyComments)
-  );
+  return sortComments(await getGuestbookComments());
 }
 
 export async function getCommentSummary(

@@ -1,6 +1,8 @@
 import { createClientPasswordHashRecord } from '@/lib/clientPasswordCrypto';
 import { ensureFirebaseInit, USE_FIREBASE } from '@/lib/firebase';
 
+export const DEFAULT_INITIAL_CLIENT_PASSWORD = '12344';
+
 export interface ClientPassword {
   id: string;
   pageSlug: string;

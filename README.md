@@ -7,7 +7,7 @@
 - 공개 청첩장 테마는 `emotional`, `simple` 두 가지입니다.
 - 공개 청첩장 페이지는 `Firestore 우선 + 로컬 sample fallback` 구조입니다.
 - 고객 편집기는 `/page-editor/[slug]`에서 동작하며, 관리자 로그인 또는 페이지별 고객 비밀번호로 진입할 수 있습니다.
-- 방명록은 새 구조 `guestbooks/{pageSlug}/comments/{commentId}`로 정리 중이며, 기존 `comments` / `comments-{slug}`도 마이그레이션 기간 동안 읽기 fallback을 유지합니다.
+- 방명록은 표준 구조 `guestbooks/{pageSlug}/comments/{commentId}`를 사용하며, 레거시 `comments` / `comments-{slug}`는 마이그레이션 대상으로만 관리합니다.
 - 메모리 페이지는 별도 `memory-pages` 컬렉션과 `memory-images` 스토리지를 사용합니다.
 
 ## 추가 문서
@@ -215,10 +215,8 @@ guestbooks/{pageSlug}/comments/{commentId}
 
 #### 레거시 구조
 
-마이그레이션 기간 동안 아래 구조도 읽기 fallback으로 유지합니다.
-
-- `comments/{commentId}`
-- `comments-{pageSlug}/{commentId}`
+레거시 컬렉션(`comments`, `comments-{pageSlug}`)은 마이그레이션 대상이며,
+현재 서비스 조회/저장은 `guestbooks/{pageSlug}/comments/{commentId}` 기준으로 동작합니다.
 
 관련 파일:
 
@@ -402,6 +400,8 @@ npm run migrate:firebase:static
 npm run migrate:comments:guestbooks
 npm run migrate:comments:guestbooks:execute
 npm run migrate:comments:guestbooks:validate
+npm run migrate:comments:guestbooks:purge
+npm run migrate:comments:guestbooks:purge:execute
 ```
 
 ### 스크립트 설명
@@ -420,6 +420,10 @@ npm run migrate:comments:guestbooks:validate
   댓글을 `guestbooks/{pageSlug}/comments/{commentId}`로 복사
 - `migrate:comments:guestbooks:validate`
   마이그레이션 누락 검증
+- `migrate:comments:guestbooks:purge`
+  레거시 댓글 삭제 계획(dry-run) 확인
+- `migrate:comments:guestbooks:purge:execute`
+  target 검증 후 레거시 댓글 실제 삭제
 
 ## 12. 고객 편집기 개요
 
@@ -463,7 +467,7 @@ npm run migrate:comments:guestbooks:validate
 
 ## 14. 방명록 마이그레이션 가이드
 
-현재 댓글 구조는 새 구조와 레거시 구조를 함께 읽는 과도기 상태입니다.
+현재 댓글 저장/조회 표준은 `guestbooks/{pageSlug}/comments/{commentId}`이며, 레거시 컬렉션은 purge 대상입니다.
 
 권장 순서:
 
@@ -471,12 +475,15 @@ npm run migrate:comments:guestbooks:validate
 npm run migrate:comments:guestbooks
 npm run migrate:comments:guestbooks:execute
 npm run migrate:comments:guestbooks:validate
+npm run migrate:comments:guestbooks:purge
+npm run migrate:comments:guestbooks:purge:execute
 npm run deploy:firebase
 ```
 
 검증 기준:
 
 - `validate` 결과에서 `missingCount: 0`이면 정상
+- `purge` dry-run에서 `blockedEntryCount: 0`이면 안전 삭제 가능
 
 ### 마이그레이션 실행 전 준비
 
@@ -552,7 +559,7 @@ npm run migrate:comments:guestbooks
 
 - 메모리 페이지는 현재 seed slug 기준으로만 static params를 생성합니다.
 - 관리자에서 완전한 새 페이지 draft 생성 흐름은 아직 붙어 있지 않습니다.
-- `guestbooks` 마이그레이션이 끝날 때까지 레거시 댓글 fallback을 유지합니다.
+- 레거시 댓글 컬렉션(`comments`, `comments-{slug}`)은 purge 스크립트로 정리합니다.
 - 배포 파이프라인은 동적 Next 구조 기준으로 아직 최종 정리 전 상태입니다.
 
 ## 18. 검증 권장 명령

@@ -1,6 +1,10 @@
+'use client';
+
+import { useEffect, useMemo, useState } from 'react';
+
 import type { InvitationPageSummary } from '@/services';
 
-import { EmptyState, FilterToolbar, StatusBadge } from '.';
+import { EmptyState, FilterToolbar, Pagination, StatusBadge } from '.';
 import {
   formatDateTime,
   PAGE_SORT_LABELS,
@@ -12,6 +16,13 @@ import {
   getAvailableShortcuts,
 } from './adminPageUtils';
 import styles from '../page.module.css';
+
+const PAGE_SIZE_OPTIONS = [10, 30, 50, 100] as const;
+
+function parsePageSize(value: string) {
+  const parsed = Number(value);
+  return PAGE_SIZE_OPTIONS.find((option) => option === parsed) ?? PAGE_SIZE_OPTIONS[0];
+}
 
 interface AdminPagesTabProps {
   loading: boolean;
@@ -26,6 +37,7 @@ interface AdminPagesTabProps {
   onQueryChange: (updates: Record<string, string | null>) => void;
   onRefresh: () => void;
   onEnableVariant: (page: InvitationPageSummary, variantKey: ShortcutKey) => void;
+  onDisableVariant: (page: InvitationPageSummary, variantKey: ShortcutKey) => void;
   updatingVariantToken: string | null;
 }
 
@@ -42,8 +54,37 @@ export default function AdminPagesTab({
   onQueryChange,
   onRefresh,
   onEnableVariant,
+  onDisableVariant,
   updatingVariantToken,
 }: AdminPagesTabProps) {
+  const getEnableVariantButtonLabel = (shortcutLabel: string, isUpdating: boolean) =>
+    isUpdating
+      ? `${shortcutLabel} 추가 중`
+      : `${shortcutLabel} 추가`;
+
+  const getDisableVariantButtonLabel = (shortcutLabel: string, isUpdating: boolean) =>
+    isUpdating
+      ? `삭제 중`
+      : `삭제`;
+
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState<(typeof PAGE_SIZE_OPTIONS)[number]>(
+    PAGE_SIZE_OPTIONS[0]
+  );
+
+  const totalPages = Math.max(1, Math.ceil(filteredPages.length / pageSize));
+
+  useEffect(() => {
+    if (currentPage > totalPages) {
+      setCurrentPage(totalPages);
+    }
+  }, [currentPage, totalPages]);
+
+  const currentInvitationPages = useMemo(() => {
+    const startIndex = (currentPage - 1) * pageSize;
+    return filteredPages.slice(startIndex, startIndex + pageSize);
+  }, [currentPage, filteredPages, pageSize]);
+
   return (
     <div className={styles.panelStack}>
       <div className={styles.sectionHeader}>
@@ -205,6 +246,26 @@ export default function AdminPagesTab({
         </div>
       ) : filteredPages.length > 0 ? (
         <>
+          <div className={styles.tableActions}>
+            <label className="admin-field">
+              <span className="admin-field-label">페이지당 개수</span>
+              <select
+                className="admin-select"
+                value={String(pageSize)}
+                onChange={(event) => {
+                  setPageSize(parsePageSize(event.target.value));
+                  setCurrentPage(1);
+                }}
+              >
+                {PAGE_SIZE_OPTIONS.map((option) => (
+                  <option key={option} value={option}>
+                    {option}개
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
+
           <div className={styles.tableCard}>
             <div className={styles.tableScroll} tabIndex={0} role="region" aria-label="청첩장 테이블">
               <table className={styles.dataTable}>
@@ -218,7 +279,7 @@ export default function AdminPagesTab({
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredPages.map((page, index) => {
+                  {currentInvitationPages.map((page, index) => {
                     const links = getAvailableShortcuts(page);
                     const missingShortcuts = SHORTCUT_ITEMS.filter(
                       (shortcut) => !page.variants?.[shortcut.key]?.available
@@ -229,7 +290,7 @@ export default function AdminPagesTab({
                         <td>
                           <div className={styles.tablePrimary}>
                             <span className={styles.rowNumber}>
-                              {index + 1}
+                              {filteredPages.length - ((currentPage - 1) * pageSize + index)}
                             </span>
                             <a
                               href={`/page-editor/${page.slug}`}
@@ -257,24 +318,60 @@ export default function AdminPagesTab({
                         </td>
                         <td>
                           <div className={styles.variantPreviewGrid}>
-                            {links.length > 0 ? (
-                              links.map((link) => (
-                                <a
-                                  key={`${page.slug}-${link.key}`}
-                                  href={link.path}
-                                  target="_blank"
-                                  rel="noreferrer"
-                                  className={styles.variantPreviewLink}
+                            {links.map((link) => {
+                              const token = `${page.slug}:${link.key}`;
+                              const isUpdating = updatingVariantToken === token;
+
+                              return (
+                                <div key={`${page.slug}-${link.key}`} className={styles.variantPreviewItem}>
+                                  <a
+                                    href={link.path}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className={styles.variantPreviewLink}
+                                  >
+                                    <span className={styles.variantPreviewLabel}>{link.label}</span>
+                                    <span className={styles.variantPreviewPath}>{link.path}</span>
+                                  </a>
+                                  <button
+                                    type="button"
+                                    className={`${styles.variantPreviewActionButton} ${styles.removeVariantPreviewButton}`}
+                                    disabled={isUpdating}
+                                    onClick={() => onDisableVariant(page, link.key)}
+                                  >
+                                    {getDisableVariantButtonLabel(link.label, isUpdating)}
+                                  </button>
+                                </div>
+                              );
+                            })}
+                            {missingShortcuts.map((shortcut) => {
+                              const token = `${page.slug}:${shortcut.key}`;
+
+                              return (
+                                <button
+                                  key={`${page.slug}-preview-enable-${shortcut.key}`}
+                                  type="button"
+                                  className={`${styles.variantPreviewLink} ${styles.missingVariantPreviewButton}`}
+                                  disabled={updatingVariantToken === token}
+                                  onClick={() => onEnableVariant(page, shortcut.key)}
                                 >
-                                  <span className={styles.variantPreviewLabel}>{link.label}</span>
-                                  <span className={styles.variantPreviewPath}>{link.path}</span>
-                                </a>
-                              ))
-                            ) : (
+                                  <span className={styles.variantPreviewLabel}>
+                                    {getEnableVariantButtonLabel(
+                                      shortcut.label,
+                                      updatingVariantToken === token
+                                    )}
+                                  </span>
+                                  <span className={styles.variantPreviewPath}>
+                                    생성된 디자인 미리보기가 없습니다.
+                                  </span>
+                                </button>
+                              );
+                            })}
+                            {links.length === 0 && missingShortcuts.length === 0 ? (
                               <span className={styles.tableSubtext}>
                                 생성된 디자인 미리보기가 없습니다.
                               </span>
-                            )}
+                            ) : null}
                           </div>
                         </td>
                         <td>
@@ -302,27 +399,6 @@ export default function AdminPagesTab({
                                 모바일
                               </a>
                             </div>
-                            {missingShortcuts.length > 0 ? (
-                              <div className={styles.tableActions}>
-                                {missingShortcuts.map((shortcut) => {
-                                  const token = `${page.slug}:${shortcut.key}`;
-
-                                  return (
-                                    <button
-                                      key={`${page.slug}-enable-${shortcut.key}`}
-                                      type="button"
-                                      className="admin-button admin-button-ghost"
-                                      disabled={updatingVariantToken === token}
-                                      onClick={() => onEnableVariant(page, shortcut.key)}
-                                    >
-                                      {updatingVariantToken === token
-                                        ? `${shortcut.label} 추가 중`
-                                        : `${shortcut.label} 추가`}
-                                    </button>
-                                  );
-                                })}
-                              </div>
-                            ) : null}
                           </div>
                         </td>
                       </tr>
@@ -334,7 +410,7 @@ export default function AdminPagesTab({
           </div>
 
           <div className={styles.mobileList}>
-            {filteredPages.map((page) => {
+            {currentInvitationPages.map((page) => {
               const links = getAvailableShortcuts(page);
               const missingShortcuts = SHORTCUT_ITEMS.filter(
                 (shortcut) => !page.variants?.[shortcut.key]?.available
@@ -363,22 +439,58 @@ export default function AdminPagesTab({
                   </div>
 
                   <div className={styles.variantPreviewGrid}>
-                    {links.length > 0 ? (
-                      links.map((link) => (
-                        <a
-                          key={`${page.slug}-mobile-${link.key}`}
-                          href={link.path}
-                          target="_blank"
-                          rel="noreferrer"
-                          className={styles.variantPreviewLink}
+                    {links.map((link) => {
+                      const token = `${page.slug}:${link.key}`;
+                      const isUpdating = updatingVariantToken === token;
+
+                      return (
+                        <div key={`${page.slug}-mobile-${link.key}`} className={styles.variantPreviewItem}>
+                          <a
+                            href={link.path}
+                            target="_blank"
+                            rel="noreferrer"
+                            className={styles.variantPreviewLink}
+                          >
+                            <span className={styles.variantPreviewLabel}>{link.label}</span>
+                            <span className={styles.variantPreviewPath}>{link.path}</span>
+                          </a>
+                          <button
+                            type="button"
+                            className={`${styles.variantPreviewActionButton} ${styles.removeVariantPreviewButton}`}
+                            disabled={isUpdating}
+                            onClick={() => onDisableVariant(page, link.key)}
+                          >
+                            {getDisableVariantButtonLabel(link.label, isUpdating)}
+                          </button>
+                        </div>
+                      );
+                    })}
+                    {missingShortcuts.map((shortcut) => {
+                      const token = `${page.slug}:${shortcut.key}`;
+
+                      return (
+                        <button
+                          key={`${page.slug}-mobile-preview-enable-${shortcut.key}`}
+                          type="button"
+                          className={`${styles.variantPreviewLink} ${styles.missingVariantPreviewButton}`}
+                          disabled={updatingVariantToken === token}
+                          onClick={() => onEnableVariant(page, shortcut.key)}
                         >
-                          <span className={styles.variantPreviewLabel}>{link.label}</span>
-                          <span className={styles.variantPreviewPath}>{link.path}</span>
-                        </a>
-                      ))
-                    ) : (
+                          <span className={styles.variantPreviewLabel}>
+                            {getEnableVariantButtonLabel(
+                              shortcut.label,
+                              updatingVariantToken === token
+                            )}
+                          </span>
+                          <span className={styles.variantPreviewPath}>
+                            생성된 디자인 미리보기가 없습니다.
+                          </span>
+                        </button>
+                      );
+                    })}
+                    {links.length === 0 && missingShortcuts.length === 0 ? (
                       <span className={styles.tableSubtext}>생성된 디자인 미리보기가 없습니다.</span>
-                    )}
+                    ) : null}
                   </div>
 
                   <div className={styles.actionStack}>
@@ -400,32 +512,19 @@ export default function AdminPagesTab({
                         모바일
                       </a>
                     </div>
-                    {missingShortcuts.length > 0 ? (
-                      <div className={styles.mobileCardActions}>
-                        {missingShortcuts.map((shortcut) => {
-                          const token = `${page.slug}:${shortcut.key}`;
-
-                          return (
-                            <button
-                              key={`${page.slug}-mobile-enable-${shortcut.key}`}
-                              type="button"
-                              className="admin-button admin-button-ghost"
-                              disabled={updatingVariantToken === token}
-                              onClick={() => onEnableVariant(page, shortcut.key)}
-                            >
-                              {updatingVariantToken === token
-                                ? `${shortcut.label} 추가 중`
-                                : `${shortcut.label} 추가`}
-                            </button>
-                          );
-                        })}
-                      </div>
-                    ) : null}
                   </div>
                 </article>
               );
             })}
           </div>
+
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            totalItems={filteredPages.length}
+            pageSize={pageSize}
+            onPageChange={(page) => setCurrentPage(page)}
+          />
         </>
       ) : (
         <EmptyState

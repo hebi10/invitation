@@ -429,8 +429,9 @@
 }
 
 .variantPreviewGrid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  display: flex;
+  flex-wrap: wrap;
+  flex-direction: column;
   gap: 8px;
 }
 
@@ -444,12 +445,18 @@
   background: var(--admin-color-surface-muted);
   color: var(--admin-color-text);
   text-decoration: none;
+  width: 90%;
 }
 
 .variantPreviewLink:hover,
 .variantPreviewLink:focus-visible {
   border-color: rgba(37, 99, 235, 0.32);
   background: rgba(37, 99, 235, 0.06);
+}
+
+.variantPreviewItem {
+  display: flex;
+  gap: 6px;
 }
 
 .variantPreviewLabel {
@@ -465,6 +472,36 @@
   word-break: break-all;
 }
 
+.variantPreviewActionButton {
+  width: 100%;
+  min-height: 34px;
+  padding: 0 10px;
+  border-radius: 8px;
+  border: 1px solid var(--admin-color-border);
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-align: left;
+  cursor: pointer;
+}
+
+.variantPreviewActionButton:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.removeVariantPreviewButton {
+  width: 10%;
+  background: var(--admin-color-danger-soft);
+  border-color: rgba(220, 38, 38, 0.18);
+  color: var(--admin-color-danger);
+}
+
+.removeVariantPreviewButton:hover,
+.removeVariantPreviewButton:focus-visible {
+  background: rgba(220, 38, 38, 0.14);
+  border-color: rgba(220, 38, 38, 0.3);
+}
+
 .metaStack {
   color: var(--admin-color-text-secondary);
   font-size: 0.875rem;
@@ -475,6 +512,32 @@
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
+}
+
+.missingVariantPreviewButton {
+  text-align: left;
+  cursor: pointer;
+  background: var(--admin-color-warning-soft);
+  border-color: rgba(180, 83, 9, 0.22);
+  width: 100%;
+}
+
+.missingVariantPreviewButton .variantPreviewLabel {
+  color: var(--admin-color-warning);
+}
+
+.missingVariantPreviewButton .variantPreviewPath {
+  color: rgba(146, 64, 14, 0.9);
+}
+
+.missingVariantPreviewButton:hover,
+.missingVariantPreviewButton:focus-visible {
+  background: rgba(180, 83, 9, 0.12);
+  border-color: rgba(180, 83, 9, 0.35);
+}
+
+.missingVariantPreviewButton:disabled {
+  opacity: 0.6;
 }
 
 .actionHint,
