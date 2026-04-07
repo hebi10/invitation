@@ -1,4 +1,5 @@
 import { getAllWeddingPageSeeds } from '@/config/weddingPages';
+import { findInvitationMusicTrackById } from '@/lib/musicLibrary';
 import {
   DEFAULT_INVITATION_PRODUCT_TIER,
   resolveInvitationFeatures,
@@ -29,6 +30,7 @@ export type WizardStepKey =
   | 'greeting'
   | 'images'
   | 'extra'
+  | 'music'
   | 'final';
 
 export type StepValidation = {
@@ -120,8 +122,16 @@ export const WIZARD_STEPS: WizardStepDefinition[] = [
     highlights: ['축의금 계좌', '예식장 안내', '화환 안내'],
   },
   {
-    key: 'final',
+    key: 'music',
     number: '09',
+    title: '배경음악 선택',
+    description: '원하면 방문자 페이지에 배경음악을 설정할 수 있습니다.',
+    previewSection: 'metadata',
+    highlights: ['음악 사용 여부', '카테고리 선택', '곡과 볼륨'],
+  },
+  {
+    key: 'final',
+    number: '10',
     title: '공유 정보와 최종 확인',
     description: '공유 문구를 확인하고 페이지 공개 여부를 정합니다.',
     previewSection: 'metadata',
@@ -578,6 +588,31 @@ export function buildStepValidation(
           ? ['계좌를 입력했다면 은행명, 계좌번호, 예금주를 모두 입력해 주세요.']
           : [],
       };
+    }
+    case 'music': {
+      const messages: string[] = [];
+      const musicEnabled = Boolean(formState?.musicEnabled);
+
+      if (!musicEnabled) {
+        return { valid: true, messages };
+      }
+
+      if (!hasText(formState?.musicStoragePath) && !hasText(formState?.musicUrl)) {
+        messages.push('배경음악을 켠 경우 사용할 곡을 먼저 선택해 주세요.');
+      }
+
+      if (hasText(formState?.musicTrackId) && !findInvitationMusicTrackById(formState?.musicTrackId)) {
+        messages.push('선택한 배경음악이 라이브러리에 없습니다. 곡을 다시 선택해 주세요.');
+      }
+
+      if (
+        typeof formState?.musicVolume === 'number' &&
+        (formState.musicVolume < 0 || formState.musicVolume > 1)
+      ) {
+        messages.push('배경음악 볼륨은 0에서 1 사이 값으로 저장됩니다.');
+      }
+
+      return { valid: messages.length === 0, messages };
     }
     case 'final':
     default:

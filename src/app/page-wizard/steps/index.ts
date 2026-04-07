@@ -3,6 +3,7 @@ export { default as ExtraStep } from './ExtraStep';
 export { default as FinalStep } from './FinalStep';
 export { default as GreetingStep } from './GreetingStep';
 export { default as ImagesStep } from './ImagesStep';
+export { default as MusicStep } from './MusicStep';
 export { default as ScheduleStep } from './ScheduleStep';
 export { default as SlugStep } from './SlugStep';
 export { default as ThemeStep } from './ThemeStep';

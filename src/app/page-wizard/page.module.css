@@ -841,6 +841,213 @@
   accent-color: #2563eb;
 }
 
+.musicSection {
+  gap: 14px;
+}
+
+.musicIntroCard {
+  border: 1px solid rgba(37, 99, 235, 0.18);
+  border-radius: 18px;
+  background: linear-gradient(180deg, rgba(239, 246, 255, 0.86), rgba(255, 255, 255, 0.96));
+  box-shadow: 0 10px 24px rgba(37, 99, 235, 0.08);
+}
+
+.musicToggleCard,
+.musicControlCard,
+.musicMetaCard,
+.musicPreviewCard {
+  padding: 14px;
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.96);
+}
+
+.musicToggleContent {
+  display: grid;
+  gap: 6px;
+}
+
+.musicToggleHint {
+  margin: 0;
+  color: #64748b;
+  font-size: 0.82rem;
+  line-height: 1.55;
+}
+
+.musicControlGrid {
+  gap: 12px;
+}
+
+.musicField {
+  gap: 8px;
+}
+
+.musicOptionList {
+  display: grid;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.musicOptionCard {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.96);
+  text-align: left;
+  color: #0f172a;
+  transition:
+    border-color 0.16s ease,
+    background-color 0.16s ease,
+    box-shadow 0.16s ease,
+    transform 0.16s ease;
+}
+
+.musicOptionCard:hover:not(:disabled) {
+  border-color: rgba(37, 99, 235, 0.34);
+  background: rgba(239, 246, 255, 0.76);
+  box-shadow: 0 8px 16px rgba(37, 99, 235, 0.08);
+  transform: translateY(-1px);
+}
+
+.musicOptionCard:disabled {
+  opacity: 0.58;
+  cursor: not-allowed;
+}
+
+.musicOptionCardActive {
+  border-color: rgba(37, 99, 235, 0.44);
+  background: rgba(239, 246, 255, 0.88);
+  box-shadow:
+    inset 3px 0 0 #2563eb,
+    0 10px 18px rgba(37, 99, 235, 0.1);
+}
+
+.musicOptionTitle {
+  color: #0f172a;
+  font-size: 0.86rem;
+  font-weight: 800;
+  line-height: 1.45;
+}
+
+.musicOptionMeta {
+  color: #64748b;
+  font-size: 0.78rem;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.musicOptionEmpty {
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px dashed rgba(148, 163, 184, 0.28);
+  background: rgba(248, 250, 252, 0.8);
+  color: #64748b;
+  font-size: 0.82rem;
+  line-height: 1.55;
+}
+
+.musicSelectButton {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+  min-height: 46px;
+  padding: 0 12px;
+  border: 1px solid rgba(148, 163, 184, 0.28);
+  border-radius: 14px;
+  background: linear-gradient(180deg, #ffffff, rgba(248, 250, 252, 0.9));
+  color: #0f172a;
+  font: inherit;
+  text-align: left;
+  box-sizing: border-box;
+}
+
+.musicSelectButton:focus {
+  outline: none;
+  border-color: rgba(37, 99, 235, 0.45);
+  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.08);
+}
+
+.musicSelectButtonActive {
+  border-color: rgba(37, 99, 235, 0.42);
+  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.08);
+}
+
+.musicSelectButtonValue {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.musicSelectButtonArrow {
+  color: #64748b;
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+
+.musicRangeRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.musicRangeInput {
+  flex: 1;
+  width: 100%;
+  accent-color: #2563eb;
+}
+
+.musicVolumeBadge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 52px;
+  min-height: 30px;
+  padding: 0 10px;
+  border-radius: 999px;
+  background: rgba(37, 99, 235, 0.12);
+  color: #1d4ed8;
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.musicStoragePath {
+  display: block;
+  overflow-wrap: anywhere;
+  padding: 10px 12px;
+  border-radius: 14px;
+  background: rgba(241, 245, 249, 0.86);
+  color: #334155;
+  font-size: 0.8rem;
+  line-height: 1.6;
+}
+
+.musicPreviewCard {
+  display: grid;
+  gap: 10px;
+}
+
+.musicAudio {
+  width: 100%;
+}
+
+.musicAudioPlaceholder {
+  padding: 12px 14px;
+  border-radius: 14px;
+  border: 1px dashed rgba(148, 163, 184, 0.3);
+  background: rgba(248, 250, 252, 0.8);
+  color: #64748b;
+  font-size: 0.84rem;
+  line-height: 1.6;
+}
+
 .detailsSummary {
   list-style: none;
   cursor: pointer;
@@ -994,6 +1201,10 @@
   text-align: center;
   align-items: flex-start;
   gap: 14px;
+}
+
+.centerCard > * {
+  margin: 0 auto;
 }
 
 .hiddenInput {
@@ -1158,6 +1369,33 @@
 
 .choiceSection {
   gap: 8px;
+}
+
+.musicToggleCard,
+.musicControlCard,
+.musicMetaCard,
+.musicPreviewCard {
+  padding: 12px;
+}
+
+.musicSelectButton {
+  min-height: 44px;
+}
+
+.musicAudioPlaceholder {
+  font-size: 0.82rem;
+}
+
+.musicOptionCard {
+  padding: 10px;
+}
+
+.musicOptionTitle {
+  font-size: 0.82rem;
+}
+
+.musicOptionMeta {
+  font-size: 0.75rem;
 }
 
 .choiceSelectButton {
@@ -1677,6 +1915,98 @@
   border-radius: 22px;
   background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(252, 247, 241, 0.96));
   box-shadow: 0 12px 30px rgba(122, 93, 63, 0.06);
+}
+
+.musicIntroCard {
+  border-color: rgba(180, 131, 91, 0.2);
+  background: linear-gradient(180deg, rgba(255, 252, 248, 0.98), rgba(250, 243, 235, 0.96));
+  box-shadow: 0 14px 28px rgba(122, 93, 63, 0.08);
+}
+
+.musicToggleCard,
+.musicControlCard,
+.musicMetaCard,
+.musicPreviewCard {
+  border-color: rgba(180, 131, 91, 0.18);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(252, 247, 241, 0.96));
+}
+
+.musicToggleHint {
+  color: #7c6d60;
+}
+
+.musicOptionCard {
+  border-color: rgba(180, 131, 91, 0.2);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(252, 247, 241, 0.92));
+  color: #2f251f;
+}
+
+.musicOptionCard:hover:not(:disabled) {
+  border-color: rgba(180, 131, 91, 0.34);
+  background: rgba(250, 243, 235, 0.96);
+  box-shadow: 0 10px 18px rgba(122, 93, 63, 0.1);
+}
+
+.musicOptionCardActive {
+  border-color: rgba(180, 131, 91, 0.4);
+  background: rgba(249, 238, 226, 0.96);
+  box-shadow:
+    inset 3px 0 0 #b4835b,
+    0 12px 20px rgba(122, 93, 63, 0.1);
+}
+
+.musicOptionTitle {
+  color: #2f251f;
+}
+
+.musicOptionMeta {
+  color: #8b7b6d;
+}
+
+.musicOptionEmpty {
+  border-color: rgba(180, 131, 91, 0.24);
+  background: rgba(248, 241, 234, 0.72);
+  color: #7c6d60;
+}
+
+.musicSelectButton {
+  border-color: rgba(180, 131, 91, 0.22);
+  background: linear-gradient(180deg, #ffffff, #fbf3ea);
+  color: #2f251f;
+}
+
+.musicSelectButton:focus {
+  border-color: rgba(180, 131, 91, 0.46);
+  box-shadow: 0 0 0 4px rgba(180, 131, 91, 0.12);
+}
+
+.musicSelectButtonActive {
+  border-color: rgba(180, 131, 91, 0.4);
+  box-shadow: 0 0 0 4px rgba(180, 131, 91, 0.1);
+}
+
+.musicSelectButtonArrow {
+  color: #8b7b6d;
+}
+
+.musicRangeInput {
+  accent-color: #b4835b;
+}
+
+.musicVolumeBadge {
+  background: rgba(180, 131, 91, 0.14);
+  color: #7b5a44;
+}
+
+.musicStoragePath {
+  background: rgba(248, 241, 234, 0.92);
+  color: #5e4938;
+}
+
+.musicAudioPlaceholder {
+  border-color: rgba(180, 131, 91, 0.24);
+  background: rgba(248, 241, 234, 0.72);
+  color: #7c6d60;
 }
 
 .choiceSectionBadge {

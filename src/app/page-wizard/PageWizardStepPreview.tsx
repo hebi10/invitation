@@ -1,3 +1,11 @@
+import {
+  DEFAULT_INVITATION_MUSIC_VOLUME,
+  clampInvitationMusicVolume,
+  findFirstActiveInvitationMusicTrack,
+  findInvitationMusicTrackById,
+  getInvitationMusicTracksByCategory,
+  normalizeInvitationMusicSelection,
+} from '@/lib/musicLibrary';
 import { resolveInvitationFeatures } from '@/lib/invitationProducts';
 import type {
   InvitationPageSeed,
@@ -100,6 +108,23 @@ export default function PageWizardStepPreview({
   const brideAccounts = getFilledAccountCount(formState.pageData?.giftInfo?.brideAccounts);
   const venueGuideCount = getFilledGuideCount(formState.pageData?.venueGuide);
   const wreathGuideCount = getFilledGuideCount(formState.pageData?.wreathGuide);
+  const defaultMusicTrack = findFirstActiveInvitationMusicTrack();
+  const normalizedMusicSelection = normalizeInvitationMusicSelection({
+    categoryId: formState.musicCategoryId ?? defaultMusicTrack?.categoryId,
+    trackId: formState.musicTrackId ?? defaultMusicTrack?.id,
+    storagePath: formState.musicStoragePath ?? defaultMusicTrack?.storagePath,
+  });
+  const musicTracks = getInvitationMusicTracksByCategory(
+    normalizedMusicSelection.musicCategoryId
+  );
+  const selectedMusicTrack =
+    findInvitationMusicTrackById(normalizedMusicSelection.musicTrackId) ??
+    musicTracks[0] ??
+    defaultMusicTrack;
+  const musicVolume = clampInvitationMusicVolume(
+    formState.musicVolume,
+    DEFAULT_INVITATION_MUSIC_VOLUME
+  );
   const invalidItems = reviewSummary.filter((item) => !item.validation.valid);
 
   if (stepKey === 'theme') {
@@ -278,6 +303,39 @@ export default function PageWizardStepPreview({
           <PreviewRow label="신부측 계좌" value={`${brideAccounts}개`} />
           <PreviewRow label="예식장 안내" value={`${venueGuideCount}개`} />
           <PreviewRow label="화환 안내" value={`${wreathGuideCount}개`} />
+        </div>
+      </section>
+    );
+  }
+
+  if (stepKey === 'music') {
+    return (
+      <section className={styles.previewSummary}>
+        <div className={styles.previewHeader}>
+          <h3 className={styles.previewTitle}>배경음악 요약</h3>
+          <span className={styles.previewCaption}>원할 때만 배경음악을 켜서 사용할 수 있습니다.</span>
+        </div>
+        <div className={styles.previewKeyList}>
+          <PreviewRow
+            label="음악 사용"
+            value={formState.musicEnabled ? '사용' : '사용 안 함'}
+          />
+          <PreviewRow
+            label="선택 곡"
+            value={
+              selectedMusicTrack
+                ? `${selectedMusicTrack.title} · ${selectedMusicTrack.artist}`
+                : '선택된 곡 없음'
+            }
+          />
+          <PreviewRow
+            label="볼륨"
+            value={`${Math.round(musicVolume * 100)}%`}
+          />
+          <PreviewRow
+            label="저장 경로"
+            value={normalizedMusicSelection.musicStoragePath || '설정되지 않음'}
+          />
         </div>
       </section>
     );

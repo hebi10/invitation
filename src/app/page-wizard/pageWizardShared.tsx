@@ -30,6 +30,7 @@ export type NoticeState = { tone: NoticeTone; message: string } | null;
 export type UploadFieldKind = 'cover' | 'gallery';
 export type SlideViewMode = 'input' | 'preview';
 export type ChoicePanelKey = 'theme' | 'tier' | null;
+export type MusicPreviewState = 'idle' | 'loading' | 'ready' | 'error';
 
 /* ── Step component shared props ── */
 
@@ -46,6 +47,7 @@ export interface ThemeStepProps extends WizardStepProps {
   toggleChoicePanel: (panel: Exclude<ChoicePanelKey, null>) => void;
   onProductTierChange: (tier: InvitationProductTier) => void;
   setOpenChoicePanel: (panel: ChoicePanelKey) => void;
+  isSelectionLocked: boolean;
 }
 
 export interface SlugStepProps {
@@ -108,6 +110,10 @@ export interface ExtraStepProps extends WizardStepProps {
   onGuideRemove: (kind: GuideKind, index: number) => void;
   onGuideChange: (kind: GuideKind, index: number, field: 'title' | 'content', value: string) => void;
   onGuideTemplateApply: (kind: GuideKind, label: string, content: string) => void;
+}
+
+export interface MusicStepProps extends WizardStepProps {
+  musicPreviewState: MusicPreviewState;
 }
 
 export interface FinalStepProps extends WizardStepProps {

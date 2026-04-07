@@ -1,3 +1,5 @@
+import { useEffect } from 'react';
+
 import styles from '../page.module.css';
 import {
   buildInvitationVariants,
@@ -22,7 +24,14 @@ export default function ThemeStep({
   toggleChoicePanel,
   onProductTierChange,
   setOpenChoicePanel,
+  isSelectionLocked,
 }: ThemeStepProps) {
+  useEffect(() => {
+    if (isSelectionLocked && openChoicePanel) {
+      setOpenChoicePanel(null);
+    }
+  }, [isSelectionLocked, openChoicePanel, setOpenChoicePanel]);
+
   return (
     <div className={styles.fieldGrid}>
       <section className={styles.choiceSection}>
@@ -39,7 +48,12 @@ export default function ThemeStep({
             openChoicePanel === 'theme' ? styles.choiceSelectButtonActive : ''
           }`}
           aria-expanded={openChoicePanel === 'theme'}
-          onClick={() => toggleChoicePanel('theme')}
+          onClick={() => {
+            if (!isSelectionLocked) {
+              toggleChoicePanel('theme');
+            }
+          }}
+          disabled={isSelectionLocked}
         >
           <div className={styles.choiceSelectMeta}>
             <span className={styles.choiceSelectLabel}>현재 디자인</span>
@@ -87,6 +101,7 @@ export default function ThemeStep({
                     });
                     setOpenChoicePanel(null);
                   }}
+                  disabled={isSelectionLocked}
                 >
                   <div className={styles.choiceCardTop}>
                     <span className={styles.choiceTag}>디자인</span>
@@ -117,7 +132,12 @@ export default function ThemeStep({
             openChoicePanel === 'tier' ? styles.choiceSelectButtonActive : ''
           }`}
           aria-expanded={openChoicePanel === 'tier'}
-          onClick={() => toggleChoicePanel('tier')}
+          onClick={() => {
+            if (!isSelectionLocked) {
+              toggleChoicePanel('tier');
+            }
+          }}
+          disabled={isSelectionLocked}
         >
           <div className={styles.choiceSelectMeta}>
             <span className={styles.choiceSelectLabel}>현재 서비스</span>
@@ -156,6 +176,7 @@ export default function ThemeStep({
                     onProductTierChange(tier);
                     setOpenChoicePanel(null);
                   }}
+                  disabled={isSelectionLocked}
                 >
                   <div className={styles.choiceCardTop}>
                     <span className={styles.choiceTag}>서비스 플랜</span>
@@ -169,6 +190,12 @@ export default function ThemeStep({
               );
             })}
           </div>
+        ) : null}
+
+        {isSelectionLocked ? (
+          <p className={styles.fieldHint}>
+            페이지 주소가 확정되어 디자인과 서비스 구성은 변경할 수 없습니다.
+          </p>
         ) : null}
       </section>
     </div>

@@ -2,6 +2,8 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
+import { useRouter } from 'next/navigation';
+
 import type { Swiper as SwiperType } from 'swiper';
 import { Pagination } from 'swiper/modules';
 import { Swiper, SwiperSlide } from 'swiper/react';
@@ -20,6 +22,7 @@ import { useAdmin } from '@/contexts';
 import { DEFAULT_INVITATION_THEME } from '@/lib/invitationThemes';
 import { resolveInvitationFeatures } from '@/lib/invitationProducts';
 import { toUserFacingKoreanErrorMessage } from '@/lib/userFacingErrorMessage';
+import { getStorageDownloadUrl } from '@/services/imageService';
 import { searchKakaoLocalAddress } from '@/services/kakaoLocalService';
 import {
   getClientEditorEditableConfig,
@@ -69,6 +72,7 @@ import {
   getNoticeClassName,
   getStepIndex,
   type ChoicePanelKey,
+  type MusicPreviewState,
   type NoticeState,
   type SlideViewMode,
   type UploadFieldKind,
@@ -79,6 +83,7 @@ import {
   FinalStep,
   GreetingStep,
   ImagesStep,
+  MusicStep,
   ScheduleStep,
   SlugStep,
   ThemeStep,
@@ -159,6 +164,7 @@ function resolveWizardDraftSlug(
 }
 
 export default function PageWizardClient({ initialSlug }: PageWizardClientProps) {
+  const router = useRouter();
   const { isAdminLoading, isAdminLoggedIn } = useAdmin();
 
   const [formState, setFormState] = useState<InvitationPageSeed | null>(null);
@@ -182,6 +188,7 @@ export default function PageWizardClient({ initialSlug }: PageWizardClientProps)
     Partial<Record<WizardStepKey, SlideViewMode>>
   >({});
   const [openChoicePanel, setOpenChoicePanel] = useState<ChoicePanelKey>(null);
+  const [musicPreviewState, setMusicPreviewState] = useState<MusicPreviewState>('idle');
 
   const swiperRef = useRef<SwiperType | null>(null);
   const coverUploadInputRef = useRef<HTMLInputElement | null>(null);
@@ -435,6 +442,14 @@ export default function PageWizardClient({ initialSlug }: PageWizardClientProps)
   }, [initialSlug, isAdminLoggedIn]);
 
   useEffect(() => {
+    if (initialSlug || isAdminLoading || isAdminLoggedIn) {
+      return;
+    }
+
+    router.replace('/admin', { scroll: false });
+  }, [initialSlug, isAdminLoading, isAdminLoggedIn, router]);
+
+  useEffect(() => {
     updateSwiperLayout();
   }, [activeStepKey, notice, openChoicePanel, updateSwiperLayout]);
 
@@ -544,6 +559,62 @@ export default function PageWizardClient({ initialSlug }: PageWizardClientProps)
     isAdminLoggedIn,
     showErrorNotice,
   ]);
+
+  useEffect(() => {
+    if (!formState?.musicEnabled) {
+      setMusicPreviewState('idle');
+      return;
+    }
+
+    if (formState.musicUrl?.trim()) {
+      setMusicPreviewState('ready');
+      return;
+    }
+
+    const musicStoragePath = formState.musicStoragePath?.trim();
+    if (!musicStoragePath) {
+      setMusicPreviewState('error');
+      return;
+    }
+
+    let cancelled = false;
+    setMusicPreviewState('loading');
+
+    const resolveMusicUrl = async () => {
+      const downloadUrl = await getStorageDownloadUrl(musicStoragePath);
+      if (cancelled) {
+        return;
+      }
+
+      if (!downloadUrl) {
+        setMusicPreviewState('error');
+        return;
+      }
+
+      setFormState((current) => {
+        if (!current || current.musicStoragePath?.trim() !== musicStoragePath) {
+          return current;
+        }
+
+        if (current.musicUrl?.trim()) {
+          return current;
+        }
+
+        return {
+          ...current,
+          musicUrl: downloadUrl,
+        };
+      });
+
+      setMusicPreviewState('ready');
+    };
+
+    void resolveMusicUrl();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [formState?.musicEnabled, formState?.musicStoragePath, formState?.musicUrl]);
 
   /* ── Persistence ── */
 
@@ -1157,6 +1228,7 @@ export default function PageWizardClient({ initialSlug }: PageWizardClientProps)
             toggleChoicePanel={toggleChoicePanel}
             onProductTierChange={handleProductTierChange}
             setOpenChoicePanel={setOpenChoicePanel}
+            isSelectionLocked={Boolean(resolvedPersistedSlug)}
           />
         );
       case 'slug':
@@ -1241,6 +1313,8 @@ export default function PageWizardClient({ initialSlug }: PageWizardClientProps)
             onGuideTemplateApply={handleGuideTemplateApply}
           />
         );
+      case 'music':
+        return <MusicStep {...sharedProps} musicPreviewState={musicPreviewState} />;
       case 'final':
         return (
           <FinalStep
@@ -1280,6 +1354,10 @@ export default function PageWizardClient({ initialSlug }: PageWizardClientProps)
         </div>
       </main>
     );
+  }
+
+  if (!initialSlug && !isAdminLoggedIn) {
+    return null;
   }
 
   /* ── Auth/lock state ── */
