@@ -1,6 +1,7 @@
 import type { WeddingPageConfig } from '../weddingPages';
 
 import {
+  SIMPLE_WEDDING_VARIANT_KEYS,
   createWeddingDisplayName,
   createWeddingPageConfig,
   createWeddingVariants,
@@ -63,7 +64,7 @@ export const leeJonghunChoiInConfig: WeddingPageConfig = createWeddingPageConfig
     slug: 'lee-jonghun-choi-in',
     couple,
     displayName,
-    enabledVariants: ['simple'],
+    enabledVariants: SIMPLE_WEDDING_VARIANT_KEYS,
     displayNameOverrides: {
       simple: displayName,
     },

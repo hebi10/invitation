@@ -26,7 +26,7 @@ import {
   saveClientEditorConfig,
   setClientEditorPublishedState,
 } from '@/services/clientEditorSession';
-import type { InvitationPageSeed } from '@/types/invitationPage';
+import type { InvitationPageSeed, InvitationThemeKey } from '@/types/invitationPage';
 
 import {
   AccountSectionPanel,
@@ -343,6 +343,15 @@ function syncWeddingPresentation(draft: InvitationPageSeed) {
 
   draft.date = formatWeddingDateLabel(date);
   draft.pageData.ceremonyTime = formatWeddingTimeLabel(date);
+  draft.pageData.ceremony = {
+    ...draft.pageData.ceremony,
+    time: formatWeddingTimeLabel(date),
+    location:
+      draft.pageData.ceremony?.location ||
+      draft.pageData.ceremonyAddress ||
+      draft.pageData.venueName ||
+      draft.venue,
+  };
 }
 
 function formatSavedAt(date: Date | null) {
@@ -607,6 +616,7 @@ export default function PageEditorClient({
   const [isRestoring, setIsRestoring] = useState(false);
   const [saveState, setSaveState] = useState<SaveState>('idle');
   const [notice, setNotice] = useState<NoticeState>(null);
+  const [defaultTheme, setDefaultTheme] = useState<InvitationThemeKey>('emotional');
   const [previewTheme, setPreviewTheme] = useState<PreviewThemeKey>('emotional');
   const [workspaceView, setWorkspaceView] = useState<WorkspaceView>('form');
   const [isStepMenuOpen, setIsStepMenuOpen] = useState(false);
@@ -625,7 +635,7 @@ export default function PageEditorClient({
     formState?.displayName || initialDisplayName || slug
   );
   const previewLinks = [
-    { href: `/${slug}`, label: '감성형 청첩장 보기' },
+    { href: `/${slug}/emotional`, label: '감성형 청첩장 보기' },
     { href: `/${slug}/simple`, label: '심플형 청첩장 보기' },
   ];
 
@@ -667,7 +677,8 @@ export default function PageEditorClient({
     totalRequiredFields > 0
       ? Math.round((completedRequiredFields / totalRequiredFields) * 100)
       : 0;
-  const currentPreviewHref = previewTheme === 'simple' ? `/${slug}/simple` : `/${slug}`;
+  const currentPreviewHref =
+    previewTheme === 'simple' ? `/${slug}/simple` : `/${slug}/emotional`;
   const weddingSummary = formState ? buildWeddingSummary(formState) : '아직 입력되지 않았습니다.';
   const currentStepKey = activeStep ?? 'basic';
   const currentStep = STEP_MAP[currentStepKey];
@@ -715,6 +726,8 @@ export default function PageEditorClient({
     setBaselineState(cloneConfig(normalized));
     setPublished(config.published);
     setBaselinePublished(config.published);
+    setDefaultTheme(config.defaultTheme);
+    setPreviewTheme(config.defaultTheme);
     setHasCustomConfig(config.hasCustomConfig);
     setDataSourceLabel(
       config.dataSource === 'firestore' ? '맞춤 설정 사용 중' : '기본 샘플 사용 중'
@@ -876,10 +889,12 @@ export default function PageEditorClient({
       if (isAdminLoggedIn) {
         await saveInvitationPageConfig(nextConfig, {
           published: baselinePublished,
+          defaultTheme,
         });
       } else {
         await saveClientEditorConfig(slug, nextConfig, {
           published: baselinePublished,
+          defaultTheme,
         });
       }
       setFormState(cloneConfig(nextConfig));
@@ -1005,10 +1020,12 @@ export default function PageEditorClient({
       if (isAdminLoggedIn) {
         await restoreInvitationPageConfig(slug, {
           published: baselinePublished,
+          defaultTheme,
         });
       } else {
         await restoreClientEditorConfig(slug, {
           published: baselinePublished,
+          defaultTheme,
         });
       }
       await loadLatestConfig('기본 설정으로 복원했습니다.');
@@ -1044,10 +1061,12 @@ export default function PageEditorClient({
         if (isAdminLoggedIn) {
           await saveInvitationPageConfig(nextConfig, {
             published,
+            defaultTheme,
           });
         } else {
           await saveClientEditorConfig(slug, nextConfig, {
             published,
+            defaultTheme,
           });
         }
         setFormState(cloneConfig(nextConfig));
@@ -1056,9 +1075,13 @@ export default function PageEditorClient({
         setDataSourceLabel('맞춤 설정 사용 중');
       } else {
         if (isAdminLoggedIn) {
-          await setInvitationPagePublished(slug, published);
+          await setInvitationPagePublished(slug, published, {
+            defaultTheme,
+          });
         } else {
-          await setClientEditorPublishedState(slug, published);
+          await setClientEditorPublishedState(slug, published, {
+            defaultTheme,
+          });
         }
       }
 
@@ -1109,6 +1132,12 @@ export default function PageEditorClient({
       draft[field] = value;
       if (field === 'venue' && draft.pageData) {
         draft.pageData.venueName = value;
+        if (!hasText(draft.pageData.ceremony?.location)) {
+          draft.pageData.ceremony = {
+            ...draft.pageData.ceremony,
+            location: value,
+          };
+        }
       }
     });
   };
@@ -1180,6 +1209,62 @@ export default function PageEditorClient({
       }
 
       draft.pageData[field] = value;
+
+      if (field === 'ceremonyTime') {
+        draft.pageData.ceremony = {
+          ...draft.pageData.ceremony,
+          time: value,
+          location:
+            draft.pageData.ceremony?.location ||
+            draft.pageData.ceremonyAddress ||
+            draft.pageData.venueName ||
+            draft.venue,
+        };
+      }
+
+      if (field === 'ceremonyAddress' && !hasText(draft.pageData.ceremony?.location)) {
+        draft.pageData.ceremony = {
+          ...draft.pageData.ceremony,
+          location: value,
+        };
+      }
+
+      if (field === 'venueName' && !hasText(draft.pageData.ceremony?.location)) {
+        draft.pageData.ceremony = {
+          ...draft.pageData.ceremony,
+          location: value,
+        };
+      }
+    });
+  };
+
+  const handleScheduleDetailFieldChange = (
+    kind: 'ceremony' | 'reception',
+    field: 'time' | 'location',
+    value: string
+  ) => {
+    updateForm((draft) => {
+      if (!draft.pageData) {
+        return;
+      }
+
+      const current = draft.pageData[kind] ?? {};
+      draft.pageData[kind] = {
+        ...current,
+        [field]: value,
+      };
+
+      if (kind === 'ceremony' && field === 'time') {
+        draft.pageData.ceremonyTime = value;
+      }
+
+      if (
+        kind === 'ceremony' &&
+        field === 'location' &&
+        !hasText(draft.pageData.ceremonyAddress)
+      ) {
+        draft.pageData.ceremonyAddress = value;
+      }
     });
   };
 
@@ -2506,6 +2591,81 @@ export default function PageEditorClient({
                   placeholder="예: 오후 3시"
                   onChange={(event) =>
                     handlePageDataFieldChange('ceremonyTime', event.target.value)
+                  }
+                />
+              </label>
+            </div>
+          </div>
+        </details>
+
+        <details className={styles.detailsGroup}>
+          <summary className={styles.detailsSummary}>본식/피로연 상세 일정 (선택)</summary>
+          <div className={styles.detailsBody}>
+            <div className={styles.fieldGrid}>
+              <label className={styles.field}>
+                {renderFieldMeta('본식 시간', 'optional', '예: 오후 2시 30분')}
+                <input
+                  className={styles.input}
+                  value={
+                    formState.pageData?.ceremony?.time ??
+                    formState.pageData?.ceremonyTime ??
+                    ''
+                  }
+                  placeholder="예: 오후 2시 30분"
+                  onChange={(event) =>
+                    handleScheduleDetailFieldChange(
+                      'ceremony',
+                      'time',
+                      event.target.value
+                    )
+                  }
+                />
+              </label>
+
+              <label className={styles.field}>
+                {renderFieldMeta('본식 장소', 'optional', '예: 3층 그랜드홀')}
+                <input
+                  className={styles.input}
+                  value={formState.pageData?.ceremony?.location ?? ''}
+                  placeholder="예: 3층 그랜드홀"
+                  onChange={(event) =>
+                    handleScheduleDetailFieldChange(
+                      'ceremony',
+                      'location',
+                      event.target.value
+                    )
+                  }
+                />
+              </label>
+
+              <label className={styles.field}>
+                {renderFieldMeta('피로연 시간', 'optional', '예: 오후 4시 30분')}
+                <input
+                  className={styles.input}
+                  value={formState.pageData?.reception?.time ?? ''}
+                  placeholder="예: 오후 4시 30분"
+                  onChange={(event) =>
+                    handleScheduleDetailFieldChange(
+                      'reception',
+                      'time',
+                      event.target.value
+                    )
+                  }
+                />
+              </label>
+
+              <label className={styles.field}>
+                {renderFieldMeta('피로연 장소', 'optional', '예: 1층 연회장')}
+                <input
+                  className={styles.input}
+                  value={formState.pageData?.reception?.location ?? ''}
+                  placeholder="예: 1층 연회장"
+                  onChange={(event) =>
+                    handleScheduleDetailFieldChange(
+                      'reception',
+                      'location',
+                      event.target.value
+                    )
                   }
                 />
               </label>

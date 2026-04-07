@@ -20,11 +20,14 @@ import { resolveInvitationFeatures } from '@/lib/invitationProducts';
 import type { InvitationPageSeed } from '@/types/invitationPage';
 
 import {
+  getCeremonySchedule,
   createWeddingCalendarEvent,
   getCeremonyAddress,
   getCeremonyContact,
   getMapDescription,
+  getReceptionSchedule,
 } from '../_components/weddingPageRenderers';
+import { resolveInvitationPageDataByTheme } from '@/lib/invitationThemePageData';
 import styles from './page.module.css';
 import {
   buildPreviewPage,
@@ -226,13 +229,26 @@ export default function PageEditorSectionPreview({
     () => resolveInvitationFeatures(previewPage.productTier, previewPage.features),
     [previewPage.features, previewPage.productTier]
   );
+  const previewPageData = useMemo(
+    () => resolveInvitationPageDataByTheme(previewPage, theme),
+    [previewPage, theme]
+  );
   const weddingDate = useMemo(() => buildWeddingDate(previewPage), [previewPage]);
-  const previewImages = useMemo(() => getPreviewImages(previewPage), [previewPage]);
-  const groomAccounts = previewPage.pageData?.giftInfo?.groomAccounts ?? [];
-  const brideAccounts = previewPage.pageData?.giftInfo?.brideAccounts ?? [];
-  const giftMessage = previewPage.pageData?.giftInfo?.message ?? '';
+  const previewImages = useMemo(() => {
+    const themedGallery =
+      previewPageData?.galleryImages?.slice(0, previewFeatures.maxGalleryImages) ?? [];
+
+    if (themedGallery.length > 0) {
+      return themedGallery;
+    }
+
+    return getPreviewImages(previewPage);
+  }, [previewFeatures.maxGalleryImages, previewPage, previewPageData?.galleryImages]);
+  const groomAccounts = previewPageData?.giftInfo?.groomAccounts ?? [];
+  const brideAccounts = previewPageData?.giftInfo?.brideAccounts ?? [];
+  const giftMessage = previewPageData?.giftInfo?.message ?? '';
   const previewDateText = `${previewPage.date} ${
-    previewPage.pageData?.ceremonyTime ?? ''
+    previewPageData?.ceremonyTime ?? ''
   }`.trim();
   const sectionCopy = SECTION_COPY[section];
 
@@ -241,9 +257,9 @@ export default function PageEditorSectionPreview({
       return theme === 'simple' ? (
         <CoverSimple
           title={previewPage.displayName}
-          subtitle={previewPage.pageData?.subtitle ?? ''}
+          subtitle={previewPageData?.subtitle ?? ''}
           weddingDate={previewDateText}
-          ceremonyTime={previewPage.pageData?.ceremonyTime}
+          ceremonyTime={previewPageData?.ceremonyTime}
           venueName={previewPage.venue}
           primaryActionTargetId="page-editor-cover-preview"
           imageUrl={previewPage.metadata.images.wedding}
@@ -254,9 +270,9 @@ export default function PageEditorSectionPreview({
       ) : (
         <Cover
           title={previewPage.displayName}
-          subtitle={previewPage.pageData?.subtitle ?? ''}
+          subtitle={previewPageData?.subtitle ?? ''}
           weddingDate={previewDateText}
-          ceremonyTime={previewPage.pageData?.ceremonyTime}
+          ceremonyTime={previewPageData?.ceremonyTime}
           venueName={previewPage.venue}
           primaryActionTargetId="page-editor-cover-preview"
           imageUrl={previewPage.metadata.images.wedding}
@@ -275,7 +291,9 @@ export default function PageEditorSectionPreview({
               title="예식 달력"
               weddingDate={weddingDate}
               currentMonth={weddingDate}
-              events={[createWeddingCalendarEvent(previewPage, weddingDate, '·')]}
+              events={[
+                createWeddingCalendarEvent(previewPage, weddingDate, '·', previewPageData),
+              ]}
               showCountdown={previewFeatures.showCountdown}
               countdownTitle="결혼식까지"
             />
@@ -284,7 +302,9 @@ export default function PageEditorSectionPreview({
               title="예식 달력"
               weddingDate={weddingDate}
               currentMonth={weddingDate}
-              events={[createWeddingCalendarEvent(previewPage, weddingDate)]}
+              events={[
+                createWeddingCalendarEvent(previewPage, weddingDate, '♡', previewPageData),
+              ]}
               showCountdown={previewFeatures.showCountdown}
               countdownTitle="결혼식까지"
             />
@@ -293,28 +313,32 @@ export default function PageEditorSectionPreview({
           {theme === 'simple' ? (
             <ScheduleSimple
               date={previewPage.date}
-              time={previewPage.pageData?.ceremonyTime ?? ''}
+              time={previewPageData?.ceremonyTime ?? ''}
               venue={previewPage.venue}
-              address={getCeremonyAddress(previewPage)}
-              venueGuide={previewPage.pageData?.venueGuide}
-              wreathGuide={previewPage.pageData?.wreathGuide}
+              address={getCeremonyAddress(previewPage, previewPageData)}
+              ceremony={getCeremonySchedule(previewPage, previewPageData)}
+              reception={getReceptionSchedule(previewPage, previewPageData)}
+              venueGuide={previewPageData?.venueGuide}
+              wreathGuide={previewPageData?.wreathGuide}
             />
           ) : (
             <Schedule
               date={previewPage.date}
-              time={previewPage.pageData?.ceremonyTime ?? ''}
+              time={previewPageData?.ceremonyTime ?? ''}
               venue={previewPage.venue}
-              address={getCeremonyAddress(previewPage)}
-              venueGuide={previewPage.pageData?.venueGuide}
-              wreathGuide={previewPage.pageData?.wreathGuide}
+              address={getCeremonyAddress(previewPage, previewPageData)}
+              ceremony={getCeremonySchedule(previewPage, previewPageData)}
+              reception={getReceptionSchedule(previewPage, previewPageData)}
+              venueGuide={previewPageData?.venueGuide}
+              wreathGuide={previewPageData?.wreathGuide}
             />
           )}
 
           {renderLocationSummary(
-            previewPage.pageData?.venueName ?? previewPage.venue,
-            getCeremonyAddress(previewPage),
-            getCeremonyContact(previewPage),
-            getMapDescription(previewPage)
+            previewPageData?.venueName ?? previewPage.venue,
+            getCeremonyAddress(previewPage, previewPageData),
+            getCeremonyContact(previewPage, previewPageData),
+            getMapDescription(previewPage, previewPageData)
           )}
         </>
       );
@@ -323,15 +347,15 @@ export default function PageEditorSectionPreview({
     if (section === 'greeting') {
       return theme === 'simple' ? (
         <GreetingSimple
-          message={previewPage.pageData?.greetingMessage ?? ''}
-          author={previewPage.pageData?.greetingAuthor ?? ''}
+          message={previewPageData?.greetingMessage ?? ''}
+          author={previewPageData?.greetingAuthor ?? ''}
           groom={previewPage.couple.groom}
           bride={previewPage.couple.bride}
         />
       ) : (
         <Greeting
-          message={previewPage.pageData?.greetingMessage ?? ''}
-          author={previewPage.pageData?.greetingAuthor ?? ''}
+          message={previewPageData?.greetingMessage ?? ''}
+          author={previewPageData?.greetingAuthor ?? ''}
           groom={previewPage.couple.groom}
           bride={previewPage.couple.bride}
         />

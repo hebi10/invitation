@@ -289,6 +289,15 @@ export function applyDerivedWizardDefaults(config: InvitationPageSeed) {
     nextConfig.date = formatDateLabel(weddingDate);
     if (nextConfig.pageData) {
       nextConfig.pageData.ceremonyTime = formatTimeLabel(weddingDate);
+      nextConfig.pageData.ceremony = {
+        ...nextConfig.pageData.ceremony,
+        time: formatTimeLabel(weddingDate),
+        location:
+          nextConfig.pageData.ceremony?.location ||
+          nextConfig.pageData.ceremonyAddress ||
+          nextConfig.pageData.venueName ||
+          nextConfig.venue,
+      };
     }
   }
 
@@ -348,6 +357,14 @@ export function createInitialWizardConfig() {
     ceremonyTime: '',
     ceremonyAddress: '',
     ceremonyContact: '',
+    ceremony: {
+      time: '',
+      location: '',
+    },
+    reception: {
+      time: '',
+      location: '',
+    },
     galleryImages: [],
     greetingMessage: '',
     greetingAuthor: '',
@@ -384,6 +401,15 @@ export function prepareWizardConfigForSave(config: InvitationPageSeed, slug: str
     prepared.date = formatDateLabel(weddingDate);
     if (prepared.pageData) {
       prepared.pageData.ceremonyTime = formatTimeLabel(weddingDate);
+      prepared.pageData.ceremony = {
+        ...prepared.pageData.ceremony,
+        time: formatTimeLabel(weddingDate),
+        location:
+          prepared.pageData.ceremony?.location ||
+          prepared.pageData.ceremonyAddress ||
+          prepared.pageData.venueName ||
+          prepared.venue,
+      };
     }
   }
 

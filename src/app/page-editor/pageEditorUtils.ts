@@ -2,6 +2,7 @@ import type {
   BankAccount,
   FamilyMember,
   InvitationPageSeed,
+  InvitationScheduleDetail,
   PersonInfo,
 } from '@/types/invitationPage';
 
@@ -72,12 +73,30 @@ export function normalizeAccounts(items?: BankAccount[]) {
   }));
 }
 
+function normalizeScheduleDetail(
+  detail?: InvitationScheduleDetail,
+  fallback: {
+    time?: string;
+    location?: string;
+  } = {}
+) {
+  return {
+    time: detail?.time ?? fallback.time ?? '',
+    location: detail?.location ?? fallback.location ?? '',
+  };
+}
+
 export function normalizeFormConfig(config: InvitationPageSeed): InvitationPageSeed {
   const nextConfig = cloneConfig(config);
   const venueName = nextConfig.pageData?.venueName ?? nextConfig.venue;
   const greetingAuthor =
     nextConfig.pageData?.greetingAuthor ??
     `${nextConfig.couple.groom.name} · ${nextConfig.couple.bride.name}`;
+  const ceremony = normalizeScheduleDetail(nextConfig.pageData?.ceremony, {
+    time: nextConfig.pageData?.ceremonyTime,
+    location: nextConfig.pageData?.ceremonyAddress ?? venueName,
+  });
+  const reception = normalizeScheduleDetail(nextConfig.pageData?.reception);
 
   return {
     ...nextConfig,
@@ -106,9 +125,11 @@ export function normalizeFormConfig(config: InvitationPageSeed): InvitationPageS
     pageData: {
       ...nextConfig.pageData,
       subtitle: nextConfig.pageData?.subtitle ?? '',
-      ceremonyTime: nextConfig.pageData?.ceremonyTime ?? '',
-      ceremonyAddress: nextConfig.pageData?.ceremonyAddress ?? '',
+      ceremonyTime: ceremony.time,
+      ceremonyAddress: nextConfig.pageData?.ceremonyAddress ?? ceremony.location ?? '',
       ceremonyContact: nextConfig.pageData?.ceremonyContact ?? '',
+      ceremony,
+      reception,
       galleryImages: [...(nextConfig.pageData?.galleryImages ?? [])],
       greetingMessage: nextConfig.pageData?.greetingMessage ?? '',
       greetingAuthor,
@@ -165,6 +186,24 @@ export function prepareConfigForSave(
     nextConfig.pageData?.galleryImages
       ?.map((imageUrl) => imageUrl.trim())
       .filter(Boolean) ?? [];
+  const ceremonyTime =
+    nextConfig.pageData?.ceremony?.time?.trim() ||
+    nextConfig.pageData?.ceremonyTime?.trim() ||
+    '';
+  const ceremonyLocation =
+    nextConfig.pageData?.ceremony?.location?.trim() ||
+    nextConfig.pageData?.ceremonyAddress?.trim() ||
+    nextConfig.pageData?.venueName?.trim() ||
+    nextConfig.venue.trim();
+  const receptionTime = nextConfig.pageData?.reception?.time?.trim() || '';
+  const receptionLocation = nextConfig.pageData?.reception?.location?.trim() || '';
+  const reception =
+    receptionTime || receptionLocation
+      ? {
+          ...(receptionTime ? { time: receptionTime } : {}),
+          ...(receptionLocation ? { location: receptionLocation } : {}),
+        }
+      : undefined;
 
   return {
     ...nextConfig,
@@ -180,10 +219,18 @@ export function prepareConfigForSave(
     pageData: {
       ...nextConfig.pageData,
       venueName: nextConfig.pageData?.venueName?.trim() || nextConfig.venue,
+      ceremonyTime,
+      ceremonyAddress:
+        nextConfig.pageData?.ceremonyAddress?.trim() || ceremonyLocation,
       galleryImages,
       greetingAuthor:
         nextConfig.pageData?.greetingAuthor?.trim() ||
         `${nextConfig.couple.groom.name.trim()} · ${nextConfig.couple.bride.name.trim()}`,
+      ceremony: {
+        ...(ceremonyTime ? { time: ceremonyTime } : {}),
+        ...(ceremonyLocation ? { location: ceremonyLocation } : {}),
+      },
+      reception,
       groom: cloneConfig(nextConfig.couple.groom),
       bride: cloneConfig(nextConfig.couple.bride),
       venueGuide,

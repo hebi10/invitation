@@ -1,6 +1,10 @@
 import type { WeddingPageConfig } from '../weddingPages';
 
-import { createWeddingPageConfig, createWeddingVariants } from './helpers';
+import {
+  ALL_WEDDING_VARIANT_KEYS,
+  createWeddingPageConfig,
+  createWeddingVariants,
+} from './helpers';
 
 const venue = '소노펠리체 델피노';
 
@@ -56,6 +60,7 @@ export const anDoyoungYoonJisooConfig: WeddingPageConfig = createWeddingPageConf
   variants: createWeddingVariants({
     slug: 'an-doyoung-yoon-jisoo',
     couple,
+    enabledVariants: ALL_WEDDING_VARIANT_KEYS,
   }),
   metadata: {
     title: '안도영 ♡ 윤지수 결혼합니다',

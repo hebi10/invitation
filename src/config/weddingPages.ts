@@ -62,7 +62,10 @@ export function getWeddingPageCount(): number {
 
 function normalizeSeedVariants(
   seed: WeddingPageConfig,
-  fallbackTheme: InvitationThemeKey
+  fallbackTheme: InvitationThemeKey,
+  options: {
+    collapseLegacyAllTrue?: boolean;
+  } = {}
 ): InvitationPageSeed['variants'] {
   const sourceVariants = seed.variants ?? {};
   const sourceAvailableVariantKeys = getAvailableInvitationVariantKeys(sourceVariants);
@@ -71,6 +74,8 @@ function normalizeSeedVariants(
   const hasFullTrueAvailability =
     sourceAvailableVariantKeys.length === INVITATION_VARIANT_KEYS.length &&
     INVITATION_VARIANT_KEYS.every((key) => sourceVariants[key]?.available === true);
+  const shouldCollapseFullTrueAvailability =
+    hasFullTrueAvailability && options.collapseLegacyAllTrue === true;
 
   const supportedVariants = buildInvitationVariants(seed.slug, seed.displayName, {
     availability: createInvitationVariantAvailability([
@@ -86,7 +91,7 @@ function normalizeSeedVariants(
       }
 
       const sourceVariant = sourceVariants[variantKey];
-      const available = hasFullTrueAvailability
+      const available = shouldCollapseFullTrueAvailability
         ? variantKey === preferredTheme
         : sourceVariant?.available === true;
 
@@ -143,11 +148,18 @@ export function createInvitationPageFromSeed(
   seed: WeddingPageConfig,
   overrides: CreateInvitationPageOverrides = {}
 ): InvitationPage {
-  const fallbackTheme = overrides.fallbackTheme === 'simple' ? 'simple' : 'emotional';
+  const hasExplicitFallbackTheme =
+    overrides.fallbackTheme === 'emotional' || overrides.fallbackTheme === 'simple';
+  const fallbackTheme =
+    overrides.fallbackTheme ??
+    resolveAvailableInvitationVariant(seed.variants, 'emotional') ??
+    'emotional';
 
   return {
     ...seed,
-    variants: normalizeSeedVariants(seed, fallbackTheme),
+    variants: normalizeSeedVariants(seed, fallbackTheme, {
+      collapseLegacyAllTrue: hasExplicitFallbackTheme,
+    }),
     published: overrides.published ?? true,
     displayPeriodEnabled: overrides.displayPeriodEnabled ?? false,
     displayPeriodStart: overrides.displayPeriodStart ?? null,

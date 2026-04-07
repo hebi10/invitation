@@ -78,6 +78,18 @@ export default function PageWizardStepPreview({
   const subtitle = formState.pageData?.subtitle?.trim() || '표지 보조 문구를 아직 입력하지 않았습니다.';
   const venueName = formState.pageData?.venueName?.trim() || formState.venue.trim() || '예식장명을 입력해 주세요.';
   const venueAddress = formState.pageData?.ceremonyAddress?.trim() || '주소를 입력해 주세요.';
+  const ceremonyTimeLabel =
+    formState.pageData?.ceremony?.time?.trim() ||
+    formState.pageData?.ceremonyTime?.trim() ||
+    '시간 문구가 자동으로 들어갑니다.';
+  const ceremonyLocationLabel =
+    formState.pageData?.ceremony?.location?.trim() ||
+    formState.pageData?.ceremonyAddress?.trim() ||
+    '장소 문구를 아직 입력하지 않았습니다.';
+  const receptionTimeLabel =
+    formState.pageData?.reception?.time?.trim() || '피로연 시간이 입력되지 않았습니다.';
+  const receptionLocationLabel =
+    formState.pageData?.reception?.location?.trim() || '피로연 장소가 입력되지 않았습니다.';
   const greetingMessage =
     formState.pageData?.greetingMessage?.trim() || '인사말을 아직 입력하지 않았습니다.';
   const coverImage = formState.metadata.images.wedding?.trim();
@@ -175,8 +187,11 @@ export default function PageWizardStepPreview({
           />
           <PreviewRow
             label="일정 카드 문구"
-            value={formState.pageData?.ceremonyTime?.trim() || '시간 문구가 자동으로 들어갑니다.'}
+            value={ceremonyTimeLabel}
           />
+          <PreviewRow label="본식 장소" value={ceremonyLocationLabel} />
+          <PreviewRow label="피로연 시간" value={receptionTimeLabel} />
+          <PreviewRow label="피로연 장소" value={receptionLocationLabel} />
         </div>
       </section>
     );

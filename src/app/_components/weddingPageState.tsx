@@ -8,6 +8,7 @@ import { usePageImages } from '@/hooks';
 import { getAdminInvitationPreviewSummary } from '@/lib/adminInvitationPreviewCache';
 import { USE_FIREBASE } from '@/lib/firebase';
 import { resolveInvitationFeatures } from '@/lib/invitationProducts';
+import { resolveInvitationPageDataByTheme } from '@/lib/invitationThemePageData';
 import { getInvitationPageBySlug } from '@/services/invitationPageService';
 import type { InvitationPage } from '@/types/invitationPage';
 
@@ -154,14 +155,18 @@ export function useWeddingInvitationState(
   const [blockMessage, setBlockMessage] = useState<string | null>(null);
   const [pageConfig, setPageConfig] = useState<InvitationPage | null>(initialPage);
   const [isLoading, setIsLoading] = useState(true);
+  const themedPageData = useMemo(
+    () => resolveInvitationPageDataByTheme(pageConfig, options.theme),
+    [options.theme, pageConfig]
+  );
   const shouldLoadStorageImages = useMemo(() => {
     if (!pageConfig) {
       return true;
     }
 
-    const hasConfiguredGallery = Boolean(pageConfig.pageData?.galleryImages?.length);
+    const hasConfiguredGallery = Boolean(themedPageData?.galleryImages?.length);
     return !hasConfiguredGallery;
-  }, [pageConfig]);
+  }, [pageConfig, themedPageData]);
   const { mainImage, galleryImages, loading: imagesLoading, error } = usePageImages(
     options.slug,
     { enabled: shouldLoadStorageImages }
@@ -291,7 +296,7 @@ export function useWeddingInvitationState(
     : null;
 
   const configuredGalleryImageUrls =
-    pageConfig?.pageData?.galleryImages?.filter((imageUrl) => imageUrl.trim()) ?? [];
+    themedPageData?.galleryImages?.filter((imageUrl) => imageUrl.trim()) ?? [];
   const galleryFeatures = resolveInvitationFeatures(
     pageConfig?.productTier,
     pageConfig?.features
@@ -312,7 +317,7 @@ export function useWeddingInvitationState(
     ...galleryImageUrls.slice(0, 2),
   ].slice(0, 3);
 
-  const giftInfo = pageConfig?.pageData?.giftInfo;
+  const giftInfo = themedPageData?.giftInfo;
   const hasGiftAccounts = Boolean(
     giftInfo?.groomAccounts?.length || giftInfo?.brideAccounts?.length
   );

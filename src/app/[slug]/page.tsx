@@ -1,4 +1,4 @@
-import { notFound } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 
 import { WeddingInvitationRoutePage } from '@/app/_components/WeddingInvitationPage';
 import { resolveAvailableInvitationVariant } from '@/lib/invitationVariants';
@@ -26,10 +26,14 @@ export default async function WeddingInvitationEmotionalPage({
     notFound();
   }
 
+  if (theme === 'simple') {
+    redirect(`/${slug}/simple`);
+  }
+
   return (
     <WeddingInvitationRoutePage
       slug={slug}
-      theme={theme}
+      theme="emotional"
       initialPageConfig={page}
     />
   );

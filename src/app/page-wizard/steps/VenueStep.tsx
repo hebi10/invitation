@@ -33,6 +33,12 @@ export default function VenueStep({
               }
 
               draft.pageData.venueName = event.target.value;
+              if (!draft.pageData.ceremony?.location?.trim()) {
+                draft.pageData.ceremony = {
+                  ...draft.pageData.ceremony,
+                  location: event.target.value,
+                };
+              }
               if (
                 draft.pageData.kakaoMap &&
                 (!draft.pageData.kakaoMap.markerTitle?.trim() ||
@@ -62,6 +68,12 @@ export default function VenueStep({
               }
 
               draft.pageData.ceremonyAddress = event.target.value;
+              if (!draft.pageData.ceremony?.location?.trim()) {
+                draft.pageData.ceremony = {
+                  ...draft.pageData.ceremony,
+                  location: event.target.value,
+                };
+              }
 
               if (draft.pageData.mapUrl?.startsWith('https://map.kakao.com/link/search/')) {
                 draft.pageData.mapUrl = '';

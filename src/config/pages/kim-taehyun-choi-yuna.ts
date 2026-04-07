@@ -1,6 +1,10 @@
 import type { WeddingPageConfig } from '../weddingPages';
 
-import { createWeddingPageConfig, createWeddingVariants } from './helpers';
+import {
+  ALL_WEDDING_VARIANT_KEYS,
+  createWeddingPageConfig,
+  createWeddingVariants,
+} from './helpers';
 
 const venue = '엘리시안웨딩홀';
 
@@ -56,6 +60,7 @@ export const kimTaehyunChoiYunaConfig: WeddingPageConfig = createWeddingPageConf
   variants: createWeddingVariants({
     slug: 'kim-taehyun-choi-yuna',
     couple,
+    enabledVariants: ALL_WEDDING_VARIANT_KEYS,
   }),
   metadata: {
     description: metadataDescription,

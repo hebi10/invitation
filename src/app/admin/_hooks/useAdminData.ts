@@ -14,6 +14,7 @@ import {
   getAllMemoryPages,
   getCommentSummary,
   setClientPassword,
+  setInvitationPageVariantAvailability,
   syncClientPasswordAccess,
   type ClientPassword,
   type Comment,
@@ -59,6 +60,7 @@ export function useAdminData({
   const [summaryLoading, setSummaryLoading] = useState(false);
   const [passwordsLoading, setPasswordsLoading] = useState(false);
   const [savingPasswordPageSlug, setSavingPasswordPageSlug] = useState<string | null>(null);
+  const [updatingVariantToken, setUpdatingVariantToken] = useState<string | null>(null);
 
   const [pagesLoaded, setPagesLoaded] = useState(false);
   const [commentsLoaded, setCommentsLoaded] = useState(false);
@@ -220,6 +222,46 @@ export function useAdminData({
     [confirm, fetchPasswords, pages, showToast]
   );
 
+  const handleEnableVariant = useCallback(
+    async (page: InvitationPageSummary, variantKey: 'emotional' | 'simple') => {
+      const variantLabel = variantKey === 'emotional' ? 'Emotional' : 'Simple';
+      const approved = await confirm({
+        title: `${variantLabel} 디자인을 추가할까요?`,
+        description: `${page.displayName} 페이지에 ${variantLabel} 미리보기를 추가합니다.`,
+        confirmLabel: '추가',
+        cancelLabel: '취소',
+      });
+
+      if (!approved) {
+        return;
+      }
+
+      const token = `${page.slug}:${variantKey}`;
+      setUpdatingVariantToken(token);
+
+      try {
+        await setInvitationPageVariantAvailability(page.slug, variantKey, true, {
+          published: page.published,
+          defaultTheme: page.defaultTheme,
+        });
+        await refreshPages();
+        showToast({
+          title: `${variantLabel} 디자인을 추가했습니다.`,
+          tone: 'success',
+        });
+      } catch (error) {
+        console.error(error);
+        showToast({
+          title: `${variantLabel} 디자인 추가에 실패했습니다.`,
+          tone: 'error',
+        });
+      } finally {
+        setUpdatingVariantToken(null);
+      }
+    },
+    [confirm, refreshPages, showToast]
+  );
+
   const handleLogout = useCallback(() => {
     clearAdminInvitationPreviewCache();
     resetAll();
@@ -275,6 +317,7 @@ export function useAdminData({
     summaryLoading,
     passwordsLoading,
     savingPasswordPageSlug,
+    updatingVariantToken,
 
     refreshPages,
     fetchComments,
@@ -283,6 +326,7 @@ export function useAdminData({
 
     handleDeleteComment,
     handleSavePassword,
+    handleEnableVariant,
     handleLogout,
   };
 }

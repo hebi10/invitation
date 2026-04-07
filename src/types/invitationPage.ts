@@ -25,6 +25,7 @@ export interface BankAccount {
 
 export type InvitationShareMode = 'link' | 'card';
 export type InvitationProductTier = 'standard' | 'deluxe' | 'premium';
+export type InvitationThemeKey = 'emotional' | 'simple';
 
 export interface InvitationFeatureFlags {
   maxGalleryImages: number;
@@ -51,11 +52,18 @@ export interface InvitationPageMetadata {
   };
 }
 
-export interface InvitationPageData {
+export interface InvitationScheduleDetail {
+  time?: string;
+  location?: string;
+}
+
+export interface InvitationPageDataBase {
   subtitle?: string;
   ceremonyTime?: string;
   ceremonyAddress?: string;
   ceremonyContact?: string;
+  ceremony?: InvitationScheduleDetail;
+  reception?: InvitationScheduleDetail;
   galleryImages?: string[];
   greetingMessage?: string;
   greetingAuthor?: string;
@@ -85,13 +93,19 @@ export interface InvitationPageData {
   };
 }
 
+export type InvitationThemePageDataOverride = Partial<InvitationPageDataBase>;
+
+export interface InvitationPageData extends InvitationPageDataBase {
+  themeOverrides?: Partial<
+    Record<InvitationThemeKey, InvitationThemePageDataOverride>
+  >;
+}
+
 export interface InvitationPageVariantLink {
   available: boolean;
   path: string;
   displayName: string;
 }
-
-export type InvitationThemeKey = 'emotional' | 'simple';
 
 export interface InvitationPageVariants {
   emotional?: InvitationPageVariantLink;

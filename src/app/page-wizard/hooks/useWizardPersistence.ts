@@ -1,6 +1,12 @@
 import { useCallback } from 'react';
 
 import {
+  buildInvitationVariants,
+  createInvitationVariantAvailability,
+  type InvitationVariantKey,
+} from '@/lib/invitationVariants';
+
+import {
   createInvitationPageDraftFromSeed,
   normalizeInvitationPageSlugBase,
   saveInvitationPageConfig,
@@ -149,6 +155,11 @@ export function useWizardPersistence({
 
         const sourceConfig = draftState.config ?? formState;
         const prepared = prepareWizardConfigForSave(sourceConfig, nextSlug);
+        prepared.variants = buildInvitationVariants(nextSlug, prepared.displayName, {
+          availability: createInvitationVariantAvailability([
+            defaultTheme as InvitationVariantKey,
+          ]),
+        });
         const nextPublished = options?.publish ?? published;
 
         if (isAdminLoggedIn) {

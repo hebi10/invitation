@@ -249,6 +249,7 @@ function mergeInvitationPageSeed(
   fallbackSlug?: string,
   options: {
     fallbackTheme?: InvitationThemeKey;
+    collapseLegacyAllTrue?: boolean;
   } = {}
 ): InvitationPageSeed | null {
   const coupleInput = isRecord(candidate.couple) ? candidate.couple : {};
@@ -421,7 +422,7 @@ function mergeInvitationPageSeed(
       return isRecord(variant) && variant.available === true;
     });
   const shouldCollapseFullTrueAvailability =
-    hasFullTrueAvailability && typeof options.fallbackTheme === 'string';
+    hasFullTrueAvailability && options.collapseLegacyAllTrue === true;
   const supportedVariants = buildInvitationVariants(slug, displayName, {
     availability: createInvitationVariantAvailability([
       fallbackTheme as InvitationVariantKey,
@@ -1373,6 +1374,82 @@ export async function setInvitationPagePublished(
     defaultTheme: options.defaultTheme ?? existingRegistry?.defaultTheme,
     hasCustomConfig: existingRegistry?.hasCustomConfig ?? Boolean(existingConfig),
   });
+}
+
+export async function setInvitationPageVariantAvailability(
+  pageSlug: string,
+  variantKey: InvitationVariantKey,
+  available: boolean,
+  options: {
+    published?: boolean;
+    defaultTheme?: InvitationThemeKey;
+  } = {}
+) {
+  const editableConfig = await getEditableInvitationPageConfig(pageSlug);
+
+  if (!editableConfig) {
+    throw new Error('해당 페이지 주소를 찾을 수 없습니다.');
+  }
+
+  const baseConfig = cloneInvitationPageSeed(editableConfig.config);
+  const supportedVariants = buildInvitationVariants(pageSlug, baseConfig.displayName, {
+    availability: createInvitationVariantAvailability([]),
+  });
+
+  const nextVariants = INVITATION_VARIANT_KEYS.reduce<InvitationPageSeed['variants']>(
+    (variants, key) => {
+      const builtVariant = supportedVariants[key];
+      if (!builtVariant) {
+        return variants;
+      }
+
+      const sourceVariant = baseConfig.variants?.[key];
+      const nextAvailable =
+        key === variantKey ? available : sourceVariant?.available === true;
+
+      if (!sourceVariant && !nextAvailable) {
+        return variants;
+      }
+
+      variants[key] = {
+        ...builtVariant,
+        ...(sourceVariant ?? {}),
+        available: nextAvailable,
+        path: builtVariant.path,
+        displayName: readString(sourceVariant?.displayName, builtVariant.displayName),
+      };
+
+      return variants;
+    },
+    {}
+  );
+
+  if (getAvailableInvitationVariantKeys(nextVariants).length === 0) {
+    const fallbackTheme = normalizeInvitationTheme(
+      options.defaultTheme,
+      editableConfig.defaultTheme
+    );
+    const fallbackVariant = supportedVariants[fallbackTheme];
+
+    if (fallbackVariant) {
+      nextVariants[fallbackTheme] = {
+        ...fallbackVariant,
+        available: true,
+      };
+    }
+  }
+
+  await saveInvitationPageConfig(
+    {
+      ...baseConfig,
+      slug: pageSlug,
+      variants: nextVariants,
+    },
+    {
+      published: options.published ?? editableConfig.published,
+      defaultTheme: options.defaultTheme ?? editableConfig.defaultTheme,
+    }
+  );
 }
 
 export async function getInvitationPageBySlug(

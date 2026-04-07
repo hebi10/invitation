@@ -1,5 +1,10 @@
 import styles from '../page.module.css';
 import {
+  buildInvitationVariants,
+  createInvitationVariantAvailability,
+  type InvitationVariantKey,
+} from '@/lib/invitationVariants';
+import {
   getProductTierDescription,
   getProductTierLabel,
   getThemeDescription,
@@ -10,6 +15,7 @@ import {
 
 export default function ThemeStep({
   formState,
+  updateForm,
   defaultTheme,
   setDefaultTheme,
   openChoicePanel,
@@ -70,6 +76,17 @@ export default function ThemeStep({
                   }`}
                   onClick={() => {
                     setDefaultTheme(theme);
+                    updateForm((draft) => {
+                      draft.variants = buildInvitationVariants(
+                        draft.slug,
+                        draft.displayName,
+                        {
+                          availability: createInvitationVariantAvailability([
+                            theme as InvitationVariantKey,
+                          ]),
+                        }
+                      );
+                    });
                     setOpenChoicePanel(null);
                   }}
                 >

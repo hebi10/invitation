@@ -1,6 +1,10 @@
 import type { WeddingPageConfig } from '../weddingPages';
 
-import { createWeddingPageConfig, createWeddingVariants } from './helpers';
+import {
+  ALL_WEDDING_VARIANT_KEYS,
+  createWeddingPageConfig,
+  createWeddingVariants,
+} from './helpers';
 
 const venue = '컨벤션웨딩홀';
 
@@ -56,6 +60,7 @@ export const leeJunhoParkSominConfig: WeddingPageConfig = createWeddingPageConfi
   variants: createWeddingVariants({
     slug: 'lee-junho-park-somin',
     couple,
+    enabledVariants: ALL_WEDDING_VARIANT_KEYS,
   }),
   metadata: {
     description: metadataDescription,

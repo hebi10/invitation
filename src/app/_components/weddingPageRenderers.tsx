@@ -1,7 +1,12 @@
 import { Fragment } from 'react';
 import type { ReactNode } from 'react';
 
-import type { InvitationPage } from '@/types/invitationPage';
+import {
+  resolveCeremonyScheduleDetail,
+  resolveInvitationPageDataByTheme,
+  resolveReceptionScheduleDetail,
+} from '@/lib/invitationThemePageData';
+import type { InvitationPage, InvitationScheduleDetail } from '@/types/invitationPage';
 
 import type { WeddingPageReadyState } from './weddingPageState';
 import type { WeddingInvitationRouteOptions } from './weddingThemes';
@@ -53,27 +58,62 @@ export function createWeddingThemeRenderer(
 export function createWeddingCalendarEvent(
   page: InvitationPage,
   weddingDate: Date,
-  separator = '♡'
+  separator = '♡',
+  pageData = page.pageData
 ) {
+  const ceremony = toRenderableScheduleDetail(
+    resolveCeremonyScheduleDetail(pageData, page.venue)
+  );
+
   return {
     date: weddingDate.getDate(),
     type: 'wedding' as const,
     title: `${page.groomName} ${separator} ${page.brideName} 결혼식`,
-    description: `${page.pageData?.ceremonyTime ?? ''} ${page.venue}`.trim(),
+    description: `${ceremony?.time ?? pageData?.ceremonyTime ?? ''} ${page.venue}`.trim(),
   };
 }
 
-export function getCeremonyAddress(page: InvitationPage) {
-  return page.pageData?.ceremonyAddress ?? '';
+export function getThemePageData(page: InvitationPage, theme: 'emotional' | 'simple') {
+  return resolveInvitationPageDataByTheme(page, theme);
 }
 
-export function getCeremonyContact(page: InvitationPage) {
-  return page.pageData?.ceremonyContact;
+function toRenderableScheduleDetail(detail?: InvitationScheduleDetail) {
+  if (!detail) {
+    return undefined;
+  }
+
+  const time = detail.time?.trim() ?? '';
+  const location = detail.location?.trim() ?? '';
+
+  if (!time && !location) {
+    return undefined;
+  }
+
+  return {
+    time,
+    location,
+  };
 }
 
-export function getMapDescription(page: InvitationPage) {
+export function getCeremonySchedule(page: InvitationPage, pageData = page.pageData) {
+  return toRenderableScheduleDetail(resolveCeremonyScheduleDetail(pageData, page.venue));
+}
+
+export function getReceptionSchedule(page: InvitationPage, pageData = page.pageData) {
+  return toRenderableScheduleDetail(resolveReceptionScheduleDetail(pageData));
+}
+
+export function getCeremonyAddress(page: InvitationPage, pageData = page.pageData) {
+  return pageData?.ceremonyAddress ?? getCeremonySchedule(page, pageData)?.location ?? '';
+}
+
+export function getCeremonyContact(_page: InvitationPage, pageData?: InvitationPage['pageData']) {
+  return pageData?.ceremonyContact;
+}
+
+export function getMapDescription(page: InvitationPage, pageData = page.pageData) {
   return (
-    page.pageData?.mapDescription ?? '지하철 이용 시 편리하게 오실 수 있습니다'
+    pageData?.mapDescription ?? '지하철 이용 시 편리하게 오실 수 있습니다'
   );
 }
 

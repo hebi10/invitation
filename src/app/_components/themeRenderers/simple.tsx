@@ -15,10 +15,13 @@ import { resolveInvitationFeatures } from '@/lib/invitationProducts';
 
 import {
   createWeddingCalendarEvent,
+  getCeremonySchedule,
   createWeddingThemeRenderer,
   getCeremonyAddress,
   getCeremonyContact,
   getMapDescription,
+  getReceptionSchedule,
+  getThemePageData,
   shouldShowGiftInfo,
 } from '../weddingPageRenderers';
 
@@ -36,26 +39,38 @@ export default createWeddingThemeRenderer({
   ),
   sections: [
     ({ state }) => (
-      <CoverSimple
-        title={state.pageConfig.displayName}
-        subtitle={state.pageConfig.pageData?.subtitle ?? 'A day when two hearts become one'}
-        weddingDate={`${state.pageConfig.date} ${state.pageConfig.pageData?.ceremonyTime ?? ''}`}
-        ceremonyTime={state.pageConfig.pageData?.ceremonyTime}
-        venueName={state.pageConfig.venue}
-        primaryActionTargetId="wedding-info"
-        imageUrl={state.mainImageUrl}
-        brideName={state.pageConfig.brideName}
-        groomName={state.pageConfig.groomName}
-        preloadComplete={true}
-      />
+      (() => {
+        const pageData = getThemePageData(state.pageConfig, 'simple');
+
+        return (
+          <CoverSimple
+            title={state.pageConfig.displayName}
+            subtitle={pageData?.subtitle ?? 'A day when two hearts become one'}
+            weddingDate={`${state.pageConfig.date} ${pageData?.ceremonyTime ?? ''}`}
+            ceremonyTime={pageData?.ceremonyTime}
+            venueName={state.pageConfig.venue}
+            primaryActionTargetId="wedding-info"
+            imageUrl={state.mainImageUrl}
+            brideName={state.pageConfig.brideName}
+            groomName={state.pageConfig.groomName}
+            preloadComplete={true}
+          />
+        );
+      })()
     ),
     ({ state }) => (
-      <GreetingSimple
-        message={state.pageConfig.pageData?.greetingMessage ?? ''}
-        author={state.pageConfig.pageData?.greetingAuthor ?? ''}
-        groom={state.pageConfig.couple.groom}
-        bride={state.pageConfig.couple.bride}
-      />
+      (() => {
+        const pageData = getThemePageData(state.pageConfig, 'simple');
+
+        return (
+          <GreetingSimple
+            message={pageData?.greetingMessage ?? ''}
+            author={pageData?.greetingAuthor ?? ''}
+            groom={state.pageConfig.couple.groom}
+            bride={state.pageConfig.couple.bride}
+          />
+        );
+      })()
     ),
     ({ state }) => (
       <GallerySimple
@@ -64,6 +79,7 @@ export default createWeddingThemeRenderer({
       />
     ),
     ({ state }) => {
+      const pageData = getThemePageData(state.pageConfig, 'simple');
       const features = resolveInvitationFeatures(
         state.pageConfig.productTier,
         state.pageConfig.features
@@ -74,32 +90,48 @@ export default createWeddingThemeRenderer({
           title="Wedding Calendar"
           weddingDate={state.weddingDate}
           currentMonth={state.weddingDate}
-          events={[createWeddingCalendarEvent(state.pageConfig, state.weddingDate, '&')]}
+          events={[
+            createWeddingCalendarEvent(state.pageConfig, state.weddingDate, '&', pageData),
+          ]}
           showCountdown={features.showCountdown}
           countdownTitle="Until the wedding"
         />
       );
     },
     ({ state }) => (
-      <div id="wedding-info">
-        <ScheduleSimple
-          date={state.pageConfig.date}
-          time={state.pageConfig.pageData?.ceremonyTime ?? ''}
-          venue={state.pageConfig.venue}
-          address={getCeremonyAddress(state.pageConfig)}
-          venueGuide={state.pageConfig.pageData?.venueGuide}
-          wreathGuide={state.pageConfig.pageData?.wreathGuide}
-        />
-      </div>
+      (() => {
+        const pageData = getThemePageData(state.pageConfig, 'simple');
+
+        return (
+          <div id="wedding-info">
+            <ScheduleSimple
+              date={state.pageConfig.date}
+              time={pageData?.ceremonyTime ?? ''}
+              venue={state.pageConfig.venue}
+              address={getCeremonyAddress(state.pageConfig, pageData)}
+              ceremony={getCeremonySchedule(state.pageConfig, pageData)}
+              reception={getReceptionSchedule(state.pageConfig, pageData)}
+              venueGuide={pageData?.venueGuide}
+              wreathGuide={pageData?.wreathGuide}
+            />
+          </div>
+        );
+      })()
     ),
     ({ state }) => (
-      <LocationMapSimple
-        venueName={state.pageConfig.venue}
-        address={getCeremonyAddress(state.pageConfig)}
-        description={getMapDescription(state.pageConfig)}
-        contact={getCeremonyContact(state.pageConfig)}
-        kakaoMapConfig={state.pageConfig.pageData?.kakaoMap}
-      />
+      (() => {
+        const pageData = getThemePageData(state.pageConfig, 'simple');
+
+        return (
+          <LocationMapSimple
+            venueName={state.pageConfig.venue}
+            address={getCeremonyAddress(state.pageConfig, pageData)}
+            description={getMapDescription(state.pageConfig, pageData)}
+            contact={getCeremonyContact(state.pageConfig, pageData)}
+            kakaoMapConfig={pageData?.kakaoMap}
+          />
+        );
+      })()
     ),
     ({ state }) => {
       const features = resolveInvitationFeatures(

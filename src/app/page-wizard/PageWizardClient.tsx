@@ -756,6 +756,12 @@ export default function PageWizardClient({ initialSlug }: PageWizardClientProps)
         }
 
         draft.pageData.ceremonyAddress = result.addressName;
+        if (!draft.pageData.ceremony?.location?.trim()) {
+          draft.pageData.ceremony = {
+            ...draft.pageData.ceremony,
+            location: result.addressName,
+          };
+        }
         draft.pageData.mapUrl = buildKakaoMapSearchUrl(result.addressName);
         draft.pageData.kakaoMap = {
           latitude: result.latitude,

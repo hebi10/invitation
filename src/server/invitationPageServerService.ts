@@ -154,6 +154,7 @@ function mergeInvitationPageSeed(
   fallbackSlug?: string,
   options: {
     fallbackTheme?: InvitationThemeKey;
+    collapseLegacyAllTrue?: boolean;
   } = {}
 ): InvitationPageSeed | null {
   const coupleInput = isRecord(candidate.couple) ? candidate.couple : {};
@@ -326,7 +327,7 @@ function mergeInvitationPageSeed(
       return isRecord(variant) && variant.available === true;
     });
   const shouldCollapseFullTrueAvailability =
-    hasFullTrueAvailability && typeof options.fallbackTheme === 'string';
+    hasFullTrueAvailability && options.collapseLegacyAllTrue === true;
   const supportedVariants = buildInvitationVariants(slug, displayName, {
     availability: createInvitationVariantAvailability([
       fallbackTheme as InvitationVariantKey,

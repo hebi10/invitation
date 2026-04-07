@@ -12,10 +12,12 @@ type WeddingVariants = NonNullable<InvitationPageSeed['variants']>;
 
 export type WeddingVariantKey = keyof WeddingVariants;
 
-const defaultWeddingVariantKeys: readonly WeddingVariantKey[] = [
+export const ALL_WEDDING_VARIANT_KEYS: readonly WeddingVariantKey[] = [
   'emotional',
   'simple',
 ];
+
+export const SIMPLE_WEDDING_VARIANT_KEYS: readonly WeddingVariantKey[] = ['simple'];
 
 export interface WeddingPageMetadataInput {
   title?: string;
@@ -58,7 +60,7 @@ export interface CreateWeddingVariantsOptions {
   slug: string;
   couple: WeddingCoupleInfo;
   displayName?: string;
-  enabledVariants?: readonly WeddingVariantKey[];
+  enabledVariants: readonly WeddingVariantKey[];
   displayNameOverrides?: Partial<Record<WeddingVariantKey, string>>;
 }
 
@@ -66,7 +68,7 @@ export function createWeddingVariants({
   slug,
   couple,
   displayName = createWeddingDisplayName(couple),
-  enabledVariants = defaultWeddingVariantKeys,
+  enabledVariants,
   displayNameOverrides = {},
 }: CreateWeddingVariantsOptions): WeddingVariants {
   const variants = buildInvitationVariants(slug, displayName, {

@@ -183,12 +183,14 @@ export default function AdminPageClient() {
     summaryLoading,
     passwordsLoading,
     savingPasswordPageSlug,
+    updatingVariantToken,
     refreshPages,
     fetchComments,
     fetchPasswords,
     fetchSummarySources,
     handleDeleteComment,
     handleSavePassword,
+    handleEnableVariant,
     handleLogout: dataLogout,
   } = useAdminData({ isAdminLoggedIn, activeTab, showToast, confirm });
 
@@ -603,6 +605,10 @@ export default function AdminPageClient() {
               chips={pageFilterChips}
               onQueryChange={updateQuery}
               onRefresh={() => void refreshPages()}
+              onEnableVariant={(page, variantKey) =>
+                void handleEnableVariant(page, variantKey)
+              }
+              updatingVariantToken={updatingVariantToken}
             />
           ) : null}
 

@@ -25,6 +25,8 @@ interface AdminPagesTabProps {
   chips: Array<{ id: string; label: string; onRemove: () => void }>;
   onQueryChange: (updates: Record<string, string | null>) => void;
   onRefresh: () => void;
+  onEnableVariant: (page: InvitationPageSummary, variantKey: ShortcutKey) => void;
+  updatingVariantToken: string | null;
 }
 
 export default function AdminPagesTab({
@@ -39,6 +41,8 @@ export default function AdminPagesTab({
   chips,
   onQueryChange,
   onRefresh,
+  onEnableVariant,
+  updatingVariantToken,
 }: AdminPagesTabProps) {
   return (
     <div className={styles.panelStack}>
@@ -216,6 +220,9 @@ export default function AdminPagesTab({
                 <tbody>
                   {filteredPages.map((page, index) => {
                     const links = getAvailableShortcuts(page);
+                    const missingShortcuts = SHORTCUT_ITEMS.filter(
+                      (shortcut) => !page.variants?.[shortcut.key]?.available
+                    );
 
                     return (
                       <tr key={page.slug} className={styles.tableRowInteractive}>
@@ -295,6 +302,27 @@ export default function AdminPagesTab({
                                 모바일
                               </a>
                             </div>
+                            {missingShortcuts.length > 0 ? (
+                              <div className={styles.tableActions}>
+                                {missingShortcuts.map((shortcut) => {
+                                  const token = `${page.slug}:${shortcut.key}`;
+
+                                  return (
+                                    <button
+                                      key={`${page.slug}-enable-${shortcut.key}`}
+                                      type="button"
+                                      className="admin-button admin-button-ghost"
+                                      disabled={updatingVariantToken === token}
+                                      onClick={() => onEnableVariant(page, shortcut.key)}
+                                    >
+                                      {updatingVariantToken === token
+                                        ? `${shortcut.label} 추가 중`
+                                        : `${shortcut.label} 추가`}
+                                    </button>
+                                  );
+                                })}
+                              </div>
+                            ) : null}
                           </div>
                         </td>
                       </tr>
@@ -308,6 +336,9 @@ export default function AdminPagesTab({
           <div className={styles.mobileList}>
             {filteredPages.map((page) => {
               const links = getAvailableShortcuts(page);
+              const missingShortcuts = SHORTCUT_ITEMS.filter(
+                (shortcut) => !page.variants?.[shortcut.key]?.available
+              );
 
               return (
                 <article key={page.slug} className={styles.mobileCard}>
@@ -369,6 +400,27 @@ export default function AdminPagesTab({
                         모바일
                       </a>
                     </div>
+                    {missingShortcuts.length > 0 ? (
+                      <div className={styles.mobileCardActions}>
+                        {missingShortcuts.map((shortcut) => {
+                          const token = `${page.slug}:${shortcut.key}`;
+
+                          return (
+                            <button
+                              key={`${page.slug}-mobile-enable-${shortcut.key}`}
+                              type="button"
+                              className="admin-button admin-button-ghost"
+                              disabled={updatingVariantToken === token}
+                              onClick={() => onEnableVariant(page, shortcut.key)}
+                            >
+                              {updatingVariantToken === token
+                                ? `${shortcut.label} 추가 중`
+                                : `${shortcut.label} 추가`}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    ) : null}
                   </div>
                 </article>
               );

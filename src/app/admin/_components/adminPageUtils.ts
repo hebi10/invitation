@@ -65,8 +65,13 @@ type VariantLink = {
 };
 
 type VariantCarrier = {
+  slug: string;
   variants?: Partial<Record<ShortcutKey, VariantLink>>;
 };
+
+function getAdminPreviewPath(pageSlug: string, key: ShortcutKey) {
+  return key === 'simple' ? `/${pageSlug}/simple` : `/${pageSlug}/emotional`;
+}
 
 export function formatDateTime(date: Date) {
   return new Intl.DateTimeFormat('ko-KR', {
@@ -83,7 +88,7 @@ export function getAvailableShortcuts(page: VariantCarrier) {
     ({ key, label }) => ({
       key,
       label,
-      path: page.variants?.[key]?.path ?? '#',
+      path: getAdminPreviewPath(page.slug, key),
     })
   );
 }
