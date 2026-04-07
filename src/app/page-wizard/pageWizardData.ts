@@ -311,7 +311,6 @@ export function createInitialWizardConfig() {
     throw new Error('청첩장 기본 템플릿을 찾을 수 없습니다.');
   }
 
-  const now = new Date();
   const nextConfig = normalizeFormConfig(cloneConfig(seed));
 
   nextConfig.slug = 'new-page';
@@ -326,10 +325,10 @@ export function createInitialWizardConfig() {
     bride: normalizePerson(undefined),
   };
   nextConfig.weddingDateTime = {
-    year: now.getFullYear(),
-    month: now.getMonth(),
-    day: now.getDate(),
-    hour: 12,
+    year: 0,
+    month: 0,
+    day: 0,
+    hour: 0,
     minute: 0,
   };
   nextConfig.metadata.title = '';
@@ -423,6 +422,14 @@ export function buildStepValidation(
     case 'slug': {
       const messages: string[] = [];
 
+      if (!slugState.groomKoreanName.trim()) {
+        slugState.groomKoreanName = PLACEHOLDER_GROOM;
+      }
+
+      if (!slugState.brideKoreanName.trim()) {
+        slugState.brideKoreanName = PLACEHOLDER_BRIDE;
+      }
+
       if (!hasText(slugState.groomKoreanName)) {
         messages.push('예비 신랑 한글 이름을 입력해 주세요.');
       }
@@ -478,6 +485,15 @@ export function buildStepValidation(
       }
       if (!hasText(formState?.pageData?.ceremonyAddress)) {
         messages.push('예식장 주소를 입력해 주세요.');
+      }
+      if (
+        !formState?.pageData?.kakaoMap ||
+        !Number.isFinite(formState.pageData.kakaoMap.latitude) ||
+        !Number.isFinite(formState.pageData.kakaoMap.longitude) ||
+        formState.pageData.kakaoMap.latitude === 0 ||
+        formState.pageData.kakaoMap.longitude === 0
+      ) {
+        messages.push('주소 검색으로 지도 좌표를 확인해 주세요.');
       }
       if (!isValidUrl(formState?.pageData?.mapUrl)) {
         messages.push('지도 링크는 http 또는 https로 시작해야 합니다.');

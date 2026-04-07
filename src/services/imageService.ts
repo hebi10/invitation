@@ -1,3 +1,9 @@
+import {
+  getEditableImageUploadHint,
+  type EditableImageAssetKind,
+  validateEditableImageBatch,
+  validateEditableImageFile,
+} from '@/lib/imageUploadPolicy';
 import { optimizeUploadImage } from '@/utils/imageCompression';
 
 export interface UploadedImage {
@@ -7,7 +13,7 @@ export interface UploadedImage {
   uploadedAt: Date;
 }
 
-export type PageEditorImageAssetKind = 'cover' | 'favicon' | 'gallery';
+export type PageEditorImageAssetKind = EditableImageAssetKind;
 
 interface UploadImageOptions {
   preserveFileName?: boolean;
@@ -115,11 +121,32 @@ function buildUploadMetadata(
   };
 }
 
+async function readJsonResponse<T>(response: Response): Promise<T> {
+  const payload = (await response.json().catch(() => null)) as
+    | { error?: string; [key: string]: unknown }
+    | null;
+
+  if (!response.ok) {
+    throw new Error(
+      typeof payload?.error === 'string' && payload.error.trim()
+        ? payload.error
+        : '이미지 업로드에 실패했습니다.'
+    );
+  }
+
+  return payload as T;
+}
+
 export const uploadImage = async (
   file: File,
   pageSlug: string,
   options: UploadImageOptions = {}
 ): Promise<UploadedImage> => {
+  const validationError = validateEditableImageFile(file);
+  if (validationError) {
+    throw new Error(validationError);
+  }
+
   const optimizedFile = await optimizeUploadImage(file, {
     maxWidth: 2200,
     maxHeight: 2200,
@@ -173,6 +200,49 @@ export const uploadPageEditorImage = async (
     preserveFileName: false,
     assetKind,
   });
+
+export async function uploadClientEditorImage(
+  file: File,
+  pageSlug: string,
+  assetKind: PageEditorImageAssetKind
+) {
+  const validationError = validateEditableImageBatch([file], assetKind);
+  if (validationError) {
+    throw new Error(validationError);
+  }
+
+  const optimizedFile = await optimizeUploadImage(file, {
+    maxWidth: 2200,
+    maxHeight: 2200,
+    quality: 0.82,
+  });
+  const formData = new FormData();
+  formData.append('assetKind', assetKind);
+  formData.append('file', optimizedFile, optimizedFile.name);
+
+  const response = await readJsonResponse<{
+    name: string;
+    url: string;
+    path: string;
+    uploadedAt: string;
+  }>(
+    await fetch(`/api/client-editor/pages/${encodeURIComponent(pageSlug)}/images`, {
+      method: 'POST',
+      credentials: 'same-origin',
+      body: formData,
+    })
+  );
+
+  return {
+    ...response,
+    uploadedAt: new Date(response.uploadedAt),
+  };
+}
+
+export {
+  getEditableImageUploadHint,
+  validateEditableImageBatch,
+};
 
 export const getImagesByPage = async (
   pageSlug: string

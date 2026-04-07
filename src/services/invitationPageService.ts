@@ -27,6 +27,8 @@ export interface InvitationPageSummary {
   description: string;
   date: string;
   venue: string;
+  createdAt: Date | null;
+  updatedAt: Date | null;
   published: boolean;
   defaultTheme: InvitationThemeKey;
   productTier: InvitationProductTier;
@@ -515,10 +517,6 @@ function mergeInvitationPageSeed(
 
   if (
     !normalizedSeed.slug ||
-    !normalizedSeed.displayName ||
-    !normalizedSeed.description ||
-    !normalizedSeed.date ||
-    !normalizedSeed.venue ||
     !normalizedSeed.couple.groom.name ||
     !normalizedSeed.couple.bride.name ||
     !normalizedSeed.metadata.images.favicon ||
@@ -569,6 +567,8 @@ function toInvitationPageSummary(
     dataSource: 'seed' | 'firestore';
     hasCustomConfig: boolean;
     defaultTheme: InvitationThemeKey;
+    createdAt: Date | null;
+    updatedAt: Date | null;
   }
 ): InvitationPageSummary {
   const productTier = normalizeInvitationProductTier(
@@ -583,6 +583,8 @@ function toInvitationPageSummary(
     description: page.description,
     date: page.date,
     venue: page.venue,
+    createdAt: options.createdAt,
+    updatedAt: options.updatedAt,
     published: page.published,
     defaultTheme: options.defaultTheme,
     productTier,
@@ -605,6 +607,8 @@ function getSeedSummaries(): InvitationPageSummary[] {
         dataSource: 'seed',
         hasCustomConfig: false,
         defaultTheme: DEFAULT_INVITATION_THEME,
+        createdAt: null,
+        updatedAt: null,
       })
     );
 }
@@ -629,20 +633,55 @@ function buildDraftConfigFromSeed(
   }
 ) {
   const nextSeed = cloneInvitationPageSeed(seed);
-  const displayName = createDisplayNameFromNames(
-    overrides.groomName,
-    overrides.brideName
-  );
+  const displayName = createDisplayNameFromNames('', '');
   const features = resolveInvitationFeatures(overrides.productTier, seed.features);
 
   nextSeed.slug = overrides.slug;
-  nextSeed.displayName = displayName;
+  nextSeed.displayName = '';
+  nextSeed.description = '';
+  nextSeed.date = '';
+  nextSeed.venue = '';
   nextSeed.productTier = overrides.productTier;
   nextSeed.features = features;
   nextSeed.groomName = overrides.groomName;
   nextSeed.brideName = overrides.brideName;
-  nextSeed.couple.groom.name = overrides.groomName;
-  nextSeed.couple.bride.name = overrides.brideName;
+  nextSeed.couple.groom = {
+    name: overrides.groomName,
+    order: '',
+    phone: '',
+    father: {
+      relation: '',
+      name: '',
+      phone: '',
+    },
+    mother: {
+      relation: '',
+      name: '',
+      phone: '',
+    },
+  };
+  nextSeed.couple.bride = {
+    name: overrides.brideName,
+    order: '',
+    phone: '',
+    father: {
+      relation: '',
+      name: '',
+      phone: '',
+    },
+    mother: {
+      relation: '',
+      name: '',
+      phone: '',
+    },
+  };
+  nextSeed.weddingDateTime = {
+    year: 0,
+    month: 0,
+    day: 0,
+    hour: 0,
+    minute: 0,
+  };
   nextSeed.metadata.title = `${displayName} 결혼식에 초대합니다`;
   nextSeed.metadata.openGraph.title = `${displayName} 결혼식 초대`;
   nextSeed.metadata.twitter.title = `${displayName} 결혼식 초대`;
@@ -677,6 +716,48 @@ function buildDraftConfigFromSeed(
   if (nextSeed.pageData) {
     nextSeed.pageData.greetingAuthor = `${overrides.groomName} · ${overrides.brideName}`;
   }
+
+  nextSeed.metadata.title = '';
+  nextSeed.metadata.description = '';
+  nextSeed.metadata.images.wedding = '';
+  nextSeed.metadata.openGraph.title = '';
+  nextSeed.metadata.openGraph.description = '';
+  nextSeed.metadata.twitter.title = '';
+  nextSeed.metadata.twitter.description = '';
+  nextSeed.metadata.keywords = [overrides.groomName, overrides.brideName, '청첩장'];
+  nextSeed.variants = buildInvitationVariants(overrides.slug, '');
+  nextSeed.pageData = {
+    ...nextSeed.pageData,
+    subtitle: '',
+    ceremonyTime: '',
+    ceremonyAddress: '',
+    ceremonyContact: '',
+    galleryImages: [],
+    greetingMessage: '',
+    greetingAuthor: '',
+    mapUrl: '',
+    mapDescription: '',
+    venueName: '',
+    groom: {
+      ...nextSeed.couple.groom,
+    },
+    bride: {
+      ...nextSeed.couple.bride,
+    },
+    kakaoMap: {
+      latitude: 0,
+      longitude: 0,
+      level: nextSeed.pageData?.kakaoMap?.level ?? 3,
+      markerTitle: '',
+    },
+    venueGuide: [],
+    wreathGuide: [],
+    giftInfo: {
+      groomAccounts: [],
+      brideAccounts: [],
+      message: '',
+    },
+  };
 
   return nextSeed;
 }
@@ -1355,6 +1436,8 @@ export async function getAllInvitationPages(
         dataSource: 'seed',
         hasCustomConfig: false,
         defaultTheme: DEFAULT_INVITATION_THEME,
+        createdAt: null,
+        updatedAt: null,
       })
     );
   }
@@ -1391,6 +1474,8 @@ export async function getAllInvitationPages(
             hasCustomConfig: sourceRecord.hasCustomConfig,
             defaultTheme:
               registryMap.get(pageSlug)?.defaultTheme ?? DEFAULT_INVITATION_THEME,
+            createdAt: registryMap.get(pageSlug)?.createdAt ?? null,
+            updatedAt: registryMap.get(pageSlug)?.updatedAt ?? null,
           }
         );
       })

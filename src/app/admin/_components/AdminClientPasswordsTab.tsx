@@ -229,7 +229,7 @@ export default function AdminClientPasswordsTab({
       ) : entries.length > 0 ? (
         <>
           <div className={styles.tableCard}>
-            <div className={styles.tableScroll}>
+            <div className={styles.tableScroll} tabIndex={0} role="region" aria-label="비밀번호 테이블">
               <table className={styles.dataTable}>
                 <thead>
                   <tr>
@@ -240,17 +240,17 @@ export default function AdminClientPasswordsTab({
                   </tr>
                 </thead>
                 <tbody>
-                  {entries.map((entry, index) => {
+                  {entries.map((entry) => {
                     const status = getPasswordStatus(entry, savingPageSlug);
                     const canSave = Boolean(entry.password.trim());
-                    const canOpenEditor = entry.hasPassword;
+                    const canOpenEditor = true;
                     const isVisible = visibleRows[entry.slug] ?? false;
 
                     return (
                       <tr key={entry.slug} className={styles.tableRowInteractive}>
                         <td>
                           <div className={styles.tablePrimary}>
-                            <span className={styles.rowNumber}>{entries.length - index}</span>
+                            <span className={styles.rowNumber}>{entries.length}</span>
                             <div>
                               <p className={styles.tableTitle}>{entry.displayName}</p>
                               <p className={styles.tableSubtext}>{entry.slug}</p>
@@ -317,7 +317,7 @@ export default function AdminClientPasswordsTab({
             {entries.map((entry) => {
               const status = getPasswordStatus(entry, savingPageSlug);
               const canSave = Boolean(entry.password.trim());
-              const canOpenEditor = entry.hasPassword;
+              const canOpenEditor = true;
               const isVisible = visibleRows[entry.slug] ?? false;
 
               return (

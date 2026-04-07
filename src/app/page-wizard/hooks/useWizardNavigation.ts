@@ -1,0 +1,148 @@
+import { useCallback, useMemo } from 'react';
+
+import type { InvitationPageSeed, InvitationThemeKey } from '@/types/invitationPage';
+
+import {
+  buildReviewSummary,
+  WIZARD_STEPS,
+  type SlugStepState,
+  type StepValidation,
+  type WizardStepKey,
+} from '../pageWizardData';
+import { getStepIndex } from '../pageWizardShared';
+import type { WizardPersistDraftOptions } from './useWizardPersistence';
+
+export function useWizardNavigation({
+  activeStepKey,
+  defaultTheme,
+  previewFormState,
+  slugStepState,
+  published,
+  resolvedPersistedSlug,
+  getValidationForStep,
+  persistDraft,
+  slideToStep,
+  clearNotice,
+  showNotice,
+  showErrorNotice,
+}: {
+  activeStepKey: WizardStepKey;
+  defaultTheme: InvitationThemeKey;
+  previewFormState: InvitationPageSeed | null;
+  slugStepState: SlugStepState;
+  published: boolean;
+  resolvedPersistedSlug: string | null;
+  getValidationForStep: (stepKey: WizardStepKey) => StepValidation;
+  persistDraft: (options?: WizardPersistDraftOptions) => Promise<string | null>;
+  slideToStep: (stepKey: WizardStepKey) => void;
+  clearNotice: () => void;
+  showNotice: (tone: 'success' | 'error' | 'neutral', message: string) => void;
+  showErrorNotice: (message: string) => void;
+}) {
+  const activeStep = useMemo(
+    () => WIZARD_STEPS[getStepIndex(activeStepKey)] ?? WIZARD_STEPS[0],
+    [activeStepKey]
+  );
+  const activeStepIndex = useMemo(
+    () => getStepIndex(activeStep.key),
+    [activeStep.key]
+  );
+
+  const handleMoveNext = useCallback(async () => {
+    const validation = getValidationForStep(activeStep.key);
+
+    if (!validation.valid) {
+      showErrorNotice(validation.messages[0] ?? '현재 단계 입력값을 먼저 확인해 주세요.');
+      return;
+    }
+
+    if (activeStep.key === 'slug') {
+      const savedSlug = await persistDraft({
+        publish: false,
+        successMessage: '초안을 만들었습니다. 다음 단계로 이동합니다.',
+      });
+
+      if (!savedSlug) {
+        return;
+      }
+    } else if (activeStep.key !== 'theme' && activeStep.key !== 'final') {
+      const savedSlug = await persistDraft({ publish: false, silent: true });
+      if (!savedSlug && !resolvedPersistedSlug) {
+        return;
+      }
+    }
+
+    const nextStep = WIZARD_STEPS[getStepIndex(activeStep.key) + 1];
+    if (!nextStep) {
+      return;
+    }
+
+    slideToStep(nextStep.key);
+    showNotice('neutral', `${nextStep.number}단계로 이동했습니다.`);
+  }, [
+    activeStep.key,
+    getValidationForStep,
+    persistDraft,
+    resolvedPersistedSlug,
+    showErrorNotice,
+    showNotice,
+    slideToStep,
+  ]);
+
+  const handleMovePrevious = useCallback(() => {
+    const previousStep = WIZARD_STEPS[getStepIndex(activeStep.key) - 1];
+    if (!previousStep) {
+      return;
+    }
+
+    slideToStep(previousStep.key);
+    clearNotice();
+  }, [activeStep.key, clearNotice, slideToStep]);
+
+  const handleFinalConfirm = useCallback(async () => {
+    const reviewSummary = buildReviewSummary(defaultTheme, previewFormState, {
+      ...slugStepState,
+    });
+    const invalidStep = reviewSummary.find((item) => !item.validation.valid);
+
+    if (invalidStep) {
+      slideToStep(invalidStep.step.key);
+      showErrorNotice(
+        invalidStep.validation.messages[0] ??
+          `${invalidStep.step.number}단계를 먼저 확인해 주세요.`
+      );
+      return;
+    }
+
+    await persistDraft({
+      publish: published,
+      successMessage: published
+        ? '페이지를 공개했습니다.'
+        : '초안을 저장했습니다.',
+    });
+  }, [
+    defaultTheme,
+    persistDraft,
+    previewFormState,
+    published,
+    showErrorNotice,
+    slideToStep,
+    slugStepState,
+  ]);
+
+  const handleSaveCurrent = useCallback(async () => {
+    await persistDraft({
+      publish: published,
+      successMessage: '현재 단계 내용을 저장했습니다.',
+    });
+  }, [persistDraft, published]);
+
+  return {
+    activeStep,
+    activeStepIndex,
+    handleMoveNext,
+    handleMovePrevious,
+    handleFinalConfirm,
+    handleSaveCurrent,
+  };
+}

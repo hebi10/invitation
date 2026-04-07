@@ -5,7 +5,13 @@ import { type ChangeEvent, type ReactNode, useEffect, useMemo, useRef, useState 
 import { useAdmin } from '@/contexts';
 import { USE_FIREBASE } from '@/lib/firebase';
 import { resolveInvitationFeatures } from '@/lib/invitationProducts';
-import { uploadPageEditorImage } from '@/services/imageService';
+import { toUserFacingKoreanErrorMessage } from '@/lib/userFacingErrorMessage';
+import {
+  getEditableImageUploadHint,
+  uploadClientEditorImage,
+  uploadPageEditorImage,
+  validateEditableImageBatch,
+} from '@/services/imageService';
 import {
   getEditableInvitationPageConfig,
   restoreInvitationPageConfig,
@@ -612,7 +618,7 @@ export default function PageEditorClient({
   const galleryUploadInputRef = useRef<HTMLInputElement | null>(null);
 
   const canEdit = isAdminLoggedIn || hasClientSession;
-  const canUploadImages = USE_FIREBASE && isAdminLoggedIn;
+  const canUploadImages = USE_FIREBASE && (isAdminLoggedIn || hasClientSession);
   const title = buildEditorTitle(
     formState?.couple.groom.name ?? initialGroomName,
     formState?.couple.bride.name ?? initialBrideName,
@@ -1308,6 +1314,14 @@ export default function PageEditorClient({
     if (!canUploadImages) {
       setNotice({
         tone: 'error',
+        message: '이미지 업로드는 관리자 또는 고객 편집 로그인 후 사용할 수 있습니다.',
+      });
+      return;
+    }
+
+    if (!canUploadImages) {
+      setNotice({
+        tone: 'error',
         message: '이미지 업로드는 Firebase가 켜진 환경에서 편집 권한이 있을 때만 사용할 수 있습니다.',
       });
       return;
@@ -1331,6 +1345,122 @@ export default function PageEditorClient({
     files: File[]
   ) => {
     if (!formState || files.length === 0) {
+      return;
+    }
+
+    const handledByNewFlow = await (async () => {
+      if (!canUploadImages) {
+        setNotice({
+          tone: 'error',
+          message: '이미지 업로드는 관리자 또는 고객 편집 로그인 후 사용할 수 있습니다.',
+        });
+        return true;
+      }
+
+      const assetKind = field === 'gallery' ? 'gallery' : field === 'wedding' ? 'cover' : 'favicon';
+      const batchValidationError = validateEditableImageBatch(
+        files,
+        assetKind,
+        field === 'gallery' ? Math.min(10, maxGalleryImages) : 1
+      );
+
+      if (batchValidationError) {
+        setNotice({
+          tone: 'error',
+          message: batchValidationError,
+        });
+        return true;
+      }
+
+      setUploadingField(field);
+
+      try {
+        const uploadImage = isAdminLoggedIn ? uploadPageEditorImage : uploadClientEditorImage;
+
+        if (field === 'gallery') {
+          const currentGalleryCount = formState.pageData?.galleryImages?.length ?? 0;
+          const remainingSlots = maxGalleryImages - currentGalleryCount;
+
+          if (remainingSlots <= 0) {
+            setNotice({
+              tone: 'error',
+              message: `갤러리 이미지는 최대 ${maxGalleryImages}장까지 설정할 수 있습니다.`,
+            });
+            return true;
+          }
+
+          const uploadTargets = files.slice(0, remainingSlots);
+          const uploadTargetValidationError = validateEditableImageBatch(
+            uploadTargets,
+            'gallery',
+            Math.min(10, remainingSlots)
+          );
+
+          if (uploadTargetValidationError) {
+            setNotice({
+              tone: 'error',
+              message: uploadTargetValidationError,
+            });
+            return true;
+          }
+
+          const uploadedImages = await Promise.all(
+            uploadTargets.map((file) => uploadImage(file, slug, 'gallery'))
+          );
+
+          updateForm((draft) => {
+            if (!draft.pageData) {
+              return;
+            }
+
+            draft.pageData.galleryImages = [
+              ...(draft.pageData.galleryImages ?? []),
+              ...uploadedImages.map((image) => image.url),
+            ].slice(0, maxGalleryImages);
+          });
+
+          setNotice({
+            tone: 'success',
+            message:
+              files.length > uploadTargets.length
+                ? `갤러리 이미지 ${uploadTargets.length}장만 추가했습니다. 최대 ${maxGalleryImages}장까지 설정할 수 있습니다.`
+                : `갤러리 이미지 ${uploadedImages.length}장을 업로드했습니다. ${getEditableImageUploadHint('gallery')}`,
+          });
+          return true;
+        }
+
+        const uploadTarget = files[0];
+        const uploadedImage = await uploadImage(
+          uploadTarget,
+          slug,
+          field === 'wedding' ? 'cover' : 'favicon'
+        );
+
+        updateForm((draft) => {
+          draft.metadata.images[field] = uploadedImage.url;
+        });
+
+        setNotice({
+          tone: 'success',
+          message:
+            field === 'wedding'
+              ? `대표 이미지를 업로드했습니다. ${getEditableImageUploadHint('cover')}`
+              : `파비콘을 업로드했습니다. ${getEditableImageUploadHint('favicon')}`,
+        });
+      } catch (error) {
+        console.error('[PageEditorClient] failed to upload image asset', error);
+        setNotice({
+          tone: 'error',
+          message: toUserFacingKoreanErrorMessage(error, '이미지 업로드에 실패했습니다.'),
+        });
+      } finally {
+        setUploadingField((current) => (current === field ? null : current));
+      }
+
+      return true;
+    })();
+
+    if (handledByNewFlow) {
       return;
     }
 

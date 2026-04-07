@@ -176,6 +176,7 @@
 .reviewStateSuccess,
 .reviewStateError,
 .requiredBadge,
+.autoBadge,
 .optionalBadge {
   display: inline-flex;
   align-items: center;
@@ -195,6 +196,11 @@
 .requiredBadge {
   background: rgba(37, 99, 235, 0.1);
   color: #1d4ed8;
+}
+
+.autoBadge {
+  background: rgba(180, 131, 91, 0.14);
+  color: #7b5a44;
 }
 
 .stateSuccess,
@@ -842,6 +848,88 @@
   min-width: 0;
   padding-left: 0;
   border-left: 0;
+}
+
+.autoStatusHint {
+  color: #7c6d60;
+  font-size: 0.82rem;
+  line-height: 1.6;
+}
+
+.autoInfoCard {
+  display: grid;
+  gap: 14px;
+  padding: 16px;
+  border: 1px solid rgba(180, 131, 91, 0.16);
+  border-radius: 22px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(252, 247, 241, 0.98));
+  box-shadow: 0 12px 28px rgba(122, 93, 63, 0.06);
+}
+
+.autoInfoHeader {
+  display: grid;
+  gap: 6px;
+}
+
+.autoInfoTitleRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.autoInfoGrid {
+  display: grid;
+  gap: 10px;
+}
+
+.autoInfoItem {
+  display: grid;
+  gap: 8px;
+  padding: 12px 14px;
+  border-radius: 16px;
+  border: 1px solid rgba(180, 131, 91, 0.14);
+  background: rgba(255, 255, 255, 0.88);
+}
+
+.autoInfoItemWide {
+  min-width: 0;
+}
+
+.autoInfoLabel {
+  color: #8b7b6d;
+  font-size: 0.76rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.autoInfoValue {
+  color: #2f251f;
+  font-size: 1rem;
+  line-height: 1.45;
+  word-break: break-word;
+}
+
+.autoInfoCode {
+  display: block;
+  overflow-wrap: anywhere;
+  padding: 10px 12px;
+  border-radius: 14px;
+  background: rgba(248, 241, 234, 0.92);
+  color: #5e4938;
+  font-size: 0.82rem;
+  line-height: 1.6;
+}
+
+.autoInfoEmpty {
+  padding: 14px 16px;
+  border-radius: 16px;
+  background: rgba(248, 241, 234, 0.72);
+  color: #7c6d60;
+  font-size: 0.86rem;
+  line-height: 1.65;
 }
 
 .slideFooter {
@@ -1750,6 +1838,14 @@
 @media (min-width: 640px) {
   .twoColumnGrid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .autoInfoGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .autoInfoItemWide {
+    grid-column: 1 / -1;
   }
 }
 

@@ -19,7 +19,15 @@ export default function SlugStep({
 }: SlugStepProps) {
   return (
     <div className={styles.fieldGrid}>
-      <div className={styles.twoColumnGrid}>
+      <div className={styles.summaryCard}>
+        <span className={styles.summaryLabel}>이 단계에서 하는 일</span>
+        <strong className={styles.summaryValue}>페이지 주소에 사용할 영문 이름을 정합니다.</strong>
+        <p className={styles.sectionText}>
+          신랑·신부 한글 이름은 다음 단계인 기본 정보에서 입력합니다.
+        </p>
+      </div>
+
+      <div className={styles.twoColumnGrid} hidden>
         <label className={styles.field}>
           {renderFieldMeta('예비 신랑 이름(한글)', 'required')}
           <input

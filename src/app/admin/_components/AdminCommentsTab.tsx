@@ -159,7 +159,7 @@ export default function AdminCommentsTab({
       ) : currentComments.length > 0 ? (
         <>
           <div className={styles.tableCard}>
-            <div className={styles.tableScroll}>
+            <div className={styles.tableScroll} tabIndex={0} role="region" aria-label="방명록 테이블">
               <table className={styles.dataTable}>
                 <thead>
                   <tr>

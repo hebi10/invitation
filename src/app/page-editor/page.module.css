@@ -1194,11 +1194,16 @@
 }
 
 .subCard,
-.nestedCard,
 .emptyCard {
   padding: 18px;
   border-radius: 22px;
   border: 1px solid rgba(148, 163, 184, 0.18);
+  background: rgba(248, 250, 252, 0.9);
+}
+
+.nestedCard {
+  padding: 18px;
+  border-radius: 22px;
   background: rgba(248, 250, 252, 0.9);
 }
 
@@ -1577,7 +1582,6 @@
 }
 
 .detailsBody {
-  padding: 0 20px 20px;
   display: flex;
   flex-direction: column;
   gap: 16px;

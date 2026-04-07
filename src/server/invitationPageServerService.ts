@@ -421,10 +421,6 @@ function mergeInvitationPageSeed(
 
   if (
     !normalizedSeed.slug ||
-    !normalizedSeed.displayName ||
-    !normalizedSeed.description ||
-    !normalizedSeed.date ||
-    !normalizedSeed.venue ||
     !normalizedSeed.couple.groom.name ||
     !normalizedSeed.couple.bride.name ||
     !normalizedSeed.metadata.images.favicon ||

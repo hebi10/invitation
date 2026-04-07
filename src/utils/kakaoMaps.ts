@@ -159,6 +159,49 @@ export async function loadKakaoMapsSdk() {
   return kakaoMapsSdkPromise;
 }
 
+export async function searchAddressWithKakaoMaps(address: string) {
+  const trimmedAddress = address.trim();
+  if (!trimmedAddress) {
+    throw new Error('검색할 주소를 먼저 입력해 주세요.');
+  }
+
+  const kakao = await loadKakaoMapsSdk();
+  const geocoder = new kakao.maps.services.Geocoder();
+
+  return new Promise<{
+    addressName: string;
+    latitude: number;
+    longitude: number;
+  }>((resolve, reject) => {
+    geocoder.addressSearch(trimmedAddress, (result: any, status: any) => {
+      if (status !== kakao.maps.services.Status.OK || !Array.isArray(result) || !result[0]) {
+        reject(new Error('입력한 주소에 해당하는 좌표를 찾지 못했습니다.'));
+        return;
+      }
+
+      const primary = result[0];
+      const addressName =
+        String(primary.road_address?.address_name ?? '').trim() ||
+        String(primary.address?.address_name ?? '').trim() ||
+        String(primary.address_name ?? '').trim() ||
+        trimmedAddress;
+      const latitude = Number(primary.y);
+      const longitude = Number(primary.x);
+
+      if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) {
+        reject(new Error('입력한 주소에 해당하는 좌표를 찾지 못했습니다.'));
+        return;
+      }
+
+      resolve({
+        addressName,
+        latitude,
+        longitude,
+      });
+    });
+  });
+}
+
 export function buildKakaoMapSearchUrl(address: string) {
   return `https://map.kakao.com/link/search/${encodeURIComponent(address)}`;
 }

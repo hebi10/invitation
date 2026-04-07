@@ -1,7 +1,8 @@
-import type { InvitationPageSeedTemplate, InvitationPageSummary } from '@/services';
+import type { InvitationPageSummary } from '@/services';
 
 import { EmptyState, FilterToolbar, StatusBadge } from '.';
 import {
+  formatDateTime,
   PAGE_SORT_LABELS,
   PAGE_STATUS_LABELS,
   SHORTCUT_ITEMS,
@@ -24,17 +25,6 @@ interface AdminPagesTabProps {
   pageStatusFilter: PageStatusFilter;
   pageSort: PageSort;
   chips: Array<{ id: string; label: string; onRemove: () => void }>;
-  seedTemplates: InvitationPageSeedTemplate[];
-  createSeedSlug: string;
-  createSlugBase: string;
-  createGroomName: string;
-  createBrideName: string;
-  creatingPage: boolean;
-  onCreateSeedSlugChange: (value: string) => void;
-  onCreateSlugBaseChange: (value: string) => void;
-  onCreateGroomNameChange: (value: string) => void;
-  onCreateBrideNameChange: (value: string) => void;
-  onCreatePage: () => void;
   onQueryChange: (updates: Record<string, string | null>) => void;
   onRefresh: () => void;
 }
@@ -82,17 +72,6 @@ export default function AdminPagesTab({
   pageStatusFilter,
   pageSort,
   chips,
-  seedTemplates: _seedTemplates,
-  createSeedSlug: _createSeedSlug,
-  createSlugBase: _createSlugBase,
-  createGroomName: _createGroomName,
-  createBrideName: _createBrideName,
-  creatingPage: _creatingPage,
-  onCreateSeedSlugChange: _onCreateSeedSlugChange,
-  onCreateSlugBaseChange: _onCreateSlugBaseChange,
-  onCreateGroomNameChange: _onCreateGroomNameChange,
-  onCreateBrideNameChange: _onCreateBrideNameChange,
-  onCreatePage: _onCreatePage,
   onQueryChange,
   onRefresh,
 }: AdminPagesTabProps) {
@@ -258,7 +237,7 @@ export default function AdminPagesTab({
       ) : filteredPages.length > 0 ? (
         <>
           <div className={styles.tableCard}>
-            <div className={styles.tableScroll}>
+            <div className={styles.tableScroll} tabIndex={0} role="region" aria-label="청첩장 테이블">
               <table className={styles.dataTable}>
                 <thead>
                   <tr>
@@ -282,7 +261,7 @@ export default function AdminPagesTab({
                         <td>
                           <div className={styles.tablePrimary}>
                             <span className={styles.rowNumber}>
-                              {filteredPages.length - index}
+                              {index + 1}
                             </span>
                             <a
                               href={`/page-editor/${page.slug}`}
@@ -292,6 +271,11 @@ export default function AdminPagesTab({
                             >
                               <p className={styles.tableTitle}>{page.displayName}</p>
                               <p className={styles.tableSubtext}>{page.slug}</p>
+                              {page.createdAt ? (
+                                <p className={styles.tableSubtext}>
+                                  {formatDateTime(page.createdAt)}
+                                </p>
+                              ) : null}
                             </a>
                           </div>
                         </td>
@@ -380,6 +364,11 @@ export default function AdminPagesTab({
                     <div>
                       <h3 className={styles.mobileCardTitle}>{page.displayName}</h3>
                       <p className={styles.mobileCardSlug}>{page.slug}</p>
+                      {page.createdAt ? (
+                        <p className={styles.tableSubtext}>
+                          {formatDateTime(page.createdAt)}
+                        </p>
+                      ) : null}
                     </div>
                     <StatusBadge tone={status.tone}>{status.label}</StatusBadge>
                   </div>

@@ -48,6 +48,10 @@ function toAdminUser(user: { uid: string; email: string | null }): AdminUser {
 
 export async function loginAdmin(email: string, password: string): Promise<AdminUser> {
   if (!USE_FIREBASE) {
+    if (process.env.NODE_ENV === 'production') {
+      throw new Error('Firebase가 비활성 상태이므로 로그인할 수 없습니다.');
+    }
+
     return {
       uid: 'mock-admin',
       email,
@@ -100,6 +104,7 @@ export function observeAdminSession(
   }
 
   let disposed = false;
+  let unsubscribeAuth: (() => void) | null = null;
 
   void getAuthModules().then(({ auth, authModule }) => {
     if (!auth || disposed) {
@@ -143,13 +148,11 @@ export function observeAdminSession(
       return;
     }
 
-    teardown = unsubscribe;
+    unsubscribeAuth = unsubscribe;
   });
-
-  let teardown = () => {};
 
   return () => {
     disposed = true;
-    teardown();
+    unsubscribeAuth?.();
   };
 }

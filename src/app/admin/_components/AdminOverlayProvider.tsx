@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useContext, useEffect, useRef, useState } from 'react';
+import { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
 import styles from './AdminOverlayProvider.module.css';
 
 type ToastTone = 'success' | 'error' | 'info';
@@ -39,25 +39,20 @@ export function AdminOverlayProvider({ children }: { children: React.ReactNode }
 
   const showToast = (toast: Omit<ToastItem, 'id'>) => {
     const id = nextToastId.current++;
-    setToasts((prev) => [...prev, { id, ...toast }]);
+    setToasts((prev) => {
+      const next = [...prev, { id, ...toast }];
+      return next.length > 5 ? next.slice(-5) : next;
+    });
+
+    window.setTimeout(() => {
+      setToasts((prev) => prev.filter((item) => item.id !== id));
+    }, 2600);
   };
 
   const confirm = (options: ConfirmOptions) =>
     new Promise<boolean>((resolve) => {
       setPendingConfirm({ ...options, resolve });
     });
-
-  useEffect(() => {
-    if (toasts.length === 0) {
-      return;
-    }
-
-    const timer = window.setTimeout(() => {
-      setToasts((prev) => prev.slice(1));
-    }, 2600);
-
-    return () => window.clearTimeout(timer);
-  }, [toasts]);
 
   useEffect(() => {
     return () => {
@@ -67,14 +62,38 @@ export function AdminOverlayProvider({ children }: { children: React.ReactNode }
     };
   }, [pendingConfirm]);
 
-  const closeConfirm = (result: boolean) => {
+  const closeConfirm = useCallback((result: boolean) => {
     if (!pendingConfirm) {
       return;
     }
 
     pendingConfirm.resolve(result);
     setPendingConfirm(null);
-  };
+  }, [pendingConfirm]);
+
+  const dialogRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (!pendingConfirm) {
+      return;
+    }
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        closeConfirm(false);
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+
+    const dialog = dialogRef.current;
+    if (dialog) {
+      const confirmButton = dialog.querySelector<HTMLButtonElement>('[data-confirm-action]');
+      confirmButton?.focus();
+    }
+
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [pendingConfirm, closeConfirm]);
 
   return (
     <AdminOverlayContext.Provider value={{ showToast, confirm }}>
@@ -93,8 +112,36 @@ export function AdminOverlayProvider({ children }: { children: React.ReactNode }
         )}
 
         {pendingConfirm ? (
-          <div className={styles.dialogBackdrop} role="presentation">
-            <div className={styles.dialog} role="dialog" aria-modal="true" aria-labelledby="admin-confirm-title">
+          <div className={styles.dialogBackdrop} role="presentation" onClick={() => closeConfirm(false)}>
+            <div
+              ref={dialogRef}
+              className={styles.dialog}
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="admin-confirm-title"
+              onClick={(event) => event.stopPropagation()}
+              onKeyDown={(event) => {
+                if (event.key === 'Tab') {
+                  const focusable = dialogRef.current?.querySelectorAll<HTMLElement>(
+                    'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+                  );
+                  if (!focusable || focusable.length === 0) {
+                    return;
+                  }
+
+                  const first = focusable[0];
+                  const last = focusable[focusable.length - 1];
+
+                  if (event.shiftKey && document.activeElement === first) {
+                    event.preventDefault();
+                    last.focus();
+                  } else if (!event.shiftKey && document.activeElement === last) {
+                    event.preventDefault();
+                    first.focus();
+                  }
+                }
+              }}
+            >
               <h2 id="admin-confirm-title" className={styles.dialogTitle}>
                 {pendingConfirm.title}
               </h2>
@@ -112,12 +159,13 @@ export function AdminOverlayProvider({ children }: { children: React.ReactNode }
                 </button>
                 <button
                   type="button"
+                  data-confirm-action
                   className={`${styles.dialogButton} ${styles.dialogConfirm} ${
                     pendingConfirm.tone === 'danger' ? styles.dialogConfirmDanger : ''
                   }`}
                   onClick={() => closeConfirm(true)}
                 >
-                  {pendingConfirm.confirmLabel ?? '확인'}
+                  {pendingConfirm.confirmLabel ?? '확���'}
                 </button>
               </div>
             </div>

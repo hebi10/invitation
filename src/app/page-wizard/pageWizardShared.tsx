@@ -71,7 +71,10 @@ export interface ScheduleStepProps extends WizardStepProps {
   onTimeInputChange: (value: string) => void;
 }
 
-export interface VenueStepProps extends WizardStepProps {}
+export interface VenueStepProps extends WizardStepProps {
+  isSearchingAddress: boolean;
+  onSearchAddress: () => void;
+}
 
 export interface GreetingStepProps extends WizardStepProps {
   onPersonFieldChange: (role: PersonRole, field: 'name' | 'order' | 'phone', value: string) => void;
@@ -150,7 +153,7 @@ export function getNoticeClassName(tone: NoticeTone) {
 
 export function renderFieldMeta(
   label: string,
-  requirement: 'required' | 'optional',
+  requirement: 'required' | 'optional' | 'auto',
   hint?: string
 ) {
   return (
@@ -159,10 +162,14 @@ export function renderFieldMeta(
         <span className={styles.fieldLabel}>{label}</span>
         <span
           className={
-            requirement === 'required' ? styles.requiredBadge : styles.optionalBadge
+            requirement === 'required'
+              ? styles.requiredBadge
+              : requirement === 'auto'
+                ? styles.autoBadge
+                : styles.optionalBadge
           }
         >
-          {requirement === 'required' ? '필수' : '선택'}
+          {requirement === 'required' ? '필수' : requirement === 'auto' ? '자동입력' : '선택'}
         </span>
       </span>
       {hint ? <span className={styles.fieldHint}>{hint}</span> : null}
