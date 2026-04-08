@@ -134,8 +134,8 @@ const SECTION_COPY: Record<
   },
   metadata: {
     eyebrow: '공유 정보 미리보기',
-    title: '검색 결과와 링크 공유 카드 노출 모습을 미리 확인합니다.',
-    description: '브라우저 제목, 설명, 대표 이미지가 어떻게 보일지 요약합니다.',
+    title: '검색 결과와 링크 공유 카드에 어떻게 보일지 미리 확인합니다.',
+    description: '공유 제목, 공유 설명, 대표 이미지가 어떻게 보일지 요약합니다.',
   },
 };
 
@@ -197,7 +197,7 @@ function renderMetadataPreview(
     <div className={styles.previewMetaStack}>
       <div className={styles.previewDetailCard}>
         <div className={styles.previewDetailHeader}>
-          <h3 className={styles.previewDetailTitle}>브라우저와 검색 결과 미리보기</h3>
+          <h3 className={styles.previewDetailTitle}>검색 결과 미리보기</h3>
           <span className={styles.metaChip}>웹 노출</span>
         </div>
 
@@ -214,10 +214,10 @@ function renderMetadataPreview(
             </div>
           </div>
           <h4 className={styles.previewSearchTitle}>
-            {title || '브라우저 제목을 입력해 주세요'}
+            {title || '공유 제목을 입력해 주세요'}
           </h4>
           <p className={styles.previewSearchDescription}>
-            {description || '대표 설명 문구를 입력해 주세요'}
+            {description || '공유 설명을 입력해 주세요'}
           </p>
         </div>
       </div>

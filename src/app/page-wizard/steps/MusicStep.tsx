@@ -104,7 +104,7 @@ export default function MusicStep({
         <span className={styles.summaryLabel}>선택 단계</span>
         <strong className={styles.summaryValue}>배경음악은 필요할 때만 켜면 됩니다.</strong>
         <p className={styles.sectionText}>
-          음악을 켜면 방문자가 페이지를 열었을 때 선택한 곡으로 배경음악이 재생됩니다.
+          방문자가 첫 화면에서 한 번 터치하면 선택한 곡으로 배경음악이 재생됩니다.
         </p>
       </div>
 
@@ -255,11 +255,8 @@ export default function MusicStep({
           {selectedTrack ? `${selectedTrack.title} · ${selectedTrack.artist}` : '선택된 곡 없음'}
         </strong>
         <p className={styles.sectionText}>
-          저장 경로
+          배경음악은 언제든 다시 끄거나 다른 곡으로 바꿀 수 있습니다.
         </p>
-        <code className={styles.musicStoragePath}>
-          {normalizedSelection.musicStoragePath || '설정되지 않음'}
-        </code>
       </div>
 
       <section className={`${styles.formCard} ${styles.musicPreviewCard}`}>
@@ -271,7 +268,7 @@ export default function MusicStep({
             <div className={styles.musicAudioPlaceholder}>선택한 곡을 불러오는 중입니다.</div>
           ) : (
             <div className={styles.musicAudioPlaceholder}>
-              미리듣기 URL을 가져오지 못했습니다. 저장 경로 또는 Storage 읽기 권한을 확인해 주세요.
+              곡 미리듣기를 불러오지 못했습니다. 잠시 후 다시 확인해 주세요.
             </div>
           )
         ) : (

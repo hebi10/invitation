@@ -2,7 +2,6 @@ import {
   DEFAULT_INVITATION_MUSIC_VOLUME,
   clampInvitationMusicVolume,
   findInvitationMusicTrackById,
-  getInvitationMusicTracksByCategory,
   normalizeInvitationMusicSelection,
 } from '@/lib/musicLibrary';
 import { resolveInvitationFeatures } from '@/lib/invitationProducts';
@@ -112,13 +111,8 @@ export default function PageWizardStepPreview({
     trackId: formState.musicTrackId,
     storagePath: formState.musicStoragePath,
   });
-  const musicTracks = getInvitationMusicTracksByCategory(
-    normalizedMusicSelection.musicCategoryId
-  );
   const selectedMusicTrack =
-    findInvitationMusicTrackById(normalizedMusicSelection.musicTrackId) ??
-    musicTracks[0] ??
-    null;
+    findInvitationMusicTrackById(normalizedMusicSelection.musicTrackId) ?? null;
   const musicVolume = clampInvitationMusicVolume(
     formState.musicVolume,
     DEFAULT_INVITATION_MUSIC_VOLUME
@@ -196,8 +190,8 @@ export default function PageWizardStepPreview({
     return (
       <section className={styles.previewSummary}>
         <div className={styles.previewHeader}>
-          <h3 className={styles.previewTitle}>예식 일정 요약</h3>
-          <span className={styles.previewCaption}>달력 섹션과 일정 카드에 반영됩니다.</span>
+          <h3 className={styles.previewTitle}>예식 일정과 장소 요약</h3>
+          <span className={styles.previewCaption}>날짜, 시간, 장소, 오시는 길이 함께 반영됩니다.</span>
         </div>
         <div className={styles.previewKeyList}>
           <PreviewRow
@@ -213,6 +207,20 @@ export default function PageWizardStepPreview({
             value={ceremonyTimeLabel}
           />
           <PreviewRow label="본식 장소" value={ceremonyLocationLabel} />
+          <PreviewRow label="예식장명" value={venueName} />
+          <PreviewRow label="예식장 주소" value={venueAddress} />
+          <PreviewRow
+            label="연락처"
+            value={formState.pageData?.ceremonyContact?.trim() || '연락처를 입력하지 않았습니다.'}
+          />
+          <PreviewRow
+            label="지도 링크"
+            value={
+              formState.pageData?.mapUrl?.trim()
+                ? '지도 링크가 연결되었습니다.'
+                : '지도 링크를 아직 입력하지 않았습니다.'
+            }
+          />
           <PreviewRow label="피로연 시간" value={receptionTimeLabel} />
           <PreviewRow label="피로연 장소" value={receptionLocationLabel} />
         </div>
@@ -294,13 +302,25 @@ export default function PageWizardStepPreview({
       <section className={styles.previewSummary}>
         <div className={styles.previewHeader}>
           <h3 className={styles.previewTitle}>추가 안내 요약</h3>
-          <span className={styles.previewCaption}>선택한 안내 항목만 공개 페이지에 노출됩니다.</span>
+          <span className={styles.previewCaption}>선택한 안내 항목과 배경음악 설정만 공개 페이지에 노출됩니다.</span>
         </div>
         <div className={styles.previewKeyList}>
           <PreviewRow label="신랑측 계좌" value={`${groomAccounts}개`} />
           <PreviewRow label="신부측 계좌" value={`${brideAccounts}개`} />
-          <PreviewRow label="예식장 안내" value={`${venueGuideCount}개`} />
+          <PreviewRow label="교통 · 방문 안내" value={`${venueGuideCount}개`} />
           <PreviewRow label="화환 안내" value={`${wreathGuideCount}개`} />
+          <PreviewRow
+            label="배경음악"
+            value={formState.musicEnabled ? '사용' : '사용 안 함'}
+          />
+          <PreviewRow
+            label="선택 곡"
+            value={
+              formState.musicEnabled && selectedMusicTrack
+                ? `${selectedMusicTrack.title} · ${selectedMusicTrack.artist}`
+                : '선택된 곡 없음'
+            }
+          />
         </div>
       </section>
     );
@@ -313,10 +333,10 @@ export default function PageWizardStepPreview({
           <h3 className={styles.previewTitle}>배경음악 요약</h3>
           <span className={styles.previewCaption}>원할 때만 배경음악을 켜서 사용할 수 있습니다.</span>
         </div>
-        <div className={styles.previewKeyList}>
-          <PreviewRow
-            label="음악 사용"
-            value={formState.musicEnabled ? '사용' : '사용 안 함'}
+      <div className={styles.previewKeyList}>
+        <PreviewRow
+          label="음악 사용"
+          value={formState.musicEnabled ? '사용' : '사용 안 함'}
           />
           <PreviewRow
             label="선택 곡"
@@ -326,18 +346,10 @@ export default function PageWizardStepPreview({
                 : '선택된 곡 없음'
             }
           />
-          <PreviewRow
-            label="볼륨"
-            value={`${Math.round(musicVolume * 100)}%`}
-          />
-          <PreviewRow
-            label="저장 경로"
-            value={
-              formState.musicEnabled && normalizedMusicSelection.musicStoragePath
-                ? normalizedMusicSelection.musicStoragePath
-                : '설정되지 않음'
-            }
-          />
+        <PreviewRow
+          label="볼륨"
+          value={`${Math.round(musicVolume * 100)}%`}
+        />
         </div>
       </section>
     );
@@ -352,7 +364,7 @@ export default function PageWizardStepPreview({
       <div className={styles.previewKeyList}>
         <PreviewRow label="공개 상태" value={published ? '저장 후 바로 공개' : '비공개 청첩장'} />
         <PreviewRow
-          label="브라우저 제목"
+          label="공유 제목"
           value={formState.metadata.title.trim() || displayName || '자동 제목 사용'}
         />
         <PreviewRow

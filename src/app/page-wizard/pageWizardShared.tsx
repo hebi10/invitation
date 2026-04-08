@@ -19,7 +19,11 @@ import type {
 } from '@/types/invitationPage';
 
 import styles from './page.module.css';
-import { WIZARD_STEPS, type WizardStepKey } from './pageWizardData';
+import {
+  WIZARD_STEPS,
+  type WizardStepDefinition,
+  type WizardStepKey,
+} from './pageWizardData';
 
 /* ── Notice types ── */
 
@@ -66,6 +70,10 @@ export interface SlugStepProps {
   normalizedSlugInput: string | null;
   persistedSlug: string | null;
   previewSlug: string;
+  showClientPasswordField: boolean;
+  clientPassword: string;
+  setClientPassword: (value: string) => void;
+  defaultClientPassword: string;
 }
 
 export interface BasicStepProps extends WizardStepProps {
@@ -201,8 +209,11 @@ export function formatSavedAt(value: unknown) {
   }).format(date);
 }
 
-export function getStepIndex(stepKey: WizardStepKey) {
-  return WIZARD_STEPS.findIndex((step) => step.key === stepKey);
+export function getStepIndex(
+  stepKey: WizardStepKey,
+  steps: WizardStepDefinition[] = WIZARD_STEPS
+) {
+  return steps.findIndex((step) => step.key === stepKey);
 }
 
 export const PRODUCT_TIERS: InvitationProductTier[] = ['standard', 'deluxe', 'premium'];

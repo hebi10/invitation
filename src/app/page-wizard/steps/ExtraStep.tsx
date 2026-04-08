@@ -78,8 +78,8 @@ export default function ExtraStep({
         </div>
         <GuideSectionPanel
           kind="venueGuide"
-          title="예식장 안내"
-          description="일정 아래에 보일 선택형 안내 항목입니다."
+          title="교통 · 방문 안내"
+          description="주차, 대중교통, 건물 위치처럼 손님 안내에 필요한 내용을 적습니다."
           items={formState.pageData?.venueGuide ?? []}
           disabled={false}
           onAdd={onGuideAdd}

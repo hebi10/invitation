@@ -80,7 +80,7 @@ export default function ImagesStep({
         <div className={styles.uploadHeader}>
           <div>
             <h3 className={styles.cardTitle}>갤러리 이미지</h3>
-            <p className={styles.cardText}>
+            <p className={`${styles.cardText}`}>
               최대 {maxGalleryImages}장까지 등록할 수 있습니다.
             </p>
           </div>

@@ -104,7 +104,7 @@ export function normalizeFormConfig(config: InvitationPageSeed): InvitationPageS
   });
   const ceremony = normalizeScheduleDetail(nextConfig.pageData?.ceremony, {
     time: nextConfig.pageData?.ceremonyTime,
-    location: nextConfig.pageData?.ceremonyAddress ?? venueName,
+    location: '',
   });
   const reception = normalizeScheduleDetail(nextConfig.pageData?.reception);
 
@@ -146,7 +146,7 @@ export function normalizeFormConfig(config: InvitationPageSeed): InvitationPageS
       ...nextConfig.pageData,
       subtitle: nextConfig.pageData?.subtitle ?? '',
       ceremonyTime: ceremony.time,
-      ceremonyAddress: nextConfig.pageData?.ceremonyAddress ?? ceremony.location ?? '',
+      ceremonyAddress: nextConfig.pageData?.ceremonyAddress ?? '',
       ceremonyContact: nextConfig.pageData?.ceremonyContact ?? '',
       ceremony,
       ...(reception ? { reception } : {}),
@@ -215,11 +215,7 @@ export function prepareConfigForSave(
     nextConfig.pageData?.ceremony?.time?.trim() ||
     nextConfig.pageData?.ceremonyTime?.trim() ||
     '';
-  const ceremonyLocation =
-    nextConfig.pageData?.ceremony?.location?.trim() ||
-    nextConfig.pageData?.ceremonyAddress?.trim() ||
-    nextConfig.pageData?.venueName?.trim() ||
-    nextConfig.venue.trim();
+  const ceremonyLocation = nextConfig.pageData?.ceremony?.location?.trim() || '';
   const receptionTime = nextConfig.pageData?.reception?.time?.trim() || '';
   const receptionLocation = nextConfig.pageData?.reception?.location?.trim() || '';
   const reception =
@@ -254,8 +250,7 @@ export function prepareConfigForSave(
       ...nextConfig.pageData,
       venueName: nextConfig.pageData?.venueName?.trim() || nextConfig.venue,
       ceremonyTime,
-      ceremonyAddress:
-        nextConfig.pageData?.ceremonyAddress?.trim() || ceremonyLocation,
+      ceremonyAddress: nextConfig.pageData?.ceremonyAddress?.trim() || '',
       galleryImages,
       greetingAuthor:
         nextConfig.pageData?.greetingAuthor?.trim() ||

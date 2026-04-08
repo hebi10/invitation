@@ -3,8 +3,9 @@ import { useCallback, useMemo } from 'react';
 import type { InvitationPageSeed, InvitationThemeKey } from '@/types/invitationPage';
 
 import {
-  buildReviewSummary,
   buildStepValidation,
+  buildReviewSummary,
+  type WizardStepDefinition,
   type SlugStepState,
   type WizardStepKey,
 } from '../pageWizardData';
@@ -20,11 +21,13 @@ export function useWizardValidation({
   defaultTheme,
   previewFormState,
   slugStepState,
+  steps,
 }: {
   activeStepKey: WizardStepKey;
   defaultTheme: InvitationThemeKey;
   previewFormState: InvitationPageSeed | null;
   slugStepState: SlugStepState;
+  steps: WizardStepDefinition[];
 }) {
   const getValidationForStep = useCallback(
     (stepKey: WizardStepKey) =>
@@ -43,11 +46,12 @@ export function useWizardValidation({
     }
 
     return buildReviewSummary(
+      steps,
       defaultTheme,
       previewFormState,
       cloneSlugStepState(slugStepState)
     );
-  }, [activeStepKey, defaultTheme, previewFormState, slugStepState]);
+  }, [activeStepKey, defaultTheme, previewFormState, slugStepState, steps]);
 
   return {
     getValidationForStep,

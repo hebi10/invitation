@@ -156,8 +156,8 @@ const EDITOR_STEPS: StepDefinition[] = [
   {
     key: 'final',
     step: '07',
-    title: '최종 확인과 발행',
-    description: '검색 공유 문구, 링크, 발행 상태를 마지막으로 점검합니다.',
+    title: '공유 정보와 최종 확인',
+    description: '손님에게 보일 공유 제목과 설명을 정리하고 마지막 저장 상태를 확인합니다.',
     previewSection: 'metadata',
     isOptional: false,
   },
@@ -488,7 +488,7 @@ function buildStepReviews(formState: InvitationPageSeed | null): Record<EditorSt
 
   const finalWarnings: string[] = [];
   if (!isValidUrl(formState.metadata.images.favicon)) {
-    finalWarnings.push('파비콘 주소는 http 또는 https 형식으로 입력해 주세요.');
+    finalWarnings.push('사이트 아이콘 주소는 http 또는 https 형식으로 입력해 주세요.');
   }
 
   return {
@@ -530,9 +530,9 @@ function buildStepReviews(formState: InvitationPageSeed | null): Record<EditorSt
     gift: createStepReview([], giftWarnings, true),
     final: createStepReview(
       [
-        { label: '브라우저 제목', filled: hasText(formState.metadata.title) },
-        { label: '대표 설명 문구', filled: hasText(formState.metadata.description) },
-        { label: '파비콘 주소', filled: hasText(formState.metadata.images.favicon) },
+        { label: '공유 제목', filled: hasText(formState.metadata.title) },
+        { label: '공유 설명', filled: hasText(formState.metadata.description) },
+        { label: '사이트 아이콘 주소', filled: hasText(formState.metadata.images.favicon) },
       ],
       finalWarnings,
       false
@@ -1226,12 +1226,6 @@ export default function PageEditorClient({
       draft[field] = value;
       if (field === 'venue' && draft.pageData) {
         draft.pageData.venueName = value;
-        if (!hasText(draft.pageData.ceremony?.location)) {
-          draft.pageData.ceremony = {
-            ...draft.pageData.ceremony,
-            location: value,
-          };
-        }
       }
     });
   };
@@ -1308,25 +1302,6 @@ export default function PageEditorClient({
         draft.pageData.ceremony = {
           ...draft.pageData.ceremony,
           time: value,
-          location:
-            draft.pageData.ceremony?.location ||
-            draft.pageData.ceremonyAddress ||
-            draft.pageData.venueName ||
-            draft.venue,
-        };
-      }
-
-      if (field === 'ceremonyAddress' && !hasText(draft.pageData.ceremony?.location)) {
-        draft.pageData.ceremony = {
-          ...draft.pageData.ceremony,
-          location: value,
-        };
-      }
-
-      if (field === 'venueName' && !hasText(draft.pageData.ceremony?.location)) {
-        draft.pageData.ceremony = {
-          ...draft.pageData.ceremony,
-          location: value,
         };
       }
     });
@@ -1350,14 +1325,6 @@ export default function PageEditorClient({
 
       if (kind === 'ceremony' && field === 'time') {
         draft.pageData.ceremonyTime = value;
-      }
-
-      if (
-        kind === 'ceremony' &&
-        field === 'location' &&
-        !hasText(draft.pageData.ceremonyAddress)
-      ) {
-        draft.pageData.ceremonyAddress = value;
       }
     });
   };
@@ -2971,60 +2938,62 @@ export default function PageEditorClient({
           </div>
         </details>
 
-        <details className={styles.detailsGroup}>
-          <summary className={styles.detailsSummary}>서비스용 카카오 지도 좌표 수정</summary>
-          <div className={styles.detailsBody}>
-            <div className={styles.fieldGrid}>
-              <label className={styles.field}>
-                {renderFieldMeta('위도', 'optional')}
-                <input
-                  className={styles.input}
-                  inputMode="decimal"
-                  value={String(formState.pageData?.kakaoMap?.latitude ?? 0)}
-                  placeholder="예: 37.5665"
-                  onChange={(event) =>
-                    handleKakaoMapFieldChange('latitude', event.target.value)
-                  }
-                />
-              </label>
-              <label className={styles.field}>
-                {renderFieldMeta('경도', 'optional')}
-                <input
-                  className={styles.input}
-                  inputMode="decimal"
-                  value={String(formState.pageData?.kakaoMap?.longitude ?? 0)}
-                  placeholder="예: 126.978"
-                  onChange={(event) =>
-                    handleKakaoMapFieldChange('longitude', event.target.value)
-                  }
-                />
-              </label>
-              <label className={styles.field}>
-                {renderFieldMeta('확대 레벨', 'optional')}
-                <input
-                  className={styles.input}
-                  inputMode="numeric"
-                  value={String(formState.pageData?.kakaoMap?.level ?? 3)}
-                  placeholder="예: 3"
-                  onChange={(event) =>
-                    handleKakaoMapFieldChange('level', event.target.value)
-                  }
-                />
-              </label>
-              <label className={styles.field}>
-                {renderFieldMeta('지도 마커 이름', 'optional')}
-                <input
-                  className={styles.input}
-                  value={formState.pageData?.kakaoMap?.markerTitle ?? ''}
-                  placeholder="예: 더케이웨딩홀"
-                  onChange={(event) =>
-                    handleKakaoMapFieldChange('markerTitle', event.target.value)
-                  }
-                />
-              </label>
+        {isAdminLoggedIn ? (
+          <details className={styles.detailsGroup}>
+            <summary className={styles.detailsSummary}>서비스용 카카오 지도 좌표 수정</summary>
+            <div className={styles.detailsBody}>
+              <div className={styles.fieldGrid}>
+                <label className={styles.field}>
+                  {renderFieldMeta('위도', 'optional')}
+                  <input
+                    className={styles.input}
+                    inputMode="decimal"
+                    value={String(formState.pageData?.kakaoMap?.latitude ?? 0)}
+                    placeholder="예: 37.5665"
+                    onChange={(event) =>
+                      handleKakaoMapFieldChange('latitude', event.target.value)
+                    }
+                  />
+                </label>
+                <label className={styles.field}>
+                  {renderFieldMeta('경도', 'optional')}
+                  <input
+                    className={styles.input}
+                    inputMode="decimal"
+                    value={String(formState.pageData?.kakaoMap?.longitude ?? 0)}
+                    placeholder="예: 126.978"
+                    onChange={(event) =>
+                      handleKakaoMapFieldChange('longitude', event.target.value)
+                    }
+                  />
+                </label>
+                <label className={styles.field}>
+                  {renderFieldMeta('확대 레벨', 'optional')}
+                  <input
+                    className={styles.input}
+                    inputMode="numeric"
+                    value={String(formState.pageData?.kakaoMap?.level ?? 3)}
+                    placeholder="예: 3"
+                    onChange={(event) =>
+                      handleKakaoMapFieldChange('level', event.target.value)
+                    }
+                  />
+                </label>
+                <label className={styles.field}>
+                  {renderFieldMeta('지도 마커 이름', 'optional')}
+                  <input
+                    className={styles.input}
+                    value={formState.pageData?.kakaoMap?.markerTitle ?? ''}
+                    placeholder="예: 더케이웨딩홀"
+                    onChange={(event) =>
+                      handleKakaoMapFieldChange('markerTitle', event.target.value)
+                    }
+                  />
+                </label>
+              </div>
             </div>
-          </div>
-        </details>
+          </details>
+        ) : null}
       </section>
     );
   };
@@ -3536,9 +3505,9 @@ export default function PageEditorClient({
       <section className={styles.section}>
         <div className={styles.sectionHeader}>
           <div>
-            <h2 className={styles.sectionTitle}>검색 · 공유 문구와 최종 점검</h2>
+            <h2 className={styles.sectionTitle}>공유 정보와 최종 확인</h2>
             <p className={styles.sectionDescription}>
-              링크를 공유했을 때 보이는 제목과 설명을 먼저 정리한 뒤, 발행 상태를 마지막으로 확인해 주세요.
+              손님이 링크를 받았을 때 보이는 제목과 설명을 먼저 정리한 뒤, 마지막 저장 상태를 확인해 주세요.
             </p>
           </div>
         </div>
@@ -3546,9 +3515,9 @@ export default function PageEditorClient({
         <div className={styles.fieldGrid}>
           <label className={styles.field}>
             {renderFieldMeta(
-              '브라우저 제목',
+              '공유 제목',
               'required',
-              '검색 결과와 브라우저 탭에 보여줄 제목입니다.'
+              '링크 공유 카드와 검색 결과에 보여줄 제목입니다.'
             )}
             <input
               className={styles.input}
@@ -3562,9 +3531,9 @@ export default function PageEditorClient({
 
           <label className={styles.field}>
             {renderFieldMeta(
-              '대표 설명 문구',
+              '공유 설명',
               'required',
-              '공유 카드와 검색 결과 요약에 쓰입니다.'
+              '공유 카드와 검색 결과 요약에 함께 쓰입니다.'
             )}
             <input
               className={styles.input}
@@ -3578,9 +3547,9 @@ export default function PageEditorClient({
 
           <div className={`${styles.field} ${styles.fieldWide}`}>
             {renderFieldMeta(
-              '파비콘 주소',
+              '사이트 아이콘 주소',
               'required',
-              '브라우저 탭 아이콘으로 사용됩니다.'
+              '브라우저 탭과 검색 미리보기 아이콘으로 사용됩니다.'
             )}
             <div className={styles.assetInlineActions}>
               <input
@@ -3596,7 +3565,7 @@ export default function PageEditorClient({
                 onClick={() => handleTriggerImagePicker('favicon')}
                 disabled={!canUploadImages || uploadingField === 'favicon'}
               >
-                {uploadingField === 'favicon' ? '업로드 중..' : '파비콘 업로드'}
+                {uploadingField === 'favicon' ? '업로드 중..' : '아이콘 업로드'}
               </button>
               <button
                 type="button"
@@ -3612,11 +3581,11 @@ export default function PageEditorClient({
                 <img
                   className={styles.faviconPreviewImage}
                   src={formState.metadata.images.favicon}
-                  alt="파비콘 미리보기"
+                  alt="사이트 아이콘 미리보기"
                 />
               ) : (
                 <div className={styles.assetPreviewPlaceholder}>
-                  파비콘을 업로드하면 검색/공유 미리보기에도 함께 반영됩니다.
+                  사이트 아이콘을 업로드하면 검색/공유 미리보기에도 함께 반영됩니다.
                 </div>
               )}
             </div>
@@ -3631,76 +3600,80 @@ export default function PageEditorClient({
           </div>
         </div>
 
-        <details className={styles.detailsGroup}>
-          <summary className={styles.detailsSummary}>SNS 전용 문구와 검색 키워드 추가 설정</summary>
-          <div className={styles.detailsBody}>
-            <div className={styles.fieldGrid}>
-              <label className={styles.field}>
-                {renderFieldMeta('오픈그래프 제목', 'optional')}
-                <input
-                  className={styles.input}
-                  value={formState.metadata.openGraph.title}
-                  placeholder="예: 신민제 ♥ 김현지 결혼식"
-                  onChange={(event) =>
-                    handleMetadataFieldChange('openGraph', 'title', event.target.value)
-                  }
-                />
-              </label>
-              <label className={styles.field}>
-                {renderFieldMeta('오픈그래프 설명', 'optional')}
-                <input
-                  className={styles.input}
-                  value={formState.metadata.openGraph.description}
-                  placeholder="예: 링크 공유 시 보여줄 설명을 입력해 주세요."
-                  onChange={(event) =>
-                    handleMetadataFieldChange(
-                      'openGraph',
-                      'description',
-                      event.target.value
-                    )
-                  }
-                />
-              </label>
-              <label className={styles.field}>
-                {renderFieldMeta('트위터 제목', 'optional')}
-                <input
-                  className={styles.input}
-                  value={formState.metadata.twitter.title}
-                  placeholder="예: 신민제 ♥ 김현지 결혼식"
-                  onChange={(event) =>
-                    handleMetadataFieldChange('twitter', 'title', event.target.value)
-                  }
-                />
-              </label>
-              <label className={styles.field}>
-                {renderFieldMeta('트위터 설명', 'optional')}
-                <input
-                  className={styles.input}
-                  value={formState.metadata.twitter.description}
-                  placeholder="예: 트위터 공유 시 보여줄 설명을 입력해 주세요."
-                  onChange={(event) =>
-                    handleMetadataFieldChange(
-                      'twitter',
-                      'description',
-                      event.target.value
-                    )
-                  }
-                />
-              </label>
-              <label className={`${styles.field} ${styles.fieldWide}`}>
-                {renderFieldMeta('검색 키워드', 'optional', '쉼표로 구분해서 입력해 주세요.')}
-                <input
-                  className={styles.input}
-                  value={keywordsToText(formState.metadata.keywords)}
-                  onChange={(event) =>
-                    handleMetadataFieldChange('keywords', 'keywords', event.target.value)
-                  }
-                  placeholder="예: 결혼식, 모바일 청첩장, 신민제 김현지"
-                />
-              </label>
+        {isAdminLoggedIn ? (
+          <details className={styles.detailsGroup}>
+            <summary className={styles.detailsSummary}>
+              SNS 전용 문구와 검색 키워드 추가 설정
+            </summary>
+            <div className={styles.detailsBody}>
+              <div className={styles.fieldGrid}>
+                <label className={styles.field}>
+                  {renderFieldMeta('오픈그래프 제목', 'optional')}
+                  <input
+                    className={styles.input}
+                    value={formState.metadata.openGraph.title}
+                    placeholder="예: 신민제 ♥ 김현지 결혼식"
+                    onChange={(event) =>
+                      handleMetadataFieldChange('openGraph', 'title', event.target.value)
+                    }
+                  />
+                </label>
+                <label className={styles.field}>
+                  {renderFieldMeta('오픈그래프 설명', 'optional')}
+                  <input
+                    className={styles.input}
+                    value={formState.metadata.openGraph.description}
+                    placeholder="예: 링크 공유 시 보여줄 설명을 입력해 주세요."
+                    onChange={(event) =>
+                      handleMetadataFieldChange(
+                        'openGraph',
+                        'description',
+                        event.target.value
+                      )
+                    }
+                  />
+                </label>
+                <label className={styles.field}>
+                  {renderFieldMeta('트위터 제목', 'optional')}
+                  <input
+                    className={styles.input}
+                    value={formState.metadata.twitter.title}
+                    placeholder="예: 신민제 ♥ 김현지 결혼식"
+                    onChange={(event) =>
+                      handleMetadataFieldChange('twitter', 'title', event.target.value)
+                    }
+                  />
+                </label>
+                <label className={styles.field}>
+                  {renderFieldMeta('트위터 설명', 'optional')}
+                  <input
+                    className={styles.input}
+                    value={formState.metadata.twitter.description}
+                    placeholder="예: 트위터 공유 시 보여줄 설명을 입력해 주세요."
+                    onChange={(event) =>
+                      handleMetadataFieldChange(
+                        'twitter',
+                        'description',
+                        event.target.value
+                      )
+                    }
+                  />
+                </label>
+                <label className={`${styles.field} ${styles.fieldWide}`}>
+                  {renderFieldMeta('검색 키워드', 'optional', '쉼표로 구분해서 입력해 주세요.')}
+                  <input
+                    className={styles.input}
+                    value={keywordsToText(formState.metadata.keywords)}
+                    onChange={(event) =>
+                      handleMetadataFieldChange('keywords', 'keywords', event.target.value)
+                    }
+                    placeholder="예: 결혼식, 모바일 청첩장, 신민제 김현지"
+                  />
+                </label>
+              </div>
             </div>
-          </div>
-        </details>
+          </details>
+        ) : null}
 
         <div className={styles.guideListCard}>
           <strong className={styles.guideTitle}>발행 전 체크리스트</strong>

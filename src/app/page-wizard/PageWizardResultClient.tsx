@@ -19,7 +19,7 @@ import styles from './page.module.css';
 import {
   applyDerivedWizardDefaults,
   buildReviewSummary,
-  WIZARD_STEPS,
+  getWizardSteps,
 } from './pageWizardData';
 import { formatSavedAt, getNoticeClassName } from './pageWizardShared';
 
@@ -39,6 +39,7 @@ export default function PageWizardResultClient({
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const canView = isAdminLoggedIn || hasClientSession;
+  const wizardSteps = useMemo(() => getWizardSteps(false), []);
 
   useEffect(() => {
     if (isAdminLoading) {
@@ -141,7 +142,7 @@ export default function PageWizardResultClient({
       return [];
     }
 
-    return buildReviewSummary(configState.defaultTheme, previewFormState, {
+    return buildReviewSummary(wizardSteps, configState.defaultTheme, previewFormState, {
       slugInput: slug,
       persistedSlug: slug,
       groomKoreanName: previewFormState.couple.groom.name,
@@ -149,7 +150,7 @@ export default function PageWizardResultClient({
       groomEnglishName: '',
       brideEnglishName: '',
     });
-  }, [configState, previewFormState, slug]);
+  }, [configState, previewFormState, slug, wizardSteps]);
 
   if (isLoading || isAdminLoading || !isSessionResolved) {
     return (
@@ -205,18 +206,18 @@ export default function PageWizardResultClient({
           <h1 className={styles.centerTitle}>
             {previewFormState.displayName.trim() || `${slug} 결과 페이지`}
           </h1>
-          <p className={`${styles.centerText} ${styles.textMargin}`}>
+          <p className={`${styles.centerText}`}>
             마지막 저장 데이터를 단계별로 정리했습니다. 여기서 전체 입력 내용을 확인한 뒤
             실제 청첩장으로 바로 이동할 수 있습니다.
           </p>
           <div className={`${styles.fieldGrid} ${styles.resultMetaGrid}`}>
             <div className={styles.previewUrlCard}>
               <span className={styles.summaryLabel}>공유 URL</span>
-              <strong className={styles.previewUrlValue}>{redirectPath}</strong>
+              <strong className={styles.previewUrlValue}>https://msgnote.kr{redirectPath}</strong>
             </div>
             <div className={styles.previewUrlCard}>
               <span className={styles.summaryLabel}>실제 페이지 URL</span>
-              <strong className={styles.previewUrlValue}>{livePagePath}</strong>
+              <strong className={styles.previewUrlValue}>https://msgnote.kr{livePagePath}</strong>
             </div>
             <div className={styles.previewUrlCard}>
               <span className={styles.summaryLabel}>마지막 저장 시각</span>
@@ -252,7 +253,7 @@ export default function PageWizardResultClient({
         ) : null}
 
         <div className={styles.fieldGrid}>
-          {WIZARD_STEPS.map((step) => (
+          {wizardSteps.map((step) => (
             <PageWizardStepPreview
               key={`result-preview-${step.key}`}
               stepKey={step.key}

@@ -1,3 +1,5 @@
+import { useState } from 'react';
+
 import styles from '../page.module.css';
 import { renderFieldMeta, type SlugStepProps } from '../pageWizardShared';
 
@@ -16,7 +18,13 @@ export default function SlugStep({
   normalizedSlugInput,
   persistedSlug,
   previewSlug,
+  showClientPasswordField,
+  clientPassword,
+  setClientPassword,
+  defaultClientPassword,
 }: SlugStepProps) {
+  const [isClientPasswordVisible, setIsClientPasswordVisible] = useState(true);
+
   return (
     <div className={styles.fieldGrid}>
       <div className={styles.summaryCard}>
@@ -119,6 +127,31 @@ export default function SlugStep({
             : '영문 이름을 기준으로 주소가 자동 생성되며, 이 단계를 확인하면 청첩장 문서가 먼저 생성됩니다.'}
         </p>
       </div>
+
+      {showClientPasswordField ? (
+        <label className={styles.field}>
+          {renderFieldMeta(
+            '고객 편집 비밀번호',
+            'optional',
+            `기본값은 ${defaultClientPassword}이며, 여기서 바로 바꿀 수 있습니다.`
+          )}
+          <input
+            className={styles.input}
+            type={isClientPasswordVisible ? 'text' : 'password'}
+            autoComplete="new-password"
+            value={clientPassword}
+            placeholder={defaultClientPassword}
+            onChange={(event) => setClientPassword(event.target.value)}
+          />
+          <button
+            type="button"
+            className={styles.secondaryButton}
+            onClick={() => setIsClientPasswordVisible((current) => !current)}
+          >
+            {isClientPasswordVisible ? '숨기기' : '보기'}
+          </button>
+        </label>
+      ) : null}
     </div>
   );
 }

@@ -33,12 +33,6 @@ export default function VenueStep({
               }
 
               draft.pageData.venueName = event.target.value;
-              if (!draft.pageData.ceremony?.location?.trim()) {
-                draft.pageData.ceremony = {
-                  ...draft.pageData.ceremony,
-                  location: event.target.value,
-                };
-              }
               if (
                 draft.pageData.kakaoMap &&
                 (!draft.pageData.kakaoMap.markerTitle?.trim() ||
@@ -55,7 +49,7 @@ export default function VenueStep({
         {renderFieldMeta(
           '주소',
           'required',
-          '주소 입력 후 버튼을 누르면 카카오 좌표와 지도 링크를 자동으로 가져옵니다.'
+          '주소 입력 후 "주소 찾기" 버튼을 눌러주세요. 예식장 위치가 지도에 자동으로 표시됩니다.'
         )}
         <input
           className={styles.input}
@@ -68,12 +62,6 @@ export default function VenueStep({
               }
 
               draft.pageData.ceremonyAddress = event.target.value;
-              if (!draft.pageData.ceremony?.location?.trim()) {
-                draft.pageData.ceremony = {
-                  ...draft.pageData.ceremony,
-                  location: event.target.value,
-                };
-              }
 
               if (draft.pageData.mapUrl?.startsWith('https://map.kakao.com/link/search/')) {
                 draft.pageData.mapUrl = '';
@@ -98,7 +86,7 @@ export default function VenueStep({
           onClick={onSearchAddress}
           disabled={isSearchingAddress || !(formState.pageData?.ceremonyAddress ?? '').trim()}
         >
-          {isSearchingAddress ? '주소 확인 중' : '주소로 좌표 찾기'}
+          {isSearchingAddress ? '주소 확인 중' : '주소 찾기'}
         </button>
         <span className={hasCoordinates ? styles.choiceSectionBadge : styles.autoStatusHint}>
           {hasCoordinates ? '자동 입력 완료' : '위도, 경도, 지도 링크가 자동 입력됩니다.'}

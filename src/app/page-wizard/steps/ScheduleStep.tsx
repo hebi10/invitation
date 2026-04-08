@@ -30,14 +30,6 @@ export default function ScheduleStep({
       if (kind === 'ceremony' && field === 'time') {
         draft.pageData.ceremonyTime = value;
       }
-
-      if (
-        kind === 'ceremony' &&
-        field === 'location' &&
-        !draft.pageData.ceremonyAddress?.trim()
-      ) {
-        draft.pageData.ceremonyAddress = value;
-      }
     });
   };
 

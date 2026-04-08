@@ -4,7 +4,7 @@ import type { InvitationPageSeed, InvitationThemeKey } from '@/types/invitationP
 
 import {
   buildReviewSummary,
-  WIZARD_STEPS,
+  type WizardStepDefinition,
   type SlugStepState,
   type StepValidation,
   type WizardStepKey,
@@ -19,11 +19,11 @@ export function useWizardNavigation({
   slugStepState,
   published,
   resolvedPersistedSlug,
+  steps,
   getValidationForStep,
   persistDraft,
   slideToStep,
   clearNotice,
-  showNotice,
   showErrorNotice,
   onComplete,
 }: {
@@ -33,21 +33,21 @@ export function useWizardNavigation({
   slugStepState: SlugStepState;
   published: boolean;
   resolvedPersistedSlug: string | null;
+  steps: WizardStepDefinition[];
   getValidationForStep: (stepKey: WizardStepKey) => StepValidation;
   persistDraft: (options?: WizardPersistDraftOptions) => Promise<string | null>;
   slideToStep: (stepKey: WizardStepKey) => void;
   clearNotice: () => void;
-  showNotice: (tone: 'success' | 'error' | 'neutral', message: string) => void;
   showErrorNotice: (error: unknown, fallback?: string) => void;
   onComplete?: (savedSlug: string) => void;
 }) {
   const activeStep = useMemo(
-    () => WIZARD_STEPS[getStepIndex(activeStepKey)] ?? WIZARD_STEPS[0],
-    [activeStepKey]
+    () => steps[getStepIndex(activeStepKey, steps)] ?? steps[0],
+    [activeStepKey, steps]
   );
   const activeStepIndex = useMemo(
-    () => getStepIndex(activeStep.key),
-    [activeStep.key]
+    () => getStepIndex(activeStep.key, steps),
+    [activeStep.key, steps]
   );
 
   const scrollToTop = useCallback(() => {
@@ -100,14 +100,13 @@ export function useWizardNavigation({
       }
     }
 
-    const nextStep = WIZARD_STEPS[getStepIndex(activeStep.key) + 1];
+    const nextStep = steps[getStepIndex(activeStep.key, steps) + 1];
     if (!nextStep) {
       return;
     }
 
     slideToStep(nextStep.key);
     scrollToTop();
-    showNotice('neutral', `${nextStep.number}단계로 이동했습니다.`);
   }, [
     activeStep.key,
     getValidationForStep,
@@ -115,22 +114,22 @@ export function useWizardNavigation({
     resolvedPersistedSlug,
     scrollToTop,
     showErrorNotice,
-    showNotice,
     slideToStep,
+    steps,
   ]);
 
   const handleMovePrevious = useCallback(() => {
-    const previousStep = WIZARD_STEPS[getStepIndex(activeStep.key) - 1];
+    const previousStep = steps[getStepIndex(activeStep.key, steps) - 1];
     if (!previousStep) {
       return;
     }
 
     slideToStep(previousStep.key);
     clearNotice();
-  }, [activeStep.key, clearNotice, slideToStep]);
+  }, [activeStep.key, clearNotice, slideToStep, steps]);
 
   const handleFinalConfirm = useCallback(async () => {
-    const reviewSummary = buildReviewSummary(defaultTheme, previewFormState, {
+    const reviewSummary = buildReviewSummary(steps, defaultTheme, previewFormState, {
       ...slugStepState,
     });
     const invalidStep = reviewSummary.find((item) => !item.validation.valid);
@@ -147,6 +146,7 @@ export function useWizardNavigation({
 
     const savedSlug = await persistDraft({
       publish: published,
+      syncClientPassword: true,
       successMessage: published
         ? '페이지를 공개했습니다.'
         : '초안을 저장했습니다.',
@@ -168,14 +168,16 @@ export function useWizardNavigation({
     showErrorNotice,
     slideToStep,
     slugStepState,
+    steps,
   ]);
 
   const handleSaveCurrent = useCallback(async () => {
     await persistDraft({
       publish: published,
+      syncClientPassword: activeStep.key === 'final',
       successMessage: '현재 단계 내용을 저장했습니다.',
     });
-  }, [persistDraft, published]);
+  }, [activeStep.key, persistDraft, published]);
 
   return {
     activeStep,

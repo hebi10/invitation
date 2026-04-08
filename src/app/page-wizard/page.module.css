@@ -134,6 +134,11 @@
   line-height: 1.7;
 }
 
+.centerText,
+.cardText {
+  margin: 8px 0;
+}
+
 .eyebrow {
   margin: 0;
   font-size: 0.75rem;
@@ -655,7 +660,7 @@
 
 .choiceSectionHeader {
   display: grid;
-  gap: 4px;
+  gap: 8px;
 }
 
 .choiceSectionTitle {
@@ -1602,10 +1607,6 @@
   gap: 12px;
   margin-top: 4px;
   padding-top: 2px;
-}
-
-.textMargin {
-  margin: 18px 0;
 }
 
 .previewHeroLabel {

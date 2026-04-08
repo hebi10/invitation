@@ -47,6 +47,8 @@ export type WizardStepDefinition = {
   highlights: string[];
 };
 
+type WizardStepTemplate = Omit<WizardStepDefinition, 'number'>;
+
 export type SlugStepState = {
   slugInput: string;
   persistedSlug: string | null;
@@ -56,88 +58,102 @@ export type SlugStepState = {
   brideEnglishName: string;
 };
 
-export const WIZARD_STEPS: WizardStepDefinition[] = [
-  {
-    key: 'theme',
-    number: '01',
-    title: '디자인과 상품 선택',
-    description: '청첩장 기본 디자인과 상품 구성을 먼저 선택합니다.',
-    previewSection: 'cover',
-    highlights: ['기본 디자인', '상품 등급', '사용 가능 기능 확인'],
-  },
-  {
-    key: 'slug',
-    number: '02',
-    title: '페이지 주소 설정',
-    description: '청첩장에 사용할 최종 URL 주소를 정합니다.',
-    previewSection: 'cover',
-    highlights: ['공개 URL', '중복 주소 자동 보정', '확인 후 청첩장 생성'],
-  },
-  {
-    key: 'basic',
-    number: '03',
-    title: '기본 정보',
-    description: '첫 화면에 보일 이름과 짧은 문구를 입력합니다.',
-    previewSection: 'cover',
-    highlights: ['신랑 이름', '신부 이름', '표지 부제'],
-  },
-  {
-    key: 'schedule',
-    number: '04',
-    title: '예식 일정',
-    description: '예식 날짜와 시간을 입력합니다.',
-    previewSection: 'wedding',
-    highlights: ['예식 날짜', '예식 시간', '달력과 일정 카드'],
-  },
-  {
-    key: 'venue',
-    number: '05',
-    title: '예식장과 오시는 길',
-    description: '예식장 이름, 주소, 지도 안내를 입력합니다.',
-    previewSection: 'wedding',
-    highlights: ['예식장 이름', '주소', '지도 링크와 안내 문구'],
-  },
-  {
-    key: 'greeting',
-    number: '06',
-    title: '인사말과 가족 정보',
-    description: '인사말과 양가 정보를 입력합니다.',
-    previewSection: 'greeting',
-    highlights: ['인사말', '신랑·신부 정보', '혼주 연락처'],
-  },
-  {
-    key: 'images',
-    number: '07',
-    title: '사진',
-    description: '대표 이미지와 갤러리 이미지를 등록합니다.',
-    previewSection: 'gallery',
-    highlights: ['대표 이미지', '갤러리 순서', '노출 이미지'],
-  },
-  {
-    key: 'extra',
-    number: '08',
-    title: '축의금과 추가 안내',
-    description: '계좌와 추가 안내 문구를 필요한 만큼 입력합니다.',
-    previewSection: 'gift',
-    highlights: ['축의금 계좌', '예식장 안내', '화환 안내'],
-  },
-  {
-    key: 'music',
-    number: '09',
-    title: '배경음악 선택',
-    description: '원하면 방문자 페이지에 배경음악을 설정할 수 있습니다.',
-    previewSection: 'metadata',
-    highlights: ['음악 사용 여부', '카테고리 선택', '곡과 볼륨'],
-  },
-  {
-    key: 'final',
-    number: '10',
-    title: '공유 정보와 최종 확인',
-    description: '공유 문구를 확인하고 페이지 공개 여부를 정합니다.',
-    previewSection: 'metadata',
-    highlights: ['브라우저 제목', '공유 설명', '공개 상태'],
-  },
-];
+const THEME_STEP_TEMPLATE: WizardStepTemplate = {
+  key: 'theme',
+  title: '디자인과 상품 선택',
+  description: '청첩장 기본 디자인과 상품 구성을 먼저 선택합니다.',
+  previewSection: 'cover',
+  highlights: ['기본 디자인', '상품 등급', '사용 가능 기능 확인'],
+};
+
+const SLUG_STEP_TEMPLATE: WizardStepTemplate = {
+  key: 'slug',
+  title: '페이지 주소 설정',
+  description: '청첩장에 사용할 최종 URL 주소를 정합니다.',
+  previewSection: 'cover',
+  highlights: ['공개 URL', '중복 주소 자동 보정', '확인 후 청첩장 생성'],
+};
+
+const BASIC_STEP_TEMPLATE: WizardStepTemplate = {
+  key: 'basic',
+  title: '기본 정보',
+  description: '첫 화면에 보일 이름과 짧은 문구를 입력합니다.',
+  previewSection: 'cover',
+  highlights: ['신랑 이름', '신부 이름', '표지 제목과 부제'],
+};
+
+const SCHEDULE_STEP_TEMPLATE: WizardStepTemplate = {
+  key: 'schedule',
+  title: '예식 일정과 장소',
+  description: '예식 날짜, 시간, 장소와 오시는 길 정보를 한 번에 입력합니다.',
+  previewSection: 'wedding',
+  highlights: ['예식 날짜와 시간', '본식 장소', '예식장 이름과 주소'],
+};
+
+const GREETING_STEP_TEMPLATE: WizardStepTemplate = {
+  key: 'greeting',
+  title: '인사말과 가족 정보',
+  description: '인사말과 양가 정보를 입력합니다.',
+  previewSection: 'greeting',
+  highlights: ['인사말', '신랑·신부 정보', '혼주 연락처'],
+};
+
+const IMAGES_STEP_TEMPLATE: WizardStepTemplate = {
+  key: 'images',
+  title: '사진',
+  description: '대표 이미지와 갤러리 이미지를 등록합니다.',
+  previewSection: 'gallery',
+  highlights: ['대표 이미지', '갤러리 순서', '노출 이미지'],
+};
+
+const EXTRA_STEP_TEMPLATE: WizardStepTemplate = {
+  key: 'extra',
+  title: '추가 정보',
+  description: '축의금, 교통 안내, 화환 안내, 배경음악을 필요한 만큼 설정합니다.',
+  previewSection: 'gift',
+  highlights: ['축의금 계좌', '교통·화환 안내', '배경음악'],
+};
+
+const FINAL_STEP_TEMPLATE: WizardStepTemplate = {
+  key: 'final',
+  title: '최종 확인',
+  description: '공개 여부와 공유 문구를 확인하고 저장합니다.',
+  previewSection: 'metadata',
+  highlights: ['공개 상태', '공유 제목', '공유 설명'],
+};
+
+function withStepNumbers(steps: WizardStepTemplate[]): WizardStepDefinition[] {
+  return steps.map((step, index) => ({
+    ...step,
+    number: String(index + 1).padStart(2, '0'),
+  }));
+}
+
+export const CREATE_WIZARD_STEPS = withStepNumbers([
+  THEME_STEP_TEMPLATE,
+  SLUG_STEP_TEMPLATE,
+  BASIC_STEP_TEMPLATE,
+  SCHEDULE_STEP_TEMPLATE,
+  GREETING_STEP_TEMPLATE,
+  IMAGES_STEP_TEMPLATE,
+  EXTRA_STEP_TEMPLATE,
+  FINAL_STEP_TEMPLATE,
+]);
+
+export const CUSTOMER_WIZARD_STEPS = withStepNumbers([
+  BASIC_STEP_TEMPLATE,
+  SCHEDULE_STEP_TEMPLATE,
+  GREETING_STEP_TEMPLATE,
+  IMAGES_STEP_TEMPLATE,
+  EXTRA_STEP_TEMPLATE,
+  FINAL_STEP_TEMPLATE,
+]);
+
+export function getWizardSteps(includeSetupSteps: boolean) {
+  return includeSetupSteps ? CREATE_WIZARD_STEPS : CUSTOMER_WIZARD_STEPS;
+}
+
+export const WIZARD_STEPS = CREATE_WIZARD_STEPS;
 
 export const GREETING_TEMPLATES = [
   {
@@ -303,11 +319,6 @@ export function applyDerivedWizardDefaults(config: InvitationPageSeed) {
       nextConfig.pageData.ceremony = {
         ...nextConfig.pageData.ceremony,
         time: formatTimeLabel(weddingDate),
-        location:
-          nextConfig.pageData.ceremony?.location ||
-          nextConfig.pageData.ceremonyAddress ||
-          nextConfig.pageData.venueName ||
-          nextConfig.venue,
       };
     }
   }
@@ -429,11 +440,6 @@ export function prepareWizardConfigForSave(config: InvitationPageSeed, slug: str
       prepared.pageData.ceremony = {
         ...prepared.pageData.ceremony,
         time: formatTimeLabel(weddingDate),
-        location:
-          prepared.pageData.ceremony?.location ||
-          prepared.pageData.ceremonyAddress ||
-          prepared.pageData.venueName ||
-          prepared.venue,
       };
     }
   }
@@ -524,10 +530,6 @@ export function buildStepValidation(
       if (!formState || !buildWeddingDateObject(formState)) {
         messages.push('올바른 예식 날짜와 시간을 입력해 주세요.');
       }
-      return { valid: messages.length === 0, messages };
-    }
-    case 'venue': {
-      const messages: string[] = [];
       if (!hasText(formState?.venue)) {
         messages.push('예식장 이름을 입력해 주세요.');
       }
@@ -551,6 +553,8 @@ export function buildStepValidation(
       }
       return { valid: messages.length === 0, messages };
     }
+    case 'venue':
+      return buildStepValidation('schedule', theme, formState, slugState);
     case 'greeting': {
       const messages: string[] = [];
       if (!hasText(formState?.pageData?.greetingMessage)) {
@@ -572,6 +576,7 @@ export function buildStepValidation(
       return { valid: messages.length === 0, messages };
     }
     case 'extra': {
+      const messages: string[] = [];
       const accounts = [
         ...(formState?.pageData?.giftInfo?.groomAccounts ?? []),
         ...(formState?.pageData?.giftInfo?.brideAccounts ?? []),
@@ -587,26 +592,21 @@ export function buildStepValidation(
         return filledCount > 0 && filledCount < 3;
       });
 
-      return {
-        valid: !hasPartialAccount,
-        messages: hasPartialAccount
-          ? ['계좌를 입력했다면 은행명, 계좌번호, 예금주를 모두 입력해 주세요.']
-          : [],
-      };
-    }
-    case 'music': {
-      const messages: string[] = [];
-      const musicEnabled = Boolean(formState?.musicEnabled);
-
-      if (!musicEnabled) {
-        return { valid: true, messages };
+      if (hasPartialAccount) {
+        messages.push('계좌를 입력했다면 은행명, 계좌번호, 예금주를 모두 입력해 주세요.');
       }
 
-      if (!hasText(formState?.musicStoragePath) && !hasText(formState?.musicUrl)) {
+      const musicEnabled = Boolean(formState?.musicEnabled);
+
+      if (musicEnabled && !hasText(formState?.musicStoragePath) && !hasText(formState?.musicUrl)) {
         messages.push('배경음악을 켠 경우 사용할 곡을 먼저 선택해 주세요.');
       }
 
-      if (hasText(formState?.musicTrackId) && !findInvitationMusicTrackById(formState?.musicTrackId)) {
+      if (
+        musicEnabled &&
+        hasText(formState?.musicTrackId) &&
+        !findInvitationMusicTrackById(formState?.musicTrackId)
+      ) {
         messages.push('선택한 배경음악이 라이브러리에 없습니다. 곡을 다시 선택해 주세요.');
       }
 
@@ -619,6 +619,8 @@ export function buildStepValidation(
 
       return { valid: messages.length === 0, messages };
     }
+    case 'music':
+      return buildStepValidation('extra', theme, formState, slugState);
     case 'final':
     default:
       return { valid: true, messages: [] };
@@ -626,11 +628,12 @@ export function buildStepValidation(
 }
 
 export function buildReviewSummary(
+  steps: WizardStepDefinition[],
   theme: InvitationThemeKey | null,
   formState: InvitationPageSeed | null,
   slugState: SlugStepState
 ) {
-  return WIZARD_STEPS.map((step) => ({
+  return steps.map((step) => ({
     step,
     validation: buildStepValidation(step.key, theme, formState, slugState),
   }));
