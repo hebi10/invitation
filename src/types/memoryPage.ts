@@ -12,7 +12,9 @@ export interface MemoryGalleryImage {
   id: string;
   name: string;
   url: string;
+  thumbnailUrl?: string;
   path: string;
+  thumbnailPath?: string;
   source: MemoryImageSource;
   category: MemoryGalleryCategory;
   caption: string;

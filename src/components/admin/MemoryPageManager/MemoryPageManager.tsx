@@ -363,11 +363,14 @@ export default function MemoryPageManager() {
         draft.pageSlug,
         draft.galleryImages
       );
+      const nextHeroImage = draft.heroImage ?? nextGalleryImages[0] ?? null;
       setDraft({
         ...draft,
         galleryImages: nextGalleryImages,
-        heroImage: draft.heroImage ?? nextGalleryImages[0] ?? null,
-        heroThumbnailUrl: (draft.heroImage ?? nextGalleryImages[0])?.url ?? '',
+        heroImage: nextHeroImage,
+        heroThumbnailUrl: draft.heroImage
+          ? draft.heroThumbnailUrl
+          : (nextHeroImage?.thumbnailUrl ?? nextHeroImage?.url ?? ''),
       });
       showToast({
         title: '청첩장 이미지를 가져왔습니다.',
@@ -399,11 +402,14 @@ export default function MemoryPageManager() {
         ...draft.galleryImages,
         ...uploadedImages,
       ]);
+      const nextHeroImage = draft.heroImage ?? nextGalleryImages[0] ?? null;
       setDraft({
         ...draft,
         galleryImages: nextGalleryImages,
-        heroImage: draft.heroImage ?? nextGalleryImages[0] ?? null,
-        heroThumbnailUrl: (draft.heroImage ?? nextGalleryImages[0])?.url ?? '',
+        heroImage: nextHeroImage,
+        heroThumbnailUrl: draft.heroImage
+          ? draft.heroThumbnailUrl
+          : (nextHeroImage?.thumbnailUrl ?? nextHeroImage?.url ?? ''),
       });
       setSelectedFiles([]);
       showToast({
@@ -431,17 +437,15 @@ export default function MemoryPageManager() {
       const nextGalleryImages = normalizeOrder(
         draft.galleryImages.filter((item) => item.id !== image.id)
       );
+      const shouldResetHero = draft.heroImage?.id === image.id;
+      const nextHeroImage = shouldResetHero ? nextGalleryImages[0] ?? null : draft.heroImage;
       setDraft({
         ...draft,
         galleryImages: nextGalleryImages,
-        heroImage:
-          draft.heroImage?.id === image.id
-            ? nextGalleryImages[0] ?? null
-            : draft.heroImage,
-        heroThumbnailUrl:
-          draft.heroImage?.id === image.id
-            ? nextGalleryImages[0]?.url ?? ''
-            : draft.heroThumbnailUrl,
+        heroImage: nextHeroImage,
+        heroThumbnailUrl: shouldResetHero
+          ? (nextHeroImage?.thumbnailUrl ?? nextHeroImage?.url ?? '')
+          : draft.heroThumbnailUrl,
       });
     } catch (deleteError) {
       console.error(deleteError);
@@ -756,7 +760,11 @@ export default function MemoryPageManager() {
               <div className={styles.galleryGrid}>
                 {normalizeOrder(draft.galleryImages).map((image) => (
                   <article key={image.id} className={styles.galleryCard}>
-                    <img className={styles.galleryImage} src={image.url} alt={image.name} />
+                    <img
+                      className={styles.galleryImage}
+                      src={image.thumbnailUrl || image.url}
+                      alt={image.name}
+                    />
                     <div className={styles.galleryBody}>
                       <p className={styles.galleryName}>{image.name}</p>
                       <div className={styles.galleryMeta}>
@@ -771,7 +779,17 @@ export default function MemoryPageManager() {
                       <button
                         type="button"
                         className="admin-button admin-button-secondary"
-                        onClick={() => setField('heroImage', image)}
+                        onClick={() =>
+                          setDraft((current) =>
+                            current
+                              ? {
+                                  ...current,
+                                  heroImage: image,
+                                  heroThumbnailUrl: image.thumbnailUrl || image.url,
+                                }
+                              : current
+                          )
+                        }
                       >
                         대표 이미지
                       </button>

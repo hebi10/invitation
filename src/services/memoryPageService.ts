@@ -35,6 +35,16 @@ type StorageModules = {
 };
 
 const COLLECTION_NAME = 'memory-pages';
+const MEMORY_ORIGINAL_UPLOAD_OPTIONS = {
+  maxWidth: 1600,
+  maxHeight: 1600,
+  quality: 0.85,
+} as const;
+const MEMORY_THUMBNAIL_UPLOAD_OPTIONS = {
+  maxWidth: 600,
+  maxHeight: 600,
+  quality: 0.8,
+} as const;
 
 let firestoreModules: FirestoreModules | null = null;
 let storageModules: StorageModules | null = null;
@@ -93,7 +103,9 @@ function normalizeGalleryImage(image: Partial<MemoryGalleryImage>, index: number
     id: image.id ?? createId('memory-image'),
     name: image.name ?? `memory-image-${index + 1}`,
     url: image.url ?? '',
+    thumbnailUrl: image.thumbnailUrl ?? image.url ?? '',
     path: image.path ?? '',
+    thumbnailPath: image.thumbnailPath ?? '',
     source: image.source ?? 'memory',
     category: image.category ?? 'etc',
     caption: image.caption ?? '',
@@ -188,7 +200,11 @@ function normalizeMemoryPage(pageSlug: string, data: Partial<MemoryPage>): Memor
   const sanitized = sanitizeHeartIconPlaceholdersDeep(normalized);
 
   sanitized.heroImage = syncHeroImage(sanitized);
-  sanitized.heroThumbnailUrl = sanitized.heroThumbnailUrl || sanitized.heroImage?.url || '';
+  sanitized.heroThumbnailUrl =
+    sanitized.heroThumbnailUrl ||
+    sanitized.heroImage?.thumbnailUrl ||
+    sanitized.heroImage?.url ||
+    '';
   sanitized.seoTitle = sanitized.seoTitle.trim() || buildDefaultSeoTitle(sanitized);
   sanitized.seoDescription =
     sanitized.seoDescription.trim() || buildDefaultSeoDescription(sanitized);
@@ -251,6 +267,7 @@ function buildInvitationGalleryImages(images: UploadedImage[]): MemoryGalleryIma
       id: createId('memory-gallery'),
       name: image.name,
       url: image.url,
+      thumbnailUrl: image.url,
       path: image.path,
       source: 'invitation' as const,
       category: image.name.toLowerCase().includes('snap') ? 'snap' : 'ceremony',
@@ -391,7 +408,7 @@ export async function createMemoryPageDraftFromInvitation(
     thankYouMessage: '함께해주신 모든 분들께 진심으로 감사드립니다.',
     heroImage: invitationImages[0] ?? null,
     heroImageCrop: DEFAULT_MEMORY_HERO_CROP,
-    heroThumbnailUrl: invitationImages[0]?.url ?? '',
+    heroThumbnailUrl: invitationImages[0]?.thumbnailUrl ?? invitationImages[0]?.url ?? '',
     weddingDate: page.date,
     venueName: page.pageData?.venueName ?? page.venue,
     venueAddress: page.pageData?.ceremonyAddress ?? page.venue,
@@ -492,7 +509,11 @@ export async function saveMemoryPage(memoryPage: MemoryPage): Promise<MemoryPage
   const normalized = normalizeMemoryPage(memoryPage.pageSlug, {
     ...memoryPage,
     heroImage: memoryPage.heroImage ?? memoryPage.galleryImages[0] ?? null,
-    heroThumbnailUrl: memoryPage.heroThumbnailUrl || memoryPage.heroImage?.url || '',
+    heroThumbnailUrl:
+      memoryPage.heroThumbnailUrl ||
+      memoryPage.heroImage?.thumbnailUrl ||
+      memoryPage.heroImage?.url ||
+      '',
     updatedAt: new Date(),
   });
 
@@ -558,7 +579,9 @@ export async function uploadMemoryImages(
       id: createId('memory-upload'),
       name: file.name,
       url: `/images/${file.name}`,
+      thumbnailUrl: `/images/${file.name}`,
       path: `memory-images/${pageSlug}/${file.name}`,
+      thumbnailPath: `memory-images/${pageSlug}/thumb-${file.name}`,
       source: 'memory',
       category,
       caption: '',
@@ -573,22 +596,39 @@ export async function uploadMemoryImages(
 
   return Promise.all(
     files.map(async (file, index) => {
-      const optimizedFile = await optimizeUploadImage(file, {
-        maxWidth: 2200,
-        maxHeight: 2200,
-        quality: 0.82,
-      });
-      const safeFileName = optimizedFile.name.replace(/\s+/g, '-');
-      const path = `memory-images/${pageSlug}/${Date.now()}-${index}-${safeFileName}`;
-      const storageRef = storageState.modules.ref(storageState.storage, path);
-      const snapshot = await storageState.modules.uploadBytes(storageRef, optimizedFile);
-      const url = await storageState.modules.getDownloadURL(snapshot.ref);
+      const [originalFile, thumbnailFile] = await Promise.all([
+        optimizeUploadImage(file, MEMORY_ORIGINAL_UPLOAD_OPTIONS),
+        optimizeUploadImage(file, MEMORY_THUMBNAIL_UPLOAD_OPTIONS),
+      ]);
+      const safeOriginalFileName = originalFile.name.replace(/\s+/g, '-');
+      const safeThumbnailFileName = thumbnailFile.name.replace(/\s+/g, '-');
+      const uploadPrefix = `${Date.now()}-${index}`;
+      const path = `memory-images/${pageSlug}/${uploadPrefix}-${safeOriginalFileName}`;
+      const thumbnailPath =
+        `memory-images/${pageSlug}/${uploadPrefix}-thumb-${safeThumbnailFileName}`;
+
+      const [originalSnapshot, thumbnailSnapshot] = await Promise.all([
+        storageState.modules.uploadBytes(
+          storageState.modules.ref(storageState.storage, path),
+          originalFile
+        ),
+        storageState.modules.uploadBytes(
+          storageState.modules.ref(storageState.storage, thumbnailPath),
+          thumbnailFile
+        ),
+      ]);
+      const [url, thumbnailUrl] = await Promise.all([
+        storageState.modules.getDownloadURL(originalSnapshot.ref),
+        storageState.modules.getDownloadURL(thumbnailSnapshot.ref),
+      ]);
 
       return {
         id: createId('memory-upload'),
-        name: optimizedFile.name,
+        name: originalFile.name,
         url,
+        thumbnailUrl,
         path,
+        thumbnailPath,
         source: 'memory' as const,
         category,
         caption: '',
@@ -599,7 +639,7 @@ export async function uploadMemoryImages(
 }
 
 export async function deleteMemoryImageAsset(image: MemoryGalleryImage): Promise<void> {
-  if (image.source !== 'memory' || !image.path || !USE_FIREBASE) {
+  if (image.source !== 'memory' || !USE_FIREBASE) {
     return;
   }
 
@@ -608,8 +648,17 @@ export async function deleteMemoryImageAsset(image: MemoryGalleryImage): Promise
     return;
   }
 
-  await storageState.modules.deleteObject(
-    storageState.modules.ref(storageState.storage, image.path)
+  const deleteTargets = [...new Set([image.path, image.thumbnailPath].filter(Boolean))];
+  if (!deleteTargets.length) {
+    return;
+  }
+
+  await Promise.all(
+    deleteTargets.map((targetPath) =>
+      storageState.modules.deleteObject(
+        storageState.modules.ref(storageState.storage, targetPath)
+      )
+    )
   );
 }
 

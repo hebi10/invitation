@@ -34,11 +34,27 @@
   cursor: zoom-in;
 }
 
+.heroImageShell {
+  position: relative;
+  display: block;
+  overflow: hidden;
+}
+
 .heroImage {
+  position: relative;
+  z-index: 1;
   width: 100%;
   aspect-ratio: 4 / 5;
   object-fit: cover;
   transition: transform 0.28s ease;
+}
+
+.heroImagePlaceholder {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  filter: blur(14px);
+  opacity: 0.72;
 }
 
 .heroBody,
@@ -385,6 +401,15 @@
   border-radius: 20px;
   object-fit: contain;
   background: rgba(255, 255, 255, 0.05);
+}
+
+.lightboxImagePlaceholder {
+  width: 100%;
+  max-height: calc(100vh - 180px);
+  aspect-ratio: 4 / 3;
+  border-radius: 20px;
+  background:
+    linear-gradient(120deg, rgba(148, 163, 184, 0.16), rgba(226, 232, 240, 0.22), rgba(148, 163, 184, 0.16));
 }
 
 .lightboxMeta {

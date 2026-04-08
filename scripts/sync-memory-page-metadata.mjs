@@ -83,7 +83,9 @@ async function syncMemoryPageMetadata() {
       seoDescription: normalizeString(data.seoDescription),
       seoNoIndex: data.seoNoIndex === true,
       heroImageUrl: normalizeString(data.heroImage?.url),
-      heroThumbnailUrl: normalizeString(data.heroThumbnailUrl),
+      heroThumbnailUrl: normalizeString(
+        data.heroThumbnailUrl || data.heroImage?.thumbnailUrl || data.heroImage?.url
+      ),
     };
   }
 

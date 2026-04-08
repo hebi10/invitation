@@ -44,6 +44,7 @@ const GALLERY_BREAKPOINTS = {
 
 const LIGHTBOX_FOCUSABLE_SELECTOR =
   'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+const LIGHTBOX_RENDER_RADIUS = 2;
 
 const HEART_GLYPH_SET = new Set(['♡', '♥', '❤']);
 
@@ -143,7 +144,13 @@ function applyMemoryMetadata(
 
   const title = memoryPage.seoTitle || memoryPage.title;
   const description = memoryPage.seoDescription || memoryPage.introMessage;
-  const image = memoryPage.heroImage?.url || memoryPage.galleryImages[0]?.url || '';
+  const image =
+    memoryPage.heroThumbnailUrl ||
+    memoryPage.heroImage?.thumbnailUrl ||
+    memoryPage.heroImage?.url ||
+    memoryPage.galleryImages[0]?.thumbnailUrl ||
+    memoryPage.galleryImages[0]?.url ||
+    '';
   const shouldIndex =
     memoryPage.enabled && memoryPage.visibility === 'public' && !memoryPage.seoNoIndex;
   const robots = shouldIndex ? 'index, follow' : 'noindex, nofollow';
@@ -321,9 +328,19 @@ function MemoryPageClientBody({ slug }: MemoryPageClientProps) {
     isLightboxOpen && orderedImages.length > 0
       ? orderedImages[lightboxActiveIndex] ?? orderedImages[lightboxStartIndex ?? 0] ?? null
       : null;
+  const heroImageUrl = heroImage?.url ?? '';
+  const heroPlaceholderUrl =
+    memoryPage?.heroThumbnailUrl || heroImage?.thumbnailUrl || heroImageUrl;
   const heroImageAlt =
     heroImage?.caption?.trim() ||
     `${memoryPage?.groomName ?? ''} ${memoryPage?.brideName ?? ''} 결혼식 대표 사진`.trim();
+  const heroImageTransformStyle = memoryPage
+    ? {
+        objectPosition: `${memoryPage.heroImageCrop.focusX}% ${memoryPage.heroImageCrop.focusY}%`,
+        transform: `scale(${memoryPage.heroImageCrop.zoom})`,
+        transformOrigin: `${memoryPage.heroImageCrop.focusX}% ${memoryPage.heroImageCrop.focusY}%`,
+      }
+    : undefined;
 
   useEffect(() => {
     setCommentPage(1);
@@ -475,19 +492,28 @@ function MemoryPageClientBody({ slug }: MemoryPageClientProps) {
               className={styles.heroMediaButton}
               onClick={(event) => openLightboxByImage(heroImage, event.currentTarget)}
             >
-              <img
-                className={styles.heroImage}
-                src={heroImage.url}
-                alt={heroImageAlt}
-                loading="eager"
-                decoding="async"
-                fetchPriority="high"
-                style={{
-                  objectPosition: `${memoryPage.heroImageCrop.focusX}% ${memoryPage.heroImageCrop.focusY}%`,
-                  transform: `scale(${memoryPage.heroImageCrop.zoom})`,
-                  transformOrigin: `${memoryPage.heroImageCrop.focusX}% ${memoryPage.heroImageCrop.focusY}%`,
-                }}
-              />
+              <span className={styles.heroImageShell}>
+                {heroPlaceholderUrl && heroPlaceholderUrl !== heroImageUrl ? (
+                  <img
+                    className={`${styles.heroImage} ${styles.heroImagePlaceholder}`}
+                    src={heroPlaceholderUrl}
+                    alt=""
+                    loading="eager"
+                    decoding="async"
+                    aria-hidden="true"
+                    style={heroImageTransformStyle}
+                  />
+                ) : null}
+                <img
+                  className={styles.heroImage}
+                  src={heroImageUrl}
+                  alt={heroImageAlt}
+                  loading="eager"
+                  decoding="async"
+                  fetchPriority="high"
+                  style={heroImageTransformStyle}
+                />
+              </span>
             </button>
           ) : null}
           <div className={styles.heroBody}>
@@ -548,6 +574,7 @@ function MemoryPageClientBody({ slug }: MemoryPageClientProps) {
                   <Swiper
                     className={styles.gallerySwiper}
                     modules={[Pagination, A11y]}
+                    lazyPreloadPrevNext={2}
                     pagination={
                       group.images.length > 1
                         ? { clickable: true, dynamicBullets: true }
@@ -566,11 +593,12 @@ function MemoryPageClientBody({ slug }: MemoryPageClientProps) {
                         >
                           <img
                             className={styles.galleryThumb}
-                            src={image.url}
+                            src={image.thumbnailUrl || image.url}
                             alt={image.caption || image.name}
                             loading="lazy"
                             decoding="async"
                           />
+                          <span className="swiper-lazy-preloader" aria-hidden="true" />
                           {image.caption ? (
                             <span className={styles.galleryCaption}>{image.caption}</span>
                           ) : null}
@@ -726,17 +754,26 @@ function MemoryPageClientBody({ slug }: MemoryPageClientProps) {
               onSwiper={(swiper) => setLightboxActiveIndex(swiper.activeIndex)}
               onSlideChange={(swiper) => setLightboxActiveIndex(swiper.activeIndex)}
             >
-              {orderedImages.map((image) => (
-                <SwiperSlide key={image.id} className={styles.lightboxSlide}>
-                  <img
-                    className={styles.lightboxImage}
-                    src={image.url}
-                    alt={image.caption || image.name}
-                    loading="eager"
-                    decoding="async"
-                  />
-                </SwiperSlide>
-              ))}
+              {orderedImages.map((image, index) => {
+                const shouldRenderImage =
+                  Math.abs(index - lightboxActiveIndex) <= LIGHTBOX_RENDER_RADIUS;
+
+                return (
+                  <SwiperSlide key={image.id} className={styles.lightboxSlide}>
+                    {shouldRenderImage ? (
+                      <img
+                        className={styles.lightboxImage}
+                        src={image.url}
+                        alt={image.caption || image.name}
+                        loading={index === lightboxActiveIndex ? 'eager' : 'lazy'}
+                        decoding="async"
+                      />
+                    ) : (
+                      <div className={styles.lightboxImagePlaceholder} aria-hidden="true" />
+                    )}
+                  </SwiperSlide>
+                );
+              })}
             </Swiper>
 
             {lightboxImage ? (

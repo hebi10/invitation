@@ -5,6 +5,7 @@
 현재 기준 핵심 포인트는 아래와 같습니다.
 
 - 공개 청첩장 테마는 `emotional`, `simple` 두 가지입니다.
+- 공개 청첩장 실제 페이지는 `/{slug}/emotional`, `/{slug}/simple`이며, `/{slug}`는 `/{slug}/{defaultTheme}` redirect 전용입니다.
 - 공개 청첩장 페이지는 `Firestore 우선 + 로컬 sample fallback` 구조입니다.
 - 고객 편집기는 `/page-editor/[slug]`에서 동작하며, 관리자 로그인 또는 페이지별 고객 비밀번호로 진입할 수 있습니다.
 - 방명록은 표준 구조 `guestbooks/{pageSlug}/comments/{commentId}`를 사용하며, 레거시 `comments` / `comments-{slug}`는 마이그레이션 대상으로만 관리합니다.
@@ -31,9 +32,12 @@
 - `/`
   메인 홈
 - `/{slug}`
-  감성형 청첩장
+  공유 URL 진입용 redirect 라우트
+  `/{slug}/{defaultTheme}`로 이동
+- `/{slug}/emotional`
+  감성형 청첩장 실제 페이지
 - `/{slug}/simple`
-  심플형 청첩장
+  심플형 청첩장 실제 페이지
 - `/memory/{slug}`
   추억 페이지
 
@@ -45,6 +49,10 @@
   편집기 안내 페이지
 - `/page-editor/{slug}`
   고객용 청첩장 편집기
+- `/page-wizard`
+  관리자용 신규 페이지 위자드 시작 화면
+- `/page-wizard/{slug}`
+  관리자용 페이지 위자드 편집 / 수정 화면
 - `/firebase-test`
   개발용 Firebase 점검 페이지
 
@@ -102,8 +110,11 @@
 
 URL 규칙:
 
-- `/{slug}` → `emotional`
-- `/{slug}/simple` → `simple`
+- `/{slug}` → redirect 전용, `/{slug}/{defaultTheme}`로 이동
+- `/{slug}/emotional` → `emotional` 실제 페이지
+- `/{slug}/simple` → `simple` 실제 페이지
+
+공유 URL, 카카오 공유, SEO canonical은 실제 테마 경로(`/{slug}/emotional`, `/{slug}/simple`) 기준으로 맞춥니다.
 
 관련 파일:
 
@@ -184,6 +195,9 @@ scripts/
 - `createdAt`
 - `updatedAt`
 
+고객 편집기는 `invitation-page-configs`, `invitation-page-registry`를 Firestore에 직접 쓰지 않습니다.
+`/api/client-editor/pages/[slug]`가 세션을 검증한 뒤 서버 Admin SDK로 저장합니다.
+
 #### `display-periods/{slug}`
 
 페이지의 공개 기간을 제어합니다.
@@ -208,10 +222,6 @@ guestbooks/{pageSlug}/comments/{commentId}
 - `message`
 - `pageSlug`
 - `createdAt`
-- `deleted`
-- `deletedAt`
-- `deletedBy`
-- `editorTokenHash`
 
 #### 레거시 구조
 
@@ -250,12 +260,18 @@ memory-pages/{pageSlug}
 #### `client-passwords/{pageSlug}`
 
 관리자가 고객용 편집 비밀번호를 관리하는 컬렉션입니다.
+실제 검증 대상은 이 컬렉션에 저장된 비밀번호 해시와 `passwordVersion`입니다.
 
 #### `client-access/{pageSlug}`
 
-편집기에서 쓰는 `editorTokenHash`를 저장합니다.
+현재 런타임에서는 적극적으로 사용하지 않는 관리자 전용 컬렉션입니다.
+비밀번호 동기화나 변경 시 관련 문서를 정리하는 용도로만 남아 있습니다.
 
-`client-passwords` 값은 관리자 편의상 관리하고, 실제 고객 삭제/편집 검증은 `client-access.editorTokenHash` 기반으로 처리합니다.
+실제 고객 편집 검증 흐름은 다음과 같습니다.
+
+1. `/api/client-editor/login`에서 `client-passwords/{pageSlug}` 비밀번호 검증
+2. 서버가 서명된 세션 쿠키 발급
+3. `/api/client-editor/*`가 세션 쿠키와 `passwordVersion`을 다시 검증
 
 ### 6.6 관리자 계정
 
@@ -295,17 +311,20 @@ memory-images/{pageSlug}/...
 - `comments`
   공개 읽기, 누구나 생성, 관리자 삭제
 - `guestbooks/{pageSlug}/comments`
-  공개 읽기, 누구나 생성, 관리자 삭제, 고객 soft delete 허용
+  공개 읽기, 누구나 생성, 관리자 삭제
+  고객 soft delete / 고객 직접 삭제는 현재 미지원
 - `client-passwords`
   관리자만 읽기/쓰기
 - `client-access`
-  공개 읽기, 관리자 쓰기
+  관리자만 읽기/쓰기
 - `invitation-page-configs`
-  공개 읽기, 관리자 또는 고객 편집 토큰 기반 쓰기
+  공개 청첩장 조회 조건 충족 시 읽기, 쓰기는 관리자만
+  고객 편집 저장은 `/api/client-editor/pages/[slug]` 서버 API → Admin SDK 경로 사용
 - `invitation-page-registry`
-  공개 읽기, 관리자 또는 고객 편집 토큰 기반 쓰기
+  공개 청첩장 조회 조건 충족 시 읽기, 쓰기는 관리자만
+  고객 편집 저장은 `/api/client-editor/pages/[slug]` 서버 API → Admin SDK 경로 사용
 - `display-periods`
-  공개 읽기, 관리자 쓰기
+  공개 청첩장 조회 조건 충족 시 읽기, 관리자 쓰기
 
 자세한 내용은 `firestore.rules`를 기준으로 보는 것이 가장 정확합니다.
 
@@ -363,6 +382,7 @@ GOOGLE_APPLICATION_CREDENTIALS=
 FIREBASE_PROJECT_ID=
 GOOGLE_CLOUD_PROJECT=
 GCLOUD_PROJECT=
+CLIENT_EDITOR_SESSION_SECRET=
 MEMORY_METADATA_SYNC_STRICT=true
 ```
 
@@ -372,6 +392,9 @@ MEMORY_METADATA_SYNC_STRICT=true
   서비스 계정 JSON 전체를 문자열로 주입할 때 사용
 - `GOOGLE_APPLICATION_CREDENTIALS`
   서비스 계정 JSON 파일 경로
+- `CLIENT_EDITOR_SESSION_SECRET`
+  고객 편집 세션 서명용 서버 전용 환경변수
+  프로덕션 필수값이며 클라이언트에 노출되면 안 됨
 - `MEMORY_METADATA_SYNC_STRICT`
   메모리 페이지 메타데이터 동기화 실패 시 빌드 실패 처리
 
@@ -402,6 +425,10 @@ npm run migrate:comments:guestbooks:execute
 npm run migrate:comments:guestbooks:validate
 npm run migrate:comments:guestbooks:purge
 npm run migrate:comments:guestbooks:purge:execute
+
+npm run seed:invitation-pages
+npm run seed:invitation-pages:execute
+npm run seed:invitation-pages:validate
 ```
 
 ### 스크립트 설명
@@ -424,6 +451,12 @@ npm run migrate:comments:guestbooks:purge:execute
   레거시 댓글 삭제 계획(dry-run) 확인
 - `migrate:comments:guestbooks:purge:execute`
   target 검증 후 레거시 댓글 실제 삭제
+- `seed:invitation-pages`
+  현재 청첩장 seed / Firestore 상태를 분석
+- `seed:invitation-pages:execute`
+  청첩장 seed 데이터를 실제로 반영
+- `seed:invitation-pages:validate`
+  청첩장 seed 반영 상태를 검증
 
 ## 12. 고객 편집기 개요
 
@@ -504,6 +537,8 @@ npm run migrate:comments:guestbooks
 
 - 서비스 계정 JSON 파일은 절대 git에 커밋하면 안 됩니다.
 - 이 저장소는 해당 JSON 파일명을 `.gitignore`에 추가해 둔 상태입니다.
+- 현재 앱 런타임은 `guestbooks/{pageSlug}/comments/{commentId}`만 사용합니다.
+- 레거시 `comments` create rules 제거는 실제 migration 완료와 purge 완료 확인 후 진행합니다.
 
 ## 15. 메모리 페이지 메타데이터 동기화
 
@@ -519,16 +554,35 @@ npm run migrate:comments:guestbooks
 - `NEXT_PUBLIC_USE_FIREBASE=true`인데 Admin 자격증명이 없으면 strict 빌드가 실패할 수 있습니다.
 - 자격증명이 없고 Firebase를 끈 상태면 빈 snapshot을 생성합니다.
 
-## 16. 현재 배포 상태와 주의점
+## 16. 운영 정책 메모
+
+### 상품 티어 기본값
+
+- `DEFAULT_INVITATION_PRODUCT_TIER`는 현재 `'premium'`입니다.
+- 신규 페이지 생성과 fallback 정규화는 가장 넓은 기능 세트를 가진 `premium`을 기본값으로 사용합니다.
+- 티어별 현재 기능 차이는 아래와 같습니다.
+  - `standard`: 갤러리 6장, 링크 공유, 카운트다운 없음, 방명록 없음
+  - `deluxe`: 갤러리 12장, 카드 공유, 카운트다운 없음, 방명록 없음
+  - `premium`: 갤러리 18장, 카드 공유, 카운트다운 있음, 방명록 있음
+
+### 공개 판별 이중 체크
+
+- 서버는 `isPublicInvitationPage()`에서 `published`와 `displayPeriod`를 함께 확인합니다.
+- Firestore rules는 `invitation-page-registry.published == true`와 `display-periods` 기간 조건을 다시 확인합니다.
+- 따라서 공개 여부는 서버 렌더링과 Firestore rules 양쪽에서 함께 제한됩니다.
+
+## 17. 현재 배포 상태와 주의점
 
 이 프로젝트는 현재 코드 구조상 **동적 Next 라우트**를 사용합니다.
 
 예:
 
 - `/{slug}`
+- `/{slug}/emotional`
 - `/{slug}/simple`
 - `/admin`
 - `/page-editor/{slug}`
+- `/page-wizard/{slug}`
 
 하지만 `firebase.json`은 아직 아래처럼 **정적 Hosting `out/` 디렉터리**를 기준으로 되어 있습니다.
 
@@ -555,14 +609,14 @@ npm run migrate:comments:guestbooks
 1. Firebase App Hosting으로 전환
 2. 또는 정적 export 기반으로 다시 구조를 맞춤
 
-## 17. 현재 제약 사항
+## 18. 현재 제약 사항
 
 - 메모리 페이지는 현재 seed slug 기준으로만 static params를 생성합니다.
 - 관리자에서 완전한 새 페이지 draft 생성 흐름은 아직 붙어 있지 않습니다.
 - 레거시 댓글 컬렉션(`comments`, `comments-{slug}`)은 purge 스크립트로 정리합니다.
 - 배포 파이프라인은 동적 Next 구조 기준으로 아직 최종 정리 전 상태입니다.
 
-## 18. 검증 권장 명령
+## 19. 검증 권장 명령
 
 ```bash
 npm run lint
@@ -576,15 +630,17 @@ npm run test:e2e:smoke
 npm run migrate:comments:guestbooks:validate
 ```
 
-## 19. 참고 파일
+## 20. 참고 파일
 
 문서보다 코드가 최종 기준입니다. 특히 아래 파일들을 우선 확인하면 현재 구조를 빠르게 파악할 수 있습니다.
 
 - `src/app/[slug]/page.tsx`
-- `src/app/[slug]/simple/page.tsx`
+- `src/app/[slug]/[theme]/page.tsx`
+- `src/app/page-wizard/[slug]/page.tsx`
 - `src/app/admin/AdminPageClient.tsx`
 - `src/app/page-editor/PageEditorClient.tsx`
 - `src/server/invitationPageServerService.ts`
+- `src/server/clientEditorSession.ts`
 - `src/services/invitationPageService.ts`
 - `src/services/commentService.ts`
 - `firestore.rules`
