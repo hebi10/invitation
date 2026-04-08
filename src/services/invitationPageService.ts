@@ -29,7 +29,6 @@ import {
 import {
   clampInvitationMusicVolume,
   DEFAULT_INVITATION_MUSIC_VOLUME,
-  findFirstActiveInvitationMusicTrack,
   normalizeInvitationMusicSelection,
 } from '@/lib/musicLibrary';
 import type {
@@ -164,6 +163,43 @@ function cloneInvitationPageSeed(seed: InvitationPageSeed): InvitationPageSeed {
   return sanitizeHeartIconPlaceholdersDeep(
     JSON.parse(JSON.stringify(seed)) as InvitationPageSeed
   );
+}
+
+function stripUndefinedDeep<T>(value: T): T {
+  if (value === undefined || value === null) {
+    return value;
+  }
+
+  if (value instanceof Date) {
+    return value;
+  }
+
+  if (Array.isArray(value)) {
+    return value
+      .map((item) => stripUndefinedDeep(item))
+      .filter((item) => item !== undefined) as T;
+  }
+
+  if (typeof value !== 'object') {
+    return value;
+  }
+
+  const prototype = Object.getPrototypeOf(value);
+  if (prototype !== Object.prototype && prototype !== null) {
+    return value;
+  }
+
+  const nextObject: Record<string, unknown> = {};
+
+  Object.entries(value).forEach(([key, entryValue]) => {
+    if (entryValue === undefined) {
+      return;
+    }
+
+    nextObject[key] = stripUndefinedDeep(entryValue);
+  });
+
+  return nextObject as T;
 }
 
 function normalizeSlugBase(value: string) {
@@ -664,7 +700,6 @@ function buildDraftConfigFromSeed(
   const nextSeed = cloneInvitationPageSeed(seed);
   const displayName = createDisplayNameFromNames('', '');
   const features = resolveInvitationFeatures(overrides.productTier, seed.features);
-  const defaultMusicTrack = findFirstActiveInvitationMusicTrack();
 
   nextSeed.slug = overrides.slug;
   nextSeed.displayName = '';
@@ -764,9 +799,9 @@ function buildDraftConfigFromSeed(
     nextSeed.musicVolume,
     DEFAULT_INVITATION_MUSIC_VOLUME
   );
-  nextSeed.musicCategoryId = defaultMusicTrack?.categoryId ?? '';
-  nextSeed.musicTrackId = defaultMusicTrack?.id ?? '';
-  nextSeed.musicStoragePath = defaultMusicTrack?.storagePath ?? '';
+  nextSeed.musicCategoryId = '';
+  nextSeed.musicTrackId = '';
+  nextSeed.musicStoragePath = '';
   nextSeed.musicUrl = '';
   nextSeed.variants = buildInvitationVariants(overrides.slug, '', {
     availability: createInvitationVariantAvailability([
@@ -1283,11 +1318,12 @@ export async function saveInvitationPageConfig(
 
   const existingConfig = await getConfigByPageSlug(firestore, normalizedConfig.slug);
   const now = new Date();
+  const configPayload = stripUndefinedDeep(normalizedConfig);
 
   await firestore.modules.setDoc(
     firestore.modules.doc(firestore.db, PAGE_CONFIG_COLLECTION, normalizedConfig.slug),
     {
-      ...normalizedConfig,
+      ...configPayload,
       editorTokenHash: firestore.modules.deleteField(),
       createdAt: now,
       updatedAt: now,

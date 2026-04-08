@@ -95,6 +95,7 @@ import {
 
 const DEFAULT_THEME: InvitationThemeKey = DEFAULT_INVITATION_THEME;
 const DEFAULT_SEED_SLUG = getInvitationPageSeedTemplates()[0]?.seedSlug ?? null;
+const IS_DEV_NOTICE_MODE = process.env.NODE_ENV !== 'production';
 
 interface PageWizardClientProps {
   initialSlug: string | null;
@@ -259,18 +260,45 @@ export default function PageWizardClient({ initialSlug }: PageWizardClientProps)
     return `${formatDateLabel(weddingDate)} ${formatTimeLabel(weddingDate)}`;
   }, [previewFormState]);
 
+  const resolveErrorNoticeMessage = useCallback(
+    (error: unknown, fallback?: string) => {
+      const userFacingMessage = toUserFacingKoreanErrorMessage(error, fallback);
+
+      if (!IS_DEV_NOTICE_MODE) {
+        return userFacingMessage;
+      }
+
+      const rawMessage =
+        error instanceof Error
+          ? error.message.trim()
+          : typeof error === 'string'
+            ? error.trim()
+            : '';
+
+      if (!rawMessage || rawMessage === userFacingMessage) {
+        return userFacingMessage;
+      }
+
+      return `${userFacingMessage} (원본: ${rawMessage})`;
+    },
+    []
+  );
+
   const showNotice = useCallback((tone: 'success' | 'error' | 'neutral', message: string) => {
     const nextMessage =
-      tone === 'error' ? toUserFacingKoreanErrorMessage(message) : message;
+      tone === 'error' ? resolveErrorNoticeMessage(message) : message;
 
     setNotice({ tone, message: nextMessage });
-  }, []);
+  }, [resolveErrorNoticeMessage]);
 
   const showErrorNotice = useCallback(
-    (message: string) => {
-      showNotice('error', message);
+    (error: unknown, fallback?: string) => {
+      setNotice({
+        tone: 'error',
+        message: resolveErrorNoticeMessage(error, fallback),
+      });
     },
-    [showNotice]
+    [resolveErrorNoticeMessage]
   );
   const clearNotice = useCallback(() => {
     setNotice(null);
@@ -564,9 +592,9 @@ export default function PageWizardClient({ initialSlug }: PageWizardClientProps)
         setPublished(editableConfig.published);
         setDefaultTheme(editableConfig.defaultTheme ?? DEFAULT_THEME);
         setLastSavedAt(toDate(editableConfig.lastSavedAt));
-      } catch {
+      } catch (error) {
         if (!cancelled) {
-          showErrorNotice('청첩장 설정을 불러오지 못했습니다.');
+          showErrorNotice(error, '청첩장 설정을 불러오지 못했습니다.');
         }
       } finally {
         if (!cancelled) {
@@ -747,9 +775,7 @@ export default function PageWizardClient({ initialSlug }: PageWizardClientProps)
 
       return nextSlug;
     } catch (error) {
-      showErrorNotice(
-        toUserFacingKoreanErrorMessage(error, '청첩장 초안을 저장하지 못했습니다.')
-      );
+      showErrorNotice(error, '청첩장 초안을 저장하지 못했습니다.');
       return null;
     } finally {
       setIsSaving(false);
@@ -781,8 +807,8 @@ export default function PageWizardClient({ initialSlug }: PageWizardClientProps)
       setHasClientSession(true);
       setPasswordInput('');
       showNotice('success', '편집 권한이 확인되었습니다.');
-    } catch {
-      showErrorNotice('페이지 비밀번호를 확인하지 못했습니다.');
+    } catch (error) {
+      showErrorNotice(error, '페이지 비밀번호를 확인하지 못했습니다.');
     } finally {
       setIsUnlocking(false);
     }
@@ -884,9 +910,7 @@ export default function PageWizardClient({ initialSlug }: PageWizardClientProps)
 
       showNotice('success', '주소 검색 결과로 지도 좌표를 반영했습니다.');
     } catch (error) {
-      showErrorNotice(
-        toUserFacingKoreanErrorMessage(error, '주소 검색에 실패했습니다.')
-      );
+      showErrorNotice(error, '주소 검색에 실패했습니다.');
     } finally {
       setIsSearchingVenueAddress(false);
     }
@@ -1234,6 +1258,11 @@ export default function PageWizardClient({ initialSlug }: PageWizardClientProps)
     clearNotice,
     showNotice,
     showErrorNotice,
+    onComplete: (savedSlug) => {
+      router.push(`/page-wizard/${encodeURIComponent(savedSlug)}/result`, {
+        scroll: false,
+      });
+    },
   });
 
   /* ── Step content renderer ── */

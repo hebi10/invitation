@@ -1,6 +1,5 @@
 import { useCallback, type ChangeEvent, type RefObject } from 'react';
 
-import { toUserFacingKoreanErrorMessage } from '@/lib/userFacingErrorMessage';
 import {
   type EditableImageUploadRole,
   getEditableImageUploadHint,
@@ -35,7 +34,7 @@ export function useImageUpload({
   updateForm: (updater: (draft: InvitationPageSeed) => void) => void;
   setUploadingField: (value: UploadFieldKind | null) => void;
   showNotice: (tone: 'success' | 'error' | 'neutral', message: string) => void;
-  showErrorNotice: (message: string) => void;
+  showErrorNotice: (error: unknown, fallback?: string) => void;
 }) {
   const handleTriggerPicker = useCallback(
     (kind: UploadFieldKind) => {
@@ -99,12 +98,7 @@ export function useImageUpload({
           `대표 이미지를 업로드했습니다. ${getEditableImageUploadHint('cover')}`
         );
       } catch (error) {
-        showErrorNotice(
-          toUserFacingKoreanErrorMessage(
-            error,
-            '대표 이미지를 업로드하지 못했습니다.'
-          )
-        );
+        showErrorNotice(error, '대표 이미지를 업로드하지 못했습니다.');
       } finally {
         setUploadingField(null);
       }
@@ -182,12 +176,7 @@ export function useImageUpload({
           )}`
         );
       } catch (error) {
-        showErrorNotice(
-          toUserFacingKoreanErrorMessage(
-            error,
-            '갤러리 이미지를 업로드하지 못했습니다.'
-          )
-        );
+        showErrorNotice(error, '갤러리 이미지를 업로드하지 못했습니다.');
       } finally {
         setUploadingField(null);
       }

@@ -87,6 +87,43 @@ const DISPLAY_PERIOD_COLLECTION = 'display-periods';
 const PAGE_CONFIG_COLLECTION = 'invitation-page-configs';
 const PAGE_REGISTRY_COLLECTION = 'invitation-page-registry';
 
+function stripUndefinedDeep<T>(value: T): T {
+  if (value === undefined || value === null) {
+    return value;
+  }
+
+  if (value instanceof Date) {
+    return value;
+  }
+
+  if (Array.isArray(value)) {
+    return value
+      .map((item) => stripUndefinedDeep(item))
+      .filter((item) => item !== undefined) as T;
+  }
+
+  if (typeof value !== 'object') {
+    return value;
+  }
+
+  const prototype = Object.getPrototypeOf(value);
+  if (prototype !== Object.prototype && prototype !== null) {
+    return value;
+  }
+
+  const nextObject: Record<string, unknown> = {};
+
+  Object.entries(value).forEach(([key, entryValue]) => {
+    if (entryValue === undefined) {
+      return;
+    }
+
+    nextObject[key] = stripUndefinedDeep(entryValue);
+  });
+
+  return nextObject as T;
+}
+
 function normalizePageSlugInput(value: unknown) {
   if (typeof value !== 'string') {
     return null;
@@ -849,10 +886,11 @@ export async function saveServerInvitationPageConfig(
     ? toDate(existingSnapshot.data()?.createdAt)
     : null;
   const now = new Date();
+  const configPayload = stripUndefinedDeep(normalizedConfig);
 
   await docRef.set(
     {
-      ...normalizedConfig,
+      ...configPayload,
       createdAt: existingCreatedAt ?? now,
       updatedAt: now,
       editorTokenHash: FieldValue.delete(),

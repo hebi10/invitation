@@ -223,6 +223,9 @@ guestbooks/{pageSlug}/comments/{commentId}
 - `pageSlug`
 - `createdAt`
 
+고객 댓글 삭제는 공개 페이지에서 비밀번호 검증 후
+`/api/client-editor/pages/[slug]/comments/[commentId]` 서버 API를 통해 처리합니다.
+
 #### 레거시 구조
 
 레거시 컬렉션(`comments`, `comments-{pageSlug}`)은 마이그레이션 대상이며,
@@ -272,6 +275,7 @@ memory-pages/{pageSlug}
 1. `/api/client-editor/login`에서 `client-passwords/{pageSlug}` 비밀번호 검증
 2. 서버가 서명된 세션 쿠키 발급
 3. `/api/client-editor/*`가 세션 쿠키와 `passwordVersion`을 다시 검증
+4. 페이지 저장, 이미지 업로드, 고객 댓글 삭제는 모두 서버 API를 통해 처리
 
 ### 6.6 관리자 계정
 
@@ -312,7 +316,7 @@ memory-images/{pageSlug}/...
   공개 읽기, 누구나 생성, 관리자 삭제
 - `guestbooks/{pageSlug}/comments`
   공개 읽기, 누구나 생성, 관리자 삭제
-  고객 soft delete / 고객 직접 삭제는 현재 미지원
+  고객은 유효한 고객 편집 세션으로 서버 API 경유 삭제 가능
 - `client-passwords`
   관리자만 읽기/쓰기
 - `client-access`

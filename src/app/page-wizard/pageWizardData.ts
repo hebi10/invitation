@@ -362,6 +362,11 @@ export function createInitialWizardConfig() {
   nextConfig.metadata.images.favicon = '/favicon.ico';
   nextConfig.productTier = DEFAULT_INVITATION_PRODUCT_TIER;
   nextConfig.features = resolveInvitationFeatures(DEFAULT_INVITATION_PRODUCT_TIER);
+  nextConfig.musicEnabled = false;
+  nextConfig.musicCategoryId = '';
+  nextConfig.musicTrackId = '';
+  nextConfig.musicStoragePath = '';
+  nextConfig.musicUrl = '';
   nextConfig.pageData = {
     ...nextConfig.pageData,
     subtitle: '',

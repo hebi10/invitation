@@ -137,3 +137,15 @@ export async function setClientEditorPublishedState(
     })
   );
 }
+
+export async function deleteClientEditorComment(pageSlug: string, commentId: string) {
+  return readJsonResponse<{ success: boolean }>(
+    await fetch(
+      `/api/client-editor/pages/${encodeURIComponent(pageSlug)}/comments/${encodeURIComponent(commentId)}`,
+      {
+        method: 'DELETE',
+        credentials: 'same-origin',
+      }
+    )
+  );
+}

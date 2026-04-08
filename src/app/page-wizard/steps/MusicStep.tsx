@@ -20,22 +20,17 @@ export default function MusicStep({
 }: MusicStepProps) {
   const [openOptionPanel, setOpenOptionPanel] = useState<'category' | 'track' | null>(null);
 
-  const defaultTrack = findFirstActiveInvitationMusicTrack();
   const normalizedSelection = normalizeInvitationMusicSelection({
-    categoryId: formState.musicCategoryId ?? defaultTrack?.categoryId,
-    trackId: formState.musicTrackId ?? defaultTrack?.id,
-    storagePath: formState.musicStoragePath ?? defaultTrack?.storagePath,
+    categoryId: formState.musicCategoryId,
+    trackId: formState.musicTrackId,
+    storagePath: formState.musicStoragePath,
   });
   const musicCategoryId = normalizedSelection.musicCategoryId;
   const musicTracks = getInvitationMusicTracksByCategory(musicCategoryId);
   const selectedCategory =
-    INVITATION_MUSIC_LIBRARY.find((category) => category.id === musicCategoryId) ??
-    INVITATION_MUSIC_LIBRARY[0] ??
-    null;
+    INVITATION_MUSIC_LIBRARY.find((category) => category.id === musicCategoryId) ?? null;
   const selectedTrack =
-    findInvitationMusicTrackById(normalizedSelection.musicTrackId) ??
-    musicTracks[0] ??
-    defaultTrack;
+    findInvitationMusicTrackById(normalizedSelection.musicTrackId) ?? null;
   const musicVolume = clampInvitationMusicVolume(
     formState.musicVolume,
     DEFAULT_INVITATION_MUSIC_VOLUME
@@ -148,7 +143,7 @@ export default function MusicStep({
               disabled={!formState.musicEnabled}
             >
               <span className={styles.musicSelectButtonValue}>
-                {selectedCategory?.label ?? '카테고리 선택'}
+                {selectedCategory?.label ?? '선택'}
               </span>
               <span className={styles.musicSelectButtonArrow} aria-hidden>
                 {openOptionPanel === 'category' ? '▲' : '▼'}
@@ -195,7 +190,11 @@ export default function MusicStep({
               disabled={!formState.musicEnabled || musicTracks.length === 0}
             >
               <span className={styles.musicSelectButtonValue}>
-                {selectedTrack ? `${selectedTrack.title} · ${selectedTrack.artist}` : '등록된 곡이 없습니다.'}
+                {!musicCategoryId
+                  ? '먼저 카테고리를 선택해 주세요.'
+                  : selectedTrack
+                    ? `${selectedTrack.title} · ${selectedTrack.artist}`
+                    : '선택'}
               </span>
               <span className={styles.musicSelectButtonArrow} aria-hidden>
                 {openOptionPanel === 'track' ? '▲' : '▼'}

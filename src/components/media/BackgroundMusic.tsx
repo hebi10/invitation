@@ -14,6 +14,8 @@ interface BackgroundMusicProps {
   volume?: number;
   musicIndex?: number;
   musicUrl?: string;
+  initialControlHintText?: string;
+  initialControlHintDurationMs?: number;
 }
 
 export default function BackgroundMusic({
@@ -21,14 +23,21 @@ export default function BackgroundMusic({
   volume = DEFAULT_INVITATION_MUSIC_VOLUME,
   musicIndex: _musicIndex = 0,
   musicUrl: customMusicUrl,
+  initialControlHintText,
+  initialControlHintDurationMs = 3000,
 }: BackgroundMusicProps) {
   const [isPlaying, setIsPlaying] = useState(false);
   const [isAtTop, setIsAtTop] = useState(true);
+  const [shouldRenderInitialControlHint, setShouldRenderInitialControlHint] = useState(
+    Boolean(initialControlHintText?.trim())
+  );
+  const [isInitialControlHintFading, setIsInitialControlHintFading] = useState(false);
   const audioRef = useRef<HTMLAudioElement>(null);
   const hasAutoPlayedRef = useRef(false);
   const isPlaybackTransitionRef = useRef(false);
   const previousMusicUrlRef = useRef('');
   const normalizedMusicUrl = customMusicUrl?.trim() ?? '';
+  const normalizedInitialControlHintText = initialControlHintText?.trim() ?? '';
 
   const pauseAudio = useCallback(() => {
     const audio = audioRef.current;
@@ -114,6 +123,30 @@ export default function BackgroundMusic({
   }, []);
 
   useEffect(() => {
+    if (!normalizedInitialControlHintText || !normalizedMusicUrl) {
+      setShouldRenderInitialControlHint(false);
+      setIsInitialControlHintFading(false);
+      return;
+    }
+
+    setShouldRenderInitialControlHint(true);
+    setIsInitialControlHintFading(false);
+
+    const fadeTimer = window.setTimeout(() => {
+      setIsInitialControlHintFading(true);
+    }, initialControlHintDurationMs);
+
+    const removeTimer = window.setTimeout(() => {
+      setShouldRenderInitialControlHint(false);
+    }, initialControlHintDurationMs + 400);
+
+    return () => {
+      window.clearTimeout(fadeTimer);
+      window.clearTimeout(removeTimer);
+    };
+  }, [initialControlHintDurationMs, normalizedInitialControlHintText, normalizedMusicUrl]);
+
+  useEffect(() => {
     if (!autoPlay || !normalizedMusicUrl) {
       return;
     }
@@ -194,10 +227,23 @@ export default function BackgroundMusic({
         {isPlaying ? 'OFF' : 'ON'}
       </button>
 
-      {!hasAutoPlayedRef.current && !isPlaying && isAtTop ? (
+      {shouldRenderInitialControlHint ? (
+        <div
+          className={`${styles.autoPlayHint} ${styles.initialControlHint} ${
+            isInitialControlHintFading ? styles.initialControlHintFading : ''
+          }`}
+          aria-hidden
+        >
+          <span className={styles.initialControlHintText}>
+            {normalizedInitialControlHintText}
+          </span>
+        </div>
+      ) : null}
+
+      {!shouldRenderInitialControlHint && !hasAutoPlayedRef.current && !isPlaying && isAtTop ? (
         <div className={styles.autoPlayHint}>
-          <span style={{ fontSize: '0.7rem', color: '#999' }}>
-            클릭해서 음악 재생
+          <span style={{ fontSize: '0.7rem', color: '#838383' }}>
+            음악 ON/OFF
           </span>
         </div>
       ) : null}

@@ -70,7 +70,7 @@ export function useWizardPersistence({
   setIsSaving: (value: boolean) => void;
   normalizeFormState: (config: InvitationPageSeed) => InvitationPageSeed;
   showNotice: (tone: 'success' | 'error' | 'neutral', message: string) => void;
-  showErrorNotice: (message: string) => void;
+  showErrorNotice: (error: unknown, fallback?: string) => void;
 }) {
   const ensureDraftCreated = useCallback(async (): Promise<WizardDraftCreationState> => {
     if (resolvedPersistedSlug) {
@@ -191,11 +191,7 @@ export function useWizardPersistence({
 
         return nextSlug;
       } catch (error) {
-        showErrorNotice(
-          error instanceof Error
-            ? error.message
-            : '청첩장 초안을 저장하지 못했습니다.'
-        );
+        showErrorNotice(error, '청첩장 초안을 저장하지 못했습니다.');
         return null;
       } finally {
         setIsSaving(false);

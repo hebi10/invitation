@@ -116,6 +116,12 @@ export default function ThemeStep({
             })}
           </div>
         ) : null}
+
+        {isSelectionLocked ? (
+          <p className={styles.fieldHint}>
+            변경을 원하시면 관리자에게 문의해주세요.
+          </p>
+        ) : null}
       </section>
 
       <section className={styles.choiceSection}>
@@ -194,7 +200,7 @@ export default function ThemeStep({
 
         {isSelectionLocked ? (
           <p className={styles.fieldHint}>
-            페이지 주소가 확정되어 디자인과 서비스 구성은 변경할 수 없습니다.
+            변경을 원하시면 관리자에게 문의해주세요.
           </p>
         ) : null}
       </section>

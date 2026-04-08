@@ -1,8 +1,13 @@
 # CLAUDE.md
 
+@AGENTS.md
+
 이 파일은 AGENTS.md를 보완하는 Claude 전용 지침이다.
 공통 규칙은 반드시 AGENTS.md를 따른다.
 충돌 시 AGENTS.md를 우선한다.
+
+## 필수 사전 작업
+- 모든 작업 시작 전에 AGENTS.md를 Read 도구로 반드시 확인한다.
 
 ## Claude 도구 활용 원칙
 - 여러 파일을 수정해야 할 때는 영향 범위를 먼저 나열하고, 승인 후 진행한다.

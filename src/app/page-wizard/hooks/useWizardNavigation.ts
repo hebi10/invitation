@@ -25,6 +25,7 @@ export function useWizardNavigation({
   clearNotice,
   showNotice,
   showErrorNotice,
+  onComplete,
 }: {
   activeStepKey: WizardStepKey;
   defaultTheme: InvitationThemeKey;
@@ -37,7 +38,8 @@ export function useWizardNavigation({
   slideToStep: (stepKey: WizardStepKey) => void;
   clearNotice: () => void;
   showNotice: (tone: 'success' | 'error' | 'neutral', message: string) => void;
-  showErrorNotice: (message: string) => void;
+  showErrorNotice: (error: unknown, fallback?: string) => void;
+  onComplete?: (savedSlug: string) => void;
 }) {
   const activeStep = useMemo(
     () => WIZARD_STEPS[getStepIndex(activeStepKey)] ?? WIZARD_STEPS[0],
@@ -47,6 +49,17 @@ export function useWizardNavigation({
     () => getStepIndex(activeStep.key),
     [activeStep.key]
   );
+
+  const scrollToTop = useCallback(() => {
+    if (typeof window === 'undefined') {
+      return;
+    }
+
+    window.scrollTo({
+      top: 0,
+      behavior: 'smooth',
+    });
+  }, []);
 
   const handleMoveNext = useCallback(async () => {
     const validation = getValidationForStep(activeStep.key);
@@ -130,6 +143,7 @@ export function useWizardNavigation({
 
     if (invalidStep) {
       slideToStep(invalidStep.step.key);
+      scrollToTop();
       showErrorNotice(
         invalidStep.validation.messages[0] ??
           `${invalidStep.step.number}단계를 먼저 확인해 주세요.`
@@ -137,17 +151,24 @@ export function useWizardNavigation({
       return;
     }
 
-    await persistDraft({
+    const savedSlug = await persistDraft({
       publish: published,
       successMessage: published
         ? '페이지를 공개했습니다.'
         : '초안을 저장했습니다.',
     });
+    if (!savedSlug) {
+      return;
+    }
+    scrollToTop();
+    onComplete?.(savedSlug);
   }, [
     defaultTheme,
+    onComplete,
     persistDraft,
     previewFormState,
     published,
+    scrollToTop,
     showErrorNotice,
     slideToStep,
     slugStepState,

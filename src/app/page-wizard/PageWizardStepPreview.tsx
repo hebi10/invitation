@@ -1,7 +1,6 @@
 import {
   DEFAULT_INVITATION_MUSIC_VOLUME,
   clampInvitationMusicVolume,
-  findFirstActiveInvitationMusicTrack,
   findInvitationMusicTrackById,
   getInvitationMusicTracksByCategory,
   normalizeInvitationMusicSelection,
@@ -108,11 +107,10 @@ export default function PageWizardStepPreview({
   const brideAccounts = getFilledAccountCount(formState.pageData?.giftInfo?.brideAccounts);
   const venueGuideCount = getFilledGuideCount(formState.pageData?.venueGuide);
   const wreathGuideCount = getFilledGuideCount(formState.pageData?.wreathGuide);
-  const defaultMusicTrack = findFirstActiveInvitationMusicTrack();
   const normalizedMusicSelection = normalizeInvitationMusicSelection({
-    categoryId: formState.musicCategoryId ?? defaultMusicTrack?.categoryId,
-    trackId: formState.musicTrackId ?? defaultMusicTrack?.id,
-    storagePath: formState.musicStoragePath ?? defaultMusicTrack?.storagePath,
+    categoryId: formState.musicCategoryId,
+    trackId: formState.musicTrackId,
+    storagePath: formState.musicStoragePath,
   });
   const musicTracks = getInvitationMusicTracksByCategory(
     normalizedMusicSelection.musicCategoryId
@@ -120,7 +118,7 @@ export default function PageWizardStepPreview({
   const selectedMusicTrack =
     findInvitationMusicTrackById(normalizedMusicSelection.musicTrackId) ??
     musicTracks[0] ??
-    defaultMusicTrack;
+    null;
   const musicVolume = clampInvitationMusicVolume(
     formState.musicVolume,
     DEFAULT_INVITATION_MUSIC_VOLUME
@@ -323,7 +321,7 @@ export default function PageWizardStepPreview({
           <PreviewRow
             label="선택 곡"
             value={
-              selectedMusicTrack
+              formState.musicEnabled && selectedMusicTrack
                 ? `${selectedMusicTrack.title} · ${selectedMusicTrack.artist}`
                 : '선택된 곡 없음'
             }
@@ -334,7 +332,11 @@ export default function PageWizardStepPreview({
           />
           <PreviewRow
             label="저장 경로"
-            value={normalizedMusicSelection.musicStoragePath || '설정되지 않음'}
+            value={
+              formState.musicEnabled && normalizedMusicSelection.musicStoragePath
+                ? normalizedMusicSelection.musicStoragePath
+                : '설정되지 않음'
+            }
           />
         </div>
       </section>
