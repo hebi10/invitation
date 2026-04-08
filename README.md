@@ -50,9 +50,9 @@
 - `/page-editor/{slug}`
   고객용 청첩장 편집기
 - `/page-wizard`
-  관리자용 신규 페이지 위자드 시작 화면
+  관리자용 신규 페이지 모바일 수정 시작 화면
 - `/page-wizard/{slug}`
-  관리자용 페이지 위자드 편집 / 수정 화면
+  관리자용 페이지 모바일 수정 편집 / 수정 화면
 - `/firebase-test`
   개발용 Firebase 점검 페이지
 

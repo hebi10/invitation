@@ -178,14 +178,14 @@ export default function PageWizardResultClient({
             <p className={styles.eyebrow}>결과 페이지</p>
             <h1 className={styles.centerTitle}>저장 결과를 정리하지 못했습니다.</h1>
             <p className={styles.centerText}>
-              위자드 화면으로 돌아가 다시 저장하거나 권한 상태를 확인해 주세요.
+              모바일 수정 화면으로 돌아가 다시 저장하거나 권한 상태를 확인해 주세요.
             </p>
             <div className={styles.inlineActions}>
               <Link
                 href={`/page-wizard/${encodeURIComponent(slug)}`}
                 className={styles.secondaryButton}
               >
-                위자드로 돌아가기
+                모바일 수정으로 돌아가기
               </Link>
             </div>
           </section>
@@ -196,21 +196,20 @@ export default function PageWizardResultClient({
 
   const livePagePath = `/${slug}/${configState.defaultTheme}`;
   const redirectPath = `/${slug}`;
-  const savedConfigJson = JSON.stringify(configState.config, null, 2);
 
   return (
     <main className={styles.page}>
       <div className={styles.shell}>
-        <section className={styles.summaryCard}>
+        <section className={`${styles.summaryCard} ${styles.resultSummaryCard}`}>
           <p className={styles.eyebrow}>저장 완료</p>
           <h1 className={styles.centerTitle}>
             {previewFormState.displayName.trim() || `${slug} 결과 페이지`}
           </h1>
-          <p className={styles.centerText}>
+          <p className={`${styles.centerText} ${styles.textMargin}`}>
             마지막 저장 데이터를 단계별로 정리했습니다. 여기서 전체 입력 내용을 확인한 뒤
             실제 청첩장으로 바로 이동할 수 있습니다.
           </p>
-          <div className={styles.fieldGrid}>
+          <div className={`${styles.fieldGrid} ${styles.resultMetaGrid}`}>
             <div className={styles.previewUrlCard}>
               <span className={styles.summaryLabel}>공유 URL</span>
               <strong className={styles.previewUrlValue}>{redirectPath}</strong>
@@ -232,7 +231,7 @@ export default function PageWizardResultClient({
               </strong>
             </div>
           </div>
-          <div className={styles.inlineActions}>
+          <div className={`${styles.inlineActions} ${styles.resultActionRow}`}>
             <Link href={livePagePath} className={styles.primaryButton}>
               바로 확인해보기
             </Link>
@@ -240,7 +239,7 @@ export default function PageWizardResultClient({
               href={`/page-wizard/${encodeURIComponent(slug)}`}
               className={styles.secondaryButton}
             >
-              위자드로 돌아가기
+              모바일 수정으로 돌아가기
             </Link>
           </div>
         </section>
@@ -265,18 +264,6 @@ export default function PageWizardResultClient({
             />
           ))}
         </div>
-
-        <section className={styles.previewSummary}>
-          <div className={styles.previewHeader}>
-            <h2 className={styles.previewTitle}>저장 원본 데이터</h2>
-            <span className={styles.previewCaption}>
-              Firestore에 저장된 최종 설정을 그대로 확인할 수 있습니다.
-            </span>
-          </div>
-          <div className={styles.previewUrlCard}>
-            <pre className={styles.resultCodeBlock}>{savedConfigJson}</pre>
-          </div>
-        </section>
       </div>
     </main>
   );

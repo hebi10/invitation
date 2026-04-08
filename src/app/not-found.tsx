@@ -73,7 +73,7 @@ export default function NotFoundPage() {
 
         <p
           style={{
-            margin: '0 auto',
+            margin: '24px auto 0',
             maxWidth: '420px',
             fontSize: '1rem',
             lineHeight: 1.7,
@@ -81,8 +81,9 @@ export default function NotFoundPage() {
             wordBreak: 'keep-all',
           }}
         >
-          주소가 잘못 입력되었거나, 페이지가 이동 또는 삭제되었을 수 있습니다.
-          아래 버튼을 눌러 메인 페이지 또는 관리자 페이지로 이동해 주세요.
+          없는 페이지입니다.<br /><br />
+          만약 페이지가 생성되지 않으면 <br />"저장 후 모바일 청첩장 생성하기"를 선택해주세요.<br /><br />
+          또는 관리자 페이지에게 문의 해주세요.
         </p>
 
         <div

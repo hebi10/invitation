@@ -11,6 +11,7 @@ import {
   getInvitationThemeWizardDescription,
 } from '@/lib/invitationThemes';
 import { resolveInvitationFeatures } from '@/lib/invitationProducts';
+import { toDate } from '@/lib/invitationPageNormalization';
 import type {
   InvitationPageSeed,
   InvitationProductTier,
@@ -185,8 +186,10 @@ export function renderFieldMeta(
   );
 }
 
-export function formatSavedAt(date: Date | null) {
-  if (!date) {
+export function formatSavedAt(value: unknown) {
+  const date = toDate(value);
+
+  if (!date || Number.isNaN(date.getTime())) {
     return '아직 저장 기록이 없습니다.';
   }
 

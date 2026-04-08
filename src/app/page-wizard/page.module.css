@@ -462,6 +462,7 @@
   display: flex;
   flex-direction: column;
   gap: 6px;
+  margin-bottom: 16px;
 }
 
 .fieldWide {
@@ -1290,9 +1291,7 @@
   }
 
   .lockRow,
-  .inlineActions,
-  .templateRow,
-  .assetActionRow {
+  .templateRow {
     flex-direction: column;
   }
 }
@@ -1530,6 +1529,7 @@
   display: flex;
   gap: 8px;
   flex-wrap: wrap;
+  margin-top: 12px;
 }
 
 .previewPill {
@@ -1589,13 +1589,23 @@
   word-break: break-all;
 }
 
-.resultCodeBlock {
-  margin: 0;
-  color: #334155;
-  font-size: 0.74rem;
-  line-height: 1.65;
-  white-space: pre-wrap;
-  word-break: break-word;
+.resultSummaryCard {
+  gap: 14px;
+}
+
+.resultMetaGrid {
+  gap: 14px;
+  margin-top: 2px;
+}
+
+.resultActionRow {
+  gap: 12px;
+  margin-top: 4px;
+  padding-top: 2px;
+}
+
+.textMargin {
+  margin: 18px 0;
 }
 
 .previewHeroLabel {
@@ -1755,6 +1765,19 @@
   .slideFooter {
     padding: 15px;
   }
+
+  .resultSummaryCard {
+    gap: 16px;
+  }
+
+  .resultMetaGrid {
+    gap: 16px;
+  }
+
+  .resultActionRow {
+    gap: 14px;
+    margin-top: 16px;
+  }
 }
 
 @media (min-width: 480px) {
@@ -1782,6 +1805,15 @@
   .previewImageCard {
     grid-template-columns: minmax(0, 168px) minmax(0, 1fr);
     align-items: start;
+  }
+
+  .resultMetaGrid {
+    gap: 18px;
+  }
+
+  .resultActionRow {
+    gap: 16px;
+    margin-top: 8px;
   }
 }
 

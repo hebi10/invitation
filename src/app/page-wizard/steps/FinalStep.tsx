@@ -57,7 +57,7 @@ export default function FinalStep({
           checked={published}
           onChange={(event) => setPublished(event.target.checked)}
         />
-        저장 후 바로 공개하기
+        저장 후 모바일 청첩장 생성하기
       </label>
     </div>
   );

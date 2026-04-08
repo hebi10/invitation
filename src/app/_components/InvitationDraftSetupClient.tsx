@@ -102,14 +102,14 @@ export default function InvitationDraftSetupClient({
         productTier: selectedTemplate.productTier,
       });
 
-      setSuccessMessage(`/${created.slug} 초안을 만들었습니다. 편집 화면으로 이동합니다.`);
+      setSuccessMessage(`/${created.slug} 청첩장을 만들었습니다. 편집 화면으로 이동합니다.`);
       router.push(`/${editorKind}/${created.slug}`);
     } catch (setupError) {
       console.error('[InvitationDraftSetupClient] failed to create draft', setupError);
       setError(
         setupError instanceof Error
           ? setupError.message
-          : '청첩장 초안을 생성하지 못했습니다.'
+          : '청첩장 청첩장을 생성하지 못했습니다.'
       );
     } finally {
       setIsCreating(false);
@@ -124,7 +124,7 @@ export default function InvitationDraftSetupClient({
             <p className={styles.eyebrow}>불러오는 중</p>
             <h1 className={styles.emptyTitle}>관리자 권한을 확인하고 있습니다.</h1>
             <p className={styles.emptyText}>
-              초안 생성 화면은 관리자 확인 후에 사용할 수 있습니다.
+              청첩장 생성 화면은 관리자 확인 후에 사용할 수 있습니다.
             </p>
           </section>
         </div>
@@ -179,7 +179,7 @@ export default function InvitationDraftSetupClient({
               <span className={styles.summaryLabel}>1단계</span>
               <strong className={styles.summaryValue}>템플릿 선택</strong>
               <p className={styles.summaryText}>
-                디자인과 상품 구성을 먼저 고른 뒤 초안을 만듭니다.
+                디자인과 상품 구성을 먼저 고른 뒤 청첩장을 만듭니다.
               </p>
             </article>
             <article className={styles.summaryCard}>
@@ -200,7 +200,7 @@ export default function InvitationDraftSetupClient({
               <span className={styles.summaryLabel}>4단계</span>
               <strong className={styles.summaryValue}>편집 계속하기</strong>
               <p className={styles.summaryText}>
-                초안이 생성되면 선택한 편집 화면으로 바로 이동합니다.
+                청첩장이 생성되면 선택한 편집 화면으로 바로 이동합니다.
               </p>
             </article>
           </div>
@@ -243,7 +243,7 @@ export default function InvitationDraftSetupClient({
           <div className={styles.sectionHeader}>
             <h2 className={styles.sectionTitle}>첫 페이지 기본 정보</h2>
             <p className={styles.sectionDescription}>
-              아래 값으로 Firestore 초안을 먼저 만든 뒤 편집 화면을 엽니다.
+              아래 값으로 Firestore 청첩장을 먼저 만든 뒤 편집 화면을 엽니다.
             </p>
           </div>
 
@@ -315,7 +315,7 @@ export default function InvitationDraftSetupClient({
             <div className={styles.featureCard}>
               <h3 className={styles.featureTitle}>현재 상품 구성</h3>
               <p className={styles.featureText}>
-                이 초안은 <strong>{selectedTemplate.displayName}</strong> 설정으로 시작합니다. 갤러리 수, 공유 방식, 카운트다운, 방명록 노출도 선택한 상품에 맞춰 적용됩니다.
+                이 청첩장은 <strong>{selectedTemplate.displayName}</strong> 설정으로 시작합니다. 갤러리 수, 공유 방식, 카운트다운, 방명록 노출도 선택한 상품에 맞춰 적용됩니다.
               </p>
             </div>
           ) : null}
@@ -351,7 +351,7 @@ export default function InvitationDraftSetupClient({
                 onClick={() => void handleCreate()}
                 disabled={!canCreate || isCreating}
               >
-                {isCreating ? '초안 생성 중' : '초안 만들고 편집 시작'}
+                {isCreating ? '청첩장 생성 중' : '청첩장 만들고 편집 시작'}
               </button>
             </div>
           </div>

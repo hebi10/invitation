@@ -147,7 +147,7 @@ export function useWizardPersistence({
 
         if (draftState.createdFresh && options?.publish !== true) {
           if (!options?.silent) {
-            showNotice('success', options?.successMessage ?? '초안을 저장했습니다.');
+            showNotice('success', options?.successMessage ?? '청첩장을 저장했습니다.');
           }
 
           return nextSlug;
@@ -185,13 +185,13 @@ export function useWizardPersistence({
             options?.successMessage ??
               (nextPublished
                 ? '페이지를 공개했습니다.'
-                : '초안을 저장했습니다.')
+                : '청첩장을 저장했습니다.')
           );
         }
 
         return nextSlug;
       } catch (error) {
-        showErrorNotice(error, '청첩장 초안을 저장하지 못했습니다.');
+        showErrorNotice(error, '청첩장 청첩장을 저장하지 못했습니다.');
         return null;
       } finally {
         setIsSaving(false);

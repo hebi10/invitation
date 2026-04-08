@@ -560,7 +560,7 @@ export default function MemoryPageManager() {
                 { id: 'memory-path', label: previewPath || '-' },
                 {
                   id: 'memory-exists',
-                  label: exists ? '저장된 문서' : '새 초안',
+                  label: exists ? '저장된 문서' : '새 청첩장',
                 },
                 {
                   id: 'memory-comments',
@@ -577,7 +577,7 @@ export default function MemoryPageManager() {
         <section className={styles.panel}>
           <EmptyState
             title="청첩장을 선택해주세요."
-            description="페이지를 선택하면 추억 페이지 초안과 댓글, 이미지를 불러옵니다."
+            description="페이지를 선택하면 추억 페이지 청첩장과 댓글, 이미지를 불러옵니다."
           />
           {quickAccessPages.length > 0 ? (
             <div className={styles.selectionToolbar}>
@@ -970,7 +970,7 @@ export default function MemoryPageManager() {
                 onClick={() => void persist('save')}
                 disabled={saving}
               >
-                {saving ? '저장 중...' : exists ? '저장' : '초안 생성'}
+                {saving ? '저장 중...' : exists ? '저장' : '청첩장 생성'}
               </button>
               <button
                 type="button"

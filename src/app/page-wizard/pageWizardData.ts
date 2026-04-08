@@ -71,7 +71,7 @@ export const WIZARD_STEPS: WizardStepDefinition[] = [
     title: '페이지 주소 설정',
     description: '청첩장에 사용할 최종 URL 주소를 정합니다.',
     previewSection: 'cover',
-    highlights: ['공개 URL', '중복 주소 자동 보정', '확인 후 초안 생성'],
+    highlights: ['공개 URL', '중복 주소 자동 보정', '확인 후 청첩장 생성'],
   },
   {
     key: 'basic',

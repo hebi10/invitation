@@ -88,7 +88,7 @@ export default function SlugStep({
           '페이지 주소',
           'required',
           persistedSlug
-            ? '초안 생성 후에는 페이지 주소가 고정됩니다.'
+            ? '저장 후에는 수정이 불가능합니다. \n 동일한 URL이 이미 존재하는 경우 뒤에 중복 방지 영문이 자동으로 붙습니다.'
             : '영문 이름을 입력하면 주소가 자동으로 만들어집니다. 영문 소문자, 숫자, 하이픈만 사용할 수 있습니다.'
         )}
         <input
@@ -116,7 +116,7 @@ export default function SlugStep({
         <p className={styles.sectionText}>
           {persistedSlug
             ? '이미 생성된 페이지라 주소는 고정되어 있습니다.'
-            : '영문 이름을 기준으로 주소가 자동 생성되며, 이 단계를 확인하면 초안 문서가 먼저 생성됩니다.'}
+            : '영문 이름을 기준으로 주소가 자동 생성되며, 이 단계를 확인하면 청첩장 문서가 먼저 생성됩니다.'}
         </p>
       </div>
     </div>

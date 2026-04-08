@@ -87,9 +87,9 @@ function getTabSummary(tab: AdminTab) {
       };
     case 'memory':
       return {
-        title: '청첩장별 추억 페이지 초안과 연결 데이터를 불러옵니다.',
-        description: '청첩장을 고르면 초안, 댓글, 이미지 상태를 한 번에 이어서 관리할 수 있습니다.',
-        helper: '핵심 작업: 초안 확인 및 공개 상태 조정',
+        title: '청첩장별 추억 페이지 청첩장과 연결 데이터를 불러옵니다.',
+        description: '청첩장을 고르면 청첩장, 댓글, 이미지 상태를 한 번에 이어서 관리할 수 있습니다.',
+        helper: '핵심 작업: 청첩장 확인 및 공개 상태 조정',
       };
     case 'images':
       return {

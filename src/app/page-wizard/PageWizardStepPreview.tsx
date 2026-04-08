@@ -129,7 +129,7 @@ export default function PageWizardStepPreview({
     return (
       <section className={styles.previewSummary}>
         <div className={styles.previewHeader}>
-          <h3 className={styles.previewTitle}>선택한 구성</h3>
+          <h3 className={styles.previewTitle}>선택하신 서비스</h3>
           <div className={styles.previewPillRow}>
             <span className={styles.previewPill}>{getThemeLabel(theme)}</span>
             <span className={styles.previewPill}>{getProductTierLabel(formState.productTier ?? 'premium')}</span>
@@ -350,7 +350,7 @@ export default function PageWizardStepPreview({
         <span className={styles.previewCaption}>공개 상태와 공유 정보를 확인합니다.</span>
       </div>
       <div className={styles.previewKeyList}>
-        <PreviewRow label="공개 상태" value={published ? '저장 후 바로 공개' : '비공개 초안'} />
+        <PreviewRow label="공개 상태" value={published ? '저장 후 바로 공개' : '비공개 청첩장'} />
         <PreviewRow
           label="브라우저 제목"
           value={formState.metadata.title.trim() || displayName || '자동 제목 사용'}

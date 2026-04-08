@@ -62,7 +62,7 @@ export default function ImagesStep({
         </div>
 
         <label className={styles.field}>
-          {renderFieldMeta('대표 이미지 주소', 'optional')}
+          {renderFieldMeta('대표 이미지 주소 (이미지 업로드시 자동 입력)', 'optional')}
           <input
             className={styles.input}
             value={formState.metadata.images.wedding}
@@ -160,7 +160,7 @@ export default function ImagesStep({
                     </div>
                   </div>
                   <label className={styles.field}>
-                    {renderFieldMeta('이미지 주소', 'optional')}
+                    {renderFieldMeta('이미지 주소 (이미지 업로드시 자동 입력)', 'optional')}
                     <input
                       className={styles.input}
                       value={imageUrl}

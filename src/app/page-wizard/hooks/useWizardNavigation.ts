@@ -106,20 +106,14 @@ export function useWizardNavigation({
     }
 
     slideToStep(nextStep.key);
-
-    if (typeof window !== 'undefined') {
-      window.scrollTo({
-        top: 0,
-        behavior: 'smooth',
-      });
-    }
-
+    scrollToTop();
     showNotice('neutral', `${nextStep.number}단계로 이동했습니다.`);
   }, [
     activeStep.key,
     getValidationForStep,
     persistDraft,
     resolvedPersistedSlug,
+    scrollToTop,
     showErrorNotice,
     showNotice,
     slideToStep,
@@ -157,9 +151,11 @@ export function useWizardNavigation({
         ? '페이지를 공개했습니다.'
         : '초안을 저장했습니다.',
     });
+
     if (!savedSlug) {
       return;
     }
+
     scrollToTop();
     onComplete?.(savedSlug);
   }, [

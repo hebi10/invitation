@@ -541,7 +541,7 @@ export async function publishMemoryPage(
 ): Promise<MemoryPage> {
   const existing = await getMemoryPageByPageSlug(pageSlug);
   if (!existing) {
-    throw new Error('추억 페이지 초안이 없습니다.');
+    throw new Error('추억 페이지 청첩장이 없습니다.');
   }
 
   return saveMemoryPage({
@@ -554,7 +554,7 @@ export async function publishMemoryPage(
 export async function unpublishMemoryPage(pageSlug: string): Promise<MemoryPage> {
   const existing = await getMemoryPageByPageSlug(pageSlug);
   if (!existing) {
-    throw new Error('추억 페이지 초안이 없습니다.');
+    throw new Error('추억 페이지 청첩장이 없습니다.');
   }
 
   return saveMemoryPage({
