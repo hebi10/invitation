@@ -75,6 +75,7 @@ export default createWeddingThemeRenderer({
     ({ state }) => (
       <GallerySimple
         images={state.galleryImageUrls}
+        previewImages={state.galleryPreviewImageUrls}
         imagesLoading={state.imagesLoading}
       />
     ),

@@ -3,10 +3,12 @@
 import type { RefObject } from 'react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import Image from 'next/image';
+
 import { useScrollAnimation } from '@/hooks';
 
 export interface GalleryGridSharedProps {
   images: string[];
+  previewImages?: string[];
   imagesLoading?: boolean;
   title?: string;
   styles: Record<string, string>;
@@ -14,7 +16,7 @@ export interface GalleryGridSharedProps {
   showButtonIcons?: boolean;
 }
 
-function preloadSingleImage(url: string) {
+function preloadSingleImage(url?: string) {
   if (!url || typeof window === 'undefined') {
     return;
   }
@@ -24,8 +26,23 @@ function preloadSingleImage(url: string) {
   image.src = url;
 }
 
+function renderLoadingPlaceholder(
+  styles: Record<string, string>,
+  message = '이미지 로딩 중'
+) {
+  return (
+    <div className={styles.imagePlaceholder}>
+      <div className={styles.placeholderContent}>
+        <div className={styles.loadingSpinner}></div>
+        <span className={styles.loadingText}>{message}</span>
+      </div>
+    </div>
+  );
+}
+
 export default function GalleryGridShared({
   images,
+  previewImages,
   imagesLoading = false,
   title = '소중한 순간들',
   styles,
@@ -46,6 +63,10 @@ export default function GalleryGridShared({
 
   const shouldRenderImages = isVisible || selectedIndex !== null;
   const displayImages = useMemo(() => images.slice(0, visibleCount), [images, visibleCount]);
+  const displayPreviewImages = useMemo(
+    () => (previewImages ?? images).slice(0, visibleCount),
+    [images, previewImages, visibleCount]
+  );
   const hasMoreImages = images.length > visibleCount;
   const remainingCount = images.length - visibleCount;
   const selectedImage = selectedIndex === null ? null : images[selectedIndex];
@@ -58,16 +79,13 @@ export default function GalleryGridShared({
   }
 
   useEffect(() => {
-    if (!shouldRenderImages) {
+    if (!shouldRenderImages || !preloadAllImages) {
       return;
     }
 
-    const targetCount = preloadAllImages
-      ? Math.min(visibleCount + 3, images.length)
-      : Math.min(displayImages.length, 4);
-    const targets = preloadAllImages ? images.slice(0, targetCount) : displayImages.slice(0, targetCount);
+    const targets = (previewImages ?? images).slice(0, Math.min(visibleCount + 3, images.length));
     targets.forEach(preloadSingleImage);
-  }, [displayImages, images, preloadAllImages, shouldRenderImages, visibleCount]);
+  }, [images, preloadAllImages, previewImages, shouldRenderImages, visibleCount]);
 
   useEffect(() => {
     if (!selectedImage || selectedIndex === null) {
@@ -139,7 +157,7 @@ export default function GalleryGridShared({
       document.removeEventListener('keydown', handleKeyDown);
       document.body.classList.remove('no-scroll');
     };
-  }, [selectedIndex, images, closePopup, goToPrevImage, goToNextImage]);
+  }, [closePopup, goToNextImage, goToPrevImage, images, selectedIndex]);
 
   useEffect(() => {
     return () => {
@@ -160,50 +178,52 @@ export default function GalleryGridShared({
 
         {shouldRenderImages && hasImages ? (
           <div className={styles.imageGrid}>
-            {displayImages.map((image, index) => (
-              <div key={`${image}-${index}`} className={styles.imageWrapper}>
-                <div className={styles.imageContainer}>
-                  <Image
-                    className={styles.imageItem}
-                    src={image}
-                    alt={`Gallery image ${index + 1}`}
-                    fill
-                    sizes="(max-width: 700px) 50vw, 33vw"
-                    quality={60}
-                    loading={index < 3 ? 'eager' : 'lazy'}
-                    onClick={() => openPopup(index)}
-                    onMouseEnter={() => {
-                      preloadSingleImage(images[index]);
-                      preloadSingleImage(images[index + 1]);
-                    }}
-                    onTouchStart={() => {
-                      preloadSingleImage(images[index]);
-                      preloadSingleImage(images[index + 1]);
-                    }}
-                    onLoad={() => setLoadedImages((current) => new Set([...current, image]))}
-                    style={{
-                      objectFit: 'cover',
-                      opacity: loadedImages.has(image) ? 1 : 0,
-                      transition: 'opacity 0.22s ease',
-                      cursor: 'pointer',
-                    }}
-                  />
-                </div>
-                {!loadedImages.has(image) && (
-                  <div className={styles.imagePlaceholder}>
-                    <div className={styles.loadingSpinner}></div>
+            {displayImages.map((image, index) => {
+              const previewImage = displayPreviewImages[index] ?? image;
+
+              return (
+                <div key={`${image}-${index}`} className={styles.imageWrapper}>
+                  <div className={styles.imageContainer}>
+                    <Image
+                      className={styles.imageItem}
+                      src={previewImage}
+                      alt={`Gallery image ${index + 1}`}
+                      fill
+                      sizes="(max-width: 700px) 50vw, 33vw"
+                      quality={60}
+                      loading={index === 0 ? 'eager' : 'lazy'}
+                      onClick={() => openPopup(index)}
+                      onMouseEnter={() => {
+                        preloadSingleImage(images[index]);
+                        preloadSingleImage(images[index + 1]);
+                      }}
+                      onTouchStart={() => {
+                        preloadSingleImage(images[index]);
+                        preloadSingleImage(images[index + 1]);
+                      }}
+                      onLoad={() =>
+                        setLoadedImages((current) => new Set([...current, previewImage]))
+                      }
+                      style={{
+                        objectFit: 'cover',
+                        opacity: loadedImages.has(previewImage) ? 1 : 0,
+                        transition: 'opacity 0.22s ease',
+                        cursor: 'pointer',
+                      }}
+                    />
                   </div>
-                )}
-              </div>
-            ))}
+                  {!loadedImages.has(previewImage)
+                    ? renderLoadingPlaceholder(styles)
+                    : null}
+                </div>
+              );
+            })}
           </div>
         ) : (
           <div className={styles.imageGrid} aria-hidden="true">
             {Array.from({ length: Math.min(6, Math.max(images.length, 3)) }).map((_, index) => (
               <div key={index} className={styles.imageWrapper}>
-                <div className={styles.imagePlaceholder}>
-                  <div className={styles.loadingSpinner}></div>
-                </div>
+                {renderLoadingPlaceholder(styles)}
               </div>
             ))}
           </div>
@@ -212,15 +232,27 @@ export default function GalleryGridShared({
         {images.length > 6 && (
           <div className={styles.buttonContainer}>
             {hasMoreImages && (
-              <button className={styles.moreButton} onClick={() => setVisibleCount((current) => Math.min(current + 6, images.length))} type="button">
-                {showButtonIcons && 'buttonIcon' in styles && <span className={styles.buttonIcon}>+</span>}
-                더보기 ({remainingCount}장)
+              <button
+                className={styles.moreButton}
+                onClick={() => setVisibleCount((current) => Math.min(current + 6, images.length))}
+                type="button"
+              >
+                {showButtonIcons && 'buttonIcon' in styles ? (
+                  <span className={styles.buttonIcon}>+</span>
+                ) : null}
+                더보기({remainingCount}장)
               </button>
             )}
 
             {visibleCount > 6 && (
-              <button className={styles.lessButton} onClick={() => setVisibleCount(6)} type="button">
-                {showButtonIcons && 'buttonIcon' in styles && <span className={styles.buttonIcon}>-</span>}
+              <button
+                className={styles.lessButton}
+                onClick={() => setVisibleCount(6)}
+                type="button"
+              >
+                {showButtonIcons && 'buttonIcon' in styles ? (
+                  <span className={styles.buttonIcon}>-</span>
+                ) : null}
                 접기
               </button>
             )}
@@ -239,7 +271,7 @@ export default function GalleryGridShared({
         >
           <div className={styles.popupContent}>
             <button className={styles.closeButton} onClick={closePopup} type="button">
-              ×
+              닫기
             </button>
 
             <div
@@ -259,11 +291,9 @@ export default function GalleryGridShared({
                     zIndex: 2,
                   }}
                 >
-                  <div style={{ display: 'grid', gap: '0.65rem', justifyItems: 'center' }}>
+                  <div className={styles.popupLoadingContent}>
                     <div className={styles.loadingSpinner}></div>
-                    <span style={{ color: '#f3f4f6', fontSize: '0.9rem', whiteSpace: 'nowrap' }}>
-                      이미지 불러오는 중...
-                    </span>
+                    <span className={styles.popupLoadingText}>이미지를 불러오는 중...</span>
                   </div>
                 </div>
               ) : null}
@@ -282,14 +312,14 @@ export default function GalleryGridShared({
                     fontSize: '0.95rem',
                   }}
                 >
-                  이미지 불러오기에 실패했습니다.
+                  이미지를 불러오지 못했습니다.
                 </div>
               ) : null}
 
               <Image
                 key={selectedImage}
                 src={selectedImage}
-                alt="선택한 이미지"
+                alt="선택된 이미지"
                 width={1600}
                 height={1067}
                 sizes="(max-width: 767px) 92vw, 86vw"
@@ -329,7 +359,7 @@ export default function GalleryGridShared({
                 disabled={selectedIndex === null || selectedIndex <= 0}
                 type="button"
               >
-                ‹
+                이전
               </button>
 
               <span className={styles.imageCounter}>
@@ -342,7 +372,7 @@ export default function GalleryGridShared({
                 disabled={selectedIndex === null || selectedIndex >= images.length - 1}
                 type="button"
               >
-                ›
+                다음
               </button>
             </div>
           </div>

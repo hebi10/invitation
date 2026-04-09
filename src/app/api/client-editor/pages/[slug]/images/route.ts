@@ -297,6 +297,10 @@ function buildStoredFileName(fileName: string, assetKind: EditableImageAssetKind
     : `${prefix}-${timestamp}-${randomSuffix}`;
 }
 
+function buildThumbnailFileName(fileName: string) {
+  return `thumb-${fileName}`;
+}
+
 async function authorizePageSession(pageSlug: string) {
   const cookieStore = await cookies();
   return getAuthorizedClientEditorSession(
@@ -340,6 +344,8 @@ export async function POST(
 
   const formData = await request.formData().catch(() => null);
   const file = formData?.get('file');
+  const thumbnailEntry = formData?.get('thumbnail');
+  const thumbnailFile = thumbnailEntry instanceof File ? thumbnailEntry : null;
   const assetKind = readAssetKind(formData?.get('assetKind') ?? null);
 
   if (!(file instanceof File) || !assetKind) {
@@ -354,10 +360,23 @@ export async function POST(
     return NextResponse.json({ error: validationError }, { status: 400 });
   }
 
+  if (thumbnailFile) {
+    const thumbnailValidationError = validateEditableImageBatch([thumbnailFile], assetKind);
+    if (thumbnailValidationError) {
+      return NextResponse.json({ error: thumbnailValidationError }, { status: 400 });
+    }
+  }
+
   const buffer = await file
     .arrayBuffer()
     .then((arrayBuffer) => Buffer.from(arrayBuffer))
     .catch(() => null);
+  const thumbnailBuffer = thumbnailFile
+    ? await thumbnailFile
+        .arrayBuffer()
+        .then((arrayBuffer) => Buffer.from(arrayBuffer))
+        .catch(() => null)
+    : null;
 
   if (!buffer) {
     return NextResponse.json(
@@ -371,34 +390,77 @@ export async function POST(
     return NextResponse.json({ error: serverValidation.error }, { status: 400 });
   }
 
+  const thumbnailValidation =
+    thumbnailFile && thumbnailBuffer
+      ? validateServerSideImagePayload(thumbnailFile, thumbnailBuffer, assetKind)
+      : null;
+
+  if (thumbnailValidation && 'error' in thumbnailValidation) {
+    return NextResponse.json({ error: thumbnailValidation.error }, { status: 400 });
+  }
+
   const storedFileName = buildStoredFileName(file.name, assetKind);
   const imagePath = `wedding-images/${pageSlug}/${storedFileName}`;
   const downloadToken = randomUUID();
+  const thumbnailPath =
+    thumbnailFile && thumbnailBuffer
+      ? `wedding-images/${pageSlug}/${buildThumbnailFileName(storedFileName)}`
+      : '';
+  const thumbnailDownloadToken =
+    thumbnailPath
+      ? randomUUID()
+      : '';
 
   try {
     const bucketFile = bucket.file(imagePath);
+    const thumbnailBucketFile = thumbnailPath ? bucket.file(thumbnailPath) : null;
 
-    await bucketFile.save(buffer, {
-      resumable: false,
-      metadata: {
-        contentType: serverValidation.contentType,
+    await Promise.all([
+      bucketFile.save(buffer, {
+        resumable: false,
         metadata: {
-          pageSlug,
-          assetKind,
-          originalFileName: file.name,
-          firebaseStorageDownloadTokens: downloadToken,
+          contentType: serverValidation.contentType,
+          metadata: {
+            pageSlug,
+            assetKind,
+            originalFileName: file.name,
+            firebaseStorageDownloadTokens: downloadToken,
+            variant: 'original',
+          },
         },
-      },
-    });
+      }),
+      thumbnailBucketFile && thumbnailBuffer && thumbnailValidation && !('error' in thumbnailValidation)
+        ? thumbnailBucketFile.save(thumbnailBuffer, {
+            resumable: false,
+            metadata: {
+              contentType: thumbnailValidation.contentType,
+              metadata: {
+                pageSlug,
+                assetKind,
+                originalFileName: thumbnailFile!.name,
+                firebaseStorageDownloadTokens: thumbnailDownloadToken,
+                variant: 'thumbnail',
+              },
+            },
+          })
+        : Promise.resolve(),
+    ]);
 
     const encodedPath = encodeURIComponent(imagePath);
     const bucketName = bucket.name;
     const url = `https://firebasestorage.googleapis.com/v0/b/${bucketName}/o/${encodedPath}?alt=media&token=${downloadToken}`;
+    const thumbnailUrl = thumbnailPath
+      ? `https://firebasestorage.googleapis.com/v0/b/${bucketName}/o/${encodeURIComponent(
+          thumbnailPath
+        )}?alt=media&token=${thumbnailDownloadToken}`
+      : url;
 
     return NextResponse.json({
       name: storedFileName,
       url,
       path: imagePath,
+      thumbnailUrl,
+      thumbnailPath: thumbnailPath || imagePath,
       uploadedAt: new Date().toISOString(),
     });
   } catch (error) {

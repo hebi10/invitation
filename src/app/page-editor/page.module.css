@@ -1376,6 +1376,14 @@
   background: rgba(255, 255, 255, 0.72);
 }
 
+.panelHeaderButton {
+  position: static;
+  top: auto;
+  right: auto;
+  align-self: flex-start;
+  background: #fff;
+}
+
 .textButton {
   min-height: auto;
   padding: 0;

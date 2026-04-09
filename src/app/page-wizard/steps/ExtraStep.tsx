@@ -4,8 +4,25 @@ import {
 } from '@/app/page-editor/pageEditorPanels';
 
 import styles from '../page.module.css';
-import { GUIDE_TEMPLATES } from '../pageWizardData';
 import { renderFieldMeta, type ExtraStepProps } from '../pageWizardShared';
+
+const GIFT_MESSAGE_TEMPLATES = [
+  {
+    label: '기본 안내',
+    value:
+      '참석이 어려우신 분들을 위해 계좌번호를 함께 안내드립니다.\n전해 주시는 마음에 깊이 감사드립니다.',
+  },
+  {
+    label: '마음만으로도',
+    value:
+      '축하해 주시는 따뜻한 마음만으로도 큰 기쁨입니다.\n필요하신 분들을 위해 계좌번호를 함께 남깁니다.',
+  },
+  {
+    label: '정중한 안내',
+    value:
+      '멀리서도 축복해 주시는 소중한 마음에 감사드립니다.\n전해 주시는 마음은 감사히 받겠습니다.',
+  },
+] as const;
 
 export default function ExtraStep({
   formState,
@@ -16,8 +33,9 @@ export default function ExtraStep({
   onGuideAdd,
   onGuideRemove,
   onGuideChange,
-  onGuideTemplateApply,
 }: ExtraStepProps) {
+  const giftMessage = formState.pageData?.giftInfo?.message ?? '';
+
   return (
     <div className={styles.fieldGrid}>
       <section className={styles.formCard}>
@@ -25,7 +43,7 @@ export default function ExtraStep({
           {renderFieldMeta('축의금 안내 문구', 'optional')}
           <textarea
             className={styles.textarea}
-            value={formState.pageData?.giftInfo?.message ?? ''}
+            value={giftMessage}
             placeholder="계좌 안내 앞에 보여줄 문구를 입력해 주세요."
             onChange={(event) =>
               updateForm((draft) => {
@@ -36,6 +54,25 @@ export default function ExtraStep({
             }
           />
         </label>
+        <div className={styles.templateRow}>
+          {GIFT_MESSAGE_TEMPLATES.map((template) => (
+            <button
+              key={template.label}
+              type="button"
+              className={styles.templateButton}
+              aria-pressed={giftMessage === template.value}
+              onClick={() =>
+                updateForm((draft) => {
+                  if (draft.pageData?.giftInfo) {
+                    draft.pageData.giftInfo.message = template.value;
+                  }
+                })
+              }
+            >
+              {template.label}
+            </button>
+          ))}
+        </div>
       </section>
 
       <div className={styles.twoColumnGrid}>
@@ -62,20 +99,6 @@ export default function ExtraStep({
       </div>
 
       <section className={styles.formCard}>
-        <div className={styles.templateRow}>
-          {GUIDE_TEMPLATES.map((template) => (
-            <button
-              key={template.label}
-              type="button"
-              className={styles.templateButton}
-              onClick={() =>
-                onGuideTemplateApply('venueGuide', template.label, template.value)
-              }
-            >
-              {template.label} 붙이기
-            </button>
-          ))}
-        </div>
         <GuideSectionPanel
           kind="venueGuide"
           title="교통 · 방문 안내"

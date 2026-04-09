@@ -718,6 +718,157 @@
   line-height: 1.6;
 }
 
+.gallerySummaryCard {
+  display: grid;
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid rgba(148, 163, 184, 0.16);
+  border-radius: 18px;
+  background: #fff;
+}
+
+.gallerySummaryButton {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+}
+
+.gallerySummaryMeta {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.gallerySummaryAction {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 32px;
+  padding: 0 12px;
+  border-radius: 999px;
+  background: rgba(37, 99, 235, 0.08);
+  color: #1d4ed8;
+  font-size: 0.8rem;
+  font-weight: 800;
+}
+
+.gallerySummaryRow {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+}
+
+.gallerySummaryItem {
+  flex: 0 0 auto;
+  display: grid;
+  gap: 8px;
+  width: 72px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+}
+
+.gallerySummaryImage,
+.gallerySummaryPlaceholder {
+  display: block;
+  width: 72px;
+  height: 72px;
+  border-radius: 16px;
+}
+
+.gallerySummaryImage {
+  object-fit: cover;
+  background: rgba(226, 232, 240, 0.32);
+  border: 1px solid transparent;
+  transition:
+    border-color 0.18s ease,
+    box-shadow 0.18s ease;
+}
+
+.gallerySummaryPlaceholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px dashed rgba(148, 163, 184, 0.28);
+  background: rgba(248, 250, 252, 0.86);
+  color: #64748b;
+  font-size: 0.82rem;
+  font-weight: 800;
+  transition:
+    border-color 0.18s ease,
+    box-shadow 0.18s ease;
+}
+
+.gallerySummaryItemActive .gallerySummaryImage,
+.gallerySummaryItemActive .gallerySummaryPlaceholder {
+  border: 2px solid rgba(37, 99, 235, 1);
+}
+
+.gallerySummaryIndex {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 26px;
+  padding: 0 10px;
+  border-radius: 999px;
+  background: rgba(37, 99, 235, 0.08);
+  color: #1d4ed8;
+  font-size: 0.75rem;
+  font-weight: 800;
+}
+
+.gallerySummaryToolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.gallerySummarySelection {
+  color: #475569;
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+
+.gallerySummaryToolbarActions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.gallerySummaryMoveButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 34px;
+  padding: 0 12px;
+  border: 1px solid rgba(148, 163, 184, 0.24);
+  border-radius: 999px;
+  background: #fff;
+  color: #334155;
+  font-size: 0.8rem;
+  font-weight: 800;
+}
+
+.gallerySummaryMoveButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 .assetList {
   grid-template-columns: 1fr;
 }
@@ -1560,6 +1711,15 @@
 .previewHeader {
   display: grid;
   gap: 4px;
+}
+
+.gallerySummaryButton {
+  align-items: flex-start;
+  flex-direction: column;
+}
+
+.gallerySummaryAction {
+  align-self: flex-start;
 }
 
 .previewTitle {

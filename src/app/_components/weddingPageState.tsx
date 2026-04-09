@@ -25,6 +25,7 @@ type WeddingPageBaseState = {
   imagesLoading: boolean;
   mainImageUrl: string;
   galleryImageUrls: string[];
+  galleryPreviewImageUrls: string[];
   preloadImages: string[];
   adminNotice: string | null;
 };
@@ -134,6 +135,10 @@ function isPublicInvitationPage(page: InvitationPage) {
   return getInvitationPublicAccessState(page).isPublic;
 }
 
+function isStorageManagedImageUrl(imageUrl?: string | null) {
+  return Boolean(imageUrl?.includes('firebasestorage.googleapis.com'));
+}
+
 export function useWeddingInvitationState(
   options: WeddingInvitationRouteOptions
 ): WeddingPageState {
@@ -151,20 +156,31 @@ export function useWeddingInvitationState(
     () => resolveInvitationPageDataByTheme(pageConfig, options.theme),
     [options.theme, pageConfig]
   );
-  const shouldLoadStorageImages = useMemo(() => {
+  const configuredGalleryImageUrls =
+    themedPageData?.galleryImages?.filter((imageUrl) => imageUrl.trim()) ?? [];
+  const configuredMainImageUrl = pageConfig?.metadata.images.wedding?.trim() ?? '';
+  const shouldLoadStorageFallbackImages = useMemo(() => {
     if (!pageConfig) {
       return true;
     }
 
-    const hasConfiguredGallery = Boolean(themedPageData?.galleryImages?.length);
+    const hasConfiguredGallery = Boolean(configuredGalleryImageUrls.length);
     return !hasConfiguredGallery;
-  }, [pageConfig, themedPageData]);
-  const { mainImage, galleryImages, loading: imagesLoading, error } = usePageImages(
+  }, [configuredGalleryImageUrls.length, pageConfig]);
+  const shouldLoadStorageManagedImages = useMemo(
+    () =>
+      [configuredMainImageUrl, ...configuredGalleryImageUrls].some((imageUrl) =>
+        isStorageManagedImageUrl(imageUrl)
+      ),
+    [configuredGalleryImageUrls, configuredMainImageUrl]
+  );
+  const { mainImage, galleryImages, loading: storageImagesLoading, error } = usePageImages(
     options.slug,
-    { enabled: shouldLoadStorageImages }
+    { enabled: shouldLoadStorageFallbackImages || shouldLoadStorageManagedImages }
   );
   const { isAdminLoading, isAdminLoggedIn } = useAdmin();
   const themeDefinition = getWeddingThemeDefinition(options.theme);
+  const imagesLoading = shouldLoadStorageFallbackImages ? storageImagesLoading : false;
 
   useEffect(() => {
     if (isAdminLoading) {
@@ -324,14 +340,12 @@ export function useWeddingInvitationState(
       )
     : null;
 
-  const configuredGalleryImageUrls =
-    themedPageData?.galleryImages?.filter((imageUrl) => imageUrl.trim()) ?? [];
   const galleryFeatures = resolveInvitationFeatures(
     pageConfig?.productTier,
     pageConfig?.features
   );
   const mainImageUrl =
-    pageConfig?.metadata.images.wedding ||
+    configuredMainImageUrl ||
     configuredGalleryImageUrls[0] ||
     mainImage?.url ||
     '';
@@ -341,10 +355,18 @@ export function useWeddingInvitationState(
       : galleryImages
           .map((image) => image.url)
           .slice(0, galleryFeatures.maxGalleryImages);
-  const preloadImages = [
-    ...(mainImageUrl ? [mainImageUrl] : []),
-    ...galleryImageUrls.slice(0, 2),
-  ].slice(0, 3);
+  const galleryPreviewImageUrlMap = new Map(
+    galleryImages.map((image) => [image.url, image.thumbnailUrl ?? image.url])
+  );
+  const galleryPreviewImageUrls =
+    configuredGalleryImageUrls.length > 0
+      ? configuredGalleryImageUrls
+          .slice(0, galleryFeatures.maxGalleryImages)
+          .map((imageUrl) => galleryPreviewImageUrlMap.get(imageUrl) ?? imageUrl)
+      : galleryImages
+          .map((image) => image.thumbnailUrl ?? image.url)
+          .slice(0, galleryFeatures.maxGalleryImages);
+  const preloadImages = (mainImageUrl ? [mainImageUrl] : []).slice(0, 1);
 
   const giftInfo = themedPageData?.giftInfo;
   const hasGiftAccounts = Boolean(
@@ -357,6 +379,7 @@ export function useWeddingInvitationState(
     imagesLoading,
     mainImageUrl,
     galleryImageUrls,
+    galleryPreviewImageUrls,
     preloadImages,
     adminNotice: pageConfig ? getAdminNotice(pageConfig, isAdminLoggedIn) : null,
   };

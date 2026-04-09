@@ -99,7 +99,10 @@ export default function CoverFramedThemed({
           ) : null}
           {showImageLoader ? (
             <div className={styles.imagePlaceholder}>
-              <div className={styles.loadingSpinner}></div>
+              <div className={styles.placeholderContent}>
+                <div className={styles.loadingSpinner}></div>
+                <span className={styles.loadingText}>이미지 로딩 중</span>
+              </div>
             </div>
           ) : null}
         </div>

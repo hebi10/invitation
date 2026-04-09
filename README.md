@@ -324,6 +324,8 @@ wedding-images/{pageSlug}/...
 memory-images/{pageSlug}/...
 ```
 
+- 청첩장 이미지 업로드 시 `wedding-images/{pageSlug}/thumb-*` 썸네일 파일을 함께 저장하고, 공개 갤러리 그리드는 썸네일을 우선 사용합니다.
+
 - `wedding-images`
   청첩장용 이미지
 - `memory-images`

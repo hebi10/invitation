@@ -46,6 +46,7 @@ import type {
 import { buildKakaoMapSearchUrl } from '@/utils/kakaoMaps';
 
 import PageWizardStepPreview from './PageWizardStepPreview';
+import { applyWizardStorageImageFallback } from './pageWizardImageFallback';
 import { useImageUpload } from './hooks/useImageUpload';
 import { useWizardNavigation } from './hooks/useWizardNavigation';
 import { useWizardPersistence } from './hooks/useWizardPersistence';
@@ -574,9 +575,12 @@ export default function PageWizardClient({ initialSlug }: PageWizardClientProps)
       setIsLoading(true);
 
       try {
-        const editableConfig = isAdminLoggedIn
+        const rawEditableConfig = isAdminLoggedIn
           ? await getEditableInvitationPageConfig(initialSlug)
           : await getClientEditorEditableConfig(initialSlug);
+        const editableConfig = rawEditableConfig
+          ? await applyWizardStorageImageFallback(rawEditableConfig)
+          : null;
         if (cancelled) {
           return;
         }

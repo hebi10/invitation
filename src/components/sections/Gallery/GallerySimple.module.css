@@ -49,6 +49,8 @@
   transition: all 0.3s ease;
   cursor: pointer;
   content-visibility: auto;
+  contain: layout paint;
+  contain-intrinsic-size: 220px;
 }
 
 
@@ -58,6 +60,7 @@
   left: 0;
   width: 100%;
   height: 100%;
+  contain: paint;
 }
 
 .imageItem {
@@ -75,6 +78,15 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  pointer-events: none;
+}
+
+.placeholderContent {
+  display: grid;
+  gap: 0.55rem;
+  justify-items: center;
+  padding: 0 0.75rem;
+  text-align: center;
 }
 
 .loadingSpinner {
@@ -84,6 +96,14 @@
   border-radius: 50%;
   border-top-color: #6c757d;
   animation: spin 1s ease-in-out infinite;
+}
+
+.loadingText {
+  color: rgba(73, 80, 87, 0.78);
+  font-size: 0.8rem;
+  font-weight: 600;
+  line-height: 1.4;
+  white-space: nowrap;
 }
 
 @keyframes spin {
@@ -245,6 +265,19 @@
   min-height: min(56dvh, 460px);
   border-radius: 12px;
   background: rgba(20, 20, 20, 0.48);
+}
+
+.popupLoadingContent {
+  display: grid;
+  gap: 0.65rem;
+  justify-items: center;
+  padding: 1rem;
+}
+
+.popupLoadingText {
+  color: #f3f4f6;
+  font-size: 0.9rem;
+  white-space: nowrap;
 }
 
 .popupImage {

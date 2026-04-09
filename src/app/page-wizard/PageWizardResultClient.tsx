@@ -15,6 +15,7 @@ import {
 } from '@/services/clientEditorSession';
 
 import PageWizardStepPreview from './PageWizardStepPreview';
+import { applyWizardStorageImageFallback } from './pageWizardImageFallback';
 import styles from './page.module.css';
 import {
   applyDerivedWizardDefaults,
@@ -95,9 +96,12 @@ export default function PageWizardResultClient({
       setErrorMessage(null);
 
       try {
-        const editableConfig = isAdminLoggedIn
+        const rawEditableConfig = isAdminLoggedIn
           ? await getEditableInvitationPageConfig(slug)
           : await getClientEditorEditableConfig(slug);
+        const editableConfig = rawEditableConfig
+          ? await applyWizardStorageImageFallback(rawEditableConfig)
+          : null;
 
         if (cancelled) {
           return;

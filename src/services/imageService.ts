@@ -4,12 +4,17 @@ import {
   validateEditableImageBatch,
   validateEditableImageFile,
 } from '@/lib/imageUploadPolicy';
-import { optimizeUploadImage } from '@/utils/imageCompression';
+import {
+  optimizeUploadImage,
+  type OptimizeUploadImageOptions,
+} from '@/utils/imageCompression';
 
 export interface UploadedImage {
   name: string;
   url: string;
   path: string;
+  thumbnailUrl?: string;
+  thumbnailPath?: string;
   uploadedAt: Date;
 }
 
@@ -18,12 +23,14 @@ export type PageEditorImageAssetKind = EditableImageAssetKind;
 interface UploadImageOptions {
   preserveFileName?: boolean;
   assetKind?: PageEditorImageAssetKind;
+  variant?: 'original' | 'thumbnail';
 }
 
 const USE_FIREBASE = process.env.NEXT_PUBLIC_USE_FIREBASE === 'true';
 const imageCache = new Map<string, UploadedImage[]>();
 const storageDownloadUrlCache = new Map<string, string>();
 const CACHE_DURATION = 5 * 60 * 1000;
+const THUMBNAIL_FILE_PREFIX = 'thumb-';
 
 let firebaseModules: {
   storage: any;
@@ -160,10 +167,133 @@ function buildUploadMetadata(
     metadata.assetKind = options.assetKind;
   }
 
+  if (options.variant) {
+    metadata.variant = options.variant;
+  }
+
   return {
     contentType: sourceFile.type || 'image/jpeg',
     customMetadata: metadata,
   };
+}
+
+function buildThumbnailFileName(fileName: string) {
+  return `${THUMBNAIL_FILE_PREFIX}${fileName}`;
+}
+
+function buildThumbnailImagePath(path: string) {
+  const normalizedPath = path.trim();
+  if (!normalizedPath) {
+    return '';
+  }
+
+  const segments = normalizedPath.split('/');
+  const fileName = segments.pop();
+
+  if (!fileName) {
+    return '';
+  }
+
+  if (fileName.startsWith(THUMBNAIL_FILE_PREFIX)) {
+    return normalizedPath;
+  }
+
+  return [...segments, buildThumbnailFileName(fileName)].join('/');
+}
+
+function isThumbnailFileName(fileName: string) {
+  return fileName.startsWith(THUMBNAIL_FILE_PREFIX);
+}
+
+function supportsThumbnailVariant(assetKind?: PageEditorImageAssetKind) {
+  return assetKind !== 'favicon';
+}
+
+function resolveUploadOptimizationOptions(
+  assetKind: PageEditorImageAssetKind | undefined,
+  variant: 'original' | 'thumbnail'
+): OptimizeUploadImageOptions {
+  if (assetKind === 'favicon') {
+    return {
+      maxWidth: 256,
+      maxHeight: 256,
+      quality: 0.82,
+      maxBytes: 180 * 1024,
+    };
+  }
+
+  if (assetKind === 'cover') {
+    return variant === 'thumbnail'
+      ? {
+          maxWidth: 960,
+          maxHeight: 960,
+          quality: 0.72,
+          maxBytes: 280 * 1024,
+        }
+      : {
+          maxWidth: 1600,
+          maxHeight: 1600,
+          quality: 0.8,
+          maxBytes: 1.2 * 1024 * 1024,
+        };
+  }
+
+  if (assetKind === 'gallery') {
+    return variant === 'thumbnail'
+      ? {
+          maxWidth: 720,
+          maxHeight: 720,
+          quality: 0.7,
+          maxBytes: 200 * 1024,
+        }
+      : {
+          maxWidth: 1400,
+          maxHeight: 1400,
+          quality: 0.78,
+          maxBytes: 900 * 1024,
+        };
+  }
+
+  return variant === 'thumbnail'
+    ? {
+        maxWidth: 720,
+        maxHeight: 720,
+        quality: 0.72,
+        maxBytes: 220 * 1024,
+      }
+    : {
+        maxWidth: 1600,
+        maxHeight: 1600,
+        quality: 0.8,
+        maxBytes: 1.2 * 1024 * 1024,
+      };
+}
+
+async function createUploadFiles(
+  file: File,
+  assetKind?: PageEditorImageAssetKind
+) {
+  const [originalFile, thumbnailFile] = await Promise.all([
+    optimizeUploadImage(file, resolveUploadOptimizationOptions(assetKind, 'original')),
+    supportsThumbnailVariant(assetKind)
+      ? optimizeUploadImage(file, resolveUploadOptimizationOptions(assetKind, 'thumbnail'))
+      : Promise.resolve<File | null>(null),
+  ]);
+
+  return {
+    originalFile,
+    thumbnailFile:
+      thumbnailFile && thumbnailFile.size < originalFile.size ? thumbnailFile : null,
+  };
+}
+
+function extractPageSlugFromImagePath(imagePath: string) {
+  const segments = imagePath.trim().split('/');
+  if (segments.length < 3) {
+    return '';
+  }
+
+  return segments[1] ?? '';
 }
 
 async function readJsonResponse<T>(response: Response): Promise<T> {
@@ -192,18 +322,21 @@ export const uploadImage = async (
     throw new Error(validationError);
   }
 
-  const optimizedFile = await optimizeUploadImage(file, {
-    maxWidth: 2200,
-    maxHeight: 2200,
-    quality: 0.82,
-  });
-  const storedFileName = buildStoredFileName(optimizedFile.name, options);
+  const { originalFile, thumbnailFile } = await createUploadFiles(file, options.assetKind);
+  const storedFileName = buildStoredFileName(originalFile.name, options);
+  const thumbnailFileName = thumbnailFile ? buildThumbnailFileName(storedFileName) : '';
+  const imagePath = `wedding-images/${pageSlug}/${storedFileName}`;
+  const thumbnailPath = thumbnailFile
+    ? `wedding-images/${pageSlug}/${thumbnailFileName}`
+    : '';
 
   if (!USE_FIREBASE) {
     return {
       name: storedFileName,
       url: `/images/${storedFileName}`,
-      path: `wedding-images/${pageSlug}/${storedFileName}`,
+      path: imagePath,
+      thumbnailUrl: `/images/${storedFileName}`,
+      thumbnailPath: thumbnailPath || imagePath,
       uploadedAt: new Date(),
     };
   }
@@ -215,19 +348,44 @@ export const uploadImage = async (
   }
 
   try {
-    const imagePath = `wedding-images/${pageSlug}/${storedFileName}`;
     const imageRef = firebaseModules.ref(firebaseModules.storage, imagePath);
-    const snapshot = await firebaseModules.uploadBytes(
-      imageRef,
-      optimizedFile,
-      buildUploadMetadata(pageSlug, file, options)
-    );
-    const downloadURL = await firebaseModules.getDownloadURL(snapshot.ref);
+    const thumbnailRef =
+      thumbnailFile && thumbnailPath
+        ? firebaseModules.ref(firebaseModules.storage, thumbnailPath)
+        : null;
+
+    const [snapshot, thumbnailSnapshot] = await Promise.all([
+      firebaseModules.uploadBytes(
+        imageRef,
+        originalFile,
+        buildUploadMetadata(pageSlug, originalFile, { ...options, variant: 'original' })
+      ),
+      thumbnailRef && thumbnailFile
+        ? firebaseModules.uploadBytes(
+            thumbnailRef,
+            thumbnailFile,
+            buildUploadMetadata(pageSlug, thumbnailFile, {
+              ...options,
+              variant: 'thumbnail',
+            })
+          )
+        : Promise.resolve(null),
+    ]);
+    const [downloadURL, thumbnailUrl] = await Promise.all([
+      firebaseModules.getDownloadURL(snapshot.ref),
+      thumbnailSnapshot
+        ? firebaseModules.getDownloadURL(thumbnailSnapshot.ref)
+        : Promise.resolve<string | null>(null),
+    ]);
+
+    imageCache.delete(pageSlug);
 
     return {
       name: storedFileName,
       url: downloadURL,
       path: imagePath,
+      thumbnailUrl: thumbnailUrl ?? downloadURL,
+      thumbnailPath: thumbnailPath || imagePath,
       uploadedAt: new Date(),
     };
   } catch (error) {
@@ -271,19 +429,20 @@ export async function uploadClientEditorImage(
     throw new Error(validationError);
   }
 
-  const optimizedFile = await optimizeUploadImage(file, {
-    maxWidth: 2200,
-    maxHeight: 2200,
-    quality: 0.82,
-  });
+  const { originalFile, thumbnailFile } = await createUploadFiles(file, assetKind);
   const formData = new FormData();
   formData.append('assetKind', assetKind);
-  formData.append('file', optimizedFile, optimizedFile.name);
+  formData.append('file', originalFile, originalFile.name);
+  if (thumbnailFile) {
+    formData.append('thumbnail', thumbnailFile, thumbnailFile.name);
+  }
 
   const response = await readJsonResponse<{
     name: string;
     url: string;
     path: string;
+    thumbnailUrl?: string;
+    thumbnailPath?: string;
     uploadedAt: string;
   }>(
     await fetch(`/api/client-editor/pages/${encodeURIComponent(pageSlug)}/images`, {
@@ -329,14 +488,33 @@ export const getImagesByPage = async (
       `wedding-images/${pageSlug}`
     );
     const imagesList = await firebaseModules.listAll(imagesRef);
+    const thumbnailRefs = new Map<string, any>();
+    const originalImageRefs = imagesList.items.filter((imageRef: any) => {
+      if (!isThumbnailFileName(imageRef.name)) {
+        return true;
+      }
+
+      thumbnailRefs.set(imageRef.name.replace(THUMBNAIL_FILE_PREFIX, ''), imageRef);
+      return false;
+    });
 
     const images: UploadedImage[] = await Promise.all(
-      imagesList.items.map(async (imageRef: any) => {
-        const url = await firebaseModules!.getDownloadURL(imageRef);
+      originalImageRefs.map(async (imageRef: any) => {
+        const thumbnailRef = thumbnailRefs.get(imageRef.name);
+        const [url, thumbnailUrl] = await Promise.all([
+          firebaseModules!.getDownloadURL(imageRef),
+          thumbnailRef
+            ? firebaseModules!
+                .getDownloadURL(thumbnailRef)
+                .catch(() => null)
+            : Promise.resolve<string | null>(null),
+        ]);
         return {
           name: imageRef.name,
           url,
           path: imageRef.fullPath,
+          thumbnailUrl: thumbnailUrl ?? url,
+          thumbnailPath: thumbnailRef?.fullPath ?? imageRef.fullPath,
           uploadedAt: new Date(imageRef.timeCreated || Date.now()),
         };
       })
@@ -374,6 +552,17 @@ export const deleteImage = async (imagePath: string): Promise<void> => {
   try {
     const imageRef = firebaseModules.ref(firebaseModules.storage, imagePath);
     await firebaseModules.deleteObject(imageRef);
+
+    const thumbnailPath = buildThumbnailImagePath(imagePath);
+    if (thumbnailPath && thumbnailPath !== imagePath) {
+      const thumbnailRef = firebaseModules.ref(firebaseModules.storage, thumbnailPath);
+      await firebaseModules.deleteObject(thumbnailRef).catch(() => undefined);
+    }
+
+    const pageSlug = extractPageSlugFromImagePath(imagePath);
+    if (pageSlug) {
+      imageCache.delete(pageSlug);
+    }
   } catch (error) {
     console.error('이미지 삭제 중 오류 발생:', error);
     throw new Error('이미지 삭제에 실패했습니다.');

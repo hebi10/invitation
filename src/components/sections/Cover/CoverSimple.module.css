@@ -69,6 +69,7 @@
   width: 200px;
   height: 200px;
   margin: 0 auto 2rem;
+  contain: paint;
 }
 
 .image {
@@ -93,6 +94,15 @@
   align-items: center;
   justify-content: center;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  pointer-events: none;
+}
+
+.placeholderContent {
+  display: grid;
+  gap: 0.65rem;
+  justify-items: center;
+  text-align: center;
+  padding: 0 1rem;
 }
 
 .loadingSpinner {
@@ -102,6 +112,14 @@
   border-radius: 50%;
   border-top-color: #6c757d;
   animation: spin 1s ease-in-out infinite;
+}
+
+.loadingText {
+  color: rgba(73, 80, 87, 0.82);
+  font-size: 0.84rem;
+  font-weight: 600;
+  line-height: 1.45;
+  white-space: nowrap;
 }
 
 @keyframes spin {

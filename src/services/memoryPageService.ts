@@ -267,7 +267,7 @@ function buildInvitationGalleryImages(images: UploadedImage[]): MemoryGalleryIma
       id: createId('memory-gallery'),
       name: image.name,
       url: image.url,
-      thumbnailUrl: image.url,
+      thumbnailUrl: image.thumbnailUrl ?? image.url,
       path: image.path,
       source: 'invitation' as const,
       category: image.name.toLowerCase().includes('snap') ? 'snap' : 'ceremony',

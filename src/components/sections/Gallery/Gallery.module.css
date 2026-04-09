@@ -93,6 +93,8 @@
   overflow: hidden;
   background: #f5f5f5;
   content-visibility: auto;
+  contain: layout paint;
+  contain-intrinsic-size: 160px;
 }
 
 .imageContainer {
@@ -101,6 +103,7 @@
   height: 100%;
   border-radius: 12px;
   overflow: hidden;
+  contain: paint;
 }
 
 .imageItem {
@@ -124,6 +127,15 @@
   justify-content: center;
   background: #f8f8f8;
   border-radius: 12px;
+  pointer-events: none;
+}
+
+.placeholderContent {
+  display: grid;
+  gap: 0.55rem;
+  justify-items: center;
+  padding: 0 0.75rem;
+  text-align: center;
 }
 
 .loadingSpinner {
@@ -133,6 +145,14 @@
   border-top: 2px solid var(--primary-color);
   border-radius: 50%;
   animation: spin 1s linear infinite;
+}
+
+.loadingText {
+  color: rgba(110, 87, 72, 0.78);
+  font-size: 0.82rem;
+  font-weight: 600;
+  line-height: 1.4;
+  white-space: nowrap;
 }
 
 @keyframes spin {
@@ -145,8 +165,10 @@
     height: 220px;
   }
   
+  .imageWrapper,
   .imagePlaceholder {
     height: 220px;
+    contain-intrinsic-size: 220px;
   }
 }
 
@@ -217,6 +239,19 @@
   min-height: min(56dvh, 460px);
   border-radius: 12px;
   background: rgba(20, 20, 20, 0.48);
+}
+
+.popupLoadingContent {
+  display: grid;
+  gap: 0.65rem;
+  justify-items: center;
+  padding: 1rem;
+}
+
+.popupLoadingText {
+  color: #f3f4f6;
+  font-size: 0.9rem;
+  white-space: nowrap;
 }
 
 .popupImage {

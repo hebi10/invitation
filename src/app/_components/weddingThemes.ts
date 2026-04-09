@@ -42,16 +42,20 @@ const defaultShareContainer = {
   },
 } satisfies WeddingThemeDefinition['shareContainer'];
 
-const invitationDescription = (pageConfig: InvitationPage) =>
+const buildDefaultInvitationDescription = (pageConfig: InvitationPage) =>
   `${pageConfig.date}\n${pageConfig.venue}\n소중한 분들을 모시고 저희의 새로운 시작을 함께하고자 합니다.`;
 
-const shareTitleByMode: Record<
-  ReturnType<typeof getInvitationThemeDefinition>['shareTitleMode'],
-  (pageConfig: InvitationPage) => string
-> = {
-  metadata: (pageConfig) => pageConfig.metadata.title,
-  couple: (pageConfig) => `${pageConfig.groomName} · ${pageConfig.brideName} 결혼식 초대`,
-};
+const buildDefaultInvitationTitle = (pageConfig: InvitationPage) =>
+  pageConfig.displayName.trim() ||
+  `${pageConfig.groomName.trim() || '신랑'} · ${pageConfig.brideName.trim() || '신부'} 결혼식 초대`;
+
+const resolveShareTitle = (pageConfig: InvitationPage) =>
+  pageConfig.metadata.title.trim() || buildDefaultInvitationTitle(pageConfig);
+
+const resolveShareDescription = (pageConfig: InvitationPage) =>
+  pageConfig.metadata.description.trim() ||
+  pageConfig.description.trim() ||
+  buildDefaultInvitationDescription(pageConfig);
 
 const themeDefinitions = INVITATION_THEME_KEYS.reduce<
   Record<WeddingThemeKey, WeddingThemeDefinition>
@@ -63,8 +67,8 @@ const themeDefinitions = INVITATION_THEME_KEYS.reduce<
     ariaLabelSuffix: definition.ariaLabelSuffix,
     shareButtonVariant: 'default',
     shareContainer: defaultShareContainer,
-    getShareTitle: shareTitleByMode[definition.shareTitleMode],
-    getShareDescription: invitationDescription,
+    getShareTitle: resolveShareTitle,
+    getShareDescription: resolveShareDescription,
   };
 
   return accumulator;

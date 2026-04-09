@@ -390,7 +390,11 @@ export default function ImageManager() {
                     {pageImages.map((image) => (
                       <div key={image.path} className={styles.imageCard}>
                         <div className={styles.imageWrapper}>
-                          <img className={styles.image} src={image.url} alt={image.name} />
+                          <img
+                            className={styles.image}
+                            src={image.thumbnailUrl || image.url}
+                            alt={image.name}
+                          />
                         </div>
                         <div className={styles.imageInfo}>
                           <p className={styles.imageName}>{image.name}</p>

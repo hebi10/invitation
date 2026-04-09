@@ -258,7 +258,7 @@ export function GuideSectionPanel({
         </div>
         <button
           type="button"
-          className={styles.ghostButton}
+          className={`${styles.ghostButton} ${styles.panelHeaderButton}`}
           onClick={() => onAdd(kind)}
           disabled={!canAdd}
         >
@@ -352,11 +352,11 @@ export function AccountSectionPanel({
         </div>
         <button
           type="button"
-          className={styles.ghostButton}
+          className={`${styles.ghostButton} ${styles.panelHeaderButton}`}
           onClick={() => onAdd(kind)}
           disabled={!canAdd}
         >
-          계좌 추가
+          {accounts.length > 0 ? '부모님 계좌 추가하기' : '계좌 추가하기'}
         </button>
       </div>
 
@@ -377,7 +377,7 @@ export function AccountSectionPanel({
                   onClick={() => onRemove(kind, index)}
                   disabled={disabled}
                 >
-                  삭제
+                  항목 삭제하기
                 </button>
               </div>
 
