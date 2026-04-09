@@ -31,13 +31,28 @@
 }
 
 .title {
-  font-family: var(--font-gowun-dodum);
-  font-size: clamp(2rem, 6vw, 3rem);
-  color: #2c3e50;
+  width: 100%;
   margin-bottom: 1rem;
-  font-weight: 300;
-  letter-spacing: 1px;
-  line-height: 1.2;
+  position: relative;
+}
+
+.titleImage {
+  display: block;
+  margin: 0 auto;
+  width: max(50%, 210px);
+  height: auto;
+}
+
+.visuallyHidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }
 
 .subtitle {
@@ -187,6 +202,7 @@
   }
   
   .title {
+    width: 100%;
     margin-bottom: 1.5rem;
   }
   

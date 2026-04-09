@@ -185,6 +185,7 @@ export default function AdminPageClient() {
     savingPasswordPageSlug,
     updatingPublishedPageSlug,
     updatingVariantToken,
+    updatingTierPageSlug,
     refreshPages,
     fetchComments,
     fetchPasswords,
@@ -192,6 +193,7 @@ export default function AdminPageClient() {
     handleDeleteComment,
     handleSavePassword,
     handleTogglePublished,
+    handleChangeTier,
     handleEnableVariant,
     handleDisableVariant,
     handleLogout: dataLogout,
@@ -611,6 +613,9 @@ export default function AdminPageClient() {
               onTogglePublished={(page, nextPublished) =>
                 void handleTogglePublished(page, nextPublished)
               }
+              onChangeTier={(page, nextTier) =>
+                void handleChangeTier(page, nextTier)
+              }
               onEnableVariant={(page, variantKey) =>
                 void handleEnableVariant(page, variantKey)
               }
@@ -619,6 +624,7 @@ export default function AdminPageClient() {
               }
               updatingPublishedPageSlug={updatingPublishedPageSlug}
               updatingVariantToken={updatingVariantToken}
+              updatingTierPageSlug={updatingTierPageSlug}
             />
           ) : null}
 

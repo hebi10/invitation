@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 
 import type { InvitationPageSummary } from '@/services';
+import type { InvitationProductTier } from '@/types/invitationPage';
 
 import { EmptyState, FilterToolbar, Pagination, StatusBadge } from '.';
 import {
@@ -18,6 +19,8 @@ import {
 import styles from '../page.module.css';
 
 const PAGE_SIZE_OPTIONS = [10, 30, 50, 100] as const;
+
+const TIER_OPTIONS: InvitationProductTier[] = ['standard', 'deluxe', 'premium'];
 
 function parsePageSize(value: string) {
   const parsed = Number(value);
@@ -37,10 +40,12 @@ interface AdminPagesTabProps {
   onQueryChange: (updates: Record<string, string | null>) => void;
   onRefresh: () => void;
   onTogglePublished: (page: InvitationPageSummary, nextPublished: boolean) => void;
+  onChangeTier: (page: InvitationPageSummary, nextTier: InvitationProductTier) => void;
   onEnableVariant: (page: InvitationPageSummary, variantKey: ShortcutKey) => void;
   onDisableVariant: (page: InvitationPageSummary, variantKey: ShortcutKey) => void;
   updatingPublishedPageSlug: string | null;
   updatingVariantToken: string | null;
+  updatingTierPageSlug: string | null;
 }
 
 export default function AdminPagesTab({
@@ -56,10 +61,12 @@ export default function AdminPagesTab({
   onQueryChange,
   onRefresh,
   onTogglePublished,
+  onChangeTier,
   onEnableVariant,
   onDisableVariant,
   updatingPublishedPageSlug,
   updatingVariantToken,
+  updatingTierPageSlug,
 }: AdminPagesTabProps) {
   const getEnableVariantButtonLabel = (shortcutLabel: string, isUpdating: boolean) =>
     isUpdating
@@ -297,20 +304,37 @@ export default function AdminPagesTab({
                             <span className={styles.rowNumber}>
                               {filteredPages.length - ((currentPage - 1) * pageSize + index)}
                             </span>
-                            <a
-                              href={`/page-editor/${page.slug}`}
-                              target="_blank"
-                              rel="noreferrer"
-                              className={styles.primaryCellLink}
-                            >
-                              <p className={styles.tableTitle}>{page.displayName}</p>
-                              <p className={styles.tableSubtext}>{page.slug}</p>
-                              {page.createdAt ? (
-                                <p className={styles.tableSubtext}>
-                                  {formatDateTime(page.createdAt)}
-                                </p>
-                              ) : null}
-                            </a>
+                            <div>
+                              <a
+                                href={`/page-editor/${page.slug}`}
+                                target="_blank"
+                                rel="noreferrer"
+                                className={styles.primaryCellLink}
+                              >
+                                <p className={styles.tableTitle}>{page.displayName}</p>
+                                <p className={styles.tableSubtext}>{page.slug}</p>
+                                {page.createdAt ? (
+                                  <p className={styles.tableSubtext}>
+                                    {formatDateTime(page.createdAt)}
+                                  </p>
+                                ) : null}
+                              </a>
+                              <select
+                                className="admin-select"
+                                value={page.productTier}
+                                disabled={updatingTierPageSlug === page.slug}
+                                onChange={(event) =>
+                                  onChangeTier(page, event.target.value as InvitationProductTier)
+                                }
+                                aria-label={`${page.displayName} 서비스 등급`}
+                              >
+                                {TIER_OPTIONS.map((tier) => (
+                                  <option key={tier} value={tier}>
+                                    {tier.toUpperCase()}
+                                  </option>
+                                ))}
+                              </select>
+                            </div>
                           </div>
                         </td>
                         <td>
@@ -449,6 +473,21 @@ export default function AdminPagesTab({
                           {formatDateTime(page.createdAt)}
                         </p>
                       ) : null}
+                      <select
+                        className="admin-select"
+                        value={page.productTier}
+                        disabled={updatingTierPageSlug === page.slug}
+                        onChange={(event) =>
+                          onChangeTier(page, event.target.value as InvitationProductTier)
+                        }
+                        aria-label={`${page.displayName} 서비스 등급`}
+                      >
+                        {TIER_OPTIONS.map((tier) => (
+                          <option key={tier} value={tier}>
+                            {tier.toUpperCase()}
+                          </option>
+                        ))}
+                      </select>
                     </div>
                     <div className={styles.statusCell}>
                       <StatusBadge tone={page.published ? 'success' : 'neutral'}>

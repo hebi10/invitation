@@ -23,6 +23,10 @@ interface CoverFramedThemedProps {
     groomName: string;
     brideName: string;
   }) => ReactNode;
+  renderTitle?: (args: {
+    styles: Record<string, string>;
+    title: string;
+  }) => ReactNode;
   beforeContent?: ReactNode;
   afterContent?: ReactNode;
 }
@@ -41,6 +45,7 @@ export default function CoverFramedThemed({
   preloadComplete = false,
   styles,
   renderNames,
+  renderTitle,
   beforeContent,
   afterContent,
 }: CoverFramedThemedProps) {
@@ -72,7 +77,7 @@ export default function CoverFramedThemed({
       <div className={styles.content}>
         {beforeContent}
 
-        <h1 className={styles.title}>{title}</h1>
+        {renderTitle ? renderTitle({ styles, title }) : <h1 className={styles.title}>{title}</h1>}
         {subtitle ? <p className={styles.subtitle}>{subtitle}</p> : null}
 
         <div className={styles.imageContainer}>

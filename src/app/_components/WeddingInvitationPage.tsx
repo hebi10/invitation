@@ -195,16 +195,17 @@ function WeddingInvitationPageBody(options: WeddingInvitationRouteOptions) {
     readyState.pageConfig.features
   );
 
-  const shareButton = (
-    <WeddingKakaoShareButton
-      title={themeDefinition.getShareTitle(readyState.pageConfig)}
-      description={themeDefinition.getShareDescription(readyState.pageConfig)}
-      imageUrl={readyState.mainImageUrl}
-      pageSlug={options.slug}
-      shareMode={shareFeatures.shareMode}
-      variant={themeDefinition.shareButtonVariant}
-    />
-  );
+  const shareButton =
+    shareFeatures.shareMode !== 'none' ? (
+      <WeddingKakaoShareButton
+        title={themeDefinition.getShareTitle(readyState.pageConfig)}
+        description={themeDefinition.getShareDescription(readyState.pageConfig)}
+        imageUrl={readyState.mainImageUrl}
+        pageSlug={options.slug}
+        shareMode={shareFeatures.shareMode}
+        variant={themeDefinition.shareButtonVariant}
+      />
+    ) : null;
 
   return (
     <>
@@ -227,7 +228,7 @@ function WeddingInvitationPageBody(options: WeddingInvitationRouteOptions) {
           musicUrl={readyState.pageConfig.musicUrl}
         />
       ) : null}
-      {!isLoaderVisible
+      {!isLoaderVisible && shareButton !== null
         ? themeDefinition.shareContainer ? (
             <div
               className={themeDefinition.shareContainer.className}

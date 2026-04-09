@@ -20,6 +20,7 @@ import {
   getCommentSummary,
   setClientPassword,
   setInvitationPagePublished,
+  setInvitationPageProductTier,
   setInvitationPageVariantAvailability,
   syncClientPasswordAccess,
   type ClientPassword,
@@ -27,6 +28,7 @@ import {
   type CommentSummary,
   type InvitationPageSummary,
 } from '@/services';
+import type { InvitationProductTier } from '@/types/invitationPage';
 
 import { isRecentComment, RECENT_COMMENT_DAYS, type AdminTab } from '../_components/adminPageUtils';
 
@@ -68,6 +70,7 @@ export function useAdminData({
   const [savingPasswordPageSlug, setSavingPasswordPageSlug] = useState<string | null>(null);
   const [updatingPublishedPageSlug, setUpdatingPublishedPageSlug] = useState<string | null>(null);
   const [updatingVariantToken, setUpdatingVariantToken] = useState<string | null>(null);
+  const [updatingTierPageSlug, setUpdatingTierPageSlug] = useState<string | null>(null);
 
   const [pagesLoaded, setPagesLoaded] = useState(false);
   const [commentsLoaded, setCommentsLoaded] = useState(false);
@@ -396,6 +399,42 @@ export function useAdminData({
     [confirm, refreshPages, showToast]
   );
 
+  const handleChangeTier = useCallback(
+    async (page: InvitationPageSummary, nextTier: InvitationProductTier) => {
+      if (nextTier === page.productTier) {
+        return;
+      }
+
+      const approved = await confirm({
+        title: '서비스 등급을 변경할까요?',
+        description: `${page.displayName} 페이지의 서비스를 ${page.productTier.toUpperCase()} → ${nextTier.toUpperCase()}으로 변경합니다.`,
+        confirmLabel: '변경',
+        cancelLabel: '취소',
+      });
+
+      if (!approved) {
+        return;
+      }
+
+      setUpdatingTierPageSlug(page.slug);
+
+      try {
+        await setInvitationPageProductTier(page.slug, nextTier);
+        await refreshPages();
+        showToast({
+          title: `서비스를 ${nextTier.toUpperCase()}으로 변경했습니다.`,
+          tone: 'success',
+        });
+      } catch (error) {
+        console.error(error);
+        showToast({ title: '서비스 변경에 실패했습니다.', tone: 'error' });
+      } finally {
+        setUpdatingTierPageSlug(null);
+      }
+    },
+    [confirm, refreshPages, showToast]
+  );
+
   const handleLogout = useCallback(() => {
     clearAdminInvitationPreviewCache();
     resetAll();
@@ -453,6 +492,7 @@ export function useAdminData({
     savingPasswordPageSlug,
     updatingPublishedPageSlug,
     updatingVariantToken,
+    updatingTierPageSlug,
 
     refreshPages,
     fetchComments,
@@ -462,6 +502,7 @@ export function useAdminData({
     handleDeleteComment,
     handleSavePassword,
     handleTogglePublished,
+    handleChangeTier,
     handleEnableVariant,
     handleDisableVariant,
     handleLogout,

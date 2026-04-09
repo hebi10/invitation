@@ -25,7 +25,7 @@ export interface BankAccount {
   accountHolder: string;
 }
 
-export type InvitationShareMode = 'link' | 'card';
+export type InvitationShareMode = 'link' | 'card' | 'none';
 export type InvitationProductTier = 'standard' | 'deluxe' | 'premium';
 export type InvitationThemeKey = RegisteredInvitationThemeKey;
 

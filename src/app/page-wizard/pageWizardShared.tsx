@@ -147,7 +147,11 @@ export function getProductTierLabel(tier: InvitationProductTier) {
 export function getProductTierDescription(tier: InvitationProductTier) {
   const features = resolveInvitationFeatures(tier);
   const shareLabel =
-    features.shareMode === 'card' ? '카카오 카드형 공유' : '카카오 링크형 공유';
+    features.shareMode === 'none'
+      ? '공유 버튼 미포함'
+      : features.shareMode === 'card'
+        ? '카카오 카드형 공유'
+        : '카카오 링크형 공유';
 
   return `갤러리 최대 ${features.maxGalleryImages}장, ${shareLabel}, ${
     features.showCountdown ? '카운트다운 포함' : '카운트다운 미포함'

@@ -28,7 +28,11 @@ function describeFeatureLine(template: ReturnType<typeof getInvitationPageSeedTe
     `상품: ${template.productTier.toUpperCase()}`,
     `갤러리: 최대 ${template.features.maxGalleryImages}장`,
     `공유 방식: ${
-      template.features.shareMode === 'card' ? '카카오 카드형' : '카카오 링크형'
+      template.features.shareMode === 'none'
+        ? '공유 버튼 미포함'
+        : template.features.shareMode === 'card'
+          ? '카카오 카드형'
+          : '카카오 링크형'
     }`,
     template.features.showCountdown ? '카운트다운 포함' : '카운트다운 미포함',
     template.features.showGuestbook ? '방명록 포함' : '방명록 미포함',

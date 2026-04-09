@@ -19,7 +19,7 @@ export const INVITATION_PRODUCT_FEATURES: Record<
 > = {
   standard: {
     maxGalleryImages: 6,
-    shareMode: 'link',
+    shareMode: 'none',
     showCountdown: false,
     showGuestbook: false,
   },
@@ -60,7 +60,7 @@ export function normalizeInvitationShareMode(
   value: unknown,
   fallback: InvitationShareMode = 'card'
 ): InvitationShareMode {
-  return value === 'link' || value === 'card' ? value : fallback;
+  return value === 'link' || value === 'card' || value === 'none' ? value : fallback;
 }
 
 export function resolveInvitationFeatures(

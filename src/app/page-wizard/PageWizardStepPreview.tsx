@@ -133,7 +133,13 @@ export default function PageWizardStepPreview({
           <PreviewRow label="갤러리" value={`최대 ${features.maxGalleryImages}장`} />
           <PreviewRow
             label="공유 방식"
-            value={features.shareMode === 'card' ? '카카오 카드형 공유' : '카카오 링크형 공유'}
+            value={
+              features.shareMode === 'none'
+                ? '공유 버튼 미포함'
+                : features.shareMode === 'card'
+                  ? '카카오 카드형 공유'
+                  : '카카오 링크형 공유'
+            }
           />
           <PreviewRow
             label="캘린더 카운트다운"

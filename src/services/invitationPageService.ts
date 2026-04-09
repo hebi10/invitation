@@ -1701,3 +1701,24 @@ export async function updateInvitationPageVisibility(
 
   await syncDisplayPeriod(firestore, pageSlug, payload);
 }
+
+export async function setInvitationPageProductTier(
+  pageSlug: string,
+  productTier: InvitationProductTier
+) {
+  const editableConfig = await getEditableInvitationPageConfig(pageSlug);
+
+  if (!editableConfig) {
+    throw new Error('해당 페이지 주소를 찾을 수 없습니다.');
+  }
+
+  const features = resolveInvitationFeatures(productTier);
+
+  await saveInvitationPageConfig(
+    { ...editableConfig.config, productTier, features },
+    {
+      published: editableConfig.published,
+      defaultTheme: editableConfig.defaultTheme,
+    }
+  );
+}

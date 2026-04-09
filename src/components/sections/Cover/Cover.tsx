@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { scrollToSection } from '@/utils';
 import { HeartIcon } from '@/components/icons';
+import mainTitleImage from '../../../../public/images/main_title01.png';
 import styles from './Cover.module.css';
 
 interface CoverProps {
@@ -66,7 +67,15 @@ const Cover = React.memo(function Cover({
 
   return (
     <div className={styles.container} style={containerStyle}>
-      <h1 className={`${styles.title} ${styles.invitationTitle}`}>{title || 'Invitation'}</h1>
+      <h1 className={styles.title}>
+        <span className={styles.visuallyHidden}>{title || 'Invitation'}</span>
+        <Image
+          src={mainTitleImage}
+          alt=""
+          priority
+          className={styles.titleImage}
+        />
+      </h1>
       {subtitle && <p className={styles.subtitle}>{subtitle}</p>}
       <div className={styles.imageContainer}>
         {hasImage ? (

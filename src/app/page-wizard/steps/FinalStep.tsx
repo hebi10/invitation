@@ -11,7 +11,7 @@ export default function FinalStep({
   return (
     <div className={styles.fieldGrid}>
       <label className={styles.field}>
-        {renderFieldMeta('공유 제목', 'optional', '카카오톡이나 문자로 공유할 때 보이는 제목입니다.')}
+        {renderFieldMeta('공유 제목', 'optional', '링크 미리보기나 소셜 공유 시 보이는 제목입니다.')}
         <input
           className={styles.input}
           value={formState.metadata.title}
