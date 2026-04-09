@@ -205,6 +205,38 @@ scripts/
 - 문서가 없으면 기간 제한 없음
 - 문서가 있고 `isActive == true`면 기간 적용
 
+#### 위자드 / 편집기 저장 경로
+
+- `/page-wizard`는 seed 기반 draft를 만든 뒤 `invitation-page-configs/{slug}`와 `invitation-page-registry/{slug}`를 함께 사용합니다.
+- 위자드 저장 전 `prepareWizardConfigForSave()`가 파생값과 정규화 필드를 정리한 뒤 본문 데이터는 `invitation-page-configs/{slug}`에 저장합니다.
+- 공개 여부(`published`), 기본 테마(`defaultTheme`), 커스텀 설정 여부(`hasCustomConfig`)는 `invitation-page-registry/{slug}`에 저장합니다.
+- 고객 편집기(`/page-editor/{slug}`)도 같은 데이터 구조를 쓰지만 Firestore에 직접 쓰지 않고 `/api/client-editor/pages/[slug]` 서버 API를 통해 저장합니다.
+- `variants`는 본문 설정과 함께 `invitation-page-configs/{slug}`에 저장되며, 공개 URL 노출 여부는 registry의 공개 상태와 함께 판단합니다.
+
+#### 위자드 필드 운영 기준
+
+- `description`
+  공개 화면의 모든 섹션에서 직접 렌더되지는 않지만 `metadata.description`, Open Graph, Twitter 설명의 기본값으로 이어지는 공유용 기준 문구이므로 유지합니다.
+- `pageData.venueName`
+  위자드에서는 별도 입력을 받지 않고 `venue` 입력값과 함께 자동 동기화합니다. 공개 화면과 지도 마커 제목의 기본 표기명으로 사용하며, 별도 표기명이 필요하면 관리자 편집기에서 수정합니다.
+- `pageData.mapUrl`
+  공개 렌더러의 주 지도 기준값은 `pageData.kakaoMap` 좌표입니다. `mapUrl`은 위자드 주소 검색 결과 링크, 편집기 입력값, 미리보기용 외부 지도 링크 보조값으로 유지합니다.
+- `musicCategoryId`, `musicTrackId`, `musicStoragePath`
+  공개 화면은 최종적으로 `musicUrl` 또는 `musicStoragePath`에서 해석된 재생 URL을 사용합니다. 다만 이 3개 필드는 위자드/편집기에서 선택한 곡을 다시 복원하고, Storage 다운로드 URL을 계산하기 위한 운영 메타값이라 유지합니다.
+- `metadata.keywords`
+  위자드는 기본값 `[]`만 저장하고 별도 입력 UI를 두지 않습니다. 현재는 관리자 편집기에서만 직접 관리하는 선택 필드로 취급합니다.
+- `metadata.images.favicon`
+  위자드 기본값은 `/favicon.ico`이며, 필요하면 관리자 편집기에서 페이지별로 덮어쓸 수 있습니다.
+
+#### 자동 파생값
+
+- `displayName`: 신랑/신부 이름이 있으면 기본 청첩장 제목으로 자동 생성
+- `description`: 이름 조합 기준 초대 문구로 자동 생성
+- `metadata.title`, `metadata.description`: 비어 있으면 `displayName`, `description` 기준으로 채움
+- `metadata.openGraph.*`, `metadata.twitter.*`: 루트 메타값이 비어 있으면 같은 값으로 채움
+- `date`, `pageData.ceremonyTime`, `pageData.ceremony.time`: `weddingDateTime` 입력값으로 다시 계산
+- `pageData.greetingAuthor`: 비어 있으면 `신랑 · 신부` 형식으로 자동 생성
+
 ### 6.3 방명록
 
 #### 신규 구조
@@ -574,6 +606,15 @@ npm run migrate:comments:guestbooks
 - 서버는 `isPublicInvitationPage()`에서 `published`와 `displayPeriod`를 함께 확인합니다.
 - Firestore rules는 `invitation-page-registry.published == true`와 `display-periods` 기간 조건을 다시 확인합니다.
 - 따라서 공개 여부는 서버 렌더링과 Firestore rules 양쪽에서 함께 제한됩니다.
+
+### 노출 기간 운영 기준
+
+- 위자드와 고객 편집기는 `displayPeriod`를 직접 저장하지 않습니다.
+- 노출 기간 설정과 해제는 `/admin`의 노출 기간 탭에서만 관리합니다.
+- `published == false`면 노출 기간과 무관하게 항상 비공개입니다.
+- `published == true`이고 `displayPeriodEnabled == false`면 기간 제한 없이 항상 공개입니다.
+- `displayPeriodEnabled == true`이면 시작일과 종료일이 모두 있어야 하며, 하나라도 비어 있으면 공개 불가 상태로 처리합니다.
+- 기간이 시작되기 전이면 예약 공개, 종료 후면 공개 종료 상태로 관리자 미리보기만 허용합니다.
 
 ## 17. 현재 배포 상태와 주의점
 

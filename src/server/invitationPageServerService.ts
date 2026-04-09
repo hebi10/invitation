@@ -1,6 +1,5 @@
 import 'server-only';
 
-import { cache } from 'react';
 import { FieldValue } from 'firebase-admin/firestore';
 
 import {
@@ -22,6 +21,7 @@ import {
   normalizeInvitationProductTier,
   resolveInvitationFeatures,
 } from '@/lib/invitationProducts';
+import { getInvitationPublicAccessState } from '@/lib/invitationPublicAccess';
 import {
   clampInvitationMusicVolume,
   DEFAULT_INVITATION_MUSIC_VOLUME,
@@ -522,20 +522,7 @@ function mergeDisplayPeriod(
 }
 
 function isPublicInvitationPage(page: InvitationPage) {
-  if (!page.published) {
-    return false;
-  }
-
-  if (!page.displayPeriodEnabled) {
-    return true;
-  }
-
-  if (!page.displayPeriodStart || !page.displayPeriodEnd) {
-    return false;
-  }
-
-  const now = new Date();
-  return now >= page.displayPeriodStart && now <= page.displayPeriodEnd;
+  return getInvitationPublicAccessState(page).isPublic;
 }
 
 function toEditableSeed(page: InvitationPage): InvitationPageSeed {
@@ -720,8 +707,10 @@ async function upsertRegistryRecord(
   );
 }
 
-const getServerInvitationPageBySlugCached = cache(
-  async (pageSlug: string, includePrivate: boolean) => {
+async function loadServerInvitationPageBySlug(
+  pageSlug: string,
+  includePrivate: boolean
+) {
   const samplePage = buildSamplePage(pageSlug);
   const db = getServerFirestore();
 
@@ -757,8 +746,7 @@ const getServerInvitationPageBySlugCached = cache(
 
     return includePrivate || isPublicInvitationPage(samplePage) ? samplePage : null;
   }
-  }
-);
+}
 
 export async function getServerInvitationPageBySlug(
   pageSlug: string | null | undefined,
@@ -771,7 +759,7 @@ export async function getServerInvitationPageBySlug(
     return null;
   }
 
-  return getServerInvitationPageBySlugCached(
+  return loadServerInvitationPageBySlug(
     normalizedPageSlug,
     options.includePrivate === true
   );

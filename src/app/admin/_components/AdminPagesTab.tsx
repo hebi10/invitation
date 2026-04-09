@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 
 import type { InvitationPageSummary } from '@/services';
+import { getInvitationPublicAccessState } from '@/lib/invitationPublicAccess';
 import type { InvitationProductTier } from '@/types/invitationPage';
 
 import { EmptyState, FilterToolbar, Pagination, StatusBadge } from '.';
@@ -292,6 +293,7 @@ export default function AdminPagesTab({
                 <tbody>
                   {currentInvitationPages.map((page, index) => {
                     const links = getAvailableShortcuts(page);
+                    const previewAccess = getInvitationPublicAccessState(page);
                     const isUpdatingPublished = updatingPublishedPageSlug === page.slug;
                     const missingShortcuts = SHORTCUT_ITEMS.filter(
                       (shortcut) => !page.variants?.[shortcut.key]?.available
@@ -347,6 +349,16 @@ export default function AdminPagesTab({
                         </td>
                         <td>
                           <div className={styles.variantPreviewGrid}>
+                            {!previewAccess.isPublic ? (
+                              <div className={styles.previewWarningCard}>
+                                <span className={styles.previewWarningLabel}>
+                                  {previewAccess.adminLabel}
+                                </span>
+                                <span className={styles.previewWarningText}>
+                                  {previewAccess.adminDescription}
+                                </span>
+                              </div>
+                            ) : null}
                             {links.map((link) => {
                               const token = `${page.slug}:${link.key}`;
                               const isUpdating = updatingVariantToken === token;
@@ -359,7 +371,11 @@ export default function AdminPagesTab({
                                     rel="noreferrer"
                                     className={styles.variantPreviewLink}
                                   >
-                                    <span className={styles.variantPreviewLabel}>{link.label}</span>
+                                    <span className={styles.variantPreviewLabel}>
+                                      {previewAccess.isPublic
+                                        ? link.label
+                                        : `${link.label} 관리자 미리보기`}
+                                    </span>
                                     <span className={styles.variantPreviewPath}>{link.path}</span>
                                   </a>
                                   <button
@@ -458,6 +474,7 @@ export default function AdminPagesTab({
           <div className={styles.mobileList}>
             {currentInvitationPages.map((page) => {
               const links = getAvailableShortcuts(page);
+              const previewAccess = getInvitationPublicAccessState(page);
               const missingShortcuts = SHORTCUT_ITEMS.filter(
                 (shortcut) => !page.variants?.[shortcut.key]?.available
               );
@@ -517,6 +534,16 @@ export default function AdminPagesTab({
                   </div>
 
                   <div className={styles.variantPreviewGrid}>
+                    {!previewAccess.isPublic ? (
+                      <div className={styles.previewWarningCard}>
+                        <span className={styles.previewWarningLabel}>
+                          {previewAccess.adminLabel}
+                        </span>
+                        <span className={styles.previewWarningText}>
+                          {previewAccess.adminDescription}
+                        </span>
+                      </div>
+                    ) : null}
                     {links.map((link) => {
                       const token = `${page.slug}:${link.key}`;
                       const isUpdating = updatingVariantToken === token;
@@ -529,7 +556,11 @@ export default function AdminPagesTab({
                             rel="noreferrer"
                             className={styles.variantPreviewLink}
                           >
-                            <span className={styles.variantPreviewLabel}>{link.label}</span>
+                            <span className={styles.variantPreviewLabel}>
+                              {previewAccess.isPublic
+                                ? link.label
+                                : `${link.label} 관리자 미리보기`}
+                            </span>
                             <span className={styles.variantPreviewPath}>{link.path}</span>
                           </a>
                           <button

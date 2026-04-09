@@ -58,6 +58,7 @@ import {
   composeDisplayName,
   composeGreetingAuthor,
   createInitialWizardConfig,
+  DEFAULT_GREETING_MESSAGE,
   formatDateLabel,
   formatTimeLabel,
   getWizardSteps,
@@ -133,15 +134,8 @@ function shouldSyncDerivedText(currentValue: string, previousAutoValue: string) 
   return !normalizedCurrent || normalizedCurrent === normalizedPreviousAuto;
 }
 
-function composeAutoGreetingMessage(groomName: string, brideName: string) {
-  const groom = groomName.trim();
-  const bride = brideName.trim();
-
-  if (groom && bride) {
-    return `${groom}와 ${bride}가 함께하는 소중한 날에 귀한 걸음으로 축복해 주시면 감사하겠습니다.`;
-  }
-
-  return '두 사람이 함께하는 소중한 날에 귀한 걸음으로 축복해 주시면 감사하겠습니다.';
+function composeAutoGreetingMessage(_groomName: string, _brideName: string) {
+  return DEFAULT_GREETING_MESSAGE;
 }
 
 function resolveWizardDraftSlug(

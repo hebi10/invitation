@@ -20,15 +20,23 @@ export default async function WeddingInvitationThemeRoutePage({
 
   const page = await getServerInvitationPageBySlug(slug);
 
-  if (!page?.variants[normalizedTheme]?.available) {
+  if (page?.variants[normalizedTheme]?.available) {
+    return (
+      <WeddingInvitationRoutePage
+        slug={slug}
+        theme={normalizedTheme}
+        initialPageConfig={page}
+      />
+    );
+  }
+
+  const previewPage = await getServerInvitationPageBySlug(slug, {
+    includePrivate: true,
+  });
+
+  if (!previewPage?.variants[normalizedTheme]?.available) {
     notFound();
   }
 
-  return (
-    <WeddingInvitationRoutePage
-      slug={slug}
-      theme={normalizedTheme}
-      initialPageConfig={page}
-    />
-  );
+  return <WeddingInvitationRoutePage slug={slug} theme={normalizedTheme} />;
 }

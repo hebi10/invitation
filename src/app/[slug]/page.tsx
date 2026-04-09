@@ -23,13 +23,18 @@ export default async function WeddingInvitationSlugPage({
     getServerInvitationPageBySlug(slug),
     getServerInvitationPageDefaultThemeBySlug(slug),
   ]);
+  const previewPage =
+    page ??
+    (await getServerInvitationPageBySlug(slug, {
+      includePrivate: true,
+    }));
   const preferredTheme = normalizeInvitationThemeKey(
     defaultTheme,
     DEFAULT_INVITATION_THEME
   );
-  const theme = resolveAvailableInvitationVariant(page?.variants, preferredTheme);
+  const theme = resolveAvailableInvitationVariant(previewPage?.variants, preferredTheme);
 
-  if (!page || !theme) {
+  if (!previewPage || !theme) {
     notFound();
   }
 

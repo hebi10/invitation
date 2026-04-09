@@ -1,7 +1,11 @@
 import { PersonEditorCard } from '@/app/page-editor/pageEditorPanels';
 
 import styles from '../page.module.css';
-import { composeGreetingAuthor, GREETING_TEMPLATES } from '../pageWizardData';
+import {
+  composeGreetingAuthor,
+  DEFAULT_GREETING_MESSAGE,
+  GREETING_TEMPLATES,
+} from '../pageWizardData';
 import { renderFieldMeta, type GreetingStepProps } from '../pageWizardShared';
 
 export default function GreetingStep({
@@ -18,7 +22,7 @@ export default function GreetingStep({
         <textarea
           className={styles.textarea}
           value={formState.pageData?.greetingMessage ?? ''}
-          placeholder="소중한 분들과 기쁜 마음을 나누고 싶습니다. 따뜻한 축복으로 함께해 주세요."
+          placeholder={DEFAULT_GREETING_MESSAGE}
           onChange={(event) =>
             updateForm((draft) => {
               if (draft.pageData) {

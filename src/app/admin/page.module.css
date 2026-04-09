@@ -465,6 +465,29 @@
   gap: 6px;
 }
 
+.previewWarningCard {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid rgba(180, 83, 9, 0.22);
+  border-radius: 10px;
+  background: var(--admin-color-warning-soft);
+}
+
+.previewWarningLabel {
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: var(--admin-color-warning);
+}
+
+.previewWarningText {
+  font-size: 0.75rem;
+  line-height: 1.45;
+  color: rgba(146, 64, 14, 0.92);
+}
+
 .variantPreviewLabel {
   font-size: 0.8125rem;
   font-weight: 700;

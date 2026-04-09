@@ -24,11 +24,19 @@ export async function generateMetadata({
   const { slug } = await params;
   const page = await getServerInvitationPageBySlug(slug);
 
-  if (!page) {
+  if (page) {
+    return getWeddingInvitationMetadata(page);
+  }
+
+  const previewPage = await getServerInvitationPageBySlug(slug, {
+    includePrivate: true,
+  });
+
+  if (!previewPage) {
     notFound();
   }
 
-  return getWeddingInvitationMetadata(page);
+  return getWeddingInvitationMetadata(null);
 }
 
 export default Layout;

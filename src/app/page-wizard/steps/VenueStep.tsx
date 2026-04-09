@@ -1,3 +1,4 @@
+import VenueLocationPreview from './VenueLocationPreview';
 import styles from '../page.module.css';
 import { renderFieldMeta, type VenueStepProps } from '../pageWizardShared';
 
@@ -14,6 +15,10 @@ export default function VenueStep({
     Number.isFinite(longitude) &&
     latitude !== 0 &&
     longitude !== 0;
+  const selectedAddress = formState.pageData?.ceremonyAddress?.trim() ?? '';
+  const selectedVenueName = formState.pageData?.venueName?.trim() || formState.venue.trim();
+  const markerTitle =
+    formState.pageData?.kakaoMap?.markerTitle?.trim() || selectedVenueName || selectedAddress;
 
   return (
     <div className={styles.fieldGrid}>
@@ -49,7 +54,7 @@ export default function VenueStep({
         {renderFieldMeta(
           '주소',
           'required',
-          '주소 입력 후 "주소 찾기" 버튼을 눌러주세요. 예식장 위치가 지도에 자동으로 표시됩니다.'
+          '도로명 주소나 지번 주소 모두 입력 가능합니다. 주소 입력 후 "주소 찾기" 버튼을 눌러주세요.',
         )}
         <input
           className={styles.input}
@@ -89,9 +94,19 @@ export default function VenueStep({
           {isSearchingAddress ? '주소 확인 중' : '주소 찾기'}
         </button>
         <span className={hasCoordinates ? styles.choiceSectionBadge : styles.autoStatusHint}>
-          {hasCoordinates ? '자동 입력 완료' : '위도, 경도, 지도 링크가 자동 입력됩니다.'}
+          {hasCoordinates ? '입력 완료' : '지도 링크가 연결됩니다. 오류가 나면 다시 입력해 주세요.'}
         </span>
       </div>
+
+      {selectedAddress ? (
+        <VenueLocationPreview
+          venueName={selectedVenueName}
+          address={selectedAddress}
+          latitude={latitude}
+          longitude={longitude}
+          markerTitle={markerTitle}
+        />
+      ) : null}
 
       <label className={styles.field}>
         {renderFieldMeta('예식장 연락처', 'optional')}

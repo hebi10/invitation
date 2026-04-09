@@ -467,7 +467,6 @@
   display: flex;
   flex-direction: column;
   gap: 6px;
-  margin-bottom: 16px;
 }
 
 .fieldWide {
@@ -479,11 +478,12 @@
   align-items: center;
   gap: 8px;
   flex-wrap: wrap;
+  padding: 0 6px;
 }
 
 .fieldLabel {
   color: #334155;
-  font-size: 0.82rem;
+  font-size: 1rem;
   font-weight: 800;
 }
 
@@ -1159,6 +1159,45 @@
   line-height: 1.65;
 }
 
+.venueMapPreviewFrame {
+  position: relative;
+  overflow: hidden;
+  min-height: 220px;
+  border: 1px solid rgba(180, 131, 91, 0.14);
+  border-radius: 20px;
+  background: rgba(248, 241, 234, 0.72);
+}
+
+.venueMapPreviewCanvas {
+  width: 100%;
+  height: 220px;
+}
+
+.venueMapPreviewOverlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 18px;
+  background: rgba(255, 255, 255, 0.84);
+  color: #7c6d60;
+  font-size: 0.86rem;
+  line-height: 1.6;
+  text-align: center;
+}
+
+.venueMapPreviewActions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.venueMapPreviewAction {
+  min-width: 120px;
+}
+
 .slideFooter {
   display: grid;
   gap: 12px;
@@ -1298,6 +1337,11 @@
   .lockRow,
   .templateRow {
     flex-direction: column;
+  }
+
+  .venueMapPreviewAction {
+    flex: 1 1 calc(50% - 5px);
+    min-width: 0;
   }
 }
 
@@ -1474,7 +1518,7 @@
 }
 
 .textarea {
-  min-height: 112px;
+  min-height: 180px;
   padding: 12px;
 }
 

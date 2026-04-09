@@ -8,6 +8,7 @@ import { usePageImages } from '@/hooks';
 import { getAdminInvitationPreviewSummary } from '@/lib/adminInvitationPreviewCache';
 import { USE_FIREBASE } from '@/lib/firebase';
 import { resolveInvitationFeatures } from '@/lib/invitationProducts';
+import { getInvitationPublicAccessState } from '@/lib/invitationPublicAccess';
 import { resolveInvitationPageDataByTheme } from '@/lib/invitationThemePageData';
 import { getStorageDownloadUrl } from '@/services/imageService';
 import { getInvitationPageBySlug } from '@/services/invitationPageService';
@@ -100,6 +101,8 @@ function getAdminNotice(page: InvitationPage, isAdminLoggedIn: boolean) {
   if (!isAdminLoggedIn) {
     return null;
   }
+  return getInvitationPublicAccessState(page).adminNotice;
+  /*
 
   if (!page.published) {
     return '현재 비공개 상태인 청첩장입니다. 관리자만 볼 수 있습니다.';
@@ -124,23 +127,11 @@ function getAdminNotice(page: InvitationPage, isAdminLoggedIn: boolean) {
   }
 
   return null;
+  */
 }
 
 function isPublicInvitationPage(page: InvitationPage) {
-  if (!page.published) {
-    return false;
-  }
-
-  if (!page.displayPeriodEnabled) {
-    return true;
-  }
-
-  if (!page.displayPeriodStart || !page.displayPeriodEnd) {
-    return false;
-  }
-
-  const now = new Date();
-  return now >= page.displayPeriodStart && now <= page.displayPeriodEnd;
+  return getInvitationPublicAccessState(page).isPublic;
 }
 
 export function useWeddingInvitationState(
