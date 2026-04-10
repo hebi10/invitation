@@ -47,7 +47,6 @@
   height: 100%;
   border-radius: 50%;
   object-fit: cover;
-  box-shadow: 0 15px 40px rgba(139, 110, 99, 0.3);
   border: 4px solid var(--accent-color);
   position: relative;
   z-index: 1;
