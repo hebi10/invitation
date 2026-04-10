@@ -26,6 +26,12 @@ function preloadSingleImage(url?: string) {
   image.src = url;
 }
 
+function preloadPopupImageSet(images: string[], index: number) {
+  preloadSingleImage(images[index]);
+  preloadSingleImage(images[index - 1]);
+  preloadSingleImage(images[index + 1]);
+}
+
 function renderLoadingPlaceholder(
   styles: Record<string, string>,
   message = '이미지 로딩 중'
@@ -95,10 +101,7 @@ export default function GalleryGridShared({
     setPopupImageError(null);
     setIsPopupImageLoading(!loadedPopupImages.has(selectedImage));
 
-    preloadSingleImage(selectedImage);
-    preloadSingleImage(images[selectedIndex - 1]);
-    preloadSingleImage(images[selectedIndex + 1]);
-    preloadSingleImage(images[selectedIndex + 2]);
+    preloadPopupImageSet(images, selectedIndex);
   }, [images, loadedPopupImages, selectedImage, selectedIndex]);
 
   const closePopup = useCallback(() => {
@@ -108,32 +111,31 @@ export default function GalleryGridShared({
   }, []);
 
   const goToPrevImage = useCallback(() => {
-    setSelectedIndex((current) => {
-      if (current === null || current <= 0) {
-        return current;
-      }
+    if (selectedIndex === null || selectedIndex <= 0) {
+      return;
+    }
 
-      return current - 1;
-    });
-  }, []);
+    const nextIndex = selectedIndex - 1;
+    preloadPopupImageSet(images, nextIndex);
+    setSelectedIndex(nextIndex);
+  }, [images, selectedIndex]);
 
   const goToNextImage = useCallback(() => {
-    setSelectedIndex((current) => {
-      if (current === null || current >= images.length - 1) {
-        return current;
-      }
+    if (selectedIndex === null || selectedIndex >= images.length - 1) {
+      return;
+    }
 
-      return current + 1;
-    });
-  }, [images.length]);
+    const nextIndex = selectedIndex + 1;
+    preloadPopupImageSet(images, nextIndex);
+    setSelectedIndex(nextIndex);
+  }, [images, selectedIndex]);
 
   useEffect(() => {
     if (selectedIndex === null) {
       return;
     }
 
-    preloadSingleImage(images[selectedIndex - 1]);
-    preloadSingleImage(images[selectedIndex + 1]);
+    preloadPopupImageSet(images, selectedIndex);
 
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
@@ -166,6 +168,7 @@ export default function GalleryGridShared({
   }, []);
 
   const openPopup = (index: number) => {
+    preloadPopupImageSet(images, index);
     setSelectedIndex(index);
     setPopupImageError(null);
     setIsPopupImageLoading(!loadedPopupImages.has(images[index]));
@@ -194,12 +197,10 @@ export default function GalleryGridShared({
                       loading={index === 0 ? 'eager' : 'lazy'}
                       onClick={() => openPopup(index)}
                       onMouseEnter={() => {
-                        preloadSingleImage(images[index]);
-                        preloadSingleImage(images[index + 1]);
+                        preloadPopupImageSet(images, index);
                       }}
                       onTouchStart={() => {
-                        preloadSingleImage(images[index]);
-                        preloadSingleImage(images[index + 1]);
+                        preloadPopupImageSet(images, index);
                       }}
                       onLoad={() =>
                         setLoadedImages((current) => new Set([...current, previewImage]))
@@ -355,11 +356,12 @@ export default function GalleryGridShared({
             >
               <button
                 className={`${styles.navArrow} ${styles.prevArrow}`}
+                aria-label="이전 이미지"
                 onClick={goToPrevImage}
                 disabled={selectedIndex === null || selectedIndex <= 0}
                 type="button"
               >
-                이전
+                {'<'}
               </button>
 
               <span className={styles.imageCounter}>
@@ -368,11 +370,12 @@ export default function GalleryGridShared({
 
               <button
                 className={`${styles.navArrow} ${styles.nextArrow}`}
+                aria-label="다음 이미지"
                 onClick={goToNextImage}
                 disabled={selectedIndex === null || selectedIndex >= images.length - 1}
                 type="button"
               >
-                다음
+                {'>'}
               </button>
             </div>
           </div>
