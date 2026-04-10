@@ -3,6 +3,7 @@ import { useCallback } from 'react';
 import {
   buildInvitationVariants,
   createInvitationVariantAvailability,
+  getAvailableInvitationVariantKeys,
   type InvitationVariantKey,
 } from '@/lib/invitationVariants';
 
@@ -164,10 +165,16 @@ export function useWizardPersistence({
 
         const sourceConfig = draftState.config ?? formState;
         const prepared = prepareWizardConfigForSave(sourceConfig, nextSlug);
+        const currentAvailableVariantKeys = getAvailableInvitationVariantKeys(
+          sourceConfig.variants
+        );
+        const nextAvailableVariantKeys =
+          currentAvailableVariantKeys.length > 1
+            ? currentAvailableVariantKeys
+            : [defaultTheme as InvitationVariantKey];
+
         prepared.variants = buildInvitationVariants(nextSlug, prepared.displayName, {
-          availability: createInvitationVariantAvailability([
-            defaultTheme as InvitationVariantKey,
-          ]),
+          availability: createInvitationVariantAvailability(nextAvailableVariantKeys),
         });
         const nextPublished = options?.publish ?? published;
 

@@ -4,6 +4,8 @@ import styles from '../page.module.css';
 import {
   buildInvitationVariants,
   createInvitationVariantAvailability,
+  getAvailableInvitationVariantKeys,
+  type InvitationVariantKey,
 } from '@/lib/invitationVariants';
 import { INVITATION_THEME_KEYS } from '@/lib/invitationThemes';
 import {
@@ -91,11 +93,21 @@ export default function ThemeStep({
                   onClick={() => {
                     setDefaultTheme(theme);
                     updateForm((draft) => {
+                      const currentAvailableVariantKeys = getAvailableInvitationVariantKeys(
+                        draft.variants
+                      );
+                      const nextAvailableVariantKeys =
+                        currentAvailableVariantKeys.length > 1
+                          ? currentAvailableVariantKeys
+                          : [theme];
+
                       draft.variants = buildInvitationVariants(
                         draft.slug,
                         draft.displayName,
                         {
-                          availability: createInvitationVariantAvailability([theme]),
+                          availability: createInvitationVariantAvailability(
+                            nextAvailableVariantKeys as InvitationVariantKey[]
+                          ),
                         }
                       );
                     });

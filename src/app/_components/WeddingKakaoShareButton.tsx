@@ -2,7 +2,6 @@
 
 import { useEffect, useMemo, useState } from 'react';
 
-import { usePageImages } from '@/hooks';
 import { getPublicKakaoJavaScriptKey } from '@/lib/publicRuntimeConfig';
 import type { InvitationShareMode } from '@/types/invitationPage';
 
@@ -10,7 +9,7 @@ interface WeddingKakaoShareButtonProps {
   title: string;
   description: string;
   imageUrl: string;
-  pageSlug: string;
+  fallbackImageUrl?: string;
   shareMode?: InvitationShareMode;
   variant?: 'default' | 'space';
 }
@@ -55,20 +54,122 @@ const buttonVariantStyles = {
   },
 } as const;
 
+function buildLinkSharePayload(shareUrl: string, title: string, description: string) {
+  return {
+    objectType: 'text' as const,
+    text: `${title}\n${description}`,
+    link: {
+      mobileWebUrl: shareUrl,
+      webUrl: shareUrl,
+    },
+    buttons: [
+      {
+        title: '초대장 보기',
+        link: {
+          mobileWebUrl: shareUrl,
+          webUrl: shareUrl,
+        },
+      },
+    ],
+  };
+}
+
+function buildCardSharePayload(
+  shareUrl: string,
+  title: string,
+  description: string,
+  imageUrl: string
+) {
+  return {
+    objectType: 'feed' as const,
+    content: {
+      title,
+      description,
+      imageUrl,
+      link: {
+        mobileWebUrl: shareUrl,
+        webUrl: shareUrl,
+      },
+    },
+    buttons: [
+      {
+        title: '초대장 보기',
+        link: {
+          mobileWebUrl: shareUrl,
+          webUrl: shareUrl,
+        },
+      },
+    ],
+  };
+}
+
+function preloadShareImage(imageUrl: string) {
+  if (!imageUrl || typeof window === 'undefined') {
+    return Promise.resolve(false);
+  }
+
+  return new Promise<boolean>((resolve) => {
+    const image = new window.Image();
+    let settled = false;
+
+    const finish = (result: boolean) => {
+      if (settled) {
+        return;
+      }
+
+      settled = true;
+      resolve(result);
+    };
+
+    const timeout = window.setTimeout(() => finish(false), 4000);
+
+    image.onload = () => {
+      window.clearTimeout(timeout);
+      finish(true);
+    };
+
+    image.onerror = () => {
+      window.clearTimeout(timeout);
+      finish(false);
+    };
+
+    image.decoding = 'async';
+    image.src = imageUrl;
+  });
+}
+
+async function resolveCardShareImageUrl(candidates: string[]) {
+  for (const candidate of candidates) {
+    if (await preloadShareImage(candidate)) {
+      return candidate;
+    }
+  }
+
+  return '';
+}
+
+function openKakaoShare(payload: Record<string, unknown>) {
+  window.Kakao.Share.sendDefault(payload);
+}
+
 export default function WeddingKakaoShareButton({
   title,
   description,
   imageUrl,
-  pageSlug,
+  fallbackImageUrl,
   shareMode = 'card',
   variant = 'default',
 }: WeddingKakaoShareButtonProps) {
   const [isKakaoReady, setIsKakaoReady] = useState(false);
   const [feedbackMessage, setFeedbackMessage] = useState('');
-  const { mainImage } = usePageImages(pageSlug, { enabled: !imageUrl });
-  const shareImageUrl = imageUrl || mainImage?.url;
+  const [resolvedCardImageUrl, setResolvedCardImageUrl] = useState('');
   const variantStyle = buttonVariantStyles[variant];
   const kakaoAppKey = getPublicKakaoJavaScriptKey();
+  const shareImageCandidates = useMemo(() => {
+    return [imageUrl, fallbackImageUrl]
+      .map((value) => value?.trim() ?? '')
+      .filter((value, index, array) => value && array.indexOf(value) === index);
+  }, [fallbackImageUrl, imageUrl]);
 
   useEffect(() => {
     const initKakao = () => {
@@ -77,7 +178,7 @@ export default function WeddingKakaoShareButton({
       }
 
       if (!kakaoAppKey) {
-        console.warn('[웨딩카카오공유버튼] 카카오 자바스크립트 키 누락');
+        console.warn('[WeddingKakaoShareButton] missing Kakao JavaScript key');
         return;
       }
 
@@ -121,66 +222,88 @@ export default function WeddingKakaoShareButton({
     return () => window.clearTimeout(timer);
   }, [feedbackMessage]);
 
-  const buttonLabel = useMemo(() => {
-    return feedbackMessage || '카카오톡 공유하기';
-  }, [feedbackMessage]);
+  useEffect(() => {
+    if (shareMode !== 'card') {
+      setResolvedCardImageUrl('');
+      return;
+    }
+
+    const initialCandidate = shareImageCandidates[0] ?? '';
+    setResolvedCardImageUrl(initialCandidate);
+
+    if (!initialCandidate) {
+      return;
+    }
+
+    let cancelled = false;
+
+    const prepareCardShareImage = async () => {
+      const nextImageUrl = await resolveCardShareImageUrl(shareImageCandidates);
+
+      if (cancelled) {
+        return;
+      }
+
+      setResolvedCardImageUrl(nextImageUrl);
+    };
+
+    void prepareCardShareImage();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [shareImageCandidates, shareMode]);
+
+  const buttonLabel = useMemo(() => feedbackMessage || '카카오톡 공유하기', [feedbackMessage]);
 
   const handleKakaoShare = () => {
     if (!kakaoAppKey) {
-      setFeedbackMessage('카카오 공유가 설정되어 있지 않습니다.');
+      setFeedbackMessage('카카오 공유 설정이 준비되지 않았습니다.');
       return;
     }
 
     if (!(window.Kakao && window.Kakao.Share && isKakaoReady)) {
-      setFeedbackMessage('카카오 공유 준비 중.');
+      setFeedbackMessage('카카오 공유 준비 중입니다.');
       return;
     }
 
     const shareUrl = `${window.location.origin}${window.location.pathname}`;
+    const linkPayload = buildLinkSharePayload(shareUrl, title, description);
+    const cardImageUrl = resolvedCardImageUrl || shareImageCandidates[0] || '';
 
-    if (shareMode === 'link') {
-      window.Kakao.Share.sendDefault({
-        objectType: 'text',
-        text: `${title}\n${description}`,
-        link: {
-          mobileWebUrl: shareUrl,
-          webUrl: shareUrl,
-        },
-        buttons: [
-          {
-            title: '초대장 열기',
-            link: {
-              mobileWebUrl: shareUrl,
-              webUrl: shareUrl,
-            },
-          },
-        ],
-      });
-    } else {
-      window.Kakao.Share.sendDefault({
-        objectType: 'feed',
-        content: {
-          title,
-          description,
-          imageUrl: shareImageUrl,
-          link: {
-            mobileWebUrl: shareUrl,
-            webUrl: shareUrl,
-          },
-        },
-        buttons: [
-          {
-            title: '초대장 열기',
-            link: {
-              mobileWebUrl: shareUrl,
-              webUrl: shareUrl,
-            },
-          },
-        ],
-      });
+    try {
+      if (shareMode === 'link') {
+        openKakaoShare(linkPayload);
+        setFeedbackMessage('카카오톡 공유를 열었습니다.');
+        return;
+      }
+
+      if (!cardImageUrl) {
+        openKakaoShare(linkPayload);
+        setFeedbackMessage('대표 이미지 확인 후 링크 공유로 전환했습니다.');
+        return;
+      }
+
+      openKakaoShare(buildCardSharePayload(shareUrl, title, description, cardImageUrl));
+      setFeedbackMessage('카카오톡 공유를 열었습니다.');
+    } catch (error) {
+      console.error('[WeddingKakaoShareButton] failed to open Kakao share', error);
+
+      if (shareMode === 'card') {
+        try {
+          openKakaoShare(linkPayload);
+          setFeedbackMessage('카드 공유에 실패해 링크 공유로 전환했습니다.');
+          return;
+        } catch (fallbackError) {
+          console.error(
+            '[WeddingKakaoShareButton] failed to open Kakao link share fallback',
+            fallbackError
+          );
+        }
+      }
+
+      setFeedbackMessage('카카오톡 공유를 열지 못했습니다.');
     }
-
-    setFeedbackMessage('카카오 공유가 열렸습니다.');
   };
 
   return (

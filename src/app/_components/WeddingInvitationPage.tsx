@@ -201,7 +201,7 @@ function WeddingInvitationPageBody(options: WeddingInvitationRouteOptions) {
         title={themeDefinition.getShareTitle(readyState.pageConfig)}
         description={themeDefinition.getShareDescription(readyState.pageConfig)}
         imageUrl={readyState.mainImageUrl}
-        pageSlug={options.slug}
+        fallbackImageUrl={readyState.galleryImageUrls[0]}
         shareMode={shareFeatures.shareMode}
         variant={themeDefinition.shareButtonVariant}
       />
