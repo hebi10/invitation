@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 
+import fsSync from 'node:fs';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import process from 'node:process';
@@ -41,10 +42,41 @@ async function outputExists() {
   }
 }
 
+function resolveApplicationDefaultCredentialsPath() {
+  const credentialsPath = process.env.GOOGLE_APPLICATION_CREDENTIALS?.trim();
+
+  if (!credentialsPath) {
+    return null;
+  }
+
+  return path.isAbsolute(credentialsPath)
+    ? credentialsPath
+    : path.resolve(process.cwd(), credentialsPath);
+}
+
+function sanitizeApplicationDefaultCredentials() {
+  const resolvedPath = resolveApplicationDefaultCredentialsPath();
+
+  if (!resolvedPath) {
+    return;
+  }
+
+  if (fsSync.existsSync(resolvedPath)) {
+    return;
+  }
+
+  console.warn(
+    `[memory-metadata] Ignoring missing GOOGLE_APPLICATION_CREDENTIALS path: ${resolvedPath}`
+  );
+  delete process.env.GOOGLE_APPLICATION_CREDENTIALS;
+}
+
 function initializeFirebaseAdmin() {
   if (getApps().length > 0) {
     return getFirestore();
   }
+
+  sanitizeApplicationDefaultCredentials();
 
   if (process.env.FIREBASE_SERVICE_ACCOUNT_JSON) {
     initializeApp({

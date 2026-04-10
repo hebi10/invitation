@@ -1,5 +1,8 @@
 import 'server-only';
 
+import { existsSync } from 'node:fs';
+import path from 'node:path';
+
 import {
   applicationDefault,
   cert,
@@ -30,6 +33,32 @@ function hasApplicationDefaultCredentials() {
   return Boolean(process.env.GOOGLE_APPLICATION_CREDENTIALS);
 }
 
+function resolveApplicationDefaultCredentialsPath() {
+  const credentialsPath = process.env.GOOGLE_APPLICATION_CREDENTIALS?.trim();
+
+  if (!credentialsPath) {
+    return null;
+  }
+
+  return path.isAbsolute(credentialsPath)
+    ? credentialsPath
+    : path.resolve(process.cwd(), credentialsPath);
+}
+
+function sanitizeApplicationDefaultCredentials() {
+  const resolvedPath = resolveApplicationDefaultCredentialsPath();
+
+  if (!resolvedPath) {
+    return;
+  }
+
+  if (existsSync(resolvedPath)) {
+    return;
+  }
+
+  delete process.env.GOOGLE_APPLICATION_CREDENTIALS;
+}
+
 function isManagedGoogleRuntime() {
   return Boolean(
     process.env.K_SERVICE ||
@@ -44,6 +73,8 @@ function initializeFirebaseAdminApp() {
   if (!USE_FIREBASE) {
     return null;
   }
+
+  sanitizeApplicationDefaultCredentials();
 
   if (getApps().length > 0) {
     return getApps()[0] ?? null;

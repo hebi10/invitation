@@ -3,7 +3,6 @@
 import Image from 'next/image';
 
 import { HeartIconSimple } from '@/components/icons';
-import mainTitleImage from '../../../../public/images/main_title02.png';
 import CoverFramedThemed from './CoverFramedThemed';
 import styles from './CoverSimple.module.css';
 
@@ -22,6 +21,8 @@ interface CoverProps {
 }
 
 export default function CoverSimple(props: CoverProps) {
+  const titleImageSrc = '/images/main_title02.png';
+
   return (
     <CoverFramedThemed
       {...props}
@@ -30,9 +31,11 @@ export default function CoverSimple(props: CoverProps) {
         <h1 className={themeStyles.title}>
           <span className={themeStyles.visuallyHidden}>{title || 'Invitation'}</span>
           <Image
-            src={mainTitleImage}
+            src={titleImageSrc}
             alt=""
             priority
+            width={657}
+            height={313}
             className={themeStyles.titleImage}
           />
         </h1>
