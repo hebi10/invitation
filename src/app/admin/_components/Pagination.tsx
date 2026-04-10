@@ -35,7 +35,7 @@ export default function Pagination({
           onClick={() => onPageChange(Math.max(1, currentPage - 1))}
           disabled={currentPage === 1}
         >
-          이전
+          &#60;
         </button>
 
         <div className={uiStyles.pageNumberGroup}>
@@ -57,7 +57,7 @@ export default function Pagination({
           onClick={() => onPageChange(Math.min(totalPages, currentPage + 1))}
           disabled={currentPage === totalPages}
         >
-          다음
+          &#62;
         </button>
       </div>
     </div>

@@ -271,7 +271,7 @@ export default function GalleryGridShared({
         >
           <div className={styles.popupContent}>
             <button className={styles.closeButton} onClick={closePopup} type="button">
-              닫기
+              X
             </button>
 
             <div

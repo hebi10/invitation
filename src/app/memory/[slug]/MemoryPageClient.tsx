@@ -643,7 +643,7 @@ function MemoryPageClientBody({ slug }: MemoryPageClientProps) {
                     onClick={() => setCommentPage((page) => Math.max(1, page - 1))}
                     disabled={commentPage === 1}
                   >
-                    이전
+                    &#60;
                   </button>
 
                   <div className={styles.commentPaginationNumbers}>
@@ -673,7 +673,7 @@ function MemoryPageClientBody({ slug }: MemoryPageClientProps) {
                     }
                     disabled={commentPage === totalCommentPages}
                   >
-                    다음
+                    &#62;
                   </button>
                 </div>
               </div>
@@ -732,7 +732,7 @@ function MemoryPageClientBody({ slug }: MemoryPageClientProps) {
               onClick={closeLightbox}
               aria-label="라이트박스 닫기"
             >
-              닫기
+              X
             </button>
 
             <Swiper

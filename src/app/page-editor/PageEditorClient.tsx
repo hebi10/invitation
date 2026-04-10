@@ -2495,7 +2495,7 @@ export default function PageEditorClient({
               className={styles.ghostButton}
               onClick={() => setIsStepMenuOpen(false)}
             >
-              닫기
+              X
             </button>
           </div>
 
