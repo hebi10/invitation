@@ -131,6 +131,14 @@ export default function AdminPageClient() {
   const safePathname = pathname ?? '/admin';
   const searchParams = useSearchParams();
   const safeSearchParams = searchParams ?? new URLSearchParams();
+  const returnPath = (() => {
+    const value = safeSearchParams.get('next');
+    if (!value || !value.startsWith('/') || value.startsWith('//')) {
+      return null;
+    }
+
+    return value;
+  })();
   const { confirm, showToast } = useAdminOverlay();
 
   /* ── Login form state ── */
@@ -219,6 +227,9 @@ export default function AdminPageClient() {
         title: '관리자 로그인에 성공했습니다.',
         tone: 'success',
       });
+      if (returnPath) {
+        router.replace(returnPath, { scroll: false });
+      }
     } finally {
       setLoginLoading(false);
     }

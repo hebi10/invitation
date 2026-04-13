@@ -10,7 +10,6 @@ import {
   getInvitationThemeLabel,
   getInvitationThemeWizardDescription,
 } from '@/lib/invitationThemes';
-import { resolveInvitationFeatures } from '@/lib/invitationProducts';
 import { toDate } from '@/lib/invitationPageNormalization';
 import type {
   InvitationPageSeed,
@@ -25,19 +24,13 @@ import {
   type WizardStepKey,
 } from './pageWizardData';
 
-/* ── Notice types ── */
-
 export type NoticeTone = 'success' | 'error' | 'neutral';
 export type NoticeState = { tone: NoticeTone; message: string } | null;
-
-/* ── UI types ── */
 
 export type UploadFieldKind = 'cover' | 'gallery';
 export type SlideViewMode = 'input' | 'preview';
 export type ChoicePanelKey = 'theme' | 'tier' | null;
 export type MusicPreviewState = 'idle' | 'loading' | 'ready' | 'error';
-
-/* ── Step component shared props ── */
 
 export interface WizardStepProps {
   formState: InvitationPageSeed;
@@ -77,7 +70,11 @@ export interface SlugStepProps {
 }
 
 export interface BasicStepProps extends WizardStepProps {
-  onPersonFieldChange: (role: PersonRole, field: 'name' | 'order' | 'phone', value: string) => void;
+  onPersonFieldChange: (
+    role: PersonRole,
+    field: 'name' | 'order' | 'phone',
+    value: string
+  ) => void;
 }
 
 export interface ScheduleStepProps extends WizardStepProps {
@@ -92,8 +89,17 @@ export interface VenueStepProps extends WizardStepProps {
 }
 
 export interface GreetingStepProps extends WizardStepProps {
-  onPersonFieldChange: (role: PersonRole, field: 'name' | 'order' | 'phone', value: string) => void;
-  onParentFieldChange: (role: PersonRole, parentRole: ParentRole, field: 'relation' | 'name' | 'phone', value: string) => void;
+  onPersonFieldChange: (
+    role: PersonRole,
+    field: 'name' | 'order' | 'phone',
+    value: string
+  ) => void;
+  onParentFieldChange: (
+    role: PersonRole,
+    parentRole: ParentRole,
+    field: 'relation' | 'name' | 'phone',
+    value: string
+  ) => void;
 }
 
 export interface ImagesStepProps extends WizardStepProps {
@@ -114,10 +120,20 @@ export interface ImagesStepProps extends WizardStepProps {
 export interface ExtraStepProps extends WizardStepProps {
   onAccountAdd: (kind: AccountKind) => void;
   onAccountRemove: (kind: AccountKind, index: number) => void;
-  onAccountChange: (kind: AccountKind, index: number, field: 'bank' | 'accountNumber' | 'accountHolder', value: string) => void;
+  onAccountChange: (
+    kind: AccountKind,
+    index: number,
+    field: 'bank' | 'accountNumber' | 'accountHolder',
+    value: string
+  ) => void;
   onGuideAdd: (kind: GuideKind) => void;
   onGuideRemove: (kind: GuideKind, index: number) => void;
-  onGuideChange: (kind: GuideKind, index: number, field: 'title' | 'content', value: string) => void;
+  onGuideChange: (
+    kind: GuideKind,
+    index: number,
+    field: 'title' | 'content',
+    value: string
+  ) => void;
   onGuideTemplateApply: (kind: GuideKind, label: string, content: string) => void;
 }
 
@@ -129,8 +145,6 @@ export interface FinalStepProps extends WizardStepProps {
   published: boolean;
   setPublished: (value: boolean) => void;
 }
-
-/* ── Label utilities (shared between Client and StepPreview) ── */
 
 export function getThemeLabel(theme: InvitationThemeKey) {
   return getInvitationThemeLabel(theme);
@@ -145,20 +159,16 @@ export function getProductTierLabel(tier: InvitationProductTier) {
 }
 
 export function getProductTierDescription(tier: InvitationProductTier) {
-  const features = resolveInvitationFeatures(tier);
-  const shareLabel =
-    features.shareMode === 'none'
-      ? '공유 버튼 미포함'
-      : features.shareMode === 'card'
-        ? '카카오 카드형 공유'
-        : '카카오 링크형 공유';
-
-  return `갤러리 최대 ${features.maxGalleryImages}장, ${shareLabel}, ${
-    features.showCountdown ? '카운트다운 포함' : '카운트다운 미포함'
-  }, ${features.showGuestbook ? '방명록 포함' : '방명록 미포함'}`;
+  switch (tier) {
+    case 'standard':
+      return '맞춤 문구 제작, 갤러리 이미지 최대 6장, 카카오톡 링크 형식 공유 (URL 공유)';
+    case 'deluxe':
+      return 'STANDARD 전체 포함, 갤러리 이미지 최대 12장, 음악 포함, 카카오톡 카드 형식 공유';
+    case 'premium':
+    default:
+      return 'DELUXE 전체 포함, 갤러리 이미지 최대 18장, 캘린더 카운트다운, 방명록 기능';
+  }
 }
-
-/* ── UI helpers ── */
 
 export function getNoticeClassName(tone: NoticeTone) {
   if (tone === 'success') {
@@ -190,7 +200,11 @@ export function renderFieldMeta(
                 : styles.optionalBadge
           }
         >
-          {requirement === 'required' ? '필수' : requirement === 'auto' ? '자동입력' : '선택'}
+          {requirement === 'required'
+            ? '필수'
+            : requirement === 'auto'
+              ? '자동입력'
+              : '선택'}
         </span>
       </span>
       {hint ? <span className={styles.fieldHint}>{hint}</span> : null}

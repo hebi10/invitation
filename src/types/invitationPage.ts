@@ -32,6 +32,7 @@ export type InvitationThemeKey = RegisteredInvitationThemeKey;
 export interface InvitationFeatureFlags {
   maxGalleryImages: number;
   shareMode: InvitationShareMode;
+  showMusic: boolean;
   showCountdown: boolean;
   showGuestbook: boolean;
 }

@@ -23,7 +23,6 @@
 - `Firebase Auth`
 - `Cloud Firestore`
 - `Firebase Storage`
-- `Playwright`
 
 ## 2. 현재 라우트 구조
 
@@ -53,8 +52,6 @@
   관리자용 신규 페이지 모바일 수정 시작 화면
 - `/page-wizard/{slug}`
   관리자용 페이지 모바일 수정 편집 / 수정 화면
-- `/firebase-test`
-  개발용 Firebase 점검 페이지
 
 ## 3. 현재 아키텍처 요약
 
@@ -391,9 +388,6 @@ NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID=
 NEXT_PUBLIC_KAKAO_JAVASCRIPT_KEY=
 # 또는
 NEXT_PUBLIC_KAKAO_MAP_API_KEY=
-
-NEXT_PUBLIC_ENABLE_DEV_TOOLS=false
-ENABLE_DEV_TOOLS=false
 ```
 
 설명:
@@ -404,8 +398,6 @@ ENABLE_DEV_TOOLS=false
   Firebase Web SDK 설정
 - `NEXT_PUBLIC_KAKAO_JAVASCRIPT_KEY`
   Kakao 지도 / 공유 SDK 키
-- `NEXT_PUBLIC_ENABLE_DEV_TOOLS`, `ENABLE_DEV_TOOLS`
-  `/firebase-test` 노출 제어
 
 주의:
 
@@ -449,20 +441,14 @@ npm run dev
 
 ```bash
 npm run dev
+npm run clean:next
+npm run sync:memory-metadata
 npm run build
 npm run build:memory-metadata-strict
+npm run export
 npm run preview
 npm run lint
-npm run test:e2e
-npm run test:e2e:smoke
 npm run deploy:firebase
-
-npm run migrate:firebase:static
-npm run migrate:comments:guestbooks
-npm run migrate:comments:guestbooks:execute
-npm run migrate:comments:guestbooks:validate
-npm run migrate:comments:guestbooks:purge
-npm run migrate:comments:guestbooks:purge:execute
 
 npm run seed:invitation-pages
 npm run seed:invitation-pages:execute
@@ -475,26 +461,38 @@ npm run seed:invitation-pages:validate
   메모리 메타데이터 snapshot 생성 후 `.next` 정리 후 `next build`
 - `build:memory-metadata-strict`
   strict 모드 메타데이터 동기화 후 빌드
+- `clean:next`
+  `.next` 캐시 삭제
+- `sync:memory-metadata`
+  메모리 페이지 메타데이터 snapshot 생성
+- `export`
+  현재는 `next build`와 동일하게 동작
 - `preview`
   `next start -p 3000`
 - `deploy:firebase`
   strict build 후 `firebase deploy`
-- `migrate:comments:guestbooks`
-  레거시 댓글 구조 분석
-- `migrate:comments:guestbooks:execute`
-  댓글을 `guestbooks/{pageSlug}/comments/{commentId}`로 복사
-- `migrate:comments:guestbooks:validate`
-  마이그레이션 누락 검증
-- `migrate:comments:guestbooks:purge`
-  레거시 댓글 삭제 계획(dry-run) 확인
-- `migrate:comments:guestbooks:purge:execute`
-  target 검증 후 레거시 댓글 실제 삭제
 - `seed:invitation-pages`
   현재 청첩장 seed / Firestore 상태를 분석
 - `seed:invitation-pages:execute`
   청첩장 seed 데이터를 실제로 반영
 - `seed:invitation-pages:validate`
   청첩장 seed 반영 상태를 검증
+
+### 직접 실행 스크립트
+
+`package.json`에 alias가 없는 운영 보조 스크립트는 아래처럼 직접 실행합니다.
+
+```bash
+node scripts/migrate-comments-to-guestbooks.mjs analyze
+node scripts/migrate-comments-to-guestbooks.mjs migrate --execute
+node scripts/migrate-comments-to-guestbooks.mjs validate
+node scripts/migrate-comments-to-guestbooks.mjs purge-legacy
+node scripts/migrate-comments-to-guestbooks.mjs purge-legacy --execute
+
+node scripts/firebase-static-hosting-migration.mjs analyze
+node scripts/firebase-static-hosting-migration.mjs migrate-comments --execute
+node scripts/firebase-static-hosting-migration.mjs sanitize-memory-pages --execute
+```
 
 ## 12. 고객 편집기 개요
 
@@ -543,11 +541,11 @@ npm run seed:invitation-pages:validate
 권장 순서:
 
 ```bash
-npm run migrate:comments:guestbooks
-npm run migrate:comments:guestbooks:execute
-npm run migrate:comments:guestbooks:validate
-npm run migrate:comments:guestbooks:purge
-npm run migrate:comments:guestbooks:purge:execute
+node scripts/migrate-comments-to-guestbooks.mjs analyze
+node scripts/migrate-comments-to-guestbooks.mjs migrate --execute
+node scripts/migrate-comments-to-guestbooks.mjs validate
+node scripts/migrate-comments-to-guestbooks.mjs purge-legacy
+node scripts/migrate-comments-to-guestbooks.mjs purge-legacy --execute
 npm run deploy:firebase
 ```
 
@@ -568,7 +566,7 @@ npm run deploy:firebase
 
 ```powershell
 $env:GOOGLE_APPLICATION_CREDENTIALS="C:\Users\your-name\Downloads\firebase-admin.json"
-npm run migrate:comments:guestbooks
+node scripts/migrate-comments-to-guestbooks.mjs analyze
 ```
 
 주의:
@@ -667,14 +665,14 @@ npm run migrate:comments:guestbooks
 
 ```bash
 npm run lint
+npx tsc --noEmit
 npm run build
-npm run test:e2e:smoke
 ```
 
 방명록 마이그레이션 이후에는 추가로:
 
 ```bash
-npm run migrate:comments:guestbooks:validate
+node scripts/migrate-comments-to-guestbooks.mjs validate
 ```
 
 ## 20. 참고 파일

@@ -357,6 +357,10 @@ function mergeInvitationPageSeed(
         ? featuresInput.maxGalleryImages
         : undefined,
     shareMode: featuresInput.shareMode,
+    showMusic:
+      typeof featuresInput.showMusic === 'boolean'
+        ? featuresInput.showMusic
+        : undefined,
     showCountdown:
       typeof featuresInput.showCountdown === 'boolean'
         ? featuresInput.showCountdown

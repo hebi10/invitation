@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation';
 
 import { normalizeFormConfig } from '@/app/page-editor/pageEditorUtils';
 import { useAdmin } from '@/contexts';
+import { resolveInvitationFeatures } from '@/lib/invitationProducts';
 import type { EditableInvitationPageConfig } from '@/services/invitationPageService';
 import { getEditableInvitationPageConfig } from '@/services/invitationPageService';
 import {
@@ -40,7 +41,16 @@ export default function PageWizardResultClient({
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const canView = isAdminLoggedIn || hasClientSession;
-  const wizardSteps = useMemo(() => getWizardSteps(false), []);
+  const wizardSteps = useMemo(
+    () =>
+      getWizardSteps(false, {
+        includeMusic: resolveInvitationFeatures(
+          configState?.productTier,
+          configState?.features
+        ).showMusic,
+      }),
+    [configState?.features, configState?.productTier]
+  );
 
   useEffect(() => {
     if (isAdminLoading) {

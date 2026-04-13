@@ -106,50 +106,63 @@ export function observeAdminSession(
   let disposed = false;
   let unsubscribeAuth: (() => void) | null = null;
 
-  void getAuthModules().then(({ auth, authModule }) => {
-    if (!auth || disposed) {
-      return;
-    }
-
-    const unsubscribe = authModule.onAuthStateChanged(auth, async (user) => {
-      if (disposed) {
+  void getAuthModules()
+    .then(({ auth, authModule }) => {
+      if (!auth || disposed) {
         return;
       }
 
-      if (!user) {
-        callback({
-          user: null,
-          isAdmin: false,
-        });
-        return;
-      }
-
-      try {
-        const admin = await isUserAdmin(user.uid);
+      const unsubscribe = authModule.onAuthStateChanged(auth, async (user) => {
         if (disposed) {
           return;
         }
 
-        callback({
-          user: admin ? toAdminUser(user) : null,
-          isAdmin: admin,
-        });
-      } catch (error) {
-        console.error('[adminAuth] failed to verify admin user', error);
-        callback({
-          user: null,
-          isAdmin: false,
-        });
+        if (!user) {
+          callback({
+            user: null,
+            isAdmin: false,
+          });
+          return;
+        }
+
+        try {
+          const admin = await isUserAdmin(user.uid);
+          if (disposed) {
+            return;
+          }
+
+          callback({
+            user: admin ? toAdminUser(user) : null,
+            isAdmin: admin,
+          });
+        } catch (error) {
+          console.error('[adminAuth] failed to verify admin user', error);
+          callback({
+            user: null,
+            isAdmin: false,
+          });
+        }
+      });
+
+      if (disposed) {
+        unsubscribe();
+        return;
       }
+
+      unsubscribeAuth = unsubscribe;
+    })
+    .catch((error) => {
+      console.error('[adminAuth] failed to initialize admin session observer', error);
+
+      if (disposed) {
+        return;
+      }
+
+      callback({
+        user: null,
+        isAdmin: false,
+      });
     });
-
-    if (disposed) {
-      unsubscribe();
-      return;
-    }
-
-    unsubscribeAuth = unsubscribe;
-  });
 
   return () => {
     disposed = true;

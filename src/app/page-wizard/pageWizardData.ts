@@ -114,6 +114,14 @@ const EXTRA_STEP_TEMPLATE: WizardStepTemplate = {
   highlights: ['축의금 계좌', '교통·화환 안내', '배경음악'],
 };
 
+const MUSIC_STEP_TEMPLATE: WizardStepTemplate = {
+  key: 'music',
+  title: '배경음악',
+  description: '필요한 경우에만 배경음악을 켜고 곡과 볼륨을 따로 설정합니다.',
+  previewSection: 'metadata',
+  highlights: ['사용 여부', '카테고리', '곡 선택과 볼륨'],
+};
+
 const FINAL_STEP_TEMPLATE: WizardStepTemplate = {
   key: 'final',
   title: '최종 확인',
@@ -136,6 +144,7 @@ export const CREATE_WIZARD_STEPS = withStepNumbers([
   SCHEDULE_STEP_TEMPLATE,
   GREETING_STEP_TEMPLATE,
   IMAGES_STEP_TEMPLATE,
+  MUSIC_STEP_TEMPLATE,
   EXTRA_STEP_TEMPLATE,
   FINAL_STEP_TEMPLATE,
 ]);
@@ -145,12 +154,22 @@ export const CUSTOMER_WIZARD_STEPS = withStepNumbers([
   SCHEDULE_STEP_TEMPLATE,
   GREETING_STEP_TEMPLATE,
   IMAGES_STEP_TEMPLATE,
+  MUSIC_STEP_TEMPLATE,
   EXTRA_STEP_TEMPLATE,
   FINAL_STEP_TEMPLATE,
 ]);
 
-export function getWizardSteps(includeSetupSteps: boolean) {
-  return includeSetupSteps ? CREATE_WIZARD_STEPS : CUSTOMER_WIZARD_STEPS;
+export function getWizardSteps(
+  includeSetupSteps: boolean,
+  options: { includeMusic?: boolean } = {}
+) {
+  const baseSteps = includeSetupSteps ? CREATE_WIZARD_STEPS : CUSTOMER_WIZARD_STEPS;
+
+  if (options.includeMusic === false) {
+    return baseSteps.filter((step) => step.key !== 'music');
+  }
+
+  return baseSteps;
 }
 
 export const WIZARD_STEPS = CREATE_WIZARD_STEPS;
@@ -613,6 +632,10 @@ export function buildStepValidation(
         messages.push('계좌를 입력했다면 은행명, 계좌번호, 예금주를 모두 입력해 주세요.');
       }
 
+      return { valid: messages.length === 0, messages };
+    }
+    case 'music': {
+      const messages: string[] = [];
       const musicEnabled = Boolean(formState?.musicEnabled);
 
       if (musicEnabled && !hasText(formState?.musicStoragePath) && !hasText(formState?.musicUrl)) {
@@ -636,8 +659,6 @@ export function buildStepValidation(
 
       return { valid: messages.length === 0, messages };
     }
-    case 'music':
-      return buildStepValidation('extra', theme, formState, slugState);
     case 'final':
     default:
       return { valid: true, messages: [] };

@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import './globals.css';
+import { AdminProvider } from '@/contexts';
 import {
   Alex_Brush,
   Cormorant_Garamond,
@@ -77,7 +78,7 @@ export default function RootLayout({
       <body
         className={`${inter.variable} ${notoSerifKR.variable} ${notoSansKR.variable} ${cormorantGaramond.variable} ${alexBrush.variable} ${gowunDodum.variable}`}
       >
-        {children}
+        <AdminProvider>{children}</AdminProvider>
       </body>
     </html>
   );

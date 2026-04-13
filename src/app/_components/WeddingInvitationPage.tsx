@@ -186,14 +186,15 @@ function WeddingInvitationPageBody(options: WeddingInvitationRouteOptions) {
   const readyState: WeddingPageReadyState = state;
   const ThemeRenderer = themeRendererRegistry[options.theme];
   const isLoaderVisible = readyState.isLoading || readyState.imagesLoading;
-  const shouldRenderMusic =
-    !isLoaderVisible &&
-    readyState.pageConfig.musicEnabled === true &&
-    Boolean(readyState.pageConfig.musicUrl?.trim());
   const shareFeatures = resolveInvitationFeatures(
     readyState.pageConfig.productTier,
     readyState.pageConfig.features
   );
+  const shouldRenderMusic =
+    !isLoaderVisible &&
+    shareFeatures.showMusic &&
+    readyState.pageConfig.musicEnabled === true &&
+      Boolean(readyState.pageConfig.musicUrl?.trim());
 
   const shareButton =
     shareFeatures.shareMode !== 'none' ? (

@@ -19,19 +19,22 @@ export const INVITATION_PRODUCT_FEATURES: Record<
 > = {
   standard: {
     maxGalleryImages: 6,
-    shareMode: 'none',
+    shareMode: 'link',
+    showMusic: false,
     showCountdown: false,
     showGuestbook: false,
   },
   deluxe: {
     maxGalleryImages: 12,
     shareMode: 'card',
+    showMusic: true,
     showCountdown: false,
     showGuestbook: false,
   },
   premium: {
     maxGalleryImages: 18,
     shareMode: 'card',
+    showMusic: true,
     showCountdown: true,
     showGuestbook: true,
   },
@@ -78,6 +81,10 @@ export function resolveInvitationFeatures(
         ? Math.floor(overrides.maxGalleryImages)
         : base.maxGalleryImages,
     shareMode: normalizeInvitationShareMode(overrides?.shareMode, base.shareMode),
+    showMusic:
+      typeof overrides?.showMusic === 'boolean'
+        ? overrides.showMusic
+        : base.showMusic,
     showCountdown:
       typeof overrides?.showCountdown === 'boolean'
         ? overrides.showCountdown
@@ -91,9 +98,12 @@ export function resolveInvitationFeatures(
 
 export function buildInvitationTemplateDefinitions(seedSlug: string) {
   const tierDescriptionByProduct: Record<InvitationProductTier, string> = {
-    standard: '기본 레이아웃에 STANDARD 구성을 적용한 템플릿입니다.',
-    deluxe: '레이아웃에 확장 갤러리와 카드형 공유를 포함한 템플릿입니다.',
-    premium: '레이아웃에 모든 PREMIUM 기능을 포함한 템플릿입니다.',
+    standard:
+      '맞춤 문구 제작, 갤러리 이미지 최대 6장, 카카오톡 링크 형식 공유(URL 공유)를 포함합니다.',
+    deluxe:
+      'STANDARD 전체 포함, 갤러리 이미지 최대 12장, 음악 포함, 카카오톡 카드 형식 공유를 포함합니다.',
+    premium:
+      'DELUXE 전체 포함, 갤러리 이미지 최대 18장, 캘린더 카운트다운, 방명록 기능을 포함합니다.',
   };
 
   const tiers: InvitationProductTier[] = ['standard', 'deluxe', 'premium'];
