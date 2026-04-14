@@ -48,6 +48,14 @@ invitation-35d60-firebase-adminsdk-fbsvc-541a104160.json
 # local agent/tooling
 .claude/
 
+# expo mobile app
+/apps/mobile/.expo/
+/apps/mobile/node_modules/
+/apps/mobile/apps/
+/apps/mobile/bugreport-*.zip
+/apps/mobile/*.zip
+/apps/mobile/expo-env.d.ts
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts

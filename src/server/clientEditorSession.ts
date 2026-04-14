@@ -42,11 +42,18 @@ function signPayload(payloadBase64: string) {
 }
 
 export function createClientEditorSessionValue(
-  payload: Omit<ClientEditorSessionPayload, 'expiresAt'>
+  payload: Omit<ClientEditorSessionPayload, 'expiresAt'>,
+  options: { ttlSeconds?: number } = {}
 ) {
+  const ttlSeconds =
+    typeof options.ttlSeconds === 'number' &&
+    Number.isFinite(options.ttlSeconds) &&
+    options.ttlSeconds > 0
+      ? Math.floor(options.ttlSeconds)
+      : SESSION_TTL_SECONDS;
   const sessionPayload: ClientEditorSessionPayload = {
     ...payload,
-    expiresAt: Math.floor(Date.now() / 1000) + SESSION_TTL_SECONDS,
+    expiresAt: Math.floor(Date.now() / 1000) + ttlSeconds,
   };
   const payloadBase64 = base64UrlEncode(JSON.stringify(sessionPayload));
   const signature = signPayload(payloadBase64);

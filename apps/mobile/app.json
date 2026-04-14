@@ -1,0 +1,31 @@
+{
+  "expo": {
+    "name": "모바일 청첩장",
+    "slug": "mobile-invitation-app",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "scheme": "mobileinvitation",
+    "userInterfaceStyle": "automatic",
+    "icon": "./assets/icon.png",
+    "splash": {
+      "image": "./assets/splash.jpg",
+      "resizeMode": "contain",
+      "backgroundColor": "#f7efe7"
+    },
+    "plugins": ["expo-router", "expo-secure-store"],
+    "android": {
+      "package": "kr.msgnote.mobileinvitation",
+      "predictiveBackGestureEnabled": false,
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#f7efe7"
+      }
+    },
+    "ios": {
+      "bundleIdentifier": "kr.msgnote.mobileinvitation"
+    },
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}

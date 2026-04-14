@@ -239,3 +239,46 @@ export async function verifyServerClientPassword(pageSlug: string, password: str
     record,
   } as const;
 }
+
+export async function setServerClientPassword(pageSlug: string, password: string) {
+  const normalizedPageSlug = pageSlug.trim();
+  const normalizedPassword = password.trim();
+
+  if (!normalizedPageSlug || !normalizedPassword) {
+    throw new Error('Page slug and password are required.');
+  }
+
+  const db = getServerFirestore();
+  if (!db) {
+    throw new Error('Server Firestore is not available.');
+  }
+
+  const existing = await getServerClientPasswordRecord(normalizedPageSlug);
+  const now = new Date();
+  const createdAt = existing?.createdAt ?? now;
+  const passwordHashRecord = await createClientPasswordHashRecord(normalizedPassword);
+  const passwordVersion = (existing?.passwordVersion ?? 0) + 1;
+
+  await db
+    .collection(CLIENT_PASSWORDS_COLLECTION)
+    .doc(normalizedPageSlug)
+    .set(
+      {
+        pageSlug: normalizedPageSlug,
+        ...passwordHashRecord,
+        passwordVersion,
+        createdAt,
+        updatedAt: now,
+        password: FieldValue.delete(),
+        editorTokenHash: FieldValue.delete(),
+      },
+      { merge: true }
+    );
+
+  const savedRecord = await getServerClientPasswordRecord(normalizedPageSlug);
+  if (!savedRecord) {
+    throw new Error('Failed to update the page password.');
+  }
+
+  return savedRecord;
+}

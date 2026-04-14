@@ -4,6 +4,7 @@ import { FieldValue } from 'firebase-admin/firestore';
 
 import {
   createInvitationPageFromSeed,
+  getAllWeddingPageSeeds,
   getWeddingPageBySlug,
   type WeddingPageConfig,
 } from '@/config/weddingPages';
@@ -83,9 +84,26 @@ export interface ServerEditableInvitationPageConfig {
   lastSavedAt: Date | null;
 }
 
+export interface ServerCreateInvitationPageDraftInput {
+  seedSlug: string;
+  slugBase: string;
+  groomName?: string;
+  brideName?: string;
+  published?: boolean;
+  defaultTheme?: InvitationThemeKey;
+  productTier?: InvitationProductTier;
+}
+
+export interface ServerCreateInvitationPageDraftResult {
+  slug: string;
+  config: InvitationPageSeed;
+}
+
 const DISPLAY_PERIOD_COLLECTION = 'display-periods';
 const PAGE_CONFIG_COLLECTION = 'invitation-page-configs';
 const PAGE_REGISTRY_COLLECTION = 'invitation-page-registry';
+const PAGE_SLUG_SUFFIX_ALPHABET = 'abcdefghijklmnopqrstuvwxyz';
+const PAGE_SLUG_SUFFIX_LENGTH = 3;
 
 function stripUndefinedDeep<T>(value: T): T {
   if (value === undefined || value === null) {
@@ -131,6 +149,28 @@ function normalizePageSlugInput(value: unknown) {
 
   const normalized = value.trim();
   return normalized.length > 0 ? normalized : null;
+}
+
+function normalizeSlugBase(value: string) {
+  return value
+    .trim()
+    .toLowerCase()
+    .normalize('NFKD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .replace(/-{2,}/g, '-');
+}
+
+function generateSlugSuffix(length = PAGE_SLUG_SUFFIX_LENGTH) {
+  return Array.from({ length }, () => {
+    const index = Math.floor(Math.random() * PAGE_SLUG_SUFFIX_ALPHABET.length);
+    return PAGE_SLUG_SUFFIX_ALPHABET[index];
+  }).join('');
+}
+
+function createDisplayNameFromNames(groomName: string, brideName: string) {
+  return `${groomName} · ${brideName}`;
 }
 
 function buildSamplePage(pageSlug: string): InvitationPage | null {
@@ -538,6 +578,158 @@ function toEditableSeed(page: InvitationPage): InvitationPageSeed {
   return sanitizeHeartIconPlaceholdersDeep(seed as InvitationPageSeed);
 }
 
+function buildDraftConfigFromSeed(
+  seed: InvitationPageSeed,
+  overrides: {
+    slug: string;
+    groomName: string;
+    brideName: string;
+    productTier: InvitationProductTier;
+    theme: InvitationThemeKey;
+  }
+) {
+  const nextSeed = sanitizeHeartIconPlaceholdersDeep(
+    JSON.parse(JSON.stringify(seed)) as InvitationPageSeed
+  );
+  const features = resolveInvitationFeatures(overrides.productTier, seed.features);
+
+  nextSeed.slug = overrides.slug;
+  nextSeed.displayName = '';
+  nextSeed.description = '';
+  nextSeed.date = '';
+  nextSeed.venue = '';
+  nextSeed.productTier = overrides.productTier;
+  nextSeed.features = features;
+  nextSeed.groomName = overrides.groomName;
+  nextSeed.brideName = overrides.brideName;
+  nextSeed.couple.groom = {
+    name: overrides.groomName,
+    order: '',
+    phone: '',
+    father: {
+      relation: '',
+      name: '',
+      phone: '',
+    },
+    mother: {
+      relation: '',
+      name: '',
+      phone: '',
+    },
+  };
+  nextSeed.couple.bride = {
+    name: overrides.brideName,
+    order: '',
+    phone: '',
+    father: {
+      relation: '',
+      name: '',
+      phone: '',
+    },
+    mother: {
+      relation: '',
+      name: '',
+      phone: '',
+    },
+  };
+  nextSeed.weddingDateTime = {
+    year: 0,
+    month: 0,
+    day: 0,
+    hour: 0,
+    minute: 0,
+  };
+  nextSeed.displayName = createDisplayNameFromNames(
+    overrides.groomName,
+    overrides.brideName
+  );
+  nextSeed.description = `${overrides.groomName}님과 ${overrides.brideName}님의 모바일 청첩장입니다.`;
+  nextSeed.date = '';
+  nextSeed.venue = '';
+  nextSeed.metadata.title = nextSeed.displayName;
+  nextSeed.metadata.description = nextSeed.description;
+  nextSeed.metadata.openGraph.title = nextSeed.displayName;
+  nextSeed.metadata.openGraph.description = nextSeed.description;
+  nextSeed.metadata.twitter.title = nextSeed.displayName;
+  nextSeed.metadata.twitter.description = nextSeed.description;
+  nextSeed.pageData = {
+    ...nextSeed.pageData,
+    subtitle: '',
+    ceremonyTime: '',
+    ceremonyAddress: '',
+    ceremonyContact: '',
+    ceremony: {
+      time: '',
+      location: '',
+    },
+    reception: {
+      time: '',
+      location: '',
+    },
+    galleryImages: [],
+    greetingMessage: '',
+    greetingAuthor: '',
+    mapUrl: '',
+    mapDescription: '',
+    venueName: '',
+    groom: {
+      ...nextSeed.couple.groom,
+    },
+    bride: {
+      ...nextSeed.couple.bride,
+    },
+    kakaoMap: undefined,
+    venueGuide: [],
+    wreathGuide: [],
+    giftInfo: {
+      groomAccounts: [],
+      brideAccounts: [],
+      message: '',
+    },
+  };
+  nextSeed.musicEnabled = false;
+  nextSeed.musicCategoryId = '';
+  nextSeed.musicTrackId = '';
+  nextSeed.musicStoragePath = '';
+  nextSeed.musicUrl = '';
+  nextSeed.variants = buildInvitationVariants(overrides.slug, nextSeed.displayName, {
+    availability: createInvitationVariantAvailability([overrides.theme as InvitationVariantKey]),
+  });
+
+  return nextSeed;
+}
+
+async function isInvitationPageSlugTaken(db: FirebaseFirestore.Firestore, pageSlug: string) {
+  const [configSnapshot, registrySnapshot] = await Promise.all([
+    db.collection(PAGE_CONFIG_COLLECTION).doc(pageSlug).get(),
+    db.collection(PAGE_REGISTRY_COLLECTION).doc(pageSlug).get(),
+  ]);
+
+  return configSnapshot.exists || registrySnapshot.exists;
+}
+
+async function createUniqueInvitationPageSlug(
+  db: FirebaseFirestore.Firestore,
+  slugBase: string
+) {
+  const normalizedSlugBase = normalizeSlugBase(slugBase);
+  if (!normalizedSlugBase) {
+    throw new Error('A valid URL slug base is required.');
+  }
+
+  if (!(await isInvitationPageSlugTaken(db, normalizedSlugBase))) {
+    return normalizedSlugBase;
+  }
+
+  let nextSlug = `${normalizedSlugBase}-${generateSlugSuffix()}`;
+
+  while (await isInvitationPageSlugTaken(db, nextSlug)) {
+    nextSlug = `${normalizedSlugBase}-${generateSlugSuffix()}`;
+  }
+
+  return nextSlug;
+}
+
 function buildInvitationPageRecord(
   pageSlug: string,
   configSeed: InvitationPageSeed | null,
@@ -895,6 +1087,63 @@ export async function saveServerInvitationPageConfig(
     defaultTheme: options.defaultTheme ?? DEFAULT_INVITATION_THEME,
     hasCustomConfig: true,
   });
+}
+
+export async function createServerInvitationPageDraftFromSeed(
+  input: ServerCreateInvitationPageDraftInput
+): Promise<ServerCreateInvitationPageDraftResult> {
+  const db = getServerFirestore();
+  if (!db) {
+    throw new Error('Server Firestore is not available.');
+  }
+
+  const seed =
+    getWeddingPageBySlug(input.seedSlug) ?? getAllWeddingPageSeeds()[0] ?? null;
+  if (!seed) {
+    throw new Error('Invitation page seed was not found.');
+  }
+
+  const groomName = (input.groomName ?? seed.couple.groom.name ?? seed.groomName).trim();
+  const brideName = (input.brideName ?? seed.couple.bride.name ?? seed.brideName).trim();
+
+  if (!groomName || !brideName) {
+    throw new Error('Groom and bride names are required.');
+  }
+
+  const slug = await createUniqueInvitationPageSlug(db, input.slugBase);
+  const config = buildDraftConfigFromSeed(seed, {
+    slug,
+    groomName,
+    brideName,
+    productTier: normalizeInvitationProductTier(
+      input.productTier,
+      DEFAULT_INVITATION_PRODUCT_TIER
+    ),
+    theme: normalizeInvitationTheme(input.defaultTheme),
+  });
+  const now = new Date();
+
+  await db.collection(PAGE_CONFIG_COLLECTION).doc(slug).set(
+    {
+      ...config,
+      seedSourceSlug: seed.slug,
+      editorTokenHash: FieldValue.delete(),
+      createdAt: now,
+      updatedAt: now,
+    },
+    { merge: true }
+  );
+
+  await upsertRegistryRecord(slug, {
+    published: input.published ?? false,
+    defaultTheme: input.defaultTheme ?? DEFAULT_INVITATION_THEME,
+    hasCustomConfig: true,
+  });
+
+  return {
+    slug,
+    config,
+  };
 }
 
 export async function restoreServerInvitationPageConfig(
