@@ -1,3 +1,5 @@
+import Constants from 'expo-constants';
+
 import type {
   MobileEditableInvitationPageConfig,
   MobileInvitationCreationInput,
@@ -12,7 +14,21 @@ import type {
   MobileSessionSummary,
 } from '../types/mobileInvitation';
 
-export const DEFAULT_API_BASE_URL = 'https://msgnote.kr';
+function readConfiguredApiBaseUrl() {
+  const envApiBaseUrl = process.env.EXPO_PUBLIC_API_BASE?.trim();
+  if (envApiBaseUrl) {
+    return envApiBaseUrl;
+  }
+
+  const extraApiBaseUrl = Constants.expoConfig?.extra?.apiBaseUrl;
+  if (typeof extraApiBaseUrl === 'string' && extraApiBaseUrl.trim()) {
+    return extraApiBaseUrl.trim();
+  }
+
+  return '';
+}
+
+export const DEFAULT_API_BASE_URL = readConfiguredApiBaseUrl();
 
 const ERROR_MESSAGE_MAP: Record<string, string> = {
   'Page slug and password are required.': '페이지 주소와 비밀번호를 모두 입력해 주세요.',
@@ -51,11 +67,14 @@ function toUserFacingMessage(value: unknown) {
 
 export function normalizeApiBaseUrl(value: string) {
   const trimmed = value.trim();
-  if (!trimmed) {
-    return DEFAULT_API_BASE_URL;
+  const fallback = DEFAULT_API_BASE_URL.trim();
+  const target = trimmed || fallback;
+
+  if (!target) {
+    return '';
   }
 
-  const normalized = trimmed.replace(/\/+$/g, '');
+  const normalized = target.replace(/\/+$/g, '');
   if (normalized.startsWith('http://') || normalized.startsWith('https://')) {
     return normalized;
   }

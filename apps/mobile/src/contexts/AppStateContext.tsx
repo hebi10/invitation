@@ -1,65 +1,30 @@
 import type { PropsWithChildren } from 'react';
-import {
-  createContext,
-  useCallback,
-  useContext,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from 'react';
-import { useColorScheme } from 'react-native';
+import { useMemo } from 'react';
 
-import {
-  createMobileInvitationDraft,
-  DEFAULT_API_BASE_URL,
-  deleteMobileInvitationComment,
-  fetchMobileInvitationDashboard,
-  loginMobileClientEditor,
-  normalizeApiBaseUrl,
-  saveMobileInvitationPageConfig,
-  setMobileInvitationPublishedState,
-  validateMobileClientEditorSession,
-} from '../lib/api';
-import { extractPageSlugFromIdentifier } from '../lib/pageSlug';
-import { getStoredJson, setStoredJson, setStoredString } from '../lib/storage';
-import {
-  getFontScale,
-  getPalette,
-  resolveAppColorScheme,
-  type FontScalePreference,
-  type ThemePreference,
-} from '../constants/theme';
 import type {
   CreateDraftItem,
-  MobileEditableInvitationPageConfig,
-  MobileInvitationDashboard,
   MobileInvitationCreationInput,
-  MobileInvitationLinks,
+  MobileInvitationDashboard,
   MobileInvitationSeed,
   MobileInvitationThemeKey,
   MobilePageSummary,
   MobileSessionSummary,
   PendingManageOnboarding,
 } from '../types/mobileInvitation';
+import type { FontScalePreference, ThemePreference } from '../constants/theme';
+import type { getPalette } from '../constants/theme';
 
-const PREFERENCES_STORAGE_KEY = 'mobile-invitation:preferences';
-const SESSION_STORAGE_KEY = 'mobile-invitation:session';
-const DRAFT_STORAGE_KEY = 'mobile-invitation:drafts';
-
-type StoredPreferences = {
-  apiBaseUrl: string;
-  themePreference: ThemePreference;
-  fontScalePreference: FontScalePreference;
-};
-
-type StoredDraftItem = CreateDraftItem & {
-  password?: string;
-};
+import { AuthProvider, useAuth } from './AuthContext';
+import { DraftsProvider, useDrafts } from './DraftsContext';
+import {
+  InvitationOpsProvider,
+  useInvitationOps,
+} from './InvitationOpsContext';
+import { PreferencesProvider, usePreferences } from './PreferencesContext';
 
 type CreateDraftInput = Omit<CreateDraftItem, 'id' | 'createdAt' | 'status'>;
 
-type AppStateContextValue = {
+export type AppStateContextValue = {
   apiBaseUrl: string;
   setApiBaseUrl: (value: string) => Promise<void>;
   themePreference: ThemePreference;
@@ -79,7 +44,9 @@ type AppStateContextValue = {
   drafts: CreateDraftItem[];
   pendingManageOnboarding: PendingManageOnboarding | null;
   login: (pageIdentifier: string, password: string) => Promise<boolean>;
-  createInvitationPage: (input: MobileInvitationCreationInput) => Promise<boolean>;
+  createInvitationPage: (
+    input: MobileInvitationCreationInput
+  ) => Promise<boolean>;
   logout: () => Promise<void>;
   refreshDashboard: () => Promise<boolean>;
   saveCurrentPageConfig: (
@@ -102,575 +69,64 @@ type AppStateContextValue = {
   clearPendingManageOnboarding: () => void;
 };
 
-const AppStateContext = createContext<AppStateContextValue | null>(null);
-
-const DEFAULT_PREFERENCES: StoredPreferences = {
-  apiBaseUrl: DEFAULT_API_BASE_URL,
-  themePreference: 'system',
-  fontScalePreference: 'normal',
-};
-
-function buildPageSummaryFromConfig(
-  page: MobileEditableInvitationPageConfig
-): MobilePageSummary {
-  return {
-    slug: page.slug,
-    displayName: page.config.displayName,
-    published: page.published,
-    productTier: page.productTier,
-    defaultTheme: page.defaultTheme,
-    features: page.features,
-  };
-}
-
-function buildPageSummary(dashboard: MobileInvitationDashboard): MobilePageSummary {
-  return buildPageSummaryFromConfig(dashboard.page);
-}
-
-function buildDashboardSnapshot(
-  page: MobileEditableInvitationPageConfig | null | undefined,
-  links: MobileInvitationLinks | null | undefined
-): MobileInvitationDashboard | null {
-  if (!page || !links) {
-    return null;
-  }
-
-  return {
-    page,
-    comments: [],
-    links,
-  };
-}
-
-function sanitizeStoredDraft(draft: StoredDraftItem): CreateDraftItem {
-  return {
-    id: draft.id,
-    createdAt: draft.createdAt,
-    servicePlan: draft.servicePlan,
-    theme: draft.theme,
-    pageIdentifier: draft.pageIdentifier,
-    groomName: draft.groomName,
-    brideName: draft.brideName,
-    groomEnglishName:
-      'groomEnglishName' in draft && typeof draft.groomEnglishName === 'string'
-        ? draft.groomEnglishName
-        : '',
-    brideEnglishName:
-      'brideEnglishName' in draft && typeof draft.brideEnglishName === 'string'
-        ? draft.brideEnglishName
-        : '',
-    weddingDate: draft.weddingDate,
-    venue: draft.venue,
-    estimatedPrice: draft.estimatedPrice,
-    ticketCount: draft.ticketCount,
-    notes: draft.notes,
-    status: 'draft',
-  };
-}
-
 export function AppStateProvider({ children }: PropsWithChildren) {
-  const systemColorScheme = useColorScheme();
-  const [apiBaseUrl, setApiBaseUrlState] = useState(DEFAULT_PREFERENCES.apiBaseUrl);
-  const [themePreference, setThemePreferenceState] =
-    useState<ThemePreference>('system');
-  const [fontScalePreference, setFontScalePreferenceState] =
-    useState<FontScalePreference>('normal');
-  const [session, setSession] = useState<MobileSessionSummary | null>(null);
-  const [pageSummary, setPageSummary] = useState<MobilePageSummary | null>(null);
-  const [dashboard, setDashboard] = useState<MobileInvitationDashboard | null>(null);
-  const [drafts, setDrafts] = useState<CreateDraftItem[]>([]);
-  const [pendingManageOnboarding, setPendingManageOnboarding] =
-    useState<PendingManageOnboarding | null>(null);
-  const [isBootstrapping, setIsBootstrapping] = useState(true);
-  const [isAuthenticating, setIsAuthenticating] = useState(false);
-  const [dashboardLoading, setDashboardLoading] = useState(false);
-  const [authError, setAuthError] = useState<string | null>(null);
-  const hasRestoredSessionRef = useRef(false);
-  const isRefreshingDashboardRef = useRef(false);
-
-  const colorScheme = resolveAppColorScheme(systemColorScheme, themePreference);
-  const palette = useMemo(() => getPalette(colorScheme), [colorScheme]);
-  const fontScale = useMemo(
-    () => getFontScale(fontScalePreference),
-    [fontScalePreference]
+  return (
+    <PreferencesProvider>
+      <DraftsProvider>
+        <AuthProvider>
+          <InvitationOpsProvider>{children}</InvitationOpsProvider>
+        </AuthProvider>
+      </DraftsProvider>
+    </PreferencesProvider>
   );
+}
 
-  const persistPreferences = useCallback(
-    async (nextPreferences: StoredPreferences) => {
-      setApiBaseUrlState(nextPreferences.apiBaseUrl);
-      setThemePreferenceState(nextPreferences.themePreference);
-      setFontScalePreferenceState(nextPreferences.fontScalePreference);
-      await setStoredJson(PREFERENCES_STORAGE_KEY, nextPreferences);
-    },
-    []
-  );
+/**
+ * @deprecated 역할별 Context 훅(usePreferences/useAuth/useInvitationOps/useDrafts)으로
+ * 점진 교체 예정. 신규 코드는 세분화된 훅을 우선 사용한다.
+ */
+export function useAppState(): AppStateContextValue {
+  const {
+    apiBaseUrl,
+    setApiBaseUrl,
+    themePreference,
+    setThemePreference,
+    fontScalePreference,
+    setFontScalePreference,
+    palette,
+    fontScale,
+    isReady: isPreferencesReady,
+  } = usePreferences();
 
-  const clearSession = useCallback(async () => {
-    setSession(null);
-    setPageSummary(null);
-    setDashboard(null);
-    setPendingManageOnboarding(null);
-    await setStoredString(SESSION_STORAGE_KEY, null);
-  }, []);
+  const { drafts, isReady: isDraftsReady, saveDraft, removeDraft } = useDrafts();
 
-  const refreshDashboard = useCallback(
-    async (override?: { session?: MobileSessionSummary; baseUrl?: string }) => {
-      const activeSession = override?.session ?? session;
-      if (!activeSession) {
-        return false;
-      }
+  const {
+    session,
+    isAuthenticated,
+    isAuthenticating,
+    isReady: isAuthReady,
+    authError,
+    pendingManageOnboarding,
+    login,
+    createInvitationPage,
+    logout,
+    clearAuthError,
+    clearPendingManageOnboarding,
+  } = useAuth();
 
-      if (isRefreshingDashboardRef.current) {
-        return false;
-      }
+  const {
+    dashboard,
+    pageSummary,
+    dashboardLoading,
+    refreshDashboard,
+    saveCurrentPageConfig,
+    setPublishedState,
+    deleteComment,
+  } = useInvitationOps();
 
-      isRefreshingDashboardRef.current = true;
+  const isBootstrapping = !(isPreferencesReady && isDraftsReady && isAuthReady);
 
-      setDashboardLoading(true);
-
-      try {
-        const nextDashboard = await fetchMobileInvitationDashboard(
-          override?.baseUrl ?? apiBaseUrl,
-          activeSession.pageSlug,
-          activeSession.token
-        );
-
-        setDashboard(nextDashboard);
-        setPageSummary(buildPageSummary(nextDashboard));
-        return true;
-      } catch (error) {
-        setAuthError(
-          error instanceof Error
-            ? error.message
-            : '운영 데이터를 불러오지 못했습니다.'
-        );
-        return false;
-      } finally {
-        setDashboardLoading(false);
-        isRefreshingDashboardRef.current = false;
-      }
-    },
-    [apiBaseUrl, session]
-  );
-
-  const patchDashboard = useCallback(
-    (
-      updater: (
-        current: MobileInvitationDashboard
-      ) => MobileInvitationDashboard
-    ) => {
-      setDashboard((current) => {
-        if (!current) {
-          return current;
-        }
-
-        const nextDashboard = updater(current);
-        setPageSummary(buildPageSummary(nextDashboard));
-        return nextDashboard;
-      });
-    },
-    []
-  );
-
-  const restoreSession = useCallback(
-    async (candidateSession: MobileSessionSummary, nextBaseUrl: string) => {
-      setIsAuthenticating(true);
-
-      try {
-        const response = await validateMobileClientEditorSession(
-          nextBaseUrl,
-          candidateSession.pageSlug,
-          candidateSession.token
-        );
-
-        if (!response.authenticated) {
-          await clearSession();
-          return false;
-        }
-
-        const nextDashboard = buildDashboardSnapshot(
-          response.dashboardPage,
-          response.links
-        );
-
-        setSession(candidateSession);
-        setDashboard(nextDashboard);
-        setPageSummary(
-          nextDashboard
-            ? buildPageSummary(nextDashboard)
-            : response.page ?? null
-        );
-        setAuthError(null);
-        await setStoredJson(SESSION_STORAGE_KEY, candidateSession);
-        return true;
-      } catch {
-        await clearSession();
-        return false;
-      } finally {
-        setIsAuthenticating(false);
-      }
-    },
-    [clearSession]
-  );
-
-  useEffect(() => {
-    if (hasRestoredSessionRef.current) {
-      return;
-    }
-
-    hasRestoredSessionRef.current = true;
-    let mounted = true;
-
-    const restore = async () => {
-      const [storedPreferences, storedDrafts, storedSession] = await Promise.all([
-        getStoredJson<StoredPreferences>(PREFERENCES_STORAGE_KEY, DEFAULT_PREFERENCES),
-        getStoredJson<StoredDraftItem[]>(DRAFT_STORAGE_KEY, []),
-        getStoredJson<MobileSessionSummary | null>(SESSION_STORAGE_KEY, null),
-      ]);
-
-      if (!mounted) {
-        return;
-      }
-
-      const normalizedApiBaseUrl = normalizeApiBaseUrl(storedPreferences.apiBaseUrl);
-      const sanitizedDrafts = storedDrafts.map(sanitizeStoredDraft);
-      const shouldRewriteDrafts = storedDrafts.some((draft) =>
-        Object.prototype.hasOwnProperty.call(draft, 'password')
-      );
-
-      setApiBaseUrlState(normalizedApiBaseUrl);
-      setThemePreferenceState(storedPreferences.themePreference);
-      setFontScalePreferenceState(storedPreferences.fontScalePreference);
-      setDrafts(sanitizedDrafts);
-
-      if (shouldRewriteDrafts) {
-        await setStoredJson(DRAFT_STORAGE_KEY, sanitizedDrafts);
-      }
-
-      if (storedSession) {
-        await restoreSession(storedSession, normalizedApiBaseUrl);
-      }
-
-      if (mounted) {
-        setIsBootstrapping(false);
-      }
-    };
-
-    void restore();
-
-    return () => {
-      mounted = false;
-    };
-  }, [restoreSession]);
-
-  const setApiBaseUrl = useCallback(
-    async (value: string) => {
-      const normalized = normalizeApiBaseUrl(value);
-      await persistPreferences({
-        apiBaseUrl: normalized,
-        themePreference,
-        fontScalePreference,
-      });
-
-      if (session) {
-        await clearSession();
-      }
-    },
-    [clearSession, fontScalePreference, persistPreferences, session, themePreference]
-  );
-
-  const setThemePreference = useCallback(
-    async (value: ThemePreference) => {
-      await persistPreferences({
-        apiBaseUrl,
-        themePreference: value,
-        fontScalePreference,
-      });
-    },
-    [apiBaseUrl, fontScalePreference, persistPreferences]
-  );
-
-  const setFontScalePreference = useCallback(
-    async (value: FontScalePreference) => {
-      await persistPreferences({
-        apiBaseUrl,
-        themePreference,
-        fontScalePreference: value,
-      });
-    },
-    [apiBaseUrl, persistPreferences, themePreference]
-  );
-
-  const login = useCallback(
-    async (pageIdentifier: string, password: string) => {
-      const pageSlug = extractPageSlugFromIdentifier(pageIdentifier);
-      const normalizedPassword = password.trim();
-
-      if (!pageSlug || !normalizedPassword) {
-        setAuthError('청첩장 슬러그와 비밀번호를 입력해 주세요.');
-        return false;
-      }
-
-      setIsAuthenticating(true);
-
-      try {
-        const response = await loginMobileClientEditor(
-          apiBaseUrl,
-          pageSlug,
-          normalizedPassword
-        );
-
-        const nextSession = response.session;
-        const nextDashboard = buildDashboardSnapshot(
-          response.dashboardPage,
-          response.links
-        );
-
-        setSession(nextSession);
-        setDashboard(nextDashboard);
-        setPageSummary(
-          nextDashboard
-            ? buildPageSummary(nextDashboard)
-            : response.page
-        );
-        setAuthError(null);
-        await setStoredJson(SESSION_STORAGE_KEY, nextSession);
-        return true;
-      } catch (error) {
-        setAuthError(
-          error instanceof Error
-            ? error.message
-            : '청첩장 연동에 실패했습니다. 다시 시도해 주세요.'
-        );
-        return false;
-      } finally {
-        setIsAuthenticating(false);
-      }
-    },
-    [apiBaseUrl]
-  );
-
-  const createInvitationPage = useCallback(
-    async (input: MobileInvitationCreationInput) => {
-      setIsAuthenticating(true);
-
-      try {
-        const response = await createMobileInvitationDraft(apiBaseUrl, input);
-        const nextSession = response.session;
-        const nextDashboard = buildDashboardSnapshot(
-          response.dashboardPage,
-          response.links
-        );
-
-        setSession(nextSession);
-        setPageSummary(
-          nextDashboard
-            ? buildPageSummary(nextDashboard)
-            : response.page
-        );
-        setDashboard(nextDashboard);
-        setPendingManageOnboarding({
-          pageSlug: nextSession.pageSlug,
-          createdAt: Date.now(),
-        });
-        setAuthError(null);
-        await setStoredJson(SESSION_STORAGE_KEY, nextSession);
-        return true;
-      } catch (error) {
-        setAuthError(
-          error instanceof Error
-            ? error.message
-            : '청첩장 생성에 실패했습니다. 잠시 후 다시 시도해 주세요.'
-        );
-        return false;
-      } finally {
-        setIsAuthenticating(false);
-      }
-    },
-    [apiBaseUrl]
-  );
-
-  const logout = useCallback(async () => {
-    setAuthError(null);
-    await clearSession();
-  }, [clearSession]);
-
-  const saveCurrentPageConfig = useCallback(
-    async (
-      config: MobileInvitationSeed,
-      options: {
-        published?: boolean;
-        defaultTheme?: MobileInvitationThemeKey;
-      } = {}
-    ) => {
-      if (!session) {
-        setAuthError('청첩장 연동 후 저장할 수 있습니다.');
-        return false;
-      }
-
-      setDashboardLoading(true);
-
-      try {
-        const trustedConfig: MobileInvitationSeed = {
-          ...config,
-          slug: session.pageSlug,
-        };
-
-        await saveMobileInvitationPageConfig(apiBaseUrl, session.pageSlug, session.token, {
-          config: trustedConfig,
-          published: options.published ?? dashboard?.page.published,
-          defaultTheme: options.defaultTheme ?? dashboard?.page.defaultTheme,
-        });
-        setAuthError(null);
-        patchDashboard((current) => ({
-          ...current,
-          page: {
-            ...current.page,
-            config: trustedConfig,
-            published: options.published ?? current.page.published,
-            defaultTheme: options.defaultTheme ?? current.page.defaultTheme,
-          },
-        }));
-        return true;
-      } catch (error) {
-        setAuthError(
-          error instanceof Error ? error.message : '청첩장 저장에 실패했습니다.'
-        );
-        return false;
-      } finally {
-        setDashboardLoading(false);
-      }
-    },
-    [
-      apiBaseUrl,
-      dashboard?.page.defaultTheme,
-      dashboard?.page.published,
-      patchDashboard,
-      session,
-    ]
-  );
-
-  const setPublishedState = useCallback(
-    async (published: boolean) => {
-      if (!session || !dashboard) {
-        setAuthError('청첩장 연동 후 공개 상태를 변경할 수 있습니다.');
-        return false;
-      }
-
-      setDashboardLoading(true);
-
-      try {
-        await setMobileInvitationPublishedState(
-          apiBaseUrl,
-          session.pageSlug,
-          session.token,
-          published,
-          dashboard.page.defaultTheme
-        );
-        setAuthError(null);
-        patchDashboard((current) => ({
-          ...current,
-          page: {
-            ...current.page,
-            published,
-          },
-        }));
-        return true;
-      } catch (error) {
-        setAuthError(
-          error instanceof Error ? error.message : '공개 상태를 변경하지 못했습니다.'
-        );
-        return false;
-      } finally {
-        setDashboardLoading(false);
-      }
-    },
-    [apiBaseUrl, dashboard, patchDashboard, session]
-  );
-
-  const deleteComment = useCallback(
-    async (commentId: string) => {
-      if (!session) {
-        setAuthError('청첩장 연동 후 댓글을 관리할 수 있습니다.');
-        return false;
-      }
-
-      try {
-        await deleteMobileInvitationComment(
-          apiBaseUrl,
-          session.pageSlug,
-          commentId,
-          session.token
-        );
-        setAuthError(null);
-        patchDashboard((current) => ({
-          ...current,
-          comments: current.comments.filter((comment) => comment.id !== commentId),
-        }));
-        return true;
-      } catch (error) {
-        setAuthError(
-          error instanceof Error ? error.message : '댓글을 삭제하지 못했습니다.'
-        );
-        return false;
-      }
-    },
-    [apiBaseUrl, patchDashboard, session]
-  );
-
-  const saveDraft = useCallback(
-    async (
-      input: CreateDraftInput,
-      options: {
-        draftId?: string;
-      } = {}
-    ) => {
-      const existingDraft = options.draftId
-        ? drafts.find((draft) => draft.id === options.draftId)
-        : null;
-
-      const nextDraft: CreateDraftItem = existingDraft
-        ? {
-            ...existingDraft,
-            ...input,
-            status: 'draft',
-          }
-        : {
-            ...input,
-            id: `draft-${Date.now()}`,
-            createdAt: new Date().toISOString(),
-            status: 'draft',
-          };
-
-      const otherDrafts = existingDraft
-        ? drafts.filter((draft) => draft.id !== existingDraft.id)
-        : drafts;
-      const nextDrafts = [nextDraft, ...otherDrafts].slice(0, 12);
-      setDrafts(nextDrafts);
-      await setStoredJson(DRAFT_STORAGE_KEY, nextDrafts);
-      return nextDraft.id;
-    },
-    [drafts]
-  );
-
-  const removeDraft = useCallback(
-    async (draftId: string) => {
-      const nextDrafts = drafts.filter((draft) => draft.id !== draftId);
-      setDrafts(nextDrafts);
-      await setStoredJson(DRAFT_STORAGE_KEY, nextDrafts);
-    },
-    [drafts]
-  );
-
-  const clearAuthError = useCallback(() => {
-    setAuthError(null);
-  }, []);
-
-  const clearPendingManageOnboarding = useCallback(() => {
-    setPendingManageOnboarding(null);
-  }, []);
-
-  const value = useMemo<AppStateContextValue>(
+  return useMemo<AppStateContextValue>(
     () => ({
       apiBaseUrl,
       setApiBaseUrl,
@@ -681,7 +137,7 @@ export function AppStateProvider({ children }: PropsWithChildren) {
       palette,
       fontScale,
       isBootstrapping,
-      isAuthenticated: Boolean(session),
+      isAuthenticated,
       isAuthenticating,
       authError,
       session,
@@ -705,21 +161,25 @@ export function AppStateProvider({ children }: PropsWithChildren) {
     [
       apiBaseUrl,
       authError,
+      clearAuthError,
       clearPendingManageOnboarding,
+      createInvitationPage,
       dashboard,
       dashboardLoading,
+      deleteComment,
       drafts,
       fontScale,
       fontScalePreference,
+      isAuthenticated,
       isAuthenticating,
       isBootstrapping,
-      createInvitationPage,
       login,
       logout,
-      pendingManageOnboarding,
       pageSummary,
       palette,
+      pendingManageOnboarding,
       refreshDashboard,
+      removeDraft,
       saveCurrentPageConfig,
       saveDraft,
       session,
@@ -728,20 +188,6 @@ export function AppStateProvider({ children }: PropsWithChildren) {
       setPublishedState,
       setThemePreference,
       themePreference,
-      deleteComment,
-      removeDraft,
-      clearAuthError,
     ]
   );
-
-  return <AppStateContext.Provider value={value}>{children}</AppStateContext.Provider>;
-}
-
-export function useAppState() {
-  const context = useContext(AppStateContext);
-  if (!context) {
-    throw new Error('useAppState must be used within AppStateProvider.');
-  }
-
-  return context;
 }

@@ -71,6 +71,8 @@ export interface MobileInvitationSeed {
     ceremonyAddress?: string;
     ceremonyContact?: string;
     ceremonyTime?: string;
+    coverImageThumbnailUrl?: string;
+    galleryImageThumbnailUrls?: string[];
     ceremony?: {
       time?: string;
       location?: string;

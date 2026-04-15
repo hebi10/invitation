@@ -13,6 +13,10 @@
 3. Android 에뮬레이터는 `npm run mb:android`
 4. 웹 미리보기는 `npm run mb:web`
 
+## 환경 변수
+- `EXPO_PUBLIC_API_BASE`: 모바일 앱이 호출할 API Base URL
+- 값을 지정하지 않으면 Expo 설정에서 `https://msgnote.kr`를 기본값으로 사용합니다.
+
 ## 현재 포함한 기능
 - Expo Router 기반 하단 탭 앱 구조
 - 페이지 URL 또는 슬러그 + 비밀번호 모바일 로그인
@@ -36,3 +40,7 @@
 ## 참고
 - Expo Router 문서: https://docs.expo.dev/router/installation/
 - Expo SecureStore 및 스토리지 패턴: https://docs.expo.dev/router/reference/authentication
+
+## 검증
+- `npm --prefix apps/mobile run lint`
+- `npm --prefix apps/mobile run typecheck`

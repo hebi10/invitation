@@ -74,6 +74,7 @@ type ManageFormState = {
   coverImageThumbnailUrl: string;
   galleryImages: string[];
   galleryImageThumbnailUrls: string[];
+  galleryImagesText: string;
   giftMessage: string;
   groomAccountsText: string;
   brideAccountsText: string;
@@ -214,6 +215,7 @@ const EMPTY_FORM: ManageFormState = {
   coverImageThumbnailUrl: '',
   galleryImages: [],
   galleryImageThumbnailUrls: [],
+  galleryImagesText: '',
   giftMessage: '',
   groomAccountsText: '',
   brideAccountsText: '',
@@ -540,6 +542,10 @@ export default function ManageScreen() {
       })),
     [form.galleryImageThumbnailUrls, form.galleryImages]
   );
+  const previewGalleryImages = useMemo(
+    () => galleryPreviewItems.map((image) => image.originalUrl),
+    [galleryPreviewItems]
+  );
 
   const coverPreviewUrl = form.coverImageThumbnailUrl.trim() || form.coverImageUrl.trim();
   const mapLatitude = parseOptionalNumber(form.kakaoLatitude);
@@ -683,6 +689,7 @@ export default function ManageScreen() {
       coverImageThumbnailUrl,
       galleryImages,
       galleryImageThumbnailUrls,
+      galleryImagesText: galleryImages.join('\n'),
       giftMessage: readString(giftInfo.message),
       groomAccountsText: formatAccountsText(giftInfo.groomAccounts),
       brideAccountsText: formatAccountsText(giftInfo.brideAccounts),
@@ -1063,6 +1070,7 @@ export default function ManageScreen() {
             ...current,
             galleryImages: nextGallery,
             galleryImageThumbnailUrls: nextGalleryThumbnailUrls,
+            galleryImagesText: nextGallery.join('\n'),
           };
         });
 
@@ -1115,6 +1123,7 @@ export default function ManageScreen() {
           index,
           targetIndex
         ),
+        galleryImagesText: moveArrayItem(current.galleryImages, index, targetIndex).join('\n'),
       };
     });
   };
@@ -1123,9 +1132,10 @@ export default function ManageScreen() {
     setForm((current) => ({
       ...current,
       galleryImages: current.galleryImages.filter((_, itemIndex) => itemIndex !== index),
-      galleryImageThumbnailUrls: current.galleryImageThumbnailUrls.filter(
-        (_, itemIndex) => itemIndex !== index
-      ),
+      galleryImageThumbnailUrls: current.galleryImageThumbnailUrls.filter((_, itemIndex) => itemIndex !== index),
+      galleryImagesText: current.galleryImages
+        .filter((_, itemIndex) => itemIndex !== index)
+        .join('\n'),
     }));
   };
 
@@ -1164,12 +1174,18 @@ export default function ManageScreen() {
       }
     }
 
-    setEditorModalVisible(true);
+      await new Promise((resolve) => setTimeout(resolve, 120));
+      setEditorStepIndex(0);
+      setEditorModalVisible(true);
+    } finally {
+      setEditorPreparingVisible(false);
+    }
   };
 
   const closeEditorModal = () => {
     setEditorModalVisible(false);
     setOpenMusicDropdown(null);
+    setEditorStepIndex(0);
   };
 
   const closeOnboarding = () => {
@@ -1192,7 +1208,10 @@ export default function ManageScreen() {
     }
 
     const maxGalleryImages = dashboard.page.features.maxGalleryImages;
-    const nextGalleryImages = parseStringList(form.galleryImagesText, maxGalleryImages);
+    const nextGalleryImages = form.galleryImages.slice(0, maxGalleryImages);
+    const nextGalleryThumbnailUrls = nextGalleryImages.map(
+      (imageUrl, index) => form.galleryImageThumbnailUrls[index]?.trim() || imageUrl
+    );
     const nextGroomAccounts = parseAccountsText(form.groomAccountsText, 3);
     const nextBrideAccounts = parseAccountsText(form.brideAccountsText, 3);
     const nextVenueGuide = parseGuidesText(form.venueGuideText, 3);
@@ -1242,6 +1261,17 @@ export default function ManageScreen() {
     );
 
     const ceremonyTime = form.ceremonyTime.trim() || form.date.trim();
+    const resolvedMarkerTitle =
+      form.kakaoMarkerTitle.trim() || form.venue.trim() || form.ceremonyAddress.trim();
+    const resolvedMapUrl = hasValidCoordinates(nextLatitude, nextLongitude)
+      ? buildKakaoMapPinUrl(
+          resolvedMarkerTitle || '선택한 위치',
+          nextLatitude,
+          nextLongitude
+        )
+      : form.ceremonyAddress.trim()
+        ? buildKakaoMapSearchUrl(form.ceremonyAddress.trim())
+        : form.mapUrl.trim();
 
     const nextConfig: MobileInvitationSeed = {
       ...dashboard.page.config,
@@ -1317,17 +1347,19 @@ export default function ManageScreen() {
           location: form.receptionLocation.trim(),
         },
         mapDescription: form.mapDescription.trim(),
-        mapUrl: form.mapUrl.trim(),
+        mapUrl: resolvedMapUrl,
         kakaoMap: {
           ...existingKakaoMap,
           latitude: nextLatitude,
           longitude: nextLongitude,
           level: nextKakaoLevel,
-          markerTitle: form.kakaoMarkerTitle.trim(),
+          markerTitle: resolvedMarkerTitle,
         },
         greetingMessage: form.greetingMessage.trim(),
         greetingAuthor: form.greetingAuthor.trim(),
         galleryImages: nextGalleryImages,
+        coverImageThumbnailUrl: form.coverImageThumbnailUrl.trim(),
+        galleryImageThumbnailUrls: nextGalleryThumbnailUrls,
         venueGuide: nextVenueGuide,
         wreathGuide: nextWreathGuide,
         giftInfo: {
@@ -1555,6 +1587,697 @@ export default function ManageScreen() {
     );
   };
 
+  const renderEditorStepContent = () => {
+    switch (currentEditorStep.key) {
+      case 'basic':
+        return (
+          <>
+            <SectionCard
+              title="기본 커버 정보"
+              description="페이지 제목과 소개 문구를 먼저 정리합니다."
+            >
+              <TextField
+                label="페이지 제목"
+                value={form.displayName}
+                onChangeText={(value) => setForm((current) => ({ ...current, displayName: value }))}
+                placeholder="예: 박준호 · 김수민 결혼합니다"
+              />
+              <TextField
+                label="서브 문구"
+                value={form.subtitle}
+                onChangeText={(value) => setForm((current) => ({ ...current, subtitle: value }))}
+                placeholder="예: 소중한 날에 함께해 주세요"
+              />
+              <TextField
+                label="소개 문구"
+                value={form.description}
+                onChangeText={(value) => setForm((current) => ({ ...current, description: value }))}
+                placeholder="청첩장 첫 화면에 노출될 설명을 입력해 주세요."
+                multiline
+              />
+            </SectionCard>
+
+            <SectionCard
+              title="신랑 · 신부 · 혼주 정보"
+              description="웹 page-wizard와 같은 순서로 이름, 연락처, 혼주 정보를 관리합니다."
+            >
+              <View style={styles.personGrid}>
+                {renderPersonEditor('groom', '신랑')}
+                {renderPersonEditor('bride', '신부')}
+              </View>
+            </SectionCard>
+          </>
+        );
+      case 'schedule':
+        return (
+          <SectionCard
+            title="예식 일정 정보"
+            description="예식 일시와 본식·피로연 장소를 나눠서 입력합니다."
+          >
+            <TextField
+              label="예식 일시 문구"
+              value={form.date}
+              onChangeText={(value) => setForm((current) => ({ ...current, date: value }))}
+              placeholder="예: 2026.07.12 오후 2시"
+            />
+            <TextField
+              label="예식장 이름"
+              value={form.venue}
+              onChangeText={(value) => setForm((current) => ({ ...current, venue: value }))}
+              placeholder="예: 더채플 서울"
+            />
+            <View style={styles.twoColumnRow}>
+              <View style={styles.halfField}>
+                <TextField
+                  label="본식 시간"
+                  value={form.ceremonyTime}
+                  onChangeText={(value) =>
+                    setForm((current) => ({ ...current, ceremonyTime: value }))
+                  }
+                  placeholder="예: 오후 2시 30분"
+                />
+              </View>
+              <View style={styles.halfField}>
+                <TextField
+                  label="본식 장소"
+                  value={form.ceremonyLocation}
+                  onChangeText={(value) =>
+                    setForm((current) => ({ ...current, ceremonyLocation: value }))
+                  }
+                  placeholder="예: 3층 그랜드홀"
+                />
+              </View>
+            </View>
+            <View style={styles.twoColumnRow}>
+              <View style={styles.halfField}>
+                <TextField
+                  label="피로연 시간"
+                  value={form.receptionTime}
+                  onChangeText={(value) =>
+                    setForm((current) => ({ ...current, receptionTime: value }))
+                  }
+                  placeholder="예: 오후 4시 30분"
+                />
+              </View>
+              <View style={styles.halfField}>
+                <TextField
+                  label="피로연 장소"
+                  value={form.receptionLocation}
+                  onChangeText={(value) =>
+                    setForm((current) => ({ ...current, receptionLocation: value }))
+                  }
+                  placeholder="예: 1층 연회장"
+                />
+              </View>
+            </View>
+          </SectionCard>
+        );
+      case 'location':
+        return (
+          <>
+            <SectionCard
+              title="예식장 주소와 연락처"
+              description="주소 검색으로 좌표를 다시 맞추고, 지도 설명 문구를 함께 정리합니다."
+            >
+              <TextField
+                label="상세 주소"
+                value={form.ceremonyAddress}
+                onChangeText={(value) =>
+                  setForm((current) => ({ ...current, ceremonyAddress: value }))
+                }
+                placeholder="예: 서울특별시 강남구 ..."
+                multiline
+              />
+              <View style={styles.actionRow}>
+                <ActionButton
+                  variant="secondary"
+                  onPress={() => void handleSearchAddress()}
+                  loading={isSearchingAddress}
+                >
+                  주소 검색으로 위치 다시 맞추기
+                </ActionButton>
+              </View>
+              <TextField
+                label="예식장 연락처"
+                value={form.ceremonyContact}
+                onChangeText={(value) =>
+                  setForm((current) => ({ ...current, ceremonyContact: value }))
+                }
+                placeholder="예: 02-1234-5678"
+                autoCapitalize="none"
+              />
+              <TextField
+                label="지도 안내 문구"
+                value={form.mapDescription}
+                onChangeText={(value) =>
+                  setForm((current) => ({ ...current, mapDescription: value }))
+                }
+                placeholder="예: 건물 앞 주차장을 이용해 주세요."
+                multiline
+              />
+            </SectionCard>
+
+            <SectionCard
+              title="지도 미리보기"
+              description="주소 문자열 대신 실제로 연결될 카카오맵 위치를 앱 안에서 바로 확인합니다."
+            >
+              {mapPreviewUrl ? (
+                <View
+                  style={[
+                    styles.mapPreviewCard,
+                    {
+                      backgroundColor: palette.surfaceMuted,
+                      borderColor: palette.cardBorder,
+                    },
+                  ]}
+                >
+                  <Text style={[styles.mapPreviewTitle, { color: palette.text, fontSize: 15 * fontScale }]}>
+                    {form.venue.trim() || '선택한 예식장 위치'}
+                  </Text>
+                  <Text
+                    style={[
+                      styles.mapPreviewAddress,
+                      { color: palette.textMuted, fontSize: 13 * fontScale },
+                    ]}
+                  >
+                    {form.ceremonyAddress.trim() || '주소를 입력하면 지도 위치가 준비됩니다.'}
+                  </Text>
+                  {hasValidCoordinates(mapLatitude, mapLongitude) ? (
+                    <Text
+                      style={[
+                        styles.mapPreviewMeta,
+                        { color: palette.textMuted, fontSize: 12 * fontScale },
+                      ]}
+                    >
+                      좌표: {mapLatitude}, {mapLongitude}
+                    </Text>
+                  ) : null}
+                  <ActionButton variant="secondary" onPress={() => void handleOpenMapUrl()} fullWidth>
+                    앱 안에서 지도 열기
+                  </ActionButton>
+                </View>
+              ) : (
+                <View
+                  style={[
+                    styles.emptyImageState,
+                    {
+                      backgroundColor: palette.surfaceMuted,
+                      borderColor: palette.cardBorder,
+                    },
+                  ]}
+                >
+                  <Text style={[styles.helperText, { color: palette.textMuted, fontSize: 13 * fontScale }]}>
+                    아직 지도 위치가 준비되지 않았습니다. 주소를 검색하면 연결될 위치를 바로 확인할 수 있습니다.
+                  </Text>
+                </View>
+              )}
+            </SectionCard>
+          </>
+        );
+      case 'greeting':
+        return (
+          <>
+            <SectionCard
+              title="인사말"
+              description="페이지 본문에 노출되는 인사말과 작성자 문구를 정리합니다."
+            >
+              <TextField
+                label="인사말"
+                value={form.greetingMessage}
+                onChangeText={(value) =>
+                  setForm((current) => ({ ...current, greetingMessage: value }))
+                }
+                placeholder="소중한 분들을 예식에 초대하는 인사말을 입력해 주세요."
+                multiline
+              />
+              <TextField
+                label="인사말 서명"
+                value={form.greetingAuthor}
+                onChangeText={(value) =>
+                  setForm((current) => ({ ...current, greetingAuthor: value }))
+                }
+                placeholder="예: 신랑 · 신부"
+              />
+            </SectionCard>
+
+            <SectionCard
+              title="축의금 및 방문 안내"
+              description="축의금 계좌와 교통·화환 안내를 웹 page-wizard 구조처럼 함께 관리합니다."
+            >
+              <TextField
+                label="축의금 안내 문구"
+                value={form.giftMessage}
+                onChangeText={(value) =>
+                  setForm((current) => ({ ...current, giftMessage: value }))
+                }
+                placeholder="예: 계좌번호 안내가 필요하신 분들을 위해 준비했습니다."
+                multiline
+              />
+              <TextField
+                label="신랑측 계좌 (한 줄당 은행|계좌번호|예금주)"
+                value={form.groomAccountsText}
+                onChangeText={(value) =>
+                  setForm((current) => ({ ...current, groomAccountsText: value }))
+                }
+                placeholder={'국민은행|123-456-789|홍길동\n신한은행|111-222-333|홍길동'}
+                multiline
+                autoCapitalize="none"
+              />
+              <TextField
+                label="신부측 계좌 (한 줄당 은행|계좌번호|예금주)"
+                value={form.brideAccountsText}
+                onChangeText={(value) =>
+                  setForm((current) => ({ ...current, brideAccountsText: value }))
+                }
+                placeholder={'우리은행|987-654-321|김수민\n하나은행|444-555-666|김수민'}
+                multiline
+                autoCapitalize="none"
+              />
+              <TextField
+                label="교통 안내 (한 줄당 제목|내용)"
+                value={form.venueGuideText}
+                onChangeText={(value) =>
+                  setForm((current) => ({ ...current, venueGuideText: value }))
+                }
+                placeholder={'주차 안내|건물 앞 주차장을 이용해 주세요.\n대중교통|2호선 강남역 4번 출구'}
+                multiline
+              />
+              <TextField
+                label="화환 안내 (한 줄당 제목|내용)"
+                value={form.wreathGuideText}
+                onChangeText={(value) =>
+                  setForm((current) => ({ ...current, wreathGuideText: value }))
+                }
+                placeholder={'화환 접수|예식장 안내 데스크에 전달해 주세요.'}
+                multiline
+              />
+            </SectionCard>
+          </>
+        );
+      case 'images':
+        return (
+          <>
+            <SectionCard
+              title="대표 이미지"
+              description="원본 대신 썸네일 우선으로 미리보기를 보여주고, 저장 시에는 원본 경로를 유지합니다."
+            >
+              <View style={styles.actionRow}>
+                <ActionButton
+                  variant="secondary"
+                  onPress={() => void handleUploadImage('cover')}
+                  loading={uploadingImageKind === 'cover'}
+                >
+                  대표 이미지 업로드
+                </ActionButton>
+              </View>
+              {coverPreviewUrl ? (
+                <Image
+                  source={{ uri: coverPreviewUrl }}
+                  alt="대표 이미지 미리보기"
+                  style={styles.coverPreviewImage}
+                  resizeMode="cover"
+                />
+              ) : (
+                <View
+                  style={[
+                    styles.emptyImageState,
+                    {
+                      backgroundColor: palette.surfaceMuted,
+                      borderColor: palette.cardBorder,
+                    },
+                  ]}
+                >
+                  <Text style={[styles.helperText, { color: palette.textMuted, fontSize: 13 * fontScale }]}>
+                    아직 대표 이미지가 없습니다. 업로드하면 커버 미리보기로 바로 확인할 수 있습니다.
+                  </Text>
+                </View>
+              )}
+            </SectionCard>
+
+            <SectionCard
+              title={`갤러리 이미지 (${galleryPreviewItems.length}/${dashboard?.page.features.maxGalleryImages ?? 0})`}
+              description="웹 page-wizard처럼 실제 노출 순서를 보면서 위아래로 정렬합니다."
+            >
+              <View style={styles.actionRow}>
+                <ActionButton
+                  variant="secondary"
+                  onPress={() => void handleUploadImage('gallery')}
+                  loading={uploadingImageKind === 'gallery'}
+                  disabled={
+                    galleryPreviewItems.length >= (dashboard?.page.features.maxGalleryImages ?? 0)
+                  }
+                >
+                  갤러리 이미지 업로드
+                </ActionButton>
+              </View>
+              {galleryPreviewItems.length ? (
+                <View style={styles.galleryList}>
+                  {galleryPreviewItems.map((image, index) => (
+                    <View
+                      key={image.id}
+                      style={[
+                        styles.galleryCard,
+                        {
+                          backgroundColor: palette.surfaceMuted,
+                          borderColor: palette.cardBorder,
+                        },
+                      ]}
+                    >
+                      <Image
+                        source={{ uri: image.previewUrl }}
+                        alt={`갤러리 이미지 ${index + 1}번 미리보기`}
+                        style={styles.galleryPreviewImage}
+                      />
+                      <View style={styles.galleryCardCopy}>
+                        <Text
+                          style={[
+                            styles.galleryCardTitle,
+                            { color: palette.text, fontSize: 14 * fontScale },
+                          ]}
+                        >
+                          노출 순서 {index + 1}
+                        </Text>
+                        <Text
+                          style={[
+                            styles.galleryCardMeta,
+                            { color: palette.textMuted, fontSize: 12 * fontScale },
+                          ]}
+                        >
+                          저장 시 원본 이미지를 유지하고, 편집 화면은 썸네일로 불러옵니다.
+                        </Text>
+                      </View>
+                      <View style={styles.galleryCardActions}>
+                        <ActionButton
+                          variant="secondary"
+                          onPress={() => handleMoveGalleryImage(index, 'up')}
+                          disabled={index === 0}
+                        >
+                          위로
+                        </ActionButton>
+                        <ActionButton
+                          variant="secondary"
+                          onPress={() => handleMoveGalleryImage(index, 'down')}
+                          disabled={index === galleryPreviewItems.length - 1}
+                        >
+                          아래로
+                        </ActionButton>
+                        <ActionButton
+                          variant="danger"
+                          onPress={() => handleRemoveGalleryImage(index)}
+                        >
+                          삭제
+                        </ActionButton>
+                      </View>
+                    </View>
+                  ))}
+                </View>
+              ) : (
+                <View
+                  style={[
+                    styles.emptyImageState,
+                    {
+                      backgroundColor: palette.surfaceMuted,
+                      borderColor: palette.cardBorder,
+                    },
+                  ]}
+                >
+                  <Text style={[styles.helperText, { color: palette.textMuted, fontSize: 13 * fontScale }]}>
+                    아직 갤러리 이미지가 없습니다. 업로드 후 순서를 바로 조정할 수 있습니다.
+                  </Text>
+                </View>
+              )}
+            </SectionCard>
+          </>
+        );
+      case 'settings':
+      default:
+        return (
+          <>
+            <SectionCard
+              title="공유 문구와 기본 테마"
+              description="미리보기 제목·설명과 공개 페이지 기본 테마를 마지막으로 점검합니다."
+            >
+              <TextField
+                label="공유 제목"
+                value={form.shareTitle}
+                onChangeText={(value) => setForm((current) => ({ ...current, shareTitle: value }))}
+                placeholder="예: 박준호 · 김수민 결혼식에 초대합니다"
+              />
+              <TextField
+                label="공유 설명"
+                value={form.shareDescription}
+                onChangeText={(value) =>
+                  setForm((current) => ({ ...current, shareDescription: value }))
+                }
+                placeholder="미리보기 카드에서 보일 설명을 입력해 주세요."
+                multiline
+              />
+
+              <Text style={[styles.helperText, { color: palette.text, fontSize: 13 * fontScale }]}>
+                기본 테마
+              </Text>
+              <View style={styles.chipRow}>
+                <ChoiceChip
+                  label="감성형"
+                  selected={form.defaultTheme === 'emotional'}
+                  onPress={() => setForm((current) => ({ ...current, defaultTheme: 'emotional' }))}
+                />
+                <ChoiceChip
+                  label="심플형"
+                  selected={form.defaultTheme === 'simple'}
+                  onPress={() => setForm((current) => ({ ...current, defaultTheme: 'simple' }))}
+                />
+              </View>
+            </SectionCard>
+
+            <SectionCard
+              title="배경음악과 공개 설정"
+              description="서비스 등급에 맞는 음악 설정과 공개 상태를 함께 저장합니다."
+            >
+              {dashboard?.page.features.showMusic ? (
+                <>
+                  <ActionButton
+                    variant={form.musicEnabled ? 'primary' : 'secondary'}
+                    onPress={() =>
+                      setForm((current) => ({ ...current, musicEnabled: !current.musicEnabled }))
+                    }
+                    fullWidth
+                  >
+                    {form.musicEnabled ? '배경음악 사용 중' : '배경음악 사용 안 함'}
+                  </ActionButton>
+
+                  <View style={styles.dropdownField}>
+                    <Text style={[styles.dropdownLabel, { color: palette.text, fontSize: 13 * fontScale }]}>
+                      음악 카테고리
+                    </Text>
+                    <Pressable
+                      accessibilityRole="button"
+                      disabled={!form.musicEnabled || musicLibraryLoading}
+                      onPress={() =>
+                        setOpenMusicDropdown((current) => (current === 'category' ? null : 'category'))
+                      }
+                      style={[
+                        styles.dropdownButton,
+                        {
+                          backgroundColor: palette.surfaceMuted,
+                          borderColor:
+                            openMusicDropdown === 'category' ? palette.accent : palette.cardBorder,
+                          opacity: !form.musicEnabled || musicLibraryLoading ? 0.5 : 1,
+                        },
+                      ]}
+                    >
+                      <Text
+                        style={[
+                          styles.dropdownButtonText,
+                          { color: palette.text, fontSize: 14 * fontScale },
+                        ]}
+                      >
+                        {selectedMusicCategory?.label ?? '선택'}
+                      </Text>
+                      <Text style={[styles.dropdownArrow, { color: palette.textMuted, fontSize: 12 * fontScale }]}>
+                        {openMusicDropdown === 'category' ? '▲' : '▼'}
+                      </Text>
+                    </Pressable>
+
+                    {openMusicDropdown === 'category' ? (
+                      <View
+                        style={[
+                          styles.dropdownList,
+                          { borderColor: palette.cardBorder, backgroundColor: palette.surface },
+                        ]}
+                      >
+                        {musicCategories.length ? (
+                          musicCategories.map((category) => {
+                            const selected = category.id === form.musicCategoryId;
+
+                            return (
+                              <Pressable
+                                key={`music-category-${category.id}`}
+                                accessibilityRole="button"
+                                onPress={() => handleSelectMusicCategory(category.id)}
+                                style={[
+                                  styles.dropdownOption,
+                                  {
+                                    borderColor: selected ? palette.accent : palette.cardBorder,
+                                    backgroundColor: selected ? palette.accentSoft : palette.surfaceMuted,
+                                  },
+                                ]}
+                              >
+                                <View style={styles.dropdownOptionCopy}>
+                                  <Text
+                                    style={[
+                                      styles.dropdownOptionTitle,
+                                      { color: palette.text, fontSize: 14 * fontScale },
+                                    ]}
+                                  >
+                                    {category.label}
+                                  </Text>
+                                  <Text
+                                    style={[
+                                      styles.dropdownOptionMeta,
+                                      { color: palette.textMuted, fontSize: 12 * fontScale },
+                                    ]}
+                                  >
+                                    {category.tracks.length}곡
+                                  </Text>
+                                </View>
+                              </Pressable>
+                            );
+                          })
+                        ) : (
+                          <Text style={[styles.helperText, { color: palette.textMuted, fontSize: 12 * fontScale }]}>
+                            등록된 카테고리가 없습니다.
+                          </Text>
+                        )}
+                      </View>
+                    ) : null}
+                  </View>
+
+                  <View style={styles.dropdownField}>
+                    <Text style={[styles.dropdownLabel, { color: palette.text, fontSize: 13 * fontScale }]}>
+                      곡 선택
+                    </Text>
+                    <Pressable
+                      accessibilityRole="button"
+                      disabled={!form.musicEnabled || musicLibraryLoading || availableMusicTracks.length === 0}
+                      onPress={() =>
+                        setOpenMusicDropdown((current) => (current === 'track' ? null : 'track'))
+                      }
+                      style={[
+                        styles.dropdownButton,
+                        {
+                          backgroundColor: palette.surfaceMuted,
+                          borderColor:
+                            openMusicDropdown === 'track' ? palette.accent : palette.cardBorder,
+                          opacity:
+                            !form.musicEnabled || musicLibraryLoading || availableMusicTracks.length === 0
+                              ? 0.5
+                              : 1,
+                        },
+                      ]}
+                    >
+                      <Text
+                        style={[
+                          styles.dropdownButtonText,
+                          { color: palette.text, fontSize: 14 * fontScale },
+                        ]}
+                      >
+                        {selectedMusicTrack
+                          ? `${selectedMusicTrack.title} · ${selectedMusicTrack.artist}`
+                          : form.musicCategoryId
+                            ? '선택'
+                            : '먼저 카테고리를 선택해 주세요.'}
+                      </Text>
+                      <Text style={[styles.dropdownArrow, { color: palette.textMuted, fontSize: 12 * fontScale }]}>
+                        {openMusicDropdown === 'track' ? '▲' : '▼'}
+                      </Text>
+                    </Pressable>
+
+                    {openMusicDropdown === 'track' ? (
+                      <View
+                        style={[
+                          styles.dropdownList,
+                          { borderColor: palette.cardBorder, backgroundColor: palette.surface },
+                        ]}
+                      >
+                        {availableMusicTracks.length ? (
+                          availableMusicTracks.map((track) => {
+                            const selected = track.id === form.musicTrackId;
+
+                            return (
+                              <Pressable
+                                key={`music-track-${track.id}`}
+                                accessibilityRole="button"
+                                onPress={() => handleSelectMusicTrack(track.id)}
+                                style={[
+                                  styles.dropdownOption,
+                                  {
+                                    borderColor: selected ? palette.accent : palette.cardBorder,
+                                    backgroundColor: selected ? palette.accentSoft : palette.surfaceMuted,
+                                  },
+                                ]}
+                              >
+                                <View style={styles.dropdownOptionCopy}>
+                                  <Text
+                                    style={[
+                                      styles.dropdownOptionTitle,
+                                      { color: palette.text, fontSize: 14 * fontScale },
+                                    ]}
+                                  >
+                                    {track.title}
+                                  </Text>
+                                  <Text
+                                    style={[
+                                      styles.dropdownOptionMeta,
+                                      { color: palette.textMuted, fontSize: 12 * fontScale },
+                                    ]}
+                                  >
+                                    {track.artist}
+                                  </Text>
+                                </View>
+                              </Pressable>
+                            );
+                          })
+                        ) : (
+                          <Text style={[styles.helperText, { color: palette.textMuted, fontSize: 12 * fontScale }]}>
+                            등록된 곡이 없습니다.
+                          </Text>
+                        )}
+                      </View>
+                    ) : null}
+                  </View>
+
+                  <TextField
+                    label="볼륨 (0 ~ 1)"
+                    value={form.musicVolume}
+                    onChangeText={(value) =>
+                      setForm((current) => ({ ...current, musicVolume: value }))
+                    }
+                    placeholder="예: 0.35"
+                    autoCapitalize="none"
+                  />
+                </>
+              ) : (
+                <Text style={[styles.helperText, { color: palette.textMuted, fontSize: 13 * fontScale }]}>
+                  현재 서비스 등급에서는 배경음악을 제공하지 않습니다.
+                </Text>
+              )}
+
+              <ActionButton
+                variant={form.published ? 'primary' : 'secondary'}
+                onPress={() =>
+                  setForm((current) => ({ ...current, published: !current.published }))
+                }
+                fullWidth
+              >
+                {form.published ? '저장 후 공개 상태 유지' : '저장 후 비공개 상태 유지'}
+              </ActionButton>
+            </SectionCard>
+          </>
+        );
+    }
+  };
+
   const renderOnboardingStep = () => {
     switch (onboardingStepIndex) {
       case 0:
@@ -1759,6 +2482,42 @@ export default function ManageScreen() {
               </View>
             </SectionCard>
 
+            <Modal
+              visible={editorPreparingVisible}
+              animationType="fade"
+              transparent
+              statusBarTranslucent
+              presentationStyle="overFullScreen"
+              onRequestClose={() => setEditorPreparingVisible(false)}
+            >
+              <View style={styles.modalOverlay}>
+                <View style={styles.modalBackdrop} />
+                <View
+                  style={[
+                    styles.modalCard,
+                    styles.editorPreparingCard,
+                    {
+                      backgroundColor: palette.surface,
+                      borderColor: palette.cardBorder,
+                    },
+                  ]}
+                >
+                  <ActivityIndicator color={palette.accent} />
+                  <Text style={[styles.modalTitle, { color: palette.text, fontSize: 20 * fontScale }]}>
+                    청첩장 정보 수정 준비 중
+                  </Text>
+                  <Text
+                    style={[
+                      styles.modalDescription,
+                      { color: palette.textMuted, fontSize: 14 * fontScale },
+                    ]}
+                  >
+                    {editorPreparingMessage || '최신 청첩장 정보를 불러오고 있습니다.'}
+                  </Text>
+                </View>
+              </View>
+            </Modal>
+
             <InvitationEditorModalShell
               visible={editorModalVisible}
               onClose={closeEditorModal}
@@ -1767,6 +2526,75 @@ export default function ManageScreen() {
               palette={palette}
               fontScale={fontScale}
             >
+              <View style={styles.editorStepHeader}>
+                <Text style={[styles.editorStepTitle, { color: palette.text, fontSize: 18 * fontScale }]}>
+                  {currentEditorStep.title}
+                </Text>
+                <Text
+                  style={[
+                    styles.editorStepCounter,
+                    { color: palette.textMuted, fontSize: 12 * fontScale },
+                  ]}
+                >
+                  {editorStepIndex + 1} / {EDITOR_STEPS.length}
+                </Text>
+              </View>
+
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.editorStepChipRow}
+              >
+                {EDITOR_STEPS.map((step, index) => (
+                  <ChoiceChip
+                    key={step.key}
+                    label={step.title}
+                    selected={index === editorStepIndex}
+                    onPress={() => setEditorStepIndex(index)}
+                  />
+                ))}
+              </ScrollView>
+
+              {renderEditorStepContent()}
+
+              {notice ? (
+                <Text style={[styles.noticeText, { color: palette.accent, fontSize: 13 * fontScale }]}>
+                  {notice}
+                </Text>
+              ) : null}
+              {authError ? (
+                <Text style={[styles.noticeText, { color: palette.danger, fontSize: 13 * fontScale }]}>
+                  {authError}
+                </Text>
+              ) : null}
+
+              <View style={styles.editorStepActions}>
+                <ActionButton
+                  variant="secondary"
+                  onPress={() => setEditorStepIndex((current) => Math.max(0, current - 1))}
+                  disabled={isFirstEditorStep}
+                >
+                  이전
+                </ActionButton>
+                <ActionButton
+                  variant="secondary"
+                  onPress={() =>
+                    setEditorStepIndex((current) =>
+                      Math.min(EDITOR_STEPS.length - 1, current + 1)
+                    )
+                  }
+                  disabled={isLastEditorStep}
+                >
+                  다음
+                </ActionButton>
+              </View>
+
+              <ActionButton onPress={() => void handleSave()} loading={isSaving} fullWidth>
+                이 단계까지 저장
+              </ActionButton>
+
+              {false ? (
+                <>
             <SectionCard
               title="기본 커버 정보"
               description="웹 page-wizard 기본 단계와 동일하게 대표 정보와 표지 문구를 관리합니다."
@@ -2358,6 +3186,8 @@ export default function ManageScreen() {
               </ActionButton>
             </SectionCard>
 
+                </>
+              ) : null}
             </InvitationEditorModalShell>
 
             <SectionCard
@@ -2613,6 +3443,31 @@ export default function ManageScreen() {
 }
 
 const styles = StyleSheet.create({
+  editorPreparingCard: {
+    alignItems: 'center',
+  },
+  editorStepHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 12,
+  },
+  editorStepTitle: {
+    fontWeight: '800',
+  },
+  editorStepCounter: {
+    fontWeight: '700',
+  },
+  editorStepChipRow: {
+    gap: 8,
+    paddingBottom: 4,
+  },
+  editorStepActions: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    gap: 8,
+  },
   loadingRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -2633,6 +3488,61 @@ const styles = StyleSheet.create({
     lineHeight: 20,
   },
   helperText: {
+    lineHeight: 18,
+  },
+  coverPreviewImage: {
+    width: '100%',
+    aspectRatio: 1.45,
+    borderRadius: 18,
+  },
+  emptyImageState: {
+    borderWidth: 1,
+    borderRadius: 18,
+    paddingHorizontal: 14,
+    paddingVertical: 16,
+  },
+  galleryList: {
+    gap: 10,
+  },
+  galleryCard: {
+    borderWidth: 1,
+    borderRadius: 18,
+    padding: 12,
+    gap: 12,
+  },
+  galleryPreviewImage: {
+    width: '100%',
+    aspectRatio: 1.25,
+    borderRadius: 16,
+    backgroundColor: '#f3efe8',
+  },
+  galleryCardCopy: {
+    gap: 4,
+  },
+  galleryCardTitle: {
+    fontWeight: '800',
+  },
+  galleryCardMeta: {
+    lineHeight: 18,
+  },
+  galleryCardActions: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  mapPreviewCard: {
+    borderWidth: 1,
+    borderRadius: 18,
+    padding: 14,
+    gap: 8,
+  },
+  mapPreviewTitle: {
+    fontWeight: '800',
+  },
+  mapPreviewAddress: {
+    lineHeight: 19,
+  },
+  mapPreviewMeta: {
     lineHeight: 18,
   },
   selectedInvitationCard: {

@@ -1,20 +1,38 @@
 import {
   StyleSheet,
-  Text,
   TextInput,
+  type TextInputProps,
+  type StyleProp,
+  type TextStyle,
+  type ViewStyle,
   View,
 } from 'react-native';
 
 import { useAppState } from '../contexts/AppStateContext';
+import { AppText, type AppTextVariant } from './AppText';
 
-type TextFieldProps = {
+type SupportedTextFieldProps = Pick<
+  TextInputProps,
+  | 'autoCapitalize'
+  | 'autoCorrect'
+  | 'editable'
+  | 'keyboardType'
+  | 'maxLength'
+  | 'onSubmitEditing'
+  | 'returnKeyType'
+  | 'secureTextEntry'
+>;
+
+type TextFieldProps = SupportedTextFieldProps & {
   label: string;
   value: string;
   onChangeText: (value: string) => void;
   placeholder?: string;
-  secureTextEntry?: boolean;
   multiline?: boolean;
-  autoCapitalize?: 'none' | 'sentences' | 'words' | 'characters';
+  helperText?: string;
+  labelVariant?: AppTextVariant;
+  containerStyle?: StyleProp<ViewStyle>;
+  inputStyle?: StyleProp<TextStyle>;
 };
 
 export function TextField({
@@ -24,34 +42,57 @@ export function TextField({
   placeholder,
   secureTextEntry = false,
   multiline = false,
+  autoCorrect,
   autoCapitalize = 'sentences',
+  keyboardType,
+  returnKeyType,
+  onSubmitEditing,
+  editable = true,
+  maxLength,
+  helperText,
+  labelVariant = 'caption',
+  containerStyle,
+  inputStyle,
 }: TextFieldProps) {
   const { palette, fontScale } = useAppState();
 
   return (
-    <View style={styles.wrapper}>
-      <Text style={[styles.label, { color: palette.text, fontSize: 13 * fontScale }]}>
+    <View style={[styles.wrapper, containerStyle]}>
+      <AppText variant={labelVariant} style={styles.label}>
         {label}
-      </Text>
+      </AppText>
       <TextInput
         value={value}
         onChangeText={onChangeText}
         placeholder={placeholder}
-        placeholderTextColor="#7d7d7d"
+        placeholderTextColor={palette.textMuted}
         secureTextEntry={secureTextEntry}
         multiline={multiline}
         autoCapitalize={autoCapitalize}
+        autoCorrect={autoCorrect}
+        keyboardType={keyboardType}
+        returnKeyType={returnKeyType}
+        onSubmitEditing={onSubmitEditing}
+        editable={editable}
+        maxLength={maxLength}
         style={[
           styles.input,
           multiline ? styles.multiline : null,
           {
-            backgroundColor: '#ffffff',
+            backgroundColor: palette.surface,
             borderColor: palette.cardBorder,
-            color: '#111111',
+            color: palette.text,
             fontSize: 15 * fontScale,
+            opacity: editable ? 1 : 0.6,
           },
+          inputStyle,
         ]}
       />
+      {helperText ? (
+        <AppText variant="muted" style={styles.helperText}>
+          {helperText}
+        </AppText>
+      ) : null}
     </View>
   );
 }
@@ -72,5 +113,8 @@ const styles = StyleSheet.create({
   multiline: {
     minHeight: 92,
     textAlignVertical: 'top',
+  },
+  helperText: {
+    marginTop: -2,
   },
 });

@@ -68,6 +68,8 @@ export interface InvitationPageDataBase {
   ceremony?: InvitationScheduleDetail;
   reception?: InvitationScheduleDetail;
   galleryImages?: string[];
+  coverImageThumbnailUrl?: string;
+  galleryImageThumbnailUrls?: string[];
   greetingMessage?: string;
   greetingAuthor?: string;
   mapUrl?: string;

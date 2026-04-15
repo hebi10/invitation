@@ -1,21 +1,22 @@
+import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
-import { ActionButton } from '../../components/ActionButton';
-import { AppScreen } from '../../components/AppScreen';
-import { ChoiceChip } from '../../components/ChoiceChip';
-import { SectionCard } from '../../components/SectionCard';
-import { TextField } from '../../components/TextField';
-import { useAppState } from '../../contexts/AppStateContext';
-import { settingsNotes } from '../../constants/content';
+import { ActionButton } from '../../../components/ActionButton';
+import { AppScreen } from '../../../components/AppScreen';
+import { ChoiceChip } from '../../../components/ChoiceChip';
+import { SectionCard } from '../../../components/SectionCard';
+import { TextField } from '../../../components/TextField';
+import { useAppState } from '../../../contexts/AppStateContext';
+import { settingsNotes } from '../../../constants/content';
 
 export default function SettingsScreen() {
+  const router = useRouter();
   const {
     apiBaseUrl,
     authError,
     clearAuthError,
     fontScalePreference,
-    isAuthenticated,
     logout,
     pageSummary,
     palette,
@@ -36,6 +37,11 @@ export default function SettingsScreen() {
     clearAuthError();
     await setApiBaseUrl(apiBaseUrlInput);
     setNotice('API 주소를 저장했습니다. 주소가 바뀐 경우 기존 연동 세션은 초기화됩니다.');
+  };
+
+  const handleLogout = async () => {
+    await logout();
+    router.replace('/');
   };
 
   return (
@@ -114,7 +120,7 @@ export default function SettingsScreen() {
       <SectionCard
         title="청첩장 연동 상태"
         description="현재 연결된 페이지와 자동 연동 상태를 확인합니다."
-        badge={isAuthenticated ? '연동됨' : '연동 해제'}
+        badge={pageSummary ? '연동됨' : '연동 준비 중'}
       >
         <Text style={[styles.accountText, { color: palette.text, fontSize: 14 * fontScale }]}>
           연결된 페이지: {pageSummary?.slug ?? '없음'}
@@ -122,7 +128,7 @@ export default function SettingsScreen() {
         <Text style={[styles.accountText, { color: palette.textMuted, fontSize: 13 * fontScale }]}>
           서비스: {pageSummary ? pageSummary.productTier.toUpperCase() : '-'}
         </Text>
-        <ActionButton variant="danger" onPress={() => void logout()} fullWidth>
+        <ActionButton variant="danger" onPress={() => void handleLogout()} fullWidth>
           자동 연동 초기화
         </ActionButton>
       </SectionCard>

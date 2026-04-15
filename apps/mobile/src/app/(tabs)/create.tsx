@@ -4,12 +4,12 @@ import {
   Modal,
   Pressable,
   StyleSheet,
-  Text,
   View,
 } from 'react-native';
 
 import { ActionButton } from '../../components/ActionButton';
 import { AppScreen } from '../../components/AppScreen';
+import { AppText } from '../../components/AppText';
 import { BulletList } from '../../components/BulletList';
 import { ChoiceChip } from '../../components/ChoiceChip';
 import { SectionCard } from '../../components/SectionCard';
@@ -69,7 +69,6 @@ export default function CreateScreen() {
     clearAuthError,
     createInvitationPage,
     drafts,
-    fontScale,
     isAuthenticating,
     palette,
     removeDraft,
@@ -203,7 +202,7 @@ export default function CreateScreen() {
     setPaymentModalVisible(false);
     clearAuthError();
     setNotice('저장된 초안을 불러왔습니다. 비밀번호만 다시 입력하면 이어서 진행할 수 있습니다.');
-    router.replace('/(tabs)/create');
+    router.replace('/create');
   }, [clearAuthError, drafts, loadedDraftId, normalizedDraftId, router]);
 
   const resetForm = () => {
@@ -301,7 +300,7 @@ export default function CreateScreen() {
 
     resetForm();
     setNotice('청첩장을 생성했습니다. 운영 탭에서 예식 정보를 이어서 입력해 주세요.');
-    router.replace('/(tabs)/manage');
+    router.replace('/manage');
   };
 
   return (
@@ -340,6 +339,7 @@ export default function CreateScreen() {
             onChangeText={setGroomEnglishName}
             placeholder="예: shin-minje"
             autoCapitalize="none"
+            autoCorrect={false}
           />
           <TextField
             label="신부 영문 이름"
@@ -347,6 +347,7 @@ export default function CreateScreen() {
             onChangeText={setBrideEnglishName}
             placeholder="예: kim-hyunji"
             autoCapitalize="none"
+            autoCorrect={false}
           />
           <TextField
             label="페이지 비밀번호"
@@ -355,6 +356,9 @@ export default function CreateScreen() {
             placeholder="페이지별 비밀번호 입력"
             secureTextEntry
             autoCapitalize="none"
+            autoCorrect={false}
+            returnKeyType="done"
+            onSubmitEditing={handleOpenPaymentModal}
           />
 
           <View
@@ -366,31 +370,27 @@ export default function CreateScreen() {
               },
             ]}
           >
-            <Text style={[styles.previewLabel, { color: palette.textMuted, fontSize: 13 * fontScale }]}>
+            <AppText variant="caption" style={styles.previewLabel}>
               생성될 URL 미리보기
-            </Text>
-            <Text style={[styles.previewValue, { color: palette.text, fontSize: 15 * fontScale }]}>
+            </AppText>
+            <AppText style={styles.previewValue}>
               {publicUrlPreview}
-            </Text>
+            </AppText>
           </View>
 
           <View style={styles.validationList}>
             {validationChecklist.map((item) => (
               <View key={item.label} style={styles.validationRow}>
-                <Text
-                  style={[
-                    styles.validationState,
-                    {
-                      color: item.passed ? palette.accent : palette.danger,
-                      fontSize: 12 * fontScale,
-                    },
-                  ]}
+                <AppText
+                  variant="caption"
+                  color={item.passed ? palette.accent : palette.danger}
+                  style={styles.validationState}
                 >
                   {item.passed ? '완료' : '확인 필요'}
-                </Text>
-                <Text style={[styles.validationText, { color: palette.text, fontSize: 14 * fontScale }]}>
+                </AppText>
+                <AppText style={styles.validationText}>
                   {item.label}
-                </Text>
+                </AppText>
               </View>
             ))}
           </View>
@@ -406,12 +406,14 @@ export default function CreateScreen() {
               ]}
             >
               {validationMessages.map((message) => (
-                <Text
+                <AppText
                   key={message}
-                  style={[styles.noticeText, { color: palette.danger, fontSize: 13 * fontScale }]}
+                  variant="caption"
+                  color={palette.danger}
+                  style={styles.noticeText}
                 >
                   · {message}
-                </Text>
+                </AppText>
               ))}
             </View>
           ) : null}
@@ -431,9 +433,9 @@ export default function CreateScreen() {
               />
             ))}
           </View>
-          <Text style={[styles.helperText, { color: palette.textMuted, fontSize: 14 * fontScale }]}>
+          <AppText variant="muted" style={styles.helperText}>
             {selectedPlanInfo.description}
-          </Text>
+          </AppText>
           <BulletList items={selectedPlanInfo.features} />
 
           <View style={styles.divider} />
@@ -448,9 +450,9 @@ export default function CreateScreen() {
               />
             ))}
           </View>
-          <Text style={[styles.helperText, { color: palette.textMuted, fontSize: 14 * fontScale }]}>
+          <AppText variant="muted" style={styles.helperText}>
             선택한 디자인: {selectedThemeInfo.description}
-          </Text>
+          </AppText>
         </SectionCard>
 
         <SectionCard
@@ -458,9 +460,9 @@ export default function CreateScreen() {
           description="티켓은 장수만 먼저 구매하고, 사용 범위는 아래 정책대로 적용합니다."
           badge={`${ticketCount}장`}
         >
-          <Text style={[styles.helperText, { color: palette.textMuted, fontSize: 14 * fontScale }]}>
+          <AppText variant="muted" style={styles.helperText}>
             1장당 5,000원이며, 3장 단위로 구매할 때마다 5,000원이 할인됩니다.
-          </Text>
+          </AppText>
 
           <View style={styles.ticketPresetRow}>
             {TICKET_PRESET_COUNTS.map((count) => (
@@ -490,17 +492,17 @@ export default function CreateScreen() {
                 { borderColor: palette.cardBorder, backgroundColor: palette.surface },
               ]}
             >
-              <Text style={[styles.ticketCounterButtonLabel, { color: palette.text, fontSize: 22 * fontScale }]}>
+              <AppText variant="title" style={styles.ticketCounterButtonLabel}>
                 -
-              </Text>
+              </AppText>
             </Pressable>
             <View style={styles.ticketCounterValueBox}>
-              <Text style={[styles.ticketCounterValue, { color: palette.text, fontSize: 28 * fontScale }]}>
+              <AppText variant="title" style={styles.ticketCounterValue}>
                 {ticketCount}
-              </Text>
-              <Text style={[styles.ticketCounterCaption, { color: palette.textMuted, fontSize: 13 * fontScale }]}>
+              </AppText>
+              <AppText variant="caption" style={styles.ticketCounterCaption}>
                 구매할 티켓 장수
-              </Text>
+              </AppText>
             </View>
             <Pressable
               accessibilityRole="button"
@@ -510,9 +512,9 @@ export default function CreateScreen() {
                 { borderColor: palette.cardBorder, backgroundColor: palette.surface },
               ]}
             >
-              <Text style={[styles.ticketCounterButtonLabel, { color: palette.text, fontSize: 22 * fontScale }]}>
+              <AppText variant="title" style={styles.ticketCounterButtonLabel}>
                 +
-              </Text>
+              </AppText>
             </Pressable>
           </View>
 
@@ -525,15 +527,15 @@ export default function CreateScreen() {
               },
             ]}
           >
-            <Text style={[styles.ticketSummaryText, { color: palette.text, fontSize: 14 * fontScale }]}>
+            <AppText style={styles.ticketSummaryText}>
               3장 할인 묶음: {discountedBundleCount}개
-            </Text>
-            <Text style={[styles.ticketSummaryText, { color: palette.text, fontSize: 14 * fontScale }]}>
+            </AppText>
+            <AppText style={styles.ticketSummaryText}>
               낱장 계산: {remainderTicketCount}장
-            </Text>
-            <Text style={[styles.ticketSummaryText, { color: palette.accent, fontSize: 15 * fontScale }]}>
+            </AppText>
+            <AppText color={palette.accent} style={styles.ticketSummaryText}>
               티켓 금액: {formatPrice(ticketPrice)}
-            </Text>
+            </AppText>
           </View>
 
           <BulletList items={[...TICKET_USAGE_ITEMS]} />
@@ -544,34 +546,28 @@ export default function CreateScreen() {
           description="현재는 실제 결제 연동 대신 확인 팝업만 띄우고, 확인 즉시 페이지를 생성한 뒤 운영 탭 슬라이드 입력으로 이동합니다."
         >
           <View style={styles.summaryRow}>
-            <Text style={[styles.summaryLabel, { color: palette.text, fontSize: 14 * fontScale }]}>
-              기본 서비스
-            </Text>
-            <Text style={[styles.summaryValue, { color: palette.text, fontSize: 14 * fontScale }]}>
+            <AppText style={styles.summaryLabel}>기본 서비스</AppText>
+            <AppText style={styles.summaryValue}>
               {formatPrice(selectedPlanInfo.price)}
-            </Text>
+            </AppText>
           </View>
           <View style={styles.summaryRow}>
-            <Text style={[styles.summaryLabel, { color: palette.text, fontSize: 14 * fontScale }]}>
-              추가 티켓
-            </Text>
-            <Text style={[styles.summaryValue, { color: palette.text, fontSize: 14 * fontScale }]}>
+            <AppText style={styles.summaryLabel}>추가 티켓</AppText>
+            <AppText style={styles.summaryValue}>
               {ticketCount}장 / {formatPrice(ticketPrice)}
-            </Text>
+            </AppText>
           </View>
           <View style={styles.summaryRow}>
-            <Text style={[styles.summaryLabel, { color: palette.text, fontSize: 14 * fontScale }]}>
-              예상 총액
-            </Text>
-            <Text style={[styles.totalLabel, { color: palette.accent, fontSize: 16 * fontScale }]}>
+            <AppText style={styles.summaryLabel}>예상 총액</AppText>
+            <AppText variant="title" color={palette.accent} style={styles.totalLabel}>
               {formatPrice(totalPrice)}
-            </Text>
+            </AppText>
           </View>
 
           {notice ? (
-            <Text style={[styles.helperText, { color: palette.accent, fontSize: 13 * fontScale }]}>
+            <AppText variant="caption" color={palette.accent} style={styles.helperText}>
               {notice}
-            </Text>
+            </AppText>
           ) : null}
 
           {authError ? (
@@ -584,9 +580,9 @@ export default function CreateScreen() {
                 },
               ]}
             >
-              <Text style={[styles.noticeText, { color: palette.danger, fontSize: 13 * fontScale }]}>
+              <AppText variant="caption" color={palette.danger} style={styles.noticeText}>
                 {authError}
-              </Text>
+              </AppText>
             </View>
           ) : null}
 
@@ -618,58 +614,50 @@ export default function CreateScreen() {
               },
             ]}
           >
-            <Text style={[styles.modalTitle, { color: palette.text, fontSize: 22 * fontScale }]}>
+            <AppText variant="title" style={styles.modalTitle}>
               결제 확인
-            </Text>
-            <Text style={[styles.modalDescription, { color: palette.textMuted, fontSize: 14 * fontScale }]}>
+            </AppText>
+            <AppText variant="muted" style={styles.modalDescription}>
               실제 결제는 아직 연결하지 않았습니다. 이 팝업에서 확인을 누르면 페이지를 생성하고 운영 탭으로 바로 이동합니다.
-            </Text>
+            </AppText>
 
             <View style={styles.summaryRow}>
-              <Text style={[styles.summaryLabel, { color: palette.text, fontSize: 14 * fontScale }]}>
+              <AppText style={styles.summaryLabel}>
                 서비스
-              </Text>
-              <Text style={[styles.summaryValue, { color: palette.text, fontSize: 14 * fontScale }]}>
+              </AppText>
+              <AppText style={styles.summaryValue}>
                 {selectedPlanInfo.name}
-              </Text>
+              </AppText>
             </View>
             <View style={styles.summaryRow}>
-              <Text style={[styles.summaryLabel, { color: palette.text, fontSize: 14 * fontScale }]}>
-                디자인
-              </Text>
-              <Text style={[styles.summaryValue, { color: palette.text, fontSize: 14 * fontScale }]}>
+              <AppText style={styles.summaryLabel}>디자인</AppText>
+              <AppText style={styles.summaryValue}>
                 {selectedThemeInfo.label}
-              </Text>
+              </AppText>
             </View>
             <View style={styles.summaryRow}>
-              <Text style={[styles.summaryLabel, { color: palette.text, fontSize: 14 * fontScale }]}>
-                추가 티켓
-              </Text>
-              <Text style={[styles.summaryValue, { color: palette.text, fontSize: 14 * fontScale }]}>
+              <AppText style={styles.summaryLabel}>추가 티켓</AppText>
+              <AppText style={styles.summaryValue}>
                 {ticketCount}장 / {formatPrice(ticketPrice)}
-              </Text>
+              </AppText>
             </View>
             <View style={styles.summaryRow}>
-              <Text style={[styles.summaryLabel, { color: palette.text, fontSize: 14 * fontScale }]}>
-                생성 URL
-              </Text>
-              <Text style={[styles.summaryValue, { color: palette.text, fontSize: 14 * fontScale }]}>
+              <AppText style={styles.summaryLabel}>생성 URL</AppText>
+              <AppText style={styles.summaryValue}>
                 {slugPreview}
-              </Text>
+              </AppText>
             </View>
             <View style={styles.summaryRow}>
-              <Text style={[styles.summaryLabel, { color: palette.text, fontSize: 14 * fontScale }]}>
-                결제 예정 금액
-              </Text>
-              <Text style={[styles.totalLabel, { color: palette.accent, fontSize: 16 * fontScale }]}>
+              <AppText style={styles.summaryLabel}>결제 예정 금액</AppText>
+              <AppText variant="title" color={palette.accent} style={styles.totalLabel}>
                 {formatPrice(totalPrice)}
-              </Text>
+              </AppText>
             </View>
 
             {authError ? (
-              <Text style={[styles.modalErrorText, { color: palette.danger, fontSize: 13 * fontScale }]}>
+              <AppText variant="caption" color={palette.danger} style={styles.modalErrorText}>
                 {authError}
-              </Text>
+              </AppText>
             ) : null}
 
             <View style={styles.actionColumn}>
