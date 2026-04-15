@@ -86,7 +86,10 @@ export async function saveClientEditorConfig(
       credentials: 'same-origin',
       body: JSON.stringify({
         action: 'save',
-        config,
+        config: {
+          ...config,
+          slug: pageSlug,
+        },
         ...options,
       }),
     })

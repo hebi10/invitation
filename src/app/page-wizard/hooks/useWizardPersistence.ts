@@ -107,6 +107,7 @@ export function useWizardPersistence({
       published: false,
       defaultTheme,
       productTier: previewFormState?.productTier,
+      initialDisplayPeriodMonths: 3,
     });
     const normalizedCreatedConfig = normalizeFormState(created.config);
 

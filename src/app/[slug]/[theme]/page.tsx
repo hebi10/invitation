@@ -2,7 +2,8 @@ import { notFound } from 'next/navigation';
 
 import { WeddingInvitationRoutePage } from '@/app/_components/WeddingInvitationPage';
 import { isInvitationThemeKey } from '@/lib/invitationThemes';
-import { getServerInvitationPageBySlug } from '@/server/invitationPageServerService';
+
+import { getCachedServerInvitationPageBySlug } from '../serverInvitationPageCache';
 
 export const dynamic = 'force-dynamic';
 
@@ -18,7 +19,7 @@ export default async function WeddingInvitationThemeRoutePage({
     notFound();
   }
 
-  const page = await getServerInvitationPageBySlug(slug);
+  const page = await getCachedServerInvitationPageBySlug(slug);
 
   if (page?.variants[normalizedTheme]?.available) {
     return (
@@ -30,9 +31,7 @@ export default async function WeddingInvitationThemeRoutePage({
     );
   }
 
-  const previewPage = await getServerInvitationPageBySlug(slug, {
-    includePrivate: true,
-  });
+  const previewPage = await getCachedServerInvitationPageBySlug(slug, true);
 
   if (!previewPage?.variants[normalizedTheme]?.available) {
     notFound();

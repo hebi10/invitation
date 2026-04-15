@@ -8,6 +8,8 @@ const DIRECT_ERROR_MESSAGE_MAP: Record<string, string> = {
   'Unknown invitation page slug.': '해당 페이지 주소를 찾을 수 없습니다.',
   'Unknown invitation page seed.': '청첩장 기본 템플릿을 찾을 수 없습니다.',
   'Invitation page seed was not found.': '청첩장 기본 템플릿을 찾을 수 없습니다.',
+  'Invitation page slug does not match the authenticated session.':
+    '요청한 청첩장 주소가 현재 로그인 세션과 일치하지 않습니다.',
   'Groom and bride names are required.': '신랑과 신부 이름을 모두 입력해 주세요.',
   'Page slug and password are required.': '페이지 주소와 비밀번호를 모두 입력해 주세요.',
   'Invalid page password.': '비밀번호가 올바르지 않습니다.',

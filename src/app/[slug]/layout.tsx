@@ -7,7 +7,8 @@ import {
   weddingInvitationViewport,
 } from '@/app/_components/WeddingInvitationLayout';
 import { DEFAULT_INVITATION_THEME } from '@/lib/invitationThemes';
-import { getServerInvitationPageBySlug } from '@/server/invitationPageServerService';
+
+import { getCachedServerInvitationPageBySlug } from './serverInvitationPageCache';
 
 export const dynamic = 'force-dynamic';
 export const viewport: Viewport = weddingInvitationViewport;
@@ -22,15 +23,13 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
   const { slug } = await params;
-  const page = await getServerInvitationPageBySlug(slug);
+  const page = await getCachedServerInvitationPageBySlug(slug);
 
   if (page) {
     return getWeddingInvitationMetadata(page);
   }
 
-  const previewPage = await getServerInvitationPageBySlug(slug, {
-    includePrivate: true,
-  });
+  const previewPage = await getCachedServerInvitationPageBySlug(slug, true);
 
   if (!previewPage) {
     notFound();

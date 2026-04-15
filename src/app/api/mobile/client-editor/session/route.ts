@@ -33,6 +33,7 @@ export async function GET(request: Request) {
   return NextResponse.json({
     authenticated: true,
     pageSlug: session.session.pageSlug,
+    dashboardPage: config,
     page: config
       ? {
           slug: config.slug,

@@ -54,6 +54,7 @@ export async function POST(request: Request) {
         expiresAt,
         pageSlug,
       },
+      dashboardPage: config,
       page: config
         ? {
             slug: config.slug,

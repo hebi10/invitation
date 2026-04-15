@@ -8,6 +8,7 @@ export default function TabsLayout() {
   return (
     <Tabs
       screenOptions={{
+        headerShown: false,
         headerStyle: {
           backgroundColor: palette.background,
         },
@@ -36,7 +37,7 @@ export default function TabsLayout() {
     >
       <Tabs.Screen name="index" options={{ title: '홈', tabBarLabel: '홈' }} />
       <Tabs.Screen name="guide" options={{ title: '가이드', tabBarLabel: '가이드' }} />
-      <Tabs.Screen name="create" options={{ title: '제작', tabBarLabel: '제작' }} />
+      <Tabs.Screen name="create" options={{ title: '구매', tabBarLabel: '구매' }} />
       <Tabs.Screen name="manage" options={{ title: '관리', tabBarLabel: '관리' }} />
       <Tabs.Screen name="settings" options={{ title: '설정', tabBarLabel: '설정' }} />
     </Tabs>

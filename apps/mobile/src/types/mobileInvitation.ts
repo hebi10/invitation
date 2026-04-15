@@ -9,6 +9,28 @@ export interface MobileInvitationFeatureFlags {
   showGuestbook: boolean;
 }
 
+export interface MobileMusicTrack {
+  id: string;
+  categoryId: string;
+  title: string;
+  artist: string;
+  storagePath: string;
+  active: boolean;
+}
+
+export interface MobileMusicCategory {
+  id: string;
+  label: string;
+  tracks: MobileMusicTrack[];
+}
+
+export interface MobileKakaoAddressSearchResult {
+  query: string;
+  addressName: string;
+  latitude: number;
+  longitude: number;
+}
+
 export interface MobileInvitationPerson {
   name: string;
   order?: string;
@@ -125,6 +147,7 @@ export interface MobilePageSummary {
 export interface MobileInvitationCreationResponse {
   session: MobileSessionSummary;
   page: MobilePageSummary;
+  dashboardPage?: MobileEditableInvitationPageConfig | null;
   links: MobileInvitationLinks;
 }
 
@@ -141,6 +164,8 @@ export interface CreateDraftItem {
   pageIdentifier: string;
   groomName: string;
   brideName: string;
+  groomEnglishName: string;
+  brideEnglishName: string;
   weddingDate: string;
   venue: string;
   estimatedPrice: number;

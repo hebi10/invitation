@@ -3,7 +3,9 @@ import type {
   MobileInvitationCreationInput,
   MobileInvitationCreationResponse,
   MobileInvitationDashboard,
+  MobileKakaoAddressSearchResult,
   MobileInvitationLinks,
+  MobileMusicCategory,
   MobileInvitationSeed,
   MobileInvitationThemeKey,
   MobilePageSummary,
@@ -20,7 +22,7 @@ const ERROR_MESSAGE_MAP: Record<string, string> = {
   'Invitation page config is required.': '저장할 청첩장 설정이 필요합니다.',
   'Published state is required.': '공개 상태 값이 필요합니다.',
   'Unsupported action.': '지원하지 않는 요청입니다.',
-  'Unauthorized.': '로그인이 만료되었습니다. 다시 로그인해 주세요.',
+  'Unauthorized.': '연동 세션이 만료되었습니다. 다시 청첩장을 연동해 주세요.',
   'Server Firestore is not available.': '서버 저장소 연결을 확인하지 못했습니다.',
   'Comment was not found.': '댓글을 찾을 수 없습니다.',
   'Comment target was not specified.': '삭제할 댓글 정보를 찾지 못했습니다.',
@@ -32,6 +34,8 @@ const ERROR_MESSAGE_MAP: Record<string, string> = {
   'A valid URL slug base is required.': '사용 가능한 페이지 주소를 다시 확인해 주세요.',
   'Invitation page seed was not found.': '초기 청첩장 템플릿을 찾지 못했습니다.',
   'Failed to create invitation page draft.': '청첩장 초안 생성에 실패했습니다.',
+  'Invitation page slug does not match the authenticated session.':
+    '요청한 청첩장 주소가 현재 로그인 세션과 일치하지 않습니다.',
   'Mobile invitation draft creation is disabled.':
     '모바일 청첩장 생성이 아직 열려 있지 않습니다. 관리자에게 문의해 주세요.',
   'Request failed.': '요청 처리에 실패했습니다. 잠시 후 다시 시도해 주세요.',
@@ -92,6 +96,7 @@ export interface MobileLoginResponse {
   authenticated: boolean;
   session: MobileSessionSummary;
   page: MobilePageSummary | null;
+  dashboardPage?: MobileEditableInvitationPageConfig | null;
   links: MobileInvitationLinks;
 }
 
@@ -99,6 +104,7 @@ export interface MobileSessionResponse {
   authenticated: boolean;
   pageSlug: string | null;
   page?: MobilePageSummary | null;
+  dashboardPage?: MobileEditableInvitationPageConfig | null;
   links?: MobileInvitationLinks;
 }
 
@@ -109,6 +115,10 @@ export interface MobileImageUploadResponse {
   thumbnailUrl: string;
   thumbnailPath: string;
   uploadedAt: string;
+}
+
+export interface MobileMusicLibraryResponse {
+  categories: MobileMusicCategory[];
 }
 
 export async function loginMobileClientEditor(
@@ -227,6 +237,10 @@ export async function saveMobileInvitationPageConfig(
         body: JSON.stringify({
           action: 'save',
           ...payload,
+          config: {
+            ...payload.config,
+            slug: pageSlug,
+          },
         }),
       }
     )
@@ -276,6 +290,31 @@ export async function deleteMobileInvitationComment(
         headers: createHeaders(token),
       }
     )
+  );
+}
+
+export async function fetchMobileInvitationMusicLibrary(baseUrl: string) {
+  return readJsonResponse<MobileMusicLibraryResponse>(
+    await fetch(buildApiUrl(baseUrl, '/api/mobile/client-editor/music-library'), {
+      headers: createHeaders(),
+      cache: 'no-store',
+    })
+  );
+}
+
+export async function fetchMobileKakaoAddressSearch(baseUrl: string, query: string) {
+  const normalizedQuery = query.trim();
+  if (!normalizedQuery) {
+    throw new Error('검색할 주소를 먼저 입력해 주세요.');
+  }
+
+  const params = new URLSearchParams({ query: normalizedQuery });
+
+  return readJsonResponse<MobileKakaoAddressSearchResult>(
+    await fetch(buildApiUrl(baseUrl, `/api/kakao/local/address-search?${params.toString()}`), {
+      headers: createHeaders(),
+      cache: 'no-store',
+    })
   );
 }
 

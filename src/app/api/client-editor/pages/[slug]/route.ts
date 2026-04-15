@@ -24,6 +24,23 @@ function readTheme(value: unknown) {
   return isInvitationThemeKey(value) ? value : undefined;
 }
 
+function buildTrustedPageConfig(
+  config: InvitationPageSeed,
+  pageSlug: string
+): InvitationPageSeed | null {
+  const requestedSlug =
+    typeof config.slug === 'string' ? config.slug.trim() : '';
+
+  if (requestedSlug && requestedSlug !== pageSlug) {
+    return null;
+  }
+
+  return {
+    ...config,
+    slug: pageSlug,
+  };
+}
+
 export async function GET(
   _request: Request,
   context: { params: Promise<{ slug: string }> }
@@ -77,7 +94,18 @@ export async function POST(
         );
       }
 
-      await saveServerInvitationPageConfig(body.config, {
+      const trustedConfig = buildTrustedPageConfig(body.config, pageSlug);
+      if (!trustedConfig) {
+        return NextResponse.json(
+          {
+            error:
+              'Invitation page slug does not match the authenticated session.',
+          },
+          { status: 400 }
+        );
+      }
+
+      await saveServerInvitationPageConfig(trustedConfig, {
         published: body.published === true,
         defaultTheme,
       });

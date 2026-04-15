@@ -1,15 +1,17 @@
-import { notFound, redirect } from 'next/navigation';
+import { notFound } from 'next/navigation';
 
+import { WeddingInvitationRoutePage } from '@/app/_components/WeddingInvitationPage';
 import {
-  buildInvitationThemeRoutePath,
   DEFAULT_INVITATION_THEME,
   normalizeInvitationThemeKey,
 } from '@/lib/invitationThemes';
 import { resolveAvailableInvitationVariant } from '@/lib/invitationVariants';
+
 import {
-  getServerInvitationPageBySlug,
-  getServerInvitationPageDefaultThemeBySlug,
-} from '@/server/invitationPageServerService';
+  getCachedServerInvitationPageBySlug,
+  getCachedServerInvitationPageDefaultThemeBySlug,
+  getCachedServerInvitationPreviewBySlug,
+} from './serverInvitationPageCache';
 
 export const dynamic = 'force-dynamic';
 
@@ -19,15 +21,12 @@ export default async function WeddingInvitationSlugPage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const [page, defaultTheme] = await Promise.all([
-    getServerInvitationPageBySlug(slug),
-    getServerInvitationPageDefaultThemeBySlug(slug),
+  const [page, previewPage, defaultTheme] = await Promise.all([
+    getCachedServerInvitationPageBySlug(slug),
+    getCachedServerInvitationPreviewBySlug(slug),
+    getCachedServerInvitationPageDefaultThemeBySlug(slug),
   ]);
-  const previewPage =
-    page ??
-    (await getServerInvitationPageBySlug(slug, {
-      includePrivate: true,
-    }));
+
   const preferredTheme = normalizeInvitationThemeKey(
     defaultTheme,
     DEFAULT_INVITATION_THEME
@@ -38,5 +37,11 @@ export default async function WeddingInvitationSlugPage({
     notFound();
   }
 
-  redirect(buildInvitationThemeRoutePath(slug, theme));
+  return (
+    <WeddingInvitationRoutePage
+      slug={slug}
+      theme={theme}
+      initialPageConfig={page ?? undefined}
+    />
+  );
 }

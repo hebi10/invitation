@@ -78,9 +78,13 @@ export const guideSections = [
   {
     title: '티켓 정책',
     items: [
-      '10,000원 결제 시 티켓 3장이 지급됩니다.',
-      '티켓 1장으로 디자인 변경, 1개월 연장, 청첩장 1개 추가 생성이 가능합니다.',
-      '티켓 2장으로 같은 청첩장에 다른 디자인 추가 또는 상위 서비스 업그레이드가 가능합니다.',
+      '티켓은 1장당 5,000원입니다.',
+      '3장 단위로 구매할 때마다 5,000원이 할인됩니다.',
+      '티켓 1장: 1개월 연장',
+      '티켓 1장: 디자인 변경',
+      '티켓 1장: 모바일 청첩장 1개 추가 생성',
+      '티켓 2장: 같은 청첩장에 다른 디자인 추가',
+      '티켓 2장: 서비스 업그레이드',
     ],
   },
 ] as const;
@@ -92,14 +96,51 @@ export const faqItems = [
       '모바일 앱에서는 결제 후 상세 정보를 입력하면 웹 링크형 청첩장 생성 흐름으로 이어지도록 설계하고 있습니다.',
   },
   {
-    question: '로그인은 어떻게 하나요?',
+    question: '청첩장 연동은 어떻게 하나요?',
     answer:
-      '페이지 URL 또는 슬러그와 페이지 비밀번호로 로그인합니다. 한 번 로그인하면 앱을 다시 열어도 자동 로그인 상태를 복원합니다.',
+      '슬러그와 페이지 비밀번호로 청첩장을 연동합니다. 한 번 연동하면 앱을 다시 열어도 자동 연동 상태를 복원합니다.',
   },
   {
     question: '환불 정책은 어떻게 되나요?',
     answer:
       '현재 기획안 기준으로 결제 후 3일 이내 무료 환불을 고려하고 있으며, 환불 완료 후 동일 주문으로 재제작은 제한합니다.',
+  },
+] as const;
+
+export const guideSamplePages = [
+  {
+    title: '감성 디자인',
+    items: [
+      {
+        label: 'STANDARD 샘플 보기',
+        url: 'https://msgnote.kr/kim-taehyun-choi-yuna/emotional/',
+      },
+      {
+        label: 'DELUXE 샘플 보기',
+        url: 'https://msgnote.kr/lee-junho-park-somin/emotional/',
+      },
+      {
+        label: 'PREMIUM 샘플 보기',
+        url: 'https://msgnote.kr/shin-minje-kim-hyunji/emotional/',
+      },
+    ],
+  },
+  {
+    title: '심플 디자인',
+    items: [
+      {
+        label: 'STANDARD 샘플 보기',
+        url: 'https://msgnote.kr/kim-taehyun-choi-yuna/simple/',
+      },
+      {
+        label: 'DELUXE 샘플 보기',
+        url: 'https://msgnote.kr/lee-junho-park-somin/simple/',
+      },
+      {
+        label: 'PREMIUM 샘플 보기',
+        url: 'https://msgnote.kr/shin-minje-kim-hyunji/simple/',
+      },
+    ],
   },
 ] as const;
 
@@ -124,7 +165,7 @@ export const ticketActions = [
 ] as const;
 
 export const settingsNotes = [
-  '자동 로그인 세션은 기기에 저장됩니다.',
-  'API 주소를 변경하면 현재 로그인 세션은 초기화됩니다.',
+  '자동 연동 세션은 기기에 저장됩니다.',
+  'API 주소를 변경하면 현재 연동 세션은 초기화됩니다.',
   '라이트/다크 모드와 글자 크기 설정은 즉시 반영됩니다.',
 ] as const;

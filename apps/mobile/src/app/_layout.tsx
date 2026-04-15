@@ -1,5 +1,6 @@
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { AppStateProvider, useAppState } from '../contexts/AppStateContext';
 
@@ -19,8 +20,10 @@ function AppNavigator() {
 
 export default function RootLayout() {
   return (
-    <AppStateProvider>
-      <AppNavigator />
-    </AppStateProvider>
+    <SafeAreaProvider>
+      <AppStateProvider>
+        <AppNavigator />
+      </AppStateProvider>
+    </SafeAreaProvider>
   );
 }

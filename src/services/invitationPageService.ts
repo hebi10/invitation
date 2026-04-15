@@ -90,6 +90,7 @@ export interface CreateInvitationPageDraftInput {
   published?: boolean;
   defaultTheme?: InvitationThemeKey;
   productTier?: InvitationProductTier;
+  initialDisplayPeriodMonths?: number;
 }
 
 export interface CreateInvitationPageDraftResult {
@@ -1398,6 +1399,24 @@ export async function createInvitationPageDraftFromSeed(
     defaultTheme: input.defaultTheme ?? DEFAULT_INVITATION_THEME,
     hasCustomConfig: true,
   });
+
+  const initialDisplayPeriodMonths =
+    typeof input.initialDisplayPeriodMonths === 'number' &&
+    Number.isFinite(input.initialDisplayPeriodMonths)
+      ? Math.floor(input.initialDisplayPeriodMonths)
+      : 0;
+
+  if (initialDisplayPeriodMonths > 0) {
+    const displayPeriodStart = new Date(now);
+    const displayPeriodEnd = new Date(now);
+    displayPeriodEnd.setMonth(displayPeriodEnd.getMonth() + initialDisplayPeriodMonths);
+
+    await syncDisplayPeriod(firestore, slug, {
+      displayPeriodEnabled: true,
+      displayPeriodStart,
+      displayPeriodEnd,
+    });
+  }
 
   return {
     slug,

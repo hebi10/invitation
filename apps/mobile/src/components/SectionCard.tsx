@@ -1,6 +1,13 @@
 import type { PropsWithChildren } from 'react';
 
-import { StyleSheet, Text, View } from 'react-native';
+import {
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+  type StyleProp,
+  type ViewStyle,
+} from 'react-native';
 
 import { useAppState } from '../contexts/AppStateContext';
 
@@ -8,26 +15,28 @@ type SectionCardProps = PropsWithChildren<{
   title: string;
   description?: string;
   badge?: string;
+  onPress?: () => void;
 }>;
 
 export function SectionCard({
   title,
   description,
   badge,
+  onPress,
   children,
 }: SectionCardProps) {
   const { palette, fontScale } = useAppState();
 
-  return (
-    <View
-      style={[
-        styles.card,
-        {
-          backgroundColor: palette.surface,
-          borderColor: palette.cardBorder,
-        },
-      ]}
-    >
+  const cardStyle: StyleProp<ViewStyle> = [
+    styles.card,
+    {
+      backgroundColor: palette.surface,
+      borderColor: palette.cardBorder,
+    },
+  ];
+
+  const cardContent = (
+    <>
       <View style={styles.header}>
         <View style={styles.copy}>
           <Text style={[styles.title, { color: palette.text, fontSize: 18 * fontScale }]}>
@@ -53,6 +62,20 @@ export function SectionCard({
         ) : null}
       </View>
       <View style={styles.body}>{children}</View>
+    </>
+  );
+
+  if (onPress) {
+    return (
+      <Pressable accessibilityRole="button" onPress={onPress} style={cardStyle}>
+        {cardContent}
+      </Pressable>
+    );
+  }
+
+  return (
+    <View style={cardStyle}>
+      {cardContent}
     </View>
   );
 }

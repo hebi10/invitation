@@ -37,7 +37,7 @@ export function TextField({
         value={value}
         onChangeText={onChangeText}
         placeholder={placeholder}
-        placeholderTextColor={palette.textMuted}
+        placeholderTextColor="#7d7d7d"
         secureTextEntry={secureTextEntry}
         multiline={multiline}
         autoCapitalize={autoCapitalize}
@@ -45,9 +45,9 @@ export function TextField({
           styles.input,
           multiline ? styles.multiline : null,
           {
-            backgroundColor: palette.surfaceMuted,
+            backgroundColor: '#ffffff',
             borderColor: palette.cardBorder,
-            color: palette.text,
+            color: '#111111',
             fontSize: 15 * fontScale,
           },
         ]}

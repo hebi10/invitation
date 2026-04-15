@@ -92,6 +92,7 @@ export interface ServerCreateInvitationPageDraftInput {
   published?: boolean;
   defaultTheme?: InvitationThemeKey;
   productTier?: InvitationProductTier;
+  initialDisplayPeriodMonths?: number;
 }
 
 export interface ServerCreateInvitationPageDraftResult {
@@ -903,6 +904,48 @@ async function upsertRegistryRecord(
   );
 }
 
+async function upsertDisplayPeriodRecord(
+  pageSlug: string,
+  payload: {
+    isActive: boolean;
+    startDate: Date | null;
+    endDate: Date | null;
+  }
+) {
+  const normalizedPageSlug = normalizePageSlugInput(pageSlug);
+  if (!normalizedPageSlug) {
+    throw new Error('올바른 페이지 주소가 필요합니다.');
+  }
+
+  if (!payload.isActive || !payload.startDate || !payload.endDate) {
+    return;
+  }
+
+  const db = getServerFirestore();
+  if (!db) {
+    throw new Error('데이터 저장소 연결을 확인하지 못했습니다. 잠시 후 다시 시도해 주세요.');
+  }
+
+  const docRef = db.collection(DISPLAY_PERIOD_COLLECTION).doc(normalizedPageSlug);
+  const existingSnapshot = await docRef.get();
+  const existingCreatedAt = existingSnapshot.exists
+    ? toDate(existingSnapshot.data()?.createdAt)
+    : null;
+  const now = new Date();
+
+  await docRef.set(
+    {
+      pageSlug: normalizedPageSlug,
+      isActive: true,
+      startDate: payload.startDate,
+      endDate: payload.endDate,
+      createdAt: existingCreatedAt ?? now,
+      updatedAt: now,
+    },
+    { merge: true }
+  );
+}
+
 async function loadServerInvitationPageBySlug(
   pageSlug: string,
   includePrivate: boolean
@@ -1139,6 +1182,24 @@ export async function createServerInvitationPageDraftFromSeed(
     defaultTheme: input.defaultTheme ?? DEFAULT_INVITATION_THEME,
     hasCustomConfig: true,
   });
+
+  const initialDisplayPeriodMonths =
+    typeof input.initialDisplayPeriodMonths === 'number' &&
+    Number.isFinite(input.initialDisplayPeriodMonths)
+      ? Math.floor(input.initialDisplayPeriodMonths)
+      : 0;
+
+  if (initialDisplayPeriodMonths > 0) {
+    const displayPeriodStart = new Date(now);
+    const displayPeriodEnd = new Date(now);
+    displayPeriodEnd.setMonth(displayPeriodEnd.getMonth() + initialDisplayPeriodMonths);
+
+    await upsertDisplayPeriodRecord(slug, {
+      isActive: true,
+      startDate: displayPeriodStart,
+      endDate: displayPeriodEnd,
+    });
+  }
 
   return {
     slug,

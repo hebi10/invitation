@@ -5,7 +5,9 @@ import {
   Pressable,
   StyleSheet,
   Text,
+  type StyleProp,
   View,
+  type ViewStyle,
 } from 'react-native';
 
 import { useAppState } from '../contexts/AppStateContext';
@@ -16,6 +18,7 @@ type ActionButtonProps = PropsWithChildren<{
   disabled?: boolean;
   loading?: boolean;
   fullWidth?: boolean;
+  style?: StyleProp<ViewStyle>;
 }>;
 
 export function ActionButton({
@@ -25,6 +28,7 @@ export function ActionButton({
   disabled = false,
   loading = false,
   fullWidth = false,
+  style,
 }: ActionButtonProps) {
   const { palette, fontScale } = useAppState();
   const isDisabled = disabled || loading;
@@ -52,6 +56,7 @@ export function ActionButton({
       style={({ pressed }) => [
         styles.button,
         fullWidth ? styles.fullWidth : null,
+        style,
         {
           backgroundColor,
           borderColor,
@@ -76,6 +81,7 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     borderRadius: 14,
     borderWidth: 1,
+    backgroundColor: '#ffffff',
   },
   fullWidth: {
     width: '100%',
@@ -88,5 +94,6 @@ const styles = StyleSheet.create({
   },
   label: {
     fontWeight: '700',
+    color: '#000000',
   },
 });

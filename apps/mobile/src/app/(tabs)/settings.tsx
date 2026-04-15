@@ -35,13 +35,13 @@ export default function SettingsScreen() {
   const handleSaveApiBaseUrl = async () => {
     clearAuthError();
     await setApiBaseUrl(apiBaseUrlInput);
-    setNotice('API 주소를 저장했습니다. 주소가 바뀐 경우 기존 로그인 세션은 초기화됩니다.');
+    setNotice('API 주소를 저장했습니다. 주소가 바뀐 경우 기존 연동 세션은 초기화됩니다.');
   };
 
   return (
     <AppScreen
       title="설정"
-      subtitle="라이트/다크 모드, 글자 크기, API 주소, 자동 로그인 상태를 관리합니다."
+      subtitle="라이트/다크 모드, 글자 크기, API 주소, 자동 연동 상태를 관리합니다."
     >
       <SectionCard
         title="화면 설정"
@@ -112,9 +112,9 @@ export default function SettingsScreen() {
       </SectionCard>
 
       <SectionCard
-        title="계정과 자동 로그인"
-        description="현재 연결된 페이지와 자동 로그인 상태를 확인합니다."
-        badge={isAuthenticated ? '로그인됨' : '로그아웃'}
+        title="청첩장 연동 상태"
+        description="현재 연결된 페이지와 자동 연동 상태를 확인합니다."
+        badge={isAuthenticated ? '연동됨' : '연동 해제'}
       >
         <Text style={[styles.accountText, { color: palette.text, fontSize: 14 * fontScale }]}>
           연결된 페이지: {pageSummary?.slug ?? '없음'}
@@ -123,7 +123,7 @@ export default function SettingsScreen() {
           서비스: {pageSummary ? pageSummary.productTier.toUpperCase() : '-'}
         </Text>
         <ActionButton variant="danger" onPress={() => void logout()} fullWidth>
-          자동 로그인 초기화
+          자동 연동 초기화
         </ActionButton>
       </SectionCard>
 

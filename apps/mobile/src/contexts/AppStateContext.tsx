@@ -5,6 +5,7 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from 'react';
 import { useColorScheme } from 'react-native';
@@ -31,8 +32,10 @@ import {
 } from '../constants/theme';
 import type {
   CreateDraftItem,
+  MobileEditableInvitationPageConfig,
   MobileInvitationDashboard,
   MobileInvitationCreationInput,
+  MobileInvitationLinks,
   MobileInvitationSeed,
   MobileInvitationThemeKey,
   MobilePageSummary,
@@ -78,7 +81,7 @@ type AppStateContextValue = {
   login: (pageIdentifier: string, password: string) => Promise<boolean>;
   createInvitationPage: (input: MobileInvitationCreationInput) => Promise<boolean>;
   logout: () => Promise<void>;
-  refreshDashboard: () => Promise<void>;
+  refreshDashboard: () => Promise<boolean>;
   saveCurrentPageConfig: (
     config: MobileInvitationSeed,
     options?: {
@@ -88,7 +91,12 @@ type AppStateContextValue = {
   ) => Promise<boolean>;
   setPublishedState: (published: boolean) => Promise<boolean>;
   deleteComment: (commentId: string) => Promise<boolean>;
-  saveDraft: (input: CreateDraftInput) => Promise<void>;
+  saveDraft: (
+    input: CreateDraftInput,
+    options?: {
+      draftId?: string;
+    }
+  ) => Promise<string>;
   removeDraft: (draftId: string) => Promise<void>;
   clearAuthError: () => void;
   clearPendingManageOnboarding: () => void;
@@ -102,14 +110,35 @@ const DEFAULT_PREFERENCES: StoredPreferences = {
   fontScalePreference: 'normal',
 };
 
-function buildPageSummary(dashboard: MobileInvitationDashboard): MobilePageSummary {
+function buildPageSummaryFromConfig(
+  page: MobileEditableInvitationPageConfig
+): MobilePageSummary {
   return {
-    slug: dashboard.page.slug,
-    displayName: dashboard.page.config.displayName,
-    published: dashboard.page.published,
-    productTier: dashboard.page.productTier,
-    defaultTheme: dashboard.page.defaultTheme,
-    features: dashboard.page.features,
+    slug: page.slug,
+    displayName: page.config.displayName,
+    published: page.published,
+    productTier: page.productTier,
+    defaultTheme: page.defaultTheme,
+    features: page.features,
+  };
+}
+
+function buildPageSummary(dashboard: MobileInvitationDashboard): MobilePageSummary {
+  return buildPageSummaryFromConfig(dashboard.page);
+}
+
+function buildDashboardSnapshot(
+  page: MobileEditableInvitationPageConfig | null | undefined,
+  links: MobileInvitationLinks | null | undefined
+): MobileInvitationDashboard | null {
+  if (!page || !links) {
+    return null;
+  }
+
+  return {
+    page,
+    comments: [],
+    links,
   };
 }
 
@@ -122,6 +151,14 @@ function sanitizeStoredDraft(draft: StoredDraftItem): CreateDraftItem {
     pageIdentifier: draft.pageIdentifier,
     groomName: draft.groomName,
     brideName: draft.brideName,
+    groomEnglishName:
+      'groomEnglishName' in draft && typeof draft.groomEnglishName === 'string'
+        ? draft.groomEnglishName
+        : '',
+    brideEnglishName:
+      'brideEnglishName' in draft && typeof draft.brideEnglishName === 'string'
+        ? draft.brideEnglishName
+        : '',
     weddingDate: draft.weddingDate,
     venue: draft.venue,
     estimatedPrice: draft.estimatedPrice,
@@ -148,6 +185,8 @@ export function AppStateProvider({ children }: PropsWithChildren) {
   const [isAuthenticating, setIsAuthenticating] = useState(false);
   const [dashboardLoading, setDashboardLoading] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
+  const hasRestoredSessionRef = useRef(false);
+  const isRefreshingDashboardRef = useRef(false);
 
   const colorScheme = resolveAppColorScheme(systemColorScheme, themePreference);
   const palette = useMemo(() => getPalette(colorScheme), [colorScheme]);
@@ -178,8 +217,14 @@ export function AppStateProvider({ children }: PropsWithChildren) {
     async (override?: { session?: MobileSessionSummary; baseUrl?: string }) => {
       const activeSession = override?.session ?? session;
       if (!activeSession) {
-        return;
+        return false;
       }
+
+      if (isRefreshingDashboardRef.current) {
+        return false;
+      }
+
+      isRefreshingDashboardRef.current = true;
 
       setDashboardLoading(true);
 
@@ -192,17 +237,39 @@ export function AppStateProvider({ children }: PropsWithChildren) {
 
         setDashboard(nextDashboard);
         setPageSummary(buildPageSummary(nextDashboard));
+        return true;
       } catch (error) {
         setAuthError(
           error instanceof Error
             ? error.message
             : '운영 데이터를 불러오지 못했습니다.'
         );
+        return false;
       } finally {
         setDashboardLoading(false);
+        isRefreshingDashboardRef.current = false;
       }
     },
     [apiBaseUrl, session]
+  );
+
+  const patchDashboard = useCallback(
+    (
+      updater: (
+        current: MobileInvitationDashboard
+      ) => MobileInvitationDashboard
+    ) => {
+      setDashboard((current) => {
+        if (!current) {
+          return current;
+        }
+
+        const nextDashboard = updater(current);
+        setPageSummary(buildPageSummary(nextDashboard));
+        return nextDashboard;
+      });
+    },
+    []
   );
 
   const restoreSession = useCallback(
@@ -221,14 +288,20 @@ export function AppStateProvider({ children }: PropsWithChildren) {
           return false;
         }
 
+        const nextDashboard = buildDashboardSnapshot(
+          response.dashboardPage,
+          response.links
+        );
+
         setSession(candidateSession);
-        setPageSummary(response.page ?? null);
+        setDashboard(nextDashboard);
+        setPageSummary(
+          nextDashboard
+            ? buildPageSummary(nextDashboard)
+            : response.page ?? null
+        );
         setAuthError(null);
         await setStoredJson(SESSION_STORAGE_KEY, candidateSession);
-        await refreshDashboard({
-          session: candidateSession,
-          baseUrl: nextBaseUrl,
-        });
         return true;
       } catch {
         await clearSession();
@@ -237,10 +310,15 @@ export function AppStateProvider({ children }: PropsWithChildren) {
         setIsAuthenticating(false);
       }
     },
-    [clearSession, refreshDashboard]
+    [clearSession]
   );
 
   useEffect(() => {
+    if (hasRestoredSessionRef.current) {
+      return;
+    }
+
+    hasRestoredSessionRef.current = true;
     let mounted = true;
 
     const restore = async () => {
@@ -329,7 +407,7 @@ export function AppStateProvider({ children }: PropsWithChildren) {
       const normalizedPassword = password.trim();
 
       if (!pageSlug || !normalizedPassword) {
-        setAuthError('페이지 URL 또는 슬러그와 비밀번호를 입력해 주세요.');
+        setAuthError('청첩장 슬러그와 비밀번호를 입력해 주세요.');
         return false;
       }
 
@@ -343,27 +421,33 @@ export function AppStateProvider({ children }: PropsWithChildren) {
         );
 
         const nextSession = response.session;
+        const nextDashboard = buildDashboardSnapshot(
+          response.dashboardPage,
+          response.links
+        );
+
         setSession(nextSession);
-        setPageSummary(response.page);
+        setDashboard(nextDashboard);
+        setPageSummary(
+          nextDashboard
+            ? buildPageSummary(nextDashboard)
+            : response.page
+        );
         setAuthError(null);
         await setStoredJson(SESSION_STORAGE_KEY, nextSession);
-        await refreshDashboard({
-          session: nextSession,
-          baseUrl: apiBaseUrl,
-        });
         return true;
       } catch (error) {
         setAuthError(
           error instanceof Error
             ? error.message
-            : '로그인에 실패했습니다. 다시 시도해 주세요.'
+            : '청첩장 연동에 실패했습니다. 다시 시도해 주세요.'
         );
         return false;
       } finally {
         setIsAuthenticating(false);
       }
     },
-    [apiBaseUrl, refreshDashboard]
+    [apiBaseUrl]
   );
 
   const createInvitationPage = useCallback(
@@ -373,33 +457,37 @@ export function AppStateProvider({ children }: PropsWithChildren) {
       try {
         const response = await createMobileInvitationDraft(apiBaseUrl, input);
         const nextSession = response.session;
+        const nextDashboard = buildDashboardSnapshot(
+          response.dashboardPage,
+          response.links
+        );
 
         setSession(nextSession);
-        setPageSummary(response.page);
-        setDashboard(null);
+        setPageSummary(
+          nextDashboard
+            ? buildPageSummary(nextDashboard)
+            : response.page
+        );
+        setDashboard(nextDashboard);
         setPendingManageOnboarding({
           pageSlug: nextSession.pageSlug,
           createdAt: Date.now(),
         });
         setAuthError(null);
         await setStoredJson(SESSION_STORAGE_KEY, nextSession);
-        await refreshDashboard({
-          session: nextSession,
-          baseUrl: apiBaseUrl,
-        });
         return true;
       } catch (error) {
         setAuthError(
           error instanceof Error
             ? error.message
-            : '청첩장 초안 생성에 실패했습니다. 잠시 후 다시 시도해 주세요.'
+            : '청첩장 생성에 실패했습니다. 잠시 후 다시 시도해 주세요.'
         );
         return false;
       } finally {
         setIsAuthenticating(false);
       }
     },
-    [apiBaseUrl, refreshDashboard]
+    [apiBaseUrl]
   );
 
   const logout = useCallback(async () => {
@@ -416,20 +504,33 @@ export function AppStateProvider({ children }: PropsWithChildren) {
       } = {}
     ) => {
       if (!session) {
-        setAuthError('로그인 후 저장할 수 있습니다.');
+        setAuthError('청첩장 연동 후 저장할 수 있습니다.');
         return false;
       }
 
       setDashboardLoading(true);
 
       try {
+        const trustedConfig: MobileInvitationSeed = {
+          ...config,
+          slug: session.pageSlug,
+        };
+
         await saveMobileInvitationPageConfig(apiBaseUrl, session.pageSlug, session.token, {
-          config,
+          config: trustedConfig,
           published: options.published ?? dashboard?.page.published,
           defaultTheme: options.defaultTheme ?? dashboard?.page.defaultTheme,
         });
         setAuthError(null);
-        await refreshDashboard();
+        patchDashboard((current) => ({
+          ...current,
+          page: {
+            ...current.page,
+            config: trustedConfig,
+            published: options.published ?? current.page.published,
+            defaultTheme: options.defaultTheme ?? current.page.defaultTheme,
+          },
+        }));
         return true;
       } catch (error) {
         setAuthError(
@@ -440,13 +541,19 @@ export function AppStateProvider({ children }: PropsWithChildren) {
         setDashboardLoading(false);
       }
     },
-    [apiBaseUrl, dashboard?.page.defaultTheme, dashboard?.page.published, refreshDashboard, session]
+    [
+      apiBaseUrl,
+      dashboard?.page.defaultTheme,
+      dashboard?.page.published,
+      patchDashboard,
+      session,
+    ]
   );
 
   const setPublishedState = useCallback(
     async (published: boolean) => {
       if (!session || !dashboard) {
-        setAuthError('로그인 후 공개 상태를 변경할 수 있습니다.');
+        setAuthError('청첩장 연동 후 공개 상태를 변경할 수 있습니다.');
         return false;
       }
 
@@ -461,7 +568,13 @@ export function AppStateProvider({ children }: PropsWithChildren) {
           dashboard.page.defaultTheme
         );
         setAuthError(null);
-        await refreshDashboard();
+        patchDashboard((current) => ({
+          ...current,
+          page: {
+            ...current.page,
+            published,
+          },
+        }));
         return true;
       } catch (error) {
         setAuthError(
@@ -472,13 +585,13 @@ export function AppStateProvider({ children }: PropsWithChildren) {
         setDashboardLoading(false);
       }
     },
-    [apiBaseUrl, dashboard, refreshDashboard, session]
+    [apiBaseUrl, dashboard, patchDashboard, session]
   );
 
   const deleteComment = useCallback(
     async (commentId: string) => {
       if (!session) {
-        setAuthError('로그인 후 댓글을 관리할 수 있습니다.');
+        setAuthError('청첩장 연동 후 댓글을 관리할 수 있습니다.');
         return false;
       }
 
@@ -490,7 +603,10 @@ export function AppStateProvider({ children }: PropsWithChildren) {
           session.token
         );
         setAuthError(null);
-        await refreshDashboard();
+        patchDashboard((current) => ({
+          ...current,
+          comments: current.comments.filter((comment) => comment.id !== commentId),
+        }));
         return true;
       } catch (error) {
         setAuthError(
@@ -499,21 +615,40 @@ export function AppStateProvider({ children }: PropsWithChildren) {
         return false;
       }
     },
-    [apiBaseUrl, refreshDashboard, session]
+    [apiBaseUrl, patchDashboard, session]
   );
 
   const saveDraft = useCallback(
-    async (input: CreateDraftInput) => {
-      const nextDraft: CreateDraftItem = {
-        ...input,
-        id: `draft-${Date.now()}`,
-        createdAt: new Date().toISOString(),
-        status: 'draft',
-      };
+    async (
+      input: CreateDraftInput,
+      options: {
+        draftId?: string;
+      } = {}
+    ) => {
+      const existingDraft = options.draftId
+        ? drafts.find((draft) => draft.id === options.draftId)
+        : null;
 
-      const nextDrafts = [nextDraft, ...drafts].slice(0, 12);
+      const nextDraft: CreateDraftItem = existingDraft
+        ? {
+            ...existingDraft,
+            ...input,
+            status: 'draft',
+          }
+        : {
+            ...input,
+            id: `draft-${Date.now()}`,
+            createdAt: new Date().toISOString(),
+            status: 'draft',
+          };
+
+      const otherDrafts = existingDraft
+        ? drafts.filter((draft) => draft.id !== existingDraft.id)
+        : drafts;
+      const nextDrafts = [nextDraft, ...otherDrafts].slice(0, 12);
       setDrafts(nextDrafts);
       await setStoredJson(DRAFT_STORAGE_KEY, nextDrafts);
+      return nextDraft.id;
     },
     [drafts]
   );
@@ -558,9 +693,7 @@ export function AppStateProvider({ children }: PropsWithChildren) {
       login,
       createInvitationPage,
       logout,
-      refreshDashboard: async () => {
-        await refreshDashboard();
-      },
+      refreshDashboard,
       saveCurrentPageConfig,
       setPublishedState,
       deleteComment,

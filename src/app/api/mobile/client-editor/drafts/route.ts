@@ -77,6 +77,7 @@ export async function POST(request: Request) {
       published: false,
       defaultTheme,
       productTier,
+      initialDisplayPeriodMonths: 3,
     });
     const passwordRecord = await setServerClientPassword(createdDraft.slug, password);
     const config = await getServerEditableInvitationPageConfig(createdDraft.slug);
@@ -106,6 +107,7 @@ export async function POST(request: Request) {
         expiresAt,
         pageSlug: createdDraft.slug,
       },
+      dashboardPage: config,
       page: {
         slug: config.slug,
         displayName: config.config.displayName,
