@@ -55,19 +55,19 @@ export function SettingsEditorStep({
     <>
       <SectionCard
         title="공유 문구와 기본 테마"
-        description="미리보기 제목·설명과 공개 페이지 기본 테마를 마지막으로 점검합니다."
+        description="미리보기 제목과 설명, 공개 페이지 기본 테마를 마지막으로 점검합니다."
       >
         <TextField
           label="공유 제목"
           value={form.shareTitle}
           onChangeText={(value) => onUpdateField('shareTitle', value)}
-          placeholder="예: 박준호 · 김수민 결혼식에 초대합니다"
+          placeholder="예: 박준호 김소민 결혼식에 초대합니다"
         />
         <TextField
           label="공유 설명"
           value={form.shareDescription}
           onChangeText={(value) => onUpdateField('shareDescription', value)}
-          placeholder="미리보기 카드에서 보일 설명을 입력해 주세요."
+          placeholder="미리보기 카드에서 보일 설명을 입력해 주세요"
           multiline
         />
 
@@ -90,7 +90,7 @@ export function SettingsEditorStep({
 
       <SectionCard
         title="배경음악과 공개 설정"
-        description="서비스 등급에 맞는 음악 설정과 공개 상태를 함께 저장합니다."
+        description="서비스 등급에 맞는 음악 설정과 공개 상태를 함께 관리합니다."
       >
         {supportsMusicFeature ? (
           <>
@@ -270,7 +270,7 @@ export function SettingsEditorStep({
           onPress={() => onSetPublished(!form.published)}
           fullWidth
         >
-          {form.published ? '저장 후 공개 상태 유지' : '저장 후 비공개 상태 유지'}
+          {form.published ? '생성 후 공개 상태 유지' : '생성 후 비공개 상태 유지'}
         </ActionButton>
       </SectionCard>
     </>

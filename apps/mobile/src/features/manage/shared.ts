@@ -91,17 +91,17 @@ export const ONBOARDING_STEPS = [
   {
     key: 'cover',
     title: '1. 기본 문구와 이름',
-    description: '대표 제목과 소개 문구, 신랑·신부 이름을 먼저 확인합니다.',
+    description: '대표 제목, 소개 문구, 신랑과 신부 이름을 먼저 확인합니다.',
   },
   {
     key: 'schedule',
     title: '2. 예식 일정과 장소',
-    description: '예식 일시와 장소, 상세 주소를 넣어 공개 페이지의 기본 정보를 채웁니다.',
+    description: '예식 일시와 장소, 상세 주소를 입력해 공개 페이지의 기본 정보를 채웁니다.',
   },
   {
     key: 'greeting',
     title: '3. 인사말과 공개 상태',
-    description: '인사말을 입력하고, 저장 직후 공개 여부를 함께 결정합니다.',
+    description: '인사말을 입력하고, 저장 직후 공개할지 마지막으로 결정합니다.',
   },
 ] as const;
 
@@ -109,17 +109,17 @@ export const EDITOR_STEPS: EditorStep[] = [
   {
     key: 'basic',
     title: '기본 정보',
-    description: '페이지 제목과 신랑·신부, 혼주 정보를 먼저 정리합니다.',
+    description: '페이지 제목, 신랑·신부, 혼주 정보를 먼저 정리합니다.',
   },
   {
     key: 'schedule',
     title: '예식 일정',
-    description: '예식 일시와 본식·피로연 장소 정보를 나눠서 입력합니다.',
+    description: '예식 일시와 본식·피로연 장소 정보를 자세히 입력합니다.',
   },
   {
     key: 'location',
     title: '지도와 위치',
-    description: '예식장 주소를 검색하고 실제로 연결될 지도를 앱 안에서 확인합니다.',
+    description: '예식장 주소를 검색하고 실제 연결되는 지도를 앱 안에서 확인합니다.',
   },
   {
     key: 'greeting',

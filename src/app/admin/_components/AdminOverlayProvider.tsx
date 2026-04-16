@@ -165,7 +165,7 @@ export function AdminOverlayProvider({ children }: { children: React.ReactNode }
                   }`}
                   onClick={() => closeConfirm(true)}
                 >
-                  {pendingConfirm.confirmLabel ?? '확���'}
+                  {pendingConfirm.confirmLabel ?? '확인'}
                 </button>
               </div>
             </div>

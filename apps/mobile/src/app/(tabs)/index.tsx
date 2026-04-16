@@ -1,22 +1,19 @@
 import { useRouter } from 'expo-router';
-import { StyleSheet, Text, View } from 'react-native';
+import { Platform, StyleSheet, Text, View } from 'react-native';
 
+import { quickStartItems, sampleInvitations } from '../../constants/content';
 import { ActionButton } from '../../components/ActionButton';
 import { AppScreen } from '../../components/AppScreen';
 import { BulletList } from '../../components/BulletList';
 import { SectionCard } from '../../components/SectionCard';
+import { WebPreviewNotice } from '../../components/WebPreviewNotice';
 import { useAppState } from '../../contexts/AppStateContext';
-import { quickStartItems, sampleInvitations } from '../../constants/content';
 import { formatPrice } from '../../lib/format';
 
 export default function HomeScreen() {
   const router = useRouter();
-  const {
-    drafts,
-    removeDraft,
-    palette,
-    fontScale,
-  } = useAppState();
+  const isExpoWebPreview = Platform.OS === 'web';
+  const { drafts, removeDraft, palette, fontScale } = useAppState();
 
   const handleEditDraft = (draftId: string) => {
     router.push({
@@ -28,30 +25,54 @@ export default function HomeScreen() {
   return (
     <AppScreen
       title="모바일 청첩장"
-      subtitle="제작 초안과 샘플 구성을 먼저 확인하고, 운영이 필요할 때만 페이지 연동으로 넘어갈 수 있습니다."
+      subtitle="새 청첩장 생성, 기존 페이지 연동, 초안 관리와 샘플 확인을 한 곳에서 시작할 수 있습니다."
     >
+      {isExpoWebPreview ? <WebPreviewNotice /> : null}
+
       <SectionCard
-        title="페이지 연동"
-        description="기존 청첩장을 운영하려면 페이지 URL과 비밀번호로 로그인한 뒤 관리 탭으로 이동합니다."
+        title="지금 바로 시작하기"
+        description="신규 고객은 새 청첩장을 만들고, 기존 고객은 페이지 연동으로 바로 운영 화면으로 들어갈 수 있습니다."
       >
-        <View style={styles.actionRow}>
-          <ActionButton onPress={() => router.push('/manage')}>
-            운영 화면 열기
+        <View style={styles.primaryActionColumn}>
+          <ActionButton onPress={() => router.push('/create')} fullWidth>
+            새 청첩장 만들기
           </ActionButton>
-          <ActionButton variant="secondary" onPress={() => router.push('/login')}>
-            연동 로그인
+          <ActionButton
+            variant="secondary"
+            onPress={() => router.push('/login')}
+            disabled={isExpoWebPreview}
+            fullWidth
+          >
+            기존 페이지 연동
           </ActionButton>
         </View>
+        {isExpoWebPreview ? (
+          <Text
+            style={[
+              styles.emptyText,
+              { color: palette.textMuted, fontSize: 14 * fontScale },
+            ]}
+          >
+            Expo 웹에서는 로그인과 운영 편집이 차단되어 있습니다. 실제 작업은
+            네이티브 앱 또는 Next 웹 편집기에서 진행해 주세요.
+          </Text>
+        ) : null}
       </SectionCard>
 
       <SectionCard
-        title="내 제작 초안"
-        description="모바일에 저장한 제작 초안을 이어서 수정하거나 삭제할 수 있습니다."
+        title="내가 저장한 초안"
+        description="저장한 초안을 이어서 작성하거나 정리할 수 있습니다."
         badge={`${drafts.length}개`}
       >
         {drafts.length === 0 ? (
-          <Text style={[styles.emptyText, { color: palette.textMuted, fontSize: 14 * fontScale }]}>
-            아직 저장한 초안이 없습니다. 제작 탭에서 서비스를 선택하고 초안을 먼저 저장해 보세요.
+          <Text
+            style={[
+              styles.emptyText,
+              { color: palette.textMuted, fontSize: 14 * fontScale },
+            ]}
+          >
+            아직 저장한 초안이 없습니다. 먼저 새 청첩장을 만들고 초안을 저장해
+            보세요.
           </Text>
         ) : (
           drafts.map((draft) => (
@@ -59,29 +80,59 @@ export default function HomeScreen() {
               key={draft.id}
               style={[
                 styles.draftCard,
-                { backgroundColor: palette.surfaceMuted, borderColor: palette.cardBorder },
+                {
+                  backgroundColor: palette.surfaceMuted,
+                  borderColor: palette.cardBorder,
+                },
               ]}
             >
               <View style={styles.draftCopy}>
-                <Text style={[styles.draftTitle, { color: palette.text, fontSize: 15 * fontScale }]}>
-                  {draft.groomName || '신랑'} · {draft.brideName || '신부'}
+                <Text
+                  style={[
+                    styles.draftTitle,
+                    { color: palette.text, fontSize: 15 * fontScale },
+                  ]}
+                >
+                  {(draft.groomName || '신랑')} · {(draft.brideName || '신부')}
                 </Text>
-                <Text style={[styles.draftMeta, { color: palette.textMuted, fontSize: 13 * fontScale }]}>
+                <Text
+                  style={[
+                    styles.draftMeta,
+                    { color: palette.textMuted, fontSize: 13 * fontScale },
+                  ]}
+                >
                   {draft.servicePlan.toUpperCase()} /{' '}
                   {draft.theme === 'emotional' ? '감성 디자인' : '심플 디자인'}
                 </Text>
-                <Text style={[styles.draftMeta, { color: palette.textMuted, fontSize: 13 * fontScale }]}>
+                <Text
+                  style={[
+                    styles.draftMeta,
+                    { color: palette.textMuted, fontSize: 13 * fontScale },
+                  ]}
+                >
                   예상 금액 {formatPrice(draft.estimatedPrice)} · 티켓 {draft.ticketCount}장
                 </Text>
-                <Text style={[styles.draftMeta, { color: palette.textMuted, fontSize: 13 * fontScale }]}>
-                  URL 초안 {draft.pageIdentifier || '영문 이름을 입력하면 생성됩니다.'}
+                <Text
+                  style={[
+                    styles.draftMeta,
+                    { color: palette.textMuted, fontSize: 13 * fontScale },
+                  ]}
+                >
+                  URL 초안{' '}
+                  {draft.pageIdentifier || '영문 이름을 입력하면 자동으로 생성됩니다'}
                 </Text>
               </View>
               <View style={styles.draftActionRow}>
-                <ActionButton variant="secondary" onPress={() => handleEditDraft(draft.id)}>
+                <ActionButton
+                  variant="secondary"
+                  onPress={() => handleEditDraft(draft.id)}
+                >
                   이어서 작성
                 </ActionButton>
-                <ActionButton variant="secondary" onPress={() => void removeDraft(draft.id)}>
+                <ActionButton
+                  variant="secondary"
+                  onPress={() => void removeDraft(draft.id)}
+                >
                   삭제
                 </ActionButton>
               </View>
@@ -92,14 +143,14 @@ export default function HomeScreen() {
 
       <SectionCard
         title="빠른 시작"
-        description="앱의 주요 흐름을 먼저 확인하고 바로 제작으로 넘어갈 수 있습니다."
+        description="서비스 흐름을 먼저 읽고 바로 다음 단계로 이어갈 수 있습니다."
       >
         <BulletList items={quickStartItems} />
       </SectionCard>
 
       <SectionCard
         title="샘플 청첩장"
-        description="연동 전에 어떤 결과물이 나오는지 빠르게 참고할 수 있습니다."
+        description="실제 샘플 페이지가 어떻게 보이는지 먼저 살펴볼 수 있습니다."
       >
         <BulletList items={sampleInvitations} />
       </SectionCard>
@@ -108,10 +159,8 @@ export default function HomeScreen() {
 }
 
 const styles = StyleSheet.create({
-  actionRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
+  primaryActionColumn: {
+    gap: 10,
   },
   draftCard: {
     borderWidth: 1,

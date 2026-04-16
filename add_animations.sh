@@ -4,14 +4,14 @@
 
 # 기본 페이지들 (page)
 pages=(
-  "shin-minje-kim-hyunji"
+  "kim-shinlang-na-sinbu"
   "lee-junho-park-somin" 
   "kim-taehyun-choi-yuna"
 )
 
 # 심플 페이지들 (page_simple)
 simple_pages=(
-  "shin-minje-kim-hyunji-simple"
+  "kim-shinlang-na-sinbu-simple"
   "lee-junho-park-somin-simple"
   "kim-taehyun-choi-yuna-simple"
 )

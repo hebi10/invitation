@@ -39,7 +39,7 @@ export function useImageUpload({
   const handleUploadImage = useCallback(
     async (assetKind: EditableImageAssetKind) => {
       if (!dashboard || !session) {
-        setNotice('청첩장 연동 후 이미지를 업로드할 수 있습니다.');
+        setNotice('청첩장을 먼저 연동해야 이미지를 업로드할 수 있습니다.');
         return;
       }
 
@@ -118,8 +118,6 @@ export function useImageUpload({
           });
         }
 
-        const uploadedUrls = uploadedImages.map((image) => image.url);
-
         if (assetKind === 'cover') {
           const uploadedCoverImage = uploadedImages[0];
           if (uploadedCoverImage) {
@@ -150,7 +148,7 @@ export function useImageUpload({
             };
           });
 
-          setNotice(`갤러리 이미지 ${uploadedUrls.length}장을 업로드했습니다.`);
+          setNotice(`갤러리 이미지 ${uploadedImages.length}장을 업로드했습니다.`);
         }
       } catch (error) {
         setNotice(

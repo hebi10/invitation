@@ -91,11 +91,13 @@ export function InvitationOpsProvider({ children }: PropsWithChildren) {
   const [dashboardLoading, setDashboardLoading] = useState(false);
 
   const isRefreshingDashboardRef = useRef(false);
+  const hasRequestedInitialDashboardRefreshRef = useRef<string | null>(null);
 
   useEffect(() => {
     if (!session) {
       setDashboard(null);
       setPageSummary(null);
+      hasRequestedInitialDashboardRefreshRef.current = null;
     }
   }, [session]);
 
@@ -319,6 +321,19 @@ export function InvitationOpsProvider({ children }: PropsWithChildren) {
     }
     return initialDashboardSeed?.pageFallback ?? null;
   }, [derivedDashboard, initialDashboardSeed, pageSummary]);
+
+  useEffect(() => {
+    if (!session || !derivedDashboard || dashboardLoading) {
+      return;
+    }
+
+    if (hasRequestedInitialDashboardRefreshRef.current === session.pageSlug) {
+      return;
+    }
+
+    hasRequestedInitialDashboardRefreshRef.current = session.pageSlug;
+    void refreshDashboard();
+  }, [dashboardLoading, derivedDashboard, refreshDashboard, session]);
 
   const value = useMemo<InvitationOpsContextValue>(
     () => ({

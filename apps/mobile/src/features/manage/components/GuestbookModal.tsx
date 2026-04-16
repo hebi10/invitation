@@ -2,14 +2,9 @@ import { Modal, Pressable, ScrollView, View } from 'react-native';
 
 import { ActionButton } from '../../../components/ActionButton';
 import { AppText } from '../../../components/AppText';
-import { ChoiceChip } from '../../../components/ChoiceChip';
 import { TextField } from '../../../components/TextField';
 import { useAppState } from '../../../contexts/AppStateContext';
 import type { MobileGuestbookComment } from '../../../types/mobileInvitation';
-import {
-  GUESTBOOK_SORT_OPTIONS,
-  type GuestbookSortKey,
-} from '../shared';
 import { manageStyles } from '../manageStyles';
 
 type GuestbookModalProps = {
@@ -18,13 +13,11 @@ type GuestbookModalProps = {
   filteredCount: number;
   comments: MobileGuestbookComment[];
   searchQuery: string;
-  sortKey: GuestbookSortKey;
   page: number;
   totalPages: number;
   canRefresh: boolean;
   onClose: () => void;
   onChangeSearchQuery: (value: string) => void;
-  onChangeSortKey: (value: GuestbookSortKey) => void;
   onChangePage: (value: number) => void;
   onDeleteComment: (commentId: string) => void | Promise<void>;
   onRefresh: () => void | Promise<void>;
@@ -36,13 +29,11 @@ export function GuestbookModal({
   filteredCount,
   comments,
   searchQuery,
-  sortKey,
   page,
   totalPages,
   canRefresh,
   onClose,
   onChangeSearchQuery,
-  onChangeSortKey,
   onChangePage,
   onDeleteComment,
   onRefresh,
@@ -72,7 +63,7 @@ export function GuestbookModal({
                 연동된 페이지 방명록
               </AppText>
               <AppText variant="muted" style={manageStyles.modalDescription}>
-                정렬/검색/페이지네이션 기준으로 댓글을 확인하고 필요 시 삭제할 수 있습니다.
+                검색 조건에 맞는 댓글만 확인하고, 필요한 항목은 바로 삭제할 수 있습니다.
               </AppText>
             </View>
             <View style={[manageStyles.modalBadge, { backgroundColor: palette.accentSoft }]}>
@@ -83,22 +74,11 @@ export function GuestbookModal({
           </View>
 
           <TextField
-            label="검색 (작성자/내용)"
+            label="검색어"
             value={searchQuery}
             onChangeText={onChangeSearchQuery}
-            placeholder="예: 축하, 신랑측, 현지"
+            placeholder="작성자 또는 내용을 입력해 주세요."
           />
-
-          <View style={manageStyles.chipRow}>
-            {GUESTBOOK_SORT_OPTIONS.map((option) => (
-              <ChoiceChip
-                key={option.key}
-                label={option.label}
-                selected={sortKey === option.key}
-                onPress={() => onChangeSortKey(option.key)}
-              />
-            ))}
-          </View>
 
           <AppText variant="caption" style={manageStyles.searchSummaryText}>
             검색 결과 {filteredCount}개 · 페이지 {page}/{totalPages}
@@ -125,13 +105,10 @@ export function GuestbookModal({
                     <AppText variant="caption" style={manageStyles.commentMeta}>
                       {comment.createdAt
                         ? new Date(comment.createdAt).toLocaleString('ko-KR')
-                        : '작성 시각 없음'}
+                        : '작성 시각 정보 없음'}
                     </AppText>
                   </View>
-                  <ActionButton
-                    variant="danger"
-                    onPress={() => void onDeleteComment(comment.id)}
-                  >
+                  <ActionButton variant="danger" onPress={() => void onDeleteComment(comment.id)}>
                     삭제
                   </ActionButton>
                 </View>
@@ -167,11 +144,7 @@ export function GuestbookModal({
             <ActionButton variant="secondary" onPress={onClose}>
               닫기
             </ActionButton>
-            <ActionButton
-              variant="secondary"
-              onPress={() => void onRefresh()}
-              disabled={!canRefresh}
-            >
+            <ActionButton variant="secondary" onPress={() => void onRefresh()} disabled={!canRefresh}>
               목록 새로고침
             </ActionButton>
           </View>

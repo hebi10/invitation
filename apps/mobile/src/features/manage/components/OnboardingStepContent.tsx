@@ -1,9 +1,6 @@
 import { ActionButton } from '../../../components/ActionButton';
 import { TextField } from '../../../components/TextField';
-import type {
-  ManageFormState,
-  ManageStringFieldKey,
-} from '../shared';
+import type { ManageFormState, ManageStringFieldKey } from '../shared';
 
 type OnboardingStepContentProps = {
   stepIndex: number;
@@ -25,29 +22,29 @@ export function OnboardingStepContent({
       return (
         <>
           <TextField
-            label="대표 제목"
+            label="페이지 제목"
             value={form.displayName}
             onChangeText={(value) => onUpdateField('displayName', value)}
-            placeholder="예: 신민제 · 김현지 결혼합니다"
+            placeholder="예: 박준호 김소민 결혼합니다"
           />
           <TextField
             label="소개 문구"
             value={form.description}
             onChangeText={(value) => onUpdateField('description', value)}
-            placeholder="청첩장 첫 화면에 노출할 문구"
+            placeholder="페이지 첫 화면에 보여질 짧은 소개 문구"
             multiline
           />
           <TextField
             label="신랑 이름"
             value={form.groom.name}
             onChangeText={(value) => onUpdatePersonName('groom', value)}
-            placeholder="예: 신민제"
+            placeholder="예: 박준호"
           />
           <TextField
             label="신부 이름"
             value={form.bride.name}
             onChangeText={(value) => onUpdatePersonName('bride', value)}
-            placeholder="예: 김현지"
+            placeholder="예: 김소민"
           />
         </>
       );
@@ -64,7 +61,7 @@ export function OnboardingStepContent({
             label="예식 장소"
             value={form.venue}
             onChangeText={(value) => onUpdateField('venue', value)}
-            placeholder="예: 더컨벤션 서울"
+            placeholder="예: 소풍컨벤션 서울"
           />
           <TextField
             label="상세 주소"
@@ -89,7 +86,7 @@ export function OnboardingStepContent({
             label="인사말"
             value={form.greetingMessage}
             onChangeText={(value) => onUpdateField('greetingMessage', value)}
-            placeholder="전하고 싶은 인사말을 입력하세요."
+            placeholder="하객분들께 전할 인사말을 입력해 주세요"
             multiline
           />
           <ActionButton
@@ -97,7 +94,7 @@ export function OnboardingStepContent({
             onPress={() => onSetPublished(!form.published)}
             fullWidth
           >
-            {form.published ? '저장 후 공개' : '저장 후 비공개 유지'}
+            {form.published ? '생성 후 공개' : '생성 후 비공개 유지'}
           </ActionButton>
         </>
       );

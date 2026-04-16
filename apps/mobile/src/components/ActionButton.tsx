@@ -19,6 +19,9 @@ type ActionButtonProps = PropsWithChildren<{
   loading?: boolean;
   fullWidth?: boolean;
   style?: StyleProp<ViewStyle>;
+  backgroundColor?: string;
+  borderColor?: string;
+  labelColor?: string;
 }>;
 
 export function ActionButton({
@@ -29,24 +32,30 @@ export function ActionButton({
   loading = false,
   fullWidth = false,
   style,
+  backgroundColor,
+  borderColor,
+  labelColor,
 }: ActionButtonProps) {
   const { palette, fontScale } = useAppState();
   const isDisabled = disabled || loading;
 
-  const backgroundColor =
+  const defaultBackgroundColor =
     variant === 'primary'
       ? palette.accent
       : variant === 'danger'
         ? palette.danger
-        : palette.surfaceMuted;
-  const textColor =
-    variant === 'primary' || variant === 'danger' ? '#ffffff' : palette.text;
-  const borderColor =
+        : palette.accentSoft;
+  const defaultTextColor =
+    variant === 'primary' || variant === 'danger' ? palette.surface : palette.accent;
+  const defaultBorderColor =
     variant === 'primary'
       ? palette.accent
       : variant === 'danger'
         ? palette.danger
-        : palette.cardBorder;
+        : palette.accent;
+  const resolvedBackgroundColor = backgroundColor ?? defaultBackgroundColor;
+  const resolvedBorderColor = borderColor ?? defaultBorderColor;
+  const resolvedTextColor = labelColor ?? defaultTextColor;
 
   return (
     <Pressable
@@ -58,15 +67,15 @@ export function ActionButton({
         fullWidth ? styles.fullWidth : null,
         style,
         {
-          backgroundColor,
-          borderColor,
+          backgroundColor: resolvedBackgroundColor,
+          borderColor: resolvedBorderColor,
           opacity: isDisabled ? 0.5 : pressed ? 0.88 : 1,
         },
       ]}
     >
       <View style={styles.content}>
-        {loading ? <ActivityIndicator color={textColor} size="small" /> : null}
-        <Text style={[styles.label, { color: textColor, fontSize: 14 * fontScale }]}>
+        {loading ? <ActivityIndicator color={resolvedTextColor} size="small" /> : null}
+        <Text style={[styles.label, { color: resolvedTextColor, fontSize: 14 * fontScale }]}>
           {children}
         </Text>
       </View>
@@ -81,7 +90,6 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     borderRadius: 14,
     borderWidth: 1,
-    backgroundColor: '#ffffff',
   },
   fullWidth: {
     width: '100%',
@@ -94,6 +102,5 @@ const styles = StyleSheet.create({
   },
   label: {
     fontWeight: '700',
-    color: '#000000',
   },
 });

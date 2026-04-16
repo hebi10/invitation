@@ -24,11 +24,11 @@ export function LoginCard({
 
   return (
     <SectionCard
-      title="청첩장 연동"
-      description="슬러그와 비밀번호로 연동하면 자동 연동 상태가 유지됩니다."
+      title="페이지 로그인"
+      description="페이지 URL 또는 슬러그와 비밀번호로 로그인하면 자동 로그인 상태가 유지됩니다."
     >
       <TextField
-        label="슬러그"
+        label="페이지 URL 또는 슬러그"
         value={pageIdentifier}
         onChangeText={onChangePageIdentifier}
         placeholder="예: kim-shinlang-na-sinbu"
@@ -55,7 +55,7 @@ export function LoginCard({
         </View>
       ) : null}
       <ActionButton onPress={onSubmit} loading={isAuthenticating} fullWidth>
-        청첩장 연동
+        로그인
       </ActionButton>
     </SectionCard>
   );

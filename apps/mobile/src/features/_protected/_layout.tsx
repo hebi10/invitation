@@ -1,12 +1,13 @@
 import { Redirect, Slot, usePathname } from 'expo-router';
-import { ActivityIndicator, View } from 'react-native';
+import { ActivityIndicator, Platform, View } from 'react-native';
 
-import { AppText } from '../../../components/AppText';
-import { useAppState } from '../../../contexts/AppStateContext';
+import { AppText } from '../../components/AppText';
+import { useAppState } from '../../contexts/AppStateContext';
 
 export default function ProtectedTabsLayout() {
   const pathname = usePathname();
   const { isAuthenticated, isBootstrapping, palette } = useAppState();
+  const isExpoWebPreview = Platform.OS === 'web';
 
   if (isBootstrapping) {
     return (
@@ -24,6 +25,10 @@ export default function ProtectedTabsLayout() {
         <AppText variant="muted">자동 연동 상태를 확인하는 중입니다.</AppText>
       </View>
     );
+  }
+
+  if (isExpoWebPreview) {
+    return <Redirect href={{ pathname: '/login', params: { next: pathname } }} />;
   }
 
   if (!isAuthenticated) {

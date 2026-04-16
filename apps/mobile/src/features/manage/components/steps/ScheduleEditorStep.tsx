@@ -2,10 +2,7 @@ import { View } from 'react-native';
 
 import { SectionCard } from '../../../../components/SectionCard';
 import { TextField } from '../../../../components/TextField';
-import type {
-  ManageFormState,
-  ManageStringFieldKey,
-} from '../../shared';
+import type { ManageFormState, ManageStringFieldKey } from '../../shared';
 import { manageStyles } from '../../manageStyles';
 
 type ScheduleEditorStepProps = {
@@ -20,7 +17,7 @@ export function ScheduleEditorStep({
   return (
     <SectionCard
       title="예식 일정 정보"
-      description="예식 일시와 본식·피로연 장소를 나눠서 입력합니다."
+      description="예식 일시와 본식, 피로연 장소를 차례대로 입력합니다."
     >
       <TextField
         label="예식 일시 문구"
@@ -32,7 +29,7 @@ export function ScheduleEditorStep({
         label="예식장 이름"
         value={form.venue}
         onChangeText={(value) => onUpdateField('venue', value)}
-        placeholder="예: 더채플 서울"
+        placeholder="예: 소풍컨벤션 서울"
       />
       <View style={manageStyles.twoColumnRow}>
         <View style={manageStyles.halfField}>

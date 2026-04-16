@@ -1,8 +1,10 @@
-import { useLocalSearchParams, useRouter } from 'expo-router';
+﻿import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
 import {
   Modal,
+  Platform,
   Pressable,
+  ScrollView,
   StyleSheet,
   View,
 } from 'react-native';
@@ -14,6 +16,7 @@ import { BulletList } from '../../components/BulletList';
 import { ChoiceChip } from '../../components/ChoiceChip';
 import { SectionCard } from '../../components/SectionCard';
 import { TextField } from '../../components/TextField';
+import { WebPreviewNotice } from '../../components/WebPreviewNotice';
 import { useAppState } from '../../contexts/AppStateContext';
 import {
   designThemes,
@@ -31,14 +34,13 @@ import type {
 
 const FLOW_GUIDE_ITEMS = [
   '신랑·신부 한글 이름, 영문 이름, 페이지 비밀번호를 먼저 확인합니다.',
-  '서비스와 디자인을 선택하고, 필요한 경우 추가 티켓 수량을 정합니다.',
+  '서비스와 디자인을 선택하고, 필요한 경우 추가 티켓 수량도 함께 정합니다.',
   '결제 확인 팝업을 거친 뒤 바로 페이지를 생성하고 운영 탭으로 이동합니다.',
 ] as const;
 
 const TICKET_USAGE_ITEMS = [
   '티켓 1장: 1개월 연장',
   '티켓 1장: 디자인 변경',
-  '티켓 1장: 모바일 청첩장 1개 추가 생성',
   '티켓 2장: 같은 청첩장에 다른 디자인 추가',
   '티켓 2장: 서비스 업그레이드',
 ] as const;
@@ -48,6 +50,12 @@ const TICKET_DISCOUNT_BUNDLE_SIZE = 3;
 const TICKET_DISCOUNT_PER_BUNDLE = 5000;
 const TICKET_PRESET_COUNTS = [0, 1, 3, 6] as const;
 const MAX_TICKET_COUNT = 12;
+
+type CreateValidationRule = {
+  label: string;
+  passed: boolean;
+  errorMessage: string;
+};
 
 function calculateTicketPrice(ticketCount: number) {
   const bundleCount = Math.floor(ticketCount / TICKET_DISCOUNT_BUNDLE_SIZE);
@@ -60,9 +68,74 @@ function calculateTicketPrice(ticketCount: number) {
   );
 }
 
+function buildCreateValidationRules(input: {
+  groomKoreanName: string;
+  brideKoreanName: string;
+  groomEnglishName: string;
+  brideEnglishName: string;
+  slugPreview: string;
+  password: string;
+}): CreateValidationRule[] {
+  const groomKoreanName = input.groomKoreanName.trim();
+  const brideKoreanName = input.brideKoreanName.trim();
+  const groomEnglishName = input.groomEnglishName.trim();
+  const brideEnglishName = input.brideEnglishName.trim();
+  const password = input.password.trim();
+
+  return [
+    {
+      label: '신랑 한글 이름',
+      passed: Boolean(groomKoreanName),
+      errorMessage: '신랑 한글 이름을 입력해 주세요.',
+    },
+    {
+      label: '신부 한글 이름',
+      passed: Boolean(brideKoreanName),
+      errorMessage: '신부 한글 이름을 입력해 주세요.',
+    },
+    {
+      label: '신랑 영문 이름',
+      passed: Boolean(groomEnglishName) && isValidEnglishName(groomEnglishName),
+      errorMessage: !groomEnglishName
+        ? '신랑 영문 이름을 입력해 주세요.'
+        : '신랑 영문 이름은 영문, 공백, 하이픈만 사용할 수 있습니다.',
+    },
+    {
+      label: '신부 영문 이름',
+      passed: Boolean(brideEnglishName) && isValidEnglishName(brideEnglishName),
+      errorMessage: !brideEnglishName
+        ? '신부 영문 이름을 입력해 주세요.'
+        : '신부 영문 이름은 영문, 공백, 하이픈만 사용할 수 있습니다.',
+    },
+    {
+      label: 'URL 슬러그 생성',
+      passed: Boolean(input.slugPreview),
+      errorMessage: '영문 이름으로 사용할 페이지 주소를 만들 수 없습니다.',
+    },
+    {
+      label: '페이지 비밀번호',
+      passed: password.length >= 4,
+      errorMessage: !password
+        ? '페이지 비밀번호를 입력해 주세요.'
+        : '페이지 비밀번호는 4자 이상으로 입력해 주세요.',
+    },
+  ];
+}
+
 export default function CreateScreen() {
   const router = useRouter();
-  const { draftId: draftIdParam } = useLocalSearchParams<{ draftId?: string | string[] }>();
+  const isExpoWebPreview = Platform.OS === 'web';
+  const {
+    draftId: draftIdParam,
+    ticketIntent: ticketIntentParam,
+    targetPlan: targetPlanParam,
+    targetTheme: targetThemeParam,
+  } = useLocalSearchParams<{
+    draftId?: string | string[];
+    ticketIntent?: string | string[];
+    targetPlan?: string | string[];
+    targetTheme?: string | string[];
+  }>();
   const {
     apiBaseUrl,
     authError,
@@ -90,6 +163,7 @@ export default function CreateScreen() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [editingDraftId, setEditingDraftId] = useState<string | null>(null);
   const [loadedDraftId, setLoadedDraftId] = useState<string | null>(null);
+  const [handledTicketIntentKey, setHandledTicketIntentKey] = useState<string | null>(null);
 
   const selectedPlanInfo = useMemo(
     () => servicePlans.find((plan) => plan.tier === selectedPlan) ?? servicePlans[0],
@@ -112,72 +186,36 @@ export default function CreateScreen() {
     return slugPreview ? `${baseUrl}/${slugPreview}` : `${baseUrl}/...`;
   }, [apiBaseUrl, slugPreview]);
   const normalizedDraftId = Array.isArray(draftIdParam) ? draftIdParam[0] : draftIdParam;
+  const normalizedTicketIntent = Array.isArray(ticketIntentParam)
+    ? ticketIntentParam[0]
+    : ticketIntentParam;
+  const normalizedTargetPlan = Array.isArray(targetPlanParam) ? targetPlanParam[0] : targetPlanParam;
+  const normalizedTargetTheme = Array.isArray(targetThemeParam)
+    ? targetThemeParam[0]
+    : targetThemeParam;
 
-  const validationChecklist = useMemo(
-    () => [
-      {
-        label: '신랑 한글 이름',
-        passed: Boolean(groomKoreanName.trim()),
-      },
-      {
-        label: '신부 한글 이름',
-        passed: Boolean(brideKoreanName.trim()),
-      },
-      {
-        label: '신랑 영문 이름',
-        passed: Boolean(groomEnglishName.trim()) && isValidEnglishName(groomEnglishName),
-      },
-      {
-        label: '신부 영문 이름',
-        passed: Boolean(brideEnglishName.trim()) && isValidEnglishName(brideEnglishName),
-      },
-      {
-        label: 'URL 슬러그 생성',
-        passed: Boolean(slugPreview),
-      },
-      {
-        label: '페이지 비밀번호',
-        passed: password.trim().length >= 4,
-      },
-    ],
+  const validationRules = useMemo(
+    () =>
+      buildCreateValidationRules({
+        groomKoreanName,
+        brideKoreanName,
+        groomEnglishName,
+        brideEnglishName,
+        slugPreview,
+        password,
+      }),
     [brideEnglishName, brideKoreanName, groomEnglishName, groomKoreanName, password, slugPreview]
   );
 
-  const validationMessages = useMemo(() => {
-    const messages: string[] = [];
+  const validationChecklist = useMemo(
+    () => validationRules.map(({ label, passed }) => ({ label, passed })),
+    [validationRules]
+  );
 
-    if (!groomKoreanName.trim()) {
-      messages.push('신랑 한글 이름을 입력해 주세요.');
-    }
-
-    if (!brideKoreanName.trim()) {
-      messages.push('신부 한글 이름을 입력해 주세요.');
-    }
-
-    if (!groomEnglishName.trim()) {
-      messages.push('신랑 영문 이름을 입력해 주세요.');
-    } else if (!isValidEnglishName(groomEnglishName)) {
-      messages.push('신랑 영문 이름은 영문, 공백, 하이픈만 사용할 수 있습니다.');
-    }
-
-    if (!brideEnglishName.trim()) {
-      messages.push('신부 영문 이름을 입력해 주세요.');
-    } else if (!isValidEnglishName(brideEnglishName)) {
-      messages.push('신부 영문 이름은 영문, 공백, 하이픈만 사용할 수 있습니다.');
-    }
-
-    if (!slugPreview) {
-      messages.push('영문 이름으로 사용할 페이지 주소를 만들 수 없습니다.');
-    }
-
-    if (!password.trim()) {
-      messages.push('페이지 비밀번호를 입력해 주세요.');
-    } else if (password.trim().length < 4) {
-      messages.push('페이지 비밀번호는 4자 이상으로 입력해 주세요.');
-    }
-
-    return messages;
-  }, [brideEnglishName, brideKoreanName, groomEnglishName, groomKoreanName, password, slugPreview]);
+  const validationMessages = useMemo(
+    () => validationRules.filter((rule) => !rule.passed).map((rule) => rule.errorMessage),
+    [validationRules]
+  );
 
   useEffect(() => {
     if (!normalizedDraftId || normalizedDraftId === loadedDraftId) {
@@ -204,6 +242,51 @@ export default function CreateScreen() {
     setNotice('저장된 초안을 불러왔습니다. 비밀번호만 다시 입력하면 이어서 진행할 수 있습니다.');
     router.replace('/create');
   }, [clearAuthError, drafts, loadedDraftId, normalizedDraftId, router]);
+
+  useEffect(() => {
+    if (!normalizedTicketIntent) {
+      return;
+    }
+
+    const intentKey = [
+      normalizedTicketIntent,
+      normalizedTargetPlan ?? '',
+      normalizedTargetTheme ?? '',
+    ].join(':');
+
+    if (handledTicketIntentKey === intentKey) {
+      return;
+    }
+
+    if (
+      normalizedTargetPlan === 'standard' ||
+      normalizedTargetPlan === 'deluxe' ||
+      normalizedTargetPlan === 'premium'
+    ) {
+      setSelectedPlan(normalizedTargetPlan);
+    }
+
+    if (normalizedTargetTheme === 'emotional' || normalizedTargetTheme === 'simple') {
+      setSelectedTheme(normalizedTargetTheme);
+    }
+
+    if (normalizedTicketIntent === 'extend') {
+      setNotice('티켓 사용: 기간 1개월 연장 준비를 위해 구매 탭으로 이동했습니다.');
+    } else if (normalizedTicketIntent === 'extra-page') {
+      setNotice('티켓 사용: 추가 청첩장 생성을 진행할 수 있습니다.');
+    } else if (normalizedTicketIntent === 'extra-variant') {
+      setNotice('티켓 사용: 같은 청첩장에 다른 디자인 추가 구매 흐름으로 이동했습니다.');
+    } else if (normalizedTicketIntent === 'upgrade') {
+      setNotice('티켓 사용: 서비스 업그레이드 구매 흐름으로 이동했습니다.');
+    }
+
+    setHandledTicketIntentKey(intentKey);
+  }, [
+    handledTicketIntentKey,
+    normalizedTargetPlan,
+    normalizedTargetTheme,
+    normalizedTicketIntent,
+  ]);
 
   const resetForm = () => {
     setSelectedPlan('standard');
@@ -252,11 +335,18 @@ export default function CreateScreen() {
 
     setEditingDraftId(savedDraftId);
     setLoadedDraftId(savedDraftId);
-    setNotice('제작 초안을 저장했습니다. 입력한 내용은 유지되며 홈에서도 이어서 작성할 수 있습니다.');
+    setNotice('제작 초안을 저장했습니다. 입력한 내용은 유지되고 홈에서도 이어서 작성할 수 있습니다.');
   };
 
   const handleOpenPaymentModal = () => {
     clearAuthError();
+
+    if (isExpoWebPreview) {
+      setNotice(
+        'Expo 웹 빌드에서는 실제 페이지 생성이 차단되어 있습니다. 네이티브 앱이나 Next 웹 편집기를 사용해 주세요.'
+      );
+      return;
+    }
 
     if (validationMessages.length > 0) {
       setNotice(validationMessages[0] ?? '입력 정보를 먼저 확인해 주세요.');
@@ -268,7 +358,15 @@ export default function CreateScreen() {
   };
 
   const handleConfirmCreate = async () => {
-    if (validationMessages.length > 0 || !slugPreview) {
+    if (isExpoWebPreview) {
+      setNotice(
+        'Expo 웹 빌드에서는 실제 페이지를 생성할 수 없습니다. 네이티브 앱이나 Next 웹 편집기를 사용해 주세요.'
+      );
+      setPaymentModalVisible(false);
+      return;
+    }
+
+    if (validationMessages.length > 0) {
       setNotice(validationMessages[0] ?? '입력 정보를 먼저 확인해 주세요.');
       setPaymentModalVisible(false);
       return;
@@ -307,11 +405,18 @@ export default function CreateScreen() {
     <>
       <AppScreen
         title="구매"
-        subtitle="구매 탭에서는 초안을 기기 로컬에 저장하고, 결제 완료 처리 시점에만 Firestore에 실제 페이지를 생성합니다."
+        subtitle="구매 탭에서는 제작 초안을 기기에 저장하고, 결제 확인 시점에만 실제 페이지를 생성합니다."
       >
+        {isExpoWebPreview ? (
+          <WebPreviewNotice
+            title="웹 생성 제한 안내"
+            description="Expo 웹 빌드에서는 실제 페이지 생성 요청을 보내지 않습니다."
+          />
+        ) : null}
+
         <SectionCard
           title="진행 안내"
-          description="구매 탭에서는 입력 정보 확인부터 페이지 생성 직후 운영 이동까지 한 흐름으로 처리합니다."
+          description="구매 탭에서는 입력 정보 확인부터 페이지 생성 후 운영 이동까지 같은 흐름으로 처리합니다."
         >
           <BulletList items={[...FLOW_GUIDE_ITEMS]} />
         </SectionCard>
@@ -325,19 +430,19 @@ export default function CreateScreen() {
             label="신랑 한글 이름"
             value={groomKoreanName}
             onChangeText={setGroomKoreanName}
-            placeholder="예: 신민제"
+            placeholder="예: 김신랑"
           />
           <TextField
             label="신부 한글 이름"
             value={brideKoreanName}
             onChangeText={setBrideKoreanName}
-            placeholder="예: 김현지"
+            placeholder="예: 나신부"
           />
           <TextField
             label="신랑 영문 이름"
             value={groomEnglishName}
             onChangeText={setGroomEnglishName}
-            placeholder="예: shin-minje"
+            placeholder="예: kim-shinlang"
             autoCapitalize="none"
             autoCorrect={false}
           />
@@ -345,7 +450,7 @@ export default function CreateScreen() {
             label="신부 영문 이름"
             value={brideEnglishName}
             onChangeText={setBrideEnglishName}
-            placeholder="예: kim-hyunji"
+            placeholder="예: na-sinbu"
             autoCapitalize="none"
             autoCorrect={false}
           />
@@ -438,7 +543,14 @@ export default function CreateScreen() {
           </AppText>
           <BulletList items={selectedPlanInfo.features} />
 
-          <View style={styles.divider} />
+          <View
+            style={[
+              styles.divider,
+              {
+                backgroundColor: palette.cardBorder,
+              },
+            ]}
+          />
 
           <View style={styles.chipRow}>
             {designThemes.map((theme) => (
@@ -457,11 +569,11 @@ export default function CreateScreen() {
 
         <SectionCard
           title="추가 티켓 구매"
-          description="티켓은 장수만 먼저 구매하고, 사용 범위는 아래 정책대로 적용합니다."
+          description="티켓은 수량만 먼저 구매하고, 사용 범위는 아래 정책에 따라 적용됩니다."
           badge={`${ticketCount}장`}
         >
           <AppText variant="muted" style={styles.helperText}>
-            1장당 5,000원이며, 3장 단위로 구매할 때마다 5,000원이 할인됩니다.
+            1장당 5,000원이며 3장 단위로 구매할 때마다 5,000원이 할인됩니다.
           </AppText>
 
           <View style={styles.ticketPresetRow}>
@@ -486,10 +598,15 @@ export default function CreateScreen() {
           >
             <Pressable
               accessibilityRole="button"
+              accessibilityLabel="추가 티켓 1장 줄이기"
+              accessibilityHint="구매할 티켓 수량을 1장 줄입니다."
+              accessibilityState={{ disabled: ticketCount <= 0 }}
+              disabled={ticketCount <= 0}
               onPress={() => updateTicketCount(ticketCount - 1)}
               style={[
                 styles.ticketCounterButton,
                 { borderColor: palette.cardBorder, backgroundColor: palette.surface },
+                ticketCount <= 0 ? styles.ticketCounterButtonDisabled : null,
               ]}
             >
               <AppText variant="title" style={styles.ticketCounterButtonLabel}>
@@ -506,10 +623,15 @@ export default function CreateScreen() {
             </View>
             <Pressable
               accessibilityRole="button"
+              accessibilityLabel="추가 티켓 1장 늘리기"
+              accessibilityHint="구매할 티켓 수량을 1장 늘립니다."
+              accessibilityState={{ disabled: ticketCount >= MAX_TICKET_COUNT }}
+              disabled={ticketCount >= MAX_TICKET_COUNT}
               onPress={() => updateTicketCount(ticketCount + 1)}
               style={[
                 styles.ticketCounterButton,
                 { borderColor: palette.cardBorder, backgroundColor: palette.surface },
+                ticketCount >= MAX_TICKET_COUNT ? styles.ticketCounterButtonDisabled : null,
               ]}
             >
               <AppText variant="title" style={styles.ticketCounterButtonLabel}>
@@ -543,7 +665,7 @@ export default function CreateScreen() {
 
         <SectionCard
           title="3. 결제 확인과 페이지 생성"
-          description="현재는 실제 결제 연동 대신 확인 팝업만 띄우고, 확인 즉시 페이지를 생성한 뒤 운영 탭 슬라이드 입력으로 이동합니다."
+          description="현재는 실제 결제 연동 대신 확인 팝업만 띄우고, 확인 즉시 페이지를 생성한 뒤 운영 탭으로 이동합니다."
         >
           <View style={styles.summaryRow}>
             <AppText style={styles.summaryLabel}>기본 서비스</AppText>
@@ -590,7 +712,11 @@ export default function CreateScreen() {
             <ActionButton variant="secondary" onPress={() => void handleSaveDraft()} fullWidth>
               제작 초안 저장
             </ActionButton>
-            <ActionButton onPress={handleOpenPaymentModal} fullWidth>
+            <ActionButton
+              onPress={handleOpenPaymentModal}
+              disabled={isExpoWebPreview}
+              fullWidth
+            >
               결제 확인 팝업 열기
             </ActionButton>
           </View>
@@ -604,7 +730,18 @@ export default function CreateScreen() {
         onRequestClose={() => setPaymentModalVisible(false)}
       >
         <View style={styles.modalOverlay}>
-          <Pressable style={styles.modalBackdrop} onPress={() => setPaymentModalVisible(false)} />
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="결제 확인 팝업 닫기"
+            style={[
+              styles.modalBackdrop,
+              {
+                backgroundColor: palette.background,
+                opacity: 0.78,
+              },
+            ]}
+            onPress={() => setPaymentModalVisible(false)}
+          />
           <View
             style={[
               styles.modalCard,
@@ -614,68 +751,73 @@ export default function CreateScreen() {
               },
             ]}
           >
-            <AppText variant="title" style={styles.modalTitle}>
-              결제 확인
-            </AppText>
-            <AppText variant="muted" style={styles.modalDescription}>
-              실제 결제는 아직 연결하지 않았습니다. 이 팝업에서 확인을 누르면 페이지를 생성하고 운영 탭으로 바로 이동합니다.
-            </AppText>
+            <ScrollView
+              style={styles.modalScroll}
+              contentContainerStyle={styles.modalScrollContent}
+              keyboardShouldPersistTaps="handled"
+              showsVerticalScrollIndicator={false}
+            >
+              <AppText variant="title" style={styles.modalTitle}>
+                결제 확인
+              </AppText>
+              <AppText variant="muted" style={styles.modalDescription}>
+                실제 결제는 아직 연결하지 않았습니다. 이 팝업에서 확인을 누르면 페이지를 생성하고 운영 탭으로 바로 이동합니다.
+              </AppText>
 
-            <View style={styles.summaryRow}>
-              <AppText style={styles.summaryLabel}>
-                서비스
-              </AppText>
-              <AppText style={styles.summaryValue}>
-                {selectedPlanInfo.name}
-              </AppText>
-            </View>
-            <View style={styles.summaryRow}>
-              <AppText style={styles.summaryLabel}>디자인</AppText>
-              <AppText style={styles.summaryValue}>
-                {selectedThemeInfo.label}
-              </AppText>
-            </View>
-            <View style={styles.summaryRow}>
-              <AppText style={styles.summaryLabel}>추가 티켓</AppText>
-              <AppText style={styles.summaryValue}>
-                {ticketCount}장 / {formatPrice(ticketPrice)}
-              </AppText>
-            </View>
-            <View style={styles.summaryRow}>
-              <AppText style={styles.summaryLabel}>생성 URL</AppText>
-              <AppText style={styles.summaryValue}>
-                {slugPreview}
-              </AppText>
-            </View>
-            <View style={styles.summaryRow}>
-              <AppText style={styles.summaryLabel}>결제 예정 금액</AppText>
-              <AppText variant="title" color={palette.accent} style={styles.totalLabel}>
-                {formatPrice(totalPrice)}
-              </AppText>
-            </View>
+              <View style={styles.summaryRow}>
+                <AppText style={styles.summaryLabel}>서비스</AppText>
+                <AppText style={styles.summaryValue}>
+                  {selectedPlanInfo.name}
+                </AppText>
+              </View>
+              <View style={styles.summaryRow}>
+                <AppText style={styles.summaryLabel}>디자인</AppText>
+                <AppText style={styles.summaryValue}>
+                  {selectedThemeInfo.label}
+                </AppText>
+              </View>
+              <View style={styles.summaryRow}>
+                <AppText style={styles.summaryLabel}>추가 티켓</AppText>
+                <AppText style={styles.summaryValue}>
+                  {ticketCount}장 / {formatPrice(ticketPrice)}
+                </AppText>
+              </View>
+              <View style={styles.summaryRow}>
+                <AppText style={styles.summaryLabel}>생성 URL</AppText>
+                <AppText style={styles.summaryValue}>
+                  {slugPreview}
+                </AppText>
+              </View>
+              <View style={styles.summaryRow}>
+                <AppText style={styles.summaryLabel}>결제 예정 금액</AppText>
+                <AppText variant="title" color={palette.accent} style={styles.totalLabel}>
+                  {formatPrice(totalPrice)}
+                </AppText>
+              </View>
 
-            {authError ? (
-              <AppText variant="caption" color={palette.danger} style={styles.modalErrorText}>
-                {authError}
-              </AppText>
-            ) : null}
+              {authError ? (
+                <AppText variant="caption" color={palette.danger} style={styles.modalErrorText}>
+                  {authError}
+                </AppText>
+              ) : null}
 
-            <View style={styles.actionColumn}>
-              <ActionButton
-                variant="secondary"
-                onPress={() => setPaymentModalVisible(false)}
-                fullWidth
-              >
-                다시 확인하기
-              </ActionButton>
-              <ActionButton
-                onPress={() => void handleConfirmCreate()}
-                loading={isSubmitting || isAuthenticating}
-                fullWidth
-              >
-                확인 후 페이지 생성
-              </ActionButton>
-            </View>
+              <View style={styles.actionColumn}>
+                <ActionButton
+                  variant="secondary"
+                  onPress={() => setPaymentModalVisible(false)}
+                  fullWidth
+                >
+                  다시 확인하기
+                </ActionButton>
+                <ActionButton
+                  onPress={() => void handleConfirmCreate()}
+                  loading={isSubmitting || isAuthenticating}
+                  fullWidth
+                >
+                  확인 후 페이지 생성
+                </ActionButton>
+              </View>
+            </ScrollView>
           </View>
         </View>
       </Modal>
@@ -694,7 +836,6 @@ const styles = StyleSheet.create({
   },
   divider: {
     height: 1,
-    backgroundColor: '#d8d1cb',
     opacity: 0.7,
   },
   previewCard: {
@@ -759,6 +900,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  ticketCounterButtonDisabled: {
+    opacity: 0.45,
+  },
   ticketCounterButtonLabel: {
     fontWeight: '800',
   },
@@ -811,13 +955,20 @@ const styles = StyleSheet.create({
   },
   modalBackdrop: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(16, 12, 10, 0.58)',
   },
   modalCard: {
+    maxHeight: '88%',
     borderWidth: 1,
     borderRadius: 28,
     padding: 20,
     gap: 14,
+  },
+  modalScroll: {
+    flexGrow: 0,
+  },
+  modalScrollContent: {
+    gap: 14,
+    paddingBottom: 2,
   },
   modalTitle: {
     fontWeight: '800',
@@ -830,3 +981,4 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
 });
+

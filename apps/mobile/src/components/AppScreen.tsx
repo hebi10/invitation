@@ -4,7 +4,9 @@ import {
   ScrollView,
   StyleSheet,
   Text,
+  type StyleProp,
   View,
+  type ViewStyle,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -14,12 +16,14 @@ type AppScreenProps = PropsWithChildren<{
   title: string;
   subtitle?: string;
   headerRight?: ReactNode;
+  contentContainerStyle?: StyleProp<ViewStyle>;
 }>;
 
 export function AppScreen({
   title,
   subtitle,
   headerRight,
+  contentContainerStyle,
   children,
 }: AppScreenProps) {
   const { palette, fontScale } = useAppState();
@@ -31,9 +35,10 @@ export function AppScreen({
       contentContainerStyle={[
         styles.content,
         {
-          paddingTop: insets.top + 16,
-          paddingBottom: insets.bottom + 40,
+          paddingTop: insets.top + 32,
+          paddingBottom: insets.bottom + 16,
         },
+        contentContainerStyle,
       ]}
       keyboardShouldPersistTaps="handled"
       keyboardDismissMode="on-drag"

@@ -42,6 +42,11 @@ export const manageStyles = StyleSheet.create({
     flexWrap: 'wrap',
     gap: 8,
   },
+  actionHalfButton: {
+    width: '48%',
+    flexBasis: '48%',
+    flexGrow: 1,
+  },
   noticeText: {
     lineHeight: 20,
   },
@@ -211,14 +216,15 @@ export const manageStyles = StyleSheet.create({
     lineHeight: 18,
   },
   guestbookModalCard: {
-    maxHeight: '85%',
+    maxHeight: '90%',
   },
   searchSummaryText: {
     lineHeight: 18,
     fontWeight: '600',
   },
   guestbookList: {
-    maxHeight: 340,
+    maxHeight: 440,
+    minHeight: 280,
   },
   guestbookListContent: {
     gap: 10,
@@ -285,5 +291,6 @@ export const manageStyles = StyleSheet.create({
     flexWrap: 'wrap',
     gap: 8,
     justifyContent: 'flex-end',
+    borderTopWidth: 1,
   },
 });

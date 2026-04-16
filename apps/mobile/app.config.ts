@@ -1,5 +1,9 @@
 import type { ExpoConfig } from 'expo/config';
 
+declare const process: {
+  env: Record<string, string | undefined>;
+};
+
 const configuredApiBaseUrl =
   process.env.EXPO_PUBLIC_API_BASE?.trim() || 'https://msgnote.kr';
 

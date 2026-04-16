@@ -10,7 +10,7 @@ const venue = '더케이웨딩홀';
 
 const couple = {
   groom: {
-    name: '신민제',
+    name: '김신랑',
     order: '장남',
     father: {
       relation: '부',
@@ -25,7 +25,7 @@ const couple = {
     phone: '010-3333-4444',
   },
   bride: {
-    name: '김현지',
+    name: '나신부',
     order: '장녀',
     father: {
       relation: '부',
@@ -45,7 +45,7 @@ const invitationDescription = `2026년 4월 14일 오후 3시, ${couple.groom.na
 const metadataDescription = `${invitationDescription} 저희의 새로운 시작을 함께 축복해 주세요.`;
 
 export const shinMinjeKimHyunjiConfig: WeddingPageConfig = createWeddingPageConfig({
-  slug: 'shin-minje-kim-hyunji',
+  slug: 'kim-shinlang-na-sinbu',
   description: invitationDescription,
   date: '2026년 4월 14일',
   venue,
@@ -58,7 +58,7 @@ export const shinMinjeKimHyunjiConfig: WeddingPageConfig = createWeddingPageConf
     minute: 0,
   },
   variants: createWeddingVariants({
-    slug: 'shin-minje-kim-hyunji',
+    slug: 'kim-shinlang-na-sinbu',
     couple,
     enabledVariants: ALL_WEDDING_VARIANT_KEYS,
   }),
@@ -67,7 +67,7 @@ export const shinMinjeKimHyunjiConfig: WeddingPageConfig = createWeddingPageConf
     keywords: ['결혼식', '웨딩', '청첩장', couple.groom.name, couple.bride.name, '2026년 4월'],
     images: {
       wedding:
-        'https://firebasestorage.googleapis.com/v0/b/invitation-35d60.firebasestorage.app/o/wedding-images%2Fshin-minje-kim-hyunji%2Fthum.jpg?alt=media&token=c5eef8b5-a83b-4a4c-b5bb-2491feaba51c',
+        'https://firebasestorage.googleapis.com/v0/b/invitation-35d60.firebasestorage.app/o/wedding-images%2Fkim-shinlang-na-sinbu%2Fthum.jpg?alt=media&token=c5eef8b5-a83b-4a4c-b5bb-2491feaba51c',
       favicon: '/images/favicon.ico',
     },
   },
@@ -100,7 +100,7 @@ export const shinMinjeKimHyunjiConfig: WeddingPageConfig = createWeddingPageConf
       {
         title: '화환 안내',
         content:
-          '축하의 뜻을 전하고자 화환을 보내주실 경우\n아래 안내 사항을 참고해 주시기 바랍니다.\n\n예식장: 더케이웨딩홀\n예식일시: 2026년 4월 14일 오후 3시\n수령인: 신랑 신민제 / 신부 김현지\n예식장 문의: 02-1234-5678',
+          '축하의 뜻을 전하고자 화환을 보내주실 경우\n아래 안내 사항을 참고해 주시기 바랍니다.\n\n예식장: 더케이웨딩홀\n예식일시: 2026년 4월 14일 오후 3시\n수령인: 신랑 김신랑 / 신부 나신부\n예식장 문의: 02-1234-5678',
       },
       {
         title: '배송 시간',
@@ -113,7 +113,7 @@ export const shinMinjeKimHyunjiConfig: WeddingPageConfig = createWeddingPageConf
         {
           bank: '신한은행',
           accountNumber: '110-123-456789',
-          accountHolder: '신랑 신민제',
+          accountHolder: '신랑 김신랑',
         },
         {
           bank: '신한은행',
@@ -130,7 +130,7 @@ export const shinMinjeKimHyunjiConfig: WeddingPageConfig = createWeddingPageConf
         {
           bank: '우리은행',
           accountNumber: '1002-234-567890',
-          accountHolder: '신부 김현지',
+          accountHolder: '신부 나신부',
         },
         {
           bank: '신한은행',

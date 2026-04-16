@@ -11,7 +11,12 @@ export const servicePlans = [
     priceLabel: '20,000원',
     description:
       '맞춤 문구 제작, 갤러리 이미지 최대 6장, 카카오톡 링크 형식 공유(URL 공유)',
-    features: ['기본 3개월 노출', '맞춤 문구 제작', '갤러리 최대 6장', 'URL 링크 공유'],
+    features: [
+      '기본 노출 기간 3개월',
+      '맞춤 문구 제작',
+      '갤러리 최대 6장',
+      'URL 링크 공유',
+    ],
   },
   {
     name: 'DELUXE',
@@ -19,11 +24,11 @@ export const servicePlans = [
     price: 25000,
     priceLabel: '25,000원',
     description:
-      'STANDARD 전체 포함, 갤러리 이미지 최대 12장, 음악 포함, 카카오톡 카드 형식 공유',
+      'STANDARD 전체 포함, 갤러리 이미지 최대 12장, 배경음악 포함, 카카오톡 카드 형식 공유',
     features: [
       'STANDARD 전체 포함',
       '갤러리 최대 12장',
-      '배경음악 사용 가능',
+      '배경음악 지원',
       '카카오톡 카드 공유',
     ],
   },
@@ -46,40 +51,40 @@ export const servicePlans = [
 export const designThemes = [
   {
     key: 'emotional' as MobileInvitationThemeKey,
-    label: '감성형',
-    description: '사진과 분위기를 중심으로 보여주는 감성형 레이아웃',
+    label: '감성 디자인',
+    description: '사진과 분위기를 중심으로 보여주는 감성형 디자인입니다.',
   },
   {
     key: 'simple' as MobileInvitationThemeKey,
-    label: '심플형',
-    description: '정보를 정돈해서 보여주는 심플형 레이아웃',
+    label: '심플 디자인',
+    description: '정보를 깔끔하게 정리해 보여주는 심플형 디자인입니다.',
   },
 ] as const;
 
 export const guideSections = [
   {
-    title: '제작 순서',
+    title: '시작 순서',
     items: [
       '서비스와 디자인을 선택합니다.',
-      '고객 편집 비밀번호를 설정하고 결제를 진행합니다.',
-      '결제 후 예식 정보와 문구를 입력합니다.',
-      '웹 링크형 청첩장이 생성되고 운영 탭에서 관리합니다.',
+      '고객 편집 비밀번호를 설정하고 생성 흐름을 진행합니다.',
+      '예식 정보와 문구를 입력하면 페이지가 생성됩니다.',
+      '생성 후에는 운영 탭에서 링크 공유, 공개 전환, 방명록 관리를 이어서 할 수 있습니다.',
     ],
   },
   {
     title: '이용 정책',
     items: [
       '기본 노출 기간은 3개월입니다.',
-      '결과물은 앱 내부 전용이 아니라 웹 링크 형태로 공유합니다.',
-      '계정당 청첩장은 최대 3개까지 관리할 수 있습니다.',
-      '비밀번호 분실 및 변경은 관리자 문의 흐름을 기준으로 운영합니다.',
+      '결과물은 앱이 아니라 웹 링크 형식으로 공유됩니다.',
+      '한 계정에서 여러 청첩장을 운영하는 구조는 추후 확장 예정입니다.',
+      '현재는 페이지 슬러그와 비밀번호 기반으로 고객 편집을 연동합니다.',
     ],
   },
   {
-    title: '티켓 정책',
+    title: '추가 티켓 정책',
     items: [
       '티켓은 1장당 5,000원입니다.',
-      '3장 단위로 구매할 때마다 5,000원이 할인됩니다.',
+      '3장 단위로 구매할 때마다 5,000원 할인됩니다.',
       '티켓 1장: 1개월 연장',
       '티켓 1장: 디자인 변경',
       '티켓 1장: 모바일 청첩장 1개 추가 생성',
@@ -93,17 +98,17 @@ export const faqItems = [
   {
     question: '결제 후 바로 청첩장이 만들어지나요?',
     answer:
-      '모바일 앱에서는 결제 후 상세 정보를 입력하면 웹 링크형 청첩장 생성 흐름으로 이어지도록 설계하고 있습니다.',
+      '현재 앱에서는 생성 흐름과 운영 흐름을 먼저 연결해 둔 상태이고, 실제 결제 연동은 다음 단계에서 붙일 예정입니다.',
   },
   {
     question: '청첩장 연동은 어떻게 하나요?',
     answer:
-      '슬러그와 페이지 비밀번호로 청첩장을 연동합니다. 한 번 연동하면 앱을 다시 열어도 자동 연동 상태를 복원합니다.',
+      '페이지 URL 또는 슬러그와 비밀번호로 연동합니다. 한 번 연동하면 앱에서 다시 이어서 운영할 수 있습니다.',
   },
   {
     question: '환불 정책은 어떻게 되나요?',
     answer:
-      '현재 기획안 기준으로 결제 후 3일 이내 무료 환불을 고려하고 있으며, 환불 완료 후 동일 주문으로 재제작은 제한합니다.',
+      '현재 기획 기준으로는 결제 후 3일 이내 정책을 검토 중이며, 실제 결제 연동 시점에 최종 정책을 확정할 예정입니다.',
   },
 ] as const;
 
@@ -121,7 +126,7 @@ export const guideSamplePages = [
       },
       {
         label: 'PREMIUM 샘플 보기',
-        url: 'https://msgnote.kr/shin-minje-kim-hyunji/emotional/',
+        url: 'https://msgnote.kr/kim-shinlang-na-sinbu/emotional/',
       },
     ],
   },
@@ -138,34 +143,34 @@ export const guideSamplePages = [
       },
       {
         label: 'PREMIUM 샘플 보기',
-        url: 'https://msgnote.kr/shin-minje-kim-hyunji/simple/',
+        url: 'https://msgnote.kr/kim-shinlang-na-sinbu/simple/',
       },
     ],
   },
 ] as const;
 
 export const sampleInvitations = [
-  '감성형 웨딩 샘플',
-  '심플형 웨딩 샘플',
-  '프리미엄 카운트다운 샘플',
+  '감성 디자인 샘플 둘러보기',
+  '심플 디자인 샘플 둘러보기',
+  '서비스 등급별 구성 비교하기',
 ] as const;
 
 export const quickStartItems = [
-  '새 청첩장 제작 초안 작성',
-  '서비스 등급 비교 보기',
-  '이미 만든 페이지 운영하기',
+  '새 청첩장 만들기',
+  '기존 페이지 연동하기',
+  '샘플 페이지 먼저 둘러보기',
 ] as const;
 
 export const ticketActions = [
   { key: 'extend', label: '기간 1개월 연장', tickets: 1 },
   { key: 'theme-change', label: '디자인 변경', tickets: 1 },
   { key: 'extra-page', label: '청첩장 1개 추가 생성', tickets: 1 },
-  { key: 'extra-variant', label: '같은 청첩장 다른 디자인 추가', tickets: 2 },
-  { key: 'upgrade', label: '상위 서비스 업그레이드', tickets: 2 },
+  { key: 'extra-variant', label: '같은 청첩장에 다른 디자인 추가', tickets: 2 },
+  { key: 'upgrade', label: '서비스 업그레이드', tickets: 2 },
 ] as const;
 
 export const settingsNotes = [
-  '자동 연동 세션은 기기에 저장됩니다.',
-  'API 주소를 변경하면 현재 연동 세션은 초기화됩니다.',
-  '라이트/다크 모드와 글자 크기 설정은 즉시 반영됩니다.',
+  '현재 연동 세션은 기기 내부에만 저장됩니다.',
+  'API 주소를 변경하면 기존 연동 세션은 초기화될 수 있습니다.',
+  '라이트·다크 모드와 글자 크기 설정은 즉시 반영됩니다.',
 ] as const;

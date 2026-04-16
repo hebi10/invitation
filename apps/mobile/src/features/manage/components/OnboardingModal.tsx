@@ -2,11 +2,11 @@ import { Modal, Pressable, View } from 'react-native';
 
 import { ActionButton } from '../../../components/ActionButton';
 import { AppText } from '../../../components/AppText';
+import { useAppState } from '../../../contexts/AppStateContext';
 import type { ManageFormState, ManageStringFieldKey } from '../shared';
 import { ONBOARDING_STEPS } from '../shared';
 import { manageStyles } from '../manageStyles';
 import { OnboardingStepContent } from './OnboardingStepContent';
-import { useAppState } from '../../../contexts/AppStateContext';
 
 type OnboardingModalProps = {
   visible: boolean;
@@ -60,7 +60,7 @@ export function OnboardingModal({
           <View style={manageStyles.modalHeader}>
             <View style={manageStyles.modalHeaderCopy}>
               <AppText variant="caption" color={palette.accent} style={manageStyles.modalEyebrow}>
-                운영 탭 온보딩
+                운영 시작 안내
               </AppText>
               <AppText variant="title" style={manageStyles.modalTitle}>
                 {ONBOARDING_STEPS[stepIndex].title}

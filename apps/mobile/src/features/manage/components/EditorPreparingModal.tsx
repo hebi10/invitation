@@ -36,7 +36,9 @@ export function EditorPreparingModal({
           ]}
         >
           <ActivityIndicator size="large" color={palette.accent} />
-          <AppText style={manageStyles.editorStepTitle}>청첩장 정보 수정 팝업 준비 중</AppText>
+          <AppText style={manageStyles.editorStepTitle}>
+            청첩장 편집 화면을 준비하고 있습니다
+          </AppText>
           <AppText variant="muted" style={manageStyles.loadingText}>
             {message}
           </AppText>

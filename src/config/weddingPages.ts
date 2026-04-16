@@ -25,7 +25,7 @@ import { kimMinjunParkSoheeConfig } from './pages/kim-minjun-park-sohee';
 import { kimTaehyunChoiYunaConfig } from './pages/kim-taehyun-choi-yuna';
 import { leeJonghunChoiInConfig } from './pages/lee-jonghun-choi-in';
 import { leeJunhoParkSominConfig } from './pages/lee-junho-park-somin';
-import { shinMinjeKimHyunjiConfig } from './pages/shin-minje-kim-hyunji';
+import { shinMinjeKimHyunjiConfig } from './pages/kim-shinlang-na-sinbu';
 
 export type WeddingPageConfig = InvitationPageSeed;
 export type { BankAccount, FamilyMember, PersonInfo, WeddingCoupleInfo };

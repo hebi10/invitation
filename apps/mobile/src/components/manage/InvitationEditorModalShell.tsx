@@ -1,7 +1,9 @@
-import type { PropsWithChildren } from 'react';
+﻿import type { PropsWithChildren } from 'react';
 
 import {
+  KeyboardAvoidingView,
   Modal,
+  Platform,
   ScrollView,
   StyleSheet,
   Text,
@@ -18,6 +20,7 @@ type InvitationEditorModalShellProps = PropsWithChildren<{
   description: string;
   palette: ReturnType<typeof getPalette>;
   fontScale: number;
+  showActionDivider?: boolean;
 }>;
 
 export function InvitationEditorModalShell({
@@ -27,6 +30,7 @@ export function InvitationEditorModalShell({
   description,
   palette,
   fontScale,
+  showActionDivider = false,
   children,
 }: InvitationEditorModalShellProps) {
   return (
@@ -39,40 +43,59 @@ export function InvitationEditorModalShell({
       onRequestClose={onClose}
     >
       <View style={styles.overlay}>
-        <View style={styles.backdrop} />
         <View
           style={[
-            styles.card,
+            styles.backdrop,
             {
-              backgroundColor: palette.surface,
-              borderColor: palette.cardBorder,
+              backgroundColor: palette.background,
+              opacity: 0.78,
             },
           ]}
+        />
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          keyboardVerticalOffset={Platform.OS === 'ios' ? 16 : 0}
+          style={styles.keyboardAvoiding}
         >
-          <View style={styles.header}>
-            <Text style={[styles.title, { color: palette.text, fontSize: 20 * fontScale }]}>
-              {title}
-            </Text>
-            <Text
-              style={[
-                styles.description,
-                { color: palette.textMuted, fontSize: 13 * fontScale },
-              ]}
+          <View
+            style={[
+              styles.card,
+              {
+                backgroundColor: palette.surface,
+                borderColor: palette.cardBorder,
+              },
+            ]}
+          >
+            <View style={styles.header}>
+              <Text style={[styles.title, { color: palette.text, fontSize: 20 * fontScale }]}>
+                {title}
+              </Text>
+              <Text
+                style={[
+                  styles.description,
+                  { color: palette.textMuted, fontSize: 13 * fontScale },
+                ]}
+              >
+                {description}
+              </Text>
+            </View>
+
+            <ScrollView
+              showsVerticalScrollIndicator={false}
+              contentContainerStyle={styles.content}
+              keyboardShouldPersistTaps="handled"
+              keyboardDismissMode="on-drag"
             >
-              {description}
-            </Text>
-          </View>
+              {children}
+            </ScrollView>
 
-          <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
-            {children}
-          </ScrollView>
-
-          <View style={styles.actions}>
-            <ActionButton variant="secondary" onPress={onClose}>
-              닫기
-            </ActionButton>
+            <View style={[styles.actions, showActionDivider ? { borderTopWidth: 1, borderTopColor: palette.cardBorder, paddingTop: 12 } : null]}>
+              <ActionButton variant="secondary" onPress={onClose}>
+                닫기
+              </ActionButton>
+            </View>
           </View>
-        </View>
+        </KeyboardAvoidingView>
       </View>
     </Modal>
   );
@@ -87,7 +110,9 @@ const styles = StyleSheet.create({
   },
   backdrop: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(15, 12, 10, 0.58)',
+  },
+  keyboardAvoiding: {
+    width: '100%',
   },
   card: {
     maxHeight: '92%',
@@ -114,3 +139,4 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
 });
+

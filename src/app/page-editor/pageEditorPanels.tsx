@@ -110,7 +110,7 @@ export function PersonEditorCard({
           <input
             className={styles.input}
             value={person.name ?? ''}
-            placeholder="예: 신민제"
+            placeholder="예: 김신랑"
             onChange={(event) =>
               onPersonFieldChange(role, 'name', event.target.value)
             }
@@ -417,7 +417,7 @@ export function AccountSectionPanel({
                   <input
                     className={styles.input}
                     value={account.accountHolder}
-                    placeholder="예: 김현지"
+                    placeholder="예: 나신부"
                     onChange={(event) =>
                       onChange(kind, index, 'accountHolder', event.target.value)
                     }

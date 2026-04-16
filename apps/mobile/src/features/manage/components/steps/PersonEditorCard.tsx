@@ -44,7 +44,7 @@ export function PersonEditorCard({
         label={`${label} 이름`}
         value={person.name}
         onChangeText={(value) => onUpdatePersonField(role, 'name', value)}
-        placeholder={`예: ${role === 'groom' ? '신민제' : '김현지'}`}
+        placeholder={`예: ${role === 'groom' ? '박준호' : '김소민'}`}
       />
       <View style={manageStyles.twoColumnRow}>
         <View style={manageStyles.halfField}>
@@ -85,7 +85,7 @@ export function PersonEditorCard({
             label="이름"
             value={person.father.name}
             onChangeText={(value) => onUpdateParentField(role, 'father', 'name', value)}
-            placeholder="예: 홍길동"
+            placeholder="예: 박상훈"
           />
         </View>
       </View>
@@ -116,7 +116,7 @@ export function PersonEditorCard({
             label="이름"
             value={person.mother.name}
             onChangeText={(value) => onUpdateParentField(role, 'mother', 'name', value)}
-            placeholder="예: 홍길순"
+            placeholder="예: 이영희"
           />
         </View>
       </View>

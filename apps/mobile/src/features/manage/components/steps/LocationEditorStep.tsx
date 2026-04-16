@@ -45,7 +45,7 @@ export function LocationEditorStep({
           label="상세 주소"
           value={form.ceremonyAddress}
           onChangeText={(value) => onUpdateField('ceremonyAddress', value)}
-          placeholder="예: 서울특별시 강남구 ..."
+          placeholder="예: 서울시 강남구 ..."
           multiline
         />
         <View style={manageStyles.actionRow}>
@@ -70,14 +70,14 @@ export function LocationEditorStep({
           label="지도 안내 문구"
           value={form.mapDescription}
           onChangeText={(value) => onUpdateField('mapDescription', value)}
-          placeholder="예: 건물 앞 주차장을 이용해 주세요."
+          placeholder="예: 건물 뒤 주차장을 이용해 주세요"
           multiline
         />
       </SectionCard>
 
       <SectionCard
         title="지도 미리보기"
-        description="주소 문자열 대신 실제로 연결될 카카오맵 위치를 앱 안에서 바로 확인합니다."
+        description="주소 문자 대신 실제 연결된 위치를 앱 안에서 바로 확인합니다."
       >
         {mapPreviewUrl ? (
           <View
@@ -90,7 +90,7 @@ export function LocationEditorStep({
             ]}
           >
             <AppText style={manageStyles.mapPreviewTitle}>
-              {form.venue.trim() || '선택한 예식장 위치'}
+              {form.venue.trim() || '선택된 예식장 위치'}
             </AppText>
             <AppText variant="muted" style={manageStyles.mapPreviewAddress}>
               {form.ceremonyAddress.trim() || '주소를 입력하면 지도 위치가 준비됩니다.'}
@@ -115,7 +115,8 @@ export function LocationEditorStep({
             ]}
           >
             <AppText variant="muted" style={manageStyles.helperText}>
-              아직 지도 위치가 준비되지 않았습니다. 주소를 검색하면 연결될 위치를 바로 확인할 수 있습니다.
+              아직 지도 위치가 준비되지 않았습니다. 주소를 검색하면 연결된 위치를 바로
+              확인할 수 있습니다.
             </AppText>
           </View>
         )}

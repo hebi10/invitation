@@ -1,17 +1,12 @@
-import { Alert, Linking, StyleSheet, Text, View } from 'react-native';
 import * as WebBrowser from 'expo-web-browser';
+import { Alert, Linking, StyleSheet, Text, View } from 'react-native';
 
+import { servicePlans, guideSamplePages, guideSections, faqItems } from '../../constants/content';
 import { ActionButton } from '../../components/ActionButton';
 import { AppScreen } from '../../components/AppScreen';
 import { BulletList } from '../../components/BulletList';
 import { SectionCard } from '../../components/SectionCard';
 import { useAppState } from '../../contexts/AppStateContext';
-import {
-  faqItems,
-  guideSamplePages,
-  guideSections,
-  servicePlans,
-} from '../../constants/content';
 
 export default function GuideScreen() {
   const { palette, fontScale } = useAppState();
@@ -26,7 +21,7 @@ export default function GuideScreen() {
         });
         return;
       } catch {
-        // Fall back to the platform browser when the in-app browser is unavailable.
+        // 인앱 브라우저를 사용할 수 없으면 외부 브라우저로 대체합니다.
       }
 
       const supported = await Linking.canOpenURL(url);
@@ -43,11 +38,11 @@ export default function GuideScreen() {
   return (
     <AppScreen
       title="가이드"
-      subtitle="서비스 비교, 제작 순서, 운영 정책, 자주 묻는 질문을 한 번에 볼 수 있도록 정리했습니다."
+      subtitle="서비스 비교, 제작 순서, 운영 팁, 자주 묻는 질문을 한 번에 확인할 수 있도록 정리했습니다."
     >
       <SectionCard
         title="서비스 등급 비교"
-        description="결제 전에 STANDARD, DELUXE, PREMIUM 차이를 빠르게 확인해 보세요."
+        description="생성 전에 STANDARD, DELUXE, PREMIUM 차이를 빠르게 확인해 보세요."
       >
         {servicePlans.map((plan) => (
           <View
@@ -58,10 +53,14 @@ export default function GuideScreen() {
             ]}
           >
             <View style={styles.planHeader}>
-              <Text style={[styles.planName, { color: palette.text, fontSize: 16 * fontScale }]}>
+              <Text
+                style={[styles.planName, { color: palette.text, fontSize: 16 * fontScale }]}
+              >
                 {plan.name}
               </Text>
-              <Text style={[styles.planPrice, { color: palette.accent, fontSize: 15 * fontScale }]}>
+              <Text
+                style={[styles.planPrice, { color: palette.accent, fontSize: 15 * fontScale }]}
+              >
                 {plan.priceLabel}
               </Text>
             </View>
@@ -80,11 +79,16 @@ export default function GuideScreen() {
 
       <SectionCard
         title="샘플 페이지"
-        description="앱에서 서비스 등급별 웹 샘플 페이지를 바로 열어볼 수 있습니다."
+        description="서비스와 디자인 단계별 샘플 페이지를 바로 열어볼 수 있습니다."
       >
         {guideSamplePages.map((group) => (
           <View key={group.title} style={styles.sampleGroup}>
-            <Text style={[styles.sampleGroupTitle, { color: palette.text, fontSize: 16 * fontScale }]}>
+            <Text
+              style={[
+                styles.sampleGroupTitle,
+                { color: palette.text, fontSize: 16 * fontScale },
+              ]}
+            >
               {group.title}
             </Text>
             {group.items.map((item) => (
@@ -96,10 +100,20 @@ export default function GuideScreen() {
                 ]}
               >
                 <View style={styles.sampleCopy}>
-                  <Text style={[styles.sampleLabel, { color: palette.text, fontSize: 14 * fontScale }]}>
+                  <Text
+                    style={[
+                      styles.sampleLabel,
+                      { color: palette.text, fontSize: 14 * fontScale },
+                    ]}
+                  >
                     {item.label}
                   </Text>
-                  <Text style={[styles.sampleUrl, { color: palette.textMuted, fontSize: 12 * fontScale }]}>
+                  <Text
+                    style={[
+                      styles.sampleUrl,
+                      { color: palette.textMuted, fontSize: 12 * fontScale },
+                    ]}
+                  >
                     {item.url}
                   </Text>
                 </View>
@@ -108,7 +122,7 @@ export default function GuideScreen() {
                   onPress={() => void handleOpenSample(item.url)}
                   style={styles.actionButton}
                 >
-                  웹으로 보기
+                  미리보기
                 </ActionButton>
               </View>
             ))}
@@ -125,10 +139,20 @@ export default function GuideScreen() {
       <SectionCard title="자주 묻는 질문">
         {faqItems.map((item) => (
           <View key={item.question} style={styles.faqItem}>
-            <Text style={[styles.faqQuestion, { color: palette.text, fontSize: 15 * fontScale }]}>
+            <Text
+              style={[
+                styles.faqQuestion,
+                { color: palette.text, fontSize: 15 * fontScale },
+              ]}
+            >
               {item.question}
             </Text>
-            <Text style={[styles.faqAnswer, { color: palette.textMuted, fontSize: 14 * fontScale }]}>
+            <Text
+              style={[
+                styles.faqAnswer,
+                { color: palette.textMuted, fontSize: 14 * fontScale },
+              ]}
+            >
               {item.answer}
             </Text>
           </View>

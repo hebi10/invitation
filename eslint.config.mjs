@@ -16,6 +16,7 @@ export default [
       'out/**',
       'node_modules/**',
       'apps/mobile/.expo/**',
+      'apps/mobile/.expo-export-test/**',
       'apps/mobile/dist/**',
       'apps/mobile/web-build/**',
       'apps/mobile/apps/**',

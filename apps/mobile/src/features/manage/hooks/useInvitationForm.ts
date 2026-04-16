@@ -92,7 +92,7 @@ export function useInvitationForm({
     form.kakaoMarkerTitle.trim() ||
     form.venue.trim() ||
     form.ceremonyAddress.trim() ||
-    '선택한 위치';
+    '선택된 위치';
   const mapPreviewUrl = useMemo(() => {
     if (hasValidCoordinates(mapLatitude, mapLongitude)) {
       return buildKakaoMapPinUrl(mapMarkerTitle, mapLatitude ?? 0, mapLongitude ?? 0);
@@ -218,13 +218,15 @@ export function useInvitationForm({
     clearAuthError();
     setNotice('');
     setEditorPreparingMessage(
-      dashboard ? '청첩장 편집 화면을 준비하고 있습니다.' : '최신 청첩장 정보를 불러오고 있습니다.'
+      dashboard
+        ? '청첩장 편집 화면을 준비하고 있습니다.'
+        : '최신 청첩장 정보를 불러오고 있습니다.'
     );
     setEditorPreparingVisible(true);
 
     try {
       if (!dashboard) {
-        setNotice('운영 데이터를 불러온 뒤 수정 팝업을 엽니다.');
+        setNotice('운영 데이터를 불러와야 수정 팝업을 열 수 있습니다.');
         const synced = await requestDashboardSync();
         if (!synced) {
           return;
@@ -239,12 +241,12 @@ export function useInvitationForm({
     }
   }, [
     clearAuthError,
-      dashboard,
-      dashboardLoading,
-      editorModalVisible,
-      requestDashboardSync,
-      setNotice,
-    ]);
+    dashboard,
+    dashboardLoading,
+    editorModalVisible,
+    requestDashboardSync,
+    setNotice,
+  ]);
 
   const closeEditorModal = useCallback(() => {
     setEditorModalVisible(false);
@@ -267,7 +269,7 @@ export function useInvitationForm({
       const brideName = form.bride.name.trim();
 
       if (!groomName || !brideName) {
-        setNotice('신랑/신부 이름은 비워둘 수 없습니다.');
+        setNotice('신랑과 신부 이름은 비워둘 수 없습니다.');
         return false;
       }
 
@@ -328,7 +330,7 @@ export function useInvitationForm({
         form.kakaoMarkerTitle.trim() || form.venue.trim() || form.ceremonyAddress.trim();
       const resolvedMapUrl = hasValidCoordinates(nextLatitude, nextLongitude)
         ? buildKakaoMapPinUrl(
-            resolvedMarkerTitle || '선택한 위치',
+            resolvedMarkerTitle || '선택된 위치',
             nextLatitude,
             nextLongitude
           )

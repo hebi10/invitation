@@ -32,7 +32,7 @@ export function ImagesEditorStep({
     <>
       <SectionCard
         title="대표 이미지"
-        description="원본 대신 썸네일 우선으로 미리보기를 보여주고, 저장 시에는 원본 경로를 유지합니다."
+        description="원본 주소 대신 썸네일 미리보기를 보여주고, 저장 시 썸네일을 우선 사용합니다."
       >
         <View style={manageStyles.actionRow}>
           <ActionButton
@@ -61,7 +61,8 @@ export function ImagesEditorStep({
             ]}
           >
             <AppText variant="muted" style={manageStyles.helperText}>
-              아직 대표 이미지가 없습니다. 업로드하면 커버 미리보기로 바로 확인할 수 있습니다.
+              아직 대표 이미지가 없습니다. 업로드하면 커버 미리보기로 바로 확인할 수
+              있습니다.
             </AppText>
           </View>
         )}
@@ -69,7 +70,7 @@ export function ImagesEditorStep({
 
       <SectionCard
         title={`갤러리 이미지 (${galleryPreviewItems.length}/${maxGalleryImageCount})`}
-        description="웹 page-wizard처럼 실제 노출 순서를 보면서 위아래로 정렬합니다."
+        description="/page-wizard처럼 실제 노출 순서를 보면서 위아래로 정렬할 수 있습니다."
       >
         <View style={manageStyles.actionRow}>
           <ActionButton
@@ -104,7 +105,8 @@ export function ImagesEditorStep({
                     노출 순서 {index + 1}
                   </AppText>
                   <AppText variant="caption" style={manageStyles.galleryCardMeta}>
-                    저장 시 원본 이미지를 유지하고, 편집 화면은 썸네일로 불러옵니다.
+                    저장 시에는 원본 이미지를 유지하고, 편집 화면에서는 썸네일로
+                    불러옵니다.
                   </AppText>
                 </View>
                 <View style={manageStyles.galleryCardActions}>
@@ -140,7 +142,8 @@ export function ImagesEditorStep({
             ]}
           >
             <AppText variant="muted" style={manageStyles.helperText}>
-              아직 갤러리 이미지가 없습니다. 업로드 후 순서를 바로 조정할 수 있습니다.
+              아직 갤러리 이미지가 없습니다. 업로드하면 순서를 바로 조정할 수
+              있습니다.
             </AppText>
           </View>
         )}

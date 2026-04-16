@@ -2577,7 +2577,7 @@ export default function PageEditorClient({
             <input
               className={styles.input}
               value={formState.displayName}
-              placeholder="예: 신민제 ♥ 김현지"
+              placeholder="예: 김신랑 ♥ 나신부"
               onChange={(event) =>
                 handleTopLevelFieldChange('displayName', event.target.value)
               }
@@ -3077,12 +3077,12 @@ export default function PageEditorClient({
               {renderFieldMeta(
                 '인사말 서명',
                 'optional',
-                '예: 신민제 · 김현지 드림'
+                '예: 김신랑 · 나신부 드림'
               )}
               <input
                 className={styles.input}
                 value={formState.pageData?.greetingAuthor ?? ''}
-                placeholder="예: 신민제 · 김현지 드림"
+                placeholder="예: 김신랑 · 나신부 드림"
                 onChange={(event) =>
                   handlePageDataFieldChange('greetingAuthor', event.target.value)
                 }
@@ -3522,7 +3522,7 @@ export default function PageEditorClient({
             <input
               className={styles.input}
               value={formState.metadata.title}
-              placeholder="예: 신민제 ♥ 김현지 결혼식에 초대합니다"
+              placeholder="예: 김신랑 ♥ 나신부 결혼식에 초대합니다"
               onChange={(event) =>
                 handleMetadataFieldChange('root', 'title', event.target.value)
               }
@@ -3612,7 +3612,7 @@ export default function PageEditorClient({
                   <input
                     className={styles.input}
                     value={formState.metadata.openGraph.title}
-                    placeholder="예: 신민제 ♥ 김현지 결혼식"
+                    placeholder="예: 김신랑 ♥ 나신부 결혼식"
                     onChange={(event) =>
                       handleMetadataFieldChange('openGraph', 'title', event.target.value)
                     }
@@ -3638,7 +3638,7 @@ export default function PageEditorClient({
                   <input
                     className={styles.input}
                     value={formState.metadata.twitter.title}
-                    placeholder="예: 신민제 ♥ 김현지 결혼식"
+                    placeholder="예: 김신랑 ♥ 나신부 결혼식"
                     onChange={(event) =>
                       handleMetadataFieldChange('twitter', 'title', event.target.value)
                     }
@@ -3667,7 +3667,7 @@ export default function PageEditorClient({
                     onChange={(event) =>
                       handleMetadataFieldChange('keywords', 'keywords', event.target.value)
                     }
-                    placeholder="예: 결혼식, 모바일 청첩장, 신민제 김현지"
+                    placeholder="예: 결혼식, 모바일 청첩장, 김신랑 나신부"
                   />
                 </label>
               </div>

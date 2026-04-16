@@ -258,7 +258,7 @@ export default function InvitationDraftSetupClient({
                 <span className={styles.requiredBadge}>필수</span>
               </span>
               <span className={styles.hint}>
-                영문 소문자, 숫자, 하이픈만 사용할 수 있습니다. 예: shin-minje-kim-hyunji
+                영문 소문자, 숫자, 하이픈만 사용할 수 있습니다. 예: kim-shinlang-na-sinbu
               </span>
               <input
                 className={styles.input}

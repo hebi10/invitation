@@ -43,8 +43,8 @@ export function useMusicLibrary({
   const selectedMusicTrackLabel =
     selectedMusicTrack === null
       ? form.musicCategoryId
-        ? '선택'
-        : '먼저 카테고리를 선택해 주세요.'
+        ? '곡을 선택해 주세요'
+        : '먼저 카테고리를 선택해 주세요'
       : `${selectedMusicTrack.title} · ${selectedMusicTrack.artist}`;
 
   useEffect(() => {
