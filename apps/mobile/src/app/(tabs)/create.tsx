@@ -1,5 +1,6 @@
 ﻿import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useFocusEffect } from 'expo-router';
 import {
   Modal,
   Platform,
@@ -22,11 +23,19 @@ import {
   designThemes,
   servicePlans,
 } from '../../constants/content';
+import { adjustMobileInvitationTicketCount } from '../../lib/api';
 import { formatPrice } from '../../lib/format';
 import {
   buildPageSlugBaseFromEnglishNames,
   isValidEnglishName,
 } from '../../lib/pageSlug';
+import {
+  buildLinkedInvitationCardFromPageSummary,
+  getLinkedInvitationCards,
+  mergeLinkedInvitationCard,
+  setLinkedInvitationCards as persistLinkedInvitationCards,
+  type LinkedInvitationCard,
+} from '../../lib/linkedInvitationCards';
 import type {
   MobileInvitationProductTier,
   MobileInvitationThemeKey,
@@ -45,9 +54,9 @@ const TICKET_USAGE_ITEMS = [
   '티켓 2장: 서비스 업그레이드',
 ] as const;
 
-const TICKET_UNIT_PRICE = 5000;
+const TICKET_UNIT_PRICE = 4000;
 const TICKET_DISCOUNT_BUNDLE_SIZE = 3;
-const TICKET_DISCOUNT_PER_BUNDLE = 5000;
+const TICKET_BUNDLE_PRICE = 10000;
 const TICKET_PRESET_COUNTS = [0, 1, 3, 6] as const;
 const MAX_TICKET_COUNT = 12;
 
@@ -57,15 +66,17 @@ type CreateValidationRule = {
   errorMessage: string;
 };
 
+type TicketPurchaseSuccessState = {
+  ticketCount: number;
+  targetDisplayName: string;
+  nextTicketCount: number;
+};
+
 function calculateTicketPrice(ticketCount: number) {
   const bundleCount = Math.floor(ticketCount / TICKET_DISCOUNT_BUNDLE_SIZE);
   const remainderCount = ticketCount % TICKET_DISCOUNT_BUNDLE_SIZE;
 
-  return (
-    bundleCount *
-      (TICKET_UNIT_PRICE * TICKET_DISCOUNT_BUNDLE_SIZE - TICKET_DISCOUNT_PER_BUNDLE) +
-    remainderCount * TICKET_UNIT_PRICE
-  );
+  return bundleCount * TICKET_BUNDLE_PRICE + remainderCount * TICKET_UNIT_PRICE;
 }
 
 function buildCreateValidationRules(input: {
@@ -144,6 +155,9 @@ export default function CreateScreen() {
     drafts,
     isAuthenticating,
     palette,
+    pageSummary,
+    session,
+    adjustTicketCount,
     removeDraft,
     saveDraft,
   } = useAppState();
@@ -160,10 +174,16 @@ export default function CreateScreen() {
   const [ticketCount, setTicketCount] = useState(0);
   const [notice, setNotice] = useState('');
   const [paymentModalVisible, setPaymentModalVisible] = useState(false);
+  const [ticketOnlyModalVisible, setTicketOnlyModalVisible] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [editingDraftId, setEditingDraftId] = useState<string | null>(null);
   const [loadedDraftId, setLoadedDraftId] = useState<string | null>(null);
   const [handledTicketIntentKey, setHandledTicketIntentKey] = useState<string | null>(null);
+  const [linkedInvitationCards, setLinkedInvitationCards] = useState<LinkedInvitationCard[]>([]);
+  const [selectedTicketTargetSlug, setSelectedTicketTargetSlug] = useState<string | null>(null);
+  const [isTicketPurchaseSubmitting, setIsTicketPurchaseSubmitting] = useState(false);
+  const [ticketPurchaseSuccess, setTicketPurchaseSuccess] =
+    useState<TicketPurchaseSuccessState | null>(null);
 
   const selectedPlanInfo = useMemo(
     () => servicePlans.find((plan) => plan.tier === selectedPlan) ?? servicePlans[0],
@@ -194,6 +214,26 @@ export default function CreateScreen() {
     ? targetThemeParam[0]
     : targetThemeParam;
 
+  const reloadLinkedInvitationCards = useCallback(async () => {
+    const storedCards = await getLinkedInvitationCards();
+    let nextCards = storedCards.filter((item) => item.session);
+
+    if (pageSummary && session) {
+      const currentCard = buildLinkedInvitationCardFromPageSummary(pageSummary, {
+        updatedAt: Date.now(),
+        ticketCount: pageSummary.ticketCount,
+        session,
+      });
+      const existing = nextCards.find((item) => item.slug === currentCard.slug);
+      const mergedCurrentCard = mergeLinkedInvitationCard(existing, currentCard);
+
+      nextCards = [mergedCurrentCard, ...nextCards.filter((item) => item.slug !== mergedCurrentCard.slug)];
+      await persistLinkedInvitationCards(nextCards);
+    }
+
+    setLinkedInvitationCards(nextCards);
+  }, [pageSummary, session]);
+
   const validationRules = useMemo(
     () =>
       buildCreateValidationRules({
@@ -216,6 +256,38 @@ export default function CreateScreen() {
     () => validationRules.filter((rule) => !rule.passed).map((rule) => rule.errorMessage),
     [validationRules]
   );
+
+  const selectedTicketTargetCard = useMemo(
+    () =>
+      linkedInvitationCards.find((item) => item.slug === selectedTicketTargetSlug) ??
+      linkedInvitationCards[0] ??
+      null,
+    [linkedInvitationCards, selectedTicketTargetSlug]
+  );
+
+  const hasTicketPurchaseTarget = Boolean(selectedTicketTargetCard);
+  const hasLinkedInvitation = hasTicketPurchaseTarget;
+  const storedTicketCount = selectedTicketTargetCard?.ticketCount ?? 0;
+
+  useFocusEffect(
+    useCallback(() => {
+      void reloadLinkedInvitationCards();
+    }, [reloadLinkedInvitationCards])
+  );
+
+  useEffect(() => {
+    if (linkedInvitationCards.length === 0) {
+      setSelectedTicketTargetSlug(null);
+      return;
+    }
+
+    if (
+      !selectedTicketTargetSlug ||
+      !linkedInvitationCards.some((item) => item.slug === selectedTicketTargetSlug)
+    ) {
+      setSelectedTicketTargetSlug(linkedInvitationCards[0]?.slug ?? null);
+    }
+  }, [linkedInvitationCards, selectedTicketTargetSlug]);
 
   useEffect(() => {
     if (!normalizedDraftId || normalizedDraftId === loadedDraftId) {
@@ -300,6 +372,7 @@ export default function CreateScreen() {
     setEditingDraftId(null);
     setLoadedDraftId(null);
     setPaymentModalVisible(false);
+    setTicketOnlyModalVisible(false);
     clearAuthError();
   };
 
@@ -355,6 +428,81 @@ export default function CreateScreen() {
 
     setNotice('');
     setPaymentModalVisible(true);
+  };
+
+  const handleOpenTicketOnlyModal = () => {
+    clearAuthError();
+
+    if (!selectedTicketTargetCard?.session) {
+      setNotice('연동된 청첩장이 있을 때만 티켓만 구매할 수 있습니다. 먼저 페이지를 연동해 주세요.');
+      return;
+    }
+
+    if (ticketCount <= 0) {
+      setNotice('티켓만 구매하려면 먼저 티켓 수량을 선택해 주세요.');
+      return;
+    }
+
+    setNotice('');
+    setTicketOnlyModalVisible(true);
+  };
+
+  const handleConfirmTicketOnlyPurchase = async () => {
+    if (!selectedTicketTargetCard?.session) {
+      setNotice('연동된 청첩장이 없어서 티켓을 적립할 수 없습니다. 먼저 페이지를 연동해 주세요.');
+      return;
+    }
+
+    const purchaseTargetDisplayName =
+      selectedTicketTargetCard.displayName.trim() || selectedTicketTargetCard.slug;
+
+    setIsTicketPurchaseSubmitting(true);
+
+    const nextTicketCount =
+      session && selectedTicketTargetCard.slug === session.pageSlug
+        ? await adjustTicketCount(ticketCount)
+        : await adjustMobileInvitationTicketCount(
+            apiBaseUrl,
+            selectedTicketTargetCard.slug,
+            selectedTicketTargetCard.session.token,
+            ticketCount
+          )
+            .then((response) => response.ticketCount)
+            .catch((error) => {
+              setNotice(
+                error instanceof Error
+                  ? error.message
+                  : '티켓을 저장하지 못했습니다. 잠시 후 다시 시도해 주세요.'
+              );
+              return null;
+            });
+
+    setIsTicketPurchaseSubmitting(false);
+
+    if (nextTicketCount === null) {
+      return;
+    }
+
+    const nextLinkedInvitationCards = linkedInvitationCards.map((item) =>
+      item.slug === selectedTicketTargetCard.slug
+        ? {
+            ...item,
+            ticketCount: nextTicketCount,
+            updatedAt: Date.now(),
+          }
+        : item
+    );
+
+    setLinkedInvitationCards(nextLinkedInvitationCards);
+    await persistLinkedInvitationCards(nextLinkedInvitationCards);
+
+    setTicketOnlyModalVisible(false);
+    setTicketCount(0);
+    setTicketPurchaseSuccess({
+      ticketCount,
+      targetDisplayName: purchaseTargetDisplayName,
+      nextTicketCount,
+    });
   };
 
   const handleConfirmCreate = async () => {
@@ -573,7 +721,7 @@ export default function CreateScreen() {
           badge={`${ticketCount}장`}
         >
           <AppText variant="muted" style={styles.helperText}>
-            1장당 5,000원이며 3장 단위로 구매할 때마다 5,000원이 할인됩니다.
+            1장당 4,000원이며 3장 구매 시 10,000원으로 계산됩니다.
           </AppText>
 
           <View style={styles.ticketPresetRow}>
@@ -661,6 +809,23 @@ export default function CreateScreen() {
           </View>
 
           <BulletList items={[...TICKET_USAGE_ITEMS]} />
+
+          <AppText variant="muted" style={styles.helperText}>
+            {hasLinkedInvitation
+              ? `현재 선택된 적립 대상: ${
+                  selectedTicketTargetCard?.displayName.trim() || selectedTicketTargetCard?.slug || '-'
+                } · 보유 티켓 ${storedTicketCount}장`
+              : '연동된 청첩장이 있을 때만 티켓만 구매를 사용할 수 있습니다.'}
+          </AppText>
+
+          <ActionButton
+            variant="secondary"
+            onPress={handleOpenTicketOnlyModal}
+            disabled={ticketCount <= 0 || !hasLinkedInvitation}
+            fullWidth
+          >
+            티켓만 구매
+          </ActionButton>
         </SectionCard>
 
         <SectionCard
@@ -818,6 +983,186 @@ export default function CreateScreen() {
                 </ActionButton>
               </View>
             </ScrollView>
+          </View>
+        </View>
+      </Modal>
+
+      <Modal
+        visible={ticketOnlyModalVisible}
+        animationType="fade"
+        transparent
+        onRequestClose={() => setTicketOnlyModalVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="티켓 전용 결제 확인 팝업 닫기"
+            style={[
+              styles.modalBackdrop,
+              {
+                backgroundColor: palette.background,
+                opacity: 0.78,
+              },
+            ]}
+            onPress={() => setTicketOnlyModalVisible(false)}
+          />
+          <View
+            style={[
+              styles.modalCard,
+              {
+                backgroundColor: palette.surface,
+                borderColor: palette.cardBorder,
+              },
+            ]}
+          >
+            <ScrollView
+              style={styles.modalScroll}
+              contentContainerStyle={styles.modalScrollContent}
+              keyboardShouldPersistTaps="handled"
+              showsVerticalScrollIndicator={false}
+            >
+              <AppText variant="title" style={styles.modalTitle}>
+                티켓 전용 결제 확인
+              </AppText>
+              <AppText variant="muted" style={styles.modalDescription}>
+                이 창은 추가 티켓만 먼저 결제하려는 경우를 위한 확인 단계입니다.
+                실제 결제는 아직 연결하지 않았고, 현재는 금액과 사용 범위만 확인할 수 있습니다.
+              </AppText>
+
+              <View style={styles.summaryRow}>
+                <AppText style={styles.summaryLabel}>티켓 수량</AppText>
+                <AppText style={styles.summaryValue}>{ticketCount}장</AppText>
+              </View>
+              <View style={styles.summaryRow}>
+                <AppText style={styles.summaryLabel}>3장 할인 묶음</AppText>
+                <AppText style={styles.summaryValue}>{discountedBundleCount}개</AppText>
+              </View>
+              <View style={styles.summaryRow}>
+                <AppText style={styles.summaryLabel}>낱장 계산</AppText>
+                <AppText style={styles.summaryValue}>{remainderTicketCount}장</AppText>
+              </View>
+              <View style={styles.summaryRow}>
+                <AppText style={styles.summaryLabel}>티켓 결제 예정 금액</AppText>
+                <AppText variant="title" color={palette.accent} style={styles.totalLabel}>
+                  {formatPrice(ticketPrice)}
+                </AppText>
+              </View>
+              <View style={styles.summaryRow}>
+                <AppText style={styles.summaryLabel}>적립 대상</AppText>
+                <AppText style={styles.summaryValue}>
+                  {selectedTicketTargetCard?.displayName?.trim() ||
+                    selectedTicketTargetCard?.slug ||
+                    '연동된 청첩장이 필요합니다'}
+                </AppText>
+              </View>
+              <View style={styles.summaryRow}>
+                <AppText style={styles.summaryLabel}>현재 보유 티켓</AppText>
+                <AppText style={styles.summaryValue}>{storedTicketCount}장</AppText>
+              </View>
+
+              {linkedInvitationCards.length > 1 ? (
+                <View style={styles.actionColumn}>
+                  <AppText variant="caption" style={styles.summaryLabel}>
+                    티켓 적립 대상 선택
+                  </AppText>
+                  <View style={styles.chipRow}>
+                    {linkedInvitationCards.map((item) => (
+                      <ChoiceChip
+                        key={`ticket-target-${item.slug}`}
+                        label={item.displayName.trim() || item.slug}
+                        selected={selectedTicketTargetCard?.slug === item.slug}
+                        onPress={() => setSelectedTicketTargetSlug(item.slug)}
+                      />
+                    ))}
+                  </View>
+                  <AppText variant="muted" style={styles.helperText}>
+                    선택한 청첩장에 티켓이 적립되고, 운영 탭에서도 같은 수량을 바로 확인할 수 있습니다.
+                  </AppText>
+                </View>
+              ) : null}
+
+              <BulletList items={[...TICKET_USAGE_ITEMS]} />
+
+              <View style={styles.actionColumn}>
+                <ActionButton
+                  variant="secondary"
+                  onPress={() => setTicketOnlyModalVisible(false)}
+                  fullWidth
+                >
+                  다시 확인하기
+                </ActionButton>
+                <ActionButton
+                  onPress={handleConfirmTicketOnlyPurchase}
+                  loading={isTicketPurchaseSubmitting}
+                  fullWidth
+                >
+                  티켓 전용 결제 확인
+                </ActionButton>
+              </View>
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
+
+      <Modal
+        visible={ticketPurchaseSuccess !== null}
+        animationType="fade"
+        transparent
+        onRequestClose={() => setTicketPurchaseSuccess(null)}
+      >
+        <View style={styles.modalOverlay}>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="티켓 구매 완료 팝업 닫기"
+            style={[
+              styles.modalBackdrop,
+              {
+                backgroundColor: palette.background,
+                opacity: 0.78,
+              },
+            ]}
+            onPress={() => setTicketPurchaseSuccess(null)}
+          />
+          <View
+            style={[
+              styles.modalCard,
+              {
+                backgroundColor: palette.surface,
+                borderColor: palette.cardBorder,
+              },
+            ]}
+          >
+            <View style={styles.modalScrollContent}>
+              <AppText variant="title" style={styles.modalTitle}>
+                구매 완료됐습니다
+              </AppText>
+              <AppText variant="muted" style={styles.modalDescription}>
+                선택한 청첩장에 티켓 적립이 정상적으로 완료되었습니다.
+              </AppText>
+
+              <View style={styles.summaryRow}>
+                <AppText style={styles.summaryLabel}>적립 대상</AppText>
+                <AppText style={styles.summaryValue}>
+                  {ticketPurchaseSuccess?.targetDisplayName ?? '-'}
+                </AppText>
+              </View>
+              <View style={styles.summaryRow}>
+                <AppText style={styles.summaryLabel}>구매한 티켓</AppText>
+                <AppText style={styles.summaryValue}>
+                  {ticketPurchaseSuccess?.ticketCount ?? 0}장
+                </AppText>
+              </View>
+              <View style={styles.summaryRow}>
+                <AppText style={styles.summaryLabel}>현재 보유 티켓</AppText>
+                <AppText variant="title" color={palette.accent} style={styles.totalLabel}>
+                  {ticketPurchaseSuccess?.nextTicketCount ?? 0}장
+                </AppText>
+              </View>
+
+              <ActionButton onPress={() => setTicketPurchaseSuccess(null)} fullWidth>
+                확인
+              </ActionButton>
+            </View>
           </View>
         </View>
       </Modal>
@@ -981,4 +1326,3 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
 });
-

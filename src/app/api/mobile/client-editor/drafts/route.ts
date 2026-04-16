@@ -13,6 +13,7 @@ import {
   createServerInvitationPageDraftFromSeed,
   getServerEditableInvitationPageConfig,
 } from '@/server/invitationPageServerService';
+import { getServerPageTicketCount } from '@/server/pageTicketServerService';
 
 function isMobileDraftCreationEnabled() {
   if (process.env.NODE_ENV !== 'production') {
@@ -80,7 +81,10 @@ export async function POST(request: Request) {
       initialDisplayPeriodMonths: 3,
     });
     const passwordRecord = await setServerClientPassword(createdDraft.slug, password);
-    const config = await getServerEditableInvitationPageConfig(createdDraft.slug);
+    const [config, ticketCount] = await Promise.all([
+      getServerEditableInvitationPageConfig(createdDraft.slug),
+      getServerPageTicketCount(createdDraft.slug),
+    ]);
 
     if (!config) {
       throw new Error('Failed to create invitation page draft.');
@@ -115,6 +119,7 @@ export async function POST(request: Request) {
         productTier: config.productTier,
         defaultTheme: config.defaultTheme,
         features: config.features,
+        ticketCount,
       },
       links,
     });

@@ -1254,6 +1254,93 @@ export async function setServerInvitationPagePublished(
   });
 }
 
+export async function setServerInvitationPageVariantAvailability(
+  pageSlug: string,
+  variantKey: InvitationVariantKey,
+  available: boolean,
+  options: {
+    published?: boolean;
+    defaultTheme?: InvitationThemeKey;
+  } = {}
+) {
+  const normalizedPageSlug = normalizePageSlugInput(pageSlug);
+  if (!normalizedPageSlug) {
+    throw new Error('?щ컮瑜??섏씠吏 二쇱냼媛 ?꾩슂?⑸땲??');
+  }
+
+  const editableConfig = await getServerEditableInvitationPageConfig(normalizedPageSlug);
+
+  if (!editableConfig) {
+    throw new Error('?대떦 ?섏씠吏 二쇱냼瑜?李얠쓣 ???놁뒿?덈떎.');
+  }
+
+  const baseConfig = sanitizeHeartIconPlaceholdersDeep(
+    JSON.parse(JSON.stringify(editableConfig.config)) as InvitationPageSeed
+  );
+  const supportedVariants = buildInvitationVariants(
+    normalizedPageSlug,
+    baseConfig.displayName,
+    {
+      availability: createInvitationVariantAvailability([]),
+    }
+  );
+
+  const nextVariants = INVITATION_VARIANT_KEYS.reduce<InvitationPageSeed['variants']>(
+    (variants, key) => {
+      const builtVariant = supportedVariants[key];
+      if (!builtVariant) {
+        return variants;
+      }
+
+      const sourceVariant = baseConfig.variants?.[key];
+      const nextAvailable =
+        key === variantKey ? available : sourceVariant?.available === true;
+
+      if (!sourceVariant && !nextAvailable) {
+        return variants;
+      }
+
+      variants[key] = {
+        ...builtVariant,
+        ...(sourceVariant ?? {}),
+        available: nextAvailable,
+        path: builtVariant.path,
+        displayName: readString(sourceVariant?.displayName, builtVariant.displayName),
+      };
+
+      return variants;
+    },
+    {}
+  );
+
+  if (getAvailableInvitationVariantKeys(nextVariants).length === 0) {
+    const fallbackTheme = normalizeInvitationTheme(
+      options.defaultTheme,
+      editableConfig.defaultTheme
+    );
+    const fallbackVariant = supportedVariants[fallbackTheme];
+
+    if (fallbackVariant) {
+      nextVariants[fallbackTheme] = {
+        ...fallbackVariant,
+        available: true,
+      };
+    }
+  }
+
+  await saveServerInvitationPageConfig(
+    {
+      ...baseConfig,
+      slug: normalizedPageSlug,
+      variants: nextVariants,
+    },
+    {
+      published: options.published ?? editableConfig.published,
+      defaultTheme: options.defaultTheme ?? editableConfig.defaultTheme,
+    }
+  );
+}
+
 export async function getServerInvitationPageDefaultThemeBySlug(
   pageSlug: string | null | undefined
 ) {

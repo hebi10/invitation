@@ -118,6 +118,7 @@ export interface MobileInvitationDashboard {
   page: MobileEditableInvitationPageConfig;
   comments: MobileGuestbookComment[];
   links: MobileInvitationLinks;
+  ticketCount: number;
 }
 
 export interface MobileSessionSummary {
@@ -144,6 +145,7 @@ export interface MobilePageSummary {
   productTier: MobileInvitationProductTier;
   defaultTheme: MobileInvitationThemeKey;
   features: MobileInvitationFeatureFlags;
+  ticketCount: number;
 }
 
 export interface MobileInvitationCreationResponse {

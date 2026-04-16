@@ -6,6 +6,7 @@ import {
   buildMobileInvitationLinks,
 } from '@/server/clientEditorMobileApi';
 import { getServerEditableInvitationPageConfig } from '@/server/invitationPageServerService';
+import { getServerPageTicketCount } from '@/server/pageTicketServerService';
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -23,7 +24,10 @@ export async function GET(request: Request) {
     return NextResponse.json({ authenticated: false, pageSlug: null });
   }
 
-  const config = await getServerEditableInvitationPageConfig(pageSlug);
+  const [config, ticketCount] = await Promise.all([
+    getServerEditableInvitationPageConfig(pageSlug),
+    getServerPageTicketCount(pageSlug),
+  ]);
   const links = buildMobileInvitationLinks(
     new URL(request.url).origin,
     pageSlug,
@@ -42,6 +46,7 @@ export async function GET(request: Request) {
           productTier: config.productTier,
           defaultTheme: config.defaultTheme,
           features: config.features,
+          ticketCount,
         }
       : null,
     links,

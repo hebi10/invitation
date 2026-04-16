@@ -62,6 +62,10 @@ service cloud.firestore {
         isWithinInvitationDisplayPeriod(pageSlug);
     }
 
+    function canAccessPublicGuestbook(pageSlug) {
+      return canReadPublicInvitationPage(pageSlug);
+    }
+
     function isLegacyCommentCollection(collectionId) {
       return collectionId.matches('^comments-.+$');
     }
@@ -72,18 +76,18 @@ service cloud.firestore {
     }
 
     match /comments/{commentId} {
-      allow read: if true;
-      allow create: if isValidCommentCreate();
+      allow read: if isAdmin();
+      allow create: if false;
       allow update, delete: if isAdmin();
     }
 
     match /guestbooks/{pageSlug} {
-      allow read: if true;
+      allow read: if isAdmin() || canAccessPublicGuestbook(pageSlug);
       allow create, update, delete: if isAdmin();
 
       match /comments/{commentId} {
-        allow read: if true;
-        allow create: if isValidCommentCreateForPage(pageSlug);
+        allow read: if isAdmin() || canAccessPublicGuestbook(pageSlug);
+        allow create: if canAccessPublicGuestbook(pageSlug) && isValidCommentCreateForPage(pageSlug);
         allow update, delete: if isAdmin();
       }
     }
@@ -119,6 +123,10 @@ service cloud.firestore {
     match /display-periods/{pageSlug} {
       allow read: if isAdmin() || canReadPublicInvitationPage(pageSlug);
       allow write: if isAdmin();
+    }
+
+    match /page-ticket-balances/{pageSlug} {
+      allow read, write: if isAdmin();
     }
 
     match /settings/{document=**} {

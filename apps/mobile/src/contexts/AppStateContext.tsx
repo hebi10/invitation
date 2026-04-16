@@ -47,6 +47,7 @@ export type AppStateContextValue = {
   createInvitationPage: (
     input: MobileInvitationCreationInput
   ) => Promise<boolean>;
+  activateStoredSession: (candidateSession: MobileSessionSummary) => Promise<boolean>;
   logout: () => Promise<void>;
   refreshDashboard: () => Promise<boolean>;
   saveCurrentPageConfig: (
@@ -56,7 +57,17 @@ export type AppStateContextValue = {
       defaultTheme?: MobileInvitationThemeKey;
     }
   ) => Promise<boolean>;
+  setVariantAvailability: (
+    variantKey: MobileInvitationThemeKey,
+    available: boolean
+  ) => Promise<boolean>;
   setPublishedState: (published: boolean) => Promise<boolean>;
+  adjustTicketCount: (amount: number) => Promise<number | null>;
+  transferTicketCount: (
+    targetPageSlug: string,
+    targetToken: string,
+    amount: number
+  ) => Promise<{ sourceTicketCount: number; targetTicketCount: number } | null>;
   deleteComment: (commentId: string) => Promise<boolean>;
   saveDraft: (
     input: CreateDraftInput,
@@ -109,6 +120,7 @@ export function useAppState(): AppStateContextValue {
     pendingManageOnboarding,
     login,
     createInvitationPage,
+    activateStoredSession,
     logout,
     clearAuthError,
     clearPendingManageOnboarding,
@@ -120,7 +132,10 @@ export function useAppState(): AppStateContextValue {
     dashboardLoading,
     refreshDashboard,
     saveCurrentPageConfig,
+    setVariantAvailability,
     setPublishedState,
+    adjustTicketCount,
+    transferTicketCount,
     deleteComment,
   } = useInvitationOps();
 
@@ -148,10 +163,14 @@ export function useAppState(): AppStateContextValue {
       pendingManageOnboarding,
       login,
       createInvitationPage,
+      activateStoredSession,
       logout,
       refreshDashboard,
       saveCurrentPageConfig,
+      setVariantAvailability,
       setPublishedState,
+      adjustTicketCount,
+      transferTicketCount,
       deleteComment,
       saveDraft,
       removeDraft,
@@ -164,6 +183,7 @@ export function useAppState(): AppStateContextValue {
       clearAuthError,
       clearPendingManageOnboarding,
       createInvitationPage,
+      activateStoredSession,
       dashboard,
       dashboardLoading,
       deleteComment,
@@ -182,10 +202,13 @@ export function useAppState(): AppStateContextValue {
       removeDraft,
       saveCurrentPageConfig,
       saveDraft,
+      setVariantAvailability,
       session,
       setApiBaseUrl,
       setFontScalePreference,
       setPublishedState,
+      adjustTicketCount,
+      transferTicketCount,
       setThemePreference,
       themePreference,
     ]

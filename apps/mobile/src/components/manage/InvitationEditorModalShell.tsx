@@ -20,7 +20,6 @@ type InvitationEditorModalShellProps = PropsWithChildren<{
   description: string;
   palette: ReturnType<typeof getPalette>;
   fontScale: number;
-  showActionDivider?: boolean;
 }>;
 
 export function InvitationEditorModalShell({
@@ -30,7 +29,6 @@ export function InvitationEditorModalShell({
   description,
   palette,
   fontScale,
-  showActionDivider = false,
   children,
 }: InvitationEditorModalShellProps) {
   return (
@@ -89,7 +87,7 @@ export function InvitationEditorModalShell({
               {children}
             </ScrollView>
 
-            <View style={[styles.actions, showActionDivider ? { borderTopWidth: 1, borderTopColor: palette.cardBorder, paddingTop: 12 } : null]}>
+            <View style={styles.actions}>
               <ActionButton variant="secondary" onPress={onClose}>
                 닫기
               </ActionButton>

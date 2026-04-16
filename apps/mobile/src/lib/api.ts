@@ -54,6 +54,14 @@ const ERROR_MESSAGE_MAP: Record<string, string> = {
     '요청한 청첩장 주소가 현재 로그인 세션과 일치하지 않습니다.',
   'Mobile invitation draft creation is disabled.':
     '모바일 청첩장 생성이 아직 열려 있지 않습니다. 관리자에게 문의해 주세요.',
+  'Ticket count adjustment amount is required.': '변경할 티켓 수량이 올바르지 않습니다.',
+  'Target page slug and session are required.':
+    '티켓을 이동할 대상 청첩장 정보를 확인해 주세요.',
+  'Transfer ticket count amount is required.': '이동할 티켓 수량이 올바르지 않습니다.',
+  'Target page slug must be different.': '현재 청첩장과 다른 연동 페이지를 선택해 주세요.',
+  'Target invitation page authorization failed.':
+    '대상 청첩장의 연동 정보가 만료되었습니다. 다시 연동해 주세요.',
+  'Not enough tickets.': '보유 티켓이 부족합니다.',
   'Request failed.': '요청 처리에 실패했습니다. 잠시 후 다시 시도해 주세요.',
 };
 
@@ -286,6 +294,97 @@ export async function setMobileInvitationPublishedState(
           action: 'setPublished',
           published,
           defaultTheme,
+        }),
+      }
+    )
+  );
+}
+
+export async function setMobileInvitationVariantAvailability(
+  baseUrl: string,
+  pageSlug: string,
+  token: string,
+  variantKey: MobileInvitationThemeKey,
+  available: boolean,
+  options?: {
+    published?: boolean;
+    defaultTheme?: MobileInvitationThemeKey;
+  }
+) {
+  return readJsonResponse<{ success: boolean }>(
+    await fetch(
+      buildApiUrl(baseUrl, `/api/mobile/client-editor/pages/${encodeURIComponent(pageSlug)}`),
+      {
+        method: 'POST',
+        headers: {
+          ...createHeaders(token),
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          action: 'setVariantAvailability',
+          variantKey,
+          available,
+          published: options?.published,
+          defaultTheme: options?.defaultTheme,
+        }),
+      }
+    )
+  );
+}
+
+export async function adjustMobileInvitationTicketCount(
+  baseUrl: string,
+  pageSlug: string,
+  token: string,
+  amount: number
+) {
+  return readJsonResponse<{ success: boolean; ticketCount: number }>(
+    await fetch(
+      buildApiUrl(baseUrl, `/api/mobile/client-editor/pages/${encodeURIComponent(pageSlug)}`),
+      {
+        method: 'POST',
+        headers: {
+          ...createHeaders(token),
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          action: 'adjustTicketCount',
+          amount,
+        }),
+      }
+    )
+  );
+}
+
+export async function transferMobileInvitationTicketCount(
+  baseUrl: string,
+  pageSlug: string,
+  token: string,
+  payload: {
+    amount: number;
+    targetPageSlug: string;
+    targetToken: string;
+  }
+) {
+  return readJsonResponse<{
+    success: boolean;
+    ticketCount: number;
+    targetTicketCount: number;
+    targetPageSlug: string;
+  }>(
+    await fetch(
+      buildApiUrl(baseUrl, `/api/mobile/client-editor/pages/${encodeURIComponent(pageSlug)}`),
+      {
+        method: 'POST',
+        headers: {
+          ...createHeaders(token),
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          action: 'transferTicketCount',
+          amount: payload.amount,
+          targetPageSlug: payload.targetPageSlug,
+          targetToken: payload.targetToken,
         }),
       }
     )

@@ -7,6 +7,7 @@ import {
   getServerGuestbookCommentsByPageSlug,
 } from '@/server/clientEditorMobileApi';
 import { getServerEditableInvitationPageConfig } from '@/server/invitationPageServerService';
+import { getServerPageTicketCount } from '@/server/pageTicketServerService';
 
 export async function GET(
   request: Request,
@@ -25,8 +26,9 @@ export async function GET(
     return NextResponse.json({ error: 'Invitation page was not found.' }, { status: 404 });
   }
 
-  const [comments] = await Promise.all([
+  const [comments, ticketCount] = await Promise.all([
     getServerGuestbookCommentsByPageSlug(pageSlug),
+    getServerPageTicketCount(pageSlug),
   ]);
 
   return NextResponse.json({
@@ -37,5 +39,6 @@ export async function GET(
       pageSlug,
       page.defaultTheme ?? DEFAULT_INVITATION_THEME
     ),
+    ticketCount,
   });
 }

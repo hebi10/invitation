@@ -10,10 +10,13 @@ import {
 } from 'react';
 
 import {
+  adjustMobileInvitationTicketCount,
   deleteMobileInvitationComment,
   fetchMobileInvitationDashboard,
   saveMobileInvitationPageConfig,
   setMobileInvitationPublishedState,
+  transferMobileInvitationTicketCount,
+  setMobileInvitationVariantAvailability,
 } from '../lib/api';
 import type {
   MobileEditableInvitationPageConfig,
@@ -39,14 +42,25 @@ type InvitationOpsContextValue = {
       defaultTheme?: MobileInvitationThemeKey;
     }
   ) => Promise<boolean>;
+  setVariantAvailability: (
+    variantKey: MobileInvitationThemeKey,
+    available: boolean
+  ) => Promise<boolean>;
   setPublishedState: (published: boolean) => Promise<boolean>;
+  adjustTicketCount: (amount: number) => Promise<number | null>;
+  transferTicketCount: (
+    targetPageSlug: string,
+    targetToken: string,
+    amount: number
+  ) => Promise<{ sourceTicketCount: number; targetTicketCount: number } | null>;
   deleteComment: (commentId: string) => Promise<boolean>;
 };
 
 const InvitationOpsContext = createContext<InvitationOpsContextValue | null>(null);
 
 function buildPageSummaryFromConfig(
-  page: MobileEditableInvitationPageConfig
+  page: MobileEditableInvitationPageConfig,
+  ticketCount: number
 ): MobilePageSummary {
   return {
     slug: page.slug,
@@ -55,16 +69,18 @@ function buildPageSummaryFromConfig(
     productTier: page.productTier,
     defaultTheme: page.defaultTheme,
     features: page.features,
+    ticketCount,
   };
 }
 
 function buildPageSummary(dashboard: MobileInvitationDashboard): MobilePageSummary {
-  return buildPageSummaryFromConfig(dashboard.page);
+  return buildPageSummaryFromConfig(dashboard.page, dashboard.ticketCount);
 }
 
 function buildDashboardSnapshot(
   page: MobileEditableInvitationPageConfig | null | undefined,
-  links: MobileInvitationLinks | null | undefined
+  links: MobileInvitationLinks | null | undefined,
+  ticketCount: number
 ): MobileInvitationDashboard | null {
   if (!page || !links) {
     return null;
@@ -74,6 +90,7 @@ function buildDashboardSnapshot(
     page,
     comments: [],
     links,
+    ticketCount,
   };
 }
 
@@ -108,7 +125,8 @@ export function InvitationOpsProvider({ children }: PropsWithChildren) {
 
     const snapshot = buildDashboardSnapshot(
       initialDashboardSeed.dashboardPage,
-      initialDashboardSeed.links
+      initialDashboardSeed.links,
+      initialDashboardSeed.ticketCount
     );
 
     setDashboard(snapshot);
@@ -269,6 +287,173 @@ export function InvitationOpsProvider({ children }: PropsWithChildren) {
     [apiBaseUrl, dashboard, patchDashboard, reportAuthError, session]
   );
 
+  const setVariantAvailability = useCallback(
+    async (variantKey: MobileInvitationThemeKey, available: boolean) => {
+      if (!session || !dashboard) {
+        reportAuthError('청첩장 연동 후 디자인 구성을 변경할 수 있습니다.');
+        return false;
+      }
+
+      setDashboardLoading(true);
+
+      try {
+        await setMobileInvitationVariantAvailability(
+          apiBaseUrl,
+          session.pageSlug,
+          session.token,
+          variantKey,
+          available,
+          {
+            published: dashboard.page.published,
+            defaultTheme: dashboard.page.defaultTheme,
+          }
+        );
+
+        patchDashboard((current) => {
+          const sourceVariants =
+            current.page.config.variants && typeof current.page.config.variants === 'object'
+              ? (current.page.config.variants as Record<string, unknown>)
+              : {};
+          const sourceVariant =
+            sourceVariants[variantKey] &&
+            typeof sourceVariants[variantKey] === 'object' &&
+            sourceVariants[variantKey] !== null
+              ? (sourceVariants[variantKey] as Record<string, unknown>)
+              : {};
+
+          return {
+            ...current,
+            page: {
+              ...current.page,
+              config: {
+                ...current.page.config,
+                variants: {
+                  ...sourceVariants,
+                  [variantKey]: {
+                    ...sourceVariant,
+                    available,
+                  },
+                },
+              },
+            },
+          };
+        });
+        return true;
+      } catch (error) {
+        reportAuthError(
+          error instanceof Error
+            ? error.message
+            : '디자인 구성을 변경하지 못했습니다.'
+        );
+        return false;
+      } finally {
+        setDashboardLoading(false);
+      }
+    },
+    [apiBaseUrl, dashboard, patchDashboard, reportAuthError, session]
+  );
+
+  const adjustTicketCount = useCallback(
+    async (amount: number) => {
+      if (!session) {
+        reportAuthError('청첩장 연동 후 티켓을 변경할 수 있습니다.');
+        return null;
+      }
+
+      try {
+        const response = await adjustMobileInvitationTicketCount(
+          apiBaseUrl,
+          session.pageSlug,
+          session.token,
+          amount
+        );
+
+        setDashboard((current) => {
+          if (!current) {
+            return current;
+          }
+
+          return {
+            ...current,
+            ticketCount: response.ticketCount,
+          };
+        });
+        setPageSummary((current) => {
+          if (!current) {
+            return current;
+          }
+
+          return {
+            ...current,
+            ticketCount: response.ticketCount,
+          };
+        });
+
+        return response.ticketCount;
+      } catch (error) {
+        reportAuthError(
+          error instanceof Error ? error.message : '티켓 수량을 변경하지 못했습니다.'
+        );
+        return null;
+      }
+    },
+    [apiBaseUrl, reportAuthError, session]
+  );
+
+  const transferTicketCount = useCallback(
+    async (targetPageSlug: string, targetToken: string, amount: number) => {
+      if (!session) {
+        reportAuthError('청첩장 연동 후 티켓을 이동할 수 있습니다.');
+        return null;
+      }
+
+      try {
+        const response = await transferMobileInvitationTicketCount(
+          apiBaseUrl,
+          session.pageSlug,
+          session.token,
+          {
+            amount,
+            targetPageSlug,
+            targetToken,
+          }
+        );
+
+        setDashboard((current) => {
+          if (!current) {
+            return current;
+          }
+
+          return {
+            ...current,
+            ticketCount: response.ticketCount,
+          };
+        });
+        setPageSummary((current) => {
+          if (!current) {
+            return current;
+          }
+
+          return {
+            ...current,
+            ticketCount: response.ticketCount,
+          };
+        });
+
+        return {
+          sourceTicketCount: response.ticketCount,
+          targetTicketCount: response.targetTicketCount,
+        };
+      } catch (error) {
+        reportAuthError(
+          error instanceof Error ? error.message : '티켓을 이동하지 못했습니다.'
+        );
+        return null;
+      }
+    },
+    [apiBaseUrl, reportAuthError, session]
+  );
+
   const deleteComment = useCallback(
     async (commentId: string) => {
       if (!session) {
@@ -308,7 +493,8 @@ export function InvitationOpsProvider({ children }: PropsWithChildren) {
     }
     return buildDashboardSnapshot(
       initialDashboardSeed.dashboardPage,
-      initialDashboardSeed.links
+      initialDashboardSeed.links,
+      initialDashboardSeed.ticketCount
     );
   }, [dashboard, initialDashboardSeed]);
 
@@ -342,7 +528,10 @@ export function InvitationOpsProvider({ children }: PropsWithChildren) {
       dashboardLoading,
       refreshDashboard,
       saveCurrentPageConfig,
+      setVariantAvailability,
       setPublishedState,
+      adjustTicketCount,
+      transferTicketCount,
       deleteComment,
     }),
     [
@@ -352,7 +541,10 @@ export function InvitationOpsProvider({ children }: PropsWithChildren) {
       derivedPageSummary,
       refreshDashboard,
       saveCurrentPageConfig,
+      setVariantAvailability,
       setPublishedState,
+      adjustTicketCount,
+      transferTicketCount,
     ]
   );
 

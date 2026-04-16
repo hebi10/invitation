@@ -33,6 +33,7 @@ export type AuthInitialDashboardSeed = {
   dashboardPage: MobileEditableInvitationPageConfig | null | undefined;
   links: MobileInvitationLinks | null | undefined;
   pageFallback: MobilePageSummary | null;
+  ticketCount: number;
 };
 
 type AuthContextValue = {
@@ -47,6 +48,7 @@ type AuthContextValue = {
   createInvitationPage: (
     input: MobileInvitationCreationInput
   ) => Promise<boolean>;
+  activateStoredSession: (candidateSession: MobileSessionSummary) => Promise<boolean>;
   logout: () => Promise<void>;
   clearAuthError: () => void;
   clearPendingManageOnboarding: () => void;
@@ -78,8 +80,15 @@ export function AuthProvider({ children }: PropsWithChildren) {
     await setStoredString(SESSION_STORAGE_KEY, null);
   }, []);
 
-  const restoreSession = useCallback(
-    async (candidateSession: MobileSessionSummary, nextBaseUrl: string) => {
+  const hydrateSession = useCallback(
+    async (
+      candidateSession: MobileSessionSummary,
+      nextBaseUrl: string,
+      options: {
+        clearOnFailure: boolean;
+        failureMessage?: string;
+      }
+    ) => {
       setIsAuthenticating(true);
 
       try {
@@ -90,7 +99,11 @@ export function AuthProvider({ children }: PropsWithChildren) {
         );
 
         if (!response.authenticated) {
-          await clearSession();
+          if (options.clearOnFailure) {
+            await clearSession();
+          } else if (options.failureMessage) {
+            setAuthError(options.failureMessage);
+          }
           return false;
         }
 
@@ -99,18 +112,41 @@ export function AuthProvider({ children }: PropsWithChildren) {
           dashboardPage: response.dashboardPage,
           links: response.links,
           pageFallback: response.page ?? null,
+          ticketCount: response.page?.ticketCount ?? 0,
         });
         setAuthError(null);
         await setStoredJson(SESSION_STORAGE_KEY, candidateSession);
         return true;
       } catch {
-        await clearSession();
+        if (options.clearOnFailure) {
+          await clearSession();
+        } else if (options.failureMessage) {
+          setAuthError(options.failureMessage);
+        }
         return false;
       } finally {
         setIsAuthenticating(false);
       }
     },
     [clearSession]
+  );
+
+  const restoreSession = useCallback(
+    async (candidateSession: MobileSessionSummary, nextBaseUrl: string) =>
+      hydrateSession(candidateSession, nextBaseUrl, {
+        clearOnFailure: true,
+      }),
+    [hydrateSession]
+  );
+
+  const activateStoredSession = useCallback(
+    async (candidateSession: MobileSessionSummary) =>
+      hydrateSession(candidateSession, apiBaseUrl, {
+        clearOnFailure: false,
+        failureMessage:
+          '저장된 청첩장 연동 정보가 만료되었습니다. 비밀번호를 다시 입력해 주세요.',
+      }),
+    [apiBaseUrl, hydrateSession]
   );
 
   useEffect(() => {
@@ -196,6 +232,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
           dashboardPage: response.dashboardPage,
           links: response.links,
           pageFallback: response.page ?? null,
+          ticketCount: response.page?.ticketCount ?? 0,
         });
         setAuthError(null);
         await setStoredJson(SESSION_STORAGE_KEY, response.session);
@@ -226,6 +263,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
           dashboardPage: response.dashboardPage,
           links: response.links,
           pageFallback: response.page ?? null,
+          ticketCount: response.page?.ticketCount ?? 0,
         });
         setPendingManageOnboarding({
           pageSlug: response.session.pageSlug,
@@ -280,6 +318,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
       initialDashboardSeed,
       login,
       createInvitationPage,
+      activateStoredSession,
       logout,
       clearAuthError,
       clearPendingManageOnboarding,
@@ -292,6 +331,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
       clearPendingManageOnboarding,
       consumeInitialDashboardSeed,
       createInvitationPage,
+      activateStoredSession,
       initialDashboardSeed,
       isAuthenticating,
       isReady,

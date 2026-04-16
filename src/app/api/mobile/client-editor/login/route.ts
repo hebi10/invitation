@@ -8,6 +8,7 @@ import {
 } from '@/server/clientEditorMobileApi';
 import { verifyServerClientPassword } from '@/server/clientPasswordServerService';
 import { getServerEditableInvitationPageConfig } from '@/server/invitationPageServerService';
+import { getServerPageTicketCount } from '@/server/pageTicketServerService';
 
 export async function POST(request: Request) {
   try {
@@ -31,7 +32,10 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Invalid page password.' }, { status: 401 });
     }
 
-    const config = await getServerEditableInvitationPageConfig(pageSlug);
+    const [config, ticketCount] = await Promise.all([
+      getServerEditableInvitationPageConfig(pageSlug),
+      getServerPageTicketCount(pageSlug),
+    ]);
     const { value, expiresAt } = createClientEditorSessionValue(
       {
         pageSlug,
@@ -63,6 +67,7 @@ export async function POST(request: Request) {
             productTier: config.productTier,
             defaultTheme: config.defaultTheme,
             features: config.features,
+            ticketCount,
           }
         : null,
       links,

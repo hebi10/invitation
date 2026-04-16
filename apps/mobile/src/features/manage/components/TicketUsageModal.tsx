@@ -25,16 +25,31 @@ type TicketUsageModalProps = {
   onClose: () => void;
   palette: ReturnType<typeof getPalette>;
   fontScale: number;
+  availableTicketCount: number;
   currentPlan: MobileInvitationProductTier;
   currentTheme: MobileInvitationThemeKey;
   selectedTheme: MobileInvitationThemeKey;
   upgradeTargetPlan: MobileInvitationProductTier | null;
   isApplyingThemeChange: boolean;
+  isApplyingExtraVariant: boolean;
+  isExtraVariantAdded: boolean;
+  transferTargetCards: Array<{
+    slug: string;
+    displayName: string;
+    ticketCount: number;
+  }>;
+  selectedTransferTargetSlug: string | null;
+  ticketTransferCount: number;
+  ticketTransferCountOptions: number[];
+  isTransferringTickets: boolean;
   onSelectTheme: (theme: MobileInvitationThemeKey) => void;
+  onSelectTransferTarget: (slug: string) => void;
+  onSelectTicketTransferCount: (count: number) => void;
   onApplyThemeChange: () => void;
   onOpenAlternateThemePreview: () => void;
+  onAddExtraVariant: () => void;
+  onTransferTickets: () => void;
   onGoToExtend: () => void;
-  onGoToExtraVariant: () => void;
   onGoToUpgrade: () => void;
 };
 
@@ -59,32 +74,47 @@ export function TicketUsageModal({
   onClose,
   palette,
   fontScale,
+  availableTicketCount,
   currentPlan,
   currentTheme,
   selectedTheme,
   upgradeTargetPlan,
   isApplyingThemeChange,
+  isApplyingExtraVariant,
+  isExtraVariantAdded,
+  transferTargetCards,
+  selectedTransferTargetSlug,
+  ticketTransferCount,
+  ticketTransferCountOptions,
+  isTransferringTickets,
   onSelectTheme,
+  onSelectTransferTarget,
+  onSelectTicketTransferCount,
   onApplyThemeChange,
   onOpenAlternateThemePreview,
+  onAddExtraVariant,
+  onTransferTickets,
   onGoToExtend,
-  onGoToExtraVariant,
   onGoToUpgrade,
 }: TicketUsageModalProps) {
+  const alternateTheme = currentTheme === 'emotional' ? 'simple' : 'emotional';
+
   return (
     <InvitationEditorModalShell
       visible={visible}
       onClose={onClose}
       title="티켓 사용"
-      description="현재 청첩장에 적용 가능한 티켓 기능만 모아 두었습니다."
+      description="현재 연동된 청첩장에 바로 적용할 수 있는 티켓 기능을 모아두었습니다."
       palette={palette}
       fontScale={fontScale}
-      showActionDivider
     >
       <SectionCard
         title="티켓 정책"
         description="운영 탭에서도 현재 지원하는 티켓 사용 범위를 한 번에 확인할 수 있습니다."
       >
+        <AppText variant="muted" style={manageStyles.helperText}>
+          현재 보유 티켓: {availableTicketCount}장
+        </AppText>
         <BulletList items={[...TICKET_USAGE_ITEMS]} />
       </SectionCard>
 
@@ -114,11 +144,12 @@ export function TicketUsageModal({
           />
         </View>
         <AppText variant="muted" style={manageStyles.helperText}>
-          기본 디자인을 바꾸면 공개 링크의 기본 테마도 함께 변경됩니다.
+          기본 디자인을 바꾸면 공유 링크의 기본 노출 테마가 함께 변경됩니다.
         </AppText>
         <ActionButton
           variant="secondary"
           onPress={onApplyThemeChange}
+          disabled={availableTicketCount < 1}
           loading={isApplyingThemeChange}
           fullWidth
         >
@@ -126,9 +157,12 @@ export function TicketUsageModal({
         </ActionButton>
       </SectionCard>
 
-      <SectionCard title="같은 청첩장에 다른 디자인 추가" description="티켓 2장 사용">
+      <SectionCard
+        title="같은 청첩장에 다른 디자인 추가"
+        description={`티켓 2장 사용 · 추가 대상 ${getThemeLabel(alternateTheme)}`}
+      >
         <AppText variant="muted" style={manageStyles.helperText}>
-          현재 청첩장에 다른 디자인을 추가하기 전에 미리보기로 먼저 확인할 수 있습니다.
+          현재 청첩장 slug는 그대로 유지하고, 다른 디자인 미리보기만 추가합니다.
         </AppText>
         <View style={manageStyles.actionRow}>
           <ActionButton
@@ -138,8 +172,13 @@ export function TicketUsageModal({
           >
             미리보기
           </ActionButton>
-          <ActionButton onPress={onGoToExtraVariant} style={manageStyles.actionHalfButton}>
-            생성 탭으로 이동
+          <ActionButton
+            onPress={onAddExtraVariant}
+            loading={isApplyingExtraVariant}
+            disabled={isExtraVariantAdded || availableTicketCount < 2}
+            style={manageStyles.actionHalfButton}
+          >
+            {isExtraVariantAdded ? '이미 추가됨' : '현재 청첩장에 추가'}
           </ActionButton>
         </View>
       </SectionCard>
@@ -156,9 +195,55 @@ export function TicketUsageModal({
         <ActionButton onPress={onGoToUpgrade} disabled={!upgradeTargetPlan} fullWidth>
           {upgradeTargetPlan
             ? `${getPlanLabel(upgradeTargetPlan)} 업그레이드 진행`
-            : '업그레이드 가능한 상품이 없습니다'}
+          : '업그레이드 가능한 상품이 없습니다'}
         </ActionButton>
       </SectionCard>
+
+      {transferTargetCards.length > 0 ? (
+        <SectionCard
+          title="다른 연동 청첩장으로 티켓 이동"
+          description="현재 연동된 청첩장의 보유 티켓을 다른 연동 청첩장으로 옮길 수 있습니다."
+        >
+          <View style={manageStyles.chipRow}>
+            {transferTargetCards.map((item) => (
+              <ChoiceChip
+                key={`transfer-target-${item.slug}`}
+                label={item.displayName.trim() || item.slug}
+                selected={selectedTransferTargetSlug === item.slug}
+                onPress={() => onSelectTransferTarget(item.slug)}
+              />
+            ))}
+          </View>
+          <AppText variant="muted" style={manageStyles.helperText}>
+            이동 대상: {
+              transferTargetCards.find((item) => item.slug === selectedTransferTargetSlug)?.displayName.trim() ||
+              transferTargetCards.find((item) => item.slug === selectedTransferTargetSlug)?.slug ||
+              '-'
+            } · 현재 보유 티켓 {
+              transferTargetCards.find((item) => item.slug === selectedTransferTargetSlug)?.ticketCount ?? 0
+            }장
+          </AppText>
+          <View style={manageStyles.chipRow}>
+            {ticketTransferCountOptions.map((count) => (
+              <ChoiceChip
+                key={`transfer-count-${count}`}
+                label={`${count}장`}
+                selected={ticketTransferCount === count}
+                onPress={() => onSelectTicketTransferCount(count)}
+              />
+            ))}
+          </View>
+          <ActionButton
+            variant="secondary"
+            onPress={onTransferTickets}
+            loading={isTransferringTickets}
+            disabled={!selectedTransferTargetSlug || availableTicketCount < ticketTransferCount}
+            fullWidth
+          >
+            선택한 청첩장으로 티켓 이동
+          </ActionButton>
+        </SectionCard>
+      ) : null}
     </InvitationEditorModalShell>
   );
 }

@@ -291,6 +291,5 @@ export const manageStyles = StyleSheet.create({
     flexWrap: 'wrap',
     gap: 8,
     justifyContent: 'flex-end',
-    borderTopWidth: 1,
   },
 });
