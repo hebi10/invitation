@@ -7,12 +7,12 @@ export const servicePlans = [
   {
     name: 'STANDARD',
     tier: 'standard' as MobileInvitationProductTier,
-    price: 20000,
-    priceLabel: '20,000원',
+    price: 17900,
+    priceLabel: '17,900원',
     description:
-      '맞춤 문구 제작, 갤러리 이미지 최대 6장, 카카오톡 링크 형식 공유(URL 공유)',
+      '맞춤 문구 제작, 갤러리 최대 6장, 카카오톡 링크 형식 공유(URL 공유)를 제공합니다.',
     features: [
-      '기본 노출 기간 3개월',
+      '기본 노출 기간 6개월',
       '맞춤 문구 제작',
       '갤러리 최대 6장',
       'URL 링크 공유',
@@ -21,10 +21,10 @@ export const servicePlans = [
   {
     name: 'DELUXE',
     tier: 'deluxe' as MobileInvitationProductTier,
-    price: 25000,
-    priceLabel: '25,000원',
+    price: 22900,
+    priceLabel: '22,900원',
     description:
-      'STANDARD 전체 포함, 갤러리 이미지 최대 12장, 배경음악 포함, 카카오톡 카드 형식 공유',
+      'STANDARD 전체 포함, 갤러리 최대 12장, 배경음악 포함, 카카오톡 카드 형식 공유를 제공합니다.',
     features: [
       'STANDARD 전체 포함',
       '갤러리 최대 12장',
@@ -35,10 +35,10 @@ export const servicePlans = [
   {
     name: 'PREMIUM',
     tier: 'premium' as MobileInvitationProductTier,
-    price: 30000,
-    priceLabel: '30,000원',
+    price: 27900,
+    priceLabel: '27,900원',
     description:
-      'DELUXE 전체 포함, 갤러리 이미지 최대 18장, 캘린더 카운트다운, 방명록 기능',
+      'DELUXE 전체 포함, 갤러리 최대 18장, 캘린더 카운트다운, 방명록 기능을 제공합니다.',
     features: [
       'DELUXE 전체 포함',
       '갤러리 최대 18장',
@@ -74,10 +74,10 @@ export const guideSections = [
   {
     title: '이용 정책',
     items: [
-      '기본 노출 기간은 3개월입니다.',
+      '기본 노출 기간은 6개월입니다.',
       '결과물은 앱이 아니라 웹 링크 형식으로 공유됩니다.',
       '한 계정에서 여러 청첩장을 운영하는 구조는 추후 확장 예정입니다.',
-      '현재는 페이지 슬러그와 비밀번호 기반으로 고객 편집을 연동합니다.',
+      '현재는 페이지 슬러그와 비밀번호 기반으로 고객 편집 연동을 지원합니다.',
     ],
   },
   {
@@ -98,7 +98,7 @@ export const faqItems = [
   {
     question: '결제 후 바로 청첩장이 만들어지나요?',
     answer:
-      '현재 앱에서는 생성 흐름과 운영 흐름을 먼저 연결해 둔 상태이고, 실제 결제 연동은 다음 단계에서 붙일 예정입니다.',
+      '현재 앱에서는 생성 흐름과 운영 흐름을 먼저 연결한 상태이고, 실제 결제 연동은 다음 단계에서 붙일 예정입니다.',
   },
   {
     question: '청첩장 연동은 어떻게 하나요?',
@@ -108,7 +108,7 @@ export const faqItems = [
   {
     question: '환불 정책은 어떻게 되나요?',
     answer:
-      '현재 기획 기준으로는 결제 후 3일 이내 정책을 검토 중이며, 실제 결제 연동 시점에 최종 정책을 확정할 예정입니다.',
+      '현재 기획 기준으로는 결제 후 3일 이내 환불을 검토 중이며, 실제 결제 연동 시점에 최종 정책을 확정할 예정입니다.',
   },
 ] as const;
 
@@ -126,7 +126,7 @@ export const guideSamplePages = [
       },
       {
         label: 'PREMIUM 샘플 보기',
-        url: 'https://msgnote.kr/kim-shinlang-na-sinbu/emotional/',
+        url: 'https://msgnote.kr/shin-minje-kim-hyunji/emotional/',
       },
     ],
   },
@@ -143,7 +143,7 @@ export const guideSamplePages = [
       },
       {
         label: 'PREMIUM 샘플 보기',
-        url: 'https://msgnote.kr/kim-shinlang-na-sinbu/simple/',
+        url: 'https://msgnote.kr/shin-minje-kim-hyunji/simple/',
       },
     ],
   },
@@ -171,6 +171,6 @@ export const ticketActions = [
 
 export const settingsNotes = [
   '현재 연동 세션은 기기 내부에만 저장됩니다.',
-  'API 주소를 변경하면 기존 연동 세션은 초기화될 수 있습니다.',
-  '라이트·다크 모드와 글자 크기 설정은 즉시 반영됩니다.',
+  'API 주소를 변경하면 기존 연동 세션이 초기화될 수 있습니다.',
+  '라이트/다크 모드와 글자 크기 설정은 즉시 반영됩니다.',
 ] as const;

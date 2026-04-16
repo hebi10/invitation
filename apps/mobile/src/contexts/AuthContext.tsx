@@ -14,6 +14,10 @@ import {
   loginMobileClientEditor,
   validateMobileClientEditorSession,
 } from '../lib/api';
+import {
+  buildLinkedInvitationCardFromPageSummary,
+  upsertLinkedInvitationCard,
+} from '../lib/linkedInvitationCards';
 import { extractPageSlugFromIdentifier } from '../lib/pageSlug';
 import { getStoredJson, setStoredJson, setStoredString } from '../lib/storage';
 import type {
@@ -116,6 +120,19 @@ export function AuthProvider({ children }: PropsWithChildren) {
         });
         setAuthError(null);
         await setStoredJson(SESSION_STORAGE_KEY, candidateSession);
+
+        if (response.page) {
+          await upsertLinkedInvitationCard(
+            buildLinkedInvitationCardFromPageSummary(response.page, {
+              publicUrl: response.links?.publicUrl ?? null,
+              links: response.links,
+              config: response.dashboardPage?.config,
+              updatedAt: Date.now(),
+              ticketCount: response.page.ticketCount,
+              session: candidateSession,
+            })
+          );
+        }
         return true;
       } catch {
         if (options.clearOnFailure) {
@@ -236,6 +253,19 @@ export function AuthProvider({ children }: PropsWithChildren) {
         });
         setAuthError(null);
         await setStoredJson(SESSION_STORAGE_KEY, response.session);
+
+        if (response.page) {
+          await upsertLinkedInvitationCard(
+            buildLinkedInvitationCardFromPageSummary(response.page, {
+              publicUrl: response.links?.publicUrl ?? null,
+              links: response.links,
+              config: response.dashboardPage?.config,
+              updatedAt: Date.now(),
+              ticketCount: response.page.ticketCount,
+              session: response.session,
+            })
+          );
+        }
         return true;
       } catch (error) {
         setAuthError(
@@ -271,6 +301,19 @@ export function AuthProvider({ children }: PropsWithChildren) {
         });
         setAuthError(null);
         await setStoredJson(SESSION_STORAGE_KEY, response.session);
+
+        if (response.page) {
+          await upsertLinkedInvitationCard(
+            buildLinkedInvitationCardFromPageSummary(response.page, {
+              publicUrl: response.links?.publicUrl ?? null,
+              links: response.links,
+              config: response.dashboardPage?.config,
+              updatedAt: Date.now(),
+              ticketCount: response.page.ticketCount,
+              session: response.session,
+            })
+          );
+        }
         return true;
       } catch (error) {
         setAuthError(

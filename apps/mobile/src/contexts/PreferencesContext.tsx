@@ -10,7 +10,11 @@ import {
 } from 'react';
 import { useColorScheme } from 'react-native';
 
-import { DEFAULT_API_BASE_URL, normalizeApiBaseUrl } from '../lib/api';
+import {
+  DEFAULT_API_BASE_URL,
+  normalizeApiBaseUrl,
+  PRODUCTION_API_BASE_URL,
+} from '../lib/api';
 import { getStoredJson, setStoredJson } from '../lib/storage';
 import {
   getFontScale,
@@ -83,9 +87,28 @@ export function PreferencesProvider({ children }: PropsWithChildren) {
         return;
       }
 
-      setApiBaseUrlState(normalizeApiBaseUrl(stored.apiBaseUrl));
+      const normalizedStoredApiBaseUrl = normalizeApiBaseUrl(stored.apiBaseUrl);
+      const shouldResetStoredApiBaseUrl =
+        normalizedStoredApiBaseUrl.startsWith('http://localhost:3000') ||
+        normalizedStoredApiBaseUrl.startsWith('http://127.0.0.1:3000') ||
+        normalizedStoredApiBaseUrl.startsWith('http://10.0.2.2:3000') ||
+        normalizedStoredApiBaseUrl.startsWith('http://0.0.0.0:3000') ||
+        /^http:\/\/\d{1,3}(?:\.\d{1,3}){3}:3000$/i.test(normalizedStoredApiBaseUrl);
+      const resolvedApiBaseUrl = shouldResetStoredApiBaseUrl
+        ? PRODUCTION_API_BASE_URL
+        : normalizedStoredApiBaseUrl;
+
+      setApiBaseUrlState(resolvedApiBaseUrl);
       setThemePreferenceState(stored.themePreference);
       setFontScalePreferenceState(stored.fontScalePreference);
+
+      if (shouldResetStoredApiBaseUrl) {
+        await setStoredJson(PREFERENCES_STORAGE_KEY, {
+          ...stored,
+          apiBaseUrl: PRODUCTION_API_BASE_URL,
+        });
+      }
+
       setIsReady(true);
     };
 

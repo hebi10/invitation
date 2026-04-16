@@ -23,6 +23,7 @@ import { ChoiceChip } from '../../components/ChoiceChip';
 import { InvitationEditorModalShell } from '../../components/manage/InvitationEditorModalShell';
 import { SectionCard } from '../../components/SectionCard';
 import { useAppState } from '../../contexts/AppStateContext';
+import { validateMobileClientEditorSession } from '../../lib/api';
 import {
 buildLinkedInvitationCardFromPageSummary,
 getLinkedInvitationCards,
@@ -35,6 +36,39 @@ import type {
 MobileInvitationProductTier,
 MobileInvitationThemeKey,
 } from '../../types/mobileInvitation';
+
+const THEME_LABELS: Record<MobileInvitationThemeKey, string> = {
+emotional: '감성형',
+simple: '심플형',
+};
+
+function formatThemeList(themeKeys: readonly MobileInvitationThemeKey[]) {
+return themeKeys.map((key) => THEME_LABELS[key]).join(', ');
+}
+
+function formatDateLabel(value: string) {
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) {
+    return value;
+  }
+
+  return new Intl.DateTimeFormat('ko-KR', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  }).format(parsed);
+}
+
+function formatDisplayPeriod(period: LinkedInvitationCard['displayPeriod'] | null | undefined) {
+  if (!period?.enabled) {
+    return '미설정';
+  }
+
+  const startDate = period.startDate ? formatDateLabel(period.startDate) : '시작일 미설정';
+  const endDate = period.endDate ? formatDateLabel(period.endDate) : '종료일 미설정';
+
+  return `${startDate} ~ ${endDate}`;
+}
 
 export default function ManageScreen() {
 const {
@@ -55,6 +89,7 @@ refreshDashboard,
 saveCurrentPageConfig,
 session,
 adjustTicketCount,
+extendDisplayPeriod,
 setVariantAvailability,
 setPublishedState,
 transferTicketCount,
@@ -64,17 +99,61 @@ const [linkedInvitationCards, setLinkedInvitationCards] = useState<LinkedInvitat
 const [hasLoadedLinkedInvitationCards, setHasLoadedLinkedInvitationCards] = useState(false);
 const [ticketModalVisible, setTicketModalVisible] = useState(false);
 const [ticketThemeSelection, setTicketThemeSelection] = useState<MobileInvitationThemeKey>('emotional');
+const [isExtendingDisplayPeriod, setIsExtendingDisplayPeriod] = useState(false);
 const [isApplyingTicketThemeChange, setIsApplyingTicketThemeChange] = useState(false);
 const [isApplyingExtraVariant, setIsApplyingExtraVariant] = useState(false);
 const [isTransferringTickets, setIsTransferringTickets] = useState(false);
 const [ticketTransferTargetSlug, setTicketTransferTargetSlug] = useState<string | null>(null);
 const [ticketTransferCount, setTicketTransferCount] = useState(1);
+const [previewLinkCardSlug, setPreviewLinkCardSlug] = useState<string | null>(null);
 
-const reloadLinkedInvitationCards = useCallback(async () => {
+const reloadLinkedInvitationCards = useCallback(async (options: { syncWithServer?: boolean } = {}) => {
 const stored = await getLinkedInvitationCards();
+
+if (!options.syncWithServer) {
 setLinkedInvitationCards(stored);
 setHasLoadedLinkedInvitationCards(true);
-}, []);
+return;
+}
+
+const refreshedCards = await Promise.all(
+stored.map(async (card) => {
+if (!card.session) {
+return card;
+}
+
+try {
+const sessionResponse = await validateMobileClientEditorSession(
+apiBaseUrl,
+card.slug,
+card.session.token
+);
+
+if (!sessionResponse.authenticated || !sessionResponse.page) {
+return card;
+}
+
+return mergeLinkedInvitationCard(
+card,
+buildLinkedInvitationCardFromPageSummary(sessionResponse.page, {
+publicUrl: sessionResponse.links?.publicUrl ?? card.publicUrl,
+links: sessionResponse.links,
+config: sessionResponse.dashboardPage?.config,
+updatedAt: Date.now(),
+ticketCount: sessionResponse.page.ticketCount,
+session: card.session,
+})
+);
+} catch {
+return card;
+}
+})
+);
+
+setLinkedInvitationCards(refreshedCards);
+setHasLoadedLinkedInvitationCards(true);
+await persistLinkedInvitationCards(refreshedCards);
+}, [apiBaseUrl]);
 
 const invitationForm = useInvitationForm({
 dashboard,
@@ -114,7 +193,8 @@ setNotice,
 const guestbook = useGuestbook({
 dashboard,
 dashboardLoading,
-refreshDashboard: invitationForm.requestDashboardSync,
+refreshDashboard: (options) =>
+  invitationForm.requestDashboardSync(undefined, options),
 deleteComment,
 setNotice,
 });
@@ -134,11 +214,14 @@ return null;
 return {
 ...buildLinkedInvitationCardFromPageSummary(pageSummary, {
 publicUrl: dashboard?.links.publicUrl ?? null,
+links: dashboard?.links,
+config: dashboard?.page.config,
 updatedAt: 0,
+ticketCount: dashboard?.ticketCount ?? pageSummary.ticketCount,
 session,
 }),
 };
-}, [dashboard?.links.publicUrl, pageSummary, session]);
+}, [dashboard?.links, dashboard?.page.config, dashboard?.ticketCount, pageSummary, session]);
 
 const additionalLinkedInvitationCards = useMemo(
 () =>
@@ -146,6 +229,30 @@ linkedInvitationCards
 .filter((item) => item.slug !== pageSummary?.slug)
 .sort((left, right) => right.updatedAt - left.updatedAt),
 [linkedInvitationCards, pageSummary?.slug]
+);
+
+const previewLinkTargetCard = useMemo(
+() =>
+[activeLinkedInvitationCard, ...additionalLinkedInvitationCards].find(
+  (item): item is LinkedInvitationCard => {
+    if (!item) {
+      return false;
+    }
+
+    return item.slug === previewLinkCardSlug;
+  }
+) ?? null,
+[activeLinkedInvitationCard, additionalLinkedInvitationCards, previewLinkCardSlug]
+);
+
+const previewLinkThemeKeys = useMemo(
+() =>
+previewLinkTargetCard?.availableThemeKeys.length
+  ? previewLinkTargetCard.availableThemeKeys
+  : previewLinkTargetCard
+    ? [previewLinkTargetCard.defaultTheme]
+    : [],
+[previewLinkTargetCard]
 );
 
 const ticketTransferTargetCards = useMemo(
@@ -266,6 +373,9 @@ existing.published === nextCard.published &&
 existing.showMusic === nextCard.showMusic &&
 existing.showGuestbook === nextCard.showGuestbook &&
 existing.publicUrl === nextCard.publicUrl &&
+existing.availableThemeKeys.join('|') === nextCard.availableThemeKeys.join('|') &&
+JSON.stringify(existing.previewUrls) === JSON.stringify(nextCard.previewUrls) &&
+JSON.stringify(existing.displayPeriod) === JSON.stringify(nextCard.displayPeriod) &&
 existing.ticketCount === nextCard.ticketCount
 ) {
 return current;
@@ -316,12 +426,17 @@ url: publicUrl,
 };
 
 const handleOpenUrl = async () => {
-const publicUrl = dashboard?.links.publicUrl;
-if (!publicUrl) {
+if (!activeLinkedInvitationCard) {
 return;
 }
 
-await Linking.openURL(publicUrl);
+if (activeLinkedInvitationCard.availableThemeKeys.length > 1) {
+setPreviewLinkCardSlug(activeLinkedInvitationCard.slug);
+return;
+}
+
+const themeKey = activeLinkedInvitationCard.availableThemeKeys[0] ?? activeLinkedInvitationCard.defaultTheme;
+await handleOpenThemeLink(activeLinkedInvitationCard, themeKey);
 };
 
 const handleOpenMapUrl = async () => {
@@ -351,6 +466,43 @@ setNotice('지도를 열지 못했습니다. 잠시 후 다시 시도해 주세�
 const handleRefreshManageScreen = async () => {
 await reloadLinkedInvitationCards();
 await invitationForm.requestDashboardSync();
+};
+
+const closePreviewLinkModal = () => {
+setPreviewLinkCardSlug(null);
+};
+
+const handleOpenThemeLink = async (
+card: LinkedInvitationCard,
+themeKey: MobileInvitationThemeKey
+) => {
+const targetUrl =
+card.previewUrls[themeKey] ??
+(themeKey === card.defaultTheme ? card.publicUrl : null);
+
+if (!targetUrl) {
+setNotice('열 수 있는 디자인 링크를 찾지 못했습니다.');
+return;
+}
+
+try {
+  try {
+    await WebBrowser.openBrowserAsync(targetUrl, {
+      enableDefaultShareMenuItem: true,
+      controlsColor: palette.accent,
+      createTask: true,
+    });
+    closePreviewLinkModal();
+    return;
+  } catch {
+    // noop
+  }
+
+  await Linking.openURL(targetUrl);
+  closePreviewLinkModal();
+} catch {
+  setNotice('디자인 링크를 열지 못했습니다. 잠시 후 다시 시도해 주세요.');
+}
 };
 
 const handleLinkAnotherInvitation = async (pageSlugToRelink?: string) => {
@@ -451,6 +603,36 @@ return;
 
 setTicketModalVisible(false);
 }
+};
+
+const handleExtendDisplayPeriod = async () => {
+if (!activeLinkedInvitationCard) {
+return;
+}
+
+if (activeLinkedInvitationCard.ticketCount < 1) {
+setNotice('기간을 1개월 연장하려면 티켓 1장이 필요합니다. 먼저 티켓을 구매해 주세요.');
+return;
+}
+
+setIsExtendingDisplayPeriod(true);
+const displayPeriodResult = await extendDisplayPeriod(1);
+setIsExtendingDisplayPeriod(false);
+
+if (!displayPeriodResult) {
+return;
+}
+
+const nextTicketCount = await adjustTicketCount(-1);
+
+if (nextTicketCount === null) {
+return;
+}
+
+setTicketModalVisible(false);
+setNotice(
+  `노출 기간을 1개월 연장했습니다. 새 종료일은 ${formatDateLabel(displayPeriodResult.endDate)}입니다.`
+);
 };
 
 const handleAddExtraVariant = async () => {
@@ -636,7 +818,9 @@ items={[
 `기본 테마: ${
 activeLinkedInvitationCard.defaultTheme === 'emotional' ? '감성형' : '심플형'
 }`,
+`연결된 디자인: ${formatThemeList(activeLinkedInvitationCard.availableThemeKeys)}`,
 `보유 티켓: ${activeLinkedInvitationCard.ticketCount}장`,
+`노출 기간: ${formatDisplayPeriod(activeLinkedInvitationCard.displayPeriod)}`,
 `배경음악: ${activeLinkedInvitationCard.showMusic ? '사용 가능' : '미제공'}`,
 `방명록: ${activeLinkedInvitationCard.showGuestbook ? '제공' : '미제공'}`,
 ]}
@@ -655,7 +839,7 @@ onPress={() => void invitationForm.openEditorModal()}
 disabled={!canRequestDashboardSync}
 style={manageStyles.actionHalfButton}
 >
-수정 팝업 열기
+수정 하기
 </ActionButton>
 <ActionButton onPress={handleShare} style={manageStyles.actionHalfButton}>
 링크 공유
@@ -699,9 +883,9 @@ style={manageStyles.actionHalfButton}
 </View>
 
 <AppText variant="muted" style={manageStyles.loadingText}>
-  {dashboard.comments.length === 0
+  {dashboard.commentCount === 0
     ? '아직 등록된 방명록 댓글이 없습니다.'
-    : `${dashboard.comments.length}개의 방명록 댓글이 등록되어 있습니다.`}
+    : `${dashboard.commentCount}개의 방명록 댓글이 등록되어 있습니다.`}
 </AppText>
 </>
 ) : null}
@@ -742,7 +926,9 @@ items={[
 `슬러그: ${item.slug}`,
 `서비스: ${item.productTier.toUpperCase()}`,
 `기본 테마: ${item.defaultTheme === 'emotional' ? '감성형' : '심플형'}`,
+`연결된 디자인: ${formatThemeList(item.availableThemeKeys)}`,
 `보유 티켓: ${item.ticketCount}장`,
+`노출 기간: ${formatDisplayPeriod(item.displayPeriod)}`,
 ]}
 />
 
@@ -790,6 +976,7 @@ title="청첩장 정보 수정"
 description="/page-wizard처럼 단계별로 입력하면 더 편하게 관리할 수 있습니다."
 palette={palette}
 fontScale={fontScale}
+cardStyle={manageStyles.previewLinkModalCard}
 >
 <View style={manageStyles.editorStepHeader}>
 <AppText style={manageStyles.editorStepTitle}>
@@ -892,7 +1079,7 @@ Math.min(EDITOR_STEPS.length - 1, current + 1)
 
 <GuestbookModal
 visible={guestbook.guestbookModalVisible}
-totalCount={dashboard?.comments.length ?? 0}
+totalCount={dashboard?.commentCount ?? 0}
 filteredCount={guestbook.guestbookFilteredSortedComments.length}
 comments={guestbook.guestbookPageComments}
 searchQuery={guestbook.guestbookSearchQuery}
@@ -903,25 +1090,28 @@ onClose={guestbook.closeGuestbookModal}
 onChangeSearchQuery={guestbook.setGuestbookSearchQuery}
 onChangePage={guestbook.setGuestbookPage}
 onDeleteComment={guestbook.handleDeleteComment}
-onRefresh={() => void invitationForm.requestDashboardSync()}
+onRefresh={() =>
+  void invitationForm.requestDashboardSync(undefined, { includeComments: true })
+}
 />
 
-      <TicketUsageModal
-        visible={ticketModalVisible}
-onClose={closeTicketModal}
+        <TicketUsageModal
+          visible={ticketModalVisible}
+  onClose={closeTicketModal}
 palette={palette}
 fontScale={fontScale}
-availableTicketCount={activeLinkedInvitationCard?.ticketCount ?? 0}
-currentPlan={activeLinkedInvitationCard?.productTier ?? 'standard'}
-currentTheme={activeLinkedInvitationCard?.defaultTheme ?? 'emotional'}
-selectedTheme={ticketThemeSelection}
-upgradeTargetPlan={upgradeTargetPlan}
-        isApplyingThemeChange={isApplyingTicketThemeChange}
-        onSelectTheme={setTicketThemeSelection}
-        onApplyThemeChange={() => void handleApplyTicketThemeChange()}
-        onOpenAlternateThemePreview={() => void handleOpenAlternateThemePreview()}
-        onGoToExtend={() => handleRouteToCreateWithTicketIntent('extend')}
-        isApplyingExtraVariant={isApplyingExtraVariant}
+  availableTicketCount={activeLinkedInvitationCard?.ticketCount ?? 0}
+  currentPlan={activeLinkedInvitationCard?.productTier ?? 'standard'}
+  currentTheme={activeLinkedInvitationCard?.defaultTheme ?? 'emotional'}
+  selectedTheme={ticketThemeSelection}
+  upgradeTargetPlan={upgradeTargetPlan}
+          isExtendingDisplayPeriod={isExtendingDisplayPeriod}
+          isApplyingThemeChange={isApplyingTicketThemeChange}
+          onSelectTheme={setTicketThemeSelection}
+          onExtendDisplayPeriod={() => void handleExtendDisplayPeriod()}
+          onApplyThemeChange={() => void handleApplyTicketThemeChange()}
+          onOpenAlternateThemePreview={() => void handleOpenAlternateThemePreview()}
+          isApplyingExtraVariant={isApplyingExtraVariant}
         isExtraVariantAdded={isAlternateThemeAvailable}
         onAddExtraVariant={() => void handleAddExtraVariant()}
 transferTargetCards={ticketTransferTargetCards.map((item) => ({
@@ -935,16 +1125,50 @@ ticketTransferCountOptions={ticketTransferCountOptions}
 isTransferringTickets={isTransferringTickets}
 onSelectTransferTarget={setTicketTransferTargetSlug}
 onSelectTicketTransferCount={setTicketTransferCount}
-onTransferTickets={() => void handleTransferTicketCount()}
-onGoToUpgrade={() =>
-handleRouteToCreateWithTicketIntent('upgrade', {
-targetPlan: upgradeTargetPlan ?? undefined,
-})
-}
-/>
+  onTransferTickets={() => void handleTransferTicketCount()}
+  onGoToUpgrade={() =>
+  handleRouteToCreateWithTicketIntent('upgrade', {
+  targetPlan: upgradeTargetPlan ?? undefined,
+  })
+  }
+  />
+
+<InvitationEditorModalShell
+visible={Boolean(previewLinkTargetCard)}
+onClose={closePreviewLinkModal}
+title="디자인 링크 열기"
+description="연결된 디자인이 여러 개면 원하는 테마 링크를 골라서 바로 열 수 있습니다."
+palette={palette}
+fontScale={fontScale}
+>
+<SectionCard
+title={previewLinkTargetCard?.displayName.trim() || '연동된 청첩장'}
+description="관리자 페이지의 디자인 미리보기처럼 현재 연결된 테마별 경로를 바로 열 수 있습니다."
+>
+<BulletList
+items={[
+  `기본 테마: ${previewLinkTargetCard ? THEME_LABELS[previewLinkTargetCard.defaultTheme] : '-'}`,
+  `연결된 디자인: ${formatThemeList(previewLinkThemeKeys)}`,
+]}/>
+<View style={manageStyles.actionRow}>
+{previewLinkTargetCard
+  ? previewLinkThemeKeys.map((themeKey) => (
+      <ActionButton
+        key={`preview-link-${previewLinkTargetCard.slug}-${themeKey}`}
+        variant={themeKey === previewLinkTargetCard.defaultTheme ? 'primary' : 'secondary'}
+        onPress={() => void handleOpenThemeLink(previewLinkTargetCard, themeKey)}
+        style={manageStyles.actionHalfButton}
+      >
+        {`${THEME_LABELS[themeKey]} 링크 열기`}
+      </ActionButton>
+    ))
+  : null}
+</View>
+</SectionCard>
+</InvitationEditorModalShell>
 
 <OnboardingModal
-visible={invitationForm.onboardingVisible}
+  visible={invitationForm.onboardingVisible}
 stepIndex={invitationForm.onboardingStepIndex}
 form={invitationForm.form}
 isSaving={invitationForm.isSaving}
@@ -964,9 +1188,3 @@ onSetPublished={invitationForm.setPublished}
 </>
 );
 }
-
-
-
-
-
-

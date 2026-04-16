@@ -33,7 +33,7 @@ type UseInvitationFormOptions = {
   dashboardLoading: boolean;
   clearAuthError: () => void;
   clearPendingManageOnboarding: () => void;
-  refreshDashboard: () => Promise<boolean>;
+  refreshDashboard: (options?: { includeComments?: boolean }) => Promise<boolean>;
   saveCurrentPageConfig: (
     config: MobileInvitationSeed,
     options?: {
@@ -195,7 +195,10 @@ export function useInvitationForm({
   );
 
   const requestDashboardSync = useCallback(
-    async (nextNotice?: string) => {
+    async (
+      nextNotice?: string,
+      options: { includeComments?: boolean } = {}
+    ) => {
       if (dashboardLoading) {
         return false;
       }
@@ -205,7 +208,7 @@ export function useInvitationForm({
         setNotice(nextNotice);
       }
 
-      return refreshDashboard();
+      return refreshDashboard(options);
     },
     [clearAuthError, dashboardLoading, refreshDashboard, setNotice]
   );

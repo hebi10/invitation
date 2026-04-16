@@ -5,9 +5,11 @@ import {
   Modal,
   Platform,
   ScrollView,
+  StyleProp,
   StyleSheet,
   Text,
   View,
+  ViewStyle,
 } from 'react-native';
 
 import { getPalette } from '../../constants/theme';
@@ -20,6 +22,7 @@ type InvitationEditorModalShellProps = PropsWithChildren<{
   description: string;
   palette: ReturnType<typeof getPalette>;
   fontScale: number;
+  cardStyle?: StyleProp<ViewStyle>;
 }>;
 
 export function InvitationEditorModalShell({
@@ -29,6 +32,7 @@ export function InvitationEditorModalShell({
   description,
   palette,
   fontScale,
+  cardStyle,
   children,
 }: InvitationEditorModalShellProps) {
   return (
@@ -62,6 +66,7 @@ export function InvitationEditorModalShell({
                 backgroundColor: palette.surface,
                 borderColor: palette.cardBorder,
               },
+              cardStyle,
             ]}
           >
             <View style={styles.header}>

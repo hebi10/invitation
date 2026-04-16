@@ -49,7 +49,7 @@ export type AppStateContextValue = {
   ) => Promise<boolean>;
   activateStoredSession: (candidateSession: MobileSessionSummary) => Promise<boolean>;
   logout: () => Promise<void>;
-  refreshDashboard: () => Promise<boolean>;
+  refreshDashboard: (options?: { includeComments?: boolean }) => Promise<boolean>;
   saveCurrentPageConfig: (
     config: MobileInvitationSeed,
     options?: {
@@ -62,6 +62,9 @@ export type AppStateContextValue = {
     available: boolean
   ) => Promise<boolean>;
   setPublishedState: (published: boolean) => Promise<boolean>;
+  extendDisplayPeriod: (
+    months?: number
+  ) => Promise<{ startDate: string; endDate: string } | null>;
   adjustTicketCount: (amount: number) => Promise<number | null>;
   transferTicketCount: (
     targetPageSlug: string,
@@ -134,6 +137,7 @@ export function useAppState(): AppStateContextValue {
     saveCurrentPageConfig,
     setVariantAvailability,
     setPublishedState,
+    extendDisplayPeriod,
     adjustTicketCount,
     transferTicketCount,
     deleteComment,
@@ -169,6 +173,7 @@ export function useAppState(): AppStateContextValue {
       saveCurrentPageConfig,
       setVariantAvailability,
       setPublishedState,
+      extendDisplayPeriod,
       adjustTicketCount,
       transferTicketCount,
       deleteComment,
@@ -207,6 +212,7 @@ export function useAppState(): AppStateContextValue {
       setApiBaseUrl,
       setFontScalePreference,
       setPublishedState,
+      extendDisplayPeriod,
       adjustTicketCount,
       transferTicketCount,
       setThemePreference,

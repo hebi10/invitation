@@ -12,26 +12,12 @@ import { setServerClientPassword } from '@/server/clientPasswordServerService';
 import {
   createServerInvitationPageDraftFromSeed,
   getServerEditableInvitationPageConfig,
+  getServerInvitationPageDisplayPeriodSummary,
 } from '@/server/invitationPageServerService';
 import { getServerPageTicketCount } from '@/server/pageTicketServerService';
 
-function isMobileDraftCreationEnabled() {
-  if (process.env.NODE_ENV !== 'production') {
-    return true;
-  }
-
-  return process.env.MOBILE_DRAFT_CREATION_ENABLED?.trim().toLowerCase() === 'true';
-}
-
 export async function POST(request: Request) {
   try {
-    if (!isMobileDraftCreationEnabled()) {
-      return NextResponse.json(
-        { error: 'Mobile invitation draft creation is disabled.' },
-        { status: 503 }
-      );
-    }
-
     const body = (await request.json().catch(() => null)) as
       | {
           seedSlug?: unknown;
@@ -78,11 +64,12 @@ export async function POST(request: Request) {
       published: false,
       defaultTheme,
       productTier,
-      initialDisplayPeriodMonths: 3,
+      initialDisplayPeriodMonths: 6,
     });
     const passwordRecord = await setServerClientPassword(createdDraft.slug, password);
-    const [config, ticketCount] = await Promise.all([
+    const [config, displayPeriod, ticketCount] = await Promise.all([
       getServerEditableInvitationPageConfig(createdDraft.slug),
+      getServerInvitationPageDisplayPeriodSummary(createdDraft.slug),
       getServerPageTicketCount(createdDraft.slug),
     ]);
 
@@ -120,6 +107,11 @@ export async function POST(request: Request) {
         defaultTheme: config.defaultTheme,
         features: config.features,
         ticketCount,
+        displayPeriod: {
+          enabled: displayPeriod.enabled,
+          startDate: displayPeriod.startDate?.toISOString() ?? null,
+          endDate: displayPeriod.endDate?.toISOString() ?? null,
+        },
       },
       links,
     });

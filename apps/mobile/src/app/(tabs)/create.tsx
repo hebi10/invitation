@@ -156,6 +156,7 @@ export default function CreateScreen() {
     isAuthenticating,
     palette,
     pageSummary,
+    refreshDashboard,
     session,
     adjustTicketCount,
     removeDraft,
@@ -448,6 +449,9 @@ export default function CreateScreen() {
   };
 
   const handleConfirmTicketOnlyPurchase = async () => {
+    clearAuthError();
+    setNotice('');
+
     if (!selectedTicketTargetCard?.session) {
       setNotice('연동된 청첩장이 없어서 티켓을 적립할 수 없습니다. 먼저 페이지를 연동해 주세요.');
       return;
@@ -495,6 +499,10 @@ export default function CreateScreen() {
 
     setLinkedInvitationCards(nextLinkedInvitationCards);
     await persistLinkedInvitationCards(nextLinkedInvitationCards);
+
+    if (session && selectedTicketTargetCard.slug === session.pageSlug) {
+      await refreshDashboard();
+    }
 
     setTicketOnlyModalVisible(false);
     setTicketCount(0);
@@ -1082,6 +1090,28 @@ export default function CreateScreen() {
               ) : null}
 
               <BulletList items={[...TICKET_USAGE_ITEMS]} />
+
+              {notice ? (
+                <AppText variant="caption" color={palette.accent} style={styles.helperText}>
+                  {notice}
+                </AppText>
+              ) : null}
+
+              {authError ? (
+                <View
+                  style={[
+                    styles.noticeBox,
+                    {
+                      backgroundColor: palette.dangerSoft,
+                      borderColor: palette.danger,
+                    },
+                  ]}
+                >
+                  <AppText variant="caption" color={palette.danger} style={styles.noticeText}>
+                    {authError}
+                  </AppText>
+                </View>
+              ) : null}
 
               <View style={styles.actionColumn}>
                 <ActionButton

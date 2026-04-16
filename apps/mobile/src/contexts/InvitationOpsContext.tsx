@@ -12,6 +12,7 @@ import {
 import {
   adjustMobileInvitationTicketCount,
   deleteMobileInvitationComment,
+  extendMobileInvitationDisplayPeriod,
   fetchMobileInvitationDashboard,
   saveMobileInvitationPageConfig,
   setMobileInvitationPublishedState,
@@ -34,7 +35,7 @@ type InvitationOpsContextValue = {
   dashboard: MobileInvitationDashboard | null;
   pageSummary: MobilePageSummary | null;
   dashboardLoading: boolean;
-  refreshDashboard: () => Promise<boolean>;
+  refreshDashboard: (options?: { includeComments?: boolean }) => Promise<boolean>;
   saveCurrentPageConfig: (
     config: MobileInvitationSeed,
     options?: {
@@ -47,6 +48,9 @@ type InvitationOpsContextValue = {
     available: boolean
   ) => Promise<boolean>;
   setPublishedState: (published: boolean) => Promise<boolean>;
+  extendDisplayPeriod: (
+    months?: number
+  ) => Promise<{ startDate: string; endDate: string } | null>;
   adjustTicketCount: (amount: number) => Promise<number | null>;
   transferTicketCount: (
     targetPageSlug: string,
@@ -60,7 +64,8 @@ const InvitationOpsContext = createContext<InvitationOpsContextValue | null>(nul
 
 function buildPageSummaryFromConfig(
   page: MobileEditableInvitationPageConfig,
-  ticketCount: number
+  ticketCount: number,
+  displayPeriod: MobileInvitationDashboard['displayPeriod']
 ): MobilePageSummary {
   return {
     slug: page.slug,
@@ -70,17 +75,23 @@ function buildPageSummaryFromConfig(
     defaultTheme: page.defaultTheme,
     features: page.features,
     ticketCount,
+    displayPeriod,
   };
 }
 
 function buildPageSummary(dashboard: MobileInvitationDashboard): MobilePageSummary {
-  return buildPageSummaryFromConfig(dashboard.page, dashboard.ticketCount);
+  return buildPageSummaryFromConfig(
+    dashboard.page,
+    dashboard.ticketCount,
+    dashboard.displayPeriod
+  );
 }
 
 function buildDashboardSnapshot(
   page: MobileEditableInvitationPageConfig | null | undefined,
   links: MobileInvitationLinks | null | undefined,
-  ticketCount: number
+  ticketCount: number,
+  pageFallback: MobilePageSummary | null | undefined
 ): MobileInvitationDashboard | null {
   if (!page || !links) {
     return null;
@@ -89,8 +100,15 @@ function buildDashboardSnapshot(
   return {
     page,
     comments: [],
+    commentCount: 0,
+    commentsIncluded: false,
     links,
     ticketCount,
+    displayPeriod: pageFallback?.displayPeriod ?? {
+      enabled: false,
+      startDate: null,
+      endDate: null,
+    },
   };
 }
 
@@ -126,7 +144,8 @@ export function InvitationOpsProvider({ children }: PropsWithChildren) {
     const snapshot = buildDashboardSnapshot(
       initialDashboardSeed.dashboardPage,
       initialDashboardSeed.links,
-      initialDashboardSeed.ticketCount
+      initialDashboardSeed.ticketCount,
+      initialDashboardSeed.pageFallback
     );
 
     setDashboard(snapshot);
@@ -153,7 +172,7 @@ export function InvitationOpsProvider({ children }: PropsWithChildren) {
     []
   );
 
-  const refreshDashboard = useCallback(async () => {
+  const refreshDashboard = useCallback(async (options: { includeComments?: boolean } = {}) => {
     if (!session) {
       return false;
     }
@@ -169,7 +188,10 @@ export function InvitationOpsProvider({ children }: PropsWithChildren) {
       const nextDashboard = await fetchMobileInvitationDashboard(
         apiBaseUrl,
         session.pageSlug,
-        session.token
+        session.token,
+        {
+          includeComments: options.includeComments,
+        }
       );
 
       setDashboard(nextDashboard);
@@ -400,6 +422,35 @@ export function InvitationOpsProvider({ children }: PropsWithChildren) {
     [apiBaseUrl, reportAuthError, session]
   );
 
+  const extendDisplayPeriod = useCallback(
+    async (months = 1) => {
+      if (!session) {
+        reportAuthError('기간을 연장할 청첩장이 연동되어 있지 않습니다.');
+        return null;
+      }
+
+      try {
+        const response = await extendMobileInvitationDisplayPeriod(
+          apiBaseUrl,
+          session.pageSlug,
+          session.token,
+          months
+        );
+
+        return {
+          startDate: response.startDate,
+          endDate: response.endDate,
+        };
+      } catch (error) {
+        reportAuthError(
+          error instanceof Error ? error.message : '노출 기간을 연장하지 못했습니다.'
+        );
+        return null;
+      }
+    },
+    [apiBaseUrl, reportAuthError, session]
+  );
+
   const transferTicketCount = useCallback(
     async (targetPageSlug: string, targetToken: string, amount: number) => {
       if (!session) {
@@ -471,6 +522,7 @@ export function InvitationOpsProvider({ children }: PropsWithChildren) {
 
         patchDashboard((current) => ({
           ...current,
+          commentCount: Math.max(0, current.commentCount - 1),
           comments: current.comments.filter((comment) => comment.id !== commentId),
         }));
         return true;
@@ -494,7 +546,8 @@ export function InvitationOpsProvider({ children }: PropsWithChildren) {
     return buildDashboardSnapshot(
       initialDashboardSeed.dashboardPage,
       initialDashboardSeed.links,
-      initialDashboardSeed.ticketCount
+      initialDashboardSeed.ticketCount,
+      initialDashboardSeed.pageFallback
     );
   }, [dashboard, initialDashboardSeed]);
 
@@ -530,6 +583,7 @@ export function InvitationOpsProvider({ children }: PropsWithChildren) {
       saveCurrentPageConfig,
       setVariantAvailability,
       setPublishedState,
+      extendDisplayPeriod,
       adjustTicketCount,
       transferTicketCount,
       deleteComment,
@@ -543,6 +597,7 @@ export function InvitationOpsProvider({ children }: PropsWithChildren) {
       saveCurrentPageConfig,
       setVariantAvailability,
       setPublishedState,
+      extendDisplayPeriod,
       adjustTicketCount,
       transferTicketCount,
     ]

@@ -14,8 +14,8 @@ import type {
 import { manageStyles } from '../manageStyles';
 
 const TICKET_USAGE_ITEMS = [
-  '티켓 1장: 1개월 연장',
-  '티켓 1장: 디자인 변경',
+  '티켓 1장: 노출 기간 1개월 연장',
+  '티켓 1장: 기본 디자인 변경',
   '티켓 2장: 같은 청첩장에 다른 디자인 추가',
   '티켓 2장: 서비스 업그레이드',
 ] as const;
@@ -30,6 +30,7 @@ type TicketUsageModalProps = {
   currentTheme: MobileInvitationThemeKey;
   selectedTheme: MobileInvitationThemeKey;
   upgradeTargetPlan: MobileInvitationProductTier | null;
+  isExtendingDisplayPeriod: boolean;
   isApplyingThemeChange: boolean;
   isApplyingExtraVariant: boolean;
   isExtraVariantAdded: boolean;
@@ -45,11 +46,11 @@ type TicketUsageModalProps = {
   onSelectTheme: (theme: MobileInvitationThemeKey) => void;
   onSelectTransferTarget: (slug: string) => void;
   onSelectTicketTransferCount: (count: number) => void;
+  onExtendDisplayPeriod: () => void;
   onApplyThemeChange: () => void;
   onOpenAlternateThemePreview: () => void;
   onAddExtraVariant: () => void;
   onTransferTickets: () => void;
-  onGoToExtend: () => void;
   onGoToUpgrade: () => void;
 };
 
@@ -79,6 +80,7 @@ export function TicketUsageModal({
   currentTheme,
   selectedTheme,
   upgradeTargetPlan,
+  isExtendingDisplayPeriod,
   isApplyingThemeChange,
   isApplyingExtraVariant,
   isExtraVariantAdded,
@@ -90,11 +92,11 @@ export function TicketUsageModal({
   onSelectTheme,
   onSelectTransferTarget,
   onSelectTicketTransferCount,
+  onExtendDisplayPeriod,
   onApplyThemeChange,
   onOpenAlternateThemePreview,
   onAddExtraVariant,
   onTransferTickets,
-  onGoToExtend,
   onGoToUpgrade,
 }: TicketUsageModalProps) {
   const alternateTheme = currentTheme === 'emotional' ? 'simple' : 'emotional';
@@ -120,16 +122,21 @@ export function TicketUsageModal({
 
       <SectionCard title="기간 1개월 연장" description="티켓 1장 사용">
         <AppText variant="muted" style={manageStyles.helperText}>
-          현재 청첩장의 노출 기간을 연장하는 흐름으로 이동합니다.
+          현재 청첩장의 노출 기간 종료일을 기준으로 1개월 연장합니다.
         </AppText>
-        <ActionButton onPress={onGoToExtend} fullWidth>
-          생성 탭으로 이동
+        <ActionButton
+          onPress={onExtendDisplayPeriod}
+          loading={isExtendingDisplayPeriod}
+          disabled={availableTicketCount < 1}
+          fullWidth
+        >
+          1개월 연장 적용
         </ActionButton>
       </SectionCard>
 
       <SectionCard
         title="디자인 변경"
-        description={`티켓 1장 사용 · 현재 기본 디자인 ${getThemeLabel(currentTheme)}`}
+        description={`티켓 1장 사용 / 현재 기본 디자인 ${getThemeLabel(currentTheme)}`}
       >
         <View style={manageStyles.chipRow}>
           <ChoiceChip
@@ -144,7 +151,7 @@ export function TicketUsageModal({
           />
         </View>
         <AppText variant="muted" style={manageStyles.helperText}>
-          기본 디자인을 바꾸면 공유 링크의 기본 노출 테마가 함께 변경됩니다.
+          기본 디자인을 바꾸면 공유 링크의 기본 노출 테마도 함께 변경됩니다.
         </AppText>
         <ActionButton
           variant="secondary"
@@ -159,10 +166,10 @@ export function TicketUsageModal({
 
       <SectionCard
         title="같은 청첩장에 다른 디자인 추가"
-        description={`티켓 2장 사용 · 추가 대상 ${getThemeLabel(alternateTheme)}`}
+        description={`티켓 2장 사용 / 추가 대상 ${getThemeLabel(alternateTheme)}`}
       >
         <AppText variant="muted" style={manageStyles.helperText}>
-          현재 청첩장 slug는 그대로 유지하고, 다른 디자인 미리보기만 추가합니다.
+          현재 청첩장 slug는 유지하고, 다른 디자인 미리보기만 추가합니다.
         </AppText>
         <View style={manageStyles.actionRow}>
           <ActionButton
@@ -185,7 +192,7 @@ export function TicketUsageModal({
 
       <SectionCard
         title="서비스 업그레이드"
-        description={`티켓 2장 사용 · 현재 ${getPlanLabel(currentPlan)}`}
+        description={`티켓 2장 사용 / 현재 ${getPlanLabel(currentPlan)}`}
       >
         <AppText variant="muted" style={manageStyles.helperText}>
           {upgradeTargetPlan
@@ -195,14 +202,14 @@ export function TicketUsageModal({
         <ActionButton onPress={onGoToUpgrade} disabled={!upgradeTargetPlan} fullWidth>
           {upgradeTargetPlan
             ? `${getPlanLabel(upgradeTargetPlan)} 업그레이드 진행`
-          : '업그레이드 가능한 상품이 없습니다'}
+            : '업그레이드 가능한 상품이 없습니다'}
         </ActionButton>
       </SectionCard>
 
       {transferTargetCards.length > 0 ? (
         <SectionCard
           title="다른 연동 청첩장으로 티켓 이동"
-          description="현재 연동된 청첩장의 보유 티켓을 다른 연동 청첩장으로 옮길 수 있습니다."
+          description="현재 연동된 청첩장의 보유 티켓을 다른 연동 청첩장으로 보낼 수 있습니다."
         >
           <View style={manageStyles.chipRow}>
             {transferTargetCards.map((item) => (
@@ -215,13 +222,12 @@ export function TicketUsageModal({
             ))}
           </View>
           <AppText variant="muted" style={manageStyles.helperText}>
-            이동 대상: {
-              transferTargetCards.find((item) => item.slug === selectedTransferTargetSlug)?.displayName.trim() ||
+            이동 대상{' '}
+            {transferTargetCards.find((item) => item.slug === selectedTransferTargetSlug)?.displayName.trim() ||
               transferTargetCards.find((item) => item.slug === selectedTransferTargetSlug)?.slug ||
-              '-'
-            } · 현재 보유 티켓 {
-              transferTargetCards.find((item) => item.slug === selectedTransferTargetSlug)?.ticketCount ?? 0
-            }장
+              '-'}{' '}
+            / 현재 보유 티켓{' '}
+            {transferTargetCards.find((item) => item.slug === selectedTransferTargetSlug)?.ticketCount ?? 0}장
           </AppText>
           <View style={manageStyles.chipRow}>
             {ticketTransferCountOptions.map((count) => (

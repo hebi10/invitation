@@ -10,7 +10,7 @@ import {
 type UseGuestbookOptions = {
   dashboard: MobileInvitationDashboard | null;
   dashboardLoading: boolean;
-  refreshDashboard: () => Promise<boolean>;
+  refreshDashboard: (options?: { includeComments?: boolean }) => Promise<boolean>;
   deleteComment: (commentId: string) => Promise<boolean>;
   setNotice: (message: string) => void;
 };
@@ -73,7 +73,7 @@ export function useGuestbook({
 
   useEffect(() => {
     setHasRequestedGuestbookLoad(false);
-  }, [dashboard?.page.slug]);
+  }, [dashboard?.page.slug, guestbookModalVisible]);
 
   useEffect(() => {
     if (
@@ -81,13 +81,13 @@ export function useGuestbook({
       hasRequestedGuestbookLoad ||
       !dashboard ||
       dashboardLoading ||
-      dashboard.comments.length > 0
+      dashboard.commentsIncluded
     ) {
       return;
     }
 
     setHasRequestedGuestbookLoad(true);
-    void refreshDashboard();
+    void refreshDashboard({ includeComments: true });
   }, [
     dashboard,
     dashboardLoading,

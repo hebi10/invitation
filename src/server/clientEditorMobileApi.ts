@@ -11,6 +11,7 @@ import { getAuthorizedClientEditorSession } from './clientEditorSessionAuth';
 import { getServerFirestore } from './firebaseAdmin';
 
 export const MOBILE_CLIENT_EDITOR_SESSION_TTL_SECONDS = 60 * 60 * 24 * 30;
+const MOBILE_INVITATION_PUBLIC_ORIGIN = 'https://msgnote.kr';
 
 export interface ServerGuestbookCommentSummary {
   id: string;
@@ -107,12 +108,38 @@ export async function getServerGuestbookCommentsByPageSlug(pageSlug: string) {
     });
 }
 
+export async function getServerGuestbookCommentCountByPageSlug(pageSlug: string) {
+  const normalizedPageSlug = pageSlug.trim();
+  if (!normalizedPageSlug) {
+    return 0;
+  }
+
+  const db = getServerFirestore();
+  if (!db) {
+    return 0;
+  }
+
+  const commentsCollection = db
+    .collection('guestbooks')
+    .doc(normalizedPageSlug)
+    .collection('comments');
+
+  try {
+    const aggregateSnapshot = await commentsCollection.count().get();
+    const count = aggregateSnapshot.data().count;
+    return typeof count === 'number' && Number.isFinite(count) ? count : 0;
+  } catch {
+    const snapshot = await commentsCollection.get();
+    return snapshot.size;
+  }
+}
+
 export function buildMobileInvitationLinks(
-  origin: string,
+  _origin: string,
   pageSlug: string,
   defaultTheme: InvitationThemeKey = DEFAULT_INVITATION_THEME
 ) {
-  const baseOrigin = origin.replace(/\/+$/g, '');
+  const baseOrigin = MOBILE_INVITATION_PUBLIC_ORIGIN.replace(/\/+$/g, '');
   const normalizedPageSlug = pageSlug.trim().replace(/^\/+|\/+$/g, '');
   const themeUrls = INVITATION_THEME_KEYS.reduce<Record<InvitationThemeKey, string>>(
     (accumulator, theme) => {

@@ -1,8 +1,11 @@
 import type {
+  MobileDisplayPeriodSummary,
   MobileInvitationFeatureFlags,
+  MobileInvitationLinks,
   MobileInvitationProductTier,
   MobileInvitationThemeKey,
   MobilePageSummary,
+  MobileInvitationSeed,
   MobileSessionSummary,
 } from '../types/mobileInvitation';
 
@@ -17,6 +20,9 @@ export type LinkedInvitationCard = {
   showMusic: boolean;
   showGuestbook: boolean;
   publicUrl: string | null;
+  previewUrls: Partial<Record<MobileInvitationThemeKey, string>>;
+  availableThemeKeys: MobileInvitationThemeKey[];
+  displayPeriod: MobileDisplayPeriodSummary;
   updatedAt: number;
   ticketCount: number;
   session: MobileSessionSummary | null;
@@ -71,6 +77,26 @@ function normalizeLinkedInvitationCard(input: unknown): LinkedInvitationCard | n
         } satisfies MobileSessionSummary)
       : null;
 
+  const previewUrls =
+    record.previewUrls && typeof record.previewUrls === 'object'
+      ? (['emotional', 'simple'] as const).reduce<
+          Partial<Record<MobileInvitationThemeKey, string>>
+        >((accumulator, key) => {
+          const value = (record.previewUrls as Record<string, unknown>)[key];
+          if (typeof value === 'string' && value.trim()) {
+            accumulator[key] = value.trim();
+          }
+          return accumulator;
+        }, {})
+      : {};
+
+  const availableThemeKeys = Array.isArray(record.availableThemeKeys)
+    ? record.availableThemeKeys.filter(
+        (value): value is MobileInvitationThemeKey =>
+          value === 'emotional' || value === 'simple'
+      )
+    : [];
+
   return {
     slug,
     displayName,
@@ -80,6 +106,29 @@ function normalizeLinkedInvitationCard(input: unknown): LinkedInvitationCard | n
     showMusic: coerceFeatureFlag(record, 'showMusic'),
     showGuestbook: coerceFeatureFlag(record, 'showGuestbook'),
     publicUrl: typeof record.publicUrl === 'string' ? record.publicUrl : null,
+    previewUrls,
+    availableThemeKeys:
+      availableThemeKeys.length > 0
+        ? Array.from(new Set(availableThemeKeys))
+        : [defaultTheme],
+    displayPeriod:
+      record.displayPeriod && typeof record.displayPeriod === 'object'
+        ? {
+            enabled: (record.displayPeriod as Record<string, unknown>).enabled === true,
+            startDate:
+              typeof (record.displayPeriod as Record<string, unknown>).startDate === 'string'
+                ? ((record.displayPeriod as Record<string, unknown>).startDate as string)
+                : null,
+            endDate:
+              typeof (record.displayPeriod as Record<string, unknown>).endDate === 'string'
+                ? ((record.displayPeriod as Record<string, unknown>).endDate as string)
+                : null,
+          }
+        : {
+            enabled: false,
+            startDate: null,
+            endDate: null,
+          },
     updatedAt: typeof record.updatedAt === 'number' ? record.updatedAt : 0,
     ticketCount:
       typeof record.ticketCount === 'number' && Number.isFinite(record.ticketCount)
@@ -87,6 +136,30 @@ function normalizeLinkedInvitationCard(input: unknown): LinkedInvitationCard | n
         : 0,
     session,
   };
+}
+
+function resolveAvailableThemeKeys(
+  seed: MobileInvitationSeed | undefined,
+  fallbackTheme: MobileInvitationThemeKey
+) {
+  const variants = seed?.variants;
+  const availableThemeKeys = (['emotional', 'simple'] as const).filter(
+    (key) => variants?.[key]?.available
+  );
+
+  return availableThemeKeys.length > 0 ? [...availableThemeKeys] : [fallbackTheme];
+}
+
+function resolvePreviewUrls(links: MobileInvitationLinks | undefined) {
+  return (['emotional', 'simple'] as const).reduce<
+    Partial<Record<MobileInvitationThemeKey, string>>
+  >((accumulator, key) => {
+    const value = links?.previewUrls[key];
+    if (typeof value === 'string' && value.trim()) {
+      accumulator[key] = value.trim();
+    }
+    return accumulator;
+  }, {});
 }
 
 export function sanitizeLinkedInvitationCards(stored: unknown) {
@@ -102,6 +175,8 @@ export function buildLinkedInvitationCardFromPageSummary(
   pageSummary: MobilePageSummary,
   options?: {
     publicUrl?: string | null;
+    links?: MobileInvitationLinks;
+    config?: MobileInvitationSeed;
     updatedAt?: number;
     ticketCount?: number;
     session?: MobileSessionSummary | null;
@@ -116,6 +191,9 @@ export function buildLinkedInvitationCardFromPageSummary(
     showMusic: pageSummary.features.showMusic,
     showGuestbook: pageSummary.features.showGuestbook,
     publicUrl: options?.publicUrl ?? null,
+    previewUrls: resolvePreviewUrls(options?.links),
+    availableThemeKeys: resolveAvailableThemeKeys(options?.config, pageSummary.defaultTheme),
+    displayPeriod: pageSummary.displayPeriod,
     updatedAt: options?.updatedAt ?? Date.now(),
     ticketCount: Math.max(0, Math.floor(options?.ticketCount ?? 0)),
     session: options?.session ?? null,
@@ -129,6 +207,19 @@ export function mergeLinkedInvitationCard(
   return {
     ...nextCard,
     publicUrl: nextCard.publicUrl ?? existing?.publicUrl ?? null,
+    previewUrls:
+      Object.keys(nextCard.previewUrls).length > 0
+        ? nextCard.previewUrls
+        : existing?.previewUrls ?? {},
+    availableThemeKeys:
+      nextCard.availableThemeKeys.length > 0
+        ? nextCard.availableThemeKeys
+        : existing?.availableThemeKeys ?? [nextCard.defaultTheme],
+    displayPeriod: nextCard.displayPeriod ?? existing?.displayPeriod ?? {
+      enabled: false,
+      startDate: null,
+      endDate: null,
+    },
     ticketCount: nextCard.ticketCount,
     session: nextCard.session ?? existing?.session ?? null,
   };

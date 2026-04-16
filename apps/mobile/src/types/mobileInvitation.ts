@@ -1,6 +1,12 @@
 export type MobileInvitationProductTier = 'standard' | 'deluxe' | 'premium';
 export type MobileInvitationThemeKey = 'emotional' | 'simple';
 
+export interface MobileInvitationVariantLink {
+  available: boolean;
+  path: string;
+  displayName: string;
+}
+
 export interface MobileInvitationFeatureFlags {
   maxGalleryImages: number;
   shareMode: 'link' | 'card' | 'none';
@@ -81,6 +87,7 @@ export interface MobileInvitationSeed {
     galleryImages?: string[];
     [key: string]: unknown;
   };
+  variants?: Partial<Record<MobileInvitationThemeKey, MobileInvitationVariantLink>>;
   [key: string]: unknown;
 }
 
@@ -114,11 +121,20 @@ export interface MobileInvitationLinks {
   };
 }
 
+export interface MobileDisplayPeriodSummary {
+  enabled: boolean;
+  startDate: string | null;
+  endDate: string | null;
+}
+
 export interface MobileInvitationDashboard {
   page: MobileEditableInvitationPageConfig;
   comments: MobileGuestbookComment[];
+  commentCount: number;
+  commentsIncluded: boolean;
   links: MobileInvitationLinks;
   ticketCount: number;
+  displayPeriod: MobileDisplayPeriodSummary;
 }
 
 export interface MobileSessionSummary {
@@ -146,6 +162,7 @@ export interface MobilePageSummary {
   defaultTheme: MobileInvitationThemeKey;
   features: MobileInvitationFeatureFlags;
   ticketCount: number;
+  displayPeriod: MobileDisplayPeriodSummary;
 }
 
 export interface MobileInvitationCreationResponse {

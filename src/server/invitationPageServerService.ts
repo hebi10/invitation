@@ -820,6 +820,16 @@ async function getDisplayPeriodByPageSlug(pageSlug: string) {
   return preferred;
 }
 
+export async function getServerInvitationPageDisplayPeriodSummary(pageSlug: string) {
+  const displayPeriod = await getDisplayPeriodByPageSlug(pageSlug);
+
+  return {
+    enabled: displayPeriod?.isActive === true,
+    startDate: displayPeriod?.startDate ?? null,
+    endDate: displayPeriod?.endDate ?? null,
+  };
+}
+
 async function getRegistryByPageSlug(pageSlug: string) {
   const normalizedPageSlug = normalizePageSlugInput(pageSlug);
   if (!normalizedPageSlug) {
@@ -1339,6 +1349,39 @@ export async function setServerInvitationPageVariantAvailability(
       defaultTheme: options.defaultTheme ?? editableConfig.defaultTheme,
     }
   );
+}
+
+export async function extendServerInvitationPageDisplayPeriod(
+  pageSlug: string,
+  months = 1
+) {
+  const normalizedPageSlug = normalizePageSlugInput(pageSlug);
+  if (!normalizedPageSlug) {
+    throw new Error('Page slug is required.');
+  }
+
+  const normalizedMonths =
+    Number.isFinite(months) && Math.trunc(months) > 0 ? Math.trunc(months) : 1;
+  const currentDisplayPeriod = await getDisplayPeriodByPageSlug(normalizedPageSlug);
+
+  if (!currentDisplayPeriod?.startDate || !currentDisplayPeriod?.endDate) {
+    throw new Error('Display period is not configured.');
+  }
+
+  const nextStartDate = new Date(currentDisplayPeriod.startDate);
+  const nextEndDate = new Date(currentDisplayPeriod.endDate);
+  nextEndDate.setMonth(nextEndDate.getMonth() + normalizedMonths);
+
+  await upsertDisplayPeriodRecord(normalizedPageSlug, {
+    isActive: true,
+    startDate: nextStartDate,
+    endDate: nextEndDate,
+  });
+
+  return {
+    startDate: nextStartDate,
+    endDate: nextEndDate,
+  };
 }
 
 export async function getServerInvitationPageDefaultThemeBySlug(

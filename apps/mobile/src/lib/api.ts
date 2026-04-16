@@ -14,6 +14,8 @@ import type {
   MobileSessionSummary,
 } from '../types/mobileInvitation';
 
+export const PRODUCTION_API_BASE_URL = 'https://msgnote.kr';
+
 function readConfiguredApiBaseUrl() {
   const envApiBaseUrl = process.env.EXPO_PUBLIC_API_BASE?.trim();
   if (envApiBaseUrl) {
@@ -25,7 +27,7 @@ function readConfiguredApiBaseUrl() {
     return extraApiBaseUrl.trim();
   }
 
-  return '';
+  return PRODUCTION_API_BASE_URL;
 }
 
 export const DEFAULT_API_BASE_URL = readConfiguredApiBaseUrl();
@@ -212,13 +214,23 @@ export async function validateMobileClientEditorSession(
 export async function fetchMobileInvitationDashboard(
   baseUrl: string,
   pageSlug: string,
-  token: string
+  token: string,
+  options: {
+    includeComments?: boolean;
+  } = {}
 ) {
+  const params = new URLSearchParams();
+  if (options.includeComments) {
+    params.set('includeComments', 'true');
+  }
+
   return readJsonResponse<MobileInvitationDashboard>(
     await fetch(
       buildApiUrl(
         baseUrl,
-        `/api/mobile/client-editor/pages/${encodeURIComponent(pageSlug)}/dashboard`
+        `/api/mobile/client-editor/pages/${encodeURIComponent(pageSlug)}/dashboard${
+          params.size ? `?${params.toString()}` : ''
+        }`
       ),
       {
         headers: createHeaders(token),
@@ -350,6 +362,30 @@ export async function adjustMobileInvitationTicketCount(
         body: JSON.stringify({
           action: 'adjustTicketCount',
           amount,
+        }),
+      }
+    )
+  );
+}
+
+export async function extendMobileInvitationDisplayPeriod(
+  baseUrl: string,
+  pageSlug: string,
+  token: string,
+  months = 1
+) {
+  return readJsonResponse<{ success: boolean; startDate: string; endDate: string }>(
+    await fetch(
+      buildApiUrl(baseUrl, `/api/mobile/client-editor/pages/${encodeURIComponent(pageSlug)}`),
+      {
+        method: 'POST',
+        headers: {
+          ...createHeaders(token),
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          action: 'extendDisplayPeriod',
+          months,
         }),
       }
     )

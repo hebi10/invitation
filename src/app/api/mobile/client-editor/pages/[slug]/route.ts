@@ -5,6 +5,7 @@ import {
   authorizeMobileClientEditorRequest,
 } from '@/server/clientEditorMobileApi';
 import {
+  extendServerInvitationPageDisplayPeriod,
   getServerEditableInvitationPageConfig,
   restoreServerInvitationPageConfig,
   saveServerInvitationPageConfig,
@@ -84,6 +85,7 @@ export async function POST(
         variantKey?: unknown;
         available?: unknown;
         amount?: unknown;
+        months?: unknown;
         targetPageSlug?: unknown;
         targetToken?: unknown;
       }
@@ -167,6 +169,20 @@ export async function POST(
 
       const ticketCount = await adjustServerPageTicketCount(pageSlug, body.amount);
       return NextResponse.json({ success: true, ticketCount });
+    }
+
+    if (action === 'extendDisplayPeriod') {
+      const months =
+        typeof body?.months === 'number' && Number.isFinite(body.months)
+          ? Math.max(1, Math.trunc(body.months))
+          : 1;
+
+      const displayPeriod = await extendServerInvitationPageDisplayPeriod(pageSlug, months);
+      return NextResponse.json({
+        success: true,
+        startDate: displayPeriod.startDate.toISOString(),
+        endDate: displayPeriod.endDate.toISOString(),
+      });
     }
 
     if (action === 'transferTicketCount') {

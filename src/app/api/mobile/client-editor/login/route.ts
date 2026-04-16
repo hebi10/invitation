@@ -7,7 +7,10 @@ import {
   MOBILE_CLIENT_EDITOR_SESSION_TTL_SECONDS,
 } from '@/server/clientEditorMobileApi';
 import { verifyServerClientPassword } from '@/server/clientPasswordServerService';
-import { getServerEditableInvitationPageConfig } from '@/server/invitationPageServerService';
+import {
+  getServerEditableInvitationPageConfig,
+  getServerInvitationPageDisplayPeriodSummary,
+} from '@/server/invitationPageServerService';
 import { getServerPageTicketCount } from '@/server/pageTicketServerService';
 
 export async function POST(request: Request) {
@@ -32,8 +35,9 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Invalid page password.' }, { status: 401 });
     }
 
-    const [config, ticketCount] = await Promise.all([
+    const [config, displayPeriod, ticketCount] = await Promise.all([
       getServerEditableInvitationPageConfig(pageSlug),
+      getServerInvitationPageDisplayPeriodSummary(pageSlug),
       getServerPageTicketCount(pageSlug),
     ]);
     const { value, expiresAt } = createClientEditorSessionValue(
@@ -68,6 +72,11 @@ export async function POST(request: Request) {
             defaultTheme: config.defaultTheme,
             features: config.features,
             ticketCount,
+            displayPeriod: {
+              enabled: displayPeriod.enabled,
+              startDate: displayPeriod.startDate?.toISOString() ?? null,
+              endDate: displayPeriod.endDate?.toISOString() ?? null,
+            },
           }
         : null,
       links,
