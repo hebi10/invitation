@@ -86,12 +86,14 @@ function buildCreateValidationRules(input: {
   brideEnglishName: string;
   slugPreview: string;
   password: string;
+  confirmPassword: string;
 }): CreateValidationRule[] {
   const groomKoreanName = input.groomKoreanName.trim();
   const brideKoreanName = input.brideKoreanName.trim();
   const groomEnglishName = input.groomEnglishName.trim();
   const brideEnglishName = input.brideEnglishName.trim();
   const password = input.password.trim();
+  const confirmPassword = input.confirmPassword.trim();
 
   return [
     {
@@ -129,6 +131,13 @@ function buildCreateValidationRules(input: {
       errorMessage: !password
         ? '페이지 비밀번호를 입력해 주세요.'
         : '페이지 비밀번호는 4자 이상으로 입력해 주세요.',
+    },
+    {
+      label: '비밀번호 확인',
+      passed: Boolean(confirmPassword) && password === confirmPassword,
+      errorMessage: !confirmPassword
+        ? '비밀번호 확인을 입력해 주세요.'
+        : '비밀번호와 비밀번호 확인이 일치하지 않습니다.',
     },
   ];
 }
@@ -172,6 +181,7 @@ export default function CreateScreen() {
   const [groomEnglishName, setGroomEnglishName] = useState('');
   const [brideEnglishName, setBrideEnglishName] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [ticketCount, setTicketCount] = useState(0);
   const [notice, setNotice] = useState('');
   const [paymentModalVisible, setPaymentModalVisible] = useState(false);
@@ -244,8 +254,17 @@ export default function CreateScreen() {
         brideEnglishName,
         slugPreview,
         password,
+        confirmPassword,
       }),
-    [brideEnglishName, brideKoreanName, groomEnglishName, groomKoreanName, password, slugPreview]
+    [
+      brideEnglishName,
+      brideKoreanName,
+      confirmPassword,
+      groomEnglishName,
+      groomKoreanName,
+      password,
+      slugPreview,
+    ]
   );
 
   const validationChecklist = useMemo(
@@ -307,6 +326,7 @@ export default function CreateScreen() {
     setGroomEnglishName(selectedDraft.groomEnglishName);
     setBrideEnglishName(selectedDraft.brideEnglishName);
     setPassword('');
+    setConfirmPassword('');
     setTicketCount(selectedDraft.ticketCount);
     setEditingDraftId(selectedDraft.id);
     setLoadedDraftId(selectedDraft.id);
@@ -369,6 +389,7 @@ export default function CreateScreen() {
     setGroomEnglishName('');
     setBrideEnglishName('');
     setPassword('');
+    setConfirmPassword('');
     setTicketCount(0);
     setEditingDraftId(null);
     setLoadedDraftId(null);
@@ -615,6 +636,16 @@ export default function CreateScreen() {
             value={password}
             onChangeText={setPassword}
             placeholder="페이지별 비밀번호 입력"
+            secureTextEntry
+            autoCapitalize="none"
+            autoCorrect={false}
+            returnKeyType="next"
+          />
+          <TextField
+            label="비밀번호 확인"
+            value={confirmPassword}
+            onChangeText={setConfirmPassword}
+            placeholder="비밀번호를 한 번 더 입력"
             secureTextEntry
             autoCapitalize="none"
             autoCorrect={false}

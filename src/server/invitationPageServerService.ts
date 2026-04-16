@@ -679,7 +679,12 @@ function buildDraftConfigFromSeed(
     bride: {
       ...nextSeed.couple.bride,
     },
-    kakaoMap: undefined,
+    kakaoMap: {
+      latitude: 0,
+      longitude: 0,
+      level: nextSeed.pageData?.kakaoMap?.level ?? 3,
+      markerTitle: '',
+    },
     venueGuide: [],
     wreathGuide: [],
     giftInfo: {
@@ -1175,10 +1180,11 @@ export async function createServerInvitationPageDraftFromSeed(
     theme: normalizeInvitationTheme(input.defaultTheme),
   });
   const now = new Date();
+  const configPayload = stripUndefinedDeep(config);
 
   await db.collection(PAGE_CONFIG_COLLECTION).doc(slug).set(
     {
-      ...config,
+      ...configPayload,
       seedSourceSlug: seed.slug,
       editorTokenHash: FieldValue.delete(),
       createdAt: now,

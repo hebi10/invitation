@@ -1,7 +1,7 @@
 import { useRouter } from 'expo-router';
 import { Platform, StyleSheet, Text, View } from 'react-native';
 
-import { quickStartItems, sampleInvitations } from '../../constants/content';
+import { quickStartItems } from '../../constants/content';
 import { ActionButton } from '../../components/ActionButton';
 import { AppScreen } from '../../components/AppScreen';
 import { BulletList } from '../../components/BulletList';
@@ -146,13 +146,6 @@ export default function HomeScreen() {
         description="서비스 흐름을 먼저 읽고 바로 다음 단계로 이어갈 수 있습니다."
       >
         <BulletList items={quickStartItems} />
-      </SectionCard>
-
-      <SectionCard
-        title="샘플 청첩장"
-        description="실제 샘플 페이지가 어떻게 보이는지 먼저 살펴볼 수 있습니다."
-      >
-        <BulletList items={sampleInvitations} />
       </SectionCard>
     </AppScreen>
   );
