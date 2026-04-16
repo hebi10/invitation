@@ -1,11 +1,11 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Tabs } from 'expo-router';
-
-import { useAppState } from '../../contexts/AppStateContext';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { usePreferences } from '../../contexts/PreferencesContext';
+
 export default function TabsLayout() {
-  const { palette, fontScale } = useAppState();
+  const { palette, fontScale } = usePreferences();
   const insets = useSafeAreaInsets();
 
   return (

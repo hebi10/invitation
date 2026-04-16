@@ -1,7 +1,12 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+﻿import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import type {
   MobileInvitationDashboard,
+  MobileInvitationGiftInfo,
+  MobileInvitationKakaoMapData,
+  MobileInvitationMetadata,
+  MobileInvitationMetadataImages,
+  MobileInvitationPageData,
   MobileInvitationSeed,
   MobileInvitationThemeKey,
   PendingManageOnboarding,
@@ -92,7 +97,7 @@ export function useInvitationForm({
     form.kakaoMarkerTitle.trim() ||
     form.venue.trim() ||
     form.ceremonyAddress.trim() ||
-    '선택된 위치';
+    '선택한 위치';
   const mapPreviewUrl = useMemo(() => {
     if (hasValidCoordinates(mapLatitude, mapLongitude)) {
       return buildKakaoMapPinUrl(mapMarkerTitle, mapLatitude ?? 0, mapLongitude ?? 0);
@@ -127,10 +132,18 @@ export function useInvitationForm({
       return;
     }
 
+    setOnboardingVisible(false);
     setOnboardingStepIndex(0);
-    setOnboardingVisible(true);
-    setNotice('운영 탭에서 예식 정보를 이어서 입력해 주세요.');
-  }, [dashboard, pendingManageOnboarding, setNotice]);
+    setEditorStepIndex(0);
+    setEditorModalVisible(true);
+    clearPendingManageOnboarding();
+    setNotice('운영 탭의 편집 모달에서 예식 정보를 이어서 입력해 주세요.');
+  }, [
+    clearPendingManageOnboarding,
+    dashboard,
+    pendingManageOnboarding,
+    setNotice,
+  ]);
 
   const updateField = useCallback((field: ManageStringFieldKey, value: string) => {
     setForm((current) => ({
@@ -222,14 +235,14 @@ export function useInvitationForm({
     setNotice('');
     setEditorPreparingMessage(
       dashboard
-        ? '청첩장 편집 화면을 준비하고 있습니다.'
+        ? '청첩장 수정 화면을 준비하고 있습니다.'
         : '최신 청첩장 정보를 불러오고 있습니다.'
     );
     setEditorPreparingVisible(true);
 
     try {
       if (!dashboard) {
-        setNotice('운영 데이터를 불러와야 수정 팝업을 열 수 있습니다.');
+        setNotice('운영 데이터를 불러와야 편집 작업을 시작할 수 있습니다.');
         const synced = await requestDashboardSync();
         if (!synced) {
           return;
@@ -286,19 +299,39 @@ export function useInvitationForm({
       const nextVenueGuide = parseGuidesText(form.venueGuideText, 3);
       const nextWreathGuide = parseGuidesText(form.wreathGuideText, 3);
 
-      const existingPageData = dashboard.page.config.pageData ?? {};
-      const existingCeremony = readRecord(existingPageData.ceremony);
-      const existingReception = readRecord(existingPageData.reception);
-      const existingKakaoMap = readRecord(existingPageData.kakaoMap);
-      const existingGiftInfo = readRecord(existingPageData.giftInfo);
-      const existingPageDataGroom = readRecord(existingPageData.groom);
-      const existingPageDataBride = readRecord(existingPageData.bride);
-      const existingMetadata = readRecord(
-        (dashboard.page.config as Record<string, unknown>).metadata
+      const existingPageData = readRecord<MobileInvitationPageData>(
+        dashboard.page.config.pageData
       );
-      const existingMetadataImages = readRecord(existingMetadata.images);
-      const existingOpenGraph = readRecord(existingMetadata.openGraph);
-      const existingTwitter = readRecord(existingMetadata.twitter);
+      const existingCeremony = readRecord<NonNullable<MobileInvitationPageData['ceremony']>>(
+        existingPageData.ceremony
+      );
+      const existingReception = readRecord<NonNullable<MobileInvitationPageData['reception']>>(
+        existingPageData.reception
+      );
+      const existingKakaoMap = readRecord<MobileInvitationKakaoMapData>(
+        existingPageData.kakaoMap
+      );
+      const existingGiftInfo = readRecord<MobileInvitationGiftInfo>(existingPageData.giftInfo);
+      const existingPageDataGroom = readRecord<NonNullable<MobileInvitationPageData['groom']>>(
+        existingPageData.groom
+      );
+      const existingPageDataBride = readRecord<NonNullable<MobileInvitationPageData['bride']>>(
+        existingPageData.bride
+      );
+      const existingMetadata = readRecord<MobileInvitationMetadata>(
+        dashboard.page.config.metadata
+      );
+      const existingMetadataImages = readRecord<MobileInvitationMetadataImages>(
+        existingMetadata.images
+      );
+      const existingOpenGraph = readRecord<NonNullable<MobileInvitationMetadata['openGraph']>>(
+        existingMetadata.openGraph
+      );
+      const existingTwitter = readRecord<NonNullable<MobileInvitationMetadata['twitter']>>(
+        existingMetadata.twitter
+      );
+
+
 
       const nextLatitude = parseOptionalNumber(form.kakaoLatitude) ?? 0;
       const nextLongitude = parseOptionalNumber(form.kakaoLongitude) ?? 0;
@@ -333,7 +366,7 @@ export function useInvitationForm({
         form.kakaoMarkerTitle.trim() || form.venue.trim() || form.ceremonyAddress.trim();
       const resolvedMapUrl = hasValidCoordinates(nextLatitude, nextLongitude)
         ? buildKakaoMapPinUrl(
-            resolvedMarkerTitle || '선택된 위치',
+            resolvedMarkerTitle || '선택한 위치',
             nextLatitude,
             nextLongitude
           )
@@ -451,7 +484,7 @@ export function useInvitationForm({
         },
       };
 
-      (nextConfig as Record<string, unknown>).metadata = {
+      nextConfig.metadata = {
         ...existingMetadata,
         title: form.shareTitle.trim(),
         description: form.shareDescription.trim(),

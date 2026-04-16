@@ -1,4 +1,4 @@
-import type { PropsWithChildren, ReactNode } from 'react';
+import type { PropsWithChildren, ReactNode, RefObject } from 'react';
 
 import {
   ScrollView,
@@ -10,13 +10,14 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { useAppState } from '../contexts/AppStateContext';
+import { usePreferences } from '../contexts/PreferencesContext';
 
 type AppScreenProps = PropsWithChildren<{
   title: string;
   subtitle?: string;
   headerRight?: ReactNode;
   contentContainerStyle?: StyleProp<ViewStyle>;
+  scrollRef?: RefObject<ScrollView | null>;
 }>;
 
 export function AppScreen({
@@ -24,13 +25,15 @@ export function AppScreen({
   subtitle,
   headerRight,
   contentContainerStyle,
+  scrollRef,
   children,
 }: AppScreenProps) {
-  const { palette, fontScale } = useAppState();
+  const { palette, fontScale } = usePreferences();
   const insets = useSafeAreaInsets();
 
   return (
     <ScrollView
+      ref={scrollRef}
       style={[styles.screen, { backgroundColor: palette.background }]}
       contentContainerStyle={[
         styles.content,

@@ -1,5 +1,11 @@
-import type {
+﻿import type {
+  MobileInvitationAccountItem,
   MobileInvitationDashboard,
+  MobileInvitationGiftInfo,
+  MobileInvitationGuideItem,
+  MobileInvitationKakaoMapData,
+  MobileInvitationMetadata,
+  MobileInvitationPageData,
   MobileInvitationThemeKey,
 } from '../../types/mobileInvitation';
 
@@ -73,6 +79,7 @@ export type EditorStepKey =
   | 'location'
   | 'greeting'
   | 'images'
+  | 'music'
   | 'settings';
 
 export type EditorStep = {
@@ -91,7 +98,7 @@ export const ONBOARDING_STEPS = [
   {
     key: 'cover',
     title: '1. 기본 문구와 이름',
-    description: '대표 제목, 소개 문구, 신랑과 신부 이름을 먼저 확인합니다.',
+    description: '제목, 소개 문구, 신랑과 신부 이름을 먼저 확인합니다.',
   },
   {
     key: 'schedule',
@@ -101,7 +108,7 @@ export const ONBOARDING_STEPS = [
   {
     key: 'greeting',
     title: '3. 인사말과 공개 상태',
-    description: '인사말을 입력하고, 저장 직후 공개할지 마지막으로 결정합니다.',
+    description: '인사말을 입력하고, 저장 직후 공개 여부를 마지막으로 결정합니다.',
   },
 ] as const;
 
@@ -132,9 +139,14 @@ export const EDITOR_STEPS: EditorStep[] = [
     description: '대표 이미지와 갤러리를 실제 미리보기 기준으로 정렬합니다.',
   },
   {
+    key: 'music',
+    title: '배경음악',
+    description: '배경음악 사용 여부와 곡 선택, 볼륨을 따로 관리합니다.',
+  },
+  {
     key: 'settings',
     title: '공유와 공개 설정',
-    description: '공유 문구, 기본 테마, 배경음악, 공개 상태를 마지막으로 점검합니다.',
+    description: '공유 문구와 공개 상태를 마지막으로 확인합니다.',
   },
 ];
 
@@ -205,9 +217,9 @@ export const EMPTY_FORM: ManageFormState = {
   defaultTheme: 'emotional',
 };
 
-export function readRecord(value: unknown): Record<string, unknown> {
+export function readRecord<T extends object>(value: unknown): Partial<T> {
   return typeof value === 'object' && value !== null
-    ? (value as Record<string, unknown>)
+    ? (value as Partial<T>)
     : {};
 }
 
@@ -238,7 +250,7 @@ export function formatAccountsText(value: unknown) {
 
   return value
     .map((item) => {
-      const account = readRecord(item);
+      const account = readRecord<MobileInvitationAccountItem>(item);
       const bank = readString(account.bank).trim();
       const accountNumber = readString(account.accountNumber).trim();
       const accountHolder = readString(account.accountHolder).trim();
@@ -285,7 +297,7 @@ export function formatGuidesText(value: unknown) {
 
   return value
     .map((item) => {
-      const guide = readRecord(item);
+      const guide = readRecord<MobileInvitationGuideItem>(item);
       const title = readString(guide.title).trim();
       const content = readString(guide.content).trim();
 
@@ -398,7 +410,7 @@ export function buildUploadFileName(assetKind: EditableImageAssetKind, mimeType:
 }
 
 export function toParentState(value: unknown): ManageParentState {
-  const parent = readRecord(value);
+  const parent = readRecord<ManageParentState>(value);
   return {
     relation: readString(parent.relation),
     name: readString(parent.name),
@@ -407,7 +419,7 @@ export function toParentState(value: unknown): ManageParentState {
 }
 
 export function toPersonState(value: unknown, fallbackName = ''): ManagePersonState {
-  const person = readRecord(value);
+  const person = readRecord<ManagePersonState>(value);
   return {
     name: readString(person.name, fallbackName),
     order: readString(person.order),
@@ -428,7 +440,7 @@ export function getOnboardingValidationMessage(stepIndex: number, form: ManageFo
     }
 
     if (!form.displayName.trim()) {
-      return '대표 제목을 입력해 주세요.';
+      return '페이지 제목을 입력해 주세요.';
     }
   }
 
@@ -457,13 +469,13 @@ export function buildManageFormFromDashboard(
   dashboard: MobileInvitationDashboard
 ): ManageFormState {
   const config = dashboard.page.config;
-  const pageData = readRecord(config.pageData);
-  const ceremony = readRecord(pageData.ceremony);
-  const reception = readRecord(pageData.reception);
-  const kakaoMap = readRecord(pageData.kakaoMap);
-  const giftInfo = readRecord(pageData.giftInfo);
-  const metadata = readRecord((config as Record<string, unknown>).metadata);
-  const metadataImages = readRecord(metadata.images);
+  const pageData = readRecord<MobileInvitationPageData>(config.pageData);
+  const ceremony = readRecord<NonNullable<MobileInvitationPageData['ceremony']>>(pageData.ceremony);
+  const reception = readRecord<NonNullable<MobileInvitationPageData['reception']>>(pageData.reception);
+  const kakaoMap = readRecord<MobileInvitationKakaoMapData>(pageData.kakaoMap);
+  const giftInfo = readRecord<MobileInvitationGiftInfo>(pageData.giftInfo);
+  const metadata = readRecord<MobileInvitationMetadata>(config.metadata);
+  const metadataImages = readRecord<NonNullable<MobileInvitationMetadata['images']>>(metadata.images);
   const galleryThumbnailCandidates = readStringArray(pageData.galleryImageThumbnailUrls);
   const galleryImages = readStringArray(
     pageData.galleryImages,
@@ -522,7 +534,7 @@ export function buildManageFormFromDashboard(
     musicEnabled: dashboard.page.features.showMusic ? config.musicEnabled === true : false,
     musicCategoryId: readString(config.musicCategoryId),
     musicTrackId: readString(config.musicTrackId),
-    musicStoragePath: readString((config as Record<string, unknown>).musicStoragePath),
+    musicStoragePath: readString(config.musicStoragePath),
     musicVolume:
       typeof config.musicVolume === 'number' && Number.isFinite(config.musicVolume)
         ? String(config.musicVolume)

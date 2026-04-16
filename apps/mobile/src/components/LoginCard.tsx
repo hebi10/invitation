@@ -1,6 +1,7 @@
 import { StyleSheet, Text, View } from 'react-native';
 
-import { useAppState } from '../contexts/AppStateContext';
+import { useAuth } from '../contexts/AuthContext';
+import { usePreferences } from '../contexts/PreferencesContext';
 import { ActionButton } from './ActionButton';
 import { SectionCard } from './SectionCard';
 import { TextField } from './TextField';
@@ -20,7 +21,8 @@ export function LoginCard({
   onChangePassword,
   onSubmit,
 }: LoginCardProps) {
-  const { authError, isAuthenticating, palette, fontScale } = useAppState();
+  const { authError, isAuthenticating } = useAuth();
+  const { palette, fontScale } = usePreferences();
 
   return (
     <SectionCard

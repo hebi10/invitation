@@ -218,6 +218,9 @@ export const manageStyles = StyleSheet.create({
   guestbookModalCard: {
     maxHeight: '90%',
   },
+  editorModalCard: {
+    height: '96%',
+  },
   previewLinkModalCard: {
     maxHeight: '96%',
     minHeight: 420,

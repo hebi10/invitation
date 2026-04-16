@@ -1,4 +1,4 @@
-import type { PropsWithChildren } from 'react';
+﻿import type { PropsWithChildren } from 'react';
 import {
   createContext,
   useCallback,
@@ -32,6 +32,7 @@ import type {
 import { usePreferences } from './PreferencesContext';
 
 const SESSION_STORAGE_KEY = 'mobile-invitation:session';
+const SESSION_EXPIRY_BUFFER_MS = 30 * 1000;
 
 export type AuthInitialDashboardSeed = {
   dashboardPage: MobileEditableInvitationPageConfig | null | undefined;
@@ -84,6 +85,10 @@ export function AuthProvider({ children }: PropsWithChildren) {
     await setStoredString(SESSION_STORAGE_KEY, null);
   }, []);
 
+  const hasSessionExpired = useCallback((candidateSession: MobileSessionSummary) => {
+    return candidateSession.expiresAt <= Date.now() + SESSION_EXPIRY_BUFFER_MS;
+  }, []);
+
   const hydrateSession = useCallback(
     async (
       candidateSession: MobileSessionSummary,
@@ -96,6 +101,15 @@ export function AuthProvider({ children }: PropsWithChildren) {
       setIsAuthenticating(true);
 
       try {
+        if (hasSessionExpired(candidateSession)) {
+          if (options.clearOnFailure) {
+            await clearSession();
+          } else if (options.failureMessage) {
+            setAuthError(options.failureMessage);
+          }
+          return false;
+        }
+
         const response = await validateMobileClientEditorSession(
           nextBaseUrl,
           candidateSession.pageSlug,
@@ -145,7 +159,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
         setIsAuthenticating(false);
       }
     },
-    [clearSession]
+    [clearSession, hasSessionExpired]
   );
 
   const restoreSession = useCallback(
@@ -161,7 +175,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
       hydrateSession(candidateSession, apiBaseUrl, {
         clearOnFailure: false,
         failureMessage:
-          '저장된 청첩장 연동 정보가 만료되었습니다. 비밀번호를 다시 입력해 주세요.',
+          '저장된 연동 정보가 만료되었습니다. 비밀번호를 다시 입력해 주세요.',
       }),
     [apiBaseUrl, hydrateSession]
   );
@@ -231,7 +245,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
       const normalizedPassword = password.trim();
 
       if (!pageSlug || !normalizedPassword) {
-        setAuthError('청첩장 슬러그와 비밀번호를 입력해 주세요.');
+        setAuthError('청첩장 주소와 비밀번호를 입력해 주세요.');
         return false;
       }
 

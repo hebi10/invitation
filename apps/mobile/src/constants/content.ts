@@ -48,6 +48,12 @@ export const servicePlans = [
   },
 ] as const;
 
+export const ticketPricing = {
+  unitPrice: 4000,
+  bundleSize: 3,
+  bundlePrice: 10000,
+} as const;
+
 export const designThemes = [
   {
     key: 'emotional' as MobileInvitationThemeKey,

@@ -1,13 +1,14 @@
 import { Redirect, type Href, useLocalSearchParams, useRouter } from 'expo-router';
-import { ActivityIndicator, Platform, StyleSheet, View } from 'react-native';
 import { useState } from 'react';
+import { ActivityIndicator, Platform, StyleSheet, View } from 'react-native';
 
 import { ActionButton } from '../components/ActionButton';
 import { AppScreen } from '../components/AppScreen';
 import { AppText } from '../components/AppText';
 import { LoginCard } from '../components/LoginCard';
 import { WebPreviewNotice } from '../components/WebPreviewNotice';
-import { useAppState } from '../contexts/AppStateContext';
+import { useAuth } from '../contexts/AuthContext';
+import { usePreferences } from '../contexts/PreferencesContext';
 
 function resolveNextPath(value: string | string[] | undefined): Href {
   const next = Array.isArray(value) ? value[0] : value;
@@ -22,9 +23,15 @@ export default function LoginScreen() {
   const router = useRouter();
   const params = useLocalSearchParams<{ next?: string | string[] }>();
   const nextPath = resolveNextPath(params.next);
-  const { isAuthenticated, isBootstrapping, login, clearAuthError, palette } =
-    useAppState();
+  const {
+    isAuthenticated,
+    isReady: isAuthReady,
+    login,
+    clearAuthError,
+  } = useAuth();
+  const { isReady: isPreferencesReady, palette } = usePreferences();
   const isExpoWebPreview = Platform.OS === 'web';
+  const isBootstrapping = !(isAuthReady && isPreferencesReady);
   const [pageIdentifier, setPageIdentifier] = useState('');
   const [password, setPassword] = useState('');
 
@@ -43,7 +50,7 @@ export default function LoginScreen() {
     return (
       <AppScreen
         title="페이지 연동"
-        subtitle="저장된 자동 로그인 상태와 운영 권한을 확인하고 있습니다."
+        subtitle="저장된 연동 로그인 상태와 운영 권한을 확인하고 있습니다."
       >
         <View style={styles.loadingRow}>
           <ActivityIndicator color={palette.accent} />
@@ -57,7 +64,7 @@ export default function LoginScreen() {
     return (
       <AppScreen
         title="웹 미리보기"
-        subtitle="Expo 웹 빌드에서는 실제 로그인과 운영 편집 기능이 제한됩니다."
+        subtitle="Expo 웹 빌드에서는 실제 로그인과 운영 편집 기능을 제한합니다."
         contentContainerStyle={styles.screenContent}
       >
         <WebPreviewNotice />

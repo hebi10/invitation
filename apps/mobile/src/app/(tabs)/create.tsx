@@ -1,5 +1,5 @@
 ﻿import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useFocusEffect } from 'expo-router';
 import {
   Modal,
@@ -18,11 +18,15 @@ import { ChoiceChip } from '../../components/ChoiceChip';
 import { SectionCard } from '../../components/SectionCard';
 import { TextField } from '../../components/TextField';
 import { WebPreviewNotice } from '../../components/WebPreviewNotice';
-import { useAppState } from '../../contexts/AppStateContext';
 import {
   designThemes,
   servicePlans,
+  ticketPricing,
 } from '../../constants/content';
+import { useAuth } from '../../contexts/AuthContext';
+import { useDrafts } from '../../contexts/DraftsContext';
+import { useInvitationOps } from '../../contexts/InvitationOpsContext';
+import { usePreferences } from '../../contexts/PreferencesContext';
 import { adjustMobileInvitationTicketCount } from '../../lib/api';
 import { formatPrice } from '../../lib/format';
 import {
@@ -54,13 +58,14 @@ const TICKET_USAGE_ITEMS = [
   '티켓 2장: 서비스 업그레이드',
 ] as const;
 
-const TICKET_UNIT_PRICE = 4000;
-const TICKET_DISCOUNT_BUNDLE_SIZE = 3;
-const TICKET_BUNDLE_PRICE = 10000;
+const TICKET_UNIT_PRICE = ticketPricing.unitPrice;
+const TICKET_DISCOUNT_BUNDLE_SIZE = ticketPricing.bundleSize;
+const TICKET_BUNDLE_PRICE = ticketPricing.bundlePrice;
 const TICKET_PRESET_COUNTS = [0, 1, 3, 6] as const;
 const MAX_TICKET_COUNT = 12;
 
 type CreateValidationRule = {
+  section: 'input' | 'selection';
   label: string;
   passed: boolean;
   errorMessage: string;
@@ -87,6 +92,7 @@ function buildCreateValidationRules(input: {
   slugPreview: string;
   password: string;
   confirmPassword: string;
+  selectedTheme: MobileInvitationThemeKey | null;
 }): CreateValidationRule[] {
   const groomKoreanName = input.groomKoreanName.trim();
   const brideKoreanName = input.brideKoreanName.trim();
@@ -98,16 +104,19 @@ function buildCreateValidationRules(input: {
   return [
     {
       label: '신랑 한글 이름',
+      section: 'input',
       passed: Boolean(groomKoreanName),
       errorMessage: '신랑 한글 이름을 입력해 주세요.',
     },
     {
       label: '신부 한글 이름',
+      section: 'input',
       passed: Boolean(brideKoreanName),
       errorMessage: '신부 한글 이름을 입력해 주세요.',
     },
     {
       label: '신랑 영문 이름',
+      section: 'input',
       passed: Boolean(groomEnglishName) && isValidEnglishName(groomEnglishName),
       errorMessage: !groomEnglishName
         ? '신랑 영문 이름을 입력해 주세요.'
@@ -115,6 +124,7 @@ function buildCreateValidationRules(input: {
     },
     {
       label: '신부 영문 이름',
+      section: 'input',
       passed: Boolean(brideEnglishName) && isValidEnglishName(brideEnglishName),
       errorMessage: !brideEnglishName
         ? '신부 영문 이름을 입력해 주세요.'
@@ -122,11 +132,13 @@ function buildCreateValidationRules(input: {
     },
     {
       label: 'URL 슬러그 생성',
+      section: 'input',
       passed: Boolean(input.slugPreview),
       errorMessage: '영문 이름으로 사용할 페이지 주소를 만들 수 없습니다.',
     },
     {
       label: '페이지 비밀번호',
+      section: 'input',
       passed: password.length >= 4,
       errorMessage: !password
         ? '페이지 비밀번호를 입력해 주세요.'
@@ -134,10 +146,17 @@ function buildCreateValidationRules(input: {
     },
     {
       label: '비밀번호 확인',
+      section: 'input',
       passed: Boolean(confirmPassword) && password === confirmPassword,
       errorMessage: !confirmPassword
         ? '비밀번호 확인을 입력해 주세요.'
         : '비밀번호와 비밀번호 확인이 일치하지 않습니다.',
+    },
+    {
+      label: '디자인 선택',
+      section: 'selection',
+      passed: Boolean(input.selectedTheme),
+      errorMessage: '디자인을 먼저 선택해 주세요.',
     },
   ];
 }
@@ -156,26 +175,21 @@ export default function CreateScreen() {
     targetPlan?: string | string[];
     targetTheme?: string | string[];
   }>();
+  const { apiBaseUrl, palette } = usePreferences();
   const {
-    apiBaseUrl,
     authError,
     clearAuthError,
     createInvitationPage,
-    drafts,
     isAuthenticating,
-    palette,
-    pageSummary,
-    refreshDashboard,
     session,
-    adjustTicketCount,
-    removeDraft,
-    saveDraft,
-  } = useAppState();
+  } = useAuth();
+  const { pageSummary, refreshDashboard, adjustTicketCount } = useInvitationOps();
+  const { drafts, removeDraft, saveDraft } = useDrafts();
 
   const [selectedPlan, setSelectedPlan] =
     useState<MobileInvitationProductTier>('standard');
   const [selectedTheme, setSelectedTheme] =
-    useState<MobileInvitationThemeKey>('emotional');
+    useState<MobileInvitationThemeKey | null>(null);
   const [groomKoreanName, setGroomKoreanName] = useState('');
   const [brideKoreanName, setBrideKoreanName] = useState('');
   const [groomEnglishName, setGroomEnglishName] = useState('');
@@ -195,13 +209,16 @@ export default function CreateScreen() {
   const [isTicketPurchaseSubmitting, setIsTicketPurchaseSubmitting] = useState(false);
   const [ticketPurchaseSuccess, setTicketPurchaseSuccess] =
     useState<TicketPurchaseSuccessState | null>(null);
+  const scrollRef = useRef<ScrollView | null>(null);
+  const [inputSectionOffsetY, setInputSectionOffsetY] = useState(0);
+  const [selectionSectionOffsetY, setSelectionSectionOffsetY] = useState(0);
 
   const selectedPlanInfo = useMemo(
     () => servicePlans.find((plan) => plan.tier === selectedPlan) ?? servicePlans[0],
     [selectedPlan]
   );
   const selectedThemeInfo = useMemo(
-    () => designThemes.find((theme) => theme.key === selectedTheme) ?? designThemes[0],
+    () => designThemes.find((theme) => theme.key === selectedTheme) ?? null,
     [selectedTheme]
   );
   const ticketPrice = useMemo(() => calculateTicketPrice(ticketCount), [ticketCount]);
@@ -255,6 +272,7 @@ export default function CreateScreen() {
         slugPreview,
         password,
         confirmPassword,
+        selectedTheme,
       }),
     [
       brideEnglishName,
@@ -263,6 +281,7 @@ export default function CreateScreen() {
       groomEnglishName,
       groomKoreanName,
       password,
+      selectedTheme,
       slugPreview,
     ]
   );
@@ -383,7 +402,7 @@ export default function CreateScreen() {
 
   const resetForm = () => {
     setSelectedPlan('standard');
-    setSelectedTheme('emotional');
+    setSelectedTheme(null);
     setGroomKoreanName('');
     setBrideKoreanName('');
     setGroomEnglishName('');
@@ -408,10 +427,16 @@ export default function CreateScreen() {
       return;
     }
 
+    if (!selectedTheme) {
+      setNotice('초안 저장 전에는 디자인을 먼저 선택해 주세요.');
+      scrollRef.current?.scrollTo({ y: selectionSectionOffsetY, animated: true });
+      return;
+    }
+
     const savedDraftId = await saveDraft(
       {
         servicePlan: selectedPlan,
-        theme: selectedTheme,
+        theme: selectedTheme ?? 'emotional',
         pageIdentifier: slugPreview,
         groomName: groomKoreanName.trim(),
         brideName: brideKoreanName.trim(),
@@ -445,6 +470,11 @@ export default function CreateScreen() {
 
     if (validationMessages.length > 0) {
       setNotice(validationMessages[0] ?? '입력 정보를 먼저 확인해 주세요.');
+      const firstInvalidRule = validationRules.find((rule) => !rule.passed);
+      scrollRef.current?.scrollTo({
+        y: firstInvalidRule?.section === 'selection' ? selectionSectionOffsetY : inputSectionOffsetY,
+        animated: true,
+      });
       return;
     }
 
@@ -483,6 +513,8 @@ export default function CreateScreen() {
 
     setIsTicketPurchaseSubmitting(true);
 
+    // 현재 활성 청첩장이 아닌 다른 연동 카드에 적립할 때는,
+    // 해당 카드에 저장된 세션 토큰으로 직접 서버를 호출해야 한다.
     const nextTicketCount =
       session && selectedTicketTargetCard.slug === session.pageSlug
         ? await adjustTicketCount(ticketCount)
@@ -546,6 +578,11 @@ export default function CreateScreen() {
     if (validationMessages.length > 0) {
       setNotice(validationMessages[0] ?? '입력 정보를 먼저 확인해 주세요.');
       setPaymentModalVisible(false);
+      const firstInvalidRule = validationRules.find((rule) => !rule.passed);
+      scrollRef.current?.scrollTo({
+        y: firstInvalidRule?.section === 'selection' ? selectionSectionOffsetY : inputSectionOffsetY,
+        animated: true,
+      });
       return;
     }
 
@@ -560,7 +597,7 @@ export default function CreateScreen() {
       brideEnglishName: brideEnglishName.trim(),
       password: password.trim(),
       servicePlan: selectedPlan,
-      theme: selectedTheme,
+      theme: selectedTheme ?? 'emotional',
     });
 
     setIsSubmitting(false);
@@ -583,6 +620,7 @@ export default function CreateScreen() {
       <AppScreen
         title="구매"
         subtitle="구매 탭에서는 제작 초안을 기기에 저장하고, 결제 확인 시점에만 실제 페이지를 생성합니다."
+        scrollRef={scrollRef}
       >
         {isExpoWebPreview ? (
           <WebPreviewNotice
@@ -598,6 +636,7 @@ export default function CreateScreen() {
           <BulletList items={[...FLOW_GUIDE_ITEMS]} />
         </SectionCard>
 
+        <View onLayout={(event) => setInputSectionOffsetY(event.nativeEvent.layout.y)}>
         <SectionCard
           title="1. 입력 정보 확인"
           description="신랑·신부 한글 이름과 영문 이름을 확인하면, 영문 이름 기준으로 페이지 URL이 자동 생성됩니다."
@@ -710,7 +749,9 @@ export default function CreateScreen() {
             </View>
           ) : null}
         </SectionCard>
+        </View>
 
+        <View onLayout={(event) => setSelectionSectionOffsetY(event.nativeEvent.layout.y)}>
         <SectionCard
           title="2. 서비스와 디자인 선택"
           description="서비스에 따라 기본 기능과 가격이 달라지고, 디자인은 생성 직후 기본 테마로 적용됩니다."
@@ -740,6 +781,11 @@ export default function CreateScreen() {
           />
 
           <View style={styles.chipRow}>
+            <ChoiceChip
+              label="선택하기"
+              selected={selectedTheme === null}
+              onPress={() => setSelectedTheme(null)}
+            />
             {designThemes.map((theme) => (
               <ChoiceChip
                 key={theme.key}
@@ -750,9 +796,10 @@ export default function CreateScreen() {
             ))}
           </View>
           <AppText variant="muted" style={styles.helperText}>
-            선택한 디자인: {selectedThemeInfo.description}
+            선택한 디자인: {selectedThemeInfo?.description ?? '아직 디자인을 선택하지 않았습니다.'}
           </AppText>
         </SectionCard>
+        </View>
 
         <SectionCard
           title="추가 티켓 구매"
@@ -977,7 +1024,7 @@ export default function CreateScreen() {
               <View style={styles.summaryRow}>
                 <AppText style={styles.summaryLabel}>디자인</AppText>
                 <AppText style={styles.summaryValue}>
-                  {selectedThemeInfo.label}
+                  {selectedThemeInfo?.label ?? '선택 필요'}
                 </AppText>
               </View>
               <View style={styles.summaryRow}>

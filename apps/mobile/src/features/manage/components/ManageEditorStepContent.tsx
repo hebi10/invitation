@@ -12,6 +12,7 @@ import { BasicEditorStep } from './steps/BasicEditorStep';
 import { GreetingEditorStep } from './steps/GreetingEditorStep';
 import { ImagesEditorStep } from './steps/ImagesEditorStep';
 import { LocationEditorStep } from './steps/LocationEditorStep';
+import { MusicEditorStep } from './steps/MusicEditorStep';
 import { ScheduleEditorStep } from './steps/ScheduleEditorStep';
 import { SettingsEditorStep } from './steps/SettingsEditorStep';
 
@@ -49,7 +50,6 @@ type ManageEditorStepContentProps = {
   onRemoveGalleryImage: (index: number) => void;
   onSearchAddress: () => void | Promise<void>;
   onOpenMapUrl: () => void | Promise<void>;
-  onSetDefaultTheme: (theme: 'emotional' | 'simple') => void;
   onSetMusicEnabled: (enabled: boolean) => void;
   onSetPublished: (published: boolean) => void;
   onToggleMusicDropdown: (panel: MusicDropdownPanel) => void;
@@ -82,7 +82,6 @@ export function ManageEditorStepContent({
   onRemoveGalleryImage,
   onSearchAddress,
   onOpenMapUrl,
-  onSetDefaultTheme,
   onSetMusicEnabled,
   onSetPublished,
   onToggleMusicDropdown,
@@ -128,10 +127,9 @@ export function ManageEditorStepContent({
           onRemoveGalleryImage={onRemoveGalleryImage}
         />
       );
-    case 'settings':
-    default:
+    case 'music':
       return (
-        <SettingsEditorStep
+        <MusicEditorStep
           form={form}
           supportsMusicFeature={supportsMusicFeature}
           musicLibraryLoading={musicLibraryLoading}
@@ -141,12 +139,19 @@ export function ManageEditorStepContent({
           selectedMusicTrackLabel={selectedMusicTrackLabel}
           availableMusicTracks={availableMusicTracks}
           onUpdateField={onUpdateField}
-          onSetDefaultTheme={onSetDefaultTheme}
           onSetMusicEnabled={onSetMusicEnabled}
-          onSetPublished={onSetPublished}
           onToggleMusicDropdown={onToggleMusicDropdown}
           onSelectMusicCategory={onSelectMusicCategory}
           onSelectMusicTrack={onSelectMusicTrack}
+        />
+      );
+    case 'settings':
+    default:
+      return (
+        <SettingsEditorStep
+          form={form}
+          onUpdateField={onUpdateField}
+          onSetPublished={onSetPublished}
         />
       );
   }

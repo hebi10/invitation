@@ -1,15 +1,20 @@
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
+import { useColorScheme } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
-import { AppStateProvider, useAppState } from '../contexts/AppStateContext';
+import { resolveAppColorScheme } from '../constants/theme';
+import { AppStateProvider } from '../contexts/AppStateContext';
+import { usePreferences } from '../contexts/PreferencesContext';
 
 function AppNavigator() {
-  const { palette } = useAppState();
+  const { themePreference } = usePreferences();
+  const systemColorScheme = useColorScheme();
+  const colorScheme = resolveAppColorScheme(systemColorScheme, themePreference);
 
   return (
     <>
-      <StatusBar style={palette.background === '#141210' ? 'light' : 'dark'} />
+      <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
       <Stack screenOptions={{ headerShown: false }}>
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="login" options={{ headerShown: false }} />

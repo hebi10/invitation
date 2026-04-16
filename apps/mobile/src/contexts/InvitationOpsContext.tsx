@@ -1,4 +1,4 @@
-import type { PropsWithChildren } from 'react';
+﻿import type { PropsWithChildren } from 'react';
 import {
   createContext,
   useCallback,
@@ -219,7 +219,7 @@ export function InvitationOpsProvider({ children }: PropsWithChildren) {
       } = {}
     ) => {
       if (!session) {
-        reportAuthError('청첩장 연동 후 저장할 수 있습니다.');
+        reportAuthError('청첩장을 연동해야 저장할 수 있습니다.');
         return false;
       }
 
@@ -274,7 +274,7 @@ export function InvitationOpsProvider({ children }: PropsWithChildren) {
   const setPublishedState = useCallback(
     async (published: boolean) => {
       if (!session || !dashboard) {
-        reportAuthError('청첩장 연동 후 공개 상태를 변경할 수 있습니다.');
+        reportAuthError('청첩장을 연동해야 공개 상태를 변경할 수 있습니다.');
         return false;
       }
 
@@ -312,7 +312,7 @@ export function InvitationOpsProvider({ children }: PropsWithChildren) {
   const setVariantAvailability = useCallback(
     async (variantKey: MobileInvitationThemeKey, available: boolean) => {
       if (!session || !dashboard) {
-        reportAuthError('청첩장 연동 후 디자인 구성을 변경할 수 있습니다.');
+        reportAuthError('청첩장을 연동해야 디자인 구성을 변경할 수 있습니다.');
         return false;
       }
 
@@ -332,16 +332,8 @@ export function InvitationOpsProvider({ children }: PropsWithChildren) {
         );
 
         patchDashboard((current) => {
-          const sourceVariants =
-            current.page.config.variants && typeof current.page.config.variants === 'object'
-              ? (current.page.config.variants as Record<string, unknown>)
-              : {};
-          const sourceVariant =
-            sourceVariants[variantKey] &&
-            typeof sourceVariants[variantKey] === 'object' &&
-            sourceVariants[variantKey] !== null
-              ? (sourceVariants[variantKey] as Record<string, unknown>)
-              : {};
+          const sourceVariants = current.page.config.variants ?? {};
+          const sourceVariant = sourceVariants[variantKey];
 
           return {
             ...current,
@@ -352,7 +344,7 @@ export function InvitationOpsProvider({ children }: PropsWithChildren) {
                 variants: {
                   ...sourceVariants,
                   [variantKey]: {
-                    ...sourceVariant,
+                    ...(sourceVariant ?? {}),
                     available,
                   },
                 },
@@ -378,7 +370,7 @@ export function InvitationOpsProvider({ children }: PropsWithChildren) {
   const adjustTicketCount = useCallback(
     async (amount: number) => {
       if (!session) {
-        reportAuthError('청첩장 연동 후 티켓을 변경할 수 있습니다.');
+        reportAuthError('청첩장을 연동해야 티켓 수량을 변경할 수 있습니다.');
         return null;
       }
 
@@ -454,7 +446,7 @@ export function InvitationOpsProvider({ children }: PropsWithChildren) {
   const transferTicketCount = useCallback(
     async (targetPageSlug: string, targetToken: string, amount: number) => {
       if (!session) {
-        reportAuthError('청첩장 연동 후 티켓을 이동할 수 있습니다.');
+        reportAuthError('청첩장을 연동해야 티켓을 이동할 수 있습니다.');
         return null;
       }
 
@@ -508,7 +500,7 @@ export function InvitationOpsProvider({ children }: PropsWithChildren) {
   const deleteComment = useCallback(
     async (commentId: string) => {
       if (!session) {
-        reportAuthError('청첩장 연동 후 댓글을 관리할 수 있습니다.');
+        reportAuthError('청첩장을 연동해야 댓글을 관리할 수 있습니다.');
         return false;
       }
 

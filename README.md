@@ -2,20 +2,22 @@
 
 모바일 청첩장과 추억 페이지를 운영하는 Next.js + Firebase 프로젝트입니다.
 
-현재 기준 핵심 포인트는 아래와 같습니다.
+현재 프로젝트의 핵심 방향은 아래와 같습니다.
 
-- 공개 청첩장 테마는 `emotional`, `simple` 두 가지입니다.
-- 공개 청첩장 실제 페이지는 `/{slug}/emotional`, `/{slug}/simple`이며, `/{slug}`는 `/{slug}/{defaultTheme}` redirect 전용입니다.
-- 공개 청첩장 페이지는 `Firestore 우선 + 로컬 sample fallback` 구조입니다.
-- 고객 편집기는 `/page-editor/[slug]`에서 동작하며, 관리자 로그인 또는 페이지별 고객 비밀번호로 진입할 수 있습니다.
-- 방명록은 표준 구조 `guestbooks/{pageSlug}/comments/{commentId}`를 사용하며, 레거시 `comments` / `comments-{slug}`는 마이그레이션 대상으로만 관리합니다.
-- 메모리 페이지는 별도 `memory-pages` 컬렉션과 `memory-images` 스토리지를 사용합니다.
+- 공개 청첩장 테마는 `emotional`, `simple` 2가지를 사용합니다.
+- 공개 URL은 `/{slug}/emotional`, `/{slug}/simple`를 실제 경로로 사용하고, `/{slug}`는 `/{slug}/{defaultTheme}`로 리다이렉트합니다.
+- 공개 청첩장은 `Firestore 우선 + 로컬 sample fallback` 구조로 렌더링합니다.
+- 고객 편집기는 `/page-editor/[slug]`에서 동작하며, 페이지별 비밀번호 기반으로 진입합니다.
+- 방명록은 `guestbooks/{pageSlug}/comments/{commentId}` 구조를 사용합니다.
+- 추억 페이지는 `memory-pages`, `memory-images`를 별도로 사용합니다.
+- 모바일 앱은 `apps/mobile` 아래 Expo 프로젝트로 관리합니다.
 
 ## 추가 문서
 
-- 새 디자인(테마) 추가 체크리스트: `docs/new-theme-checklist.md`
+- 새 테마 추가 체크리스트: `docs/new-theme-checklist.md`
+- 서비스 개요 문서: `docs/portfolio-service-overview.md`
 
-## 1. 기술 스택
+## 기술 스택
 
 - `Next.js 15`
 - `React 19`
@@ -23,20 +25,20 @@
 - `Firebase Auth`
 - `Cloud Firestore`
 - `Firebase Storage`
+- `Expo` (`apps/mobile`)
 
-## 2. 현재 라우트 구조
+## 현재 라우트 구조
 
 ### 공개 페이지
 
 - `/`
-  메인 홈
+  메인 페이지
 - `/{slug}`
-  공유 URL 진입용 redirect 라우트
-  `/{slug}/{defaultTheme}`로 이동
+  공개 URL 진입용 리다이렉트 라우트
 - `/{slug}/emotional`
-  감성형 청첩장 실제 페이지
+  감성형 청첩장
 - `/{slug}/simple`
-  심플형 청첩장 실제 페이지
+  심플형 청첩장
 - `/memory/{slug}`
   추억 페이지
 
@@ -45,19 +47,24 @@
 - `/admin`
   관리자 대시보드
 - `/page-editor`
-  편집기 안내 페이지
+  고객 편집기 안내 페이지
 - `/page-editor/{slug}`
-  고객용 청첩장 편집기
+  고객 청첩장 편집기
 - `/page-wizard`
-  관리자용 신규 페이지 모바일 수정 시작 화면
+  관리자용 신규 페이지 생성 시작 화면
 - `/page-wizard/{slug}`
-  관리자용 페이지 모바일 수정 편집 / 수정 화면
+  관리자용 페이지 생성 / 수정 화면
 
-## 3. 현재 아키텍처 요약
+### 모바일 앱
+
+- `apps/mobile`
+  Expo Router 기반 모바일 운영 앱
+
+## 현재 아키텍처 요약
 
 ### 청첩장 페이지
 
-공개 청첩장 페이지는 서버에서 먼저 Firestore를 확인하고, 해당 slug에 대한 커스텀 설정이 있으면 그것을 사용합니다. Firestore에 설정이 없거나 서버 Admin 자격증명이 없는 로컬 환경에서는 `src/config/pages/*` sample 데이터를 fallback으로 사용합니다.
+공개 청첩장 페이지는 서버에서 먼저 Firestore를 확인하고, 해당 slug에 대한 커스텀 설정이 있으면 그 값을 사용합니다. Firestore 설정을 읽지 못하거나 서버 Admin 자격증명이 없는 로컬 환경에서는 `src/config/pages/*`의 sample 데이터를 fallback으로 사용합니다.
 
 관련 파일:
 
@@ -65,15 +72,17 @@
 - `src/services/invitationPageService.ts`
 - `src/config/weddingPages.ts`
 
-### 편집기
+### 고객 편집기
 
-편집기는 단계형 고객 입력 화면입니다.
+고객 편집기는 청첩장 페이지를 단계적으로 수정할 수 있는 편집 화면입니다.
 
-- 단계형 입력
+주요 기능:
+
+- 섹션별 입력
 - 실시간 섹션 미리보기
 - 감성형 / 심플형 미리보기 전환
 - 자동 저장
-- 관리자 또는 고객 비밀번호 기반 편집 진입
+- 페이지별 비밀번호 기반 진입
 
 관련 파일:
 
@@ -98,20 +107,20 @@
 - `src/app/admin/_components/*`
 - `src/components/admin/*`
 
-## 4. 테마 시스템
+## 테마 시스템
 
-현재 실제 운영 테마는 2개만 남겨둔 상태입니다.
+현재 실제 운영 테마는 아래 2개입니다.
 
 - `emotional`
 - `simple`
 
 URL 규칙:
 
-- `/{slug}` → redirect 전용, `/{slug}/{defaultTheme}`로 이동
-- `/{slug}/emotional` → `emotional` 실제 페이지
-- `/{slug}/simple` → `simple` 실제 페이지
+- `/{slug}`는 리다이렉트 전용이고 `/{slug}/{defaultTheme}`로 이동합니다.
+- `/{slug}/emotional`은 `emotional` 실제 페이지입니다.
+- `/{slug}/simple`은 `simple` 실제 페이지입니다.
 
-공유 URL, 카카오 공유, SEO canonical은 실제 테마 경로(`/{slug}/emotional`, `/{slug}/simple`) 기준으로 맞춥니다.
+공유 URL, 카카오 공유, SEO canonical은 실제 테마 경로(`/{slug}/emotional`, `/{slug}/simple`) 기준으로 맞춰집니다.
 
 관련 파일:
 
@@ -120,7 +129,7 @@ URL 규칙:
 - `src/lib/invitationVariants.ts`
 - `src/app/_components/weddingThemes.ts`
 
-## 5. 주요 디렉터리 구조
+## 주요 디렉터리 구조
 
 ```text
 src/
@@ -129,9 +138,11 @@ src/
     admin/
     memory/
     page-editor/
+    page-wizard/
   components/
     admin/
     icons/
+    manage/
     maps/
     media/
     motion/
@@ -140,11 +151,15 @@ src/
     pages/
     weddingPages.ts
   contexts/
+  generated/
   lib/
   server/
   services/
   types/
   utils/
+
+apps/
+  mobile/
 
 scripts/
   firebase-static-hosting-migration.mjs
@@ -153,26 +168,26 @@ scripts/
   sync-memory-page-metadata.mjs
 ```
 
-## 6. 데이터 소스 구조
+## 데이터 소스 구조
 
-### 6.1 sample / seed
+### sample / seed
 
 기본 샘플 데이터는 아래 파일들에 있습니다.
 
 - `src/config/pages/*`
 - `src/config/weddingPages.ts`
 
-이 데이터는 더 이상 라우트 생성의 단일 진실 공급원만은 아니고, 기본값과 fallback 역할을 합니다.
+샘플 데이터는 더 이상 임시용 데이터만은 아니고, 기본값과 fallback 역할도 합니다.
 
-### 6.2 Firestore 기반 청첩장 설정
+### Firestore 기반 청첩장 설정
 
 #### `invitation-page-configs/{slug}`
 
-페이지 본문 설정값 자체를 저장합니다.
+페이지 본문 설정값 전체를 저장합니다.
 
-예:
+예시 항목:
 
-- 신랑/신부 정보
+- 신랑 / 신부 정보
 - 일정
 - 장소
 - 인사말
@@ -183,7 +198,7 @@ scripts/
 
 페이지 레지스트리와 공개 상태를 저장합니다.
 
-예:
+예시 항목:
 
 - `pageSlug`
 - `published`
@@ -192,8 +207,7 @@ scripts/
 - `createdAt`
 - `updatedAt`
 
-고객 편집기는 `invitation-page-configs`, `invitation-page-registry`를 Firestore에 직접 쓰지 않습니다.
-`/api/client-editor/pages/[slug]`가 세션을 검증한 뒤 서버 Admin SDK로 저장합니다.
+고객 편집기는 `invitation-page-configs`, `invitation-page-registry`를 Firestore에 직접 쓰지 않습니다. `/api/client-editor/pages/[slug]`가 세션을 검증한 뒤 서버 Admin SDK로 저장합니다.
 
 #### `display-periods/{slug}`
 
@@ -202,39 +216,15 @@ scripts/
 - 문서가 없으면 기간 제한 없음
 - 문서가 있고 `isActive == true`면 기간 적용
 
-#### 위자드 / 편집기 저장 경로
+#### 페이지 생성 / 편집 경로 요약
 
-- `/page-wizard`는 seed 기반 draft를 만든 뒤 `invitation-page-configs/{slug}`와 `invitation-page-registry/{slug}`를 함께 사용합니다.
-- 위자드 저장 전 `prepareWizardConfigForSave()`가 파생값과 정규화 필드를 정리한 뒤 본문 데이터는 `invitation-page-configs/{slug}`에 저장합니다.
+- `/page-wizard`는 seed 기반 draft를 만들고 `invitation-page-configs/{slug}`와 `invitation-page-registry/{slug}`를 함께 사용합니다.
+- 관리자는 `prepareWizardConfigForSave()`로 파생값과 정규화 필드를 정리한 뒤 본문 데이터는 `invitation-page-configs/{slug}`에 저장합니다.
 - 공개 여부(`published`), 기본 테마(`defaultTheme`), 커스텀 설정 여부(`hasCustomConfig`)는 `invitation-page-registry/{slug}`에 저장합니다.
-- 고객 편집기(`/page-editor/{slug}`)도 같은 데이터 구조를 쓰지만 Firestore에 직접 쓰지 않고 `/api/client-editor/pages/[slug]` 서버 API를 통해 저장합니다.
+- 고객 편집기(`/page-editor/{slug}`)도 같은 데이터 구조를 읽지만 Firestore에 직접 쓰지 않고 `/api/client-editor/pages/[slug]` 서버 API를 통해 저장합니다.
 - `variants`는 본문 설정과 함께 `invitation-page-configs/{slug}`에 저장되며, 공개 URL 노출 여부는 registry의 공개 상태와 함께 판단합니다.
 
-#### 위자드 필드 운영 기준
-
-- `description`
-  공개 화면의 모든 섹션에서 직접 렌더되지는 않지만 `metadata.description`, Open Graph, Twitter 설명의 기본값으로 이어지는 공유용 기준 문구이므로 유지합니다.
-- `pageData.venueName`
-  위자드에서는 별도 입력을 받지 않고 `venue` 입력값과 함께 자동 동기화합니다. 공개 화면과 지도 마커 제목의 기본 표기명으로 사용하며, 별도 표기명이 필요하면 관리자 편집기에서 수정합니다.
-- `pageData.mapUrl`
-  공개 렌더러의 주 지도 기준값은 `pageData.kakaoMap` 좌표입니다. `mapUrl`은 위자드 주소 검색 결과 링크, 편집기 입력값, 미리보기용 외부 지도 링크 보조값으로 유지합니다.
-- `musicCategoryId`, `musicTrackId`, `musicStoragePath`
-  공개 화면은 최종적으로 `musicUrl` 또는 `musicStoragePath`에서 해석된 재생 URL을 사용합니다. 다만 이 3개 필드는 위자드/편집기에서 선택한 곡을 다시 복원하고, Storage 다운로드 URL을 계산하기 위한 운영 메타값이라 유지합니다.
-- `metadata.keywords`
-  위자드는 기본값 `[]`만 저장하고 별도 입력 UI를 두지 않습니다. 현재는 관리자 편집기에서만 직접 관리하는 선택 필드로 취급합니다.
-- `metadata.images.favicon`
-  위자드 기본값은 `/favicon.ico`이며, 필요하면 관리자 편집기에서 페이지별로 덮어쓸 수 있습니다.
-
-#### 자동 파생값
-
-- `displayName`: 신랑/신부 이름이 있으면 기본 청첩장 제목으로 자동 생성
-- `description`: 이름 조합 기준 초대 문구로 자동 생성
-- `metadata.title`, `metadata.description`: 비어 있으면 `displayName`, `description` 기준으로 채움
-- `metadata.openGraph.*`, `metadata.twitter.*`: 루트 메타값이 비어 있으면 같은 값으로 채움
-- `date`, `pageData.ceremonyTime`, `pageData.ceremony.time`: `weddingDateTime` 입력값으로 다시 계산
-- `pageData.greetingAuthor`: 비어 있으면 `신랑 · 신부` 형식으로 자동 생성
-
-### 6.3 방명록
+### 방명록
 
 #### 신규 구조
 
@@ -245,33 +235,31 @@ guestbooks/{pageSlug}/comments/{commentId}
 
 실제 댓글 문서는 하위 `comments` 서브컬렉션에 저장됩니다.
 
-예:
+예시 필드:
 
 - `author`
 - `message`
 - `pageSlug`
 - `createdAt`
 
-고객 댓글 삭제는 공개 페이지에서 비밀번호 검증 후
-`/api/client-editor/pages/[slug]/comments/[commentId]` 서버 API를 통해 처리합니다.
+고객 댓글 삭제는 공개 페이지에서 비밀번호 검증 후 `/api/client-editor/pages/[slug]/comments/[commentId]` 서버 API를 통해 처리합니다.
 
 #### 레거시 구조
 
-레거시 컬렉션(`comments`, `comments-{pageSlug}`)은 마이그레이션 대상이며,
-현재 서비스 조회/저장은 `guestbooks/{pageSlug}/comments/{commentId}` 기준으로 동작합니다.
+레거시 컬렉션(`comments`, `comments-{pageSlug}`)은 마이그레이션 대상이며, 현재 서비스 조회/저장은 `guestbooks/{pageSlug}/comments/{commentId}` 기준으로 동작합니다.
 
 관련 파일:
 
 - `src/services/commentService.ts`
 - `scripts/migrate-comments-to-guestbooks.mjs`
 
-### 6.4 추억 페이지
+### 추억 페이지
 
 ```text
 memory-pages/{pageSlug}
 ```
 
-주요 필드 예:
+주요 필드 예시:
 
 - `enabled`
 - `visibility`
@@ -287,26 +275,24 @@ memory-pages/{pageSlug}
 - `seoDescription`
 - `seoNoIndex`
 
-### 6.5 고객 편집 비밀번호
+### 고객 편집 비밀번호
 
 #### `client-passwords/{pageSlug}`
 
-관리자가 고객용 편집 비밀번호를 관리하는 컬렉션입니다.
-실제 검증 대상은 이 컬렉션에 저장된 비밀번호 해시와 `passwordVersion`입니다.
+관리자가 고객 편집 비밀번호를 관리하는 컬렉션입니다. 실제 검증의 핵심은 이 컬렉션에 저장된 비밀번호 해시와 `passwordVersion`입니다.
 
 #### `client-access/{pageSlug}`
 
-현재 런타임에서는 적극적으로 사용하지 않는 관리자 전용 컬렉션입니다.
-비밀번호 동기화나 변경 시 관련 문서를 정리하는 용도로만 남아 있습니다.
+현재는 핵심 런타임보다 운영 정리 목적에 가까운 관리자 전용 컬렉션입니다.
 
 실제 고객 편집 검증 흐름은 다음과 같습니다.
 
 1. `/api/client-editor/login`에서 `client-passwords/{pageSlug}` 비밀번호 검증
 2. 서버가 서명된 세션 쿠키 발급
 3. `/api/client-editor/*`가 세션 쿠키와 `passwordVersion`을 다시 검증
-4. 페이지 저장, 이미지 업로드, 고객 댓글 삭제는 모두 서버 API를 통해 처리
+4. 페이지 저장, 이미지 업로드, 고객 댓글 삭제 모두 서버 API를 통해 처리
 
-### 6.6 관리자 계정
+### 관리자 계정
 
 ```text
 admin-users/{uid}
@@ -314,14 +300,16 @@ admin-users/{uid}
 
 관리자 로그인 자체는 Firebase Auth로 처리하고, 실제 권한 부여는 `admin-users/{uid}` 문서 존재 여부와 `enabled != false` 여부로 판정합니다.
 
-## 7. Storage 구조
+## Storage 구조
 
 ```text
 wedding-images/{pageSlug}/...
 memory-images/{pageSlug}/...
 ```
 
-- 청첩장 이미지 업로드 시 `wedding-images/{pageSlug}/thumb-*` 썸네일 파일을 함께 저장하고, 공개 갤러리 그리드는 썸네일을 우선 사용합니다.
+- 청첩장 이미지 업로드는 `wedding-images/{pageSlug}/thumb-*` 썸네일 파일도 함께 저장하고, 공개 갤러리 그리드는 썸네일을 우선 사용합니다.
+
+구성:
 
 - `wedding-images`
   청첩장용 이미지
@@ -335,42 +323,37 @@ memory-images/{pageSlug}/...
 - `storage.rules`
 - `src/services/imageService.ts`
 
-## 8. 권한 / 보안 규칙 요약
+## 권한 / 보안 규칙 요약
 
 ### Firestore
 
 현재 rules 기준 주요 정책:
 
 - `memory-pages`
-  공개 메모리 페이지만 읽기 허용
-- `comments`
-  공개 읽기, 누구나 생성, 관리자 삭제
+  공개 메모리 페이지 읽기 허용
 - `guestbooks/{pageSlug}/comments`
-  공개 읽기, 누구나 생성, 관리자 삭제
-  고객은 유효한 고객 편집 세션으로 서버 API 경유 삭제 가능
+  공개 읽기, 공개 작성, 관리자 삭제
 - `client-passwords`
-  관리자만 읽기/쓰기
+  관리자만 읽기 / 쓰기
 - `client-access`
-  관리자만 읽기/쓰기
+  관리자만 읽기 / 쓰기
 - `invitation-page-configs`
-  공개 청첩장 조회 조건 충족 시 읽기, 쓰기는 관리자만
-  고객 편집 저장은 `/api/client-editor/pages/[slug]` 서버 API → Admin SDK 경로 사용
+  공개 청첩장 조건 충족 시 읽기 가능, 쓰기는 관리자 또는 서버 경유
 - `invitation-page-registry`
-  공개 청첩장 조회 조건 충족 시 읽기, 쓰기는 관리자만
-  고객 편집 저장은 `/api/client-editor/pages/[slug]` 서버 API → Admin SDK 경로 사용
+  공개 청첩장 조건 충족 시 읽기 가능, 쓰기는 관리자 또는 서버 경유
 - `display-periods`
-  공개 청첩장 조회 조건 충족 시 읽기, 관리자 쓰기
+  공개 청첩장 조건 충족 시 읽기, 쓰기는 관리자
 
-자세한 내용은 `firestore.rules`를 기준으로 보는 것이 가장 정확합니다.
+자세한 기준은 `firestore.rules`를 우선 확인합니다.
 
 ### Storage
 
 현재 rules 기준:
 
-- `wedding-images/**` 공개 읽기, 관리자 쓰기/삭제
-- `memory-images/**` 공개 읽기, 관리자 쓰기/삭제
+- `wedding-images/**` 공개 읽기, 관리자 쓰기 / 삭제
+- `memory-images/**` 공개 읽기, 관리자 쓰기 / 삭제
 
-## 9. 환경 변수
+## 환경 변수
 
 ### 클라이언트 공개 env
 
@@ -401,8 +384,8 @@ NEXT_PUBLIC_KAKAO_MAP_API_KEY=
 
 주의:
 
-- 관리자 로그인은 Firebase Auth 계정 + `admin-users/{uid}` 권한 문서로 제어됩니다.
-- 클라이언트 공개 env(`NEXT_PUBLIC_*`)에 관리자 비밀번호를 두지 않습니다.
+- 관리자 로그인은 Firebase Auth 계정 + `admin-users/{uid}` 권한 문서로 제어합니다.
+- `NEXT_PUBLIC_*` 값에는 관리자 비밀번호나 서버 전용 키를 넣지 않습니다.
 
 ### 서버 / 스크립트용 env
 
@@ -424,21 +407,28 @@ MEMORY_METADATA_SYNC_STRICT=true
 - `GOOGLE_APPLICATION_CREDENTIALS`
   서비스 계정 JSON 파일 경로
 - `CLIENT_EDITOR_SESSION_SECRET`
-  고객 편집 세션 서명용 서버 전용 환경변수
-  프로덕션 필수값이며 클라이언트에 노출되면 안 됨
+  고객 편집 세션 서명용 서버 전용 비밀값
 - `MEMORY_METADATA_SYNC_STRICT`
-  메모리 페이지 메타데이터 동기화 실패 시 빌드 실패 처리
+  추억 페이지 메타데이터 동기화 실패 시 빌드 실패 처리
 
-## 10. 로컬 개발
+## 로컬 개발
 
 ```bash
 npm install
 npm run dev
 ```
 
-개발 서버는 빌드 캐시 꼬임 방지를 위해 `npm run dev`에서 `.next`를 먼저 지우고 시작합니다.
+개발 서버는 빌드 캐시 꼬임을 줄이기 위해 `npm run dev`에서 `.next`를 먼저 지우고 시작합니다.
 
-## 11. 주요 스크립트
+모바일 앱은 아래처럼 별도 실행합니다.
+
+```bash
+npm run mb:start
+npm run mb:android
+npm run mb:web
+```
+
+## 주요 스크립트
 
 ```bash
 npm run dev
@@ -451,6 +441,10 @@ npm run preview
 npm run lint
 npm run deploy:firebase
 
+npm run mb:start
+npm run mb:android
+npm run mb:web
+
 npm run seed:invitation-pages
 npm run seed:invitation-pages:execute
 npm run seed:invitation-pages:validate
@@ -459,7 +453,7 @@ npm run seed:invitation-pages:validate
 ### 스크립트 설명
 
 - `build`
-  메모리 메타데이터 snapshot 생성 후 `.next` 정리 후 `next build`
+  메모리 메타데이터 snapshot 생성 후 `.next` 정리, 이후 `next build`
 - `build:memory-metadata-strict`
   strict 모드 메타데이터 동기화 후 빌드
 - `clean:next`
@@ -473,11 +467,11 @@ npm run seed:invitation-pages:validate
 - `deploy:firebase`
   strict build 후 `firebase deploy`
 - `seed:invitation-pages`
-  현재 청첩장 seed / Firestore 상태를 분석
+  현재 청첩장 seed / Firestore 상태 분석
 - `seed:invitation-pages:execute`
-  청첩장 seed 데이터를 실제로 반영
+  청첩장 seed 데이터 실제 반영
 - `seed:invitation-pages:validate`
-  청첩장 seed 반영 상태를 검증
+  청첩장 seed 반영 상태 검증
 
 ### 직접 실행 스크립트
 
@@ -495,38 +489,38 @@ node scripts/firebase-static-hosting-migration.mjs migrate-comments --execute
 node scripts/firebase-static-hosting-migration.mjs sanitize-memory-pages --execute
 ```
 
-## 12. 고객 편집기 개요
+## 고객 편집기 개요
 
 `/page-editor/{slug}`는 고객이 직접 내용을 수정할 수 있도록 만든 단계형 편집기입니다.
 
 주요 기능:
 
-- 관리자 로그인 시 즉시 편집 가능
+- 관리자 로그인 없이 즉시 편집 가능
 - 고객은 페이지별 비밀번호로 잠금 해제 가능
-- 단계별 입력
+- 섹션별 입력
 - 자동 저장
 - 감성형 / 심플형 미리보기 전환
-- 공개 상태 저장
+- 공개 상태 전환
 - 기본값 복원
 - 변경 취소
 
 현재 UX 기준:
 
-- 데스크톱: 좌측 단계 메뉴 + 우측 작업 영역
-- 모바일: 플로팅 단계 버튼 + 바텀시트 기반 단계 이동
+- 데스크톱: 좌측 섹션 메뉴 + 우측 작업 영역
+- 모바일 / 태블릿: 섹션 버튼 + 바텀시트 기반 섹션 이동
 
-## 13. 관리자 대시보드 개요
+## 관리자 대시보드 개요
 
 `/admin`은 운영 화면입니다.
 
-지원 기능:
+주요 기능:
 
 - 청첩장 목록 조회
 - 편집기 이동
 - 이미지 업로드 / 삭제
-- 메모리 페이지 관리
+- 추억 페이지 관리
 - 방명록 조회 / 삭제
-- 고객 비밀번호 저장 및 편집기 이동
+- 고객 비밀번호 관리
 - 노출 기간 설정
 
 관리자 권한 체크:
@@ -535,9 +529,9 @@ node scripts/firebase-static-hosting-migration.mjs sanitize-memory-pages --execu
 2. `admin-users/{uid}` 문서 존재
 3. `enabled != false`
 
-## 14. 방명록 마이그레이션 가이드
+## 방명록 마이그레이션 가이드
 
-현재 댓글 저장/조회 표준은 `guestbooks/{pageSlug}/comments/{commentId}`이며, 레거시 컬렉션은 purge 대상입니다.
+현재 댓글 대상 조회 구조는 `guestbooks/{pageSlug}/comments/{commentId}`이며, 레거시 컬렉션은 purge 대상입니다.
 
 권장 순서:
 
@@ -553,7 +547,7 @@ npm run deploy:firebase
 검증 기준:
 
 - `validate` 결과에서 `missingCount: 0`이면 정상
-- `purge` dry-run에서 `blockedEntryCount: 0`이면 안전 삭제 가능
+- `purge` dry-run에서 `blockedEntryCount: 0`이면 이전 데이터 삭제 가능
 
 ### 마이그레이션 실행 전 준비
 
@@ -572,12 +566,11 @@ node scripts/migrate-comments-to-guestbooks.mjs analyze
 
 주의:
 
-- 서비스 계정 JSON 파일은 절대 git에 커밋하면 안 됩니다.
-- 이 저장소는 해당 JSON 파일명을 `.gitignore`에 추가해 둔 상태입니다.
-- 현재 앱 런타임은 `guestbooks/{pageSlug}/comments/{commentId}`만 사용합니다.
-- 레거시 `comments` create rules 제거는 실제 migration 완료와 purge 완료 확인 후 진행합니다.
+- 서비스 계정 JSON 파일은 git에 커밋하지 않습니다.
+- 저장소에는 해당 JSON 파일명을 `.gitignore`에 추가한 상태여야 합니다.
+- 현재 런타임은 `guestbooks/{pageSlug}/comments/{commentId}`만 사용합니다.
 
-## 15. 메모리 페이지 메타데이터 동기화
+## 메모리 페이지 메타데이터 동기화
 
 빌드 전에 `scripts/sync-memory-page-metadata.mjs`가 `memory-pages` 컬렉션을 읽어 `src/generated/memory-page-metadata.json`을 생성합니다.
 
@@ -591,35 +584,34 @@ node scripts/migrate-comments-to-guestbooks.mjs analyze
 - `NEXT_PUBLIC_USE_FIREBASE=true`인데 Admin 자격증명이 없으면 strict 빌드가 실패할 수 있습니다.
 - 자격증명이 없고 Firebase를 끈 상태면 빈 snapshot을 생성합니다.
 
-## 16. 운영 정책 메모
+## 운영 정책 메모
 
 ### 상품 티어 기본값
 
 - `DEFAULT_INVITATION_PRODUCT_TIER`는 현재 `'premium'`입니다.
-- 신규 페이지 생성과 fallback 정규화는 가장 넓은 기능 세트를 가진 `premium`을 기본값으로 사용합니다.
+- 신규 페이지 생성과 fallback 샘플은 기본 기능 전체를 가진 `premium`을 기본값으로 사용합니다.
 - 티어별 현재 기능 차이는 아래와 같습니다.
-  - `standard`: 갤러리 6장, 링크 공유, 카운트다운 없음, 방명록 없음
-  - `deluxe`: 갤러리 12장, 카드 공유, 카운트다운 없음, 방명록 없음
+  - `standard`: 갤러리 6장, 링크 공유, 음악 없음, 방명록 없음
+  - `deluxe`: 갤러리 12장, 카드 공유, 음악 있음, 방명록 없음
   - `premium`: 갤러리 18장, 카드 공유, 카운트다운 있음, 방명록 있음
 
-### 공개 판별 이중 체크
+### 공개 상태와 노출 기간
 
 - 서버는 `isPublicInvitationPage()`에서 `published`와 `displayPeriod`를 함께 확인합니다.
-- Firestore rules는 `invitation-page-registry.published == true`와 `display-periods` 기간 조건을 다시 확인합니다.
-- 따라서 공개 여부는 서버 렌더링과 Firestore rules 양쪽에서 함께 제한됩니다.
+- Firestore rules도 `invitation-page-registry.published == true`와 `display-periods` 조건을 다시 확인합니다.
+- 따라서 공개 여부는 서버 렌더와 Firestore rules 양쪽에서 제한됩니다.
 
 ### 노출 기간 운영 기준
 
-- 위자드와 고객 편집기는 `displayPeriod`를 직접 저장하지 않습니다.
+- 관리자와 고객 편집기는 `displayPeriod`를 직접 쓰지 않습니다.
 - 노출 기간 설정과 해제는 `/admin`의 노출 기간 탭에서만 관리합니다.
 - `published == false`면 노출 기간과 무관하게 항상 비공개입니다.
-- `published == true`이고 `displayPeriodEnabled == false`면 기간 제한 없이 항상 공개입니다.
-- `displayPeriodEnabled == true`이면 시작일과 종료일이 모두 있어야 하며, 하나라도 비어 있으면 공개 불가 상태로 처리합니다.
-- 기간이 시작되기 전이면 예약 공개, 종료 후면 공개 종료 상태로 관리자 미리보기만 허용합니다.
+- `published == true`이고 `displayPeriodEnabled == false`면 기간 제한 없이 공개입니다.
+- `displayPeriodEnabled == true`면 시작일과 종료일이 모두 있어야 하고, 하나라도 비어 있으면 공개 불가 상태로 봅니다.
 
-## 17. 현재 배포 상태와 주의점
+## 배포 상태와 주의사항
 
-이 프로젝트는 현재 코드 구조상 **동적 Next 라우트**를 사용합니다.
+현재 프로젝트 코드는 **동적 Next 라우트**를 기준으로 작성되어 있습니다.
 
 예:
 
@@ -630,39 +622,26 @@ node scripts/migrate-comments-to-guestbooks.mjs analyze
 - `/page-editor/{slug}`
 - `/page-wizard/{slug}`
 
-하지만 `firebase.json`은 아직 아래처럼 **정적 Hosting `out/` 디렉터리**를 기준으로 되어 있습니다.
-
-```json
-"hosting": {
-  "public": "out"
-}
-```
-
-즉 현재 상태는 다음과 같습니다.
-
-- 애플리케이션 코드는 동적 Next 구조
-- Firebase Hosting 설정은 과거 정적 export 구조
-
-이 때문에 `npm run deploy:firebase`는 규칙 배포에는 유효하지만, Hosting 배포 방식은 현재 앱 구조와 완전히 맞지 않습니다.
+다만 `firebase.json`은 아직 정적 Hosting `out/` 디렉터리 기준 설정을 일부 유지하고 있어, Hosting 구조와 현재 애플리케이션 구조가 완전히 일치하지 않을 수 있습니다.
 
 정리:
 
-- Firestore / Storage rules 배포: 가능
-- 동적 청첩장 / 관리자 / 편집기까지 포함한 올바른 웹 배포: 재정비 필요
+- Firestore / Storage rules 배포는 가능
+- 동적 청첩장 / 관리자 / 편집기까지 포함한 최종 배포 방식은 별도 점검 필요
 
 권장 방향:
 
-1. Firebase App Hosting으로 전환
-2. 또는 정적 export 기반으로 다시 구조를 맞춤
+1. Firebase App Hosting 또는 동적 런타임 호스팅 구조로 정리
+2. 정적 export 기준과 동적 Next 기준 중 하나로 완전히 맞추기
 
-## 18. 현재 제약 사항
+## 현재 제약 사항
 
 - 메모리 페이지는 현재 seed slug 기준으로만 static params를 생성합니다.
-- 관리자에서 완전한 새 페이지 draft 생성 흐름은 아직 붙어 있지 않습니다.
+- 관리자에서 완전한 신규 페이지 draft 생성 흐름은 계속 정리 중입니다.
 - 레거시 댓글 컬렉션(`comments`, `comments-{slug}`)은 purge 스크립트로 정리합니다.
-- 배포 파이프라인은 동적 Next 구조 기준으로 아직 최종 정리 전 상태입니다.
+- 배포 파이프라인은 동적 Next 기준으로 아직 최종 정리 전입니다.
 
-## 19. 검증 권장 명령
+## 검증 권장 명령
 
 ```bash
 npm run lint
@@ -670,15 +649,15 @@ npx tsc --noEmit
 npm run build
 ```
 
-방명록 마이그레이션 이후에는 추가로:
+방명록 마이그레이션 이후에는 추가로 아래 검증을 권장합니다.
 
 ```bash
 node scripts/migrate-comments-to-guestbooks.mjs validate
 ```
 
-## 20. 참고 파일
+## 참고 파일
 
-문서보다 코드가 최종 기준입니다. 특히 아래 파일들을 우선 확인하면 현재 구조를 빠르게 파악할 수 있습니다.
+문서보다 코드가 최종 기준입니다. 아래 파일들을 우선 확인하면 현재 구조를 빠르게 파악할 수 있습니다.
 
 - `src/app/[slug]/page.tsx`
 - `src/app/[slug]/[theme]/page.tsx`

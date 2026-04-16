@@ -1,14 +1,17 @@
 import { Redirect, usePathname } from 'expo-router';
-import { ActivityIndicator, Platform, View } from 'react-native';
 import type { PropsWithChildren } from 'react';
+import { ActivityIndicator, Platform, View } from 'react-native';
 
-import { useAppState } from '../contexts/AppStateContext';
+import { useAuth } from '../contexts/AuthContext';
+import { usePreferences } from '../contexts/PreferencesContext';
 import { AppText } from './AppText';
 
 export function ProtectedTabRoute({ children }: PropsWithChildren) {
   const pathname = usePathname();
-  const { isAuthenticated, isBootstrapping, palette } = useAppState();
+  const { isAuthenticated, isReady: isAuthReady } = useAuth();
+  const { isReady: isPreferencesReady, palette } = usePreferences();
   const isExpoWebPreview = Platform.OS === 'web';
+  const isBootstrapping = !(isAuthReady && isPreferencesReady);
 
   if (isBootstrapping) {
     return (

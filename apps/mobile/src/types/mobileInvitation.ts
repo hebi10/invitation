@@ -53,6 +53,77 @@ export interface MobileInvitationPerson {
   };
 }
 
+export interface MobileInvitationCeremonyData {
+  time?: string;
+  location?: string;
+}
+
+export interface MobileInvitationGuideItem {
+  title: string;
+  content: string;
+}
+
+export interface MobileInvitationAccountItem {
+  bank: string;
+  accountNumber: string;
+  accountHolder: string;
+}
+
+export interface MobileInvitationGiftInfo {
+  message?: string;
+  groomAccounts?: MobileInvitationAccountItem[];
+  brideAccounts?: MobileInvitationAccountItem[];
+}
+
+export interface MobileInvitationKakaoMapData {
+  latitude?: number;
+  longitude?: number;
+  level?: number;
+  markerTitle?: string;
+}
+
+export interface MobileInvitationPageData {
+  subtitle?: string;
+  venueName?: string;
+  ceremonyAddress?: string;
+  ceremonyContact?: string;
+  ceremonyTime?: string;
+  mapDescription?: string;
+  mapUrl?: string;
+  greetingMessage?: string;
+  greetingAuthor?: string;
+  coverImageThumbnailUrl?: string;
+  galleryImageThumbnailUrls?: string[];
+  ceremony?: MobileInvitationCeremonyData;
+  reception?: MobileInvitationCeremonyData;
+  groom?: MobileInvitationPerson;
+  bride?: MobileInvitationPerson;
+  galleryImages?: string[];
+  kakaoMap?: MobileInvitationKakaoMapData;
+  venueGuide?: MobileInvitationGuideItem[];
+  wreathGuide?: MobileInvitationGuideItem[];
+  giftInfo?: MobileInvitationGiftInfo;
+}
+
+export interface MobileInvitationMetadataImages {
+  wedding?: string;
+  favicon?: string;
+}
+
+export interface MobileInvitationMetadataText {
+  title?: string;
+  description?: string;
+}
+
+export interface MobileInvitationMetadata {
+  title?: string;
+  description?: string;
+  keywords?: string[];
+  images?: MobileInvitationMetadataImages;
+  openGraph?: MobileInvitationMetadataText;
+  twitter?: MobileInvitationMetadataText;
+}
+
 export interface MobileInvitationSeed {
   slug: string;
   displayName: string;
@@ -71,24 +142,10 @@ export interface MobileInvitationSeed {
     groom: MobileInvitationPerson;
     bride: MobileInvitationPerson;
   };
-  pageData?: {
-    greetingMessage?: string;
-    venueName?: string;
-    ceremonyAddress?: string;
-    ceremonyContact?: string;
-    ceremonyTime?: string;
-    coverImageThumbnailUrl?: string;
-    galleryImageThumbnailUrls?: string[];
-    ceremony?: {
-      time?: string;
-      location?: string;
-      [key: string]: unknown;
-    };
-    galleryImages?: string[];
-    [key: string]: unknown;
-  };
+  pageData?: MobileInvitationPageData;
+  metadata?: MobileInvitationMetadata;
+  musicStoragePath?: string;
   variants?: Partial<Record<MobileInvitationThemeKey, MobileInvitationVariantLink>>;
-  [key: string]: unknown;
 }
 
 export interface MobileEditableInvitationPageConfig {

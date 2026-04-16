@@ -131,8 +131,8 @@ export function DraftsProvider({ children }: PropsWithChildren) {
         ? drafts.filter((draft) => draft.id !== existingDraft.id)
         : drafts;
       const nextDrafts = [nextDraft, ...otherDrafts].slice(0, 12);
-      setDrafts(nextDrafts);
       await setStoredJson(DRAFT_STORAGE_KEY, nextDrafts);
+      setDrafts(nextDrafts);
       return nextDraft.id;
     },
     [drafts]
@@ -141,8 +141,8 @@ export function DraftsProvider({ children }: PropsWithChildren) {
   const removeDraft = useCallback(
     async (draftId: string) => {
       const nextDrafts = drafts.filter((draft) => draft.id !== draftId);
-      setDrafts(nextDrafts);
       await setStoredJson(DRAFT_STORAGE_KEY, nextDrafts);
+      setDrafts(nextDrafts);
     },
     [drafts]
   );

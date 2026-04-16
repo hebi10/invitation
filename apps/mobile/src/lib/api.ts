@@ -1,4 +1,4 @@
-import Constants from 'expo-constants';
+﻿import Constants from 'expo-constants';
 
 import type {
   MobileEditableInvitationPageConfig,
@@ -15,6 +15,14 @@ import type {
 } from '../types/mobileInvitation';
 
 export const PRODUCTION_API_BASE_URL = 'https://msgnote.kr';
+const ALLOWED_API_HOSTS = new Set([
+  'msgnote.kr',
+  'www.msgnote.kr',
+  'localhost',
+  '127.0.0.1',
+  '10.0.2.2',
+  '0.0.0.0',
+]);
 
 function readConfiguredApiBaseUrl() {
   const envApiBaseUrl = process.env.EXPO_PUBLIC_API_BASE?.trim();
@@ -31,6 +39,43 @@ function readConfiguredApiBaseUrl() {
 }
 
 export const DEFAULT_API_BASE_URL = readConfiguredApiBaseUrl();
+
+function isPrivateIpv4Host(hostname: string) {
+  const match = hostname.match(/^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/);
+  if (!match) {
+    return false;
+  }
+
+  const [first, second, third, fourth] = match.slice(1).map(Number);
+  const octets = [first, second, third, fourth];
+  if (octets.some((value) => Number.isNaN(value) || value < 0 || value > 255)) {
+    return false;
+  }
+
+  if (first === 10) {
+    return true;
+  }
+
+  if (first === 172 && second >= 16 && second <= 31) {
+    return true;
+  }
+
+  return first === 192 && second === 168;
+}
+
+function isAllowedApiHost(hostname: string) {
+  const normalizedHostname = hostname.trim().toLowerCase();
+
+  if (!normalizedHostname) {
+    return false;
+  }
+
+  return (
+    ALLOWED_API_HOSTS.has(normalizedHostname) ||
+    normalizedHostname.endsWith('.msgnote.kr') ||
+    isPrivateIpv4Host(normalizedHostname)
+  );
+}
 
 const ERROR_MESSAGE_MAP: Record<string, string> = {
   'Page slug and password are required.': '페이지 주소와 비밀번호를 모두 입력해 주세요.',
@@ -85,11 +130,20 @@ export function normalizeApiBaseUrl(value: string) {
   }
 
   const normalized = target.replace(/\/+$/g, '');
-  if (normalized.startsWith('http://') || normalized.startsWith('https://')) {
-    return normalized;
-  }
+  const candidateUrl = normalized.startsWith('http://') || normalized.startsWith('https://')
+    ? normalized
+    : `https://${normalized}`;
 
-  return `https://${normalized}`;
+  try {
+    const parsed = new URL(candidateUrl);
+    if (!isAllowedApiHost(parsed.hostname)) {
+      return PRODUCTION_API_BASE_URL;
+    }
+
+    return `${parsed.protocol}//${parsed.host}`;
+  } catch {
+    return PRODUCTION_API_BASE_URL;
+  }
 }
 
 function buildApiUrl(baseUrl: string, path: string) {
