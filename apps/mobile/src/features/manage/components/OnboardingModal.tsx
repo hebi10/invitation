@@ -2,7 +2,7 @@ import { Modal, Pressable, View } from 'react-native';
 
 import { ActionButton } from '../../../components/ActionButton';
 import { AppText } from '../../../components/AppText';
-import { useAppState } from '../../../contexts/AppStateContext';
+import { usePreferences } from '../../../contexts/PreferencesContext';
 import type { ManageFormState, ManageStringFieldKey } from '../shared';
 import { ONBOARDING_STEPS } from '../shared';
 import { manageStyles } from '../manageStyles';
@@ -37,15 +37,10 @@ export function OnboardingModal({
   onUpdatePersonName,
   onSetPublished,
 }: OnboardingModalProps) {
-  const { palette } = useAppState();
+  const { palette } = usePreferences();
 
   return (
-    <Modal
-      visible={visible}
-      animationType="slide"
-      transparent
-      onRequestClose={onClose}
-    >
+    <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
       <View style={manageStyles.modalOverlay}>
         <Pressable style={manageStyles.modalBackdrop} onPress={onClose} />
         <View
@@ -103,7 +98,7 @@ export function OnboardingModal({
               이전
             </ActionButton>
             <ActionButton onPress={() => void onNext()} loading={isSaving}>
-              {stepIndex === ONBOARDING_STEPS.length - 1 ? '저장 후 시작' : '다음'}
+              {stepIndex === ONBOARDING_STEPS.length - 1 ? '저장하고 시작' : '다음'}
             </ActionButton>
           </View>
         </View>

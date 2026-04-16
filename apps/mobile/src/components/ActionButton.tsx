@@ -5,12 +5,13 @@ import {
   Pressable,
   StyleSheet,
   Text,
+  type AccessibilityState,
   type StyleProp,
   View,
   type ViewStyle,
 } from 'react-native';
 
-import { useAppState } from '../contexts/AppStateContext';
+import { usePreferences } from '../contexts/PreferencesContext';
 
 type ActionButtonProps = PropsWithChildren<{
   onPress?: () => void;
@@ -22,6 +23,9 @@ type ActionButtonProps = PropsWithChildren<{
   backgroundColor?: string;
   borderColor?: string;
   labelColor?: string;
+  accessibilityLabel?: string;
+  accessibilityHint?: string;
+  accessibilityState?: AccessibilityState;
 }>;
 
 export function ActionButton({
@@ -35,8 +39,11 @@ export function ActionButton({
   backgroundColor,
   borderColor,
   labelColor,
+  accessibilityLabel,
+  accessibilityHint,
+  accessibilityState,
 }: ActionButtonProps) {
-  const { palette, fontScale } = useAppState();
+  const { palette, fontScale } = usePreferences();
   const isDisabled = disabled || loading;
 
   const defaultBackgroundColor =
@@ -60,6 +67,13 @@ export function ActionButton({
   return (
     <Pressable
       accessibilityRole="button"
+      accessibilityLabel={accessibilityLabel}
+      accessibilityHint={accessibilityHint}
+      accessibilityState={{
+        ...accessibilityState,
+        disabled: isDisabled,
+        busy: loading || accessibilityState?.busy,
+      }}
       onPress={onPress}
       disabled={isDisabled}
       style={({ pressed }) => [

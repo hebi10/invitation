@@ -5,7 +5,7 @@ import { AppText } from '../../../components/AppText';
 import { InvitationEditorModalShell } from '../../../components/manage/InvitationEditorModalShell';
 import { SectionCard } from '../../../components/SectionCard';
 import { TextField } from '../../../components/TextField';
-import { useAppState } from '../../../contexts/AppStateContext';
+import { usePreferences } from '../../../contexts/PreferencesContext';
 import type { MobileGuestbookComment } from '../../../types/mobileInvitation';
 import { manageStyles } from '../manageStyles';
 
@@ -40,14 +40,14 @@ export function GuestbookModal({
   onDeleteComment,
   onRefresh,
 }: GuestbookModalProps) {
-  const { palette, fontScale } = useAppState();
+  const { palette, fontScale } = usePreferences();
 
   return (
     <InvitationEditorModalShell
       visible={visible}
       onClose={onClose}
       title="연동된 페이지 방명록"
-      description="방명록을 검색하고 필요한 댓글을 바로 삭제할 수 있습니다."
+      description="방명록을 검색하고 필요하면 댓글을 바로 삭제할 수 있습니다."
       palette={palette}
       fontScale={fontScale}
     >
@@ -60,12 +60,17 @@ export function GuestbookModal({
           label="검색어"
           value={searchQuery}
           onChangeText={onChangeSearchQuery}
-          placeholder="작성자 또는 댓글 내용을 입력해 주세요."
+          placeholder="작성자 이름이나 일부 내용을 입력해 주세요."
         />
         <AppText variant="caption" style={manageStyles.searchSummaryText}>
           검색 결과 {filteredCount}개 · 페이지 {page}/{totalPages}
         </AppText>
-        <ActionButton variant="secondary" onPress={() => void onRefresh()} disabled={!canRefresh} fullWidth>
+        <ActionButton
+          variant="secondary"
+          onPress={() => void onRefresh()}
+          disabled={!canRefresh}
+          fullWidth
+        >
           방명록 새로고침
         </ActionButton>
       </SectionCard>

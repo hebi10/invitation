@@ -1,7 +1,7 @@
 import { ActivityIndicator, Modal, View } from 'react-native';
 
 import { AppText } from '../../../components/AppText';
-import { useAppState } from '../../../contexts/AppStateContext';
+import { usePreferences } from '../../../contexts/PreferencesContext';
 import { manageStyles } from '../manageStyles';
 
 type EditorPreparingModalProps = {
@@ -13,7 +13,7 @@ export function EditorPreparingModal({
   visible,
   message,
 }: EditorPreparingModalProps) {
-  const { palette } = useAppState();
+  const { palette } = usePreferences();
 
   return (
     <Modal

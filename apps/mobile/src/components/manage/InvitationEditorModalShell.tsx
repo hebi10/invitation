@@ -23,6 +23,7 @@ type InvitationEditorModalShellProps = PropsWithChildren<{
   palette: ReturnType<typeof getPalette>;
   fontScale: number;
   cardStyle?: StyleProp<ViewStyle>;
+  closeAccessibilityLabel?: string;
 }>;
 
 export function InvitationEditorModalShell({
@@ -33,6 +34,7 @@ export function InvitationEditorModalShell({
   palette,
   fontScale,
   cardStyle,
+  closeAccessibilityLabel,
   children,
 }: InvitationEditorModalShellProps) {
   return (
@@ -93,7 +95,11 @@ export function InvitationEditorModalShell({
             </ScrollView>
 
             <View style={styles.actions}>
-              <ActionButton variant="secondary" onPress={onClose}>
+              <ActionButton
+                variant="secondary"
+                onPress={onClose}
+                accessibilityLabel={closeAccessibilityLabel ?? `${title} 닫기`}
+              >
                 닫기
               </ActionButton>
             </View>

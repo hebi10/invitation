@@ -2,14 +2,16 @@ import { Redirect, Slot, usePathname } from 'expo-router';
 import { ActivityIndicator, Platform, View } from 'react-native';
 
 import { AppText } from '../../components/AppText';
-import { useAppState } from '../../contexts/AppStateContext';
+import { useAuth } from '../../contexts/AuthContext';
+import { usePreferences } from '../../contexts/PreferencesContext';
 
 export default function ProtectedTabsLayout() {
   const pathname = usePathname();
-  const { isAuthenticated, isBootstrapping, palette } = useAppState();
+  const { isAuthenticated, isReady } = useAuth();
+  const { palette } = usePreferences();
   const isExpoWebPreview = Platform.OS === 'web';
 
-  if (isBootstrapping) {
+  if (!isReady) {
     return (
       <View
         style={{
@@ -27,11 +29,7 @@ export default function ProtectedTabsLayout() {
     );
   }
 
-  if (isExpoWebPreview) {
-    return <Redirect href={{ pathname: '/login', params: { next: pathname } }} />;
-  }
-
-  if (!isAuthenticated) {
+  if (isExpoWebPreview || !isAuthenticated) {
     return <Redirect href={{ pathname: '/login', params: { next: pathname } }} />;
   }
 

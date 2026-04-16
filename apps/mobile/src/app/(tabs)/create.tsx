@@ -2,7 +2,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useFocusEffect } from 'expo-router';
 import {
-  Modal,
   Platform,
   Pressable,
   ScrollView,
@@ -23,6 +22,9 @@ import {
   servicePlans,
   ticketPricing,
 } from '../../constants/content';
+import { PaymentConfirmModal } from '../../features/create/components/PaymentConfirmModal';
+import { TicketOnlyPurchaseModal } from '../../features/create/components/TicketOnlyPurchaseModal';
+import { TicketPurchaseSuccessModal } from '../../features/create/components/TicketPurchaseSuccessModal';
 import { useAuth } from '../../contexts/AuthContext';
 import { useDrafts } from '../../contexts/DraftsContext';
 import { useInvitationOps } from '../../contexts/InvitationOpsContext';
@@ -513,8 +515,10 @@ export default function CreateScreen() {
 
     setIsTicketPurchaseSubmitting(true);
 
-    // 현재 활성 청첩장이 아닌 다른 연동 카드에 적립할 때는,
-    // 해당 카드에 저장된 세션 토큰으로 직접 서버를 호출해야 한다.
+    // 티켓 적립은 현재 활성 세션이면 InvitationOpsContext 경로를 재사용하고,
+    // 다른 연동 청첩장을 적립 대상으로 고른 경우에는 그 카드의 세션 토큰으로
+    // 직접 호출해야 한다. InvitationOpsContext는 현재 활성 청첩장 기준 상태를
+    // 관리하므로, 다른 페이지 적립만 여기서 예외 처리한다.
     const nextTicketCount =
       session && selectedTicketTargetCard.slug === session.pageSlug
         ? await adjustTicketCount(ticketCount)
@@ -974,306 +978,54 @@ export default function CreateScreen() {
         </SectionCard>
       </AppScreen>
 
-      <Modal
+      <PaymentConfirmModal
         visible={paymentModalVisible}
-        animationType="fade"
-        transparent
-        onRequestClose={() => setPaymentModalVisible(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel="결제 확인 팝업 닫기"
-            style={[
-              styles.modalBackdrop,
-              {
-                backgroundColor: palette.background,
-                opacity: 0.78,
-              },
-            ]}
-            onPress={() => setPaymentModalVisible(false)}
-          />
-          <View
-            style={[
-              styles.modalCard,
-              {
-                backgroundColor: palette.surface,
-                borderColor: palette.cardBorder,
-              },
-            ]}
-          >
-            <ScrollView
-              style={styles.modalScroll}
-              contentContainerStyle={styles.modalScrollContent}
-              keyboardShouldPersistTaps="handled"
-              showsVerticalScrollIndicator={false}
-            >
-              <AppText variant="title" style={styles.modalTitle}>
-                결제 확인
-              </AppText>
-              <AppText variant="muted" style={styles.modalDescription}>
-                실제 결제는 아직 연결하지 않았습니다. 이 팝업에서 확인을 누르면 페이지를 생성하고 운영 탭으로 바로 이동합니다.
-              </AppText>
+        onClose={() => setPaymentModalVisible(false)}
+        onConfirm={() => void handleConfirmCreate()}
+        loading={isSubmitting || isAuthenticating}
+        authError={authError}
+        palette={palette}
+        serviceName={selectedPlanInfo.name}
+        selectedThemeLabel={selectedThemeInfo?.label ?? '선택 필요'}
+        ticketCount={ticketCount}
+        ticketPrice={ticketPrice}
+        slugPreview={slugPreview}
+        totalPrice={totalPrice}
+      />
 
-              <View style={styles.summaryRow}>
-                <AppText style={styles.summaryLabel}>서비스</AppText>
-                <AppText style={styles.summaryValue}>
-                  {selectedPlanInfo.name}
-                </AppText>
-              </View>
-              <View style={styles.summaryRow}>
-                <AppText style={styles.summaryLabel}>디자인</AppText>
-                <AppText style={styles.summaryValue}>
-                  {selectedThemeInfo?.label ?? '선택 필요'}
-                </AppText>
-              </View>
-              <View style={styles.summaryRow}>
-                <AppText style={styles.summaryLabel}>추가 티켓</AppText>
-                <AppText style={styles.summaryValue}>
-                  {ticketCount}장 / {formatPrice(ticketPrice)}
-                </AppText>
-              </View>
-              <View style={styles.summaryRow}>
-                <AppText style={styles.summaryLabel}>생성 URL</AppText>
-                <AppText style={styles.summaryValue}>
-                  {slugPreview}
-                </AppText>
-              </View>
-              <View style={styles.summaryRow}>
-                <AppText style={styles.summaryLabel}>결제 예정 금액</AppText>
-                <AppText variant="title" color={palette.accent} style={styles.totalLabel}>
-                  {formatPrice(totalPrice)}
-                </AppText>
-              </View>
-
-              {authError ? (
-                <AppText variant="caption" color={palette.danger} style={styles.modalErrorText}>
-                  {authError}
-                </AppText>
-              ) : null}
-
-              <View style={styles.actionColumn}>
-                <ActionButton
-                  variant="secondary"
-                  onPress={() => setPaymentModalVisible(false)}
-                  fullWidth
-                >
-                  다시 확인하기
-                </ActionButton>
-                <ActionButton
-                  onPress={() => void handleConfirmCreate()}
-                  loading={isSubmitting || isAuthenticating}
-                  fullWidth
-                >
-                  확인 후 페이지 생성
-                </ActionButton>
-              </View>
-            </ScrollView>
-          </View>
-        </View>
-      </Modal>
-
-      <Modal
+      <TicketOnlyPurchaseModal
         visible={ticketOnlyModalVisible}
-        animationType="fade"
-        transparent
-        onRequestClose={() => setTicketOnlyModalVisible(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel="티켓 전용 결제 확인 팝업 닫기"
-            style={[
-              styles.modalBackdrop,
-              {
-                backgroundColor: palette.background,
-                opacity: 0.78,
-              },
-            ]}
-            onPress={() => setTicketOnlyModalVisible(false)}
-          />
-          <View
-            style={[
-              styles.modalCard,
-              {
-                backgroundColor: palette.surface,
-                borderColor: palette.cardBorder,
-              },
-            ]}
-          >
-            <ScrollView
-              style={styles.modalScroll}
-              contentContainerStyle={styles.modalScrollContent}
-              keyboardShouldPersistTaps="handled"
-              showsVerticalScrollIndicator={false}
-            >
-              <AppText variant="title" style={styles.modalTitle}>
-                티켓 전용 결제 확인
-              </AppText>
-              <AppText variant="muted" style={styles.modalDescription}>
-                이 창은 추가 티켓만 먼저 결제하려는 경우를 위한 확인 단계입니다.
-                실제 결제는 아직 연결하지 않았고, 현재는 금액과 사용 범위만 확인할 수 있습니다.
-              </AppText>
+        onClose={() => setTicketOnlyModalVisible(false)}
+        onConfirm={handleConfirmTicketOnlyPurchase}
+        loading={isTicketPurchaseSubmitting}
+        authError={authError}
+        notice={notice}
+        palette={palette}
+        ticketCount={ticketCount}
+        discountedBundleCount={discountedBundleCount}
+        remainderTicketCount={remainderTicketCount}
+        ticketPrice={ticketPrice}
+        ticketUsageItems={TICKET_USAGE_ITEMS}
+        targetOptions={linkedInvitationCards.map((item) => ({
+          slug: item.slug,
+          displayName: item.displayName.trim() || item.slug,
+        }))}
+        selectedTargetSlug={selectedTicketTargetCard?.slug ?? null}
+        selectedTargetLabel={
+          selectedTicketTargetCard?.displayName?.trim() ||
+          selectedTicketTargetCard?.slug ||
+          '연동된 청첩장이 필요합니다'
+        }
+        currentStoredTicketCount={storedTicketCount}
+        onSelectTarget={setSelectedTicketTargetSlug}
+      />
 
-              <View style={styles.summaryRow}>
-                <AppText style={styles.summaryLabel}>티켓 수량</AppText>
-                <AppText style={styles.summaryValue}>{ticketCount}장</AppText>
-              </View>
-              <View style={styles.summaryRow}>
-                <AppText style={styles.summaryLabel}>3장 할인 묶음</AppText>
-                <AppText style={styles.summaryValue}>{discountedBundleCount}개</AppText>
-              </View>
-              <View style={styles.summaryRow}>
-                <AppText style={styles.summaryLabel}>낱장 계산</AppText>
-                <AppText style={styles.summaryValue}>{remainderTicketCount}장</AppText>
-              </View>
-              <View style={styles.summaryRow}>
-                <AppText style={styles.summaryLabel}>티켓 결제 예정 금액</AppText>
-                <AppText variant="title" color={palette.accent} style={styles.totalLabel}>
-                  {formatPrice(ticketPrice)}
-                </AppText>
-              </View>
-              <View style={styles.summaryRow}>
-                <AppText style={styles.summaryLabel}>적립 대상</AppText>
-                <AppText style={styles.summaryValue}>
-                  {selectedTicketTargetCard?.displayName?.trim() ||
-                    selectedTicketTargetCard?.slug ||
-                    '연동된 청첩장이 필요합니다'}
-                </AppText>
-              </View>
-              <View style={styles.summaryRow}>
-                <AppText style={styles.summaryLabel}>현재 보유 티켓</AppText>
-                <AppText style={styles.summaryValue}>{storedTicketCount}장</AppText>
-              </View>
-
-              {linkedInvitationCards.length > 1 ? (
-                <View style={styles.actionColumn}>
-                  <AppText variant="caption" style={styles.summaryLabel}>
-                    티켓 적립 대상 선택
-                  </AppText>
-                  <View style={styles.chipRow}>
-                    {linkedInvitationCards.map((item) => (
-                      <ChoiceChip
-                        key={`ticket-target-${item.slug}`}
-                        label={item.displayName.trim() || item.slug}
-                        selected={selectedTicketTargetCard?.slug === item.slug}
-                        onPress={() => setSelectedTicketTargetSlug(item.slug)}
-                      />
-                    ))}
-                  </View>
-                  <AppText variant="muted" style={styles.helperText}>
-                    선택한 청첩장에 티켓이 적립되고, 운영 탭에서도 같은 수량을 바로 확인할 수 있습니다.
-                  </AppText>
-                </View>
-              ) : null}
-
-              <BulletList items={[...TICKET_USAGE_ITEMS]} />
-
-              {notice ? (
-                <AppText variant="caption" color={palette.accent} style={styles.helperText}>
-                  {notice}
-                </AppText>
-              ) : null}
-
-              {authError ? (
-                <View
-                  style={[
-                    styles.noticeBox,
-                    {
-                      backgroundColor: palette.dangerSoft,
-                      borderColor: palette.danger,
-                    },
-                  ]}
-                >
-                  <AppText variant="caption" color={palette.danger} style={styles.noticeText}>
-                    {authError}
-                  </AppText>
-                </View>
-              ) : null}
-
-              <View style={styles.actionColumn}>
-                <ActionButton
-                  variant="secondary"
-                  onPress={() => setTicketOnlyModalVisible(false)}
-                  fullWidth
-                >
-                  다시 확인하기
-                </ActionButton>
-                <ActionButton
-                  onPress={handleConfirmTicketOnlyPurchase}
-                  loading={isTicketPurchaseSubmitting}
-                  fullWidth
-                >
-                  티켓 전용 결제 확인
-                </ActionButton>
-              </View>
-            </ScrollView>
-          </View>
-        </View>
-      </Modal>
-
-      <Modal
+      <TicketPurchaseSuccessModal
         visible={ticketPurchaseSuccess !== null}
-        animationType="fade"
-        transparent
-        onRequestClose={() => setTicketPurchaseSuccess(null)}
-      >
-        <View style={styles.modalOverlay}>
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel="티켓 구매 완료 팝업 닫기"
-            style={[
-              styles.modalBackdrop,
-              {
-                backgroundColor: palette.background,
-                opacity: 0.78,
-              },
-            ]}
-            onPress={() => setTicketPurchaseSuccess(null)}
-          />
-          <View
-            style={[
-              styles.modalCard,
-              {
-                backgroundColor: palette.surface,
-                borderColor: palette.cardBorder,
-              },
-            ]}
-          >
-            <View style={styles.modalScrollContent}>
-              <AppText variant="title" style={styles.modalTitle}>
-                구매 완료됐습니다
-              </AppText>
-              <AppText variant="muted" style={styles.modalDescription}>
-                선택한 청첩장에 티켓 적립이 정상적으로 완료되었습니다.
-              </AppText>
-
-              <View style={styles.summaryRow}>
-                <AppText style={styles.summaryLabel}>적립 대상</AppText>
-                <AppText style={styles.summaryValue}>
-                  {ticketPurchaseSuccess?.targetDisplayName ?? '-'}
-                </AppText>
-              </View>
-              <View style={styles.summaryRow}>
-                <AppText style={styles.summaryLabel}>구매한 티켓</AppText>
-                <AppText style={styles.summaryValue}>
-                  {ticketPurchaseSuccess?.ticketCount ?? 0}장
-                </AppText>
-              </View>
-              <View style={styles.summaryRow}>
-                <AppText style={styles.summaryLabel}>현재 보유 티켓</AppText>
-                <AppText variant="title" color={palette.accent} style={styles.totalLabel}>
-                  {ticketPurchaseSuccess?.nextTicketCount ?? 0}장
-                </AppText>
-              </View>
-
-              <ActionButton onPress={() => setTicketPurchaseSuccess(null)} fullWidth>
-                확인
-              </ActionButton>
-            </View>
-          </View>
-        </View>
-      </Modal>
+        onClose={() => setTicketPurchaseSuccess(null)}
+        palette={palette}
+        success={ticketPurchaseSuccess}
+      />
     </>
   );
 }
@@ -1400,37 +1152,5 @@ const styles = StyleSheet.create({
   },
   actionColumn: {
     gap: 10,
-  },
-  modalOverlay: {
-    flex: 1,
-    justifyContent: 'center',
-    paddingHorizontal: 20,
-  },
-  modalBackdrop: {
-    ...StyleSheet.absoluteFillObject,
-  },
-  modalCard: {
-    maxHeight: '88%',
-    borderWidth: 1,
-    borderRadius: 28,
-    padding: 20,
-    gap: 14,
-  },
-  modalScroll: {
-    flexGrow: 0,
-  },
-  modalScrollContent: {
-    gap: 14,
-    paddingBottom: 2,
-  },
-  modalTitle: {
-    fontWeight: '800',
-  },
-  modalDescription: {
-    lineHeight: 21,
-  },
-  modalErrorText: {
-    lineHeight: 19,
-    fontWeight: '600',
   },
 });

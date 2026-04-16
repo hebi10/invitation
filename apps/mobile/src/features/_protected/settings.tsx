@@ -1,33 +1,32 @@
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 
 import { settingsNotes } from '../../constants/content';
 import { AppScreen } from '../../components/AppScreen';
+import { AppText } from '../../components/AppText';
 import { ChoiceChip } from '../../components/ChoiceChip';
 import { SectionCard } from '../../components/SectionCard';
-import { useAppState } from '../../contexts/AppStateContext';
+import { usePreferences } from '../../contexts/PreferencesContext';
 
 export default function SettingsScreen() {
   const {
     fontScalePreference,
-    palette,
-    fontScale,
     setFontScalePreference,
     setThemePreference,
     themePreference,
-  } = useAppState();
+  } = usePreferences();
 
   return (
     <AppScreen
       title="설정"
-      subtitle="라이트/다크 모드와 글자 크기를 현재 기기 기준으로 바로 반영합니다."
+      subtitle="라이트·다크 모드와 글자 크기를 현재 기기 기준으로 바로 반영합니다."
     >
       <SectionCard
         title="화면 설정"
         description="변경 즉시 모바일 앱 전체 화면에 반영됩니다."
       >
-        <Text style={[styles.settingLabel, { color: palette.text, fontSize: 14 * fontScale }]}>
+        <AppText variant="caption" style={styles.settingLabel}>
           테마
-        </Text>
+        </AppText>
         <View style={styles.chipRow}>
           <ChoiceChip
             label="시스템"
@@ -46,9 +45,9 @@ export default function SettingsScreen() {
           />
         </View>
 
-        <Text style={[styles.settingLabel, { color: palette.text, fontSize: 14 * fontScale }]}>
+        <AppText variant="caption" style={styles.settingLabel}>
           글자 크기
-        </Text>
+        </AppText>
         <View style={styles.chipRow}>
           <ChoiceChip
             label="기본"
@@ -65,12 +64,9 @@ export default function SettingsScreen() {
 
       <SectionCard title="안내">
         {settingsNotes.map((note) => (
-          <Text
-            key={note}
-            style={[styles.accountText, { color: palette.textMuted, fontSize: 14 * fontScale }]}
-          >
-            · {note}
-          </Text>
+          <AppText key={note} variant="muted" style={styles.accountText}>
+            • {note}
+          </AppText>
         ))}
       </SectionCard>
     </AppScreen>

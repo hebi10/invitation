@@ -3,7 +3,7 @@ import { Image, View } from 'react-native';
 import { ActionButton } from '../../../../components/ActionButton';
 import { AppText } from '../../../../components/AppText';
 import { SectionCard } from '../../../../components/SectionCard';
-import { useAppState } from '../../../../contexts/AppStateContext';
+import { usePreferences } from '../../../../contexts/PreferencesContext';
 import type { ManageGalleryPreviewItem } from '../../shared';
 import { manageStyles } from '../../manageStyles';
 
@@ -26,13 +26,13 @@ export function ImagesEditorStep({
   onMoveGalleryImage,
   onRemoveGalleryImage,
 }: ImagesEditorStepProps) {
-  const { palette } = useAppState();
+  const { palette } = usePreferences();
 
   return (
     <>
       <SectionCard
         title="대표 이미지"
-        description="원본 주소 대신 썸네일 미리보기를 보여주고, 저장 시 썸네일을 우선 사용합니다."
+        description="이미지 주소 대신 실제 미리보기를 보여주고, 대표 이미지는 썸네일을 우선 사용합니다."
       >
         <View style={manageStyles.actionRow}>
           <ActionButton
@@ -61,8 +61,7 @@ export function ImagesEditorStep({
             ]}
           >
             <AppText variant="muted" style={manageStyles.helperText}>
-              아직 대표 이미지가 없습니다. 업로드하면 커버 미리보기로 바로 확인할 수
-              있습니다.
+              아직 대표 이미지가 없습니다. 업로드하면 커버 미리보기로 바로 확인할 수 있습니다.
             </AppText>
           </View>
         )}
@@ -101,11 +100,9 @@ export function ImagesEditorStep({
                   style={manageStyles.galleryPreviewImage}
                 />
                 <View style={manageStyles.galleryCardCopy}>
-                  <AppText style={manageStyles.galleryCardTitle}>
-                    노출 순서 {index + 1}
-                  </AppText>
+                  <AppText style={manageStyles.galleryCardTitle}>노출 순서 {index + 1}</AppText>
                   <AppText variant="caption" style={manageStyles.galleryCardMeta}>
-                    저장 시에는 원본 이미지를 유지하고, 편집 화면에서는 썸네일로
+                    대표 순서에 맞춰 원본 이미지를 유지하고, 편집 화면에서는 썸네일로
                     불러옵니다.
                   </AppText>
                 </View>
@@ -142,8 +139,7 @@ export function ImagesEditorStep({
             ]}
           >
             <AppText variant="muted" style={manageStyles.helperText}>
-              아직 갤러리 이미지가 없습니다. 업로드하면 순서를 바로 조정할 수
-              있습니다.
+              아직 갤러리 이미지가 없습니다. 업로드하면 순서를 바로 조정할 수 있습니다.
             </AppText>
           </View>
         )}

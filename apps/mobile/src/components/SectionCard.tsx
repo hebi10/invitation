@@ -9,7 +9,7 @@ import {
   type ViewStyle,
 } from 'react-native';
 
-import { useAppState } from '../contexts/AppStateContext';
+import { usePreferences } from '../contexts/PreferencesContext';
 
 type SectionCardProps = PropsWithChildren<{
   title: string;
@@ -25,7 +25,7 @@ export function SectionCard({
   onPress,
   children,
 }: SectionCardProps) {
-  const { palette, fontScale } = useAppState();
+  const { palette, fontScale } = usePreferences();
 
   const cardStyle: StyleProp<ViewStyle> = [
     styles.card,

@@ -8,7 +8,7 @@ import {
   View,
 } from 'react-native';
 
-import { useAppState } from '../contexts/AppStateContext';
+import { usePreferences } from '../contexts/PreferencesContext';
 import { AppText, type AppTextVariant } from './AppText';
 
 type SupportedTextFieldProps = Pick<
@@ -54,7 +54,7 @@ export function TextField({
   containerStyle,
   inputStyle,
 }: TextFieldProps) {
-  const { palette, fontScale } = useAppState();
+  const { palette, fontScale } = usePreferences();
 
   return (
     <View style={[styles.wrapper, containerStyle]}>

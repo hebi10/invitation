@@ -1,10 +1,10 @@
 import { Link } from 'expo-router';
 import { StyleSheet, Text, View } from 'react-native';
 
-import { useAppState } from '../contexts/AppStateContext';
+import { usePreferences } from '../contexts/PreferencesContext';
 
 export default function NotFoundScreen() {
-  const { palette, fontScale } = useAppState();
+  const { palette, fontScale } = usePreferences();
 
   return (
     <View style={[styles.container, { backgroundColor: palette.background }]}>
@@ -18,7 +18,7 @@ export default function NotFoundScreen() {
           페이지를 찾을 수 없습니다.
         </Text>
         <Text style={[styles.text, { color: palette.textMuted, fontSize: 15 * fontScale }]}>
-          모바일 청첩장 앱에는 아직 이 경로가 준비되지 않았습니다.
+          모바일 청첩장 앱에서 아직 이 경로는 준비되지 않았습니다.
         </Text>
         <Link href="/" style={[styles.link, { color: palette.accent, fontSize: 15 * fontScale }]}>
           홈으로 돌아가기

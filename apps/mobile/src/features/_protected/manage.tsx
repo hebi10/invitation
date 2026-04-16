@@ -1,6 +1,6 @@
-﻿import { router, useFocusEffect } from 'expo-router';
+﻿import { router } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useState } from 'react';
 import { Linking, ScrollView, Share, View } from 'react-native';
 
 import { EditorPreparingModal } from '../manage/components/EditorPreparingModal';
@@ -12,7 +12,9 @@ import { useAddressSearch } from '../manage/hooks/useAddressSearch';
 import { useGuestbook } from '../manage/hooks/useGuestbook';
 import { useImageUpload } from '../manage/hooks/useImageUpload';
 import { useInvitationForm } from '../manage/hooks/useInvitationForm';
+import { useLinkedInvitationManager } from '../manage/hooks/useLinkedInvitationManager';
 import { useMusicLibrary } from '../manage/hooks/useMusicLibrary';
+import { useTicketOperations } from '../manage/hooks/useTicketOperations';
 import { manageStyles } from '../manage/manageStyles';
 import { EDITOR_STEPS } from '../manage/shared';
 import { ActionButton } from '../../components/ActionButton';
@@ -25,16 +27,9 @@ import { SectionCard } from '../../components/SectionCard';
 import { useAuth } from '../../contexts/AuthContext';
 import { useInvitationOps } from '../../contexts/InvitationOpsContext';
 import { usePreferences } from '../../contexts/PreferencesContext';
-import { validateMobileClientEditorSession } from '../../lib/api';
-import {
-  buildLinkedInvitationCardFromPageSummary,
-  getLinkedInvitationCards,
-  LinkedInvitationCard,
-  MAX_LINKED_INVITATION_CARD_COUNT,
-  mergeLinkedInvitationCard,
-  setLinkedInvitationCards as persistLinkedInvitationCards,
-} from '../../lib/linkedInvitationCards';
+import type { LinkedInvitationCard } from '../../lib/linkedInvitationCards';
 import type {
+  MobileDisplayPeriodSummary,
   MobileInvitationProductTier,
   MobileInvitationThemeKey,
 } from '../../types/mobileInvitation';
@@ -61,7 +56,7 @@ function formatDateLabel(value: string) {
   }).format(parsed);
 }
 
-function formatDisplayPeriod(period: LinkedInvitationCard['displayPeriod'] | null | undefined) {
+function formatDisplayPeriod(period: MobileDisplayPeriodSummary | null | undefined) {
   if (!period?.enabled) {
     return '미설정';
   }
@@ -97,66 +92,6 @@ export default function ManageScreen() {
     transferTicketCount,
   } = useInvitationOps();
   const [notice, setNotice] = useState('');
-  const [linkedInvitationCards, setLinkedInvitationCards] = useState<LinkedInvitationCard[]>([]);
-  const [hasLoadedLinkedInvitationCards, setHasLoadedLinkedInvitationCards] = useState(false);
-  const [ticketModalVisible, setTicketModalVisible] = useState(false);
-  const [ticketThemeSelection, setTicketThemeSelection] = useState<MobileInvitationThemeKey>('emotional');
-  const [isExtendingDisplayPeriod, setIsExtendingDisplayPeriod] = useState(false);
-  const [isApplyingTicketThemeChange, setIsApplyingTicketThemeChange] = useState(false);
-  const [isApplyingExtraVariant, setIsApplyingExtraVariant] = useState(false);
-  const [isTransferringTickets, setIsTransferringTickets] = useState(false);
-  const [ticketTransferTargetSlug, setTicketTransferTargetSlug] = useState<string | null>(null);
-  const [ticketTransferCount, setTicketTransferCount] = useState(1);
-  const [previewLinkCardSlug, setPreviewLinkCardSlug] = useState<string | null>(null);
-  const [activatingLinkedInvitationSlug, setActivatingLinkedInvitationSlug] = useState<string | null>(null);
-
-  const reloadLinkedInvitationCards = useCallback(async (options: { syncWithServer?: boolean } = {}) => {
-    const stored = await getLinkedInvitationCards();
-
-    if (!options.syncWithServer) {
-      setLinkedInvitationCards(stored);
-      setHasLoadedLinkedInvitationCards(true);
-      return;
-    }
-
-    const refreshedCardResults = await Promise.allSettled(
-      stored.map(async (card) => {
-        if (!card.session) {
-          return card;
-        }
-
-        const sessionResponse = await validateMobileClientEditorSession(
-          apiBaseUrl,
-          card.slug,
-          card.session.token
-        );
-
-        if (!sessionResponse.authenticated || !sessionResponse.page) {
-          return card;
-        }
-
-        return mergeLinkedInvitationCard(
-          card,
-          buildLinkedInvitationCardFromPageSummary(sessionResponse.page, {
-            publicUrl: sessionResponse.links?.publicUrl ?? card.publicUrl,
-            links: sessionResponse.links,
-            config: sessionResponse.dashboardPage?.config,
-            updatedAt: Date.now(),
-            ticketCount: sessionResponse.page.ticketCount,
-            session: card.session,
-          })
-        );
-      })
-    );
-
-    const refreshedCards = refreshedCardResults.map((result, index) =>
-      result.status === 'fulfilled' ? result.value : stored[index]
-    );
-
-    setLinkedInvitationCards(refreshedCards);
-    setHasLoadedLinkedInvitationCards(true);
-    await persistLinkedInvitationCards(refreshedCards);
-  }, [apiBaseUrl]);
 
   const invitationForm = useInvitationForm({
     dashboard,
@@ -167,6 +102,30 @@ export default function ManageScreen() {
     refreshDashboard,
     saveCurrentPageConfig,
     setPublishedState,
+    setNotice,
+  });
+
+  const {
+    setLinkedInvitationCards,
+    activeLinkedInvitationCard,
+    additionalLinkedInvitationCards,
+    previewLinkTargetCard,
+    previewLinkThemeKeys,
+    activatingLinkedInvitationSlug,
+    reloadLinkedInvitationCards,
+    handleLinkAnotherInvitation,
+    handleActivateLinkedInvitation,
+    openPreviewLinkModal,
+    closePreviewLinkModal,
+  } = useLinkedInvitationManager({
+    apiBaseUrl,
+    dashboardConfig: dashboard?.page.config,
+    links: dashboard?.links,
+    pageSummary,
+    session,
+    activateStoredSession,
+    logout,
+    clearAuthError,
     setNotice,
   });
 
@@ -209,181 +168,42 @@ export default function ManageScreen() {
   const selectedMusicCategoryLabel =
     musicLibrary.selectedMusicCategory?.label ?? '선택해 주세요';
 
-  const activeLinkedInvitationCard = useMemo<LinkedInvitationCard | null>(() => {
-    if (!pageSummary) {
-      return null;
-    }
-
-    return {
-      ...buildLinkedInvitationCardFromPageSummary(pageSummary, {
-        publicUrl: dashboard?.links.publicUrl ?? null,
-        links: dashboard?.links,
-        config: dashboard?.page.config,
-        updatedAt: 0,
-        ticketCount: dashboard?.ticketCount ?? pageSummary.ticketCount,
-        session,
-      }),
-    };
-  }, [dashboard?.links, dashboard?.page.config, dashboard?.ticketCount, pageSummary, session]);
-
-  const additionalLinkedInvitationCards = useMemo(
-    () =>
-      linkedInvitationCards
-        .filter((item) => item.slug !== pageSummary?.slug)
-        .sort((left, right) => right.updatedAt - left.updatedAt),
-    [linkedInvitationCards, pageSummary?.slug]
-  );
-
-  const previewLinkTargetCard = useMemo(
-    () =>
-      [activeLinkedInvitationCard, ...additionalLinkedInvitationCards].find(
-        (item): item is LinkedInvitationCard => {
-          if (!item) {
-            return false;
-          }
-
-          return item.slug === previewLinkCardSlug;
-        }
-      ) ?? null,
-    [activeLinkedInvitationCard, additionalLinkedInvitationCards, previewLinkCardSlug]
-  );
-
-  const previewLinkThemeKeys = useMemo(
-    () =>
-      previewLinkTargetCard?.availableThemeKeys.length
-        ? previewLinkTargetCard.availableThemeKeys
-        : previewLinkTargetCard
-          ? [previewLinkTargetCard.defaultTheme]
-          : [],
-    [previewLinkTargetCard]
-  );
-
-  const ticketTransferTargetCards = useMemo(
-    () => additionalLinkedInvitationCards.filter((item) => Boolean(item.session)),
-    [additionalLinkedInvitationCards]
-  );
-
-  const selectedTicketTransferTargetCard = useMemo(
-    () =>
-      ticketTransferTargetCards.find((item) => item.slug === ticketTransferTargetSlug) ??
-      ticketTransferTargetCards[0] ??
-      null,
-    [ticketTransferTargetCards, ticketTransferTargetSlug]
-  );
-
-  const ticketTransferCountOptions = useMemo(() => {
-    const availableTicketCount = activeLinkedInvitationCard?.ticketCount ?? 0;
-    const cappedCount = Math.min(availableTicketCount, 5);
-    const options = Array.from({ length: cappedCount }, (_, index) => index + 1);
-
-    if (availableTicketCount > 5) {
-      options.push(availableTicketCount);
-    }
-
-    return options;
-  }, [activeLinkedInvitationCard?.ticketCount]);
-
-  const upgradeTargetPlan = useMemo<MobileInvitationProductTier | null>(() => {
-    if (!activeLinkedInvitationCard) {
-      return null;
-    }
-
-    if (activeLinkedInvitationCard.productTier === 'standard') {
-      return 'deluxe';
-    }
-
-    if (activeLinkedInvitationCard.productTier === 'deluxe') {
-      return 'premium';
-    }
-
-    return null;
-  }, [activeLinkedInvitationCard]);
-
-  const alternateTheme = useMemo<MobileInvitationThemeKey>(() => {
-    return activeLinkedInvitationCard?.defaultTheme === 'emotional' ? 'simple' : 'emotional';
-  }, [activeLinkedInvitationCard?.defaultTheme]);
-
-  const isAlternateThemeAvailable = useMemo(() => {
-    const targetVariant = dashboard?.page.config.variants?.[alternateTheme];
-    return targetVariant?.available === true;
-  }, [alternateTheme, dashboard?.page.config.variants]);
-
-  useFocusEffect(
-    useCallback(() => {
-      void reloadLinkedInvitationCards();
-    }, [reloadLinkedInvitationCards])
-  );
-
-  useEffect(() => {
-    if (!hasLoadedLinkedInvitationCards) {
-      return;
-    }
-
-    void persistLinkedInvitationCards(linkedInvitationCards);
-  }, [hasLoadedLinkedInvitationCards, linkedInvitationCards]);
-
-  useEffect(() => {
-    if (!activeLinkedInvitationCard) {
-      return;
-    }
-
-    setTicketThemeSelection(activeLinkedInvitationCard.defaultTheme);
-
-    setLinkedInvitationCards((current) => {
-      const existing = current.find((item) => item.slug === activeLinkedInvitationCard.slug);
-      const nextCard = mergeLinkedInvitationCard(existing, {
-        ...activeLinkedInvitationCard,
-        updatedAt: Date.now(),
-      });
-
-      if (
-        existing &&
-        existing.displayName === nextCard.displayName &&
-        existing.productTier === nextCard.productTier &&
-        existing.defaultTheme === nextCard.defaultTheme &&
-        existing.published === nextCard.published &&
-        existing.showMusic === nextCard.showMusic &&
-        existing.showGuestbook === nextCard.showGuestbook &&
-        existing.publicUrl === nextCard.publicUrl &&
-        existing.availableThemeKeys.join('|') === nextCard.availableThemeKeys.join('|') &&
-        JSON.stringify(existing.previewUrls) === JSON.stringify(nextCard.previewUrls) &&
-        JSON.stringify(existing.displayPeriod) === JSON.stringify(nextCard.displayPeriod) &&
-        existing.ticketCount === nextCard.ticketCount
-      ) {
-        return current;
-      }
-
-      return [
-        nextCard,
-        ...current.filter((item) => item.slug !== nextCard.slug),
-      ].slice(0, MAX_LINKED_INVITATION_CARD_COUNT);
-    });
-  }, [activeLinkedInvitationCard]);
-
-  useEffect(() => {
-    if (ticketTransferTargetCards.length === 0) {
-      setTicketTransferTargetSlug(null);
-      setTicketTransferCount(1);
-      return;
-    }
-
-    if (
-      !ticketTransferTargetSlug ||
-      !ticketTransferTargetCards.some((item) => item.slug === ticketTransferTargetSlug)
-    ) {
-      setTicketTransferTargetSlug(ticketTransferTargetCards[0]?.slug ?? null);
-    }
-  }, [ticketTransferTargetCards, ticketTransferTargetSlug]);
-
-  useEffect(() => {
-    const availableTicketCount = activeLinkedInvitationCard?.ticketCount ?? 0;
-    if (availableTicketCount <= 0) {
-      setTicketTransferCount(1);
-      return;
-    }
-
-    setTicketTransferCount((current) => Math.max(1, Math.min(current, availableTicketCount)));
-  }, [activeLinkedInvitationCard?.ticketCount]);
+  const {
+    ticketModalVisible,
+    ticketThemeSelection,
+    isExtendingDisplayPeriod,
+    isApplyingTicketThemeChange,
+    isApplyingExtraVariant,
+    isTransferringTickets,
+    ticketTransferTargetCards,
+    selectedTicketTransferTargetCard,
+    ticketTransferCount,
+    ticketTransferCountOptions,
+    upgradeTargetPlan,
+    alternateTheme,
+    isAlternateThemeAvailable,
+    setTicketThemeSelection,
+    setTicketTransferTargetSlug,
+    setTicketTransferCount,
+    handleOpenTicketModal,
+    closeTicketModal,
+    handleApplyTicketThemeChange,
+    handleExtendDisplayPeriod,
+    handleAddExtraVariant,
+    handleTransferTicketCount,
+  } = useTicketOperations({
+    activeLinkedInvitationCard,
+    additionalLinkedInvitationCards,
+    dashboardVariants: dashboard?.page.config.variants,
+    invitationForm,
+    adjustTicketCount,
+    extendDisplayPeriod,
+    setVariantAvailability,
+    transferTicketCount,
+    setNotice,
+    setLinkedInvitationCards,
+    formatDateLabel,
+  });
 
   const handleShare = async () => {
     const publicUrl = dashboard?.links.publicUrl;
@@ -410,7 +230,7 @@ export default function ManageScreen() {
 
     try {
       if (activeLinkedInvitationCard.availableThemeKeys.length > 1) {
-        setPreviewLinkCardSlug(activeLinkedInvitationCard.slug);
+        openPreviewLinkModal(activeLinkedInvitationCard.slug);
         return;
       }
 
@@ -456,10 +276,6 @@ export default function ManageScreen() {
     }
   };
 
-  const closePreviewLinkModal = () => {
-    setPreviewLinkCardSlug(null);
-  };
-
   const handleOpenThemeLink = async (
     card: LinkedInvitationCard,
     themeKey: MobileInvitationThemeKey
@@ -493,62 +309,6 @@ export default function ManageScreen() {
     }
   };
 
-  const handleLinkAnotherInvitation = async (pageSlugToRelink?: string) => {
-    setNotice(
-      pageSlugToRelink
-        ? `${pageSlugToRelink} 청첩장을 다시 연동하려면 비밀번호를 입력해 주세요.`
-        : '다른 청첩장을 연동하려면 슬러그와 비밀번호를 입력해 주세요.'
-    );
-    await logout();
-    clearAuthError();
-  };
-
-  const handleActivateLinkedInvitation = async (card: LinkedInvitationCard) => {
-    if (!card.session) {
-      await handleLinkAnotherInvitation(card.slug);
-      return;
-    }
-
-    if (session?.pageSlug === card.slug) {
-      setNotice(`${card.displayName.trim() || card.slug} 청첩장이 이미 열려 있습니다.`);
-      return;
-    }
-
-    setNotice(`${card.displayName.trim() || card.slug} 청첩장을 불러오는 중입니다.`);
-    clearAuthError();
-
-    setActivatingLinkedInvitationSlug(card.slug);
-    try {
-      const activated = await activateStoredSession(card.session);
-      if (!activated) {
-        setNotice(
-          `${card.displayName.trim() || card.slug} 청첩장의 저장된 연동 정보가 만료되었습니다. 다시 연동해 주세요.`
-        );
-        return;
-      }
-
-      await reloadLinkedInvitationCards();
-      setNotice(`${card.displayName.trim() || card.slug} 청첩장으로 전환했습니다.`);
-    } finally {
-      setActivatingLinkedInvitationSlug(null);
-    }
-  };
-
-  const handleOpenTicketModal = () => {
-    if (!activeLinkedInvitationCard) {
-      return;
-    }
-
-    setTicketThemeSelection(activeLinkedInvitationCard.defaultTheme);
-    setTicketTransferCount(1);
-    setTicketTransferTargetSlug(ticketTransferTargetCards[0]?.slug ?? null);
-    setTicketModalVisible(true);
-  };
-
-  const closeTicketModal = () => {
-    setTicketModalVisible(false);
-  };
-
   const handleRouteToCreateWithTicketIntent = (
     ticketIntent: 'extend' | 'extra-page' | 'extra-variant' | 'upgrade',
     options: {
@@ -556,7 +316,7 @@ export default function ManageScreen() {
       targetTheme?: MobileInvitationThemeKey;
     } = {}
   ) => {
-    setTicketModalVisible(false);
+    closeTicketModal();
     router.push({
       pathname: '/create',
       params: {
@@ -565,170 +325,6 @@ export default function ManageScreen() {
         ...(options.targetTheme ? { targetTheme: options.targetTheme } : {}),
       },
     });
-  };
-
-  const handleApplyTicketThemeChange = async () => {
-    if (!activeLinkedInvitationCard) {
-      return;
-    }
-
-    if (ticketThemeSelection === activeLinkedInvitationCard.defaultTheme) {
-      setNotice('현재 기본 디자인과 같은 테마가 선택되어 있습니다.');
-      return;
-    }
-
-    if (activeLinkedInvitationCard.ticketCount < 1) {
-      setNotice('디자인 변경에는 티켓 1장이 필요합니다. 먼저 티켓을 구매해 주세요.');
-      return;
-    }
-
-    invitationForm.setDefaultTheme(ticketThemeSelection);
-    setIsApplyingTicketThemeChange(true);
-
-    const saved = await invitationForm.persistForm({
-      notice: `기본 디자인을 ${ticketThemeSelection === 'emotional' ? '감성형' : '심플형'
-        }으로 변경했습니다.`,
-    });
-
-    setIsApplyingTicketThemeChange(false);
-
-    if (saved) {
-      const nextTicketCount = await adjustTicketCount(-1);
-
-      if (nextTicketCount === null) {
-        return;
-      }
-
-      setTicketModalVisible(false);
-    }
-  };
-
-  const handleExtendDisplayPeriod = async () => {
-    if (!activeLinkedInvitationCard) {
-      return;
-    }
-
-    if (activeLinkedInvitationCard.ticketCount < 1) {
-      setNotice('기간을 1개월 연장하려면 티켓 1장이 필요합니다. 먼저 티켓을 구매해 주세요.');
-      return;
-    }
-
-    setIsExtendingDisplayPeriod(true);
-    const displayPeriodResult = await extendDisplayPeriod(1);
-    setIsExtendingDisplayPeriod(false);
-
-    if (!displayPeriodResult) {
-      return;
-    }
-
-    const nextTicketCount = await adjustTicketCount(-1);
-
-    if (nextTicketCount === null) {
-      return;
-    }
-
-    setTicketModalVisible(false);
-    setNotice(
-      `노출 기간을 1개월 연장했습니다. 새 종료일은 ${formatDateLabel(displayPeriodResult.endDate)}입니다.`
-    );
-  };
-
-  const handleAddExtraVariant = async () => {
-    if (!activeLinkedInvitationCard) {
-      return;
-    }
-
-    if (isAlternateThemeAvailable) {
-      setNotice(`이미 ${alternateTheme === 'emotional' ? '감성형' : '심플형'} 디자인이 추가되어 있습니다.`);
-      return;
-    }
-
-    if (activeLinkedInvitationCard.ticketCount < 2) {
-      setNotice('다른 디자인 추가에는 티켓 2장이 필요합니다. 먼저 티켓을 구매해 주세요.');
-      return;
-    }
-
-    setIsApplyingExtraVariant(true);
-
-    const saved = await setVariantAvailability(alternateTheme, true);
-
-    setIsApplyingExtraVariant(false);
-
-    if (saved) {
-      const nextTicketCount = await adjustTicketCount(-2);
-
-      if (nextTicketCount === null) {
-        return;
-      }
-
-      setTicketModalVisible(false);
-      setNotice(
-        `같은 청첩장에 ${alternateTheme === 'emotional' ? '감성형' : '심플형'} 디자인을 추가했습니다.`
-      );
-    }
-  };
-
-  const handleTransferTicketCount = async () => {
-    if (!activeLinkedInvitationCard) {
-      return;
-    }
-
-    if (!selectedTicketTransferTargetCard?.session) {
-      setNotice('티켓을 이동할 다른 연동 청첩장을 먼저 선택해 주세요.');
-      return;
-    }
-
-    if (ticketTransferCount <= 0) {
-      setNotice('이동할 티켓 수량을 먼저 선택해 주세요.');
-      return;
-    }
-
-    if (activeLinkedInvitationCard.ticketCount < ticketTransferCount) {
-      setNotice('보유 티켓보다 많은 수량은 이동할 수 없습니다.');
-      return;
-    }
-
-    setIsTransferringTickets(true);
-
-    const transferResult = await transferTicketCount(
-      selectedTicketTransferTargetCard.slug,
-      selectedTicketTransferTargetCard.session.token,
-      ticketTransferCount
-    );
-
-    setIsTransferringTickets(false);
-
-    if (!transferResult) {
-      return;
-    }
-
-    setLinkedInvitationCards((current) =>
-      current.map((item) => {
-        if (item.slug === activeLinkedInvitationCard.slug) {
-          return {
-            ...item,
-            ticketCount: transferResult.sourceTicketCount,
-            updatedAt: Date.now(),
-          };
-        }
-
-        if (item.slug === selectedTicketTransferTargetCard.slug) {
-          return {
-            ...item,
-            ticketCount: transferResult.targetTicketCount,
-            updatedAt: Date.now(),
-          };
-        }
-
-        return item;
-      })
-    );
-
-    setTicketModalVisible(false);
-    setNotice(
-      `티켓 ${ticketTransferCount}장을 ${selectedTicketTransferTargetCard.displayName.trim() || selectedTicketTransferTargetCard.slug
-      } 청첩장으로 이동했습니다.`
-    );
   };
 
   const handleOpenAlternateThemePreview = async () => {
@@ -785,21 +381,14 @@ export default function ManageScreen() {
             <View
               style={[
                 manageStyles.selectedInvitationCard,
+                manageStyles.invitationCardExpanded,
                 {
                   backgroundColor: palette.surfaceMuted,
                   borderColor: palette.cardBorder,
-                  gap: 10,
                 },
               ]}
             >
-              <View
-                style={{
-                  flexDirection: 'row',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  gap: 8,
-                }}
-              >
+              <View style={manageStyles.invitationCardHeaderRow}>
                 <AppText style={manageStyles.selectedInvitationTitle}>
                   {activeLinkedInvitationCard.displayName.trim() || '연동된 청첩장'}
                 </AppText>
@@ -888,27 +477,20 @@ export default function ManageScreen() {
             </View>
 
             {additionalLinkedInvitationCards.length ? (
-              <View style={{ gap: 10 }}>
+              <View style={manageStyles.invitationCardList}>
                 {additionalLinkedInvitationCards.map((item) => (
                   <View
                     key={`linked-invitation-${item.slug}`}
                     style={[
                       manageStyles.selectedInvitationCard,
+                      manageStyles.invitationCardExpanded,
                       {
                         backgroundColor: palette.surface,
                         borderColor: palette.cardBorder,
-                        gap: 10,
                       },
                     ]}
                   >
-                    <View
-                      style={{
-                        flexDirection: 'row',
-                        justifyContent: 'space-between',
-                        alignItems: 'center',
-                        gap: 8,
-                      }}
-                    >
+                    <View style={manageStyles.invitationCardHeaderRow}>
                       <AppText style={manageStyles.selectedInvitationTitle}>
                         {item.displayName.trim() || item.slug}
                       </AppText>

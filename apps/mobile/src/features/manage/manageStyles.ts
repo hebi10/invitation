@@ -115,6 +115,18 @@ export const manageStyles = StyleSheet.create({
     paddingVertical: 10,
     gap: 4,
   },
+  invitationCardExpanded: {
+    gap: 10,
+  },
+  invitationCardHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    gap: 8,
+  },
+  invitationCardList: {
+    gap: 10,
+  },
   selectedInvitationTitle: {
     fontWeight: '800',
   },

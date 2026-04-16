@@ -4,7 +4,7 @@ import {
   Text,
 } from 'react-native';
 
-import { useAppState } from '../contexts/AppStateContext';
+import { usePreferences } from '../contexts/PreferencesContext';
 
 type ChoiceChipProps = {
   label: string;
@@ -13,11 +13,13 @@ type ChoiceChipProps = {
 };
 
 export function ChoiceChip({ label, selected, onPress }: ChoiceChipProps) {
-  const { palette, fontScale } = useAppState();
+  const { palette, fontScale } = usePreferences();
 
   return (
     <Pressable
       accessibilityRole="button"
+      accessibilityLabel={label}
+      accessibilityState={{ selected }}
       onPress={onPress}
       style={({ pressed }) => [
         styles.chip,

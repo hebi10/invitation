@@ -2,7 +2,7 @@ import { View } from 'react-native';
 
 import { AppText } from '../../../../components/AppText';
 import { TextField } from '../../../../components/TextField';
-import { useAppState } from '../../../../contexts/AppStateContext';
+import { usePreferences } from '../../../../contexts/PreferencesContext';
 import { manageStyles } from '../../manageStyles';
 import type { ManageParentState, ManagePersonState } from '../../shared';
 
@@ -30,7 +30,7 @@ export function PersonEditorCard({
   onUpdatePersonField,
   onUpdateParentField,
 }: PersonEditorCardProps) {
-  const { palette } = useAppState();
+  const { palette } = usePreferences();
 
   return (
     <View
@@ -44,7 +44,7 @@ export function PersonEditorCard({
         label={`${label} 이름`}
         value={person.name}
         onChangeText={(value) => onUpdatePersonField(role, 'name', value)}
-        placeholder={`예: ${role === 'groom' ? '박준호' : '김소민'}`}
+        placeholder={`예: ${role === 'groom' ? '박신랑' : '김신부'}`}
       />
       <View style={manageStyles.twoColumnRow}>
         <View style={manageStyles.halfField}>
@@ -85,7 +85,7 @@ export function PersonEditorCard({
             label="이름"
             value={person.father.name}
             onChangeText={(value) => onUpdateParentField(role, 'father', 'name', value)}
-            placeholder="예: 박상훈"
+            placeholder="예: 박상우"
           />
         </View>
       </View>

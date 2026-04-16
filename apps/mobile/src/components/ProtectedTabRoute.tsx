@@ -1,6 +1,6 @@
 import { Redirect, usePathname } from 'expo-router';
 import type { PropsWithChildren } from 'react';
-import { ActivityIndicator, Platform, View } from 'react-native';
+import { ActivityIndicator, Platform, StyleSheet, View } from 'react-native';
 
 import { useAuth } from '../contexts/AuthContext';
 import { usePreferences } from '../contexts/PreferencesContext';
@@ -15,16 +15,7 @@ export function ProtectedTabRoute({ children }: PropsWithChildren) {
 
   if (isBootstrapping) {
     return (
-      <View
-        style={{
-          flex: 1,
-          alignItems: 'center',
-          justifyContent: 'center',
-          gap: 12,
-          backgroundColor: palette.background,
-          paddingHorizontal: 24,
-        }}
-      >
+      <View style={[styles.loadingScreen, { backgroundColor: palette.background }]}>
         <ActivityIndicator color={palette.accent} />
         <AppText variant="muted">자동 연동 상태를 확인하는 중입니다.</AppText>
       </View>
@@ -37,3 +28,13 @@ export function ProtectedTabRoute({ children }: PropsWithChildren) {
 
   return children;
 }
+
+const styles = StyleSheet.create({
+  loadingScreen: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 12,
+    paddingHorizontal: 24,
+  },
+});
