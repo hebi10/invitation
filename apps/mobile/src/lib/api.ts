@@ -195,6 +195,71 @@ async function readJsonResponse<T>(response: Response): Promise<T> {
   return payload as T;
 }
 
+async function uploadFormDataResponse<T>(
+  url: string,
+  token: string,
+  formData: FormData
+): Promise<T> {
+  if (typeof XMLHttpRequest === 'undefined') {
+    return readJsonResponse<T>(
+      await fetchWithRetry(url, {
+        method: 'POST',
+        headers: createHeaders(token),
+        body: formData,
+      })
+    );
+  }
+
+  return new Promise<T>((resolve, reject) => {
+    const request = new XMLHttpRequest();
+
+    request.open('POST', url);
+    request.timeout = 30000;
+    request.setRequestHeader('Accept', 'application/json');
+    if (token) {
+      request.setRequestHeader('Authorization', `Bearer ${token}`);
+    }
+
+    request.onload = () => {
+      const rawText = request.responseText;
+      let payload: { error?: string } | null = null;
+
+      if (rawText) {
+        try {
+          payload = (JSON.parse(rawText) as { error?: string } | null) ?? null;
+        } catch {
+          payload = null;
+        }
+      }
+
+      if (request.status >= 200 && request.status < 300) {
+        resolve(payload as T);
+        return;
+      }
+
+      reject(new Error(toUserFacingMessage(payload?.error)));
+    };
+
+    request.onerror = () => {
+      reject(new Error('이미지 업로드 요청을 보내지 못했습니다. 네트워크 상태를 확인해 주세요.'));
+    };
+
+    request.ontimeout = () => {
+      reject(new Error('이미지 업로드 요청이 시간 초과되었습니다. 다시 시도해 주세요.'));
+    };
+
+    try {
+      request.send(formData);
+    } catch (error) {
+      reject(
+        error instanceof Error
+          ? new Error(toUserFacingMessage(error.message))
+          : new Error('이미지 업로드 요청을 시작하지 못했습니다. 다시 시도해 주세요.')
+      );
+    }
+  });
+}
+
 function createHeaders(token?: string) {
   const headers: Record<string, string> = {
     Accept: 'application/json',
@@ -230,6 +295,13 @@ export interface MobileImageUploadResponse {
   thumbnailUrl: string;
   thumbnailPath: string;
   uploadedAt: string;
+}
+
+export interface MobileBase64ImageUploadInput {
+  assetKind: 'cover' | 'gallery' | 'favicon';
+  fileName: string;
+  mimeType: string;
+  base64: string;
 }
 
 export interface MobileMusicLibraryResponse {
@@ -601,19 +673,29 @@ export async function uploadMobileInvitationImage(
   baseUrl: string,
   pageSlug: string,
   token: string,
-  formData: FormData
+  payload: FormData | MobileBase64ImageUploadInput
 ) {
-  return readJsonResponse<MobileImageUploadResponse>(
-    await fetchWithRetry(
-      buildApiUrl(
-        baseUrl,
-        `/api/mobile/client-editor/pages/${encodeURIComponent(pageSlug)}/images`
-      ),
-      {
+  const url = buildApiUrl(
+    baseUrl,
+    `/api/mobile/client-editor/pages/${encodeURIComponent(pageSlug)}/images`
+  );
+
+  if (!(payload instanceof FormData)) {
+    return readJsonResponse<MobileImageUploadResponse>(
+      await fetchWithRetry(url, {
         method: 'POST',
-        headers: createHeaders(token),
-        body: formData,
-      }
-    )
+        headers: {
+          ...createHeaders(token),
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      })
+    );
+  }
+
+  return uploadFormDataResponse<MobileImageUploadResponse>(
+    url,
+    token,
+    payload
   );
 }

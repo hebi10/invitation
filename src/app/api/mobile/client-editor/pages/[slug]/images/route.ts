@@ -22,6 +22,19 @@ const MAX_ASPECT_RATIO_BY_KIND: Record<EditableImageAssetKind, number> = {
 
 type SniffedImageFormat = 'jpeg' | 'png' | 'webp';
 type ImageDimensions = { width: number; height: number };
+type MobileBase64UploadBody = {
+  assetKind?: string;
+  fileName?: string;
+  mimeType?: string;
+  base64?: string;
+};
+type ResolvedUploadPayload = {
+  assetKind: EditableImageAssetKind;
+  file: File;
+  buffer: Buffer;
+  thumbnailFile: File | null;
+  thumbnailBuffer: Buffer | null;
+};
 
 function sniffImageFormat(buffer: Buffer): SniffedImageFormat | null {
   if (buffer.length >= 3 && buffer[0] === 0xff && buffer[1] === 0xd8 && buffer[2] === 0xff) {
@@ -303,7 +316,7 @@ async function authorizePageSession(request: Request, pageSlug: string) {
   return authorizeMobileClientEditorRequest(request, pageSlug);
 }
 
-function readAssetKind(value: FormDataEntryValue | null): EditableImageAssetKind | null {
+function readAssetKind(value: unknown): EditableImageAssetKind | null {
   if (typeof value !== 'string') {
     return null;
   }
@@ -311,6 +324,81 @@ function readAssetKind(value: FormDataEntryValue | null): EditableImageAssetKind
   return ALLOWED_ASSET_KINDS.includes(value as EditableImageAssetKind)
     ? (value as EditableImageAssetKind)
     : null;
+}
+
+function normalizeBase64Payload(value: string) {
+  const trimmed = value.trim();
+  const markerIndex = trimmed.indexOf('base64,');
+  return markerIndex >= 0 ? trimmed.slice(markerIndex + 'base64,'.length) : trimmed;
+}
+
+async function readUploadPayload(request: Request): Promise<ResolvedUploadPayload | null> {
+  const contentType = request.headers.get('content-type')?.toLowerCase() ?? '';
+
+  if (contentType.includes('application/json')) {
+    const body = (await request.json().catch(() => null)) as MobileBase64UploadBody | null;
+    const assetKind = readAssetKind(body?.assetKind ?? null);
+    const normalizedBase64 =
+      typeof body?.base64 === 'string' ? normalizeBase64Payload(body.base64) : '';
+    const fileName =
+      typeof body?.fileName === 'string' && body.fileName.trim()
+        ? body.fileName.trim()
+        : 'image.jpg';
+    const mimeType =
+      typeof body?.mimeType === 'string' && body.mimeType.trim()
+        ? body.mimeType.trim()
+        : 'image/jpeg';
+
+    if (!assetKind || !normalizedBase64) {
+      return null;
+    }
+
+    const buffer = Buffer.from(normalizedBase64, 'base64');
+    if (!buffer.length) {
+      return null;
+    }
+
+    return {
+      assetKind,
+      file: new File([buffer], fileName, { type: mimeType }),
+      buffer,
+      thumbnailFile: null,
+      thumbnailBuffer: null,
+    };
+  }
+
+  const formData = await request.formData().catch(() => null);
+  const file = formData?.get('file');
+  const thumbnailEntry = formData?.get('thumbnail');
+  const thumbnailFile = thumbnailEntry instanceof File ? thumbnailEntry : null;
+  const assetKind = readAssetKind(formData?.get('assetKind') ?? null);
+
+  if (!(file instanceof File) || !assetKind) {
+    return null;
+  }
+
+  const buffer = await file
+    .arrayBuffer()
+    .then((arrayBuffer) => Buffer.from(arrayBuffer))
+    .catch(() => null);
+  const thumbnailBuffer = thumbnailFile
+    ? await thumbnailFile
+        .arrayBuffer()
+        .then((arrayBuffer) => Buffer.from(arrayBuffer))
+        .catch(() => null)
+    : null;
+
+  if (!buffer) {
+    return null;
+  }
+
+  return {
+    assetKind,
+    file,
+    buffer,
+    thumbnailFile,
+    thumbnailBuffer,
+  };
 }
 
 export async function POST(
@@ -336,11 +424,10 @@ export async function POST(
     );
   }
 
-  const formData = await request.formData().catch(() => null);
-  const file = formData?.get('file');
-  const thumbnailEntry = formData?.get('thumbnail');
-  const thumbnailFile = thumbnailEntry instanceof File ? thumbnailEntry : null;
-  const assetKind = readAssetKind(formData?.get('assetKind') ?? null);
+  const uploadPayload = await readUploadPayload(request);
+  const file = uploadPayload?.file ?? null;
+  const thumbnailFile = uploadPayload?.thumbnailFile ?? null;
+  const assetKind = uploadPayload?.assetKind ?? null;
 
   if (!(file instanceof File) || !assetKind) {
     return NextResponse.json(
@@ -361,16 +448,8 @@ export async function POST(
     }
   }
 
-  const buffer = await file
-    .arrayBuffer()
-    .then((arrayBuffer) => Buffer.from(arrayBuffer))
-    .catch(() => null);
-  const thumbnailBuffer = thumbnailFile
-    ? await thumbnailFile
-        .arrayBuffer()
-        .then((arrayBuffer) => Buffer.from(arrayBuffer))
-        .catch(() => null)
-    : null;
+  const buffer = uploadPayload?.buffer ?? null;
+  const thumbnailBuffer = uploadPayload?.thumbnailBuffer ?? null;
 
   if (!buffer) {
     return NextResponse.json(

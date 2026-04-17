@@ -3,7 +3,10 @@ import type { Dispatch, SetStateAction } from 'react';
 
 import * as ImagePicker from 'expo-image-picker';
 
-import { uploadMobileInvitationImage } from '../../../lib/api';
+import {
+  uploadMobileInvitationImage,
+  type MobileBase64ImageUploadInput,
+} from '../../../lib/api';
 import type {
   MobileInvitationDashboard,
   MobileSessionSummary,
@@ -31,6 +34,47 @@ type UseImageUploadOptions = {
   setForm: Dispatch<SetStateAction<ManageFormState>>;
   setNotice: (message: string) => void;
 };
+
+function createUploadPayload(
+  asset: ImagePicker.ImagePickerAsset,
+  assetKind: EditableImageAssetKind,
+  mimeType: string,
+  fileName: string
+): FormData | MobileBase64ImageUploadInput {
+  const base64 = typeof asset.base64 === 'string' ? asset.base64 : '';
+  if (base64.trim()) {
+    return {
+      assetKind,
+      fileName,
+      mimeType,
+      base64,
+    };
+  }
+
+  const formData = new FormData();
+  formData.append('assetKind', assetKind);
+  formData.append(
+    'file',
+    {
+      uri: asset.uri,
+      name: fileName,
+      type: mimeType,
+    } as unknown as Blob
+  );
+  return formData;
+}
+
+function toUploadErrorMessage(error: unknown) {
+  if (error instanceof Error) {
+    if (error.message.includes('Network request failed')) {
+      return '이미지 파일을 앱에서 서버로 전송하지 못했습니다. 다시 선택해 시도해 주세요.';
+    }
+
+    return error.message;
+  }
+
+  return '이미지 업로드에 실패했습니다. 잠시 후 다시 시도해 주세요.';
+}
 
 export function useImageUpload({
   apiBaseUrl,
@@ -82,6 +126,7 @@ export function useImageUpload({
         allowsMultipleSelection: assetKind === 'gallery',
         selectionLimit,
         quality: 0.95,
+        base64: true,
       });
 
       if (pickerResult.canceled || pickerResult.assets.length === 0) {
@@ -110,28 +155,22 @@ export function useImageUpload({
             currentIndex: index + 1,
           });
 
-          const mimeType =
+          const fallbackMimeType =
             typeof asset.mimeType === 'string' && asset.mimeType.trim().startsWith('image/')
               ? asset.mimeType.trim()
               : 'image/jpeg';
+          const mimeType =
+            typeof asset.base64 === 'string' && asset.base64.trim()
+              ? 'image/jpeg'
+              : fallbackMimeType;
           const fileName = buildUploadFileName(assetKind, mimeType);
-
-          const formData = new FormData();
-          formData.append('assetKind', assetKind);
-          formData.append(
-            'file',
-            {
-              uri: asset.uri,
-              name: fileName,
-              type: mimeType,
-            } as unknown as Blob
-          );
+          const uploadPayload = createUploadPayload(asset, assetKind, mimeType, fileName);
 
           const uploaded = await uploadMobileInvitationImage(
             apiBaseUrl,
             session.pageSlug,
             session.token,
-            formData
+            uploadPayload
           );
 
           uploadedImages.push({
@@ -183,11 +222,7 @@ export function useImageUpload({
           setNotice(`갤러리 이미지 ${uploadedImages.length}장을 업로드했습니다.`);
         }
       } catch (error) {
-        setNotice(
-          error instanceof Error
-            ? error.message
-            : '이미지 업로드에 실패했습니다. 잠시 후 다시 시도해 주세요.'
-        );
+        setNotice(toUploadErrorMessage(error));
       } finally {
         setUploadingImageKind(null);
         setUploadProgress(null);

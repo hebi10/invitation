@@ -1,13 +1,21 @@
 import { memo } from 'react';
-import { Image } from 'expo-image';
-import { View } from 'react-native';
+import { Image as ExpoImage } from 'expo-image';
+import {
+  Image as NativeImage,
+  type ImageStyle,
+  type StyleProp,
+  View,
+} from 'react-native';
 
 import { ActionButton } from '../../../../components/ActionButton';
 import { AppText } from '../../../../components/AppText';
 import { SectionCard } from '../../../../components/SectionCard';
 import { useVisualPreferences } from '../../../../contexts/PreferencesContext';
 import type { ImageUploadProgressState } from '../../hooks/useImageUpload';
-import type { ManageGalleryPreviewItem } from '../../shared';
+import {
+  isTemporaryImagePreviewUrl,
+  type ManageGalleryPreviewItem,
+} from '../../shared';
 import { manageStyles } from '../../manageStyles';
 
 type ImagesEditorStepProps = {
@@ -30,7 +38,46 @@ type GalleryPreviewCardProps = {
   onRemoveGalleryImage: (index: number) => void;
 };
 
+type PreviewImageProps = {
+  uri: string;
+  alt: string;
+  style: StyleProp<ImageStyle>;
+};
+
 const GALLERY_IMAGE_CACHE_POLICY = 'memory-disk' as const;
+
+function PreviewImage({ uri, alt, style }: PreviewImageProps) {
+  const normalizedUri = uri.trim().toLowerCase();
+  const shouldUseExpoImage =
+    normalizedUri.startsWith('ph://') ||
+    normalizedUri.startsWith('assets-library://') ||
+    !isTemporaryImagePreviewUrl(uri);
+
+  if (!shouldUseExpoImage) {
+    return (
+      <NativeImage
+        key={uri}
+        source={{ uri }}
+        accessibilityLabel={alt}
+        style={style}
+        resizeMode="cover"
+      />
+    );
+  }
+
+  return (
+    <ExpoImage
+      key={uri}
+      source={{ uri }}
+      alt={alt}
+      accessibilityLabel={alt}
+      style={style}
+      contentFit="cover"
+      cachePolicy={GALLERY_IMAGE_CACHE_POLICY}
+      transition={120}
+    />
+  );
+}
 
 const GalleryPreviewCard = memo(function GalleryPreviewCard({
   image,
@@ -52,19 +99,15 @@ const GalleryPreviewCard = memo(function GalleryPreviewCard({
         },
       ]}
     >
-      <Image
-        source={{ uri: image.previewUrl }}
+      <PreviewImage
+        uri={image.previewUrl}
         alt={`갤러리 이미지 ${index + 1}번 미리보기`}
-        accessibilityLabel={`갤러리 이미지 ${index + 1}번 미리보기`}
         style={manageStyles.galleryPreviewImage}
-        contentFit="cover"
-        cachePolicy={GALLERY_IMAGE_CACHE_POLICY}
-        transition={120}
       />
       <View style={manageStyles.galleryCardCopy}>
         <AppText style={manageStyles.galleryCardTitle}>노출 순서 {index + 1}</AppText>
         <AppText variant="caption" style={manageStyles.galleryCardMeta}>
-          순서에 맞춰 이미지를 정리하면 실제 화면에서도 같은 흐름으로 보입니다.
+          순서를 맞춰두면 실제 화면에서도 같은 순서로 보입니다.
         </AppText>
       </View>
       <View style={manageStyles.galleryCardActions}>
@@ -131,7 +174,7 @@ export function ImagesEditorStep({
 
       <SectionCard
         title="대표 이미지"
-        description="커버에 먼저 노출되는 대표 이미지를 업로드하고 바로 미리보기로 확인할 수 있습니다."
+        description="커버에 먼저 노출되는 대표 이미지를 업로드하고 바로 미리보기로 확인합니다."
       >
         <View style={manageStyles.actionRow}>
           <ActionButton
@@ -143,14 +186,10 @@ export function ImagesEditorStep({
           </ActionButton>
         </View>
         {coverPreviewUrl ? (
-          <Image
-            source={{ uri: coverPreviewUrl }}
+          <PreviewImage
+            uri={coverPreviewUrl}
             alt="대표 이미지 미리보기"
-            accessibilityLabel="대표 이미지 미리보기"
             style={manageStyles.coverPreviewImage}
-            contentFit="cover"
-            cachePolicy={GALLERY_IMAGE_CACHE_POLICY}
-            transition={120}
           />
         ) : (
           <View
