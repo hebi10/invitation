@@ -12,6 +12,8 @@ export type AppPalette = {
   textMuted: string;
   accent: string;
   accentSoft: string;
+  notice: string;
+  noticeSoft: string;
   danger: string;
   dangerSoft: string;
   success: string;
@@ -27,6 +29,8 @@ const lightPalette: AppPalette = {
   textMuted: '#6d6256',
   accent: '#9a5f3d',
   accentSoft: '#f3e1d4',
+  notice: '#8a6a2d',
+  noticeSoft: '#f6edcf',
   danger: '#b64b4b',
   dangerSoft: '#f6dddd',
   success: '#2f7d4c',
@@ -42,6 +46,8 @@ const darkPalette: AppPalette = {
   textMuted: '#c8b8a6',
   accent: '#f0a06a',
   accentSoft: '#3a281d',
+  notice: '#f0d37a',
+  noticeSoft: '#40351a',
   danger: '#ef8d8d',
   dangerSoft: '#432525',
   success: '#77c48f',

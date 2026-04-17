@@ -67,7 +67,7 @@ export function TicketPurchaseSuccessModal({
             </View>
             <View style={styles.summaryRow}>
               <AppText style={styles.summaryLabel}>현재 보유 티켓</AppText>
-              <AppText variant="title" color={palette.accent} style={styles.totalLabel}>
+              <AppText variant="display" color={palette.success} style={styles.totalLabel}>
                 {success?.nextTicketCount ?? 0}장
               </AppText>
             </View>

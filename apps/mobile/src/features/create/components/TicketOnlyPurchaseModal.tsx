@@ -103,7 +103,7 @@ export function TicketOnlyPurchaseModal({
             </View>
             <View style={styles.summaryRow}>
               <AppText style={styles.summaryLabel}>티켓 결제 예정 금액</AppText>
-              <AppText variant="title" color={palette.accent} style={styles.totalLabel}>
+              <AppText variant="display" style={styles.totalLabel}>
                 {formatPrice(ticketPrice)}
               </AppText>
             </View>
@@ -141,9 +141,19 @@ export function TicketOnlyPurchaseModal({
             <BulletList items={ticketUsageItems} />
 
             {notice ? (
-              <AppText variant="caption" color={palette.accent} style={styles.helperText}>
-                {notice}
-              </AppText>
+              <View
+                style={[
+                  styles.noticeBox,
+                  {
+                    backgroundColor: palette.noticeSoft,
+                    borderColor: palette.notice,
+                  },
+                ]}
+              >
+                <AppText variant="caption" color={palette.notice} style={styles.noticeText}>
+                  {notice}
+                </AppText>
+              </View>
             ) : null}
 
             {authError ? (

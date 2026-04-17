@@ -3,6 +3,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import {
   buildLinkedInvitationCardFromPageSummary,
+  canActivateLinkedInvitationCard,
   getLinkedInvitationCards,
   type LinkedInvitationCard,
   MAX_LINKED_INVITATION_CARD_COUNT,
@@ -116,7 +117,10 @@ export function useLinkedInvitationManager({
   const additionalLinkedInvitationCards = useMemo(
     () =>
       linkedInvitationCards
-        .filter((item) => item.slug !== pageSummary?.slug)
+        .filter(
+          (item) =>
+            item.slug !== pageSummary?.slug && canActivateLinkedInvitationCard(item)
+        )
         .sort((left, right) => right.updatedAt - left.updatedAt),
     [linkedInvitationCards, pageSummary?.slug]
   );
@@ -205,7 +209,13 @@ export function useLinkedInvitationManager({
 
   const handleActivateLinkedInvitation = useCallback(
     async (card: LinkedInvitationCard) => {
-      if (!card.session) {
+      if (!canActivateLinkedInvitationCard(card)) {
+        await handleLinkAnotherInvitation(card.slug);
+        return;
+      }
+
+      const activatableSession = card.session;
+      if (!activatableSession) {
         await handleLinkAnotherInvitation(card.slug);
         return;
       }
@@ -220,7 +230,7 @@ export function useLinkedInvitationManager({
 
       setActivatingLinkedInvitationSlug(card.slug);
       try {
-        const activated = await activateStoredSession(card.session);
+        const activated = await activateStoredSession(activatableSession);
         if (!activated) {
           setNotice(
             `${card.displayName.trim() || card.slug} 청첩장의 저장된 연동 정보가 만료되었습니다. 다시 연동해 주세요.`

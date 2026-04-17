@@ -1,0 +1,230 @@
+import { useFocusEffect } from 'expo-router';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+
+import type { useAuth } from '../../../contexts/AuthContext';
+import type { useInvitationOps } from '../../../contexts/InvitationOpsContext';
+import { adjustMobileInvitationTicketCount } from '../../../lib/api';
+import {
+  buildLinkedInvitationCardFromPageSummary,
+  getLinkedInvitationCards,
+  mergeLinkedInvitationCard,
+  setLinkedInvitationCards as persistLinkedInvitationCards,
+  type LinkedInvitationCard,
+} from '../../../lib/linkedInvitationCards';
+import type { TicketPurchaseSuccessState } from '../shared';
+
+type AuthState = Pick<ReturnType<typeof useAuth>, 'clearAuthError' | 'session'>;
+type InvitationOpsState = Pick<
+  ReturnType<typeof useInvitationOps>,
+  'adjustTicketCount' | 'pageSummary' | 'refreshDashboard'
+>;
+
+type UseCreateTicketPurchaseOptions = AuthState &
+  InvitationOpsState & {
+    apiBaseUrl: string;
+    ticketCount: number;
+    resetTicketCount: () => void;
+    setNotice: (message: string) => void;
+  };
+
+export function useCreateTicketPurchase({
+  apiBaseUrl,
+  pageSummary,
+  session,
+  refreshDashboard,
+  adjustTicketCount,
+  ticketCount,
+  resetTicketCount,
+  clearAuthError,
+  setNotice,
+}: UseCreateTicketPurchaseOptions) {
+  const [ticketOnlyModalVisible, setTicketOnlyModalVisible] = useState(false);
+  const [linkedInvitationCards, setLinkedInvitationCards] = useState<LinkedInvitationCard[]>([]);
+  const [selectedTicketTargetSlug, setSelectedTicketTargetSlug] = useState<string | null>(null);
+  const [isTicketPurchaseSubmitting, setIsTicketPurchaseSubmitting] = useState(false);
+  const [ticketPurchaseSuccess, setTicketPurchaseSuccess] =
+    useState<TicketPurchaseSuccessState | null>(null);
+
+  const reloadLinkedInvitationCards = useCallback(async () => {
+    const storedCards = await getLinkedInvitationCards();
+    let nextCards = storedCards.filter((item) => item.session);
+
+    if (pageSummary && session) {
+      const currentCard = buildLinkedInvitationCardFromPageSummary(pageSummary, {
+        updatedAt: Date.now(),
+        ticketCount: pageSummary.ticketCount,
+        session,
+      });
+      const existing = nextCards.find((item) => item.slug === currentCard.slug);
+      const mergedCurrentCard = mergeLinkedInvitationCard(existing, currentCard);
+
+      nextCards = [
+        mergedCurrentCard,
+        ...nextCards.filter((item) => item.slug !== mergedCurrentCard.slug),
+      ];
+      await persistLinkedInvitationCards(nextCards);
+    }
+
+    setLinkedInvitationCards(nextCards);
+  }, [pageSummary, session]);
+
+  const selectedTicketTargetCard = useMemo(
+    () =>
+      linkedInvitationCards.find((item) => item.slug === selectedTicketTargetSlug) ??
+      linkedInvitationCards[0] ??
+      null,
+    [linkedInvitationCards, selectedTicketTargetSlug]
+  );
+  const hasLinkedInvitation = Boolean(selectedTicketTargetCard);
+  const storedTicketCount = selectedTicketTargetCard?.ticketCount ?? 0;
+  const ticketTargetOptions = useMemo(
+    () =>
+      linkedInvitationCards.map((item) => ({
+        slug: item.slug,
+        displayName: item.displayName.trim() || item.slug,
+      })),
+    [linkedInvitationCards]
+  );
+  const selectedTargetLabel =
+    selectedTicketTargetCard?.displayName?.trim() ||
+    selectedTicketTargetCard?.slug ||
+    '연동된 청첩장이 필요합니다';
+
+  useFocusEffect(
+    useCallback(() => {
+      void reloadLinkedInvitationCards();
+    }, [reloadLinkedInvitationCards])
+  );
+
+  useEffect(() => {
+    if (linkedInvitationCards.length === 0) {
+      setSelectedTicketTargetSlug(null);
+      return;
+    }
+
+    if (
+      !selectedTicketTargetSlug ||
+      !linkedInvitationCards.some((item) => item.slug === selectedTicketTargetSlug)
+    ) {
+      setSelectedTicketTargetSlug(linkedInvitationCards[0]?.slug ?? null);
+    }
+  }, [linkedInvitationCards, selectedTicketTargetSlug]);
+
+  const handleOpenTicketOnlyModal = useCallback(() => {
+    clearAuthError();
+
+    if (!selectedTicketTargetCard?.session) {
+      setNotice('연동된 청첩장이 있을 때만 티켓만 구매할 수 있습니다. 먼저 페이지를 연동해 주세요.');
+      return;
+    }
+
+    if (ticketCount <= 0) {
+      setNotice('티켓만 구매하려면 먼저 티켓 수량을 선택해 주세요.');
+      return;
+    }
+
+    setNotice('');
+    setTicketOnlyModalVisible(true);
+  }, [clearAuthError, selectedTicketTargetCard, setNotice, ticketCount]);
+
+  const closeTicketOnlyModal = useCallback(() => {
+    setTicketOnlyModalVisible(false);
+  }, []);
+
+  const closeTicketPurchaseSuccess = useCallback(() => {
+    setTicketPurchaseSuccess(null);
+  }, []);
+
+  const handleConfirmTicketOnlyPurchase = useCallback(async () => {
+    clearAuthError();
+    setNotice('');
+
+    if (!selectedTicketTargetCard?.session) {
+      setNotice('연동된 청첩장이 없어서 티켓을 적립할 수 없습니다. 먼저 페이지를 연동해 주세요.');
+      return;
+    }
+
+    const purchaseTargetDisplayName =
+      selectedTicketTargetCard.displayName.trim() || selectedTicketTargetCard.slug;
+
+    setIsTicketPurchaseSubmitting(true);
+
+    const nextTicketCount =
+      session && selectedTicketTargetCard.slug === session.pageSlug
+        ? await adjustTicketCount(ticketCount)
+        : await adjustMobileInvitationTicketCount(
+            apiBaseUrl,
+            selectedTicketTargetCard.slug,
+            selectedTicketTargetCard.session.token,
+            ticketCount
+          )
+            .then((response) => response.ticketCount)
+            .catch((error) => {
+              setNotice(
+                error instanceof Error
+                  ? error.message
+                  : '티켓을 저장하지 못했습니다. 잠시 후 다시 시도해 주세요.'
+              );
+              return null;
+            });
+
+    setIsTicketPurchaseSubmitting(false);
+
+    if (nextTicketCount === null) {
+      return;
+    }
+
+    const nextLinkedInvitationCards = linkedInvitationCards.map((item) =>
+      item.slug === selectedTicketTargetCard.slug
+        ? {
+            ...item,
+            ticketCount: nextTicketCount,
+            updatedAt: Date.now(),
+          }
+        : item
+    );
+
+    setLinkedInvitationCards(nextLinkedInvitationCards);
+    await persistLinkedInvitationCards(nextLinkedInvitationCards);
+
+    if (session && selectedTicketTargetCard.slug === session.pageSlug) {
+      await refreshDashboard();
+    }
+
+    setTicketOnlyModalVisible(false);
+    resetTicketCount();
+    setTicketPurchaseSuccess({
+      ticketCount,
+      targetDisplayName: purchaseTargetDisplayName,
+      nextTicketCount,
+    });
+  }, [
+    adjustTicketCount,
+    apiBaseUrl,
+    clearAuthError,
+    linkedInvitationCards,
+    refreshDashboard,
+    resetTicketCount,
+    selectedTicketTargetCard,
+    session,
+    setNotice,
+    ticketCount,
+  ]);
+
+  return {
+    ticketOnlyModalVisible,
+    closeTicketOnlyModal,
+    handleOpenTicketOnlyModal,
+    handleConfirmTicketOnlyPurchase,
+    isTicketPurchaseSubmitting,
+    ticketPurchaseSuccess,
+    closeTicketPurchaseSuccess,
+    hasLinkedInvitation,
+    storedTicketCount,
+    selectedTicketTargetCard,
+    ticketTargetOptions,
+    selectedTargetLabel,
+    selectedTicketTargetSlug,
+    setSelectedTicketTargetSlug,
+  };
+}

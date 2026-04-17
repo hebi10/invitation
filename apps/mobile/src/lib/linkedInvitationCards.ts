@@ -30,6 +30,7 @@ export type LinkedInvitationCard = {
 
 export const LINKED_INVITATION_CARDS_STORAGE_KEY = 'mobile-invitation:linked-invitation-cards';
 export const MAX_LINKED_INVITATION_CARD_COUNT = 8;
+const LINKED_INVITATION_SESSION_EXPIRY_BUFFER_MS = 30 * 1000;
 
 function coerceFeatureFlag(features: unknown, key: keyof MobileInvitationFeatureFlags) {
   return Boolean(
@@ -223,6 +224,17 @@ export function mergeLinkedInvitationCard(
     ticketCount: nextCard.ticketCount,
     session: nextCard.session ?? existing?.session ?? null,
   };
+}
+
+export function canActivateLinkedInvitationCard(
+  card: LinkedInvitationCard,
+  now = Date.now()
+) {
+  return Boolean(
+    card.session &&
+      card.session.pageSlug === card.slug &&
+      card.session.expiresAt > now + LINKED_INVITATION_SESSION_EXPIRY_BUFFER_MS
+  );
 }
 
 export async function getLinkedInvitationCards() {

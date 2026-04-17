@@ -1,13 +1,15 @@
-﻿import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useFocusEffect } from 'expo-router';
+import * as WebBrowser from 'expo-web-browser';
+import { useEffect, useRef } from 'react';
 import {
+  Alert,
+  Linking,
   Platform,
   Pressable,
   ScrollView,
-  StyleSheet,
+  useWindowDimensions,
   View,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ActionButton } from '../../components/ActionButton';
 import { AppScreen } from '../../components/AppScreen';
@@ -17,166 +19,35 @@ import { ChoiceChip } from '../../components/ChoiceChip';
 import { SectionCard } from '../../components/SectionCard';
 import { TextField } from '../../components/TextField';
 import { WebPreviewNotice } from '../../components/WebPreviewNotice';
-import {
-  designThemes,
-  servicePlans,
-  ticketPricing,
-} from '../../constants/content';
 import { PaymentConfirmModal } from '../../features/create/components/PaymentConfirmModal';
 import { TicketOnlyPurchaseModal } from '../../features/create/components/TicketOnlyPurchaseModal';
 import { TicketPurchaseSuccessModal } from '../../features/create/components/TicketPurchaseSuccessModal';
+import { createStyles as styles } from '../../features/create/createStyles';
+import { useCreateForm } from '../../features/create/hooks/useCreateForm';
+import { useCreateTicketPurchase } from '../../features/create/hooks/useCreateTicketPurchase';
+import {
+  CREATE_STEPS,
+  MAX_TICKET_COUNT,
+  STICKY_CTA_BAR_COMPACT_HEIGHT,
+  STICKY_CTA_BAR_HEIGHT,
+  TICKET_PRESET_COUNTS,
+  TICKET_USAGE_ITEMS,
+  designThemes,
+  servicePlans,
+} from '../../features/create/shared';
 import { useAuth } from '../../contexts/AuthContext';
 import { useDrafts } from '../../contexts/DraftsContext';
 import { useInvitationOps } from '../../contexts/InvitationOpsContext';
 import { usePreferences } from '../../contexts/PreferencesContext';
-import { adjustMobileInvitationTicketCount } from '../../lib/api';
 import { formatPrice } from '../../lib/format';
-import {
-  buildPageSlugBaseFromEnglishNames,
-  isValidEnglishName,
-} from '../../lib/pageSlug';
-import {
-  buildLinkedInvitationCardFromPageSummary,
-  getLinkedInvitationCards,
-  mergeLinkedInvitationCard,
-  setLinkedInvitationCards as persistLinkedInvitationCards,
-  type LinkedInvitationCard,
-} from '../../lib/linkedInvitationCards';
-import type {
-  MobileInvitationProductTier,
-  MobileInvitationThemeKey,
-} from '../../types/mobileInvitation';
-
-const FLOW_GUIDE_ITEMS = [
-  '신랑·신부 한글 이름, 영문 이름, 페이지 비밀번호를 먼저 확인합니다.',
-  '서비스와 디자인을 선택하고, 필요한 경우 추가 티켓 수량도 함께 정합니다.',
-  '결제 확인 팝업을 거친 뒤 바로 페이지를 생성하고 운영 탭으로 이동합니다.',
-] as const;
-
-const TICKET_USAGE_ITEMS = [
-  '티켓 1장: 1개월 연장',
-  '티켓 1장: 디자인 변경',
-  '티켓 2장: 같은 청첩장에 다른 디자인 추가',
-  '티켓 2장: 서비스 업그레이드',
-] as const;
-
-const TICKET_UNIT_PRICE = ticketPricing.unitPrice;
-const TICKET_DISCOUNT_BUNDLE_SIZE = ticketPricing.bundleSize;
-const TICKET_BUNDLE_PRICE = ticketPricing.bundlePrice;
-const TICKET_PRESET_COUNTS = [0, 1, 3, 6] as const;
-const MAX_TICKET_COUNT = 12;
-
-type CreateValidationRule = {
-  section: 'input' | 'selection';
-  label: string;
-  passed: boolean;
-  errorMessage: string;
-};
-
-type TicketPurchaseSuccessState = {
-  ticketCount: number;
-  targetDisplayName: string;
-  nextTicketCount: number;
-};
-
-function calculateTicketPrice(ticketCount: number) {
-  const bundleCount = Math.floor(ticketCount / TICKET_DISCOUNT_BUNDLE_SIZE);
-  const remainderCount = ticketCount % TICKET_DISCOUNT_BUNDLE_SIZE;
-
-  return bundleCount * TICKET_BUNDLE_PRICE + remainderCount * TICKET_UNIT_PRICE;
-}
-
-function buildCreateValidationRules(input: {
-  groomKoreanName: string;
-  brideKoreanName: string;
-  groomEnglishName: string;
-  brideEnglishName: string;
-  slugPreview: string;
-  password: string;
-  confirmPassword: string;
-  selectedTheme: MobileInvitationThemeKey | null;
-}): CreateValidationRule[] {
-  const groomKoreanName = input.groomKoreanName.trim();
-  const brideKoreanName = input.brideKoreanName.trim();
-  const groomEnglishName = input.groomEnglishName.trim();
-  const brideEnglishName = input.brideEnglishName.trim();
-  const password = input.password.trim();
-  const confirmPassword = input.confirmPassword.trim();
-
-  return [
-    {
-      label: '신랑 한글 이름',
-      section: 'input',
-      passed: Boolean(groomKoreanName),
-      errorMessage: '신랑 한글 이름을 입력해 주세요.',
-    },
-    {
-      label: '신부 한글 이름',
-      section: 'input',
-      passed: Boolean(brideKoreanName),
-      errorMessage: '신부 한글 이름을 입력해 주세요.',
-    },
-    {
-      label: '신랑 영문 이름',
-      section: 'input',
-      passed: Boolean(groomEnglishName) && isValidEnglishName(groomEnglishName),
-      errorMessage: !groomEnglishName
-        ? '신랑 영문 이름을 입력해 주세요.'
-        : '신랑 영문 이름은 영문, 공백, 하이픈만 사용할 수 있습니다.',
-    },
-    {
-      label: '신부 영문 이름',
-      section: 'input',
-      passed: Boolean(brideEnglishName) && isValidEnglishName(brideEnglishName),
-      errorMessage: !brideEnglishName
-        ? '신부 영문 이름을 입력해 주세요.'
-        : '신부 영문 이름은 영문, 공백, 하이픈만 사용할 수 있습니다.',
-    },
-    {
-      label: 'URL 슬러그 생성',
-      section: 'input',
-      passed: Boolean(input.slugPreview),
-      errorMessage: '영문 이름으로 사용할 페이지 주소를 만들 수 없습니다.',
-    },
-    {
-      label: '페이지 비밀번호',
-      section: 'input',
-      passed: password.length >= 4,
-      errorMessage: !password
-        ? '페이지 비밀번호를 입력해 주세요.'
-        : '페이지 비밀번호는 4자 이상으로 입력해 주세요.',
-    },
-    {
-      label: '비밀번호 확인',
-      section: 'input',
-      passed: Boolean(confirmPassword) && password === confirmPassword,
-      errorMessage: !confirmPassword
-        ? '비밀번호 확인을 입력해 주세요.'
-        : '비밀번호와 비밀번호 확인이 일치하지 않습니다.',
-    },
-    {
-      label: '디자인 선택',
-      section: 'selection',
-      passed: Boolean(input.selectedTheme),
-      errorMessage: '디자인을 먼저 선택해 주세요.',
-    },
-  ];
-}
+import { findGuideSamplePageUrl } from '../../constants/content';
 
 export default function CreateScreen() {
-  const router = useRouter();
   const isExpoWebPreview = Platform.OS === 'web';
-  const {
-    draftId: draftIdParam,
-    ticketIntent: ticketIntentParam,
-    targetPlan: targetPlanParam,
-    targetTheme: targetThemeParam,
-  } = useLocalSearchParams<{
-    draftId?: string | string[];
-    ticketIntent?: string | string[];
-    targetPlan?: string | string[];
-    targetTheme?: string | string[];
-  }>();
+  const insets = useSafeAreaInsets();
+  const { width } = useWindowDimensions();
+  const scrollRef = useRef<ScrollView | null>(null);
+
   const { apiBaseUrl, palette } = usePreferences();
   const {
     authError,
@@ -188,763 +59,143 @@ export default function CreateScreen() {
   const { pageSummary, refreshDashboard, adjustTicketCount } = useInvitationOps();
   const { drafts, removeDraft, saveDraft } = useDrafts();
 
-  const [selectedPlan, setSelectedPlan] =
-    useState<MobileInvitationProductTier>('standard');
-  const [selectedTheme, setSelectedTheme] =
-    useState<MobileInvitationThemeKey | null>(null);
-  const [groomKoreanName, setGroomKoreanName] = useState('');
-  const [brideKoreanName, setBrideKoreanName] = useState('');
-  const [groomEnglishName, setGroomEnglishName] = useState('');
-  const [brideEnglishName, setBrideEnglishName] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [ticketCount, setTicketCount] = useState(0);
-  const [notice, setNotice] = useState('');
-  const [paymentModalVisible, setPaymentModalVisible] = useState(false);
-  const [ticketOnlyModalVisible, setTicketOnlyModalVisible] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [editingDraftId, setEditingDraftId] = useState<string | null>(null);
-  const [loadedDraftId, setLoadedDraftId] = useState<string | null>(null);
-  const [handledTicketIntentKey, setHandledTicketIntentKey] = useState<string | null>(null);
-  const [linkedInvitationCards, setLinkedInvitationCards] = useState<LinkedInvitationCard[]>([]);
-  const [selectedTicketTargetSlug, setSelectedTicketTargetSlug] = useState<string | null>(null);
-  const [isTicketPurchaseSubmitting, setIsTicketPurchaseSubmitting] = useState(false);
-  const [ticketPurchaseSuccess, setTicketPurchaseSuccess] =
-    useState<TicketPurchaseSuccessState | null>(null);
-  const scrollRef = useRef<ScrollView | null>(null);
-  const [inputSectionOffsetY, setInputSectionOffsetY] = useState(0);
-  const [selectionSectionOffsetY, setSelectionSectionOffsetY] = useState(0);
+  const createForm = useCreateForm({
+    apiBaseUrl,
+    drafts,
+    saveDraft,
+    removeDraft,
+    clearAuthError,
+    createInvitationPage,
+    isExpoWebPreview,
+  });
 
-  const selectedPlanInfo = useMemo(
-    () => servicePlans.find((plan) => plan.tier === selectedPlan) ?? servicePlans[0],
-    [selectedPlan]
-  );
-  const selectedThemeInfo = useMemo(
-    () => designThemes.find((theme) => theme.key === selectedTheme) ?? null,
-    [selectedTheme]
-  );
-  const ticketPrice = useMemo(() => calculateTicketPrice(ticketCount), [ticketCount]);
-  const discountedBundleCount = Math.floor(ticketCount / TICKET_DISCOUNT_BUNDLE_SIZE);
-  const remainderTicketCount = ticketCount % TICKET_DISCOUNT_BUNDLE_SIZE;
-  const totalPrice = selectedPlanInfo.price + ticketPrice;
-  const slugPreview = useMemo(
-    () => buildPageSlugBaseFromEnglishNames(groomEnglishName, brideEnglishName),
-    [brideEnglishName, groomEnglishName]
-  );
-  const publicUrlPreview = useMemo(() => {
-    const baseUrl = apiBaseUrl.replace(/\/+$/g, '');
-    return slugPreview ? `${baseUrl}/${slugPreview}` : `${baseUrl}/...`;
-  }, [apiBaseUrl, slugPreview]);
-  const normalizedDraftId = Array.isArray(draftIdParam) ? draftIdParam[0] : draftIdParam;
-  const normalizedTicketIntent = Array.isArray(ticketIntentParam)
-    ? ticketIntentParam[0]
-    : ticketIntentParam;
-  const normalizedTargetPlan = Array.isArray(targetPlanParam) ? targetPlanParam[0] : targetPlanParam;
-  const normalizedTargetTheme = Array.isArray(targetThemeParam)
-    ? targetThemeParam[0]
-    : targetThemeParam;
+  const ticketPurchase = useCreateTicketPurchase({
+    apiBaseUrl,
+    pageSummary,
+    session,
+    refreshDashboard,
+    adjustTicketCount,
+    ticketCount: createForm.ticketCount,
+    resetTicketCount: createForm.resetTicketCount,
+    clearAuthError,
+    setNotice: createForm.setNotice,
+  });
 
-  const reloadLinkedInvitationCards = useCallback(async () => {
-    const storedCards = await getLinkedInvitationCards();
-    let nextCards = storedCards.filter((item) => item.session);
-
-    if (pageSummary && session) {
-      const currentCard = buildLinkedInvitationCardFromPageSummary(pageSummary, {
-        updatedAt: Date.now(),
-        ticketCount: pageSummary.ticketCount,
-        session,
-      });
-      const existing = nextCards.find((item) => item.slug === currentCard.slug);
-      const mergedCurrentCard = mergeLinkedInvitationCard(existing, currentCard);
-
-      nextCards = [mergedCurrentCard, ...nextCards.filter((item) => item.slug !== mergedCurrentCard.slug)];
-      await persistLinkedInvitationCards(nextCards);
-    }
-
-    setLinkedInvitationCards(nextCards);
-  }, [pageSummary, session]);
-
-  const validationRules = useMemo(
-    () =>
-      buildCreateValidationRules({
-        groomKoreanName,
-        brideKoreanName,
-        groomEnglishName,
-        brideEnglishName,
-        slugPreview,
-        password,
-        confirmPassword,
-        selectedTheme,
-      }),
-    [
-      brideEnglishName,
-      brideKoreanName,
-      confirmPassword,
-      groomEnglishName,
-      groomKoreanName,
-      password,
-      selectedTheme,
-      slugPreview,
-    ]
-  );
-
-  const validationChecklist = useMemo(
-    () => validationRules.map(({ label, passed }) => ({ label, passed })),
-    [validationRules]
-  );
-
-  const validationMessages = useMemo(
-    () => validationRules.filter((rule) => !rule.passed).map((rule) => rule.errorMessage),
-    [validationRules]
-  );
-
-  const selectedTicketTargetCard = useMemo(
-    () =>
-      linkedInvitationCards.find((item) => item.slug === selectedTicketTargetSlug) ??
-      linkedInvitationCards[0] ??
-      null,
-    [linkedInvitationCards, selectedTicketTargetSlug]
-  );
-
-  const hasTicketPurchaseTarget = Boolean(selectedTicketTargetCard);
-  const hasLinkedInvitation = hasTicketPurchaseTarget;
-  const storedTicketCount = selectedTicketTargetCard?.ticketCount ?? 0;
-
-  useFocusEffect(
-    useCallback(() => {
-      void reloadLinkedInvitationCards();
-    }, [reloadLinkedInvitationCards])
-  );
+  const isCompactStickyBar = width < 390;
+  const stickyBarHeight = isCompactStickyBar
+    ? STICKY_CTA_BAR_COMPACT_HEIGHT
+    : STICKY_CTA_BAR_HEIGHT;
+  const stickyBarBottomInset = Math.max(insets.bottom, 12);
+  const screenBottomPadding = stickyBarHeight + stickyBarBottomInset + 24;
+  const selectedGuideSampleUrl = createForm.selectedTheme
+    ? findGuideSamplePageUrl(createForm.selectedTheme, createForm.selectedPlanInfo.tier)
+    : null;
 
   useEffect(() => {
-    if (linkedInvitationCards.length === 0) {
-      setSelectedTicketTargetSlug(null);
-      return;
-    }
+    scrollRef.current?.scrollTo({ y: 0, animated: true });
+  }, [createForm.currentStep]);
 
-    if (
-      !selectedTicketTargetSlug ||
-      !linkedInvitationCards.some((item) => item.slug === selectedTicketTargetSlug)
-    ) {
-      setSelectedTicketTargetSlug(linkedInvitationCards[0]?.slug ?? null);
-    }
-  }, [linkedInvitationCards, selectedTicketTargetSlug]);
-
-  useEffect(() => {
-    if (!normalizedDraftId || normalizedDraftId === loadedDraftId) {
-      return;
-    }
-
-    const selectedDraft = drafts.find((draft) => draft.id === normalizedDraftId);
-    if (!selectedDraft) {
-      return;
-    }
-
-    setSelectedPlan(selectedDraft.servicePlan);
-    setSelectedTheme(selectedDraft.theme);
-    setGroomKoreanName(selectedDraft.groomName);
-    setBrideKoreanName(selectedDraft.brideName);
-    setGroomEnglishName(selectedDraft.groomEnglishName);
-    setBrideEnglishName(selectedDraft.brideEnglishName);
-    setPassword('');
-    setConfirmPassword('');
-    setTicketCount(selectedDraft.ticketCount);
-    setEditingDraftId(selectedDraft.id);
-    setLoadedDraftId(selectedDraft.id);
-    setPaymentModalVisible(false);
-    clearAuthError();
-    setNotice('저장된 초안을 불러왔습니다. 비밀번호만 다시 입력하면 이어서 진행할 수 있습니다.');
-    router.replace('/create');
-  }, [clearAuthError, drafts, loadedDraftId, normalizedDraftId, router]);
-
-  useEffect(() => {
-    if (!normalizedTicketIntent) {
-      return;
-    }
-
-    const intentKey = [
-      normalizedTicketIntent,
-      normalizedTargetPlan ?? '',
-      normalizedTargetTheme ?? '',
-    ].join(':');
-
-    if (handledTicketIntentKey === intentKey) {
-      return;
-    }
-
-    if (
-      normalizedTargetPlan === 'standard' ||
-      normalizedTargetPlan === 'deluxe' ||
-      normalizedTargetPlan === 'premium'
-    ) {
-      setSelectedPlan(normalizedTargetPlan);
-    }
-
-    if (normalizedTargetTheme === 'emotional' || normalizedTargetTheme === 'simple') {
-      setSelectedTheme(normalizedTargetTheme);
-    }
-
-    if (normalizedTicketIntent === 'extend') {
-      setNotice('티켓 사용: 기간 1개월 연장 준비를 위해 구매 탭으로 이동했습니다.');
-    } else if (normalizedTicketIntent === 'extra-page') {
-      setNotice('티켓 사용: 추가 청첩장 생성을 진행할 수 있습니다.');
-    } else if (normalizedTicketIntent === 'extra-variant') {
-      setNotice('티켓 사용: 같은 청첩장에 다른 디자인 추가 구매 흐름으로 이동했습니다.');
-    } else if (normalizedTicketIntent === 'upgrade') {
-      setNotice('티켓 사용: 서비스 업그레이드 구매 흐름으로 이동했습니다.');
-    }
-
-    setHandledTicketIntentKey(intentKey);
-  }, [
-    handledTicketIntentKey,
-    normalizedTargetPlan,
-    normalizedTargetTheme,
-    normalizedTicketIntent,
-  ]);
-
-  const resetForm = () => {
-    setSelectedPlan('standard');
-    setSelectedTheme(null);
-    setGroomKoreanName('');
-    setBrideKoreanName('');
-    setGroomEnglishName('');
-    setBrideEnglishName('');
-    setPassword('');
-    setConfirmPassword('');
-    setTicketCount(0);
-    setEditingDraftId(null);
-    setLoadedDraftId(null);
-    setPaymentModalVisible(false);
-    setTicketOnlyModalVisible(false);
-    clearAuthError();
-  };
-
-  const updateTicketCount = (nextCount: number) => {
-    setTicketCount(Math.max(0, Math.min(MAX_TICKET_COUNT, nextCount)));
-  };
-
-  const handleSaveDraft = async () => {
-    if (!groomKoreanName.trim() || !brideKoreanName.trim()) {
-      setNotice('초안 저장 전에는 신랑·신부 한글 이름을 먼저 입력해 주세요.');
-      return;
-    }
-
-    if (!selectedTheme) {
-      setNotice('초안 저장 전에는 디자인을 먼저 선택해 주세요.');
-      scrollRef.current?.scrollTo({ y: selectionSectionOffsetY, animated: true });
-      return;
-    }
-
-    const savedDraftId = await saveDraft(
-      {
-        servicePlan: selectedPlan,
-        theme: selectedTheme ?? 'emotional',
-        pageIdentifier: slugPreview,
-        groomName: groomKoreanName.trim(),
-        brideName: brideKoreanName.trim(),
-        groomEnglishName: groomEnglishName.trim(),
-        brideEnglishName: brideEnglishName.trim(),
-        weddingDate: '',
-        venue: '',
-        estimatedPrice: totalPrice,
-        ticketCount,
-        notes: '',
-      },
-      {
-        draftId: editingDraftId ?? undefined,
+  const handleOpenGuideSample = async (url: string) => {
+    try {
+      try {
+        await WebBrowser.openBrowserAsync(url, {
+          enableDefaultShareMenuItem: true,
+          controlsColor: palette.accent,
+          createTask: true,
+        });
+        return;
+      } catch {
+        // 인앱 브라우저를 사용할 수 없으면 기본 브라우저로 대체합니다.
       }
-    );
 
-    setEditingDraftId(savedDraftId);
-    setLoadedDraftId(savedDraftId);
-    setNotice('제작 초안을 저장했습니다. 입력한 내용은 유지되고 홈에서도 이어서 작성할 수 있습니다.');
-  };
+      const supported = await Linking.canOpenURL(url);
+      if (!supported) {
+        throw new Error('unsupported-url');
+      }
 
-  const handleOpenPaymentModal = () => {
-    clearAuthError();
-
-    if (isExpoWebPreview) {
-      setNotice(
-        'Expo 웹 빌드에서는 실제 페이지 생성이 차단되어 있습니다. 네이티브 앱이나 Next 웹 편집기를 사용해 주세요.'
-      );
-      return;
+      await Linking.openURL(url);
+    } catch {
+      Alert.alert('샘플 페이지를 열지 못했습니다.', '잠시 후 다시 시도해 주세요.');
     }
-
-    if (validationMessages.length > 0) {
-      setNotice(validationMessages[0] ?? '입력 정보를 먼저 확인해 주세요.');
-      const firstInvalidRule = validationRules.find((rule) => !rule.passed);
-      scrollRef.current?.scrollTo({
-        y: firstInvalidRule?.section === 'selection' ? selectionSectionOffsetY : inputSectionOffsetY,
-        animated: true,
-      });
-      return;
-    }
-
-    setNotice('');
-    setPaymentModalVisible(true);
-  };
-
-  const handleOpenTicketOnlyModal = () => {
-    clearAuthError();
-
-    if (!selectedTicketTargetCard?.session) {
-      setNotice('연동된 청첩장이 있을 때만 티켓만 구매할 수 있습니다. 먼저 페이지를 연동해 주세요.');
-      return;
-    }
-
-    if (ticketCount <= 0) {
-      setNotice('티켓만 구매하려면 먼저 티켓 수량을 선택해 주세요.');
-      return;
-    }
-
-    setNotice('');
-    setTicketOnlyModalVisible(true);
-  };
-
-  const handleConfirmTicketOnlyPurchase = async () => {
-    clearAuthError();
-    setNotice('');
-
-    if (!selectedTicketTargetCard?.session) {
-      setNotice('연동된 청첩장이 없어서 티켓을 적립할 수 없습니다. 먼저 페이지를 연동해 주세요.');
-      return;
-    }
-
-    const purchaseTargetDisplayName =
-      selectedTicketTargetCard.displayName.trim() || selectedTicketTargetCard.slug;
-
-    setIsTicketPurchaseSubmitting(true);
-
-    // 티켓 적립은 현재 활성 세션이면 InvitationOpsContext 경로를 재사용하고,
-    // 다른 연동 청첩장을 적립 대상으로 고른 경우에는 그 카드의 세션 토큰으로
-    // 직접 호출해야 한다. InvitationOpsContext는 현재 활성 청첩장 기준 상태를
-    // 관리하므로, 다른 페이지 적립만 여기서 예외 처리한다.
-    const nextTicketCount =
-      session && selectedTicketTargetCard.slug === session.pageSlug
-        ? await adjustTicketCount(ticketCount)
-        : await adjustMobileInvitationTicketCount(
-            apiBaseUrl,
-            selectedTicketTargetCard.slug,
-            selectedTicketTargetCard.session.token,
-            ticketCount
-          )
-            .then((response) => response.ticketCount)
-            .catch((error) => {
-              setNotice(
-                error instanceof Error
-                  ? error.message
-                  : '티켓을 저장하지 못했습니다. 잠시 후 다시 시도해 주세요.'
-              );
-              return null;
-            });
-
-    setIsTicketPurchaseSubmitting(false);
-
-    if (nextTicketCount === null) {
-      return;
-    }
-
-    const nextLinkedInvitationCards = linkedInvitationCards.map((item) =>
-      item.slug === selectedTicketTargetCard.slug
-        ? {
-            ...item,
-            ticketCount: nextTicketCount,
-            updatedAt: Date.now(),
-          }
-        : item
-    );
-
-    setLinkedInvitationCards(nextLinkedInvitationCards);
-    await persistLinkedInvitationCards(nextLinkedInvitationCards);
-
-    if (session && selectedTicketTargetCard.slug === session.pageSlug) {
-      await refreshDashboard();
-    }
-
-    setTicketOnlyModalVisible(false);
-    setTicketCount(0);
-    setTicketPurchaseSuccess({
-      ticketCount,
-      targetDisplayName: purchaseTargetDisplayName,
-      nextTicketCount,
-    });
-  };
-
-  const handleConfirmCreate = async () => {
-    if (isExpoWebPreview) {
-      setNotice(
-        'Expo 웹 빌드에서는 실제 페이지를 생성할 수 없습니다. 네이티브 앱이나 Next 웹 편집기를 사용해 주세요.'
-      );
-      setPaymentModalVisible(false);
-      return;
-    }
-
-    if (validationMessages.length > 0) {
-      setNotice(validationMessages[0] ?? '입력 정보를 먼저 확인해 주세요.');
-      setPaymentModalVisible(false);
-      const firstInvalidRule = validationRules.find((rule) => !rule.passed);
-      scrollRef.current?.scrollTo({
-        y: firstInvalidRule?.section === 'selection' ? selectionSectionOffsetY : inputSectionOffsetY,
-        animated: true,
-      });
-      return;
-    }
-
-    setIsSubmitting(true);
-    clearAuthError();
-
-    const created = await createInvitationPage({
-      slugBase: slugPreview,
-      groomKoreanName: groomKoreanName.trim(),
-      brideKoreanName: brideKoreanName.trim(),
-      groomEnglishName: groomEnglishName.trim(),
-      brideEnglishName: brideEnglishName.trim(),
-      password: password.trim(),
-      servicePlan: selectedPlan,
-      theme: selectedTheme ?? 'emotional',
-    });
-
-    setIsSubmitting(false);
-
-    if (!created) {
-      return;
-    }
-
-    if (editingDraftId) {
-      await removeDraft(editingDraftId);
-    }
-
-    resetForm();
-    setNotice('청첩장을 생성했습니다. 운영 탭에서 예식 정보를 이어서 입력해 주세요.');
-    router.replace('/manage');
   };
 
   return (
     <>
-      <AppScreen
-        title="구매"
-        subtitle="구매 탭에서는 제작 초안을 기기에 저장하고, 결제 확인 시점에만 실제 페이지를 생성합니다."
-        scrollRef={scrollRef}
-      >
-        {isExpoWebPreview ? (
-          <WebPreviewNotice
-            title="웹 생성 제한 안내"
-            description="Expo 웹 빌드에서는 실제 페이지 생성 요청을 보내지 않습니다."
-          />
-        ) : null}
-
-        <SectionCard
-          title="진행 안내"
-          description="구매 탭에서는 입력 정보 확인부터 페이지 생성 후 운영 이동까지 같은 흐름으로 처리합니다."
+      <View style={[styles.screenRoot, { backgroundColor: palette.background }]}>
+        <AppScreen
+          title="구매"
+          subtitle="구매 탭에서는 제작 초안을 기기에 저장하고, 결제 확인 시점에만 실제 페이지를 생성합니다."
+          scrollRef={scrollRef}
+          contentContainerStyle={{ paddingBottom: screenBottomPadding }}
         >
-          <BulletList items={[...FLOW_GUIDE_ITEMS]} />
-        </SectionCard>
+          {isExpoWebPreview ? (
+            <WebPreviewNotice
+              title="웹 생성 제한 안내"
+              description="Expo 웹 빌드에서는 실제 페이지 생성 요청을 보내지 않습니다."
+            />
+          ) : null}
 
-        <View onLayout={(event) => setInputSectionOffsetY(event.nativeEvent.layout.y)}>
-        <SectionCard
-          title="1. 입력 정보 확인"
-          description="신랑·신부 한글 이름과 영문 이름을 확인하면, 영문 이름 기준으로 페이지 URL이 자동 생성됩니다."
-          badge={validationMessages.length === 0 ? '입력 완료' : `${validationMessages.length}개 확인 필요`}
-        >
-          <TextField
-            label="신랑 한글 이름"
-            value={groomKoreanName}
-            onChangeText={setGroomKoreanName}
-            placeholder="예: 김신랑"
-          />
-          <TextField
-            label="신부 한글 이름"
-            value={brideKoreanName}
-            onChangeText={setBrideKoreanName}
-            placeholder="예: 나신부"
-          />
-          <TextField
-            label="신랑 영문 이름"
-            value={groomEnglishName}
-            onChangeText={setGroomEnglishName}
-            placeholder="예: kim-shinlang"
-            autoCapitalize="none"
-            autoCorrect={false}
-          />
-          <TextField
-            label="신부 영문 이름"
-            value={brideEnglishName}
-            onChangeText={setBrideEnglishName}
-            placeholder="예: na-sinbu"
-            autoCapitalize="none"
-            autoCorrect={false}
-          />
-          <TextField
-            label="페이지 비밀번호"
-            value={password}
-            onChangeText={setPassword}
-            placeholder="페이지별 비밀번호 입력"
-            secureTextEntry
-            autoCapitalize="none"
-            autoCorrect={false}
-            returnKeyType="next"
-          />
-          <TextField
-            label="비밀번호 확인"
-            value={confirmPassword}
-            onChangeText={setConfirmPassword}
-            placeholder="비밀번호를 한 번 더 입력"
-            secureTextEntry
-            autoCapitalize="none"
-            autoCorrect={false}
-            returnKeyType="done"
-            onSubmitEditing={handleOpenPaymentModal}
-          />
+          <View style={styles.stepTabsSection}>
+            <AppText variant="caption" color={palette.textMuted} style={styles.stepTabsCaption}>
+              현재 단계: {createForm.currentStepIndex + 1} / {CREATE_STEPS.length} ·{' '}
+              {createForm.currentStepInfo.label}
+            </AppText>
+            <View style={styles.stepTabsRow}>
+              {CREATE_STEPS.map((step, index) => {
+                const isSelected = createForm.currentStep === step.key;
+                const isCompleted = createForm.stepCompletion[step.key];
 
-          <View
-            style={[
-              styles.previewCard,
-              {
-                backgroundColor: palette.surfaceMuted,
-                borderColor: palette.cardBorder,
-              },
-            ]}
-          >
-            <AppText variant="caption" style={styles.previewLabel}>
-              생성될 URL 미리보기
-            </AppText>
-            <AppText style={styles.previewValue}>
-              {publicUrlPreview}
-            </AppText>
+                return (
+                  <Pressable
+                    key={step.key}
+                    accessibilityRole="button"
+                    accessibilityLabel={`${index + 1}단계 ${step.label}`}
+                    accessibilityState={{ selected: isSelected }}
+                    onPress={() => createForm.handleStepTabPress(step.key)}
+                    style={[
+                      styles.stepTab,
+                      {
+                        backgroundColor: isSelected
+                          ? palette.accentSoft
+                          : isCompleted
+                            ? palette.successSoft
+                            : palette.surface,
+                        borderColor: isSelected
+                          ? palette.accent
+                          : isCompleted
+                            ? palette.success
+                            : palette.cardBorder,
+                      },
+                    ]}
+                  >
+                    <AppText
+                      variant="caption"
+                      color={isSelected ? palette.accent : isCompleted ? palette.success : palette.textMuted}
+                      style={styles.stepTabIndex}
+                    >
+                      {index + 1}
+                    </AppText>
+                    <AppText style={styles.stepTabLabel}>{step.label}</AppText>
+                  </Pressable>
+                );
+              })}
+            </View>
           </View>
 
-          <View style={styles.validationList}>
-            {validationChecklist.map((item) => (
-              <View key={item.label} style={styles.validationRow}>
-                <AppText
-                  variant="caption"
-                  color={item.passed ? palette.accent : palette.danger}
-                  style={styles.validationState}
-                >
-                  {item.passed ? '완료' : '확인 필요'}
-                </AppText>
-                <AppText style={styles.validationText}>
-                  {item.label}
-                </AppText>
-              </View>
-            ))}
-          </View>
-
-          {validationMessages.length > 0 ? (
+          {createForm.notice ? (
             <View
               style={[
                 styles.noticeBox,
                 {
-                  backgroundColor: palette.dangerSoft,
-                  borderColor: palette.danger,
+                  backgroundColor: palette.noticeSoft,
+                  borderColor: palette.notice,
                 },
               ]}
             >
-              {validationMessages.map((message) => (
-                <AppText
-                  key={message}
-                  variant="caption"
-                  color={palette.danger}
-                  style={styles.noticeText}
-                >
-                  · {message}
-                </AppText>
-              ))}
-            </View>
-          ) : null}
-        </SectionCard>
-        </View>
-
-        <View onLayout={(event) => setSelectionSectionOffsetY(event.nativeEvent.layout.y)}>
-        <SectionCard
-          title="2. 서비스와 디자인 선택"
-          description="서비스에 따라 기본 기능과 가격이 달라지고, 디자인은 생성 직후 기본 테마로 적용됩니다."
-        >
-          <View style={styles.chipRow}>
-            {servicePlans.map((plan) => (
-              <ChoiceChip
-                key={plan.name}
-                label={`${plan.name} · ${formatPrice(plan.price)}`}
-                selected={selectedPlan === plan.tier}
-                onPress={() => setSelectedPlan(plan.tier)}
-              />
-            ))}
-          </View>
-          <AppText variant="muted" style={styles.helperText}>
-            {selectedPlanInfo.description}
-          </AppText>
-          <BulletList items={selectedPlanInfo.features} />
-
-          <View
-            style={[
-              styles.divider,
-              {
-                backgroundColor: palette.cardBorder,
-              },
-            ]}
-          />
-
-          <View style={styles.chipRow}>
-            <ChoiceChip
-              label="선택하기"
-              selected={selectedTheme === null}
-              onPress={() => setSelectedTheme(null)}
-            />
-            {designThemes.map((theme) => (
-              <ChoiceChip
-                key={theme.key}
-                label={theme.label}
-                selected={selectedTheme === theme.key}
-                onPress={() => setSelectedTheme(theme.key)}
-              />
-            ))}
-          </View>
-          <AppText variant="muted" style={styles.helperText}>
-            선택한 디자인: {selectedThemeInfo?.description ?? '아직 디자인을 선택하지 않았습니다.'}
-          </AppText>
-        </SectionCard>
-        </View>
-
-        <SectionCard
-          title="추가 티켓 구매"
-          description="티켓은 수량만 먼저 구매하고, 사용 범위는 아래 정책에 따라 적용됩니다."
-          badge={`${ticketCount}장`}
-        >
-          <AppText variant="muted" style={styles.helperText}>
-            1장당 4,000원이며 3장 구매 시 10,000원으로 계산됩니다.
-          </AppText>
-
-          <View style={styles.ticketPresetRow}>
-            {TICKET_PRESET_COUNTS.map((count) => (
-              <ChoiceChip
-                key={count}
-                label={`${count}장`}
-                selected={ticketCount === count}
-                onPress={() => updateTicketCount(count)}
-              />
-            ))}
-          </View>
-
-          <View
-            style={[
-              styles.ticketCounterCard,
-              {
-                backgroundColor: palette.surfaceMuted,
-                borderColor: palette.cardBorder,
-              },
-            ]}
-          >
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel="추가 티켓 1장 줄이기"
-              accessibilityHint="구매할 티켓 수량을 1장 줄입니다."
-              accessibilityState={{ disabled: ticketCount <= 0 }}
-              disabled={ticketCount <= 0}
-              onPress={() => updateTicketCount(ticketCount - 1)}
-              style={[
-                styles.ticketCounterButton,
-                { borderColor: palette.cardBorder, backgroundColor: palette.surface },
-                ticketCount <= 0 ? styles.ticketCounterButtonDisabled : null,
-              ]}
-            >
-              <AppText variant="title" style={styles.ticketCounterButtonLabel}>
-                -
-              </AppText>
-            </Pressable>
-            <View style={styles.ticketCounterValueBox}>
-              <AppText variant="title" style={styles.ticketCounterValue}>
-                {ticketCount}
-              </AppText>
-              <AppText variant="caption" style={styles.ticketCounterCaption}>
-                구매할 티켓 장수
+              <AppText variant="caption" color={palette.notice} style={styles.noticeText}>
+                {createForm.notice}
               </AppText>
             </View>
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel="추가 티켓 1장 늘리기"
-              accessibilityHint="구매할 티켓 수량을 1장 늘립니다."
-              accessibilityState={{ disabled: ticketCount >= MAX_TICKET_COUNT }}
-              disabled={ticketCount >= MAX_TICKET_COUNT}
-              onPress={() => updateTicketCount(ticketCount + 1)}
-              style={[
-                styles.ticketCounterButton,
-                { borderColor: palette.cardBorder, backgroundColor: palette.surface },
-                ticketCount >= MAX_TICKET_COUNT ? styles.ticketCounterButtonDisabled : null,
-              ]}
-            >
-              <AppText variant="title" style={styles.ticketCounterButtonLabel}>
-                +
-              </AppText>
-            </Pressable>
-          </View>
-
-          <View
-            style={[
-              styles.ticketSummaryCard,
-              {
-                backgroundColor: palette.surfaceMuted,
-                borderColor: palette.cardBorder,
-              },
-            ]}
-          >
-            <AppText style={styles.ticketSummaryText}>
-              3장 할인 묶음: {discountedBundleCount}개
-            </AppText>
-            <AppText style={styles.ticketSummaryText}>
-              낱장 계산: {remainderTicketCount}장
-            </AppText>
-            <AppText color={palette.accent} style={styles.ticketSummaryText}>
-              티켓 금액: {formatPrice(ticketPrice)}
-            </AppText>
-          </View>
-
-          <BulletList items={[...TICKET_USAGE_ITEMS]} />
-
-          <AppText variant="muted" style={styles.helperText}>
-            {hasLinkedInvitation
-              ? `현재 선택된 적립 대상: ${
-                  selectedTicketTargetCard?.displayName.trim() || selectedTicketTargetCard?.slug || '-'
-                } · 보유 티켓 ${storedTicketCount}장`
-              : '연동된 청첩장이 있을 때만 티켓만 구매를 사용할 수 있습니다.'}
-          </AppText>
-
-          <ActionButton
-            variant="secondary"
-            onPress={handleOpenTicketOnlyModal}
-            disabled={ticketCount <= 0 || !hasLinkedInvitation}
-            fullWidth
-          >
-            티켓만 구매
-          </ActionButton>
-        </SectionCard>
-
-        <SectionCard
-          title="3. 결제 확인과 페이지 생성"
-          description="현재는 실제 결제 연동 대신 확인 팝업만 띄우고, 확인 즉시 페이지를 생성한 뒤 운영 탭으로 이동합니다."
-        >
-          <View style={styles.summaryRow}>
-            <AppText style={styles.summaryLabel}>기본 서비스</AppText>
-            <AppText style={styles.summaryValue}>
-              {formatPrice(selectedPlanInfo.price)}
-            </AppText>
-          </View>
-          <View style={styles.summaryRow}>
-            <AppText style={styles.summaryLabel}>추가 티켓</AppText>
-            <AppText style={styles.summaryValue}>
-              {ticketCount}장 / {formatPrice(ticketPrice)}
-            </AppText>
-          </View>
-          <View style={styles.summaryRow}>
-            <AppText style={styles.summaryLabel}>예상 총액</AppText>
-            <AppText variant="title" color={palette.accent} style={styles.totalLabel}>
-              {formatPrice(totalPrice)}
-            </AppText>
-          </View>
-
-          {notice ? (
-            <AppText variant="caption" color={palette.accent} style={styles.helperText}>
-              {notice}
-            </AppText>
           ) : null}
 
           {authError ? (
@@ -963,194 +214,581 @@ export default function CreateScreen() {
             </View>
           ) : null}
 
-          <View style={styles.actionColumn}>
-            <ActionButton variant="secondary" onPress={() => void handleSaveDraft()} fullWidth>
-              제작 초안 저장
-            </ActionButton>
-            <ActionButton
-              onPress={handleOpenPaymentModal}
-              disabled={isExpoWebPreview}
-              fullWidth
+          {createForm.currentStep === 'info' ? (
+            <>
+              <SectionCard
+                title="1. 기본 정보"
+                description="청첩장에 표시할 이름 정보를 먼저 입력합니다."
+                badge={
+                  createForm.basicValidationMessages.length === 0
+                    ? '입력 완료'
+                    : `${createForm.basicValidationMessages.length}개 확인 필요`
+                }
+                badgeTone={createForm.basicValidationMessages.length === 0 ? 'success' : 'notice'}
+              >
+                <TextField
+                  label="신랑 한글 이름"
+                  value={createForm.groomKoreanName}
+                  onChangeText={createForm.setGroomKoreanName}
+                  placeholder="예: 김신랑"
+                />
+                <TextField
+                  label="신부 한글 이름"
+                  value={createForm.brideKoreanName}
+                  onChangeText={createForm.setBrideKoreanName}
+                  placeholder="예: 나신부"
+                />
+                <TextField
+                  label="신랑 영문 이름"
+                  value={createForm.groomEnglishName}
+                  onChangeText={createForm.setGroomEnglishName}
+                  placeholder="예: kim-shinlang"
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                />
+                <TextField
+                  label="신부 영문 이름"
+                  value={createForm.brideEnglishName}
+                  onChangeText={createForm.setBrideEnglishName}
+                  placeholder="예: na-sinbu"
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                />
+
+                {createForm.basicValidationMessages.length > 0 ? (
+                  <View
+                    style={[
+                      styles.noticeBox,
+                      {
+                        backgroundColor: palette.dangerSoft,
+                        borderColor: palette.danger,
+                      },
+                    ]}
+                  >
+                    {createForm.basicValidationMessages.map((message) => (
+                      <AppText
+                        key={message}
+                        variant="caption"
+                        color={palette.danger}
+                        style={styles.noticeText}
+                      >
+                        · {message}
+                      </AppText>
+                    ))}
+                  </View>
+                ) : null}
+              </SectionCard>
+
+              <SectionCard
+                title="보안 설정"
+                description="운영 페이지에 접속할 때 사용할 비밀번호를 설정합니다."
+                badge={
+                  createForm.securityValidationMessages.length === 0
+                    ? '보안 설정 완료'
+                    : `${createForm.securityValidationMessages.length}개 확인 필요`
+                }
+                badgeTone={
+                  createForm.securityValidationMessages.length === 0 ? 'success' : 'notice'
+                }
+              >
+                <TextField
+                  label="페이지 비밀번호"
+                  value={createForm.password}
+                  onChangeText={createForm.setPassword}
+                  placeholder="페이지별 비밀번호 입력"
+                  secureTextEntry
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  returnKeyType="next"
+                />
+                <TextField
+                  label="비밀번호 확인"
+                  value={createForm.confirmPassword}
+                  onChangeText={createForm.setConfirmPassword}
+                  placeholder="비밀번호를 한 번 더 입력"
+                  secureTextEntry
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  returnKeyType="done"
+                  onSubmitEditing={createForm.handlePrimaryStepAction}
+                />
+
+                <View
+                  style={[
+                    styles.securityGuideCard,
+                    {
+                      backgroundColor: palette.surfaceMuted,
+                      borderColor: palette.cardBorder,
+                    },
+                  ]}
+                >
+                  <AppText variant="caption" style={styles.previewLabel}>
+                    보안 안내
+                  </AppText>
+                  <AppText variant="muted" style={styles.helperText}>
+                    비밀번호는 4자 이상으로 입력하고, 본인과 운영자가 확인 가능한 값으로 관리해 주세요.
+                  </AppText>
+                </View>
+
+                {createForm.securityValidationMessages.length > 0 ? (
+                  <View
+                    style={[
+                      styles.noticeBox,
+                      {
+                        backgroundColor: palette.dangerSoft,
+                        borderColor: palette.danger,
+                      },
+                    ]}
+                  >
+                    {createForm.securityValidationMessages.map((message) => (
+                      <AppText
+                        key={message}
+                        variant="caption"
+                        color={palette.danger}
+                        style={styles.noticeText}
+                      >
+                        · {message}
+                      </AppText>
+                    ))}
+                  </View>
+                ) : null}
+              </SectionCard>
+            </>
+          ) : null}
+
+          {createForm.currentStep === 'selection' ? (
+            <SectionCard
+              title="2. 서비스와 디자인 선택"
+              description="모든 서비스는 하위 서비스를 포함합니다."
+              badge={
+                createForm.selectionValidationMessages.length === 0
+                  ? '선택 완료'
+                  : `${createForm.selectionValidationMessages.length}개 확인 필요`
+              }
+              badgeTone={
+                createForm.selectionValidationMessages.length === 0 ? 'success' : 'notice'
+              }
             >
-              결제 확인 팝업 열기
-            </ActionButton>
+              <View style={styles.chipRow}>
+                {servicePlans.map((plan) => (
+                  <ChoiceChip
+                    key={plan.name}
+                    label={plan.name}
+                    selected={createForm.selectedPlan === plan.tier}
+                    onPress={() => createForm.setSelectedPlan(plan.tier)}
+                  />
+                ))}
+              </View>
+
+              <View
+                style={[
+                  styles.selectionSummaryCard,
+                  {
+                    backgroundColor: palette.surfaceMuted,
+                    borderColor: palette.cardBorder,
+                  },
+                ]}
+              >
+                <AppText variant="caption" color={palette.textMuted} style={styles.selectionSummaryLabel}>
+                  현재 선택한 서비스
+                </AppText>
+                <AppText variant="title" style={styles.selectionSummaryValue}>
+                  {createForm.selectedPlanInfo.name} · {formatPrice(createForm.selectedPlanInfo.price)}
+                </AppText>
+                <View style={styles.selectionFeatureRow}>
+                  {createForm.selectedPlanHighlights.map((feature) => (
+                    <View
+                      key={`selected-plan-${feature}`}
+                      style={[
+                        styles.selectionFeatureChip,
+                        {
+                          backgroundColor: palette.accentSoft,
+                        },
+                      ]}
+                    >
+                      <AppText variant="caption" color={palette.textMuted}>
+                        {feature}
+                      </AppText>
+                    </View>
+                  ))}
+                </View>
+              </View>
+
+              <View
+                style={[
+                  styles.divider,
+                  {
+                    backgroundColor: palette.cardBorder,
+                  },
+                ]}
+              />
+
+              <View style={styles.chipRow}>
+                {designThemes.map((theme) => (
+                  <ChoiceChip
+                    key={`theme-quick-${theme.key}`}
+                    label={theme.label}
+                    selected={createForm.selectedTheme === theme.key}
+                    onPress={() => createForm.setSelectedTheme(theme.key)}
+                  />
+                ))}
+              </View>
+
+              <View
+                style={[
+                  styles.selectionSummaryCard,
+                  {
+                    backgroundColor: palette.surfaceMuted,
+                    borderColor: palette.cardBorder,
+                  },
+                ]}
+              >
+                <AppText variant="caption" color={palette.textMuted} style={styles.selectionSummaryLabel}>
+                  현재 선택한 디자인
+                </AppText>
+                <AppText variant="title" style={styles.selectionSummaryValue}>
+                  {createForm.selectedThemeInfo?.label ?? '아직 선택하지 않았습니다'}
+                </AppText>
+                <AppText
+                  variant="muted"
+                  style={styles.selectionSummaryDescription}
+                  numberOfLines={2}
+                >
+                  {createForm.selectedThemeInfo?.description ??
+                    '위 선택 버튼에서 원하는 디자인을 고르면 해당 샘플 링크를 바로 열 수 있습니다.'}
+                </AppText>
+                <View
+                  style={[
+                    styles.sampleLinkBox,
+                    {
+                      backgroundColor: palette.surface,
+                      borderColor: palette.cardBorder,
+                    },
+                  ]}
+                >
+                  <AppText
+                    variant="caption"
+                    color={selectedGuideSampleUrl ? palette.text : palette.textMuted}
+                    style={styles.sampleLinkText}
+                    numberOfLines={2}
+                  >
+                    {selectedGuideSampleUrl ??
+                      '서비스와 디자인을 선택하면 가이드에 있는 샘플 링크를 여기서 바로 열 수 있습니다.'}
+                  </AppText>
+                </View>
+                <ActionButton
+                  variant="secondary"
+                  disabled={!selectedGuideSampleUrl}
+                  onPress={() =>
+                    selectedGuideSampleUrl
+                      ? void handleOpenGuideSample(selectedGuideSampleUrl)
+                      : undefined
+                  }
+                  style={styles.sampleLinkButton}
+                >
+                  샘플 링크 열기
+                </ActionButton>
+              </View>
+
+              {createForm.selectionValidationMessages.length > 0 ? (
+                <View
+                  style={[
+                    styles.noticeBox,
+                    {
+                      backgroundColor: palette.dangerSoft,
+                      borderColor: palette.danger,
+                    },
+                  ]}
+                >
+                  {createForm.selectionValidationMessages.map((message) => (
+                    <AppText
+                      key={message}
+                      variant="caption"
+                      color={palette.danger}
+                      style={styles.noticeText}
+                    >
+                      · {message}
+                    </AppText>
+                  ))}
+                </View>
+              ) : null}
+            </SectionCard>
+          ) : null}
+
+          {createForm.currentStep === 'ticket' ? (
+            <SectionCard
+              title="3. 추가 티켓 구매 (선택 사항)"
+              description="기본 구성 외에 필요한 티켓 수량만 정하고, 실제 사용은 생성 후 정책에 맞게 적용합니다."
+              badge={`${createForm.ticketCount}장`}
+              badgeTone="accent"
+              variant="emphasis"
+            >
+              <AppText variant="muted" style={styles.helperText}>
+                1장당 4,000원이며 3장 구매 시 10,000원으로 계산됩니다.
+              </AppText>
+
+              <View style={styles.ticketPresetRow}>
+                {TICKET_PRESET_COUNTS.map((count) => (
+                  <ChoiceChip
+                    key={count}
+                    label={`${count}장`}
+                    selected={createForm.ticketCount === count}
+                    onPress={() => createForm.updateTicketCount(count)}
+                  />
+                ))}
+              </View>
+
+              <View
+                style={[
+                  styles.ticketCounterCard,
+                  {
+                    backgroundColor: palette.surfaceMuted,
+                    borderColor: palette.cardBorder,
+                  },
+                ]}
+              >
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel="추가 티켓 1장 줄이기"
+                  accessibilityHint="구매할 티켓 수량을 1장 줄입니다."
+                  accessibilityState={{ disabled: createForm.ticketCount <= 0 }}
+                  disabled={createForm.ticketCount <= 0}
+                  onPress={() => createForm.updateTicketCount(createForm.ticketCount - 1)}
+                  style={[
+                    styles.ticketCounterButton,
+                    { borderColor: palette.cardBorder, backgroundColor: palette.surface },
+                    createForm.ticketCount <= 0 ? styles.ticketCounterButtonDisabled : null,
+                  ]}
+                >
+                  <AppText variant="title" style={styles.ticketCounterButtonLabel}>
+                    -
+                  </AppText>
+                </Pressable>
+                <View style={styles.ticketCounterValueBox}>
+                  <AppText variant="title" style={styles.ticketCounterValue}>
+                    {createForm.ticketCount}
+                  </AppText>
+                  <AppText variant="caption" style={styles.ticketCounterCaption}>
+                    구매할 티켓 장수
+                  </AppText>
+                </View>
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel="추가 티켓 1장 늘리기"
+                  accessibilityHint="구매할 티켓 수량을 1장 늘립니다."
+                  accessibilityState={{ disabled: createForm.ticketCount >= MAX_TICKET_COUNT }}
+                  disabled={createForm.ticketCount >= MAX_TICKET_COUNT}
+                  onPress={() => createForm.updateTicketCount(createForm.ticketCount + 1)}
+                  style={[
+                    styles.ticketCounterButton,
+                    { borderColor: palette.cardBorder, backgroundColor: palette.surface },
+                    createForm.ticketCount >= MAX_TICKET_COUNT
+                      ? styles.ticketCounterButtonDisabled
+                      : null,
+                  ]}
+                >
+                  <AppText variant="title" style={styles.ticketCounterButtonLabel}>
+                    +
+                  </AppText>
+                </Pressable>
+              </View>
+
+              <View
+                style={[
+                  styles.ticketSummaryCard,
+                  {
+                    backgroundColor: palette.surfaceMuted,
+                    borderColor: palette.cardBorder,
+                  },
+                ]}
+              >
+                <AppText style={styles.ticketSummaryText}>
+                  3장 할인 묶음: {createForm.discountedBundleCount}개
+                </AppText>
+                <AppText style={styles.ticketSummaryText}>
+                  낱장 계산: {createForm.remainderTicketCount}장
+                </AppText>
+                <AppText style={styles.ticketSummaryText}>
+                  티켓 금액: {formatPrice(createForm.ticketPrice)}
+                </AppText>
+              </View>
+
+              <BulletList items={[...TICKET_USAGE_ITEMS]} />
+
+              <AppText variant="muted" style={styles.helperText}>
+                {ticketPurchase.hasLinkedInvitation
+                  ? `현재 선택된 적립 대상: ${
+                      ticketPurchase.selectedTicketTargetCard?.displayName.trim() ||
+                      ticketPurchase.selectedTicketTargetCard?.slug ||
+                      '-'
+                    } · 보유 티켓 ${ticketPurchase.storedTicketCount}장`
+                  : '연동된 청첩장이 있을 때만 티켓만 구매를 사용할 수 있습니다.'}
+              </AppText>
+
+              <ActionButton
+                variant="secondary"
+                onPress={ticketPurchase.handleOpenTicketOnlyModal}
+                disabled={createForm.ticketCount <= 0 || !ticketPurchase.hasLinkedInvitation}
+                fullWidth
+              >
+                티켓만 구매
+              </ActionButton>
+            </SectionCard>
+          ) : null}
+
+          {createForm.currentStep === 'review' ? (
+            <SectionCard
+              title="4. 확인 및 결제"
+              description="선택한 구성과 금액을 마지막으로 확인한 뒤 결제를 진행합니다."
+              badge={createForm.validationMessages.length === 0 ? '결제 준비 완료' : '확인 필요'}
+              badgeTone={createForm.validationMessages.length === 0 ? 'success' : 'notice'}
+              variant="emphasis"
+            >
+              <View style={styles.summaryRow}>
+                <AppText style={styles.summaryLabel}>선택한 서비스</AppText>
+                <AppText style={styles.summaryValue}>{createForm.selectedPlanInfo.name}</AppText>
+              </View>
+              <View style={styles.summaryRow}>
+                <AppText style={styles.summaryLabel}>선택한 디자인</AppText>
+                <AppText style={styles.summaryValue}>
+                  {createForm.selectedThemeInfo?.label ?? '선택 필요'}
+                </AppText>
+              </View>
+              <View style={styles.summaryRow}>
+                <AppText style={styles.summaryLabel}>기본 서비스 금액</AppText>
+                <AppText style={styles.summaryValue}>
+                  {formatPrice(createForm.selectedPlanInfo.price)}
+                </AppText>
+              </View>
+              <View style={styles.summaryRow}>
+                <AppText style={styles.summaryLabel}>추가 티켓</AppText>
+                <AppText style={styles.summaryValue}>
+                  {createForm.ticketCount}장 / {formatPrice(createForm.ticketPrice)}
+                </AppText>
+              </View>
+              <View style={styles.summaryRow}>
+                <AppText style={styles.summaryLabel}>예상 총액</AppText>
+                <AppText variant="display" style={styles.totalLabel}>
+                  {formatPrice(createForm.totalPrice)}
+                </AppText>
+              </View>
+
+              <View style={styles.actionColumn}>
+                <ActionButton variant="secondary" onPress={() => void createForm.handleSaveDraft()} fullWidth>
+                  제작 초안 저장
+                </ActionButton>
+              </View>
+            </SectionCard>
+          ) : null}
+        </AppScreen>
+
+        <View
+          style={[
+            styles.stickyBar,
+            isCompactStickyBar ? styles.stickyBarCompact : null,
+            {
+              backgroundColor: palette.surface,
+              borderTopColor: palette.cardBorder,
+              paddingBottom: stickyBarBottomInset,
+            },
+          ]}
+        >
+          <View
+            style={[
+              styles.stickyBarContent,
+              isCompactStickyBar ? styles.stickyBarContentCompact : null,
+              { minHeight: stickyBarHeight },
+            ]}
+          >
+            <View style={styles.stickyPriceBox}>
+              <AppText variant="caption" style={styles.stickyPriceLabel}>
+                예상 총액
+              </AppText>
+              <AppText
+                variant="display"
+                style={styles.stickyPriceValue}
+                numberOfLines={1}
+                adjustsFontSizeToFit
+                minimumFontScale={0.8}
+              >
+                {formatPrice(createForm.totalPrice)}
+              </AppText>
+            </View>
+            <View
+              style={[
+                styles.stickyActionRow,
+                isCompactStickyBar ? styles.stickyActionRowCompact : null,
+              ]}
+            >
+              {createForm.showPreviousCta ? (
+                <ActionButton
+                  variant="secondary"
+                  onPress={createForm.handlePreviousStep}
+                  style={[
+                    styles.stickySecondaryActionButton,
+                    isCompactStickyBar ? styles.stickyActionButtonCompact : null,
+                  ]}
+                >
+                  이전
+                </ActionButton>
+              ) : null}
+              <ActionButton
+                onPress={createForm.handlePrimaryStepAction}
+                disabled={createForm.currentStep === 'review' && isExpoWebPreview}
+                loading={createForm.currentStep === 'review' && (createForm.isSubmitting || isAuthenticating)}
+                style={[
+                  styles.stickyPrimaryActionButton,
+                  isCompactStickyBar ? styles.stickyActionButtonCompact : null,
+                ]}
+              >
+                {createForm.primaryCtaLabel}
+              </ActionButton>
+            </View>
           </View>
-        </SectionCard>
-      </AppScreen>
+        </View>
+      </View>
 
       <PaymentConfirmModal
-        visible={paymentModalVisible}
-        onClose={() => setPaymentModalVisible(false)}
-        onConfirm={() => void handleConfirmCreate()}
-        loading={isSubmitting || isAuthenticating}
+        visible={createForm.paymentModalVisible}
+        onClose={createForm.closePaymentModal}
+        onConfirm={() => void createForm.handleConfirmCreate()}
+        loading={createForm.isSubmitting || isAuthenticating}
         authError={authError}
         palette={palette}
-        serviceName={selectedPlanInfo.name}
-        selectedThemeLabel={selectedThemeInfo?.label ?? '선택 필요'}
-        ticketCount={ticketCount}
-        ticketPrice={ticketPrice}
-        slugPreview={slugPreview}
-        totalPrice={totalPrice}
+        serviceName={createForm.selectedPlanInfo.name}
+        selectedThemeLabel={createForm.selectedThemeInfo?.label ?? '선택 필요'}
+        ticketCount={createForm.ticketCount}
+        ticketPrice={createForm.ticketPrice}
+        slugPreview={createForm.slugBase}
+        totalPrice={createForm.totalPrice}
       />
 
       <TicketOnlyPurchaseModal
-        visible={ticketOnlyModalVisible}
-        onClose={() => setTicketOnlyModalVisible(false)}
-        onConfirm={handleConfirmTicketOnlyPurchase}
-        loading={isTicketPurchaseSubmitting}
+        visible={ticketPurchase.ticketOnlyModalVisible}
+        onClose={ticketPurchase.closeTicketOnlyModal}
+        onConfirm={ticketPurchase.handleConfirmTicketOnlyPurchase}
+        loading={ticketPurchase.isTicketPurchaseSubmitting}
         authError={authError}
-        notice={notice}
+        notice={createForm.notice}
         palette={palette}
-        ticketCount={ticketCount}
-        discountedBundleCount={discountedBundleCount}
-        remainderTicketCount={remainderTicketCount}
-        ticketPrice={ticketPrice}
+        ticketCount={createForm.ticketCount}
+        discountedBundleCount={createForm.discountedBundleCount}
+        remainderTicketCount={createForm.remainderTicketCount}
+        ticketPrice={createForm.ticketPrice}
         ticketUsageItems={TICKET_USAGE_ITEMS}
-        targetOptions={linkedInvitationCards.map((item) => ({
-          slug: item.slug,
-          displayName: item.displayName.trim() || item.slug,
-        }))}
-        selectedTargetSlug={selectedTicketTargetCard?.slug ?? null}
-        selectedTargetLabel={
-          selectedTicketTargetCard?.displayName?.trim() ||
-          selectedTicketTargetCard?.slug ||
-          '연동된 청첩장이 필요합니다'
-        }
-        currentStoredTicketCount={storedTicketCount}
-        onSelectTarget={setSelectedTicketTargetSlug}
+        targetOptions={ticketPurchase.ticketTargetOptions}
+        selectedTargetSlug={ticketPurchase.selectedTicketTargetSlug}
+        selectedTargetLabel={ticketPurchase.selectedTargetLabel}
+        currentStoredTicketCount={ticketPurchase.storedTicketCount}
+        onSelectTarget={ticketPurchase.setSelectedTicketTargetSlug}
       />
 
       <TicketPurchaseSuccessModal
-        visible={ticketPurchaseSuccess !== null}
-        onClose={() => setTicketPurchaseSuccess(null)}
+        visible={ticketPurchase.ticketPurchaseSuccess !== null}
+        onClose={ticketPurchase.closeTicketPurchaseSuccess}
         palette={palette}
-        success={ticketPurchaseSuccess}
+        success={ticketPurchase.ticketPurchaseSuccess}
       />
     </>
   );
 }
-
-const styles = StyleSheet.create({
-  chipRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-  },
-  helperText: {
-    lineHeight: 21,
-  },
-  divider: {
-    height: 1,
-    opacity: 0.7,
-  },
-  previewCard: {
-    borderWidth: 1,
-    borderRadius: 18,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    gap: 6,
-  },
-  previewLabel: {
-    fontWeight: '700',
-  },
-  previewValue: {
-    fontWeight: '700',
-  },
-  validationList: {
-    gap: 8,
-  },
-  validationRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-  },
-  validationState: {
-    width: 60,
-    fontWeight: '800',
-  },
-  validationText: {
-    flex: 1,
-    lineHeight: 20,
-  },
-  noticeBox: {
-    borderWidth: 1,
-    borderRadius: 16,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    gap: 6,
-  },
-  noticeText: {
-    lineHeight: 19,
-    fontWeight: '600',
-  },
-  ticketPresetRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-  },
-  ticketCounterCard: {
-    borderWidth: 1,
-    borderRadius: 20,
-    padding: 14,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: 14,
-  },
-  ticketCounterButton: {
-    width: 52,
-    height: 52,
-    borderRadius: 16,
-    borderWidth: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  ticketCounterButtonDisabled: {
-    opacity: 0.45,
-  },
-  ticketCounterButtonLabel: {
-    fontWeight: '800',
-  },
-  ticketCounterValueBox: {
-    flex: 1,
-    alignItems: 'center',
-    gap: 4,
-  },
-  ticketCounterValue: {
-    fontWeight: '800',
-  },
-  ticketCounterCaption: {
-    fontWeight: '600',
-  },
-  ticketSummaryCard: {
-    borderWidth: 1,
-    borderRadius: 18,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    gap: 6,
-  },
-  ticketSummaryText: {
-    lineHeight: 20,
-    fontWeight: '700',
-  },
-  summaryRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    gap: 16,
-  },
-  summaryLabel: {
-    lineHeight: 20,
-  },
-  summaryValue: {
-    flexShrink: 1,
-    textAlign: 'right',
-    fontWeight: '700',
-  },
-  totalLabel: {
-    fontWeight: '800',
-  },
-  actionColumn: {
-    gap: 10,
-  },
-});

@@ -10,7 +10,7 @@ import {
 
 import { usePreferences } from '../contexts/PreferencesContext';
 
-export type AppTextVariant = 'body' | 'title' | 'caption' | 'muted';
+export type AppTextVariant = 'body' | 'title' | 'display' | 'caption' | 'muted';
 
 type AppTextProps = PropsWithChildren<
   TextProps & {
@@ -29,6 +29,11 @@ const VARIANT_STYLES: Record<AppTextVariant, TextStyle> = {
   title: {
     fontSize: 18,
     lineHeight: 24,
+    fontWeight: '800',
+  },
+  display: {
+    fontSize: 24,
+    lineHeight: 30,
     fontWeight: '800',
   },
   caption: {

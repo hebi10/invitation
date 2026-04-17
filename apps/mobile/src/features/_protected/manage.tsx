@@ -524,7 +524,7 @@ export default function ManageScreen() {
                         disabled={Boolean(activatingLinkedInvitationSlug)}
                         style={manageStyles.actionHalfButton}
                       >
-                        이 청첩장 열기
+                        청첩장 전환하기
                       </ActionButton>
                     </View>
                   </View>

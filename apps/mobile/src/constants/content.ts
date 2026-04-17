@@ -120,39 +120,55 @@ export const faqItems = [
 export const guideSamplePages = [
   {
     title: '감성 디자인',
+    themeKey: 'emotional' as MobileInvitationThemeKey,
     items: [
       {
         label: 'STANDARD 샘플 보기',
+        tier: 'standard' as MobileInvitationProductTier,
         url: 'https://msgnote.kr/kim-taehyun-choi-yuna/emotional/',
       },
       {
         label: 'DELUXE 샘플 보기',
+        tier: 'deluxe' as MobileInvitationProductTier,
         url: 'https://msgnote.kr/lee-junho-park-somin/emotional/',
       },
       {
         label: 'PREMIUM 샘플 보기',
+        tier: 'premium' as MobileInvitationProductTier,
         url: 'https://msgnote.kr/shin-minje-kim-hyunji/emotional/',
       },
     ],
   },
   {
     title: '심플 디자인',
+    themeKey: 'simple' as MobileInvitationThemeKey,
     items: [
       {
         label: 'STANDARD 샘플 보기',
+        tier: 'standard' as MobileInvitationProductTier,
         url: 'https://msgnote.kr/kim-taehyun-choi-yuna/simple/',
       },
       {
         label: 'DELUXE 샘플 보기',
+        tier: 'deluxe' as MobileInvitationProductTier,
         url: 'https://msgnote.kr/lee-junho-park-somin/simple/',
       },
       {
         label: 'PREMIUM 샘플 보기',
+        tier: 'premium' as MobileInvitationProductTier,
         url: 'https://msgnote.kr/shin-minje-kim-hyunji/simple/',
       },
     ],
   },
 ] as const;
+
+export function findGuideSamplePageUrl(
+  themeKey: MobileInvitationThemeKey,
+  tier: MobileInvitationProductTier
+) {
+  const selectedThemeGroup = guideSamplePages.find((group) => group.themeKey === themeKey);
+  return selectedThemeGroup?.items.find((item) => item.tier === tier)?.url ?? null;
+}
 
 export const sampleInvitations = [
   '감성 디자인 샘플 둘러보기',

@@ -139,6 +139,21 @@ function isStorageManagedImageUrl(imageUrl?: string | null) {
   return Boolean(imageUrl?.includes('firebasestorage.googleapis.com'));
 }
 
+function resolveStorageManagedImageUrl(
+  configuredImageUrl: string,
+  fallbackImageUrl?: string | null
+) {
+  if (!configuredImageUrl) {
+    return fallbackImageUrl?.trim() ?? '';
+  }
+
+  if (!isStorageManagedImageUrl(configuredImageUrl)) {
+    return configuredImageUrl;
+  }
+
+  return fallbackImageUrl?.trim() || configuredImageUrl;
+}
+
 export function useWeddingInvitationState(
   options: WeddingInvitationRouteOptions
 ): WeddingPageState {
@@ -180,7 +195,10 @@ export function useWeddingInvitationState(
   );
   const { isAdminLoading, isAdminLoggedIn } = useAdmin();
   const themeDefinition = getWeddingThemeDefinition(options.theme);
-  const imagesLoading = shouldLoadStorageFallbackImages ? storageImagesLoading : false;
+  const imagesLoading =
+    shouldLoadStorageFallbackImages || shouldLoadStorageManagedImages
+      ? storageImagesLoading
+      : false;
 
   useEffect(() => {
     if (isAdminLoading) {
@@ -344,25 +362,33 @@ export function useWeddingInvitationState(
     pageConfig?.productTier,
     pageConfig?.features
   );
+  const resolvedConfiguredGalleryImageUrls = configuredGalleryImageUrls.map((imageUrl, index) =>
+    resolveStorageManagedImageUrl(imageUrl, galleryImages[index]?.url)
+  );
   const mainImageUrl =
-    configuredMainImageUrl ||
-    configuredGalleryImageUrls[0] ||
-    mainImage?.url ||
+    resolveStorageManagedImageUrl(
+      configuredMainImageUrl,
+      mainImage?.url ?? resolvedConfiguredGalleryImageUrls[0]
+    ) ||
+    resolvedConfiguredGalleryImageUrls[0] ||
     '';
   const galleryImageUrls =
-    configuredGalleryImageUrls.length > 0
-      ? configuredGalleryImageUrls.slice(0, galleryFeatures.maxGalleryImages)
+    resolvedConfiguredGalleryImageUrls.length > 0
+      ? resolvedConfiguredGalleryImageUrls.slice(0, galleryFeatures.maxGalleryImages)
       : galleryImages
           .map((image) => image.url)
           .slice(0, galleryFeatures.maxGalleryImages);
-  const galleryPreviewImageUrlMap = new Map(
-    galleryImages.map((image) => [image.url, image.thumbnailUrl ?? image.url])
-  );
   const galleryPreviewImageUrls =
-    configuredGalleryImageUrls.length > 0
+    resolvedConfiguredGalleryImageUrls.length > 0
       ? configuredGalleryImageUrls
           .slice(0, galleryFeatures.maxGalleryImages)
-          .map((imageUrl) => galleryPreviewImageUrlMap.get(imageUrl) ?? imageUrl)
+          .map((imageUrl, index) =>
+            isStorageManagedImageUrl(imageUrl)
+              ? galleryImages[index]?.thumbnailUrl ??
+                galleryImages[index]?.url ??
+                resolvedConfiguredGalleryImageUrls[index]
+              : resolvedConfiguredGalleryImageUrls[index]
+          )
       : galleryImages
           .map((image) => image.thumbnailUrl ?? image.url)
           .slice(0, galleryFeatures.maxGalleryImages);

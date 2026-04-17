@@ -92,7 +92,7 @@ export function PaymentConfirmModal({
             </View>
             <View style={styles.summaryRow}>
               <AppText style={styles.summaryLabel}>결제 예정 금액</AppText>
-              <AppText variant="title" color={palette.accent} style={styles.totalLabel}>
+              <AppText variant="display" style={styles.totalLabel}>
                 {formatPrice(totalPrice)}
               </AppText>
             </View>
