@@ -1,5 +1,5 @@
 import { ProtectedTabRoute } from '../../components/ProtectedTabRoute';
-import ManageScreenContent from '../../features/_protected/manage';
+import ManageScreenContent from '../../features/screens/manage';
 
 export default function ManageScreen() {
   return (

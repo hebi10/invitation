@@ -1,4 +1,5 @@
 import type { MobileMusicCategory } from '../../../types/mobileInvitation';
+import type { ImageUploadProgressState } from '../hooks/useImageUpload';
 import type {
   EditableImageAssetKind,
   EditorStepKey,
@@ -32,6 +33,7 @@ type ManageEditorStepContentProps = {
   selectedMusicTrackLabel: string;
   availableMusicTracks: MobileMusicCategory['tracks'];
   uploadingImageKind: EditableImageAssetKind | null;
+  uploadProgress: ImageUploadProgressState | null;
   isSearchingAddress: boolean;
   onUpdateField: (field: ManageStringFieldKey, value: string) => void;
   onUpdatePersonField: (
@@ -73,6 +75,7 @@ export function ManageEditorStepContent({
   selectedMusicTrackLabel,
   availableMusicTracks,
   uploadingImageKind,
+  uploadProgress,
   isSearchingAddress,
   onUpdateField,
   onUpdatePersonField,
@@ -122,6 +125,7 @@ export function ManageEditorStepContent({
           galleryPreviewItems={galleryPreviewItems}
           maxGalleryImageCount={maxGalleryImageCount}
           uploadingImageKind={uploadingImageKind}
+          uploadProgress={uploadProgress}
           onUploadImage={onUploadImage}
           onMoveGalleryImage={onMoveGalleryImage}
           onRemoveGalleryImage={onRemoveGalleryImage}

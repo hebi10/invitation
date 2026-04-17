@@ -9,6 +9,7 @@ import {
   useState,
 } from 'react';
 
+import { createRandomSuffix } from '../lib/id';
 import { getStoredJson, setStoredJson } from '../lib/storage';
 import type { CreateDraftItem } from '../types/mobileInvitation';
 
@@ -122,7 +123,7 @@ export function DraftsProvider({ children }: PropsWithChildren) {
           }
         : {
             ...input,
-            id: `draft-${Date.now()}`,
+            id: `draft-${Date.now()}-${createRandomSuffix()}`,
             createdAt: new Date().toISOString(),
             status: 'draft',
           };

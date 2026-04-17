@@ -8,7 +8,7 @@ import {
   type TextStyle,
 } from 'react-native';
 
-import { usePreferences } from '../contexts/PreferencesContext';
+import { useVisualPreferences } from '../contexts/PreferencesContext';
 
 export type AppTextVariant = 'body' | 'title' | 'display' | 'caption' | 'muted';
 
@@ -55,7 +55,7 @@ export function AppText({
   style,
   ...textProps
 }: AppTextProps) {
-  const { palette, fontScale } = usePreferences();
+  const { palette, fontScale } = useVisualPreferences();
   const variantStyle = VARIANT_STYLES[variant];
   const resolvedColor =
     color ?? (variant === 'muted' ? palette.textMuted : palette.text);

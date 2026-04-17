@@ -3,6 +3,7 @@ import { useMemo } from 'react';
 
 import type {
   CreateDraftItem,
+  MobileDisplayPeriodSummary,
   MobileInvitationCreationInput,
   MobileInvitationDashboard,
   MobileInvitationSeed,
@@ -20,6 +21,7 @@ import {
   InvitationOpsProvider,
   useInvitationOps,
 } from './InvitationOpsContext';
+import { AppFeedbackProvider } from './AppFeedbackContext';
 import { PreferencesProvider, usePreferences } from './PreferencesContext';
 
 type CreateDraftInput = Omit<CreateDraftItem, 'id' | 'createdAt' | 'status'>;
@@ -64,7 +66,10 @@ export type AppStateContextValue = {
   setPublishedState: (published: boolean) => Promise<boolean>;
   extendDisplayPeriod: (
     months?: number
-  ) => Promise<{ startDate: string; endDate: string } | null>;
+  ) => Promise<MobileDisplayPeriodSummary | null>;
+  setDisplayPeriod: (
+    period: MobileDisplayPeriodSummary
+  ) => Promise<MobileDisplayPeriodSummary | null>;
   adjustTicketCount: (amount: number) => Promise<number | null>;
   transferTicketCount: (
     targetPageSlug: string,
@@ -86,11 +91,13 @@ export type AppStateContextValue = {
 export function AppStateProvider({ children }: PropsWithChildren) {
   return (
     <PreferencesProvider>
-      <DraftsProvider>
-        <AuthProvider>
-          <InvitationOpsProvider>{children}</InvitationOpsProvider>
-        </AuthProvider>
-      </DraftsProvider>
+      <AppFeedbackProvider>
+        <DraftsProvider>
+          <AuthProvider>
+            <InvitationOpsProvider>{children}</InvitationOpsProvider>
+          </AuthProvider>
+        </DraftsProvider>
+      </AppFeedbackProvider>
     </PreferencesProvider>
   );
 }
@@ -138,6 +145,7 @@ export function useAppState(): AppStateContextValue {
     setVariantAvailability,
     setPublishedState,
     extendDisplayPeriod,
+    setDisplayPeriod,
     adjustTicketCount,
     transferTicketCount,
     deleteComment,
@@ -174,6 +182,7 @@ export function useAppState(): AppStateContextValue {
       setVariantAvailability,
       setPublishedState,
       extendDisplayPeriod,
+      setDisplayPeriod,
       adjustTicketCount,
       transferTicketCount,
       deleteComment,
@@ -213,6 +222,7 @@ export function useAppState(): AppStateContextValue {
       setFontScalePreference,
       setPublishedState,
       extendDisplayPeriod,
+      setDisplayPeriod,
       adjustTicketCount,
       transferTicketCount,
       setThemePreference,

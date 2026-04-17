@@ -1,9 +1,9 @@
 import { StyleSheet, Text, View } from 'react-native';
 
-import { usePreferences } from '../contexts/PreferencesContext';
+import { useVisualPreferences } from '../contexts/PreferencesContext';
 
 export function BulletList({ items }: { items: readonly string[] }) {
-  const { palette, fontScale } = usePreferences();
+  const { palette, fontScale } = useVisualPreferences();
 
   return (
     <View style={styles.list}>

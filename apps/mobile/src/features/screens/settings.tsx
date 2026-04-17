@@ -1,11 +1,31 @@
+import Constants from 'expo-constants';
 import { StyleSheet, View } from 'react-native';
 
-import { settingsNotes } from '../../constants/content';
 import { AppScreen } from '../../components/AppScreen';
 import { AppText } from '../../components/AppText';
 import { ChoiceChip } from '../../components/ChoiceChip';
 import { SectionCard } from '../../components/SectionCard';
+import { settingsNotes } from '../../constants/content';
 import { usePreferences } from '../../contexts/PreferencesContext';
+
+const UPDATE_GUIDE_ITEMS = [
+  '청첩장 본문이나 샘플 페이지 수정은 웹 배포만으로 반영될 수 있습니다.',
+  '구매, 운영, 설정 같은 앱 화면 변경은 최신 앱 버전 설치가 필요합니다.',
+  '새 기능이 보이지 않거나 오류가 계속되면 앱을 완전히 종료한 뒤 최신 버전으로 다시 실행해 주세요.',
+] as const;
+
+function normalizeVersionLabel(value: unknown) {
+  if (typeof value === 'string') {
+    const trimmed = value.trim();
+    return trimmed.length > 0 ? trimmed : null;
+  }
+
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return String(value);
+  }
+
+  return null;
+}
 
 export default function SettingsScreen() {
   const {
@@ -14,6 +34,13 @@ export default function SettingsScreen() {
     setThemePreference,
     themePreference,
   } = usePreferences();
+
+  const appVersion =
+    normalizeVersionLabel(Constants.expoConfig?.version) ||
+    normalizeVersionLabel(Constants.nativeAppVersion) ||
+    '확인 불가';
+  const buildVersion =
+    normalizeVersionLabel(Constants.nativeBuildVersion) || '개발 빌드';
 
   return (
     <AppScreen
@@ -62,10 +89,38 @@ export default function SettingsScreen() {
         </View>
       </SectionCard>
 
+      <SectionCard
+        title="앱 업데이트 안내"
+        description="새 기능이 반영되지 않거나 같은 오류가 계속되면 현재 앱 버전부터 확인해 주세요."
+        badge={`v${appVersion}`}
+        badgeTone="notice"
+      >
+        <View style={styles.versionRow}>
+          <View style={styles.versionItem}>
+            <AppText variant="caption" style={styles.settingLabel}>
+              현재 버전
+            </AppText>
+            <AppText>{appVersion}</AppText>
+          </View>
+          <View style={styles.versionItem}>
+            <AppText variant="caption" style={styles.settingLabel}>
+              빌드 번호
+            </AppText>
+            <AppText>{buildVersion}</AppText>
+          </View>
+        </View>
+
+        {UPDATE_GUIDE_ITEMS.map((note) => (
+          <AppText key={note} variant="muted" style={styles.accountText}>
+            · {note}
+          </AppText>
+        ))}
+      </SectionCard>
+
       <SectionCard title="안내">
         {settingsNotes.map((note) => (
           <AppText key={note} variant="muted" style={styles.accountText}>
-            • {note}
+            · {note}
           </AppText>
         ))}
       </SectionCard>
@@ -81,6 +136,16 @@ const styles = StyleSheet.create({
   },
   settingLabel: {
     fontWeight: '700',
+  },
+  versionRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+  },
+  versionItem: {
+    flex: 1,
+    minWidth: 120,
+    gap: 4,
   },
   accountText: {
     lineHeight: 20,

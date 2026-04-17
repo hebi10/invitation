@@ -14,6 +14,7 @@ import {
   buildKakaoMapSearchUrl,
   clampNumber,
   hasValidCoordinates,
+  isTemporaryImagePreviewUrl,
   parseAccountsText,
   parseGuidesText,
   parseOptionalNumber,
@@ -35,7 +36,10 @@ export function buildConfigFromForm({
   const maxGalleryImages = dashboard.page.features.maxGalleryImages;
   const nextGalleryImages = form.galleryImages.slice(0, maxGalleryImages);
   const nextGalleryThumbnailUrls = nextGalleryImages.map(
-    (imageUrl, index) => form.galleryImageThumbnailUrls[index]?.trim() || imageUrl
+    (imageUrl, index) => {
+      const thumbnailUrl = form.galleryImageThumbnailUrls[index]?.trim() || imageUrl;
+      return isTemporaryImagePreviewUrl(thumbnailUrl) ? imageUrl : thumbnailUrl;
+    }
   );
   const nextGroomAccounts = parseAccountsText(form.groomAccountsText, 3);
   const nextBrideAccounts = parseAccountsText(form.brideAccountsText, 3);
@@ -201,7 +205,9 @@ export function buildConfigFromForm({
       greetingMessage: form.greetingMessage.trim(),
       greetingAuthor: form.greetingAuthor.trim(),
       galleryImages: nextGalleryImages,
-      coverImageThumbnailUrl: form.coverImageThumbnailUrl.trim(),
+      coverImageThumbnailUrl: isTemporaryImagePreviewUrl(form.coverImageThumbnailUrl)
+        ? form.coverImageUrl.trim()
+        : form.coverImageThumbnailUrl.trim(),
       galleryImageThumbnailUrls: nextGalleryThumbnailUrls,
       venueGuide: nextVenueGuide,
       wreathGuide: nextWreathGuide,

@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 
 import type { LinkedInvitationCard } from '../../../lib/linkedInvitationCards';
 import type {
+  MobileDisplayPeriodSummary,
   MobileInvitationProductTier,
   MobileInvitationThemeKey,
 } from '../../../types/mobileInvitation';
@@ -22,7 +23,10 @@ type UseTicketOperationsOptions = {
   adjustTicketCount: (amount: number) => Promise<number | null>;
   extendDisplayPeriod: (
     months?: number
-  ) => Promise<{ startDate: string; endDate: string } | null>;
+  ) => Promise<MobileDisplayPeriodSummary | null>;
+  setDisplayPeriod: (
+    period: MobileDisplayPeriodSummary
+  ) => Promise<MobileDisplayPeriodSummary | null>;
   setVariantAvailability: (
     variantKey: MobileInvitationThemeKey,
     available: boolean
@@ -37,6 +41,10 @@ type UseTicketOperationsOptions = {
   formatDateLabel: (value: string) => string;
 };
 
+function getThemeLabel(themeKey: MobileInvitationThemeKey) {
+  return themeKey === 'emotional' ? '감성형' : '심플형';
+}
+
 export function useTicketOperations({
   activeLinkedInvitationCard,
   additionalLinkedInvitationCards,
@@ -44,6 +52,7 @@ export function useTicketOperations({
   invitationForm,
   adjustTicketCount,
   extendDisplayPeriod,
+  setDisplayPeriod,
   setVariantAvailability,
   transferTicketCount,
   setNotice,
@@ -174,27 +183,38 @@ export function useTicketOperations({
       return;
     }
 
+    const previousTheme = activeLinkedInvitationCard.defaultTheme;
     invitationForm.setDefaultTheme(ticketThemeSelection);
     setIsApplyingTicketThemeChange(true);
 
     const saved = await invitationForm.persistForm({
-      notice: `기본 디자인을 ${
-        ticketThemeSelection === 'emotional' ? '감성형' : '심플형'
-      }으로 변경했습니다.`,
+      suppressNotice: true,
     });
 
-    setIsApplyingTicketThemeChange(false);
-
     if (!saved) {
+      invitationForm.setDefaultTheme(previousTheme);
+      setIsApplyingTicketThemeChange(false);
       return;
     }
 
     const nextTicketCount = await adjustTicketCount(-1);
     if (nextTicketCount === null) {
+      invitationForm.setDefaultTheme(previousTheme);
+      const rolledBack = await invitationForm.persistForm({
+        suppressNotice: true,
+      });
+      setIsApplyingTicketThemeChange(false);
+      setNotice(
+        rolledBack
+          ? '티켓 차감에 실패해 기본 디자인 변경을 취소했습니다.'
+          : '티켓 차감에 실패했고 기본 디자인 변경 롤백을 확인하지 못했습니다. 새로고침 후 상태를 확인해 주세요.'
+      );
       return;
     }
 
+    setIsApplyingTicketThemeChange(false);
     setTicketModalVisible(false);
+    setNotice(`기본 디자인을 ${getThemeLabel(ticketThemeSelection)}으로 변경했습니다.`);
   };
 
   const handleExtendDisplayPeriod = async () => {
@@ -203,29 +223,38 @@ export function useTicketOperations({
     }
 
     if (activeLinkedInvitationCard.ticketCount < 1) {
-      setNotice('기간을 1개월 연장하려면 티켓 1장이 필요합니다. 먼저 티켓을 구매해 주세요.');
+      setNotice('노출 기간 1개월 연장에는 티켓 1장이 필요합니다. 먼저 티켓을 구매해 주세요.');
       return;
     }
 
+    const previousDisplayPeriod = activeLinkedInvitationCard.displayPeriod;
     setIsExtendingDisplayPeriod(true);
     const displayPeriodResult = await extendDisplayPeriod(1);
-    setIsExtendingDisplayPeriod(false);
 
     if (!displayPeriodResult) {
+      setIsExtendingDisplayPeriod(false);
       return;
     }
 
     const nextTicketCount = await adjustTicketCount(-1);
     if (nextTicketCount === null) {
+      const rolledBack = await setDisplayPeriod(previousDisplayPeriod);
+      setIsExtendingDisplayPeriod(false);
+      setNotice(
+        rolledBack
+          ? '티켓 차감에 실패해 노출 기간 연장을 취소했습니다.'
+          : '티켓 차감에 실패했고 노출 기간 롤백을 확인하지 못했습니다. 새로고침 후 상태를 확인해 주세요.'
+      );
       return;
     }
 
+    const endDateLabel = displayPeriodResult.endDate
+      ? formatDateLabel(displayPeriodResult.endDate)
+      : '종료일 확인 필요';
+
+    setIsExtendingDisplayPeriod(false);
     setTicketModalVisible(false);
-    setNotice(
-      `노출 기간을 1개월 연장했습니다. 새 종료일은 ${formatDateLabel(
-        displayPeriodResult.endDate
-      )}입니다.`
-    );
+    setNotice(`노출 기간을 1개월 연장했습니다. 새 종료일은 ${endDateLabel}입니다.`);
   };
 
   const handleAddExtraVariant = async () => {
@@ -234,9 +263,7 @@ export function useTicketOperations({
     }
 
     if (isAlternateThemeAvailable) {
-      setNotice(
-        `이미 ${alternateTheme === 'emotional' ? '감성형' : '심플형'} 디자인이 추가되어 있습니다.`
-      );
+      setNotice(`이미 ${getThemeLabel(alternateTheme)} 디자인이 추가되어 있습니다.`);
       return;
     }
 
@@ -247,23 +274,27 @@ export function useTicketOperations({
 
     setIsApplyingExtraVariant(true);
     const saved = await setVariantAvailability(alternateTheme, true);
-    setIsApplyingExtraVariant(false);
 
     if (!saved) {
+      setIsApplyingExtraVariant(false);
       return;
     }
 
     const nextTicketCount = await adjustTicketCount(-2);
     if (nextTicketCount === null) {
+      const rolledBack = await setVariantAvailability(alternateTheme, false);
+      setIsApplyingExtraVariant(false);
+      setNotice(
+        rolledBack
+          ? '티켓 차감에 실패해 추가 디자인 적용을 취소했습니다.'
+          : '티켓 차감에 실패했고 추가 디자인 롤백을 확인하지 못했습니다. 새로고침 후 상태를 확인해 주세요.'
+      );
       return;
     }
 
+    setIsApplyingExtraVariant(false);
     setTicketModalVisible(false);
-    setNotice(
-      `같은 청첩장에 ${
-        alternateTheme === 'emotional' ? '감성형' : '심플형'
-      } 디자인을 추가했습니다.`
-    );
+    setNotice(`같은 청첩장에 ${getThemeLabel(alternateTheme)} 디자인을 추가했습니다.`);
   };
 
   const handleTransferTicketCount = async () => {

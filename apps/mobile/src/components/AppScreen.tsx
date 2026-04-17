@@ -10,7 +10,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { usePreferences } from '../contexts/PreferencesContext';
+import { useVisualPreferences } from '../contexts/PreferencesContext';
 
 type AppScreenProps = PropsWithChildren<{
   title: string;
@@ -28,7 +28,7 @@ export function AppScreen({
   scrollRef,
   children,
 }: AppScreenProps) {
-  const { palette, fontScale } = usePreferences();
+  const { palette, fontScale } = useVisualPreferences();
   const insets = useSafeAreaInsets();
 
   return (

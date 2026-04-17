@@ -30,6 +30,25 @@ type UseLinkedInvitationManagerOptions = {
   setNotice: (message: string) => void;
 };
 
+const LINKED_INVITATION_SYNC_BATCH_SIZE = 2;
+const LINKED_INVITATION_BACKGROUND_SYNC_STALE_MS = 5 * 60 * 1000;
+
+function sortLinkedInvitationCardsForSync(
+  cards: LinkedInvitationCard[],
+  activeSlug: string | null
+) {
+  return [...cards].sort((left, right) => {
+    const leftPriority = left.slug === activeSlug ? 0 : 1;
+    const rightPriority = right.slug === activeSlug ? 0 : 1;
+
+    if (leftPriority !== rightPriority) {
+      return leftPriority - rightPriority;
+    }
+
+    return right.updatedAt - left.updatedAt;
+  });
+}
+
 export function useLinkedInvitationManager({
   apiBaseUrl,
   dashboardConfig,
@@ -58,45 +77,78 @@ export function useLinkedInvitationManager({
         return;
       }
 
-      const refreshedCardResults = await Promise.allSettled(
-        stored.map(async (card) => {
-          if (!card.session) {
-            return card;
-          }
+      const activeSlug = pageSummary?.slug ?? session?.pageSlug ?? null;
+      const now = Date.now();
+      const orderedCards = sortLinkedInvitationCardsForSync(stored, activeSlug);
+      const refreshedCardMap = new Map(stored.map((card) => [card.slug, card]));
 
-          const sessionResponse = await validateMobileClientEditorSession(
-            apiBaseUrl,
-            card.slug,
-            card.session.token
+      for (
+        let startIndex = 0;
+        startIndex < orderedCards.length;
+        startIndex += LINKED_INVITATION_SYNC_BATCH_SIZE
+      ) {
+        const batch = orderedCards.slice(
+          startIndex,
+          startIndex + LINKED_INVITATION_SYNC_BATCH_SIZE
+        );
+
+        const batchResults = await Promise.allSettled(
+          batch.map(async (card) => {
+            if (!card.session || !canActivateLinkedInvitationCard(card, now)) {
+              return card;
+            }
+
+            const shouldDelayValidation =
+              card.slug !== activeSlug &&
+              card.updatedAt > 0 &&
+              now - card.updatedAt < LINKED_INVITATION_BACKGROUND_SYNC_STALE_MS;
+
+            if (shouldDelayValidation) {
+              return card;
+            }
+
+            const sessionResponse = await validateMobileClientEditorSession(
+              apiBaseUrl,
+              card.slug,
+              card.session.token
+            );
+
+            if (!sessionResponse.authenticated || !sessionResponse.page) {
+              return card;
+            }
+
+            return mergeLinkedInvitationCard(
+              card,
+              buildLinkedInvitationCardFromPageSummary(sessionResponse.page, {
+                publicUrl: sessionResponse.links?.publicUrl ?? card.publicUrl,
+                links: sessionResponse.links,
+                config: sessionResponse.dashboardPage?.config,
+                updatedAt: Date.now(),
+                ticketCount: sessionResponse.page.ticketCount,
+                session: card.session,
+              })
+            );
+          })
+        );
+
+        batchResults.forEach((result, index) => {
+          const sourceCard = batch[index];
+          refreshedCardMap.set(
+            sourceCard.slug,
+            result.status === 'fulfilled' ? result.value : sourceCard
           );
+        });
+      }
 
-          if (!sessionResponse.authenticated || !sessionResponse.page) {
-            return card;
-          }
-
-          return mergeLinkedInvitationCard(
-            card,
-            buildLinkedInvitationCardFromPageSummary(sessionResponse.page, {
-              publicUrl: sessionResponse.links?.publicUrl ?? card.publicUrl,
-              links: sessionResponse.links,
-              config: sessionResponse.dashboardPage?.config,
-              updatedAt: Date.now(),
-              ticketCount: sessionResponse.page.ticketCount,
-              session: card.session,
-            })
-          );
-        })
-      );
-
-      const refreshedCards = refreshedCardResults.map((result, index) =>
-        result.status === 'fulfilled' ? result.value : stored[index]
+      const refreshedCards = stored.map(
+        (card) => refreshedCardMap.get(card.slug) ?? card
       );
 
       setLinkedInvitationCards(refreshedCards);
       setHasLoadedLinkedInvitationCards(true);
       await persistLinkedInvitationCards(refreshedCards);
     },
-    [apiBaseUrl]
+    [apiBaseUrl, pageSummary?.slug, session?.pageSlug]
   );
 
   const activeLinkedInvitationCard = useMemo<LinkedInvitationCard | null>(() => {

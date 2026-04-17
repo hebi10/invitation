@@ -1,12 +1,15 @@
-import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useRouter } from 'expo-router';
+import { useCallback, useMemo, useRef, useState } from 'react';
 
 import type { useAuth } from '../../../contexts/AuthContext';
 import type { useDrafts } from '../../../contexts/DraftsContext';
 import type {
+  CreateDraftItem,
   MobileInvitationProductTier,
   MobileInvitationThemeKey,
 } from '../../../types/mobileInvitation';
+import { useCreateDraftSync } from './useCreateDraftSync';
+import { useCreateTicketIntent } from './useCreateTicketIntent';
 import {
   CREATE_STEPS,
   MAX_TICKET_COUNT,
@@ -15,8 +18,6 @@ import {
   buildCreateValidationRules,
   calculateTicketPrice,
   designThemes,
-  isValidCreateStepProductTier,
-  isValidCreateStepThemeKey,
   servicePlans,
   type CreateStepKey,
 } from '../shared';
@@ -43,17 +44,6 @@ export function useCreateForm({
   isExpoWebPreview,
 }: UseCreateFormOptions) {
   const router = useRouter();
-  const {
-    draftId: draftIdParam,
-    ticketIntent: ticketIntentParam,
-    targetPlan: targetPlanParam,
-    targetTheme: targetThemeParam,
-  } = useLocalSearchParams<{
-    draftId?: string | string[];
-    ticketIntent?: string | string[];
-    targetPlan?: string | string[];
-    targetTheme?: string | string[];
-  }>();
 
   const [selectedPlan, setSelectedPlan] =
     useState<MobileInvitationProductTier>('standard');
@@ -69,10 +59,8 @@ export function useCreateForm({
   const [notice, setNotice] = useState('');
   const [paymentModalVisible, setPaymentModalVisible] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [editingDraftId, setEditingDraftId] = useState<string | null>(null);
-  const [loadedDraftId, setLoadedDraftId] = useState<string | null>(null);
-  const [handledTicketIntentKey, setHandledTicketIntentKey] = useState<string | null>(null);
   const [currentStep, setCurrentStep] = useState<CreateStepKey>('info');
+  const lastDraftSnapshotRef = useRef('');
 
   const selectedPlanInfo = useMemo(
     () => servicePlans.find((plan) => plan.tier === selectedPlan) ?? servicePlans[0],
@@ -87,7 +75,10 @@ export function useCreateForm({
       (feature) => !feature.includes('전체 포함')
     );
 
-    return (coreFeatures.length > 0 ? coreFeatures : [...selectedPlanInfo.features]).slice(0, 2);
+    return (coreFeatures.length > 0 ? coreFeatures : [...selectedPlanInfo.features]).slice(
+      0,
+      2
+    );
   }, [selectedPlanInfo]);
   const ticketPrice = useMemo(() => calculateTicketPrice(ticketCount), [ticketCount]);
   const discountedBundleCount = Math.floor(ticketCount / TICKET_DISCOUNT_BUNDLE_SIZE);
@@ -102,17 +93,6 @@ export function useCreateForm({
     const baseUrl = apiBaseUrl.replace(/\/+$/g, '');
     return slugBase ? `${baseUrl}/${slugBase}` : `${baseUrl}/...`;
   }, [apiBaseUrl, slugBase]);
-
-  const normalizedDraftId = Array.isArray(draftIdParam) ? draftIdParam[0] : draftIdParam;
-  const normalizedTicketIntent = Array.isArray(ticketIntentParam)
-    ? ticketIntentParam[0]
-    : ticketIntentParam;
-  const normalizedTargetPlan = Array.isArray(targetPlanParam)
-    ? targetPlanParam[0]
-    : targetPlanParam;
-  const normalizedTargetTheme = Array.isArray(targetThemeParam)
-    ? targetThemeParam[0]
-    : targetThemeParam;
 
   const validationRules = useMemo(
     () =>
@@ -192,7 +172,7 @@ export function useCreateForm({
     }
 
     if (currentStep === 'ticket') {
-      return '3단계 · 티켓 수량 확인 중';
+      return '3단계 · 추가 티켓 확인 중';
     }
 
     if (currentStep === 'selection') {
@@ -211,78 +191,149 @@ export function useCreateForm({
     validationMessages.length,
   ]);
 
-  useEffect(() => {
-    if (!normalizedDraftId || normalizedDraftId === loadedDraftId) {
-      return;
-    }
-
-    const selectedDraft = drafts.find((draft) => draft.id === normalizedDraftId);
-    if (!selectedDraft) {
-      return;
-    }
-
-    setSelectedPlan(selectedDraft.servicePlan);
-    setSelectedTheme(selectedDraft.theme);
-    setGroomKoreanName(selectedDraft.groomName);
-    setBrideKoreanName(selectedDraft.brideName);
-    setGroomEnglishName(selectedDraft.groomEnglishName);
-    setBrideEnglishName(selectedDraft.brideEnglishName);
-    setPassword('');
-    setConfirmPassword('');
-    setTicketCount(selectedDraft.ticketCount);
-    setEditingDraftId(selectedDraft.id);
-    setLoadedDraftId(selectedDraft.id);
-    setPaymentModalVisible(false);
-    clearAuthError();
-    setNotice('저장된 초안을 불러왔습니다. 비밀번호만 다시 입력하면 이어서 진행할 수 있습니다.');
-    router.replace('/create');
-  }, [clearAuthError, drafts, loadedDraftId, normalizedDraftId, router]);
-
-  useEffect(() => {
-    if (!normalizedTicketIntent) {
-      return;
-    }
-
-    const intentKey = [
-      normalizedTicketIntent,
-      normalizedTargetPlan ?? '',
-      normalizedTargetTheme ?? '',
-    ].join(':');
-
-    if (handledTicketIntentKey === intentKey) {
-      return;
-    }
-
-    if (isValidCreateStepProductTier(normalizedTargetPlan)) {
-      setSelectedPlan(normalizedTargetPlan);
-    }
-
-    if (isValidCreateStepThemeKey(normalizedTargetTheme)) {
-      setSelectedTheme(normalizedTargetTheme);
-    }
-
-    if (normalizedTicketIntent === 'extend') {
-      setNotice('티켓 사용: 기간 1개월 연장 준비를 위해 구매 탭으로 이동했습니다.');
-    } else if (normalizedTicketIntent === 'extra-page') {
-      setNotice('티켓 사용: 추가 청첩장 생성을 진행할 수 있습니다.');
-    } else if (normalizedTicketIntent === 'extra-variant') {
-      setNotice('티켓 사용: 같은 청첩장에 다른 디자인 추가 구매 흐름으로 이동했습니다.');
-    } else if (normalizedTicketIntent === 'upgrade') {
-      setNotice('티켓 사용: 서비스 업그레이드 구매 흐름으로 이동했습니다.');
-    }
-
-    setCurrentStep('ticket');
-    setHandledTicketIntentKey(intentKey);
-  }, [
-    handledTicketIntentKey,
-    normalizedTargetPlan,
-    normalizedTargetTheme,
-    normalizedTicketIntent,
-  ]);
-
   const moveToStep = useCallback((nextStep: CreateStepKey) => {
     setCurrentStep(nextStep);
   }, []);
+
+  const buildDraftPayload = useCallback(
+    (
+      overrides: Partial<{
+        servicePlan: MobileInvitationProductTier;
+        theme: MobileInvitationThemeKey;
+        pageIdentifier: string;
+        groomName: string;
+        brideName: string;
+        groomEnglishName: string;
+        brideEnglishName: string;
+        estimatedPrice: number;
+        ticketCount: number;
+      }> = {}
+    ) => ({
+      servicePlan: overrides.servicePlan ?? selectedPlan,
+      theme: overrides.theme ?? selectedTheme ?? 'emotional',
+      pageIdentifier: overrides.pageIdentifier ?? slugBase,
+      groomName: overrides.groomName ?? groomKoreanName.trim(),
+      brideName: overrides.brideName ?? brideKoreanName.trim(),
+      groomEnglishName: overrides.groomEnglishName ?? groomEnglishName.trim(),
+      brideEnglishName: overrides.brideEnglishName ?? brideEnglishName.trim(),
+      weddingDate: '',
+      venue: '',
+      estimatedPrice: overrides.estimatedPrice ?? totalPrice,
+      ticketCount: overrides.ticketCount ?? ticketCount,
+      notes: '',
+    }),
+    [
+      brideEnglishName,
+      brideKoreanName,
+      groomEnglishName,
+      groomKoreanName,
+      selectedPlan,
+      selectedTheme,
+      slugBase,
+      ticketCount,
+      totalPrice,
+    ]
+  );
+
+  const applyDraft = useCallback(
+    (draft: CreateDraftItem) => {
+      setSelectedPlan(draft.servicePlan);
+      setSelectedTheme(draft.theme);
+      setGroomKoreanName(draft.groomName);
+      setBrideKoreanName(draft.brideName);
+      setGroomEnglishName(draft.groomEnglishName);
+      setBrideEnglishName(draft.brideEnglishName);
+      setPassword('');
+      setConfirmPassword('');
+      setTicketCount(draft.ticketCount);
+      setPaymentModalVisible(false);
+      setCurrentStep('info');
+      lastDraftSnapshotRef.current = JSON.stringify(
+        buildDraftPayload({
+          servicePlan: draft.servicePlan,
+          theme: draft.theme,
+          pageIdentifier: draft.pageIdentifier,
+          groomName: draft.groomName,
+          brideName: draft.brideName,
+          groomEnglishName: draft.groomEnglishName,
+          brideEnglishName: draft.brideEnglishName,
+          estimatedPrice: draft.estimatedPrice,
+          ticketCount: draft.ticketCount,
+        })
+      );
+    },
+    [buildDraftPayload]
+  );
+
+  const { editingDraftId, setEditingDraftId, resetDraftSync } = useCreateDraftSync({
+    drafts,
+    clearAuthError,
+    setNotice,
+    applyDraft,
+  });
+
+  useCreateTicketIntent({
+    setSelectedPlan,
+    setSelectedTheme,
+    setNotice,
+    moveToStep,
+  });
+
+  const hasDraftableInput = useMemo(
+    () =>
+      Boolean(
+        groomKoreanName.trim() ||
+          brideKoreanName.trim() ||
+          groomEnglishName.trim() ||
+          brideEnglishName.trim() ||
+          password.trim() ||
+          confirmPassword.trim() ||
+          selectedTheme ||
+          ticketCount > 0 ||
+          selectedPlan !== 'standard'
+      ),
+    [
+      brideEnglishName,
+      brideKoreanName,
+      confirmPassword,
+      groomEnglishName,
+      groomKoreanName,
+      password,
+      selectedPlan,
+      selectedTheme,
+      ticketCount,
+    ]
+  );
+
+  const canAutoSaveProgress = useMemo(
+    () => Boolean(groomKoreanName.trim() && brideKoreanName.trim()),
+    [brideKoreanName, groomKoreanName]
+  );
+
+  const persistDraft = useCallback(
+    async (
+      theme: MobileInvitationThemeKey,
+      options: {
+        silent?: boolean;
+        notice?: string;
+      } = {}
+    ) => {
+      const nextDraftPayload = buildDraftPayload({ theme });
+      const savedDraftId = await saveDraft(nextDraftPayload, {
+        draftId: editingDraftId ?? undefined,
+      });
+
+      setEditingDraftId(savedDraftId);
+      lastDraftSnapshotRef.current = JSON.stringify(nextDraftPayload);
+
+      if (!options.silent && options.notice) {
+        setNotice(options.notice);
+      }
+
+      return savedDraftId;
+    },
+    [buildDraftPayload, editingDraftId, saveDraft, setEditingDraftId]
+  );
 
   const getBlockedStepForTarget = useCallback(
     (targetStep: CreateStepKey) => {
@@ -293,7 +344,9 @@ export function useCreateForm({
       if (infoValidationMessages.length > 0) {
         return {
           step: 'info' as const,
-          message: infoValidationMessages[0] ?? '기본 정보와 보안 설정을 먼저 확인해 주세요.',
+          message:
+            infoValidationMessages[0] ??
+            '기본 정보와 보안 설정을 먼저 확인해 주세요.',
         };
       }
 
@@ -305,7 +358,8 @@ export function useCreateForm({
         return {
           step: 'selection' as const,
           message:
-            selectionValidationMessages[0] ?? '서비스와 디자인 선택을 먼저 확인해 주세요.',
+            selectionValidationMessages[0] ??
+            '서비스와 디자인 선택을 먼저 확인해 주세요.',
         };
       }
 
@@ -351,13 +405,13 @@ export function useCreateForm({
     setPassword('');
     setConfirmPassword('');
     setTicketCount(0);
-    setEditingDraftId(null);
-    setLoadedDraftId(null);
+    resetDraftSync();
+    lastDraftSnapshotRef.current = '';
     setPaymentModalVisible(false);
     setCurrentStep('info');
     setNotice('');
     clearAuthError();
-  }, [clearAuthError]);
+  }, [clearAuthError, resetDraftSync]);
 
   const updateTicketCount = useCallback((nextCount: number) => {
     setTicketCount(Math.max(0, Math.min(MAX_TICKET_COUNT, nextCount)));
@@ -369,7 +423,7 @@ export function useCreateForm({
 
   const handleSaveDraft = useCallback(async () => {
     if (!groomKoreanName.trim() || !brideKoreanName.trim()) {
-      setNotice('초안 저장 전에는 신랑·신부 한글 이름을 먼저 입력해 주세요.');
+      setNotice('초안 저장 전에는 신랑과 신부 이름을 먼저 입력해 주세요.');
       moveToStep('info');
       return;
     }
@@ -380,42 +434,34 @@ export function useCreateForm({
       return;
     }
 
-    const savedDraftId = await saveDraft(
-      {
-        servicePlan: selectedPlan,
-        theme: selectedTheme,
-        pageIdentifier: slugBase,
-        groomName: groomKoreanName.trim(),
-        brideName: brideKoreanName.trim(),
-        groomEnglishName: groomEnglishName.trim(),
-        brideEnglishName: brideEnglishName.trim(),
-        weddingDate: '',
-        venue: '',
-        estimatedPrice: totalPrice,
-        ticketCount,
-        notes: '',
-      },
-      {
-        draftId: editingDraftId ?? undefined,
-      }
-    );
+    await persistDraft(selectedTheme, {
+      notice:
+        '시작 초안을 저장했습니다. 입력 중인 내용은 홈에서도 다시 이어서 작성할 수 있습니다.',
+    });
+  }, [brideKoreanName, groomKoreanName, moveToStep, persistDraft, selectedTheme]);
 
-    setEditingDraftId(savedDraftId);
-    setLoadedDraftId(savedDraftId);
-    setNotice('제작 초안을 저장했습니다. 입력한 내용은 유지되고 홈에서도 이어서 작성할 수 있습니다.');
+  const autoSaveProgress = useCallback(async () => {
+    if (isSubmitting || !hasDraftableInput || !canAutoSaveProgress) {
+      return false;
+    }
+
+    const nextDraftPayload = buildDraftPayload();
+    const nextSnapshot = JSON.stringify(nextDraftPayload);
+
+    if (lastDraftSnapshotRef.current === nextSnapshot) {
+      return false;
+    }
+
+    await persistDraft(nextDraftPayload.theme, {
+      silent: true,
+    });
+    return true;
   }, [
-    brideEnglishName,
-    brideKoreanName,
-    editingDraftId,
-    groomEnglishName,
-    groomKoreanName,
-    moveToStep,
-    saveDraft,
-    selectedPlan,
-    selectedTheme,
-    slugBase,
-    ticketCount,
-    totalPrice,
+    buildDraftPayload,
+    canAutoSaveProgress,
+    hasDraftableInput,
+    isSubmitting,
+    persistDraft,
   ]);
 
   const handleOpenPaymentModal = useCallback(() => {
@@ -423,7 +469,7 @@ export function useCreateForm({
 
     if (isExpoWebPreview) {
       setNotice(
-        'Expo 웹 빌드에서는 실제 페이지 생성이 차단되어 있습니다. 네이티브 앱이나 Next 웹 편집기를 사용해 주세요.'
+        'Expo 웹 빌드에서는 실제 페이지 생성 요청이 차단되어 있습니다. 라이브 앱이나 Next 운영 환경을 사용해 주세요.'
       );
       return;
     }
@@ -480,7 +526,7 @@ export function useCreateForm({
   const handleConfirmCreate = useCallback(async () => {
     if (isExpoWebPreview) {
       setNotice(
-        'Expo 웹 빌드에서는 실제 페이지를 생성할 수 없습니다. 네이티브 앱이나 Next 웹 편집기를 사용해 주세요.'
+        'Expo 웹 빌드에서는 실제 페이지를 생성할 수 없습니다. 라이브 앱이나 Next 운영 환경을 사용해 주세요.'
       );
       setPaymentModalVisible(false);
       return;
@@ -519,7 +565,7 @@ export function useCreateForm({
     }
 
     resetForm();
-    setNotice('청첩장을 생성했습니다. 운영 탭에서 예식 정보를 이어서 입력해 주세요.');
+    setNotice('청첩장을 생성했습니다. 운영 탭에서 식장 정보를 이어서 입력해 주세요.');
     router.replace('/manage');
   }, [
     brideEnglishName,
@@ -587,9 +633,11 @@ export function useCreateForm({
     basicValidationMessages,
     securityValidationMessages,
     selectionValidationMessages,
+    hasDraftableInput,
     handleStepTabPress,
     handlePreviousStep,
     handleSaveDraft,
+    autoSaveProgress,
     handlePrimaryStepAction,
     handleConfirmCreate,
   };

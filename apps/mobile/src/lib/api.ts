@@ -1,6 +1,7 @@
 ﻿import Constants from 'expo-constants';
 
 import type {
+  MobileDisplayPeriodSummary,
   MobileEditableInvitationPageConfig,
   MobileInvitationCreationInput,
   MobileInvitationCreationResponse,
@@ -105,6 +106,9 @@ const ERROR_MESSAGE_MAP: Record<string, string> = {
   'Target page slug and session are required.':
     '티켓을 이동할 대상 청첩장 정보를 확인해 주세요.',
   'Transfer ticket count amount is required.': '이동할 티켓 수량이 올바르지 않습니다.',
+  'Display period enabled state is required.': '노출 기간 활성화 상태가 올바르지 않습니다.',
+  'Display period dates are required.': '노출 기간 시작일과 종료일을 확인해 주세요.',
+  'Display period date is invalid.': '노출 기간 날짜 형식이 올바르지 않습니다.',
   'Target page slug must be different.': '현재 청첩장과 다른 연동 페이지를 선택해 주세요.',
   'Target invitation page authorization failed.':
     '대상 청첩장의 연동 정보가 만료되었습니다. 다시 연동해 주세요.',
@@ -149,6 +153,34 @@ export function normalizeApiBaseUrl(value: string) {
 function buildApiUrl(baseUrl: string, path: string) {
   const normalizedBaseUrl = normalizeApiBaseUrl(baseUrl);
   return `${normalizedBaseUrl}${path.startsWith('/') ? path : `/${path}`}`;
+}
+
+const DEFAULT_GET_RETRY_COUNT = 1;
+const RETRYABLE_STATUS_CODES = new Set([408, 429, 500, 502, 503, 504]);
+
+async function waitForRetry(delayMs: number) {
+  await new Promise((resolve) => setTimeout(resolve, delayMs));
+}
+
+async function fetchWithRetry(input: RequestInfo | URL, init: RequestInit = {}) {
+  const method = (init.method ?? 'GET').toUpperCase();
+  const maxRetries = method === 'GET' ? DEFAULT_GET_RETRY_COUNT : 0;
+
+  for (let attempt = 0; ; attempt += 1) {
+    try {
+      const response = await fetch(input, init);
+
+      if (attempt >= maxRetries || !RETRYABLE_STATUS_CODES.has(response.status)) {
+        return response;
+      }
+    } catch (error) {
+      if (attempt >= maxRetries) {
+        throw error;
+      }
+    }
+
+    await waitForRetry(250 * (attempt + 1));
+  }
 }
 
 async function readJsonResponse<T>(response: Response): Promise<T> {
@@ -210,7 +242,7 @@ export async function loginMobileClientEditor(
   password: string
 ) {
   return readJsonResponse<MobileLoginResponse>(
-    await fetch(buildApiUrl(baseUrl, '/api/mobile/client-editor/login'), {
+    await fetchWithRetry(buildApiUrl(baseUrl, '/api/mobile/client-editor/login'), {
       method: 'POST',
       headers: {
         ...createHeaders(),
@@ -229,7 +261,7 @@ export async function createMobileInvitationDraft(
   payload: MobileInvitationCreationInput
 ) {
   return readJsonResponse<MobileInvitationCreationResponse>(
-    await fetch(buildApiUrl(baseUrl, '/api/mobile/client-editor/drafts'), {
+    await fetchWithRetry(buildApiUrl(baseUrl, '/api/mobile/client-editor/drafts'), {
       method: 'POST',
       headers: {
         ...createHeaders(),
@@ -256,7 +288,7 @@ export async function validateMobileClientEditorSession(
 ) {
   const params = new URLSearchParams({ pageSlug });
   return readJsonResponse<MobileSessionResponse>(
-    await fetch(
+    await fetchWithRetry(
       buildApiUrl(baseUrl, `/api/mobile/client-editor/session?${params.toString()}`),
       {
         headers: createHeaders(token),
@@ -279,7 +311,7 @@ export async function fetchMobileInvitationDashboard(
   }
 
   return readJsonResponse<MobileInvitationDashboard>(
-    await fetch(
+    await fetchWithRetry(
       buildApiUrl(
         baseUrl,
         `/api/mobile/client-editor/pages/${encodeURIComponent(pageSlug)}/dashboard${
@@ -299,7 +331,7 @@ export async function fetchMobileEditableInvitationPageConfig(
   token: string
 ) {
   return readJsonResponse<MobileEditableInvitationPageConfig>(
-    await fetch(
+    await fetchWithRetry(
       buildApiUrl(baseUrl, `/api/mobile/client-editor/pages/${encodeURIComponent(pageSlug)}`),
       {
         headers: createHeaders(token),
@@ -319,7 +351,7 @@ export async function saveMobileInvitationPageConfig(
   }
 ) {
   return readJsonResponse<{ success: boolean }>(
-    await fetch(
+    await fetchWithRetry(
       buildApiUrl(baseUrl, `/api/mobile/client-editor/pages/${encodeURIComponent(pageSlug)}`),
       {
         method: 'POST',
@@ -348,7 +380,7 @@ export async function setMobileInvitationPublishedState(
   defaultTheme?: MobileInvitationThemeKey
 ) {
   return readJsonResponse<{ success: boolean }>(
-    await fetch(
+    await fetchWithRetry(
       buildApiUrl(baseUrl, `/api/mobile/client-editor/pages/${encodeURIComponent(pageSlug)}`),
       {
         method: 'POST',
@@ -378,7 +410,7 @@ export async function setMobileInvitationVariantAvailability(
   }
 ) {
   return readJsonResponse<{ success: boolean }>(
-    await fetch(
+    await fetchWithRetry(
       buildApiUrl(baseUrl, `/api/mobile/client-editor/pages/${encodeURIComponent(pageSlug)}`),
       {
         method: 'POST',
@@ -405,7 +437,7 @@ export async function adjustMobileInvitationTicketCount(
   amount: number
 ) {
   return readJsonResponse<{ success: boolean; ticketCount: number }>(
-    await fetch(
+    await fetchWithRetry(
       buildApiUrl(baseUrl, `/api/mobile/client-editor/pages/${encodeURIComponent(pageSlug)}`),
       {
         method: 'POST',
@@ -428,8 +460,13 @@ export async function extendMobileInvitationDisplayPeriod(
   token: string,
   months = 1
 ) {
-  return readJsonResponse<{ success: boolean; startDate: string; endDate: string }>(
-    await fetch(
+  return readJsonResponse<{
+    success: boolean;
+    enabled: boolean;
+    startDate: string | null;
+    endDate: string | null;
+  }>(
+    await fetchWithRetry(
       buildApiUrl(baseUrl, `/api/mobile/client-editor/pages/${encodeURIComponent(pageSlug)}`),
       {
         method: 'POST',
@@ -440,6 +477,37 @@ export async function extendMobileInvitationDisplayPeriod(
         body: JSON.stringify({
           action: 'extendDisplayPeriod',
           months,
+        }),
+      }
+    )
+  );
+}
+
+export async function setMobileInvitationDisplayPeriod(
+  baseUrl: string,
+  pageSlug: string,
+  token: string,
+  period: MobileDisplayPeriodSummary
+) {
+  return readJsonResponse<{
+    success: boolean;
+    enabled: boolean;
+    startDate: string | null;
+    endDate: string | null;
+  }>(
+    await fetchWithRetry(
+      buildApiUrl(baseUrl, `/api/mobile/client-editor/pages/${encodeURIComponent(pageSlug)}`),
+      {
+        method: 'POST',
+        headers: {
+          ...createHeaders(token),
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          action: 'setDisplayPeriod',
+          enabled: period.enabled,
+          startDate: period.startDate,
+          endDate: period.endDate,
         }),
       }
     )
@@ -462,7 +530,7 @@ export async function transferMobileInvitationTicketCount(
     targetTicketCount: number;
     targetPageSlug: string;
   }>(
-    await fetch(
+    await fetchWithRetry(
       buildApiUrl(baseUrl, `/api/mobile/client-editor/pages/${encodeURIComponent(pageSlug)}`),
       {
         method: 'POST',
@@ -488,7 +556,7 @@ export async function deleteMobileInvitationComment(
   token: string
 ) {
   return readJsonResponse<{ success: boolean }>(
-    await fetch(
+    await fetchWithRetry(
       buildApiUrl(
         baseUrl,
         `/api/mobile/client-editor/pages/${encodeURIComponent(pageSlug)}/comments/${encodeURIComponent(commentId)}`
@@ -503,7 +571,7 @@ export async function deleteMobileInvitationComment(
 
 export async function fetchMobileInvitationMusicLibrary(baseUrl: string) {
   return readJsonResponse<MobileMusicLibraryResponse>(
-    await fetch(buildApiUrl(baseUrl, '/api/mobile/client-editor/music-library'), {
+    await fetchWithRetry(buildApiUrl(baseUrl, '/api/mobile/client-editor/music-library'), {
       headers: createHeaders(),
       cache: 'no-store',
     })
@@ -519,10 +587,13 @@ export async function fetchMobileKakaoAddressSearch(baseUrl: string, query: stri
   const params = new URLSearchParams({ query: normalizedQuery });
 
   return readJsonResponse<MobileKakaoAddressSearchResult>(
-    await fetch(buildApiUrl(baseUrl, `/api/kakao/local/address-search?${params.toString()}`), {
-      headers: createHeaders(),
-      cache: 'no-store',
-    })
+    await fetchWithRetry(
+      buildApiUrl(baseUrl, `/api/kakao/local/address-search?${params.toString()}`),
+      {
+        headers: createHeaders(),
+        cache: 'no-store',
+      }
+    )
   );
 }
 
@@ -533,7 +604,7 @@ export async function uploadMobileInvitationImage(
   formData: FormData
 ) {
   return readJsonResponse<MobileImageUploadResponse>(
-    await fetch(
+    await fetchWithRetry(
       buildApiUrl(
         baseUrl,
         `/api/mobile/client-editor/pages/${encodeURIComponent(pageSlug)}/images`

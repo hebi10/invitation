@@ -1,5 +1,5 @@
 import { useRouter } from 'expo-router';
-import { Platform, StyleSheet, View } from 'react-native';
+import { Alert, Platform, StyleSheet, View } from 'react-native';
 
 import { ActionButton } from '../../components/ActionButton';
 import { AppScreen } from '../../components/AppScreen';
@@ -8,6 +8,7 @@ import { BulletList } from '../../components/BulletList';
 import { SectionCard } from '../../components/SectionCard';
 import { WebPreviewNotice } from '../../components/WebPreviewNotice';
 import { quickStartItems } from '../../constants/content';
+import { useAppFeedback } from '../../contexts/AppFeedbackContext';
 import { useDrafts } from '../../contexts/DraftsContext';
 import { usePreferences } from '../../contexts/PreferencesContext';
 import { formatPrice } from '../../lib/format';
@@ -15,6 +16,7 @@ import { formatPrice } from '../../lib/format';
 export default function HomeScreen() {
   const router = useRouter();
   const isExpoWebPreview = Platform.OS === 'web';
+  const { showToast } = useAppFeedback();
   const { drafts, removeDraft } = useDrafts();
   const { palette } = usePreferences();
 
@@ -23,6 +25,30 @@ export default function HomeScreen() {
       pathname: '/create',
       params: { draftId },
     });
+  };
+
+  const handleDeleteDraft = (draftId: string) => {
+    Alert.alert(
+      '초안을 삭제할까요?',
+      '삭제한 초안은 다시 복구할 수 없습니다.',
+      [
+        {
+          text: '취소',
+          style: 'cancel',
+        },
+        {
+          text: '삭제',
+          style: 'destructive',
+          onPress: () => {
+            void removeDraft(draftId).then(() => {
+              showToast('초안을 삭제했습니다.', {
+                tone: 'success',
+              });
+            });
+          },
+        },
+      ]
+    );
   };
 
   return (
@@ -98,7 +124,7 @@ export default function HomeScreen() {
                 <ActionButton variant="secondary" onPress={() => handleEditDraft(draft.id)}>
                   이어서 작성
                 </ActionButton>
-                <ActionButton variant="secondary" onPress={() => void removeDraft(draft.id)}>
+                <ActionButton variant="secondary" onPress={() => handleDeleteDraft(draft.id)}>
                   삭제
                 </ActionButton>
               </View>

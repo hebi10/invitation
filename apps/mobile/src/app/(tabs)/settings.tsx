@@ -1,10 +1,5 @@
-import { ProtectedTabRoute } from '../../components/ProtectedTabRoute';
-import SettingsScreenContent from '../../features/_protected/settings';
+import SettingsScreenContent from '../../features/screens/settings';
 
 export default function SettingsScreen() {
-  return (
-    <ProtectedTabRoute>
-      <SettingsScreenContent />
-    </ProtectedTabRoute>
-  );
+  return <SettingsScreenContent />;
 }

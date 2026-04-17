@@ -47,6 +47,22 @@ export const manageStyles = StyleSheet.create({
     flexBasis: '48%',
     flexGrow: 1,
   },
+  noticeBanner: {
+    borderWidth: 1,
+    borderRadius: 16,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+  },
+  secondaryActionCard: {
+    borderWidth: 1,
+    borderRadius: 16,
+    paddingHorizontal: 12,
+    paddingVertical: 12,
+    gap: 10,
+  },
+  secondaryActionLabel: {
+    fontWeight: '700',
+  },
   noticeText: {
     lineHeight: 20,
   },
@@ -63,6 +79,16 @@ export const manageStyles = StyleSheet.create({
     borderRadius: 18,
     paddingHorizontal: 14,
     paddingVertical: 16,
+  },
+  uploadProgressCard: {
+    borderWidth: 1,
+    borderRadius: 18,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    gap: 4,
+  },
+  uploadProgressTitle: {
+    fontWeight: '800',
   },
   galleryList: {
     gap: 10,

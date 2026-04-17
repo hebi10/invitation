@@ -82,7 +82,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
     setSession(null);
     setPendingManageOnboarding(null);
     setInitialDashboardSeed(null);
-    await setStoredString(SESSION_STORAGE_KEY, null);
+    await setStoredString(SESSION_STORAGE_KEY, null, { sensitive: true });
   }, []);
 
   const hasSessionExpired = useCallback((candidateSession: MobileSessionSummary) => {
@@ -133,7 +133,9 @@ export function AuthProvider({ children }: PropsWithChildren) {
           ticketCount: response.page?.ticketCount ?? 0,
         });
         setAuthError(null);
-        await setStoredJson(SESSION_STORAGE_KEY, candidateSession);
+        await setStoredJson(SESSION_STORAGE_KEY, candidateSession, {
+          sensitive: true,
+        });
 
         if (response.page) {
           await upsertLinkedInvitationCard(
@@ -195,7 +197,8 @@ export function AuthProvider({ children }: PropsWithChildren) {
     const restore = async () => {
       const storedSession = await getStoredJson<MobileSessionSummary | null>(
         SESSION_STORAGE_KEY,
-        null
+        null,
+        { sensitive: true }
       );
 
       if (!mounted) {
@@ -266,7 +269,9 @@ export function AuthProvider({ children }: PropsWithChildren) {
           ticketCount: response.page?.ticketCount ?? 0,
         });
         setAuthError(null);
-        await setStoredJson(SESSION_STORAGE_KEY, response.session);
+        await setStoredJson(SESSION_STORAGE_KEY, response.session, {
+          sensitive: true,
+        });
 
         if (response.page) {
           await upsertLinkedInvitationCard(
@@ -314,7 +319,9 @@ export function AuthProvider({ children }: PropsWithChildren) {
           createdAt: Date.now(),
         });
         setAuthError(null);
-        await setStoredJson(SESSION_STORAGE_KEY, response.session);
+        await setStoredJson(SESSION_STORAGE_KEY, response.session, {
+          sensitive: true,
+        });
 
         if (response.page) {
           await upsertLinkedInvitationCard(

@@ -1,9 +1,12 @@
-import { Image, View } from 'react-native';
+import { memo } from 'react';
+import { Image } from 'expo-image';
+import { View } from 'react-native';
 
 import { ActionButton } from '../../../../components/ActionButton';
 import { AppText } from '../../../../components/AppText';
 import { SectionCard } from '../../../../components/SectionCard';
-import { usePreferences } from '../../../../contexts/PreferencesContext';
+import { useVisualPreferences } from '../../../../contexts/PreferencesContext';
+import type { ImageUploadProgressState } from '../../hooks/useImageUpload';
 import type { ManageGalleryPreviewItem } from '../../shared';
 import { manageStyles } from '../../manageStyles';
 
@@ -12,27 +15,123 @@ type ImagesEditorStepProps = {
   galleryPreviewItems: ManageGalleryPreviewItem[];
   maxGalleryImageCount: number;
   uploadingImageKind: 'cover' | 'gallery' | null;
+  uploadProgress: ImageUploadProgressState | null;
   onUploadImage: (assetKind: 'cover' | 'gallery') => void | Promise<void>;
   onMoveGalleryImage: (index: number, direction: 'up' | 'down') => void;
   onRemoveGalleryImage: (index: number) => void;
 };
+
+type GalleryPreviewCardProps = {
+  image: ManageGalleryPreviewItem;
+  index: number;
+  isFirst: boolean;
+  isLast: boolean;
+  onMoveGalleryImage: (index: number, direction: 'up' | 'down') => void;
+  onRemoveGalleryImage: (index: number) => void;
+};
+
+const GALLERY_IMAGE_CACHE_POLICY = 'memory-disk' as const;
+
+const GalleryPreviewCard = memo(function GalleryPreviewCard({
+  image,
+  index,
+  isFirst,
+  isLast,
+  onMoveGalleryImage,
+  onRemoveGalleryImage,
+}: GalleryPreviewCardProps) {
+  const { palette } = useVisualPreferences();
+
+  return (
+    <View
+      style={[
+        manageStyles.galleryCard,
+        {
+          backgroundColor: palette.surfaceMuted,
+          borderColor: palette.cardBorder,
+        },
+      ]}
+    >
+      <Image
+        source={{ uri: image.previewUrl }}
+        alt={`갤러리 이미지 ${index + 1}번 미리보기`}
+        accessibilityLabel={`갤러리 이미지 ${index + 1}번 미리보기`}
+        style={manageStyles.galleryPreviewImage}
+        contentFit="cover"
+        cachePolicy={GALLERY_IMAGE_CACHE_POLICY}
+        transition={120}
+      />
+      <View style={manageStyles.galleryCardCopy}>
+        <AppText style={manageStyles.galleryCardTitle}>노출 순서 {index + 1}</AppText>
+        <AppText variant="caption" style={manageStyles.galleryCardMeta}>
+          순서에 맞춰 이미지를 정리하면 실제 화면에서도 같은 흐름으로 보입니다.
+        </AppText>
+      </View>
+      <View style={manageStyles.galleryCardActions}>
+        <ActionButton
+          variant="secondary"
+          onPress={() => onMoveGalleryImage(index, 'up')}
+          disabled={isFirst}
+        >
+          위로
+        </ActionButton>
+        <ActionButton
+          variant="secondary"
+          onPress={() => onMoveGalleryImage(index, 'down')}
+          disabled={isLast}
+        >
+          아래로
+        </ActionButton>
+        <ActionButton variant="danger" onPress={() => onRemoveGalleryImage(index)}>
+          삭제
+        </ActionButton>
+      </View>
+    </View>
+  );
+});
 
 export function ImagesEditorStep({
   coverPreviewUrl,
   galleryPreviewItems,
   maxGalleryImageCount,
   uploadingImageKind,
+  uploadProgress,
   onUploadImage,
   onMoveGalleryImage,
   onRemoveGalleryImage,
 }: ImagesEditorStepProps) {
-  const { palette } = usePreferences();
+  const { palette } = useVisualPreferences();
 
   return (
     <>
+      {uploadProgress ? (
+        <View
+          style={[
+            manageStyles.uploadProgressCard,
+            {
+              backgroundColor: palette.noticeSoft,
+              borderColor: palette.notice,
+            },
+          ]}
+        >
+          <AppText color={palette.notice} style={manageStyles.uploadProgressTitle}>
+            {uploadProgress.assetKind === 'cover'
+              ? '대표 이미지 업로드 중'
+              : '갤러리 이미지 업로드 중'}
+          </AppText>
+          <AppText variant="caption" color={palette.notice} style={manageStyles.helperText}>
+            총 {uploadProgress.totalCount}개 중 {uploadProgress.completedCount}개 완료
+          </AppText>
+          <AppText variant="muted" style={manageStyles.helperText}>
+            현재 {Math.min(uploadProgress.currentIndex, uploadProgress.totalCount)} /{' '}
+            {uploadProgress.totalCount} 처리 중
+          </AppText>
+        </View>
+      ) : null}
+
       <SectionCard
         title="대표 이미지"
-        description="이미지 주소 대신 실제 미리보기를 보여주고, 대표 이미지는 썸네일을 우선 사용합니다."
+        description="커버에 먼저 노출되는 대표 이미지를 업로드하고 바로 미리보기로 확인할 수 있습니다."
       >
         <View style={manageStyles.actionRow}>
           <ActionButton
@@ -47,8 +146,11 @@ export function ImagesEditorStep({
           <Image
             source={{ uri: coverPreviewUrl }}
             alt="대표 이미지 미리보기"
+            accessibilityLabel="대표 이미지 미리보기"
             style={manageStyles.coverPreviewImage}
-            resizeMode="cover"
+            contentFit="cover"
+            cachePolicy={GALLERY_IMAGE_CACHE_POLICY}
+            transition={120}
           />
         ) : (
           <View
@@ -69,7 +171,7 @@ export function ImagesEditorStep({
 
       <SectionCard
         title={`갤러리 이미지 (${galleryPreviewItems.length}/${maxGalleryImageCount})`}
-        description="/page-wizard처럼 실제 노출 순서를 보면서 위아래로 정렬할 수 있습니다."
+        description="실제 노출 순서를 보면서 위아래로 정렬할 수 있습니다."
       >
         <View style={manageStyles.actionRow}>
           <ActionButton
@@ -84,48 +186,15 @@ export function ImagesEditorStep({
         {galleryPreviewItems.length ? (
           <View style={manageStyles.galleryList}>
             {galleryPreviewItems.map((image, index) => (
-              <View
+              <GalleryPreviewCard
                 key={image.id}
-                style={[
-                  manageStyles.galleryCard,
-                  {
-                    backgroundColor: palette.surfaceMuted,
-                    borderColor: palette.cardBorder,
-                  },
-                ]}
-              >
-                <Image
-                  source={{ uri: image.previewUrl }}
-                  alt={`갤러리 이미지 ${index + 1}번 미리보기`}
-                  style={manageStyles.galleryPreviewImage}
-                />
-                <View style={manageStyles.galleryCardCopy}>
-                  <AppText style={manageStyles.galleryCardTitle}>노출 순서 {index + 1}</AppText>
-                  <AppText variant="caption" style={manageStyles.galleryCardMeta}>
-                    대표 순서에 맞춰 원본 이미지를 유지하고, 편집 화면에서는 썸네일로
-                    불러옵니다.
-                  </AppText>
-                </View>
-                <View style={manageStyles.galleryCardActions}>
-                  <ActionButton
-                    variant="secondary"
-                    onPress={() => onMoveGalleryImage(index, 'up')}
-                    disabled={index === 0}
-                  >
-                    위로
-                  </ActionButton>
-                  <ActionButton
-                    variant="secondary"
-                    onPress={() => onMoveGalleryImage(index, 'down')}
-                    disabled={index === galleryPreviewItems.length - 1}
-                  >
-                    아래로
-                  </ActionButton>
-                  <ActionButton variant="danger" onPress={() => onRemoveGalleryImage(index)}>
-                    삭제
-                  </ActionButton>
-                </View>
-              </View>
+                image={image}
+                index={index}
+                isFirst={index === 0}
+                isLast={index === galleryPreviewItems.length - 1}
+                onMoveGalleryImage={onMoveGalleryImage}
+                onRemoveGalleryImage={onRemoveGalleryImage}
+              />
             ))}
           </View>
         ) : (

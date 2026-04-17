@@ -9,7 +9,7 @@ import {
   type ViewStyle,
 } from 'react-native';
 
-import { usePreferences } from '../contexts/PreferencesContext';
+import { useVisualPreferences } from '../contexts/PreferencesContext';
 
 type SectionCardProps = PropsWithChildren<{
   title: string;
@@ -29,10 +29,12 @@ export function SectionCard({
   variant = 'default',
   children,
 }: SectionCardProps) {
-  const { palette, fontScale } = usePreferences();
+  const { palette, fontScale } = useVisualPreferences();
 
   const isHero = variant === 'hero';
   const isEmphasis = variant === 'emphasis';
+  const noticeBadgeBackgroundColor = palette.noticeSoft ?? palette.surfaceMuted;
+  const noticeBadgeTextColor = palette.notice ?? palette.textMuted;
 
   const cardStyle: StyleProp<ViewStyle> = [
     styles.card,
@@ -52,7 +54,7 @@ export function SectionCard({
     badgeTone === 'success'
       ? palette.successSoft
       : badgeTone === 'notice'
-        ? palette.noticeSoft
+        ? noticeBadgeBackgroundColor
         : badgeTone === 'neutral'
           ? palette.surface
           : isEmphasis
@@ -62,7 +64,7 @@ export function SectionCard({
     badgeTone === 'success'
       ? palette.success
       : badgeTone === 'notice'
-        ? palette.notice
+        ? noticeBadgeTextColor
         : badgeTone === 'neutral'
           ? palette.textMuted
           : palette.accent;

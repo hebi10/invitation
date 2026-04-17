@@ -1,5 +1,6 @@
+import { useFocusEffect } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
-import { useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import {
   Alert,
   Linking,
@@ -36,9 +37,11 @@ import {
   servicePlans,
 } from '../../features/create/shared';
 import { useAuth } from '../../contexts/AuthContext';
+import { useAppFeedback } from '../../contexts/AppFeedbackContext';
 import { useDrafts } from '../../contexts/DraftsContext';
 import { useInvitationOps } from '../../contexts/InvitationOpsContext';
 import { usePreferences } from '../../contexts/PreferencesContext';
+import { useNoticeToast } from '../../hooks/useNoticeToast';
 import { formatPrice } from '../../lib/format';
 import { findGuideSamplePageUrl } from '../../constants/content';
 
@@ -47,8 +50,10 @@ export default function CreateScreen() {
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
   const scrollRef = useRef<ScrollView | null>(null);
+  const autoSaveProgressRef = useRef<(() => Promise<boolean>) | null>(null);
 
   const { apiBaseUrl, palette } = usePreferences();
+  const { showToast } = useAppFeedback();
   const {
     authError,
     clearAuthError,
@@ -91,9 +96,30 @@ export default function CreateScreen() {
     ? findGuideSamplePageUrl(createForm.selectedTheme, createForm.selectedPlanInfo.tier)
     : null;
 
+  useNoticeToast(createForm.notice);
+  useNoticeToast(authError, { tone: 'error' });
+
+  useEffect(() => {
+    autoSaveProgressRef.current = createForm.autoSaveProgress;
+  }, [createForm.autoSaveProgress]);
+
   useEffect(() => {
     scrollRef.current?.scrollTo({ y: 0, animated: true });
   }, [createForm.currentStep]);
+
+  useFocusEffect(
+    useCallback(() => {
+      return () => {
+        void autoSaveProgressRef.current?.().then((didAutoSave) => {
+          if (didAutoSave) {
+            showToast('입력 중인 내용을 임시 저장했습니다.', {
+              tone: 'success',
+            });
+          }
+        });
+      };
+    }, [showToast])
+  );
 
   const handleOpenGuideSample = async (url: string) => {
     try {

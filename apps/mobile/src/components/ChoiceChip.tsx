@@ -4,7 +4,7 @@ import {
   Text,
 } from 'react-native';
 
-import { usePreferences } from '../contexts/PreferencesContext';
+import { useVisualPreferences } from '../contexts/PreferencesContext';
 
 type ChoiceChipProps = {
   label: string;
@@ -13,7 +13,7 @@ type ChoiceChipProps = {
 };
 
 export function ChoiceChip({ label, selected, onPress }: ChoiceChipProps) {
-  const { palette, fontScale } = usePreferences();
+  const { palette, fontScale } = useVisualPreferences();
 
   return (
     <Pressable

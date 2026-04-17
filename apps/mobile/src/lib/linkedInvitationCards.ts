@@ -28,7 +28,16 @@ export type LinkedInvitationCard = {
   session: MobileSessionSummary | null;
 };
 
-export const LINKED_INVITATION_CARDS_STORAGE_KEY = 'mobile-invitation:linked-invitation-cards';
+type StoredLinkedInvitationCard = Omit<LinkedInvitationCard, 'session'> & {
+  session: Pick<MobileSessionSummary, 'pageSlug' | 'expiresAt'> | null;
+};
+
+type LinkedInvitationTokenMap = Record<string, string>;
+
+export const LINKED_INVITATION_CARDS_STORAGE_KEY =
+  'mobile-invitation:linked-invitation-cards';
+const LINKED_INVITATION_TOKENS_STORAGE_KEY =
+  'mobile-invitation:linked-invitation-card-tokens';
 export const MAX_LINKED_INVITATION_CARD_COUNT = 8;
 const LINKED_INVITATION_SESSION_EXPIRY_BUFFER_MS = 30 * 1000;
 
@@ -41,7 +50,10 @@ function coerceFeatureFlag(features: unknown, key: keyof MobileInvitationFeature
   );
 }
 
-function normalizeLinkedInvitationCard(input: unknown): LinkedInvitationCard | null {
+function normalizeStoredLinkedInvitationCard(
+  input: unknown,
+  tokenMap: LinkedInvitationTokenMap
+): LinkedInvitationCard | null {
   if (!input || typeof input !== 'object') {
     return null;
   }
@@ -65,16 +77,20 @@ function normalizeLinkedInvitationCard(input: unknown): LinkedInvitationCard | n
       ? record.defaultTheme
       : 'emotional';
 
+  const storedSession =
+    record.session && typeof record.session === 'object'
+      ? (record.session as Record<string, unknown>)
+      : null;
+  const storedToken = tokenMap[slug]?.trim() ?? '';
   const session =
-    record.session &&
-    typeof record.session === 'object' &&
-    typeof (record.session as Record<string, unknown>).token === 'string' &&
-    typeof (record.session as Record<string, unknown>).pageSlug === 'string' &&
-    typeof (record.session as Record<string, unknown>).expiresAt === 'number'
+    storedSession &&
+    typeof storedSession.pageSlug === 'string' &&
+    typeof storedSession.expiresAt === 'number' &&
+    storedToken
       ? ({
-          token: (record.session as Record<string, unknown>).token as string,
-          pageSlug: (record.session as Record<string, unknown>).pageSlug as string,
-          expiresAt: (record.session as Record<string, unknown>).expiresAt as number,
+          token: storedToken,
+          pageSlug: storedSession.pageSlug,
+          expiresAt: storedSession.expiresAt,
         } satisfies MobileSessionSummary)
       : null;
 
@@ -139,6 +155,28 @@ function normalizeLinkedInvitationCard(input: unknown): LinkedInvitationCard | n
   };
 }
 
+function toStoredLinkedInvitationCard(card: LinkedInvitationCard): StoredLinkedInvitationCard {
+  return {
+    ...card,
+    session: card.session
+      ? {
+          pageSlug: card.session.pageSlug,
+          expiresAt: card.session.expiresAt,
+        }
+      : null,
+  };
+}
+
+function buildLinkedInvitationTokenMap(cards: LinkedInvitationCard[]) {
+  return cards.reduce<LinkedInvitationTokenMap>((tokenMap, card) => {
+    const token = card.session?.token?.trim();
+    if (token) {
+      tokenMap[card.slug] = token;
+    }
+    return tokenMap;
+  }, {});
+}
+
 function resolveAvailableThemeKeys(
   seed: MobileInvitationSeed | undefined,
   fallbackTheme: MobileInvitationThemeKey
@@ -163,10 +201,13 @@ function resolvePreviewUrls(links: MobileInvitationLinks | undefined) {
   }, {});
 }
 
-export function sanitizeLinkedInvitationCards(stored: unknown) {
+export function sanitizeLinkedInvitationCards(
+  stored: unknown,
+  tokenMap: LinkedInvitationTokenMap = {}
+) {
   return Array.isArray(stored)
     ? stored
-        .map((item) => normalizeLinkedInvitationCard(item))
+        .map((item) => normalizeStoredLinkedInvitationCard(item, tokenMap))
         .filter((item): item is LinkedInvitationCard => item !== null)
         .slice(0, MAX_LINKED_INVITATION_CARD_COUNT)
     : [];
@@ -238,12 +279,31 @@ export function canActivateLinkedInvitationCard(
 }
 
 export async function getLinkedInvitationCards() {
-  const stored = await getStoredJson<unknown>(LINKED_INVITATION_CARDS_STORAGE_KEY, []);
-  return sanitizeLinkedInvitationCards(stored);
+  const [storedCards, storedTokens] = await Promise.all([
+    getStoredJson<unknown>(LINKED_INVITATION_CARDS_STORAGE_KEY, []),
+    getStoredJson<LinkedInvitationTokenMap>(LINKED_INVITATION_TOKENS_STORAGE_KEY, {}, {
+      sensitive: true,
+    }),
+  ]);
+
+  return sanitizeLinkedInvitationCards(storedCards, storedTokens);
 }
 
 export async function setLinkedInvitationCards(cards: LinkedInvitationCard[]) {
-  await setStoredJson(LINKED_INVITATION_CARDS_STORAGE_KEY, cards.slice(0, MAX_LINKED_INVITATION_CARD_COUNT));
+  const nextCards = cards.slice(0, MAX_LINKED_INVITATION_CARD_COUNT);
+  await Promise.all([
+    setStoredJson(
+      LINKED_INVITATION_CARDS_STORAGE_KEY,
+      nextCards.map(toStoredLinkedInvitationCard)
+    ),
+    setStoredJson(
+      LINKED_INVITATION_TOKENS_STORAGE_KEY,
+      buildLinkedInvitationTokenMap(nextCards),
+      {
+        sensitive: true,
+      }
+    ),
+  ]);
 }
 
 export async function getLinkedInvitationCardBySlug(slug: string) {

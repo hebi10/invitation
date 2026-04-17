@@ -932,8 +932,8 @@ async function upsertDisplayPeriodRecord(
     throw new Error('올바른 페이지 주소가 필요합니다.');
   }
 
-  if (!payload.isActive || !payload.startDate || !payload.endDate) {
-    return;
+  if (payload.isActive && (!payload.startDate || !payload.endDate)) {
+    throw new Error('Display period dates are required.');
   }
 
   const db = getServerFirestore();
@@ -951,9 +951,9 @@ async function upsertDisplayPeriodRecord(
   await docRef.set(
     {
       pageSlug: normalizedPageSlug,
-      isActive: true,
-      startDate: payload.startDate,
-      endDate: payload.endDate,
+      isActive: payload.isActive,
+      startDate: payload.isActive ? payload.startDate : null,
+      endDate: payload.isActive ? payload.endDate : null,
       createdAt: existingCreatedAt ?? now,
       updatedAt: now,
     },
@@ -1387,6 +1387,41 @@ export async function extendServerInvitationPageDisplayPeriod(
   return {
     startDate: nextStartDate,
     endDate: nextEndDate,
+  };
+}
+
+export async function setServerInvitationPageDisplayPeriod(
+  pageSlug: string,
+  payload: {
+    enabled: boolean;
+    startDate: Date | null;
+    endDate: Date | null;
+  }
+) {
+  const normalizedPageSlug = normalizePageSlugInput(pageSlug);
+  if (!normalizedPageSlug) {
+    throw new Error('Page slug is required.');
+  }
+
+  const editableConfig = await getServerEditableInvitationPageConfig(normalizedPageSlug);
+  if (!editableConfig) {
+    throw new Error('Invitation page was not found.');
+  }
+
+  if (payload.enabled && (!payload.startDate || !payload.endDate)) {
+    throw new Error('Display period dates are required.');
+  }
+
+  await upsertDisplayPeriodRecord(normalizedPageSlug, {
+    isActive: payload.enabled,
+    startDate: payload.startDate,
+    endDate: payload.endDate,
+  });
+
+  return {
+    enabled: payload.enabled,
+    startDate: payload.enabled ? payload.startDate : null,
+    endDate: payload.enabled ? payload.endDate : null,
   };
 }
 

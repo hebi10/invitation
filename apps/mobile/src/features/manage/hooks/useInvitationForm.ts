@@ -1,4 +1,11 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+  type Dispatch,
+  type SetStateAction,
+} from 'react';
 
 import type {
   MobileInvitationDashboard,
@@ -52,7 +59,7 @@ export function useInvitationForm({
   setPublishedState,
   setNotice,
 }: UseInvitationFormOptions) {
-  const [form, setForm] = useState<ManageFormState>(EMPTY_FORM);
+  const [form, setFormState] = useState<ManageFormState>(EMPTY_FORM);
   const [editorModalVisible, setEditorModalVisible] = useState(false);
   const [editorPreparingVisible, setEditorPreparingVisible] = useState(false);
   const [editorPreparingMessage, setEditorPreparingMessage] = useState('');
@@ -60,6 +67,28 @@ export function useInvitationForm({
   const [onboardingVisible, setOnboardingVisible] = useState(false);
   const [onboardingStepIndex, setOnboardingStepIndex] = useState(0);
   const [isSaving, setIsSaving] = useState(false);
+  const [isFormDirty, setIsFormDirty] = useState(false);
+
+  const isEditingForm = editorModalVisible || onboardingVisible;
+  const isFormHydrationLocked =
+    editorModalVisible || editorPreparingVisible || onboardingVisible || isSaving;
+
+  const hydrateForm = useCallback((nextDashboard: MobileInvitationDashboard | null) => {
+    if (!nextDashboard) {
+      setFormState(EMPTY_FORM);
+      setIsFormDirty(false);
+      return;
+    }
+
+    setFormState(buildManageFormFromDashboard(nextDashboard));
+    setIsFormDirty(false);
+  }, []);
+
+  const markFormDirty = useCallback(() => {
+    if (isEditingForm) {
+      setIsFormDirty(true);
+    }
+  }, [isEditingForm]);
 
   const onboardingValidationMessage = useMemo(
     () => getOnboardingValidationMessage(onboardingStepIndex, form),
@@ -106,13 +135,12 @@ export function useInvitationForm({
   const isLastEditorStep = editorStepIndex === EDITOR_STEPS.length - 1;
 
   useEffect(() => {
-    if (!dashboard) {
-      setForm(EMPTY_FORM);
+    if (isFormHydrationLocked || isFormDirty) {
       return;
     }
 
-    setForm(buildManageFormFromDashboard(dashboard));
-  }, [dashboard]);
+    hydrateForm(dashboard);
+  }, [dashboard, hydrateForm, isFormDirty, isFormHydrationLocked]);
 
   useEffect(() => {
     if (!dashboard || !pendingManageOnboarding) {
@@ -131,37 +159,47 @@ export function useInvitationForm({
     setNotice('운영 탭의 편집 모달에서 예식 정보를 이어서 입력해 주세요.');
   }, [clearPendingManageOnboarding, dashboard, pendingManageOnboarding, setNotice]);
 
+  const setForm = useCallback<Dispatch<SetStateAction<ManageFormState>>>((value) => {
+    markFormDirty();
+    setFormState(value);
+  }, [markFormDirty]);
+
   const updateField = useCallback((field: ManageStringFieldKey, value: string) => {
-    setForm((current) => ({
+    markFormDirty();
+    setFormState((current) => ({
       ...current,
       [field]: value,
     }));
-  }, []);
+  }, [markFormDirty]);
 
   const setPublished = useCallback((published: boolean) => {
-    setForm((current) => ({
+    markFormDirty();
+    setFormState((current) => ({
       ...current,
       published,
     }));
-  }, []);
+  }, [markFormDirty]);
 
   const setDefaultTheme = useCallback((defaultTheme: MobileInvitationThemeKey) => {
-    setForm((current) => ({
+    markFormDirty();
+    setFormState((current) => ({
       ...current,
       defaultTheme,
     }));
-  }, []);
+  }, [markFormDirty]);
 
   const setMusicEnabled = useCallback((musicEnabled: boolean) => {
-    setForm((current) => ({
+    markFormDirty();
+    setFormState((current) => ({
       ...current,
       musicEnabled,
     }));
-  }, []);
+  }, [markFormDirty]);
 
   const updatePersonField = useCallback(
     (role: 'groom' | 'bride', field: 'name' | 'order' | 'phone', value: string) => {
-      setForm((current) => ({
+      markFormDirty();
+      setFormState((current) => ({
         ...current,
         [role]: {
           ...current[role],
@@ -169,7 +207,7 @@ export function useInvitationForm({
         },
       }));
     },
-    []
+    [markFormDirty]
   );
 
   const updateParentField = useCallback(
@@ -179,7 +217,8 @@ export function useInvitationForm({
       field: keyof ManageParentState,
       value: string
     ) => {
-      setForm((current) => ({
+      markFormDirty();
+      setFormState((current) => ({
         ...current,
         [role]: {
           ...current[role],
@@ -190,7 +229,7 @@ export function useInvitationForm({
         },
       }));
     },
-    []
+    [markFormDirty]
   );
 
   const requestDashboardSync = useCallback(
@@ -250,16 +289,22 @@ export function useInvitationForm({
   const closeEditorModal = useCallback(() => {
     setEditorModalVisible(false);
     setEditorStepIndex(0);
+    setIsFormDirty(false);
   }, []);
 
   const closeOnboarding = useCallback(() => {
     setOnboardingVisible(false);
     setOnboardingStepIndex(0);
+    setIsFormDirty(false);
     clearPendingManageOnboarding();
   }, [clearPendingManageOnboarding]);
 
   const persistForm = useCallback(
-    async (options: { closeOnSuccess?: boolean; notice: string }) => {
+    async (options: {
+      closeOnSuccess?: boolean;
+      notice?: string;
+      suppressNotice?: boolean;
+    }) => {
       if (!dashboard) {
         return false;
       }
@@ -285,7 +330,11 @@ export function useInvitationForm({
         return false;
       }
 
-      setNotice(options.notice);
+      setIsFormDirty(false);
+
+      if (!options.suppressNotice && options.notice) {
+        setNotice(options.notice);
+      }
 
       if (options.closeOnSuccess) {
         closeOnboarding();

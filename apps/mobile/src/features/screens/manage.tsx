@@ -27,6 +27,7 @@ import { SectionCard } from '../../components/SectionCard';
 import { useAuth } from '../../contexts/AuthContext';
 import { useInvitationOps } from '../../contexts/InvitationOpsContext';
 import { usePreferences } from '../../contexts/PreferencesContext';
+import { useNoticeToast } from '../../hooks/useNoticeToast';
 import type { LinkedInvitationCard } from '../../lib/linkedInvitationCards';
 import type {
   MobileDisplayPeriodSummary,
@@ -87,11 +88,16 @@ export default function ManageScreen() {
     saveCurrentPageConfig,
     adjustTicketCount,
     extendDisplayPeriod,
+    setDisplayPeriod,
     setVariantAvailability,
     setPublishedState,
     transferTicketCount,
   } = useInvitationOps();
   const [notice, setNotice] = useState('');
+  const [needsRefreshRetry, setNeedsRefreshRetry] = useState(false);
+
+  useNoticeToast(notice);
+  useNoticeToast(authError, { tone: 'error' });
 
   const invitationForm = useInvitationForm({
     dashboard,
@@ -198,6 +204,7 @@ export default function ManageScreen() {
     invitationForm,
     adjustTicketCount,
     extendDisplayPeriod,
+    setDisplayPeriod,
     setVariantAvailability,
     transferTicketCount,
     setNotice,
@@ -269,10 +276,19 @@ export default function ManageScreen() {
 
   const handleRefreshManageScreen = async () => {
     try {
-      await reloadLinkedInvitationCards();
-      await invitationForm.requestDashboardSync();
+      await reloadLinkedInvitationCards({ syncWithServer: true });
+      const synced = await invitationForm.requestDashboardSync();
+      if (!synced) {
+        setNeedsRefreshRetry(true);
+        setNotice('운영 정보를 새로고침하지 못했습니다. 다시 시도해 주세요.');
+        return;
+      }
+
+      setNeedsRefreshRetry(false);
+      setNotice('운영 정보를 새로고침했습니다.');
     } catch {
-      setNotice('운영 정보를 새로고침하지 못했습니다. 잠시 후 다시 시도해 주세요.');
+      setNeedsRefreshRetry(true);
+      setNotice('운영 정보를 새로고침하지 못했습니다. 다시 시도해 주세요.');
     }
   };
 
@@ -372,6 +388,38 @@ export default function ManageScreen() {
           </SectionCard>
         ) : null}
 
+        {notice ? (
+          <View
+            style={[
+              manageStyles.noticeBanner,
+              {
+                backgroundColor: palette.noticeSoft,
+                borderColor: palette.notice,
+              },
+            ]}
+          >
+            <AppText color={palette.notice} style={manageStyles.noticeText}>
+              {notice}
+            </AppText>
+          </View>
+        ) : null}
+
+        {authError ? (
+          <View
+            style={[
+              manageStyles.noticeBanner,
+              {
+                backgroundColor: palette.dangerSoft,
+                borderColor: palette.danger,
+              },
+            ]}
+          >
+            <AppText color={palette.danger} style={manageStyles.noticeText}>
+              {authError}
+            </AppText>
+          </View>
+        ) : null}
+
         {activeLinkedInvitationCard ? (
           <SectionCard
             title="연동된 청첩장"
@@ -419,15 +467,11 @@ export default function ManageScreen() {
 
                   <View style={manageStyles.actionRow}>
                     <ActionButton
-                      variant="secondary"
                       onPress={() => void invitationForm.openEditorModal()}
                       disabled={!canRequestDashboardSync}
                       style={manageStyles.actionHalfButton}
                     >
                       수정 하기
-                    </ActionButton>
-                    <ActionButton onPress={handleShare} style={manageStyles.actionHalfButton}>
-                      링크 공유
                     </ActionButton>
                     <ActionButton
                       variant="secondary"
@@ -445,26 +489,56 @@ export default function ManageScreen() {
                     </ActionButton>
                     <ActionButton
                       variant="secondary"
-                      onPress={guestbook.openGuestbookModal}
-                      style={manageStyles.actionHalfButton}
-                    >
-                      방명록 열기
-                    </ActionButton>
-                    <ActionButton
-                      variant="secondary"
-                      onPress={() => void handleRefreshManageScreen()}
-                      disabled={!canRequestDashboardSync}
-                      style={manageStyles.actionHalfButton}
-                    >
-                      새로고침
-                    </ActionButton>
-                    <ActionButton
-                      variant="secondary"
                       onPress={handleOpenTicketModal}
                       style={manageStyles.actionHalfButton}
                     >
                       티켓 사용
                     </ActionButton>
+                  </View>
+
+                  <View
+                    style={[
+                      manageStyles.secondaryActionCard,
+                      {
+                        backgroundColor: palette.surface,
+                        borderColor: palette.cardBorder,
+                      },
+                    ]}
+                  >
+                    <AppText variant="caption" color={palette.textMuted} style={manageStyles.secondaryActionLabel}>
+                      추가 작업
+                    </AppText>
+                    <View style={manageStyles.actionRow}>
+                      <ActionButton
+                        variant="secondary"
+                        onPress={handleShare}
+                        style={manageStyles.actionHalfButton}
+                      >
+                        링크 공유
+                      </ActionButton>
+                      <ActionButton
+                        variant="secondary"
+                        onPress={guestbook.openGuestbookModal}
+                        style={manageStyles.actionHalfButton}
+                      >
+                        방명록 열기
+                      </ActionButton>
+                      <ActionButton
+                        variant="secondary"
+                        onPress={() => void handleRefreshManageScreen()}
+                        disabled={!canRequestDashboardSync}
+                        style={manageStyles.actionHalfButton}
+                      >
+                        {needsRefreshRetry ? '다시 시도' : '새로고침'}
+                      </ActionButton>
+                      <ActionButton
+                        variant={dashboard.page.published ? 'danger' : 'primary'}
+                        onPress={() => void invitationForm.handleTogglePublished()}
+                        style={manageStyles.actionHalfButton}
+                      >
+                        {dashboard.page.published ? '비공개 전환' : '공개 전환'}
+                      </ActionButton>
+                    </View>
                   </View>
 
                   <AppText variant="muted" style={manageStyles.loadingText}>
@@ -601,6 +675,7 @@ export default function ManageScreen() {
           selectedMusicTrackLabel={musicLibrary.selectedMusicTrackLabel}
           availableMusicTracks={musicLibrary.availableMusicTracks}
           uploadingImageKind={imageUpload.uploadingImageKind}
+          uploadProgress={imageUpload.uploadProgress}
           isSearchingAddress={addressSearch.isSearchingAddress}
           onUpdateField={invitationForm.updateField}
           onUpdatePersonField={invitationForm.updatePersonField}

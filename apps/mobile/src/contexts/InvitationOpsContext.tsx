@@ -15,11 +15,13 @@ import {
   extendMobileInvitationDisplayPeriod,
   fetchMobileInvitationDashboard,
   saveMobileInvitationPageConfig,
+  setMobileInvitationDisplayPeriod,
   setMobileInvitationPublishedState,
   transferMobileInvitationTicketCount,
   setMobileInvitationVariantAvailability,
 } from '../lib/api';
 import type {
+  MobileDisplayPeriodSummary,
   MobileEditableInvitationPageConfig,
   MobileInvitationDashboard,
   MobileInvitationLinks,
@@ -50,7 +52,10 @@ type InvitationOpsContextValue = {
   setPublishedState: (published: boolean) => Promise<boolean>;
   extendDisplayPeriod: (
     months?: number
-  ) => Promise<{ startDate: string; endDate: string } | null>;
+  ) => Promise<MobileDisplayPeriodSummary | null>;
+  setDisplayPeriod: (
+    period: MobileDisplayPeriodSummary
+  ) => Promise<MobileDisplayPeriodSummary | null>;
   adjustTicketCount: (amount: number) => Promise<number | null>;
   transferTicketCount: (
     targetPageSlug: string,
@@ -167,6 +172,32 @@ export function InvitationOpsProvider({ children }: PropsWithChildren) {
         const nextDashboard = updater(current);
         setPageSummary(buildPageSummary(nextDashboard));
         return nextDashboard;
+      });
+    },
+    []
+  );
+
+  const applyDisplayPeriod = useCallback(
+    (displayPeriod: MobileDisplayPeriodSummary) => {
+      setDashboard((current) => {
+        if (!current) {
+          return current;
+        }
+
+        return {
+          ...current,
+          displayPeriod,
+        };
+      });
+      setPageSummary((current) => {
+        if (!current) {
+          return current;
+        }
+
+        return {
+          ...current,
+          displayPeriod,
+        };
       });
     },
     []
@@ -429,10 +460,14 @@ export function InvitationOpsProvider({ children }: PropsWithChildren) {
           months
         );
 
-        return {
+        const displayPeriod = {
+          enabled: response.enabled,
           startDate: response.startDate,
           endDate: response.endDate,
         };
+
+        applyDisplayPeriod(displayPeriod);
+        return displayPeriod;
       } catch (error) {
         reportAuthError(
           error instanceof Error ? error.message : '노출 기간을 연장하지 못했습니다.'
@@ -440,7 +475,40 @@ export function InvitationOpsProvider({ children }: PropsWithChildren) {
         return null;
       }
     },
-    [apiBaseUrl, reportAuthError, session]
+    [apiBaseUrl, applyDisplayPeriod, reportAuthError, session]
+  );
+
+  const setDisplayPeriod = useCallback(
+    async (period: MobileDisplayPeriodSummary) => {
+      if (!session) {
+        reportAuthError('기간을 변경할 청첩장이 연동되어 있지 않습니다.');
+        return null;
+      }
+
+      try {
+        const response = await setMobileInvitationDisplayPeriod(
+          apiBaseUrl,
+          session.pageSlug,
+          session.token,
+          period
+        );
+
+        const nextDisplayPeriod = {
+          enabled: response.enabled,
+          startDate: response.startDate,
+          endDate: response.endDate,
+        };
+
+        applyDisplayPeriod(nextDisplayPeriod);
+        return nextDisplayPeriod;
+      } catch (error) {
+        reportAuthError(
+          error instanceof Error ? error.message : '노출 기간을 되돌리지 못했습니다.'
+        );
+        return null;
+      }
+    },
+    [apiBaseUrl, applyDisplayPeriod, reportAuthError, session]
   );
 
   const transferTicketCount = useCallback(
@@ -576,6 +644,7 @@ export function InvitationOpsProvider({ children }: PropsWithChildren) {
       setVariantAvailability,
       setPublishedState,
       extendDisplayPeriod,
+      setDisplayPeriod,
       adjustTicketCount,
       transferTicketCount,
       deleteComment,
@@ -590,6 +659,7 @@ export function InvitationOpsProvider({ children }: PropsWithChildren) {
       setVariantAvailability,
       setPublishedState,
       extendDisplayPeriod,
+      setDisplayPeriod,
       adjustTicketCount,
       transferTicketCount,
     ]

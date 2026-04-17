@@ -8,6 +8,7 @@
   MobileInvitationPageData,
   MobileInvitationThemeKey,
 } from '../../types/mobileInvitation';
+import { createRandomSuffix } from '../../lib/id';
 
 export type ManageParentState = {
   relation: string;
@@ -243,6 +244,21 @@ export function readStringArray(value: unknown, maxCount?: number) {
   return parsed;
 }
 
+export function isTemporaryImagePreviewUrl(value: string) {
+  const normalized = value.trim().toLowerCase();
+  if (!normalized) {
+    return false;
+  }
+
+  return (
+    normalized.startsWith('file://') ||
+    normalized.startsWith('content://') ||
+    normalized.startsWith('ph://') ||
+    normalized.startsWith('assets-library://') ||
+    normalized.startsWith('blob:')
+  );
+}
+
 export function formatAccountsText(value: unknown) {
   if (!Array.isArray(value)) {
     return '';
@@ -406,7 +422,7 @@ export function getUploadFileExtension(mimeType: string) {
 
 export function buildUploadFileName(assetKind: EditableImageAssetKind, mimeType: string) {
   const extension = getUploadFileExtension(mimeType);
-  return `${assetKind}-${Date.now()}.${extension}`;
+  return `${assetKind}-${Date.now()}-${createRandomSuffix()}.${extension}`;
 }
 
 export function toParentState(value: unknown): ManageParentState {

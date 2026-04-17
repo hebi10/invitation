@@ -1,6 +1,12 @@
 import * as SecureStore from 'expo-secure-store';
 import { Platform } from 'react-native';
 
+type StorageOptions = {
+  sensitive?: boolean;
+};
+
+const warnedSensitiveWebStorageKeys = new Set<string>();
+
 function normalizeNativeStorageKey(key: string) {
   const trimmed = key.trim();
   if (!trimmed) {
@@ -27,6 +33,17 @@ async function readWebStorage(key: string) {
   }
 }
 
+function warnSensitiveWebStorage(key: string) {
+  if (warnedSensitiveWebStorageKeys.has(key)) {
+    return;
+  }
+
+  warnedSensitiveWebStorageKeys.add(key);
+  console.warn(
+    `[mobile/storage] skipped persisting sensitive data for "${key}" on web localStorage.`
+  );
+}
+
 async function writeWebStorage(key: string, value: string | null) {
   try {
     if (typeof localStorage === 'undefined') {
@@ -44,16 +61,32 @@ async function writeWebStorage(key: string, value: string | null) {
   }
 }
 
-export async function getStoredString(key: string) {
+export async function getStoredString(key: string, options: StorageOptions = {}) {
   if (Platform.OS === 'web') {
+    if (options.sensitive) {
+      await writeWebStorage(key, null);
+      warnSensitiveWebStorage(key);
+      return null;
+    }
+
     return readWebStorage(key);
   }
 
   return SecureStore.getItemAsync(normalizeNativeStorageKey(key));
 }
 
-export async function setStoredString(key: string, value: string | null) {
+export async function setStoredString(
+  key: string,
+  value: string | null,
+  options: StorageOptions = {}
+) {
   if (Platform.OS === 'web') {
+    if (options.sensitive) {
+      await writeWebStorage(key, null);
+      warnSensitiveWebStorage(key);
+      return;
+    }
+
     await writeWebStorage(key, value);
     return;
   }
@@ -68,8 +101,12 @@ export async function setStoredString(key: string, value: string | null) {
   await SecureStore.setItemAsync(normalizedKey, value);
 }
 
-export async function getStoredJson<T>(key: string, fallback: T) {
-  const value = await getStoredString(key);
+export async function getStoredJson<T>(
+  key: string,
+  fallback: T,
+  options: StorageOptions = {}
+) {
+  const value = await getStoredString(key, options);
   if (!value) {
     return fallback;
   }
@@ -81,6 +118,10 @@ export async function getStoredJson<T>(key: string, fallback: T) {
   }
 }
 
-export async function setStoredJson(key: string, value: unknown) {
-  await setStoredString(key, JSON.stringify(value));
+export async function setStoredJson(
+  key: string,
+  value: unknown,
+  options: StorageOptions = {}
+) {
+  await setStoredString(key, JSON.stringify(value), options);
 }

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { Alert } from 'react-native';
 
 import type { MobileInvitationDashboard } from '../../../types/mobileInvitation';
 import {
@@ -106,10 +107,27 @@ export function useGuestbook({
 
   const handleDeleteComment = useCallback(
     async (commentId: string) => {
-      const deleted = await deleteComment(commentId);
-      if (deleted) {
-        setNotice('방명록 댓글을 삭제했습니다.');
-      }
+      Alert.alert(
+        '방명록 댓글을 삭제할까요?',
+        '삭제한 댓글은 다시 복구할 수 없습니다.',
+        [
+          {
+            text: '취소',
+            style: 'cancel',
+          },
+          {
+            text: '삭제',
+            style: 'destructive',
+            onPress: () => {
+              void deleteComment(commentId).then((deleted) => {
+                if (deleted) {
+                  setNotice('방명록 댓글을 삭제했습니다.');
+                }
+              });
+            },
+          },
+        ]
+      );
     },
     [deleteComment, setNotice]
   );

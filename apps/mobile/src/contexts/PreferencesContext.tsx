@@ -38,19 +38,25 @@ const DEFAULT_PREFERENCES: StoredPreferences = {
   fontScalePreference: 'normal',
 };
 
-type PreferencesContextValue = {
+type PreferencesSettingsContextValue = {
   apiBaseUrl: string;
   themePreference: ThemePreference;
   fontScalePreference: FontScalePreference;
-  palette: ReturnType<typeof getPalette>;
-  fontScale: number;
   isReady: boolean;
   setApiBaseUrl: (value: string) => Promise<void>;
   setThemePreference: (value: ThemePreference) => Promise<void>;
   setFontScalePreference: (value: FontScalePreference) => Promise<void>;
 };
 
-const PreferencesContext = createContext<PreferencesContextValue | null>(null);
+type PreferencesVisualContextValue = {
+  palette: ReturnType<typeof getPalette>;
+  fontScale: number;
+};
+
+type PreferencesContextValue = PreferencesSettingsContextValue & PreferencesVisualContextValue;
+
+const PreferencesSettingsContext = createContext<PreferencesSettingsContextValue | null>(null);
+const PreferencesVisualContext = createContext<PreferencesVisualContextValue | null>(null);
 
 export function PreferencesProvider({ children }: PropsWithChildren) {
   const systemColorScheme = useColorScheme();
@@ -162,13 +168,11 @@ export function PreferencesProvider({ children }: PropsWithChildren) {
     [apiBaseUrl, persistPreferences, themePreference]
   );
 
-  const value = useMemo<PreferencesContextValue>(
+  const settingsValue = useMemo<PreferencesSettingsContextValue>(
     () => ({
       apiBaseUrl,
       themePreference,
       fontScalePreference,
-      palette,
-      fontScale,
       isReady,
       setApiBaseUrl,
       setThemePreference,
@@ -176,10 +180,8 @@ export function PreferencesProvider({ children }: PropsWithChildren) {
     }),
     [
       apiBaseUrl,
-      fontScale,
       fontScalePreference,
       isReady,
-      palette,
       setApiBaseUrl,
       setFontScalePreference,
       setThemePreference,
@@ -187,17 +189,48 @@ export function PreferencesProvider({ children }: PropsWithChildren) {
     ]
   );
 
+  const visualValue = useMemo<PreferencesVisualContextValue>(
+    () => ({
+      palette,
+      fontScale,
+    }),
+    [fontScale, palette]
+  );
+
   return (
-    <PreferencesContext.Provider value={value}>
-      {children}
-    </PreferencesContext.Provider>
+    <PreferencesSettingsContext.Provider value={settingsValue}>
+      <PreferencesVisualContext.Provider value={visualValue}>
+        {children}
+      </PreferencesVisualContext.Provider>
+    </PreferencesSettingsContext.Provider>
   );
 }
 
-export function usePreferences() {
-  const context = useContext(PreferencesContext);
+export function usePreferenceSettings() {
+  const context = useContext(PreferencesSettingsContext);
   if (!context) {
-    throw new Error('usePreferences must be used within PreferencesProvider.');
+    throw new Error('usePreferenceSettings must be used within PreferencesProvider.');
   }
   return context;
+}
+
+export function useVisualPreferences() {
+  const context = useContext(PreferencesVisualContext);
+  if (!context) {
+    throw new Error('useVisualPreferences must be used within PreferencesProvider.');
+  }
+  return context;
+}
+
+export function usePreferences(): PreferencesContextValue {
+  const settings = usePreferenceSettings();
+  const visual = useVisualPreferences();
+
+  return useMemo(
+    () => ({
+      ...settings,
+      ...visual,
+    }),
+    [settings, visual]
+  );
 }

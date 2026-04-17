@@ -16,6 +16,13 @@ import {
   type ManageGalleryPreviewItem,
 } from '../shared';
 
+export type ImageUploadProgressState = {
+  assetKind: EditableImageAssetKind;
+  totalCount: number;
+  completedCount: number;
+  currentIndex: number;
+};
+
 type UseImageUploadOptions = {
   apiBaseUrl: string;
   dashboard: MobileInvitationDashboard | null;
@@ -35,6 +42,8 @@ export function useImageUpload({
 }: UseImageUploadOptions) {
   const [uploadingImageKind, setUploadingImageKind] =
     useState<EditableImageAssetKind | null>(null);
+  const [uploadProgress, setUploadProgress] =
+    useState<ImageUploadProgressState | null>(null);
 
   const handleUploadImage = useCallback(
     async (assetKind: EditableImageAssetKind) => {
@@ -69,7 +78,7 @@ export function useImageUpload({
           : 1;
 
       const pickerResult = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        mediaTypes: 'images',
         allowsMultipleSelection: assetKind === 'gallery',
         selectionLimit,
         quality: 0.95,
@@ -80,20 +89,32 @@ export function useImageUpload({
       }
 
       const selectedAssets = pickerResult.assets.slice(0, selectionLimit);
+      const localPreviewUrls = selectedAssets.map((asset) => asset.uri.trim()).filter(Boolean);
+
       setUploadingImageKind(assetKind);
+      setUploadProgress({
+        assetKind,
+        totalCount: selectedAssets.length,
+        completedCount: 0,
+        currentIndex: 1,
+      });
 
       try {
         const uploadedImages: Array<{ url: string; previewUrl: string }> = [];
 
-        for (const asset of selectedAssets) {
+        for (const [index, asset] of selectedAssets.entries()) {
+          setUploadProgress({
+            assetKind,
+            totalCount: selectedAssets.length,
+            completedCount: index,
+            currentIndex: index + 1,
+          });
+
           const mimeType =
             typeof asset.mimeType === 'string' && asset.mimeType.trim().startsWith('image/')
               ? asset.mimeType.trim()
               : 'image/jpeg';
-          const fileName =
-            typeof asset.fileName === 'string' && asset.fileName.trim()
-              ? asset.fileName.trim()
-              : buildUploadFileName(assetKind, mimeType);
+          const fileName = buildUploadFileName(assetKind, mimeType);
 
           const formData = new FormData();
           formData.append('assetKind', assetKind);
@@ -112,9 +133,17 @@ export function useImageUpload({
             session.token,
             formData
           );
+
           uploadedImages.push({
             url: uploaded.url,
             previewUrl: uploaded.thumbnailUrl.trim() || uploaded.url,
+          });
+
+          setUploadProgress({
+            assetKind,
+            totalCount: selectedAssets.length,
+            completedCount: index + 1,
+            currentIndex: Math.min(selectedAssets.length, index + 2),
           });
         }
 
@@ -124,7 +153,8 @@ export function useImageUpload({
             setForm((current) => ({
               ...current,
               coverImageUrl: uploadedCoverImage.url,
-              coverImageThumbnailUrl: uploadedCoverImage.previewUrl,
+              coverImageThumbnailUrl:
+                localPreviewUrls[0] || uploadedCoverImage.previewUrl || uploadedCoverImage.url,
             }));
             setNotice('대표 이미지를 업로드했습니다.');
           }
@@ -137,7 +167,9 @@ export function useImageUpload({
             ].slice(0, maxGalleryImages);
             const nextGalleryThumbnailUrls = [
               ...current.galleryImageThumbnailUrls,
-              ...uploadedImages.map((image) => image.previewUrl),
+              ...uploadedImages.map(
+                (image, index) => localPreviewUrls[index] || image.previewUrl || image.url
+              ),
             ].slice(0, maxGalleryImages);
 
             return {
@@ -158,6 +190,7 @@ export function useImageUpload({
         );
       } finally {
         setUploadingImageKind(null);
+        setUploadProgress(null);
       }
     },
     [apiBaseUrl, dashboard, galleryPreviewItems.length, session, setForm, setNotice]
@@ -206,6 +239,7 @@ export function useImageUpload({
 
   return {
     uploadingImageKind,
+    uploadProgress,
     handleUploadImage,
     handleMoveGalleryImage,
     handleRemoveGalleryImage,

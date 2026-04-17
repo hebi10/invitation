@@ -9,6 +9,7 @@ import {
   getServerEditableInvitationPageConfig,
   restoreServerInvitationPageConfig,
   saveServerInvitationPageConfig,
+  setServerInvitationPageDisplayPeriod,
   setServerInvitationPagePublished,
   setServerInvitationPageVariantAvailability,
 } from '@/server/invitationPageServerService';
@@ -25,6 +26,15 @@ function readTheme(value: unknown) {
 
 function readVariantKey(value: unknown) {
   return isInvitationThemeKey(value) ? value : undefined;
+}
+
+function readDate(value: unknown) {
+  if (typeof value !== 'string' || !value.trim()) {
+    return null;
+  }
+
+  const parsed = new Date(value);
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
 }
 
 function buildTrustedPageConfig(
@@ -86,6 +96,9 @@ export async function POST(
         available?: unknown;
         amount?: unknown;
         months?: unknown;
+        enabled?: unknown;
+        startDate?: unknown;
+        endDate?: unknown;
         targetPageSlug?: unknown;
         targetToken?: unknown;
       }
@@ -182,6 +195,43 @@ export async function POST(
         success: true,
         startDate: displayPeriod.startDate.toISOString(),
         endDate: displayPeriod.endDate.toISOString(),
+      });
+    }
+
+    if (action === 'setDisplayPeriod') {
+      if (typeof body?.enabled !== 'boolean') {
+        return NextResponse.json(
+          { error: 'Display period enabled state is required.' },
+          { status: 400 }
+        );
+      }
+
+      const startDate = readDate(body?.startDate);
+      const endDate = readDate(body?.endDate);
+
+      if (body.enabled && (!startDate || !endDate)) {
+        return NextResponse.json(
+          {
+            error:
+              body?.startDate || body?.endDate
+                ? 'Display period date is invalid.'
+                : 'Display period dates are required.',
+          },
+          { status: 400 }
+        );
+      }
+
+      const displayPeriod = await setServerInvitationPageDisplayPeriod(pageSlug, {
+        enabled: body.enabled,
+        startDate,
+        endDate,
+      });
+
+      return NextResponse.json({
+        success: true,
+        enabled: displayPeriod.enabled,
+        startDate: displayPeriod.startDate?.toISOString() ?? null,
+        endDate: displayPeriod.endDate?.toISOString() ?? null,
       });
     }
 

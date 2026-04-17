@@ -11,7 +11,7 @@ import {
   type ViewStyle,
 } from 'react-native';
 
-import { usePreferences } from '../contexts/PreferencesContext';
+import { useVisualPreferences } from '../contexts/PreferencesContext';
 
 type ActionButtonProps = PropsWithChildren<{
   onPress?: () => void;
@@ -43,7 +43,7 @@ export function ActionButton({
   accessibilityHint,
   accessibilityState,
 }: ActionButtonProps) {
-  const { palette, fontScale } = usePreferences();
+  const { palette, fontScale } = useVisualPreferences();
   const isDisabled = disabled || loading;
 
   const defaultBackgroundColor =
