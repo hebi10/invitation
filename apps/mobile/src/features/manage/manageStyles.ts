@@ -69,10 +69,21 @@ export const manageStyles = StyleSheet.create({
   helperText: {
     lineHeight: 18,
   },
-  coverPreviewImage: {
+  previewFrame: {
+    borderWidth: 1.5,
+    borderRadius: 18,
+    padding: 10,
+    overflow: 'hidden',
+  },
+  coverPreviewFrame: {
     width: '100%',
     aspectRatio: 1.45,
-    borderRadius: 18,
+  },
+  coverPreviewImage: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 12,
+    backgroundColor: '#f3efe8',
   },
   emptyImageState: {
     borderWidth: 1,
@@ -99,10 +110,14 @@ export const manageStyles = StyleSheet.create({
     padding: 12,
     gap: 12,
   },
-  galleryPreviewImage: {
+  galleryPreviewFrame: {
     width: '100%',
     aspectRatio: 1.25,
-    borderRadius: 16,
+  },
+  galleryPreviewImage: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 12,
     backgroundColor: '#f3efe8',
   },
   galleryCardCopy: {
@@ -260,8 +275,8 @@ export const manageStyles = StyleSheet.create({
     height: '96%',
   },
   previewLinkModalCard: {
-    maxHeight: '96%',
-    minHeight: 420,
+    height: '93%',
+    maxHeight: '93%',
   },
   searchSummaryText: {
     lineHeight: 18,

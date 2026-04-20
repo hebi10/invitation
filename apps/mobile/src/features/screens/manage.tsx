@@ -95,6 +95,7 @@ export default function ManageScreen() {
   } = useInvitationOps();
   const [notice, setNotice] = useState('');
   const [needsRefreshRetry, setNeedsRefreshRetry] = useState(false);
+  const [isEditorFinalizing, setIsEditorFinalizing] = useState(false);
 
   useNoticeToast(notice);
   useNoticeToast(authError, { tone: 'error' });
@@ -167,12 +168,74 @@ export default function ManageScreen() {
     setNotice,
   });
 
+  const handleCloseEditorModal = async () => {
+    if (imageUpload.uploadProgress) {
+      setNotice('이미지 업로드가 끝난 뒤 편집창을 닫아 주세요.');
+      return;
+    }
+
+    if (isEditorFinalizing) {
+      return;
+    }
+
+    setIsEditorFinalizing(true);
+    try {
+      const cleaned = await imageUpload.discardTrackedUploads();
+      invitationForm.closeEditorModal();
+
+      if (!cleaned) {
+        setNotice(
+          '편집창은 닫았지만 임시 업로드 이미지를 정리하지 못했습니다. 잠시 후 다시 확인해 주세요.'
+        );
+      }
+    } finally {
+      setIsEditorFinalizing(false);
+    }
+  };
+
+  const handleSaveEditor = async () => {
+    if (imageUpload.uploadProgress) {
+      setNotice('이미지 업로드가 끝난 뒤 저장해 주세요.');
+      return;
+    }
+
+    if (invitationForm.isSaving || isEditorFinalizing) {
+      return;
+    }
+
+    setIsEditorFinalizing(true);
+    try {
+      const saved = await invitationForm.persistForm({
+        notice: '운영 정보를 저장했습니다.',
+        suppressNotice: true,
+      });
+
+      if (!saved) {
+        return;
+      }
+
+      const cleaned = await imageUpload.finalizeTrackedUploads(invitationForm.form);
+      invitationForm.closeEditorModal();
+      setNotice(
+        cleaned
+          ? '운영 정보를 저장했습니다.'
+          : '운영 정보는 저장했지만 임시 업로드 이미지를 정리하지 못했습니다. 잠시 후 다시 확인해 주세요.'
+      );
+    } finally {
+      setIsEditorFinalizing(false);
+    }
+  };
+
   const showDashboardSyncLoading = dashboardLoading && !dashboard && !pageSummary;
   const canRequestDashboardSync = !dashboardLoading;
   const maxGalleryImageCount = dashboard?.page.features.maxGalleryImages ?? 0;
   const supportsMusicFeature = dashboard?.page.features.showMusic ?? false;
   const selectedMusicCategoryLabel =
     musicLibrary.selectedMusicCategory?.label ?? '선택해 주세요';
+  const isEditorBusy =
+    invitationForm.isSaving ||
+    isEditorFinalizing ||
+    Boolean(imageUpload.uploadProgress);
 
   const {
     ticketModalVisible,
@@ -625,12 +688,14 @@ export default function ManageScreen() {
 
       <InvitationEditorModalShell
         visible={invitationForm.editorModalVisible}
-        onClose={invitationForm.closeEditorModal}
+        onClose={() => void handleCloseEditorModal()}
         title="청첩장 정보 수정"
         description="/page-wizard처럼 단계별로 입력하면 더 편하게 관리할 수 있습니다."
         palette={palette}
         fontScale={fontScale}
         cardStyle={manageStyles.previewLinkModalCard}
+        closeDisabled={isEditorBusy}
+        closeLoading={isEditorFinalizing && !invitationForm.isSaving}
       >
         <View style={manageStyles.editorStepHeader}>
           <AppText style={manageStyles.editorStepTitle}>
@@ -709,7 +774,7 @@ export default function ManageScreen() {
             onPress={() =>
               invitationForm.setEditorStepIndex((current) => Math.max(0, current - 1))
             }
-            disabled={invitationForm.isFirstEditorStep}
+            disabled={invitationForm.isFirstEditorStep || isEditorBusy}
           >
             이전
           </ActionButton>
@@ -721,11 +786,16 @@ export default function ManageScreen() {
                   Math.min(EDITOR_STEPS.length - 1, current + 1)
                 )
               }
+              disabled={isEditorBusy}
             >
               다음
             </ActionButton>
           ) : null}
-          <ActionButton onPress={() => void invitationForm.handleSave()} loading={invitationForm.isSaving}>
+          <ActionButton
+            onPress={() => void handleSaveEditor()}
+            loading={invitationForm.isSaving || isEditorFinalizing}
+            disabled={Boolean(imageUpload.uploadProgress)}
+          >
             운영 정보 저장
           </ActionButton>
         </View>

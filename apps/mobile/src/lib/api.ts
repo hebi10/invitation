@@ -113,6 +113,16 @@ const ERROR_MESSAGE_MAP: Record<string, string> = {
   'Target invitation page authorization failed.':
     '대상 청첩장의 연동 정보가 만료되었습니다. 다시 연동해 주세요.',
   'Not enough tickets.': '보유 티켓이 부족합니다.',
+  'Image cleanup paths are required.': '정리할 업로드 이미지 경로를 다시 확인해 주세요.',
+  'Too many image cleanup paths were requested.':
+    '한 번에 정리할 이미지 수가 너무 많습니다. 다시 시도해 주세요.',
+  'Image cleanup path is invalid.': '정리할 이미지 경로 형식이 올바르지 않습니다.',
+  'Image cleanup path does not belong to the current page.':
+    '현재 청첩장에 속한 이미지 경로만 정리할 수 있습니다.',
+  'Image storage is not available.':
+    '이미지 저장소 연결을 확인하지 못했습니다. 잠시 후 다시 시도해 주세요.',
+  'Failed to clean up uploaded images.':
+    '임시 업로드 이미지를 정리하지 못했습니다. 잠시 후 다시 시도해 주세요.',
   'Request failed.': '요청 처리에 실패했습니다. 잠시 후 다시 시도해 주세요.',
 };
 
@@ -302,6 +312,12 @@ export interface MobileBase64ImageUploadInput {
   fileName: string;
   mimeType: string;
   base64: string;
+  uploadSessionId: string;
+}
+
+export interface MobileImageCleanupResponse {
+  success: boolean;
+  deletedPaths: string[];
 }
 
 export interface MobileMusicLibraryResponse {
@@ -697,5 +713,31 @@ export async function uploadMobileInvitationImage(
     url,
     token,
     payload
+  );
+}
+
+export async function deleteMobileInvitationImages(
+  baseUrl: string,
+  pageSlug: string,
+  token: string,
+  payload: {
+    paths: string[];
+  }
+) {
+  return readJsonResponse<MobileImageCleanupResponse>(
+    await fetchWithRetry(
+      buildApiUrl(
+        baseUrl,
+        `/api/mobile/client-editor/pages/${encodeURIComponent(pageSlug)}/images`
+      ),
+      {
+        method: 'DELETE',
+        headers: {
+          ...createHeaders(token),
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      }
+    )
   );
 }

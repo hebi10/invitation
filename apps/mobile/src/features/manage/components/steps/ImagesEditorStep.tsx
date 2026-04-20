@@ -42,11 +42,12 @@ type PreviewImageProps = {
   uri: string;
   alt: string;
   style: StyleProp<ImageStyle>;
+  fit?: 'cover' | 'contain';
 };
 
-const GALLERY_IMAGE_CACHE_POLICY = 'memory-disk' as const;
+const IMAGE_CACHE_POLICY = 'memory-disk' as const;
 
-function PreviewImage({ uri, alt, style }: PreviewImageProps) {
+function PreviewImage({ uri, alt, style, fit = 'cover' }: PreviewImageProps) {
   const normalizedUri = uri.trim().toLowerCase();
   const shouldUseExpoImage =
     normalizedUri.startsWith('ph://') ||
@@ -60,7 +61,7 @@ function PreviewImage({ uri, alt, style }: PreviewImageProps) {
         source={{ uri }}
         accessibilityLabel={alt}
         style={style}
-        resizeMode="cover"
+        resizeMode={fit}
       />
     );
   }
@@ -72,8 +73,8 @@ function PreviewImage({ uri, alt, style }: PreviewImageProps) {
       alt={alt}
       accessibilityLabel={alt}
       style={style}
-      contentFit="cover"
-      cachePolicy={GALLERY_IMAGE_CACHE_POLICY}
+      contentFit={fit}
+      cachePolicy={IMAGE_CACHE_POLICY}
       transition={120}
     />
   );
@@ -99,15 +100,27 @@ const GalleryPreviewCard = memo(function GalleryPreviewCard({
         },
       ]}
     >
-      <PreviewImage
-        uri={image.previewUrl}
-        alt={`갤러리 이미지 ${index + 1}번 미리보기`}
-        style={manageStyles.galleryPreviewImage}
-      />
+      <View
+        style={[
+          manageStyles.previewFrame,
+          manageStyles.galleryPreviewFrame,
+          {
+            backgroundColor: palette.surface,
+            borderColor: palette.accent,
+          },
+        ]}
+      >
+        <PreviewImage
+          uri={image.previewUrl}
+          alt={`갤러리 이미지 ${index + 1}번 미리보기`}
+          style={manageStyles.galleryPreviewImage}
+          fit="contain"
+        />
+      </View>
       <View style={manageStyles.galleryCardCopy}>
         <AppText style={manageStyles.galleryCardTitle}>노출 순서 {index + 1}</AppText>
         <AppText variant="caption" style={manageStyles.galleryCardMeta}>
-          순서를 맞춰두면 실제 화면에서도 같은 순서로 보입니다.
+          전체 이미지가 보이는 상태로 순서를 확인한 뒤 위아래로 정렬할 수 있습니다.
         </AppText>
       </View>
       <View style={manageStyles.galleryCardActions}>
@@ -163,7 +176,7 @@ export function ImagesEditorStep({
               : '갤러리 이미지 업로드 중'}
           </AppText>
           <AppText variant="caption" color={palette.notice} style={manageStyles.helperText}>
-            총 {uploadProgress.totalCount}개 중 {uploadProgress.completedCount}개 완료
+            총 {uploadProgress.totalCount}장 중 {uploadProgress.completedCount}장 완료
           </AppText>
           <AppText variant="muted" style={manageStyles.helperText}>
             현재 {Math.min(uploadProgress.currentIndex, uploadProgress.totalCount)} /{' '}
@@ -174,7 +187,7 @@ export function ImagesEditorStep({
 
       <SectionCard
         title="대표 이미지"
-        description="커버에 먼저 노출되는 대표 이미지를 업로드하고 바로 미리보기로 확인합니다."
+        description="잘리지 않게 전체 이미지를 보고 커버에 들어갈 대표 이미지를 확인합니다."
       >
         <View style={manageStyles.actionRow}>
           <ActionButton
@@ -186,11 +199,23 @@ export function ImagesEditorStep({
           </ActionButton>
         </View>
         {coverPreviewUrl ? (
-          <PreviewImage
-            uri={coverPreviewUrl}
-            alt="대표 이미지 미리보기"
-            style={manageStyles.coverPreviewImage}
-          />
+          <View
+            style={[
+              manageStyles.previewFrame,
+              manageStyles.coverPreviewFrame,
+              {
+                backgroundColor: palette.surface,
+                borderColor: palette.accent,
+              },
+            ]}
+          >
+            <PreviewImage
+              uri={coverPreviewUrl}
+              alt="대표 이미지 미리보기"
+              style={manageStyles.coverPreviewImage}
+              fit="contain"
+            />
+          </View>
         ) : (
           <View
             style={[
@@ -202,7 +227,8 @@ export function ImagesEditorStep({
             ]}
           >
             <AppText variant="muted" style={manageStyles.helperText}>
-              아직 대표 이미지가 없습니다. 업로드하면 커버 미리보기로 바로 확인할 수 있습니다.
+              아직 대표 이미지가 없습니다. 업로드하면 이 영역 안에서 전체 비율 그대로 미리볼 수
+              있습니다.
             </AppText>
           </View>
         )}
@@ -210,7 +236,7 @@ export function ImagesEditorStep({
 
       <SectionCard
         title={`갤러리 이미지 (${galleryPreviewItems.length}/${maxGalleryImageCount})`}
-        description="실제 노출 순서를 보면서 위아래로 정렬할 수 있습니다."
+        description="갤러리도 잘리지 않게 전체 이미지를 본 뒤 실제 노출 순서를 정리합니다."
       >
         <View style={manageStyles.actionRow}>
           <ActionButton
@@ -247,7 +273,8 @@ export function ImagesEditorStep({
             ]}
           >
             <AppText variant="muted" style={manageStyles.helperText}>
-              아직 갤러리 이미지가 없습니다. 업로드하면 순서를 바로 조정할 수 있습니다.
+              아직 갤러리 이미지가 없습니다. 업로드하면 각 이미지 영역 안에서 전체 모습을 먼저 볼
+              수 있습니다.
             </AppText>
           </View>
         )}

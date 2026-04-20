@@ -12,6 +12,7 @@ import { getServerStorageBucket } from '@/server/firebaseAdmin';
 const ALLOWED_ASSET_KINDS: EditableImageAssetKind[] = ['cover', 'favicon', 'gallery'];
 const MAX_IMAGE_DIMENSION = 6000;
 const MAX_IMAGE_PIXELS = 16_000_000;
+const MAX_IMAGE_CLEANUP_PATHS = 40;
 const MIN_IMAGE_DIMENSION = 240;
 const MIN_FAVICON_DIMENSION = 48;
 const MAX_ASPECT_RATIO_BY_KIND: Record<EditableImageAssetKind, number> = {
@@ -27,6 +28,10 @@ type MobileBase64UploadBody = {
   fileName?: string;
   mimeType?: string;
   base64?: string;
+  uploadSessionId?: string;
+};
+type MobileImageCleanupBody = {
+  paths?: unknown;
 };
 type ResolvedUploadPayload = {
   assetKind: EditableImageAssetKind;
@@ -34,6 +39,7 @@ type ResolvedUploadPayload = {
   buffer: Buffer;
   thumbnailFile: File | null;
   thumbnailBuffer: Buffer | null;
+  uploadSessionId: string;
 };
 
 function sniffImageFormat(buffer: Buffer): SniffedImageFormat | null {
@@ -326,10 +332,69 @@ function readAssetKind(value: unknown): EditableImageAssetKind | null {
     : null;
 }
 
+function sanitizeUploadSessionId(value: unknown) {
+  if (typeof value !== 'string') {
+    return '';
+  }
+
+  const normalized = value.trim().toLowerCase();
+  if (!normalized) {
+    return '';
+  }
+
+  return /^[a-z0-9-]{8,80}$/.test(normalized) ? normalized : '';
+}
+
 function normalizeBase64Payload(value: string) {
   const trimmed = value.trim();
   const markerIndex = trimmed.indexOf('base64,');
   return markerIndex >= 0 ? trimmed.slice(markerIndex + 'base64,'.length) : trimmed;
+}
+
+function normalizeCleanupPath(value: unknown, pageSlug: string) {
+  if (typeof value !== 'string') {
+    return null;
+  }
+
+  const normalized = value.trim().replace(/^\/+/, '');
+  if (!normalized || normalized.includes('..') || normalized.includes('\\')) {
+    return null;
+  }
+
+  return normalized.startsWith(`wedding-images/${pageSlug}/`) ? normalized : null;
+}
+
+async function readCleanupPaths(request: Request, pageSlug: string) {
+  const body = (await request.json().catch(() => null)) as MobileImageCleanupBody | null;
+  if (!Array.isArray(body?.paths)) {
+    return { error: 'Image cleanup paths are required.' };
+  }
+
+  if (body.paths.length === 0) {
+    return { error: 'Image cleanup paths are required.' };
+  }
+
+  if (body.paths.length > MAX_IMAGE_CLEANUP_PATHS) {
+    return { error: 'Too many image cleanup paths were requested.' };
+  }
+
+  const normalizedEntries = body.paths.map((path) =>
+    normalizeCleanupPath(path, pageSlug)
+  );
+
+  if (normalizedEntries.some((path) => path === null)) {
+    return {
+      error: body.paths.some((path) => typeof path !== 'string')
+        ? 'Image cleanup path is invalid.'
+        : 'Image cleanup path does not belong to the current page.',
+    };
+  }
+
+  return {
+    paths: Array.from(
+      new Set(normalizedEntries.filter((path): path is string => path !== null))
+    ),
+  };
 }
 
 async function readUploadPayload(request: Request): Promise<ResolvedUploadPayload | null> {
@@ -348,6 +413,7 @@ async function readUploadPayload(request: Request): Promise<ResolvedUploadPayloa
       typeof body?.mimeType === 'string' && body.mimeType.trim()
         ? body.mimeType.trim()
         : 'image/jpeg';
+    const uploadSessionId = sanitizeUploadSessionId(body?.uploadSessionId ?? null);
 
     if (!assetKind || !normalizedBase64) {
       return null;
@@ -364,6 +430,7 @@ async function readUploadPayload(request: Request): Promise<ResolvedUploadPayloa
       buffer,
       thumbnailFile: null,
       thumbnailBuffer: null,
+      uploadSessionId,
     };
   }
 
@@ -372,6 +439,9 @@ async function readUploadPayload(request: Request): Promise<ResolvedUploadPayloa
   const thumbnailEntry = formData?.get('thumbnail');
   const thumbnailFile = thumbnailEntry instanceof File ? thumbnailEntry : null;
   const assetKind = readAssetKind(formData?.get('assetKind') ?? null);
+  const uploadSessionId = sanitizeUploadSessionId(
+    formData?.get('uploadSessionId') ?? null
+  );
 
   if (!(file instanceof File) || !assetKind) {
     return null;
@@ -398,6 +468,7 @@ async function readUploadPayload(request: Request): Promise<ResolvedUploadPayloa
     buffer,
     thumbnailFile,
     thumbnailBuffer,
+    uploadSessionId,
   };
 }
 
@@ -450,6 +521,8 @@ export async function POST(
 
   const buffer = uploadPayload?.buffer ?? null;
   const thumbnailBuffer = uploadPayload?.thumbnailBuffer ?? null;
+  const uploadSessionId =
+    uploadPayload?.uploadSessionId || 'legacy-mobile-upload';
 
   if (!buffer) {
     return NextResponse.json(
@@ -483,6 +556,7 @@ export async function POST(
     thumbnailPath
       ? randomUUID()
       : '';
+  const uploadedAt = new Date().toISOString();
 
   try {
     const bucketFile = bucket.file(imagePath);
@@ -496,6 +570,8 @@ export async function POST(
           metadata: {
             pageSlug,
             assetKind,
+            uploadSessionId,
+            uploadedAt,
             originalFileName: file.name,
             firebaseStorageDownloadTokens: downloadToken,
             variant: 'original',
@@ -510,6 +586,8 @@ export async function POST(
               metadata: {
                 pageSlug,
                 assetKind,
+                uploadSessionId,
+                uploadedAt,
                 originalFileName: thumbnailFile!.name,
                 firebaseStorageDownloadTokens: thumbnailDownloadToken,
                 variant: 'thumbnail',
@@ -534,12 +612,63 @@ export async function POST(
       path: imagePath,
       thumbnailUrl,
       thumbnailPath: thumbnailPath || imagePath,
-      uploadedAt: new Date().toISOString(),
+      uploadedAt,
     });
   } catch (error) {
     console.error('[mobile/client-editor/images] failed to upload image', error);
     return NextResponse.json(
       { error: '이미지 업로드에 실패했습니다. 잠시 후 다시 시도해 주세요.' },
+      { status: 500 }
+    );
+  }
+}
+
+export async function DELETE(
+  request: Request,
+  context: { params: Promise<{ slug: string }> }
+) {
+  const { slug } = await context.params;
+  const pageSlug = slug.trim();
+
+  const session = await authorizePageSession(request, pageSlug);
+  if (!session) {
+    return NextResponse.json(
+      { error: 'Unauthorized.' },
+      { status: 401 }
+    );
+  }
+
+  const bucket = getServerStorageBucket();
+  if (!bucket) {
+    return NextResponse.json(
+      { error: 'Image storage is not available.' },
+      { status: 503 }
+    );
+  }
+
+  const cleanupPayload = await readCleanupPaths(request, pageSlug);
+  if ('error' in cleanupPayload) {
+    return NextResponse.json(
+      { error: cleanupPayload.error },
+      { status: 400 }
+    );
+  }
+
+  try {
+    await Promise.all(
+      cleanupPayload.paths.map((path) =>
+        bucket.file(path).delete({ ignoreNotFound: true })
+      )
+    );
+
+    return NextResponse.json({
+      success: true,
+      deletedPaths: cleanupPayload.paths,
+    });
+  } catch (error) {
+    console.error('[mobile/client-editor/images] failed to clean up image', error);
+    return NextResponse.json(
+      { error: 'Failed to clean up uploaded images.' },
       { status: 500 }
     );
   }

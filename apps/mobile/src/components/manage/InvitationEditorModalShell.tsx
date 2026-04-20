@@ -24,6 +24,8 @@ type InvitationEditorModalShellProps = PropsWithChildren<{
   fontScale: number;
   cardStyle?: StyleProp<ViewStyle>;
   closeAccessibilityLabel?: string;
+  closeDisabled?: boolean;
+  closeLoading?: boolean;
 }>;
 
 export function InvitationEditorModalShell({
@@ -35,6 +37,8 @@ export function InvitationEditorModalShell({
   fontScale,
   cardStyle,
   closeAccessibilityLabel,
+  closeDisabled = false,
+  closeLoading = false,
   children,
 }: InvitationEditorModalShellProps) {
   return (
@@ -98,6 +102,8 @@ export function InvitationEditorModalShell({
               <ActionButton
                 variant="secondary"
                 onPress={onClose}
+                disabled={closeDisabled}
+                loading={closeLoading}
                 accessibilityLabel={closeAccessibilityLabel ?? `${title} 닫기`}
               >
                 닫기
