@@ -3,7 +3,9 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import type { useAuth } from '../../../contexts/AuthContext';
 import type { useInvitationOps } from '../../../contexts/InvitationOpsContext';
-import { adjustMobileInvitationTicketCount } from '../../../lib/api';
+import { fulfillMobileBillingTicketPack } from '../../../lib/api';
+import { purchaseBillingProduct } from '../../../lib/billing';
+import { getMobileBillingTicketPackProductId } from '../../../lib/mobileBillingProducts';
 import {
   buildLinkedInvitationCardFromPageSummary,
   getLinkedInvitationCards,
@@ -11,12 +13,13 @@ import {
   setLinkedInvitationCards as persistLinkedInvitationCards,
   type LinkedInvitationCard,
 } from '../../../lib/linkedInvitationCards';
+import { isPurchasableTicketPackCount } from '../shared';
 import type { TicketPurchaseSuccessState } from '../shared';
 
 type AuthState = Pick<ReturnType<typeof useAuth>, 'clearAuthError' | 'session'>;
 type InvitationOpsState = Pick<
   ReturnType<typeof useInvitationOps>,
-  'adjustTicketCount' | 'pageSummary' | 'refreshDashboard'
+  'pageSummary' | 'refreshDashboard'
 >;
 
 type UseCreateTicketPurchaseOptions = AuthState &
@@ -32,7 +35,6 @@ export function useCreateTicketPurchase({
   pageSummary,
   session,
   refreshDashboard,
-  adjustTicketCount,
   ticketCount,
   resetTicketCount,
   clearAuthError,
@@ -144,29 +146,39 @@ export function useCreateTicketPurchase({
       return;
     }
 
+    if (!isPurchasableTicketPackCount(ticketCount)) {
+      setNotice('Google Play Billing에서는 1장, 3장, 6장 티켓 상품만 구매할 수 있습니다.');
+      return;
+    }
+
     const purchaseTargetDisplayName =
       selectedTicketTargetCard.displayName.trim() || selectedTicketTargetCard.slug;
 
     setIsTicketPurchaseSubmitting(true);
 
-    const nextTicketCount =
-      session && selectedTicketTargetCard.slug === session.pageSlug
-        ? await adjustTicketCount(ticketCount)
-        : await adjustMobileInvitationTicketCount(
-            apiBaseUrl,
-            selectedTicketTargetCard.slug,
-            selectedTicketTargetCard.session.token,
-            ticketCount
-          )
-            .then((response) => response.ticketCount)
-            .catch((error) => {
-              setNotice(
-                error instanceof Error
-                  ? error.message
-                  : '티켓을 저장하지 못했습니다. 잠시 후 다시 시도해 주세요.'
-              );
-              return null;
-            });
+    const billingProductId = getMobileBillingTicketPackProductId(ticketCount);
+    let nextTicketCount: number | null = null;
+
+    try {
+      const purchase = await purchaseBillingProduct(billingProductId);
+      const fulfillment = await fulfillMobileBillingTicketPack(apiBaseUrl, {
+        purchase: {
+          appUserId: purchase.appUserId,
+          productId: purchase.productIdentifier,
+          transactionId: purchase.transactionIdentifier,
+        },
+        targetPageSlug: selectedTicketTargetCard.slug,
+        targetToken: selectedTicketTargetCard.session.token,
+      });
+
+      nextTicketCount = fulfillment.ticketCount;
+    } catch (error) {
+      setNotice(
+        error instanceof Error
+          ? error.message
+          : '티켓 결제를 진행하지 못했습니다. 잠시 후 다시 시도해 주세요.'
+      );
+    }
 
     setIsTicketPurchaseSubmitting(false);
 
@@ -199,7 +211,6 @@ export function useCreateTicketPurchase({
       nextTicketCount,
     });
   }, [
-    adjustTicketCount,
     apiBaseUrl,
     clearAuthError,
     linkedInvitationCards,

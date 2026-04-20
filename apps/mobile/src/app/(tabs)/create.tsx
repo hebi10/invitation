@@ -61,7 +61,7 @@ export default function CreateScreen() {
     isAuthenticating,
     session,
   } = useAuth();
-  const { pageSummary, refreshDashboard, adjustTicketCount } = useInvitationOps();
+  const { pageSummary, refreshDashboard } = useInvitationOps();
   const { drafts, removeDraft, saveDraft } = useDrafts();
 
   const createForm = useCreateForm({
@@ -79,7 +79,6 @@ export default function CreateScreen() {
     pageSummary,
     session,
     refreshDashboard,
-    adjustTicketCount,
     ticketCount: createForm.ticketCount,
     resetTicketCount: createForm.resetTicketCount,
     clearAuthError,
@@ -150,7 +149,7 @@ export default function CreateScreen() {
       <View style={[styles.screenRoot, { backgroundColor: palette.background }]}>
         <AppScreen
           title="구매"
-          subtitle="구매 탭에서는 제작 초안을 기기에 저장하고, 결제 확인 시점에만 실제 페이지를 생성합니다."
+          subtitle="구매 탭에서는 제작 초안을 기기에 저장하고, Google Play 결제 완료 시점에만 실제 페이지를 생성합니다."
           scrollRef={scrollRef}
           contentContainerStyle={{ paddingBottom: screenBottomPadding }}
         >
@@ -544,7 +543,7 @@ export default function CreateScreen() {
           {createForm.currentStep === 'ticket' ? (
             <SectionCard
               title="3. 추가 티켓 구매 (선택 사항)"
-              description="기본 구성 외에 필요한 티켓 수량만 정하고, 실제 사용은 생성 후 정책에 맞게 적용합니다."
+              description="Google Play Billing SKU에 맞는 티켓 상품만 선택하고, 실제 사용은 생성 후 정책에 맞게 적용합니다."
               badge={`${createForm.ticketCount}장`}
               badgeTone="accent"
               variant="emphasis"
@@ -575,11 +574,11 @@ export default function CreateScreen() {
               >
                 <Pressable
                   accessibilityRole="button"
-                  accessibilityLabel="추가 티켓 1장 줄이기"
-                  accessibilityHint="구매할 티켓 수량을 1장 줄입니다."
+                  accessibilityLabel="이전 티켓 상품으로 이동"
+                  accessibilityHint="지원되는 이전 티켓 상품 수량으로 이동합니다."
                   accessibilityState={{ disabled: createForm.ticketCount <= 0 }}
                   disabled={createForm.ticketCount <= 0}
-                  onPress={() => createForm.updateTicketCount(createForm.ticketCount - 1)}
+                  onPress={createForm.decreaseTicketCount}
                   style={[
                     styles.ticketCounterButton,
                     { borderColor: palette.cardBorder, backgroundColor: palette.surface },
@@ -595,16 +594,16 @@ export default function CreateScreen() {
                     {createForm.ticketCount}
                   </AppText>
                   <AppText variant="caption" style={styles.ticketCounterCaption}>
-                    구매할 티켓 장수
+                    지원되는 티켓 상품 수량
                   </AppText>
                 </View>
                 <Pressable
                   accessibilityRole="button"
-                  accessibilityLabel="추가 티켓 1장 늘리기"
-                  accessibilityHint="구매할 티켓 수량을 1장 늘립니다."
+                  accessibilityLabel="다음 티켓 상품으로 이동"
+                  accessibilityHint="지원되는 다음 티켓 상품 수량으로 이동합니다."
                   accessibilityState={{ disabled: createForm.ticketCount >= MAX_TICKET_COUNT }}
                   disabled={createForm.ticketCount >= MAX_TICKET_COUNT}
-                  onPress={() => createForm.updateTicketCount(createForm.ticketCount + 1)}
+                  onPress={createForm.increaseTicketCount}
                   style={[
                     styles.ticketCounterButton,
                     { borderColor: palette.cardBorder, backgroundColor: palette.surface },

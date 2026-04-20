@@ -8,6 +8,11 @@ import {
   buildPageSlugBaseFromEnglishNames,
   isValidEnglishName,
 } from '../../lib/pageSlug';
+import {
+  MOBILE_BILLING_TICKET_PACK_COUNTS,
+  isMobileBillingTicketPackCount,
+  type MobileBillingTicketPackCount,
+} from '../../lib/mobileBillingProducts';
 import type {
   MobileInvitationProductTier,
   MobileInvitationThemeKey,
@@ -23,8 +28,8 @@ export const TICKET_USAGE_ITEMS = [
 export const TICKET_UNIT_PRICE = ticketPricing.unitPrice;
 export const TICKET_DISCOUNT_BUNDLE_SIZE = ticketPricing.bundleSize;
 export const TICKET_BUNDLE_PRICE = ticketPricing.bundlePrice;
-export const TICKET_PRESET_COUNTS = [0, 1, 3, 6] as const;
-export const MAX_TICKET_COUNT = 12;
+export const TICKET_PRESET_COUNTS = [0, ...MOBILE_BILLING_TICKET_PACK_COUNTS] as const;
+export const MAX_TICKET_COUNT = MOBILE_BILLING_TICKET_PACK_COUNTS.at(-1) ?? 0;
 export const STICKY_CTA_BAR_HEIGHT = 92;
 export const STICKY_CTA_BAR_COMPACT_HEIGHT = 156;
 
@@ -51,11 +56,44 @@ export type TicketPurchaseSuccessState = {
   nextTicketCount: number;
 };
 
+export type SupportedCreateTicketCount = typeof TICKET_PRESET_COUNTS[number];
+
 export function calculateTicketPrice(ticketCount: number) {
   const bundleCount = Math.floor(ticketCount / TICKET_DISCOUNT_BUNDLE_SIZE);
   const remainderCount = ticketCount % TICKET_DISCOUNT_BUNDLE_SIZE;
 
   return bundleCount * TICKET_BUNDLE_PRICE + remainderCount * TICKET_UNIT_PRICE;
+}
+
+export function isSupportedCreateTicketCount(
+  value: number
+): value is SupportedCreateTicketCount {
+  return TICKET_PRESET_COUNTS.includes(value as SupportedCreateTicketCount);
+}
+
+export function normalizeSupportedCreateTicketCount(value: number) {
+  return isSupportedCreateTicketCount(value) ? value : 0;
+}
+
+export function getAdjacentSupportedTicketCount(
+  currentCount: number,
+  direction: 'decrease' | 'increase'
+) {
+  const currentIndex = TICKET_PRESET_COUNTS.indexOf(
+    normalizeSupportedCreateTicketCount(currentCount)
+  );
+  const nextIndex =
+    direction === 'increase'
+      ? Math.min(TICKET_PRESET_COUNTS.length - 1, currentIndex + 1)
+      : Math.max(0, currentIndex - 1);
+
+  return TICKET_PRESET_COUNTS[nextIndex] ?? 0;
+}
+
+export function isPurchasableTicketPackCount(
+  value: number
+): value is MobileBillingTicketPackCount {
+  return isMobileBillingTicketPackCount(value);
 }
 
 export function buildCreateValidationRules(input: {

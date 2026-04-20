@@ -14,6 +14,7 @@ import type {
   MobilePageSummary,
   MobileSessionSummary,
 } from '../types/mobileInvitation';
+import type { MobileBillingProductId } from './mobileBillingProducts';
 
 export const PRODUCTION_API_BASE_URL = 'https://msgnote.kr';
 const ALLOWED_API_HOSTS = new Set([
@@ -123,6 +124,24 @@ const ERROR_MESSAGE_MAP: Record<string, string> = {
     '이미지 저장소 연결을 확인하지 못했습니다. 잠시 후 다시 시도해 주세요.',
   'Failed to clean up uploaded images.':
     '임시 업로드 이미지를 정리하지 못했습니다. 잠시 후 다시 시도해 주세요.',
+  'Google Play purchase information is required.':
+    'Google Play 결제 정보가 누락되었습니다. 다시 시도해 주세요.',
+  'RevenueCat API key is not configured.':
+    '결제 검증 설정이 아직 완료되지 않았습니다. 관리자에게 문의해 주세요.',
+  'RevenueCat purchase verification failed.':
+    'Google Play 결제를 아직 확인하지 못했습니다. 잠시 후 다시 시도해 주세요.',
+  'The Google Play purchase could not be verified yet.':
+    'Google Play 결제가 아직 검증되지 않았습니다. 잠시 후 다시 시도해 주세요.',
+  'The selected Google Play product is not a page creation SKU.':
+    '선택한 결제 상품이 페이지 생성용이 아닙니다.',
+  'The selected Google Play product is not a ticket pack SKU.':
+    '선택한 결제 상품이 티켓 상품이 아닙니다.',
+  'This purchase record is already linked to another request.':
+    '이미 다른 요청에 사용된 결제 정보입니다.',
+  'The page password record could not be loaded.':
+    '생성한 청첩장 비밀번호 정보를 불러오지 못했습니다.',
+  'The created invitation page could not be loaded.':
+    '생성한 청첩장 정보를 다시 불러오지 못했습니다.',
   'Request failed.': '요청 처리에 실패했습니다. 잠시 후 다시 시도해 주세요.',
 };
 
@@ -324,6 +343,12 @@ export interface MobileMusicLibraryResponse {
   categories: MobileMusicCategory[];
 }
 
+export interface MobileBillingPurchaseReceiptInput {
+  appUserId: string;
+  productId: MobileBillingProductId;
+  transactionId: string;
+}
+
 export async function loginMobileClientEditor(
   baseUrl: string,
   pageSlug: string,
@@ -364,6 +389,62 @@ export async function createMobileInvitationDraft(
         password: payload.password,
         productTier: payload.servicePlan,
         defaultTheme: payload.theme,
+      }),
+    })
+  );
+}
+
+export async function fulfillMobileBillingPageCreation(
+  baseUrl: string,
+  payload: {
+    purchase: MobileBillingPurchaseReceiptInput;
+    input: MobileInvitationCreationInput;
+  }
+) {
+  return readJsonResponse<MobileInvitationCreationResponse>(
+    await fetchWithRetry(buildApiUrl(baseUrl, '/api/mobile/billing/fulfill'), {
+      method: 'POST',
+      headers: {
+        ...createHeaders(),
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        action: 'createInvitationPage',
+        purchase: payload.purchase,
+        createInput: {
+          slugBase: payload.input.slugBase,
+          groomKoreanName: payload.input.groomKoreanName,
+          brideKoreanName: payload.input.brideKoreanName,
+          groomEnglishName: payload.input.groomEnglishName,
+          brideEnglishName: payload.input.brideEnglishName,
+          password: payload.input.password,
+          theme: payload.input.theme,
+        },
+      }),
+    })
+  );
+}
+
+export async function fulfillMobileBillingTicketPack(
+  baseUrl: string,
+  payload: {
+    purchase: MobileBillingPurchaseReceiptInput;
+    targetPageSlug: string;
+    targetToken: string;
+  }
+) {
+  return readJsonResponse<{ success: boolean; ticketCount: number }>(
+    await fetchWithRetry(buildApiUrl(baseUrl, '/api/mobile/billing/fulfill'), {
+      method: 'POST',
+      headers: {
+        ...createHeaders(),
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        action: 'grantTicketPack',
+        purchase: payload.purchase,
+        targetPageSlug: payload.targetPageSlug,
+        targetToken: payload.targetToken,
       }),
     })
   );

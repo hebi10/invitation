@@ -4,8 +4,11 @@ import { useCallback, useMemo, useRef, useState } from 'react';
 import type { useAuth } from '../../../contexts/AuthContext';
 import type { useDrafts } from '../../../contexts/DraftsContext';
 import { DEFAULT_INVITATION_THEME } from '../../../lib/invitationThemes';
+import { purchaseBillingProduct } from '../../../lib/billing';
+import { getMobileBillingPageCreationProductId } from '../../../lib/mobileBillingProducts';
 import type {
   CreateDraftItem,
+  MobileInvitationCreationInput,
   MobileInvitationProductTier,
   MobileInvitationThemeKey,
 } from '../../../types/mobileInvitation';
@@ -13,12 +16,13 @@ import { useCreateDraftSync } from './useCreateDraftSync';
 import { useCreateTicketIntent } from './useCreateTicketIntent';
 import {
   CREATE_STEPS,
-  MAX_TICKET_COUNT,
   TICKET_DISCOUNT_BUNDLE_SIZE,
   buildCreateSlugBase,
   buildCreateValidationRules,
   calculateTicketPrice,
   designThemes,
+  getAdjacentSupportedTicketCount,
+  normalizeSupportedCreateTicketCount,
   servicePlans,
   type CreateStepKey,
 } from '../shared';
@@ -147,7 +151,7 @@ export function useCreateForm({
   );
   const currentStepIndex = CREATE_STEPS.findIndex((step) => step.key === currentStep);
   const currentStepInfo = CREATE_STEPS[currentStepIndex] ?? CREATE_STEPS[0];
-  const primaryCtaLabel = currentStep === 'review' ? '결제 확인' : '다음';
+  const primaryCtaLabel = currentStep === 'review' ? 'Google Play 결제' : '다음';
   const showPreviousCta = currentStepIndex > 0;
   const stepCompletion = useMemo(
     () => ({
@@ -246,7 +250,7 @@ export function useCreateForm({
       setBrideEnglishName(draft.brideEnglishName);
       setPassword('');
       setConfirmPassword('');
-      setTicketCount(draft.ticketCount);
+      setTicketCount(normalizeSupportedCreateTicketCount(draft.ticketCount));
       setPaymentModalVisible(false);
       setCurrentStep('info');
       lastDraftSnapshotRef.current = JSON.stringify(
@@ -415,7 +419,19 @@ export function useCreateForm({
   }, [clearAuthError, resetDraftSync]);
 
   const updateTicketCount = useCallback((nextCount: number) => {
-    setTicketCount(Math.max(0, Math.min(MAX_TICKET_COUNT, nextCount)));
+    setTicketCount(normalizeSupportedCreateTicketCount(nextCount));
+  }, []);
+
+  const decreaseTicketCount = useCallback(() => {
+    setTicketCount((currentCount) =>
+      getAdjacentSupportedTicketCount(currentCount, 'decrease')
+    );
+  }, []);
+
+  const increaseTicketCount = useCallback(() => {
+    setTicketCount((currentCount) =>
+      getAdjacentSupportedTicketCount(currentCount, 'increase')
+    );
   }, []);
 
   const resetTicketCount = useCallback(() => {
@@ -543,8 +559,7 @@ export function useCreateForm({
 
     setIsSubmitting(true);
     clearAuthError();
-
-    const created = await createInvitationPage({
+    const createInput: MobileInvitationCreationInput = {
       slugBase,
       groomKoreanName: groomKoreanName.trim(),
       brideKoreanName: brideKoreanName.trim(),
@@ -553,7 +568,27 @@ export function useCreateForm({
       password: password.trim(),
       servicePlan: selectedPlan,
       theme: selectedTheme ?? DEFAULT_INVITATION_THEME,
-    });
+    };
+    const billingProductId = getMobileBillingPageCreationProductId(selectedPlan);
+
+    let created = false;
+
+    try {
+      const purchase = await purchaseBillingProduct(billingProductId);
+      created = await createInvitationPage(createInput, {
+        billingPurchase: {
+          appUserId: purchase.appUserId,
+          productId: purchase.productIdentifier,
+          transactionId: purchase.transactionIdentifier,
+        },
+      });
+    } catch (error) {
+      setNotice(
+        error instanceof Error
+          ? error.message
+          : 'Google Play 결제를 진행하지 못했습니다. 잠시 후 다시 시도해 주세요.'
+      );
+    }
 
     setIsSubmitting(false);
 
@@ -566,7 +601,9 @@ export function useCreateForm({
     }
 
     resetForm();
-    setNotice('청첩장을 생성했습니다. 운영 탭에서 식장 정보를 이어서 입력해 주세요.');
+    setNotice(
+      'Google Play 결제가 완료되어 청첩장을 생성했습니다. 운영 탭에서 식장 정보를 이어서 입력해 주세요.'
+    );
     router.replace('/manage');
   }, [
     brideEnglishName,
@@ -579,6 +616,7 @@ export function useCreateForm({
     isExpoWebPreview,
     moveToStep,
     password,
+    setNotice,
     removeDraft,
     resetForm,
     router,
@@ -611,6 +649,8 @@ export function useCreateForm({
     setConfirmPassword,
     ticketCount,
     updateTicketCount,
+    decreaseTicketCount,
+    increaseTicketCount,
     resetTicketCount,
     ticketPrice,
     discountedBundleCount,

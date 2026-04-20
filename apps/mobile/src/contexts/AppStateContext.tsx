@@ -12,6 +12,7 @@ import type {
   MobileSessionSummary,
   PendingManageOnboarding,
 } from '../types/mobileInvitation';
+import type { MobileBillingPurchaseReceiptInput } from '../lib/api';
 import type { FontScalePreference, ThemePreference } from '../constants/theme';
 import type { getPalette } from '../constants/theme';
 
@@ -47,7 +48,10 @@ export type AppStateContextValue = {
   pendingManageOnboarding: PendingManageOnboarding | null;
   login: (pageIdentifier: string, password: string) => Promise<boolean>;
   createInvitationPage: (
-    input: MobileInvitationCreationInput
+    input: MobileInvitationCreationInput,
+    options?: {
+      billingPurchase?: MobileBillingPurchaseReceiptInput;
+    }
   ) => Promise<boolean>;
   activateStoredSession: (candidateSession: MobileSessionSummary) => Promise<boolean>;
   logout: () => Promise<void>;

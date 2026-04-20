@@ -371,6 +371,9 @@ NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID=
 NEXT_PUBLIC_KAKAO_JAVASCRIPT_KEY=
 # 또는
 NEXT_PUBLIC_KAKAO_MAP_API_KEY=
+
+EXPO_PUBLIC_REVENUECAT_ANDROID_API_KEY=
+EXPO_PUBLIC_REVENUECAT_IOS_API_KEY=
 ```
 
 설명:
@@ -381,6 +384,10 @@ NEXT_PUBLIC_KAKAO_MAP_API_KEY=
   Firebase Web SDK 설정
 - `NEXT_PUBLIC_KAKAO_JAVASCRIPT_KEY`
   Kakao 지도 / 공유 SDK 키
+- `EXPO_PUBLIC_REVENUECAT_ANDROID_API_KEY`
+  Expo Android 앱에서 `react-native-purchases`가 사용할 RevenueCat 공개 SDK 키
+- `EXPO_PUBLIC_REVENUECAT_IOS_API_KEY`
+  Expo iOS 앱에서 `react-native-purchases`가 사용할 RevenueCat 공개 SDK 키
 
 주의:
 
@@ -398,6 +405,8 @@ GCLOUD_PROJECT=
 CLIENT_EDITOR_SESSION_SECRET=
 MOBILE_DRAFT_CREATION_ENABLED=
 MEMORY_METADATA_SYNC_STRICT=true
+REVENUECAT_PUBLIC_API_KEY=
+REVENUECAT_SERVER_API_KEY=
 ```
 
 설명:
@@ -410,6 +419,10 @@ MEMORY_METADATA_SYNC_STRICT=true
   고객 편집 세션 서명용 서버 전용 비밀값
 - `MEMORY_METADATA_SYNC_STRICT`
   추억 페이지 메타데이터 동기화 실패 시 빌드 실패 처리
+- `REVENUECAT_PUBLIC_API_KEY`
+  RevenueCat v1 subscriber 조회용 API 키. 모바일 Billing 지급 검증에 사용
+- `REVENUECAT_SERVER_API_KEY`
+  RevenueCat 서버 전용 키를 쓰는 경우 우선 사용
 
 ## 로컬 개발
 
@@ -427,6 +440,12 @@ npm run mb:start
 npm run mb:android
 npm run mb:web
 ```
+
+Google Play Billing 연동 주의:
+
+- 모바일 앱은 `react-native-purchases`를 사용하므로 Expo Go가 아니라 development build 또는 production build에서 테스트해야 합니다.
+- 현재 저장소에는 `apps/mobile/package.json`에 의존성만 반영되어 있고, 오프라인 환경에서는 `npm --prefix apps/mobile install react-native-purchases`가 실패할 수 있습니다.
+- 네트워크가 가능한 환경에서 패키지 설치 후 `npx eas build --platform android --profile development` 또는 `production`으로 다시 빌드해야 실제 결제를 테스트할 수 있습니다.
 
 ## 주요 스크립트
 

@@ -56,7 +56,7 @@ export function TicketOnlyPurchaseModal({
       <View style={styles.overlay}>
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel="티켓 전용 결제 확인 팝업 닫기"
+          accessibilityLabel="티켓 Google Play 결제 팝업 닫기"
           style={[
             styles.backdrop,
             {
@@ -82,11 +82,11 @@ export function TicketOnlyPurchaseModal({
             showsVerticalScrollIndicator={false}
           >
             <AppText variant="title" style={styles.title}>
-              티켓 전용 결제 확인
+              티켓 Google Play 결제
             </AppText>
             <AppText variant="muted" style={styles.description}>
-              이 창은 추가 티켓만 먼저 결제하려는 경우를 위한 확인 단계입니다. 실제
-              결제는 아직 연결하지 않았고, 현재는 금액과 사용 범위만 확인할 수 있습니다.
+              이 창은 추가 티켓을 Google Play Billing으로 구매하기 전 확인 단계입니다.
+              결제가 완료되면 선택한 청첩장에 티켓이 바로 적립됩니다.
             </AppText>
 
             <View style={styles.summaryRow}>
@@ -177,7 +177,7 @@ export function TicketOnlyPurchaseModal({
                 다시 확인하기
               </ActionButton>
               <ActionButton onPress={onConfirm} loading={loading} fullWidth>
-                티켓 전용 결제 확인
+                Google Play로 티켓 구매
               </ActionButton>
             </View>
           </ScrollView>

@@ -11,8 +11,10 @@ import {
 
 import {
   createMobileInvitationDraft,
+  fulfillMobileBillingPageCreation,
   loginMobileClientEditor,
   validateMobileClientEditorSession,
+  type MobileBillingPurchaseReceiptInput,
 } from '../lib/api';
 import {
   buildLinkedInvitationCardFromPageSummary,
@@ -51,7 +53,10 @@ type AuthContextValue = {
   initialDashboardSeed: AuthInitialDashboardSeed | null;
   login: (pageIdentifier: string, password: string) => Promise<boolean>;
   createInvitationPage: (
-    input: MobileInvitationCreationInput
+    input: MobileInvitationCreationInput,
+    options?: {
+      billingPurchase?: MobileBillingPurchaseReceiptInput;
+    }
   ) => Promise<boolean>;
   activateStoredSession: (candidateSession: MobileSessionSummary) => Promise<boolean>;
   logout: () => Promise<void>;
@@ -301,11 +306,21 @@ export function AuthProvider({ children }: PropsWithChildren) {
   );
 
   const createInvitationPage = useCallback(
-    async (input: MobileInvitationCreationInput) => {
+    async (
+      input: MobileInvitationCreationInput,
+      options: {
+        billingPurchase?: MobileBillingPurchaseReceiptInput;
+      } = {}
+    ) => {
       setIsAuthenticating(true);
 
       try {
-        const response = await createMobileInvitationDraft(apiBaseUrl, input);
+        const response = options.billingPurchase
+          ? await fulfillMobileBillingPageCreation(apiBaseUrl, {
+              purchase: options.billingPurchase,
+              input,
+            })
+          : await createMobileInvitationDraft(apiBaseUrl, input);
 
         setSession(response.session);
         setInitialDashboardSeed({

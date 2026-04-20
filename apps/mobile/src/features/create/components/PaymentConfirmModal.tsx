@@ -39,7 +39,7 @@ export function PaymentConfirmModal({
       <View style={styles.overlay}>
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel="결제 확인 팝업 닫기"
+          accessibilityLabel="Google Play 결제 팝업 닫기"
           style={[
             styles.backdrop,
             {
@@ -65,11 +65,10 @@ export function PaymentConfirmModal({
             showsVerticalScrollIndicator={false}
           >
             <AppText variant="title" style={styles.title}>
-              결제 확인
+              Google Play 결제
             </AppText>
             <AppText variant="muted" style={styles.description}>
-              실제 결제는 아직 연결하지 않았습니다. 이 팝업에서 확인을 누르면 페이지를
-              생성하고 운영 탭으로 바로 이동합니다.
+              Google Play 결제가 완료되면 청첩장을 생성하고 운영 탭으로 바로 이동합니다.
             </AppText>
 
             <View style={styles.summaryRow}>
@@ -108,7 +107,7 @@ export function PaymentConfirmModal({
                 다시 확인하기
               </ActionButton>
               <ActionButton onPress={onConfirm} loading={loading} fullWidth>
-                확인 후 페이지 생성
+                Google Play 결제 후 페이지 생성
               </ActionButton>
             </View>
           </ScrollView>
