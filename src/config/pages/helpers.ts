@@ -13,7 +13,7 @@ import {
 } from '@/lib/musicLibrary';
 import {
   DEFAULT_INVITATION_THEME,
-  INVITATION_THEME_REGISTRY,
+  INVITATION_THEME_METADATA_REGISTRY,
 } from '@/lib/invitationThemes';
 
 type WeddingPageMetadata = InvitationPageSeed['metadata'];
@@ -26,7 +26,7 @@ export type WeddingVariantKey = keyof WeddingVariants;
 export const ALL_WEDDING_VARIANT_KEYS: readonly WeddingVariantKey[] =
   INVITATION_VARIANT_KEYS as readonly WeddingVariantKey[];
 
-const simpleThemeKey = INVITATION_THEME_REGISTRY.find(
+const simpleThemeKey = INVITATION_THEME_METADATA_REGISTRY.find(
   (theme) => theme.pathSuffix === '/simple'
 )?.key;
 

@@ -8,6 +8,7 @@
     "expo-env.d.ts",
     "src/**/*.ts",
     "src/**/*.tsx",
+    "../../src/lib/invitationThemes.ts",
     ".expo/types/**/*.ts"
   ]
 }

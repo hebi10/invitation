@@ -1,13 +1,9 @@
 'use client';
 
 import { useEffect } from 'react';
-import type { ComponentType } from 'react';
 
 import { AdminProvider } from '@/contexts';
 import { BackgroundMusic } from '@/components';
-import {
-  type InvitationThemeKey,
-} from '@/lib/invitationThemes';
 import { resolveInvitationFeatures } from '@/lib/invitationProducts';
 import {
   clampInvitationMusicVolume,
@@ -16,19 +12,12 @@ import {
 import { AccessDeniedPage } from '@/utils';
 
 import { useWeddingInvitationState } from './weddingPageState';
-import EmotionalThemeRenderer from './themeRenderers/emotional';
-import SimpleThemeRenderer from './themeRenderers/simple';
+import { getWeddingThemeRenderer } from './themeRenderers/registry';
 import { type WeddingInvitationRouteOptions } from './weddingThemes';
 import { getWeddingThemeDefinition } from './weddingThemes';
 import WeddingKakaoShareButton from './WeddingKakaoShareButton';
 import type { WeddingPageReadyState } from './weddingPageState';
-import type { WeddingThemeRendererProps } from './weddingPageRenderers';
 import styles from './WeddingInvitationPage.module.css';
-
-const themeRendererRegistry: Record<InvitationThemeKey, ComponentType<WeddingThemeRendererProps>> = {
-  emotional: EmotionalThemeRenderer,
-  simple: SimpleThemeRenderer,
-};
 
 function upsertMetaTag(selector: string, attributes: Record<string, string>) {
   if (typeof document === 'undefined') {
@@ -184,7 +173,7 @@ function WeddingInvitationPageBody(options: WeddingInvitationRouteOptions) {
   }
 
   const readyState: WeddingPageReadyState = state;
-  const ThemeRenderer = themeRendererRegistry[options.theme];
+  const ThemeRenderer = getWeddingThemeRenderer(options.theme);
   const isLoaderVisible = readyState.isLoading || readyState.imagesLoading;
   const shareFeatures = resolveInvitationFeatures(
     readyState.pageConfig.productTier,

@@ -1,6 +1,15 @@
 import { useEffect, useMemo, useState } from 'react';
 
-import type { LinkedInvitationCard } from '../../../lib/linkedInvitationCards';
+import {
+  getLinkedInvitationThemeKeys,
+  type LinkedInvitationCard,
+} from '../../../lib/linkedInvitationCardsModel';
+import {
+  DEFAULT_INVITATION_THEME,
+  INVITATION_THEME_KEYS,
+  getInvitationThemeLabel,
+  getPurchasableInvitationThemeKeys,
+} from '../../../lib/invitationThemes';
 import type {
   MobileDisplayPeriodSummary,
   MobileInvitationProductTier,
@@ -41,8 +50,41 @@ type UseTicketOperationsOptions = {
   formatDateLabel: (value: string) => string;
 };
 
-function getThemeLabel(themeKey: MobileInvitationThemeKey) {
-  return themeKey === 'emotional' ? '감성형' : '심플형';
+export function resolvePreferredTargetTheme(
+  currentTheme: MobileInvitationThemeKey,
+  availableThemes: readonly MobileInvitationThemeKey[],
+  purchasableThemes: readonly MobileInvitationThemeKey[]
+) {
+  const availableThemeSet = new Set<MobileInvitationThemeKey>(availableThemes);
+
+  return (
+    purchasableThemes.find(
+      (themeKey) => themeKey !== currentTheme && availableThemeSet.has(themeKey)
+    ) ??
+    purchasableThemes.find((themeKey) => !availableThemeSet.has(themeKey)) ??
+    purchasableThemes.find((themeKey) => themeKey === currentTheme) ??
+    purchasableThemes[0] ??
+    currentTheme
+  );
+}
+
+export function getSelectedTargetThemeState(options: {
+  currentTheme: MobileInvitationThemeKey;
+  selectedTargetTheme: MobileInvitationThemeKey;
+  availableThemes: readonly MobileInvitationThemeKey[];
+}) {
+  const { currentTheme, selectedTargetTheme, availableThemes } = options;
+  const isSelectedTargetThemeCurrent = selectedTargetTheme === currentTheme;
+  const isSelectedTargetThemeAvailable = availableThemes.includes(selectedTargetTheme);
+
+  return {
+    isSelectedTargetThemeCurrent,
+    isSelectedTargetThemeAvailable,
+    canApplyThemeChange:
+      !isSelectedTargetThemeCurrent && isSelectedTargetThemeAvailable,
+    canPurchaseTargetTheme:
+      !isSelectedTargetThemeCurrent && !isSelectedTargetThemeAvailable,
+  };
 }
 
 export function useTicketOperations({
@@ -60,14 +102,47 @@ export function useTicketOperations({
   formatDateLabel,
 }: UseTicketOperationsOptions) {
   const [ticketModalVisible, setTicketModalVisible] = useState(false);
-  const [ticketThemeSelection, setTicketThemeSelection] =
-    useState<MobileInvitationThemeKey>('emotional');
+  const [selectedTargetTheme, setSelectedTargetTheme] =
+    useState<MobileInvitationThemeKey>(DEFAULT_INVITATION_THEME);
   const [isExtendingDisplayPeriod, setIsExtendingDisplayPeriod] = useState(false);
   const [isApplyingTicketThemeChange, setIsApplyingTicketThemeChange] = useState(false);
-  const [isApplyingExtraVariant, setIsApplyingExtraVariant] = useState(false);
+  const [isPurchasingTargetTheme, setIsPurchasingTargetTheme] = useState(false);
   const [isTransferringTickets, setIsTransferringTickets] = useState(false);
   const [ticketTransferTargetSlug, setTicketTransferTargetSlug] = useState<string | null>(null);
   const [ticketTransferCount, setTicketTransferCount] = useState(1);
+
+  const purchasableThemes = useMemo(() => getPurchasableInvitationThemeKeys(), []);
+
+  const currentTheme = activeLinkedInvitationCard?.defaultTheme ?? DEFAULT_INVITATION_THEME;
+
+  const availableThemes = useMemo(() => {
+    if (!activeLinkedInvitationCard) {
+      return [] as MobileInvitationThemeKey[];
+    }
+
+    const themeSet = new Set<MobileInvitationThemeKey>([
+      activeLinkedInvitationCard.defaultTheme,
+      ...getLinkedInvitationThemeKeys(activeLinkedInvitationCard),
+    ]);
+
+    INVITATION_THEME_KEYS.forEach((themeKey) => {
+      if (dashboardVariants?.[themeKey]?.available === true) {
+        themeSet.add(themeKey);
+      }
+    });
+
+    return INVITATION_THEME_KEYS.filter((themeKey) => themeSet.has(themeKey));
+  }, [activeLinkedInvitationCard, dashboardVariants]);
+
+  const selectedTargetThemeState = useMemo(
+    () =>
+      getSelectedTargetThemeState({
+        currentTheme,
+        selectedTargetTheme,
+        availableThemes,
+      }),
+    [availableThemes, currentTheme, selectedTargetTheme]
+  );
 
   const ticketTransferTargetCards = useMemo(
     () => additionalLinkedInvitationCards.filter((item) => Boolean(item.session)),
@@ -110,23 +185,25 @@ export function useTicketOperations({
     return null;
   }, [activeLinkedInvitationCard]);
 
-  const alternateTheme = useMemo<MobileInvitationThemeKey>(
-    () => (activeLinkedInvitationCard?.defaultTheme === 'emotional' ? 'simple' : 'emotional'),
-    [activeLinkedInvitationCard?.defaultTheme]
-  );
-
-  const isAlternateThemeAvailable = useMemo(() => {
-    const targetVariant = dashboardVariants?.[alternateTheme];
-    return targetVariant?.available === true;
-  }, [alternateTheme, dashboardVariants]);
-
   useEffect(() => {
     if (!activeLinkedInvitationCard) {
       return;
     }
 
-    setTicketThemeSelection(activeLinkedInvitationCard.defaultTheme);
-  }, [activeLinkedInvitationCard]);
+    if (purchasableThemes.includes(selectedTargetTheme)) {
+      return;
+    }
+
+    setSelectedTargetTheme(
+      resolvePreferredTargetTheme(currentTheme, availableThemes, purchasableThemes)
+    );
+  }, [
+    activeLinkedInvitationCard,
+    availableThemes,
+    currentTheme,
+    purchasableThemes,
+    selectedTargetTheme,
+  ]);
 
   useEffect(() => {
     if (ticketTransferTargetCards.length === 0) {
@@ -158,7 +235,9 @@ export function useTicketOperations({
       return;
     }
 
-    setTicketThemeSelection(activeLinkedInvitationCard.defaultTheme);
+    setSelectedTargetTheme(
+      resolvePreferredTargetTheme(currentTheme, availableThemes, purchasableThemes)
+    );
     setTicketTransferCount(1);
     setTicketTransferTargetSlug(ticketTransferTargetCards[0]?.slug ?? null);
     setTicketModalVisible(true);
@@ -173,8 +252,13 @@ export function useTicketOperations({
       return;
     }
 
-    if (ticketThemeSelection === activeLinkedInvitationCard.defaultTheme) {
-      setNotice('현재 기본 디자인과 같은 테마가 선택되어 있습니다.');
+    if (selectedTargetThemeState.isSelectedTargetThemeCurrent) {
+      setNotice('현재 기본 디자인과 같은 디자인이 선택되어 있습니다.');
+      return;
+    }
+
+    if (!selectedTargetThemeState.isSelectedTargetThemeAvailable) {
+      setNotice('기본 디자인을 변경하려면 먼저 해당 디자인을 현재 청첩장에 추가해야 합니다.');
       return;
     }
 
@@ -183,8 +267,8 @@ export function useTicketOperations({
       return;
     }
 
-    const previousTheme = activeLinkedInvitationCard.defaultTheme;
-    invitationForm.setDefaultTheme(ticketThemeSelection);
+    const previousTheme = currentTheme;
+    invitationForm.setDefaultTheme(selectedTargetTheme);
     setIsApplyingTicketThemeChange(true);
 
     const saved = await invitationForm.persistForm({
@@ -207,14 +291,14 @@ export function useTicketOperations({
       setNotice(
         rolledBack
           ? '티켓 차감에 실패해 기본 디자인 변경을 취소했습니다.'
-          : '티켓 차감에 실패했고 기본 디자인 변경 롤백을 확인하지 못했습니다. 새로고침 후 상태를 확인해 주세요.'
+          : '티켓 차감에 실패했고 기본 디자인 롤백도 확인하지 못했습니다. 새로고침 후 상태를 확인해 주세요.'
       );
       return;
     }
 
     setIsApplyingTicketThemeChange(false);
     setTicketModalVisible(false);
-    setNotice(`기본 디자인을 ${getThemeLabel(ticketThemeSelection)}으로 변경했습니다.`);
+    setNotice(`기본 디자인을 ${getInvitationThemeLabel(selectedTargetTheme)}으로 변경했습니다.`);
   };
 
   const handleExtendDisplayPeriod = async () => {
@@ -243,7 +327,7 @@ export function useTicketOperations({
       setNotice(
         rolledBack
           ? '티켓 차감에 실패해 노출 기간 연장을 취소했습니다.'
-          : '티켓 차감에 실패했고 노출 기간 롤백을 확인하지 못했습니다. 새로고침 후 상태를 확인해 주세요.'
+          : '티켓 차감에 실패했고 노출 기간 롤백도 확인하지 못했습니다. 새로고침 후 상태를 확인해 주세요.'
       );
       return;
     }
@@ -257,13 +341,20 @@ export function useTicketOperations({
     setNotice(`노출 기간을 1개월 연장했습니다. 새 종료일은 ${endDateLabel}입니다.`);
   };
 
-  const handleAddExtraVariant = async () => {
+  const handlePurchaseTargetTheme = async () => {
     if (!activeLinkedInvitationCard) {
       return;
     }
 
-    if (isAlternateThemeAvailable) {
-      setNotice(`이미 ${getThemeLabel(alternateTheme)} 디자인이 추가되어 있습니다.`);
+    if (selectedTargetThemeState.isSelectedTargetThemeCurrent) {
+      setNotice('현재 기본 디자인은 추가 구매 대상이 아닙니다.');
+      return;
+    }
+
+    if (selectedTargetThemeState.isSelectedTargetThemeAvailable) {
+      setNotice(
+        `이미 ${getInvitationThemeLabel(selectedTargetTheme)} 디자인을 현재 청첩장에서 사용할 수 있습니다.`
+      );
       return;
     }
 
@@ -272,29 +363,31 @@ export function useTicketOperations({
       return;
     }
 
-    setIsApplyingExtraVariant(true);
-    const saved = await setVariantAvailability(alternateTheme, true);
+    setIsPurchasingTargetTheme(true);
+    const saved = await setVariantAvailability(selectedTargetTheme, true);
 
     if (!saved) {
-      setIsApplyingExtraVariant(false);
+      setIsPurchasingTargetTheme(false);
       return;
     }
 
     const nextTicketCount = await adjustTicketCount(-2);
     if (nextTicketCount === null) {
-      const rolledBack = await setVariantAvailability(alternateTheme, false);
-      setIsApplyingExtraVariant(false);
+      const rolledBack = await setVariantAvailability(selectedTargetTheme, false);
+      setIsPurchasingTargetTheme(false);
       setNotice(
         rolledBack
           ? '티켓 차감에 실패해 추가 디자인 적용을 취소했습니다.'
-          : '티켓 차감에 실패했고 추가 디자인 롤백을 확인하지 못했습니다. 새로고침 후 상태를 확인해 주세요.'
+          : '티켓 차감에 실패했고 추가 디자인 롤백도 확인하지 못했습니다. 새로고침 후 상태를 확인해 주세요.'
       );
       return;
     }
 
-    setIsApplyingExtraVariant(false);
+    setIsPurchasingTargetTheme(false);
     setTicketModalVisible(false);
-    setNotice(`같은 청첩장에 ${getThemeLabel(alternateTheme)} 디자인을 추가했습니다.`);
+    setNotice(
+      `같은 청첩장에 ${getInvitationThemeLabel(selectedTargetTheme)} 디자인을 추가했습니다.`
+    );
   };
 
   const handleTransferTicketCount = async () => {
@@ -362,26 +455,31 @@ export function useTicketOperations({
 
   return {
     ticketModalVisible,
-    ticketThemeSelection,
+    currentTheme,
+    availableThemes,
+    purchasableThemes,
+    selectedTargetTheme,
     isExtendingDisplayPeriod,
     isApplyingTicketThemeChange,
-    isApplyingExtraVariant,
+    isPurchasingTargetTheme,
+    isSelectedTargetThemeAvailable:
+      selectedTargetThemeState.isSelectedTargetThemeAvailable,
+    isSelectedTargetThemeCurrent:
+      selectedTargetThemeState.isSelectedTargetThemeCurrent,
     isTransferringTickets,
     ticketTransferTargetCards,
     selectedTicketTransferTargetCard,
     ticketTransferCount,
     ticketTransferCountOptions,
     upgradeTargetPlan,
-    alternateTheme,
-    isAlternateThemeAvailable,
-    setTicketThemeSelection,
+    setSelectedTargetTheme,
     setTicketTransferTargetSlug,
     setTicketTransferCount,
     handleOpenTicketModal,
     closeTicketModal,
     handleApplyTicketThemeChange,
     handleExtendDisplayPeriod,
-    handleAddExtraVariant,
+    handlePurchaseTargetTheme,
     handleTransferTicketCount,
   };
 }

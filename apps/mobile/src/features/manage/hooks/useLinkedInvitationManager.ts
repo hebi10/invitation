@@ -5,6 +5,7 @@ import {
   buildLinkedInvitationCardFromPageSummary,
   canActivateLinkedInvitationCard,
   getLinkedInvitationCards,
+  getLinkedInvitationThemeKeys,
   type LinkedInvitationCard,
   MAX_LINKED_INVITATION_CARD_COUNT,
   mergeLinkedInvitationCard,
@@ -188,11 +189,9 @@ export function useLinkedInvitationManager({
 
   const previewLinkThemeKeys = useMemo(
     () =>
-      previewLinkTargetCard?.availableThemeKeys.length
-        ? previewLinkTargetCard.availableThemeKeys
-        : previewLinkTargetCard
-          ? [previewLinkTargetCard.defaultTheme]
-          : [],
+      previewLinkTargetCard
+        ? getLinkedInvitationThemeKeys(previewLinkTargetCard)
+        : [],
     [previewLinkTargetCard]
   );
 
@@ -231,8 +230,7 @@ export function useLinkedInvitationManager({
         existing.showMusic === nextCard.showMusic &&
         existing.showGuestbook === nextCard.showGuestbook &&
         existing.publicUrl === nextCard.publicUrl &&
-        existing.availableThemeKeys.join('|') === nextCard.availableThemeKeys.join('|') &&
-        JSON.stringify(existing.previewUrls) === JSON.stringify(nextCard.previewUrls) &&
+        JSON.stringify(existing.linkedThemes) === JSON.stringify(nextCard.linkedThemes) &&
         JSON.stringify(existing.displayPeriod) === JSON.stringify(nextCard.displayPeriod) &&
         existing.ticketCount === nextCard.ticketCount
       ) {

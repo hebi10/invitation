@@ -190,9 +190,6 @@ export default function MobileInvitationPrivacyPage() {
           <Link className={styles.homeLink} href="/">
             홈으로 돌아가기
           </Link>
-          <p className={styles.footerCopy}>
-            Play Console 등록용 권장 URL: https://msgnote.kr/privacy/mobile-invitation/
-          </p>
         </footer>
       </div>
     </main>

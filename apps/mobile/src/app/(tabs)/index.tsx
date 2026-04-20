@@ -12,6 +12,7 @@ import { useAppFeedback } from '../../contexts/AppFeedbackContext';
 import { useDrafts } from '../../contexts/DraftsContext';
 import { usePreferences } from '../../contexts/PreferencesContext';
 import { formatPrice } from '../../lib/format';
+import { getInvitationThemeLabel } from '../../lib/invitationThemes';
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -54,7 +55,7 @@ export default function HomeScreen() {
   return (
     <AppScreen
       title="모바일 청첩장"
-      subtitle="새 청첩장 생성, 기존 페이지 연동, 초안 관리와 샘플 확인까지 한곳에서 바로 시작할 수 있습니다."
+      subtitle="새 청첩장 생성, 기존 페이지 연동, 초안 관리와 샘플 확인까지 한 화면에서 바로 시작할 수 있습니다."
     >
       {isExpoWebPreview ? <WebPreviewNotice /> : null}
 
@@ -77,14 +78,13 @@ export default function HomeScreen() {
         </View>
         {isExpoWebPreview ? (
           <AppText variant="muted" style={styles.emptyText}>
-            Expo 웹에서는 로그인과 운영 편집이 제한되어 있습니다. 실제 작업은 라이브 앱이나 Next
-            웹 편집기에서 진행해 주세요.
+            Expo 웹에서는 로그인과 운영 인증이 제한됩니다. 실제 작업은 라이브 사이트 또는 Next 운영 환경에서 진행해 주세요.
           </AppText>
         ) : null}
       </SectionCard>
 
       <SectionCard
-        title="내가 저장한 초안"
+        title="최근 저장한 초안"
         description="저장한 초안을 이어서 작성하거나 정리할 수 있습니다."
         badge={`${drafts.length}개`}
       >
@@ -109,8 +109,7 @@ export default function HomeScreen() {
                   {(draft.groomName || '신랑')} · {(draft.brideName || '신부')}
                 </AppText>
                 <AppText variant="muted" style={styles.draftMeta}>
-                  {draft.servicePlan.toUpperCase()} /{' '}
-                  {draft.theme === 'emotional' ? '감성 디자인' : '심플 디자인'}
+                  {draft.servicePlan.toUpperCase()} / {getInvitationThemeLabel(draft.theme)}
                 </AppText>
                 <AppText variant="muted" style={styles.draftMeta}>
                   예상 금액 {formatPrice(draft.estimatedPrice)} · 티켓 {draft.ticketCount}장

@@ -7,7 +7,7 @@ import {
   getInvitationThemeLabel,
   getInvitationThemePreviewDescription,
   getInvitationThemePreviewSampleUrl,
-  getPurchasableInvitationThemeKeys,
+  getSelectableInvitationThemeKeys,
 } from '../lib/invitationThemes';
 
 export const servicePlans = [
@@ -61,7 +61,7 @@ export const ticketPricing = {
   bundlePrice: 10000,
 } as const;
 
-export const designThemes = getPurchasableInvitationThemeKeys().map((key) => ({
+export const designThemes = getSelectableInvitationThemeKeys().map((key) => ({
   key,
   label: getInvitationThemeLabel(key),
   description: getInvitationThemePreviewDescription(key),
@@ -130,24 +130,20 @@ const GUIDE_SAMPLE_PRODUCT_TIERS: MobileInvitationProductTier[] = [
 export const guideSamplePages = INVITATION_THEME_KEYS.map((themeKey) => ({
   title: getInvitationThemeLabel(themeKey),
   themeKey,
-  items: GUIDE_SAMPLE_PRODUCT_TIERS.map((tier) => {
+  items: GUIDE_SAMPLE_PRODUCT_TIERS.flatMap((tier) => {
     const url = getInvitationThemePreviewSampleUrl(themeKey, tier);
     if (!url) {
-      return null;
+      return [];
     }
 
-    return {
-      label: `${tier.toUpperCase()} 샘플 보기`,
-      tier,
-      url,
-    };
-  }).filter(
-    (item): item is {
-      label: string;
-      tier: MobileInvitationProductTier;
-      url: string;
-    } => item !== null
-  ),
+    return [
+      {
+        label: `${tier.toUpperCase()} 샘플 보기`,
+        tier,
+        url,
+      },
+    ];
+  }),
 })) as ReadonlyArray<{
   title: string;
   themeKey: MobileInvitationThemeKey;

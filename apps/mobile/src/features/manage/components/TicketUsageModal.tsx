@@ -7,6 +7,7 @@ import { ChoiceChip } from '../../../components/ChoiceChip';
 import { InvitationEditorModalShell } from '../../../components/manage/InvitationEditorModalShell';
 import { SectionCard } from '../../../components/SectionCard';
 import type { getPalette } from '../../../constants/theme';
+import { getInvitationThemeLabel } from '../../../lib/invitationThemes';
 import type {
   MobileInvitationProductTier,
   MobileInvitationThemeKey,
@@ -15,8 +16,8 @@ import { manageStyles } from '../manageStyles';
 
 const TICKET_USAGE_ITEMS = [
   '티켓 1장: 노출 기간 1개월 연장',
-  '티켓 1장: 기본 디자인 변경',
-  '티켓 2장: 같은 청첩장에 다른 디자인 추가',
+  '티켓 1장: 연결된 디자인 중 기본 디자인 변경',
+  '티켓 2장: 같은 청첩장에 새 디자인 추가',
   '티켓 2장: 서비스 업그레이드',
 ] as const;
 
@@ -28,12 +29,15 @@ type TicketUsageModalProps = {
   availableTicketCount: number;
   currentPlan: MobileInvitationProductTier;
   currentTheme: MobileInvitationThemeKey;
-  selectedTheme: MobileInvitationThemeKey;
+  availableThemes: MobileInvitationThemeKey[];
+  purchasableThemes: MobileInvitationThemeKey[];
+  selectedTargetTheme: MobileInvitationThemeKey;
   upgradeTargetPlan: MobileInvitationProductTier | null;
   isExtendingDisplayPeriod: boolean;
   isApplyingThemeChange: boolean;
-  isApplyingExtraVariant: boolean;
-  isExtraVariantAdded: boolean;
+  isPurchasingTargetTheme: boolean;
+  isSelectedTargetThemeAvailable: boolean;
+  isSelectedTargetThemeCurrent: boolean;
   transferTargetCards: Array<{
     slug: string;
     displayName: string;
@@ -43,13 +47,13 @@ type TicketUsageModalProps = {
   ticketTransferCount: number;
   ticketTransferCountOptions: number[];
   isTransferringTickets: boolean;
-  onSelectTheme: (theme: MobileInvitationThemeKey) => void;
+  onSelectTargetTheme: (theme: MobileInvitationThemeKey) => void;
   onSelectTransferTarget: (slug: string) => void;
   onSelectTicketTransferCount: (count: number) => void;
   onExtendDisplayPeriod: () => void;
   onApplyThemeChange: () => void;
-  onOpenAlternateThemePreview: () => void;
-  onAddExtraVariant: () => void;
+  onOpenTargetThemePreview: () => void;
+  onPurchaseTargetTheme: () => void;
   onTransferTickets: () => void;
   onGoToUpgrade: () => void;
 };
@@ -66,8 +70,60 @@ function getPlanLabel(plan: MobileInvitationProductTier) {
   return 'PREMIUM';
 }
 
-function getThemeLabel(theme: MobileInvitationThemeKey) {
-  return theme === 'emotional' ? '감성형' : '심플형';
+function formatThemeList(themeKeys: readonly MobileInvitationThemeKey[]) {
+  return themeKeys.map((themeKey) => getInvitationThemeLabel(themeKey)).join(', ');
+}
+
+function getTargetThemeChangeHelperText(options: {
+  currentTheme: MobileInvitationThemeKey;
+  selectedTargetTheme: MobileInvitationThemeKey;
+  isSelectedTargetThemeAvailable: boolean;
+  isSelectedTargetThemeCurrent: boolean;
+}) {
+  const {
+    currentTheme,
+    selectedTargetTheme,
+    isSelectedTargetThemeAvailable,
+    isSelectedTargetThemeCurrent,
+  } = options;
+
+  if (isSelectedTargetThemeCurrent) {
+    return `${getInvitationThemeLabel(currentTheme)}은 이미 현재 기본 디자인입니다.`;
+  }
+
+  if (!isSelectedTargetThemeAvailable) {
+    return `${getInvitationThemeLabel(
+      selectedTargetTheme
+    )}은 아직 현재 청첩장에 연결되지 않았습니다. 먼저 추가 구매가 필요합니다.`;
+  }
+
+  return '선택한 디자인은 이미 사용할 수 있으므로 티켓 1장으로 기본 디자인만 전환합니다.';
+}
+
+function getTargetThemePurchaseHelperText(options: {
+  currentTheme: MobileInvitationThemeKey;
+  selectedTargetTheme: MobileInvitationThemeKey;
+  isSelectedTargetThemeAvailable: boolean;
+  isSelectedTargetThemeCurrent: boolean;
+}) {
+  const {
+    currentTheme,
+    selectedTargetTheme,
+    isSelectedTargetThemeAvailable,
+    isSelectedTargetThemeCurrent,
+  } = options;
+
+  if (isSelectedTargetThemeCurrent) {
+    return `${getInvitationThemeLabel(currentTheme)}은 이미 기본 디자인으로 사용 중입니다.`;
+  }
+
+  if (isSelectedTargetThemeAvailable) {
+    return `${getInvitationThemeLabel(
+      selectedTargetTheme
+    )}은 이미 현재 청첩장에서 사용할 수 있습니다.`;
+  }
+
+  return '현재 청첩장 slug는 유지하고, 선택한 디자인 경로만 추가합니다.';
 }
 
 export function TicketUsageModal({
@@ -78,35 +134,36 @@ export function TicketUsageModal({
   availableTicketCount,
   currentPlan,
   currentTheme,
-  selectedTheme,
+  availableThemes,
+  purchasableThemes,
+  selectedTargetTheme,
   upgradeTargetPlan,
   isExtendingDisplayPeriod,
   isApplyingThemeChange,
-  isApplyingExtraVariant,
-  isExtraVariantAdded,
+  isPurchasingTargetTheme,
+  isSelectedTargetThemeAvailable,
+  isSelectedTargetThemeCurrent,
   transferTargetCards,
   selectedTransferTargetSlug,
   ticketTransferCount,
   ticketTransferCountOptions,
   isTransferringTickets,
-  onSelectTheme,
+  onSelectTargetTheme,
   onSelectTransferTarget,
   onSelectTicketTransferCount,
   onExtendDisplayPeriod,
   onApplyThemeChange,
-  onOpenAlternateThemePreview,
-  onAddExtraVariant,
+  onOpenTargetThemePreview,
+  onPurchaseTargetTheme,
   onTransferTickets,
   onGoToUpgrade,
 }: TicketUsageModalProps) {
-  const alternateTheme = currentTheme === 'emotional' ? 'simple' : 'emotional';
-
   return (
     <InvitationEditorModalShell
       visible={visible}
       onClose={onClose}
       title="티켓 사용"
-      description="현재 연동된 청첩장에 바로 적용할 수 있는 티켓 기능을 모아두었습니다."
+      description="현재 연동된 청첩장에 바로 적용할 수 있는 티켓 기능을 모아 두었습니다."
       palette={palette}
       fontScale={fontScale}
     >
@@ -118,6 +175,36 @@ export function TicketUsageModal({
           현재 보유 티켓: {availableTicketCount}장
         </AppText>
         <BulletList items={[...TICKET_USAGE_ITEMS]} />
+      </SectionCard>
+
+      <SectionCard
+        title="대상 디자인 선택"
+        description={`현재 기본 디자인 ${getInvitationThemeLabel(currentTheme)}`}
+      >
+        <AppText variant="muted" style={manageStyles.helperText}>
+          현재 사용할 수 있는 디자인: {formatThemeList(availableThemes)}
+        </AppText>
+        <View style={manageStyles.chipRow}>
+          {purchasableThemes.map((themeKey) => (
+            <ChoiceChip
+              key={`ticket-target-theme-${themeKey}`}
+              label={getInvitationThemeLabel(themeKey)}
+              selected={selectedTargetTheme === themeKey}
+              onPress={() => onSelectTargetTheme(themeKey)}
+            />
+          ))}
+        </View>
+        <AppText variant="muted" style={manageStyles.helperText}>
+          선택 대상: {getInvitationThemeLabel(selectedTargetTheme)}
+          {isSelectedTargetThemeCurrent
+            ? ' / 현재 기본 디자인'
+            : isSelectedTargetThemeAvailable
+              ? ' / 이미 연결됨'
+              : ' / 아직 미연결'}
+        </AppText>
+        <ActionButton variant="secondary" onPress={onOpenTargetThemePreview} fullWidth>
+          선택한 디자인 미리보기
+        </ActionButton>
       </SectionCard>
 
       <SectionCard title="기간 1개월 연장" description="티켓 1장 사용">
@@ -135,59 +222,60 @@ export function TicketUsageModal({
       </SectionCard>
 
       <SectionCard
-        title="디자인 변경"
-        description={`티켓 1장 사용 / 현재 기본 디자인 ${getThemeLabel(currentTheme)}`}
+        title="기본 디자인 변경"
+        description={`티켓 1장 사용 / 대상 ${getInvitationThemeLabel(selectedTargetTheme)}`}
       >
-        <View style={manageStyles.chipRow}>
-          <ChoiceChip
-            label="감성형"
-            selected={selectedTheme === 'emotional'}
-            onPress={() => onSelectTheme('emotional')}
-          />
-          <ChoiceChip
-            label="심플형"
-            selected={selectedTheme === 'simple'}
-            onPress={() => onSelectTheme('simple')}
-          />
-        </View>
         <AppText variant="muted" style={manageStyles.helperText}>
-          기본 디자인을 바꾸면 공유 링크의 기본 노출 테마도 함께 변경됩니다.
+          {getTargetThemeChangeHelperText({
+            currentTheme,
+            selectedTargetTheme,
+            isSelectedTargetThemeAvailable,
+            isSelectedTargetThemeCurrent,
+          })}
         </AppText>
         <ActionButton
           variant="secondary"
           onPress={onApplyThemeChange}
-          disabled={availableTicketCount < 1}
+          disabled={
+            availableTicketCount < 1 ||
+            isSelectedTargetThemeCurrent ||
+            !isSelectedTargetThemeAvailable
+          }
           loading={isApplyingThemeChange}
           fullWidth
         >
-          선택한 디자인으로 변경
+          선택한 디자인으로 기본 변경
         </ActionButton>
       </SectionCard>
 
       <SectionCard
-        title="같은 청첩장에 다른 디자인 추가"
-        description={`티켓 2장 사용 / 추가 대상 ${getThemeLabel(alternateTheme)}`}
+        title="같은 청첩장에 디자인 추가"
+        description={`티켓 2장 사용 / 대상 ${getInvitationThemeLabel(selectedTargetTheme)}`}
       >
         <AppText variant="muted" style={manageStyles.helperText}>
-          현재 청첩장 slug는 유지하고, 다른 디자인 미리보기만 추가합니다.
+          {getTargetThemePurchaseHelperText({
+            currentTheme,
+            selectedTargetTheme,
+            isSelectedTargetThemeAvailable,
+            isSelectedTargetThemeCurrent,
+          })}
         </AppText>
-        <View style={manageStyles.actionRow}>
-          <ActionButton
-            variant="secondary"
-            onPress={onOpenAlternateThemePreview}
-            style={manageStyles.actionHalfButton}
-          >
-            미리보기
-          </ActionButton>
-          <ActionButton
-            onPress={onAddExtraVariant}
-            loading={isApplyingExtraVariant}
-            disabled={isExtraVariantAdded || availableTicketCount < 2}
-            style={manageStyles.actionHalfButton}
-          >
-            {isExtraVariantAdded ? '이미 추가됨' : '현재 청첩장에 추가'}
-          </ActionButton>
-        </View>
+        <ActionButton
+          onPress={onPurchaseTargetTheme}
+          loading={isPurchasingTargetTheme}
+          disabled={
+            availableTicketCount < 2 ||
+            isSelectedTargetThemeCurrent ||
+            isSelectedTargetThemeAvailable
+          }
+          fullWidth
+        >
+          {isSelectedTargetThemeCurrent
+            ? '현재 기본 디자인'
+            : isSelectedTargetThemeAvailable
+              ? '이미 추가됨'
+              : '선택한 디자인 추가'}
+        </ActionButton>
       </SectionCard>
 
       <SectionCard
@@ -197,7 +285,7 @@ export function TicketUsageModal({
         <AppText variant="muted" style={manageStyles.helperText}>
           {upgradeTargetPlan
             ? `${getPlanLabel(upgradeTargetPlan)} 상품으로 업그레이드할 수 있습니다.`
-            : '현재는 최고 등급 상품이라 추가 업그레이드가 필요하지 않습니다.'}
+            : '현재가 최고 등급 상품이라 추가 업그레이드는 필요하지 않습니다.'}
         </AppText>
         <ActionButton onPress={onGoToUpgrade} disabled={!upgradeTargetPlan} fullWidth>
           {upgradeTargetPlan
@@ -223,11 +311,15 @@ export function TicketUsageModal({
           </View>
           <AppText variant="muted" style={manageStyles.helperText}>
             이동 대상{' '}
-            {transferTargetCards.find((item) => item.slug === selectedTransferTargetSlug)?.displayName.trim() ||
-              transferTargetCards.find((item) => item.slug === selectedTransferTargetSlug)?.slug ||
+            {transferTargetCards.find((item) => item.slug === selectedTransferTargetSlug)
+              ?.displayName.trim() ||
+              transferTargetCards.find((item) => item.slug === selectedTransferTargetSlug)
+                ?.slug ||
               '-'}{' '}
             / 현재 보유 티켓{' '}
-            {transferTargetCards.find((item) => item.slug === selectedTransferTargetSlug)?.ticketCount ?? 0}장
+            {transferTargetCards.find((item) => item.slug === selectedTransferTargetSlug)
+              ?.ticketCount ?? 0}
+            장
           </AppText>
           <View style={manageStyles.chipRow}>
             {ticketTransferCountOptions.map((count) => (

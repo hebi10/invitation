@@ -5,6 +5,10 @@ import { AppText } from '../../../../components/AppText';
 import { ChoiceChip } from '../../../../components/ChoiceChip';
 import { SectionCard } from '../../../../components/SectionCard';
 import { TextField } from '../../../../components/TextField';
+import {
+  INVITATION_THEME_KEYS,
+  getInvitationThemeLabel,
+} from '../../../../lib/invitationThemes';
 import type { ManageFormState, ManageStringFieldKey } from '../../shared';
 import { manageStyles } from '../../manageStyles';
 
@@ -23,7 +27,7 @@ export function SettingsEditorStep({
     <>
       <SectionCard
         title="공유 문구"
-        description="링크 공유 시 보이는 제목과 설명을 마지막으로 다듬습니다."
+        description="링크 공유 때 보이는 제목과 설명을 마지막으로 다듬습니다."
       >
         <TextField
           label="공유 제목"
@@ -48,16 +52,14 @@ export function SettingsEditorStep({
           현재 기본 테마
         </AppText>
         <View style={manageStyles.chipRow}>
-          <ChoiceChip
-            label="감성 디자인"
-            selected={form.defaultTheme === 'emotional'}
-            onPress={() => {}}
-          />
-          <ChoiceChip
-            label="심플 디자인"
-            selected={form.defaultTheme === 'simple'}
-            onPress={() => {}}
-          />
+          {INVITATION_THEME_KEYS.map((themeKey) => (
+            <ChoiceChip
+              key={`settings-default-theme-${themeKey}`}
+              label={getInvitationThemeLabel(themeKey)}
+              selected={form.defaultTheme === themeKey}
+              onPress={() => {}}
+            />
+          ))}
         </View>
         <AppText variant="muted" style={manageStyles.helperText}>
           기본 테마를 바꾸려면 운영 탭의 `티켓 사용`에서 디자인 변경을 진행해 주세요.

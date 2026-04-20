@@ -28,20 +28,23 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useInvitationOps } from '../../contexts/InvitationOpsContext';
 import { usePreferences } from '../../contexts/PreferencesContext';
 import { useNoticeToast } from '../../hooks/useNoticeToast';
-import type { LinkedInvitationCard } from '../../lib/linkedInvitationCards';
+import {
+  DEFAULT_INVITATION_THEME,
+  getInvitationThemeLabel,
+} from '../../lib/invitationThemes';
+import {
+  getLinkedInvitationThemeKeys,
+  getLinkedInvitationThemePreviewUrl,
+  type LinkedInvitationCard,
+} from '../../lib/linkedInvitationCards';
 import type {
   MobileDisplayPeriodSummary,
   MobileInvitationProductTier,
   MobileInvitationThemeKey,
 } from '../../types/mobileInvitation';
 
-const THEME_LABELS: Record<MobileInvitationThemeKey, string> = {
-  emotional: '감성형',
-  simple: '심플형',
-};
-
 function formatThemeList(themeKeys: readonly MobileInvitationThemeKey[]) {
-  return themeKeys.map((key) => THEME_LABELS[key]).join(', ');
+  return themeKeys.map((key) => getInvitationThemeLabel(key)).join(', ');
 }
 
 function formatDateLabel(value: string) {
@@ -239,26 +242,29 @@ export default function ManageScreen() {
 
   const {
     ticketModalVisible,
-    ticketThemeSelection,
+    currentTheme,
+    availableThemes,
+    purchasableThemes,
+    selectedTargetTheme,
     isExtendingDisplayPeriod,
     isApplyingTicketThemeChange,
-    isApplyingExtraVariant,
+    isPurchasingTargetTheme,
+    isSelectedTargetThemeAvailable,
+    isSelectedTargetThemeCurrent,
     isTransferringTickets,
     ticketTransferTargetCards,
     selectedTicketTransferTargetCard,
     ticketTransferCount,
     ticketTransferCountOptions,
     upgradeTargetPlan,
-    alternateTheme,
-    isAlternateThemeAvailable,
-    setTicketThemeSelection,
+    setSelectedTargetTheme,
     setTicketTransferTargetSlug,
     setTicketTransferCount,
     handleOpenTicketModal,
     closeTicketModal,
     handleApplyTicketThemeChange,
     handleExtendDisplayPeriod,
-    handleAddExtraVariant,
+    handlePurchaseTargetTheme,
     handleTransferTicketCount,
   } = useTicketOperations({
     activeLinkedInvitationCard,
@@ -299,14 +305,13 @@ export default function ManageScreen() {
     }
 
     try {
-      if (activeLinkedInvitationCard.availableThemeKeys.length > 1) {
+      const themeKeys = getLinkedInvitationThemeKeys(activeLinkedInvitationCard);
+      if (themeKeys.length > 1) {
         openPreviewLinkModal(activeLinkedInvitationCard.slug);
         return;
       }
 
-      const themeKey =
-        activeLinkedInvitationCard.availableThemeKeys[0] ??
-        activeLinkedInvitationCard.defaultTheme;
+      const themeKey = themeKeys[0] ?? activeLinkedInvitationCard.defaultTheme;
       await handleOpenThemeLink(activeLinkedInvitationCard, themeKey);
     } catch {
       setNotice('청첩장 링크를 열지 못했습니다. 잠시 후 다시 시도해 주세요.');
@@ -359,9 +364,7 @@ export default function ManageScreen() {
     card: LinkedInvitationCard,
     themeKey: MobileInvitationThemeKey
   ) => {
-    const targetUrl =
-      card.previewUrls[themeKey] ??
-      (themeKey === card.defaultTheme ? card.publicUrl : null);
+    const targetUrl = getLinkedInvitationThemePreviewUrl(card, themeKey);
 
     if (!targetUrl) {
       setNotice('열 수 있는 디자인 링크를 찾지 못했습니다.');
@@ -406,10 +409,14 @@ export default function ManageScreen() {
     });
   };
 
-  const handleOpenAlternateThemePreview = async () => {
-    const previewUrl = dashboard?.links.previewUrls[alternateTheme];
+  const handleOpenTargetThemePreview = async () => {
+    const previewUrl =
+      (activeLinkedInvitationCard
+        ? getLinkedInvitationThemePreviewUrl(activeLinkedInvitationCard, selectedTargetTheme)
+        : null) ??
+      dashboard?.links.previewUrls[selectedTargetTheme];
     if (!previewUrl) {
-      setNotice('다른 디자인 미리보기를 아직 불러오지 못했습니다.');
+      setNotice('선택한 디자인 미리보기를 아직 불러오지 못했습니다.');
       return;
     }
 
@@ -427,7 +434,7 @@ export default function ManageScreen() {
 
       await Linking.openURL(previewUrl);
     } catch {
-      setNotice('다른 디자인 미리보기를 열지 못했습니다. 잠시 후 다시 시도해 주세요.');
+      setNotice('선택한 디자인 미리보기를 열지 못했습니다. 잠시 후 다시 시도해 주세요.');
     }
   };
 
@@ -512,9 +519,10 @@ export default function ManageScreen() {
                 items={[
                   `슬러그: ${activeLinkedInvitationCard.slug}`,
                   `서비스: ${activeLinkedInvitationCard.productTier.toUpperCase()}`,
-                  `기본 테마: ${activeLinkedInvitationCard.defaultTheme === 'emotional' ? '감성형' : '심플형'
-                  }`,
-                  `연결된 디자인: ${formatThemeList(activeLinkedInvitationCard.availableThemeKeys)}`,
+                  `기본 테마: ${getInvitationThemeLabel(activeLinkedInvitationCard.defaultTheme)}`,
+                  `연결된 디자인: ${formatThemeList(
+                    getLinkedInvitationThemeKeys(activeLinkedInvitationCard)
+                  )}`,
                   `보유 티켓: ${activeLinkedInvitationCard.ticketCount}장`,
                   `노출 기간: ${formatDisplayPeriod(activeLinkedInvitationCard.displayPeriod)}`,
                   `배경음악: ${activeLinkedInvitationCard.showMusic ? '사용 가능' : '미제공'}`,
@@ -640,8 +648,10 @@ export default function ManageScreen() {
                       items={[
                         `슬러그: ${item.slug}`,
                         `서비스: ${item.productTier.toUpperCase()}`,
-                        `기본 테마: ${item.defaultTheme === 'emotional' ? '감성형' : '심플형'}`,
-                        `연결된 디자인: ${formatThemeList(item.availableThemeKeys)}`,
+                        `기본 테마: ${getInvitationThemeLabel(item.defaultTheme)}`,
+                        `연결된 디자인: ${formatThemeList(
+                          getLinkedInvitationThemeKeys(item)
+                        )}`,
                         `보유 티켓: ${item.ticketCount}장`,
                         `노출 기간: ${formatDisplayPeriod(item.displayPeriod)}`,
                       ]}
@@ -826,18 +836,21 @@ export default function ManageScreen() {
         fontScale={fontScale}
         availableTicketCount={activeLinkedInvitationCard?.ticketCount ?? 0}
         currentPlan={activeLinkedInvitationCard?.productTier ?? 'standard'}
-        currentTheme={activeLinkedInvitationCard?.defaultTheme ?? 'emotional'}
-        selectedTheme={ticketThemeSelection}
+        currentTheme={currentTheme ?? DEFAULT_INVITATION_THEME}
+        availableThemes={availableThemes}
+        purchasableThemes={purchasableThemes}
+        selectedTargetTheme={selectedTargetTheme}
         upgradeTargetPlan={upgradeTargetPlan}
         isExtendingDisplayPeriod={isExtendingDisplayPeriod}
         isApplyingThemeChange={isApplyingTicketThemeChange}
-        onSelectTheme={setTicketThemeSelection}
+        isPurchasingTargetTheme={isPurchasingTargetTheme}
+        isSelectedTargetThemeAvailable={isSelectedTargetThemeAvailable}
+        isSelectedTargetThemeCurrent={isSelectedTargetThemeCurrent}
+        onSelectTargetTheme={setSelectedTargetTheme}
         onExtendDisplayPeriod={() => void handleExtendDisplayPeriod()}
         onApplyThemeChange={() => void handleApplyTicketThemeChange()}
-        onOpenAlternateThemePreview={() => void handleOpenAlternateThemePreview()}
-        isApplyingExtraVariant={isApplyingExtraVariant}
-        isExtraVariantAdded={isAlternateThemeAvailable}
-        onAddExtraVariant={() => void handleAddExtraVariant()}
+        onOpenTargetThemePreview={() => void handleOpenTargetThemePreview()}
+        onPurchaseTargetTheme={() => void handlePurchaseTargetTheme()}
         transferTargetCards={ticketTransferTargetCards.map((item) => ({
           slug: item.slug,
           displayName: item.displayName,
@@ -871,7 +884,11 @@ export default function ManageScreen() {
         >
           <BulletList
             items={[
-              `기본 테마: ${previewLinkTargetCard ? THEME_LABELS[previewLinkTargetCard.defaultTheme] : '-'}`,
+              `기본 테마: ${
+                previewLinkTargetCard
+                  ? getInvitationThemeLabel(previewLinkTargetCard.defaultTheme)
+                  : '-'
+              }`,
               `연결된 디자인: ${formatThemeList(previewLinkThemeKeys)}`,
             ]} />
           <View style={manageStyles.actionRow}>
@@ -883,7 +900,7 @@ export default function ManageScreen() {
                   onPress={() => void handleOpenThemeLink(previewLinkTargetCard, themeKey)}
                   style={manageStyles.actionHalfButton}
                 >
-                  {`${THEME_LABELS[themeKey]} 링크 열기`}
+                  {`${getInvitationThemeLabel(themeKey)} 링크 열기`}
                 </ActionButton>
               ))
               : null}

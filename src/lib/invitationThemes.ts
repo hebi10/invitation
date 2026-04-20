@@ -5,7 +5,7 @@ type InvitationThemePreviewInfo = {
   sampleUrls: Record<InvitationThemePreviewProductTier, string>;
 };
 
-type InvitationThemeRegistryEntry = {
+type InvitationThemeMetadataEntry = {
   key: string;
   label: string;
   adminLabel: string;
@@ -16,13 +16,10 @@ type InvitationThemeRegistryEntry = {
   shareTitleMode: 'metadata' | 'couple';
   documentTitleSuffix: string;
   ariaLabelSuffix: string;
-  isDefault: boolean;
-  isPurchasable: boolean;
-  allowsAdditionalPurchase: boolean;
   sortOrder: number;
 };
 
-export const INVITATION_THEME_REGISTRY = [
+export const INVITATION_THEME_METADATA_REGISTRY = [
   {
     key: 'emotional',
     label: '감성형',
@@ -41,9 +38,6 @@ export const INVITATION_THEME_REGISTRY = [
     shareTitleMode: 'metadata',
     documentTitleSuffix: '',
     ariaLabelSuffix: '',
-    isDefault: true,
-    isPurchasable: true,
-    allowsAdditionalPurchase: true,
     sortOrder: 10,
   },
   {
@@ -64,17 +58,41 @@ export const INVITATION_THEME_REGISTRY = [
     shareTitleMode: 'couple',
     documentTitleSuffix: ' (Simple)',
     ariaLabelSuffix: ' (Simple)',
-    isDefault: false,
-    isPurchasable: true,
-    allowsAdditionalPurchase: true,
     sortOrder: 20,
   },
-] as const satisfies readonly InvitationThemeRegistryEntry[];
+] as const satisfies readonly InvitationThemeMetadataEntry[];
 
-export type InvitationThemeDefinition = (typeof INVITATION_THEME_REGISTRY)[number];
+export type InvitationThemeDefinition = (typeof INVITATION_THEME_METADATA_REGISTRY)[number];
 export type InvitationThemeKey = InvitationThemeDefinition['key'];
 
-const sortedInvitationThemes = [...INVITATION_THEME_REGISTRY].sort(
+export type InvitationThemeSalesPolicy = {
+  isDefault: boolean;
+  canBeDefault: boolean;
+  isSelectableAtCreation: boolean;
+  isPurchasable: boolean;
+  allowsAdditionalPurchase: boolean;
+};
+
+export const INVITATION_THEME_SALES_POLICY_REGISTRY = {
+  emotional: {
+    isDefault: true,
+    canBeDefault: true,
+    isSelectableAtCreation: true,
+    isPurchasable: true,
+    allowsAdditionalPurchase: true,
+  },
+  simple: {
+    isDefault: false,
+    canBeDefault: true,
+    isSelectableAtCreation: true,
+    isPurchasable: true,
+    allowsAdditionalPurchase: true,
+  },
+} as const satisfies Record<InvitationThemeKey, InvitationThemeSalesPolicy>;
+
+export const INVITATION_THEME_REGISTRY = INVITATION_THEME_METADATA_REGISTRY;
+
+const sortedInvitationThemes = [...INVITATION_THEME_METADATA_REGISTRY].sort(
   (left, right) => left.sortOrder - right.sortOrder
 ) as InvitationThemeDefinition[];
 
@@ -86,17 +104,36 @@ export const INVITATION_THEME_KEYS = sortedInvitationThemes.map(
   (theme) => theme.key
 ) as InvitationThemeKey[];
 
+function getSortedThemeKeysByPolicy(
+  predicate: (policy: InvitationThemeSalesPolicy) => boolean
+) {
+  return INVITATION_THEME_KEYS.filter((theme) =>
+    predicate(INVITATION_THEME_SALES_POLICY_REGISTRY[theme])
+  );
+}
+
+const DEFAULT_ELIGIBLE_INVITATION_THEME_KEYS = getSortedThemeKeysByPolicy(
+  (policy) => policy.canBeDefault
+);
+
 export const DEFAULT_INVITATION_THEME: InvitationThemeKey =
-  sortedInvitationThemes.find((theme) => theme.isDefault)?.key ??
+  INVITATION_THEME_KEYS.find(
+    (theme) => INVITATION_THEME_SALES_POLICY_REGISTRY[theme].isDefault
+  ) ??
+  DEFAULT_ELIGIBLE_INVITATION_THEME_KEYS[0] ??
   sortedInvitationThemes[0].key;
 
-export const PURCHASABLE_INVITATION_THEME_KEYS = sortedInvitationThemes
-  .filter((theme) => theme.isPurchasable)
-  .map((theme) => theme.key) as InvitationThemeKey[];
+export const SELECTABLE_INVITATION_THEME_KEYS = getSortedThemeKeysByPolicy(
+  (policy) => policy.isSelectableAtCreation
+) as InvitationThemeKey[];
 
-export const ADDITIONAL_PURCHASABLE_INVITATION_THEME_KEYS = sortedInvitationThemes
-  .filter((theme) => theme.allowsAdditionalPurchase)
-  .map((theme) => theme.key) as InvitationThemeKey[];
+export const PURCHASABLE_INVITATION_THEME_KEYS = getSortedThemeKeysByPolicy(
+  (policy) => policy.isPurchasable
+) as InvitationThemeKey[];
+
+export const ADDITIONAL_PURCHASABLE_INVITATION_THEME_KEYS = getSortedThemeKeysByPolicy(
+  (policy) => policy.allowsAdditionalPurchase
+) as InvitationThemeKey[];
 
 export function isInvitationThemeKey(value: unknown): value is InvitationThemeKey {
   return (
@@ -114,6 +151,26 @@ export function normalizeInvitationThemeKey(
 
 export function getInvitationThemeDefinition(theme: InvitationThemeKey) {
   return invitationThemeByKey[theme];
+}
+
+export function getInvitationThemeSalesPolicy(theme: InvitationThemeKey) {
+  return INVITATION_THEME_SALES_POLICY_REGISTRY[theme];
+}
+
+export function canInvitationThemeBeDefault(theme: InvitationThemeKey) {
+  return getInvitationThemeSalesPolicy(theme).canBeDefault;
+}
+
+export function isInvitationThemeSelectableAtCreation(theme: InvitationThemeKey) {
+  return getInvitationThemeSalesPolicy(theme).isSelectableAtCreation;
+}
+
+export function isInvitationThemePurchasable(theme: InvitationThemeKey) {
+  return getInvitationThemeSalesPolicy(theme).isPurchasable;
+}
+
+export function canAdditionalPurchaseInvitationTheme(theme: InvitationThemeKey) {
+  return getInvitationThemeSalesPolicy(theme).allowsAdditionalPurchase;
 }
 
 export function getInvitationThemeLabel(theme: InvitationThemeKey) {
@@ -146,6 +203,10 @@ export function getInvitationThemePathSuffix(theme: InvitationThemeKey) {
 export function buildInvitationThemeRoutePath(slug: string, theme: InvitationThemeKey) {
   const normalizedSlug = slug.trim().replace(/^\/+|\/+$/g, '');
   return `/${normalizedSlug}${getInvitationThemePathSuffix(theme)}`;
+}
+
+export function getSelectableInvitationThemeKeys() {
+  return [...SELECTABLE_INVITATION_THEME_KEYS];
 }
 
 export function getPurchasableInvitationThemeKeys() {
