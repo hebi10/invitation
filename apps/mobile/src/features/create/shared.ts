@@ -3,6 +3,7 @@ import {
   servicePlans,
   ticketPricing,
 } from '../../constants/content';
+import { isInvitationThemeKey } from '../../lib/invitationThemes';
 import {
   buildPageSlugBaseFromEnglishNames,
   isValidEnglishName,
@@ -140,7 +141,7 @@ export function isValidCreateStepProductTier(
 export function isValidCreateStepThemeKey(
   value: string | undefined
 ): value is MobileInvitationThemeKey {
-  return value === 'emotional' || value === 'simple';
+  return isInvitationThemeKey(value);
 }
 
 export { designThemes, servicePlans };

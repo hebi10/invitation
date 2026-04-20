@@ -1,5 +1,7 @@
+import type { MobileInvitationThemeKey as SharedMobileInvitationThemeKey } from '../lib/invitationThemes';
+
 export type MobileInvitationProductTier = 'standard' | 'deluxe' | 'premium';
-export type MobileInvitationThemeKey = 'emotional' | 'simple';
+export type MobileInvitationThemeKey = SharedMobileInvitationThemeKey;
 
 export interface MobileInvitationVariantLink {
   available: boolean;
@@ -172,10 +174,7 @@ export interface MobileInvitationLinks {
   publicUrl: string;
   previewUrls: {
     default: string;
-    emotional?: string;
-    simple?: string;
-    [key: string]: string | undefined;
-  };
+  } & Partial<Record<MobileInvitationThemeKey, string>>;
 }
 
 export interface MobileDisplayPeriodSummary {

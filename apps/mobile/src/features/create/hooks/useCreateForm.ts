@@ -3,6 +3,7 @@ import { useCallback, useMemo, useRef, useState } from 'react';
 
 import type { useAuth } from '../../../contexts/AuthContext';
 import type { useDrafts } from '../../../contexts/DraftsContext';
+import { DEFAULT_INVITATION_THEME } from '../../../lib/invitationThemes';
 import type {
   CreateDraftItem,
   MobileInvitationProductTier,
@@ -210,7 +211,7 @@ export function useCreateForm({
       }> = {}
     ) => ({
       servicePlan: overrides.servicePlan ?? selectedPlan,
-      theme: overrides.theme ?? selectedTheme ?? 'emotional',
+      theme: overrides.theme ?? selectedTheme ?? DEFAULT_INVITATION_THEME,
       pageIdentifier: overrides.pageIdentifier ?? slugBase,
       groomName: overrides.groomName ?? groomKoreanName.trim(),
       brideName: overrides.brideName ?? brideKoreanName.trim(),
@@ -551,7 +552,7 @@ export function useCreateForm({
       brideEnglishName: brideEnglishName.trim(),
       password: password.trim(),
       servicePlan: selectedPlan,
-      theme: selectedTheme ?? 'emotional',
+      theme: selectedTheme ?? DEFAULT_INVITATION_THEME,
     });
 
     setIsSubmitting(false);

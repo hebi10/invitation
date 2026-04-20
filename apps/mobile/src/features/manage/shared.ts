@@ -8,6 +8,7 @@
   MobileInvitationPageData,
   MobileInvitationThemeKey,
 } from '../../types/mobileInvitation';
+import { DEFAULT_INVITATION_THEME } from '../../lib/invitationThemes';
 import { createRandomSuffix } from '../../lib/id';
 
 export type ManageParentState = {
@@ -215,7 +216,7 @@ export const EMPTY_FORM: ManageFormState = {
   musicStoragePath: '',
   musicVolume: '',
   published: false,
-  defaultTheme: 'emotional',
+  defaultTheme: DEFAULT_INVITATION_THEME,
 };
 
 export function readRecord<T extends object>(value: unknown): Partial<T> {

@@ -8,6 +8,11 @@ import type {
   MobileInvitationSeed,
   MobileSessionSummary,
 } from '../types/mobileInvitation';
+import {
+  DEFAULT_INVITATION_THEME,
+  INVITATION_THEME_KEYS,
+  isInvitationThemeKey,
+} from './invitationThemes';
 
 import { getStoredJson, setStoredJson } from './storage';
 
@@ -72,10 +77,9 @@ function normalizeStoredLinkedInvitationCard(
     record.productTier === 'premium'
       ? record.productTier
       : 'standard';
-  const defaultTheme =
-    record.defaultTheme === 'emotional' || record.defaultTheme === 'simple'
-      ? record.defaultTheme
-      : 'emotional';
+  const defaultTheme = isInvitationThemeKey(record.defaultTheme)
+    ? record.defaultTheme
+    : DEFAULT_INVITATION_THEME;
 
   const storedSession =
     record.session && typeof record.session === 'object'
@@ -96,7 +100,7 @@ function normalizeStoredLinkedInvitationCard(
 
   const previewUrls =
     record.previewUrls && typeof record.previewUrls === 'object'
-      ? (['emotional', 'simple'] as const).reduce<
+      ? INVITATION_THEME_KEYS.reduce<
           Partial<Record<MobileInvitationThemeKey, string>>
         >((accumulator, key) => {
           const value = (record.previewUrls as Record<string, unknown>)[key];
@@ -108,10 +112,7 @@ function normalizeStoredLinkedInvitationCard(
       : {};
 
   const availableThemeKeys = Array.isArray(record.availableThemeKeys)
-    ? record.availableThemeKeys.filter(
-        (value): value is MobileInvitationThemeKey =>
-          value === 'emotional' || value === 'simple'
-      )
+    ? record.availableThemeKeys.filter(isInvitationThemeKey)
     : [];
 
   return {
@@ -182,7 +183,7 @@ function resolveAvailableThemeKeys(
   fallbackTheme: MobileInvitationThemeKey
 ) {
   const variants = seed?.variants;
-  const availableThemeKeys = (['emotional', 'simple'] as const).filter(
+  const availableThemeKeys = INVITATION_THEME_KEYS.filter(
     (key) => variants?.[key]?.available
   );
 
@@ -190,7 +191,7 @@ function resolveAvailableThemeKeys(
 }
 
 function resolvePreviewUrls(links: MobileInvitationLinks | undefined) {
-  return (['emotional', 'simple'] as const).reduce<
+  return INVITATION_THEME_KEYS.reduce<
     Partial<Record<MobileInvitationThemeKey, string>>
   >((accumulator, key) => {
     const value = links?.previewUrls[key];

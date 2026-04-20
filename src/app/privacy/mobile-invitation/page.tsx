@@ -70,7 +70,7 @@ export default function MobileInvitationPrivacyPage() {
           <p className={styles.lead}>
             모바일 청첩장 앱은 청첩장 생성, 운영 관리, 이미지 업로드 기능을 제공하는 과정에서
             이용자의 정보를 처리할 수 있습니다. 본 문서는 서비스가 어떤 정보를 어떤 목적으로
-            사용하고, 어떻게 보관 및 삭제하는지 안내하기 위한 정책 초안입니다.
+            사용하고, 어떻게 보관 및 삭제하는지 안내하기 위한 정책입니다.
           </p>
 
           <div className={styles.summaryGrid}>
@@ -171,10 +171,8 @@ export default function MobileInvitationPrivacyPage() {
               >
                 {inquiryUrl}
               </a>
-              <p className={styles.contactHint}>
-                운영자 전용 이메일이나 별도 문의 폼이 준비되면 이 섹션을 해당 채널로 교체해 두는
-                편이 가장 안전합니다.
-              </p>
+              <p className={styles.contactLabel}>문의 이메일</p>
+              <p className={styles.contactValue}>sevim0104@naver.com</p>
             </div>
           </section>
 
