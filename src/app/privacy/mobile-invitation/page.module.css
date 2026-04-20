@@ -1,0 +1,223 @@
+.page {
+  position: relative;
+  min-height: 100vh;
+  padding: 40px 20px 72px;
+  background:
+    radial-gradient(circle at top left, rgba(212, 165, 116, 0.2), transparent 42%),
+    linear-gradient(180deg, #fbf6f1 0%, #f3e8dc 48%, #efe3d6 100%);
+}
+
+.backdrop {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.74), rgba(255, 255, 255, 0.2)),
+    radial-gradient(circle at 80% 20%, rgba(141, 110, 99, 0.12), transparent 28%);
+  pointer-events: none;
+}
+
+.shell {
+  position: relative;
+  z-index: 1;
+  width: min(100%, 980px);
+  margin: 0 auto;
+  display: grid;
+  gap: 24px;
+}
+
+.hero {
+  padding: 28px;
+  border: 1px solid rgba(141, 110, 99, 0.16);
+  border-radius: 32px;
+  background: rgba(255, 252, 248, 0.84);
+  box-shadow: 0 24px 48px rgba(93, 64, 55, 0.12);
+  backdrop-filter: blur(12px);
+}
+
+.eyebrow {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 32px;
+  padding: 0 14px;
+  margin-bottom: 14px;
+  border-radius: 999px;
+  border: 1px solid rgba(212, 165, 116, 0.28);
+  background: rgba(212, 165, 116, 0.12);
+  color: var(--primary-color);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.title {
+  font-family: var(--font-display);
+  font-size: clamp(2.2rem, 5vw, 3.4rem);
+  line-height: 1.18;
+  color: var(--text-primary);
+  margin-bottom: 14px;
+}
+
+.lead {
+  max-width: 760px;
+  font-size: 1rem;
+  line-height: 1.9;
+  color: var(--text-secondary);
+}
+
+.summaryGrid {
+  display: grid;
+  gap: 12px;
+  margin-top: 22px;
+}
+
+.summaryCard {
+  padding: 16px 18px;
+  border-radius: 22px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(247, 241, 233, 0.92));
+  border: 1px solid rgba(212, 165, 116, 0.16);
+  box-shadow: 0 12px 28px rgba(141, 110, 99, 0.08);
+}
+
+.summaryLabel {
+  margin-bottom: 8px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--text-light);
+  text-transform: uppercase;
+}
+
+.summaryValue {
+  font-size: 1rem;
+  line-height: 1.7;
+  color: var(--text-primary);
+}
+
+.policyCard {
+  padding: 28px;
+  border-radius: 32px;
+  border: 1px solid rgba(141, 110, 99, 0.16);
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 24px 54px rgba(93, 64, 55, 0.1);
+  display: grid;
+  gap: 24px;
+}
+
+.section {
+  padding-bottom: 22px;
+  border-bottom: 1px solid rgba(232, 221, 212, 0.9);
+}
+
+.section:last-child {
+  padding-bottom: 0;
+  border-bottom: 0;
+}
+
+.sectionTitle {
+  margin-bottom: 14px;
+  font-family: var(--font-gowun);
+  font-size: clamp(1.12rem, 2.4vw, 1.4rem);
+  font-weight: 700;
+  line-height: 1.5;
+  color: var(--text-primary);
+}
+
+.paragraph {
+  font-size: 0.98rem;
+  line-height: 1.9;
+  color: var(--text-secondary);
+}
+
+.list {
+  display: grid;
+  gap: 10px;
+  padding-left: 18px;
+  list-style: disc;
+}
+
+.list li {
+  color: var(--text-secondary);
+  font-size: 0.98rem;
+  line-height: 1.85;
+}
+
+.contactCard {
+  display: grid;
+  gap: 8px;
+  margin-top: 14px;
+  padding: 18px;
+  border-radius: 24px;
+  background:
+    linear-gradient(135deg, rgba(245, 230, 211, 0.45), rgba(255, 255, 255, 0.94));
+  border: 1px solid rgba(212, 165, 116, 0.18);
+}
+
+.contactLabel {
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: var(--text-light);
+  text-transform: uppercase;
+}
+
+.contactValue {
+  font-size: 1rem;
+  color: var(--text-primary);
+}
+
+.contactLink {
+  color: var(--primary-color);
+  font-size: 1rem;
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 0.18em;
+}
+
+.contactHint {
+  margin-top: 4px;
+  font-size: 0.92rem;
+  line-height: 1.8;
+  color: var(--text-secondary);
+}
+
+.footer {
+  display: grid;
+  gap: 8px;
+  justify-items: start;
+}
+
+.homeLink {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 46px;
+  padding: 0 20px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+  color: #fff;
+  font-weight: 600;
+  box-shadow: 0 14px 28px rgba(141, 110, 99, 0.18);
+}
+
+.footerCopy {
+  font-size: 0.92rem;
+  line-height: 1.7;
+  color: var(--text-secondary);
+}
+
+@media (min-width: 720px) {
+  .page {
+    padding: 56px 28px 96px;
+  }
+
+  .hero,
+  .policyCard {
+    padding: 36px;
+  }
+
+  .summaryGrid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
