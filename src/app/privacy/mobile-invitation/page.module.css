@@ -105,6 +105,14 @@
   gap: 24px;
 }
 
+.noticeCard {
+  padding: 22px;
+  border-radius: 28px;
+  border: 1px solid rgba(212, 165, 116, 0.2);
+  background: linear-gradient(180deg, rgba(255, 249, 242, 0.96), rgba(250, 243, 235, 0.82));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.78);
+}
+
 .section {
   padding-bottom: 22px;
   border-bottom: 1px solid rgba(232, 221, 212, 0.9);
@@ -141,6 +149,49 @@
   color: var(--text-secondary);
   font-size: 0.98rem;
   line-height: 1.85;
+}
+
+.numberedList {
+  display: grid;
+  gap: 10px;
+  padding-left: 22px;
+}
+
+.numberedList li {
+  color: var(--text-secondary);
+  font-size: 0.98rem;
+  line-height: 1.85;
+}
+
+.ctaRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.primaryCta,
+.secondaryCta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 46px;
+  padding: 0 18px;
+  border-radius: 999px;
+  font-weight: 600;
+  text-align: center;
+}
+
+.primaryCta {
+  background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+  color: #fff;
+  box-shadow: 0 14px 28px rgba(141, 110, 99, 0.18);
+}
+
+.secondaryCta {
+  border: 1px solid rgba(212, 165, 116, 0.28);
+  background: rgba(255, 255, 255, 0.85);
+  color: var(--primary-color);
 }
 
 .contactCard {
@@ -180,6 +231,13 @@
   font-size: 0.92rem;
   line-height: 1.8;
   color: var(--text-secondary);
+}
+
+.inlineLink {
+  color: var(--primary-color);
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 0.18em;
 }
 
 .footer {
