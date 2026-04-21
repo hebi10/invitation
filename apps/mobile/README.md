@@ -15,7 +15,10 @@
 
 ## 환경 변수
 - `EXPO_PUBLIC_API_BASE`: 모바일 앱이 호출할 API Base URL
-- 값을 지정하지 않으면 Expo 설정에서 `https://msgnote.kr`를 기본값으로 사용합니다.
+- 값을 비워두면 앱 기본값은 운영 API `https://msgnote.kr`입니다.
+- 로컬 Next 서버를 같은 PC에서 웹 미리보기로 붙일 때는 `http://localhost:3000`을 사용합니다.
+- 실제 기기나 다른 에뮬레이터에서 로컬 서버를 붙일 때는 `localhost` 대신 개발 PC의 LAN IP 또는 Android 에뮬레이터용 `http://10.0.2.2:3000`을 사용합니다.
+- 로컬 개발용 값은 `apps/mobile/.env.local`에서만 덮어쓰고, 운영 빌드는 값을 비워 두거나 운영 도메인으로만 설정합니다.
 
 ## 현재 포함한 기능
 - Expo Router 기반 하단 탭 앱 구조

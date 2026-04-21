@@ -61,7 +61,7 @@ export function InvitationEditorModalShell({
           ]}
         />
         <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
           keyboardVerticalOffset={Platform.OS === 'ios' ? 16 : 0}
           style={styles.keyboardAvoiding}
         >

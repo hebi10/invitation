@@ -42,6 +42,36 @@ function readConfiguredApiBaseUrl() {
 
 export const DEFAULT_API_BASE_URL = readConfiguredApiBaseUrl();
 
+export function isTransientLocalApiBaseUrl(value: string) {
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return false;
+  }
+
+  const normalized = trimmed.startsWith('http://') || trimmed.startsWith('https://')
+    ? trimmed
+    : `http://${trimmed}`;
+
+  try {
+    const parsed = new URL(normalized);
+    const hostname = parsed.hostname.toLowerCase();
+
+    if (parsed.protocol !== 'http:' || parsed.port !== '3000') {
+      return false;
+    }
+
+    return (
+      hostname === 'localhost' ||
+      hostname === '127.0.0.1' ||
+      hostname === '10.0.2.2' ||
+      hostname === '0.0.0.0' ||
+      isPrivateIpv4Host(hostname)
+    );
+  } catch {
+    return false;
+  }
+}
+
 function isPrivateIpv4Host(hostname: string) {
   const match = hostname.match(/^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/);
   if (!match) {

@@ -50,6 +50,7 @@ const AppFeedbackContext = createContext<AppFeedbackContextValue | null>(null);
 export function AppFeedbackProvider({ children }: PropsWithChildren) {
   const { apiBaseUrl, palette } = usePreferences();
   const insets = useSafeAreaInsets();
+  const isExpoWebPreview = Platform.OS === 'web';
   const [toast, setToast] = useState<AppToastState | null>(null);
   const [isOffline, setIsOffline] = useState(false);
   const dismissTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -101,8 +102,13 @@ export function AppFeedbackProvider({ children }: PropsWithChildren) {
   );
 
   const refreshConnectivity = useCallback(async () => {
-    if (Platform.OS === 'web' && typeof navigator !== 'undefined' && navigator.onLine === false) {
-      setIsOffline(true);
+    if (isExpoWebPreview) {
+      if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+        setIsOffline(true);
+        return;
+      }
+
+      setIsOffline(false);
       return;
     }
 
@@ -121,7 +127,7 @@ export function AppFeedbackProvider({ children }: PropsWithChildren) {
     } catch {
       setIsOffline(true);
     }
-  }, [apiBaseUrl]);
+  }, [apiBaseUrl, isExpoWebPreview]);
 
   useEffect(() => {
     void refreshConnectivity();
@@ -130,7 +136,7 @@ export function AppFeedbackProvider({ children }: PropsWithChildren) {
       void refreshConnectivity();
     }, CONNECTIVITY_POLL_INTERVAL_MS);
 
-    if (Platform.OS !== 'web' || typeof window === 'undefined') {
+    if (!isExpoWebPreview || typeof window === 'undefined') {
       return () => {
         clearInterval(interval);
       };
@@ -152,7 +158,7 @@ export function AppFeedbackProvider({ children }: PropsWithChildren) {
       window.removeEventListener('online', handleOnline);
       window.removeEventListener('offline', handleOffline);
     };
-  }, [refreshConnectivity]);
+  }, [isExpoWebPreview, refreshConnectivity]);
 
   useEffect(() => {
     return () => {

@@ -1281,13 +1281,13 @@ export async function setServerInvitationPageVariantAvailability(
 ) {
   const normalizedPageSlug = normalizePageSlugInput(pageSlug);
   if (!normalizedPageSlug) {
-    throw new Error('?щ컮瑜??섏씠吏 二쇱냼媛 ?꾩슂?⑸땲??');
+    throw new Error('올바른 페이지 주소가 필요합니다.');
   }
 
   const editableConfig = await getServerEditableInvitationPageConfig(normalizedPageSlug);
 
   if (!editableConfig) {
-    throw new Error('?대떦 ?섏씠吏 二쇱냼瑜?李얠쓣 ???놁뒿?덈떎.');
+    throw new Error('해당 페이지 주소를 찾을 수 없습니다.');
   }
 
   const baseConfig = sanitizeHeartIconPlaceholdersDeep(

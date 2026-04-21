@@ -23,10 +23,11 @@ export default function TabsLayout() {
         tabBarStyle: {
           backgroundColor: palette.surface,
           borderTopColor: palette.cardBorder,
-          height: 60 + insets.bottom,
+          height: "auto",
           paddingBottom: Math.max(insets.bottom, 8),
           paddingTop: 8,
         },
+        tabBarHideOnKeyboard: true,
         tabBarActiveTintColor: palette.accent,
         tabBarInactiveTintColor: palette.textMuted,
         tabBarLabelStyle: {

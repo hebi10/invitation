@@ -1,6 +1,8 @@
 import type { PropsWithChildren, ReactNode, RefObject } from 'react';
 
 import {
+  KeyboardAvoidingView,
+  Platform,
   ScrollView,
   StyleSheet,
   Text,
@@ -32,41 +34,46 @@ export function AppScreen({
   const insets = useSafeAreaInsets();
 
   return (
-    <ScrollView
-      ref={scrollRef}
-      style={[styles.screen, { backgroundColor: palette.background }]}
-      contentContainerStyle={[
-        styles.content,
-        {
-          paddingTop: insets.top + 32,
-          paddingBottom: insets.bottom + 16,
-        },
-        contentContainerStyle,
-      ]}
-      keyboardShouldPersistTaps="handled"
-      keyboardDismissMode="on-drag"
-      showsVerticalScrollIndicator={false}
+    <KeyboardAvoidingView
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      style={styles.screen}
     >
-      <View style={styles.header}>
-        <View style={styles.headerCopy}>
-          <Text style={[styles.title, { color: palette.text, fontSize: 28 * fontScale }]}>
-            {title}
-          </Text>
-          {subtitle ? (
-            <Text
-              style={[
-                styles.subtitle,
-                { color: palette.textMuted, fontSize: 15 * fontScale },
-              ]}
-            >
-              {subtitle}
+      <ScrollView
+        ref={scrollRef}
+        style={[styles.screen, { backgroundColor: palette.background }]}
+        contentContainerStyle={[
+          styles.content,
+          {
+            paddingTop: insets.top + 32,
+            paddingBottom: insets.bottom + 16,
+          },
+          contentContainerStyle,
+        ]}
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="on-drag"
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={styles.header}>
+          <View style={styles.headerCopy}>
+            <Text style={[styles.title, { color: palette.text, fontSize: 28 * fontScale }]}>
+              {title}
             </Text>
-          ) : null}
+            {subtitle ? (
+              <Text
+                style={[
+                  styles.subtitle,
+                  { color: palette.textMuted, fontSize: 15 * fontScale },
+                ]}
+              >
+                {subtitle}
+              </Text>
+            ) : null}
+          </View>
+          {headerRight ? <View>{headerRight}</View> : null}
         </View>
-        {headerRight ? <View>{headerRight}</View> : null}
-      </View>
-      {children}
-    </ScrollView>
+        {children}
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 }
 

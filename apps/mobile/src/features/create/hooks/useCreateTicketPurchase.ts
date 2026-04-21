@@ -13,7 +13,13 @@ import {
   setLinkedInvitationCards as persistLinkedInvitationCards,
   type LinkedInvitationCard,
 } from '../../../lib/linkedInvitationCards';
-import { isPurchasableTicketPackCount } from '../shared';
+import {
+  TICKET_DISCOUNT_BUNDLE_SIZE,
+  calculateTicketPrice,
+  getAdjacentSupportedTicketCount,
+  isPurchasableTicketPackCount,
+  normalizeSupportedCreateTicketCount,
+} from '../shared';
 import type { TicketPurchaseSuccessState } from '../shared';
 
 type AuthState = Pick<ReturnType<typeof useAuth>, 'clearAuthError' | 'session'>;
@@ -25,8 +31,6 @@ type InvitationOpsState = Pick<
 type UseCreateTicketPurchaseOptions = AuthState &
   InvitationOpsState & {
     apiBaseUrl: string;
-    ticketCount: number;
-    resetTicketCount: () => void;
     setNotice: (message: string) => void;
   };
 
@@ -35,17 +39,21 @@ export function useCreateTicketPurchase({
   pageSummary,
   session,
   refreshDashboard,
-  ticketCount,
-  resetTicketCount,
   clearAuthError,
   setNotice,
 }: UseCreateTicketPurchaseOptions) {
+  const [ticketOnlyCount, setTicketOnlyCount] = useState(0);
   const [ticketOnlyModalVisible, setTicketOnlyModalVisible] = useState(false);
   const [linkedInvitationCards, setLinkedInvitationCards] = useState<LinkedInvitationCard[]>([]);
   const [selectedTicketTargetSlug, setSelectedTicketTargetSlug] = useState<string | null>(null);
   const [isTicketPurchaseSubmitting, setIsTicketPurchaseSubmitting] = useState(false);
   const [ticketPurchaseSuccess, setTicketPurchaseSuccess] =
     useState<TicketPurchaseSuccessState | null>(null);
+  const discountedBundleCount = Math.floor(
+    ticketOnlyCount / TICKET_DISCOUNT_BUNDLE_SIZE
+  );
+  const remainderTicketCount = ticketOnlyCount % TICKET_DISCOUNT_BUNDLE_SIZE;
+  const ticketPrice = calculateTicketPrice(ticketOnlyCount);
 
   const reloadLinkedInvitationCards = useCallback(async () => {
     const storedCards = await getLinkedInvitationCards();
@@ -112,6 +120,26 @@ export function useCreateTicketPurchase({
     }
   }, [linkedInvitationCards, selectedTicketTargetSlug]);
 
+  const updateTicketOnlyCount = useCallback((value: number) => {
+    setTicketOnlyCount(normalizeSupportedCreateTicketCount(value));
+  }, []);
+
+  const decreaseTicketOnlyCount = useCallback(() => {
+    setTicketOnlyCount((currentCount) =>
+      getAdjacentSupportedTicketCount(currentCount, 'decrease')
+    );
+  }, []);
+
+  const increaseTicketOnlyCount = useCallback(() => {
+    setTicketOnlyCount((currentCount) =>
+      getAdjacentSupportedTicketCount(currentCount, 'increase')
+    );
+  }, []);
+
+  const resetTicketOnlyCount = useCallback(() => {
+    setTicketOnlyCount(0);
+  }, []);
+
   const handleOpenTicketOnlyModal = useCallback(() => {
     clearAuthError();
 
@@ -120,14 +148,14 @@ export function useCreateTicketPurchase({
       return;
     }
 
-    if (ticketCount <= 0) {
+    if (ticketOnlyCount <= 0) {
       setNotice('티켓만 구매하려면 먼저 티켓 수량을 선택해 주세요.');
       return;
     }
 
     setNotice('');
     setTicketOnlyModalVisible(true);
-  }, [clearAuthError, selectedTicketTargetCard, setNotice, ticketCount]);
+  }, [clearAuthError, selectedTicketTargetCard, setNotice, ticketOnlyCount]);
 
   const closeTicketOnlyModal = useCallback(() => {
     setTicketOnlyModalVisible(false);
@@ -146,7 +174,7 @@ export function useCreateTicketPurchase({
       return;
     }
 
-    if (!isPurchasableTicketPackCount(ticketCount)) {
+    if (!isPurchasableTicketPackCount(ticketOnlyCount)) {
       setNotice('Google Play Billing에서는 1장, 3장, 6장 티켓 상품만 구매할 수 있습니다.');
       return;
     }
@@ -156,7 +184,7 @@ export function useCreateTicketPurchase({
 
     setIsTicketPurchaseSubmitting(true);
 
-    const billingProductId = getMobileBillingTicketPackProductId(ticketCount);
+    const billingProductId = getMobileBillingTicketPackProductId(ticketOnlyCount);
     let nextTicketCount: number | null = null;
 
     try {
@@ -204,9 +232,9 @@ export function useCreateTicketPurchase({
     }
 
     setTicketOnlyModalVisible(false);
-    resetTicketCount();
+    resetTicketOnlyCount();
     setTicketPurchaseSuccess({
-      ticketCount,
+      ticketCount: ticketOnlyCount,
       targetDisplayName: purchaseTargetDisplayName,
       nextTicketCount,
     });
@@ -215,14 +243,21 @@ export function useCreateTicketPurchase({
     clearAuthError,
     linkedInvitationCards,
     refreshDashboard,
-    resetTicketCount,
+    resetTicketOnlyCount,
     selectedTicketTargetCard,
     session,
     setNotice,
-    ticketCount,
+    ticketOnlyCount,
   ]);
 
   return {
+    ticketOnlyCount,
+    updateTicketOnlyCount,
+    decreaseTicketOnlyCount,
+    increaseTicketOnlyCount,
+    discountedBundleCount,
+    remainderTicketCount,
+    ticketPrice,
     ticketOnlyModalVisible,
     closeTicketOnlyModal,
     handleOpenTicketOnlyModal,

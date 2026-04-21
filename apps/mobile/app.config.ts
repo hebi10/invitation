@@ -4,13 +4,15 @@ declare const process: {
   env: Record<string, string | undefined>;
 };
 
+const PRODUCTION_API_BASE_URL = 'https://msgnote.kr';
 const configuredApiBaseUrl =
-  process.env.EXPO_PUBLIC_API_BASE?.trim() || 'https://msgnote.kr';
+  process.env.EXPO_PUBLIC_API_BASE?.trim().replace(/\/+$/g, '') ||
+  PRODUCTION_API_BASE_URL;
 
 const config: ExpoConfig = {
   name: '모바일 청첩장',
   slug: 'mobile-invitation-app',
-  version: '1.0.0',
+  version: '1.0.3',
   orientation: 'portrait',
   scheme: 'mobileinvitation',
   userInterfaceStyle: 'automatic',
@@ -58,7 +60,7 @@ const config: ExpoConfig = {
     },
   },
   web: {
-    favicon: './assets/favicon.ico',
+    favicon: './assets/icon.png',
   },
   experiments: {
     typedRoutes: true,

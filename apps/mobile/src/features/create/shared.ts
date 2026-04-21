@@ -30,13 +30,13 @@ export const TICKET_DISCOUNT_BUNDLE_SIZE = ticketPricing.bundleSize;
 export const TICKET_BUNDLE_PRICE = ticketPricing.bundlePrice;
 export const TICKET_PRESET_COUNTS = [0, ...MOBILE_BILLING_TICKET_PACK_COUNTS] as const;
 export const MAX_TICKET_COUNT = MOBILE_BILLING_TICKET_PACK_COUNTS.at(-1) ?? 0;
-export const STICKY_CTA_BAR_HEIGHT = 92;
-export const STICKY_CTA_BAR_COMPACT_HEIGHT = 156;
+export const STICKY_CTA_BAR_HEIGHT = 30;
+export const STICKY_CTA_BAR_COMPACT_HEIGHT = 30;
 
 export const CREATE_STEPS = [
   { key: 'info', label: '기본 정보' },
   { key: 'selection', label: '선택' },
-  { key: 'ticket', label: '티켓' },
+  { key: 'ticket', label: '추가 티켓' },
   { key: 'review', label: '결제' },
 ] as const;
 
