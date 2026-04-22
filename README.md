@@ -16,6 +16,13 @@
 
 - 새 테마 추가 체크리스트: `docs/new-theme-checklist.md`
 - 모바일 청첩장 연동 기준: `docs/mobile-client-editor-policy.md`
+- Expo 영향 범위 점검: `docs/expo-impact-assessment.md`
+- 이벤트 데이터 전환 기준: `docs/event-data-architecture.md`
+- 이벤트 데이터 매핑표: `docs/event-data-mapping.md`
+- 이벤트 저장소 계층 정리: `docs/event-repository-rollout.md`
+- 이벤트 write-through 정책: `docs/event-write-through-policy.md`
+- 이벤트 백필 실행 가이드: `docs/event-backfill-runbook.md`
+- 웹 생성 흐름 정리: `docs/web-page-wizard-alignment.md`
 - 서비스 개요 문서: `docs/portfolio-service-overview.md`
 
 ## 기술 스택
@@ -462,6 +469,7 @@ npm run preview
 npm run lint
 npm run check
 npm run test:smoke
+npm run test:api-repository-boundary
 npm run deploy:firebase
 
 npm run mb:start

@@ -1,14 +1,20 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+
 import { useRouter } from 'next/navigation';
 
 import { useAdmin } from '@/contexts';
 import { getInvitationThemeLabel } from '@/lib/invitationThemes';
 import {
+  buildSuggestedInvitationPageSlugBase,
+  createInvitationPageSlugSuggestionSeed,
+  type InvitationPageSlugValidationReason,
+  validateInvitationPageSlugBase,
+} from '@/lib/invitationPageSlug';
+import {
   createInvitationPageDraftFromSeed,
   getInvitationPageSeedTemplates,
-  normalizeInvitationPageSlugBase,
 } from '@/services';
 
 import styles from './InvitationDraftSetupClient.module.css';
@@ -22,14 +28,16 @@ interface InvitationDraftSetupClientProps {
   compactMode?: boolean;
 }
 
-function describeFeatureLine(template: ReturnType<typeof getInvitationPageSeedTemplates>[number]) {
+function describeFeatureLine(
+  template: ReturnType<typeof getInvitationPageSeedTemplates>[number]
+) {
   return [
-    `디자인: ${getInvitationThemeLabel(template.theme)}`,
-    `상품: ${template.productTier.toUpperCase()}`,
-    `갤러리: 최대 ${template.features.maxGalleryImages}장`,
+    `테마: ${getInvitationThemeLabel(template.theme)}`,
+    `플랜: ${template.productTier.toUpperCase()}`,
+    `갤러리 최대 ${template.features.maxGalleryImages}장`,
     `공유 방식: ${
       template.features.shareMode === 'none'
-        ? '공유 버튼 미포함'
+        ? '공유 버튼 없음'
         : template.features.shareMode === 'card'
           ? '카카오 카드형'
           : '카카오 링크형'
@@ -37,6 +45,27 @@ function describeFeatureLine(template: ReturnType<typeof getInvitationPageSeedTe
     template.features.showCountdown ? '카운트다운 포함' : '카운트다운 미포함',
     template.features.showGuestbook ? '방명록 포함' : '방명록 미포함',
   ];
+}
+
+function getSlugValidationMessage(reason: InvitationPageSlugValidationReason | null) {
+  switch (reason) {
+    case 'required':
+      return '청첩장 주소를 입력해 주세요.';
+    case 'invalid':
+      return '청첩장 주소는 영문 소문자, 숫자, 하이픈(-)만 사용할 수 있습니다.';
+    case 'too_short':
+      return '청첩장 주소는 3자 이상이어야 합니다.';
+    case 'too_long':
+      return '청첩장 주소는 40자 이하로 입력해 주세요.';
+    case 'reserved':
+      return '예약된 주소라서 사용할 수 없습니다. 다른 주소를 입력해 주세요.';
+    default:
+      return '사용 가능한 청첩장 주소를 다시 확인해 주세요.';
+  }
+}
+
+function getEditorKindLabel(editorKind: DraftEditorKind) {
+  return editorKind === 'page-wizard' ? '모바일형 편집기' : '기본 편집기';
 }
 
 export default function InvitationDraftSetupClient({
@@ -53,41 +82,68 @@ export default function InvitationDraftSetupClient({
   const [brideName, setBrideName] = useState('');
   const [slugBase, setSlugBase] = useState('');
   const [slugTouched, setSlugTouched] = useState(false);
+  const [slugSuggestionSeed, setSlugSuggestionSeed] = useState(() =>
+    createInvitationPageSlugSuggestionSeed()
+  );
   const [isCreating, setIsCreating] = useState(false);
   const [error, setError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
 
   const selectedTemplate =
     templates.find((template) => template.id === templateId) ?? templates[0] ?? null;
+  const suggestedSlugBase = useMemo(
+    () =>
+      buildSuggestedInvitationPageSlugBase([groomName, brideName], {
+        seed: slugSuggestionSeed,
+      }),
+    [brideName, groomName, slugSuggestionSeed]
+  );
+  const slugValidation = useMemo(
+    () => validateInvitationPageSlugBase(slugBase),
+    [slugBase]
+  );
+  const previewSlug = slugValidation.normalizedSlugBase || suggestedSlugBase || '...';
+  const slugHelperText = useMemo(() => {
+    if (!slugTouched) {
+      return '이름을 입력하면 주소를 자동 제안합니다. 필요하면 직접 수정할 수 있습니다.';
+    }
+
+    if (!slugValidation.isValid) {
+      return getSlugValidationMessage(slugValidation.reason);
+    }
+
+    return '현재 주소를 사용할 수 있습니다. 저장 시 중복이면 서버에서 자동으로 조정합니다.';
+  }, [slugTouched, slugValidation.isValid, slugValidation.reason]);
 
   useEffect(() => {
     if (slugTouched) {
       return;
     }
 
-    const nextSlug = normalizeInvitationPageSlugBase(
-      `${groomName.trim()}-${brideName.trim()}`
-    );
-    setSlugBase(nextSlug);
-  }, [brideName, groomName, slugTouched]);
+    setSlugBase(suggestedSlugBase);
+  }, [slugTouched, suggestedSlugBase]);
 
   const canCreate = Boolean(
     isAdminLoggedIn &&
       selectedTemplate &&
       groomName.trim() &&
       brideName.trim() &&
-      normalizeInvitationPageSlugBase(slugBase)
+      slugValidation.isValid
   );
 
   const handleCreate = async () => {
     if (!selectedTemplate) {
-      setError('템플릿을 먼저 선택해 주세요.');
+      setError('시작 템플릿을 먼저 선택해 주세요.');
       return;
     }
 
-    const normalizedSlug = normalizeInvitationPageSlugBase(slugBase);
-    if (!normalizedSlug || !groomName.trim() || !brideName.trim()) {
-      setError('템플릿, URL 기본값, 신랑 이름, 신부 이름을 모두 입력해 주세요.');
+    if (!groomName.trim() || !brideName.trim()) {
+      setError('신랑 이름과 신부 이름을 모두 입력해 주세요.');
+      return;
+    }
+
+    if (!slugValidation.isValid) {
+      setError(getSlugValidationMessage(slugValidation.reason));
       return;
     }
 
@@ -98,7 +154,7 @@ export default function InvitationDraftSetupClient({
     try {
       const created = await createInvitationPageDraftFromSeed({
         seedSlug: selectedTemplate.seedSlug,
-        slugBase: normalizedSlug,
+        slugBase: slugValidation.normalizedSlugBase,
         groomName: groomName.trim(),
         brideName: brideName.trim(),
         published: false,
@@ -106,18 +162,28 @@ export default function InvitationDraftSetupClient({
         productTier: selectedTemplate.productTier,
       });
 
-      setSuccessMessage(`/${created.slug} 청첩장을 만들었습니다. 편집 화면으로 이동합니다.`);
+      setSuccessMessage(`/${created.slug} 초안을 만들었습니다. 편집 화면으로 이동합니다.`);
       router.push(`/${editorKind}/${created.slug}`);
     } catch (setupError) {
       console.error('[InvitationDraftSetupClient] failed to create draft', setupError);
       setError(
         setupError instanceof Error
           ? setupError.message
-          : '청첩장 청첩장을 생성하지 못했습니다.'
+          : '청첩장 초안을 생성하지 못했습니다.'
       );
     } finally {
       setIsCreating(false);
     }
+  };
+
+  const handleReset = () => {
+    setGroomName('');
+    setBrideName('');
+    setSlugBase('');
+    setSlugTouched(false);
+    setSlugSuggestionSeed(createInvitationPageSlugSuggestionSeed());
+    setError('');
+    setSuccessMessage('');
   };
 
   if (isAdminLoading) {
@@ -128,7 +194,7 @@ export default function InvitationDraftSetupClient({
             <p className={styles.eyebrow}>불러오는 중</p>
             <h1 className={styles.emptyTitle}>관리자 권한을 확인하고 있습니다.</h1>
             <p className={styles.emptyText}>
-              청첩장 생성 화면은 관리자 확인 후에 사용할 수 있습니다.
+              청첩장 생성 화면은 관리자 권한 확인 뒤에 사용할 수 있습니다.
             </p>
           </section>
         </div>
@@ -142,7 +208,7 @@ export default function InvitationDraftSetupClient({
         <div className={`${styles.shell} ${compactMode ? styles.shellCompact : ''}`}>
           <section className={styles.emptyCard}>
             <p className={styles.eyebrow}>관리자 전용</p>
-            <h1 className={styles.emptyTitle}>새 청첩장 생성은 관리자만 할 수 있습니다.</h1>
+            <h1 className={styles.emptyTitle}>새 청첩장 생성은 관리자만 사용할 수 있습니다.</h1>
             <p className={styles.emptyText}>
               먼저 관리자 페이지에서 로그인한 뒤 다시 돌아와 주세요.
             </p>
@@ -169,9 +235,7 @@ export default function InvitationDraftSetupClient({
             </div>
             <div className={styles.heroMeta}>
               <span className={styles.chip}>관리자 생성</span>
-              <span className={styles.chip}>
-                {editorKind === 'page-wizard' ? '모바일 모바일' : '기본 편집기'}
-              </span>
+              <span className={styles.chip}>{getEditorKindLabel(editorKind)}</span>
               {selectedTemplate ? (
                 <span className={styles.chip}>{selectedTemplate.productTier}</span>
               ) : null}
@@ -183,28 +247,29 @@ export default function InvitationDraftSetupClient({
               <span className={styles.summaryLabel}>1단계</span>
               <strong className={styles.summaryValue}>템플릿 선택</strong>
               <p className={styles.summaryText}>
-                디자인과 상품 구성을 먼저 고른 뒤 청첩장을 만듭니다.
+                테마와 상품 구성을 먼저 고른 뒤 초안 구성을 시작합니다.
               </p>
             </article>
             <article className={styles.summaryCard}>
               <span className={styles.summaryLabel}>2단계</span>
-              <strong className={styles.summaryValue}>URL 주소 설정</strong>
+              <strong className={styles.summaryValue}>청첩장 주소 확정</strong>
               <p className={styles.summaryText}>
-                입력한 주소는 최종 공개 URL이 되며, 중복이면 짧은 suffix가 자동으로 붙습니다.
+                청첩장 주소는 1필드만 입력합니다. 중복이면 생성 시 서버가 최종 slug를
+                자동 조정합니다.
               </p>
             </article>
             <article className={styles.summaryCard}>
               <span className={styles.summaryLabel}>3단계</span>
-              <strong className={styles.summaryValue}>신랑·신부 이름 입력</strong>
+              <strong className={styles.summaryValue}>신랑 · 신부 이름 입력</strong>
               <p className={styles.summaryText}>
-                첫 표지 제목과 공유 문구에 사용할 이름을 입력합니다.
+                초안 기본 제목과 공유 문구에 사용할 한글 이름을 입력합니다.
               </p>
             </article>
             <article className={styles.summaryCard}>
               <span className={styles.summaryLabel}>4단계</span>
-              <strong className={styles.summaryValue}>편집 계속하기</strong>
+              <strong className={styles.summaryValue}>편집 이어가기</strong>
               <p className={styles.summaryText}>
-                청첩장이 생성되면 선택한 편집 화면으로 바로 이동합니다.
+                초안을 만들면 선택한 편집 화면으로 바로 이동합니다.
               </p>
             </article>
           </div>
@@ -214,7 +279,8 @@ export default function InvitationDraftSetupClient({
           <div className={styles.sectionHeader}>
             <h2 className={styles.sectionTitle}>시작 템플릿 선택</h2>
             <p className={styles.sectionDescription}>
-              각 템플릿은 디자인과 상품 구성을 함께 포함합니다. 아래 기능 제한은 편집기와 공개 페이지에 동일하게 적용됩니다.
+              각 템플릿은 테마와 상품 구성을 함께 포함합니다. 아래 기능 제한과 편집기,
+              공개 페이지에도 같은 규칙이 적용됩니다.
             </p>
           </div>
 
@@ -230,9 +296,7 @@ export default function InvitationDraftSetupClient({
               >
                 <div className={styles.templateTop}>
                   <strong className={styles.templateTitle}>{template.displayName}</strong>
-                  <span className={styles.chip}>
-                    {getInvitationThemeLabel(template.theme)}
-                  </span>
+                  <span className={styles.chip}>{getInvitationThemeLabel(template.theme)}</span>
                 </div>
                 <p className={styles.templateDescription}>{template.description}</p>
                 <ul className={styles.templateFeatures}>
@@ -245,45 +309,46 @@ export default function InvitationDraftSetupClient({
           </div>
 
           <div className={styles.sectionHeader}>
-            <h2 className={styles.sectionTitle}>첫 페이지 기본 정보</h2>
+            <h2 className={styles.sectionTitle}>초안 기본 정보</h2>
             <p className={styles.sectionDescription}>
-              아래 값으로 Firestore 청첩장을 먼저 만든 뒤 편집 화면을 엽니다.
+              입력한 값으로 Firestore 초안을 먼저 만들고, 이어서 상세 편집 화면에서 내용을
+              채웁니다.
             </p>
           </div>
 
           <div className={styles.fieldGrid}>
             <label className={styles.field}>
               <span className={styles.labelRow}>
-                <span className={styles.label}>URL 기본값</span>
+                <span className={styles.label}>청첩장 주소</span>
                 <span className={styles.requiredBadge}>필수</span>
               </span>
-              <span className={styles.hint}>
-                영문 소문자, 숫자, 하이픈만 사용할 수 있습니다. 예: kim-shinlang-na-sinbu
-              </span>
+              <span className={styles.hint}>{slugHelperText}</span>
               <input
                 className={styles.input}
                 value={slugBase}
                 onChange={(event) => {
-                  setSlugTouched(true);
-                  setSlugBase(event.target.value);
+                  const nextValue = event.target.value;
+                  setSlugTouched(Boolean(nextValue.trim()));
+                  setSlugBase(nextValue);
                 }}
-                placeholder="new-wedding-page"
+                onBlur={() => {
+                  if (slugValidation.isValid) {
+                    setSlugBase(slugValidation.normalizedSlugBase);
+                  }
+                }}
+                placeholder="wedding-abc123"
               />
             </label>
 
             <label className={styles.field}>
               <span className={styles.labelRow}>
-                <span className={styles.label}>편집 화면</span>
+                <span className={styles.label}>편집기</span>
                 <span className={styles.optionalBadge}>자동</span>
               </span>
               <span className={styles.hint}>
-                생성 후 선택한 편집 화면으로 자동 이동합니다.
+                초안을 만들면 선택한 편집 화면으로 자동 이동합니다.
               </span>
-              <input
-                className={styles.input}
-                value={editorKind}
-                readOnly
-              />
+              <input className={styles.input} value={getEditorKindLabel(editorKind)} readOnly />
             </label>
 
             <label className={styles.field}>
@@ -291,7 +356,7 @@ export default function InvitationDraftSetupClient({
                 <span className={styles.label}>신랑 이름</span>
                 <span className={styles.requiredBadge}>필수</span>
               </span>
-              <span className={styles.hint}>초기 표지 제목과 공유 문구에 사용됩니다.</span>
+              <span className={styles.hint}>초기 제목과 공유 문구에 사용할 한글 이름입니다.</span>
               <input
                 className={styles.input}
                 value={groomName}
@@ -305,7 +370,7 @@ export default function InvitationDraftSetupClient({
                 <span className={styles.label}>신부 이름</span>
                 <span className={styles.requiredBadge}>필수</span>
               </span>
-              <span className={styles.hint}>초기 표지 제목과 공유 문구에 사용됩니다.</span>
+              <span className={styles.hint}>초기 제목과 공유 문구에 사용할 한글 이름입니다.</span>
               <input
                 className={styles.input}
                 value={brideName}
@@ -315,11 +380,20 @@ export default function InvitationDraftSetupClient({
             </label>
           </div>
 
+          <div className={styles.featureCard}>
+            <h3 className={styles.featureTitle}>주소 미리보기</h3>
+            <p className={styles.featureText}>
+              공개 주소는 <strong>/{previewSlug}</strong> 형태로 생성됩니다. 실제 저장 시 같은
+              주소가 이미 있으면 뒤에 짧은 suffix가 자동으로 붙습니다.
+            </p>
+          </div>
+
           {selectedTemplate ? (
             <div className={styles.featureCard}>
               <h3 className={styles.featureTitle}>현재 상품 구성</h3>
               <p className={styles.featureText}>
-                이 청첩장은 <strong>{selectedTemplate.displayName}</strong> 설정으로 시작합니다. 갤러리 수, 공유 방식, 카운트다운, 방명록 노출도 선택한 상품에 맞춰 적용됩니다.
+                이 청첩장은 <strong>{selectedTemplate.displayName}</strong> 설정으로 시작합니다.
+                갤러리 수, 공유 방식, 카운트다운, 방명록 노출 여부도 여기에 맞춰 적용됩니다.
               </p>
             </div>
           ) : null}
@@ -337,14 +411,7 @@ export default function InvitationDraftSetupClient({
               <button
                 type="button"
                 className={styles.secondaryButton}
-                onClick={() => {
-                  setGroomName('');
-                  setBrideName('');
-                  setSlugBase('');
-                  setSlugTouched(false);
-                  setError('');
-                  setSuccessMessage('');
-                }}
+                onClick={handleReset}
                 disabled={isCreating}
               >
                 다시 입력

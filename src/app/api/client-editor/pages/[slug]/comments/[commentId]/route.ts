@@ -7,7 +7,7 @@ import {
 } from '@/lib/guestbookComments';
 import { CLIENT_EDITOR_SESSION_COOKIE } from '@/server/clientEditorSession';
 import { getAuthorizedClientEditorSession } from '@/server/clientEditorSessionAuth';
-import { getServerFirestore } from '@/server/firebaseAdmin';
+import { firestoreEventCommentRepository } from '@/server/repositories/eventCommentRepository';
 import {
   applyScopedInMemoryRateLimit,
   buildRateLimitHeaders,
@@ -36,7 +36,7 @@ export async function DELETE(
 
   if (!pageSlug || !normalizedCommentId) {
     return NextResponse.json(
-      { error: '삭제할 댓글 정보를 찾지 못했습니다.' },
+      { error: '삭제할 방명록 정보를 찾지 못했습니다.' },
       { status: 400 }
     );
   }
@@ -44,7 +44,7 @@ export async function DELETE(
   const session = await authorizePageSession(pageSlug);
   if (!session) {
     return NextResponse.json(
-      { error: '댓글을 관리할 권한이 없습니다. 다시 로그인해 주세요.' },
+      { error: '방명록을 관리할 권한이 없습니다. 다시 로그인해 주세요.' },
       { status: 401 }
     );
   }
@@ -58,7 +58,7 @@ export async function DELETE(
 
   if (!rateLimitResult.allowed) {
     return NextResponse.json(
-      { error: '댓글 삭제 요청이 너무 많습니다. 잠시 후 다시 시도해 주세요.' },
+      { error: '방명록 삭제 요청이 너무 많습니다. 잠시 후 다시 시도해 주세요.' },
       {
         status: 429,
         headers: buildRateLimitHeaders(rateLimitResult),
@@ -66,52 +66,51 @@ export async function DELETE(
     );
   }
 
-  const db = getServerFirestore();
-  if (!db) {
+  if (!firestoreEventCommentRepository.isAvailable()) {
     return NextResponse.json(
-      { error: '댓글 저장소를 확인하지 못했습니다. 관리자에게 문의해 주세요.' },
+      { error: '방명록 저장소를 확인하지 못했습니다. 관리자에게 문의해 주세요.' },
       { status: 503 }
     );
   }
 
-  const commentRef = db
-    .collection('guestbooks')
-    .doc(pageSlug)
-    .collection('comments')
-    .doc(normalizedCommentId);
-
-  const commentSnapshot = await commentRef.get();
-  if (!commentSnapshot.exists) {
+  const commentRecord = await firestoreEventCommentRepository.findByPageSlugAndId(
+    pageSlug,
+    normalizedCommentId
+  );
+  if (!commentRecord) {
     return NextResponse.json(
-      { error: '삭제할 댓글을 찾을 수 없습니다.' },
+      { error: '삭제할 방명록을 찾을 수 없습니다.' },
       { status: 404 }
     );
   }
 
-  const commentData = commentSnapshot.data() ?? {};
+  const commentData = commentRecord.data;
   if (
     typeof commentData.pageSlug === 'string' &&
     commentData.pageSlug.trim() &&
     commentData.pageSlug.trim() !== pageSlug
   ) {
     return NextResponse.json(
-      { error: '댓글과 페이지 정보가 일치하지 않습니다.' },
+      { error: '방명록과 페이지 정보가 일치하지 않습니다.' },
       { status: 400 }
     );
   }
 
   if (isGuestbookCommentPendingPurge(commentData)) {
-    await commentRef.delete().catch(() => null);
+    await firestoreEventCommentRepository.deleteByPageSlugAndId(
+      pageSlug,
+      normalizedCommentId
+    ).catch(() => null);
     return NextResponse.json(
-      { error: '삭제할 댓글을 찾을 수 없습니다.' },
+      { error: '삭제할 방명록을 찾을 수 없습니다.' },
       { status: 404 }
     );
   }
 
   try {
-    await commentRef.update(
-      { ...buildGuestbookCommentStatusPatch('scheduleDelete', new Date()) }
-    );
+    await firestoreEventCommentRepository.updateByPageSlugAndId(pageSlug, normalizedCommentId, {
+      ...buildGuestbookCommentStatusPatch('scheduleDelete', new Date()),
+    });
 
     return NextResponse.json(
       { success: true },
@@ -122,7 +121,7 @@ export async function DELETE(
   } catch (error) {
     console.error('[client-editor/comments] failed to schedule comment delete', error);
     return NextResponse.json(
-      { error: '댓글을 삭제 예정 상태로 바꾸지 못했습니다. 잠시 후 다시 시도해 주세요.' },
+      { error: '방명록을 삭제 예정 상태로 바꾸지 못했습니다. 잠시 후 다시 시도해 주세요.' },
       { status: 500 }
     );
   }

@@ -1,7 +1,5 @@
 import 'server-only';
 
-import { FieldValue } from 'firebase-admin/firestore';
-
 import {
   createInvitationPageFromSeed,
   getAllWeddingPageSeeds,
@@ -20,11 +18,7 @@ import {
   createInvitationPageDisplayName,
   generateInvitationPageSlugSuffix,
   mergeInvitationPageSeed,
-  normalizeInvitationConfigSeed,
-    normalizeInvitationPageDisplayPeriod,
-    normalizeInvitationPageRegistryRecord,
-    normalizeInvitationPageSlugInput,
-    stripUndefinedDeep,
+  normalizeInvitationPageSlugInput,
   type InvitationPageDisplayPeriodRecord as DisplayPeriodRecord,
   type InvitationPageRegistryRecord,
 } from '@/lib/invitationPagePersistence';
@@ -43,7 +37,6 @@ import { getInvitationPublicAccessState } from '@/lib/invitationPublicAccess';
 import {
   normalizeInvitationTheme,
   readString,
-  toDate,
 } from '@/lib/invitationPageNormalization';
 import type {
   InvitationFeatureFlags,
@@ -54,7 +47,9 @@ import type {
 } from '@/types/invitationPage';
 import { sanitizeHeartIconPlaceholdersDeep } from '@/utils/textSanitizers';
 
-import { getServerFirestore } from './firebaseAdmin';
+import {
+  firestoreEventRepository,
+} from './repositories/eventRepository';
 
 type BuiltInvitationPageRecord = {
   page: InvitationPage;
@@ -90,10 +85,6 @@ export interface ServerCreateInvitationPageDraftResult {
   config: InvitationPageSeed;
 }
 
-const DISPLAY_PERIOD_COLLECTION = 'display-periods';
-const PAGE_CONFIG_COLLECTION = 'invitation-page-configs';
-const PAGE_REGISTRY_COLLECTION = 'invitation-page-registry';
-
 function buildSamplePage(pageSlug: string): InvitationPage | null {
   const sample = getWeddingPageBySlug(pageSlug);
   if (!sample) {
@@ -101,17 +92,6 @@ function buildSamplePage(pageSlug: string): InvitationPage | null {
   }
 
   return sanitizeHeartIconPlaceholdersDeep(createInvitationPageFromSeed(sample));
-}
-
-function normalizeConfigSeed(
-  docId: string,
-  data: Record<string, any>
-): InvitationPageSeed | null {
-  return normalizeInvitationConfigSeed(
-    docId,
-    data,
-    getWeddingPageBySlug(docId) ?? undefined
-  );
 }
 
 function mergeDisplayPeriod(
@@ -269,19 +249,11 @@ function buildDraftConfigFromSeed(
   return nextSeed;
 }
 
-async function isInvitationPageSlugTaken(db: FirebaseFirestore.Firestore, pageSlug: string) {
-  const [configSnapshot, registrySnapshot] = await Promise.all([
-    db.collection(PAGE_CONFIG_COLLECTION).doc(pageSlug).get(),
-    db.collection(PAGE_REGISTRY_COLLECTION).doc(pageSlug).get(),
-  ]);
-
-  return configSnapshot.exists || registrySnapshot.exists;
+async function isInvitationPageSlugTaken(pageSlug: string) {
+  return firestoreEventRepository.isSlugTaken(pageSlug);
 }
 
-async function createUniqueInvitationPageSlug(
-  db: FirebaseFirestore.Firestore,
-  slugBase: string
-) {
+async function createUniqueInvitationPageSlug(slugBase: string) {
   const slugValidation = validateInvitationPageSlugBase(slugBase);
   if (!slugValidation.isValid) {
     throw new Error(getInvitationPageSlugValidationErrorMessage(slugValidation.reason));
@@ -289,13 +261,13 @@ async function createUniqueInvitationPageSlug(
 
   const normalizedSlugBase = slugValidation.normalizedSlugBase;
 
-  if (!(await isInvitationPageSlugTaken(db, normalizedSlugBase))) {
+  if (!(await isInvitationPageSlugTaken(normalizedSlugBase))) {
     return normalizedSlugBase;
   }
 
   let nextSlug = `${normalizedSlugBase}-${generateInvitationPageSlugSuffix()}`;
 
-  while (await isInvitationPageSlugTaken(db, nextSlug)) {
+  while (await isInvitationPageSlugTaken(nextSlug)) {
     nextSlug = `${normalizedSlugBase}-${generateInvitationPageSlugSuffix()}`;
   }
 
@@ -311,8 +283,7 @@ export type ServerInvitationPageSlugAvailability = {
 export async function getServerInvitationPageSlugAvailability(
   slugBase: string
 ): Promise<ServerInvitationPageSlugAvailability> {
-  const db = getServerFirestore();
-  if (!db) {
+  if (!firestoreEventRepository.isAvailable()) {
     throw new Error('Server Firestore is not available.');
   }
 
@@ -325,7 +296,7 @@ export async function getServerInvitationPageSlugAvailability(
     };
   }
 
-  const taken = await isInvitationPageSlugTaken(db, slugValidation.normalizedSlugBase);
+  const taken = await isInvitationPageSlugTaken(slugValidation.normalizedSlugBase);
   return {
     normalizedSlugBase: slugValidation.normalizedSlugBase,
     available: !taken,
@@ -360,69 +331,8 @@ function buildInvitationPageRecord(
   };
 }
 
-function preferDisplayPeriod(
-  current: DisplayPeriodRecord | undefined,
-  nextRecord: DisplayPeriodRecord
-) {
-  if (!current) {
-    return nextRecord;
-  }
-
-  if (nextRecord.docId === nextRecord.pageSlug && current.docId !== current.pageSlug) {
-    return nextRecord;
-  }
-
-  if ((nextRecord.updatedAt?.getTime() ?? 0) > (current.updatedAt?.getTime() ?? 0)) {
-    return nextRecord;
-  }
-
-  return current;
-}
-
 async function getDisplayPeriodByPageSlug(pageSlug: string) {
-  const normalizedPageSlug = normalizeInvitationPageSlugInput(pageSlug);
-  if (!normalizedPageSlug) {
-    return null;
-  }
-
-  const db = getServerFirestore();
-  if (!db) {
-    return null;
-  }
-
-  const directSnapshot = await db
-    .collection(DISPLAY_PERIOD_COLLECTION)
-    .doc(normalizedPageSlug)
-    .get();
-  if (directSnapshot.exists) {
-    const normalized = normalizeInvitationPageDisplayPeriod(
-      normalizedPageSlug,
-      directSnapshot.data() ?? {}
-    );
-    if (normalized) {
-      return normalized;
-    }
-  }
-
-  const snapshot = await db
-    .collection(DISPLAY_PERIOD_COLLECTION)
-    .where('pageSlug', '==', normalizedPageSlug)
-    .get();
-
-  let preferred: DisplayPeriodRecord | null = null;
-  snapshot.docs.forEach((docSnapshot) => {
-    const normalized = normalizeInvitationPageDisplayPeriod(
-      docSnapshot.id,
-      docSnapshot.data()
-    );
-    if (!normalized) {
-      return;
-    }
-
-    preferred = preferDisplayPeriod(preferred ?? undefined, normalized);
-  });
-
-  return preferred;
+  return firestoreEventRepository.findDisplayPeriodBySlug(pageSlug);
 }
 
 export async function getServerInvitationPageDisplayPeriodSummary(pageSlug: string) {
@@ -436,50 +346,12 @@ export async function getServerInvitationPageDisplayPeriodSummary(pageSlug: stri
 }
 
 async function getRegistryByPageSlug(pageSlug: string) {
-  const normalizedPageSlug = normalizeInvitationPageSlugInput(pageSlug);
-  if (!normalizedPageSlug) {
-    return null;
-  }
-
-  const db = getServerFirestore();
-  if (!db) {
-    return null;
-  }
-
-  const snapshot = await db
-    .collection(PAGE_REGISTRY_COLLECTION)
-    .doc(normalizedPageSlug)
-    .get();
-  if (!snapshot.exists) {
-    return null;
-  }
-
-  return normalizeInvitationPageRegistryRecord(
-    normalizedPageSlug,
-    snapshot.data() ?? {}
-  );
+  return firestoreEventRepository.findRegistryBySlug(pageSlug);
 }
 
 async function getConfigByPageSlug(pageSlug: string) {
-  const normalizedPageSlug = normalizeInvitationPageSlugInput(pageSlug);
-  if (!normalizedPageSlug) {
-    return null;
-  }
-
-  const db = getServerFirestore();
-  if (!db) {
-    return null;
-  }
-
-  const snapshot = await db
-    .collection(PAGE_CONFIG_COLLECTION)
-    .doc(normalizedPageSlug)
-    .get();
-  if (!snapshot.exists) {
-    return null;
-  }
-
-  return normalizeConfigSeed(normalizedPageSlug, snapshot.data() ?? {});
+  const record = await firestoreEventRepository.findContentBySlug(pageSlug);
+  return record?.config ?? null;
 }
 
 async function upsertRegistryRecord(
@@ -490,39 +362,7 @@ async function upsertRegistryRecord(
     hasCustomConfig?: boolean;
   }
 ) {
-  const normalizedPageSlug = normalizeInvitationPageSlugInput(pageSlug);
-  if (!normalizedPageSlug) {
-    throw new Error('올바른 페이지 주소가 필요합니다.');
-  }
-
-  const db = getServerFirestore();
-  if (!db) {
-    throw new Error('데이터 저장소 연결을 확인하지 못했습니다. 잠시 후 다시 시도해 주세요.');
-  }
-
-  const docRef = db.collection(PAGE_REGISTRY_COLLECTION).doc(normalizedPageSlug);
-  const existingSnapshot = await docRef.get();
-  const existing = existingSnapshot.exists
-    ? normalizeInvitationPageRegistryRecord(
-        normalizedPageSlug,
-        existingSnapshot.data() ?? {}
-      )
-    : null;
-  const now = new Date();
-
-  await docRef.set(
-    {
-      pageSlug: normalizedPageSlug,
-      published: payload.published ?? existing?.published ?? true,
-      defaultTheme:
-        payload.defaultTheme ?? existing?.defaultTheme ?? DEFAULT_INVITATION_THEME,
-      hasCustomConfig: payload.hasCustomConfig ?? existing?.hasCustomConfig ?? false,
-      createdAt: existing?.createdAt ?? now,
-      updatedAt: now,
-      editorTokenHash: FieldValue.delete(),
-    },
-    { merge: true }
-  );
+  await firestoreEventRepository.upsertRegistryBySlug(pageSlug, payload);
 }
 
 async function upsertDisplayPeriodRecord(
@@ -533,38 +373,7 @@ async function upsertDisplayPeriodRecord(
     endDate: Date | null;
   }
 ) {
-  const normalizedPageSlug = normalizeInvitationPageSlugInput(pageSlug);
-  if (!normalizedPageSlug) {
-    throw new Error('올바른 페이지 주소가 필요합니다.');
-  }
-
-  if (payload.isActive && (!payload.startDate || !payload.endDate)) {
-    throw new Error('Display period dates are required.');
-  }
-
-  const db = getServerFirestore();
-  if (!db) {
-    throw new Error('데이터 저장소 연결을 확인하지 못했습니다. 잠시 후 다시 시도해 주세요.');
-  }
-
-  const docRef = db.collection(DISPLAY_PERIOD_COLLECTION).doc(normalizedPageSlug);
-  const existingSnapshot = await docRef.get();
-  const existingCreatedAt = existingSnapshot.exists
-    ? toDate(existingSnapshot.data()?.createdAt)
-    : null;
-  const now = new Date();
-
-  await docRef.set(
-    {
-      pageSlug: normalizedPageSlug,
-      isActive: payload.isActive,
-      startDate: payload.isActive ? payload.startDate : null,
-      endDate: payload.isActive ? payload.endDate : null,
-      createdAt: existingCreatedAt ?? now,
-      updatedAt: now,
-    },
-    { merge: true }
-  );
+  await firestoreEventRepository.upsertDisplayPeriodBySlug(pageSlug, payload);
 }
 
 async function loadServerInvitationPageBySlug(
@@ -572,9 +381,8 @@ async function loadServerInvitationPageBySlug(
   includePrivate: boolean
 ) {
   const samplePage = buildSamplePage(pageSlug);
-  const db = getServerFirestore();
 
-  if (!db) {
+  if (!firestoreEventRepository.isAvailable()) {
     if (!samplePage) {
       return null;
     }
@@ -643,8 +451,7 @@ export async function getServerEditableInvitationPageConfig(
     fallbackConfig?.features
   );
 
-  const db = getServerFirestore();
-  if (!db) {
+  if (!firestoreEventRepository.isAvailable()) {
     return fallbackConfig
       ? {
           slug: normalizedPageSlug,
@@ -723,28 +530,15 @@ export async function saveServerInvitationPageConfig(
     throw new Error('초대 페이지 구성이 잘못되었습니다.');
   }
 
-  const db = getServerFirestore();
-  if (!db) {
+  if (!firestoreEventRepository.isAvailable()) {
     throw new Error('데이터 저장소 연결을 확인하지 못했습니다. 잠시 후 다시 시도해 주세요.');
   }
-
-  const docRef = db.collection(PAGE_CONFIG_COLLECTION).doc(normalizedConfig.slug);
-  const existingSnapshot = await docRef.get();
-  const existingCreatedAt = existingSnapshot.exists
-    ? toDate(existingSnapshot.data()?.createdAt)
-    : null;
   const now = new Date();
-  const configPayload = stripUndefinedDeep(normalizedConfig);
-
-  await docRef.set(
-    {
-      ...configPayload,
-      createdAt: existingCreatedAt ?? now,
-      updatedAt: now,
-      editorTokenHash: FieldValue.delete(),
-    },
-    { merge: true }
-  );
+  await firestoreEventRepository.saveContentBySlug({
+    slug: normalizedConfig.slug,
+    config: normalizedConfig,
+    updatedAt: now,
+  });
 
   await upsertRegistryRecord(normalizedConfig.slug, {
     published: options.published ?? true,
@@ -756,8 +550,7 @@ export async function saveServerInvitationPageConfig(
 export async function createServerInvitationPageDraftFromSeed(
   input: ServerCreateInvitationPageDraftInput
 ): Promise<ServerCreateInvitationPageDraftResult> {
-  const db = getServerFirestore();
-  if (!db) {
+  if (!firestoreEventRepository.isAvailable()) {
     throw new Error('Server Firestore is not available.');
   }
 
@@ -774,7 +567,7 @@ export async function createServerInvitationPageDraftFromSeed(
     throw new Error('Groom and bride names are required.');
   }
 
-  const slug = await createUniqueInvitationPageSlug(db, input.slugBase);
+  const slug = await createUniqueInvitationPageSlug(input.slugBase);
   const config = buildDraftConfigFromSeed(seed, {
     slug,
     groomName,
@@ -786,18 +579,13 @@ export async function createServerInvitationPageDraftFromSeed(
     theme: normalizeInvitationTheme(input.defaultTheme),
   });
   const now = new Date();
-  const configPayload = stripUndefinedDeep(config);
-
-  await db.collection(PAGE_CONFIG_COLLECTION).doc(slug).set(
-    {
-      ...configPayload,
-      seedSourceSlug: seed.slug,
-      editorTokenHash: FieldValue.delete(),
-      createdAt: now,
-      updatedAt: now,
-    },
-    { merge: true }
-  );
+  await firestoreEventRepository.saveContentBySlug({
+    slug,
+    config,
+    seedSourceSlug: seed.slug,
+    createdAt: now,
+    updatedAt: now,
+  });
 
   await upsertRegistryRecord(slug, {
     published: input.published ?? false,

@@ -19,12 +19,12 @@ import type {
 import type { ServerEditableInvitationPageConfig } from '@/server/invitationPageServerService';
 
 import { getAuthorizedClientEditorSession } from './clientEditorSessionAuth';
-import { getServerFirestore } from './firebaseAdmin';
 import {
   getServerEditableInvitationPageConfig,
   getServerInvitationPageDisplayPeriodSummary,
 } from './invitationPageServerService';
 import { getServerPageTicketCount } from './pageTicketServerService';
+import { firestoreEventCommentRepository } from './repositories/eventCommentRepository';
 
 export const MOBILE_CLIENT_EDITOR_SESSION_TTL_SECONDS = 60 * 60 * 24 * 30;
 const MOBILE_INVITATION_PUBLIC_ORIGIN = 'https://msgnote.kr';
@@ -181,31 +181,32 @@ export async function getServerGuestbookCommentsByPageSlug(pageSlug: string) {
     return [] as ServerGuestbookCommentSummary[];
   }
 
-  const db = getServerFirestore();
-  if (!db) {
+  if (!firestoreEventCommentRepository.isAvailable()) {
     return [] as ServerGuestbookCommentSummary[];
   }
 
-  const snapshot = await db
-    .collection('guestbooks')
-    .doc(normalizedPageSlug)
-    .collection('comments')
-    .get();
+  const storedComments = await firestoreEventCommentRepository.listByPageSlug(
+    normalizedPageSlug
+  );
   const now = new Date();
   const purgeTasks: Array<Promise<unknown>> = [];
 
-  const comments = snapshot.docs
-    .map((commentSnapshot) => {
-      const data = commentSnapshot.data() ?? {};
+  const comments = storedComments
+    .map((commentRecord) => {
+      const data = commentRecord.data;
       if (!isGuestbookCommentVisibleToManager(data, now)) {
         if (isGuestbookCommentPendingPurge(data, now)) {
-          purgeTasks.push(commentSnapshot.ref.delete().catch(() => null));
+          purgeTasks.push(
+            firestoreEventCommentRepository
+              .deleteByPageSlugAndId(normalizedPageSlug, commentRecord.id)
+              .catch(() => null)
+          );
         }
         return null;
       }
 
       return buildServerGuestbookCommentSummary(
-        commentSnapshot.id,
+        commentRecord.id,
         normalizedPageSlug,
         data
       );
@@ -233,31 +234,32 @@ export async function getServerGuestbookCommentCountByPageSlug(pageSlug: string)
     return 0;
   }
 
-  const db = getServerFirestore();
-  if (!db) {
+  if (!firestoreEventCommentRepository.isAvailable()) {
     return 0;
   }
 
-  const commentsCollection = db
-    .collection('guestbooks')
-    .doc(normalizedPageSlug)
-    .collection('comments');
-  const snapshot = await commentsCollection.get();
+  const storedComments = await firestoreEventCommentRepository.listByPageSlug(
+    normalizedPageSlug
+  );
   const now = new Date();
   const purgeTasks: Array<Promise<unknown>> = [];
 
   let count = 0;
-  snapshot.docs.forEach((commentSnapshot) => {
-    const data = commentSnapshot.data() ?? {};
+  storedComments.forEach((commentRecord) => {
+    const data = commentRecord.data;
     if (!isGuestbookCommentVisibleToManager(data, now)) {
       if (isGuestbookCommentPendingPurge(data, now)) {
-        purgeTasks.push(commentSnapshot.ref.delete().catch(() => null));
+        purgeTasks.push(
+          firestoreEventCommentRepository
+            .deleteByPageSlugAndId(normalizedPageSlug, commentRecord.id)
+            .catch(() => null)
+        );
       }
       return;
     }
 
     const comment = buildServerGuestbookCommentSummary(
-      commentSnapshot.id,
+      commentRecord.id,
       normalizedPageSlug,
       data
     );

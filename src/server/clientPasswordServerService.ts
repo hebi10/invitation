@@ -1,108 +1,17 @@
 import 'server-only';
 
-import { FieldValue } from 'firebase-admin/firestore';
-
 import { createClientPasswordHashRecord, verifyClientPasswordHashRecord } from '@/lib/clientPasswordCrypto';
 import { getServerInvitationPageBySlug } from '@/server/invitationPageServerService';
 
-import { getServerFirestore } from './firebaseAdmin';
+import {
+  firestoreEventSecretRepository,
+  type EventSecretRecord as ServerClientPasswordRecord,
+} from './repositories/eventSecretRepository';
 
-export interface ServerClientPasswordRecord {
-  pageSlug: string;
-  passwordHash: string | null;
-  passwordSalt: string | null;
-  passwordIterations: number | null;
-  passwordVersion: number;
-  legacyPassword: string | null;
-  createdAt: Date | null;
-  updatedAt: Date | null;
-}
-
-const CLIENT_PASSWORDS_COLLECTION = 'client-passwords';
 const DEFAULT_INITIAL_CLIENT_PASSWORD = '12344';
 
-function toDate(value: unknown) {
-  if (
-    typeof value === 'object' &&
-    value !== null &&
-    typeof (value as { toDate?: () => Date }).toDate === 'function'
-  ) {
-    return (value as { toDate: () => Date }).toDate();
-  }
-
-  if (value instanceof Date) {
-    return value;
-  }
-
-  const parsed = value ? new Date(String(value)) : null;
-  return parsed && !Number.isNaN(parsed.getTime()) ? parsed : null;
-}
-
-function normalizePasswordRecord(
-  pageSlug: string,
-  data: Record<string, unknown>
-): ServerClientPasswordRecord | null {
-  const normalizedPageSlug =
-    typeof data.pageSlug === 'string' && data.pageSlug.trim() ? data.pageSlug.trim() : pageSlug;
-  const passwordHash =
-    typeof data.passwordHash === 'string' && data.passwordHash.trim()
-      ? data.passwordHash.trim()
-      : null;
-  const passwordSalt =
-    typeof data.passwordSalt === 'string' && data.passwordSalt.trim()
-      ? data.passwordSalt.trim()
-      : null;
-  const passwordIterations =
-    typeof data.passwordIterations === 'number' && Number.isFinite(data.passwordIterations)
-      ? data.passwordIterations
-      : null;
-  const legacyPassword =
-    typeof data.password === 'string' && data.password.trim() ? data.password.trim() : null;
-  const passwordVersion =
-    typeof data.passwordVersion === 'number' && Number.isFinite(data.passwordVersion)
-      ? data.passwordVersion
-      : 1;
-
-  if (
-    !normalizedPageSlug ||
-    (!legacyPassword && !(passwordHash && passwordSalt && passwordIterations))
-  ) {
-    return null;
-  }
-
-  return {
-    pageSlug: normalizedPageSlug,
-    passwordHash,
-    passwordSalt,
-    passwordIterations,
-    passwordVersion,
-    legacyPassword,
-    createdAt: toDate(data.createdAt),
-    updatedAt: toDate(data.updatedAt),
-  };
-}
-
 export async function getServerClientPasswordRecord(pageSlug: string) {
-  const normalizedPageSlug = pageSlug.trim();
-  if (!normalizedPageSlug) {
-    return null;
-  }
-
-  const db = getServerFirestore();
-  if (!db) {
-    return null;
-  }
-
-  const snapshot = await db
-    .collection(CLIENT_PASSWORDS_COLLECTION)
-    .doc(normalizedPageSlug)
-    .get();
-
-  if (!snapshot.exists) {
-    return null;
-  }
-
-  return normalizePasswordRecord(normalizedPageSlug, snapshot.data() ?? {});
+  return firestoreEventSecretRepository.findByPageSlug(pageSlug);
 }
 
 async function ensureServerClientPasswordRecord(pageSlug: string) {
@@ -116,8 +25,7 @@ async function ensureServerClientPasswordRecord(pageSlug: string) {
     return existing;
   }
 
-  const db = getServerFirestore();
-  if (!db) {
+  if (!firestoreEventSecretRepository.isAvailable()) {
     return null;
   }
 
@@ -134,21 +42,15 @@ async function ensureServerClientPasswordRecord(pageSlug: string) {
   );
   const now = new Date();
 
-  await db
-    .collection(CLIENT_PASSWORDS_COLLECTION)
-    .doc(normalizedPageSlug)
-    .set(
-      {
-        pageSlug: normalizedPageSlug,
-        ...passwordHashRecord,
-        passwordVersion: 1,
-        createdAt: now,
-        updatedAt: now,
-        password: FieldValue.delete(),
-        editorTokenHash: FieldValue.delete(),
-      },
-      { merge: true }
-    );
+  await firestoreEventSecretRepository.saveByPageSlug({
+    pageSlug: normalizedPageSlug,
+    passwordHash: passwordHashRecord.passwordHash,
+    passwordSalt: passwordHashRecord.passwordSalt,
+    passwordIterations: passwordHashRecord.passwordIterations,
+    passwordVersion: 1,
+    createdAt: now,
+    updatedAt: now,
+  });
 
   return getServerClientPasswordRecord(normalizedPageSlug);
 }
@@ -158,29 +60,22 @@ async function upgradeLegacyPasswordRecord(
   record: ServerClientPasswordRecord,
   password: string
 ) {
-  const db = getServerFirestore();
-  if (!db) {
+  if (!firestoreEventSecretRepository.isAvailable()) {
     return;
   }
 
   const passwordHashRecord = await createClientPasswordHashRecord(password);
   const now = new Date();
 
-  await db
-    .collection(CLIENT_PASSWORDS_COLLECTION)
-    .doc(pageSlug)
-    .set(
-      {
-        pageSlug,
-        ...passwordHashRecord,
-        passwordVersion: (record.passwordVersion ?? 0) + 1,
-        createdAt: record.createdAt ?? now,
-        updatedAt: now,
-        password: FieldValue.delete(),
-        editorTokenHash: FieldValue.delete(),
-      },
-      { merge: true }
-    );
+  await firestoreEventSecretRepository.saveByPageSlug({
+    pageSlug,
+    passwordHash: passwordHashRecord.passwordHash,
+    passwordSalt: passwordHashRecord.passwordSalt,
+    passwordIterations: passwordHashRecord.passwordIterations,
+    passwordVersion: (record.passwordVersion ?? 0) + 1,
+    createdAt: record.createdAt ?? now,
+    updatedAt: now,
+  });
 }
 
 export async function verifyServerClientPassword(pageSlug: string, password: string) {
@@ -248,8 +143,7 @@ export async function setServerClientPassword(pageSlug: string, password: string
     throw new Error('Page slug and password are required.');
   }
 
-  const db = getServerFirestore();
-  if (!db) {
+  if (!firestoreEventSecretRepository.isAvailable()) {
     throw new Error('Server Firestore is not available.');
   }
 
@@ -259,21 +153,15 @@ export async function setServerClientPassword(pageSlug: string, password: string
   const passwordHashRecord = await createClientPasswordHashRecord(normalizedPassword);
   const passwordVersion = (existing?.passwordVersion ?? 0) + 1;
 
-  await db
-    .collection(CLIENT_PASSWORDS_COLLECTION)
-    .doc(normalizedPageSlug)
-    .set(
-      {
-        pageSlug: normalizedPageSlug,
-        ...passwordHashRecord,
-        passwordVersion,
-        createdAt,
-        updatedAt: now,
-        password: FieldValue.delete(),
-        editorTokenHash: FieldValue.delete(),
-      },
-      { merge: true }
-    );
+  await firestoreEventSecretRepository.saveByPageSlug({
+    pageSlug: normalizedPageSlug,
+    passwordHash: passwordHashRecord.passwordHash,
+    passwordSalt: passwordHashRecord.passwordSalt,
+    passwordIterations: passwordHashRecord.passwordIterations,
+    passwordVersion,
+    createdAt,
+    updatedAt: now,
+  });
 
   const savedRecord = await getServerClientPasswordRecord(normalizedPageSlug);
   if (!savedRecord) {

@@ -3,32 +3,19 @@ import 'server-only';
 import { createHmac, randomBytes } from 'node:crypto';
 
 import { getServerClientPasswordRecord } from './clientPasswordServerService';
-import { getServerFirestore } from './firebaseAdmin';
+import {
+  firestoreEventLinkTokenRepository,
+  type ConsumeMobileClientEditorLinkTokenResult,
+  type MobileClientEditorLinkTokenPurpose,
+  type StoredMobileClientEditorLinkTokenRecord,
+} from './repositories/eventLinkTokenRepository';
 
 export const MOBILE_CLIENT_EDITOR_LINK_TOKEN_TTL_SECONDS = 15 * 60;
-export const MOBILE_CLIENT_EDITOR_LINK_TOKEN_COLLECTION =
-  'mobile-client-editor-link-tokens';
+export type { MobileClientEditorLinkTokenPurpose };
 
 const APP_LINK_SCHEME = 'mobileinvitation';
 const APP_LINK_WEB_PREFIX = 'app';
 const DEFAULT_LINK_TOKEN_NEXT_PATH = '/manage';
-
-export type MobileClientEditorLinkTokenPurpose = 'mobile-login';
-
-type MobileClientEditorLinkTokenRecord = {
-  id: string;
-  pageSlug: string;
-  tokenHash: string;
-  purpose: MobileClientEditorLinkTokenPurpose;
-  passwordVersion: number;
-  createdAt: Date;
-  expiresAt: Date;
-  usedAt: Date | null;
-  revokedAt: Date | null;
-  lastValidatedAt: Date | null;
-  issuedBy: string | null;
-  issuedByType: string | null;
-};
 
 type IssueMobileClientEditorLinkTokenInput = {
   pageSlug: string;
@@ -41,36 +28,8 @@ type IssueMobileClientEditorLinkTokenInput = {
   nextPath?: string;
 };
 
-type ExchangeMobileClientEditorLinkTokenResult =
-  | {
-      status: 'ok';
-      record: MobileClientEditorLinkTokenRecord;
-    }
-  | {
-      status: 'invalid' | 'used' | 'expired' | 'revoked';
-      record: MobileClientEditorLinkTokenRecord | null;
-    };
-
-function toDate(value: unknown) {
-  if (
-    typeof value === 'object' &&
-    value !== null &&
-    typeof (value as { toDate?: () => Date }).toDate === 'function'
-  ) {
-    return (value as { toDate: () => Date }).toDate();
-  }
-
-  if (value instanceof Date) {
-    return value;
-  }
-
-  const parsed = value ? new Date(String(value)) : null;
-  if (!parsed || Number.isNaN(parsed.getTime())) {
-    return null;
-  }
-
-  return parsed;
-}
+type ExchangeMobileClientEditorLinkTokenResult = ConsumeMobileClientEditorLinkTokenResult;
+export type MobileClientEditorLinkTokenRecord = StoredMobileClientEditorLinkTokenRecord;
 
 function getLinkTokenSecret() {
   const configuredSecret = process.env.MOBILE_CLIENT_EDITOR_LINK_TOKEN_SECRET?.trim();
@@ -126,47 +85,6 @@ function resolveOrigin(origin: string) {
   }
 }
 
-function buildRecord(
-  id: string,
-  data: Record<string, unknown>
-): MobileClientEditorLinkTokenRecord | null {
-  const pageSlug = typeof data.pageSlug === 'string' ? data.pageSlug.trim() : '';
-  const tokenHash = typeof data.tokenHash === 'string' ? data.tokenHash.trim() : '';
-  const purpose = normalizePurpose(
-    typeof data.purpose === 'string' ? data.purpose.trim() : undefined
-  );
-  const passwordVersion =
-    typeof data.passwordVersion === 'number' && Number.isFinite(data.passwordVersion)
-      ? data.passwordVersion
-      : null;
-  const createdAt = toDate(data.createdAt);
-  const expiresAt = toDate(data.expiresAt);
-
-  if (!pageSlug || !tokenHash || passwordVersion === null || !createdAt || !expiresAt) {
-    return null;
-  }
-
-  return {
-    id,
-    pageSlug,
-    tokenHash,
-    purpose,
-    passwordVersion,
-    createdAt,
-    expiresAt,
-    usedAt: toDate(data.usedAt),
-    revokedAt: toDate(data.revokedAt),
-    lastValidatedAt: toDate(data.lastValidatedAt),
-    issuedBy: typeof data.issuedBy === 'string' ? data.issuedBy.trim() || null : null,
-    issuedByType:
-      typeof data.issuedByType === 'string' ? data.issuedByType.trim() || null : null,
-  };
-}
-
-function isActiveRecord(record: MobileClientEditorLinkTokenRecord, now = new Date()) {
-  return !record.usedAt && !record.revokedAt && record.expiresAt.getTime() > now.getTime();
-}
-
 export function buildMobileClientEditorLinkTokenUrls(
   origin: string,
   token: string,
@@ -189,42 +107,7 @@ export async function revokeActiveMobileClientEditorLinkTokens(
   pageSlug: string,
   purpose: MobileClientEditorLinkTokenPurpose = 'mobile-login'
 ) {
-  const normalizedPageSlug = pageSlug.trim();
-  if (!normalizedPageSlug) {
-    return 0;
-  }
-
-  const db = getServerFirestore();
-  if (!db) {
-    throw new Error('Server Firestore is not available.');
-  }
-
-  const snapshot = await db
-    .collection(MOBILE_CLIENT_EDITOR_LINK_TOKEN_COLLECTION)
-    .where('pageSlug', '==', normalizedPageSlug)
-    .where('purpose', '==', purpose)
-    .get();
-
-  const now = new Date();
-  const activeDocs = snapshot.docs.filter((docSnapshot) => {
-    const record = buildRecord(docSnapshot.id, docSnapshot.data() ?? {});
-    return record ? isActiveRecord(record, now) : false;
-  });
-
-  if (!activeDocs.length) {
-    return 0;
-  }
-
-  const batch = db.batch();
-  activeDocs.forEach((docSnapshot) => {
-    batch.update(docSnapshot.ref, {
-      revokedAt: now,
-      lastValidatedAt: now,
-    });
-  });
-  await batch.commit();
-
-  return activeDocs.length;
+  return firestoreEventLinkTokenRepository.revokeActiveByPageSlug(pageSlug, purpose);
 }
 
 export async function issueMobileClientEditorLinkToken(
@@ -235,8 +118,7 @@ export async function issueMobileClientEditorLinkToken(
     throw new Error('Page slug is required.');
   }
 
-  const db = getServerFirestore();
-  if (!db) {
+  if (!firestoreEventLinkTokenRepository.isAvailable()) {
     throw new Error('Server Firestore is not available.');
   }
 
@@ -255,38 +137,20 @@ export async function issueMobileClientEditorLinkToken(
       ? Math.floor(input.ttlSeconds)
       : MOBILE_CLIENT_EDITOR_LINK_TOKEN_TTL_SECONDS;
   const expiresAt = new Date(createdAt.getTime() + ttlSeconds * 1000);
-  const docRef = db.collection(MOBILE_CLIENT_EDITOR_LINK_TOKEN_COLLECTION).doc();
-
-  await docRef.set({
+  const record = await firestoreEventLinkTokenRepository.create({
     pageSlug: normalizedPageSlug,
     tokenHash,
     purpose,
     passwordVersion: input.passwordVersion,
     createdAt,
     expiresAt,
-    usedAt: null,
-    revokedAt: null,
-    lastValidatedAt: null,
-    issuedBy: input.issuedBy?.trim() || null,
-    issuedByType: input.issuedByType?.trim() || 'mobile-owner-session',
+    issuedBy: input.issuedBy,
+    issuedByType: input.issuedByType,
   });
 
   return {
     token: plainToken,
-    record: {
-      id: docRef.id,
-      pageSlug: normalizedPageSlug,
-      tokenHash,
-      purpose,
-      passwordVersion: input.passwordVersion,
-      createdAt,
-      expiresAt,
-      usedAt: null,
-      revokedAt: null,
-      lastValidatedAt: null,
-      issuedBy: input.issuedBy?.trim() || null,
-      issuedByType: input.issuedByType?.trim() || 'mobile-owner-session',
-    } satisfies MobileClientEditorLinkTokenRecord,
+    record,
     revokedExistingCount,
     ...buildMobileClientEditorLinkTokenUrls(
       input.origin,
@@ -307,27 +171,12 @@ export async function exchangeMobileClientEditorLinkToken(
     };
   }
 
-  const db = getServerFirestore();
-  if (!db) {
+  if (!firestoreEventLinkTokenRepository.isAvailable()) {
     throw new Error('Server Firestore is not available.');
   }
 
   const tokenHash = hashMobileClientEditorLinkToken(normalizedToken);
-  const snapshot = await db
-    .collection(MOBILE_CLIENT_EDITOR_LINK_TOKEN_COLLECTION)
-    .where('tokenHash', '==', tokenHash)
-    .limit(1)
-    .get();
-
-  const tokenDoc = snapshot.docs[0] ?? null;
-  if (!tokenDoc) {
-    return {
-      status: 'invalid',
-      record: null,
-    };
-  }
-
-  const currentRecord = buildRecord(tokenDoc.id, tokenDoc.data() ?? {});
+  const currentRecord = await firestoreEventLinkTokenRepository.findByTokenHash(tokenHash);
   if (!currentRecord) {
     return {
       status: 'invalid',
@@ -338,17 +187,14 @@ export async function exchangeMobileClientEditorLinkToken(
   const passwordRecord = await getServerClientPasswordRecord(currentRecord.pageSlug);
   if (!passwordRecord || passwordRecord.passwordVersion !== currentRecord.passwordVersion) {
     const now = new Date();
-    await tokenDoc.ref.set(
-      {
-        revokedAt: now,
-        lastValidatedAt: now,
-      },
-      { merge: true }
+    const revokedRecord = await firestoreEventLinkTokenRepository.revokeById(
+      currentRecord.id,
+      now
     );
 
     return {
       status: 'revoked',
-      record: {
+      record: revokedRecord ?? {
         ...currentRecord,
         revokedAt: now,
         lastValidatedAt: now,
@@ -356,77 +202,9 @@ export async function exchangeMobileClientEditorLinkToken(
     };
   }
 
-  const now = new Date();
-  const result = await db.runTransaction(async (transaction) => {
-    const freshSnapshot = await transaction.get(tokenDoc.ref);
-    const freshRecord = buildRecord(tokenDoc.id, freshSnapshot.data() ?? {});
-
-    if (!freshRecord) {
-      return {
-        status: 'invalid',
-        record: null,
-      } satisfies ExchangeMobileClientEditorLinkTokenResult;
-    }
-
-    if (freshRecord.revokedAt) {
-      return {
-        status: 'revoked',
-        record: freshRecord,
-      } satisfies ExchangeMobileClientEditorLinkTokenResult;
-    }
-
-    if (freshRecord.usedAt) {
-      return {
-        status: 'used',
-        record: freshRecord,
-      } satisfies ExchangeMobileClientEditorLinkTokenResult;
-    }
-
-    if (freshRecord.expiresAt.getTime() <= now.getTime()) {
-      return {
-        status: 'expired',
-        record: freshRecord,
-      } satisfies ExchangeMobileClientEditorLinkTokenResult;
-    }
-
-    if (freshRecord.passwordVersion !== passwordRecord.passwordVersion) {
-      transaction.set(
-        tokenDoc.ref,
-        {
-          revokedAt: now,
-          lastValidatedAt: now,
-        },
-        { merge: true }
-      );
-
-      return {
-        status: 'revoked',
-        record: {
-          ...freshRecord,
-          revokedAt: now,
-          lastValidatedAt: now,
-        },
-      } satisfies ExchangeMobileClientEditorLinkTokenResult;
-    }
-
-    transaction.set(
-      tokenDoc.ref,
-      {
-        usedAt: now,
-        lastValidatedAt: now,
-      },
-      { merge: true }
-    );
-
-    return {
-      status: 'ok',
-      record: {
-        ...freshRecord,
-        usedAt: now,
-        lastValidatedAt: now,
-      },
-    } satisfies ExchangeMobileClientEditorLinkTokenResult;
-  });
-
-  return result;
+  return firestoreEventLinkTokenRepository.consumeById(
+    currentRecord.id,
+    passwordRecord.passwordVersion,
+    new Date()
+  );
 }

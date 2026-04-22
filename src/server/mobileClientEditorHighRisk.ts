@@ -3,7 +3,7 @@ import 'server-only';
 import { createHmac, timingSafeEqual } from 'node:crypto';
 
 import type { AuthorizedMobileClientEditorAccess } from './clientEditorMobileApi';
-import { getServerFirestore } from './firebaseAdmin';
+import { firestoreEventAuditLogRepository } from './repositories/eventAuditLogRepository';
 
 export const MOBILE_CLIENT_EDITOR_HIGH_RISK_TOKEN_HEADER =
   'x-mobile-client-editor-high-risk-token';
@@ -37,8 +37,6 @@ interface MobileClientEditorAuditLogInput {
   reason?: string | null;
   metadata?: Record<string, string | number | boolean | null | undefined>;
 }
-
-const MOBILE_CLIENT_EDITOR_AUDIT_LOG_COLLECTION = 'mobile-client-editor-audit-logs';
 
 function base64UrlEncode(value: string) {
   return Buffer.from(value, 'utf8').toString('base64url');
@@ -184,24 +182,14 @@ export async function writeMobileClientEditorAuditLog({
   reason,
   metadata,
 }: MobileClientEditorAuditLogInput) {
-  const db = getServerFirestore();
-  if (!db) {
-    return;
-  }
-
   try {
-    const safeMetadata = Object.fromEntries(
-      Object.entries(metadata ?? {}).filter(([, value]) => value !== undefined)
-    );
-
-    await db.collection(MOBILE_CLIENT_EDITOR_AUDIT_LOG_COLLECTION).add({
+    await firestoreEventAuditLogRepository.write({
       action,
       result,
       pageSlug,
       sessionPageSlug: sessionPageSlug ?? null,
-      reason: reason?.trim() ? reason.trim() : null,
-      metadata: safeMetadata,
-      createdAt: new Date(),
+      reason,
+      metadata,
     });
   } catch (error) {
     console.error('[mobile-client-editor/high-risk] failed to write audit log', error);

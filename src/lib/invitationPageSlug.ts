@@ -32,6 +32,10 @@ export type InvitationPageSlugValidationResult = {
 };
 
 const RESERVED_INVITATION_PAGE_SLUG_SET = new Set<string>(INVITATION_PAGE_RESERVED_SLUGS);
+const INVITATION_PAGE_SLUG_SUGGESTION_SEED_ALPHABET =
+  'abcdefghijklmnopqrstuvwxyz0123456789';
+const INVITATION_PAGE_SLUG_SUGGESTION_FALLBACK_PREFIX = 'wedding';
+const INVITATION_PAGE_SLUG_SUGGESTION_SECONDARY_PREFIX = 'invite';
 
 export function normalizeInvitationPageSlugBase(value: string) {
   return value
@@ -103,6 +107,66 @@ export function validateInvitationPageSlugBase(value: string): InvitationPageSlu
     isValid: true,
     reason: null,
   };
+}
+
+function trimSuggestedInvitationPageSlugBase(value: string) {
+  return value.slice(0, INVITATION_PAGE_SLUG_MAX_LENGTH).replace(/-+$/g, '');
+}
+
+function resolveSuggestedInvitationPageSlugBase(value: string) {
+  const trimmedSlugBase = trimSuggestedInvitationPageSlugBase(
+    normalizeInvitationPageSlugBase(value)
+  );
+  const validation = validateInvitationPageSlugBase(trimmedSlugBase);
+
+  return validation.isValid ? validation.normalizedSlugBase : null;
+}
+
+export function createInvitationPageSlugSuggestionSeed(length = 6) {
+  return Array.from({ length }, () => {
+    const index = Math.floor(
+      Math.random() * INVITATION_PAGE_SLUG_SUGGESTION_SEED_ALPHABET.length
+    );
+    return INVITATION_PAGE_SLUG_SUGGESTION_SEED_ALPHABET[index];
+  }).join('');
+}
+
+export function buildSuggestedInvitationPageSlugBase(
+  values: readonly string[],
+  options: {
+    seed?: string;
+    fallbackPrefix?: string;
+  } = {}
+) {
+  const candidateSlugBase = resolveSuggestedInvitationPageSlugBase(
+    values
+      .map((value) => value.trim())
+      .filter(Boolean)
+      .join('-')
+  );
+  if (candidateSlugBase) {
+    return candidateSlugBase;
+  }
+
+  const fallbackPrefix =
+    normalizeInvitationPageSlugBase(
+      options.fallbackPrefix ?? INVITATION_PAGE_SLUG_SUGGESTION_FALLBACK_PREFIX
+    ) || INVITATION_PAGE_SLUG_SUGGESTION_FALLBACK_PREFIX;
+  const normalizedSeed =
+    normalizeInvitationPageSlugBase(options.seed ?? '').replace(/-/g, '') ||
+    createInvitationPageSlugSuggestionSeed();
+  const fallbackSlugBase = resolveSuggestedInvitationPageSlugBase(
+    `${fallbackPrefix}-${normalizedSeed}`
+  );
+  if (fallbackSlugBase) {
+    return fallbackSlugBase;
+  }
+
+  return (
+    resolveSuggestedInvitationPageSlugBase(
+      `${INVITATION_PAGE_SLUG_SUGGESTION_SECONDARY_PREFIX}-${createInvitationPageSlugSuggestionSeed()}`
+    ) ?? 'invite-page'
+  );
 }
 
 export function getInvitationPageSlugValidationErrorMessage(

@@ -12,7 +12,7 @@ import {
   buildServerGuestbookCommentSummary,
   hasMobileClientEditorPermission,
 } from '@/server/clientEditorMobileApi';
-import { getServerFirestore } from '@/server/firebaseAdmin';
+import { firestoreEventCommentRepository } from '@/server/repositories/eventCommentRepository';
 import {
   applyScopedInMemoryRateLimit,
   buildRateLimitHeaders,
@@ -23,10 +23,7 @@ const MOBILE_CLIENT_EDITOR_COMMENT_MUTATION_RATE_LIMIT = {
   windowMs: 5 * 60 * 1000,
 } as const;
 
-async function authorizeCommentMutation(
-  request: Request,
-  pageSlug: string
-) {
+async function authorizeCommentMutation(request: Request, pageSlug: string) {
   const access = await authorizeMobileClientEditorRequest(request, pageSlug);
   if (!access) {
     return NextResponse.json({ error: 'Unauthorized.' }, { status: 401 });
@@ -52,8 +49,7 @@ function applyCommentMutationRateLimit(request: Request, pageSlug: string) {
 }
 
 async function loadCommentTarget(pageSlug: string, commentId: string) {
-  const db = getServerFirestore();
-  if (!db) {
+  if (!firestoreEventCommentRepository.isAvailable()) {
     return {
       error: NextResponse.json(
         { error: 'Server Firestore is not available.' },
@@ -64,25 +60,22 @@ async function loadCommentTarget(pageSlug: string, commentId: string) {
     };
   }
 
-  const commentRef = db
-    .collection('guestbooks')
-    .doc(pageSlug)
-    .collection('comments')
-    .doc(commentId);
-
-  const commentSnapshot = await commentRef.get();
-  if (!commentSnapshot.exists) {
+  const commentRecord = await firestoreEventCommentRepository.findByPageSlugAndId(
+    pageSlug,
+    commentId
+  );
+  if (!commentRecord) {
     return {
       error: NextResponse.json(
         { error: 'Comment was not found.' },
         { status: 404 }
       ),
-      commentRef,
+      commentRef: null,
       commentData: null,
     };
   }
 
-  const commentData = commentSnapshot.data() ?? {};
+  const commentData = commentRecord.data;
   if (
     typeof commentData.pageSlug === 'string' &&
     commentData.pageSlug.trim() &&
@@ -93,26 +86,28 @@ async function loadCommentTarget(pageSlug: string, commentId: string) {
         { error: 'Comment page does not match the requested page.' },
         { status: 400 }
       ),
-      commentRef,
+      commentRef: null,
       commentData,
     };
   }
 
   if (isGuestbookCommentPendingPurge(commentData)) {
-    await commentRef.delete().catch(() => null);
+    await firestoreEventCommentRepository.deleteByPageSlugAndId(pageSlug, commentId).catch(
+      () => null
+    );
     return {
       error: NextResponse.json(
         { error: 'Comment was not found.' },
         { status: 404 }
       ),
-      commentRef,
+      commentRef: null,
       commentData,
     };
   }
 
   return {
     error: null,
-    commentRef,
+    commentRef: commentRecord.id,
     commentData,
   };
 }
@@ -138,7 +133,9 @@ async function updateCommentStatus(
   const nextStatusPatch = buildGuestbookCommentStatusPatch(action, now);
 
   try {
-    await target.commentRef.update({ ...nextStatusPatch });
+    await firestoreEventCommentRepository.updateByPageSlugAndId(pageSlug, commentId, {
+      ...nextStatusPatch,
+    });
     const nextSummary = buildServerGuestbookCommentSummary(commentId, pageSlug, {
       ...target.commentData,
       ...nextStatusPatch,
