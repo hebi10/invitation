@@ -15,6 +15,7 @@
 ## 추가 문서
 
 - 새 테마 추가 체크리스트: `docs/new-theme-checklist.md`
+- 모바일 청첩장 연동 기준: `docs/mobile-client-editor-policy.md`
 - 서비스 개요 문서: `docs/portfolio-service-overview.md`
 
 ## 기술 스택
@@ -455,9 +456,12 @@ npm run clean:next
 npm run sync:memory-metadata
 npm run build
 npm run build:memory-metadata-strict
+npm run typecheck
 npm run export
 npm run preview
 npm run lint
+npm run check
+npm run test:smoke
 npm run deploy:firebase
 
 npm run mb:start
@@ -475,6 +479,8 @@ npm run seed:invitation-pages:validate
   메모리 메타데이터 snapshot 생성 후 `.next` 정리, 이후 `next build`
 - `build:memory-metadata-strict`
   strict 모드 메타데이터 동기화 후 빌드
+- `typecheck`
+  웹(`tsc --noEmit`)과 모바일(`apps/mobile`) 타입 검사를 함께 실행
 - `clean:next`
   `.next` 캐시 삭제
 - `sync:memory-metadata`
@@ -483,6 +489,10 @@ npm run seed:invitation-pages:validate
   현재는 `next build`와 동일하게 동작
 - `preview`
   `next start -p 3000`
+- `check`
+  루트 lint + 웹/모바일 typecheck를 한 번에 실행
+- `test:smoke`
+  `next build` 기준의 최소 smoke 검증
 - `deploy:firebase`
   strict build 후 `firebase deploy`
 - `seed:invitation-pages`
@@ -663,8 +673,16 @@ node scripts/migrate-comments-to-guestbooks.mjs analyze
 ## 검증 권장 명령
 
 ```bash
+npm run check
+npm run build
+npm run test:smoke
+```
+
+필요하면 개별 검증도 바로 실행할 수 있습니다.
+
+```bash
 npm run lint
-npx tsc --noEmit
+npm run typecheck
 npm run build
 ```
 

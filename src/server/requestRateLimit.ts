@@ -11,6 +11,14 @@ type InMemoryRateLimitOptions = {
   windowMs: number;
 };
 
+type ScopedInMemoryRateLimitOptions = {
+  request: Request;
+  scope: string;
+  keyParts?: Array<string | number | boolean | null | undefined>;
+  limit: number;
+  windowMs: number;
+};
+
 type InMemoryRateLimitResult = {
   allowed: boolean;
   limit: number;
@@ -47,6 +55,31 @@ export function readRequestClientKey(request: Request) {
   const normalizedUserAgent = userAgent.slice(0, 120);
 
   return `${clientIp}:${normalizedUserAgent}`;
+}
+
+function normalizeRateLimitKeyPart(value: string | number | boolean | null | undefined) {
+  if (typeof value === 'string') {
+    const normalized = value.trim();
+    return normalized.length > 0 ? normalized : null;
+  }
+
+  if (typeof value === 'number' || typeof value === 'boolean') {
+    return String(value);
+  }
+
+  return null;
+}
+
+export function buildScopedRateLimitKey(
+  request: Request,
+  scope: string,
+  keyParts: Array<string | number | boolean | null | undefined> = []
+) {
+  const normalizedParts = keyParts
+    .map((value) => normalizeRateLimitKeyPart(value))
+    .filter((value): value is string => value !== null);
+
+  return [scope, ...normalizedParts, readRequestClientKey(request)].join(':');
 }
 
 export function applyInMemoryRateLimit(
@@ -95,6 +128,20 @@ export function applyInMemoryRateLimit(
     resetAt: current.resetAt,
     retryAfterSeconds: Math.max(1, Math.ceil((current.resetAt - now) / 1000)),
   };
+}
+
+export function applyScopedInMemoryRateLimit(
+  options: ScopedInMemoryRateLimitOptions
+) {
+  return applyInMemoryRateLimit({
+    key: buildScopedRateLimitKey(
+      options.request,
+      options.scope,
+      options.keyParts ?? []
+    ),
+    limit: options.limit,
+    windowMs: options.windowMs,
+  });
 }
 
 export function buildRateLimitHeaders(result: InMemoryRateLimitResult) {

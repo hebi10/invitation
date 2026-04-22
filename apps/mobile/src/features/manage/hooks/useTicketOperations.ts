@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 
+import { useAuth } from '../../../contexts/AuthContext';
 import {
   getLinkedInvitationThemeKeys,
   type LinkedInvitationCard,
@@ -101,6 +102,7 @@ export function useTicketOperations({
   setLinkedInvitationCards,
   formatDateLabel,
 }: UseTicketOperationsOptions) {
+  const { runHighRiskAction } = useAuth();
   const [ticketModalVisible, setTicketModalVisible] = useState(false);
   const [selectedTargetTheme, setSelectedTargetTheme] =
     useState<MobileInvitationThemeKey>(DEFAULT_INVITATION_THEME);
@@ -258,47 +260,62 @@ export function useTicketOperations({
     }
 
     if (!selectedTargetThemeState.isSelectedTargetThemeAvailable) {
-      setNotice('기본 디자인을 변경하려면 먼저 해당 디자인을 현재 청첩장에 추가해야 합니다.');
-      return;
-    }
-
-    if (activeLinkedInvitationCard.ticketCount < 1) {
-      setNotice('디자인 변경에는 티켓 1장이 필요합니다. 먼저 티켓을 구매해 주세요.');
-      return;
-    }
-
-    const previousTheme = currentTheme;
-    invitationForm.setDefaultTheme(selectedTargetTheme);
-    setIsApplyingTicketThemeChange(true);
-
-    const saved = await invitationForm.persistForm({
-      suppressNotice: true,
-    });
-
-    if (!saved) {
-      invitationForm.setDefaultTheme(previousTheme);
-      setIsApplyingTicketThemeChange(false);
-      return;
-    }
-
-    const nextTicketCount = await adjustTicketCount(-1);
-    if (nextTicketCount === null) {
-      invitationForm.setDefaultTheme(previousTheme);
-      const rolledBack = await invitationForm.persistForm({
-        suppressNotice: true,
-      });
-      setIsApplyingTicketThemeChange(false);
       setNotice(
-        rolledBack
-          ? '티켓 차감에 실패해 기본 디자인 변경을 취소했습니다.'
-          : '티켓 차감에 실패했고 기본 디자인 롤백도 확인하지 못했습니다. 새로고침 후 상태를 확인해 주세요.'
+        '기본 디자인을 바꾸려면 먼저 해당 디자인을 현재 청첩장에 추가해야 합니다.'
       );
       return;
     }
 
-    setIsApplyingTicketThemeChange(false);
-    setTicketModalVisible(false);
-    setNotice(`기본 디자인을 ${getInvitationThemeLabel(selectedTargetTheme)}으로 변경했습니다.`);
+    if (activeLinkedInvitationCard.ticketCount < 1) {
+      setNotice('기본 디자인 변경에는 티켓 1장이 필요합니다. 먼저 티켓을 구매해 주세요.');
+      return;
+    }
+
+    const previousTheme = currentTheme;
+    await runHighRiskAction(
+      {
+        title: '디자인 변경을 진행할까요?',
+        description:
+          '기본 디자인 변경은 티켓을 차감하는 민감한 작업입니다. 비밀번호를 다시 확인한 뒤 진행합니다.',
+        confirmLabel: '변경하기',
+      },
+      async () => {
+        invitationForm.setDefaultTheme(selectedTargetTheme);
+        setIsApplyingTicketThemeChange(true);
+
+        const saved = await invitationForm.persistForm({
+          suppressNotice: true,
+        });
+
+        if (!saved) {
+          invitationForm.setDefaultTheme(previousTheme);
+          setIsApplyingTicketThemeChange(false);
+          return false;
+        }
+
+        const nextTicketCount = await adjustTicketCount(-1);
+        if (nextTicketCount === null) {
+          invitationForm.setDefaultTheme(previousTheme);
+          const rolledBack = await invitationForm.persistForm({
+            suppressNotice: true,
+          });
+          setIsApplyingTicketThemeChange(false);
+          setNotice(
+            rolledBack
+              ? '티켓 차감이 실패해 기본 디자인 변경을 취소했습니다.'
+              : '티켓 차감이 실패했고 기본 디자인 롤백도 확인하지 못했습니다. 운영 화면에서 상태를 다시 확인해 주세요.'
+          );
+          return false;
+        }
+
+        setIsApplyingTicketThemeChange(false);
+        setTicketModalVisible(false);
+        setNotice(
+          `기본 디자인을 ${getInvitationThemeLabel(selectedTargetTheme)}(으)로 변경했습니다.`
+        );
+        return true;
+      }
+    );
   };
 
   const handleExtendDisplayPeriod = async () => {
@@ -312,33 +329,44 @@ export function useTicketOperations({
     }
 
     const previousDisplayPeriod = activeLinkedInvitationCard.displayPeriod;
-    setIsExtendingDisplayPeriod(true);
-    const displayPeriodResult = await extendDisplayPeriod(1);
+    await runHighRiskAction(
+      {
+        title: '노출 기간을 연장할까요?',
+        description:
+          '노출 기간 연장은 티켓을 차감하는 민감한 작업입니다. 비밀번호를 다시 확인한 뒤 진행합니다.',
+        confirmLabel: '연장하기',
+      },
+      async () => {
+        setIsExtendingDisplayPeriod(true);
+        const displayPeriodResult = await extendDisplayPeriod(1);
 
-    if (!displayPeriodResult) {
-      setIsExtendingDisplayPeriod(false);
-      return;
-    }
+        if (!displayPeriodResult) {
+          setIsExtendingDisplayPeriod(false);
+          return false;
+        }
 
-    const nextTicketCount = await adjustTicketCount(-1);
-    if (nextTicketCount === null) {
-      const rolledBack = await setDisplayPeriod(previousDisplayPeriod);
-      setIsExtendingDisplayPeriod(false);
-      setNotice(
-        rolledBack
-          ? '티켓 차감에 실패해 노출 기간 연장을 취소했습니다.'
-          : '티켓 차감에 실패했고 노출 기간 롤백도 확인하지 못했습니다. 새로고침 후 상태를 확인해 주세요.'
-      );
-      return;
-    }
+        const nextTicketCount = await adjustTicketCount(-1);
+        if (nextTicketCount === null) {
+          const rolledBack = await setDisplayPeriod(previousDisplayPeriod);
+          setIsExtendingDisplayPeriod(false);
+          setNotice(
+            rolledBack
+              ? '티켓 차감이 실패해 노출 기간 연장을 취소했습니다.'
+              : '티켓 차감이 실패했고 노출 기간 롤백도 확인하지 못했습니다. 운영 화면에서 상태를 다시 확인해 주세요.'
+          );
+          return false;
+        }
 
-    const endDateLabel = displayPeriodResult.endDate
-      ? formatDateLabel(displayPeriodResult.endDate)
-      : '종료일 확인 필요';
+        const endDateLabel = displayPeriodResult.endDate
+          ? formatDateLabel(displayPeriodResult.endDate)
+          : '종료일 확인 필요';
 
-    setIsExtendingDisplayPeriod(false);
-    setTicketModalVisible(false);
-    setNotice(`노출 기간을 1개월 연장했습니다. 새 종료일은 ${endDateLabel}입니다.`);
+        setIsExtendingDisplayPeriod(false);
+        setTicketModalVisible(false);
+        setNotice(`노출 기간을 1개월 연장했습니다. 새 종료일은 ${endDateLabel}입니다.`);
+        return true;
+      }
+    );
   };
 
   const handlePurchaseTargetTheme = async () => {
@@ -363,30 +391,41 @@ export function useTicketOperations({
       return;
     }
 
-    setIsPurchasingTargetTheme(true);
-    const saved = await setVariantAvailability(selectedTargetTheme, true);
+    await runHighRiskAction(
+      {
+        title: '디자인을 추가할까요?',
+        description:
+          '새 디자인 추가는 티켓을 차감하는 민감한 작업입니다. 비밀번호를 다시 확인한 뒤 진행합니다.',
+        confirmLabel: '추가하기',
+      },
+      async () => {
+        setIsPurchasingTargetTheme(true);
+        const saved = await setVariantAvailability(selectedTargetTheme, true);
 
-    if (!saved) {
-      setIsPurchasingTargetTheme(false);
-      return;
-    }
+        if (!saved) {
+          setIsPurchasingTargetTheme(false);
+          return false;
+        }
 
-    const nextTicketCount = await adjustTicketCount(-2);
-    if (nextTicketCount === null) {
-      const rolledBack = await setVariantAvailability(selectedTargetTheme, false);
-      setIsPurchasingTargetTheme(false);
-      setNotice(
-        rolledBack
-          ? '티켓 차감에 실패해 추가 디자인 적용을 취소했습니다.'
-          : '티켓 차감에 실패했고 추가 디자인 롤백도 확인하지 못했습니다. 새로고침 후 상태를 확인해 주세요.'
-      );
-      return;
-    }
+        const nextTicketCount = await adjustTicketCount(-2);
+        if (nextTicketCount === null) {
+          const rolledBack = await setVariantAvailability(selectedTargetTheme, false);
+          setIsPurchasingTargetTheme(false);
+          setNotice(
+            rolledBack
+              ? '티켓 차감이 실패해 추가 디자인 적용을 취소했습니다.'
+              : '티켓 차감이 실패했고 추가 디자인 롤백도 확인하지 못했습니다. 운영 화면에서 상태를 다시 확인해 주세요.'
+          );
+          return false;
+        }
 
-    setIsPurchasingTargetTheme(false);
-    setTicketModalVisible(false);
-    setNotice(
-      `같은 청첩장에 ${getInvitationThemeLabel(selectedTargetTheme)} 디자인을 추가했습니다.`
+        setIsPurchasingTargetTheme(false);
+        setTicketModalVisible(false);
+        setNotice(
+          `현재 청첩장에 ${getInvitationThemeLabel(selectedTargetTheme)} 디자인을 추가했습니다.`
+        );
+        return true;
+      }
     );
   };
 
@@ -399,6 +438,7 @@ export function useTicketOperations({
       setNotice('티켓을 이동할 다른 연동 청첩장을 먼저 선택해 주세요.');
       return;
     }
+    const targetSession = selectedTicketTransferTargetCard.session;
 
     if (ticketTransferCount <= 0) {
       setNotice('이동할 티켓 수량을 먼저 선택해 주세요.');
@@ -410,46 +450,57 @@ export function useTicketOperations({
       return;
     }
 
-    setIsTransferringTickets(true);
-    const transferResult = await transferTicketCount(
-      selectedTicketTransferTargetCard.slug,
-      selectedTicketTransferTargetCard.session.token,
-      ticketTransferCount
-    );
-    setIsTransferringTickets(false);
+    await runHighRiskAction(
+      {
+        title: '티켓을 이동할까요?',
+        description:
+          '티켓 이동은 결제 상태에 영향을 주는 민감한 작업입니다. 비밀번호를 다시 확인한 뒤 진행합니다.',
+        confirmLabel: '이동하기',
+      },
+      async () => {
+        setIsTransferringTickets(true);
+        const transferResult = await transferTicketCount(
+          selectedTicketTransferTargetCard.slug,
+          targetSession.token,
+          ticketTransferCount
+        );
+        setIsTransferringTickets(false);
 
-    if (!transferResult) {
-      return;
-    }
-
-    setLinkedInvitationCards((current) =>
-      current.map((item) => {
-        if (item.slug === activeLinkedInvitationCard.slug) {
-          return {
-            ...item,
-            ticketCount: transferResult.sourceTicketCount,
-            updatedAt: Date.now(),
-          };
+        if (!transferResult) {
+          return false;
         }
 
-        if (item.slug === selectedTicketTransferTargetCard.slug) {
-          return {
-            ...item,
-            ticketCount: transferResult.targetTicketCount,
-            updatedAt: Date.now(),
-          };
-        }
+        setLinkedInvitationCards((current) =>
+          current.map((item) => {
+            if (item.slug === activeLinkedInvitationCard.slug) {
+              return {
+                ...item,
+                ticketCount: transferResult.sourceTicketCount,
+                updatedAt: Date.now(),
+              };
+            }
 
-        return item;
-      })
-    );
+            if (item.slug === selectedTicketTransferTargetCard.slug) {
+              return {
+                ...item,
+                ticketCount: transferResult.targetTicketCount,
+                updatedAt: Date.now(),
+              };
+            }
 
-    setTicketModalVisible(false);
-    setNotice(
-      `티켓 ${ticketTransferCount}장을 ${
-        selectedTicketTransferTargetCard.displayName.trim() ||
-        selectedTicketTransferTargetCard.slug
-      } 청첩장으로 이동했습니다.`
+            return item;
+          })
+        );
+
+        setTicketModalVisible(false);
+        setNotice(
+          `티켓 ${ticketTransferCount}장을 ${
+            selectedTicketTransferTargetCard.displayName.trim() ||
+            selectedTicketTransferTargetCard.slug
+          } 청첩장으로 이동했습니다.`
+        );
+        return true;
+      }
     );
   };
 

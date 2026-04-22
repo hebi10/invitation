@@ -1,11 +1,16 @@
 ﻿import Constants from 'expo-constants';
 
+import type { MobileClientEditorPermissions } from '../../../../src/types/mobileClientEditor';
 import type {
   MobileDisplayPeriodSummary,
   MobileEditableInvitationPageConfig,
+  MobileGuestbookComment,
+  MobileGuestbookCommentAction,
+  MobileHighRiskSessionSummary,
   MobileInvitationCreationInput,
   MobileInvitationCreationResponse,
   MobileInvitationDashboard,
+  MobileInvitationSlugAvailabilityResponse,
   MobileKakaoAddressSearchResult,
   MobileInvitationLinks,
   MobileMusicCategory,
@@ -118,15 +123,24 @@ const ERROR_MESSAGE_MAP: Record<string, string> = {
   'Published state is required.': '공개 상태 값이 필요합니다.',
   'Unsupported action.': '지원하지 않는 요청입니다.',
   'Unauthorized.': '연동 세션이 만료되었습니다. 다시 청첩장을 연동해 주세요.',
+  'Forbidden.': '현재 연동 세션으로는 이 작업을 수행할 수 없습니다.',
   'Server Firestore is not available.': '서버 저장소 연결을 확인하지 못했습니다.',
   'Comment was not found.': '댓글을 찾을 수 없습니다.',
   'Comment target was not specified.': '삭제할 댓글 정보를 찾지 못했습니다.',
   'Comment page does not match the requested page.': '댓글과 페이지 정보가 일치하지 않습니다.',
   'Failed to delete comment.': '댓글을 삭제하지 못했습니다.',
-  'Page slug base is required.': '페이지 주소를 만들 영문 이름을 먼저 확인해 주세요.',
+  'Comment action is required.': '방명록 처리 방식을 다시 확인해 주세요.',
+  'Unsupported comment action.': '지원하지 않는 방명록 처리입니다.',
+  'Failed to update comment status.': '방명록 상태를 변경하지 못했습니다.',
+  'Too many comment update requests. Please try again later.':
+    '방명록 처리 요청이 너무 많습니다. 잠시 후 다시 시도해 주세요.',
+  'Page slug base is required.': '청첩장 주소를 입력해 주세요.',
   'Page password is required.': '페이지 비밀번호를 입력해 주세요.',
   'Groom and bride names are required.': '신랑과 신부 이름을 모두 입력해 주세요.',
   'A valid URL slug base is required.': '사용 가능한 페이지 주소를 다시 확인해 주세요.',
+  'Page slug base must be at least 3 characters.': '청첩장 주소는 3자 이상으로 입력해 주세요.',
+  'Page slug base must be 40 characters or fewer.': '청첩장 주소는 40자 이하로 입력해 주세요.',
+  'Page slug base is reserved.': '이미 예약된 청첩장 주소입니다. 다른 주소를 입력해 주세요.',
   'Invitation page seed was not found.': '초기 청첩장 템플릿을 찾지 못했습니다.',
   'Failed to create invitation page draft.': '청첩장 초안 생성에 실패했습니다.',
   'Invitation page slug does not match the authenticated session.':
@@ -144,6 +158,26 @@ const ERROR_MESSAGE_MAP: Record<string, string> = {
   'Target invitation page authorization failed.':
     '대상 청첩장의 연동 정보가 만료되었습니다. 다시 연동해 주세요.',
   'Not enough tickets.': '보유 티켓이 부족합니다.',
+  'Recent authentication is required for this action.':
+    '민감한 작업이라 비밀번호를 다시 확인해야 합니다.',
+  'Too many high-risk verification attempts. Please try again later.':
+    '재인증 시도가 너무 많습니다. 잠시 후 다시 시도해 주세요.',
+  'Page slug is required.': '청첩장 주소를 다시 확인해 주세요.',
+  'Invitation link token is required.': '연동 링크 정보를 다시 확인해 주세요.',
+  'Invitation link token is invalid.': '유효하지 않은 앱 연동 링크입니다.',
+  'Invitation link token was already used.': '이미 사용한 앱 연동 링크입니다.',
+  'Invitation link token has expired.': '만료된 앱 연동 링크입니다. 새 링크를 발급해 주세요.',
+  'Invitation link token has been revoked.': '폐기된 앱 연동 링크입니다. 새 링크를 발급해 주세요.',
+  'Too many link token requests. Please try again later.':
+    '앱 연동 링크 발급 요청이 너무 많습니다. 잠시 후 다시 시도해 주세요.',
+  'Too many invitation link attempts. Please try again later.':
+    '앱 연동 링크 확인 요청이 너무 많습니다. 잠시 후 다시 시도해 주세요.',
+  'Failed to issue the invitation link token.':
+    '앱 연동 링크를 만들지 못했습니다. 잠시 후 다시 시도해 주세요.',
+  'Failed to revoke the invitation link token.':
+    '앱 연동 링크를 폐기하지 못했습니다. 잠시 후 다시 시도해 주세요.',
+  'Failed to exchange the invitation link token.':
+    '앱 연동 링크를 확인하지 못했습니다. 잠시 후 다시 시도해 주세요.',
   'Image cleanup paths are required.': '정리할 업로드 이미지 경로를 다시 확인해 주세요.',
   'Too many image cleanup paths were requested.':
     '한 번에 정리할 이미지 수가 너무 많습니다. 다시 시도해 주세요.',
@@ -178,6 +212,10 @@ const ERROR_MESSAGE_MAP: Record<string, string> = {
 function toUserFacingMessage(value: unknown) {
   if (typeof value !== 'string' || !value.trim()) {
     return ERROR_MESSAGE_MAP['Request failed.'];
+  }
+
+  if (value.startsWith('Missing mobile client editor permission:')) {
+    return '현재 연동 세션으로는 이 작업을 수행할 수 없습니다.';
   }
 
   return ERROR_MESSAGE_MAP[value] ?? value;
@@ -319,7 +357,7 @@ async function uploadFormDataResponse<T>(
   });
 }
 
-function createHeaders(token?: string) {
+function createHeaders(token?: string, highRiskToken?: string) {
   const headers: Record<string, string> = {
     Accept: 'application/json',
   };
@@ -328,11 +366,16 @@ function createHeaders(token?: string) {
     headers.Authorization = `Bearer ${token}`;
   }
 
+  if (highRiskToken) {
+    headers['x-mobile-client-editor-high-risk-token'] = highRiskToken;
+  }
+
   return headers;
 }
 
 export interface MobileLoginResponse {
   authenticated: boolean;
+  permissions: MobileClientEditorPermissions;
   session: MobileSessionSummary;
   page: MobilePageSummary | null;
   dashboardPage?: MobileEditableInvitationPageConfig | null;
@@ -342,6 +385,7 @@ export interface MobileLoginResponse {
 export interface MobileSessionResponse {
   authenticated: boolean;
   pageSlug: string | null;
+  permissions?: MobileClientEditorPermissions;
   page?: MobilePageSummary | null;
   dashboardPage?: MobileEditableInvitationPageConfig | null;
   links?: MobileInvitationLinks;
@@ -379,6 +423,26 @@ export interface MobileBillingPurchaseReceiptInput {
   transactionId: string;
 }
 
+export interface MobileHighRiskVerificationResponse {
+  verified: boolean;
+  session: MobileHighRiskSessionSummary;
+}
+
+export interface MobileLinkTokenIssueResponse {
+  success: boolean;
+  purpose: 'mobile-login';
+  expiresAt: string;
+  deepLinkUrl: string;
+  webFallbackUrl: string;
+  revokedExistingCount: number;
+}
+
+export interface MobileLinkTokenRevokeResponse {
+  success: boolean;
+  purpose: 'mobile-login';
+  revokedCount: number;
+}
+
 export async function loginMobileClientEditor(
   baseUrl: string,
   pageSlug: string,
@@ -414,13 +478,72 @@ export async function createMobileInvitationDraft(
         slugBase: payload.slugBase,
         groomName: payload.groomKoreanName,
         brideName: payload.brideKoreanName,
-        groomEnglishName: payload.groomEnglishName,
-        brideEnglishName: payload.brideEnglishName,
         password: payload.password,
         productTier: payload.servicePlan,
         defaultTheme: payload.theme,
       }),
     })
+  );
+}
+
+export async function exchangeMobileClientEditorLinkToken(
+  baseUrl: string,
+  token: string
+) {
+  return readJsonResponse<MobileLoginResponse>(
+    await fetchWithRetry(buildApiUrl(baseUrl, '/api/mobile/client-editor/link-tokens/exchange'), {
+      method: 'POST',
+      headers: {
+        ...createHeaders(),
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        token,
+      }),
+    })
+  );
+}
+
+export async function issueMobileClientEditorLinkToken(
+  baseUrl: string,
+  pageSlug: string,
+  token: string,
+  highRiskToken: string
+) {
+  return readJsonResponse<MobileLinkTokenIssueResponse>(
+    await fetchWithRetry(buildApiUrl(baseUrl, '/api/mobile/client-editor/link-tokens'), {
+      method: 'POST',
+      headers: {
+        ...createHeaders(token, highRiskToken),
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        pageSlug,
+        purpose: 'mobile-login',
+      }),
+    })
+  );
+}
+
+export async function revokeMobileClientEditorLinkTokens(
+  baseUrl: string,
+  pageSlug: string,
+  token: string,
+  highRiskToken: string
+) {
+  const params = new URLSearchParams({
+    pageSlug,
+    purpose: 'mobile-login',
+  });
+
+  return readJsonResponse<MobileLinkTokenRevokeResponse>(
+    await fetchWithRetry(
+      buildApiUrl(baseUrl, `/api/mobile/client-editor/link-tokens?${params.toString()}`),
+      {
+        method: 'DELETE',
+        headers: createHeaders(token, highRiskToken),
+      }
+    )
   );
 }
 
@@ -445,13 +568,26 @@ export async function fulfillMobileBillingPageCreation(
           slugBase: payload.input.slugBase,
           groomKoreanName: payload.input.groomKoreanName,
           brideKoreanName: payload.input.brideKoreanName,
-          groomEnglishName: payload.input.groomEnglishName,
-          brideEnglishName: payload.input.brideEnglishName,
           password: payload.input.password,
           theme: payload.input.theme,
         },
       }),
     })
+  );
+}
+
+export async function checkMobileInvitationSlugAvailability(
+  baseUrl: string,
+  slugBase: string
+) {
+  const params = new URLSearchParams({ slugBase });
+  return readJsonResponse<MobileInvitationSlugAvailabilityResponse>(
+    await fetchWithRetry(
+      buildApiUrl(baseUrl, `/api/mobile/client-editor/slug-availability?${params.toString()}`),
+      {
+        headers: createHeaders(),
+      }
+    )
   );
 }
 
@@ -547,7 +683,8 @@ export async function saveMobileInvitationPageConfig(
     config: MobileInvitationSeed;
     published?: boolean;
     defaultTheme?: MobileInvitationThemeKey;
-  }
+  },
+  highRiskToken?: string
 ) {
   return readJsonResponse<{ success: boolean }>(
     await fetchWithRetry(
@@ -555,7 +692,7 @@ export async function saveMobileInvitationPageConfig(
       {
         method: 'POST',
         headers: {
-          ...createHeaders(token),
+          ...createHeaders(token, highRiskToken),
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
@@ -576,7 +713,8 @@ export async function setMobileInvitationPublishedState(
   pageSlug: string,
   token: string,
   published: boolean,
-  defaultTheme?: MobileInvitationThemeKey
+  defaultTheme?: MobileInvitationThemeKey,
+  highRiskToken?: string
 ) {
   return readJsonResponse<{ success: boolean }>(
     await fetchWithRetry(
@@ -584,7 +722,7 @@ export async function setMobileInvitationPublishedState(
       {
         method: 'POST',
         headers: {
-          ...createHeaders(token),
+          ...createHeaders(token, highRiskToken),
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
@@ -606,7 +744,8 @@ export async function setMobileInvitationVariantAvailability(
   options?: {
     published?: boolean;
     defaultTheme?: MobileInvitationThemeKey;
-  }
+  },
+  highRiskToken?: string
 ) {
   return readJsonResponse<{ success: boolean }>(
     await fetchWithRetry(
@@ -614,7 +753,7 @@ export async function setMobileInvitationVariantAvailability(
       {
         method: 'POST',
         headers: {
-          ...createHeaders(token),
+          ...createHeaders(token, highRiskToken),
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
@@ -633,7 +772,8 @@ export async function adjustMobileInvitationTicketCount(
   baseUrl: string,
   pageSlug: string,
   token: string,
-  amount: number
+  amount: number,
+  highRiskToken?: string
 ) {
   return readJsonResponse<{ success: boolean; ticketCount: number }>(
     await fetchWithRetry(
@@ -641,7 +781,7 @@ export async function adjustMobileInvitationTicketCount(
       {
         method: 'POST',
         headers: {
-          ...createHeaders(token),
+          ...createHeaders(token, highRiskToken),
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
@@ -657,7 +797,8 @@ export async function extendMobileInvitationDisplayPeriod(
   baseUrl: string,
   pageSlug: string,
   token: string,
-  months = 1
+  months = 1,
+  highRiskToken?: string
 ) {
   return readJsonResponse<{
     success: boolean;
@@ -670,7 +811,7 @@ export async function extendMobileInvitationDisplayPeriod(
       {
         method: 'POST',
         headers: {
-          ...createHeaders(token),
+          ...createHeaders(token, highRiskToken),
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
@@ -682,11 +823,33 @@ export async function extendMobileInvitationDisplayPeriod(
   );
 }
 
+export async function verifyMobileClientEditorHighRiskSession(
+  baseUrl: string,
+  pageSlug: string,
+  token: string,
+  password: string
+) {
+  return readJsonResponse<MobileHighRiskVerificationResponse>(
+    await fetchWithRetry(buildApiUrl(baseUrl, '/api/mobile/client-editor/high-risk/verify'), {
+      method: 'POST',
+      headers: {
+        ...createHeaders(token),
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        pageSlug,
+        password,
+      }),
+    })
+  );
+}
+
 export async function setMobileInvitationDisplayPeriod(
   baseUrl: string,
   pageSlug: string,
   token: string,
-  period: MobileDisplayPeriodSummary
+  period: MobileDisplayPeriodSummary,
+  highRiskToken?: string
 ) {
   return readJsonResponse<{
     success: boolean;
@@ -699,7 +862,7 @@ export async function setMobileInvitationDisplayPeriod(
       {
         method: 'POST',
         headers: {
-          ...createHeaders(token),
+          ...createHeaders(token, highRiskToken),
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
@@ -721,7 +884,8 @@ export async function transferMobileInvitationTicketCount(
     amount: number;
     targetPageSlug: string;
     targetToken: string;
-  }
+  },
+  highRiskToken?: string
 ) {
   return readJsonResponse<{
     success: boolean;
@@ -734,7 +898,7 @@ export async function transferMobileInvitationTicketCount(
       {
         method: 'POST',
         headers: {
-          ...createHeaders(token),
+          ...createHeaders(token, highRiskToken),
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
@@ -754,7 +918,7 @@ export async function deleteMobileInvitationComment(
   commentId: string,
   token: string
 ) {
-  return readJsonResponse<{ success: boolean }>(
+  return readJsonResponse<{ success: boolean; comment?: MobileGuestbookComment | null }>(
     await fetchWithRetry(
       buildApiUrl(
         baseUrl,
@@ -791,6 +955,31 @@ export async function fetchMobileKakaoAddressSearch(baseUrl: string, query: stri
       {
         headers: createHeaders(),
         cache: 'no-store',
+      }
+    )
+  );
+}
+
+export async function manageMobileInvitationComment(
+  baseUrl: string,
+  pageSlug: string,
+  commentId: string,
+  token: string,
+  action: MobileGuestbookCommentAction
+) {
+  return readJsonResponse<{ success: boolean; comment: MobileGuestbookComment | null }>(
+    await fetchWithRetry(
+      buildApiUrl(
+        baseUrl,
+        `/api/mobile/client-editor/pages/${encodeURIComponent(pageSlug)}/comments/${encodeURIComponent(commentId)}`
+      ),
+      {
+        method: 'POST',
+        headers: {
+          ...createHeaders(token),
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ action }),
       }
     )
   );

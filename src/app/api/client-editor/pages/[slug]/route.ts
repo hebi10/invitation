@@ -10,7 +10,16 @@ import {
 import { CLIENT_EDITOR_SESSION_COOKIE } from '@/server/clientEditorSession';
 import { getAuthorizedClientEditorSession } from '@/server/clientEditorSessionAuth';
 import { isInvitationThemeKey } from '@/lib/invitationThemes';
+import {
+  applyScopedInMemoryRateLimit,
+  buildRateLimitHeaders,
+} from '@/server/requestRateLimit';
 import type { InvitationPageSeed, InvitationThemeKey } from '@/types/invitationPage';
+
+const CLIENT_EDITOR_MUTATION_RATE_LIMIT = {
+  limit: 30,
+  windowMs: 60 * 1000,
+} as const;
 
 async function authorizePageSession(pageSlug: string) {
   const cookieStore = await cookies();
@@ -84,6 +93,22 @@ export async function POST(
 
   const action = typeof body?.action === 'string' ? body.action : '';
   const defaultTheme = readTheme(body?.defaultTheme) as InvitationThemeKey | undefined;
+  const rateLimitResult = applyScopedInMemoryRateLimit({
+    request,
+    scope: 'client-editor-mutation',
+    keyParts: [pageSlug, action || 'unknown'],
+    ...CLIENT_EDITOR_MUTATION_RATE_LIMIT,
+  });
+
+  if (!rateLimitResult.allowed) {
+    return NextResponse.json(
+      { error: '요청이 너무 많습니다. 잠시 후 다시 시도해 주세요.' },
+      {
+        status: 429,
+        headers: buildRateLimitHeaders(rateLimitResult),
+      }
+    );
+  }
 
   try {
     if (action === 'save') {
@@ -109,7 +134,10 @@ export async function POST(
         published: body.published === true,
         defaultTheme,
       });
-      return NextResponse.json({ success: true });
+      return NextResponse.json(
+        { success: true },
+        { headers: buildRateLimitHeaders(rateLimitResult) }
+      );
     }
 
     if (action === 'restore') {
@@ -117,7 +145,10 @@ export async function POST(
         published: body?.published === true,
         defaultTheme,
       });
-      return NextResponse.json({ success: true });
+      return NextResponse.json(
+        { success: true },
+        { headers: buildRateLimitHeaders(rateLimitResult) }
+      );
     }
 
     if (action === 'setPublished') {
@@ -131,10 +162,19 @@ export async function POST(
       await setServerInvitationPagePublished(pageSlug, body.published, {
         defaultTheme,
       });
-      return NextResponse.json({ success: true });
+      return NextResponse.json(
+        { success: true },
+        { headers: buildRateLimitHeaders(rateLimitResult) }
+      );
     }
 
-    return NextResponse.json({ error: '지원하지 않는 요청입니다.' }, { status: 400 });
+    return NextResponse.json(
+      { error: '지원하지 않는 요청입니다.' },
+      {
+        status: 400,
+        headers: buildRateLimitHeaders(rateLimitResult),
+      }
+    );
   } catch (error) {
     console.error('[client-editor/pages] failed to process request', error);
     return NextResponse.json(

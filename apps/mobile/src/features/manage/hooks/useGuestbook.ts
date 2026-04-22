@@ -1,7 +1,10 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Alert } from 'react-native';
 
-import type { MobileInvitationDashboard } from '../../../types/mobileInvitation';
+import type {
+  MobileGuestbookCommentAction,
+  MobileInvitationDashboard,
+} from '../../../types/mobileInvitation';
 import {
   GUESTBOOK_PAGE_SIZE,
   getCommentTimestamp,
@@ -12,7 +15,10 @@ type UseGuestbookOptions = {
   dashboard: MobileInvitationDashboard | null;
   dashboardLoading: boolean;
   refreshDashboard: (options?: { includeComments?: boolean }) => Promise<boolean>;
-  deleteComment: (commentId: string) => Promise<boolean>;
+  manageComment: (
+    commentId: string,
+    action: MobileGuestbookCommentAction
+  ) => Promise<unknown>;
   setNotice: (message: string) => void;
 };
 
@@ -20,7 +26,7 @@ export function useGuestbook({
   dashboard,
   dashboardLoading,
   refreshDashboard,
-  deleteComment,
+  manageComment,
   setNotice,
 }: UseGuestbookOptions) {
   const [guestbookModalVisible, setGuestbookModalVisible] = useState(false);
@@ -105,31 +111,74 @@ export function useGuestbook({
     setGuestbookPage((current) => Math.min(current, guestbookTotalPages));
   }, [guestbookTotalPages]);
 
-  const handleDeleteComment = useCallback(
+  const runCommentAction = useCallback(
+    async (
+      commentId: string,
+      action: MobileGuestbookCommentAction,
+      successMessage: string
+    ) => {
+      const result = await manageComment(commentId, action);
+      if (result) {
+        setNotice(successMessage);
+      }
+    },
+    [manageComment, setNotice]
+  );
+
+  const handleHideComment = useCallback(
     async (commentId: string) => {
       Alert.alert(
-        '방명록 댓글을 삭제할까요?',
-        '삭제한 댓글은 다시 복구할 수 없습니다.',
+        '방명록을 숨길까요?',
+        '하객 화면에서는 즉시 숨겨지고, 운영 화면에서 다시 공개할 수 있습니다.',
         [
           {
             text: '취소',
             style: 'cancel',
           },
           {
-            text: '삭제',
-            style: 'destructive',
+            text: '숨김',
             onPress: () => {
-              void deleteComment(commentId).then((deleted) => {
-                if (deleted) {
-                  setNotice('방명록 댓글을 삭제했습니다.');
-                }
-              });
+              void runCommentAction(commentId, 'hide', '방명록을 숨김 처리했습니다.');
             },
           },
         ]
       );
     },
-    [deleteComment, setNotice]
+    [runCommentAction]
+  );
+
+  const handleScheduleDeleteComment = useCallback(
+    async (commentId: string) => {
+      Alert.alert(
+        '삭제 예정으로 옮길까요?',
+        '삭제 예정 상태에서는 하객 화면에서 숨겨지고, 30일 안에는 다시 복구할 수 있습니다.',
+        [
+          {
+            text: '취소',
+            style: 'cancel',
+          },
+          {
+            text: '삭제 예정',
+            style: 'destructive',
+            onPress: () => {
+              void runCommentAction(
+                commentId,
+                'scheduleDelete',
+                '방명록을 삭제 예정 상태로 옮겼습니다.'
+              );
+            },
+          },
+        ]
+      );
+    },
+    [runCommentAction]
+  );
+
+  const handleRestoreComment = useCallback(
+    async (commentId: string) => {
+      void runCommentAction(commentId, 'restore', '방명록을 다시 공개했습니다.');
+    },
+    [runCommentAction]
   );
 
   const openGuestbookModal = useCallback(() => {
@@ -154,6 +203,8 @@ export function useGuestbook({
     setGuestbookPage,
     openGuestbookModal,
     closeGuestbookModal,
-    handleDeleteComment,
+    handleHideComment,
+    handleScheduleDeleteComment,
+    handleRestoreComment,
   };
 }

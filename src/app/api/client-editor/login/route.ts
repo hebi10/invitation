@@ -6,6 +6,15 @@ import {
   createClientEditorSessionValue,
 } from '@/server/clientEditorSession';
 import { verifyServerClientPassword } from '@/server/clientPasswordServerService';
+import {
+  applyScopedInMemoryRateLimit,
+  buildRateLimitHeaders,
+} from '@/server/requestRateLimit';
+
+const CLIENT_EDITOR_LOGIN_RATE_LIMIT = {
+  limit: 10,
+  windowMs: 5 * 60 * 1000,
+} as const;
 
 export async function POST(request: Request) {
   try {
@@ -24,11 +33,31 @@ export async function POST(request: Request) {
       );
     }
 
+    const rateLimitResult = applyScopedInMemoryRateLimit({
+      request,
+      scope: 'client-editor-login',
+      keyParts: [pageSlug],
+      ...CLIENT_EDITOR_LOGIN_RATE_LIMIT,
+    });
+
+    if (!rateLimitResult.allowed) {
+      return NextResponse.json(
+        { error: '로그인 요청이 너무 많습니다. 잠시 후 다시 시도해 주세요.' },
+        {
+          status: 429,
+          headers: buildRateLimitHeaders(rateLimitResult),
+        }
+      );
+    }
+
     const verification = await verifyServerClientPassword(pageSlug, password);
     if (!verification.verified || !verification.record) {
       return NextResponse.json(
         { error: '비밀번호가 올바르지 않습니다.' },
-        { status: 401 }
+        {
+          status: 401,
+          headers: buildRateLimitHeaders(rateLimitResult),
+        }
       );
     }
 
@@ -46,7 +75,12 @@ export async function POST(request: Request) {
       expires: new Date(expiresAt * 1000),
     });
 
-    return NextResponse.json({ authenticated: true });
+    return NextResponse.json(
+      { authenticated: true },
+      {
+        headers: buildRateLimitHeaders(rateLimitResult),
+      }
+    );
   } catch (error) {
     console.error('[client-editor/login] failed to create editor session', error);
     return NextResponse.json(

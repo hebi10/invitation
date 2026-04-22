@@ -3,9 +3,11 @@ import { NextResponse } from 'next/server';
 import { DEFAULT_INVITATION_THEME } from '@/lib/invitationThemes';
 import {
   authorizeMobileClientEditorRequest,
+  buildMissingMobileClientEditorPermissionError,
   getServerGuestbookCommentCountByPageSlug,
   buildMobileInvitationLinks,
   getServerGuestbookCommentsByPageSlug,
+  hasMobileClientEditorPermission,
 } from '@/server/clientEditorMobileApi';
 import {
   getServerEditableInvitationPageConfig,
@@ -25,6 +27,16 @@ export async function GET(
   const session = await authorizeMobileClientEditorRequest(request, pageSlug);
   if (!session) {
     return NextResponse.json({ error: 'Unauthorized.' }, { status: 401 });
+  }
+
+  const requiredPermissions = includeComments
+    ? (['canViewDashboard', 'canManageGuestbook'] as const)
+    : ('canViewDashboard' as const);
+  if (!hasMobileClientEditorPermission(session.permissions, requiredPermissions)) {
+    return NextResponse.json(
+      { error: buildMissingMobileClientEditorPermissionError(requiredPermissions) },
+      { status: 403 }
+    );
   }
 
   const page = await getServerEditableInvitationPageConfig(pageSlug);
@@ -53,6 +65,7 @@ export async function GET(
     comments: guestbookPayload.comments,
     commentCount: guestbookPayload.commentCount,
     commentsIncluded: guestbookPayload.commentsIncluded,
+    permissions: session.permissions,
     links: buildMobileInvitationLinks(
       new URL(request.url).origin,
       pageSlug,

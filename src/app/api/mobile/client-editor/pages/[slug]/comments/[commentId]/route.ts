@@ -1,7 +1,217 @@
 import { NextResponse } from 'next/server';
 
-import { authorizeMobileClientEditorRequest } from '@/server/clientEditorMobileApi';
+import {
+  buildGuestbookCommentStatusPatch,
+  isGuestbookCommentAction,
+  isGuestbookCommentPendingPurge,
+  type GuestbookCommentAction,
+} from '@/lib/guestbookComments';
+import {
+  authorizeMobileClientEditorRequest,
+  buildMissingMobileClientEditorPermissionError,
+  buildServerGuestbookCommentSummary,
+  hasMobileClientEditorPermission,
+} from '@/server/clientEditorMobileApi';
 import { getServerFirestore } from '@/server/firebaseAdmin';
+import {
+  applyScopedInMemoryRateLimit,
+  buildRateLimitHeaders,
+} from '@/server/requestRateLimit';
+
+const MOBILE_CLIENT_EDITOR_COMMENT_MUTATION_RATE_LIMIT = {
+  limit: 20,
+  windowMs: 5 * 60 * 1000,
+} as const;
+
+async function authorizeCommentMutation(
+  request: Request,
+  pageSlug: string
+) {
+  const access = await authorizeMobileClientEditorRequest(request, pageSlug);
+  if (!access) {
+    return NextResponse.json({ error: 'Unauthorized.' }, { status: 401 });
+  }
+
+  if (!hasMobileClientEditorPermission(access.permissions, 'canManageGuestbook')) {
+    return NextResponse.json(
+      { error: buildMissingMobileClientEditorPermissionError('canManageGuestbook') },
+      { status: 403 }
+    );
+  }
+
+  return access;
+}
+
+function applyCommentMutationRateLimit(request: Request, pageSlug: string) {
+  return applyScopedInMemoryRateLimit({
+    request,
+    scope: 'mobile-client-editor-comment-mutation',
+    keyParts: [pageSlug],
+    ...MOBILE_CLIENT_EDITOR_COMMENT_MUTATION_RATE_LIMIT,
+  });
+}
+
+async function loadCommentTarget(pageSlug: string, commentId: string) {
+  const db = getServerFirestore();
+  if (!db) {
+    return {
+      error: NextResponse.json(
+        { error: 'Server Firestore is not available.' },
+        { status: 503 }
+      ),
+      commentRef: null,
+      commentData: null,
+    };
+  }
+
+  const commentRef = db
+    .collection('guestbooks')
+    .doc(pageSlug)
+    .collection('comments')
+    .doc(commentId);
+
+  const commentSnapshot = await commentRef.get();
+  if (!commentSnapshot.exists) {
+    return {
+      error: NextResponse.json(
+        { error: 'Comment was not found.' },
+        { status: 404 }
+      ),
+      commentRef,
+      commentData: null,
+    };
+  }
+
+  const commentData = commentSnapshot.data() ?? {};
+  if (
+    typeof commentData.pageSlug === 'string' &&
+    commentData.pageSlug.trim() &&
+    commentData.pageSlug.trim() !== pageSlug
+  ) {
+    return {
+      error: NextResponse.json(
+        { error: 'Comment page does not match the requested page.' },
+        { status: 400 }
+      ),
+      commentRef,
+      commentData,
+    };
+  }
+
+  if (isGuestbookCommentPendingPurge(commentData)) {
+    await commentRef.delete().catch(() => null);
+    return {
+      error: NextResponse.json(
+        { error: 'Comment was not found.' },
+        { status: 404 }
+      ),
+      commentRef,
+      commentData,
+    };
+  }
+
+  return {
+    error: null,
+    commentRef,
+    commentData,
+  };
+}
+
+async function updateCommentStatus(
+  pageSlug: string,
+  commentId: string,
+  action: GuestbookCommentAction
+) {
+  const target = await loadCommentTarget(pageSlug, commentId);
+  if (target.error) {
+    return target.error;
+  }
+
+  if (!target.commentRef || !target.commentData) {
+    return NextResponse.json(
+      { error: 'Comment was not found.' },
+      { status: 404 }
+    );
+  }
+
+  const now = new Date();
+  const nextStatusPatch = buildGuestbookCommentStatusPatch(action, now);
+
+  try {
+    await target.commentRef.update({ ...nextStatusPatch });
+    const nextSummary = buildServerGuestbookCommentSummary(commentId, pageSlug, {
+      ...target.commentData,
+      ...nextStatusPatch,
+    });
+
+    return NextResponse.json({
+      success: true,
+      comment: nextSummary,
+    });
+  } catch (error) {
+    console.error('[mobile/client-editor/comments] failed to update comment status', error);
+    return NextResponse.json(
+      { error: 'Failed to update comment status.' },
+      { status: 500 }
+    );
+  }
+}
+
+export async function POST(
+  request: Request,
+  context: { params: Promise<{ slug: string; commentId: string }> }
+) {
+  const { slug, commentId } = await context.params;
+  const pageSlug = slug.trim();
+  const normalizedCommentId = commentId.trim();
+
+  if (!pageSlug || !normalizedCommentId) {
+    return NextResponse.json(
+      { error: 'Comment target was not specified.' },
+      { status: 400 }
+    );
+  }
+
+  const authorizationResult = await authorizeCommentMutation(request, pageSlug);
+  if (authorizationResult instanceof Response) {
+    return authorizationResult;
+  }
+
+  const rateLimitResult = applyCommentMutationRateLimit(request, pageSlug);
+  if (!rateLimitResult.allowed) {
+    return NextResponse.json(
+      { error: 'Too many comment update requests. Please try again later.' },
+      {
+        status: 429,
+        headers: buildRateLimitHeaders(rateLimitResult),
+      }
+    );
+  }
+
+  const payload = (await request.json().catch(() => null)) as { action?: unknown } | null;
+  if (payload?.action == null) {
+    return NextResponse.json(
+      { error: 'Comment action is required.' },
+      { status: 400 }
+    );
+  }
+
+  if (!isGuestbookCommentAction(payload.action)) {
+    return NextResponse.json(
+      { error: 'Unsupported comment action.' },
+      { status: 400 }
+    );
+  }
+
+  const response = await updateCommentStatus(pageSlug, normalizedCommentId, payload.action);
+  response.headers.set(
+    'X-RateLimit-Limit',
+    String(MOBILE_CLIENT_EDITOR_COMMENT_MUTATION_RATE_LIMIT.limit)
+  );
+  const rateHeaders = buildRateLimitHeaders(rateLimitResult);
+  Object.entries(rateHeaders).forEach(([key, value]) => response.headers.set(key, value));
+  return response;
+}
 
 export async function DELETE(
   request: Request,
@@ -18,53 +228,28 @@ export async function DELETE(
     );
   }
 
-  const session = await authorizeMobileClientEditorRequest(request, pageSlug);
-  if (!session) {
-    return NextResponse.json({ error: 'Unauthorized.' }, { status: 401 });
+  const authorizationResult = await authorizeCommentMutation(request, pageSlug);
+  if (authorizationResult instanceof Response) {
+    return authorizationResult;
   }
 
-  const db = getServerFirestore();
-  if (!db) {
+  const rateLimitResult = applyCommentMutationRateLimit(request, pageSlug);
+  if (!rateLimitResult.allowed) {
     return NextResponse.json(
-      { error: 'Server Firestore is not available.' },
-      { status: 503 }
+      { error: 'Too many comment update requests. Please try again later.' },
+      {
+        status: 429,
+        headers: buildRateLimitHeaders(rateLimitResult),
+      }
     );
   }
 
-  const commentRef = db
-    .collection('guestbooks')
-    .doc(pageSlug)
-    .collection('comments')
-    .doc(normalizedCommentId);
-
-  const commentSnapshot = await commentRef.get();
-  if (!commentSnapshot.exists) {
-    return NextResponse.json(
-      { error: 'Comment was not found.' },
-      { status: 404 }
-    );
-  }
-
-  const commentData = commentSnapshot.data() ?? {};
-  if (
-    typeof commentData.pageSlug === 'string' &&
-    commentData.pageSlug.trim() &&
-    commentData.pageSlug.trim() !== pageSlug
-  ) {
-    return NextResponse.json(
-      { error: 'Comment page does not match the requested page.' },
-      { status: 400 }
-    );
-  }
-
-  try {
-    await commentRef.delete();
-    return NextResponse.json({ success: true });
-  } catch (error) {
-    console.error('[mobile/client-editor/comments] failed to delete comment', error);
-    return NextResponse.json(
-      { error: 'Failed to delete comment.' },
-      { status: 500 }
-    );
-  }
+  const response = await updateCommentStatus(
+    pageSlug,
+    normalizedCommentId,
+    'scheduleDelete'
+  );
+  const rateHeaders = buildRateLimitHeaders(rateLimitResult);
+  Object.entries(rateHeaders).forEach(([key, value]) => response.headers.set(key, value));
+  return response;
 }

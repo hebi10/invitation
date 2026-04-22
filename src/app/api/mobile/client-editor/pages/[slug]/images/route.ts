@@ -6,8 +6,16 @@ import {
   type EditableImageAssetKind,
   validateEditableImageBatch,
 } from '@/lib/imageUploadPolicy';
-import { authorizeMobileClientEditorRequest } from '@/server/clientEditorMobileApi';
+import {
+  authorizeMobileClientEditorRequest,
+  buildMissingMobileClientEditorPermissionError,
+  hasMobileClientEditorPermission,
+} from '@/server/clientEditorMobileApi';
 import { getServerStorageBucket } from '@/server/firebaseAdmin';
+import {
+  applyScopedInMemoryRateLimit,
+  buildRateLimitHeaders,
+} from '@/server/requestRateLimit';
 
 const ALLOWED_ASSET_KINDS: EditableImageAssetKind[] = ['cover', 'favicon', 'gallery'];
 const MAX_IMAGE_DIMENSION = 6000;
@@ -20,6 +28,14 @@ const MAX_ASPECT_RATIO_BY_KIND: Record<EditableImageAssetKind, number> = {
   gallery: 4,
   favicon: 1.8,
 };
+const MOBILE_CLIENT_EDITOR_IMAGE_UPLOAD_RATE_LIMIT = {
+  limit: 10,
+  windowMs: 5 * 60 * 1000,
+} as const;
+const MOBILE_CLIENT_EDITOR_IMAGE_CLEANUP_RATE_LIMIT = {
+  limit: 20,
+  windowMs: 5 * 60 * 1000,
+} as const;
 
 type SniffedImageFormat = 'jpeg' | 'png' | 'webp';
 type ImageDimensions = { width: number; height: number };
@@ -318,10 +334,6 @@ function buildThumbnailFileName(fileName: string) {
   return `thumb-${fileName}`;
 }
 
-async function authorizePageSession(request: Request, pageSlug: string) {
-  return authorizeMobileClientEditorRequest(request, pageSlug);
-}
-
 function readAssetKind(value: unknown): EditableImageAssetKind | null {
   if (typeof value !== 'string') {
     return null;
@@ -479,11 +491,35 @@ export async function POST(
   const { slug } = await context.params;
   const pageSlug = slug.trim();
 
-  const session = await authorizePageSession(request, pageSlug);
-  if (!session) {
+  const access = await authorizeMobileClientEditorRequest(request, pageSlug);
+  if (!access) {
     return NextResponse.json(
       { error: '이미지 업로드 권한이 없습니다. 다시 로그인해 주세요.' },
       { status: 401 }
+    );
+  }
+
+  if (!hasMobileClientEditorPermission(access.permissions, 'canUploadImages')) {
+    return NextResponse.json(
+      { error: buildMissingMobileClientEditorPermissionError('canUploadImages') },
+      { status: 403 }
+    );
+  }
+
+  const rateLimitResult = applyScopedInMemoryRateLimit({
+    request,
+    scope: 'mobile-client-editor-image-upload',
+    keyParts: [pageSlug],
+    ...MOBILE_CLIENT_EDITOR_IMAGE_UPLOAD_RATE_LIMIT,
+  });
+
+  if (!rateLimitResult.allowed) {
+    return NextResponse.json(
+      { error: 'Too many image upload requests. Please try again later.' },
+      {
+        status: 429,
+        headers: buildRateLimitHeaders(rateLimitResult),
+      }
     );
   }
 
@@ -606,14 +642,19 @@ export async function POST(
         )}?alt=media&token=${thumbnailDownloadToken}`
       : url;
 
-    return NextResponse.json({
-      name: storedFileName,
-      url,
-      path: imagePath,
-      thumbnailUrl,
-      thumbnailPath: thumbnailPath || imagePath,
-      uploadedAt,
-    });
+    return NextResponse.json(
+      {
+        name: storedFileName,
+        url,
+        path: imagePath,
+        thumbnailUrl,
+        thumbnailPath: thumbnailPath || imagePath,
+        uploadedAt,
+      },
+      {
+        headers: buildRateLimitHeaders(rateLimitResult),
+      }
+    );
   } catch (error) {
     console.error('[mobile/client-editor/images] failed to upload image', error);
     return NextResponse.json(
@@ -630,11 +671,35 @@ export async function DELETE(
   const { slug } = await context.params;
   const pageSlug = slug.trim();
 
-  const session = await authorizePageSession(request, pageSlug);
-  if (!session) {
+  const access = await authorizeMobileClientEditorRequest(request, pageSlug);
+  if (!access) {
     return NextResponse.json(
       { error: 'Unauthorized.' },
       { status: 401 }
+    );
+  }
+
+  if (!hasMobileClientEditorPermission(access.permissions, 'canUploadImages')) {
+    return NextResponse.json(
+      { error: buildMissingMobileClientEditorPermissionError('canUploadImages') },
+      { status: 403 }
+    );
+  }
+
+  const rateLimitResult = applyScopedInMemoryRateLimit({
+    request,
+    scope: 'mobile-client-editor-image-cleanup',
+    keyParts: [pageSlug],
+    ...MOBILE_CLIENT_EDITOR_IMAGE_CLEANUP_RATE_LIMIT,
+  });
+
+  if (!rateLimitResult.allowed) {
+    return NextResponse.json(
+      { error: 'Too many image cleanup requests. Please try again later.' },
+      {
+        status: 429,
+        headers: buildRateLimitHeaders(rateLimitResult),
+      }
     );
   }
 
@@ -661,10 +726,15 @@ export async function DELETE(
       )
     );
 
-    return NextResponse.json({
-      success: true,
-      deletedPaths: cleanupPayload.paths,
-    });
+    return NextResponse.json(
+      {
+        success: true,
+        deletedPaths: cleanupPayload.paths,
+      },
+      {
+        headers: buildRateLimitHeaders(rateLimitResult),
+      }
+    );
   } catch (error) {
     console.error('[mobile/client-editor/images] failed to clean up image', error);
     return NextResponse.json(

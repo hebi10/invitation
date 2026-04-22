@@ -1,9 +1,22 @@
 import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
 
+import {
+  buildGuestbookCommentStatusPatch,
+  isGuestbookCommentPendingPurge,
+} from '@/lib/guestbookComments';
 import { CLIENT_EDITOR_SESSION_COOKIE } from '@/server/clientEditorSession';
 import { getAuthorizedClientEditorSession } from '@/server/clientEditorSessionAuth';
 import { getServerFirestore } from '@/server/firebaseAdmin';
+import {
+  applyScopedInMemoryRateLimit,
+  buildRateLimitHeaders,
+} from '@/server/requestRateLimit';
+
+const CLIENT_EDITOR_COMMENT_DELETE_RATE_LIMIT = {
+  limit: 20,
+  windowMs: 5 * 60 * 1000,
+} as const;
 
 async function authorizePageSession(pageSlug: string) {
   const cookieStore = await cookies();
@@ -14,7 +27,7 @@ async function authorizePageSession(pageSlug: string) {
 }
 
 export async function DELETE(
-  _request: Request,
+  request: Request,
   context: { params: Promise<{ slug: string; commentId: string }> }
 ) {
   const { slug, commentId } = await context.params;
@@ -23,7 +36,7 @@ export async function DELETE(
 
   if (!pageSlug || !normalizedCommentId) {
     return NextResponse.json(
-      { error: '삭제할 댓글 정보를 확인할 수 없습니다.' },
+      { error: '삭제할 댓글 정보를 찾지 못했습니다.' },
       { status: 400 }
     );
   }
@@ -31,15 +44,32 @@ export async function DELETE(
   const session = await authorizePageSession(pageSlug);
   if (!session) {
     return NextResponse.json(
-      { error: '댓글 삭제 권한이 없습니다. 다시 로그인해 주세요.' },
+      { error: '댓글을 관리할 권한이 없습니다. 다시 로그인해 주세요.' },
       { status: 401 }
+    );
+  }
+
+  const rateLimitResult = applyScopedInMemoryRateLimit({
+    request,
+    scope: 'client-editor-comment-delete',
+    keyParts: [pageSlug],
+    ...CLIENT_EDITOR_COMMENT_DELETE_RATE_LIMIT,
+  });
+
+  if (!rateLimitResult.allowed) {
+    return NextResponse.json(
+      { error: '댓글 삭제 요청이 너무 많습니다. 잠시 후 다시 시도해 주세요.' },
+      {
+        status: 429,
+        headers: buildRateLimitHeaders(rateLimitResult),
+      }
     );
   }
 
   const db = getServerFirestore();
   if (!db) {
     return NextResponse.json(
-      { error: '댓글 저장소에 연결할 수 없습니다. 관리자에게 문의해 주세요.' },
+      { error: '댓글 저장소를 확인하지 못했습니다. 관리자에게 문의해 주세요.' },
       { status: 503 }
     );
   }
@@ -70,13 +100,29 @@ export async function DELETE(
     );
   }
 
-  try {
-    await commentRef.delete();
-    return NextResponse.json({ success: true });
-  } catch (error) {
-    console.error('[client-editor/comments] failed to delete comment', error);
+  if (isGuestbookCommentPendingPurge(commentData)) {
+    await commentRef.delete().catch(() => null);
     return NextResponse.json(
-      { error: '댓글을 삭제하지 못했습니다. 잠시 후 다시 시도해 주세요.' },
+      { error: '삭제할 댓글을 찾을 수 없습니다.' },
+      { status: 404 }
+    );
+  }
+
+  try {
+    await commentRef.update(
+      { ...buildGuestbookCommentStatusPatch('scheduleDelete', new Date()) }
+    );
+
+    return NextResponse.json(
+      { success: true },
+      {
+        headers: buildRateLimitHeaders(rateLimitResult),
+      }
+    );
+  } catch (error) {
+    console.error('[client-editor/comments] failed to schedule comment delete', error);
+    return NextResponse.json(
+      { error: '댓글을 삭제 예정 상태로 바꾸지 못했습니다. 잠시 후 다시 시도해 주세요.' },
       { status: 500 }
     );
   }

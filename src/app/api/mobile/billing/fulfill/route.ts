@@ -1,5 +1,9 @@
 import { NextResponse } from 'next/server';
 
+import {
+  getInvitationPageSlugValidationErrorMessage,
+  validateInvitationPageSlugBase,
+} from '@/lib/invitationPageSlug';
 import { isMobileBillingProductId } from '@/lib/mobileBillingProducts';
 import {
   fulfillServerMobilePageCreationPurchase,
@@ -24,8 +28,6 @@ export async function POST(request: Request) {
             slugBase?: unknown;
             groomKoreanName?: unknown;
             brideKoreanName?: unknown;
-            groomEnglishName?: unknown;
-            brideEnglishName?: unknown;
             password?: unknown;
             theme?: unknown;
           };
@@ -52,21 +54,20 @@ export async function POST(request: Request) {
       const slugBase = readTrimmedString(createInput?.slugBase);
       const groomKoreanName = readTrimmedString(createInput?.groomKoreanName);
       const brideKoreanName = readTrimmedString(createInput?.brideKoreanName);
-      const groomEnglishName = readTrimmedString(createInput?.groomEnglishName);
-      const brideEnglishName = readTrimmedString(createInput?.brideEnglishName);
       const password = readTrimmedString(createInput?.password);
       const theme = readTrimmedString(createInput?.theme);
 
-      if (
-        !slugBase ||
-        !groomKoreanName ||
-        !brideKoreanName ||
-        !groomEnglishName ||
-        !brideEnglishName ||
-        !password
-      ) {
+      if (!slugBase || !groomKoreanName || !brideKoreanName || !password) {
         return NextResponse.json(
           { error: 'Invitation page draft input is required.' },
+          { status: 400 }
+        );
+      }
+
+      const slugValidation = validateInvitationPageSlugBase(slugBase);
+      if (!slugValidation.isValid) {
+        return NextResponse.json(
+          { error: getInvitationPageSlugValidationErrorMessage(slugValidation.reason) },
           { status: 400 }
         );
       }
@@ -79,11 +80,9 @@ export async function POST(request: Request) {
           transactionId,
         },
         {
-          slugBase,
+          slugBase: slugValidation.normalizedSlugBase,
           groomKoreanName,
           brideKoreanName,
-          groomEnglishName,
-          brideEnglishName,
           password,
           theme,
         }

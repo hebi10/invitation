@@ -1,16 +1,21 @@
 ### Commit 메시지
-- `Collapse ticket-only purchase section in mobile create flow`
+- `Add one-time mobile link token flow`
 
 ### 작업 요약
-- 모바일 구매 탭의 `티켓만 구매` 섹션을 기본 접힘으로 바꾸고, 토글 클릭 시 부드럽게 펼쳐지도록 `Animated` 기반 열림/닫힘 동작을 추가했다.
-- 접힌 상태에서는 본문을 트리에서 내려 웹/앱에서 불필요한 포커스 이동이 생기지 않도록 정리했다.
-- 구매 탭 스타일 파일에 토글 행 스타일을 추가했고, 누락돼 있던 `stickyBarCompact` 키도 복원해 `typecheck`가 다시 통과하도록 맞췄다.
-- 이전 작업으로 Expo 웹 파비콘 입력을 `icon.png`로 교체했고, 웹 미리보기 오프라인 배너는 브라우저 `online/offline` 기준만 사용하도록 완화했다.
+- 7단계 1회용 앱 연동 링크를 반영했다. `src/server/mobileClientEditorLinkToken.ts`에 Firestore 저장 모델, tokenHash 기반 발급/교환/폐기, 15분 TTL, 1회 사용, 비밀번호 버전 무효화 규칙을 추가했다.
+- 모바일 API는 `src/app/api/mobile/client-editor/link-tokens/route.ts`, `link-tokens/exchange/route.ts`를 추가했고, 로그인/세션 응답은 `src/server/clientEditorMobileApi.ts`의 snapshot helper로 통일했다.
+- Expo 앱은 `apps/mobile/src/lib/appDeepLink.ts`, `app/login.tsx`, `contexts/AuthContext.tsx`, `features/screens/manage.tsx`, `lib/api.ts`를 업데이트해 딥링크 자동 연동, 앱 연동 링크 복사, 활성 링크 폐기 흐름을 연결했다. 웹 fallback은 `src/app/app/login/page.tsx`에서 앱 열기를 시도한다.
+
+### 확인 사항
+- 실행: `npm run typecheck`
+- 실행: `npm run lint:web`
+- 실행: `npm --prefix apps/mobile run lint`
+- 문서 갱신: `docs/mobile-client-editor-policy.md`를 7단계 기준으로 다시 작성했다.
 
 ### 남은 작업
-1. 실제 UI 확인
-   - `npm run mb:web` 또는 네이티브 앱에서 구매 탭을 열고 `티켓만 구매` 카드가 접힌 상태로 시작하는지, 열고 닫을 때 높이 애니메이션이 자연스러운지 확인이 필요하다.
-2. Expo 웹 export 이슈
-   - `npm --prefix apps/mobile exec expo export --platform web`와 `expo config --type public`은 현재 monorepo 경로 해석 중 `web/package.json`, `public/package.json`을 찾으며 실패한다.
-3. 모바일 결제 릴리스 준비
-   - Google Play/RevenueCat 권한, 상품 매핑, 실제 결제 검증 작업은 계속 남아 있다.
+1. 링크 운영 UX 보강
+   - 운영 화면에 최근 발급 상태나 마지막 사용 시간까지 보여주고 싶으면 별도 조회 API와 카드 UI를 추가하면 된다.
+2. 앱 미설치 fallback 확장
+   - `src/app/app/login/page.tsx`에 스토어 이동, 설치 안내, 실패 케이스 분기를 더 넣을 수 있다.
+3. 미구현 고위험 API 연결
+   - 비밀번호 변경, 청첩장 삭제, 방명록 전체 삭제 API가 추가되면 현재 high-risk helper와 audit log를 그대로 재사용하면 된다.

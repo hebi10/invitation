@@ -13,9 +13,22 @@ import {
 } from '@/lib/invitationVariants';
 import { ensureFirebaseInit, USE_FIREBASE } from '@/lib/firebase';
 import {
-  isRecord,
+  createInvitationPageDisplayName,
+  generateInvitationPageSlugSuffix,
+  mergeInvitationPageSeed,
+  normalizeInvitationConfigSeed,
+    normalizeInvitationPageDisplayPeriod,
+    normalizeInvitationPageRegistryRecord,
+    stripUndefinedDeep,
+  type InvitationPageDisplayPeriodRecord as DisplayPeriodRecord,
+  type InvitationPageRegistryRecord,
+} from '@/lib/invitationPagePersistence';
+import {
+  getInvitationPageSlugValidationErrorMessage,
+  validateInvitationPageSlugBase,
+} from '@/lib/invitationPageSlug';
+import {
   normalizeInvitationTheme,
-  readNumber,
   readString,
   toDate,
 } from '@/lib/invitationPageNormalization';
@@ -29,7 +42,6 @@ import {
 import {
   clampInvitationMusicVolume,
   DEFAULT_INVITATION_MUSIC_VOLUME,
-  normalizeInvitationMusicSelection,
 } from '@/lib/musicLibrary';
 import type {
   InvitationFeatureFlags,
@@ -39,6 +51,8 @@ import type {
   InvitationThemeKey,
 } from '@/types/invitationPage';
 import { sanitizeHeartIconPlaceholdersDeep } from '@/utils/textSanitizers';
+
+export { normalizeInvitationPageSlugBase } from '@/lib/invitationPagePersistence';
 
 export interface InvitationPageSummary {
   slug: string;
@@ -122,26 +136,6 @@ type FirestoreState = {
   };
 };
 
-type DisplayPeriodRecord = {
-  docId: string;
-  pageSlug: string;
-  isActive: boolean;
-  startDate: Date | null;
-  endDate: Date | null;
-  createdAt: Date | null;
-  updatedAt: Date | null;
-};
-
-type InvitationPageRegistryRecord = {
-  docId: string;
-  pageSlug: string;
-  published: boolean;
-  defaultTheme: InvitationThemeKey;
-  hasCustomConfig: boolean;
-  createdAt: Date | null;
-  updatedAt: Date | null;
-};
-
 type BuiltInvitationPageRecord = {
   page: InvitationPage;
   dataSource: 'seed' | 'firestore';
@@ -151,8 +145,6 @@ type BuiltInvitationPageRecord = {
 const DISPLAY_PERIOD_COLLECTION = 'display-periods';
 const PAGE_CONFIG_COLLECTION = 'invitation-page-configs';
 const PAGE_REGISTRY_COLLECTION = 'invitation-page-registry';
-const PAGE_SLUG_SUFFIX_ALPHABET = 'abcdefghijklmnopqrstuvwxyz';
-const PAGE_SLUG_SUFFIX_LENGTH = 3;
 
 function wait(ms: number) {
   return new Promise((resolve) => {
@@ -166,69 +158,6 @@ function cloneInvitationPageSeed(seed: InvitationPageSeed): InvitationPageSeed {
   );
 }
 
-function stripUndefinedDeep<T>(value: T): T {
-  if (value === undefined || value === null) {
-    return value;
-  }
-
-  if (value instanceof Date) {
-    return value;
-  }
-
-  if (Array.isArray(value)) {
-    return value
-      .map((item) => stripUndefinedDeep(item))
-      .filter((item) => item !== undefined) as T;
-  }
-
-  if (typeof value !== 'object') {
-    return value;
-  }
-
-  const prototype = Object.getPrototypeOf(value);
-  if (prototype !== Object.prototype && prototype !== null) {
-    return value;
-  }
-
-  const nextObject: Record<string, unknown> = {};
-
-  Object.entries(value).forEach(([key, entryValue]) => {
-    if (entryValue === undefined) {
-      return;
-    }
-
-    nextObject[key] = stripUndefinedDeep(entryValue);
-  });
-
-  return nextObject as T;
-}
-
-function normalizeSlugBase(value: string) {
-  return value
-    .trim()
-    .toLowerCase()
-    .normalize('NFKD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '')
-    .replace(/-{2,}/g, '-');
-}
-
-export function normalizeInvitationPageSlugBase(value: string) {
-  return normalizeSlugBase(value);
-}
-
-function generateSlugSuffix(length = PAGE_SLUG_SUFFIX_LENGTH) {
-  return Array.from({ length }, () => {
-    const index = Math.floor(Math.random() * PAGE_SLUG_SUFFIX_ALPHABET.length);
-    return PAGE_SLUG_SUFFIX_ALPHABET[index];
-  }).join('');
-}
-
-function createDisplayNameFromNames(groomName: string, brideName: string) {
-  return `${groomName} · ${brideName}`;
-}
-
 function buildSeedPage(pageSlug: string): InvitationPage | null {
   const seed = getWeddingPageBySlug(pageSlug);
   if (!seed) {
@@ -238,371 +167,15 @@ function buildSeedPage(pageSlug: string): InvitationPage | null {
   return sanitizeHeartIconPlaceholdersDeep(createInvitationPageFromSeed(seed));
 }
 
-function normalizeDisplayPeriod(
-  docId: string,
-  data: Record<string, any>
-): DisplayPeriodRecord | null {
-  const pageSlug =
-    typeof data.pageSlug === 'string' && data.pageSlug.trim()
-      ? data.pageSlug.trim()
-      : docId;
-
-  if (!pageSlug) {
-    return null;
-  }
-
-  return {
-    docId,
-    pageSlug,
-    isActive: data.isActive === true,
-    startDate: toDate(data.startDate),
-    endDate: toDate(data.endDate),
-    createdAt: toDate(data.createdAt),
-    updatedAt: toDate(data.updatedAt),
-  };
-}
-
-function normalizeRegistryRecord(
-  docId: string,
-  data: Record<string, any>
-): InvitationPageRegistryRecord | null {
-  const pageSlug =
-    typeof data.pageSlug === 'string' && data.pageSlug.trim()
-      ? data.pageSlug.trim()
-      : docId;
-
-  if (!pageSlug) {
-    return null;
-  }
-
-  return {
-    docId,
-    pageSlug,
-    published: data.published !== false,
-    defaultTheme: normalizeInvitationTheme(data.defaultTheme),
-    hasCustomConfig: data.hasCustomConfig === true,
-    createdAt: toDate(data.createdAt),
-    updatedAt: toDate(data.updatedAt),
-  };
-}
-
-function mergeInvitationPageSeed(
-  base: InvitationPageSeed | undefined,
-  candidate: Record<string, any>,
-  fallbackSlug?: string,
-  options: {
-    fallbackTheme?: InvitationThemeKey;
-    collapseLegacyAllTrue?: boolean;
-  } = {}
-): InvitationPageSeed | null {
-  const coupleInput = isRecord(candidate.couple) ? candidate.couple : {};
-  const groomInput = isRecord(coupleInput.groom) ? coupleInput.groom : {};
-  const brideInput = isRecord(coupleInput.bride) ? coupleInput.bride : {};
-
-  const metadataInput = isRecord(candidate.metadata) ? candidate.metadata : {};
-  const metadataImagesInput = isRecord(metadataInput.images) ? metadataInput.images : {};
-  const metadataOpenGraphInput = isRecord(metadataInput.openGraph)
-    ? metadataInput.openGraph
-    : {};
-  const metadataTwitterInput = isRecord(metadataInput.twitter)
-    ? metadataInput.twitter
-    : {};
-
-  const weddingDateTimeInput = isRecord(candidate.weddingDateTime)
-    ? candidate.weddingDateTime
-    : {};
-  const variantsInput = isRecord(candidate.variants) ? candidate.variants : {};
-  const pageDataInput = isRecord(candidate.pageData) ? candidate.pageData : undefined;
-  const pageDataKakaoMapInput =
-    pageDataInput && isRecord(pageDataInput.kakaoMap) ? pageDataInput.kakaoMap : {};
-  const pageDataGiftInfoInput =
-    pageDataInput && isRecord(pageDataInput.giftInfo) ? pageDataInput.giftInfo : {};
-
-  const slug = readString(candidate.slug, base?.slug ?? fallbackSlug ?? '').trim();
-  const displayName = readString(candidate.displayName, base?.displayName ?? '').trim();
-  const description = readString(candidate.description, base?.description ?? '').trim();
-  const date = readString(candidate.date, base?.date ?? '').trim();
-  const venue = readString(candidate.venue, base?.venue ?? '').trim();
-
-  const groom = {
-    ...(base?.couple.groom ?? {}),
-    ...groomInput,
-    name: readString(groomInput.name, base?.couple.groom.name ?? '').trim(),
-  };
-
-  const bride = {
-    ...(base?.couple.bride ?? {}),
-    ...brideInput,
-    name: readString(brideInput.name, base?.couple.bride.name ?? '').trim(),
-  };
-
-  const metadata = {
-    ...(base?.metadata ?? {}),
-    ...metadataInput,
-    title: readString(metadataInput.title, base?.metadata.title ?? '').trim(),
-    description: readString(
-      metadataInput.description,
-      base?.metadata.description ?? description
-    ).trim(),
-    keywords: Array.isArray(metadataInput.keywords)
-      ? metadataInput.keywords.filter((value): value is string => typeof value === 'string')
-      : base?.metadata.keywords ?? [],
-    images: {
-      ...(base?.metadata.images ?? {}),
-      ...metadataImagesInput,
-      wedding: readString(
-        metadataImagesInput.wedding,
-        base?.metadata.images.wedding ?? ''
-      ),
-      favicon: readString(
-        metadataImagesInput.favicon,
-        base?.metadata.images.favicon ?? ''
-      ),
-    },
-    openGraph: {
-      ...(base?.metadata.openGraph ?? {}),
-      ...metadataOpenGraphInput,
-      title: readString(
-        metadataOpenGraphInput.title,
-        base?.metadata.openGraph.title ?? ''
-      ),
-      description: readString(
-        metadataOpenGraphInput.description,
-        base?.metadata.openGraph.description ?? description
-      ),
-    },
-    twitter: {
-      ...(base?.metadata.twitter ?? {}),
-      ...metadataTwitterInput,
-      title: readString(
-        metadataTwitterInput.title,
-        base?.metadata.twitter.title ?? ''
-      ),
-      description: readString(
-        metadataTwitterInput.description,
-        base?.metadata.twitter.description ?? description
-      ),
-    },
-  };
-
-  const pageData = pageDataInput
-    ? {
-        ...(base?.pageData ?? {}),
-        ...pageDataInput,
-        galleryImages: Array.isArray(pageDataInput.galleryImages)
-          ? pageDataInput.galleryImages.filter(
-              (value): value is string => typeof value === 'string'
-            )
-          : base?.pageData?.galleryImages,
-        kakaoMap: pageDataInput.kakaoMap
-          ? {
-              ...(base?.pageData?.kakaoMap ?? {}),
-              ...pageDataKakaoMapInput,
-              latitude: readNumber(
-                pageDataKakaoMapInput.latitude,
-                base?.pageData?.kakaoMap?.latitude ?? 0
-              ),
-              longitude: readNumber(
-                pageDataKakaoMapInput.longitude,
-                base?.pageData?.kakaoMap?.longitude ?? 0
-              ),
-            }
-          : base?.pageData?.kakaoMap,
-        venueGuide: Array.isArray(pageDataInput.venueGuide)
-          ? pageDataInput.venueGuide
-          : base?.pageData?.venueGuide,
-        wreathGuide: Array.isArray(pageDataInput.wreathGuide)
-          ? pageDataInput.wreathGuide
-          : base?.pageData?.wreathGuide,
-        giftInfo: pageDataInput.giftInfo
-          ? {
-              ...(base?.pageData?.giftInfo ?? {}),
-              ...pageDataGiftInfoInput,
-              groomAccounts: Array.isArray(pageDataGiftInfoInput.groomAccounts)
-                ? pageDataGiftInfoInput.groomAccounts
-                : base?.pageData?.giftInfo?.groomAccounts,
-              brideAccounts: Array.isArray(pageDataGiftInfoInput.brideAccounts)
-                ? pageDataGiftInfoInput.brideAccounts
-                : base?.pageData?.giftInfo?.brideAccounts,
-            }
-          : base?.pageData?.giftInfo,
-      }
-    : base?.pageData;
-  const existingMusicStoragePath = readString(base?.musicStoragePath, '').trim();
-  const normalizedMusicSelection = normalizeInvitationMusicSelection({
-    categoryId: readString(candidate.musicCategoryId, base?.musicCategoryId ?? '').trim(),
-    trackId: readString(candidate.musicTrackId, base?.musicTrackId ?? '').trim(),
-    storagePath: readString(candidate.musicStoragePath, existingMusicStoragePath).trim(),
-  });
-  const hasExplicitMusicUrl = typeof candidate.musicUrl === 'string';
-  const hasStoragePathChanged =
-    normalizedMusicSelection.musicStoragePath !== existingMusicStoragePath;
-  const musicUrl = readString(
-    candidate.musicUrl,
-    hasStoragePathChanged && !hasExplicitMusicUrl ? '' : base?.musicUrl ?? ''
-  ).trim();
-  const featuresInput = isRecord(candidate.features) ? candidate.features : {};
-  const productTier = normalizeInvitationProductTier(
-    candidate.productTier,
-    base?.productTier ?? DEFAULT_INVITATION_PRODUCT_TIER
-  );
-  const features = resolveInvitationFeatures(productTier, {
-    maxGalleryImages:
-      typeof featuresInput.maxGalleryImages === 'number' &&
-      Number.isFinite(featuresInput.maxGalleryImages)
-        ? featuresInput.maxGalleryImages
-        : undefined,
-    shareMode: featuresInput.shareMode,
-    showMusic:
-      typeof featuresInput.showMusic === 'boolean'
-        ? featuresInput.showMusic
-        : undefined,
-    showCountdown:
-      typeof featuresInput.showCountdown === 'boolean'
-        ? featuresInput.showCountdown
-        : undefined,
-    showGuestbook:
-      typeof featuresInput.showGuestbook === 'boolean'
-        ? featuresInput.showGuestbook
-        : undefined,
-  });
-
-  const sourceVariants = { ...(base?.variants ?? {}), ...variantsInput };
-  const sourceAvailableVariantKeys = getAvailableInvitationVariantKeys(
-    sourceVariants as InvitationPageSeed['variants']
-  );
-  const fallbackTheme = normalizeInvitationTheme(
-    options.fallbackTheme,
-    sourceAvailableVariantKeys[0] ?? DEFAULT_INVITATION_THEME
-  );
-  const hasFullTrueAvailability =
-    sourceAvailableVariantKeys.length === INVITATION_VARIANT_KEYS.length &&
-    INVITATION_VARIANT_KEYS.every((key) => {
-      const variant = sourceVariants[key];
-      return isRecord(variant) && variant.available === true;
-    });
-  const shouldCollapseFullTrueAvailability =
-    hasFullTrueAvailability && options.collapseLegacyAllTrue === true;
-  const supportedVariants = buildInvitationVariants(slug, displayName, {
-    availability: createInvitationVariantAvailability([
-      fallbackTheme as InvitationVariantKey,
-    ]),
-  });
-
-  const normalizedVariants = INVITATION_VARIANT_KEYS.reduce<InvitationPageSeed['variants']>(
-    (variants, variantKey) => {
-      const builtVariant = supportedVariants[variantKey];
-      if (!builtVariant) {
-        return variants;
-      }
-
-      const sourceVariant = sourceVariants[variantKey];
-      const available = shouldCollapseFullTrueAvailability
-        ? variantKey === fallbackTheme
-        : isRecord(sourceVariant) && typeof sourceVariant.available === 'boolean'
-          ? sourceVariant.available
-          : builtVariant.available;
-
-      if (!isRecord(sourceVariant) && !available) {
-        return variants;
-      }
-
-      variants[variantKey] = {
-        ...builtVariant,
-        ...(isRecord(sourceVariant) ? sourceVariant : {}),
-        available,
-        path: builtVariant.path,
-        displayName: readString(
-          isRecord(sourceVariant) ? sourceVariant.displayName : undefined,
-          builtVariant.displayName
-        ),
-      };
-
-      return variants;
-    },
-    {}
-  );
-
-  if (getAvailableInvitationVariantKeys(normalizedVariants).length === 0) {
-    const fallbackVariant = supportedVariants[fallbackTheme];
-    if (fallbackVariant) {
-      const sourceVariant = sourceVariants[fallbackTheme];
-      normalizedVariants[fallbackTheme] = {
-        ...fallbackVariant,
-        ...(isRecord(sourceVariant) ? sourceVariant : {}),
-        available: true,
-        path: fallbackVariant.path,
-        displayName: readString(
-          isRecord(sourceVariant) ? sourceVariant.displayName : undefined,
-          fallbackVariant.displayName
-        ),
-      };
-    }
-  }
-
-  const normalizedSeed: InvitationPageSeed = {
-    ...(base ?? {}),
-    slug,
-    displayName,
-    description,
-    date,
-    venue,
-    productTier,
-    features,
-    musicEnabled:
-      typeof candidate.musicEnabled === 'boolean'
-        ? candidate.musicEnabled
-        : base?.musicEnabled ?? false,
-    musicVolume: clampInvitationMusicVolume(
-      candidate.musicVolume,
-      base?.musicVolume ?? DEFAULT_INVITATION_MUSIC_VOLUME
-    ),
-    musicCategoryId: normalizedMusicSelection.musicCategoryId,
-    musicTrackId: normalizedMusicSelection.musicTrackId,
-    musicStoragePath: normalizedMusicSelection.musicStoragePath,
-    musicUrl,
-    groomName: readString(candidate.groomName, groom.name).trim(),
-    brideName: readString(candidate.brideName, bride.name).trim(),
-    couple: {
-      groom,
-      bride,
-    },
-    weddingDateTime: {
-      year: readNumber(weddingDateTimeInput.year, base?.weddingDateTime.year ?? 0),
-      month: readNumber(weddingDateTimeInput.month, base?.weddingDateTime.month ?? 0),
-      day: readNumber(weddingDateTimeInput.day, base?.weddingDateTime.day ?? 0),
-      hour: readNumber(weddingDateTimeInput.hour, base?.weddingDateTime.hour ?? 0),
-      minute: readNumber(
-        weddingDateTimeInput.minute,
-        base?.weddingDateTime.minute ?? 0
-      ),
-    },
-    metadata,
-    pageData,
-    variants: normalizedVariants,
-  };
-
-  if (
-    !normalizedSeed.slug ||
-    !normalizedSeed.couple.groom.name ||
-    !normalizedSeed.couple.bride.name ||
-    !normalizedSeed.metadata.images.favicon ||
-    getAvailableInvitationVariantKeys(normalizedSeed.variants).length === 0
-  ) {
-    return null;
-  }
-
-  return normalizedSeed;
-}
-
 function normalizeConfigSeed(
   docId: string,
   data: Record<string, any>
 ): InvitationPageSeed | null {
-  const fallbackSeed = getWeddingPageBySlug(docId);
-  return mergeInvitationPageSeed(fallbackSeed, data, docId, {
-    fallbackTheme: normalizeInvitationTheme(data.defaultTheme),
-  });
+  return normalizeInvitationConfigSeed(
+    docId,
+    data,
+    getWeddingPageBySlug(docId) ?? undefined
+  );
 }
 
 function mergeDisplayPeriod(
@@ -703,7 +276,7 @@ function buildDraftConfigFromSeed(
   }
 ) {
   const nextSeed = cloneInvitationPageSeed(seed);
-  const displayName = createDisplayNameFromNames('', '');
+  const displayName = createInvitationPageDisplayName('', '');
   const features = resolveInvitationFeatures(overrides.productTier, seed.features);
 
   nextSeed.slug = overrides.slug;
@@ -925,7 +498,10 @@ async function getDisplayPeriodMap(firestore: FirestoreState) {
     id: string;
     data: () => Record<string, any>;
   }>) {
-    const normalized = normalizeDisplayPeriod(docSnapshot.id, docSnapshot.data());
+    const normalized = normalizeInvitationPageDisplayPeriod(
+      docSnapshot.id,
+      docSnapshot.data()
+    );
     if (!normalized) {
       continue;
     }
@@ -947,7 +523,10 @@ async function getDisplayPeriodByPageSlug(
     firestore.modules.doc(firestore.db, DISPLAY_PERIOD_COLLECTION, pageSlug)
   );
   if (directSnapshot.exists()) {
-    const normalized = normalizeDisplayPeriod(pageSlug, directSnapshot.data());
+    const normalized = normalizeInvitationPageDisplayPeriod(
+      pageSlug,
+      directSnapshot.data()
+    );
     if (normalized) {
       return normalized;
     }
@@ -962,7 +541,10 @@ async function getDisplayPeriodByPageSlug(
 
   let preferred: DisplayPeriodRecord | null = null;
   snapshot.docs.forEach((docSnapshot: { id: string; data: () => Record<string, any> }) => {
-    const normalized = normalizeDisplayPeriod(docSnapshot.id, docSnapshot.data());
+    const normalized = normalizeInvitationPageDisplayPeriod(
+      docSnapshot.id,
+      docSnapshot.data()
+    );
     if (!normalized) {
       return;
     }
@@ -983,7 +565,10 @@ async function getRegistryMap(firestore: FirestoreState) {
     id: string;
     data: () => Record<string, any>;
   }>) {
-    const normalized = normalizeRegistryRecord(docSnapshot.id, docSnapshot.data());
+    const normalized = normalizeInvitationPageRegistryRecord(
+      docSnapshot.id,
+      docSnapshot.data()
+    );
     if (!normalized) {
       continue;
     }
@@ -1009,7 +594,7 @@ async function getRegistryByPageSlug(
     return null;
   }
 
-  return normalizeRegistryRecord(pageSlug, snapshot.data());
+  return normalizeInvitationPageRegistryRecord(pageSlug, snapshot.data());
 }
 
 async function getConfigMap(firestore: FirestoreState) {
@@ -1072,19 +657,34 @@ async function createUniqueInvitationPageSlug(
   firestore: FirestoreState,
   slugBase: string
 ) {
-  const normalizedSlugBase = normalizeSlugBase(slugBase);
-  if (!normalizedSlugBase) {
-    throw new Error('올바른 페이지 주소를 입력해 주세요.');
+  const slugValidation = validateInvitationPageSlugBase(slugBase);
+  if (!slugValidation.isValid) {
+    const serverMessage = getInvitationPageSlugValidationErrorMessage(slugValidation.reason);
+
+    switch (serverMessage) {
+      case 'Page slug base is required.':
+        throw new Error('청첩장 주소를 입력해 주세요.');
+      case 'Page slug base is reserved.':
+        throw new Error('이미 예약된 청첩장 주소입니다. 다른 주소를 입력해 주세요.');
+      case 'Page slug base must be at least 3 characters.':
+        throw new Error('청첩장 주소는 3자 이상으로 입력해 주세요.');
+      case 'Page slug base must be 40 characters or fewer.':
+        throw new Error('청첩장 주소는 40자 이하로 입력해 주세요.');
+      default:
+        throw new Error('올바른 청첩장 주소를 입력해 주세요.');
+    }
   }
+
+  const normalizedSlugBase = slugValidation.normalizedSlugBase;
 
   if (!(await isInvitationPageSlugTaken(firestore, normalizedSlugBase))) {
     return normalizedSlugBase;
   }
 
-  let nextSlug = `${normalizedSlugBase}-${generateSlugSuffix()}`;
+  let nextSlug = `${normalizedSlugBase}-${generateInvitationPageSlugSuffix()}`;
 
   while (await isInvitationPageSlugTaken(firestore, nextSlug)) {
-    nextSlug = `${normalizedSlugBase}-${generateSlugSuffix()}`;
+    nextSlug = `${normalizedSlugBase}-${generateInvitationPageSlugSuffix()}`;
   }
 
   return nextSlug;

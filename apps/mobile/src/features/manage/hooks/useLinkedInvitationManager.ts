@@ -249,7 +249,7 @@ export function useLinkedInvitationManager({
       setNotice(
         pageSlugToRelink
           ? `${pageSlugToRelink} 청첩장을 다시 연동하려면 비밀번호를 입력해 주세요.`
-          : '다른 청첩장을 연동하려면 슬러그와 비밀번호를 입력해 주세요.'
+          : '다른 청첩장을 연동하려면 청첩장 링크 또는 주소와 비밀번호를 입력해 주세요.'
       );
       await logout();
       clearAuthError();

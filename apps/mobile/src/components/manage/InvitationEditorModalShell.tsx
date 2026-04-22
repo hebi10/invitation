@@ -11,6 +11,7 @@ import {
   View,
   ViewStyle,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { getPalette } from '../../constants/theme';
 import { ActionButton } from '../ActionButton';
@@ -41,6 +42,8 @@ export function InvitationEditorModalShell({
   closeLoading = false,
   children,
 }: InvitationEditorModalShellProps) {
+  const insets = useSafeAreaInsets();
+
   return (
     <Modal
       visible={visible}
@@ -50,7 +53,14 @@ export function InvitationEditorModalShell({
       presentationStyle="overFullScreen"
       onRequestClose={onClose}
     >
-      <View style={styles.overlay}>
+      <View
+        style={[
+          styles.overlay,
+          {
+            paddingBottom: Math.max(insets.bottom, 18),
+          },
+        ]}
+      >
         <View
           style={[
             styles.backdrop,
@@ -62,7 +72,7 @@ export function InvitationEditorModalShell({
         />
         <KeyboardAvoidingView
           behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-          keyboardVerticalOffset={Platform.OS === 'ios' ? 16 : 0}
+          keyboardVerticalOffset={Platform.OS === 'ios' ? insets.bottom : 0}
           style={styles.keyboardAvoiding}
         >
           <View

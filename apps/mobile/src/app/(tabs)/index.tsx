@@ -116,7 +116,7 @@ export default function HomeScreen() {
                 </AppText>
                 <AppText variant="muted" style={styles.draftMeta}>
                   URL 초안{' '}
-                  {draft.pageIdentifier || '영문 이름을 입력하면 자동으로 생성됩니다.'}
+                  {draft.pageIdentifier || '추천 주소가 자동으로 준비됩니다.'}
                 </AppText>
               </View>
               <View style={styles.draftActionRow}>

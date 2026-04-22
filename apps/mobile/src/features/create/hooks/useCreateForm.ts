@@ -1,31 +1,36 @@
 import { useRouter } from 'expo-router';
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import type { useAuth } from '../../../contexts/AuthContext';
 import type { useDrafts } from '../../../contexts/DraftsContext';
-import { DEFAULT_INVITATION_THEME } from '../../../lib/invitationThemes';
+import { checkMobileInvitationSlugAvailability } from '../../../lib/api';
 import { purchaseBillingProduct } from '../../../lib/billing';
+import { createRandomSuffix } from '../../../lib/id';
+import { DEFAULT_INVITATION_THEME } from '../../../lib/invitationThemes';
 import { getMobileBillingPageCreationProductId } from '../../../lib/mobileBillingProducts';
+import { validatePageSlugBase } from '../../../lib/pageSlug';
 import type {
   CreateDraftItem,
   MobileInvitationCreationInput,
   MobileInvitationProductTier,
+  MobileInvitationSlugAvailabilityReason,
   MobileInvitationThemeKey,
 } from '../../../types/mobileInvitation';
-import { useCreateDraftSync } from './useCreateDraftSync';
-import { useCreateTicketIntent } from './useCreateTicketIntent';
 import {
-  CREATE_STEPS,
-  TICKET_DISCOUNT_BUNDLE_SIZE,
-  buildCreateSlugBase,
   buildCreateValidationRules,
+  buildSuggestedCreateSlugBase,
   calculateTicketPrice,
+  CREATE_STEPS,
   designThemes,
   getAdjacentSupportedTicketCount,
+  getCreateSlugAvailabilityMessage,
   normalizeSupportedCreateTicketCount,
   servicePlans,
+  TICKET_DISCOUNT_BUNDLE_SIZE,
   type CreateStepKey,
 } from '../shared';
+import { useCreateDraftSync } from './useCreateDraftSync';
+import { useCreateTicketIntent } from './useCreateTicketIntent';
 
 type DraftStore = Pick<ReturnType<typeof useDrafts>, 'drafts' | 'removeDraft' | 'saveDraft'>;
 type AuthActions = Pick<
@@ -38,6 +43,30 @@ type UseCreateFormOptions = DraftStore &
     apiBaseUrl: string;
     isExpoWebPreview: boolean;
   };
+
+type CreateSlugAvailabilityState = {
+  status: 'idle' | 'checking' | 'resolved' | 'error';
+  normalizedSlugBase: string;
+  available: boolean;
+  reason: MobileInvitationSlugAvailabilityReason | 'error';
+};
+
+type DraftPayloadOverrides = Partial<{
+  servicePlan: MobileInvitationProductTier;
+  theme: MobileInvitationThemeKey;
+  pageIdentifier: string;
+  groomName: string;
+  brideName: string;
+  estimatedPrice: number;
+  ticketCount: number;
+}>;
+
+const INITIAL_SLUG_AVAILABILITY_STATE: CreateSlugAvailabilityState = {
+  status: 'idle',
+  normalizedSlugBase: '',
+  available: false,
+  reason: 'required',
+};
 
 export function useCreateForm({
   apiBaseUrl,
@@ -56,8 +85,9 @@ export function useCreateForm({
     useState<MobileInvitationThemeKey | null>(null);
   const [groomKoreanName, setGroomKoreanName] = useState('');
   const [brideKoreanName, setBrideKoreanName] = useState('');
-  const [groomEnglishName, setGroomEnglishName] = useState('');
-  const [brideEnglishName, setBrideEnglishName] = useState('');
+  const [slugSuggestionSeed, setSlugSuggestionSeed] = useState(() => createRandomSuffix(6));
+  const [pageIdentifier, setPageIdentifier] = useState('');
+  const [hasCustomPageIdentifier, setHasCustomPageIdentifier] = useState(false);
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [ticketCount, setTicketCount] = useState(0);
@@ -65,6 +95,9 @@ export function useCreateForm({
   const [paymentModalVisible, setPaymentModalVisible] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [currentStep, setCurrentStep] = useState<CreateStepKey>('info');
+  const [slugAvailability, setSlugAvailability] = useState<CreateSlugAvailabilityState>(
+    INITIAL_SLUG_AVAILABILITY_STATE
+  );
   const lastDraftSnapshotRef = useRef('');
 
   const selectedPlanInfo = useMemo(
@@ -90,31 +123,182 @@ export function useCreateForm({
   const remainderTicketCount = ticketCount % TICKET_DISCOUNT_BUNDLE_SIZE;
   const totalPrice = selectedPlanInfo.price + ticketPrice;
 
-  const slugBase = useMemo(
-    () => buildCreateSlugBase(groomEnglishName, brideEnglishName),
-    [brideEnglishName, groomEnglishName]
+  const suggestedSlugBase = useMemo(() => {
+    if (!groomKoreanName.trim() && !brideKoreanName.trim()) {
+      return '';
+    }
+
+    return buildSuggestedCreateSlugBase(
+      groomKoreanName.trim(),
+      brideKoreanName.trim(),
+      slugSuggestionSeed
+    );
+  }, [brideKoreanName, groomKoreanName, slugSuggestionSeed]);
+
+  useEffect(() => {
+    if (hasCustomPageIdentifier) {
+      return;
+    }
+
+    setPageIdentifier(suggestedSlugBase);
+  }, [hasCustomPageIdentifier, suggestedSlugBase]);
+
+  const effectivePageIdentifier = useMemo(() => {
+    if (hasCustomPageIdentifier) {
+      return pageIdentifier;
+    }
+
+    return pageIdentifier || suggestedSlugBase;
+  }, [hasCustomPageIdentifier, pageIdentifier, suggestedSlugBase]);
+
+  const slugValidation = useMemo(
+    () => validatePageSlugBase(effectivePageIdentifier),
+    [effectivePageIdentifier]
   );
+  const slugBase = slugValidation.normalizedSlugBase;
+
   const publicUrlPreview = useMemo(() => {
     const baseUrl = apiBaseUrl.replace(/\/+$/g, '');
-    return slugBase ? `${baseUrl}/${slugBase}` : `${baseUrl}/...`;
-  }, [apiBaseUrl, slugBase]);
+    const previewSlug = slugBase || suggestedSlugBase;
+
+    return previewSlug ? `${baseUrl}/${previewSlug}` : `${baseUrl}/...`;
+  }, [apiBaseUrl, slugBase, suggestedSlugBase]);
+
+  useEffect(() => {
+    const trimmedIdentifier = effectivePageIdentifier.trim();
+
+    if (!trimmedIdentifier) {
+      setSlugAvailability(INITIAL_SLUG_AVAILABILITY_STATE);
+      return;
+    }
+
+    if (!slugValidation.isValid) {
+      setSlugAvailability({
+        status: 'resolved',
+        normalizedSlugBase: slugValidation.normalizedSlugBase,
+        available: false,
+        reason: slugValidation.reason ?? 'invalid',
+      });
+      return;
+    }
+
+    let cancelled = false;
+    const normalizedSlugBase = slugValidation.normalizedSlugBase;
+
+    setSlugAvailability({
+      status: 'checking',
+      normalizedSlugBase,
+      available: false,
+      reason: 'ok',
+    });
+
+    const timer = setTimeout(() => {
+      void (async () => {
+        try {
+          const response = await checkMobileInvitationSlugAvailability(
+            apiBaseUrl,
+            normalizedSlugBase
+          );
+
+          if (cancelled) {
+            return;
+          }
+
+          setSlugAvailability({
+            status: 'resolved',
+            normalizedSlugBase: response.normalizedSlugBase,
+            available: response.available,
+            reason: response.reason,
+          });
+        } catch {
+          if (cancelled) {
+            return;
+          }
+
+          setSlugAvailability({
+            status: 'error',
+            normalizedSlugBase,
+            available: false,
+            reason: 'error',
+          });
+        }
+      })();
+    }, 300);
+
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [
+    apiBaseUrl,
+    effectivePageIdentifier,
+    slugValidation.isValid,
+    slugValidation.normalizedSlugBase,
+    slugValidation.reason,
+  ]);
+
+  const pageIdentifierHelperText = useMemo(() => {
+    const isRecommended = !hasCustomPageIdentifier;
+    const trimmedIdentifier = effectivePageIdentifier.trim();
+
+    if (!trimmedIdentifier) {
+      return getCreateSlugAvailabilityMessage('required', {
+        isRecommended,
+      });
+    }
+
+    if (!slugValidation.isValid) {
+      return getCreateSlugAvailabilityMessage(slugValidation.reason ?? 'invalid', {
+        isRecommended,
+      });
+    }
+
+    if (slugAvailability.status === 'checking') {
+      return getCreateSlugAvailabilityMessage('checking', {
+        isRecommended,
+      });
+    }
+
+    if (slugAvailability.status === 'error') {
+      return getCreateSlugAvailabilityMessage('error', {
+        isRecommended,
+      });
+    }
+
+    if (slugAvailability.normalizedSlugBase !== slugValidation.normalizedSlugBase) {
+      return getCreateSlugAvailabilityMessage('checking', {
+        isRecommended,
+      });
+    }
+
+    return getCreateSlugAvailabilityMessage(slugAvailability.reason, {
+      isRecommended,
+    });
+  }, [
+    effectivePageIdentifier,
+    hasCustomPageIdentifier,
+    slugAvailability.normalizedSlugBase,
+    slugAvailability.reason,
+    slugAvailability.status,
+    slugValidation.isValid,
+    slugValidation.normalizedSlugBase,
+    slugValidation.reason,
+  ]);
 
   const validationRules = useMemo(
     () =>
       buildCreateValidationRules({
         groomKoreanName,
         brideKoreanName,
-        groomEnglishName,
-        brideEnglishName,
+        pageIdentifier: effectivePageIdentifier,
         password,
         confirmPassword,
         selectedTheme,
       }),
     [
-      brideEnglishName,
       brideKoreanName,
       confirmPassword,
-      groomEnglishName,
+      effectivePageIdentifier,
       groomKoreanName,
       password,
       selectedTheme,
@@ -172,23 +356,23 @@ export function useCreateForm({
   const currentProgressLabel = useMemo(() => {
     if (currentStep === 'review') {
       return validationMessages.length === 0
-        ? '4단계 · 결제 확인 준비 완료'
-        : '4단계 · 결제 정보 확인 중';
+        ? '4단계 결제 확인 준비가 끝났습니다.'
+        : '4단계 결제 전 입력 내용을 다시 확인해 주세요.';
     }
 
     if (currentStep === 'ticket') {
-      return '3단계 · 추가 티켓 확인 중';
+      return '3단계 추가 티켓 구성을 확인하고 있습니다.';
     }
 
     if (currentStep === 'selection') {
       return selectionValidationMessages.length === 0
-        ? '2단계 · 서비스와 디자인 선택 완료'
-        : '2단계 · 서비스와 디자인 선택 중';
+        ? '2단계 서비스와 디자인 선택을 마쳤습니다.'
+        : '2단계 서비스와 디자인 선택을 진행해 주세요.';
     }
 
     return infoValidationMessages.length === 0
-      ? '1단계 · 기본 정보 입력 완료'
-      : '1단계 · 기본 정보 입력 중';
+      ? '1단계 기본 정보 입력이 끝났습니다.'
+      : '1단계 기본 정보와 주소를 입력해 주세요.';
   }, [
     currentStep,
     infoValidationMessages.length,
@@ -200,27 +384,34 @@ export function useCreateForm({
     setCurrentStep(nextStep);
   }, []);
 
+  const handlePageIdentifierChange = useCallback(
+    (value: string) => {
+      setPageIdentifier(value);
+
+      const trimmedValue = value.trim();
+
+      if (!trimmedValue) {
+        setHasCustomPageIdentifier(false);
+        return;
+      }
+
+      const normalizedValue = validatePageSlugBase(value).normalizedSlugBase;
+      setHasCustomPageIdentifier(
+        Boolean(suggestedSlugBase) && normalizedValue === suggestedSlugBase ? false : true
+      );
+    },
+    [suggestedSlugBase]
+  );
+
   const buildDraftPayload = useCallback(
-    (
-      overrides: Partial<{
-        servicePlan: MobileInvitationProductTier;
-        theme: MobileInvitationThemeKey;
-        pageIdentifier: string;
-        groomName: string;
-        brideName: string;
-        groomEnglishName: string;
-        brideEnglishName: string;
-        estimatedPrice: number;
-        ticketCount: number;
-      }> = {}
-    ) => ({
+    (overrides: DraftPayloadOverrides = {}) => ({
       servicePlan: overrides.servicePlan ?? selectedPlan,
       theme: overrides.theme ?? selectedTheme ?? DEFAULT_INVITATION_THEME,
-      pageIdentifier: overrides.pageIdentifier ?? slugBase,
+      pageIdentifier:
+        overrides.pageIdentifier ??
+        (hasCustomPageIdentifier ? effectivePageIdentifier.trim() : ''),
       groomName: overrides.groomName ?? groomKoreanName.trim(),
       brideName: overrides.brideName ?? brideKoreanName.trim(),
-      groomEnglishName: overrides.groomEnglishName ?? groomEnglishName.trim(),
-      brideEnglishName: overrides.brideEnglishName ?? brideEnglishName.trim(),
       weddingDate: '',
       venue: '',
       estimatedPrice: overrides.estimatedPrice ?? totalPrice,
@@ -228,13 +419,12 @@ export function useCreateForm({
       notes: '',
     }),
     [
-      brideEnglishName,
       brideKoreanName,
-      groomEnglishName,
+      effectivePageIdentifier,
       groomKoreanName,
+      hasCustomPageIdentifier,
       selectedPlan,
       selectedTheme,
-      slugBase,
       ticketCount,
       totalPrice,
     ]
@@ -242,17 +432,27 @@ export function useCreateForm({
 
   const applyDraft = useCallback(
     (draft: CreateDraftItem) => {
+      const nextSeed = createRandomSuffix(6);
+      const storedPageIdentifier = draft.pageIdentifier.trim();
+      const nextSuggestedSlugBase =
+        storedPageIdentifier ||
+        (draft.groomName.trim() || draft.brideName.trim()
+          ? buildSuggestedCreateSlugBase(draft.groomName, draft.brideName, nextSeed)
+          : '');
+
       setSelectedPlan(draft.servicePlan);
       setSelectedTheme(draft.theme);
       setGroomKoreanName(draft.groomName);
       setBrideKoreanName(draft.brideName);
-      setGroomEnglishName(draft.groomEnglishName);
-      setBrideEnglishName(draft.brideEnglishName);
+      setSlugSuggestionSeed(nextSeed);
+      setHasCustomPageIdentifier(Boolean(storedPageIdentifier));
+      setPageIdentifier(storedPageIdentifier || nextSuggestedSlugBase);
       setPassword('');
       setConfirmPassword('');
       setTicketCount(normalizeSupportedCreateTicketCount(draft.ticketCount));
       setPaymentModalVisible(false);
       setCurrentStep('info');
+      setSlugAvailability(INITIAL_SLUG_AVAILABILITY_STATE);
       lastDraftSnapshotRef.current = JSON.stringify(
         buildDraftPayload({
           servicePlan: draft.servicePlan,
@@ -260,8 +460,6 @@ export function useCreateForm({
           pageIdentifier: draft.pageIdentifier,
           groomName: draft.groomName,
           brideName: draft.brideName,
-          groomEnglishName: draft.groomEnglishName,
-          brideEnglishName: draft.brideEnglishName,
           estimatedPrice: draft.estimatedPrice,
           ticketCount: draft.ticketCount,
         })
@@ -289,8 +487,7 @@ export function useCreateForm({
       Boolean(
         groomKoreanName.trim() ||
           brideKoreanName.trim() ||
-          groomEnglishName.trim() ||
-          brideEnglishName.trim() ||
+          (hasCustomPageIdentifier && effectivePageIdentifier.trim()) ||
           password.trim() ||
           confirmPassword.trim() ||
           selectedTheme ||
@@ -298,11 +495,11 @@ export function useCreateForm({
           selectedPlan !== 'standard'
       ),
     [
-      brideEnglishName,
       brideKoreanName,
       confirmPassword,
-      groomEnglishName,
+      effectivePageIdentifier,
       groomKoreanName,
+      hasCustomPageIdentifier,
       password,
       selectedPlan,
       selectedTheme,
@@ -405,11 +602,13 @@ export function useCreateForm({
     setSelectedTheme(null);
     setGroomKoreanName('');
     setBrideKoreanName('');
-    setGroomEnglishName('');
-    setBrideEnglishName('');
+    setSlugSuggestionSeed(createRandomSuffix(6));
+    setPageIdentifier('');
+    setHasCustomPageIdentifier(false);
     setPassword('');
     setConfirmPassword('');
     setTicketCount(0);
+    setSlugAvailability(INITIAL_SLUG_AVAILABILITY_STATE);
     resetDraftSync();
     lastDraftSnapshotRef.current = '';
     setPaymentModalVisible(false);
@@ -453,7 +652,7 @@ export function useCreateForm({
 
     await persistDraft(selectedTheme, {
       notice:
-        '시작 초안을 저장했습니다. 입력 중인 내용은 홈에서도 다시 이어서 작성할 수 있습니다.',
+        '작성 중인 초안을 저장했습니다. 다음에도 같은 화면에서 이어서 만들 수 있습니다.',
     });
   }, [brideKoreanName, groomKoreanName, moveToStep, persistDraft, selectedTheme]);
 
@@ -486,7 +685,7 @@ export function useCreateForm({
 
     if (isExpoWebPreview) {
       setNotice(
-        'Expo 웹 빌드에서는 실제 페이지 생성 요청이 차단되어 있습니다. 라이브 앱이나 Next 운영 환경을 사용해 주세요.'
+        'Expo 웹 미리보기에서는 실제 페이지 생성 요청을 보낼 수 없습니다. 모바일 앱이나 Next 운영 환경에서 진행해 주세요.'
       );
       return;
     }
@@ -543,7 +742,7 @@ export function useCreateForm({
   const handleConfirmCreate = useCallback(async () => {
     if (isExpoWebPreview) {
       setNotice(
-        'Expo 웹 빌드에서는 실제 페이지를 생성할 수 없습니다. 라이브 앱이나 Next 운영 환경을 사용해 주세요.'
+        'Expo 웹 미리보기에서는 실제 페이지를 만들 수 없습니다. 모바일 앱이나 Next 운영 환경에서 진행해 주세요.'
       );
       setPaymentModalVisible(false);
       return;
@@ -559,12 +758,11 @@ export function useCreateForm({
 
     setIsSubmitting(true);
     clearAuthError();
+
     const createInput: MobileInvitationCreationInput = {
       slugBase,
       groomKoreanName: groomKoreanName.trim(),
       brideKoreanName: brideKoreanName.trim(),
-      groomEnglishName: groomEnglishName.trim(),
-      brideEnglishName: brideEnglishName.trim(),
       password: password.trim(),
       servicePlan: selectedPlan,
       theme: selectedTheme ?? DEFAULT_INVITATION_THEME,
@@ -602,21 +800,18 @@ export function useCreateForm({
 
     resetForm();
     setNotice(
-      'Google Play 결제가 완료되어 청첩장을 생성했습니다. 운영 탭에서 식장 정보를 이어서 입력해 주세요.'
+      'Google Play 결제가 완료되어 청첩장을 만들었습니다. 운영 화면에서 상세 정보를 이어서 입력해 주세요.'
     );
     router.replace('/manage');
   }, [
-    brideEnglishName,
     brideKoreanName,
     clearAuthError,
     createInvitationPage,
     editingDraftId,
-    groomEnglishName,
     groomKoreanName,
     isExpoWebPreview,
     moveToStep,
     password,
-    setNotice,
     removeDraft,
     resetForm,
     router,
@@ -639,10 +834,9 @@ export function useCreateForm({
     setGroomKoreanName,
     brideKoreanName,
     setBrideKoreanName,
-    groomEnglishName,
-    setGroomEnglishName,
-    brideEnglishName,
-    setBrideEnglishName,
+    pageIdentifier,
+    setPageIdentifier: handlePageIdentifierChange,
+    pageIdentifierHelperText,
     password,
     setPassword,
     confirmPassword,

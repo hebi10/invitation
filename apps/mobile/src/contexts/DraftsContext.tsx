@@ -44,14 +44,6 @@ function sanitizeStoredDraft(draft: StoredDraftItem): CreateDraftItem {
     pageIdentifier: draft.pageIdentifier,
     groomName: draft.groomName,
     brideName: draft.brideName,
-    groomEnglishName:
-      'groomEnglishName' in draft && typeof draft.groomEnglishName === 'string'
-        ? draft.groomEnglishName
-        : '',
-    brideEnglishName:
-      'brideEnglishName' in draft && typeof draft.brideEnglishName === 'string'
-        ? draft.brideEnglishName
-        : '',
     weddingDate: draft.weddingDate,
     venue: draft.venue,
     estimatedPrice: draft.estimatedPrice,
@@ -82,8 +74,11 @@ export function DraftsProvider({ children }: PropsWithChildren) {
       }
 
       const sanitized = stored.map(sanitizeStoredDraft);
-      const shouldRewrite = stored.some((draft) =>
-        Object.prototype.hasOwnProperty.call(draft, 'password')
+      const shouldRewrite = stored.some(
+        (draft) =>
+          Object.prototype.hasOwnProperty.call(draft, 'password') ||
+          Object.prototype.hasOwnProperty.call(draft, 'groomEnglishName') ||
+          Object.prototype.hasOwnProperty.call(draft, 'brideEnglishName')
       );
 
       setDrafts(sanitized);

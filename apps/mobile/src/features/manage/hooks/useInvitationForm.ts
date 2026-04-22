@@ -7,6 +7,7 @@ import {
   type SetStateAction,
 } from 'react';
 
+import { useAuth } from '../../../contexts/AuthContext';
 import type {
   MobileInvitationDashboard,
   MobileInvitationSeed,
@@ -59,6 +60,7 @@ export function useInvitationForm({
   setPublishedState,
   setNotice,
 }: UseInvitationFormOptions) {
+  const { runHighRiskAction } = useAuth();
   const [form, setFormState] = useState<ManageFormState>(EMPTY_FORM);
   const [editorModalVisible, setEditorModalVisible] = useState(false);
   const [editorPreparingVisible, setEditorPreparingVisible] = useState(false);
@@ -156,45 +158,60 @@ export function useInvitationForm({
     setEditorStepIndex(0);
     setEditorModalVisible(true);
     clearPendingManageOnboarding();
-    setNotice('운영 탭의 편집 모달에서 예식 정보를 이어서 입력해 주세요.');
+    setNotice('운영 첫 진입이므로 편집 모달에서 예식 정보를 바로 입력해 주세요.');
   }, [clearPendingManageOnboarding, dashboard, pendingManageOnboarding, setNotice]);
 
-  const setForm = useCallback<Dispatch<SetStateAction<ManageFormState>>>((value) => {
-    markFormDirty();
-    setFormState(value);
-  }, [markFormDirty]);
+  const setForm = useCallback<Dispatch<SetStateAction<ManageFormState>>>(
+    (value) => {
+      markFormDirty();
+      setFormState(value);
+    },
+    [markFormDirty]
+  );
 
-  const updateField = useCallback((field: ManageStringFieldKey, value: string) => {
-    markFormDirty();
-    setFormState((current) => ({
-      ...current,
-      [field]: value,
-    }));
-  }, [markFormDirty]);
+  const updateField = useCallback(
+    (field: ManageStringFieldKey, value: string) => {
+      markFormDirty();
+      setFormState((current) => ({
+        ...current,
+        [field]: value,
+      }));
+    },
+    [markFormDirty]
+  );
 
-  const setPublished = useCallback((published: boolean) => {
-    markFormDirty();
-    setFormState((current) => ({
-      ...current,
-      published,
-    }));
-  }, [markFormDirty]);
+  const setPublished = useCallback(
+    (published: boolean) => {
+      markFormDirty();
+      setFormState((current) => ({
+        ...current,
+        published,
+      }));
+    },
+    [markFormDirty]
+  );
 
-  const setDefaultTheme = useCallback((defaultTheme: MobileInvitationThemeKey) => {
-    markFormDirty();
-    setFormState((current) => ({
-      ...current,
-      defaultTheme,
-    }));
-  }, [markFormDirty]);
+  const setDefaultTheme = useCallback(
+    (defaultTheme: MobileInvitationThemeKey) => {
+      markFormDirty();
+      setFormState((current) => ({
+        ...current,
+        defaultTheme,
+      }));
+    },
+    [markFormDirty]
+  );
 
-  const setMusicEnabled = useCallback((musicEnabled: boolean) => {
-    markFormDirty();
-    setFormState((current) => ({
-      ...current,
-      musicEnabled,
-    }));
-  }, [markFormDirty]);
+  const setMusicEnabled = useCallback(
+    (musicEnabled: boolean) => {
+      markFormDirty();
+      setFormState((current) => ({
+        ...current,
+        musicEnabled,
+      }));
+    },
+    [markFormDirty]
+  );
 
   const updatePersonField = useCallback(
     (role: 'groom' | 'bride', field: 'name' | 'order' | 'phone', value: string) => {
@@ -257,14 +274,14 @@ export function useInvitationForm({
     setNotice('');
     setEditorPreparingMessage(
       dashboard
-        ? '청첩장 수정 화면을 준비하고 있습니다.'
+        ? '청첩장 편집 화면을 준비하고 있습니다.'
         : '최신 청첩장 정보를 불러오고 있습니다.'
     );
     setEditorPreparingVisible(true);
 
     try {
       if (!dashboard) {
-        setNotice('운영 데이터를 불러와야 편집 작업을 시작할 수 있습니다.');
+        setNotice('운영 데이터를 불러온 뒤 편집 작업을 시작합니다.');
         const synced = await requestDashboardSync();
         if (!synced) {
           return;
@@ -319,12 +336,30 @@ export function useInvitationForm({
 
       const nextConfig = buildConfigFromForm({ dashboard, form });
 
-      setIsSaving(true);
-      const saved = await saveCurrentPageConfig(nextConfig, {
-        published: form.published,
-        defaultTheme: form.defaultTheme,
-      });
-      setIsSaving(false);
+      const performSave = async () => {
+        setIsSaving(true);
+        try {
+          return await saveCurrentPageConfig(nextConfig, {
+            published: form.published,
+            defaultTheme: form.defaultTheme,
+          });
+        } finally {
+          setIsSaving(false);
+        }
+      };
+
+      const saved =
+        form.published && !dashboard.page.published
+          ? await runHighRiskAction(
+              {
+                title: '청첩장을 공개할까요?',
+                description:
+                  '공개 전환은 하객에게 바로 노출되는 민감한 작업입니다. 비밀번호를 다시 확인한 뒤 저장합니다.',
+                confirmLabel: '공개 후 저장',
+              },
+              performSave
+            )
+          : await performSave();
 
       if (!saved) {
         return false;
@@ -342,7 +377,14 @@ export function useInvitationForm({
 
       return true;
     },
-    [closeOnboarding, dashboard, form, saveCurrentPageConfig, setNotice]
+    [
+      closeOnboarding,
+      dashboard,
+      form,
+      runHighRiskAction,
+      saveCurrentPageConfig,
+      setNotice,
+    ]
   );
 
   const handleSave = useCallback(async () => {
@@ -379,16 +421,28 @@ export function useInvitationForm({
       return;
     }
 
-    const changed = await setPublishedState(!dashboard.page.published);
+    const nextPublished = !dashboard.page.published;
+    const changed = nextPublished
+      ? await runHighRiskAction(
+          {
+            title: '청첩장을 공개할까요?',
+            description:
+              '공개 전환은 하객이 바로 볼 수 있는 민감한 작업입니다. 비밀번호를 다시 확인한 뒤 진행합니다.',
+            confirmLabel: '공개하기',
+          },
+          () => setPublishedState(true)
+        )
+      : await setPublishedState(false);
+
     if (changed) {
-      setPublished(!dashboard.page.published);
+      setPublished(nextPublished);
       setNotice(
-        !dashboard.page.published
+        nextPublished
           ? '페이지를 공개 상태로 전환했습니다.'
           : '페이지를 비공개 상태로 전환했습니다.'
       );
     }
-  }, [dashboard, setNotice, setPublished, setPublishedState]);
+  }, [dashboard, runHighRiskAction, setNotice, setPublished, setPublishedState]);
 
   return {
     form,

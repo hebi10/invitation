@@ -31,6 +31,7 @@ import { useCreateForm } from '../../features/create/hooks/useCreateForm';
 import { useCreateTicketPurchase } from '../../features/create/hooks/useCreateTicketPurchase';
 import {
   CREATE_STEPS,
+  CREATE_PAGE_IDENTIFIER_MAX_LENGTH,
   MAX_TICKET_COUNT,
   STICKY_CTA_BAR_COMPACT_HEIGHT,
   STICKY_CTA_BAR_HEIGHT,
@@ -457,7 +458,7 @@ export default function CreateScreen() {
             <>
               <SectionCard
                 title="1. 기본 정보"
-                description="청첩장에 표시할 이름 정보를 먼저 입력합니다."
+                description="청첩장에 표시할 이름과 사용할 주소를 먼저 확인합니다."
                 badge={
                   createForm.basicValidationMessages.length === 0
                     ? '입력 완료'
@@ -478,21 +479,32 @@ export default function CreateScreen() {
                   placeholder="예: 나신부"
                 />
                 <TextField
-                  label="신랑 영문 이름"
-                  value={createForm.groomEnglishName}
-                  onChangeText={createForm.setGroomEnglishName}
-                  placeholder="예: kim-shinlang"
+                  label="청첩장 주소"
+                  value={createForm.pageIdentifier}
+                  onChangeText={createForm.setPageIdentifier}
+                  placeholder="예: wedding-minji-seungho"
                   autoCapitalize="none"
                   autoCorrect={false}
+                  maxLength={CREATE_PAGE_IDENTIFIER_MAX_LENGTH}
+                  helperText={createForm.pageIdentifierHelperText}
                 />
-                <TextField
-                  label="신부 영문 이름"
-                  value={createForm.brideEnglishName}
-                  onChangeText={createForm.setBrideEnglishName}
-                  placeholder="예: na-sinbu"
-                  autoCapitalize="none"
-                  autoCorrect={false}
-                />
+
+                <View
+                  style={[
+                    styles.securityGuideCard,
+                    {
+                      backgroundColor: palette.surfaceMuted,
+                      borderColor: palette.cardBorder,
+                    },
+                  ]}
+                >
+                  <AppText variant="caption" style={styles.previewLabel}>
+                    청첩장 링크 미리보기
+                  </AppText>
+                  <AppText variant="muted" style={styles.helperText}>
+                    {createForm.publicUrlPreview}
+                  </AppText>
+                </View>
 
                 {createForm.basicValidationMessages.length > 0 ? (
                   <View
@@ -978,7 +990,7 @@ export default function CreateScreen() {
         selectedThemeLabel={createForm.selectedThemeInfo?.label ?? '선택 필요'}
         ticketCount={createForm.ticketCount}
         ticketPrice={createForm.ticketPrice}
-        slugPreview={createForm.slugBase}
+        slugPreview={createForm.publicUrlPreview}
         totalPrice={createForm.totalPrice}
       />
 

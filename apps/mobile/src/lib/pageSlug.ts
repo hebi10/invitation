@@ -1,11 +1,14 @@
-const RESERVED_ROUTE_SEGMENTS = new Set([
-  'admin',
-  'api',
-  'memory',
-  'page-editor',
-  'page-wizard',
-]);
-const ENGLISH_NAME_PATTERN = /^[A-Za-z]+(?:[ -][A-Za-z]+)*$/;
+import {
+  INVITATION_PAGE_RESERVED_SLUGS,
+  INVITATION_PAGE_SLUG_MAX_LENGTH,
+  INVITATION_PAGE_SLUG_MIN_LENGTH,
+  normalizeInvitationPageSlugBase,
+  validateInvitationPageSlugBase,
+  type InvitationPageSlugAvailabilityReason,
+  type InvitationPageSlugValidationReason,
+} from '../../../../src/lib/invitationPageSlug';
+
+const RESERVED_ROUTE_SEGMENTS = new Set<string>(INVITATION_PAGE_RESERVED_SLUGS);
 
 function normalizeSlug(value: string) {
   return value
@@ -26,36 +29,12 @@ function pickSlugFromSegments(segments: string[]) {
   return normalizeSlug(segments[0]);
 }
 
-export function normalizePageSlugBase(value: string) {
-  return value
-    .trim()
-    .toLowerCase()
-    .normalize('NFKD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/[^a-z0-9\s-]+/g, '')
-    .replace(/\s+/g, '-')
-    .replace(/-{2,}/g, '-')
-    .replace(/^-+|-+$/g, '');
-}
-
-export function isValidEnglishName(value: string) {
-  return ENGLISH_NAME_PATTERN.test(value.trim());
-}
-
-function normalizeEnglishNameFragment(value: string) {
-  return normalizePageSlugBase(value).replace(/[0-9]/g, '');
-}
-
-export function buildPageSlugBaseFromEnglishNames(
-  groomEnglishName: string,
-  brideEnglishName: string
-) {
-  return normalizePageSlugBase(
-    [normalizeEnglishNameFragment(groomEnglishName), normalizeEnglishNameFragment(brideEnglishName)]
-      .filter(Boolean)
-      .join('-')
-  );
-}
+export const PAGE_SLUG_BASE_MIN_LENGTH = INVITATION_PAGE_SLUG_MIN_LENGTH;
+export const PAGE_SLUG_BASE_MAX_LENGTH = INVITATION_PAGE_SLUG_MAX_LENGTH;
+export type PageSlugBaseValidationReason = InvitationPageSlugValidationReason;
+export type PageSlugAvailabilityReason = InvitationPageSlugAvailabilityReason;
+export const normalizePageSlugBase = normalizeInvitationPageSlugBase;
+export const validatePageSlugBase = validateInvitationPageSlugBase;
 
 export function extractPageSlugFromIdentifier(value: string) {
   const trimmed = value.trim();

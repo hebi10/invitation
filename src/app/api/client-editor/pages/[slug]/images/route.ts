@@ -10,6 +10,10 @@ import {
 import { CLIENT_EDITOR_SESSION_COOKIE } from '@/server/clientEditorSession';
 import { getAuthorizedClientEditorSession } from '@/server/clientEditorSessionAuth';
 import { getServerStorageBucket } from '@/server/firebaseAdmin';
+import {
+  applyScopedInMemoryRateLimit,
+  buildRateLimitHeaders,
+} from '@/server/requestRateLimit';
 
 const ALLOWED_ASSET_KINDS: EditableImageAssetKind[] = ['cover', 'favicon', 'gallery'];
 const MAX_IMAGE_DIMENSION = 6000;
@@ -21,6 +25,10 @@ const MAX_ASPECT_RATIO_BY_KIND: Record<EditableImageAssetKind, number> = {
   gallery: 4,
   favicon: 1.8,
 };
+const CLIENT_EDITOR_IMAGE_UPLOAD_RATE_LIMIT = {
+  limit: 10,
+  windowMs: 5 * 60 * 1000,
+} as const;
 
 type SniffedImageFormat = 'jpeg' | 'png' | 'webp';
 type ImageDimensions = { width: number; height: number };
@@ -334,6 +342,23 @@ export async function POST(
     );
   }
 
+  const rateLimitResult = applyScopedInMemoryRateLimit({
+    request,
+    scope: 'client-editor-image-upload',
+    keyParts: [pageSlug],
+    ...CLIENT_EDITOR_IMAGE_UPLOAD_RATE_LIMIT,
+  });
+
+  if (!rateLimitResult.allowed) {
+    return NextResponse.json(
+      { error: '이미지 업로드 요청이 너무 많습니다. 잠시 후 다시 시도해 주세요.' },
+      {
+        status: 429,
+        headers: buildRateLimitHeaders(rateLimitResult),
+      }
+    );
+  }
+
   const bucket = getServerStorageBucket();
   if (!bucket) {
     return NextResponse.json(
@@ -455,14 +480,19 @@ export async function POST(
         )}?alt=media&token=${thumbnailDownloadToken}`
       : url;
 
-    return NextResponse.json({
-      name: storedFileName,
-      url,
-      path: imagePath,
-      thumbnailUrl,
-      thumbnailPath: thumbnailPath || imagePath,
-      uploadedAt: new Date().toISOString(),
-    });
+    return NextResponse.json(
+      {
+        name: storedFileName,
+        url,
+        path: imagePath,
+        thumbnailUrl,
+        thumbnailPath: thumbnailPath || imagePath,
+        uploadedAt: new Date().toISOString(),
+      },
+      {
+        headers: buildRateLimitHeaders(rateLimitResult),
+      }
+    );
   } catch (error) {
     console.error('[client-editor/images] failed to upload image', error);
     return NextResponse.json(

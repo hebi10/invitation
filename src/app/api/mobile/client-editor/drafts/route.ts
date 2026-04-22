@@ -2,11 +2,16 @@ import { NextResponse } from 'next/server';
 
 import { getAllWeddingPageSeeds } from '@/config/weddingPages';
 import { DEFAULT_INVITATION_THEME, isInvitationThemeKey } from '@/lib/invitationThemes';
+import {
+  getInvitationPageSlugValidationErrorMessage,
+  validateInvitationPageSlugBase,
+} from '@/lib/invitationPageSlug';
 import { normalizeInvitationProductTier } from '@/lib/invitationProducts';
 import { createClientEditorSessionValue } from '@/server/clientEditorSession';
 import {
   buildMobileInvitationLinks,
   MOBILE_CLIENT_EDITOR_SESSION_TTL_SECONDS,
+  resolveMobileClientEditorPermissions,
 } from '@/server/clientEditorMobileApi';
 import { setServerClientPassword } from '@/server/clientPasswordServerService';
 import {
@@ -15,6 +20,15 @@ import {
   getServerInvitationPageDisplayPeriodSummary,
 } from '@/server/invitationPageServerService';
 import { getServerPageTicketCount } from '@/server/pageTicketServerService';
+import {
+  applyScopedInMemoryRateLimit,
+  buildRateLimitHeaders,
+} from '@/server/requestRateLimit';
+
+const MOBILE_CLIENT_EDITOR_DRAFT_RATE_LIMIT = {
+  limit: 3,
+  windowMs: 10 * 60 * 1000,
+} as const;
 
 export async function POST(request: Request) {
   try {
@@ -43,12 +57,37 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Page slug base is required.' }, { status: 400 });
     }
 
+    const slugValidation = validateInvitationPageSlugBase(slugBase);
+    if (!slugValidation.isValid) {
+      return NextResponse.json(
+        { error: getInvitationPageSlugValidationErrorMessage(slugValidation.reason) },
+        { status: 400 }
+      );
+    }
+
     if (!groomName || !brideName) {
       return NextResponse.json({ error: 'Groom and bride names are required.' }, { status: 400 });
     }
 
     if (!password) {
       return NextResponse.json({ error: 'Page password is required.' }, { status: 400 });
+    }
+
+    const rateLimitResult = applyScopedInMemoryRateLimit({
+      request,
+      scope: 'mobile-client-editor-drafts',
+      keyParts: [slugValidation.normalizedSlugBase, seedSlug],
+      ...MOBILE_CLIENT_EDITOR_DRAFT_RATE_LIMIT,
+    });
+
+    if (!rateLimitResult.allowed) {
+      return NextResponse.json(
+        { error: 'Too many draft creation attempts. Please try again later.' },
+        {
+          status: 429,
+          headers: buildRateLimitHeaders(rateLimitResult),
+        }
+      );
     }
 
     const defaultTheme = isInvitationThemeKey(body?.defaultTheme)
@@ -58,7 +97,7 @@ export async function POST(request: Request) {
 
     const createdDraft = await createServerInvitationPageDraftFromSeed({
       seedSlug,
-      slugBase,
+      slugBase: slugValidation.normalizedSlugBase,
       groomName,
       brideName,
       published: false,
@@ -91,30 +130,37 @@ export async function POST(request: Request) {
       createdDraft.slug,
       config.defaultTheme
     );
+    const permissions = resolveMobileClientEditorPermissions();
 
-    return NextResponse.json({
-      session: {
-        token: value,
-        expiresAt,
-        pageSlug: createdDraft.slug,
-      },
-      dashboardPage: config,
-      page: {
-        slug: config.slug,
-        displayName: config.config.displayName,
-        published: config.published,
-        productTier: config.productTier,
-        defaultTheme: config.defaultTheme,
-        features: config.features,
-        ticketCount,
-        displayPeriod: {
-          enabled: displayPeriod.enabled,
-          startDate: displayPeriod.startDate?.toISOString() ?? null,
-          endDate: displayPeriod.endDate?.toISOString() ?? null,
+    return NextResponse.json(
+      {
+        permissions,
+        session: {
+          token: value,
+          expiresAt,
+          pageSlug: createdDraft.slug,
         },
+        dashboardPage: config,
+        page: {
+          slug: config.slug,
+          displayName: config.config.displayName,
+          published: config.published,
+          productTier: config.productTier,
+          defaultTheme: config.defaultTheme,
+          features: config.features,
+          ticketCount,
+          displayPeriod: {
+            enabled: displayPeriod.enabled,
+            startDate: displayPeriod.startDate?.toISOString() ?? null,
+            endDate: displayPeriod.endDate?.toISOString() ?? null,
+          },
+        },
+        links,
       },
-      links,
-    });
+      {
+        headers: buildRateLimitHeaders(rateLimitResult),
+      }
+    );
   } catch (error) {
     console.error('[mobile/client-editor/drafts] failed to create draft', error);
     return NextResponse.json(

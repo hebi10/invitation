@@ -1,4 +1,8 @@
 import { ensureFirebaseInit, USE_FIREBASE } from '@/lib/firebase';
+import {
+  buildGuestbookCommentStatusPatch,
+  isGuestbookCommentVisibleToPublic,
+} from '@/lib/guestbookComments';
 
 export interface Comment {
   id: string;
@@ -30,7 +34,6 @@ type FirestoreModules = {
   addDoc: any;
   collection: any;
   collectionGroup: any;
-  deleteDoc: any;
   doc: any;
   getDocs: any;
   query: any;
@@ -57,7 +60,6 @@ async function ensureFirestoreModules() {
       addDoc: firestore.addDoc,
       collection: firestore.collection,
       collectionGroup: firestore.collectionGroup,
-      deleteDoc: firestore.deleteDoc,
       doc: firestore.doc,
       getDocs: firestore.getDocs,
       query: firestore.query,
@@ -96,7 +98,7 @@ function normalizeComment(
   data: Record<string, any>,
   options: { pageSlug?: string; collectionName?: string } = {}
 ): Comment | null {
-  if (data.deleted === true) {
+  if (!isGuestbookCommentVisibleToPublic(data)) {
     return null;
   }
 
@@ -241,8 +243,9 @@ export async function deleteComment(
     throw new Error('Comment collection path is required.');
   }
 
-  await firestore.modules.deleteDoc(
-    firestore.modules.doc(firestore.db, collectionName, commentId)
+  await firestore.modules.updateDoc(
+    firestore.modules.doc(firestore.db, collectionName, commentId),
+    buildGuestbookCommentStatusPatch('scheduleDelete', new Date())
   );
 }
 

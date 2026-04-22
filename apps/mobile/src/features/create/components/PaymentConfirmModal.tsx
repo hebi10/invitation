@@ -86,7 +86,7 @@ export function PaymentConfirmModal({
               </AppText>
             </View>
             <View style={styles.summaryRow}>
-              <AppText style={styles.summaryLabel}>생성 URL</AppText>
+              <AppText style={styles.summaryLabel}>청첩장 주소</AppText>
               <AppText style={styles.summaryValue}>{slugPreview}</AppText>
             </View>
             <View style={styles.summaryRow}>

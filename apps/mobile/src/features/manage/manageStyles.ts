@@ -256,6 +256,20 @@ export const manageStyles = StyleSheet.create({
     padding: 14,
     gap: 12,
   },
+  commentStatusRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 8,
+  },
+  commentStatusBadge: {
+    borderRadius: 999,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+  },
+  commentStatusBadgeText: {
+    fontWeight: '800',
+  },
   commentCopy: {
     gap: 4,
   },
@@ -267,6 +281,14 @@ export const manageStyles = StyleSheet.create({
   },
   commentMeta: {
     lineHeight: 18,
+  },
+  commentStatusHint: {
+    lineHeight: 18,
+  },
+  commentActionRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
   },
   guestbookModalCard: {
     maxHeight: '90%',

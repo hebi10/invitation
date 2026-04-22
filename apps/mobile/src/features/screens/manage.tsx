@@ -1,10 +1,11 @@
 ﻿import { router } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
 import { useState } from 'react';
-import { Linking, ScrollView, Share, View } from 'react-native';
+import { Linking, ScrollView, View } from 'react-native';
 
 import { EditorPreparingModal } from '../manage/components/EditorPreparingModal';
 import { GuestbookModal } from '../manage/components/GuestbookModal';
+import { LinkedInvitationsSection } from '../manage/components/LinkedInvitationsSection';
 import { ManageEditorStepContent } from '../manage/components/ManageEditorStepContent';
 import { OnboardingModal } from '../manage/components/OnboardingModal';
 import { TicketUsageModal } from '../manage/components/TicketUsageModal';
@@ -15,6 +16,7 @@ import { useInvitationForm } from '../manage/hooks/useInvitationForm';
 import { useLinkedInvitationManager } from '../manage/hooks/useLinkedInvitationManager';
 import { useMusicLibrary } from '../manage/hooks/useMusicLibrary';
 import { useTicketOperations } from '../manage/hooks/useTicketOperations';
+import { formatDateLabel, formatThemeList } from '../manage/linkedInvitationDisplay';
 import { manageStyles } from '../manage/manageStyles';
 import { EDITOR_STEPS } from '../manage/shared';
 import { ActionButton } from '../../components/ActionButton';
@@ -29,6 +31,11 @@ import { useInvitationOps } from '../../contexts/InvitationOpsContext';
 import { usePreferences } from '../../contexts/PreferencesContext';
 import { useNoticeToast } from '../../hooks/useNoticeToast';
 import {
+  issueMobileClientEditorLinkToken,
+  revokeMobileClientEditorLinkTokens,
+} from '../../lib/api';
+import { buildManageAppDeepLink } from '../../lib/appDeepLink';
+import {
   DEFAULT_INVITATION_THEME,
   getInvitationThemeLabel,
 } from '../../lib/invitationThemes';
@@ -37,39 +44,11 @@ import {
   getLinkedInvitationThemePreviewUrl,
   type LinkedInvitationCard,
 } from '../../lib/linkedInvitationCards';
+import { copyTextWithFallback } from '../../lib/textTransfer';
 import type {
-  MobileDisplayPeriodSummary,
   MobileInvitationProductTier,
   MobileInvitationThemeKey,
 } from '../../types/mobileInvitation';
-
-function formatThemeList(themeKeys: readonly MobileInvitationThemeKey[]) {
-  return themeKeys.map((key) => getInvitationThemeLabel(key)).join(', ');
-}
-
-function formatDateLabel(value: string) {
-  const parsed = new Date(value);
-  if (Number.isNaN(parsed.getTime())) {
-    return value;
-  }
-
-  return new Intl.DateTimeFormat('ko-KR', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-  }).format(parsed);
-}
-
-function formatDisplayPeriod(period: MobileDisplayPeriodSummary | null | undefined) {
-  if (!period?.enabled) {
-    return '미설정';
-  }
-
-  const startDate = period.startDate ? formatDateLabel(period.startDate) : '시작일 미설정';
-  const endDate = period.endDate ? formatDateLabel(period.endDate) : '종료일 미설정';
-
-  return `${startDate} ~ ${endDate}`;
-}
 
 export default function ManageScreen() {
   const { apiBaseUrl, palette, fontScale } = usePreferences();
@@ -78,14 +57,16 @@ export default function ManageScreen() {
     authError,
     clearAuthError,
     clearPendingManageOnboarding,
+    getHighRiskToken,
     logout,
     pendingManageOnboarding,
+    runHighRiskAction,
     session,
   } = useAuth();
   const {
     dashboard,
     dashboardLoading,
-    deleteComment,
+    manageComment,
     pageSummary,
     refreshDashboard,
     saveCurrentPageConfig,
@@ -99,6 +80,8 @@ export default function ManageScreen() {
   const [notice, setNotice] = useState('');
   const [needsRefreshRetry, setNeedsRefreshRetry] = useState(false);
   const [isEditorFinalizing, setIsEditorFinalizing] = useState(false);
+  const [isIssuingAppLink, setIsIssuingAppLink] = useState(false);
+  const [isRevokingAppLink, setIsRevokingAppLink] = useState(false);
 
   useNoticeToast(notice);
   useNoticeToast(authError, { tone: 'error' });
@@ -167,7 +150,7 @@ export default function ManageScreen() {
     dashboardLoading,
     refreshDashboard: (options) =>
       invitationForm.requestDashboardSync(undefined, options),
-    deleteComment,
+    manageComment,
     setNotice,
   });
 
@@ -281,21 +264,134 @@ export default function ManageScreen() {
     formatDateLabel,
   });
 
-  const handleShare = async () => {
-    const publicUrl = dashboard?.links.publicUrl;
-    if (!publicUrl) {
-      setNotice('공유할 공개 링크를 아직 불러오지 못했습니다.');
+  const handleCopyPublicUrl = async (card: LinkedInvitationCard) => {
+    const address = card.publicUrl?.trim() || card.slug;
+    if (!address) {
+      setNotice('복사할 청첩장 주소를 아직 확인하지 못했습니다.');
       return;
     }
 
     try {
-      await Share.share({
-        message: publicUrl,
-        url: publicUrl,
-      });
+      const method = await copyTextWithFallback(address);
+      setNotice(
+        method === 'clipboard'
+          ? '청첩장 주소를 복사했습니다.'
+          : '이 기기에서는 복사 대신 공유창을 열었습니다.'
+      );
     } catch {
-      setNotice('링크 공유를 열지 못했습니다. 잠시 후 다시 시도해 주세요.');
+      setNotice('청첩장 주소를 전달하지 못했습니다. 잠시 후 다시 시도해 주세요.');
     }
+  };
+
+  const handleOpenInApp = async () => {
+    const manageAppLink = buildManageAppDeepLink();
+
+    try {
+      await Linking.openURL(manageAppLink);
+      setNotice('앱 운영 화면을 다시 열었습니다.');
+    } catch {
+      router.replace('/manage');
+      setNotice('앱 운영 화면을 다시 열었습니다.');
+    }
+  };
+
+  const handleCopyAppLink = async () => {
+    if (!session) {
+      setNotice('먼저 청첩장을 연동해 주세요.');
+      return;
+    }
+
+    await runHighRiskAction(
+      {
+        title: '앱 연동 링크를 발급할까요?',
+        description:
+          '앱 연동 링크는 15분 안에 한 번만 사용할 수 있습니다. 비밀번호를 다시 확인한 뒤 발급합니다.',
+        confirmLabel: '링크 발급',
+      },
+      async () => {
+        const highRiskToken = getHighRiskToken(session.pageSlug);
+        if (!highRiskToken) {
+          setNotice('재인증 정보를 확인하지 못했습니다. 다시 시도해 주세요.');
+          return false;
+        }
+
+        setIsIssuingAppLink(true);
+
+        try {
+          const response = await issueMobileClientEditorLinkToken(
+            apiBaseUrl,
+            session.pageSlug,
+            session.token,
+            highRiskToken
+          );
+          const method = await copyTextWithFallback(response.webFallbackUrl);
+          setNotice(
+            method === 'clipboard'
+              ? '앱 연동 링크를 복사했습니다. 15분 안에 한 번만 사용할 수 있습니다.'
+              : '이 기기에서는 복사 대신 공유창을 열었습니다. 앱 연동 링크는 15분 안에 한 번만 사용할 수 있습니다.'
+          );
+          return true;
+        } catch (error) {
+          setNotice(
+            error instanceof Error
+              ? error.message
+              : '앱 연동 링크를 만들지 못했습니다. 잠시 후 다시 시도해 주세요.'
+          );
+          return false;
+        } finally {
+          setIsIssuingAppLink(false);
+        }
+      }
+    );
+  };
+
+  const handleRevokeAppLink = async () => {
+    if (!session) {
+      setNotice('먼저 청첩장을 연동해 주세요.');
+      return;
+    }
+
+    await runHighRiskAction(
+      {
+        title: '앱 연동 링크를 폐기할까요?',
+        description:
+          '현재 발급된 앱 연동 링크를 모두 무효화합니다. 비밀번호를 다시 확인한 뒤 진행합니다.',
+        confirmLabel: '링크 폐기',
+      },
+      async () => {
+        const highRiskToken = getHighRiskToken(session.pageSlug);
+        if (!highRiskToken) {
+          setNotice('재인증 정보를 확인하지 못했습니다. 다시 시도해 주세요.');
+          return false;
+        }
+
+        setIsRevokingAppLink(true);
+
+        try {
+          const response = await revokeMobileClientEditorLinkTokens(
+            apiBaseUrl,
+            session.pageSlug,
+            session.token,
+            highRiskToken
+          );
+          setNotice(
+            response.revokedCount > 0
+              ? `활성 앱 연동 링크 ${response.revokedCount}개를 폐기했습니다.`
+              : '현재 폐기할 활성 앱 연동 링크가 없습니다.'
+          );
+          return true;
+        } catch (error) {
+          setNotice(
+            error instanceof Error
+              ? error.message
+              : '앱 연동 링크를 폐기하지 못했습니다. 잠시 후 다시 시도해 주세요.'
+          );
+          return false;
+        } finally {
+          setIsRevokingAppLink(false);
+        }
+      }
+    );
   };
 
   const handleOpenUrl = async () => {
@@ -490,194 +586,59 @@ export default function ManageScreen() {
           </View>
         ) : null}
 
-        {activeLinkedInvitationCard ? (
+        <LinkedInvitationsSection
+          activeLinkedInvitationCard={activeLinkedInvitationCard}
+          additionalLinkedInvitationCards={additionalLinkedInvitationCards}
+          palette={palette}
+          hasDashboard={Boolean(dashboard)}
+          dashboardPublicUrl={dashboard?.links.publicUrl ?? null}
+          dashboardCommentCount={dashboard?.commentCount ?? 0}
+          dashboardPublished={dashboard?.page.published ?? false}
+          canRequestDashboardSync={canRequestDashboardSync}
+          needsRefreshRetry={needsRefreshRetry}
+          activatingLinkedInvitationSlug={activatingLinkedInvitationSlug}
+          onOpenEditor={() => void invitationForm.openEditorModal()}
+          onOpenUrl={handleOpenUrl}
+          onTogglePublished={() => void invitationForm.handleTogglePublished()}
+          onOpenTicketModal={handleOpenTicketModal}
+          onCopyPublicUrl={(card) => void handleCopyPublicUrl(card)}
+          onOpenInApp={() => void handleOpenInApp()}
+          onOpenGuestbook={guestbook.openGuestbookModal}
+          onRefresh={() => void handleRefreshManageScreen()}
+          onActivateLinkedInvitation={(card) => void handleActivateLinkedInvitation(card)}
+        />
+
+        {session ? (
           <SectionCard
-            title="연동된 청첩장"
-            description="현재 연동 정보와 공개 상태를 확인하고, 필요하면 다시 연동할 수 있습니다."
-            badge={`${1 + additionalLinkedInvitationCards.length}개`}
+            title="앱 연동 링크"
+            description="다른 기기에서는 비밀번호 입력 대신 1회용 앱 연동 링크로 바로 진입할 수 있습니다."
           >
-            <View
-              style={[
-                manageStyles.selectedInvitationCard,
-                manageStyles.invitationCardExpanded,
-                {
-                  backgroundColor: palette.surfaceMuted,
-                  borderColor: palette.cardBorder,
-                },
+            <BulletList
+              items={[
+                '링크는 발급 후 15분 동안만 유효합니다.',
+                '발급된 링크는 1회만 사용할 수 있습니다.',
+                '새 링크를 발급하면 이전 링크는 자동으로 무효화됩니다.',
               ]}
-            >
-              <View style={manageStyles.invitationCardHeaderRow}>
-                <AppText style={manageStyles.selectedInvitationTitle}>
-                  {activeLinkedInvitationCard.displayName.trim() || '연동된 청첩장'}
-                </AppText>
-                <AppText color={palette.accent} variant="caption">
-                  현재 연동
-                </AppText>
-              </View>
-
-              <BulletList
-                items={[
-                  `슬러그: ${activeLinkedInvitationCard.slug}`,
-                  `서비스: ${activeLinkedInvitationCard.productTier.toUpperCase()}`,
-                  `기본 테마: ${getInvitationThemeLabel(activeLinkedInvitationCard.defaultTheme)}`,
-                  `연결된 디자인: ${formatThemeList(
-                    getLinkedInvitationThemeKeys(activeLinkedInvitationCard)
-                  )}`,
-                  `보유 티켓: ${activeLinkedInvitationCard.ticketCount}장`,
-                  `노출 기간: ${formatDisplayPeriod(activeLinkedInvitationCard.displayPeriod)}`,
-                  `배경음악: ${activeLinkedInvitationCard.showMusic ? '사용 가능' : '미제공'}`,
-                  `방명록: ${activeLinkedInvitationCard.showGuestbook ? '제공' : '미제공'}`,
-                ]}
-              />
-
-              {dashboard ? (
-                <>
-                  <AppText variant="muted" style={manageStyles.linkText}>
-                    {dashboard.links.publicUrl}
-                  </AppText>
-
-                  <View style={manageStyles.actionRow}>
-                    <ActionButton
-                      onPress={() => void invitationForm.openEditorModal()}
-                      disabled={!canRequestDashboardSync}
-                      style={manageStyles.actionHalfButton}
-                    >
-                      수정 하기
-                    </ActionButton>
-                    <ActionButton
-                      variant="secondary"
-                      onPress={handleOpenUrl}
-                      style={manageStyles.actionHalfButton}
-                    >
-                      링크 열기
-                    </ActionButton>
-                    <ActionButton
-                      variant={dashboard.page.published ? 'danger' : 'primary'}
-                      onPress={() => void invitationForm.handleTogglePublished()}
-                      style={manageStyles.actionHalfButton}
-                    >
-                      {dashboard.page.published ? '비공개 전환' : '공개 전환'}
-                    </ActionButton>
-                    <ActionButton
-                      variant="secondary"
-                      onPress={handleOpenTicketModal}
-                      style={manageStyles.actionHalfButton}
-                    >
-                      티켓 사용
-                    </ActionButton>
-                  </View>
-
-                  <View
-                    style={[
-                      manageStyles.secondaryActionCard,
-                      {
-                        backgroundColor: palette.surface,
-                        borderColor: palette.cardBorder,
-                      },
-                    ]}
-                  >
-                    <AppText variant="caption" color={palette.textMuted} style={manageStyles.secondaryActionLabel}>
-                      추가 작업
-                    </AppText>
-                    <View style={manageStyles.actionRow}>
-                      <ActionButton
-                        variant="secondary"
-                        onPress={handleShare}
-                        style={manageStyles.actionHalfButton}
-                      >
-                        링크 공유
-                      </ActionButton>
-                      <ActionButton
-                        variant="secondary"
-                        onPress={guestbook.openGuestbookModal}
-                        style={manageStyles.actionHalfButton}
-                      >
-                        방명록 열기
-                      </ActionButton>
-                      <ActionButton
-                        variant="secondary"
-                        onPress={() => void handleRefreshManageScreen()}
-                        disabled={!canRequestDashboardSync}
-                        style={manageStyles.actionHalfButton}
-                      >
-                        {needsRefreshRetry ? '다시 시도' : '새로고침'}
-                      </ActionButton>
-                      <ActionButton
-                        variant={dashboard.page.published ? 'danger' : 'primary'}
-                        onPress={() => void invitationForm.handleTogglePublished()}
-                        style={manageStyles.actionHalfButton}
-                      >
-                        {dashboard.page.published ? '비공개 전환' : '공개 전환'}
-                      </ActionButton>
-                    </View>
-                  </View>
-
-                  <AppText variant="muted" style={manageStyles.loadingText}>
-                    {dashboard.commentCount === 0
-                      ? '아직 등록된 방명록 댓글이 없습니다.'
-                      : `${dashboard.commentCount}개의 방명록 댓글이 등록되어 있습니다.`}
-                  </AppText>
-                </>
-              ) : null}
+            />
+            <View style={manageStyles.actionRow}>
+              <ActionButton
+                onPress={() => void handleCopyAppLink()}
+                loading={isIssuingAppLink}
+                disabled={isRevokingAppLink}
+                style={manageStyles.actionHalfButton}
+              >
+                앱 연동 링크 복사
+              </ActionButton>
+              <ActionButton
+                variant="secondary"
+                onPress={() => void handleRevokeAppLink()}
+                loading={isRevokingAppLink}
+                disabled={isIssuingAppLink}
+                style={manageStyles.actionHalfButton}
+              >
+                활성 링크 폐기
+              </ActionButton>
             </View>
-
-            {additionalLinkedInvitationCards.length ? (
-              <View style={manageStyles.invitationCardList}>
-                {additionalLinkedInvitationCards.map((item) => (
-                  <View
-                    key={`linked-invitation-${item.slug}`}
-                    style={[
-                      manageStyles.selectedInvitationCard,
-                      manageStyles.invitationCardExpanded,
-                      {
-                        backgroundColor: palette.surface,
-                        borderColor: palette.cardBorder,
-                      },
-                    ]}
-                  >
-                    <View style={manageStyles.invitationCardHeaderRow}>
-                      <AppText style={manageStyles.selectedInvitationTitle}>
-                        {item.displayName.trim() || item.slug}
-                      </AppText>
-                      <AppText variant="caption" color={palette.textMuted}>
-                        추가 연동
-                      </AppText>
-                    </View>
-
-                    <BulletList
-                      items={[
-                        `슬러그: ${item.slug}`,
-                        `서비스: ${item.productTier.toUpperCase()}`,
-                        `기본 테마: ${getInvitationThemeLabel(item.defaultTheme)}`,
-                        `연결된 디자인: ${formatThemeList(
-                          getLinkedInvitationThemeKeys(item)
-                        )}`,
-                        `보유 티켓: ${item.ticketCount}장`,
-                        `노출 기간: ${formatDisplayPeriod(item.displayPeriod)}`,
-                      ]}
-                    />
-
-                    {item.publicUrl ? (
-                      <AppText variant="muted" style={manageStyles.linkText}>
-                        {item.publicUrl}
-                      </AppText>
-                    ) : null}
-
-                    <View style={manageStyles.actionRow}>
-                      <ActionButton
-                        variant="secondary"
-                        onPress={() => void handleActivateLinkedInvitation(item)}
-                        loading={activatingLinkedInvitationSlug === item.slug}
-                        disabled={Boolean(activatingLinkedInvitationSlug)}
-                        style={manageStyles.actionHalfButton}
-                      >
-                        청첩장 전환하기
-                      </ActionButton>
-                    </View>
-                  </View>
-                ))}
-              </View>
-            ) : null}
           </SectionCard>
         ) : null}
 
@@ -823,7 +784,9 @@ export default function ManageScreen() {
         onClose={guestbook.closeGuestbookModal}
         onChangeSearchQuery={guestbook.setGuestbookSearchQuery}
         onChangePage={guestbook.setGuestbookPage}
-        onDeleteComment={guestbook.handleDeleteComment}
+        onHideComment={guestbook.handleHideComment}
+        onScheduleDeleteComment={guestbook.handleScheduleDeleteComment}
+        onRestoreComment={guestbook.handleRestoreComment}
         onRefresh={() =>
           void invitationForm.requestDashboardSync(undefined, { includeComments: true })
         }

@@ -1,17 +1,20 @@
 import { NextResponse } from 'next/server';
 
-import { DEFAULT_INVITATION_THEME } from '@/lib/invitationThemes';
 import { createClientEditorSessionValue } from '@/server/clientEditorSession';
 import {
-  buildMobileInvitationLinks,
+  loadMobileClientEditorPageSnapshot,
   MOBILE_CLIENT_EDITOR_SESSION_TTL_SECONDS,
 } from '@/server/clientEditorMobileApi';
 import { verifyServerClientPassword } from '@/server/clientPasswordServerService';
 import {
-  getServerEditableInvitationPageConfig,
-  getServerInvitationPageDisplayPeriodSummary,
-} from '@/server/invitationPageServerService';
-import { getServerPageTicketCount } from '@/server/pageTicketServerService';
+  applyScopedInMemoryRateLimit,
+  buildRateLimitHeaders,
+} from '@/server/requestRateLimit';
+
+const MOBILE_CLIENT_EDITOR_LOGIN_RATE_LIMIT = {
+  limit: 10,
+  windowMs: 5 * 60 * 1000,
+} as const;
 
 export async function POST(request: Request) {
   try {
@@ -30,16 +33,34 @@ export async function POST(request: Request) {
       );
     }
 
-    const verification = await verifyServerClientPassword(pageSlug, password);
-    if (!verification.verified || !verification.record) {
-      return NextResponse.json({ error: 'Invalid page password.' }, { status: 401 });
+    const rateLimitResult = applyScopedInMemoryRateLimit({
+      request,
+      scope: 'mobile-client-editor-login',
+      keyParts: [pageSlug],
+      ...MOBILE_CLIENT_EDITOR_LOGIN_RATE_LIMIT,
+    });
+
+    if (!rateLimitResult.allowed) {
+      return NextResponse.json(
+        { error: 'Too many login attempts. Please try again later.' },
+        {
+          status: 429,
+          headers: buildRateLimitHeaders(rateLimitResult),
+        }
+      );
     }
 
-    const [config, displayPeriod, ticketCount] = await Promise.all([
-      getServerEditableInvitationPageConfig(pageSlug),
-      getServerInvitationPageDisplayPeriodSummary(pageSlug),
-      getServerPageTicketCount(pageSlug),
-    ]);
+    const verification = await verifyServerClientPassword(pageSlug, password);
+    if (!verification.verified || !verification.record) {
+      return NextResponse.json(
+        { error: 'Invalid page password.' },
+        {
+          status: 401,
+          headers: buildRateLimitHeaders(rateLimitResult),
+        }
+      );
+    }
+
     const { value, expiresAt } = createClientEditorSessionValue(
       {
         pageSlug,
@@ -49,38 +70,28 @@ export async function POST(request: Request) {
         ttlSeconds: MOBILE_CLIENT_EDITOR_SESSION_TTL_SECONDS,
       }
     );
-    const links = buildMobileInvitationLinks(
+    const snapshot = await loadMobileClientEditorPageSnapshot(
       new URL(request.url).origin,
-      pageSlug,
-      config?.defaultTheme ?? DEFAULT_INVITATION_THEME
+      pageSlug
     );
 
-    return NextResponse.json({
-      authenticated: true,
-      session: {
-        token: value,
-        expiresAt,
-        pageSlug,
+    return NextResponse.json(
+      {
+        authenticated: true,
+        permissions: snapshot.permissions,
+        session: {
+          token: value,
+          expiresAt,
+          pageSlug,
+        },
+        dashboardPage: snapshot.dashboardPage,
+        page: snapshot.page,
+        links: snapshot.links,
       },
-      dashboardPage: config,
-      page: config
-        ? {
-            slug: config.slug,
-            displayName: config.config.displayName,
-            published: config.published,
-            productTier: config.productTier,
-            defaultTheme: config.defaultTheme,
-            features: config.features,
-            ticketCount,
-            displayPeriod: {
-              enabled: displayPeriod.enabled,
-              startDate: displayPeriod.startDate?.toISOString() ?? null,
-              endDate: displayPeriod.endDate?.toISOString() ?? null,
-            },
-          }
-        : null,
-      links,
-    });
+      {
+        headers: buildRateLimitHeaders(rateLimitResult),
+      }
+    );
   } catch (error) {
     console.error('[mobile/client-editor/login] failed to create mobile session', error);
     return NextResponse.json(

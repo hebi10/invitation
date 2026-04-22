@@ -75,18 +75,30 @@ function buildCreateHref(searchParams: URLSearchParams): Href {
 }
 
 function buildLoginHref(searchParams: URLSearchParams): Href {
+  const params: Record<string, string> = {};
   const next = searchParams.get('next')?.trim();
+  const linkToken = searchParams.get('linkToken')?.trim();
 
-  if (!next || !next.startsWith('/')) {
+  if (linkToken) {
+    params.linkToken = linkToken;
+  }
+
+  if (next && next.startsWith('/')) {
+    params.next = next;
+  }
+
+  if (Object.keys(params).length === 0) {
     return '/login';
   }
 
   return {
     pathname: '/login',
-    params: {
-      next,
-    },
+    params,
   } as Href;
+}
+
+export function buildManageAppDeepLink() {
+  return `${APP_LINK_SCHEME}://manage`;
 }
 
 export function resolveAppDeepLink(urlString: string): AppDeepLinkResolution {

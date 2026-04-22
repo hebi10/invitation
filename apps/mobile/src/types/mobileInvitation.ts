@@ -1,7 +1,14 @@
 import type { MobileInvitationThemeKey as SharedMobileInvitationThemeKey } from '../lib/invitationThemes';
+import type { MobileClientEditorPermissions } from '../../../../src/types/mobileClientEditor';
+import type {
+  GuestbookCommentAction as SharedGuestbookCommentAction,
+  GuestbookCommentStatus as SharedGuestbookCommentStatus,
+} from '../../../../src/lib/guestbookComments';
 
 export type MobileInvitationProductTier = 'standard' | 'deluxe' | 'premium';
 export type MobileInvitationThemeKey = SharedMobileInvitationThemeKey;
+export type MobileGuestbookCommentAction = SharedGuestbookCommentAction;
+export type MobileGuestbookCommentStatus = SharedGuestbookCommentStatus;
 
 export interface MobileInvitationVariantLink {
   available: boolean;
@@ -167,7 +174,12 @@ export interface MobileGuestbookComment {
   author: string;
   message: string;
   pageSlug: string;
+  status: MobileGuestbookCommentStatus;
   createdAt: string | null;
+  hiddenAt: string | null;
+  deletedAt: string | null;
+  scheduledDeleteAt: string | null;
+  restoredAt: string | null;
 }
 
 export interface MobileInvitationLinks {
@@ -188,6 +200,7 @@ export interface MobileInvitationDashboard {
   comments: MobileGuestbookComment[];
   commentCount: number;
   commentsIncluded: boolean;
+  permissions: MobileClientEditorPermissions;
   links: MobileInvitationLinks;
   ticketCount: number;
   displayPeriod: MobileDisplayPeriodSummary;
@@ -199,15 +212,35 @@ export interface MobileSessionSummary {
   pageSlug: string;
 }
 
+export interface MobileHighRiskSessionSummary {
+  token: string;
+  expiresAt: number;
+  verifiedAt: number;
+  pageSlug: string;
+}
+
 export interface MobileInvitationCreationInput {
   slugBase: string;
   groomKoreanName: string;
   brideKoreanName: string;
-  groomEnglishName: string;
-  brideEnglishName: string;
   password: string;
   servicePlan: MobileInvitationProductTier;
   theme: MobileInvitationThemeKey;
+}
+
+export type MobileInvitationSlugAvailabilityReason =
+  | 'ok'
+  | 'taken'
+  | 'required'
+  | 'invalid'
+  | 'too_short'
+  | 'too_long'
+  | 'reserved';
+
+export interface MobileInvitationSlugAvailabilityResponse {
+  normalizedSlugBase: string;
+  available: boolean;
+  reason: MobileInvitationSlugAvailabilityReason;
 }
 
 export interface MobilePageSummary {
@@ -222,6 +255,7 @@ export interface MobilePageSummary {
 }
 
 export interface MobileInvitationCreationResponse {
+  permissions: MobileClientEditorPermissions;
   session: MobileSessionSummary;
   page: MobilePageSummary;
   dashboardPage?: MobileEditableInvitationPageConfig | null;
@@ -241,8 +275,6 @@ export interface CreateDraftItem {
   pageIdentifier: string;
   groomName: string;
   brideName: string;
-  groomEnglishName: string;
-  brideEnglishName: string;
   weddingDate: string;
   venue: string;
   estimatedPrice: number;

@@ -11,8 +11,14 @@ import {
   createClientEditorSessionValue,
 } from '@/server/clientEditorSession';
 
-import { getAuthorizedClientEditorSession } from './clientEditorSessionAuth';
-import { MOBILE_CLIENT_EDITOR_SESSION_TTL_SECONDS, buildMobileInvitationLinks } from './clientEditorMobileApi';
+import {
+  authorizeMobileClientEditorToken,
+  buildMissingMobileClientEditorPermissionError,
+  buildMobileInvitationLinks,
+  hasMobileClientEditorPermission,
+  MOBILE_CLIENT_EDITOR_SESSION_TTL_SECONDS,
+  resolveMobileClientEditorPermissions,
+} from './clientEditorMobileApi';
 import {
   getServerClientPasswordRecord,
   setServerClientPassword,
@@ -38,8 +44,6 @@ type MobileBillingCreatePageInput = {
   slugBase: string;
   groomKoreanName: string;
   brideKoreanName: string;
-  groomEnglishName: string;
-  brideEnglishName: string;
   password: string;
   theme: string;
 };
@@ -384,8 +388,10 @@ async function buildMobileDraftCreationResponse(origin: string, pageSlug: string
     }
   );
   const links = buildMobileInvitationLinks(origin, pageSlug, config.defaultTheme);
+  const permissions = resolveMobileClientEditorPermissions();
 
   return {
+    permissions,
     session: {
       token: value,
       expiresAt,
@@ -488,12 +494,13 @@ export async function fulfillServerMobileTicketPackPurchase(
     };
   }
 
-  const authorizedSession = await getAuthorizedClientEditorSession(
-    targetPageSlug,
-    targetToken
-  );
+  const authorizedSession = await authorizeMobileClientEditorToken(targetPageSlug, targetToken);
   if (!authorizedSession) {
     throw new Error('Target invitation page authorization failed.');
+  }
+
+  if (!hasMobileClientEditorPermission(authorizedSession.permissions, 'canManageTickets')) {
+    throw new Error(buildMissingMobileClientEditorPermissionError('canManageTickets'));
   }
 
   try {

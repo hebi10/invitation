@@ -11,9 +11,9 @@ import {
 
 import {
   adjustMobileInvitationTicketCount,
-  deleteMobileInvitationComment,
   extendMobileInvitationDisplayPeriod,
   fetchMobileInvitationDashboard,
+  manageMobileInvitationComment,
   saveMobileInvitationPageConfig,
   setMobileInvitationDisplayPeriod,
   setMobileInvitationPublishedState,
@@ -23,6 +23,8 @@ import {
 import type {
   MobileDisplayPeriodSummary,
   MobileEditableInvitationPageConfig,
+  MobileGuestbookComment,
+  MobileGuestbookCommentAction,
   MobileInvitationDashboard,
   MobileInvitationLinks,
   MobileInvitationSeed,
@@ -62,6 +64,10 @@ type InvitationOpsContextValue = {
     targetToken: string,
     amount: number
   ) => Promise<{ sourceTicketCount: number; targetTicketCount: number } | null>;
+  manageComment: (
+    commentId: string,
+    action: MobileGuestbookCommentAction
+  ) => Promise<MobileGuestbookComment | null>;
   deleteComment: (commentId: string) => Promise<boolean>;
 };
 
@@ -96,7 +102,8 @@ function buildDashboardSnapshot(
   page: MobileEditableInvitationPageConfig | null | undefined,
   links: MobileInvitationLinks | null | undefined,
   ticketCount: number,
-  pageFallback: MobilePageSummary | null | undefined
+  pageFallback: MobilePageSummary | null | undefined,
+  permissions: MobileInvitationDashboard['permissions'] | null | undefined
 ): MobileInvitationDashboard | null {
   if (!page || !links) {
     return null;
@@ -107,6 +114,17 @@ function buildDashboardSnapshot(
     comments: [],
     commentCount: 0,
     commentsIncluded: false,
+    permissions:
+      permissions ?? {
+        canViewDashboard: false,
+        canEditInvitation: false,
+        canManageGuestbook: false,
+        canUploadImages: false,
+        canManagePublication: false,
+        canManageDisplayPeriod: false,
+        canManageTickets: false,
+        canIssueLinkToken: false,
+      },
     links,
     ticketCount,
     displayPeriod: pageFallback?.displayPeriod ?? {
@@ -120,6 +138,7 @@ function buildDashboardSnapshot(
 export function InvitationOpsProvider({ children }: PropsWithChildren) {
   const { apiBaseUrl } = usePreferences();
   const {
+    getHighRiskToken,
     session,
     initialDashboardSeed,
     consumeInitialDashboardSeed,
@@ -150,7 +169,8 @@ export function InvitationOpsProvider({ children }: PropsWithChildren) {
       initialDashboardSeed.dashboardPage,
       initialDashboardSeed.links,
       initialDashboardSeed.ticketCount,
-      initialDashboardSeed.pageFallback
+      initialDashboardSeed.pageFallback,
+      initialDashboardSeed.permissions
     );
 
     setDashboard(snapshot);
@@ -270,7 +290,8 @@ export function InvitationOpsProvider({ children }: PropsWithChildren) {
             config: trustedConfig,
             published: options.published ?? dashboard?.page.published,
             defaultTheme: options.defaultTheme ?? dashboard?.page.defaultTheme,
-          }
+          },
+          getHighRiskToken(session.pageSlug) ?? undefined
         );
 
         patchDashboard((current) => ({
@@ -296,6 +317,7 @@ export function InvitationOpsProvider({ children }: PropsWithChildren) {
       apiBaseUrl,
       dashboard?.page.defaultTheme,
       dashboard?.page.published,
+      getHighRiskToken,
       patchDashboard,
       reportAuthError,
       session,
@@ -317,7 +339,8 @@ export function InvitationOpsProvider({ children }: PropsWithChildren) {
           session.pageSlug,
           session.token,
           published,
-          dashboard.page.defaultTheme
+          dashboard.page.defaultTheme,
+          getHighRiskToken(session.pageSlug) ?? undefined
         );
 
         patchDashboard((current) => ({
@@ -337,7 +360,7 @@ export function InvitationOpsProvider({ children }: PropsWithChildren) {
         setDashboardLoading(false);
       }
     },
-    [apiBaseUrl, dashboard, patchDashboard, reportAuthError, session]
+    [apiBaseUrl, dashboard, getHighRiskToken, patchDashboard, reportAuthError, session]
   );
 
   const setVariantAvailability = useCallback(
@@ -359,7 +382,8 @@ export function InvitationOpsProvider({ children }: PropsWithChildren) {
           {
             published: dashboard.page.published,
             defaultTheme: dashboard.page.defaultTheme,
-          }
+          },
+          getHighRiskToken(session.pageSlug) ?? undefined
         );
 
         patchDashboard((current) => {
@@ -395,7 +419,7 @@ export function InvitationOpsProvider({ children }: PropsWithChildren) {
         setDashboardLoading(false);
       }
     },
-    [apiBaseUrl, dashboard, patchDashboard, reportAuthError, session]
+    [apiBaseUrl, dashboard, getHighRiskToken, patchDashboard, reportAuthError, session]
   );
 
   const adjustTicketCount = useCallback(
@@ -410,7 +434,8 @@ export function InvitationOpsProvider({ children }: PropsWithChildren) {
           apiBaseUrl,
           session.pageSlug,
           session.token,
-          amount
+          amount,
+          getHighRiskToken(session.pageSlug) ?? undefined
         );
 
         setDashboard((current) => {
@@ -442,7 +467,7 @@ export function InvitationOpsProvider({ children }: PropsWithChildren) {
         return null;
       }
     },
-    [apiBaseUrl, reportAuthError, session]
+    [apiBaseUrl, getHighRiskToken, reportAuthError, session]
   );
 
   const extendDisplayPeriod = useCallback(
@@ -457,7 +482,8 @@ export function InvitationOpsProvider({ children }: PropsWithChildren) {
           apiBaseUrl,
           session.pageSlug,
           session.token,
-          months
+          months,
+          getHighRiskToken(session.pageSlug) ?? undefined
         );
 
         const displayPeriod = {
@@ -475,7 +501,7 @@ export function InvitationOpsProvider({ children }: PropsWithChildren) {
         return null;
       }
     },
-    [apiBaseUrl, applyDisplayPeriod, reportAuthError, session]
+    [apiBaseUrl, applyDisplayPeriod, getHighRiskToken, reportAuthError, session]
   );
 
   const setDisplayPeriod = useCallback(
@@ -490,7 +516,8 @@ export function InvitationOpsProvider({ children }: PropsWithChildren) {
           apiBaseUrl,
           session.pageSlug,
           session.token,
-          period
+          period,
+          getHighRiskToken(session.pageSlug) ?? undefined
         );
 
         const nextDisplayPeriod = {
@@ -508,7 +535,7 @@ export function InvitationOpsProvider({ children }: PropsWithChildren) {
         return null;
       }
     },
-    [apiBaseUrl, applyDisplayPeriod, reportAuthError, session]
+    [apiBaseUrl, applyDisplayPeriod, getHighRiskToken, reportAuthError, session]
   );
 
   const transferTicketCount = useCallback(
@@ -527,7 +554,8 @@ export function InvitationOpsProvider({ children }: PropsWithChildren) {
             amount,
             targetPageSlug,
             targetToken,
-          }
+          },
+          getHighRiskToken(session.pageSlug) ?? undefined
         );
 
         setDashboard((current) => {
@@ -562,38 +590,72 @@ export function InvitationOpsProvider({ children }: PropsWithChildren) {
         return null;
       }
     },
-    [apiBaseUrl, reportAuthError, session]
+    [apiBaseUrl, getHighRiskToken, reportAuthError, session]
+  );
+
+  const applyManagedComment = useCallback(
+    (nextComment: MobileGuestbookComment) => {
+      patchDashboard((current) => {
+        if (!current.commentsIncluded) {
+          return current;
+        }
+
+        const hasExistingComment = current.comments.some(
+          (comment) => comment.id === nextComment.id
+        );
+
+        return {
+          ...current,
+          comments: hasExistingComment
+            ? current.comments.map((comment) =>
+                comment.id === nextComment.id ? nextComment : comment
+              )
+            : [nextComment, ...current.comments],
+        };
+      });
+    },
+    [patchDashboard]
+  );
+
+  const manageComment = useCallback(
+    async (commentId: string, action: MobileGuestbookCommentAction) => {
+      if (!session) {
+        reportAuthError('청첩장을 연동해야 방명록을 관리할 수 있습니다.');
+        return null;
+      }
+
+      try {
+        const response = await manageMobileInvitationComment(
+          apiBaseUrl,
+          session.pageSlug,
+          commentId,
+          session.token,
+          action
+        );
+
+        if (response.comment) {
+          applyManagedComment(response.comment);
+        }
+
+        return response.comment ?? null;
+      } catch (error) {
+        reportAuthError(
+          error instanceof Error
+            ? error.message
+            : '방명록 상태를 변경하지 못했습니다.'
+        );
+        return null;
+      }
+    },
+    [apiBaseUrl, applyManagedComment, reportAuthError, session]
   );
 
   const deleteComment = useCallback(
     async (commentId: string) => {
-      if (!session) {
-        reportAuthError('청첩장을 연동해야 댓글을 관리할 수 있습니다.');
-        return false;
-      }
-
-      try {
-        await deleteMobileInvitationComment(
-          apiBaseUrl,
-          session.pageSlug,
-          commentId,
-          session.token
-        );
-
-        patchDashboard((current) => ({
-          ...current,
-          commentCount: Math.max(0, current.commentCount - 1),
-          comments: current.comments.filter((comment) => comment.id !== commentId),
-        }));
-        return true;
-      } catch (error) {
-        reportAuthError(
-          error instanceof Error ? error.message : '댓글을 삭제하지 못했습니다.'
-        );
-        return false;
-      }
+      const updatedComment = await manageComment(commentId, 'scheduleDelete');
+      return Boolean(updatedComment);
     },
-    [apiBaseUrl, patchDashboard, reportAuthError, session]
+    [manageComment]
   );
 
   const derivedDashboard = useMemo(() => {
@@ -607,7 +669,8 @@ export function InvitationOpsProvider({ children }: PropsWithChildren) {
       initialDashboardSeed.dashboardPage,
       initialDashboardSeed.links,
       initialDashboardSeed.ticketCount,
-      initialDashboardSeed.pageFallback
+      initialDashboardSeed.pageFallback,
+      initialDashboardSeed.permissions
     );
   }, [dashboard, initialDashboardSeed]);
 
@@ -647,10 +710,12 @@ export function InvitationOpsProvider({ children }: PropsWithChildren) {
       setDisplayPeriod,
       adjustTicketCount,
       transferTicketCount,
+      manageComment,
       deleteComment,
     }),
     [
       dashboardLoading,
+      manageComment,
       deleteComment,
       derivedDashboard,
       derivedPageSummary,

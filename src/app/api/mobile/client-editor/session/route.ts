@@ -1,15 +1,11 @@
 import { NextResponse } from 'next/server';
 
-import { DEFAULT_INVITATION_THEME } from '@/lib/invitationThemes';
 import {
   authorizeMobileClientEditorRequest,
-  buildMobileInvitationLinks,
+  buildMissingMobileClientEditorPermissionError,
+  hasMobileClientEditorPermission,
+  loadMobileClientEditorPageSnapshot,
 } from '@/server/clientEditorMobileApi';
-import {
-  getServerEditableInvitationPageConfig,
-  getServerInvitationPageDisplayPeriodSummary,
-} from '@/server/invitationPageServerService';
-import { getServerPageTicketCount } from '@/server/pageTicketServerService';
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -27,37 +23,28 @@ export async function GET(request: Request) {
     return NextResponse.json({ authenticated: false, pageSlug: null });
   }
 
-  const [config, displayPeriod, ticketCount] = await Promise.all([
-    getServerEditableInvitationPageConfig(pageSlug),
-    getServerInvitationPageDisplayPeriodSummary(pageSlug),
-    getServerPageTicketCount(pageSlug),
-  ]);
-  const links = buildMobileInvitationLinks(
+  if (!hasMobileClientEditorPermission(session.permissions, 'canViewDashboard')) {
+    return NextResponse.json(
+      {
+        authenticated: false,
+        pageSlug: null,
+        error: buildMissingMobileClientEditorPermissionError('canViewDashboard'),
+      },
+      { status: 403 }
+    );
+  }
+
+  const snapshot = await loadMobileClientEditorPageSnapshot(
     new URL(request.url).origin,
-    pageSlug,
-    config?.defaultTheme ?? DEFAULT_INVITATION_THEME
+    pageSlug
   );
 
   return NextResponse.json({
     authenticated: true,
     pageSlug: session.session.pageSlug,
-    dashboardPage: config,
-    page: config
-      ? {
-          slug: config.slug,
-          displayName: config.config.displayName,
-          published: config.published,
-          productTier: config.productTier,
-          defaultTheme: config.defaultTheme,
-          features: config.features,
-          ticketCount,
-          displayPeriod: {
-            enabled: displayPeriod.enabled,
-            startDate: displayPeriod.startDate?.toISOString() ?? null,
-            endDate: displayPeriod.endDate?.toISOString() ?? null,
-          },
-        }
-      : null,
-    links,
+    permissions: snapshot.permissions,
+    dashboardPage: snapshot.dashboardPage,
+    page: snapshot.page,
+    links: snapshot.links,
   });
 }

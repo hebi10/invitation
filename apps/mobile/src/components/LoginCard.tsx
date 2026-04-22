@@ -11,6 +11,7 @@ type LoginCardProps = {
   password: string;
   onChangePageIdentifier: (value: string) => void;
   onChangePassword: (value: string) => void;
+  onPaste: () => void;
   onSubmit: () => void;
 };
 
@@ -19,6 +20,7 @@ export function LoginCard({
   password,
   onChangePageIdentifier,
   onChangePassword,
+  onPaste,
   onSubmit,
 }: LoginCardProps) {
   const { authError, isAuthenticating } = useAuth();
@@ -26,18 +28,25 @@ export function LoginCard({
 
   return (
     <SectionCard
-      title="페이지 로그인"
-      description="페이지 URL 또는 슬러그와 비밀번호로 로그인하면 자동 로그인 상태가 유지됩니다."
+      title="청첩장 연동"
+      description="청첩장 링크 또는 주소와 비밀번호를 입력하면 저장된 연동 상태로 이어서 관리할 수 있습니다."
     >
+      <View style={styles.identifierField}>
+        <TextField
+          label="청첩장 링크 또는 주소"
+          value={pageIdentifier}
+          onChangeText={onChangePageIdentifier}
+          placeholder="예: https://msgnote.kr/kim-shinlang-na-sinbu"
+          helperText="전체 URL을 붙여넣어도 자동으로 인식됩니다."
+          autoCapitalize="none"
+          containerStyle={styles.identifierInput}
+        />
+        <ActionButton variant="secondary" onPress={onPaste} style={styles.pasteButton}>
+          붙여넣기
+        </ActionButton>
+      </View>
       <TextField
-        label="페이지 URL 또는 슬러그"
-        value={pageIdentifier}
-        onChangeText={onChangePageIdentifier}
-        placeholder="예: kim-shinlang-na-sinbu"
-        autoCapitalize="none"
-      />
-      <TextField
-        label="비밀번호"
+        label="연동 비밀번호"
         value={password}
         onChangeText={onChangePassword}
         placeholder="예: 12344"
@@ -57,13 +66,22 @@ export function LoginCard({
         </View>
       ) : null}
       <ActionButton onPress={onSubmit} loading={isAuthenticating} fullWidth>
-        로그인
+        연동하기
       </ActionButton>
     </SectionCard>
   );
 }
 
 const styles = StyleSheet.create({
+  identifierField: {
+    gap: 10,
+  },
+  identifierInput: {
+    gap: 0,
+  },
+  pasteButton: {
+    alignSelf: 'flex-start',
+  },
   errorBox: {
     borderWidth: 1,
     borderRadius: 14,

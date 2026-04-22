@@ -1,4 +1,5 @@
 import { Modal, Pressable, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ActionButton } from '../../../components/ActionButton';
 import { AppText } from '../../../components/AppText';
@@ -38,10 +39,18 @@ export function OnboardingModal({
   onSetPublished,
 }: OnboardingModalProps) {
   const { palette } = usePreferences();
+  const insets = useSafeAreaInsets();
 
   return (
     <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
-      <View style={manageStyles.modalOverlay}>
+      <View
+        style={[
+          manageStyles.modalOverlay,
+          {
+            paddingBottom: Math.max(insets.bottom, 24),
+          },
+        ]}
+      >
         <Pressable style={manageStyles.modalBackdrop} onPress={onClose} />
         <View
           style={[
