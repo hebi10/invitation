@@ -143,14 +143,69 @@ export async function executeWriteThrough<T>({
       throw new Error('Event write handler is required when event rollout write mode is event-only.');
     }
 
-    return eventWrite();
+    try {
+      return await eventWrite();
+    } catch (error) {
+      const normalizedError = normalizeError(error);
+
+      if (recordFailure) {
+        try {
+          await recordFailure({
+            operation,
+            pageSlug,
+            eventId,
+            sourceOfTruth: 'event',
+            legacyCollection,
+            eventCollection,
+            payload: normalizePayload(payload),
+            attemptCount: 1,
+            errorMessage: normalizedError.message,
+            errorStack: normalizedError.stack,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          });
+        } catch (failureLoggingError) {
+          console.error('[event-write-through] failed to record event-only failure', failureLoggingError);
+        }
+      }
+
+      throw error;
+    }
   }
 
   if (!legacyWrite) {
     throw new Error('Legacy write handler is required when event rollout write mode is legacy-primary.');
   }
 
-  const primaryResult = await legacyWrite();
+  let primaryResult: T;
+  try {
+    primaryResult = await legacyWrite();
+  } catch (error) {
+    const normalizedError = normalizeError(error);
+
+    if (recordFailure) {
+      try {
+        await recordFailure({
+          operation,
+          pageSlug,
+          eventId,
+          sourceOfTruth: 'legacy',
+          legacyCollection,
+          eventCollection,
+          payload: normalizePayload(payload),
+          attemptCount: 1,
+          errorMessage: normalizedError.message,
+          errorStack: normalizedError.stack,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        });
+      } catch (failureLoggingError) {
+        console.error('[event-write-through] failed to record primary failure', failureLoggingError);
+      }
+    }
+
+    throw error;
+  }
 
   if (!eventWrite) {
     return primaryResult;

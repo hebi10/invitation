@@ -2,7 +2,7 @@ import 'server-only';
 
 import { getServerFirestore } from '../firebaseAdmin';
 
-const BILLING_FULFILLMENTS_COLLECTION = 'mobile-billing-fulfillments';
+const BILLING_FULFILLMENTS_COLLECTION = 'billingFulfillments';
 
 export type BillingFulfillmentKind = 'pageCreation' | 'ticketPack';
 export type BillingFulfillmentStatus = 'processing' | 'fulfilled' | 'failed';
@@ -27,6 +27,8 @@ export interface BillingFulfillmentRecord {
   targetPageSlug: string | null;
   grantedTicketCount: number | null;
   lastError: string | null;
+  eventId?: string | null;
+  provider?: string | null;
 }
 
 export interface BillingFulfillmentRepository {
@@ -62,6 +64,8 @@ function buildDefaultBillingFulfillmentRecord(
     targetPageSlug: null,
     grantedTicketCount: null,
     lastError: null,
+    eventId: null,
+    provider: 'revenuecat',
   } satisfies BillingFulfillmentRecord;
 }
 
@@ -121,7 +125,39 @@ function normalizeBillingFulfillmentRecord(
       typeof data.lastError === 'string' && data.lastError.trim()
         ? data.lastError.trim()
         : null,
+    eventId:
+      typeof data.eventId === 'string' && data.eventId.trim() ? data.eventId.trim() : null,
+    provider:
+      typeof data.provider === 'string' && data.provider.trim()
+        ? data.provider.trim()
+        : 'revenuecat',
   };
+}
+
+async function findBillingFulfillmentByCollection(
+  collectionName: string,
+  transactionId: string
+) {
+  const normalizedTransactionId = transactionId.trim();
+  if (!normalizedTransactionId) {
+    return null;
+  }
+
+  const db = getServerFirestore();
+  if (!db) {
+    throw new Error('Server Firestore is not available.');
+  }
+
+  const snapshot = await db
+    .collection(collectionName)
+    .doc(normalizedTransactionId)
+    .get();
+
+  if (!snapshot.exists) {
+    return null;
+  }
+
+  return normalizeBillingFulfillmentRecord(normalizedTransactionId, snapshot.data() ?? {});
 }
 
 export const firestoreBillingFulfillmentRepository: BillingFulfillmentRepository = {
@@ -135,21 +171,10 @@ export const firestoreBillingFulfillmentRepository: BillingFulfillmentRepository
       return null;
     }
 
-    const db = getServerFirestore();
-    if (!db) {
-      throw new Error('Server Firestore is not available.');
-    }
-
-    const snapshot = await db
-      .collection(BILLING_FULFILLMENTS_COLLECTION)
-      .doc(normalizedTransactionId)
-      .get();
-
-    if (!snapshot.exists) {
-      return null;
-    }
-
-    return normalizeBillingFulfillmentRecord(normalizedTransactionId, snapshot.data() ?? {});
+    return findBillingFulfillmentByCollection(
+      BILLING_FULFILLMENTS_COLLECTION,
+      normalizedTransactionId
+    );
   },
 
   async acquireLock(purchase, kind) {
@@ -158,49 +183,44 @@ export const firestoreBillingFulfillmentRepository: BillingFulfillmentRepository
       throw new Error('Server Firestore is not available.');
     }
 
-    const docRef = db.collection(BILLING_FULFILLMENTS_COLLECTION).doc(purchase.transactionId);
+    const normalizedTransactionId = purchase.transactionId.trim();
+    const docRef = db.collection(BILLING_FULFILLMENTS_COLLECTION).doc(normalizedTransactionId);
 
     return db.runTransaction(async (transaction) => {
       const snapshot = await transaction.get(docRef);
 
-      if (!snapshot.exists) {
-        const nextRecord = buildDefaultBillingFulfillmentRecord(purchase, kind);
-        transaction.set(docRef, nextRecord);
-        return nextRecord;
-      }
-
-      const existing = normalizeBillingFulfillmentRecord(
-        purchase.transactionId,
-        snapshot.data() ?? {}
-      );
+      const existing = snapshot.exists
+        ? normalizeBillingFulfillmentRecord(
+            normalizedTransactionId,
+            snapshot.data() ?? {}
+          )
+        : null;
+      const currentRecord =
+        existing ?? buildDefaultBillingFulfillmentRecord(purchase, kind);
 
       if (!existing) {
-        throw new Error('Billing fulfillment record is invalid.');
+        transaction.set(docRef, currentRecord, { merge: true });
       }
 
-      if (existing.productId !== purchase.productId || existing.appUserId !== purchase.appUserId) {
+      if (
+        currentRecord.productId !== purchase.productId ||
+        currentRecord.appUserId !== purchase.appUserId
+      ) {
         throw new Error('This purchase record is already linked to another request.');
       }
 
-      if (existing.status === 'failed') {
-        transaction.set(
-          docRef,
-          {
-            ...existing,
-            status: 'processing',
-            updatedAt: new Date().toISOString(),
-            lastError: null,
-          },
-          { merge: true }
-        );
-        return {
-          ...existing,
-          status: 'processing',
+      if (currentRecord.status === 'failed') {
+        const nextRecord = {
+          ...currentRecord,
+          status: 'processing' as const,
+          updatedAt: new Date().toISOString(),
           lastError: null,
-        } satisfies BillingFulfillmentRecord;
+        };
+        transaction.set(docRef, nextRecord, { merge: true });
+        return nextRecord;
       }
 
-      return existing;
+      return currentRecord;
     });
   },
 

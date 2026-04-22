@@ -30,88 +30,66 @@ service cloud.firestore {
         request.resource.data.pageSlug.size() <= 120;
     }
 
-    function isValidCommentCreateForPage(pageSlug) {
-      return isValidCommentCreate() &&
-        request.resource.data.pageSlug == pageSlug;
-    }
-
-    function hasPublishedInvitationRegistry(pageSlug) {
-      return pageSlug is string &&
-        exists(/databases/$(database)/documents/invitation-page-registry/$(pageSlug)) &&
-        get(/databases/$(database)/documents/invitation-page-registry/$(pageSlug)).data.published == true;
-    }
-
-    function hasInvitationDisplayPeriod(pageSlug) {
-      return pageSlug is string &&
-        exists(/databases/$(database)/documents/display-periods/$(pageSlug)) &&
-        get(/databases/$(database)/documents/display-periods/$(pageSlug)).data.isActive == true;
-    }
-
-    function isWithinInvitationDisplayPeriod(pageSlug) {
-      return !hasInvitationDisplayPeriod(pageSlug) ||
-        (
-          get(/databases/$(database)/documents/display-periods/$(pageSlug)).data.startDate is timestamp &&
-          get(/databases/$(database)/documents/display-periods/$(pageSlug)).data.endDate is timestamp &&
-          request.time >= get(/databases/$(database)/documents/display-periods/$(pageSlug)).data.startDate &&
-          request.time <= get(/databases/$(database)/documents/display-periods/$(pageSlug)).data.endDate
+    function canReadPublicGuestbookComment(data) {
+      return data.deleted != true &&
+        data.status != 'hidden' &&
+        data.status != 'pending_delete' &&
+        !(
+          data.scheduledDeleteAt is timestamp &&
+          data.scheduledDeleteAt <= request.time
         );
     }
 
-    function canReadPublicInvitationPage(pageSlug) {
-      return hasPublishedInvitationRegistry(pageSlug) &&
-        isWithinInvitationDisplayPeriod(pageSlug);
+    function hasPublishedEventSummary(eventId) {
+      return eventId is string &&
+        exists(/databases/$(database)/documents/events/$(eventId)) &&
+        get(/databases/$(database)/documents/events/$(eventId)).data.visibility.published == true;
     }
 
-    function canAccessPublicGuestbook(pageSlug) {
-      return canReadPublicInvitationPage(pageSlug);
+    function hasEventDisplayPeriod(eventId) {
+      return eventId is string &&
+        exists(/databases/$(database)/documents/events/$(eventId)) &&
+        (
+          get(/databases/$(database)/documents/events/$(eventId)).data.visibility.displayStartAt is timestamp &&
+          get(/databases/$(database)/documents/events/$(eventId)).data.visibility.displayEndAt is timestamp
+        );
     }
 
-    function isLegacyCommentCollection(collectionId) {
-      return collectionId.matches('^comments-.+$');
+    function isWithinEventDisplayPeriod(eventId) {
+      return !hasEventDisplayPeriod(eventId) ||
+        (
+          request.time >= get(/databases/$(database)/documents/events/$(eventId)).data.visibility.displayStartAt &&
+          request.time <= get(/databases/$(database)/documents/events/$(eventId)).data.visibility.displayEndAt
+        );
+    }
+
+    function canReadPublicEvent(eventId) {
+      return hasPublishedEventSummary(eventId) &&
+        isWithinEventDisplayPeriod(eventId);
+    }
+
+    function isValidCommentCreateForEvent(eventId) {
+      return isValidCommentCreate() &&
+        exists(/databases/$(database)/documents/events/$(eventId)) &&
+        request.resource.data.pageSlug ==
+          get(/databases/$(database)/documents/events/$(eventId)).data.slug;
+    }
+
+    function canReadPublicEventSlugIndex(slug) {
+      return slug is string &&
+        exists(/databases/$(database)/documents/eventSlugIndex/$(slug)) &&
+        (
+          get(/databases/$(database)/documents/eventSlugIndex/$(slug)).data.status == 'active' ||
+          get(/databases/$(database)/documents/eventSlugIndex/$(slug)).data.status == 'redirect'
+        ) &&
+        get(/databases/$(database)/documents/eventSlugIndex/$(slug)).data.eventId is string &&
+        canReadPublicEvent(
+          get(/databases/$(database)/documents/eventSlugIndex/$(slug)).data.eventId
+        );
     }
 
     match /memory-pages/{pageSlug} {
       allow read: if isPublicMemoryPage(resource.data) || isAdmin();
-      allow create, update, delete: if isAdmin();
-    }
-
-    match /comments/{commentId} {
-      allow read: if isAdmin();
-      allow create: if false;
-      allow update, delete: if isAdmin();
-    }
-
-    match /guestbooks/{pageSlug} {
-      allow read: if isAdmin() || canAccessPublicGuestbook(pageSlug);
-      allow create, update, delete: if isAdmin();
-
-      match /comments/{commentId} {
-        allow read: if isAdmin() || canAccessPublicGuestbook(pageSlug);
-        allow create: if canAccessPublicGuestbook(pageSlug) && isValidCommentCreateForPage(pageSlug);
-        allow update, delete: if isAdmin();
-      }
-    }
-
-    match /{collectionId}/{commentId} {
-      allow read: if isLegacyCommentCollection(collectionId);
-      allow delete: if isLegacyCommentCollection(collectionId) && isAdmin();
-    }
-
-    match /client-passwords/{document=**} {
-      allow read, write: if isAdmin();
-    }
-
-    match /client-access/{pageSlug} {
-      allow read, write: if isAdmin();
-    }
-
-    match /invitation-page-configs/{pageSlug} {
-      allow read: if isAdmin() || canReadPublicInvitationPage(pageSlug);
-      allow create, update, delete: if isAdmin();
-    }
-
-    match /invitation-page-registry/{pageSlug} {
-      allow read: if isAdmin() || canReadPublicInvitationPage(pageSlug);
       allow create, update, delete: if isAdmin();
     }
 
@@ -120,12 +98,47 @@ service cloud.firestore {
       allow create, update, delete: if isAdmin();
     }
 
-    match /display-periods/{pageSlug} {
-      allow read: if isAdmin() || canReadPublicInvitationPage(pageSlug);
+    match /events/{eventId} {
+      allow read: if isAdmin() || canReadPublicEvent(eventId);
+      allow create, update, delete: if isAdmin();
+
+      match /content/{documentId} {
+        allow read: if isAdmin() || canReadPublicEvent(eventId);
+        allow create, update, delete: if isAdmin();
+      }
+
+      match /comments/{commentId} {
+        allow read: if isAdmin() || (
+          canReadPublicEvent(eventId) &&
+          canReadPublicGuestbookComment(resource.data)
+        );
+        allow create: if canReadPublicEvent(eventId) && isValidCommentCreateForEvent(eventId);
+        allow update, delete: if isAdmin();
+      }
+
+      match /linkTokens/{tokenId} {
+        allow read, write: if isAdmin();
+      }
+
+      match /auditLogs/{logId} {
+        allow read, write: if isAdmin();
+      }
+    }
+
+    match /eventSecrets/{eventId} {
+      allow read, write: if isAdmin();
+    }
+
+    match /eventSlugIndex/{slug} {
+      allow read: if isAdmin() || canReadPublicEventSlugIndex(slug);
       allow write: if isAdmin();
     }
 
-    match /page-ticket-balances/{pageSlug} {
+    match /billingFulfillments/{transactionId} {
+      allow read, write: if isAdmin();
+    }
+
+    match /event-write-through-failures/{failureId} {
       allow read, write: if isAdmin();
     }
 

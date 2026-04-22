@@ -22,7 +22,6 @@ import {
   setInvitationPagePublished,
   setInvitationPageProductTier,
   setInvitationPageVariantAvailability,
-  syncClientPasswordAccess,
   type ClientPassword,
   type Comment,
   type CommentSummary,
@@ -157,7 +156,6 @@ export function useAdminData({
         writeAdminInvitationPreviewCache(sourcePages);
       }
 
-      await syncClientPasswordAccess();
       let nextPasswords = await getAllClientPasswords();
 
       const passwordSlugSet = new Set(nextPasswords.map((entry) => entry.pageSlug));
@@ -172,7 +170,6 @@ export function useAdminData({
           )
         );
 
-        await syncClientPasswordAccess();
         nextPasswords = await getAllClientPasswords();
 
         showToast({
@@ -449,9 +446,6 @@ export function useAdminData({
     }
 
     void fetchSummarySources();
-    void syncClientPasswordAccess().catch((syncError) => {
-      console.error(syncError);
-    });
   }, [fetchSummarySources, isAdminLoggedIn, resetAll]);
 
   useEffect(() => {

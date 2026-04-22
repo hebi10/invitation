@@ -23,6 +23,7 @@ async function main() {
   assert.equal(preferredValue, 'events-record');
   assert.equal(fallbackCalled, false);
 
+  process.env.EVENT_ROLLOUT_ENABLE_LEGACY_READ_FALLBACK = 'true';
   const fallbackValue = await loadReadThroughValue({
     preferred: async () => null,
     fallback: async () => 'legacy-record',
@@ -35,6 +36,7 @@ async function main() {
     fallback: async () => 'legacy-record',
   });
   assert.equal(disabledFallbackValue, null);
+
   if (originalFallbackFlag === undefined) {
     delete process.env.EVENT_ROLLOUT_ENABLE_LEGACY_READ_FALLBACK;
   } else {
@@ -69,13 +71,13 @@ async function main() {
     },
     content: {
       slug: 'alpha-event',
-      displayName: '민수 지수 결혼식',
-      description: '초대합니다',
+      displayName: '민수 지연 결혼식',
+      description: '초대합니다.',
       date: '2026-06-20',
       venue: '테스트 웨딩홀',
       couple: {
         groom: { name: '민수' },
-        bride: { name: '지수' },
+        bride: { name: '지연' },
       },
       metadata: {
         images: {
@@ -88,7 +90,7 @@ async function main() {
   assert.equal(configRecord?.slug, 'alpha-event');
   assert.equal(configRecord?.config.slug, 'alpha-event');
   assert.equal(configRecord?.config.couple.groom.name, '민수');
-  assert.equal(configRecord?.config.couple.bride.name, '지수');
+  assert.equal(configRecord?.config.couple.bride.name, '지연');
 
   const slugIndex = normalizeEventSlugIndexRecord('alpha-event', {
     eventId: 'event-123',

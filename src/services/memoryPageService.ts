@@ -5,6 +5,7 @@ import { getComments } from '@/services/commentService';
 import type { UploadedImage } from '@/services/imageService';
 import { getPageImages } from '@/services/imageService';
 import { getInvitationPageBySlug } from '@/services/invitationPageService';
+import { memoryPageRepository } from '@/services/repositories/memoryPageRepository';
 import type {
   MemoryGalleryCategory,
   MemoryGalleryImage,
@@ -18,15 +19,6 @@ import { DEFAULT_MEMORY_HERO_CROP } from '@/types/memoryPage';
 import { optimizeUploadImage } from '@/utils/imageCompression';
 import { sanitizeHeartIconPlaceholdersDeep } from '@/utils/textSanitizers';
 
-type FirestoreModules = {
-  collection: any;
-  deleteDoc: any;
-  doc: any;
-  getDoc: any;
-  getDocs: any;
-  setDoc: any;
-};
-
 type StorageModules = {
   deleteObject: any;
   getDownloadURL: any;
@@ -34,7 +26,6 @@ type StorageModules = {
   uploadBytes: any;
 };
 
-const COLLECTION_NAME = 'memory-pages';
 const MEMORY_ORIGINAL_UPLOAD_OPTIONS = {
   maxWidth: 1600,
   maxHeight: 1600,
@@ -46,7 +37,6 @@ const MEMORY_THUMBNAIL_UPLOAD_OPTIONS = {
   quality: 0.8,
 } as const;
 
-let firestoreModules: FirestoreModules | null = null;
 let storageModules: StorageModules | null = null;
 
 const mockMemoryPages = new Map<string, MemoryPage>();
@@ -210,31 +200,6 @@ function normalizeMemoryPage(pageSlug: string, data: Partial<MemoryPage>): Memor
     sanitized.seoDescription.trim() || buildDefaultSeoDescription(sanitized);
 
   return sanitized;
-}
-
-async function ensureFirestoreModules() {
-  if (!USE_FIREBASE) {
-    return null;
-  }
-
-  const { db } = await ensureFirebaseInit();
-  if (!db) {
-    throw new Error('Firestore가 초기화되지 않았습니다.');
-  }
-
-  if (!firestoreModules) {
-    const firestore = await import('firebase/firestore');
-    firestoreModules = {
-      collection: firestore.collection,
-      deleteDoc: firestore.deleteDoc,
-      doc: firestore.doc,
-      getDoc: firestore.getDoc,
-      getDocs: firestore.getDocs,
-      setDoc: firestore.setDoc,
-    };
-  }
-
-  return { db, modules: firestoreModules };
 }
 
 async function ensureStorageModules() {
@@ -455,25 +420,13 @@ export async function suggestCommentsFromInvitation(
 }
 
 export async function getMemoryPageByPageSlug(pageSlug: string): Promise<MemoryPage | null> {
-  if (!USE_FIREBASE) {
+  if (!memoryPageRepository.isAvailable()) {
     const local = mockMemoryPages.get(pageSlug);
     return local ? normalizeMemoryPage(pageSlug, local) : null;
   }
 
-  const firebase = await ensureFirestoreModules();
-  if (!firebase) {
-    return null;
-  }
-
-  const snapshot = await firebase.modules.getDoc(
-    firebase.modules.doc(firebase.db, COLLECTION_NAME, pageSlug)
-  );
-
-  if (!snapshot.exists()) {
-    return null;
-  }
-
-  return normalizeMemoryPage(pageSlug, snapshot.data());
+  const record = await memoryPageRepository.findByPageSlug(pageSlug);
+  return record ? normalizeMemoryPage(pageSlug, record) : null;
 }
 
 export async function getMemoryPageBySlug(pageSlug: string): Promise<MemoryPage | null> {
@@ -481,7 +434,7 @@ export async function getMemoryPageBySlug(pageSlug: string): Promise<MemoryPage 
 }
 
 export async function getAllMemoryPages(): Promise<MemoryPage[]> {
-  if (!USE_FIREBASE) {
+  if (!memoryPageRepository.isAvailable()) {
     return [...mockMemoryPages.values()]
       .map((page) => normalizeMemoryPage(page.pageSlug, page))
       .sort(
@@ -489,19 +442,10 @@ export async function getAllMemoryPages(): Promise<MemoryPage[]> {
     );
   }
 
-  const firebase = await ensureFirestoreModules();
-  if (!firebase) {
-    return [];
-  }
+  const records = await memoryPageRepository.listAll();
 
-  const snapshot = await firebase.modules.getDocs(
-    firebase.modules.collection(firebase.db, COLLECTION_NAME)
-  );
-
-  return snapshot.docs
-    .map((docSnapshot: { id: string; data: () => Partial<MemoryPage> }) =>
-      normalizeMemoryPage(docSnapshot.id, docSnapshot.data())
-    )
+  return records
+    .map((record) => normalizeMemoryPage(record.pageSlug, record.data))
     .sort((left: MemoryPage, right: MemoryPage) => right.updatedAt.getTime() - left.updatedAt.getTime());
 }
 
@@ -517,20 +461,12 @@ export async function saveMemoryPage(memoryPage: MemoryPage): Promise<MemoryPage
     updatedAt: new Date(),
   });
 
-  if (!USE_FIREBASE) {
+  if (!memoryPageRepository.isAvailable()) {
     mockMemoryPages.set(normalized.pageSlug, normalized);
     return normalized;
   }
 
-  const firebase = await ensureFirestoreModules();
-  if (!firebase) {
-    throw new Error('Firestore가 초기화되지 않았습니다.');
-  }
-
-  await firebase.modules.setDoc(
-    firebase.modules.doc(firebase.db, COLLECTION_NAME, normalized.pageSlug),
-    normalized
-  );
+  await memoryPageRepository.save(normalized);
 
   return normalized;
 }
@@ -670,19 +606,12 @@ export async function deleteMemoryPage(pageSlug: string): Promise<void> {
 
   await Promise.all(existing.galleryImages.map((image) => deleteMemoryImageAsset(image)));
 
-  if (!USE_FIREBASE) {
+  if (!memoryPageRepository.isAvailable()) {
     mockMemoryPages.delete(pageSlug);
     return;
   }
 
-  const firebase = await ensureFirestoreModules();
-  if (!firebase) {
-    throw new Error('Firestore가 초기화되지 않았습니다.');
-  }
-
-  await firebase.modules.deleteDoc(
-    firebase.modules.doc(firebase.db, COLLECTION_NAME, pageSlug)
-  );
+  await memoryPageRepository.deleteByPageSlug(pageSlug);
 }
 
 export function createSelectedCommentSnapshot(

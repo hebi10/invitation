@@ -426,6 +426,31 @@ async function consumeEventTokenOnly(
   });
 }
 
+function compareEventLinkTokens(
+  preferred: StoredMobileClientEditorLinkTokenRecord,
+  fallback: StoredMobileClientEditorLinkTokenRecord
+) {
+  const mismatchFields: string[] = [];
+
+  if (preferred.pageSlug !== fallback.pageSlug) {
+    mismatchFields.push('pageSlug');
+  }
+
+  if (preferred.passwordVersion !== fallback.passwordVersion) {
+    mismatchFields.push('passwordVersion');
+  }
+
+  if (preferred.purpose !== fallback.purpose) {
+    mismatchFields.push('purpose');
+  }
+
+  if ((preferred.expiresAt?.getTime() ?? 0) !== (fallback.expiresAt?.getTime() ?? 0)) {
+    mismatchFields.push('expiresAt');
+  }
+
+  return mismatchFields;
+}
+
 export const firestoreEventLinkTokenRepository: EventLinkTokenRepository = {
   isAvailable() {
     return Boolean(getServerFirestore());
@@ -435,6 +460,12 @@ export const firestoreEventLinkTokenRepository: EventLinkTokenRepository = {
     return loadReadThroughValue({
       preferred: () => fetchEventTokenByTokenHash(tokenHash),
       fallback: () => fetchLegacyTokenByTokenHash(tokenHash),
+      context: {
+        domain: 'event-link-token',
+        lookupType: 'tokenHash',
+        lookupValue: tokenHash.trim(),
+      },
+      compare: compareEventLinkTokens,
     });
   },
 

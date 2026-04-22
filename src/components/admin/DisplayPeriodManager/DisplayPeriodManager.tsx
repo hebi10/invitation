@@ -285,7 +285,7 @@ export default function DisplayPeriodManager({
         <div>
           <h2 className={styles.title}>노출 기간 관리</h2>
           <p className={styles.description}>
-            display-periods 운영 데이터를 카드 단위로 바로 편집합니다.
+            이벤트 공개 기간 데이터를 카드 단위로 바로 편집합니다.
           </p>
         </div>
         <StatusBadge tone="neutral">총 {filteredPages.length}개 페이지</StatusBadge>

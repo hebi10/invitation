@@ -8,7 +8,10 @@
 - 공개 URL은 `/{slug}/emotional`, `/{slug}/simple`를 실제 경로로 사용하고, `/{slug}`는 `/{slug}/{defaultTheme}`로 리다이렉트합니다.
 - 공개 청첩장은 `Firestore 우선 + 로컬 sample fallback` 구조로 렌더링합니다.
 - 고객 편집기는 `/page-editor/[slug]`에서 동작하며, 페이지별 비밀번호 기반으로 진입합니다.
-- 방명록은 `guestbooks/{pageSlug}/comments/{commentId}` 구조를 사용합니다.
+- Firestore source of truth는 `events/{eventId}` 축입니다.
+- 공개 주소 `slug`는 `eventSlugIndex/{slug}`로 `eventId`에 매핑합니다.
+- 비밀번호는 `eventSecrets/{eventId}`, 결제는 `billingFulfillments/{transactionId}`를 기준으로 처리합니다.
+- 이벤트 도메인 legacy 컬렉션은 제거 완료 상태이며, `memory-pages`는 별도 도메인으로 유지합니다.
 - 추억 페이지는 `memory-pages`, `memory-images`를 별도로 사용합니다.
 - 모바일 앱은 `apps/mobile` 아래 Expo 프로젝트로 관리합니다.
 
@@ -17,11 +20,13 @@
 - 새 테마 추가 체크리스트: `docs/new-theme-checklist.md`
 - 모바일 청첩장 연동 기준: `docs/mobile-client-editor-policy.md`
 - Expo 영향 범위 점검: `docs/expo-impact-assessment.md`
-- 이벤트 데이터 전환 기준: `docs/event-data-architecture.md`
+- 이벤트 데이터 기준 구조: `docs/event-data-architecture.md`
+- 이벤트 데이터 계약서: `docs/event-data-contract.md`
 - 이벤트 데이터 매핑표: `docs/event-data-mapping.md`
 - 이벤트 저장소 계층 정리: `docs/event-repository-rollout.md`
 - 이벤트 write-through 정책: `docs/event-write-through-policy.md`
 - 이벤트 백필 실행 가이드: `docs/event-backfill-runbook.md`
+- 이벤트 운영 모니터링 가이드: `docs/event-rollout-monitoring.md`
 - 웹 생성 흐름 정리: `docs/web-page-wizard-alignment.md`
 - 서비스 개요 문서: `docs/portfolio-service-overview.md`
 
@@ -171,7 +176,6 @@ apps/
 
 scripts/
   firebase-static-hosting-migration.mjs
-  migrate-comments-to-guestbooks.mjs
   postbuild-static-cleanup.mjs
   sync-memory-page-metadata.mjs
 ```
@@ -187,79 +191,52 @@ scripts/
 
 샘플 데이터는 더 이상 임시용 데이터만은 아니고, 기본값과 fallback 역할도 합니다.
 
-### Firestore 기반 청첩장 설정
+### Firestore 기반 이벤트 저장 구조
 
-#### `invitation-page-configs/{slug}`
+#### source of truth
 
-페이지 본문 설정값 전체를 저장합니다.
+- `events/{eventId}`
+  - 이벤트 메타, 공개 상태, 기간, 통계
+- `events/{eventId}/content/current`
+  - 청첩장 본문 원본
+- `events/{eventId}/comments/{commentId}`
+  - 방명록/댓글
+- `events/{eventId}/linkTokens/{tokenId}`
+  - 모바일 1회용 연동 링크
+- `events/{eventId}/auditLogs/{logId}`
+  - 고위험 작업 및 운영 로그
+- `eventSecrets/{eventId}`
+  - 편집 비밀번호 민감정보
+- `eventSlugIndex/{slug}`
+  - 공개 주소 slug -> `eventId` 조회 인덱스
+- `billingFulfillments/{transactionId}`
+  - 결제 이행 멱등성과 상태
 
-예시 항목:
+#### 해석 규칙
 
-- 신랑 / 신부 정보
-- 일정
-- 장소
-- 인사말
-- 메타데이터
-- 테마 variant 정보
+- 공개 주소와 운영 화면에서 보이는 식별자는 `slug`다.
+- 실제 Firestore 원본 문서는 `eventId` 기준으로 읽고 쓴다.
+- `slug`는 항상 `eventSlugIndex/{slug}`를 통해 `eventId`로 해석한다.
+- `/page-wizard`, `/page-editor/{slug}`, 모바일 운영 화면은 모두 이 구조를 기준 저장소로 사용한다.
+- 고객 편집기와 모바일 편집기는 Firestore에 직접 쓰지 않고 서버 API 또는 repository를 통해 저장한다.
 
-#### `invitation-page-registry/{slug}`
+#### 본문 / 방명록 / 비밀번호 / 결제
 
-페이지 레지스트리와 공개 상태를 저장합니다.
+- 본문 저장은 `events/{eventId}/content/current`
+- 방명록 저장과 상태 변경은 `events/{eventId}/comments/{commentId}`
+- 비밀번호 저장과 검증은 `eventSecrets/{eventId}`
+- 결제 이행은 `billingFulfillments/{transactionId}`
 
-예시 항목:
+#### legacy 상태
 
-- `pageSlug`
-- `published`
-- `hasCustomConfig`
-- `editorTokenHash`
-- `createdAt`
-- `updatedAt`
+- `invitation-page-configs`
+- `invitation-page-registry`
+- `display-periods`
+- `client-passwords`
+- `guestbooks`
+- `page-ticket-balances`
 
-고객 편집기는 `invitation-page-configs`, `invitation-page-registry`를 Firestore에 직접 쓰지 않습니다. `/api/client-editor/pages/[slug]`가 세션을 검증한 뒤 서버 Admin SDK로 저장합니다.
-
-#### `display-periods/{slug}`
-
-페이지의 공개 기간을 제어합니다.
-
-- 문서가 없으면 기간 제한 없음
-- 문서가 있고 `isActive == true`면 기간 적용
-
-#### 페이지 생성 / 편집 경로 요약
-
-- `/page-wizard`는 seed 기반 draft를 만들고 `invitation-page-configs/{slug}`와 `invitation-page-registry/{slug}`를 함께 사용합니다.
-- 관리자는 `prepareWizardConfigForSave()`로 파생값과 정규화 필드를 정리한 뒤 본문 데이터는 `invitation-page-configs/{slug}`에 저장합니다.
-- 공개 여부(`published`), 기본 테마(`defaultTheme`), 커스텀 설정 여부(`hasCustomConfig`)는 `invitation-page-registry/{slug}`에 저장합니다.
-- 고객 편집기(`/page-editor/{slug}`)도 같은 데이터 구조를 읽지만 Firestore에 직접 쓰지 않고 `/api/client-editor/pages/[slug]` 서버 API를 통해 저장합니다.
-- `variants`는 본문 설정과 함께 `invitation-page-configs/{slug}`에 저장되며, 공개 URL 노출 여부는 registry의 공개 상태와 함께 판단합니다.
-
-### 방명록
-
-#### 신규 구조
-
-```text
-guestbooks/{pageSlug}
-guestbooks/{pageSlug}/comments/{commentId}
-```
-
-실제 댓글 문서는 하위 `comments` 서브컬렉션에 저장됩니다.
-
-예시 필드:
-
-- `author`
-- `message`
-- `pageSlug`
-- `createdAt`
-
-고객 댓글 삭제는 공개 페이지에서 비밀번호 검증 후 `/api/client-editor/pages/[slug]/comments/[commentId]` 서버 API를 통해 처리합니다.
-
-#### 레거시 구조
-
-레거시 컬렉션(`comments`, `comments-{pageSlug}`)은 마이그레이션 대상이며, 현재 서비스 조회/저장은 `guestbooks/{pageSlug}/comments/{commentId}` 기준으로 동작합니다.
-
-관련 파일:
-
-- `src/services/commentService.ts`
-- `scripts/migrate-comments-to-guestbooks.mjs`
+위 이벤트 도메인 legacy 컬렉션은 제거 완료 상태다. 현재 런타임은 새 구조만 기준으로 동작한다.
 
 ### 추억 페이지
 
@@ -285,20 +262,9 @@ memory-pages/{pageSlug}
 
 ### 고객 편집 비밀번호
 
-#### `client-passwords/{pageSlug}`
+#### `eventSecrets/{eventId}`
 
-관리자가 고객 편집 비밀번호를 관리하는 컬렉션입니다. 실제 검증의 핵심은 이 컬렉션에 저장된 비밀번호 해시와 `passwordVersion`입니다.
-
-#### `client-access/{pageSlug}`
-
-현재는 핵심 런타임보다 운영 정리 목적에 가까운 관리자 전용 컬렉션입니다.
-
-실제 고객 편집 검증 흐름은 다음과 같습니다.
-
-1. `/api/client-editor/login`에서 `client-passwords/{pageSlug}` 비밀번호 검증
-2. 서버가 서명된 세션 쿠키 발급
-3. `/api/client-editor/*`가 세션 쿠키와 `passwordVersion`을 다시 검증
-4. 페이지 저장, 이미지 업로드, 고객 댓글 삭제 모두 서버 API를 통해 처리
+관리자가 고객 편집 비밀번호를 관리하는 컬렉션입니다. 실제 검증의 핵심은 `eventSecrets/{eventId}`에 저장된 비밀번호 해시와 `passwordVersion`입니다.
 
 ### 관리자 계정
 
@@ -339,18 +305,14 @@ memory-images/{pageSlug}/...
 
 - `memory-pages`
   공개 메모리 페이지 읽기 허용
-- `guestbooks/{pageSlug}/comments`
-  공개 읽기, 공개 작성, 관리자 삭제
-- `client-passwords`
-  관리자만 읽기 / 쓰기
-- `client-access`
-  관리자만 읽기 / 쓰기
-- `invitation-page-configs`
-  공개 청첩장 조건 충족 시 읽기 가능, 쓰기는 관리자 또는 서버 경유
-- `invitation-page-registry`
-  공개 청첩장 조건 충족 시 읽기 가능, 쓰기는 관리자 또는 서버 경유
-- `display-periods`
-  공개 청첩장 조건 충족 시 읽기, 쓰기는 관리자
+- `events/{eventId}`, `events/{eventId}/content/current`
+  공개 이벤트 조건 충족 시 읽기 가능, 쓰기는 관리자 또는 서버 경유
+- `events/{eventId}/comments/{commentId}`
+  공개 이벤트 조건 충족 시 읽기 가능, 공개 작성 가능, 관리자 수정/삭제
+- `eventSecrets`, `eventSlugIndex`, `billingFulfillments`, `event-write-through-failures`
+  관리자 전용 또는 서버 운영 보조 컬렉션
+
+source of truth는 `events/{eventId}` 축이며, legacy 컬렉션 rules는 제거 완료 상태입니다.
 
 자세한 기준은 `firestore.rules`를 우선 확인합니다.
 
@@ -515,14 +477,7 @@ npm run seed:invitation-pages:validate
 `package.json`에 alias가 없는 운영 보조 스크립트는 아래처럼 직접 실행합니다.
 
 ```bash
-node scripts/migrate-comments-to-guestbooks.mjs analyze
-node scripts/migrate-comments-to-guestbooks.mjs migrate --execute
-node scripts/migrate-comments-to-guestbooks.mjs validate
-node scripts/migrate-comments-to-guestbooks.mjs purge-legacy
-node scripts/migrate-comments-to-guestbooks.mjs purge-legacy --execute
-
 node scripts/firebase-static-hosting-migration.mjs analyze
-node scripts/firebase-static-hosting-migration.mjs migrate-comments --execute
 node scripts/firebase-static-hosting-migration.mjs sanitize-memory-pages --execute
 ```
 
@@ -566,46 +521,9 @@ node scripts/firebase-static-hosting-migration.mjs sanitize-memory-pages --execu
 2. `admin-users/{uid}` 문서 존재
 3. `enabled != false`
 
-## 방명록 마이그레이션 가이드
+## 방명록 운영 기준
 
-현재 댓글 대상 조회 구조는 `guestbooks/{pageSlug}/comments/{commentId}`이며, 레거시 컬렉션은 purge 대상입니다.
-
-권장 순서:
-
-```bash
-node scripts/migrate-comments-to-guestbooks.mjs analyze
-node scripts/migrate-comments-to-guestbooks.mjs migrate --execute
-node scripts/migrate-comments-to-guestbooks.mjs validate
-node scripts/migrate-comments-to-guestbooks.mjs purge-legacy
-node scripts/migrate-comments-to-guestbooks.mjs purge-legacy --execute
-npm run deploy:firebase
-```
-
-검증 기준:
-
-- `validate` 결과에서 `missingCount: 0`이면 정상
-- `purge` dry-run에서 `blockedEntryCount: 0`이면 이전 데이터 삭제 가능
-
-### 마이그레이션 실행 전 준비
-
-아래 중 하나가 필요합니다.
-
-- `GOOGLE_APPLICATION_CREDENTIALS`
-- `FIREBASE_SERVICE_ACCOUNT_JSON`
-- 또는 `gcloud auth application-default login`
-
-예시:
-
-```powershell
-$env:GOOGLE_APPLICATION_CREDENTIALS="C:\Users\your-name\Downloads\firebase-admin.json"
-node scripts/migrate-comments-to-guestbooks.mjs analyze
-```
-
-주의:
-
-- 서비스 계정 JSON 파일은 git에 커밋하지 않습니다.
-- 저장소에는 해당 JSON 파일명을 `.gitignore`에 추가한 상태여야 합니다.
-- 현재 런타임은 `guestbooks/{pageSlug}/comments/{commentId}`만 사용합니다.
+현재 댓글 대상 조회와 운영 구조는 `events/{eventId}/comments/{commentId}`입니다. 공개/관리 런타임 모두 이 구조를 기준으로 동작하며, 이벤트 도메인 댓글 legacy 컬렉션은 제거 완료 상태입니다.
 
 ## 메모리 페이지 메타데이터 동기화
 
@@ -634,17 +552,17 @@ node scripts/migrate-comments-to-guestbooks.mjs analyze
 
 ### 공개 상태와 노출 기간
 
-- 서버는 `isPublicInvitationPage()`에서 `published`와 `displayPeriod`를 함께 확인합니다.
-- Firestore rules도 `invitation-page-registry.published == true`와 `display-periods` 조건을 다시 확인합니다.
+- 서버는 `isPublicInvitationPage()`에서 `events.visibility.published`와 `displayPeriod`를 함께 확인합니다.
+- Firestore rules도 `events/{eventId}`의 공개 상태와 기간 조건을 다시 확인합니다.
 - 따라서 공개 여부는 서버 렌더와 Firestore rules 양쪽에서 제한됩니다.
 
 ### 노출 기간 운영 기준
 
-- 관리자와 고객 편집기는 `displayPeriod`를 직접 쓰지 않습니다.
-- 노출 기간 설정과 해제는 `/admin`의 노출 기간 탭에서만 관리합니다.
-- `published == false`면 노출 기간과 무관하게 항상 비공개입니다.
-- `published == true`이고 `displayPeriodEnabled == false`면 기간 제한 없이 공개입니다.
-- `displayPeriodEnabled == true`면 시작일과 종료일이 모두 있어야 하고, 하나라도 비어 있으면 공개 불가 상태로 봅니다.
+- 관리자와 고객 편집기는 별도 기간 컬렉션을 직접 쓰지 않습니다.
+- 노출 기간 설정과 해제는 `/admin`의 노출 기간 탭에서 관리되고, 실제 저장은 `events/{eventId}.visibility`에 반영됩니다.
+- `visibility.published == false`면 기간과 무관하게 항상 비공개입니다.
+- `visibility.displayStartAt`, `visibility.displayEndAt`가 모두 비어 있으면 기간 제한 없이 공개입니다.
+- 기간 필드를 쓸 때는 시작일과 종료일이 모두 있어야 하며, 하나라도 비어 있으면 공개 불가 상태로 봅니다.
 
 ## 배포 상태와 주의사항
 
@@ -675,7 +593,6 @@ node scripts/migrate-comments-to-guestbooks.mjs analyze
 
 - 메모리 페이지는 현재 seed slug 기준으로만 static params를 생성합니다.
 - 관리자에서 완전한 신규 페이지 draft 생성 흐름은 계속 정리 중입니다.
-- 레거시 댓글 컬렉션(`comments`, `comments-{slug}`)은 purge 스크립트로 정리합니다.
 - 배포 파이프라인은 동적 Next 기준으로 아직 최종 정리 전입니다.
 
 ## 검증 권장 명령
@@ -692,12 +609,6 @@ npm run test:smoke
 npm run lint
 npm run typecheck
 npm run build
-```
-
-방명록 마이그레이션 이후에는 추가로 아래 검증을 권장합니다.
-
-```bash
-node scripts/migrate-comments-to-guestbooks.mjs validate
 ```
 
 ## 참고 파일

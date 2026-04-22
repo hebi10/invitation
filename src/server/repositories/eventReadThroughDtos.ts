@@ -33,13 +33,22 @@ export interface EventSummaryRecord {
   eventId: string;
   slug: string;
   eventType: string;
+  status: string | null;
+  title: string | null;
   displayName: string | null;
   summary: string | null;
+  supportedVariants: string[];
   published: boolean;
   defaultTheme: InvitationThemeKey;
   featureFlags: Record<string, unknown>;
   commentCount: number | null;
   ticketCount: number | null;
+  ticketBalance: number | null;
+  visibility: {
+    published: boolean;
+    displayStartAt: Date | null;
+    displayEndAt: Date | null;
+  } | null;
   displayPeriod: {
     isActive: boolean;
     startDate: Date | null;
@@ -49,6 +58,7 @@ export interface EventSummaryRecord {
   createdAt: Date | null;
   updatedAt: Date | null;
   lastSavedAt: Date | null;
+  version: number | null;
   migratedFromPageSlug: string | null;
 }
 
@@ -181,29 +191,54 @@ export function normalizeEventSummaryRecord(
 
   const displayPeriodInput = isRecord(data.displayPeriod) ? data.displayPeriod : null;
   const statsInput = isRecord(data.stats) ? data.stats : null;
+  const visibilityInput = isRecord(data.visibility) ? data.visibility : null;
+  const visibilityPublished =
+    typeof visibilityInput?.published === 'boolean'
+      ? visibilityInput.published
+      : data.published !== false;
+  const visibilityDisplayStartAt = toDate(visibilityInput?.displayStartAt);
+  const visibilityDisplayEndAt = toDate(visibilityInput?.displayEndAt);
+  const supportedVariants = Array.isArray(data.supportedVariants)
+    ? data.supportedVariants.filter(
+        (entry): entry is string => typeof entry === 'string' && entry.trim().length > 0
+      )
+    : [];
 
   return {
     eventId: readNonEmptyString(data.eventId) ?? eventId,
     slug,
     eventType: readNonEmptyString(data.eventType) ?? 'wedding',
+    status: readNonEmptyString(data.status),
+    title: readNonEmptyString(data.title),
     displayName: readNonEmptyString(data.displayName),
     summary: readNonEmptyString(data.summary),
-    published: data.published !== false,
+    supportedVariants,
+    published: visibilityPublished,
     defaultTheme: normalizeInvitationTheme(data.defaultTheme),
     featureFlags: isRecord(data.featureFlags) ? data.featureFlags : {},
     commentCount: readFiniteNumber(statsInput?.commentCount ?? null),
     ticketCount: readFiniteNumber(statsInput?.ticketCount ?? null),
-    displayPeriod: displayPeriodInput
+    ticketBalance: readFiniteNumber(statsInput?.ticketBalance ?? statsInput?.ticketCount ?? null),
+    visibility: {
+      published: visibilityPublished,
+      displayStartAt: visibilityDisplayStartAt,
+      displayEndAt: visibilityDisplayEndAt,
+    },
+    displayPeriod:
+      displayPeriodInput || visibilityDisplayStartAt || visibilityDisplayEndAt
       ? {
-          isActive: displayPeriodInput.isActive === true,
-          startDate: toDate(displayPeriodInput.startDate),
-          endDate: toDate(displayPeriodInput.endDate),
+          isActive:
+            displayPeriodInput?.isActive === true ||
+            Boolean(visibilityDisplayStartAt && visibilityDisplayEndAt),
+          startDate: toDate(displayPeriodInput?.startDate) ?? visibilityDisplayStartAt,
+          endDate: toDate(displayPeriodInput?.endDate) ?? visibilityDisplayEndAt,
         }
       : null,
     hasCustomContent: data.hasCustomContent === true || data.hasCustomConfig === true,
     createdAt: toDate(data.createdAt),
     updatedAt: toDate(data.updatedAt),
     lastSavedAt: toDate(data.lastSavedAt),
+    version: readFiniteNumber(data.version),
     migratedFromPageSlug: readNonEmptyString(data.migratedFromPageSlug),
   };
 }

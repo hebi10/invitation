@@ -1,7 +1,5 @@
 import 'server-only';
 
-import { FieldValue } from 'firebase-admin/firestore';
-
 import { normalizeInvitationPageSlugInput, stripUndefinedDeep } from '@/lib/invitationPagePersistence';
 import { DEFAULT_INVITATION_THEME, type InvitationThemeKey } from '@/lib/invitationThemes';
 import type {
@@ -23,13 +21,6 @@ import {
   isReservedEventSlugIndexStatus,
   type EventSlugIndexStatus,
 } from './eventSlugIndex';
-import { isLegacyReadFallbackEnabled } from './eventRolloutConfig';
-import { loadReadThroughValue } from './readThrough';
-import { executeWriteThrough } from './writeThrough';
-
-const DISPLAY_PERIOD_COLLECTION = 'display-periods';
-const PAGE_CONFIG_COLLECTION = 'invitation-page-configs';
-const PAGE_REGISTRY_COLLECTION = 'invitation-page-registry';
 
 export const EVENTS_COLLECTION = 'events';
 export const EVENT_CONTENT_COLLECTION = 'content';
@@ -144,7 +135,7 @@ function maxDate(...dates: Array<Date | null | undefined>) {
   return new Date(Math.max(...availableDates.map((entry) => entry.getTime())));
 }
 
-function buildEventSummaryFromLegacyState(options: {
+function buildEventSummaryFromRepositoryState(options: {
   pageSlug: string;
   eventId: string;
   existing?: EventSummaryRecord | null;
@@ -169,8 +160,15 @@ function buildEventSummaryFromLegacyState(options: {
     eventId: options.eventId,
     slug: pageSlug,
     eventType: existing?.eventType ?? DEFAULT_EVENT_TYPE,
+    status: existing?.status ?? 'active',
+    title: content?.config.displayName ?? existing?.title ?? null,
     displayName: content?.config.displayName ?? existing?.displayName ?? null,
     summary: content?.config.description ?? existing?.summary ?? null,
+    supportedVariants:
+      Object.keys(content?.config.variants ?? {}).filter((entry) => entry.trim().length > 0)
+        .length > 0
+        ? Object.keys(content?.config.variants ?? {}).filter((entry) => entry.trim().length > 0)
+        : existing?.supportedVariants ?? [],
     published: registry?.published ?? existing?.published ?? true,
     defaultTheme:
       registry?.defaultTheme ??
@@ -185,6 +183,20 @@ function buildEventSummaryFromLegacyState(options: {
       {},
     commentCount: existing?.commentCount ?? null,
     ticketCount: existing?.ticketCount ?? null,
+    ticketBalance: existing?.ticketBalance ?? existing?.ticketCount ?? null,
+    visibility: {
+      published: registry?.published ?? existing?.visibility?.published ?? existing?.published ?? true,
+      displayStartAt:
+        displayPeriod?.startDate ??
+        existing?.visibility?.displayStartAt ??
+        existing?.displayPeriod?.startDate ??
+        null,
+      displayEndAt:
+        displayPeriod?.endDate ??
+        existing?.visibility?.displayEndAt ??
+        existing?.displayPeriod?.endDate ??
+        null,
+    },
     displayPeriod:
       displayPeriod || existing?.displayPeriod
         ? {
@@ -210,120 +222,9 @@ function buildEventSummaryFromLegacyState(options: {
         displayPeriod?.updatedAt
       ) ?? now,
     lastSavedAt: content?.updatedAt ?? existing?.lastSavedAt ?? null,
+    version: (existing?.version ?? 0) + 1,
     migratedFromPageSlug: existing?.migratedFromPageSlug ?? pageSlug,
   } satisfies EventSummaryRecord;
-}
-
-async function fetchLegacySlugTaken(pageSlug: string) {
-  const db = getServerFirestore();
-  if (!db) {
-    return false;
-  }
-
-  const [configSnapshot, registrySnapshot] = await Promise.all([
-    db.collection(PAGE_CONFIG_COLLECTION).doc(pageSlug).get(),
-    db.collection(PAGE_REGISTRY_COLLECTION).doc(pageSlug).get(),
-  ]);
-
-  return configSnapshot.exists || registrySnapshot.exists;
-}
-
-async function fetchLegacyRegistryBySlug(pageSlug: string) {
-  const db = getServerFirestore();
-  if (!db) {
-    return null;
-  }
-
-  const snapshot = await db.collection(PAGE_REGISTRY_COLLECTION).doc(pageSlug).get();
-  if (!snapshot.exists) {
-    return null;
-  }
-
-  const { normalizeInvitationPageRegistryRecord } = await import(
-    '@/lib/invitationPagePersistence'
-  );
-  return normalizeInvitationPageRegistryRecord(pageSlug, snapshot.data() ?? {});
-}
-
-async function fetchLegacyContentBySlug(pageSlug: string) {
-  const db = getServerFirestore();
-  if (!db) {
-    return null;
-  }
-
-  const snapshot = await db.collection(PAGE_CONFIG_COLLECTION).doc(pageSlug).get();
-  if (!snapshot.exists) {
-    return null;
-  }
-
-  const { getWeddingPageBySlug } = await import('@/config/weddingPages');
-  const { normalizeInvitationConfigSeed } = await import('@/lib/invitationPagePersistence');
-  const { toDate } = await import('@/lib/invitationPageNormalization');
-  const config = normalizeInvitationConfigSeed(
-    pageSlug,
-    snapshot.data() ?? {},
-    getWeddingPageBySlug(pageSlug) ?? undefined
-  );
-  if (!config) {
-    return null;
-  }
-
-  const data = snapshot.data() ?? {};
-  return {
-    slug: config.slug,
-    config,
-    createdAt: toDate(data.createdAt),
-    updatedAt: toDate(data.updatedAt),
-    seedSourceSlug:
-      typeof data.seedSourceSlug === 'string' && data.seedSourceSlug.trim()
-        ? data.seedSourceSlug.trim()
-        : null,
-  } satisfies StoredInvitationPageConfigRecord;
-}
-
-async function fetchLegacyDisplayPeriodBySlug(pageSlug: string) {
-  const db = getServerFirestore();
-  if (!db) {
-    return null;
-  }
-
-  const { normalizeInvitationPageDisplayPeriod } = await import(
-    '@/lib/invitationPagePersistence'
-  );
-
-  const directSnapshot = await db.collection(DISPLAY_PERIOD_COLLECTION).doc(pageSlug).get();
-  if (directSnapshot.exists) {
-    const normalized = normalizeInvitationPageDisplayPeriod(
-      pageSlug,
-      directSnapshot.data() ?? {}
-    );
-    if (normalized) {
-      return normalized;
-    }
-  }
-
-  const snapshot = await db
-    .collection(DISPLAY_PERIOD_COLLECTION)
-    .where('pageSlug', '==', pageSlug)
-    .get();
-
-  let preferred: InvitationPageDisplayPeriodRecord | null = null;
-  snapshot.docs.forEach((docSnapshot) => {
-    const normalized = normalizeInvitationPageDisplayPeriod(docSnapshot.id, docSnapshot.data());
-    if (!normalized) {
-      return;
-    }
-
-    if (
-      !preferred ||
-      (normalized.docId === normalized.pageSlug && preferred.docId !== preferred.pageSlug) ||
-      (normalized.updatedAt?.getTime() ?? 0) > (preferred.updatedAt?.getTime() ?? 0)
-    ) {
-      preferred = normalized;
-    }
-  });
-
-  return preferred;
 }
 
 async function findEventSummaryById(
@@ -608,6 +509,20 @@ async function fetchEventContentBySlug(pageSlug: string) {
   );
 }
 
+async function fetchEventRegistryBySlug(pageSlug: string) {
+  const resolvedEvent = await resolveStoredEventBySlug(pageSlug);
+  return resolvedEvent
+    ? buildInvitationPageRegistryRecordFromEventSummary(resolvedEvent.summary)
+    : null;
+}
+
+async function fetchEventDisplayPeriodBySlug(pageSlug: string) {
+  const resolvedEvent = await resolveStoredEventBySlug(pageSlug);
+  return resolvedEvent
+    ? buildInvitationPageDisplayPeriodRecordFromEventSummary(resolvedEvent.summary)
+    : null;
+}
+
 async function writeEventSummaryMirror(
   resolvedEvent: ResolvedEventRecord | null,
   summary: EventSummaryRecord,
@@ -626,14 +541,25 @@ async function writeEventSummaryMirror(
         eventId: summary.eventId,
         eventType: summary.eventType,
         slug: summary.slug,
+        status: summary.status ?? 'active',
+        title: summary.title,
         displayName: summary.displayName,
         summary: summary.summary,
         published: summary.published,
         defaultTheme: summary.defaultTheme,
+        supportedVariants: summary.supportedVariants,
         featureFlags: summary.featureFlags,
         stats: {
           commentCount: summary.commentCount,
           ticketCount: summary.ticketCount,
+          ticketBalance: summary.ticketBalance ?? summary.ticketCount,
+        },
+        visibility: {
+          published: summary.visibility?.published ?? summary.published,
+          displayStartAt:
+            summary.visibility?.displayStartAt ?? summary.displayPeriod?.startDate ?? null,
+          displayEndAt:
+            summary.visibility?.displayEndAt ?? summary.displayPeriod?.endDate ?? null,
         },
         displayPeriod: summary.displayPeriod
           ? {
@@ -642,10 +568,12 @@ async function writeEventSummaryMirror(
               endDate: summary.displayPeriod.endDate,
             }
           : null,
+        hasCustomConfig: summary.hasCustomContent,
         hasCustomContent: summary.hasCustomContent,
         createdAt: summary.createdAt ?? now,
         updatedAt: summary.updatedAt ?? now,
         lastSavedAt: summary.lastSavedAt,
+        version: summary.version ?? 1,
         migratedFromPageSlug: summary.migratedFromPageSlug ?? summary.slug,
       },
       { merge: true }
@@ -710,17 +638,17 @@ export async function ensureEventMirrorBySlug(
   const registry =
     options.registry !== undefined
       ? options.registry
-      : await fetchLegacyRegistryBySlug(normalizedPageSlug);
+      : await fetchEventRegistryBySlug(normalizedPageSlug);
   const content =
     options.content !== undefined
       ? options.content
-      : await fetchLegacyContentBySlug(normalizedPageSlug);
+      : await fetchEventContentBySlug(normalizedPageSlug);
   const displayPeriod =
     options.displayPeriod !== undefined
       ? options.displayPeriod
-      : await fetchLegacyDisplayPeriodBySlug(normalizedPageSlug);
+      : await fetchEventDisplayPeriodBySlug(normalizedPageSlug);
 
-  const summary = buildEventSummaryFromLegacyState({
+  const summary = buildEventSummaryFromRepositoryState({
     pageSlug: normalizedPageSlug,
     eventId,
     existing: existingEvent?.summary ?? null,
@@ -764,16 +692,7 @@ export const firestoreEventRepository: EventRepository = {
       return false;
     }
 
-    const preferred = await resolveStoredEventBySlug(normalizedPageSlug);
-    if (preferred) {
-      return true;
-    }
-
-    if (!isLegacyReadFallbackEnabled()) {
-      return false;
-    }
-
-    return fetchLegacySlugTaken(normalizedPageSlug);
+    return Boolean(await resolveStoredEventBySlug(normalizedPageSlug));
   },
 
   async findRegistryBySlug(pageSlug) {
@@ -782,15 +701,7 @@ export const firestoreEventRepository: EventRepository = {
       return null;
     }
 
-    return loadReadThroughValue({
-      preferred: async () => {
-        const resolvedEvent = await resolveStoredEventBySlug(normalizedPageSlug);
-        return resolvedEvent
-          ? buildInvitationPageRegistryRecordFromEventSummary(resolvedEvent.summary)
-          : null;
-      },
-      fallback: () => fetchLegacyRegistryBySlug(normalizedPageSlug),
-    });
+    return fetchEventRegistryBySlug(normalizedPageSlug);
   },
 
   async findContentBySlug(pageSlug) {
@@ -799,10 +710,7 @@ export const firestoreEventRepository: EventRepository = {
       return null;
     }
 
-    return loadReadThroughValue({
-      preferred: () => fetchEventContentBySlug(normalizedPageSlug),
-      fallback: () => fetchLegacyContentBySlug(normalizedPageSlug),
-    });
+    return fetchEventContentBySlug(normalizedPageSlug);
   },
 
   async findDisplayPeriodBySlug(pageSlug) {
@@ -811,26 +719,17 @@ export const firestoreEventRepository: EventRepository = {
       return null;
     }
 
-    return loadReadThroughValue({
-      preferred: async () => {
-        const resolvedEvent = await resolveStoredEventBySlug(normalizedPageSlug);
-        return resolvedEvent
-          ? buildInvitationPageDisplayPeriodRecordFromEventSummary(resolvedEvent.summary)
-          : null;
-      },
-      fallback: () => fetchLegacyDisplayPeriodBySlug(normalizedPageSlug),
-    });
+    return fetchEventDisplayPeriodBySlug(normalizedPageSlug);
   },
 
   async upsertRegistryBySlug(pageSlug, payload) {
     const slugGuard = await ensureSlugIndexWriteAllowed(pageSlug);
     const normalizedPageSlug = slugGuard.normalizedPageSlug;
-    const db = getServerFirestore();
-    if (!db) {
+    if (!getServerFirestore()) {
       throw new Error('데이터 저장소 연결을 확인하지 못했습니다. 잠시 후 다시 시도해 주세요.');
     }
 
-    const existing = await fetchLegacyRegistryBySlug(normalizedPageSlug);
+    const existing = await fetchEventRegistryBySlug(normalizedPageSlug);
     const now = new Date();
     const nextRegistry: InvitationPageRegistryRecord = {
       docId: normalizedPageSlug,
@@ -841,44 +740,10 @@ export const firestoreEventRepository: EventRepository = {
       createdAt: existing?.createdAt ?? now,
       updatedAt: now,
     };
-    const docRef = db.collection(PAGE_REGISTRY_COLLECTION).doc(normalizedPageSlug);
-
-    await executeWriteThrough({
-      operation: 'upsertEventRegistry',
-      pageSlug: normalizedPageSlug,
-      eventId: slugGuard.eventId,
-      legacyCollection: PAGE_REGISTRY_COLLECTION,
-      eventCollection: EVENTS_COLLECTION,
-      payload: {
-        published: nextRegistry.published,
-        defaultTheme: nextRegistry.defaultTheme,
-        hasCustomConfig: nextRegistry.hasCustomConfig,
-      },
-      legacyWrite: async () => {
-        await docRef.set(
-          {
-            pageSlug: normalizedPageSlug,
-            published: nextRegistry.published,
-            defaultTheme: nextRegistry.defaultTheme,
-            hasCustomConfig: nextRegistry.hasCustomConfig,
-            createdAt: nextRegistry.createdAt ?? now,
-            updatedAt: now,
-            editorTokenHash: FieldValue.delete(),
-          },
-          { merge: true }
-        );
-
-        return undefined;
-      },
-      eventWrite: async () => {
-        await ensureEventMirrorBySlug(normalizedPageSlug, {
-          registry: nextRegistry,
-          forceCreate: true,
-          now,
-        });
-
-        return undefined;
-      },
+    await ensureEventMirrorBySlug(normalizedPageSlug, {
+      registry: nextRegistry,
+      forceCreate: true,
+      now,
     });
   },
 
@@ -889,12 +754,11 @@ export const firestoreEventRepository: EventRepository = {
       throw new Error('Display period dates are required.');
     }
 
-    const db = getServerFirestore();
-    if (!db) {
+    if (!getServerFirestore()) {
       throw new Error('데이터 저장소 연결을 확인하지 못했습니다. 잠시 후 다시 시도해 주세요.');
     }
 
-    const existing = await fetchLegacyDisplayPeriodBySlug(normalizedPageSlug);
+    const existing = await fetchEventDisplayPeriodBySlug(normalizedPageSlug);
     const now = new Date();
     const nextDisplayPeriod: InvitationPageDisplayPeriodRecord = {
       docId: normalizedPageSlug,
@@ -905,55 +769,21 @@ export const firestoreEventRepository: EventRepository = {
       createdAt: existing?.createdAt ?? now,
       updatedAt: now,
     };
-    const docRef = db.collection(DISPLAY_PERIOD_COLLECTION).doc(normalizedPageSlug);
-
-    await executeWriteThrough({
-      operation: 'upsertEventDisplayPeriod',
-      pageSlug: normalizedPageSlug,
-      eventId: slugGuard.eventId,
-      legacyCollection: DISPLAY_PERIOD_COLLECTION,
-      eventCollection: EVENTS_COLLECTION,
-      payload: {
-        isActive: nextDisplayPeriod.isActive,
-        startDate: nextDisplayPeriod.startDate,
-        endDate: nextDisplayPeriod.endDate,
-      },
-      legacyWrite: async () => {
-        await docRef.set(
-          {
-            pageSlug: normalizedPageSlug,
-            isActive: nextDisplayPeriod.isActive,
-            startDate: nextDisplayPeriod.startDate,
-            endDate: nextDisplayPeriod.endDate,
-            createdAt: nextDisplayPeriod.createdAt ?? now,
-            updatedAt: now,
-          },
-          { merge: true }
-        );
-
-        return undefined;
-      },
-      eventWrite: async () => {
-        await ensureEventMirrorBySlug(normalizedPageSlug, {
-          displayPeriod: nextDisplayPeriod,
-          forceCreate: true,
-          now,
-        });
-
-        return undefined;
-      },
+    await ensureEventMirrorBySlug(normalizedPageSlug, {
+      displayPeriod: nextDisplayPeriod,
+      forceCreate: true,
+      now,
     });
   },
 
   async saveContentBySlug(input) {
     const slugGuard = await ensureSlugIndexWriteAllowed(input.slug);
     const normalizedPageSlug = slugGuard.normalizedPageSlug;
-    const db = getServerFirestore();
-    if (!db) {
+    if (!getServerFirestore()) {
       throw new Error('데이터 저장소 연결을 확인하지 못했습니다. 잠시 후 다시 시도해 주세요.');
     }
 
-    const existing = await fetchLegacyContentBySlug(normalizedPageSlug);
+    const existing = await fetchEventContentBySlug(normalizedPageSlug);
     const now = input.updatedAt ?? new Date();
     const nextContentRecord: StoredInvitationPageConfigRecord = {
       slug: normalizedPageSlug,
@@ -962,52 +792,15 @@ export const firestoreEventRepository: EventRepository = {
       updatedAt: now,
       seedSourceSlug: input.seedSourceSlug?.trim() || null,
     };
-    const payload = stripUndefinedDeep(input.config);
-
-    await executeWriteThrough({
-      operation: 'saveEventContent',
-      pageSlug: normalizedPageSlug,
-      eventId: slugGuard.eventId,
-      legacyCollection: PAGE_CONFIG_COLLECTION,
-      eventCollection: `${EVENTS_COLLECTION}/${EVENT_CONTENT_COLLECTION}`,
-      payload: {
-        slug: normalizedPageSlug,
-        seedSourceSlug: nextContentRecord.seedSourceSlug,
-        productTier: input.config.productTier ?? null,
-      },
-      legacyWrite: async () => {
-        await db
-          .collection(PAGE_CONFIG_COLLECTION)
-          .doc(normalizedPageSlug)
-          .set(
-            {
-              ...payload,
-              ...(nextContentRecord.seedSourceSlug !== null
-                ? { seedSourceSlug: nextContentRecord.seedSourceSlug }
-                : { seedSourceSlug: FieldValue.delete() }),
-              createdAt: nextContentRecord.createdAt ?? now,
-              updatedAt: now,
-              editorTokenHash: FieldValue.delete(),
-            },
-            { merge: true }
-          );
-
-        return undefined;
-      },
-      eventWrite: async () => {
-        const mirroredEvent = await ensureEventMirrorBySlug(normalizedPageSlug, {
-          content: nextContentRecord,
-          forceCreate: true,
-          now,
-        });
-        if (!mirroredEvent) {
-          throw new Error('Failed to mirror event summary for content write.');
-        }
-
-        await writeEventContentMirror(mirroredEvent.summary, nextContentRecord, now);
-
-        return undefined;
-      },
+    const mirroredEvent = await ensureEventMirrorBySlug(normalizedPageSlug, {
+      content: nextContentRecord,
+      forceCreate: true,
+      now,
     });
+    if (!mirroredEvent) {
+      throw new Error('Failed to mirror event summary for content write.');
+    }
+
+    await writeEventContentMirror(mirroredEvent.summary, nextContentRecord, now);
   },
 };

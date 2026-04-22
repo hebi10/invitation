@@ -7,8 +7,12 @@ import { pathToFileURL } from 'node:url';
 import { applicationDefault, cert, getApps, initializeApp } from 'firebase-admin/app';
 import { getFirestore } from 'firebase-admin/firestore';
 
-const PAGE_CONFIG_COLLECTION = 'invitation-page-configs';
-const PAGE_REGISTRY_COLLECTION = 'invitation-page-registry';
+const EVENTS_COLLECTION = 'events';
+const EVENT_CONTENT_COLLECTION = 'content';
+const EVENT_CURRENT_CONTENT_DOC = 'current';
+const EVENT_SLUG_INDEX_COLLECTION = 'eventSlugIndex';
+const DEFAULT_EVENT_TYPE = 'wedding';
+const DEFAULT_INVITATION_THEME = 'emotional';
 
 function getFirebaseProjectId() {
   return (
@@ -134,25 +138,130 @@ function cloneSeed(seed) {
   return JSON.parse(JSON.stringify(seed));
 }
 
-function buildConfigPayload(seed, existingConfig) {
+function buildEventId(seed) {
+  return `evt_${seed.slug}`;
+}
+
+function readSupportedVariants(seed) {
+  return Object.keys(seed.variants ?? {}).filter((entry) => entry.trim().length > 0);
+}
+
+function resolveDefaultTheme(seed, existingSummary) {
+  if (typeof existingSummary?.defaultTheme === 'string' && existingSummary.defaultTheme.trim()) {
+    return existingSummary.defaultTheme.trim();
+  }
+
+  const availableVariant = Object.entries(seed.variants ?? {}).find(([, value]) => {
+    return typeof value === 'object' && value !== null && value.available !== false;
+  });
+
+  return availableVariant?.[0] ?? DEFAULT_INVITATION_THEME;
+}
+
+function buildEventSummaryPayload(seed, existingSummary) {
+  const now = new Date();
+  const supportedVariants = readSupportedVariants(seed);
+  const nextPublished =
+    typeof existingSummary?.visibility?.published === 'boolean'
+      ? existingSummary.visibility.published
+      : existingSummary?.published ?? true;
+  const nextDisplayStartAt =
+    existingSummary?.visibility?.displayStartAt ??
+    existingSummary?.displayPeriod?.startDate ??
+    null;
+  const nextDisplayEndAt =
+    existingSummary?.visibility?.displayEndAt ??
+    existingSummary?.displayPeriod?.endDate ??
+    null;
+  const nextTicketBalance =
+    typeof existingSummary?.stats?.ticketBalance === 'number'
+      ? existingSummary.stats.ticketBalance
+      : typeof existingSummary?.stats?.ticketCount === 'number'
+        ? existingSummary.stats.ticketCount
+        : 0;
+  const nextCommentCount =
+    typeof existingSummary?.stats?.commentCount === 'number'
+      ? existingSummary.stats.commentCount
+      : 0;
+
+  return {
+    eventId: buildEventId(seed),
+    eventType: existingSummary?.eventType ?? DEFAULT_EVENT_TYPE,
+    slug: seed.slug,
+    status: existingSummary?.status ?? 'active',
+    title: seed.displayName,
+    displayName: seed.displayName,
+    summary:
+      typeof seed.description === 'string' && seed.description.trim()
+        ? seed.description.trim()
+        : null,
+    supportedVariants,
+    published: nextPublished,
+    defaultTheme: resolveDefaultTheme(seed, existingSummary),
+    featureFlags:
+      seed.features && typeof seed.features === 'object' ? cloneSeed(seed.features) : {},
+    stats: {
+      commentCount: nextCommentCount,
+      ticketCount: nextTicketBalance,
+      ticketBalance: nextTicketBalance,
+    },
+    visibility: {
+      published: nextPublished,
+      displayStartAt: nextDisplayStartAt,
+      displayEndAt: nextDisplayEndAt,
+    },
+    displayPeriod:
+      nextDisplayStartAt || nextDisplayEndAt
+        ? {
+            isActive: Boolean(nextDisplayStartAt && nextDisplayEndAt),
+            startDate: nextDisplayStartAt,
+            endDate: nextDisplayEndAt,
+          }
+        : null,
+    hasCustomConfig: true,
+    hasCustomContent: true,
+    createdAt: existingSummary?.createdAt ?? now,
+    updatedAt: now,
+    lastSavedAt: now,
+    version:
+      typeof existingSummary?.version === 'number' && Number.isFinite(existingSummary.version)
+        ? existingSummary.version + 1
+        : 1,
+    migratedFromPageSlug: existingSummary?.migratedFromPageSlug ?? seed.slug,
+  };
+}
+
+function buildEventContentPayload(seed, existingContent, eventSummary) {
   const now = new Date();
 
   return {
-    ...cloneSeed(seed),
+    schemaVersion: 1,
+    eventType: eventSummary.eventType,
+    slug: seed.slug,
+    content: cloneSeed(seed),
+    themeState: {
+      defaultTheme: eventSummary.defaultTheme,
+      variants: cloneSeed(seed.variants ?? {}),
+    },
+    productTier: seed.productTier ?? null,
+    featureFlags:
+      seed.features && typeof seed.features === 'object' ? cloneSeed(seed.features) : {},
     seedSourceSlug: seed.slug,
-    createdAt: existingConfig?.createdAt ?? now,
+    createdAt: existingContent?.createdAt ?? eventSummary.createdAt ?? now,
     updatedAt: now,
   };
 }
 
-function buildRegistryPayload(seed, existingRegistry) {
+function buildEventSlugIndexPayload(seed, existingSlugIndex, eventSummary) {
   const now = new Date();
 
   return {
-    pageSlug: seed.slug,
-    published: existingRegistry?.published ?? true,
-    hasCustomConfig: true,
-    createdAt: existingRegistry?.createdAt ?? now,
+    slug: seed.slug,
+    eventId: eventSummary.eventId,
+    eventType: eventSummary.eventType,
+    status: 'active',
+    targetSlug: null,
+    createdAt: existingSlugIndex?.createdAt ?? eventSummary.createdAt ?? now,
     updatedAt: now,
   };
 }
@@ -160,17 +269,27 @@ function buildRegistryPayload(seed, existingRegistry) {
 async function collectSeedStatus(db, seeds) {
   const statuses = await Promise.all(
     seeds.map(async (seed) => {
-      const [configSnapshot, registrySnapshot] = await Promise.all([
-        db.collection(PAGE_CONFIG_COLLECTION).doc(seed.slug).get(),
-        db.collection(PAGE_REGISTRY_COLLECTION).doc(seed.slug).get(),
+      const eventId = buildEventId(seed);
+      const [summarySnapshot, contentSnapshot, slugIndexSnapshot] = await Promise.all([
+        db.collection(EVENTS_COLLECTION).doc(eventId).get(),
+        db
+          .collection(EVENTS_COLLECTION)
+          .doc(eventId)
+          .collection(EVENT_CONTENT_COLLECTION)
+          .doc(EVENT_CURRENT_CONTENT_DOC)
+          .get(),
+        db.collection(EVENT_SLUG_INDEX_COLLECTION).doc(seed.slug).get(),
       ]);
 
       return {
         seed,
-        hasConfig: configSnapshot.exists,
-        hasRegistry: registrySnapshot.exists,
-        configData: configSnapshot.exists ? configSnapshot.data() : null,
-        registryData: registrySnapshot.exists ? registrySnapshot.data() : null,
+        eventId,
+        hasSummary: summarySnapshot.exists,
+        hasContent: contentSnapshot.exists,
+        hasSlugIndex: slugIndexSnapshot.exists,
+        summaryData: summarySnapshot.exists ? summarySnapshot.data() : null,
+        contentData: contentSnapshot.exists ? contentSnapshot.data() : null,
+        slugIndexData: slugIndexSnapshot.exists ? slugIndexSnapshot.data() : null,
       };
     })
   );
@@ -180,19 +299,23 @@ async function collectSeedStatus(db, seeds) {
 
 async function analyze(db, seeds) {
   const statuses = await collectSeedStatus(db, seeds);
-  const missingConfig = statuses.filter((entry) => !entry.hasConfig).map((entry) => entry.seed.slug);
-  const missingRegistry = statuses.filter((entry) => !entry.hasRegistry).map((entry) => entry.seed.slug);
+  const missingSummary = statuses.filter((entry) => !entry.hasSummary).map((entry) => entry.seed.slug);
+  const missingContent = statuses.filter((entry) => !entry.hasContent).map((entry) => entry.seed.slug);
+  const missingSlugIndex = statuses.filter((entry) => !entry.hasSlugIndex).map((entry) => entry.seed.slug);
 
   console.log(
     JSON.stringify(
       {
         seedCount: seeds.length,
-        configCount: statuses.filter((entry) => entry.hasConfig).length,
-        registryCount: statuses.filter((entry) => entry.hasRegistry).length,
-        missingConfigCount: missingConfig.length,
-        missingRegistryCount: missingRegistry.length,
-        missingConfig,
-        missingRegistry,
+        summaryCount: statuses.filter((entry) => entry.hasSummary).length,
+        contentCount: statuses.filter((entry) => entry.hasContent).length,
+        slugIndexCount: statuses.filter((entry) => entry.hasSlugIndex).length,
+        missingSummaryCount: missingSummary.length,
+        missingContentCount: missingContent.length,
+        missingSlugIndexCount: missingSlugIndex.length,
+        missingSummary,
+        missingContent,
+        missingSlugIndex,
       },
       null,
       2
@@ -202,41 +325,64 @@ async function analyze(db, seeds) {
 
 async function seedPages(db, seeds, execute, overwrite) {
   const statuses = await collectSeedStatus(db, seeds);
-  let configWrites = 0;
-  let registryWrites = 0;
+  let summaryWrites = 0;
+  let contentWrites = 0;
+  let slugIndexWrites = 0;
   let skipped = 0;
 
   for (const entry of statuses) {
-    const shouldWriteConfig = overwrite || !entry.hasConfig;
-    const shouldWriteRegistry = overwrite || !entry.hasRegistry;
+    const shouldWriteSummary = overwrite || !entry.hasSummary;
+    const shouldWriteContent = overwrite || !entry.hasContent;
+    const shouldWriteSlugIndex = overwrite || !entry.hasSlugIndex;
 
-    if (!shouldWriteConfig && !shouldWriteRegistry) {
+    if (!shouldWriteSummary && !shouldWriteContent && !shouldWriteSlugIndex) {
       skipped += 1;
       continue;
     }
 
+    const eventSummary = buildEventSummaryPayload(entry.seed, entry.summaryData);
+
     if (execute) {
-      if (shouldWriteConfig) {
+      if (shouldWriteSummary) {
         await db
-          .collection(PAGE_CONFIG_COLLECTION)
-          .doc(entry.seed.slug)
-          .set(buildConfigPayload(entry.seed, entry.configData), { merge: true });
+          .collection(EVENTS_COLLECTION)
+          .doc(entry.eventId)
+          .set(eventSummary, { merge: true });
       }
 
-      if (shouldWriteRegistry) {
+      if (shouldWriteContent) {
         await db
-          .collection(PAGE_REGISTRY_COLLECTION)
+          .collection(EVENTS_COLLECTION)
+          .doc(entry.eventId)
+          .collection(EVENT_CONTENT_COLLECTION)
+          .doc(EVENT_CURRENT_CONTENT_DOC)
+          .set(
+            buildEventContentPayload(entry.seed, entry.contentData, eventSummary),
+            { merge: true }
+          );
+      }
+
+      if (shouldWriteSlugIndex) {
+        await db
+          .collection(EVENT_SLUG_INDEX_COLLECTION)
           .doc(entry.seed.slug)
-          .set(buildRegistryPayload(entry.seed, entry.registryData), { merge: true });
+          .set(
+            buildEventSlugIndexPayload(entry.seed, entry.slugIndexData, eventSummary),
+            { merge: true }
+          );
       }
     }
 
-    if (shouldWriteConfig) {
-      configWrites += 1;
+    if (shouldWriteSummary) {
+      summaryWrites += 1;
     }
 
-    if (shouldWriteRegistry) {
-      registryWrites += 1;
+    if (shouldWriteContent) {
+      contentWrites += 1;
+    }
+
+    if (shouldWriteSlugIndex) {
+      slugIndexWrites += 1;
     }
   }
 
@@ -245,8 +391,9 @@ async function seedPages(db, seeds, execute, overwrite) {
       {
         mode: execute ? 'execute' : 'dry-run',
         overwrite,
-        configWrites,
-        registryWrites,
+        summaryWrites,
+        contentWrites,
+        slugIndexWrites,
         skipped,
       },
       null,
@@ -258,11 +405,12 @@ async function seedPages(db, seeds, execute, overwrite) {
 async function validate(db, seeds) {
   const statuses = await collectSeedStatus(db, seeds);
   const invalidEntries = statuses
-    .filter((entry) => !entry.hasConfig || !entry.hasRegistry)
+    .filter((entry) => !entry.hasSummary || !entry.hasContent || !entry.hasSlugIndex)
     .map((entry) => ({
       slug: entry.seed.slug,
-      missingConfig: !entry.hasConfig,
-      missingRegistry: !entry.hasRegistry,
+      missingSummary: !entry.hasSummary,
+      missingContent: !entry.hasContent,
+      missingSlugIndex: !entry.hasSlugIndex,
     }));
 
   console.log(

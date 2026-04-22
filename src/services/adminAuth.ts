@@ -1,4 +1,5 @@
 import { ensureFirebaseInit, USE_FIREBASE } from '@/lib/firebase';
+import { adminUserRepository } from '@/services/repositories/adminUserRepository';
 
 export interface AdminUser {
   uid: string;
@@ -12,31 +13,16 @@ type AdminSessionSnapshot = {
 
 async function getAuthModules() {
   const firebase = await ensureFirebaseInit();
-  const [authModule, firestoreModule] = await Promise.all([
-    import('firebase/auth'),
-    import('firebase/firestore'),
-  ]);
+  const authModule = await import('firebase/auth');
 
   return {
     auth: firebase.auth,
-    db: firebase.db,
     authModule,
-    firestoreModule,
   };
 }
 
 async function isUserAdmin(uid: string) {
-  const { db, firestoreModule } = await getAuthModules();
-
-  if (!db) {
-    return false;
-  }
-
-  const snapshot = await firestoreModule.getDoc(
-    firestoreModule.doc(db, 'admin-users', uid)
-  );
-
-  return snapshot.exists() && snapshot.data()?.enabled !== false;
+  return adminUserRepository.isEnabled(uid);
 }
 
 function toAdminUser(user: { uid: string; email: string | null }): AdminUser {
@@ -49,7 +35,7 @@ function toAdminUser(user: { uid: string; email: string | null }): AdminUser {
 export async function loginAdmin(email: string, password: string): Promise<AdminUser> {
   if (!USE_FIREBASE) {
     if (process.env.NODE_ENV === 'production') {
-      throw new Error('Firebase가 비활성 상태이므로 로그인할 수 없습니다.');
+      throw new Error('Firebase가 비활성화된 상태에서는 로그인할 수 없습니다.');
     }
 
     return {

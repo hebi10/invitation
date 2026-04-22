@@ -11,6 +11,7 @@ async function main() {
   const directResult = await executeWriteThrough({
     operation: 'testDirectWriteThrough',
     pageSlug: 'alpha-event',
+    writeMode: 'legacy-primary',
     legacyCollection: 'legacy-test',
     eventCollection: 'events-test',
     legacyWrite: async () => {
@@ -33,6 +34,7 @@ async function main() {
   const retryResult = await executeWriteThrough({
     operation: 'testRetryWriteThrough',
     pageSlug: 'beta-event',
+    writeMode: 'legacy-primary',
     legacyCollection: 'legacy-test',
     eventCollection: 'events-test',
     legacyWrite: async () => 'legacy-success',
@@ -56,6 +58,7 @@ async function main() {
   const partialFailureResult = await executeWriteThrough({
     operation: 'testPartialFailureWriteThrough',
     pageSlug: 'gamma-event',
+    writeMode: 'legacy-primary',
     legacyCollection: 'legacy-test',
     eventCollection: 'events-test',
     payload: {
@@ -83,15 +86,14 @@ async function main() {
     await executeWriteThrough({
       operation: 'testPrimaryFailureWriteThrough',
       pageSlug: 'delta-event',
+      writeMode: 'legacy-primary',
       legacyCollection: 'legacy-test',
       eventCollection: 'events-test',
       legacyWrite: async () => {
         throw new Error('legacy failed');
       },
       eventWrite: async () => 'event-success',
-      recordFailure: async () => {
-        throw new Error('recordFailure should not run when primary fails');
-      },
+      recordFailure: async () => undefined,
     });
   }, /legacy failed/);
 

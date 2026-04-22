@@ -11,26 +11,15 @@ import {
   resolveAvailableInvitationVariant,
   type InvitationVariantKey,
 } from '@/lib/invitationVariants';
-import { ensureFirebaseInit, USE_FIREBASE } from '@/lib/firebase';
 import {
   createInvitationPageDisplayName,
-  generateInvitationPageSlugSuffix,
   mergeInvitationPageSeed,
-  normalizeInvitationConfigSeed,
-    normalizeInvitationPageDisplayPeriod,
-    normalizeInvitationPageRegistryRecord,
-    stripUndefinedDeep,
   type InvitationPageDisplayPeriodRecord as DisplayPeriodRecord,
   type InvitationPageRegistryRecord,
 } from '@/lib/invitationPagePersistence';
 import {
-  getInvitationPageSlugValidationErrorMessage,
-  validateInvitationPageSlugBase,
-} from '@/lib/invitationPageSlug';
-import {
   normalizeInvitationTheme,
   readString,
-  toDate,
 } from '@/lib/invitationPageNormalization';
 import {
   buildInvitationTemplateDefinitions,
@@ -51,6 +40,10 @@ import type {
   InvitationThemeKey,
 } from '@/types/invitationPage';
 import { sanitizeHeartIconPlaceholdersDeep } from '@/utils/textSanitizers';
+import {
+  clientInvitationPageRepository,
+  type StoredInvitationPageConfigRecord,
+} from '@/services/repositories/invitationPageRepository';
 
 export { normalizeInvitationPageSlugBase } from '@/lib/invitationPagePersistence';
 
@@ -121,30 +114,13 @@ export interface InvitationPageLookupOptions {
   retryDelayMs?: number;
 }
 
-type FirestoreState = {
-  db: any;
-  modules: {
-    collection: any;
-    deleteField: any;
-    doc: any;
-    getDoc: any;
-    getDocs: any;
-    query: any;
-    setDoc: any;
-    where: any;
-    deleteDoc: any;
-  };
-};
+type FirestoreState = true;
 
 type BuiltInvitationPageRecord = {
   page: InvitationPage;
   dataSource: 'seed' | 'firestore';
   hasCustomConfig: boolean;
 };
-
-const DISPLAY_PERIOD_COLLECTION = 'display-periods';
-const PAGE_CONFIG_COLLECTION = 'invitation-page-configs';
-const PAGE_REGISTRY_COLLECTION = 'invitation-page-registry';
 
 function wait(ms: number) {
   return new Promise((resolve) => {
@@ -166,18 +142,6 @@ function buildSeedPage(pageSlug: string): InvitationPage | null {
 
   return sanitizeHeartIconPlaceholdersDeep(createInvitationPageFromSeed(seed));
 }
-
-function normalizeConfigSeed(
-  docId: string,
-  data: Record<string, any>
-): InvitationPageSeed | null {
-  return normalizeInvitationConfigSeed(
-    docId,
-    data,
-    getWeddingPageBySlug(docId) ?? undefined
-  );
-}
-
 function mergeDisplayPeriod(
   page: InvitationPage,
   period: DisplayPeriodRecord | null
@@ -423,280 +387,57 @@ function buildDraftConfigFromSeed(
 }
 
 async function ensureFirestoreState(): Promise<FirestoreState | null> {
-  if (!USE_FIREBASE) {
-    return null;
-  }
-
-  const firebase = await ensureFirebaseInit();
-  if (!firebase.db) {
-    throw new Error('데이터 저장소가 아직 준비되지 않았습니다. 잠시 후 다시 시도해 주세요.');
-  }
-
-  const firestoreModule = await import('firebase/firestore');
-
-  return {
-    db: firebase.db,
-    modules: {
-      collection: firestoreModule.collection,
-      deleteField: firestoreModule.deleteField,
-      deleteDoc: firestoreModule.deleteDoc,
-      doc: firestoreModule.doc,
-      getDoc: firestoreModule.getDoc,
-      getDocs: firestoreModule.getDocs,
-      query: firestoreModule.query,
-      setDoc: firestoreModule.setDoc,
-      where: firestoreModule.where,
-    },
-  };
+  return clientInvitationPageRepository.isAvailable() ? true : null;
 }
 
-function preferDisplayPeriod(
-  current: DisplayPeriodRecord | undefined,
-  nextRecord: DisplayPeriodRecord
-) {
-  if (!current) {
-    return nextRecord;
-  }
-
-  if (nextRecord.docId === nextRecord.pageSlug && current.docId !== current.pageSlug) {
-    return nextRecord;
-  }
-
-  if ((nextRecord.updatedAt?.getTime() ?? 0) > (current.updatedAt?.getTime() ?? 0)) {
-    return nextRecord;
-  }
-
-  return current;
-}
-
-function preferRegistryRecord(
-  current: InvitationPageRegistryRecord | undefined,
-  nextRecord: InvitationPageRegistryRecord
-) {
-  if (!current) {
-    return nextRecord;
-  }
-
-  if (nextRecord.docId === nextRecord.pageSlug && current.docId !== current.pageSlug) {
-    return nextRecord;
-  }
-
-  if ((nextRecord.updatedAt?.getTime() ?? 0) > (current.updatedAt?.getTime() ?? 0)) {
-    return nextRecord;
-  }
-
-  return current;
-}
-
-async function getDisplayPeriodMap(firestore: FirestoreState) {
-  const snapshot = await firestore.modules.getDocs(
-    firestore.modules.collection(firestore.db, DISPLAY_PERIOD_COLLECTION)
-  );
-  const periodMap = new Map<string, DisplayPeriodRecord>();
-
-  for (const docSnapshot of snapshot.docs as Array<{
-    id: string;
-    data: () => Record<string, any>;
-  }>) {
-    const normalized = normalizeInvitationPageDisplayPeriod(
-      docSnapshot.id,
-      docSnapshot.data()
-    );
-    if (!normalized) {
-      continue;
-    }
-
-    periodMap.set(
-      normalized.pageSlug,
-      preferDisplayPeriod(periodMap.get(normalized.pageSlug), normalized)
-    );
-  }
-
-  return periodMap;
+async function getDisplayPeriodMap(_firestore: FirestoreState) {
+  return clientInvitationPageRepository.listDisplayPeriodMap();
 }
 
 async function getDisplayPeriodByPageSlug(
-  firestore: FirestoreState,
+  _firestore: FirestoreState,
   pageSlug: string
 ) {
-  const directSnapshot = await firestore.modules.getDoc(
-    firestore.modules.doc(firestore.db, DISPLAY_PERIOD_COLLECTION, pageSlug)
-  );
-  if (directSnapshot.exists()) {
-    const normalized = normalizeInvitationPageDisplayPeriod(
-      pageSlug,
-      directSnapshot.data()
-    );
-    if (normalized) {
-      return normalized;
-    }
-  }
-
-  const snapshot = await firestore.modules.getDocs(
-    firestore.modules.query(
-      firestore.modules.collection(firestore.db, DISPLAY_PERIOD_COLLECTION),
-      firestore.modules.where('pageSlug', '==', pageSlug)
-    )
-  );
-
-  let preferred: DisplayPeriodRecord | null = null;
-  snapshot.docs.forEach((docSnapshot: { id: string; data: () => Record<string, any> }) => {
-    const normalized = normalizeInvitationPageDisplayPeriod(
-      docSnapshot.id,
-      docSnapshot.data()
-    );
-    if (!normalized) {
-      return;
-    }
-
-    preferred = preferDisplayPeriod(preferred ?? undefined, normalized);
-  });
-
-  return preferred;
+  return clientInvitationPageRepository.findDisplayPeriodBySlug(pageSlug);
 }
 
-async function getRegistryMap(firestore: FirestoreState) {
-  const snapshot = await firestore.modules.getDocs(
-    firestore.modules.collection(firestore.db, PAGE_REGISTRY_COLLECTION)
-  );
-  const registryMap = new Map<string, InvitationPageRegistryRecord>();
-
-  for (const docSnapshot of snapshot.docs as Array<{
-    id: string;
-    data: () => Record<string, any>;
-  }>) {
-    const normalized = normalizeInvitationPageRegistryRecord(
-      docSnapshot.id,
-      docSnapshot.data()
-    );
-    if (!normalized) {
-      continue;
-    }
-
-    registryMap.set(
-      normalized.pageSlug,
-      preferRegistryRecord(registryMap.get(normalized.pageSlug), normalized)
-    );
-  }
-
-  return registryMap;
+async function getRegistryMap(_firestore: FirestoreState) {
+  return clientInvitationPageRepository.listRegistryMap();
 }
 
 async function getRegistryByPageSlug(
-  firestore: FirestoreState,
+  _firestore: FirestoreState,
   pageSlug: string
 ) {
-  const snapshot = await firestore.modules.getDoc(
-    firestore.modules.doc(firestore.db, PAGE_REGISTRY_COLLECTION, pageSlug)
-  );
-
-  if (!snapshot.exists()) {
-    return null;
-  }
-
-  return normalizeInvitationPageRegistryRecord(pageSlug, snapshot.data());
+  return clientInvitationPageRepository.findRegistryBySlug(pageSlug);
 }
 
-async function getConfigMap(firestore: FirestoreState) {
-  const snapshot = await firestore.modules.getDocs(
-    firestore.modules.collection(firestore.db, PAGE_CONFIG_COLLECTION)
-  );
-  const configMap = new Map<string, InvitationPageSeed>();
-
-  for (const docSnapshot of snapshot.docs as Array<{
-    id: string;
-    data: () => Record<string, any>;
-  }>) {
-    const normalized = normalizeConfigSeed(docSnapshot.id, docSnapshot.data());
-    if (!normalized) {
-      continue;
-    }
-
-    configMap.set(normalized.slug, normalized);
-  }
-
-  return configMap;
+async function getConfigMap(_firestore: FirestoreState) {
+  return clientInvitationPageRepository.listConfigMap();
 }
 
 async function getConfigByPageSlug(
-  firestore: FirestoreState,
+  _firestore: FirestoreState,
   pageSlug: string
 ) {
-  const snapshot = await firestore.modules.getDoc(
-    firestore.modules.doc(firestore.db, PAGE_CONFIG_COLLECTION, pageSlug)
-  );
-
-  if (!snapshot.exists()) {
-    return null;
-  }
-
-  return normalizeConfigSeed(pageSlug, snapshot.data());
-}
-
-async function isInvitationPageSlugTaken(
-  firestore: FirestoreState,
-  pageSlug: string
-) {
-  if (getWeddingPageBySlug(pageSlug)) {
-    return true;
-  }
-
-  const [configSnapshot, registrySnapshot] = await Promise.all([
-    firestore.modules.getDoc(
-      firestore.modules.doc(firestore.db, PAGE_CONFIG_COLLECTION, pageSlug)
-    ),
-    firestore.modules.getDoc(
-      firestore.modules.doc(firestore.db, PAGE_REGISTRY_COLLECTION, pageSlug)
-    ),
-  ]);
-
-  return configSnapshot.exists() || registrySnapshot.exists();
+  return clientInvitationPageRepository.findConfigBySlug(pageSlug);
 }
 
 async function createUniqueInvitationPageSlug(
-  firestore: FirestoreState,
+  _firestore: FirestoreState,
   slugBase: string
 ) {
-  const slugValidation = validateInvitationPageSlugBase(slugBase);
-  if (!slugValidation.isValid) {
-    const serverMessage = getInvitationPageSlugValidationErrorMessage(slugValidation.reason);
-
-    switch (serverMessage) {
-      case 'Page slug base is required.':
-        throw new Error('청첩장 주소를 입력해 주세요.');
-      case 'Page slug base is reserved.':
-        throw new Error('이미 예약된 청첩장 주소입니다. 다른 주소를 입력해 주세요.');
-      case 'Page slug base must be at least 3 characters.':
-        throw new Error('청첩장 주소는 3자 이상으로 입력해 주세요.');
-      case 'Page slug base must be 40 characters or fewer.':
-        throw new Error('청첩장 주소는 40자 이하로 입력해 주세요.');
-      default:
-        throw new Error('올바른 청첩장 주소를 입력해 주세요.');
-    }
-  }
-
-  const normalizedSlugBase = slugValidation.normalizedSlugBase;
-
-  if (!(await isInvitationPageSlugTaken(firestore, normalizedSlugBase))) {
-    return normalizedSlugBase;
-  }
-
-  let nextSlug = `${normalizedSlugBase}-${generateInvitationPageSlugSuffix()}`;
-
-  while (await isInvitationPageSlugTaken(firestore, nextSlug)) {
-    nextSlug = `${normalizedSlugBase}-${generateInvitationPageSlugSuffix()}`;
-  }
-
-  return nextSlug;
+  return clientInvitationPageRepository.createUniqueSlug(slugBase);
 }
 
 function buildInvitationPageRecord(
   pageSlug: string,
-  configSeed: InvitationPageSeed | null,
+  configRecord: StoredInvitationPageConfigRecord | null,
   registryRecord: InvitationPageRegistryRecord | null
 ): BuiltInvitationPageRecord | null {
   const seed = getWeddingPageBySlug(pageSlug);
-  const hasCustomConfig = registryRecord?.hasCustomConfig ?? Boolean(configSeed);
+  const configSeed = configRecord?.config ?? null;
+  const hasCustomConfig = registryRecord?.hasCustomConfig ?? Boolean(configRecord);
   const selectedSeed =
     hasCustomConfig && configSeed ? configSeed : configSeed && !seed ? configSeed : seed ?? null;
 
@@ -718,7 +459,7 @@ function buildInvitationPageRecord(
 }
 
 async function upsertRegistryRecord(
-  firestore: FirestoreState,
+  _firestore: FirestoreState,
   pageSlug: string,
   payload: {
     published?: boolean;
@@ -726,54 +467,11 @@ async function upsertRegistryRecord(
     hasCustomConfig?: boolean;
   }
 ) {
-  const existing = await getRegistryByPageSlug(firestore, pageSlug);
-  const now = new Date();
-
-  await firestore.modules.setDoc(
-    firestore.modules.doc(firestore.db, PAGE_REGISTRY_COLLECTION, pageSlug),
-    {
-      pageSlug,
-      published: payload.published ?? existing?.published ?? true,
-      defaultTheme:
-        payload.defaultTheme ?? existing?.defaultTheme ?? DEFAULT_INVITATION_THEME,
-      hasCustomConfig:
-        payload.hasCustomConfig ?? existing?.hasCustomConfig ?? false,
-      editorTokenHash: firestore.modules.deleteField(),
-      createdAt: existing?.createdAt ?? now,
-      updatedAt: now,
-    },
-    { merge: true }
-  );
-}
-
-async function deleteDisplayPeriodDocuments(
-  firestore: FirestoreState,
-  pageSlug: string
-) {
-  const directSnapshot = await firestore.modules.getDoc(
-    firestore.modules.doc(firestore.db, DISPLAY_PERIOD_COLLECTION, pageSlug)
-  );
-
-  if (directSnapshot.exists()) {
-    await firestore.modules.deleteDoc(directSnapshot.ref);
-  }
-
-  const duplicateSnapshot = await firestore.modules.getDocs(
-    firestore.modules.query(
-      firestore.modules.collection(firestore.db, DISPLAY_PERIOD_COLLECTION),
-      firestore.modules.where('pageSlug', '==', pageSlug)
-    )
-  );
-
-  await Promise.all(
-    duplicateSnapshot.docs
-      .filter((docSnapshot: { id: string }) => docSnapshot.id !== pageSlug)
-      .map((docSnapshot: { ref: any }) => firestore.modules.deleteDoc(docSnapshot.ref))
-  );
+  await clientInvitationPageRepository.upsertRegistryBySlug(pageSlug, payload);
 }
 
 async function syncDisplayPeriod(
-  firestore: FirestoreState,
+  _firestore: FirestoreState,
   pageSlug: string,
   payload: {
     displayPeriodEnabled: boolean;
@@ -781,33 +479,7 @@ async function syncDisplayPeriod(
     displayPeriodEnd: Date | null;
   }
 ) {
-  if (
-    !payload.displayPeriodEnabled ||
-    !payload.displayPeriodStart ||
-    !payload.displayPeriodEnd
-  ) {
-    await deleteDisplayPeriodDocuments(firestore, pageSlug);
-    return;
-  }
-
-  const docRef = firestore.modules.doc(firestore.db, DISPLAY_PERIOD_COLLECTION, pageSlug);
-  const existingSnapshot = await firestore.modules.getDoc(docRef);
-  const existingCreatedAt = existingSnapshot.exists()
-    ? toDate(existingSnapshot.data().createdAt)
-    : null;
-
-  await firestore.modules.setDoc(
-    docRef,
-    {
-      pageSlug,
-      isActive: true,
-      startDate: payload.displayPeriodStart,
-      endDate: payload.displayPeriodEnd,
-      createdAt: existingCreatedAt ?? new Date(),
-      updatedAt: new Date(),
-    },
-    { merge: true }
-  );
+  await clientInvitationPageRepository.syncDisplayPeriodBySlug(pageSlug, payload);
 }
 
 export async function getEditableInvitationPageConfig(
@@ -854,7 +526,7 @@ export async function getEditableInvitationPageConfig(
 
     const editableConfig =
       sourceRecord.hasCustomConfig && configSeed
-        ? sanitizeHeartIconPlaceholdersDeep(configSeed)
+        ? sanitizeHeartIconPlaceholdersDeep(configSeed.config)
         : fallbackConfig ?? toEditableSeed(sourceRecord.page);
     const productTier = normalizeInvitationProductTier(
       editableConfig.productTier,
@@ -923,18 +595,12 @@ export async function saveInvitationPageConfig(
 
   const existingConfig = await getConfigByPageSlug(firestore, normalizedConfig.slug);
   const now = new Date();
-  const configPayload = stripUndefinedDeep(normalizedConfig);
-
-  await firestore.modules.setDoc(
-    firestore.modules.doc(firestore.db, PAGE_CONFIG_COLLECTION, normalizedConfig.slug),
-    {
-      ...configPayload,
-      editorTokenHash: firestore.modules.deleteField(),
-      createdAt: now,
-      updatedAt: now,
-    },
-    { merge: true }
-  );
+  await clientInvitationPageRepository.saveConfig({
+    slug: normalizedConfig.slug,
+    config: normalizedConfig,
+    createdAt: now,
+    updatedAt: now,
+  });
 
   await upsertRegistryRecord(firestore, normalizedConfig.slug, {
     published: options.published ?? true,
@@ -942,7 +608,7 @@ export async function saveInvitationPageConfig(
     hasCustomConfig: true,
   });
 
-  return existingConfig ?? normalizedConfig;
+  return existingConfig?.config ?? normalizedConfig;
 }
 
 export function getInvitationPageSeedTemplates() {
@@ -982,17 +648,13 @@ export async function createInvitationPageDraftFromSeed(
   });
   const now = new Date();
 
-  await firestore.modules.setDoc(
-    firestore.modules.doc(firestore.db, PAGE_CONFIG_COLLECTION, slug),
-    {
-      ...config,
-      seedSourceSlug: seed.slug,
-      editorTokenHash: firestore.modules.deleteField(),
-      createdAt: now,
-      updatedAt: now,
-    },
-    { merge: true }
-  );
+  await clientInvitationPageRepository.saveConfig({
+    slug,
+    config,
+    seedSourceSlug: seed.slug,
+    createdAt: now,
+    updatedAt: now,
+  });
 
   await upsertRegistryRecord(firestore, slug, {
     published: input.published ?? false,

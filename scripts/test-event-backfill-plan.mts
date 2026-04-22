@@ -55,10 +55,18 @@ async function main() {
   assert.equal(summary.eventId, 'evt_alpha-event');
   assert.equal(summary.eventType, 'wedding');
   assert.equal(summary.slug, 'alpha-event');
+  assert.equal(summary.status, 'active');
+  assert.equal(summary.title, 'Alpha Wedding');
   assert.equal(summary.published, false);
   assert.deepEqual(summary.stats, {
     commentCount: 1,
     ticketCount: 3,
+    ticketBalance: 3,
+  });
+  assert.deepEqual(summary.visibility, {
+    published: false,
+    displayStartAt: new Date('2026-05-01T00:00:00.000Z'),
+    displayEndAt: new Date('2026-05-31T00:00:00.000Z'),
   });
 
   const content = buildBackfillContentPayload(
@@ -86,6 +94,7 @@ async function main() {
     createdPageSlug: 'alpha-event',
     targetPageSlug: 'beta-event',
   });
+  assert.equal(billingPayload.eventId, 'evt_beta-event');
   assert.equal(billingPayload.createdEventId, 'evt_alpha-event');
   assert.equal(billingPayload.targetEventId, 'evt_beta-event');
   assert.equal(billingPayload.migratedFromCollection, 'mobile-billing-fulfillments');

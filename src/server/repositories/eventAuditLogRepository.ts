@@ -7,7 +7,7 @@ import {
   ensureEventMirrorBySlug,
   resolveStoredEventBySlug,
 } from './eventRepository';
-import { isLegacyReadFallbackEnabled } from './eventRolloutConfig';
+import { loadReadThroughValue } from './readThrough';
 import { executeWriteThrough } from './writeThrough';
 
 const LEGACY_EVENT_AUDIT_LOG_COLLECTION = 'mobile-client-editor-audit-logs';
@@ -127,6 +127,27 @@ async function fetchEventAuditLogsByPageSlug(pageSlug: string, limit: number) {
   };
 }
 
+function compareAuditLogLists(
+  preferred: StoredEventAuditLogRecord[],
+  fallback: StoredEventAuditLogRecord[]
+) {
+  const mismatchFields: string[] = [];
+
+  if (preferred.length !== fallback.length) {
+    mismatchFields.push('count');
+  }
+
+  if ((preferred[0]?.action ?? null) !== (fallback[0]?.action ?? null)) {
+    mismatchFields.push('latestAction');
+  }
+
+  if ((preferred[0]?.result ?? null) !== (fallback[0]?.result ?? null)) {
+    mismatchFields.push('latestResult');
+  }
+
+  return mismatchFields;
+}
+
 export const firestoreEventAuditLogRepository: EventAuditLogRepository = {
   isAvailable() {
     return Boolean(getServerFirestore());
@@ -205,15 +226,21 @@ export const firestoreEventAuditLogRepository: EventAuditLogRepository = {
       return [];
     }
 
-    const preferred = await fetchEventAuditLogsByPageSlug(normalizedPageSlug, limit);
-    if (preferred && preferred.authoritative) {
-      return preferred.records;
-    }
-
-    if (!isLegacyReadFallbackEnabled()) {
-      return preferred?.records ?? [];
-    }
-
-    return fetchLegacyAuditLogsByPageSlug(normalizedPageSlug, limit);
+    return loadReadThroughValue({
+      preferred: async () => {
+        const preferred = await fetchEventAuditLogsByPageSlug(normalizedPageSlug, limit);
+        return preferred && preferred.authoritative ? preferred.records : null;
+      },
+      fallback: () => fetchLegacyAuditLogsByPageSlug(normalizedPageSlug, limit),
+      context: {
+        domain: 'event-audit-log',
+        lookupType: 'pageSlug',
+        lookupValue: normalizedPageSlug,
+      },
+      compare: compareAuditLogLists,
+      shouldFallback(value: StoredEventAuditLogRecord[] | null) {
+        return value == null || value.length === 0;
+      },
+    }).then((records: StoredEventAuditLogRecord[] | null) => records ?? []);
   },
 };

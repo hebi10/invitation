@@ -46,12 +46,9 @@ function initializeFirebaseAdmin() {
 }
 
 async function analyze(db) {
-  const collections = await db.listCollections();
-  const legacyCommentCollections = collections.filter((collection) => collection.id.startsWith('comments-'));
   const adminSnapshot = await db.collection('admin-users').get();
   const displayPeriodSnapshot = await db.collection('display-periods').get();
   const memorySnapshot = await db.collection('memory-pages').get();
-  const commentsSnapshot = await db.collection('comments').get();
 
   const legacyMemoryDocs = memorySnapshot.docs.filter((doc) =>
     LEGACY_MEMORY_FIELDS.some((field) => doc.data()[field] !== undefined)
@@ -60,39 +57,8 @@ async function analyze(db) {
   console.log(JSON.stringify({
     adminUsers: adminSnapshot.size,
     displayPeriods: displayPeriodSnapshot.size,
-    comments: commentsSnapshot.size,
-    legacyCommentCollections: legacyCommentCollections.map((collection) => collection.id),
     legacyMemoryPageCount: legacyMemoryDocs.length,
   }, null, 2));
-}
-
-async function migrateComments(db, execute) {
-  const collections = await db.listCollections();
-  const legacyCollections = collections.filter((collection) => collection.id.startsWith('comments-'));
-
-  let migratedCount = 0;
-  for (const collection of legacyCollections) {
-    const pageSlug = collection.id.replace(/^comments-/, '');
-    const snapshot = await collection.get();
-
-    for (const doc of snapshot.docs) {
-      const data = doc.data();
-      const payload = {
-        author: data.author ?? '',
-        message: data.message ?? '',
-        pageSlug: data.pageSlug ?? pageSlug,
-        createdAt: data.createdAt ?? data.timestamp ?? new Date(),
-      };
-
-      if (execute) {
-        await db.collection('comments').doc(doc.id).set(payload, { merge: true });
-      }
-
-      migratedCount += 1;
-    }
-  }
-
-  console.log(`${execute ? 'Migrated' : 'Would migrate'} ${migratedCount} legacy comments.`);
 }
 
 async function sanitizeMemoryPages(db, execute) {
@@ -138,11 +104,6 @@ async function main() {
 
   if (command === 'analyze') {
     await analyze(db);
-    return;
-  }
-
-  if (command === 'migrate-comments') {
-    await migrateComments(db, execute);
     return;
   }
 

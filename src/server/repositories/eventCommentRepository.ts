@@ -6,10 +6,7 @@ import {
   EVENTS_COLLECTION,
   resolveStoredEventBySlug,
 } from './eventRepository';
-import { isLegacyReadFallbackEnabled } from './eventRolloutConfig';
-import { executeWriteThrough } from './writeThrough';
 
-const GUESTBOOKS_COLLECTION = 'guestbooks';
 const COMMENTS_COLLECTION = 'comments';
 
 export interface StoredEventCommentRecord {
@@ -38,58 +35,15 @@ function normalizePageSlug(pageSlug: string) {
   return pageSlug.trim();
 }
 
-async function fetchLegacyCommentsByPageSlug(pageSlug: string) {
-  const db = getServerFirestore();
-  if (!db) {
-    return [];
-  }
-
-  const snapshot = await db
-    .collection(GUESTBOOKS_COLLECTION)
-    .doc(pageSlug)
-    .collection(COMMENTS_COLLECTION)
-    .get();
-
-  return snapshot.docs.map((docSnapshot) => ({
-    id: docSnapshot.id,
-    pageSlug,
-    data: docSnapshot.data() ?? {},
-  }));
-}
-
-async function fetchLegacyCommentById(pageSlug: string, commentId: string) {
-  const db = getServerFirestore();
-  if (!db) {
-    return null;
-  }
-
-  const snapshot = await db
-    .collection(GUESTBOOKS_COLLECTION)
-    .doc(pageSlug)
-    .collection(COMMENTS_COLLECTION)
-    .doc(commentId)
-    .get();
-
-  if (!snapshot.exists) {
-    return null;
-  }
-
-  return {
-    id: snapshot.id,
-    pageSlug,
-    data: snapshot.data() ?? {},
-  } satisfies StoredEventCommentRecord;
-}
-
 async function fetchEventCommentsByPageSlug(pageSlug: string) {
   const resolvedEvent = await resolveStoredEventBySlug(pageSlug);
   if (!resolvedEvent) {
-    return null;
+    return [] as StoredEventCommentRecord[];
   }
 
   const db = getServerFirestore();
   if (!db) {
-    return null;
+    return [] as StoredEventCommentRecord[];
   }
 
   const snapshot = await db
@@ -98,16 +52,13 @@ async function fetchEventCommentsByPageSlug(pageSlug: string) {
     .collection(COMMENTS_COLLECTION)
     .get();
 
-  return {
-    authoritative: snapshot.size > 0 || resolvedEvent.summary.commentCount !== null,
-    records: snapshot.docs.map((docSnapshot) =>
-      buildEventCommentRecordFromEventDoc(
-        resolvedEvent.summary,
-        docSnapshot.id,
-        docSnapshot.data() ?? {}
-      )
-    ),
-  };
+  return snapshot.docs.map((docSnapshot) =>
+    buildEventCommentRecordFromEventDoc(
+      resolvedEvent.summary,
+      docSnapshot.id,
+      docSnapshot.data() ?? {}
+    )
+  );
 }
 
 async function fetchEventCommentById(pageSlug: string, commentId: string) {
@@ -129,20 +80,14 @@ async function fetchEventCommentById(pageSlug: string, commentId: string) {
     .get();
 
   if (!snapshot.exists) {
-    return {
-      authoritative: resolvedEvent.summary.commentCount !== null,
-      record: null,
-    };
+    return null;
   }
 
-  return {
-    authoritative: true,
-    record: buildEventCommentRecordFromEventDoc(
-      resolvedEvent.summary,
-      snapshot.id,
-      snapshot.data() ?? {}
-    ),
-  };
+  return buildEventCommentRecordFromEventDoc(
+    resolvedEvent.summary,
+    snapshot.id,
+    snapshot.data() ?? {}
+  );
 }
 
 async function updateEventCommentOnly(
@@ -171,60 +116,6 @@ async function updateEventCommentOnly(
   }
 
   await docRef.update(patch);
-  return true;
-}
-
-async function upsertEventCommentPatch(
-  pageSlug: string,
-  commentId: string,
-  patch: Record<string, unknown>
-) {
-  const resolvedEvent = await resolveStoredEventBySlug(pageSlug);
-  if (!resolvedEvent) {
-    return false;
-  }
-
-  const db = getServerFirestore();
-  if (!db) {
-    throw new Error('Server Firestore is not available.');
-  }
-
-  const docRef = db
-    .collection(EVENTS_COLLECTION)
-    .doc(resolvedEvent.summary.eventId)
-    .collection(COMMENTS_COLLECTION)
-    .doc(commentId);
-  const snapshot = await docRef.get();
-
-  if (snapshot.exists) {
-    await docRef.update(patch);
-    return true;
-  }
-
-  const legacyComment = await fetchLegacyCommentById(pageSlug, commentId);
-  if (!legacyComment) {
-    return false;
-  }
-
-  const normalizedComment = buildEventCommentRecordFromEventDoc(
-    resolvedEvent.summary,
-    legacyComment.id,
-    {
-      ...legacyComment.data,
-      ...patch,
-    }
-  );
-
-  await docRef.set(
-    {
-      eventId: resolvedEvent.summary.eventId,
-      slug: normalizedComment.pageSlug,
-      pageSlug: normalizedComment.pageSlug,
-      ...normalizedComment.data,
-    },
-    { merge: true }
-  );
-
   return true;
 }
 
@@ -264,16 +155,7 @@ export const firestoreEventCommentRepository: EventCommentRepository = {
       return [];
     }
 
-    const preferred = await fetchEventCommentsByPageSlug(normalizedPageSlug);
-    if (preferred && preferred.authoritative) {
-      return preferred.records;
-    }
-
-    if (!isLegacyReadFallbackEnabled()) {
-      return preferred?.records ?? [];
-    }
-
-    return fetchLegacyCommentsByPageSlug(normalizedPageSlug);
+    return fetchEventCommentsByPageSlug(normalizedPageSlug);
   },
 
   async findByPageSlugAndId(pageSlug, commentId) {
@@ -283,22 +165,7 @@ export const firestoreEventCommentRepository: EventCommentRepository = {
       return null;
     }
 
-    const preferred = await fetchEventCommentById(normalizedPageSlug, normalizedCommentId);
-    if (preferred) {
-      if (preferred.record) {
-        return preferred.record;
-      }
-
-      if (preferred.authoritative) {
-        return null;
-      }
-    }
-
-    if (!isLegacyReadFallbackEnabled()) {
-      return preferred?.record ?? null;
-    }
-
-    return fetchLegacyCommentById(normalizedPageSlug, normalizedCommentId);
+    return fetchEventCommentById(normalizedPageSlug, normalizedCommentId);
   },
 
   async updateByPageSlugAndId(pageSlug, commentId, patch) {
@@ -308,57 +175,14 @@ export const firestoreEventCommentRepository: EventCommentRepository = {
       throw new Error('Comment target was not specified.');
     }
 
-    const legacyComment = await fetchLegacyCommentById(normalizedPageSlug, normalizedCommentId);
-    if (!legacyComment) {
-      const updatedEventComment = await updateEventCommentOnly(
-        normalizedPageSlug,
-        normalizedCommentId,
-        patch
-      );
-      if (updatedEventComment) {
-        return;
-      }
-
+    const updatedEventComment = await updateEventCommentOnly(
+      normalizedPageSlug,
+      normalizedCommentId,
+      patch
+    );
+    if (!updatedEventComment) {
       throw new Error('Comment target was not specified.');
     }
-
-    const db = getServerFirestore();
-    if (!db) {
-      throw new Error('Server Firestore is not available.');
-    }
-
-    await executeWriteThrough({
-      operation: 'updateEventComment',
-      pageSlug: normalizedPageSlug,
-      legacyCollection: `${GUESTBOOKS_COLLECTION}/${normalizedPageSlug}/${COMMENTS_COLLECTION}`,
-      eventCollection: `${EVENTS_COLLECTION}/{eventId}/${COMMENTS_COLLECTION}`,
-      payload: {
-        commentId: normalizedCommentId,
-        patch,
-      },
-      legacyWrite: async () => {
-        await db
-          .collection(GUESTBOOKS_COLLECTION)
-          .doc(normalizedPageSlug)
-          .collection(COMMENTS_COLLECTION)
-          .doc(normalizedCommentId)
-          .update(patch);
-
-        return undefined;
-      },
-      eventWrite: async () => {
-        const updatedEventComment = await upsertEventCommentPatch(
-          normalizedPageSlug,
-          normalizedCommentId,
-          patch
-        );
-        if (!updatedEventComment) {
-          throw new Error('Comment target was not specified.');
-        }
-
-        return undefined;
-      },
-    });
   },
 
   async deleteByPageSlugAndId(pageSlug, commentId) {
@@ -368,53 +192,12 @@ export const firestoreEventCommentRepository: EventCommentRepository = {
       throw new Error('Comment target was not specified.');
     }
 
-    const legacyComment = await fetchLegacyCommentById(normalizedPageSlug, normalizedCommentId);
-    if (!legacyComment) {
-      const deletedEventComment = await deleteEventCommentOnly(
-        normalizedPageSlug,
-        normalizedCommentId
-      );
-      if (deletedEventComment) {
-        return;
-      }
-
+    const deletedEventComment = await deleteEventCommentOnly(
+      normalizedPageSlug,
+      normalizedCommentId
+    );
+    if (!deletedEventComment) {
       throw new Error('Comment target was not specified.');
     }
-
-    const db = getServerFirestore();
-    if (!db) {
-      throw new Error('Server Firestore is not available.');
-    }
-
-    await executeWriteThrough({
-      operation: 'deleteEventComment',
-      pageSlug: normalizedPageSlug,
-      legacyCollection: `${GUESTBOOKS_COLLECTION}/${normalizedPageSlug}/${COMMENTS_COLLECTION}`,
-      eventCollection: `${EVENTS_COLLECTION}/{eventId}/${COMMENTS_COLLECTION}`,
-      payload: {
-        commentId: normalizedCommentId,
-      },
-      legacyWrite: async () => {
-        await db
-          .collection(GUESTBOOKS_COLLECTION)
-          .doc(normalizedPageSlug)
-          .collection(COMMENTS_COLLECTION)
-          .doc(normalizedCommentId)
-          .delete();
-
-        return undefined;
-      },
-      eventWrite: async () => {
-        const deletedEventComment = await deleteEventCommentOnly(
-          normalizedPageSlug,
-          normalizedCommentId
-        );
-        if (!deletedEventComment) {
-          throw new Error('Comment target was not specified.');
-        }
-
-        return undefined;
-      },
-    });
   },
 };

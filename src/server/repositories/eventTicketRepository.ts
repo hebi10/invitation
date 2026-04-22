@@ -1,8 +1,12 @@
 import 'server-only';
 
 import { getServerFirestore } from '../firebaseAdmin';
-
-const PAGE_TICKET_COLLECTION = 'page-ticket-balances';
+import {
+  ensureEventMirrorBySlug,
+  EVENTS_COLLECTION,
+  resolveStoredEventBySlug,
+} from './eventRepository';
+import { normalizeEventSummaryRecord } from './eventReadThroughDtos';
 
 export interface EventTicketRepository {
   isAvailable(): boolean;
@@ -28,12 +32,30 @@ function readTicketCount(value: unknown) {
     : 0;
 }
 
-function buildTicketBalancePayload(pageSlug: string, ticketCount: number) {
-  return {
-    pageSlug,
-    ticketCount,
-    updatedAt: new Date().toISOString(),
-  };
+async function fetchEventTicketCountByPageSlug(pageSlug: string) {
+  const resolvedEvent = await resolveStoredEventBySlug(pageSlug);
+  if (!resolvedEvent) {
+    return null;
+  }
+
+  return readTicketCount(
+    resolvedEvent.summary.ticketBalance ?? resolvedEvent.summary.ticketCount ?? 0
+  );
+}
+
+async function ensureEventTicketState(pageSlug: string, now = new Date()) {
+  const mirroredEvent =
+    (await resolveStoredEventBySlug(pageSlug)) ??
+    (await ensureEventMirrorBySlug(pageSlug, {
+      forceCreate: true,
+      now,
+    }));
+
+  if (!mirroredEvent) {
+    throw new Error('Target page slug and session are required.');
+  }
+
+  return mirroredEvent;
 }
 
 export const firestoreEventTicketRepository: EventTicketRepository = {
@@ -47,17 +69,7 @@ export const firestoreEventTicketRepository: EventTicketRepository = {
       return 0;
     }
 
-    const db = getServerFirestore();
-    if (!db) {
-      return 0;
-    }
-
-    const snapshot = await db.collection(PAGE_TICKET_COLLECTION).doc(normalizedPageSlug).get();
-    if (!snapshot.exists) {
-      return 0;
-    }
-
-    return readTicketCount(snapshot.data()?.ticketCount);
+    return (await fetchEventTicketCountByPageSlug(normalizedPageSlug)) ?? 0;
   },
 
   async adjustTicketCountByPageSlug(pageSlug, amount) {
@@ -72,18 +84,33 @@ export const firestoreEventTicketRepository: EventTicketRepository = {
       throw new Error('Server Firestore is not available.');
     }
 
-    const docRef = db.collection(PAGE_TICKET_COLLECTION).doc(normalizedPageSlug);
+    const mirroredEvent = await ensureEventTicketState(normalizedPageSlug);
+    const eventRef = db.collection(EVENTS_COLLECTION).doc(mirroredEvent.summary.eventId);
 
     return db.runTransaction(async (transaction) => {
-      const snapshot = await transaction.get(docRef);
-      const currentCount = snapshot.exists
-        ? readTicketCount(snapshot.data()?.ticketCount)
-        : 0;
+      const snapshot = await transaction.get(eventRef);
+      const summary = snapshot.exists
+        ? normalizeEventSummaryRecord(snapshot.id, snapshot.data() ?? {}, normalizedPageSlug)
+        : mirroredEvent.summary;
+      const currentCount = readTicketCount(
+        summary?.ticketBalance ?? summary?.ticketCount ?? 0
+      );
       const nextCount = Math.max(0, currentCount + normalizedAmount);
 
       transaction.set(
-        docRef,
-        buildTicketBalancePayload(normalizedPageSlug, nextCount),
+        eventRef,
+        {
+          eventId: mirroredEvent.summary.eventId,
+          slug: mirroredEvent.summary.slug,
+          eventType: mirroredEvent.summary.eventType,
+          stats: {
+            commentCount: summary?.commentCount ?? mirroredEvent.summary.commentCount ?? 0,
+            ticketCount: nextCount,
+            ticketBalance: nextCount,
+          },
+          updatedAt: new Date(),
+          version: (summary?.version ?? mirroredEvent.summary.version ?? 0) + 1,
+        },
         { merge: true }
       );
 
@@ -113,8 +140,13 @@ export const firestoreEventTicketRepository: EventTicketRepository = {
       throw new Error('Server Firestore is not available.');
     }
 
-    const sourceRef = db.collection(PAGE_TICKET_COLLECTION).doc(normalizedSourcePageSlug);
-    const targetRef = db.collection(PAGE_TICKET_COLLECTION).doc(normalizedTargetPageSlug);
+    const [sourceEvent, targetEvent] = await Promise.all([
+      ensureEventTicketState(normalizedSourcePageSlug),
+      ensureEventTicketState(normalizedTargetPageSlug),
+    ]);
+
+    const sourceRef = db.collection(EVENTS_COLLECTION).doc(sourceEvent.summary.eventId);
+    const targetRef = db.collection(EVENTS_COLLECTION).doc(targetEvent.summary.eventId);
 
     return db.runTransaction(async (transaction) => {
       const [sourceSnapshot, targetSnapshot] = await Promise.all([
@@ -122,12 +154,27 @@ export const firestoreEventTicketRepository: EventTicketRepository = {
         transaction.get(targetRef),
       ]);
 
-      const sourceTicketCount = sourceSnapshot.exists
-        ? readTicketCount(sourceSnapshot.data()?.ticketCount)
-        : 0;
-      const targetTicketCount = targetSnapshot.exists
-        ? readTicketCount(targetSnapshot.data()?.ticketCount)
-        : 0;
+      const sourceSummary = sourceSnapshot.exists
+        ? normalizeEventSummaryRecord(
+            sourceSnapshot.id,
+            sourceSnapshot.data() ?? {},
+            normalizedSourcePageSlug
+          )
+        : sourceEvent.summary;
+      const targetSummary = targetSnapshot.exists
+        ? normalizeEventSummaryRecord(
+            targetSnapshot.id,
+            targetSnapshot.data() ?? {},
+            normalizedTargetPageSlug
+          )
+        : targetEvent.summary;
+
+      const sourceTicketCount = readTicketCount(
+        sourceSummary?.ticketBalance ?? sourceSummary?.ticketCount ?? 0
+      );
+      const targetTicketCount = readTicketCount(
+        targetSummary?.ticketBalance ?? targetSummary?.ticketCount ?? 0
+      );
 
       if (sourceTicketCount < normalizedAmount) {
         throw new Error('Not enough tickets.');
@@ -138,12 +185,37 @@ export const firestoreEventTicketRepository: EventTicketRepository = {
 
       transaction.set(
         sourceRef,
-        buildTicketBalancePayload(normalizedSourcePageSlug, nextSourceTicketCount),
+        {
+          eventId: sourceEvent.summary.eventId,
+          slug: sourceEvent.summary.slug,
+          eventType: sourceEvent.summary.eventType,
+          stats: {
+            commentCount:
+              sourceSummary?.commentCount ?? sourceEvent.summary.commentCount ?? 0,
+            ticketCount: nextSourceTicketCount,
+            ticketBalance: nextSourceTicketCount,
+          },
+          updatedAt: new Date(),
+          version: (sourceSummary?.version ?? sourceEvent.summary.version ?? 0) + 1,
+        },
         { merge: true }
       );
+
       transaction.set(
         targetRef,
-        buildTicketBalancePayload(normalizedTargetPageSlug, nextTargetTicketCount),
+        {
+          eventId: targetEvent.summary.eventId,
+          slug: targetEvent.summary.slug,
+          eventType: targetEvent.summary.eventType,
+          stats: {
+            commentCount:
+              targetSummary?.commentCount ?? targetEvent.summary.commentCount ?? 0,
+            ticketCount: nextTargetTicketCount,
+            ticketBalance: nextTargetTicketCount,
+          },
+          updatedAt: new Date(),
+          version: (targetSummary?.version ?? targetEvent.summary.version ?? 0) + 1,
+        },
         { merge: true }
       );
 

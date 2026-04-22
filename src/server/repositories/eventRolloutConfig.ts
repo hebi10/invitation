@@ -1,6 +1,6 @@
 export type EventRolloutWriteMode = 'legacy-primary' | 'event-only';
 
-const DEFAULT_EVENT_ROLLOUT_WRITE_MODE: EventRolloutWriteMode = 'legacy-primary';
+const DEFAULT_EVENT_ROLLOUT_WRITE_MODE: EventRolloutWriteMode = 'event-only';
 
 function normalizeBooleanFlag(value: string | undefined) {
   const normalizedValue = value?.trim().toLowerCase();
@@ -39,6 +39,10 @@ export function getEventRolloutWriteMode(): EventRolloutWriteMode {
     return 'event-only';
   }
 
+  if (normalizedValue === 'legacy-primary') {
+    return 'legacy-primary';
+  }
+
   return DEFAULT_EVENT_ROLLOUT_WRITE_MODE;
 }
 
@@ -62,7 +66,7 @@ export function isLegacyReadFallbackEnabled(now = new Date()) {
     return true;
   }
 
-  return true;
+  return false;
 }
 
 export function getEventRolloutCutoverConfig(now = new Date()) {

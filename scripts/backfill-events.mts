@@ -62,6 +62,7 @@ type LegacyBundle = {
 type BackfillOptions = {
   mode: BackfillMode;
   slug: string | null;
+  resumeFrom: string | null;
   limit: number | null;
   batchSize: number;
 };
@@ -145,6 +146,15 @@ function pickDefaultTheme(config: FirestoreData | null, registry: FirestoreData 
   return availableVariant?.[0] ?? DEFAULT_INVITATION_THEME;
 }
 
+function readSupportedVariants(config: FirestoreData | null) {
+  const variants = isRecord(config?.variants) ? config.variants : null;
+  if (!variants) {
+    return [];
+  }
+
+  return Object.keys(variants).filter((entry) => entry.trim().length > 0);
+}
+
 function readDisplayPeriod(data: FirestoreData | null) {
   if (!data) {
     return null;
@@ -172,6 +182,10 @@ export function buildBackfillEventSummary(
   const displayPeriod = readDisplayPeriod(bundle.displayPeriod);
   const ticketCount = normalizeTicketCount(bundle.ticket?.ticketCount);
   const commentCount = bundle.comments.length > 0 ? bundle.comments.length : null;
+  const published = readBoolean(bundle.registry?.published) ?? true;
+  const defaultTheme = pickDefaultTheme(bundle.config, bundle.registry);
+  const supportedVariants = readSupportedVariants(bundle.config);
+  const displayName = readString(bundle.config?.displayName);
   const createdAt =
     toDate(bundle.registry?.createdAt) ??
     toDate(bundle.config?.createdAt) ??
@@ -190,21 +204,33 @@ export function buildBackfillEventSummary(
     eventId,
     eventType: DEFAULT_EVENT_TYPE,
     slug: bundle.slug,
-    displayName: readString(bundle.config?.displayName),
+    status: 'active',
+    title: displayName,
+    displayName,
     summary: readString(bundle.config?.description),
-    published: readBoolean(bundle.registry?.published) ?? true,
-    defaultTheme: pickDefaultTheme(bundle.config, bundle.registry),
+    supportedVariants,
+    published,
+    defaultTheme,
     featureFlags: readFeatureFlags(bundle.config),
     stats: {
       commentCount,
       ticketCount,
+      ticketBalance: ticketCount,
+    },
+    visibility: {
+      published,
+      displayStartAt: displayPeriod?.startDate ?? null,
+      displayEndAt: displayPeriod?.endDate ?? null,
     },
     displayPeriod,
+    hasCustomConfig:
+      readBoolean(bundle.registry?.hasCustomConfig) ?? Boolean(bundle.config),
     hasCustomContent:
       readBoolean(bundle.registry?.hasCustomConfig) ?? Boolean(bundle.config),
     createdAt,
     updatedAt,
     lastSavedAt: toDate(bundle.config?.updatedAt),
+    version: 1,
     migratedFromPageSlug: bundle.slug,
   } satisfies FirestoreData;
 }
@@ -324,18 +350,107 @@ function buildAuditLogPayload(slug: string, eventId: string, data: FirestoreData
   }) as FirestoreData;
 }
 
-export function buildBillingMirrorPayload(data: FirestoreData) {
+export function buildBillingMirrorPayload(data: FirestoreData, now = new Date()) {
   const rawCreatedPageSlug = readString(data.createdPageSlug);
   const rawTargetPageSlug = readString(data.targetPageSlug);
   const createdPageSlug = rawCreatedPageSlug ? normalizeBackfillSlug(rawCreatedPageSlug) : null;
   const targetPageSlug = rawTargetPageSlug ? normalizeBackfillSlug(rawTargetPageSlug) : null;
+  const createdEventId = createdPageSlug ? buildBackfillEventId(createdPageSlug) : null;
+  const targetEventId = targetPageSlug ? buildBackfillEventId(targetPageSlug) : null;
   return stripUndefinedDeep({
     ...data,
-    createdEventId: createdPageSlug ? buildBackfillEventId(createdPageSlug) : null,
-    targetEventId: targetPageSlug ? buildBackfillEventId(targetPageSlug) : null,
+    eventId: targetEventId ?? createdEventId,
+    createdEventId,
+    targetEventId,
     migratedFromCollection: LEGACY_BILLING_COLLECTION,
-    migratedAt: new Date(),
+    migratedAt: now,
   }) as FirestoreData;
+}
+
+function isDateLike(value: unknown) {
+  return value instanceof Date || toDate(value) instanceof Date;
+}
+
+function areComparableDatesEqual(left: unknown, right: unknown) {
+  return (toDate(left)?.getTime() ?? null) === (toDate(right)?.getTime() ?? null);
+}
+
+function findSubsetMismatches(
+  expected: unknown,
+  actual: unknown,
+  fieldPath = ''
+): string[] {
+  if (expected === undefined) {
+    return [];
+  }
+
+  if (expected === null) {
+    return actual === null || actual === undefined ? [] : [fieldPath || '<root>'];
+  }
+
+  if (Array.isArray(expected)) {
+    if (!Array.isArray(actual) || expected.length !== actual.length) {
+      return [fieldPath || '<root>'];
+    }
+
+    return expected.flatMap((entry, index) =>
+      findSubsetMismatches(entry, actual[index], `${fieldPath}[${index}]`)
+    );
+  }
+
+  if (isDateLike(expected)) {
+    return areComparableDatesEqual(expected, actual) ? [] : [fieldPath || '<root>'];
+  }
+
+  if (isRecord(expected)) {
+    if (!isRecord(actual)) {
+      return [fieldPath || '<root>'];
+    }
+
+    return Object.entries(expected).flatMap(([key, value]) => {
+      const nextPath = fieldPath ? `${fieldPath}.${key}` : key;
+      return findSubsetMismatches(value, actual[key], nextPath);
+    });
+  }
+
+  return expected === actual ? [] : [fieldPath || '<root>'];
+}
+
+function pushMismatchFailures(
+  failures: BackfillFailure[],
+  target: string,
+  id: string,
+  expected: FirestoreData,
+  actual: FirestoreData | null | undefined
+) {
+  if (!actual) {
+    failures.push({ target, id, reason: 'missing document' });
+    return;
+  }
+
+  const mismatchFields = findSubsetMismatches(expected, actual);
+  if (mismatchFields.length > 0) {
+    failures.push({
+      target,
+      id,
+      reason: `field mismatch: ${mismatchFields.join(', ')}`,
+    });
+  }
+}
+
+function omitTopLevelFields(
+  data: FirestoreData | null | undefined,
+  fields: string[]
+): FirestoreData | null {
+  if (!data) {
+    return null;
+  }
+
+  const cloned = { ...data };
+  fields.forEach((field) => {
+    delete cloned[field];
+  });
+  return cloned;
 }
 
 function increment(counters: BackfillCounters, key: string, amount = 1) {
@@ -420,6 +535,7 @@ function parseArgs(argv: string[]): BackfillOptions {
   const options: BackfillOptions = {
     mode: rawMode,
     slug: null,
+    resumeFrom: null,
     limit: null,
     batchSize: DEFAULT_BATCH_SIZE,
   };
@@ -429,6 +545,9 @@ function parseArgs(argv: string[]): BackfillOptions {
     const value = rest[index + 1];
     if (key === '--slug' && value) {
       options.slug = normalizeBackfillSlug(value);
+      index += 1;
+    } else if (key === '--resume-from' && value) {
+      options.resumeFrom = normalizeBackfillSlug(value);
       index += 1;
     } else if (key === '--limit' && value) {
       options.limit = Math.max(1, Number.parseInt(value, 10));
@@ -502,7 +621,10 @@ async function collectSlugs(db: Firestore, options: BackfillOptions) {
   guestbookRefs.forEach((docRef) => addSlug(docRef.id));
 
   const sorted = [...slugs].sort();
-  return options.limit ? sorted.slice(0, options.limit) : sorted;
+  const resumed = options.resumeFrom
+    ? sorted.filter((slug) => slug >= options.resumeFrom!)
+    : sorted;
+  return options.limit ? resumed.slice(0, options.limit) : resumed;
 }
 
 async function getDirectOrPageSlugDoc(
@@ -718,14 +840,17 @@ async function runDryRunOrExecute(
 
   for (const slug of slugs) {
     try {
+      increment(counters, 'scannedSlug');
       await assertSlugIndexWritable(db, slug);
       const bundle = await loadLegacyBundle(db, slug);
       if (!hasAnyLegacyData(bundle)) {
+        increment(counters, 'skippedSlug');
         increment(counters, 'skippedEmptySlug');
         continue;
       }
 
       const writes = buildWritesForBundle(bundle);
+      increment(counters, 'plannedWrite', writes.length);
       writes.forEach((write) => increment(counters, write.kind));
 
       if (mode === 'execute') {
@@ -734,8 +859,10 @@ async function runDryRunOrExecute(
         }
       }
 
+      increment(counters, 'successSlug');
       increment(counters, 'processedSlug');
     } catch (error) {
+      increment(counters, 'failedSlug');
       failures.push({
         target: 'slug',
         id: slug,
@@ -780,11 +907,14 @@ async function backfillBillingRecords(
         data: buildBillingMirrorPayload((docSnapshot.data() ?? {}) as FirestoreData),
         merge: true,
       };
+      increment(counters, 'scannedBillingFulfillment');
       increment(counters, write.kind);
       if (mode === 'execute') {
         await writer.set(write);
       }
+      increment(counters, 'successBillingFulfillment');
     } catch (error) {
+      increment(counters, 'failedBillingFulfillment');
       failures.push({
         target: 'billingFulfillment',
         id: docSnapshot.id,
@@ -808,78 +938,132 @@ async function validateSlug(db: Firestore, slug: string) {
     db.collection(EVENTS_COLLECTION).doc(eventId).get(),
     db.collection(EVENT_SLUG_INDEX_COLLECTION).doc(slug).get(),
   ]);
+  const eventData = eventSnapshot.exists
+    ? ((eventSnapshot.data() ?? {}) as FirestoreData)
+    : null;
+  const slugIndexData = slugIndexSnapshot.exists
+    ? ((slugIndexSnapshot.data() ?? {}) as FirestoreData)
+    : null;
+  const validationNow =
+    toDate(eventData?.createdAt) ??
+    toDate(eventData?.updatedAt) ??
+    toDate(slugIndexData?.createdAt) ??
+    toDate(slugIndexData?.updatedAt) ??
+    new Date();
+  const expectedSummary = buildBackfillEventSummary(bundle, validationNow);
+  const expectedSlugIndex = buildSlugIndexPayload(slug, expectedSummary);
 
-  if (!eventSnapshot.exists) {
-    failures.push({ target: 'events', id: eventId, reason: 'missing event summary' });
-  }
-
-  if (!slugIndexSnapshot.exists) {
-    failures.push({ target: 'eventSlugIndex', id: slug, reason: 'missing slug index' });
-  } else if (readString(slugIndexSnapshot.data()?.eventId) !== eventId) {
-    failures.push({ target: 'eventSlugIndex', id: slug, reason: 'eventId mismatch' });
-  }
+  pushMismatchFailures(
+    failures,
+    'events',
+    eventId,
+    omitTopLevelFields(expectedSummary, ['createdAt', 'updatedAt']),
+    omitTopLevelFields(eventData, ['createdAt', 'updatedAt'])
+  );
+  pushMismatchFailures(
+    failures,
+    'eventSlugIndex',
+    slug,
+    omitTopLevelFields(expectedSlugIndex, ['createdAt', 'updatedAt']),
+    omitTopLevelFields(slugIndexData, ['createdAt', 'updatedAt'])
+  );
 
   if (bundle.config) {
+    const expectedContent = buildBackfillContentPayload(slug, bundle.config, expectedSummary);
     const contentSnapshot = await db
       .collection(EVENTS_COLLECTION)
       .doc(eventId)
       .collection(EVENT_CONTENT_COLLECTION)
       .doc(EVENT_CURRENT_CONTENT_DOC)
       .get();
-    if (!contentSnapshot.exists) {
-      failures.push({ target: 'eventContent', id: slug, reason: 'missing content/current' });
-    }
+    pushMismatchFailures(
+      failures,
+      'eventContent',
+      slug,
+      expectedContent,
+      contentSnapshot.exists ? ((contentSnapshot.data() ?? {}) as FirestoreData) : null
+    );
   }
 
   if (bundle.secret) {
+    const expectedSecret = buildSecretPayload(slug, eventId, bundle.secret);
     const secretSnapshot = await db.collection(EVENT_SECRET_COLLECTION).doc(eventId).get();
-    if (!secretSnapshot.exists) {
-      failures.push({ target: 'eventSecrets', id: eventId, reason: 'missing event secret' });
-    }
+    pushMismatchFailures(
+      failures,
+      'eventSecrets',
+      eventId,
+      expectedSecret,
+      secretSnapshot.exists ? ((secretSnapshot.data() ?? {}) as FirestoreData) : null
+    );
   }
 
+  const commentCollection = db
+    .collection(EVENTS_COLLECTION)
+    .doc(eventId)
+    .collection(COMMENTS_COLLECTION);
+  const commentSnapshot = await commentCollection.get();
+  if (commentSnapshot.size !== bundle.comments.length) {
+    failures.push({
+      target: 'eventCommentCount',
+      id: slug,
+      reason: `count mismatch: expected=${bundle.comments.length}, actual=${commentSnapshot.size}`,
+    });
+  }
   for (const comment of bundle.comments) {
-    const snapshot = await db
-      .collection(EVENTS_COLLECTION)
-      .doc(eventId)
-      .collection(COMMENTS_COLLECTION)
-      .doc(comment.id)
-      .get();
-    if (!snapshot.exists) {
-      failures.push({ target: 'eventComment', id: `${slug}/${comment.id}`, reason: 'missing comment' });
-    }
+    const snapshot = await commentCollection.doc(comment.id).get();
+    pushMismatchFailures(
+      failures,
+      'eventComment',
+      `${slug}/${comment.id}`,
+      buildCommentPayload(slug, eventId, comment.data),
+      snapshot.exists ? ((snapshot.data() ?? {}) as FirestoreData) : null
+    );
   }
 
+  const tokenCollection = db
+    .collection(EVENTS_COLLECTION)
+    .doc(eventId)
+    .collection(EVENT_LINK_TOKEN_COLLECTION);
+  const tokenSnapshot = await tokenCollection.get();
+  if (tokenSnapshot.size !== bundle.linkTokens.length) {
+    failures.push({
+      target: 'eventLinkTokenCount',
+      id: slug,
+      reason: `count mismatch: expected=${bundle.linkTokens.length}, actual=${tokenSnapshot.size}`,
+    });
+  }
   for (const token of bundle.linkTokens) {
-    const snapshot = await db
-      .collection(EVENTS_COLLECTION)
-      .doc(eventId)
-      .collection(EVENT_LINK_TOKEN_COLLECTION)
-      .doc(token.id)
-      .get();
-    if (!snapshot.exists) {
-      failures.push({ target: 'eventLinkToken', id: `${slug}/${token.id}`, reason: 'missing link token' });
-    }
+    const snapshot = await tokenCollection.doc(token.id).get();
+    pushMismatchFailures(
+      failures,
+      'eventLinkToken',
+      `${slug}/${token.id}`,
+      buildLinkTokenPayload(slug, eventId, token.data),
+      snapshot.exists ? ((snapshot.data() ?? {}) as FirestoreData) : null
+    );
   }
 
+  const auditLogCollection = db
+    .collection(EVENTS_COLLECTION)
+    .doc(eventId)
+    .collection(EVENT_AUDIT_LOG_COLLECTION);
+  const auditLogSnapshot = await auditLogCollection.get();
+  if (auditLogSnapshot.size !== bundle.auditLogs.length) {
+    failures.push({
+      target: 'eventAuditLogCount',
+      id: slug,
+      reason: `count mismatch: expected=${bundle.auditLogs.length}, actual=${auditLogSnapshot.size}`,
+    });
+  }
   for (const log of bundle.auditLogs) {
-    const snapshot = await db
-      .collection(EVENTS_COLLECTION)
-      .doc(eventId)
-      .collection(EVENT_AUDIT_LOG_COLLECTION)
-      .doc(log.id)
-      .get();
-    if (!snapshot.exists) {
-      failures.push({ target: 'eventAuditLog', id: `${slug}/${log.id}`, reason: 'missing audit log' });
-    }
-  }
-
-  if (bundle.ticket) {
-    const ticketCount = normalizeTicketCount(bundle.ticket.ticketCount);
-    const eventStats = isRecord(eventSnapshot.data()?.stats) ? eventSnapshot.data()?.stats : null;
-    if (eventSnapshot.exists && normalizeTicketCount(eventStats?.ticketCount) !== ticketCount) {
-      failures.push({ target: 'events.stats', id: eventId, reason: 'ticketCount mismatch' });
-    }
+    const snapshot = await auditLogCollection.doc(log.id).get();
+    pushMismatchFailures(
+      failures,
+      'eventAuditLog',
+      `${slug}/${log.id}`,
+      buildAuditLogPayload(slug, eventId, log.data),
+      snapshot.exists ? ((snapshot.data() ?? {}) as FirestoreData) : null
+    );
   }
 
   return failures;
@@ -891,34 +1075,55 @@ async function validateBillingRecords(db: Firestore) {
 
   for (const docSnapshot of snapshot.docs) {
     const targetSnapshot = await db.collection(BILLING_COLLECTION).doc(docSnapshot.id).get();
-    if (!targetSnapshot.exists) {
-      failures.push({
-        target: 'billingFulfillment',
-        id: docSnapshot.id,
-        reason: 'missing billing fulfillment mirror',
-      });
-    }
+    const targetData = targetSnapshot.exists
+      ? ((targetSnapshot.data() ?? {}) as FirestoreData)
+      : null;
+    pushMismatchFailures(
+      failures,
+      'billingFulfillment',
+      docSnapshot.id,
+      buildBillingMirrorPayload(
+        (docSnapshot.data() ?? {}) as FirestoreData,
+        toDate(targetData?.migratedAt) ?? new Date()
+      ),
+      targetData
+    );
   }
 
-  return failures;
+  return {
+    failures,
+    scannedCount: snapshot.size,
+  };
 }
 
 async function runValidate(db: Firestore, options: BackfillOptions) {
   const slugs = await collectSlugs(db, options);
   const failures: BackfillFailure[] = [];
+  const counters: BackfillCounters = {
+    validatedSlug: 0,
+    validSlug: 0,
+    failedSlug: 0,
+  };
 
   for (const slug of slugs) {
-    failures.push(...(await validateSlug(db, slug)));
+    increment(counters, 'validatedSlug');
+    const slugFailures = await validateSlug(db, slug);
+    failures.push(...slugFailures);
+    if (slugFailures.length > 0) {
+      increment(counters, 'failedSlug');
+    } else {
+      increment(counters, 'validSlug');
+    }
   }
-  failures.push(...(await validateBillingRecords(db)));
+  const billingResult = await validateBillingRecords(db);
+  failures.push(...billingResult.failures);
+  counters.failure = failures.length;
+  counters.validatedBillingFulfillment = billingResult.scannedCount;
 
   return {
     mode: 'validate' as const,
     scannedSlugCount: slugs.length,
-    counters: {
-      validatedSlug: slugs.length,
-      failure: failures.length,
-    },
+    counters,
     committedBatches: 0,
     failures,
   };
