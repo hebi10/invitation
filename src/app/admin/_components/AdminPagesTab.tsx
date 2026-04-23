@@ -127,23 +127,6 @@ export default function AdminPagesTab({
         </p>
       </div>
 
-      <div className={styles.innerTabBar} role="tablist" aria-label="페이지 유형 탭">
-        {PAGE_CATEGORY_TABS.map((tab) => (
-          <button
-            key={tab.key}
-            type="button"
-            role="tab"
-            aria-selected={activePageCategory === tab.key}
-            className={`${styles.innerTabButton} ${
-              activePageCategory === tab.key ? styles.innerTabButtonActive : ''
-            }`}
-            onClick={() => setActivePageCategory(tab.key)}
-          >
-            {tab.label}
-          </button>
-        ))}
-      </div>
-
       {activeFutureCategory ? (
         <div className={styles.todoPanel}>
           <span className={styles.todoBadge}>TODO</span>
@@ -566,7 +549,6 @@ export default function AdminPagesTab({
           <div className={styles.mobileList}>
             {currentInvitationPages.map((page) => {
               const links = getAvailableShortcuts(page);
-              const previewAccess = getInvitationPublicAccessState(page);
               const selectedVariantKey = selectedVariantByPage[page.slug] ?? '';
               const selectedVariant = links.find((link) => link.key === selectedVariantKey);
               const selectedMissingShortcut = SHORTCUT_ITEMS.find(

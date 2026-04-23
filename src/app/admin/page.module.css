@@ -175,6 +175,25 @@
   padding: 8px;
 }
 
+.tabBarGroup,
+.tabBarInlineGroup {
+  display: flex;
+  flex: 1 1 0;
+  flex-wrap: wrap;
+  gap: 8px;
+  min-width: 0;
+}
+
+.tabBarInlineGroup {
+  flex: 999 1 360px;
+}
+
+.tabBarDivider {
+  width: 1px;
+  align-self: stretch;
+  background: var(--admin-color-border);
+}
+
 .tabButton {
   display: inline-flex;
   align-items: center;
@@ -209,16 +228,6 @@
 
 .panelStack {
   gap: 20px;
-}
-.innerTabBar {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  padding: 8px;
-  border: 1px solid var(--admin-color-border);
-  border-radius: var(--admin-radius-lg);
-  background: var(--admin-color-surface);
-  box-shadow: var(--admin-shadow-sm);
 }
 .innerTabButton {
   display: inline-flex;
@@ -870,6 +879,16 @@
 
   .tabButton {
     flex-basis: calc(50% - 4px);
+  }
+
+  .tabBarGroup,
+  .tabBarInlineGroup {
+    flex-basis: 100%;
+  }
+
+  .tabBarDivider {
+    width: 100%;
+    height: 1px;
   }
 
   .innerTabButton {

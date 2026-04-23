@@ -640,28 +640,58 @@ export default function AdminPageClient() {
 
         <SummaryCards items={summaryCards} />
 
-        <div className={styles.tabBar} role="tablist" aria-label="관리 섹션">
-          {ADMIN_SECTIONS.map(({ key: sectionKey }) => (
-            <button
-              key={sectionKey}
-              type="button"
-              role="tab"
-              aria-selected={activeSection === sectionKey}
-              aria-controls={`section-${sectionKey}`}
-              id={`section-${sectionKey}`}
-              className={`${styles.tabButton} ${
-                activeSection === sectionKey ? styles.tabButtonActive : ''
-              }`}
-              onClick={() =>
-                updateQuery({
-                  section: sectionKey,
-                  tab: getDefaultTabForSection(sectionKey),
-                })
-              }
-            >
-              {getSectionLabel(sectionKey)}
-            </button>
-          ))}
+        <div className={styles.tabBar}>
+          <div className={styles.tabBarGroup} role="tablist" aria-label="관리 섹션">
+            {ADMIN_SECTIONS.map(({ key: sectionKey }) => (
+              <button
+                key={sectionKey}
+                type="button"
+                role="tab"
+                aria-selected={activeSection === sectionKey}
+                aria-controls={`section-${sectionKey}`}
+                id={`section-${sectionKey}`}
+                className={`${styles.tabButton} ${
+                  activeSection === sectionKey ? styles.tabButtonActive : ''
+                }`}
+                onClick={() =>
+                  updateQuery({
+                    section: sectionKey,
+                    tab: getDefaultTabForSection(sectionKey),
+                  })
+                }
+              >
+                {getSectionLabel(sectionKey)}
+              </button>
+            ))}
+          </div>
+
+          {shouldShowPageCategoryTabs ? (
+            <>
+              <div className={styles.tabBarDivider} aria-hidden="true" />
+              <div
+                className={styles.tabBarInlineGroup}
+                role="tablist"
+                aria-label="페이지 유형 탭"
+              >
+                {PAGE_CATEGORY_TABS.map((tab) => (
+                  <button
+                    key={tab.key}
+                    type="button"
+                    role="tab"
+                    aria-selected={activePageCategory === tab.key}
+                    className={`${styles.innerTabButton} ${
+                      activePageCategory === tab.key
+                        ? styles.innerTabButtonActive
+                        : ''
+                    }`}
+                    onClick={() => setActivePageCategory(tab.key)}
+                  >
+                    {tab.label}
+                  </button>
+                ))}
+              </div>
+            </>
+          ) : null}
         </div>
 
         <div className={styles.tabBar} role="tablist" aria-label="세부 관리 탭">
@@ -705,6 +735,7 @@ export default function AdminPageClient() {
               pageShortcutFilter={pageShortcutFilter}
               pageStatusFilter={pageStatusFilter}
               pageSort={pageSort}
+              activePageCategory={activePageCategory}
               chips={pageFilterChips}
               onQueryChange={updateQuery}
               onRefresh={() => void refreshPages()}
