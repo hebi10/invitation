@@ -4,6 +4,8 @@ import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { useEffect, useMemo } from 'react';
 
+export const dynamic = 'force-dynamic';
+
 function buildAppLoginLink(linkToken: string, next: string) {
   const params = new URLSearchParams({
     linkToken,
