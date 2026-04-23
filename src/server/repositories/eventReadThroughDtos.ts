@@ -1,4 +1,5 @@
 import { getWeddingPageBySlug } from '@/config/weddingPages';
+import { DEFAULT_EVENT_TYPE, normalizeEventTypeKey, type EventTypeKey } from '@/lib/eventTypes';
 import {
   normalizeGuestbookCommentStatus,
   readGuestbookCommentDate,
@@ -22,7 +23,7 @@ import {
 export interface EventSlugIndexRecord {
   slug: string;
   eventId: string;
-  eventType: string | null;
+  eventType: EventTypeKey | null;
   status: EventSlugIndexStatus;
   targetSlug: string | null;
   createdAt: Date | null;
@@ -32,8 +33,11 @@ export interface EventSlugIndexRecord {
 export interface EventSummaryRecord {
   eventId: string;
   slug: string;
-  eventType: string;
+  eventType: EventTypeKey;
   status: string | null;
+  ownerUid: string | null;
+  ownerEmail: string | null;
+  ownerDisplayName: string | null;
   title: string | null;
   displayName: string | null;
   summary: string | null;
@@ -166,7 +170,9 @@ export function normalizeEventSlugIndexRecord(
   return {
     slug,
     eventId,
-    eventType: readNonEmptyString(data.eventType),
+    eventType: readNonEmptyString(data.eventType)
+      ? normalizeEventTypeKey(data.eventType, DEFAULT_EVENT_TYPE)
+      : null,
     status,
     targetSlug: readNonEmptyString(data.targetSlug),
     createdAt: toDate(data.createdAt),
@@ -207,8 +213,11 @@ export function normalizeEventSummaryRecord(
   return {
     eventId: readNonEmptyString(data.eventId) ?? eventId,
     slug,
-    eventType: readNonEmptyString(data.eventType) ?? 'wedding',
+    eventType: normalizeEventTypeKey(data.eventType, DEFAULT_EVENT_TYPE),
     status: readNonEmptyString(data.status),
+    ownerUid: readNonEmptyString(data.ownerUid),
+    ownerEmail: readNonEmptyString(data.ownerEmail),
+    ownerDisplayName: readNonEmptyString(data.ownerDisplayName),
     title: readNonEmptyString(data.title),
     displayName: readNonEmptyString(data.displayName),
     summary: readNonEmptyString(data.summary),
@@ -283,6 +292,10 @@ export function buildInvitationPageConfigRecordFromEventContent(
   const themeStateInput = isRecord(data.themeState) ? data.themeState : null;
   const contentCandidate = {
     ...contentInput,
+    eventType:
+      readNonEmptyString(contentInput.eventType) ??
+      readNonEmptyString(data.eventType) ??
+      eventSummary.eventType,
     slug:
       readNonEmptyString(contentInput.slug) ??
       readNonEmptyString(data.slug) ??

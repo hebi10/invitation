@@ -8,8 +8,7 @@ export interface ClientPasswordRecord {
   passwordSalt: string | null;
   passwordIterations: number | null;
   passwordVersion: number;
-  legacyPassword: string | null;
-  legacyPlaintextStored: boolean;
+  requiresReset: boolean;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -19,7 +18,7 @@ export interface ClientPasswordSummary {
   pageSlug: string;
   hasPassword: boolean;
   passwordVersion: number;
-  legacyPlaintextStored: boolean;
+  requiresReset: boolean;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -48,9 +47,8 @@ export function normalizeRepositoryClientPasswordRecord(
     typeof data.passwordVersion === 'number' && Number.isFinite(data.passwordVersion)
       ? data.passwordVersion
       : 1;
-  const hasPassword = Boolean(
-    legacyPassword || (passwordHash && passwordSalt && passwordIterations)
-  );
+  const hasHash = Boolean(passwordHash && passwordSalt && passwordIterations);
+  const hasPassword = Boolean(legacyPassword || hasHash);
 
   if (!pageSlug || !hasPassword) {
     return null;
@@ -64,8 +62,7 @@ export function normalizeRepositoryClientPasswordRecord(
     passwordSalt,
     passwordIterations,
     passwordVersion,
-    legacyPassword,
-    legacyPlaintextStored: Boolean(legacyPassword),
+    requiresReset: !hasHash,
     createdAt: toClientRepositoryDate(data.createdAt, new Date()),
     updatedAt: toClientRepositoryDate(data.updatedAt, new Date()),
   };
@@ -79,7 +76,7 @@ export function toClientPasswordSummary(
     pageSlug: record.pageSlug,
     hasPassword: record.hasPassword,
     passwordVersion: record.passwordVersion,
-    legacyPlaintextStored: record.legacyPlaintextStored,
+    requiresReset: record.requiresReset,
     createdAt: record.createdAt,
     updatedAt: record.updatedAt,
   };

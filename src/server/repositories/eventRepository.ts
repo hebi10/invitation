@@ -1,5 +1,6 @@
 import 'server-only';
 
+import { DEFAULT_EVENT_TYPE, normalizeEventTypeKey } from '@/lib/eventTypes';
 import { normalizeInvitationPageSlugInput, stripUndefinedDeep } from '@/lib/invitationPagePersistence';
 import { DEFAULT_INVITATION_THEME, type InvitationThemeKey } from '@/lib/invitationThemes';
 import type {
@@ -26,7 +27,6 @@ export const EVENTS_COLLECTION = 'events';
 export const EVENT_CONTENT_COLLECTION = 'content';
 export const EVENT_CURRENT_CONTENT_DOC = 'current';
 export const EVENT_SLUG_INDEX_COLLECTION = 'eventSlugIndex';
-const DEFAULT_EVENT_TYPE = 'wedding';
 
 export interface InvitationPageDisplayPeriodRecord {
   docId: string;
@@ -73,6 +73,7 @@ interface EnsureEventMirrorOptions {
 export interface EventRepository {
   isAvailable(): boolean;
   isSlugTaken(pageSlug: string): Promise<boolean>;
+  listSummaries(): Promise<EventSummaryRecord[]>;
   findRegistryBySlug(pageSlug: string): Promise<InvitationPageRegistryRecord | null>;
   findContentBySlug(pageSlug: string): Promise<StoredInvitationPageConfigRecord | null>;
   findDisplayPeriodBySlug(
@@ -101,6 +102,13 @@ export interface EventRepository {
     createdAt?: Date | null;
     updatedAt?: Date | null;
   }): Promise<void>;
+  assignOwnerBySlug(input: {
+    pageSlug: string;
+    ownerUid: string;
+    ownerEmail?: string | null;
+    ownerDisplayName?: string | null;
+  }): Promise<ResolvedEventRecord>;
+  clearOwnerBySlug(pageSlug: string): Promise<ResolvedEventRecord>;
 }
 
 function normalizePageSlug(pageSlug: string) {
@@ -159,8 +167,14 @@ function buildEventSummaryFromRepositoryState(options: {
   return {
     eventId: options.eventId,
     slug: pageSlug,
-    eventType: existing?.eventType ?? DEFAULT_EVENT_TYPE,
+    eventType: normalizeEventTypeKey(
+      content?.config.eventType,
+      existing?.eventType ?? DEFAULT_EVENT_TYPE
+    ),
     status: existing?.status ?? 'active',
+    ownerUid: existing?.ownerUid ?? null,
+    ownerEmail: existing?.ownerEmail ?? null,
+    ownerDisplayName: existing?.ownerDisplayName ?? null,
     title: content?.config.displayName ?? existing?.title ?? null,
     displayName: content?.config.displayName ?? existing?.displayName ?? null,
     summary: content?.config.description ?? existing?.summary ?? null,
@@ -270,6 +284,25 @@ async function findEventSummaryBySlugQuery(pageSlug: string) {
   return normalizeEventSummaryRecord(matched.id, matched.data() ?? {}, pageSlug);
 }
 
+export async function listStoredEventSummaries() {
+  const db = getServerFirestore();
+  if (!db) {
+    return [];
+  }
+
+  const snapshot = await db.collection(EVENTS_COLLECTION).get();
+  return snapshot.docs
+    .map((docSnapshot) =>
+      normalizeEventSummaryRecord(docSnapshot.id, docSnapshot.data() ?? {})
+    )
+    .filter((record): record is EventSummaryRecord => Boolean(record?.slug))
+    .sort((left, right) => {
+      const rightTime = right.updatedAt?.getTime() ?? 0;
+      const leftTime = left.updatedAt?.getTime() ?? 0;
+      return rightTime - leftTime;
+    });
+}
+
 export async function findEventSlugIndexBySlug(pageSlug: string) {
   const normalizedPageSlug = normalizePageSlug(pageSlug);
   if (!normalizedPageSlug) {
@@ -353,7 +386,7 @@ export async function syncEventSlugIndexRecord(input: {
   const nextRecord = {
     slug: normalizedPageSlug,
     eventId: normalizedEventId,
-    eventType: input.eventType?.trim() || DEFAULT_EVENT_TYPE,
+    eventType: normalizeEventTypeKey(input.eventType, DEFAULT_EVENT_TYPE),
     status: nextStatus,
     targetSlug:
       normalizedTargetSlug ||
@@ -542,6 +575,9 @@ async function writeEventSummaryMirror(
         eventType: summary.eventType,
         slug: summary.slug,
         status: summary.status ?? 'active',
+        ownerUid: summary.ownerUid,
+        ownerEmail: summary.ownerEmail,
+        ownerDisplayName: summary.ownerDisplayName,
         title: summary.title,
         displayName: summary.displayName,
         summary: summary.summary,
@@ -681,6 +717,108 @@ export async function ensureEventMirrorBySlug(
   } satisfies ResolvedEventRecord;
 }
 
+export async function assignEventOwnerBySlug(input: {
+  pageSlug: string;
+  ownerUid: string;
+  ownerEmail?: string | null;
+  ownerDisplayName?: string | null;
+}) {
+  const normalizedPageSlug = normalizePageSlug(input.pageSlug);
+  const normalizedOwnerUid = input.ownerUid.trim();
+  if (!normalizedPageSlug || !normalizedOwnerUid) {
+    throw new Error('Valid page slug and owner uid are required.');
+  }
+
+  const mirroredEvent = await ensureEventMirrorBySlug(normalizedPageSlug, {
+    forceCreate: true,
+    now: new Date(),
+  });
+  if (!mirroredEvent) {
+    throw new Error('Failed to resolve the event for owner assignment.');
+  }
+
+  const db = getServerFirestore();
+  if (!db) {
+    throw new Error('Server Firestore is not available.');
+  }
+
+  const now = new Date();
+  await db
+    .collection(EVENTS_COLLECTION)
+    .doc(mirroredEvent.summary.eventId)
+    .set(
+      {
+        ownerUid: normalizedOwnerUid,
+        ownerEmail: input.ownerEmail?.trim() || null,
+        ownerDisplayName: input.ownerDisplayName?.trim() || null,
+        updatedAt: now,
+      },
+      { merge: true }
+    );
+
+  const updatedSummary = await findStoredEventSummaryById(
+    mirroredEvent.summary.eventId,
+    mirroredEvent.summary.slug
+  );
+  if (!updatedSummary) {
+    throw new Error('Failed to reload the event after owner assignment.');
+  }
+
+  return {
+    requestedSlug: mirroredEvent.requestedSlug,
+    slugIndex: mirroredEvent.slugIndex,
+    summary: updatedSummary,
+  } satisfies ResolvedEventRecord;
+}
+
+export async function clearEventOwnerBySlug(pageSlug: string) {
+  const normalizedPageSlug = normalizePageSlug(pageSlug);
+  if (!normalizedPageSlug) {
+    throw new Error('Valid page slug is required.');
+  }
+
+  const mirroredEvent = await ensureEventMirrorBySlug(normalizedPageSlug, {
+    forceCreate: true,
+    now: new Date(),
+  });
+  if (!mirroredEvent) {
+    throw new Error('Failed to resolve the event for owner removal.');
+  }
+
+  const db = getServerFirestore();
+  if (!db) {
+    throw new Error('Server Firestore is not available.');
+  }
+
+  const now = new Date();
+  await db
+    .collection(EVENTS_COLLECTION)
+    .doc(mirroredEvent.summary.eventId)
+    .set(
+      {
+        ownerUid: null,
+        ownerEmail: null,
+        ownerDisplayName: null,
+        updatedAt: now,
+      },
+      { merge: true }
+    );
+
+  const updatedSummary = await findStoredEventSummaryById(
+    mirroredEvent.summary.eventId,
+    mirroredEvent.summary.slug
+  );
+  if (!updatedSummary) {
+    throw new Error('Failed to reload the event after owner removal.');
+  }
+
+  return {
+    requestedSlug: mirroredEvent.requestedSlug,
+    slugIndex: mirroredEvent.slugIndex,
+    summary: updatedSummary,
+  } satisfies ResolvedEventRecord;
+}
+
 export const firestoreEventRepository: EventRepository = {
   isAvailable() {
     return Boolean(getServerFirestore());
@@ -693,6 +831,10 @@ export const firestoreEventRepository: EventRepository = {
     }
 
     return Boolean(await resolveStoredEventBySlug(normalizedPageSlug));
+  },
+
+  async listSummaries() {
+    return listStoredEventSummaries();
   },
 
   async findRegistryBySlug(pageSlug) {
@@ -802,5 +944,13 @@ export const firestoreEventRepository: EventRepository = {
     }
 
     await writeEventContentMirror(mirroredEvent.summary, nextContentRecord, now);
+  },
+
+  async assignOwnerBySlug(input) {
+    return assignEventOwnerBySlug(input);
+  },
+
+  async clearOwnerBySlug(pageSlug) {
+    return clearEventOwnerBySlug(pageSlug);
   },
 };

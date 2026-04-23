@@ -4,6 +4,7 @@ import type { InvitationThemeKey } from '@/lib/invitationThemes';
 
 import type { WeddingThemeRendererProps } from '../weddingPageRenderers';
 import EmotionalThemeRenderer from './emotional';
+import RomanticThemeRenderer from './romantic';
 import SimpleThemeRenderer from './simple';
 
 export type WeddingThemeRendererComponent =
@@ -18,6 +19,10 @@ export const WEDDING_THEME_RENDERER_REGISTRY = [
   {
     key: 'emotional',
     component: EmotionalThemeRenderer,
+  },
+  {
+    key: 'romantic',
+    component: RomanticThemeRenderer,
   },
   {
     key: 'simple',

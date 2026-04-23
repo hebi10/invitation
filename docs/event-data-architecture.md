@@ -9,6 +9,7 @@
 ## 기준 원칙
 - 내부 기준 키: `eventId`
 - 외부 공개 주소: `slug`
+- 이벤트 타입 기준: `src/lib/eventTypes.ts`
 - `slug` 해석: `eventSlugIndex/{slug}` -> `eventId`
 - 본문 원본: `events/{eventId}/content/current`
 - 민감 정보: `eventSecrets/{eventId}`
@@ -130,6 +131,7 @@
 
 ## 해석 규칙
 - 공개 URL은 항상 `slug`를 사용한다.
+- `eventType`의 허용 key와 표시 메타는 `src/lib/eventTypes.ts`를 source of truth로 본다.
 - 서버와 repository는 `eventSlugIndex/{slug}`를 먼저 읽고 `eventId`를 찾는다.
 - 실제 이벤트 원본은 `events/{eventId}`와 그 하위 서브컬렉션에서만 읽고 쓴다.
 - 고객 편집기, 관리자, 모바일 운영은 Firestore 경로를 직접 다루지 않고 repository/API를 통해 저장한다.

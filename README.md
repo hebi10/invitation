@@ -17,6 +17,7 @@
 
 ## 추가 문서
 
+- 문서 허브: `docs/README.md`
 - 새 테마 추가 체크리스트: `docs/new-theme-checklist.md`
 - 모바일 청첩장 연동 기준: `docs/mobile-client-editor-policy.md`
 - Expo 영향 범위 점검: `docs/expo-impact-assessment.md`

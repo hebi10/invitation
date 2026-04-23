@@ -415,10 +415,29 @@
   color: var(--admin-color-text-muted);
 }
 
+.identityStack {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.customerIdentityHeader {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
 .metaStack,
 .statusCell {
   display: flex;
   flex-direction: column;
+  gap: 6px;
+}
+
+.customerStatusRow {
+  display: flex;
+  flex-wrap: wrap;
   gap: 6px;
 }
 
@@ -504,12 +523,11 @@
 .variantPreviewActionButton {
   width: 100%;
   min-height: 34px;
-  padding: 0 10px;
   border-radius: 8px;
   border: 1px solid var(--admin-color-border);
   font-size: 0.75rem;
   font-weight: 700;
-  text-align: left;
+  text-align: center;
   cursor: pointer;
 }
 
@@ -582,6 +600,65 @@
   flex-wrap: wrap;
   align-items: center;
   gap: 8px;
+}
+
+.emptyInlineText {
+  font-size: 0.8125rem;
+  color: var(--admin-color-text-muted);
+}
+
+.linkedEventCompact {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 280px;
+}
+
+.linkedEventSelectRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.linkedEventCompactMeta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  font-size: 0.75rem;
+  color: var(--admin-color-text-muted);
+}
+
+.customerEventList {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 260px;
+}
+
+.customerEventCard {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid var(--admin-color-border);
+  border-radius: 12px;
+  background: var(--admin-color-surface-muted);
+}
+
+.customerEventHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.customerEventMeta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  font-size: 0.75rem;
+  color: var(--admin-color-text-muted);
 }
 
 .messagePreview {

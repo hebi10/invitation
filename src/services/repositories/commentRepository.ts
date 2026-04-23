@@ -3,8 +3,10 @@ import { buildGuestbookCommentStatusPatch } from '@/lib/guestbookComments';
 import { ensureClientFirestoreState } from './clientFirestoreRepositoryCore';
 import {
   buildClientEventCommentCollectionPath,
+  listClientEventSummaries,
   resolveClientStoredEventBySlug,
 } from './clientEventRepositoryCore';
+import type { ClientEventSummaryRecord } from './mappers/clientEventRepositoryMapper';
 import {
   buildEventCommentCollectionPath,
   normalizeRepositoryComment,
@@ -12,7 +14,6 @@ import {
 } from './mappers/commentRepositoryMapper';
 import { requireTrimmedString } from './repositoryValidators';
 
-const COMMENTS_COLLECTION = 'comments';
 const EVENT_COLLECTION_PREFIX = 'events/';
 
 export interface CommentInput {
@@ -66,24 +67,35 @@ async function listAllEventComments() {
     return [];
   }
 
-  const snapshot = await firestore.modules.getDocs(
-    firestore.modules.collectionGroup(firestore.db, COMMENTS_COLLECTION)
+  const eventSummaries = await listClientEventSummaries();
+  const commentGroups = await Promise.all(
+    eventSummaries.map(async (eventSummary: ClientEventSummaryRecord) => {
+      const collectionPath = buildEventCommentCollectionPath(eventSummary.eventId);
+
+      try {
+        const snapshot = await firestore.modules.getDocs(
+          firestore.modules.collection(firestore.db, collectionPath)
+        );
+
+        return snapshot.docs
+          .map((docSnapshot: { id: string; data: () => Record<string, unknown> }) =>
+            normalizeRepositoryComment(docSnapshot.id, docSnapshot.data(), {
+              pageSlug: eventSummary.slug,
+              collectionName: collectionPath,
+            })
+          )
+          .filter((comment: Comment | null): comment is Comment => comment !== null);
+      } catch (error) {
+        console.error(
+          `[commentRepository] event comments load failed for ${eventSummary.slug}`,
+          error
+        );
+        return [];
+      }
+    })
   );
 
-  return snapshot.docs
-    .filter((docSnapshot: { ref: { parent: { path: string } } }) =>
-      isEventCommentCollectionPath(docSnapshot.ref.parent.path)
-    )
-    .map((docSnapshot: {
-      id: string;
-      data: () => Record<string, unknown>;
-      ref: { parent: { path: string } };
-    }) =>
-      normalizeRepositoryComment(docSnapshot.id, docSnapshot.data(), {
-        collectionName: docSnapshot.ref.parent.path,
-      })
-    )
-    .filter((comment: Comment | null): comment is Comment => comment !== null);
+  return commentGroups.flat();
 }
 
 export const commentRepository: CommentRepository = {

@@ -1,7 +1,9 @@
-'use client';
+﻿'use client';
 
 import { type ChangeEvent, type ReactNode, useEffect, useMemo, useRef, useState } from 'react';
 
+import CustomerEventClaimCard from '@/app/_components/CustomerEventClaimCard';
+import FirebaseAuthLoginCard from '@/app/_components/FirebaseAuthLoginCard';
 import { useAdmin } from '@/contexts';
 import { USE_FIREBASE } from '@/lib/firebase';
 import {
@@ -35,15 +37,8 @@ import {
   saveInvitationPageConfig,
   setInvitationPagePublished,
 } from '@/services/invitationPageService';
-import {
-  getClientEditorEditableConfig,
-  getClientEditorSession,
-  loginClientEditorSession,
-  restoreClientEditorConfig,
-  saveClientEditorConfig,
-  setClientEditorPublishedState,
-} from '@/services/clientEditorSession';
 import { getInvitationMusicLibraryFromStorage } from '@/services/musicService';
+import { getCustomerEventOwnershipStatus } from '@/services/customerEventService';
 import type { InvitationPageSeed, InvitationThemeKey } from '@/types/invitationPage';
 
 import {
@@ -423,7 +418,7 @@ export default function PageEditorClient({
   initialDate,
   initialVenue,
 }: PageEditorClientProps) {
-  const { isAdminLoading, isAdminLoggedIn } = useAdmin();
+  const { authUser, isAdminLoading, isAdminLoggedIn, isLoggedIn } = useAdmin();
 
   const [formState, setFormState] = useState<InvitationPageSeed | null>(null);
   const [baselineState, setBaselineState] = useState<InvitationPageSeed | null>(null);
@@ -432,10 +427,11 @@ export default function PageEditorClient({
   const [hasCustomConfig, setHasCustomConfig] = useState(false);
   const [dataSourceLabel, setDataSourceLabel] = useState('기본 샘플 사용 중');
   const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
-  const [hasClientSession, setHasClientSession] = useState(false);
-  const [passwordInput, setPasswordInput] = useState('');
+  const [hasOwnershipAccess, setHasOwnershipAccess] = useState(false);
+  const [requiresOwnershipClaim, setRequiresOwnershipClaim] = useState(false);
+  const [accessErrorMessage, setAccessErrorMessage] = useState<string | null>(null);
+  const [accessRefreshToken, setAccessRefreshToken] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
-  const [isUnlocking, setIsUnlocking] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isSavingVisibility, setIsSavingVisibility] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -453,8 +449,8 @@ export default function PageEditorClient({
   const faviconUploadInputRef = useRef<HTMLInputElement | null>(null);
   const galleryUploadInputRef = useRef<HTMLInputElement | null>(null);
 
-  const canEdit = isAdminLoggedIn || hasClientSession;
-  const canUploadImages = USE_FIREBASE && (isAdminLoggedIn || hasClientSession);
+  const canEdit = isAdminLoggedIn || hasOwnershipAccess;
+  const canUploadImages = USE_FIREBASE && canEdit;
   const title = buildEditorTitle(
     formState?.couple.groom.name ?? initialGroomName,
     formState?.couple.bride.name ?? initialBrideName,
@@ -587,32 +583,75 @@ export default function PageEditorClient({
   }, []);
 
   useEffect(() => {
+    if (isAdminLoading) {
+      return;
+    }
+
     if (isAdminLoggedIn) {
-      setHasClientSession(false);
+      setHasOwnershipAccess(false);
+      setRequiresOwnershipClaim(false);
+      setAccessErrorMessage(null);
+      return;
+    }
+
+    if (!isLoggedIn) {
+      setHasOwnershipAccess(false);
+      setRequiresOwnershipClaim(false);
+      setAccessErrorMessage(null);
+      setFormState(null);
+      setBaselineState(null);
       return;
     }
 
     let cancelled = false;
 
-    const loadClientSession = async () => {
+    const loadOwnership = async () => {
       try {
-        const session = await getClientEditorSession(slug);
-        if (!cancelled) {
-          setHasClientSession(session.authenticated);
+        const ownership = await getCustomerEventOwnershipStatus(slug, authUser?.uid);
+        if (cancelled) {
+          return;
         }
+
+        if (ownership.status === 'owner') {
+          setHasOwnershipAccess(true);
+          setRequiresOwnershipClaim(false);
+          setAccessErrorMessage(null);
+          return;
+        }
+
+        if (ownership.status === 'claimable') {
+          setHasOwnershipAccess(false);
+          setRequiresOwnershipClaim(true);
+          setAccessErrorMessage(null);
+          setFormState(null);
+          setBaselineState(null);
+          return;
+        }
+
+        setHasOwnershipAccess(false);
+        setRequiresOwnershipClaim(false);
+        setAccessErrorMessage(
+          ownership.status === 'different-owner'
+            ? '이 청첩장은 현재 로그인한 계정과 연결되어 있지 않습니다.'
+            : '청첩장 정보를 찾지 못했습니다.'
+        );
+        setFormState(null);
+        setBaselineState(null);
       } catch {
         if (!cancelled) {
-          setHasClientSession(false);
+          setHasOwnershipAccess(false);
+          setRequiresOwnershipClaim(false);
+          setAccessErrorMessage('청첩장 소유권을 확인하지 못했습니다.');
         }
       }
     };
 
-    void loadClientSession();
+    void loadOwnership();
 
     return () => {
       cancelled = true;
     };
-  }, [isAdminLoggedIn, slug]);
+  }, [accessRefreshToken, authUser?.uid, isAdminLoading, isAdminLoggedIn, isLoggedIn, slug]);
 
   useEffect(() => {
     if (isAdminLoading || !canEdit) {
@@ -624,9 +663,7 @@ export default function PageEditorClient({
 
     const load = async () => {
       try {
-        const config = isAdminLoggedIn
-          ? await getEditableInvitationPageConfig(slug)
-          : await getClientEditorEditableConfig(slug);
+        const config = await getEditableInvitationPageConfig(slug);
         if (cancelled) {
           return;
         }
@@ -655,7 +692,7 @@ export default function PageEditorClient({
     return () => {
       cancelled = true;
     };
-  }, [canEdit, isAdminLoading, isAdminLoggedIn, slug]);
+  }, [canEdit, isAdminLoading, slug]);
 
   useEffect(() => {
     if (!formState) {
@@ -773,17 +810,10 @@ export default function PageEditorClient({
 
     try {
       const nextConfig = prepareConfigForSave(formState, slug);
-      if (isAdminLoggedIn) {
-        await saveInvitationPageConfig(nextConfig, {
-          published: baselinePublished,
-          defaultTheme,
-        });
-      } else {
-        await saveClientEditorConfig(slug, nextConfig, {
-          published: baselinePublished,
-          defaultTheme,
-        });
-      }
+      await saveInvitationPageConfig(nextConfig, {
+        published: baselinePublished,
+        defaultTheme,
+      });
       setFormState(cloneConfig(nextConfig));
       setBaselineState(cloneConfig(nextConfig));
       setHasCustomConfig(true);
@@ -818,50 +848,11 @@ export default function PageEditorClient({
     }
   };
 
-  const handleUnlock = async () => {
-    const trimmedPassword = passwordInput.trim();
-    if (!trimmedPassword) {
-      setNotice({ tone: 'error', message: '페이지 비밀번호를 입력해 주세요.' });
-      return;
-    }
-
-    setIsUnlocking(true);
-
-    try {
-      const session = await loginClientEditorSession(slug, trimmedPassword);
-      if (!session.authenticated) {
-        setNotice({
-          tone: 'error',
-          message: '비밀번호가 올바르지 않습니다. 다시 확인해 주세요.',
-        });
-        return;
-      }
-
-      setHasClientSession(true);
-      setPasswordInput('');
-      setNotice({
-        tone: 'success',
-        message: '편집 권한을 확인했습니다. 설정 정보를 불러오는 중입니다.',
-      });
-    } catch (error) {
-      console.error('[PageEditorClient] failed to verify password', error);
-      setSaveState('error');
-      setNotice({
-        tone: 'error',
-        message: '비밀번호 확인에 실패했습니다. 잠시 후 다시 시도해 주세요.',
-      });
-    } finally {
-      setIsUnlocking(false);
-    }
-  };
-
   const loadLatestConfig = async (successMessage?: string) => {
     setIsRefreshing(true);
 
     try {
-      const config = isAdminLoggedIn
-        ? await getEditableInvitationPageConfig(slug)
-        : await getClientEditorEditableConfig(slug);
+      const config = await getEditableInvitationPageConfig(slug);
       applyLoadedConfig(config);
       if (successMessage) {
         setNotice({ tone: 'success', message: successMessage });
@@ -904,17 +895,10 @@ export default function PageEditorClient({
     setIsRestoring(true);
 
     try {
-      if (isAdminLoggedIn) {
-        await restoreInvitationPageConfig(slug, {
-          published: baselinePublished,
-          defaultTheme,
-        });
-      } else {
-        await restoreClientEditorConfig(slug, {
-          published: baselinePublished,
-          defaultTheme,
-        });
-      }
+      await restoreInvitationPageConfig(slug, {
+        published: baselinePublished,
+        defaultTheme,
+      });
       await loadLatestConfig('기본 설정으로 복원했습니다.');
     } catch (error) {
       console.error('[PageEditorClient] failed to restore config', error);
@@ -945,31 +929,18 @@ export default function PageEditorClient({
     try {
       if (hasConfigChanges && formState) {
         const nextConfig = prepareConfigForSave(formState, slug);
-        if (isAdminLoggedIn) {
-          await saveInvitationPageConfig(nextConfig, {
-            published,
-            defaultTheme,
-          });
-        } else {
-          await saveClientEditorConfig(slug, nextConfig, {
-            published,
-            defaultTheme,
-          });
-        }
+        await saveInvitationPageConfig(nextConfig, {
+          published,
+          defaultTheme,
+        });
         setFormState(cloneConfig(nextConfig));
         setBaselineState(cloneConfig(nextConfig));
         setHasCustomConfig(true);
         setDataSourceLabel('맞춤 설정 사용 중');
       } else {
-        if (isAdminLoggedIn) {
-          await setInvitationPagePublished(slug, published, {
-            defaultTheme,
-          });
-        } else {
-          await setClientEditorPublishedState(slug, published, {
-            defaultTheme,
-          });
-        }
+        await setInvitationPagePublished(slug, published, {
+          defaultTheme,
+        });
       }
 
       setBaselinePublished(published);
@@ -3503,39 +3474,41 @@ export default function PageEditorClient({
             {renderHeroCard()}
             {renderNotice()}
 
-            {!canEdit ? (
+            {!isLoggedIn ? (
+              <section className={styles.lockedCard}>
+                <FirebaseAuthLoginCard
+                  title="로그인 후 청첩장을 관리해 주세요"
+                  description="이메일 로그인이나 Google 로그인을 완료하면 현재 계정 UID 기준으로 소유권을 확인합니다."
+                  helperText="기본 이메일 로그인과 Google 로그인만 지원합니다."
+                />
+              </section>
+            ) : null}
+
+            {isLoggedIn && requiresOwnershipClaim ? (
+              <section className={styles.lockedCard}>
+                <CustomerEventClaimCard
+                  pageSlug={slug}
+                  title="기존 청첩장을 현재 계정에 연결해 주세요"
+                  description="아직 현재 로그인한 UID와 연결되지 않은 청첩장입니다. 기존 페이지 비밀번호를 확인하면 내 계정 청첩장으로 등록됩니다."
+                  helperText="한 번 연결하면 이후에는 Firebase 로그인만으로 편집할 수 있습니다."
+                  onClaimed={() => {
+                    setNotice({
+                      tone: 'success',
+                      message: '청첩장을 현재 계정에 연결했습니다. 최신 상태를 다시 불러옵니다.',
+                    });
+                    setAccessRefreshToken((current) => current + 1);
+                  }}
+                />
+              </section>
+            ) : null}
+
+            {isLoggedIn && accessErrorMessage ? (
               <section className={styles.lockedCard}>
                 <div className={styles.sectionHeader}>
                   <div>
-                    <h2 className={styles.lockedTitle}>편집 비밀번호 확인</h2>
-                    <p className={styles.lockedText}>
-                      고객용 설정 편집기는 페이지별 비밀번호로 보호됩니다. 관리자 로그인 중이라면 별도 비밀번호 없이 수정할 수 있습니다.
-                    </p>
+                    <h2 className={styles.lockedTitle}>이 청첩장은 현재 계정으로 관리할 수 없습니다.</h2>
+                    <p className={styles.lockedText}>{accessErrorMessage}</p>
                   </div>
-                </div>
-
-                <div className={styles.authGrid}>
-                  <label className={styles.field}>
-                    {renderFieldMeta('페이지 비밀번호', 'required')}
-                    <input
-                      className={styles.input}
-                      type="password"
-                      value={passwordInput}
-                      onChange={(event) => setPasswordInput(event.target.value)}
-                      placeholder="관리자에게 전달받은 비밀번호를 입력해 주세요"
-                    />
-                  </label>
-                </div>
-
-                <div className={styles.actionRow}>
-                  <button
-                    type="button"
-                    className={styles.primaryButton}
-                    onClick={() => void handleUnlock()}
-                    disabled={isUnlocking}
-                  >
-                    {isUnlocking ? '확인하는 중...' : '편집 시작하기'}
-                  </button>
                 </div>
               </section>
             ) : null}

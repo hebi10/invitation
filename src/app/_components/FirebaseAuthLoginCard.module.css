@@ -1,0 +1,147 @@
+.card {
+  display: grid;
+  gap: 18px;
+  width: min(100%, 460px);
+  padding: 28px;
+  border-radius: 28px;
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 30px 60px rgba(15, 23, 42, 0.12);
+}
+
+.cardCompact {
+  width: 100%;
+  padding: 20px;
+  border-radius: 22px;
+}
+
+.header {
+  display: grid;
+  gap: 8px;
+}
+
+.title {
+  margin: 0;
+  font-size: 1.7rem;
+  line-height: 1.2;
+  letter-spacing: -0.04em;
+  color: #0f172a;
+}
+
+.description {
+  margin: 0;
+  color: #475569;
+  font-size: 0.95rem;
+  line-height: 1.7;
+}
+
+.modeRow {
+  display: inline-grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  padding: 6px;
+  border-radius: 999px;
+  background: #f8fafc;
+}
+
+.modeButton {
+  min-height: 42px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: #64748b;
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.modeButtonActive {
+  background: #ffffff;
+  color: #0f172a;
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.08);
+}
+
+.form {
+  display: grid;
+  gap: 14px;
+}
+
+.field {
+  display: grid;
+  gap: 8px;
+}
+
+.label {
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: #334155;
+}
+
+.input {
+  width: 100%;
+  min-height: 50px;
+  padding: 0 16px;
+  box-sizing: border-box;
+  border-radius: 16px;
+  border: 1px solid rgba(148, 163, 184, 0.3);
+  background: #ffffff;
+  color: #0f172a;
+  font-size: 0.95rem;
+}
+
+.helper {
+  margin: 0;
+  font-size: 0.86rem;
+  color: #64748b;
+  line-height: 1.6;
+}
+
+.error {
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: 14px;
+  background: rgba(239, 68, 68, 0.08);
+  color: #b91c1c;
+  font-size: 0.9rem;
+  line-height: 1.6;
+}
+
+.primaryButton,
+.googleButton {
+  min-height: 48px;
+  border: 0;
+  border-radius: 999px;
+  font-size: 0.95rem;
+  font-weight: 800;
+}
+
+.primaryButton {
+  background: linear-gradient(135deg, #1e293b, #334155);
+  color: #ffffff;
+}
+
+.googleButton {
+  background: #ffffff;
+  color: #0f172a;
+  border: 1px solid rgba(148, 163, 184, 0.3);
+}
+
+.divider {
+  position: relative;
+  text-align: center;
+  font-size: 0.82rem;
+  color: #94a3b8;
+}
+
+.divider::before {
+  content: '';
+  position: absolute;
+  inset: 50% 0 auto;
+  border-top: 1px solid rgba(148, 163, 184, 0.25);
+}
+
+.divider span {
+  position: relative;
+  display: inline-block;
+  padding: 0 10px;
+  background: rgba(255, 255, 255, 0.92);
+}

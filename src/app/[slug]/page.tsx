@@ -1,47 +1,40 @@
 import { notFound } from 'next/navigation';
 
-import { WeddingInvitationRoutePage } from '@/app/_components/WeddingInvitationPage';
-import {
-  DEFAULT_INVITATION_THEME,
-  normalizeInvitationThemeKey,
-} from '@/lib/invitationThemes';
-import { resolveAvailableInvitationVariant } from '@/lib/invitationVariants';
+import { resolveEventPageRenderer } from '@/app/_components/eventPageRendererRegistry';
 
 import {
   getCachedServerInvitationPageBySlug,
-  getCachedServerInvitationPageDefaultThemeBySlug,
   getCachedServerInvitationPreviewBySlug,
+  getCachedServerInvitationPageDefaultThemeBySlug,
 } from './serverInvitationPageCache';
+import { getServerInvitationPageEventTypeBySlug } from '@/server/invitationPageServerService';
 
 export const dynamic = 'force-dynamic';
 
-export default async function WeddingInvitationSlugPage({
+export default async function EventInvitationSlugPage({
   params,
 }: {
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const [page, previewPage, defaultTheme] = await Promise.all([
+  const [page, previewPage, defaultTheme, eventType] = await Promise.all([
     getCachedServerInvitationPageBySlug(slug),
     getCachedServerInvitationPreviewBySlug(slug),
     getCachedServerInvitationPageDefaultThemeBySlug(slug),
+    getServerInvitationPageEventTypeBySlug(slug),
   ]);
+  const { renderer, resolvedEventType } = resolveEventPageRenderer(eventType);
 
-  const preferredTheme = normalizeInvitationThemeKey(
-    defaultTheme,
-    DEFAULT_INVITATION_THEME
-  );
-  const theme = resolveAvailableInvitationVariant(previewPage?.variants, preferredTheme);
+  const theme = renderer.resolveRouteTheme(previewPage, null, defaultTheme);
 
   if (!previewPage || !theme) {
     notFound();
   }
 
-  return (
-    <WeddingInvitationRoutePage
-      slug={slug}
-      theme={theme}
-      initialPageConfig={page ?? undefined}
-    />
-  );
+  return renderer.renderPage({
+    slug,
+    theme,
+    initialPageConfig: page ?? undefined,
+    eventType: resolvedEventType,
+  });
 }

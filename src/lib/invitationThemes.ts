@@ -1,4 +1,4 @@
-export type InvitationThemePreviewProductTier = 'standard' | 'deluxe' | 'premium';
+﻿export type InvitationThemePreviewProductTier = 'standard' | 'deluxe' | 'premium';
 
 type InvitationThemePreviewInfo = {
   description: string;
@@ -41,6 +41,27 @@ export const INVITATION_THEME_METADATA_REGISTRY = [
     sortOrder: 10,
   },
   {
+    key: 'romantic',
+    label: '로맨틱형',
+    adminLabel: 'Romantic',
+    variantLabel: 'Romantic',
+    pathSuffix: '/romantic',
+    wizardDescription: '은은한 분홍 톤과 카드형 섹션으로 구성한 감성 로맨틱 디자인입니다.',
+    preview: {
+      description:
+        '은은한 로맨틱 톤과 포인트 카드 배치로 초대장의 분위기를 강조한 테마입니다.',
+      sampleUrls: {
+        standard: 'https://msgnote.kr/kim-taehyun-choi-yuna/romantic/',
+        deluxe: 'https://msgnote.kr/lee-junho-park-somin/romantic/',
+        premium: 'https://msgnote.kr/shin-minje-kim-hyunji/romantic/',
+      },
+    },
+    shareTitleMode: 'metadata',
+    documentTitleSuffix: ' (Romantic)',
+    ariaLabelSuffix: ' (Romantic)',
+    sortOrder: 15,
+  },
+  {
     key: 'simple',
     label: '심플형',
     adminLabel: 'Simple',
@@ -76,6 +97,13 @@ export type InvitationThemeSalesPolicy = {
 export const INVITATION_THEME_SALES_POLICY_REGISTRY = {
   emotional: {
     isDefault: true,
+    canBeDefault: true,
+    isSelectableAtCreation: true,
+    isPurchasable: true,
+    allowsAdditionalPurchase: true,
+  },
+  romantic: {
+    isDefault: false,
     canBeDefault: true,
     isSelectableAtCreation: true,
     isPurchasable: true,
@@ -220,3 +248,4 @@ export function getAdditionalPurchasableInvitationThemeKeys(
     (theme) => theme !== excludedTheme
   );
 }
+

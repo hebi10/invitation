@@ -12,6 +12,39 @@ service cloud.firestore {
         get(/databases/$(database)/documents/admin-users/$(request.auth.uid)).data.enabled != false;
     }
 
+    function isEventOwnerById(eventId) {
+      return isSignedIn() &&
+        eventId is string &&
+        exists(/databases/$(database)/documents/events/$(eventId)) &&
+        get(/databases/$(database)/documents/events/$(eventId)).data.ownerUid == request.auth.uid;
+    }
+
+    function isEventOwnerBySlug(slug) {
+      return slug is string &&
+        exists(/databases/$(database)/documents/eventSlugIndex/$(slug)) &&
+        get(/databases/$(database)/documents/eventSlugIndex/$(slug)).data.eventId is string &&
+        isEventOwnerById(
+          get(/databases/$(database)/documents/eventSlugIndex/$(slug)).data.eventId
+        );
+    }
+
+    function canCreateOwnedEvent() {
+      return isSignedIn() &&
+        request.resource.data.ownerUid is string &&
+        request.resource.data.ownerUid == request.auth.uid;
+    }
+
+    function canUpdateOwnedEvent(eventId) {
+      return isEventOwnerById(eventId) &&
+        request.resource.data.ownerUid == resource.data.ownerUid;
+    }
+
+    function canWriteOwnedSlugIndex() {
+      return isSignedIn() &&
+        request.resource.data.eventId is string &&
+        isEventOwnerById(request.resource.data.eventId);
+    }
+
     function isPublicMemoryPage(data) {
       return data.enabled == true &&
         (data.visibility == 'public' || data.visibility == 'unlisted');
@@ -99,29 +132,31 @@ service cloud.firestore {
     }
 
     match /events/{eventId} {
-      allow read: if isAdmin() || canReadPublicEvent(eventId);
-      allow create, update, delete: if isAdmin();
+      allow read: if isAdmin() || isEventOwnerById(eventId) || canReadPublicEvent(eventId);
+      allow create: if isAdmin() || canCreateOwnedEvent();
+      allow update, delete: if isAdmin() || canUpdateOwnedEvent(eventId);
 
       match /content/{documentId} {
-        allow read: if isAdmin() || canReadPublicEvent(eventId);
-        allow create, update, delete: if isAdmin();
+        allow read: if isAdmin() || isEventOwnerById(eventId) || canReadPublicEvent(eventId);
+        allow create, update, delete: if isAdmin() || isEventOwnerById(eventId);
       }
 
       match /comments/{commentId} {
-        allow read: if isAdmin() || (
+        allow read: if isAdmin() || isEventOwnerById(eventId) || (
           canReadPublicEvent(eventId) &&
           canReadPublicGuestbookComment(resource.data)
         );
         allow create: if canReadPublicEvent(eventId) && isValidCommentCreateForEvent(eventId);
-        allow update, delete: if isAdmin();
+        allow update, delete: if isAdmin() || isEventOwnerById(eventId);
       }
 
       match /linkTokens/{tokenId} {
-        allow read, write: if isAdmin();
+        allow read, write: if isAdmin() || isEventOwnerById(eventId);
       }
 
       match /auditLogs/{logId} {
-        allow read, write: if isAdmin();
+        allow read: if isAdmin() || isEventOwnerById(eventId);
+        allow write: if isAdmin();
       }
     }
 
@@ -130,8 +165,12 @@ service cloud.firestore {
     }
 
     match /eventSlugIndex/{slug} {
-      allow read: if isAdmin() || canReadPublicEventSlugIndex(slug);
-      allow write: if isAdmin();
+      allow read: if isAdmin() || isEventOwnerBySlug(slug) || canReadPublicEventSlugIndex(slug);
+      allow create, update: if isAdmin() || canWriteOwnedSlugIndex();
+      allow delete: if isAdmin() || (
+        resource.data.eventId is string &&
+        isEventOwnerById(resource.data.eventId)
+      );
     }
 
     match /billingFulfillments/{transactionId} {
@@ -139,6 +178,14 @@ service cloud.firestore {
     }
 
     match /event-write-through-failures/{failureId} {
+      allow read, write: if isAdmin();
+    }
+
+    match /event-read-fallback-logs/{logId} {
+      allow read, write: if isAdmin();
+    }
+
+    match /event-rollout-mismatches/{mismatchId} {
       allow read, write: if isAdmin();
     }
 

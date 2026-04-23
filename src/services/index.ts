@@ -1,4 +1,6 @@
 export * from './adminAuth';
+export * from './adminCustomerService';
+export * from './adminEventService';
 export * from './commentService';
 export * from './displayPeriodService';
 export * from './imageService';

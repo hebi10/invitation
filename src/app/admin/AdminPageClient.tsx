@@ -1,15 +1,18 @@
-'use client';
+﻿'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 
+import FirebaseAuthLoginCard from '@/app/_components/FirebaseAuthLoginCard';
 import { DisplayPeriodManager, ImageManager, MemoryPageManager } from '@/components/admin';
 import { useAdmin } from '@/contexts';
+import { getEventTypeDisplayLabel } from '@/lib/eventTypes';
 import type { InvitationPageSummary } from '@/services';
 
 import {
   AdminClientPasswordsTab,
   AdminCommentsTab,
+  AdminCustomerAccountsTab,
   AdminPagesTab,
   StatusBadge,
   SummaryCards,
@@ -17,24 +20,34 @@ import {
   type SummaryCardItem,
 } from './_components';
 import {
+  ADMIN_SECTIONS,
   COMMENTS_PER_PAGE,
   DUE_SOON_DAYS,
   PAGE_SORT_LABELS,
   PAGE_STATUS_LABELS,
   RECENT_COMMENT_DAYS,
   TOTAL_SHORTCUT_COUNT,
+  getDefaultTabForSection,
   getAvailableShortcuts,
+  getSectionForTab,
+  getTabsForSection,
   isRecentComment,
   numberFromParam,
   parseCommentAge,
   parsePageSort,
   parsePageStatus,
+  parsePageEventType,
   parsePeriodFilter,
+  parseSection,
   parseShortcut,
   parseTab,
-  type AdminTab,
 } from './_components/adminPageUtils';
-import { getTabLabel, getTabSummary } from './_components/adminTabMeta';
+import {
+  getSectionLabel,
+  getSectionSummary,
+  getTabLabel,
+  getTabSummary,
+} from './_components/adminTabMeta';
 import { useAdminData } from './_hooks/useAdminData';
 import styles from './page.module.css';
 
@@ -60,7 +73,7 @@ function isPageDueSoon(page: InvitationPageSummary) {
 }
 
 export default function AdminPageClient() {
-  const { adminUser, isAdminLoggedIn, isAdminLoading, login, logout } = useAdmin();
+  const { adminUser, isAdminLoggedIn, isAdminLoading, logout } = useAdmin();
   const router = useRouter();
   const pathname = usePathname();
   const safePathname = pathname ?? '/admin';
@@ -76,17 +89,21 @@ export default function AdminPageClient() {
   })();
   const { confirm, showToast } = useAdminOverlay();
 
-  /* ── Login form state ── */
-
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
-  const [loginLoading, setLoginLoading] = useState(false);
-
   /* ── URL query ── */
 
-  const activeTab = parseTab(safeSearchParams.get('tab'));
+  const requestedTabParam = safeSearchParams.get('tab');
+  const requestedSectionParam = safeSearchParams.get('section');
+  const requestedTab = parseTab(requestedTabParam);
+  const requestedSection = requestedSectionParam;
+  const activeSection = requestedSection
+    ? parseSection(requestedSection)
+    : getSectionForTab(requestedTab);
+  const sectionTabs = getTabsForSection(activeSection);
+  const activeTab = sectionTabs.some((tab) => tab.key === requestedTab)
+    ? requestedTab
+    : getDefaultTabForSection(activeSection);
   const pageSearch = safeSearchParams.get('pageQ') ?? '';
+  const pageEventTypeFilter = parsePageEventType(safeSearchParams.get('pageType'));
   const pageShortcutFilter = parseShortcut(safeSearchParams.get('shortcut'));
   const pageStatusFilter = parsePageStatus(safeSearchParams.get('pageStatus'));
   const pageSort = parsePageSort(safeSearchParams.get('pageSort'));
@@ -119,22 +136,31 @@ export default function AdminPageClient() {
     pages,
     comments,
     clientPasswords,
+    customerAccounts,
+    unassignedCustomerEvents,
     memoryPublicCount,
     commentSummary,
     pagesLoading,
     commentsLoading,
     summaryLoading,
     passwordsLoading,
+    accountsLoading,
     savingPasswordPageSlug,
     updatingPublishedPageSlug,
     updatingVariantToken,
     updatingTierPageSlug,
+    deletingPageSlug,
+    ownershipActionToken,
     refreshPages,
     fetchComments,
     fetchPasswords,
+    fetchCustomerAccounts,
     fetchSummarySources,
     handleDeleteComment,
+    handleDeletePage,
     handleSavePassword,
+    handleAssignCustomerOwnership,
+    handleClearCustomerOwnership,
     handleTogglePublished,
     handleChangeTier,
     handleEnableVariant,
@@ -144,40 +170,43 @@ export default function AdminPageClient() {
 
   /* ── Handlers ── */
 
-  const handleLogin = async (event: React.FormEvent) => {
-    event.preventDefault();
-
-    setLoginLoading(true);
-    setError('');
-
-    try {
-      const success = await login(email, password);
-      if (!success) {
-        setError('이메일 또는 비밀번호를 확인해 주세요.');
-        return;
-      }
-
-      setPassword('');
-      showToast({
-        title: '관리자 로그인에 성공했습니다.',
-        tone: 'success',
-      });
-      if (returnPath) {
-        router.replace(returnPath, { scroll: false });
-      }
-    } finally {
-      setLoginLoading(false);
-    }
-  };
-
   const handleLogout = async () => {
     await logout();
     dataLogout();
-    setEmail('');
-    setPassword('');
-    setError('');
     router.replace(safePathname, { scroll: false });
   };
+
+  useEffect(() => {
+    if (isAdminLoggedIn && returnPath) {
+      router.replace(returnPath, { scroll: false });
+    }
+  }, [isAdminLoggedIn, returnPath, router]);
+
+  useEffect(() => {
+    const needsCanonicalSection = requestedSectionParam !== activeSection;
+    const needsCanonicalTab = requestedTabParam !== activeTab;
+
+    if (!needsCanonicalSection && !needsCanonicalTab) {
+      return;
+    }
+
+    const nextParams = new URLSearchParams(safeSearchParams.toString());
+    nextParams.set('section', activeSection);
+    nextParams.set('tab', activeTab);
+
+    router.replace(
+      `${safePathname}${nextParams.toString() ? `?${nextParams.toString()}` : ''}`,
+      { scroll: false }
+    );
+  }, [
+    activeSection,
+    activeTab,
+    requestedSectionParam,
+    requestedTabParam,
+    router,
+    safePathname,
+    safeSearchParams,
+  ]);
 
   /* ── Filtered / sorted views ── */
 
@@ -187,9 +216,11 @@ export default function AdminPageClient() {
         const links = getAvailableShortcuts(page);
         const matchesSearch = `${page.displayName} ${page.slug} ${
           page.description ?? ''
-        } ${page.venue ?? ''}`
+        } ${page.venue ?? ''} ${getEventTypeDisplayLabel(page.eventType)}`
           .toLowerCase()
           .includes(pageSearch.trim().toLowerCase());
+        const matchesEventType =
+          pageEventTypeFilter === 'all' || page.eventType === pageEventTypeFilter;
         const matchesShortcut =
           pageShortcutFilter === 'all' ||
           links.some((link) => link.key === pageShortcutFilter);
@@ -202,7 +233,7 @@ export default function AdminPageClient() {
             links.length < TOTAL_SHORTCUT_COUNT) ||
           (pageStatusFilter === 'empty' && links.length === 0);
 
-        return matchesSearch && matchesShortcut && matchesStatus;
+        return matchesSearch && matchesEventType && matchesShortcut && matchesStatus;
       })
       .sort((left, right) => {
         if (pageSort === 'name') {
@@ -229,7 +260,14 @@ export default function AdminPageClient() {
 
         return right.slug.localeCompare(left.slug, 'ko');
       });
-  }, [pageSearch, pageShortcutFilter, pageSort, pageStatusFilter, pages]);
+  }, [
+    pageEventTypeFilter,
+    pageSearch,
+    pageShortcutFilter,
+    pageSort,
+    pageStatusFilter,
+    pages,
+  ]);
 
   const filteredComments = useMemo(() => {
     return comments.filter((comment) => {
@@ -290,8 +328,77 @@ export default function AdminPageClient() {
   const restrictedCount = pages.filter((page) => page.displayPeriodEnabled).length;
   const dueSoonCount = pages.filter(isPageDueSoon).length;
   const recentCommentsCount = commentSummary.recentCount;
+  const configuredPasswordCount = clientPasswords.filter((entry) => entry.hasPassword).length;
+  const recentPasswordUpdateCount = clientPasswords.filter((entry) => {
+    const updatedAt = entry.updatedAt?.getTime() ?? 0;
+    if (!updatedAt) {
+      return false;
+    }
 
-  const summaryCards: SummaryCardItem[] = [
+    return Date.now() - updatedAt <= RECENT_COMMENT_DAYS * 24 * 60 * 60 * 1000;
+  }).length;
+  const customerAccountCount = customerAccounts.length;
+  const linkedCustomerEventCount = customerAccounts.reduce(
+    (sum, account) => sum + account.linkedEvents.length,
+    0
+  );
+  const orphanedAccountCount = customerAccounts.filter((account) => account.missingAuthUser).length;
+  const unassignedCustomerEventCount = unassignedCustomerEvents.length;
+
+  const customerSummaryCards: SummaryCardItem[] = [
+    {
+      id: 'customer-accounts',
+      label: '고객 계정',
+      value: customerAccountCount,
+      meta:
+        customerAccountCount > 0
+          ? 'Firebase 로그인 기준으로 고객이 직접 관리할 수 있는 계정 목록입니다.'
+          : '아직 고객 관리 대상 계정이 없습니다.',
+      tone: customerAccountCount > 0 ? 'success' : 'neutral',
+      actionLabel: '고객 계정 열기',
+      onClick: () => updateQuery({ section: 'customers', tab: 'accounts' }),
+    },
+    {
+      id: 'linked-customer-events',
+      label: '연결된 이벤트',
+      value: linkedCustomerEventCount,
+      meta:
+        linkedCustomerEventCount > 0
+          ? '사용자 페이지에서 바로 수정할 수 있도록 ownerUid가 연결된 청첩장 수입니다.'
+          : '아직 고객 계정과 연결된 청첩장이 없습니다.',
+      tone: linkedCustomerEventCount > 0 ? 'primary' : 'neutral',
+      actionLabel: '연결 상태 보기',
+      onClick: () => updateQuery({ section: 'customers', tab: 'accounts' }),
+    },
+    {
+      id: 'unassigned-events',
+      label: '미연결 이벤트',
+      value: unassignedCustomerEventCount,
+      meta:
+        unassignedCustomerEventCount > 0
+          ? '아직 어느 고객 계정에도 연결되지 않아 사용자 페이지에 보이지 않는 청첩장입니다.'
+          : '모든 청첩장이 고객 계정에 연결되어 있습니다.',
+      tone: unassignedCustomerEventCount > 0 ? 'warning' : 'success',
+      actionLabel: '계정에 연결하기',
+      onClick: () => updateQuery({ section: 'customers', tab: 'accounts' }),
+    },
+    {
+      id: 'configured-passwords',
+      label: '비밀번호 설정됨',
+      value: configuredPasswordCount,
+      meta:
+        orphanedAccountCount > 0
+          ? `삭제된 계정에 남아 있는 청첩장 ${orphanedAccountCount}건이 있어 연결 상태를 점검해 주세요.`
+          : configuredPasswordCount > 0
+            ? `최근 ${RECENT_COMMENT_DAYS}일 이내 변경된 비밀번호 ${recentPasswordUpdateCount}건을 포함합니다.`
+            : '설정된 고객 비밀번호가 아직 없습니다.',
+      tone: orphanedAccountCount > 0 ? 'warning' : configuredPasswordCount > 0 ? 'primary' : 'neutral',
+      actionLabel: '비밀번호 보기',
+      onClick: () => updateQuery({ section: 'customers', tab: 'passwords' }),
+    },
+  ];
+
+  const eventSummaryCards: SummaryCardItem[] = [
     {
       id: 'invitations',
       label: '청첩장 페이지',
@@ -302,7 +409,7 @@ export default function AdminPageClient() {
           : '현재 기간 제한이 설정된 페이지가 없습니다.',
       tone: invitationCount > 0 ? 'success' : 'neutral',
       actionLabel: '청첩장 관리 열기',
-      onClick: () => updateQuery({ tab: 'pages' }),
+      onClick: () => updateQuery({ section: 'events', tab: 'pages' }),
     },
     {
       id: 'dueSoon',
@@ -314,7 +421,8 @@ export default function AdminPageClient() {
           : '긴급히 확인할 청첩장이 없습니다.',
       tone: dueSoonCount > 0 ? 'warning' : 'neutral',
       actionLabel: '노출 기간 보기',
-      onClick: () => updateQuery({ tab: 'periods', periodStatus: 'dueSoon' }),
+      onClick: () =>
+        updateQuery({ section: 'events', tab: 'periods', periodStatus: 'dueSoon' }),
     },
     {
       id: 'recentComments',
@@ -327,7 +435,12 @@ export default function AdminPageClient() {
       tone: recentCommentsCount > 0 ? 'primary' : 'neutral',
       actionLabel: '방명록 열기',
       onClick: () =>
-        updateQuery({ tab: 'comments', commentAge: 'recent', commentPage: '1' }),
+        updateQuery({
+          section: 'events',
+          tab: 'comments',
+          commentAge: 'recent',
+          commentPage: '1',
+        }),
     },
     {
       id: 'memoryVisible',
@@ -336,9 +449,12 @@ export default function AdminPageClient() {
       meta: `청첩장 ${invitationCount}개와 별도로 운영됩니다.`,
       tone: memoryPublicCount > 0 ? 'primary' : 'neutral',
       actionLabel: '추억 페이지 열기',
-      onClick: () => updateQuery({ tab: 'memory' }),
+      onClick: () => updateQuery({ section: 'events', tab: 'memory' }),
     },
   ];
+
+  const summaryCards =
+    activeSection === 'customers' ? customerSummaryCards : eventSummaryCards;
 
   /* ── Filter chips ── */
 
@@ -355,6 +471,13 @@ export default function AdminPageClient() {
           id: 'page-shortcut',
           label: `테마: ${pageShortcutFilter}`,
           onRemove: () => updateQuery({ shortcut: null }),
+        }
+      : null,
+    pageEventTypeFilter !== 'all'
+      ? {
+          id: 'page-type',
+          label: `이벤트: ${getEventTypeDisplayLabel(pageEventTypeFilter)}`,
+          onRemove: () => updateQuery({ pageType: null }),
         }
       : null,
     pageStatusFilter !== 'all'
@@ -398,7 +521,8 @@ export default function AdminPageClient() {
       : null,
   ].filter(Boolean) as Array<{ id: string; label: string; onRemove: () => void }>;
 
-  const activeTabLabel = getTabLabel(activeTab);
+  const activeSectionLabel = getSectionLabel(activeSection);
+  const activeSectionSummary = getSectionSummary(activeSection);
   const activeTabSummary = getTabSummary(activeTab);
 
   /* ── Render ── */
@@ -420,9 +544,19 @@ export default function AdminPageClient() {
     return (
       <div className={styles.container}>
         <div className={styles.loginShell}>
-          <a className="admin-button admin-button-ghost" href="/">
-            메인으로 돌아가기
-          </a>
+          <div className={styles.headerActions}>
+            <a className="admin-button admin-button-ghost" href="/">
+              메인으로 돌아가기
+            </a>
+            <a
+              className="admin-button admin-button-secondary"
+              href="/my-invitations"
+              target="_blank"
+              rel="noreferrer"
+            >
+              사용자 페이지
+            </a>
+          </div>
           <div className={styles.loginCard}>
             <StatusBadge tone="neutral">Admin Access</StatusBadge>
             <div className={styles.loginHeader}>
@@ -431,36 +565,13 @@ export default function AdminPageClient() {
                 Firebase Auth 관리자 계정으로만 로그인할 수 있습니다.
               </p>
             </div>
-            <form className={styles.loginForm} onSubmit={handleLogin}>
-              <label className="admin-field">
-                <span className="admin-field-label">Email</span>
-                <input
-                  className="admin-input"
-                  type="email"
-                  value={email}
-                  onChange={(event) => setEmail(event.target.value)}
-                  required
-                />
-              </label>
-              <label className="admin-field">
-                <span className="admin-field-label">Password</span>
-                <input
-                  className="admin-input"
-                  type="password"
-                  value={password}
-                  onChange={(event) => setPassword(event.target.value)}
-                  required
-                />
-              </label>
-              {error ? <p className={styles.errorBanner}>{error}</p> : null}
-              <button
-                className="admin-button admin-button-primary"
-                type="submit"
-                disabled={loginLoading}
-              >
-                {loginLoading ? '로그인 중...' : '로그인'}
-              </button>
-            </form>
+            <FirebaseAuthLoginCard
+              title="관리자 로그인"
+              description="Firebase Authentication으로 로그인한 뒤 관리자 권한이 있는 계정만 관리자 화면에 접근할 수 있습니다."
+              helperText="기본 이메일 로그인과 Google 로그인만 지원합니다."
+              requireAdmin
+              allowSignUp={false}
+            />
           </div>
         </div>
       </div>
@@ -472,9 +583,19 @@ export default function AdminPageClient() {
       <div className={styles.shell}>
         <header className={styles.pageHeader}>
           <div className={styles.headerTopRow}>
-            <a className="admin-button admin-button-ghost" href="/">
-              메인으로 돌아가기
-            </a>
+            <div className={styles.headerActions}>
+              <a className="admin-button admin-button-ghost" href="/">
+                메인으로 돌아가기
+              </a>
+              <a
+                className="admin-button admin-button-secondary"
+                href="/my-invitations"
+                target="_blank"
+                rel="noreferrer"
+              >
+                사용자 페이지
+              </a>
+            </div>
             <div className={styles.headerActions}>
               <StatusBadge tone="success">{adminUser?.email ?? 'Admin'}</StatusBadge>
               <button
@@ -492,19 +613,20 @@ export default function AdminPageClient() {
               <span className={styles.pageEyebrow}>Invitation Admin</span>
               <h1 className={styles.pageTitle}>운영 대시보드</h1>
               <p className={styles.pageDescription}>
-                청첩장 공개 상태, 방명록, 이미지, 고객 비밀번호, 추억 페이지, 노출
-                기간을 한 화면에서 관리합니다.
+                {activeSectionSummary.description}
               </p>
             </div>
             <div className={styles.headerSummary}>
-              <StatusBadge tone="primary">{activeTabLabel}</StatusBadge>
+              <StatusBadge tone="primary">{activeSectionLabel}</StatusBadge>
               <strong className={styles.headerSummaryTitle}>
-                {activeTabSummary.title}
+                {activeSectionSummary.title}
               </strong>
               <p className={styles.headerSummaryText}>{activeTabSummary.description}</p>
-              <p className={styles.headerSummaryMeta}>{activeTabSummary.helper}</p>
+              <p className={styles.headerSummaryMeta}>
+                {activeSectionSummary.helper} · {activeTabSummary.helper}
+              </p>
               <p className={styles.headerSummaryLegacy}>
-                현재 탭에 필요한 범위만 조회합니다.
+                {activeSectionSummary.title}
               </p>
             </div>
           </div>
@@ -512,10 +634,32 @@ export default function AdminPageClient() {
 
         <SummaryCards items={summaryCards} />
 
-        <div className={styles.tabBar} role="tablist" aria-label="관리 탭">
-          {(
-            ['pages', 'memory', 'images', 'comments', 'passwords', 'periods'] as AdminTab[]
-          ).map((tabKey) => (
+        <div className={styles.tabBar} role="tablist" aria-label="관리 섹션">
+          {ADMIN_SECTIONS.map(({ key: sectionKey }) => (
+            <button
+              key={sectionKey}
+              type="button"
+              role="tab"
+              aria-selected={activeSection === sectionKey}
+              aria-controls={`section-${sectionKey}`}
+              id={`section-${sectionKey}`}
+              className={`${styles.tabButton} ${
+                activeSection === sectionKey ? styles.tabButtonActive : ''
+              }`}
+              onClick={() =>
+                updateQuery({
+                  section: sectionKey,
+                  tab: getDefaultTabForSection(sectionKey),
+                })
+              }
+            >
+              {getSectionLabel(sectionKey)}
+            </button>
+          ))}
+        </div>
+
+        <div className={styles.tabBar} role="tablist" aria-label="세부 관리 탭">
+          {sectionTabs.map(({ key: tabKey }) => (
             <button
               key={tabKey}
               type="button"
@@ -528,7 +672,8 @@ export default function AdminPageClient() {
               }`}
               onClick={() =>
                 updateQuery({
-                  tab: tabKey === 'pages' ? null : tabKey,
+                  section: activeSection,
+                  tab: tabKey,
                 })
               }
             >
@@ -550,6 +695,7 @@ export default function AdminPageClient() {
               weddingPages={pages}
               filteredPages={filteredPages}
               pageSearch={pageSearch}
+              pageEventTypeFilter={pageEventTypeFilter}
               pageShortcutFilter={pageShortcutFilter}
               pageStatusFilter={pageStatusFilter}
               pageSort={pageSort}
@@ -571,6 +717,8 @@ export default function AdminPageClient() {
               updatingPublishedPageSlug={updatingPublishedPageSlug}
               updatingVariantToken={updatingVariantToken}
               updatingTierPageSlug={updatingTierPageSlug}
+              deletingPageSlug={deletingPageSlug}
+              onDeletePage={(page) => void handleDeletePage(page)}
             />
           ) : null}
 
@@ -593,6 +741,20 @@ export default function AdminPageClient() {
               onRefresh={() => void fetchComments()}
               onQueryChange={updateQuery}
               onDeleteComment={(comment) => void handleDeleteComment(comment)}
+            />
+          ) : null}
+
+          {activeTab === 'accounts' ? (
+            <AdminCustomerAccountsTab
+              loading={accountsLoading}
+              accounts={customerAccounts}
+              unassignedEvents={unassignedCustomerEvents}
+              ownershipActionToken={ownershipActionToken}
+              onRefresh={() => void fetchCustomerAccounts()}
+              onAssign={(uid, pageSlug) =>
+                void handleAssignCustomerOwnership(uid, pageSlug)
+              }
+              onClear={(pageSlug) => void handleClearCustomerOwnership(pageSlug)}
             />
           ) : null}
 

@@ -1,9 +1,45 @@
-import type { AdminTab } from './adminPageUtils';
+import type { AdminSection, AdminTab } from './adminPageUtils';
+
+export function getSectionLabel(section: AdminSection) {
+  switch (section) {
+    case 'customers':
+      return '고객 관리';
+    case 'events':
+      return '이벤트 운영';
+    default:
+      return '관리';
+  }
+}
+
+export function getSectionSummary(section: AdminSection) {
+  switch (section) {
+    case 'customers':
+      return {
+        title: '고객 계정과 편집 인증 수단을 함께 관리합니다.',
+        description: '고객 계정 목록, 청첩장 소유권 연결, 고객 비밀번호를 한 흐름으로 묶어 관리합니다.',
+        helper: '현재 제공 기능: 고객 계정 · 고객 비밀번호',
+      };
+    case 'events':
+      return {
+        title: '청첩장과 이벤트 운영 데이터를 관리합니다.',
+        description: '페이지, 이미지, 방명록, 노출 기간, 추억 페이지까지 운영 작업을 이어서 처리합니다.',
+        helper: '핵심 작업: 이벤트 운영',
+      };
+    default:
+      return {
+        title: '관리 구조를 확인합니다.',
+        description: '고객 관리와 이벤트 운영으로 나눠 필요한 범위만 빠르게 엽니다.',
+        helper: '핵심 작업: 관리',
+      };
+  }
+}
 
 export function getTabLabel(tab: AdminTab) {
   switch (tab) {
+    case 'accounts':
+      return '고객 계정';
     case 'pages':
-      return '청첩장';
+      return '모바일 청첩장';
     case 'memory':
       return '추억 페이지';
     case 'images':
@@ -11,7 +47,7 @@ export function getTabLabel(tab: AdminTab) {
     case 'comments':
       return '방명록';
     case 'passwords':
-      return '비밀번호';
+      return '고객 비밀번호';
     case 'periods':
       return '노출 기간';
     default:
@@ -21,9 +57,15 @@ export function getTabLabel(tab: AdminTab) {
 
 export function getTabSummary(tab: AdminTab) {
   switch (tab) {
+    case 'accounts':
+      return {
+        title: 'Firebase 로그인 계정과 연결된 청첩장을 한 번에 관리합니다.',
+        description: '고객 계정에 현재 연결된 이벤트를 확인하고, 아직 연결되지 않은 청첩장을 바로 연결하거나 해제할 수 있습니다.',
+        helper: '핵심 작업: 고객 계정 연결 관리',
+      };
     case 'pages':
       return {
-        title: '청첩장 공개 상태와 연결 상태를 바로 확인합니다.',
+        title: '모바일 청첩장 공개 상태와 연결 상태를 바로 확인합니다.',
         description: '공개 여부, 테마 연결, 데이터 기준을 보고 곧바로 편집기로 이동할 수 있습니다.',
         helper: '핵심 작업: 청첩장 편집',
       };
@@ -47,9 +89,9 @@ export function getTabSummary(tab: AdminTab) {
       };
     case 'passwords':
       return {
-        title: '페이지별 고객 비밀번호를 저장하고 편집기로 이동합니다.',
-        description: '기본은 숨김 상태로 관리되며, 저장 완료 여부를 확인한 뒤 편집기로 안전하게 열 수 있습니다.',
-        helper: '핵심 작업: 비밀번호 저장',
+        title: '고객 비밀번호를 확인하고 재설정합니다.',
+        description: '고객 편집 로그인과 기존 페이지 연결 흐름에 필요한 비밀번호 상태를 유지합니다.',
+        helper: '핵심 작업: 고객 인증 관리',
       };
     case 'periods':
       return {

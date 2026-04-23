@@ -28,6 +28,7 @@ import {
   normalizeInvitationProductTier,
   resolveInvitationFeatures,
 } from '@/lib/invitationProducts';
+import { DEFAULT_EVENT_TYPE, normalizeEventTypeKey, type EventTypeKey } from '@/lib/eventTypes';
 import {
   clampInvitationMusicVolume,
   DEFAULT_INVITATION_MUSIC_VOLUME,
@@ -49,6 +50,7 @@ export { normalizeInvitationPageSlugBase } from '@/lib/invitationPagePersistence
 
 export interface InvitationPageSummary {
   slug: string;
+  eventType: EventTypeKey;
   displayName: string;
   description: string;
   date: string;
@@ -92,6 +94,7 @@ export interface InvitationPageSeedTemplate {
 export interface CreateInvitationPageDraftInput {
   seedSlug: string;
   slugBase: string;
+  eventType?: EventTypeKey;
   groomName?: string;
   brideName?: string;
   published?: boolean;
@@ -185,6 +188,7 @@ function toInvitationPageSummary(
 
   return {
     slug: page.slug,
+    eventType: normalizeEventTypeKey(page.eventType, DEFAULT_EVENT_TYPE),
     displayName: page.displayName,
     description: page.description,
     date: page.date,
@@ -233,6 +237,7 @@ function buildDraftConfigFromSeed(
   seed: InvitationPageSeed,
   overrides: {
     slug: string;
+    eventType: EventTypeKey;
     groomName: string;
     brideName: string;
     productTier: InvitationProductTier;
@@ -244,6 +249,7 @@ function buildDraftConfigFromSeed(
   const features = resolveInvitationFeatures(overrides.productTier, seed.features);
 
   nextSeed.slug = overrides.slug;
+  nextSeed.eventType = overrides.eventType;
   nextSeed.displayName = '';
   nextSeed.description = '';
   nextSeed.date = '';
@@ -547,19 +553,7 @@ export async function getEditableInvitationPageConfig(
     };
   } catch (error) {
     console.error('[invitationPageService] failed to load editable config', error);
-    return fallbackConfig
-      ? {
-          slug: pageSlug,
-          config: fallbackConfig,
-          published: true,
-          defaultTheme: DEFAULT_INVITATION_THEME,
-          productTier: fallbackProductTier,
-          features: fallbackFeatures,
-          hasCustomConfig: false,
-          dataSource: 'seed',
-          lastSavedAt: null,
-      }
-      : null;
+    return null;
   }
 }
 
@@ -638,6 +632,7 @@ export async function createInvitationPageDraftFromSeed(
   const slug = await createUniqueInvitationPageSlug(firestore, input.slugBase);
   const config = buildDraftConfigFromSeed(seed, {
     slug,
+    eventType: normalizeEventTypeKey(input.eventType, DEFAULT_EVENT_TYPE),
     groomName,
     brideName,
     productTier: normalizeInvitationProductTier(

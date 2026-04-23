@@ -1,0 +1,459 @@
+.romanticTheme {
+  color: #2a1f1f;
+}
+
+.hero {
+  position: relative;
+  min-height: 62vh;
+  overflow: hidden;
+  background: #1a1a1a;
+}
+
+.heroNoImage {
+  min-height: 62vh;
+  width: 100%;
+  background: linear-gradient(180deg, #1e1218 0%, #fdf8f5 70%);
+}
+
+.heroImage {
+  width: 100%;
+  min-height: 62vh;
+  object-fit: cover;
+  object-position: center;
+  display: block;
+}
+
+.heroOverlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to bottom,
+    rgba(253, 248, 245, 0) 28%,
+    rgba(253, 248, 245, 0.75) 72%,
+    #fdf8f5 100%
+  );
+}
+
+.heroContent {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 2.4rem 1.4rem 2rem;
+  text-align: center;
+}
+
+.heroDateLine {
+  font-family: var(--font-script);
+  font-size: 0.8rem;
+  letter-spacing: 0.32em;
+  color: #c9849a;
+  margin-bottom: 1rem;
+}
+
+.heroNames {
+  font-family: var(--font-script);
+  font-size: clamp(2.6rem, 11vw, 4.2rem);
+  letter-spacing: -0.01em;
+  color: #2a1f1f;
+  line-height: 1.05;
+  text-wrap: balance;
+}
+
+.heroAmpersand {
+  font-style: italic;
+  color: #c9849a;
+  font-size: 2.4rem;
+}
+
+.heroVenue {
+  margin-top: 1rem;
+  font-family: var(--font-sans);
+  font-size: 0.95rem;
+  color: #7a5c5c;
+  letter-spacing: 0.05em;
+}
+
+.section {
+  padding: 3.4rem 1.25rem 3rem;
+  background: #fdf8f5;
+}
+
+.sectionAlt {
+  background: #fff;
+}
+
+.sectionDark {
+  background: #f5ede8;
+}
+
+.sectionLabel {
+  font-family: var(--font-script);
+  font-size: 0.72rem;
+  letter-spacing: 0.36em;
+  color: #c9849a;
+  text-align: center;
+  margin-bottom: 0.6rem;
+  text-transform: uppercase;
+}
+
+.sectionDivider {
+  width: 42px;
+  height: 1px;
+  margin: 0 auto 2rem;
+  background: #c9849a;
+  opacity: 0.5;
+}
+
+.sectionTitle {
+  font-family: var(--font-sans);
+  text-align: center;
+  font-size: 1.25rem;
+  color: #2a1f1f;
+  margin-bottom: 1.1rem;
+}
+
+.greetingText {
+  font-family: var(--font-serif);
+  font-size: 0.96rem;
+  line-height: 2.05;
+  color: #7a5c5c;
+  text-align: center;
+  white-space: pre-wrap;
+  margin: 0 auto 1rem;
+  max-width: 760px;
+}
+
+.greetingAuthor {
+  text-align: center;
+  color: #c9849a;
+  font-family: var(--font-script);
+  font-size: 0.97rem;
+}
+
+.dateCard {
+  background: rgba(255, 255, 255, 0.85);
+  border: 1px solid rgba(201, 132, 154, 0.22);
+  border-radius: 16px;
+  padding: 1.8rem 1rem;
+  text-align: center;
+  max-width: 440px;
+  margin: 0 auto 1.3rem;
+}
+
+.dateMain {
+  font-family: var(--font-script);
+  font-size: 4rem;
+  color: #c9849a;
+  line-height: 1;
+}
+
+.dateMeta {
+  color: #7a5c5c;
+  font-family: var(--font-serif);
+  margin-top: 0.3rem;
+  font-size: 0.92rem;
+}
+
+.dateVenue {
+  margin-top: 0.85rem;
+  color: #b09090;
+  font-family: var(--font-serif);
+  font-size: 0.86rem;
+}
+
+.countdownContainer {
+  justify-content: center;
+}
+
+.countdownContent,
+.countdownTimeDisplay,
+.countdownTimeUnit {
+  text-align: center;
+}
+
+.countdownTitle {
+  color: #c9849a;
+  font-family: var(--font-script);
+  font-size: 1rem;
+  margin-bottom: 1rem;
+}
+
+.countdownTimeDisplay {
+  justify-content: center;
+  margin-top: 0.4rem;
+}
+
+.countdownTimeUnit {
+  min-width: 56px;
+}
+
+.countdownTimeNumber {
+  color: #c9849a;
+  font-size: 2.1rem;
+  font-family: var(--font-script);
+  line-height: 1;
+}
+
+.countdownTimeLabel {
+  margin-top: 0.3rem;
+  color: #b09090;
+  font-size: 0.72rem;
+}
+
+.countdownSeparator {
+  color: #e8b4c0;
+  opacity: 0.8;
+}
+
+.countdownSubtitle {
+  color: #b09090;
+  font-family: var(--font-sans);
+  font-size: 0.86rem;
+}
+
+.gallerySection {
+  padding-bottom: 3.4rem;
+}
+
+.gallerySection :global(section) {
+  margin: 0 auto;
+  width: 100%;
+  max-width: none;
+  padding: 0;
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+}
+
+.gallerySection :global(h2) {
+  display: none;
+}
+
+.mapPlaceholder {
+  position: relative;
+  height: 200px;
+  border-radius: 16px;
+  overflow: hidden;
+  border: 1px solid rgba(201, 132, 154, 0.28);
+  background: #f5ede8;
+  margin-bottom: 1.4rem;
+  display: grid;
+  place-items: center;
+}
+
+.mapGrid {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(201, 132, 154, 0.2) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(201, 132, 154, 0.2) 1px, transparent 1px);
+  background-size: 32px 32px;
+  opacity: 0.45;
+}
+
+.mapPin {
+  width: 28px;
+  height: 28px;
+  background: #c9849a;
+  transform: rotate(-45deg);
+  border-radius: 50% 50% 50% 0;
+  margin-bottom: 28px;
+  position: relative;
+  z-index: 1;
+  box-shadow: 0 4px 12px rgba(201, 132, 154, 0.35);
+}
+
+.mapPin::after {
+  content: '';
+  position: absolute;
+  inset: 50% 50% auto auto;
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  background: #fdf8f5;
+  transform: translate(50%, -45%) rotate(45deg);
+}
+
+.mapLabel {
+  position: relative;
+  z-index: 1;
+  padding: 0.5rem 0.95rem;
+  border-radius: 999px;
+  font-size: 0.82rem;
+  color: #7a5c5c;
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(201, 132, 154, 0.24);
+}
+
+.locationRows {
+  margin-top: 1.3rem;
+  border-top: 1px solid rgba(201, 132, 154, 0.2);
+}
+
+.locationRow {
+  display: flex;
+  gap: 0.8rem;
+  align-items: flex-start;
+  padding: 0.95rem 0;
+  border-bottom: 1px solid rgba(201, 132, 154, 0.2);
+}
+
+.locationIcon {
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  background: #f5ede8;
+  display: grid;
+  place-items: center;
+}
+
+.locationText {
+  flex: 1;
+}
+
+.locationLabel {
+  color: #b09090;
+  margin-bottom: 0.2rem;
+  font-size: 0.7rem;
+  letter-spacing: 0.03em;
+}
+
+.locationValue {
+  color: #2a1f1f;
+  line-height: 1.45;
+  font-family: var(--font-serif);
+  white-space: pre-line;
+}
+
+.mapActions {
+  display: flex;
+  gap: 0.6rem;
+  margin-top: 1.2rem;
+  flex-wrap: wrap;
+}
+
+.mapAction {
+  border: 1px solid rgba(201, 132, 154, 0.45);
+  color: #7a5c5c;
+  background: #fff;
+  padding: 0.58rem 0.95rem;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  transition: border-color 0.2s ease, color 0.2s ease;
+}
+
+.mapAction:hover {
+  color: #c9849a;
+  border-color: #c9849a;
+}
+
+.sectionMessage {
+  color: #b09090;
+  font-family: var(--font-sans);
+  margin: 0 auto 1rem;
+  font-size: 0.88rem;
+  line-height: 1.7;
+  text-align: center;
+  max-width: 760px;
+}
+
+.accountSection {
+  max-width: 760px;
+  margin: 0 auto;
+}
+
+.accountTitle {
+  font-family: var(--font-serif);
+  color: #2a1f1f;
+  font-size: 1rem;
+  margin: 0.6rem 0;
+  text-align: center;
+}
+
+.accountCard {
+  border: 1px solid rgba(201, 132, 154, 0.3);
+  border-radius: 14px;
+  padding: 1rem;
+  background: rgba(255, 255, 255, 0.9);
+  margin-bottom: 0.8rem;
+  display: flex;
+  gap: 0.7rem;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.accountName {
+  font-family: var(--font-sans);
+  color: #2a1f1f;
+  margin-bottom: 0.2rem;
+  font-size: 0.98rem;
+}
+
+.accountInfo {
+  color: #b09090;
+  font-size: 0.8rem;
+  margin-bottom: 0.1rem;
+}
+
+.accountInfoMonospace {
+  font-family: var(--font-script);
+  color: #7a5c5c;
+  font-size: 1.05rem;
+  word-break: break-all;
+}
+
+.copyButton {
+  border: 1px solid rgba(201, 132, 154, 0.35);
+  border-radius: 999px;
+  padding: 0.48rem 0.8rem;
+  background: #fff;
+  color: #7a5c5c;
+  font-size: 0.76rem;
+}
+
+.copyButton:hover {
+  border-color: #c9849a;
+  color: #c9849a;
+}
+
+.footer {
+  padding: 3rem 1.2rem;
+  text-align: center;
+  background: #f5ede8;
+}
+
+.footerHeart {
+  font-family: var(--font-script);
+  font-size: 2rem;
+  color: #c9849a;
+  margin-bottom: 0.65rem;
+}
+
+.footerNames {
+  font-family: var(--font-script);
+  letter-spacing: 0.08em;
+  font-size: 1.25rem;
+  color: #7a5c5c;
+}
+
+.footerDate {
+  margin-top: 0.45rem;
+  color: #b09090;
+  font-family: var(--font-sans);
+  font-size: 0.8rem;
+}
+
+.footerDivider {
+  height: 1px;
+  background: rgba(201, 132, 154, 0.32);
+  margin: 1.4rem auto;
+  width: 48px;
+}
+
+.footerText {
+  color: #b09090;
+  font-family: var(--font-serif);
+  font-size: 0.75rem;
+  line-height: 1.75;
+}

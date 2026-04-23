@@ -21,7 +21,7 @@ import {
   type WizardStepDefinition,
   type WizardStepKey,
 } from './pageWizardData';
-import { getProductTierLabel, getThemeLabel } from './pageWizardShared';
+import { getEventTypeDescription, getEventTypeLabel, getProductTierLabel, getThemeLabel } from './pageWizardShared';
 
 type WizardReviewItem = {
   step: WizardStepDefinition;
@@ -118,6 +118,24 @@ export default function PageWizardStepPreview({
     DEFAULT_INVITATION_MUSIC_VOLUME
   );
   const invalidItems = reviewSummary.filter((item) => !item.validation.valid);
+  const eventTypeLabel = getEventTypeLabel(formState.eventType ?? 'wedding');
+  const eventTypeDescription = getEventTypeDescription(formState.eventType ?? 'wedding');
+
+  if (stepKey === 'eventType') {
+    return (
+      <section className={styles.previewSummary}>
+        <div className={styles.previewHeader}>
+          <h3 className={styles.previewTitle}>선택한 이벤트 타입</h3>
+          <span className={styles.previewCaption}>이 타입 기준으로 renderer, editor, wizard 구성이 이어집니다.</span>
+        </div>
+        <div className={styles.previewHeroCard}>
+          <span className={styles.previewHeroLabel}>이벤트 타입</span>
+          <strong className={styles.previewHeroTitle}>{eventTypeLabel}</strong>
+          <p className={styles.previewHeroSubtitle}>{eventTypeDescription}</p>
+        </div>
+      </section>
+    );
+  }
 
   if (stepKey === 'theme') {
     return (

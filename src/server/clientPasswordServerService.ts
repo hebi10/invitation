@@ -1,14 +1,11 @@
 import 'server-only';
 
 import { createClientPasswordHashRecord, verifyClientPasswordHashRecord } from '@/lib/clientPasswordCrypto';
-import { getServerInvitationPageBySlug } from '@/server/invitationPageServerService';
 
 import {
   firestoreEventSecretRepository,
   type EventSecretRecord as ServerClientPasswordRecord,
 } from './repositories/eventSecretRepository';
-
-const DEFAULT_INITIAL_CLIENT_PASSWORD = '12344';
 
 export async function getServerClientPasswordRecord(pageSlug: string) {
   return firestoreEventSecretRepository.findByPageSlug(pageSlug);
@@ -19,38 +16,6 @@ async function ensureServerClientPasswordRecord(pageSlug: string) {
   if (!normalizedPageSlug) {
     return null;
   }
-
-  const existing = await getServerClientPasswordRecord(normalizedPageSlug);
-  if (existing) {
-    return existing;
-  }
-
-  if (!firestoreEventSecretRepository.isAvailable()) {
-    return null;
-  }
-
-  const page = await getServerInvitationPageBySlug(normalizedPageSlug, {
-    includePrivate: true,
-  });
-
-  if (!page) {
-    return null;
-  }
-
-  const passwordHashRecord = await createClientPasswordHashRecord(
-    DEFAULT_INITIAL_CLIENT_PASSWORD
-  );
-  const now = new Date();
-
-  await firestoreEventSecretRepository.saveByPageSlug({
-    pageSlug: normalizedPageSlug,
-    passwordHash: passwordHashRecord.passwordHash,
-    passwordSalt: passwordHashRecord.passwordSalt,
-    passwordIterations: passwordHashRecord.passwordIterations,
-    passwordVersion: 1,
-    createdAt: now,
-    updatedAt: now,
-  });
 
   return getServerClientPasswordRecord(normalizedPageSlug);
 }
@@ -78,6 +43,32 @@ async function upgradeLegacyPasswordRecord(
   });
 }
 
+async function clearLegacyPasswordRecord(
+  pageSlug: string,
+  record: ServerClientPasswordRecord
+) {
+  if (
+    !firestoreEventSecretRepository.isAvailable() ||
+    !record.passwordHash ||
+    !record.passwordSalt ||
+    !record.passwordIterations ||
+    !record.legacyPassword
+  ) {
+    return;
+  }
+
+  const now = new Date();
+  await firestoreEventSecretRepository.saveByPageSlug({
+    pageSlug,
+    passwordHash: record.passwordHash,
+    passwordSalt: record.passwordSalt,
+    passwordIterations: record.passwordIterations,
+    passwordVersion: record.passwordVersion,
+    createdAt: record.createdAt ?? now,
+    updatedAt: now,
+  });
+}
+
 export async function verifyServerClientPassword(pageSlug: string, password: string) {
   const normalizedPageSlug = pageSlug.trim();
   const normalizedPassword = password.trim();
@@ -99,6 +90,28 @@ export async function verifyServerClientPassword(pageSlug: string, password: str
     } as const;
   }
 
+  if (record.passwordHash && record.passwordSalt && record.passwordIterations) {
+    const verified = await verifyClientPasswordHashRecord(normalizedPassword, {
+      passwordHash: record.passwordHash,
+      passwordSalt: record.passwordSalt,
+      passwordIterations: record.passwordIterations,
+    });
+
+    if (verified && record.legacyPassword) {
+      await clearLegacyPasswordRecord(normalizedPageSlug, record);
+      const cleanedRecord = await getServerClientPasswordRecord(normalizedPageSlug);
+      return {
+        verified: true,
+        record: cleanedRecord ?? record,
+      } as const;
+    }
+
+    return {
+      verified,
+      record,
+    } as const;
+  }
+
   if (record.legacyPassword) {
     const verified = record.legacyPassword === normalizedPassword;
     if (verified) {
@@ -109,28 +122,10 @@ export async function verifyServerClientPassword(pageSlug: string, password: str
         record: upgradedRecord ?? record,
       } as const;
     }
-
-    return {
-      verified: false,
-      record,
-    } as const;
   }
-
-  if (!record.passwordHash || !record.passwordSalt || !record.passwordIterations) {
-    return {
-      verified: false,
-      record,
-    } as const;
-  }
-
-  const verified = await verifyClientPasswordHashRecord(normalizedPassword, {
-    passwordHash: record.passwordHash,
-    passwordSalt: record.passwordSalt,
-    passwordIterations: record.passwordIterations,
-  });
 
   return {
-    verified,
+    verified: false,
     record,
   } as const;
 }

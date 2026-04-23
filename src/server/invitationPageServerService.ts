@@ -22,6 +22,7 @@ import {
   type InvitationPageDisplayPeriodRecord as DisplayPeriodRecord,
   type InvitationPageRegistryRecord,
 } from '@/lib/invitationPagePersistence';
+import { DEFAULT_EVENT_TYPE, normalizeEventTypeKey, type EventTypeKey } from '@/lib/eventTypes';
 import {
   getInvitationPageSlugValidationErrorMessage,
   type InvitationPageSlugAvailabilityReason,
@@ -49,6 +50,7 @@ import { sanitizeHeartIconPlaceholdersDeep } from '@/utils/textSanitizers';
 
 import {
   firestoreEventRepository,
+  resolveStoredEventBySlug,
 } from './repositories/eventRepository';
 
 type BuiltInvitationPageRecord = {
@@ -72,6 +74,7 @@ export interface ServerEditableInvitationPageConfig {
 export interface ServerCreateInvitationPageDraftInput {
   seedSlug: string;
   slugBase: string;
+  eventType?: EventTypeKey;
   groomName?: string;
   brideName?: string;
   published?: boolean;
@@ -127,6 +130,7 @@ function buildDraftConfigFromSeed(
   seed: InvitationPageSeed,
   overrides: {
     slug: string;
+    eventType: EventTypeKey;
     groomName: string;
     brideName: string;
     productTier: InvitationProductTier;
@@ -139,6 +143,7 @@ function buildDraftConfigFromSeed(
   const features = resolveInvitationFeatures(overrides.productTier, seed.features);
 
   nextSeed.slug = overrides.slug;
+  nextSeed.eventType = overrides.eventType;
   nextSeed.displayName = '';
   nextSeed.description = '';
   nextSeed.date = '';
@@ -570,6 +575,7 @@ export async function createServerInvitationPageDraftFromSeed(
   const slug = await createUniqueInvitationPageSlug(input.slugBase);
   const config = buildDraftConfigFromSeed(seed, {
     slug,
+    eventType: normalizeEventTypeKey(input.eventType, DEFAULT_EVENT_TYPE),
     groomName,
     brideName,
     productTier: normalizeInvitationProductTier(
@@ -836,6 +842,26 @@ export async function getServerInvitationPageDefaultThemeBySlug(
       error
     );
     return DEFAULT_INVITATION_THEME;
+  }
+}
+
+export async function getServerInvitationPageEventTypeBySlug(
+  pageSlug: string | null | undefined
+) {
+  const normalizedPageSlug = normalizeInvitationPageSlugInput(pageSlug);
+  if (!normalizedPageSlug) {
+    return DEFAULT_EVENT_TYPE;
+  }
+
+  try {
+    const resolvedEvent = await resolveStoredEventBySlug(normalizedPageSlug);
+    return normalizeEventTypeKey(resolvedEvent?.summary.eventType, DEFAULT_EVENT_TYPE);
+  } catch (error) {
+    console.error(
+      '[invitationPageServerService] failed to load invitation event type',
+      error
+    );
+    return DEFAULT_EVENT_TYPE;
   }
 }
 

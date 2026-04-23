@@ -49,7 +49,7 @@ export function LoginCard({
         label="연동 비밀번호"
         value={password}
         onChangeText={onChangePassword}
-        placeholder="예: 12344"
+        placeholder="예: wedding2026!"
         secureTextEntry
         autoCapitalize="none"
       />

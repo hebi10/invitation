@@ -23,7 +23,7 @@ type PasswordEntry = {
   password: string;
   hasPassword: boolean;
   passwordVersion: number;
-  legacyPlaintextStored: boolean;
+  requiresReset: boolean;
   updatedAt: Date | null;
 };
 
@@ -40,15 +40,15 @@ function getPasswordStatus(entry: PasswordEntry, savingPageSlug: string | null) 
     return {
       label: '재설정 대기',
       tone: 'warning' as const,
-      description: '입력한 값은 저장 전까지 적용되지 않습니다.',
+      description: '입력한 새 비밀번호는 저장 전까지 적용되지 않습니다.',
     };
   }
 
-  if (entry.legacyPlaintextStored) {
+  if (entry.requiresReset) {
     return {
-      label: '레거시',
+      label: '재설정 필요',
       tone: 'warning' as const,
-      description: '평문 흔적이 남아 있습니다. 재설정을 권장합니다.',
+      description: '기존 보안 형식이 아니어서 새 비밀번호로 다시 설정해야 합니다.',
     };
   }
 
@@ -65,7 +65,7 @@ function getPasswordStatus(entry: PasswordEntry, savingPageSlug: string | null) 
   return {
     label: '미설정',
     tone: 'neutral' as const,
-    description: '비밀번호를 새로 설정해야 고객 편집 로그인이 가능합니다.',
+    description: '고객 로그인과 청첩장 연결을 위해 새 비밀번호를 설정해 주세요.',
   };
 }
 
@@ -109,7 +109,7 @@ export default function AdminClientPasswordsTab({
           password: drafts[slug] ?? '',
           hasPassword: record?.hasPassword ?? false,
           passwordVersion: record?.passwordVersion ?? 0,
-          legacyPlaintextStored: record?.legacyPlaintextStored ?? false,
+          requiresReset: record?.requiresReset ?? false,
           updatedAt: record?.updatedAt ?? null,
         };
       })
@@ -129,6 +129,7 @@ export default function AdminClientPasswordsTab({
           type={isVisible ? 'text' : 'password'}
           value={entry.password}
           placeholder="새 비밀번호 입력"
+          autoComplete="new-password"
           onChange={(event) =>
             setDrafts((current) => ({
               ...current,
@@ -150,7 +151,7 @@ export default function AdminClientPasswordsTab({
         </button>
       </div>
       <span className={styles.inlineMetaText}>
-        현재 비밀번호는 다시 표시되지 않습니다. 저장하면 새 비밀번호로 재설정됩니다.
+        현재 비밀번호는 보안상 표시하지 않습니다. 필요할 때만 새 값으로 재설정해 주세요.
       </span>
     </div>
   );
@@ -161,8 +162,8 @@ export default function AdminClientPasswordsTab({
         <div>
           <h2 className={styles.sectionTitle}>고객 비밀번호</h2>
           <p className={styles.sectionDescription}>
-            평문 조회를 제거하고 재설정만 허용합니다. 저장된 비밀번호는 해시로만 보관되며,
-            미설정 페이지는 기본값 12344로 자동 초기 설정됩니다.
+            고객이 청첩장을 연결하거나 모바일 편집에 사용하는 비밀번호를 관리합니다. 현재
+            비밀번호는 보안상 보여주지 않고, 필요한 경우에만 새 비밀번호로 재설정합니다.
           </p>
         </div>
         <p className={styles.sectionMeta}>현재 {entries.length}개 페이지</p>
@@ -183,7 +184,8 @@ export default function AdminClientPasswordsTab({
             </label>
             <div className={styles.metaStack}>
               <span className={styles.toolbarNote}>
-                비밀번호는 재설정만 가능하며, 기존 값은 관리자에게도 다시 노출되지 않습니다.
+                저장 시 비밀번호 해시와 버전만 갱신되며, 관리자 화면에는 현재 값이 다시
+                노출되지 않습니다.
               </span>
             </div>
           </>
@@ -241,17 +243,16 @@ export default function AdminClientPasswordsTab({
                   </tr>
                 </thead>
                 <tbody>
-                  {entries.map((entry) => {
+                  {entries.map((entry, index) => {
                     const status = getPasswordStatus(entry, savingPageSlug);
                     const canSave = Boolean(entry.password.trim());
-                    const canOpenEditor = true;
                     const isVisible = visibleRows[entry.slug] ?? false;
 
                     return (
                       <tr key={entry.slug} className={styles.tableRowInteractive}>
                         <td>
                           <div className={styles.tablePrimary}>
-                            <span className={styles.rowNumber}>{entries.length}</span>
+                            <span className={styles.rowNumber}>{index + 1}</span>
                             <div>
                               <p className={styles.tableTitle}>{entry.displayName}</p>
                               <p className={styles.tableSubtext}>{entry.slug}</p>
@@ -280,29 +281,19 @@ export default function AdminClientPasswordsTab({
                                     ? '재설정'
                                     : '설정'}
                               </button>
-                              {canOpenEditor ? (
-                                <a
-                                  className="admin-button admin-button-ghost"
-                                  href={`/page-editor/${entry.slug}`}
-                                  target="_blank"
-                                  rel="noreferrer"
-                                >
-                                  편집기 열기
-                                </a>
-                              ) : (
-                                <button
-                                  type="button"
-                                  className="admin-button admin-button-ghost"
-                                  disabled
-                                >
-                                  비밀번호 필요
-                                </button>
-                              )}
+                              <a
+                                className="admin-button admin-button-ghost"
+                                href={`/page-editor/${entry.slug}`}
+                                target="_blank"
+                                rel="noreferrer"
+                              >
+                                편집기 열기
+                              </a>
                             </div>
                             <span className={styles.actionHint}>
                               {entry.hasPassword
-                                ? '현재 비밀번호는 볼 수 없고 새 비밀번호로만 교체할 수 있습니다.'
-                                : '비밀번호를 한 번 설정하면 고객 편집 로그인이 활성화됩니다.'}
+                                ? '현재 비밀번호를 확인하는 대신 새 비밀번호로 바로 재설정합니다.'
+                                : '비밀번호를 설정하면 고객이 로그인과 청첩장 연결을 진행할 수 있습니다.'}
                             </span>
                           </div>
                         </td>
@@ -318,7 +309,6 @@ export default function AdminClientPasswordsTab({
             {entries.map((entry) => {
               const status = getPasswordStatus(entry, savingPageSlug);
               const canSave = Boolean(entry.password.trim());
-              const canOpenEditor = true;
               const isVisible = visibleRows[entry.slug] ?? false;
 
               return (
@@ -348,24 +338,14 @@ export default function AdminClientPasswordsTab({
                             ? '재설정'
                             : '설정'}
                       </button>
-                      {canOpenEditor ? (
-                        <a
-                          className="admin-button admin-button-ghost"
-                          href={`/page-editor/${entry.slug}`}
-                          target="_blank"
-                          rel="noreferrer"
-                        >
-                          편집기 열기
-                        </a>
-                      ) : (
-                        <button
-                          type="button"
-                          className="admin-button admin-button-ghost"
-                          disabled
-                        >
-                          비밀번호 필요
-                        </button>
-                      )}
+                      <a
+                        className="admin-button admin-button-ghost"
+                        href={`/page-editor/${entry.slug}`}
+                        target="_blank"
+                        rel="noreferrer"
+                      >
+                        편집기 열기
+                      </a>
                     </div>
                   </div>
                 </article>
@@ -375,11 +355,19 @@ export default function AdminClientPasswordsTab({
         </>
       ) : (
         <EmptyState
-          title="조건에 맞는 페이지가 없습니다."
-          description="페이지 검색 조건을 다시 확인하거나 비밀번호 상태를 새로고침해 주세요."
+          title={
+            searchQuery
+              ? '검색 조건에 맞는 고객 인증 대상이 없습니다.'
+              : '고객 인증 관리 대상이 아직 없습니다.'
+          }
+          description={
+            searchQuery
+              ? '검색어를 다시 확인하거나 인증 상태를 새로고침해 주세요.'
+              : '이벤트 운영에서 페이지를 만들면 이곳에서 고객 로그인과 연결용 비밀번호를 재설정할 수 있습니다.'
+          }
           highlights={[
-            '현재 비밀번호는 표시하지 않고 재설정만 허용합니다.',
-            '저장 후에는 해시 정보와 마지막 변경 시각만 남습니다.',
+            '현재 비밀번호는 보안상 화면에 표시하지 않습니다.',
+            '필요할 때만 새 비밀번호를 입력해 재설정합니다.',
           ]}
           actionLabel={searchQuery ? '검색 초기화' : '새로고침'}
           onAction={searchQuery ? () => setSearchQuery('') : onRefresh}

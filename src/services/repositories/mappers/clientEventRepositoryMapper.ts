@@ -1,4 +1,5 @@
 import { getWeddingPageBySlug } from '@/config/weddingPages';
+import { DEFAULT_EVENT_TYPE, normalizeEventTypeKey, type EventTypeKey } from '@/lib/eventTypes';
 import { normalizeInvitationTheme } from '@/lib/invitationPageNormalization';
 import { normalizeInvitationConfigSeed } from '@/lib/invitationPagePersistence';
 import type {
@@ -25,7 +26,7 @@ function readFiniteNumber(value: unknown) {
 export interface ClientEventSlugIndexRecord {
   slug: string;
   eventId: string;
-  eventType: string | null;
+  eventType: EventTypeKey | null;
   status: string;
   targetSlug: string | null;
   createdAt: Date | null;
@@ -35,8 +36,11 @@ export interface ClientEventSlugIndexRecord {
 export interface ClientEventSummaryRecord {
   eventId: string;
   slug: string;
-  eventType: string;
+  eventType: EventTypeKey;
   status: string | null;
+  ownerUid: string | null;
+  ownerEmail: string | null;
+  ownerDisplayName: string | null;
   title: string | null;
   displayName: string | null;
   summary: string | null;
@@ -79,7 +83,9 @@ export function normalizeClientEventSlugIndexRecord(
   return {
     slug,
     eventId,
-    eventType: readNonEmptyString(data.eventType),
+    eventType: readNonEmptyString(data.eventType)
+      ? normalizeEventTypeKey(data.eventType, DEFAULT_EVENT_TYPE)
+      : null,
     status: readNonEmptyString(data.status) ?? 'active',
     targetSlug: readNonEmptyString(data.targetSlug),
     createdAt: toClientRepositoryDate(data.createdAt, new Date()),
@@ -126,8 +132,11 @@ export function normalizeClientEventSummaryRecord(
   return {
     eventId: readNonEmptyString(data.eventId) ?? eventId,
     slug,
-    eventType: readNonEmptyString(data.eventType) ?? 'wedding',
+    eventType: normalizeEventTypeKey(data.eventType, DEFAULT_EVENT_TYPE),
     status: readNonEmptyString(data.status),
+    ownerUid: readNonEmptyString(data.ownerUid),
+    ownerEmail: readNonEmptyString(data.ownerEmail),
+    ownerDisplayName: readNonEmptyString(data.ownerDisplayName),
     title: readNonEmptyString(data.title),
     displayName: readNonEmptyString(data.displayName),
     summary: readNonEmptyString(data.summary),
@@ -211,6 +220,10 @@ export function buildInvitationPageConfigRecordFromClientEventContent(
   const themeStateInput = isRecord(data.themeState) ? data.themeState : null;
   const contentCandidate = {
     ...contentInput,
+    eventType:
+      readNonEmptyString(contentInput.eventType) ??
+      readNonEmptyString(data.eventType) ??
+      eventSummary.eventType,
     slug:
       readNonEmptyString(contentInput.slug) ??
       readNonEmptyString(data.slug) ??

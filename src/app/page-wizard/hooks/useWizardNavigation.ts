@@ -93,7 +93,11 @@ export function useWizardNavigation({
           window.history.replaceState(null, '', nextUrl);
         }
       }
-    } else if (activeStep.key !== 'theme' && activeStep.key !== 'final') {
+    } else if (
+      activeStep.key !== 'eventType' &&
+      activeStep.key !== 'theme' &&
+      activeStep.key !== 'final'
+    ) {
       const savedSlug = await persistDraft({ publish: false, silent: true });
       if (!savedSlug && !resolvedPersistedSlug) {
         return;

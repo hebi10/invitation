@@ -16,6 +16,7 @@ import {
   normalizeInvitationProductTier,
   resolveInvitationFeatures,
 } from '@/lib/invitationProducts';
+import { DEFAULT_EVENT_TYPE, normalizeEventTypeKey } from '@/lib/eventTypes';
 import {
   buildInvitationVariants,
   createInvitationVariantAvailability,
@@ -414,6 +415,7 @@ export function mergeInvitationPageSeed(
 
   const normalizedSeed: InvitationPageSeed = {
     ...(base ?? {}),
+    eventType: normalizeEventTypeKey(candidate.eventType, base?.eventType ?? DEFAULT_EVENT_TYPE),
     slug,
     displayName,
     description,

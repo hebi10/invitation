@@ -108,13 +108,13 @@ export const firestoreEventSecretRepository: EventSecretRepository = {
         {
           eventId: mirroredEvent.summary.eventId,
           slug: mirroredEvent.summary.slug,
+          password: FieldValue.delete(),
           passwordHash: input.passwordHash,
           passwordSalt: input.passwordSalt,
           passwordIterations: input.passwordIterations,
           passwordVersion: input.passwordVersion,
           createdAt: input.createdAt,
           updatedAt: input.updatedAt,
-          password: FieldValue.delete(),
         },
         { merge: true }
       );

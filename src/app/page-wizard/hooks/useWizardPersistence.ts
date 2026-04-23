@@ -12,15 +12,13 @@ import {
   normalizeInvitationPageSlugBase,
   saveInvitationPageConfig,
 } from '@/services/invitationPageService';
-import { saveClientEditorConfig } from '@/services/clientEditorSession';
-import {
-  DEFAULT_INITIAL_CLIENT_PASSWORD,
-  setClientPassword,
-} from '@/services/passwordService';
+import { setOwnedEventPassword } from '@/services/customerEventOwnerService';
+import { setClientPassword } from '@/services/passwordService';
 import type {
   InvitationPageSeed,
   InvitationThemeKey,
 } from '@/types/invitationPage';
+import type { EventTypeKey } from '@/lib/eventTypes';
 
 import {
   PLACEHOLDER_BRIDE,
@@ -44,12 +42,14 @@ export type WizardPersistDraftOptions = {
 export function useWizardPersistence({
   formState,
   previewFormState,
+  eventType,
   defaultTheme,
   published,
   resolvedPersistedSlug,
   slugInput,
   defaultSeedSlug,
   isAdminLoggedIn,
+  isLoggedIn,
   clientPassword,
   allowClientPasswordSetup,
   setPersistedSlug,
@@ -64,12 +64,14 @@ export function useWizardPersistence({
 }: {
   formState: InvitationPageSeed | null;
   previewFormState: InvitationPageSeed | null;
+  eventType: EventTypeKey;
   defaultTheme: InvitationThemeKey;
   published: boolean;
   resolvedPersistedSlug: string | null;
   slugInput: string;
   defaultSeedSlug: string | null;
   isAdminLoggedIn: boolean;
+  isLoggedIn: boolean;
   clientPassword: string;
   allowClientPasswordSetup: boolean;
   setPersistedSlug: (value: string | null) => void;
@@ -102,6 +104,7 @@ export function useWizardPersistence({
     const created = await createInvitationPageDraftFromSeed({
       seedSlug: defaultSeedSlug,
       slugBase: normalizedSlug,
+      eventType,
       groomName: previewFormState?.couple.groom.name || PLACEHOLDER_GROOM,
       brideName: previewFormState?.couple.bride.name || PLACEHOLDER_BRIDE,
       published: false,
@@ -132,6 +135,7 @@ export function useWizardPersistence({
   }, [
     defaultSeedSlug,
     defaultTheme,
+    eventType,
     normalizeFormState,
     previewFormState,
     resolvedPersistedSlug,
@@ -179,24 +183,25 @@ export function useWizardPersistence({
         });
         const nextPublished = options?.publish ?? published;
 
-        if (isAdminLoggedIn) {
-          await saveInvitationPageConfig(prepared, {
-            published: nextPublished,
-            defaultTheme,
-          });
-        } else {
-          await saveClientEditorConfig(nextSlug, prepared, {
-            published: nextPublished,
-            defaultTheme,
-          });
-        }
+        await saveInvitationPageConfig(prepared, {
+          published: nextPublished,
+          defaultTheme,
+        });
 
-        if (isAdminLoggedIn && allowClientPasswordSetup && options?.syncClientPassword) {
-          const nextClientPassword =
-            clientPassword.trim() || DEFAULT_INITIAL_CLIENT_PASSWORD;
+        if (isLoggedIn && allowClientPasswordSetup && options?.syncClientPassword) {
+          const nextClientPassword = clientPassword.trim();
+
+          if (!nextClientPassword) {
+            showNotice('error', '고객 편집 비밀번호를 입력해 주세요.');
+            return null;
+          }
 
           try {
-            await setClientPassword(nextSlug, nextClientPassword);
+            if (isAdminLoggedIn) {
+              await setClientPassword(nextSlug, nextClientPassword);
+            } else {
+              await setOwnedEventPassword(nextSlug, nextClientPassword);
+            }
           } catch (error) {
             showErrorNotice(error, '청첩장은 저장했지만 고객 편집 비밀번호를 저장하지 못했습니다.');
             return null;
@@ -220,7 +225,7 @@ export function useWizardPersistence({
 
         return nextSlug;
       } catch (error) {
-        showErrorNotice(error, '청첩장 청첩장을 저장하지 못했습니다.');
+        showErrorNotice(error, '청첩장을 저장하지 못했습니다.');
         return null;
       } finally {
         setIsSaving(false);
@@ -233,6 +238,7 @@ export function useWizardPersistence({
       ensureDraftCreated,
       formState,
       isAdminLoggedIn,
+      isLoggedIn,
       normalizeFormState,
       published,
       setFormState,

@@ -1,7 +1,9 @@
-'use client';
+﻿'use client';
 
 import { type ReactNode, useEffect, useMemo, useState } from 'react';
 
+import CustomerEventClaimCard from '@/app/_components/CustomerEventClaimCard';
+import FirebaseAuthLoginCard from '@/app/_components/FirebaseAuthLoginCard';
 import { useAdmin } from '@/contexts';
 import {
   addComment,
@@ -9,12 +11,7 @@ import {
   getComments,
   type Comment,
 } from '@/services/commentService';
-import {
-  deleteClientEditorComment,
-  getClientEditorSession,
-  loginClientEditorSession,
-  logoutClientEditorSession,
-} from '@/services/clientEditorSession';
+import { getCustomerEventOwnershipStatus } from '@/services/customerEventService';
 import { HeartIcon, HeartIconSimple } from '@/components/icons';
 
 interface GuestbookThemedProps {
@@ -55,7 +52,7 @@ export default function GuestbookThemed({
   statusColors,
   emptyIcon,
 }: GuestbookThemedProps) {
-  const { isAdminLoggedIn } = useAdmin();
+  const { authUser, isAdminLoggedIn, isLoggedIn } = useAdmin();
 
   const [comments, setComments] = useState<Comment[]>([]);
   const [name, setName] = useState('');
@@ -66,12 +63,12 @@ export default function GuestbookThemed({
   const [currentPage, setCurrentPage] = useState(1);
   const [isMobile, setIsMobile] = useState(false);
   const [showClientManager, setShowClientManager] = useState(false);
-  const [clientPassword, setClientPassword] = useState('');
-  const [hasClientManagerAccess, setHasClientManagerAccess] = useState(false);
-  const [clientAccessLoading, setClientAccessLoading] = useState(false);
+  const [ownershipState, setOwnershipState] = useState<
+    'unknown' | 'owner' | 'claimable' | 'different-owner' | 'missing'
+  >('unknown');
   const [lastTitleInteraction, setLastTitleInteraction] = useState(0);
 
-  const canManageComments = isAdminLoggedIn || hasClientManagerAccess;
+  const canManageComments = isAdminLoggedIn || ownershipState === 'owner';
   const commentsPerPage = 5;
   const totalPages = Math.max(1, Math.ceil(comments.length / commentsPerPage));
   const currentComments = comments.slice(
@@ -145,7 +142,12 @@ export default function GuestbookThemed({
 
   useEffect(() => {
     if (isAdminLoggedIn) {
-      setHasClientManagerAccess(false);
+      setOwnershipState('owner');
+      return;
+    }
+
+    if (!isLoggedIn) {
+      setOwnershipState('unknown');
       return;
     }
 
@@ -153,13 +155,13 @@ export default function GuestbookThemed({
 
     void (async () => {
       try {
-        const session = await getClientEditorSession(pageSlug);
+        const ownership = await getCustomerEventOwnershipStatus(pageSlug, authUser?.uid);
         if (!cancelled) {
-          setHasClientManagerAccess(session.authenticated);
+          setOwnershipState(ownership.status);
         }
       } catch {
         if (!cancelled) {
-          setHasClientManagerAccess(false);
+          setOwnershipState('unknown');
         }
       }
     })();
@@ -167,7 +169,7 @@ export default function GuestbookThemed({
     return () => {
       cancelled = true;
     };
-  }, [isAdminLoggedIn, pageSlug]);
+  }, [authUser?.uid, isAdminLoggedIn, isLoggedIn, pageSlug]);
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -199,7 +201,7 @@ export default function GuestbookThemed({
 
   const handleDelete = async (comment: Comment) => {
     if (!canManageComments) {
-      showStatus('관리 모드로 로그인한 뒤 삭제할 수 있습니다.', 'error');
+      showStatus('관리 권한이 있는 계정으로 로그인한 뒤 삭제할 수 있습니다.', 'error');
       return;
     }
 
@@ -208,60 +210,13 @@ export default function GuestbookThemed({
     }
 
     try {
-      if (isAdminLoggedIn) {
-        await deleteComment(comment.id, comment.collectionName);
-      } else if (hasClientManagerAccess) {
-        await deleteClientEditorComment(pageSlug, comment.id);
-      } else {
-        showStatus('관리 모드로 로그인한 뒤 삭제할 수 있습니다.', 'error');
-        return;
-      }
-
+      await deleteComment(comment.id, comment.collectionName);
       await loadComments();
       showStatus('메시지를 삭제했습니다.', 'success');
     } catch (error) {
       console.error('Failed to delete comment', error);
       showStatus('메시지 삭제에 실패했습니다.', 'error');
     }
-  };
-
-  const handleClientLogin = async () => {
-    if (!clientPassword.trim()) {
-      showStatus('비밀번호를 입력해 주세요.', 'error');
-      return;
-    }
-
-    setClientAccessLoading(true);
-    try {
-      const session = await loginClientEditorSession(pageSlug, clientPassword.trim());
-      if (!session.authenticated) {
-        showStatus('비밀번호가 올바르지 않습니다.', 'error');
-        return;
-      }
-
-      setHasClientManagerAccess(true);
-      setClientPassword('');
-      setShowClientManager(false);
-      showStatus('댓글 관리 모드가 활성화되었습니다.', 'success');
-    } catch (error) {
-      console.error('Failed to verify client password', error);
-      showStatus('비밀번호 확인 중 오류가 발생했습니다.', 'error');
-    } finally {
-      setClientAccessLoading(false);
-    }
-  };
-
-  const handleClientLogout = async () => {
-    try {
-      await logoutClientEditorSession();
-    } catch (error) {
-      console.error('Failed to logout client manager session', error);
-    }
-
-    setHasClientManagerAccess(false);
-    setClientPassword('');
-    setShowClientManager(false);
-    showStatus('댓글 관리 모드를 종료했습니다.', 'success');
   };
 
   const handleTitleInteraction = () => {
@@ -325,8 +280,84 @@ export default function GuestbookThemed({
   };
 
   const renderManagerBlock = () => {
-    if (!isAdminLoggedIn && !hasClientManagerAccess && !showClientManager) {
+    if (!showClientManager && !canManageComments) {
       return null;
+    }
+
+    if (showClientManager && !isLoggedIn) {
+      return (
+        <div style={{ marginTop: '0.9rem', display: 'grid', gap: '0.7rem' }}>
+          <FirebaseAuthLoginCard
+            compact
+            title="로그인 후 방명록을 관리해 주세요"
+            description="이메일 로그인이나 Google 로그인을 완료하면 현재 계정 UID 기준으로 청첩장 소유권을 확인합니다."
+            helperText="기본 이메일 로그인과 Google 로그인만 지원합니다."
+          />
+        </div>
+      );
+    }
+
+    if (showClientManager && !isAdminLoggedIn && ownershipState === 'claimable') {
+      return (
+        <div style={{ marginTop: '0.9rem', display: 'grid', gap: '0.7rem' }}>
+          <CustomerEventClaimCard
+            compact
+            pageSlug={pageSlug}
+            title="기존 청첩장을 현재 계정에 연결해 주세요"
+            description="기존 페이지 비밀번호를 한 번 확인하면 이 계정으로 방명록을 계속 관리할 수 있습니다."
+            helperText="연결 이후에는 Firebase 로그인만으로 방명록 관리가 가능합니다."
+            onClaimed={async () => {
+              setOwnershipState('owner');
+              setShowClientManager(false);
+              showStatus('현재 계정에 청첩장을 연결했습니다.', 'success');
+            }}
+          />
+        </div>
+      );
+    }
+
+    if (showClientManager && !isAdminLoggedIn && ownershipState === 'different-owner') {
+      return (
+        <div
+          style={{
+            marginTop: '0.9rem',
+            display: 'grid',
+            gap: '0.55rem',
+            padding: '0.9rem 1rem',
+            border: '1px solid rgba(248, 113, 113, 0.28)',
+            borderRadius: '14px',
+            background: 'rgba(255,255,255,0.78)',
+            backdropFilter: 'blur(8px)',
+          }}
+        >
+          <strong style={{ fontSize: '0.95rem' }}>다른 계정에 연결된 청첩장입니다.</strong>
+          <p style={{ margin: 0, fontSize: '0.86rem', lineHeight: 1.6 }}>
+            현재 로그인한 계정으로는 이 방명록을 관리할 수 없습니다. 내 청첩장은 내 청첩장 관리 페이지에서 확인해 주세요.
+          </p>
+        </div>
+      );
+    }
+
+    if (showClientManager && !isAdminLoggedIn && ownershipState === 'missing') {
+      return (
+        <div
+          style={{
+            marginTop: '0.9rem',
+            display: 'grid',
+            gap: '0.55rem',
+            padding: '0.9rem 1rem',
+            border: '1px solid rgba(148, 163, 184, 0.24)',
+            borderRadius: '14px',
+            background: 'rgba(255,255,255,0.78)',
+            backdropFilter: 'blur(8px)',
+          }}
+        >
+          <strong style={{ fontSize: '0.95rem' }}>청첩장 정보를 찾지 못했습니다.</strong>
+          <p style={{ margin: 0, fontSize: '0.86rem', lineHeight: 1.6 }}>
+            이 페이지와 연결된 청첩장 정보가 없어 방명록 관리 권한을 확인할 수 없습니다.
+          </p>
+        </div>
+      );
     }
 
     return (
@@ -352,83 +383,14 @@ export default function GuestbookThemed({
           }}
         >
           <span style={{ fontSize: '0.9rem', fontWeight: 600 }}>
-            {isAdminLoggedIn
-              ? '관리자 댓글 관리 모드'
-              : hasClientManagerAccess
-                ? '신랑신부 댓글 관리 모드'
-                : '신랑신부 댓글 관리 모드 로그인 필요'}
+            {isAdminLoggedIn ? '관리자 방명록 관리 모드' : '내 청첩장 방명록 관리 모드'}
           </span>
-          {hasClientManagerAccess && !isAdminLoggedIn ? (
-            <button
-              type="button"
-              onClick={() => void handleClientLogout()}
-              style={{
-                minHeight: '38px',
-                borderRadius: '999px',
-                border: '1px solid rgba(148, 163, 184, 0.28)',
-                background: '#fff',
-                padding: '0 0.85rem',
-                fontSize: '0.82rem',
-                fontWeight: 600,
-              }}
-            >
-              로그아웃
-            </button>
-          ) : null}
         </div>
-
-        {showClientManager && !canManageComments && !isAdminLoggedIn ? (
-          <div style={{ display: 'grid', gap: '0.6rem' }}>
-            <p style={{ margin: 0, fontSize: '0.86rem', lineHeight: 1.6 }}>
-              신랑신부 전용 비밀번호를 입력하면 방명록 댓글을 삭제할 수 있습니다.
-            </p>
-            <div
-              style={{
-                display: 'flex',
-                gap: '0.55rem',
-                flexWrap: 'wrap',
-              }}
-            >
-              <input
-                type="password"
-                value={clientPassword}
-                onChange={(event) => setClientPassword(event.target.value)}
-                onKeyDown={(event) => {
-                  if (event.key === 'Enter') {
-                    event.preventDefault();
-                    void handleClientLogin();
-                  }
-                }}
-                placeholder="비밀번호"
-                style={{
-                  flex: '1 1 180px',
-                  minHeight: '42px',
-                  borderRadius: '12px',
-                  border: '1px solid rgba(148, 163, 184, 0.28)',
-                  padding: '0 0.85rem',
-                  fontSize: '0.92rem',
-                }}
-              />
-              <button
-                type="button"
-                onClick={() => void handleClientLogin()}
-                disabled={clientAccessLoading}
-                style={{
-                  minHeight: '42px',
-                  borderRadius: '12px',
-                  border: 0,
-                  background: '#1f2937',
-                  color: '#fff',
-                  padding: '0 1rem',
-                  fontSize: '0.88rem',
-                  fontWeight: 600,
-                }}
-              >
-                {clientAccessLoading ? '확인 중...' : '관리 모드 로그인'}
-              </button>
-            </div>
-          </div>
-        ) : null}
+        <p style={{ margin: 0, fontSize: '0.86rem', lineHeight: 1.6, textAlign: 'center' }}>
+          {isAdminLoggedIn
+            ? '관리자 권한으로 방명록 숨김, 삭제 예정 처리, 복구를 관리할 수 있습니다.'
+            : '현재 로그인한 계정이 이 청첩장의 소유자로 확인되어 방명록을 바로 관리할 수 있습니다.'}
+        </p>
       </div>
     );
   };

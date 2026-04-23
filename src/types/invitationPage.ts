@@ -1,4 +1,5 @@
 import type { InvitationThemeKey as RegisteredInvitationThemeKey } from '@/lib/invitationThemes';
+import type { EventTypeKey } from '@/lib/eventTypes';
 
 export interface FamilyMember {
   relation: string;
@@ -117,6 +118,7 @@ export type InvitationPageVariants = Partial<
 >;
 
 export interface InvitationPage {
+  eventType?: EventTypeKey;
   slug: string;
   displayName: string;
   description: string;

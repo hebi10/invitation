@@ -1,13 +1,17 @@
-import InvitationDraftSetupClient from '@/app/_components/InvitationDraftSetupClient';
+import { Suspense } from 'react';
+
+import PageWizardClient from './PageWizardClient';
 
 export const dynamic = 'force-dynamic';
 
+function PageWizardFallback() {
+  return <div style={{ minHeight: '100vh', background: '#f8fafc' }} />;
+}
+
 export default function PageWizardCreatePage() {
   return (
-    <InvitationDraftSetupClient
-      editorKind="page-wizard"
-      title="모바일형 청첩장 초안 만들기"
-      description="템플릿, 한글 이름, 청첩장 주소를 먼저 정한 뒤 page-wizard에서 단계별로 내용을 채웁니다."
-    />
+    <Suspense fallback={<PageWizardFallback />}>
+      <PageWizardClient initialSlug={null} />
+    </Suspense>
   );
 }

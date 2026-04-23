@@ -10,6 +10,7 @@ import {
   initializeApp,
   type App,
 } from 'firebase-admin/app';
+import { getAuth } from 'firebase-admin/auth';
 import { getFirestore } from 'firebase-admin/firestore';
 import { getStorage } from 'firebase-admin/storage';
 
@@ -127,6 +128,11 @@ export function getServerFirestore() {
   const app = getServerFirebaseAdminApp();
   firestoreInstance = app ? getFirestore(app) : null;
   return firestoreInstance;
+}
+
+export function getServerAuth() {
+  const app = getServerFirebaseAdminApp();
+  return app ? getAuth(app) : null;
 }
 
 export function getServerStorageBucketName() {

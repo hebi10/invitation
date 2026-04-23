@@ -1,41 +1,41 @@
 import { notFound } from 'next/navigation';
 
-import { WeddingInvitationRoutePage } from '@/app/_components/WeddingInvitationPage';
-import { isInvitationThemeKey } from '@/lib/invitationThemes';
+import { resolveEventPageRenderer } from '@/app/_components/eventPageRendererRegistry';
 
 import { getCachedServerInvitationPageBySlug } from '../serverInvitationPageCache';
+import { getServerInvitationPageEventTypeBySlug } from '@/server/invitationPageServerService';
 
 export const dynamic = 'force-dynamic';
 
-export default async function WeddingInvitationThemeRoutePage({
+export default async function EventInvitationThemeRoutePage({
   params,
 }: {
   params: Promise<{ slug: string; theme: string }>;
 }) {
   const { slug, theme } = await params;
   const normalizedTheme = theme.trim().toLowerCase();
+  const eventType = await getServerInvitationPageEventTypeBySlug(slug);
+  const { renderer, resolvedEventType } = resolveEventPageRenderer(eventType);
 
-  if (!isInvitationThemeKey(normalizedTheme)) {
+  if (!renderer.isThemeSupported(normalizedTheme)) {
     notFound();
   }
 
-  const page = await getCachedServerInvitationPageBySlug(slug);
+  const [page, previewPage] = await Promise.all([
+    getCachedServerInvitationPageBySlug(slug),
+    getCachedServerInvitationPageBySlug(slug, true),
+  ]);
+  const routePreviewPage = page ?? previewPage;
+  const resolvedTheme = renderer.resolveRouteTheme(routePreviewPage, normalizedTheme);
 
-  if (page?.variants[normalizedTheme]?.available) {
-    return (
-      <WeddingInvitationRoutePage
-        slug={slug}
-        theme={normalizedTheme}
-        initialPageConfig={page}
-      />
-    );
-  }
-
-  const previewPage = await getCachedServerInvitationPageBySlug(slug, true);
-
-  if (!previewPage?.variants[normalizedTheme]?.available) {
+  if (!routePreviewPage || !resolvedTheme || resolvedTheme !== normalizedTheme) {
     notFound();
   }
 
-  return <WeddingInvitationRoutePage slug={slug} theme={normalizedTheme} />;
+  return renderer.renderPage({
+    slug,
+    theme: resolvedTheme,
+    initialPageConfig: page ?? undefined,
+    eventType: resolvedEventType,
+  });
 }

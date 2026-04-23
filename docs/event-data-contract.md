@@ -53,7 +53,7 @@
 
 ```ts
 type EventStatus = 'draft' | 'active' | 'archived' | 'deleted';
-type EventType = 'wedding' | 'birthday' | 'etc';
+type EventType = 'wedding' | 'birthday' | 'seventieth' | 'etc';
 type CommentStatus = 'public' | 'hidden' | 'pending_delete';
 type SlugIndexStatus = 'active' | 'redirect' | 'revoked';
 type BillingStatus = 'processing' | 'fulfilled' | 'failed';
@@ -179,6 +179,7 @@ interface BillingFulfillmentDoc {
 
 ## 신규 기능 개발 규칙
 - 신규 기능은 레거시 컬렉션명을 직접 참조하면 안 된다.
+- 신규 기능에서 event type을 판단할 때는 `src/lib/eventTypes.ts`를 기준으로 한다.
 - 신규 기능에서 slug 조회가 필요하면 `eventSlugIndex`를 기준으로 설계한다.
 - 본문 원본은 `events/{eventId}/content/current`만 기준으로 본다.
 - 민감 정보는 `eventSecrets`로 분리한다.

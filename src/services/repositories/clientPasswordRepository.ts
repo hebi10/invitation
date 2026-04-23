@@ -173,7 +173,7 @@ export const clientPasswordRepository: ClientPasswordRepository = {
       pageSlug: resolvedEvent.summary.slug,
       hasPassword: true,
       passwordVersion,
-      legacyPlaintextStored: false,
+      requiresReset: false,
       createdAt,
       updatedAt: now,
     };

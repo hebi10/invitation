@@ -1,5 +1,10 @@
 import type { DisplayPeriod } from '@/services';
 import {
+  EVENT_TYPE_KEYS,
+  getEventTypeDisplayLabel,
+  type EventTypeKey,
+} from '@/lib/eventTypes';
+import {
   buildInvitationThemeRoutePath,
   getInvitationThemeAdminLabel,
   INVITATION_THEME_KEYS,
@@ -8,15 +13,27 @@ import {
 import type { StatusTone } from './StatusBadge';
 
 export type AdminTab =
+  | 'accounts'
   | 'pages'
   | 'memory'
   | 'images'
   | 'comments'
   | 'passwords'
   | 'periods';
+export type AdminSection = 'customers' | 'events';
+export interface AdminSectionItem {
+  key: AdminSection;
+  label: string;
+}
+export interface AdminTabItem {
+  key: AdminTab;
+  section: AdminSection;
+  label: string;
+}
 
 export type ShortcutKey = InvitationThemeKey;
 export type PageStatusFilter = 'all' | 'complete' | 'partial' | 'empty';
+export type PageEventTypeFilter = 'all' | EventTypeKey;
 export type PageSort = 'newest' | 'name' | 'coverage';
 export type CommentAgeFilter = 'all' | 'recent';
 export type PeriodStatusFilter =
@@ -31,13 +48,19 @@ export const COMMENTS_PER_PAGE = 10;
 export const RECENT_COMMENT_DAYS = 7;
 export const DUE_SOON_DAYS = 7;
 
-export const TAB_ITEMS: Array<{ key: AdminTab; label: string }> = [
-  { key: 'pages', label: '청첩장' },
-  { key: 'memory', label: '추억 페이지' },
-  { key: 'images', label: '이미지' },
-  { key: 'comments', label: '방명록' },
-  { key: 'passwords', label: '비밀번호' },
-  { key: 'periods', label: '노출 기간' },
+export const ADMIN_SECTIONS: AdminSectionItem[] = [
+  { key: 'customers', label: '고객 관리' },
+  { key: 'events', label: '이벤트 운영' },
+];
+
+export const TAB_ITEMS: AdminTabItem[] = [
+  { key: 'accounts', section: 'customers', label: '고객 계정' },
+  { key: 'passwords', section: 'customers', label: '고객 비밀번호' },
+  { key: 'pages', section: 'events', label: '모바일 청첩장' },
+  { key: 'memory', section: 'events', label: '추억 페이지' },
+  { key: 'images', section: 'events', label: '이미지' },
+  { key: 'comments', section: 'events', label: '방명록' },
+  { key: 'periods', section: 'events', label: '노출 기간' },
 ];
 
 export const SHORTCUT_ITEMS: Array<{ key: ShortcutKey; label: string }> =
@@ -54,6 +77,17 @@ export const PAGE_STATUS_LABELS: Record<PageStatusFilter, string> = {
   partial: '일부 연결',
   empty: '미연결',
 };
+
+export const PAGE_EVENT_TYPE_OPTIONS: Array<{
+  value: PageEventTypeFilter;
+  label: string;
+}> = [
+  { value: 'all', label: '전체 이벤트' },
+  ...EVENT_TYPE_KEYS.map((key) => ({
+    value: key,
+    label: getEventTypeDisplayLabel(key),
+  })),
+];
 
 export const PAGE_SORT_LABELS: Record<PageSort, string> = {
   newest: '최신순',
@@ -159,6 +193,24 @@ export function getPeriodStatusMeta(
   };
 }
 
+export function parseSection(value: string | null): AdminSection {
+  return ADMIN_SECTIONS.some((section) => section.key === value)
+    ? (value as AdminSection)
+    : 'events';
+}
+
+export function getTabsForSection(section: AdminSection) {
+  return TAB_ITEMS.filter((tab) => tab.section === section);
+}
+
+export function getDefaultTabForSection(section: AdminSection): AdminTab {
+  return getTabsForSection(section)[0]?.key ?? 'pages';
+}
+
+export function getSectionForTab(tab: AdminTab): AdminSection {
+  return TAB_ITEMS.find((item) => item.key === tab)?.section ?? 'events';
+}
+
 export function parseTab(value: string | null): AdminTab {
   return TAB_ITEMS.some((tab) => tab.key === value) ? (value as AdminTab) : 'pages';
 }
@@ -172,6 +224,12 @@ export function parseShortcut(value: string | null): 'all' | ShortcutKey {
 export function parsePageStatus(value: string | null): PageStatusFilter {
   return value === 'complete' || value === 'partial' || value === 'empty'
     ? value
+    : 'all';
+}
+
+export function parsePageEventType(value: string | null): PageEventTypeFilter {
+  return EVENT_TYPE_KEYS.some((eventType) => eventType === value)
+    ? (value as EventTypeKey)
     : 'all';
 }
 

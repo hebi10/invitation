@@ -1,3 +1,5 @@
+import { ensureFirebaseInit } from '@/lib/firebase';
+import { DEFAULT_EVENT_TYPE, normalizeEventTypeKey, type EventTypeKey } from '@/lib/eventTypes';
 import { DEFAULT_INVITATION_THEME, type InvitationThemeKey } from '@/lib/invitationThemes';
 import type { InvitationPageSeed } from '@/types/invitationPage';
 
@@ -19,8 +21,6 @@ export const CLIENT_EVENT_CURRENT_CONTENT_DOC = 'current';
 export const CLIENT_EVENT_SLUG_INDEX_COLLECTION = 'eventSlugIndex';
 export const CLIENT_EVENT_SECRETS_COLLECTION = 'eventSecrets';
 export const CLIENT_EVENT_COMMENTS_COLLECTION = 'comments';
-
-const DEFAULT_EVENT_TYPE = 'wedding';
 
 export interface ResolvedClientEventRecord {
   requestedSlug: string;
@@ -44,7 +44,10 @@ export interface ClientEventSummaryWriteInput {
   createdAt?: Date | null;
   updatedAt?: Date | null;
   seedSourceSlug?: string | null;
-  eventType?: string | null;
+  eventType?: EventTypeKey | string | null;
+  ownerUid?: string | null;
+  ownerEmail?: string | null;
+  ownerDisplayName?: string | null;
 }
 
 function normalizePageSlug(pageSlug: string) {
@@ -53,6 +56,21 @@ function normalizePageSlug(pageSlug: string) {
 
 function readSupportedVariants(config: InvitationPageSeed) {
   return Object.keys(config.variants ?? {}).filter((entry) => entry.trim().length > 0);
+}
+
+async function getCurrentAuthOwner() {
+  const firebase = await ensureFirebaseInit();
+  const currentUser = firebase.auth?.currentUser;
+
+  if (!currentUser) {
+    return null;
+  }
+
+  return {
+    uid: currentUser.uid,
+    email: currentUser.email ?? null,
+    displayName: currentUser.displayName ?? null,
+  };
 }
 
 export function buildInitialClientEventIdFromSlug(pageSlug: string) {
@@ -271,10 +289,43 @@ export async function listClientEventSummaries() {
     );
 }
 
+export async function listOwnedClientEventSummaries(ownerUid: string) {
+  const normalizedOwnerUid = ownerUid.trim();
+  if (!normalizedOwnerUid) {
+    return [];
+  }
+
+  const firestore = await ensureClientFirestoreState();
+  if (!firestore) {
+    return [];
+  }
+
+  const snapshot = await firestore.modules.getDocs(
+    firestore.modules.query(
+      firestore.modules.collection(firestore.db, CLIENT_EVENTS_COLLECTION),
+      firestore.modules.where('ownerUid', '==', normalizedOwnerUid)
+    )
+  );
+
+  return snapshot.docs
+    .map((docSnapshot: { id: string; data: () => Record<string, unknown> }) =>
+      normalizeClientEventSummaryRecord(docSnapshot.id, docSnapshot.data())
+    )
+    .filter(
+      (record: ClientEventSummaryRecord | null): record is ClientEventSummaryRecord =>
+        record !== null && typeof record.slug === 'string' && record.slug.length > 0
+    )
+    .sort((left: ClientEventSummaryRecord, right: ClientEventSummaryRecord) => {
+      const leftTime = left.updatedAt?.getTime() ?? 0;
+      const rightTime = right.updatedAt?.getTime() ?? 0;
+      return rightTime - leftTime;
+    });
+}
+
 export async function syncClientEventSlugIndexRecord(input: {
   slug: string;
   eventId: string;
-  eventType?: string | null;
+  eventType?: EventTypeKey | string | null;
   status?: string;
   targetSlug?: string | null;
   createdAt?: Date | null;
@@ -309,7 +360,10 @@ export async function syncClientEventSlugIndexRecord(input: {
     {
       slug: normalizedPageSlug,
       eventId: normalizedEventId,
-      eventType: input.eventType?.trim() || existing?.eventType || DEFAULT_EVENT_TYPE,
+      eventType: normalizeEventTypeKey(
+        input.eventType,
+        existing?.eventType ?? DEFAULT_EVENT_TYPE
+      ),
       status: nextStatus,
       targetSlug:
         nextStatus === 'redirect'
@@ -324,7 +378,10 @@ export async function syncClientEventSlugIndexRecord(input: {
   return {
     slug: normalizedPageSlug,
     eventId: normalizedEventId,
-    eventType: input.eventType?.trim() || existing?.eventType || DEFAULT_EVENT_TYPE,
+    eventType: normalizeEventTypeKey(
+      input.eventType,
+      existing?.eventType ?? DEFAULT_EVENT_TYPE
+    ),
     status: nextStatus,
     targetSlug:
       nextStatus === 'redirect'
@@ -354,6 +411,7 @@ export async function upsertClientEventSummary(
   const existingSummary =
     resolvedEvent?.summary ??
     (await findClientEventSummaryById(eventId, normalizedPageSlug));
+  const currentAuthOwner = await getCurrentAuthOwner();
   const now = input.updatedAt ?? new Date();
   const nextCreatedAt = existingSummary?.createdAt ?? input.createdAt ?? now;
   const nextDisplayStartAt =
@@ -391,14 +449,35 @@ export async function upsertClientEventSummary(
     DEFAULT_INVITATION_THEME;
   const nextHasCustomConfig =
     input.hasCustomConfig ?? existingSummary?.hasCustomContent ?? false;
+  const nextOwnerUid =
+    existingSummary?.ownerUid ??
+    input.ownerUid ??
+    currentAuthOwner?.uid ??
+    null;
+  const nextOwnerEmail =
+    existingSummary?.ownerEmail ??
+    input.ownerEmail ??
+    currentAuthOwner?.email ??
+    null;
+  const nextOwnerDisplayName =
+    existingSummary?.ownerDisplayName ??
+    input.ownerDisplayName ??
+    currentAuthOwner?.displayName ??
+    null;
 
   await firestore.modules.setDoc(
     firestore.modules.doc(firestore.db, CLIENT_EVENTS_COLLECTION, eventId),
     {
       eventId,
-      eventType: input.eventType?.trim() || existingSummary?.eventType || DEFAULT_EVENT_TYPE,
+      eventType: normalizeEventTypeKey(
+        input.eventType,
+        existingSummary?.eventType ?? DEFAULT_EVENT_TYPE
+      ),
       slug: normalizedPageSlug,
       status: existingSummary?.status ?? 'active',
+      ownerUid: nextOwnerUid,
+      ownerEmail: nextOwnerEmail,
+      ownerDisplayName: nextOwnerDisplayName,
       title: input.displayName ?? existingSummary?.title ?? null,
       displayName: input.displayName ?? existingSummary?.displayName ?? null,
       summary: input.summary ?? existingSummary?.summary ?? null,
@@ -442,7 +521,10 @@ export async function upsertClientEventSummary(
   const slugIndex = await syncClientEventSlugIndexRecord({
     slug: normalizedPageSlug,
     eventId,
-    eventType: input.eventType ?? existingSummary?.eventType ?? DEFAULT_EVENT_TYPE,
+    eventType: normalizeEventTypeKey(
+      input.eventType,
+      existingSummary?.eventType ?? DEFAULT_EVENT_TYPE
+    ),
     status: 'active',
     targetSlug: null,
     createdAt: resolvedEvent?.slugIndex?.createdAt ?? nextCreatedAt,
@@ -454,8 +536,11 @@ export async function upsertClientEventSummary(
     ({
       eventId,
       slug: normalizedPageSlug,
-      eventType: input.eventType?.trim() || DEFAULT_EVENT_TYPE,
+      eventType: normalizeEventTypeKey(input.eventType, DEFAULT_EVENT_TYPE),
       status: 'active',
+      ownerUid: nextOwnerUid,
+      ownerEmail: nextOwnerEmail,
+      ownerDisplayName: nextOwnerDisplayName,
       title: input.displayName ?? null,
       displayName: input.displayName ?? null,
       summary: input.summary ?? null,
@@ -509,6 +594,7 @@ export async function saveClientEventContentBySlug(input: {
   const nextSupportedVariants = readSupportedVariants(input.config);
   const resolvedEvent = await upsertClientEventSummary({
     slug: normalizedPageSlug,
+    eventType: input.config.eventType,
     displayName: input.config.displayName,
     summary: input.config.description,
     published: true,

@@ -11,7 +11,10 @@ import {
   type InvitationThemeKey,
 } from '@/lib/invitationThemes';
 import {
-  DEFAULT_INITIAL_CLIENT_PASSWORD,
+  assignAdminCustomerEventOwnership,
+  clearAdminCustomerEventOwnership,
+  getAdminCustomerAccountsSnapshot,
+  deleteAdminEventByPageSlug,
   deleteComment,
   getAllClientPasswords,
   getAllComments,
@@ -22,6 +25,8 @@ import {
   setInvitationPagePublished,
   setInvitationPageProductTier,
   setInvitationPageVariantAvailability,
+  type AdminCustomerAccountSummary,
+  type AdminCustomerLinkedEventSummary,
   type ClientPassword,
   type Comment,
   type CommentSummary,
@@ -56,6 +61,10 @@ export function useAdminData({
   const [pages, setPages] = useState<InvitationPageSummary[]>([]);
   const [comments, setComments] = useState<Comment[]>([]);
   const [clientPasswords, setClientPasswords] = useState<ClientPassword[]>([]);
+  const [customerAccounts, setCustomerAccounts] = useState<AdminCustomerAccountSummary[]>([]);
+  const [unassignedCustomerEvents, setUnassignedCustomerEvents] = useState<
+    AdminCustomerLinkedEventSummary[]
+  >([]);
   const [memoryPublicCount, setMemoryPublicCount] = useState(0);
   const [commentSummary, setCommentSummary] = useState<CommentSummary>({
     totalCount: 0,
@@ -66,24 +75,31 @@ export function useAdminData({
   const [commentsLoading, setCommentsLoading] = useState(false);
   const [summaryLoading, setSummaryLoading] = useState(false);
   const [passwordsLoading, setPasswordsLoading] = useState(false);
+  const [accountsLoading, setAccountsLoading] = useState(false);
   const [savingPasswordPageSlug, setSavingPasswordPageSlug] = useState<string | null>(null);
   const [updatingPublishedPageSlug, setUpdatingPublishedPageSlug] = useState<string | null>(null);
   const [updatingVariantToken, setUpdatingVariantToken] = useState<string | null>(null);
   const [updatingTierPageSlug, setUpdatingTierPageSlug] = useState<string | null>(null);
+  const [deletingPageSlug, setDeletingPageSlug] = useState<string | null>(null);
+  const [ownershipActionToken, setOwnershipActionToken] = useState<string | null>(null);
 
   const [pagesLoaded, setPagesLoaded] = useState(false);
   const [commentsLoaded, setCommentsLoaded] = useState(false);
   const [passwordsLoaded, setPasswordsLoaded] = useState(false);
+  const [accountsLoaded, setAccountsLoaded] = useState(false);
 
   const resetAll = useCallback(() => {
     setPages([]);
     setComments([]);
     setClientPasswords([]);
+    setCustomerAccounts([]);
+    setUnassignedCustomerEvents([]);
     setMemoryPublicCount(0);
     setCommentSummary({ totalCount: 0, recentCount: 0 });
     setPagesLoaded(false);
     setCommentsLoaded(false);
     setPasswordsLoaded(false);
+    setAccountsLoaded(false);
   }, []);
 
   /* ── Fetch: pages + summary (unified) ── */
@@ -156,29 +172,7 @@ export function useAdminData({
         writeAdminInvitationPreviewCache(sourcePages);
       }
 
-      let nextPasswords = await getAllClientPasswords();
-
-      const passwordSlugSet = new Set(nextPasswords.map((entry) => entry.pageSlug));
-      const missingPasswordSlugs = sourcePages
-        .map((page) => page.slug.trim())
-        .filter((slug) => Boolean(slug) && !passwordSlugSet.has(slug));
-
-      if (missingPasswordSlugs.length > 0) {
-        await Promise.all(
-          missingPasswordSlugs.map((pageSlug) =>
-            setClientPassword(pageSlug, DEFAULT_INITIAL_CLIENT_PASSWORD)
-          )
-        );
-
-        nextPasswords = await getAllClientPasswords();
-
-        showToast({
-          title: '고객 비밀번호 기본값을 자동 설정했습니다.',
-          message: `${missingPasswordSlugs.length}개 페이지에 기본값(12344)을 적용했습니다.`,
-          tone: 'info',
-        });
-      }
-
+      const nextPasswords = await getAllClientPasswords();
       setClientPasswords(nextPasswords);
       setPasswordsLoaded(true);
     } catch (fetchError) {
@@ -188,6 +182,21 @@ export function useAdminData({
       setPasswordsLoading(false);
     }
   }, [pages, showToast]);
+
+  const fetchCustomerAccounts = useCallback(async () => {
+    setAccountsLoading(true);
+    try {
+      const snapshot = await getAdminCustomerAccountsSnapshot();
+      setCustomerAccounts(snapshot.accounts);
+      setUnassignedCustomerEvents(snapshot.unassignedEvents);
+      setAccountsLoaded(true);
+    } catch (fetchError) {
+      console.error(fetchError);
+      showToast({ title: '고객 계정 목록을 불러오지 못했습니다.', tone: 'error' });
+    } finally {
+      setAccountsLoading(false);
+    }
+  }, [showToast]);
 
   /* ── Actions ── */
 
@@ -231,6 +240,78 @@ export function useAdminData({
     [confirm, showToast]
   );
 
+  const handleDeletePage = useCallback(
+    async (page: InvitationPageSummary) => {
+      const approved = await confirm({
+        title: '청첩장을 완전 삭제할까요?',
+        description: `${page.displayName} 페이지와 이벤트 본문, 방명록, 링크 토큰, 비밀번호, 결제 이행 로그까지 모두 삭제합니다. 이 작업은 복구할 수 없습니다.`,
+        confirmLabel: '완전 삭제',
+        cancelLabel: '취소',
+        tone: 'danger',
+      });
+
+      if (!approved) {
+        return;
+      }
+
+      setDeletingPageSlug(page.slug);
+
+      try {
+        const deletedPageSlug = page.slug;
+        const deletedComments = comments.filter(
+          (comment) => comment.pageSlug === deletedPageSlug
+        );
+        const deletedRecentCommentCount = deletedComments.filter((comment) =>
+          isRecentComment(comment.createdAt)
+        ).length;
+
+        const removeDeletedPageFromLocalState = () => {
+          setPages((prev) => prev.filter((entry) => entry.slug !== deletedPageSlug));
+          setComments((prev) =>
+            prev.filter((entry) => entry.pageSlug !== deletedPageSlug)
+          );
+          setClientPasswords((prev) =>
+            prev.filter((entry) => entry.pageSlug !== deletedPageSlug)
+          );
+        };
+
+        await deleteAdminEventByPageSlug(deletedPageSlug);
+        removeDeletedPageFromLocalState();
+        await Promise.all([
+          fetchSummarySources(),
+          commentsLoaded ? fetchComments() : Promise.resolve(),
+          passwordsLoaded ? fetchPasswords() : Promise.resolve(),
+        ]);
+        removeDeletedPageFromLocalState();
+        setCommentSummary((prev) => ({
+          totalCount: Math.max(0, prev.totalCount - deletedComments.length),
+          recentCount: Math.max(0, prev.recentCount - deletedRecentCommentCount),
+        }));
+        showToast({ title: '청첩장을 완전 삭제했습니다.', tone: 'success' });
+      } catch (error) {
+        console.error(error);
+        showToast({
+          title: '청첩장 전체 삭제에 실패했습니다.',
+          message:
+            error instanceof Error ? error.message : '잠시 뒤 다시 시도해 주세요.',
+          tone: 'error',
+        });
+      } finally {
+        setDeletingPageSlug(null);
+      }
+    },
+    [
+      comments,
+      commentsLoaded,
+      confirm,
+      fetchComments,
+      fetchPasswords,
+      fetchSummarySources,
+      passwordsLoaded,
+      showToast,
+    ]
+  );
+
   const handleSavePassword = useCallback(
     async (pageSlug: string, nextPassword: string) => {
       const pageName = pages.find((page) => page.slug === pageSlug)?.displayName ?? pageSlug;
@@ -259,6 +340,86 @@ export function useAdminData({
       }
     },
     [confirm, fetchPasswords, pages, showToast]
+  );
+
+  const handleAssignCustomerOwnership = useCallback(
+    async (uid: string, pageSlug: string) => {
+      const pageName = pages.find((page) => page.slug === pageSlug)?.displayName ?? pageSlug;
+      const approved = await confirm({
+        title: '고객 계정에 청첩장을 연결할까요?',
+        description: `${pageName} 청첩장을 선택한 고객 계정의 사용자 페이지에서 바로 관리할 수 있게 연결합니다.`,
+        confirmLabel: '연결',
+        cancelLabel: '취소',
+      });
+
+      if (!approved) {
+        return;
+      }
+
+      const nextToken = `assign:${uid}:${pageSlug}`;
+      setOwnershipActionToken(nextToken);
+
+      try {
+        await assignAdminCustomerEventOwnership(uid, pageSlug);
+        await Promise.all([fetchCustomerAccounts(), refreshPages()]);
+        showToast({
+          title: '고객 계정에 청첩장을 연결했습니다.',
+          message: '이제 고객이 사용자 페이지에서 바로 수정 및 관리할 수 있습니다.',
+          tone: 'success',
+        });
+      } catch (error) {
+        console.error(error);
+        showToast({
+          title: '고객 계정 연결에 실패했습니다.',
+          message:
+            error instanceof Error ? error.message : '잠시 후 다시 시도해 주세요.',
+          tone: 'error',
+        });
+      } finally {
+        setOwnershipActionToken(null);
+      }
+    },
+    [confirm, fetchCustomerAccounts, pages, refreshPages, showToast]
+  );
+
+  const handleClearCustomerOwnership = useCallback(
+    async (pageSlug: string) => {
+      const pageName = pages.find((page) => page.slug === pageSlug)?.displayName ?? pageSlug;
+      const approved = await confirm({
+        title: '고객 계정 연결을 해제할까요?',
+        description: `${pageName} 청첩장을 현재 고객 계정에서 분리합니다. 해제 후에는 고객 사용자 페이지에서 더 이상 보이지 않습니다.`,
+        confirmLabel: '연결 해제',
+        cancelLabel: '취소',
+        tone: 'danger',
+      });
+
+      if (!approved) {
+        return;
+      }
+
+      const nextToken = `clear:${pageSlug}`;
+      setOwnershipActionToken(nextToken);
+
+      try {
+        await clearAdminCustomerEventOwnership(pageSlug);
+        await Promise.all([fetchCustomerAccounts(), refreshPages()]);
+        showToast({
+          title: '고객 계정 연결을 해제했습니다.',
+          tone: 'success',
+        });
+      } catch (error) {
+        console.error(error);
+        showToast({
+          title: '고객 계정 연결 해제에 실패했습니다.',
+          message:
+            error instanceof Error ? error.message : '잠시 후 다시 시도해 주세요.',
+          tone: 'error',
+        });
+      } finally {
+        setOwnershipActionToken(null);
+      }
+    },
+    [confirm, fetchCustomerAccounts, pages, refreshPages, showToast]
   );
 
   const handleTogglePublished = useCallback(
@@ -472,10 +633,20 @@ export function useAdminData({
     void fetchPasswords();
   }, [activeTab, fetchPasswords, isAdminLoggedIn, passwordsLoaded, passwordsLoading]);
 
+  useEffect(() => {
+    if (!isAdminLoggedIn || activeTab !== 'accounts' || accountsLoading || accountsLoaded) {
+      return;
+    }
+
+    void fetchCustomerAccounts();
+  }, [accountsLoaded, accountsLoading, activeTab, fetchCustomerAccounts, isAdminLoggedIn]);
+
   return {
     pages,
     comments,
     clientPasswords,
+    customerAccounts,
+    unassignedCustomerEvents,
     memoryPublicCount,
     commentSummary,
 
@@ -483,18 +654,25 @@ export function useAdminData({
     commentsLoading,
     summaryLoading,
     passwordsLoading,
+    accountsLoading,
     savingPasswordPageSlug,
     updatingPublishedPageSlug,
     updatingVariantToken,
     updatingTierPageSlug,
+    deletingPageSlug,
+    ownershipActionToken,
 
     refreshPages,
     fetchComments,
     fetchPasswords,
+    fetchCustomerAccounts,
     fetchSummarySources,
 
     handleDeleteComment,
+    handleDeletePage,
     handleSavePassword,
+    handleAssignCustomerOwnership,
+    handleClearCustomerOwnership,
     handleTogglePublished,
     handleChangeTier,
     handleEnableVariant,

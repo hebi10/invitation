@@ -5,6 +5,12 @@ import {
   resolveInvitationFeatures,
 } from '@/lib/invitationProducts';
 import { isInvitationThemeKey } from '@/lib/invitationThemes';
+import {
+  DEFAULT_EVENT_TYPE,
+  getEventTypeMeta,
+  normalizeEventTypeKey,
+  type EventTypeKey,
+} from '@/lib/eventTypes';
 import type { InvitationPageSeed, InvitationThemeKey } from '@/types/invitationPage';
 
 import {
@@ -22,6 +28,7 @@ export const PLACEHOLDER_GROOM = '신랑';
 export const PLACEHOLDER_BRIDE = '신부';
 
 export type WizardStepKey =
+  | 'eventType'
   | 'theme'
   | 'slug'
   | 'basic'
@@ -56,6 +63,8 @@ export type SlugStepState = {
   brideKoreanName: string;
   groomEnglishName: string;
   brideEnglishName: string;
+  clientPassword: string;
+  showClientPasswordField: boolean;
 };
 
 const THEME_STEP_TEMPLATE: WizardStepTemplate = {
@@ -64,6 +73,14 @@ const THEME_STEP_TEMPLATE: WizardStepTemplate = {
   description: '청첩장 기본 디자인과 상품 구성을 먼저 선택합니다.',
   previewSection: 'cover',
   highlights: ['기본 디자인', '상품 등급', '사용 가능 기능 확인'],
+};
+
+const EVENT_TYPE_STEP_TEMPLATE: WizardStepTemplate = {
+  key: 'eventType',
+  title: '이벤트 타입 선택',
+  description: '생성할 페이지의 이벤트 타입을 먼저 선택합니다.',
+  previewSection: 'metadata',
+  highlights: ['이벤트 타입', '공개 페이지 renderer', 'wizard step 구성'],
 };
 
 const SLUG_STEP_TEMPLATE: WizardStepTemplate = {
@@ -137,40 +154,120 @@ function withStepNumbers(steps: WizardStepTemplate[]): WizardStepDefinition[] {
   }));
 }
 
-export const CREATE_WIZARD_STEPS = withStepNumbers([
-  THEME_STEP_TEMPLATE,
-  SLUG_STEP_TEMPLATE,
-  BASIC_STEP_TEMPLATE,
-  SCHEDULE_STEP_TEMPLATE,
-  GREETING_STEP_TEMPLATE,
-  IMAGES_STEP_TEMPLATE,
-  MUSIC_STEP_TEMPLATE,
-  EXTRA_STEP_TEMPLATE,
-  FINAL_STEP_TEMPLATE,
-]);
+const WIZARD_STEP_TEMPLATE_MAP: Record<WizardStepKey, WizardStepTemplate> = {
+  eventType: EVENT_TYPE_STEP_TEMPLATE,
+  theme: THEME_STEP_TEMPLATE,
+  slug: SLUG_STEP_TEMPLATE,
+  basic: BASIC_STEP_TEMPLATE,
+  schedule: SCHEDULE_STEP_TEMPLATE,
+  venue: SCHEDULE_STEP_TEMPLATE,
+  greeting: GREETING_STEP_TEMPLATE,
+  images: IMAGES_STEP_TEMPLATE,
+  extra: EXTRA_STEP_TEMPLATE,
+  music: MUSIC_STEP_TEMPLATE,
+  final: FINAL_STEP_TEMPLATE,
+};
 
-export const CUSTOMER_WIZARD_STEPS = withStepNumbers([
-  BASIC_STEP_TEMPLATE,
-  SCHEDULE_STEP_TEMPLATE,
-  GREETING_STEP_TEMPLATE,
-  IMAGES_STEP_TEMPLATE,
-  MUSIC_STEP_TEMPLATE,
-  EXTRA_STEP_TEMPLATE,
-  FINAL_STEP_TEMPLATE,
-]);
+export type WizardStepConfigKey =
+  | 'wedding-page-wizard'
+  | 'birthday-page-wizard'
+  | 'seventieth-page-wizard'
+  | 'generic-page-wizard';
 
-export function getWizardSteps(
-  includeSetupSteps: boolean,
-  options: { includeMusic?: boolean } = {}
-) {
-  const baseSteps = includeSetupSteps ? CREATE_WIZARD_STEPS : CUSTOMER_WIZARD_STEPS;
+type WizardStepConfigDefinition = {
+  key: WizardStepConfigKey;
+  eventType: EventTypeKey;
+  commonSetupSteps: WizardStepKey[];
+  eventSpecificSteps: WizardStepKey[];
+  editSteps: WizardStepKey[];
+};
 
-  if (options.includeMusic === false) {
-    return baseSteps.filter((step) => step.key !== 'music');
-  }
+const WEDDING_EVENT_STEP_KEYS: WizardStepKey[] = [
+  'basic',
+  'schedule',
+  'greeting',
+  'images',
+  'music',
+  'extra',
+  'final',
+];
 
-  return baseSteps;
+const BIRTHDAY_EVENT_STEP_KEYS: WizardStepKey[] = [
+  'basic',
+  'schedule',
+  'greeting',
+  'images',
+  'music',
+  'extra',
+  'final',
+];
+
+const WIZARD_STEP_CONFIGS: Record<WizardStepConfigKey, WizardStepConfigDefinition> = {
+  'wedding-page-wizard': {
+    key: 'wedding-page-wizard',
+    eventType: 'wedding',
+    commonSetupSteps: ['eventType', 'theme', 'slug'],
+    eventSpecificSteps: WEDDING_EVENT_STEP_KEYS,
+    editSteps: WEDDING_EVENT_STEP_KEYS,
+  },
+  'birthday-page-wizard': {
+    key: 'birthday-page-wizard',
+    eventType: 'birthday',
+    commonSetupSteps: ['eventType', 'theme', 'slug'],
+    eventSpecificSteps: BIRTHDAY_EVENT_STEP_KEYS,
+    editSteps: BIRTHDAY_EVENT_STEP_KEYS,
+  },
+  'seventieth-page-wizard': {
+    key: 'seventieth-page-wizard',
+    eventType: 'seventieth',
+    commonSetupSteps: ['eventType', 'theme', 'slug'],
+    eventSpecificSteps: WEDDING_EVENT_STEP_KEYS,
+    editSteps: WEDDING_EVENT_STEP_KEYS,
+  },
+  'generic-page-wizard': {
+    key: 'generic-page-wizard',
+    eventType: 'etc',
+    commonSetupSteps: ['eventType', 'theme', 'slug'],
+    eventSpecificSteps: WEDDING_EVENT_STEP_KEYS,
+    editSteps: WEDDING_EVENT_STEP_KEYS,
+  },
+};
+
+function buildWizardStepsFromKeys(stepKeys: WizardStepKey[]) {
+  return withStepNumbers(stepKeys.map((stepKey) => WIZARD_STEP_TEMPLATE_MAP[stepKey]));
 }
+
+export function resolveWizardStepConfig(eventType: unknown) {
+  const normalizedEventType = normalizeEventTypeKey(eventType, DEFAULT_EVENT_TYPE);
+  const stepConfigKey =
+    getEventTypeMeta(normalizedEventType).defaultWizardStepConfigKey as WizardStepConfigKey;
+
+  return WIZARD_STEP_CONFIGS[stepConfigKey] ?? WIZARD_STEP_CONFIGS['wedding-page-wizard'];
+}
+
+export function getWizardSteps(options: {
+  eventType?: EventTypeKey;
+  includeSetupSteps: boolean;
+  includeMusic?: boolean;
+}) {
+  const stepConfig = resolveWizardStepConfig(options.eventType);
+  const baseKeys = options.includeSetupSteps
+    ? [...stepConfig.commonSetupSteps, ...stepConfig.eventSpecificSteps]
+    : [...stepConfig.editSteps];
+  const stepKeys =
+    options.includeMusic === false ? baseKeys.filter((stepKey) => stepKey !== 'music') : baseKeys;
+
+  return buildWizardStepsFromKeys(stepKeys);
+}
+
+export const CREATE_WIZARD_STEPS = buildWizardStepsFromKeys([
+  ...WIZARD_STEP_CONFIGS['wedding-page-wizard'].commonSetupSteps,
+  ...WIZARD_STEP_CONFIGS['wedding-page-wizard'].eventSpecificSteps,
+]);
+
+export const CUSTOMER_WIZARD_STEPS = buildWizardStepsFromKeys(
+  WIZARD_STEP_CONFIGS['wedding-page-wizard'].editSteps
+);
 
 export const WIZARD_STEPS = CREATE_WIZARD_STEPS;
 export const DEFAULT_GREETING_MESSAGE = `두 사람이 사랑으로 하나가 되는 순간을
@@ -372,7 +469,7 @@ export function applyDerivedWizardDefaults(config: InvitationPageSeed) {
   return nextConfig;
 }
 
-export function createInitialWizardConfig() {
+export function createInitialWizardConfig(eventType: EventTypeKey = DEFAULT_EVENT_TYPE) {
   const seed = getAllWeddingPageSeeds()[0];
   if (!seed) {
     throw new Error('청첩장 기본 템플릿을 찾을 수 없습니다.');
@@ -380,6 +477,7 @@ export function createInitialWizardConfig() {
 
   const nextConfig = normalizeFormConfig(cloneConfig(seed));
 
+  nextConfig.eventType = normalizeEventTypeKey(eventType, DEFAULT_EVENT_TYPE);
   nextConfig.slug = 'new-page';
   nextConfig.displayName = '';
   nextConfig.description = '';
@@ -454,6 +552,7 @@ export function prepareWizardConfigForSave(config: InvitationPageSeed, slug: str
   const prepared = prepareConfigForSave(
     {
       ...withDefaults,
+      eventType: normalizeEventTypeKey(withDefaults.eventType, DEFAULT_EVENT_TYPE),
       slug,
     },
     slug
@@ -497,6 +596,17 @@ export function buildStepValidation(
   }
 
   switch (stepKey) {
+    case 'eventType': {
+      const selectedEventType = normalizeEventTypeKey(formState?.eventType, DEFAULT_EVENT_TYPE);
+      const eventTypeMeta = getEventTypeMeta(selectedEventType);
+      const messages: string[] = [];
+
+      if (!eventTypeMeta.enabled) {
+        messages.push('현재 선택한 이벤트 타입은 아직 생성에 사용할 수 없습니다.');
+      }
+
+      return { valid: messages.length === 0, messages };
+    }
     case 'theme': {
       const hasValidTheme = isInvitationThemeKey(theme);
       const hasValidTier =
@@ -531,6 +641,9 @@ export function buildStepValidation(
       }
       if (!slugState.persistedSlug && !hasText(slugState.brideEnglishName)) {
         messages.push('예비 신부 영문 이름을 입력해 주세요.');
+      }
+      if (slugState.showClientPasswordField && !hasText(slugState.clientPassword)) {
+        messages.push('고객 편집 비밀번호를 입력해 주세요.');
       }
 
       const rawSlug = slugState.slugInput.trim();

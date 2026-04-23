@@ -3,8 +3,6 @@ import {
   type ClientPassword,
 } from '@/services/repositories/clientPasswordRepository';
 
-export const DEFAULT_INITIAL_CLIENT_PASSWORD = '12344';
-
 export type { ClientPassword };
 
 export async function getClientPassword(pageSlug: string): Promise<ClientPassword | null> {

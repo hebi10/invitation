@@ -10,6 +10,7 @@ import {
   getInvitationThemeLabel,
   getInvitationThemeWizardDescription,
 } from '@/lib/invitationThemes';
+import { getEventTypeMeta, type EventTypeKey } from '@/lib/eventTypes';
 import { toDate } from '@/lib/invitationPageNormalization';
 import type {
   InvitationPageSeed,
@@ -48,13 +49,14 @@ export interface ThemeStepProps extends WizardStepProps {
   isSelectionLocked: boolean;
 }
 
+export interface EventTypeStepProps extends WizardStepProps {
+  eventType: EventTypeKey;
+  setEventType: (eventType: EventTypeKey) => void;
+}
+
 export interface SlugStepProps {
-  groomKoreanName: string;
-  brideKoreanName: string;
   groomEnglishName: string;
   brideEnglishName: string;
-  setGroomKoreanName: (value: string) => void;
-  setBrideKoreanName: (value: string) => void;
   setGroomEnglishName: (value: string) => void;
   setBrideEnglishName: (value: string) => void;
   slugInput: string;
@@ -66,7 +68,6 @@ export interface SlugStepProps {
   showClientPasswordField: boolean;
   clientPassword: string;
   setClientPassword: (value: string) => void;
-  defaultClientPassword: string;
 }
 
 export interface BasicStepProps extends WizardStepProps {
@@ -148,6 +149,15 @@ export interface FinalStepProps extends WizardStepProps {
 
 export function getThemeLabel(theme: InvitationThemeKey) {
   return getInvitationThemeLabel(theme);
+}
+
+export function getEventTypeLabel(eventType: EventTypeKey, audience: 'admin' | 'customer' = 'admin') {
+  const meta = getEventTypeMeta(eventType);
+  return audience === 'customer' ? meta.customerLabel : meta.adminLabel;
+}
+
+export function getEventTypeDescription(eventType: EventTypeKey) {
+  return getEventTypeMeta(eventType).description;
 }
 
 export function getThemeDescription(theme: InvitationThemeKey) {
