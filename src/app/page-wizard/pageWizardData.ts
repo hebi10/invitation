@@ -444,6 +444,10 @@ export function applyDerivedWizardDefaults(config: InvitationPageSeed) {
     nextConfig.metadata.description;
   nextConfig.metadata.images.favicon =
     nextConfig.metadata.images.favicon.trim() || '/favicon.ico';
+  nextConfig.metadata.images.social =
+    nextConfig.metadata.images.social?.trim() || '';
+  nextConfig.metadata.images.kakaoCard =
+    nextConfig.metadata.images.kakaoCard?.trim() || '';
 
   if (weddingDate) {
     nextConfig.date = formatDateLabel(weddingDate);
@@ -505,6 +509,8 @@ export function createInitialWizardConfig(eventType: EventTypeKey = DEFAULT_EVEN
   nextConfig.metadata.keywords = [];
   nextConfig.metadata.images.wedding = '';
   nextConfig.metadata.images.favicon = '/favicon.ico';
+  nextConfig.metadata.images.social = '';
+  nextConfig.metadata.images.kakaoCard = '';
   nextConfig.productTier = DEFAULT_INVITATION_PRODUCT_TIER;
   nextConfig.features = resolveInvitationFeatures(DEFAULT_INVITATION_PRODUCT_TIER);
   nextConfig.musicEnabled = false;
@@ -581,6 +587,10 @@ export function prepareWizardConfigForSave(config: InvitationPageSeed, slug: str
 
   prepared.metadata.images.favicon =
     prepared.metadata.images.favicon.trim() || '/favicon.ico';
+  prepared.metadata.images.social =
+    prepared.metadata.images.social?.trim() || '';
+  prepared.metadata.images.kakaoCard =
+    prepared.metadata.images.kakaoCard?.trim() || '';
 
   return prepared;
 }
@@ -714,13 +724,16 @@ export function buildStepValidation(
     case 'images': {
       const messages: string[] = [];
       if (!hasText(formState?.metadata.images.wedding)) {
-        messages.push('대표 이미지를 등록해 주세요.');
+        messages.push('대표 이미지를 업로드해 주세요.');
       }
-      if (!isValidUrl(formState?.metadata.images.wedding)) {
-        messages.push('대표 이미지 주소를 확인해 주세요.');
+      if (
+        hasText(formState?.metadata.images.wedding) &&
+        !isValidUrl(formState?.metadata.images.wedding)
+      ) {
+        messages.push('대표 이미지를 다시 업로드해 주세요.');
       }
       if ((formState?.pageData?.galleryImages ?? []).some((value) => !isValidUrl(value))) {
-        messages.push('갤러리 이미지 주소를 확인해 주세요.');
+        messages.push('갤러리 이미지를 다시 업로드해 주세요.');
       }
       return { valid: messages.length === 0, messages };
     }

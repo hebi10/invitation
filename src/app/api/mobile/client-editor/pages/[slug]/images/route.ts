@@ -17,7 +17,13 @@ import {
   buildRateLimitHeaders,
 } from '@/server/requestRateLimit';
 
-const ALLOWED_ASSET_KINDS: EditableImageAssetKind[] = ['cover', 'favicon', 'gallery'];
+const ALLOWED_ASSET_KINDS: EditableImageAssetKind[] = [
+  'cover',
+  'favicon',
+  'gallery',
+  'share-preview',
+  'kakao-card',
+];
 const MAX_IMAGE_DIMENSION = 6000;
 const MAX_IMAGE_PIXELS = 16_000_000;
 const MAX_IMAGE_CLEANUP_PATHS = 40;
@@ -27,6 +33,8 @@ const MAX_ASPECT_RATIO_BY_KIND: Record<EditableImageAssetKind, number> = {
   cover: 4,
   gallery: 4,
   favicon: 1.8,
+  'share-preview': 4,
+  'kakao-card': 4,
 };
 const MOBILE_CLIENT_EDITOR_IMAGE_UPLOAD_RATE_LIMIT = {
   limit: 10,

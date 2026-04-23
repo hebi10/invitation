@@ -231,6 +231,14 @@ export function mergeInvitationPageSeed(
         metadataImagesInput.favicon,
         base?.metadata.images.favicon ?? ''
       ),
+      social: readString(
+        metadataImagesInput.social,
+        base?.metadata.images.social ?? ''
+      ),
+      kakaoCard: readString(
+        metadataImagesInput.kakaoCard,
+        base?.metadata.images.kakaoCard ?? ''
+      ),
     },
     openGraph: {
       ...(base?.metadata.openGraph ?? {}),

@@ -116,6 +116,8 @@ export interface MobileInvitationPageData {
 
 export interface MobileInvitationMetadataImages {
   wedding?: string;
+  social?: string;
+  kakaoCard?: string;
   favicon?: string;
 }
 

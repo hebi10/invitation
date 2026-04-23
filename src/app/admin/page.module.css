@@ -210,6 +210,78 @@
 .panelStack {
   gap: 20px;
 }
+.innerTabBar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 8px;
+  border: 1px solid var(--admin-color-border);
+  border-radius: var(--admin-radius-lg);
+  background: var(--admin-color-surface);
+  box-shadow: var(--admin-shadow-sm);
+}
+.innerTabButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1 1 120px;
+  min-height: var(--admin-control-height-md);
+  padding: 0 14px;
+  border-radius: var(--admin-radius-sm);
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--admin-color-text-secondary);
+  font-size: 0.875rem;
+  font-weight: 600;
+  transition: background-color 0.18s ease, border-color 0.18s ease, color 0.18s ease;
+}
+.innerTabButtonActive {
+  background: rgba(15, 23, 42, 0.06);
+  border-color: rgba(15, 23, 42, 0.08);
+  color: var(--admin-color-text);
+}
+.todoPanel {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 24px;
+  border: 1px dashed rgba(15, 23, 42, 0.16);
+  border-radius: var(--admin-radius-lg);
+  background: linear-gradient(180deg, rgba(248, 250, 252, 0.95) 0%, rgba(255, 255, 255, 1) 100%);
+}
+.todoBadge {
+  display: inline-flex;
+  width: fit-content;
+  min-height: 28px;
+  align-items: center;
+  padding: 0 10px;
+  border-radius: 999px;
+  background: rgba(37, 99, 235, 0.08);
+  color: var(--admin-color-primary);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.todoTitle {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--admin-color-text);
+}
+.todoDescription {
+  font-size: 0.9rem;
+  line-height: 1.7;
+  color: var(--admin-color-text-muted);
+}
+.todoList {
+  display: grid;
+  gap: 8px;
+  padding-left: 18px;
+  list-style: disc;
+  color: var(--admin-color-text-secondary);
+  font-size: 0.875rem;
+  line-height: 1.65;
+}
 
 .sectionHeader {
   display: flex;
@@ -797,6 +869,10 @@
   }
 
   .tabButton {
+    flex-basis: calc(50% - 4px);
+  }
+
+  .innerTabButton {
     flex-basis: calc(50% - 4px);
   }
 

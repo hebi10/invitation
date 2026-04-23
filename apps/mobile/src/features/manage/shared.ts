@@ -1,4 +1,4 @@
-﻿import type {
+import type {
   MobileInvitationAccountItem,
   MobileInvitationDashboard,
   MobileInvitationGiftInfo,
@@ -49,6 +49,10 @@ export type ManageFormState = {
   greetingAuthor: string;
   coverImageUrl: string;
   coverImageThumbnailUrl: string;
+  sharePreviewImageUrl: string;
+  sharePreviewImageThumbnailUrl: string;
+  kakaoCardImageUrl: string;
+  kakaoCardImageThumbnailUrl: string;
   galleryImages: string[];
   galleryImageThumbnailUrls: string[];
   galleryImagesText: string;
@@ -74,7 +78,11 @@ export type ManageStringFieldKey = {
 
 export type GuestbookSortKey = 'latest' | 'oldest' | 'author-asc' | 'author-desc';
 export type MusicDropdownPanel = 'category' | 'track' | null;
-export type EditableImageAssetKind = 'cover' | 'gallery';
+export type EditableImageAssetKind =
+  | 'cover'
+  | 'share-preview'
+  | 'kakao-card'
+  | 'gallery';
 export type EditorStepKey =
   | 'basic'
   | 'schedule'
@@ -200,6 +208,10 @@ export const EMPTY_FORM: ManageFormState = {
   greetingAuthor: '',
   coverImageUrl: '',
   coverImageThumbnailUrl: '',
+  sharePreviewImageUrl: '',
+  sharePreviewImageThumbnailUrl: '',
+  kakaoCardImageUrl: '',
+  kakaoCardImageThumbnailUrl: '',
   galleryImages: [],
   galleryImageThumbnailUrls: [],
   galleryImagesText: '',
@@ -501,9 +513,11 @@ export function buildManageFormFromDashboard(
   const galleryImageThumbnailUrls = galleryImages.map(
     (imageUrl, index) => galleryThumbnailCandidates[index]?.trim() || imageUrl
   );
-  const coverImageUrl = readString(metadataImages.wedding);
+  const coverImageUrl = readString(metadataImages.wedding).trim();
   const coverImageThumbnailUrl =
     readString(pageData.coverImageThumbnailUrl).trim() || coverImageUrl;
+  const sharePreviewImageUrl = readString(metadataImages.social).trim();
+  const kakaoCardImageUrl = readString(metadataImages.kakaoCard).trim();
 
   return {
     displayName: readString(config.displayName),
@@ -538,6 +552,10 @@ export function buildManageFormFromDashboard(
     greetingAuthor: readString(pageData.greetingAuthor),
     coverImageUrl,
     coverImageThumbnailUrl,
+    sharePreviewImageUrl,
+    sharePreviewImageThumbnailUrl: sharePreviewImageUrl,
+    kakaoCardImageUrl,
+    kakaoCardImageThumbnailUrl: kakaoCardImageUrl,
     galleryImages,
     galleryImageThumbnailUrls,
     galleryImagesText: galleryImages.join('\n'),

@@ -45,6 +45,8 @@ export interface InvitationPageMetadata {
   images: {
     wedding: string;
     favicon: string;
+    social?: string;
+    kakaoCard?: string;
   };
   openGraph: {
     title: string;

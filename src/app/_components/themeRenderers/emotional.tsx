@@ -15,13 +15,13 @@ import { resolveInvitationFeatures } from '@/lib/invitationProducts';
 
 import {
   createWeddingCalendarEvent,
-  getCeremonySchedule,
-  createWeddingThemeRenderer,
   getCeremonyAddress,
   getCeremonyContact,
+  getCeremonySchedule,
   getMapDescription,
   getReceptionSchedule,
   getThemePageData,
+  createWeddingThemeRenderer,
   shouldShowGiftInfo,
 } from '../weddingPageRenderers';
 
@@ -37,7 +37,7 @@ export default createWeddingThemeRenderer({
     />
   ),
   sections: [
-    ({ state }) => (
+    ({ state }) =>
       (() => {
         const pageData = getThemePageData(state.pageConfig, 'emotional');
 
@@ -55,9 +55,8 @@ export default createWeddingThemeRenderer({
             preloadComplete={true}
           />
         );
-      })()
-    ),
-    ({ state }) => (
+      })(),
+    ({ state }) =>
       (() => {
         const pageData = getThemePageData(state.pageConfig, 'emotional');
 
@@ -69,8 +68,7 @@ export default createWeddingThemeRenderer({
             bride={state.pageConfig.couple.bride}
           />
         );
-      })()
-    ),
+      })(),
     ({ state }) => {
       const pageData = getThemePageData(state.pageConfig, 'emotional');
       const features = resolveInvitationFeatures(
@@ -98,7 +96,7 @@ export default createWeddingThemeRenderer({
         imagesLoading={state.imagesLoading}
       />
     ),
-    ({ state }) => (
+    ({ state }) =>
       (() => {
         const pageData = getThemePageData(state.pageConfig, 'emotional');
 
@@ -116,9 +114,8 @@ export default createWeddingThemeRenderer({
             />
           </div>
         );
-      })()
-    ),
-    ({ state }) => (
+      })(),
+    ({ state }) =>
       (() => {
         const pageData = getThemePageData(state.pageConfig, 'emotional');
 
@@ -131,8 +128,7 @@ export default createWeddingThemeRenderer({
             kakaoMapConfig={pageData?.kakaoMap}
           />
         );
-      })()
-    ),
+      })(),
     ({ state }) => {
       const features = resolveInvitationFeatures(
         state.pageConfig.productTier,

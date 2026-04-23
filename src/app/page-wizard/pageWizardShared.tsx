@@ -28,7 +28,11 @@ import {
 export type NoticeTone = 'success' | 'error' | 'neutral';
 export type NoticeState = { tone: NoticeTone; message: string } | null;
 
-export type UploadFieldKind = 'cover' | 'gallery';
+export type UploadFieldKind =
+  | 'cover'
+  | 'sharePreview'
+  | 'kakaoCard'
+  | 'gallery';
 export type SlideViewMode = 'input' | 'preview';
 export type ChoicePanelKey = 'theme' | 'tier' | null;
 export type MusicPreviewState = 'idle' | 'loading' | 'ready' | 'error';
@@ -108,12 +112,17 @@ export interface ImagesStepProps extends WizardStepProps {
   maxGalleryImages: number;
   uploadingField: UploadFieldKind | null;
   coverUploadInputRef: React.RefObject<HTMLInputElement | null>;
+  sharePreviewUploadInputRef: React.RefObject<HTMLInputElement | null>;
+  kakaoCardUploadInputRef: React.RefObject<HTMLInputElement | null>;
   galleryUploadInputRef: React.RefObject<HTMLInputElement | null>;
   onTriggerPicker: (kind: UploadFieldKind) => void;
   onCoverUpload: (event: ChangeEvent<HTMLInputElement>) => void;
+  onSharePreviewUpload: (event: ChangeEvent<HTMLInputElement>) => void;
+  onKakaoCardUpload: (event: ChangeEvent<HTMLInputElement>) => void;
   onGalleryUpload: (event: ChangeEvent<HTMLInputElement>) => void;
-  onGalleryImageChange: (index: number, value: string) => void;
-  onGalleryImageAdd: () => void;
+  onCoverImageRemove: () => void;
+  onSharePreviewImageRemove: () => void;
+  onKakaoCardImageRemove: () => void;
   onGalleryImageRemove: (index: number) => void;
   onGalleryImageMove: (index: number, direction: 'up' | 'down') => void;
 }

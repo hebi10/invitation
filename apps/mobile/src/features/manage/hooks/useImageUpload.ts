@@ -354,7 +354,12 @@ export function useImageUpload({
   const finalizeTrackedUploads = useCallback(
     async (form: ManageFormState) => {
       const retainedUrls = new Set(
-        [form.coverImageUrl, ...form.galleryImages]
+        [
+          form.coverImageUrl,
+          form.sharePreviewImageUrl,
+          form.kakaoCardImageUrl,
+          ...form.galleryImages,
+        ]
           .map((value) => value.trim())
           .filter(Boolean)
       );
@@ -467,15 +472,35 @@ export function useImageUpload({
           });
         }
 
-        if (assetKind === 'cover') {
-          const uploadedCoverImage = uploadedImages[0];
-          if (uploadedCoverImage) {
-            setForm((current) => ({
-              ...current,
-              coverImageUrl: uploadedCoverImage.url,
-              coverImageThumbnailUrl:
-                localPreviewUrls[0] || uploadedCoverImage.previewUrl || uploadedCoverImage.url,
-            }));
+        if (assetKind === 'cover' || assetKind === 'share-preview' || assetKind === 'kakao-card') {
+          const uploadedSingleImage = uploadedImages[0];
+          if (uploadedSingleImage) {
+            setForm((current) => {
+              const nextPreviewUrl =
+                localPreviewUrls[0] || uploadedSingleImage.previewUrl || uploadedSingleImage.url;
+
+              if (assetKind === 'cover') {
+                return {
+                  ...current,
+                  coverImageUrl: uploadedSingleImage.url,
+                  coverImageThumbnailUrl: nextPreviewUrl,
+                };
+              }
+
+              if (assetKind === 'share-preview') {
+                return {
+                  ...current,
+                  sharePreviewImageUrl: uploadedSingleImage.url,
+                  sharePreviewImageThumbnailUrl: nextPreviewUrl,
+                };
+              }
+
+              return {
+                ...current,
+                kakaoCardImageUrl: uploadedSingleImage.url,
+                kakaoCardImageThumbnailUrl: nextPreviewUrl,
+              };
+            });
           }
         } else {
           setForm((current) => {
@@ -568,6 +593,35 @@ export function useImageUpload({
             (_, itemIndex) => itemIndex !== index
           ),
           galleryImagesText: nextGalleryImages.join('\n'),
+        };
+      });
+    },
+    [setForm]
+  );
+
+  const handleRemoveSingleImage = useCallback(
+    (assetKind: 'cover' | 'share-preview' | 'kakao-card') => {
+      setForm((current) => {
+        if (assetKind === 'cover') {
+          return {
+            ...current,
+            coverImageUrl: '',
+            coverImageThumbnailUrl: '',
+          };
+        }
+
+        if (assetKind === 'share-preview') {
+          return {
+            ...current,
+            sharePreviewImageUrl: '',
+            sharePreviewImageThumbnailUrl: '',
+          };
+        }
+
+        return {
+          ...current,
+          kakaoCardImageUrl: '',
+          kakaoCardImageThumbnailUrl: '',
         };
       });
     },

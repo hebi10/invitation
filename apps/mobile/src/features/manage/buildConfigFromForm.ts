@@ -241,6 +241,8 @@ export function buildConfigFromForm({
     images: {
       ...existingMetadataImages,
       wedding: form.coverImageUrl.trim(),
+      social: form.sharePreviewImageUrl.trim(),
+      kakaoCard: form.kakaoCardImageUrl.trim(),
     },
     openGraph: {
       ...existingOpenGraph,

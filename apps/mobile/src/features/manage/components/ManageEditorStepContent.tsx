@@ -122,11 +122,18 @@ export function ManageEditorStepContent({
       return (
         <ImagesEditorStep
           coverPreviewUrl={form.coverImageThumbnailUrl.trim() || form.coverImageUrl.trim()}
+          sharePreviewUrl={
+            form.sharePreviewImageThumbnailUrl.trim() || form.sharePreviewImageUrl.trim()
+          }
+          kakaoCardPreviewUrl={
+            form.kakaoCardImageThumbnailUrl.trim() || form.kakaoCardImageUrl.trim()
+          }
           galleryPreviewItems={galleryPreviewItems}
           maxGalleryImageCount={maxGalleryImageCount}
           uploadingImageKind={uploadingImageKind}
           uploadProgress={uploadProgress}
           onUploadImage={onUploadImage}
+          onRemoveSingleImage={onRemoveSingleImage}
           onMoveGalleryImage={onMoveGalleryImage}
           onRemoveGalleryImage={onRemoveGalleryImage}
         />

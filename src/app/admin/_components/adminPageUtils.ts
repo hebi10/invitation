@@ -36,6 +36,12 @@ export type PageStatusFilter = 'all' | 'complete' | 'partial' | 'empty';
 export type PageEventTypeFilter = 'all' | EventTypeKey;
 export type PageSort = 'newest' | 'name' | 'coverage';
 export type CommentAgeFilter = 'all' | 'recent';
+export type PageCategoryTabKey =
+  | 'invitation'
+  | 'first-birthday'
+  | 'birthday'
+  | 'general-event'
+  | 'opening';
 export type PeriodStatusFilter =
   | 'all'
   | 'dueSoon'
@@ -70,6 +76,46 @@ export const SHORTCUT_ITEMS: Array<{ key: ShortcutKey; label: string }> =
   }));
 
 export const TOTAL_SHORTCUT_COUNT = SHORTCUT_ITEMS.length;
+
+export const PAGE_CATEGORY_TABS = [
+  { key: 'invitation', label: '청첩장' },
+  {
+    key: 'first-birthday',
+    label: '돌잔치',
+    title: '돌잔치 관리 탭 준비 중',
+    description:
+      '돌잔치 전용 디자인, 관리 목록, 생성 흐름은 추후 순차적으로 연결할 예정입니다.',
+  },
+  {
+    key: 'birthday',
+    label: '생일',
+    title: '생일 관리 탭 준비 중',
+    description:
+      '생일 페이지 전용 디자인과 운영 목록은 이후 단계에서 붙일 예정입니다.',
+  },
+  {
+    key: 'general-event',
+    label: '일반 행사',
+    title: '일반 행사 관리 탭 준비 중',
+    description:
+      '일반 행사 유형에 맞는 템플릿과 관리 항목은 앞으로 추가할 예정입니다.',
+  },
+  {
+    key: 'opening',
+    label: '개업',
+    title: '개업 관리 탭 준비 중',
+    description:
+      '개업 이벤트 전용 관리 화면과 디자인은 TODO 상태로 남겨둡니다.',
+  },
+] as const satisfies ReadonlyArray<
+  | { key: 'invitation'; label: string }
+  | {
+      key: Exclude<PageCategoryTabKey, 'invitation'>;
+      label: string;
+      title: string;
+      description: string;
+    }
+>;
 
 export const PAGE_STATUS_LABELS: Record<PageStatusFilter, string> = {
   all: '전체 상태',

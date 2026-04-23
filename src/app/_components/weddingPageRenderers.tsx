@@ -23,6 +23,7 @@ export type WeddingThemeSectionSlot = (
 
 export interface WeddingThemeRendererDefinition {
   ariaLabelSuffix?: string;
+  rootClassName?: string;
   renderLoader: WeddingThemeSectionSlot;
   sections: WeddingThemeSectionSlot[];
 }
@@ -40,7 +41,8 @@ export function createWeddingThemeRenderer(
     return (
       <main
         role="main"
-        aria-label={`${state.pageConfig.groomName}와 ${state.pageConfig.brideName}의 결혼식 청첩장${
+        className={definition.rootClassName}
+        aria-label={`${state.pageConfig.groomName}과 ${state.pageConfig.brideName}의 결혼식 초대장${
           definition.ariaLabelSuffix ?? ''
         }`}
       >
@@ -59,7 +61,7 @@ export function createWeddingThemeRenderer(
 export function createWeddingCalendarEvent(
   page: InvitationPage,
   weddingDate: Date,
-  separator = '♡',
+  separator = '&',
   pageData = page.pageData
 ) {
   const ceremony = toRenderableScheduleDetail(
@@ -113,9 +115,7 @@ export function getCeremonyContact(_page: InvitationPage, pageData?: InvitationP
 }
 
 export function getMapDescription(page: InvitationPage, pageData = page.pageData) {
-  return (
-    pageData?.mapDescription ?? '지하철 이용 시 편리하게 오실 수 있습니다'
-  );
+  return pageData?.mapDescription ?? '지도를 눌러 자세한 길안내를 확인해 주세요.';
 }
 
 export function shouldShowGiftInfo(state: WeddingPageReadyState) {

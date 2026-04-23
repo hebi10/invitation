@@ -1,6 +1,6 @@
 ﻿'use client';
 
-import { useCallback, useEffect, useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 
 import FirebaseAuthLoginCard from '@/app/_components/FirebaseAuthLoginCard';
@@ -23,8 +23,10 @@ import {
   ADMIN_SECTIONS,
   COMMENTS_PER_PAGE,
   DUE_SOON_DAYS,
+  PAGE_CATEGORY_TABS,
   PAGE_SORT_LABELS,
   PAGE_STATUS_LABELS,
+  type PageCategoryTabKey,
   RECENT_COMMENT_DAYS,
   TOTAL_SHORTCUT_COUNT,
   getDefaultTabForSection,
@@ -102,6 +104,8 @@ export default function AdminPageClient() {
   const activeTab = sectionTabs.some((tab) => tab.key === requestedTab)
     ? requestedTab
     : getDefaultTabForSection(activeSection);
+  const [activePageCategory, setActivePageCategory] =
+    useState<PageCategoryTabKey>('invitation');
   const pageSearch = safeSearchParams.get('pageQ') ?? '';
   const pageEventTypeFilter = parsePageEventType(safeSearchParams.get('pageType'));
   const pageShortcutFilter = parseShortcut(safeSearchParams.get('shortcut'));
@@ -524,6 +528,8 @@ export default function AdminPageClient() {
   const activeSectionLabel = getSectionLabel(activeSection);
   const activeSectionSummary = getSectionSummary(activeSection);
   const activeTabSummary = getTabSummary(activeTab);
+  const shouldShowPageCategoryTabs =
+    activeSection === 'events' && activeTab === 'pages';
 
   /* ── Render ── */
 

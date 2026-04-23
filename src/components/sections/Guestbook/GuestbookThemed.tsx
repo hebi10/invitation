@@ -373,23 +373,10 @@ export default function GuestbookThemed({
           backdropFilter: 'blur(8px)',
         }}
       >
-        <div
-          style={{
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'center',
-            gap: '0.75rem',
-            flexWrap: 'wrap',
-          }}
-        >
-          <span style={{ fontSize: '0.9rem', fontWeight: 600 }}>
-            {isAdminLoggedIn ? '관리자 방명록 관리 모드' : '내 청첩장 방명록 관리 모드'}
-          </span>
-        </div>
         <p style={{ margin: 0, fontSize: '0.86rem', lineHeight: 1.6, textAlign: 'center' }}>
           {isAdminLoggedIn
-            ? '관리자 권한으로 방명록 숨김, 삭제 예정 처리, 복구를 관리할 수 있습니다.'
-            : '현재 로그인한 계정이 이 청첩장의 소유자로 확인되어 방명록을 바로 관리할 수 있습니다.'}
+            ? '관리자 권한 로그인 중입니다.'
+            : '이 방명록을 관리할 수 있는 계정으로 로그인했습니다.'}
         </p>
       </div>
     );

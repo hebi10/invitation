@@ -1,30 +1,33 @@
-# 웹 page-wizard 정렬 상태
+# page-wizard 정렬 상태
 
 ## 현재 기준
 
 - `/page-wizard`
-  - `/page-wizard/[slug]`와 같은 `PageWizardClient` wizard 레이아웃으로 진입한다.
+  - 새 청첩장 생성과 기존 페이지 편집 모두 `PageWizardClient` 기반 wizard 흐름을 사용합니다.
 - `/page-editor`
-  - `InvitationDraftSetupClient`를 통한 초안 생성 화면을 유지한다.
+  - 세부 편집 화면은 별도 editor 흐름을 유지합니다.
 
 ## 현재 동작
 
 1. `/page-wizard`
-   - 관리자 권한 확인 후 바로 wizard 편집 화면으로 진입한다.
-   - 새 생성에서는 `이벤트 타입 -> 디자인/상품 -> 주소 -> 본문` 순서로 진행한다.
-   - 이벤트 타입은 현재 `wedding`만 실제 선택 가능하고, 다른 타입은 `준비 중`으로 보인다.
-   - 주소 단계에서 `예비 신랑/신부 영문 이름 + 페이지 주소 + 고객 비밀번호`를 함께 입력한다.
-   - 영문 이름을 입력하면 페이지 주소가 자동으로 채워지고, 필요하면 주소를 직접 수정할 수 있다.
-2. `/page-wizard/{slug}`
-   - 기존 초안 또는 저장된 페이지를 같은 wizard 편집 화면으로 연다.
-   - 기존 수정에서는 저장된 `eventType`을 고정하고 다시 선택하지 않는다.
-   - 고객 비밀번호 로그인 후 관리 가능한 흐름을 유지한다.
-3. `/page-editor`
-   - 초안 생성 화면에서 시작한 뒤 `/page-editor/{slug}`로 이동한다.
+   - 관리자 또는 권한 확인 사용자가 wizard 단계형 편집 화면으로 진입합니다.
+   - 신규 생성은 `이벤트 타입 -> 테마/상품 -> 주소 -> 본문` 흐름으로 이어집니다.
+2. `/page-wizard/[slug]`
+   - 기존 페이지 설정도 wizard 화면에서 다시 편집합니다.
+   - 삭제된 스토리지 이미지 참조는 진입 시 자동 정리합니다.
+3. 이미지 단계
+   - URL 직접 입력은 제거했습니다.
+   - 업로드 슬롯은 `대표 이미지`, `공유 미리보기 이미지`, `카카오 카드 이미지`, `갤러리`로 분리했습니다.
+   - 공유 미리보기 이미지는 `og:image`, `twitter:image`에 사용합니다.
+   - 카카오 카드 이미지는 카카오 feed/card 공유용으로 사용합니다.
+- 공개 페이지 카카오 공유는 `카카오 카드 이미지 -> 공유 미리보기 이미지 -> 대표 이미지` 순으로 fallback 합니다.
+- `romantic` 공개 페이지의 로더와 첫 hero는 `heroImageUrl -> mainImageUrl` 순서로 대표 이미지를 우선 사용합니다.
+- 공개 페이지는 스토리지 관리 URL을 다시 읽을 때도 wizard에 저장된 `metadata.images.wedding`과 일치하는 자산을 먼저 매칭한 뒤, 없을 때만 legacy `main`/갤러리 fallback을 사용합니다.
+- `romantic` hero 날짜 문구는 이미지 중앙을 가리지 않도록 이름/장소 아래 하단으로 내리고, 밝은 배경에서도 읽히게 그림자를 보강했습니다.
+- `romantic` 갤러리 모달은 좌우 터치 스와이프로 이전/다음 이미지를 넘길 수 있도록 보강했습니다.
 
-## 메모
+## Expo 반영 메모
 
-- `PageWizardClient`는 이제 `eventType -> wizard step config` 구조를 먼저 가진다.
-- 현재 실제 step 배열은 `wedding` 기준을 재사용하고, 다른 타입 전용 step 분리는 다음 단계로 남아 있다.
-- 현재 사용자 기준 주소 단계 UX는 `영문 이름으로 URL 생성 + 직접 수정 가능` 방향으로 유지한다.
-- 다음 정리 단계에서는 slug 검증 타입과 UI 상태를 더 단순하게 정리할 수 있다.
+- Expo 관리 화면도 같은 3슬롯 이미지 구조를 사용하도록 맞췄습니다.
+- 모바일 업로드 타입은 `cover`, `share-preview`, `kakao-card`, `gallery`를 지원합니다.
+- 모바일 저장 시 `metadata.images.wedding`, `metadata.images.social`, `metadata.images.kakaoCard`로 각각 반영됩니다.

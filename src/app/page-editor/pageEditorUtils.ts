@@ -128,6 +128,8 @@ export function normalizeFormConfig(config: InvitationPageSeed): InvitationPageS
       images: {
         wedding: nextConfig.metadata.images.wedding ?? '',
         favicon: nextConfig.metadata.images.favicon ?? '',
+        social: nextConfig.metadata.images.social ?? '',
+        kakaoCard: nextConfig.metadata.images.kakaoCard ?? '',
       },
       openGraph: {
         title: nextConfig.metadata.openGraph.title ?? '',

@@ -1,4 +1,4 @@
-﻿import Constants from 'expo-constants';
+import Constants from 'expo-constants';
 
 import type { MobileClientEditorPermissions } from '../../../../src/types/mobileClientEditor';
 import type {
@@ -401,7 +401,7 @@ export interface MobileImageUploadResponse {
 }
 
 export interface MobileBase64ImageUploadInput {
-  assetKind: 'cover' | 'gallery' | 'favicon';
+  assetKind: 'cover' | 'gallery' | 'favicon' | 'share-preview' | 'kakao-card';
   fileName: string;
   mimeType: string;
   base64: string;

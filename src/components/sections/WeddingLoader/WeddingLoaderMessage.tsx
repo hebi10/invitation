@@ -26,13 +26,45 @@ interface WeddingLoaderMessageProps extends WeddingLoaderMessageBaseProps {
   messageClassName: string;
 }
 
-function preloadSingleImage(imageUrl: string) {
+function preloadSingleImage(
+  imageUrl: string,
+  options: {
+    waitForDecode?: boolean;
+  } = {}
+) {
   return new Promise<void>((resolve) => {
     const image = new Image();
-    image.decoding = 'async';
-    image.onload = () => resolve();
-    image.onerror = () => resolve();
+    let settled = false;
+
+    const finish = () => {
+      if (settled) {
+        return;
+      }
+
+      settled = true;
+      resolve();
+    };
+
+    const finalizeLoad = () => {
+      if (!options.waitForDecode || typeof image.decode !== 'function') {
+        finish();
+        return;
+      }
+
+      void image
+        .decode()
+        .catch(() => undefined)
+        .then(finish);
+    };
+
+    image.decoding = options.waitForDecode ? 'sync' : 'async';
+    image.onload = finalizeLoad;
+    image.onerror = finish;
     image.src = imageUrl;
+
+    if (image.complete) {
+      finalizeLoad();
+    }
   });
 }
 
@@ -59,9 +91,11 @@ export default function WeddingLoaderMessage({
 
   useEffect(() => {
     let cancelled = false;
-    const criticalImages = [mainImage || preloadImages[0]].filter(Boolean) as string[];
+    const criticalImages = Array.from(
+      new Set([mainImage, preloadImages[0]].filter(Boolean) as string[])
+    );
     const deferredImages = preloadImages
-      .filter((imageUrl) => imageUrl && imageUrl !== mainImage)
+      .filter((imageUrl) => imageUrl && !criticalImages.includes(imageUrl))
       .slice(0, 1);
 
     if (criticalImages.length === 0) {
@@ -69,7 +103,11 @@ export default function WeddingLoaderMessage({
       return;
     }
 
-    void Promise.all(criticalImages.map(preloadSingleImage)).then(() => {
+    void Promise.all(
+      criticalImages.map((imageUrl) =>
+        preloadSingleImage(imageUrl, { waitForDecode: true })
+      )
+    ).then(() => {
       if (!cancelled) {
         setImagesLoaded(true);
       }

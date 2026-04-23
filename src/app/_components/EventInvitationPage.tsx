@@ -62,7 +62,8 @@ function syncInvitationMetadata(page: EventPageReadyState['pageConfig']) {
 
   const title = page.metadata.title || page.displayName;
   const description = page.metadata.description || page.description;
-  const imageUrl = page.metadata.images.wedding || '';
+  const imageUrl =
+    page.metadata.images.social?.trim() || page.metadata.images.wedding?.trim() || '';
   const faviconUrl = page.metadata.images.favicon || '/favicon.ico';
   const pageUrl =
     typeof window !== 'undefined'
@@ -183,6 +184,12 @@ function EventInvitationPageBody(options: EventInvitationRouteOptions) {
     readyState.pageConfig.productTier,
     readyState.pageConfig.features
   );
+  const kakaoCardImageUrl = readyState.pageConfig.metadata.images.kakaoCard?.trim() || '';
+  const fallbackShareImageUrl =
+    readyState.pageConfig.metadata.images.social?.trim() ||
+    readyState.mainImageUrl ||
+    readyState.galleryImageUrls[0] ||
+    '';
   const shouldRenderMusic =
     !isLoaderVisible &&
     shareFeatures.showMusic &&
@@ -194,8 +201,8 @@ function EventInvitationPageBody(options: EventInvitationRouteOptions) {
       <WeddingKakaoShareButton
         title={themeDefinition.getShareTitle(readyState.pageConfig)}
         description={themeDefinition.getShareDescription(readyState.pageConfig)}
-        imageUrl={readyState.mainImageUrl}
-        fallbackImageUrl={readyState.galleryImageUrls[0]}
+        imageUrl={kakaoCardImageUrl}
+        fallbackImageUrl={fallbackShareImageUrl}
         shareMode={shareFeatures.shareMode}
         variant={themeDefinition.shareButtonVariant}
       />

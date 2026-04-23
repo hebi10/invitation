@@ -18,8 +18,8 @@ export default function WeddingCountdownSimple({ targetDate, title }: WeddingCou
       showIcon={false}
       styles={styles}
       separator=":"
-      expiredTitle="축하합니다"
-      expiredSubtitle="행복한 결혼식이 이미 시작되었습니다."
+      expiredTitle="축하합니다."
+      expiredSubtitle="행복한 결혼식이 이미 시작되었거나 마무리되었어요."
     />
   );
 }

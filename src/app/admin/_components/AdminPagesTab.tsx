@@ -9,6 +9,9 @@ import type { InvitationProductTier } from '@/types/invitationPage';
 import { EmptyState, FilterToolbar, Pagination, StatusBadge } from '.';
 import {
   formatDateTime,
+  PAGE_CATEGORY_TABS,
+  type PageCategoryTabKey,
+  type PageEventTypeFilter,
   PAGE_SORT_LABELS,
   PAGE_STATUS_LABELS,
   SHORTCUT_ITEMS,
@@ -34,9 +37,11 @@ interface AdminPagesTabProps {
   weddingPages: InvitationPageSummary[];
   filteredPages: InvitationPageSummary[];
   pageSearch: string;
+  pageEventTypeFilter: PageEventTypeFilter;
   pageShortcutFilter: 'all' | ShortcutKey;
   pageStatusFilter: PageStatusFilter;
   pageSort: PageSort;
+  activePageCategory: PageCategoryTabKey;
   chips: Array<{ id: string; label: string; onRemove: () => void }>;
   onQueryChange: (updates: Record<string, string | null>) => void;
   onRefresh: () => void;
@@ -47,6 +52,8 @@ interface AdminPagesTabProps {
   updatingPublishedPageSlug: string | null;
   updatingVariantToken: string | null;
   updatingTierPageSlug: string | null;
+  deletingPageSlug: string | null;
+  onDeletePage: (page: InvitationPageSummary) => void;
 }
 
 export default function AdminPagesTab({
@@ -55,9 +62,11 @@ export default function AdminPagesTab({
   weddingPages,
   filteredPages,
   pageSearch,
+  pageEventTypeFilter: _pageEventTypeFilter,
   pageShortcutFilter,
   pageStatusFilter,
   pageSort,
+  activePageCategory,
   chips,
   onQueryChange,
   onRefresh,
@@ -68,6 +77,8 @@ export default function AdminPagesTab({
   updatingPublishedPageSlug,
   updatingVariantToken,
   updatingTierPageSlug,
+  deletingPageSlug: _deletingPageSlug,
+  onDeletePage: _onDeletePage,
 }: AdminPagesTabProps) {
 
   const [currentPage, setCurrentPage] = useState(1);
@@ -91,6 +102,14 @@ export default function AdminPagesTab({
     const startIndex = (currentPage - 1) * pageSize;
     return filteredPages.slice(startIndex, startIndex + pageSize);
   }, [currentPage, filteredPages, pageSize]);
+  const activeFutureCategory = PAGE_CATEGORY_TABS.find(
+    (
+      tab
+    ): tab is Extract<
+      (typeof PAGE_CATEGORY_TABS)[number],
+      { title: string; description: string }
+    > => tab.key === activePageCategory && 'title' in tab
+  );
 
   return (
     <div className={styles.panelStack}>
@@ -108,6 +127,36 @@ export default function AdminPagesTab({
         </p>
       </div>
 
+      <div className={styles.innerTabBar} role="tablist" aria-label="페이지 유형 탭">
+        {PAGE_CATEGORY_TABS.map((tab) => (
+          <button
+            key={tab.key}
+            type="button"
+            role="tab"
+            aria-selected={activePageCategory === tab.key}
+            className={`${styles.innerTabButton} ${
+              activePageCategory === tab.key ? styles.innerTabButtonActive : ''
+            }`}
+            onClick={() => setActivePageCategory(tab.key)}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
+
+      {activeFutureCategory ? (
+        <div className={styles.todoPanel}>
+          <span className={styles.todoBadge}>TODO</span>
+          <h3 className={styles.todoTitle}>{activeFutureCategory.title}</h3>
+          <p className={styles.todoDescription}>{activeFutureCategory.description}</p>
+                    <ul className={styles.todoList}>
+            <li>?? ??? ??</li>
+            <li>?? ?? ??? ?? ??</li>
+            <li>?? ? ?? ?? ??</li>
+          </ul>
+        </div>
+      ) : (
+        <>
       <div className={styles.createPanelActions}>
         <p className={styles.createPanelMeta}>
           새 페이지 생성은 이제 에디터 진입 페이지에서 시작합니다. 상세 편집으로 들어가기 전에
@@ -730,6 +779,8 @@ export default function AdminPagesTab({
           secondaryActionLabel="현재 화면 새로고침"
           onSecondaryAction={onRefresh}
         />
+      )}
+        </>
       )}
     </div>
   );

@@ -222,7 +222,11 @@ function resolveUploadOptimizationOptions(
     };
   }
 
-  if (assetKind === 'cover') {
+  if (
+    assetKind === 'cover' ||
+    assetKind === 'share-preview' ||
+    assetKind === 'kakao-card'
+  ) {
     return variant === 'thumbnail'
       ? {
           maxWidth: 960,

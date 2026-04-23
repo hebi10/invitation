@@ -30,6 +30,9 @@ export function getEventInvitationMetadata(page?: InvitationPage | null): Metada
     return genericInvitationMetadata;
   }
 
+  const socialPreviewImageUrl =
+    page.metadata.images.social?.trim() || page.metadata.images.wedding?.trim() || '';
+
   return {
     title: page.metadata.title || page.displayName,
     description: page.metadata.description || page.description,
@@ -48,10 +51,10 @@ export function getEventInvitationMetadata(page?: InvitationPage | null): Metada
         page.metadata.openGraph.description ||
         page.metadata.description ||
         page.description,
-      images: page.metadata.images.wedding
+      images: socialPreviewImageUrl
         ? [
             {
-              url: page.metadata.images.wedding,
+              url: socialPreviewImageUrl,
               alt: page.displayName,
             },
           ]
@@ -64,7 +67,7 @@ export function getEventInvitationMetadata(page?: InvitationPage | null): Metada
         page.metadata.twitter.description ||
         page.metadata.description ||
         page.description,
-      images: page.metadata.images.wedding ? [page.metadata.images.wedding] : undefined,
+      images: socialPreviewImageUrl ? [socialPreviewImageUrl] : undefined,
     },
   };
 }

@@ -99,6 +99,8 @@ export default function PageWizardStepPreview({
   const greetingMessage =
     formState.pageData?.greetingMessage?.trim() || '인사말을 아직 입력하지 않았습니다.';
   const coverImage = formState.metadata.images.wedding?.trim();
+  const socialPreviewImage = formState.metadata.images.social?.trim();
+  const kakaoCardImage = formState.metadata.images.kakaoCard?.trim();
   const galleryImages = (formState.pageData?.galleryImages ?? []).filter((imageUrl) =>
     hasText(imageUrl)
   );

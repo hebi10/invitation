@@ -1,4 +1,9 @@
-export type EditableImageAssetKind = 'cover' | 'favicon' | 'gallery';
+export type EditableImageAssetKind =
+  | 'cover'
+  | 'favicon'
+  | 'gallery'
+  | 'share-preview'
+  | 'kakao-card';
 
 export const IMAGE_UPLOAD_MAX_FILE_SIZE_BYTES = 8 * 1024 * 1024;
 export const IMAGE_UPLOAD_ALLOWED_EXTENSIONS = ['jpg', 'jpeg', 'png', 'webp'] as const;
@@ -12,6 +17,10 @@ export function getEditableImageAssetLabel(kind: EditableImageAssetKind) {
   switch (kind) {
     case 'cover':
       return '대표 이미지';
+    case 'share-preview':
+      return '공유 미리보기 이미지';
+    case 'kakao-card':
+      return '카카오 카드 이미지';
     case 'favicon':
       return '파비콘';
     case 'gallery':
@@ -75,6 +84,6 @@ export function validateEditableImageBatch(
 
 export function getEditableImageUploadHint(kind: EditableImageAssetKind) {
   return kind === 'gallery'
-    ? 'JPG, PNG, WEBP · 각 8MB 이하 · 한 번에 최대 10장'
-    : 'JPG, PNG, WEBP · 8MB 이하 · 1장 업로드';
+    ? 'JPG, PNG, WEBP / 각 8MB 이하 / 한 번에 최대 10장'
+    : 'JPG, PNG, WEBP / 8MB 이하 / 1장 업로드';
 }

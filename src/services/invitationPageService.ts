@@ -337,6 +337,8 @@ function buildDraftConfigFromSeed(
   nextSeed.metadata.title = '';
   nextSeed.metadata.description = '';
   nextSeed.metadata.images.wedding = '';
+  nextSeed.metadata.images.social = '';
+  nextSeed.metadata.images.kakaoCard = '';
   nextSeed.metadata.openGraph.title = '';
   nextSeed.metadata.openGraph.description = '';
   nextSeed.metadata.twitter.title = '';

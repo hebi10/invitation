@@ -1,4 +1,4 @@
-﻿import { router } from 'expo-router';
+import { router } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
 import { useState } from 'react';
 import { Linking, ScrollView, View } from 'react-native';
@@ -717,6 +717,7 @@ export default function ManageScreen() {
           onUpdatePersonField={invitationForm.updatePersonField}
           onUpdateParentField={invitationForm.updateParentField}
           onUploadImage={imageUpload.handleUploadImage}
+          onRemoveSingleImage={imageUpload.handleRemoveSingleImage}
           onMoveGalleryImage={imageUpload.handleMoveGalleryImage}
           onRemoveGalleryImage={imageUpload.handleRemoveGalleryImage}
           onSearchAddress={() => addressSearch.handleSearchAddress(invitationForm.form.ceremonyAddress)}

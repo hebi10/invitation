@@ -40,7 +40,7 @@ export default function WeddingCountdownDisplay({
 
   useEffect(() => {
     const calculateTimeLeft = () => {
-      const now = new Date().getTime();
+      const now = Date.now();
       const target = targetDate.getTime();
       const difference = target - now;
 
@@ -66,7 +66,7 @@ export default function WeddingCountdownDisplay({
   if (isExpired) {
     return (
       <div className={styles.countdownContainer}>
-        {showIcon && <span className={styles.icon}>{icon}</span>}
+        {showIcon ? <span className={styles.icon}>{icon}</span> : null}
         <div className={styles.content}>
           <h4 className={styles.title}>{expiredTitle}</h4>
           <p className={styles.subtitle}>{expiredSubtitle}</p>
@@ -77,7 +77,7 @@ export default function WeddingCountdownDisplay({
 
   return (
     <div className={styles.countdownContainer}>
-      {showIcon && <span className={styles.icon}>{icon}</span>}
+      {showIcon ? <span className={styles.icon}>{icon}</span> : null}
       <div className={styles.content}>
         <h4 className={styles.title}>{title}</h4>
         <div className={styles.timeDisplay}>
