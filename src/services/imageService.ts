@@ -467,6 +467,8 @@ export {
   validateEditableImageBatch,
 };
 
+export type { EditableImageAssetKind };
+
 export const getImagesByPage = async (
   pageSlug: string
 ): Promise<UploadedImage[]> => {
