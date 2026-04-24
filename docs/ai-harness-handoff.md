@@ -5,6 +5,7 @@
 - `/page-wizard/[slug]`에서 editable API가 `claim`을 먼저 반환해도 `/api/customer/events` 소유 목록 확인이 끝나기 전에는 비밀번호 claim 카드를 보여주지 않도록 조정했습니다.
 - 소유 목록에 현재 slug가 있으면 claim/error 상태에서도 sample 기반 편집 config를 적용해 바로 편집 화면으로 진입합니다.
 - page-wizard의 `저장 후 바로 공개하기` 옵션은 서버 `published` 상태를 그대로 반영합니다.
+- `/shin-minje-kim-hyunji/romantic/`처럼 서버가 공개 pageConfig를 내려준 공개 페이지는 클라이언트 재조회 실패가 접근 제한 상태로 덮어쓰지 않도록 했습니다.
 - Kakao Maps SDK 로딩 실패, Storage 이미지 listing 권한 거부, editable config 권한 거부는 화면 fallback/warn 처리로 바꿔 Next 개발 오버레이가 뜨지 않게 했습니다.
 - `/my-invitations/`의 `수정하기`, `미리보기`는 새 탭으로 열립니다.
 
@@ -18,8 +19,11 @@
 - `src/server/customerEventsService.ts`
 - `src/services/customerEventService.ts`
 - `src/app/my-invitations/MyInvitationsClient.tsx`
+- `src/app/_components/weddingPageState.tsx`
 - `docs/web-page-wizard-alignment.md`
 - `docs/service-repository-boundary.md`
+- `docs/security-hardening-checklist.md`
+- `docs/event-page-renderer-registry.md`
 
 ### 검증 명령어 결과
 - `npm run typecheck:web` 통과

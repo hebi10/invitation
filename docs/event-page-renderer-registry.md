@@ -42,6 +42,7 @@
   - slug 기준 eventType 조회 후 renderer 선택
 - `src/app/[slug]/[theme]/page.tsx`
   - theme route 진입 시 renderer별 theme 지원 여부 확인
+- 공개 route에서 서버가 전달한 `initialPageConfig`가 있으면 클라이언트 공개 조회 실패로 접근 제한 화면을 덮어쓰지 않는다.
 - `src/app/[slug]/layout.tsx`
   - layout / metadata도 renderer registry 기준으로 분기
 

@@ -62,6 +62,7 @@ npm run lint:mobile
 - Firebase를 사용할 수 있는 공개 라우트는 Firestore 공개 데이터만 초기 렌더에 전달한다.
 - 비관리자 공개 클라이언트 조회는 seed fallback, 오류 fallback, 비공개 데이터 통과를 모두 끈다.
 - seed/sample fallback은 Firebase 비활성 환경, 관리자 인증 상태, 명시적 preview 용도에서만 허용한다.
+- 서버가 공개 pageConfig를 초기 렌더에 전달한 경우, 비관리자 클라이언트 재조회 실패가 해당 공개 화면을 접근 제한 상태로 덮어쓰지 않는다.
 
 ## Storage 이미지 공개 정책
 - `wedding-images/{slug}` 공개 읽기는 Firestore `events`의 공개 상태와 노출 기간을 통과한 경우에만 허용한다.

@@ -276,6 +276,7 @@ export function useWeddingInvitationState(
     () => resolveInvitationPageDataByTheme(pageConfig, options.theme),
     [options.theme, pageConfig]
   );
+  const shouldRunClientPageQuery = !isAdminLoading && (isAdminLoggedIn || !initialPage);
   const configuredGalleryImageUrls =
     themedPageData?.galleryImages?.filter((imageUrl) => imageUrl.trim()) ?? [];
   const configuredMainImageUrl = pageConfig?.metadata.images.wedding?.trim() ?? '';
@@ -307,7 +308,7 @@ export function useWeddingInvitationState(
   });
   const pageQuery = useQuery<WeddingPageQueryResult>({
     queryKey: appQueryKeys.invitationPage(options.slug, isAdminLoggedIn ? 'admin' : 'public'),
-    enabled: !isAdminLoading,
+    enabled: shouldRunClientPageQuery,
     queryFn: async () => loadWeddingInvitationPage(options.slug, isAdminLoggedIn),
     staleTime: FIFTEEN_MINUTES_MS,
     gcTime: THIRTY_MINUTES_MS,
@@ -343,6 +344,13 @@ export function useWeddingInvitationState(
       return;
     }
 
+    if (!isAdminLoggedIn && initialPage && pageQuery.data.status === 'blocked') {
+      setStatus('ready');
+      setBlockMessage(null);
+      setPageConfig(initialPage);
+      return;
+    }
+
     setStatus(pageQuery.data.status);
     setBlockMessage(pageQuery.data.blockMessage);
     setPageConfig(pageQuery.data.pageConfig);
@@ -350,7 +358,7 @@ export function useWeddingInvitationState(
     if (pageQuery.data.status === 'blocked') {
       setIsLoading(false);
     }
-  }, [initialPage, pageQuery.data, pageQuery.isPending]);
+  }, [initialPage, isAdminLoggedIn, pageQuery.data, pageQuery.isPending]);
 
   useEffect(() => {
     if (!error) {

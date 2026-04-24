@@ -58,6 +58,7 @@
 ## 공개 조회 fallback 경계
 - `getInvitationPageBySlug`의 공개 방문자 호출은 `includeSeedFallback: false`, `allowSeedFallbackWithFirestore: false`, `requirePublicAccess: true`를 함께 사용한다.
 - 서버 공개 라우트는 `sampleFallbackMode: 'when-firestore-unavailable'`로 Firestore 사용 가능 환경의 암묵적 sample fallback을 막는다.
+- 공개 라우트 SSR이 검증한 `initialPageConfig`가 있으면 비관리자 클라이언트 Firestore 재조회 실패가 공개 화면을 blocked 상태로 낮추지 않는다.
 - 관리자/편집/로컬 preview 흐름은 명시적으로 private 또는 fallback 옵션을 켠 호출부에서만 sample 데이터를 사용할 수 있다.
 
 ## Storage 이미지 조회 경계
