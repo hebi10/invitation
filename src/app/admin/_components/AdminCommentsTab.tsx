@@ -11,6 +11,7 @@ import styles from '../page.module.css';
 
 interface AdminCommentsTabProps {
   commentsLoading: boolean;
+  commentsRefreshing: boolean;
   comments: Comment[];
   filteredComments: Comment[];
   currentComments: Comment[];
@@ -39,6 +40,7 @@ function resetCommentFilters(
 
 export default function AdminCommentsTab({
   commentsLoading,
+  commentsRefreshing,
   comments,
   filteredComments,
   currentComments,
@@ -135,9 +137,13 @@ export default function AdminCommentsTab({
               type="button"
               className="admin-button admin-button-secondary"
               onClick={onRefresh}
-              disabled={commentsLoading}
+              disabled={commentsLoading || commentsRefreshing}
             >
-              {commentsLoading ? '새로고침 중..' : '새로고침'}
+              {commentsRefreshing
+                ? '새로고침 중'
+                : commentsLoading
+                  ? '불러오는 중'
+                  : '새로고침'}
             </button>
             <button
               type="button"

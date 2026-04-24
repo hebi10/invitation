@@ -68,6 +68,8 @@
   - 웹 fallback: `https://msgnote.kr/app/login?...`
 
 ## 현재 구현 기준
+- 모바일 API Base URL은 운영 `https://msgnote.kr`와 로컬 개발용 `http://localhost:3000`, `http://localhost:3001` 계열을 허용한다.
+  - 실제 기기/Android 에뮬레이터에서는 같은 포트의 개발 PC LAN IP 또는 `10.0.2.2`를 사용한다.
 - 모바일 로그인은 URL 또는 slug 입력을 이미 지원한다.
   - `apps/mobile/src/components/LoginCard.tsx`
 - 모바일 owner session은 서버에서 `pageSlug`, `passwordVersion`, 만료 시간을 검증한다.
@@ -82,6 +84,13 @@
 - 앱은 `login?linkToken=...` 딥링크를 받으면 로그인 화면에서 자동 교환을 시도한다.
   - `apps/mobile/src/lib/appDeepLink.ts`
   - `apps/mobile/src/app/login.tsx`
+- 모바일 편집기 이미지 관리는 서버 세션 기반 업로드를 사용하고, 대표/공유/카카오 단건 제거와 갤러리 index 기반 제거를 분리한다.
+  - `apps/mobile/src/features/manage/hooks/useImageUpload.ts`
+  - `apps/mobile/src/features/manage/components/ManageEditorStepContent.tsx`
+  - `apps/mobile/src/features/manage/components/steps/ImagesEditorStep.tsx`
+- 모바일 티켓 디자인 판정은 React hook 밖의 순수 helper에 두고, 훅과 검증 스크립트가 같은 기준을 사용한다.
+  - `apps/mobile/src/features/manage/ticketThemeValidation.ts`
+  - `apps/mobile/src/features/manage/hooks/useTicketOperations.ts`
 
 ## 후속 작업
 - 앱 연동 링크의 사용 이력 조회 UI가 필요하면 운영 화면에 최근 발급 상태를 추가한다.

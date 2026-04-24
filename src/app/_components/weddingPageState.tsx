@@ -1,11 +1,13 @@
 'use client';
 
-import { type Dispatch, type SetStateAction, useEffect, useMemo, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { type Dispatch, type SetStateAction, useCallback, useEffect, useMemo, useState } from 'react';
 
 import { createInvitationPageFromSeed, getWeddingPageBySlug } from '@/config/weddingPages';
 import { useAdmin } from '@/contexts';
 import { usePageImages } from '@/hooks';
 import { getAdminInvitationPreviewSummary } from '@/lib/adminInvitationPreviewCache';
+import { appQueryKeys, FIFTEEN_MINUTES_MS, THIRTY_MINUTES_MS } from '@/lib/appQuery';
 import { USE_FIREBASE } from '@/lib/firebase';
 import { resolveInvitationFeatures } from '@/lib/invitationProducts';
 import { getInvitationPublicAccessState } from '@/lib/invitationPublicAccess';
@@ -22,6 +24,8 @@ import {
 type WeddingPageBaseState = {
   isLoading: boolean;
   setIsLoading: Dispatch<SetStateAction<boolean>>;
+  isRefreshingPage: boolean;
+  refreshPage: () => Promise<void>;
   imagesLoading: boolean;
   heroImageUrl: string;
   mainImageUrl: string;
@@ -62,6 +66,18 @@ export type WeddingPageState =
   | WeddingPageLoadingState
   | WeddingPageBlockedState
   | WeddingPageReadyState;
+
+type WeddingPageQueryResult =
+  | {
+      status: 'ready';
+      pageConfig: InvitationPage;
+      blockMessage: null;
+    }
+  | {
+      status: 'blocked';
+      pageConfig: null;
+      blockMessage: string;
+    };
 
 const BLOCKED_MESSAGE = '현재 접근할 수 없는 청첩장입니다.';
 const LOAD_FAILED_MESSAGE =
@@ -136,6 +152,78 @@ function isPublicInvitationPage(page: InvitationPage) {
   return getInvitationPublicAccessState(page).isPublic;
 }
 
+async function loadWeddingInvitationPage(
+  slug: string,
+  isAdminLoggedIn: boolean
+): Promise<WeddingPageQueryResult> {
+  try {
+    const allowSeedFallback = !USE_FIREBASE || isAdminLoggedIn;
+    const page = await getInvitationPageBySlug(slug, {
+      includeSeedFallback: allowSeedFallback,
+      allowSeedFallbackWithFirestore: isAdminLoggedIn,
+      requirePublicAccess: !isAdminLoggedIn,
+      fallbackOnError: isAdminLoggedIn,
+      retryOnPermissionDenied: isAdminLoggedIn,
+      retryCount: isAdminLoggedIn ? 4 : 0,
+      retryDelayMs: 350,
+    });
+
+    if (!page) {
+      if (isAdminLoggedIn) {
+        const adminPreviewPage = getAdminPreviewInvitationPage(slug);
+
+        if (adminPreviewPage) {
+          return {
+            status: 'ready',
+            pageConfig: adminPreviewPage,
+            blockMessage: null,
+          };
+        }
+      }
+
+      return {
+        status: 'blocked',
+        pageConfig: null,
+        blockMessage: BLOCKED_MESSAGE,
+      };
+    }
+
+    if (!isAdminLoggedIn && !isPublicInvitationPage(page)) {
+      return {
+        status: 'blocked',
+        pageConfig: null,
+        blockMessage: BLOCKED_MESSAGE,
+      };
+    }
+
+    return {
+      status: 'ready',
+      pageConfig: page,
+      blockMessage: null,
+    };
+  } catch (loadError) {
+    console.error('[weddingPageState] failed to load invitation page', loadError);
+
+    if (isAdminLoggedIn) {
+      const adminPreviewPage = getAdminPreviewInvitationPage(slug);
+
+      if (adminPreviewPage) {
+        return {
+          status: 'ready',
+          pageConfig: adminPreviewPage,
+          blockMessage: null,
+        };
+      }
+    }
+
+    return {
+      status: 'blocked',
+      pageConfig: null,
+      blockMessage: LOAD_FAILED_MESSAGE,
+    };
+  }
+}
+
 function isStorageManagedImageUrl(imageUrl?: string | null) {
   return Boolean(imageUrl?.includes('firebasestorage.googleapis.com'));
 }
@@ -183,6 +271,7 @@ export function useWeddingInvitationState(
   const [blockMessage, setBlockMessage] = useState<string | null>(null);
   const [pageConfig, setPageConfig] = useState<InvitationPage | null>(initialPage);
   const [isLoading, setIsLoading] = useState(true);
+  const { isAdminLoading, isAdminLoggedIn } = useAdmin();
   const themedPageData = useMemo(
     () => resolveInvitationPageDataByTheme(pageConfig, options.theme),
     [options.theme, pageConfig]
@@ -191,19 +280,20 @@ export function useWeddingInvitationState(
     themedPageData?.galleryImages?.filter((imageUrl) => imageUrl.trim()) ?? [];
   const configuredMainImageUrl = pageConfig?.metadata.images.wedding?.trim() ?? '';
   const shouldLoadStorageFallbackImages = useMemo(() => {
-    if (!pageConfig) {
-      return true;
+    if (!isAdminLoggedIn || !pageConfig) {
+      return false;
     }
 
     const hasConfiguredGallery = Boolean(configuredGalleryImageUrls.length);
     return !hasConfiguredGallery;
-  }, [configuredGalleryImageUrls.length, pageConfig]);
+  }, [configuredGalleryImageUrls.length, isAdminLoggedIn, pageConfig]);
   const shouldLoadStorageManagedImages = useMemo(
     () =>
+      isAdminLoggedIn &&
       [configuredMainImageUrl, ...configuredGalleryImageUrls].some((imageUrl) =>
         isStorageManagedImageUrl(imageUrl)
       ),
-    [configuredGalleryImageUrls, configuredMainImageUrl]
+    [configuredGalleryImageUrls, configuredMainImageUrl, isAdminLoggedIn]
   );
   const {
     images: storageImages,
@@ -213,101 +303,54 @@ export function useWeddingInvitationState(
     error,
   } = usePageImages(options.slug, {
     enabled: shouldLoadStorageFallbackImages || shouldLoadStorageManagedImages,
+    allowListing: isAdminLoggedIn,
   });
-  const { isAdminLoading, isAdminLoggedIn } = useAdmin();
+  const pageQuery = useQuery<WeddingPageQueryResult>({
+    queryKey: appQueryKeys.invitationPage(options.slug, isAdminLoggedIn ? 'admin' : 'public'),
+    enabled: !isAdminLoading,
+    queryFn: async () => loadWeddingInvitationPage(options.slug, isAdminLoggedIn),
+    staleTime: FIFTEEN_MINUTES_MS,
+    gcTime: THIRTY_MINUTES_MS,
+    refetchOnWindowFocus: false,
+  });
   const themeDefinition = getWeddingThemeDefinition(options.theme);
   const imagesLoading =
     shouldLoadStorageFallbackImages || shouldLoadStorageManagedImages
       ? storageImagesLoading
       : false;
+  const refreshPage = useCallback(async () => {
+    await pageQuery.refetch();
+  }, [pageQuery.refetch]);
 
   useEffect(() => {
     if (isAdminLoading) {
       return;
     }
 
-    let cancelled = false;
-
     setStatus(initialPage ? 'ready' : 'loading');
     setBlockMessage(null);
     setPageConfig(initialPage);
     setIsLoading(true);
-
-    const loadInvitationPage = async () => {
-      try {
-        const page = await getInvitationPageBySlug(options.slug, {
-          includeSeedFallback: true,
-          fallbackOnError: !isAdminLoggedIn,
-          retryOnPermissionDenied: isAdminLoggedIn,
-          retryCount: isAdminLoggedIn ? 4 : 0,
-          retryDelayMs: 350,
-        });
-
-        if (cancelled) {
-          return;
-        }
-
-        if (!page) {
-          if (isAdminLoggedIn) {
-            const adminPreviewPage = getAdminPreviewInvitationPage(options.slug);
-
-            if (adminPreviewPage) {
-              setPageConfig(adminPreviewPage);
-              setBlockMessage(null);
-              setStatus('ready');
-              return;
-            }
-          }
-
-          setPageConfig(null);
-          setBlockMessage(BLOCKED_MESSAGE);
-          setStatus('blocked');
-          setIsLoading(false);
-          return;
-        }
-
-        if (!isAdminLoggedIn && !isPublicInvitationPage(page)) {
-          setPageConfig(null);
-          setBlockMessage(BLOCKED_MESSAGE);
-          setStatus('blocked');
-          setIsLoading(false);
-          return;
-        }
-
-        setPageConfig(page);
-        setBlockMessage(null);
-        setStatus('ready');
-      } catch (loadError) {
-        console.error('[weddingPageState] failed to load invitation page', loadError);
-
-        if (cancelled) {
-          return;
-        }
-
-        if (isAdminLoggedIn) {
-          const adminPreviewPage = getAdminPreviewInvitationPage(options.slug);
-
-          if (adminPreviewPage) {
-            setPageConfig(adminPreviewPage);
-            setBlockMessage(null);
-            setStatus('ready');
-            return;
-          }
-        }
-
-        setPageConfig(null);
-        setBlockMessage(LOAD_FAILED_MESSAGE);
-        setStatus('blocked');
-        setIsLoading(false);
-      }
-    };
-
-    void loadInvitationPage();
-
-    return () => {
-      cancelled = true;
-    };
   }, [initialPage, isAdminLoading, isAdminLoggedIn, options.slug]);
+
+  useEffect(() => {
+    if (!pageQuery.data) {
+      if (pageQuery.isPending) {
+        setStatus(initialPage ? 'ready' : 'loading');
+        setBlockMessage(null);
+        setPageConfig(initialPage);
+      }
+      return;
+    }
+
+    setStatus(pageQuery.data.status);
+    setBlockMessage(pageQuery.data.blockMessage);
+    setPageConfig(pageQuery.data.pageConfig);
+
+    if (pageQuery.data.status === 'blocked') {
+      setIsLoading(false);
+    }
+  }, [initialPage, pageQuery.data, pageQuery.isPending]);
 
   useEffect(() => {
     if (!error) {
@@ -435,6 +478,8 @@ export function useWeddingInvitationState(
   const baseState: WeddingPageBaseState = {
     isLoading,
     setIsLoading,
+    isRefreshingPage: pageQuery.isRefetching,
+    refreshPage,
     imagesLoading,
     heroImageUrl,
     mainImageUrl,

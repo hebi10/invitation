@@ -10,6 +10,8 @@ import {
   Noto_Serif_KR,
 } from 'next/font/google';
 
+import AppQueryProvider from './AppQueryProvider';
+
 export const metadata: Metadata = {
   title: {
     default: '모바일 청첩장',
@@ -78,7 +80,9 @@ export default function RootLayout({
       <body
         className={`${inter.variable} ${notoSerifKR.variable} ${notoSansKR.variable} ${cormorantGaramond.variable} ${alexBrush.variable} ${gowunDodum.variable}`}
       >
-        <AdminProvider>{children}</AdminProvider>
+        <AdminProvider>
+          <AppQueryProvider>{children}</AppQueryProvider>
+        </AdminProvider>
       </body>
     </html>
   );

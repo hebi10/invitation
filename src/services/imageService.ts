@@ -26,6 +26,10 @@ interface UploadImageOptions {
   variant?: 'original' | 'thumbnail';
 }
 
+interface GetImagesByPageOptions {
+  allowListing?: boolean;
+}
+
 const USE_FIREBASE = process.env.NEXT_PUBLIC_USE_FIREBASE === 'true';
 const imageCache = new Map<string, UploadedImage[]>();
 const storageDownloadUrlCache = new Map<string, string>();
@@ -470,8 +474,13 @@ export {
 export type { EditableImageAssetKind };
 
 export const getImagesByPage = async (
-  pageSlug: string
+  pageSlug: string,
+  options: GetImagesByPageOptions = {}
 ): Promise<UploadedImage[]> => {
+  if (options.allowListing === false) {
+    return [];
+  }
+
   const cachedData = imageCache.get(pageSlug);
   if (cachedData) {
     return cachedData;
@@ -538,7 +547,23 @@ export const getImagesByPage = async (
 
     return sortedImages;
   } catch (error) {
-    console.error('이미지 목록 조회 중 오류 발생:', error);
+    const errorCode =
+      typeof error === 'object' && error !== null && 'code' in error
+        ? String((error as { code?: unknown }).code ?? '')
+        : '';
+    if (
+      errorCode === 'storage/unauthorized' ||
+      errorCode === 'permission-denied' ||
+      errorCode === 'unauthorized'
+    ) {
+      console.warn('이미지 목록 조회 권한이 없어 빈 목록으로 처리합니다.', {
+        pageSlug,
+        errorCode,
+      });
+      return [];
+    }
+
+    console.warn('이미지 목록 조회 중 오류 발생:', error);
     return [];
   }
 };
@@ -609,5 +634,7 @@ export const getAllPageImages = async (): Promise<{
   }
 };
 
-export const getPageImages = async (pageSlug: string): Promise<UploadedImage[]> =>
-  getImagesByPage(pageSlug);
+export const getPageImages = async (
+  pageSlug: string,
+  options: GetImagesByPageOptions = {}
+): Promise<UploadedImage[]> => getImagesByPage(pageSlug, options);

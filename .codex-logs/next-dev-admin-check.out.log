@@ -1,0 +1,8 @@
+
+> invitation@0.1.0 dev
+> npm run clean:next && next dev -p 3000
+
+
+> invitation@0.1.0 clean:next
+> node -e "require('fs').rmSync('.next',{recursive:true,force:true})"
+

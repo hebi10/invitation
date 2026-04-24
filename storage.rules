@@ -20,20 +20,91 @@ service firebase.storage {
         ).data.ownerUid == request.auth.uid;
     }
 
+    function hasPublishedEventSummary(eventId) {
+      return eventId is string &&
+        firestore.exists(/databases/(default)/documents/events/$(eventId)) &&
+        firestore.get(/databases/(default)/documents/events/$(eventId)).data.visibility.published == true;
+    }
+
+    function hasEventDisplayPeriod(eventId) {
+      return eventId is string &&
+        firestore.exists(/databases/(default)/documents/events/$(eventId)) &&
+        (
+          firestore.get(/databases/(default)/documents/events/$(eventId)).data.visibility.displayStartAt is timestamp &&
+          firestore.get(/databases/(default)/documents/events/$(eventId)).data.visibility.displayEndAt is timestamp
+        );
+    }
+
+    function isWithinEventDisplayPeriod(eventId) {
+      return !hasEventDisplayPeriod(eventId) ||
+        (
+          request.time >= firestore.get(/databases/(default)/documents/events/$(eventId)).data.visibility.displayStartAt &&
+          request.time <= firestore.get(/databases/(default)/documents/events/$(eventId)).data.visibility.displayEndAt
+        );
+    }
+
+    function canReadPublicEvent(eventId) {
+      return hasPublishedEventSummary(eventId) &&
+        isWithinEventDisplayPeriod(eventId);
+    }
+
+    function canReadPublicEventBySlug(pageSlug) {
+      return pageSlug is string &&
+        firestore.exists(/databases/(default)/documents/eventSlugIndex/$(pageSlug)) &&
+        (
+          firestore.get(/databases/(default)/documents/eventSlugIndex/$(pageSlug)).data.status == 'active' ||
+          firestore.get(/databases/(default)/documents/eventSlugIndex/$(pageSlug)).data.status == 'redirect'
+        ) &&
+        firestore.get(/databases/(default)/documents/eventSlugIndex/$(pageSlug)).data.eventId is string &&
+        canReadPublicEvent(
+          firestore.get(/databases/(default)/documents/eventSlugIndex/$(pageSlug)).data.eventId
+        );
+    }
+
+    function canReadPublicMemoryPage(pageSlug) {
+      return pageSlug is string &&
+        firestore.exists(/databases/(default)/documents/memory-pages/$(pageSlug)) &&
+        firestore.get(/databases/(default)/documents/memory-pages/$(pageSlug)).data.enabled == true &&
+        (
+          firestore.get(/databases/(default)/documents/memory-pages/$(pageSlug)).data.visibility == 'public' ||
+          firestore.get(/databases/(default)/documents/memory-pages/$(pageSlug)).data.visibility == 'unlisted'
+        );
+    }
+
     function isImageWriteRequest() {
       return request.resource != null &&
         request.resource.size < 10 * 1024 * 1024 &&
         request.resource.contentType.matches('image/.*');
     }
 
+    match /wedding-images {
+      allow list: if isAdmin();
+    }
+
+    match /wedding-images/{pageSlug} {
+      allow list: if isAdmin() || isEventOwnerBySlug(pageSlug);
+    }
+
     match /wedding-images/{pageSlug}/{allPaths=**} {
-      allow read: if true;
+      allow get: if isAdmin() ||
+        isEventOwnerBySlug(pageSlug) ||
+        canReadPublicEventBySlug(pageSlug);
+      allow list: if isAdmin() || isEventOwnerBySlug(pageSlug);
       allow create, update: if (isAdmin() || isEventOwnerBySlug(pageSlug)) && isImageWriteRequest();
       allow delete: if isAdmin() || isEventOwnerBySlug(pageSlug);
     }
 
-    match /memory-images/{allPaths=**} {
-      allow read: if true;
+    match /memory-images {
+      allow list: if isAdmin();
+    }
+
+    match /memory-images/{pageSlug} {
+      allow list: if isAdmin();
+    }
+
+    match /memory-images/{pageSlug}/{allPaths=**} {
+      allow get: if isAdmin() || canReadPublicMemoryPage(pageSlug);
+      allow list: if isAdmin();
       allow create, update: if isAdmin() && isImageWriteRequest();
       allow delete: if isAdmin();
     }

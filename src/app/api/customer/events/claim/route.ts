@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 
+import { getCustomerEditableInvitationPageSnapshot } from '@/server/customerEventsService';
 import { verifyServerClientPassword } from '@/server/clientPasswordServerService';
 import { getServerAuth } from '@/server/firebaseAdmin';
 import { firestoreEventRepository, resolveStoredEventBySlug } from '@/server/repositories/eventRepository';
@@ -12,6 +13,17 @@ const CUSTOMER_EVENT_CLAIM_RATE_LIMIT = {
   limit: 5,
   windowMs: 10 * 60 * 1000,
 } as const;
+
+async function buildClaimSuccessPayload(ownerUid: string, pageSlug: string, eventId: string) {
+  const editableSnapshot = await getCustomerEditableInvitationPageSnapshot(ownerUid, pageSlug);
+
+  return {
+    success: true,
+    slug: pageSlug,
+    eventId,
+    config: editableSnapshot.status === 'ready' ? editableSnapshot.config : null,
+  };
+}
 
 export async function POST(request: Request) {
   try {
@@ -84,11 +96,13 @@ export async function POST(request: Request) {
     }
 
     if (resolvedEvent.summary.ownerUid === decodedToken.uid) {
-      return NextResponse.json({
-        success: true,
-        slug: resolvedEvent.summary.slug,
-        eventId: resolvedEvent.summary.eventId,
-      });
+      return NextResponse.json(
+        await buildClaimSuccessPayload(
+          decodedToken.uid,
+          resolvedEvent.summary.slug,
+          resolvedEvent.summary.eventId
+        )
+      );
     }
 
     const verification = await verifyServerClientPassword(pageSlug, password);
@@ -109,13 +123,16 @@ export async function POST(request: Request) {
       ownerDisplayName: decodedToken.name ?? null,
     });
 
-    return NextResponse.json({
-      success: true,
-      slug: assignedEvent.summary.slug,
-      eventId: assignedEvent.summary.eventId,
-    }, {
-      headers: buildRateLimitHeaders(rateLimitResult),
-    });
+    return NextResponse.json(
+      await buildClaimSuccessPayload(
+        decodedToken.uid,
+        assignedEvent.summary.slug,
+        assignedEvent.summary.eventId
+      ),
+      {
+        headers: buildRateLimitHeaders(rateLimitResult),
+      }
+    );
   } catch (error) {
     console.error('[customer/events/claim] failed to claim event ownership', error);
     return NextResponse.json(

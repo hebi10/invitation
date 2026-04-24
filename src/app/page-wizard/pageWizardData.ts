@@ -632,14 +632,6 @@ export function buildStepValidation(
     case 'slug': {
       const messages: string[] = [];
 
-      if (!slugState.groomKoreanName.trim()) {
-        slugState.groomKoreanName = PLACEHOLDER_GROOM;
-      }
-
-      if (!slugState.brideKoreanName.trim()) {
-        slugState.brideKoreanName = PLACEHOLDER_BRIDE;
-      }
-
       if (!hasText(slugState.groomKoreanName)) {
         messages.push('예비 신랑 한글 이름을 입력해 주세요.');
       }

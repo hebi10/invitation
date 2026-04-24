@@ -41,6 +41,8 @@
 ## 현재 정책
 - 새 생성에서만 `eventType` 선택 step을 노출한다.
 - 기존 수정에서는 `eventType`을 고정한다.
+- `slug` step은 초안 생성 전에 한글 이름과 영문 주소용 이름을 함께 받는다.
+- 한글 이름은 초안 생성 시 기본 `displayName`/`description`/본문 인물 정보에 바로 반영하고, 영문 이름은 주소 자동 제안값을 만든다.
 - 현재 선택 가능한 타입은 `wedding`, `birthday`이고, `seventieth`, `etc`는 UI에 `준비 중`으로만 보인다.
 - `birthday`는 PoC 단계라서 현재는 wedding용 본문 step과 문구를 대부분 재사용한다.
 - 저장 payload에는 `eventType`을 `InvitationPageSeed`와 event summary/content mirror에 함께 반영한다.

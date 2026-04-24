@@ -1,14 +1,20 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 
 import CustomerEventClaimCard from '@/app/_components/CustomerEventClaimCard';
 import { useAdmin } from '@/contexts';
+import {
+  appQueryKeys,
+  FIFTEEN_MINUTES_MS,
+  THIRTY_MINUTES_MS,
+} from '@/lib/appQuery';
 import { getEventTypeDisplayLabel } from '@/lib/eventTypes';
 import {
-  listOwnedCustomerEvents,
   type CustomerOwnedEventSummary,
+  listOwnedCustomerEvents,
 } from '@/services/customerEventService';
 
 import styles from './page.module.css';
@@ -29,43 +35,35 @@ function formatDate(date: Date | null | undefined) {
 
 export default function MyInvitationsClient() {
   const { authUser, isLoggedIn, isAdminLoading, logout } = useAdmin();
-  const [events, setEvents] = useState<CustomerOwnedEventSummary[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [errorMessage, setErrorMessage] = useState('');
+  const router = useRouter();
+  const queryClient = useQueryClient();
+  const eventsQuery = useQuery<CustomerOwnedEventSummary[]>({
+    queryKey: appQueryKeys.ownedCustomerEvents(authUser?.uid ?? null),
+    enabled: !isAdminLoading && isLoggedIn && Boolean(authUser?.uid),
+    queryFn: async () => listOwnedCustomerEvents(authUser?.uid ?? ''),
+    staleTime: FIFTEEN_MINUTES_MS,
+    gcTime: THIRTY_MINUTES_MS,
+    refetchOnWindowFocus: false,
+  });
+  const events = eventsQuery.data ?? [];
+  const loading = eventsQuery.isFetching && !eventsQuery.data;
+  const refreshing = eventsQuery.isRefetching;
+  const errorMessage =
+    eventsQuery.error instanceof Error
+      ? eventsQuery.error.message
+      : '';
 
-  const loadOwnedEvents = async () => {
-    if (!authUser?.uid) {
-      setEvents([]);
-      return;
+  const handleClaimed = async (slug: string) => {
+    await queryClient.invalidateQueries({
+      queryKey: appQueryKeys.ownedCustomerEvents(authUser?.uid ?? null),
+    });
+    await eventsQuery.refetch();
+
+    if (slug.trim()) {
+      router.push(`/page-wizard/${encodeURIComponent(slug.trim())}`, {
+        scroll: false,
+      });
     }
-
-    setLoading(true);
-    setErrorMessage('');
-
-    try {
-      const nextEvents = await listOwnedCustomerEvents(authUser.uid);
-      setEvents(nextEvents);
-    } catch (error) {
-      setErrorMessage(
-        error instanceof Error
-          ? error.message
-          : '이벤트 목록을 불러오지 못했습니다.'
-      );
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    if (isAdminLoading || !isLoggedIn) {
-      return;
-    }
-
-    void loadOwnedEvents();
-  }, [authUser?.uid, isAdminLoading, isLoggedIn]);
-
-  const handleClaimed = async () => {
-    await loadOwnedEvents();
   };
 
   if (isAdminLoading) {
@@ -124,6 +122,14 @@ export default function MyInvitationsClient() {
             <Link className={styles.primaryButton} href="/page-wizard">
               새 이벤트 만들기
             </Link>
+            <button
+              className={styles.secondaryButton}
+              type="button"
+              onClick={() => void eventsQuery.refetch()}
+              disabled={refreshing}
+            >
+              {refreshing ? '새로고침 중' : '새로고침'}
+            </button>
             <button className={styles.secondaryButton} type="button" onClick={() => void logout()}>
               로그아웃
             </button>
@@ -157,10 +163,20 @@ export default function MyInvitationsClient() {
                     </div>
 
                     <div className={styles.actions}>
-                      <Link className={styles.primaryButton} href={wizardHref}>
+                      <Link
+                        className={styles.primaryButton}
+                        href={wizardHref}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
                         수정하기
                       </Link>
-                      <Link className={styles.secondaryButton} href={publicHref}>
+                      <Link
+                        className={styles.secondaryButton}
+                        href={publicHref}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
                         미리보기
                       </Link>
                     </div>

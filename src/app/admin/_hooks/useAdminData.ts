@@ -1,11 +1,17 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import {
   clearAdminInvitationPreviewCache,
   writeAdminInvitationPreviewCache,
 } from '@/lib/adminInvitationPreviewCache';
+import {
+  ADMIN_GC_TIME_MS,
+  ADMIN_STALE_TIME_MS,
+  appQueryKeys,
+} from '@/lib/appQuery';
 import {
   getInvitationThemeAdminLabel,
   type InvitationThemeKey,
@@ -13,20 +19,20 @@ import {
 import {
   assignAdminCustomerEventOwnership,
   clearAdminCustomerEventOwnership,
-  getAdminCustomerAccountsSnapshot,
   deleteAdminEventByPageSlug,
   deleteComment,
-  getAllClientPasswords,
+  getAdminCustomerAccountsSnapshot,
+  getAdminClientPasswordsSnapshot,
+  getAdminDashboardSummary,
   getAllComments,
   getAllManagedInvitationPages,
-  getAllMemoryPages,
-  getCommentSummary,
   setClientPassword,
-  setInvitationPagePublished,
   setInvitationPageProductTier,
+  setInvitationPagePublished,
   setInvitationPageVariantAvailability,
-  type AdminCustomerAccountSummary,
-  type AdminCustomerLinkedEventSummary,
+  type AdminClientPasswordSummary,
+  type AdminCustomerAccountsSnapshot,
+  type AdminDashboardSummarySnapshot,
   type ClientPassword,
   type Comment,
   type CommentSummary,
@@ -34,7 +40,7 @@ import {
 } from '@/services';
 import type { InvitationProductTier } from '@/types/invitationPage';
 
-import { isRecentComment, RECENT_COMMENT_DAYS, type AdminTab } from '../_components/adminPageUtils';
+import { RECENT_COMMENT_DAYS, type AdminTab } from '../_components/adminPageUtils';
 
 type ToastFn = (toast: { title: string; message?: string; tone: 'success' | 'error' | 'info' }) => void;
 type ConfirmFn = (options: {
@@ -52,30 +58,34 @@ interface UseAdminDataParams {
   confirm: ConfirmFn;
 }
 
+const EMPTY_COMMENT_SUMMARY: CommentSummary = {
+  totalCount: 0,
+  recentCount: 0,
+};
+
+function toLegacyClientPasswords(entries: AdminClientPasswordSummary[]): ClientPassword[] {
+  return entries.map((entry) => {
+    const timestamp = entry.updatedAt ?? new Date(0);
+
+    return {
+      id: entry.eventId,
+      pageSlug: entry.slug,
+      hasPassword: entry.hasPassword,
+      passwordVersion: entry.passwordVersion,
+      requiresReset: entry.requiresReset,
+      createdAt: timestamp,
+      updatedAt: timestamp,
+    };
+  });
+}
+
 export function useAdminData({
   isAdminLoggedIn,
   activeTab,
   showToast,
   confirm,
 }: UseAdminDataParams) {
-  const [pages, setPages] = useState<InvitationPageSummary[]>([]);
-  const [comments, setComments] = useState<Comment[]>([]);
-  const [clientPasswords, setClientPasswords] = useState<ClientPassword[]>([]);
-  const [customerAccounts, setCustomerAccounts] = useState<AdminCustomerAccountSummary[]>([]);
-  const [unassignedCustomerEvents, setUnassignedCustomerEvents] = useState<
-    AdminCustomerLinkedEventSummary[]
-  >([]);
-  const [memoryPublicCount, setMemoryPublicCount] = useState(0);
-  const [commentSummary, setCommentSummary] = useState<CommentSummary>({
-    totalCount: 0,
-    recentCount: 0,
-  });
-
-  const [pagesLoading, setPagesLoading] = useState(false);
-  const [commentsLoading, setCommentsLoading] = useState(false);
-  const [summaryLoading, setSummaryLoading] = useState(false);
-  const [passwordsLoading, setPasswordsLoading] = useState(false);
-  const [accountsLoading, setAccountsLoading] = useState(false);
+  const queryClient = useQueryClient();
   const [savingPasswordPageSlug, setSavingPasswordPageSlug] = useState<string | null>(null);
   const [updatingPublishedPageSlug, setUpdatingPublishedPageSlug] = useState<string | null>(null);
   const [updatingVariantToken, setUpdatingVariantToken] = useState<string | null>(null);
@@ -83,127 +93,228 @@ export function useAdminData({
   const [deletingPageSlug, setDeletingPageSlug] = useState<string | null>(null);
   const [ownershipActionToken, setOwnershipActionToken] = useState<string | null>(null);
 
-  const [pagesLoaded, setPagesLoaded] = useState(false);
-  const [commentsLoaded, setCommentsLoaded] = useState(false);
-  const [passwordsLoaded, setPasswordsLoaded] = useState(false);
-  const [accountsLoaded, setAccountsLoaded] = useState(false);
+  const shouldLoadPages =
+    isAdminLoggedIn &&
+    (activeTab === 'pages' ||
+      activeTab === 'comments' ||
+      activeTab === 'periods' ||
+      activeTab === 'passwords');
+  const shouldLoadComments = isAdminLoggedIn && activeTab === 'comments';
+  const shouldLoadPasswords =
+    isAdminLoggedIn && (activeTab === 'passwords' || activeTab === 'accounts');
+  const shouldLoadAccounts =
+    isAdminLoggedIn && (activeTab === 'accounts' || activeTab === 'passwords');
 
-  const resetAll = useCallback(() => {
-    setPages([]);
-    setComments([]);
-    setClientPasswords([]);
-    setCustomerAccounts([]);
-    setUnassignedCustomerEvents([]);
-    setMemoryPublicCount(0);
-    setCommentSummary({ totalCount: 0, recentCount: 0 });
-    setPagesLoaded(false);
-    setCommentsLoaded(false);
-    setPasswordsLoaded(false);
-    setAccountsLoaded(false);
-  }, []);
+  const dashboardSummaryQuery = useQuery<AdminDashboardSummarySnapshot>({
+    queryKey: appQueryKeys.adminDashboardSummary(RECENT_COMMENT_DAYS),
+    enabled: isAdminLoggedIn,
+    queryFn: async () => getAdminDashboardSummary(),
+    staleTime: ADMIN_STALE_TIME_MS,
+    gcTime: ADMIN_GC_TIME_MS,
+    refetchOnWindowFocus: false,
+  });
+  const pagesQuery = useQuery<InvitationPageSummary[]>({
+    queryKey: appQueryKeys.adminInvitationPages,
+    enabled: shouldLoadPages,
+    queryFn: async () => getAllManagedInvitationPages(),
+    staleTime: ADMIN_STALE_TIME_MS,
+    gcTime: ADMIN_GC_TIME_MS,
+    refetchOnWindowFocus: false,
+  });
+  const commentsQuery = useQuery<Comment[]>({
+    queryKey: appQueryKeys.adminComments,
+    enabled: shouldLoadComments,
+    queryFn: async () => getAllComments(),
+    staleTime: ADMIN_STALE_TIME_MS,
+    gcTime: ADMIN_GC_TIME_MS,
+    refetchOnWindowFocus: false,
+  });
+  const passwordsQuery = useQuery<AdminClientPasswordSummary[]>({
+    queryKey: appQueryKeys.adminClientPasswords,
+    enabled: shouldLoadPasswords,
+    queryFn: async () => getAdminClientPasswordsSnapshot(),
+    staleTime: ADMIN_STALE_TIME_MS,
+    gcTime: ADMIN_GC_TIME_MS,
+    refetchOnWindowFocus: false,
+  });
+  const accountsQuery = useQuery<AdminCustomerAccountsSnapshot>({
+    queryKey: appQueryKeys.adminCustomerAccounts,
+    enabled: shouldLoadAccounts,
+    queryFn: async () => getAdminCustomerAccountsSnapshot(),
+    staleTime: ADMIN_STALE_TIME_MS,
+    gcTime: ADMIN_GC_TIME_MS,
+    refetchOnWindowFocus: false,
+  });
 
-  /* ── Fetch: pages + summary (unified) ── */
+  const pages = pagesQuery.data ?? [];
+  const comments = commentsQuery.data ?? [];
+  const clientPasswords = useMemo(
+    () => toLegacyClientPasswords(passwordsQuery.data ?? []),
+    [passwordsQuery.data]
+  );
+  const customerAccounts = accountsQuery.data?.accounts ?? [];
+  const unassignedCustomerEvents = accountsQuery.data?.unassignedEvents ?? [];
+  const dashboardSummary = dashboardSummaryQuery.data ?? null;
+  const memoryPublicCount = dashboardSummary?.memoryPublicCount ?? 0;
+  const commentSummary = dashboardSummary
+    ? {
+        totalCount: dashboardSummary.commentSummary.totalCount,
+        recentCount: dashboardSummary.commentSummary.recentCount,
+      }
+    : EMPTY_COMMENT_SUMMARY;
 
-  const fetchSummarySources = useCallback(async () => {
-    setSummaryLoading(true);
-    try {
-      const [nextPages, memoryPages, nextCommentSummary] = await Promise.all([
-        getAllManagedInvitationPages(),
-        getAllMemoryPages(),
-        getCommentSummary(RECENT_COMMENT_DAYS),
-      ]);
+  const pagesLoading = pagesQuery.isPending;
+  const pagesRefreshing = pagesQuery.isRefetching;
+  const commentsLoading = commentsQuery.isPending;
+  const commentsRefreshing = commentsQuery.isRefetching;
+  const summaryLoading = dashboardSummaryQuery.isPending;
+  const summaryRefreshing = dashboardSummaryQuery.isRefetching;
+  const passwordsLoading = passwordsQuery.isPending;
+  const passwordsRefreshing = passwordsQuery.isRefetching;
+  const accountsLoading = accountsQuery.isPending;
+  const accountsRefreshing = accountsQuery.isRefetching;
 
-      setPages(nextPages);
-      setPagesLoaded(true);
-      writeAdminInvitationPreviewCache(nextPages);
-      setMemoryPublicCount(
-        memoryPages.filter((page) => page.enabled && page.visibility !== 'private').length
-      );
-      setCommentSummary(nextCommentSummary);
-    } catch (fetchError) {
-      console.error(fetchError);
-    } finally {
-      setSummaryLoading(false);
+  useEffect(() => {
+    if (!isAdminLoggedIn) {
+      clearAdminInvitationPreviewCache();
+      return;
     }
-  }, []);
 
-  const refreshPages = useCallback(async () => {
-    setPagesLoading(true);
-    try {
-      const nextPages = await getAllManagedInvitationPages();
-      setPages(nextPages);
-      setPagesLoaded(true);
-      writeAdminInvitationPreviewCache(nextPages);
-    } catch (fetchError) {
-      console.error(fetchError);
-      showToast({ title: '청첩장 목록을 불러오지 못했습니다.', tone: 'error' });
-    } finally {
-      setPagesLoading(false);
+    if (pages.length > 0) {
+      writeAdminInvitationPreviewCache(pages);
     }
-  }, [showToast]);
+  }, [isAdminLoggedIn, pages]);
 
-  /* ── Fetch: comments ── */
+  const refreshAdminData = useCallback(
+    async (options: {
+      summary?: boolean;
+      pages?: boolean;
+      comments?: boolean;
+      passwords?: boolean;
+      accounts?: boolean;
+      invitationPageSlug?: string | null;
+    }) => {
+      const tasks: Promise<unknown>[] = [];
 
-  const fetchComments = useCallback(async () => {
-    setCommentsLoading(true);
-    try {
-      const nextComments = await getAllComments();
-      setComments(nextComments);
-    } catch (fetchError) {
-      console.error(fetchError);
-      showToast({ title: '방명록을 불러오지 못했습니다.', tone: 'error' });
-    } finally {
-      setCommentsLoaded(true);
-      setCommentsLoading(false);
-    }
-  }, [showToast]);
-
-  /* ── Fetch: passwords ── */
-
-  const fetchPasswords = useCallback(async () => {
-    setPasswordsLoading(true);
-    try {
-      const sourcePages =
-        pages.length > 0 ? pages : await getAllManagedInvitationPages();
-
-      if (pages.length === 0 && sourcePages.length > 0) {
-        setPages(sourcePages);
-        setPagesLoaded(true);
-        writeAdminInvitationPreviewCache(sourcePages);
+      if (options.summary) {
+        tasks.push(dashboardSummaryQuery.refetch());
       }
 
-      const nextPasswords = await getAllClientPasswords();
-      setClientPasswords(nextPasswords);
-      setPasswordsLoaded(true);
-    } catch (fetchError) {
-      console.error(fetchError);
-      showToast({ title: '고객 비밀번호를 불러오지 못했습니다.', tone: 'error' });
-    } finally {
-      setPasswordsLoading(false);
-    }
-  }, [pages, showToast]);
+      if (options.pages) {
+        if (shouldLoadPages) {
+          tasks.push(pagesQuery.refetch());
+        } else {
+          tasks.push(
+            queryClient.invalidateQueries({
+              queryKey: appQueryKeys.adminInvitationPages,
+            })
+          );
+        }
+      }
+
+      if (options.comments) {
+        if (shouldLoadComments) {
+          tasks.push(commentsQuery.refetch());
+        } else {
+          tasks.push(
+            queryClient.invalidateQueries({
+              queryKey: appQueryKeys.adminComments,
+            })
+          );
+        }
+      }
+
+      if (options.passwords) {
+        if (shouldLoadPasswords) {
+          tasks.push(passwordsQuery.refetch());
+        } else {
+          tasks.push(
+            queryClient.invalidateQueries({
+              queryKey: appQueryKeys.adminClientPasswords,
+            })
+          );
+        }
+      }
+
+      if (options.accounts) {
+        if (shouldLoadAccounts) {
+          tasks.push(accountsQuery.refetch());
+        } else {
+          tasks.push(
+            queryClient.invalidateQueries({
+              queryKey: appQueryKeys.adminCustomerAccounts,
+            })
+          );
+        }
+      }
+
+      if (options.invitationPageSlug) {
+        tasks.push(
+          queryClient.invalidateQueries({
+            queryKey: appQueryKeys.invitationPage(options.invitationPageSlug, 'public'),
+          })
+        );
+        tasks.push(
+          queryClient.invalidateQueries({
+            queryKey: appQueryKeys.invitationPage(options.invitationPageSlug, 'admin'),
+          })
+        );
+      }
+
+      await Promise.all(tasks);
+    },
+    [
+      accountsQuery,
+      commentsQuery,
+      dashboardSummaryQuery,
+      pagesQuery,
+      passwordsQuery,
+      queryClient,
+      shouldLoadAccounts,
+      shouldLoadComments,
+      shouldLoadPages,
+      shouldLoadPasswords,
+    ]
+  );
+
+  const fetchSummarySources = useCallback(async () => {
+    await refreshAdminData({
+      summary: true,
+      pages: true,
+    });
+  }, [refreshAdminData]);
+
+  const refreshPages = useCallback(async () => {
+    await refreshAdminData({
+      summary: true,
+      pages: true,
+    });
+  }, [refreshAdminData]);
+
+  const fetchComments = useCallback(async () => {
+    await refreshAdminData({
+      summary: true,
+      comments: true,
+    });
+  }, [refreshAdminData]);
+
+  const fetchPasswords = useCallback(async () => {
+    await refreshAdminData({
+      passwords: true,
+      pages: true,
+    });
+  }, [refreshAdminData]);
 
   const fetchCustomerAccounts = useCallback(async () => {
-    setAccountsLoading(true);
-    try {
-      const snapshot = await getAdminCustomerAccountsSnapshot();
-      setCustomerAccounts(snapshot.accounts);
-      setUnassignedCustomerEvents(snapshot.unassignedEvents);
-      setAccountsLoaded(true);
-    } catch (fetchError) {
-      console.error(fetchError);
-      showToast({ title: '고객 계정 목록을 불러오지 못했습니다.', tone: 'error' });
-    } finally {
-      setAccountsLoading(false);
-    }
-  }, [showToast]);
-
-  /* ── Actions ── */
+    await refreshAdminData({
+      accounts: true,
+    });
+  }, [refreshAdminData]);
 
   const handleDeleteComment = useCallback(
     async (comment: Comment) => {
       const approved = await confirm({
-        title: '이 댓글을 삭제할까요?',
+        title: '댓글을 삭제할까요?',
         description: `${comment.author} 님의 댓글을 삭제하면 복구할 수 없습니다.`,
         confirmLabel: '삭제',
         cancelLabel: '취소',
@@ -216,35 +327,24 @@ export function useAdminData({
 
       try {
         await deleteComment(comment.id, comment.collectionName);
-        setComments((prev) =>
-          prev.filter(
-            (entry) =>
-              !(
-                entry.id === comment.id &&
-                (entry.collectionName ?? 'comments') === (comment.collectionName ?? 'comments')
-              )
-          )
-        );
-        setCommentSummary((prev) => ({
-          totalCount: Math.max(0, prev.totalCount - 1),
-          recentCount: isRecentComment(comment.createdAt)
-            ? Math.max(0, prev.recentCount - 1)
-            : prev.recentCount,
-        }));
+        await refreshAdminData({
+          summary: true,
+          comments: true,
+        });
         showToast({ title: '댓글을 삭제했습니다.', tone: 'success' });
       } catch (deleteError) {
         console.error(deleteError);
         showToast({ title: '댓글 삭제에 실패했습니다.', tone: 'error' });
       }
     },
-    [confirm, showToast]
+    [confirm, refreshAdminData, showToast]
   );
 
   const handleDeletePage = useCallback(
     async (page: InvitationPageSummary) => {
       const approved = await confirm({
         title: '청첩장을 완전 삭제할까요?',
-        description: `${page.displayName} 페이지와 이벤트 본문, 방명록, 링크 토큰, 비밀번호, 결제 이행 로그까지 모두 삭제합니다. 이 작업은 복구할 수 없습니다.`,
+        description: `${page.displayName} 페이지와 연결된 운영 데이터가 모두 삭제됩니다.`,
         confirmLabel: '완전 삭제',
         cancelLabel: '취소',
         tone: 'danger',
@@ -257,59 +357,29 @@ export function useAdminData({
       setDeletingPageSlug(page.slug);
 
       try {
-        const deletedPageSlug = page.slug;
-        const deletedComments = comments.filter(
-          (comment) => comment.pageSlug === deletedPageSlug
-        );
-        const deletedRecentCommentCount = deletedComments.filter((comment) =>
-          isRecentComment(comment.createdAt)
-        ).length;
-
-        const removeDeletedPageFromLocalState = () => {
-          setPages((prev) => prev.filter((entry) => entry.slug !== deletedPageSlug));
-          setComments((prev) =>
-            prev.filter((entry) => entry.pageSlug !== deletedPageSlug)
-          );
-          setClientPasswords((prev) =>
-            prev.filter((entry) => entry.pageSlug !== deletedPageSlug)
-          );
-        };
-
-        await deleteAdminEventByPageSlug(deletedPageSlug);
-        removeDeletedPageFromLocalState();
-        await Promise.all([
-          fetchSummarySources(),
-          commentsLoaded ? fetchComments() : Promise.resolve(),
-          passwordsLoaded ? fetchPasswords() : Promise.resolve(),
-        ]);
-        removeDeletedPageFromLocalState();
-        setCommentSummary((prev) => ({
-          totalCount: Math.max(0, prev.totalCount - deletedComments.length),
-          recentCount: Math.max(0, prev.recentCount - deletedRecentCommentCount),
-        }));
+        await deleteAdminEventByPageSlug(page.slug);
+        await refreshAdminData({
+          summary: true,
+          pages: true,
+          comments: true,
+          passwords: true,
+          accounts: true,
+          invitationPageSlug: page.slug,
+        });
         showToast({ title: '청첩장을 완전 삭제했습니다.', tone: 'success' });
       } catch (error) {
         console.error(error);
         showToast({
           title: '청첩장 전체 삭제에 실패했습니다.',
           message:
-            error instanceof Error ? error.message : '잠시 뒤 다시 시도해 주세요.',
+            error instanceof Error ? error.message : '잠시 후 다시 시도해 주세요.',
           tone: 'error',
         });
       } finally {
         setDeletingPageSlug(null);
       }
     },
-    [
-      comments,
-      commentsLoaded,
-      confirm,
-      fetchComments,
-      fetchPasswords,
-      fetchSummarySources,
-      passwordsLoaded,
-      showToast,
-    ]
+    [confirm, refreshAdminData, showToast]
   );
 
   const handleSavePassword = useCallback(
@@ -317,7 +387,7 @@ export function useAdminData({
       const pageName = pages.find((page) => page.slug === pageSlug)?.displayName ?? pageSlug;
       const approved = await confirm({
         title: '비밀번호를 저장할까요?',
-        description: `${pageName} 페이지의 고객 비밀번호를 변경하면 기존 비밀번호는 복구할 수 없습니다.`,
+        description: `${pageName} 페이지의 고객 비밀번호를 새 값으로 저장합니다.`,
         confirmLabel: '저장',
         cancelLabel: '취소',
         tone: 'danger',
@@ -328,9 +398,13 @@ export function useAdminData({
       }
 
       setSavingPasswordPageSlug(pageSlug);
+
       try {
         await setClientPassword(pageSlug, nextPassword);
-        await fetchPasswords();
+        await refreshAdminData({
+          passwords: true,
+          pages: true,
+        });
         showToast({ title: '고객 비밀번호를 저장했습니다.', tone: 'success' });
       } catch (saveError) {
         console.error(saveError);
@@ -339,7 +413,7 @@ export function useAdminData({
         setSavingPasswordPageSlug(null);
       }
     },
-    [confirm, fetchPasswords, pages, showToast]
+    [confirm, pages, refreshAdminData, showToast]
   );
 
   const handleAssignCustomerOwnership = useCallback(
@@ -347,7 +421,7 @@ export function useAdminData({
       const pageName = pages.find((page) => page.slug === pageSlug)?.displayName ?? pageSlug;
       const approved = await confirm({
         title: '고객 계정에 청첩장을 연결할까요?',
-        description: `${pageName} 청첩장을 선택한 고객 계정의 사용자 페이지에서 바로 관리할 수 있게 연결합니다.`,
+        description: `${pageName} 청첩장을 선택한 고객 계정에 연결합니다.`,
         confirmLabel: '연결',
         cancelLabel: '취소',
       });
@@ -361,10 +435,12 @@ export function useAdminData({
 
       try {
         await assignAdminCustomerEventOwnership(uid, pageSlug);
-        await Promise.all([fetchCustomerAccounts(), refreshPages()]);
+        await refreshAdminData({
+          accounts: true,
+          pages: true,
+        });
         showToast({
           title: '고객 계정에 청첩장을 연결했습니다.',
-          message: '이제 고객이 사용자 페이지에서 바로 수정 및 관리할 수 있습니다.',
           tone: 'success',
         });
       } catch (error) {
@@ -379,7 +455,7 @@ export function useAdminData({
         setOwnershipActionToken(null);
       }
     },
-    [confirm, fetchCustomerAccounts, pages, refreshPages, showToast]
+    [confirm, pages, refreshAdminData, showToast]
   );
 
   const handleClearCustomerOwnership = useCallback(
@@ -387,7 +463,7 @@ export function useAdminData({
       const pageName = pages.find((page) => page.slug === pageSlug)?.displayName ?? pageSlug;
       const approved = await confirm({
         title: '고객 계정 연결을 해제할까요?',
-        description: `${pageName} 청첩장을 현재 고객 계정에서 분리합니다. 해제 후에는 고객 사용자 페이지에서 더 이상 보이지 않습니다.`,
+        description: `${pageName} 청첩장의 고객 계정 연결을 해제합니다.`,
         confirmLabel: '연결 해제',
         cancelLabel: '취소',
         tone: 'danger',
@@ -402,7 +478,10 @@ export function useAdminData({
 
       try {
         await clearAdminCustomerEventOwnership(pageSlug);
-        await Promise.all([fetchCustomerAccounts(), refreshPages()]);
+        await refreshAdminData({
+          accounts: true,
+          pages: true,
+        });
         showToast({
           title: '고객 계정 연결을 해제했습니다.',
           tone: 'success',
@@ -419,7 +498,7 @@ export function useAdminData({
         setOwnershipActionToken(null);
       }
     },
-    [confirm, fetchCustomerAccounts, pages, refreshPages, showToast]
+    [confirm, pages, refreshAdminData, showToast]
   );
 
   const handleTogglePublished = useCallback(
@@ -430,7 +509,7 @@ export function useAdminData({
 
       const approved = await confirm({
         title: nextPublished ? '페이지를 공개할까요?' : '페이지를 비공개로 전환할까요?',
-        description: `${page.displayName} 페이지를 ${nextPublished ? '공개' : '비공개'} 상태로 변경합니다.`,
+        description: `${page.displayName} 페이지의 공개 상태를 변경합니다.`,
         confirmLabel: nextPublished ? '공개' : '비공개',
         cancelLabel: '취소',
         tone: nextPublished ? 'primary' : 'danger',
@@ -446,7 +525,11 @@ export function useAdminData({
         await setInvitationPagePublished(page.slug, nextPublished, {
           defaultTheme: page.defaultTheme,
         });
-        await refreshPages();
+        await refreshAdminData({
+          summary: true,
+          pages: true,
+          invitationPageSlug: page.slug,
+        });
         showToast({
           title: nextPublished ? '페이지를 공개했습니다.' : '페이지를 비공개로 전환했습니다.',
           tone: 'success',
@@ -461,14 +544,14 @@ export function useAdminData({
         setUpdatingPublishedPageSlug(null);
       }
     },
-    [confirm, refreshPages, showToast]
+    [confirm, refreshAdminData, showToast]
   );
 
   const handleEnableVariant = useCallback(
     async (page: InvitationPageSummary, variantKey: InvitationThemeKey) => {
       const variantLabel = getInvitationThemeAdminLabel(variantKey);
       const approved = await confirm({
-        title: `${variantLabel} 디자인을 추가할까요?`,
+        title: `${variantLabel} 미리보기를 추가할까요?`,
         description: `${page.displayName} 페이지에 ${variantLabel} 미리보기를 추가합니다.`,
         confirmLabel: '추가',
         cancelLabel: '취소',
@@ -486,22 +569,25 @@ export function useAdminData({
           published: page.published,
           defaultTheme: page.defaultTheme,
         });
-        await refreshPages();
+        await refreshAdminData({
+          pages: true,
+          invitationPageSlug: page.slug,
+        });
         showToast({
-          title: `${variantLabel} 디자인을 추가했습니다.`,
+          title: `${variantLabel} 미리보기를 추가했습니다.`,
           tone: 'success',
         });
       } catch (error) {
         console.error(error);
         showToast({
-          title: `${variantLabel} 디자인 추가에 실패했습니다.`,
+          title: `${variantLabel} 미리보기 추가에 실패했습니다.`,
           tone: 'error',
         });
       } finally {
         setUpdatingVariantToken(null);
       }
     },
-    [confirm, refreshPages, showToast]
+    [confirm, refreshAdminData, showToast]
   );
 
   const handleDisableVariant = useCallback(
@@ -513,16 +599,16 @@ export function useAdminData({
 
       if (availableVariantCount <= 1) {
         showToast({
-          title: '최소 1개의 디자인은 유지해야 합니다.',
+          title: '최소 1개의 미리보기는 유지해야 합니다.',
           tone: 'error',
         });
         return;
       }
 
       const approved = await confirm({
-        title: `${variantLabel} 디자인을 삭제할까요?`,
+        title: `${variantLabel} 미리보기를 제거할까요?`,
         description: `${page.displayName} 페이지에서 ${variantLabel} 미리보기를 제거합니다.`,
-        confirmLabel: '삭제',
+        confirmLabel: '제거',
         cancelLabel: '취소',
         tone: 'danger',
       });
@@ -539,22 +625,25 @@ export function useAdminData({
           published: page.published,
           defaultTheme: page.defaultTheme,
         });
-        await refreshPages();
+        await refreshAdminData({
+          pages: true,
+          invitationPageSlug: page.slug,
+        });
         showToast({
-          title: `${variantLabel} 디자인을 삭제했습니다.`,
+          title: `${variantLabel} 미리보기를 제거했습니다.`,
           tone: 'success',
         });
       } catch (error) {
         console.error(error);
         showToast({
-          title: `${variantLabel} 디자인 삭제에 실패했습니다.`,
+          title: `${variantLabel} 미리보기 제거에 실패했습니다.`,
           tone: 'error',
         });
       } finally {
         setUpdatingVariantToken(null);
       }
     },
-    [confirm, refreshPages, showToast]
+    [confirm, refreshAdminData, showToast]
   );
 
   const handleChangeTier = useCallback(
@@ -564,8 +653,8 @@ export function useAdminData({
       }
 
       const approved = await confirm({
-        title: '서비스 등급을 변경할까요?',
-        description: `${page.displayName} 페이지의 서비스를 ${page.productTier.toUpperCase()} → ${nextTier.toUpperCase()}으로 변경합니다.`,
+        title: '상품 등급을 변경할까요?',
+        description: `${page.displayName} 페이지의 상품 등급을 ${nextTier.toUpperCase()}로 바꿉니다.`,
         confirmLabel: '변경',
         cancelLabel: '취소',
       });
@@ -578,68 +667,42 @@ export function useAdminData({
 
       try {
         await setInvitationPageProductTier(page.slug, nextTier);
-        await refreshPages();
+        await refreshAdminData({
+          pages: true,
+          invitationPageSlug: page.slug,
+        });
         showToast({
-          title: `서비스를 ${nextTier.toUpperCase()}으로 변경했습니다.`,
+          title: `상품 등급을 ${nextTier.toUpperCase()}로 변경했습니다.`,
           tone: 'success',
         });
       } catch (error) {
         console.error(error);
-        showToast({ title: '서비스 변경에 실패했습니다.', tone: 'error' });
+        showToast({ title: '상품 등급 변경에 실패했습니다.', tone: 'error' });
       } finally {
         setUpdatingTierPageSlug(null);
       }
     },
-    [confirm, refreshPages, showToast]
+    [confirm, refreshAdminData, showToast]
   );
 
   const handleLogout = useCallback(() => {
     clearAdminInvitationPreviewCache();
-    resetAll();
-  }, [resetAll]);
-
-  /* ── Auto-fetch effects ── */
-
-  useEffect(() => {
-    if (!isAdminLoggedIn) {
-      resetAll();
-      return;
-    }
-
-    void fetchSummarySources();
-  }, [fetchSummarySources, isAdminLoggedIn, resetAll]);
-
-  useEffect(() => {
-    if (!isAdminLoggedIn || activeTab !== 'comments' || commentsLoading || commentsLoaded) {
-      return;
-    }
-
-    void fetchComments();
-  }, [activeTab, commentsLoaded, commentsLoading, fetchComments, isAdminLoggedIn]);
-
-  useEffect(() => {
-    if (!isAdminLoggedIn || activeTab !== 'pages' || summaryLoading || pagesLoading || pagesLoaded) {
-      return;
-    }
-
-    void refreshPages();
-  }, [activeTab, refreshPages, isAdminLoggedIn, pagesLoaded, pagesLoading, summaryLoading]);
-
-  useEffect(() => {
-    if (!isAdminLoggedIn || activeTab !== 'passwords' || passwordsLoading || passwordsLoaded) {
-      return;
-    }
-
-    void fetchPasswords();
-  }, [activeTab, fetchPasswords, isAdminLoggedIn, passwordsLoaded, passwordsLoading]);
-
-  useEffect(() => {
-    if (!isAdminLoggedIn || activeTab !== 'accounts' || accountsLoading || accountsLoaded) {
-      return;
-    }
-
-    void fetchCustomerAccounts();
-  }, [accountsLoaded, accountsLoading, activeTab, fetchCustomerAccounts, isAdminLoggedIn]);
+    queryClient.removeQueries({
+      queryKey: appQueryKeys.adminDashboardSummary(RECENT_COMMENT_DAYS),
+    });
+    queryClient.removeQueries({
+      queryKey: appQueryKeys.adminInvitationPages,
+    });
+    queryClient.removeQueries({
+      queryKey: appQueryKeys.adminComments,
+    });
+    queryClient.removeQueries({
+      queryKey: appQueryKeys.adminClientPasswords,
+    });
+    queryClient.removeQueries({
+      queryKey: appQueryKeys.adminCustomerAccounts,
+    });
+  }, [queryClient]);
 
   return {
     pages,
@@ -649,12 +712,18 @@ export function useAdminData({
     unassignedCustomerEvents,
     memoryPublicCount,
     commentSummary,
+    dashboardSummary,
 
     pagesLoading,
+    pagesRefreshing,
     commentsLoading,
+    commentsRefreshing,
     summaryLoading,
+    summaryRefreshing,
     passwordsLoading,
+    passwordsRefreshing,
     accountsLoading,
+    accountsRefreshing,
     savingPasswordPageSlug,
     updatingPublishedPageSlug,
     updatingVariantToken,

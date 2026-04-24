@@ -1,6 +1,7 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { useMemo } from 'react';
 
 import Link from 'next/link';
 
@@ -8,10 +9,14 @@ import CustomerEventClaimCard from '@/app/_components/CustomerEventClaimCard';
 import FirebaseAuthLoginCard from '@/app/_components/FirebaseAuthLoginCard';
 import { normalizeFormConfig } from '@/app/page-editor/pageEditorUtils';
 import { useAdmin } from '@/contexts';
+import {
+  FIFTEEN_MINUTES_MS,
+  THIRTY_MINUTES_MS,
+} from '@/lib/appQuery';
 import { resolveInvitationFeatures } from '@/lib/invitationProducts';
 import type { EditableInvitationPageConfig } from '@/services/invitationPageService';
 import { getEditableInvitationPageConfig } from '@/services/invitationPageService';
-import { getCustomerEventOwnershipStatus } from '@/services/customerEventService';
+import { getCustomerEditableInvitationPageState } from '@/services/customerEventService';
 
 import PageWizardStepPreview from './PageWizardStepPreview';
 import { applyWizardStorageImageFallback } from './pageWizardImageFallback';
@@ -27,15 +32,74 @@ interface PageWizardResultClientProps {
   slug: string;
 }
 
+type ResultLoadState =
+  | { status: 'logged-out' }
+  | { status: 'claim' }
+  | { status: 'blocked'; errorMessage: string }
+  | { status: 'ready'; configState: EditableInvitationPageConfig };
+
 export default function PageWizardResultClient({
   slug,
 }: PageWizardResultClientProps) {
   const { authUser, isAdminLoading, isAdminLoggedIn, isLoggedIn } = useAdmin();
-  const [isLoading, setIsLoading] = useState(true);
-  const [configState, setConfigState] = useState<EditableInvitationPageConfig | null>(null);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [requiresOwnershipClaim, setRequiresOwnershipClaim] = useState(false);
-  const [accessRefreshToken, setAccessRefreshToken] = useState(0);
+  const resultQuery = useQuery<ResultLoadState>({
+    queryKey: ['page-wizard-result', slug, authUser?.uid ?? null, isAdminLoggedIn, isLoggedIn],
+    enabled: !isAdminLoading,
+    queryFn: async () => {
+      if (!isLoggedIn) {
+        return { status: 'logged-out' } satisfies ResultLoadState;
+      }
+
+      let rawEditableConfig: EditableInvitationPageConfig | null = null;
+      if (isAdminLoggedIn) {
+        rawEditableConfig = await getEditableInvitationPageConfig(slug);
+      } else {
+        const customerState = await getCustomerEditableInvitationPageState(slug);
+        if (customerState.status === 'blocked') {
+          return {
+            status: 'blocked',
+            errorMessage: customerState.message,
+          } satisfies ResultLoadState;
+        }
+
+        if (customerState.status !== 'ready') {
+          return { status: 'claim' } satisfies ResultLoadState;
+        }
+
+        rawEditableConfig = customerState.editableConfig;
+      }
+
+      const editableConfig =
+        rawEditableConfig && isAdminLoggedIn
+          ? await applyWizardStorageImageFallback(rawEditableConfig)
+          : rawEditableConfig;
+
+      if (!editableConfig) {
+        return {
+          status: 'blocked',
+          errorMessage: '저장된 청첩장 데이터를 찾을 수 없습니다.',
+        } satisfies ResultLoadState;
+      }
+
+      return {
+        status: 'ready',
+        configState: editableConfig,
+      } satisfies ResultLoadState;
+    },
+    staleTime: FIFTEEN_MINUTES_MS,
+    gcTime: THIRTY_MINUTES_MS,
+    refetchOnWindowFocus: false,
+  });
+  const resultState = resultQuery.data;
+  const configState = resultState?.status === 'ready' ? resultState.configState : null;
+  const errorMessage =
+    resultState?.status === 'blocked'
+      ? resultState.errorMessage
+      : resultQuery.error instanceof Error
+        ? '저장된 청첩장 데이터를 불러오지 못했습니다.'
+        : null;
+  const requiresOwnershipClaim = resultState?.status === 'claim';
+  const isLoading = resultQuery.isLoading;
 
   const wizardSteps = useMemo(
     () =>
@@ -49,90 +113,6 @@ export default function PageWizardResultClient({
       }),
     [configState?.features, configState?.productTier]
   );
-
-  useEffect(() => {
-    if (isAdminLoading) {
-      return;
-    }
-
-    let cancelled = false;
-
-    const loadConfig = async () => {
-      if (!isLoggedIn) {
-        setConfigState(null);
-        setErrorMessage(null);
-        setRequiresOwnershipClaim(false);
-        setIsLoading(false);
-        return;
-      }
-
-      setIsLoading(true);
-      setErrorMessage(null);
-      setRequiresOwnershipClaim(false);
-
-      try {
-        if (!isAdminLoggedIn) {
-          const ownershipStatus = await getCustomerEventOwnershipStatus(
-            slug,
-            authUser?.uid
-          );
-
-          if (cancelled) {
-            return;
-          }
-
-          if (ownershipStatus.status === 'different-owner') {
-            setConfigState(null);
-            setRequiresOwnershipClaim(false);
-            setErrorMessage('이 청첩장은 다른 계정에 이미 연결되어 있습니다.');
-            setIsLoading(false);
-            return;
-          }
-
-          if (ownershipStatus.status !== 'owner') {
-            setConfigState(null);
-            setRequiresOwnershipClaim(true);
-            setErrorMessage(null);
-            setIsLoading(false);
-            return;
-          }
-        }
-
-        const rawEditableConfig = await getEditableInvitationPageConfig(slug);
-        const editableConfig = rawEditableConfig
-          ? await applyWizardStorageImageFallback(rawEditableConfig)
-          : null;
-
-        if (cancelled) {
-          return;
-        }
-
-        if (!editableConfig) {
-          setConfigState(null);
-          setErrorMessage('저장된 청첩장 데이터를 찾을 수 없습니다.');
-          setIsLoading(false);
-          return;
-        }
-
-        setConfigState(editableConfig);
-      } catch {
-        if (!cancelled) {
-          setConfigState(null);
-          setErrorMessage('저장된 청첩장 데이터를 불러오지 못했습니다.');
-        }
-      } finally {
-        if (!cancelled) {
-          setIsLoading(false);
-        }
-      }
-    };
-
-    void loadConfig();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [accessRefreshToken, authUser?.uid, isAdminLoading, isAdminLoggedIn, isLoggedIn, slug]);
 
   const previewFormState = useMemo(() => {
     if (!configState) {
@@ -199,7 +179,7 @@ export default function PageWizardResultClient({
             description="이 결과 화면은 현재 로그인한 계정의 UID와 연결된 청첩장만 볼 수 있습니다. 기존 페이지 비밀번호를 확인하면 바로 연결할 수 있습니다."
             helperText="한 번 연결하면 이후에는 Firebase 로그인만으로 접근할 수 있습니다."
             onClaimed={() => {
-              setAccessRefreshToken((current) => current + 1);
+              void resultQuery.refetch();
             }}
           />
         </div>
@@ -221,6 +201,14 @@ export default function PageWizardResultClient({
               내 청첩장 목록에서 다시 열거나 편집 화면으로 돌아가 상태를 확인해 주세요.
             </p>
             <div className={styles.inlineActions}>
+              <button
+                type="button"
+                className={styles.secondaryButton}
+                onClick={() => void resultQuery.refetch()}
+                disabled={resultQuery.isRefetching}
+              >
+                {resultQuery.isRefetching ? '새로고침 중' : '새로고침'}
+              </button>
               <Link href="/my-invitations" className={styles.secondaryButton}>
                 내 청첩장으로 이동
               </Link>
@@ -278,6 +266,14 @@ export default function PageWizardResultClient({
             <Link href={livePagePath} className={styles.primaryButton}>
               바로 확인하기
             </Link>
+            <button
+              type="button"
+              className={styles.secondaryButton}
+              onClick={() => void resultQuery.refetch()}
+              disabled={resultQuery.isRefetching}
+            >
+              {resultQuery.isRefetching ? '새로고침 중' : '새로고침'}
+            </button>
             <Link
               href={`/page-wizard/${encodeURIComponent(slug)}`}
               className={styles.secondaryButton}

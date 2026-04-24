@@ -1,10 +1,16 @@
 ﻿'use client';
 
-import { type ChangeEvent, type ReactNode, useEffect, useMemo, useRef, useState } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { type ChangeEvent, type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import CustomerEventClaimCard from '@/app/_components/CustomerEventClaimCard';
 import FirebaseAuthLoginCard from '@/app/_components/FirebaseAuthLoginCard';
 import { useAdmin } from '@/contexts';
+import {
+  appQueryKeys,
+  FIFTEEN_MINUTES_MS,
+  THIRTY_MINUTES_MS,
+} from '@/lib/appQuery';
 import { USE_FIREBASE } from '@/lib/firebase';
 import {
   buildInvitationThemeRoutePath,
@@ -38,8 +44,14 @@ import {
   setInvitationPagePublished,
 } from '@/services/invitationPageService';
 import { getInvitationMusicLibraryFromStorage } from '@/services/musicService';
-import { getCustomerEventOwnershipStatus } from '@/services/customerEventService';
-import type { InvitationPageSeed, InvitationThemeKey } from '@/types/invitationPage';
+import {
+  getCustomerEditableInvitationPageState,
+  getCustomerEventOwnershipStatus,
+} from '@/services/customerEventService';
+import type {
+  InvitationPageSeed,
+  InvitationThemeKey,
+} from '@/types/invitationPage';
 
 import {
   AccountSectionPanel,
@@ -419,6 +431,7 @@ export default function PageEditorClient({
   initialVenue,
 }: PageEditorClientProps) {
   const { authUser, isAdminLoading, isAdminLoggedIn, isLoggedIn } = useAdmin();
+  const queryClient = useQueryClient();
 
   const [formState, setFormState] = useState<InvitationPageSeed | null>(null);
   const [baselineState, setBaselineState] = useState<InvitationPageSeed | null>(null);
@@ -430,7 +443,6 @@ export default function PageEditorClient({
   const [hasOwnershipAccess, setHasOwnershipAccess] = useState(false);
   const [requiresOwnershipClaim, setRequiresOwnershipClaim] = useState(false);
   const [accessErrorMessage, setAccessErrorMessage] = useState<string | null>(null);
-  const [accessRefreshToken, setAccessRefreshToken] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isSavingVisibility, setIsSavingVisibility] = useState(false);
@@ -448,6 +460,38 @@ export default function PageEditorClient({
   const coverUploadInputRef = useRef<HTMLInputElement | null>(null);
   const faviconUploadInputRef = useRef<HTMLInputElement | null>(null);
   const galleryUploadInputRef = useRef<HTMLInputElement | null>(null);
+  const ownershipQuery = useQuery({
+    queryKey: appQueryKeys.customerEventOwnership(slug, authUser?.uid ?? null),
+    enabled: !isAdminLoading && !isAdminLoggedIn && isLoggedIn,
+    queryFn: async () => getCustomerEventOwnershipStatus(slug, authUser?.uid),
+    staleTime: FIFTEEN_MINUTES_MS,
+    gcTime: THIRTY_MINUTES_MS,
+    refetchOnWindowFocus: false,
+  });
+  const configQuery = useQuery({
+    queryKey: appQueryKeys.editableInvitationPage(slug),
+    enabled:
+      !isAdminLoading && (isAdminLoggedIn || ownershipQuery.data?.status === 'owner'),
+    queryFn: async () => {
+      if (isAdminLoggedIn) {
+        return getEditableInvitationPageConfig(slug);
+      }
+
+      const customerState = await getCustomerEditableInvitationPageState(slug);
+      if (customerState.status === 'ready') {
+        return customerState.editableConfig;
+      }
+
+      if (customerState.status === 'blocked') {
+        throw new Error(customerState.message);
+      }
+
+      return null;
+    },
+    staleTime: FIFTEEN_MINUTES_MS,
+    gcTime: THIRTY_MINUTES_MS,
+    refetchOnWindowFocus: false,
+  });
 
   const canEdit = isAdminLoggedIn || hasOwnershipAccess;
   const canUploadImages = USE_FIREBASE && canEdit;
@@ -556,6 +600,38 @@ export default function PageEditorClient({
     setLastSavedAt(config.lastSavedAt);
     setSaveState('idle');
   };
+  const syncEditableQueryCache = useCallback(
+    (nextConfig: InvitationPageSeed, nextPublished: boolean, nextLastSavedAt: Date) => {
+      queryClient.setQueryData(appQueryKeys.editableInvitationPage(slug), {
+        slug,
+        config: cloneConfig(nextConfig),
+        published: nextPublished,
+        defaultTheme,
+        productTier: nextConfig.productTier,
+        features: resolveInvitationFeatures(nextConfig.productTier, nextConfig.features),
+        hasCustomConfig: true,
+        dataSource: 'firestore',
+        lastSavedAt: nextLastSavedAt,
+      });
+    },
+    [defaultTheme, queryClient, slug]
+  );
+  const invalidateEditorCaches = useCallback(async () => {
+    await Promise.all([
+      queryClient.invalidateQueries({
+        queryKey: appQueryKeys.ownedCustomerEvents(authUser?.uid ?? null),
+      }),
+      queryClient.invalidateQueries({
+        queryKey: appQueryKeys.customerEventOwnership(slug, authUser?.uid ?? null),
+      }),
+      queryClient.invalidateQueries({
+        queryKey: appQueryKeys.invitationPage(slug, 'public'),
+      }),
+      queryClient.invalidateQueries({
+        queryKey: appQueryKeys.invitationPage(slug, 'admin'),
+      }),
+    ]);
+  }, [authUser?.uid, queryClient, slug]);
 
   useEffect(() => {
     let cancelled = false;
@@ -603,96 +679,77 @@ export default function PageEditorClient({
       return;
     }
 
-    let cancelled = false;
-
-    const loadOwnership = async () => {
-      try {
-        const ownership = await getCustomerEventOwnershipStatus(slug, authUser?.uid);
-        if (cancelled) {
-          return;
-        }
-
-        if (ownership.status === 'owner') {
-          setHasOwnershipAccess(true);
-          setRequiresOwnershipClaim(false);
-          setAccessErrorMessage(null);
-          return;
-        }
-
-        if (ownership.status === 'claimable') {
-          setHasOwnershipAccess(false);
-          setRequiresOwnershipClaim(true);
-          setAccessErrorMessage(null);
-          setFormState(null);
-          setBaselineState(null);
-          return;
-        }
-
-        setHasOwnershipAccess(false);
+    if (ownershipQuery.data) {
+      if (ownershipQuery.data.status === 'owner') {
+        setHasOwnershipAccess(true);
         setRequiresOwnershipClaim(false);
-        setAccessErrorMessage(
-          ownership.status === 'different-owner'
-            ? '이 청첩장은 현재 로그인한 계정과 연결되어 있지 않습니다.'
-            : '청첩장 정보를 찾지 못했습니다.'
-        );
+        setAccessErrorMessage(null);
+        return;
+      }
+
+      if (ownershipQuery.data.status === 'claimable') {
+        setHasOwnershipAccess(false);
+        setRequiresOwnershipClaim(true);
+        setAccessErrorMessage(null);
         setFormState(null);
         setBaselineState(null);
-      } catch {
-        if (!cancelled) {
-          setHasOwnershipAccess(false);
-          setRequiresOwnershipClaim(false);
-          setAccessErrorMessage('청첩장 소유권을 확인하지 못했습니다.');
-        }
+        return;
       }
-    };
 
-    void loadOwnership();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [accessRefreshToken, authUser?.uid, isAdminLoading, isAdminLoggedIn, isLoggedIn, slug]);
-
-  useEffect(() => {
-    if (isAdminLoading || !canEdit) {
+      setHasOwnershipAccess(false);
+      setRequiresOwnershipClaim(false);
+      setAccessErrorMessage(
+        ownershipQuery.data.status === 'different-owner'
+          ? '이 청첩장은 현재 로그인한 계정과 연결되어 있지 않습니다.'
+          : '청첩장 정보를 찾지 못했습니다.'
+      );
+      setFormState(null);
+      setBaselineState(null);
       return;
     }
 
-    let cancelled = false;
-    setIsLoading(true);
+    if (ownershipQuery.error) {
+      setHasOwnershipAccess(false);
+      setRequiresOwnershipClaim(false);
+      setAccessErrorMessage('청첩장 소유권을 확인하지 못했습니다.');
+    }
+  }, [
+    authUser?.uid,
+    isAdminLoading,
+    isAdminLoggedIn,
+    isLoggedIn,
+    ownershipQuery.data,
+    ownershipQuery.error,
+    slug,
+  ]);
 
-    const load = async () => {
-      try {
-        const config = await getEditableInvitationPageConfig(slug);
-        if (cancelled) {
-          return;
-        }
+  useEffect(() => {
+    if (isAdminLoading || !canEdit) {
+      setIsLoading(false);
+      return;
+    }
 
-        applyLoadedConfig(config);
-      } catch (error) {
-        if (cancelled) {
-          return;
-        }
+    if (configQuery.isLoading) {
+      setIsLoading(true);
+      return;
+    }
 
-        console.error('[PageEditorClient] failed to load config', error);
-        setSaveState('error');
-        setNotice({
-          tone: 'error',
-          message: '설정 정보를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.',
-        });
-      } finally {
-        if (!cancelled) {
-          setIsLoading(false);
-        }
-      }
-    };
+    if (configQuery.data) {
+      applyLoadedConfig(configQuery.data);
+      setIsLoading(false);
+      return;
+    }
 
-    void load();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [canEdit, isAdminLoading, slug]);
+    if (configQuery.error) {
+      console.error('[PageEditorClient] failed to load config', configQuery.error);
+      setSaveState('error');
+      setNotice({
+        tone: 'error',
+        message: '설정 정보를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.',
+      });
+      setIsLoading(false);
+    }
+  }, [canEdit, configQuery.data, configQuery.error, configQuery.isLoading, isAdminLoading]);
 
   useEffect(() => {
     if (!formState) {
@@ -814,11 +871,14 @@ export default function PageEditorClient({
         published: baselinePublished,
         defaultTheme,
       });
+      const savedAt = new Date();
       setFormState(cloneConfig(nextConfig));
       setBaselineState(cloneConfig(nextConfig));
       setHasCustomConfig(true);
       setDataSourceLabel('맞춤 설정 사용 중');
-      setLastSavedAt(new Date());
+      setLastSavedAt(savedAt);
+      syncEditableQueryCache(nextConfig, baselinePublished, savedAt);
+      await invalidateEditorCaches();
       setSaveState('saved');
 
       if (mode === 'manual') {
@@ -852,8 +912,12 @@ export default function PageEditorClient({
     setIsRefreshing(true);
 
     try {
-      const config = await getEditableInvitationPageConfig(slug);
-      applyLoadedConfig(config);
+      const refreshed = await configQuery.refetch();
+      if (!refreshed.data) {
+        throw refreshed.error ?? new Error('설정 정보를 찾을 수 없습니다.');
+      }
+
+      applyLoadedConfig(refreshed.data);
       if (successMessage) {
         setNotice({ tone: 'success', message: successMessage });
       }
@@ -899,6 +963,7 @@ export default function PageEditorClient({
         published: baselinePublished,
         defaultTheme,
       });
+      await invalidateEditorCaches();
       await loadLatestConfig('기본 설정으로 복원했습니다.');
     } catch (error) {
       console.error('[PageEditorClient] failed to restore config', error);
@@ -933,10 +998,12 @@ export default function PageEditorClient({
           published,
           defaultTheme,
         });
+        const savedAt = new Date();
         setFormState(cloneConfig(nextConfig));
         setBaselineState(cloneConfig(nextConfig));
         setHasCustomConfig(true);
         setDataSourceLabel('맞춤 설정 사용 중');
+        syncEditableQueryCache(nextConfig, published, savedAt);
       } else {
         await setInvitationPagePublished(slug, published, {
           defaultTheme,
@@ -944,7 +1011,12 @@ export default function PageEditorClient({
       }
 
       setBaselinePublished(published);
-      setLastSavedAt(new Date());
+      const savedAt = new Date();
+      setLastSavedAt(savedAt);
+      if (formState && !hasConfigChanges) {
+        syncEditableQueryCache(formState, published, savedAt);
+      }
+      await invalidateEditorCaches();
       setSaveState('saved');
       setNotice({
         tone: 'success',
@@ -3496,7 +3568,8 @@ export default function PageEditorClient({
                       tone: 'success',
                       message: '청첩장을 현재 계정에 연결했습니다. 최신 상태를 다시 불러옵니다.',
                     });
-                    setAccessRefreshToken((current) => current + 1);
+                    void ownershipQuery.refetch();
+                    void configQuery.refetch();
                   }}
                 />
               </section>

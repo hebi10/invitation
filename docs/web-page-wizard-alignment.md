@@ -2,32 +2,37 @@
 
 ## 현재 기준
 
-- `/page-wizard`
-  - 새 청첩장 생성과 기존 페이지 편집 모두 `PageWizardClient` 기반 wizard 흐름을 사용합니다.
-- `/page-editor`
-  - 세부 편집 화면은 별도 editor 흐름을 유지합니다.
+- `/page-wizard`, `/page-wizard/[slug]`, `/page-wizard/[slug]/result`, `/page-editor/[slug]`는 React Query 기반으로 기존 초안/결과를 읽습니다.
+- 결과/편집 화면의 기본 조회 정책은 `staleTime 15분`, `gcTime 30분`, `refetchOnWindowFocus: false`입니다.
+- `/page-wizard/[slug]`의 소유권/편집 진입 확인은 이전 `claim` 캐시를 믿지 않고 `staleTime: 0`, `refetchOnMount: "always"`로 매번 다시 확인합니다.
+- 캐시가 살아 있는 동안 재조회가 필요 없는 화면은 이전 응답을 우선 사용하고, 사용자가 눌렀을 때 수동 새로고침을 실행합니다.
 
 ## 현재 동작
 
 1. `/page-wizard`
-   - 관리자 또는 권한 확인 사용자가 wizard 단계형 편집 화면으로 진입합니다.
-   - 신규 생성은 `이벤트 타입 -> 테마/상품 -> 주소 -> 본문` 흐름으로 이어집니다.
-2. `/page-wizard/[slug]`
-   - 기존 페이지 설정도 wizard 화면에서 다시 편집합니다.
-   - 삭제된 스토리지 이미지 참조는 진입 시 자동 정리합니다.
-3. 이미지 단계
-   - URL 직접 입력은 제거했습니다.
-   - 업로드 슬롯은 `대표 이미지`, `공유 미리보기 이미지`, `카카오 카드 이미지`, `갤러리`로 분리했습니다.
-   - 공유 미리보기 이미지는 `og:image`, `twitter:image`에 사용합니다.
-   - 카카오 카드 이미지는 카카오 feed/card 공유용으로 사용합니다.
-- 공개 페이지 카카오 공유는 `카카오 카드 이미지 -> 공유 미리보기 이미지 -> 대표 이미지` 순으로 fallback 합니다.
-- `romantic` 공개 페이지의 로더와 첫 hero는 `heroImageUrl -> mainImageUrl` 순서로 대표 이미지를 우선 사용합니다.
-- 공개 페이지는 스토리지 관리 URL을 다시 읽을 때도 wizard에 저장된 `metadata.images.wedding`과 일치하는 자산을 먼저 매칭한 뒤, 없을 때만 legacy `main`/갤러리 fallback을 사용합니다.
-- `romantic` hero 날짜 문구는 이미지 중앙을 가리지 않도록 이름/장소 아래 하단으로 내리고, 밝은 배경에서도 읽히게 그림자를 보강했습니다.
-- `romantic` 갤러리 모달은 좌우 터치 스와이프로 이전/다음 이미지를 넘길 수 있도록 보강했습니다.
+   - 신규 생성과 기존 페이지 편집 진입을 모두 `PageWizardClient`가 담당합니다.
+   - 기존 slug 편집은 비관리자 고객의 경우 `/api/customer/events/[slug]/editable` 서버 API로 소유권과 기존 설정을 함께 확인하고, 접근 제한/연결 필요 상태도 쿼리 결과로 분기합니다.
+   - 현재 UID에 이미 연결된 청첩장은 비밀번호 claim 카드 없이 바로 편집 화면으로 진입합니다.
+   - claim 카드 렌더링 전 `/api/customer/events` 소유 목록 확인을 별도로 기다리며, 목록에 현재 slug가 있으면 편집 state를 즉시 적용합니다.
+   - 이전에 claim 필요로 캐시된 상태여도 페이지 진입 시 다시 확인하며, 재확인 중에는 claim 카드 대신 로딩 상태를 보여줍니다.
+   - editable API가 일시적으로 claimable을 반환해도, 같은 UID의 `/api/customer/events` 목록에 해당 slug가 있으면 claim 카드 대신 소유 이벤트 fallback config로 진입합니다.
+   - editable API가 claimable을 반환했더라도 소유 이벤트 목록 재확인이 끝나기 전에는 claim 카드를 렌더링하지 않아 비밀번호 입력창 깜박임을 막습니다.
+   - 기존 청첩장 연결 비밀번호 검증에 성공하면 claim API 응답에 포함된 편집 config를 우선 적용해 바로 편집 화면으로 전환합니다.
+   - 비관리자 고객 흐름에서는 진입 직후 Storage folder listing과 클라이언트 Firestore 정리 저장을 실행하지 않습니다.
+   - 성공 후 편집 데이터 재조회가 실패하거나 10초 안에 끝나지 않으면 로딩 화면에 머무르지 않고 claim 카드로 돌아와 “비밀번호는 맞음” 상태를 안내합니다.
+   - `저장 후 바로 공개하기` 옵션은 서버에서 내려온 `published` 상태를 그대로 반영합니다.
+   - 상단, claim 카드, 접근 제한 카드에 `다시 불러오기` 버튼이 있어 저장 직후나 권한 변경 직후 수동으로 최신값을 확인할 수 있습니다.
+   - Kakao 지도 SDK 실패와 권한 제한 이미지 목록 조회는 화면 fallback으로 처리하며 개발 오버레이를 띄우는 `console.error`를 사용하지 않습니다.
+2. `/page-wizard/[slug]/result`
+   - 결과 화면도 동일한 15분 캐시 정책을 사용합니다.
+   - 결과 카드와 오류 카드에서 수동 새로고침을 제공합니다.
+3. `/page-editor/[slug]`
+   - 비관리자 고객의 소유권 확인은 `/api/customer/events/[slug]/ownership`, 편집 설정 조회는 `/api/customer/events/[slug]/editable` 서버 API를 우선 사용합니다.
+   - `다시 불러오기` 버튼으로 현재 Firestore 설정을 다시 읽을 수 있습니다.
+   - 저장/복구/공개 상태 변경 뒤에는 공개 페이지, 내 이벤트, 소유권 캐시를 함께 invalidate합니다.
 
-## Expo 반영 메모
+## 메모
 
-- Expo 관리 화면도 같은 3슬롯 이미지 구조를 사용하도록 맞췄습니다.
-- 모바일 업로드 타입은 `cover`, `share-preview`, `kakao-card`, `gallery`를 지원합니다.
-- 모바일 저장 시 `metadata.images.wedding`, `metadata.images.social`, `metadata.images.kakaoCard`로 각각 반영됩니다.
+- slug step의 한글 이름 입력은 초안 생성 시 본문 기본값과 메타에 바로 반영됩니다.
+- slug step의 영문 이름 입력은 주소 입력과 자동 동기화되며, 주소를 직접 수정한 뒤에는 수동 입력을 우선합니다.
+- `/my-invitations`의 `수정하기`, `미리보기` 링크는 새 탭으로 열립니다.

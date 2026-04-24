@@ -7,7 +7,6 @@ import {
 } from '../../../lib/linkedInvitationCardsModel';
 import {
   DEFAULT_INVITATION_THEME,
-  INVITATION_THEME_KEYS,
   getInvitationThemeLabel,
   getPurchasableInvitationThemeKeys,
 } from '../../../lib/invitationThemes';
@@ -16,6 +15,11 @@ import type {
   MobileInvitationProductTier,
   MobileInvitationThemeKey,
 } from '../../../types/mobileInvitation';
+import {
+  getSelectedTargetThemeState,
+  resolveAvailableTicketThemes,
+  resolvePreferredTargetTheme,
+} from '../ticketThemeValidation';
 import type { useInvitationForm } from './useInvitationForm';
 
 type InvitationFormActions = Pick<
@@ -51,43 +55,6 @@ type UseTicketOperationsOptions = {
   formatDateLabel: (value: string) => string;
 };
 
-export function resolvePreferredTargetTheme(
-  currentTheme: MobileInvitationThemeKey,
-  availableThemes: readonly MobileInvitationThemeKey[],
-  purchasableThemes: readonly MobileInvitationThemeKey[]
-) {
-  const availableThemeSet = new Set<MobileInvitationThemeKey>(availableThemes);
-
-  return (
-    purchasableThemes.find(
-      (themeKey) => themeKey !== currentTheme && availableThemeSet.has(themeKey)
-    ) ??
-    purchasableThemes.find((themeKey) => !availableThemeSet.has(themeKey)) ??
-    purchasableThemes.find((themeKey) => themeKey === currentTheme) ??
-    purchasableThemes[0] ??
-    currentTheme
-  );
-}
-
-export function getSelectedTargetThemeState(options: {
-  currentTheme: MobileInvitationThemeKey;
-  selectedTargetTheme: MobileInvitationThemeKey;
-  availableThemes: readonly MobileInvitationThemeKey[];
-}) {
-  const { currentTheme, selectedTargetTheme, availableThemes } = options;
-  const isSelectedTargetThemeCurrent = selectedTargetTheme === currentTheme;
-  const isSelectedTargetThemeAvailable = availableThemes.includes(selectedTargetTheme);
-
-  return {
-    isSelectedTargetThemeCurrent,
-    isSelectedTargetThemeAvailable,
-    canApplyThemeChange:
-      !isSelectedTargetThemeCurrent && isSelectedTargetThemeAvailable,
-    canPurchaseTargetTheme:
-      !isSelectedTargetThemeCurrent && !isSelectedTargetThemeAvailable,
-  };
-}
-
 export function useTicketOperations({
   activeLinkedInvitationCard,
   additionalLinkedInvitationCards,
@@ -122,18 +89,11 @@ export function useTicketOperations({
       return [] as MobileInvitationThemeKey[];
     }
 
-    const themeSet = new Set<MobileInvitationThemeKey>([
-      activeLinkedInvitationCard.defaultTheme,
-      ...getLinkedInvitationThemeKeys(activeLinkedInvitationCard),
-    ]);
-
-    INVITATION_THEME_KEYS.forEach((themeKey) => {
-      if (dashboardVariants?.[themeKey]?.available === true) {
-        themeSet.add(themeKey);
-      }
+    return resolveAvailableTicketThemes({
+      defaultTheme: activeLinkedInvitationCard.defaultTheme,
+      linkedThemeKeys: getLinkedInvitationThemeKeys(activeLinkedInvitationCard),
+      dashboardVariants,
     });
-
-    return INVITATION_THEME_KEYS.filter((themeKey) => themeSet.has(themeKey));
   }, [activeLinkedInvitationCard, dashboardVariants]);
 
   const selectedTargetThemeState = useMemo(

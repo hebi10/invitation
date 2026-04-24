@@ -22,6 +22,7 @@ import type {
 import type { MobileBillingProductId } from './mobileBillingProducts';
 
 export const PRODUCTION_API_BASE_URL = 'https://msgnote.kr';
+const TRANSIENT_LOCAL_API_PORTS = new Set(['3000', '3001']);
 const ALLOWED_API_HOSTS = new Set([
   'msgnote.kr',
   'www.msgnote.kr',
@@ -61,7 +62,7 @@ export function isTransientLocalApiBaseUrl(value: string) {
     const parsed = new URL(normalized);
     const hostname = parsed.hostname.toLowerCase();
 
-    if (parsed.protocol !== 'http:' || parsed.port !== '3000') {
+    if (parsed.protocol !== 'http:' || !TRANSIENT_LOCAL_API_PORTS.has(parsed.port)) {
       return false;
     }
 

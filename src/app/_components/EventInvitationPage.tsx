@@ -2,8 +2,8 @@
 
 import { useEffect } from 'react';
 
-import { AdminProvider } from '@/contexts';
 import { BackgroundMusic } from '@/components';
+import { AdminProvider } from '@/contexts';
 import { resolveInvitationFeatures } from '@/lib/invitationProducts';
 import {
   clampInvitationMusicVolume,
@@ -170,7 +170,16 @@ function EventInvitationPageBody(options: EventInvitationRouteOptions) {
   }, [state.status, state.isLoading, state.imagesLoading]);
 
   if (state.status === 'blocked') {
-    return <AccessDeniedPage message={state.blockMessage} />;
+    return (
+      <AccessDeniedPage
+        message={state.blockMessage}
+        actionLabel={state.isRefreshingPage ? '다시 불러오는 중...' : '다시 불러오기'}
+        actionDisabled={state.isRefreshingPage}
+        onAction={() => {
+          void state.refreshPage();
+        }}
+      />
+    );
   }
 
   if (state.status !== 'ready') {
@@ -207,18 +216,36 @@ function EventInvitationPageBody(options: EventInvitationRouteOptions) {
         variant={themeDefinition.shareButtonVariant}
       />
     ) : null;
+  const refreshButton = (
+    <button
+      type="button"
+      className={styles.pageRefreshButton}
+      onClick={() => {
+        void readyState.refreshPage();
+      }}
+      disabled={readyState.isRefreshingPage}
+    >
+      {readyState.isRefreshingPage ? '새로고침 중' : '새로고침'}
+    </button>
+  );
 
   return (
     <>
       {readyState.adminNotice ? (
         <div className={styles.adminNoticeBar}>
           <div className={styles.adminNoticeInner}>
-            <strong className={styles.adminNoticeTitle}>관리자 전용 보기</strong>
-            <span className={styles.adminNoticeText}>{readyState.adminNotice}</span>
+            <div className={styles.adminNoticeCopy}>
+              <strong className={styles.adminNoticeTitle}>관리자 전용 보기</strong>
+              <span className={styles.adminNoticeText}>{readyState.adminNotice}</span>
+            </div>
+            {refreshButton}
           </div>
         </div>
       ) : null}
       <ThemeRenderer state={readyState} options={options} />
+      {!readyState.adminNotice ? (
+        <div className={styles.pageRefreshFloating}>{refreshButton}</div>
+      ) : null}
       {shouldRenderMusic ? (
         <BackgroundMusic
           autoPlay

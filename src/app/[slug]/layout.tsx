@@ -7,7 +7,10 @@ import { resolveEventPageRenderer } from '@/app/_components/eventPageRendererReg
 import { DEFAULT_INVITATION_THEME } from '@/lib/invitationThemes';
 import { getServerInvitationPageEventTypeBySlug } from '@/server/invitationPageServerService';
 
-import { getCachedServerInvitationPageBySlug } from './serverInvitationPageCache';
+import {
+  getCachedServerInvitationPreviewBySlug,
+  getCachedServerPublicInvitationPageBySlug,
+} from './serverInvitationPageCache';
 
 export const dynamic = 'force-dynamic';
 export const viewport: Viewport = eventInvitationViewport;
@@ -19,7 +22,7 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { slug } = await params;
   const [page, eventType] = await Promise.all([
-    getCachedServerInvitationPageBySlug(slug),
+    getCachedServerPublicInvitationPageBySlug(slug),
     getServerInvitationPageEventTypeBySlug(slug),
   ]);
   const { renderer } = resolveEventPageRenderer(eventType);
@@ -28,7 +31,7 @@ export async function generateMetadata({
     return renderer.getMetadata(page);
   }
 
-  const previewPage = await getCachedServerInvitationPageBySlug(slug, true);
+  const previewPage = await getCachedServerInvitationPreviewBySlug(slug);
 
   if (!previewPage) {
     notFound();

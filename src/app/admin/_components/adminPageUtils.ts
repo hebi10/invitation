@@ -42,6 +42,10 @@ export type PageCategoryTabKey =
   | 'birthday'
   | 'general-event'
   | 'opening';
+export type EventAdminTab = Extract<
+  AdminTab,
+  'pages' | 'memory' | 'images' | 'comments' | 'periods'
+>;
 export type PeriodStatusFilter =
   | 'all'
   | 'dueSoon'
@@ -116,6 +120,79 @@ export const PAGE_CATEGORY_TABS = [
       description: string;
     }
 >;
+
+const EVENT_ADMIN_TABS: EventAdminTab[] = [
+  'pages',
+  'memory',
+  'images',
+  'comments',
+  'periods',
+];
+
+function getBaseTabLabel(tab: AdminTab) {
+  switch (tab) {
+    case 'accounts':
+      return '고객 계정';
+    case 'pages':
+      return '모바일 청첩장';
+    case 'memory':
+      return '추억 페이지';
+    case 'images':
+      return '이미지';
+    case 'comments':
+      return '방명록';
+    case 'passwords':
+      return '고객 비밀번호';
+    case 'periods':
+      return '노출 기간';
+    default:
+      return '관리';
+  }
+}
+
+export function parsePageCategory(value: string | null): PageCategoryTabKey {
+  return PAGE_CATEGORY_TABS.some((tab) => tab.key === value)
+    ? (value as PageCategoryTabKey)
+    : 'invitation';
+}
+
+export function getPageCategoryMeta(pageCategory: PageCategoryTabKey) {
+  return PAGE_CATEGORY_TABS.find((tab) => tab.key === pageCategory) ?? PAGE_CATEGORY_TABS[0];
+}
+
+export function isImplementedPageCategory(pageCategory: PageCategoryTabKey) {
+  return pageCategory === 'invitation';
+}
+
+export function isEventAdminTab(tab: AdminTab): tab is EventAdminTab {
+  return EVENT_ADMIN_TABS.includes(tab as EventAdminTab);
+}
+
+export function getTabLabelForPageCategory(
+  tab: AdminTab,
+  pageCategory: PageCategoryTabKey
+) {
+  if (!isEventAdminTab(tab) || pageCategory === 'invitation') {
+    return getBaseTabLabel(tab);
+  }
+
+  const categoryLabel = getPageCategoryMeta(pageCategory).label;
+
+  switch (tab) {
+    case 'pages':
+      return `${categoryLabel} 페이지`;
+    case 'memory':
+      return `${categoryLabel} 기록`;
+    case 'comments':
+      return `${categoryLabel} 메시지`;
+    case 'images':
+      return '이미지';
+    case 'periods':
+      return '노출 기간';
+    default:
+      return getBaseTabLabel(tab);
+  }
+}
 
 export const PAGE_STATUS_LABELS: Record<PageStatusFilter, string> = {
   all: '전체 상태',
@@ -245,12 +322,21 @@ export function parseSection(value: string | null): AdminSection {
     : 'events';
 }
 
-export function getTabsForSection(section: AdminSection) {
-  return TAB_ITEMS.filter((tab) => tab.section === section);
+export function getTabsForSection(
+  section: AdminSection,
+  pageCategory: PageCategoryTabKey = 'invitation'
+) {
+  return TAB_ITEMS.filter((tab) => tab.section === section).map((tab) => ({
+    ...tab,
+    label: getTabLabelForPageCategory(tab.key, pageCategory),
+  }));
 }
 
-export function getDefaultTabForSection(section: AdminSection): AdminTab {
-  return getTabsForSection(section)[0]?.key ?? 'pages';
+export function getDefaultTabForSection(
+  section: AdminSection,
+  pageCategory: PageCategoryTabKey = 'invitation'
+): AdminTab {
+  return getTabsForSection(section, pageCategory)[0]?.key ?? 'pages';
 }
 
 export function getSectionForTab(tab: AdminTab): AdminSection {

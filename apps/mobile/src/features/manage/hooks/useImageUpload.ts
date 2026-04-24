@@ -632,6 +632,7 @@ export function useImageUpload({
     uploadingImageKind,
     uploadProgress,
     handleUploadImage,
+    handleRemoveSingleImage,
     handleMoveGalleryImage,
     handleRemoveGalleryImage,
     discardTrackedUploads,

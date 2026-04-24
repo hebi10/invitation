@@ -1,9 +1,15 @@
 export const AccessDeniedPage = ({
   message = '이 페이지에 접근할 수 없습니다.',
   showAdminLink = true,
+  actionLabel,
+  onAction,
+  actionDisabled = false,
 }: {
   message?: string;
   showAdminLink?: boolean;
+  actionLabel?: string;
+  onAction?: (() => void) | null;
+  actionDisabled?: boolean;
 }) => {
   return (
     <div
@@ -62,6 +68,25 @@ export const AccessDeniedPage = ({
         </p>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+          {actionLabel && onAction ? (
+            <button
+              onClick={onAction}
+              disabled={actionDisabled}
+              style={{
+                background: 'rgba(255, 255, 255, 0.9)',
+                border: '0',
+                color: '#333',
+                padding: '12px 24px',
+                borderRadius: '10px',
+                fontSize: '16px',
+                fontWeight: '600',
+                cursor: actionDisabled ? 'default' : 'pointer',
+                opacity: actionDisabled ? 0.7 : 1,
+              }}
+            >
+              {actionLabel}
+            </button>
+          ) : null}
           <button
             onClick={() => window.history.back()}
             style={{

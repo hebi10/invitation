@@ -3,9 +3,9 @@ import { notFound } from 'next/navigation';
 import { resolveEventPageRenderer } from '@/app/_components/eventPageRendererRegistry';
 
 import {
-  getCachedServerInvitationPageBySlug,
   getCachedServerInvitationPreviewBySlug,
   getCachedServerInvitationPageDefaultThemeBySlug,
+  getCachedServerPublicInvitationPageBySlug,
 } from './serverInvitationPageCache';
 import { getServerInvitationPageEventTypeBySlug } from '@/server/invitationPageServerService';
 
@@ -18,7 +18,7 @@ export default async function EventInvitationSlugPage({
 }) {
   const { slug } = await params;
   const [page, previewPage, defaultTheme, eventType] = await Promise.all([
-    getCachedServerInvitationPageBySlug(slug),
+    getCachedServerPublicInvitationPageBySlug(slug),
     getCachedServerInvitationPreviewBySlug(slug),
     getCachedServerInvitationPageDefaultThemeBySlug(slug),
     getServerInvitationPageEventTypeBySlug(slug),

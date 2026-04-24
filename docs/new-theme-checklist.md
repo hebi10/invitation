@@ -17,6 +17,7 @@
 - 2) 공개 페이지 렌더 등록
   - `src/app/_components/themeRenderers/{theme}.tsx` 추가 (새 테마 렌더러)
   - `src/app/_components/themeRenderers/registry.ts`의 `WEDDING_THEME_RENDERER_REGISTRY`에 key/component 추가
+  - 새 테마 렌더러는 기본 디자인의 핵심 컨텐츠(히어로 subtitle, 인사말/가족 연락처, 캘린더, 본식/피로연 일정, 예식장/화환 안내, 갤러리, 지도, 방명록, 계좌)를 테마 톤에 맞게 모두 노출하는지 확인
   - 새 테마가 `event` 라우트로 사용될 경우 `src/app/_components/eventPageThemes.ts`의 theme definition 매핑 영향 확인
   - `resolveEventPageRenderer`/route 분기 경로에서 미연결 상태는 기본값(`wedding`) 또는 404 정책을 다시 점검
 

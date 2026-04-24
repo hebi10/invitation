@@ -146,7 +146,7 @@ service cloud.firestore {
           canReadPublicEvent(eventId) &&
           canReadPublicGuestbookComment(resource.data)
         );
-        allow create: if canReadPublicEvent(eventId) && isValidCommentCreateForEvent(eventId);
+        allow create: if false;
         allow update, delete: if isAdmin() || isEventOwnerById(eventId);
       }
 

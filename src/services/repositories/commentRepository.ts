@@ -2,7 +2,6 @@ import { buildGuestbookCommentStatusPatch } from '@/lib/guestbookComments';
 
 import { ensureClientFirestoreState } from './clientFirestoreRepositoryCore';
 import {
-  buildClientEventCommentCollectionPath,
   listClientEventSummaries,
   resolveClientStoredEventBySlug,
 } from './clientEventRepositoryCore';
@@ -33,6 +32,20 @@ export interface CommentRepository {
 
 function isEventCommentCollectionPath(collectionName: string) {
   return collectionName.startsWith(EVENT_COLLECTION_PREFIX);
+}
+
+async function readCommentApiResponse(response: Response) {
+  const payload = (await response.json().catch(() => null)) as
+    | { error?: string }
+    | null;
+
+  if (!response.ok) {
+    throw new Error(
+      typeof payload?.error === 'string' && payload.error.trim()
+        ? payload.error
+        : '방명록 등록에 실패했습니다.'
+    );
+  }
 }
 
 async function listEventCommentsByPageSlug(pageSlug: string) {
@@ -116,27 +129,19 @@ export const commentRepository: CommentRepository = {
       fieldLabel: 'Message',
       message: 'Required comment fields are missing.',
     });
-    const firestore = await ensureClientFirestoreState();
-    if (!firestore) {
-      throw new Error('Firestore is not initialized.');
-    }
-
-    const resolvedEvent = await resolveClientStoredEventBySlug(pageSlug);
-    if (!resolvedEvent) {
-      throw new Error('Invitation event could not be resolved.');
-    }
-
-    await firestore.modules.addDoc(
-      firestore.modules.collection(
-        firestore.db,
-        buildClientEventCommentCollectionPath(resolvedEvent.summary.eventId)
-      ),
-      {
-        author,
-        message,
-        pageSlug: resolvedEvent.summary.slug,
-        createdAt: firestore.modules.serverTimestamp(),
-      }
+    await readCommentApiResponse(
+      await fetch('/api/guestbook/comments', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'same-origin',
+        body: JSON.stringify({
+          author,
+          message,
+          pageSlug,
+        }),
+      })
     );
   },
 

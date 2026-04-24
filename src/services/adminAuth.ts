@@ -1,5 +1,4 @@
 import { ensureFirebaseInit, USE_FIREBASE } from '@/lib/firebase';
-import { adminUserRepository } from '@/services/repositories/adminUserRepository';
 
 export interface AuthUser {
   uid: string;
@@ -25,6 +24,13 @@ type AuthSessionSnapshot = {
   isAdmin: boolean;
 };
 
+type FirebaseAuthUserLike = {
+  uid: string;
+  email: string | null;
+  displayName?: string | null;
+  getIdToken: () => Promise<string>;
+};
+
 async function getAuthModules() {
   const firebase = await ensureFirebaseInit();
   const authModule = await import('firebase/auth');
@@ -35,8 +41,40 @@ async function getAuthModules() {
   };
 }
 
-async function isUserAdmin(uid: string) {
-  return adminUserRepository.isEnabled(uid);
+async function readAdminSessionResponse(response: Response) {
+  const payload = (await response.json().catch(() => null)) as
+    | {
+        isAdmin?: boolean;
+        error?: string;
+      }
+    | null;
+
+  if (response.status === 401 || response.status === 403) {
+    return false;
+  }
+
+  if (!response.ok) {
+    throw new Error(
+      typeof payload?.error === 'string' && payload.error.trim()
+        ? payload.error
+        : '관리자 권한을 확인하지 못했습니다.'
+    );
+  }
+
+  return payload?.isAdmin === true;
+}
+
+async function isUserAdmin(user: FirebaseAuthUserLike) {
+  const idToken = await user.getIdToken();
+  const response = await fetch('/api/admin/session', {
+    method: 'GET',
+    headers: {
+      Authorization: `Bearer ${idToken}`,
+    },
+    cache: 'no-store',
+  });
+
+  return readAdminSessionResponse(response);
 }
 
 function toAuthUser(user: {
@@ -92,7 +130,7 @@ export async function loginFirebaseUser(
   return {
     success: true,
     user: toAuthUser(credential.user),
-    isAdmin: await isUserAdmin(credential.user.uid),
+    isAdmin: await isUserAdmin(credential.user),
   };
 }
 
@@ -130,7 +168,7 @@ export async function registerFirebaseUser(
   return {
     success: true,
     user: toAuthUser(credential.user),
-    isAdmin: await isUserAdmin(credential.user.uid),
+    isAdmin: await isUserAdmin(credential.user),
   };
 }
 
@@ -166,7 +204,7 @@ export async function loginFirebaseUserWithGoogle(): Promise<AuthActionResult> {
   return {
     success: true,
     user: toAuthUser(credential.user),
-    isAdmin: await isUserAdmin(credential.user.uid),
+    isAdmin: await isUserAdmin(credential.user),
   };
 }
 
@@ -233,7 +271,7 @@ export function observeFirebaseSession(
         }
 
         try {
-          const isAdmin = await isUserAdmin(user.uid);
+          const isAdmin = await isUserAdmin(user);
           if (disposed) {
             return;
           }

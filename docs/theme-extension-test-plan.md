@@ -3,6 +3,8 @@
 ## Command
 - Baseline validation: `npm run validate:theme-extension`
 - After adding a new theme: `npm run validate:theme-extension -- --expected-theme-count=3`
+- Validation script는 React hook이나 `.tsx` 컴포넌트를 직접 import하지 않고 순수 helper만 import해야 한다.
+  - 모바일 티켓 테마 판정 helper: `apps/mobile/src/features/manage/ticketThemeValidation.ts`
 
 ## Automated checks
 1. Theme registry count
@@ -15,6 +17,7 @@
    - Builds a linked invitation card with every registered theme, restores it through storage normalization, and checks the linked theme list is preserved.
 5. Ticket modal purchase logic
    - Confirms a newly added theme is considered purchasable when it is not yet linked to the current invitation.
+   - Uses the shared pure helper instead of importing `useTicketOperations`.
 6. Default theme change preview URL
    - Confirms preview URLs still resolve correctly after changing the default theme.
 7. Deep link routing

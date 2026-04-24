@@ -198,6 +198,7 @@ function buildEventSummaryFromRepositoryState(options: {
     commentCount: existing?.commentCount ?? null,
     ticketCount: existing?.ticketCount ?? null,
     ticketBalance: existing?.ticketBalance ?? existing?.ticketCount ?? null,
+    security: existing?.security ?? null,
     visibility: {
       published: registry?.published ?? existing?.visibility?.published ?? existing?.published ?? true,
       displayStartAt:
@@ -590,6 +591,7 @@ async function writeEventSummaryMirror(
           ticketCount: summary.ticketCount,
           ticketBalance: summary.ticketBalance ?? summary.ticketCount,
         },
+        security: summary.security,
         visibility: {
           published: summary.visibility?.published ?? summary.published,
           displayStartAt:

@@ -1,6 +1,6 @@
 ﻿'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 
 import FirebaseAuthLoginCard from '@/app/_components/FirebaseAuthLoginCard';
@@ -26,16 +26,18 @@ import {
   PAGE_CATEGORY_TABS,
   PAGE_SORT_LABELS,
   PAGE_STATUS_LABELS,
-  type PageCategoryTabKey,
   RECENT_COMMENT_DAYS,
   TOTAL_SHORTCUT_COUNT,
   getDefaultTabForSection,
   getAvailableShortcuts,
+  getPageCategoryMeta,
   getSectionForTab,
   getTabsForSection,
+  isImplementedPageCategory,
   isRecentComment,
   numberFromParam,
   parseCommentAge,
+  parsePageCategory,
   parsePageSort,
   parsePageStatus,
   parsePageEventType,
@@ -95,17 +97,17 @@ export default function AdminPageClient() {
 
   const requestedTabParam = safeSearchParams.get('tab');
   const requestedSectionParam = safeSearchParams.get('section');
+  const requestedPageCategoryParam = safeSearchParams.get('pageCategory');
   const requestedTab = parseTab(requestedTabParam);
   const requestedSection = requestedSectionParam;
+  const activePageCategory = parsePageCategory(requestedPageCategoryParam);
   const activeSection = requestedSection
     ? parseSection(requestedSection)
     : getSectionForTab(requestedTab);
-  const sectionTabs = getTabsForSection(activeSection);
+  const sectionTabs = getTabsForSection(activeSection, activePageCategory);
   const activeTab = sectionTabs.some((tab) => tab.key === requestedTab)
     ? requestedTab
-    : getDefaultTabForSection(activeSection);
-  const [activePageCategory, setActivePageCategory] =
-    useState<PageCategoryTabKey>('invitation');
+    : getDefaultTabForSection(activeSection, activePageCategory);
   const pageSearch = safeSearchParams.get('pageQ') ?? '';
   const pageEventTypeFilter = parsePageEventType(safeSearchParams.get('pageType'));
   const pageShortcutFilter = parseShortcut(safeSearchParams.get('shortcut'));
@@ -144,11 +146,17 @@ export default function AdminPageClient() {
     unassignedCustomerEvents,
     memoryPublicCount,
     commentSummary,
+    dashboardSummary,
     pagesLoading,
+    pagesRefreshing,
     commentsLoading,
+    commentsRefreshing,
     summaryLoading,
+    summaryRefreshing,
     passwordsLoading,
+    passwordsRefreshing,
     accountsLoading,
+    accountsRefreshing,
     savingPasswordPageSlug,
     updatingPublishedPageSlug,
     updatingVariantToken,
@@ -189,22 +197,29 @@ export default function AdminPageClient() {
   useEffect(() => {
     const needsCanonicalSection = requestedSectionParam !== activeSection;
     const needsCanonicalTab = requestedTabParam !== activeTab;
+    const needsCanonicalPageCategory =
+      activeSection === 'events' && requestedPageCategoryParam !== activePageCategory;
 
-    if (!needsCanonicalSection && !needsCanonicalTab) {
+    if (!needsCanonicalSection && !needsCanonicalTab && !needsCanonicalPageCategory) {
       return;
     }
 
     const nextParams = new URLSearchParams(safeSearchParams.toString());
     nextParams.set('section', activeSection);
     nextParams.set('tab', activeTab);
+    if (activeSection === 'events') {
+      nextParams.set('pageCategory', activePageCategory);
+    }
 
     router.replace(
       `${safePathname}${nextParams.toString() ? `?${nextParams.toString()}` : ''}`,
       { scroll: false }
     );
   }, [
+    activePageCategory,
     activeSection,
     activeTab,
+    requestedPageCategoryParam,
     requestedSectionParam,
     requestedTabParam,
     router,
@@ -328,10 +343,10 @@ export default function AdminPageClient() {
 
   /* ── Summary cards ── */
 
-  const invitationCount = pages.length;
-  const restrictedCount = pages.filter((page) => page.displayPeriodEnabled).length;
-  const dueSoonCount = pages.filter(isPageDueSoon).length;
-  const recentCommentsCount = commentSummary.recentCount;
+  const invitationCount = dashboardSummary?.invitationCount ?? pages.length;
+  const restrictedCount = dashboardSummary?.restrictedCount ?? pages.filter((page) => page.displayPeriodEnabled).length;
+  const dueSoonCount = dashboardSummary?.dueSoonCount ?? pages.filter(isPageDueSoon).length;
+  const recentCommentsCount = dashboardSummary?.commentSummary.recentCount ?? commentSummary.recentCount;
   const configuredPasswordCount = clientPasswords.filter((entry) => entry.hasPassword).length;
   const recentPasswordUpdateCount = clientPasswords.filter((entry) => {
     const updatedAt = entry.updatedAt?.getTime() ?? 0;
@@ -457,8 +472,73 @@ export default function AdminPageClient() {
     },
   ];
 
+  const activePageCategoryMeta = getPageCategoryMeta(activePageCategory);
+  const isInvitationPageCategory = isImplementedPageCategory(activePageCategory);
+  const futureEventSummaryCards: SummaryCardItem[] = [
+    {
+      id: 'selected-category',
+      label: '선택 서비스',
+      value: activePageCategoryMeta.label,
+      meta: `${activePageCategoryMeta.label} 전용 관리자 화면을 순차적으로 연결할 예정입니다.`,
+      tone: 'primary',
+      actionLabel: `${getTabLabel('pages', activePageCategory)} 보기`,
+      onClick: () =>
+        updateQuery({
+          section: 'events',
+          tab: 'pages',
+          pageCategory: activePageCategory,
+        }),
+    },
+    {
+      id: 'category-pages',
+      label: getTabLabel('pages', activePageCategory),
+      value: 'TODO',
+      meta: '서비스별 목록, 생성 흐름, 공개 정책을 별도 구조로 분리합니다.',
+      tone: 'neutral',
+      actionLabel: '페이지 탭 열기',
+      onClick: () =>
+        updateQuery({
+          section: 'events',
+          tab: 'pages',
+          pageCategory: activePageCategory,
+        }),
+    },
+    {
+      id: 'category-memory',
+      label: getTabLabel('memory', activePageCategory),
+      value: '준비 중',
+      meta: '후속 페이지와 기록 흐름도 서비스별 요구사항에 맞춰 따로 연결할 예정입니다.',
+      tone: 'warning',
+      actionLabel: '기록 탭 열기',
+      onClick: () =>
+        updateQuery({
+          section: 'events',
+          tab: 'memory',
+          pageCategory: activePageCategory,
+        }),
+    },
+    {
+      id: 'category-assets',
+      label: getTabLabel('images', activePageCategory),
+      value: '대기',
+      meta: '이미지, 메시지, 노출 정책을 서비스 기준으로 정리한 뒤 관리자 기능을 붙입니다.',
+      tone: 'neutral',
+      actionLabel: '이미지 탭 열기',
+      onClick: () =>
+        updateQuery({
+          section: 'events',
+          tab: 'images',
+          pageCategory: activePageCategory,
+        }),
+    },
+  ];
+
   const summaryCards =
-    activeSection === 'customers' ? customerSummaryCards : eventSummaryCards;
+    activeSection === 'customers'
+      ? customerSummaryCards
+      : isInvitationPageCategory
+        ? eventSummaryCards
+        : futureEventSummaryCards;
 
   /* ── Filter chips ── */
 
@@ -526,10 +606,11 @@ export default function AdminPageClient() {
   ].filter(Boolean) as Array<{ id: string; label: string; onRemove: () => void }>;
 
   const activeSectionLabel = getSectionLabel(activeSection);
-  const activeSectionSummary = getSectionSummary(activeSection);
-  const activeTabSummary = getTabSummary(activeTab);
-  const shouldShowPageCategoryTabs =
-    activeSection === 'events' && activeTab === 'pages';
+  const activeSectionSummary = getSectionSummary(activeSection, activePageCategory);
+  const activeTabSummary = getTabSummary(activeTab, activePageCategory);
+  const shouldShowPageCategoryTabs = activeSection === 'events';
+  const shouldShowFutureCategoryTodo =
+    activeSection === 'events' && !isInvitationPageCategory;
 
   /* ── Render ── */
 
@@ -606,6 +687,18 @@ export default function AdminPageClient() {
               <StatusBadge tone="success">{adminUser?.email ?? 'Admin'}</StatusBadge>
               <button
                 className="admin-button admin-button-secondary"
+                onClick={() => void fetchSummarySources()}
+                type="button"
+                disabled={summaryLoading || summaryRefreshing}
+              >
+                {summaryRefreshing
+                  ? '요약 새로고침 중'
+                  : summaryLoading
+                    ? '요약 불러오는 중'
+                    : '요약 새로고침'}
+              </button>
+              <button
+                className="admin-button admin-button-secondary"
                 onClick={() => void handleLogout()}
                 type="button"
               >
@@ -640,82 +733,85 @@ export default function AdminPageClient() {
 
         <SummaryCards items={summaryCards} />
 
-        <div className={styles.tabBar}>
-          <div className={styles.tabBarGroup} role="tablist" aria-label="관리 섹션">
-            {ADMIN_SECTIONS.map(({ key: sectionKey }) => (
-              <button
-                key={sectionKey}
-                type="button"
-                role="tab"
-                aria-selected={activeSection === sectionKey}
-                aria-controls={`section-${sectionKey}`}
-                id={`section-${sectionKey}`}
-                className={`${styles.tabButton} ${
-                  activeSection === sectionKey ? styles.tabButtonActive : ''
-                }`}
-                onClick={() =>
-                  updateQuery({
-                    section: sectionKey,
-                    tab: getDefaultTabForSection(sectionKey),
-                  })
-                }
-              >
-                {getSectionLabel(sectionKey)}
-              </button>
-            ))}
+        <div className={styles.tabStack}>
+          <div className={styles.tabBar}>
+            <div className={styles.tabBarGroup} role="group" aria-label="관리 섹션">
+              {ADMIN_SECTIONS.map(({ key: sectionKey }) => (
+                <button
+                  key={sectionKey}
+                  type="button"
+                  aria-pressed={activeSection === sectionKey}
+                  className={`${styles.tabButton} ${
+                    activeSection === sectionKey ? styles.tabButtonActive : ''
+                  }`}
+                  onClick={() =>
+                    updateQuery({
+                      section: sectionKey,
+                      tab: getDefaultTabForSection(sectionKey),
+                    })
+                  }
+                >
+                  {getSectionLabel(sectionKey)}
+                </button>
+              ))}
+            </div>
           </div>
 
           {shouldShowPageCategoryTabs ? (
-            <>
-              <div className={styles.tabBarDivider} aria-hidden="true" />
+            <div className={`${styles.tabBar} ${styles.pageCategoryTabBar}`}>
               <div
-                className={styles.tabBarInlineGroup}
-                role="tablist"
+                className={styles.tabBarGroup}
+                role="group"
                 aria-label="페이지 유형 탭"
               >
                 {PAGE_CATEGORY_TABS.map((tab) => (
                   <button
                     key={tab.key}
                     type="button"
-                    role="tab"
-                    aria-selected={activePageCategory === tab.key}
-                    className={`${styles.innerTabButton} ${
+                    aria-pressed={activePageCategory === tab.key}
+                className={`${styles.innerTabButton} ${
                       activePageCategory === tab.key
                         ? styles.innerTabButtonActive
                         : ''
                     }`}
-                    onClick={() => setActivePageCategory(tab.key)}
+                    onClick={() =>
+                      updateQuery({
+                        section: 'events',
+                        tab: 'pages',
+                        pageCategory: tab.key,
+                      })
+                    }
                   >
                     {tab.label}
                   </button>
                 ))}
               </div>
-            </>
+            </div>
           ) : null}
-        </div>
 
-        <div className={styles.tabBar} role="tablist" aria-label="세부 관리 탭">
-          {sectionTabs.map(({ key: tabKey }) => (
-            <button
-              key={tabKey}
-              type="button"
-              role="tab"
-              aria-selected={activeTab === tabKey}
-              aria-controls={`panel-${tabKey}`}
-              id={`tab-${tabKey}`}
-              className={`${styles.tabButton} ${
-                activeTab === tabKey ? styles.tabButtonActive : ''
-              }`}
-              onClick={() =>
-                updateQuery({
-                  section: activeSection,
-                  tab: tabKey,
-                })
-              }
-            >
-              {getTabLabel(tabKey)}
-            </button>
-          ))}
+          <div className={styles.tabBar} role="tablist" aria-label="세부 관리 탭">
+            {sectionTabs.map(({ key: tabKey }) => (
+              <button
+                key={tabKey}
+                type="button"
+                role="tab"
+                aria-selected={activeTab === tabKey}
+                aria-controls={`panel-${tabKey}`}
+                id={`tab-${tabKey}`}
+                className={`${styles.tabButton} ${
+                  activeTab === tabKey ? styles.tabButtonActive : ''
+                }`}
+                onClick={() =>
+                  updateQuery({
+                    section: activeSection,
+                    tab: tabKey,
+                  })
+                }
+              >
+                {getTabLabel(tabKey, activePageCategory)}
+              </button>
+            ))}
+          </div>
         </div>
 
         <section
@@ -724,9 +820,27 @@ export default function AdminPageClient() {
           id={`panel-${activeTab}`}
           aria-labelledby={`tab-${activeTab}`}
         >
-          {activeTab === 'pages' ? (
+          {shouldShowFutureCategoryTodo ? (
+            <div className={styles.todoPanel}>
+              <span className={styles.todoBadge}>TODO</span>
+              <h3 className={styles.todoTitle}>
+                {getTabLabel(activeTab, activePageCategory)} 관리 화면 준비 중
+              </h3>
+              <p className={styles.todoDescription}>
+                {activePageCategoryMeta.label} 서비스는 아래 세부 관리 탭 라벨까지 분리했지만,
+                실제 목록/이미지/메시지/노출 관리 기능은 서비스별 요구사항에 맞춰
+                별도 구현이 더 필요합니다.
+              </p>
+              <ul className={styles.todoList}>
+                <li>{activePageCategoryMeta.label} 전용 데이터와 관리자 흐름 정리</li>
+                <li>{getTabLabel(activeTab, activePageCategory)} 탭에 맞는 실제 운영 기능 연결</li>
+                <li>이미지, 메시지, 공개 정책을 청첩장 서비스와 분리해 점검</li>
+              </ul>
+            </div>
+          ) : activeTab === 'pages' ? (
             <AdminPagesTab
               loading={pagesLoading}
+              refreshing={pagesRefreshing}
               summaryLoading={summaryLoading}
               weddingPages={pages}
               filteredPages={filteredPages}
@@ -759,12 +873,17 @@ export default function AdminPageClient() {
             />
           ) : null}
 
-          {activeTab === 'memory' ? <MemoryPageManager /> : null}
-          {activeTab === 'images' ? <ImageManager /> : null}
+          {!shouldShowFutureCategoryTodo && activeTab === 'memory' ? (
+            <MemoryPageManager />
+          ) : null}
+          {!shouldShowFutureCategoryTodo && activeTab === 'images' ? (
+            <ImageManager />
+          ) : null}
 
-          {activeTab === 'comments' ? (
+          {!shouldShowFutureCategoryTodo && activeTab === 'comments' ? (
             <AdminCommentsTab
               commentsLoading={commentsLoading}
+              commentsRefreshing={commentsRefreshing}
               comments={comments}
               filteredComments={filteredComments}
               currentComments={currentComments}
@@ -784,6 +903,7 @@ export default function AdminPageClient() {
           {activeTab === 'accounts' ? (
             <AdminCustomerAccountsTab
               loading={accountsLoading}
+              refreshing={accountsRefreshing}
               accounts={customerAccounts}
               unassignedEvents={unassignedCustomerEvents}
               ownershipActionToken={ownershipActionToken}
@@ -798,6 +918,7 @@ export default function AdminPageClient() {
           {activeTab === 'passwords' ? (
             <AdminClientPasswordsTab
               loading={passwordsLoading}
+              refreshing={passwordsRefreshing}
               pages={pages}
               passwords={clientPasswords}
               savingPageSlug={savingPasswordPageSlug}
@@ -808,7 +929,7 @@ export default function AdminPageClient() {
             />
           ) : null}
 
-          {activeTab === 'periods' ? (
+          {!shouldShowFutureCategoryTodo && activeTab === 'periods' ? (
             <DisplayPeriodManager
               isVisible={true}
               statusFilter={periodStatusFilter}

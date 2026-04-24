@@ -59,6 +59,16 @@ type BuiltInvitationPageRecord = {
   hasCustomConfig: boolean;
 };
 
+export type ServerInvitationPageSampleFallbackMode =
+  | 'always'
+  | 'when-firestore-unavailable'
+  | 'never';
+
+export interface ServerInvitationPageLookupOptions {
+  includePrivate?: boolean;
+  sampleFallbackMode?: ServerInvitationPageSampleFallbackMode;
+}
+
 export interface ServerEditableInvitationPageConfig {
   slug: string;
   config: InvitationPageSeed;
@@ -115,6 +125,21 @@ function mergeDisplayPeriod(
 
 function isPublicInvitationPage(page: InvitationPage) {
   return getInvitationPublicAccessState(page).isPublic;
+}
+
+function canUseSampleFallback(
+  mode: ServerInvitationPageSampleFallbackMode,
+  firestoreAvailable: boolean
+) {
+  if (mode === 'never') {
+    return false;
+  }
+
+  if (mode === 'when-firestore-unavailable') {
+    return !firestoreAvailable;
+  }
+
+  return true;
 }
 
 function toEditableSeed(page: InvitationPage): InvitationPageSeed {
@@ -312,12 +337,24 @@ export async function getServerInvitationPageSlugAvailability(
 function buildInvitationPageRecord(
   pageSlug: string,
   configSeed: InvitationPageSeed | null,
-  registryRecord: InvitationPageRegistryRecord | null
+  registryRecord: InvitationPageRegistryRecord | null,
+  options: {
+    includeImplicitSampleFallback?: boolean;
+  } = {}
 ): BuiltInvitationPageRecord | null {
   const sample = getWeddingPageBySlug(pageSlug);
   const hasCustomConfig = registryRecord?.hasCustomConfig ?? Boolean(configSeed);
+  const canUseSampleSource =
+    Boolean(sample) &&
+    (options.includeImplicitSampleFallback !== false || Boolean(registryRecord));
   const selectedSeed =
-    hasCustomConfig && configSeed ? configSeed : configSeed && !sample ? configSeed : sample ?? null;
+    hasCustomConfig && configSeed
+      ? configSeed
+      : configSeed && !sample
+        ? configSeed
+        : canUseSampleSource
+          ? sample
+          : null;
 
   if (!selectedSeed) {
     return null;
@@ -383,16 +420,21 @@ async function upsertDisplayPeriodRecord(
 
 async function loadServerInvitationPageBySlug(
   pageSlug: string,
-  includePrivate: boolean
+  options: Required<ServerInvitationPageLookupOptions>
 ) {
-  const samplePage = buildSamplePage(pageSlug);
+  const firestoreAvailable = firestoreEventRepository.isAvailable();
+  const shouldUseSampleFallback = canUseSampleFallback(
+    options.sampleFallbackMode,
+    firestoreAvailable
+  );
+  const samplePage = shouldUseSampleFallback ? buildSamplePage(pageSlug) : null;
 
-  if (!firestoreEventRepository.isAvailable()) {
+  if (!firestoreAvailable) {
     if (!samplePage) {
       return null;
     }
 
-    return includePrivate || isPublicInvitationPage(samplePage) ? samplePage : null;
+    return options.includePrivate || isPublicInvitationPage(samplePage) ? samplePage : null;
   }
 
   try {
@@ -402,7 +444,9 @@ async function loadServerInvitationPageBySlug(
       getDisplayPeriodByPageSlug(pageSlug),
     ]);
 
-    const sourceRecord = buildInvitationPageRecord(pageSlug, configSeed, registryRecord);
+    const sourceRecord = buildInvitationPageRecord(pageSlug, configSeed, registryRecord, {
+      includeImplicitSampleFallback: shouldUseSampleFallback,
+    });
     const basePage = sourceRecord?.page ?? samplePage;
 
     if (!basePage) {
@@ -410,32 +454,30 @@ async function loadServerInvitationPageBySlug(
     }
 
     const mergedPage = mergeDisplayPeriod(basePage, displayPeriod);
-    return includePrivate || isPublicInvitationPage(mergedPage) ? mergedPage : null;
+    return options.includePrivate || isPublicInvitationPage(mergedPage) ? mergedPage : null;
   } catch (error) {
     console.error('[invitationPageServerService] failed to load invitation page', error);
     if (!samplePage) {
       return null;
     }
 
-    return includePrivate || isPublicInvitationPage(samplePage) ? samplePage : null;
+    return options.includePrivate || isPublicInvitationPage(samplePage) ? samplePage : null;
   }
 }
 
 export async function getServerInvitationPageBySlug(
   pageSlug: string | null | undefined,
-  options: {
-    includePrivate?: boolean;
-  } = {}
+  options: ServerInvitationPageLookupOptions = {}
 ) {
   const normalizedPageSlug = normalizeInvitationPageSlugInput(pageSlug);
   if (!normalizedPageSlug) {
     return null;
   }
 
-  return loadServerInvitationPageBySlug(
-    normalizedPageSlug,
-    options.includePrivate === true
-  );
+  return loadServerInvitationPageBySlug(normalizedPageSlug, {
+    includePrivate: options.includePrivate === true,
+    sampleFallbackMode: options.sampleFallbackMode ?? 'always',
+  });
 }
 
 export async function getServerEditableInvitationPageConfig(

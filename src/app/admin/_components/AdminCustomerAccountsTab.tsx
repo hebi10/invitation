@@ -14,6 +14,7 @@ import styles from '../page.module.css';
 
 interface AdminCustomerAccountsTabProps {
   loading: boolean;
+  refreshing: boolean;
   accounts: AdminCustomerAccountSummary[];
   unassignedEvents: AdminCustomerLinkedEventSummary[];
   ownershipActionToken: string | null;
@@ -54,6 +55,7 @@ function getProviderLabels(providerIds: string[]) {
 
 export default function AdminCustomerAccountsTab({
   loading,
+  refreshing,
   accounts,
   unassignedEvents,
   ownershipActionToken,
@@ -221,9 +223,9 @@ export default function AdminCustomerAccountsTab({
               type="button"
               className="admin-button admin-button-secondary"
               onClick={onRefresh}
-              disabled={loading}
+              disabled={loading || refreshing}
             >
-              {loading ? '불러오는 중..' : '새로고침'}
+              {refreshing ? '새로고침 중' : loading ? '불러오는 중' : '새로고침'}
             </button>
             {searchQuery ? (
               <button

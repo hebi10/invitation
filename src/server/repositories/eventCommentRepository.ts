@@ -18,6 +18,14 @@ export interface StoredEventCommentRecord {
 
 export interface EventCommentRepository {
   isAvailable(): boolean;
+  createByPageSlug(
+    pageSlug: string,
+    input: {
+      author: string;
+      message: string;
+      status?: 'public';
+    }
+  ): Promise<{ id: string }>;
   listByPageSlug(pageSlug: string): Promise<StoredEventCommentRecord[]>;
   findByPageSlugAndId(
     pageSlug: string,
@@ -90,6 +98,43 @@ async function fetchEventCommentById(pageSlug: string, commentId: string) {
   );
 }
 
+async function createEventCommentOnly(
+  pageSlug: string,
+  input: {
+    author: string;
+    message: string;
+    status?: 'public';
+  }
+) {
+  const resolvedEvent = await resolveStoredEventBySlug(pageSlug);
+  if (!resolvedEvent) {
+    throw new Error('Invitation event could not be resolved.');
+  }
+
+  const db = getServerFirestore();
+  if (!db) {
+    throw new Error('Server Firestore is not available.');
+  }
+
+  const docRef = db
+    .collection(EVENTS_COLLECTION)
+    .doc(resolvedEvent.summary.eventId)
+    .collection(COMMENTS_COLLECTION)
+    .doc();
+  const now = new Date();
+
+  await docRef.set({
+    author: input.author,
+    message: input.message,
+    pageSlug: resolvedEvent.summary.slug,
+    createdAt: now,
+    status: input.status ?? 'public',
+    deleted: false,
+  });
+
+  return { id: docRef.id };
+}
+
 async function updateEventCommentOnly(
   pageSlug: string,
   commentId: string,
@@ -147,6 +192,22 @@ async function deleteEventCommentOnly(pageSlug: string, commentId: string) {
 export const firestoreEventCommentRepository: EventCommentRepository = {
   isAvailable() {
     return Boolean(getServerFirestore());
+  },
+
+  async createByPageSlug(pageSlug, input) {
+    const normalizedPageSlug = normalizePageSlug(pageSlug);
+    const author = input.author.trim();
+    const message = input.message.trim();
+
+    if (!normalizedPageSlug || !author || !message) {
+      throw new Error('Required comment fields are missing.');
+    }
+
+    return createEventCommentOnly(normalizedPageSlug, {
+      author,
+      message,
+      status: input.status,
+    });
   },
 
   async listByPageSlug(pageSlug) {

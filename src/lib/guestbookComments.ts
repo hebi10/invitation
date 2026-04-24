@@ -22,8 +22,11 @@ export function readGuestbookCommentDate(value: unknown) {
     value !== null &&
     typeof (value as GuestbookCommentDateCandidate).toDate === 'function'
   ) {
-    const toDate = (value as GuestbookCommentDateCandidate).toDate;
-    return typeof toDate === 'function' ? toDate() : null;
+    try {
+      return (value as GuestbookCommentDateCandidate).toDate?.() ?? null;
+    } catch {
+      return null;
+    }
   }
 
   if (value instanceof Date) {

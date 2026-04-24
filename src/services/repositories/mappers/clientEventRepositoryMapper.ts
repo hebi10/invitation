@@ -51,6 +51,12 @@ export interface ClientEventSummaryRecord {
   commentCount: number | null;
   ticketCount: number | null;
   ticketBalance: number | null;
+  security: {
+    hasPassword: boolean;
+    passwordVersion: number | null;
+    requiresReset: boolean;
+    passwordUpdatedAt: Date | null;
+  } | null;
   visibility: {
     published: boolean;
     displayStartAt: Date | null;
@@ -111,6 +117,7 @@ export function normalizeClientEventSummaryRecord(
   const visibilityInput = isRecord(data.visibility) ? data.visibility : null;
   const displayPeriodInput = isRecord(data.displayPeriod) ? data.displayPeriod : null;
   const statsInput = isRecord(data.stats) ? data.stats : null;
+  const securityInput = isRecord(data.security) ? data.security : null;
   const visibilityPublished =
     typeof visibilityInput?.published === 'boolean'
       ? visibilityInput.published
@@ -128,6 +135,12 @@ export function normalizeClientEventSummaryRecord(
         (entry): entry is string => typeof entry === 'string' && entry.trim().length > 0
       )
     : [];
+  const hasSecuritySummary =
+    securityInput !== null &&
+    (typeof securityInput.hasPassword === 'boolean' ||
+      securityInput.passwordUpdatedAt != null ||
+      securityInput.passwordVersion != null ||
+      securityInput.requiresReset != null);
 
   return {
     eventId: readNonEmptyString(data.eventId) ?? eventId,
@@ -147,6 +160,18 @@ export function normalizeClientEventSummaryRecord(
     commentCount: readFiniteNumber(statsInput?.commentCount ?? null),
     ticketCount: readFiniteNumber(statsInput?.ticketCount ?? null),
     ticketBalance: readFiniteNumber(statsInput?.ticketBalance ?? statsInput?.ticketCount ?? null),
+    security:
+      hasSecuritySummary
+        ? {
+            hasPassword: securityInput?.hasPassword === true,
+            passwordVersion: readFiniteNumber(securityInput?.passwordVersion ?? null),
+            requiresReset: securityInput?.requiresReset === true,
+            passwordUpdatedAt:
+              securityInput?.passwordUpdatedAt != null
+                ? toClientRepositoryDate(securityInput.passwordUpdatedAt, new Date())
+                : null,
+          }
+        : null,
     visibility: {
       published: visibilityPublished,
       displayStartAt,

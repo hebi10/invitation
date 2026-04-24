@@ -48,6 +48,9 @@ type ManageEditorStepContentProps = {
     value: string
   ) => void;
   onUploadImage: (assetKind: EditableImageAssetKind) => void | Promise<void>;
+  onRemoveSingleImage: (
+    assetKind: Exclude<EditableImageAssetKind, 'gallery'>
+  ) => void;
   onMoveGalleryImage: (index: number, direction: 'up' | 'down') => void;
   onRemoveGalleryImage: (index: number) => void;
   onSearchAddress: () => void | Promise<void>;
@@ -81,6 +84,7 @@ export function ManageEditorStepContent({
   onUpdatePersonField,
   onUpdateParentField,
   onUploadImage,
+  onRemoveSingleImage,
   onMoveGalleryImage,
   onRemoveGalleryImage,
   onSearchAddress,

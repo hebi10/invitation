@@ -91,8 +91,7 @@ export default function LocationMap({
       .then(() => {
         initializeKakaoMap();
       })
-      .catch((error) => {
-        console.error('[LocationMap] failed to load Kakao Maps SDK', error);
+      .catch(() => {
         setKakaoMapLoaded(true);
       });
   }, [isClient, address, hasAddress, hasCoordinates, venueName, kakaoMapConfig]);
@@ -180,11 +179,9 @@ export default function LocationMap({
           return;
         }
 
-        console.error('[LocationMap] address search failed', status);
         setKakaoMapLoaded(true);
       });
-    } catch (error) {
-      console.error('[LocationMap] failed to initialize map instance', error);
+    } catch {
       setKakaoMapLoaded(true);
     }
   };

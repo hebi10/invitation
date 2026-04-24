@@ -12,11 +12,17 @@
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  justify-content: center;
+  justify-content: space-between;
   gap: 8px 12px;
   min-height: 52px;
   padding: 12px 16px;
-  text-align: center;
+}
+
+.adminNoticeCopy {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  text-align: left;
 }
 
 .adminNoticeTitle {
@@ -31,10 +37,42 @@
   line-height: 1.5;
 }
 
+.pageRefreshFloating {
+  position: fixed;
+  top: 12px;
+  right: 12px;
+  z-index: 45;
+}
+
+.pageRefreshButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 36px;
+  padding: 0 14px;
+  border: 1px solid rgba(255, 255, 255, 0.34);
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.74);
+  color: #f8fafc;
+  font-size: 0.84rem;
+  font-weight: 700;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.2);
+}
+
+.pageRefreshButton:disabled {
+  opacity: 0.72;
+  cursor: default;
+}
+
 @media (max-width: 720px) {
   .adminNoticeInner {
     align-items: flex-start;
     justify-content: flex-start;
-    text-align: left;
+  }
+
+  .pageRefreshFloating {
+    top: 10px;
+    right: 10px;
   }
 }

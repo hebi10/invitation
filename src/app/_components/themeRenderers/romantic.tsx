@@ -7,6 +7,7 @@ import WeddingLoaderMessage, {
   type WeddingLoaderMessageBaseProps,
 } from '@/components/sections/WeddingLoader/WeddingLoaderMessage';
 import { resolveInvitationFeatures } from '@/lib/invitationProducts';
+import type { PersonInfo } from '@/types/invitationPage';
 import { copyTextToClipboard } from '@/utils/copyTextToClipboard';
 import {
   buildGoogleMapSearchUrl,
@@ -19,7 +20,9 @@ import {
   createWeddingThemeRenderer,
   getCeremonyAddress,
   getCeremonyContact,
+  getCeremonySchedule,
   getMapDescription,
+  getReceptionSchedule,
   getThemePageData,
   shouldShowGiftInfo,
 } from '../weddingPageRenderers';
@@ -51,6 +54,23 @@ interface RomanticKakaoMapConfig {
   markerTitle?: string;
 }
 
+interface RomanticGuideItem {
+  title: string;
+  content: string;
+}
+
+interface RomanticScheduleDetail {
+  time: string;
+  location: string;
+}
+
+type RomanticInfoTab = 'summary' | 'detail' | 'guide';
+
+interface ContactTarget {
+  name: string;
+  phone?: string;
+}
+
 const INTRO_IMAGE_URL = '/images/intro_romantic.png';
 const LOADING_MESSAGES = [
   '\uCC08\uB300\uC7A5\uC744 \uC900\uBE44\uD558\uACE0 \uC788\uC2B5\uB2C8\uB2E4.',
@@ -76,6 +96,39 @@ function getDisplayTime(date: Date, ceremonyTime: string) {
   }
 
   return `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
+}
+
+function hasText(value?: string) {
+  return Boolean(value?.trim());
+}
+
+function formatTextWithBreaks(text: string) {
+  return text.split('\n').map((line, index, lines) => (
+    <span key={`${line}-${index}`}>
+      {line}
+      {index < lines.length - 1 ? <br /> : null}
+    </span>
+  ));
+}
+
+function hasFamilyMemberContent(member?: PersonInfo['father']) {
+  return Boolean(
+    hasText(member?.relation) || hasText(member?.name) || hasText(member?.phone)
+  );
+}
+
+function hasPersonContent(person?: PersonInfo) {
+  return Boolean(
+    hasText(person?.name) ||
+      hasText(person?.order) ||
+      hasText(person?.phone) ||
+      hasFamilyMemberContent(person?.father) ||
+      hasFamilyMemberContent(person?.mother)
+  );
+}
+
+function sanitizeGuideItems(items?: RomanticGuideItem[]) {
+  return (items ?? []).filter((item) => hasText(item.title) || hasText(item.content));
 }
 
 function RomanticHeroVisual({
@@ -313,9 +366,9 @@ function RomanticLoader({
           <div className={themeStyles.loaderOverlay} />
           <div className={themeStyles.loaderDateLine}>{heroDateLine}</div>
           <div className={themeStyles.loaderNames}>
-            <span>{groomName}</span>
+            <span className={themeStyles.loaderNamePrimary}>{groomName}</span>
             <span className={themeStyles.loaderAmpersand}>&amp;</span>
-            <span>{brideName}</span>
+            <span className={themeStyles.loaderNamePrimary}>{brideName}</span>
           </div>
         </div>
       )}
@@ -408,6 +461,489 @@ function RomanticCountdown({
         </div>
       </div>
     </div>
+  );
+}
+
+function RomanticCalendar({
+  brideName,
+  groomName,
+  weddingDate,
+}: {
+  brideName: string;
+  groomName: string;
+  weddingDate: Date;
+}) {
+  const monthStart = new Date(weddingDate.getFullYear(), weddingDate.getMonth(), 1);
+  const daysInMonth = new Date(weddingDate.getFullYear(), weddingDate.getMonth() + 1, 0).getDate();
+  const emptyDayCount = monthStart.getDay();
+  const calendarCells = [
+    ...Array.from({ length: emptyDayCount }, (_, index) => ({
+      key: `empty-${index}`,
+      day: null,
+    })),
+    ...Array.from({ length: daysInMonth }, (_, index) => ({
+      key: `day-${index + 1}`,
+      day: index + 1,
+    })),
+  ];
+
+  return (
+    <div className={styles.calendarPanel}>
+      <div className={styles.calendarMonth}>
+        {weddingDate.getFullYear()}년 {weddingDate.getMonth() + 1}월
+      </div>
+      <div className={styles.calendarWeekdays}>
+        {WEEKDAY_LABELS.map((weekday) => (
+          <span key={weekday}>{weekday}</span>
+        ))}
+      </div>
+      <div className={styles.calendarGrid}>
+        {calendarCells.map((cell) =>
+          cell.day ? (
+            <div
+              className={`${styles.calendarDay} ${
+                cell.day === weddingDate.getDate() ? styles.calendarWeddingDay : ''
+              }`}
+              key={cell.key}
+            >
+              <span>{cell.day}</span>
+              {cell.day === weddingDate.getDate() ? (
+                <span className={styles.calendarMarker}>♡</span>
+              ) : null}
+            </div>
+          ) : (
+            <div className={styles.calendarDayEmpty} key={cell.key} />
+          )
+        )}
+      </div>
+      <p className={styles.calendarWeddingLabel}>
+        {groomName} &amp; {brideName} 결혼식
+      </p>
+    </div>
+  );
+}
+
+function RomanticFamilySection({
+  bride,
+  groom,
+}: {
+  bride?: PersonInfo;
+  groom?: PersonInfo;
+}) {
+  const [contactModal, setContactModal] = useState<ContactTarget | null>(null);
+  const modalContentRef = useRef<HTMLDivElement | null>(null);
+  const modalCloseButtonRef = useRef<HTMLButtonElement | null>(null);
+  const modalTriggerRef = useRef<HTMLElement | null>(null);
+  const hasGroomInfo = hasPersonContent(groom);
+  const hasBrideInfo = hasPersonContent(bride);
+
+  useEffect(() => {
+    if (!contactModal) {
+      const trigger = modalTriggerRef.current;
+      if (trigger && typeof trigger.focus === 'function') {
+        trigger.focus();
+      }
+      modalTriggerRef.current = null;
+      return;
+    }
+
+    modalCloseButtonRef.current?.focus();
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        setContactModal(null);
+        return;
+      }
+
+      if (event.key !== 'Tab') {
+        return;
+      }
+
+      const modal = modalContentRef.current;
+      if (!modal) {
+        return;
+      }
+
+      const focusableElements = Array.from(
+        modal.querySelectorAll<HTMLElement>(
+          'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+        )
+      ).filter((element) => element.tabIndex !== -1 && element.offsetParent !== null);
+
+      if (focusableElements.length === 0) {
+        event.preventDefault();
+        modalCloseButtonRef.current?.focus();
+        return;
+      }
+
+      const firstElement = focusableElements[0];
+      const lastElement = focusableElements[focusableElements.length - 1];
+      const activeElement =
+        document.activeElement instanceof HTMLElement ? document.activeElement : null;
+      const isInsideModal = activeElement ? modal.contains(activeElement) : false;
+
+      if (event.shiftKey) {
+        if (!isInsideModal || activeElement === firstElement) {
+          event.preventDefault();
+          lastElement.focus();
+        }
+        return;
+      }
+
+      if (!isInsideModal || activeElement === lastElement) {
+        event.preventDefault();
+        firstElement.focus();
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [contactModal]);
+
+  if (!hasGroomInfo && !hasBrideInfo) {
+    return null;
+  }
+
+  const openContactModal = (person: ContactTarget, triggerElement: HTMLElement) => {
+    modalTriggerRef.current = triggerElement;
+    setContactModal(person);
+  };
+
+  const handleCall = (phone: string) => {
+    window.location.href = `tel:${phone}`;
+  };
+
+  const handleSms = (phone: string) => {
+    window.location.href = `sms:${phone}`;
+  };
+
+  const renderPhoneButton = (person: ContactTarget) => {
+    if (!person.phone) {
+      return null;
+    }
+
+    return (
+      <button
+        type="button"
+        className={styles.familyContactButton}
+        onClick={(event) => openContactModal(person, event.currentTarget)}
+        aria-label={`${person.name} 연락하기`}
+      >
+        ✆
+      </button>
+    );
+  };
+
+  const renderPersonColumn = (title: string, person?: PersonInfo) => {
+    if (!hasPersonContent(person) || !person) {
+      return null;
+    }
+
+    return (
+      <div className={styles.familyColumn}>
+        <div className={styles.familyRole}>{title}</div>
+        {person.father && hasFamilyMemberContent(person.father) ? (
+          <div className={styles.familyRow}>
+            <span className={styles.familyRelation}>{person.father.relation}</span>
+            <span className={styles.familyName}>{person.father.name}</span>
+            {renderPhoneButton({
+              name: person.father.name || `${title} 혼주`,
+              phone: person.father.phone,
+            })}
+          </div>
+        ) : null}
+        {person.mother && hasFamilyMemberContent(person.mother) ? (
+          <div className={styles.familyRow}>
+            <span className={styles.familyRelation}>{person.mother.relation}</span>
+            <span className={styles.familyName}>{person.mother.name}</span>
+            {renderPhoneButton({
+              name: person.mother.name || `${title} 혼주`,
+              phone: person.mother.phone,
+            })}
+          </div>
+        ) : null}
+        {hasText(person.name) || hasText(person.order) || hasText(person.phone) ? (
+          <div className={`${styles.familyRow} ${styles.familyMainRow}`}>
+            {person.order ? <span className={styles.familyOrder}>{person.order}</span> : null}
+            <span className={styles.familyName}>{person.name}</span>
+            {renderPhoneButton({ name: person.name || title, phone: person.phone })}
+          </div>
+        ) : null}
+      </div>
+    );
+  };
+
+  return (
+    <>
+      <div className={styles.familySection}>
+        <div className={styles.familyGrid}>
+          {renderPersonColumn('신랑측', groom)}
+          {renderPersonColumn('신부측', bride)}
+        </div>
+      </div>
+
+      {contactModal ? (
+        <div className={styles.contactModalOverlay} onClick={() => setContactModal(null)}>
+          <div
+            ref={modalContentRef}
+            className={styles.contactModal}
+            role="dialog"
+            aria-modal="true"
+            aria-label={`${contactModal.name} 연락처`}
+            onClick={(event) => event.stopPropagation()}
+          >
+            <button
+              ref={modalCloseButtonRef}
+              className={styles.contactModalClose}
+              onClick={() => setContactModal(null)}
+              aria-label="연락처 모달 닫기"
+              type="button"
+            >
+              ×
+            </button>
+            <h3 className={styles.contactModalTitle}>{contactModal.name}</h3>
+            <div className={styles.contactModalPhone}>{contactModal.phone}</div>
+            {contactModal.phone ? (
+              <div className={styles.contactModalActions}>
+                <button
+                  type="button"
+                  className={styles.contactModalButton}
+                  onClick={() => handleCall(contactModal.phone!)}
+                >
+                  전화
+                </button>
+                <button
+                  type="button"
+                  className={styles.contactModalButton}
+                  onClick={() => handleSms(contactModal.phone!)}
+                >
+                  문자
+                </button>
+              </div>
+            ) : null}
+          </div>
+        </div>
+      ) : null}
+    </>
+  );
+}
+
+function RomanticScheduleSection({
+  address,
+  ceremony,
+  date,
+  reception,
+  time,
+  venue,
+  venueGuide,
+  wreathGuide,
+}: {
+  address: string;
+  ceremony?: RomanticScheduleDetail;
+  date: string;
+  reception?: RomanticScheduleDetail;
+  time: string;
+  venue: string;
+  venueGuide?: RomanticGuideItem[];
+  wreathGuide?: RomanticGuideItem[];
+}) {
+  const sanitizedVenueGuide = sanitizeGuideItems(venueGuide);
+  const sanitizedWreathGuide = sanitizeGuideItems(wreathGuide);
+  const hasScheduleDetail =
+    hasText(date) ||
+    hasText(time) ||
+    hasText(venue) ||
+    hasText(address) ||
+    hasText(ceremony?.time) ||
+    hasText(ceremony?.location) ||
+    hasText(reception?.time) ||
+    hasText(reception?.location);
+  const hasGuide = sanitizedVenueGuide.length > 0 || sanitizedWreathGuide.length > 0;
+  const hasSummary = hasText(date) || hasText(time) || hasText(venue) || hasText(address);
+  const [activeTab, setActiveTab] = useState<RomanticInfoTab>(() =>
+    hasSummary ? 'summary' : hasGuide ? 'guide' : 'detail'
+  );
+
+  useEffect(() => {
+    if (activeTab === 'summary' && !hasSummary) {
+      setActiveTab(hasGuide ? 'guide' : 'detail');
+      return;
+    }
+
+    if (activeTab === 'detail' && !hasScheduleDetail) {
+      setActiveTab(hasSummary ? 'summary' : hasGuide ? 'guide' : 'summary');
+    }
+
+    if (activeTab === 'guide' && !hasGuide) {
+      setActiveTab(hasSummary ? 'summary' : hasScheduleDetail ? 'detail' : 'summary');
+    }
+  }, [activeTab, hasSummary, hasScheduleDetail, hasGuide]);
+
+  if (!hasScheduleDetail && !hasGuide) {
+    return null;
+  }
+
+  const scheduleTabs = [
+    ...(hasSummary
+      ? [{ key: 'summary' as const, label: '예식 일정', icon: '일정' }]
+      : []),
+    ...(hasScheduleDetail ? [{ key: 'detail' as const, label: '세부 안내', icon: '세부' }] : []),
+    ...(hasGuide ? [{ key: 'guide' as const, label: '안내사항', icon: '안내' }] : []),
+  ];
+
+  const renderScheduleDetail = (
+    label: string,
+    detail?: RomanticScheduleDetail,
+    fallbackLocation?: string
+  ) => {
+    if (!hasText(detail?.time) && !hasText(detail?.location) && !fallbackLocation) {
+      return null;
+    }
+
+    return (
+      <div className={styles.scheduleDetailCard}>
+        <div className={styles.scheduleDetailLabel}>{label}</div>
+        {hasText(detail?.time) ? (
+          <div className={styles.scheduleDetailValue}>{detail?.time}</div>
+        ) : null}
+        <div className={styles.scheduleDetailMeta}>
+          {detail?.location?.trim() || fallbackLocation}
+        </div>
+      </div>
+    );
+  };
+
+  const renderGuideGroup = (title: string, items: RomanticGuideItem[]) => {
+    if (items.length === 0) {
+      return null;
+    }
+
+    return (
+      <div className={styles.guideGroup}>
+        <h3 className={styles.guideGroupTitle}>{title}</h3>
+        <div className={styles.guideList}>
+          {items.map((item, index) => (
+            <div className={styles.guideCard} key={`${title}-${item.title}-${index}`}>
+              {hasText(item.title) ? (
+                <div className={styles.guideCardTitle}>{item.title}</div>
+              ) : null}
+              {hasText(item.content) ? (
+                <p className={styles.guideCardContent}>
+                  {formatTextWithBreaks(item.content)}
+                </p>
+              ) : null}
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  };
+
+  const renderSummaryPanel = () => (
+    <div className={styles.scheduleSummaryPanel}>
+      <div className={styles.scheduleSummary}>
+        {hasText(date) ? (
+          <div className={styles.scheduleSummaryItem}>
+            <span>예식일</span>
+            <strong>{date}</strong>
+          </div>
+        ) : null}
+        {hasText(time) ? (
+          <div className={styles.scheduleSummaryItem}>
+            <span>시간</span>
+            <strong>{time}</strong>
+          </div>
+        ) : null}
+        {hasText(venue) ? (
+          <div className={styles.scheduleSummaryItem}>
+            <span>예식장</span>
+            <strong>{venue}</strong>
+          </div>
+        ) : null}
+        {hasText(address) ? (
+          <div className={styles.scheduleSummaryItem}>
+            <span>주소</span>
+            <strong>{address}</strong>
+          </div>
+        ) : null}
+      </div>
+    </div>
+  );
+
+  const renderDetailPanel = () => (
+    <div className={styles.scheduleDetailPanel}>
+      <div className={styles.scheduleDetailGrid}>
+        {renderScheduleDetail('본식', ceremony, venue)}
+        {renderScheduleDetail('피로연', reception)}
+      </div>
+      {!hasText(ceremony?.time) &&
+      !hasText(ceremony?.location) &&
+      !hasText(reception?.time) &&
+      !hasText(reception?.location) ? (
+        <div className={styles.scheduleEmpty}>현재 노출 가능한 세부 안내가 없습니다.</div>
+      ) : null}
+    </div>
+  );
+
+  const renderGuidePanel = () => (
+    <div className={styles.scheduleGuidePanel}>
+      {hasGuide ? (
+        <div className={styles.guideSection}>
+          {renderGuideGroup('예식장 안내', sanitizedVenueGuide)}
+          {renderGuideGroup('화환 안내', sanitizedWreathGuide)}
+        </div>
+      ) : (
+        <div className={styles.scheduleEmpty}>현재 노출 가능한 안내사항이 없습니다.</div>
+      )}
+    </div>
+  );
+
+  const renderPanel = () => {
+    if (activeTab === 'summary') {
+      return renderSummaryPanel();
+    }
+
+    if (activeTab === 'detail') {
+      return renderDetailPanel();
+    }
+
+    return renderGuidePanel();
+  };
+
+  return (
+    <section className={styles.section} id="wedding-info">
+      <p className={styles.sectionLabel}>Information</p>
+      <div className={styles.sectionDivider} />
+      <h2 className={styles.sectionTitle}>예식 안내</h2>
+
+      {scheduleTabs.length > 1 ? (
+        <div className={styles.scheduleTabs} role="tablist" aria-label="예식 안내 탭">
+          {scheduleTabs.map((tab) => (
+            <button
+              key={tab.key}
+              type="button"
+              className={`${styles.scheduleTabButton} ${
+                activeTab === tab.key ? styles.scheduleTabButtonActive : ''
+              }`}
+              role="tab"
+              aria-selected={activeTab === tab.key}
+              onClick={() => setActiveTab(tab.key)}
+            >
+              <span className={styles.scheduleTabLabel}>{tab.label}</span>
+              <span className={styles.scheduleTabValue}>{tab.icon}</span>
+            </button>
+          ))}
+        </div>
+      ) : null}
+
+      <div className={styles.scheduleTabPanel} role="tabpanel">
+        {renderPanel()}
+      </div>
+    </section>
   );
 }
 
@@ -728,6 +1264,7 @@ export default createWeddingThemeRenderer({
       const pageData = getThemePageData(state.pageConfig, 'romantic');
       const heroDate = formatHeroDateLabel(state.weddingDate);
       const heroTime = getDisplayTime(state.weddingDate, pageData?.ceremonyTime || '');
+      const subtitle = pageData?.subtitle?.trim();
 
       return (
         <section className={styles.hero}>
@@ -743,11 +1280,12 @@ export default createWeddingThemeRenderer({
           <div className={styles.heroOverlay} />
           <div className={styles.heroContent}>
             <h1 className={styles.heroNames}>
-              <span>{state.pageConfig.groomName}</span>
+              <span className={styles.heroNamePrimary}>{state.pageConfig.groomName}</span>
               <span className={styles.heroAmpersand}>&amp;</span>
-              <span>{state.pageConfig.brideName}</span>
+              <span className={styles.heroNamePrimary}>{state.pageConfig.brideName}</span>
             </h1>
             <p className={styles.heroVenue}>{state.pageConfig.venue}</p>
+            {subtitle ? <p className={styles.heroSubtitle}>{subtitle}</p> : null}
             <div className={styles.heroDateLine}>
               {heroDate} / {heroTime}
             </div>
@@ -769,6 +1307,10 @@ export default createWeddingThemeRenderer({
             {greeting || `${state.pageConfig.displayName} 결혼식에 초대합니다.`}
           </p>
           <p className={styles.greetingAuthor}>from. {greetingAuthor}</p>
+          <RomanticFamilySection
+            groom={state.pageConfig.couple.groom}
+            bride={state.pageConfig.couple.bride}
+          />
         </section>
       );
     },
@@ -791,6 +1333,11 @@ export default createWeddingThemeRenderer({
             <div className={styles.dateMeta}>{eventTime}</div>
             <div className={styles.dateVenue}>{address || state.pageConfig.venue}</div>
           </div>
+          <RomanticCalendar
+            weddingDate={state.weddingDate}
+            groomName={state.pageConfig.groomName}
+            brideName={state.pageConfig.brideName}
+          />
           {features.showCountdown ? (
             <>
               <p className={styles.sectionLabel}>D-DAY</p>
@@ -803,6 +1350,24 @@ export default createWeddingThemeRenderer({
             </>
           ) : null}
         </section>
+      );
+    },
+    ({ state }) => {
+      const pageData = getThemePageData(state.pageConfig, 'romantic');
+      const ceremony = getCeremonySchedule(state.pageConfig, pageData);
+      const reception = getReceptionSchedule(state.pageConfig, pageData);
+
+      return (
+        <RomanticScheduleSection
+          date={state.pageConfig.date}
+          time={pageData?.ceremonyTime ?? ''}
+          venue={state.pageConfig.venue}
+          address={getCeremonyAddress(state.pageConfig, pageData)}
+          ceremony={ceremony}
+          reception={reception}
+          venueGuide={pageData?.venueGuide}
+          wreathGuide={pageData?.wreathGuide}
+        />
       );
     },
     ({ state }) => (

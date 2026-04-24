@@ -6,6 +6,7 @@ import { getPageImages, type UploadedImage } from '@/services/imageService';
 
 interface UsePageImagesOptions {
   enabled?: boolean;
+  allowListing?: boolean;
 }
 
 export function usePageImages(pageSlug: string, options: UsePageImagesOptions = {}) {
@@ -27,7 +28,9 @@ export function usePageImages(pageSlug: string, options: UsePageImagesOptions = 
         setLoading(true);
         setError(null);
 
-        const fetchedImages = await getPageImages(pageSlug);
+        const fetchedImages = await getPageImages(pageSlug, {
+          allowListing: options.allowListing !== false,
+        });
         setImages(fetchedImages);
       } catch (loadError) {
         console.error('이미지 로드 실패:', loadError);
@@ -38,7 +41,7 @@ export function usePageImages(pageSlug: string, options: UsePageImagesOptions = 
     };
 
     void loadImages();
-  }, [enabled, pageSlug]);
+  }, [enabled, options.allowListing, pageSlug]);
 
   return {
     images,

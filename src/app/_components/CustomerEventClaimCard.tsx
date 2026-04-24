@@ -3,7 +3,10 @@
 import Link from 'next/link';
 import { useState } from 'react';
 
-import { claimOwnedCustomerEvent } from '@/services/customerEventService';
+import {
+  claimOwnedCustomerEvent,
+  type ClaimOwnedCustomerEventResult,
+} from '@/services/customerEventService';
 
 import styles from './CustomerEventClaimCard.module.css';
 
@@ -13,7 +16,10 @@ interface CustomerEventClaimCardProps {
   description: string;
   helperText?: string | null;
   compact?: boolean;
-  onClaimed?: (slug: string) => void | Promise<void>;
+  onClaimed?: (
+    slug: string,
+    result: ClaimOwnedCustomerEventResult
+  ) => void | Promise<void>;
 }
 
 export default function CustomerEventClaimCard({
@@ -47,7 +53,7 @@ export default function CustomerEventClaimCard({
         setPageSlugInput(result.slug);
       }
       setSuccessMessage('이 계정에 청첩장을 연결했습니다. 이제 바로 관리할 수 있습니다.');
-      await onClaimed?.(result.slug);
+      await onClaimed?.(result.slug, result);
     } catch (error) {
       setErrorMessage(
         error instanceof Error

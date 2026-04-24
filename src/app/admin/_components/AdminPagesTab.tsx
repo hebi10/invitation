@@ -33,6 +33,7 @@ function parsePageSize(value: string) {
 
 interface AdminPagesTabProps {
   loading: boolean;
+  refreshing: boolean;
   summaryLoading: boolean;
   weddingPages: InvitationPageSummary[];
   filteredPages: InvitationPageSummary[];
@@ -58,6 +59,7 @@ interface AdminPagesTabProps {
 
 export default function AdminPagesTab({
   loading,
+  refreshing,
   summaryLoading,
   weddingPages,
   filteredPages,
@@ -77,8 +79,8 @@ export default function AdminPagesTab({
   updatingPublishedPageSlug,
   updatingVariantToken,
   updatingTierPageSlug,
-  deletingPageSlug: _deletingPageSlug,
-  onDeletePage: _onDeletePage,
+  deletingPageSlug,
+  onDeletePage,
 }: AdminPagesTabProps) {
 
   const [currentPage, setCurrentPage] = useState(1);
@@ -255,9 +257,9 @@ export default function AdminPagesTab({
               type="button"
               className="admin-button admin-button-secondary"
               onClick={onRefresh}
-              disabled={loading}
+              disabled={loading || refreshing}
             >
-              {loading ? '새로고침 중' : '새로고침'}
+              {refreshing ? '새로고침 중' : loading ? '불러오는 중' : '새로고침'}
             </button>
             <button
               type="button"
@@ -322,6 +324,7 @@ export default function AdminPagesTab({
                     const links = getAvailableShortcuts(page);
                     const previewAccess = getInvitationPublicAccessState(page);
                     const isUpdatingPublished = updatingPublishedPageSlug === page.slug;
+                    const isDeletingPage = deletingPageSlug === page.slug;
                     const selectedVariantKey = selectedVariantByPage[page.slug] ?? '';
                     const selectedVariant = links.find(
                       (link) => link.key === selectedVariantKey
@@ -535,6 +538,14 @@ export default function AdminPagesTab({
                               >
                                 모바일
                               </a>
+                              <button
+                                type="button"
+                                className="admin-button admin-button-danger"
+                                disabled={isDeletingPage}
+                                onClick={() => onDeletePage(page)}
+                              >
+                                {isDeletingPage ? '완전 삭제 중' : '완전 삭제'}
+                              </button>
                             </div>
                           </div>
                         </td>
@@ -549,6 +560,7 @@ export default function AdminPagesTab({
           <div className={styles.mobileList}>
             {currentInvitationPages.map((page) => {
               const links = getAvailableShortcuts(page);
+              const isDeletingPage = deletingPageSlug === page.slug;
               const selectedVariantKey = selectedVariantByPage[page.slug] ?? '';
               const selectedVariant = links.find((link) => link.key === selectedVariantKey);
               const selectedMissingShortcut = SHORTCUT_ITEMS.find(
@@ -726,6 +738,14 @@ export default function AdminPagesTab({
                       >
                         모바일
                       </a>
+                      <button
+                        type="button"
+                        className="admin-button admin-button-danger"
+                        disabled={isDeletingPage}
+                        onClick={() => onDeletePage(page)}
+                      >
+                        {isDeletingPage ? '완전 삭제 중' : '완전 삭제'}
+                      </button>
                     </div>
                   </div>
                 </article>

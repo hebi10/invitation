@@ -31,7 +31,7 @@
 - `src/services/repositories/clientPasswordRepository.ts`
   - 페이지 비밀번호 조회/저장
 - `src/services/repositories/commentRepository.ts`
-  - 방명록 조회/등록/삭제 예정 처리
+  - 방명록 조회/서버 API 등록/삭제 예정 처리
 - `src/services/repositories/adminUserRepository.ts`
   - 관리자 활성 여부 조회
 - `src/services/repositories/memoryPageRepository.ts`
@@ -54,6 +54,40 @@
 2. service는 입력 정리와 mock fallback만 처리한다.
 3. 실제 Firestore 읽기/쓰기는 `src/services/repositories/*`가 담당한다.
 4. repository 내부에서 mapper/validator를 사용해 DTO와 문서 사이를 변환한다.
+
+## 공개 조회 fallback 경계
+- `getInvitationPageBySlug`의 공개 방문자 호출은 `includeSeedFallback: false`, `allowSeedFallbackWithFirestore: false`, `requirePublicAccess: true`를 함께 사용한다.
+- 서버 공개 라우트는 `sampleFallbackMode: 'when-firestore-unavailable'`로 Firestore 사용 가능 환경의 암묵적 sample fallback을 막는다.
+- 관리자/편집/로컬 preview 흐름은 명시적으로 private 또는 fallback 옵션을 켠 호출부에서만 sample 데이터를 사용할 수 있다.
+
+## Storage 이미지 조회 경계
+- 공개 페이지는 `usePageImages` listing fallback을 사용하지 않고 Firestore config의 이미지 URL만 사용한다.
+- `getPageImages`/`getAllPageImages`의 Storage `listAll`은 관리자, 소유자, 위자드/관리 화면처럼 명시적 관리 흐름에서만 사용한다.
+- Storage rules는 공개 `get`을 Firestore 공개 상태와 연결하고, `list`는 관리자/소유자 관리 권한으로 제한한다.
+
+## 방명록 쓰기 경계
+- 공개 페이지 댓글 등록은 클라이언트 repository가 Firestore에 직접 create하지 않고 `POST /api/guestbook/comments`를 호출한다.
+- 서버 API는 `src/server/repositories/eventCommentRepository.ts`를 통해 `events/{eventId}/comments`에만 댓글을 생성한다.
+- Firestore rules는 공개 클라이언트의 `events/{eventId}/comments/{commentId}` create를 차단하고, 기존 읽기와 관리자 삭제 예정 처리는 유지한다.
+- 서버 API는 이벤트 공개 상태와 노출 기간을 확인한 뒤 이름/메시지 길이, 기본 스팸 패턴, rate limit을 통과한 요청만 저장한다.
+
+## 관리자 조회 경계
+- 관리자 페이지 목록은 클라이언트 Firestore 직접 조회 대신 `/api/admin/pages`를 통해 서버 Admin SDK로 읽는다.
+- 관리자 방명록 목록은 클라이언트 collection/list 조회 대신 `/api/admin/comments`를 통해 서버 Admin SDK로 읽는다.
+- 관리자 로그인 권한 확인과 주요 조회 API는 Firebase ID token을 `Authorization: Bearer`로 전달하고 서버에서 `admin-users` 권한을 확인한다.
+
+## 고객 소유 이벤트 조회 경계
+- `/my-invitations`의 내 청첩장 목록은 클라이언트 Firestore 직접 조회 대신 `/api/customer/events`를 통해 서버 Admin SDK로 읽는다.
+- 고객 조회 API는 Firebase ID token을 `Authorization: Bearer`로 전달하고 서버에서 검증한 UID의 `ownerUid`와 일치하는 이벤트만 반환한다.
+- 기존 청첩장 claim 성공 후에는 내 청첩장 목록 캐시를 무효화하고 서버 목록을 다시 읽은 뒤 `/page-wizard/[slug]` 관리 화면으로 이동한다.
+- `/page-wizard/[slug]`, `/page-wizard/[slug]/result`, `/page-editor/[slug]`의 비관리자 소유권/편집 설정 확인은 `/api/customer/events/[slug]/ownership`, `/api/customer/events/[slug]/editable` 서버 API를 사용한다.
+- claim 직후 편집 화면 전환은 클라이언트 Firestore 규칙 전파나 slug index 읽기에 의존하지 않고, 서버 Admin SDK가 확인한 owner/config 상태를 기준으로 한다.
+- `/api/customer/events/claim` 성공 응답은 가능한 경우 서버가 확인한 editable config를 함께 내려주며, 고객 위저드는 이 config를 즉시 적용한다.
+- 고객 위저드 진입 시 Storage listing fallback과 클라이언트 Firestore 이미지 정리 저장은 실행하지 않는다.
+- 고객 위저드는 editable API가 `claimable`을 먼저 반환해도 `/api/customer/events` 소유 목록 확인이 끝나기 전에는 비밀번호 claim 카드를 렌더링하지 않는다.
+- slug index가 오래되어 먼저 찾은 이벤트의 `ownerUid`가 비어 있어도, 현재 UID가 같은 slug의 이벤트 summary를 소유하고 있으면 고객 편집 API는 `claimable`보다 owner를 우선 인정한다.
+- owner 이벤트의 editable config가 비어 있고 같은 slug의 sample config가 있으면 고객 편집 API는 sample 기반 config를 반환해 비밀번호 claim 루프로 보내지 않는다.
+- 위저드 클라이언트도 `/api/customer/events` 소유 목록에 같은 slug가 있으면 claimable 응답을 그대로 믿지 않고 소유 이벤트 fallback config를 적용한다.
 
 ## 남겨둔 예외
 - `memoryPageService`는 Firestore 경로는 repository로 분리했지만, Storage 업로드/삭제는 도메인 서비스에 남겨뒀다.

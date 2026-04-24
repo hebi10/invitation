@@ -2,7 +2,10 @@ import { notFound } from 'next/navigation';
 
 import { resolveEventPageRenderer } from '@/app/_components/eventPageRendererRegistry';
 
-import { getCachedServerInvitationPageBySlug } from '../serverInvitationPageCache';
+import {
+  getCachedServerInvitationPageBySlug,
+  getCachedServerPublicInvitationPageBySlug,
+} from '../serverInvitationPageCache';
 import { getServerInvitationPageEventTypeBySlug } from '@/server/invitationPageServerService';
 
 export const dynamic = 'force-dynamic';
@@ -22,7 +25,7 @@ export default async function EventInvitationThemeRoutePage({
   }
 
   const [page, previewPage] = await Promise.all([
-    getCachedServerInvitationPageBySlug(slug),
+    getCachedServerPublicInvitationPageBySlug(slug),
     getCachedServerInvitationPageBySlug(slug, true),
   ]);
   const routePreviewPage = page ?? previewPage;

@@ -14,7 +14,6 @@
 .loginShell {
   max-width: 520px;
   margin: 0 auto;
-  padding-top: clamp(40px, 8vh, 88px);
   display: flex;
   flex-direction: column;
   gap: 20px;
@@ -175,8 +174,13 @@
   padding: 8px;
 }
 
-.tabBarGroup,
-.tabBarInlineGroup {
+.tabStack {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.tabBarGroup {
   display: flex;
   flex: 1 1 0;
   flex-wrap: wrap;
@@ -184,14 +188,8 @@
   min-width: 0;
 }
 
-.tabBarInlineGroup {
-  flex: 999 1 360px;
-}
-
-.tabBarDivider {
-  width: 1px;
-  align-self: stretch;
-  background: var(--admin-color-border);
+.pageCategoryTabBar {
+  background: var(--admin-color-surface-muted);
 }
 
 .tabButton {
@@ -881,14 +879,8 @@
     flex-basis: calc(50% - 4px);
   }
 
-  .tabBarGroup,
-  .tabBarInlineGroup {
+  .tabBarGroup {
     flex-basis: 100%;
-  }
-
-  .tabBarDivider {
-    width: 100%;
-    height: 1px;
   }
 
   .innerTabButton {

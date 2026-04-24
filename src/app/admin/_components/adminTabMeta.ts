@@ -1,4 +1,12 @@
-import type { AdminSection, AdminTab } from './adminPageUtils';
+import {
+  getPageCategoryMeta,
+  getTabLabelForPageCategory,
+  isImplementedPageCategory,
+  isEventAdminTab,
+  type AdminSection,
+  type AdminTab,
+  type PageCategoryTabKey,
+} from './adminPageUtils';
 
 export function getSectionLabel(section: AdminSection) {
   switch (section) {
@@ -11,7 +19,10 @@ export function getSectionLabel(section: AdminSection) {
   }
 }
 
-export function getSectionSummary(section: AdminSection) {
+export function getSectionSummary(
+  section: AdminSection,
+  pageCategory: PageCategoryTabKey = 'invitation'
+) {
   switch (section) {
     case 'customers':
       return {
@@ -20,6 +31,16 @@ export function getSectionSummary(section: AdminSection) {
         helper: '현재 제공 기능: 고객 계정 · 고객 비밀번호',
       };
     case 'events':
+      if (!isImplementedPageCategory(pageCategory)) {
+        const categoryLabel = getPageCategoryMeta(pageCategory).label;
+
+        return {
+          title: `${categoryLabel} 서비스 운영 화면을 준비하고 있습니다.`,
+          description: `${categoryLabel} 전용 페이지, 이미지, 메시지, 노출 정책은 서비스별 요구사항에 맞춰 순차적으로 분리할 예정입니다.`,
+          helper: `현재 선택 서비스: ${categoryLabel}`,
+        };
+      }
+
       return {
         title: '청첩장과 이벤트 운영 데이터를 관리합니다.',
         description: '페이지, 이미지, 방명록, 노출 기간, 추억 페이지까지 운영 작업을 이어서 처리합니다.',
@@ -34,28 +55,28 @@ export function getSectionSummary(section: AdminSection) {
   }
 }
 
-export function getTabLabel(tab: AdminTab) {
-  switch (tab) {
-    case 'accounts':
-      return '고객 계정';
-    case 'pages':
-      return '모바일 청첩장';
-    case 'memory':
-      return '추억 페이지';
-    case 'images':
-      return '이미지';
-    case 'comments':
-      return '방명록';
-    case 'passwords':
-      return '고객 비밀번호';
-    case 'periods':
-      return '노출 기간';
-    default:
-      return '관리';
-  }
+export function getTabLabel(
+  tab: AdminTab,
+  pageCategory: PageCategoryTabKey = 'invitation'
+) {
+  return getTabLabelForPageCategory(tab, pageCategory);
 }
 
-export function getTabSummary(tab: AdminTab) {
+export function getTabSummary(
+  tab: AdminTab,
+  pageCategory: PageCategoryTabKey = 'invitation'
+) {
+  if (isEventAdminTab(tab) && !isImplementedPageCategory(pageCategory)) {
+    const categoryLabel = getPageCategoryMeta(pageCategory).label;
+    const tabLabel = getTabLabelForPageCategory(tab, pageCategory);
+
+    return {
+      title: `${tabLabel} 관리 화면은 준비 중입니다.`,
+      description: `${categoryLabel} 서비스에 맞는 ${tabLabel} 관리 흐름은 별도 정책과 데이터 구조를 정리한 뒤 연결할 예정입니다.`,
+      helper: `현재 선택 서비스: ${categoryLabel}`,
+    };
+  }
+
   switch (tab) {
     case 'accounts':
       return {

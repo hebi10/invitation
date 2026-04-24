@@ -36,12 +36,19 @@
   - `eventId`
   - `status`
   - `updatedAt`
+- `events/{eventId}/comments/{commentId}`
+  - `author`
+  - `message`
+  - `pageSlug`
+  - `createdAt`
+  - `status`
+  - `deleted`
 
 ### nullable 필드
 - `visibility.displayStartAt`
 - `visibility.displayEndAt`
 - `billingFulfillments.fulfilledAt`
-- `events/{eventId}/comments/{commentId}`의 복구/삭제 시각 필드
+- `events/{eventId}/comments/{commentId}`의 숨김/복구/삭제 예약 시각 필드
 - `events/{eventId}/linkTokens/{tokenId}`의 사용/폐기 시각 필드
 
 ### optional 허용 필드
@@ -96,8 +103,14 @@ interface EventContentDoc {
 interface EventCommentDoc {
   author: string;
   message: string;
+  pageSlug: string;
   createdAt: Timestamp;
   status: CommentStatus;
+  deleted: boolean;
+  hiddenAt?: Timestamp | null;
+  deletedAt?: Timestamp | null;
+  scheduledDeleteAt?: Timestamp | null;
+  restoredAt?: Timestamp | null;
 }
 
 interface EventLinkTokenDoc {
@@ -176,6 +189,12 @@ interface BillingFulfillmentDoc {
   - 읽기: `events`만 사용
   - 쓰기: `events`만 사용
   - 신규 기능: legacy 컬렉션 접근 금지
+
+## 방명록 쓰기 계약
+- 공개 댓글 생성은 서버 API `POST /api/guestbook/comments`를 통해서만 허용한다.
+- 서버 API는 `eventSlugIndex`로 slug를 해석하고 `events/{eventId}`의 공개 여부와 노출 기간을 확인한 뒤 저장한다.
+- 신규 댓글의 기본 상태는 현재 공개 읽기 흐름과 맞춰 `status: "public"`, `deleted: false`다.
+- 클라이언트 SDK의 직접 create는 Firestore rules에서 차단하며, 기존 댓글 읽기는 `events/{eventId}/comments` 공개 조회 정책을 유지한다.
 
 ## 신규 기능 개발 규칙
 - 신규 기능은 레거시 컬렉션명을 직접 참조하면 안 된다.

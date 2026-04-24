@@ -28,6 +28,7 @@ import {
   normalizeInvitationProductTier,
   resolveInvitationFeatures,
 } from '@/lib/invitationProducts';
+import { getInvitationPublicAccessState } from '@/lib/invitationPublicAccess';
 import { DEFAULT_EVENT_TYPE, normalizeEventTypeKey, type EventTypeKey } from '@/lib/eventTypes';
 import {
   clampInvitationMusicVolume,
@@ -45,6 +46,8 @@ import {
   clientInvitationPageRepository,
   type StoredInvitationPageConfigRecord,
 } from '@/services/repositories/invitationPageRepository';
+
+import { getCurrentFirebaseIdToken } from './adminAuth';
 
 export { normalizeInvitationPageSlugBase } from '@/lib/invitationPagePersistence';
 
@@ -91,6 +94,12 @@ export interface InvitationPageSeedTemplate {
   features: InvitationFeatureFlags;
 }
 
+type AdminInvitationPagesApiResponse = {
+  success?: boolean;
+  pages?: Array<Record<string, unknown>>;
+  error?: string;
+};
+
 export interface CreateInvitationPageDraftInput {
   seedSlug: string;
   slugBase: string;
@@ -111,6 +120,8 @@ export interface CreateInvitationPageDraftResult {
 export interface InvitationPageLookupOptions {
   includeSeedFallback?: boolean;
   includeSeedPages?: boolean;
+  allowSeedFallbackWithFirestore?: boolean;
+  requirePublicAccess?: boolean;
   fallbackOnError?: boolean;
   retryOnPermissionDenied?: boolean;
   retryCount?: number;
@@ -124,6 +135,97 @@ type BuiltInvitationPageRecord = {
   dataSource: 'seed' | 'firestore';
   hasCustomConfig: boolean;
 };
+
+function readServiceDate(value: unknown) {
+  if (value instanceof Date) {
+    return value;
+  }
+
+  const parsed = typeof value === 'string' || typeof value === 'number' ? new Date(value) : null;
+  return parsed && !Number.isNaN(parsed.getTime()) ? parsed : null;
+}
+
+function normalizeAdminInvitationPageSummary(
+  input: Record<string, unknown>
+): InvitationPageSummary | null {
+  const slug = typeof input.slug === 'string' ? input.slug.trim() : '';
+  if (!slug) {
+    return null;
+  }
+
+  const productTier = normalizeInvitationProductTier(
+    input.productTier,
+    DEFAULT_INVITATION_PRODUCT_TIER
+  );
+
+  return {
+    slug,
+    eventType: normalizeEventTypeKey(input.eventType, DEFAULT_EVENT_TYPE),
+    displayName:
+      typeof input.displayName === 'string' && input.displayName.trim()
+        ? input.displayName.trim()
+        : slug,
+    description: typeof input.description === 'string' ? input.description : '',
+    date: typeof input.date === 'string' ? input.date : '',
+    venue: typeof input.venue === 'string' ? input.venue : '',
+    createdAt: readServiceDate(input.createdAt),
+    updatedAt: readServiceDate(input.updatedAt),
+    published: input.published === true,
+    defaultTheme: normalizeInvitationTheme(input.defaultTheme),
+    productTier,
+    features: resolveInvitationFeatures(
+      productTier,
+      typeof input.features === 'object' && input.features !== null
+        ? (input.features as Record<string, unknown>)
+        : undefined
+    ),
+    displayPeriodEnabled: input.displayPeriodEnabled === true,
+    displayPeriodStart: readServiceDate(input.displayPeriodStart),
+    displayPeriodEnd: readServiceDate(input.displayPeriodEnd),
+    variants:
+      typeof input.variants === 'object' && input.variants !== null
+        ? (input.variants as InvitationPage['variants'])
+        : {},
+    dataSource: 'firestore' as const,
+    hasCustomConfig: input.hasCustomConfig === true,
+  } satisfies InvitationPageSummary;
+}
+
+async function getAdminAuthHeaders() {
+  const idToken = await getCurrentFirebaseIdToken();
+  if (!idToken) {
+    throw new Error('관리자 로그인 상태를 확인하지 못했습니다. 다시 로그인해 주세요.');
+  }
+
+  return {
+    Authorization: `Bearer ${idToken}`,
+  };
+}
+
+async function fetchAdminManagedInvitationPages() {
+  const response = await fetch('/api/admin/pages', {
+    method: 'GET',
+    headers: await getAdminAuthHeaders(),
+    cache: 'no-store',
+  });
+  const payload = (await response.json().catch(() => null)) as
+    | AdminInvitationPagesApiResponse
+    | null;
+
+  if (!response.ok) {
+    throw new Error(
+      typeof payload?.error === 'string' && payload.error.trim()
+        ? payload.error
+        : '청첩장 페이지 목록을 불러오지 못했습니다.'
+    );
+  }
+
+  return Array.isArray(payload?.pages)
+    ? payload.pages
+        .map((page) => normalizeAdminInvitationPageSummary(page))
+        .filter((page): page is InvitationPageSummary => page !== null)
+    : [];
+}
 
 function wait(ms: number) {
   return new Promise((resolve) => {
@@ -398,6 +500,31 @@ async function ensureFirestoreState(): Promise<FirestoreState | null> {
   return clientInvitationPageRepository.isAvailable() ? true : null;
 }
 
+function canUseSeedFallback(
+  options: InvitationPageLookupOptions,
+  firestoreAvailable: boolean
+) {
+  if (options.includeSeedFallback === false) {
+    return false;
+  }
+
+  if (!firestoreAvailable) {
+    return true;
+  }
+
+  return options.allowSeedFallbackWithFirestore !== false;
+}
+
+function readRepositoryErrorCode(error: unknown) {
+  return typeof error === 'object' && error !== null && 'code' in error
+    ? String((error as { code?: unknown }).code ?? '')
+    : '';
+}
+
+function isPublicInvitationPage(page: InvitationPage) {
+  return getInvitationPublicAccessState(page).isPublic;
+}
+
 async function getDisplayPeriodMap(_firestore: FirestoreState) {
   return clientInvitationPageRepository.listDisplayPeriodMap();
 }
@@ -441,13 +568,25 @@ async function createUniqueInvitationPageSlug(
 function buildInvitationPageRecord(
   pageSlug: string,
   configRecord: StoredInvitationPageConfigRecord | null,
-  registryRecord: InvitationPageRegistryRecord | null
+  registryRecord: InvitationPageRegistryRecord | null,
+  options: {
+    includeImplicitSeedFallback?: boolean;
+  } = {}
 ): BuiltInvitationPageRecord | null {
   const seed = getWeddingPageBySlug(pageSlug);
   const configSeed = configRecord?.config ?? null;
   const hasCustomConfig = registryRecord?.hasCustomConfig ?? Boolean(configRecord);
+  const canUseSeedSource =
+    Boolean(seed) &&
+    (options.includeImplicitSeedFallback !== false || Boolean(registryRecord));
   const selectedSeed =
-    hasCustomConfig && configSeed ? configSeed : configSeed && !seed ? configSeed : seed ?? null;
+    hasCustomConfig && configSeed
+      ? configSeed
+      : configSeed && !seed
+        ? configSeed
+        : canUseSeedSource
+          ? seed
+          : null;
 
   if (!selectedSeed) {
     return null;
@@ -554,7 +693,16 @@ export async function getEditableInvitationPageConfig(
       lastSavedAt: registryRecord?.updatedAt ?? null,
     };
   } catch (error) {
-    console.error('[invitationPageService] failed to load editable config', error);
+    const errorCode = readRepositoryErrorCode(error);
+    if (errorCode === 'permission-denied' || errorCode === 'not-found') {
+      console.warn('[invitationPageService] editable config unavailable', {
+        pageSlug,
+        errorCode,
+      });
+      return null;
+    }
+
+    console.warn('[invitationPageService] failed to load editable config', error);
     return null;
   }
 }
@@ -819,8 +967,10 @@ export async function getInvitationPageBySlug(
 
   const firestore = await ensureFirestoreState();
   if (!firestore) {
-    return options.includeSeedFallback === false ? null : seedPage;
+    return canUseSeedFallback(options, false) ? seedPage : null;
   }
+
+  const shouldUseSeedFallback = canUseSeedFallback(options, true);
 
   try {
     const [registryRecord, configSeed, period] = await Promise.all([
@@ -829,19 +979,23 @@ export async function getInvitationPageBySlug(
       getDisplayPeriodByPageSlug(firestore, pageSlug),
     ]);
 
-    const sourceRecord = buildInvitationPageRecord(pageSlug, configSeed, registryRecord);
-    const basePage = sourceRecord?.page ?? seedPage;
+    const sourceRecord = buildInvitationPageRecord(pageSlug, configSeed, registryRecord, {
+      includeImplicitSeedFallback: shouldUseSeedFallback,
+    });
+    const basePage = sourceRecord?.page ?? (shouldUseSeedFallback ? seedPage : null);
 
     if (!basePage) {
       return null;
     }
 
-    return mergeDisplayPeriod(basePage, period);
+    const mergedPage = mergeDisplayPeriod(basePage, period);
+    if (options.requirePublicAccess && !isPublicInvitationPage(mergedPage)) {
+      return null;
+    }
+
+    return mergedPage;
   } catch (error) {
-    const errorCode =
-      typeof error === 'object' && error !== null && 'code' in error
-        ? String((error as { code?: unknown }).code ?? '')
-        : '';
+    const errorCode = readRepositoryErrorCode(error);
 
     if (
       errorCode === 'permission-denied' &&
@@ -855,13 +1009,21 @@ export async function getInvitationPageBySlug(
       });
     }
 
-    if (options.fallbackOnError) {
+    if (options.fallbackOnError && shouldUseSeedFallback) {
       console.warn(
         '[invitationPageService] falling back to seed invitation page',
         pageSlug,
         error
       );
       return seedPage;
+    }
+
+    if (errorCode === 'permission-denied' || errorCode === 'not-found') {
+      console.warn('[invitationPageService] invitation page unavailable', {
+        pageSlug,
+        errorCode,
+      });
+      return null;
     }
 
     console.error('[invitationPageService] failed to load invitation page', error);
@@ -946,6 +1108,10 @@ export async function getAllInvitationPages(
 }
 
 export async function getAllManagedInvitationPages(): Promise<InvitationPageSummary[]> {
+  if (typeof window !== 'undefined') {
+    return fetchAdminManagedInvitationPages();
+  }
+
   return getAllInvitationPages({
     includeSeedPages: false,
     includeSeedFallback: false,

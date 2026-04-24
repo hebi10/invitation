@@ -1,10 +1,18 @@
 ﻿'use client';
 
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { type ReactNode, useEffect, useMemo, useState } from 'react';
 
 import CustomerEventClaimCard from '@/app/_components/CustomerEventClaimCard';
 import FirebaseAuthLoginCard from '@/app/_components/FirebaseAuthLoginCard';
 import { useAdmin } from '@/contexts';
+import {
+  appQueryKeys,
+  FIFTEEN_MINUTES_MS,
+  GUESTBOOK_GC_TIME_MS,
+  GUESTBOOK_STALE_TIME_MS,
+  THIRTY_MINUTES_MS,
+} from '@/lib/appQuery';
 import {
   addComment,
   deleteComment,
@@ -44,6 +52,14 @@ function hasClass(styles: Record<string, string>, className: string) {
   return Boolean(styles[className]);
 }
 
+function getGuestbookSubmitErrorMessage(error: unknown) {
+  if (error instanceof Error && error.message.trim()) {
+    return error.message;
+  }
+
+  return '메시지 등록에 실패했습니다.';
+}
+
 export default function GuestbookThemed({
   pageSlug,
   styles,
@@ -53,11 +69,11 @@ export default function GuestbookThemed({
   emptyIcon,
 }: GuestbookThemedProps) {
   const { authUser, isAdminLoggedIn, isLoggedIn } = useAdmin();
+  const queryClient = useQueryClient();
 
-  const [comments, setComments] = useState<Comment[]>([]);
   const [name, setName] = useState('');
   const [message, setMessage] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [statusMessage, setStatusMessage] = useState('');
   const [statusTone, setStatusTone] = useState<StatusTone>('success');
   const [currentPage, setCurrentPage] = useState(1);
@@ -67,6 +83,24 @@ export default function GuestbookThemed({
     'unknown' | 'owner' | 'claimable' | 'different-owner' | 'missing'
   >('unknown');
   const [lastTitleInteraction, setLastTitleInteraction] = useState(0);
+  const commentsQuery = useQuery({
+    queryKey: appQueryKeys.guestbookComments(pageSlug),
+    enabled: Boolean(pageSlug),
+    queryFn: async () => getComments(pageSlug),
+    staleTime: GUESTBOOK_STALE_TIME_MS,
+    gcTime: GUESTBOOK_GC_TIME_MS,
+    refetchOnWindowFocus: false,
+  });
+  const ownershipQuery = useQuery({
+    queryKey: appQueryKeys.guestbookOwnership(pageSlug, authUser?.uid ?? null),
+    enabled: !isAdminLoggedIn && isLoggedIn && Boolean(pageSlug),
+    queryFn: async () => getCustomerEventOwnershipStatus(pageSlug, authUser?.uid),
+    staleTime: FIFTEEN_MINUTES_MS,
+    gcTime: THIRTY_MINUTES_MS,
+    refetchOnWindowFocus: false,
+  });
+  const comments = commentsQuery.data ?? [];
+  const isRefreshingComments = commentsQuery.isRefetching;
 
   const canManageComments = isAdminLoggedIn || ownershipState === 'owner';
   const commentsPerPage = 5;
@@ -104,20 +138,6 @@ export default function GuestbookThemed({
     setStatusMessage(messageText);
   };
 
-  const loadComments = async () => {
-    try {
-      const loadedComments = await getComments(pageSlug);
-      setComments(loadedComments);
-    } catch (error) {
-      console.error('Failed to load comments', error);
-      showStatus('방명록을 불러오지 못했습니다.', 'error');
-    }
-  };
-
-  useEffect(() => {
-    void loadComments();
-  }, [pageSlug]);
-
   useEffect(() => {
     if (!statusMessage) {
       return;
@@ -151,25 +171,31 @@ export default function GuestbookThemed({
       return;
     }
 
-    let cancelled = false;
+    if (ownershipQuery.data) {
+      setOwnershipState(ownershipQuery.data.status);
+      return;
+    }
 
-    void (async () => {
-      try {
-        const ownership = await getCustomerEventOwnershipStatus(pageSlug, authUser?.uid);
-        if (!cancelled) {
-          setOwnershipState(ownership.status);
-        }
-      } catch {
-        if (!cancelled) {
-          setOwnershipState('unknown');
-        }
-      }
-    })();
+    if (ownershipQuery.error) {
+      setOwnershipState('unknown');
+    }
+  }, [
+    authUser?.uid,
+    isAdminLoggedIn,
+    isLoggedIn,
+    ownershipQuery.data,
+    ownershipQuery.error,
+    pageSlug,
+  ]);
 
-    return () => {
-      cancelled = true;
-    };
-  }, [authUser?.uid, isAdminLoggedIn, isLoggedIn, pageSlug]);
+  useEffect(() => {
+    if (!commentsQuery.error) {
+      return;
+    }
+
+    console.error('Failed to load comments', commentsQuery.error);
+    showStatus('방명록을 불러오지 못했습니다.', 'error');
+  }, [commentsQuery.error]);
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -179,7 +205,7 @@ export default function GuestbookThemed({
       return;
     }
 
-    setLoading(true);
+    setIsSubmitting(true);
     try {
       await addComment({
         pageSlug,
@@ -189,13 +215,15 @@ export default function GuestbookThemed({
       setName('');
       setMessage('');
       setCurrentPage(1);
-      await loadComments();
+      await queryClient.invalidateQueries({
+        queryKey: appQueryKeys.guestbookComments(pageSlug),
+      });
       showStatus('메시지가 등록되었습니다.', 'success');
     } catch (error) {
       console.error('Failed to add comment', error);
-      showStatus('메시지 등록에 실패했습니다.', 'error');
+      showStatus(getGuestbookSubmitErrorMessage(error), 'error');
     } finally {
-      setLoading(false);
+      setIsSubmitting(false);
     }
   };
 
@@ -211,7 +239,9 @@ export default function GuestbookThemed({
 
     try {
       await deleteComment(comment.id, comment.collectionName);
-      await loadComments();
+      await queryClient.invalidateQueries({
+        queryKey: appQueryKeys.guestbookComments(pageSlug),
+      });
       showStatus('메시지를 삭제했습니다.', 'success');
     } catch (error) {
       console.error('Failed to delete comment', error);
@@ -494,15 +524,15 @@ export default function GuestbookThemed({
             </div>
           ) : null}
 
-          <button type="submit" className={styles.submitButton} disabled={loading}>
+          <button type="submit" className={styles.submitButton} disabled={isSubmitting}>
             {hasClass(styles, 'buttonIcon') ? (
               <HeartIcon className={styles.pointHeart} />
             ) : null}
             {hasClass(styles, 'buttonText') ? (
               <span className={styles.buttonText}>
-                {loading ? '등록 중...' : '메시지 남기기'}
+                {isSubmitting ? '등록 중...' : '메시지 남기기'}
               </span>
-            ) : loading ? (
+            ) : isSubmitting ? (
               '등록 중...'
             ) : (
               '메시지 남기기'
@@ -532,11 +562,40 @@ export default function GuestbookThemed({
         </span>
       )}
 
-      {styles.pageInfo && totalPages > 1 ? (
-        <span className={styles.pageInfo}>
-          {currentPage} / {totalPages}
-        </span>
-      ) : null}
+      <div
+        style={{
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: '0.55rem',
+          marginLeft: 'auto',
+        }}
+      >
+        {styles.pageInfo && totalPages > 1 ? (
+          <span className={styles.pageInfo}>
+            {currentPage} / {totalPages}
+          </span>
+        ) : null}
+        <button
+          type="button"
+          onClick={() => {
+            void commentsQuery.refetch();
+            void ownershipQuery.refetch();
+          }}
+          disabled={isRefreshingComments}
+          style={{
+            minHeight: '32px',
+            padding: '0 12px',
+            borderRadius: '999px',
+            border: '1px solid rgba(148, 163, 184, 0.28)',
+            background: 'rgba(255,255,255,0.82)',
+            color: '#475569',
+            fontSize: '0.8rem',
+            fontWeight: 700,
+          }}
+        >
+          {isRefreshingComments ? '새로고침 중' : '새로고침'}
+        </button>
+      </div>
     </div>
   );
 

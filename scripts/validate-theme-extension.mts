@@ -19,7 +19,7 @@ import {
 } from '../apps/mobile/src/lib/linkedInvitationCardsModel';
 import {
   getSelectedTargetThemeState,
-} from '../apps/mobile/src/features/manage/hooks/useTicketOperations';
+} from '../apps/mobile/src/features/manage/ticketThemeValidation';
 
 const projectRoot = process.cwd();
 const sourceFiles = {

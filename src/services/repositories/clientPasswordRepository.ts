@@ -168,6 +168,17 @@ export const clientPasswordRepository: ClientPasswordRepository = {
       { merge: true }
     );
 
+    await upsertClientEventSummary({
+      slug: resolvedEvent.summary.slug,
+      hasCustomConfig: true,
+      createdAt,
+      updatedAt: now,
+      hasPassword: true,
+      passwordVersion,
+      passwordRequiresReset: false,
+      passwordUpdatedAt: now,
+    });
+
     return {
       id: resolvedEvent.summary.eventId,
       pageSlug: resolvedEvent.summary.slug,

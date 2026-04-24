@@ -61,6 +61,7 @@ export function useWizardPersistence({
   normalizeFormState,
   showNotice,
   showErrorNotice,
+  onPersisted,
 }: {
   formState: InvitationPageSeed | null;
   previewFormState: InvitationPageSeed | null;
@@ -83,6 +84,12 @@ export function useWizardPersistence({
   normalizeFormState: (config: InvitationPageSeed) => InvitationPageSeed;
   showNotice: (tone: 'success' | 'error' | 'neutral', message: string) => void;
   showErrorNotice: (error: unknown, fallback?: string) => void;
+  onPersisted?: (input: {
+    slug: string;
+    config: InvitationPageSeed;
+    published: boolean;
+    createdFresh: boolean;
+  }) => Promise<void> | void;
 }) {
   const ensureDraftCreated = useCallback(async (): Promise<WizardDraftCreationState> => {
     if (resolvedPersistedSlug) {
@@ -161,6 +168,12 @@ export function useWizardPersistence({
         const nextSlug = draftState.slug;
 
         if (draftState.createdFresh && options?.publish !== true) {
+          await onPersisted?.({
+            slug: nextSlug,
+            config: draftState.config ?? formState,
+            published: false,
+            createdFresh: true,
+          });
           if (!options?.silent) {
             showNotice('success', options?.successMessage ?? '청첩장을 저장했습니다.');
           }
@@ -212,6 +225,12 @@ export function useWizardPersistence({
         setFormState(normalized);
         setPublished(nextPublished);
         setLastSavedAt(new Date());
+        await onPersisted?.({
+          slug: nextSlug,
+          config: normalized,
+          published: nextPublished,
+          createdFresh: draftState.createdFresh,
+        });
 
         if (!options?.silent) {
           showNotice(
@@ -247,6 +266,7 @@ export function useWizardPersistence({
       setPublished,
       showErrorNotice,
       showNotice,
+      onPersisted,
     ]
   );
 

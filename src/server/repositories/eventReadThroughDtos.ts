@@ -48,6 +48,12 @@ export interface EventSummaryRecord {
   commentCount: number | null;
   ticketCount: number | null;
   ticketBalance: number | null;
+  security: {
+    hasPassword: boolean;
+    passwordVersion: number | null;
+    requiresReset: boolean;
+    passwordUpdatedAt: Date | null;
+  } | null;
   visibility: {
     published: boolean;
     displayStartAt: Date | null;
@@ -197,6 +203,7 @@ export function normalizeEventSummaryRecord(
 
   const displayPeriodInput = isRecord(data.displayPeriod) ? data.displayPeriod : null;
   const statsInput = isRecord(data.stats) ? data.stats : null;
+  const securityInput = isRecord(data.security) ? data.security : null;
   const visibilityInput = isRecord(data.visibility) ? data.visibility : null;
   const visibilityPublished =
     typeof visibilityInput?.published === 'boolean'
@@ -209,6 +216,12 @@ export function normalizeEventSummaryRecord(
         (entry): entry is string => typeof entry === 'string' && entry.trim().length > 0
       )
     : [];
+  const hasSecuritySummary =
+    securityInput !== null &&
+    (typeof securityInput.hasPassword === 'boolean' ||
+      securityInput.passwordUpdatedAt != null ||
+      securityInput.passwordVersion != null ||
+      securityInput.requiresReset != null);
 
   return {
     eventId: readNonEmptyString(data.eventId) ?? eventId,
@@ -228,6 +241,15 @@ export function normalizeEventSummaryRecord(
     commentCount: readFiniteNumber(statsInput?.commentCount ?? null),
     ticketCount: readFiniteNumber(statsInput?.ticketCount ?? null),
     ticketBalance: readFiniteNumber(statsInput?.ticketBalance ?? statsInput?.ticketCount ?? null),
+    security:
+      hasSecuritySummary
+        ? {
+            hasPassword: securityInput?.hasPassword === true,
+            passwordVersion: readFiniteNumber(securityInput?.passwordVersion ?? null),
+            requiresReset: securityInput?.requiresReset === true,
+            passwordUpdatedAt: toDate(securityInput?.passwordUpdatedAt),
+          }
+        : null,
     visibility: {
       published: visibilityPublished,
       displayStartAt: visibilityDisplayStartAt,

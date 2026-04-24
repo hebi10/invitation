@@ -41,6 +41,10 @@ export interface ClientEventSummaryWriteInput {
   displayEndAt?: Date | null;
   ticketBalance?: number | null;
   commentCount?: number | null;
+  hasPassword?: boolean | null;
+  passwordVersion?: number | null;
+  passwordRequiresReset?: boolean | null;
+  passwordUpdatedAt?: Date | null;
   createdAt?: Date | null;
   updatedAt?: Date | null;
   seedSourceSlug?: string | null;
@@ -464,6 +468,34 @@ export async function upsertClientEventSummary(
     input.ownerDisplayName ??
     currentAuthOwner?.displayName ??
     null;
+  const nextHasPassword =
+    input.hasPassword !== undefined
+      ? input.hasPassword === true
+      : existingSummary?.security?.hasPassword ?? false;
+  const nextPasswordVersion =
+    input.passwordVersion !== undefined
+      ? input.passwordVersion
+      : existingSummary?.security?.passwordVersion ?? null;
+  const nextPasswordRequiresReset =
+    input.passwordRequiresReset !== undefined
+      ? input.passwordRequiresReset === true
+      : existingSummary?.security?.requiresReset ?? false;
+  const nextPasswordUpdatedAt =
+    input.passwordUpdatedAt !== undefined
+      ? input.passwordUpdatedAt
+      : existingSummary?.security?.passwordUpdatedAt ?? null;
+  const nextSecurity =
+    nextHasPassword ||
+    nextPasswordVersion !== null ||
+    nextPasswordRequiresReset ||
+    nextPasswordUpdatedAt
+      ? {
+          hasPassword: nextHasPassword,
+          passwordVersion: nextPasswordVersion,
+          requiresReset: nextPasswordRequiresReset,
+          passwordUpdatedAt: nextPasswordUpdatedAt,
+        }
+      : null;
 
   await firestore.modules.setDoc(
     firestore.modules.doc(firestore.db, CLIENT_EVENTS_COLLECTION, eventId),
@@ -490,6 +522,7 @@ export async function upsertClientEventSummary(
         ticketCount: nextTicketBalance,
         ticketBalance: nextTicketBalance,
       },
+      security: nextSecurity,
       visibility: {
         published: nextPublished,
         displayStartAt: nextDisplayStartAt,
@@ -551,6 +584,7 @@ export async function upsertClientEventSummary(
       commentCount: nextCommentCount,
       ticketCount: nextTicketBalance,
       ticketBalance: nextTicketBalance,
+      security: nextSecurity,
       visibility: {
         published: nextPublished,
         displayStartAt: nextDisplayStartAt,

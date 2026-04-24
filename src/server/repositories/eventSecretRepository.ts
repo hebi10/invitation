@@ -4,7 +4,11 @@ import { FieldValue } from 'firebase-admin/firestore';
 
 import { getServerFirestore } from '../firebaseAdmin';
 import { buildEventSecretRecordFromEventDoc } from './eventReadThroughDtos';
-import { ensureEventMirrorBySlug, resolveStoredEventBySlug } from './eventRepository';
+import {
+  ensureEventMirrorBySlug,
+  EVENTS_COLLECTION,
+  resolveStoredEventBySlug,
+} from './eventRepository';
 const EVENT_SECRET_COLLECTION = 'eventSecrets';
 
 export interface EventSecretRecord {
@@ -115,6 +119,21 @@ export const firestoreEventSecretRepository: EventSecretRepository = {
           passwordVersion: input.passwordVersion,
           createdAt: input.createdAt,
           updatedAt: input.updatedAt,
+        },
+        { merge: true }
+      );
+
+    await db
+      .collection(EVENTS_COLLECTION)
+      .doc(mirroredEvent.summary.eventId)
+      .set(
+        {
+          security: {
+            hasPassword: true,
+            passwordVersion: input.passwordVersion,
+            requiresReset: false,
+            passwordUpdatedAt: input.updatedAt,
+          },
         },
         { merge: true }
       );

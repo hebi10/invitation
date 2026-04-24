@@ -109,9 +109,7 @@ export default function VenueLocationPreview({
         if (!cancelled) {
           setMapLoadState('ready');
         }
-      } catch (error) {
-        console.error('[VenueLocationPreview] failed to initialize map preview', error);
-
+      } catch {
         if (!cancelled) {
           setMapLoadState('error');
         }
