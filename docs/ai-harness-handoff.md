@@ -1,13 +1,19 @@
-### 진행 요약
-- 관리자 대시보드는 `이벤트 운영 > 모바일 청첩장`일 때만 `페이지 유형 탭`을 상단 `관리 섹션` 탭 바 안에 함께 노출하도록 옮기고, 기존 패널 내부 탭 바는 제거해 중복 노출을 막았습니다.
-- `romantic` 로더와 첫 hero가 `state.heroImageUrl -> state.mainImageUrl` 순서로 이미지를 선택하고, 스토리지 관리 대표 이미지는 wizard에 저장된 `metadata.images.wedding` URL과 일치하는 자산을 먼저 매칭해 첫 갤러리 이미지로 잘못 fallback 되지 않도록 정리했습니다.
-- `romantic` hero의 날짜 문구는 이미지 중앙을 가리지 않도록 이름/장소 아래 하단으로 내리고, 밝은 배경에서도 읽히게 그림자를 보강했습니다.
-- `romantic` 갤러리 모달은 터치 시작/이동/종료를 추가해 모바일에서 좌우 스와이프로 이전/다음 이미지를 넘길 수 있게 했습니다.
-- 웹 `/page-wizard`의 `대표 이미지 / 공유 미리보기 이미지 / 카카오 카드 이미지` 3슬롯 구조를 메타데이터(`og:image`, `twitter:image`)와 카카오 카드 공유 이미지 선택 로직까지 연결했습니다.
-- Expo 관리 화면도 같은 3슬롯 이미지 구조와 제거 동작을 지원하도록 폼 상태, 업로드 타입, 저장 변환, 편집 UI를 함께 확장했습니다.
-- 공개 이벤트 페이지의 카카오 공유 버튼이 `metadata.images.kakaoCard`를 우선 사용하고, 없으면 공유 미리보기/대표 이미지로 fallback 하도록 런타임 참조 누락을 보완했습니다.
+### commit message
+- fix: app login 페이지의 searchParams 처리로 빌드 오류 수정
 
-### 다음 단계
-- `page-wizard`와 Expo 관리 화면에서 새 이미지 3슬롯이 저장 후 재진입 시 그대로 유지되는지 확인이 필요합니다.
-- 다른 테마가 새 `social`, `kakaoCard` 필드를 건드리지 않고 기존 동작을 유지하는지 확인이 필요합니다.
-- 모바일 실제 기기에서 `share-preview`, `kakao-card` 업로드와 임시 이미지 정리 흐름을 한 번 점검하는 것이 좋습니다.
+### 진행 요약
+- `/app/login`이 클라이언트 페이지에서 `useSearchParams()`를 직접 읽어 Next 빌드 시 Suspense 경계 오류가 나던 문제를 수정했습니다.
+- `src/app/app/login/page.tsx`를 서버 페이지로 바꾸고, 쿼리 파라미터는 `searchParams` prop으로 받아 정리한 뒤 클라이언트 컴포넌트로 넘기도록 분리했습니다.
+- 자동 앱 열기 로직과 화면 렌더링은 `src/app/app/login/AppLoginRedirectClient.tsx`로 옮겨 기존 동작은 유지했습니다.
+- `npm run build`까지 다시 실행해 `/app/login` 포함 전체 빌드가 정상 완료되는 것을 확인했습니다.
+
+### 인수인계
+- `/app/login` 관련 수정 파일은 `src/app/app/login/page.tsx`, `src/app/app/login/AppLoginRedirectClient.tsx`입니다.
+- `next` 쿼리값은 서버 페이지에서 `/manage` fallback과 절대 경로 검증을 거친 뒤 클라이언트로 전달합니다.
+- 검증은 `npm run lint:web`, `npm run typecheck:web`, `npm run build` 기준으로 확인했습니다.
+- `lint:web`는 기존 `apps/mobile/src/features/manage/hooks/useImageUpload.ts`의 미사용 변수 경고 1건이 그대로 남아 있습니다.
+
+### 남은 작업
+- Firebase App Hosting 환경에서 다시 배포할 때도 같은 `/app/login` 경로가 정상 빌드되는지 한 번 더 확인하면 됩니다.
+- 기존 홈 화면 단순화 변경분의 모바일 간격과 줄바꿈은 실제 브라우저에서 한 번 보는 편이 좋습니다.
+- `page-wizard`/Expo 이미지 3슬롯 저장 재진입 QA와 다른 테마 영향 점검은 아직 남아 있습니다.
