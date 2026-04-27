@@ -59,12 +59,14 @@
 - `getInvitationPageBySlug`의 공개 방문자 호출은 `includeSeedFallback: false`, `allowSeedFallbackWithFirestore: false`, `requirePublicAccess: true`를 함께 사용한다.
 - 서버 공개 라우트는 `sampleFallbackMode: 'when-firestore-unavailable'`로 Firestore 사용 가능 환경의 암묵적 sample fallback을 막는다.
 - 공개 라우트 SSR이 검증한 `initialPageConfig`가 있으면 비관리자 클라이언트 Firestore 재조회 실패가 공개 화면을 blocked 상태로 낮추지 않는다.
+- 공개 URL에서 관리자 로그인 사용자가 비공개/기간 외 페이지를 볼 때는 `/api/admin/events/[slug]`가 Admin SDK로 private 포함 설정을 읽어 클라이언트 Firestore rules 제한에 막히지 않게 한다.
 - 관리자/편집/로컬 preview 흐름은 명시적으로 private 또는 fallback 옵션을 켠 호출부에서만 sample 데이터를 사용할 수 있다.
 
 ## Storage 이미지 조회 경계
 - 공개 페이지는 `usePageImages` listing fallback을 사용하지 않고 Firestore config의 이미지 URL만 사용한다.
 - `getPageImages`/`getAllPageImages`의 Storage `listAll`은 관리자, 소유자, 위자드/관리 화면처럼 명시적 관리 흐름에서만 사용한다.
 - Storage rules는 공개 `get`을 Firestore 공개 상태와 연결하고, `list`는 관리자/소유자 관리 권한으로 제한한다.
+- Storage/Firestore rules의 공개 기간 판정은 `displayPeriod.isActive`가 명시된 경우 이를 우선하고, 기간 비활성 상태의 오래된 visibility 날짜만으로 공개 이미지를 차단하지 않는다.
 
 ## 방명록 쓰기 경계
 - 공개 페이지 댓글 등록은 클라이언트 repository가 Firestore에 직접 create하지 않고 `POST /api/guestbook/comments`를 호출한다.
@@ -76,6 +78,12 @@
 - 관리자 페이지 목록은 클라이언트 Firestore 직접 조회 대신 `/api/admin/pages`를 통해 서버 Admin SDK로 읽는다.
 - 관리자 방명록 목록은 클라이언트 collection/list 조회 대신 `/api/admin/comments`를 통해 서버 Admin SDK로 읽는다.
 - 관리자 로그인 권한 확인과 주요 조회 API는 Firebase ID token을 `Authorization: Bearer`로 전달하고 서버에서 `admin-users` 권한을 확인한다.
+- 관리자 요약/삭제/비밀번호 보조 조회/관리자 사용자 확인은 `src/server/repositories/admin*Repository.ts`와 `eventSecretRepository`를 통해 Firestore 경로를 다룬다.
+
+## Rate limit 경계
+- API rate limit 상태는 `src/server/repositories/rateLimitRepository.ts`가 Firestore `rateLimits` 컬렉션에 저장한다.
+- `src/server/requestRateLimit.ts`는 키 구성과 fallback만 담당하고 Firestore 컬렉션 경로를 직접 알지 않는다.
+- Firebase 비활성 로컬 환경에서만 프로세스 메모리 fallback을 허용한다.
 
 ## 고객 소유 이벤트 조회 경계
 - `/my-invitations`의 내 청첩장 목록은 클라이언트 Firestore 직접 조회 대신 `/api/customer/events`를 통해 서버 Admin SDK로 읽는다.

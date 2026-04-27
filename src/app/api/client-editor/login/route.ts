@@ -1,4 +1,4 @@
-import { cookies } from 'next/headers';
+﻿import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
 
 import {
@@ -7,7 +7,7 @@ import {
 } from '@/server/clientEditorSession';
 import { verifyServerClientPassword } from '@/server/clientPasswordServerService';
 import {
-  applyScopedInMemoryRateLimit,
+  applyScopedRateLimit,
   buildRateLimitHeaders,
 } from '@/server/requestRateLimit';
 
@@ -33,7 +33,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const rateLimitResult = applyScopedInMemoryRateLimit({
+    const rateLimitResult = await applyScopedRateLimit({
       request,
       scope: 'client-editor-login',
       keyParts: [pageSlug],

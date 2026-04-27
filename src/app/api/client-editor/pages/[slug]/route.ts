@@ -1,4 +1,4 @@
-import { cookies } from 'next/headers';
+﻿import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
 
 import {
@@ -11,7 +11,7 @@ import { CLIENT_EDITOR_SESSION_COOKIE } from '@/server/clientEditorSession';
 import { getAuthorizedClientEditorSession } from '@/server/clientEditorSessionAuth';
 import { isInvitationThemeKey } from '@/lib/invitationThemes';
 import {
-  applyScopedInMemoryRateLimit,
+  applyScopedRateLimit,
   buildRateLimitHeaders,
 } from '@/server/requestRateLimit';
 import type { InvitationPageSeed, InvitationThemeKey } from '@/types/invitationPage';
@@ -93,7 +93,7 @@ export async function POST(
 
   const action = typeof body?.action === 'string' ? body.action : '';
   const defaultTheme = readTheme(body?.defaultTheme) as InvitationThemeKey | undefined;
-  const rateLimitResult = applyScopedInMemoryRateLimit({
+  const rateLimitResult = await applyScopedRateLimit({
     request,
     scope: 'client-editor-mutation',
     keyParts: [pageSlug, action || 'unknown'],

@@ -38,7 +38,8 @@
     "test:smoke": "npm run sync:memory-metadata && npm run clean:next && next build",
     "test": "npm run sync:memory-metadata && npm run clean:next && next build",
     "export": "next build",
-    "deploy:firebase": "npm run build:memory-metadata-strict && firebase deploy"
+    "deploy:firebase:rules": "firebase deploy --only firestore,storage",
+    "deploy:firebase": "npm run deploy:firebase:rules"
   },
   "dependencies": {
     "@tanstack/react-query": "^5.83.0",

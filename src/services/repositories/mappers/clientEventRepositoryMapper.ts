@@ -130,6 +130,11 @@ export function normalizeClientEventSummaryRecord(
     toClientRepositoryDate(visibilityInput?.displayEndAt, new Date(0)).getTime() === 0
       ? null
       : toClientRepositoryDate(visibilityInput?.displayEndAt, new Date());
+  const hasExplicitDisplayPeriodActive =
+    displayPeriodInput !== null && typeof displayPeriodInput.isActive === 'boolean';
+  const displayPeriodIsActive = hasExplicitDisplayPeriodActive
+    ? displayPeriodInput.isActive === true
+    : Boolean(displayStartAt && displayEndAt);
   const supportedVariants = Array.isArray(data.supportedVariants)
     ? data.supportedVariants.filter(
         (entry): entry is string => typeof entry === 'string' && entry.trim().length > 0
@@ -180,9 +185,7 @@ export function normalizeClientEventSummaryRecord(
     displayPeriod:
       displayPeriodInput || displayStartAt || displayEndAt
         ? {
-            isActive:
-              displayPeriodInput?.isActive === true ||
-              Boolean(displayStartAt && displayEndAt),
+            isActive: displayPeriodIsActive,
             startDate:
               (displayPeriodInput?.startDate
                 ? toClientRepositoryDate(displayPeriodInput.startDate, new Date())

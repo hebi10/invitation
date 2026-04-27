@@ -8,6 +8,7 @@ import {
   optimizeUploadImage,
   type OptimizeUploadImageOptions,
 } from '@/utils/imageCompression';
+import type { FirebaseStorage, StorageReference } from 'firebase/storage';
 
 export interface UploadedImage {
   name: string;
@@ -36,13 +37,15 @@ const storageDownloadUrlCache = new Map<string, string>();
 const CACHE_DURATION = 5 * 60 * 1000;
 const THUMBNAIL_FILE_PREFIX = 'thumb-';
 
+type FirebaseStorageModule = typeof import('firebase/storage');
+
 let firebaseModules: {
-  storage: any;
-  ref: any;
-  uploadBytes: any;
-  getDownloadURL: any;
-  deleteObject: any;
-  listAll: any;
+  storage: FirebaseStorage;
+  ref: FirebaseStorageModule['ref'];
+  uploadBytes: FirebaseStorageModule['uploadBytes'];
+  getDownloadURL: FirebaseStorageModule['getDownloadURL'];
+  deleteObject: FirebaseStorageModule['deleteObject'];
+  listAll: FirebaseStorageModule['listAll'];
 } | null = null;
 
 const initFirebase = async () => {
@@ -60,9 +63,10 @@ const initFirebase = async () => {
         import('firebase/storage'),
       ]);
 
-      if (firebaseModule.storage) {
+      const initializedStorage = firebaseModule.storage;
+      if (initializedStorage) {
         firebaseModules = {
-          storage: firebaseModule.storage,
+          storage: initializedStorage,
           ref: storageModule.ref,
           uploadBytes: storageModule.uploadBytes,
           getDownloadURL: storageModule.getDownloadURL,
@@ -503,8 +507,8 @@ export const getImagesByPage = async (
       `wedding-images/${pageSlug}`
     );
     const imagesList = await firebaseModules.listAll(imagesRef);
-    const thumbnailRefs = new Map<string, any>();
-    const originalImageRefs = imagesList.items.filter((imageRef: any) => {
+    const thumbnailRefs = new Map<string, StorageReference>();
+    const originalImageRefs = imagesList.items.filter((imageRef) => {
       if (!isThumbnailFileName(imageRef.name)) {
         return true;
       }
@@ -514,7 +518,7 @@ export const getImagesByPage = async (
     });
 
     const images: UploadedImage[] = await Promise.all(
-      originalImageRefs.map(async (imageRef: any) => {
+      originalImageRefs.map(async (imageRef) => {
         const thumbnailRef = thumbnailRefs.get(imageRef.name);
         const [url, thumbnailUrl] = await Promise.all([
           firebaseModules!.getDownloadURL(imageRef),
@@ -530,7 +534,7 @@ export const getImagesByPage = async (
           path: imageRef.fullPath,
           thumbnailUrl: thumbnailUrl ?? url,
           thumbnailPath: thumbnailRef?.fullPath ?? imageRef.fullPath,
-          uploadedAt: new Date(imageRef.timeCreated || Date.now()),
+          uploadedAt: new Date(),
         };
       })
     );
@@ -620,7 +624,7 @@ export const getAllPageImages = async (): Promise<{
     const allPageImages: { [pageSlug: string]: UploadedImage[] } = {};
 
     await Promise.all(
-      pagesList.prefixes.map(async (pageRef: any) => {
+      pagesList.prefixes.map(async (pageRef) => {
         const pageSlug = pageRef.name;
         const pageImages = await getImagesByPage(pageSlug);
         allPageImages[pageSlug] = pageImages;

@@ -1,4 +1,5 @@
 import { buildGuestbookCommentStatusPatch } from '@/lib/guestbookComments';
+import type { DocumentData, UpdateData } from 'firebase/firestore';
 
 import { ensureClientFirestoreState } from './clientFirestoreRepositoryCore';
 import {
@@ -172,13 +173,18 @@ export const commentRepository: CommentRepository = {
       throw new Error('Firestore is not initialized.');
     }
 
+    const statusPatch = buildGuestbookCommentStatusPatch(
+      'scheduleDelete',
+      new Date()
+    ) as unknown as UpdateData<DocumentData>;
+
     await firestore.modules.updateDoc(
       firestore.modules.doc(
         firestore.db,
         normalizedCollectionName,
         normalizedCommentId
       ),
-      buildGuestbookCommentStatusPatch('scheduleDelete', new Date())
+      statusPatch
     );
   },
 };

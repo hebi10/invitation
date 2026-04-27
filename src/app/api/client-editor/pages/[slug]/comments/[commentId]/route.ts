@@ -1,4 +1,4 @@
-import { cookies } from 'next/headers';
+﻿import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
 
 import {
@@ -9,7 +9,7 @@ import { CLIENT_EDITOR_SESSION_COOKIE } from '@/server/clientEditorSession';
 import { getAuthorizedClientEditorSession } from '@/server/clientEditorSessionAuth';
 import { firestoreEventCommentRepository } from '@/server/repositories/eventCommentRepository';
 import {
-  applyScopedInMemoryRateLimit,
+  applyScopedRateLimit,
   buildRateLimitHeaders,
 } from '@/server/requestRateLimit';
 
@@ -49,7 +49,7 @@ export async function DELETE(
     );
   }
 
-  const rateLimitResult = applyScopedInMemoryRateLimit({
+  const rateLimitResult = await applyScopedRateLimit({
     request,
     scope: 'client-editor-comment-delete',
     keyParts: [pageSlug],

@@ -1,23 +1,26 @@
 import { ensureFirebaseInit, USE_FIREBASE } from '@/lib/firebase';
+import type { Firestore } from 'firebase/firestore';
+
+type FirestoreModule = typeof import('firebase/firestore');
 
 export type ClientFirestoreModules = {
-  addDoc: any;
-  collection: any;
-  collectionGroup: any;
-  deleteDoc: any;
-  deleteField: any;
-  doc: any;
-  getDoc: any;
-  getDocs: any;
-  query: any;
-  serverTimestamp: any;
-  setDoc: any;
-  updateDoc: any;
-  where: any;
+  addDoc: FirestoreModule['addDoc'];
+  collection: FirestoreModule['collection'];
+  collectionGroup: FirestoreModule['collectionGroup'];
+  deleteDoc: FirestoreModule['deleteDoc'];
+  deleteField: FirestoreModule['deleteField'];
+  doc: FirestoreModule['doc'];
+  getDoc: FirestoreModule['getDoc'];
+  getDocs: FirestoreModule['getDocs'];
+  query: FirestoreModule['query'];
+  serverTimestamp: FirestoreModule['serverTimestamp'];
+  setDoc: FirestoreModule['setDoc'];
+  updateDoc: FirestoreModule['updateDoc'];
+  where: FirestoreModule['where'];
 };
 
 export type ClientFirestoreState = {
-  db: any;
+  db: Firestore;
   modules: ClientFirestoreModules;
 };
 

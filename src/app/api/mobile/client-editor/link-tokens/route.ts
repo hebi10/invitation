@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server';
+﻿import { NextResponse } from 'next/server';
 
 import {
   authorizeMobileClientEditorRequest,
@@ -16,7 +16,7 @@ import {
   writeMobileClientEditorAuditLog,
 } from '@/server/mobileClientEditorHighRisk';
 import {
-  applyScopedInMemoryRateLimit,
+  applyScopedRateLimit,
   buildRateLimitHeaders,
 } from '@/server/requestRateLimit';
 
@@ -66,7 +66,7 @@ export async function POST(request: Request) {
     );
   }
 
-  const rateLimitResult = applyScopedInMemoryRateLimit({
+  const rateLimitResult = await applyScopedRateLimit({
     request,
     scope: 'mobile-client-editor-link-token-issue',
     keyParts: [pageSlug, purpose],

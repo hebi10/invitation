@@ -63,9 +63,11 @@ npm run lint:mobile
 - 비관리자 공개 클라이언트 조회는 seed fallback, 오류 fallback, 비공개 데이터 통과를 모두 끈다.
 - seed/sample fallback은 Firebase 비활성 환경, 관리자 인증 상태, 명시적 preview 용도에서만 허용한다.
 - 서버가 공개 pageConfig를 초기 렌더에 전달한 경우, 비관리자 클라이언트 재조회 실패가 해당 공개 화면을 접근 제한 상태로 덮어쓰지 않는다.
+- 관리자 로그인 상태에서 공개 URL로 비공개/기간 외 청첩장을 확인할 때는 클라이언트 Firestore 직접 조회가 아니라 `/api/admin/events/[slug]` 서버 API로 private 포함 pageConfig를 읽는다.
 
 ## Storage 이미지 공개 정책
 - `wedding-images/{slug}` 공개 읽기는 Firestore `events`의 공개 상태와 노출 기간을 통과한 경우에만 허용한다.
+- 노출 기간 판정은 `displayPeriod.isActive == true`가 명시된 경우에만 기간 제한을 적용하고, 기간이 꺼져 있으면 과거 `visibility.displayStartAt/displayEndAt` 잔여값만으로 차단하지 않는다.
 - `memory-images/{slug}` 공개 읽기는 `memory-pages/{slug}`가 enabled이고 public/unlisted인 경우에만 허용한다.
 - 공개 방문자는 Storage folder listing을 하지 않고, Firestore config에 저장된 필요한 이미지 URL만 사용한다.
 - Storage download token이 이미 발급된 기존 URL은 별도 토큰 회전/삭제 없이는 계속 접근될 수 있으므로 운영 정리 대상이다.
@@ -75,6 +77,16 @@ npm run lint:mobile
 - 서버 API는 slug 존재 여부, 공개 여부, 노출 기간, 이름/메시지 길이, 기본 스팸 패턴, IP/user-agent 기반 rate limit을 확인한다.
 - `events/{eventId}/comments/{commentId}`의 클라이언트 직접 create는 Firestore rules에서 차단한다.
 - 이번 단계에서는 댓글을 기존 공개 흐름과 맞춰 `status: "public"`으로 저장하고, 승인제 전환이 필요하면 별도 관리자 승인 흐름과 함께 `pending` 정책을 추가한다.
+
+## Rate limit 운영 정책
+- API rate limit 상태는 Firestore `rateLimits/{keyHash}`에 저장해 서버리스/다중 인스턴스에서도 같은 제한 윈도우를 공유한다.
+- Firebase가 꺼진 로컬 개발 환경에서만 프로세스 메모리 fallback을 사용한다.
+- 로그인, claim, 방명록, 모바일 편집/이미지/링크 토큰, 결제 이행 API는 `requestRateLimit`을 통해 공통 제한 헤더를 반환한다.
+
+## 모바일 결제 검증 정책
+- 서버 지급 검증은 `REVENUECAT_SERVER_API_KEY`만 사용한다.
+- `EXPO_PUBLIC_REVENUECAT_*` 키는 모바일 SDK용 공개 키이며 서버 구매 검증 fallback으로 쓰지 않는다.
+- 서버 전용 키가 없으면 모바일 Billing 지급 검증은 실패 처리한다.
 
 ## 이번 작업 후 자동 검증
 - [x] `npm run typecheck:web`

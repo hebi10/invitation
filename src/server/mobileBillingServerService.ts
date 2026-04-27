@@ -59,13 +59,7 @@ type RevenueCatTransactionRecord = {
 };
 
 function getRevenueCatApiKey() {
-  return (
-    process.env.REVENUECAT_SERVER_API_KEY?.trim() ??
-    process.env.REVENUECAT_PUBLIC_API_KEY?.trim() ??
-    process.env.EXPO_PUBLIC_REVENUECAT_ANDROID_API_KEY?.trim() ??
-    process.env.EXPO_PUBLIC_REVENUECAT_IOS_API_KEY?.trim() ??
-    ''
-  );
+  return process.env.REVENUECAT_SERVER_API_KEY?.trim() ?? '';
 }
 
 async function getBillingFulfillmentRecord(transactionId: string) {
@@ -140,7 +134,7 @@ async function verifyRevenueCatNonSubscriptionTransaction(
 ) {
   const apiKey = getRevenueCatApiKey();
   if (!apiKey) {
-    throw new Error('RevenueCat API key is not configured.');
+    throw new Error('REVENUECAT_SERVER_API_KEY is required for purchase verification.');
   }
 
   const response = await fetch(

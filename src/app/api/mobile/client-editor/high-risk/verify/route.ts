@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server';
+﻿import { NextResponse } from 'next/server';
 
 import { authorizeMobileClientEditorRequest } from '@/server/clientEditorMobileApi';
 import { verifyServerClientPassword } from '@/server/clientPasswordServerService';
@@ -7,7 +7,7 @@ import {
   writeMobileClientEditorAuditLog,
 } from '@/server/mobileClientEditorHighRisk';
 import {
-  applyScopedInMemoryRateLimit,
+  applyScopedRateLimit,
   buildRateLimitHeaders,
 } from '@/server/requestRateLimit';
 
@@ -35,7 +35,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Unauthorized.' }, { status: 401 });
   }
 
-  const rateLimitResult = applyScopedInMemoryRateLimit({
+  const rateLimitResult = await applyScopedRateLimit({
     request,
     scope: 'mobile-client-editor-high-risk-verify',
     keyParts: [pageSlug],

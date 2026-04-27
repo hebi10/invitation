@@ -1,10 +1,10 @@
-import { NextResponse } from 'next/server';
+﻿import { NextResponse } from 'next/server';
 
 import { normalizeInvitationPageSlugInput } from '@/lib/invitationPagePersistence';
 import { firestoreEventCommentRepository } from '@/server/repositories/eventCommentRepository';
 import { resolveStoredEventBySlug } from '@/server/repositories/eventRepository';
 import {
-  applyScopedInMemoryRateLimit,
+  applyScopedRateLimit,
   buildRateLimitHeaders,
 } from '@/server/requestRateLimit';
 
@@ -98,7 +98,7 @@ export async function POST(request: Request) {
     );
   }
 
-  const rateLimitResult = applyScopedInMemoryRateLimit({
+  const rateLimitResult = await applyScopedRateLimit({
     request,
     scope: 'public-guestbook-comment-create',
     keyParts: [validatedInput.pageSlug],

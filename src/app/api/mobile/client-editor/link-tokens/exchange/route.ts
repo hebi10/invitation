@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server';
+﻿import { NextResponse } from 'next/server';
 
 import { createClientEditorSessionValue } from '@/server/clientEditorSession';
 import {
@@ -8,7 +8,7 @@ import {
 import { exchangeMobileClientEditorLinkToken } from '@/server/mobileClientEditorLinkToken';
 import { writeMobileClientEditorAuditLog } from '@/server/mobileClientEditorHighRisk';
 import {
-  applyScopedInMemoryRateLimit,
+  applyScopedRateLimit,
   buildRateLimitHeaders,
 } from '@/server/requestRateLimit';
 
@@ -30,7 +30,7 @@ export async function POST(request: Request) {
     );
   }
 
-  const rateLimitResult = applyScopedInMemoryRateLimit({
+  const rateLimitResult = await applyScopedRateLimit({
     request,
     scope: 'mobile-client-editor-link-token-exchange',
     ...MOBILE_CLIENT_EDITOR_LINK_TOKEN_EXCHANGE_RATE_LIMIT,

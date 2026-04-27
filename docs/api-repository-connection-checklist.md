@@ -4,7 +4,7 @@
 
 - `src/app/api` 라우트가 기존 Firestore 컬렉션 경로를 직접 다루지 않도록 유지한다.
 - API 요청/응답 계약은 유지하고, 내부 구현만 `server service -> repository` 또는 `repository` 경유로 통일한다.
-- 이후 `events` 구조 컷오버가 진행돼도 API 라우트 수정 범위를 최소화한다.
+- `events` 구조 컷오버 완료 이후에도 API 라우트 수정 범위를 최소화한다.
 
 ## 경계 원칙
 
@@ -12,6 +12,7 @@
 2. API 라우트는 Firestore collection/doc 경로를 직접 다루지 않는다.
 3. Firestore 접근은 `src/server/repositories/*` 또는 그 위의 `src/server/*` service에만 둔다.
 4. Storage 접근은 예외적으로 API 라우트에서 `firebaseAdmin` bucket helper를 사용할 수 있다.
+5. rate limit 상태처럼 운영성 보조 컬렉션도 `src/server/repositories/*`에서만 직접 다룬다.
 
 ## 전환 상태
 
@@ -24,6 +25,8 @@
 | 5 | 링크 토큰 발급/검증 API | 완료 | route -> `mobileClientEditorLinkToken`, `mobileClientEditorHighRisk`, `clientEditorMobileApi` |
 | 6 | 고위험 작업 API | 완료 | route -> `mobileClientEditorHighRisk`, `clientPasswordServerService`, `clientEditorMobileApi` |
 | 7 | 결제 이행 API | 완료 | route -> `mobileBillingServerService` |
+| 8 | 관리자 서버 조회/삭제 보조 서비스 | 완료 | service -> `admin*Repository` |
+| 9 | API rate limit | 완료 | route -> `requestRateLimit` -> `rateLimitRepository` |
 
 ## 구 API / 신 repository 연결표
 
@@ -60,7 +63,7 @@
 - `src/app/api/client-editor/pages/[slug]/comments/[commentId]/route.ts`
 - `src/app/api/mobile/client-editor/pages/[slug]/comments/[commentId]/route.ts`
   - 현재 연결: `firestoreEventCommentRepository`
-  - read-through/write-through, soft delete, `events/{eventId}/comments` 미러링 포함
+  - `events/{eventId}/comments` 기준 soft delete / 상태 변경 처리
 
 ### 5. 링크 토큰 발급 / 검증 API
 
@@ -83,6 +86,25 @@
   - 현재 연결: `mobileBillingServerService`
   - 결제 기록 저장: `billingFulfillmentRepository`
   - 초안 생성/티켓 부여: `eventRepository`, `eventTicketRepository`, `eventSecretRepository`
+  - 요청 제한: `requestRateLimit` -> `rateLimitRepository`
+
+### 8. 관리자 서버 조회/삭제 보조 서비스
+
+- `src/server/adminDashboardSummaryService.ts`
+  - 현재 연결: `adminDashboardRepository`, `eventRepository`
+- `src/server/adminEventDeletionService.ts`
+  - 현재 연결: `adminEventDeletionRepository`
+- `src/server/adminPasswordSummaryService.ts`
+  - 현재 연결: `eventSecretRepository`, `eventRepository`
+- `src/server/adminUserServerService.ts`
+  - 현재 연결: `adminUserRepository`
+
+### 9. API rate limit
+
+- `src/server/requestRateLimit.ts`
+  - 현재 연결: `rateLimitRepository`
+  - Firestore 사용 가능 환경에서는 `rateLimits/{keyHash}`에 윈도우 상태를 저장한다.
+  - Firebase 비활성 로컬 환경에서만 프로세스 메모리 fallback을 사용한다.
 
 ## 검증 기준
 

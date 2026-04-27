@@ -1,8 +1,8 @@
-import { NextResponse } from 'next/server';
+﻿import { NextResponse } from 'next/server';
 
 import { getServerInvitationPageSlugAvailability } from '@/server/invitationPageServerService';
 import {
-  applyScopedInMemoryRateLimit,
+  applyScopedRateLimit,
   buildRateLimitHeaders,
 } from '@/server/requestRateLimit';
 
@@ -16,7 +16,7 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const slugBase = searchParams.get('slugBase')?.trim() ?? '';
 
-    const rateLimitResult = applyScopedInMemoryRateLimit({
+    const rateLimitResult = await applyScopedRateLimit({
       request,
       scope: 'mobile-client-editor-slug-availability',
       keyParts: [slugBase],

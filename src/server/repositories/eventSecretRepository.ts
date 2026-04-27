@@ -3,7 +3,11 @@ import 'server-only';
 import { FieldValue } from 'firebase-admin/firestore';
 
 import { getServerFirestore } from '../firebaseAdmin';
-import { buildEventSecretRecordFromEventDoc } from './eventReadThroughDtos';
+import {
+  buildEventSecretRecordFromEventDoc,
+  type EventSecretRecordDto,
+  type EventSummaryRecord,
+} from './eventReadThroughDtos';
 import {
   ensureEventMirrorBySlug,
   EVENTS_COLLECTION,
@@ -22,6 +26,8 @@ export interface EventSecretRecord {
   updatedAt: Date | null;
 }
 
+export type EventPasswordSecuritySummary = NonNullable<EventSummaryRecord['security']>;
+
 export interface EventSecretRepository {
   isAvailable(): boolean;
   findByPageSlug(pageSlug: string): Promise<EventSecretRecord | null>;
@@ -34,6 +40,24 @@ export interface EventSecretRepository {
     createdAt: Date;
     updatedAt: Date;
   }): Promise<void>;
+}
+
+function buildPasswordSecurityFromSecret(
+  secretRecord: EventSecretRecordDto | null
+): EventPasswordSecuritySummary {
+  const hasHash = Boolean(
+    secretRecord?.passwordHash &&
+      secretRecord.passwordSalt &&
+      secretRecord.passwordIterations
+  );
+  const hasPassword = Boolean(secretRecord);
+
+  return {
+    hasPassword,
+    passwordVersion: secretRecord?.passwordVersion ?? null,
+    requiresReset: hasPassword ? !hasHash : false,
+    passwordUpdatedAt: secretRecord?.updatedAt ?? null,
+  };
 }
 
 async function fetchEventSecretBySlug(pageSlug: string) {
@@ -139,3 +163,38 @@ export const firestoreEventSecretRepository: EventSecretRepository = {
       );
   },
 };
+
+export async function syncEventPasswordSecuritySummary(
+  summary: EventSummaryRecord
+): Promise<EventPasswordSecuritySummary | null> {
+  const db = getServerFirestore();
+  if (!db) {
+    return summary.security;
+  }
+
+  const secretSnapshot = await db
+    .collection(EVENT_SECRET_COLLECTION)
+    .doc(summary.eventId)
+    .get();
+  const secretRecord = secretSnapshot.exists
+    ? buildEventSecretRecordFromEventDoc(summary, secretSnapshot.data() ?? {})
+    : null;
+  const nextSecurity = buildPasswordSecurityFromSecret(secretRecord);
+
+  await db
+    .collection(EVENTS_COLLECTION)
+    .doc(summary.eventId)
+    .set(
+      {
+        security: {
+          hasPassword: nextSecurity.hasPassword,
+          passwordVersion: nextSecurity.passwordVersion,
+          requiresReset: nextSecurity.requiresReset,
+          passwordUpdatedAt: nextSecurity.passwordUpdatedAt,
+        },
+      },
+      { merge: true }
+    );
+
+  return nextSecurity;
+}

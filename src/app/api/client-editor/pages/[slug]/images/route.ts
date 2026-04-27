@@ -1,4 +1,4 @@
-import { randomUUID } from 'node:crypto';
+﻿import { randomUUID } from 'node:crypto';
 
 import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
@@ -11,7 +11,7 @@ import { CLIENT_EDITOR_SESSION_COOKIE } from '@/server/clientEditorSession';
 import { getAuthorizedClientEditorSession } from '@/server/clientEditorSessionAuth';
 import { getServerStorageBucket } from '@/server/firebaseAdmin';
 import {
-  applyScopedInMemoryRateLimit,
+  applyScopedRateLimit,
   buildRateLimitHeaders,
 } from '@/server/requestRateLimit';
 
@@ -350,7 +350,7 @@ export async function POST(
     );
   }
 
-  const rateLimitResult = applyScopedInMemoryRateLimit({
+  const rateLimitResult = await applyScopedRateLimit({
     request,
     scope: 'client-editor-image-upload',
     keyParts: [pageSlug],

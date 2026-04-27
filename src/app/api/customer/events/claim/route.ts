@@ -1,11 +1,11 @@
-import { NextResponse } from 'next/server';
+﻿import { NextResponse } from 'next/server';
 
 import { getCustomerEditableInvitationPageSnapshot } from '@/server/customerEventsService';
 import { verifyServerClientPassword } from '@/server/clientPasswordServerService';
 import { getServerAuth } from '@/server/firebaseAdmin';
 import { firestoreEventRepository, resolveStoredEventBySlug } from '@/server/repositories/eventRepository';
 import {
-  applyScopedInMemoryRateLimit,
+  applyScopedRateLimit,
   buildRateLimitHeaders,
 } from '@/server/requestRateLimit';
 
@@ -60,7 +60,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const rateLimitResult = applyScopedInMemoryRateLimit({
+    const rateLimitResult = await applyScopedRateLimit({
       request,
       scope: 'customer-event-claim',
       keyParts: [decodedToken.uid, pageSlug],

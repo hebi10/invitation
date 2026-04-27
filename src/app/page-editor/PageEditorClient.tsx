@@ -1,6 +1,6 @@
-﻿'use client';
+'use client';
 
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQueryClient } from '@tanstack/react-query';
 import { type ChangeEvent, type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import CustomerEventClaimCard from '@/app/_components/CustomerEventClaimCard';
@@ -8,8 +8,6 @@ import FirebaseAuthLoginCard from '@/app/_components/FirebaseAuthLoginCard';
 import { useAdmin } from '@/contexts';
 import {
   appQueryKeys,
-  FIFTEEN_MINUTES_MS,
-  THIRTY_MINUTES_MS,
 } from '@/lib/appQuery';
 import { USE_FIREBASE } from '@/lib/firebase';
 import {
@@ -38,16 +36,11 @@ import {
   validateEditableImageBatch,
 } from '@/services/imageService';
 import {
-  getEditableInvitationPageConfig,
   restoreInvitationPageConfig,
   saveInvitationPageConfig,
   setInvitationPagePublished,
 } from '@/services/invitationPageService';
 import { getInvitationMusicLibraryFromStorage } from '@/services/musicService';
-import {
-  getCustomerEditableInvitationPageState,
-  getCustomerEventOwnershipStatus,
-} from '@/services/customerEventService';
 import type {
   InvitationPageSeed,
   InvitationThemeKey,
@@ -58,6 +51,8 @@ import {
   GuideSectionPanel,
   PersonEditorCard,
 } from './pageEditorPanels';
+import PageEditorBasicInfoSection from './PageEditorBasicInfoSection';
+import PageEditorScheduleSection from './PageEditorScheduleSection';
 import PageEditorSectionPreview from './PageEditorSectionPreview';
 import {
   buildEditorTitle,
@@ -65,21 +60,30 @@ import {
   GALLERY_GUIDE_ITEMS,
   GREETING_TEMPLATES,
   hasText,
-  isValidPhone,
-  isValidUrl,
   parseNumericInput,
   STEP_MAP,
   TRANSPORT_GUIDE_TEMPLATES,
   type EditorStepKey,
-  type StepDefinition,
 } from './pageEditorContent';
 import {
+  buildStepReviews,
+  buildWeddingSummary,
   findFirstInvalidRequiredStep,
-  formatDateInputValue,
-  formatTimeInputValue,
+  formatSavedAt,
   getNextStepKey,
   getPreviousStepKey,
+  MAX_REPEATABLE_ITEMS,
+  syncWeddingPresentation,
 } from './pageEditorDerivedState';
+import {
+  getStepCriteriaText,
+  getStepSummaryText,
+  renderFieldMeta,
+} from './pageEditorFieldMeta';
+import {
+  type EditablePageEditorConfig,
+  usePageEditorAccessQueries,
+} from './pageEditorDataHooks';
 import styles from './page.module.css';
 import { type PreviewThemeKey } from './pageEditorPreviewUtils';
 import {
@@ -97,21 +101,12 @@ import {
   type PersonRole,
 } from './pageEditorUtils';
 
-const MAX_REPEATABLE_ITEMS = 3;
 const AUTOSAVE_DELAY_MS = 1500;
 
 type NoticeState = { tone: NoticeTone; message: string } | null;
 type SaveState = 'idle' | 'autosaving' | 'saving' | 'saved' | 'error' | 'publishing';
 type WorkspaceView = 'form' | 'preview';
 type UploadFieldKind = 'wedding' | 'favicon' | 'gallery';
-
-type StepReview = {
-  requiredCount: number;
-  completedRequiredCount: number;
-  missing: string[];
-  warnings: string[];
-  isOptional: boolean;
-};
 
 interface PageEditorClientProps {
   slug: string;
@@ -120,306 +115,6 @@ interface PageEditorClientProps {
   initialBrideName: string;
   initialDate: string;
   initialVenue: string;
-}
-
-function isValidDateTimeSeed(formState: InvitationPageSeed) {
-  const { year, month, day, hour, minute } = formState.weddingDateTime;
-  if (
-    year < 1900 ||
-    month < 0 ||
-    month > 11 ||
-    day < 1 ||
-    day > 31 ||
-    hour < 0 ||
-    hour > 23 ||
-    minute < 0 ||
-    minute > 59
-  ) {
-    return false;
-  }
-
-  const date = new Date(year, month, day, hour, minute);
-  return (
-    date.getFullYear() === year &&
-    date.getMonth() === month &&
-    date.getDate() === day &&
-    date.getHours() === hour &&
-    date.getMinutes() === minute
-  );
-}
-
-function buildWeddingDateObject(formState: InvitationPageSeed) {
-  if (!isValidDateTimeSeed(formState)) {
-    return null;
-  }
-
-  const { year, month, day, hour, minute } = formState.weddingDateTime;
-  return new Date(year, month, day, hour, minute);
-}
-
-function formatWeddingDateLabel(date: Date) {
-  return new Intl.DateTimeFormat('ko-KR', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-    weekday: 'long',
-  }).format(date);
-}
-
-function formatWeddingTimeLabel(date: Date) {
-  return new Intl.DateTimeFormat('ko-KR', {
-    hour: 'numeric',
-    minute: '2-digit',
-    hour12: true,
-  }).format(date);
-}
-
-function buildWeddingSummary(formState: InvitationPageSeed) {
-  const date = buildWeddingDateObject(formState);
-  if (!date) {
-    return '예식 날짜와 시간을 입력하면 문장형 요약이 여기 표시됩니다.';
-  }
-
-  return `${formatWeddingDateLabel(date)} ${formatWeddingTimeLabel(date)}`;
-}
-
-function syncWeddingPresentation(draft: InvitationPageSeed) {
-  if (!draft.pageData) {
-    return;
-  }
-
-  const date = buildWeddingDateObject(draft);
-  if (!date) {
-    return;
-  }
-
-  draft.date = formatWeddingDateLabel(date);
-  draft.pageData.ceremonyTime = formatWeddingTimeLabel(date);
-  draft.pageData.ceremony = {
-    ...draft.pageData.ceremony,
-    time: formatWeddingTimeLabel(date),
-    location:
-      draft.pageData.ceremony?.location ||
-      draft.pageData.ceremonyAddress ||
-      draft.pageData.venueName ||
-      draft.venue,
-  };
-}
-
-function formatSavedAt(date: Date | null) {
-  if (!date) {
-    return '아직 저장 기록이 없습니다.';
-  }
-
-  return new Intl.DateTimeFormat('ko-KR', {
-    month: 'long',
-    day: 'numeric',
-    hour: 'numeric',
-    minute: '2-digit',
-  }).format(date);
-}
-
-function createStepReview(
-  requiredFields: Array<{ label: string; filled: boolean }>,
-  warnings: string[],
-  isOptional: boolean
-): StepReview {
-  return {
-    requiredCount: requiredFields.length,
-    completedRequiredCount: requiredFields.filter((field) => field.filled).length,
-    missing: requiredFields.filter((field) => !field.filled).map((field) => field.label),
-    warnings,
-    isOptional,
-  };
-}
-
-function buildStepReviews(formState: InvitationPageSeed | null): Record<EditorStepKey, StepReview> {
-  const emptyReview = (isOptional: boolean): StepReview => ({
-    requiredCount: 0,
-    completedRequiredCount: 0,
-    missing: [],
-    warnings: [],
-    isOptional,
-  });
-
-  if (!formState) {
-    return {
-      basic: emptyReview(false),
-      schedule: emptyReview(false),
-      venue: emptyReview(false),
-      greeting: emptyReview(false),
-      gallery: emptyReview(true),
-      gift: emptyReview(true),
-      final: emptyReview(false),
-    };
-  }
-
-  const giftAccounts = [
-    ...(formState.pageData?.giftInfo?.groomAccounts ?? []),
-    ...(formState.pageData?.giftInfo?.brideAccounts ?? []),
-  ];
-
-  const galleryWarnings: string[] = [];
-  if (!isValidUrl(formState.metadata.images.wedding)) {
-    galleryWarnings.push('대표 이미지 주소 형식을 다시 확인해 주세요.');
-  }
-  if (
-    (formState.pageData?.galleryImages ?? []).some((imageUrl) => !isValidUrl(imageUrl))
-  ) {
-    galleryWarnings.push('갤러리 이미지 주소 형식을 다시 확인해 주세요.');
-  }
-  if (formState.musicEnabled) {
-    const selectedTrack = findInvitationMusicTrackById(formState.musicTrackId);
-    if (!hasText(formState.musicStoragePath) && !hasText(formState.musicUrl)) {
-      galleryWarnings.push('배경음악을 켠 경우 사용할 곡을 먼저 선택해 주세요.');
-    }
-    if (hasText(formState.musicTrackId) && !selectedTrack) {
-      galleryWarnings.push('선택한 배경음악이 라이브러리에 없습니다. 곡을 다시 선택해 주세요.');
-    }
-  }
-  if (
-    typeof formState.musicVolume === 'number' &&
-    (formState.musicVolume < 0 || formState.musicVolume > 1)
-  ) {
-    galleryWarnings.push('배경음악 볼륨은 0에서 1 사이 값으로 저장됩니다.');
-  }
-
-  const venueWarnings: string[] = [];
-  if (!isValidPhone(formState.pageData?.ceremonyContact)) {
-    venueWarnings.push('예식장 연락처 형식이 올바른지 확인해 주세요.');
-  }
-  if (!isValidUrl(formState.pageData?.mapUrl)) {
-    venueWarnings.push('지도 링크는 http 또는 https 주소로 입력해 주세요.');
-  }
-
-  const greetingWarnings: string[] = [];
-  if ((formState.pageData?.greetingMessage ?? '').trim().length > 140) {
-    greetingWarnings.push('인사말이 길어지면 미리보기에서 줄바꿈이 많아질 수 있습니다.');
-  }
-
-  const phoneTargets = [
-    formState.couple.groom.phone,
-    formState.couple.bride.phone,
-    formState.couple.groom.father?.phone,
-    formState.couple.groom.mother?.phone,
-    formState.couple.bride.father?.phone,
-    formState.couple.bride.mother?.phone,
-  ];
-  if (phoneTargets.some((value) => !isValidPhone(value))) {
-    greetingWarnings.push('연락처는 010-1234-5678 형식으로 입력해 주세요.');
-  }
-
-  const giftWarnings: string[] = [];
-  if (
-    giftAccounts.some(
-      (account) =>
-        (hasText(account.accountNumber) || hasText(account.bank) || hasText(account.accountHolder)) &&
-        !(hasText(account.accountNumber) && hasText(account.bank) && hasText(account.accountHolder))
-    )
-  ) {
-    giftWarnings.push('계좌는 은행명, 계좌번호, 예금주를 한 세트로 모두 입력해 주세요.');
-  }
-
-  const finalWarnings: string[] = [];
-  if (!isValidUrl(formState.metadata.images.favicon)) {
-    finalWarnings.push('사이트 아이콘 주소는 http 또는 https 형식으로 입력해 주세요.');
-  }
-
-  return {
-    basic: createStepReview(
-      [
-        { label: '청첩장 이름', filled: hasText(formState.displayName) },
-        { label: '소개 문구', filled: hasText(formState.description) },
-      ],
-      [],
-      false
-    ),
-    schedule: createStepReview(
-      [
-        { label: '예식 날짜와 시간', filled: isValidDateTimeSeed(formState) },
-        { label: '표지용 날짜 문구', filled: hasText(formState.date) },
-      ],
-      [],
-      false
-    ),
-    venue: createStepReview(
-      [
-        { label: '예식장 이름', filled: hasText(formState.venue) },
-        { label: '표시 장소명', filled: hasText(formState.pageData?.venueName) },
-        { label: '예식장 주소', filled: hasText(formState.pageData?.ceremonyAddress) },
-      ],
-      venueWarnings,
-      false
-    ),
-    greeting: createStepReview(
-      [
-        { label: '신랑 이름', filled: hasText(formState.couple.groom.name) },
-        { label: '신부 이름', filled: hasText(formState.couple.bride.name) },
-        { label: '인사말 본문', filled: hasText(formState.pageData?.greetingMessage) },
-      ],
-      greetingWarnings,
-      false
-    ),
-    gallery: createStepReview([], galleryWarnings, true),
-    gift: createStepReview([], giftWarnings, true),
-    final: createStepReview(
-      [
-        { label: '공유 제목', filled: hasText(formState.metadata.title) },
-        { label: '공유 설명', filled: hasText(formState.metadata.description) },
-        { label: '사이트 아이콘 주소', filled: hasText(formState.metadata.images.favicon) },
-      ],
-      finalWarnings,
-      false
-    ),
-  };
-}
-
-function getStepCriteriaText(step: StepDefinition, review: StepReview) {
-  if (step.isOptional) {
-    if (step.key === 'gallery') {
-      return '선택 항목 · 대표 이미지 1장만 정해도 충분합니다.';
-    }
-
-    if (step.key === 'gift') {
-      return `선택 항목 · 계좌와 안내는 최대 ${MAX_REPEATABLE_ITEMS}개까지 입력할 수 있습니다.`;
-    }
-
-    return '선택 항목 · 필요한 경우에만 입력해 주세요.';
-  }
-
-  return `완료 기준 · 필수 ${review.completedRequiredCount}/${review.requiredCount}`;
-}
-
-function getStepSummaryText(step: StepDefinition, review: StepReview) {
-  if (step.isOptional) {
-    return review.warnings.length > 0 ? '선택 항목 확인 필요' : '선택 항목';
-  }
-
-  return `필수 ${review.completedRequiredCount}/${review.requiredCount}`;
-}
-
-function renderFieldMeta(
-  label: string,
-  requirement: 'required' | 'optional',
-  hint?: string
-) {
-  return (
-    <>
-      <span className={styles.labelRow}>
-        <span className={styles.label}>{label}</span>
-        <span
-          className={
-            requirement === 'required'
-              ? styles.fieldBadgeRequired
-              : styles.fieldBadgeOptional
-          }
-        >
-          {requirement === 'required' ? '필수' : '선택'}
-        </span>
-      </span>
-      {hint ? <span className={styles.fieldHint}>{hint}</span> : null}
-    </>
-  );
 }
 
 export default function PageEditorClient({
@@ -460,37 +155,12 @@ export default function PageEditorClient({
   const coverUploadInputRef = useRef<HTMLInputElement | null>(null);
   const faviconUploadInputRef = useRef<HTMLInputElement | null>(null);
   const galleryUploadInputRef = useRef<HTMLInputElement | null>(null);
-  const ownershipQuery = useQuery({
-    queryKey: appQueryKeys.customerEventOwnership(slug, authUser?.uid ?? null),
-    enabled: !isAdminLoading && !isAdminLoggedIn && isLoggedIn,
-    queryFn: async () => getCustomerEventOwnershipStatus(slug, authUser?.uid),
-    staleTime: FIFTEEN_MINUTES_MS,
-    gcTime: THIRTY_MINUTES_MS,
-    refetchOnWindowFocus: false,
-  });
-  const configQuery = useQuery({
-    queryKey: appQueryKeys.editableInvitationPage(slug),
-    enabled:
-      !isAdminLoading && (isAdminLoggedIn || ownershipQuery.data?.status === 'owner'),
-    queryFn: async () => {
-      if (isAdminLoggedIn) {
-        return getEditableInvitationPageConfig(slug);
-      }
-
-      const customerState = await getCustomerEditableInvitationPageState(slug);
-      if (customerState.status === 'ready') {
-        return customerState.editableConfig;
-      }
-
-      if (customerState.status === 'blocked') {
-        throw new Error(customerState.message);
-      }
-
-      return null;
-    },
-    staleTime: FIFTEEN_MINUTES_MS,
-    gcTime: THIRTY_MINUTES_MS,
-    refetchOnWindowFocus: false,
+  const { ownershipQuery, configQuery } = usePageEditorAccessQueries({
+    slug,
+    authUserUid: authUser?.uid,
+    isAdminLoading,
+    isAdminLoggedIn,
+    isLoggedIn,
   });
 
   const canEdit = isAdminLoggedIn || hasOwnershipAccess;
@@ -579,9 +249,7 @@ export default function PageEditorClient({
   const systemStatusLabel = hasCustomConfig ? '맞춤 설정 저장됨' : dataSourceLabel;
   const canCopyPublishedLink = published && !hasPublishChanges;
 
-  const applyLoadedConfig = (
-    config: Awaited<ReturnType<typeof getEditableInvitationPageConfig>>
-  ) => {
+  const applyLoadedConfig = (config: EditablePageEditorConfig) => {
     if (!config) {
       throw new Error('설정 정보를 찾을 수 없습니다.');
     }
@@ -2393,66 +2061,11 @@ export default function PageEditorClient({
     }
 
     return (
-      <section className={styles.section}>
-        <div className={styles.sectionHeader}>
-          <div>
-            <h2 className={styles.sectionTitle}>표지에 가장 먼저 보이는 정보</h2>
-            <p className={styles.sectionDescription}>
-              청첩장 이름과 소개 문구는 첫 화면에서 가장 먼저 보이는 핵심 문구입니다.
-            </p>
-          </div>
-        </div>
-
-        <div className={styles.fieldGrid}>
-          <label className={styles.field}>
-            {renderFieldMeta(
-              '청첩장 이름',
-              'required',
-              '신랑 · 신부 이름이 함께 보이도록 입력해 주세요.'
-            )}
-            <input
-              className={styles.input}
-              value={formState.displayName}
-              placeholder="예: 김신랑 ♥ 나신부"
-              onChange={(event) =>
-                handleTopLevelFieldChange('displayName', event.target.value)
-              }
-            />
-          </label>
-
-          <label className={styles.field}>
-            {renderFieldMeta(
-              '표지 보조 문구',
-              'optional',
-              '두 사람이 사랑으로 하나가 되는 날 같은 짧은 문구를 넣을 수 있습니다.'
-            )}
-            <input
-              className={styles.input}
-              value={formState.pageData?.subtitle ?? ''}
-              placeholder="예: 두 사람이 사랑으로 하나가 되는 날"
-              onChange={(event) =>
-                handlePageDataFieldChange('subtitle', event.target.value)
-              }
-            />
-          </label>
-
-          <label className={`${styles.field} ${styles.fieldWide}`}>
-            {renderFieldMeta(
-              '소개 문구',
-              'required',
-              '검색 결과와 첫 화면 소개에 함께 쓰이는 문구입니다.'
-            )}
-            <textarea
-              className={styles.textarea}
-              value={formState.description}
-              placeholder="예: 사랑으로 하나가 되는 날, 소중한 분들을 초대합니다."
-              onChange={(event) =>
-                handleTopLevelFieldChange('description', event.target.value)
-              }
-            />
-          </label>
-        </div>
-      </section>
+      <PageEditorBasicInfoSection
+        formState={formState}
+        onTopLevelFieldChange={handleTopLevelFieldChange}
+        onPageDataFieldChange={handlePageDataFieldChange}
+      />
     );
   };
 
@@ -2462,166 +2075,15 @@ export default function PageEditorClient({
     }
 
     return (
-      <section className={styles.section}>
-        <div className={styles.sectionHeader}>
-          <div>
-            <h2 className={styles.sectionTitle}>날짜와 시간 입력</h2>
-            <p className={styles.sectionDescription}>
-              날짜와 시간을 정확히 입력하면 표지 문구와 달력 미리보기가 함께 업데이트됩니다.
-            </p>
-          </div>
-        </div>
-
-        <div className={styles.dualGrid}>
-          <label className={styles.field}>
-            {renderFieldMeta(
-              '예식 날짜',
-              'required',
-              '달력에서 날짜를 선택하면 자동으로 대표 날짜 문구가 바뀝니다.'
-            )}
-            <input
-              className={styles.input}
-              type="date"
-              value={formatDateInputValue(formState)}
-              onChange={(event) => handleDateInputChange(event.target.value)}
-            />
-          </label>
-
-          <label className={styles.field}>
-            {renderFieldMeta(
-              '예식 시간',
-              'required',
-              '30분 단위나 정각처럼 실제 진행 시간을 입력해 주세요.'
-            )}
-            <input
-              className={styles.input}
-              type="time"
-              value={formatTimeInputValue(formState)}
-              onChange={(event) => handleTimeInputChange(event.target.value)}
-            />
-          </label>
-        </div>
-
-        <div className={styles.summaryHighlightCard}>
-          <span className={styles.summaryHighlightLabel}>문장형 요약</span>
-          <strong className={styles.summaryHighlightValue}>{weddingSummary}</strong>
-          <p className={styles.summaryHighlightText}>
-            손님이 읽는 날짜 문구와 카운트다운 계산은 이 값을 기준으로 맞춰집니다.
-          </p>
-        </div>
-
-        <details className={styles.detailsGroup}>
-          <summary className={styles.detailsSummary}>표지에 보이는 날짜 문구 직접 수정</summary>
-          <div className={styles.detailsBody}>
-            <div className={styles.fieldGrid}>
-              <label className={styles.field}>
-                {renderFieldMeta(
-                  '대표 날짜 문구',
-                  'required',
-                  '자동 생성된 문구를 조금 다르게 표현하고 싶을 때만 수정해 주세요.'
-                )}
-                <input
-                  className={styles.input}
-                  value={formState.date}
-                  placeholder="예: 2026년 4월 14일 화요일"
-                  onChange={(event) => handleManualDateTextChange(event.target.value)}
-                />
-              </label>
-
-              <label className={styles.field}>
-                {renderFieldMeta(
-                  '표시 시간 문구',
-                  'optional',
-                  '오후 3시, 오후 3시 30분처럼 손님에게 보일 시간 표현입니다.'
-                )}
-                <input
-                  className={styles.input}
-                  value={formState.pageData?.ceremonyTime ?? ''}
-                  placeholder="예: 오후 3시"
-                  onChange={(event) =>
-                    handlePageDataFieldChange('ceremonyTime', event.target.value)
-                  }
-                />
-              </label>
-            </div>
-          </div>
-        </details>
-
-        <details className={styles.detailsGroup}>
-          <summary className={styles.detailsSummary}>본식/피로연 상세 일정 (선택)</summary>
-          <div className={styles.detailsBody}>
-            <div className={styles.fieldGrid}>
-              <label className={styles.field}>
-                {renderFieldMeta('본식 시간', 'optional', '예: 오후 2시 30분')}
-                <input
-                  className={styles.input}
-                  value={
-                    formState.pageData?.ceremony?.time ??
-                    formState.pageData?.ceremonyTime ??
-                    ''
-                  }
-                  placeholder="예: 오후 2시 30분"
-                  onChange={(event) =>
-                    handleScheduleDetailFieldChange(
-                      'ceremony',
-                      'time',
-                      event.target.value
-                    )
-                  }
-                />
-              </label>
-
-              <label className={styles.field}>
-                {renderFieldMeta('본식 장소', 'optional', '예: 3층 그랜드홀')}
-                <input
-                  className={styles.input}
-                  value={formState.pageData?.ceremony?.location ?? ''}
-                  placeholder="예: 3층 그랜드홀"
-                  onChange={(event) =>
-                    handleScheduleDetailFieldChange(
-                      'ceremony',
-                      'location',
-                      event.target.value
-                    )
-                  }
-                />
-              </label>
-
-              <label className={styles.field}>
-                {renderFieldMeta('피로연 시간', 'optional', '예: 오후 4시 30분')}
-                <input
-                  className={styles.input}
-                  value={formState.pageData?.reception?.time ?? ''}
-                  placeholder="예: 오후 4시 30분"
-                  onChange={(event) =>
-                    handleScheduleDetailFieldChange(
-                      'reception',
-                      'time',
-                      event.target.value
-                    )
-                  }
-                />
-              </label>
-
-              <label className={styles.field}>
-                {renderFieldMeta('피로연 장소', 'optional', '예: 1층 연회장')}
-                <input
-                  className={styles.input}
-                  value={formState.pageData?.reception?.location ?? ''}
-                  placeholder="예: 1층 연회장"
-                  onChange={(event) =>
-                    handleScheduleDetailFieldChange(
-                      'reception',
-                      'location',
-                      event.target.value
-                    )
-                  }
-                />
-              </label>
-            </div>
-          </div>
-        </details>
-      </section>
+      <PageEditorScheduleSection
+        formState={formState}
+        weddingSummary={weddingSummary}
+        onDateInputChange={handleDateInputChange}
+        onTimeInputChange={handleTimeInputChange}
+        onManualDateTextChange={handleManualDateTextChange}
+        onPageDataFieldChange={handlePageDataFieldChange}
+        onScheduleDetailFieldChange={handleScheduleDetailFieldChange}
+      />
     );
   };
 

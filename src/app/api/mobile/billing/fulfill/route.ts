@@ -9,6 +9,15 @@ import {
   fulfillServerMobilePageCreationPurchase,
   fulfillServerMobileTicketPackPurchase,
 } from '@/server/mobileBillingServerService';
+import {
+  applyScopedRateLimit,
+  buildRateLimitHeaders,
+} from '@/server/requestRateLimit';
+
+const MOBILE_BILLING_FULFILL_RATE_LIMIT = {
+  limit: 10,
+  windowMs: 10 * 60 * 1000,
+} as const;
 
 function readTrimmedString(value: unknown) {
   return typeof value === 'string' ? value.trim() : '';
@@ -41,11 +50,32 @@ export async function POST(request: Request) {
     const appUserId = readTrimmedString(purchase?.appUserId);
     const productId = readTrimmedString(purchase?.productId);
     const transactionId = readTrimmedString(purchase?.transactionId);
+    const rateLimitResult = await applyScopedRateLimit({
+      request,
+      scope: 'mobile-billing-fulfill',
+      keyParts: [
+        action || 'unknown-action',
+        appUserId || 'missing-user',
+        productId || 'missing-product',
+      ],
+      ...MOBILE_BILLING_FULFILL_RATE_LIMIT,
+    });
+    const rateLimitHeaders = buildRateLimitHeaders(rateLimitResult);
+
+    if (!rateLimitResult.allowed) {
+      return NextResponse.json(
+        { error: 'Too many billing fulfillment requests. Please try again later.' },
+        {
+          status: 429,
+          headers: rateLimitHeaders,
+        }
+      );
+    }
 
     if (!appUserId || !isMobileBillingProductId(productId) || !transactionId) {
       return NextResponse.json(
         { error: 'Google Play purchase information is required.' },
-        { status: 400 }
+        { status: 400, headers: rateLimitHeaders }
       );
     }
 
@@ -60,7 +90,7 @@ export async function POST(request: Request) {
       if (!slugBase || !groomKoreanName || !brideKoreanName || !password) {
         return NextResponse.json(
           { error: 'Invitation page draft input is required.' },
-          { status: 400 }
+          { status: 400, headers: rateLimitHeaders }
         );
       }
 
@@ -68,7 +98,7 @@ export async function POST(request: Request) {
       if (!slugValidation.isValid) {
         return NextResponse.json(
           { error: getInvitationPageSlugValidationErrorMessage(slugValidation.reason) },
-          { status: 400 }
+          { status: 400, headers: rateLimitHeaders }
         );
       }
 
@@ -88,7 +118,7 @@ export async function POST(request: Request) {
         }
       );
 
-      return NextResponse.json(response);
+      return NextResponse.json(response, { headers: rateLimitHeaders });
     }
 
     if (action === 'grantTicketPack') {
@@ -98,7 +128,7 @@ export async function POST(request: Request) {
       if (!targetPageSlug || !targetToken) {
         return NextResponse.json(
           { error: 'Target page slug and session are required.' },
-          { status: 400 }
+          { status: 400, headers: rateLimitHeaders }
         );
       }
 
@@ -112,10 +142,13 @@ export async function POST(request: Request) {
         targetToken
       );
 
-      return NextResponse.json(response);
+      return NextResponse.json(response, { headers: rateLimitHeaders });
     }
 
-    return NextResponse.json({ error: 'Unsupported action.' }, { status: 400 });
+    return NextResponse.json(
+      { error: 'Unsupported action.' },
+      { status: 400, headers: rateLimitHeaders }
+    );
   } catch (error) {
     console.error('[mobile/billing/fulfill] failed to process request', error);
     return NextResponse.json(

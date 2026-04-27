@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server';
+﻿import { NextResponse } from 'next/server';
 
 import { createClientEditorSessionValue } from '@/server/clientEditorSession';
 import {
@@ -7,7 +7,7 @@ import {
 } from '@/server/clientEditorMobileApi';
 import { verifyServerClientPassword } from '@/server/clientPasswordServerService';
 import {
-  applyScopedInMemoryRateLimit,
+  applyScopedRateLimit,
   buildRateLimitHeaders,
 } from '@/server/requestRateLimit';
 
@@ -33,7 +33,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const rateLimitResult = applyScopedInMemoryRateLimit({
+    const rateLimitResult = await applyScopedRateLimit({
       request,
       scope: 'mobile-client-editor-login',
       keyParts: [pageSlug],

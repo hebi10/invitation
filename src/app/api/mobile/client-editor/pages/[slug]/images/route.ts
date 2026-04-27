@@ -1,4 +1,4 @@
-import { randomUUID } from 'node:crypto';
+﻿import { randomUUID } from 'node:crypto';
 
 import { NextResponse } from 'next/server';
 
@@ -13,7 +13,7 @@ import {
 } from '@/server/clientEditorMobileApi';
 import { getServerStorageBucket } from '@/server/firebaseAdmin';
 import {
-  applyScopedInMemoryRateLimit,
+  applyScopedRateLimit,
   buildRateLimitHeaders,
 } from '@/server/requestRateLimit';
 
@@ -514,7 +514,7 @@ export async function POST(
     );
   }
 
-  const rateLimitResult = applyScopedInMemoryRateLimit({
+  const rateLimitResult = await applyScopedRateLimit({
     request,
     scope: 'mobile-client-editor-image-upload',
     keyParts: [pageSlug],
@@ -694,7 +694,7 @@ export async function DELETE(
     );
   }
 
-  const rateLimitResult = applyScopedInMemoryRateLimit({
+  const rateLimitResult = await applyScopedRateLimit({
     request,
     scope: 'mobile-client-editor-image-cleanup',
     keyParts: [pageSlug],

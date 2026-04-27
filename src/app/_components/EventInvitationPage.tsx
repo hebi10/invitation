@@ -3,7 +3,6 @@
 import { useEffect } from 'react';
 
 import { BackgroundMusic } from '@/components';
-import { AdminProvider } from '@/contexts';
 import { resolveInvitationFeatures } from '@/lib/invitationProducts';
 import {
   clampInvitationMusicVolume,
@@ -273,11 +272,7 @@ function EventInvitationPageBody(options: EventInvitationRouteOptions) {
 }
 
 export function EventInvitationRoutePage(options: EventInvitationRouteOptions) {
-  return (
-    <AdminProvider>
-      <EventInvitationPageBody {...options} />
-    </AdminProvider>
-  );
+  return <EventInvitationPageBody {...options} />;
 }
 
 export function createEventInvitationPage(options: EventInvitationRouteOptions) {

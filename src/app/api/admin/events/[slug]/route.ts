@@ -1,52 +1,63 @@
 import { NextResponse } from 'next/server';
 
 import { normalizeInvitationPageSlugInput } from '@/lib/invitationPagePersistence';
+import { AdminApiAuthError, verifyAdminRequest } from '@/server/adminApiAuth';
 import { deleteAdminEventBySlug } from '@/server/adminEventDeletionService';
-import { isServerAdminUserEnabled } from '@/server/adminUserServerService';
-import { getServerAuth } from '@/server/firebaseAdmin';
+import { getServerInvitationPageBySlug } from '@/server/invitationPageServerService';
 
-async function authenticateAdminRequest(request: Request) {
-  const authHeader = request.headers.get('authorization') ?? '';
-  const idToken = authHeader.startsWith('Bearer ') ? authHeader.slice(7).trim() : '';
-
-  if (!idToken) {
-    return {
-      ok: false as const,
-      response: NextResponse.json(
-        { error: '로그인 토큰이 없습니다. 다시 로그인해 주세요.' },
-        { status: 401 }
-      ),
-    };
+function toAdminApiErrorResponse(error: unknown) {
+  if (error instanceof AdminApiAuthError) {
+    return NextResponse.json({ error: error.message }, { status: error.status });
   }
 
-  const serverAuth = getServerAuth();
-  if (!serverAuth) {
-    return {
-      ok: false as const,
-      response: NextResponse.json(
-        { error: 'Firebase Admin Auth를 초기화하지 못했습니다.' },
-        { status: 500 }
-      ),
-    };
+  return null;
+}
+
+export async function GET(
+  request: Request,
+  context: { params: Promise<{ slug: string }> }
+) {
+  try {
+    await verifyAdminRequest(request);
+
+    const { slug } = await context.params;
+    const normalizedPageSlug = normalizeInvitationPageSlugInput(slug);
+
+    if (!normalizedPageSlug) {
+      return NextResponse.json(
+        { error: '청첩장 주소가 올바르지 않습니다.' },
+        { status: 400 }
+      );
+    }
+
+    const page = await getServerInvitationPageBySlug(normalizedPageSlug, {
+      includePrivate: true,
+      sampleFallbackMode: 'when-firestore-unavailable',
+    });
+
+    if (!page) {
+      return NextResponse.json(
+        { error: '청첩장 페이지를 찾을 수 없습니다.' },
+        { status: 404 }
+      );
+    }
+
+    return NextResponse.json({
+      success: true,
+      page,
+    });
+  } catch (error) {
+    const authErrorResponse = toAdminApiErrorResponse(error);
+    if (authErrorResponse) {
+      return authErrorResponse;
+    }
+
+    console.error('[api/admin/events/[slug]] failed to load event', error);
+    return NextResponse.json(
+      { error: '청첩장 정보를 불러오지 못했습니다. 잠시 뒤 다시 시도해 주세요.' },
+      { status: 500 }
+    );
   }
-
-  const decodedToken = await serverAuth.verifyIdToken(idToken);
-  const isAdmin = await isServerAdminUserEnabled(decodedToken.uid);
-
-  if (!isAdmin) {
-    return {
-      ok: false as const,
-      response: NextResponse.json(
-        { error: '관리자 권한이 없습니다.' },
-        { status: 403 }
-      ),
-    };
-  }
-
-  return {
-    ok: true as const,
-    decodedToken,
-  };
 }
 
 export async function DELETE(
@@ -54,10 +65,7 @@ export async function DELETE(
   context: { params: Promise<{ slug: string }> }
 ) {
   try {
-    const auth = await authenticateAdminRequest(request);
-    if (!auth.ok) {
-      return auth.response;
-    }
+    await verifyAdminRequest(request);
 
     const { slug } = await context.params;
     const normalizedPageSlug = normalizeInvitationPageSlugInput(slug);
@@ -82,6 +90,11 @@ export async function DELETE(
       ...deletedEvent,
     });
   } catch (error) {
+    const authErrorResponse = toAdminApiErrorResponse(error);
+    if (authErrorResponse) {
+      return authErrorResponse;
+    }
+
     console.error('[api/admin/events/[slug]] failed to delete event', error);
     return NextResponse.json(
       { error: '청첩장 전체 삭제에 실패했습니다. 잠시 뒤 다시 시도해 주세요.' },

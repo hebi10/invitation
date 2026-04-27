@@ -30,16 +30,33 @@ service firebase.storage {
       return eventId is string &&
         firestore.exists(/databases/(default)/documents/events/$(eventId)) &&
         (
-          firestore.get(/databases/(default)/documents/events/$(eventId)).data.visibility.displayStartAt is timestamp &&
-          firestore.get(/databases/(default)/documents/events/$(eventId)).data.visibility.displayEndAt is timestamp
+          (
+            firestore.get(/databases/(default)/documents/events/$(eventId)).data.displayPeriod is map &&
+            firestore.get(/databases/(default)/documents/events/$(eventId)).data.displayPeriod.isActive == true &&
+            firestore.get(/databases/(default)/documents/events/$(eventId)).data.displayPeriod.startDate is timestamp &&
+            firestore.get(/databases/(default)/documents/events/$(eventId)).data.displayPeriod.endDate is timestamp
+          ) ||
+          (
+            !(firestore.get(/databases/(default)/documents/events/$(eventId)).data.displayPeriod is map) &&
+            firestore.get(/databases/(default)/documents/events/$(eventId)).data.visibility.displayStartAt is timestamp &&
+            firestore.get(/databases/(default)/documents/events/$(eventId)).data.visibility.displayEndAt is timestamp
+          )
         );
     }
 
     function isWithinEventDisplayPeriod(eventId) {
       return !hasEventDisplayPeriod(eventId) ||
         (
-          request.time >= firestore.get(/databases/(default)/documents/events/$(eventId)).data.visibility.displayStartAt &&
-          request.time <= firestore.get(/databases/(default)/documents/events/$(eventId)).data.visibility.displayEndAt
+          (
+            firestore.get(/databases/(default)/documents/events/$(eventId)).data.displayPeriod is map &&
+            request.time >= firestore.get(/databases/(default)/documents/events/$(eventId)).data.displayPeriod.startDate &&
+            request.time <= firestore.get(/databases/(default)/documents/events/$(eventId)).data.displayPeriod.endDate
+          ) ||
+          (
+            !(firestore.get(/databases/(default)/documents/events/$(eventId)).data.displayPeriod is map) &&
+            request.time >= firestore.get(/databases/(default)/documents/events/$(eventId)).data.visibility.displayStartAt &&
+            request.time <= firestore.get(/databases/(default)/documents/events/$(eventId)).data.visibility.displayEndAt
+          )
         );
     }
 

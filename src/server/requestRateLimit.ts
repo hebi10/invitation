@@ -1,17 +1,19 @@
 import 'server-only';
 
+import { firestoreRateLimitRepository } from './repositories/rateLimitRepository';
+
 type RateLimitEntry = {
   count: number;
   resetAt: number;
 };
 
-type InMemoryRateLimitOptions = {
+type RateLimitOptions = {
   key: string;
   limit: number;
   windowMs: number;
 };
 
-type ScopedInMemoryRateLimitOptions = {
+type ScopedRateLimitOptions = {
   request: Request;
   scope: string;
   keyParts?: Array<string | number | boolean | null | undefined>;
@@ -19,7 +21,7 @@ type ScopedInMemoryRateLimitOptions = {
   windowMs: number;
 };
 
-type InMemoryRateLimitResult = {
+type RateLimitResult = {
   allowed: boolean;
   limit: number;
   remaining: number;
@@ -28,6 +30,7 @@ type InMemoryRateLimitResult = {
 };
 
 const RATE_LIMIT_STORE_KEY = '__invitation_rate_limit_store__';
+const RATE_LIMIT_SLOW_APPLY_MS = 500;
 
 function getRateLimitStore() {
   const globalScope = globalThis as typeof globalThis & {
@@ -82,9 +85,7 @@ export function buildScopedRateLimitKey(
   return [scope, ...normalizedParts, readRequestClientKey(request)].join(':');
 }
 
-export function applyInMemoryRateLimit(
-  options: InMemoryRateLimitOptions
-): InMemoryRateLimitResult {
+function applyLocalRateLimitFallback(options: RateLimitOptions): RateLimitResult {
   const now = Date.now();
   const store = getRateLimitStore();
   const current = store.get(options.key);
@@ -130,10 +131,33 @@ export function applyInMemoryRateLimit(
   };
 }
 
-export function applyScopedInMemoryRateLimit(
-  options: ScopedInMemoryRateLimitOptions
-) {
-  return applyInMemoryRateLimit({
+export async function applyRateLimit(options: RateLimitOptions) {
+  if (firestoreRateLimitRepository.isAvailable()) {
+    const startedAt = Date.now();
+
+    try {
+      const result = await firestoreRateLimitRepository.apply(options);
+      const elapsedMs = Date.now() - startedAt;
+
+      if (elapsedMs >= RATE_LIMIT_SLOW_APPLY_MS) {
+        console.warn('[rate-limit] slow Firestore rate limit apply', {
+          elapsedMs,
+          limit: options.limit,
+          windowMs: options.windowMs,
+        });
+      }
+
+      return result;
+    } catch (error) {
+      console.error('[rate-limit] Firestore rate limit failed; using local fallback', error);
+    }
+  }
+
+  return applyLocalRateLimitFallback(options);
+}
+
+export function applyScopedRateLimit(options: ScopedRateLimitOptions) {
+  return applyRateLimit({
     key: buildScopedRateLimitKey(
       options.request,
       options.scope,
@@ -144,7 +168,7 @@ export function applyScopedInMemoryRateLimit(
   });
 }
 
-export function buildRateLimitHeaders(result: InMemoryRateLimitResult) {
+export function buildRateLimitHeaders(result: RateLimitResult) {
   return {
     'Retry-After': String(result.retryAfterSeconds),
     'X-RateLimit-Limit': String(result.limit),

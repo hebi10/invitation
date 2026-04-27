@@ -20,12 +20,10 @@ service cloud.firestore {
     }
 
     function isEventOwnerBySlug(slug) {
+      let slugIndex = get(/databases/$(database)/documents/eventSlugIndex/$(slug));
       return slug is string &&
-        exists(/databases/$(database)/documents/eventSlugIndex/$(slug)) &&
-        get(/databases/$(database)/documents/eventSlugIndex/$(slug)).data.eventId is string &&
-        isEventOwnerById(
-          get(/databases/$(database)/documents/eventSlugIndex/$(slug)).data.eventId
-        );
+        slugIndex.data.eventId is string &&
+        isEventOwnerById(slugIndex.data.eventId);
     }
 
     function canCreateOwnedEvent() {
@@ -73,32 +71,43 @@ service cloud.firestore {
         );
     }
 
-    function hasPublishedEventSummary(eventId) {
-      return eventId is string &&
-        exists(/databases/$(database)/documents/events/$(eventId)) &&
-        get(/databases/$(database)/documents/events/$(eventId)).data.visibility.published == true;
+    function hasEventDisplayPeriodData(data) {
+      return (
+        data.displayPeriod is map &&
+        data.displayPeriod.isActive == true &&
+        data.displayPeriod.startDate is timestamp &&
+        data.displayPeriod.endDate is timestamp
+      ) || (
+        !(data.displayPeriod is map) &&
+        data.visibility.displayStartAt is timestamp &&
+        data.visibility.displayEndAt is timestamp
+      );
     }
 
-    function hasEventDisplayPeriod(eventId) {
-      return eventId is string &&
-        exists(/databases/$(database)/documents/events/$(eventId)) &&
+    function isWithinEventDisplayPeriodData(data) {
+      return !hasEventDisplayPeriodData(data) ||
         (
-          get(/databases/$(database)/documents/events/$(eventId)).data.visibility.displayStartAt is timestamp &&
-          get(/databases/$(database)/documents/events/$(eventId)).data.visibility.displayEndAt is timestamp
+          data.displayPeriod is map &&
+          request.time >= data.displayPeriod.startDate &&
+          request.time <= data.displayPeriod.endDate
+        ) ||
+        (
+          !(data.displayPeriod is map) &&
+          request.time >= data.visibility.displayStartAt &&
+          request.time <= data.visibility.displayEndAt
         );
     }
 
-    function isWithinEventDisplayPeriod(eventId) {
-      return !hasEventDisplayPeriod(eventId) ||
-        (
-          request.time >= get(/databases/$(database)/documents/events/$(eventId)).data.visibility.displayStartAt &&
-          request.time <= get(/databases/$(database)/documents/events/$(eventId)).data.visibility.displayEndAt
-        );
+    function canReadPublicEventData(data) {
+      return data.visibility.published == true &&
+        isWithinEventDisplayPeriodData(data);
     }
 
     function canReadPublicEvent(eventId) {
-      return hasPublishedEventSummary(eventId) &&
-        isWithinEventDisplayPeriod(eventId);
+      return eventId is string &&
+        canReadPublicEventData(
+          get(/databases/$(database)/documents/events/$(eventId)).data
+        );
     }
 
     function isValidCommentCreateForEvent(eventId) {
@@ -109,16 +118,14 @@ service cloud.firestore {
     }
 
     function canReadPublicEventSlugIndex(slug) {
+      let slugIndex = get(/databases/$(database)/documents/eventSlugIndex/$(slug));
       return slug is string &&
-        exists(/databases/$(database)/documents/eventSlugIndex/$(slug)) &&
         (
-          get(/databases/$(database)/documents/eventSlugIndex/$(slug)).data.status == 'active' ||
-          get(/databases/$(database)/documents/eventSlugIndex/$(slug)).data.status == 'redirect'
+          slugIndex.data.status == 'active' ||
+          slugIndex.data.status == 'redirect'
         ) &&
-        get(/databases/$(database)/documents/eventSlugIndex/$(slug)).data.eventId is string &&
-        canReadPublicEvent(
-          get(/databases/$(database)/documents/eventSlugIndex/$(slug)).data.eventId
-        );
+        slugIndex.data.eventId is string &&
+        canReadPublicEvent(slugIndex.data.eventId);
     }
 
     match /memory-pages/{pageSlug} {

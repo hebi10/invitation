@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server';
+﻿import { NextResponse } from 'next/server';
 
 import {
   buildGuestbookCommentStatusPatch,
@@ -14,7 +14,7 @@ import {
 } from '@/server/clientEditorMobileApi';
 import { firestoreEventCommentRepository } from '@/server/repositories/eventCommentRepository';
 import {
-  applyScopedInMemoryRateLimit,
+  applyScopedRateLimit,
   buildRateLimitHeaders,
 } from '@/server/requestRateLimit';
 
@@ -40,7 +40,7 @@ async function authorizeCommentMutation(request: Request, pageSlug: string) {
 }
 
 function applyCommentMutationRateLimit(request: Request, pageSlug: string) {
-  return applyScopedInMemoryRateLimit({
+  return applyScopedRateLimit({
     request,
     scope: 'mobile-client-editor-comment-mutation',
     keyParts: [pageSlug],
@@ -174,7 +174,7 @@ export async function POST(
     return authorizationResult;
   }
 
-  const rateLimitResult = applyCommentMutationRateLimit(request, pageSlug);
+  const rateLimitResult = await applyCommentMutationRateLimit(request, pageSlug);
   if (!rateLimitResult.allowed) {
     return NextResponse.json(
       { error: 'Too many comment update requests. Please try again later.' },
@@ -230,7 +230,7 @@ export async function DELETE(
     return authorizationResult;
   }
 
-  const rateLimitResult = applyCommentMutationRateLimit(request, pageSlug);
+  const rateLimitResult = await applyCommentMutationRateLimit(request, pageSlug);
   if (!rateLimitResult.allowed) {
     return NextResponse.json(
       { error: 'Too many comment update requests. Please try again later.' },

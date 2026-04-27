@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server';
+﻿import { NextResponse } from 'next/server';
 
 import { isInvitationThemeKey } from '@/lib/invitationThemes';
 import {
@@ -22,7 +22,7 @@ import {
   transferServerPageTicketCount,
 } from '@/server/pageTicketServerService';
 import {
-  applyScopedInMemoryRateLimit,
+  applyScopedRateLimit,
   buildRateLimitHeaders,
 } from '@/server/requestRateLimit';
 import {
@@ -270,7 +270,7 @@ export async function POST(
   const body = (await request.json().catch(() => null)) as MobileClientEditorPageActionBody | null;
 
   const action = typeof body?.action === 'string' ? body.action : '';
-  const rateLimitResult = applyScopedInMemoryRateLimit({
+  const rateLimitResult = await applyScopedRateLimit({
     request,
     scope: 'mobile-client-editor-mutation',
     keyParts: [pageSlug, action || 'unknown'],

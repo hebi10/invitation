@@ -12,6 +12,7 @@ import { USE_FIREBASE } from '@/lib/firebase';
 import { resolveInvitationFeatures } from '@/lib/invitationProducts';
 import { getInvitationPublicAccessState } from '@/lib/invitationPublicAccess';
 import { resolveInvitationPageDataByTheme } from '@/lib/invitationThemePageData';
+import { getCurrentFirebaseIdToken } from '@/services/adminAuth';
 import { getStorageDownloadUrl, type UploadedImage } from '@/services/imageService';
 import { getInvitationPageBySlug } from '@/services/invitationPageService';
 import type { InvitationPage } from '@/types/invitationPage';
@@ -79,9 +80,36 @@ type WeddingPageQueryResult =
       blockMessage: string;
     };
 
+type AdminInvitationPageApiResponse = {
+  success?: boolean;
+  page?: InvitationPage;
+  error?: string;
+};
+
 const BLOCKED_MESSAGE = '현재 접근할 수 없는 청첩장입니다.';
 const LOAD_FAILED_MESSAGE =
   '청첩장 정보를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.';
+
+function readApiDate(value: unknown) {
+  if (value instanceof Date) {
+    return value;
+  }
+
+  if (typeof value !== 'string' && typeof value !== 'number') {
+    return null;
+  }
+
+  const parsed = new Date(value);
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
+}
+
+function hydrateInvitationPageFromApi(page: InvitationPage): InvitationPage {
+  return {
+    ...page,
+    displayPeriodStart: readApiDate(page.displayPeriodStart),
+    displayPeriodEnd: readApiDate(page.displayPeriodEnd),
+  };
+}
 
 function getInitialWeddingPage(
   slug: string,
@@ -152,11 +180,62 @@ function isPublicInvitationPage(page: InvitationPage) {
   return getInvitationPublicAccessState(page).isPublic;
 }
 
+async function getAdminInvitationPageBySlug(slug: string) {
+  const idToken = await getCurrentFirebaseIdToken();
+  if (!idToken) {
+    throw new Error('관리자 로그인 토큰을 확인하지 못했습니다.');
+  }
+
+  const response = await fetch(`/api/admin/events/${encodeURIComponent(slug)}`, {
+    method: 'GET',
+    headers: {
+      Authorization: `Bearer ${idToken}`,
+    },
+    cache: 'no-store',
+  });
+  const payload = (await response.json().catch(() => null)) as
+    | AdminInvitationPageApiResponse
+    | null;
+
+  if (response.status === 404) {
+    return null;
+  }
+
+  if (!response.ok) {
+    throw new Error(
+      typeof payload?.error === 'string' && payload.error.trim()
+        ? payload.error
+        : '청첩장 정보를 불러오지 못했습니다.'
+    );
+  }
+
+  return payload?.page ? hydrateInvitationPageFromApi(payload.page) : null;
+}
+
 async function loadWeddingInvitationPage(
   slug: string,
   isAdminLoggedIn: boolean
 ): Promise<WeddingPageQueryResult> {
   try {
+    if (isAdminLoggedIn) {
+      try {
+        const adminPage = await getAdminInvitationPageBySlug(slug);
+
+        if (adminPage) {
+          return {
+            status: 'ready',
+            pageConfig: adminPage,
+            blockMessage: null,
+          };
+        }
+      } catch (adminLoadError) {
+        console.warn(
+          '[weddingPageState] failed to load admin invitation page',
+          adminLoadError
+        );
+      }
+    }
+
     const allowSeedFallback = !USE_FIREBASE || isAdminLoggedIn;
     const page = await getInvitationPageBySlug(slug, {
       includeSeedFallback: allowSeedFallback,

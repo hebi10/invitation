@@ -1,7 +1,7 @@
-import { NextResponse } from 'next/server';
+﻿import { NextResponse } from 'next/server';
 
 import {
-  applyInMemoryRateLimit,
+  applyRateLimit,
   buildRateLimitHeaders,
   readRequestClientKey,
 } from '@/server/requestRateLimit';
@@ -95,7 +95,7 @@ export async function GET(request: Request) {
     );
   }
 
-  const rateLimitResult = applyInMemoryRateLimit({
+  const rateLimitResult = await applyRateLimit({
     key: `kakao-local-address-search:${readRequestClientKey(request)}`,
     ...ADDRESS_SEARCH_RATE_LIMIT,
   });

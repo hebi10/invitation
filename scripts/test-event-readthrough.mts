@@ -63,6 +63,23 @@ async function main() {
   assert.equal(displayPeriod?.pageSlug, 'alpha-event');
   assert.equal(displayPeriod?.isActive, true);
 
+  const disabledPeriodSummary = normalizeEventSummaryRecord('event-disabled-period', {
+    slug: 'disabled-period-event',
+    published: true,
+    visibility: {
+      published: true,
+      displayStartAt: '2026-01-01T00:00:00.000Z',
+      displayEndAt: '2026-01-31T23:59:59.000Z',
+    },
+    displayPeriod: {
+      isActive: false,
+      startDate: null,
+      endDate: null,
+    },
+  });
+  assert.ok(disabledPeriodSummary);
+  assert.equal(disabledPeriodSummary.displayPeriod?.isActive, false);
+
   const configRecord = buildInvitationPageConfigRecordFromEventContent(summary, {
     createdAt: '2026-05-01T00:00:00.000Z',
     updatedAt: '2026-05-10T00:00:00.000Z',

@@ -211,6 +211,11 @@ export function normalizeEventSummaryRecord(
       : data.published !== false;
   const visibilityDisplayStartAt = toDate(visibilityInput?.displayStartAt);
   const visibilityDisplayEndAt = toDate(visibilityInput?.displayEndAt);
+  const hasExplicitDisplayPeriodActive =
+    displayPeriodInput !== null && typeof displayPeriodInput.isActive === 'boolean';
+  const displayPeriodIsActive = hasExplicitDisplayPeriodActive
+    ? displayPeriodInput.isActive === true
+    : Boolean(visibilityDisplayStartAt && visibilityDisplayEndAt);
   const supportedVariants = Array.isArray(data.supportedVariants)
     ? data.supportedVariants.filter(
         (entry): entry is string => typeof entry === 'string' && entry.trim().length > 0
@@ -258,9 +263,7 @@ export function normalizeEventSummaryRecord(
     displayPeriod:
       displayPeriodInput || visibilityDisplayStartAt || visibilityDisplayEndAt
       ? {
-          isActive:
-            displayPeriodInput?.isActive === true ||
-            Boolean(visibilityDisplayStartAt && visibilityDisplayEndAt),
+          isActive: displayPeriodIsActive,
           startDate: toDate(displayPeriodInput?.startDate) ?? visibilityDisplayStartAt,
           endDate: toDate(displayPeriodInput?.endDate) ?? visibilityDisplayEndAt,
         }

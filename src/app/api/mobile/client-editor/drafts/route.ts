@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server';
+﻿import { NextResponse } from 'next/server';
 
 import { getAllWeddingPageSeeds } from '@/config/weddingPages';
 import { DEFAULT_INVITATION_THEME, isInvitationThemeKey } from '@/lib/invitationThemes';
@@ -21,7 +21,7 @@ import {
 } from '@/server/invitationPageServerService';
 import { getServerPageTicketCount } from '@/server/pageTicketServerService';
 import {
-  applyScopedInMemoryRateLimit,
+  applyScopedRateLimit,
   buildRateLimitHeaders,
 } from '@/server/requestRateLimit';
 
@@ -73,7 +73,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Page password is required.' }, { status: 400 });
     }
 
-    const rateLimitResult = applyScopedInMemoryRateLimit({
+    const rateLimitResult = await applyScopedRateLimit({
       request,
       scope: 'mobile-client-editor-drafts',
       keyParts: [slugValidation.normalizedSlugBase, seedSlug],
