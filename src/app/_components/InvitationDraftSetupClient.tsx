@@ -187,15 +187,18 @@ export default function InvitationDraftSetupClient({
   };
 
   if (isAdminLoading) {
+    const loadingDescription =
+      editorKind === 'page-editor'
+        ? '고객 편집기는 관리자 권한 확인 뒤에 사용할 수 있습니다.'
+        : '청첩장 생성 화면은 관리자 권한 확인 뒤에 사용할 수 있습니다.';
+
     return (
       <main className={`${styles.page} ${compactMode ? styles.pageCompact : ''}`}>
         <div className={`${styles.shell} ${compactMode ? styles.shellCompact : ''}`}>
           <section className={styles.emptyCard}>
             <p className={styles.eyebrow}>불러오는 중</p>
             <h1 className={styles.emptyTitle}>관리자 권한을 확인하고 있습니다.</h1>
-            <p className={styles.emptyText}>
-              청첩장 생성 화면은 관리자 권한 확인 뒤에 사용할 수 있습니다.
-            </p>
+            <p className={styles.emptyText}>{loadingDescription}</p>
           </section>
         </div>
       </main>
@@ -203,12 +206,17 @@ export default function InvitationDraftSetupClient({
   }
 
   if (!isAdminLoggedIn) {
+    const adminOnlyTitle =
+      editorKind === 'page-editor'
+        ? '고객 편집기는 관리자만 이용 가능합니다.'
+        : '새 청첩장 생성은 관리자만 사용할 수 있습니다.';
+
     return (
       <main className={`${styles.page} ${compactMode ? styles.pageCompact : ''}`}>
         <div className={`${styles.shell} ${compactMode ? styles.shellCompact : ''}`}>
           <section className={styles.emptyCard}>
             <p className={styles.eyebrow}>관리자 전용</p>
-            <h1 className={styles.emptyTitle}>새 청첩장 생성은 관리자만 사용할 수 있습니다.</h1>
+            <h1 className={styles.emptyTitle}>{adminOnlyTitle}</h1>
             <p className={styles.emptyText}>
               먼저 관리자 페이지에서 로그인한 뒤 다시 돌아와 주세요.
             </p>

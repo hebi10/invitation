@@ -3,8 +3,6 @@
 import { useQueryClient } from '@tanstack/react-query';
 import { type ChangeEvent, type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
-import CustomerEventClaimCard from '@/app/_components/CustomerEventClaimCard';
-import FirebaseAuthLoginCard from '@/app/_components/FirebaseAuthLoginCard';
 import { useAdmin } from '@/contexts';
 import {
   appQueryKeys,
@@ -125,7 +123,7 @@ export default function PageEditorClient({
   initialDate,
   initialVenue,
 }: PageEditorClientProps) {
-  const { authUser, isAdminLoading, isAdminLoggedIn, isLoggedIn } = useAdmin();
+  const { authUser, isAdminLoading, isAdminLoggedIn } = useAdmin();
   const queryClient = useQueryClient();
 
   const [formState, setFormState] = useState<InvitationPageSeed | null>(null);
@@ -135,9 +133,6 @@ export default function PageEditorClient({
   const [hasCustomConfig, setHasCustomConfig] = useState(false);
   const [dataSourceLabel, setDataSourceLabel] = useState('기본 샘플 사용 중');
   const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
-  const [hasOwnershipAccess, setHasOwnershipAccess] = useState(false);
-  const [requiresOwnershipClaim, setRequiresOwnershipClaim] = useState(false);
-  const [accessErrorMessage, setAccessErrorMessage] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isSavingVisibility, setIsSavingVisibility] = useState(false);
@@ -155,15 +150,15 @@ export default function PageEditorClient({
   const coverUploadInputRef = useRef<HTMLInputElement | null>(null);
   const faviconUploadInputRef = useRef<HTMLInputElement | null>(null);
   const galleryUploadInputRef = useRef<HTMLInputElement | null>(null);
-  const { ownershipQuery, configQuery } = usePageEditorAccessQueries({
+  const { configQuery } = usePageEditorAccessQueries({
     slug,
     authUserUid: authUser?.uid,
     isAdminLoading,
     isAdminLoggedIn,
-    isLoggedIn,
+    isLoggedIn: false,
   });
 
-  const canEdit = isAdminLoggedIn || hasOwnershipAccess;
+  const canEdit = isAdminLoggedIn;
   const canUploadImages = USE_FIREBASE && canEdit;
   const title = buildEditorTitle(
     formState?.couple.groom.name ?? initialGroomName,
@@ -325,71 +320,6 @@ export default function PageEditorClient({
       cancelled = true;
     };
   }, []);
-
-  useEffect(() => {
-    if (isAdminLoading) {
-      return;
-    }
-
-    if (isAdminLoggedIn) {
-      setHasOwnershipAccess(false);
-      setRequiresOwnershipClaim(false);
-      setAccessErrorMessage(null);
-      return;
-    }
-
-    if (!isLoggedIn) {
-      setHasOwnershipAccess(false);
-      setRequiresOwnershipClaim(false);
-      setAccessErrorMessage(null);
-      setFormState(null);
-      setBaselineState(null);
-      return;
-    }
-
-    if (ownershipQuery.data) {
-      if (ownershipQuery.data.status === 'owner') {
-        setHasOwnershipAccess(true);
-        setRequiresOwnershipClaim(false);
-        setAccessErrorMessage(null);
-        return;
-      }
-
-      if (ownershipQuery.data.status === 'claimable') {
-        setHasOwnershipAccess(false);
-        setRequiresOwnershipClaim(true);
-        setAccessErrorMessage(null);
-        setFormState(null);
-        setBaselineState(null);
-        return;
-      }
-
-      setHasOwnershipAccess(false);
-      setRequiresOwnershipClaim(false);
-      setAccessErrorMessage(
-        ownershipQuery.data.status === 'different-owner'
-          ? '이 청첩장은 현재 로그인한 계정과 연결되어 있지 않습니다.'
-          : '청첩장 정보를 찾지 못했습니다.'
-      );
-      setFormState(null);
-      setBaselineState(null);
-      return;
-    }
-
-    if (ownershipQuery.error) {
-      setHasOwnershipAccess(false);
-      setRequiresOwnershipClaim(false);
-      setAccessErrorMessage('청첩장 소유권을 확인하지 못했습니다.');
-    }
-  }, [
-    authUser?.uid,
-    isAdminLoading,
-    isAdminLoggedIn,
-    isLoggedIn,
-    ownershipQuery.data,
-    ownershipQuery.error,
-    slug,
-  ]);
 
   useEffect(() => {
     if (isAdminLoading || !canEdit) {
@@ -3008,42 +2938,25 @@ export default function PageEditorClient({
             {renderHeroCard()}
             {renderNotice()}
 
-            {!isLoggedIn ? (
+            {isAdminLoading ? (
               <section className={styles.lockedCard}>
-                <FirebaseAuthLoginCard
-                  title="로그인 후 청첩장을 관리해 주세요"
-                  description="이메일 로그인이나 Google 로그인을 완료하면 현재 계정 UID 기준으로 소유권을 확인합니다."
-                  helperText="기본 이메일 로그인과 Google 로그인만 지원합니다."
-                />
+                <h2 className={styles.lockedTitle}>관리자 권한을 확인하고 있습니다.</h2>
+                <p className={styles.lockedText}>
+                  고객 편집기는 관리자 권한 확인 뒤에만 사용할 수 있습니다.
+                </p>
               </section>
             ) : null}
 
-            {isLoggedIn && requiresOwnershipClaim ? (
+            {!isAdminLoading && !isAdminLoggedIn ? (
               <section className={styles.lockedCard}>
-                <CustomerEventClaimCard
-                  pageSlug={slug}
-                  title="기존 청첩장을 현재 계정에 연결해 주세요"
-                  description="아직 현재 로그인한 UID와 연결되지 않은 청첩장입니다. 기존 페이지 비밀번호를 확인하면 내 계정 청첩장으로 등록됩니다."
-                  helperText="한 번 연결하면 이후에는 Firebase 로그인만으로 편집할 수 있습니다."
-                  onClaimed={() => {
-                    setNotice({
-                      tone: 'success',
-                      message: '청첩장을 현재 계정에 연결했습니다. 최신 상태를 다시 불러옵니다.',
-                    });
-                    void ownershipQuery.refetch();
-                    void configQuery.refetch();
-                  }}
-                />
-              </section>
-            ) : null}
-
-            {isLoggedIn && accessErrorMessage ? (
-              <section className={styles.lockedCard}>
-                <div className={styles.sectionHeader}>
-                  <div>
-                    <h2 className={styles.lockedTitle}>이 청첩장은 현재 계정으로 관리할 수 없습니다.</h2>
-                    <p className={styles.lockedText}>{accessErrorMessage}</p>
-                  </div>
+                <div>
+                  <h2 className={styles.lockedTitle}>고객 편집기는 관리자만 이용 가능합니다.</h2>
+                  <p className={styles.lockedText}>
+                    관리자 계정으로 로그인한 뒤 청첩장 편집 화면에 다시 접속해 주세요.
+                  </p>
+                  <a className={styles.primaryButton} href="/admin">
+                    관리자 대시보드로 이동
+                  </a>
                 </div>
               </section>
             ) : null}

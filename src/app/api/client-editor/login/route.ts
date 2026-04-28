@@ -10,6 +10,10 @@ import {
   applyScopedRateLimit,
   buildRateLimitHeaders,
 } from '@/server/requestRateLimit';
+import {
+  isWebClientEditorAdminOnly,
+  WEB_CLIENT_EDITOR_ADMIN_ONLY_MESSAGE,
+} from '@/server/webClientEditorPolicy';
 
 const CLIENT_EDITOR_LOGIN_RATE_LIMIT = {
   limit: 10,
@@ -18,6 +22,13 @@ const CLIENT_EDITOR_LOGIN_RATE_LIMIT = {
 
 export async function POST(request: Request) {
   try {
+    if (isWebClientEditorAdminOnly()) {
+      return NextResponse.json(
+        { error: WEB_CLIENT_EDITOR_ADMIN_ONLY_MESSAGE },
+        { status: 403 }
+      );
+    }
+
     const body = (await request.json().catch(() => null)) as
       | { pageSlug?: unknown; password?: unknown }
       | null;

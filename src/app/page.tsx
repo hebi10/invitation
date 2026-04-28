@@ -2,58 +2,46 @@ import Link from 'next/link';
 
 import styles from './page.module.css';
 
-const primaryLinks = [
+const dashboardLinks = [
   {
     href: '/admin',
     title: '관리자 대시보드',
     description: '운영 화면으로 이동',
-  },
-  {
-    href: '/page-wizard',
-    title: '청첩장 만들기',
-    description: '새 초안 시작',
-  },
-  {
-    href: '/my-invitations',
-    title: '사용자 페이지',
-    description: '고객 화면 확인',
-  },
-];
-
-const secondaryLinks = [
-  {
-    href: '/page-editor',
-    label: '고객 편집기',
     external: false,
   },
   {
     href: 'https://kmong.com/gig/686626',
-    label: '판매 페이지',
+    title: '판매 페이지',
+    description: '상품 소개로 이동',
     external: true,
   },
   {
-    href: 'https://hebi10.notion.site/Nextjs-Firebase-23f8b702e1b880e08f14fc063e851791?pvs=74',
-    label: '작업 문서',
-    external: true,
+    href: '/my-invitations',
+    title: '대시보드',
+    description: '내 청첩장 확인',
+    external: false,
   },
 ];
 
-function renderSecondaryLink(link: {
+function renderDashboardLink(link: {
   href: string;
-  label: string;
+  title: string;
+  description: string;
   external: boolean;
 }) {
   if (link.external) {
     return (
-      <a key={link.href} className={styles.secondaryLink} href={link.href} target="_blank" rel="noreferrer">
-        {link.label}
+      <a key={link.href} className={styles.primaryCard} href={link.href} target="_blank" rel="noreferrer">
+        <strong className={styles.cardTitle}>{link.title}</strong>
+        <span className={styles.cardDescription}>{link.description}</span>
       </a>
     );
   }
 
   return (
-    <Link key={link.href} className={styles.secondaryLink} href={link.href}>
-      {link.label}
+    <Link key={link.href} className={styles.primaryCard} href={link.href}>
+      <strong className={styles.cardTitle}>{link.title}</strong>
+      <span className={styles.cardDescription}>{link.description}</span>
     </Link>
   );
 }
@@ -77,15 +65,8 @@ export default function Home() {
           </div>
 
           <div className={styles.primaryGrid}>
-            {primaryLinks.map((link) => (
-              <Link key={link.href} className={styles.primaryCard} href={link.href}>
-                <strong className={styles.cardTitle}>{link.title}</strong>
-                <span className={styles.cardDescription}>{link.description}</span>
-              </Link>
-            ))}
+            {dashboardLinks.map(renderDashboardLink)}
           </div>
-
-          <div className={styles.secondaryRow}>{secondaryLinks.map(renderSecondaryLink)}</div>
         </section>
       </div>
     </main>

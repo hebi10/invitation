@@ -14,6 +14,10 @@ import {
   applyScopedRateLimit,
   buildRateLimitHeaders,
 } from '@/server/requestRateLimit';
+import {
+  isWebClientEditorAdminOnly,
+  WEB_CLIENT_EDITOR_ADMIN_ONLY_MESSAGE,
+} from '@/server/webClientEditorPolicy';
 import type { InvitationPageSeed, InvitationThemeKey } from '@/types/invitationPage';
 
 const CLIENT_EDITOR_MUTATION_RATE_LIMIT = {
@@ -54,6 +58,13 @@ export async function GET(
   _request: Request,
   context: { params: Promise<{ slug: string }> }
 ) {
+  if (isWebClientEditorAdminOnly()) {
+    return NextResponse.json(
+      { error: WEB_CLIENT_EDITOR_ADMIN_ONLY_MESSAGE },
+      { status: 403 }
+    );
+  }
+
   const { slug } = await context.params;
   const pageSlug = slug.trim();
 
@@ -74,6 +85,13 @@ export async function POST(
   request: Request,
   context: { params: Promise<{ slug: string }> }
 ) {
+  if (isWebClientEditorAdminOnly()) {
+    return NextResponse.json(
+      { error: WEB_CLIENT_EDITOR_ADMIN_ONLY_MESSAGE },
+      { status: 403 }
+    );
+  }
+
   const { slug } = await context.params;
   const pageSlug = slug.trim();
 

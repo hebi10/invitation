@@ -176,11 +176,11 @@ export default function PageWizardClient({ initialSlug }: PageWizardClientProps)
   const kakaoCardUploadInputRef = useRef<HTMLInputElement | null>(null);
   const galleryUploadInputRef = useRef<HTMLInputElement | null>(null);
 
-  const canCreateNew = initialSlug ? true : isLoggedIn;
-  const canUploadImages = isLoggedIn;
+  const canCreateNew = isAdminLoggedIn;
+  const canUploadImages = isAdminLoggedIn;
   const ownedEventsQuery = useQuery<CustomerOwnedEventSummary[]>({
     queryKey: appQueryKeys.ownedCustomerEvents(authUser?.uid ?? null),
-    enabled: Boolean(initialSlug && !isAdminLoading && isLoggedIn && authUser?.uid),
+    enabled: false,
     queryFn: async () => listOwnedCustomerEvents(authUser?.uid ?? ''),
     staleTime: 0,
     gcTime: THIRTY_MINUTES_MS,
@@ -225,7 +225,7 @@ export default function PageWizardClient({ initialSlug }: PageWizardClientProps)
       isAdminLoggedIn,
       isLoggedIn,
     ],
-    enabled: Boolean(initialSlug) && !isAdminLoading && isLoggedIn,
+    enabled: Boolean(initialSlug) && !isAdminLoading && isAdminLoggedIn,
     queryFn: async () => {
       if (!initialSlug) {
         throw new Error('기존 청첩장 slug가 없습니다.');
@@ -912,6 +912,15 @@ export default function PageWizardClient({ initialSlug }: PageWizardClientProps)
       return;
     }
 
+    if (!isAdminLoggedIn) {
+      setFormState(null);
+      setClientPasswordInput('');
+      setRequiresOwnershipClaim(false);
+      setAccessErrorMessage(null);
+      setIsLoading(false);
+      return;
+    }
+
     if (!initialSlug) {
       const nextConfig = createInitialWizardConfig();
 
@@ -926,15 +935,6 @@ export default function PageWizardClient({ initialSlug }: PageWizardClientProps)
       setPublished(false);
       setDefaultTheme(DEFAULT_THEME);
       setLastSavedAt(null);
-      setRequiresOwnershipClaim(false);
-      setAccessErrorMessage(null);
-      setIsLoading(false);
-      return;
-    }
-
-    if (!isLoggedIn) {
-      setFormState(null);
-      setClientPasswordInput('');
       setRequiresOwnershipClaim(false);
       setAccessErrorMessage(null);
       setIsLoading(false);
@@ -1667,7 +1667,7 @@ export default function PageWizardClient({ initialSlug }: PageWizardClientProps)
 
     return <div className={getNoticeClassName(notice.tone)}>{notice.message}</div>;
   };
-  const isExistingWizardRefreshable = Boolean(initialSlug && isLoggedIn);
+  const isExistingWizardRefreshable = Boolean(initialSlug && isAdminLoggedIn);
   const isWizardRefreshing = wizardLoadQuery.isRefetching;
   const isCheckingOwnedEventsBeforeClaim = Boolean(
     initialSlug &&
@@ -1695,7 +1695,7 @@ export default function PageWizardClient({ initialSlug }: PageWizardClientProps)
     );
   }
 
-  if (!isLoggedIn) {
+  if (!isAdminLoggedIn) {
     return (
       <main className={styles.page}>
         <div className={`${styles.shell} ${styles.gateShell}`}>
@@ -1703,19 +1703,21 @@ export default function PageWizardClient({ initialSlug }: PageWizardClientProps)
             <FirebaseAuthLoginCard
               title={
                 initialSlug
-                  ? '로그인 후 청첩장을 관리해 주세요'
-                  : '로그인 후 새 청첩장을 만들어 주세요'
+                  ? '청첩장 편집은 관리자만 이용 가능합니다'
+                  : '청첩장 만들기는 관리자만 이용 가능합니다'
               }
               description={
                 initialSlug
-                  ? '이메일 로그인이나 Google 로그인을 완료하면 현재 계정 UID 기준으로 청첩장 소유권을 확인합니다.'
-                  : '이메일 로그인이나 Google 로그인을 완료하면 새 청첩장에 현재 계정 UID가 소유자로 저장됩니다.'
+                  ? '관리자 계정으로 로그인한 뒤 청첩장 편집 화면에 다시 접속해 주세요.'
+                  : '관리자 계정으로 로그인한 뒤 새 청첩장 생성 화면을 이용해 주세요.'
               }
               helperText={
                 initialSlug
-                  ? '기존 청첩장은 로그인 후 소유권을 확인하거나, 아직 연결되지 않은 페이지라면 비밀번호로 한 번 연결할 수 있습니다.'
-                  : '기본 이메일 로그인과 Google 로그인만 지원합니다.'
+                  ? '고객 계정 연결이나 비밀번호 확인 흐름은 이 화면에서 제공하지 않습니다.'
+                  : '청첩장 생성은 관리자 권한이 확인된 계정에서만 가능합니다.'
               }
+              requireAdmin
+              allowSignUp={false}
             />
           </section>
         </div>

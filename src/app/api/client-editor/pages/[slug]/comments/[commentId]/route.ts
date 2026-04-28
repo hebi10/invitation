@@ -12,6 +12,10 @@ import {
   applyScopedRateLimit,
   buildRateLimitHeaders,
 } from '@/server/requestRateLimit';
+import {
+  isWebClientEditorAdminOnly,
+  WEB_CLIENT_EDITOR_ADMIN_ONLY_MESSAGE,
+} from '@/server/webClientEditorPolicy';
 
 const CLIENT_EDITOR_COMMENT_DELETE_RATE_LIMIT = {
   limit: 20,
@@ -30,6 +34,13 @@ export async function DELETE(
   request: Request,
   context: { params: Promise<{ slug: string; commentId: string }> }
 ) {
+  if (isWebClientEditorAdminOnly()) {
+    return NextResponse.json(
+      { error: WEB_CLIENT_EDITOR_ADMIN_ONLY_MESSAGE },
+      { status: 403 }
+    );
+  }
+
   const { slug, commentId } = await context.params;
   const pageSlug = slug.trim();
   const normalizedCommentId = commentId.trim();

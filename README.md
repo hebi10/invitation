@@ -7,7 +7,7 @@
 - 공개 청첩장 테마는 `emotional`, `simple` 2가지를 사용합니다.
 - 공개 URL은 `/{slug}/emotional`, `/{slug}/simple`를 실제 경로로 사용하고, `/{slug}`는 `/{slug}/{defaultTheme}`로 리다이렉트합니다.
 - 공개 청첩장은 `Firestore 우선 + 로컬 sample fallback` 구조로 렌더링합니다.
-- 고객 편집기는 `/page-editor/[slug]`에서 동작하며, 페이지별 비밀번호 기반으로 진입합니다.
+- 웹 고객 편집기(`/page-editor/[slug]`)와 청첩장 만들기(`/page-wizard`)는 관리자 전용으로 동작합니다.
 - Firestore source of truth는 `events/{eventId}` 축입니다.
 - 공개 주소 `slug`는 `eventSlugIndex/{slug}`로 `eventId`에 매핑합니다.
 - 비밀번호는 `eventSecrets/{eventId}`, 결제는 `billingFulfillments/{transactionId}`를 기준으로 처리합니다.
@@ -57,9 +57,9 @@
 - `/admin`
   관리자 대시보드
 - `/page-editor`
-  고객 편집기 안내 페이지
+  관리자 전용 고객 편집기 시작 페이지
 - `/page-editor/{slug}`
-  고객 청첩장 편집기
+  관리자 전용 고객 청첩장 편집기
 - `/page-wizard`
   관리자용 신규 페이지 생성 시작 화면
 - `/page-wizard/{slug}`
@@ -84,7 +84,7 @@
 
 ### 고객 편집기
 
-고객 편집기는 청첩장 페이지를 단계적으로 수정할 수 있는 편집 화면입니다.
+고객 편집기는 청첩장 페이지를 단계적으로 수정할 수 있는 편집 화면이며, 현재 웹에서는 관리자만 접근할 수 있습니다.
 
 주요 기능:
 
@@ -215,7 +215,7 @@ scripts/
 - 실제 Firestore 원본 문서는 `eventId` 기준으로 읽고 쓴다.
 - `slug`는 항상 `eventSlugIndex/{slug}`를 통해 `eventId`로 해석한다.
 - `/page-wizard`, `/page-editor/{slug}`, 모바일 운영 화면은 모두 이 구조를 기준 저장소로 사용한다.
-- 고객 편집기와 모바일 편집기는 Firestore에 직접 쓰지 않고 서버 API 또는 repository를 통해 저장한다.
+- 웹 고객 편집기는 관리자 전용으로 제한하고, 모바일 편집기는 Firestore에 직접 쓰지 않고 서버 API 또는 repository를 통해 저장한다.
 
 #### 본문 / 방명록 / 비밀번호 / 결제
 
@@ -481,12 +481,12 @@ node scripts/firebase-static-hosting-migration.mjs sanitize-memory-pages --execu
 
 ## 고객 편집기 개요
 
-`/page-editor/{slug}`는 고객이 직접 내용을 수정할 수 있도록 만든 단계형 편집기입니다.
+`/page-editor/{slug}`는 청첩장 내용을 단계적으로 수정할 수 있도록 만든 편집기이며, 현재 웹에서는 관리자만 사용할 수 있습니다.
 
 주요 기능:
 
-- 관리자 로그인 없이 즉시 편집 가능
-- 고객은 페이지별 비밀번호로 잠금 해제 가능
+- 관리자 로그인 후 편집 가능
+- 비관리자 사용자는 관리자 전용 안내 문구만 확인 가능
 - 섹션별 입력
 - 자동 저장
 - 감성형 / 심플형 미리보기 전환
