@@ -2,6 +2,9 @@
   "name": "invitation",
   "version": "0.1.0",
   "private": true,
+  "engines": {
+    "node": ">=20"
+  },
   "scripts": {
     "dev": "npm run clean:next && next dev",
     "clean:next": "node -e \"require('fs').rmSync('.next',{recursive:true,force:true})\"",
@@ -37,7 +40,6 @@
     "check": "npm run lint && npm run typecheck",
     "test:smoke": "npm run sync:memory-metadata && npm run clean:next && next build",
     "test": "npm run sync:memory-metadata && npm run clean:next && next build",
-    "export": "next build",
     "deploy:firebase:rules": "firebase deploy --only firestore,storage",
     "deploy:firebase": "npm run deploy:firebase:rules"
   },

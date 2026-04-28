@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 import styles from '../page.module.css';
 import type { ImagesStepProps, UploadFieldKind } from '../pageWizardShared';
@@ -118,7 +118,10 @@ export default function ImagesStep({
   onGalleryImageRemove,
   onGalleryImageMove,
 }: ImagesStepProps) {
-  const galleryImages = formState.pageData?.galleryImages ?? [];
+  const galleryImages = useMemo(
+    () => formState.pageData?.galleryImages ?? [],
+    [formState.pageData?.galleryImages]
+  );
   const coverImage = previewFormState.metadata.images.wedding?.trim() ?? '';
   const socialPreviewImage = previewFormState.metadata.images.social?.trim() ?? '';
   const kakaoCardImage = previewFormState.metadata.images.kakaoCard?.trim() ?? '';

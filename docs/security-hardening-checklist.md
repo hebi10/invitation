@@ -10,6 +10,12 @@
 - Web customer dashboard: `/login`, `/signup`, `/my-invitations`
 - Mobile: Expo 로그인, 생성, 운영 대시보드, 방명록 관리
 
+## 배포 / 비밀값 기준
+- 웹 런타임은 Firebase App Hosting을 사용한다.
+- 저장소에는 서비스 계정 JSON 파일을 두지 않는다.
+- 서버 비밀값은 Firebase App Hosting Secret Manager 또는 배포 환경 변수로 주입한다.
+- 로컬 스크립트에서 `GOOGLE_APPLICATION_CREDENTIALS`가 필요하면 저장소 밖의 파일 경로를 사용한다.
+
 ## 수동 QA 체크리스트
 - Web 관리자 전용
   - [ ] `/page-wizard` 비관리자 접근 시 “관리자만 이용 가능” 안내 표시
@@ -28,6 +34,11 @@
   - [ ] `/api/client-editor/*` 웹 고객 편집 API는 관리자 전용 전환 안내를 반환
   - [ ] `/api/customer/events/claim` 연속 실패 시 429 응답
   - [ ] `/api/admin/session`이 Firebase ID token과 admin 권한 문서를 검증
+- Repository hygiene
+  - [ ] 저장소 루트에 서비스 계정 JSON 파일이 없음
+  - [ ] `.codex/`, `.codex-logs/` 같은 로컬 도구 산출물이 git에 추적되지 않음
+  - [ ] App Hosting Secret Manager에 서버 비밀값이 등록되어 있음
+  - [ ] `firebase.json`은 Firestore/Storage rules 배포만 담당함
 - Mobile
   - [ ] 모바일 로그인과 고위험 재인증이 기존 비밀번호로 정상 동작
   - [ ] 기존 계정 연결 후 `/my-invitations`가 서버 API로 목록을 다시 읽음

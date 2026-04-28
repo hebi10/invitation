@@ -71,10 +71,6 @@ export default function GreetingShared({
   const hasBrideInfo = hasPersonContent(bride);
   const showFamilySection = hasGroomInfo || hasBrideInfo;
 
-  if (!hasMessage && !showFamilySection) {
-    return null;
-  }
-
   const formatMessage = (text: string) => {
     const normalizedText = text.replace(/<br\s*\/?>/gi, '\n');
     const lines = normalizedText.split('\n');
@@ -165,6 +161,10 @@ export default function GreetingShared({
       document.removeEventListener('keydown', handleKeyDown);
     };
   }, [contactModal]);
+
+  if (!hasMessage && !showFamilySection) {
+    return null;
+  }
 
   const handleCall = (phone: string) => {
     window.location.href = `tel:${phone}`;

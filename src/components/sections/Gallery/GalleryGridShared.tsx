@@ -80,10 +80,6 @@ export default function GalleryGridShared({
   const hasImages = images.length > 0;
   const isPopupBusy = isPopupImageLoading;
 
-  if (!hasImages && !imagesLoading) {
-    return null;
-  }
-
   useEffect(() => {
     if (!shouldRenderImages || !preloadAllImages) {
       return;
@@ -173,6 +169,10 @@ export default function GalleryGridShared({
     setPopupImageError(null);
     setIsPopupImageLoading(!loadedPopupImages.has(images[index]));
   };
+
+  if (!hasImages && !imagesLoading) {
+    return null;
+  }
 
   return (
     <>

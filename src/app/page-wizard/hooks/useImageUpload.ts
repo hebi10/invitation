@@ -269,11 +269,62 @@ export function useImageUpload({
     ]
   );
 
+  const handleCoverImageRemove = useCallback(() => {
+    updateForm((draft) => {
+      draft.metadata.images.wedding = '';
+    });
+  }, [updateForm]);
+
+  const handleSharePreviewImageRemove = useCallback(() => {
+    updateForm((draft) => {
+      draft.metadata.images.social = '';
+    });
+  }, [updateForm]);
+
+  const handleKakaoCardImageRemove = useCallback(() => {
+    updateForm((draft) => {
+      draft.metadata.images.kakaoCard = '';
+    });
+  }, [updateForm]);
+
+  const handleGalleryImageRemove = useCallback(
+    (index: number) => {
+      updateForm((draft) => {
+        draft.pageData?.galleryImages?.splice(index, 1);
+      });
+    },
+    [updateForm]
+  );
+
+  const handleGalleryImageMove = useCallback(
+    (index: number, direction: 'up' | 'down') => {
+      updateForm((draft) => {
+        const images = draft.pageData?.galleryImages;
+        if (!images) {
+          return;
+        }
+
+        const targetIndex = direction === 'up' ? index - 1 : index + 1;
+        if (targetIndex < 0 || targetIndex >= images.length) {
+          return;
+        }
+
+        [images[index], images[targetIndex]] = [images[targetIndex], images[index]];
+      });
+    },
+    [updateForm]
+  );
+
   return {
     handleTriggerPicker,
     handleCoverUpload,
     handleSharePreviewUpload,
     handleKakaoCardUpload,
     handleGalleryUpload,
+    handleCoverImageRemove,
+    handleSharePreviewImageRemove,
+    handleKakaoCardImageRemove,
+    handleGalleryImageRemove,
+    handleGalleryImageMove,
   };
 }

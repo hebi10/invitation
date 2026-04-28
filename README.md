@@ -4,8 +4,8 @@
 
 현재 프로젝트의 핵심 방향은 아래와 같습니다.
 
-- 공개 청첩장 테마는 `emotional`, `simple` 2가지를 사용합니다.
-- 공개 URL은 `/{slug}/emotional`, `/{slug}/simple`를 실제 경로로 사용하고, `/{slug}`는 `/{slug}/{defaultTheme}`로 리다이렉트합니다.
+- 공개 청첩장 테마는 `emotional`, `romantic`, `simple` 3가지를 사용합니다.
+- 공개 URL은 `/{slug}`에서 기본 테마를 직접 렌더링하고, `/{slug}/emotional`, `/{slug}/romantic`, `/{slug}/simple`를 테마별 실제 경로로 사용합니다.
 - 공개 청첩장은 `Firestore 우선 + 로컬 sample fallback` 구조로 렌더링합니다.
 - 웹 고객 편집기(`/page-editor/[slug]`)와 청첩장 만들기(`/page-wizard`)는 관리자 전용으로 동작합니다.
 - Firestore source of truth는 `events/{eventId}` 축입니다.
@@ -44,9 +44,11 @@
 - `/`
   메인 페이지
 - `/{slug}`
-  공개 URL 진입용 리다이렉트 라우트
+  기본 테마 공개 청첩장
 - `/{slug}/emotional`
   감성형 청첩장
+- `/{slug}/romantic`
+  로맨틱형 청첩장
 - `/{slug}/simple`
   심플형 청첩장
 - `/memory/{slug}`
@@ -90,7 +92,7 @@
 
 - 섹션별 입력
 - 실시간 섹션 미리보기
-- 감성형 / 심플형 미리보기 전환
+- 감성형 / 로맨틱형 / 심플형 미리보기 전환
 - 자동 저장
 - 페이지별 비밀번호 기반 진입
 
@@ -119,22 +121,25 @@
 
 ## 테마 시스템
 
-현재 실제 운영 테마는 아래 2개입니다.
+현재 실제 운영 테마는 아래 3개입니다.
 
 - `emotional`
+- `romantic`
 - `simple`
 
 URL 규칙:
 
-- `/{slug}`는 리다이렉트 전용이고 `/{slug}/{defaultTheme}`로 이동합니다.
+- `/{slug}`는 기본 테마를 직접 렌더링합니다.
 - `/{slug}/emotional`은 `emotional` 실제 페이지입니다.
+- `/{slug}/romantic`은 `romantic` 실제 페이지입니다.
 - `/{slug}/simple`은 `simple` 실제 페이지입니다.
 
-공유 URL, 카카오 공유, SEO canonical은 실제 테마 경로(`/{slug}/emotional`, `/{slug}/simple`) 기준으로 맞춰집니다.
+공유 URL, 카카오 공유, SEO canonical은 현재 렌더링 중인 공개 경로 기준으로 맞춰집니다.
 
 관련 파일:
 
 - `src/app/_components/themeRenderers/emotional.tsx`
+- `src/app/_components/themeRenderers/romantic.tsx`
 - `src/app/_components/themeRenderers/simple.tsx`
 - `src/lib/invitationVariants.ts`
 - `src/app/_components/weddingThemes.ts`
@@ -378,9 +383,9 @@ REVENUECAT_SERVER_API_KEY=
 설명:
 
 - `FIREBASE_SERVICE_ACCOUNT_JSON`
-  서비스 계정 JSON 전체를 문자열로 주입할 때 사용
+  App Hosting Secret Manager 또는 배포 환경 변수로 서비스 계정 JSON 전체를 문자열 주입할 때 사용
 - `GOOGLE_APPLICATION_CREDENTIALS`
-  서비스 계정 JSON 파일 경로
+  로컬 스크립트 실행용 서비스 계정 JSON 파일 경로. 파일은 저장소 루트에 두지 않습니다.
 - `CLIENT_EDITOR_SESSION_SECRET`
   고객 편집 세션 서명용 서버 전용 비밀값
 - `MEMORY_METADATA_SYNC_STRICT`
@@ -397,10 +402,12 @@ npm run dev
 
 ## 배포 기준
 
-- 이 저장소의 웹 앱은 API 라우트와 SSR 라우트를 사용하므로 정적 `out` 기반 Firebase Hosting 배포를 기본값으로 사용하지 않습니다.
+- 이 저장소의 웹 앱은 API 라우트와 SSR 라우트를 사용하므로 정적 `out` 기반 Firebase Hosting 배포를 사용하지 않습니다.
+- 웹 런타임은 Firebase App Hosting으로 배포합니다.
 - `firebase.json`은 Firestore/Storage rules 배포 설정만 유지합니다.
 - `npm run deploy:firebase`는 현재 rules 배포만 수행합니다.
-- 웹 런타임 배포는 Firebase App Hosting, Cloud Run, Vercel처럼 Next.js 동적 라우트를 지원하는 호스팅으로 통일합니다.
+- App Hosting은 `package.json`의 `build` 스크립트와 `apphosting.yaml` 런타임 설정을 기준으로 빌드/롤아웃합니다.
+- 서버 비밀값은 저장소의 JSON 파일이 아니라 Firebase App Hosting Secret Manager 참조로 주입합니다.
 
 개발 서버는 빌드 캐시 꼬임을 줄이기 위해 `npm run dev`에서 `.next`를 먼저 지우고 시작합니다.
 
@@ -427,7 +434,6 @@ npm run sync:memory-metadata
 npm run build
 npm run build:memory-metadata-strict
 npm run typecheck
-npm run export
 npm run preview
 npm run lint
 npm run check
@@ -455,8 +461,6 @@ npm run monitor:event-rollout
   `.next` 캐시 삭제
 - `sync:memory-metadata`
   메모리 페이지 메타데이터 snapshot 생성
-- `export`
-  현재는 `next build`와 동일하게 동작
 - `preview`
   `next start -p 3000`
 - `check`
@@ -489,7 +493,7 @@ node scripts/firebase-static-hosting-migration.mjs sanitize-memory-pages --execu
 - 비관리자 사용자는 관리자 전용 안내 문구만 확인 가능
 - 섹션별 입력
 - 자동 저장
-- 감성형 / 심플형 미리보기 전환
+- 감성형 / 로맨틱형 / 심플형 미리보기 전환
 - 공개 상태 전환
 - 기본값 복원
 - 변경 취소
@@ -570,28 +574,28 @@ node scripts/firebase-static-hosting-migration.mjs sanitize-memory-pages --execu
 
 - `/{slug}`
 - `/{slug}/emotional`
+- `/{slug}/romantic`
 - `/{slug}/simple`
 - `/admin`
 - `/page-editor/{slug}`
 - `/page-wizard/{slug}`
 
-`firebase.json`은 정적 Hosting `out/` 배포 설정을 제거하고 Firestore / Storage rules 배포 설정만 유지합니다.
+`firebase.json`은 정적 Hosting `out/` 배포 설정을 제거하고 Firestore / Storage rules 배포 설정만 유지합니다. 웹 런타임은 Firebase App Hosting backend가 담당합니다.
 
 정리:
 
 - Firestore / Storage rules 배포는 `npm run deploy:firebase`로 수행
-- 동적 청첩장 / 관리자 / 편집기 웹 런타임은 Next.js SSR/API 지원 호스팅으로 배포
+- 동적 청첩장 / 관리자 / 편집기 웹 런타임은 Firebase App Hosting으로 배포
+- App Hosting runtime은 `apphosting.yaml`의 `runConfig`를 사용
+- `FIREBASE_SERVICE_ACCOUNT_JSON`, `CLIENT_EDITOR_SESSION_SECRET`, `REVENUECAT_SERVER_API_KEY` 같은 서버 비밀값은 Secret Manager로 주입
 
-권장 방향:
-
-1. Firebase App Hosting 또는 동적 런타임 호스팅 구조로 웹 배포 통일
-2. 정적 export 전용 배포가 필요하면 별도 Firebase Hosting 설정 파일로 분리
+정적 export 전용 배포가 필요하면 현재 App Hosting 설정과 분리된 별도 Firebase Hosting 설정 파일을 사용합니다.
 
 ## 현재 제약 사항
 
 - 메모리 페이지는 현재 seed slug 기준으로만 static params를 생성합니다.
 - 관리자에서 완전한 신규 페이지 draft 생성 흐름은 계속 정리 중입니다.
-- 웹 런타임 배포 파이프라인은 동적 Next 호스팅 기준으로 별도 연결이 필요합니다.
+- Firebase App Hosting backend와 GitHub live branch 연결은 Firebase 콘솔에서 관리합니다.
 
 ## 검증 권장 명령
 

@@ -1,7 +1,7 @@
 'use client';
 
 import { useQueryClient } from '@tanstack/react-query';
-import { type ChangeEvent, type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { type ReactNode, useCallback, useEffect, useState } from 'react';
 
 import { useAdmin } from '@/contexts';
 import {
@@ -9,13 +9,11 @@ import {
 } from '@/lib/appQuery';
 import { USE_FIREBASE } from '@/lib/firebase';
 import {
-  buildInvitationThemeRoutePath,
   DEFAULT_INVITATION_THEME,
   getInvitationThemeLabel,
   INVITATION_THEME_KEYS,
 } from '@/lib/invitationThemes';
 import { resolveInvitationFeatures } from '@/lib/invitationProducts';
-import { toUserFacingKoreanErrorMessage } from '@/lib/userFacingErrorMessage';
 import {
   DEFAULT_INVITATION_MUSIC_VOLUME,
   clampInvitationMusicVolume,
@@ -27,17 +25,8 @@ import {
   setInvitationMusicLibrary,
 } from '@/lib/musicLibrary';
 import {
-  getEditableImageUploadHint,
   getStorageDownloadUrl,
-  uploadClientEditorImage,
-  uploadPageEditorImage,
-  validateEditableImageBatch,
 } from '@/services/imageService';
-import {
-  restoreInvitationPageConfig,
-  saveInvitationPageConfig,
-  setInvitationPagePublished,
-} from '@/services/invitationPageService';
 import { getInvitationMusicLibraryFromStorage } from '@/services/musicService';
 import type {
   InvitationPageSeed,
@@ -64,12 +53,8 @@ import {
   type EditorStepKey,
 } from './pageEditorContent';
 import {
-  buildStepReviews,
   buildWeddingSummary,
-  findFirstInvalidRequiredStep,
   formatSavedAt,
-  getNextStepKey,
-  getPreviousStepKey,
   MAX_REPEATABLE_ITEMS,
   syncWeddingPresentation,
 } from './pageEditorDerivedState';
@@ -79,32 +64,30 @@ import {
   renderFieldMeta,
 } from './pageEditorFieldMeta';
 import {
+  usePageEditorProgress,
+} from './pageEditorHooks';
+import {
   type EditablePageEditorConfig,
   usePageEditorAccessQueries,
 } from './pageEditorDataHooks';
+import type { NoticeState, SaveState } from './pageEditorClientTypes';
+import { usePageEditorImageUpload } from './pageEditorImageUploadHook';
+import { usePageEditorPersistence } from './pageEditorPersistenceHooks';
+import { usePageEditorPreviewState } from './pageEditorPreviewState';
+import { usePageEditorVisibility } from './pageEditorVisibilityHook';
 import styles from './page.module.css';
-import { type PreviewThemeKey } from './pageEditorPreviewUtils';
 import {
   cloneConfig,
   createEmptyAccount,
   createEmptyGuideItem,
   keywordsToText,
   normalizeFormConfig,
-  prepareConfigForSave,
   textToKeywords,
   type AccountKind,
   type GuideKind,
-  type NoticeTone,
   type ParentRole,
   type PersonRole,
 } from './pageEditorUtils';
-
-const AUTOSAVE_DELAY_MS = 1500;
-
-type NoticeState = { tone: NoticeTone; message: string } | null;
-type SaveState = 'idle' | 'autosaving' | 'saving' | 'saved' | 'error' | 'publishing';
-type WorkspaceView = 'form' | 'preview';
-type UploadFieldKind = 'wedding' | 'favicon' | 'gallery';
 
 interface PageEditorClientProps {
   slug: string;
@@ -134,22 +117,21 @@ export default function PageEditorClient({
   const [dataSourceLabel, setDataSourceLabel] = useState('기본 샘플 사용 중');
   const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
-  const [isSavingVisibility, setIsSavingVisibility] = useState(false);
-  const [isRefreshing, setIsRefreshing] = useState(false);
-  const [isRestoring, setIsRestoring] = useState(false);
   const [saveState, setSaveState] = useState<SaveState>('idle');
   const [notice, setNotice] = useState<NoticeState>(null);
   const [defaultTheme, setDefaultTheme] = useState<InvitationThemeKey>(DEFAULT_INVITATION_THEME);
-  const [previewTheme, setPreviewTheme] = useState<PreviewThemeKey>(DEFAULT_INVITATION_THEME);
-  const [workspaceView, setWorkspaceView] = useState<WorkspaceView>('form');
   const [isStepMenuOpen, setIsStepMenuOpen] = useState(false);
   const [activeStep, setActiveStep] = useState<EditorStepKey | null>('basic');
   const [highlightedStep, setHighlightedStep] = useState<EditorStepKey | null>('basic');
-  const [uploadingField, setUploadingField] = useState<UploadFieldKind | null>(null);
-  const coverUploadInputRef = useRef<HTMLInputElement | null>(null);
-  const faviconUploadInputRef = useRef<HTMLInputElement | null>(null);
-  const galleryUploadInputRef = useRef<HTMLInputElement | null>(null);
+  const {
+    previewTheme,
+    setPreviewTheme,
+    workspaceView,
+    setWorkspaceView,
+    previewLinks,
+    currentPreviewHref,
+    handleCopyPreviewLink,
+  } = usePageEditorPreviewState({ slug, setNotice });
   const { configQuery } = usePageEditorAccessQueries({
     slug,
     authUserUid: authUser?.uid,
@@ -165,10 +147,6 @@ export default function PageEditorClient({
     formState?.couple.bride.name ?? initialBrideName,
     formState?.displayName || initialDisplayName || slug
   );
-  const previewLinks = INVITATION_THEME_KEYS.map((themeKey) => ({
-    href: buildInvitationThemeRoutePath(slug, themeKey),
-    label: `${getInvitationThemeLabel(themeKey)} 청첩장 보기`,
-  }));
 
   const hasConfigChanges = Boolean(
     formState &&
@@ -178,45 +156,22 @@ export default function PageEditorClient({
   const hasPublishChanges = published !== baselinePublished;
   const isDirty = hasConfigChanges || hasPublishChanges;
 
-  const stepReviews = useMemo(() => buildStepReviews(formState), [formState]);
-  const invitationFeatures = useMemo(
-    () => resolveInvitationFeatures(formState?.productTier, formState?.features),
-    [formState?.features, formState?.productTier]
-  );
-  const maxGalleryImages = invitationFeatures.maxGalleryImages;
-  const firstInvalidRequiredStep = useMemo(
-    () => findFirstInvalidRequiredStep(stepReviews),
-    [stepReviews]
-  );
-  const totalRequiredFields = useMemo(
-    () =>
-      EDITOR_STEPS.filter((step) => !step.isOptional).reduce(
-        (total, step) => total + stepReviews[step.key].requiredCount,
-        0
-      ),
-    [stepReviews]
-  );
-  const completedRequiredFields = useMemo(
-    () =>
-      EDITOR_STEPS.filter((step) => !step.isOptional).reduce(
-        (total, step) => total + stepReviews[step.key].completedRequiredCount,
-        0
-      ),
-    [stepReviews]
-  );
-  const progressPercent =
-    totalRequiredFields > 0
-      ? Math.round((completedRequiredFields / totalRequiredFields) * 100)
-      : 0;
-  const currentPreviewHref = buildInvitationThemeRoutePath(slug, previewTheme);
+  const {
+    stepReviews,
+    maxGalleryImages,
+    firstInvalidRequiredStep,
+    totalRequiredFields,
+    completedRequiredFields,
+    progressPercent,
+    currentStepKey,
+    currentStep,
+    currentReview,
+    previousStepKey,
+    previousStep,
+    nextStepKey,
+    nextStep,
+  } = usePageEditorProgress({ formState, activeStep });
   const weddingSummary = formState ? buildWeddingSummary(formState) : '아직 입력되지 않았습니다.';
-  const currentStepKey = activeStep ?? 'basic';
-  const currentStep = STEP_MAP[currentStepKey];
-  const currentReview = stepReviews[currentStepKey];
-  const previousStepKey = useMemo(() => getPreviousStepKey(activeStep), [activeStep]);
-  const previousStep = previousStepKey ? STEP_MAP[previousStepKey] : null;
-  const nextStepKey = useMemo(() => getNextStepKey(activeStep), [activeStep]);
-  const nextStep = nextStepKey ? STEP_MAP[nextStepKey] : null;
   const primaryActionLabel =
     activeStep === 'final'
       ? published
@@ -244,7 +199,7 @@ export default function PageEditorClient({
   const systemStatusLabel = hasCustomConfig ? '맞춤 설정 저장됨' : dataSourceLabel;
   const canCopyPublishedLink = published && !hasPublishChanges;
 
-  const applyLoadedConfig = (config: EditablePageEditorConfig) => {
+  const applyLoadedConfig = useCallback((config: EditablePageEditorConfig) => {
     if (!config) {
       throw new Error('설정 정보를 찾을 수 없습니다.');
     }
@@ -262,7 +217,7 @@ export default function PageEditorClient({
     );
     setLastSavedAt(config.lastSavedAt);
     setSaveState('idle');
-  };
+  }, [setPreviewTheme]);
   const syncEditableQueryCache = useCallback(
     (nextConfig: InvitationPageSeed, nextPublished: boolean, nextLastSavedAt: Date) => {
       queryClient.setQueryData(appQueryKeys.editableInvitationPage(slug), {
@@ -347,7 +302,14 @@ export default function PageEditorClient({
       });
       setIsLoading(false);
     }
-  }, [canEdit, configQuery.data, configQuery.error, configQuery.isLoading, isAdminLoading]);
+  }, [
+    applyLoadedConfig,
+    canEdit,
+    configQuery.data,
+    configQuery.error,
+    configQuery.isLoading,
+    isAdminLoading,
+  ]);
 
   useEffect(() => {
     if (!formState) {
@@ -404,44 +366,12 @@ export default function PageEditorClient({
   }, [formState?.musicStoragePath, formState?.musicUrl]);
 
   useEffect(() => {
-    if (
-      !hasConfigChanges ||
-      hasPublishChanges ||
-      !formState ||
-      !canEdit ||
-      isLoading ||
-      isSaving ||
-      isSavingVisibility ||
-      isRestoring
-    ) {
-      return;
-    }
-
-    const timeout = window.setTimeout(() => {
-      void persistDraft('auto');
-    }, AUTOSAVE_DELAY_MS);
-
-    return () => {
-      window.clearTimeout(timeout);
-    };
-  }, [
-    canEdit,
-    formState,
-    hasConfigChanges,
-    hasPublishChanges,
-    isLoading,
-    isRestoring,
-    isSaving,
-    isSavingVisibility,
-  ]);
-
-  useEffect(() => {
     if (isDirty) {
       setSaveState((current) => (current === 'saved' ? 'idle' : current));
     }
   }, [isDirty]);
 
-  const updateForm = (updater: (draft: InvitationPageSeed) => void) => {
+  const updateForm = useCallback((updater: (draft: InvitationPageSeed) => void) => {
     setFormState((current) => {
       if (!current) {
         return current;
@@ -451,206 +381,86 @@ export default function PageEditorClient({
       updater(next);
       return next;
     });
-  };
+  }, []);
 
-  const persistDraft = async (mode: 'manual' | 'auto') => {
-    if (!formState) {
-      return false;
-    }
+  const jumpToStep = useCallback((stepKey: EditorStepKey) => {
+    setActiveStep(stepKey);
+    setHighlightedStep(stepKey);
+    setWorkspaceView('form');
+    setIsStepMenuOpen(false);
+  }, [setWorkspaceView]);
 
-    if (mode === 'manual') {
-      setIsSaving(true);
-    }
-    setSaveState(mode === 'auto' ? 'autosaving' : 'saving');
+  const {
+    isSavingVisibility,
+    handleApplyVisibility,
+  } = usePageEditorVisibility({
+    slug,
+    formState,
+    published,
+    hasConfigChanges,
+    defaultTheme,
+    firstInvalidRequiredStep,
+    jumpToStep,
+    setFormState,
+    setBaselineState,
+    setBaselinePublished,
+    setHasCustomConfig,
+    setDataSourceLabel,
+    setLastSavedAt,
+    setSaveState,
+    setNotice,
+    syncEditableQueryCache,
+    invalidateEditorCaches,
+  });
 
-    try {
-      const nextConfig = prepareConfigForSave(formState, slug);
-      await saveInvitationPageConfig(nextConfig, {
-        published: baselinePublished,
-        defaultTheme,
-      });
-      const savedAt = new Date();
-      setFormState(cloneConfig(nextConfig));
-      setBaselineState(cloneConfig(nextConfig));
-      setHasCustomConfig(true);
-      setDataSourceLabel('맞춤 설정 사용 중');
-      setLastSavedAt(savedAt);
-      syncEditableQueryCache(nextConfig, baselinePublished, savedAt);
-      await invalidateEditorCaches();
-      setSaveState('saved');
+  const {
+    isSaving,
+    isRefreshing,
+    isRestoring,
+    persistDraft,
+    handleRefresh,
+    handleRestore,
+  } = usePageEditorPersistence({
+    slug,
+    formState,
+    baselinePublished,
+    defaultTheme,
+    hasConfigChanges,
+    hasPublishChanges,
+    isDirty,
+    canEdit,
+    isLoading,
+    isSavingVisibility,
+    refetchConfig: configQuery.refetch,
+    applyLoadedConfig,
+    setFormState,
+    setBaselineState,
+    setHasCustomConfig,
+    setDataSourceLabel,
+    setLastSavedAt,
+    setSaveState,
+    setNotice,
+    syncEditableQueryCache,
+    invalidateEditorCaches,
+  });
 
-      if (mode === 'manual') {
-        setNotice({
-          tone: 'success',
-          message: '변경 내용을 임시저장했습니다.',
-        });
-      }
-
-      return true;
-    } catch (error) {
-      console.error('[PageEditorClient] failed to save config', error);
-      setSaveState('error');
-
-      if (mode === 'manual') {
-        setNotice({
-          tone: 'error',
-          message: '임시저장에 실패했습니다. 입력 내용을 확인한 뒤 다시 시도해 주세요.',
-        });
-      }
-
-      return false;
-    } finally {
-      if (mode === 'manual') {
-        setIsSaving(false);
-      }
-    }
-  };
-
-  const loadLatestConfig = async (successMessage?: string) => {
-    setIsRefreshing(true);
-
-    try {
-      const refreshed = await configQuery.refetch();
-      if (!refreshed.data) {
-        throw refreshed.error ?? new Error('설정 정보를 찾을 수 없습니다.');
-      }
-
-      applyLoadedConfig(refreshed.data);
-      if (successMessage) {
-        setNotice({ tone: 'success', message: successMessage });
-      }
-    } catch (error) {
-      console.error('[PageEditorClient] failed to refresh config', error);
-      setSaveState('error');
-      setNotice({
-        tone: 'error',
-        message: '최신 설정을 불러오지 못했습니다. 다시 시도해 주세요.',
-      });
-    } finally {
-      setIsRefreshing(false);
-    }
-  };
-
-  const handleRefresh = async () => {
-    if (isDirty && typeof window !== 'undefined') {
-      const confirmed = window.confirm(
-        '저장하지 않은 변경 사항이 사라집니다. 최신 설정을 다시 불러올까요?'
-      );
-      if (!confirmed) {
-        return;
-      }
-    }
-
-    await loadLatestConfig('최신 설정을 다시 불러왔습니다.');
-  };
-
-  const handleRestore = async () => {
-    if (typeof window !== 'undefined') {
-      const confirmed = window.confirm(
-        '기본값으로 복원하면 현재 맞춤 설정이 초기화됩니다. 계속할까요?'
-      );
-      if (!confirmed) {
-        return;
-      }
-    }
-
-    setIsRestoring(true);
-
-    try {
-      await restoreInvitationPageConfig(slug, {
-        published: baselinePublished,
-        defaultTheme,
-      });
-      await invalidateEditorCaches();
-      await loadLatestConfig('기본 설정으로 복원했습니다.');
-    } catch (error) {
-      console.error('[PageEditorClient] failed to restore config', error);
-      setSaveState('error');
-      setNotice({
-        tone: 'error',
-        message: '기본 설정으로 복원하지 못했습니다. 다시 시도해 주세요.',
-      });
-    } finally {
-      setIsRestoring(false);
-    }
-  };
-
-  const handleApplyVisibility = async () => {
-    if (published && firstInvalidRequiredStep) {
-      const step = STEP_MAP[firstInvalidRequiredStep];
-      jumpToStep(firstInvalidRequiredStep);
-      setNotice({
-        tone: 'error',
-        message: `${step.step} 단계의 필수 정보를 먼저 입력해 주세요.`,
-      });
-      return;
-    }
-
-    setIsSavingVisibility(true);
-    setSaveState('publishing');
-
-    try {
-      if (hasConfigChanges && formState) {
-        const nextConfig = prepareConfigForSave(formState, slug);
-        await saveInvitationPageConfig(nextConfig, {
-          published,
-          defaultTheme,
-        });
-        const savedAt = new Date();
-        setFormState(cloneConfig(nextConfig));
-        setBaselineState(cloneConfig(nextConfig));
-        setHasCustomConfig(true);
-        setDataSourceLabel('맞춤 설정 사용 중');
-        syncEditableQueryCache(nextConfig, published, savedAt);
-      } else {
-        await setInvitationPagePublished(slug, published, {
-          defaultTheme,
-        });
-      }
-
-      setBaselinePublished(published);
-      const savedAt = new Date();
-      setLastSavedAt(savedAt);
-      if (formState && !hasConfigChanges) {
-        syncEditableQueryCache(formState, published, savedAt);
-      }
-      await invalidateEditorCaches();
-      setSaveState('saved');
-      setNotice({
-        tone: 'success',
-        message: published ? '발행 상태를 반영했습니다.' : '비공개 상태를 반영했습니다.',
-      });
-    } catch (error) {
-      console.error('[PageEditorClient] failed to apply visibility', error);
-      setSaveState('error');
-      setNotice({
-        tone: 'error',
-        message: '발행 상태를 반영하지 못했습니다. 다시 시도해 주세요.',
-      });
-    } finally {
-      setIsSavingVisibility(false);
-    }
-  };
-
-  const handleCopyPreviewLink = async () => {
-    if (typeof window === 'undefined') {
-      return;
-    }
-
-    try {
-      await navigator.clipboard.writeText(`${window.location.origin}${currentPreviewHref}`);
-      setNotice({
-        tone: 'success',
-        message: '현재 미리보기 링크를 복사했습니다.',
-      });
-    } catch (error) {
-      console.error('[PageEditorClient] failed to copy preview link', error);
-      setNotice({
-        tone: 'error',
-        message: '링크를 복사하지 못했습니다. 브라우저 권한을 확인해 주세요.',
-      });
-    }
-  };
+  const {
+    uploadingField,
+    coverUploadInputRef,
+    faviconUploadInputRef,
+    galleryUploadInputRef,
+    handleTriggerImagePicker,
+    handleSingleImageUploadChange,
+    handleGalleryUploadChange,
+  } = usePageEditorImageUpload({
+    slug,
+    canUploadImages,
+    uploadRole: isAdminLoggedIn ? 'admin' : 'client',
+    formState,
+    maxGalleryImages,
+    updateForm,
+    setNotice,
+  });
 
   const handleTopLevelFieldChange = (
     field: 'displayName' | 'description' | 'venue',
@@ -950,262 +760,6 @@ export default function PageEditorClient({
     });
   };
 
-  const handleTriggerImagePicker = (field: UploadFieldKind) => {
-    if (!canUploadImages) {
-      setNotice({
-        tone: 'error',
-        message: '이미지 업로드는 관리자 또는 고객 편집 로그인 후 사용할 수 있습니다.',
-      });
-      return;
-    }
-
-    if (!canUploadImages) {
-      setNotice({
-        tone: 'error',
-        message: '이미지 업로드는 Firebase가 켜진 환경에서 편집 권한이 있을 때만 사용할 수 있습니다.',
-      });
-      return;
-    }
-
-    if (field === 'wedding') {
-      coverUploadInputRef.current?.click();
-      return;
-    }
-
-    if (field === 'favicon') {
-      faviconUploadInputRef.current?.click();
-      return;
-    }
-
-    galleryUploadInputRef.current?.click();
-  };
-
-  const handleUploadAsset = async (
-    field: UploadFieldKind,
-    files: File[]
-  ) => {
-    if (!formState || files.length === 0) {
-      return;
-    }
-
-    const handledByNewFlow = await (async () => {
-      if (!canUploadImages) {
-        setNotice({
-          tone: 'error',
-          message: '이미지 업로드는 관리자 또는 고객 편집 로그인 후 사용할 수 있습니다.',
-        });
-        return true;
-      }
-
-      const assetKind = field === 'gallery' ? 'gallery' : field === 'wedding' ? 'cover' : 'favicon';
-      const batchValidationError = validateEditableImageBatch(
-        files,
-        assetKind,
-        field === 'gallery' ? Math.min(10, maxGalleryImages) : 1
-      );
-
-      if (batchValidationError) {
-        setNotice({
-          tone: 'error',
-          message: batchValidationError,
-        });
-        return true;
-      }
-
-      setUploadingField(field);
-
-      try {
-        const uploadImage = isAdminLoggedIn ? uploadPageEditorImage : uploadClientEditorImage;
-
-        if (field === 'gallery') {
-          const currentGalleryCount = formState.pageData?.galleryImages?.length ?? 0;
-          const remainingSlots = maxGalleryImages - currentGalleryCount;
-
-          if (remainingSlots <= 0) {
-            setNotice({
-              tone: 'error',
-              message: `갤러리 이미지는 최대 ${maxGalleryImages}장까지 설정할 수 있습니다.`,
-            });
-            return true;
-          }
-
-          const uploadTargets = files.slice(0, remainingSlots);
-          const uploadTargetValidationError = validateEditableImageBatch(
-            uploadTargets,
-            'gallery',
-            Math.min(10, remainingSlots)
-          );
-
-          if (uploadTargetValidationError) {
-            setNotice({
-              tone: 'error',
-              message: uploadTargetValidationError,
-            });
-            return true;
-          }
-
-          const uploadedImages = await Promise.all(
-            uploadTargets.map((file) => uploadImage(file, slug, 'gallery'))
-          );
-
-          updateForm((draft) => {
-            if (!draft.pageData) {
-              return;
-            }
-
-            draft.pageData.galleryImages = [
-              ...(draft.pageData.galleryImages ?? []),
-              ...uploadedImages.map((image) => image.url),
-            ].slice(0, maxGalleryImages);
-          });
-
-          setNotice({
-            tone: 'success',
-            message:
-              files.length > uploadTargets.length
-                ? `갤러리 이미지 ${uploadTargets.length}장만 추가했습니다. 최대 ${maxGalleryImages}장까지 설정할 수 있습니다.`
-                : `갤러리 이미지 ${uploadedImages.length}장을 업로드했습니다. ${getEditableImageUploadHint('gallery')}`,
-          });
-          return true;
-        }
-
-        const uploadTarget = files[0];
-        const uploadedImage = await uploadImage(
-          uploadTarget,
-          slug,
-          field === 'wedding' ? 'cover' : 'favicon'
-        );
-
-        updateForm((draft) => {
-          draft.metadata.images[field] = uploadedImage.url;
-        });
-
-        setNotice({
-          tone: 'success',
-          message:
-            field === 'wedding'
-              ? `대표 이미지를 업로드했습니다. ${getEditableImageUploadHint('cover')}`
-              : `파비콘을 업로드했습니다. ${getEditableImageUploadHint('favicon')}`,
-        });
-      } catch (error) {
-        console.error('[PageEditorClient] failed to upload image asset', error);
-        setNotice({
-          tone: 'error',
-          message: toUserFacingKoreanErrorMessage(error, '이미지 업로드에 실패했습니다.'),
-        });
-      } finally {
-        setUploadingField((current) => (current === field ? null : current));
-      }
-
-      return true;
-    })();
-
-    if (handledByNewFlow) {
-      return;
-    }
-
-    if (!canUploadImages) {
-      setNotice({
-        tone: 'error',
-        message: '이미지 업로드를 사용할 수 없는 환경입니다.',
-      });
-      return;
-    }
-
-    setUploadingField(field);
-    if (!isAdminLoggedIn && !canUploadImages) {
-      setNotice({
-        tone: 'error',
-        message: '이미지 업로드 전에 먼저 페이지 비밀번호를 확인해 주세요.',
-      });
-      return;
-    }
-
-    setUploadingField(field);
-
-    try {
-      if (field === 'gallery') {
-        const currentGalleryCount = formState.pageData?.galleryImages?.length ?? 0;
-        const remainingSlots = maxGalleryImages - currentGalleryCount;
-
-        if (remainingSlots <= 0) {
-          setNotice({
-            tone: 'error',
-            message: `갤러리 이미지는 최대 ${maxGalleryImages}장까지 설정할 수 있습니다.`,
-          });
-          return;
-        }
-
-        const uploadTargets = files.slice(0, remainingSlots);
-        const uploadedImages = await Promise.all(
-          uploadTargets.map((file) => uploadPageEditorImage(file, slug, 'gallery'))
-        );
-
-        updateForm((draft) => {
-          if (!draft.pageData) {
-            return;
-          }
-
-          draft.pageData.galleryImages = [
-            ...(draft.pageData.galleryImages ?? []),
-            ...uploadedImages.map((image) => image.url),
-          ].slice(0, maxGalleryImages);
-        });
-
-        setNotice({
-          tone: 'success',
-          message:
-            files.length > uploadTargets.length
-              ? `갤러리 이미지 ${uploadTargets.length}장만 추가했습니다. 최대 ${maxGalleryImages}장까지 설정할 수 있습니다.`
-              : `갤러리 이미지 ${uploadedImages.length}장을 추가했습니다. 자동 저장이 곧 진행됩니다.`,
-        });
-        return;
-      }
-
-      const uploadTarget = files[0];
-      const uploadedImage = await uploadPageEditorImage(
-        uploadTarget,
-        slug,
-        field === 'wedding' ? 'cover' : 'favicon'
-      );
-
-      updateForm((draft) => {
-        draft.metadata.images[field] = uploadedImage.url;
-      });
-
-      setNotice({
-        tone: 'success',
-        message:
-          field === 'wedding'
-            ? '대표 이미지를 업로드했습니다. 자동 저장이 곧 진행됩니다.'
-            : '파비콘을 업로드했습니다. 자동 저장이 곧 진행됩니다.',
-      });
-    } catch (error) {
-      console.error('[PageEditorClient] failed to upload image asset', error);
-      setNotice({
-        tone: 'error',
-        message: '이미지 업로드에 실패했습니다. Storage 규칙과 네트워크 상태를 확인해 주세요.',
-      });
-    } finally {
-      setUploadingField((current) => (current === field ? null : current));
-    }
-  };
-
-  const handleSingleImageUploadChange = async (
-    field: 'wedding' | 'favicon',
-    event: ChangeEvent<HTMLInputElement>
-  ) => {
-    const files = Array.from(event.target.files ?? []);
-    event.target.value = '';
-    await handleUploadAsset(field, files);
-  };
-
-  const handleGalleryUploadChange = async (event: ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(event.target.files ?? []);
-    event.target.value = '';
-    await handleUploadAsset('gallery', files);
-  };
-
   const handlePersonFieldChange = (
     role: PersonRole,
     field: 'name' | 'order' | 'phone',
@@ -1354,13 +908,6 @@ export default function PageEditorClient({
 
       target[field] = value;
     });
-  };
-
-  const jumpToStep = (stepKey: EditorStepKey) => {
-    setActiveStep(stepKey);
-    setHighlightedStep(stepKey);
-    setWorkspaceView('form');
-    setIsStepMenuOpen(false);
   };
 
   const handlePrimaryAction = async () => {

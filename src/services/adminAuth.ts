@@ -31,6 +31,38 @@ type FirebaseAuthUserLike = {
   getIdToken: () => Promise<string>;
 };
 
+const ADMIN_SESSION_TIMEOUT_MS = 10000;
+
+function createAdminSessionTimeoutError() {
+  return new Error('관리자 권한 확인 시간이 초과되었습니다. 다시 로그인해 주세요.');
+}
+
+async function withAdminSessionTimeout<T>(
+  task: (signal: AbortSignal) => Promise<T>
+) {
+  const controller = new AbortController();
+  let abortListener: (() => void) | null = null;
+  const timeoutId = setTimeout(() => {
+    controller.abort();
+  }, ADMIN_SESSION_TIMEOUT_MS);
+
+  const timeoutPromise = new Promise<never>((_, reject) => {
+    abortListener = () => {
+      reject(createAdminSessionTimeoutError());
+    };
+    controller.signal.addEventListener('abort', abortListener, { once: true });
+  });
+
+  try {
+    return await Promise.race([task(controller.signal), timeoutPromise]);
+  } finally {
+    clearTimeout(timeoutId);
+    if (abortListener) {
+      controller.signal.removeEventListener('abort', abortListener);
+    }
+  }
+}
+
 async function getAuthModules() {
   const firebase = await ensureFirebaseInit();
   const authModule = await import('firebase/auth');
@@ -65,16 +97,23 @@ async function readAdminSessionResponse(response: Response) {
 }
 
 async function isUserAdmin(user: FirebaseAuthUserLike) {
-  const idToken = await user.getIdToken();
-  const response = await fetch('/api/admin/session', {
-    method: 'GET',
-    headers: {
-      Authorization: `Bearer ${idToken}`,
-    },
-    cache: 'no-store',
-  });
+  return withAdminSessionTimeout(async (signal) => {
+    const idToken = await user.getIdToken();
+    if (signal.aborted) {
+      throw createAdminSessionTimeoutError();
+    }
 
-  return readAdminSessionResponse(response);
+    const response = await fetch('/api/admin/session', {
+      method: 'GET',
+      headers: {
+        Authorization: `Bearer ${idToken}`,
+      },
+      cache: 'no-store',
+      signal,
+    });
+
+    return readAdminSessionResponse(response);
+  });
 }
 
 function toAuthUser(user: {
@@ -253,6 +292,13 @@ export function observeFirebaseSession(
   void getAuthModules()
     .then(({ auth, authModule }) => {
       if (!auth || disposed) {
+        if (!disposed) {
+          callback({
+            authUser: null,
+            adminUser: null,
+            isAdmin: false,
+          });
+        }
         return;
       }
 

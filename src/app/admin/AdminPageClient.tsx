@@ -82,7 +82,10 @@ export default function AdminPageClient() {
   const pathname = usePathname();
   const safePathname = pathname ?? '/admin';
   const searchParams = useSearchParams();
-  const safeSearchParams = searchParams ?? new URLSearchParams();
+  const safeSearchParams = useMemo(
+    () => searchParams ?? new URLSearchParams(),
+    [searchParams]
+  );
   const returnPath = (() => {
     const value = safeSearchParams.get('next');
     if (!value || !value.startsWith('/') || value.startsWith('//')) {

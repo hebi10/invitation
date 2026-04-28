@@ -12,6 +12,12 @@
   --shadow-soft: rgba(139, 110, 99, 0.1);
   
   /* 폰트 패밀리 - Next.js 폰트 변수 활용 */
+  --font-inter: 'Inter';
+  --font-noto-serif: 'Noto Serif KR';
+  --font-noto-sans: 'Noto Sans KR';
+  --font-cormorant: 'Cormorant Garamond';
+  --font-alex-brush: 'Alex Brush';
+  --font-gowun-dodum: 'Gowun Dodum';
   --font-serif: var(--font-noto-serif), 'Noto Serif KR', serif;
   --font-sans: var(--font-inter), var(--font-gowun-dodum), 'Inter', 'Noto Sans KR', system-ui, sans-serif;
   --font-script: var(--font-cormorant), 'Cormorant Garamond', serif;

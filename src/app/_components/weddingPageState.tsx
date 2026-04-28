@@ -356,8 +356,10 @@ export function useWeddingInvitationState(
     [options.theme, pageConfig]
   );
   const shouldRunClientPageQuery = !isAdminLoading && (isAdminLoggedIn || !initialPage);
-  const configuredGalleryImageUrls =
-    themedPageData?.galleryImages?.filter((imageUrl) => imageUrl.trim()) ?? [];
+  const configuredGalleryImageUrls = useMemo(
+    () => themedPageData?.galleryImages?.filter((imageUrl) => imageUrl.trim()) ?? [],
+    [themedPageData?.galleryImages]
+  );
   const configuredMainImageUrl = pageConfig?.metadata.images.wedding?.trim() ?? '';
   const shouldLoadStorageFallbackImages = useMemo(() => {
     if (!isAdminLoggedIn || !pageConfig) {
@@ -398,9 +400,10 @@ export function useWeddingInvitationState(
     shouldLoadStorageFallbackImages || shouldLoadStorageManagedImages
       ? storageImagesLoading
       : false;
+  const { refetch: refetchPage, isRefetching: isPageRefetching } = pageQuery;
   const refreshPage = useCallback(async () => {
-    await pageQuery.refetch();
-  }, [pageQuery.refetch]);
+    await refetchPage();
+  }, [refetchPage]);
 
   useEffect(() => {
     if (isAdminLoading) {
@@ -565,7 +568,7 @@ export function useWeddingInvitationState(
   const baseState: WeddingPageBaseState = {
     isLoading,
     setIsLoading,
-    isRefreshingPage: pageQuery.isRefetching,
+    isRefreshingPage: isPageRefetching,
     refreshPage,
     imagesLoading,
     heroImageUrl,

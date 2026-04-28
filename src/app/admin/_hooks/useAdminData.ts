@@ -146,14 +146,20 @@ export function useAdminData({
     refetchOnWindowFocus: false,
   });
 
-  const pages = pagesQuery.data ?? [];
-  const comments = commentsQuery.data ?? [];
+  const pages = useMemo(() => pagesQuery.data ?? [], [pagesQuery.data]);
+  const comments = useMemo(() => commentsQuery.data ?? [], [commentsQuery.data]);
   const clientPasswords = useMemo(
     () => toLegacyClientPasswords(passwordsQuery.data ?? []),
     [passwordsQuery.data]
   );
-  const customerAccounts = accountsQuery.data?.accounts ?? [];
-  const unassignedCustomerEvents = accountsQuery.data?.unassignedEvents ?? [];
+  const customerAccounts = useMemo(
+    () => accountsQuery.data?.accounts ?? [],
+    [accountsQuery.data?.accounts]
+  );
+  const unassignedCustomerEvents = useMemo(
+    () => accountsQuery.data?.unassignedEvents ?? [],
+    [accountsQuery.data?.unassignedEvents]
+  );
   const dashboardSummary = dashboardSummaryQuery.data ?? null;
   const memoryPublicCount = dashboardSummary?.memoryPublicCount ?? 0;
   const commentSummary = dashboardSummary

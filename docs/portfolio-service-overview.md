@@ -41,8 +41,9 @@
 | `/page-editor` | 관리자 전용 고객 편집 시작 | 관리자만 draft 생성 또는 진입 가능 | `screenshots/09-page-editor-create.png` |
 | `/page-editor/{slug}` | 관리자 전용 고객 편집기 | 관리자 권한 확인, 자동 저장, 미리보기 | `screenshots/10-page-editor-detail.png` |
 | `/{slug}/emotional` | 감성형 공개 청첩장 | 사진과 분위기 중심 공개 화면 | `screenshots/11-public-emotional.png` |
-| `/{slug}/simple` | 심플형 공개 청첩장 | 같은 데이터의 정보 중심 테마 | `screenshots/12-public-simple.png` |
-| `/memory/{slug}` | 추억 페이지 | 결혼식 이후 기록 확장 | `screenshots/13-memory-page.png` |
+| `/{slug}/romantic` | 로맨틱형 공개 청첩장 | 같은 데이터의 부드러운 카드형 테마 | `screenshots/12-public-romantic.png` |
+| `/{slug}/simple` | 심플형 공개 청첩장 | 같은 데이터의 정보 중심 테마 | `screenshots/13-public-simple.png` |
+| `/memory/{slug}` | 추억 페이지 | 결혼식 이후 기록 확장 | `screenshots/14-memory-page.png` |
 
 ## 6. 기술 구조
 | 영역 | 구현 기준 |
@@ -53,6 +54,7 @@
 | 파일 | Firebase Storage, 공개 읽기는 Firestore 공개 상태와 연동 |
 | 권한 | 웹 편집은 관리자 전용, 모바일 고객 흐름과 공개 방문자는 API와 rules에서 분리 |
 | 운영 방어 | 서버 repository 경계, Firestore 기반 rate limit, RevenueCat 서버 키 검증 |
+| 웹 배포 | Firebase App Hosting 기준 SSR/API 런타임 |
 
 ## 7. 데이터 흐름
 ### 공개 청첩장
@@ -68,7 +70,7 @@
 - 랜딩 페이지가 아니라 생성, 편집, 공개, 운영, 사후 페이지까지 이어지는 서비스 구조
 - 웹 편집을 관리자 전용으로 제한하고 모바일 고객 흐름과 분리한 운영 모델
 - 공개 상태와 표시 기간을 함께 다루는 실제 운영 정책
-- 테마 렌더러와 이벤트 타입을 확장할 수 있는 구조
+- `emotional`, `romantic`, `simple` 테마 렌더러와 이벤트 타입을 확장할 수 있는 구조
 - repository 경계와 QA 스크립트로 데이터 접근 원칙을 검증하는 흐름
 
 ## 9. 면접 설명 예시
@@ -82,11 +84,11 @@
 
 ## 10. 캡처 우선순위
 1. 공개 청첩장 감성형
-2. 관리자 전용 고객 편집기
-3. 관리자 대시보드
-4. 위자드 편집 화면
-5. 노출 기간 또는 비밀번호 관리 탭
-6. 추억 페이지
+2. 공개 청첩장 로맨틱형
+3. 관리자 전용 고객 편집기
+4. 관리자 대시보드
+5. 위자드 편집 화면
+6. 노출 기간 또는 비밀번호 관리 탭
 
 ## 11. 참고 문서
 - 이벤트 도메인 현재 기준: `event-domain-current-state.md`

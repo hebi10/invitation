@@ -311,7 +311,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
         setIsAuthenticating(false);
       }
     },
-    [clearSession, hasSessionExpired]
+    [clearSession, hasSessionExpired, updateHighRiskSession]
   );
 
   const restoreSession = useCallback(

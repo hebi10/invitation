@@ -36,6 +36,7 @@ firebase-debug.log
 
 # env files (can opt-in for committing if needed)
 .env*
+!.env.example
 
 # vercel
 .vercel
@@ -47,6 +48,8 @@ invitation-35d60-firebase-adminsdk-fbsvc-541a104160.json
 
 # local agent/tooling
 .claude/
+.codex/
+.codex-logs/
 
 # expo mobile app
 /apps/mobile/.expo/

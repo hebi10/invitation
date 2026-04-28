@@ -545,7 +545,6 @@ export function useImageUpload({
       }
     },
     [
-      apiBaseUrl,
       appendTrackedUploads,
       dashboard,
       deleteUploadedEntries,

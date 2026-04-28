@@ -111,7 +111,7 @@ export default function PageWizardResultClient({
           configState?.features
         ).showMusic,
       }),
-    [configState?.features, configState?.productTier]
+    [configState?.config.eventType, configState?.features, configState?.productTier]
   );
 
   const previewFormState = useMemo(() => {

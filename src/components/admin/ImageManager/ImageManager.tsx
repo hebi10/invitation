@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { useAdmin } from '@/contexts';
 import {
@@ -36,7 +36,7 @@ export default function ImageManager() {
   const [searchQuery, setSearchQuery] = useState('');
   const [expandedPages, setExpandedPages] = useState<Record<string, boolean>>({});
 
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     try {
       setIsLoading(true);
       setError('');
@@ -59,7 +59,7 @@ export default function ImageManager() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [selectedPage, showToast]);
 
   useEffect(() => {
     if (!isAdminLoggedIn) {
@@ -67,7 +67,7 @@ export default function ImageManager() {
     }
 
     void loadData();
-  }, [isAdminLoggedIn]);
+  }, [isAdminLoggedIn, loadData]);
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;

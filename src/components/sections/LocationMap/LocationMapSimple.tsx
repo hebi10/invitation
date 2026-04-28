@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { copyTextToClipboard } from '@/utils';
 import {
@@ -74,21 +74,7 @@ export default function LocationMapSimple({
     setIsClient(true);
   }, []);
 
-  useEffect(() => {
-    if (!isClient || (!hasAddress && !hasCoordinates)) {
-      return;
-    }
-
-    void loadKakaoMapsSdk()
-      .then(() => {
-        initializeKakaoMap();
-      })
-      .catch(() => {
-        setKakaoMapLoaded(true);
-      });
-  }, [isClient, address, hasAddress, hasCoordinates, venueName, kakaoMapConfig]);
-
-  const initializeKakaoMap = () => {
+  const initializeKakaoMap = useCallback(() => {
     const container = mapRef.current;
     if (!container || !window.kakao?.maps) {
       return;
@@ -176,7 +162,21 @@ export default function LocationMapSimple({
     } catch {
       setKakaoMapLoaded(true);
     }
-  };
+  }, [address, hasCoordinates, kakaoMapConfig, venueName]);
+
+  useEffect(() => {
+    if (!isClient || (!hasAddress && !hasCoordinates)) {
+      return;
+    }
+
+    void loadKakaoMapsSdk()
+      .then(() => {
+        initializeKakaoMap();
+      })
+      .catch(() => {
+        setKakaoMapLoaded(true);
+      });
+  }, [hasAddress, hasCoordinates, initializeKakaoMap, isClient]);
 
   const toggleControl = () => {
     const map = window.kakaoMapInstance;
