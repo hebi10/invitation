@@ -867,9 +867,32 @@
 
 .accountCardBadges {
   display: flex;
+  align-items: center;
   justify-content: flex-end;
   flex-wrap: wrap;
   gap: 8px;
+}
+
+.accountHeaderDangerButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 30px;
+  padding: 0 10px;
+  border: 1px solid #f1b5ae;
+  border-radius: 999px;
+  background: #fff2f0;
+  color: #b42318;
+  font: inherit;
+  font-size: 0.75rem;
+  font-weight: 800;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.accountHeaderDangerButton:disabled {
+  cursor: not-allowed;
+  opacity: 0.58;
 }
 
 .accountCardMetaGrid {
@@ -904,12 +927,6 @@
 
 .accountConnectSection {
   grid-column: 1 / -1;
-}
-
-.accountDangerSection {
-  grid-column: 1 / -1;
-  border-color: #f4b7b2;
-  background: #fff8f7;
 }
 
 .accountCardSectionHeader {
