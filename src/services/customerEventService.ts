@@ -29,6 +29,7 @@ export interface CustomerOwnedEventSummary {
   displayName: string | null;
   published: boolean;
   defaultTheme: InvitationThemeKey;
+  availableThemes: InvitationThemeKey[];
   updatedAt: Date | null;
 }
 
@@ -111,6 +112,23 @@ function readDate(value: unknown) {
   return null;
 }
 
+function normalizeThemeList(
+  value: unknown,
+  fallbackTheme: InvitationThemeKey
+) {
+  const sourceThemes = Array.isArray(value) && value.length > 0 ? value : [fallbackTheme];
+  const themes = sourceThemes.reduce<InvitationThemeKey[]>((themeList, theme) => {
+    const normalizedTheme = normalizeInvitationThemeKey(theme, fallbackTheme);
+    if (!themeList.includes(normalizedTheme)) {
+      themeList.push(normalizedTheme);
+    }
+
+    return themeList;
+  }, []);
+
+  return themes.length > 0 ? themes : [fallbackTheme];
+}
+
 function normalizeOwnedEvent(input: unknown): CustomerOwnedEventSummary | null {
   if (!input || typeof input !== 'object' || Array.isArray(input)) {
     return null;
@@ -124,6 +142,11 @@ function normalizeOwnedEvent(input: unknown): CustomerOwnedEventSummary | null {
     return null;
   }
 
+  const defaultTheme = normalizeInvitationThemeKey(
+    record.defaultTheme,
+    DEFAULT_INVITATION_THEME
+  );
+
   return {
     eventId,
     slug,
@@ -134,7 +157,8 @@ function normalizeOwnedEvent(input: unknown): CustomerOwnedEventSummary | null {
         ? record.displayName.trim()
         : null,
     published: record.published === true,
-    defaultTheme: normalizeInvitationThemeKey(record.defaultTheme, DEFAULT_INVITATION_THEME),
+    defaultTheme,
+    availableThemes: normalizeThemeList(record.availableThemes, defaultTheme),
     updatedAt: readDate(record.updatedAt),
   };
 }
@@ -249,6 +273,10 @@ function mapClientResolvedEventToOwnershipStatus(
       displayName: resolvedEvent.summary.displayName,
       published: resolvedEvent.summary.published,
       defaultTheme: resolvedEvent.summary.defaultTheme,
+      availableThemes: normalizeThemeList(
+        resolvedEvent.summary.supportedVariants,
+        resolvedEvent.summary.defaultTheme
+      ),
       updatedAt: resolvedEvent.summary.updatedAt,
       ownerUid: ownerUid || null,
     } satisfies CustomerEventOwnershipSummary;
@@ -464,7 +492,7 @@ export async function getCustomerEditableInvitationPageState(
 export async function createOwnedCustomerEvent(
   input: CreateOwnedCustomerEventInput
 ): Promise<CreateOwnedCustomerEventResult> {
-  const idToken = await getCurrentFirebaseIdToken();
+  const idToken = await getCurrentFirebaseIdToken({ forceRefresh: true });
   if (!idToken) {
     throw new Error('로그인 상태를 확인하지 못했습니다. 다시 로그인해 주세요.');
   }

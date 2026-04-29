@@ -160,6 +160,7 @@ export default function AdminPageClient() {
     updatingVariantToken,
     updatingTierPageSlug,
     deletingPageSlug,
+    deletingCustomerUid,
     ownershipActionToken,
     walletGrantActionToken,
     refreshPages,
@@ -171,6 +172,7 @@ export default function AdminPageClient() {
     handleAssignCustomerOwnership,
     handleClearCustomerOwnership,
     handleGrantCustomerWalletCredit,
+    handleDeleteCustomerAccount,
     handleTogglePublished,
     handleChangeTier,
     handleEnableVariant,
@@ -882,6 +884,7 @@ export default function AdminPageClient() {
               unassignedEvents={unassignedCustomerEvents}
               ownershipActionToken={ownershipActionToken}
               walletGrantActionToken={walletGrantActionToken}
+              deletingCustomerUid={deletingCustomerUid}
               onRefresh={() => void fetchCustomerAccounts()}
               onAssign={(uid, pageSlug) =>
                 void handleAssignCustomerOwnership(uid, pageSlug)
@@ -890,6 +893,7 @@ export default function AdminPageClient() {
               onGrantWalletCredit={(uid, grant) =>
                 void handleGrantCustomerWalletCredit(uid, grant)
               }
+              onDeleteAccount={(uid) => void handleDeleteCustomerAccount(uid)}
             />
           ) : null}
 

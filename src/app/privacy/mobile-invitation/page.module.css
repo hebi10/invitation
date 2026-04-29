@@ -178,11 +178,15 @@
   min-height: 46px;
   padding: 0 18px;
   border-radius: 999px;
+  font: inherit;
   font-weight: 600;
   text-align: center;
+  text-decoration: none;
+  cursor: pointer;
 }
 
 .primaryCta {
+  border: 0;
   background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
   color: #fff;
   box-shadow: 0 14px 28px rgba(141, 110, 99, 0.18);
@@ -192,6 +196,133 @@
   border: 1px solid rgba(212, 165, 116, 0.28);
   background: rgba(255, 255, 255, 0.85);
   color: var(--primary-color);
+}
+
+.requestModalOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(43, 33, 27, 0.48);
+}
+
+.requestModalDialog {
+  width: min(620px, 100%);
+  max-height: min(820px, calc(100vh - 40px));
+  overflow: hidden;
+  border: 1px solid rgba(212, 165, 116, 0.22);
+  border-radius: 28px;
+  background: #fffaf5;
+  box-shadow: 0 28px 90px rgba(43, 33, 27, 0.28);
+}
+
+.requestModalHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 22px 24px 18px;
+  border-bottom: 1px solid rgba(232, 221, 212, 0.9);
+  background: rgba(255, 252, 248, 0.94);
+}
+
+.requestModalTitle {
+  margin: 0;
+  font-family: var(--font-gowun);
+  font-size: 1.35rem;
+  line-height: 1.4;
+  color: var(--text-primary);
+}
+
+.modalCloseButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  min-height: 38px;
+  padding: 0 14px;
+  border: 1px solid rgba(212, 165, 116, 0.28);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.9);
+  color: var(--primary-color);
+  font: inherit;
+  font-size: 0.88rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.requestModalBody {
+  display: grid;
+  gap: 16px;
+  max-height: calc(100vh - 168px);
+  overflow-y: auto;
+  padding: 22px 24px 24px;
+}
+
+.requestModalText {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 0.96rem;
+  line-height: 1.8;
+}
+
+.requestInfoGrid {
+  display: grid;
+  grid-template-columns: 92px minmax(0, 1fr);
+  gap: 10px 12px;
+  padding: 16px;
+  border: 1px solid rgba(212, 165, 116, 0.18);
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.72);
+}
+
+.requestInfoLabel {
+  color: var(--text-light);
+  font-size: 0.84rem;
+  font-weight: 700;
+}
+
+.requestInfoValue {
+  min-width: 0;
+  color: var(--text-primary);
+  font-size: 0.94rem;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+.requestTemplate {
+  max-height: 190px;
+  overflow: auto;
+  margin: 0;
+  padding: 16px;
+  border: 1px solid rgba(212, 165, 116, 0.18);
+  border-radius: 20px;
+  background: #fff;
+  color: var(--text-secondary);
+  font-family: inherit;
+  font-size: 0.92rem;
+  line-height: 1.75;
+  white-space: pre-wrap;
+}
+
+.requestModalActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.copyStatus {
+  margin: 0;
+  padding: 12px 14px;
+  border-radius: 16px;
+  background: rgba(212, 165, 116, 0.12);
+  color: var(--primary-color);
+  font-size: 0.92rem;
+  font-weight: 700;
+  line-height: 1.6;
 }
 
 .contactCard {
@@ -277,5 +408,37 @@
 
   .summaryGrid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .requestModalOverlay {
+    align-items: flex-end;
+    padding: 12px;
+  }
+
+  .requestModalDialog {
+    max-height: calc(100vh - 24px);
+    border-radius: 24px;
+  }
+
+  .requestModalHeader {
+    flex-direction: column;
+    padding: 18px;
+  }
+
+  .modalCloseButton,
+  .requestModalActions .primaryCta,
+  .requestModalActions .secondaryCta {
+    width: 100%;
+  }
+
+  .requestModalBody {
+    max-height: calc(100vh - 166px);
+    padding: 18px;
+  }
+
+  .requestInfoGrid {
+    grid-template-columns: 1fr;
   }
 }

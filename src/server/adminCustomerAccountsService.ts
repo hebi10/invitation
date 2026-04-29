@@ -7,8 +7,14 @@ import type { CustomerWalletSummary } from '@/types/customerWallet';
 import {
   EMPTY_CUSTOMER_PAGE_CREATION_CREDITS,
 } from '@/types/customerWallet';
-import { listCustomerWalletSummariesByOwnerUids } from './customerWalletServerService';
-import { listServerAdminUserIds } from './adminUserServerService';
+import {
+  deleteCustomerWalletByOwnerUid,
+  listCustomerWalletSummariesByOwnerUids,
+} from './customerWalletServerService';
+import {
+  isServerAdminUserEnabled,
+  listServerAdminUserIds,
+} from './adminUserServerService';
 import { getServerAuth } from './firebaseAdmin';
 import {
   firestoreEventRepository,
@@ -84,6 +90,15 @@ function buildEmptyWallet(uid: string): CustomerWalletSummary {
     updatedAt: null,
     recentLedger: [],
   };
+}
+
+function isAuthUserNotFoundError(error: unknown) {
+  return (
+    error &&
+    typeof error === 'object' &&
+    'code' in error &&
+    error.code === 'auth/user-not-found'
+  );
 }
 
 async function listAllAuthUsers() {
@@ -250,4 +265,59 @@ export async function clearAdminCustomerEventOwnership(input: { pageSlug: string
   }
 
   return firestoreEventRepository.clearOwnerBySlug(normalizedPageSlug);
+}
+
+export async function deleteAdminCustomerAccount(input: {
+  uid: string;
+  requestedByUid: string;
+}) {
+  const serverAuth = getServerAuth();
+  if (!serverAuth) {
+    throw new Error('Firebase Admin Auth를 초기화하지 못했습니다.');
+  }
+
+  const normalizedUid = input.uid.trim();
+  const normalizedRequesterUid = input.requestedByUid.trim();
+
+  if (!normalizedUid) {
+    throw new Error('탈퇴 처리할 고객 UID가 필요합니다.');
+  }
+
+  if (normalizedUid === normalizedRequesterUid) {
+    throw new Error('현재 로그인한 관리자 계정은 이 화면에서 탈퇴 처리할 수 없습니다.');
+  }
+
+  if (await isServerAdminUserEnabled(normalizedUid)) {
+    throw new Error('관리자 권한이 있는 계정은 고객 탈퇴 처리 대상에서 제외됩니다.');
+  }
+
+  const linkedEvents = (await listStoredEventSummaries()).filter(
+    (summary) => (summary.ownerUid?.trim() ?? '') === normalizedUid
+  );
+
+  for (const event of linkedEvents) {
+    await firestoreEventRepository.clearOwnerBySlug(event.slug);
+    await firestoreEventRepository.upsertRegistryBySlug(event.slug, {
+      published: false,
+    });
+  }
+
+  await deleteCustomerWalletByOwnerUid(normalizedUid);
+
+  let authUserDeleted = false;
+  try {
+    await serverAuth.deleteUser(normalizedUid);
+    authUserDeleted = true;
+  } catch (error) {
+    if (!isAuthUserNotFoundError(error)) {
+      throw error;
+    }
+  }
+
+  return {
+    uid: normalizedUid,
+    authUserDeleted,
+    detachedEventCount: linkedEvents.length,
+    unpublishedEventCount: linkedEvents.length,
+  };
 }

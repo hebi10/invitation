@@ -26,21 +26,40 @@ service cloud.firestore {
         isEventOwnerById(slugIndex.data.eventId);
     }
 
-    function canCreateOwnedEvent() {
-      return isSignedIn() &&
-        request.resource.data.ownerUid is string &&
-        request.resource.data.ownerUid == request.auth.uid;
-    }
-
     function canUpdateOwnedEvent(eventId) {
       return isEventOwnerById(eventId) &&
-        request.resource.data.ownerUid == resource.data.ownerUid;
+        request.resource.data.eventId == resource.data.eventId &&
+        request.resource.data.slug == resource.data.slug &&
+        request.resource.data.ownerUid == resource.data.ownerUid &&
+        !request.resource.data.diff(resource.data).affectedKeys().hasAny([
+          'featureFlags',
+          'productTier',
+          'stats',
+          'ticketBalance',
+          'ticketCount'
+        ]);
     }
 
-    function canWriteOwnedSlugIndex() {
+    function canUpdateOwnedEventContent(eventId, documentId) {
+      return isEventOwnerById(eventId) &&
+        documentId == 'current' &&
+        request.resource.data.schemaVersion == resource.data.schemaVersion &&
+        request.resource.data.eventType == resource.data.eventType &&
+        request.resource.data.slug == resource.data.slug &&
+        request.resource.data.productTier == resource.data.productTier &&
+        request.resource.data.featureFlags == resource.data.featureFlags &&
+        request.resource.data.content.productTier == resource.data.content.productTier &&
+        request.resource.data.content.features == resource.data.content.features;
+    }
+
+    function canUpdateOwnedSlugIndex(slug) {
       return isSignedIn() &&
-        request.resource.data.eventId is string &&
-        isEventOwnerById(request.resource.data.eventId);
+        slug is string &&
+        resource.data.slug == slug &&
+        request.resource.data.slug == slug &&
+        resource.data.eventId is string &&
+        request.resource.data.eventId == resource.data.eventId &&
+        isEventOwnerById(resource.data.eventId);
     }
 
     function isPublicMemoryPage(data) {
@@ -140,12 +159,13 @@ service cloud.firestore {
 
     match /events/{eventId} {
       allow read: if isAdmin() || isEventOwnerById(eventId) || canReadPublicEvent(eventId);
-      allow create: if isAdmin() || canCreateOwnedEvent();
+      allow create: if isAdmin();
       allow update, delete: if isAdmin() || canUpdateOwnedEvent(eventId);
 
       match /content/{documentId} {
         allow read: if isAdmin() || isEventOwnerById(eventId) || canReadPublicEvent(eventId);
-        allow create, update, delete: if isAdmin() || isEventOwnerById(eventId);
+        allow create, delete: if isAdmin();
+        allow update: if isAdmin() || canUpdateOwnedEventContent(eventId, documentId);
       }
 
       match /comments/{commentId} {
@@ -173,7 +193,8 @@ service cloud.firestore {
 
     match /eventSlugIndex/{slug} {
       allow read: if isAdmin() || isEventOwnerBySlug(slug) || canReadPublicEventSlugIndex(slug);
-      allow create, update: if isAdmin() || canWriteOwnedSlugIndex();
+      allow create: if isAdmin();
+      allow update: if isAdmin() || canUpdateOwnedSlugIndex(slug);
       allow delete: if isAdmin() || (
         resource.data.eventId is string &&
         isEventOwnerById(resource.data.eventId)

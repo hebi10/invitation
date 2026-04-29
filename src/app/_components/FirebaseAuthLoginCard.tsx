@@ -31,6 +31,7 @@ export default function FirebaseAuthLoginCard({
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState<'email' | 'google' | null>(null);
   const [errorMessage, setErrorMessage] = useState('');
+  const [noticeMessage, setNoticeMessage] = useState('');
 
   const isRegisterMode = allowSignUp && mode === 'register';
 
@@ -38,6 +39,7 @@ export default function FirebaseAuthLoginCard({
     event.preventDefault();
     setLoading('email');
     setErrorMessage('');
+    setNoticeMessage('');
 
     const result = isRegisterMode
       ? await register(email, password)
@@ -56,12 +58,20 @@ export default function FirebaseAuthLoginCard({
     }
 
     setPassword('');
+    if (isRegisterMode) {
+      setNoticeMessage(
+        result.verificationEmailSent
+          ? '인증 메일을 보냈습니다. 이메일 받은 편지함에서 인증 링크를 확인한 뒤 청첩장을 생성해 주세요.'
+          : '계정은 생성됐지만 인증 메일을 보내지 못했습니다. 다시 로그인한 뒤 인증 메일을 요청해 주세요.'
+      );
+    }
     setLoading(null);
   };
 
   const handleGoogleLogin = async () => {
     setLoading('google');
     setErrorMessage('');
+    setNoticeMessage('');
 
     const result = await loginWithGoogle();
     if (!result.success) {
@@ -91,14 +101,22 @@ export default function FirebaseAuthLoginCard({
           <button
             type="button"
             className={`${styles.modeButton} ${mode === 'login' ? styles.modeButtonActive : ''}`}
-            onClick={() => setMode('login')}
+            onClick={() => {
+              setMode('login');
+              setErrorMessage('');
+              setNoticeMessage('');
+            }}
           >
             로그인
           </button>
           <button
             type="button"
             className={`${styles.modeButton} ${mode === 'register' ? styles.modeButtonActive : ''}`}
-            onClick={() => setMode('register')}
+            onClick={() => {
+              setMode('register');
+              setErrorMessage('');
+              setNoticeMessage('');
+            }}
           >
             이메일 가입
           </button>
@@ -133,6 +151,7 @@ export default function FirebaseAuthLoginCard({
         </label>
 
         {helperText ? <p className={styles.helper}>{helperText}</p> : null}
+        {noticeMessage ? <p className={styles.notice}>{noticeMessage}</p> : null}
         {errorMessage ? <p className={styles.error}>{errorMessage}</p> : null}
 
         <button className={styles.primaryButton} type="submit" disabled={loading !== null}>

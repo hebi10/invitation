@@ -36,15 +36,12 @@
   justify-content: center;
   gap: 0.75rem;
   margin-bottom: 1rem;
-  cursor: help;
+  cursor: default;
+  pointer-events: none;
   padding: 0.5rem;
   border-radius: 12px;
   transition: all 0.3s ease;
   position: relative;
-}
-
-.titleSection:active {
-  transform: scale(0.99);
 }
 
 .titleIcon {
@@ -64,11 +61,6 @@
   .titleSection {
     gap: 1rem;
     border-radius: 15px;
-  }
-
-  
-  .titleSection:active {
-    transform: scale(0.98);
   }
 }
 

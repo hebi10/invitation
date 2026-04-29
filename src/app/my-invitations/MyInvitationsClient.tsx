@@ -7,6 +7,10 @@ import { useEffect, useState } from 'react';
 
 import { useAdmin } from '@/contexts';
 import {
+  MOBILE_INVITATION_DELETE_REQUEST_PATH,
+  MOBILE_INVITATION_PRIVACY_POLICY_PATH,
+} from '@/app/privacy/mobile-invitation/content';
+import {
   appQueryKeys,
   FIFTEEN_MINUTES_MS,
   GUESTBOOK_GC_TIME_MS,
@@ -14,6 +18,10 @@ import {
   THIRTY_MINUTES_MS,
 } from '@/lib/appQuery';
 import { getEventTypeDisplayLabel } from '@/lib/eventTypes';
+import {
+  buildInvitationThemeRoutePath,
+  getInvitationThemeLabel,
+} from '@/lib/invitationThemes';
 import {
   deleteCustomerEventGuestbookComment,
   type CustomerEventGuestbookComment,
@@ -53,6 +61,37 @@ function getCommentStatusLabel(status: CustomerEventGuestbookComment['status']) 
 }
 
 const PRODUCT_TIERS: InvitationProductTier[] = ['standard', 'deluxe', 'premium'];
+const GUESTBOOK_MODAL_PAGE_SIZE = 10;
+
+function LegalFooter() {
+  return (
+    <footer className={styles.legalFooter} aria-label="서비스 정책 안내">
+      <p className={styles.legalFooterLabel}>모바일 앱과 고객 데이터 안내</p>
+      <div className={styles.legalFooterLinks}>
+        <Link className={styles.legalFooterLink} href={MOBILE_INVITATION_PRIVACY_POLICY_PATH}>
+          개인정보처리방침
+        </Link>
+        <Link className={styles.legalFooterLink} href={MOBILE_INVITATION_DELETE_REQUEST_PATH}>
+          계정 및 데이터 삭제 요청
+        </Link>
+      </div>
+    </footer>
+  );
+}
+
+function getPaginationPageNumbers(currentPage: number, totalPages: number) {
+  const maxVisiblePages = 5;
+  if (totalPages <= maxVisiblePages) {
+    return Array.from({ length: totalPages }, (_, index) => index + 1);
+  }
+
+  const firstPage = Math.min(
+    Math.max(currentPage - Math.floor(maxVisiblePages / 2), 1),
+    totalPages - maxVisiblePages + 1
+  );
+
+  return Array.from({ length: maxVisiblePages }, (_, index) => firstPage + index);
+}
 
 function getPageCreationCreditTotal(wallet: CustomerWalletSummary | null | undefined) {
   if (!wallet) {
@@ -73,9 +112,19 @@ interface OwnedEventCardProps {
 function OwnedEventCard({ authUid, event }: OwnedEventCardProps) {
   const queryClient = useQueryClient();
   const [guestbookOpen, setGuestbookOpen] = useState(false);
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [guestbookPage, setGuestbookPage] = useState(1);
   const [deletingCommentId, setDeletingCommentId] = useState('');
-  const publicHref = `/${event.slug}/${event.defaultTheme}`;
   const wizardHref = `/page-wizard/${encodeURIComponent(event.slug)}`;
+  const previewThemes =
+    event.availableThemes.length > 0 ? event.availableThemes : [event.defaultTheme];
+  const previewLinks = previewThemes.map((theme) => ({
+    theme,
+    href: buildInvitationThemeRoutePath(event.slug, theme),
+    label: getInvitationThemeLabel(theme),
+    isDefault: theme === event.defaultTheme,
+  }));
+  const singlePreviewLink = previewLinks.length === 1 ? previewLinks[0] : null;
   const guestbookQueryKey = appQueryKeys.customerEventGuestbookComments(
     event.slug,
     authUid
@@ -99,6 +148,27 @@ function OwnedEventCard({ authUid, event }: OwnedEventCardProps) {
     onSettled: () => setDeletingCommentId(''),
   });
   const comments = commentsQuery.data ?? [];
+  const guestbookTotalPages = Math.max(
+    1,
+    Math.ceil(comments.length / GUESTBOOK_MODAL_PAGE_SIZE)
+  );
+  const currentGuestbookPage = Math.min(guestbookPage, guestbookTotalPages);
+  const paginatedComments = comments.slice(
+    (currentGuestbookPage - 1) * GUESTBOOK_MODAL_PAGE_SIZE,
+    currentGuestbookPage * GUESTBOOK_MODAL_PAGE_SIZE
+  );
+  const guestbookPageStart =
+    comments.length === 0
+      ? 0
+      : (currentGuestbookPage - 1) * GUESTBOOK_MODAL_PAGE_SIZE + 1;
+  const guestbookPageEnd = Math.min(
+    currentGuestbookPage * GUESTBOOK_MODAL_PAGE_SIZE,
+    comments.length
+  );
+  const guestbookPageNumbers = getPaginationPageNumbers(
+    currentGuestbookPage,
+    guestbookTotalPages
+  );
   const eventTitle = event.displayName || event.title || event.slug;
   const guestbookErrorMessage =
     commentsQuery.error instanceof Error
@@ -121,7 +191,7 @@ function OwnedEventCard({ authUid, event }: OwnedEventCardProps) {
   };
 
   useEffect(() => {
-    if (!guestbookOpen) {
+    if (!guestbookOpen && !previewOpen) {
       return;
     }
 
@@ -129,6 +199,7 @@ function OwnedEventCard({ authUid, event }: OwnedEventCardProps) {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
         setGuestbookOpen(false);
+        setPreviewOpen(false);
       }
     };
 
@@ -139,7 +210,15 @@ function OwnedEventCard({ authUid, event }: OwnedEventCardProps) {
       document.body.style.overflow = previousOverflow;
       window.removeEventListener('keydown', handleKeyDown);
     };
-  }, [guestbookOpen]);
+  }, [guestbookOpen, previewOpen]);
+
+  useEffect(() => {
+    if (!guestbookOpen || guestbookPage <= guestbookTotalPages) {
+      return;
+    }
+
+    setGuestbookPage(guestbookTotalPages);
+  }, [guestbookOpen, guestbookPage, guestbookTotalPages]);
 
   return (
     <>
@@ -165,23 +244,101 @@ function OwnedEventCard({ authUid, event }: OwnedEventCardProps) {
           >
             수정하기
           </Link>
-          <Link
-            className={styles.secondaryButton}
-            href={publicHref}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            미리보기
-          </Link>
+          {singlePreviewLink ? (
+            <Link
+              className={styles.secondaryButton}
+              href={singlePreviewLink.href}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              미리보기
+            </Link>
+          ) : (
+            <button
+              className={styles.secondaryButton}
+              type="button"
+              onClick={() => setPreviewOpen(true)}
+            >
+              미리보기
+            </button>
+          )}
           <button
             className={styles.secondaryButton}
             type="button"
-            onClick={() => setGuestbookOpen(true)}
+            onClick={() => {
+              setGuestbookPage(1);
+              setGuestbookOpen(true);
+            }}
           >
             방명록 확인
           </button>
         </div>
       </article>
+
+      {previewOpen ? (
+        <div
+          className={styles.modalOverlay}
+          role="presentation"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget) {
+              setPreviewOpen(false);
+            }
+          }}
+        >
+          <section
+            className={styles.modalDialog}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby={`preview-title-${event.eventId}`}
+          >
+            <div className={styles.modalHeader}>
+              <div className={styles.modalTitleStack}>
+                <p className={styles.eyebrow}>Preview</p>
+                <h3
+                  className={styles.modalTitle}
+                  id={`preview-title-${event.eventId}`}
+                >
+                  미리볼 디자인 선택
+                </h3>
+                <p className={styles.modalDescription}>
+                  {eventTitle}에 연결된 디자인 중 하나를 선택해 공개 화면을 확인할 수 있습니다.
+                </p>
+              </div>
+              <button
+                className={styles.modalCloseButton}
+                type="button"
+                onClick={() => setPreviewOpen(false)}
+                aria-label="미리보기 선택 팝업 닫기"
+              >
+                닫기
+              </button>
+            </div>
+
+            <div className={styles.modalBody}>
+              <div className={styles.previewChoiceList}>
+                {previewLinks.map((preview) => (
+                  <Link
+                    className={styles.previewChoiceLink}
+                    href={preview.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    key={preview.theme}
+                    onClick={() => setPreviewOpen(false)}
+                  >
+                    <span className={styles.previewChoiceText}>
+                      <strong>{preview.label}</strong>
+                      <span>{preview.href}</span>
+                    </span>
+                    {preview.isDefault ? (
+                      <span className={styles.previewChoiceBadge}>기본</span>
+                    ) : null}
+                  </Link>
+                ))}
+              </div>
+            </div>
+          </section>
+        </div>
+      ) : null}
 
       {guestbookOpen ? (
         <div
@@ -249,33 +406,87 @@ function OwnedEventCard({ authUid, event }: OwnedEventCardProps) {
                 ) : null}
 
                 {comments.length > 0 ? (
-                  <div className={styles.guestbookList}>
-                    {comments.map((comment) => (
-                      <div className={styles.guestbookItem} key={comment.id}>
-                        <div className={styles.guestbookItemHeader}>
-                          <div>
-                            <strong>{comment.author}</strong>
-                            <p className={styles.guestbookMeta}>
-                              {formatDate(comment.createdAt)} ·{' '}
-                              {getCommentStatusLabel(comment.status)}
-                            </p>
+                  <>
+                    <div className={styles.guestbookList}>
+                      {paginatedComments.map((comment) => (
+                        <div className={styles.guestbookItem} key={comment.id}>
+                          <div className={styles.guestbookItemHeader}>
+                            <div>
+                              <strong>{comment.author}</strong>
+                              <p className={styles.guestbookMeta}>
+                                {formatDate(comment.createdAt)} ·{' '}
+                                {getCommentStatusLabel(comment.status)}
+                              </p>
+                            </div>
+                            <button
+                              className={styles.dangerButton}
+                              type="button"
+                              onClick={() => handleDeleteComment(comment)}
+                              disabled={
+                                deleteMutation.isPending ||
+                                comment.status === 'pending_delete'
+                              }
+                            >
+                              {deletingCommentId === comment.id ? '삭제 중' : '삭제'}
+                            </button>
                           </div>
+                          <p className={styles.guestbookMessage}>{comment.message}</p>
+                        </div>
+                      ))}
+                    </div>
+
+                    {guestbookTotalPages > 1 ? (
+                      <div
+                        className={styles.guestbookPagination}
+                        aria-label="방명록 페이지 이동"
+                      >
+                        <p className={styles.guestbookPageSummary}>
+                          {guestbookPageStart}-{guestbookPageEnd} / {comments.length}개
+                        </p>
+                        <div className={styles.guestbookPageControls}>
                           <button
-                            className={styles.dangerButton}
+                            className={styles.guestbookPageButton}
                             type="button"
-                            onClick={() => handleDeleteComment(comment)}
-                            disabled={
-                              deleteMutation.isPending ||
-                              comment.status === 'pending_delete'
+                            onClick={() =>
+                              setGuestbookPage((page) => Math.max(1, page - 1))
                             }
+                            disabled={currentGuestbookPage === 1}
                           >
-                            {deletingCommentId === comment.id ? '삭제 중' : '삭제'}
+                            이전
+                          </button>
+                          {guestbookPageNumbers.map((page) => (
+                            <button
+                              className={
+                                page === currentGuestbookPage
+                                  ? `${styles.guestbookPageButton} ${styles.guestbookPageButtonActive}`
+                                  : styles.guestbookPageButton
+                              }
+                              type="button"
+                              key={page}
+                              onClick={() => setGuestbookPage(page)}
+                              aria-current={
+                                page === currentGuestbookPage ? 'page' : undefined
+                              }
+                            >
+                              {page}
+                            </button>
+                          ))}
+                          <button
+                            className={styles.guestbookPageButton}
+                            type="button"
+                            onClick={() =>
+                              setGuestbookPage((page) =>
+                                Math.min(guestbookTotalPages, page + 1)
+                              )
+                            }
+                            disabled={currentGuestbookPage === guestbookTotalPages}
+                          >
+                            다음
                           </button>
                         </div>
-                        <p className={styles.guestbookMessage}>{comment.message}</p>
                       </div>
-                    ))}
-                  </div>
+                    ) : null}
+                  </>
                 ) : null}
               </div>
             </div>
@@ -351,6 +562,7 @@ export default function MyInvitationsClient() {
       <main className={styles.page}>
         <div className={styles.shell}>
           <section className={styles.loading}>로그인 상태를 확인하는 중입니다.</section>
+          <LegalFooter />
         </div>
       </main>
     );
@@ -375,6 +587,7 @@ export default function MyInvitationsClient() {
               </Link>
             </div>
           </section>
+          <LegalFooter />
         </div>
       </main>
     );
@@ -461,6 +674,8 @@ export default function MyInvitationsClient() {
             아직 연결된 이벤트가 없습니다. 새 이벤트를 만들거나 관리자에게 계정 연결을 요청해 주세요.
           </section>
         ) : null}
+
+        <LegalFooter />
       </div>
     </main>
   );

@@ -9,6 +9,11 @@ import {
   type GuestbookCommentStatus,
 } from '@/lib/guestbookComments';
 import { normalizeInvitationPageSlugInput } from '@/lib/invitationPagePersistence';
+import { getAvailableInvitationVariantKeys } from '@/lib/invitationVariants';
+import {
+  DEFAULT_INVITATION_THEME,
+  normalizeInvitationThemeKey,
+} from '@/lib/invitationThemes';
 import {
   DEFAULT_INVITATION_PRODUCT_TIER,
   normalizeInvitationProductTier,
@@ -32,6 +37,7 @@ export interface CustomerOwnedEventSummary {
   displayName: string | null;
   published: boolean;
   defaultTheme: InvitationThemeKey;
+  availableThemes: InvitationThemeKey[];
   updatedAt: Date | null;
 }
 
@@ -66,7 +72,31 @@ export type CustomerEventOwnershipSnapshot =
       summary: null;
     };
 
-function toCustomerOwnedEventSummary(summary: EventSummaryRecord) {
+function getAvailableThemesForCustomerSummary(
+  summary: EventSummaryRecord,
+  config: InvitationPageSeed | null = null
+) {
+  const configAvailableThemes = getAvailableInvitationVariantKeys(config?.variants);
+  const rawThemeKeys =
+    configAvailableThemes.length > 0
+      ? configAvailableThemes
+      : [summary.defaultTheme, ...summary.supportedVariants];
+  const availableThemes = rawThemeKeys.reduce<InvitationThemeKey[]>((themes, theme) => {
+    const normalizedTheme = normalizeInvitationThemeKey(theme, DEFAULT_INVITATION_THEME);
+    if (!themes.includes(normalizedTheme)) {
+      themes.push(normalizedTheme);
+    }
+
+    return themes;
+  }, []);
+
+  return availableThemes.length > 0 ? availableThemes : [summary.defaultTheme];
+}
+
+function toCustomerOwnedEventSummary(
+  summary: EventSummaryRecord,
+  config: InvitationPageSeed | null = null
+) {
   return {
     eventId: summary.eventId,
     slug: summary.slug,
@@ -75,6 +105,7 @@ function toCustomerOwnedEventSummary(summary: EventSummaryRecord) {
     displayName: summary.displayName,
     published: summary.visibility?.published ?? summary.published,
     defaultTheme: summary.defaultTheme,
+    availableThemes: getAvailableThemesForCustomerSummary(summary, config),
     updatedAt: summary.lastSavedAt ?? summary.updatedAt,
   } satisfies CustomerOwnedEventSummary;
 }
@@ -186,9 +217,19 @@ export async function listCustomerOwnedEventSummaries(ownerUid: string) {
 
   const eventSummaries = await listStoredEventSummaries();
 
-  return eventSummaries
-    .filter((summary) => summary.ownerUid?.trim() === normalizedOwnerUid)
-    .map(toCustomerOwnedEventSummary)
+  const ownedSummaries = eventSummaries.filter(
+    (summary) => summary.ownerUid?.trim() === normalizedOwnerUid
+  );
+  const customerSummaries = await Promise.all(
+    ownedSummaries.map(async (summary) => {
+      const editableConfig = await getServerEditableInvitationPageConfig(summary.slug).catch(
+        () => null
+      );
+      return toCustomerOwnedEventSummary(summary, editableConfig?.config ?? null);
+    })
+  );
+
+  return customerSummaries
     .sort((left, right) => {
       const rightTime = right.updatedAt?.getTime() ?? 0;
       const leftTime = left.updatedAt?.getTime() ?? 0;

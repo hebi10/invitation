@@ -10,6 +10,7 @@ import {
   MOBILE_INVITATION_SUPPORT_FORM_URL,
 } from '../content';
 import styles from '../page.module.css';
+import DeleteRequestActions from './DeleteRequestActions';
 
 export const metadata: Metadata = {
   title: '계정 및 데이터 삭제 요청',
@@ -25,15 +26,17 @@ export const metadata: Metadata = {
 };
 
 const requestItems = [
-  '삭제를 원하는 청첩장 주소(slug) 또는 공개 URL',
-  '요청자 확인을 위한 연락 가능한 이메일 주소',
-  '삭제 요청 범위: 전체 삭제 또는 일부 데이터 삭제',
+  '삭제를 요청하는 계정 이메일 주소 또는 앱 로그인 계정 식별 정보',
+  '삭제 요청 범위: 계정 전체 삭제, 특정 청첩장 삭제, 일부 데이터 삭제',
+  '특정 청첩장 삭제가 필요한 경우 청첩장 주소(slug) 또는 공개 URL',
   '필요한 경우 본인 확인을 위한 추가 설명',
 ];
 
 const deletionTargets = [
+  'Firebase Authentication 계정과 고객 프로필',
   '청첩장 운영 정보와 공개 설정',
   '대표 이미지와 갤러리 이미지',
+  '삭제 가능한 고객 이용권, 연결 정보, 운영 관리 데이터',
   '기기와 서버에 남아 있는 연동 세션 정보',
 ];
 
@@ -80,24 +83,11 @@ export default function MobileInvitationDeleteRequestPage() {
               아래 두 채널 중 하나로 삭제 요청을 보내면 됩니다. 이메일 또는 문의 내용에는 이
               페이지 하단의 요청 항목을 함께 적어 주세요.
             </p>
-            <div className={styles.ctaRow}>
-              <a
-                className={styles.primaryCta}
-                href={`mailto:${MOBILE_INVITATION_SUPPORT_EMAIL}?subject=${encodeURIComponent(
-                  `${MOBILE_INVITATION_SERVICE_NAME} 삭제 요청`
-                )}`}
-              >
-                이메일로 삭제 요청
-              </a>
-              <a
-                className={styles.secondaryCta}
-                href={MOBILE_INVITATION_SUPPORT_FORM_URL}
-                target="_blank"
-                rel="noreferrer"
-              >
-                문의 폼으로 요청
-              </a>
-            </div>
+            <DeleteRequestActions
+              serviceName={MOBILE_INVITATION_SERVICE_NAME}
+              supportEmail={MOBILE_INVITATION_SUPPORT_EMAIL}
+              supportFormUrl={MOBILE_INVITATION_SUPPORT_FORM_URL}
+            />
           </section>
 
           <section className={styles.section}>

@@ -11,6 +11,10 @@ import {
   validateInvitationPageSlugBase,
 } from '@/lib/invitationPageSlug';
 import { normalizeInvitationProductTier } from '@/lib/invitationProducts';
+import {
+  canCreateCustomerOwnedInvitation,
+  CUSTOMER_EMAIL_VERIFICATION_REQUIRED_MESSAGE,
+} from '@/server/customerAuthVerification';
 import { createCustomerInvitationPageFromWalletCredit } from '@/server/customerWalletServerService';
 import { listCustomerOwnedEventSummaries } from '@/server/customerEventsService';
 import { getServerAuth } from '@/server/firebaseAdmin';
@@ -97,6 +101,13 @@ export async function POST(request: Request) {
     const customer = await verifyCustomer(request);
     if (customer.error || !customer.decodedToken) {
       return customer.error;
+    }
+
+    if (!canCreateCustomerOwnedInvitation(customer.decodedToken)) {
+      return NextResponse.json(
+        { error: CUSTOMER_EMAIL_VERIFICATION_REQUIRED_MESSAGE },
+        { status: 403 }
+      );
     }
 
     const body = (await request.json().catch(() => null)) as

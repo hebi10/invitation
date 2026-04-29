@@ -15,6 +15,7 @@ interface CustomerAuthPageClientProps {
   description: string;
   authTitle: string;
   authDescription: string;
+  authHelperText?: string;
   initialMode?: 'login' | 'register';
 }
 
@@ -24,6 +25,7 @@ export default function CustomerAuthPageClient({
   description,
   authTitle,
   authDescription,
+  authHelperText,
   initialMode = 'login',
 }: CustomerAuthPageClientProps) {
   const router = useRouter();
@@ -64,6 +66,7 @@ export default function CustomerAuthPageClient({
         <FirebaseAuthLoginCard
           title={authTitle}
           description={authDescription}
+          helperText={authHelperText}
           initialMode={initialMode}
         />
       </div>

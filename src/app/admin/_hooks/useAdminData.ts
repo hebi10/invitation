@@ -19,6 +19,7 @@ import {
 import {
   assignAdminCustomerEventOwnership,
   clearAdminCustomerEventOwnership,
+  deleteAdminCustomerAccount,
   deleteAdminEventByPageSlug,
   deleteComment,
   getAdminCustomerAccountsSnapshot,
@@ -71,6 +72,7 @@ export function useAdminData({
   const [updatingVariantToken, setUpdatingVariantToken] = useState<string | null>(null);
   const [updatingTierPageSlug, setUpdatingTierPageSlug] = useState<string | null>(null);
   const [deletingPageSlug, setDeletingPageSlug] = useState<string | null>(null);
+  const [deletingCustomerUid, setDeletingCustomerUid] = useState<string | null>(null);
   const [ownershipActionToken, setOwnershipActionToken] = useState<string | null>(null);
   const [walletGrantActionToken, setWalletGrantActionToken] = useState<string | null>(null);
 
@@ -473,6 +475,55 @@ export function useAdminData({
     [confirm, customerAccounts, refreshAdminData, showToast]
   );
 
+  const handleDeleteCustomerAccount = useCallback(
+    async (uid: string) => {
+      const account = customerAccounts.find((entry) => entry.uid === uid);
+      const accountName = account?.displayName || account?.email || uid;
+      const linkedEventCount = account?.linkedEvents.length ?? 0;
+      const approved = await confirm({
+        title: '고객 계정을 탈퇴 처리할까요?',
+        description:
+          `${accountName} 계정의 Firebase 로그인 계정과 보유 이용권 데이터를 삭제하고, ` +
+          `연결된 청첩장 ${linkedEventCount}개의 고객 소유권을 해제한 뒤 즉시 비공개로 전환합니다. 청첩장 페이지 자체는 삭제되지 않습니다.`,
+        confirmLabel: '탈퇴 처리',
+        cancelLabel: '취소',
+        tone: 'danger',
+      });
+
+      if (!approved) {
+        return;
+      }
+
+      setDeletingCustomerUid(uid);
+
+      try {
+        const result = await deleteAdminCustomerAccount(uid);
+        await refreshAdminData({
+          accounts: true,
+          pages: true,
+        });
+        showToast({
+          title: '고객 계정을 탈퇴 처리했습니다.',
+          message:
+            `연결된 청첩장 ${result.detachedEventCount}개의 소유권을 해제하고 ` +
+            `${result.unpublishedEventCount}개를 비공개로 전환했습니다.`,
+          tone: 'success',
+        });
+      } catch (error) {
+        console.error(error);
+        showToast({
+          title: '고객 계정 탈퇴 처리에 실패했습니다.',
+          message:
+            error instanceof Error ? error.message : '잠시 후 다시 시도해 주세요.',
+          tone: 'error',
+        });
+      } finally {
+        setDeletingCustomerUid(null);
+      }
+    },
+    [confirm, customerAccounts, refreshAdminData, showToast]
+  );
+
   const handleTogglePublished = useCallback(
     async (page: InvitationPageSummary, nextPublished: boolean) => {
       if (nextPublished === page.published) {
@@ -694,6 +745,7 @@ export function useAdminData({
     updatingVariantToken,
     updatingTierPageSlug,
     deletingPageSlug,
+    deletingCustomerUid,
     ownershipActionToken,
     walletGrantActionToken,
 
@@ -707,6 +759,7 @@ export function useAdminData({
     handleAssignCustomerOwnership,
     handleClearCustomerOwnership,
     handleGrantCustomerWalletCredit,
+    handleDeleteCustomerAccount,
     handleTogglePublished,
     handleChangeTier,
     handleEnableVariant,

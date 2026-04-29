@@ -50,6 +50,10 @@ export async function listCustomerWalletSummariesByOwnerUids(ownerUids: string[]
   return firestoreCustomerWalletRepository.listSummariesByOwnerUids(ownerUids);
 }
 
+export async function deleteCustomerWalletByOwnerUid(ownerUid: string) {
+  return firestoreCustomerWalletRepository.deleteByOwnerUid(ownerUid);
+}
+
 export async function grantAdminCustomerWalletCredit(
   input: AdminCustomerWalletGrantInput
 ): Promise<CustomerWalletSummary> {

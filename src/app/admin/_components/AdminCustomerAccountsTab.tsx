@@ -22,9 +22,11 @@ interface AdminCustomerAccountsTabProps {
   unassignedEvents: AdminCustomerLinkedEventSummary[];
   ownershipActionToken: string | null;
   walletGrantActionToken: string | null;
+  deletingCustomerUid: string | null;
   onRefresh: () => void;
   onAssign: (uid: string, pageSlug: string) => void;
   onClear: (pageSlug: string) => void;
+  onDeleteAccount: (uid: string) => void;
   onGrantWalletCredit: (
     uid: string,
     grant: {
@@ -113,9 +115,11 @@ export default function AdminCustomerAccountsTab({
   unassignedEvents,
   ownershipActionToken,
   walletGrantActionToken,
+  deletingCustomerUid,
   onRefresh,
   onAssign,
   onClear,
+  onDeleteAccount,
   onGrantWalletCredit,
 }: AdminCustomerAccountsTabProps) {
   const [searchQuery, setSearchQuery] = useState('');
@@ -464,6 +468,7 @@ export default function AdminCustomerAccountsTab({
     const providerLabels = getProviderLabels(account.providerIds);
     const selectedSlug = draftAssignments[account.uid] ?? '';
     const isAssigning = ownershipActionToken === `assign:${account.uid}:${selectedSlug}`;
+    const isDeletingAccount = deletingCustomerUid === account.uid;
 
     return (
       <article className={styles.accountCard} key={account.uid}>
@@ -566,6 +571,32 @@ export default function AdminCustomerAccountsTab({
               </StatusBadge>
             </div>
             {renderWalletManager(account)}
+          </section>
+
+          <section className={`${styles.accountCardSection} ${styles.accountDangerSection}`}>
+            <div className={styles.accountCardSectionHeader}>
+              <h4 className={styles.accountCardSectionTitle}>계정 탈퇴 처리</h4>
+              <StatusBadge tone={account.isAdmin ? 'primary' : 'danger'}>
+                {account.isAdmin ? '관리자 보호' : '고객 계정'}
+              </StatusBadge>
+            </div>
+            <p className={styles.actionHint}>
+              {account.isAdmin
+                ? '관리자 권한이 있는 계정은 고객 계정 탭에서 탈퇴 처리할 수 없습니다.'
+                : 'Firebase 로그인 계정과 보유 이용권 데이터를 삭제하고, 연결된 청첩장 소유권을 해제한 뒤 즉시 비공개로 전환합니다. 청첩장 페이지 자체는 삭제되지 않습니다.'}
+            </p>
+            <button
+              type="button"
+              className="admin-button admin-button-danger"
+              disabled={account.isAdmin || isDeletingAccount}
+              onClick={() => onDeleteAccount(account.uid)}
+            >
+              {isDeletingAccount
+                ? '탈퇴 처리 중..'
+                : account.missingAuthUser
+                  ? '잔여 데이터 정리'
+                  : '고객 탈퇴 처리'}
+            </button>
           </section>
         </div>
       </article>

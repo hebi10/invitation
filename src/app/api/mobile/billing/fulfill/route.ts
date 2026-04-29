@@ -5,6 +5,10 @@ import {
   validateInvitationPageSlugBase,
 } from '@/lib/invitationPageSlug';
 import { isMobileBillingProductId } from '@/lib/mobileBillingProducts';
+import {
+  canCreateCustomerOwnedInvitation,
+  CUSTOMER_EMAIL_VERIFICATION_REQUIRED_MESSAGE,
+} from '@/server/customerAuthVerification';
 import { getServerAuth } from '@/server/firebaseAdmin';
 import {
   fulfillServerMobilePageCreationPurchase,
@@ -147,6 +151,13 @@ export async function POST(request: Request) {
       const customerAuth = await verifyMobileCustomerRequest(request);
       if (customerAuth.response) {
         return customerAuth.response;
+      }
+
+      if (!canCreateCustomerOwnedInvitation(customerAuth.identity)) {
+        return NextResponse.json(
+          { error: CUSTOMER_EMAIL_VERIFICATION_REQUIRED_MESSAGE },
+          { status: 403, headers: rateLimitHeaders }
+        );
       }
 
       if (appUserId !== customerAuth.identity.uid) {

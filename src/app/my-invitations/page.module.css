@@ -239,6 +239,57 @@
   word-break: break-word;
 }
 
+.guestbookPagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-top: 4px;
+}
+
+.guestbookPageSummary {
+  margin: 0;
+  color: #66707f;
+  font-size: 0.84rem;
+  font-weight: 700;
+}
+
+.guestbookPageControls {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.guestbookPageButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 34px;
+  min-height: 34px;
+  padding: 0 10px;
+  border: 1px solid #d9e0e8;
+  border-radius: 10px;
+  background: #ffffff;
+  color: #1d2430;
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.guestbookPageButtonActive {
+  border-color: #1d2430;
+  background: #1d2430;
+  color: #ffffff;
+}
+
+.guestbookPageButton:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
 .modalOverlay {
   position: fixed;
   inset: 0;
@@ -318,6 +369,62 @@
   border-top: 0;
 }
 
+.previewChoiceList {
+  display: grid;
+  gap: 10px;
+}
+
+.previewChoiceLink {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  min-height: 68px;
+  padding: 14px;
+  border-radius: 14px;
+  border: 1px solid #e3d9ca;
+  background: #ffffff;
+  color: #1d2430;
+  text-decoration: none;
+}
+
+.previewChoiceLink:hover,
+.previewChoiceLink:focus-visible {
+  border-color: #c9a77f;
+  box-shadow: 0 0 0 3px rgba(180, 137, 95, 0.16);
+  outline: none;
+}
+
+.previewChoiceText {
+  min-width: 0;
+  display: grid;
+  gap: 4px;
+}
+
+.previewChoiceText strong {
+  font-size: 0.98rem;
+}
+
+.previewChoiceText span {
+  color: #66707f;
+  font-size: 0.86rem;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+.previewChoiceBadge {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  min-height: 30px;
+  padding: 0 10px;
+  border-radius: 999px;
+  background: #f4efe7;
+  color: #5a422c;
+  font-size: 0.8rem;
+  font-weight: 800;
+}
+
 .textButton,
 .dangerButton {
   display: inline-flex;
@@ -373,6 +480,48 @@
   font-size: 0.94rem;
   font-weight: 700;
   line-height: 1.55;
+}
+
+.legalFooter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 4px 4px 0;
+  color: #66707f;
+}
+
+.legalFooterLabel {
+  margin: 0;
+  font-size: 0.84rem;
+  font-weight: 700;
+}
+
+.legalFooterLinks {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.legalFooterLink {
+  display: inline-flex;
+  align-items: center;
+  min-height: 34px;
+  padding: 0 11px;
+  border: 1px solid #ded6ca;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.72);
+  color: #394252;
+  font-size: 0.84rem;
+  font-weight: 800;
+  text-decoration: none;
+}
+
+.legalFooterLink:hover,
+.legalFooterLink:focus-visible {
+  border-color: #b5895f;
+  outline: none;
 }
 
 .formCard {
@@ -491,6 +640,29 @@
 
   .modalCloseButton {
     width: 100%;
+  }
+
+  .guestbookPagination {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .guestbookPageControls {
+    justify-content: flex-start;
+  }
+
+  .legalFooter {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .legalFooterLinks {
+    justify-content: flex-start;
+  }
+
+  .previewChoiceLink {
+    align-items: flex-start;
+    flex-direction: column;
   }
 
   .formCard {

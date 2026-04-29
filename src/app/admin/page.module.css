@@ -906,6 +906,12 @@
   grid-column: 1 / -1;
 }
 
+.accountDangerSection {
+  grid-column: 1 / -1;
+  border-color: #f4b7b2;
+  background: #fff8f7;
+}
+
 .accountCardSectionHeader {
   display: flex;
   align-items: center;

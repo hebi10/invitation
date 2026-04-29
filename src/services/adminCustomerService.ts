@@ -277,6 +277,57 @@ export async function getAdminCustomerAccountsSnapshot() {
   } satisfies AdminCustomerAccountsSnapshot;
 }
 
+export async function deleteAdminCustomerAccount(uid: string) {
+  const normalizedUid = uid.trim();
+  if (!normalizedUid) {
+    throw new Error('탈퇴 처리할 고객 계정을 먼저 확인해 주세요.');
+  }
+
+  const headers = await createAdminAuthHeaders();
+  const response = await fetch('/api/admin/customers/accounts', {
+    method: 'DELETE',
+    headers: {
+      ...headers,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      uid: normalizedUid,
+      confirm: true,
+    }),
+  });
+  const payload = (await response.json().catch(() => null)) as
+    | {
+        success?: boolean;
+        error?: string;
+        detachedEventCount?: unknown;
+        unpublishedEventCount?: unknown;
+        authUserDeleted?: unknown;
+      }
+    | null;
+
+  if (!response.ok) {
+    throw new Error(
+      typeof payload?.error === 'string' && payload.error.trim()
+        ? payload.error
+        : '고객 계정을 탈퇴 처리하지 못했습니다.'
+    );
+  }
+
+  return {
+    authUserDeleted: payload?.authUserDeleted === true,
+    detachedEventCount:
+      typeof payload?.detachedEventCount === 'number' &&
+      Number.isFinite(payload.detachedEventCount)
+        ? Math.max(0, Math.trunc(payload.detachedEventCount))
+        : 0,
+    unpublishedEventCount:
+      typeof payload?.unpublishedEventCount === 'number' &&
+      Number.isFinite(payload.unpublishedEventCount)
+        ? Math.max(0, Math.trunc(payload.unpublishedEventCount))
+        : 0,
+  };
+}
+
 export async function assignAdminCustomerEventOwnership(uid: string, pageSlug: string) {
   const normalizedPageSlug = normalizeInvitationPageSlugInput(pageSlug);
   if (!uid.trim() || !normalizedPageSlug) {

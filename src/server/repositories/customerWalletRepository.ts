@@ -42,6 +42,7 @@ export interface CustomerWalletRepository {
   findSummaryByOwnerUid(ownerUid: string): Promise<CustomerWalletSummary>;
   listSummariesByOwnerUids(ownerUids: string[]): Promise<Map<string, CustomerWalletSummary>>;
   adjustBalance(input: CustomerWalletAdjustmentInput): Promise<CustomerWalletSummary>;
+  deleteByOwnerUid(ownerUid: string): Promise<void>;
 }
 
 function normalizeOwnerUid(ownerUid: string) {
@@ -367,5 +368,59 @@ export const firestoreCustomerWalletRepository: CustomerWalletRepository = {
     });
 
     return firestoreCustomerWalletRepository.findSummaryByOwnerUid(normalizedOwnerUid);
+  },
+
+  async deleteByOwnerUid(ownerUid) {
+    const normalizedOwnerUid = normalizeOwnerUid(ownerUid);
+    if (!normalizedOwnerUid) {
+      throw new Error('고객 UID가 필요합니다.');
+    }
+
+    const db = getServerFirestore();
+    if (!db) {
+      throw new Error('Server Firestore is not available.');
+    }
+
+    const walletRef = db.collection(CUSTOMER_WALLETS_COLLECTION).doc(normalizedOwnerUid);
+    const ledgerSnapshot = await walletRef
+      .collection(CUSTOMER_WALLET_LEDGER_COLLECTION)
+      .limit(400)
+      .get();
+
+    let batch = db.batch();
+    let operationCount = 0;
+
+    for (const docSnapshot of ledgerSnapshot.docs) {
+      batch.delete(docSnapshot.ref);
+      operationCount += 1;
+    }
+
+    batch.delete(walletRef);
+    operationCount += 1;
+
+    if (operationCount > 0) {
+      await batch.commit();
+    }
+
+    let nextLedgerSnapshot = await walletRef
+      .collection(CUSTOMER_WALLET_LEDGER_COLLECTION)
+      .limit(400)
+      .get();
+
+    while (!nextLedgerSnapshot.empty) {
+      batch = db.batch();
+      operationCount = 0;
+
+      for (const docSnapshot of nextLedgerSnapshot.docs) {
+        batch.delete(docSnapshot.ref);
+        operationCount += 1;
+      }
+
+      await batch.commit();
+      nextLedgerSnapshot = await walletRef
+        .collection(CUSTOMER_WALLET_LEDGER_COLLECTION)
+        .limit(400)
+        .get();
+    }
   },
 };

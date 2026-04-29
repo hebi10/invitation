@@ -16,6 +16,10 @@ import {
   MOBILE_CLIENT_EDITOR_SESSION_TTL_SECONDS,
   resolveMobileClientEditorPermissions,
 } from '@/server/clientEditorMobileApi';
+import {
+  canCreateCustomerOwnedInvitation,
+  CUSTOMER_EMAIL_VERIFICATION_REQUIRED_MESSAGE,
+} from '@/server/customerAuthVerification';
 import { getServerAuth } from '@/server/firebaseAdmin';
 import {
   createServerInvitationPageDraftFromSeed,
@@ -67,6 +71,13 @@ export async function POST(request: Request) {
       return NextResponse.json(
         { error: 'Customer authentication is required.' },
         { status: 401 }
+      );
+    }
+
+    if (!canCreateCustomerOwnedInvitation(customerIdentity)) {
+      return NextResponse.json(
+        { error: CUSTOMER_EMAIL_VERIFICATION_REQUIRED_MESSAGE },
+        { status: 403 }
       );
     }
 

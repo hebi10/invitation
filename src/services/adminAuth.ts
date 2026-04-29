@@ -5,6 +5,7 @@ export interface AuthUser {
   uid: string;
   email: string | null;
   displayName: string | null;
+  emailVerified: boolean;
 }
 
 export interface AdminUser {
@@ -16,6 +17,8 @@ export interface AuthActionResult {
   success: boolean;
   user: AuthUser | null;
   isAdmin: boolean;
+  requiresEmailVerification?: boolean;
+  verificationEmailSent?: boolean;
   errorMessage?: string;
 }
 
@@ -29,6 +32,7 @@ type FirebaseAuthUserLike = {
   uid: string;
   email: string | null;
   displayName?: string | null;
+  emailVerified?: boolean;
   getIdToken: () => Promise<string>;
 };
 
@@ -156,11 +160,13 @@ function toAuthUser(user: {
   uid: string;
   email: string | null;
   displayName?: string | null;
+  emailVerified?: boolean;
 }): AuthUser {
   return {
     uid: user.uid,
     email: user.email,
     displayName: user.displayName ?? null,
+    emailVerified: user.emailVerified === true,
   };
 }
 
@@ -186,6 +192,7 @@ export async function loginFirebaseUser(
         uid: 'mock-user',
         email,
         displayName: 'Mock User',
+        emailVerified: true,
       },
       isAdmin: true,
     };
@@ -224,8 +231,11 @@ export async function registerFirebaseUser(
         uid: 'mock-user',
         email,
         displayName: 'Mock User',
+        emailVerified: true,
       },
       isAdmin: true,
+      requiresEmailVerification: false,
+      verificationEmailSent: false,
     };
   }
 
@@ -239,11 +249,23 @@ export async function registerFirebaseUser(
     email.trim(),
     password
   );
+  let verificationEmailSent = false;
+
+  if (!credential.user.emailVerified) {
+    try {
+      await authModule.sendEmailVerification(credential.user);
+      verificationEmailSent = true;
+    } catch (error) {
+      console.error('[adminAuth] failed to send verification email', error);
+    }
+  }
 
   return {
     success: true,
     user: toAuthUser(credential.user),
     isAdmin: await isUserAdmin(credential.user),
+    requiresEmailVerification: !credential.user.emailVerified,
+    verificationEmailSent,
   };
 }
 
@@ -259,6 +281,7 @@ export async function loginFirebaseUserWithGoogle(): Promise<AuthActionResult> {
         uid: 'mock-google-user',
         email: 'mock@example.com',
         displayName: 'Mock Google User',
+        emailVerified: true,
       },
       isAdmin: true,
     };
@@ -296,7 +319,9 @@ export async function logoutFirebaseUser() {
   await authModule.signOut(auth);
 }
 
-export async function getCurrentFirebaseIdToken() {
+export async function getCurrentFirebaseIdToken(
+  options: { forceRefresh?: boolean } = {}
+) {
   if (!USE_FIREBASE) {
     return null;
   }
@@ -306,7 +331,7 @@ export async function getCurrentFirebaseIdToken() {
     return null;
   }
 
-  return auth.currentUser.getIdToken();
+  return auth.currentUser.getIdToken(options.forceRefresh === true);
 }
 
 export function observeFirebaseSession(
