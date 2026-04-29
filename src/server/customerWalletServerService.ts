@@ -7,6 +7,7 @@ import type {
 } from '@/types/invitationPage';
 
 import { firestoreCustomerWalletRepository } from './repositories/customerWalletRepository';
+import { deleteAdminEventBySlug } from './adminEventDeletionService';
 import { setServerClientPassword } from './clientPasswordServerService';
 import { createServerInvitationPageDraftFromSeed } from './invitationPageServerService';
 import { firestoreEventRepository } from './repositories/eventRepository';
@@ -147,8 +148,12 @@ export async function createCustomerInvitationPageFromWalletCredit(
     note: `${input.productTier.toUpperCase()} 제작권을 새 청첩장 생성에 사용했습니다.`,
   });
 
+  let createdDraft: Awaited<
+    ReturnType<typeof createServerInvitationPageDraftFromSeed>
+  > | null = null;
+
   try {
-    const createdDraft = await createServerInvitationPageDraftFromSeed({
+    createdDraft = await createServerInvitationPageDraftFromSeed({
       seedSlug: input.seedSlug,
       slugBase: input.slugBase,
       groomName: input.groomName,
@@ -173,6 +178,15 @@ export async function createCustomerInvitationPageFromWalletCredit(
       config: createdDraft.config,
     };
   } catch (error) {
+    if (createdDraft?.slug) {
+      await deleteAdminEventBySlug(createdDraft.slug).catch((cleanupError) => {
+        console.error(
+          '[customerWalletServerService] failed to clean up partially created event',
+          cleanupError
+        );
+      });
+    }
+
     await firestoreCustomerWalletRepository.adjustBalance({
       ownerUid: normalizedOwnerUid,
       kind: 'pageCreation',

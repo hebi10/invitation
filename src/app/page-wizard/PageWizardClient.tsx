@@ -180,10 +180,15 @@ export default function PageWizardClient({ initialSlug }: PageWizardClientProps)
   const galleryUploadInputRef = useRef<HTMLInputElement | null>(null);
 
   const canCreateNew = isAdminLoggedIn;
-  const canUploadImages = isAdminLoggedIn;
+  const canUploadImages = isAdminLoggedIn || Boolean(initialSlug && isLoggedIn);
   const ownedEventsQuery = useQuery<CustomerOwnedEventSummary[]>({
     queryKey: appQueryKeys.ownedCustomerEvents(authUser?.uid ?? null),
-    enabled: false,
+    enabled:
+      Boolean(initialSlug) &&
+      !isAdminLoading &&
+      isLoggedIn &&
+      !isAdminLoggedIn &&
+      Boolean(authUser?.uid),
     queryFn: async () => listOwnedCustomerEvents(authUser?.uid ?? ''),
     staleTime: 0,
     gcTime: THIRTY_MINUTES_MS,
@@ -214,6 +219,7 @@ export default function PageWizardClient({ initialSlug }: PageWizardClientProps)
   const isOwnedEventsCheckPendingForInitialSlug = Boolean(
     initialSlug &&
       !isAdminLoading &&
+      !isAdminLoggedIn &&
       isLoggedIn &&
       authUser?.uid &&
       !ownedEventForInitialSlug &&
@@ -228,7 +234,10 @@ export default function PageWizardClient({ initialSlug }: PageWizardClientProps)
       isAdminLoggedIn,
       isLoggedIn,
     ],
-    enabled: Boolean(initialSlug) && !isAdminLoading && isAdminLoggedIn,
+    enabled:
+      Boolean(initialSlug) &&
+      !isAdminLoading &&
+      (isAdminLoggedIn || isLoggedIn),
     queryFn: async () => {
       if (!initialSlug) {
         throw new Error('기존 청첩장 slug가 없습니다.');
@@ -845,7 +854,7 @@ export default function PageWizardClient({ initialSlug }: PageWizardClientProps)
       return;
     }
 
-    if (!isAdminLoggedIn) {
+    if (!isAdminLoggedIn && (!initialSlug || !isLoggedIn)) {
       setFormState(null);
       setClientPasswordInput('');
       setRequiresOwnershipClaim(false);
@@ -1373,7 +1382,7 @@ export default function PageWizardClient({ initialSlug }: PageWizardClientProps)
     handleGalleryImageMove,
   } = useImageUpload({
     canUploadImages,
-    uploadRole: isAdminLoggedIn ? 'admin' : 'client',
+    uploadRole: isAdminLoggedIn ? 'admin' : 'owner',
     formState,
     maxGalleryImages,
     coverUploadInputRef,
@@ -1564,7 +1573,9 @@ export default function PageWizardClient({ initialSlug }: PageWizardClientProps)
 
     return <div className={getNoticeClassName(notice.tone)}>{notice.message}</div>;
   };
-  const isExistingWizardRefreshable = Boolean(initialSlug && isAdminLoggedIn);
+  const isExistingWizardRefreshable = Boolean(
+    initialSlug && (isAdminLoggedIn || isLoggedIn)
+  );
   const isWizardRefreshing = wizardLoadQuery.isRefetching;
   const isCheckingOwnedEventsBeforeClaim = Boolean(
     initialSlug &&
@@ -1592,7 +1603,7 @@ export default function PageWizardClient({ initialSlug }: PageWizardClientProps)
     );
   }
 
-  if (!isAdminLoggedIn) {
+  if (!isAdminLoggedIn && (!initialSlug || !isLoggedIn)) {
     return (
       <main className={styles.page}>
         <div className={`${styles.shell} ${styles.gateShell}`}>
@@ -1600,21 +1611,21 @@ export default function PageWizardClient({ initialSlug }: PageWizardClientProps)
             <FirebaseAuthLoginCard
               title={
                 initialSlug
-                  ? '청첩장 편집은 관리자만 이용 가능합니다'
+                  ? '청첩장 편집을 위해 로그인해 주세요'
                   : '청첩장 만들기는 관리자만 이용 가능합니다'
               }
               description={
                 initialSlug
-                  ? '관리자 계정으로 로그인한 뒤 청첩장 편집 화면에 다시 접속해 주세요.'
+                  ? '청첩장에 연결된 고객 계정으로 로그인하면 편집 화면을 이용할 수 있습니다.'
                   : '관리자 계정으로 로그인한 뒤 새 청첩장 생성 화면을 이용해 주세요.'
               }
               helperText={
                 initialSlug
-                  ? '고객 계정 연결이나 비밀번호 확인 흐름은 이 화면에서 제공하지 않습니다.'
+                  ? '아직 계정에 연결되지 않은 기존 청첩장은 로그인 후 페이지 비밀번호로 연결할 수 있습니다.'
                   : '청첩장 생성은 관리자 권한이 확인된 계정에서만 가능합니다.'
               }
-              requireAdmin
-              allowSignUp={false}
+              requireAdmin={!initialSlug}
+              allowSignUp={Boolean(initialSlug)}
             />
           </section>
         </div>

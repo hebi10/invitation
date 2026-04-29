@@ -93,6 +93,7 @@
 - claim 직후 편집 화면 전환은 클라이언트 Firestore 규칙 전파나 slug index 읽기에 의존하지 않고, 서버 Admin SDK가 확인한 owner/config 상태를 기준으로 한다.
 - `/api/customer/events/claim` 성공 응답은 가능한 경우 서버가 확인한 editable config를 함께 내려주며, 고객 위저드는 이 config를 즉시 적용한다.
 - 고객 위저드 진입 시 Storage listing fallback과 클라이언트 Firestore 이미지 정리 저장은 실행하지 않는다.
+- 고객 위저드의 이미지 업로드는 Firebase 로그인 계정의 이벤트 소유권을 Storage rules가 확인하는 직접 업로드 경로를 사용한다.
 - 고객 위저드는 editable API가 `claimable`을 먼저 반환해도 `/api/customer/events` 소유 목록 확인이 끝나기 전에는 비밀번호 claim 카드를 렌더링하지 않는다.
 - slug index가 오래되어 먼저 찾은 이벤트의 `ownerUid`가 비어 있어도, 현재 UID가 같은 slug의 이벤트 summary를 소유하고 있으면 고객 편집 API는 `claimable`보다 owner를 우선 인정한다.
 - owner 이벤트의 editable config가 비어 있고 같은 slug의 sample config가 있으면 고객 편집 API는 sample 기반 config를 반환해 비밀번호 claim 루프로 보내지 않는다.
@@ -102,7 +103,7 @@
 - 고객 제작권과 운영 티켓 지급/소비 이력은 `src/server/repositories/customerWalletRepository.ts`가 Firestore `customerWallets` 경로를 전담한다.
 - 관리자 지급은 `/api/admin/customers/wallet`을 통해서만 처리하고, 클라이언트는 `src/services/adminCustomerService.ts` 공개 함수를 호출한다.
 - 고객 지갑 조회는 `/api/customer/wallet`을 통해 서버가 Firebase ID token을 검증한 UID 기준으로만 반환한다.
-- 고객 청첩장 생성 API는 `/api/customer/events` `POST`에서 제작권 1개를 차감한 뒤 이벤트 초안을 만들고 소유권을 연결한다.
+- 고객 청첩장 생성 API는 `/api/customer/events` `POST`에서 제작권 1개를 차감한 뒤 이벤트 초안을 만들고 소유권을 연결하며, 중간 실패 시 생성된 초안 정리와 제작권 환불을 시도한다.
 - 모바일 티켓팩 결제는 이벤트 잔액 적립을 유지하되, 고객 계정에 연결된 이벤트라면 지갑 원장에도 구매/배정 이력을 남긴다.
 
 ## 남겨둔 예외

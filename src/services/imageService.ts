@@ -416,7 +416,7 @@ export const uploadPageEditorImage = async (
     assetKind,
   });
 
-export type EditableImageUploadRole = 'admin' | 'client';
+export type EditableImageUploadRole = 'admin' | 'owner' | 'client';
 
 export async function uploadEditablePageImage(
   file: File,
@@ -424,7 +424,7 @@ export async function uploadEditablePageImage(
   assetKind: PageEditorImageAssetKind,
   role: EditableImageUploadRole
 ) {
-  if (role === 'admin') {
+  if (role === 'admin' || role === 'owner') {
     return uploadPageEditorImage(file, pageSlug, assetKind);
   }
 
