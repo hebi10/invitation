@@ -166,7 +166,7 @@ export function authorizeMobileClientEditorHighRiskToken(
 
   if (
     highRiskSession.pageSlug !== access.session.pageSlug ||
-    highRiskSession.passwordVersion !== access.passwordRecord.passwordVersion
+    highRiskSession.passwordVersion !== access.session.passwordVersion
   ) {
     return null;
   }

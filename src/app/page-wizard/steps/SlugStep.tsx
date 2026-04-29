@@ -1,5 +1,3 @@
-import { useState } from 'react';
-
 import styles from '../page.module.css';
 import { renderFieldMeta, type SlugStepProps } from '../pageWizardShared';
 
@@ -18,12 +16,7 @@ export default function SlugStep({
   normalizedSlugInput,
   persistedSlug,
   previewSlug,
-  showClientPasswordField,
-  clientPassword,
-  setClientPassword,
 }: SlugStepProps) {
-  const [isClientPasswordVisible, setIsClientPasswordVisible] = useState(true);
-
   return (
     <div className={styles.fieldGrid}>
       <div className={styles.summaryCard}>
@@ -136,30 +129,6 @@ export default function SlugStep({
         </p>
       </div>
 
-      {showClientPasswordField ? (
-        <label className={styles.field}>
-          {renderFieldMeta(
-            '고객 편집 비밀번호',
-            'required',
-            '고객 로그인, 기존 청첩장 연결, 모바일 편집 로그인에 사용할 비밀번호를 직접 설정해 주세요.'
-          )}
-          <input
-            className={styles.input}
-            type={isClientPasswordVisible ? 'text' : 'password'}
-            autoComplete="new-password"
-            value={clientPassword}
-            placeholder="예: wedding2026!"
-            onChange={(event) => setClientPassword(event.target.value)}
-          />
-          <button
-            type="button"
-            className={styles.secondaryButton}
-            onClick={() => setIsClientPasswordVisible((current) => !current)}
-          >
-            {isClientPasswordVisible ? '숨기기' : '보기'}
-          </button>
-        </label>
-      ) : null}
     </div>
   );
 }

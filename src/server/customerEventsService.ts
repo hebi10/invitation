@@ -324,7 +324,11 @@ export async function listCustomerEventGuestbookComments(
   const comments = await firestoreEventCommentRepository.listByPageSlug(summary.slug);
 
   return comments
-    .filter((comment) => isGuestbookCommentVisibleToManager(comment.data, now))
+    .filter(
+      (comment) =>
+        isGuestbookCommentVisibleToManager(comment.data, now) &&
+        readGuestbookCommentStatus(comment.data) !== 'pending_delete'
+    )
     .map((comment) =>
       buildCustomerGuestbookCommentSummary(comment.id, summary.slug, comment.data)
     )
@@ -360,6 +364,6 @@ export async function scheduleDeleteCustomerEventGuestbookComment(
   await firestoreEventCommentRepository.updateByPageSlugAndId(
     summary.slug,
     normalizedCommentId,
-    buildGuestbookCommentStatusPatch('scheduleDelete', new Date())
+    { ...buildGuestbookCommentStatusPatch('scheduleDelete', new Date()) }
   );
 }

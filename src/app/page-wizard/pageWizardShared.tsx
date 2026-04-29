@@ -73,9 +73,6 @@ export interface SlugStepProps {
   normalizedSlugInput: string | null;
   persistedSlug: string | null;
   previewSlug: string;
-  showClientPasswordField: boolean;
-  clientPassword: string;
-  setClientPassword: (value: string) => void;
 }
 
 export interface BasicStepProps extends WizardStepProps {

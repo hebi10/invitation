@@ -10,7 +10,6 @@ import { getEventTypeDisplayLabel } from '@/lib/eventTypes';
 import type { InvitationPageSummary } from '@/services';
 
 import {
-  AdminClientPasswordsTab,
   AdminCommentsTab,
   AdminCustomerAccountsTab,
   AdminPagesTab,
@@ -144,7 +143,6 @@ export default function AdminPageClient() {
   const {
     pages,
     comments,
-    clientPasswords,
     customerAccounts,
     unassignedCustomerEvents,
     memoryPublicCount,
@@ -156,11 +154,8 @@ export default function AdminPageClient() {
     commentsRefreshing,
     summaryLoading,
     summaryRefreshing,
-    passwordsLoading,
-    passwordsRefreshing,
     accountsLoading,
     accountsRefreshing,
-    savingPasswordPageSlug,
     updatingPublishedPageSlug,
     updatingVariantToken,
     updatingTierPageSlug,
@@ -169,12 +164,10 @@ export default function AdminPageClient() {
     walletGrantActionToken,
     refreshPages,
     fetchComments,
-    fetchPasswords,
     fetchCustomerAccounts,
     fetchSummarySources,
     handleDeleteComment,
     handleDeletePage,
-    handleSavePassword,
     handleAssignCustomerOwnership,
     handleClearCustomerOwnership,
     handleGrantCustomerWalletCredit,
@@ -352,21 +345,11 @@ export default function AdminPageClient() {
   const restrictedCount = dashboardSummary?.restrictedCount ?? pages.filter((page) => page.displayPeriodEnabled).length;
   const dueSoonCount = dashboardSummary?.dueSoonCount ?? pages.filter(isPageDueSoon).length;
   const recentCommentsCount = dashboardSummary?.commentSummary.recentCount ?? commentSummary.recentCount;
-  const configuredPasswordCount = clientPasswords.filter((entry) => entry.hasPassword).length;
-  const recentPasswordUpdateCount = clientPasswords.filter((entry) => {
-    const updatedAt = entry.updatedAt?.getTime() ?? 0;
-    if (!updatedAt) {
-      return false;
-    }
-
-    return Date.now() - updatedAt <= RECENT_COMMENT_DAYS * 24 * 60 * 60 * 1000;
-  }).length;
   const customerAccountCount = customerAccounts.length;
   const linkedCustomerEventCount = customerAccounts.reduce(
     (sum, account) => sum + account.linkedEvents.length,
     0
   );
-  const orphanedAccountCount = customerAccounts.filter((account) => account.missingAuthUser).length;
   const unassignedCustomerEventCount = unassignedCustomerEvents.length;
 
   const customerSummaryCards: SummaryCardItem[] = [
@@ -405,20 +388,6 @@ export default function AdminPageClient() {
       tone: unassignedCustomerEventCount > 0 ? 'warning' : 'success',
       actionLabel: '계정에 연결하기',
       onClick: () => updateQuery({ section: 'customers', tab: 'accounts' }),
-    },
-    {
-      id: 'configured-passwords',
-      label: '비밀번호 설정됨',
-      value: configuredPasswordCount,
-      meta:
-        orphanedAccountCount > 0
-          ? `삭제된 계정에 남아 있는 청첩장 ${orphanedAccountCount}건이 있어 연결 상태를 점검해 주세요.`
-          : configuredPasswordCount > 0
-            ? `최근 ${RECENT_COMMENT_DAYS}일 이내 변경된 비밀번호 ${recentPasswordUpdateCount}건을 포함합니다.`
-            : '설정된 고객 비밀번호가 아직 없습니다.',
-      tone: orphanedAccountCount > 0 ? 'warning' : configuredPasswordCount > 0 ? 'primary' : 'neutral',
-      actionLabel: '비밀번호 보기',
-      onClick: () => updateQuery({ section: 'customers', tab: 'passwords' }),
     },
   ];
 
@@ -920,20 +889,6 @@ export default function AdminPageClient() {
               onClear={(pageSlug) => void handleClearCustomerOwnership(pageSlug)}
               onGrantWalletCredit={(uid, grant) =>
                 void handleGrantCustomerWalletCredit(uid, grant)
-              }
-            />
-          ) : null}
-
-          {activeTab === 'passwords' ? (
-            <AdminClientPasswordsTab
-              loading={passwordsLoading}
-              refreshing={passwordsRefreshing}
-              pages={pages}
-              passwords={clientPasswords}
-              savingPageSlug={savingPasswordPageSlug}
-              onRefresh={() => void fetchPasswords()}
-              onSave={(pageSlug, nextPassword) =>
-                void handleSavePassword(pageSlug, nextPassword)
               }
             />
           ) : null}

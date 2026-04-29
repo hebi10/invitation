@@ -3,23 +3,16 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { type ReactNode, useEffect, useMemo, useState } from 'react';
 
-import CustomerEventClaimCard from '@/app/_components/CustomerEventClaimCard';
-import FirebaseAuthLoginCard from '@/app/_components/FirebaseAuthLoginCard';
-import { useAdmin } from '@/contexts';
 import {
   appQueryKeys,
-  FIFTEEN_MINUTES_MS,
   GUESTBOOK_GC_TIME_MS,
   GUESTBOOK_STALE_TIME_MS,
-  THIRTY_MINUTES_MS,
 } from '@/lib/appQuery';
 import {
   addComment,
-  deleteComment,
   getComments,
   type Comment,
 } from '@/services/commentService';
-import { getCustomerEventOwnershipStatus } from '@/services/customerEventService';
 import { HeartIcon, HeartIconSimple } from '@/components/icons';
 
 interface GuestbookThemedProps {
@@ -68,7 +61,6 @@ export default function GuestbookThemed({
   statusColors,
   emptyIcon,
 }: GuestbookThemedProps) {
-  const { authUser, isAdminLoggedIn, isLoggedIn, supportsInteractiveAuth } = useAdmin();
   const queryClient = useQueryClient();
 
   const [name, setName] = useState('');
@@ -78,11 +70,6 @@ export default function GuestbookThemed({
   const [statusTone, setStatusTone] = useState<StatusTone>('success');
   const [currentPage, setCurrentPage] = useState(1);
   const [isMobile, setIsMobile] = useState(false);
-  const [showClientManager, setShowClientManager] = useState(false);
-  const [ownershipState, setOwnershipState] = useState<
-    'unknown' | 'owner' | 'claimable' | 'different-owner' | 'missing'
-  >('unknown');
-  const [lastTitleInteraction, setLastTitleInteraction] = useState(0);
   const commentsQuery = useQuery({
     queryKey: appQueryKeys.guestbookComments(pageSlug),
     enabled: Boolean(pageSlug),
@@ -91,18 +78,9 @@ export default function GuestbookThemed({
     gcTime: GUESTBOOK_GC_TIME_MS,
     refetchOnWindowFocus: false,
   });
-  const ownershipQuery = useQuery({
-    queryKey: appQueryKeys.guestbookOwnership(pageSlug, authUser?.uid ?? null),
-    enabled: !isAdminLoggedIn && isLoggedIn && Boolean(pageSlug),
-    queryFn: async () => getCustomerEventOwnershipStatus(pageSlug, authUser?.uid),
-    staleTime: FIFTEEN_MINUTES_MS,
-    gcTime: THIRTY_MINUTES_MS,
-    refetchOnWindowFocus: false,
-  });
   const comments = commentsQuery.data ?? [];
   const isRefreshingComments = commentsQuery.isRefetching;
 
-  const canManageComments = isAdminLoggedIn || ownershipState === 'owner';
   const commentsPerPage = 5;
   const totalPages = Math.max(1, Math.ceil(comments.length / commentsPerPage));
   const currentComments = comments.slice(
@@ -161,34 +139,6 @@ export default function GuestbookThemed({
   }, [currentPage, totalPages]);
 
   useEffect(() => {
-    if (isAdminLoggedIn) {
-      setOwnershipState('owner');
-      return;
-    }
-
-    if (!isLoggedIn) {
-      setOwnershipState('unknown');
-      return;
-    }
-
-    if (ownershipQuery.data) {
-      setOwnershipState(ownershipQuery.data.status);
-      return;
-    }
-
-    if (ownershipQuery.error) {
-      setOwnershipState('unknown');
-    }
-  }, [
-    authUser?.uid,
-    isAdminLoggedIn,
-    isLoggedIn,
-    ownershipQuery.data,
-    ownershipQuery.error,
-    pageSlug,
-  ]);
-
-  useEffect(() => {
     if (!commentsQuery.error) {
       return;
     }
@@ -225,43 +175,6 @@ export default function GuestbookThemed({
     } finally {
       setIsSubmitting(false);
     }
-  };
-
-  const handleDelete = async (comment: Comment) => {
-    if (!canManageComments) {
-      showStatus('관리 권한이 있는 계정으로 로그인한 뒤 삭제할 수 있습니다.', 'error');
-      return;
-    }
-
-    if (!window.confirm('이 메시지를 삭제할까요?')) {
-      return;
-    }
-
-    try {
-      await deleteComment(comment.id, comment.collectionName);
-      await queryClient.invalidateQueries({
-        queryKey: appQueryKeys.guestbookComments(pageSlug),
-      });
-      showStatus('메시지를 삭제했습니다.', 'success');
-    } catch (error) {
-      console.error('Failed to delete comment', error);
-      showStatus('메시지 삭제에 실패했습니다.', 'error');
-    }
-  };
-
-  const handleTitleInteraction = () => {
-    if (isAdminLoggedIn || !supportsInteractiveAuth) {
-      return;
-    }
-
-    const now = Date.now();
-    if (lastTitleInteraction && now - lastTitleInteraction < 320) {
-      setShowClientManager((current) => !current);
-      setLastTitleInteraction(0);
-      return;
-    }
-
-    setLastTitleInteraction(now);
   };
 
   const pageNumbers = useMemo(() => {
@@ -309,109 +222,6 @@ export default function GuestbookThemed({
     );
   };
 
-  const renderManagerBlock = () => {
-    if (!showClientManager && !canManageComments) {
-      return null;
-    }
-
-    if (showClientManager && !isLoggedIn) {
-      return (
-        <div style={{ marginTop: '0.9rem', display: 'grid', gap: '0.7rem' }}>
-          <FirebaseAuthLoginCard
-            compact
-            title="로그인 후 방명록을 관리해 주세요"
-            description="이메일 로그인이나 Google 로그인을 완료하면 현재 계정 UID 기준으로 청첩장 소유권을 확인합니다."
-            helperText="기본 이메일 로그인과 Google 로그인만 지원합니다."
-          />
-        </div>
-      );
-    }
-
-    if (showClientManager && !isAdminLoggedIn && ownershipState === 'claimable') {
-      return (
-        <div style={{ marginTop: '0.9rem', display: 'grid', gap: '0.7rem' }}>
-          <CustomerEventClaimCard
-            compact
-            pageSlug={pageSlug}
-            title="기존 청첩장을 현재 계정에 연결해 주세요"
-            description="기존 페이지 비밀번호를 한 번 확인하면 이 계정으로 방명록을 계속 관리할 수 있습니다."
-            helperText="연결 이후에는 Firebase 로그인만으로 방명록 관리가 가능합니다."
-            onClaimed={async () => {
-              setOwnershipState('owner');
-              setShowClientManager(false);
-              showStatus('현재 계정에 청첩장을 연결했습니다.', 'success');
-            }}
-          />
-        </div>
-      );
-    }
-
-    if (showClientManager && !isAdminLoggedIn && ownershipState === 'different-owner') {
-      return (
-        <div
-          style={{
-            marginTop: '0.9rem',
-            display: 'grid',
-            gap: '0.55rem',
-            padding: '0.9rem 1rem',
-            border: '1px solid rgba(248, 113, 113, 0.28)',
-            borderRadius: '14px',
-            background: 'rgba(255,255,255,0.78)',
-            backdropFilter: 'blur(8px)',
-          }}
-        >
-          <strong style={{ fontSize: '0.95rem' }}>다른 계정에 연결된 청첩장입니다.</strong>
-          <p style={{ margin: 0, fontSize: '0.86rem', lineHeight: 1.6 }}>
-            현재 로그인한 계정으로는 이 방명록을 관리할 수 없습니다. 내 청첩장은 내 청첩장 관리 페이지에서 확인해 주세요.
-          </p>
-        </div>
-      );
-    }
-
-    if (showClientManager && !isAdminLoggedIn && ownershipState === 'missing') {
-      return (
-        <div
-          style={{
-            marginTop: '0.9rem',
-            display: 'grid',
-            gap: '0.55rem',
-            padding: '0.9rem 1rem',
-            border: '1px solid rgba(148, 163, 184, 0.24)',
-            borderRadius: '14px',
-            background: 'rgba(255,255,255,0.78)',
-            backdropFilter: 'blur(8px)',
-          }}
-        >
-          <strong style={{ fontSize: '0.95rem' }}>청첩장 정보를 찾지 못했습니다.</strong>
-          <p style={{ margin: 0, fontSize: '0.86rem', lineHeight: 1.6 }}>
-            이 페이지와 연결된 청첩장 정보가 없어 방명록 관리 권한을 확인할 수 없습니다.
-          </p>
-        </div>
-      );
-    }
-
-    return (
-      <div
-        style={{
-          marginTop: '0.9rem',
-          display: 'grid',
-          gap: '0.7rem',
-          padding: '0.9rem 1rem',
-          border: '1px solid rgba(148, 163, 184, 0.24)',
-          borderRadius: '14px',
-          background: 'rgba(255,255,255,0.78)',
-          backdropFilter: 'blur(8px)',
-        }}
-      >
-        <p style={{ margin: 0, fontSize: '0.86rem', lineHeight: 1.6, textAlign: 'center' }}>
-          {isAdminLoggedIn
-            ? '관리자 권한 로그인 중입니다.'
-            : '이 방명록을 관리할 수 있는 계정으로 로그인했습니다.'}
-        </p>
-      </div>
-    );
-  };
-
   const renderHeader = () => {
     const titleContent = <h2 className={styles.title}>{title}</h2>;
 
@@ -420,33 +230,10 @@ export default function GuestbookThemed({
         {hasClass(styles, 'lemonDecoration') ? (
           <div className={styles.lemonDecoration}>🍋</div>
         ) : null}
-        <div
-          className={styles.titleSection}
-          onDoubleClick={() => {
-            if (!isAdminLoggedIn) {
-              setShowClientManager((current) => !current);
-            }
-          }}
-          onTouchEnd={() => {
-            handleTitleInteraction();
-          }}
-          onKeyDown={(event) => {
-            if (event.key === 'Enter' || event.key === ' ') {
-              event.preventDefault();
-              if (!isAdminLoggedIn) {
-                setShowClientManager((current) => !current);
-              }
-            }
-          }}
-          role="button"
-          tabIndex={0}
-          title="제목을 두 번 눌러 방명록 관리 모드를 열 수 있습니다."
-          style={{ cursor: 'pointer', userSelect: 'none' }}
-        >
+        <div className={styles.titleSection}>
           {titleContent}
         </div>
         <p className={styles.subtitle}>{subtitle}</p>
-        {renderManagerBlock()}
       </>
     );
 
@@ -579,7 +366,6 @@ export default function GuestbookThemed({
           type="button"
           onClick={() => {
             void commentsQuery.refetch();
-            void ownershipQuery.refetch();
           }}
           disabled={isRefreshingComments}
           style={{
@@ -641,15 +427,6 @@ export default function GuestbookThemed({
             <span className={styles.commentDate}>{formatDate(comment.createdAt)}</span>
           )}
 
-          {canManageComments ? (
-            <button
-              className={styles.deleteButton}
-              onClick={() => void handleDelete(comment)}
-              type="button"
-            >
-              삭제
-            </button>
-          ) : null}
         </div>
       </div>
     );

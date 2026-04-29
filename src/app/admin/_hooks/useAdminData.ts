@@ -22,19 +22,15 @@ import {
   deleteAdminEventByPageSlug,
   deleteComment,
   getAdminCustomerAccountsSnapshot,
-  getAdminClientPasswordsSnapshot,
   getAdminDashboardSummary,
   getAllComments,
   getAllManagedInvitationPages,
   grantAdminCustomerWalletCredit,
-  setClientPassword,
   setInvitationPageProductTier,
   setInvitationPagePublished,
   setInvitationPageVariantAvailability,
-  type AdminClientPasswordSummary,
   type AdminCustomerAccountsSnapshot,
   type AdminDashboardSummarySnapshot,
-  type ClientPassword,
   type Comment,
   type CommentSummary,
   type InvitationPageSummary,
@@ -64,22 +60,6 @@ const EMPTY_COMMENT_SUMMARY: CommentSummary = {
   recentCount: 0,
 };
 
-function toLegacyClientPasswords(entries: AdminClientPasswordSummary[]): ClientPassword[] {
-  return entries.map((entry) => {
-    const timestamp = entry.updatedAt ?? new Date(0);
-
-    return {
-      id: entry.eventId,
-      pageSlug: entry.slug,
-      hasPassword: entry.hasPassword,
-      passwordVersion: entry.passwordVersion,
-      requiresReset: entry.requiresReset,
-      createdAt: timestamp,
-      updatedAt: timestamp,
-    };
-  });
-}
-
 export function useAdminData({
   isAdminLoggedIn,
   activeTab,
@@ -87,7 +67,6 @@ export function useAdminData({
   confirm,
 }: UseAdminDataParams) {
   const queryClient = useQueryClient();
-  const [savingPasswordPageSlug, setSavingPasswordPageSlug] = useState<string | null>(null);
   const [updatingPublishedPageSlug, setUpdatingPublishedPageSlug] = useState<string | null>(null);
   const [updatingVariantToken, setUpdatingVariantToken] = useState<string | null>(null);
   const [updatingTierPageSlug, setUpdatingTierPageSlug] = useState<string | null>(null);
@@ -99,13 +78,9 @@ export function useAdminData({
     isAdminLoggedIn &&
     (activeTab === 'pages' ||
       activeTab === 'comments' ||
-      activeTab === 'periods' ||
-      activeTab === 'passwords');
+      activeTab === 'periods');
   const shouldLoadComments = isAdminLoggedIn && activeTab === 'comments';
-  const shouldLoadPasswords =
-    isAdminLoggedIn && (activeTab === 'passwords' || activeTab === 'accounts');
-  const shouldLoadAccounts =
-    isAdminLoggedIn && (activeTab === 'accounts' || activeTab === 'passwords');
+  const shouldLoadAccounts = isAdminLoggedIn && activeTab === 'accounts';
 
   const dashboardSummaryQuery = useQuery<AdminDashboardSummarySnapshot>({
     queryKey: appQueryKeys.adminDashboardSummary(RECENT_COMMENT_DAYS),
@@ -131,14 +106,6 @@ export function useAdminData({
     gcTime: ADMIN_GC_TIME_MS,
     refetchOnWindowFocus: false,
   });
-  const passwordsQuery = useQuery<AdminClientPasswordSummary[]>({
-    queryKey: appQueryKeys.adminClientPasswords,
-    enabled: shouldLoadPasswords,
-    queryFn: async () => getAdminClientPasswordsSnapshot(),
-    staleTime: ADMIN_STALE_TIME_MS,
-    gcTime: ADMIN_GC_TIME_MS,
-    refetchOnWindowFocus: false,
-  });
   const accountsQuery = useQuery<AdminCustomerAccountsSnapshot>({
     queryKey: appQueryKeys.adminCustomerAccounts,
     enabled: shouldLoadAccounts,
@@ -150,10 +117,6 @@ export function useAdminData({
 
   const pages = useMemo(() => pagesQuery.data ?? [], [pagesQuery.data]);
   const comments = useMemo(() => commentsQuery.data ?? [], [commentsQuery.data]);
-  const clientPasswords = useMemo(
-    () => toLegacyClientPasswords(passwordsQuery.data ?? []),
-    [passwordsQuery.data]
-  );
   const customerAccounts = useMemo(
     () => accountsQuery.data?.accounts ?? [],
     [accountsQuery.data?.accounts]
@@ -177,8 +140,6 @@ export function useAdminData({
   const commentsRefreshing = commentsQuery.isRefetching;
   const summaryLoading = dashboardSummaryQuery.isPending;
   const summaryRefreshing = dashboardSummaryQuery.isRefetching;
-  const passwordsLoading = passwordsQuery.isPending;
-  const passwordsRefreshing = passwordsQuery.isRefetching;
   const accountsLoading = accountsQuery.isPending;
   const accountsRefreshing = accountsQuery.isRefetching;
 
@@ -198,7 +159,6 @@ export function useAdminData({
       summary?: boolean;
       pages?: boolean;
       comments?: boolean;
-      passwords?: boolean;
       accounts?: boolean;
       invitationPageSlug?: string | null;
     }) => {
@@ -227,18 +187,6 @@ export function useAdminData({
           tasks.push(
             queryClient.invalidateQueries({
               queryKey: appQueryKeys.adminComments,
-            })
-          );
-        }
-      }
-
-      if (options.passwords) {
-        if (shouldLoadPasswords) {
-          tasks.push(passwordsQuery.refetch());
-        } else {
-          tasks.push(
-            queryClient.invalidateQueries({
-              queryKey: appQueryKeys.adminClientPasswords,
             })
           );
         }
@@ -276,12 +224,10 @@ export function useAdminData({
       commentsQuery,
       dashboardSummaryQuery,
       pagesQuery,
-      passwordsQuery,
       queryClient,
       shouldLoadAccounts,
       shouldLoadComments,
       shouldLoadPages,
-      shouldLoadPasswords,
     ]
   );
 
@@ -303,13 +249,6 @@ export function useAdminData({
     await refreshAdminData({
       summary: true,
       comments: true,
-    });
-  }, [refreshAdminData]);
-
-  const fetchPasswords = useCallback(async () => {
-    await refreshAdminData({
-      passwords: true,
-      pages: true,
     });
   }, [refreshAdminData]);
 
@@ -370,7 +309,6 @@ export function useAdminData({
           summary: true,
           pages: true,
           comments: true,
-          passwords: true,
           accounts: true,
           invitationPageSlug: page.slug,
         });
@@ -388,40 +326,6 @@ export function useAdminData({
       }
     },
     [confirm, refreshAdminData, showToast]
-  );
-
-  const handleSavePassword = useCallback(
-    async (pageSlug: string, nextPassword: string) => {
-      const pageName = pages.find((page) => page.slug === pageSlug)?.displayName ?? pageSlug;
-      const approved = await confirm({
-        title: '비밀번호를 저장할까요?',
-        description: `${pageName} 페이지의 고객 비밀번호를 새 값으로 저장합니다.`,
-        confirmLabel: '저장',
-        cancelLabel: '취소',
-        tone: 'danger',
-      });
-
-      if (!approved) {
-        return;
-      }
-
-      setSavingPasswordPageSlug(pageSlug);
-
-      try {
-        await setClientPassword(pageSlug, nextPassword);
-        await refreshAdminData({
-          passwords: true,
-          pages: true,
-        });
-        showToast({ title: '고객 비밀번호를 저장했습니다.', tone: 'success' });
-      } catch (saveError) {
-        console.error(saveError);
-        showToast({ title: '고객 비밀번호 저장에 실패했습니다.', tone: 'error' });
-      } finally {
-        setSavingPasswordPageSlug(null);
-      }
-    },
-    [confirm, pages, refreshAdminData, showToast]
   );
 
   const handleAssignCustomerOwnership = useCallback(
@@ -765,9 +669,6 @@ export function useAdminData({
       queryKey: appQueryKeys.adminComments,
     });
     queryClient.removeQueries({
-      queryKey: appQueryKeys.adminClientPasswords,
-    });
-    queryClient.removeQueries({
       queryKey: appQueryKeys.adminCustomerAccounts,
     });
   }, [queryClient]);
@@ -775,7 +676,6 @@ export function useAdminData({
   return {
     pages,
     comments,
-    clientPasswords,
     customerAccounts,
     unassignedCustomerEvents,
     memoryPublicCount,
@@ -788,11 +688,8 @@ export function useAdminData({
     commentsRefreshing,
     summaryLoading,
     summaryRefreshing,
-    passwordsLoading,
-    passwordsRefreshing,
     accountsLoading,
     accountsRefreshing,
-    savingPasswordPageSlug,
     updatingPublishedPageSlug,
     updatingVariantToken,
     updatingTierPageSlug,
@@ -802,13 +699,11 @@ export function useAdminData({
 
     refreshPages,
     fetchComments,
-    fetchPasswords,
     fetchCustomerAccounts,
     fetchSummarySources,
 
     handleDeleteComment,
     handleDeletePage,
-    handleSavePassword,
     handleAssignCustomerOwnership,
     handleClearCustomerOwnership,
     handleGrantCustomerWalletCredit,

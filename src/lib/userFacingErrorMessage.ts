@@ -11,9 +11,6 @@ const DIRECT_ERROR_MESSAGE_MAP: Record<string, string> = {
   'Invitation page slug does not match the authenticated session.':
     '요청한 청첩장 주소가 현재 로그인 세션과 일치하지 않습니다.',
   'Groom and bride names are required.': '신랑과 신부 이름을 모두 입력해 주세요.',
-  'Page slug and password are required.': '페이지 주소와 비밀번호를 모두 입력해 주세요.',
-  'Invalid page password.': '비밀번호가 올바르지 않습니다.',
-  'Failed to verify the page password.': '페이지 비밀번호를 확인하지 못했습니다.',
   'Published state is required.': '공개 상태 값이 필요합니다.',
   'Unsupported action.': '지원하지 않는 요청입니다.',
   'Unauthorized.': '편집 권한이 없습니다. 다시 로그인해 주세요.',

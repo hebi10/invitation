@@ -115,10 +115,10 @@ export async function POST(request: Request) {
   }
 
   try {
-    const issuedToken = await issueMobileClientEditorLinkToken({
-      pageSlug,
-      purpose,
-      passwordVersion: access.passwordRecord.passwordVersion,
+      const issuedToken = await issueMobileClientEditorLinkToken({
+        pageSlug,
+        purpose,
+        passwordVersion: access.session.passwordVersion,
       issuedBy: access.session.pageSlug,
       issuedByType: 'mobile-owner-session',
       origin: new URL(request.url).origin,

@@ -19,7 +19,6 @@ import {
 
 export function useWizardDerivedState({
   activeEventType,
-  clientPasswordInput,
   brideEnglishName,
   formState,
   groomEnglishName,
@@ -28,7 +27,6 @@ export function useWizardDerivedState({
   slugInput,
 }: {
   activeEventType: EventTypeKey;
-  clientPasswordInput: string;
   brideEnglishName: string;
   formState: InvitationPageSeed | null;
   groomEnglishName: string;
@@ -74,14 +72,10 @@ export function useWizardDerivedState({
       brideKoreanName: previewFormState?.couple.bride.name ?? '',
       groomEnglishName,
       brideEnglishName,
-      clientPassword: clientPasswordInput,
-      showClientPasswordField: !initialSlug,
     }),
     [
       brideEnglishName,
-      clientPasswordInput,
       groomEnglishName,
-      initialSlug,
       resolvedPersistedSlug,
       previewFormState,
       slugInput,

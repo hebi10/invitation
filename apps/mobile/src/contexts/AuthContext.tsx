@@ -14,7 +14,6 @@ import {
   exchangeMobileClientEditorLinkToken,
   fulfillMobileBillingPageCreation,
   loginMobileCustomerAuth,
-  loginMobileClientEditor,
   refreshMobileCustomerAuth,
   validateMobileClientEditorSession,
   verifyMobileClientEditorHighRiskSession,
@@ -25,7 +24,6 @@ import {
   buildLinkedInvitationCardFromPageSummary,
   upsertLinkedInvitationCard,
 } from '../lib/linkedInvitationCards';
-import { extractPageSlugFromIdentifier } from '../lib/pageSlug';
 import { getStoredJson, setStoredJson, setStoredString } from '../lib/storage';
 import type { MobileClientEditorPermissions } from '../../../../src/types/mobileClientEditor';
 import type {
@@ -61,7 +59,6 @@ type HighRiskActionOptions = {
 };
 
 type PendingHighRiskAction = HighRiskActionOptions & {
-  requiresPassword: boolean;
   execute: () => Promise<boolean>;
   resolve: (value: boolean) => void;
 };
@@ -80,7 +77,6 @@ type AuthContextValue = {
   customerAuthError: string | null;
   pendingManageOnboarding: PendingManageOnboarding | null;
   initialDashboardSeed: AuthInitialDashboardSeed | null;
-  login: (pageIdentifier: string, password: string) => Promise<boolean>;
   loginCustomer: (email: string, password: string) => Promise<boolean>;
   logoutCustomer: () => Promise<void>;
   loginWithLinkToken: (linkToken: string) => Promise<boolean>;
@@ -128,7 +124,6 @@ export function AuthProvider({ children }: PropsWithChildren) {
   const [isReady, setIsReady] = useState(false);
   const [pendingHighRiskAction, setPendingHighRiskAction] =
     useState<PendingHighRiskAction | null>(null);
-  const [highRiskPassword, setHighRiskPassword] = useState('');
   const [highRiskError, setHighRiskError] = useState<string | null>(null);
   const [highRiskLoading, setHighRiskLoading] = useState(false);
 
@@ -159,7 +154,6 @@ export function AuthProvider({ children }: PropsWithChildren) {
     setPendingManageOnboarding(null);
     setInitialDashboardSeed(null);
     setPendingHighRiskAction(null);
-    setHighRiskPassword('');
     setHighRiskError(null);
     setHighRiskLoading(false);
     await setStoredString(SESSION_STORAGE_KEY, null, { sensitive: true });
@@ -189,25 +183,8 @@ export function AuthProvider({ children }: PropsWithChildren) {
     []
   );
 
-  const hasRecentHighRiskAccess = useCallback(
-    (targetPageSlug: string | null | undefined) => {
-      const normalizedPageSlug = targetPageSlug?.trim() ?? '';
-      const currentHighRiskSession = highRiskSessionRef.current;
-      if (!normalizedPageSlug || !currentHighRiskSession) {
-        return false;
-      }
-
-      if (currentHighRiskSession.pageSlug !== normalizedPageSlug) {
-        return false;
-      }
-
-      return !hasHighRiskSessionExpired(currentHighRiskSession);
-    },
-    [hasHighRiskSessionExpired]
-  );
-
   const verifyHighRiskAccess = useCallback(
-    async (password: string) => {
+    async () => {
       if (!session) {
         return {
           verified: false,
@@ -215,20 +192,11 @@ export function AuthProvider({ children }: PropsWithChildren) {
         } as const;
       }
 
-      const normalizedPassword = password.trim();
-      if (!normalizedPassword) {
-        return {
-          verified: false,
-          error: '연동 비밀번호를 입력해 주세요.',
-        } as const;
-      }
-
       try {
         const response = await verifyMobileClientEditorHighRiskSession(
           apiBaseUrl,
           session.pageSlug,
-          session.token,
-          normalizedPassword
+          session.token
         );
 
         updateHighRiskSession(response.session);
@@ -364,7 +332,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
       hydrateSession(candidateSession, apiBaseUrl, {
         clearOnFailure: false,
         failureMessage:
-          '저장된 연동 정보가 만료되었습니다. 비밀번호를 다시 입력해 주세요.',
+          '저장된 연동 정보가 만료되었습니다. 다시 로그인하거나 앱 연동 링크를 새로 발급해 주세요.',
       }),
     [apiBaseUrl, hydrateSession]
   );
@@ -567,40 +535,6 @@ export function AuthProvider({ children }: PropsWithChildren) {
     }
   }, [hasHighRiskSessionExpired, highRiskSession, session, updateHighRiskSession]);
 
-  const login = useCallback(
-    async (pageIdentifier: string, password: string) => {
-      const pageSlug = extractPageSlugFromIdentifier(pageIdentifier);
-      const normalizedPassword = password.trim();
-
-      if (!pageSlug || !normalizedPassword) {
-        setAuthError('청첩장 링크 또는 주소와 비밀번호를 입력해 주세요.');
-        return false;
-      }
-
-      setIsAuthenticating(true);
-
-      try {
-        const response = await loginMobileClientEditor(
-          apiBaseUrl,
-          pageSlug,
-          normalizedPassword
-        );
-        await applyAuthenticatedSession(response);
-        return true;
-      } catch (error) {
-        setAuthError(
-          error instanceof Error
-            ? error.message
-            : '청첩장 연동에 실패했습니다. 다시 시도해 주세요.'
-        );
-        return false;
-      } finally {
-        setIsAuthenticating(false);
-      }
-    },
-    [apiBaseUrl, applyAuthenticatedSession]
-  );
-
   const loginCustomer = useCallback(
     async (email: string, password: string) => {
       const normalizedEmail = email.trim();
@@ -739,7 +673,6 @@ export function AuthProvider({ children }: PropsWithChildren) {
       current?.resolve(false);
       return null;
     });
-    setHighRiskPassword('');
     setHighRiskError(null);
     setHighRiskLoading(false);
   }, []);
@@ -752,18 +685,16 @@ export function AuthProvider({ children }: PropsWithChildren) {
       }
 
       return new Promise<boolean>((resolve) => {
-        setHighRiskPassword('');
         setHighRiskError(null);
         setHighRiskLoading(false);
         setPendingHighRiskAction({
           ...options,
-          requiresPassword: !hasRecentHighRiskAccess(session.pageSlug),
           execute,
           resolve,
         });
       });
     },
-    [hasRecentHighRiskAccess, session]
+    [session]
   );
 
   const handleConfirmHighRiskAction = useCallback(async () => {
@@ -775,8 +706,8 @@ export function AuthProvider({ children }: PropsWithChildren) {
     setHighRiskError(null);
     let activeHighRiskToken = getHighRiskToken(session?.pageSlug);
 
-    if (pendingHighRiskAction.requiresPassword) {
-      const verification = await verifyHighRiskAccess(highRiskPassword);
+    if (!activeHighRiskToken) {
+      const verification = await verifyHighRiskAccess();
       if (!verification.verified) {
         setHighRiskError(verification.error);
         setHighRiskLoading(false);
@@ -796,7 +727,6 @@ export function AuthProvider({ children }: PropsWithChildren) {
       const completed = await pendingHighRiskAction.execute();
       pendingHighRiskAction.resolve(completed);
       setPendingHighRiskAction(null);
-      setHighRiskPassword('');
       setHighRiskError(null);
     } catch (error) {
       setHighRiskError(
@@ -806,11 +736,10 @@ export function AuthProvider({ children }: PropsWithChildren) {
       );
       pendingHighRiskAction.resolve(false);
       setPendingHighRiskAction(null);
-      setHighRiskPassword('');
     } finally {
       setHighRiskLoading(false);
     }
-  }, [getHighRiskToken, highRiskPassword, pendingHighRiskAction, session?.pageSlug, verifyHighRiskAccess]);
+  }, [getHighRiskToken, pendingHighRiskAction, session?.pageSlug, verifyHighRiskAccess]);
 
   const value = useMemo<AuthContextValue>(
     () => ({
@@ -827,7 +756,6 @@ export function AuthProvider({ children }: PropsWithChildren) {
       customerAuthError,
       pendingManageOnboarding,
       initialDashboardSeed,
-      login,
       loginCustomer,
       logoutCustomer,
       loginWithLinkToken,
@@ -855,7 +783,6 @@ export function AuthProvider({ children }: PropsWithChildren) {
       isAuthenticating,
       isCustomerAuthenticating,
       isReady,
-      login,
       loginCustomer,
       loginWithLinkToken,
       logout,
@@ -875,16 +802,13 @@ export function AuthProvider({ children }: PropsWithChildren) {
         title={pendingHighRiskAction?.title ?? '민감한 작업 확인'}
         description={
           pendingHighRiskAction?.description ??
-          '민감한 작업이라 비밀번호를 다시 확인한 뒤 진행합니다.'
+          '민감한 작업이라 로그인 세션을 다시 확인한 뒤 진행합니다.'
         }
         confirmLabel={pendingHighRiskAction?.confirmLabel ?? '확인 후 진행'}
-        requiresPassword={pendingHighRiskAction?.requiresPassword ?? true}
-        password={highRiskPassword}
         errorMessage={highRiskError}
         loading={highRiskLoading}
         palette={palette}
         fontScale={fontScale}
-        onChangePassword={setHighRiskPassword}
         onConfirm={() => void handleConfirmHighRiskAction()}
         onClose={closePendingHighRiskAction}
       />

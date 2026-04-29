@@ -57,7 +57,6 @@ export default function CreateInvitationClient() {
   const [brideEnglishName, setBrideEnglishName] = useState('');
   const [slugBase, setSlugBase] = useState('');
   const [hasManualSlugOverride, setHasManualSlugOverride] = useState(false);
-  const [password, setPassword] = useState('');
   const [productTier, setProductTier] = useState<InvitationProductTier>('standard');
   const [defaultTheme, setDefaultTheme] =
     useState<InvitationThemeKey>(DEFAULT_INVITATION_THEME);
@@ -112,7 +111,6 @@ export default function CreateInvitationClient() {
         brideName,
         groomEnglishName,
         brideEnglishName,
-        password,
         productTier,
         defaultTheme,
       }),
@@ -164,11 +162,6 @@ export default function CreateInvitationClient() {
 
     if (!slugBase.trim()) {
       setNotice('청첩장 주소를 입력해 주세요.');
-      return;
-    }
-
-    if (password.trim().length < 4) {
-      setNotice('페이지 비밀번호는 4자 이상으로 입력해 주세요.');
       return;
     }
 
@@ -299,16 +292,6 @@ export default function CreateInvitationClient() {
                     value={slugBase}
                     onChange={(event) => handleSlugChange(event.target.value)}
                     placeholder="예: kim-shinlang-na-sinbu"
-                  />
-                </label>
-                <label className={styles.field}>
-                  <span>페이지 비밀번호</span>
-                  <input
-                    className={styles.input}
-                    value={password}
-                    onChange={(event) => setPassword(event.target.value)}
-                    placeholder="4자 이상 입력"
-                    type="password"
                   />
                 </label>
                 <label className={styles.field}>

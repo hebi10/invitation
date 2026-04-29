@@ -44,7 +44,7 @@ export const CREATE_STEPS = [
   { key: 'review', label: '결제' },
 ] as const;
 
-export type CreateValidationSection = 'basic' | 'security' | 'selection';
+export type CreateValidationSection = 'basic' | 'selection';
 export type CreateStepKey = (typeof CREATE_STEPS)[number]['key'];
 
 export type CreateValidationRule = {
@@ -103,8 +103,6 @@ export function buildCreateValidationRules(input: {
   groomEnglishName: string;
   brideEnglishName: string;
   pageIdentifier: string;
-  password: string;
-  confirmPassword: string;
   selectedTheme: MobileInvitationThemeKey | null;
 }): CreateValidationRule[] {
   const groomKoreanName = input.groomKoreanName.trim();
@@ -113,8 +111,6 @@ export function buildCreateValidationRules(input: {
   const brideEnglishName = input.brideEnglishName.trim();
   const pageIdentifier = input.pageIdentifier.trim();
   const slugValidation = validatePageSlugBase(pageIdentifier);
-  const password = input.password.trim();
-  const confirmPassword = input.confirmPassword.trim();
 
   return [
     {
@@ -146,22 +142,6 @@ export function buildCreateValidationRules(input: {
       section: 'basic',
       passed: slugValidation.isValid,
       errorMessage: getCreateSlugValidationMessage(slugValidation.reason),
-    },
-    {
-      label: '페이지 비밀번호',
-      section: 'security',
-      passed: password.length >= 4,
-      errorMessage: !password
-        ? '페이지 비밀번호를 입력해 주세요.'
-        : '페이지 비밀번호는 4자 이상으로 입력해 주세요.',
-    },
-    {
-      label: '비밀번호 확인',
-      section: 'security',
-      passed: Boolean(confirmPassword) && password === confirmPassword,
-      errorMessage: !confirmPassword
-        ? '비밀번호 확인을 입력해 주세요.'
-        : '비밀번호와 비밀번호 확인이 일치하지 않습니다.',
     },
     {
       label: '디자인 선택',

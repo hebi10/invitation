@@ -236,7 +236,6 @@ export interface MobileInvitationCreationInput {
   brideKoreanName: string;
   groomEnglishName: string;
   brideEnglishName: string;
-  password: string;
   servicePlan: MobileInvitationProductTier;
   theme: MobileInvitationThemeKey;
 }

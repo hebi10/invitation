@@ -236,7 +236,7 @@ export function useTicketOperations({
       {
         title: '디자인 변경을 진행할까요?',
         description:
-          '기본 디자인 변경은 티켓을 차감하는 민감한 작업입니다. 비밀번호를 다시 확인한 뒤 진행합니다.',
+          '기본 디자인 변경은 티켓을 차감하는 민감한 작업입니다. 로그인 세션을 다시 확인한 뒤 진행합니다.',
         confirmLabel: '변경하기',
       },
       async () => {
@@ -293,7 +293,7 @@ export function useTicketOperations({
       {
         title: '노출 기간을 연장할까요?',
         description:
-          '노출 기간 연장은 티켓을 차감하는 민감한 작업입니다. 비밀번호를 다시 확인한 뒤 진행합니다.',
+          '노출 기간 연장은 티켓을 차감하는 민감한 작업입니다. 로그인 세션을 다시 확인한 뒤 진행합니다.',
         confirmLabel: '연장하기',
       },
       async () => {
@@ -355,7 +355,7 @@ export function useTicketOperations({
       {
         title: '디자인을 추가할까요?',
         description:
-          '새 디자인 추가는 티켓을 차감하는 민감한 작업입니다. 비밀번호를 다시 확인한 뒤 진행합니다.',
+          '새 디자인 추가는 티켓을 차감하는 민감한 작업입니다. 로그인 세션을 다시 확인한 뒤 진행합니다.',
         confirmLabel: '추가하기',
       },
       async () => {
@@ -414,7 +414,7 @@ export function useTicketOperations({
       {
         title: '티켓을 이동할까요?',
         description:
-          '티켓 이동은 결제 상태에 영향을 주는 민감한 작업입니다. 비밀번호를 다시 확인한 뒤 진행합니다.',
+          '티켓 이동은 결제 상태에 영향을 주는 민감한 작업입니다. 로그인 세션을 다시 확인한 뒤 진행합니다.',
         confirmLabel: '이동하기',
       },
       async () => {

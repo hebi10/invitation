@@ -6,8 +6,9 @@
 - 모바일 앱 수정은 계약이 실제로 바뀌는 지점에만 최소 범위로 적용한다.
 
 ## 결론
-- 현재 `events` 컷오버 완료 기준으로 Expo의 필수 수정은 없다.
-- 모바일 앱은 이미 `apps/mobile/src/lib/api.ts`를 통해 서버 응답을 소비하고 있고, 로그인/생성/운영/방명록/링크 토큰 흐름의 응답 형태도 유지되고 있다.
+- Expo는 기존 페이지 비밀번호 로그인 대신 Firebase 고객 로그인과 owner session을 사용한다.
+- 모바일 생성은 한글/영문 이름, 자동 주소 제안, Firebase UID 기반 소유권 연결을 기준으로 동작한다.
+- 운영/방명록/링크 토큰 흐름은 `apps/mobile/src/lib/api.ts`를 통해 서버 응답을 소비한다.
 - 단, 향후 `slug redirect`나 canonical slug 교체를 실제 운영에 열면 최근 연동 카드와 재연동 흐름은 최소 수정이 필요할 수 있다.
 
 ## 점검 범위
@@ -21,8 +22,8 @@
 ## API 계약 점검
 | 영역 | Expo 소비 지점 | 서버 계약 | 판정 |
 | --- | --- | --- | --- |
-| 로그인 | `loginMobileClientEditor`, `AuthContext.login` | `MobileLoginResponse` 유지 | 유지 |
-| 링크 로그인 | `exchangeMobileClientEditorLinkToken`, `AuthContext.loginWithLinkToken` | `MobileLoginResponse` 유지 | 유지 |
+| 고객 로그인 | `loginMobileCustomerAuth`, `AuthContext.loginCustomer` | Firebase 고객 auth session | 변경 반영 |
+| 링크 로그인 | `exchangeMobileClientEditorLinkToken`, `AuthContext.loginWithLinkToken` | owner session 응답 | 유지 |
 | 세션 복원 | `validateMobileClientEditorSession`, `activateStoredSession` | `MobileSessionResponse` 유지 | 유지 |
 | 생성 | `createMobileInvitationDraft`, `fulfillMobileBillingPageCreation` | `MobileInvitationCreationResponse` 유지 | 유지 |
 | 운영 대시보드 | `fetchMobileInvitationDashboard`, `InvitationOpsContext` | `MobileInvitationDashboard` 유지 | 유지 |
@@ -32,12 +33,12 @@
 | 딥링크 진입 | `resolveAppDeepLink`, `login.tsx` | `/login?linkToken=...` 유지 | 유지 |
 
 ## 화면 / 상태 영향 목록
-### 즉시 수정 불필요
+### 현재 반영된 항목
 - 로그인 화면
-  - `pageSlug + password` 요청, `MobileLoginResponse` 소비 방식이 그대로다.
+  - Firebase 고객 로그인과 앱 연동 링크 진입만 사용한다.
 - 생성 화면
-  - 서버는 여전히 `slugBase`, 한글 이름, 비밀번호, 테마를 받는다.
-  - 모바일 생성 폼은 이미 영문 이름 없는 구조라 추가 수정이 필요 없다.
+  - 서버는 `slugBase`, 신랑/신부 한글 이름, 영문 이름, 테마, 고객 ID token을 받는다.
+  - 생성 완료 시 이벤트 `ownerUid`를 연결해 PC `/my-invitations`에서도 보이게 한다.
 - 운영 화면
   - `dashboard.page`, `ticketCount`, `displayPeriod`, `permissions`, `links` 형식을 그대로 사용한다.
 - 방명록 관리

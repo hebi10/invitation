@@ -1,7 +1,6 @@
 ﻿import { NextResponse } from 'next/server';
 
 import { authorizeMobileClientEditorRequest } from '@/server/clientEditorMobileApi';
-import { verifyServerClientPassword } from '@/server/clientPasswordServerService';
 import {
   createMobileClientEditorHighRiskSessionValue,
   writeMobileClientEditorAuditLog,
@@ -18,14 +17,13 @@ const MOBILE_CLIENT_EDITOR_HIGH_RISK_VERIFY_RATE_LIMIT = {
 
 export async function POST(request: Request) {
   const body = (await request.json().catch(() => null)) as
-    | { pageSlug?: unknown; password?: unknown }
+    | { pageSlug?: unknown }
     | null;
   const pageSlug = typeof body?.pageSlug === 'string' ? body.pageSlug.trim() : '';
-  const password = typeof body?.password === 'string' ? body.password.trim() : '';
 
-  if (!pageSlug || !password) {
+  if (!pageSlug) {
     return NextResponse.json(
-      { error: 'Page slug and password are required.' },
+      { error: 'Page slug is required.' },
       { status: 400 }
     );
   }
@@ -60,28 +58,9 @@ export async function POST(request: Request) {
     );
   }
 
-  const verification = await verifyServerClientPassword(pageSlug, password);
-  if (!verification.verified || !verification.record) {
-    await writeMobileClientEditorAuditLog({
-      action: 'verifyHighRisk',
-      result: 'failure',
-      pageSlug,
-      sessionPageSlug: access.session.pageSlug,
-      reason: 'invalid_password',
-    });
-
-    return NextResponse.json(
-      { error: 'Invalid page password.' },
-      {
-        status: 401,
-        headers: buildRateLimitHeaders(rateLimitResult),
-      }
-    );
-  }
-
   const highRiskSession = createMobileClientEditorHighRiskSessionValue({
     pageSlug,
-    passwordVersion: verification.record.passwordVersion,
+    passwordVersion: access.session.passwordVersion,
   });
 
   await writeMobileClientEditorAuditLog({

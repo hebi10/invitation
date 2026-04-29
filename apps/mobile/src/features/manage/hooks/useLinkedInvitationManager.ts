@@ -248,8 +248,8 @@ export function useLinkedInvitationManager({
     async (pageSlugToRelink?: string) => {
       setNotice(
         pageSlugToRelink
-          ? `${pageSlugToRelink} 청첩장을 다시 연동하려면 비밀번호를 입력해 주세요.`
-          : '다른 청첩장을 연동하려면 청첩장 링크 또는 주소와 비밀번호를 입력해 주세요.'
+          ? `${pageSlugToRelink} 청첩장을 다시 연동하려면 앱 연동 링크를 새로 발급해 주세요.`
+          : '다른 청첩장을 연동하려면 해당 계정으로 로그인하거나 앱 연동 링크를 사용해 주세요.'
       );
       await logout();
       clearAuthError();

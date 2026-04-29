@@ -150,7 +150,6 @@ export function useWizardNavigation({
 
     const savedSlug = await persistDraft({
       publish: published,
-      syncClientPassword: true,
       successMessage: published
         ? '페이지를 공개했습니다.'
         : '초안을 저장했습니다.',
@@ -178,10 +177,9 @@ export function useWizardNavigation({
   const handleSaveCurrent = useCallback(async () => {
     await persistDraft({
       publish: published,
-      syncClientPassword: activeStep.key === 'final',
       successMessage: '현재 단계 내용을 저장했습니다.',
     });
-  }, [activeStep.key, persistDraft, published]);
+  }, [persistDraft, published]);
 
   return {
     activeStep,

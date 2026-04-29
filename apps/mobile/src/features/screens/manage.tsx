@@ -305,7 +305,7 @@ export default function ManageScreen() {
       {
         title: '앱 연동 링크를 발급할까요?',
         description:
-          '앱 연동 링크는 15분 안에 한 번만 사용할 수 있습니다. 비밀번호를 다시 확인한 뒤 발급합니다.',
+          '앱 연동 링크는 15분 안에 한 번만 사용할 수 있습니다. 로그인 세션을 다시 확인한 뒤 발급합니다.',
         confirmLabel: '링크 발급',
       },
       async () => {
@@ -355,7 +355,7 @@ export default function ManageScreen() {
       {
         title: '앱 연동 링크를 폐기할까요?',
         description:
-          '현재 발급된 앱 연동 링크를 모두 무효화합니다. 비밀번호를 다시 확인한 뒤 진행합니다.',
+          '현재 발급된 앱 연동 링크를 모두 무효화합니다. 로그인 세션을 다시 확인한 뒤 진행합니다.',
         confirmLabel: '링크 폐기',
       },
       async () => {
@@ -611,7 +611,7 @@ export default function ManageScreen() {
         {session ? (
           <SectionCard
             title="앱 연동 링크"
-            description="다른 기기에서는 비밀번호 입력 대신 1회용 앱 연동 링크로 바로 진입할 수 있습니다."
+            description="다른 기기에서는 1회용 앱 연동 링크로 바로 진입할 수 있습니다."
           >
             <BulletList
               items={[

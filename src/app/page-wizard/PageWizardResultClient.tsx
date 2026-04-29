@@ -5,7 +5,6 @@ import { useMemo } from 'react';
 
 import Link from 'next/link';
 
-import CustomerEventClaimCard from '@/app/_components/CustomerEventClaimCard';
 import FirebaseAuthLoginCard from '@/app/_components/FirebaseAuthLoginCard';
 import { normalizeFormConfig } from '@/app/page-editor/pageEditorUtils';
 import { useAdmin } from '@/contexts';
@@ -134,8 +133,6 @@ export default function PageWizardResultClient({
       brideKoreanName: previewFormState.couple.bride.name,
       groomEnglishName: '',
       brideEnglishName: '',
-      clientPassword: '',
-      showClientPasswordField: false,
     });
   }, [configState, previewFormState, slug, wizardSteps]);
 
@@ -173,15 +170,26 @@ export default function PageWizardResultClient({
     return (
       <main className={styles.page}>
         <div className={styles.shell}>
-          <CustomerEventClaimCard
-            pageSlug={slug}
-            title="기존 청첩장을 현재 계정에 연결해 주세요"
-            description="이 결과 화면은 현재 로그인한 계정의 UID와 연결된 청첩장만 볼 수 있습니다. 기존 페이지 비밀번호를 확인하면 바로 연결할 수 있습니다."
-            helperText="한 번 연결하면 이후에는 Firebase 로그인만으로 접근할 수 있습니다."
-            onClaimed={() => {
-              void resultQuery.refetch();
-            }}
-          />
+          <section className={styles.summaryCard}>
+            <p className={styles.eyebrow}>계정 연결 필요</p>
+            <h1 className={styles.centerTitle}>관리자에게 청첩장 연결을 요청해 주세요</h1>
+            <p className={styles.centerText}>
+              이 결과 화면은 현재 로그인한 계정에 연결된 청첩장만 볼 수 있습니다.
+            </p>
+            <div className={styles.inlineActions}>
+              <button
+                type="button"
+                className={styles.secondaryButton}
+                onClick={() => void resultQuery.refetch()}
+                disabled={resultQuery.isRefetching}
+              >
+                {resultQuery.isRefetching ? '새로고침 중' : '새로고침'}
+              </button>
+              <Link className={styles.primaryButton} href="/my-invitations">
+                내 이벤트로 이동
+              </Link>
+            </div>
+          </section>
         </div>
       </main>
     );

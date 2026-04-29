@@ -18,7 +18,6 @@ export type AdminTab =
   | 'memory'
   | 'images'
   | 'comments'
-  | 'passwords'
   | 'periods';
 export type AdminSection = 'customers' | 'events';
 export interface AdminSectionItem {
@@ -65,7 +64,6 @@ export const ADMIN_SECTIONS: AdminSectionItem[] = [
 
 export const TAB_ITEMS: AdminTabItem[] = [
   { key: 'accounts', section: 'customers', label: '고객 계정' },
-  { key: 'passwords', section: 'customers', label: '고객 비밀번호' },
   { key: 'pages', section: 'events', label: '모바일 청첩장' },
   { key: 'memory', section: 'events', label: '추억 페이지' },
   { key: 'images', section: 'events', label: '이미지' },
@@ -141,8 +139,6 @@ function getBaseTabLabel(tab: AdminTab) {
       return '이미지';
     case 'comments':
       return '방명록';
-    case 'passwords':
-      return '고객 비밀번호';
     case 'periods':
       return '노출 기간';
     default:

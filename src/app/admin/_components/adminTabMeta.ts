@@ -26,9 +26,9 @@ export function getSectionSummary(
   switch (section) {
     case 'customers':
       return {
-        title: '고객 계정과 편집 인증 수단을 함께 관리합니다.',
-        description: '고객 계정 목록, 청첩장 소유권 연결, 고객 비밀번호를 한 흐름으로 묶어 관리합니다.',
-        helper: '현재 제공 기능: 고객 계정 · 고객 비밀번호',
+        title: '고객 계정과 청첩장 소유권을 관리합니다.',
+        description: '고객 계정 목록과 청첩장 소유권 연결을 한 흐름으로 관리합니다.',
+        helper: '현재 제공 기능: 고객 계정 연결 관리',
       };
     case 'events':
       if (!isImplementedPageCategory(pageCategory)) {
@@ -107,12 +107,6 @@ export function getTabSummary(
         title: '검색과 필터로 댓글을 찾고 삭제할 수 있습니다.',
         description: '페이지, 기간, 검색어 기준으로 방명록을 좁혀 보고 필요한 댓글만 빠르게 정리합니다.',
         helper: '핵심 작업: 댓글 검토 및 삭제',
-      };
-    case 'passwords':
-      return {
-        title: '고객 비밀번호를 확인하고 재설정합니다.',
-        description: '고객 편집 로그인과 기존 페이지 연결 흐름에 필요한 비밀번호 상태를 유지합니다.',
-        helper: '핵심 작업: 고객 인증 관리',
       };
     case 'periods':
       return {

@@ -44,9 +44,7 @@ export function useCreateDraftSync({
     setEditingDraftId(selectedDraft.id);
     setLoadedDraftId(selectedDraft.id);
     clearAuthError();
-    setNotice(
-      '저장한 초안을 불러왔습니다. 비밀번호만 다시 입력하면 이어서 진행할 수 있습니다.'
-    );
+    setNotice('저장한 초안을 불러왔습니다. 이어서 진행할 수 있습니다.');
     router.replace('/create');
   }, [
     applyDraft,

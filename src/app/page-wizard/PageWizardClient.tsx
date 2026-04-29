@@ -9,7 +9,6 @@ import type { Swiper as SwiperType } from 'swiper';
 import { Pagination } from 'swiper/modules';
 import { Swiper, SwiperSlide } from 'swiper/react';
 
-import CustomerEventClaimCard from '@/app/_components/CustomerEventClaimCard';
 import FirebaseAuthLoginCard from '@/app/_components/FirebaseAuthLoginCard';
 import {
   cloneConfig,
@@ -44,7 +43,6 @@ import { getInvitationMusicLibraryFromStorage } from '@/services/musicService';
 import {
   getCustomerEditableInvitationPageState,
   listOwnedCustomerEvents,
-  type ClaimOwnedCustomerEventResult,
   type CustomerOwnedEventSummary,
 } from '@/services/customerEventService';
 import {
@@ -85,7 +83,6 @@ import {
   buildSlugFromEnglishNames,
   composeAutoGreetingMessage,
   deriveEnglishNamesFromSlug,
-  settleWithTimeout,
   shouldSyncDerivedText,
 } from './pageWizardClientUtils';
 import {
@@ -112,7 +109,6 @@ import {
 const DEFAULT_THEME: InvitationThemeKey = DEFAULT_INVITATION_THEME;
 const DEFAULT_SEED_SLUG = getInvitationPageSeedTemplates()[0]?.seedSlug ?? null;
 const IS_DEV_NOTICE_MODE = process.env.NODE_ENV !== 'production';
-const CLAIMED_WIZARD_REFRESH_TIMEOUT_MS = 10000;
 
 interface PageWizardClientProps {
   initialSlug: string | null;
@@ -152,7 +148,6 @@ export default function PageWizardClient({ initialSlug }: PageWizardClientProps)
   );
   const [groomEnglishName, setGroomEnglishName] = useState('');
   const [brideEnglishName, setBrideEnglishName] = useState('');
-  const [clientPasswordInput, setClientPasswordInput] = useState('');
   const [notice, setNotice] = useState<NoticeState>(null);
   const [, setLastSavedAt] = useState<Date | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -354,7 +349,6 @@ export default function PageWizardClient({ initialSlug }: PageWizardClientProps)
   } = useWizardDerivedState({
     activeEventType: eventType,
     brideEnglishName,
-    clientPasswordInput,
     formState,
     groomEnglishName,
     initialSlug,
@@ -476,140 +470,6 @@ export default function PageWizardClient({ initialSlug }: PageWizardClientProps)
     requiresOwnershipClaim,
   ]);
 
-  const handleExistingWizardClaimed = useCallback(
-    async (
-      claimedSlug: string,
-      claimResult?: ClaimOwnedCustomerEventResult
-    ) => {
-      const normalizedClaimedSlug =
-        normalizeInvitationPageSlugBase(claimedSlug) ?? initialSlug ?? claimedSlug.trim();
-
-      setNotice({
-        tone: 'success',
-        message: '비밀번호가 확인되었습니다. 청첩장을 현재 계정에 연결했습니다.',
-      });
-      setAccessErrorMessage(null);
-
-      if (normalizedClaimedSlug) {
-        await Promise.all([
-          queryClient.invalidateQueries({
-            queryKey: ['page-wizard-existing', normalizedClaimedSlug],
-          }),
-          queryClient.invalidateQueries({
-            queryKey: appQueryKeys.editableInvitationPage(normalizedClaimedSlug),
-          }),
-          queryClient.invalidateQueries({
-            queryKey: appQueryKeys.customerEventOwnership(
-              normalizedClaimedSlug,
-              authUser?.uid ?? null
-            ),
-          }),
-          queryClient.invalidateQueries({
-            queryKey: appQueryKeys.ownedCustomerEvents(authUser?.uid ?? null),
-          }),
-        ]);
-      }
-
-      if (normalizedClaimedSlug && normalizedClaimedSlug !== initialSlug) {
-        router.replace(`/page-wizard/${encodeURIComponent(normalizedClaimedSlug)}`, {
-          scroll: false,
-        });
-        return;
-      }
-
-      if (claimResult?.editableConfig) {
-        queryClient.setQueryData(
-          [
-            'page-wizard-existing',
-            initialSlug,
-            authUser?.uid ?? null,
-            isAdminLoggedIn,
-            isLoggedIn,
-          ],
-          {
-            status: 'ready',
-            editableConfig: claimResult.editableConfig,
-          } satisfies ExistingWizardLoadState
-        );
-        applyLoadedEditableConfig(claimResult.editableConfig);
-        setIsLoading(false);
-        return;
-      }
-
-      const refreshed = await settleWithTimeout(
-        wizardLoadQuery.refetch(),
-        CLAIMED_WIZARD_REFRESH_TIMEOUT_MS
-      );
-
-      if (refreshed.status === 'timeout') {
-        setRequiresOwnershipClaim(true);
-        setIsLoading(false);
-        setNotice({
-          tone: 'neutral',
-          message:
-            '비밀번호는 맞습니다. 연결은 완료됐지만 편집 정보를 불러오는 데 시간이 걸리고 있습니다. 잠시 후 다시 시도해 주세요.',
-        });
-        return;
-      }
-
-      if (refreshed.status === 'rejected') {
-        setRequiresOwnershipClaim(true);
-        setIsLoading(false);
-        showErrorNotice(
-          refreshed.error,
-          '비밀번호는 맞지만 편집 정보를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.'
-        );
-        return;
-      }
-
-      if (refreshed.value.error) {
-        setRequiresOwnershipClaim(true);
-        setIsLoading(false);
-        showErrorNotice(
-          refreshed.value.error,
-          '비밀번호는 맞지만 편집 정보를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.'
-        );
-        return;
-      }
-
-      const refreshedState = refreshed.value.data;
-      if (refreshedState?.status === 'ready') {
-        applyLoadedEditableConfig(refreshedState.editableConfig);
-        setIsLoading(false);
-        return;
-      }
-
-      if (refreshedState?.status === 'blocked') {
-        setRequiresOwnershipClaim(false);
-        setAccessErrorMessage(refreshedState.message);
-        setIsLoading(false);
-        setNotice({
-          tone: 'error',
-          message: refreshedState.message,
-        });
-        return;
-      }
-
-      setRequiresOwnershipClaim(true);
-      setIsLoading(false);
-      setNotice({
-        tone: 'neutral',
-        message:
-          '비밀번호는 맞습니다. 연결은 완료됐지만 편집 화면 반영이 아직 끝나지 않았습니다. 다시 불러오기를 눌러 주세요.',
-      });
-    },
-    [
-      applyLoadedEditableConfig,
-      authUser?.uid,
-      initialSlug,
-      isAdminLoggedIn,
-      isLoggedIn,
-      queryClient,
-      router,
-      showErrorNotice,
-      wizardLoadQuery,
-    ]
-  );
   const clearNotice = useCallback(() => {
     setNotice(null);
   }, []);
@@ -856,7 +716,6 @@ export default function PageWizardClient({ initialSlug }: PageWizardClientProps)
 
     if (!isAdminLoggedIn && (!initialSlug || !isLoggedIn)) {
       setFormState(null);
-      setClientPasswordInput('');
       setRequiresOwnershipClaim(false);
       setAccessErrorMessage(null);
       setIsLoading(false);
@@ -873,7 +732,6 @@ export default function PageWizardClient({ initialSlug }: PageWizardClientProps)
       setHasManualSlugOverride(false);
       setGroomEnglishName('');
       setBrideEnglishName('');
-      setClientPasswordInput('');
       resetPublishedState();
       setDefaultTheme(DEFAULT_THEME);
       setLastSavedAt(null);
@@ -882,8 +740,6 @@ export default function PageWizardClient({ initialSlug }: PageWizardClientProps)
       setIsLoading(false);
       return;
     }
-
-    setClientPasswordInput('');
 
     if (
       wizardLoadQuery.isPending ||
@@ -1325,9 +1181,6 @@ export default function PageWizardClient({ initialSlug }: PageWizardClientProps)
     slugInput,
     defaultSeedSlug: DEFAULT_SEED_SLUG,
     isAdminLoggedIn,
-    isLoggedIn,
-    clientPassword: clientPasswordInput,
-    allowClientPasswordSetup: !initialSlug,
     setPersistedSlug,
     setSlugInput,
     setFormState,
@@ -1475,9 +1328,6 @@ export default function PageWizardClient({ initialSlug }: PageWizardClientProps)
             normalizedSlugInput={normalizedSlugInput}
             persistedSlug={resolvedPersistedSlug}
             previewSlug={previewSlug}
-            showClientPasswordField={!initialSlug}
-            clientPassword={clientPasswordInput}
-            setClientPassword={setClientPasswordInput}
           />
         );
       case 'basic':
@@ -1621,7 +1471,7 @@ export default function PageWizardClient({ initialSlug }: PageWizardClientProps)
               }
               helperText={
                 initialSlug
-                  ? '아직 계정에 연결되지 않은 기존 청첩장은 로그인 후 페이지 비밀번호로 연결할 수 있습니다.'
+                  ? '아직 계정에 연결되지 않은 청첩장은 관리자에게 계정 연결을 요청해 주세요.'
                   : '청첩장 생성은 관리자 권한이 확인된 계정에서만 가능합니다.'
               }
               requireAdmin={!initialSlug}
@@ -1639,13 +1489,12 @@ export default function PageWizardClient({ initialSlug }: PageWizardClientProps)
         <div className={`${styles.shell} ${styles.gateShell}`}>
           {renderNotice()}
           <section className={`${styles.centerCard} ${styles.gateCard}`}>
-            <CustomerEventClaimCard
-              pageSlug={initialSlug}
-              title="기존 청첩장을 현재 계정에 연결해 주세요"
-              description="아직 현재 로그인한 UID와 연결되지 않은 청첩장입니다. 기존 페이지 비밀번호를 확인하면 내 계정 청첩장으로 등록됩니다."
-              helperText="한 번 연결한 뒤에는 페이지 비밀번호 대신 계정 로그인만으로 관리할 수 있습니다."
-              onClaimed={handleExistingWizardClaimed}
-            />
+            <p className={styles.eyebrow}>계정 연결 필요</p>
+            <h1 className={styles.centerTitle}>관리자에게 청첩장 연결을 요청해 주세요</h1>
+            <p className={styles.centerText}>
+              이 청첩장은 아직 현재 로그인 계정과 연결되어 있지 않습니다. 고객 계정에 연결된
+              청첩장만 편집할 수 있습니다.
+            </p>
             <div className={styles.inlineActions}>
               <button
                 type="button"
@@ -1654,6 +1503,13 @@ export default function PageWizardClient({ initialSlug }: PageWizardClientProps)
                 disabled={isWizardRefreshing}
               >
                 {isWizardRefreshing ? '다시 불러오는 중...' : '다시 불러오기'}
+              </button>
+              <button
+                type="button"
+                className={styles.primaryButton}
+                onClick={() => void router.push('/my-invitations', { scroll: false })}
+              >
+                내 이벤트로 이동
               </button>
             </div>
           </section>

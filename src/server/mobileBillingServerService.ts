@@ -8,6 +8,7 @@ import {
   getMobileBillingProductDefinition,
 } from '@/lib/mobileBillingProducts';
 import {
+  CLIENT_EDITOR_OWNER_SESSION_VERSION,
   createClientEditorSessionValue,
 } from '@/server/clientEditorSession';
 
@@ -19,10 +20,6 @@ import {
   MOBILE_CLIENT_EDITOR_SESSION_TTL_SECONDS,
   resolveMobileClientEditorPermissions,
 } from './clientEditorMobileApi';
-import {
-  getServerClientPasswordRecord,
-  setServerClientPassword,
-} from './clientPasswordServerService';
 import {
   createServerInvitationPageDraftFromSeed,
   getServerEditableInvitationPageConfig,
@@ -55,7 +52,6 @@ type MobileBillingCreatePageInput = {
   brideKoreanName: string;
   groomEnglishName: string;
   brideEnglishName: string;
-  password: string;
   theme: string;
   ownerUid: string;
   ownerEmail?: string | null;
@@ -219,11 +215,6 @@ async function verifyRevenueCatNonSubscriptionTransaction(
 }
 
 async function buildMobileDraftCreationResponse(origin: string, pageSlug: string) {
-  const passwordRecord = await getServerClientPasswordRecord(pageSlug);
-  if (!passwordRecord) {
-    throw new Error('The page password record could not be loaded.');
-  }
-
   const [config, displayPeriod, ticketCount] = await Promise.all([
     getServerEditableInvitationPageConfig(pageSlug),
     getServerInvitationPageDisplayPeriodSummary(pageSlug),
@@ -237,7 +228,7 @@ async function buildMobileDraftCreationResponse(origin: string, pageSlug: string
   const { value, expiresAt } = createClientEditorSessionValue(
     {
       pageSlug,
-      passwordVersion: passwordRecord.passwordVersion,
+      passwordVersion: CLIENT_EDITOR_OWNER_SESSION_VERSION,
     },
     {
       ttlSeconds: MOBILE_CLIENT_EDITOR_SESSION_TTL_SECONDS,
@@ -310,7 +301,6 @@ export async function fulfillServerMobilePageCreationPurchase(
       initialDisplayPeriodMonths: 6,
     });
 
-    await setServerClientPassword(createdDraft.slug, input.password);
     const resolvedCreatedEvent = await firestoreEventRepository.assignOwnerBySlug({
       pageSlug: createdDraft.slug,
       ownerUid: input.ownerUid,

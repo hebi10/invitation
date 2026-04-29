@@ -8,15 +8,15 @@
 ## 2. 서비스가 해결하는 문제
 - 청첩장 생성과 수정 과정이 운영자에게 반복 부담이 되는 문제
 - 웹 편집 권한을 관리자 전용으로 통제해 운영 실수를 줄여야 하는 문제
-- 공개 여부, 비밀번호, 노출 기간, 이미지, 방명록 같은 운영 요소가 흩어지는 문제
+- 공개 여부, 노출 기간, 이미지, 방명록 같은 운영 요소가 흩어지는 문제
 - 결혼식 이후 추억 페이지까지 이어지는 경험이 분리되는 문제
 
 ## 3. 핵심 사용자
 | 사용자 | 주요 행동 | 서비스 가치 |
 | --- | --- | --- |
 | 하객 | 공개 청첩장 확인, 지도/갤러리/방명록/공유 사용 | 모바일에서 빠르게 필요한 정보를 확인 |
-| 고객 | 공개 청첩장 확인, 필요 시 운영자에게 수정 요청 | 공개된 청첩장 정보를 안정적으로 확인 |
-| 관리자 | 청첩장 생성, 편집, 공개 상태, 노출 기간, 비밀번호, 이미지 관리 | 여러 페이지를 한 콘솔에서 운영 |
+| 고객 | 연결된 청첩장 수정, 방명록 확인/삭제, 공개 청첩장 확인 | 본인 계정 기준으로 운영 정보를 직접 관리 |
+| 관리자 | 청첩장 생성, 편집, 공개 상태, 노출 기간, 이미지 관리 | 여러 페이지를 한 콘솔에서 운영 |
 
 ## 4. 전체 흐름
 1. 관리자가 `/page-wizard`에서 청첩장 초안을 생성합니다.
@@ -24,7 +24,7 @@
 3. Firestore는 `events/{eventId}`와 `events/{eventId}/content/current`를 기준으로 공개 상태와 본문을 관리합니다.
 4. 하객은 `/{slug}` 또는 `/{slug}/{theme}`에서 공개 청첩장을 봅니다.
 5. 관리자는 `/page-editor/{slug}`에서 고객 편집기 화면을 열어 내용을 수정합니다.
-6. 관리자는 `/admin`에서 공개 상태, 비밀번호, 노출 기간, 이미지, 방명록을 운영합니다.
+6. 관리자는 `/admin`에서 공개 상태, 노출 기간, 이미지, 방명록과 고객 계정 연결을 운영합니다.
 7. 결혼식 이후 `/memory/{slug}` 추억 페이지로 경험을 확장할 수 있습니다.
 
 ## 5. 화면 요약
@@ -33,7 +33,6 @@
 | `/` | 서비스 진입 화면 | 주요 이동 경로를 단순하게 제시 | `screenshots/01-home.png` |
 | `/admin` | 관리자 콘솔 | 운영 요소를 한 화면에서 관리 | `screenshots/02-admin-dashboard.png` |
 | `/admin?tab=pages` | 청첩장 목록 관리 | 공개 상태, 테마 링크, 편집 이동 | `screenshots/03-admin-pages-tab.png` |
-| `/admin?tab=passwords` | 고객 편집 비밀번호 관리 | 운영자 권한과 고객 편집 권한 분리 | `screenshots/04-admin-passwords-tab.png` |
 | `/admin?tab=periods` | 노출 기간 관리 | 공개 여부와 노출 기간을 분리 | `screenshots/05-admin-periods-tab.png` |
 | `/page-wizard` | 신규 초안 생성 | 템플릿과 slug 기반 빠른 시작 | `screenshots/06-page-wizard-create.png` |
 | `/page-wizard/{slug}` | 관리자 위자드 편집 | 모바일 중심 단계형 입력 흐름 | `screenshots/07-page-wizard-detail.png` |
@@ -50,7 +49,7 @@
 | --- | --- |
 | 프론트엔드 | Next.js App Router, React, TypeScript |
 | 모바일 앱 | `apps/mobile` Expo 프로젝트 |
-| 데이터 | Firestore `events`, `eventSlugIndex`, `eventSecrets`, `billingFulfillments`, `rateLimits` |
+| 데이터 | Firestore `events`, `eventSlugIndex`, `customerWallets`, `billingFulfillments`, `rateLimits` |
 | 파일 | Firebase Storage, 공개 읽기는 Firestore 공개 상태와 연동 |
 | 권한 | 웹 편집은 관리자 전용, 모바일 고객 흐름과 공개 방문자는 API와 rules에서 분리 |
 | 운영 방어 | 서버 repository 경계, Firestore 기반 rate limit, RevenueCat 서버 키 검증 |
@@ -88,7 +87,7 @@
 3. 관리자 전용 고객 편집기
 4. 관리자 대시보드
 5. 위자드 편집 화면
-6. 노출 기간 또는 비밀번호 관리 탭
+6. 노출 기간 또는 고객 계정 연결 탭
 
 ## 11. 참고 문서
 - 이벤트 도메인 현재 기준: `event-domain-current-state.md`

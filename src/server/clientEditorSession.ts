@@ -3,6 +3,7 @@ import 'server-only';
 import { createHmac, timingSafeEqual } from 'node:crypto';
 
 export const CLIENT_EDITOR_SESSION_COOKIE = 'client-editor-session';
+export const CLIENT_EDITOR_OWNER_SESSION_VERSION = 0;
 const SESSION_TTL_SECONDS = 60 * 60 * 8;
 
 export interface ClientEditorSessionPayload {

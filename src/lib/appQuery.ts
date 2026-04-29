@@ -9,8 +9,6 @@ export const appQueryKeys = {
   invitationPage: (slug: string, scope: 'admin' | 'public') =>
     ['invitation-page', slug, scope] as const,
   guestbookComments: (pageSlug: string) => ['guestbook-comments', pageSlug] as const,
-  guestbookOwnership: (pageSlug: string, uid: string | null) =>
-    ['guestbook-ownership', pageSlug, uid] as const,
   ownedCustomerEvents: (uid: string | null) => ['owned-customer-events', uid] as const,
   customerEventGuestbookComments: (pageSlug: string, uid: string | null) =>
     ['customer-event-guestbook-comments', pageSlug, uid] as const,
@@ -22,6 +20,5 @@ export const appQueryKeys = {
     ['admin-dashboard-summary', recentDays] as const,
   adminInvitationPages: ['admin-invitation-pages'] as const,
   adminComments: ['admin-comments'] as const,
-  adminClientPasswords: ['admin-client-passwords'] as const,
   adminCustomerAccounts: ['admin-customer-accounts'] as const,
 } as const;

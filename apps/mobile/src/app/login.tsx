@@ -5,7 +5,7 @@ import { ActivityIndicator, Platform, StyleSheet, View } from 'react-native';
 import { ActionButton } from '../components/ActionButton';
 import { AppScreen } from '../components/AppScreen';
 import { AppText } from '../components/AppText';
-import { LoginCard } from '../components/LoginCard';
+import { SectionCard } from '../components/SectionCard';
 import { WebPreviewNotice } from '../components/WebPreviewNotice';
 import { useAuth } from '../contexts/AuthContext';
 import { usePreferences } from '../contexts/PreferencesContext';
@@ -16,8 +16,7 @@ import {
   getLinkedInvitationCards,
   type LinkedInvitationCard,
 } from '../lib/linkedInvitationCards';
-import { extractPageSlugFromIdentifier } from '../lib/pageSlug';
-import { copyTextWithFallback, readClipboardText } from '../lib/textTransfer';
+import { copyTextWithFallback } from '../lib/textTransfer';
 
 function resolveNextPath(value: string | string[] | undefined): Href {
   const next = Array.isArray(value) ? value[0] : value;
@@ -45,7 +44,6 @@ export default function LoginScreen() {
     authError,
     isAuthenticated,
     isReady: isAuthReady,
-    login,
     loginWithLinkToken,
     activateStoredSession,
     clearAuthError,
@@ -53,8 +51,6 @@ export default function LoginScreen() {
   const { isReady: isPreferencesReady, palette } = usePreferences();
   const isExpoWebPreview = Platform.OS === 'web';
   const isBootstrapping = !(isAuthReady && isPreferencesReady);
-  const [pageIdentifier, setPageIdentifier] = useState('');
-  const [password, setPassword] = useState('');
   const [notice, setNotice] = useState('');
   const [recentCards, setRecentCards] = useState<LinkedInvitationCard[]>([]);
   const [isLoadingRecentCards, setIsLoadingRecentCards] = useState(false);
@@ -111,7 +107,6 @@ export default function LoginScreen() {
         return;
       }
 
-      setPassword('');
       router.replace(nextPath);
     })();
   }, [
@@ -124,60 +119,6 @@ export default function LoginScreen() {
     nextPath,
     router,
   ]);
-
-  const handleChangePageIdentifier = useCallback(
-    (value: string) => {
-      clearAuthError();
-      setPageIdentifier(value);
-    },
-    [clearAuthError]
-  );
-
-  const handleChangePassword = useCallback(
-    (value: string) => {
-      clearAuthError();
-      setPassword(value);
-    },
-    [clearAuthError]
-  );
-
-  const handleLogin = async () => {
-    clearAuthError();
-    const authenticated = await login(pageIdentifier, password);
-    if (!authenticated) {
-      return;
-    }
-
-    setPassword('');
-    router.replace(nextPath);
-  };
-
-  const handlePaste = useCallback(async () => {
-    const clipboardText = await readClipboardText();
-
-    if (!clipboardText?.trim()) {
-      setNotice('붙여넣을 내용을 읽지 못했습니다. 입력칸을 길게 눌러 붙여넣기를 사용해 주세요.');
-      return;
-    }
-
-    clearAuthError();
-    setPageIdentifier(clipboardText.trim());
-    setNotice(
-      extractPageSlugFromIdentifier(clipboardText)
-        ? '청첩장 링크 또는 주소를 입력창에 붙여넣었습니다.'
-        : '붙여넣은 내용을 확인해 주세요.'
-    );
-  }, [clearAuthError]);
-
-  const handlePrepareRelink = useCallback(
-    (card: LinkedInvitationCard) => {
-      clearAuthError();
-      setPassword('');
-      setPageIdentifier(card.publicUrl?.trim() || card.slug);
-      setNotice(`${card.displayName.trim() || '청첩장'}의 비밀번호를 다시 입력해 주세요.`);
-    },
-    [clearAuthError]
-  );
 
   const handleCopyLinkedInvitationLink = useCallback(async (card: LinkedInvitationCard) => {
     const address = card.publicUrl?.trim() || card.slug;
@@ -202,7 +143,7 @@ export default function LoginScreen() {
   const handleContinueLinkedInvitation = useCallback(
     async (card: LinkedInvitationCard) => {
       if (!canActivateLinkedInvitationCard(card) || !card.session) {
-        handlePrepareRelink(card);
+        setNotice('저장된 연동 정보가 만료되었습니다. 관리자에게 새 앱 연동 링크를 요청해 주세요.');
         return;
       }
 
@@ -213,17 +154,16 @@ export default function LoginScreen() {
       try {
         const activated = await activateStoredSession(card.session);
         if (!activated) {
-          handlePrepareRelink(card);
+          setNotice('저장된 연동 정보가 만료되었습니다. 관리자에게 새 앱 연동 링크를 요청해 주세요.');
           return;
         }
 
-        setPassword('');
         router.replace(nextPath);
       } finally {
         setActivatingRecentSlug(null);
       }
     },
-    [activateStoredSession, clearAuthError, handlePrepareRelink, nextPath, router]
+    [activateStoredSession, clearAuthError, nextPath, router]
   );
 
   if (isBootstrapping) {
@@ -267,24 +207,23 @@ export default function LoginScreen() {
   return (
     <AppScreen
       title="청첩장 연동"
-      subtitle="청첩장 링크 또는 주소와 연동 비밀번호만 입력하면 운영 화면으로 바로 이어집니다."
+      subtitle="앱 연동 링크나 저장된 세션으로 운영 화면에 들어갑니다."
       contentContainerStyle={styles.screenContent}
     >
-      <LoginCard
-        pageIdentifier={pageIdentifier}
-        password={password}
-        onChangePageIdentifier={handleChangePageIdentifier}
-        onChangePassword={handleChangePassword}
-        onPaste={() => void handlePaste()}
-        onSubmit={handleLogin}
-      />
+      <SectionCard
+        title="비밀번호 없는 앱 연동"
+        description="새 청첩장은 생성 탭에서 고객 계정으로 로그인한 뒤 결제하면 자동으로 연결됩니다. 다른 기기에서는 운영 화면에서 발급한 앱 연동 링크를 사용해 주세요."
+      >
+        <ActionButton onPress={() => router.replace('/create')} fullWidth>
+          새 청첩장 만들기
+        </ActionButton>
+      </SectionCard>
       {!isLoadingRecentCards || recentCards.length ? (
         <RecentLinkedInvitationsSection
           cards={recentCards}
           palette={palette}
           activatingSlug={activatingRecentSlug}
           onContinue={(card) => void handleContinueLinkedInvitation(card)}
-          onPrepareRelink={handlePrepareRelink}
           onCopyLink={(card) => void handleCopyLinkedInvitationLink(card)}
         />
       ) : null}

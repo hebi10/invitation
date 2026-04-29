@@ -354,7 +354,7 @@ export function useInvitationForm({
               {
                 title: '청첩장을 공개할까요?',
                 description:
-                  '공개 전환은 하객에게 바로 노출되는 민감한 작업입니다. 비밀번호를 다시 확인한 뒤 저장합니다.',
+                  '공개 전환은 하객에게 바로 노출되는 민감한 작업입니다. 로그인 세션을 다시 확인한 뒤 저장합니다.',
                 confirmLabel: '공개 후 저장',
               },
               performSave
@@ -427,7 +427,7 @@ export function useInvitationForm({
           {
             title: '청첩장을 공개할까요?',
             description:
-              '공개 전환은 하객이 바로 볼 수 있는 민감한 작업입니다. 비밀번호를 다시 확인한 뒤 진행합니다.',
+              '공개 전환은 하객이 바로 볼 수 있는 민감한 작업입니다. 로그인 세션을 다시 확인한 뒤 진행합니다.',
             confirmLabel: '공개하기',
           },
           () => setPublishedState(true)

@@ -12,8 +12,6 @@ import {
   normalizeInvitationPageSlugBase,
   saveInvitationPageConfig,
 } from '@/services/invitationPageService';
-import { setOwnedEventPassword } from '@/services/customerEventOwnerService';
-import { setClientPassword } from '@/services/passwordService';
 import type {
   InvitationPageSeed,
   InvitationThemeKey,
@@ -36,7 +34,6 @@ export type WizardPersistDraftOptions = {
   publish?: boolean;
   successMessage?: string;
   silent?: boolean;
-  syncClientPassword?: boolean;
 };
 
 export function useWizardPersistence({
@@ -49,9 +46,6 @@ export function useWizardPersistence({
   slugInput,
   defaultSeedSlug,
   isAdminLoggedIn,
-  isLoggedIn,
-  clientPassword,
-  allowClientPasswordSetup,
   setPersistedSlug,
   setSlugInput,
   setFormState,
@@ -72,9 +66,6 @@ export function useWizardPersistence({
   slugInput: string;
   defaultSeedSlug: string | null;
   isAdminLoggedIn: boolean;
-  isLoggedIn: boolean;
-  clientPassword: string;
-  allowClientPasswordSetup: boolean;
   setPersistedSlug: (value: string | null) => void;
   setSlugInput: (value: string) => void;
   setFormState: (value: InvitationPageSeed) => void;
@@ -206,26 +197,6 @@ export function useWizardPersistence({
           defaultTheme,
         });
 
-        if (isLoggedIn && allowClientPasswordSetup && options?.syncClientPassword) {
-          const nextClientPassword = clientPassword.trim();
-
-          if (!nextClientPassword) {
-            showNotice('error', '고객 편집 비밀번호를 입력해 주세요.');
-            return null;
-          }
-
-          try {
-            if (isAdminLoggedIn) {
-              await setClientPassword(nextSlug, nextClientPassword);
-            } else {
-              await setOwnedEventPassword(nextSlug, nextClientPassword);
-            }
-          } catch (error) {
-            showErrorNotice(error, '청첩장은 저장했지만 고객 편집 비밀번호를 저장하지 못했습니다.');
-            return null;
-          }
-        }
-
         const normalized = normalizeFormState(prepared);
         setFormState(normalized);
         setPublished(nextPublished);
@@ -256,13 +227,9 @@ export function useWizardPersistence({
       }
     },
     [
-      allowClientPasswordSetup,
-      clientPassword,
       defaultTheme,
       ensureDraftCreated,
       formState,
-      isAdminLoggedIn,
-      isLoggedIn,
       normalizeFormState,
       published,
       setFormState,

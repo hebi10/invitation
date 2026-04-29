@@ -18,34 +18,34 @@
 
 | 우선순위 | API 범주 | 상태 | 연결 방식 |
 | --- | --- | --- | --- |
-| 1 | 로그인 API | 완료 | route -> `clientPasswordServerService`, `clientEditorSession`, `clientEditorMobileApi` |
-| 2 | 초안 생성 API | 완료 | route -> `invitationPageServerService`, `clientPasswordServerService`, `pageTicketServerService` |
+| 1 | 고객 인증 / owner session API | 완료 | route -> `firebaseAuth`, `clientEditorSession`, `clientEditorMobileApi` |
+| 2 | 초안 생성 API | 완료 | route -> `invitationPageServerService`, `eventRepository`, `pageTicketServerService` |
 | 3 | 청첩장 조회 API | 완료 | route -> `clientEditorMobileApi`, `invitationPageServerService` |
 | 4 | 방명록 관리 API | 완료 | route -> `firestoreEventCommentRepository` |
 | 5 | 링크 토큰 발급/검증 API | 완료 | route -> `mobileClientEditorLinkToken`, `mobileClientEditorHighRisk`, `clientEditorMobileApi` |
-| 6 | 고위험 작업 API | 완료 | route -> `mobileClientEditorHighRisk`, `clientPasswordServerService`, `clientEditorMobileApi` |
+| 6 | 고위험 작업 API | 완료 | route -> `mobileClientEditorHighRisk`, `clientEditorMobileApi` |
 | 7 | 결제 이행 API | 완료 | route -> `mobileBillingServerService` |
 | 8 | 관리자 서버 조회/삭제 보조 서비스 | 완료 | service -> `admin*Repository` |
 | 9 | API rate limit | 완료 | route -> `requestRateLimit` -> `rateLimitRepository` |
 
 ## 구 API / 신 repository 연결표
 
-### 1. 로그인 API
+### 1. 고객 인증 / owner session API
 
-- `src/app/api/client-editor/login/route.ts`
-  - 기존 역할: `client-passwords`, 세션 발급
-  - 현재 연결: `verifyServerClientPassword` -> `eventSecretRepository`
-  - 세션 발급: `createClientEditorSessionValue`
-- `src/app/api/mobile/client-editor/login/route.ts`
-  - 현재 연결: `verifyServerClientPassword`, `loadMobileClientEditorPageSnapshot`
-  - snapshot 내부: `eventRepository`, `eventCommentRepository`, `eventTicketRepository`
+- `src/app/api/mobile/auth/login/route.ts`, `src/app/api/mobile/auth/refresh/route.ts`
+  - 현재 연결: Firebase Auth REST API
+  - 모바일 생성/구매 이행의 고객 UID 기준으로 사용
+- `src/app/api/mobile/client-editor/link-tokens/exchange/route.ts`
+  - 현재 연결: `exchangeMobileClientEditorLinkToken`
+  - owner session 발급: `createClientEditorSessionValue`
+- 기존 `client-editor/login` 비밀번호 API는 사용하지 않는다.
 
 ### 2. 초안 생성 API
 
 - `src/app/api/mobile/client-editor/drafts/route.ts`
   - 현재 연결: `createServerInvitationPageDraftFromSeed`
   - draft 저장: `eventRepository.saveContentBySlug`, `eventRepository.upsertRegistryBySlug`
-  - 비밀번호 저장: `setServerClientPassword` -> `eventSecretRepository`
+  - 소유권 연결: `eventRepository.assignOwnerBySlug`
 - 웹 초안 생성 시작점
   - `/page-editor`, `/page-wizard`는 아직 브라우저 서비스 호출을 사용하지만, 서버 저장은 `invitationPageServerService` 경유로 repository에 연결된다.
 
@@ -77,7 +77,7 @@
 ### 6. 고위험 작업 API
 
 - `src/app/api/mobile/client-editor/high-risk/verify/route.ts`
-  - 현재 연결: `authorizeMobileClientEditorRequest`, `verifyServerClientPassword`, `createMobileClientEditorHighRiskSessionValue`
+  - 현재 연결: `authorizeMobileClientEditorRequest`, `createMobileClientEditorHighRiskSessionValue`
   - 감사 로그: `writeMobileClientEditorAuditLog` -> `eventAuditLogRepository`
 
 ### 7. 결제 이행 API
@@ -85,7 +85,7 @@
 - `src/app/api/mobile/billing/fulfill/route.ts`
   - 현재 연결: `mobileBillingServerService`
   - 결제 기록 저장: `billingFulfillmentRepository`
-  - 초안 생성/티켓 부여: `eventRepository`, `eventTicketRepository`, `eventSecretRepository`
+  - 초안 생성/티켓 부여: `eventRepository`, `eventTicketRepository`
   - 요청 제한: `requestRateLimit` -> `rateLimitRepository`
 
 ### 8. 관리자 서버 조회/삭제 보조 서비스
@@ -94,8 +94,6 @@
   - 현재 연결: `adminDashboardRepository`, `eventRepository`
 - `src/server/adminEventDeletionService.ts`
   - 현재 연결: `adminEventDeletionRepository`
-- `src/server/adminPasswordSummaryService.ts`
-  - 현재 연결: `eventSecretRepository`, `eventRepository`
 - `src/server/adminUserServerService.ts`
   - 현재 연결: `adminUserRepository`
 

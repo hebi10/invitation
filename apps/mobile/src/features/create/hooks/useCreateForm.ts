@@ -105,8 +105,6 @@ export function useCreateForm({
   const [slugSuggestionSeed, setSlugSuggestionSeed] = useState(() => createRandomSuffix(6));
   const [pageIdentifier, setPageIdentifier] = useState('');
   const [hasCustomPageIdentifier, setHasCustomPageIdentifier] = useState(false);
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
   const [ticketCount, setTicketCount] = useState(0);
   const [notice, setNotice] = useState('');
   const [paymentModalVisible, setPaymentModalVisible] = useState(false);
@@ -308,18 +306,14 @@ export function useCreateForm({
         groomEnglishName,
         brideEnglishName,
         pageIdentifier: effectivePageIdentifier,
-        password,
-        confirmPassword,
         selectedTheme,
       }),
     [
       brideKoreanName,
       brideEnglishName,
-      confirmPassword,
       effectivePageIdentifier,
       groomEnglishName,
       groomKoreanName,
-      password,
       selectedTheme,
     ]
   );
@@ -334,13 +328,6 @@ export function useCreateForm({
         .map((rule) => rule.errorMessage),
     [validationRules]
   );
-  const securityValidationMessages = useMemo(
-    () =>
-      validationRules
-        .filter((rule) => rule.section === 'security' && !rule.passed)
-        .map((rule) => rule.errorMessage),
-    [validationRules]
-  );
   const selectionValidationMessages = useMemo(
     () =>
       validationRules
@@ -349,8 +336,8 @@ export function useCreateForm({
     [validationRules]
   );
   const infoValidationMessages = useMemo(
-    () => [...basicValidationMessages, ...securityValidationMessages],
-    [basicValidationMessages, securityValidationMessages]
+    () => [...basicValidationMessages],
+    [basicValidationMessages]
   );
   const currentStepIndex = CREATE_STEPS.findIndex((step) => step.key === currentStep);
   const currentStepInfo = CREATE_STEPS[currentStepIndex] ?? CREATE_STEPS[0];
@@ -478,8 +465,6 @@ export function useCreateForm({
       setSlugSuggestionSeed(nextSeed);
       setHasCustomPageIdentifier(Boolean(storedPageIdentifier));
       setPageIdentifier(storedPageIdentifier || nextSuggestedSlugBase);
-      setPassword('');
-      setConfirmPassword('');
       setTicketCount(normalizeSupportedCreateTicketCount(draft.ticketCount));
       setPaymentModalVisible(false);
       setCurrentStep('info');
@@ -523,8 +508,6 @@ export function useCreateForm({
           groomEnglishName.trim() ||
           brideEnglishName.trim() ||
           (hasCustomPageIdentifier && effectivePageIdentifier.trim()) ||
-          password.trim() ||
-          confirmPassword.trim() ||
           selectedTheme ||
           ticketCount > 0 ||
           selectedPlan !== 'standard'
@@ -532,12 +515,10 @@ export function useCreateForm({
     [
       brideKoreanName,
       brideEnglishName,
-      confirmPassword,
       effectivePageIdentifier,
       groomEnglishName,
       groomKoreanName,
       hasCustomPageIdentifier,
-      password,
       selectedPlan,
       selectedTheme,
       ticketCount,
@@ -651,8 +632,6 @@ export function useCreateForm({
     setSlugSuggestionSeed(createRandomSuffix(6));
     setPageIdentifier('');
     setHasCustomPageIdentifier(false);
-    setPassword('');
-    setConfirmPassword('');
     setTicketCount(0);
     setSlugAvailability(INITIAL_SLUG_AVAILABILITY_STATE);
     resetDraftSync();
@@ -855,7 +834,6 @@ export function useCreateForm({
       brideKoreanName: brideKoreanName.trim(),
       groomEnglishName: groomEnglishName.trim(),
       brideEnglishName: brideEnglishName.trim(),
-      password: password.trim(),
       servicePlan: selectedPlan,
       theme: selectedTheme ?? DEFAULT_INVITATION_THEME,
     };
@@ -908,7 +886,6 @@ export function useCreateForm({
     groomKoreanName,
     isExpoWebPreview,
     moveToStep,
-    password,
     removeDraft,
     resetForm,
     router,
@@ -947,10 +924,6 @@ export function useCreateForm({
     pageIdentifier,
     setPageIdentifier: handlePageIdentifierChange,
     pageIdentifierHelperText,
-    password,
-    setPassword,
-    confirmPassword,
-    setConfirmPassword,
     ticketCount,
     updateTicketCount,
     decreaseTicketCount,
@@ -975,7 +948,6 @@ export function useCreateForm({
     currentProgressLabel,
     validationMessages,
     basicValidationMessages,
-    securityValidationMessages,
     selectionValidationMessages,
     hasDraftableInput,
     handleStepTabPress,

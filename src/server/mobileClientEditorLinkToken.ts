@@ -2,7 +2,6 @@ import 'server-only';
 
 import { createHmac, randomBytes } from 'node:crypto';
 
-import { getServerClientPasswordRecord } from './clientPasswordServerService';
 import {
   firestoreEventLinkTokenRepository,
   type ConsumeMobileClientEditorLinkTokenResult,
@@ -184,27 +183,9 @@ export async function exchangeMobileClientEditorLinkToken(
     };
   }
 
-  const passwordRecord = await getServerClientPasswordRecord(currentRecord.pageSlug);
-  if (!passwordRecord || passwordRecord.passwordVersion !== currentRecord.passwordVersion) {
-    const now = new Date();
-    const revokedRecord = await firestoreEventLinkTokenRepository.revokeById(
-      currentRecord.id,
-      now
-    );
-
-    return {
-      status: 'revoked',
-      record: revokedRecord ?? {
-        ...currentRecord,
-        revokedAt: now,
-        lastValidatedAt: now,
-      },
-    };
-  }
-
   return firestoreEventLinkTokenRepository.consumeById(
     currentRecord.id,
-    passwordRecord.passwordVersion,
+    currentRecord.passwordVersion,
     new Date()
   );
 }

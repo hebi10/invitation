@@ -81,7 +81,6 @@ export async function POST(request: Request) {
             brideKoreanName?: unknown;
             groomEnglishName?: unknown;
             brideEnglishName?: unknown;
-            password?: unknown;
             theme?: unknown;
           };
           targetPageSlug?: unknown;
@@ -130,7 +129,6 @@ export async function POST(request: Request) {
       const brideKoreanName = readTrimmedString(createInput?.brideKoreanName);
       const groomEnglishName = readTrimmedString(createInput?.groomEnglishName);
       const brideEnglishName = readTrimmedString(createInput?.brideEnglishName);
-      const password = readTrimmedString(createInput?.password);
       const theme = readTrimmedString(createInput?.theme);
 
       if (
@@ -138,8 +136,7 @@ export async function POST(request: Request) {
         !groomKoreanName ||
         !brideKoreanName ||
         !groomEnglishName ||
-        !brideEnglishName ||
-        !password
+        !brideEnglishName
       ) {
         return NextResponse.json(
           { error: 'Invitation page draft input is required.' },
@@ -180,7 +177,6 @@ export async function POST(request: Request) {
           brideKoreanName,
           groomEnglishName,
           brideEnglishName,
-          password,
           theme,
           ownerUid: customerAuth.identity.uid,
           ownerEmail:

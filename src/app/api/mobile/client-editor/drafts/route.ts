@@ -7,19 +7,23 @@ import {
   validateInvitationPageSlugBase,
 } from '@/lib/invitationPageSlug';
 import { normalizeInvitationProductTier } from '@/lib/invitationProducts';
-import { createClientEditorSessionValue } from '@/server/clientEditorSession';
+import {
+  CLIENT_EDITOR_OWNER_SESSION_VERSION,
+  createClientEditorSessionValue,
+} from '@/server/clientEditorSession';
 import {
   buildMobileInvitationLinks,
   MOBILE_CLIENT_EDITOR_SESSION_TTL_SECONDS,
   resolveMobileClientEditorPermissions,
 } from '@/server/clientEditorMobileApi';
-import { setServerClientPassword } from '@/server/clientPasswordServerService';
+import { getServerAuth } from '@/server/firebaseAdmin';
 import {
   createServerInvitationPageDraftFromSeed,
   getServerEditableInvitationPageConfig,
   getServerInvitationPageDisplayPeriodSummary,
 } from '@/server/invitationPageServerService';
 import { getServerPageTicketCount } from '@/server/pageTicketServerService';
+import { firestoreEventRepository } from '@/server/repositories/eventRepository';
 import {
   applyScopedRateLimit,
   buildRateLimitHeaders,
@@ -34,6 +38,21 @@ function isMobileDraftCreationEnabled() {
   return process.env.MOBILE_DRAFT_CREATION_ENABLED === 'true';
 }
 
+async function verifyMobileCustomerUid(request: Request) {
+  const authHeader = request.headers.get('authorization') ?? '';
+  const idToken = authHeader.startsWith('Bearer ') ? authHeader.slice(7).trim() : '';
+  if (!idToken) {
+    return null;
+  }
+
+  const serverAuth = getServerAuth();
+  if (!serverAuth) {
+    throw new Error('Firebase Admin Auth is not available.');
+  }
+
+  return serverAuth.verifyIdToken(idToken);
+}
+
 export async function POST(request: Request) {
   try {
     if (!isMobileDraftCreationEnabled()) {
@@ -43,13 +62,20 @@ export async function POST(request: Request) {
       );
     }
 
+    const customerIdentity = await verifyMobileCustomerUid(request);
+    if (!customerIdentity) {
+      return NextResponse.json(
+        { error: 'Customer authentication is required.' },
+        { status: 401 }
+      );
+    }
+
     const body = (await request.json().catch(() => null)) as
       | {
           seedSlug?: unknown;
           slugBase?: unknown;
           groomName?: unknown;
           brideName?: unknown;
-          password?: unknown;
           productTier?: unknown;
           defaultTheme?: unknown;
         }
@@ -58,7 +84,6 @@ export async function POST(request: Request) {
     const slugBase = typeof body?.slugBase === 'string' ? body.slugBase.trim() : '';
     const groomName = typeof body?.groomName === 'string' ? body.groomName.trim() : '';
     const brideName = typeof body?.brideName === 'string' ? body.brideName.trim() : '';
-    const password = typeof body?.password === 'string' ? body.password.trim() : '';
     const seedSlug =
       typeof body?.seedSlug === 'string' && body.seedSlug.trim()
         ? body.seedSlug.trim()
@@ -78,10 +103,6 @@ export async function POST(request: Request) {
 
     if (!groomName || !brideName) {
       return NextResponse.json({ error: 'Groom and bride names are required.' }, { status: 400 });
-    }
-
-    if (!password) {
-      return NextResponse.json({ error: 'Page password is required.' }, { status: 400 });
     }
 
     const rateLimitResult = await applyScopedRateLimit({
@@ -116,7 +137,14 @@ export async function POST(request: Request) {
       productTier,
       initialDisplayPeriodMonths: 6,
     });
-    const passwordRecord = await setServerClientPassword(createdDraft.slug, password);
+    await firestoreEventRepository.assignOwnerBySlug({
+      pageSlug: createdDraft.slug,
+      ownerUid: customerIdentity.uid,
+      ownerEmail:
+        typeof customerIdentity.email === 'string' ? customerIdentity.email : null,
+      ownerDisplayName:
+        typeof customerIdentity.name === 'string' ? customerIdentity.name : null,
+    });
     const [config, displayPeriod, ticketCount] = await Promise.all([
       getServerEditableInvitationPageConfig(createdDraft.slug),
       getServerInvitationPageDisplayPeriodSummary(createdDraft.slug),
@@ -130,7 +158,7 @@ export async function POST(request: Request) {
     const { value, expiresAt } = createClientEditorSessionValue(
       {
         pageSlug: createdDraft.slug,
-        passwordVersion: passwordRecord.passwordVersion,
+        passwordVersion: CLIENT_EDITOR_OWNER_SESSION_VERSION,
       },
       {
         ttlSeconds: MOBILE_CLIENT_EDITOR_SESSION_TTL_SECONDS,

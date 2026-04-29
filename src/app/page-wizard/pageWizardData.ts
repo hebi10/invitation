@@ -63,8 +63,6 @@ export type SlugStepState = {
   brideKoreanName: string;
   groomEnglishName: string;
   brideEnglishName: string;
-  clientPassword: string;
-  showClientPasswordField: boolean;
 };
 
 const THEME_STEP_TEMPLATE: WizardStepTemplate = {
@@ -644,10 +642,6 @@ export function buildStepValidation(
       if (!slugState.persistedSlug && !hasText(slugState.brideEnglishName)) {
         messages.push('예비 신부 영문 이름을 입력해 주세요.');
       }
-      if (slugState.showClientPasswordField && !hasText(slugState.clientPassword)) {
-        messages.push('고객 편집 비밀번호를 입력해 주세요.');
-      }
-
       const rawSlug = slugState.slugInput.trim();
       if (!rawSlug) {
         messages.push('페이지 주소를 입력해 주세요.');

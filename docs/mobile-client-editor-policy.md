@@ -5,15 +5,14 @@
 - 로그인 UX, 생성 규칙, 권한 모델, 고위험 작업 보호, 1회용 연동 링크를 구현할 때 공통 기준으로 사용한다.
 
 ## 사용자 노출 용어
-- 사용자 문구는 `청첩장 연동`, `청첩장 링크 또는 주소`, `연동 비밀번호`로 통일한다.
+- 사용자 문구는 `청첩장 연동`, `고객 로그인`, `앱 연동 링크`로 통일한다.
 - `slug`, `pageSlug`, `slugBase`는 개발 내부 용어로만 사용한다.
 - 로그인과 운영 화면에서는 raw slug를 기본값으로 노출하지 않는다.
 
 ## 로그인과 생성 기준
-- 로그인 입력은 `청첩장 링크 또는 주소`를 기준으로 한다.
-- 전체 URL을 붙여넣어도 내부에서 slug를 추출해 연동한다.
+- 청첩장 관리는 Firebase 고객 로그인 또는 1회용 앱 연동 링크를 기준으로 진입한다.
+- 기존 고객 편집 비밀번호로 청첩장을 claim하거나 로그인하는 흐름은 사용하지 않는다.
 - 청첩장 생성은 `자동 주소 제안 + 선택 수정`을 기본으로 한다.
-- 신규 청첩장 생성 시 고객 편집 비밀번호는 기본값 없이 직접 입력한다.
 - 최종 unique slug는 서버가 확정한다.
 - 주소 규칙, 예약어, 중복 판단은 프론트와 서버가 같은 기준을 사용한다.
 
@@ -46,10 +45,10 @@
   - 노출 기간 연장 또는 유료 노출 기간 변경
   - 티켓 이동
   - 앱 연동 링크 발급 및 폐기
-  - 향후 추가될 비밀번호 변경, 청첩장 삭제, 방명록 전체 삭제
+  - 향후 추가될 청첩장 삭제, 방명록 전체 삭제
 - 보호 방식은 아래 순서를 따른다.
   - 확인 모달 노출
-  - 필요 시 연동 비밀번호 재입력
+  - 기존 owner session을 verify API로 재확인
   - 10분 TTL의 step-up 세션 발급
   - 기존 mutation rate limit + 재인증 전용 rate limit 적용
   - 서버 audit log 기록
@@ -62,7 +61,7 @@
   - 1회 사용 후 즉시 `usedAt` 기록
   - 새 링크 발급 시 기존 활성 링크 자동 폐기
   - 수동 폐기 시 `revokedAt` 기록
-  - 비밀번호 버전이 바뀌면 기존 링크는 자동 무효화
+  - owner session version이 바뀌면 기존 링크는 자동 무효화
 - 반환 링크는 아래 두 종류를 제공한다.
   - 앱 스킴: `mobileinvitation://login?...`
   - 웹 fallback: `https://msgnote.kr/app/login?...`
@@ -70,9 +69,9 @@
 ## 현재 구현 기준
 - 모바일 API Base URL은 운영 `https://msgnote.kr`와 로컬 개발용 `http://localhost:3000`, `http://localhost:3001` 계열을 허용한다.
   - 실제 기기/Android 에뮬레이터에서는 같은 포트의 개발 PC LAN IP 또는 `10.0.2.2`를 사용한다.
-- 모바일 로그인은 URL 또는 slug 입력을 이미 지원한다.
-  - `apps/mobile/src/components/LoginCard.tsx`
-- 모바일 owner session은 서버에서 `pageSlug`, `passwordVersion`, 만료 시간을 검증한다.
+- 모바일 로그인은 Firebase 고객 로그인과 1회용 앱 연동 링크 교환을 사용한다.
+  - `apps/mobile/src/app/login.tsx`
+- 모바일 owner session은 서버에서 `pageSlug`, owner session version, 만료 시간을 검증한다.
   - `src/server/clientEditorSessionAuth.ts`
 - 고위험 재인증은 전용 verify API와 step-up 토큰으로 처리한다.
   - `src/app/api/mobile/client-editor/high-risk/verify/route.ts`
@@ -100,7 +99,7 @@
 ## 후속 작업
 - 앱 연동 링크의 사용 이력 조회 UI가 필요하면 운영 화면에 최근 발급 상태를 추가한다.
 - 앱 미설치 사용자를 위한 설치 안내 분기나 스토어 이동 문구는 fallback 페이지에서 확장할 수 있다.
-- 모바일 비밀번호 변경, 청첩장 삭제, 방명록 전체 삭제 API가 추가되면 같은 high-risk helper를 재사용한다.
+- 청첩장 삭제, 방명록 전체 삭제 API가 추가되면 같은 high-risk helper를 재사용한다.
 - 모바일 RevenueCat `appUserId`와 Firebase 고객 UID를 연결하면 모바일에서 산 미사용 제작권도 PC 고객 페이지에서 소비할 수 있다.
 
 ## 2026-04 모바일 생성 흐름 확정

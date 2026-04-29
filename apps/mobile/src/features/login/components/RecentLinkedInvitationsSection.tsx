@@ -14,7 +14,6 @@ type RecentLinkedInvitationsSectionProps = {
   palette: AppPalette;
   activatingSlug: string | null;
   onContinue: (card: LinkedInvitationCard) => void;
-  onPrepareRelink: (card: LinkedInvitationCard) => void;
   onCopyLink: (card: LinkedInvitationCard) => void;
 };
 
@@ -36,7 +35,6 @@ export function RecentLinkedInvitationsSection({
   palette,
   activatingSlug,
   onContinue,
-  onPrepareRelink,
   onCopyLink,
 }: RecentLinkedInvitationsSectionProps) {
   if (!cards.length) {
@@ -46,7 +44,7 @@ export function RecentLinkedInvitationsSection({
   return (
     <SectionCard
       title="최근 연동한 청첩장"
-      description="이전에 연동한 청첩장은 저장된 정보로 바로 열거나, 비밀번호만 다시 입력해 이어서 관리할 수 있습니다."
+      description="이전에 연동한 청첩장은 저장된 세션이 유효할 때 바로 이어서 열 수 있습니다."
       badge={`${cards.length}개`}
       badgeTone="notice"
     >
@@ -72,7 +70,7 @@ export function RecentLinkedInvitationsSection({
                 color={canContinue ? palette.success : palette.textMuted}
                 style={styles.status}
               >
-                {canContinue ? '바로 이어서 열기 가능' : '비밀번호 다시 입력'}
+                {canContinue ? '바로 이어서 열기 가능' : '연동 만료'}
               </AppText>
             </View>
 
@@ -90,12 +88,12 @@ export function RecentLinkedInvitationsSection({
 
             <View style={styles.actions}>
               <ActionButton
-                onPress={() => (canContinue ? onContinue(card) : onPrepareRelink(card))}
+                onPress={() => onContinue(card)}
                 loading={activatingSlug === card.slug}
                 disabled={Boolean(activatingSlug) && activatingSlug !== card.slug}
                 style={styles.actionButton}
               >
-                {canContinue ? '이어서 열기' : '비밀번호 입력'}
+                {canContinue ? '이어서 열기' : '연동 확인'}
               </ActionButton>
               <ActionButton
                 variant="secondary"

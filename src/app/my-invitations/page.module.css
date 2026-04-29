@@ -188,6 +188,168 @@
   color: #66707f;
 }
 
+.guestbookPanel {
+  display: grid;
+  gap: 12px;
+  padding-top: 14px;
+  border-top: 1px solid #e1d8ca;
+}
+
+.guestbookHeader,
+.guestbookItemHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.guestbookTitle {
+  margin: 0;
+  font-size: 0.98rem;
+  color: #1d2430;
+}
+
+.guestbookList {
+  display: grid;
+  gap: 10px;
+}
+
+.guestbookItem {
+  display: grid;
+  gap: 8px;
+  padding: 12px;
+  border-radius: 14px;
+  border: 1px solid #e8e1d7;
+  background: #ffffff;
+}
+
+.guestbookMeta {
+  margin: 4px 0 0;
+  font-size: 0.82rem;
+  line-height: 1.45;
+  color: #7a8593;
+}
+
+.guestbookMessage {
+  margin: 0;
+  color: #394252;
+  font-size: 0.92rem;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.modalOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(29, 36, 48, 0.46);
+}
+
+.modalDialog {
+  width: min(720px, 100%);
+  max-height: min(760px, calc(100vh - 48px));
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border-radius: 20px;
+  border: 1px solid #e8e2d9;
+  background: #ffffff;
+  box-shadow: 0 24px 80px rgba(29, 36, 48, 0.24);
+}
+
+.modalHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 22px 22px 18px;
+  border-bottom: 1px solid #ece6dd;
+  background: #fbfaf7;
+}
+
+.modalTitleStack {
+  display: grid;
+  gap: 4px;
+}
+
+.modalTitle {
+  margin: 0;
+  color: #1d2430;
+  font-size: 1.2rem;
+  line-height: 1.35;
+}
+
+.modalDescription {
+  margin: 0;
+  color: #66707f;
+  font-size: 0.92rem;
+  line-height: 1.55;
+}
+
+.modalCloseButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  min-height: 38px;
+  padding: 0 12px;
+  border: 1px solid #d9e0e8;
+  border-radius: 12px;
+  background: #ffffff;
+  color: #1d2430;
+  font: inherit;
+  font-size: 0.86rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.modalBody {
+  overflow-y: auto;
+  padding: 20px 22px 22px;
+}
+
+.modalBody .guestbookPanel {
+  padding-top: 0;
+  border-top: 0;
+}
+
+.textButton,
+.dangerButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 34px;
+  padding: 0 10px;
+  border-radius: 10px;
+  font: inherit;
+  font-size: 0.84rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.textButton {
+  border: 1px solid #d9e0e8;
+  background: #ffffff;
+  color: #1d2430;
+}
+
+.dangerButton {
+  border: 1px solid #f1b5ae;
+  background: #fff2f0;
+  color: #b42318;
+}
+
+.textButton:disabled,
+.dangerButton:disabled {
+  cursor: not-allowed;
+  opacity: 0.58;
+}
+
 .emptyState,
 .loading {
   color: #5e6877;
@@ -306,6 +468,29 @@
   .heroActions,
   .actions {
     flex-direction: column;
+  }
+
+  .modalOverlay {
+    align-items: flex-end;
+    padding: 12px;
+  }
+
+  .modalDialog {
+    max-height: calc(100vh - 24px);
+    border-radius: 18px;
+  }
+
+  .modalHeader {
+    flex-direction: column;
+    padding: 18px;
+  }
+
+  .modalBody {
+    padding: 16px 18px 18px;
+  }
+
+  .modalCloseButton {
+    width: 100%;
   }
 
   .formCard {

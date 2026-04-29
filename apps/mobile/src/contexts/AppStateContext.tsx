@@ -46,7 +46,6 @@ export type AppStateContextValue = {
   dashboardLoading: boolean;
   drafts: CreateDraftItem[];
   pendingManageOnboarding: PendingManageOnboarding | null;
-  login: (pageIdentifier: string, password: string) => Promise<boolean>;
   createInvitationPage: (
     input: MobileInvitationCreationInput,
     options?: {
@@ -132,7 +131,6 @@ export function useAppState(): AppStateContextValue {
     isReady: isAuthReady,
     authError,
     pendingManageOnboarding,
-    login,
     createInvitationPage,
     activateStoredSession,
     logout,
@@ -177,7 +175,6 @@ export function useAppState(): AppStateContextValue {
       dashboardLoading,
       drafts,
       pendingManageOnboarding,
-      login,
       createInvitationPage,
       activateStoredSession,
       logout,
@@ -211,7 +208,6 @@ export function useAppState(): AppStateContextValue {
       isAuthenticated,
       isAuthenticating,
       isBootstrapping,
-      login,
       logout,
       pageSummary,
       palette,

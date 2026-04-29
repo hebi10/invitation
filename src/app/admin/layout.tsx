@@ -6,7 +6,7 @@ import { AdminOverlayProvider } from './_components';
 
 export const metadata: Metadata = {
   title: '관리자 대시보드 | 모바일 청첩장',
-  description: '청첩장 페이지, 이미지, 댓글, 비밀번호, 노출 기간을 운영형 UI로 관리하는 관리자 대시보드입니다.',
+  description: '청첩장 페이지, 이미지, 댓글, 고객 계정 연결, 노출 기간을 운영형 UI로 관리하는 관리자 대시보드입니다.',
   robots: {
     index: false,
     follow: false,

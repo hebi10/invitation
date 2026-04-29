@@ -7,9 +7,9 @@
 
 ## 적용 범위
 - `src/services/invitationPageService.ts`
-- `src/services/passwordService.ts`
 - `src/services/commentService.ts`
 - `src/services/adminAuth.ts`
+- `src/services/customerEventService.ts`
 - `src/services/memoryPageService.ts`
 
 ## 현재 구조
@@ -28,8 +28,6 @@
 ## repository 구현체
 - `src/services/repositories/invitationPageRepository.ts`
   - 페이지 본문, registry, display period, slug 중복 확인
-- `src/services/repositories/clientPasswordRepository.ts`
-  - 페이지 비밀번호 조회/저장
 - `src/services/repositories/commentRepository.ts`
   - 방명록 조회/서버 API 등록/삭제 예정 처리
 - `src/services/repositories/adminUserRepository.ts`
@@ -40,7 +38,6 @@
 ## mapper / validator / utility
 - mappers
   - `mappers/invitationPageRepositoryMapper.ts`
-  - `mappers/clientPasswordRepositoryMapper.ts`
   - `mappers/commentRepositoryMapper.ts`
 - validator
   - `repositoryValidators.ts`
@@ -78,7 +75,7 @@
 - 관리자 페이지 목록은 클라이언트 Firestore 직접 조회 대신 `/api/admin/pages`를 통해 서버 Admin SDK로 읽는다.
 - 관리자 방명록 목록은 클라이언트 collection/list 조회 대신 `/api/admin/comments`를 통해 서버 Admin SDK로 읽는다.
 - 관리자 로그인 권한 확인과 주요 조회 API는 Firebase ID token을 `Authorization: Bearer`로 전달하고 서버에서 `admin-users` 권한을 확인한다.
-- 관리자 요약/삭제/비밀번호 보조 조회/관리자 사용자 확인은 `src/server/repositories/admin*Repository.ts`와 `eventSecretRepository`를 통해 Firestore 경로를 다룬다.
+- 관리자 요약/삭제/관리자 사용자 확인은 `src/server/repositories/admin*Repository.ts`를 통해 Firestore 경로를 다룬다.
 
 ## Rate limit 경계
 - API rate limit 상태는 `src/server/repositories/rateLimitRepository.ts`가 Firestore `rateLimits` 컬렉션에 저장한다.
@@ -88,16 +85,14 @@
 ## 고객 소유 이벤트 조회 경계
 - `/my-invitations`의 내 청첩장 목록은 클라이언트 Firestore 직접 조회 대신 `/api/customer/events`를 통해 서버 Admin SDK로 읽는다.
 - 고객 조회 API는 Firebase ID token을 `Authorization: Bearer`로 전달하고 서버에서 검증한 UID의 `ownerUid`와 일치하는 이벤트만 반환한다.
-- 기존 청첩장 claim 성공 후에는 내 청첩장 목록 캐시를 무효화하고 서버 목록을 다시 읽은 뒤 `/page-wizard/[slug]` 관리 화면으로 이동한다.
 - `/page-wizard/[slug]`, `/page-wizard/[slug]/result`, `/page-editor/[slug]`의 비관리자 소유권/편집 설정 확인은 `/api/customer/events/[slug]/ownership`, `/api/customer/events/[slug]/editable` 서버 API를 사용한다.
-- claim 직후 편집 화면 전환은 클라이언트 Firestore 규칙 전파나 slug index 읽기에 의존하지 않고, 서버 Admin SDK가 확인한 owner/config 상태를 기준으로 한다.
-- `/api/customer/events/claim` 성공 응답은 가능한 경우 서버가 확인한 editable config를 함께 내려주며, 고객 위저드는 이 config를 즉시 적용한다.
 - 고객 위저드 진입 시 Storage listing fallback과 클라이언트 Firestore 이미지 정리 저장은 실행하지 않는다.
 - 고객 위저드의 이미지 업로드는 Firebase 로그인 계정의 이벤트 소유권을 Storage rules가 확인하는 직접 업로드 경로를 사용한다.
-- 고객 위저드는 editable API가 `claimable`을 먼저 반환해도 `/api/customer/events` 소유 목록 확인이 끝나기 전에는 비밀번호 claim 카드를 렌더링하지 않는다.
+- 고객 위저드는 editable API가 `claimable`을 반환하면 비밀번호 claim을 제공하지 않고 관리자 계정 연결 안내를 표시한다.
 - slug index가 오래되어 먼저 찾은 이벤트의 `ownerUid`가 비어 있어도, 현재 UID가 같은 slug의 이벤트 summary를 소유하고 있으면 고객 편집 API는 `claimable`보다 owner를 우선 인정한다.
-- owner 이벤트의 editable config가 비어 있고 같은 slug의 sample config가 있으면 고객 편집 API는 sample 기반 config를 반환해 비밀번호 claim 루프로 보내지 않는다.
+- owner 이벤트의 editable config가 비어 있고 같은 slug의 sample config가 있으면 고객 편집 API는 sample 기반 config를 반환한다.
 - 위저드 클라이언트도 `/api/customer/events` 소유 목록에 같은 slug가 있으면 claimable 응답을 그대로 믿지 않고 소유 이벤트 fallback config를 적용한다.
+- `/my-invitations`의 고객 방명록 조회/삭제는 `/api/customer/events/[slug]/comments`와 `/api/customer/events/[slug]/comments/[commentId]`를 사용하고, 서버에서 ownerUid를 다시 확인한다.
 
 ## 고객 이용권 지갑 경계
 - 고객 제작권과 운영 티켓 지급/소비 이력은 `src/server/repositories/customerWalletRepository.ts`가 Firestore `customerWallets` 경로를 전담한다.

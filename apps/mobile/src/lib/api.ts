@@ -117,9 +117,6 @@ function isAllowedApiHost(hostname: string) {
 }
 
 const ERROR_MESSAGE_MAP: Record<string, string> = {
-  'Page slug and password are required.': '페이지 주소와 비밀번호를 모두 입력해 주세요.',
-  'Invalid page password.': '비밀번호가 올바르지 않습니다.',
-  'Failed to verify the page password.': '페이지 비밀번호를 확인하지 못했습니다.',
   'Invitation page was not found.': '청첩장 페이지를 찾을 수 없습니다.',
   'Invitation page config is required.': '저장할 청첩장 설정이 필요합니다.',
   'Published state is required.': '공개 상태 값이 필요합니다.',
@@ -137,7 +134,6 @@ const ERROR_MESSAGE_MAP: Record<string, string> = {
   'Too many comment update requests. Please try again later.':
     '방명록 처리 요청이 너무 많습니다. 잠시 후 다시 시도해 주세요.',
   'Page slug base is required.': '청첩장 주소를 입력해 주세요.',
-  'Page password is required.': '페이지 비밀번호를 입력해 주세요.',
   'Groom and bride names are required.': '신랑과 신부 이름을 모두 입력해 주세요.',
   'A valid URL slug base is required.': '사용 가능한 페이지 주소를 다시 확인해 주세요.',
   'Page slug base must be at least 3 characters.': '청첩장 주소는 3자 이상으로 입력해 주세요.',
@@ -163,7 +159,7 @@ const ERROR_MESSAGE_MAP: Record<string, string> = {
     '대상 청첩장의 연동 정보가 만료되었습니다. 다시 연동해 주세요.',
   'Not enough tickets.': '보유 티켓이 부족합니다.',
   'Recent authentication is required for this action.':
-    '민감한 작업이라 비밀번호를 다시 확인해야 합니다.',
+    '민감한 작업이라 로그인 세션을 다시 확인해야 합니다.',
   'Too many high-risk verification attempts. Please try again later.':
     '재인증 시도가 너무 많습니다. 잠시 후 다시 시도해 주세요.',
   'Page slug is required.': '청첩장 주소를 다시 확인해 주세요.',
@@ -206,8 +202,6 @@ const ERROR_MESSAGE_MAP: Record<string, string> = {
     '선택한 결제 상품이 티켓 상품이 아닙니다.',
   'This purchase record is already linked to another request.':
     '이미 다른 요청에 사용된 결제 정보입니다.',
-  'The page password record could not be loaded.':
-    '생성한 청첩장 비밀번호 정보를 불러오지 못했습니다.',
   'The created invitation page could not be loaded.':
     '생성한 청첩장 정보를 다시 불러오지 못했습니다.',
   'Firebase Auth API key is not configured.':
@@ -462,26 +456,6 @@ export interface MobileLinkTokenRevokeResponse {
   revokedCount: number;
 }
 
-export async function loginMobileClientEditor(
-  baseUrl: string,
-  pageSlug: string,
-  password: string
-) {
-  return readJsonResponse<MobileLoginResponse>(
-    await fetchWithRetry(buildApiUrl(baseUrl, '/api/mobile/client-editor/login'), {
-      method: 'POST',
-      headers: {
-        ...createHeaders(),
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        pageSlug,
-        password,
-      }),
-    })
-  );
-}
-
 export async function loginMobileCustomerAuth(
   baseUrl: string,
   email: string,
@@ -535,7 +509,6 @@ export async function createMobileInvitationDraft(
         brideName: payload.brideKoreanName,
         groomEnglishName: payload.groomEnglishName,
         brideEnglishName: payload.brideEnglishName,
-        password: payload.password,
         productTier: payload.servicePlan,
         defaultTheme: payload.theme,
       }),
@@ -628,7 +601,6 @@ export async function fulfillMobileBillingPageCreation(
           brideKoreanName: payload.input.brideKoreanName,
           groomEnglishName: payload.input.groomEnglishName,
           brideEnglishName: payload.input.brideEnglishName,
-          password: payload.input.password,
           theme: payload.input.theme,
         },
       }),
@@ -886,8 +858,7 @@ export async function extendMobileInvitationDisplayPeriod(
 export async function verifyMobileClientEditorHighRiskSession(
   baseUrl: string,
   pageSlug: string,
-  token: string,
-  password: string
+  token: string
 ) {
   return readJsonResponse<MobileHighRiskVerificationResponse>(
     await fetchWithRetry(buildApiUrl(baseUrl, '/api/mobile/client-editor/high-risk/verify'), {
@@ -898,7 +869,6 @@ export async function verifyMobileClientEditorHighRiskSession(
       },
       body: JSON.stringify({
         pageSlug,
-        password,
       }),
     })
   );

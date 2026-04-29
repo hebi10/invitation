@@ -70,12 +70,6 @@ export type CustomerEditableInvitationPageState =
       message: string;
     };
 
-export interface ClaimOwnedCustomerEventResult {
-  slug: string;
-  eventId: string;
-  editableConfig: EditableInvitationPageConfig | null;
-}
-
 export interface CreateOwnedCustomerEventInput {
   slugBase: string;
   groomName: string;
@@ -102,31 +96,6 @@ export interface CustomerEventGuestbookComment {
   deletedAt: Date | null;
   scheduledDeleteAt: Date | null;
   restoredAt: Date | null;
-}
-
-function extractPageSlugFromInput(value: string) {
-  const trimmedValue = value.trim();
-  if (!trimmedValue) {
-    return '';
-  }
-
-  try {
-    const normalizedUrl = trimmedValue.startsWith('http')
-      ? new URL(trimmedValue)
-      : new URL(trimmedValue, 'https://placeholder.local');
-    const segments = normalizedUrl.pathname
-      .split('/')
-      .map((segment) => segment.trim())
-      .filter(Boolean);
-    return normalizeInvitationPageSlugInput(segments[0] ?? '');
-  } catch {
-    const firstSegment = trimmedValue
-      .replace(/^\/+/, '')
-      .split('/')
-      .map((segment) => segment.trim())
-      .filter(Boolean)[0] ?? '';
-    return normalizeInvitationPageSlugInput(firstSegment);
-  }
 }
 
 function readDate(value: unknown) {
@@ -489,58 +458,6 @@ export async function getCustomerEditableInvitationPageState(
     status: 'blocked',
     summary,
     message: '청첩장 편집 권한을 확인하지 못했습니다.',
-  };
-}
-
-export async function claimOwnedCustomerEvent(input: {
-  pageSlugOrUrl: string;
-  password: string;
-}): Promise<ClaimOwnedCustomerEventResult> {
-  const pageSlug = extractPageSlugFromInput(input.pageSlugOrUrl);
-  const password = input.password.trim();
-
-  if (!pageSlug || !password) {
-    throw new Error('청첩장 링크 또는 주소와 기존 페이지 비밀번호를 모두 입력해 주세요.');
-  }
-
-  const idToken = await getCurrentFirebaseIdToken();
-  if (!idToken) {
-    throw new Error('로그인 상태를 확인하지 못했습니다. 다시 로그인해 주세요.');
-  }
-
-  const response = await fetch('/api/customer/events/claim/', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${idToken}`,
-    },
-    body: JSON.stringify({
-      pageSlug,
-      password,
-    }),
-  });
-  const payload = (await response.json().catch(() => null)) as
-    | {
-        success?: boolean;
-        slug?: string;
-        eventId?: string;
-        config?: unknown;
-        error?: string;
-      }
-    | null;
-
-  if (!response.ok) {
-    throw new Error(
-      typeof payload?.error === 'string' && payload.error.trim()
-        ? payload.error
-        : '청첩장 계정 연결에 실패했습니다.'
-    );
-  }
-
-  return {
-    slug: payload?.slug ?? pageSlug,
-    eventId: payload?.eventId ?? '',
-    editableConfig: normalizeEditableConfig(payload?.config),
   };
 }
 

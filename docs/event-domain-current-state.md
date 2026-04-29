@@ -8,7 +8,7 @@
 - 이벤트 메타와 공개 상태: `events/{eventId}`
 - 이벤트 본문: `events/{eventId}/content/current`
 - 공개 주소 해석: `eventSlugIndex/{slug}` -> `eventId`
-- 고객 편집 비밀번호: `eventSecrets/{eventId}`
+- 고객 소유권: `events/{eventId}.ownerUid`
 - 결제 이행: `billingFulfillments/{transactionId}`
 - API rate limit: `rateLimits/{keyHash}`
 - 추억 페이지: `memory-pages/{slug}` 별도 도메인
@@ -24,7 +24,7 @@
 - 표시 기간은 `displayPeriod` 또는 호환 필드에서 읽되, 공개 조회 판단은 `events` 문서의 공개 상태와 표시 기간을 함께 본다.
 - 본문 원본은 `events/{eventId}/content/current`의 `config`가 기준이며, 공개 렌더러와 편집기는 repository mapper를 통해 정규화된 값을 사용한다.
 - `eventSlugIndex/{slug}`는 `eventId`, `slug`, `updatedAt`을 보유하고 공개 URL의 유일한 slug lookup 경로다.
-- `eventSecrets/{eventId}`에는 고객 편집용 secret hash만 둔다. 공개 조회 또는 클라이언트 응답에 secret 원문을 노출하지 않는다.
+- 고객 편집 권한은 Firebase Auth UID와 `events/{eventId}.ownerUid` 일치 여부로 판단한다.
 
 ## 운영 기준
 - 기본 운영 모드는 `event-only`다. legacy 컬렉션을 fallback 또는 rollback 기준으로 삼지 않는다.
