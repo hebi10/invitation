@@ -76,7 +76,7 @@ export default function FirebaseAuthLoginCard({
       setCanResendVerification(result.requiresEmailVerification === true);
       setNoticeMessage(
         result.verificationEmailSent
-          ? '인증 메일을 보냈습니다. 이메일 받은 편지함에서 인증 링크를 확인한 뒤 청첩장을 생성해 주세요.'
+          ? '인증 메일을 보냈습니다. 받은 편지함에서 인증 링크를 확인해 주세요. 메일이 없으면 스팸 메일함도 확인해 주세요.'
           : '계정은 생성됐지만 인증 메일 발송을 확인하지 못했습니다. 아래 버튼으로 인증 메일을 다시 보낼 수 있습니다.'
       );
     }
@@ -105,7 +105,9 @@ export default function FirebaseAuthLoginCard({
     }
 
     setCanResendVerification(true);
-    setNoticeMessage('인증 메일을 다시 보냈습니다. 받은 편지함에서 인증 링크를 확인해 주세요.');
+    setNoticeMessage(
+      '인증 메일을 다시 보냈습니다. 받은 편지함에서 인증 링크를 확인해 주세요. 메일이 없으면 스팸 메일함도 확인해 주세요.'
+    );
     setLoading(null);
   };
 

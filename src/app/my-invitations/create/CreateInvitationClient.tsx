@@ -115,7 +115,7 @@ export default function CreateInvitationClient() {
     setVerificationNotice(
       result.alreadyVerified
         ? '이메일 인증이 확인되었습니다. 생성 화면을 다시 불러와 주세요.'
-        : '인증 메일을 다시 보냈습니다. 받은 편지함에서 인증 링크를 확인해 주세요.'
+        : '인증 메일을 다시 보냈습니다. 받은 편지함에서 인증 링크를 확인해 주세요. 메일이 없으면 스팸 메일함도 확인해 주세요.'
     );
     setVerificationLoading(false);
   };

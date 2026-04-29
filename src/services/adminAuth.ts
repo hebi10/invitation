@@ -109,6 +109,10 @@ async function getAuthModules() {
   };
 }
 
+function applyPreferredAuthLanguage(auth: { languageCode: string | null }) {
+  auth.languageCode = 'ko';
+}
+
 async function readAdminSessionResponse(response: Response) {
   const payload = (await response.json().catch(() => null)) as
     | {
@@ -251,6 +255,8 @@ export async function registerFirebaseUser(
     throw new Error('Firebase Auth가 초기화되지 않았습니다.');
   }
 
+  applyPreferredAuthLanguage(auth);
+
   const credential = await authModule.createUserWithEmailAndPassword(
     auth,
     email.trim(),
@@ -298,6 +304,8 @@ export async function sendCurrentUserEmailVerification(): Promise<EmailVerificat
   if (!auth?.currentUser) {
     throw new Error('로그인 상태를 확인하지 못했습니다. 다시 로그인해 주세요.');
   }
+
+  applyPreferredAuthLanguage(auth);
 
   await auth.currentUser.reload();
 
