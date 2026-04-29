@@ -7,6 +7,7 @@ import type {
   MobileGuestbookComment,
   MobileGuestbookCommentAction,
   MobileHighRiskSessionSummary,
+  MobileCustomerAuthSession,
   MobileInvitationCreationInput,
   MobileInvitationCreationResponse,
   MobileInvitationDashboard,
@@ -148,6 +149,8 @@ const ERROR_MESSAGE_MAP: Record<string, string> = {
     '요청한 청첩장 주소가 현재 로그인 세션과 일치하지 않습니다.',
   'Mobile invitation draft creation is disabled.':
     '모바일 청첩장 생성이 아직 열려 있지 않습니다. 관리자에게 문의해 주세요.',
+  'Invitation page draft input is required.':
+    '청첩장 생성에 필요한 정보를 모두 입력해 주세요.',
   'Ticket count adjustment amount is required.': '변경할 티켓 수량이 올바르지 않습니다.',
   'Target page slug and session are required.':
     '티켓을 이동할 대상 청첩장 정보를 확인해 주세요.',
@@ -207,6 +210,16 @@ const ERROR_MESSAGE_MAP: Record<string, string> = {
     '생성한 청첩장 비밀번호 정보를 불러오지 못했습니다.',
   'The created invitation page could not be loaded.':
     '생성한 청첩장 정보를 다시 불러오지 못했습니다.',
+  'Firebase Auth API key is not configured.':
+    '고객 로그인을 위한 Firebase 설정이 아직 준비되지 않았습니다.',
+  'Firebase Admin Auth is not available.':
+    '고객 인증을 확인할 수 없습니다. 관리자에게 문의해 주세요.',
+  'Customer email and password are required.': '이메일과 비밀번호를 입력해 주세요.',
+  'Customer refresh token is required.': '고객 로그인 정보가 만료되었습니다. 다시 로그인해 주세요.',
+  'Invalid customer credentials.': '이메일 또는 비밀번호가 올바르지 않습니다.',
+  'Customer authentication is required.': '고객 계정으로 로그인한 뒤 다시 진행해 주세요.',
+  'Too many login attempts. Please try again later.':
+    '로그인 시도가 너무 많습니다. 잠시 후 다시 시도해 주세요.',
   'Request failed.': '요청 처리에 실패했습니다. 잠시 후 다시 시도해 주세요.',
 };
 
@@ -424,6 +437,11 @@ export interface MobileBillingPurchaseReceiptInput {
   transactionId: string;
 }
 
+export interface MobileCustomerAuthResponse {
+  authenticated: boolean;
+  session: MobileCustomerAuthSession;
+}
+
 export interface MobileHighRiskVerificationResponse {
   verified: boolean;
   session: MobileHighRiskSessionSummary;
@@ -464,21 +482,59 @@ export async function loginMobileClientEditor(
   );
 }
 
-export async function createMobileInvitationDraft(
+export async function loginMobileCustomerAuth(
   baseUrl: string,
-  payload: MobileInvitationCreationInput
+  email: string,
+  password: string
 ) {
-  return readJsonResponse<MobileInvitationCreationResponse>(
-    await fetchWithRetry(buildApiUrl(baseUrl, '/api/mobile/client-editor/drafts'), {
+  return readJsonResponse<MobileCustomerAuthResponse>(
+    await fetchWithRetry(buildApiUrl(baseUrl, '/api/mobile/auth/login'), {
       method: 'POST',
       headers: {
         ...createHeaders(),
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
+        email,
+        password,
+      }),
+    })
+  );
+}
+
+export async function refreshMobileCustomerAuth(baseUrl: string, refreshToken: string) {
+  return readJsonResponse<MobileCustomerAuthResponse>(
+    await fetchWithRetry(buildApiUrl(baseUrl, '/api/mobile/auth/refresh'), {
+      method: 'POST',
+      headers: {
+        ...createHeaders(),
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        refreshToken,
+      }),
+    })
+  );
+}
+
+export async function createMobileInvitationDraft(
+  baseUrl: string,
+  payload: MobileInvitationCreationInput,
+  customerIdToken?: string | null
+) {
+  return readJsonResponse<MobileInvitationCreationResponse>(
+    await fetchWithRetry(buildApiUrl(baseUrl, '/api/mobile/client-editor/drafts'), {
+      method: 'POST',
+      headers: {
+        ...createHeaders(customerIdToken ?? undefined),
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
         slugBase: payload.slugBase,
         groomName: payload.groomKoreanName,
         brideName: payload.brideKoreanName,
+        groomEnglishName: payload.groomEnglishName,
+        brideEnglishName: payload.brideEnglishName,
         password: payload.password,
         productTier: payload.servicePlan,
         defaultTheme: payload.theme,
@@ -553,13 +609,14 @@ export async function fulfillMobileBillingPageCreation(
   payload: {
     purchase: MobileBillingPurchaseReceiptInput;
     input: MobileInvitationCreationInput;
+    customerIdToken?: string | null;
   }
 ) {
   return readJsonResponse<MobileInvitationCreationResponse>(
     await fetchWithRetry(buildApiUrl(baseUrl, '/api/mobile/billing/fulfill'), {
       method: 'POST',
       headers: {
-        ...createHeaders(),
+        ...createHeaders(payload.customerIdToken ?? undefined),
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
@@ -569,6 +626,8 @@ export async function fulfillMobileBillingPageCreation(
           slugBase: payload.input.slugBase,
           groomKoreanName: payload.input.groomKoreanName,
           brideKoreanName: payload.input.brideKoreanName,
+          groomEnglishName: payload.input.groomEnglishName,
+          brideEnglishName: payload.input.brideEnglishName,
           password: payload.input.password,
           theme: payload.input.theme,
         },

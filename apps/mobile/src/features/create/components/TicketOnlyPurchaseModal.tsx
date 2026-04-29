@@ -21,8 +21,7 @@ type TicketOnlyPurchaseModalProps = {
   notice: string;
   palette: ReturnType<typeof getPalette>;
   ticketCount: number;
-  discountedBundleCount: number;
-  remainderTicketCount: number;
+  ticketUnitPrice: number;
   ticketPrice: number;
   ticketUsageItems: readonly string[];
   targetOptions: TicketTargetOption[];
@@ -41,8 +40,7 @@ export function TicketOnlyPurchaseModal({
   notice,
   palette,
   ticketCount,
-  discountedBundleCount,
-  remainderTicketCount,
+  ticketUnitPrice,
   ticketPrice,
   ticketUsageItems,
   targetOptions,
@@ -94,12 +92,8 @@ export function TicketOnlyPurchaseModal({
               <AppText style={styles.summaryValue}>{ticketCount}장</AppText>
             </View>
             <View style={styles.summaryRow}>
-              <AppText style={styles.summaryLabel}>3장 할인 묶음</AppText>
-              <AppText style={styles.summaryValue}>{discountedBundleCount}개</AppText>
-            </View>
-            <View style={styles.summaryRow}>
-              <AppText style={styles.summaryLabel}>낱장 계산</AppText>
-              <AppText style={styles.summaryValue}>{remainderTicketCount}장</AppText>
+              <AppText style={styles.summaryLabel}>장당 금액</AppText>
+              <AppText style={styles.summaryValue}>{formatPrice(ticketUnitPrice)}</AppText>
             </View>
             <View style={styles.summaryRow}>
               <AppText style={styles.summaryLabel}>티켓 결제 예정 금액</AppText>

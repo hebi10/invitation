@@ -65,7 +65,12 @@ export default function CreateScreen() {
     authError,
     clearAuthError,
     createInvitationPage,
+    customerAuthError,
+    customerSession,
     isAuthenticating,
+    isCustomerAuthenticating,
+    loginCustomer,
+    logoutCustomer,
     session,
   } = useAuth();
   const { pageSummary, refreshDashboard } = useInvitationOps();
@@ -78,6 +83,11 @@ export default function CreateScreen() {
     removeDraft,
     clearAuthError,
     createInvitationPage,
+    customerAuthError,
+    customerSession,
+    isCustomerAuthenticating,
+    loginCustomer,
+    logoutCustomer,
     isExpoWebPreview,
   });
 
@@ -85,6 +95,7 @@ export default function CreateScreen() {
     apiBaseUrl,
     pageSummary,
     session,
+    customerSession,
     refreshDashboard,
     clearAuthError,
     setNotice: createForm.setNotice,
@@ -330,12 +341,10 @@ export default function CreateScreen() {
                   ]}
                 >
                   <View style={styles.summaryRow}>
-                    <AppText style={styles.summaryLabel}>3장 할인 묶음</AppText>
-                    <AppText style={styles.summaryValue}>{ticketPurchase.discountedBundleCount}개</AppText>
-                  </View>
-                  <View style={styles.summaryRow}>
-                    <AppText style={styles.summaryLabel}>낱장 계산</AppText>
-                    <AppText style={styles.summaryValue}>{ticketPurchase.remainderTicketCount}장</AppText>
+                    <AppText style={styles.summaryLabel}>장당 금액</AppText>
+                    <AppText style={styles.summaryValue}>
+                      {formatPrice(ticketPurchase.ticketUnitPrice)}
+                    </AppText>
                   </View>
                   <View style={styles.summaryRow}>
                     <AppText style={styles.summaryLabel}>티켓 금액</AppText>
@@ -457,6 +466,87 @@ export default function CreateScreen() {
           {createForm.currentStep === 'info' ? (
             <>
               <SectionCard
+                title="고객 계정 로그인"
+                description="PC와 같은 고객 계정으로 로그인하면 생성한 청첩장이 내 이벤트에도 바로 연결됩니다."
+                badge={createForm.customerSession ? '로그인됨' : '필수'}
+                badgeTone={createForm.customerSession ? 'success' : 'notice'}
+              >
+                {createForm.customerSession ? (
+                  <View
+                    style={[
+                      styles.securityGuideCard,
+                      {
+                        backgroundColor: palette.surfaceMuted,
+                        borderColor: palette.cardBorder,
+                      },
+                    ]}
+                  >
+                    <AppText variant="caption" style={styles.previewLabel}>
+                      로그인 계정
+                    </AppText>
+                    <AppText style={styles.helperText}>
+                      {createForm.customerSession.email}
+                    </AppText>
+                    <ActionButton
+                      variant="secondary"
+                      onPress={() => void createForm.handleCustomerLogout()}
+                      loading={createForm.isCustomerAuthenticating}
+                      fullWidth
+                    >
+                      로그아웃
+                    </ActionButton>
+                  </View>
+                ) : (
+                  <>
+                    <TextField
+                      label="이메일"
+                      value={createForm.customerEmail}
+                      onChangeText={createForm.setCustomerEmail}
+                      placeholder="가입한 이메일 입력"
+                      keyboardType="email-address"
+                      autoCapitalize="none"
+                      autoCorrect={false}
+                      returnKeyType="next"
+                    />
+                    <TextField
+                      label="비밀번호"
+                      value={createForm.customerPassword}
+                      onChangeText={createForm.setCustomerPassword}
+                      placeholder="비밀번호 입력"
+                      secureTextEntry
+                      autoCapitalize="none"
+                      autoCorrect={false}
+                      returnKeyType="done"
+                      onSubmitEditing={() => void createForm.handleCustomerLogin()}
+                    />
+                    <ActionButton
+                      onPress={() => void createForm.handleCustomerLogin()}
+                      loading={createForm.isCustomerAuthenticating}
+                      fullWidth
+                    >
+                      고객 계정으로 로그인
+                    </ActionButton>
+                  </>
+                )}
+
+                {createForm.customerAuthError ? (
+                  <View
+                    style={[
+                      styles.noticeBox,
+                      {
+                        backgroundColor: palette.dangerSoft,
+                        borderColor: palette.danger,
+                      },
+                    ]}
+                  >
+                    <AppText variant="caption" color={palette.danger} style={styles.noticeText}>
+                      {createForm.customerAuthError}
+                    </AppText>
+                  </View>
+                ) : null}
+              </SectionCard>
+
+              <SectionCard
                 title="1. 기본 정보"
                 description="청첩장에 표시할 이름과 사용할 주소를 먼저 확인합니다."
                 badge={
@@ -477,6 +567,22 @@ export default function CreateScreen() {
                   value={createForm.brideKoreanName}
                   onChangeText={createForm.setBrideKoreanName}
                   placeholder="예: 나신부"
+                />
+                <TextField
+                  label="신랑 영문 이름"
+                  value={createForm.groomEnglishName}
+                  onChangeText={createForm.setGroomEnglishName}
+                  placeholder="예: minje-shin"
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                />
+                <TextField
+                  label="신부 영문 이름"
+                  value={createForm.brideEnglishName}
+                  onChangeText={createForm.setBrideEnglishName}
+                  placeholder="예: hyunji-kim"
+                  autoCapitalize="none"
+                  autoCorrect={false}
                 />
                 <TextField
                   label="청첩장 주소"
@@ -854,10 +960,7 @@ export default function CreateScreen() {
                 ]}
               >
                 <AppText style={styles.ticketSummaryText}>
-                  3장 할인 묶음: {createForm.discountedBundleCount}개
-                </AppText>
-                <AppText style={styles.ticketSummaryText}>
-                  낱장 계산: {createForm.remainderTicketCount}장
+                  장당 금액: {formatPrice(createForm.ticketUnitPrice)}
                 </AppText>
                 <AppText style={styles.ticketSummaryText}>
                   티켓 금액: {formatPrice(createForm.ticketPrice)}
@@ -1003,8 +1106,7 @@ export default function CreateScreen() {
         notice={createForm.notice}
         palette={palette}
         ticketCount={ticketPurchase.ticketOnlyCount}
-        discountedBundleCount={ticketPurchase.discountedBundleCount}
-        remainderTicketCount={ticketPurchase.remainderTicketCount}
+        ticketUnitPrice={ticketPurchase.ticketUnitPrice}
         ticketPrice={ticketPurchase.ticketPrice}
         ticketUsageItems={TICKET_USAGE_ITEMS}
         targetOptions={ticketPurchase.ticketTargetOptions}

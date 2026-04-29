@@ -23,5 +23,6 @@
 - 결제 없는 모바일 직접 초안 생성 API는 `MOBILE_DRAFT_CREATION_ENABLED=true`일 때만 허용한다.
 
 ## 후속 작업
-- 모바일 RevenueCat `appUserId`와 Firebase 고객 UID를 연결하는 계정 연동 흐름을 추가하면 모바일에서 산 미사용 제작권도 PC에서 쓸 수 있다.
+- 모바일 생성 결제는 Firebase 고객 UID를 RevenueCat `appUserId`로 사용하고, 생성 완료 시 이벤트 `ownerUid`를 연결한다. 따라서 모바일에서 만든 청첩장은 PC `/my-invitations`에서도 바로 조회된다.
+- 모바일 미사용 제작권을 별도 지갑 잔액으로 판매하려면 RevenueCat 구매 원장을 `customerWallets/{uid}` 제작권 credit/debit과 연결하는 추가 설계가 필요하다.
 - 이벤트별 티켓 사용 내역을 지갑 원장과 더 촘촘히 연결하려면 기존 `events.stats.ticketBalance`에 대한 마이그레이션 원장을 남긴다.

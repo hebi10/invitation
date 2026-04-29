@@ -67,6 +67,7 @@ let billingConfigurationPromise: Promise<{
   purchases: PurchasesModule;
   appUserId: string;
 }> | null = null;
+let configuredBillingAppUserId: string | null = null;
 
 function getRevenueCatApiKey() {
   if (Platform.OS === 'android') {
@@ -85,7 +86,13 @@ function createBillingAppUserId() {
   return `mid_${Date.now().toString(36)}_${randomSuffix}`;
 }
 
-async function getOrCreateBillingAppUserId() {
+async function getOrCreateBillingAppUserId(preferredAppUserId?: string | null) {
+  const normalizedPreferredAppUserId = preferredAppUserId?.trim() ?? '';
+  if (normalizedPreferredAppUserId) {
+    await setStoredString(BILLING_APP_USER_ID_STORAGE_KEY, normalizedPreferredAppUserId);
+    return normalizedPreferredAppUserId;
+  }
+
   const existing = await getStoredString(BILLING_APP_USER_ID_STORAGE_KEY);
   if (existing?.trim()) {
     return existing.trim();
@@ -130,12 +137,41 @@ function getBillingUnavailableMessage() {
   return 'react-native-purchases 패키지가 설치되지 않아 Google Play Billing을 사용할 수 없습니다.';
 }
 
-export async function ensureBillingConfigured() {
+function createMockPurchaseResult(
+  productId: MobileBillingProductId,
+  appUserId: string
+): MobileBillingPurchaseResult {
+  const purchaseDate = new Date().toISOString();
+  const transactionIdentifier = `mock_${productId}_${Date.now().toString(36)}_${Math.random()
+    .toString(36)
+    .slice(2, 10)}`;
+
+  return {
+    appUserId,
+    customerInfo: {
+      originalAppUserId: appUserId,
+      nonSubscriptionTransactions: [
+        {
+          productIdentifier: productId,
+          purchaseDate,
+          transactionIdentifier,
+        },
+      ],
+    },
+    productIdentifier: productId,
+    transactionIdentifier,
+    purchaseDate,
+  };
+}
+
+export async function ensureBillingConfigured(options: { appUserId?: string | null } = {}) {
   if (Platform.OS === 'web') {
     throw new Error(getBillingUnavailableMessage());
   }
 
-  if (!billingConfigurationPromise) {
+  const requestedAppUserId = await getOrCreateBillingAppUserId(options.appUserId);
+
+  if (!billingConfigurationPromise || configuredBillingAppUserId !== requestedAppUserId) {
     billingConfigurationPromise = (async () => {
       const purchases = loadPurchasesModule();
       if (!purchases) {
@@ -147,23 +183,23 @@ export async function ensureBillingConfigured() {
         throw new Error(getBillingUnavailableMessage());
       }
 
-      const appUserId = await getOrCreateBillingAppUserId();
-
       if (process.env.NODE_ENV !== 'production' && purchases.LOG_LEVEL?.DEBUG && purchases.setLogLevel) {
         purchases.setLogLevel(purchases.LOG_LEVEL.DEBUG);
       }
 
       purchases.configure({
         apiKey,
-        appUserID: appUserId,
+        appUserID: requestedAppUserId,
       });
+      configuredBillingAppUserId = requestedAppUserId;
 
       return {
         purchases,
-        appUserId,
+        appUserId: requestedAppUserId,
       };
     })().catch((error) => {
       billingConfigurationPromise = null;
+      configuredBillingAppUserId = null;
       throw error;
     });
   }
@@ -177,8 +213,16 @@ export async function fetchBillingProducts(productIds: readonly MobileBillingPro
   return purchases.getProducts([...productIds], type);
 }
 
-export async function purchaseBillingProduct(productId: MobileBillingProductId) {
-  const { purchases, appUserId } = await ensureBillingConfigured();
+export async function purchaseBillingProduct(
+  productId: MobileBillingProductId,
+  options: { appUserId?: string | null } = {}
+) {
+  const appUserId = await getOrCreateBillingAppUserId(options.appUserId);
+  if (!getRevenueCatApiKey() || !loadPurchasesModule()) {
+    return createMockPurchaseResult(productId, appUserId);
+  }
+
+  const { purchases } = await ensureBillingConfigured({ appUserId });
   const products = await fetchBillingProducts([productId]);
   const targetProduct = products.find((product) => product.identifier === productId);
 

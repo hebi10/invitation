@@ -14,8 +14,8 @@ export const servicePlans = [
   {
     name: 'STANDARD',
     tier: 'standard' as MobileInvitationProductTier,
-    price: 17900,
-    priceLabel: '17,900원',
+    price: 5000,
+    priceLabel: '5,000원',
     description:
       '맞춤 문구 시작, 갤러리 최대 6장, 카카오톡 링크 형식 공유(URL 공유)를 제공합니다.',
     features: [
@@ -28,8 +28,8 @@ export const servicePlans = [
   {
     name: 'DELUXE',
     tier: 'deluxe' as MobileInvitationProductTier,
-    price: 22900,
-    priceLabel: '22,900원',
+    price: 10000,
+    priceLabel: '10,000원',
     description:
       'STANDARD 전체 포함, 갤러리 최대 12장, 배경음악 포함, 카카오톡 카드 형식 공유를 제공합니다.',
     features: [
@@ -42,8 +42,8 @@ export const servicePlans = [
   {
     name: 'PREMIUM',
     tier: 'premium' as MobileInvitationProductTier,
-    price: 27900,
-    priceLabel: '27,900원',
+    price: 15000,
+    priceLabel: '15,000원',
     description:
       'DELUXE 전체 포함, 갤러리 최대 18장, 캘린더·카운트다운, 방명록 기능을 제공합니다.',
     features: [
@@ -56,9 +56,7 @@ export const servicePlans = [
 ] as const;
 
 export const ticketPricing = {
-  unitPrice: 4000,
-  bundleSize: 3,
-  bundlePrice: 10000,
+  unitPrice: 1000,
 } as const;
 
 export const designThemes = getSelectableInvitationThemeKeys().map((key) => ({
@@ -92,8 +90,7 @@ export const guideSections = [
   {
     title: '추가 티켓 정책',
     items: [
-      '티켓은 1장당 4,000원입니다.',
-      '티켓 3장 묶음은 10,000원입니다.',
+      '티켓은 할인 없이 1장당 1,000원입니다.',
       '티켓 1장: 1개월 연장',
       '티켓 1장: 기본 디자인 변경',
       '티켓 1장: 모바일 청첩장 1개 추가 생성',

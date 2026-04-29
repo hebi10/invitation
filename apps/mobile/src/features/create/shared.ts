@@ -31,8 +31,6 @@ export const TICKET_USAGE_ITEMS = [
 ] as const;
 
 export const TICKET_UNIT_PRICE = ticketPricing.unitPrice;
-export const TICKET_DISCOUNT_BUNDLE_SIZE = ticketPricing.bundleSize;
-export const TICKET_BUNDLE_PRICE = ticketPricing.bundlePrice;
 export const TICKET_PRESET_COUNTS = [0, ...MOBILE_BILLING_TICKET_PACK_COUNTS] as const;
 export const MAX_TICKET_COUNT = MOBILE_BILLING_TICKET_PACK_COUNTS.at(-1) ?? 0;
 export const STICKY_CTA_BAR_HEIGHT = 30;
@@ -65,10 +63,7 @@ export type TicketPurchaseSuccessState = {
 export type SupportedCreateTicketCount = typeof TICKET_PRESET_COUNTS[number];
 
 export function calculateTicketPrice(ticketCount: number) {
-  const bundleCount = Math.floor(ticketCount / TICKET_DISCOUNT_BUNDLE_SIZE);
-  const remainderCount = ticketCount % TICKET_DISCOUNT_BUNDLE_SIZE;
-
-  return bundleCount * TICKET_BUNDLE_PRICE + remainderCount * TICKET_UNIT_PRICE;
+  return ticketCount * TICKET_UNIT_PRICE;
 }
 
 export function isSupportedCreateTicketCount(
@@ -105,6 +100,8 @@ export function isPurchasableTicketPackCount(
 export function buildCreateValidationRules(input: {
   groomKoreanName: string;
   brideKoreanName: string;
+  groomEnglishName: string;
+  brideEnglishName: string;
   pageIdentifier: string;
   password: string;
   confirmPassword: string;
@@ -112,6 +109,8 @@ export function buildCreateValidationRules(input: {
 }): CreateValidationRule[] {
   const groomKoreanName = input.groomKoreanName.trim();
   const brideKoreanName = input.brideKoreanName.trim();
+  const groomEnglishName = input.groomEnglishName.trim();
+  const brideEnglishName = input.brideEnglishName.trim();
   const pageIdentifier = input.pageIdentifier.trim();
   const slugValidation = validatePageSlugBase(pageIdentifier);
   const password = input.password.trim();
@@ -129,6 +128,18 @@ export function buildCreateValidationRules(input: {
       section: 'basic',
       passed: Boolean(brideKoreanName),
       errorMessage: '신부 한글 이름을 입력해 주세요.',
+    },
+    {
+      label: '신랑 영문 이름',
+      section: 'basic',
+      passed: Boolean(groomEnglishName),
+      errorMessage: '신랑 영문 이름을 입력해 주세요.',
+    },
+    {
+      label: '신부 영문 이름',
+      section: 'basic',
+      passed: Boolean(brideEnglishName),
+      errorMessage: '신부 영문 이름을 입력해 주세요.',
     },
     {
       label: '청첩장 주소',

@@ -14,15 +14,18 @@ import {
   type LinkedInvitationCard,
 } from '../../../lib/linkedInvitationCards';
 import {
-  TICKET_DISCOUNT_BUNDLE_SIZE,
   calculateTicketPrice,
   getAdjacentSupportedTicketCount,
   isPurchasableTicketPackCount,
   normalizeSupportedCreateTicketCount,
+  TICKET_UNIT_PRICE,
 } from '../shared';
 import type { TicketPurchaseSuccessState } from '../shared';
 
-type AuthState = Pick<ReturnType<typeof useAuth>, 'clearAuthError' | 'session'>;
+type AuthState = Pick<
+  ReturnType<typeof useAuth>,
+  'clearAuthError' | 'customerSession' | 'session'
+>;
 type InvitationOpsState = Pick<
   ReturnType<typeof useInvitationOps>,
   'pageSummary' | 'refreshDashboard'
@@ -38,6 +41,7 @@ export function useCreateTicketPurchase({
   apiBaseUrl,
   pageSummary,
   session,
+  customerSession,
   refreshDashboard,
   clearAuthError,
   setNotice,
@@ -49,10 +53,6 @@ export function useCreateTicketPurchase({
   const [isTicketPurchaseSubmitting, setIsTicketPurchaseSubmitting] = useState(false);
   const [ticketPurchaseSuccess, setTicketPurchaseSuccess] =
     useState<TicketPurchaseSuccessState | null>(null);
-  const discountedBundleCount = Math.floor(
-    ticketOnlyCount / TICKET_DISCOUNT_BUNDLE_SIZE
-  );
-  const remainderTicketCount = ticketOnlyCount % TICKET_DISCOUNT_BUNDLE_SIZE;
   const ticketPrice = calculateTicketPrice(ticketOnlyCount);
 
   const reloadLinkedInvitationCards = useCallback(async () => {
@@ -148,6 +148,11 @@ export function useCreateTicketPurchase({
       return;
     }
 
+    if (!customerSession) {
+      setNotice('고객 계정으로 로그인한 뒤 티켓을 구매해 주세요.');
+      return;
+    }
+
     if (ticketOnlyCount <= 0) {
       setNotice('티켓만 구매하려면 먼저 티켓 수량을 선택해 주세요.');
       return;
@@ -155,7 +160,13 @@ export function useCreateTicketPurchase({
 
     setNotice('');
     setTicketOnlyModalVisible(true);
-  }, [clearAuthError, selectedTicketTargetCard, setNotice, ticketOnlyCount]);
+  }, [
+    clearAuthError,
+    customerSession,
+    selectedTicketTargetCard,
+    setNotice,
+    ticketOnlyCount,
+  ]);
 
   const closeTicketOnlyModal = useCallback(() => {
     setTicketOnlyModalVisible(false);
@@ -174,6 +185,11 @@ export function useCreateTicketPurchase({
       return;
     }
 
+    if (!customerSession) {
+      setNotice('고객 계정으로 로그인한 뒤 티켓을 구매해 주세요.');
+      return;
+    }
+
     if (!isPurchasableTicketPackCount(ticketOnlyCount)) {
       setNotice('Google Play Billing에서는 1장, 3장, 6장 티켓 상품만 구매할 수 있습니다.');
       return;
@@ -188,7 +204,9 @@ export function useCreateTicketPurchase({
     let nextTicketCount: number | null = null;
 
     try {
-      const purchase = await purchaseBillingProduct(billingProductId);
+      const purchase = await purchaseBillingProduct(billingProductId, {
+        appUserId: customerSession.uid,
+      });
       const fulfillment = await fulfillMobileBillingTicketPack(apiBaseUrl, {
         purchase: {
           appUserId: purchase.appUserId,
@@ -241,6 +259,7 @@ export function useCreateTicketPurchase({
   }, [
     apiBaseUrl,
     clearAuthError,
+    customerSession,
     linkedInvitationCards,
     refreshDashboard,
     resetTicketOnlyCount,
@@ -255,8 +274,7 @@ export function useCreateTicketPurchase({
     updateTicketOnlyCount,
     decreaseTicketOnlyCount,
     increaseTicketOnlyCount,
-    discountedBundleCount,
-    remainderTicketCount,
+    ticketUnitPrice: TICKET_UNIT_PRICE,
     ticketPrice,
     ticketOnlyModalVisible,
     closeTicketOnlyModal,

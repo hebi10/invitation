@@ -221,10 +221,21 @@ export interface MobileHighRiskSessionSummary {
   pageSlug: string;
 }
 
+export interface MobileCustomerAuthSession {
+  idToken: string;
+  refreshToken: string;
+  expiresAt: number;
+  uid: string;
+  email: string;
+  displayName: string | null;
+}
+
 export interface MobileInvitationCreationInput {
   slugBase: string;
   groomKoreanName: string;
   brideKoreanName: string;
+  groomEnglishName: string;
+  brideEnglishName: string;
   password: string;
   servicePlan: MobileInvitationProductTier;
   theme: MobileInvitationThemeKey;
@@ -277,6 +288,8 @@ export interface CreateDraftItem {
   pageIdentifier: string;
   groomName: string;
   brideName: string;
+  groomEnglishName?: string;
+  brideEnglishName?: string;
   weddingDate: string;
   venue: string;
   estimatedPrice: number;

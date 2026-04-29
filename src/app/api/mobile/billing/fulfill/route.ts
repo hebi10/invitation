@@ -5,6 +5,7 @@ import {
   validateInvitationPageSlugBase,
 } from '@/lib/invitationPageSlug';
 import { isMobileBillingProductId } from '@/lib/mobileBillingProducts';
+import { getServerAuth } from '@/server/firebaseAdmin';
 import {
   fulfillServerMobilePageCreationPurchase,
   fulfillServerMobileTicketPackPurchase,
@@ -23,6 +24,47 @@ function readTrimmedString(value: unknown) {
   return typeof value === 'string' ? value.trim() : '';
 }
 
+async function verifyMobileCustomerRequest(request: Request) {
+  const authHeader = request.headers.get('authorization') ?? '';
+  const idToken = authHeader.startsWith('Bearer ') ? authHeader.slice(7).trim() : '';
+
+  if (!idToken) {
+    return {
+      identity: null,
+      response: NextResponse.json(
+        { error: 'Customer authentication is required.' },
+        { status: 401 }
+      ),
+    } as const;
+  }
+
+  const serverAuth = getServerAuth();
+  if (!serverAuth) {
+    return {
+      identity: null,
+      response: NextResponse.json(
+        { error: 'Firebase Admin Auth is not available.' },
+        { status: 500 }
+      ),
+    } as const;
+  }
+
+  try {
+    return {
+      identity: await serverAuth.verifyIdToken(idToken),
+      response: null,
+    } as const;
+  } catch {
+    return {
+      identity: null,
+      response: NextResponse.json(
+        { error: 'Customer authentication is required.' },
+        { status: 401 }
+      ),
+    } as const;
+  }
+}
+
 export async function POST(request: Request) {
   try {
     const body = (await request.json().catch(() => null)) as
@@ -37,6 +79,8 @@ export async function POST(request: Request) {
             slugBase?: unknown;
             groomKoreanName?: unknown;
             brideKoreanName?: unknown;
+            groomEnglishName?: unknown;
+            brideEnglishName?: unknown;
             password?: unknown;
             theme?: unknown;
           };
@@ -84,12 +128,33 @@ export async function POST(request: Request) {
       const slugBase = readTrimmedString(createInput?.slugBase);
       const groomKoreanName = readTrimmedString(createInput?.groomKoreanName);
       const brideKoreanName = readTrimmedString(createInput?.brideKoreanName);
+      const groomEnglishName = readTrimmedString(createInput?.groomEnglishName);
+      const brideEnglishName = readTrimmedString(createInput?.brideEnglishName);
       const password = readTrimmedString(createInput?.password);
       const theme = readTrimmedString(createInput?.theme);
 
-      if (!slugBase || !groomKoreanName || !brideKoreanName || !password) {
+      if (
+        !slugBase ||
+        !groomKoreanName ||
+        !brideKoreanName ||
+        !groomEnglishName ||
+        !brideEnglishName ||
+        !password
+      ) {
         return NextResponse.json(
           { error: 'Invitation page draft input is required.' },
+          { status: 400, headers: rateLimitHeaders }
+        );
+      }
+
+      const customerAuth = await verifyMobileCustomerRequest(request);
+      if (customerAuth.response) {
+        return customerAuth.response;
+      }
+
+      if (appUserId !== customerAuth.identity.uid) {
+        return NextResponse.json(
+          { error: 'Google Play purchase information is required.' },
           { status: 400, headers: rateLimitHeaders }
         );
       }
@@ -113,8 +178,19 @@ export async function POST(request: Request) {
           slugBase: slugValidation.normalizedSlugBase,
           groomKoreanName,
           brideKoreanName,
+          groomEnglishName,
+          brideEnglishName,
           password,
           theme,
+          ownerUid: customerAuth.identity.uid,
+          ownerEmail:
+            typeof customerAuth.identity.email === 'string'
+              ? customerAuth.identity.email
+              : null,
+          ownerDisplayName:
+            typeof customerAuth.identity.name === 'string'
+              ? customerAuth.identity.name
+              : null,
         }
       );
 

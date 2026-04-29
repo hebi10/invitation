@@ -13,7 +13,9 @@ import {
   createMobileInvitationDraft,
   exchangeMobileClientEditorLinkToken,
   fulfillMobileBillingPageCreation,
+  loginMobileCustomerAuth,
   loginMobileClientEditor,
+  refreshMobileCustomerAuth,
   validateMobileClientEditorSession,
   verifyMobileClientEditorHighRiskSession,
   type MobileBillingPurchaseReceiptInput,
@@ -28,6 +30,7 @@ import { getStoredJson, setStoredJson, setStoredString } from '../lib/storage';
 import type { MobileClientEditorPermissions } from '../../../../src/types/mobileClientEditor';
 import type {
   MobileEditableInvitationPageConfig,
+  MobileCustomerAuthSession,
   MobileHighRiskSessionSummary,
   MobileInvitationCreationInput,
   MobileInvitationLinks,
@@ -39,7 +42,9 @@ import type {
 import { usePreferences } from './PreferencesContext';
 
 const SESSION_STORAGE_KEY = 'mobile-invitation:session';
+const CUSTOMER_AUTH_STORAGE_KEY = 'mobile-invitation:customer-auth-session';
 const SESSION_EXPIRY_BUFFER_MS = 30 * 1000;
+const CUSTOMER_AUTH_EXPIRY_BUFFER_MS = 60 * 1000;
 
 export type AuthInitialDashboardSeed = {
   dashboardPage: MobileEditableInvitationPageConfig | null | undefined;
@@ -64,14 +69,20 @@ type PendingHighRiskAction = HighRiskActionOptions & {
 type AuthContextValue = {
   session: MobileSessionSummary | null;
   highRiskSession: MobileHighRiskSessionSummary | null;
+  customerSession: MobileCustomerAuthSession | null;
   getHighRiskToken: (pageSlug?: string | null) => string | null;
   isAuthenticated: boolean;
+  isCustomerAuthenticated: boolean;
   isAuthenticating: boolean;
+  isCustomerAuthenticating: boolean;
   isReady: boolean;
   authError: string | null;
+  customerAuthError: string | null;
   pendingManageOnboarding: PendingManageOnboarding | null;
   initialDashboardSeed: AuthInitialDashboardSeed | null;
   login: (pageIdentifier: string, password: string) => Promise<boolean>;
+  loginCustomer: (email: string, password: string) => Promise<boolean>;
+  logoutCustomer: () => Promise<void>;
   loginWithLinkToken: (linkToken: string) => Promise<boolean>;
   createInvitationPage: (
     input: MobileInvitationCreationInput,
@@ -104,8 +115,12 @@ export function AuthProvider({ children }: PropsWithChildren) {
   const [session, setSession] = useState<MobileSessionSummary | null>(null);
   const [highRiskSession, setHighRiskSession] =
     useState<MobileHighRiskSessionSummary | null>(null);
+  const [customerSession, setCustomerSession] =
+    useState<MobileCustomerAuthSession | null>(null);
   const [isAuthenticating, setIsAuthenticating] = useState(false);
+  const [isCustomerAuthenticating, setIsCustomerAuthenticating] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
+  const [customerAuthError, setCustomerAuthError] = useState<string | null>(null);
   const [pendingManageOnboarding, setPendingManageOnboarding] =
     useState<PendingManageOnboarding | null>(null);
   const [initialDashboardSeed, setInitialDashboardSeed] =
@@ -120,11 +135,20 @@ export function AuthProvider({ children }: PropsWithChildren) {
   const hasRestoredSessionRef = useRef(false);
   const lastApiBaseUrlRef = useRef<string | null>(null);
   const highRiskSessionRef = useRef<MobileHighRiskSessionSummary | null>(null);
+  const customerSessionRef = useRef<MobileCustomerAuthSession | null>(null);
 
   const updateHighRiskSession = useCallback(
     (nextSession: MobileHighRiskSessionSummary | null) => {
       highRiskSessionRef.current = nextSession;
       setHighRiskSession(nextSession);
+    },
+    []
+  );
+
+  const updateCustomerSession = useCallback(
+    (nextSession: MobileCustomerAuthSession | null) => {
+      customerSessionRef.current = nextSession;
+      setCustomerSession(nextSession);
     },
     []
   );
@@ -141,9 +165,22 @@ export function AuthProvider({ children }: PropsWithChildren) {
     await setStoredString(SESSION_STORAGE_KEY, null, { sensitive: true });
   }, [updateHighRiskSession]);
 
+  const clearCustomerSession = useCallback(async () => {
+    updateCustomerSession(null);
+    setCustomerAuthError(null);
+    await setStoredString(CUSTOMER_AUTH_STORAGE_KEY, null, { sensitive: true });
+  }, [updateCustomerSession]);
+
   const hasSessionExpired = useCallback((candidateSession: MobileSessionSummary) => {
     return candidateSession.expiresAt <= Date.now() + SESSION_EXPIRY_BUFFER_MS;
   }, []);
+
+  const hasCustomerSessionExpired = useCallback(
+    (candidateSession: MobileCustomerAuthSession) => {
+      return candidateSession.expiresAt <= Date.now() + CUSTOMER_AUTH_EXPIRY_BUFFER_MS;
+    },
+    []
+  );
 
   const hasHighRiskSessionExpired = useCallback(
     (candidateSession: MobileHighRiskSessionSummary) => {
@@ -376,6 +413,74 @@ export function AuthProvider({ children }: PropsWithChildren) {
     [updateHighRiskSession]
   );
 
+  const applyCustomerAuthSession = useCallback(
+    async (nextSession: MobileCustomerAuthSession) => {
+      updateCustomerSession(nextSession);
+      setCustomerAuthError(null);
+      await setStoredJson(CUSTOMER_AUTH_STORAGE_KEY, nextSession, {
+        sensitive: true,
+      });
+    },
+    [updateCustomerSession]
+  );
+
+  const refreshCustomerSession = useCallback(
+    async (candidateSession: MobileCustomerAuthSession) => {
+      if (!candidateSession.refreshToken.trim()) {
+        await clearCustomerSession();
+        return null;
+      }
+
+      if (!hasCustomerSessionExpired(candidateSession)) {
+        updateCustomerSession(candidateSession);
+        return candidateSession;
+      }
+
+      setIsCustomerAuthenticating(true);
+
+      try {
+        const response = await refreshMobileCustomerAuth(
+          apiBaseUrl,
+          candidateSession.refreshToken
+        );
+        const nextSession = {
+          ...response.session,
+          email: response.session.email || candidateSession.email,
+          displayName: response.session.displayName ?? candidateSession.displayName,
+        };
+        await applyCustomerAuthSession(nextSession);
+        return nextSession;
+      } catch (error) {
+        await clearCustomerSession();
+        setCustomerAuthError(
+          error instanceof Error
+            ? error.message
+            : '고객 로그인 정보가 만료되었습니다. 다시 로그인해 주세요.'
+        );
+        return null;
+      } finally {
+        setIsCustomerAuthenticating(false);
+      }
+    },
+    [
+      apiBaseUrl,
+      applyCustomerAuthSession,
+      clearCustomerSession,
+      hasCustomerSessionExpired,
+      updateCustomerSession,
+    ]
+  );
+
+  const getCustomerIdToken = useCallback(async () => {
+    const currentCustomerSession = customerSessionRef.current;
+    if (!currentCustomerSession) {
+      return null;
+    }
+
+    const refreshedSession = await refreshCustomerSession(currentCustomerSession);
+    return refreshedSession?.idToken ?? null;
+  }, [refreshCustomerSession]);
+
   useEffect(() => {
     if (!isPreferencesReady) {
       return;
@@ -394,6 +499,11 @@ export function AuthProvider({ children }: PropsWithChildren) {
         null,
         { sensitive: true }
       );
+      const storedCustomerSession = await getStoredJson<MobileCustomerAuthSession | null>(
+        CUSTOMER_AUTH_STORAGE_KEY,
+        null,
+        { sensitive: true }
+      );
 
       if (!mounted) {
         return;
@@ -401,6 +511,10 @@ export function AuthProvider({ children }: PropsWithChildren) {
 
       if (storedSession) {
         await restoreSession(storedSession, apiBaseUrl);
+      }
+
+      if (storedCustomerSession) {
+        await refreshCustomerSession(storedCustomerSession);
       }
 
       if (mounted) {
@@ -413,7 +527,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
     return () => {
       mounted = false;
     };
-  }, [apiBaseUrl, isPreferencesReady, restoreSession]);
+  }, [apiBaseUrl, isPreferencesReady, refreshCustomerSession, restoreSession]);
 
   useEffect(() => {
     if (!isReady) {
@@ -434,7 +548,11 @@ export function AuthProvider({ children }: PropsWithChildren) {
     if (session) {
       void clearSession();
     }
-  }, [apiBaseUrl, clearSession, isReady, session]);
+
+    if (customerSessionRef.current) {
+      void clearCustomerSession();
+    }
+  }, [apiBaseUrl, clearCustomerSession, clearSession, isReady, session]);
 
   useEffect(() => {
     if (!session || !highRiskSession) {
@@ -483,6 +601,44 @@ export function AuthProvider({ children }: PropsWithChildren) {
     [apiBaseUrl, applyAuthenticatedSession]
   );
 
+  const loginCustomer = useCallback(
+    async (email: string, password: string) => {
+      const normalizedEmail = email.trim();
+      const normalizedPassword = password.trim();
+
+      if (!normalizedEmail || !normalizedPassword) {
+        setCustomerAuthError('이메일과 비밀번호를 입력해 주세요.');
+        return false;
+      }
+
+      setIsCustomerAuthenticating(true);
+
+      try {
+        const response = await loginMobileCustomerAuth(
+          apiBaseUrl,
+          normalizedEmail,
+          normalizedPassword
+        );
+        await applyCustomerAuthSession(response.session);
+        return true;
+      } catch (error) {
+        setCustomerAuthError(
+          error instanceof Error
+            ? error.message
+            : '고객 로그인에 실패했습니다. 다시 시도해 주세요.'
+        );
+        return false;
+      } finally {
+        setIsCustomerAuthenticating(false);
+      }
+    },
+    [apiBaseUrl, applyCustomerAuthSession]
+  );
+
+  const logoutCustomer = useCallback(async () => {
+    await clearCustomerSession();
+  }, [clearCustomerSession]);
+
   const loginWithLinkToken = useCallback(
     async (linkToken: string) => {
       const normalizedLinkToken = linkToken.trim();
@@ -524,12 +680,18 @@ export function AuthProvider({ children }: PropsWithChildren) {
       setIsAuthenticating(true);
 
       try {
+        const customerIdToken = await getCustomerIdToken();
+        if (!customerIdToken) {
+          throw new Error('Customer authentication is required.');
+        }
+
         const response = options.billingPurchase
           ? await fulfillMobileBillingPageCreation(apiBaseUrl, {
               purchase: options.billingPurchase,
               input,
+              customerIdToken,
             })
-          : await createMobileInvitationDraft(apiBaseUrl, input);
+          : await createMobileInvitationDraft(apiBaseUrl, input, customerIdToken);
         await applyAuthenticatedSession(response, {
           pendingManageOnboarding: {
             pageSlug: response.session.pageSlug,
@@ -548,7 +710,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
         setIsAuthenticating(false);
       }
     },
-    [apiBaseUrl, applyAuthenticatedSession]
+    [apiBaseUrl, applyAuthenticatedSession, getCustomerIdToken]
   );
 
   const logout = useCallback(async () => {
@@ -654,14 +816,20 @@ export function AuthProvider({ children }: PropsWithChildren) {
     () => ({
       session,
       highRiskSession,
+      customerSession,
       getHighRiskToken,
       isAuthenticated: Boolean(session),
+      isCustomerAuthenticated: Boolean(customerSession),
       isAuthenticating,
+      isCustomerAuthenticating,
       isReady,
       authError,
+      customerAuthError,
       pendingManageOnboarding,
       initialDashboardSeed,
       login,
+      loginCustomer,
+      logoutCustomer,
       loginWithLinkToken,
       createInvitationPage,
       activateStoredSession,
@@ -679,14 +847,19 @@ export function AuthProvider({ children }: PropsWithChildren) {
       consumeInitialDashboardSeed,
       createInvitationPage,
       activateStoredSession,
+      customerAuthError,
+      customerSession,
       getHighRiskToken,
       highRiskSession,
       initialDashboardSeed,
       isAuthenticating,
+      isCustomerAuthenticating,
       isReady,
       login,
+      loginCustomer,
       loginWithLinkToken,
       logout,
+      logoutCustomer,
       pendingManageOnboarding,
       reportAuthError,
       runHighRiskAction,

@@ -26,7 +26,7 @@ import {
   getCreateSlugAvailabilityMessage,
   normalizeSupportedCreateTicketCount,
   servicePlans,
-  TICKET_DISCOUNT_BUNDLE_SIZE,
+  TICKET_UNIT_PRICE,
   type CreateStepKey,
 } from '../shared';
 import { useCreateDraftSync } from './useCreateDraftSync';
@@ -35,7 +35,13 @@ import { useCreateTicketIntent } from './useCreateTicketIntent';
 type DraftStore = Pick<ReturnType<typeof useDrafts>, 'drafts' | 'removeDraft' | 'saveDraft'>;
 type AuthActions = Pick<
   ReturnType<typeof useAuth>,
-  'clearAuthError' | 'createInvitationPage'
+  | 'clearAuthError'
+  | 'createInvitationPage'
+  | 'customerAuthError'
+  | 'customerSession'
+  | 'isCustomerAuthenticating'
+  | 'loginCustomer'
+  | 'logoutCustomer'
 >;
 
 type UseCreateFormOptions = DraftStore &
@@ -57,6 +63,8 @@ type DraftPayloadOverrides = Partial<{
   pageIdentifier: string;
   groomName: string;
   brideName: string;
+  groomEnglishName: string;
+  brideEnglishName: string;
   estimatedPrice: number;
   ticketCount: number;
 }>;
@@ -75,6 +83,11 @@ export function useCreateForm({
   removeDraft,
   clearAuthError,
   createInvitationPage,
+  customerAuthError,
+  customerSession,
+  isCustomerAuthenticating,
+  loginCustomer,
+  logoutCustomer,
   isExpoWebPreview,
 }: UseCreateFormOptions) {
   const router = useRouter();
@@ -83,8 +96,12 @@ export function useCreateForm({
     useState<MobileInvitationProductTier>('standard');
   const [selectedTheme, setSelectedTheme] =
     useState<MobileInvitationThemeKey | null>(null);
+  const [customerEmail, setCustomerEmail] = useState('');
+  const [customerPassword, setCustomerPassword] = useState('');
   const [groomKoreanName, setGroomKoreanName] = useState('');
   const [brideKoreanName, setBrideKoreanName] = useState('');
+  const [groomEnglishName, setGroomEnglishName] = useState('');
+  const [brideEnglishName, setBrideEnglishName] = useState('');
   const [slugSuggestionSeed, setSlugSuggestionSeed] = useState(() => createRandomSuffix(6));
   const [pageIdentifier, setPageIdentifier] = useState('');
   const [hasCustomPageIdentifier, setHasCustomPageIdentifier] = useState(false);
@@ -119,21 +136,19 @@ export function useCreateForm({
     );
   }, [selectedPlanInfo]);
   const ticketPrice = useMemo(() => calculateTicketPrice(ticketCount), [ticketCount]);
-  const discountedBundleCount = Math.floor(ticketCount / TICKET_DISCOUNT_BUNDLE_SIZE);
-  const remainderTicketCount = ticketCount % TICKET_DISCOUNT_BUNDLE_SIZE;
   const totalPrice = selectedPlanInfo.price + ticketPrice;
 
   const suggestedSlugBase = useMemo(() => {
-    if (!groomKoreanName.trim() && !brideKoreanName.trim()) {
+    if (!groomEnglishName.trim() && !brideEnglishName.trim()) {
       return '';
     }
 
     return buildSuggestedCreateSlugBase(
-      groomKoreanName.trim(),
-      brideKoreanName.trim(),
+      groomEnglishName.trim(),
+      brideEnglishName.trim(),
       slugSuggestionSeed
     );
-  }, [brideKoreanName, groomKoreanName, slugSuggestionSeed]);
+  }, [brideEnglishName, groomEnglishName, slugSuggestionSeed]);
 
   useEffect(() => {
     if (hasCustomPageIdentifier) {
@@ -290,6 +305,8 @@ export function useCreateForm({
       buildCreateValidationRules({
         groomKoreanName,
         brideKoreanName,
+        groomEnglishName,
+        brideEnglishName,
         pageIdentifier: effectivePageIdentifier,
         password,
         confirmPassword,
@@ -297,8 +314,10 @@ export function useCreateForm({
       }),
     [
       brideKoreanName,
+      brideEnglishName,
       confirmPassword,
       effectivePageIdentifier,
+      groomEnglishName,
       groomKoreanName,
       password,
       selectedTheme,
@@ -412,6 +431,8 @@ export function useCreateForm({
         (hasCustomPageIdentifier ? effectivePageIdentifier.trim() : ''),
       groomName: overrides.groomName ?? groomKoreanName.trim(),
       brideName: overrides.brideName ?? brideKoreanName.trim(),
+      groomEnglishName: overrides.groomEnglishName ?? groomEnglishName.trim(),
+      brideEnglishName: overrides.brideEnglishName ?? brideEnglishName.trim(),
       weddingDate: '',
       venue: '',
       estimatedPrice: overrides.estimatedPrice ?? totalPrice,
@@ -420,7 +441,9 @@ export function useCreateForm({
     }),
     [
       brideKoreanName,
+      brideEnglishName,
       effectivePageIdentifier,
+      groomEnglishName,
       groomKoreanName,
       hasCustomPageIdentifier,
       selectedPlan,
@@ -434,16 +457,24 @@ export function useCreateForm({
     (draft: CreateDraftItem) => {
       const nextSeed = createRandomSuffix(6);
       const storedPageIdentifier = draft.pageIdentifier.trim();
+      const storedGroomEnglishName = draft.groomEnglishName?.trim() ?? '';
+      const storedBrideEnglishName = draft.brideEnglishName?.trim() ?? '';
       const nextSuggestedSlugBase =
         storedPageIdentifier ||
-        (draft.groomName.trim() || draft.brideName.trim()
-          ? buildSuggestedCreateSlugBase(draft.groomName, draft.brideName, nextSeed)
+        (storedGroomEnglishName || storedBrideEnglishName
+          ? buildSuggestedCreateSlugBase(
+              storedGroomEnglishName,
+              storedBrideEnglishName,
+              nextSeed
+            )
           : '');
 
       setSelectedPlan(draft.servicePlan);
       setSelectedTheme(draft.theme);
       setGroomKoreanName(draft.groomName);
       setBrideKoreanName(draft.brideName);
+      setGroomEnglishName(storedGroomEnglishName);
+      setBrideEnglishName(storedBrideEnglishName);
       setSlugSuggestionSeed(nextSeed);
       setHasCustomPageIdentifier(Boolean(storedPageIdentifier));
       setPageIdentifier(storedPageIdentifier || nextSuggestedSlugBase);
@@ -460,6 +491,8 @@ export function useCreateForm({
           pageIdentifier: draft.pageIdentifier,
           groomName: draft.groomName,
           brideName: draft.brideName,
+          groomEnglishName: storedGroomEnglishName,
+          brideEnglishName: storedBrideEnglishName,
           estimatedPrice: draft.estimatedPrice,
           ticketCount: draft.ticketCount,
         })
@@ -487,6 +520,8 @@ export function useCreateForm({
       Boolean(
         groomKoreanName.trim() ||
           brideKoreanName.trim() ||
+          groomEnglishName.trim() ||
+          brideEnglishName.trim() ||
           (hasCustomPageIdentifier && effectivePageIdentifier.trim()) ||
           password.trim() ||
           confirmPassword.trim() ||
@@ -496,8 +531,10 @@ export function useCreateForm({
       ),
     [
       brideKoreanName,
+      brideEnglishName,
       confirmPassword,
       effectivePageIdentifier,
+      groomEnglishName,
       groomKoreanName,
       hasCustomPageIdentifier,
       password,
@@ -508,8 +545,14 @@ export function useCreateForm({
   );
 
   const canAutoSaveProgress = useMemo(
-    () => Boolean(groomKoreanName.trim() && brideKoreanName.trim()),
-    [brideKoreanName, groomKoreanName]
+    () =>
+      Boolean(
+        groomKoreanName.trim() &&
+          brideKoreanName.trim() &&
+          groomEnglishName.trim() &&
+          brideEnglishName.trim()
+      ),
+    [brideKoreanName, brideEnglishName, groomEnglishName, groomKoreanName]
   );
 
   const persistDraft = useCallback(
@@ -600,8 +643,11 @@ export function useCreateForm({
   const resetForm = useCallback(() => {
     setSelectedPlan('standard');
     setSelectedTheme(null);
+    setCustomerPassword('');
     setGroomKoreanName('');
     setBrideKoreanName('');
+    setGroomEnglishName('');
+    setBrideEnglishName('');
     setSlugSuggestionSeed(createRandomSuffix(6));
     setPageIdentifier('');
     setHasCustomPageIdentifier(false);
@@ -637,9 +683,31 @@ export function useCreateForm({
     setTicketCount(0);
   }, []);
 
+  const handleCustomerLogin = useCallback(async () => {
+    const loggedIn = await loginCustomer(customerEmail, customerPassword);
+    if (loggedIn) {
+      setCustomerPassword('');
+      setNotice('고객 계정으로 로그인되었습니다.');
+      return;
+    }
+
+    setNotice(customerAuthError ?? '고객 로그인 정보를 다시 확인해 주세요.');
+  }, [customerAuthError, customerEmail, customerPassword, loginCustomer]);
+
+  const handleCustomerLogout = useCallback(async () => {
+    await logoutCustomer();
+    setCustomerPassword('');
+    setNotice('고객 계정 로그아웃이 완료되었습니다.');
+  }, [logoutCustomer]);
+
   const handleSaveDraft = useCallback(async () => {
-    if (!groomKoreanName.trim() || !brideKoreanName.trim()) {
-      setNotice('초안 저장 전에는 신랑과 신부 이름을 먼저 입력해 주세요.');
+    if (
+      !groomKoreanName.trim() ||
+      !brideKoreanName.trim() ||
+      !groomEnglishName.trim() ||
+      !brideEnglishName.trim()
+    ) {
+      setNotice('초안 저장 전에는 신랑·신부의 한글 이름과 영문 이름을 모두 입력해 주세요.');
       moveToStep('info');
       return;
     }
@@ -654,7 +722,15 @@ export function useCreateForm({
       notice:
         '작성 중인 초안을 저장했습니다. 다음에도 같은 화면에서 이어서 만들 수 있습니다.',
     });
-  }, [brideKoreanName, groomKoreanName, moveToStep, persistDraft, selectedTheme]);
+  }, [
+    brideEnglishName,
+    brideKoreanName,
+    groomEnglishName,
+    groomKoreanName,
+    moveToStep,
+    persistDraft,
+    selectedTheme,
+  ]);
 
   const autoSaveProgress = useCallback(async () => {
     if (isSubmitting || !hasDraftableInput || !canAutoSaveProgress) {
@@ -690,6 +766,12 @@ export function useCreateForm({
       return;
     }
 
+    if (!customerSession) {
+      setNotice('고객 계정으로 로그인한 뒤 결제를 진행해 주세요.');
+      moveToStep('info');
+      return;
+    }
+
     if (validationMessages.length > 0) {
       setNotice(validationMessages[0] ?? '입력 정보를 먼저 확인해 주세요.');
       const firstInvalidRule = validationRules.find((rule) => !rule.passed);
@@ -701,6 +783,7 @@ export function useCreateForm({
     setPaymentModalVisible(true);
   }, [
     clearAuthError,
+    customerSession,
     isExpoWebPreview,
     moveToStep,
     validationMessages,
@@ -748,6 +831,13 @@ export function useCreateForm({
       return;
     }
 
+    if (!customerSession) {
+      setNotice('고객 계정으로 로그인한 뒤 결제를 진행해 주세요.');
+      setPaymentModalVisible(false);
+      moveToStep('info');
+      return;
+    }
+
     if (validationMessages.length > 0) {
       setNotice(validationMessages[0] ?? '입력 정보를 먼저 확인해 주세요.');
       setPaymentModalVisible(false);
@@ -763,6 +853,8 @@ export function useCreateForm({
       slugBase,
       groomKoreanName: groomKoreanName.trim(),
       brideKoreanName: brideKoreanName.trim(),
+      groomEnglishName: groomEnglishName.trim(),
+      brideEnglishName: brideEnglishName.trim(),
       password: password.trim(),
       servicePlan: selectedPlan,
       theme: selectedTheme ?? DEFAULT_INVITATION_THEME,
@@ -772,7 +864,9 @@ export function useCreateForm({
     let created = false;
 
     try {
-      const purchase = await purchaseBillingProduct(billingProductId);
+      const purchase = await purchaseBillingProduct(billingProductId, {
+        appUserId: customerSession.uid,
+      });
       created = await createInvitationPage(createInput, {
         billingPurchase: {
           appUserId: purchase.appUserId,
@@ -805,9 +899,12 @@ export function useCreateForm({
     router.replace('/manage');
   }, [
     brideKoreanName,
+    brideEnglishName,
     clearAuthError,
     createInvitationPage,
+    customerSession,
     editingDraftId,
+    groomEnglishName,
     groomKoreanName,
     isExpoWebPreview,
     moveToStep,
@@ -830,10 +927,23 @@ export function useCreateForm({
     selectedTheme,
     setSelectedTheme,
     selectedThemeInfo,
+    customerEmail,
+    setCustomerEmail,
+    customerPassword,
+    setCustomerPassword,
+    customerSession,
+    customerAuthError,
+    isCustomerAuthenticating,
+    handleCustomerLogin,
+    handleCustomerLogout,
     groomKoreanName,
     setGroomKoreanName,
     brideKoreanName,
     setBrideKoreanName,
+    groomEnglishName,
+    setGroomEnglishName,
+    brideEnglishName,
+    setBrideEnglishName,
     pageIdentifier,
     setPageIdentifier: handlePageIdentifierChange,
     pageIdentifierHelperText,
@@ -847,8 +957,7 @@ export function useCreateForm({
     increaseTicketCount,
     resetTicketCount,
     ticketPrice,
-    discountedBundleCount,
-    remainderTicketCount,
+    ticketUnitPrice: TICKET_UNIT_PRICE,
     totalPrice,
     slugBase,
     publicUrlPreview,

@@ -38,7 +38,10 @@ import {
   type BillingFulfillmentPurchaseInput,
   type BillingFulfillmentRecord,
 } from './repositories/billingFulfillmentRepository';
-import { resolveStoredEventBySlug } from './repositories/eventRepository';
+import {
+  firestoreEventRepository,
+  resolveStoredEventBySlug,
+} from './repositories/eventRepository';
 
 type MobileBillingPurchaseReceipt = {
   appUserId: string;
@@ -50,8 +53,13 @@ type MobileBillingCreatePageInput = {
   slugBase: string;
   groomKoreanName: string;
   brideKoreanName: string;
+  groomEnglishName: string;
+  brideEnglishName: string;
   password: string;
   theme: string;
+  ownerUid: string;
+  ownerEmail?: string | null;
+  ownerDisplayName?: string | null;
 };
 
 type RevenueCatTransactionRecord = {
@@ -62,6 +70,27 @@ type RevenueCatTransactionRecord = {
 
 function getRevenueCatApiKey() {
   return process.env.REVENUECAT_SERVER_API_KEY?.trim() ?? '';
+}
+
+function isMockBillingFulfillmentAllowed() {
+  return (
+    process.env.NODE_ENV !== 'production' ||
+    process.env.MOBILE_BILLING_ALLOW_MOCK === 'true'
+  );
+}
+
+function buildMockTransactionRecord(
+  purchase: MobileBillingPurchaseReceipt
+): RevenueCatTransactionRecord | null {
+  if (!purchase.transactionId.startsWith('mock_') || !isMockBillingFulfillmentAllowed()) {
+    return null;
+  }
+
+  return {
+    productIdentifier: purchase.productId,
+    transactionIdentifier: purchase.transactionId,
+    purchaseDate: new Date().toISOString(),
+  };
 }
 
 async function getBillingFulfillmentRecord(transactionId: string) {
@@ -134,6 +163,11 @@ function normalizeRevenueCatTransactionRecord(input: unknown): RevenueCatTransac
 async function verifyRevenueCatNonSubscriptionTransaction(
   purchase: MobileBillingPurchaseReceipt
 ) {
+  const mockTransaction = buildMockTransactionRecord(purchase);
+  if (mockTransaction) {
+    return mockTransaction;
+  }
+
   const apiKey = getRevenueCatApiKey();
   if (!apiKey) {
     throw new Error('REVENUECAT_SERVER_API_KEY is required for purchase verification.');
@@ -277,7 +311,12 @@ export async function fulfillServerMobilePageCreationPurchase(
     });
 
     await setServerClientPassword(createdDraft.slug, input.password);
-    const resolvedCreatedEvent = await resolveStoredEventBySlug(createdDraft.slug);
+    const resolvedCreatedEvent = await firestoreEventRepository.assignOwnerBySlug({
+      pageSlug: createdDraft.slug,
+      ownerUid: input.ownerUid,
+      ownerEmail: input.ownerEmail ?? null,
+      ownerDisplayName: input.ownerDisplayName ?? null,
+    });
 
     await updateBillingFulfillmentRecord(purchase.transactionId, {
       status: 'fulfilled',
