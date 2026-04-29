@@ -107,7 +107,6 @@ export async function POST(request: Request) {
           brideName?: unknown;
           groomEnglishName?: unknown;
           brideEnglishName?: unknown;
-          password?: unknown;
           productTier?: unknown;
           defaultTheme?: unknown;
         }
@@ -120,7 +119,6 @@ export async function POST(request: Request) {
       [groomEnglishName, brideEnglishName].filter(Boolean).join('-')
     );
     const slugBase = readTrimmedString(body?.slugBase) || generatedSlugBase;
-    const password = readTrimmedString(body?.password);
     const seedSlug =
       readTrimmedString(body?.seedSlug) || (getAllWeddingPageSeeds()[0]?.slug ?? '');
     const productTier = normalizeInvitationProductTier(body?.productTier);
@@ -174,13 +172,6 @@ export async function POST(request: Request) {
       );
     }
 
-    if (!password) {
-      return NextResponse.json(
-        { error: '페이지 비밀번호를 입력해 주세요.' },
-        { status: 400, headers: rateLimitHeaders }
-      );
-    }
-
     const created = await createCustomerInvitationPageFromWalletCredit({
       ownerUid: customer.decodedToken.uid,
       ownerEmail: customer.decodedToken.email ?? null,
@@ -189,7 +180,6 @@ export async function POST(request: Request) {
       slugBase: slugValidation.normalizedSlugBase,
       groomName,
       brideName,
-      password,
       productTier,
       defaultTheme,
     });

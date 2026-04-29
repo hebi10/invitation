@@ -1,6 +1,13 @@
 import 'server-only';
 
 import type { EventTypeKey } from '@/lib/eventTypes';
+import {
+  buildGuestbookCommentStatusPatch,
+  isGuestbookCommentPendingPurge,
+  isGuestbookCommentVisibleToManager,
+  readGuestbookCommentStatus,
+  type GuestbookCommentStatus,
+} from '@/lib/guestbookComments';
 import { normalizeInvitationPageSlugInput } from '@/lib/invitationPagePersistence';
 import {
   DEFAULT_INVITATION_PRODUCT_TIER,
@@ -14,6 +21,7 @@ import { sanitizeHeartIconPlaceholdersDeep } from '@/utils/textSanitizers';
 import { getServerEditableInvitationPageConfig } from './invitationPageServerService';
 import { listStoredEventSummaries } from './repositories/eventRepository';
 import { resolveStoredEventBySlug } from './repositories/eventRepository';
+import { firestoreEventCommentRepository } from './repositories/eventCommentRepository';
 import type { EventSummaryRecord } from './repositories/eventReadThroughDtos';
 
 export interface CustomerOwnedEventSummary {
@@ -25,6 +33,19 @@ export interface CustomerOwnedEventSummary {
   published: boolean;
   defaultTheme: InvitationThemeKey;
   updatedAt: Date | null;
+}
+
+export interface CustomerEventGuestbookCommentSummary {
+  id: string;
+  author: string;
+  message: string;
+  pageSlug: string;
+  status: GuestbookCommentStatus;
+  createdAt: string | null;
+  hiddenAt: string | null;
+  deletedAt: string | null;
+  scheduledDeleteAt: string | null;
+  restoredAt: string | null;
 }
 
 export type CustomerEventOwnershipSnapshot =
@@ -99,6 +120,62 @@ function buildSampleEditableConfig(summary: CustomerOwnedEventSummary) {
     dataSource: 'sample' as const,
     lastSavedAt: summary.updatedAt,
   };
+}
+
+function toIsoString(value: unknown) {
+  if (
+    typeof value === 'object' &&
+    value !== null &&
+    typeof (value as { toDate?: () => Date }).toDate === 'function'
+  ) {
+    return (value as { toDate: () => Date }).toDate().toISOString();
+  }
+
+  if (value instanceof Date) {
+    return value.toISOString();
+  }
+
+  const parsed = value ? new Date(String(value)) : null;
+  return parsed && !Number.isNaN(parsed.getTime()) ? parsed.toISOString() : null;
+}
+
+function buildCustomerGuestbookCommentSummary(
+  commentId: string,
+  pageSlug: string,
+  data: Record<string, unknown>
+): CustomerEventGuestbookCommentSummary | null {
+  const message = typeof data.message === 'string' ? data.message.trim() : '';
+  if (!message) {
+    return null;
+  }
+
+  return {
+    id: commentId,
+    author:
+      typeof data.author === 'string' && data.author.trim()
+        ? data.author.trim()
+        : '익명',
+    message,
+    pageSlug:
+      typeof data.pageSlug === 'string' && data.pageSlug.trim()
+        ? data.pageSlug.trim()
+        : pageSlug,
+    status: readGuestbookCommentStatus(data),
+    createdAt: toIsoString(data.createdAt),
+    hiddenAt: toIsoString(data.hiddenAt),
+    deletedAt: toIsoString(data.deletedAt),
+    scheduledDeleteAt: toIsoString(data.scheduledDeleteAt),
+    restoredAt: toIsoString(data.restoredAt),
+  };
+}
+
+async function requireOwnedEventSummary(ownerUid: string, pageSlug: string) {
+  const ownership = await getCustomerEventOwnershipSnapshot(ownerUid, pageSlug);
+  if (ownership.status !== 'owner') {
+    throw new Error('로그인한 계정에 연결된 청첩장만 관리할 수 있습니다.');
+  }
+
+  return ownership.summary;
 }
 
 export async function listCustomerOwnedEventSummaries(ownerUid: string) {
@@ -236,4 +313,53 @@ export async function getCustomerEditableInvitationPageSnapshot(
         resolvedEditableConfig.dataSource === 'firestore' ? 'firestore' : 'seed',
     },
   };
+}
+
+export async function listCustomerEventGuestbookComments(
+  ownerUid: string,
+  pageSlug: string
+) {
+  const summary = await requireOwnedEventSummary(ownerUid, pageSlug);
+  const now = new Date();
+  const comments = await firestoreEventCommentRepository.listByPageSlug(summary.slug);
+
+  return comments
+    .filter((comment) => isGuestbookCommentVisibleToManager(comment.data, now))
+    .map((comment) =>
+      buildCustomerGuestbookCommentSummary(comment.id, summary.slug, comment.data)
+    )
+    .filter(
+      (comment): comment is CustomerEventGuestbookCommentSummary => comment !== null
+    )
+    .sort((left, right) => {
+      const rightTime = right.createdAt ? new Date(right.createdAt).getTime() : 0;
+      const leftTime = left.createdAt ? new Date(left.createdAt).getTime() : 0;
+      return rightTime - leftTime;
+    });
+}
+
+export async function scheduleDeleteCustomerEventGuestbookComment(
+  ownerUid: string,
+  pageSlug: string,
+  commentId: string
+) {
+  const summary = await requireOwnedEventSummary(ownerUid, pageSlug);
+  const normalizedCommentId = commentId.trim();
+  if (!normalizedCommentId) {
+    throw new Error('삭제할 방명록을 선택해 주세요.');
+  }
+
+  const comment = await firestoreEventCommentRepository.findByPageSlugAndId(
+    summary.slug,
+    normalizedCommentId
+  );
+  if (!comment || isGuestbookCommentPendingPurge(comment.data, new Date())) {
+    throw new Error('삭제할 방명록을 찾을 수 없습니다.');
+  }
+
+  await firestoreEventCommentRepository.updateByPageSlugAndId(
+    summary.slug,
+    normalizedCommentId,
+    buildGuestbookCommentStatusPatch('scheduleDelete', new Date())
+  );
 }

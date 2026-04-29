@@ -8,7 +8,6 @@ import type {
 
 import { firestoreCustomerWalletRepository } from './repositories/customerWalletRepository';
 import { deleteAdminEventBySlug } from './adminEventDeletionService';
-import { setServerClientPassword } from './clientPasswordServerService';
 import { createServerInvitationPageDraftFromSeed } from './invitationPageServerService';
 import { firestoreEventRepository } from './repositories/eventRepository';
 
@@ -39,7 +38,6 @@ export interface CustomerWalletPageCreationInput {
   slugBase: string;
   groomName: string;
   brideName: string;
-  password: string;
   productTier: InvitationProductTier;
   defaultTheme: InvitationThemeKey;
 }
@@ -164,7 +162,6 @@ export async function createCustomerInvitationPageFromWalletCredit(
       initialDisplayPeriodMonths: 6,
     });
 
-    await setServerClientPassword(createdDraft.slug, input.password);
     const assignedEvent = await firestoreEventRepository.assignOwnerBySlug({
       pageSlug: createdDraft.slug,
       ownerUid: normalizedOwnerUid,

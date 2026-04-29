@@ -82,7 +82,6 @@ export interface CreateOwnedCustomerEventInput {
   brideName: string;
   groomEnglishName: string;
   brideEnglishName: string;
-  password: string;
   productTier: InvitationProductTier;
   defaultTheme: InvitationThemeKey;
 }
@@ -90,6 +89,19 @@ export interface CreateOwnedCustomerEventInput {
 export interface CreateOwnedCustomerEventResult {
   slug: string;
   eventId: string;
+}
+
+export interface CustomerEventGuestbookComment {
+  id: string;
+  author: string;
+  message: string;
+  pageSlug: string;
+  status: 'public' | 'hidden' | 'pending_delete';
+  createdAt: Date | null;
+  hiddenAt: Date | null;
+  deletedAt: Date | null;
+  scheduledDeleteAt: Date | null;
+  restoredAt: Date | null;
 }
 
 function extractPageSlugFromInput(value: string) {
@@ -209,6 +221,40 @@ function normalizeEditableConfig(input: unknown): EditableInvitationPageConfig |
     hasCustomConfig: record.hasCustomConfig === true,
     dataSource: record.dataSource === 'firestore' ? 'firestore' : 'seed',
     lastSavedAt: readDate(record.lastSavedAt),
+  };
+}
+
+function normalizeGuestbookComment(input: unknown): CustomerEventGuestbookComment | null {
+  if (!input || typeof input !== 'object' || Array.isArray(input)) {
+    return null;
+  }
+
+  const record = input as Record<string, unknown>;
+  const id = typeof record.id === 'string' ? record.id.trim() : '';
+  const pageSlug = typeof record.pageSlug === 'string' ? record.pageSlug.trim() : '';
+  const status =
+    record.status === 'hidden' || record.status === 'pending_delete'
+      ? record.status
+      : 'public';
+
+  if (!id || !pageSlug) {
+    return null;
+  }
+
+  return {
+    id,
+    author:
+      typeof record.author === 'string' && record.author.trim()
+        ? record.author.trim()
+        : '익명',
+    message: typeof record.message === 'string' ? record.message : '',
+    pageSlug,
+    status,
+    createdAt: readDate(record.createdAt),
+    hiddenAt: readDate(record.hiddenAt),
+    deletedAt: readDate(record.deletedAt),
+    scheduledDeleteAt: readDate(record.scheduledDeleteAt),
+    restoredAt: readDate(record.restoredAt),
   };
 }
 
@@ -518,7 +564,6 @@ export async function createOwnedCustomerEvent(
       brideName: input.brideName,
       groomEnglishName: input.groomEnglishName,
       brideEnglishName: input.brideEnglishName,
-      password: input.password,
       productTier: input.productTier,
       defaultTheme: input.defaultTheme,
     }),
@@ -544,4 +589,83 @@ export async function createOwnedCustomerEvent(
     slug: typeof payload?.slug === 'string' ? payload.slug : '',
     eventId: typeof payload?.eventId === 'string' ? payload.eventId : '',
   };
+}
+
+export async function listCustomerEventGuestbookComments(
+  pageSlug: string
+): Promise<CustomerEventGuestbookComment[]> {
+  const normalizedPageSlug = normalizeInvitationPageSlugInput(pageSlug);
+  if (!normalizedPageSlug) {
+    return [];
+  }
+
+  const idToken = await getCurrentFirebaseIdToken();
+  if (!idToken) {
+    throw new Error('로그인 상태를 확인하지 못했습니다. 다시 로그인해 주세요.');
+  }
+
+  const response = await fetch(
+    `/api/customer/events/${encodeURIComponent(normalizedPageSlug)}/comments/`,
+    {
+      method: 'GET',
+      headers: {
+        Authorization: `Bearer ${idToken}`,
+      },
+      cache: 'no-store',
+    }
+  );
+  const payload = (await response.json().catch(() => null)) as
+    | { success?: boolean; comments?: unknown[]; error?: string }
+    | null;
+
+  if (!response.ok) {
+    throw new Error(
+      typeof payload?.error === 'string' && payload.error.trim()
+        ? payload.error
+        : '방명록을 불러오지 못했습니다.'
+    );
+  }
+
+  return Array.isArray(payload?.comments)
+    ? payload.comments
+        .map((entry) => normalizeGuestbookComment(entry))
+        .filter((entry): entry is CustomerEventGuestbookComment => entry !== null)
+    : [];
+}
+
+export async function deleteCustomerEventGuestbookComment(
+  pageSlug: string,
+  commentId: string
+): Promise<void> {
+  const normalizedPageSlug = normalizeInvitationPageSlugInput(pageSlug);
+  const normalizedCommentId = commentId.trim();
+  if (!normalizedPageSlug || !normalizedCommentId) {
+    throw new Error('삭제할 방명록 댓글을 확인하지 못했습니다.');
+  }
+
+  const idToken = await getCurrentFirebaseIdToken();
+  if (!idToken) {
+    throw new Error('로그인 상태를 확인하지 못했습니다. 다시 로그인해 주세요.');
+  }
+
+  const response = await fetch(
+    `/api/customer/events/${encodeURIComponent(normalizedPageSlug)}/comments/${encodeURIComponent(normalizedCommentId)}/`,
+    {
+      method: 'DELETE',
+      headers: {
+        Authorization: `Bearer ${idToken}`,
+      },
+    }
+  );
+  const payload = (await response.json().catch(() => null)) as
+    | { success?: boolean; error?: string }
+    | null;
+
+  if (!response.ok) {
+    throw new Error(
+      typeof payload?.error === 'string' && payload.error.trim()
+        ? payload.error
+        : '방명록 댓글을 삭제하지 못했습니다.'
+    );
+  }
 }
