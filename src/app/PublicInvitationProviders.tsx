@@ -2,7 +2,7 @@
 
 import type { ReactNode } from 'react';
 
-import { AnonymousAdminProvider } from '@/contexts';
+import { AdminProvider } from '@/contexts';
 
 import AppQueryProvider from './AppQueryProvider';
 
@@ -12,8 +12,8 @@ export default function PublicInvitationProviders({
   children: ReactNode;
 }) {
   return (
-    <AnonymousAdminProvider>
+    <AdminProvider>
       <AppQueryProvider>{children}</AppQueryProvider>
-    </AnonymousAdminProvider>
+    </AdminProvider>
   );
 }
