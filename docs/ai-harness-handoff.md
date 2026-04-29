@@ -1,15 +1,15 @@
 ### commit message
-- fix: 이메일 인증 상태 확인 흐름 정리
+- fix: 고객 생성 후 page-wizard 진입 복구
 
 ### 해결한 문제
-- `/signup` 회원가입 직후 미인증 고객은 `/my-invitations`로 즉시 이동하지 않고 인증 안내를 볼 수 있게 했습니다.
-- `/my-invitations`와 `/my-invitations/create` 직접 접근도 미인증 회원가입 계정이면 이메일 인증 필요 화면을 보여주도록 막았습니다.
-- Firebase 인증 메일 발송 전에 Auth 언어를 `ko`로 고정하고, `인증 상태 확인`과 `인증 메일 다시 보내기` 버튼 역할을 분리했습니다.
+- `/my-invitations/create`에서 고객이 제작권으로 청첩장을 만들면 목록/지갑 쿼리 무효화를 기다리지 않고 바로 `/page-wizard/{slug}`로 이동하도록 정리했습니다.
+- `PageWizardClient`의 기존 청첩장 접근 게이트가 `isAdminLoggedIn`만 보고 있어 고객 소유 slug도 막히던 문제를 수정했습니다.
+- 고객이 방금 만든 청첩장은 소유권 연결이 되어 있으면 `/page-wizard/{slug}`에서 바로 편집 화면을 열 수 있습니다.
 
 ### 최근 변경 유지 항목
 - 고객 신규 생성과 모바일 생성 API는 이메일 인증 또는 신뢰 provider 확인을 거칩니다.
 - 고객 편집 권한은 Firebase ID token과 `events.ownerUid` 일치 여부로 확인합니다.
-- 탭 복귀/화면 재노출 시 Auth 세션을 자동 refresh해서 이메일 인증 완료 상태를 다시 읽습니다.
+- 이메일 인증 상태 확인/재발송 흐름과 관리자 요약 카드 레이아웃 보정은 기존 수정 상태를 그대로 유지합니다.
 
 ### 검증 명령과 결과
 - `npm run typecheck:web` 통과

@@ -18,7 +18,12 @@ interface SummaryCardsProps {
 
 export default function SummaryCards({ items }: SummaryCardsProps) {
   return (
-    <section className={uiStyles.summaryGrid} aria-label="요약 지표">
+    <section
+      className={`${uiStyles.summaryGrid} ${
+        items.length === 3 ? uiStyles.summaryGridThreeColumns : ''
+      }`}
+      aria-label="요약 지표"
+    >
       {items.map((item) => {
         const sharedClassName = `${uiStyles.summaryCard} ${uiStyles[`summaryTone${capitalize(item.tone ?? 'neutral')}`]} ${
           item.onClick ? uiStyles.summaryInteractive : ''

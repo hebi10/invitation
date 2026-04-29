@@ -175,6 +175,7 @@ export default function PageWizardClient({ initialSlug }: PageWizardClientProps)
   const galleryUploadInputRef = useRef<HTMLInputElement | null>(null);
 
   const canCreateNew = isAdminLoggedIn;
+  const canOpenExistingWizard = Boolean(initialSlug && isLoggedIn);
   const canUploadImages = isAdminLoggedIn || Boolean(initialSlug && isLoggedIn);
   const ownedEventsQuery = useQuery<CustomerOwnedEventSummary[]>({
     queryKey: appQueryKeys.ownedCustomerEvents(authUser?.uid ?? null),
@@ -1551,7 +1552,7 @@ export default function PageWizardClient({ initialSlug }: PageWizardClientProps)
     );
   }
 
-  if (!formState || !previewFormState || !canCreateNew) {
+  if (!formState || !previewFormState || !(canCreateNew || canOpenExistingWizard)) {
     return (
       <main className={styles.page}>
         <div className={`${styles.shell} ${styles.gateShell}`}>

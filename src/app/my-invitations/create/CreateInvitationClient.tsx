@@ -171,15 +171,13 @@ export default function CreateInvitationClient() {
         productTier,
         defaultTheme,
       }),
-    onSuccess: async (created) => {
-      await Promise.all([
-        queryClient.invalidateQueries({
-          queryKey: appQueryKeys.ownedCustomerEvents(authUser?.uid ?? null),
-        }),
-        queryClient.invalidateQueries({
-          queryKey: appQueryKeys.customerWallet(authUser?.uid ?? null),
-        }),
-      ]);
+    onSuccess: (created) => {
+      void queryClient.invalidateQueries({
+        queryKey: appQueryKeys.ownedCustomerEvents(authUser?.uid ?? null),
+      });
+      void queryClient.invalidateQueries({
+        queryKey: appQueryKeys.customerWallet(authUser?.uid ?? null),
+      });
       router.replace(`/page-wizard/${encodeURIComponent(created.slug)}`, {
         scroll: false,
       });
