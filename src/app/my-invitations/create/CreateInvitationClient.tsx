@@ -48,8 +48,14 @@ function buildSlugBaseFromEnglishNames(groomEnglishName: string, brideEnglishNam
 }
 
 export default function CreateInvitationClient() {
-  const { authUser, isLoggedIn, isAdminLoading, logout, sendVerificationEmail } =
-    useAdmin();
+  const {
+    authUser,
+    isLoggedIn,
+    isAdminLoading,
+    logout,
+    refreshSession,
+    sendVerificationEmail,
+  } = useAdmin();
   const router = useRouter();
   const queryClient = useQueryClient();
   const [groomName, setGroomName] = useState('');
@@ -64,6 +70,7 @@ export default function CreateInvitationClient() {
   const [notice, setNotice] = useState('');
   const [verificationNotice, setVerificationNotice] = useState('');
   const [verificationError, setVerificationError] = useState('');
+  const [verificationRefreshing, setVerificationRefreshing] = useState(false);
   const [verificationLoading, setVerificationLoading] = useState(false);
   const requiresEmailVerification =
     isLoggedIn && authUser ? !authUser.emailVerified : false;
@@ -118,6 +125,24 @@ export default function CreateInvitationClient() {
         : '인증 메일을 다시 보냈습니다. 받은 편지함에서 인증 링크를 확인해 주세요. 메일이 없으면 스팸 메일함도 확인해 주세요.'
     );
     setVerificationLoading(false);
+  };
+
+  const handleRefreshVerificationStatus = async () => {
+    setVerificationRefreshing(true);
+    setVerificationNotice('');
+    setVerificationError('');
+
+    const snapshot = await refreshSession();
+    if (snapshot.authUser?.emailVerified) {
+      setVerificationNotice('이메일 인증이 확인되었습니다. 생성 화면을 다시 표시합니다.');
+      setVerificationRefreshing(false);
+      return;
+    }
+
+    setVerificationNotice(
+      '아직 이메일 인증이 확인되지 않았습니다. 받은 편지함의 인증 링크를 먼저 열어 주세요. 메일이 없으면 스팸 메일함도 확인해 주세요.'
+    );
+    setVerificationRefreshing(false);
   };
 
   useEffect(() => {
@@ -259,17 +284,18 @@ export default function CreateInvitationClient() {
               <button
                 className={styles.primaryButton}
                 type="button"
-                onClick={() => void handleResendVerificationEmail()}
-                disabled={verificationLoading}
+                onClick={() => void handleRefreshVerificationStatus()}
+                disabled={verificationRefreshing || verificationLoading}
               >
-                {verificationLoading ? '인증 메일 보내는 중' : '인증 메일 다시 보내기'}
+                {verificationRefreshing ? '인증 상태 확인 중' : '인증 상태 확인'}
               </button>
               <button
                 className={styles.secondaryButton}
                 type="button"
-                onClick={() => window.location.reload()}
+                onClick={() => void handleResendVerificationEmail()}
+                disabled={verificationRefreshing || verificationLoading}
               >
-                인증 후 새로고침
+                {verificationLoading ? '인증 메일 보내는 중' : '인증 메일 다시 보내기'}
               </button>
               <button
                 className={styles.secondaryButton}

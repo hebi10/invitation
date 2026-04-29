@@ -6,6 +6,7 @@ import type { ReactNode } from 'react';
 import type {
   AdminUser,
   AuthActionResult,
+  AuthSessionSnapshot,
   AuthUser,
   EmailVerificationActionResult,
 } from '@/services/adminAuth';
@@ -14,6 +15,7 @@ import {
   loginFirebaseUserWithGoogle,
   logoutFirebaseUser,
   observeFirebaseSession,
+  refreshCurrentFirebaseSession,
   registerFirebaseUser,
   sendCurrentUserEmailVerification,
 } from '@/services/adminAuth';
@@ -29,6 +31,7 @@ export interface AdminContextType {
   register: (email: string, password: string) => Promise<AuthActionResult>;
   loginWithGoogle: () => Promise<AuthActionResult>;
   sendVerificationEmail: () => Promise<EmailVerificationActionResult>;
+  refreshSession: () => Promise<AuthSessionSnapshot>;
   logout: () => Promise<void>;
 }
 
@@ -47,6 +50,12 @@ const unavailableEmailVerificationResult: EmailVerificationActionResult = {
   errorMessage: '현재 화면에서는 인증 메일을 보낼 수 없습니다.',
 };
 
+const unavailableSessionSnapshot: AuthSessionSnapshot = {
+  authUser: null,
+  adminUser: null,
+  isAdmin: false,
+};
+
 const anonymousAdminContextValue: AdminContextType = {
   adminUser: null,
   authUser: null,
@@ -58,6 +67,7 @@ const anonymousAdminContextValue: AdminContextType = {
   register: async () => unavailableAuthResult,
   loginWithGoogle: async () => unavailableAuthResult,
   sendVerificationEmail: async () => unavailableEmailVerificationResult,
+  refreshSession: async () => unavailableSessionSnapshot,
   logout: async () => {},
 };
 
@@ -75,6 +85,46 @@ export function AdminProvider({ children }: { children: ReactNode }) {
 
     return unsubscribe;
   }, []);
+
+  useEffect(() => {
+    if (!authUser) {
+      return;
+    }
+
+    let cancelled = false;
+    const refreshSession = async () => {
+      try {
+        const snapshot = await refreshCurrentFirebaseSession();
+        if (cancelled) {
+          return;
+        }
+
+        setAuthUser(snapshot.authUser);
+        setAdminUser(snapshot.adminUser);
+      } catch (error) {
+        console.error('[AdminProvider] session refresh failed', error);
+      }
+    };
+
+    const handleFocus = () => {
+      void refreshSession();
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        void refreshSession();
+      }
+    };
+
+    window.addEventListener('focus', handleFocus);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      cancelled = true;
+      window.removeEventListener('focus', handleFocus);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [authUser]);
 
   const value = useMemo<AdminContextType>(
     () => ({
@@ -168,6 +218,21 @@ export function AdminProvider({ children }: { children: ReactNode }) {
               error instanceof Error
                 ? error.message
                 : '인증 메일을 보내지 못했습니다. 잠시 후 다시 시도해 주세요.',
+          };
+        }
+      },
+      refreshSession: async () => {
+        try {
+          const snapshot = await refreshCurrentFirebaseSession();
+          setAuthUser(snapshot.authUser);
+          setAdminUser(snapshot.adminUser);
+          return snapshot;
+        } catch (error) {
+          console.error('[AdminProvider] session refresh failed', error);
+          return {
+            authUser,
+            adminUser,
+            isAdmin: Boolean(adminUser),
           };
         }
       },

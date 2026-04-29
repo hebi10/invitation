@@ -29,11 +29,11 @@ export interface EmailVerificationActionResult {
   errorMessage?: string;
 }
 
-type AuthSessionSnapshot = {
+export interface AuthSessionSnapshot {
   authUser: AuthUser | null;
   adminUser: AdminUser | null;
   isAdmin: boolean;
-};
+}
 
 type FirebaseAuthUserLike = {
   uid: string;
@@ -41,6 +41,10 @@ type FirebaseAuthUserLike = {
   displayName?: string | null;
   emailVerified?: boolean;
   getIdToken: () => Promise<string>;
+};
+
+type FirebaseReloadableAuthUserLike = FirebaseAuthUserLike & {
+  reload: () => Promise<void>;
 };
 
 const ADMIN_SESSION_TIMEOUT_MS = 10000;
@@ -185,6 +189,26 @@ function toAdminUser(user: { uid: string; email: string | null }): AdminUser {
   return {
     uid: user.uid,
     email: user.email,
+  };
+}
+
+async function resolveSignedInAuthSessionSnapshot(
+  auth: { currentUser: FirebaseReloadableAuthUserLike | null },
+  user: FirebaseReloadableAuthUserLike
+): Promise<AuthSessionSnapshot> {
+  try {
+    await user.reload();
+  } catch (error) {
+    console.warn('[adminAuth] failed to refresh signed-in user', error);
+  }
+
+  const refreshedUser = auth.currentUser ?? user;
+  const isAdmin = await isUserAdmin(refreshedUser);
+
+  return {
+    authUser: toAuthUser(refreshedUser),
+    adminUser: isAdmin ? toAdminUser(refreshedUser) : null,
+    isAdmin,
   };
 }
 
@@ -396,6 +420,28 @@ export async function getCurrentFirebaseIdToken(
   return auth.currentUser.getIdToken(options.forceRefresh === true);
 }
 
+export async function refreshCurrentFirebaseSession(): Promise<AuthSessionSnapshot> {
+  if (!USE_FIREBASE) {
+    return {
+      authUser: null,
+      adminUser: null,
+      isAdmin: false,
+    };
+  }
+
+  const { auth } = await getAuthModules();
+  const currentUser = auth?.currentUser as FirebaseReloadableAuthUserLike | null;
+  if (!auth || !currentUser) {
+    return {
+      authUser: null,
+      adminUser: null,
+      isAdmin: false,
+    };
+  }
+
+  return resolveSignedInAuthSessionSnapshot(auth, currentUser);
+}
+
 export function observeFirebaseSession(
   callback: (snapshot: AuthSessionSnapshot) => void
 ) {
@@ -440,23 +486,15 @@ export function observeFirebaseSession(
         }
 
         try {
-          try {
-            await user.reload();
-          } catch (error) {
-            console.warn('[adminAuth] failed to refresh signed-in user', error);
-          }
-
-          const refreshedUser = auth.currentUser ?? user;
-          const isAdmin = await isUserAdmin(refreshedUser);
+          const snapshot = await resolveSignedInAuthSessionSnapshot(
+            auth,
+            user as FirebaseReloadableAuthUserLike
+          );
           if (disposed) {
             return;
           }
 
-          callback({
-            authUser: toAuthUser(refreshedUser),
-            adminUser: isAdmin ? toAdminUser(refreshedUser) : null,
-            isAdmin,
-          });
+          callback(snapshot);
         } catch (error) {
           console.error('[adminAuth] failed to verify signed-in user', error);
           callback({

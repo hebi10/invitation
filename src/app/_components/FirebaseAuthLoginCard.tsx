@@ -25,11 +25,20 @@ export default function FirebaseAuthLoginCard({
   helperText = null,
   initialMode = 'login',
 }: FirebaseAuthLoginCardProps) {
-  const { authUser, login, loginWithGoogle, register, sendVerificationEmail } = useAdmin();
+  const {
+    authUser,
+    login,
+    loginWithGoogle,
+    refreshSession,
+    register,
+    sendVerificationEmail,
+  } = useAdmin();
   const [mode, setMode] = useState<'login' | 'register'>(initialMode);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [loading, setLoading] = useState<'email' | 'google' | 'verification' | null>(null);
+  const [loading, setLoading] = useState<
+    'email' | 'google' | 'verification' | 'refresh' | null
+  >(null);
   const [errorMessage, setErrorMessage] = useState('');
   const [noticeMessage, setNoticeMessage] = useState('');
   const [canResendVerification, setCanResendVerification] = useState(false);
@@ -107,6 +116,26 @@ export default function FirebaseAuthLoginCard({
     setCanResendVerification(true);
     setNoticeMessage(
       '인증 메일을 다시 보냈습니다. 받은 편지함에서 인증 링크를 확인해 주세요. 메일이 없으면 스팸 메일함도 확인해 주세요.'
+    );
+    setLoading(null);
+  };
+
+  const handleRefreshVerificationStatus = async () => {
+    setLoading('refresh');
+    setErrorMessage('');
+    setNoticeMessage('');
+
+    const snapshot = await refreshSession();
+    if (snapshot.authUser?.emailVerified) {
+      setCanResendVerification(false);
+      setNoticeMessage('이메일 인증이 확인되었습니다. 내 청첩장 페이지로 이동합니다.');
+      setLoading(null);
+      return;
+    }
+
+    setCanResendVerification(true);
+    setNoticeMessage(
+      '아직 이메일 인증이 확인되지 않았습니다. 받은 편지함의 인증 링크를 먼저 열어 주세요. 메일이 없으면 스팸 메일함도 확인해 주세요.'
     );
     setLoading(null);
   };
@@ -199,14 +228,24 @@ export default function FirebaseAuthLoginCard({
         {helperText ? <p className={styles.helper}>{helperText}</p> : null}
         {noticeMessage ? <p className={styles.notice}>{noticeMessage}</p> : null}
         {canResendVerification ? (
-          <button
-            type="button"
-            className={styles.resendButton}
-            onClick={() => void handleResendVerificationEmail()}
-            disabled={loading !== null}
-          >
-            {loading === 'verification' ? '인증 메일 보내는 중...' : '인증 메일 다시 보내기'}
-          </button>
+          <div className={styles.noticeActions}>
+            <button
+              type="button"
+              className={styles.resendButton}
+              onClick={() => void handleRefreshVerificationStatus()}
+              disabled={loading !== null}
+            >
+              {loading === 'refresh' ? '인증 상태 확인 중...' : '인증 상태 확인'}
+            </button>
+            <button
+              type="button"
+              className={styles.resendButton}
+              onClick={() => void handleResendVerificationEmail()}
+              disabled={loading !== null}
+            >
+              {loading === 'verification' ? '인증 메일 보내는 중...' : '인증 메일 다시 보내기'}
+            </button>
+          </div>
         ) : null}
         {errorMessage ? <p className={styles.error}>{errorMessage}</p> : null}
 
