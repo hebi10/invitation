@@ -30,8 +30,19 @@ const MOBILE_CLIENT_EDITOR_DRAFT_RATE_LIMIT = {
   windowMs: 10 * 60 * 1000,
 } as const;
 
+function isMobileDraftCreationEnabled() {
+  return process.env.MOBILE_DRAFT_CREATION_ENABLED === 'true';
+}
+
 export async function POST(request: Request) {
   try {
+    if (!isMobileDraftCreationEnabled()) {
+      return NextResponse.json(
+        { error: 'Mobile invitation draft creation is disabled.' },
+        { status: 403 }
+      );
+    }
+
     const body = (await request.json().catch(() => null)) as
       | {
           seedSlug?: unknown;

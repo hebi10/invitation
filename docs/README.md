@@ -20,6 +20,7 @@
 - Expo 영향 범위의 관련 문서 : expo-impact-assessment.md
 - Expo 수동 QA 결과의 관련 문서 : expo-manual-qa-report.md
 - 관리자 대시보드 탭 배치의 관련 문서 : admin-dashboard-tab-layout.md
+- 고객 이용권 지갑의 관련 문서 : customer-wallet-commerce-plan.md
 - 모바일 연동 정책의 관련 문서 : mobile-client-editor-policy.md
 - 새 테마 추가의 관련 문서 : new-theme-checklist.md
 - 서비스 전체 개요의 관련 문서 : portfolio-service-overview.md

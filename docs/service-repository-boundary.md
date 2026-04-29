@@ -98,6 +98,13 @@
 - owner 이벤트의 editable config가 비어 있고 같은 slug의 sample config가 있으면 고객 편집 API는 sample 기반 config를 반환해 비밀번호 claim 루프로 보내지 않는다.
 - 위저드 클라이언트도 `/api/customer/events` 소유 목록에 같은 slug가 있으면 claimable 응답을 그대로 믿지 않고 소유 이벤트 fallback config를 적용한다.
 
+## 고객 이용권 지갑 경계
+- 고객 제작권과 운영 티켓 지급/소비 이력은 `src/server/repositories/customerWalletRepository.ts`가 Firestore `customerWallets` 경로를 전담한다.
+- 관리자 지급은 `/api/admin/customers/wallet`을 통해서만 처리하고, 클라이언트는 `src/services/adminCustomerService.ts` 공개 함수를 호출한다.
+- 고객 지갑 조회는 `/api/customer/wallet`을 통해 서버가 Firebase ID token을 검증한 UID 기준으로만 반환한다.
+- 고객 청첩장 생성 API는 `/api/customer/events` `POST`에서 제작권 1개를 차감한 뒤 이벤트 초안을 만들고 소유권을 연결한다.
+- 모바일 티켓팩 결제는 이벤트 잔액 적립을 유지하되, 고객 계정에 연결된 이벤트라면 지갑 원장에도 구매/배정 이력을 남긴다.
+
 ## 남겨둔 예외
 - `memoryPageService`는 Firestore 경로는 repository로 분리했지만, Storage 업로드/삭제는 도메인 서비스에 남겨뒀다.
 - 서버 전용 `src/server/repositories/*`는 별도 rollout 문서 기준으로 관리한다.

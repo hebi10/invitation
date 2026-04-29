@@ -12,6 +12,7 @@ export const appQueryKeys = {
   guestbookOwnership: (pageSlug: string, uid: string | null) =>
     ['guestbook-ownership', pageSlug, uid] as const,
   ownedCustomerEvents: (uid: string | null) => ['owned-customer-events', uid] as const,
+  customerWallet: (uid: string | null) => ['customer-wallet', uid] as const,
   customerEventOwnership: (pageSlug: string, uid: string | null) =>
     ['customer-event-ownership', pageSlug, uid] as const,
   editableInvitationPage: (pageSlug: string) => ['editable-invitation-page', pageSlug] as const,

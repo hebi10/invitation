@@ -76,6 +76,22 @@ export interface ClaimOwnedCustomerEventResult {
   editableConfig: EditableInvitationPageConfig | null;
 }
 
+export interface CreateOwnedCustomerEventInput {
+  slugBase: string;
+  groomName: string;
+  brideName: string;
+  groomEnglishName: string;
+  brideEnglishName: string;
+  password: string;
+  productTier: InvitationProductTier;
+  defaultTheme: InvitationThemeKey;
+}
+
+export interface CreateOwnedCustomerEventResult {
+  slug: string;
+  eventId: string;
+}
+
 function extractPageSlugFromInput(value: string) {
   const trimmedValue = value.trim();
   if (!trimmedValue) {
@@ -479,5 +495,53 @@ export async function claimOwnedCustomerEvent(input: {
     slug: payload?.slug ?? pageSlug,
     eventId: payload?.eventId ?? '',
     editableConfig: normalizeEditableConfig(payload?.config),
+  };
+}
+
+export async function createOwnedCustomerEvent(
+  input: CreateOwnedCustomerEventInput
+): Promise<CreateOwnedCustomerEventResult> {
+  const idToken = await getCurrentFirebaseIdToken();
+  if (!idToken) {
+    throw new Error('로그인 상태를 확인하지 못했습니다. 다시 로그인해 주세요.');
+  }
+
+  const response = await fetch('/api/customer/events/', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${idToken}`,
+    },
+    body: JSON.stringify({
+      slugBase: input.slugBase,
+      groomName: input.groomName,
+      brideName: input.brideName,
+      groomEnglishName: input.groomEnglishName,
+      brideEnglishName: input.brideEnglishName,
+      password: input.password,
+      productTier: input.productTier,
+      defaultTheme: input.defaultTheme,
+    }),
+  });
+  const payload = (await response.json().catch(() => null)) as
+    | {
+        success?: boolean;
+        slug?: string;
+        eventId?: string;
+        error?: string;
+      }
+    | null;
+
+  if (!response.ok) {
+    throw new Error(
+      typeof payload?.error === 'string' && payload.error.trim()
+        ? payload.error
+        : '청첩장 생성에 실패했습니다.'
+    );
+  }
+
+  return {
+    slug: typeof payload?.slug === 'string' ? payload.slug : '',
+    eventId: typeof payload?.eventId === 'string' ? payload.eventId : '',
   };
 }

@@ -1,16 +1,19 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 import { getEventTypeDisplayLabel } from '@/lib/eventTypes';
 import type {
   AdminCustomerAccountSummary,
   AdminCustomerLinkedEventSummary,
 } from '@/services';
+import type { InvitationProductTier } from '@/types/invitationPage';
 
-import { EmptyState, FilterToolbar, StatusBadge } from '.';
+import { EmptyState, FilterToolbar, Pagination, StatusBadge } from '.';
 import { formatDateTime } from './adminPageUtils';
 import styles from '../page.module.css';
+
+const CUSTOMER_ACCOUNTS_PAGE_SIZE = 5;
 
 interface AdminCustomerAccountsTabProps {
   loading: boolean;
@@ -18,9 +21,19 @@ interface AdminCustomerAccountsTabProps {
   accounts: AdminCustomerAccountSummary[];
   unassignedEvents: AdminCustomerLinkedEventSummary[];
   ownershipActionToken: string | null;
+  walletGrantActionToken: string | null;
   onRefresh: () => void;
   onAssign: (uid: string, pageSlug: string) => void;
   onClear: (pageSlug: string) => void;
+  onGrantWalletCredit: (
+    uid: string,
+    grant: {
+      kind: 'pageCreation' | 'operationTicket';
+      quantity: number;
+      tier?: InvitationProductTier | null;
+      note?: string | null;
+    }
+  ) => void;
 }
 
 function formatDateValue(value: string | null) {
@@ -53,19 +66,73 @@ function getProviderLabels(providerIds: string[]) {
   });
 }
 
+function formatWalletUpdatedAt(value: string | null) {
+  return value ? formatDateValue(value) : '지급 이력 없음';
+}
+
+function getLedgerSourceLabel(source: string) {
+  switch (source) {
+    case 'adminGrant':
+      return '관리자 지급';
+    case 'mobilePurchase':
+      return '모바일 결제';
+    case 'webPurchase':
+      return '웹 결제';
+    case 'eventAssignment':
+      return '이벤트 배정';
+    case 'migration':
+      return '이관';
+    default:
+      return '시스템';
+  }
+}
+
+function getLedgerDirectionLabel(direction: string) {
+  return direction === 'debit' ? '사용' : '지급';
+}
+
+function getLedgerStatusLabel(status: string) {
+  switch (status) {
+    case 'consumed':
+      return '소비됨';
+    case 'assigned':
+      return '배정됨';
+    case 'revoked':
+      return '회수됨';
+    case 'refunded':
+      return '환불됨';
+    default:
+      return '보유 반영';
+  }
+}
+
 export default function AdminCustomerAccountsTab({
   loading,
   refreshing,
   accounts,
   unassignedEvents,
   ownershipActionToken,
+  walletGrantActionToken,
   onRefresh,
   onAssign,
   onClear,
+  onGrantWalletCredit,
 }: AdminCustomerAccountsTabProps) {
   const [searchQuery, setSearchQuery] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
   const [draftAssignments, setDraftAssignments] = useState<Record<string, string>>({});
   const [selectedLinkedEvents, setSelectedLinkedEvents] = useState<Record<string, string>>({});
+  const [grantDrafts, setGrantDrafts] = useState<
+    Record<
+      string,
+      {
+        tier: InvitationProductTier;
+        pageCreationQuantity: string;
+        operationTicketQuantity: string;
+        note: string;
+      }
+    >
+  >({});
 
   const filteredAccounts = useMemo(() => {
     const normalizedQuery = searchQuery.trim().toLowerCase();
@@ -91,6 +158,25 @@ export default function AdminCustomerAccountsTab({
     () => accounts.reduce((sum, account) => sum + account.linkedEvents.length, 0),
     [accounts]
   );
+  const totalPages = Math.max(
+    1,
+    Math.ceil(filteredAccounts.length / CUSTOMER_ACCOUNTS_PAGE_SIZE)
+  );
+  const normalizedCurrentPage = Math.min(currentPage, totalPages);
+  const paginatedAccounts = filteredAccounts.slice(
+    (normalizedCurrentPage - 1) * CUSTOMER_ACCOUNTS_PAGE_SIZE,
+    normalizedCurrentPage * CUSTOMER_ACCOUNTS_PAGE_SIZE
+  );
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery]);
+
+  useEffect(() => {
+    if (currentPage !== normalizedCurrentPage) {
+      setCurrentPage(normalizedCurrentPage);
+    }
+  }, [currentPage, normalizedCurrentPage]);
 
   const getSelectedLinkedEvent = (account: AdminCustomerAccountSummary) => {
     if (!account.linkedEvents.length) {
@@ -101,6 +187,200 @@ export default function AdminCustomerAccountsTab({
     return (
       account.linkedEvents.find((event) => event.slug === selectedSlug) ??
       account.linkedEvents[0]
+    );
+  };
+
+  const getGrantDraft = (uid: string) =>
+    grantDrafts[uid] ?? {
+      tier: 'standard' as InvitationProductTier,
+      pageCreationQuantity: '1',
+      operationTicketQuantity: '1',
+      note: '',
+    };
+
+  const updateGrantDraft = (
+    uid: string,
+    patch: Partial<ReturnType<typeof getGrantDraft>>
+  ) => {
+    setGrantDrafts((current) => ({
+      ...current,
+      [uid]: {
+        ...(current[uid] ?? getGrantDraft(uid)),
+        ...patch,
+      },
+    }));
+  };
+
+  const readGrantQuantity = (value: string) => {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? Math.max(0, Math.trunc(parsed)) : 0;
+  };
+
+  const renderWalletManager = (account: AdminCustomerAccountSummary) => {
+    const draft = getGrantDraft(account.uid);
+    const isGrantingPageCreation =
+      walletGrantActionToken === `grant:${account.uid}:pageCreation`;
+    const isGrantingOperationTicket =
+      walletGrantActionToken === `grant:${account.uid}:operationTicket`;
+    const pageCreationQuantity = readGrantQuantity(draft.pageCreationQuantity);
+    const operationTicketQuantity = readGrantQuantity(draft.operationTicketQuantity);
+
+    return (
+      <div className={styles.walletPanel}>
+        <p className={styles.walletSectionLabel}>현재 보유</p>
+        <div className={styles.walletSummaryGrid}>
+          <span className={styles.walletMetric}>
+            STANDARD {account.wallet.pageCreationCredits.standard}
+          </span>
+          <span className={styles.walletMetric}>
+            DELUXE {account.wallet.pageCreationCredits.deluxe}
+          </span>
+          <span className={styles.walletMetric}>
+            PREMIUM {account.wallet.pageCreationCredits.premium}
+          </span>
+          <span className={styles.walletMetric}>
+            운영 티켓 {account.wallet.operationTicketBalance}장
+          </span>
+        </div>
+        <p className={styles.tableSubtext}>
+          최근 갱신 · {formatWalletUpdatedAt(account.wallet.updatedAt)}
+        </p>
+        <p className={styles.tableSubtext}>
+          새 이벤트 생성은 STANDARD/DELUXE/PREMIUM 제작권만 사용합니다. 운영 티켓은 생성된
+          청첩장 운영용입니다.
+        </p>
+
+        <div className={styles.walletGrantGrid}>
+          <label className="admin-field">
+            <span className="admin-field-label">제작권 등급</span>
+            <select
+              className="admin-input"
+              value={draft.tier}
+              disabled={account.missingAuthUser}
+              onChange={(event) =>
+                updateGrantDraft(account.uid, {
+                  tier: event.target.value as InvitationProductTier,
+                })
+              }
+            >
+              <option value="standard">STANDARD</option>
+              <option value="deluxe">DELUXE</option>
+              <option value="premium">PREMIUM</option>
+            </select>
+          </label>
+          <label className="admin-field">
+            <span className="admin-field-label">제작권 수량</span>
+            <input
+              className="admin-input"
+              type="number"
+              min="1"
+              step="1"
+              value={draft.pageCreationQuantity}
+              disabled={account.missingAuthUser}
+              onChange={(event) =>
+                updateGrantDraft(account.uid, {
+                  pageCreationQuantity: event.target.value,
+                })
+              }
+            />
+          </label>
+          <button
+            type="button"
+            className="admin-button admin-button-primary"
+            disabled={
+              account.missingAuthUser ||
+              pageCreationQuantity <= 0 ||
+              isGrantingPageCreation
+            }
+            onClick={() =>
+              onGrantWalletCredit(account.uid, {
+                kind: 'pageCreation',
+                tier: draft.tier,
+                quantity: pageCreationQuantity,
+                note: draft.note,
+              })
+            }
+          >
+            {isGrantingPageCreation ? '지급 중..' : '제작권 지급'}
+          </button>
+        </div>
+
+        <div className={styles.walletGrantGrid}>
+          <label className="admin-field">
+            <span className="admin-field-label">운영 티켓 수량</span>
+            <input
+              className="admin-input"
+              type="number"
+              min="1"
+              step="1"
+              value={draft.operationTicketQuantity}
+              disabled={account.missingAuthUser}
+              onChange={(event) =>
+                updateGrantDraft(account.uid, {
+                  operationTicketQuantity: event.target.value,
+                })
+              }
+            />
+          </label>
+          <label className="admin-field">
+            <span className="admin-field-label">메모</span>
+            <input
+              className="admin-input"
+              type="text"
+              value={draft.note}
+              disabled={account.missingAuthUser}
+              placeholder="선택 입력"
+              onChange={(event) =>
+                updateGrantDraft(account.uid, {
+                  note: event.target.value,
+                })
+              }
+            />
+          </label>
+          <button
+            type="button"
+            className="admin-button admin-button-secondary"
+            disabled={
+              account.missingAuthUser ||
+              operationTicketQuantity <= 0 ||
+              isGrantingOperationTicket
+            }
+            onClick={() =>
+              onGrantWalletCredit(account.uid, {
+                kind: 'operationTicket',
+                quantity: operationTicketQuantity,
+                note: draft.note,
+              })
+            }
+          >
+            {isGrantingOperationTicket ? '지급 중..' : '운영 티켓 지급'}
+          </button>
+        </div>
+
+        <div className={styles.walletLedgerPanel}>
+          <p className={styles.walletSectionLabel}>최근 이용권 이력</p>
+          {account.wallet.recentLedger.length > 0 ? (
+            <div className={styles.walletLedgerList}>
+              {account.wallet.recentLedger.slice(0, 5).map((entry) => (
+                <div className={styles.walletLedgerItem} key={entry.id}>
+                  <strong>
+                    {getLedgerDirectionLabel(entry.direction)} ·{' '}
+                    {entry.kind === 'pageCreation'
+                      ? `${entry.tier?.toUpperCase() ?? '제작권'} ${entry.quantity}개`
+                      : `운영 티켓 ${entry.quantity}장`}
+                  </strong>
+                  <span>
+                    {getLedgerSourceLabel(entry.source)} · {getLedgerStatusLabel(entry.status)}
+                    {entry.createdAt ? ` · ${formatDateValue(entry.createdAt)}` : ''}
+                  </span>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <span className={styles.emptyInlineText}>아직 지급 또는 사용 이력이 없습니다.</span>
+          )}
+        </div>
+      </div>
     );
   };
 
@@ -180,6 +460,118 @@ export default function AdminCustomerAccountsTab({
     );
   };
 
+  const renderAccountCard = (account: AdminCustomerAccountSummary, index: number) => {
+    const providerLabels = getProviderLabels(account.providerIds);
+    const selectedSlug = draftAssignments[account.uid] ?? '';
+    const isAssigning = ownershipActionToken === `assign:${account.uid}:${selectedSlug}`;
+
+    return (
+      <article className={styles.accountCard} key={account.uid}>
+        <div className={styles.accountCardHeader}>
+          <div className={styles.accountCardIdentity}>
+            <span className={styles.rowNumber}>{index + 1}</span>
+            <div className={styles.identityStack}>
+              <div className={styles.customerIdentityHeader}>
+                <h3 className={styles.accountCardTitle}>
+                  {account.displayName || account.email || account.uid}
+                </h3>
+                {account.isAdmin ? <StatusBadge tone="primary">관리자</StatusBadge> : null}
+              </div>
+              <p className={styles.tableSubtext}>{account.email ?? '이메일 없음'}</p>
+              <p className={styles.tableSubtext}>UID · {account.uid}</p>
+            </div>
+          </div>
+
+          <div className={styles.accountCardBadges}>
+            <StatusBadge tone={account.disabled ? 'danger' : 'success'}>
+              {account.disabled ? '비활성화' : '사용 가능'}
+            </StatusBadge>
+            <StatusBadge tone={account.emailVerified ? 'success' : 'warning'}>
+              {account.emailVerified ? '이메일 확인됨' : '이메일 미확인'}
+            </StatusBadge>
+            {account.missingAuthUser ? (
+              <StatusBadge tone="danger">삭제된 계정</StatusBadge>
+            ) : null}
+          </div>
+        </div>
+
+        <div className={styles.accountCardMetaGrid}>
+          <span>로그인 수단 · {providerLabels.join(', ')}</span>
+          <span>최근 로그인 · {formatDateValue(account.lastSignInAt)}</span>
+          <span>연결된 청첩장 · {account.linkedEvents.length}개</span>
+        </div>
+
+        <div className={styles.accountCardBody}>
+          <section className={`${styles.accountCardSection} ${styles.accountConnectSection}`}>
+            <div className={styles.accountCardSectionHeader}>
+              <h4 className={styles.accountCardSectionTitle}>새 청첩장 연결</h4>
+              <StatusBadge tone={unassignedEvents.length > 0 ? 'warning' : 'neutral'}>
+                미연결 {unassignedEvents.length}개
+              </StatusBadge>
+            </div>
+            <div className={styles.accountConnectPanel}>
+              <div className={styles.inlineInputGroup}>
+                <select
+                  className="admin-input"
+                  value={selectedSlug}
+                  disabled={account.missingAuthUser || !unassignedEvents.length}
+                  onChange={(event) =>
+                    setDraftAssignments((current) => ({
+                      ...current,
+                      [account.uid]: event.target.value,
+                    }))
+                  }
+                >
+                  <option value="">연결할 청첩장 선택</option>
+                  {unassignedEvents.map((event) => (
+                    <option key={event.slug} value={event.slug}>
+                      [{getEventTypeDisplayLabel(event.eventType)}] {event.displayName} ({event.slug})
+                    </option>
+                  ))}
+                </select>
+                <button
+                  type="button"
+                  className="admin-button admin-button-primary"
+                  disabled={account.missingAuthUser || !selectedSlug || isAssigning}
+                  onClick={() => onAssign(account.uid, selectedSlug)}
+                >
+                  {isAssigning ? '연결 중..' : '청첩장 연결'}
+                </button>
+              </div>
+              <span className={styles.actionHint}>
+                {account.missingAuthUser
+                  ? '삭제된 계정에는 청첩장을 연결할 수 없습니다.'
+                  : unassignedEvents.length > 0
+                    ? '미연결 청첩장을 선택하면 고객 페이지에서 바로 관리할 수 있습니다.'
+                    : '현재 바로 연결할 수 있는 미연결 청첩장이 없습니다.'}
+              </span>
+            </div>
+          </section>
+
+          <section className={styles.accountCardSection}>
+            <div className={styles.accountCardSectionHeader}>
+              <h4 className={styles.accountCardSectionTitle}>연결된 청첩장</h4>
+              <StatusBadge tone={account.linkedEvents.length > 0 ? 'primary' : 'neutral'}>
+                {account.linkedEvents.length}개
+              </StatusBadge>
+            </div>
+            {renderLinkedEventManager(account)}
+          </section>
+
+          <section className={styles.accountCardSection}>
+            <div className={styles.accountCardSectionHeader}>
+              <h4 className={styles.accountCardSectionTitle}>보유 이용권</h4>
+              <StatusBadge tone="neutral">
+                운영 티켓 {account.wallet.operationTicketBalance}장
+              </StatusBadge>
+            </div>
+            {renderWalletManager(account)}
+          </section>
+        </div>
+      </article>
+    );
+  };
+
   return (
     <div className={styles.panelStack}>
       <div className={styles.sectionHeader}>
@@ -191,7 +583,7 @@ export default function AdminCustomerAccountsTab({
           </p>
         </div>
         <p className={styles.sectionMeta}>
-          계정 {accounts.length}개 · 연결된 이벤트 {totalLinkedEvents}개 · 미연결 이벤트{' '}
+          계정 {accounts.length}개 · 화면 표시 최대 5개 · 연결된 이벤트 {totalLinkedEvents}개 · 미연결 이벤트{' '}
           {unassignedEvents.length}개
         </p>
       </div>
@@ -258,178 +650,21 @@ export default function AdminCustomerAccountsTab({
         </div>
       ) : filteredAccounts.length > 0 ? (
         <>
-          <div className={styles.tableCard}>
-            <div className={styles.tableScroll} tabIndex={0} role="region" aria-label="고객 계정 목록">
-              <table className={styles.dataTable}>
-                <thead>
-                  <tr>
-                    <th>고객 계정</th>
-                    <th>인증 상태</th>
-                    <th>연결된 청첩장</th>
-                    <th>새 청첩장 연결</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredAccounts.map((account, index) => {
-                    const providerLabels = getProviderLabels(account.providerIds);
-                    const selectedSlug = draftAssignments[account.uid] ?? '';
-                    const isAssigning = ownershipActionToken === `assign:${account.uid}:${selectedSlug}`;
-
-                    return (
-                      <tr key={account.uid} className={styles.tableRowInteractive}>
-                        <td>
-                          <div className={styles.tablePrimary}>
-                            <span className={styles.rowNumber}>{index + 1}</span>
-                            <div className={styles.identityStack}>
-                              <div className={styles.customerIdentityHeader}>
-                                <p className={styles.tableTitle}>
-                                  {account.displayName || account.email || account.uid}
-                                </p>
-                                {account.isAdmin ? (
-                                  <StatusBadge tone="primary">관리자</StatusBadge>
-                                ) : null}
-                              </div>
-                              <p className={styles.tableSubtext}>{account.email ?? '이메일 없음'}</p>
-                              <p className={styles.tableSubtext}>UID · {account.uid}</p>
-                            </div>
-                          </div>
-                        </td>
-                        <td>
-                          <div className={styles.statusCell}>
-                            <div className={styles.customerStatusRow}>
-                              <StatusBadge tone={account.disabled ? 'danger' : 'success'}>
-                                {account.disabled ? '비활성화' : '사용 가능'}
-                              </StatusBadge>
-                              <StatusBadge tone={account.emailVerified ? 'success' : 'warning'}>
-                                {account.emailVerified ? '이메일 확인됨' : '이메일 미확인'}
-                              </StatusBadge>
-                              {account.missingAuthUser ? (
-                                <StatusBadge tone="danger">삭제된 계정</StatusBadge>
-                              ) : null}
-                            </div>
-                            <span className={styles.tableSubtext}>
-                              로그인 수단 · {providerLabels.join(', ')}
-                            </span>
-                            <span className={styles.tableSubtext}>
-                              최근 로그인 · {formatDateValue(account.lastSignInAt)}
-                            </span>
-                          </div>
-                        </td>
-                        <td>{renderLinkedEventManager(account)}</td>
-                        <td>
-                          <div className={styles.actionStack}>
-                            <div className={styles.inlineInputGroup}>
-                              <select
-                                className="admin-input"
-                                value={selectedSlug}
-                                disabled={account.missingAuthUser || !unassignedEvents.length}
-                                onChange={(event) =>
-                                  setDraftAssignments((current) => ({
-                                    ...current,
-                                    [account.uid]: event.target.value,
-                                  }))
-                                }
-                              >
-                                <option value="">연결할 청첩장 선택</option>
-                                {unassignedEvents.map((event) => (
-                                <option key={event.slug} value={event.slug}>
-                                    [{getEventTypeDisplayLabel(event.eventType)}] {event.displayName} ({event.slug})
-                                </option>
-                                ))}
-                              </select>
-                              <button
-                                type="button"
-                                className="admin-button admin-button-primary"
-                                disabled={account.missingAuthUser || !selectedSlug || isAssigning}
-                                onClick={() => onAssign(account.uid, selectedSlug)}
-                              >
-                                {isAssigning ? '연결 중..' : '청첩장 연결'}
-                              </button>
-                            </div>
-                            <span className={styles.actionHint}>
-                              {account.missingAuthUser
-                                ? '삭제된 계정에는 청첩장을 연결할 수 없습니다.'
-                                : unassignedEvents.length > 0
-                                  ? '미연결 청첩장을 선택하면 고객 페이지에서 바로 관리할 수 있습니다.'
-                                  : '현재 바로 연결할 수 있는 미연결 청첩장이 없습니다.'}
-                            </span>
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
+          <div className={styles.accountCardList}>
+            {paginatedAccounts.map((account, index) =>
+              renderAccountCard(
+                account,
+                (normalizedCurrentPage - 1) * CUSTOMER_ACCOUNTS_PAGE_SIZE + index
+              )
+            )}
           </div>
-
-          <div className={styles.mobileList}>
-            {filteredAccounts.map((account) => {
-              const providerLabels = getProviderLabels(account.providerIds);
-              const selectedSlug = draftAssignments[account.uid] ?? '';
-              const isAssigning = ownershipActionToken === `assign:${account.uid}:${selectedSlug}`;
-
-              return (
-                <article className={styles.mobileCard} key={account.uid}>
-                  <div className={styles.mobileCardHead}>
-                    <div>
-                      <div className={styles.customerIdentityHeader}>
-                        <h3 className={styles.mobileCardTitle}>
-                          {account.displayName || account.email || account.uid}
-                        </h3>
-                        {account.isAdmin ? (
-                          <StatusBadge tone="primary">관리자</StatusBadge>
-                        ) : null}
-                      </div>
-                      <p className={styles.mobileCardSlug}>{account.email ?? '이메일 없음'}</p>
-                      <p className={styles.mobileCardSlug}>UID · {account.uid}</p>
-                    </div>
-                    <StatusBadge tone={account.disabled ? 'danger' : 'success'}>
-                      {account.disabled ? '비활성화' : '사용 가능'}
-                    </StatusBadge>
-                  </div>
-
-                  <div className={styles.metaStack}>
-                    <span className={styles.tableSubtext}>로그인 수단 · {providerLabels.join(', ')}</span>
-                    <span className={styles.tableSubtext}>
-                      최근 로그인 · {formatDateValue(account.lastSignInAt)}
-                    </span>
-                  </div>
-
-                  {renderLinkedEventManager(account)}
-
-                  <div className={styles.actionStack}>
-                    <select
-                      className="admin-input"
-                      value={selectedSlug}
-                      disabled={account.missingAuthUser || !unassignedEvents.length}
-                      onChange={(event) =>
-                        setDraftAssignments((current) => ({
-                          ...current,
-                          [account.uid]: event.target.value,
-                        }))
-                      }
-                    >
-                      <option value="">연결할 청첩장 선택</option>
-                      {unassignedEvents.map((event) => (
-                      <option key={event.slug} value={event.slug}>
-                          [{getEventTypeDisplayLabel(event.eventType)}] {event.displayName} ({event.slug})
-                      </option>
-                      ))}
-                    </select>
-                    <button
-                      type="button"
-                      className="admin-button admin-button-primary"
-                      disabled={account.missingAuthUser || !selectedSlug || isAssigning}
-                      onClick={() => onAssign(account.uid, selectedSlug)}
-                    >
-                      {isAssigning ? '연결 중..' : '청첩장 연결'}
-                    </button>
-                  </div>
-                </article>
-              );
-            })}
-          </div>
+          <Pagination
+            currentPage={normalizedCurrentPage}
+            totalPages={totalPages}
+            totalItems={filteredAccounts.length}
+            pageSize={CUSTOMER_ACCOUNTS_PAGE_SIZE}
+            onPageChange={setCurrentPage}
+          />
         </>
       ) : (
         <EmptyState

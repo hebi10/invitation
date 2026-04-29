@@ -4,6 +4,11 @@ import {
   normalizeEventTypeKey,
   type EventTypeKey,
 } from '@/lib/eventTypes';
+import {
+  EMPTY_CUSTOMER_PAGE_CREATION_CREDITS,
+  type CustomerWalletLedgerEntry,
+  type CustomerWalletSummary,
+} from '@/types/customerWallet';
 
 import { getCurrentFirebaseIdToken } from './adminAuth';
 
@@ -29,6 +34,7 @@ export interface AdminCustomerAccountSummary {
   lastSignInAt: string | null;
   missingAuthUser: boolean;
   linkedEvents: AdminCustomerLinkedEventSummary[];
+  wallet: CustomerWalletSummary;
 }
 
 export interface AdminCustomerAccountsSnapshot {
@@ -82,6 +88,125 @@ function normalizeLinkedEvent(input: unknown): AdminCustomerLinkedEventSummary |
   };
 }
 
+function normalizeWalletLedgerEntry(input: unknown): CustomerWalletLedgerEntry | null {
+  if (!input || typeof input !== 'object' || Array.isArray(input)) {
+    return null;
+  }
+
+  const record = input as Record<string, unknown>;
+  const id = typeof record.id === 'string' ? record.id.trim() : '';
+  const ownerUid = typeof record.ownerUid === 'string' ? record.ownerUid.trim() : '';
+  const kind = record.kind === 'pageCreation' || record.kind === 'operationTicket'
+    ? record.kind
+    : null;
+  const direction = record.direction === 'credit' || record.direction === 'debit'
+    ? record.direction
+    : null;
+  const source =
+    record.source === 'adminGrant' ||
+    record.source === 'mobilePurchase' ||
+    record.source === 'webPurchase' ||
+    record.source === 'eventAssignment' ||
+    record.source === 'migration' ||
+    record.source === 'system'
+      ? record.source
+      : null;
+  const platform =
+    record.platform === 'admin' ||
+    record.platform === 'mobile' ||
+    record.platform === 'web' ||
+    record.platform === 'system'
+      ? record.platform
+      : null;
+  const status =
+    record.status === 'active' ||
+    record.status === 'consumed' ||
+    record.status === 'assigned' ||
+    record.status === 'revoked' ||
+    record.status === 'refunded'
+      ? record.status
+      : 'active';
+  const quantity =
+    typeof record.quantity === 'number' && Number.isFinite(record.quantity)
+      ? Math.max(0, Math.trunc(record.quantity))
+      : 0;
+  const tier =
+    record.tier === 'standard' || record.tier === 'deluxe' || record.tier === 'premium'
+      ? record.tier
+      : null;
+
+  if (!id || !ownerUid || !kind || !direction || !source || !platform || quantity <= 0) {
+    return null;
+  }
+
+  return {
+    id,
+    ownerUid,
+    kind,
+    direction,
+    quantity,
+    tier,
+    source,
+    platform,
+    status,
+    eventId: typeof record.eventId === 'string' && record.eventId.trim() ? record.eventId.trim() : null,
+    pageSlug: typeof record.pageSlug === 'string' && record.pageSlug.trim() ? record.pageSlug.trim() : null,
+    transactionId:
+      typeof record.transactionId === 'string' && record.transactionId.trim()
+        ? record.transactionId.trim()
+        : null,
+    provider: typeof record.provider === 'string' && record.provider.trim() ? record.provider.trim() : null,
+    note: typeof record.note === 'string' && record.note.trim() ? record.note.trim() : null,
+    createdByUid:
+      typeof record.createdByUid === 'string' && record.createdByUid.trim()
+        ? record.createdByUid.trim()
+        : null,
+    createdAt: toDateString(record.createdAt),
+  };
+}
+
+function readFiniteCount(value: unknown) {
+  return typeof value === 'number' && Number.isFinite(value)
+    ? Math.max(0, Math.trunc(value))
+    : 0;
+}
+
+function normalizeWallet(input: unknown, ownerUid: string): CustomerWalletSummary {
+  if (!input || typeof input !== 'object' || Array.isArray(input)) {
+    return {
+      ownerUid,
+      pageCreationCredits: { ...EMPTY_CUSTOMER_PAGE_CREATION_CREDITS },
+      operationTicketBalance: 0,
+      updatedAt: null,
+      recentLedger: [],
+    };
+  }
+
+  const record = input as Record<string, unknown>;
+  const creditsInput =
+    record.pageCreationCredits &&
+    typeof record.pageCreationCredits === 'object' &&
+    !Array.isArray(record.pageCreationCredits)
+      ? record.pageCreationCredits as Record<string, unknown>
+      : {};
+
+  return {
+    ownerUid,
+    pageCreationCredits: {
+      standard: readFiniteCount(creditsInput.standard),
+      deluxe: readFiniteCount(creditsInput.deluxe),
+      premium: readFiniteCount(creditsInput.premium),
+    },
+    operationTicketBalance: readFiniteCount(record.operationTicketBalance),
+    updatedAt: toDateString(record.updatedAt),
+    recentLedger: Array.isArray(record.recentLedger)
+      ? record.recentLedger
+          .map((entry) => normalizeWalletLedgerEntry(entry))
+          .filter((entry): entry is CustomerWalletLedgerEntry => Boolean(entry))
+      : [],
+  };
+}
+
 function normalizeAccount(input: unknown): AdminCustomerAccountSummary | null {
   if (!input || typeof input !== 'object' || Array.isArray(input)) {
     return null;
@@ -116,6 +241,7 @@ function normalizeAccount(input: unknown): AdminCustomerAccountSummary | null {
           .map((entry) => normalizeLinkedEvent(entry))
           .filter((entry): entry is AdminCustomerLinkedEventSummary => Boolean(entry))
       : [],
+    wallet: normalizeWallet(record.wallet, uid),
   };
 }
 
@@ -212,4 +338,46 @@ export async function clearAdminCustomerEventOwnership(pageSlug: string) {
         : '고객 계정 연결을 해제하지 못했습니다.'
     );
   }
+}
+
+export async function grantAdminCustomerWalletCredit(input: {
+  uid: string;
+  kind: 'pageCreation' | 'operationTicket';
+  quantity: number;
+  tier?: 'standard' | 'deluxe' | 'premium' | null;
+  note?: string | null;
+}) {
+  if (!input.uid.trim()) {
+    throw new Error('지급할 고객 계정을 먼저 확인해 주세요.');
+  }
+
+  const headers = await createAdminAuthHeaders();
+  const response = await fetch('/api/admin/customers/wallet', {
+    method: 'POST',
+    headers: {
+      ...headers,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      action: 'grant',
+      uid: input.uid.trim(),
+      kind: input.kind,
+      quantity: input.quantity,
+      tier: input.kind === 'pageCreation' ? input.tier : null,
+      note: input.note ?? null,
+    }),
+  });
+  const payload = (await response.json().catch(() => null)) as
+    | { success?: boolean; wallet?: unknown; error?: string }
+    | null;
+
+  if (!response.ok) {
+    throw new Error(
+      typeof payload?.error === 'string' && payload.error.trim()
+        ? payload.error
+        : '고객 이용권을 지급하지 못했습니다.'
+    );
+  }
+
+  return normalizeWallet(payload?.wallet, input.uid.trim());
 }

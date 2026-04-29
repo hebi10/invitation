@@ -107,6 +107,12 @@
   color: #1d2430;
 }
 
+.primaryButton:disabled,
+.secondaryButton:disabled {
+  cursor: not-allowed;
+  opacity: 0.58;
+}
+
 .section {
   display: grid;
   gap: 16px;
@@ -196,6 +202,86 @@
   font-weight: 600;
 }
 
+.notice {
+  margin: 0;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: #fff7e6;
+  color: #7a4b12;
+  font-size: 0.94rem;
+  font-weight: 700;
+  line-height: 1.55;
+}
+
+.formCard {
+  display: grid;
+  gap: 18px;
+  padding: 22px;
+  border: 1px solid #ebe3d7;
+  border-radius: 18px;
+  background: #fbfaf7;
+}
+
+.walletCreditGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.walletCreditItem,
+.walletCreditActive {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 38px;
+  padding: 0 10px;
+  border-radius: 12px;
+  border: 1px solid #e3d9ca;
+  color: #66707f;
+  font-size: 0.85rem;
+  font-weight: 800;
+  text-align: center;
+}
+
+.walletCreditActive {
+  border-color: #b5895f;
+  background: #f7ead9;
+  color: #1d2430;
+}
+
+.formGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.field {
+  display: grid;
+  gap: 8px;
+  color: #1d2430;
+  font-size: 0.9rem;
+  font-weight: 800;
+}
+
+.input {
+  width: 100%;
+  min-height: 48px;
+  padding: 0 14px;
+  box-sizing: border-box;
+  border: 1px solid #d9e0e8;
+  border-radius: 14px;
+  background: #ffffff;
+  color: #1d2430;
+  font: inherit;
+  font-weight: 600;
+  outline: none;
+}
+
+.input:focus {
+  border-color: #1d2430;
+  box-shadow: 0 0 0 3px rgba(29, 36, 48, 0.1);
+}
+
 @media (max-width: 768px) {
   .page {
     padding: 20px 14px 48px;
@@ -220,5 +306,14 @@
   .heroActions,
   .actions {
     flex-direction: column;
+  }
+
+  .formCard {
+    padding: 16px;
+  }
+
+  .walletCreditGrid,
+  .formGrid {
+    grid-template-columns: 1fr;
   }
 }

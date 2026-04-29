@@ -91,8 +91,14 @@
 - 모바일 티켓 디자인 판정은 React hook 밖의 순수 helper에 두고, 훅과 검증 스크립트가 같은 기준을 사용한다.
   - `apps/mobile/src/features/manage/ticketThemeValidation.ts`
   - `apps/mobile/src/features/manage/hooks/useTicketOperations.ts`
+- 모바일 티켓팩 결제는 기존처럼 대상 청첩장에 바로 적립하고, 대상 이벤트가 고객 계정에 연결되어 있으면 `customerWallets/{uid}/ledger`에 구매와 이벤트 배정 이력을 함께 남긴다.
+  - `src/server/mobileBillingServerService.ts`
+  - `src/server/customerWalletServerService.ts`
+- 결제 없는 모바일 직접 초안 생성 API는 운영에서 기본 차단하고, `MOBILE_DRAFT_CREATION_ENABLED=true`일 때만 허용한다.
+  - `src/app/api/mobile/client-editor/drafts/route.ts`
 
 ## 후속 작업
 - 앱 연동 링크의 사용 이력 조회 UI가 필요하면 운영 화면에 최근 발급 상태를 추가한다.
 - 앱 미설치 사용자를 위한 설치 안내 분기나 스토어 이동 문구는 fallback 페이지에서 확장할 수 있다.
 - 모바일 비밀번호 변경, 청첩장 삭제, 방명록 전체 삭제 API가 추가되면 같은 high-risk helper를 재사용한다.
+- 모바일 RevenueCat `appUserId`와 Firebase 고객 UID를 연결하면 모바일에서 산 미사용 제작권도 PC 고객 페이지에서 소비할 수 있다.

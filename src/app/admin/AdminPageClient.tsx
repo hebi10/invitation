@@ -166,6 +166,7 @@ export default function AdminPageClient() {
     updatingTierPageSlug,
     deletingPageSlug,
     ownershipActionToken,
+    walletGrantActionToken,
     refreshPages,
     fetchComments,
     fetchPasswords,
@@ -176,6 +177,7 @@ export default function AdminPageClient() {
     handleSavePassword,
     handleAssignCustomerOwnership,
     handleClearCustomerOwnership,
+    handleGrantCustomerWalletCredit,
     handleTogglePublished,
     handleChangeTier,
     handleEnableVariant,
@@ -910,11 +912,15 @@ export default function AdminPageClient() {
               accounts={customerAccounts}
               unassignedEvents={unassignedCustomerEvents}
               ownershipActionToken={ownershipActionToken}
+              walletGrantActionToken={walletGrantActionToken}
               onRefresh={() => void fetchCustomerAccounts()}
               onAssign={(uid, pageSlug) =>
                 void handleAssignCustomerOwnership(uid, pageSlug)
               }
               onClear={(pageSlug) => void handleClearCustomerOwnership(pageSlug)}
+              onGrantWalletCredit={(uid, grant) =>
+                void handleGrantCustomerWalletCredit(uid, grant)
+              }
             />
           ) : null}
 

@@ -3,6 +3,11 @@ import 'server-only';
 import type { UserRecord } from 'firebase-admin/auth';
 
 import type { EventTypeKey } from '@/lib/eventTypes';
+import type { CustomerWalletSummary } from '@/types/customerWallet';
+import {
+  EMPTY_CUSTOMER_PAGE_CREATION_CREDITS,
+} from '@/types/customerWallet';
+import { listCustomerWalletSummariesByOwnerUids } from './customerWalletServerService';
 import { listServerAdminUserIds } from './adminUserServerService';
 import { getServerAuth } from './firebaseAdmin';
 import {
@@ -33,6 +38,7 @@ export interface AdminCustomerAccountSummary {
   lastSignInAt: Date | null;
   missingAuthUser: boolean;
   linkedEvents: AdminCustomerLinkedEventSummary[];
+  wallet: CustomerWalletSummary;
 }
 
 export interface AdminCustomerAccountsSnapshot {
@@ -68,6 +74,16 @@ function toLinkedEventSummary(input: {
     defaultTheme: input.defaultTheme,
     updatedAt: input.updatedAt,
   } satisfies AdminCustomerLinkedEventSummary;
+}
+
+function buildEmptyWallet(uid: string): CustomerWalletSummary {
+  return {
+    ownerUid: uid,
+    pageCreationCredits: { ...EMPTY_CUSTOMER_PAGE_CREATION_CREDITS },
+    operationTicketBalance: 0,
+    updatedAt: null,
+    recentLedger: [],
+  };
 }
 
 async function listAllAuthUsers() {
@@ -121,6 +137,13 @@ export async function listAdminCustomerAccountsSnapshot(): Promise<AdminCustomer
   });
 
   const knownUserIds = new Set(users.map((user) => user.uid));
+  const walletOwnerUids = [
+    ...new Set([
+      ...users.map((user) => user.uid),
+      ...linkedEventsByOwnerUid.keys(),
+    ]),
+  ];
+  const walletsByOwnerUid = await listCustomerWalletSummariesByOwnerUids(walletOwnerUids);
   const orphanedAccounts = [...linkedEventsByOwnerUid.entries()]
     .filter(([uid]) => !knownUserIds.has(uid))
     .map(([uid, linkedEvents]) => ({
@@ -137,6 +160,7 @@ export async function listAdminCustomerAccountsSnapshot(): Promise<AdminCustomer
       linkedEvents: [...linkedEvents].sort((left, right) =>
         left.displayName.localeCompare(right.displayName, 'ko')
       ),
+      wallet: walletsByOwnerUid.get(uid) ?? buildEmptyWallet(uid),
     }) satisfies AdminCustomerAccountSummary);
 
   const accounts = users
@@ -156,6 +180,7 @@ export async function listAdminCustomerAccountsSnapshot(): Promise<AdminCustomer
       linkedEvents: [...(linkedEventsByOwnerUid.get(user.uid) ?? [])].sort((left, right) =>
         left.displayName.localeCompare(right.displayName, 'ko')
       ),
+      wallet: walletsByOwnerUid.get(user.uid) ?? buildEmptyWallet(user.uid),
     }) satisfies AdminCustomerAccountSummary)
     .sort((left, right) => {
       const rightLinkedCount = right.linkedEvents.length;

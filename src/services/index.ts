@@ -4,6 +4,7 @@ export * from './adminCustomerService';
 export * from './adminEventService';
 export * from './adminPasswordService';
 export * from './commentService';
+export * from './customerWalletService';
 export * from './displayPeriodService';
 export * from './imageService';
 export * from './invitationPageService';

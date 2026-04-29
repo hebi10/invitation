@@ -26,6 +26,7 @@ import {
   getAdminDashboardSummary,
   getAllComments,
   getAllManagedInvitationPages,
+  grantAdminCustomerWalletCredit,
   setClientPassword,
   setInvitationPageProductTier,
   setInvitationPagePublished,
@@ -92,6 +93,7 @@ export function useAdminData({
   const [updatingTierPageSlug, setUpdatingTierPageSlug] = useState<string | null>(null);
   const [deletingPageSlug, setDeletingPageSlug] = useState<string | null>(null);
   const [ownershipActionToken, setOwnershipActionToken] = useState<string | null>(null);
+  const [walletGrantActionToken, setWalletGrantActionToken] = useState<string | null>(null);
 
   const shouldLoadPages =
     isAdminLoggedIn &&
@@ -507,6 +509,66 @@ export function useAdminData({
     [confirm, pages, refreshAdminData, showToast]
   );
 
+  const handleGrantCustomerWalletCredit = useCallback(
+    async (
+      uid: string,
+      grant: {
+        kind: 'pageCreation' | 'operationTicket';
+        quantity: number;
+        tier?: InvitationProductTier | null;
+        note?: string | null;
+      }
+    ) => {
+      const account = customerAccounts.find((entry) => entry.uid === uid);
+      const accountName = account?.displayName || account?.email || uid;
+      const grantLabel =
+        grant.kind === 'pageCreation'
+          ? `${(grant.tier ?? 'standard').toUpperCase()} 제작권 ${grant.quantity}개`
+          : `운영 티켓 ${grant.quantity}장`;
+      const approved = await confirm({
+        title: '고객에게 이용권을 지급할까요?',
+        description: `${accountName} 계정에 ${grantLabel}를 지급합니다.`,
+        confirmLabel: '지급',
+        cancelLabel: '취소',
+      });
+
+      if (!approved) {
+        return;
+      }
+
+      const nextToken = `grant:${uid}:${grant.kind}`;
+      setWalletGrantActionToken(nextToken);
+
+      try {
+        await grantAdminCustomerWalletCredit({
+          uid,
+          kind: grant.kind,
+          quantity: grant.quantity,
+          tier: grant.kind === 'pageCreation' ? grant.tier ?? 'standard' : null,
+          note: grant.note ?? null,
+        });
+        await refreshAdminData({
+          accounts: true,
+        });
+        showToast({
+          title: '고객 이용권을 지급했습니다.',
+          tone: 'success',
+        });
+      } catch (error) {
+        console.error(error);
+        showToast({
+          title: '고객 이용권 지급에 실패했습니다.',
+          message:
+            error instanceof Error ? error.message : '잠시 후 다시 시도해 주세요.',
+          tone: 'error',
+        });
+      } finally {
+        setWalletGrantActionToken(null);
+      }
+    },
+    [confirm, customerAccounts, refreshAdminData, showToast]
+  );
+
   const handleTogglePublished = useCallback(
     async (page: InvitationPageSummary, nextPublished: boolean) => {
       if (nextPublished === page.published) {
@@ -736,6 +798,7 @@ export function useAdminData({
     updatingTierPageSlug,
     deletingPageSlug,
     ownershipActionToken,
+    walletGrantActionToken,
 
     refreshPages,
     fetchComments,
@@ -748,6 +811,7 @@ export function useAdminData({
     handleSavePassword,
     handleAssignCustomerOwnership,
     handleClearCustomerOwnership,
+    handleGrantCustomerWalletCredit,
     handleTogglePublished,
     handleChangeTier,
     handleEnableVariant,

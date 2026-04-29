@@ -92,6 +92,10 @@ export function useWizardPersistence({
   }) => Promise<void> | void;
 }) {
   const ensureDraftCreated = useCallback(async (): Promise<WizardDraftCreationState> => {
+    if (!isAdminLoggedIn) {
+      throw new Error('관리자 계정으로 로그인한 뒤 청첩장을 생성할 수 있습니다.');
+    }
+
     if (resolvedPersistedSlug) {
       return {
         slug: resolvedPersistedSlug,
@@ -143,6 +147,7 @@ export function useWizardPersistence({
     defaultSeedSlug,
     defaultTheme,
     eventType,
+    isAdminLoggedIn,
     normalizeFormState,
     previewFormState,
     resolvedPersistedSlug,

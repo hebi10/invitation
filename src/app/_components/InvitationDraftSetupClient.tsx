@@ -132,6 +132,11 @@ export default function InvitationDraftSetupClient({
   );
 
   const handleCreate = async () => {
+    if (!isAdminLoggedIn) {
+      setError('관리자 계정으로 로그인한 뒤 새 청첩장을 생성할 수 있습니다.');
+      return;
+    }
+
     if (!selectedTemplate) {
       setError('시작 템플릿을 먼저 선택해 주세요.');
       return;

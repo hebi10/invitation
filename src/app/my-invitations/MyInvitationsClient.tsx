@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useState } from 'react';
 
 import CustomerEventClaimCard from '@/app/_components/CustomerEventClaimCard';
 import { useAdmin } from '@/contexts';
@@ -16,6 +17,9 @@ import {
   type CustomerOwnedEventSummary,
   listOwnedCustomerEvents,
 } from '@/services/customerEventService';
+import { getCustomerWalletSnapshot } from '@/services/customerWalletService';
+import type { CustomerWalletSummary } from '@/types/customerWallet';
+import type { InvitationProductTier } from '@/types/invitationPage';
 
 import styles from './page.module.css';
 
@@ -33,10 +37,24 @@ function formatDate(date: Date | null | undefined) {
   }).format(date);
 }
 
+const PRODUCT_TIERS: InvitationProductTier[] = ['standard', 'deluxe', 'premium'];
+
+function getPageCreationCreditTotal(wallet: CustomerWalletSummary | null | undefined) {
+  if (!wallet) {
+    return 0;
+  }
+
+  return PRODUCT_TIERS.reduce(
+    (sum, tier) => sum + wallet.pageCreationCredits[tier],
+    0
+  );
+}
+
 export default function MyInvitationsClient() {
-  const { authUser, isLoggedIn, isAdminLoading, logout } = useAdmin();
+  const { authUser, isLoggedIn, isAdminLoading, isAdminLoggedIn, logout } = useAdmin();
   const router = useRouter();
   const queryClient = useQueryClient();
+  const [createEventNotice, setCreateEventNotice] = useState('');
   const eventsQuery = useQuery<CustomerOwnedEventSummary[]>({
     queryKey: appQueryKeys.ownedCustomerEvents(authUser?.uid ?? null),
     enabled: !isAdminLoading && isLoggedIn && Boolean(authUser?.uid),
@@ -45,25 +63,66 @@ export default function MyInvitationsClient() {
     gcTime: THIRTY_MINUTES_MS,
     refetchOnWindowFocus: false,
   });
+  const walletQuery = useQuery<CustomerWalletSummary>({
+    queryKey: appQueryKeys.customerWallet(authUser?.uid ?? null),
+    enabled: !isAdminLoading && isLoggedIn && Boolean(authUser?.uid),
+    queryFn: async () => getCustomerWalletSnapshot(authUser?.uid ?? ''),
+    staleTime: FIFTEEN_MINUTES_MS,
+    gcTime: THIRTY_MINUTES_MS,
+    refetchOnWindowFocus: false,
+  });
   const events = eventsQuery.data ?? [];
+  const wallet = walletQuery.data ?? null;
+  const pageCreationCreditTotal = getPageCreationCreditTotal(wallet);
+  const operationTicketBalance = wallet?.operationTicketBalance ?? 0;
+  const canCreateFromWallet = pageCreationCreditTotal > 0;
+  const walletLoading = walletQuery.isFetching && !walletQuery.data;
   const loading = eventsQuery.isFetching && !eventsQuery.data;
-  const refreshing = eventsQuery.isRefetching;
+  const refreshing = eventsQuery.isRefetching || walletQuery.isRefetching;
   const errorMessage =
     eventsQuery.error instanceof Error
       ? eventsQuery.error.message
-      : '';
+      : walletQuery.error instanceof Error
+        ? walletQuery.error.message
+        : '';
 
   const handleClaimed = async (slug: string) => {
     await queryClient.invalidateQueries({
       queryKey: appQueryKeys.ownedCustomerEvents(authUser?.uid ?? null),
     });
     await eventsQuery.refetch();
+    await walletQuery.refetch();
 
     if (slug.trim()) {
       router.push(`/page-wizard/${encodeURIComponent(slug.trim())}`, {
         scroll: false,
       });
     }
+  };
+
+  const handleCreateEvent = () => {
+    if (walletLoading) {
+      setCreateEventNotice('보유 제작권을 확인하는 중입니다. 잠시 후 다시 눌러 주세요.');
+      return;
+    }
+
+    if (canCreateFromWallet) {
+      setCreateEventNotice('');
+      router.push('/my-invitations/create', { scroll: false });
+      return;
+    }
+
+    if (!isAdminLoggedIn) {
+      setCreateEventNotice(
+        operationTicketBalance > 0
+          ? '운영 티켓은 보유 중이지만 새 이벤트 생성에는 제작권이 필요합니다. 제작권이 필요하면 관리자에게 문의해 주세요.'
+          : '보유한 제작권이 없습니다. 새 이벤트가 필요하면 관리자에게 문의해 주세요.'
+      );
+      return;
+    }
+
+    setCreateEventNotice('');
+    router.push('/page-wizard', { scroll: false });
   };
 
   if (isAdminLoading) {
@@ -115,17 +174,29 @@ export default function MyInvitationsClient() {
             <div className={styles.summaryStack}>
               <span className={styles.summaryItem}>{authUser?.email ?? '이메일 없음'}</span>
               <span className={styles.summaryItem}>연결된 이벤트 {events.length}개</span>
+              <span className={styles.summaryItem}>
+                보유 제작권 {pageCreationCreditTotal}개
+              </span>
+              <span className={styles.summaryItem}>운영 티켓 {operationTicketBalance}장</span>
             </div>
           </div>
 
           <div className={styles.heroActions}>
-            <Link className={styles.primaryButton} href="/page-wizard">
-              새 이벤트 만들기
-            </Link>
+            <button
+              className={styles.primaryButton}
+              type="button"
+              onClick={handleCreateEvent}
+              disabled={walletLoading}
+            >
+              {walletLoading ? '제작권 확인 중' : '새 이벤트 만들기'}
+            </button>
             <button
               className={styles.secondaryButton}
               type="button"
-              onClick={() => void eventsQuery.refetch()}
+              onClick={() => {
+                void eventsQuery.refetch();
+                void walletQuery.refetch();
+              }}
               disabled={refreshing}
             >
               {refreshing ? '새로고침 중' : '새로고침'}
@@ -134,6 +205,11 @@ export default function MyInvitationsClient() {
               로그아웃
             </button>
           </div>
+          {createEventNotice ? (
+            <p className={styles.notice} role="status">
+              {createEventNotice}
+            </p>
+          ) : null}
         </section>
 
         {events.length > 0 ? (

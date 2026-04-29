@@ -1,21 +1,26 @@
 ### commit message
-- chore: 운영 리뷰 리스크 정리
+- feat: 고객 이용권 지급과 직접 생성 흐름 추가
 
 ### 해결한 문제
-- 루트 layout의 전역 `AdminProvider`/`AppQueryProvider`를 제거하고, 관리자·고객·편집 라우트에만 실제 Auth/Query Provider를 배치했습니다.
-- 공개 청첩장과 추억 페이지는 `AnonymousAdminProvider`를 사용해 Firebase Auth 관찰 없이 공개 상태로 렌더링합니다.
-- `webpackBuildWorker: false`는 Windows 로컬/명시 환경에서만 적용되도록 조건부화했습니다.
+- `customerWallets/{uid}` 기반 제작권/운영 티켓 지갑과 원장 repository를 추가했습니다.
+- 관리자 고객 계정 탭에서 지급, 현재 보유 수량, 최근 이용권 이력을 한 화면에서 확인할 수 있게 했습니다.
+- `/my-invitations`에서 보유 제작권이 있으면 `/my-invitations/create`로 이동해 고객이 직접 새 청첩장 초안을 만들 수 있게 했습니다.
+- 관리자 고객 카드에서 `새 청첩장 연결` 섹션을 최상단으로 올려 연결 작업을 먼저 처리할 수 있게 했습니다.
+- 제작권과 운영 티켓을 혼동하지 않도록 관리자/고객 화면에 운영 티켓은 새 이벤트 생성용이 아니라는 안내를 추가했습니다.
+- 고객 직접 생성 화면도 기존 page-wizard처럼 한글 이름과 영문 이름을 분리하고, 영문 이름으로 URL을 자동 생성하게 맞췄습니다.
 
 ### 정리한 유지보수 항목
-- `@typescript-eslint/no-explicit-any`를 `error`로 되돌리고, src/apps/scripts 기준 명시적 `any` 사용을 0건으로 줄였습니다.
-- Kakao SDK 전역 타입과 Firebase Storage/List 타입을 명시해 지도·공유·음악·추억 페이지 경로의 타입 방어선을 강화했습니다.
-- `.env.example`과 README에 `NEXT_DISABLE_WEBPACK_BUILD_WORKER` 로컬 옵션을 추가했습니다.
+- 관리자 고객 계정 탭은 카드형 UI와 5개 단위 페이징/검색으로 정리했습니다.
+- 모바일 티켓팩 결제는 기존 이벤트 티켓 적립을 유지하면서, 고객 계정에 연결된 이벤트면 지갑 원장에도 구매/배정 이력을 남깁니다.
+- 관련 기획 문서 `docs/customer-wallet-commerce-plan.md`를 추가하고 docs 허브, 모바일 정책, repository 경계를 갱신했습니다.
 
 ### 검증 명령과 결과
 - `npm run check` 통과
 - `npm run typecheck:web` 통과
+- `npm run lint:web` 통과
+- `git diff --check` 통과
 
 ### 남은 리스크
-- 로컬 `.env.local`의 Admin SDK 자격증명은 실제 서비스 계정 파일 또는 Secret 값이 필요해 코드에서 대체할 수 없습니다.
-- App Hosting backend 생성, GitHub live branch 연결, Secret Manager 실제 값 등록은 Firebase 콘솔에서 별도 수행해야 합니다.
-- `next dev`/`next build`의 `spawn EPERM` 환경 문제와 큰 클라이언트 파일 잔여 리팩터링은 다음 작업 리스크입니다.
+- 모바일 RevenueCat `appUserId`와 Firebase UID 연결이 없어서 모바일 미사용 제작권을 PC에서 쓰는 완전 공용화는 후속 작업입니다.
+- 이벤트별 티켓 사용 내역과 고객 지갑 원장은 구매/배정 중심으로만 연결되어 있어 세부 사용 마이그레이션은 후속 작업입니다.
+- 루트의 `firebase-service-account.json`은 여전히 untracked 상태라 저장소 밖으로 이동하거나 삭제 여부 확인 후 정리해야 합니다.

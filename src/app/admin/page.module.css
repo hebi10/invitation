@@ -690,7 +690,7 @@
   display: flex;
   flex-direction: column;
   gap: 10px;
-  min-width: 280px;
+  min-width: 0;
 }
 
 .linkedEventSelectRow {
@@ -828,6 +828,188 @@
   color: var(--admin-color-text-secondary);
 }
 
+.accountCardList {
+  display: grid;
+  gap: 16px;
+}
+
+.accountCard {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 18px;
+  border: 2px solid #cbd7e6;
+  border-radius: var(--admin-radius-lg);
+  background: var(--admin-color-surface);
+  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.08);
+}
+
+.accountCardHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.accountCardIdentity {
+  display: flex;
+  align-items: flex-start;
+  min-width: 0;
+  gap: 12px;
+}
+
+.accountCardTitle {
+  color: var(--admin-color-text);
+  font-size: 1rem;
+  font-weight: 800;
+  line-height: 1.35;
+}
+
+.accountCardBadges {
+  display: flex;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.accountCardMetaGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  padding: 10px 12px;
+  border-radius: var(--admin-radius-md);
+  background: var(--admin-color-surface-muted);
+  color: var(--admin-color-text-muted);
+  font-size: 0.8125rem;
+  line-height: 1.45;
+}
+
+.accountCardBody {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr);
+  gap: 14px;
+  align-items: start;
+}
+
+.accountCardSection {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 12px;
+  padding: 14px;
+  border: 2px solid #d8e0ec;
+  border-radius: var(--admin-radius-md);
+  background: #fcfdff;
+}
+
+.accountConnectSection {
+  grid-column: 1 / -1;
+}
+
+.accountCardSectionHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #dfe7f1;
+}
+
+.accountCardSectionTitle {
+  color: var(--admin-color-text);
+  font-size: 0.875rem;
+  font-weight: 800;
+}
+
+.accountConnectPanel {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.accountConnectPanel select {
+  min-width: min(360px, 100%);
+  flex: 1 1 360px;
+}
+
+.walletPanel {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.walletSectionLabel {
+  margin: 0;
+  color: var(--admin-color-text);
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.walletSummaryGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.walletMetric {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 30px;
+  padding: 6px 8px;
+  border: 1px solid var(--admin-color-border);
+  border-radius: var(--admin-radius-sm);
+  background: var(--admin-color-surface-muted);
+  color: var(--admin-color-text-secondary);
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.walletGrantGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
+  align-items: end;
+  gap: 8px;
+}
+
+.walletGrantGrid input,
+.walletGrantGrid select {
+  min-width: 0;
+}
+
+.walletLedgerPanel {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-top: 2px;
+}
+
+.walletLedgerList {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.walletLedgerItem {
+  display: grid;
+  gap: 3px;
+  min-height: 36px;
+  padding: 8px 10px;
+  border-radius: var(--admin-radius-sm);
+  background: var(--admin-color-primary-soft);
+  color: var(--admin-color-text-secondary);
+  font-size: 0.75rem;
+  line-height: 1.35;
+}
+
+.walletLedgerItem strong {
+  color: var(--admin-color-text);
+  font-weight: 600;
+}
+
 @keyframes spin {
   to {
     transform: rotate(360deg);
@@ -864,6 +1046,14 @@
   .createPanelGrid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
+
+  .accountCardBody {
+    grid-template-columns: 1fr;
+  }
+
+  .walletGrantGrid {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (max-width: 767px) {
@@ -887,13 +1077,26 @@
     flex-basis: calc(50% - 4px);
   }
 
-  .tableCard {
-    display: none;
+  .accountCard {
+    padding: 16px;
   }
 
-  .mobileList {
-    display: grid;
-    gap: 12px;
+  .accountCardHeader,
+  .accountCardSectionHeader {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .accountCardBadges {
+    justify-content: flex-start;
+  }
+
+  .accountCardMetaGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .walletSummaryGrid {
+    grid-template-columns: 1fr;
   }
 
   .createPanelGrid {

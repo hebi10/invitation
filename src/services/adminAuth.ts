@@ -1,4 +1,5 @@
 import { ensureFirebaseInit, USE_FIREBASE } from '@/lib/firebase';
+import { adminUserRepository } from '@/services/repositories/adminUserRepository';
 
 export interface AuthUser {
   uid: string;
@@ -32,9 +33,33 @@ type FirebaseAuthUserLike = {
 };
 
 const ADMIN_SESSION_TIMEOUT_MS = 10000;
+const FIREBASE_ADMIN_AUTH_INIT_ERROR = 'Firebase Admin Auth를 초기화하지 못했습니다.';
 
 function createAdminSessionTimeoutError() {
   return new Error('관리자 권한 확인 시간이 초과되었습니다. 다시 로그인해 주세요.');
+}
+
+function canUseLocalClientAdminFallback() {
+  return process.env.NODE_ENV !== 'production';
+}
+
+function isFirebaseAdminAuthInitError(error: unknown) {
+  return (
+    error instanceof Error &&
+    error.message.includes(FIREBASE_ADMIN_AUTH_INIT_ERROR)
+  );
+}
+
+async function isUserAdminFromLocalClientFallback(user: FirebaseAuthUserLike) {
+  if (!adminUserRepository.isAvailable()) {
+    return false;
+  }
+
+  console.warn(
+    '[adminAuth] Firebase Admin Auth unavailable; using local client admin lookup.'
+  );
+
+  return adminUserRepository.isEnabled(user.uid);
 }
 
 async function withAdminSessionTimeout<T>(
@@ -103,16 +128,27 @@ async function isUserAdmin(user: FirebaseAuthUserLike) {
       throw createAdminSessionTimeoutError();
     }
 
-    const response = await fetch('/api/admin/session', {
-      method: 'GET',
-      headers: {
-        Authorization: `Bearer ${idToken}`,
-      },
-      cache: 'no-store',
-      signal,
-    });
+    try {
+      const response = await fetch('/api/admin/session', {
+        method: 'GET',
+        headers: {
+          Authorization: `Bearer ${idToken}`,
+        },
+        cache: 'no-store',
+        signal,
+      });
 
-    return readAdminSessionResponse(response);
+      return readAdminSessionResponse(response);
+    } catch (error) {
+      if (
+        canUseLocalClientAdminFallback() &&
+        isFirebaseAdminAuthInitError(error)
+      ) {
+        return isUserAdminFromLocalClientFallback(user);
+      }
+
+      throw error;
+    }
   });
 }
 

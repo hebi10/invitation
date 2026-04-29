@@ -5,7 +5,7 @@ import styles from './page.module.css';
 
 const mainLinks = [
   {
-    href: '/lee-junho-park-somin/romantic',
+    href: '/shin-minje-kim-hyunji/romantic/',
     label: '샘플 청첩장 보기',
     description: '하객이 받는 모바일 화면',
     variant: 'primary',
