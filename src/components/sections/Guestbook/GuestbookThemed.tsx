@@ -68,7 +68,7 @@ export default function GuestbookThemed({
   statusColors,
   emptyIcon,
 }: GuestbookThemedProps) {
-  const { authUser, isAdminLoggedIn, isLoggedIn } = useAdmin();
+  const { authUser, isAdminLoggedIn, isLoggedIn, supportsInteractiveAuth } = useAdmin();
   const queryClient = useQueryClient();
 
   const [name, setName] = useState('');
@@ -250,7 +250,7 @@ export default function GuestbookThemed({
   };
 
   const handleTitleInteraction = () => {
-    if (isAdminLoggedIn) {
+    if (isAdminLoggedIn || !supportsInteractiveAuth) {
       return;
     }
 

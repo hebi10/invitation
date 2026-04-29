@@ -1,3 +1,5 @@
+import type { Firestore } from 'firebase-admin/firestore';
+
 export const EVENT_READ_FALLBACK_LOG_COLLECTION = 'event-read-fallback-logs';
 export const EVENT_ROLLOUT_MISMATCH_COLLECTION = 'event-rollout-mismatches';
 
@@ -18,7 +20,7 @@ export interface EventRolloutMismatchEntry {
 }
 
 async function addCollectionEntry(collectionName: string, entry: Record<string, unknown>) {
-  let getServerFirestore: (() => any) | null = null;
+  let getServerFirestore: (() => Firestore | null) | null = null;
   try {
     ({ getServerFirestore } = await import('../firebaseAdmin'));
   } catch {

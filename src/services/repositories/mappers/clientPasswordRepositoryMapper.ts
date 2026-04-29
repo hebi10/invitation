@@ -25,7 +25,7 @@ export interface ClientPasswordSummary {
 
 export function normalizeRepositoryClientPasswordRecord(
   id: string,
-  data: Record<string, any>
+  data: Record<string, unknown>
 ): ClientPasswordRecord | null {
   const pageSlug =
     typeof data.pageSlug === 'string' && data.pageSlug.trim() ? data.pageSlug.trim() : id;

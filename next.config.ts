@@ -1,10 +1,18 @@
 import type { NextConfig } from "next";
 
+const shouldDisableWebpackBuildWorker =
+  process.env.NEXT_DISABLE_WEBPACK_BUILD_WORKER === "true" ||
+  (process.platform === "win32" && process.env.CI !== "true");
+
 const nextConfig: NextConfig = {
   trailingSlash: true,
-  experimental: {
-    webpackBuildWorker: false,
-  },
+  ...(shouldDisableWebpackBuildWorker
+    ? {
+        experimental: {
+          webpackBuildWorker: false,
+        },
+      }
+    : {}),
   images: {
     unoptimized: true,
   },

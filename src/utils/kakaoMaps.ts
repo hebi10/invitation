@@ -1,14 +1,9 @@
 import { getPublicKakaoJavaScriptKey } from '@/lib/publicRuntimeConfig';
-
-declare global {
-  interface Window {
-    kakao?: any;
-  }
-}
+import type { KakaoAddressSearchResult, KakaoMapsSdk } from '@/types/kakao';
 
 const KAKAO_MAPS_SCRIPT_ID = 'kakao-maps-sdk';
 const LEGACY_KAKAO_MAPS_COMPAT_KEY = '234add558ffec30aa714eb4644df46e3';
-let kakaoMapsSdkPromise: Promise<any> | null = null;
+let kakaoMapsSdkPromise: Promise<KakaoMapsSdk> | null = null;
 
 function buildKakaoMapsSdkUrl(appKey: string) {
   const params = new URLSearchParams({
@@ -20,18 +15,19 @@ function buildKakaoMapsSdkUrl(appKey: string) {
   return `https://dapi.kakao.com/v2/maps/sdk.js?${params.toString()}`;
 }
 
-export async function loadKakaoMapsSdk() {
+export async function loadKakaoMapsSdk(): Promise<KakaoMapsSdk> {
   if (typeof window === 'undefined') {
     throw new Error('Kakao Maps SDK can only be loaded in the browser.');
   }
 
-  if (window.kakao?.maps) {
-    if (typeof window.kakao.maps.load === 'function') {
+  const currentKakao = window.kakao;
+  if (currentKakao?.maps) {
+    if (typeof currentKakao.maps.load === 'function') {
       await new Promise<void>((resolve) => {
-        window.kakao.maps.load(() => resolve());
+        currentKakao.maps.load?.(() => resolve());
       });
     }
-    return window.kakao;
+    return currentKakao;
   }
 
   if (!kakaoMapsSdkPromise) {
@@ -55,18 +51,19 @@ export async function loadKakaoMapsSdk() {
       }
 
       const onReady = () => {
-        if (!window.kakao?.maps) {
+        const loadedKakao = window.kakao;
+        if (!loadedKakao?.maps) {
           kakaoMapsSdkPromise = null;
           reject(new Error('Kakao Maps SDK did not initialize correctly.'));
           return;
         }
 
-        if (typeof window.kakao.maps.load === 'function') {
-          window.kakao.maps.load(() => resolve(window.kakao));
+        if (typeof loadedKakao.maps.load === 'function') {
+          loadedKakao.maps.load(() => resolve(loadedKakao));
           return;
         }
 
-        resolve(window.kakao);
+        resolve(loadedKakao);
       };
 
       const tryLoadWithKey = (candidateIndex: number) => {
@@ -173,7 +170,7 @@ export async function searchAddressWithKakaoMaps(address: string) {
     latitude: number;
     longitude: number;
   }>((resolve, reject) => {
-    geocoder.addressSearch(trimmedAddress, (result: any, status: any) => {
+    geocoder.addressSearch(trimmedAddress, (result: KakaoAddressSearchResult[], status) => {
       if (status !== kakao.maps.services.Status.OK || !Array.isArray(result) || !result[0]) {
         reject(new Error('입력한 주소에 해당하는 좌표를 찾지 못했습니다.'));
         return;

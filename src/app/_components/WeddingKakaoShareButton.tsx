@@ -14,12 +14,6 @@ interface WeddingKakaoShareButtonProps {
   variant?: 'default' | 'space';
 }
 
-declare global {
-  interface Window {
-    Kakao: any;
-  }
-}
-
 const buttonBaseStyle = {
   display: 'flex',
   alignItems: 'center',
@@ -149,7 +143,12 @@ async function resolveCardShareImageUrl(candidates: string[]) {
 }
 
 function openKakaoShare(payload: Record<string, unknown>) {
-  window.Kakao.Share.sendDefault(payload);
+  const kakaoShare = window.Kakao?.Share;
+  if (!kakaoShare) {
+    throw new Error('Kakao Share SDK is not ready.');
+  }
+
+  kakaoShare.sendDefault(payload);
 }
 
 export default function WeddingKakaoShareButton({

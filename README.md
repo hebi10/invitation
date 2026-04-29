@@ -377,6 +377,7 @@ GCLOUD_PROJECT=
 CLIENT_EDITOR_SESSION_SECRET=
 MOBILE_DRAFT_CREATION_ENABLED=
 MEMORY_METADATA_SYNC_STRICT=true
+NEXT_DISABLE_WEBPACK_BUILD_WORKER=
 REVENUECAT_SERVER_API_KEY=
 ```
 
@@ -390,6 +391,8 @@ REVENUECAT_SERVER_API_KEY=
   고객 편집 세션 서명용 서버 전용 비밀값
 - `MEMORY_METADATA_SYNC_STRICT`
   추억 페이지 메타데이터 동기화 실패 시 빌드 실패 처리
+- `NEXT_DISABLE_WEBPACK_BUILD_WORKER`
+  Windows 로컬 빌드에서 worker spawn 문제가 날 때만 `true`로 설정
 - `REVENUECAT_SERVER_API_KEY`
   RevenueCat 구매 검증용 서버 전용 키. 모바일 Billing 지급 검증은 이 값이 없으면 실패 처리합니다.
 

@@ -9,6 +9,7 @@ import {
   buildNaverMapSearchUrl,
   loadKakaoMapsSdk,
 } from '@/utils/kakaoMaps';
+import type { KakaoAddressSearchResult } from '@/types/kakao';
 
 import styles from './LocationMapSimple.module.css';
 
@@ -23,13 +24,6 @@ interface LocationMapProps {
     level?: number;
     markerTitle?: string;
   };
-}
-
-declare global {
-  interface Window {
-    kakao?: any;
-    kakaoMapInstance?: any;
-  }
 }
 
 function hasText(value?: string) {
@@ -76,7 +70,8 @@ export default function LocationMapSimple({
 
   const initializeKakaoMap = useCallback(() => {
     const container = mapRef.current;
-    if (!container || !window.kakao?.maps) {
+    const kakao = window.kakao;
+    if (!container || !kakao?.maps) {
       return;
     }
 
@@ -87,28 +82,28 @@ export default function LocationMapSimple({
 
       const options = {
         center: hasCoordinates
-          ? new window.kakao.maps.LatLng(kakaoMapConfig!.latitude, kakaoMapConfig!.longitude)
-          : new window.kakao.maps.LatLng(37.5665, 126.978),
+          ? new kakao.maps.LatLng(kakaoMapConfig!.latitude, kakaoMapConfig!.longitude)
+          : new kakao.maps.LatLng(37.5665, 126.978),
         level: mapLevel,
       };
 
-      const map = new window.kakao.maps.Map(container, options);
+      const map = new kakao.maps.Map(container, options);
 
       if (hasCoordinates && kakaoMapConfig) {
-        const coords = new window.kakao.maps.LatLng(
+        const coords = new kakao.maps.LatLng(
           kakaoMapConfig.latitude,
           kakaoMapConfig.longitude
         );
 
         map.setCenter(coords);
 
-        const marker = new window.kakao.maps.Marker({
+        const marker = new kakao.maps.Marker({
           map,
           position: coords,
         });
 
         const markerTitle = kakaoMapConfig.markerTitle || venueName || '웨딩홀';
-        const infowindow = new window.kakao.maps.InfoWindow({
+        const infowindow = new kakao.maps.InfoWindow({
           content: `<div style="width:200px;text-align:center;padding:6px 0;font-size:12px;font-weight:bold;">${markerTitle}</div>`,
         });
 
@@ -126,20 +121,20 @@ export default function LocationMapSimple({
         return;
       }
 
-      const geocoder = new window.kakao.maps.services.Geocoder();
+      const geocoder = new kakao.maps.services.Geocoder();
 
-      geocoder.addressSearch(address.trim(), (result: any, status: any) => {
-        if (status === window.kakao.maps.services.Status.OK) {
-          const coords = new window.kakao.maps.LatLng(result[0].y, result[0].x);
+      geocoder.addressSearch(address.trim(), (result: KakaoAddressSearchResult[], status) => {
+        if (status === kakao.maps.services.Status.OK && result[0]) {
+          const coords = new kakao.maps.LatLng(result[0].y, result[0].x);
 
           map.setCenter(coords);
 
-          const marker = new window.kakao.maps.Marker({
+          const marker = new kakao.maps.Marker({
             map,
             position: coords,
           });
 
-          const infowindow = new window.kakao.maps.InfoWindow({
+          const infowindow = new kakao.maps.InfoWindow({
             content: `<div style="width:200px;text-align:center;padding:6px 0;font-size:12px;font-weight:bold;">${venueName || '웨딩홀'}</div>`,
           });
 

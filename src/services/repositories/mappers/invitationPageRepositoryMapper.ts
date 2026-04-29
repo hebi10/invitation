@@ -20,21 +20,21 @@ export interface StoredInvitationPageConfigRecord {
 
 export function normalizeRepositoryDisplayPeriodRecord(
   docId: string,
-  data: Record<string, any>
+  data: Record<string, unknown>
 ): InvitationPageDisplayPeriodRecord | null {
   return normalizeInvitationPageDisplayPeriod(docId, data);
 }
 
 export function normalizeRepositoryRegistryRecord(
   docId: string,
-  data: Record<string, any>
+  data: Record<string, unknown>
 ): InvitationPageRegistryRecord | null {
   return normalizeInvitationPageRegistryRecord(docId, data);
 }
 
 export function normalizeRepositoryConfigRecord(
   docId: string,
-  data: Record<string, any>
+  data: Record<string, unknown>
 ): StoredInvitationPageConfigRecord | null {
   const config = normalizeInvitationConfigSeed(
     docId,

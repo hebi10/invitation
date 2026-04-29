@@ -1,4 +1,10 @@
 import type { InvitationPage } from '@/types/invitationPage';
+import type {
+  FirebaseStorage,
+  StorageReference,
+  UploadMetadata,
+  UploadResult,
+} from 'firebase/storage';
 import { ensureFirebaseInit, USE_FIREBASE } from '@/lib/firebase';
 import type { Comment } from '@/services/commentService';
 import { getComments } from '@/services/commentService';
@@ -20,10 +26,14 @@ import { optimizeUploadImage } from '@/utils/imageCompression';
 import { sanitizeHeartIconPlaceholdersDeep } from '@/utils/textSanitizers';
 
 type StorageModules = {
-  deleteObject: any;
-  getDownloadURL: any;
-  ref: any;
-  uploadBytes: any;
+  deleteObject: (storageRef: StorageReference) => Promise<void>;
+  getDownloadURL: (storageRef: StorageReference) => Promise<string>;
+  ref: (storage: FirebaseStorage, path?: string) => StorageReference;
+  uploadBytes: (
+    storageRef: StorageReference,
+    data: Blob | Uint8Array | ArrayBuffer,
+    metadata?: UploadMetadata
+  ) => Promise<UploadResult>;
 };
 
 const MEMORY_ORIGINAL_UPLOAD_OPTIONS = {

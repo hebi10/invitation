@@ -1,5 +1,7 @@
 import type { Metadata, Viewport } from 'next';
 import './admin-theme.css';
+import AuthenticatedAppProviders from '@/app/AuthenticatedAppProviders';
+
 import { AdminOverlayProvider } from './_components';
 
 export const metadata: Metadata = {
@@ -22,8 +24,10 @@ export default function Layout({
   children: React.ReactNode;
 }) {
   return (
-    <div data-admin-ui>
-      <AdminOverlayProvider>{children}</AdminOverlayProvider>
-    </div>
+    <AuthenticatedAppProviders>
+      <div data-admin-ui>
+        <AdminOverlayProvider>{children}</AdminOverlayProvider>
+      </div>
+    </AuthenticatedAppProviders>
   );
 }

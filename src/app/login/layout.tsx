@@ -2,7 +2,7 @@ import type { ReactNode } from 'react';
 
 import AuthenticatedAppProviders from '@/app/AuthenticatedAppProviders';
 
-export default function PageEditorLayout({
+export default function LoginLayout({
   children,
 }: {
   children: ReactNode;

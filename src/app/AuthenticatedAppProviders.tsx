@@ -1,0 +1,19 @@
+'use client';
+
+import type { ReactNode } from 'react';
+
+import { AdminProvider } from '@/contexts';
+
+import AppQueryProvider from './AppQueryProvider';
+
+export default function AuthenticatedAppProviders({
+  children,
+}: {
+  children: ReactNode;
+}) {
+  return (
+    <AdminProvider>
+      <AppQueryProvider>{children}</AppQueryProvider>
+    </AdminProvider>
+  );
+}

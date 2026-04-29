@@ -535,7 +535,7 @@ export async function saveInvitationPageConfig(
 
   const normalizedConfig = mergeInvitationPageSeed(
     getWeddingPageBySlug(config.slug),
-    config as unknown as Record<string, any>,
+    config as unknown as Record<string, unknown>,
     config.slug,
     {
       fallbackTheme,

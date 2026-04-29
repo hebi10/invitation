@@ -17,7 +17,7 @@ export function buildEventCommentCollectionPath(eventId: string) {
 
 export function normalizeRepositoryComment(
   id: string,
-  data: Record<string, any>,
+  data: Record<string, unknown>,
   options: {
     pageSlug?: string;
     collectionName?: string;
@@ -36,8 +36,8 @@ export function normalizeRepositoryComment(
 
   return {
     id,
-    author: data.author ?? '',
-    message: data.message ?? '',
+    author: typeof data.author === 'string' ? data.author : '',
+    message: typeof data.message === 'string' ? data.message : '',
     pageSlug: normalizedPageSlug,
     createdAt: toClientRepositoryDate(data.createdAt, new Date()),
     collectionName:

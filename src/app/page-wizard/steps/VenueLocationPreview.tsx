@@ -12,12 +12,6 @@ import {
 
 import styles from '../page.module.css';
 
-declare global {
-  interface Window {
-    kakao?: any;
-  }
-}
-
 type VenueLocationPreviewProps = {
   venueName: string;
   address: string;
@@ -78,20 +72,21 @@ export default function VenueLocationPreview({
       try {
         await loadKakaoMapsSdk();
 
-        if (cancelled || !mapRef.current || !window.kakao?.maps) {
+        const kakao = window.kakao;
+        if (cancelled || !mapRef.current || !kakao?.maps) {
           return;
         }
 
         const container = mapRef.current;
         container.innerHTML = '';
 
-        const coords = new window.kakao.maps.LatLng(latitude, longitude);
-        const map = new window.kakao.maps.Map(container, {
+        const coords = new kakao.maps.LatLng(latitude, longitude);
+        const map = new kakao.maps.Map(container, {
           center: coords,
           level: 3,
         });
 
-        const marker = new window.kakao.maps.Marker({
+        const marker = new kakao.maps.Marker({
           map,
           position: coords,
         });

@@ -2,6 +2,11 @@
 
 import { useEffect, useRef, useState } from 'react';
 
+import type {
+  KakaoAddressSearchResult,
+  KakaoLatLng,
+  KakaoMapInstance,
+} from '@/types/kakao';
 import { loadKakaoMapsSdk } from '@/utils/kakaoMaps';
 
 import styles from './romantic.module.css';
@@ -13,50 +18,8 @@ export interface RomanticKakaoMapConfig {
   markerTitle?: string;
 }
 
-type KakaoLatLng = object;
-
-type KakaoMapInstance = {
-  relayout: () => void;
-  setCenter: (coords: KakaoLatLng) => void;
-  setDraggable: (enabled: boolean) => void;
-  setZoomable: (enabled: boolean) => void;
-};
-
-type KakaoMarker = object;
-
-type KakaoMapsApi = {
-  maps: {
-    InfoWindow: new (options: { content: string }) => {
-      open: (map: KakaoMapInstance, marker: KakaoMarker) => void;
-    };
-    LatLng: new (latitude: number | string, longitude: number | string) => KakaoLatLng;
-    Map: new (
-      container: HTMLElement,
-      options: { center: KakaoLatLng; level: number }
-    ) => KakaoMapInstance;
-    Marker: new (options: {
-      map: KakaoMapInstance;
-      position: KakaoLatLng;
-    }) => KakaoMarker;
-    services: {
-      Geocoder: new () => {
-        addressSearch: (
-          address: string,
-          callback: (
-            result: Array<{ x: string; y: string }>,
-            status: string
-          ) => void
-        ) => void;
-      };
-      Status: {
-        OK: string;
-      };
-    };
-  };
-};
-
 function readWindowKakaoMaps() {
-  return (window as Window & { kakao?: KakaoMapsApi }).kakao;
+  return window.kakao;
 }
 
 function hasValidRomanticKakaoCoordinates(config?: RomanticKakaoMapConfig) {
@@ -164,7 +127,7 @@ export default function RomanticLocationMap({
 
           geocoder.addressSearch(
             address.trim(),
-            (result: Array<{ x: string; y: string }>, status: string) => {
+            (result: KakaoAddressSearchResult[], status) => {
               if (cancelled) {
                 return;
               }

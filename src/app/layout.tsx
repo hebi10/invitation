@@ -1,8 +1,5 @@
 import type { Metadata } from 'next';
 import './globals.css';
-import { AdminProvider } from '@/contexts';
-
-import AppQueryProvider from './AppQueryProvider';
 
 export const metadata: Metadata = {
   title: {
@@ -28,9 +25,7 @@ export default function RootLayout({
         <link rel="dns-prefetch" href="https://firebasestorage.googleapis.com" />
       </head>
       <body>
-        <AdminProvider>
-          <AppQueryProvider>{children}</AppQueryProvider>
-        </AdminProvider>
+        {children}
       </body>
     </html>
   );

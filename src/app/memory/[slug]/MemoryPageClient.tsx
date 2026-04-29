@@ -8,7 +8,7 @@ import 'swiper/css/navigation';
 import 'swiper/css/pagination';
 
 import { HeartIconSimple } from '@/components/icons';
-import { AdminProvider, useAdmin } from '@/contexts';
+import { AnonymousAdminProvider, useAdmin } from '@/contexts';
 import { getMemoryPageBySlug } from '@/services/memoryPageService';
 import type {
   MemoryGalleryCategory,
@@ -796,8 +796,8 @@ function MemoryPageClientBody({ slug }: MemoryPageClientProps) {
 
 export default function MemoryPageClient({ slug }: MemoryPageClientProps) {
   return (
-    <AdminProvider>
+    <AnonymousAdminProvider>
       <MemoryPageClientBody slug={slug} />
-    </AdminProvider>
+    </AnonymousAdminProvider>
   );
 }

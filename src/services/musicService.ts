@@ -1,5 +1,6 @@
 import { ensureFirebaseInit, USE_FIREBASE } from '@/lib/firebase';
 import type { InvitationMusicCategory, InvitationMusicTrack } from '@/lib/musicLibrary';
+import type { ListResult, StorageReference } from 'firebase/storage';
 
 const AUDIO_FILE_PATTERN = /\.(mp3|wav|m4a|aac|ogg|flac|webm)$/i;
 const MUSIC_PATH_PREFIX = 'music/';
@@ -112,9 +113,9 @@ function buildTrackId(categoryId: string, fileName: string, usedTrackIds: Set<st
 }
 
 async function collectAllMusicItems(
-  listAll: (storageRef: any) => Promise<{ items: any[]; prefixes: any[] }>,
-  currentRef: any
-): Promise<any[]> {
+  listAll: (storageRef: StorageReference) => Promise<ListResult>,
+  currentRef: StorageReference
+): Promise<StorageReference[]> {
   const listed = await listAll(currentRef);
   const nestedItems = await Promise.all(
     listed.prefixes.map((prefixRef) => collectAllMusicItems(listAll, prefixRef))

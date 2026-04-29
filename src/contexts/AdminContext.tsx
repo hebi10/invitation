@@ -22,6 +22,7 @@ export interface AdminContextType {
   isAdminLoggedIn: boolean;
   isLoggedIn: boolean;
   isAdminLoading: boolean;
+  supportsInteractiveAuth: boolean;
   login: (email: string, password: string) => Promise<AuthActionResult>;
   register: (email: string, password: string) => Promise<AuthActionResult>;
   loginWithGoogle: () => Promise<AuthActionResult>;
@@ -29,6 +30,26 @@ export interface AdminContextType {
 }
 
 const AdminContext = createContext<AdminContextType | undefined>(undefined);
+
+const unavailableAuthResult: AuthActionResult = {
+  success: false,
+  user: null,
+  isAdmin: false,
+  errorMessage: '이 화면에서는 로그인을 지원하지 않습니다.',
+};
+
+const anonymousAdminContextValue: AdminContextType = {
+  adminUser: null,
+  authUser: null,
+  isAdminLoggedIn: false,
+  isLoggedIn: false,
+  isAdminLoading: false,
+  supportsInteractiveAuth: false,
+  login: async () => unavailableAuthResult,
+  register: async () => unavailableAuthResult,
+  loginWithGoogle: async () => unavailableAuthResult,
+  logout: async () => {},
+};
 
 export function AdminProvider({ children }: { children: ReactNode }) {
   const [adminUser, setAdminUser] = useState<AdminUser | null>(null);
@@ -52,6 +73,7 @@ export function AdminProvider({ children }: { children: ReactNode }) {
       isAdminLoggedIn: Boolean(adminUser),
       isLoggedIn: Boolean(authUser),
       isAdminLoading,
+      supportsInteractiveAuth: true,
       login: async (email: string, password: string) => {
         try {
           const result = await loginFirebaseUser(email, password);
@@ -130,6 +152,14 @@ export function AdminProvider({ children }: { children: ReactNode }) {
   );
 
   return <AdminContext.Provider value={value}>{children}</AdminContext.Provider>;
+}
+
+export function AnonymousAdminProvider({ children }: { children: ReactNode }) {
+  return (
+    <AdminContext.Provider value={anonymousAdminContextValue}>
+      {children}
+    </AdminContext.Provider>
+  );
 }
 
 export function useAdmin() {

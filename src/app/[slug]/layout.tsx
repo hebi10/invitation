@@ -4,6 +4,7 @@ import type { ReactNode } from 'react';
 
 import { eventInvitationViewport } from '@/app/_components/EventInvitationLayout';
 import { resolveEventPageRenderer } from '@/app/_components/eventPageRendererRegistry';
+import PublicInvitationProviders from '@/app/PublicInvitationProviders';
 import { DEFAULT_INVITATION_THEME } from '@/lib/invitationThemes';
 import { getServerInvitationPageEventTypeBySlug } from '@/server/invitationPageServerService';
 
@@ -52,5 +53,9 @@ export default async function EventInvitationLayout({
   const { renderer } = resolveEventPageRenderer(eventType);
   const Layout = renderer.createLayout(DEFAULT_INVITATION_THEME);
 
-  return <Layout>{children}</Layout>;
+  return (
+    <Layout>
+      <PublicInvitationProviders>{children}</PublicInvitationProviders>
+    </Layout>
+  );
 }

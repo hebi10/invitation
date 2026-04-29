@@ -113,7 +113,7 @@ export function createInvitationPageDisplayName(groomName: string, brideName: st
 
 export function normalizeInvitationPageDisplayPeriod(
   docId: string,
-  data: Record<string, any>
+  data: Record<string, unknown>
 ): InvitationPageDisplayPeriodRecord | null {
   const pageSlug =
     typeof data.pageSlug === 'string' && data.pageSlug.trim()
@@ -137,7 +137,7 @@ export function normalizeInvitationPageDisplayPeriod(
 
 export function normalizeInvitationPageRegistryRecord(
   docId: string,
-  data: Record<string, any>
+  data: Record<string, unknown>
 ): InvitationPageRegistryRecord | null {
   const pageSlug =
     typeof data.pageSlug === 'string' && data.pageSlug.trim()
@@ -161,7 +161,7 @@ export function normalizeInvitationPageRegistryRecord(
 
 export function mergeInvitationPageSeed(
   base: InvitationPageSeed | undefined,
-  candidate: Record<string, any>,
+  candidate: Record<string, unknown>,
   fallbackSlug?: string,
   options: {
     fallbackTheme?: InvitationThemeKey;
@@ -333,7 +333,12 @@ export function mergeInvitationPageSeed(
       Number.isFinite(featuresInput.maxGalleryImages)
         ? featuresInput.maxGalleryImages
         : undefined,
-    shareMode: featuresInput.shareMode,
+    shareMode:
+      featuresInput.shareMode === 'link' ||
+      featuresInput.shareMode === 'card' ||
+      featuresInput.shareMode === 'none'
+        ? featuresInput.shareMode
+        : undefined,
     showMusic:
       typeof featuresInput.showMusic === 'boolean'
         ? featuresInput.showMusic
@@ -479,7 +484,7 @@ export function mergeInvitationPageSeed(
 
 export function normalizeInvitationConfigSeed(
   docId: string,
-  data: Record<string, any>,
+  data: Record<string, unknown>,
   fallbackSeed?: InvitationPageSeed
 ) {
   return mergeInvitationPageSeed(fallbackSeed, data, docId, {

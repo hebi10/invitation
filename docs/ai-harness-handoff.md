@@ -1,22 +1,21 @@
 ### commit message
-- fix: 관리자 인증 로딩 멈춤 방지
+- chore: 운영 리뷰 리스크 정리
 
 ### 해결한 문제
-- 관리자 인증 확인이 끝나지 않는 경우를 막기 위해 `/api/admin/session` 권한 확인에 10초 timeout을 추가했습니다.
-- Firebase Auth 객체를 못 받은 예외 경로에서도 `observeFirebaseSession` 콜백을 호출해 `isAdminLoading`이 true로 고정되지 않게 했습니다.
-- 이전 PageEditor/PageWizard 훅 분리와 레포 위생 정리는 유지했습니다.
+- 루트 layout의 전역 `AdminProvider`/`AppQueryProvider`를 제거하고, 관리자·고객·편집 라우트에만 실제 Auth/Query Provider를 배치했습니다.
+- 공개 청첩장과 추억 페이지는 `AnonymousAdminProvider`를 사용해 Firebase Auth 관찰 없이 공개 상태로 렌더링합니다.
+- `webpackBuildWorker: false`는 Windows 로컬/명시 환경에서만 적용되도록 조건부화했습니다.
 
 ### 정리한 유지보수 항목
-- PageEditorClient는 약 2,520줄로 줄었고, 큰 비동기 흐름은 `pageEditorPersistenceHooks`, `pageEditorImageUploadHook`, `pageEditorVisibilityHook`, `pageEditorPreviewState`로 이동했습니다.
-- PageWizardClient는 약 1,915줄 기준이며, `useWizardPreviewState`, `useWizardVisibilityState`, 확장된 `useImageUpload`가 화면 상태 일부를 담당합니다.
-- 관리자 인증 상태는 `src/services/adminAuth.ts`에서 Firebase Auth observer와 서버 세션 검증을 함께 관리합니다.
+- `@typescript-eslint/no-explicit-any`를 `error`로 되돌리고, src/apps/scripts 기준 명시적 `any` 사용을 0건으로 줄였습니다.
+- Kakao SDK 전역 타입과 Firebase Storage/List 타입을 명시해 지도·공유·음악·추억 페이지 경로의 타입 방어선을 강화했습니다.
+- `.env.example`과 README에 `NEXT_DISABLE_WEBPACK_BUILD_WORKER` 로컬 옵션을 추가했습니다.
 
 ### 검증 명령과 결과
 - `npm run check` 통과
-- `git diff --check` 통과
-- `next dev` 재현은 현재 로컬 Windows 환경의 `spawn EPERM`으로 실행되지 못했습니다.
+- `npm run typecheck:web` 통과
 
 ### 남은 리스크
+- 로컬 `.env.local`의 Admin SDK 자격증명은 실제 서비스 계정 파일 또는 Secret 값이 필요해 코드에서 대체할 수 없습니다.
 - App Hosting backend 생성, GitHub live branch 연결, Secret Manager 실제 값 등록은 Firebase 콘솔에서 별도 수행해야 합니다.
-- 현재 로컬 환경은 `.git/index.lock` 생성 권한 문제로 `git rm --cached`/stage/commit이 막힐 수 있으며, 이번 로그 제거는 작업트리 삭제 상태로 정리했습니다.
-- `next build`/`next dev`의 `spawn EPERM`, 일부 기존 파일의 CRLF 정규화 경고, 큰 클라이언트 파일 잔여 리팩터링은 다음 작업 리스크로 남아 있습니다.
+- `next dev`/`next build`의 `spawn EPERM` 환경 문제와 큰 클라이언트 파일 잔여 리팩터링은 다음 작업 리스크입니다.
