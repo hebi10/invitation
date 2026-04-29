@@ -48,7 +48,8 @@ function buildSlugBaseFromEnglishNames(groomEnglishName: string, brideEnglishNam
 }
 
 export default function CreateInvitationClient() {
-  const { authUser, isLoggedIn, isAdminLoading } = useAdmin();
+  const { authUser, isLoggedIn, isAdminLoading, logout, sendVerificationEmail } =
+    useAdmin();
   const router = useRouter();
   const queryClient = useQueryClient();
   const [groomName, setGroomName] = useState('');
@@ -61,11 +62,20 @@ export default function CreateInvitationClient() {
   const [defaultTheme, setDefaultTheme] =
     useState<InvitationThemeKey>(DEFAULT_INVITATION_THEME);
   const [notice, setNotice] = useState('');
+  const [verificationNotice, setVerificationNotice] = useState('');
+  const [verificationError, setVerificationError] = useState('');
+  const [verificationLoading, setVerificationLoading] = useState(false);
+  const requiresEmailVerification =
+    isLoggedIn && authUser ? !authUser.emailVerified : false;
   const selectableThemes = useMemo(() => getSelectableInvitationThemeKeys(), []);
 
   const walletQuery = useQuery<CustomerWalletSummary>({
     queryKey: appQueryKeys.customerWallet(authUser?.uid ?? null),
-    enabled: !isAdminLoading && isLoggedIn && Boolean(authUser?.uid),
+    enabled:
+      !isAdminLoading &&
+      isLoggedIn &&
+      Boolean(authUser?.uid) &&
+      !requiresEmailVerification,
     queryFn: async () => getCustomerWalletSnapshot(authUser?.uid ?? ''),
     staleTime: FIFTEEN_MINUTES_MS,
     gcTime: THIRTY_MINUTES_MS,
@@ -87,6 +97,28 @@ export default function CreateInvitationClient() {
     () => buildSlugBaseFromEnglishNames(groomEnglishName, brideEnglishName),
     [brideEnglishName, groomEnglishName]
   );
+
+  const handleResendVerificationEmail = async () => {
+    setVerificationLoading(true);
+    setVerificationNotice('');
+    setVerificationError('');
+
+    const result = await sendVerificationEmail();
+    if (!result.success) {
+      setVerificationError(
+        result.errorMessage ?? '인증 메일을 보내지 못했습니다. 잠시 후 다시 시도해 주세요.'
+      );
+      setVerificationLoading(false);
+      return;
+    }
+
+    setVerificationNotice(
+      result.alreadyVerified
+        ? '이메일 인증이 확인되었습니다. 생성 화면을 다시 불러와 주세요.'
+        : '인증 메일을 다시 보냈습니다. 받은 편지함에서 인증 링크를 확인해 주세요.'
+    );
+    setVerificationLoading(false);
+  };
 
   useEffect(() => {
     const firstTier = availableTiers[0];
@@ -196,6 +228,64 @@ export default function CreateInvitationClient() {
                 내 이벤트로 돌아가기
               </Link>
             </div>
+          </section>
+        </div>
+      </main>
+    );
+  }
+
+  if (requiresEmailVerification) {
+    return (
+      <main className={styles.page}>
+        <div className={styles.shell}>
+          <section className={styles.hero}>
+            <div className={styles.heroHeader}>
+              <div>
+                <p className={styles.eyebrow}>Email Verification</p>
+                <h1 className={styles.title}>이메일 인증이 필요합니다</h1>
+                <p className={styles.description}>
+                  회원가입 계정은 이메일 인증을 완료한 뒤 새 이벤트를 만들 수 있습니다.
+                </p>
+              </div>
+              <div className={styles.summaryStack}>
+                <span className={styles.summaryItem}>
+                  {authUser?.email ?? '이메일 없음'}
+                </span>
+                <span className={styles.summaryItem}>인증 대기</span>
+              </div>
+            </div>
+
+            <div className={styles.heroActions}>
+              <button
+                className={styles.primaryButton}
+                type="button"
+                onClick={() => void handleResendVerificationEmail()}
+                disabled={verificationLoading}
+              >
+                {verificationLoading ? '인증 메일 보내는 중' : '인증 메일 다시 보내기'}
+              </button>
+              <button
+                className={styles.secondaryButton}
+                type="button"
+                onClick={() => window.location.reload()}
+              >
+                인증 후 새로고침
+              </button>
+              <button
+                className={styles.secondaryButton}
+                type="button"
+                onClick={() => void logout()}
+              >
+                로그아웃
+              </button>
+            </div>
+
+            {verificationNotice ? (
+              <p className={styles.notice} role="status">
+                {verificationNotice}
+              </p>
+            ) : null}
+            {verificationError ? <p className={styles.error}>{verificationError}</p> : null}
           </section>
         </div>
       </main>

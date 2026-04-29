@@ -22,6 +22,13 @@ export interface AuthActionResult {
   errorMessage?: string;
 }
 
+export interface EmailVerificationActionResult {
+  success: boolean;
+  user: AuthUser | null;
+  alreadyVerified?: boolean;
+  errorMessage?: string;
+}
+
 type AuthSessionSnapshot = {
   authUser: AuthUser | null;
   adminUser: AdminUser | null;
@@ -269,6 +276,53 @@ export async function registerFirebaseUser(
   };
 }
 
+export async function sendCurrentUserEmailVerification(): Promise<EmailVerificationActionResult> {
+  if (!USE_FIREBASE) {
+    if (process.env.NODE_ENV === 'production') {
+      throw new Error('Firebase가 비활성화된 상태에서는 인증 메일을 보낼 수 없습니다.');
+    }
+
+    return {
+      success: true,
+      user: {
+        uid: 'mock-user',
+        email: 'mock@example.com',
+        displayName: 'Mock User',
+        emailVerified: true,
+      },
+      alreadyVerified: true,
+    };
+  }
+
+  const { auth, authModule } = await getAuthModules();
+  if (!auth?.currentUser) {
+    throw new Error('로그인 상태를 확인하지 못했습니다. 다시 로그인해 주세요.');
+  }
+
+  await auth.currentUser.reload();
+
+  const currentUser = auth.currentUser;
+  if (!currentUser) {
+    throw new Error('로그인 상태를 확인하지 못했습니다. 다시 로그인해 주세요.');
+  }
+
+  if (currentUser.emailVerified) {
+    return {
+      success: true,
+      user: toAuthUser(currentUser),
+      alreadyVerified: true,
+    };
+  }
+
+  await authModule.sendEmailVerification(currentUser);
+
+  return {
+    success: true,
+    user: toAuthUser(currentUser),
+    alreadyVerified: false,
+  };
+}
+
 export async function loginFirebaseUserWithGoogle(): Promise<AuthActionResult> {
   if (!USE_FIREBASE) {
     if (process.env.NODE_ENV === 'production') {
@@ -378,14 +432,21 @@ export function observeFirebaseSession(
         }
 
         try {
-          const isAdmin = await isUserAdmin(user);
+          try {
+            await user.reload();
+          } catch (error) {
+            console.warn('[adminAuth] failed to refresh signed-in user', error);
+          }
+
+          const refreshedUser = auth.currentUser ?? user;
+          const isAdmin = await isUserAdmin(refreshedUser);
           if (disposed) {
             return;
           }
 
           callback({
-            authUser: toAuthUser(user),
-            adminUser: isAdmin ? toAdminUser(user) : null,
+            authUser: toAuthUser(refreshedUser),
+            adminUser: isAdmin ? toAdminUser(refreshedUser) : null,
             isAdmin,
           });
         } catch (error) {

@@ -7,6 +7,7 @@ import type {
   AdminUser,
   AuthActionResult,
   AuthUser,
+  EmailVerificationActionResult,
 } from '@/services/adminAuth';
 import {
   loginFirebaseUser,
@@ -14,6 +15,7 @@ import {
   logoutFirebaseUser,
   observeFirebaseSession,
   registerFirebaseUser,
+  sendCurrentUserEmailVerification,
 } from '@/services/adminAuth';
 
 export interface AdminContextType {
@@ -26,6 +28,7 @@ export interface AdminContextType {
   login: (email: string, password: string) => Promise<AuthActionResult>;
   register: (email: string, password: string) => Promise<AuthActionResult>;
   loginWithGoogle: () => Promise<AuthActionResult>;
+  sendVerificationEmail: () => Promise<EmailVerificationActionResult>;
   logout: () => Promise<void>;
 }
 
@@ -38,6 +41,12 @@ const unavailableAuthResult: AuthActionResult = {
   errorMessage: '이 화면에서는 로그인을 지원하지 않습니다.',
 };
 
+const unavailableEmailVerificationResult: EmailVerificationActionResult = {
+  success: false,
+  user: null,
+  errorMessage: '현재 화면에서는 인증 메일을 보낼 수 없습니다.',
+};
+
 const anonymousAdminContextValue: AdminContextType = {
   adminUser: null,
   authUser: null,
@@ -48,6 +57,7 @@ const anonymousAdminContextValue: AdminContextType = {
   login: async () => unavailableAuthResult,
   register: async () => unavailableAuthResult,
   loginWithGoogle: async () => unavailableAuthResult,
+  sendVerificationEmail: async () => unavailableEmailVerificationResult,
   logout: async () => {},
 };
 
@@ -139,6 +149,25 @@ export function AdminProvider({ children }: { children: ReactNode }) {
               error instanceof Error
                 ? error.message
                 : 'Google 로그인에 실패했습니다.',
+          };
+        }
+      },
+      sendVerificationEmail: async () => {
+        try {
+          const result = await sendCurrentUserEmailVerification();
+          if (result.user) {
+            setAuthUser(result.user);
+          }
+          return result;
+        } catch (error) {
+          console.error('[AdminProvider] verification email resend failed', error);
+          return {
+            success: false,
+            user: authUser,
+            errorMessage:
+              error instanceof Error
+                ? error.message
+                : '인증 메일을 보내지 못했습니다. 잠시 후 다시 시도해 주세요.',
           };
         }
       },

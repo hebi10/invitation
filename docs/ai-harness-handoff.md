@@ -1,22 +1,22 @@
 ### commit message
-- fix: 관리자 비공개 청첩장 미리보기 복구
+- fix: 회원가입 인증 메일 재발송 연결
 
 ### 해결한 문제
-- 공개 청첩장 레이아웃이 익명 관리자 컨텍스트로 고정되어 관리자 로그인 상태를 읽지 못하던 문제를 수정했습니다.
-- 비공개 청첩장도 관리자 로그인 상태에서는 기존 관리자 API 재조회 경로로 열 수 있게 복구했습니다.
-- 일반 방문자는 기존처럼 공개 상태가 아닌 청첩장 접근 제한을 유지합니다.
+- `/signup` 회원가입 직후 미인증 고객은 `/my-invitations`로 즉시 이동하지 않고 인증 안내를 볼 수 있게 했습니다.
+- `/my-invitations`와 `/my-invitations/create` 직접 접근도 미인증 회원가입 계정이면 이메일 인증 필요 화면을 보여주도록 막았습니다.
+- 인증 메일 발송 실패/분실 상황에서 같은 화면에서 “인증 메일 다시 보내기”를 실행하도록 Auth 컨텍스트와 UI를 연결했습니다.
 
 ### 최근 변경 유지 항목
 - 고객 신규 생성과 모바일 생성 API는 이메일 인증 또는 신뢰 provider 확인을 거칩니다.
 - 고객 편집 권한은 Firebase ID token과 `events.ownerUid` 일치 여부로 확인합니다.
-- 레거시 비밀번호 데이터는 신규 코드 경로에서 생성, 검증, 저장하지 않습니다.
+- Auth 관찰 시 Firebase user를 reload해서 이메일 인증 완료 후 새로고침하면 최신 인증 상태를 읽습니다.
 
 ### 검증 명령과 결과
 - `npm run typecheck:web` 통과
 - `npm run lint:web` 통과
-- `git diff --check` 통과, 기존 CRLF/LF 변환 경고 1건 표시
+- `git diff --check` 통과
 
 ### 남은 리스크
+- Firebase 인증 메일은 실제 수신함/스팸함과 Firebase Authorized domains 설정까지 실계정으로 확인이 필요합니다.
 - Google Play 계정 삭제 요구사항 기준으로 모바일 앱 내부에도 삭제 요청 경로가 잘 보이는지 실기기에서 확인이 필요합니다.
-- 실제 Firebase 데이터의 오래된 `eventSecrets`/`client-passwords` 문서는 별도 운영 스크립트로 정리할지 결정이 필요합니다.
 - 모바일 앱 연동 링크와 RevenueCat 결제 완료 흐름은 실기기에서 최종 QA가 필요합니다.

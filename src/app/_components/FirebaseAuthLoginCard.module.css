@@ -116,7 +116,8 @@
 }
 
 .primaryButton,
-.googleButton {
+.googleButton,
+.resendButton {
   min-height: 48px;
   border: 0;
   border-radius: 999px;
@@ -133,6 +134,12 @@
   background: #ffffff;
   color: #0f172a;
   border: 1px solid rgba(148, 163, 184, 0.3);
+}
+
+.resendButton {
+  background: #f8fafc;
+  color: #0f172a;
+  border: 1px solid rgba(148, 163, 184, 0.36);
 }
 
 .divider {

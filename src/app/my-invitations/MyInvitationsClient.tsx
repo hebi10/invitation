@@ -498,12 +498,28 @@ function OwnedEventCard({ authUid, event }: OwnedEventCardProps) {
 }
 
 export default function MyInvitationsClient() {
-  const { authUser, isLoggedIn, isAdminLoading, isAdminLoggedIn, logout } = useAdmin();
+  const {
+    authUser,
+    isLoggedIn,
+    isAdminLoading,
+    isAdminLoggedIn,
+    logout,
+    sendVerificationEmail,
+  } = useAdmin();
   const router = useRouter();
   const [createEventNotice, setCreateEventNotice] = useState('');
+  const [verificationNotice, setVerificationNotice] = useState('');
+  const [verificationError, setVerificationError] = useState('');
+  const [verificationLoading, setVerificationLoading] = useState(false);
+  const requiresEmailVerification =
+    isLoggedIn && authUser ? !authUser.emailVerified : false;
   const eventsQuery = useQuery<CustomerOwnedEventSummary[]>({
     queryKey: appQueryKeys.ownedCustomerEvents(authUser?.uid ?? null),
-    enabled: !isAdminLoading && isLoggedIn && Boolean(authUser?.uid),
+    enabled:
+      !isAdminLoading &&
+      isLoggedIn &&
+      Boolean(authUser?.uid) &&
+      !requiresEmailVerification,
     queryFn: async () => listOwnedCustomerEvents(authUser?.uid ?? ''),
     staleTime: FIFTEEN_MINUTES_MS,
     gcTime: THIRTY_MINUTES_MS,
@@ -511,7 +527,11 @@ export default function MyInvitationsClient() {
   });
   const walletQuery = useQuery<CustomerWalletSummary>({
     queryKey: appQueryKeys.customerWallet(authUser?.uid ?? null),
-    enabled: !isAdminLoading && isLoggedIn && Boolean(authUser?.uid),
+    enabled:
+      !isAdminLoading &&
+      isLoggedIn &&
+      Boolean(authUser?.uid) &&
+      !requiresEmailVerification,
     queryFn: async () => getCustomerWalletSnapshot(authUser?.uid ?? ''),
     staleTime: FIFTEEN_MINUTES_MS,
     gcTime: THIRTY_MINUTES_MS,
@@ -531,6 +551,28 @@ export default function MyInvitationsClient() {
       : walletQuery.error instanceof Error
         ? walletQuery.error.message
         : '';
+
+  const handleResendVerificationEmail = async () => {
+    setVerificationLoading(true);
+    setVerificationNotice('');
+    setVerificationError('');
+
+    const result = await sendVerificationEmail();
+    if (!result.success) {
+      setVerificationError(
+        result.errorMessage ?? '인증 메일을 보내지 못했습니다. 잠시 후 다시 시도해 주세요.'
+      );
+      setVerificationLoading(false);
+      return;
+    }
+
+    setVerificationNotice(
+      result.alreadyVerified
+        ? '이메일 인증이 확인되었습니다. 내 이벤트 화면으로 이동합니다.'
+        : '인증 메일을 다시 보냈습니다. 받은 편지함에서 인증 링크를 확인해 주세요.'
+    );
+    setVerificationLoading(false);
+  };
 
   const handleCreateEvent = () => {
     if (walletLoading) {
@@ -586,6 +628,66 @@ export default function MyInvitationsClient() {
                 회원가입
               </Link>
             </div>
+          </section>
+          <LegalFooter />
+        </div>
+      </main>
+    );
+  }
+
+  if (requiresEmailVerification) {
+    return (
+      <main className={styles.page}>
+        <div className={styles.shell}>
+          <section className={styles.hero}>
+            <div className={styles.heroHeader}>
+              <div>
+                <p className={styles.eyebrow}>Email Verification</p>
+                <h1 className={styles.title}>이메일 인증이 필요합니다</h1>
+                <p className={styles.description}>
+                  회원가입 계정은 이메일 인증을 완료한 뒤 내 이벤트와 청첩장 생성 기능을
+                  이용할 수 있습니다.
+                </p>
+              </div>
+              <div className={styles.summaryStack}>
+                <span className={styles.summaryItem}>
+                  {authUser?.email ?? '이메일 없음'}
+                </span>
+                <span className={styles.summaryItem}>인증 대기</span>
+              </div>
+            </div>
+
+            <div className={styles.heroActions}>
+              <button
+                className={styles.primaryButton}
+                type="button"
+                onClick={() => void handleResendVerificationEmail()}
+                disabled={verificationLoading}
+              >
+                {verificationLoading ? '인증 메일 보내는 중' : '인증 메일 다시 보내기'}
+              </button>
+              <button
+                className={styles.secondaryButton}
+                type="button"
+                onClick={() => window.location.reload()}
+              >
+                인증 후 새로고침
+              </button>
+              <button
+                className={styles.secondaryButton}
+                type="button"
+                onClick={() => void logout()}
+              >
+                로그아웃
+              </button>
+            </div>
+
+            {verificationNotice ? (
+              <p className={styles.notice} role="status">
+                {verificationNotice}
+              </p>
+            ) : null}
+            {verificationError ? <p className={styles.error}>{verificationError}</p> : null}
           </section>
           <LegalFooter />
         </div>

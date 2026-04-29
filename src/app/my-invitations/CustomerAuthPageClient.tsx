@@ -29,15 +29,19 @@ export default function CustomerAuthPageClient({
   initialMode = 'login',
 }: CustomerAuthPageClientProps) {
   const router = useRouter();
-  const { isLoggedIn, isAdminLoading } = useAdmin();
+  const { authUser, isLoggedIn, isAdminLoading } = useAdmin();
 
   useEffect(() => {
     if (isAdminLoading || !isLoggedIn) {
       return;
     }
 
+    if (initialMode === 'register' && authUser && !authUser.emailVerified) {
+      return;
+    }
+
     router.replace('/my-invitations');
-  }, [isAdminLoading, isLoggedIn, router]);
+  }, [authUser, initialMode, isAdminLoading, isLoggedIn, router]);
 
   if (isAdminLoading) {
     return (

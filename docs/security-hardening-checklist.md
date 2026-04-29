@@ -26,7 +26,7 @@
   - [ ] `/admin/?section=customers&tab=accounts&pageCategory=invitation` 고객 탈퇴 처리 시 관리자 계정과 현재 로그인 관리자는 차단됨
 - Web 고객 대시보드
   - [ ] `/login` 이메일 로그인
-  - [ ] `/signup` 이메일 가입
+  - [ ] `/signup` 회원가입
   - [ ] `/my-invitations` 로그인 전/후 상태 전환
   - [ ] `/my-invitations`에서 본인 청첩장 방명록 조회
   - [ ] `/my-invitations`에서 본인 청첩장 방명록 삭제 예정 처리
@@ -34,7 +34,7 @@
   - [ ] 기존 고객 편집 비밀번호 로그인/claim API가 노출되지 않음
   - [ ] `/api/customer/events/[slug]/comments`가 Firebase ID token과 ownerUid를 검증
   - [ ] `/api/admin/session`이 Firebase ID token과 admin 권한 문서를 검증
-  - [ ] 이메일 가입 계정은 인증 메일 확인 전 신규 청첩장 생성이 차단됨
+  - [ ] 회원가입 계정은 인증 메일 확인 전 신규 청첩장 생성이 차단됨
   - [ ] 고객 신규 이벤트 생성은 서버 API/Admin SDK만 허용하고 Firestore client create는 관리자 전용
   - [ ] 고객 편집 update는 `productTier`, `features`, `featureFlags`, `ticket` 계열 과금/권한성 필드를 변경할 수 없음
   - [ ] `eventSlugIndex` update는 기존 slug와 eventId를 유지하고 기존 eventId 소유자만 허용
