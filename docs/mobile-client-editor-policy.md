@@ -83,6 +83,10 @@
 - 앱은 `login?linkToken=...` 딥링크를 받으면 로그인 화면에서 자동 교환을 시도한다.
   - `apps/mobile/src/lib/appDeepLink.ts`
   - `apps/mobile/src/app/login.tsx`
+- Expo 앱은 custom scheme과 HTTPS 앱 링크를 모두 받는다.
+  - custom scheme: `mobileinvitation://...`
+  - HTTPS app link: `https://msgnote.kr/app/...`, `https://msgnote.kr/mobile/...`
+  - 출시 전 도메인에 Android Asset Links와 iOS Apple App Site Association 설정이 필요하다.
 - 모바일 편집기 이미지 관리는 서버 세션 기반 업로드를 사용하고, 대표/공유/카카오 단건 제거와 갤러리 index 기반 제거를 분리한다.
   - `apps/mobile/src/features/manage/hooks/useImageUpload.ts`
   - `apps/mobile/src/features/manage/components/ManageEditorStepContent.tsx`

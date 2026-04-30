@@ -5,6 +5,7 @@ import { INVITATION_THEME_KEYS, isInvitationThemeKey } from './invitationThemes'
 const APP_LINK_SCHEME = 'mobileinvitation';
 const APP_LINK_WEB_HOSTS = new Set(['msgnote.kr', 'www.msgnote.kr']);
 const APP_LINK_WEB_PREFIXES = new Set(['app', 'mobile']);
+const LOGIN_REDIRECT_PATHS = new Set(['/', '/guide', '/create', '/manage', '/settings']);
 const VALID_TICKET_INTENTS = new Set(['extend', 'extra-page', 'extra-variant', 'upgrade']);
 const VALID_PRODUCT_TIERS = new Set(['standard', 'deluxe', 'premium']);
 const VALID_THEME_KEYS = new Set(INVITATION_THEME_KEYS);
@@ -74,6 +75,20 @@ function buildCreateHref(searchParams: URLSearchParams): Href {
   } as Href;
 }
 
+export function normalizeLoginRedirectPath(next: string | null | undefined): Href {
+  const normalizedNext = next?.trim() ?? '';
+  if (!normalizedNext.startsWith('/')) {
+    return '/manage';
+  }
+
+  const pathname = normalizedNext.split(/[?#]/)[0]?.replace(/\/+$/g, '') || '/';
+  if (!LOGIN_REDIRECT_PATHS.has(pathname)) {
+    return '/manage';
+  }
+
+  return normalizedNext as Href;
+}
+
 function buildLoginHref(searchParams: URLSearchParams): Href {
   const params: Record<string, string> = {};
   const next = searchParams.get('next')?.trim();
@@ -83,8 +98,11 @@ function buildLoginHref(searchParams: URLSearchParams): Href {
     params.linkToken = linkToken;
   }
 
-  if (next && next.startsWith('/')) {
-    params.next = next;
+  if (next) {
+    const normalizedNext = normalizeLoginRedirectPath(next);
+    if (normalizedNext !== '/manage') {
+      params.next = String(normalizedNext);
+    }
   }
 
   if (Object.keys(params).length === 0) {

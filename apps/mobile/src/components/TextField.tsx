@@ -21,6 +21,8 @@ type SupportedTextFieldProps = Pick<
   | 'onSubmitEditing'
   | 'returnKeyType'
   | 'secureTextEntry'
+  | 'accessibilityLabel'
+  | 'accessibilityHint'
 >;
 
 type TextFieldProps = SupportedTextFieldProps & {
@@ -49,6 +51,8 @@ export function TextField({
   onSubmitEditing,
   editable = true,
   maxLength,
+  accessibilityLabel,
+  accessibilityHint,
   helperText,
   labelVariant = 'caption',
   containerStyle,
@@ -75,6 +79,8 @@ export function TextField({
         onSubmitEditing={onSubmitEditing}
         editable={editable}
         maxLength={maxLength}
+        accessibilityLabel={accessibilityLabel ?? label}
+        accessibilityHint={accessibilityHint}
         style={[
           styles.input,
           multiline ? styles.multiline : null,

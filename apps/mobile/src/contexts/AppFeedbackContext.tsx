@@ -1,5 +1,6 @@
 import type { PropsWithChildren } from 'react';
 import {
+  AccessibilityInfo,
   Platform,
   StyleSheet,
   Vibration,
@@ -168,6 +169,24 @@ export function AppFeedbackProvider({ children }: PropsWithChildren) {
     };
   }, []);
 
+  useEffect(() => {
+    if (!toast || Platform.OS === 'web') {
+      return;
+    }
+
+    AccessibilityInfo.announceForAccessibility(toast.message);
+  }, [toast]);
+
+  useEffect(() => {
+    if (!isOffline || Platform.OS === 'web') {
+      return;
+    }
+
+    AccessibilityInfo.announceForAccessibility(
+      '오프라인 상태입니다. 연결이 복구되면 다시 시도해 주세요.'
+    );
+  }, [isOffline]);
+
   const toastStyle = useMemo(() => {
     if (!toast) {
       return null;
@@ -220,6 +239,9 @@ export function AppFeedbackProvider({ children }: PropsWithChildren) {
       <View pointerEvents="box-none" style={styles.overlay}>
         {isOffline ? (
           <View
+            accessible
+            accessibilityRole="alert"
+            accessibilityLiveRegion="polite"
             style={[
               styles.offlineBanner,
               {
@@ -237,6 +259,9 @@ export function AppFeedbackProvider({ children }: PropsWithChildren) {
 
         {toast && toastStyle ? (
           <View
+            accessible
+            accessibilityRole={toast.tone === 'error' ? 'alert' : 'text'}
+            accessibilityLiveRegion={toast.tone === 'error' ? 'assertive' : 'polite'}
             style={[
               styles.toast,
               {

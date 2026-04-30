@@ -16,15 +16,12 @@ import {
   getLinkedInvitationCards,
   type LinkedInvitationCard,
 } from '../lib/linkedInvitationCards';
+import { normalizeLoginRedirectPath } from '../lib/appDeepLink';
 import { copyTextWithFallback } from '../lib/textTransfer';
 
 function resolveNextPath(value: string | string[] | undefined): Href {
   const next = Array.isArray(value) ? value[0] : value;
-  if (typeof next !== 'string' || !next.trim().startsWith('/')) {
-    return '/manage';
-  }
-
-  return next.trim() as Href;
+  return normalizeLoginRedirectPath(typeof next === 'string' ? next : null);
 }
 
 function resolveLinkToken(value: string | string[] | undefined) {

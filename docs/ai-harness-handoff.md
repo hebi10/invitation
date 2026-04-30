@@ -1,24 +1,21 @@
 ### commit message
-- fix: 방명록 권한과 rate limit 보안 강화
+- fix: 모바일 앱 링크와 업로드 UX 안정화
 
 ### 해결한 문제
-- Firestore rules에서 고객 소유자가 본인 이벤트의 방명록 댓글을 직접 관리할 수 있는 권한을 유지하도록 조정했습니다.
-- 고객 댓글 삭제 API 인증 검증을 공통 helper로 분리해 토큰 없음/만료/위조는 401, 소유권 없음은 403으로 분리했습니다.
-- 운영 환경의 민감 rate limit scope는 Firestore 저장소 실패 또는 미가용 시 로컬 fallback 대신 fail-closed로 차단합니다.
+- Expo 앱에 Android HTTPS intent filter와 iOS associated domains를 추가해 `https://msgnote.kr/app`, `https://msgnote.kr/mobile` 앱 링크를 받을 수 있게 했습니다.
+- 모바일 이미지 업로드는 선택 품질을 낮추고, 서버 제한 초과 이미지를 사전 차단하며, `expo-image-manipulator`가 런타임에 있으면 긴 변 2400px 기준으로 최적화합니다.
+- 로그인 `next` 경로 allowlist, TextField 접근성 라벨, toast/오프라인 배너 스크린리더 공지를 추가했습니다.
 
 ### 최근 변경 유지 항목
-- 고객 신규 생성과 모바일 생성 API는 이메일 인증 또는 신뢰 provider 확인을 거칩니다.
-- 고객 편집 권한은 Firebase ID token과 `events.ownerUid` 일치 여부로 확인합니다.
-- 공개 방명록 작성은 계속 서버 API만 사용하며, Firestore client 직접 create는 차단 상태를 유지합니다.
+- 결제 기능은 이번 작업 범위에서 제외했고 기존 흐름을 건드리지 않았습니다.
+- SecureStore 기반 owner/customer session 복구 흐름은 기존 구조를 유지했습니다.
+- 고객 소유자의 방명록 관리 권한 유지 정책도 변경하지 않았습니다.
 
 ### 검증 명령과 결과
-- `npm run test:customer-api-auth` 통과
-- `npm run test:rate-limit-policy` 통과
-- `npm run qa:event-rollout` 통과
-- `npm run lint:web` 통과
-- `git diff --check` 통과
+- `npm run typecheck:mobile` 통과
+- `npm run lint:mobile` 통과
 
 ### 남은 리스크
-- `npm run test:rules`는 추가했지만 현재 로컬 환경에서 Java 실행이 불가해 Firestore emulator가 시작되지 않습니다.
-- `npm run build`의 Next 내부 type-checking `spawn EPERM`은 CI 또는 Firebase App Hosting에서 재확인이 필요합니다.
-- PageEditorClient/PageWizardClient 대형 파일 분리는 별도 리팩터링 작업으로 남아 있습니다.
+- 현재 환경은 npm registry 접근이 제한되어 `expo-image-manipulator` 설치/lockfile 갱신을 수행하지 못했습니다. 패키지를 설치하면 런타임 리사이즈 경로가 활성화됩니다.
+- HTTPS 앱 링크는 앱 설정 외에 `assetlinks.json`, `apple-app-site-association` 도메인 배포 후 실기기에서 확인해야 합니다.
+- iPhone/Android 원본 사진 업로드와 카카오/브라우저 앱 링크 전환은 실기기 QA가 필요합니다.

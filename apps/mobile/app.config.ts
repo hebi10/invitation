@@ -40,6 +40,35 @@ const config: ExpoConfig = {
     package: 'kr.msgnote.mobileinvitation',
     versionCode: 1,
     predictiveBackGestureEnabled: false,
+    intentFilters: [
+      {
+        action: 'VIEW',
+        autoVerify: true,
+        data: [
+          {
+            scheme: 'https',
+            host: 'msgnote.kr',
+            pathPrefix: '/app',
+          },
+          {
+            scheme: 'https',
+            host: 'msgnote.kr',
+            pathPrefix: '/mobile',
+          },
+          {
+            scheme: 'https',
+            host: 'www.msgnote.kr',
+            pathPrefix: '/app',
+          },
+          {
+            scheme: 'https',
+            host: 'www.msgnote.kr',
+            pathPrefix: '/mobile',
+          },
+        ],
+        category: ['BROWSABLE', 'DEFAULT'],
+      },
+    ],
     blockedPermissions: [
       'android.permission.CAMERA',
       'android.permission.RECORD_AUDIO',
@@ -52,6 +81,10 @@ const config: ExpoConfig = {
   ios: {
     bundleIdentifier: 'kr.msgnote.mobileinvitation',
     buildNumber: '1',
+    associatedDomains: [
+      'applinks:msgnote.kr',
+      'applinks:www.msgnote.kr',
+    ],
     infoPlist: {
       NSPhotoLibraryUsageDescription:
         '청첩장 대표 이미지와 갤러리 이미지를 업로드하려면 사진 보관함 접근 권한이 필요합니다.',
