@@ -1,23 +1,10 @@
 import { NextResponse } from 'next/server';
 
+import {
+  CustomerApiAuthError,
+  verifyCustomerUid,
+} from '@/server/customerApiAuth';
 import { scheduleDeleteCustomerEventGuestbookComment } from '@/server/customerEventsService';
-import { getServerAuth } from '@/server/firebaseAdmin';
-
-async function verifyCustomerUid(request: Request) {
-  const authHeader = request.headers.get('authorization') ?? '';
-  const idToken = authHeader.startsWith('Bearer ') ? authHeader.slice(7).trim() : '';
-  if (!idToken) {
-    return null;
-  }
-
-  const serverAuth = getServerAuth();
-  if (!serverAuth) {
-    throw new Error('Firebase Admin Auth를 초기화하지 못했습니다.');
-  }
-
-  const decodedToken = await serverAuth.verifyIdToken(idToken);
-  return decodedToken.uid;
-}
 
 export async function DELETE(
   request: Request,
@@ -39,6 +26,10 @@ export async function DELETE(
       success: true,
     });
   } catch (error) {
+    if (error instanceof CustomerApiAuthError) {
+      return NextResponse.json({ error: error.message }, { status: error.status });
+    }
+
     const message =
       error instanceof Error
         ? error.message

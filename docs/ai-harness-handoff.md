@@ -1,22 +1,24 @@
 ### commit message
-- fix: 고객 생성 후 page-wizard 진입 복구
+- fix: 방명록 권한과 rate limit 보안 강화
 
 ### 해결한 문제
-- `/my-invitations/create`에서 고객이 제작권으로 청첩장을 만들면 목록/지갑 쿼리 무효화를 기다리지 않고 바로 `/page-wizard/{slug}`로 이동하도록 정리했습니다.
-- `PageWizardClient`의 기존 청첩장 접근 게이트가 `isAdminLoggedIn`만 보고 있어 고객 소유 slug도 막히던 문제를 수정했습니다.
-- 고객이 방금 만든 청첩장은 소유권 연결이 되어 있으면 `/page-wizard/{slug}`에서 바로 편집 화면을 열 수 있습니다.
+- Firestore rules에서 고객 소유자가 본인 이벤트의 방명록 댓글을 직접 관리할 수 있는 권한을 유지하도록 조정했습니다.
+- 고객 댓글 삭제 API 인증 검증을 공통 helper로 분리해 토큰 없음/만료/위조는 401, 소유권 없음은 403으로 분리했습니다.
+- 운영 환경의 민감 rate limit scope는 Firestore 저장소 실패 또는 미가용 시 로컬 fallback 대신 fail-closed로 차단합니다.
 
 ### 최근 변경 유지 항목
 - 고객 신규 생성과 모바일 생성 API는 이메일 인증 또는 신뢰 provider 확인을 거칩니다.
 - 고객 편집 권한은 Firebase ID token과 `events.ownerUid` 일치 여부로 확인합니다.
-- 이메일 인증 상태 확인/재발송 흐름과 관리자 요약 카드 레이아웃 보정은 기존 수정 상태를 그대로 유지합니다.
+- 공개 방명록 작성은 계속 서버 API만 사용하며, Firestore client 직접 create는 차단 상태를 유지합니다.
 
 ### 검증 명령과 결과
-- `npm run typecheck:web` 통과
+- `npm run test:customer-api-auth` 통과
+- `npm run test:rate-limit-policy` 통과
+- `npm run qa:event-rollout` 통과
 - `npm run lint:web` 통과
 - `git diff --check` 통과
 
 ### 남은 리스크
-- Firebase 인증 메일은 실제 수신함/스팸함과 Firebase Authorized domains 설정까지 실계정으로 확인이 필요합니다.
-- Google Play 계정 삭제 요구사항 기준으로 모바일 앱 내부에도 삭제 요청 경로가 잘 보이는지 실기기에서 확인이 필요합니다.
-- 모바일 앱 연동 링크와 RevenueCat 결제 완료 흐름은 실기기에서 최종 QA가 필요합니다.
+- `npm run test:rules`는 추가했지만 현재 로컬 환경에서 Java 실행이 불가해 Firestore emulator가 시작되지 않습니다.
+- `npm run build`의 Next 내부 type-checking `spawn EPERM`은 CI 또는 Firebase App Hosting에서 재확인이 필요합니다.
+- PageEditorClient/PageWizardClient 대형 파일 분리는 별도 리팩터링 작업으로 남아 있습니다.

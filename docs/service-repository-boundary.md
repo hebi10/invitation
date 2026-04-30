@@ -81,6 +81,7 @@
 - API rate limit 상태는 `src/server/repositories/rateLimitRepository.ts`가 Firestore `rateLimits` 컬렉션에 저장한다.
 - `src/server/requestRateLimit.ts`는 키 구성과 fallback만 담당하고 Firestore 컬렉션 경로를 직접 알지 않는다.
 - Firebase 비활성 로컬 환경에서만 프로세스 메모리 fallback을 허용한다.
+- 운영 환경에서는 로그인, 방명록, 이미지 업로드, 모바일 mutation, 결제/링크 토큰 같은 민감 scope가 Firestore rate limit 저장소를 사용할 수 없거나 저장에 실패하면 fail-closed로 차단한다.
 
 ## 고객 소유 이벤트 조회 경계
 - `/my-invitations`의 내 청첩장 목록은 클라이언트 Firestore 직접 조회 대신 `/api/customer/events`를 통해 서버 Admin SDK로 읽는다.
@@ -108,5 +109,7 @@
 
 ## 검증
 - `npm run test:service-repository-boundary`
+- `npm run test:customer-api-auth`
+- `npm run test:rate-limit-policy`
 - `npm run typecheck:web`
 - `npm run lint:web`

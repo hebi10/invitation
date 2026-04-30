@@ -33,6 +33,8 @@
 - API 보안
   - [ ] 기존 고객 편집 비밀번호 로그인/claim API가 노출되지 않음
   - [ ] `/api/customer/events/[slug]/comments`가 Firebase ID token과 ownerUid를 검증
+  - [ ] 고객 방명록 삭제 API의 토큰 없음/만료/위조 응답이 401로 정규화됨
+  - [ ] 고객 소유자는 본인 이벤트의 `events/{eventId}/comments/{commentId}`를 관리할 수 있고, 다른 고객은 수정/삭제할 수 없음
   - [ ] `/api/admin/session`이 Firebase ID token과 admin 권한 문서를 검증
   - [ ] 회원가입 계정은 인증 메일 확인 전 신규 청첩장 생성이 차단됨
   - [ ] 고객 신규 이벤트 생성은 서버 API/Admin SDK만 허용하고 Firestore client create는 관리자 전용
@@ -52,6 +54,9 @@
 ```bash
 npm run check
 npm run qa:event-rollout
+npm run test:customer-api-auth
+npm run test:rate-limit-policy
+npm run test:rules
 npm run build
 git diff --check
 ```

@@ -25,6 +25,13 @@ export async function resolve(specifier, context, defaultResolve) {
     return defaultResolve(specifier, context, defaultResolve);
   }
 
+  if (specifier === 'server-only') {
+    return {
+      url: 'data:text/javascript,export {}',
+      shortCircuit: true,
+    };
+  }
+
   if (specifier.startsWith('@/')) {
     const resolved = tryResolvePath(path.join(projectRoot, 'src', specifier.slice(2)));
     if (resolved) {

@@ -31,6 +31,42 @@ type RateLimitResult = {
 
 const RATE_LIMIT_STORE_KEY = '__invitation_rate_limit_store__';
 const RATE_LIMIT_SLOW_APPLY_MS = 500;
+const FAIL_CLOSED_RATE_LIMIT_SCOPES = new Set([
+  'client-editor-comment-delete',
+  'client-editor-image-upload',
+  'client-editor-mutation',
+  'customer-event-create',
+  'mobile-billing-fulfill',
+  'mobile-client-editor-comment-mutation',
+  'mobile-client-editor-drafts',
+  'mobile-client-editor-high-risk-verify',
+  'mobile-client-editor-image-cleanup',
+  'mobile-client-editor-image-upload',
+  'mobile-client-editor-link-token-exchange',
+  'mobile-client-editor-link-token-issue',
+  'mobile-client-editor-mutation',
+  'mobile-customer-auth-login',
+  'mobile-customer-auth-refresh',
+  'public-guestbook-comment-create',
+]);
+
+export function isFailClosedRateLimitScope(scope: string) {
+  return FAIL_CLOSED_RATE_LIMIT_SCOPES.has(scope.trim());
+}
+
+function readRateLimitScope(key: string) {
+  return key.split(':', 1)[0]?.trim() ?? '';
+}
+
+export function shouldFailClosedRateLimit({
+  key,
+  nodeEnv = process.env.NODE_ENV,
+}: {
+  key: string;
+  nodeEnv?: string;
+}) {
+  return nodeEnv === 'production' && isFailClosedRateLimitScope(readRateLimitScope(key));
+}
 
 function getRateLimitStore() {
   const globalScope = globalThis as typeof globalThis & {
@@ -150,7 +186,28 @@ export async function applyRateLimit(options: RateLimitOptions) {
       return result;
     } catch (error) {
       console.error('[rate-limit] Firestore rate limit failed; using local fallback', error);
+      if (shouldFailClosedRateLimit({ key: options.key })) {
+        const resetAt = Date.now() + options.windowMs;
+        return {
+          allowed: false,
+          limit: options.limit,
+          remaining: 0,
+          resetAt,
+          retryAfterSeconds: Math.max(1, Math.ceil(options.windowMs / 1000)),
+        };
+      }
     }
+  }
+
+  if (shouldFailClosedRateLimit({ key: options.key })) {
+    const resetAt = Date.now() + options.windowMs;
+    return {
+      allowed: false,
+      limit: options.limit,
+      remaining: 0,
+      resetAt,
+      retryAfterSeconds: Math.max(1, Math.ceil(options.windowMs / 1000)),
+    };
   }
 
   return applyLocalRateLimitFallback(options);
