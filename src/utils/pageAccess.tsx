@@ -1,5 +1,5 @@
 export const AccessDeniedPage = ({
-  message = '이 페이지에 접근할 수 없습니다.',
+  message = '현재 접근할 수 없는 페이지입니다.',
   showAdminLink = true,
   actionLabel,
   onAction,
@@ -42,7 +42,7 @@ export const AccessDeniedPage = ({
             marginBottom: '20px',
           }}
         >
-          🔒
+          !
         </div>
 
         <h1
@@ -53,7 +53,7 @@ export const AccessDeniedPage = ({
             margin: 0,
           }}
         >
-          접근 제한
+          페이지를 열 수 없습니다
         </h1>
 
         <p

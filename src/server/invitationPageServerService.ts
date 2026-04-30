@@ -151,6 +151,18 @@ function toEditableSeed(page: InvitationPage): InvitationPageSeed {
   return sanitizeHeartIconPlaceholdersDeep(seed as InvitationPageSeed);
 }
 
+export function buildServerTrustedMobileInvitationPageConfigForSave(
+  requestedConfig: InvitationPageSeed,
+  currentConfig: InvitationPageSeed
+): InvitationPageSeed {
+  return sanitizeHeartIconPlaceholdersDeep({
+    ...requestedConfig,
+    productTier: currentConfig.productTier,
+    features: currentConfig.features,
+    variants: currentConfig.variants,
+  });
+}
+
 function buildDraftConfigFromSeed(
   seed: InvitationPageSeed,
   overrides: {

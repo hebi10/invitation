@@ -8,13 +8,12 @@ import {
 } from '@/lib/invitationPageSlug';
 import { normalizeInvitationProductTier } from '@/lib/invitationProducts';
 import { GENERIC_SERVER_ERROR_MESSAGE } from '@/server/apiErrorResponse';
-import {
-  CLIENT_EDITOR_OWNER_SESSION_VERSION,
-  createClientEditorSessionValue,
-} from '@/server/clientEditorSession';
+import { CLIENT_EDITOR_OWNER_SESSION_VERSION } from '@/server/clientEditorSession';
 import {
   buildMobileInvitationLinks,
+  createServerBackedMobileClientEditorSession,
   MOBILE_CLIENT_EDITOR_SESSION_TTL_SECONDS,
+  readMobileClientEditorDeviceId,
   resolveMobileClientEditorPermissions,
 } from '@/server/clientEditorMobileApi';
 import {
@@ -149,7 +148,7 @@ export async function POST(request: Request) {
       productTier,
       initialDisplayPeriodMonths: 6,
     });
-    await firestoreEventRepository.assignOwnerBySlug({
+    const resolvedCreatedEvent = await firestoreEventRepository.assignOwnerBySlug({
       pageSlug: createdDraft.slug,
       ownerUid: customerIdentity.uid,
       ownerEmail:
@@ -167,21 +166,23 @@ export async function POST(request: Request) {
       throw new Error('Failed to create invitation page draft.');
     }
 
-    const { value, expiresAt } = createClientEditorSessionValue(
+    const { value, expiresAt, scopes } = await createServerBackedMobileClientEditorSession(
       {
         pageSlug: createdDraft.slug,
         passwordVersion: CLIENT_EDITOR_OWNER_SESSION_VERSION,
-      },
-      {
+        ownerUid: customerIdentity.uid,
+        eventId: resolvedCreatedEvent.summary.eventId,
+        deviceId: readMobileClientEditorDeviceId(request),
+        issuedVia: 'draft-create',
         ttlSeconds: MOBILE_CLIENT_EDITOR_SESSION_TTL_SECONDS,
-      }
+      },
     );
     const links = buildMobileInvitationLinks(
       new URL(request.url).origin,
       createdDraft.slug,
       config.defaultTheme
     );
-    const permissions = resolveMobileClientEditorPermissions();
+    const permissions = resolveMobileClientEditorPermissions({ scopes });
 
     return NextResponse.json(
       {

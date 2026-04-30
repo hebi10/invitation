@@ -1,13 +1,15 @@
 ﻿import { NextResponse } from 'next/server';
 
 import { GENERIC_SERVER_ERROR_MESSAGE } from '@/server/apiErrorResponse';
-import { createClientEditorSessionValue } from '@/server/clientEditorSession';
 import {
+  createServerBackedMobileClientEditorSession,
   loadMobileClientEditorPageSnapshot,
   MOBILE_CLIENT_EDITOR_SESSION_TTL_SECONDS,
+  readMobileClientEditorDeviceId,
 } from '@/server/clientEditorMobileApi';
 import { exchangeMobileClientEditorLinkToken } from '@/server/mobileClientEditorLinkToken';
 import { writeMobileClientEditorAuditLog } from '@/server/mobileClientEditorHighRisk';
+import { resolveStoredEventBySlug } from '@/server/repositories/eventRepository';
 import {
   applyScopedRateLimit,
   buildRateLimitHeaders,
@@ -77,14 +79,17 @@ export async function POST(request: Request) {
     }
 
     const { record } = exchangeResult;
-    const { value, expiresAt } = createClientEditorSessionValue(
+    const resolvedEvent = await resolveStoredEventBySlug(record.pageSlug);
+    const { value, expiresAt } = await createServerBackedMobileClientEditorSession(
       {
         pageSlug: record.pageSlug,
         passwordVersion: record.passwordVersion,
-      },
-      {
+        ownerUid: resolvedEvent?.summary.ownerUid ?? null,
+        eventId: resolvedEvent?.summary.eventId ?? null,
+        deviceId: readMobileClientEditorDeviceId(request),
+        issuedVia: 'link-token',
         ttlSeconds: MOBILE_CLIENT_EDITOR_SESSION_TTL_SECONDS,
-      }
+      },
     );
     const snapshot = await loadMobileClientEditorPageSnapshot(
       new URL(request.url).origin,

@@ -25,6 +25,7 @@ export default function BirthdayThemeStep({
   toggleChoicePanel,
   onProductTierChange,
   setOpenChoicePanel,
+  setDefaultTheme,
   isSelectionLocked,
 }: ThemeStepProps) {
   const selectedTheme = normalizeBirthdayThemeKey(
@@ -39,6 +40,7 @@ export default function BirthdayThemeStep({
   }, [isSelectionLocked, openChoicePanel, setOpenChoicePanel]);
 
   const handleThemeSelect = (theme: BirthdayThemeKey) => {
+    setDefaultTheme(theme);
     updateForm((draft) => {
       draft.pageData = {
         ...draft.pageData,

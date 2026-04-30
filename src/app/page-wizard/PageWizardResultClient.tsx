@@ -12,6 +12,10 @@ import {
   FIFTEEN_MINUTES_MS,
   THIRTY_MINUTES_MS,
 } from '@/lib/appQuery';
+import {
+  buildEventPreviewPath,
+  getEventTypeDefaultPreviewTheme,
+} from '@/lib/eventPreviewLinks';
 import { resolveInvitationFeatures } from '@/lib/invitationProducts';
 import type { EditableInvitationPageConfig } from '@/services/invitationPageService';
 import { getEditableInvitationPageConfig } from '@/services/invitationPageService';
@@ -121,12 +125,23 @@ export default function PageWizardResultClient({
     return applyDerivedWizardDefaults(normalizeFormConfig(configState.config));
   }, [configState]);
 
+  const previewTheme = useMemo(() => {
+    if (!configState) {
+      return null;
+    }
+
+    return getEventTypeDefaultPreviewTheme(
+      configState.config.eventType,
+      configState.defaultTheme
+    );
+  }, [configState]);
+
   const reviewSummary = useMemo(() => {
-    if (!configState || !previewFormState) {
+    if (!configState || !previewFormState || !previewTheme) {
       return [];
     }
 
-    return buildReviewSummary(wizardSteps, configState.defaultTheme, previewFormState, {
+    return buildReviewSummary(wizardSteps, previewTheme, previewFormState, {
       slugInput: slug,
       persistedSlug: slug,
       groomKoreanName: previewFormState.couple.groom.name,
@@ -134,7 +149,7 @@ export default function PageWizardResultClient({
       groomEnglishName: '',
       brideEnglishName: '',
     });
-  }, [configState, previewFormState, slug, wizardSteps]);
+  }, [configState, previewFormState, previewTheme, slug, wizardSteps]);
 
   if (isLoading || isAdminLoading) {
     return (
@@ -195,7 +210,7 @@ export default function PageWizardResultClient({
     );
   }
 
-  if (!configState || !previewFormState) {
+  if (!configState || !previewFormState || !previewTheme) {
     return (
       <main className={styles.page}>
         <div className={styles.shell}>
@@ -233,7 +248,11 @@ export default function PageWizardResultClient({
     );
   }
 
-  const livePagePath = `/${slug}/${configState.defaultTheme}`;
+  const livePagePath = buildEventPreviewPath(
+    slug,
+    configState.config.eventType,
+    previewTheme
+  );
   const redirectPath = `/${slug}`;
 
   return (
@@ -302,7 +321,7 @@ export default function PageWizardResultClient({
             <PageWizardStepPreview
               key={`result-preview-${step.key}`}
               stepKey={step.key}
-              theme={configState.defaultTheme}
+              theme={previewTheme}
               slug={slug}
               formState={previewFormState}
               published={configState.published}

@@ -69,26 +69,6 @@ function syncFirstBirthdayMetadata(page: EventPageReadyState['pageConfig']) {
   }
 }
 
-function FirstBirthdayIntro({
-  babyName,
-  onOpen,
-}: {
-  babyName: string;
-  onOpen: () => void;
-}) {
-  return (
-    <div className={styles.curtain}>
-      <div className={styles.curtainCard}>
-        <span className={styles.curtainKicker}>You're invited</span>
-        <h1 className={styles.curtainTitle}>{babyName}</h1>
-        <button type="button" className={styles.curtainButton} onClick={onOpen}>
-          초대장 열기
-        </button>
-      </div>
-    </div>
-  );
-}
-
 function FirstBirthdayInvitationPageBody(options: EventInvitationRouteOptions) {
   const state = useEventInvitationState({
     ...options,
@@ -128,13 +108,9 @@ function FirstBirthdayInvitationPageBody(options: EventInvitationRouteOptions) {
     readyState.pageConfig.productTier,
     readyState.pageConfig.features
   );
-  const isLoaderVisible = readyState.isLoading || readyState.imagesLoading;
-  const babyName =
-    readyState.pageConfig.displayName.trim() ||
-    readyState.pageConfig.metadata.title.trim() ||
-    '첫 번째 생일';
+  const isMediaPending = readyState.imagesLoading;
   const shouldRenderMusic =
-    !isLoaderVisible &&
+    !isMediaPending &&
     features.showMusic &&
     readyState.pageConfig.musicEnabled === true &&
     Boolean(readyState.pageConfig.musicUrl?.trim());
@@ -164,15 +140,8 @@ function FirstBirthdayInvitationPageBody(options: EventInvitationRouteOptions) {
           </div>
         </div>
       ) : null}
-      {isLoaderVisible ? (
-        <FirstBirthdayIntro
-          babyName={babyName}
-          onOpen={() => readyState.setIsLoading(false)}
-        />
-      ) : (
-        <ThemeRenderer state={readyState} />
-      )}
-      {!readyState.adminNotice && !isLoaderVisible ? (
+      <ThemeRenderer state={readyState} />
+      {!readyState.adminNotice && !isMediaPending ? (
         <div className={styles.floatingRefresh}>
           <button
             type="button"

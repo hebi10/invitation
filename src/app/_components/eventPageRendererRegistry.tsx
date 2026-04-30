@@ -78,6 +78,7 @@ export interface EventPageRouteRenderOptions {
   slug: string;
   theme: string;
   initialPageConfig?: InvitationPage | null;
+  initialBlockMessage?: string | null;
   loadingDelay?: number;
   showGuestbook?: boolean;
   eventType?: EventTypeKey;

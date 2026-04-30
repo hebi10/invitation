@@ -1,6 +1,7 @@
 import { notFound } from 'next/navigation';
 
 import { resolveEventPageRenderer } from '@/app/_components/eventPageRendererRegistry';
+import { getInvitationPublicAccessState } from '@/lib/invitationPublicAccess';
 
 import {
   getCachedServerInvitationPreviewBySlug,
@@ -35,6 +36,10 @@ export default async function EventInvitationSlugPage({
     slug,
     theme,
     initialPageConfig: page ?? undefined,
+    initialBlockMessage:
+      !page && previewPage
+        ? getInvitationPublicAccessState(previewPage).visitorMessage
+        : null,
     eventType: resolvedEventType,
   });
 }

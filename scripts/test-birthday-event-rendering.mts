@@ -6,6 +6,10 @@ import {
   isBirthdayThemeKey,
   resolveBirthdayRouteTheme,
 } from '../src/app/_components/birthday/birthdayThemes.ts';
+import {
+  getInvitationThemePathSuffix,
+  isInvitationThemeKey,
+} from '../src/lib/invitationThemes.ts';
 import { getPageWizardPresentation } from '../src/app/page-wizard/pageWizardPresentation.ts';
 import {
   getPageCategoryEventTypeFilter,
@@ -18,6 +22,10 @@ assert.deepEqual(BIRTHDAY_THEME_KEYS, ['birthday-minimal', 'birthday-floral']);
 assert.equal(isBirthdayThemeKey('birthday-minimal'), true);
 assert.equal(isBirthdayThemeKey('birthday-floral'), true);
 assert.equal(isBirthdayThemeKey('birthday-luxury'), false);
+assert.equal(isInvitationThemeKey('birthday-minimal'), true);
+assert.equal(isInvitationThemeKey('birthday-floral'), true);
+assert.equal(getInvitationThemePathSuffix('birthday-minimal'), '/birthday-minimal');
+assert.equal(getInvitationThemePathSuffix('birthday-floral'), '/birthday-floral');
 assert.equal(resolveBirthdayRouteTheme(null, 'birthday-floral'), 'birthday-floral');
 assert.equal(resolveBirthdayRouteTheme(null, 'emotional'), DEFAULT_BIRTHDAY_THEME);
 assert.equal(

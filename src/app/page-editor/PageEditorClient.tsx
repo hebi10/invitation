@@ -11,8 +11,8 @@ import { USE_FIREBASE } from '@/lib/firebase';
 import {
   DEFAULT_INVITATION_THEME,
   getInvitationThemeLabel,
-  INVITATION_THEME_KEYS,
 } from '@/lib/invitationThemes';
+import { getWeddingPreviewThemeKeys } from '@/lib/eventPreviewLinks';
 import { resolveInvitationFeatures } from '@/lib/invitationProducts';
 import {
   DEFAULT_INVITATION_MUSIC_VOLUME,
@@ -1300,7 +1300,7 @@ export default function PageEditorClient({
 
   const renderPreviewThemeTabs = () => (
     <div className={styles.editorTabs} role="tablist" aria-label="미리보기 테마 선택">
-      {INVITATION_THEME_KEYS.map((themeKey) => (
+      {getWeddingPreviewThemeKeys().map((themeKey) => (
         <button
           key={themeKey}
           type="button"

@@ -25,6 +25,9 @@ export type MobileClientEditorHighRiskAction =
 export interface MobileClientEditorHighRiskSessionPayload {
   pageSlug: string;
   passwordVersion: number;
+  sessionId?: string | null;
+  deviceIdHash?: string | null;
+  allowedActions?: MobileClientEditorHighRiskAction[];
   verifiedAt: number;
   expiresAt: number;
 }
@@ -141,11 +144,25 @@ export function verifyMobileClientEditorHighRiskSessionValue(
     }
 
     return {
-      pageSlug: parsed.pageSlug.trim(),
-      passwordVersion: parsed.passwordVersion,
-      verifiedAt: parsed.verifiedAt,
-      expiresAt: parsed.expiresAt,
-    } satisfies MobileClientEditorHighRiskSessionPayload;
+        pageSlug: parsed.pageSlug.trim(),
+        passwordVersion: parsed.passwordVersion,
+        sessionId:
+          typeof parsed.sessionId === 'string' && parsed.sessionId.trim()
+            ? parsed.sessionId.trim()
+            : null,
+        deviceIdHash:
+          typeof parsed.deviceIdHash === 'string' && parsed.deviceIdHash.trim()
+            ? parsed.deviceIdHash.trim()
+            : null,
+        allowedActions: Array.isArray(parsed.allowedActions)
+          ? parsed.allowedActions.filter(
+              (action): action is MobileClientEditorHighRiskAction =>
+                typeof action === 'string'
+            )
+          : undefined,
+        verifiedAt: parsed.verifiedAt,
+        expiresAt: parsed.expiresAt,
+      } satisfies MobileClientEditorHighRiskSessionPayload;
   } catch {
     return null;
   }
@@ -157,7 +174,8 @@ export function readMobileClientEditorHighRiskToken(request: Request) {
 
 export function authorizeMobileClientEditorHighRiskToken(
   access: AuthorizedMobileClientEditorAccess,
-  highRiskToken: string | undefined | null
+  highRiskToken: string | undefined | null,
+  action?: MobileClientEditorHighRiskAction | null
 ) {
   const highRiskSession = verifyMobileClientEditorHighRiskSessionValue(highRiskToken);
   if (!highRiskSession) {
@@ -166,7 +184,29 @@ export function authorizeMobileClientEditorHighRiskToken(
 
   if (
     highRiskSession.pageSlug !== access.session.pageSlug ||
-    highRiskSession.passwordVersion !== access.session.passwordVersion
+      highRiskSession.passwordVersion !== access.session.passwordVersion
+  ) {
+    return null;
+  }
+
+  if (
+    highRiskSession.sessionId &&
+    highRiskSession.sessionId !== access.session.sessionId
+  ) {
+    return null;
+  }
+
+  if (
+    highRiskSession.deviceIdHash &&
+    highRiskSession.deviceIdHash !== access.session.deviceIdHash
+  ) {
+    return null;
+  }
+
+  if (
+    action &&
+    Array.isArray(highRiskSession.allowedActions) &&
+    !highRiskSession.allowedActions.includes(action)
   ) {
     return null;
   }

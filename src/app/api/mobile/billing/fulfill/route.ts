@@ -15,6 +15,7 @@ import {
   fulfillServerMobilePageCreationPurchase,
   fulfillServerMobileTicketPackPurchase,
 } from '@/server/mobileBillingServerService';
+import { readMobileClientEditorDeviceId } from '@/server/clientEditorMobileApi';
 import {
   applyScopedRateLimit,
   buildRateLimitHeaders,
@@ -199,6 +200,7 @@ export async function POST(request: Request) {
             typeof customerAuth.identity.name === 'string'
               ? customerAuth.identity.name
               : null,
+          deviceId: readMobileClientEditorDeviceId(request),
         }
       );
 
@@ -223,7 +225,10 @@ export async function POST(request: Request) {
           transactionId,
         },
         targetPageSlug,
-        targetToken
+        targetToken,
+        {
+          deviceId: readMobileClientEditorDeviceId(request),
+        }
       );
 
       return NextResponse.json(response, { headers: rateLimitHeaders });

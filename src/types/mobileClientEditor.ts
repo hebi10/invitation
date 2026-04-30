@@ -10,3 +10,4 @@ export interface MobileClientEditorPermissions {
 }
 
 export type MobileClientEditorPermissionKey = keyof MobileClientEditorPermissions;
+export type MobileClientEditorScope = MobileClientEditorPermissionKey;

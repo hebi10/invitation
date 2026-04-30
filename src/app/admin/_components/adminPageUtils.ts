@@ -5,11 +5,14 @@ import {
   type EventTypeKey,
 } from '@/lib/eventTypes';
 import {
-  buildInvitationThemeRoutePath,
   getInvitationThemeAdminLabel,
-  INVITATION_THEME_KEYS,
   type InvitationThemeKey,
 } from '@/lib/invitationThemes';
+import {
+  buildEventPreviewPath,
+  getEventPreviewLinks,
+  getWeddingPreviewThemeKeys,
+} from '@/lib/eventPreviewLinks';
 import type { StatusTone } from './StatusBadge';
 
 export type AdminTab =
@@ -72,9 +75,7 @@ export const TAB_ITEMS: AdminTabItem[] = [
 ];
 
 export const SHORTCUT_ITEMS: Array<{ key: ShortcutKey; label: string }> =
-  INVITATION_THEME_KEYS.filter(
-    (key) => !key.startsWith('first-birthday-') && !key.startsWith('opening-')
-  ).map((key) => ({
+  getWeddingPreviewThemeKeys().map((key) => ({
     key,
     label: getInvitationThemeAdminLabel(key),
   }));
@@ -272,8 +273,14 @@ type VariantCarrier = {
   variants?: Partial<Record<ShortcutKey, VariantLink>>;
 };
 
+type EventPreviewLink = {
+  key: string;
+  label: string;
+  path: string;
+};
+
 function getAdminPreviewPath(pageSlug: string, key: ShortcutKey) {
-  return buildInvitationThemeRoutePath(pageSlug, key);
+  return buildEventPreviewPath(pageSlug, 'wedding', key);
 }
 
 export function formatDateTime(date: Date) {
@@ -294,6 +301,23 @@ export function getAvailableShortcuts(page: VariantCarrier) {
       path: getAdminPreviewPath(page.slug, key),
     })
   );
+}
+
+export function getPageCategoryPreviewLinks(
+  pageCategory: PageCategoryTabKey,
+  page: VariantCarrier
+): EventPreviewLink[] {
+  const eventType = getPageCategoryEventTypeFilter(pageCategory);
+
+  if (!eventType || pageCategory === 'invitation') {
+    return getAvailableShortcuts(page);
+  }
+
+  return getEventPreviewLinks({
+    slug: page.slug,
+    eventType,
+    labelMode: 'admin',
+  });
 }
 
 export function getPageStatusMeta(

@@ -6,6 +6,10 @@ import {
   listEnabledEventTypes,
 } from '../src/lib/eventTypes.ts';
 import {
+  getInvitationThemePathSuffix,
+  isInvitationThemeKey,
+} from '../src/lib/invitationThemes.ts';
+import {
   DEFAULT_OPENING_THEME,
   OPENING_THEME_KEYS,
   isOpeningThemeKey,
@@ -35,6 +39,14 @@ assert.equal(DEFAULT_OPENING_THEME, 'opening-natural');
 assert.equal(isOpeningThemeKey('opening-natural'), true);
 assert.equal(isOpeningThemeKey('opening-modern'), true);
 assert.equal(isOpeningThemeKey('opening-luxury'), false);
+assert.equal(isInvitationThemeKey('general-event-elegant'), true);
+assert.equal(isInvitationThemeKey('general-event-vivid'), true);
+assert.equal(getInvitationThemePathSuffix('general-event-elegant'), '/general-event-elegant');
+assert.equal(getInvitationThemePathSuffix('general-event-vivid'), '/general-event-vivid');
+assert.equal(isInvitationThemeKey('opening-natural'), true);
+assert.equal(isInvitationThemeKey('opening-modern'), true);
+assert.equal(getInvitationThemePathSuffix('opening-natural'), '/opening-natural');
+assert.equal(getInvitationThemePathSuffix('opening-modern'), '/opening-modern');
 assert.equal(normalizeOpeningThemeKey('opening-modern'), 'opening-modern');
 assert.equal(normalizeOpeningThemeKey('emotional'), DEFAULT_OPENING_THEME);
 assert.equal(resolveOpeningRouteTheme(null, 'opening-modern'), null);

@@ -1,5 +1,7 @@
 import 'server-only';
 
+import { createHash } from 'node:crypto';
+
 import {
   type GuestbookCommentStatus,
   isGuestbookCommentPendingPurge,
@@ -15,16 +17,28 @@ import {
 import type {
   MobileClientEditorPermissionKey,
   MobileClientEditorPermissions,
+  MobileClientEditorScope,
 } from '@/types/mobileClientEditor';
 import type { ServerEditableInvitationPageConfig } from '@/server/invitationPageServerService';
 
-import { getAuthorizedClientEditorSession } from './clientEditorSessionAuth';
+import {
+  createClientEditorSessionId,
+  createClientEditorSessionValue,
+  hashClientEditorSessionValue,
+} from './clientEditorSession';
 import {
   getServerEditableInvitationPageConfig,
   getServerInvitationPageDisplayPeriodSummary,
 } from './invitationPageServerService';
 import { getServerPageTicketCount } from './pageTicketServerService';
 import { firestoreEventCommentRepository } from './repositories/eventCommentRepository';
+import { resolveStoredEventBySlug } from './repositories/eventRepository';
+import {
+  firestoreMobileClientEditorSessionRepository,
+  type MobileClientEditorSessionIssuedVia,
+  type StoredMobileClientEditorSessionRecord,
+} from './repositories/mobileClientEditorSessionRepository';
+import { getAuthorizedClientEditorSession } from './clientEditorSessionAuth';
 
 export const MOBILE_CLIENT_EDITOR_SESSION_TTL_SECONDS = 60 * 60 * 24 * 30;
 const MOBILE_INVITATION_PUBLIC_ORIGIN = 'https://msgnote.kr';
@@ -48,18 +62,30 @@ type AuthorizedClientEditorSession = NonNullable<
 
 export type AuthorizedMobileClientEditorAccess = AuthorizedClientEditorSession & {
   permissions: MobileClientEditorPermissions;
+  mobileSession: StoredMobileClientEditorSessionRecord | null;
 };
 
-const OWNER_MOBILE_CLIENT_EDITOR_PERMISSIONS: Readonly<MobileClientEditorPermissions> = {
+const BASE_MOBILE_CLIENT_EDITOR_PERMISSIONS: Readonly<MobileClientEditorPermissions> = {
   canViewDashboard: true,
   canEditInvitation: true,
   canManageGuestbook: true,
   canUploadImages: true,
-  canManagePublication: true,
-  canManageDisplayPeriod: true,
-  canManageTickets: true,
-  canIssueLinkToken: true,
+  canManagePublication: false,
+  canManageDisplayPeriod: false,
+  canManageTickets: false,
+  canIssueLinkToken: false,
 };
+
+const FULL_OWNER_MOBILE_CLIENT_EDITOR_SCOPES: readonly MobileClientEditorScope[] = [
+  'canViewDashboard',
+  'canEditInvitation',
+  'canManageGuestbook',
+  'canUploadImages',
+  'canManagePublication',
+  'canManageDisplayPeriod',
+  'canManageTickets',
+  'canIssueLinkToken',
+] as const;
 
 function toIsoString(value: unknown) {
   if (
@@ -118,9 +144,83 @@ export function readMobileClientEditorToken(request: Request) {
   return token || null;
 }
 
-export function resolveMobileClientEditorPermissions(): MobileClientEditorPermissions {
+export function readMobileClientEditorDeviceId(request: Request) {
+  return request.headers.get('x-mobile-device-id')?.trim() || null;
+}
+
+export function hashMobileClientEditorDeviceId(deviceId: string | null | undefined) {
+  const normalizedDeviceId = deviceId?.trim() ?? '';
+  if (!normalizedDeviceId) {
+    return null;
+  }
+
+  return createHash('sha256').update(normalizedDeviceId).digest('base64url');
+}
+
+export function resolveMobileClientEditorPermissions(
+  input: {
+    scopes?: readonly MobileClientEditorScope[] | null;
+  } = {}
+): MobileClientEditorPermissions {
+  const scopes = new Set(input.scopes ?? []);
+
   return {
-    ...OWNER_MOBILE_CLIENT_EDITOR_PERMISSIONS,
+    ...BASE_MOBILE_CLIENT_EDITOR_PERMISSIONS,
+    canManagePublication: scopes.has('canManagePublication'),
+    canManageDisplayPeriod: scopes.has('canManageDisplayPeriod'),
+    canManageTickets: scopes.has('canManageTickets'),
+    canIssueLinkToken: scopes.has('canIssueLinkToken'),
+  };
+}
+
+export async function createServerBackedMobileClientEditorSession(input: {
+  pageSlug: string;
+  passwordVersion: number;
+  ownerUid?: string | null;
+  eventId?: string | null;
+  deviceId?: string | null;
+  issuedVia: MobileClientEditorSessionIssuedVia;
+  scopes?: readonly MobileClientEditorScope[];
+  ttlSeconds?: number;
+}) {
+  const pageSlug = input.pageSlug.trim();
+  const sessionId = createClientEditorSessionId();
+  const deviceIdHash = hashMobileClientEditorDeviceId(input.deviceId);
+  const scopes = [...(input.scopes ?? FULL_OWNER_MOBILE_CLIENT_EDITOR_SCOPES)];
+  const { value, expiresAt } = createClientEditorSessionValue(
+    {
+      pageSlug,
+      passwordVersion: input.passwordVersion,
+      sessionId,
+      eventId: input.eventId?.trim() || null,
+      ownerUid: input.ownerUid?.trim() || null,
+      deviceIdHash,
+      issuedVia: input.issuedVia,
+      scopes,
+    },
+    {
+      ttlSeconds: input.ttlSeconds,
+    }
+  );
+
+  await firestoreMobileClientEditorSessionRepository.create({
+    sessionId,
+    tokenHash: hashClientEditorSessionValue(value),
+    pageSlug,
+    eventId: input.eventId,
+    ownerUid: input.ownerUid,
+    deviceIdHash,
+    scopes,
+    issuedVia: input.issuedVia,
+    expiresAt: new Date(expiresAt * 1000),
+  });
+
+  return {
+    value,
+    expiresAt,
+    sessionId,
+    deviceIdHash,
+    scopes,
   };
 }
 
@@ -155,16 +255,62 @@ export function buildMissingMobileClientEditorPermissionError(
 
 export async function authorizeMobileClientEditorToken(
   pageSlug: string,
-  sessionValue: string | undefined | null
+  sessionValue: string | undefined | null,
+  options: { deviceId?: string | null } = {}
 ) {
   const authorizedSession = await getAuthorizedClientEditorSession(pageSlug, sessionValue);
   if (!authorizedSession) {
     return null;
   }
 
+  let mobileSession: StoredMobileClientEditorSessionRecord | null = null;
+  const sessionId = authorizedSession.session.sessionId?.trim() ?? '';
+  if (sessionId) {
+    mobileSession =
+      await firestoreMobileClientEditorSessionRepository.findBySessionId(sessionId);
+    if (!mobileSession) {
+      return null;
+    }
+
+    if (mobileSession.revokedAt) {
+      return null;
+    }
+
+    if (mobileSession.expiresAt && mobileSession.expiresAt.getTime() <= Date.now()) {
+      return null;
+    }
+
+    if (mobileSession.pageSlug !== pageSlug) {
+      return null;
+    }
+
+    if (hashClientEditorSessionValue(sessionValue ?? '') !== mobileSession.tokenHash) {
+      return null;
+    }
+
+    const requestDeviceIdHash = hashMobileClientEditorDeviceId(options.deviceId);
+    if (mobileSession.deviceIdHash && mobileSession.deviceIdHash !== requestDeviceIdHash) {
+      return null;
+    }
+
+    const resolvedEvent = await resolveStoredEventBySlug(pageSlug);
+    if (mobileSession.eventId && resolvedEvent?.summary.eventId !== mobileSession.eventId) {
+      return null;
+    }
+
+    if (mobileSession.ownerUid && resolvedEvent?.summary.ownerUid !== mobileSession.ownerUid) {
+      return null;
+    }
+
+    await firestoreMobileClientEditorSessionRepository.touch(sessionId).catch(() => null);
+  }
+
+  const scopes = mobileSession?.scopes ?? authorizedSession.session.scopes ?? [];
+
   return {
     ...authorizedSession,
-    permissions: resolveMobileClientEditorPermissions(),
+    mobileSession,
+    permissions: resolveMobileClientEditorPermissions({ scopes }),
   } satisfies AuthorizedMobileClientEditorAccess;
 }
 
@@ -172,7 +318,9 @@ export async function authorizeMobileClientEditorRequest(
   request: Request,
   pageSlug: string
 ) {
-  return authorizeMobileClientEditorToken(pageSlug, readMobileClientEditorToken(request));
+  return authorizeMobileClientEditorToken(pageSlug, readMobileClientEditorToken(request), {
+    deviceId: readMobileClientEditorDeviceId(request),
+  });
 }
 
 export async function getServerGuestbookCommentsByPageSlug(pageSlug: string) {
@@ -357,7 +505,9 @@ export async function loadMobileClientEditorPageSnapshot(origin: string, pageSlu
   );
 
   return {
-    permissions: resolveMobileClientEditorPermissions(),
+    permissions: resolveMobileClientEditorPermissions({
+      scopes: FULL_OWNER_MOBILE_CLIENT_EDITOR_SCOPES,
+    }),
     dashboardPage: config,
     page: buildMobileClientEditorPageSummary(config, ticketCount, displayPeriod),
     links,

@@ -340,14 +340,18 @@ function findStorageImageByUrl(images: UploadedImage[], imageUrl: string) {
 export function useWeddingInvitationState(
   options: WeddingInvitationRouteOptions
 ): WeddingPageState {
+  const initialBlockMessage = options.initialBlockMessage?.trim() ?? '';
   const initialPage = useMemo(
     () => getInitialWeddingPage(options.slug, options.initialPageConfig),
     [options.slug, options.initialPageConfig]
   );
+  const isInitiallyBlocked = !initialPage && Boolean(initialBlockMessage);
   const [status, setStatus] = useState<WeddingPageState['status']>(
-    initialPage ? 'ready' : 'loading'
+    initialPage ? 'ready' : isInitiallyBlocked ? 'blocked' : 'loading'
   );
-  const [blockMessage, setBlockMessage] = useState<string | null>(null);
+  const [blockMessage, setBlockMessage] = useState<string | null>(
+    isInitiallyBlocked ? initialBlockMessage : null
+  );
   const [pageConfig, setPageConfig] = useState<InvitationPage | null>(initialPage);
   const [isLoading, setIsLoading] = useState(true);
   const { isAdminLoading, isAdminLoggedIn } = useAdmin();
@@ -410,17 +414,24 @@ export function useWeddingInvitationState(
       return;
     }
 
-    setStatus(initialPage ? 'ready' : 'loading');
-    setBlockMessage(null);
+    setStatus(initialPage ? 'ready' : isInitiallyBlocked ? 'blocked' : 'loading');
+    setBlockMessage(isInitiallyBlocked ? initialBlockMessage : null);
     setPageConfig(initialPage);
-    setIsLoading(true);
-  }, [initialPage, isAdminLoading, isAdminLoggedIn, options.slug]);
+    setIsLoading(!isInitiallyBlocked);
+  }, [
+    initialBlockMessage,
+    initialPage,
+    isAdminLoading,
+    isAdminLoggedIn,
+    isInitiallyBlocked,
+    options.slug,
+  ]);
 
   useEffect(() => {
     if (!pageQuery.data) {
       if (pageQuery.isPending) {
-        setStatus(initialPage ? 'ready' : 'loading');
-        setBlockMessage(null);
+        setStatus(initialPage ? 'ready' : isInitiallyBlocked ? 'blocked' : 'loading');
+        setBlockMessage(isInitiallyBlocked ? initialBlockMessage : null);
         setPageConfig(initialPage);
       }
       return;
@@ -434,13 +445,24 @@ export function useWeddingInvitationState(
     }
 
     setStatus(pageQuery.data.status);
-    setBlockMessage(pageQuery.data.blockMessage);
+    setBlockMessage(
+      !isAdminLoggedIn && pageQuery.data.status === 'blocked' && initialBlockMessage
+        ? initialBlockMessage
+        : pageQuery.data.blockMessage
+    );
     setPageConfig(pageQuery.data.pageConfig);
 
     if (pageQuery.data.status === 'blocked') {
       setIsLoading(false);
     }
-  }, [initialPage, isAdminLoggedIn, pageQuery.data, pageQuery.isPending]);
+  }, [
+    initialBlockMessage,
+    initialPage,
+    isAdminLoggedIn,
+    isInitiallyBlocked,
+    pageQuery.data,
+    pageQuery.isPending,
+  ]);
 
   useEffect(() => {
     if (!error) {

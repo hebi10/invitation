@@ -9,7 +9,6 @@ import {
 } from '@/lib/mobileBillingProducts';
 import {
   CLIENT_EDITOR_OWNER_SESSION_VERSION,
-  createClientEditorSessionValue,
 } from '@/server/clientEditorSession';
 
 import {
@@ -18,6 +17,7 @@ import {
   buildMobileInvitationLinks,
   hasMobileClientEditorPermission,
   MOBILE_CLIENT_EDITOR_SESSION_TTL_SECONDS,
+  createServerBackedMobileClientEditorSession,
   resolveMobileClientEditorPermissions,
 } from './clientEditorMobileApi';
 import {
@@ -214,7 +214,16 @@ async function verifyRevenueCatNonSubscriptionTransaction(
   return verifiedTransaction;
 }
 
-async function buildMobileDraftCreationResponse(origin: string, pageSlug: string) {
+async function buildMobileDraftCreationResponse(
+  origin: string,
+  pageSlug: string,
+  options: {
+    ownerUid?: string | null;
+    eventId?: string | null;
+    deviceId?: string | null;
+    issuedVia: 'purchase' | 'draft-create' | 'link-token';
+  }
+) {
   const [config, displayPeriod, ticketCount] = await Promise.all([
     getServerEditableInvitationPageConfig(pageSlug),
     getServerInvitationPageDisplayPeriodSummary(pageSlug),
@@ -225,17 +234,19 @@ async function buildMobileDraftCreationResponse(origin: string, pageSlug: string
     throw new Error('The created invitation page could not be loaded.');
   }
 
-  const { value, expiresAt } = createClientEditorSessionValue(
+  const { value, expiresAt, scopes } = await createServerBackedMobileClientEditorSession(
     {
       pageSlug,
       passwordVersion: CLIENT_EDITOR_OWNER_SESSION_VERSION,
-    },
-    {
+      ownerUid: options.ownerUid,
+      eventId: options.eventId,
+      deviceId: options.deviceId,
+      issuedVia: options.issuedVia,
       ttlSeconds: MOBILE_CLIENT_EDITOR_SESSION_TTL_SECONDS,
-    }
+    },
   );
   const links = buildMobileInvitationLinks(origin, pageSlug, config.defaultTheme);
-  const permissions = resolveMobileClientEditorPermissions();
+  const permissions = resolveMobileClientEditorPermissions({ scopes });
 
   return {
     permissions,
@@ -266,7 +277,7 @@ async function buildMobileDraftCreationResponse(origin: string, pageSlug: string
 export async function fulfillServerMobilePageCreationPurchase(
   origin: string,
   purchase: MobileBillingPurchaseReceipt,
-  input: MobileBillingCreatePageInput
+  input: MobileBillingCreatePageInput & { deviceId?: string | null }
 ) {
   const definition = getMobileBillingProductDefinition(purchase.productId);
   if (!definition || definition.kind !== 'pageCreation') {
@@ -277,11 +288,21 @@ export async function fulfillServerMobilePageCreationPurchase(
   const lockRecord = await acquireBillingFulfillmentLock(purchase, definition);
 
   if (lockRecord.status === 'fulfilled' && lockRecord.createdPageSlug) {
-    return buildMobileDraftCreationResponse(origin, lockRecord.createdPageSlug);
+    return buildMobileDraftCreationResponse(origin, lockRecord.createdPageSlug, {
+      ownerUid: input.ownerUid,
+      eventId: lockRecord.eventId,
+      deviceId: input.deviceId,
+      issuedVia: 'purchase',
+    });
   }
 
   if (lockRecord.status === 'processing' && lockRecord.createdPageSlug) {
-    return buildMobileDraftCreationResponse(origin, lockRecord.createdPageSlug);
+    return buildMobileDraftCreationResponse(origin, lockRecord.createdPageSlug, {
+      ownerUid: input.ownerUid,
+      eventId: lockRecord.eventId,
+      deviceId: input.deviceId,
+      issuedVia: 'purchase',
+    });
   }
 
   try {
@@ -317,7 +338,12 @@ export async function fulfillServerMobilePageCreationPurchase(
       eventId: resolvedCreatedEvent?.summary.eventId ?? null,
     });
 
-    return buildMobileDraftCreationResponse(origin, createdDraft.slug);
+    return buildMobileDraftCreationResponse(origin, createdDraft.slug, {
+      ownerUid: input.ownerUid,
+      eventId: resolvedCreatedEvent?.summary.eventId ?? null,
+      deviceId: input.deviceId,
+      issuedVia: 'purchase',
+    });
   } catch (error) {
     await markBillingFulfillmentFailed(
       purchase.transactionId,
@@ -330,7 +356,8 @@ export async function fulfillServerMobilePageCreationPurchase(
 export async function fulfillServerMobileTicketPackPurchase(
   purchase: MobileBillingPurchaseReceipt,
   targetPageSlug: string,
-  targetToken: string
+  targetToken: string,
+  options: { deviceId?: string | null } = {}
 ) {
   const definition = getMobileBillingProductDefinition(purchase.productId);
   if (!definition || definition.kind !== 'ticketPack') {
@@ -347,7 +374,9 @@ export async function fulfillServerMobileTicketPackPurchase(
     };
   }
 
-  const authorizedSession = await authorizeMobileClientEditorToken(targetPageSlug, targetToken);
+  const authorizedSession = await authorizeMobileClientEditorToken(targetPageSlug, targetToken, {
+    deviceId: options.deviceId,
+  });
   if (!authorizedSession) {
     throw new Error('Target invitation page authorization failed.');
   }

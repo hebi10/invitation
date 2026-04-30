@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 
 import { getEventTypeDisplayLabel } from '@/lib/eventTypes';
+import { buildEventPreviewPath } from '@/lib/eventPreviewLinks';
 import type {
   AdminCustomerAccountSummary,
   AdminCustomerLinkedEventSummary,
@@ -443,7 +444,11 @@ export default function AdminCustomerAccountsTab({
               </a>
               <a
                 className="admin-button admin-button-ghost"
-                href={`/${selectedEvent.slug}/${selectedEvent.defaultTheme}`}
+                href={buildEventPreviewPath(
+                  selectedEvent.slug,
+                  selectedEvent.eventType,
+                  selectedEvent.defaultTheme
+                )}
                 target="_blank"
                 rel="noreferrer"
               >

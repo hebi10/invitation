@@ -3,6 +3,7 @@
 import { authorizeMobileClientEditorRequest } from '@/server/clientEditorMobileApi';
 import {
   createMobileClientEditorHighRiskSessionValue,
+  type MobileClientEditorHighRiskAction,
   writeMobileClientEditorAuditLog,
 } from '@/server/mobileClientEditorHighRisk';
 import {
@@ -14,6 +15,14 @@ const MOBILE_CLIENT_EDITOR_HIGH_RISK_VERIFY_RATE_LIMIT = {
   limit: 5,
   windowMs: 10 * 60 * 1000,
 } as const;
+
+const MOBILE_CLIENT_EDITOR_HIGH_RISK_ACTIONS: readonly MobileClientEditorHighRiskAction[] = [
+  'publishInvitation',
+  'managePaidFeature',
+  'transferTickets',
+  'issueLinkToken',
+  'revokeLinkToken',
+] as const;
 
 export async function POST(request: Request) {
   const body = (await request.json().catch(() => null)) as
@@ -61,6 +70,9 @@ export async function POST(request: Request) {
   const highRiskSession = createMobileClientEditorHighRiskSessionValue({
     pageSlug,
     passwordVersion: access.session.passwordVersion,
+    sessionId: access.session.sessionId ?? null,
+    deviceIdHash: access.session.deviceIdHash ?? null,
+    allowedActions: [...MOBILE_CLIENT_EDITOR_HIGH_RISK_ACTIONS],
   });
 
   await writeMobileClientEditorAuditLog({

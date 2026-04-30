@@ -9,11 +9,19 @@ import type { Swiper as SwiperType } from 'swiper';
 import { Pagination } from 'swiper/modules';
 import { Swiper, SwiperSlide } from 'swiper/react';
 
+import {
+  DEFAULT_BIRTHDAY_THEME,
+  isBirthdayThemeKey,
+} from '@/app/_components/birthday/birthdayThemes';
 import FirebaseAuthLoginCard from '@/app/_components/FirebaseAuthLoginCard';
 import {
   DEFAULT_FIRST_BIRTHDAY_THEME,
   isFirstBirthdayThemeKey,
 } from '@/app/_components/firstBirthday/firstBirthdayThemes';
+import {
+  GENERAL_EVENT_DEFAULT_THEME,
+  isGeneralEventThemeKey,
+} from '@/app/_components/generalEvent/generalEventThemes';
 import {
   DEFAULT_OPENING_THEME,
   isOpeningThemeKey,
@@ -984,6 +992,20 @@ export default function PageWizardClient({
       return;
     }
 
+    if (eventType === 'birthday') {
+      setDefaultTheme((current) =>
+        isBirthdayThemeKey(current) ? current : DEFAULT_BIRTHDAY_THEME
+      );
+      return;
+    }
+
+    if (eventType === 'general-event') {
+      setDefaultTheme((current) =>
+        isGeneralEventThemeKey(current) ? current : GENERAL_EVENT_DEFAULT_THEME
+      );
+      return;
+    }
+
     if (eventType === 'opening') {
       setDefaultTheme((current) =>
         isOpeningThemeKey(current) ? current : DEFAULT_OPENING_THEME
@@ -992,7 +1014,12 @@ export default function PageWizardClient({
     }
 
     setDefaultTheme((current) =>
-      isFirstBirthdayThemeKey(current) || isOpeningThemeKey(current) ? DEFAULT_THEME : current
+      isFirstBirthdayThemeKey(current) ||
+      isBirthdayThemeKey(current) ||
+      isGeneralEventThemeKey(current) ||
+      isOpeningThemeKey(current)
+        ? DEFAULT_THEME
+        : current
     );
   }, [eventType, initialSlug]);
 

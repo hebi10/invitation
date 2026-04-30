@@ -96,7 +96,8 @@ export async function POST(request: Request) {
   if (
     !authorizeMobileClientEditorHighRiskToken(
       access,
-      readMobileClientEditorHighRiskToken(request)
+      readMobileClientEditorHighRiskToken(request),
+      'issueLinkToken'
     )
   ) {
     await writeMobileClientEditorAuditLog({
@@ -194,7 +195,8 @@ export async function DELETE(request: Request) {
   if (
     !authorizeMobileClientEditorHighRiskToken(
       access,
-      readMobileClientEditorHighRiskToken(request)
+      readMobileClientEditorHighRiskToken(request),
+      'revokeLinkToken'
     )
   ) {
     await writeMobileClientEditorAuditLog({

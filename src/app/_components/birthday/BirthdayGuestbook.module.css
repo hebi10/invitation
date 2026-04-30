@@ -29,6 +29,7 @@
 
 .input,
 .textarea {
+  box-sizing: border-box;
   width: 100%;
   border: 1px solid var(--birthday-border);
   border-radius: 8px;

@@ -14,6 +14,7 @@ export interface EventInvitationRouteOptions {
   slug: string;
   theme: EventThemeKey;
   initialPageConfig?: InvitationPage | null;
+  initialBlockMessage?: string | null;
   loadingDelay?: number;
   showGuestbook?: boolean;
   eventType?: EventTypeKey;

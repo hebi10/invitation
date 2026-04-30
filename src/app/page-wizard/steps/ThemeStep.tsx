@@ -124,6 +124,7 @@ export default function ThemeStep({
                           draft.pageData.generalEventTheme = themeKey;
                         }
                       });
+                      setDefaultTheme(themeKey);
                       setOpenChoicePanel(null);
                     }}
                     disabled={isSelectionLocked}

@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 import GuestbookThemed from '@/components/sections/Guestbook/GuestbookThemed';
 import { resolveInvitationFeatures } from '@/lib/invitationProducts';
@@ -16,7 +16,7 @@ type FirstBirthdayThemeRendererProps = {
   theme: FirstBirthdayThemeKey;
 };
 
-function getCountdownParts(target: Date) {
+export function getCountdownParts(target: Date) {
   const diff = Math.max(0, target.getTime() - Date.now());
 
   return [
@@ -25,6 +25,42 @@ function getCountdownParts(target: Date) {
     ['분', Math.floor((diff % 3600000) / 60000)],
     ['초', Math.floor((diff % 60000) / 1000)],
   ] as const;
+}
+
+function useCountdownParts(target: Date) {
+  const [now, setNow] = useState<number | null>(null);
+
+  useEffect(() => {
+    setNow(Date.now());
+
+    const timer = window.setInterval(() => {
+      setNow(Date.now());
+    }, 1000);
+
+    return () => {
+      window.clearInterval(timer);
+    };
+  }, []);
+
+  return useMemo(() => {
+    if (now === null) {
+      return [
+        ['일', 0],
+        ['시간', 0],
+        ['분', 0],
+        ['초', 0],
+      ] as const;
+    }
+
+    const diff = Math.max(0, target.getTime() - now);
+
+    return [
+      ['일', Math.floor(diff / 86400000)],
+      ['시간', Math.floor((diff % 86400000) / 3600000)],
+      ['분', Math.floor((diff % 3600000) / 60000)],
+      ['초', Math.floor((diff % 60000) / 1000)],
+    ] as const;
+  }, [now, target]);
 }
 
 function AccountCard({
@@ -76,10 +112,7 @@ export function FirstBirthdayThemeRenderer({
     state.pageConfig.productTier,
     state.pageConfig.features
   );
-  const countdownParts = useMemo(
-    () => getCountdownParts(model.countdownDate),
-    [model.countdownDate]
-  );
+  const countdownParts = useCountdownParts(model.countdownDate);
   const rootClassName = `${styles.page} ${
     theme === 'first-birthday-mint' ? styles.mint : styles.pink
   }`;

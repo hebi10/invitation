@@ -13,6 +13,7 @@ export interface WeddingInvitationRouteOptions {
   slug: string;
   theme: WeddingThemeKey;
   initialPageConfig?: InvitationPage | null;
+  initialBlockMessage?: string | null;
   loadingDelay?: number;
   showGuestbook?: boolean;
 }

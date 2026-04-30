@@ -10,6 +10,7 @@ import {
   type AuthorizedMobileClientEditorAccess,
 } from '@/server/clientEditorMobileApi';
 import {
+  buildServerTrustedMobileInvitationPageConfigForSave,
   extendServerInvitationPageDisplayPeriod,
   getServerEditableInvitationPageConfig,
   restoreServerInvitationPageConfig,
@@ -313,7 +314,8 @@ export async function POST(
   if (highRiskRequirement) {
     const highRiskAccess = authorizeMobileClientEditorHighRiskToken(
       access,
-      readMobileClientEditorHighRiskToken(request)
+      readMobileClientEditorHighRiskToken(request),
+      highRiskRequirement.action
     );
 
     if (!highRiskAccess) {
@@ -354,7 +356,22 @@ export async function POST(
         );
       }
 
-      await saveServerInvitationPageConfig(trustedConfig, {
+      const currentPageConfig = await getServerEditableInvitationPageConfig(pageSlug);
+      if (!currentPageConfig) {
+        return NextResponse.json(
+          { error: 'Invitation page was not found.' },
+          { status: 404 }
+        );
+      }
+
+      const entitlementTrustedConfig =
+        buildServerTrustedMobileInvitationPageConfigForSave(trustedConfig, {
+          ...currentPageConfig.config,
+          productTier: currentPageConfig.productTier,
+          features: currentPageConfig.features,
+        });
+
+      await saveServerInvitationPageConfig(entitlementTrustedConfig, {
         published: body.published === true,
         defaultTheme,
       });

@@ -18,6 +18,7 @@ export type InvitationPublicAccessState = {
   adminLabel: string;
   adminDescription: string | null;
   adminNotice: string | null;
+  visitorMessage: string | null;
 };
 
 const accessDateTimeFormatter = new Intl.DateTimeFormat('ko-KR', {
@@ -43,6 +44,7 @@ export function getInvitationPublicAccessState(
       adminLabel: '비공개',
       adminDescription: '공개 상태가 꺼져 있어 방문자에게는 열리지 않습니다.',
       adminNotice: '현재 비공개 상태인 청첩장입니다. 관리자만 볼 수 있습니다.',
+      visitorMessage: '비공개 페이지입니다.',
     };
   }
 
@@ -53,6 +55,7 @@ export function getInvitationPublicAccessState(
       adminLabel: '공개 가능',
       adminDescription: null,
       adminNotice: null,
+      visitorMessage: null,
     };
   }
 
@@ -64,6 +67,7 @@ export function getInvitationPublicAccessState(
       adminDescription: '노출 기간이 활성화됐지만 시작일 또는 종료일이 비어 있습니다.',
       adminNotice:
         '노출 기간 설정이 완전하지 않아 공개되지 않습니다. 관리자만 볼 수 있습니다.',
+      visitorMessage: '노출 기간이 아직 설정되지 않은 페이지입니다.',
     };
   }
 
@@ -78,6 +82,9 @@ export function getInvitationPublicAccessState(
       adminNotice: startLabel
         ? `현재 노출 시작 전입니다. ${startLabel}부터 공개됩니다. 관리자만 볼 수 있습니다.`
         : '현재 노출 시작 전인 페이지입니다. 관리자만 볼 수 있습니다.',
+      visitorMessage: startLabel
+        ? `아직 노출 기간이 시작되지 않은 페이지입니다. ${startLabel}부터 확인하실 수 있습니다.`
+        : '아직 노출 기간이 시작되지 않은 페이지입니다.',
     };
   }
 
@@ -92,6 +99,9 @@ export function getInvitationPublicAccessState(
       adminNotice: endLabel
         ? `현재 노출 종료된 페이지입니다. ${endLabel}에 공개가 종료되었습니다. 관리자만 볼 수 있습니다.`
         : '현재 노출 종료된 페이지입니다. 관리자만 볼 수 있습니다.',
+      visitorMessage: endLabel
+        ? `노출 기간이 지난 페이지입니다. ${endLabel}에 공개가 종료되었습니다.`
+        : '노출 기간이 지난 페이지입니다.',
     };
   }
 
@@ -101,5 +111,6 @@ export function getInvitationPublicAccessState(
     adminLabel: '공개 가능',
     adminDescription: null,
     adminNotice: null,
+    visitorMessage: null,
   };
 }

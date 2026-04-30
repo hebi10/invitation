@@ -18,10 +18,7 @@ import {
   THIRTY_MINUTES_MS,
 } from '@/lib/appQuery';
 import { getEventTypeDisplayLabel } from '@/lib/eventTypes';
-import {
-  buildInvitationThemeRoutePath,
-  getInvitationThemeLabel,
-} from '@/lib/invitationThemes';
+import { getEventPreviewLinks } from '@/lib/eventPreviewLinks';
 import {
   deleteCustomerEventGuestbookComment,
   type CustomerEventGuestbookComment,
@@ -116,14 +113,12 @@ function OwnedEventCard({ authUid, event }: OwnedEventCardProps) {
   const [guestbookPage, setGuestbookPage] = useState(1);
   const [deletingCommentId, setDeletingCommentId] = useState('');
   const wizardHref = `/page-wizard/${encodeURIComponent(event.slug)}`;
-  const previewThemes =
-    event.availableThemes.length > 0 ? event.availableThemes : [event.defaultTheme];
-  const previewLinks = previewThemes.map((theme) => ({
-    theme,
-    href: buildInvitationThemeRoutePath(event.slug, theme),
-    label: getInvitationThemeLabel(theme),
-    isDefault: theme === event.defaultTheme,
-  }));
+  const previewLinks = getEventPreviewLinks({
+    slug: event.slug,
+    eventType: event.eventType,
+    availableThemes: event.availableThemes,
+    defaultTheme: event.defaultTheme,
+  });
   const singlePreviewLink = previewLinks.length === 1 ? previewLinks[0] : null;
   const guestbookQueryKey = appQueryKeys.customerEventGuestbookComments(
     event.slug,

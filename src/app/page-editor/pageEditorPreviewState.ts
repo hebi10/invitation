@@ -4,8 +4,8 @@ import {
   buildInvitationThemeRoutePath,
   DEFAULT_INVITATION_THEME,
   getInvitationThemeLabel,
-  INVITATION_THEME_KEYS,
 } from '@/lib/invitationThemes';
+import { getWeddingPreviewThemeKeys } from '@/lib/eventPreviewLinks';
 
 import type { NoticeState, WorkspaceView } from './pageEditorClientTypes';
 import type { PreviewThemeKey } from './pageEditorPreviewUtils';
@@ -23,7 +23,7 @@ export function usePageEditorPreviewState({
 
   const previewLinks = useMemo(
     () =>
-      INVITATION_THEME_KEYS.map((themeKey) => ({
+      getWeddingPreviewThemeKeys().map((themeKey) => ({
         href: buildInvitationThemeRoutePath(slug, themeKey),
         label: `${getInvitationThemeLabel(themeKey)} 청첩장 보기`,
       })),

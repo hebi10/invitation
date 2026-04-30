@@ -21,6 +21,7 @@ import {
   getPageCategoryMeta,
   getPageCategoryCreateWizardHref,
   getAvailableShortcuts,
+  getPageCategoryPreviewLinks,
   isImplementedPageCategory,
 } from './adminPageUtils';
 import styles from '../page.module.css';
@@ -99,6 +100,7 @@ export default function AdminPagesTab({
   const categoryLabel = getPageCategoryMeta(activePageCategory).label;
   const isWeddingCategory = activePageCategory === 'invitation';
   const isBirthdayCategory = activePageCategory === 'birthday';
+  const usesShortcutVariants = activePageCategory === 'invitation';
   const createWizardHref = getPageCategoryCreateWizardHref(activePageCategory);
 
   useEffect(() => {
@@ -342,6 +344,10 @@ export default function AdminPagesTab({
                 <tbody>
                   {currentInvitationPages.map((page, index) => {
                     const links = getAvailableShortcuts(page);
+                    const categoryPreviewLinks = getPageCategoryPreviewLinks(
+                      activePageCategory,
+                      page
+                    );
                     const previewAccess = getInvitationPublicAccessState(page);
                     const isUpdatingPublished = updatingPublishedPageSlug === page.slug;
                     const isDeletingPage = deletingPageSlug === page.slug;
@@ -408,24 +414,23 @@ export default function AdminPagesTab({
                           </div>
                         </td>
                         <td>
-                          {isBirthdayCategory ? (
+                          {!usesShortcutVariants ? (
                             <div className={styles.actionStack}>
-                              <a
-                                href={`/${page.slug}/birthday-minimal`}
-                                target="_blank"
-                                rel="noreferrer"
-                                className="admin-button admin-button-primary"
-                              >
-                                Minimal 열기
-                              </a>
-                              <a
-                                href={`/${page.slug}/birthday-floral`}
-                                target="_blank"
-                                rel="noreferrer"
-                                className="admin-button admin-button-secondary"
-                              >
-                                Floral 열기
-                              </a>
+                              {categoryPreviewLinks.map((link, linkIndex) => (
+                                <a
+                                  key={`${page.slug}-${link.key}`}
+                                  href={link.path}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className={
+                                    linkIndex === 0
+                                      ? 'admin-button admin-button-primary'
+                                      : 'admin-button admin-button-secondary'
+                                  }
+                                >
+                                  {link.label} 열기
+                                </a>
+                              ))}
                             </div>
                           ) : (
                             <div className={styles.variantPreviewGrid}>
@@ -601,6 +606,10 @@ export default function AdminPagesTab({
           <div className={styles.mobileList}>
             {currentInvitationPages.map((page) => {
               const links = getAvailableShortcuts(page);
+              const categoryPreviewLinks = getPageCategoryPreviewLinks(
+                activePageCategory,
+                page
+              );
               const isDeletingPage = deletingPageSlug === page.slug;
               const selectedVariantKey = selectedVariantByPage[page.slug] ?? '';
               const selectedVariant = links.find((link) => link.key === selectedVariantKey);
@@ -662,24 +671,23 @@ export default function AdminPagesTab({
                       </select>
                     </div>
                   </div>
-                  {isBirthdayCategory ? (
+                  {!usesShortcutVariants ? (
                     <div className={styles.mobileCardActions}>
-                      <a
-                        href={`/${page.slug}/birthday-minimal`}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="admin-button admin-button-primary"
-                      >
-                        Minimal 열기
-                      </a>
-                      <a
-                        href={`/${page.slug}/birthday-floral`}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="admin-button admin-button-secondary"
-                      >
-                        Floral 열기
-                      </a>
+                      {categoryPreviewLinks.map((link, linkIndex) => (
+                        <a
+                          key={`${page.slug}-mobile-${link.key}`}
+                          href={link.path}
+                          target="_blank"
+                          rel="noreferrer"
+                          className={
+                            linkIndex === 0
+                              ? 'admin-button admin-button-primary'
+                              : 'admin-button admin-button-secondary'
+                          }
+                        >
+                          {link.label} 열기
+                        </a>
+                      ))}
                     </div>
                   ) : (
                     <>

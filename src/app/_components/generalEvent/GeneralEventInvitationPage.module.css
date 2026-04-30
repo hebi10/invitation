@@ -51,11 +51,11 @@
 }
 
 .hero {
-  min-height: 88vh;
+  min-height: 84vh;
   display: flex;
   align-items: stretch;
   background: var(--general-event-hero-bg);
-  padding: 26px;
+  padding: 26px 24px;
 }
 
 .heroInner {
@@ -63,7 +63,7 @@
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  padding: 18px 0;
+  padding: 16px 0;
 }
 
 .label {
@@ -80,10 +80,10 @@
 }
 
 .heroTitle {
-  margin: 70px 0 18px;
+  margin: 56px 0 18px;
   font-family: var(--general-event-title-font);
-  font-size: clamp(42px, 13vw, 68px);
-  line-height: 0.96;
+  font-size: clamp(38px, 11vw, 60px);
+  line-height: 1.02;
   letter-spacing: 0;
   word-break: keep-all;
 }
@@ -91,7 +91,7 @@
 .heroSubtitle {
   max-width: 320px;
   color: var(--general-event-sub-text);
-  font-size: 16px;
+  font-size: 15px;
   line-height: 1.7;
 }
 
@@ -117,7 +117,7 @@
 }
 
 .section {
-  padding: 58px 26px;
+  padding: 54px 24px;
   border-top: 1px solid var(--general-event-border);
 }
 
@@ -137,15 +137,15 @@
 
 .sectionTitle {
   font-family: var(--general-event-title-font);
-  font-size: 34px;
-  line-height: 1.12;
+  font-size: clamp(28px, 7vw, 34px);
+  line-height: 1.16;
   letter-spacing: 0;
 }
 
 .greetingText {
   color: var(--general-event-sub-text);
-  font-size: 17px;
-  line-height: 1.85;
+  font-size: 16px;
+  line-height: 1.78;
   white-space: pre-line;
 }
 
@@ -197,7 +197,7 @@
 .countValue {
   display: block;
   color: var(--general-event-accent);
-  font-size: 27px;
+  font-size: 25px;
   font-weight: 900;
 }
 
@@ -215,7 +215,7 @@
   border: 1px solid var(--general-event-border);
   border-radius: 8px;
   background: var(--general-event-surface);
-  padding: 22px;
+  padding: 20px;
 }
 
 .locationTitle {
@@ -273,6 +273,7 @@
 .input,
 .select,
 .textarea {
+  box-sizing: border-box;
   width: 100%;
   border: 1px solid var(--general-event-border);
   border-radius: 8px;
@@ -332,7 +333,7 @@
 
 .title {
   font-family: var(--general-event-title-font);
-  font-size: 30px;
+  font-size: clamp(26px, 7vw, 30px);
   letter-spacing: 0;
 }
 
