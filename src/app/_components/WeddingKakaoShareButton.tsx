@@ -5,6 +5,8 @@ import { useEffect, useMemo, useState } from 'react';
 import { getPublicKakaoJavaScriptKey } from '@/lib/publicRuntimeConfig';
 import type { InvitationShareMode } from '@/types/invitationPage';
 
+import { buildKakaoShareImageCandidates } from './kakaoShareUtils';
+
 interface WeddingKakaoShareButtonProps {
   title: string;
   description: string;
@@ -165,9 +167,8 @@ export default function WeddingKakaoShareButton({
   const variantStyle = buttonVariantStyles[variant];
   const kakaoAppKey = getPublicKakaoJavaScriptKey();
   const shareImageCandidates = useMemo(() => {
-    return [imageUrl, fallbackImageUrl]
-      .map((value) => value?.trim() ?? '')
-      .filter((value, index, array) => value && array.indexOf(value) === index);
+    const origin = typeof window === 'undefined' ? '' : window.location.origin;
+    return buildKakaoShareImageCandidates([imageUrl, fallbackImageUrl], origin);
   }, [fallbackImageUrl, imageUrl]);
 
   useEffect(() => {
