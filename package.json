@@ -33,6 +33,7 @@
     "test:rate-limit-policy": "node --experimental-strip-types --loader ./scripts/ts-path-loader.mjs scripts/test-rate-limit-policy.mts",
     "test:security-hardening": "node --experimental-strip-types --loader ./scripts/ts-path-loader.mjs scripts/test-security-hardening.mts",
     "test:mobile-session-security-policy": "node --experimental-strip-types --loader ./scripts/ts-path-loader.mjs scripts/test-mobile-session-security-policy.mts",
+    "test:customer-page-wizard-save-route": "node --experimental-strip-types --loader ./scripts/ts-path-loader.mjs scripts/test-customer-page-wizard-save-route.mts",
     "test:public-access-block-reasons": "node --experimental-strip-types --loader ./scripts/ts-path-loader.mjs scripts/test-public-access-block-reasons.mts",
     "test:mobile-save-entitlement-policy": "node --experimental-strip-types --loader ./scripts/ts-path-loader.mjs scripts/test-mobile-save-entitlement-policy.mts",
     "test:birthday-event-rendering": "node --experimental-strip-types --loader ./scripts/ts-path-loader.mjs scripts/test-birthday-event-rendering.mts",

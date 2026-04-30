@@ -12,6 +12,7 @@ import {
   normalizeInvitationPageSlugBase,
   saveInvitationPageConfig,
 } from '@/services/invitationPageService';
+import { saveCustomerEditableInvitationPageConfig } from '@/services/customerEventService';
 import type {
   InvitationPageSeed,
   InvitationThemeKey,
@@ -230,19 +231,29 @@ export function useWizardPersistence({
         });
         const nextPublished = options?.publish ?? published;
 
-        await saveInvitationPageConfig(prepared, {
-          published: nextPublished,
-          defaultTheme,
-        });
+        const savedEditableConfig = isAdminLoggedIn
+          ? null
+          : await saveCustomerEditableInvitationPageConfig(nextSlug, {
+              config: prepared,
+              published: nextPublished,
+              defaultTheme,
+            });
 
-        const normalized = normalizeFormState(prepared);
+        if (isAdminLoggedIn) {
+          await saveInvitationPageConfig(prepared, {
+            published: nextPublished,
+            defaultTheme,
+          });
+        }
+
+        const normalized = normalizeFormState(savedEditableConfig?.config ?? prepared);
         setFormState(normalized);
-        setPublished(nextPublished);
+        setPublished(savedEditableConfig?.published ?? nextPublished);
         setLastSavedAt(new Date());
         await onPersisted?.({
           slug: nextSlug,
           config: normalized,
-          published: nextPublished,
+          published: savedEditableConfig?.published ?? nextPublished,
           createdFresh: draftState.createdFresh,
         });
 
@@ -268,6 +279,7 @@ export function useWizardPersistence({
       defaultTheme,
       ensureDraftCreated,
       formState,
+      isAdminLoggedIn,
       normalizeFormState,
       published,
       setFormState,

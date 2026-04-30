@@ -489,6 +489,70 @@ export async function getCustomerEditableInvitationPageState(
   };
 }
 
+export async function saveCustomerEditableInvitationPageConfig(
+  pageSlug: string,
+  input: {
+    config: InvitationPageSeed;
+    published?: boolean;
+    defaultTheme?: InvitationThemeKey;
+  }
+): Promise<EditableInvitationPageConfig> {
+  const normalizedPageSlug = normalizeInvitationPageSlugInput(pageSlug);
+  if (!normalizedPageSlug) {
+    throw new Error('청첩장 주소가 올바르지 않습니다.');
+  }
+
+  const idToken = await getCurrentFirebaseIdToken({ forceRefresh: true });
+  if (!idToken) {
+    throw new Error('로그인 상태를 확인하지 못했습니다. 다시 로그인해 주세요.');
+  }
+
+  const response = await fetch(
+    `/api/customer/events/${encodeURIComponent(normalizedPageSlug)}/editable/`,
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${idToken}`,
+      },
+      body: JSON.stringify({
+        config: {
+          ...input.config,
+          slug: normalizedPageSlug,
+        },
+        published: input.published,
+        defaultTheme: input.defaultTheme,
+      }),
+    }
+  );
+  const payload = (await response.json().catch(() => null)) as
+    | {
+        status?: unknown;
+        config?: unknown;
+        error?: string;
+      }
+    | null;
+
+  if (!response.ok) {
+    throw new Error(
+      typeof payload?.error === 'string' && payload.error.trim()
+        ? payload.error
+        : '청첩장을 저장하지 못했습니다.'
+    );
+  }
+
+  if (payload?.status !== 'ready') {
+    throw new Error('청첩장 저장 권한을 확인하지 못했습니다.');
+  }
+
+  const editableConfig = normalizeEditableConfig(payload.config);
+  if (!editableConfig) {
+    throw new Error('저장된 청첩장 데이터를 확인하지 못했습니다.');
+  }
+
+  return editableConfig;
+}
+
 export async function createOwnedCustomerEvent(
   input: CreateOwnedCustomerEventInput
 ): Promise<CreateOwnedCustomerEventResult> {

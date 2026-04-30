@@ -23,7 +23,11 @@ import type { InvitationPageSeed, InvitationThemeKey } from '@/types/invitationP
 import { getWeddingPageBySlug } from '@/config/weddingPages';
 import { sanitizeHeartIconPlaceholdersDeep } from '@/utils/textSanitizers';
 
-import { getServerEditableInvitationPageConfig } from './invitationPageServerService';
+import {
+  buildServerTrustedMobileInvitationPageConfigForSave,
+  getServerEditableInvitationPageConfig,
+  saveServerInvitationPageConfig,
+} from './invitationPageServerService';
 import { listStoredEventSummaries } from './repositories/eventRepository';
 import { resolveStoredEventBySlug } from './repositories/eventRepository';
 import { firestoreEventCommentRepository } from './repositories/eventCommentRepository';
@@ -354,6 +358,47 @@ export async function getCustomerEditableInvitationPageSnapshot(
         resolvedEditableConfig.dataSource === 'firestore' ? 'firestore' : 'seed',
     },
   };
+}
+
+export async function saveCustomerEditableInvitationPageConfig(
+  ownerUid: string,
+  pageSlug: string,
+  input: {
+    config: InvitationPageSeed;
+    published?: boolean;
+    defaultTheme?: InvitationThemeKey;
+  }
+) {
+  const ownership = await getCustomerEventOwnershipSnapshot(ownerUid, pageSlug);
+  if (ownership.status !== 'owner') {
+    throw new Error('로그인한 계정에 연결된 청첩장만 저장할 수 있습니다.');
+  }
+
+  const normalizedPageSlug = normalizeInvitationPageSlugInput(ownership.summary.slug);
+  const requestedSlug = normalizeInvitationPageSlugInput(input.config.slug);
+  if (!normalizedPageSlug || requestedSlug !== normalizedPageSlug) {
+    throw new Error('요청한 청첩장 주소가 현재 계정의 청첩장과 일치하지 않습니다.');
+  }
+
+  const currentEditableConfig =
+    await getServerEditableInvitationPageConfig(normalizedPageSlug);
+  if (!currentEditableConfig) {
+    throw new Error('저장된 청첩장 데이터를 찾을 수 없습니다.');
+  }
+
+  const entitlementTrustedConfig =
+    buildServerTrustedMobileInvitationPageConfigForSave(input.config, {
+      ...currentEditableConfig.config,
+      productTier: currentEditableConfig.productTier,
+      features: currentEditableConfig.features,
+    });
+
+  await saveServerInvitationPageConfig(entitlementTrustedConfig, {
+    published: input.published ?? currentEditableConfig.published,
+    defaultTheme: input.defaultTheme ?? currentEditableConfig.defaultTheme,
+  });
+
+  return getCustomerEditableInvitationPageSnapshot(ownerUid, normalizedPageSlug);
 }
 
 export async function listCustomerEventGuestbookComments(
