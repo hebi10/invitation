@@ -11,7 +11,14 @@ import {
   normalizeEventTypeKey,
   type EventTypeKey,
 } from '@/lib/eventTypes';
+import { DEFAULT_BIRTHDAY_THEME } from '@/app/_components/birthday/birthdayThemes';
+import { GENERAL_EVENT_DEFAULT_THEME } from '@/app/_components/generalEvent/generalEventThemes';
 import type { InvitationPageSeed, InvitationThemeKey } from '@/types/invitationPage';
+
+export const OPENING_DEFAULT_SUBTITLE = 'Grand Opening';
+export const GENERAL_EVENT_DEFAULT_SUBTITLE = 'General Event';
+export const GENERAL_EVENT_DEFAULT_DESCRIPTION = '소중한 자리에 초대합니다.';
+export const OPENING_DEFAULT_DESCRIPTION = '새로운 공간의 시작에 초대합니다.';
 
 import {
   cloneConfig,
@@ -127,6 +134,52 @@ const BIRTHDAY_GREETING_STEP_TEMPLATE: WizardStepTemplate = {
   highlights: ['초대 문구', '초대장 서명', '참석 안내'],
 };
 
+const FIRST_BIRTHDAY_THEME_STEP_TEMPLATE: WizardStepTemplate = {
+  ...THEME_STEP_TEMPLATE,
+  description: '돌잔치 초대장에 사용할 핑크 또는 민트 디자인과 서비스 구성을 선택합니다.',
+  highlights: ['돌잔치 디자인', '성장 갤러리', '방명록 제공 범위'],
+};
+
+const FIRST_BIRTHDAY_BASIC_STEP_TEMPLATE: WizardStepTemplate = {
+  key: 'basic',
+  title: '아기 기본 정보',
+  description: '첫 화면에 보일 아기 이름, 부모 이름, 소개 문구를 입력합니다.',
+  previewSection: 'cover',
+  highlights: ['아기 이름', '아빠·엄마 이름', '표지 문구'],
+};
+
+const FIRST_BIRTHDAY_SCHEDULE_STEP_TEMPLATE: WizardStepTemplate = {
+  key: 'schedule',
+  title: '돌잔치 일정과 장소',
+  description: '돌잔치 날짜, 시간, 장소와 오시는 길 정보를 입력합니다.',
+  previewSection: 'wedding',
+  highlights: ['돌잔치 날짜와 시간', '장소명', '주소와 지도'],
+};
+
+const FIRST_BIRTHDAY_GREETING_STEP_TEMPLATE: WizardStepTemplate = {
+  key: 'greeting',
+  title: '인사말',
+  description: '돌잔치 초대장에 노출할 인사말과 서명을 입력합니다.',
+  previewSection: 'greeting',
+  highlights: ['인사말', '부모 서명', '초대 문구'],
+};
+
+const FIRST_BIRTHDAY_IMAGES_STEP_TEMPLATE: WizardStepTemplate = {
+  key: 'images',
+  title: '성장 사진',
+  description: '대표 이미지와 성장 갤러리 이미지를 등록합니다.',
+  previewSection: 'gallery',
+  highlights: ['대표 이미지', '성장 갤러리 순서', '공유 이미지'],
+};
+
+const FIRST_BIRTHDAY_EXTRA_STEP_TEMPLATE: WizardStepTemplate = {
+  key: 'extra',
+  title: '마음 전하기와 안내',
+  description: '마음 전하기 계좌, 교통 안내, 답례품 안내를 필요한 만큼 설정합니다.',
+  previewSection: 'gift',
+  highlights: ['마음 전하기', '교통 안내', '추가 안내'],
+};
+
 const SCHEDULE_STEP_TEMPLATE: WizardStepTemplate = {
   key: 'schedule',
   title: '예식 일정과 장소',
@@ -164,6 +217,81 @@ const BIRTHDAY_EXTRA_STEP_TEMPLATE: WizardStepTemplate = {
   title: '추가 안내',
   description: '교통, 드레스코드, 준비물 같은 참석 안내를 필요한 만큼 설정합니다.',
   highlights: ['교통 안내', '참석 안내', '배경음악'],
+};
+
+const GENERAL_EVENT_THEME_STEP_TEMPLATE: WizardStepTemplate = {
+  ...THEME_STEP_TEMPLATE,
+  description: '일반 행사 초대장에 사용할 elegant 또는 vivid 디자인과 서비스 구성을 선택합니다.',
+  highlights: ['행사 전용 디자인', '상품 등급', '방명록 제공 범위'],
+};
+
+const GENERAL_EVENT_BASIC_STEP_TEMPLATE: WizardStepTemplate = {
+  key: 'basic',
+  title: '행사 기본 정보',
+  description: '첫 화면에 보일 행사명, 라벨, 소개 문구를 입력합니다.',
+  previewSection: 'cover',
+  highlights: ['행사명', '행사 라벨', '소개 문구'],
+};
+
+const GENERAL_EVENT_SCHEDULE_STEP_TEMPLATE: WizardStepTemplate = {
+  key: 'schedule',
+  title: '행사 일시와 장소',
+  description: '행사 날짜, 시간, 장소와 오시는 길 정보를 입력합니다.',
+  previewSection: 'wedding',
+  highlights: ['행사 날짜와 시간', '장소명', '주소와 지도'],
+};
+
+const GENERAL_EVENT_GREETING_STEP_TEMPLATE: WizardStepTemplate = {
+  key: 'greeting',
+  title: '초대의 글',
+  description: '행사 초대장에 노출할 인사말과 주최자 서명을 입력합니다.',
+  previewSection: 'greeting',
+  highlights: ['초대 문구', '주최자 서명', '참석 안내'],
+};
+
+const GENERAL_EVENT_EXTRA_STEP_TEMPLATE: WizardStepTemplate = {
+  ...EXTRA_STEP_TEMPLATE,
+  title: '프로그램과 추가 안내',
+  description: '교통, 참석 안내, 프로그램 메모처럼 행사에 필요한 안내를 정리합니다.',
+  highlights: ['행사 안내', '참석 안내', '프로그램 메모'],
+};
+
+const OPENING_THEME_STEP_TEMPLATE: WizardStepTemplate = {
+  ...THEME_STEP_TEMPLATE,
+  description: '개업 초대장에 사용할 내추럴 또는 모던 디자인을 선택합니다.',
+  highlights: ['개업 전용 디자인', '브랜드 톤', '방명록 제공 범위'],
+};
+
+const OPENING_BASIC_STEP_TEMPLATE: WizardStepTemplate = {
+  key: 'basic',
+  title: '매장 기본 정보',
+  description: '상호명, 영문명 또는 브랜드 라벨, 태그라인을 입력합니다.',
+  previewSection: 'cover',
+  highlights: ['상호명', '브랜드 라벨', '태그라인'],
+};
+
+const OPENING_SCHEDULE_STEP_TEMPLATE: WizardStepTemplate = {
+  key: 'schedule',
+  title: '오픈 일정',
+  description: '오픈일, 오픈 시간, 매장 위치를 입력합니다.',
+  previewSection: 'wedding',
+  highlights: ['오픈일', '오픈 시간', '매장 주소'],
+};
+
+const OPENING_GREETING_STEP_TEMPLATE: WizardStepTemplate = {
+  key: 'greeting',
+  title: '개업 인사말',
+  description: '초대장에 보여줄 개업 인사말과 서명을 입력합니다.',
+  previewSection: 'greeting',
+  highlights: ['인사말', '대표자 또는 매장명', '초대 문구'],
+};
+
+const OPENING_EXTRA_STEP_TEMPLATE: WizardStepTemplate = {
+  key: 'extra',
+  title: '브랜드 소개와 오픈 혜택',
+  description: '브랜드 소개, 대표 메뉴/서비스, 오픈 기념 혜택을 입력합니다.',
+  previewSection: 'gift',
+  highlights: ['브랜드 소개', '오픈 혜택', '방문 안내'],
 };
 
 const MUSIC_STEP_TEMPLATE: WizardStepTemplate = {
@@ -213,11 +341,43 @@ const BIRTHDAY_WIZARD_STEP_TEMPLATE_MAP: Partial<
   extra: BIRTHDAY_EXTRA_STEP_TEMPLATE,
 };
 
+const FIRST_BIRTHDAY_WIZARD_STEP_TEMPLATE_MAP: Partial<
+  Record<WizardStepKey, WizardStepTemplate>
+> = {
+  theme: FIRST_BIRTHDAY_THEME_STEP_TEMPLATE,
+  basic: FIRST_BIRTHDAY_BASIC_STEP_TEMPLATE,
+  schedule: FIRST_BIRTHDAY_SCHEDULE_STEP_TEMPLATE,
+  greeting: FIRST_BIRTHDAY_GREETING_STEP_TEMPLATE,
+  images: FIRST_BIRTHDAY_IMAGES_STEP_TEMPLATE,
+  extra: FIRST_BIRTHDAY_EXTRA_STEP_TEMPLATE,
+};
+
+const OPENING_WIZARD_STEP_TEMPLATE_MAP: Partial<
+  Record<WizardStepKey, WizardStepTemplate>
+> = {
+  theme: OPENING_THEME_STEP_TEMPLATE,
+  basic: OPENING_BASIC_STEP_TEMPLATE,
+  schedule: OPENING_SCHEDULE_STEP_TEMPLATE,
+  greeting: OPENING_GREETING_STEP_TEMPLATE,
+  extra: OPENING_EXTRA_STEP_TEMPLATE,
+};
+
+const GENERAL_EVENT_WIZARD_STEP_TEMPLATE_MAP: Partial<
+  Record<WizardStepKey, WizardStepTemplate>
+> = {
+  theme: GENERAL_EVENT_THEME_STEP_TEMPLATE,
+  basic: GENERAL_EVENT_BASIC_STEP_TEMPLATE,
+  schedule: GENERAL_EVENT_SCHEDULE_STEP_TEMPLATE,
+  greeting: GENERAL_EVENT_GREETING_STEP_TEMPLATE,
+  extra: GENERAL_EVENT_EXTRA_STEP_TEMPLATE,
+};
+
 export type WizardStepConfigKey =
   | 'wedding-page-wizard'
   | 'first-birthday-page-wizard'
   | 'birthday-page-wizard'
   | 'general-event-page-wizard'
+  | 'opening-page-wizard'
   | 'seventieth-page-wizard'
   | 'generic-page-wizard';
 
@@ -268,6 +428,15 @@ const GENERAL_EVENT_STEP_KEYS: WizardStepKey[] = [
   'final',
 ];
 
+const OPENING_EVENT_STEP_KEYS: WizardStepKey[] = [
+  'basic',
+  'schedule',
+  'greeting',
+  'extra',
+  'images',
+  'final',
+];
+
 const WIZARD_STEP_CONFIGS: Record<WizardStepConfigKey, WizardStepConfigDefinition> = {
   'wedding-page-wizard': {
     key: 'wedding-page-wizard',
@@ -297,6 +466,13 @@ const WIZARD_STEP_CONFIGS: Record<WizardStepConfigKey, WizardStepConfigDefinitio
     eventSpecificSteps: GENERAL_EVENT_STEP_KEYS,
     editSteps: GENERAL_EVENT_STEP_KEYS,
   },
+  'opening-page-wizard': {
+    key: 'opening-page-wizard',
+    eventType: 'opening',
+    commonSetupSteps: ['eventType', 'theme', 'slug'],
+    eventSpecificSteps: OPENING_EVENT_STEP_KEYS,
+    editSteps: OPENING_EVENT_STEP_KEYS,
+  },
   'seventieth-page-wizard': {
     key: 'seventieth-page-wizard',
     eventType: 'seventieth',
@@ -316,6 +492,18 @@ const WIZARD_STEP_CONFIGS: Record<WizardStepConfigKey, WizardStepConfigDefinitio
 function getWizardStepTemplate(stepKey: WizardStepKey, eventType?: EventTypeKey) {
   if (eventType === 'birthday') {
     return BIRTHDAY_WIZARD_STEP_TEMPLATE_MAP[stepKey] ?? WIZARD_STEP_TEMPLATE_MAP[stepKey];
+  }
+
+  if (eventType === 'first-birthday') {
+    return FIRST_BIRTHDAY_WIZARD_STEP_TEMPLATE_MAP[stepKey] ?? WIZARD_STEP_TEMPLATE_MAP[stepKey];
+  }
+
+  if (eventType === 'opening') {
+    return OPENING_WIZARD_STEP_TEMPLATE_MAP[stepKey] ?? WIZARD_STEP_TEMPLATE_MAP[stepKey];
+  }
+
+  if (eventType === 'general-event') {
+    return GENERAL_EVENT_WIZARD_STEP_TEMPLATE_MAP[stepKey] ?? WIZARD_STEP_TEMPLATE_MAP[stepKey];
   }
 
   return WIZARD_STEP_TEMPLATE_MAP[stepKey];
@@ -369,6 +557,12 @@ export const DEFAULT_BIRTHDAY_GREETING_MESSAGE = `소중한 분들과 함께
 
 편한 마음으로 오셔서
 따뜻한 축하를 전해 주세요.`;
+
+export const DEFAULT_OPENING_GREETING_MESSAGE = `새로운 공간의 시작을
+소중한 분들과 함께 나누고자 합니다.
+
+방문해 주시는 발걸음마다
+좋은 경험으로 보답하겠습니다.`;
 
 export const GREETING_TEMPLATES = [
   {
@@ -471,6 +665,15 @@ export function composeBirthdayDescription(name: string) {
   return `${birthdayName}님의 생일 자리에 초대합니다.`;
 }
 
+export function composeOpeningDisplayName(name: string) {
+  return name.trim() || '새 매장';
+}
+
+export function composeOpeningDescription(name: string) {
+  const businessName = name.trim() || '새 매장';
+  return `${businessName} 개업 소식에 초대합니다.`;
+}
+
 export function formatDateLabel(date: Date) {
   return new Intl.DateTimeFormat('ko-KR', {
     year: 'numeric',
@@ -542,38 +745,93 @@ export function isValidPhone(value?: string | null) {
   return digits.length >= 9 && digits.length <= 12;
 }
 
+type EventDefaultsContext = {
+  groomName: string;
+  brideName: string;
+  babyName: string;
+  currentDisplayName: string;
+};
+
+type EventDefaultsComposer = {
+  displayName: (ctx: EventDefaultsContext) => string;
+  description: (ctx: EventDefaultsContext, displayName: string) => string;
+  greetingAuthor: (ctx: EventDefaultsContext, displayName: string) => string;
+  keepBrideName: boolean;
+};
+
+const EVENT_DEFAULTS_COMPOSERS: Record<EventTypeKey, EventDefaultsComposer> = {
+  wedding: {
+    displayName: ({ groomName, brideName }) => composeDisplayName(groomName, brideName),
+    description: ({ groomName, brideName }) => composeDescription(groomName, brideName),
+    greetingAuthor: ({ groomName, brideName }) => composeGreetingAuthor(groomName, brideName),
+    keepBrideName: true,
+  },
+  birthday: {
+    displayName: ({ groomName }) => composeBirthdayDisplayName(groomName),
+    description: ({ groomName }) => composeBirthdayDescription(groomName),
+    greetingAuthor: ({ groomName }) => composeBirthdayDisplayName(groomName),
+    keepBrideName: false,
+  },
+  'first-birthday': {
+    displayName: ({ babyName }) => babyName || '아기 이름',
+    description: (_ctx, displayName) => `${displayName}의 첫 번째 생일잔치에 초대합니다.`,
+    greetingAuthor: ({ groomName, brideName }) =>
+      `${groomName || '아빠'} · ${brideName || '엄마'}`,
+    keepBrideName: true,
+  },
+  'general-event': {
+    displayName: ({ groomName }) => groomName || '일반 행사',
+    description: (_ctx, displayName) => `${displayName}에 초대합니다.`,
+    greetingAuthor: () => '주최자',
+    keepBrideName: true,
+  },
+  opening: {
+    displayName: ({ groomName, currentDisplayName }) =>
+      composeOpeningDisplayName(groomName || currentDisplayName),
+    description: ({ groomName }, displayName) =>
+      composeOpeningDescription(displayName || groomName),
+    greetingAuthor: ({ groomName }, displayName) => displayName || groomName || '대표',
+    keepBrideName: true,
+  },
+  seventieth: {
+    displayName: ({ groomName, brideName }) => composeDisplayName(groomName, brideName),
+    description: ({ groomName, brideName }) => composeDescription(groomName, brideName),
+    greetingAuthor: ({ groomName, brideName }) => composeGreetingAuthor(groomName, brideName),
+    keepBrideName: true,
+  },
+  etc: {
+    displayName: ({ groomName, brideName }) => composeDisplayName(groomName, brideName),
+    description: ({ groomName, brideName }) => composeDescription(groomName, brideName),
+    greetingAuthor: ({ groomName, brideName }) => composeGreetingAuthor(groomName, brideName),
+    keepBrideName: true,
+  },
+};
+
 export function applyDerivedWizardDefaults(config: InvitationPageSeed) {
   const nextConfig = normalizeFormConfig(cloneConfig(config));
   const normalizedEventType = normalizeEventTypeKey(nextConfig.eventType, DEFAULT_EVENT_TYPE);
-  const isBirthday = normalizedEventType === 'birthday';
-  const isGeneralEvent = nextConfig.eventType === 'general-event';
-  const isFirstBirthday = nextConfig.eventType === 'first-birthday';
+  const composer =
+    EVENT_DEFAULTS_COMPOSERS[normalizedEventType] ?? EVENT_DEFAULTS_COMPOSERS.wedding;
   const groomName = nextConfig.couple.groom.name.trim();
   const brideName = nextConfig.couple.bride.name.trim();
   const babyName =
     nextConfig.displayName.trim() || nextConfig.metadata.title.trim() || nextConfig.groomName.trim();
   const weddingDate = buildWeddingDateObject(nextConfig);
 
+  const composerContext: EventDefaultsContext = {
+    groomName,
+    brideName,
+    babyName,
+    currentDisplayName: nextConfig.displayName,
+  };
+
   nextConfig.groomName = groomName;
-  nextConfig.brideName = isBirthday ? '' : brideName;
+  nextConfig.brideName = composer.keepBrideName ? brideName : '';
   nextConfig.displayName =
-    nextConfig.displayName.trim() ||
-    (isBirthday
-      ? composeBirthdayDisplayName(groomName)
-      : isFirstBirthday
-      ? babyName || '아기 이름'
-      : isGeneralEvent
-        ? groomName || '일반 행사'
-        : composeDisplayName(groomName, brideName));
+    nextConfig.displayName.trim() || composer.displayName(composerContext);
   nextConfig.description =
     nextConfig.description.trim() ||
-    (isBirthday
-      ? composeBirthdayDescription(groomName)
-      : isFirstBirthday
-      ? `${nextConfig.displayName}의 첫 번째 생일잔치에 초대합니다.`
-      : isGeneralEvent
-        ? `${nextConfig.displayName}에 초대합니다.`
-        : composeDescription(groomName, brideName));
+    composer.description(composerContext, nextConfig.displayName);
   nextConfig.metadata.title =
     nextConfig.metadata.title.trim() || nextConfig.displayName;
   nextConfig.metadata.description =
@@ -611,13 +869,7 @@ export function applyDerivedWizardDefaults(config: InvitationPageSeed) {
       nextConfig.pageData.venueName?.trim() || nextConfig.venue;
     nextConfig.pageData.greetingAuthor =
       nextConfig.pageData.greetingAuthor?.trim() ||
-      (isBirthday
-        ? composeBirthdayDisplayName(groomName)
-        : isFirstBirthday
-        ? `${groomName || '아빠'} · ${brideName || '엄마'}`
-        : isGeneralEvent
-          ? '주최자'
-          : composeGreetingAuthor(groomName, brideName));
+      composer.greetingAuthor(composerContext, nextConfig.displayName);
     nextConfig.pageData.groom = cloneConfig(nextConfig.couple.groom);
     nextConfig.pageData.bride = cloneConfig(nextConfig.couple.bride);
   }
@@ -703,16 +955,34 @@ export function createInitialWizardConfig(eventType: EventTypeKey = DEFAULT_EVEN
   };
 
   if (nextConfig.eventType === 'general-event') {
-    nextConfig.description = '소중한 자리에 초대합니다.';
-    nextConfig.pageData.subtitle = 'General Event';
+    nextConfig.description = GENERAL_EVENT_DEFAULT_DESCRIPTION;
+    nextConfig.pageData.generalEventTheme = GENERAL_EVENT_DEFAULT_THEME;
+    nextConfig.pageData.subtitle = GENERAL_EVENT_DEFAULT_SUBTITLE;
     nextConfig.pageData.greetingMessage = `소중한 분들을 모시고 뜻깊은 시간을 함께 나누고자 합니다.
 
 편한 마음으로 참석하셔서 자리를 빛내 주세요.`;
     nextConfig.pageData.greetingAuthor = '주최자';
   }
 
+  if (nextConfig.eventType === 'opening') {
+    nextConfig.description = OPENING_DEFAULT_DESCRIPTION;
+    nextConfig.pageData.subtitle = OPENING_DEFAULT_SUBTITLE;
+    nextConfig.pageData.greetingMessage = DEFAULT_OPENING_GREETING_MESSAGE;
+    nextConfig.pageData.greetingAuthor = '대표';
+    nextConfig.pageData.venueGuide = [
+      { title: '스페셜티 커피', content: '대표 메뉴와 서비스를 정성껏 준비했습니다.' },
+      { title: '자연 친화 공간', content: '편안히 머무를 수 있는 공간을 마련했습니다.' },
+      { title: '수제 디저트', content: '오픈 기간에만 만나는 특별 메뉴를 소개합니다.' },
+    ];
+    nextConfig.pageData.wreathGuide = [
+      { title: '오픈 기념 혜택', content: '오픈 기간 방문 고객에게 특별 혜택을 제공합니다.' },
+      { title: '선착순 이벤트', content: '준비 수량 소진 시까지 웰컴 혜택을 드립니다.' },
+    ];
+  }
+
   if (nextConfig.eventType === 'birthday') {
     nextConfig.description = '소중한 생일 자리에 초대합니다.';
+    nextConfig.pageData.birthdayTheme = DEFAULT_BIRTHDAY_THEME;
     nextConfig.pageData.subtitle = '소중한 분들과 함께하는 특별한 하루';
     nextConfig.pageData.greetingMessage = DEFAULT_BIRTHDAY_GREETING_MESSAGE;
     nextConfig.pageData.greetingAuthor = '';
@@ -812,6 +1082,7 @@ export function buildStepValidation(
       const isGeneralEvent = formState?.eventType === 'general-event';
       const isFirstBirthday = formState?.eventType === 'first-birthday';
       const isBirthday = formState?.eventType === 'birthday';
+      const isOpening = formState?.eventType === 'opening';
 
       if (!hasText(slugState.groomKoreanName)) {
         messages.push(
@@ -819,12 +1090,14 @@ export function buildStepValidation(
             ? '생일 주인공 이름을 입력해 주세요.'
             : isFirstBirthday
             ? '아기 이름을 입력해 주세요.'
+            : isOpening
+              ? '상호명을 입력해 주세요.'
             : isGeneralEvent
               ? '행사명을 입력해 주세요.'
               : '예비 신랑 한글 이름을 입력해 주세요.'
         );
       }
-      if (!isGeneralEvent && !isFirstBirthday && !isBirthday && !hasText(slugState.brideKoreanName)) {
+      if (!isGeneralEvent && !isFirstBirthday && !isBirthday && !isOpening && !hasText(slugState.brideKoreanName)) {
         messages.push('예비 신부 한글 이름을 입력해 주세요.');
       }
       if (!slugState.persistedSlug && !hasText(slugState.groomEnglishName)) {
@@ -833,6 +1106,8 @@ export function buildStepValidation(
             ? '생일 주인공 영문 표기를 입력해 주세요.'
             : isFirstBirthday
             ? '아기 이름 영문 표기를 입력해 주세요.'
+            : isOpening
+              ? '주소 영문 키워드를 입력해 주세요.'
             : isGeneralEvent
               ? '주소 영문 키워드를 입력해 주세요.'
               : '예비 신랑 영문 이름을 입력해 주세요.'
@@ -842,6 +1117,7 @@ export function buildStepValidation(
         !isGeneralEvent &&
         !isFirstBirthday &&
         !isBirthday &&
+        !isOpening &&
         !slugState.persistedSlug &&
         !hasText(slugState.brideEnglishName)
       ) {
@@ -887,6 +1163,13 @@ export function buildStepValidation(
         return { valid: messages.length === 0, messages };
       }
 
+      if (formState?.eventType === 'opening') {
+        if (!hasText(formState?.displayName)) {
+          messages.push('상호명을 입력해 주세요.');
+        }
+        return { valid: messages.length === 0, messages };
+      }
+
       if (formState?.eventType === 'birthday') {
         if (!hasText(formState?.couple.groom.name)) {
           messages.push('생일 주인공 이름을 입력해 주세요.');
@@ -910,6 +1193,8 @@ export function buildStepValidation(
             ? '올바른 파티 날짜와 시간을 입력해 주세요.'
             : formState?.eventType === 'first-birthday'
             ? '올바른 돌잔치 날짜와 시간을 입력해 주세요.'
+            : formState?.eventType === 'opening'
+              ? '올바른 오픈 날짜와 시간을 입력해 주세요.'
             : '올바른 예식 날짜와 시간을 입력해 주세요.'
         );
       }
@@ -919,6 +1204,8 @@ export function buildStepValidation(
             ? '파티 장소명을 입력해 주세요.'
             : formState?.eventType === 'first-birthday'
             ? '돌잔치 장소명을 입력해 주세요.'
+            : formState?.eventType === 'opening'
+              ? '매장명을 입력해 주세요.'
             : '예식장 이름을 입력해 주세요.'
         );
       }
@@ -928,6 +1215,8 @@ export function buildStepValidation(
             ? '파티 장소 주소를 입력해 주세요.'
             : formState?.eventType === 'first-birthday'
             ? '돌잔치 장소 주소를 입력해 주세요.'
+            : formState?.eventType === 'opening'
+              ? '매장 주소를 입력해 주세요.'
             : '예식장 주소를 입력해 주세요.'
         );
       }
@@ -947,6 +1236,8 @@ export function buildStepValidation(
         messages.push(
           formState?.eventType === 'birthday'
             ? '파티 장소 연락처 형식을 확인해 주세요.'
+            : formState?.eventType === 'opening'
+              ? '매장 연락처 형식을 확인해 주세요.'
             : '예식장 연락처 형식을 확인해 주세요.'
         );
       }

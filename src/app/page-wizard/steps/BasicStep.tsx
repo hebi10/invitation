@@ -140,6 +140,62 @@ export default function BasicStep({
     );
   }
 
+  if (formState.eventType === 'opening') {
+    return (
+      <div className={styles.fieldGrid}>
+        <label className={styles.field}>
+          {renderFieldMeta('상호명', 'required')}
+          <input
+            className={styles.input}
+            value={formState.displayName}
+            placeholder="카페 블루밍"
+            onChange={(event) =>
+              updateForm((draft) => {
+                draft.displayName = event.target.value;
+                draft.groomName = event.target.value;
+                draft.couple.groom.name = event.target.value;
+                draft.metadata.title = event.target.value;
+              })
+            }
+          />
+        </label>
+
+        <label className={styles.field}>
+          {renderFieldMeta('영문명 또는 브랜드 라벨', 'optional')}
+          <input
+            className={styles.input}
+            value={formState.pageData?.subtitle ?? ''}
+            placeholder="CAFÉ BLOOMING"
+            onChange={(event) =>
+              updateForm((draft) => {
+                if (draft.pageData) {
+                  draft.pageData.subtitle = event.target.value;
+                }
+              })
+            }
+          />
+        </label>
+
+        <label className={styles.field}>
+          {renderFieldMeta('태그라인', 'optional')}
+          <textarea
+            className={styles.textarea}
+            value={formState.description}
+            placeholder="꽃처럼 피어나는 일상의 향기"
+            onChange={(event) =>
+              updateForm((draft) => {
+                draft.description = event.target.value;
+                draft.metadata.description = event.target.value;
+                draft.metadata.openGraph.description = event.target.value;
+                draft.metadata.twitter.description = event.target.value;
+              })
+            }
+          />
+        </label>
+      </div>
+    );
+  }
+
   return (
     <div className={styles.fieldGrid}>
       <div className={styles.twoColumnGrid}>

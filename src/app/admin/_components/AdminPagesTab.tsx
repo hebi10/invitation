@@ -100,12 +100,15 @@ export default function AdminPagesTab({
   const isFirstBirthdayCategory = activePageCategory === 'first-birthday';
   const isBirthdayCategory = activePageCategory === 'birthday';
   const isGeneralEventCategory = activePageCategory === 'general-event';
+  const isOpeningCategory = activePageCategory === 'opening';
   const createWizardHref = isFirstBirthdayCategory
-    ? '/page-wizard?eventType=first-birthday'
+    ? '/page-wizard/first-birthday'
     : isBirthdayCategory
       ? '/page-wizard?eventType=birthday'
       : isGeneralEventCategory
         ? '/page-wizard?eventType=general-event'
+        : isOpeningCategory
+          ? '/page-wizard/opening'
         : '/page-wizard';
 
   useEffect(() => {

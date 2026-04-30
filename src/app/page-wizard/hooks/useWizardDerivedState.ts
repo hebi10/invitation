@@ -71,6 +71,8 @@ export function useWizardDerivedState({
       groomKoreanName:
         activeEventType === 'first-birthday'
           ? previewFormState?.displayName ?? ''
+          : activeEventType === 'opening'
+            ? previewFormState?.displayName ?? ''
           : previewFormState?.couple.groom.name ?? '',
       brideKoreanName: previewFormState?.couple.bride.name ?? '',
       groomEnglishName,
@@ -87,15 +89,23 @@ export function useWizardDerivedState({
   );
   const currentWeddingSummary = useMemo(() => {
     if (!previewFormState) {
-      return activeEventType === 'birthday'
+      return activeEventType === 'first-birthday'
+        ? '돌잔치 날짜를 아직 입력하지 않았습니다.'
+        : activeEventType === 'birthday'
         ? '파티 날짜를 아직 입력하지 않았습니다.'
+        : activeEventType === 'opening'
+          ? '오픈 날짜를 아직 입력하지 않았습니다.'
         : '예식 날짜를 아직 입력하지 않았습니다.';
     }
 
     const weddingDate = buildWeddingDateObject(previewFormState);
     if (!weddingDate) {
-      return activeEventType === 'birthday'
+      return activeEventType === 'first-birthday'
+        ? '돌잔치 날짜를 아직 입력하지 않았습니다.'
+        : activeEventType === 'birthday'
         ? '파티 날짜를 아직 입력하지 않았습니다.'
+        : activeEventType === 'opening'
+          ? '오픈 날짜를 아직 입력하지 않았습니다.'
         : '예식 날짜를 아직 입력하지 않았습니다.';
     }
 

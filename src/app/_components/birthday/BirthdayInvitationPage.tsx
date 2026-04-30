@@ -13,10 +13,7 @@ import { AccessDeniedPage } from '@/utils';
 import type { EventInvitationRouteOptions } from '../eventPageThemes';
 import { useEventInvitationState, type EventPageReadyState } from '../eventPageState';
 import { DEFAULT_INVITATION_THEME } from '@/lib/invitationThemes';
-import {
-  DEFAULT_BIRTHDAY_THEME,
-  normalizeBirthdayThemeKey,
-} from './birthdayThemes';
+import { resolveBirthdayRouteTheme } from './birthdayThemes';
 import { getBirthdayThemeRenderer } from './themeRenderers/registry';
 import styles from './BirthdayInvitationPage.module.css';
 
@@ -99,7 +96,11 @@ function BirthdayInvitationPageBody(options: EventInvitationRouteOptions) {
   }
 
   const readyState: EventPageReadyState = state;
-  const birthdayTheme = normalizeBirthdayThemeKey(options.theme, DEFAULT_BIRTHDAY_THEME);
+  const birthdayTheme = resolveBirthdayRouteTheme(
+    readyState.pageConfig,
+    options.theme,
+    null
+  );
   const ThemeRenderer = getBirthdayThemeRenderer(birthdayTheme);
   const features = resolveInvitationFeatures(
     readyState.pageConfig.productTier,

@@ -5,6 +5,15 @@ import {
   normalizeInvitationMusicSelection,
 } from '@/lib/musicLibrary';
 import { resolveInvitationFeatures } from '@/lib/invitationProducts';
+import {
+  getGeneralEventTheme,
+  normalizeGeneralEventThemeKey,
+} from '@/app/_components/generalEvent/generalEventThemes';
+import {
+  DEFAULT_BIRTHDAY_THEME,
+  getBirthdayThemeLabel,
+  normalizeBirthdayThemeKey,
+} from '@/app/_components/birthday/birthdayThemes';
 import type {
   InvitationPageSeed,
   InvitationThemeKey,
@@ -121,6 +130,12 @@ export default function PageWizardStepPreview({
   const eventTypeLabel = getEventTypeLabel(formState.eventType ?? 'wedding');
   const eventTypeDescription = getEventTypeDescription(formState.eventType ?? 'wedding');
   const isBirthday = formState.eventType === 'birthday';
+  const isFirstBirthday = formState.eventType === 'first-birthday';
+  const isOpening = formState.eventType === 'opening';
+  const isGeneralEvent = formState.eventType === 'general-event';
+  const generalEventTheme = getGeneralEventTheme(
+    normalizeGeneralEventThemeKey(formState.pageData?.generalEventTheme)
+  );
 
   if (stepKey === 'eventType') {
     return (
@@ -139,12 +154,23 @@ export default function PageWizardStepPreview({
   }
 
   if (stepKey === 'theme') {
+    const birthdayTheme = normalizeBirthdayThemeKey(
+      formState.pageData?.birthdayTheme,
+      DEFAULT_BIRTHDAY_THEME
+    );
+
     return (
       <section className={styles.previewSummary}>
         <div className={styles.previewHeader}>
           <h3 className={styles.previewTitle}>선택하신 서비스</h3>
           <div className={styles.previewPillRow}>
-            <span className={styles.previewPill}>{getThemeLabel(theme)}</span>
+            <span className={styles.previewPill}>
+              {isBirthday
+                ? getBirthdayThemeLabel(birthdayTheme)
+                : isGeneralEvent
+                  ? generalEventTheme.label
+                  : getThemeLabel(theme)}
+            </span>
             <span className={styles.previewPill}>{getProductTierLabel(formState.productTier ?? 'premium')}</span>
           </div>
         </div>
@@ -199,9 +225,26 @@ export default function PageWizardStepPreview({
           <strong className={styles.previewHeroTitle}>{displayName}</strong>
           <p className={styles.previewHeroSubtitle}>{subtitle}</p>
           <div className={styles.previewPillRow}>
-            {isBirthday ? (
+            {isGeneralEvent ? (
+              <span className={styles.previewPill}>
+                행사명 {formState.displayName.trim() || '미입력'}
+              </span>
+            ) : isFirstBirthday ? (
+              <>
+                <span className={styles.previewPill}>
+                  아기 {formState.displayName.trim() || '미입력'}
+                </span>
+                <span className={styles.previewPill}>
+                  부모 {formState.couple.groom.name.trim() || '아빠'} · {formState.couple.bride.name.trim() || '엄마'}
+                </span>
+              </>
+            ) : isBirthday ? (
               <span className={styles.previewPill}>
                 생일 주인공 {formState.couple.groom.name.trim() || '미입력'}
+              </span>
+            ) : isOpening ? (
+              <span className={styles.previewPill}>
+                상호명 {formState.displayName.trim() || formState.couple.groom.name.trim() || '미입력'}
               </span>
             ) : (
               <>
@@ -224,26 +267,34 @@ export default function PageWizardStepPreview({
       <section className={styles.previewSummary}>
         <div className={styles.previewHeader}>
           <h3 className={styles.previewTitle}>
-            {isBirthday ? '파티 일정과 장소 요약' : '예식 일정과 장소 요약'}
+            {isGeneralEvent
+              ? '행사 일시와 장소 요약'
+              : isFirstBirthday
+                ? '돌잔치 일정과 장소 요약'
+              : isBirthday
+              ? '파티 일정과 장소 요약'
+              : isOpening
+                ? '오픈 일정과 매장 위치 요약'
+                : '예식 일정과 장소 요약'}
           </h3>
           <span className={styles.previewCaption}>날짜, 시간, 장소, 오시는 길이 함께 반영됩니다.</span>
         </div>
         <div className={styles.previewKeyList}>
           <PreviewRow
-            label={isBirthday ? '파티 일시' : '예식 일시'}
+            label="일정 카드 문구"
+            value={ceremonyTimeLabel}
+          />
+          <PreviewRow
+            label={isGeneralEvent ? '행사 일시' : isFirstBirthday ? '돌잔치 일시' : isBirthday ? '파티 일시' : isOpening ? '오픈 일시' : '예식 일시'}
             value={
               weddingDate
                 ? `${formatDateLabel(weddingDate)} ${formatTimeLabel(weddingDate)}`
                 : '날짜와 시간을 입력해 주세요.'
             }
           />
-          <PreviewRow
-            label="일정 카드 문구"
-            value={ceremonyTimeLabel}
-          />
-          <PreviewRow label={isBirthday ? '파티 장소' : '본식 장소'} value={ceremonyLocationLabel} />
-          <PreviewRow label={isBirthday ? '장소명' : '예식장명'} value={venueName} />
-          <PreviewRow label={isBirthday ? '장소 주소' : '예식장 주소'} value={venueAddress} />
+          <PreviewRow label={isGeneralEvent ? '행사 장소' : isFirstBirthday ? '돌잔치 장소' : isBirthday ? '파티 장소' : isOpening ? '매장 위치' : '본식 장소'} value={ceremonyLocationLabel} />
+          <PreviewRow label={isGeneralEvent ? '장소명' : isFirstBirthday ? '장소명' : isBirthday ? '장소명' : isOpening ? '매장명' : '예식장명'} value={venueName} />
+          <PreviewRow label={isGeneralEvent ? '장소 주소' : isFirstBirthday ? '장소 주소' : isBirthday ? '장소 주소' : isOpening ? '매장 주소' : '예식장 주소'} value={venueAddress} />
           <PreviewRow
             label="연락처"
             value={formState.pageData?.ceremonyContact?.trim() || '연락처를 입력하지 않았습니다.'}
@@ -256,8 +307,12 @@ export default function PageWizardStepPreview({
                 : '지도 링크를 아직 입력하지 않았습니다.'
             }
           />
-          <PreviewRow label="피로연 시간" value={receptionTimeLabel} />
-          <PreviewRow label="피로연 장소" value={receptionLocationLabel} />
+          {!isFirstBirthday && !isBirthday ? (
+            <>
+              <PreviewRow label={isGeneralEvent ? '추가 시간 안내' : isOpening ? '운영시간' : '피로연 시간'} value={receptionTimeLabel} />
+              <PreviewRow label={isGeneralEvent ? '추가 장소 안내' : isOpening ? '예약/채널 안내' : '피로연 장소'} value={receptionLocationLabel} />
+            </>
+          ) : null}
         </div>
       </section>
     );
@@ -267,11 +322,17 @@ export default function PageWizardStepPreview({
     return (
       <section className={styles.previewSummary}>
         <div className={styles.previewHeader}>
-          <h3 className={styles.previewTitle}>예식장 안내 요약</h3>
+          <h3 className={styles.previewTitle}>
+            {isGeneralEvent
+              ? '행사 장소 안내 요약'
+              : isFirstBirthday
+                ? '돌잔치 장소 안내 요약'
+                : '예식장 안내 요약'}
+          </h3>
           <span className={styles.previewCaption}>오시는 길 섹션에 노출됩니다.</span>
         </div>
         <div className={styles.previewKeyList}>
-          <PreviewRow label="예식장명" value={venueName} />
+          <PreviewRow label={isGeneralEvent ? '장소명' : isFirstBirthday ? '장소명' : '예식장명'} value={venueName} />
           <PreviewRow label="주소" value={venueAddress} />
           <PreviewRow
             label="연락처"
@@ -295,10 +356,18 @@ export default function PageWizardStepPreview({
       <section className={styles.previewSummary}>
         <div className={styles.previewHeader}>
           <h3 className={styles.previewTitle}>
-            {isBirthday ? '초대 문구 요약' : '인사말 요약'}
+            {isGeneralEvent ? '초대의 글 요약' : isFirstBirthday ? '돌잔치 인사말 요약' : isBirthday ? '초대 문구 요약' : isOpening ? '개업 인사말 요약' : '인사말 요약'}
           </h3>
           <span className={styles.previewCaption}>
-            {isBirthday ? '생일 초대장 본문에 반영됩니다.' : '인사말 섹션과 연락 정보에 반영됩니다.'}
+            {isGeneralEvent
+              ? '행사 초대장 본문에 반영됩니다.'
+              : isFirstBirthday
+              ? '돌잔치 초대장 인사말 섹션에 반영됩니다.'
+              : isBirthday
+              ? '생일 초대장 본문에 반영됩니다.'
+              : isOpening
+                ? '개업 초대장 인사말 섹션에 반영됩니다.'
+                : '인사말 섹션과 연락 정보에 반영됩니다.'}
           </span>
         </div>
         <div className={styles.previewQuoteCard}>
@@ -344,10 +413,14 @@ export default function PageWizardStepPreview({
           <span className={styles.previewCaption}>선택한 안내 항목과 배경음악 설정만 공개 페이지에 노출됩니다.</span>
         </div>
         <div className={styles.previewKeyList}>
-          {!isBirthday ? <PreviewRow label="신랑측 계좌" value={`${groomAccounts}개`} /> : null}
-          {!isBirthday ? <PreviewRow label="신부측 계좌" value={`${brideAccounts}개`} /> : null}
-          <PreviewRow label="교통 · 방문 안내" value={`${venueGuideCount}개`} />
-          <PreviewRow label="화환 안내" value={`${wreathGuideCount}개`} />
+          {!isBirthday && !isOpening && !isGeneralEvent ? (
+            <PreviewRow label={isFirstBirthday ? '아빠 계좌' : '신랑측 계좌'} value={`${groomAccounts}개`} />
+          ) : null}
+          {!isBirthday && !isOpening && !isGeneralEvent ? (
+            <PreviewRow label={isFirstBirthday ? '엄마 계좌' : '신부측 계좌'} value={`${brideAccounts}개`} />
+          ) : null}
+          <PreviewRow label={isGeneralEvent ? '행사 안내' : isOpening ? '브랜드 소개' : '교통 · 방문 안내'} value={`${venueGuideCount}개`} />
+          <PreviewRow label={isGeneralEvent ? '추가 안내' : isFirstBirthday ? '추가 안내' : isOpening ? '오픈 혜택' : '화환 안내'} value={`${wreathGuideCount}개`} />
           <PreviewRow
             label="배경음악"
             value={formState.musicEnabled ? '사용' : '사용 안 함'}
@@ -401,7 +474,18 @@ export default function PageWizardStepPreview({
         <span className={styles.previewCaption}>공개 상태와 공유 정보를 확인합니다.</span>
       </div>
       <div className={styles.previewKeyList}>
-        <PreviewRow label="공개 상태" value={published ? '저장 후 바로 공개' : '비공개 청첩장'} />
+        <PreviewRow
+          label="공개 상태"
+          value={
+            published
+              ? '저장 후 바로 공개'
+              : isGeneralEvent
+                ? '비공개 행사 초대장'
+                : isFirstBirthday
+                  ? '비공개 돌잔치 초대장'
+                  : '비공개 청첩장'
+          }
+        />
         <PreviewRow
           label="공유 제목"
           value={formState.metadata.title.trim() || displayName || '자동 제목 사용'}

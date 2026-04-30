@@ -121,6 +121,46 @@ export const INVITATION_THEME_METADATA_REGISTRY = [
     ariaLabelSuffix: ' (First Birthday Mint)',
     sortOrder: 120,
   },
+  {
+    key: 'opening-natural',
+    label: '개업 내추럴',
+    adminLabel: 'Opening Natural',
+    variantLabel: 'Opening Natural',
+    pathSuffix: '/opening-natural',
+    wizardDescription: '따뜻한 색감과 안정적인 정보 구조로 개업 소식을 전하는 디자인입니다.',
+    preview: {
+      description: '브랜드 소개, 오픈 혜택, 오시는 길을 내추럴 톤으로 정리합니다.',
+      sampleUrls: {
+        standard: 'https://msgnote.kr/opening-sample/opening-natural/',
+        deluxe: 'https://msgnote.kr/opening-sample/opening-natural/',
+        premium: 'https://msgnote.kr/opening-sample/opening-natural/',
+      },
+    },
+    shareTitleMode: 'metadata',
+    documentTitleSuffix: ' (Opening Natural)',
+    ariaLabelSuffix: ' (Opening Natural)',
+    sortOrder: 210,
+  },
+  {
+    key: 'opening-modern',
+    label: '개업 모던',
+    adminLabel: 'Opening Modern',
+    variantLabel: 'Opening Modern',
+    pathSuffix: '/opening-modern',
+    wizardDescription: '강한 대비와 브랜디드 톤으로 개업 정보를 선명하게 보여주는 디자인입니다.',
+    preview: {
+      description: 'Grand Opening 인상을 강조하고 핵심 방문 정보를 빠르게 전달합니다.',
+      sampleUrls: {
+        standard: 'https://msgnote.kr/opening-sample/opening-modern/',
+        deluxe: 'https://msgnote.kr/opening-sample/opening-modern/',
+        premium: 'https://msgnote.kr/opening-sample/opening-modern/',
+      },
+    },
+    shareTitleMode: 'metadata',
+    documentTitleSuffix: ' (Opening Modern)',
+    ariaLabelSuffix: ' (Opening Modern)',
+    sortOrder: 220,
+  },
 ] as const satisfies readonly InvitationThemeMetadataEntry[];
 
 export type InvitationThemeDefinition = (typeof INVITATION_THEME_METADATA_REGISTRY)[number];
@@ -164,6 +204,20 @@ export const INVITATION_THEME_SALES_POLICY_REGISTRY = {
     allowsAdditionalPurchase: false,
   },
   'first-birthday-mint': {
+    isDefault: false,
+    canBeDefault: true,
+    isSelectableAtCreation: false,
+    isPurchasable: false,
+    allowsAdditionalPurchase: false,
+  },
+  'opening-natural': {
+    isDefault: false,
+    canBeDefault: true,
+    isSelectableAtCreation: false,
+    isPurchasable: false,
+    allowsAdditionalPurchase: false,
+  },
+  'opening-modern': {
     isDefault: false,
     canBeDefault: true,
     isSelectableAtCreation: false,

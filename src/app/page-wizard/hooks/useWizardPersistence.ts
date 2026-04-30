@@ -116,6 +116,13 @@ export function useWizardPersistence({
     });
     const normalizedCreatedConfig = normalizeFormState(created.config);
 
+    if (eventType === 'birthday') {
+      normalizedCreatedConfig.pageData = {
+        ...normalizedCreatedConfig.pageData,
+        birthdayTheme: previewFormState?.pageData?.birthdayTheme,
+      };
+    }
+
     if (eventType === 'first-birthday' && previewFormState?.displayName.trim()) {
       const babyName = previewFormState.displayName.trim();
       normalizedCreatedConfig.displayName = babyName;

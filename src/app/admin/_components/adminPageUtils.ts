@@ -72,7 +72,9 @@ export const TAB_ITEMS: AdminTabItem[] = [
 ];
 
 export const SHORTCUT_ITEMS: Array<{ key: ShortcutKey; label: string }> =
-  INVITATION_THEME_KEYS.filter((key) => !key.startsWith('first-birthday-')).map((key) => ({
+  INVITATION_THEME_KEYS.filter(
+    (key) => !key.startsWith('first-birthday-') && !key.startsWith('opening-')
+  ).map((key) => ({
     key,
     label: getInvitationThemeAdminLabel(key),
   }));
@@ -104,9 +106,9 @@ export const PAGE_CATEGORY_TABS = [
   {
     key: 'opening',
     label: '개업',
-    title: '개업 관리 탭 준비 중',
+    title: '개업 관리',
     description:
-      '개업 이벤트 전용 관리 화면과 디자인은 TODO 상태로 남겨둡니다.',
+      '개업 초대장 전용 목록, 방명록, 매장 이미지, 노출 기간을 관리합니다.',
   },
 ] as const satisfies ReadonlyArray<
   | { key: 'invitation'; label: string }
@@ -160,7 +162,8 @@ export function isImplementedPageCategory(pageCategory: PageCategoryTabKey) {
     pageCategory === 'invitation' ||
     pageCategory === 'first-birthday' ||
     pageCategory === 'birthday' ||
-    pageCategory === 'general-event'
+    pageCategory === 'general-event' ||
+    pageCategory === 'opening'
   );
 }
 
@@ -176,6 +179,8 @@ export function getPageCategoryEventTypeFilter(
       return 'birthday';
     case 'general-event':
       return 'general-event';
+    case 'opening':
+      return 'opening';
     default:
       return null;
   }

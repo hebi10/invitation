@@ -12,6 +12,11 @@ export default function EventTypeStep({
   setEventType,
   updateForm,
 }: EventTypeStepProps) {
+  const availableEventTypeText = EVENT_TYPE_KEYS
+    .filter((eventTypeKey) => getEventTypeMeta(eventTypeKey).enabled)
+    .map((eventTypeKey) => getEventTypeLabel(eventTypeKey, 'admin'))
+    .join(', ');
+
   return (
     <div className={styles.fieldGrid}>
       <section className={styles.choiceSection}>
@@ -19,8 +24,8 @@ export default function EventTypeStep({
           <span className={styles.choiceSectionBadge}>이벤트</span>
           <h3 className={styles.choiceSectionTitle}>생성할 이벤트 타입을 선택해 주세요</h3>
           <p className={styles.choiceSectionText}>
-            모바일 청첩장, 생일/돌잔치, 일반 행사 초대장을 생성할 수 있습니다.
-            준비 중인 타입은 선택할 수 없습니다.
+            {availableEventTypeText}
+            유형을 만들 수 있습니다. 준비 중인 타입은 선택할 수 없습니다.
           </p>
         </div>
         <div className={styles.choiceOptions}>
@@ -48,7 +53,7 @@ export default function EventTypeStep({
                 disabled={!isEnabled}
               >
                 <div className={styles.choiceCardTop}>
-                  <span className={styles.choiceTag}>{meta.key}</span>
+                  <span className={styles.choiceTag}>{meta.adminLabel}</span>
                   {isActive ? (
                     <span className={styles.choiceSelectedBadge}>선택됨</span>
                   ) : !isEnabled ? (

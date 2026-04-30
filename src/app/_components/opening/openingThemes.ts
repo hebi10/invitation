@@ -1,3 +1,4 @@
+import { resolveAvailableInvitationVariant } from '@/lib/invitationVariants';
 import type { InvitationPage } from '@/types/invitationPage';
 
 export const OPENING_THEME_KEYS = ['opening-natural', 'opening-modern'] as const;
@@ -83,7 +84,7 @@ export function getOpeningTheme(theme: OpeningThemeKey) {
 }
 
 export function resolveOpeningRouteTheme(
-  previewPage: Pick<InvitationPage, 'slug'> | null | undefined,
+  previewPage: InvitationPage | null | undefined,
   requestedTheme?: string | null,
   defaultTheme?: string | null
 ) {
@@ -91,5 +92,11 @@ export function resolveOpeningRouteTheme(
     return null;
   }
 
-  return normalizeOpeningThemeKey(requestedTheme ?? defaultTheme, DEFAULT_OPENING_THEME);
+  const preferred = normalizeOpeningThemeKey(
+    requestedTheme ?? defaultTheme,
+    DEFAULT_OPENING_THEME
+  );
+
+  const resolved = resolveAvailableInvitationVariant(previewPage.variants, preferred);
+  return isOpeningThemeKey(resolved) ? resolved : null;
 }

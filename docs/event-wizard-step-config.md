@@ -10,6 +10,7 @@
 - `src/app/page-wizard/PageWizardStepPreview.tsx`
 - `src/app/page-wizard/steps/SlugStep.tsx`
 - `src/app/page-wizard/steps/BirthdayBasicStep.tsx`
+- `src/app/page-wizard/steps/BirthdayThemeStep.tsx`
 - `src/app/page-wizard/steps/BirthdayScheduleStep.tsx`
 - `src/app/page-wizard/steps/BirthdayGreetingStep.tsx`
 
@@ -24,6 +25,11 @@
 - `images`: 이미지/공유 정보
 - `extra`: 추가 안내
 - `final`: 최종 확인
+
+## general-event 입력 매핑
+- 디자인 선택값은 `pageData.generalEventTheme`에 `general-event-elegant` 또는 `general-event-vivid`로 저장한다.
+- 기본 공개 route는 저장된 `pageData.generalEventTheme`를 우선 사용하고 값이 없으면 `general-event-elegant`로 해석한다.
+- `weddingDateTime`, `venue`, `pageData.ceremonyAddress`, `pageData.kakaoMap`은 기존 저장 구조를 유지하되 행사 일시와 장소로 표시한다.
 
 ### 기존 수정
 - `basic`
@@ -56,6 +62,9 @@
 - `final`
 
 ## birthday 입력 매핑
+- `BirthdayThemeStep`
+  - wedding theme 목록 대신 `birthday-minimal`, `birthday-floral`만 공개 선택지로 보여준다.
+  - 선택값은 `pageData.birthdayTheme`에 저장하고 공개 renderer의 기본 route 선택에 사용한다.
 - `BirthdayBasicStep`
   - 생일 주인공 이름을 `couple.groom.name`, `groomName`, `displayName`, `pageData.greetingAuthor`에 반영한다.
   - `couple.bride.name`, `brideName`은 비워 wedding 문구가 섞이지 않게 한다.
@@ -76,6 +85,6 @@
 - birthday 인사말 단계는 메시지를 `초대 문구`로 안내한다.
 
 ## 남은 작업
-1. birthday theme 선택값을 저장하는 명시 필드 추가 여부 결정
-2. page-editor도 birthday 문구로 분리
+1. page-editor도 birthday 문구로 분리
+2. 생일 전용 디자인 후보 4종(`birthday-luxury`, `birthday-y2k`, `birthday-aurora`, `birthday-paper`)의 운영 공개 여부 결정
 3. general-event 프로그램 편집 step과 RSVP 저장 흐름 추가

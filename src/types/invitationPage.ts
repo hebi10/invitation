@@ -65,6 +65,8 @@ export interface InvitationScheduleDetail {
 
 export interface InvitationPageDataBase {
   subtitle?: string;
+  birthdayTheme?: string;
+  generalEventTheme?: string;
   ceremonyTime?: string;
   ceremonyAddress?: string;
   ceremonyContact?: string;
@@ -93,6 +95,11 @@ export interface InvitationPageDataBase {
   wreathGuide?: Array<{
     title: string;
     content: string;
+  }>;
+  programItems?: Array<{
+    time: string;
+    title: string;
+    description?: string;
   }>;
   giftInfo?: {
     groomAccounts?: BankAccount[];

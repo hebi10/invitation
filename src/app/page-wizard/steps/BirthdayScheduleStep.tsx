@@ -10,12 +10,13 @@ export default function BirthdayScheduleStep({
   onTimeInputChange,
 }: ScheduleStepProps) {
   const birthdayDate = buildWeddingDateObject(previewFormState);
+  const isFirstBirthday = previewFormState.eventType === 'first-birthday';
 
   return (
     <div className={styles.fieldGrid}>
       <div className={styles.twoColumnGrid}>
         <label className={styles.field}>
-          {renderFieldMeta('파티 날짜', 'required')}
+          {renderFieldMeta(isFirstBirthday ? '돌잔치 날짜' : '파티 날짜', 'required')}
           <input
             className={styles.input}
             type="date"
@@ -30,7 +31,7 @@ export default function BirthdayScheduleStep({
           />
         </label>
         <label className={styles.field}>
-          {renderFieldMeta('파티 시간', 'required')}
+          {renderFieldMeta(isFirstBirthday ? '돌잔치 시간' : '파티 시간', 'required')}
           <input
             className={styles.input}
             type="time"
@@ -52,11 +53,11 @@ export default function BirthdayScheduleStep({
       </div>
 
       <label className={styles.field}>
-        {renderFieldMeta('파티 장소명', 'required')}
+        {renderFieldMeta(isFirstBirthday ? '돌잔치 장소명' : '파티 장소명', 'required')}
         <input
           className={styles.input}
           value={previewFormState.venue}
-          placeholder="강남 OO레스토랑"
+          placeholder={isFirstBirthday ? 'OO호텔 돌잔치홀' : '강남 OO레스토랑'}
           onChange={(event) =>
             updateForm((draft) => {
               draft.venue = event.target.value;

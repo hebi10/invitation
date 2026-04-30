@@ -60,6 +60,19 @@ import {
   normalizeGeneralEventThemeKey,
   type GeneralEventThemeKey,
 } from './generalEvent/generalEventThemes';
+import {
+  createOpeningInvitationLayout,
+  getOpeningInvitationMetadata,
+  openingInvitationViewport,
+} from './opening/OpeningInvitationLayout';
+import { OpeningInvitationRoutePage } from './opening/OpeningInvitationPage';
+import {
+  DEFAULT_OPENING_THEME,
+  isOpeningThemeKey,
+  normalizeOpeningThemeKey,
+  resolveOpeningRouteTheme,
+  type OpeningThemeKey,
+} from './opening/openingThemes';
 
 export interface EventPageRouteRenderOptions {
   slug: string;
@@ -172,11 +185,18 @@ function createFirstBirthdayRenderer(): EventPageRendererDefinition {
     normalizeTheme(theme, fallback = DEFAULT_FIRST_BIRTHDAY_THEME) {
       return normalizeFirstBirthdayThemeKey(theme, fallback as FirstBirthdayThemeKey);
     },
-    resolveRouteTheme(_previewPage, requestedTheme, defaultTheme) {
-      return normalizeFirstBirthdayThemeKey(
+    resolveRouteTheme(previewPage, requestedTheme, defaultTheme) {
+      const preferred = normalizeFirstBirthdayThemeKey(
         requestedTheme ?? defaultTheme,
         DEFAULT_FIRST_BIRTHDAY_THEME
       );
+
+      if (!previewPage) {
+        return preferred;
+      }
+
+      const resolved = resolveAvailableInvitationVariant(previewPage.variants, preferred);
+      return isFirstBirthdayThemeKey(resolved) ? resolved : preferred;
     },
   };
 }
@@ -215,7 +235,41 @@ function createGeneralEventRenderer(): EventPageRendererDefinition {
         return isGeneralEventThemeKey(requestedTheme) ? requestedTheme : null;
       }
 
-      return GENERAL_EVENT_DEFAULT_THEME;
+      return normalizeGeneralEventThemeKey(
+        previewPage.pageData?.generalEventTheme,
+        GENERAL_EVENT_DEFAULT_THEME
+      );
+    },
+  };
+}
+
+function createOpeningRenderer(): EventPageRendererDefinition {
+  return {
+    eventType: 'opening',
+    renderPage(options) {
+      return (
+        <OpeningInvitationRoutePage
+          {...options}
+          theme={normalizeOpeningThemeKey(options.theme)}
+          eventType="opening"
+        />
+      );
+    },
+    createLayout() {
+      return createOpeningInvitationLayout();
+    },
+    getMetadata(page) {
+      return getOpeningInvitationMetadata(page);
+    },
+    viewport: openingInvitationViewport,
+    isThemeSupported(theme) {
+      return isOpeningThemeKey(theme);
+    },
+    normalizeTheme(theme, fallback = DEFAULT_OPENING_THEME) {
+      return normalizeOpeningThemeKey(theme, fallback as OpeningThemeKey);
+    },
+    resolveRouteTheme(previewPage, requestedTheme, defaultTheme) {
+      return resolveOpeningRouteTheme(previewPage, requestedTheme, defaultTheme);
     },
   };
 }
@@ -224,12 +278,14 @@ const weddingEventPageRenderer = createWeddingBackedRenderer('wedding');
 const firstBirthdayEventPageRenderer = createFirstBirthdayRenderer();
 const birthdayEventPageRenderer = createBirthdayRenderer();
 const generalEventPageRenderer = createGeneralEventRenderer();
+const openingEventPageRenderer = createOpeningRenderer();
 
 const EVENT_PAGE_RENDERER_REGISTRY: Partial<Record<EventTypeKey, EventPageRendererDefinition>> = {
   wedding: weddingEventPageRenderer,
   'first-birthday': firstBirthdayEventPageRenderer,
   birthday: birthdayEventPageRenderer,
   'general-event': generalEventPageRenderer,
+  opening: openingEventPageRenderer,
 };
 
 export function resolveEventPageRenderer(eventType: unknown) {
@@ -244,6 +300,17 @@ export function resolveEventPageRenderer(eventType: unknown) {
       renderer: requestedRenderer,
       usedFallback: false,
     } as const;
+  }
+
+  if (requestedEventType !== DEFAULT_EVENT_TYPE) {
+    const reason = !requestedRenderer
+      ? '등록된 렌더러 없음'
+      : !requestedEventMeta.enabled
+        ? '이벤트 타입 비활성'
+        : '알 수 없음';
+    console.warn(
+      `[eventPageRenderer] '${requestedEventType}' fallback to '${DEFAULT_EVENT_TYPE}' (${reason})`
+    );
   }
 
   return {

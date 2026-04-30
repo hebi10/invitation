@@ -35,12 +35,42 @@ export default function ExtraStep({
   onGuideChange,
 }: ExtraStepProps) {
   const giftMessage = formState.pageData?.giftInfo?.message ?? '';
+  const isFirstBirthday = formState.eventType === 'first-birthday';
+
+  if (formState.eventType === 'opening') {
+    return (
+      <div className={styles.fieldGrid}>
+        <section className={styles.formCard}>
+          <GuideSectionPanel
+            kind="venueGuide"
+            title="브랜드 소개"
+            description="대표 메뉴, 서비스, 공간 콘셉트처럼 매장을 소개할 내용을 적습니다."
+            items={formState.pageData?.venueGuide ?? []}
+            disabled={false}
+            onAdd={onGuideAdd}
+            onRemove={onGuideRemove}
+            onChange={onGuideChange}
+          />
+          <GuideSectionPanel
+            kind="wreathGuide"
+            title="오픈 기념 혜택"
+            description="할인율, 선착순 혜택, 이벤트 안내를 입력합니다."
+            items={formState.pageData?.wreathGuide ?? []}
+            disabled={false}
+            onAdd={onGuideAdd}
+            onRemove={onGuideRemove}
+            onChange={onGuideChange}
+          />
+        </section>
+      </div>
+    );
+  }
 
   return (
     <div className={styles.fieldGrid}>
       <section className={styles.formCard}>
         <label className={styles.field}>
-          {renderFieldMeta('축의금 안내 문구', 'optional')}
+          {renderFieldMeta(isFirstBirthday ? '마음 전하기 안내 문구' : '축의금 안내 문구', 'optional')}
           <textarea
             className={styles.textarea}
             value={giftMessage}
@@ -78,7 +108,7 @@ export default function ExtraStep({
       <div className={styles.twoColumnGrid}>
         <AccountSectionPanel
           kind="groomAccounts"
-          title="신랑측 계좌"
+        title={isFirstBirthday ? '아빠 계좌' : '신랑측 계좌'}
           description="최대 3개까지 등록할 수 있습니다."
           accounts={formState.pageData?.giftInfo?.groomAccounts ?? []}
           disabled={false}
@@ -88,7 +118,7 @@ export default function ExtraStep({
         />
         <AccountSectionPanel
           kind="brideAccounts"
-          title="신부측 계좌"
+        title={isFirstBirthday ? '엄마 계좌' : '신부측 계좌'}
           description="최대 3개까지 등록할 수 있습니다."
           accounts={formState.pageData?.giftInfo?.brideAccounts ?? []}
           disabled={false}
@@ -111,8 +141,12 @@ export default function ExtraStep({
         />
         <GuideSectionPanel
           kind="wreathGuide"
-          title="화환 안내"
-          description="화환 전달 관련 안내를 선택적으로 입력합니다."
+          title={isFirstBirthday ? '추가 안내' : '화환 안내'}
+          description={
+            isFirstBirthday
+              ? '답례품, 포토테이블, 식사 안내처럼 손님에게 필요한 내용을 적습니다.'
+              : '화환 전달 관련 안내를 선택적으로 입력합니다.'
+          }
           items={formState.pageData?.wreathGuide ?? []}
           disabled={false}
           onAdd={onGuideAdd}

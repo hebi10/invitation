@@ -3,6 +3,7 @@ export const EVENT_TYPE_KEYS = [
   'first-birthday',
   'birthday',
   'general-event',
+  'opening',
   'seventieth',
   'etc',
 ] as const;
@@ -70,6 +71,17 @@ export const EVENT_TYPE_META = {
     defaultRendererKey: 'general-event-default',
     defaultEditorKey: 'general-event-page-editor',
     defaultWizardStepConfigKey: 'general-event-page-wizard',
+  },
+  opening: {
+    key: 'opening',
+    label: '개업 초대장',
+    adminLabel: '개업',
+    customerLabel: '내 개업 초대장',
+    description: '매장, 브랜드, 사무실 개업 소식을 알리는 전용 초대장 타입입니다.',
+    enabled: true,
+    defaultRendererKey: 'opening-default',
+    defaultEditorKey: 'opening-page-editor',
+    defaultWizardStepConfigKey: 'opening-page-wizard',
   },
   seventieth: {
     key: 'seventieth',

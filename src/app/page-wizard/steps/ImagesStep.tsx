@@ -125,6 +125,8 @@ export default function ImagesStep({
   const coverImage = previewFormState.metadata.images.wedding?.trim() ?? '';
   const socialPreviewImage = previewFormState.metadata.images.social?.trim() ?? '';
   const kakaoCardImage = previewFormState.metadata.images.kakaoCard?.trim() ?? '';
+  const isFirstBirthday = formState.eventType === 'first-birthday';
+  const isGeneralEvent = formState.eventType === 'general-event';
 
   const [isGalleryExpanded, setIsGalleryExpanded] = useState(false);
   const [selectedGalleryIndex, setSelectedGalleryIndex] = useState(0);
@@ -188,7 +190,13 @@ export default function ImagesStep({
     <div className={styles.fieldGrid}>
       <SingleImageCard
         title="대표 이미지"
-        description="청첩장 최상단과 첫 화면에 사용하는 메인 이미지입니다."
+        description={
+          isGeneralEvent
+            ? '행사 초대장 최상단과 공유 화면에 사용하는 메인 이미지입니다.'
+            : isFirstBirthday
+            ? '돌잔치 초대장 최상단과 첫 화면에 사용하는 메인 이미지입니다.'
+            : '청첩장 최상단과 첫 화면에 사용하는 메인 이미지입니다.'
+        }
         imageUrl={coverImage}
         isBroken={brokenSingleImages.cover}
         placeholder="대표 이미지 미리보기"
@@ -246,7 +254,9 @@ export default function ImagesStep({
       <section className={styles.uploadCard}>
         <div className={styles.uploadHeader}>
           <div>
-            <h3 className={styles.cardTitle}>갤러리 이미지</h3>
+            <h3 className={styles.cardTitle}>
+              {isFirstBirthday ? '성장 갤러리 이미지' : '갤러리 이미지'}
+            </h3>
             <p className={styles.cardText}>
               최대 {maxGalleryImages}장까지 업로드할 수 있습니다.
             </p>

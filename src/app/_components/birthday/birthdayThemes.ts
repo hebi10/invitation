@@ -45,13 +45,25 @@ export function normalizeBirthdayThemeKey(
 }
 
 export function resolveBirthdayRouteTheme(
-  _previewPage: InvitationPage | null | undefined,
+  previewPage: InvitationPage | null | undefined,
   requestedTheme?: string | null,
   defaultTheme?: string | null
 ) {
-  return normalizeBirthdayThemeKey(requestedTheme ?? defaultTheme, DEFAULT_BIRTHDAY_THEME);
+  if (isBirthdayThemeKey(requestedTheme)) {
+    return requestedTheme;
+  }
+
+  if (isBirthdayThemeKey(previewPage?.pageData?.birthdayTheme)) {
+    return previewPage.pageData.birthdayTheme;
+  }
+
+  return normalizeBirthdayThemeKey(defaultTheme, DEFAULT_BIRTHDAY_THEME);
 }
 
 export function getBirthdayThemeLabel(theme: BirthdayThemeKey) {
   return BIRTHDAY_THEME_META[theme].label;
+}
+
+export function getBirthdayThemeDescription(theme: BirthdayThemeKey) {
+  return BIRTHDAY_THEME_META[theme].description;
 }

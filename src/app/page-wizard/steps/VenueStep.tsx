@@ -19,15 +19,18 @@ export default function VenueStep({
   const selectedVenueName = formState.pageData?.venueName?.trim() || formState.venue.trim();
   const markerTitle =
     formState.pageData?.kakaoMap?.markerTitle?.trim() || selectedVenueName || selectedAddress;
+  const isFirstBirthday = formState.eventType === 'first-birthday';
+  const isGeneralEvent = formState.eventType === 'general-event';
+  const venueLabel = isGeneralEvent ? '행사 장소' : isFirstBirthday ? '돌잔치 장소' : '예식장';
 
   return (
     <div className={styles.fieldGrid}>
       <label className={styles.field}>
-        {renderFieldMeta('예식장 이름', 'required')}
+        {renderFieldMeta(`${venueLabel} 이름`, 'required')}
         <input
           className={styles.input}
           value={formState.venue}
-          placeholder="예식장 이름"
+          placeholder={`${venueLabel} 이름`}
           onChange={(event) =>
             updateForm((draft) => {
               const previousVenueName = draft.pageData?.venueName?.trim() ?? draft.venue.trim();
@@ -59,7 +62,7 @@ export default function VenueStep({
         <input
           className={styles.input}
           value={formState.pageData?.ceremonyAddress ?? ''}
-          placeholder="예식장 주소"
+          placeholder={`${venueLabel} 주소`}
           onChange={(event) =>
             updateForm((draft) => {
               if (!draft.pageData) {
@@ -105,11 +108,12 @@ export default function VenueStep({
           latitude={latitude}
           longitude={longitude}
           markerTitle={markerTitle}
+          venueLabel={venueLabel}
         />
       ) : null}
 
       <label className={styles.field}>
-        {renderFieldMeta('예식장 연락처', 'optional')}
+        {renderFieldMeta(`${venueLabel} 연락처`, 'optional')}
         <input
           className={styles.input}
           value={formState.pageData?.ceremonyContact ?? ''}
@@ -129,7 +133,13 @@ export default function VenueStep({
         <textarea
           className={styles.textarea}
           value={formState.pageData?.mapDescription ?? ''}
-          placeholder="예식장 건물 뒤 주차장을 이용하실 수 있습니다."
+          placeholder={
+            isGeneralEvent
+              ? '행사장 주차장 또는 대중교통 안내를 입력해 주세요.'
+              : isFirstBirthday
+              ? '건물 내 주차장 또는 발렛 이용 안내를 입력해 주세요.'
+              : '예식장 건물 뒤 주차장을 이용하실 수 있습니다.'
+          }
           onChange={(event) =>
             updateForm((draft) => {
               if (draft.pageData) {

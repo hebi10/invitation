@@ -18,6 +18,7 @@ type VenueLocationPreviewProps = {
   latitude: number;
   longitude: number;
   markerTitle?: string;
+  venueLabel?: string;
 };
 
 type MapLoadState = 'idle' | 'loading' | 'ready' | 'error';
@@ -40,6 +41,7 @@ export default function VenueLocationPreview({
   latitude,
   longitude,
   markerTitle,
+  venueLabel = '예식장',
 }: VenueLocationPreviewProps) {
   const mapRef = useRef<HTMLDivElement | null>(null);
   const hasAddress = hasText(address);
@@ -47,7 +49,7 @@ export default function VenueLocationPreview({
   const [mapLoadState, setMapLoadState] = useState<MapLoadState>(
     hasCoordinates ? 'loading' : 'idle'
   );
-  const resolvedVenueName = venueName.trim() || '예식장';
+  const resolvedVenueName = venueName.trim() || venueLabel;
   const resolvedMarkerTitle =
     markerTitle?.trim() || resolvedVenueName || address.trim() || '선택한 위치';
 
@@ -138,7 +140,7 @@ export default function VenueLocationPreview({
 
       <div className={styles.autoInfoGrid}>
         <div className={`${styles.autoInfoItem} ${styles.autoInfoItemWide}`}>
-          <span className={styles.autoInfoLabel}>예식장명</span>
+          <span className={styles.autoInfoLabel}>{venueLabel}명</span>
           <span className={styles.autoInfoValue}>{resolvedVenueName}</span>
         </div>
         <div className={`${styles.autoInfoItem} ${styles.autoInfoItemWide}`}>

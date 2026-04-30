@@ -15,6 +15,10 @@ import {
   isFirstBirthdayThemeKey,
 } from '@/app/_components/firstBirthday/firstBirthdayThemes';
 import {
+  DEFAULT_OPENING_THEME,
+  isOpeningThemeKey,
+} from '@/app/_components/opening/openingThemes';
+import {
   cloneConfig,
   createEmptyAccount,
   createEmptyGuideItem,
@@ -89,6 +93,7 @@ import {
   deriveEnglishNamesFromSlug,
   shouldSyncDerivedText,
 } from './pageWizardClientUtils';
+import { getPageWizardPresentation } from './pageWizardPresentation';
 import {
   getNoticeClassName,
   getStepIndex,
@@ -101,6 +106,7 @@ import {
   BirthdayBasicStep,
   BirthdayGreetingStep,
   BirthdayScheduleStep,
+  BirthdayThemeStep,
   ExtraStep,
   FinalStep,
   GreetingStep,
@@ -119,6 +125,7 @@ const IS_DEV_NOTICE_MODE = process.env.NODE_ENV !== 'production';
 
 interface PageWizardClientProps {
   initialSlug: string | null;
+  forcedEventType?: EventTypeKey;
 }
 
 type ExistingWizardLoadState =
@@ -134,11 +141,87 @@ type ExistingWizardLoadState =
       message: string;
     };
 
-export default function PageWizardClient({ initialSlug }: PageWizardClientProps) {
+function getWizardCopy(eventType: EventTypeKey) {
+  if (eventType === 'general-event') {
+    return {
+      itemLabel: '행사 초대장',
+      loadingTitle: '행사 초대장 편집 화면을 준비하고 있습니다.',
+      createLoginTitle: '행사 초대장 만들기는 관리자만 이용 가능합니다',
+      editLoginTitle: '행사 초대장 편집을 위해 로그인해 주세요',
+      createLoginDescription:
+        '관리자 계정으로 로그인한 뒤 새 행사 초대장 생성 화면을 이용해 주세요.',
+      editLoginDescription:
+        '행사 초대장에 연결된 고객 계정으로 로그인하면 편집 화면을 이용할 수 있습니다.',
+      createLoginHelper: '행사 초대장 생성은 관리자 권한이 확인된 계정에서만 가능합니다.',
+      editLoginHelper:
+        '아직 계정에 연결되지 않은 행사 초대장은 관리자에게 계정 연결을 요청해 주세요.',
+      claimTitle: '관리자에게 행사 초대장 연결을 요청해 주세요',
+      claimDescription:
+        '이 행사 초대장은 아직 현재 로그인 계정과 연결되어 있지 않습니다. 고객 계정에 연결된 행사 초대장만 편집할 수 있습니다.',
+      blockedTitle: '이 행사 초대장은 현재 계정으로 관리할 수 없습니다.',
+      listButton: '내 행사 초대장으로 이동',
+      emptyTitle: '행사 초대장 정보를 아직 불러오지 못했습니다.',
+      emptyDescription:
+        '잠시 후 다시 시도하거나 로그인 상태와 행사 초대장 연결 여부를 확인해 주세요.',
+      loadError: '행사 초대장 설정을 불러오지 못했습니다.',
+      addressRequired: '행사 장소 주소를 먼저 입력해 주세요.',
+    };
+  }
+
+  if (eventType === 'opening') {
+    return {
+      itemLabel: '개업 초대장',
+      loadingTitle: '개업 초대장 편집 화면을 준비하고 있습니다.',
+      createLoginTitle: '개업 초대장 만들기는 관리자만 이용 가능합니다',
+      editLoginTitle: '개업 초대장 편집을 위해 로그인해 주세요',
+      createLoginDescription: '관리자 계정으로 로그인한 뒤 새 개업 초대장 생성 화면을 이용해 주세요.',
+      editLoginDescription: '개업 초대장에 연결된 고객 계정으로 로그인하면 편집 화면을 이용할 수 있습니다.',
+      createLoginHelper: '개업 초대장 생성은 관리자 권한이 확인된 계정에서만 가능합니다.',
+      editLoginHelper: '아직 계정에 연결되지 않은 개업 초대장은 관리자에게 계정 연결을 요청해 주세요.',
+      claimTitle: '관리자에게 개업 초대장 연결을 요청해 주세요',
+      claimDescription:
+        '이 개업 초대장은 아직 현재 로그인 계정과 연결되어 있지 않습니다. 고객 계정에 연결된 개업 초대장만 편집할 수 있습니다.',
+      blockedTitle: '이 개업 초대장은 현재 계정으로 관리할 수 없습니다.',
+      listButton: '내 개업 초대장으로 이동',
+      emptyTitle: '개업 초대장 정보를 아직 불러오지 못했습니다.',
+      emptyDescription:
+        '잠시 후 다시 시도하거나 로그인 상태와 개업 초대장 연결 여부를 확인해 주세요.',
+      loadError: '개업 초대장 설정을 불러오지 못했습니다.',
+      addressRequired: '매장 주소를 먼저 입력해 주세요.',
+    };
+  }
+
+  return {
+    itemLabel: '청첩장',
+    loadingTitle: '청첩장 편집 화면을 준비하고 있습니다.',
+    createLoginTitle: '청첩장 만들기는 관리자만 이용 가능합니다',
+    editLoginTitle: '청첩장 편집을 위해 로그인해 주세요',
+    createLoginDescription: '관리자 계정으로 로그인한 뒤 새 청첩장 생성 화면을 이용해 주세요.',
+    editLoginDescription:
+      '청첩장에 연결된 고객 계정으로 로그인하면 편집 화면을 이용할 수 있습니다.',
+    createLoginHelper: '청첩장 생성은 관리자 권한이 확인된 계정에서만 가능합니다.',
+    editLoginHelper: '아직 계정에 연결되지 않은 청첩장은 관리자에게 계정 연결을 요청해 주세요.',
+    claimTitle: '관리자에게 청첩장 연결을 요청해 주세요',
+    claimDescription:
+      '이 청첩장은 아직 현재 로그인 계정과 연결되어 있지 않습니다. 고객 계정에 연결된 청첩장만 편집할 수 있습니다.',
+    blockedTitle: '이 청첩장은 현재 계정으로 관리할 수 없습니다.',
+    listButton: '내 청첩장으로 이동',
+    emptyTitle: '청첩장 정보를 아직 불러오지 못했습니다.',
+    emptyDescription:
+      '잠시 후 다시 시도하거나 로그인 상태와 청첩장 연결 여부를 확인해 주세요.',
+    loadError: '청첩장 설정을 불러오지 못했습니다.',
+    addressRequired: '예식장 주소를 먼저 입력해 주세요.',
+  };
+}
+
+export default function PageWizardClient({
+  initialSlug,
+  forcedEventType,
+}: PageWizardClientProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const requestedEventType = normalizeEventTypeKey(
-    searchParams?.get('eventType'),
+    forcedEventType ?? searchParams?.get('eventType'),
     DEFAULT_EVENT_TYPE
   );
   const queryClient = useQueryClient();
@@ -179,6 +262,7 @@ export default function PageWizardClient({ initialSlug }: PageWizardClientProps)
     toggleChoicePanel,
   } = useWizardPreviewState();
   const [musicPreviewState, setMusicPreviewState] = useState<MusicPreviewState>('idle');
+  const wizardCopy = getWizardCopy(eventType);
 
   const swiperRef = useRef<SwiperType | null>(null);
   const coverUploadInputRef = useRef<HTMLInputElement | null>(null);
@@ -189,6 +273,15 @@ export default function PageWizardClient({ initialSlug }: PageWizardClientProps)
   const canCreateNew = isAdminLoggedIn;
   const canOpenExistingWizard = Boolean(initialSlug && isLoggedIn);
   const canUploadImages = isAdminLoggedIn || Boolean(initialSlug && isLoggedIn);
+  const wizardPresentation = getPageWizardPresentation(eventType);
+  const pageClassName =
+    wizardPresentation.pageClassName === 'birthday'
+      ? `${styles.page} ${styles.pageBirthday}`
+      : wizardPresentation.pageClassName === 'firstBirthday'
+        ? `${styles.page} ${styles.pageFirstBirthday}`
+        : wizardPresentation.pageClassName === 'generalEvent'
+          ? `${styles.page} ${styles.pageGeneralEvent}`
+          : styles.page;
   const ownedEventsQuery = useQuery<CustomerOwnedEventSummary[]>({
     queryKey: appQueryKeys.ownedCustomerEvents(authUser?.uid ?? null),
     enabled:
@@ -830,7 +923,7 @@ export default function PageWizardClient({ initialSlug }: PageWizardClientProps)
         return;
       }
 
-      showErrorNotice(wizardLoadQuery.error, '청첩장 설정을 불러오지 못했습니다.');
+      showErrorNotice(wizardLoadQuery.error, wizardPresentation.loadErrorMessage);
       setIsLoading(false);
     }
   }, [
@@ -846,6 +939,7 @@ export default function PageWizardClient({ initialSlug }: PageWizardClientProps)
     requestedEventType,
     resetPublishedState,
     showErrorNotice,
+    wizardPresentation.loadErrorMessage,
     wizardLoadQuery.data,
     wizardLoadQuery.error,
     wizardLoadQuery.isFetching,
@@ -886,8 +980,15 @@ export default function PageWizardClient({ initialSlug }: PageWizardClientProps)
       return;
     }
 
+    if (eventType === 'opening') {
+      setDefaultTheme((current) =>
+        isOpeningThemeKey(current) ? current : DEFAULT_OPENING_THEME
+      );
+      return;
+    }
+
     setDefaultTheme((current) =>
-      isFirstBirthdayThemeKey(current) ? DEFAULT_THEME : current
+      isFirstBirthdayThemeKey(current) || isOpeningThemeKey(current) ? DEFAULT_THEME : current
     );
   }, [eventType, initialSlug]);
 
@@ -1014,7 +1115,15 @@ export default function PageWizardClient({ initialSlug }: PageWizardClientProps)
   const handleVenueAddressSearch = async () => {
     const query = formState?.pageData?.ceremonyAddress?.trim() ?? '';
     if (!query) {
-      showErrorNotice('예식장 주소를 먼저 입력해 주세요.');
+      showErrorNotice(
+        eventType === 'general-event'
+          ? wizardCopy.addressRequired
+          : eventType === 'birthday'
+            ? '파티 장소 주소를 먼저 입력해 주세요.'
+          : eventType === 'first-birthday'
+            ? '돌잔치 장소 주소를 먼저 입력해 주세요.'
+            : '예식장 주소를 먼저 입력해 주세요.'
+      );
       return;
     }
 
@@ -1092,6 +1201,30 @@ export default function PageWizardClient({ initialSlug }: PageWizardClientProps)
       }
 
       if (eventType !== 'general-event') {
+        if (eventType === 'opening') {
+          updateForm((draft) => {
+            draft.groomName = value;
+            draft.couple.groom.name = value;
+            draft.displayName = value;
+            draft.description =
+              draft.description.trim() || `${value.trim() || '새 매장'} 개업 소식에 초대합니다.`;
+            draft.metadata.title = value;
+            draft.metadata.description =
+              draft.metadata.description.trim() || draft.description;
+            draft.metadata.openGraph.title = value;
+            draft.metadata.openGraph.description =
+              draft.metadata.openGraph.description.trim() || draft.description;
+            draft.metadata.twitter.title = value;
+            draft.metadata.twitter.description =
+              draft.metadata.twitter.description.trim() || draft.description;
+            if (draft.pageData) {
+              draft.pageData.greetingAuthor = value;
+              draft.pageData.venueName = value;
+            }
+          });
+          return;
+        }
+
         handlePersonFieldChange('groom', 'name', value);
         if (eventType === 'birthday') {
           updateForm((draft) => {
@@ -1390,6 +1523,22 @@ export default function PageWizardClient({ initialSlug }: PageWizardClientProps)
 
     switch (stepKey) {
       case 'theme':
+        if (eventType === 'birthday') {
+          return (
+            <BirthdayThemeStep
+              {...sharedProps}
+              eventType={eventType}
+              defaultTheme={defaultTheme}
+              setDefaultTheme={setDefaultTheme}
+              openChoicePanel={openChoicePanel}
+              toggleChoicePanel={toggleChoicePanel}
+              onProductTierChange={handleProductTierChange}
+              setOpenChoicePanel={setOpenChoicePanel}
+              isSelectionLocked={Boolean(resolvedPersistedSlug)}
+            />
+          );
+        }
+
         return (
           <ThemeStep
             {...sharedProps}
@@ -1453,7 +1602,7 @@ export default function PageWizardClient({ initialSlug }: PageWizardClientProps)
           />
         );
       case 'schedule':
-        if (eventType === 'birthday') {
+        if (eventType === 'birthday' || eventType === 'first-birthday') {
           return (
             <>
               <BirthdayScheduleStep
@@ -1579,15 +1728,13 @@ export default function PageWizardClient({ initialSlug }: PageWizardClientProps)
 
   if (isLoading || isAdminLoading || isCheckingOwnedEventsBeforeClaim) {
     return (
-      <main className={styles.page}>
+      <main className={pageClassName}>
         <div className={`${styles.shell} ${styles.gateShell}`}>
           <section className={`${styles.centerCard} ${styles.gateCard} ${styles.loadingGateCard}`}>
             <div className={styles.gateLoader} aria-hidden />
             <p className={styles.eyebrow}>불러오는 중</p>
-            <h1 className={styles.centerTitle}>청첩장 편집 화면을 준비하고 있습니다.</h1>
-            <p className={styles.centerText}>
-              현재 설정과 공개 상태를 확인하고 있습니다.
-            </p>
+            <h1 className={styles.centerTitle}>{wizardPresentation.loadingTitle}</h1>
+            <p className={styles.centerText}>{wizardPresentation.loadingDescription}</p>
           </section>
         </div>
       </main>
@@ -1596,24 +1743,24 @@ export default function PageWizardClient({ initialSlug }: PageWizardClientProps)
 
   if (!isAdminLoggedIn && (!initialSlug || !isLoggedIn)) {
     return (
-      <main className={styles.page}>
+      <main className={pageClassName}>
         <div className={`${styles.shell} ${styles.gateShell}`}>
           <section className={`${styles.centerCard} ${styles.gateCard}`}>
             <FirebaseAuthLoginCard
               title={
                 initialSlug
-                  ? '청첩장 편집을 위해 로그인해 주세요'
-                  : '청첩장 만들기는 관리자만 이용 가능합니다'
+                  ? wizardPresentation.editLoginTitle
+                  : wizardPresentation.createLoginTitle
               }
               description={
                 initialSlug
-                  ? '청첩장에 연결된 고객 계정으로 로그인하면 편집 화면을 이용할 수 있습니다.'
-                  : '관리자 계정으로 로그인한 뒤 새 청첩장 생성 화면을 이용해 주세요.'
+                  ? wizardPresentation.editLoginDescription
+                  : wizardPresentation.createLoginDescription
               }
               helperText={
                 initialSlug
-                  ? '아직 계정에 연결되지 않은 청첩장은 관리자에게 계정 연결을 요청해 주세요.'
-                  : '청첩장 생성은 관리자 권한이 확인된 계정에서만 가능합니다.'
+                  ? wizardPresentation.editLoginHelper
+                  : wizardPresentation.createLoginHelper
               }
               requireAdmin={!initialSlug}
               allowSignUp={Boolean(initialSlug)}
@@ -1626,16 +1773,13 @@ export default function PageWizardClient({ initialSlug }: PageWizardClientProps)
 
   if (initialSlug && requiresOwnershipClaim) {
     return (
-      <main className={styles.page}>
+      <main className={pageClassName}>
         <div className={`${styles.shell} ${styles.gateShell}`}>
           {renderNotice()}
           <section className={`${styles.centerCard} ${styles.gateCard}`}>
             <p className={styles.eyebrow}>계정 연결 필요</p>
-            <h1 className={styles.centerTitle}>관리자에게 청첩장 연결을 요청해 주세요</h1>
-            <p className={styles.centerText}>
-              이 청첩장은 아직 현재 로그인 계정과 연결되어 있지 않습니다. 고객 계정에 연결된
-              청첩장만 편집할 수 있습니다.
-            </p>
+            <h1 className={styles.centerTitle}>{wizardPresentation.ownershipTitle}</h1>
+            <p className={styles.centerText}>{wizardPresentation.ownershipDescription}</p>
             <div className={styles.inlineActions}>
               <button
                 type="button"
@@ -1650,7 +1794,7 @@ export default function PageWizardClient({ initialSlug }: PageWizardClientProps)
                 className={styles.primaryButton}
                 onClick={() => void router.push('/my-invitations', { scroll: false })}
               >
-                내 이벤트로 이동
+                {wizardPresentation.myPagesLabel}
               </button>
             </div>
           </section>
@@ -1661,11 +1805,11 @@ export default function PageWizardClient({ initialSlug }: PageWizardClientProps)
 
   if (initialSlug && accessErrorMessage) {
     return (
-      <main className={styles.page}>
+      <main className={pageClassName}>
         <div className={`${styles.shell} ${styles.gateShell}`}>
           <section className={`${styles.centerCard} ${styles.gateCard}`}>
             <p className={styles.eyebrow}>접근 제한</p>
-            <h1 className={styles.centerTitle}>이 청첩장은 현재 계정으로 관리할 수 없습니다.</h1>
+            <h1 className={styles.centerTitle}>{wizardPresentation.accessTitle}</h1>
             <p className={styles.centerText}>{accessErrorMessage}</p>
             <div className={styles.inlineActions}>
               {isExistingWizardRefreshable ? (
@@ -1683,7 +1827,7 @@ export default function PageWizardClient({ initialSlug }: PageWizardClientProps)
                 className={styles.secondaryButton}
                 onClick={() => void router.push('/my-invitations', { scroll: false })}
               >
-                내 청첩장으로 이동
+                {wizardPresentation.myPagesLabel}
               </button>
             </div>
           </section>
@@ -1694,15 +1838,13 @@ export default function PageWizardClient({ initialSlug }: PageWizardClientProps)
 
   if (!formState || !previewFormState || !(canCreateNew || canOpenExistingWizard)) {
     return (
-      <main className={styles.page}>
+      <main className={pageClassName}>
         <div className={`${styles.shell} ${styles.gateShell}`}>
           {renderNotice()}
           <section className={`${styles.centerCard} ${styles.gateCard}`}>
             <p className={styles.eyebrow}>상태 확인</p>
-            <h1 className={styles.centerTitle}>청첩장 정보를 아직 불러오지 못했습니다.</h1>
-            <p className={styles.centerText}>
-              잠시 후 다시 시도하거나 로그인 상태와 청첩장 연결 여부를 확인해 주세요.
-            </p>
+            <h1 className={styles.centerTitle}>{wizardPresentation.fallbackTitle}</h1>
+            <p className={styles.centerText}>{wizardPresentation.fallbackDescription}</p>
             {isExistingWizardRefreshable ? (
               <div className={styles.inlineActions}>
                 <button
@@ -1724,7 +1866,7 @@ export default function PageWizardClient({ initialSlug }: PageWizardClientProps)
   /* ── Main wizard ── */
 
   return (
-    <main className={styles.page}>
+    <main className={pageClassName}>
       <div className={styles.shell}>
         <div className={styles.progressBar}>
           <div className={styles.progressLabels}>
