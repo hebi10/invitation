@@ -16,6 +16,7 @@ import {
   StatusBadge,
   useAdminOverlay,
 } from '@/app/admin/_components';
+import type { EventTypeKey } from '@/lib/eventTypes';
 import {
   DUE_SOON_DAYS,
   getPeriodStatusMeta,
@@ -27,6 +28,7 @@ import styles from './DisplayPeriodManager.module.css';
 interface DisplayPeriodManagerProps {
   isVisible: boolean;
   statusFilter?: PeriodStatusFilter;
+  eventTypeFilter?: EventTypeKey | null;
   onDataChanged?: () => void;
 }
 
@@ -106,6 +108,7 @@ function matchesStatusFilter(
 export default function DisplayPeriodManager({
   isVisible,
   statusFilter = 'all',
+  eventTypeFilter = 'wedding',
   onDataChanged,
 }: DisplayPeriodManagerProps) {
   const [periods, setPeriods] = useState<DisplayPeriod[]>([]);
@@ -249,14 +252,15 @@ export default function DisplayPeriodManager({
     const normalizedQuery = searchQuery.trim().toLowerCase();
 
     return pages.filter((page) => {
+      const matchesEventType = !eventTypeFilter || page.eventType === eventTypeFilter;
       const period = periodsByPage.get(page.slug);
       const matchesSearch = `${page.displayName} ${page.slug} ${page.venue ?? ''}`
         .toLowerCase()
         .includes(normalizedQuery);
 
-      return matchesSearch && matchesStatusFilter(localStatusFilter, period);
+      return matchesEventType && matchesSearch && matchesStatusFilter(localStatusFilter, period);
     });
-  }, [localStatusFilter, pages, periodsByPage, searchQuery]);
+  }, [eventTypeFilter, localStatusFilter, pages, periodsByPage, searchQuery]);
 
   const chips = [
     searchQuery

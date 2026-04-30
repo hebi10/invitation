@@ -19,8 +19,8 @@ export default function EventTypeStep({
           <span className={styles.choiceSectionBadge}>이벤트</span>
           <h3 className={styles.choiceSectionTitle}>생성할 이벤트 타입을 선택해 주세요</h3>
           <p className={styles.choiceSectionText}>
-            현재는 모바일 청첩장과 birthday PoC를 먼저 지원하고, 다른 이벤트 타입은 같은 구조로
-            확장할 수 있게 준비 중입니다.
+            모바일 청첩장, 생일/돌잔치, 일반 행사 초대장을 생성할 수 있습니다.
+            준비 중인 타입은 선택할 수 없습니다.
           </p>
         </div>
         <div className={styles.choiceOptions}>

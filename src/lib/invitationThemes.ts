@@ -81,6 +81,46 @@ export const INVITATION_THEME_METADATA_REGISTRY = [
     ariaLabelSuffix: ' (Simple)',
     sortOrder: 20,
   },
+  {
+    key: 'first-birthday-pink',
+    label: '핑크 봄날',
+    adminLabel: 'First Birthday Pink',
+    variantLabel: '핑크 봄날',
+    pathSuffix: '/first-birthday-pink',
+    wizardDescription: '부드러운 핑크와 봄날 장식을 중심으로 구성한 돌잔치 디자인입니다.',
+    preview: {
+      description: '커튼형 인트로와 성장 갤러리를 강조하는 핑크 톤 돌잔치 디자인입니다.',
+      sampleUrls: {
+        standard: 'https://msgnote.kr/first-birthday-sample/first-birthday-pink/',
+        deluxe: 'https://msgnote.kr/first-birthday-sample/first-birthday-pink/',
+        premium: 'https://msgnote.kr/first-birthday-sample/first-birthday-pink/',
+      },
+    },
+    shareTitleMode: 'metadata',
+    documentTitleSuffix: ' (First Birthday Pink)',
+    ariaLabelSuffix: ' (First Birthday Pink)',
+    sortOrder: 110,
+  },
+  {
+    key: 'first-birthday-mint',
+    label: '민트 새벽',
+    adminLabel: 'First Birthday Mint',
+    variantLabel: '민트 새벽',
+    pathSuffix: '/first-birthday-mint',
+    wizardDescription: '차분한 민트와 새벽빛 포인트를 적용한 돌잔치 디자인입니다.',
+    preview: {
+      description: '민트와 블루 포인트로 아기의 첫 생일을 맑게 보여주는 디자인입니다.',
+      sampleUrls: {
+        standard: 'https://msgnote.kr/first-birthday-sample/first-birthday-mint/',
+        deluxe: 'https://msgnote.kr/first-birthday-sample/first-birthday-mint/',
+        premium: 'https://msgnote.kr/first-birthday-sample/first-birthday-mint/',
+      },
+    },
+    shareTitleMode: 'metadata',
+    documentTitleSuffix: ' (First Birthday Mint)',
+    ariaLabelSuffix: ' (First Birthday Mint)',
+    sortOrder: 120,
+  },
 ] as const satisfies readonly InvitationThemeMetadataEntry[];
 
 export type InvitationThemeDefinition = (typeof INVITATION_THEME_METADATA_REGISTRY)[number];
@@ -115,6 +155,20 @@ export const INVITATION_THEME_SALES_POLICY_REGISTRY = {
     isSelectableAtCreation: true,
     isPurchasable: true,
     allowsAdditionalPurchase: true,
+  },
+  'first-birthday-pink': {
+    isDefault: false,
+    canBeDefault: true,
+    isSelectableAtCreation: false,
+    isPurchasable: false,
+    allowsAdditionalPurchase: false,
+  },
+  'first-birthday-mint': {
+    isDefault: false,
+    canBeDefault: true,
+    isSelectableAtCreation: false,
+    isPurchasable: false,
+    allowsAdditionalPurchase: false,
   },
 } as const satisfies Record<InvitationThemeKey, InvitationThemeSalesPolicy>;
 

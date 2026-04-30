@@ -2,6 +2,7 @@ import styles from '../page.module.css';
 import { renderFieldMeta, type SlugStepProps } from '../pageWizardShared';
 
 export default function SlugStep({
+  eventType,
   groomKoreanName,
   brideKoreanName,
   groomEnglishName,
@@ -17,79 +18,141 @@ export default function SlugStep({
   persistedSlug,
   previewSlug,
 }: SlugStepProps) {
+  const isGeneralEvent = eventType === 'general-event';
+  const isBirthday = eventType === 'birthday';
+  const isFirstBirthday = eventType === 'first-birthday';
+  const isSingleNameEvent = isGeneralEvent || isBirthday || isFirstBirthday;
+
   return (
     <div className={styles.fieldGrid}>
       <div className={styles.summaryCard}>
         <span className={styles.summaryLabel}>이 단계에서 하는 일</span>
-        <strong className={styles.summaryValue}>이름과 주소를 먼저 정하고 초안 생성에 바로 반영합니다.</strong>
+        <strong className={styles.summaryValue}>
+          {isGeneralEvent
+            ? '행사명과 주소를 먼저 정하고 초안 생성에 바로 반영합니다.'
+            : isFirstBirthday
+              ? '아기 이름과 주소를 먼저 정하고 초안 생성에 바로 반영합니다.'
+            : isBirthday
+              ? '생일 주인공 이름과 주소를 먼저 정하고 초안 생성에 바로 반영합니다.'
+            : '이름과 주소를 먼저 정하고 초안 생성에 바로 반영합니다.'}
+        </strong>
         <p className={styles.sectionText}>
-          한글 이름은 생성되는 청첩장 본문에 바로 들어가고, 영문 이름은 주소 입력칸을 자동으로
-          채웁니다.
+          {isGeneralEvent
+            ? '행사명은 초대장 제목에 바로 들어가고, 영문 키워드는 주소 입력칸을 자동으로 채웁니다.'
+            : isFirstBirthday
+              ? '아기 이름은 돌잔치 초대장 본문에 바로 들어가고, 영문 표기는 주소 입력칸을 자동으로 채웁니다.'
+            : isBirthday
+              ? '한글 이름은 생일 초대장 본문에 바로 들어가고, 영문 표기는 주소 입력칸을 자동으로 채웁니다.'
+            : '한글 이름은 생성되는 청첩장 본문에 바로 들어가고, 영문 이름은 주소 입력칸을 자동으로 채웁니다.'}
         </p>
       </div>
 
       <div className={styles.twoColumnGrid}>
         <label className={styles.field}>
           {renderFieldMeta(
-            '예비 신랑 이름(한글)',
+            isGeneralEvent
+              ? '행사명'
+              : isFirstBirthday
+                ? '아기 이름(한글)'
+                : isBirthday
+                  ? '생일 주인공 이름(한글)'
+                  : '예비 신랑 이름(한글)',
             'required',
-            '초안 생성과 기본 제목, 안내 문구에 바로 반영됩니다.'
+            isGeneralEvent
+              ? '초안 생성과 기본 제목, 공유 문구에 바로 반영됩니다.'
+              : isFirstBirthday
+                ? '초안 생성과 돌잔치 초대장 제목에 바로 반영됩니다.'
+              : isBirthday
+                ? '초안 생성과 생일 초대장 제목에 바로 반영됩니다.'
+              : '초안 생성과 기본 제목, 안내 문구에 바로 반영됩니다.'
           )}
           <input
             className={styles.input}
             value={groomKoreanName}
-            placeholder="신랑 이름"
+            placeholder={
+              isGeneralEvent
+                ? '팀 창립 5주년 파티'
+                : isFirstBirthday
+                  ? '아기 이름'
+                  : isBirthday
+                    ? '생일 주인공'
+                    : '신랑 이름'
+            }
             onChange={(event) => onGroomKoreanNameChange(event.target.value)}
           />
         </label>
-        <label className={styles.field}>
-          {renderFieldMeta(
-            '예비 신부 이름(한글)',
-            'required',
-            '초안 생성과 기본 제목, 안내 문구에 바로 반영됩니다.'
-          )}
-          <input
-            className={styles.input}
-            value={brideKoreanName}
-            placeholder="신부 이름"
-            onChange={(event) => onBrideKoreanNameChange(event.target.value)}
-          />
-        </label>
+        {!isSingleNameEvent ? (
+          <label className={styles.field}>
+            {renderFieldMeta(
+              '예비 신부 이름(한글)',
+              'required',
+              '초안 생성과 기본 제목, 안내 문구에 바로 반영됩니다.'
+            )}
+            <input
+              className={styles.input}
+              value={brideKoreanName}
+              placeholder="신부 이름"
+              onChange={(event) => onBrideKoreanNameChange(event.target.value)}
+            />
+          </label>
+        ) : null}
       </div>
 
       <div className={styles.twoColumnGrid}>
         <label className={styles.field}>
           {renderFieldMeta(
-            '예비 신랑 이름(영문)',
+            isGeneralEvent
+              ? '주소 영문 키워드'
+              : isFirstBirthday
+                ? '아기 이름(영문)'
+                : isBirthday
+                  ? '생일 주인공 이름(영문)'
+                  : '예비 신랑 이름(영문)',
             persistedSlug ? 'optional' : 'required',
             persistedSlug
               ? '기존 주소에서 가져온 영문 표기입니다.'
-              : '영문 이름을 입력하면 페이지 주소가 자동으로 갱신됩니다.'
+              : isGeneralEvent
+                ? '영문 키워드를 입력하면 페이지 주소가 자동으로 갱신됩니다.'
+                : isFirstBirthday
+                  ? '영문 표기를 입력하면 페이지 주소가 자동으로 갱신됩니다.'
+                : isBirthday
+                  ? '영문 표기를 입력하면 페이지 주소가 자동으로 갱신됩니다.'
+                : '영문 이름을 입력하면 페이지 주소가 자동으로 갱신됩니다.'
           )}
           <input
             className={styles.input}
             value={groomEnglishName}
-            placeholder="kim-shinlang"
+            placeholder={
+              isGeneralEvent
+                ? 'team-anniversary'
+                : isFirstBirthday
+                  ? 'baby-name'
+                  : isBirthday
+                    ? 'birthday-name'
+                    : 'kim-shinlang'
+            }
             onChange={(event) => onGroomEnglishNameChange(event.target.value)}
             disabled={Boolean(persistedSlug)}
           />
         </label>
-        <label className={styles.field}>
-          {renderFieldMeta(
-            '예비 신부 이름(영문)',
-            persistedSlug ? 'optional' : 'required',
-            persistedSlug
-              ? '기존 주소에서 가져온 영문 표기입니다.'
-              : '영문 이름을 입력하면 페이지 주소가 자동으로 갱신됩니다.'
-          )}
-          <input
-            className={styles.input}
-            value={brideEnglishName}
-            placeholder="na-sinbu"
-            onChange={(event) => onBrideEnglishNameChange(event.target.value)}
-            disabled={Boolean(persistedSlug)}
-          />
-        </label>
+        {!isSingleNameEvent ? (
+          <label className={styles.field}>
+            {renderFieldMeta(
+              '예비 신부 이름(영문)',
+              persistedSlug ? 'optional' : 'required',
+              persistedSlug
+                ? '기존 주소에서 가져온 영문 표기입니다.'
+                : '영문 이름을 입력하면 페이지 주소가 자동으로 갱신됩니다.'
+            )}
+            <input
+              className={styles.input}
+              value={brideEnglishName}
+              placeholder="na-sinbu"
+              onChange={(event) => onBrideEnglishNameChange(event.target.value)}
+              disabled={Boolean(persistedSlug)}
+            />
+          </label>
+        ) : null}
       </div>
 
       <label className={styles.field}>
@@ -98,12 +161,27 @@ export default function SlugStep({
           'required',
           persistedSlug
             ? '이미 생성된 페이지라서 주소를 수정할 수 없습니다. 같은 주소가 있으면 서버에서 중복 방지 suffix를 자동으로 붙입니다.'
-            : '영문 소문자, 숫자, 하이픈(-)만 사용할 수 있습니다. 영문 이름을 입력하면 제안 주소가 자동으로 들어갑니다.'
+              : isGeneralEvent
+                ? '영문 소문자, 숫자, 하이픈(-)만 사용할 수 있습니다. 영문 키워드를 입력하면 제안 주소가 자동으로 들어갑니다.'
+                : isFirstBirthday
+                  ? '영문 소문자, 숫자, 하이픈(-)만 사용할 수 있습니다. 영문 표기를 입력하면 제안 주소가 자동으로 들어갑니다.'
+                : isBirthday
+                  ? '영문 소문자, 숫자, 하이픈(-)만 사용할 수 있습니다. 영문 표기를 입력하면 제안 주소가 자동으로 들어갑니다.'
+                : '영문 소문자, 숫자, 하이픈(-)만 사용할 수 있습니다. 영문 이름을 입력하면 제안 주소가 자동으로 들어갑니다.'
         )}
         <input
           className={styles.input}
           value={slugInput}
-          placeholder={autoGeneratedSlug || 'wedding-abc123'}
+          placeholder={
+            autoGeneratedSlug ||
+            (isGeneralEvent
+              ? 'team-anniversary'
+              : isFirstBirthday
+                ? 'baby-name'
+                : isBirthday
+                  ? 'birthday-name'
+                  : 'wedding-abc123')
+          }
           onChange={(event) => onSlugInputChange(event.target.value)}
           onBlur={() => {
             if (!persistedSlug && normalizedSlugInput) {
@@ -125,10 +203,15 @@ export default function SlugStep({
         <p className={styles.sectionText}>
           {persistedSlug
             ? '이미 생성된 페이지라서 현재 주소가 고정되어 있습니다.'
-            : '영문 이름으로 만든 제안 주소를 기준으로 초안 문서를 먼저 만들고, 이후 단계에서 다시 수정할 수 있습니다.'}
+            : isGeneralEvent
+              ? '영문 키워드로 만든 제안 주소를 기준으로 초안 문서를 먼저 만들고, 이후 단계에서 다시 수정할 수 있습니다.'
+              : isFirstBirthday
+                ? '영문 표기로 만든 제안 주소를 기준으로 초안 문서를 먼저 만들고, 이후 단계에서 다시 수정할 수 있습니다.'
+              : isBirthday
+                ? '영문 표기로 만든 제안 주소를 기준으로 초안 문서를 먼저 만들고, 이후 단계에서 다시 수정할 수 있습니다.'
+              : '영문 이름으로 만든 제안 주소를 기준으로 초안 문서를 먼저 만들고, 이후 단계에서 다시 수정할 수 있습니다.'}
         </p>
       </div>
-
     </div>
   );
 }

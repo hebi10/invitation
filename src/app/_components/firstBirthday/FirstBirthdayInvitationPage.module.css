@@ -1,0 +1,487 @@
+.page {
+  min-height: 100vh;
+  background: var(--fb-bg);
+  color: var(--fb-text);
+  font-family: var(--fb-body-font);
+  overflow-x: hidden;
+}
+
+.pink {
+  --fb-bg: linear-gradient(175deg, #fff5f0 0%, #fdeee8 42%, #fff8f5 100%);
+  --fb-surface: rgba(255, 255, 255, 0.9);
+  --fb-surface-strong: #fffaf7;
+  --fb-primary: #d97892;
+  --fb-primary-dark: #9f435b;
+  --fb-accent: #e8966a;
+  --fb-muted: #916b70;
+  --fb-border: rgba(217, 120, 146, 0.24);
+  --fb-text: #3a2022;
+  --fb-body-font: "Noto Sans KR", system-ui, sans-serif;
+  --fb-heading-font: "Noto Serif KR", serif;
+}
+
+.mint {
+  --fb-bg: linear-gradient(175deg, #f0f9f6 0%, #e6f4f0 45%, #eef9fb 100%);
+  --fb-surface: rgba(255, 255, 255, 0.92);
+  --fb-surface-strong: #f7fffd;
+  --fb-primary: #4aaa98;
+  --fb-primary-dark: #287469;
+  --fb-accent: #5a9ec8;
+  --fb-muted: #527868;
+  --fb-border: rgba(74, 170, 152, 0.26);
+  --fb-text: #162e28;
+  --fb-body-font: "Noto Sans KR", system-ui, sans-serif;
+  --fb-heading-font: "Noto Sans KR", system-ui, sans-serif;
+}
+
+.curtain {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: grid;
+  place-items: center;
+  background: var(--fb-bg);
+}
+
+.curtainCard {
+  width: min(84vw, 360px);
+  padding: 42px 28px;
+  border: 1px solid var(--fb-border);
+  border-radius: 28px;
+  background: var(--fb-surface);
+  text-align: center;
+  box-shadow: 0 22px 70px rgba(60, 40, 45, 0.16);
+}
+
+.curtainKicker,
+.sectionKicker {
+  display: block;
+  color: var(--fb-primary-dark);
+  font-size: 0.76rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.curtainTitle {
+  margin: 12px 0 18px;
+  font-family: var(--fb-heading-font);
+  font-size: 2.2rem;
+}
+
+.curtainButton,
+.mapButton,
+.copyButton,
+.refreshButton,
+.floatingRefreshButton {
+  border: 0;
+  border-radius: 999px;
+  background: var(--fb-primary);
+  color: #fff;
+  font-weight: 700;
+}
+
+.curtainButton,
+.mapButton {
+  padding: 12px 18px;
+}
+
+.hero {
+  min-height: 92vh;
+  display: grid;
+  align-items: end;
+  padding: 38px 18px 28px;
+}
+
+.heroInner {
+  width: min(100%, 430px);
+  margin: 0 auto;
+}
+
+.heroImage {
+  width: 100%;
+  aspect-ratio: 4 / 5;
+  overflow: hidden;
+  border-radius: 30px;
+  background: var(--fb-surface-strong);
+  box-shadow: 0 26px 80px rgba(45, 28, 35, 0.18);
+}
+
+.heroImage img,
+.galleryItem img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.heroImageFallback {
+  height: 100%;
+  display: grid;
+  place-items: center;
+  color: var(--fb-primary-dark);
+  font-family: var(--fb-heading-font);
+  font-size: 1.6rem;
+}
+
+.heroCopy {
+  margin-top: -54px;
+  position: relative;
+  padding: 28px 22px;
+  border-radius: 28px;
+  background: var(--fb-surface);
+  border: 1px solid var(--fb-border);
+  text-align: center;
+  box-shadow: 0 18px 50px rgba(45, 28, 35, 0.12);
+}
+
+.title {
+  margin: 10px 0;
+  font-family: var(--fb-heading-font);
+  font-size: clamp(2.4rem, 11vw, 4rem);
+  line-height: 1.05;
+}
+
+.subtitle {
+  margin: 0;
+  color: var(--fb-muted);
+  font-size: 1rem;
+}
+
+.quickInfo {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 20px;
+}
+
+.quickInfoItem,
+.detailItem,
+.accountCard {
+  border: 1px solid var(--fb-border);
+  border-radius: 18px;
+  background: var(--fb-surface);
+}
+
+.quickInfoItem {
+  padding: 12px 8px;
+}
+
+.quickInfoLabel,
+.detailLabel {
+  display: block;
+  color: var(--fb-muted);
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.quickInfoValue,
+.detailValue {
+  display: block;
+  margin-top: 4px;
+  font-size: 0.9rem;
+  word-break: keep-all;
+}
+
+.section {
+  padding: 54px 18px;
+}
+
+.sectionAlt {
+  background: rgba(255, 255, 255, 0.32);
+}
+
+.sectionInner {
+  width: min(100%, 430px);
+  margin: 0 auto;
+}
+
+.sectionHeader {
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+.sectionTitle {
+  margin: 8px 0 0;
+  font-family: var(--fb-heading-font);
+  font-size: 1.7rem;
+}
+
+.messageCard,
+.detailCard {
+  padding: 24px;
+  border: 1px solid var(--fb-border);
+  border-radius: 24px;
+  background: var(--fb-surface);
+}
+
+.messageText {
+  margin: 0;
+  line-height: 1.9;
+  white-space: pre-line;
+}
+
+.author {
+  display: block;
+  margin-top: 18px;
+  color: var(--fb-primary-dark);
+  font-weight: 700;
+  text-align: right;
+}
+
+.detailGrid,
+.countdownGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.detailItem {
+  padding: 16px;
+}
+
+.countdownGrid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.countNumber {
+  display: block;
+  color: var(--fb-primary-dark);
+  font-size: 1.45rem;
+}
+
+.galleryGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.galleryItem {
+  aspect-ratio: 1;
+  overflow: hidden;
+  border-radius: 20px;
+  background: var(--fb-surface-strong);
+}
+
+.emptyText {
+  margin: 0;
+  color: var(--fb-muted);
+  line-height: 1.7;
+}
+
+.container {
+  display: grid;
+  gap: 18px;
+}
+
+.titleSection,
+.header {
+  text-align: center;
+}
+
+.form,
+.formContainer,
+.commentsList {
+  display: grid;
+  gap: 12px;
+}
+
+.formContainer,
+.commentItem,
+.emptyState {
+  padding: 18px;
+  border: 1px solid var(--fb-border);
+  border-radius: 20px;
+  background: var(--fb-surface);
+}
+
+.formRow,
+.inputGroup {
+  display: grid;
+  gap: 6px;
+}
+
+.input,
+.textarea {
+  width: 100%;
+  border: 1px solid var(--fb-border);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.86);
+  color: var(--fb-text);
+  font: inherit;
+}
+
+.input {
+  min-height: 44px;
+  padding: 0 14px;
+}
+
+.textarea {
+  min-height: 110px;
+  padding: 12px 14px;
+  resize: vertical;
+}
+
+.submitButton,
+.pageButton,
+.pageNumber {
+  border: 0;
+  border-radius: 999px;
+  font-weight: 800;
+}
+
+.submitButton {
+  min-height: 46px;
+  background: var(--fb-primary);
+  color: #fff;
+}
+
+.commentsHeader,
+.commentHeader,
+.pagination,
+.pageNumbers {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.commentsHeader,
+.commentHeader {
+  justify-content: space-between;
+}
+
+.commentsCount,
+.commentDate {
+  color: var(--fb-muted);
+  font-size: 0.84rem;
+}
+
+.commentsGrid {
+  display: grid;
+  gap: 10px;
+}
+
+.commentMessage {
+  margin: 10px 0 0;
+  line-height: 1.7;
+  white-space: pre-line;
+}
+
+.commentAuthor,
+.commentName {
+  font-weight: 800;
+}
+
+.commentActions {
+  margin-left: auto;
+}
+
+.pagination {
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.pageButton,
+.pageNumber {
+  min-width: 36px;
+  min-height: 36px;
+  padding: 0 12px;
+  background: var(--fb-surface);
+  color: var(--fb-primary-dark);
+  border: 1px solid var(--fb-border);
+}
+
+.pageButtonActive,
+.active {
+  background: var(--fb-primary);
+  color: #fff;
+}
+
+.disabled {
+  opacity: 0.45;
+}
+
+.mapButton {
+  display: inline-flex;
+  margin-top: 18px;
+  text-decoration: none;
+}
+
+.accountStack {
+  display: grid;
+  gap: 12px;
+}
+
+.accountCard {
+  padding: 16px;
+}
+
+.accountTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.accountName {
+  font-weight: 800;
+}
+
+.accountMeta {
+  margin-top: 8px;
+  color: var(--fb-muted);
+  font-size: 0.9rem;
+}
+
+.copyButton {
+  padding: 9px 12px;
+  white-space: nowrap;
+}
+
+.footer {
+  padding: 42px 18px 72px;
+  text-align: center;
+  color: var(--fb-muted);
+}
+
+.adminNoticeBar {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  background: #24181a;
+  color: #fff;
+}
+
+.adminNoticeInner {
+  width: min(100%, 760px);
+  margin: 0 auto;
+  padding: 10px 14px;
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.adminNoticeText {
+  display: block;
+  font-size: 0.85rem;
+  opacity: 0.85;
+}
+
+.refreshButton,
+.floatingRefreshButton {
+  padding: 8px 12px;
+}
+
+.floatingRefresh {
+  position: fixed;
+  right: 14px;
+  bottom: 14px;
+  z-index: 10;
+}
+
+@media (max-width: 380px) {
+  .quickInfo,
+  .countdownGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}

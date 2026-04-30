@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { useAdmin } from '@/contexts';
+import type { EventTypeKey } from '@/lib/eventTypes';
 import {
   uploadImage,
   deleteImage,
@@ -20,7 +21,11 @@ import {
 
 import styles from './ImageManager.module.css';
 
-export default function ImageManager() {
+interface ImageManagerProps {
+  eventTypeFilter?: EventTypeKey | null;
+}
+
+export default function ImageManager({ eventTypeFilter = 'wedding' }: ImageManagerProps) {
   const { isAdminLoggedIn } = useAdmin();
   const { confirm, showToast } = useAdminOverlay();
 
@@ -46,8 +51,11 @@ export default function ImageManager() {
       ]);
       setImages(nextImages);
       setPages(nextPages);
-      if (!selectedPage && nextPages.length > 0) {
-        setSelectedPage(nextPages[0].slug);
+      const visibleNextPages = eventTypeFilter
+        ? nextPages.filter((page) => page.eventType === eventTypeFilter)
+        : nextPages;
+      if (!selectedPage && visibleNextPages.length > 0) {
+        setSelectedPage(visibleNextPages[0].slug);
       }
     } catch (loadError) {
       console.error(loadError);
@@ -59,7 +67,7 @@ export default function ImageManager() {
     } finally {
       setIsLoading(false);
     }
-  }, [selectedPage, showToast]);
+  }, [eventTypeFilter, selectedPage, showToast]);
 
   useEffect(() => {
     if (!isAdminLoggedIn) {
@@ -159,15 +167,30 @@ export default function ImageManager() {
     }
   };
 
+  const visiblePages = useMemo(
+    () =>
+      eventTypeFilter
+        ? pages.filter((page) => page.eventType === eventTypeFilter)
+        : pages,
+    [eventTypeFilter, pages]
+  );
+
+  useEffect(() => {
+    if (selectedPage && !visiblePages.some((page) => page.slug === selectedPage)) {
+      setSelectedPage(visiblePages[0]?.slug ?? '');
+    }
+  }, [selectedPage, visiblePages]);
+
   const pageMap = useMemo(
-    () => new Map(pages.map((page) => [page.slug, page] as const)),
-    [pages]
+    () => new Map(visiblePages.map((page) => [page.slug, page] as const)),
+    [visiblePages]
   );
 
   const selectedPageSummary = selectedPage ? pageMap.get(selectedPage) ?? null : null;
 
   const filteredPageSlugs = useMemo(() => {
-    return Object.keys(images)
+    return visiblePages
+      .map((page) => page.slug)
       .sort((left, right) => left.localeCompare(right, 'ko'))
       .filter((pageSlug) => {
         const pageName = pageMap.get(pageSlug)?.displayName || pageSlug;
@@ -175,7 +198,7 @@ export default function ImageManager() {
           .toLowerCase()
           .includes(searchQuery.trim().toLowerCase());
       });
-  }, [images, pageMap, searchQuery]);
+  }, [pageMap, searchQuery, visiblePages]);
 
   if (!isAdminLoggedIn) {
     return (
@@ -189,7 +212,7 @@ export default function ImageManager() {
     <div className={styles.container}>
       <div className={styles.header}>
         <div>
-          <h2 className={styles.title}>청첩장 이미지 관리</h2>
+          <h2 className={styles.title}>이미지 관리</h2>
           <p className={styles.description}>
             페이지를 선택한 뒤 이미지를 업로드하거나 기존 이미지를 교체할 수 있습니다.
           </p>
@@ -206,7 +229,7 @@ export default function ImageManager() {
               onChange={(event) => setSelectedPage(event.target.value)}
             >
               <option value="">페이지를 선택해 주세요.</option>
-              {pages.map((page) => (
+              {visiblePages.map((page) => (
                 <option key={page.slug} value={page.slug}>
                   {page.displayName} ({page.slug})
                 </option>

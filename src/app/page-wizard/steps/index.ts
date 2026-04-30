@@ -1,4 +1,7 @@
 export { default as BasicStep } from './BasicStep';
+export { default as BirthdayBasicStep } from './BirthdayBasicStep';
+export { default as BirthdayGreetingStep } from './BirthdayGreetingStep';
+export { default as BirthdayScheduleStep } from './BirthdayScheduleStep';
 export { default as EventTypeStep } from './EventTypeStep';
 export { default as ExtraStep } from './ExtraStep';
 export { default as FinalStep } from './FinalStep';

@@ -1,0 +1,99 @@
+.guestbook {
+  display: grid;
+  gap: 18px;
+}
+
+.header {
+  display: grid;
+  gap: 6px;
+  text-align: center;
+}
+
+.title {
+  color: var(--birthday-text);
+  font-family: var(--birthday-serif);
+  font-size: 24px;
+  font-weight: 700;
+}
+
+.subtitle {
+  color: var(--birthday-muted);
+  font-size: 14px;
+  line-height: 1.7;
+}
+
+.form {
+  display: grid;
+  gap: 10px;
+}
+
+.input,
+.textarea {
+  width: 100%;
+  border: 1px solid var(--birthday-border);
+  border-radius: 8px;
+  background: var(--birthday-card);
+  color: var(--birthday-text);
+  font: inherit;
+  padding: 12px 14px;
+}
+
+.textarea {
+  min-height: 104px;
+  resize: vertical;
+}
+
+.button {
+  border: 0;
+  border-radius: 8px;
+  background: var(--birthday-button);
+  color: var(--birthday-button-text);
+  cursor: pointer;
+  font: inherit;
+  font-weight: 700;
+  padding: 13px 16px;
+}
+
+.button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.status {
+  color: var(--birthday-muted);
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.list {
+  display: grid;
+  gap: 10px;
+}
+
+.item {
+  border: 1px solid var(--birthday-border);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--birthday-card) 88%, transparent);
+  padding: 14px;
+}
+
+.author {
+  color: var(--birthday-text);
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.message {
+  color: var(--birthday-text);
+  font-size: 14px;
+  line-height: 1.7;
+  margin-top: 8px;
+  white-space: pre-wrap;
+}
+
+.date {
+  color: var(--birthday-muted);
+  display: block;
+  font-size: 12px;
+  margin-top: 8px;
+}

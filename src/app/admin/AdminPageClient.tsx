@@ -29,6 +29,7 @@ import {
   TOTAL_SHORTCUT_COUNT,
   getDefaultTabForSection,
   getAvailableShortcuts,
+  getPageCategoryEventTypeFilter,
   getPageCategoryMeta,
   getSectionForTab,
   getTabsForSection,
@@ -120,6 +121,7 @@ export default function AdminPageClient() {
   const commentAgeFilter = parseCommentAge(safeSearchParams.get('commentAge'));
   const currentPage = numberFromParam(safeSearchParams.get('commentPage'), 1);
   const periodStatusFilter = parsePeriodFilter(safeSearchParams.get('periodStatus'));
+  const activePageCategoryEventType = getPageCategoryEventTypeFilter(activePageCategory);
 
   const updateQuery = useCallback((updates: Record<string, string | null>) => {
     const nextParams = new URLSearchParams(safeSearchParams.toString());
@@ -146,7 +148,6 @@ export default function AdminPageClient() {
     customerAccounts,
     unassignedCustomerEvents,
     memoryPublicCount,
-    commentSummary,
     dashboardSummary,
     pagesLoading,
     pagesRefreshing,
@@ -233,6 +234,8 @@ export default function AdminPageClient() {
     return [...pages]
       .filter((page) => {
         const links = getAvailableShortcuts(page);
+        const matchesPageCategory =
+          !activePageCategoryEventType || page.eventType === activePageCategoryEventType;
         const matchesSearch = `${page.displayName} ${page.slug} ${
           page.description ?? ''
         } ${page.venue ?? ''} ${getEventTypeDisplayLabel(page.eventType)}`
@@ -252,7 +255,13 @@ export default function AdminPageClient() {
             links.length < TOTAL_SHORTCUT_COUNT) ||
           (pageStatusFilter === 'empty' && links.length === 0);
 
-        return matchesSearch && matchesEventType && matchesShortcut && matchesStatus;
+        return (
+          matchesPageCategory &&
+          matchesSearch &&
+          matchesEventType &&
+          matchesShortcut &&
+          matchesStatus
+        );
       })
       .sort((left, right) => {
         if (pageSort === 'name') {
@@ -280,6 +289,7 @@ export default function AdminPageClient() {
         return right.slug.localeCompare(left.slug, 'ko');
       });
   }, [
+    activePageCategoryEventType,
     pageEventTypeFilter,
     pageSearch,
     pageShortcutFilter,
@@ -288,8 +298,23 @@ export default function AdminPageClient() {
     pages,
   ]);
 
+  const categoryPages = useMemo(() => {
+    if (!activePageCategoryEventType) {
+      return [];
+    }
+
+    return pages.filter((page) => page.eventType === activePageCategoryEventType);
+  }, [activePageCategoryEventType, pages]);
+
+  const categoryPageSlugs = useMemo(
+    () => new Set(categoryPages.map((page) => page.slug)),
+    [categoryPages]
+  );
+
   const filteredComments = useMemo(() => {
     return comments.filter((comment) => {
+      const matchesPageCategory =
+        !activePageCategoryEventType || categoryPageSlugs.has(comment.pageSlug);
       const matchesSearch = `${comment.author} ${comment.message} ${comment.pageSlug}`
         .toLowerCase()
         .includes(commentSearch.trim().toLowerCase());
@@ -297,9 +322,16 @@ export default function AdminPageClient() {
         selectedPageSlug === 'all' || comment.pageSlug === selectedPageSlug;
       const matchesAge =
         commentAgeFilter === 'all' || isRecentComment(comment.createdAt);
-      return matchesSearch && matchesPage && matchesAge;
+      return matchesPageCategory && matchesSearch && matchesPage && matchesAge;
     });
-  }, [commentAgeFilter, commentSearch, comments, selectedPageSlug]);
+  }, [
+    activePageCategoryEventType,
+    categoryPageSlugs,
+    commentAgeFilter,
+    commentSearch,
+    comments,
+    selectedPageSlug,
+  ]);
 
   const totalCommentPages = Math.max(
     1,
@@ -312,15 +344,19 @@ export default function AdminPageClient() {
   );
 
   const pageNameMap = useMemo(
-    () => new Map(pages.map((page) => [page.slug, page.displayName])),
-    [pages]
+    () => new Map(categoryPages.map((page) => [page.slug, page.displayName])),
+    [categoryPages]
   );
 
   const commentPageOptions = useMemo(() => {
+    const categoryCommentPageSlugs = comments
+      .map((comment) => comment.pageSlug)
+      .filter((pageSlug) => !activePageCategoryEventType || categoryPageSlugs.has(pageSlug));
+
     return [
       ...new Set([
-        ...pages.map((page) => page.slug),
-        ...comments.map((comment) => comment.pageSlug),
+        ...categoryPages.map((page) => page.slug),
+        ...categoryCommentPageSlugs,
       ]),
     ]
       .sort((left, right) =>
@@ -333,7 +369,13 @@ export default function AdminPageClient() {
         value: slug,
         label: pageNameMap.get(slug) ? `${pageNameMap.get(slug)} (${slug})` : slug,
       }));
-  }, [comments, pageNameMap, pages]);
+  }, [
+    activePageCategoryEventType,
+    categoryPageSlugs,
+    categoryPages,
+    comments,
+    pageNameMap,
+  ]);
 
   useEffect(() => {
     if (currentPage !== normalizedCurrentPage) {
@@ -343,10 +385,17 @@ export default function AdminPageClient() {
 
   /* ── Summary cards ── */
 
-  const invitationCount = dashboardSummary?.invitationCount ?? pages.length;
-  const restrictedCount = dashboardSummary?.restrictedCount ?? pages.filter((page) => page.displayPeriodEnabled).length;
-  const dueSoonCount = dashboardSummary?.dueSoonCount ?? pages.filter(isPageDueSoon).length;
-  const recentCommentsCount = dashboardSummary?.commentSummary.recentCount ?? commentSummary.recentCount;
+  const activePageCategoryMeta = getPageCategoryMeta(activePageCategory);
+  const isInvitationPageCategory = isImplementedPageCategory(activePageCategory);
+  const invitationCount =
+    activePageCategoryEventType === 'wedding'
+      ? dashboardSummary?.invitationCount ?? categoryPages.length
+      : categoryPages.length;
+  const restrictedCount = categoryPages.filter((page) => page.displayPeriodEnabled).length;
+  const dueSoonCount = categoryPages.filter(isPageDueSoon).length;
+  const recentCommentsCount = filteredComments.filter((comment) =>
+    isRecentComment(comment.createdAt)
+  ).length;
   const customerAccountCount = customerAccounts.length;
   const linkedCustomerEventCount = customerAccounts.reduce(
     (sum, account) => sum + account.linkedEvents.length,
@@ -396,14 +445,14 @@ export default function AdminPageClient() {
   const eventSummaryCards: SummaryCardItem[] = [
     {
       id: 'invitations',
-      label: '청첩장 페이지',
+      label: `${activePageCategoryMeta.label} 페이지`,
       value: invitationCount,
       meta:
         restrictedCount > 0
           ? `기간 제한 사용 ${restrictedCount}개`
           : '현재 기간 제한이 설정된 페이지가 없습니다.',
       tone: invitationCount > 0 ? 'success' : 'neutral',
-      actionLabel: '청첩장 관리 열기',
+      actionLabel: `${activePageCategoryMeta.label} 관리 열기`,
       onClick: () => updateQuery({ section: 'events', tab: 'pages' }),
     },
     {
@@ -412,8 +461,8 @@ export default function AdminPageClient() {
       value: dueSoonCount,
       meta:
         dueSoonCount > 0
-          ? `${DUE_SOON_DAYS}일 이내 종료되는 청첩장`
-          : '긴급히 확인할 청첩장이 없습니다.',
+          ? `${DUE_SOON_DAYS}일 이내 종료되는 페이지`
+          : '긴급히 확인할 페이지가 없습니다.',
       tone: dueSoonCount > 0 ? 'warning' : 'neutral',
       actionLabel: '노출 기간 보기',
       onClick: () =>
@@ -441,15 +490,13 @@ export default function AdminPageClient() {
       id: 'memoryVisible',
       label: '공개 추억 페이지',
       value: memoryPublicCount,
-      meta: `청첩장 ${invitationCount}개와 별도로 운영됩니다.`,
+      meta: `${activePageCategoryMeta.label} ${invitationCount}개와 별도로 운영됩니다.`,
       tone: memoryPublicCount > 0 ? 'primary' : 'neutral',
       actionLabel: '추억 페이지 열기',
       onClick: () => updateQuery({ section: 'events', tab: 'memory' }),
     },
   ];
 
-  const activePageCategoryMeta = getPageCategoryMeta(activePageCategory);
-  const isInvitationPageCategory = isImplementedPageCategory(activePageCategory);
   const futureEventSummaryCards: SummaryCardItem[] = [
     {
       id: 'selected-category',
@@ -818,7 +865,7 @@ export default function AdminPageClient() {
               loading={pagesLoading}
               refreshing={pagesRefreshing}
               summaryLoading={summaryLoading}
-              weddingPages={pages}
+              weddingPages={categoryPages}
               filteredPages={filteredPages}
               pageSearch={pageSearch}
               pageEventTypeFilter={pageEventTypeFilter}
@@ -853,7 +900,7 @@ export default function AdminPageClient() {
             <MemoryPageManager />
           ) : null}
           {!shouldShowFutureCategoryTodo && activeTab === 'images' ? (
-            <ImageManager />
+            <ImageManager eventTypeFilter={activePageCategoryEventType} />
           ) : null}
 
           {!shouldShowFutureCategoryTodo && activeTab === 'comments' ? (
@@ -901,6 +948,7 @@ export default function AdminPageClient() {
             <DisplayPeriodManager
               isVisible={true}
               statusFilter={periodStatusFilter}
+              eventTypeFilter={activePageCategoryEventType}
               onDataChanged={() => void fetchSummarySources()}
             />
           ) : null}

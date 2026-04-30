@@ -8,6 +8,7 @@ import type {
 } from './weddingPageState';
 import { useWeddingInvitationState } from './weddingPageState';
 import type { EventInvitationRouteOptions } from './eventPageThemes';
+import { normalizeInvitationThemeKey } from '@/lib/invitationThemes';
 
 export type EventPageLoadingState = WeddingPageLoadingState;
 export type EventPageBlockedState = WeddingPageBlockedState;
@@ -17,5 +18,8 @@ export type EventPageState = WeddingPageState;
 export function useEventInvitationState(
   options: EventInvitationRouteOptions
 ): EventPageState {
-  return useWeddingInvitationState(options);
+  return useWeddingInvitationState({
+    ...options,
+    theme: normalizeInvitationThemeKey(options.theme),
+  });
 }

@@ -3,13 +3,17 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 
 import type { Swiper as SwiperType } from 'swiper';
 import { Pagination } from 'swiper/modules';
 import { Swiper, SwiperSlide } from 'swiper/react';
 
 import FirebaseAuthLoginCard from '@/app/_components/FirebaseAuthLoginCard';
+import {
+  DEFAULT_FIRST_BIRTHDAY_THEME,
+  isFirstBirthdayThemeKey,
+} from '@/app/_components/firstBirthday/firstBirthdayThemes';
 import {
   cloneConfig,
   createEmptyAccount,
@@ -94,6 +98,9 @@ import {
 } from './pageWizardShared';
 import {
   BasicStep,
+  BirthdayBasicStep,
+  BirthdayGreetingStep,
+  BirthdayScheduleStep,
   ExtraStep,
   FinalStep,
   GreetingStep,
@@ -129,11 +136,16 @@ type ExistingWizardLoadState =
 
 export default function PageWizardClient({ initialSlug }: PageWizardClientProps) {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const requestedEventType = normalizeEventTypeKey(
+    searchParams?.get('eventType'),
+    DEFAULT_EVENT_TYPE
+  );
   const queryClient = useQueryClient();
   const { authUser, isAdminLoading, isAdminLoggedIn, isLoggedIn } = useAdmin();
 
   const [formState, setFormState] = useState<InvitationPageSeed | null>(null);
-  const [eventType, setEventType] = useState<EventTypeKey>(DEFAULT_EVENT_TYPE);
+  const [eventType, setEventType] = useState<EventTypeKey>(requestedEventType);
   const [defaultTheme, setDefaultTheme] = useState<InvitationThemeKey>(DEFAULT_THEME);
   const {
     published,
@@ -641,6 +653,10 @@ export default function PageWizardClient({ initialSlug }: PageWizardClientProps)
         return current;
       }
 
+      if (current.eventType === 'general-event') {
+        return current;
+      }
+
       const groomName = current.couple.groom.name;
       const brideName = current.couple.bride.name;
       const autoGreetingMessage = composeAutoGreetingMessage(groomName, brideName);
@@ -724,7 +740,7 @@ export default function PageWizardClient({ initialSlug }: PageWizardClientProps)
     }
 
     if (!initialSlug) {
-      const nextConfig = createInitialWizardConfig();
+      const nextConfig = createInitialWizardConfig(requestedEventType);
 
       setFormState(nextConfig);
       setEventType(normalizeEventTypeKey(nextConfig.eventType, DEFAULT_EVENT_TYPE));
@@ -827,6 +843,7 @@ export default function PageWizardClient({ initialSlug }: PageWizardClientProps)
     isOwnedEventsCheckPendingForInitialSlug,
     ownedEventFallbackEditableConfig,
     queryClient,
+    requestedEventType,
     resetPublishedState,
     showErrorNotice,
     wizardLoadQuery.data,
@@ -855,6 +872,23 @@ export default function PageWizardClient({ initialSlug }: PageWizardClientProps)
         eventType,
       };
     });
+  }, [eventType, initialSlug]);
+
+  useEffect(() => {
+    if (initialSlug) {
+      return;
+    }
+
+    if (eventType === 'first-birthday') {
+      setDefaultTheme((current) =>
+        isFirstBirthdayThemeKey(current) ? current : DEFAULT_FIRST_BIRTHDAY_THEME
+      );
+      return;
+    }
+
+    setDefaultTheme((current) =>
+      isFirstBirthdayThemeKey(current) ? DEFAULT_THEME : current
+    );
   }, [eventType, initialSlug]);
 
   useEffect(() => {
@@ -1030,6 +1064,75 @@ export default function PageWizardClient({ initialSlug }: PageWizardClientProps)
       if (draft.pageData?.[role]) {
         draft.pageData[role][field] = value;
       }
+    });
+  };
+
+  const handleSlugPrimaryKoreanNameChange = (value: string) => {
+      if (eventType === 'first-birthday') {
+        updateForm((draft) => {
+          draft.displayName = value;
+          draft.groomName = '';
+          draft.brideName = '';
+          draft.metadata.title = value;
+          draft.description =
+            draft.description.trim() || `${value.trim() || '아기'}의 첫 번째 생일잔치에 초대합니다.`;
+          draft.metadata.description =
+            draft.metadata.description.trim() || draft.description;
+          draft.metadata.openGraph.title = value;
+          draft.metadata.openGraph.description =
+            draft.metadata.openGraph.description.trim() || draft.description;
+          draft.metadata.twitter.title = value;
+          draft.metadata.twitter.description =
+            draft.metadata.twitter.description.trim() || draft.description;
+          if (draft.pageData) {
+            draft.pageData.greetingAuthor = '아빠 · 엄마';
+          }
+        });
+        return;
+      }
+
+      if (eventType !== 'general-event') {
+        handlePersonFieldChange('groom', 'name', value);
+        if (eventType === 'birthday') {
+          updateForm((draft) => {
+            draft.groomName = value;
+            draft.brideName = '';
+            draft.couple.bride.name = '';
+            draft.displayName = value;
+            draft.description =
+              draft.description.trim() || `${value.trim() || '생일 주인공'}님의 생일 자리에 초대합니다.`;
+            draft.metadata.title = value;
+            draft.metadata.description =
+              draft.metadata.description.trim() || draft.description;
+            draft.metadata.openGraph.title = value;
+            draft.metadata.openGraph.description =
+              draft.metadata.openGraph.description.trim() || draft.description;
+            draft.metadata.twitter.title = value;
+            draft.metadata.twitter.description =
+              draft.metadata.twitter.description.trim() || draft.description;
+            if (draft.pageData) {
+              draft.pageData.greetingAuthor = value;
+            }
+          });
+        }
+        return;
+      }
+
+    updateForm((draft) => {
+      draft.groomName = value;
+      draft.couple.groom.name = value;
+      draft.displayName = value;
+      draft.description =
+        draft.description.trim() || `${value.trim() || '행사'}에 초대합니다.`;
+      draft.metadata.title = value;
+      draft.metadata.description =
+        draft.metadata.description.trim() || draft.description;
+      draft.metadata.openGraph.title = value;
+      draft.metadata.openGraph.description =
+        draft.metadata.openGraph.description.trim() || draft.description;
+      draft.metadata.twitter.title = value;
+      draft.metadata.twitter.description =
+        draft.metadata.twitter.description.trim() || draft.description;
     });
   };
 
@@ -1256,7 +1359,6 @@ export default function PageWizardClient({ initialSlug }: PageWizardClientProps)
     handleMoveNext,
     handleMovePrevious,
     handleFinalConfirm,
-    handleSaveCurrent,
   } = useWizardNavigation({
     activeStepKey,
     defaultTheme,
@@ -1291,6 +1393,7 @@ export default function PageWizardClient({ initialSlug }: PageWizardClientProps)
         return (
           <ThemeStep
             {...sharedProps}
+            eventType={eventType}
             defaultTheme={defaultTheme}
             setDefaultTheme={setDefaultTheme}
             openChoicePanel={openChoicePanel}
@@ -1311,13 +1414,16 @@ export default function PageWizardClient({ initialSlug }: PageWizardClientProps)
       case 'slug':
         return (
           <SlugStep
-            groomKoreanName={formState.couple.groom.name}
+            eventType={eventType}
+            groomKoreanName={
+              eventType === 'first-birthday'
+                ? formState.displayName
+                : formState.couple.groom.name
+            }
             brideKoreanName={formState.couple.bride.name}
             groomEnglishName={groomEnglishName}
             brideEnglishName={brideEnglishName}
-            onGroomKoreanNameChange={(value) =>
-              handlePersonFieldChange('groom', 'name', value)
-            }
+            onGroomKoreanNameChange={handleSlugPrimaryKoreanNameChange}
             onBrideKoreanNameChange={(value) =>
               handlePersonFieldChange('bride', 'name', value)
             }
@@ -1332,6 +1438,14 @@ export default function PageWizardClient({ initialSlug }: PageWizardClientProps)
           />
         );
       case 'basic':
+        if (eventType === 'birthday') {
+          return (
+            <BirthdayBasicStep
+              {...sharedProps}
+              onPersonFieldChange={handlePersonFieldChange}
+            />
+          );
+        }
         return (
           <BasicStep
             {...sharedProps}
@@ -1339,6 +1453,23 @@ export default function PageWizardClient({ initialSlug }: PageWizardClientProps)
           />
         );
       case 'schedule':
+        if (eventType === 'birthday') {
+          return (
+            <>
+              <BirthdayScheduleStep
+                {...sharedProps}
+                currentWeddingSummary={currentWeddingSummary}
+                onDateInputChange={handleDateInputChange}
+                onTimeInputChange={handleTimeInputChange}
+              />
+              <VenueStep
+                {...sharedProps}
+                isSearchingAddress={isSearchingVenueAddress}
+                onSearchAddress={() => void handleVenueAddressSearch()}
+              />
+            </>
+          );
+        }
         return (
           <>
             <ScheduleStep
@@ -1355,6 +1486,15 @@ export default function PageWizardClient({ initialSlug }: PageWizardClientProps)
           </>
         );
       case 'greeting':
+        if (eventType === 'birthday') {
+          return (
+            <BirthdayGreetingStep
+              {...sharedProps}
+              onPersonFieldChange={handlePersonFieldChange}
+              onParentFieldChange={handleParentFieldChange}
+            />
+          );
+        }
         return (
           <GreetingStep
             {...sharedProps}
@@ -1738,14 +1878,6 @@ export default function PageWizardClient({ initialSlug }: PageWizardClientProps)
                         >
                           이전
                         </button>
-                        <button
-                          type="button"
-                          className={styles.secondaryButton}
-                          onClick={() => void handleSaveCurrent()}
-                          disabled={isSaving}
-                        >
-                          {isSaving ? '저장 중' : '저장'}
-                        </button>
                         {step.key === 'final' ? (
                           <button
                             type="button"
@@ -1762,11 +1894,7 @@ export default function PageWizardClient({ initialSlug }: PageWizardClientProps)
                             onClick={() => void handleMoveNext()}
                             disabled={isSaving}
                           >
-                            {step.key === 'slug'
-                              ? resolvedPersistedSlug
-                                ? '다음 단계로'
-                                : '페이지 생성'
-                              : '다음'}
+                            {isSaving ? '저장 중' : '다음으로'}
                           </button>
                         )}
                       </div>

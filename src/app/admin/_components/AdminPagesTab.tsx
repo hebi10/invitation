@@ -18,7 +18,9 @@ import {
   type PageSort,
   type PageStatusFilter,
   type ShortcutKey,
+  getPageCategoryMeta,
   getAvailableShortcuts,
+  isImplementedPageCategory,
 } from './adminPageUtils';
 import styles from '../page.module.css';
 
@@ -93,6 +95,18 @@ export default function AdminPagesTab({
   >>({});
 
   const totalPages = Math.max(1, Math.ceil(filteredPages.length / pageSize));
+  const categoryLabel = getPageCategoryMeta(activePageCategory).label;
+  const isWeddingCategory = activePageCategory === 'invitation';
+  const isFirstBirthdayCategory = activePageCategory === 'first-birthday';
+  const isBirthdayCategory = activePageCategory === 'birthday';
+  const isGeneralEventCategory = activePageCategory === 'general-event';
+  const createWizardHref = isFirstBirthdayCategory
+    ? '/page-wizard?eventType=first-birthday'
+    : isBirthdayCategory
+      ? '/page-wizard?eventType=birthday'
+      : isGeneralEventCategory
+        ? '/page-wizard?eventType=general-event'
+        : '/page-wizard';
 
   useEffect(() => {
     if (currentPage > totalPages) {
@@ -104,22 +118,24 @@ export default function AdminPagesTab({
     const startIndex = (currentPage - 1) * pageSize;
     return filteredPages.slice(startIndex, startIndex + pageSize);
   }, [currentPage, filteredPages, pageSize]);
-  const activeFutureCategory = PAGE_CATEGORY_TABS.find(
+  const activeFutureCategory = !isImplementedPageCategory(activePageCategory)
+    ? PAGE_CATEGORY_TABS.find(
     (
       tab
     ): tab is Extract<
       (typeof PAGE_CATEGORY_TABS)[number],
       { title: string; description: string }
     > => tab.key === activePageCategory && 'title' in tab
-  );
+      )
+    : undefined;
 
   return (
     <div className={styles.panelStack}>
       <div className={styles.sectionHeader}>
         <div>
-          <h2 className={styles.sectionTitle}>청첩장 페이지</h2>
+          <h2 className={styles.sectionTitle}>{categoryLabel} 페이지</h2>
           <p className={styles.sectionDescription}>
-            공개 상태와 생성된 디자인별 미리보기를 한곳에서 확인할 수 있습니다.
+            공개 상태와 생성된 페이지 미리보기를 한곳에서 확인할 수 있습니다.
           </p>
         </div>
         <p className={styles.sectionMeta}>
@@ -144,20 +160,26 @@ export default function AdminPagesTab({
         <>
       <div className={styles.createPanelActions}>
         <p className={styles.createPanelMeta}>
-          새 페이지 생성은 이제 에디터 진입 페이지에서 시작합니다. 상세 편집으로 들어가기 전에
-          템플릿, 패키지, slug, 신랑·신부 이름을 먼저 설정해 주세요.
+          새 페이지 생성은 모바일 생성 흐름에서 시작합니다. 상세 편집으로 들어가기 전에
+          템플릿, 패키지, slug와 기본 정보를 먼저 설정해 주세요.
         </p>
         <div className={styles.tableActions}>
-          <a href="/page-editor" className="admin-button admin-button-primary" target="_blank">
+          <a href="/page-editor" className="admin-button admin-button-primary" target="_blank" rel="noreferrer">
             새 페이지 관리자 생성
           </a>
-          <a href="/page-wizard" className="admin-button admin-button-secondary" target="_blank">
+          <a
+            href={createWizardHref}
+            className="admin-button admin-button-secondary"
+            target="_blank"
+            rel="noreferrer"
+          >
             새 페이지 모바일 생성
           </a>
         </div>
       </div>
 
-      <div className={styles.shortcutStrip}>
+      {isWeddingCategory ? (
+        <div className={styles.shortcutStrip}>
         {SHORTCUT_ITEMS.map((shortcut) => {
           const count = weddingPages.filter(
             (page) => page.variants?.[shortcut.key]?.available
@@ -180,7 +202,8 @@ export default function AdminPagesTab({
             </button>
           );
         })}
-      </div>
+        </div>
+      ) : null}
 
       <FilterToolbar
         fields={
@@ -198,7 +221,8 @@ export default function AdminPagesTab({
               />
             </label>
 
-            <label className="admin-field">
+            {isWeddingCategory ? (
+              <label className="admin-field">
               <span className="admin-field-label">연결 상태</span>
               <select
                 className="admin-select"
@@ -213,9 +237,11 @@ export default function AdminPagesTab({
                   </option>
                 ))}
               </select>
-            </label>
+              </label>
+            ) : null}
 
-            <label className="admin-field">
+            {isWeddingCategory ? (
+              <label className="admin-field">
               <span className="admin-field-label">미리보기 유형</span>
               <select
                 className="admin-select"
@@ -231,7 +257,8 @@ export default function AdminPagesTab({
                   </option>
                 ))}
               </select>
-            </label>
+              </label>
+            ) : null}
 
             <label className="admin-field">
               <span className="admin-field-label">정렬</span>
@@ -283,7 +310,7 @@ export default function AdminPagesTab({
       {loading ? (
         <div className={styles.loadingState}>
           <div className={styles.loadingSpinner}></div>
-          <p className={styles.loadingText}>청첩장 페이지를 불러오는 중입니다.</p>
+          <p className={styles.loadingText}>{categoryLabel} 페이지를 불러오는 중입니다.</p>
         </div>
       ) : filteredPages.length > 0 ? (
         <>
@@ -313,8 +340,8 @@ export default function AdminPagesTab({
                 <thead>
                   <tr>
                     <th>페이지</th>
-                    <th>예식 정보</th>
-                    <th>디자인 미리보기</th>
+                    <th>{isBirthdayCategory ? '파티 정보' : '예식 정보'}</th>
+                    <th>미리보기</th>
                     <th>공개 상태</th>
                     <th>작업</th>
                   </tr>
@@ -383,12 +410,32 @@ export default function AdminPagesTab({
                           <div className={styles.metaStack}>
                             <span>{page.date || '날짜 미정'}</span>
                             <span className={styles.tableSubtext}>
-                              {page.venue || '예식장 정보 없음'}
+                              {page.venue || (isBirthdayCategory ? '파티 장소 정보 없음' : '예식장 정보 없음')}
                             </span>
                           </div>
                         </td>
                         <td>
-                          <div className={styles.variantPreviewGrid}>
+                          {isBirthdayCategory ? (
+                            <div className={styles.actionStack}>
+                              <a
+                                href={`/${page.slug}/birthday-minimal`}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="admin-button admin-button-primary"
+                              >
+                                Minimal 열기
+                              </a>
+                              <a
+                                href={`/${page.slug}/birthday-floral`}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="admin-button admin-button-secondary"
+                              >
+                                Floral 열기
+                              </a>
+                            </div>
+                          ) : (
+                            <div className={styles.variantPreviewGrid}>
                             {!previewAccess.isPublic ? (
                               <div className={styles.previewWarningCard}>
                                 <span className={styles.previewWarningLabel}>
@@ -495,7 +542,8 @@ export default function AdminPagesTab({
                                 )}
                               </div>
                             ) : null}
-                          </div>
+                            </div>
+                          )}
                         </td>
                         <td>
                           <div className={styles.statusCell}>
@@ -621,58 +669,79 @@ export default function AdminPagesTab({
                       </select>
                     </div>
                   </div>
-                    <select
-                      className="admin-select"
-                      value={selectedVariantKey}
-                      aria-label={`${page.displayName} 모바일 디자인 미리보기 선택`}
-                      onChange={(event) => {
-                        const value = event.currentTarget.value as ShortcutKey | '';
-                        setSelectedVariantByPage((previous) => ({
-                          ...previous,
-                          [page.slug]: value,
-                        }));
-                      }}
-                    >
-                      <option value="" disabled>
-                        디자인을 선택하세요
-                      </option>
-                      {links.length > 0 ? (
-                        <optgroup label="생성된 디자인">
-                          {links.map((link) => (
-                            <option
-                              key={`${page.slug}-mobile-existing-${link.key}`}
-                              value={link.key}
-                              disabled={
-                                updatingVariantToken === `${page.slug}:${link.key}`
-                              }
-                            >
-                              {link.label}
-                            </option>
-                          ))}
-                        </optgroup>
-                      ) : null}
-                      {missingShortcuts.length > 0 ? (
-                        <optgroup label="미생성 디자인">
-                          {missingShortcuts.map((shortcut) => (
-                            <option
-                              key={`${page.slug}-mobile-create-${shortcut.key}`}
-                              value={shortcut.key}
-                              disabled={
-                                updatingVariantToken === `${page.slug}:${shortcut.key}`
-                              }
-                            >
-                              {shortcut.label}
-                            </option>
-                          ))}
-                        </optgroup>
-                      ) : null}
-                      {links.length === 0 && missingShortcuts.length === 0 ? (
+                  {isBirthdayCategory ? (
+                    <div className={styles.mobileCardActions}>
+                      <a
+                        href={`/${page.slug}/birthday-minimal`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="admin-button admin-button-primary"
+                      >
+                        Minimal 열기
+                      </a>
+                      <a
+                        href={`/${page.slug}/birthday-floral`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="admin-button admin-button-secondary"
+                      >
+                        Floral 열기
+                      </a>
+                    </div>
+                  ) : (
+                    <>
+                      <select
+                        className="admin-select"
+                        value={selectedVariantKey}
+                        aria-label={`${page.displayName} 모바일 디자인 미리보기 선택`}
+                        onChange={(event) => {
+                          const value = event.currentTarget.value as ShortcutKey | '';
+                          setSelectedVariantByPage((previous) => ({
+                            ...previous,
+                            [page.slug]: value,
+                          }));
+                        }}
+                      >
                         <option value="" disabled>
-                          선택 가능한 디자인이 없습니다.
+                          디자인을 선택하세요
                         </option>
-                      ) : null}
-                    </select>
-                    {selectedVariantKey ? (
+                        {links.length > 0 ? (
+                          <optgroup label="생성된 디자인">
+                            {links.map((link) => (
+                              <option
+                                key={`${page.slug}-mobile-existing-${link.key}`}
+                                value={link.key}
+                                disabled={
+                                  updatingVariantToken === `${page.slug}:${link.key}`
+                                }
+                              >
+                                {link.label}
+                              </option>
+                            ))}
+                          </optgroup>
+                        ) : null}
+                        {missingShortcuts.length > 0 ? (
+                          <optgroup label="미생성 디자인">
+                            {missingShortcuts.map((shortcut) => (
+                              <option
+                                key={`${page.slug}-mobile-create-${shortcut.key}`}
+                                value={shortcut.key}
+                                disabled={
+                                  updatingVariantToken === `${page.slug}:${shortcut.key}`
+                                }
+                              >
+                                {shortcut.label}
+                              </option>
+                            ))}
+                          </optgroup>
+                        ) : null}
+                        {links.length === 0 && missingShortcuts.length === 0 ? (
+                          <option value="" disabled>
+                            선택 가능한 디자인이 없습니다.
+                          </option>
+                        ) : null}
+                      </select>
+                      {selectedVariantKey ? (
                       <div className={styles.actionStack}>
                         <p className={styles.tableSubtext}>
                           선택: {selectedVariant ? selectedVariant.label : selectedMissingShortcut?.label}
@@ -718,7 +787,9 @@ export default function AdminPagesTab({
                           </button>
                         )}
                       </div>
-                    ) : null}
+                      ) : null}
+                    </>
+                  )}
 
                   <div className={styles.actionStack}>
                     <div className={styles.mobileCardActions}>

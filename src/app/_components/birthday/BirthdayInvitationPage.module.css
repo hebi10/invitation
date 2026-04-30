@@ -1,0 +1,365 @@
+.page {
+  --birthday-bg: #fafaf8;
+  --birthday-card: #ffffff;
+  --birthday-section: #f5f5f3;
+  --birthday-text: #1a1a1a;
+  --birthday-muted: #77716b;
+  --birthday-accent: #b88545;
+  --birthday-accent-2: #527684;
+  --birthday-border: #e7e2dc;
+  --birthday-button: #1a1a1a;
+  --birthday-button-text: #ffffff;
+  --birthday-serif: Georgia, 'Times New Roman', 'Noto Serif KR', serif;
+  --birthday-sans: Arial, 'Noto Sans KR', sans-serif;
+  background: var(--birthday-bg);
+  color: var(--birthday-text);
+  font-family: var(--birthday-sans);
+  min-height: 100vh;
+}
+
+.floral {
+  --birthday-bg: #fdf6f0;
+  --birthday-card: #fff9f5;
+  --birthday-section: #fdf0f4;
+  --birthday-text: #3a2030;
+  --birthday-muted: #9a7181;
+  --birthday-accent: #b84a62;
+  --birthday-accent-2: #8663a8;
+  --birthday-border: #efd8df;
+  --birthday-button: #9e3f58;
+}
+
+.minimal {
+  --birthday-bg: #fafaf8;
+}
+
+.hero {
+  align-items: center;
+  background:
+    radial-gradient(circle at 15% 12%, color-mix(in srgb, var(--birthday-accent) 18%, transparent), transparent 26%),
+    radial-gradient(circle at 85% 8%, color-mix(in srgb, var(--birthday-accent-2) 16%, transparent), transparent 24%),
+    linear-gradient(160deg, var(--birthday-section), var(--birthday-bg));
+  display: grid;
+  min-height: 620px;
+  overflow: hidden;
+  padding: 72px 22px 42px;
+  position: relative;
+  text-align: center;
+}
+
+.hero::before,
+.hero::after {
+  border: 1px solid color-mix(in srgb, var(--birthday-accent) 42%, transparent);
+  border-radius: 999px;
+  content: '';
+  height: 170px;
+  position: absolute;
+  width: 170px;
+}
+
+.hero::before {
+  left: -58px;
+  top: 96px;
+}
+
+.hero::after {
+  bottom: 52px;
+  right: -68px;
+}
+
+.heroInner {
+  display: grid;
+  gap: 22px;
+  margin: 0 auto;
+  max-width: 620px;
+  position: relative;
+  z-index: 1;
+}
+
+.eyebrow {
+  color: var(--birthday-accent);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+}
+
+.title {
+  color: var(--birthday-text);
+  font-family: var(--birthday-serif);
+  font-size: 56px;
+  font-weight: 700;
+  line-height: 1.08;
+  margin: 0;
+}
+
+.subtitle {
+  color: var(--birthday-muted);
+  font-size: 17px;
+  line-height: 1.8;
+  margin: 0 auto;
+  max-width: 480px;
+}
+
+.heroImage {
+  aspect-ratio: 4 / 5;
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--birthday-accent) 22%, transparent), transparent),
+    var(--birthday-card);
+  border: 1px solid var(--birthday-border);
+  border-radius: 8px;
+  box-shadow: 0 24px 70px rgb(0 0 0 / 12%);
+  margin: 0 auto;
+  max-width: 340px;
+  overflow: hidden;
+  width: min(100%, 340px);
+}
+
+.heroImage img {
+  display: block;
+  height: 100%;
+  object-fit: cover;
+  width: 100%;
+}
+
+.heroImageFallback {
+  align-items: center;
+  color: var(--birthday-accent);
+  display: grid;
+  font-family: var(--birthday-serif);
+  font-size: 54px;
+  height: 100%;
+}
+
+.quickInfo {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin-top: 4px;
+}
+
+.quickInfoItem {
+  border-top: 1px solid var(--birthday-border);
+  display: grid;
+  gap: 5px;
+  padding-top: 14px;
+}
+
+.quickInfoLabel {
+  color: var(--birthday-muted);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+}
+
+.quickInfoValue {
+  color: var(--birthday-text);
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.5;
+}
+
+.section {
+  padding: 58px 22px;
+}
+
+.sectionAlt {
+  background: var(--birthday-section);
+}
+
+.sectionInner {
+  display: grid;
+  gap: 22px;
+  margin: 0 auto;
+  max-width: 720px;
+}
+
+.sectionHeader {
+  display: grid;
+  gap: 8px;
+  text-align: center;
+}
+
+.sectionKicker {
+  color: var(--birthday-accent);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.sectionTitle {
+  color: var(--birthday-text);
+  font-family: var(--birthday-serif);
+  font-size: 30px;
+  line-height: 1.25;
+  margin: 0;
+}
+
+.messageCard,
+.detailCard {
+  background: var(--birthday-card);
+  border: 1px solid var(--birthday-border);
+  border-radius: 8px;
+  box-shadow: 0 18px 48px rgb(0 0 0 / 8%);
+  padding: 26px;
+}
+
+.messageText {
+  color: var(--birthday-text);
+  font-family: var(--birthday-serif);
+  font-size: 18px;
+  line-height: 2;
+  margin: 0;
+  text-align: center;
+  white-space: pre-wrap;
+}
+
+.author {
+  color: var(--birthday-muted);
+  display: block;
+  font-size: 14px;
+  margin-top: 18px;
+  text-align: center;
+}
+
+.detailGrid {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.detailItem {
+  border: 1px solid var(--birthday-border);
+  border-radius: 8px;
+  display: grid;
+  gap: 6px;
+  padding: 18px;
+}
+
+.detailLabel {
+  color: var(--birthday-muted);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.detailValue {
+  color: var(--birthday-text);
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1.6;
+}
+
+.mapButton {
+  align-items: center;
+  background: var(--birthday-button);
+  border-radius: 8px;
+  color: var(--birthday-button-text);
+  display: inline-flex;
+  font-weight: 700;
+  justify-content: center;
+  min-height: 48px;
+  padding: 12px 16px;
+  text-decoration: none;
+}
+
+.galleryGrid {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.galleryItem {
+  aspect-ratio: 1;
+  background: var(--birthday-card);
+  border: 1px solid var(--birthday-border);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.galleryItem img {
+  display: block;
+  height: 100%;
+  object-fit: cover;
+  width: 100%;
+}
+
+.emptyText {
+  color: var(--birthday-muted);
+  line-height: 1.8;
+  text-align: center;
+}
+
+.adminNoticeBar {
+  background: #111827;
+  color: #ffffff;
+  padding: 12px 18px;
+}
+
+.adminNoticeInner {
+  align-items: center;
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+  margin: 0 auto;
+  max-width: 920px;
+}
+
+.adminNoticeTitle {
+  display: block;
+  font-size: 13px;
+}
+
+.adminNoticeText {
+  color: #d1d5db;
+  font-size: 13px;
+}
+
+.refreshButton,
+.floatingRefreshButton {
+  border: 1px solid rgb(255 255 255 / 25%);
+  border-radius: 8px;
+  background: rgb(255 255 255 / 12%);
+  color: inherit;
+  cursor: pointer;
+  padding: 8px 12px;
+}
+
+.floatingRefresh {
+  bottom: 16px;
+  position: fixed;
+  right: 16px;
+  z-index: 10;
+}
+
+.floatingRefreshButton {
+  background: #111827;
+  box-shadow: 0 14px 36px rgb(0 0 0 / 20%);
+  color: #ffffff;
+}
+
+@media (max-width: 640px) {
+  .hero {
+    min-height: 560px;
+    padding-top: 58px;
+  }
+
+  .title {
+    font-size: 42px;
+  }
+
+  .quickInfo,
+  .detailGrid,
+  .galleryGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .section {
+    padding: 46px 18px;
+  }
+
+  .messageCard,
+  .detailCard {
+    padding: 20px;
+  }
+}

@@ -1,33 +1,50 @@
 # 이벤트 wizard step config
 
 ## 목적
-- `/page-wizard`가 `eventType`에 따라 step 구성을 바꿀 수 있는 구조를 먼저 만든다.
-- 현재는 `wedding`, `birthday`가 실제 생성 경로에 들어갈 수 있고, 이후 `seventieth`, `etc`를 붙일 때 `PageWizardClient`를 크게 갈아엎지 않게 한다.
+- `/page-wizard`가 `eventType`에 따라 단계 제목, 설명, 필수 검증, 입력 컴포넌트를 바꾼다.
+- 저장 schema는 기존 `InvitationPageSeed`를 유지하고, 이벤트별 adapter/문구로 사용자 입력 경험을 분리한다.
 
 ## 현재 기준 파일
 - `src/app/page-wizard/pageWizardData.ts`
 - `src/app/page-wizard/PageWizardClient.tsx`
-- `src/app/page-wizard/hooks/useWizardPersistence.ts`
-- `src/app/page-wizard/steps/EventTypeStep.tsx`
+- `src/app/page-wizard/PageWizardStepPreview.tsx`
+- `src/app/page-wizard/steps/SlugStep.tsx`
+- `src/app/page-wizard/steps/BirthdayBasicStep.tsx`
+- `src/app/page-wizard/steps/BirthdayScheduleStep.tsx`
+- `src/app/page-wizard/steps/BirthdayGreetingStep.tsx`
 
-## 현재 구조
-- `resolveWizardStepConfig(eventType)`
-  - `eventType`를 `defaultWizardStepConfigKey`로 해석한다.
-- `getWizardSteps({ eventType, includeSetupSteps, includeMusic })`
-  - 새 생성과 기존 수정의 step 목록을 분기한다.
-
-## 현재 step 구성
+## general-event step 구성
 ### 새 생성
-- `eventType`
-- `theme`
-- `slug`
+- `eventType`: 이벤트 타입 선택
+- `theme`: 디자인과 상품 선택
+- `slug`: 행사명과 페이지 주소 설정
+- `basic`: 행사 기본 정보
+- `schedule`: 행사 일정과 장소
+- `greeting`: 초대의 글
+- `images`: 이미지/공유 정보
+- `extra`: 추가 안내
+- `final`: 최종 확인
+
+### 기존 수정
 - `basic`
 - `schedule`
 - `greeting`
 - `images`
-- `music`
 - `extra`
 - `final`
+
+## birthday step 구성
+### 새 생성
+- `eventType`: 이벤트 타입 선택
+- `theme`: 디자인과 상품 선택
+- `slug`: 페이지 주소 설정
+- `basic`: 생일 주인공 정보
+- `schedule`: 파티 일정과 장소
+- `greeting`: 초대 문구
+- `images`: 사진
+- `music`: 배경음악
+- `extra`: 추가 안내
+- `final`: 최종 확인
 
 ### 기존 수정
 - `basic`
@@ -38,26 +55,27 @@
 - `extra`
 - `final`
 
-## 현재 정책
-- 새 생성에서만 `eventType` 선택 step을 노출한다.
-- 기존 수정에서는 `eventType`을 고정한다.
-- `slug` step은 초안 생성 전에 한글 이름과 영문 주소용 이름을 함께 받는다.
-- 한글 이름은 초안 생성 시 기본 `displayName`/`description`/본문 인물 정보에 바로 반영하고, 영문 이름은 주소 자동 제안값을 만든다.
-- 현재 선택 가능한 타입은 `wedding`, `birthday`이고, `seventieth`, `etc`는 UI에 `준비 중`으로만 보인다.
-- `birthday`는 PoC 단계라서 현재는 wedding용 본문 step과 문구를 대부분 재사용한다.
-- 저장 payload에는 `eventType`을 `InvitationPageSeed`와 event summary/content mirror에 함께 반영한다.
+## birthday 입력 매핑
+- `BirthdayBasicStep`
+  - 생일 주인공 이름을 `couple.groom.name`, `groomName`, `displayName`, `pageData.greetingAuthor`에 반영한다.
+  - `couple.bride.name`, `brideName`은 비워 wedding 문구가 섞이지 않게 한다.
+- `BirthdayScheduleStep`
+  - 기존 `weddingDateTime`을 파티 날짜/시간으로 사용한다.
+  - 장소명은 `venue`, `pageData.venueName`, `pageData.ceremony.location`에 맞춘다.
+- `BirthdayGreetingStep`
+  - `pageData.greetingMessage`를 초대 문구로 사용한다.
+  - 생일 전용 템플릿은 `BIRTHDAY_GREETING_TEMPLATES`에 둔다.
 
-## 저장 경로 반영 위치
-- 새 초안 생성
-  - `createInvitationPageDraftFromSeed`
-  - `createServerInvitationPageDraftFromSeed`
-- 임시저장 / 수정 / 발행
-  - `saveInvitationPageConfig`
-  - `saveServerInvitationPageConfig`
-  - client/server event repository content mirror
+## 검증 정책
+- general-event slug 단계는 행사명과 주소 영문 키워드만 필수로 본다.
+- general-event 기본 정보 단계는 `displayName`을 행사명으로 필수 검증한다.
+- general-event 일정 단계는 기존 `weddingDateTime`, `venue`, `pageData.ceremonyAddress`, `pageData.kakaoMap` 공통 검증을 재사용한다.
+- birthday slug 단계는 생일 주인공 한글 이름과 영문 표기만 필수로 본다.
+- birthday 기본 정보 단계는 `couple.groom.name`만 필수로 본다.
+- birthday 일정 단계는 날짜/시간, 파티 장소명, 주소, 지도 좌표를 기존 공통 검증으로 확인한다.
+- birthday 인사말 단계는 메시지를 `초대 문구`로 안내한다.
 
-## 다음 작업
-1. `birthday` 전용 기본 정보/문구/본문 step을 wedding과 분리
-2. `seventieth`, `etc`용 실제 step 배열 추가
-3. `eventType`별 theme/editor 제한 규칙 분리
-4. `page-editor`와 결과 화면에도 이벤트 타입 표시 확장
+## 남은 작업
+1. birthday theme 선택값을 저장하는 명시 필드 추가 여부 결정
+2. page-editor도 birthday 문구로 분리
+3. general-event 프로그램 편집 step과 RSVP 저장 흐름 추가

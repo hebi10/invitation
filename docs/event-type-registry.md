@@ -13,6 +13,7 @@
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | `wedding` | 모바일 청첩장 | 청첩장 | 내 청첩장 | `true` | `wedding-default` | `wedding-page-editor` | `wedding-page-wizard` |
 | `birthday` | 생일/돌잔치 | 생일/돌잔치 | 내 생일/돌잔치 페이지 | `true` | `birthday-default` | `birthday-page-editor` | `birthday-page-wizard` |
+| `general-event` | 일반 행사 초대장 | 일반 행사 | 내 행사 초대장 | `true` | `general-event-default` | `general-event-page-editor` | `general-event-page-wizard` |
 | `seventieth` | 칠순 잔치 | 칠순 잔치 | 내 칠순 잔치 페이지 | `false` | `seventieth-default` | `seventieth-page-editor` | `seventieth-page-wizard` |
 | `etc` | 기타 이벤트 | 기타 이벤트 | 내 이벤트 페이지 | `false` | `generic-default` | `generic-page-editor` | `generic-page-wizard` |
 

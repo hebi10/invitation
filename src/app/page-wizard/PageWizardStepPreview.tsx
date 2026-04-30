@@ -120,6 +120,7 @@ export default function PageWizardStepPreview({
   const invalidItems = reviewSummary.filter((item) => !item.validation.valid);
   const eventTypeLabel = getEventTypeLabel(formState.eventType ?? 'wedding');
   const eventTypeDescription = getEventTypeDescription(formState.eventType ?? 'wedding');
+  const isBirthday = formState.eventType === 'birthday';
 
   if (stepKey === 'eventType') {
     return (
@@ -198,12 +199,20 @@ export default function PageWizardStepPreview({
           <strong className={styles.previewHeroTitle}>{displayName}</strong>
           <p className={styles.previewHeroSubtitle}>{subtitle}</p>
           <div className={styles.previewPillRow}>
-            <span className={styles.previewPill}>
-              신랑 {formState.couple.groom.name.trim() || '미입력'}
-            </span>
-            <span className={styles.previewPill}>
-              신부 {formState.couple.bride.name.trim() || '미입력'}
-            </span>
+            {isBirthday ? (
+              <span className={styles.previewPill}>
+                생일 주인공 {formState.couple.groom.name.trim() || '미입력'}
+              </span>
+            ) : (
+              <>
+                <span className={styles.previewPill}>
+                  신랑 {formState.couple.groom.name.trim() || '미입력'}
+                </span>
+                <span className={styles.previewPill}>
+                  신부 {formState.couple.bride.name.trim() || '미입력'}
+                </span>
+              </>
+            )}
           </div>
         </div>
       </section>
@@ -214,12 +223,14 @@ export default function PageWizardStepPreview({
     return (
       <section className={styles.previewSummary}>
         <div className={styles.previewHeader}>
-          <h3 className={styles.previewTitle}>예식 일정과 장소 요약</h3>
+          <h3 className={styles.previewTitle}>
+            {isBirthday ? '파티 일정과 장소 요약' : '예식 일정과 장소 요약'}
+          </h3>
           <span className={styles.previewCaption}>날짜, 시간, 장소, 오시는 길이 함께 반영됩니다.</span>
         </div>
         <div className={styles.previewKeyList}>
           <PreviewRow
-            label="예식 일시"
+            label={isBirthday ? '파티 일시' : '예식 일시'}
             value={
               weddingDate
                 ? `${formatDateLabel(weddingDate)} ${formatTimeLabel(weddingDate)}`
@@ -230,9 +241,9 @@ export default function PageWizardStepPreview({
             label="일정 카드 문구"
             value={ceremonyTimeLabel}
           />
-          <PreviewRow label="본식 장소" value={ceremonyLocationLabel} />
-          <PreviewRow label="예식장명" value={venueName} />
-          <PreviewRow label="예식장 주소" value={venueAddress} />
+          <PreviewRow label={isBirthday ? '파티 장소' : '본식 장소'} value={ceremonyLocationLabel} />
+          <PreviewRow label={isBirthday ? '장소명' : '예식장명'} value={venueName} />
+          <PreviewRow label={isBirthday ? '장소 주소' : '예식장 주소'} value={venueAddress} />
           <PreviewRow
             label="연락처"
             value={formState.pageData?.ceremonyContact?.trim() || '연락처를 입력하지 않았습니다.'}
@@ -283,8 +294,12 @@ export default function PageWizardStepPreview({
     return (
       <section className={styles.previewSummary}>
         <div className={styles.previewHeader}>
-          <h3 className={styles.previewTitle}>인사말 요약</h3>
-          <span className={styles.previewCaption}>인사말 섹션과 연락 정보에 반영됩니다.</span>
+          <h3 className={styles.previewTitle}>
+            {isBirthday ? '초대 문구 요약' : '인사말 요약'}
+          </h3>
+          <span className={styles.previewCaption}>
+            {isBirthday ? '생일 초대장 본문에 반영됩니다.' : '인사말 섹션과 연락 정보에 반영됩니다.'}
+          </span>
         </div>
         <div className={styles.previewQuoteCard}>
           <p className={styles.previewQuoteText}>
@@ -329,8 +344,8 @@ export default function PageWizardStepPreview({
           <span className={styles.previewCaption}>선택한 안내 항목과 배경음악 설정만 공개 페이지에 노출됩니다.</span>
         </div>
         <div className={styles.previewKeyList}>
-          <PreviewRow label="신랑측 계좌" value={`${groomAccounts}개`} />
-          <PreviewRow label="신부측 계좌" value={`${brideAccounts}개`} />
+          {!isBirthday ? <PreviewRow label="신랑측 계좌" value={`${groomAccounts}개`} /> : null}
+          {!isBirthday ? <PreviewRow label="신부측 계좌" value={`${brideAccounts}개`} /> : null}
           <PreviewRow label="교통 · 방문 안내" value={`${venueGuideCount}개`} />
           <PreviewRow label="화환 안내" value={`${wreathGuideCount}개`} />
           <PreviewRow

@@ -8,7 +8,7 @@ import {
 import type { EventTypeKey } from '@/lib/eventTypes';
 import type { InvitationPage } from '@/types/invitationPage';
 
-export type EventThemeKey = InvitationThemeKey;
+export type EventThemeKey = string;
 
 export interface EventInvitationRouteOptions {
   slug: string;
@@ -78,5 +78,9 @@ const themeDefinitions = INVITATION_THEME_KEYS.reduce<Record<EventThemeKey, Even
 );
 
 export function getEventThemeDefinition(theme: EventThemeKey) {
-  return themeDefinitions[theme];
+  const themeKey = INVITATION_THEME_KEYS.includes(theme as InvitationThemeKey)
+    ? (theme as InvitationThemeKey)
+    : INVITATION_THEME_KEYS[0];
+
+  return themeDefinitions[themeKey];
 }

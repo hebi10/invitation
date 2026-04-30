@@ -8,6 +8,7 @@ import {
   clampInvitationMusicVolume,
   DEFAULT_INVITATION_MUSIC_VOLUME,
 } from '@/lib/musicLibrary';
+import { normalizeInvitationThemeKey } from '@/lib/invitationThemes';
 import { AccessDeniedPage } from '@/utils';
 
 import {
@@ -137,8 +138,9 @@ function syncInvitationMetadata(page: EventPageReadyState['pageConfig']) {
 }
 
 function EventInvitationPageBody(options: EventInvitationRouteOptions) {
-  const state = useEventInvitationState(options);
-  const themeDefinition = getEventThemeDefinition(options.theme);
+  const weddingTheme = normalizeInvitationThemeKey(options.theme);
+  const state = useEventInvitationState({ ...options, theme: weddingTheme });
+  const themeDefinition = getEventThemeDefinition(weddingTheme);
 
   useEffect(() => {
     if (state.status !== 'ready') {
@@ -186,7 +188,7 @@ function EventInvitationPageBody(options: EventInvitationRouteOptions) {
   }
 
   const readyState: EventPageReadyState = state;
-  const ThemeRenderer = getWeddingThemeRenderer(options.theme);
+  const ThemeRenderer = getWeddingThemeRenderer(weddingTheme);
   const isLoaderVisible = readyState.isLoading || readyState.imagesLoading;
   const shareFeatures = resolveInvitationFeatures(
     readyState.pageConfig.productTier,
@@ -241,7 +243,7 @@ function EventInvitationPageBody(options: EventInvitationRouteOptions) {
           </div>
         </div>
       ) : null}
-      <ThemeRenderer state={readyState} options={options} />
+      <ThemeRenderer state={readyState} options={{ ...options, theme: weddingTheme }} />
       {!readyState.adminNotice ? (
         <div className={styles.pageRefreshFloating}>{refreshButton}</div>
       ) : null}

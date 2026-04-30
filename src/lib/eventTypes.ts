@@ -1,4 +1,11 @@
-export const EVENT_TYPE_KEYS = ['wedding', 'birthday', 'seventieth', 'etc'] as const;
+export const EVENT_TYPE_KEYS = [
+  'wedding',
+  'first-birthday',
+  'birthday',
+  'general-event',
+  'seventieth',
+  'etc',
+] as const;
 
 export type EventTypeKey = (typeof EVENT_TYPE_KEYS)[number];
 
@@ -31,15 +38,38 @@ export const EVENT_TYPE_META = {
   },
   birthday: {
     key: 'birthday',
-    label: '생일/돌잔치',
-    adminLabel: '생일/돌잔치',
-    customerLabel: '내 생일/돌잔치 페이지',
+    label: '생일 초대장',
+    adminLabel: '생일',
+    customerLabel: '내 생일 초대장',
     description:
-      'birthday PoC용 이벤트 타입입니다. 현재는 wedding 본문 구조와 renderer를 재사용하면서 생성부터 공개까지 흐름을 검증합니다.',
+      '일반 생일 초대장용 이벤트 타입입니다. 돌잔치는 first-birthday 타입으로 분리합니다.',
     enabled: true,
     defaultRendererKey: 'birthday-default',
     defaultEditorKey: 'birthday-page-editor',
     defaultWizardStepConfigKey: 'birthday-page-wizard',
+  },
+  'first-birthday': {
+    key: 'first-birthday',
+    label: '돌잔치 초대장',
+    adminLabel: '돌잔치',
+    customerLabel: '내 돌잔치 초대장',
+    description:
+      '아기의 첫 번째 생일잔치를 위한 전용 초대장 타입입니다. 성장 갤러리, D-Day, 오시는 길, 마음 전하기, 방명록을 전용 렌더러로 표시합니다.',
+    enabled: true,
+    defaultRendererKey: 'first-birthday-default',
+    defaultEditorKey: 'first-birthday-page-editor',
+    defaultWizardStepConfigKey: 'first-birthday-page-wizard',
+  },
+  'general-event': {
+    key: 'general-event',
+    label: '일반 행사 초대장',
+    adminLabel: '일반 행사',
+    customerLabel: '내 행사 초대장',
+    description: '기업 행사, 파티, 세미나처럼 결혼식이 아닌 일반 행사용 초대장입니다.',
+    enabled: true,
+    defaultRendererKey: 'general-event-default',
+    defaultEditorKey: 'general-event-page-editor',
+    defaultWizardStepConfigKey: 'general-event-page-wizard',
   },
   seventieth: {
     key: 'seventieth',

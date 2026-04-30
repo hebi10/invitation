@@ -116,6 +116,37 @@ export function useWizardPersistence({
     });
     const normalizedCreatedConfig = normalizeFormState(created.config);
 
+    if (eventType === 'first-birthday' && previewFormState?.displayName.trim()) {
+      const babyName = previewFormState.displayName.trim();
+      normalizedCreatedConfig.displayName = babyName;
+      normalizedCreatedConfig.description =
+        previewFormState.description.trim() ||
+        `${babyName}의 첫 번째 생일잔치에 초대합니다.`;
+      normalizedCreatedConfig.groomName = '';
+      normalizedCreatedConfig.brideName = '';
+      normalizedCreatedConfig.couple.groom.name = '';
+      normalizedCreatedConfig.couple.bride.name = '';
+      normalizedCreatedConfig.metadata.title = babyName;
+      normalizedCreatedConfig.metadata.description =
+        normalizedCreatedConfig.metadata.description.trim() ||
+        normalizedCreatedConfig.description;
+      normalizedCreatedConfig.metadata.openGraph.title = babyName;
+      normalizedCreatedConfig.metadata.openGraph.description =
+        normalizedCreatedConfig.metadata.openGraph.description.trim() ||
+        normalizedCreatedConfig.description;
+      normalizedCreatedConfig.metadata.twitter.title = babyName;
+      normalizedCreatedConfig.metadata.twitter.description =
+        normalizedCreatedConfig.metadata.twitter.description.trim() ||
+        normalizedCreatedConfig.description;
+
+      if (normalizedCreatedConfig.pageData) {
+        normalizedCreatedConfig.pageData.subtitle =
+          normalizedCreatedConfig.pageData.subtitle?.trim() ||
+          '첫 번째 생일잔치에 초대합니다';
+        normalizedCreatedConfig.pageData.greetingAuthor = '아빠 · 엄마';
+      }
+    }
+
     setPersistedSlug(created.slug);
     setSlugInput(created.slug);
     setFormState(normalizedCreatedConfig);

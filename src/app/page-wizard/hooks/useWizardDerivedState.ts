@@ -68,12 +68,16 @@ export function useWizardDerivedState({
     () => ({
       slugInput,
       persistedSlug: resolvedPersistedSlug,
-      groomKoreanName: previewFormState?.couple.groom.name ?? '',
+      groomKoreanName:
+        activeEventType === 'first-birthday'
+          ? previewFormState?.displayName ?? ''
+          : previewFormState?.couple.groom.name ?? '',
       brideKoreanName: previewFormState?.couple.bride.name ?? '',
       groomEnglishName,
       brideEnglishName,
     }),
     [
+      activeEventType,
       brideEnglishName,
       groomEnglishName,
       resolvedPersistedSlug,
@@ -83,16 +87,20 @@ export function useWizardDerivedState({
   );
   const currentWeddingSummary = useMemo(() => {
     if (!previewFormState) {
-      return '예식 날짜를 아직 입력하지 않았습니다.';
+      return activeEventType === 'birthday'
+        ? '파티 날짜를 아직 입력하지 않았습니다.'
+        : '예식 날짜를 아직 입력하지 않았습니다.';
     }
 
     const weddingDate = buildWeddingDateObject(previewFormState);
     if (!weddingDate) {
-      return '예식 날짜를 아직 입력하지 않았습니다.';
+      return activeEventType === 'birthday'
+        ? '파티 날짜를 아직 입력하지 않았습니다.'
+        : '예식 날짜를 아직 입력하지 않았습니다.';
     }
 
     return `${formatDateLabel(weddingDate)} ${formatTimeLabel(weddingDate)}`;
-  }, [previewFormState]);
+  }, [activeEventType, previewFormState]);
 
   return {
     wizardSteps,

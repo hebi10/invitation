@@ -72,7 +72,7 @@ export const TAB_ITEMS: AdminTabItem[] = [
 ];
 
 export const SHORTCUT_ITEMS: Array<{ key: ShortcutKey; label: string }> =
-  INVITATION_THEME_KEYS.map((key) => ({
+  INVITATION_THEME_KEYS.filter((key) => !key.startsWith('first-birthday-')).map((key) => ({
     key,
     label: getInvitationThemeAdminLabel(key),
   }));
@@ -84,9 +84,8 @@ export const PAGE_CATEGORY_TABS = [
   {
     key: 'first-birthday',
     label: '돌잔치',
-    title: '돌잔치 관리 탭 준비 중',
-    description:
-      '돌잔치 전용 디자인, 관리 목록, 생성 흐름은 추후 순차적으로 연결할 예정입니다.',
+    title: '돌잔치 관리',
+    description: '돌잔치 전용 목록, 방명록, 성장 갤러리, 노출 기간을 관리합니다.',
   },
   {
     key: 'birthday',
@@ -157,7 +156,29 @@ export function getPageCategoryMeta(pageCategory: PageCategoryTabKey) {
 }
 
 export function isImplementedPageCategory(pageCategory: PageCategoryTabKey) {
-  return pageCategory === 'invitation';
+  return (
+    pageCategory === 'invitation' ||
+    pageCategory === 'first-birthday' ||
+    pageCategory === 'birthday' ||
+    pageCategory === 'general-event'
+  );
+}
+
+export function getPageCategoryEventTypeFilter(
+  pageCategory: PageCategoryTabKey
+): EventTypeKey | null {
+  switch (pageCategory) {
+    case 'invitation':
+      return 'wedding';
+    case 'first-birthday':
+      return 'first-birthday';
+    case 'birthday':
+      return 'birthday';
+    case 'general-event':
+      return 'general-event';
+    default:
+      return null;
+  }
 }
 
 export function isEventAdminTab(tab: AdminTab): tab is EventAdminTab {

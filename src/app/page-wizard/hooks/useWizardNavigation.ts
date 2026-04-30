@@ -71,19 +71,17 @@ export function useWizardNavigation({
 
     if (activeStep.key === 'slug') {
       let nextSlug = resolvedPersistedSlug;
+      const savedSlug = await persistDraft({
+        publish: false,
+        silent: Boolean(nextSlug),
+        successMessage: '페이지를 생성했습니다. 다음 단계로 이동합니다.',
+      });
 
-      if (!nextSlug) {
-        const savedSlug = await persistDraft({
-          publish: false,
-          successMessage: '페이지를 생성했습니다. 다음 단계로 이동합니다.',
-        });
-
-        if (!savedSlug) {
-          return;
-        }
-
-        nextSlug = savedSlug;
+      if (!savedSlug) {
+        return;
       }
+
+      nextSlug = savedSlug;
 
       if (nextSlug && typeof window !== 'undefined') {
         const nextPath = `/page-wizard/${encodeURIComponent(nextSlug)}`;
@@ -94,9 +92,8 @@ export function useWizardNavigation({
         }
       }
     } else if (
-      activeStep.key !== 'eventType' &&
-      activeStep.key !== 'theme' &&
-      activeStep.key !== 'final'
+      activeStep.key !== 'final' &&
+      (resolvedPersistedSlug || (activeStep.key !== 'eventType' && activeStep.key !== 'theme'))
     ) {
       const savedSlug = await persistDraft({ publish: false, silent: true });
       if (!savedSlug && !resolvedPersistedSlug) {
@@ -174,19 +171,11 @@ export function useWizardNavigation({
     steps,
   ]);
 
-  const handleSaveCurrent = useCallback(async () => {
-    await persistDraft({
-      publish: published,
-      successMessage: '현재 단계 내용을 저장했습니다.',
-    });
-  }, [persistDraft, published]);
-
   return {
     activeStep,
     activeStepIndex,
     handleMoveNext,
     handleMovePrevious,
     handleFinalConfirm,
-    handleSaveCurrent,
   };
 }

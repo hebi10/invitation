@@ -1,0 +1,485 @@
+.page {
+  min-height: 100vh;
+  background: var(--general-event-bg);
+  color: var(--general-event-text);
+  font-family: var(--general-event-body-font);
+}
+
+.shell {
+  width: min(100%, 480px);
+  margin: 0 auto;
+  background: var(--general-event-bg);
+  box-shadow: 0 0 80px rgba(0, 0, 0, 0.4);
+}
+
+.intro {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 22px;
+  background: var(--general-event-intro-bg);
+  color: var(--general-event-accent);
+  transition: opacity 0.6s ease, transform 0.6s ease;
+}
+
+.introHidden {
+  opacity: 0;
+  pointer-events: none;
+  transform: scale(1.04);
+}
+
+.introMark {
+  width: 108px;
+  height: 108px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--general-event-border);
+  border-radius: 999px;
+  font-size: 40px;
+  letter-spacing: 0;
+  box-shadow: 0 0 48px rgba(255, 255, 255, 0.08);
+}
+
+.introTitle {
+  font-family: var(--general-event-title-font);
+  font-size: 26px;
+  font-weight: 700;
+}
+
+.hero {
+  min-height: 88vh;
+  display: flex;
+  align-items: stretch;
+  background: var(--general-event-hero-bg);
+  padding: 26px;
+}
+
+.heroInner {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 18px 0;
+}
+
+.label {
+  display: inline-flex;
+  align-self: flex-start;
+  color: var(--general-event-accent);
+  border: 1px solid var(--general-event-border);
+  border-radius: 999px;
+  padding: 8px 13px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.heroTitle {
+  margin: 70px 0 18px;
+  font-family: var(--general-event-title-font);
+  font-size: clamp(42px, 13vw, 68px);
+  line-height: 0.96;
+  letter-spacing: 0;
+  word-break: keep-all;
+}
+
+.heroSubtitle {
+  max-width: 320px;
+  color: var(--general-event-sub-text);
+  font-size: 16px;
+  line-height: 1.7;
+}
+
+.heroMeta {
+  display: grid;
+  gap: 12px;
+  margin-top: 44px;
+}
+
+.metaItem {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  border-top: 1px solid var(--general-event-border);
+  padding-top: 13px;
+  color: var(--general-event-sub-text);
+  font-size: 14px;
+}
+
+.metaItem strong {
+  color: var(--general-event-text);
+  text-align: right;
+}
+
+.section {
+  padding: 58px 26px;
+  border-top: 1px solid var(--general-event-border);
+}
+
+.sectionHeader {
+  margin-bottom: 28px;
+}
+
+.sectionLabel {
+  display: block;
+  margin-bottom: 8px;
+  color: var(--general-event-accent);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.sectionTitle {
+  font-family: var(--general-event-title-font);
+  font-size: 34px;
+  line-height: 1.12;
+  letter-spacing: 0;
+}
+
+.greetingText {
+  color: var(--general-event-sub-text);
+  font-size: 17px;
+  line-height: 1.85;
+  white-space: pre-line;
+}
+
+.programList {
+  display: grid;
+  gap: 14px;
+}
+
+.programItem {
+  display: grid;
+  grid-template-columns: 76px 1fr;
+  gap: 16px;
+  padding: 17px 0;
+  border-bottom: 1px solid var(--general-event-border);
+}
+
+.programTime {
+  color: var(--general-event-accent);
+  font-weight: 800;
+}
+
+.programTitle {
+  font-size: 17px;
+  font-weight: 800;
+}
+
+.programDesc {
+  margin-top: 5px;
+  color: var(--general-event-sub-text);
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.countdownGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+}
+
+.countBox {
+  min-width: 0;
+  padding: 16px 8px;
+  border: 1px solid var(--general-event-border);
+  border-radius: 8px;
+  background: var(--general-event-surface);
+  text-align: center;
+}
+
+.countValue {
+  display: block;
+  color: var(--general-event-accent);
+  font-size: 27px;
+  font-weight: 900;
+}
+
+.countLabel {
+  display: block;
+  margin-top: 5px;
+  color: var(--general-event-sub-text);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.locationCard,
+.rsvpCard {
+  border: 1px solid var(--general-event-border);
+  border-radius: 8px;
+  background: var(--general-event-surface);
+  padding: 22px;
+}
+
+.locationTitle {
+  font-size: 20px;
+  font-weight: 900;
+}
+
+.locationAddress {
+  margin-top: 10px;
+  color: var(--general-event-sub-text);
+  line-height: 1.7;
+}
+
+.linkButton,
+.submitButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 46px;
+  margin-top: 18px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--general-event-accent);
+  color: var(--general-event-accent-text);
+  padding: 0 18px;
+  font-weight: 900;
+  text-decoration: none;
+}
+
+.rsvpForm {
+  display: grid;
+  gap: 12px;
+}
+
+.segmented {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.segmentedButton {
+  min-height: 42px;
+  border: 1px solid var(--general-event-border);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--general-event-text);
+  font-weight: 800;
+}
+
+.segmentedButtonActive {
+  background: var(--general-event-accent);
+  color: var(--general-event-accent-text);
+}
+
+.input,
+.select,
+.textarea {
+  width: 100%;
+  border: 1px solid var(--general-event-border);
+  border-radius: 8px;
+  background: var(--general-event-muted-surface);
+  color: var(--general-event-text);
+  padding: 12px 13px;
+  font: inherit;
+}
+
+.textarea {
+  min-height: 92px;
+  resize: vertical;
+}
+
+.fieldLabel {
+  display: grid;
+  gap: 7px;
+  color: var(--general-event-sub-text);
+  font-size: 13px;
+}
+
+.statusMessage {
+  color: var(--general-event-accent);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.footer {
+  padding: 42px 26px 54px;
+  border-top: 1px solid var(--general-event-border);
+  color: var(--general-event-sub-text);
+  text-align: center;
+}
+
+.footer strong {
+  display: block;
+  color: var(--general-event-text);
+  margin-bottom: 8px;
+}
+
+.commentsSection {
+  padding: 0;
+}
+
+.container {
+  display: grid;
+  gap: 20px;
+}
+
+.header,
+.commentsHeader,
+.titleSection,
+.formHeader {
+  display: grid;
+  gap: 8px;
+}
+
+.title {
+  font-family: var(--general-event-title-font);
+  font-size: 30px;
+  letter-spacing: 0;
+}
+
+.subtitle,
+.guideText,
+.guideMessage,
+.limitMessage,
+.emptyMessage,
+.emptySubMessage,
+.emptyText {
+  color: var(--general-event-sub-text);
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.formContainer {
+  display: grid;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.form,
+.commentForm {
+  display: grid;
+  gap: 12px;
+}
+
+.commentsList,
+.commentsGrid {
+  display: grid;
+  gap: 12px;
+}
+
+.commentCard {
+  border: 1px solid var(--general-event-border);
+  border-radius: 8px;
+  background: var(--general-event-muted-surface);
+  padding: 16px;
+}
+
+.commentItem,
+.commentContent {
+  min-width: 0;
+}
+
+.commentHeader {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.commentAuthorSection {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.authorName,
+.commentAuthor,
+.commentName {
+  color: var(--general-event-text);
+  font-weight: 900;
+}
+
+.commentActions,
+.commentsCountSection,
+.commentDateSection {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.commentDate {
+  color: var(--general-event-sub-text);
+  font-size: 12px;
+}
+
+.commentMessage {
+  color: var(--general-event-sub-text);
+  line-height: 1.65;
+  white-space: pre-line;
+}
+
+.commentsCount,
+.commentCount {
+  color: var(--general-event-sub-text);
+  font-size: 13px;
+}
+
+.pageControls,
+.pagination {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+  margin-top: 18px;
+}
+
+.pageButton,
+.pageNumber {
+  border: 1px solid var(--general-event-border);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--general-event-text);
+  padding: 7px 12px;
+}
+
+.disabled {
+  opacity: 0.45;
+}
+
+.errorMessage {
+  color: #ff8a8a;
+  font-size: 13px;
+}
+
+.formTitle {
+  color: var(--general-event-text);
+  font-weight: 900;
+}
+
+.buttonText,
+.pageButtonText,
+.pageButtonIcon,
+.labelIcon,
+.guideIcon,
+.limitIcon,
+.commentsIcon,
+.emptyIcon,
+.authorIcon,
+.commentAuthorIcon,
+.commentQuote {
+  color: inherit;
+}
+
+.active,
+.pageButtonActive {
+  background: var(--general-event-accent);
+  color: var(--general-event-accent-text);
+}
+
+.emptyState {
+  border: 1px dashed var(--general-event-border);
+  border-radius: 8px;
+  padding: 22px;
+  color: var(--general-event-sub-text);
+  text-align: center;
+}

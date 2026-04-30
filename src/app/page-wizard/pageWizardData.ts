@@ -97,6 +97,36 @@ const BASIC_STEP_TEMPLATE: WizardStepTemplate = {
   highlights: ['신랑 이름', '신부 이름', '표지 제목과 부제'],
 };
 
+const BIRTHDAY_THEME_STEP_TEMPLATE: WizardStepTemplate = {
+  ...THEME_STEP_TEMPLATE,
+  description: '생일 초대장에 사용할 디자인과 서비스 구성을 선택합니다.',
+  highlights: ['생일 디자인', '상품 등급', '사용 가능 기능 확인'],
+};
+
+const BIRTHDAY_BASIC_STEP_TEMPLATE: WizardStepTemplate = {
+  key: 'basic',
+  title: '생일 주인공 정보',
+  description: '첫 화면에 보일 생일 주인공 이름과 소개 문구를 입력합니다.',
+  previewSection: 'cover',
+  highlights: ['생일 주인공 이름', '표지 제목과 부제', '소개 문구'],
+};
+
+const BIRTHDAY_SCHEDULE_STEP_TEMPLATE: WizardStepTemplate = {
+  key: 'schedule',
+  title: '파티 일정과 장소',
+  description: '파티 날짜, 시간, 장소와 오시는 길 정보를 입력합니다.',
+  previewSection: 'wedding',
+  highlights: ['파티 날짜와 시간', '파티 장소', '주소와 지도'],
+};
+
+const BIRTHDAY_GREETING_STEP_TEMPLATE: WizardStepTemplate = {
+  key: 'greeting',
+  title: '초대 문구',
+  description: '생일 초대장에 노출할 초대 문구와 서명을 입력합니다.',
+  previewSection: 'greeting',
+  highlights: ['초대 문구', '초대장 서명', '참석 안내'],
+};
+
 const SCHEDULE_STEP_TEMPLATE: WizardStepTemplate = {
   key: 'schedule',
   title: '예식 일정과 장소',
@@ -127,6 +157,13 @@ const EXTRA_STEP_TEMPLATE: WizardStepTemplate = {
   description: '축의금, 교통 안내, 화환 안내, 배경음악을 필요한 만큼 설정합니다.',
   previewSection: 'gift',
   highlights: ['축의금 계좌', '교통·화환 안내', '배경음악'],
+};
+
+const BIRTHDAY_EXTRA_STEP_TEMPLATE: WizardStepTemplate = {
+  ...EXTRA_STEP_TEMPLATE,
+  title: '추가 안내',
+  description: '교통, 드레스코드, 준비물 같은 참석 안내를 필요한 만큼 설정합니다.',
+  highlights: ['교통 안내', '참석 안내', '배경음악'],
 };
 
 const MUSIC_STEP_TEMPLATE: WizardStepTemplate = {
@@ -166,9 +203,21 @@ const WIZARD_STEP_TEMPLATE_MAP: Record<WizardStepKey, WizardStepTemplate> = {
   final: FINAL_STEP_TEMPLATE,
 };
 
+const BIRTHDAY_WIZARD_STEP_TEMPLATE_MAP: Partial<
+  Record<WizardStepKey, WizardStepTemplate>
+> = {
+  theme: BIRTHDAY_THEME_STEP_TEMPLATE,
+  basic: BIRTHDAY_BASIC_STEP_TEMPLATE,
+  schedule: BIRTHDAY_SCHEDULE_STEP_TEMPLATE,
+  greeting: BIRTHDAY_GREETING_STEP_TEMPLATE,
+  extra: BIRTHDAY_EXTRA_STEP_TEMPLATE,
+};
+
 export type WizardStepConfigKey =
   | 'wedding-page-wizard'
+  | 'first-birthday-page-wizard'
   | 'birthday-page-wizard'
+  | 'general-event-page-wizard'
   | 'seventieth-page-wizard'
   | 'generic-page-wizard';
 
@@ -200,6 +249,25 @@ const BIRTHDAY_EVENT_STEP_KEYS: WizardStepKey[] = [
   'final',
 ];
 
+const FIRST_BIRTHDAY_EVENT_STEP_KEYS: WizardStepKey[] = [
+  'basic',
+  'schedule',
+  'greeting',
+  'images',
+  'music',
+  'extra',
+  'final',
+];
+
+const GENERAL_EVENT_STEP_KEYS: WizardStepKey[] = [
+  'basic',
+  'schedule',
+  'greeting',
+  'images',
+  'extra',
+  'final',
+];
+
 const WIZARD_STEP_CONFIGS: Record<WizardStepConfigKey, WizardStepConfigDefinition> = {
   'wedding-page-wizard': {
     key: 'wedding-page-wizard',
@@ -214,6 +282,20 @@ const WIZARD_STEP_CONFIGS: Record<WizardStepConfigKey, WizardStepConfigDefinitio
     commonSetupSteps: ['eventType', 'theme', 'slug'],
     eventSpecificSteps: BIRTHDAY_EVENT_STEP_KEYS,
     editSteps: BIRTHDAY_EVENT_STEP_KEYS,
+  },
+  'first-birthday-page-wizard': {
+    key: 'first-birthday-page-wizard',
+    eventType: 'first-birthday',
+    commonSetupSteps: ['eventType', 'theme', 'slug'],
+    eventSpecificSteps: FIRST_BIRTHDAY_EVENT_STEP_KEYS,
+    editSteps: FIRST_BIRTHDAY_EVENT_STEP_KEYS,
+  },
+  'general-event-page-wizard': {
+    key: 'general-event-page-wizard',
+    eventType: 'general-event',
+    commonSetupSteps: ['eventType', 'theme', 'slug'],
+    eventSpecificSteps: GENERAL_EVENT_STEP_KEYS,
+    editSteps: GENERAL_EVENT_STEP_KEYS,
   },
   'seventieth-page-wizard': {
     key: 'seventieth-page-wizard',
@@ -231,8 +313,16 @@ const WIZARD_STEP_CONFIGS: Record<WizardStepConfigKey, WizardStepConfigDefinitio
   },
 };
 
-function buildWizardStepsFromKeys(stepKeys: WizardStepKey[]) {
-  return withStepNumbers(stepKeys.map((stepKey) => WIZARD_STEP_TEMPLATE_MAP[stepKey]));
+function getWizardStepTemplate(stepKey: WizardStepKey, eventType?: EventTypeKey) {
+  if (eventType === 'birthday') {
+    return BIRTHDAY_WIZARD_STEP_TEMPLATE_MAP[stepKey] ?? WIZARD_STEP_TEMPLATE_MAP[stepKey];
+  }
+
+  return WIZARD_STEP_TEMPLATE_MAP[stepKey];
+}
+
+function buildWizardStepsFromKeys(stepKeys: WizardStepKey[], eventType?: EventTypeKey) {
+  return withStepNumbers(stepKeys.map((stepKey) => getWizardStepTemplate(stepKey, eventType)));
 }
 
 export function resolveWizardStepConfig(eventType: unknown) {
@@ -255,7 +345,7 @@ export function getWizardSteps(options: {
   const stepKeys =
     options.includeMusic === false ? baseKeys.filter((stepKey) => stepKey !== 'music') : baseKeys;
 
-  return buildWizardStepsFromKeys(stepKeys);
+  return buildWizardStepsFromKeys(stepKeys, stepConfig.eventType);
 }
 
 export const CREATE_WIZARD_STEPS = buildWizardStepsFromKeys([
@@ -273,6 +363,12 @@ export const DEFAULT_GREETING_MESSAGE = `두 사람이 사랑으로 하나가 �
 
 새로운 시작을 따뜻한 마음으로
 축복해 주시면 더없는 기쁨이겠습니다.`;
+
+export const DEFAULT_BIRTHDAY_GREETING_MESSAGE = `소중한 분들과 함께
+특별한 날을 나누고 싶어요.
+
+편한 마음으로 오셔서
+따뜻한 축하를 전해 주세요.`;
 
 export const GREETING_TEMPLATES = [
   {
@@ -301,6 +397,29 @@ export const GREETING_TEMPLATES = [
 
 편한 마음으로 오셔서
 축복해 주세요.`,
+  },
+];
+
+export const BIRTHDAY_GREETING_TEMPLATES = [
+  {
+    label: '따뜻한 초대',
+    value: DEFAULT_BIRTHDAY_GREETING_MESSAGE,
+  },
+  {
+    label: '담백한 초대',
+    value:
+      `작지만 소중한 생일 자리를 마련했습니다.
+
+함께 웃고 이야기 나누며
+즐거운 시간을 보내면 좋겠습니다.`,
+  },
+  {
+    label: '파티형',
+    value:
+      `생일을 핑계 삼아
+좋아하는 사람들과 즐거운 시간을 보내려 합니다.
+
+가벼운 마음으로 함께해 주세요.`,
   },
 ];
 
@@ -341,6 +460,15 @@ export function composeGreetingAuthor(groomName: string, brideName: string) {
   const groom = groomName.trim() || PLACEHOLDER_GROOM;
   const bride = brideName.trim() || PLACEHOLDER_BRIDE;
   return `${groom} · ${bride}`;
+}
+
+export function composeBirthdayDisplayName(name: string) {
+  return name.trim() || '생일 주인공';
+}
+
+export function composeBirthdayDescription(name: string) {
+  const birthdayName = name.trim() || '소중한 분';
+  return `${birthdayName}님의 생일 자리에 초대합니다.`;
 }
 
 export function formatDateLabel(date: Date) {
@@ -416,16 +544,36 @@ export function isValidPhone(value?: string | null) {
 
 export function applyDerivedWizardDefaults(config: InvitationPageSeed) {
   const nextConfig = normalizeFormConfig(cloneConfig(config));
+  const normalizedEventType = normalizeEventTypeKey(nextConfig.eventType, DEFAULT_EVENT_TYPE);
+  const isBirthday = normalizedEventType === 'birthday';
+  const isGeneralEvent = nextConfig.eventType === 'general-event';
+  const isFirstBirthday = nextConfig.eventType === 'first-birthday';
   const groomName = nextConfig.couple.groom.name.trim();
   const brideName = nextConfig.couple.bride.name.trim();
+  const babyName =
+    nextConfig.displayName.trim() || nextConfig.metadata.title.trim() || nextConfig.groomName.trim();
   const weddingDate = buildWeddingDateObject(nextConfig);
 
   nextConfig.groomName = groomName;
-  nextConfig.brideName = brideName;
+  nextConfig.brideName = isBirthday ? '' : brideName;
   nextConfig.displayName =
-    nextConfig.displayName.trim() || composeDisplayName(groomName, brideName);
+    nextConfig.displayName.trim() ||
+    (isBirthday
+      ? composeBirthdayDisplayName(groomName)
+      : isFirstBirthday
+      ? babyName || '아기 이름'
+      : isGeneralEvent
+        ? groomName || '일반 행사'
+        : composeDisplayName(groomName, brideName));
   nextConfig.description =
-    nextConfig.description.trim() || composeDescription(groomName, brideName);
+    nextConfig.description.trim() ||
+    (isBirthday
+      ? composeBirthdayDescription(groomName)
+      : isFirstBirthday
+      ? `${nextConfig.displayName}의 첫 번째 생일잔치에 초대합니다.`
+      : isGeneralEvent
+        ? `${nextConfig.displayName}에 초대합니다.`
+        : composeDescription(groomName, brideName));
   nextConfig.metadata.title =
     nextConfig.metadata.title.trim() || nextConfig.displayName;
   nextConfig.metadata.description =
@@ -463,7 +611,13 @@ export function applyDerivedWizardDefaults(config: InvitationPageSeed) {
       nextConfig.pageData.venueName?.trim() || nextConfig.venue;
     nextConfig.pageData.greetingAuthor =
       nextConfig.pageData.greetingAuthor?.trim() ||
-      composeGreetingAuthor(groomName, brideName);
+      (isBirthday
+        ? composeBirthdayDisplayName(groomName)
+        : isFirstBirthday
+        ? `${groomName || '아빠'} · ${brideName || '엄마'}`
+        : isGeneralEvent
+          ? '주최자'
+          : composeGreetingAuthor(groomName, brideName));
     nextConfig.pageData.groom = cloneConfig(nextConfig.couple.groom);
     nextConfig.pageData.bride = cloneConfig(nextConfig.couple.bride);
   }
@@ -548,6 +702,32 @@ export function createInitialWizardConfig(eventType: EventTypeKey = DEFAULT_EVEN
     },
   };
 
+  if (nextConfig.eventType === 'general-event') {
+    nextConfig.description = '소중한 자리에 초대합니다.';
+    nextConfig.pageData.subtitle = 'General Event';
+    nextConfig.pageData.greetingMessage = `소중한 분들을 모시고 뜻깊은 시간을 함께 나누고자 합니다.
+
+편한 마음으로 참석하셔서 자리를 빛내 주세요.`;
+    nextConfig.pageData.greetingAuthor = '주최자';
+  }
+
+  if (nextConfig.eventType === 'birthday') {
+    nextConfig.description = '소중한 생일 자리에 초대합니다.';
+    nextConfig.pageData.subtitle = '소중한 분들과 함께하는 특별한 하루';
+    nextConfig.pageData.greetingMessage = DEFAULT_BIRTHDAY_GREETING_MESSAGE;
+    nextConfig.pageData.greetingAuthor = '';
+  }
+
+  if (nextConfig.eventType === 'first-birthday') {
+    nextConfig.description = '첫 번째 생일잔치에 초대합니다.';
+    nextConfig.pageData.subtitle = '첫 번째 생일잔치에 초대합니다';
+    nextConfig.pageData.greetingMessage = `어느새 첫 번째 생일을 맞이한 우리 아이의 특별한 날에
+소중한 분들을 모시고 감사한 마음을 나누고자 합니다.
+
+따뜻한 축하로 함께해 주시면 큰 기쁨이겠습니다.`;
+    nextConfig.pageData.greetingAuthor = '아빠 · 엄마';
+  }
+
   return nextConfig;
 }
 
@@ -629,17 +809,42 @@ export function buildStepValidation(
     }
     case 'slug': {
       const messages: string[] = [];
+      const isGeneralEvent = formState?.eventType === 'general-event';
+      const isFirstBirthday = formState?.eventType === 'first-birthday';
+      const isBirthday = formState?.eventType === 'birthday';
 
       if (!hasText(slugState.groomKoreanName)) {
-        messages.push('예비 신랑 한글 이름을 입력해 주세요.');
+        messages.push(
+          isBirthday
+            ? '생일 주인공 이름을 입력해 주세요.'
+            : isFirstBirthday
+            ? '아기 이름을 입력해 주세요.'
+            : isGeneralEvent
+              ? '행사명을 입력해 주세요.'
+              : '예비 신랑 한글 이름을 입력해 주세요.'
+        );
       }
-      if (!hasText(slugState.brideKoreanName)) {
+      if (!isGeneralEvent && !isFirstBirthday && !isBirthday && !hasText(slugState.brideKoreanName)) {
         messages.push('예비 신부 한글 이름을 입력해 주세요.');
       }
       if (!slugState.persistedSlug && !hasText(slugState.groomEnglishName)) {
-        messages.push('예비 신랑 영문 이름을 입력해 주세요.');
+        messages.push(
+          isBirthday
+            ? '생일 주인공 영문 표기를 입력해 주세요.'
+            : isFirstBirthday
+            ? '아기 이름 영문 표기를 입력해 주세요.'
+            : isGeneralEvent
+              ? '주소 영문 키워드를 입력해 주세요.'
+              : '예비 신랑 영문 이름을 입력해 주세요.'
+        );
       }
-      if (!slugState.persistedSlug && !hasText(slugState.brideEnglishName)) {
+      if (
+        !isGeneralEvent &&
+        !isFirstBirthday &&
+        !isBirthday &&
+        !slugState.persistedSlug &&
+        !hasText(slugState.brideEnglishName)
+      ) {
         messages.push('예비 신부 영문 이름을 입력해 주세요.');
       }
       const rawSlug = slugState.slugInput.trim();
@@ -662,6 +867,33 @@ export function buildStepValidation(
     }
     case 'basic': {
       const messages: string[] = [];
+      if (formState?.eventType === 'first-birthday') {
+        if (!hasText(formState?.displayName)) {
+          messages.push('아기 이름을 입력해 주세요.');
+        }
+        if (!hasText(formState?.couple.groom.name)) {
+          messages.push('아빠 이름을 입력해 주세요.');
+        }
+        if (!hasText(formState?.couple.bride.name)) {
+          messages.push('엄마 이름을 입력해 주세요.');
+        }
+        return { valid: messages.length === 0, messages };
+      }
+
+      if (formState?.eventType === 'general-event') {
+        if (!hasText(formState?.displayName)) {
+          messages.push('행사명을 입력해 주세요.');
+        }
+        return { valid: messages.length === 0, messages };
+      }
+
+      if (formState?.eventType === 'birthday') {
+        if (!hasText(formState?.couple.groom.name)) {
+          messages.push('생일 주인공 이름을 입력해 주세요.');
+        }
+        return { valid: messages.length === 0, messages };
+      }
+
       if (!hasText(formState?.couple.groom.name)) {
         messages.push('신랑 이름을 입력해 주세요.');
       }
@@ -673,13 +905,31 @@ export function buildStepValidation(
     case 'schedule': {
       const messages: string[] = [];
       if (!formState || !buildWeddingDateObject(formState)) {
-        messages.push('올바른 예식 날짜와 시간을 입력해 주세요.');
+        messages.push(
+          formState?.eventType === 'birthday'
+            ? '올바른 파티 날짜와 시간을 입력해 주세요.'
+            : formState?.eventType === 'first-birthday'
+            ? '올바른 돌잔치 날짜와 시간을 입력해 주세요.'
+            : '올바른 예식 날짜와 시간을 입력해 주세요.'
+        );
       }
       if (!hasText(formState?.venue)) {
-        messages.push('예식장 이름을 입력해 주세요.');
+        messages.push(
+          formState?.eventType === 'birthday'
+            ? '파티 장소명을 입력해 주세요.'
+            : formState?.eventType === 'first-birthday'
+            ? '돌잔치 장소명을 입력해 주세요.'
+            : '예식장 이름을 입력해 주세요.'
+        );
       }
       if (!hasText(formState?.pageData?.ceremonyAddress)) {
-        messages.push('예식장 주소를 입력해 주세요.');
+        messages.push(
+          formState?.eventType === 'birthday'
+            ? '파티 장소 주소를 입력해 주세요.'
+            : formState?.eventType === 'first-birthday'
+            ? '돌잔치 장소 주소를 입력해 주세요.'
+            : '예식장 주소를 입력해 주세요.'
+        );
       }
       if (
         !formState?.pageData?.kakaoMap ||
@@ -694,7 +944,11 @@ export function buildStepValidation(
         messages.push('지도 링크는 http 또는 https로 시작해야 합니다.');
       }
       if (!isValidPhone(formState?.pageData?.ceremonyContact)) {
-        messages.push('예식장 연락처 형식을 확인해 주세요.');
+        messages.push(
+          formState?.eventType === 'birthday'
+            ? '파티 장소 연락처 형식을 확인해 주세요.'
+            : '예식장 연락처 형식을 확인해 주세요.'
+        );
       }
       return { valid: messages.length === 0, messages };
     }
@@ -703,7 +957,11 @@ export function buildStepValidation(
     case 'greeting': {
       const messages: string[] = [];
       if (!hasText(formState?.pageData?.greetingMessage)) {
-        messages.push('인사말을 입력해 주세요.');
+        messages.push(
+          formState?.eventType === 'birthday'
+            ? '초대 문구를 입력해 주세요.'
+            : '인사말을 입력해 주세요.'
+        );
       }
       return { valid: messages.length === 0, messages };
     }

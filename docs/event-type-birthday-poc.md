@@ -1,46 +1,36 @@
-﻿# birthday 이벤트 타입 PoC
+# birthday 이벤트 타입 운영 반영
 
-## 1) 우선순위 타입
-- `birthday`를 대상 타입으로 고정.
-- 이유: `eventType` 메타/renderer/wizard/목록표시 플로우가 이미 함께 준비되어 있어, 기존 wedding 구조의 공통화 범위를 빠르게 점검하기 좋음.
+## 1) 적용 범위
+- `birthday`는 wedding renderer를 재사용하던 PoC에서 벗어나 생일 전용 공개 renderer, wizard 문구, 관리자 필터를 사용한다.
+- 저장소, 공개/비공개 판정, 이미지 업로드, 방명록, 음악, 노출 기간은 기존 이벤트 공통 인프라를 그대로 사용한다.
+- 1차 공개 생일 테마는 `birthday-minimal`, `birthday-floral`이다. `birthday-luxury`, `birthday-y2k`, `birthday-aurora`, `birthday-paper`는 후속 확장 후보로만 문서화한다.
 
-## 2) 최소 구현 점검
-- 완료 항목
-  - `src/lib/eventTypes.ts`
-    - `EVENT_TYPE_KEYS`에 `birthday` 존재
-    - `EVENT_TYPE_META.birthday.enabled = true`
-    - label/description/admin/customer 라벨이 이벤트 타입별로 설정되어 있음
-  - `src/app/_components/eventPageRendererRegistry.tsx`
-    - `birthday` renderer 등록 (`createWeddingBackedRenderer('birthday')` 재사용)
-  - `src/app/page-wizard/pageWizardData.ts`
-    - `birthday-page-wizard` config key 존재
-    - `eventType` 기본 값/resolve 흐름에 포함
-  - 목록 노출/필터/배지
-    - `/admin` 페이지 목록: `src/app/admin/_components/AdminPagesTab.tsx`
-    - `AdminPageClient` 검색/필터 파이프: `src/app/admin/AdminPageClient.tsx`
-    - 고객 계정 연동 목록: `src/app/admin/_components/AdminCustomerAccountsTab.tsx`
-    - 고객 사용자 페이지: `src/app/my-invitations/MyInvitationsClient.tsx`
+## 2) 코드 기준
+- 이벤트 메타: `src/lib/eventTypes.ts`
+  - `EVENT_TYPE_META.birthday.enabled = true`
+  - 관리자 라벨은 `생일`, 고객 라벨은 `내 생일 초대장`
+- 공개 렌더러: `src/app/_components/eventPageRendererRegistry.tsx`
+  - `birthday`는 `src/app/_components/birthday/` 전용 page/layout/theme registry로 연결
+  - `/slug/birthday-minimal`, `/slug/birthday-floral` route를 지원
+- wizard: `src/app/page-wizard/pageWizardData.ts`, `PageWizardClient.tsx`
+  - `birthday-page-wizard`는 기존 저장 타입을 유지하되 입력 문구를 `생일 주인공`, `파티 일정과 장소`, `초대 문구` 기준으로 분리
+  - 생일 주인공 이름은 기존 `couple.groom.name`, `groomName`, `displayName`, `pageData.greetingAuthor`에 매핑
+- 관리자: `src/app/admin/AdminPageClient.tsx`
+  - `pageCategory=birthday`일 때 `eventType === 'birthday'` 페이지와 댓글만 표시
+  - 이미지/노출 기간 탭은 eventType 필터를 전달받아 생일 페이지 범위로 제한
 
-## 3) 생성 → 저장 → 공개 → 조회 흐름 (코드 기준)
-- 생성(웹 위저드)
-  - `/page-wizard`에서 `eventType` 스텝의 `birthday` 선택 가능 (`EventTypeStep.tsx`)
-  - `createInitialWizardConfig` 및 `setEventType` 경로로 form 상태에 반영
-- 저장/공개
-  - 저장/최종 저장 시 `prepareWizardConfigForSave`에서 `eventType` 유지/정규화
-  - `eventType`은 `events/{slug}`, `eventSlugIndex/{slug}`, `eventSecrets/{id}` 저장 payload 및 read-through 변환에서도 함께 전달
-- 조회
-  - 공개 라우트(`/{slug}`, `/{slug}/[theme]`)에서 `resolveEventPageRenderer`가 `eventType`을 기준으로 renderer를 선택
-  - `eventType -> renderer` 매핑이 존재하지 않더라도 `normalizeEventTypeKey` 및 fallback 규칙으로 안정 동작
+## 3) 데이터 매핑
+- 생일 주인공 이름: `displayName`, `metadata.title`, `couple.groom.name`, `pageData.greetingAuthor`
+- 날짜/시간: 기존 `weddingDateTime`
+- 장소명: `venue`, `pageData.venueName`
+- 주소: `pageData.ceremonyAddress`
+- 지도: `pageData.kakaoMap`, `pageData.mapUrl`
+- 초대 문구: `pageData.greetingMessage`
+- 갤러리: `pageData.galleryImages`
+- 방명록: 기존 `events/{eventId}/comments` 흐름
 
-## 4) 공통화 vs wedding 전용 요소
-- 공통화된 부분
-  - 생성/저장/공개/조회 파이프: wizard, repository, route resolver, admin/customer summary 타입 처리
-  - 기본 폼 step 구성과 목록/필터 UX 구조
-- wedding 전용으로 남은 부분
-  - 실제 렌더/디자인은 현재 wedding renderer/테마/컴포넌트를 재사용 (`wedding` 로직 공유)
-  - 전용 editor/템플릿, 음악/섹션 문구는 이벤트 타입별 특화되지 않음
-- 다음 타입 추가 시 반복 수정 포인트
-  - `src/lib/eventTypes.ts`: 메타 enabled/라벨/editor/wizard/renderer 키 등록
-  - `src/app/_components/eventPageRendererRegistry.tsx`: 타입별 renderer 존재 시 직접 등록(없으면 fallback 동작)
-  - `src/app/page-wizard/pageWizardData.ts`: type 별 step config key 정의
-  - 폼/summary 타입 라벨/필터 노출 위치(현재는 관리자/고객 페이지 목록) 점검
+## 4) 검증 기준
+- `node --experimental-strip-types --loader ./scripts/ts-path-loader.mjs scripts/test-birthday-event-rendering.mts`
+- `npm run typecheck:web`
+- `npm run lint:web`
+- 수동 QA: `/page-wizard?eventType=birthday`, `/birthday-slug`, `/birthday-slug/birthday-minimal`, `/birthday-slug/birthday-floral`, `/admin?section=events&pageCategory=birthday&tab=pages`

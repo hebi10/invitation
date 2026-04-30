@@ -44,6 +44,7 @@ export interface WizardStepProps {
 }
 
 export interface ThemeStepProps extends WizardStepProps {
+  eventType: EventTypeKey;
   defaultTheme: InvitationThemeKey;
   setDefaultTheme: (theme: InvitationThemeKey) => void;
   openChoicePanel: ChoicePanelKey;
@@ -59,6 +60,7 @@ export interface EventTypeStepProps extends WizardStepProps {
 }
 
 export interface SlugStepProps {
+  eventType: EventTypeKey;
   groomKoreanName: string;
   brideKoreanName: string;
   groomEnglishName: string;

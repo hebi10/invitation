@@ -8,6 +8,7 @@ import {
   type InvitationVariantKey,
 } from '@/lib/invitationVariants';
 import { INVITATION_THEME_KEYS } from '@/lib/invitationThemes';
+import { getSelectableFirstBirthdayThemeKeys } from '@/app/_components/firstBirthday/firstBirthdayThemes';
 import {
   getProductTierDescription,
   getProductTierLabel,
@@ -18,6 +19,7 @@ import {
 } from '../pageWizardShared';
 
 export default function ThemeStep({
+  eventType,
   formState,
   updateForm,
   defaultTheme,
@@ -28,6 +30,11 @@ export default function ThemeStep({
   setOpenChoicePanel,
   isSelectionLocked,
 }: ThemeStepProps) {
+  const selectableThemeKeys =
+    eventType === 'first-birthday'
+      ? getSelectableFirstBirthdayThemeKeys()
+      : INVITATION_THEME_KEYS.filter((theme) => !theme.startsWith('first-birthday-'));
+
   useEffect(() => {
     if (isSelectionLocked && openChoicePanel) {
       setOpenChoicePanel(null);
@@ -79,7 +86,7 @@ export default function ThemeStep({
         </button>
         {openChoicePanel === 'theme' ? (
           <div className={styles.choiceOptions}>
-            {INVITATION_THEME_KEYS.map((theme) => {
+            {selectableThemeKeys.map((theme) => {
               const isActive = defaultTheme === theme;
 
               return (
