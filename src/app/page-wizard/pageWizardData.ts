@@ -524,14 +524,24 @@ export function resolveWizardStepConfig(eventType: unknown) {
 export function getWizardSteps(options: {
   eventType?: EventTypeKey;
   includeSetupSteps: boolean;
+  includeEventTypeStep?: boolean;
   includeMusic?: boolean;
 }) {
   const stepConfig = resolveWizardStepConfig(options.eventType);
   const baseKeys = options.includeSetupSteps
     ? [...stepConfig.commonSetupSteps, ...stepConfig.eventSpecificSteps]
     : [...stepConfig.editSteps];
-  const stepKeys =
-    options.includeMusic === false ? baseKeys.filter((stepKey) => stepKey !== 'music') : baseKeys;
+  const stepKeys = baseKeys.filter((stepKey) => {
+    if (options.includeEventTypeStep === false && stepKey === 'eventType') {
+      return false;
+    }
+
+    if (options.includeMusic === false && stepKey === 'music') {
+      return false;
+    }
+
+    return true;
+  });
 
   return buildWizardStepsFromKeys(stepKeys, stepConfig.eventType);
 }

@@ -1,6 +1,6 @@
 import { Suspense } from 'react';
 
-import PageWizardClient from '../PageWizardClient';
+import PageWizardClient from '../page-wizard/PageWizardClient';
 
 export const dynamic = 'force-dynamic';
 
@@ -9,7 +9,7 @@ function OpeningWizardFallback() {
     <div
       style={{
         minHeight: '100vh',
-        background: '#f8fafc',
+        background: 'linear-gradient(180deg, #fafffc 0%, #fffaf4 100%)',
       }}
     />
   );
@@ -22,4 +22,3 @@ export default function OpeningWizardCreatePage() {
     </Suspense>
   );
 }
-

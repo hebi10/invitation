@@ -98,5 +98,5 @@ export function resolveOpeningRouteTheme(
   );
 
   const resolved = resolveAvailableInvitationVariant(previewPage.variants, preferred);
-  return isOpeningThemeKey(resolved) ? resolved : null;
+  return isOpeningThemeKey(resolved) ? resolved : preferred;
 }

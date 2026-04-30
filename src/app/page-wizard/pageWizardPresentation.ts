@@ -1,7 +1,7 @@
 import { DEFAULT_EVENT_TYPE, type EventTypeKey } from '@/lib/eventTypes';
 
 export interface PageWizardPresentation {
-  pageClassName: 'default' | 'firstBirthday' | 'birthday' | 'generalEvent';
+  pageClassName: 'default' | 'firstBirthday' | 'birthday' | 'generalEvent' | 'opening';
   loadingTitle: string;
   loadingDescription: string;
   createLoginTitle: string;
@@ -124,7 +124,7 @@ const GENERAL_EVENT_PRESENTATION: PageWizardPresentation = {
 };
 
 const OPENING_PRESENTATION: PageWizardPresentation = {
-  pageClassName: 'default',
+  pageClassName: 'opening',
   loadingTitle: '개업 초대장 편집 화면을 준비하고 있습니다.',
   loadingDescription: '기존 설정값을 불러오는 중입니다. 잠시만 기다려 주세요.',
   createLoginTitle: '개업 초대장 만들기는 관리자만 이용 가능합니다',
@@ -167,4 +167,3 @@ export function getPageWizardPresentation(eventType: EventTypeKey = DEFAULT_EVEN
 
   return WEDDING_PRESENTATION;
 }
-

@@ -224,6 +224,7 @@ export default function PageWizardClient({
     forcedEventType ?? searchParams?.get('eventType'),
     DEFAULT_EVENT_TYPE
   );
+  const isEventTypeFixed = Boolean(forcedEventType);
   const queryClient = useQueryClient();
   const { authUser, isAdminLoading, isAdminLoggedIn, isLoggedIn } = useAdmin();
 
@@ -252,7 +253,7 @@ export default function PageWizardClient({
   const [requiresOwnershipClaim, setRequiresOwnershipClaim] = useState(false);
   const [accessErrorMessage, setAccessErrorMessage] = useState<string | null>(null);
   const [activeStepKey, setActiveStepKey] = useState<WizardStepKey>(
-    initialSlug ? 'basic' : 'eventType'
+    initialSlug ? 'basic' : isEventTypeFixed ? 'theme' : 'eventType'
   );
   const {
     openChoicePanel,
@@ -281,6 +282,8 @@ export default function PageWizardClient({
         ? `${styles.page} ${styles.pageFirstBirthday}`
         : wizardPresentation.pageClassName === 'generalEvent'
           ? `${styles.page} ${styles.pageGeneralEvent}`
+          : wizardPresentation.pageClassName === 'opening'
+            ? `${styles.page} ${styles.pageOpening}`
           : styles.page;
   const ownedEventsQuery = useQuery<CustomerOwnedEventSummary[]>({
     queryKey: appQueryKeys.ownedCustomerEvents(authUser?.uid ?? null),
@@ -457,6 +460,7 @@ export default function PageWizardClient({
     brideEnglishName,
     formState,
     groomEnglishName,
+    includeEventTypeStep: !isEventTypeFixed,
     initialSlug,
     persistedSlug,
     slugInput,

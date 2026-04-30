@@ -22,6 +22,7 @@ export function useWizardDerivedState({
   brideEnglishName,
   formState,
   groomEnglishName,
+  includeEventTypeStep,
   initialSlug,
   persistedSlug,
   slugInput,
@@ -30,6 +31,7 @@ export function useWizardDerivedState({
   brideEnglishName: string;
   formState: InvitationPageSeed | null;
   groomEnglishName: string;
+  includeEventTypeStep: boolean;
   initialSlug: string | null;
   persistedSlug: string | null;
   slugInput: string;
@@ -43,9 +45,10 @@ export function useWizardDerivedState({
       getWizardSteps({
         eventType: activeEventType,
         includeSetupSteps: !initialSlug,
+        includeEventTypeStep,
         includeMusic: invitationFeatures.showMusic,
       }),
-    [activeEventType, initialSlug, invitationFeatures.showMusic]
+    [activeEventType, includeEventTypeStep, initialSlug, invitationFeatures.showMusic]
   );
   const previewFormState = useMemo(
     () => (formState ? applyDerivedWizardDefaults(formState) : null),

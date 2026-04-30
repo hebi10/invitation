@@ -19,6 +19,7 @@ import {
   type PageStatusFilter,
   type ShortcutKey,
   getPageCategoryMeta,
+  getPageCategoryCreateWizardHref,
   getAvailableShortcuts,
   isImplementedPageCategory,
 } from './adminPageUtils';
@@ -97,19 +98,8 @@ export default function AdminPagesTab({
   const totalPages = Math.max(1, Math.ceil(filteredPages.length / pageSize));
   const categoryLabel = getPageCategoryMeta(activePageCategory).label;
   const isWeddingCategory = activePageCategory === 'invitation';
-  const isFirstBirthdayCategory = activePageCategory === 'first-birthday';
   const isBirthdayCategory = activePageCategory === 'birthday';
-  const isGeneralEventCategory = activePageCategory === 'general-event';
-  const isOpeningCategory = activePageCategory === 'opening';
-  const createWizardHref = isFirstBirthdayCategory
-    ? '/page-wizard/first-birthday'
-    : isBirthdayCategory
-      ? '/page-wizard?eventType=birthday'
-      : isGeneralEventCategory
-        ? '/page-wizard?eventType=general-event'
-        : isOpeningCategory
-          ? '/page-wizard/opening'
-        : '/page-wizard';
+  const createWizardHref = getPageCategoryCreateWizardHref(activePageCategory);
 
   useEffect(() => {
     if (currentPage > totalPages) {

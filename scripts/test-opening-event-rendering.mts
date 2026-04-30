@@ -16,6 +16,7 @@ import {
   getPageCategoryEventTypeFilter,
   isImplementedPageCategory,
 } from '../src/app/admin/_components/adminPageUtils.ts';
+import type { InvitationPage } from '../src/types/invitationPage.ts';
 
 assert.equal(EVENT_TYPE_KEYS.includes('opening'), true);
 assert.equal(listEnabledEventTypes().includes('opening'), true);
@@ -38,6 +39,22 @@ assert.equal(normalizeOpeningThemeKey('opening-modern'), 'opening-modern');
 assert.equal(normalizeOpeningThemeKey('emotional'), DEFAULT_OPENING_THEME);
 assert.equal(resolveOpeningRouteTheme(null, 'opening-modern'), null);
 assert.equal(resolveOpeningRouteTheme({ slug: 'sample' }, 'opening-modern'), 'opening-modern');
+assert.equal(
+  resolveOpeningRouteTheme(
+    {
+      slug: 'sample',
+      variants: {
+        emotional: {
+          available: true,
+          path: '/sample/emotional',
+          displayName: 'sample emotional',
+        },
+      },
+    } as InvitationPage,
+    'opening-modern'
+  ),
+  'opening-modern'
+);
 
 assert.equal(isImplementedPageCategory('opening'), true);
 assert.equal(getPageCategoryEventTypeFilter('opening'), 'opening');

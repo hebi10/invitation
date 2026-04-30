@@ -186,6 +186,22 @@ export function getPageCategoryEventTypeFilter(
   }
 }
 
+export function getPageCategoryCreateWizardHref(pageCategory: PageCategoryTabKey) {
+  switch (pageCategory) {
+    case 'birthday':
+      return '/birthday-wizard';
+    case 'first-birthday':
+      return '/first-birthday-wizard';
+    case 'general-event':
+      return '/general-event-wizard';
+    case 'opening':
+      return '/opening-wizard';
+    case 'invitation':
+    default:
+      return '/page-wizard';
+  }
+}
+
 export function isEventAdminTab(tab: AdminTab): tab is EventAdminTab {
   return EVENT_ADMIN_TABS.includes(tab as EventAdminTab);
 }

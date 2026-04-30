@@ -35,6 +35,18 @@
     #0b0b16;
 }
 
+.pageOpening {
+  --opening-ink: #1e2d28;
+  --opening-muted: #64746f;
+  --opening-primary: #2f7d67;
+  --opening-primary-dark: #1f5f4d;
+  --opening-accent: #c58b4c;
+
+  background:
+    linear-gradient(180deg, rgba(250, 255, 252, 0.98) 0%, rgba(241, 248, 244, 0.96) 52%, #fffaf4 100%);
+  color: var(--opening-ink);
+}
+
 /* ── Progress Bar ── */
 
 .progressBar {
@@ -2655,6 +2667,128 @@
 .pageFirstBirthday .gateLoader {
   border-color: rgba(219, 112, 147, 0.18);
   border-top-color: #9b3f65;
+}
+
+/* Opening invitation wizard overrides */
+
+.pageOpening .progressCurrent,
+.pageOpening .reviewStep,
+.pageOpening .choiceSectionBadge,
+.pageOpening .choiceTag {
+  color: var(--opening-primary);
+}
+
+.pageOpening .progressTitle,
+.pageOpening .stepTitle,
+.pageOpening .choiceSectionTitle,
+.pageOpening .choiceSelectValue,
+.pageOpening .centerTitle {
+  color: var(--opening-ink);
+}
+
+.pageOpening .stepDescription,
+.pageOpening .choiceSectionText,
+.pageOpening .choiceSelectDescription,
+.pageOpening .centerText,
+.pageOpening .fieldHint {
+  color: var(--opening-muted);
+}
+
+.pageOpening .progressTrack {
+  background: rgba(47, 125, 103, 0.14);
+  box-shadow: inset 0 1px 2px rgba(31, 95, 77, 0.12);
+}
+
+.pageOpening .progressFill {
+  background: linear-gradient(90deg, var(--opening-primary), var(--opening-accent));
+  box-shadow: 0 6px 16px rgba(47, 125, 103, 0.18);
+}
+
+.pageOpening .stepHeader,
+.pageOpening .choiceSection,
+.pageOpening .slideFooter,
+.pageOpening .gateCard,
+.pageOpening .musicIntroCard,
+.pageOpening .musicToggleCard,
+.pageOpening .musicControlCard,
+.pageOpening .musicMetaCard,
+.pageOpening .musicPreviewCard {
+  border-color: rgba(47, 125, 103, 0.16);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.94);
+  box-shadow: 0 14px 30px rgba(38, 73, 60, 0.08);
+}
+
+.pageOpening .viewTabs,
+.pageOpening .choiceOptions {
+  border-color: rgba(47, 125, 103, 0.14);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.78);
+}
+
+.pageOpening .viewTab {
+  border-radius: 6px;
+  color: var(--opening-muted);
+}
+
+.pageOpening .viewTabActive,
+.pageOpening .choiceSectionBadge {
+  background: rgba(47, 125, 103, 0.1);
+}
+
+.pageOpening .viewTabActive {
+  border-color: rgba(47, 125, 103, 0.2);
+  color: var(--opening-primary-dark);
+}
+
+.pageOpening .choiceSelectButton,
+.pageOpening .choiceCard {
+  border-color: rgba(47, 125, 103, 0.16);
+  border-radius: 8px;
+  background: #fff;
+}
+
+.pageOpening .choiceSelectButtonActive,
+.pageOpening .choiceCardActive {
+  border-color: rgba(47, 125, 103, 0.34);
+  background: rgba(248, 253, 250, 0.96);
+  box-shadow:
+    inset 3px 0 0 var(--opening-primary),
+    0 12px 24px rgba(38, 73, 60, 0.08);
+}
+
+.pageOpening .choiceChevron,
+.pageOpening .footerStepBadge,
+.pageOpening .gallerySummaryIndex {
+  background: rgba(47, 125, 103, 0.1);
+  color: var(--opening-primary-dark);
+}
+
+.pageOpening .choiceSelectedBadge {
+  background: var(--opening-primary-dark);
+}
+
+.pageOpening .primaryButton,
+.pageOpening .publishButton {
+  background: linear-gradient(135deg, var(--opening-primary), var(--opening-primary-dark));
+}
+
+.pageOpening .secondaryButton,
+.pageOpening .ghostButton,
+.pageOpening .templateButton {
+  border-color: rgba(47, 125, 103, 0.2);
+  background: rgba(255, 255, 255, 0.9);
+  color: var(--opening-primary-dark);
+}
+
+.pageOpening .gateLoader {
+  border-color: rgba(47, 125, 103, 0.18);
+  border-top-color: var(--opening-primary);
+}
+
+.pageOpening .swiperCard :global(.swiper-pagination-bullet-active) {
+  background: var(--opening-primary);
+  box-shadow: 0 6px 14px rgba(47, 125, 103, 0.22);
 }
 
 /* Birthday invitation wizard overrides */

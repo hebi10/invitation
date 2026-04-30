@@ -41,7 +41,7 @@ const birthdayWizardPresentation = getPageWizardPresentation('birthday');
 assert.equal(birthdayWizardPresentation.pageClassName, 'birthday');
 assert.equal(
   birthdayWizardPresentation.loadingTitle,
-  '생일 초대장 만들기를 준비하고 있습니다.'
+  '생일 초대장 편집 화면을 준비하고 있습니다.'
 );
 assert.equal(
   birthdayWizardPresentation.createLoginTitle,

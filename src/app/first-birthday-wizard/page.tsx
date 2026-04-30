@@ -1,6 +1,6 @@
 import { Suspense } from 'react';
 
-import PageWizardClient from '../PageWizardClient';
+import PageWizardClient from '../page-wizard/PageWizardClient';
 
 export const dynamic = 'force-dynamic';
 
