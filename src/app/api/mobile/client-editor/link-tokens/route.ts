@@ -5,6 +5,7 @@ import {
   buildMissingMobileClientEditorPermissionError,
   hasMobileClientEditorPermission,
 } from '@/server/clientEditorMobileApi';
+import { GENERIC_SERVER_ERROR_MESSAGE, getInternalErrorReason } from '@/server/apiErrorResponse';
 import {
   issueMobileClientEditorLinkToken,
   revokeActiveMobileClientEditorLinkTokens,
@@ -155,20 +156,12 @@ export async function POST(request: Request) {
       result: 'failure',
       pageSlug,
       sessionPageSlug: access.session.pageSlug,
-      reason:
-        error instanceof Error && error.message.trim()
-          ? error.message
-          : 'unknown_error',
+      reason: getInternalErrorReason(error),
       metadata: { purpose },
     });
 
     return NextResponse.json(
-      {
-        error:
-          error instanceof Error && error.message.trim()
-            ? error.message
-            : 'Failed to issue the invitation link token.',
-      },
+      { error: GENERIC_SERVER_ERROR_MESSAGE },
       {
         status: 500,
         headers: buildRateLimitHeaders(rateLimitResult),
@@ -237,20 +230,12 @@ export async function DELETE(request: Request) {
       result: 'failure',
       pageSlug,
       sessionPageSlug: access.session.pageSlug,
-      reason:
-        error instanceof Error && error.message.trim()
-          ? error.message
-          : 'unknown_error',
+      reason: getInternalErrorReason(error),
       metadata: { purpose },
     });
 
     return NextResponse.json(
-      {
-        error:
-          error instanceof Error && error.message.trim()
-            ? error.message
-            : 'Failed to revoke the invitation link token.',
-      },
+      { error: GENERIC_SERVER_ERROR_MESSAGE },
       { status: 500 }
     );
   }

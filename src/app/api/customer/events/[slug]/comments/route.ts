@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 
+import { GENERIC_SERVER_ERROR_MESSAGE, getInternalErrorReason } from '@/server/apiErrorResponse';
 import { listCustomerEventGuestbookComments } from '@/server/customerEventsService';
 import { getServerAuth } from '@/server/firebaseAdmin';
 
@@ -40,14 +41,12 @@ export async function GET(
       comments,
     });
   } catch (error) {
-    const message =
-      error instanceof Error
-        ? error.message
-        : '방명록을 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.';
+    const message = getInternalErrorReason(error);
     const status =
       message === '로그인한 계정에 연결된 청첩장만 관리할 수 있습니다.' ? 403 : 500;
+    const responseMessage = status >= 500 ? GENERIC_SERVER_ERROR_MESSAGE : message;
 
     console.error('[api/customer/events/comments] failed to load comments', error);
-    return NextResponse.json({ error: message }, { status });
+    return NextResponse.json({ error: responseMessage }, { status });
   }
 }

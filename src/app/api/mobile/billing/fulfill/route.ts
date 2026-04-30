@@ -5,6 +5,7 @@ import {
   validateInvitationPageSlugBase,
 } from '@/lib/invitationPageSlug';
 import { isMobileBillingProductId } from '@/lib/mobileBillingProducts';
+import { GENERIC_SERVER_ERROR_MESSAGE } from '@/server/apiErrorResponse';
 import {
   canCreateCustomerOwnedInvitation,
   CUSTOMER_EMAIL_VERIFICATION_REQUIRED_MESSAGE,
@@ -47,7 +48,7 @@ async function verifyMobileCustomerRequest(request: Request) {
     return {
       identity: null,
       response: NextResponse.json(
-        { error: 'Firebase Admin Auth is not available.' },
+        { error: GENERIC_SERVER_ERROR_MESSAGE },
         { status: 500 }
       ),
     } as const;
@@ -235,12 +236,7 @@ export async function POST(request: Request) {
   } catch (error) {
     console.error('[mobile/billing/fulfill] failed to process request', error);
     return NextResponse.json(
-      {
-        error:
-          error instanceof Error && error.message.trim()
-            ? error.message
-            : 'Failed to fulfill the Google Play purchase.',
-      },
+      { error: GENERIC_SERVER_ERROR_MESSAGE },
       { status: 500 }
     );
   }

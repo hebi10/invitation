@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 
 import { verifyAdminRequest, AdminApiAuthError } from '@/server/adminApiAuth';
+import { GENERIC_SERVER_ERROR_MESSAGE, toSafeHttpErrorResponse } from '@/server/apiErrorResponse';
 import {
   assignAdminCustomerEventOwnership,
   clearAdminCustomerEventOwnership,
@@ -70,15 +71,10 @@ export async function POST(request: Request) {
     );
   } catch (error) {
     if (error instanceof AdminApiAuthError) {
-      return NextResponse.json({ error: error.message }, { status: error.status });
+      return toSafeHttpErrorResponse(error);
     }
 
-    const errorMessage =
-      error instanceof Error && error.message.trim()
-        ? error.message
-        : '고객 계정 연결 상태를 변경하지 못했습니다.';
-
     console.error('[api/admin/customers/ownership] failed to update ownership', error);
-    return NextResponse.json({ error: errorMessage }, { status: 500 });
+    return NextResponse.json({ error: GENERIC_SERVER_ERROR_MESSAGE }, { status: 500 });
   }
 }

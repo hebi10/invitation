@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 
+import { GENERIC_SERVER_ERROR_MESSAGE } from '@/server/apiErrorResponse';
 import { getCustomerWalletSummary } from '@/server/customerWalletServerService';
 import { getServerAuth } from '@/server/firebaseAdmin';
 
@@ -18,7 +19,7 @@ export async function GET(request: Request) {
     const serverAuth = getServerAuth();
     if (!serverAuth) {
       return NextResponse.json(
-        { error: 'Firebase Admin Auth를 초기화하지 못했습니다.' },
+        { error: GENERIC_SERVER_ERROR_MESSAGE },
         { status: 500 }
       );
     }

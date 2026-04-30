@@ -10,6 +10,7 @@ import {
 import { CLIENT_EDITOR_SESSION_COOKIE } from '@/server/clientEditorSession';
 import { getAuthorizedClientEditorSession } from '@/server/clientEditorSessionAuth';
 import { isInvitationThemeKey } from '@/lib/invitationThemes';
+import { GENERIC_SERVER_ERROR_MESSAGE } from '@/server/apiErrorResponse';
 import {
   applyScopedRateLimit,
   buildRateLimitHeaders,
@@ -196,12 +197,7 @@ export async function POST(
   } catch (error) {
     console.error('[client-editor/pages] failed to process request', error);
     return NextResponse.json(
-      {
-        error:
-          error instanceof Error && error.message.trim()
-            ? error.message
-            : '청첩장 정보를 업데이트하지 못했습니다.',
-      },
+      { error: GENERIC_SERVER_ERROR_MESSAGE },
       { status: 500 }
     );
   }

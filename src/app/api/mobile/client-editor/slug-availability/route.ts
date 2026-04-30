@@ -1,5 +1,6 @@
 ﻿import { NextResponse } from 'next/server';
 
+import { GENERIC_SERVER_ERROR_MESSAGE } from '@/server/apiErrorResponse';
 import { getServerInvitationPageSlugAvailability } from '@/server/invitationPageServerService';
 import {
   applyScopedRateLimit,
@@ -40,12 +41,7 @@ export async function GET(request: Request) {
   } catch (error) {
     console.error('[mobile/client-editor/slug-availability] failed to resolve availability', error);
     return NextResponse.json(
-      {
-        error:
-          error instanceof Error && error.message.trim()
-            ? error.message
-            : 'Failed to resolve slug availability.',
-      },
+      { error: GENERIC_SERVER_ERROR_MESSAGE },
       { status: 500 }
     );
   }

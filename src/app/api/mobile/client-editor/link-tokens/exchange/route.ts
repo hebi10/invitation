@@ -1,5 +1,6 @@
 ﻿import { NextResponse } from 'next/server';
 
+import { GENERIC_SERVER_ERROR_MESSAGE } from '@/server/apiErrorResponse';
 import { createClientEditorSessionValue } from '@/server/clientEditorSession';
 import {
   loadMobileClientEditorPageSnapshot,
@@ -124,12 +125,7 @@ export async function POST(request: Request) {
     );
 
     return NextResponse.json(
-      {
-        error:
-          error instanceof Error && error.message.trim()
-            ? error.message
-            : 'Failed to exchange the invitation link token.',
-      },
+      { error: GENERIC_SERVER_ERROR_MESSAGE },
       {
         status: 500,
         headers: buildRateLimitHeaders(rateLimitResult),

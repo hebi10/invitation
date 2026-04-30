@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 
 import { verifyAdminRequest, AdminApiAuthError } from '@/server/adminApiAuth';
+import { toSafeHttpErrorResponse } from '@/server/apiErrorResponse';
 import { getAdminDashboardSummarySnapshot } from '@/server/adminDashboardSummaryService';
 
 export async function GET(request: Request) {
@@ -14,7 +15,7 @@ export async function GET(request: Request) {
     });
   } catch (error) {
     if (error instanceof AdminApiAuthError) {
-      return NextResponse.json({ error: error.message }, { status: error.status });
+      return toSafeHttpErrorResponse(error);
     }
 
     console.error('[api/admin/dashboard/summary] failed to load summary', error);

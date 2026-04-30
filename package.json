@@ -31,6 +31,7 @@
     "test:service-repository-boundary": "node --experimental-strip-types --loader ./scripts/ts-path-loader.mjs scripts/test-service-repository-boundary.mts",
     "test:event-write-paths": "node --experimental-strip-types --loader ./scripts/ts-path-loader.mjs scripts/test-event-write-paths.mts",
     "test:rate-limit-policy": "node --experimental-strip-types --loader ./scripts/ts-path-loader.mjs scripts/test-rate-limit-policy.mts",
+    "test:security-hardening": "node --experimental-strip-types --loader ./scripts/ts-path-loader.mjs scripts/test-security-hardening.mts",
     "test:rules": "firebase emulators:exec --only firestore \"node --experimental-strip-types --loader ./scripts/ts-path-loader.mjs scripts/test-firestore-rules-emulator.mts\"",
     "test:slug-index": "node --experimental-strip-types --loader ./scripts/ts-path-loader.mjs scripts/test-event-slug-index.mts",
     "test:write-through-repositories": "node --experimental-strip-types --loader ./scripts/ts-path-loader.mjs scripts/test-event-write-through.mts",

@@ -11,6 +11,7 @@ import {
   validateInvitationPageSlugBase,
 } from '@/lib/invitationPageSlug';
 import { normalizeInvitationProductTier } from '@/lib/invitationProducts';
+import { GENERIC_SERVER_ERROR_MESSAGE } from '@/server/apiErrorResponse';
 import {
   canCreateCustomerOwnedInvitation,
   CUSTOMER_EMAIL_VERIFICATION_REQUIRED_MESSAGE,
@@ -46,7 +47,7 @@ async function verifyCustomer(request: Request) {
   if (!serverAuth) {
     return {
       error: NextResponse.json(
-        { error: 'Firebase Admin Auth를 초기화하지 못했습니다.' },
+        { error: GENERIC_SERVER_ERROR_MESSAGE },
         { status: 500 }
       ),
       decodedToken: null,
@@ -202,12 +203,7 @@ export async function POST(request: Request) {
   } catch (error) {
     console.error('[api/customer/events] failed to create owned event', error);
     return NextResponse.json(
-      {
-        error:
-          error instanceof Error && error.message.trim()
-            ? error.message
-            : '청첩장 생성에 실패했습니다. 잠시 후 다시 시도해 주세요.',
-      },
+      { error: GENERIC_SERVER_ERROR_MESSAGE },
       { status: 500 }
     );
   }

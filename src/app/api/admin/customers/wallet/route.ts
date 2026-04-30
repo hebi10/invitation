@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 
 import { verifyAdminRequest, AdminApiAuthError } from '@/server/adminApiAuth';
+import { GENERIC_SERVER_ERROR_MESSAGE, toSafeHttpErrorResponse } from '@/server/apiErrorResponse';
 import { grantAdminCustomerWalletCredit } from '@/server/customerWalletServerService';
 
 type WalletGrantRequestBody = {
@@ -90,15 +91,10 @@ export async function POST(request: Request) {
     });
   } catch (error) {
     if (error instanceof AdminApiAuthError) {
-      return NextResponse.json({ error: error.message }, { status: error.status });
+      return toSafeHttpErrorResponse(error);
     }
 
-    const errorMessage =
-      error instanceof Error && error.message.trim()
-        ? error.message
-        : '고객 이용권을 지급하지 못했습니다.';
-
     console.error('[api/admin/customers/wallet] failed to update customer wallet', error);
-    return NextResponse.json({ error: errorMessage }, { status: 500 });
+    return NextResponse.json({ error: GENERIC_SERVER_ERROR_MESSAGE }, { status: 500 });
   }
 }

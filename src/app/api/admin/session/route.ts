@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 
 import { AdminApiAuthError, verifyAdminRequest } from '@/server/adminApiAuth';
+import { toSafeHttpErrorResponse } from '@/server/apiErrorResponse';
 
 export async function GET(request: Request) {
   try {
@@ -16,7 +17,7 @@ export async function GET(request: Request) {
     });
   } catch (error) {
     if (error instanceof AdminApiAuthError) {
-      return NextResponse.json({ error: error.message }, { status: error.status });
+      return toSafeHttpErrorResponse(error);
     }
 
     console.error('[api/admin/session] failed to verify admin session', error);

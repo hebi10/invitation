@@ -4,6 +4,11 @@ import {
   CustomerApiAuthError,
   verifyCustomerUid,
 } from '@/server/customerApiAuth';
+import {
+  GENERIC_SERVER_ERROR_MESSAGE,
+  getInternalErrorReason,
+  toSafeHttpErrorResponse,
+} from '@/server/apiErrorResponse';
 import { scheduleDeleteCustomerEventGuestbookComment } from '@/server/customerEventsService';
 
 export async function DELETE(
@@ -27,17 +32,15 @@ export async function DELETE(
     });
   } catch (error) {
     if (error instanceof CustomerApiAuthError) {
-      return NextResponse.json({ error: error.message }, { status: error.status });
+      return toSafeHttpErrorResponse(error);
     }
 
-    const message =
-      error instanceof Error
-        ? error.message
-        : '방명록을 삭제하지 못했습니다. 잠시 후 다시 시도해 주세요.';
+    const message = getInternalErrorReason(error);
     const status =
       message === '로그인한 계정에 연결된 청첩장만 관리할 수 있습니다.' ? 403 : 500;
+    const responseMessage = status >= 500 ? GENERIC_SERVER_ERROR_MESSAGE : message;
 
     console.error('[api/customer/events/comments] failed to delete comment', error);
-    return NextResponse.json({ error: message }, { status });
+    return NextResponse.json({ error: responseMessage }, { status });
   }
 }

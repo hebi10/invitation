@@ -7,6 +7,7 @@ import {
   validateInvitationPageSlugBase,
 } from '@/lib/invitationPageSlug';
 import { normalizeInvitationProductTier } from '@/lib/invitationProducts';
+import { GENERIC_SERVER_ERROR_MESSAGE } from '@/server/apiErrorResponse';
 import {
   CLIENT_EDITOR_OWNER_SESSION_VERSION,
   createClientEditorSessionValue,
@@ -214,12 +215,7 @@ export async function POST(request: Request) {
   } catch (error) {
     console.error('[mobile/client-editor/drafts] failed to create draft', error);
     return NextResponse.json(
-      {
-        error:
-          error instanceof Error && error.message.trim()
-            ? error.message
-            : 'Failed to create invitation page draft.',
-      },
+      { error: GENERIC_SERVER_ERROR_MESSAGE },
       { status: 500 }
     );
   }

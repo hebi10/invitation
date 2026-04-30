@@ -2,12 +2,13 @@ import { NextResponse } from 'next/server';
 
 import { normalizeInvitationPageSlugInput } from '@/lib/invitationPagePersistence';
 import { AdminApiAuthError, verifyAdminRequest } from '@/server/adminApiAuth';
+import { toSafeHttpErrorResponse } from '@/server/apiErrorResponse';
 import { deleteAdminEventBySlug } from '@/server/adminEventDeletionService';
 import { getServerInvitationPageBySlug } from '@/server/invitationPageServerService';
 
 function toAdminApiErrorResponse(error: unknown) {
   if (error instanceof AdminApiAuthError) {
-    return NextResponse.json({ error: error.message }, { status: error.status });
+    return toSafeHttpErrorResponse(error);
   }
 
   return null;

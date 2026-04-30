@@ -1,6 +1,7 @@
 ﻿import { NextResponse } from 'next/server';
 
 import { isInvitationThemeKey } from '@/lib/invitationThemes';
+import { GENERIC_SERVER_ERROR_MESSAGE, getInternalErrorReason } from '@/server/apiErrorResponse';
 import {
   authorizeMobileClientEditorRequest,
   authorizeMobileClientEditorToken,
@@ -590,17 +591,10 @@ export async function POST(
       pageSlug,
       highRiskRequirement,
       'failure',
-      error instanceof Error && error.message.trim()
-        ? error.message
-        : 'unknown_error'
+      getInternalErrorReason(error)
     );
     return NextResponse.json(
-      {
-        error:
-          error instanceof Error && error.message.trim()
-            ? error.message
-            : 'Failed to update the invitation page.',
-      },
+      { error: GENERIC_SERVER_ERROR_MESSAGE },
       { status: 500 }
     );
   }

@@ -1,5 +1,7 @@
 node_modules/
 .expo/
+.expo-home/
+.npm-cache/
 .expo-export-test/
 dist/
 web-build/
