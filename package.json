@@ -35,6 +35,8 @@
     "test:birthday-event-rendering": "node --experimental-strip-types --loader ./scripts/ts-path-loader.mjs scripts/test-birthday-event-rendering.mts",
     "test:opening-event-rendering": "node --experimental-strip-types --loader ./scripts/ts-path-loader.mjs scripts/test-opening-event-rendering.mts",
     "test:page-wizard-event-type-lock": "node --experimental-strip-types --loader ./scripts/ts-path-loader.mjs scripts/test-page-wizard-event-type-lock.mts",
+    "test:dummy-event-seeds": "node --experimental-strip-types --loader ./scripts/ts-path-loader.mjs scripts/test-dummy-event-seeds.mts",
+    "seed:dummy-events": "node --experimental-strip-types --loader ./scripts/ts-path-loader.mjs scripts/seed-dummy-events.mts",
     "test:rules": "firebase emulators:exec --only firestore \"node --experimental-strip-types --loader ./scripts/ts-path-loader.mjs scripts/test-firestore-rules-emulator.mts\"",
     "test:slug-index": "node --experimental-strip-types --loader ./scripts/ts-path-loader.mjs scripts/test-event-slug-index.mts",
     "test:write-through-repositories": "node --experimental-strip-types --loader ./scripts/ts-path-loader.mjs scripts/test-event-write-through.mts",
