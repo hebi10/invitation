@@ -14,6 +14,8 @@ export interface UploadedImage {
   name: string;
   url: string;
   path: string;
+  originalUrl?: string;
+  originalPath?: string;
   thumbnailUrl?: string;
   thumbnailPath?: string;
   uploadedAt: Date;
@@ -24,7 +26,7 @@ export type PageEditorImageAssetKind = EditableImageAssetKind;
 interface UploadImageOptions {
   preserveFileName?: boolean;
   assetKind?: PageEditorImageAssetKind;
-  variant?: 'original' | 'thumbnail';
+  variant?: 'original' | 'content' | 'thumbnail';
 }
 
 interface GetImagesByPageOptions {
@@ -219,13 +221,31 @@ function supportsThumbnailVariant(assetKind?: PageEditorImageAssetKind) {
 
 function resolveUploadOptimizationOptions(
   assetKind: PageEditorImageAssetKind | undefined,
-  variant: 'original' | 'thumbnail'
+  variant: 'original' | 'content' | 'thumbnail'
 ): OptimizeUploadImageOptions {
   if (assetKind === 'favicon') {
+    if (variant === 'original') {
+      return {
+        maxWidth: 512,
+        maxHeight: 512,
+        quality: 0.82,
+        maxBytes: 300 * 1024,
+      };
+    }
+
+    if (variant === 'thumbnail') {
+      return {
+        maxWidth: 96,
+        maxHeight: 96,
+        quality: 0.78,
+        maxBytes: 80 * 1024,
+      };
+    }
+
     return {
       maxWidth: 256,
       maxHeight: 256,
-      quality: 0.82,
+      quality: 0.8,
       maxBytes: 180 * 1024,
     };
   }
@@ -235,48 +255,75 @@ function resolveUploadOptimizationOptions(
     assetKind === 'share-preview' ||
     assetKind === 'kakao-card'
   ) {
+    if (variant === 'original') {
+      return {
+        maxWidth: 2400,
+        maxHeight: 2400,
+        quality: 0.85,
+        maxBytes: 1.8 * 1024 * 1024,
+      };
+    }
+
     return variant === 'thumbnail'
       ? {
           maxWidth: 960,
           maxHeight: 960,
-          quality: 0.72,
+          quality: 0.78,
           maxBytes: 280 * 1024,
         }
       : {
           maxWidth: 1600,
           maxHeight: 1600,
-          quality: 0.8,
+          quality: 0.82,
           maxBytes: 1.2 * 1024 * 1024,
         };
   }
 
   if (assetKind === 'gallery') {
+    if (variant === 'original') {
+      return {
+        maxWidth: 2400,
+        maxHeight: 2400,
+        quality: 0.84,
+        maxBytes: 1.6 * 1024 * 1024,
+      };
+    }
+
     return variant === 'thumbnail'
       ? {
           maxWidth: 720,
           maxHeight: 720,
-          quality: 0.7,
+          quality: 0.76,
           maxBytes: 200 * 1024,
         }
       : {
           maxWidth: 1400,
           maxHeight: 1400,
-          quality: 0.78,
+          quality: 0.8,
           maxBytes: 900 * 1024,
         };
+  }
+
+  if (variant === 'original') {
+    return {
+      maxWidth: 2400,
+      maxHeight: 2400,
+      quality: 0.84,
+      maxBytes: 1.6 * 1024 * 1024,
+    };
   }
 
   return variant === 'thumbnail'
     ? {
         maxWidth: 720,
         maxHeight: 720,
-        quality: 0.72,
+        quality: 0.78,
         maxBytes: 220 * 1024,
       }
     : {
         maxWidth: 1600,
         maxHeight: 1600,
-        quality: 0.8,
+        quality: 0.82,
         maxBytes: 1.2 * 1024 * 1024,
       };
 }
@@ -285,8 +332,9 @@ async function createUploadFiles(
   file: File,
   assetKind?: PageEditorImageAssetKind
 ) {
-  const [originalFile, thumbnailFile] = await Promise.all([
+  const [originalFile, contentFile, thumbnailFile] = await Promise.all([
     optimizeUploadImage(file, resolveUploadOptimizationOptions(assetKind, 'original')),
+    optimizeUploadImage(file, resolveUploadOptimizationOptions(assetKind, 'content')),
     supportsThumbnailVariant(assetKind)
       ? optimizeUploadImage(file, resolveUploadOptimizationOptions(assetKind, 'thumbnail'))
       : Promise.resolve<File | null>(null),
@@ -294,8 +342,9 @@ async function createUploadFiles(
 
   return {
     originalFile,
+    contentFile,
     thumbnailFile:
-      thumbnailFile && thumbnailFile.size < originalFile.size ? thumbnailFile : null,
+      thumbnailFile && thumbnailFile.size < contentFile.size ? thumbnailFile : null,
   };
 }
 
@@ -334,9 +383,11 @@ export const uploadImage = async (
     throw new Error(validationError);
   }
 
-  const { originalFile, thumbnailFile } = await createUploadFiles(file, options.assetKind);
-  const storedFileName = buildStoredFileName(originalFile.name, options);
+  const { originalFile, contentFile, thumbnailFile } = await createUploadFiles(file, options.assetKind);
+  const storedFileName = buildStoredFileName(contentFile.name, options);
+  const originalFileName = `original-${storedFileName}`;
   const thumbnailFileName = thumbnailFile ? buildThumbnailFileName(storedFileName) : '';
+  const originalPath = `wedding-images/${pageSlug}/${originalFileName}`;
   const imagePath = `wedding-images/${pageSlug}/${storedFileName}`;
   const thumbnailPath = thumbnailFile
     ? `wedding-images/${pageSlug}/${thumbnailFileName}`
@@ -347,6 +398,8 @@ export const uploadImage = async (
       name: storedFileName,
       url: `/images/${storedFileName}`,
       path: imagePath,
+      originalUrl: `/images/${originalFileName}`,
+      originalPath,
       thumbnailUrl: `/images/${storedFileName}`,
       thumbnailPath: thumbnailPath || imagePath,
       uploadedAt: new Date(),
@@ -361,14 +414,20 @@ export const uploadImage = async (
 
   try {
     const imageRef = firebaseModules.ref(firebaseModules.storage, imagePath);
+    const originalRef = firebaseModules.ref(firebaseModules.storage, originalPath);
     const thumbnailRef =
       thumbnailFile && thumbnailPath
         ? firebaseModules.ref(firebaseModules.storage, thumbnailPath)
         : null;
 
-    const [snapshot, thumbnailSnapshot] = await Promise.all([
+    const [snapshot, originalSnapshot, thumbnailSnapshot] = await Promise.all([
       firebaseModules.uploadBytes(
         imageRef,
+        contentFile,
+        buildUploadMetadata(pageSlug, contentFile, { ...options, variant: 'content' })
+      ),
+      firebaseModules.uploadBytes(
+        originalRef,
         originalFile,
         buildUploadMetadata(pageSlug, originalFile, { ...options, variant: 'original' })
       ),
@@ -383,8 +442,9 @@ export const uploadImage = async (
           )
         : Promise.resolve(null),
     ]);
-    const [downloadURL, thumbnailUrl] = await Promise.all([
+    const [downloadURL, originalUrl, thumbnailUrl] = await Promise.all([
       firebaseModules.getDownloadURL(snapshot.ref),
+      firebaseModules.getDownloadURL(originalSnapshot.ref),
       thumbnailSnapshot
         ? firebaseModules.getDownloadURL(thumbnailSnapshot.ref)
         : Promise.resolve<string | null>(null),
@@ -396,6 +456,8 @@ export const uploadImage = async (
       name: storedFileName,
       url: downloadURL,
       path: imagePath,
+      originalUrl,
+      originalPath,
       thumbnailUrl: thumbnailUrl ?? downloadURL,
       thumbnailPath: thumbnailPath || imagePath,
       uploadedAt: new Date(),
@@ -441,18 +503,17 @@ export async function uploadClientEditorImage(
     throw new Error(validationError);
   }
 
-  const { originalFile, thumbnailFile } = await createUploadFiles(file, assetKind);
+  const { originalFile } = await createUploadFiles(file, assetKind);
   const formData = new FormData();
   formData.append('assetKind', assetKind);
   formData.append('file', originalFile, originalFile.name);
-  if (thumbnailFile) {
-    formData.append('thumbnail', thumbnailFile, thumbnailFile.name);
-  }
 
   const response = await readJsonResponse<{
     name: string;
     url: string;
     path: string;
+    originalUrl?: string;
+    originalPath?: string;
     thumbnailUrl?: string;
     thumbnailPath?: string;
     uploadedAt: string;

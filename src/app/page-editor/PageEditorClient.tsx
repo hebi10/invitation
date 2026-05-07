@@ -74,6 +74,10 @@ import type { NoticeState, SaveState } from './pageEditorClientTypes';
 import { usePageEditorImageUpload } from './pageEditorImageUploadHook';
 import { usePageEditorPersistence } from './pageEditorPersistenceHooks';
 import { usePageEditorPreviewState } from './pageEditorPreviewState';
+import {
+  getPageEditorPublishStatusLabel,
+  getPageEditorSaveStatusLabel,
+} from './pageEditorStatusLabels';
 import { usePageEditorVisibility } from './pageEditorVisibilityHook';
 import styles from './page.module.css';
 import {
@@ -944,28 +948,11 @@ export default function PageEditorClient({
     });
   };
 
-  const saveStatusLabel =
-    saveState === 'autosaving'
-      ? '자동 저장 중'
-      : saveState === 'saving'
-        ? '임시저장 중'
-        : saveState === 'publishing'
-          ? '발행 상태 반영 중'
-          : saveState === 'saved'
-            ? '저장 완료'
-            : saveState === 'error'
-              ? '저장 오류'
-              : isDirty
-                ? '저장 필요'
-                : '저장 완료';
-
-  const publishStatusLabel = published
-    ? hasPublishChanges
-      ? '발행 예정'
-      : '발행 완료'
-    : hasPublishChanges
-      ? '비공개 전환 예정'
-      : '비공개';
+  const saveStatusLabel = getPageEditorSaveStatusLabel({ saveState, isDirty });
+  const publishStatusLabel = getPageEditorPublishStatusLabel({
+    published,
+    hasPublishChanges,
+  });
 
   const renderHeroCard = () => (
     <section className={`${styles.card} ${styles.heroCard}`}>

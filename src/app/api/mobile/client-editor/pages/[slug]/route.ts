@@ -1,5 +1,10 @@
 ﻿import { NextResponse } from 'next/server';
 
+import {
+  isMobileClientEditorPageAction,
+  MOBILE_CLIENT_EDITOR_PAGE_ACTION_REQUIRED_PERMISSIONS,
+  MOBILE_CLIENT_EDITOR_PAGE_ACTIONS,
+} from '@/contracts/mobileClientEditorPageActions';
 import { isInvitationThemeKey } from '@/lib/invitationThemes';
 import { GENERIC_SERVER_ERROR_MESSAGE, getInternalErrorReason } from '@/server/apiErrorResponse';
 import {
@@ -34,23 +39,11 @@ import {
   type MobileClientEditorHighRiskAction,
 } from '@/server/mobileClientEditorHighRisk';
 import type { InvitationPageSeed, InvitationThemeKey } from '@/types/invitationPage';
-import type { MobileClientEditorPermissionKey } from '@/types/mobileClientEditor';
 
 const MOBILE_CLIENT_EDITOR_MUTATION_RATE_LIMIT = {
   limit: 30,
   windowMs: 60 * 1000,
 } as const;
-
-const PAGE_ACTION_REQUIRED_PERMISSIONS: Record<string, MobileClientEditorPermissionKey> = {
-  save: 'canEditInvitation',
-  restore: 'canEditInvitation',
-  setPublished: 'canManagePublication',
-  setVariantAvailability: 'canManagePublication',
-  adjustTicketCount: 'canManageTickets',
-  extendDisplayPeriod: 'canManageDisplayPeriod',
-  setDisplayPeriod: 'canManageDisplayPeriod',
-  transferTicketCount: 'canManageTickets',
-};
 
 type MobileClientEditorPageActionBody = {
   action?: unknown;
@@ -112,7 +105,7 @@ async function resolveHighRiskRequirement(
   action: string,
   body: MobileClientEditorPageActionBody | null
 ): Promise<ResolvedHighRiskRequirement | null> {
-  if (action === 'adjustTicketCount') {
+  if (action === MOBILE_CLIENT_EDITOR_PAGE_ACTIONS.adjustTicketCount) {
     return {
       action: 'managePaidFeature',
       metadata: {
@@ -125,7 +118,7 @@ async function resolveHighRiskRequirement(
     };
   }
 
-  if (action === 'extendDisplayPeriod') {
+  if (action === MOBILE_CLIENT_EDITOR_PAGE_ACTIONS.extendDisplayPeriod) {
     return {
       action: 'managePaidFeature',
       metadata: {
@@ -138,7 +131,7 @@ async function resolveHighRiskRequirement(
     };
   }
 
-  if (action === 'setDisplayPeriod') {
+  if (action === MOBILE_CLIENT_EDITOR_PAGE_ACTIONS.setDisplayPeriod) {
     return {
       action: 'managePaidFeature',
       metadata: {
@@ -148,7 +141,7 @@ async function resolveHighRiskRequirement(
     };
   }
 
-  if (action === 'transferTicketCount') {
+  if (action === MOBILE_CLIENT_EDITOR_PAGE_ACTIONS.transferTicketCount) {
     return {
       action: 'transferTickets',
       metadata: {
@@ -163,7 +156,7 @@ async function resolveHighRiskRequirement(
     };
   }
 
-  if (action === 'setVariantAvailability') {
+  if (action === MOBILE_CLIENT_EDITOR_PAGE_ACTIONS.setVariantAvailability) {
     if (body?.available !== true) {
       return null;
     }
@@ -177,7 +170,11 @@ async function resolveHighRiskRequirement(
     };
   }
 
-  if (action !== 'save' && action !== 'restore' && action !== 'setPublished') {
+  if (
+    action !== MOBILE_CLIENT_EDITOR_PAGE_ACTIONS.save &&
+    action !== MOBILE_CLIENT_EDITOR_PAGE_ACTIONS.restore &&
+    action !== MOBILE_CLIENT_EDITOR_PAGE_ACTIONS.setPublished
+  ) {
     return null;
   }
 
@@ -271,7 +268,7 @@ export async function POST(
 
   const body = (await request.json().catch(() => null)) as MobileClientEditorPageActionBody | null;
 
-  const action = typeof body?.action === 'string' ? body.action : '';
+  const action = isMobileClientEditorPageAction(body?.action) ? body.action : '';
   const rateLimitResult = await applyScopedRateLimit({
     request,
     scope: 'mobile-client-editor-mutation',
@@ -289,7 +286,9 @@ export async function POST(
     );
   }
 
-  const requiredPermission = PAGE_ACTION_REQUIRED_PERMISSIONS[action];
+  const requiredPermission = action
+    ? MOBILE_CLIENT_EDITOR_PAGE_ACTION_REQUIRED_PERMISSIONS[action]
+    : undefined;
   if (!requiredPermission) {
     return NextResponse.json(
       { error: 'Unsupported action.' },
@@ -338,7 +337,7 @@ export async function POST(
   const defaultTheme = readTheme(body?.defaultTheme) as InvitationThemeKey | undefined;
 
   try {
-    if (action === 'save') {
+    if (action === MOBILE_CLIENT_EDITOR_PAGE_ACTIONS.save) {
       if (!body?.config || typeof body.config !== 'object') {
         return NextResponse.json(
           { error: 'Invitation page config is required.' },
@@ -382,7 +381,7 @@ export async function POST(
       );
     }
 
-    if (action === 'restore') {
+    if (action === MOBILE_CLIENT_EDITOR_PAGE_ACTIONS.restore) {
       await restoreServerInvitationPageConfig(pageSlug, {
         published: body?.published === true,
         defaultTheme,
@@ -394,7 +393,7 @@ export async function POST(
       );
     }
 
-    if (action === 'setPublished') {
+    if (action === MOBILE_CLIENT_EDITOR_PAGE_ACTIONS.setPublished) {
       if (typeof body?.published !== 'boolean') {
         return NextResponse.json(
           { error: 'Published state is required.' },
@@ -412,7 +411,7 @@ export async function POST(
       );
     }
 
-    if (action === 'setVariantAvailability') {
+    if (action === MOBILE_CLIENT_EDITOR_PAGE_ACTIONS.setVariantAvailability) {
       const variantKey = readVariantKey(body?.variantKey);
 
       if (!variantKey || typeof body?.available !== 'boolean') {
@@ -436,7 +435,7 @@ export async function POST(
       );
     }
 
-    if (action === 'adjustTicketCount') {
+    if (action === MOBILE_CLIENT_EDITOR_PAGE_ACTIONS.adjustTicketCount) {
       if (typeof body?.amount !== 'number' || !Number.isFinite(body.amount)) {
         return NextResponse.json(
           { error: 'Ticket count adjustment amount is required.' },
@@ -455,7 +454,7 @@ export async function POST(
       );
     }
 
-    if (action === 'extendDisplayPeriod') {
+    if (action === MOBILE_CLIENT_EDITOR_PAGE_ACTIONS.extendDisplayPeriod) {
       const months =
         typeof body?.months === 'number' && Number.isFinite(body.months)
           ? Math.max(1, Math.trunc(body.months))
@@ -476,7 +475,7 @@ export async function POST(
       );
     }
 
-    if (action === 'setDisplayPeriod') {
+    if (action === MOBILE_CLIENT_EDITOR_PAGE_ACTIONS.setDisplayPeriod) {
       if (typeof body?.enabled !== 'boolean') {
         return NextResponse.json(
           { error: 'Display period enabled state is required.' },
@@ -521,7 +520,7 @@ export async function POST(
       );
     }
 
-    if (action === 'transferTicketCount') {
+    if (action === MOBILE_CLIENT_EDITOR_PAGE_ACTIONS.transferTicketCount) {
       const targetPageSlug =
         typeof body?.targetPageSlug === 'string' ? body.targetPageSlug.trim() : '';
       const targetToken =

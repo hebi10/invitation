@@ -12,6 +12,7 @@ import {
   hasMobileClientEditorPermission,
 } from '@/server/clientEditorMobileApi';
 import { getServerStorageBucket } from '@/server/firebaseAdmin';
+import { buildOptimizedUploadImages } from '@/server/imageUploadOptimization';
 import {
   applyScopedRateLimit,
   buildRateLimitHeaders,
@@ -61,8 +62,6 @@ type ResolvedUploadPayload = {
   assetKind: EditableImageAssetKind;
   file: File;
   buffer: Buffer;
-  thumbnailFile: File | null;
-  thumbnailBuffer: Buffer | null;
   uploadSessionId: string;
 };
 
@@ -314,34 +313,6 @@ function validateServerSideImagePayload(
   };
 }
 
-function sanitizeFileNameSegment(value: string) {
-  return value
-    .trim()
-    .toLowerCase()
-    .normalize('NFKD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/[^a-z0-9.-]+/g, '-')
-    .replace(/^-+|-+$/g, '')
-    .replace(/-{2,}/g, '-');
-}
-
-function buildStoredFileName(fileName: string, assetKind: EditableImageAssetKind) {
-  const extensionIndex = fileName.lastIndexOf('.');
-  const extension =
-    extensionIndex >= 0 ? sanitizeFileNameSegment(fileName.slice(extensionIndex + 1)) : '';
-  const timestamp = Date.now();
-  const randomSuffix = Math.random().toString(36).slice(2, 8);
-  const prefix = sanitizeFileNameSegment(assetKind) || 'image';
-
-  return extension
-    ? `${prefix}-${timestamp}-${randomSuffix}.${extension}`
-    : `${prefix}-${timestamp}-${randomSuffix}`;
-}
-
-function buildThumbnailFileName(fileName: string) {
-  return `thumb-${fileName}`;
-}
-
 function readAssetKind(value: unknown): EditableImageAssetKind | null {
   if (typeof value !== 'string') {
     return null;
@@ -448,16 +419,12 @@ async function readUploadPayload(request: Request): Promise<ResolvedUploadPayloa
       assetKind,
       file: new File([buffer], fileName, { type: mimeType }),
       buffer,
-      thumbnailFile: null,
-      thumbnailBuffer: null,
       uploadSessionId,
     };
   }
 
   const formData = await request.formData().catch(() => null);
   const file = formData?.get('file');
-  const thumbnailEntry = formData?.get('thumbnail');
-  const thumbnailFile = thumbnailEntry instanceof File ? thumbnailEntry : null;
   const assetKind = readAssetKind(formData?.get('assetKind') ?? null);
   const uploadSessionId = sanitizeUploadSessionId(
     formData?.get('uploadSessionId') ?? null
@@ -471,13 +438,6 @@ async function readUploadPayload(request: Request): Promise<ResolvedUploadPayloa
     .arrayBuffer()
     .then((arrayBuffer) => Buffer.from(arrayBuffer))
     .catch(() => null);
-  const thumbnailBuffer = thumbnailFile
-    ? await thumbnailFile
-        .arrayBuffer()
-        .then((arrayBuffer) => Buffer.from(arrayBuffer))
-        .catch(() => null)
-    : null;
-
   if (!buffer) {
     return null;
   }
@@ -486,8 +446,6 @@ async function readUploadPayload(request: Request): Promise<ResolvedUploadPayloa
     assetKind,
     file,
     buffer,
-    thumbnailFile,
-    thumbnailBuffer,
     uploadSessionId,
   };
 }
@@ -541,7 +499,6 @@ export async function POST(
 
   const uploadPayload = await readUploadPayload(request);
   const file = uploadPayload?.file ?? null;
-  const thumbnailFile = uploadPayload?.thumbnailFile ?? null;
   const assetKind = uploadPayload?.assetKind ?? null;
 
   if (!(file instanceof File) || !assetKind) {
@@ -556,15 +513,7 @@ export async function POST(
     return NextResponse.json({ error: validationError }, { status: 400 });
   }
 
-  if (thumbnailFile) {
-    const thumbnailValidationError = validateEditableImageBatch([thumbnailFile], assetKind);
-    if (thumbnailValidationError) {
-      return NextResponse.json({ error: thumbnailValidationError }, { status: 400 });
-    }
-  }
-
   const buffer = uploadPayload?.buffer ?? null;
-  const thumbnailBuffer = uploadPayload?.thumbnailBuffer ?? null;
   const uploadSessionId =
     uploadPayload?.uploadSessionId || 'legacy-mobile-upload';
 
@@ -580,37 +529,45 @@ export async function POST(
     return NextResponse.json({ error: serverValidation.error }, { status: 400 });
   }
 
-  const thumbnailValidation =
-    thumbnailFile && thumbnailBuffer
-      ? validateServerSideImagePayload(thumbnailFile, thumbnailBuffer, assetKind)
-      : null;
-
-  if (thumbnailValidation && 'error' in thumbnailValidation) {
-    return NextResponse.json({ error: thumbnailValidation.error }, { status: 400 });
-  }
-
-  const storedFileName = buildStoredFileName(file.name, assetKind);
-  const imagePath = `wedding-images/${pageSlug}/${storedFileName}`;
+  const optimizedImages = await buildOptimizedUploadImages({
+    buffer,
+    fileName: file.name,
+    assetKind,
+  });
+  const storedFileName = optimizedImages.content.fileName;
+  const originalPath = `wedding-images/${pageSlug}/${optimizedImages.original.fileName}`;
+  const imagePath = `wedding-images/${pageSlug}/${optimizedImages.content.fileName}`;
   const downloadToken = randomUUID();
-  const thumbnailPath =
-    thumbnailFile && thumbnailBuffer
-      ? `wedding-images/${pageSlug}/${buildThumbnailFileName(storedFileName)}`
-      : '';
-  const thumbnailDownloadToken =
-    thumbnailPath
-      ? randomUUID()
-      : '';
+  const originalDownloadToken = randomUUID();
+  const thumbnailPath = `wedding-images/${pageSlug}/${optimizedImages.thumbnail.fileName}`;
+  const thumbnailDownloadToken = randomUUID();
   const uploadedAt = new Date().toISOString();
 
   try {
     const bucketFile = bucket.file(imagePath);
-    const thumbnailBucketFile = thumbnailPath ? bucket.file(thumbnailPath) : null;
+    const originalBucketFile = bucket.file(originalPath);
+    const thumbnailBucketFile = bucket.file(thumbnailPath);
 
     await Promise.all([
-      bucketFile.save(buffer, {
+      originalBucketFile.save(optimizedImages.original.buffer, {
         resumable: false,
         metadata: {
-          contentType: serverValidation.contentType,
+          contentType: optimizedImages.original.contentType,
+          metadata: {
+            pageSlug,
+            assetKind,
+            uploadSessionId,
+            uploadedAt,
+            originalFileName: file.name,
+            firebaseStorageDownloadTokens: originalDownloadToken,
+            variant: 'original',
+          },
+        },
+      }),
+      bucketFile.save(optimizedImages.content.buffer, {
+        resumable: false,
+        metadata: {
+          contentType: optimizedImages.content.contentType,
           metadata: {
             pageSlug,
             assetKind,
@@ -618,45 +575,46 @@ export async function POST(
             uploadedAt,
             originalFileName: file.name,
             firebaseStorageDownloadTokens: downloadToken,
-            variant: 'original',
+            variant: 'content',
           },
         },
       }),
-      thumbnailBucketFile && thumbnailBuffer && thumbnailValidation && !('error' in thumbnailValidation)
-        ? thumbnailBucketFile.save(thumbnailBuffer, {
-            resumable: false,
-            metadata: {
-              contentType: thumbnailValidation.contentType,
-              metadata: {
-                pageSlug,
-                assetKind,
-                uploadSessionId,
-                uploadedAt,
-                originalFileName: thumbnailFile!.name,
-                firebaseStorageDownloadTokens: thumbnailDownloadToken,
-                variant: 'thumbnail',
-              },
-            },
-          })
-        : Promise.resolve(),
+      thumbnailBucketFile.save(optimizedImages.thumbnail.buffer, {
+        resumable: false,
+        metadata: {
+          contentType: optimizedImages.thumbnail.contentType,
+          metadata: {
+            pageSlug,
+            assetKind,
+            uploadSessionId,
+            uploadedAt,
+            originalFileName: file.name,
+            firebaseStorageDownloadTokens: thumbnailDownloadToken,
+            variant: 'thumbnail',
+          },
+        },
+      }),
     ]);
 
     const encodedPath = encodeURIComponent(imagePath);
     const bucketName = bucket.name;
     const url = `https://firebasestorage.googleapis.com/v0/b/${bucketName}/o/${encodedPath}?alt=media&token=${downloadToken}`;
-    const thumbnailUrl = thumbnailPath
-      ? `https://firebasestorage.googleapis.com/v0/b/${bucketName}/o/${encodeURIComponent(
-          thumbnailPath
-        )}?alt=media&token=${thumbnailDownloadToken}`
-      : url;
+    const originalUrl = `https://firebasestorage.googleapis.com/v0/b/${bucketName}/o/${encodeURIComponent(
+      originalPath
+    )}?alt=media&token=${originalDownloadToken}`;
+    const thumbnailUrl = `https://firebasestorage.googleapis.com/v0/b/${bucketName}/o/${encodeURIComponent(
+      thumbnailPath
+    )}?alt=media&token=${thumbnailDownloadToken}`;
 
     return NextResponse.json(
       {
         name: storedFileName,
         url,
         path: imagePath,
+        originalUrl,
+        originalPath,
         thumbnailUrl,
-        thumbnailPath: thumbnailPath || imagePath,
+        thumbnailPath,
         uploadedAt,
       },
       {

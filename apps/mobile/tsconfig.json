@@ -10,6 +10,7 @@
     "src/**/*.tsx",
     "../../src/lib/invitationThemes.ts",
     "../../src/lib/mobileBillingProducts.ts",
+    "../../src/contracts/**/*.ts",
     ".expo/types/**/*.ts"
   ]
 }

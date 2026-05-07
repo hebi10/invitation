@@ -3,6 +3,7 @@ export interface OptimizeUploadImageOptions {
   maxHeight?: number;
   quality?: number;
   maxBytes?: number;
+  targetType?: 'image/webp' | 'image/jpeg' | 'image/png';
 }
 
 function loadBrowserImage(objectUrl: string) {
@@ -23,6 +24,7 @@ export async function optimizeUploadImage(
     maxHeight = 2200,
     quality = 0.82,
     maxBytes = 1.8 * 1024 * 1024,
+    targetType = 'image/webp',
   } = options;
 
   if (
@@ -45,7 +47,12 @@ export async function optimizeUploadImage(
     const outputWidth = Math.max(1, Math.round(image.naturalWidth * scale));
     const outputHeight = Math.max(1, Math.round(image.naturalHeight * scale));
     const shouldResize = scale < 1;
-    const shouldReencode = file.size > maxBytes && (file.type === 'image/jpeg' || file.type === 'image/webp');
+    const shouldReencode =
+      file.type !== targetType ||
+      file.size > maxBytes ||
+      file.type === 'image/jpeg' ||
+      file.type === 'image/png' ||
+      file.type === 'image/webp';
 
     if (!shouldResize && !shouldReencode) {
       return file;
@@ -62,12 +69,11 @@ export async function optimizeUploadImage(
 
     context.drawImage(image, 0, 0, outputWidth, outputHeight);
 
-    const targetType = file.type === 'image/webp' ? 'image/webp' : file.type === 'image/jpeg' ? 'image/jpeg' : file.type;
     const blob = await new Promise<Blob | null>((resolve) => {
       canvas.toBlob(resolve, targetType, quality);
     });
 
-    if (!blob || blob.size >= file.size) {
+    if (!blob || (blob.size >= file.size && file.type === targetType)) {
       return file;
     }
 

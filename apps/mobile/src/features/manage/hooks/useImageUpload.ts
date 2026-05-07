@@ -34,6 +34,7 @@ type TrackedUploadedImage = {
   assetKind: EditableImageAssetKind;
   url: string;
   path: string;
+  originalPath: string;
   thumbnailPath: string;
   uploadSessionId: string;
 };
@@ -163,17 +164,9 @@ function buildResizeAction(asset: UploadableImageAsset) {
 }
 
 function getManipulatorSaveOptions(
-  imageManipulator: ImageManipulatorModule,
-  mimeType: string
+  imageManipulator: ImageManipulatorModule
 ) {
-  if (mimeType === 'image/png' && imageManipulator.SaveFormat?.PNG) {
-    return {
-      format: imageManipulator.SaveFormat.PNG,
-      mimeType: 'image/png',
-    };
-  }
-
-  if (mimeType === 'image/webp' && imageManipulator.SaveFormat?.WEBP) {
+  if (imageManipulator.SaveFormat?.WEBP) {
     return {
       format: imageManipulator.SaveFormat.WEBP,
       mimeType: 'image/webp',
@@ -193,7 +186,9 @@ async function optimizeAssetForUpload(
   const initialFileSize = await getAssetFileSize(asset);
   const resizeAction = buildResizeAction(asset);
   const needsOptimization =
-    Boolean(resizeAction) || isOverServerImageLimit(asset, initialFileSize);
+    Boolean(resizeAction) ||
+    isOverServerImageLimit(asset, initialFileSize) ||
+    mimeType !== 'image/webp';
 
   if (!needsOptimization) {
     return {
@@ -222,7 +217,7 @@ async function optimizeAssetForUpload(
     };
   }
 
-  const saveOptions = getManipulatorSaveOptions(imageManipulator, mimeType);
+  const saveOptions = getManipulatorSaveOptions(imageManipulator);
   const manipulated = await imageManipulator.manipulateAsync(
     asset.uri,
     resizeAction ? [resizeAction] : [],
@@ -343,6 +338,7 @@ function buildTrackedUploadedImage(
     assetKind,
     url: uploaded.url,
     path: uploaded.path,
+    originalPath: uploaded.originalPath?.trim() || uploaded.path,
     thumbnailPath: uploaded.thumbnailPath,
     uploadSessionId,
   };
@@ -441,7 +437,7 @@ export function useImageUpload({
       }
 
       const paths = dedupePaths(
-        entries.flatMap((entry) => [entry.path, entry.thumbnailPath])
+        entries.flatMap((entry) => [entry.path, entry.originalPath, entry.thumbnailPath])
       );
       if (!paths.length) {
         return true;
