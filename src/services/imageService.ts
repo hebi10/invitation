@@ -4,6 +4,7 @@ import {
   validateEditableImageBatch,
   validateEditableImageFile,
 } from '@/lib/imageUploadPolicy';
+import { getCurrentFirebaseIdToken } from '@/services/adminAuth';
 import {
   optimizeUploadImage,
   type OptimizeUploadImageOptions,
@@ -486,17 +487,37 @@ export async function uploadEditablePageImage(
   assetKind: PageEditorImageAssetKind,
   role: EditableImageUploadRole
 ) {
-  if (role === 'admin' || role === 'owner') {
-    return uploadPageEditorImage(file, pageSlug, assetKind);
-  }
-
-  return uploadClientEditorImage(file, pageSlug, assetKind);
+  return uploadServerManagedEditablePageImage(file, pageSlug, assetKind, role);
 }
 
 export async function uploadClientEditorImage(
   file: File,
   pageSlug: string,
   assetKind: PageEditorImageAssetKind
+) {
+  return uploadServerManagedEditablePageImage(file, pageSlug, assetKind, 'client');
+}
+
+function buildEditableImageUploadApiPath(
+  pageSlug: string,
+  role: EditableImageUploadRole
+) {
+  if (role === 'admin') {
+    return `/api/admin/pages/${encodeURIComponent(pageSlug)}/images`;
+  }
+
+  if (role === 'owner') {
+    return `/api/customer/events/${encodeURIComponent(pageSlug)}/images`;
+  }
+
+  return `/api/client-editor/pages/${encodeURIComponent(pageSlug)}/images`;
+}
+
+async function uploadServerManagedEditablePageImage(
+  file: File,
+  pageSlug: string,
+  assetKind: PageEditorImageAssetKind,
+  role: EditableImageUploadRole
 ) {
   const validationError = validateEditableImageBatch([file], assetKind);
   if (validationError) {
@@ -508,6 +529,20 @@ export async function uploadClientEditorImage(
   formData.append('assetKind', assetKind);
   formData.append('file', originalFile, originalFile.name);
 
+  const idToken =
+    role === 'client'
+      ? null
+      : await getCurrentFirebaseIdToken({ forceRefresh: true });
+  if (role !== 'client' && !idToken) {
+    throw new Error('로그인 토큰을 확인하지 못했습니다. 다시 로그인해 주세요.');
+  }
+
+  const headers = idToken
+    ? {
+        Authorization: `Bearer ${idToken}`,
+      }
+    : undefined;
+
   const response = await readJsonResponse<{
     name: string;
     url: string;
@@ -518,9 +553,10 @@ export async function uploadClientEditorImage(
     thumbnailPath?: string;
     uploadedAt: string;
   }>(
-    await fetch(`/api/client-editor/pages/${encodeURIComponent(pageSlug)}/images`, {
+    await fetch(buildEditableImageUploadApiPath(pageSlug, role), {
       method: 'POST',
       credentials: 'same-origin',
+      headers,
       body: formData,
     })
   );

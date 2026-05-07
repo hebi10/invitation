@@ -34,11 +34,12 @@ import type {
 } from '@/types/invitationPage';
 
 import {
-  AccountSectionPanel,
   GuideSectionPanel,
   PersonEditorCard,
 } from './pageEditorPanels';
 import PageEditorBasicInfoSection from './PageEditorBasicInfoSection';
+import PageEditorFinalSection from './PageEditorFinalSection';
+import PageEditorGiftSection from './PageEditorGiftSection';
 import PageEditorScheduleSection from './PageEditorScheduleSection';
 import PageEditorSectionPreview from './PageEditorSectionPreview';
 import {
@@ -84,7 +85,6 @@ import {
   cloneConfig,
   createEmptyAccount,
   createEmptyGuideItem,
-  keywordsToText,
   normalizeFormConfig,
   textToKeywords,
   type AccountKind,
@@ -2187,74 +2187,13 @@ export default function PageEditorClient({
     }
 
     return (
-      <section className={styles.section}>
-        <div className={styles.sectionHeader}>
-          <div>
-            <div className={styles.sectionTitleRow}>
-              <h2 className={styles.sectionTitle}>축의금과 계좌 안내</h2>
-              <span className={styles.fieldBadgeOptional}>선택</span>
-            </div>
-            <p className={styles.sectionDescription}>
-              민감한 정보이므로 꼭 필요한 경우에만 입력하고, 은행명 · 계좌번호 · 예금주를 한 세트로 작성해 주세요.
-            </p>
-          </div>
-        </div>
-
-        <div className={styles.subCard}>
-          <div className={styles.subCardHeader}>
-            <div>
-              <h3 className={styles.subCardTitle}>계좌 안내 문구</h3>
-              <p className={styles.subCardDescription}>
-                계좌 영역 상단에 노출할 설명 문구를 입력합니다.
-              </p>
-            </div>
-          </div>
-
-          <label className={styles.field}>
-            {renderFieldMeta(
-              '안내 문구',
-              'optional',
-              '예: 참석이 어려우신 분들을 위해 계좌번호를 함께 안내드립니다.'
-            )}
-            <textarea
-              className={styles.textarea}
-              value={formState.pageData?.giftInfo?.message ?? ''}
-              placeholder="예: 참석이 어려우신 분들을 위해 계좌번호를 함께 안내드립니다."
-              onChange={(event) =>
-                updateForm((draft) => {
-                  if (!draft.pageData?.giftInfo) {
-                    return;
-                  }
-                  draft.pageData.giftInfo.message = event.target.value;
-                })
-              }
-            />
-          </label>
-        </div>
-
-        <div className={styles.dualGrid}>
-          <AccountSectionPanel
-            kind="groomAccounts"
-            title="신랑측 계좌"
-            description="신랑 본인과 가족 계좌를 순서대로 입력해 주세요."
-            accounts={formState.pageData?.giftInfo?.groomAccounts ?? []}
-            disabled={false}
-            onAdd={handleAccountAdd}
-            onRemove={handleAccountRemove}
-            onChange={handleAccountChange}
-          />
-          <AccountSectionPanel
-            kind="brideAccounts"
-            title="신부측 계좌"
-            description="신부 본인과 가족 계좌를 순서대로 입력해 주세요."
-            accounts={formState.pageData?.giftInfo?.brideAccounts ?? []}
-            disabled={false}
-            onAdd={handleAccountAdd}
-            onRemove={handleAccountRemove}
-            onChange={handleAccountChange}
-          />
-        </div>
-      </section>
+      <PageEditorGiftSection
+        formState={formState}
+        onUpdateForm={updateForm}
+        onAccountAdd={handleAccountAdd}
+        onAccountRemove={handleAccountRemove}
+        onAccountChange={handleAccountChange}
+      />
     );
   };
 
@@ -2264,188 +2203,16 @@ export default function PageEditorClient({
     }
 
     return (
-      <section className={styles.section}>
-        <div className={styles.sectionHeader}>
-          <div>
-            <h2 className={styles.sectionTitle}>공유 정보와 최종 확인</h2>
-            <p className={styles.sectionDescription}>
-              손님이 링크를 받았을 때 보이는 제목과 설명을 먼저 정리한 뒤, 마지막 저장 상태를 확인해 주세요.
-            </p>
-          </div>
-        </div>
-
-        <div className={styles.fieldGrid}>
-          <label className={styles.field}>
-            {renderFieldMeta(
-              '공유 제목',
-              'required',
-              '링크 공유 카드와 검색 결과에 보여줄 제목입니다.'
-            )}
-            <input
-              className={styles.input}
-              value={formState.metadata.title}
-              placeholder="예: 김신랑 ♥ 나신부 결혼식에 초대합니다"
-              onChange={(event) =>
-                handleMetadataFieldChange('root', 'title', event.target.value)
-              }
-            />
-          </label>
-
-          <label className={styles.field}>
-            {renderFieldMeta(
-              '공유 설명',
-              'required',
-              '공유 카드와 검색 결과 요약에 함께 쓰입니다.'
-            )}
-            <input
-              className={styles.input}
-              value={formState.metadata.description}
-              placeholder="예: 2026년 4월 14일, 소중한 분들을 초대합니다."
-              onChange={(event) =>
-                handleMetadataFieldChange('root', 'description', event.target.value)
-              }
-            />
-          </label>
-
-          <div className={`${styles.field} ${styles.fieldWide}`}>
-            {renderFieldMeta(
-              '사이트 아이콘 주소',
-              'required',
-              '브라우저 탭과 검색 미리보기 아이콘으로 사용됩니다.'
-            )}
-            <div className={styles.assetInlineActions}>
-              <input
-                ref={faviconUploadInputRef}
-                className={styles.hiddenFileInput}
-                type="file"
-                accept="image/*"
-                onChange={(event) => void handleSingleImageUploadChange('favicon', event)}
-              />
-              <button
-                type="button"
-                className={styles.secondaryButton}
-                onClick={() => handleTriggerImagePicker('favicon')}
-                disabled={!canUploadImages || uploadingField === 'favicon'}
-              >
-                {uploadingField === 'favicon' ? '업로드 중..' : '아이콘 업로드'}
-              </button>
-              <button
-                type="button"
-                className={styles.secondaryButton}
-                onClick={() => handleMetadataFieldChange('images', 'favicon', '')}
-                disabled={!formState.metadata.images.favicon}
-              >
-                비우기
-              </button>
-            </div>
-            <div className={styles.faviconPreviewRow}>
-              {formState.metadata.images.favicon ? (
-                <img
-                  className={styles.faviconPreviewImage}
-                  src={formState.metadata.images.favicon}
-                  alt="사이트 아이콘 미리보기"
-                />
-              ) : (
-                <div className={styles.assetPreviewPlaceholder}>
-                  사이트 아이콘을 업로드하면 검색/공유 미리보기에도 함께 반영됩니다.
-                </div>
-              )}
-            </div>
-            <input
-              className={styles.input}
-              value={formState.metadata.images.favicon}
-              placeholder="예: https://.../favicon.png"
-              onChange={(event) =>
-                handleMetadataFieldChange('images', 'favicon', event.target.value)
-              }
-            />
-          </div>
-        </div>
-
-        {isAdminLoggedIn ? (
-          <details className={styles.detailsGroup}>
-            <summary className={styles.detailsSummary}>
-              SNS 전용 문구와 검색 키워드 추가 설정
-            </summary>
-            <div className={styles.detailsBody}>
-              <div className={styles.fieldGrid}>
-                <label className={styles.field}>
-                  {renderFieldMeta('오픈그래프 제목', 'optional')}
-                  <input
-                    className={styles.input}
-                    value={formState.metadata.openGraph.title}
-                    placeholder="예: 김신랑 ♥ 나신부 결혼식"
-                    onChange={(event) =>
-                      handleMetadataFieldChange('openGraph', 'title', event.target.value)
-                    }
-                  />
-                </label>
-                <label className={styles.field}>
-                  {renderFieldMeta('오픈그래프 설명', 'optional')}
-                  <input
-                    className={styles.input}
-                    value={formState.metadata.openGraph.description}
-                    placeholder="예: 링크 공유 시 보여줄 설명을 입력해 주세요."
-                    onChange={(event) =>
-                      handleMetadataFieldChange(
-                        'openGraph',
-                        'description',
-                        event.target.value
-                      )
-                    }
-                  />
-                </label>
-                <label className={styles.field}>
-                  {renderFieldMeta('트위터 제목', 'optional')}
-                  <input
-                    className={styles.input}
-                    value={formState.metadata.twitter.title}
-                    placeholder="예: 김신랑 ♥ 나신부 결혼식"
-                    onChange={(event) =>
-                      handleMetadataFieldChange('twitter', 'title', event.target.value)
-                    }
-                  />
-                </label>
-                <label className={styles.field}>
-                  {renderFieldMeta('트위터 설명', 'optional')}
-                  <input
-                    className={styles.input}
-                    value={formState.metadata.twitter.description}
-                    placeholder="예: 트위터 공유 시 보여줄 설명을 입력해 주세요."
-                    onChange={(event) =>
-                      handleMetadataFieldChange(
-                        'twitter',
-                        'description',
-                        event.target.value
-                      )
-                    }
-                  />
-                </label>
-                <label className={`${styles.field} ${styles.fieldWide}`}>
-                  {renderFieldMeta('검색 키워드', 'optional', '쉼표로 구분해서 입력해 주세요.')}
-                  <input
-                    className={styles.input}
-                    value={keywordsToText(formState.metadata.keywords)}
-                    onChange={(event) =>
-                      handleMetadataFieldChange('keywords', 'keywords', event.target.value)
-                    }
-                    placeholder="예: 결혼식, 모바일 청첩장, 김신랑 나신부"
-                  />
-                </label>
-              </div>
-            </div>
-          </details>
-        ) : null}
-
-        <div className={styles.guideListCard}>
-          <strong className={styles.guideTitle}>발행 전 체크리스트</strong>
-          <ul className={styles.guideBulletList}>
-            <li>신랑 · 신부 이름, 날짜, 장소, 인사말이 모두 들어갔는지 확인해 주세요.</li>
-            <li>대표 이미지와 공유 카드 문구가 원하는 분위기인지 미리보기로 확인해 주세요.</li>
-            <li>비공개 상태에서 충분히 점검한 뒤 발행하기 버튼을 눌러 주세요.</li>
-          </ul>
-        </div>
-      </section>
+      <PageEditorFinalSection
+        formState={formState}
+        isAdminLoggedIn={isAdminLoggedIn}
+        canUploadImages={canUploadImages}
+        uploadingField={uploadingField}
+        faviconUploadInputRef={faviconUploadInputRef}
+        onSingleImageUploadChange={handleSingleImageUploadChange}
+        onTriggerImagePicker={handleTriggerImagePicker}
+        onMetadataFieldChange={handleMetadataFieldChange}
+      />
     );
   };
 

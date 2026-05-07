@@ -32,10 +32,12 @@ type RateLimitResult = {
 const RATE_LIMIT_STORE_KEY = '__invitation_rate_limit_store__';
 const RATE_LIMIT_SLOW_APPLY_MS = 500;
 const FAIL_CLOSED_RATE_LIMIT_SCOPES = new Set([
+  'admin-image-upload',
   'client-editor-comment-delete',
   'client-editor-image-upload',
   'client-editor-mutation',
   'customer-event-create',
+  'customer-event-image-upload',
   'mobile-billing-fulfill',
   'mobile-client-editor-comment-mutation',
   'mobile-client-editor-drafts',

@@ -33,6 +33,7 @@
     "test:rate-limit-policy": "node --experimental-strip-types --loader ./scripts/ts-path-loader.mjs scripts/test-rate-limit-policy.mts",
     "test:security-hardening": "node --experimental-strip-types --loader ./scripts/ts-path-loader.mjs scripts/test-security-hardening.mts",
     "test:image-upload-optimization": "node --experimental-strip-types --loader ./scripts/ts-path-loader.mjs scripts/test-image-upload-optimization.mts",
+    "test:admin-owner-image-upload-routing": "node --experimental-strip-types --loader ./scripts/ts-path-loader.mjs scripts/test-admin-owner-image-upload-routing.mts",
     "test:mobile-session-security-policy": "node --experimental-strip-types --loader ./scripts/ts-path-loader.mjs scripts/test-mobile-session-security-policy.mts",
     "test:kakao-share-url-policy": "node --experimental-strip-types --loader ./scripts/ts-path-loader.mjs scripts/test-kakao-share-url-policy.mts",
     "test:customer-page-wizard-save-route": "node --experimental-strip-types --loader ./scripts/ts-path-loader.mjs scripts/test-customer-page-wizard-save-route.mts",
@@ -58,7 +59,7 @@
     "lint": "npm run lint:web && npm run lint:mobile",
     "check": "npm run lint && npm run typecheck",
     "test:smoke": "npm run sync:memory-metadata && npm run clean:next && next build",
-    "test:regression": "npm run test:image-upload-optimization && npm run test:public-access-block-reasons && npm run test:mobile-save-entitlement-policy && npm run test:mobile-session-security-policy",
+    "test:regression": "npm run test:image-upload-optimization && npm run test:admin-owner-image-upload-routing && npm run test:public-access-block-reasons && npm run test:mobile-save-entitlement-policy && npm run test:mobile-session-security-policy",
     "test": "npm run test:regression && npm run sync:memory-metadata && npm run clean:next && next build",
     "deploy:firebase:rules": "firebase deploy --only firestore,storage",
     "deploy:firebase": "npm run deploy:firebase:rules"
