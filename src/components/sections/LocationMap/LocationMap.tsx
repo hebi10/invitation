@@ -10,6 +10,7 @@ import {
   buildNaverMapSearchUrl,
   loadKakaoMapsSdk,
 } from '@/utils/kakaoMaps';
+import { escapeHtmlText } from '@/utils/htmlEscaping';
 import type { KakaoAddressSearchResult } from '@/types/kakao';
 
 import styles from './LocationMap.module.css';
@@ -112,7 +113,7 @@ export default function LocationMap({
 
         const markerTitle = kakaoMapConfig.markerTitle || venueName;
         const infowindow = new kakao.maps.InfoWindow({
-          content: `<div style="width:200px;text-align:center;padding:6px 0;font-size:12px;font-weight:bold;">${markerTitle}</div>`,
+          content: `<div style="width:200px;text-align:center;padding:6px 0;font-size:12px;font-weight:bold;">${escapeHtmlText(markerTitle)}</div>`,
         });
 
         infowindow.open(map, marker);
@@ -143,7 +144,7 @@ export default function LocationMap({
           });
 
           const infowindow = new kakao.maps.InfoWindow({
-            content: `<div style="width:200px;text-align:center;padding:6px 0;font-size:12px;font-weight:bold;">${venueName}</div>`,
+            content: `<div style="width:200px;text-align:center;padding:6px 0;font-size:12px;font-weight:bold;">${escapeHtmlText(venueName)}</div>`,
           });
 
           infowindow.open(map, marker);

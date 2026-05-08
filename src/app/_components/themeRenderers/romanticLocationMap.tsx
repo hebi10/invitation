@@ -7,6 +7,7 @@ import type {
   KakaoLatLng,
   KakaoMapInstance,
 } from '@/types/kakao';
+import { escapeHtmlText } from '@/utils/htmlEscaping';
 import { loadKakaoMapsSdk } from '@/utils/kakaoMaps';
 
 import styles from './romantic.module.css';
@@ -102,7 +103,7 @@ export default function RomanticLocationMap({
             });
 
             const infowindow = new kakao.maps.InfoWindow({
-              content: `<div style="width:200px;text-align:center;padding:6px 0;font-size:12px;font-weight:bold;">${markerTitle}</div>`,
+              content: `<div style="width:200px;text-align:center;padding:6px 0;font-size:12px;font-weight:bold;">${escapeHtmlText(markerTitle)}</div>`,
             });
 
             infowindow.open(map, marker);
