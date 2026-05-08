@@ -5,7 +5,7 @@ import type {
   GuideKind,
   ParentRole,
   PersonRole,
-} from '@/app/page-editor/pageEditorUtils';
+} from '@/app/page-wizard/pageWizardEditorUtils';
 import {
   getInvitationThemeLabel,
   getInvitationThemeWizardDescription,

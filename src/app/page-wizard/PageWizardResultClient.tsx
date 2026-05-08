@@ -6,7 +6,7 @@ import { useMemo } from 'react';
 import Link from 'next/link';
 
 import FirebaseAuthLoginCard from '@/app/_components/FirebaseAuthLoginCard';
-import { normalizeFormConfig } from '@/app/page-editor/pageEditorUtils';
+import { normalizeFormConfig } from '@/app/page-wizard/pageWizardEditorUtils';
 import { useAdmin } from '@/contexts';
 import {
   FIFTEEN_MINUTES_MS,

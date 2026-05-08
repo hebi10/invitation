@@ -1,6 +1,6 @@
 import type { BankAccount, PersonInfo } from '@/types/invitationPage';
 
-import styles from './page.module.css';
+import styles from './pageWizardEditorPanels.module.css';
 
 const MAX_REPEATABLE_ITEMS = 3;
 

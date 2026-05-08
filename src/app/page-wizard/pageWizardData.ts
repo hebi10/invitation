@@ -25,7 +25,7 @@ import {
   normalizeFormConfig,
   normalizePerson,
   prepareConfigForSave,
-} from '../page-editor/pageEditorUtils';
+} from './pageWizardEditorUtils';
 
 export const MAX_GALLERY_IMAGES = resolveInvitationFeatures(
   DEFAULT_INVITATION_PRODUCT_TIER

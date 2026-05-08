@@ -12,7 +12,7 @@ import type { CustomerOwnedEventSummary } from '@/services/customerEventService'
 import {
   cloneConfig,
   normalizeFormConfig,
-} from '@/app/page-editor/pageEditorUtils';
+} from '@/app/page-wizard/pageWizardEditorUtils';
 import { DEFAULT_GREETING_MESSAGE } from './pageWizardData';
 
 export function deriveEnglishNamesFromSlug(slug: string | null) {

@@ -1,7 +1,7 @@
 import {
   AccountSectionPanel,
   GuideSectionPanel,
-} from '@/app/page-editor/pageEditorPanels';
+} from '@/app/page-wizard/pageWizardEditorPanels';
 
 import styles from '../page.module.css';
 import { renderFieldMeta, type ExtraStepProps } from '../pageWizardShared';

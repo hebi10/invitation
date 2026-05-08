@@ -1,4 +1,4 @@
-import { PersonEditorCard } from '@/app/page-editor/pageEditorPanels';
+import { PersonEditorCard } from '@/app/page-wizard/pageWizardEditorPanels';
 
 import styles from '../page.module.css';
 import {

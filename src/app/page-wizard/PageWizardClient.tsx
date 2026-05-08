@@ -35,7 +35,7 @@ import {
   type GuideKind,
   type ParentRole,
   type PersonRole,
-} from '@/app/page-editor/pageEditorUtils';
+} from '@/app/page-wizard/pageWizardEditorUtils';
 import { useAdmin } from '@/contexts';
 import {
   appQueryKeys,

@@ -159,12 +159,9 @@ export default function AdminPagesTab({
           템플릿, 패키지, slug와 기본 정보를 먼저 설정해 주세요.
         </p>
         <div className={styles.tableActions}>
-          <a href="/page-editor" className="admin-button admin-button-primary" target="_blank" rel="noreferrer">
-            새 페이지 관리자 생성
-          </a>
           <a
             href={createWizardHref}
-            className="admin-button admin-button-secondary"
+            className="admin-button admin-button-primary"
             target="_blank"
             rel="noreferrer"
           >
@@ -373,12 +370,7 @@ export default function AdminPagesTab({
                               {filteredPages.length - ((currentPage - 1) * pageSize + index)}
                             </span>
                             <div>
-                              <a
-                                href={`/page-editor/${page.slug}`}
-                                target="_blank"
-                                rel="noreferrer"
-                                className={styles.primaryCellLink}
-                              >
+                              <div className={styles.primaryCellLink}>
                                 <p className={styles.tableTitle}>{page.displayName}</p>
                                 <p className={styles.tableSubtext}>{page.slug}</p>
                                 {page.createdAt ? (
@@ -386,7 +378,7 @@ export default function AdminPagesTab({
                                     {formatDateTime(page.createdAt)}
                                   </p>
                                 ) : null}
-                              </a>
+                              </div>
                               <select
                                 className="admin-select"
                                 value={page.productTier}
@@ -569,18 +561,10 @@ export default function AdminPagesTab({
                           <div className={styles.actionStack}>
                             <div className={styles.tableActions}>
                               <a
-                                href={`/page-editor/${page.slug}`}
-                                target="_blank"
-                                rel="noreferrer"
-                                className="admin-button admin-button-primary"
-                              >
-                                에디터
-                              </a>
-                              <a
                                 href={`/page-wizard/${page.slug}`}
                                 target="_blank"
                                 rel="noreferrer"
-                                className="admin-button admin-button-secondary"
+                                className="admin-button admin-button-primary"
                               >
                                 모바일
                               </a>
@@ -795,18 +779,10 @@ export default function AdminPagesTab({
                   <div className={styles.actionStack}>
                     <div className={styles.mobileCardActions}>
                       <a
-                        href={`/page-editor/${page.slug}`}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="admin-button admin-button-primary"
-                      >
-                        에디터
-                      </a>
-                      <a
                         href={`/page-wizard/${page.slug}`}
                         target="_blank"
                         rel="noreferrer"
-                        className="admin-button admin-button-secondary"
+                        className="admin-button admin-button-primary"
                       >
                         모바일
                       </a>
