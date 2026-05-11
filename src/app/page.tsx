@@ -80,13 +80,17 @@ export default function Home() {
 
           <div className={styles.heroLinks} aria-label="바로가기">
             {mainLinks.map((link) => (
-              'external' in link && link.external ? (
+              link.href !== '/admin' ? (
                 <a
                   key={link.href}
                   href={link.href}
                   target="_blank"
                   rel="noreferrer"
-                  className={styles.secondaryLink}
+                  className={
+                    link.variant === 'primary'
+                      ? styles.primaryLink
+                      : styles.secondaryLink
+                  }
                 >
                   <span>{link.label}</span>
                   <small>{link.description}</small>
@@ -95,11 +99,7 @@ export default function Home() {
                 <Link
                   key={link.href}
                   href={link.href}
-                  className={
-                    link.variant === 'primary'
-                      ? styles.primaryLink
-                      : styles.secondaryLink
-                  }
+                  className={styles.secondaryLink}
                 >
                   <span>{link.label}</span>
                   <small>{link.description}</small>
