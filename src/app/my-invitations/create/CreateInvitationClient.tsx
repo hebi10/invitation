@@ -330,7 +330,7 @@ export default function CreateInvitationClient() {
             </div>
             <div className={styles.summaryStack}>
               <span className={styles.summaryItem}>제작권 {pageCreationCreditTotal}개</span>
-              <span className={styles.summaryItem}>운영 티켓 {operationTicketBalance}장</span>
+              <span className={styles.summaryItem}>모바일 초대장 생성 티켓 {operationTicketBalance}장</span>
             </div>
           </div>
         </section>
@@ -467,7 +467,7 @@ export default function CreateInvitationClient() {
               {walletErrorMessage
                 ? '보유 제작권을 확인하지 못했습니다. 새로고침 후 다시 시도해 주세요.'
                 : operationTicketBalance > 0
-                  ? '운영 티켓은 보유 중이지만 새 이벤트 생성에는 제작권이 필요합니다. 관리자에게 제작권 지급을 요청해 주세요.'
+                  ? '모바일 초대장 생성 티켓은 보유 중이지만 새 이벤트 생성에는 제작권이 필요합니다. 관리자에게 제작권 지급을 요청해 주세요.'
                 : '사용 가능한 제작권이 없습니다. 새 이벤트 생성이 필요하면 관리자에게 문의해 주세요.'}
             </div>
           )}

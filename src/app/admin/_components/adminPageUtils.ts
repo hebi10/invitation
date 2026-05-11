@@ -13,6 +13,7 @@ import {
   getEventPreviewLinks,
   getWeddingPreviewThemeKeys,
 } from '@/lib/eventPreviewLinks';
+import { getPageWizardCreateHrefForEventType } from '@/app/page-wizard/pageWizardEventConfig';
 import type { StatusTone } from './StatusBadge';
 
 export type AdminTab =
@@ -188,19 +189,8 @@ export function getPageCategoryEventTypeFilter(
 }
 
 export function getPageCategoryCreateWizardHref(pageCategory: PageCategoryTabKey) {
-  switch (pageCategory) {
-    case 'birthday':
-      return '/birthday-wizard';
-    case 'first-birthday':
-      return '/first-birthday-wizard';
-    case 'general-event':
-      return '/general-event-wizard';
-    case 'opening':
-      return '/opening-wizard';
-    case 'invitation':
-    default:
-      return '/page-wizard';
-  }
+  const eventType = getPageCategoryEventTypeFilter(pageCategory);
+  return eventType ? getPageWizardCreateHrefForEventType(eventType) : '/page-wizard';
 }
 
 export function isEventAdminTab(tab: AdminTab): tab is EventAdminTab {

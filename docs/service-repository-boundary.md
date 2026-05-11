@@ -96,7 +96,7 @@
 - `/my-invitations`의 고객 방명록 조회/삭제는 `/api/customer/events/[slug]/comments`와 `/api/customer/events/[slug]/comments/[commentId]`를 사용하고, 서버에서 ownerUid를 다시 확인한다.
 
 ## 고객 이용권 지갑 경계
-- 고객 제작권과 운영 티켓 지급/소비 이력은 `src/server/repositories/customerWalletRepository.ts`가 Firestore `customerWallets` 경로를 전담한다.
+- 고객 제작권과 모바일 초대장 생성 티켓 지급/소비 이력은 `src/server/repositories/customerWalletRepository.ts`가 Firestore `customerWallets` 경로를 전담한다.
 - 관리자 지급은 `/api/admin/customers/wallet`을 통해서만 처리하고, 클라이언트는 `src/services/adminCustomerService.ts` 공개 함수를 호출한다.
 - 고객 지갑 조회는 `/api/customer/wallet`을 통해 서버가 Firebase ID token을 검증한 UID 기준으로만 반환한다.
 - 고객 청첩장 생성 API는 `/api/customer/events` `POST`에서 제작권 1개를 차감한 뒤 이벤트 초안을 만들고 소유권을 연결하며, 중간 실패 시 생성된 초안 정리와 제작권 환불을 시도한다.

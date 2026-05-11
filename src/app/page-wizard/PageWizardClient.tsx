@@ -9,23 +9,7 @@ import type { Swiper as SwiperType } from 'swiper';
 import { Pagination } from 'swiper/modules';
 import { Swiper, SwiperSlide } from 'swiper/react';
 
-import {
-  DEFAULT_BIRTHDAY_THEME,
-  isBirthdayThemeKey,
-} from '@/app/_components/birthday/birthdayThemes';
 import FirebaseAuthLoginCard from '@/app/_components/FirebaseAuthLoginCard';
-import {
-  DEFAULT_FIRST_BIRTHDAY_THEME,
-  isFirstBirthdayThemeKey,
-} from '@/app/_components/firstBirthday/firstBirthdayThemes';
-import {
-  GENERAL_EVENT_DEFAULT_THEME,
-  isGeneralEventThemeKey,
-} from '@/app/_components/generalEvent/generalEventThemes';
-import {
-  DEFAULT_OPENING_THEME,
-  isOpeningThemeKey,
-} from '@/app/_components/opening/openingThemes';
 import {
   cloneConfig,
   createEmptyAccount,
@@ -46,7 +30,6 @@ import {
   normalizeEventTypeKey,
   type EventTypeKey,
 } from '@/lib/eventTypes';
-import { DEFAULT_INVITATION_THEME } from '@/lib/invitationThemes';
 import {
   normalizeInvitationProductTier,
   resolveInvitationFeatures,
@@ -102,6 +85,10 @@ import {
   shouldSyncDerivedText,
 } from './pageWizardClientUtils';
 import { getWizardCopy } from './pageWizardCopy';
+import {
+  getDefaultThemeForEventType,
+  isThemeSelectableForEventType,
+} from './pageWizardEventConfig';
 import { getPageWizardPresentation } from './pageWizardPresentation';
 import {
   getNoticeClassName,
@@ -128,7 +115,6 @@ import {
   VenueStep,
 } from './steps';
 
-const DEFAULT_THEME: InvitationThemeKey = DEFAULT_INVITATION_THEME;
 const DEFAULT_SEED_SLUG = getInvitationPageSeedTemplates()[0]?.seedSlug ?? null;
 const IS_DEV_NOTICE_MODE = process.env.NODE_ENV !== 'production';
 
@@ -166,7 +152,9 @@ export default function PageWizardClient({
 
   const [formState, setFormState] = useState<InvitationPageSeed | null>(null);
   const [eventType, setEventType] = useState<EventTypeKey>(requestedEventType);
-  const [defaultTheme, setDefaultTheme] = useState<InvitationThemeKey>(DEFAULT_THEME);
+  const [defaultTheme, setDefaultTheme] = useState<InvitationThemeKey>(
+    getDefaultThemeForEventType(requestedEventType)
+  );
   const {
     published,
     setPublished,
@@ -464,7 +452,13 @@ export default function PageWizardClient({
       setSlugInput(initialSlug ?? editableConfig.slug);
       setHasManualSlugOverride(true);
       applyPublishedState(editableConfig.published);
-      setDefaultTheme(editableConfig.defaultTheme ?? DEFAULT_THEME);
+      const nextDefaultTheme =
+        editableConfig.defaultTheme ?? getDefaultThemeForEventType(nextEventType);
+      setDefaultTheme(
+        isThemeSelectableForEventType(nextEventType, nextDefaultTheme)
+          ? nextDefaultTheme
+          : getDefaultThemeForEventType(nextEventType)
+      );
       setLastSavedAt(toDate(editableConfig.lastSavedAt));
       setRequiresOwnershipClaim(false);
       setAccessErrorMessage(null);
@@ -783,7 +777,7 @@ export default function PageWizardClient({
       setGroomEnglishName('');
       setBrideEnglishName('');
       resetPublishedState();
-      setDefaultTheme(DEFAULT_THEME);
+      setDefaultTheme(getDefaultThemeForEventType(requestedEventType));
       setLastSavedAt(null);
       setRequiresOwnershipClaim(false);
       setAccessErrorMessage(null);
@@ -913,41 +907,10 @@ export default function PageWizardClient({
       return;
     }
 
-    if (eventType === 'first-birthday') {
-      setDefaultTheme((current) =>
-        isFirstBirthdayThemeKey(current) ? current : DEFAULT_FIRST_BIRTHDAY_THEME
-      );
-      return;
-    }
-
-    if (eventType === 'birthday') {
-      setDefaultTheme((current) =>
-        isBirthdayThemeKey(current) ? current : DEFAULT_BIRTHDAY_THEME
-      );
-      return;
-    }
-
-    if (eventType === 'general-event') {
-      setDefaultTheme((current) =>
-        isGeneralEventThemeKey(current) ? current : GENERAL_EVENT_DEFAULT_THEME
-      );
-      return;
-    }
-
-    if (eventType === 'opening') {
-      setDefaultTheme((current) =>
-        isOpeningThemeKey(current) ? current : DEFAULT_OPENING_THEME
-      );
-      return;
-    }
-
     setDefaultTheme((current) =>
-      isFirstBirthdayThemeKey(current) ||
-      isBirthdayThemeKey(current) ||
-      isGeneralEventThemeKey(current) ||
-      isOpeningThemeKey(current)
-        ? DEFAULT_THEME
-        : current
+      isThemeSelectableForEventType(eventType, current)
+        ? current
+        : getDefaultThemeForEventType(eventType)
     );
   }, [eventType, initialSlug]);
 

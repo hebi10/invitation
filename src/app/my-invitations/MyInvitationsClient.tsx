@@ -604,7 +604,7 @@ export default function MyInvitationsClient() {
     if (!isAdminLoggedIn) {
       setCreateEventNotice(
         operationTicketBalance > 0
-          ? '운영 티켓은 보유 중이지만 새 이벤트 생성에는 제작권이 필요합니다. 제작권이 필요하면 관리자에게 문의해 주세요.'
+          ? '모바일 초대장 생성 티켓은 보유 중이지만 새 이벤트 생성에는 제작권이 필요합니다. 제작권이 필요하면 관리자에게 문의해 주세요.'
           : '보유한 제작권이 없습니다. 새 이벤트가 필요하면 관리자에게 문의해 주세요.'
       );
       return;
@@ -729,7 +729,7 @@ export default function MyInvitationsClient() {
               <span className={styles.summaryItem}>
                 보유 제작권 {pageCreationCreditTotal}개
               </span>
-              <span className={styles.summaryItem}>운영 티켓 {operationTicketBalance}장</span>
+              <span className={styles.summaryItem}>모바일 초대장 생성 티켓 {operationTicketBalance}장</span>
             </div>
           </div>
 

@@ -430,7 +430,7 @@ export function useAdminData({
       const grantLabel =
         grant.kind === 'pageCreation'
           ? `${(grant.tier ?? 'standard').toUpperCase()} 제작권 ${grant.quantity}개`
-          : `운영 티켓 ${grant.quantity}장`;
+          : `모바일 초대장 생성 티켓 ${grant.quantity}장`;
       const approved = await confirm({
         title: '고객에게 이용권을 지급할까요?',
         description: `${accountName} 계정에 ${grantLabel}를 지급합니다.`,

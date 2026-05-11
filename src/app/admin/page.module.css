@@ -950,9 +950,22 @@
   gap: 8px;
 }
 
-.accountConnectPanel select {
+.accountConnectControls {
+  display: grid;
+  grid-template-columns: minmax(180px, 0.75fr) minmax(220px, 1.25fr);
+  gap: 8px;
+}
+
+.accountConnectPanel .inlineInputGroup > select {
   min-width: min(360px, 100%);
   flex: 1 1 360px;
+}
+
+.accountConnectControls select,
+.accountConnectControls input {
+  min-width: 0;
+  width: 100%;
+  flex: 0 0 auto;
 }
 
 .walletPanel {
@@ -1075,6 +1088,10 @@
   }
 
   .walletGrantGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .accountConnectControls {
     grid-template-columns: 1fr;
   }
 }

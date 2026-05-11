@@ -7,15 +7,12 @@ import {
   getAvailableInvitationVariantKeys,
   type InvitationVariantKey,
 } from '@/lib/invitationVariants';
-import { INVITATION_THEME_KEYS } from '@/lib/invitationThemes';
-import { getSelectableFirstBirthdayThemeKeys } from '@/app/_components/firstBirthday/firstBirthdayThemes';
 import {
   GENERAL_EVENT_DEFAULT_THEME,
-  GENERAL_EVENT_THEME_KEYS,
   getGeneralEventTheme,
+  type GeneralEventThemeKey,
   normalizeGeneralEventThemeKey,
 } from '@/app/_components/generalEvent/generalEventThemes';
-import { OPENING_THEME_KEYS } from '@/app/_components/opening/openingThemes';
 import {
   getProductTierDescription,
   getProductTierLabel,
@@ -24,6 +21,7 @@ import {
   PRODUCT_TIERS,
   type ThemeStepProps,
 } from '../pageWizardShared';
+import { getSelectableThemeKeysForEventType } from '../pageWizardEventConfig';
 
 export default function ThemeStep({
   eventType,
@@ -41,15 +39,7 @@ export default function ThemeStep({
     formState.pageData?.generalEventTheme,
     GENERAL_EVENT_DEFAULT_THEME
   );
-  const selectableThemeKeys =
-    eventType === 'first-birthday'
-      ? getSelectableFirstBirthdayThemeKeys()
-      : eventType === 'opening'
-        ? [...OPENING_THEME_KEYS]
-      : INVITATION_THEME_KEYS.filter(
-            (theme) =>
-              !theme.startsWith('first-birthday-') && !theme.startsWith('opening-')
-          );
+  const selectableThemeKeys = getSelectableThemeKeysForEventType(eventType);
 
   useEffect(() => {
     if (isSelectionLocked && openChoicePanel) {
@@ -106,7 +96,7 @@ export default function ThemeStep({
           </button>
           {openChoicePanel === 'theme' ? (
             <div className={styles.choiceOptions}>
-              {GENERAL_EVENT_THEME_KEYS.map((themeKey) => {
+              {(selectableThemeKeys as GeneralEventThemeKey[]).map((themeKey) => {
                 const theme = getGeneralEventTheme(themeKey);
                 const isActive = selectedGeneralEventTheme === themeKey;
 

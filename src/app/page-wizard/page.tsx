@@ -1,8 +1,14 @@
 import { Suspense } from 'react';
 
+import { redirect } from 'next/navigation';
+
 import { normalizeEventTypeKey, type EventTypeKey } from '@/lib/eventTypes';
 
 import PageWizardClient from './PageWizardClient';
+import {
+  getPageWizardCreateHrefForEventType,
+  isDedicatedPageWizardEventType,
+} from './pageWizardEventConfig';
 
 export const dynamic = 'force-dynamic';
 
@@ -36,6 +42,10 @@ export default async function PageWizardCreatePage({
   const eventType = normalizeEventTypeKey(
     getSearchParamValue(resolvedSearchParams.eventType)
   );
+
+  if (isDedicatedPageWizardEventType(eventType)) {
+    redirect(getPageWizardCreateHrefForEventType(eventType));
+  }
 
   return (
     <Suspense fallback={<PageWizardFallback eventType={eventType} />}>

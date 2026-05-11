@@ -248,7 +248,7 @@ function applyWalletAdjustment(
   } else {
     nextOperationTicketBalance += quantity * multiplier;
     if (nextOperationTicketBalance < 0) {
-      throw new Error('보유 운영 티켓이 부족합니다.');
+      throw new Error('보유 모바일 초대장 생성 티켓이 부족합니다.');
     }
   }
 

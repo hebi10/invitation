@@ -44,6 +44,7 @@
     "test:birthday-event-rendering": "node --experimental-strip-types --loader ./scripts/ts-path-loader.mjs scripts/test-birthday-event-rendering.mts",
     "test:opening-event-rendering": "node --experimental-strip-types --loader ./scripts/ts-path-loader.mjs scripts/test-opening-event-rendering.mts",
     "test:page-wizard-event-type-lock": "node --experimental-strip-types --loader ./scripts/ts-path-loader.mjs scripts/test-page-wizard-event-type-lock.mts",
+    "test:admin-customer-assignment-filters": "node --experimental-strip-types --loader ./scripts/ts-path-loader.mjs scripts/test-admin-customer-account-assignment-filters.mts",
     "test:dummy-event-seeds": "node --experimental-strip-types --loader ./scripts/ts-path-loader.mjs scripts/test-dummy-event-seeds.mts",
     "test:admin-event-preview-links": "node --experimental-strip-types --loader ./scripts/ts-path-loader.mjs scripts/test-admin-event-preview-links.mts",
     "test:first-birthday-page-rendering": "node --experimental-strip-types --loader ./scripts/ts-path-loader.mjs scripts/test-first-birthday-page-rendering.mts",

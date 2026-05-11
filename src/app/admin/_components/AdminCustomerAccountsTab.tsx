@@ -11,6 +11,11 @@ import type {
 import type { InvitationProductTier } from '@/types/invitationPage';
 
 import { EmptyState, FilterToolbar, Pagination, StatusBadge } from '.';
+import {
+  filterAssignableEvents,
+  getAssignableEventTypeOptions,
+  type AssignmentEventTypeFilter,
+} from './adminCustomerAssignmentFilters';
 import { formatDateTime } from './adminPageUtils';
 import styles from '../page.module.css';
 
@@ -126,6 +131,10 @@ export default function AdminCustomerAccountsTab({
   const [searchQuery, setSearchQuery] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [draftAssignments, setDraftAssignments] = useState<Record<string, string>>({});
+  const [draftAssignmentEventTypes, setDraftAssignmentEventTypes] = useState<
+    Record<string, AssignmentEventTypeFilter>
+  >({});
+  const [draftAssignmentQueries, setDraftAssignmentQueries] = useState<Record<string, string>>({});
   const [selectedLinkedEvents, setSelectedLinkedEvents] = useState<Record<string, string>>({});
   const [grantDrafts, setGrantDrafts] = useState<
     Record<
@@ -163,6 +172,10 @@ export default function AdminCustomerAccountsTab({
     () => accounts.reduce((sum, account) => sum + account.linkedEvents.length, 0),
     [accounts]
   );
+  const assignableEventTypeOptions = useMemo(
+    () => getAssignableEventTypeOptions(unassignedEvents),
+    [unassignedEvents]
+  );
   const totalPages = Math.max(
     1,
     Math.ceil(filteredAccounts.length / CUSTOMER_ACCOUNTS_PAGE_SIZE)
@@ -193,6 +206,43 @@ export default function AdminCustomerAccountsTab({
       account.linkedEvents.find((event) => event.slug === selectedSlug) ??
       account.linkedEvents[0]
     );
+  };
+
+  const getDraftAssignmentEventType = (uid: string) =>
+    draftAssignmentEventTypes[uid] ?? 'all';
+
+  const getDraftAssignmentQuery = (uid: string) => draftAssignmentQueries[uid] ?? '';
+
+  const getFilteredAssignableEvents = (uid: string) =>
+    filterAssignableEvents(
+      unassignedEvents,
+      getDraftAssignmentEventType(uid),
+      getDraftAssignmentQuery(uid)
+    );
+
+  const updateDraftAssignmentEventType = (
+    uid: string,
+    eventType: AssignmentEventTypeFilter
+  ) => {
+    setDraftAssignmentEventTypes((current) => ({
+      ...current,
+      [uid]: eventType,
+    }));
+    setDraftAssignments((current) => ({
+      ...current,
+      [uid]: '',
+    }));
+  };
+
+  const updateDraftAssignmentQuery = (uid: string, query: string) => {
+    setDraftAssignmentQueries((current) => ({
+      ...current,
+      [uid]: query,
+    }));
+    setDraftAssignments((current) => ({
+      ...current,
+      [uid]: '',
+    }));
   };
 
   const getGrantDraft = (uid: string) =>
@@ -244,15 +294,15 @@ export default function AdminCustomerAccountsTab({
             PREMIUM {account.wallet.pageCreationCredits.premium}
           </span>
           <span className={styles.walletMetric}>
-            운영 티켓 {account.wallet.operationTicketBalance}장
+            모바일 초대장 생성 티켓 {account.wallet.operationTicketBalance}장
           </span>
         </div>
         <p className={styles.tableSubtext}>
           최근 갱신 · {formatWalletUpdatedAt(account.wallet.updatedAt)}
         </p>
         <p className={styles.tableSubtext}>
-          새 이벤트 생성은 STANDARD/DELUXE/PREMIUM 제작권만 사용합니다. 운영 티켓은 생성된
-          청첩장 운영용입니다.
+          새 이벤트 생성은 STANDARD/DELUXE/PREMIUM 제작권만 사용합니다. 모바일 초대장 생성
+          티켓은 모바일 앱에서 생성/배정되는 초대장용입니다.
         </p>
 
         <div className={styles.walletGrantGrid}>
@@ -312,7 +362,7 @@ export default function AdminCustomerAccountsTab({
 
         <div className={styles.walletGrantGrid}>
           <label className="admin-field">
-            <span className="admin-field-label">운영 티켓 수량</span>
+            <span className="admin-field-label">모바일 초대장 생성 티켓 수량</span>
             <input
               className="admin-input"
               type="number"
@@ -358,7 +408,7 @@ export default function AdminCustomerAccountsTab({
               })
             }
           >
-            {isGrantingOperationTicket ? '지급 중..' : '운영 티켓 지급'}
+            {isGrantingOperationTicket ? '지급 중..' : '모바일 초대장 생성 티켓 지급'}
           </button>
         </div>
 
@@ -372,7 +422,7 @@ export default function AdminCustomerAccountsTab({
                     {getLedgerDirectionLabel(entry.direction)} ·{' '}
                     {entry.kind === 'pageCreation'
                       ? `${entry.tier?.toUpperCase() ?? '제작권'} ${entry.quantity}개`
-                      : `운영 티켓 ${entry.quantity}장`}
+                      : `모바일 초대장 생성 티켓 ${entry.quantity}장`}
                   </strong>
                   <span>
                     {getLedgerSourceLabel(entry.source)} · {getLedgerStatusLabel(entry.status)}
@@ -472,6 +522,9 @@ export default function AdminCustomerAccountsTab({
   const renderAccountCard = (account: AdminCustomerAccountSummary, index: number) => {
     const providerLabels = getProviderLabels(account.providerIds);
     const selectedSlug = draftAssignments[account.uid] ?? '';
+    const assignmentEventType = getDraftAssignmentEventType(account.uid);
+    const assignmentQuery = getDraftAssignmentQuery(account.uid);
+    const filteredAssignableEvents = getFilteredAssignableEvents(account.uid);
     const isAssigning = ownershipActionToken === `assign:${account.uid}:${selectedSlug}`;
     const isDeletingAccount = deletingCustomerUid === account.uid;
 
@@ -531,15 +584,50 @@ export default function AdminCustomerAccountsTab({
             <div className={styles.accountCardSectionHeader}>
               <h4 className={styles.accountCardSectionTitle}>새 청첩장 연결</h4>
               <StatusBadge tone={unassignedEvents.length > 0 ? 'warning' : 'neutral'}>
-                미연결 {unassignedEvents.length}개
+                전체 미연결 {unassignedEvents.length}개
               </StatusBadge>
             </div>
             <div className={styles.accountConnectPanel}>
+              <div className={styles.accountConnectControls}>
+                <label className="admin-field">
+                  <span className="admin-field-label">이벤트 종류</span>
+                  <select
+                    className="admin-input"
+                    value={assignmentEventType}
+                    disabled={account.missingAuthUser || !unassignedEvents.length}
+                    onChange={(event) =>
+                      updateDraftAssignmentEventType(
+                        account.uid,
+                        event.target.value as AssignmentEventTypeFilter
+                      )
+                    }
+                  >
+                    {assignableEventTypeOptions.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label className="admin-field">
+                  <span className="admin-field-label">초대장 검색</span>
+                  <input
+                    className="admin-input"
+                    type="search"
+                    value={assignmentQuery}
+                    placeholder="이름 또는 URL 검색"
+                    disabled={account.missingAuthUser || !unassignedEvents.length}
+                    onChange={(event) =>
+                      updateDraftAssignmentQuery(account.uid, event.target.value)
+                    }
+                  />
+                </label>
+              </div>
               <div className={styles.inlineInputGroup}>
                 <select
                   className="admin-input"
                   value={selectedSlug}
-                  disabled={account.missingAuthUser || !unassignedEvents.length}
+                  disabled={account.missingAuthUser || !filteredAssignableEvents.length}
                   onChange={(event) =>
                     setDraftAssignments((current) => ({
                       ...current,
@@ -548,7 +636,7 @@ export default function AdminCustomerAccountsTab({
                   }
                 >
                   <option value="">연결할 청첩장 선택</option>
-                  {unassignedEvents.map((event) => (
+                  {filteredAssignableEvents.map((event) => (
                     <option key={event.slug} value={event.slug}>
                       [{getEventTypeDisplayLabel(event.eventType)}] {event.displayName} ({event.slug})
                     </option>
@@ -557,7 +645,12 @@ export default function AdminCustomerAccountsTab({
                 <button
                   type="button"
                   className="admin-button admin-button-primary"
-                  disabled={account.missingAuthUser || !selectedSlug || isAssigning}
+                  disabled={
+                    account.missingAuthUser ||
+                    !selectedSlug ||
+                    !filteredAssignableEvents.some((event) => event.slug === selectedSlug) ||
+                    isAssigning
+                  }
                   onClick={() => onAssign(account.uid, selectedSlug)}
                 >
                   {isAssigning ? '연결 중..' : '청첩장 연결'}
@@ -567,7 +660,9 @@ export default function AdminCustomerAccountsTab({
                 {account.missingAuthUser
                   ? '삭제된 계정에는 청첩장을 연결할 수 없습니다.'
                   : unassignedEvents.length > 0
-                    ? '미연결 청첩장을 선택하면 고객 페이지에서 바로 관리할 수 있습니다.'
+                    ? filteredAssignableEvents.length > 0
+                      ? `선택 조건에 맞는 미연결 초대장 ${filteredAssignableEvents.length}개 중에서 연결할 수 있습니다.`
+                      : '선택한 조건에 맞는 미연결 초대장이 없습니다.'
                     : '현재 바로 연결할 수 있는 미연결 청첩장이 없습니다.'}
               </span>
             </div>
@@ -587,7 +682,7 @@ export default function AdminCustomerAccountsTab({
             <div className={styles.accountCardSectionHeader}>
               <h4 className={styles.accountCardSectionTitle}>보유 이용권</h4>
               <StatusBadge tone="neutral">
-                운영 티켓 {account.wallet.operationTicketBalance}장
+                모바일 초대장 생성 티켓 {account.wallet.operationTicketBalance}장
               </StatusBadge>
             </div>
             {renderWalletManager(account)}

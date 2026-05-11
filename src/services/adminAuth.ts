@@ -49,6 +49,7 @@ type FirebaseReloadableAuthUserLike = FirebaseAuthUserLike & {
 
 const ADMIN_SESSION_TIMEOUT_MS = 10000;
 const FIREBASE_ADMIN_AUTH_INIT_ERROR = 'Firebase Admin Auth를 초기화하지 못했습니다.';
+const INVALID_EMAIL_OR_PASSWORD_MESSAGE = '아이디 또는 비밀번호가 올바르지 않습니다.';
 
 function createAdminSessionTimeoutError() {
   return new Error('관리자 권한 확인 시간이 초과되었습니다. 다시 로그인해 주세요.');
@@ -56,6 +57,29 @@ function createAdminSessionTimeoutError() {
 
 function canUseLocalClientAdminFallback() {
   return process.env.NODE_ENV !== 'production';
+}
+
+export function getFirebaseAuthErrorMessage(error: unknown) {
+  const errorCode =
+    typeof error === 'object' && error !== null && 'code' in error
+      ? String((error as { code?: unknown }).code ?? '')
+      : '';
+  const errorMessage = error instanceof Error ? error.message.trim() : '';
+
+  if (
+    errorCode === 'auth/invalid-credential' ||
+    errorCode === 'auth/invalid-email' ||
+    errorCode === 'auth/user-not-found' ||
+    errorCode === 'auth/wrong-password' ||
+    errorMessage.includes('auth/invalid-credential') ||
+    errorMessage.includes('auth/invalid-email') ||
+    errorMessage.includes('auth/user-not-found') ||
+    errorMessage.includes('auth/wrong-password')
+  ) {
+    return INVALID_EMAIL_OR_PASSWORD_MESSAGE;
+  }
+
+  return errorMessage || null;
 }
 
 function isFirebaseAdminAuthInitError(error: unknown) {
@@ -238,11 +262,16 @@ export async function loginFirebaseUser(
     throw new Error('Firebase Auth가 초기화되지 않았습니다.');
   }
 
-  const credential = await authModule.signInWithEmailAndPassword(
-    auth,
-    email.trim(),
-    password
-  );
+  let credential: Awaited<ReturnType<typeof authModule.signInWithEmailAndPassword>>;
+  try {
+    credential = await authModule.signInWithEmailAndPassword(
+      auth,
+      email.trim(),
+      password
+    );
+  } catch (error) {
+    throw new Error(getFirebaseAuthErrorMessage(error) ?? '로그인에 실패했습니다.');
+  }
 
   return {
     success: true,
