@@ -9,21 +9,9 @@ export const metadata: Metadata = {
   description:
     '예식 초대부터 공유, 방명록, 사진 관리, 추억 페이지까지 이어지는 모바일 청첩장 서비스입니다.',
   icons: {
-    icon: [
-      {
-        url: '/codex-app-icon.png',
-        type: 'image/png',
-        sizes: '1024x1024',
-      },
-    ],
-    shortcut: '/codex-app-icon.png',
-    apple: [
-      {
-        url: '/codex-app-icon.png',
-        type: 'image/png',
-        sizes: '1024x1024',
-      },
-    ],
+    icon: '/favicon.ico',
+    shortcut: '/favicon.ico',
+    apple: '/favicon.ico',
   },
 };
 
