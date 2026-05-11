@@ -111,3 +111,7 @@ function loadSnapshot(): MemoryPageMetadataSnapshotPayload {
 export function getMemoryPageMetadataBySlug(pageSlug: string) {
   return loadSnapshot().pages[pageSlug] ?? null;
 }
+
+export function getMemoryPageMetadataSlugs() {
+  return Object.keys(loadSnapshot().pages);
+}

@@ -331,10 +331,12 @@ export async function saveServerOptimizedEditableImage({
   pageSlug,
   file,
   assetKind,
+  uploadSessionId,
 }: {
   pageSlug: string;
   file: File;
   assetKind: EditableImageAssetKind;
+  uploadSessionId?: string | null;
 }): Promise<ServerEditableImageUploadResult> {
   const normalizedPageSlug = pageSlug.trim();
   if (!normalizedPageSlug) {
@@ -393,6 +395,7 @@ export async function saveServerOptimizedEditableImage({
         metadata: {
           pageSlug: normalizedPageSlug,
           assetKind,
+          ...(uploadSessionId ? { uploadSessionId } : {}),
           originalFileName: file.name,
           firebaseStorageDownloadTokens: originalDownloadToken,
           variant: 'original',
@@ -406,6 +409,7 @@ export async function saveServerOptimizedEditableImage({
         metadata: {
           pageSlug: normalizedPageSlug,
           assetKind,
+          ...(uploadSessionId ? { uploadSessionId } : {}),
           originalFileName: file.name,
           firebaseStorageDownloadTokens: downloadToken,
           variant: 'content',
@@ -419,6 +423,7 @@ export async function saveServerOptimizedEditableImage({
         metadata: {
           pageSlug: normalizedPageSlug,
           assetKind,
+          ...(uploadSessionId ? { uploadSessionId } : {}),
           originalFileName: file.name,
           firebaseStorageDownloadTokens: thumbnailDownloadToken,
           variant: 'thumbnail',

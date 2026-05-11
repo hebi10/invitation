@@ -4,28 +4,28 @@ import {
   getBirthdayThemeLabel,
   isBirthdayThemeKey,
   type BirthdayThemeKey,
-} from '@/app/_components/birthday/birthdayThemes';
+} from '@/lib/birthdayThemes';
 import {
   DEFAULT_FIRST_BIRTHDAY_THEME,
   FIRST_BIRTHDAY_THEME_KEYS,
   getFirstBirthdayThemeDefinition,
   isFirstBirthdayThemeKey,
   type FirstBirthdayThemeKey,
-} from '@/app/_components/firstBirthday/firstBirthdayThemes';
+} from '@/lib/firstBirthdayThemes';
 import {
   GENERAL_EVENT_DEFAULT_THEME,
   GENERAL_EVENT_THEME_KEYS,
   getGeneralEventTheme,
   isGeneralEventThemeKey,
   type GeneralEventThemeKey,
-} from '@/app/_components/generalEvent/generalEventThemes';
+} from '@/lib/generalEventThemes';
 import {
   DEFAULT_OPENING_THEME,
   OPENING_THEME_KEYS,
   getOpeningTheme,
   isOpeningThemeKey,
   type OpeningThemeKey,
-} from '@/app/_components/opening/openingThemes';
+} from '@/lib/openingThemes';
 import { normalizeEventTypeKey, type EventTypeKey } from '@/lib/eventTypes';
 import {
   buildInvitationThemeRoutePath,

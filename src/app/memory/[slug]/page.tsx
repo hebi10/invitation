@@ -1,14 +1,19 @@
 import type { Metadata } from 'next';
 
 import { getAllWeddingPageSlugs, getWeddingPageBySlug } from '@/config/weddingPages';
-import { getMemoryPageMetadataBySlug } from '@/lib/memoryPageMetadataSnapshot';
+import {
+  getMemoryPageMetadataBySlug,
+  getMemoryPageMetadataSlugs,
+} from '@/lib/memoryPageMetadataSnapshot';
 
 import MemoryPageClient from './MemoryPageClient';
 
 export const dynamicParams = false;
 
 export function generateStaticParams() {
-  return getAllWeddingPageSlugs().map((slug) => ({ slug }));
+  return Array.from(
+    new Set([...getAllWeddingPageSlugs(), ...getMemoryPageMetadataSlugs()])
+  ).map((slug) => ({ slug }));
 }
 
 function buildDefaultMetadata(slug: string) {

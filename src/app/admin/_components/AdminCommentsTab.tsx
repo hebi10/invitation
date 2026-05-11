@@ -1,4 +1,4 @@
-import type { Comment } from '@/services';
+import type { Comment } from '@/services/commentService';
 
 import { EmptyState, FilterToolbar, Pagination, StatusBadge } from '.';
 import {

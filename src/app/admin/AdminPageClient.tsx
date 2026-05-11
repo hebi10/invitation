@@ -7,7 +7,7 @@ import FirebaseAuthLoginCard from '@/app/_components/FirebaseAuthLoginCard';
 import { DisplayPeriodManager, ImageManager, MemoryPageManager } from '@/components/admin';
 import { useAdmin } from '@/contexts';
 import { getEventTypeDisplayLabel } from '@/lib/eventTypes';
-import type { InvitationPageSummary } from '@/services';
+import type { InvitationPageSummary } from '@/services/invitationPageService';
 
 import {
   AdminCommentsTab,

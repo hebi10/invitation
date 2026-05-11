@@ -3,7 +3,7 @@ import {
   listEnabledEventTypes,
   type EventTypeKey,
 } from '@/lib/eventTypes';
-import type { AdminCustomerLinkedEventSummary } from '@/services';
+import type { AdminCustomerLinkedEventSummary } from '@/services/adminCustomerService';
 
 export type AssignmentEventTypeFilter = 'all' | EventTypeKey;
 

@@ -7,7 +7,7 @@ import { buildEventPreviewPath } from '@/lib/eventPreviewLinks';
 import type {
   AdminCustomerAccountSummary,
   AdminCustomerLinkedEventSummary,
-} from '@/services';
+} from '@/services/adminCustomerService';
 import type { InvitationProductTier } from '@/types/invitationPage';
 
 import { EmptyState, FilterToolbar, Pagination, StatusBadge } from '.';

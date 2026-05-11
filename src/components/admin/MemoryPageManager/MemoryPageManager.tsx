@@ -10,10 +10,12 @@ import {
 import { useAdmin } from '@/contexts';
 import {
   getAllManagedInvitationPages,
+  type InvitationPageSummary,
+} from '@/services/invitationPageService';
+import {
   getComments,
   type Comment,
-  type InvitationPageSummary,
-} from '@/services';
+} from '@/services/commentService';
 import {
   backfillSelectedComments,
   buildMemoryPageUrl,

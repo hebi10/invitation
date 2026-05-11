@@ -5,11 +5,13 @@ import { useEffect, useMemo, useState } from 'react';
 import {
   deleteDisplayPeriod,
   getAllDisplayPeriods,
-  getAllManagedInvitationPages,
   setDisplayPeriod,
   type DisplayPeriod,
+} from '@/services/displayPeriodService';
+import {
+  getAllManagedInvitationPages,
   type InvitationPageSummary,
-} from '@/services';
+} from '@/services/invitationPageService';
 import {
   EmptyState,
   FilterToolbar,

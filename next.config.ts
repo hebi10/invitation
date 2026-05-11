@@ -21,6 +21,22 @@ const contentSecurityPolicyReportOnly = [
   "upgrade-insecure-requests",
 ].join("; ");
 
+const contentSecurityPolicy = [
+  "default-src 'self'",
+  "base-uri 'self'",
+  "frame-ancestors 'none'",
+  "object-src 'none'",
+  "img-src 'self' data: blob: https://firebasestorage.googleapis.com https://*.googleusercontent.com https://*.kakaocdn.net",
+  "media-src 'self' data: blob: https://firebasestorage.googleapis.com",
+  "font-src 'self' data:",
+  "style-src 'self' 'unsafe-inline'",
+  "script-src 'self' 'unsafe-inline' https://t1.kakaocdn.net https://dapi.kakao.com",
+  "connect-src 'self' https://*.googleapis.com https://*.firebaseio.com https://firebasestorage.googleapis.com https://api.revenuecat.com https://dapi.kakao.com",
+  "frame-src 'self' https://*.firebaseapp.com",
+  "form-action 'self'",
+  "upgrade-insecure-requests",
+].join("; ");
+
 const nextConfig: NextConfig = {
   trailingSlash: true,
   ...(shouldDisableWebpackBuildWorker
@@ -52,8 +68,8 @@ const nextConfig: NextConfig = {
         value: "camera=(), microphone=(), geolocation=()",
       },
       {
-        key: "Content-Security-Policy-Report-Only",
-        value: contentSecurityPolicyReportOnly,
+        key: isProduction ? "Content-Security-Policy" : "Content-Security-Policy-Report-Only",
+        value: isProduction ? contentSecurityPolicy : contentSecurityPolicyReportOnly,
       },
       ...(isProduction
         ? [

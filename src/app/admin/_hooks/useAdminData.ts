@@ -20,22 +20,28 @@ import {
   assignAdminCustomerEventOwnership,
   clearAdminCustomerEventOwnership,
   deleteAdminCustomerAccount,
-  deleteAdminEventByPageSlug,
-  deleteComment,
   getAdminCustomerAccountsSnapshot,
-  getAdminDashboardSummary,
-  getAllComments,
-  getAllManagedInvitationPages,
   grantAdminCustomerWalletCredit,
+  type AdminCustomerAccountsSnapshot,
+} from '@/services/adminCustomerService';
+import {
+  getAdminDashboardSummary,
+  type AdminDashboardSummarySnapshot,
+} from '@/services/adminDashboardService';
+import { deleteAdminEventByPageSlug } from '@/services/adminEventService';
+import {
+  deleteComment,
+  getAllComments,
+  type Comment,
+  type CommentSummary,
+} from '@/services/commentService';
+import {
+  getAllManagedInvitationPages,
   setInvitationPageProductTier,
   setInvitationPagePublished,
   setInvitationPageVariantAvailability,
-  type AdminCustomerAccountsSnapshot,
-  type AdminDashboardSummarySnapshot,
-  type Comment,
-  type CommentSummary,
   type InvitationPageSummary,
-} from '@/services';
+} from '@/services/invitationPageService';
 import type { InvitationProductTier } from '@/types/invitationPage';
 
 import { RECENT_COMMENT_DAYS, type AdminTab } from '../_components/adminPageUtils';

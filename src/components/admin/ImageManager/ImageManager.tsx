@@ -5,13 +5,15 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useAdmin } from '@/contexts';
 import type { EventTypeKey } from '@/lib/eventTypes';
 import {
-  uploadImage,
   deleteImage,
   getAllPageImages,
+  uploadImage,
+  type UploadedImage,
+} from '@/services/imageService';
+import {
   getAllManagedInvitationPages,
   type InvitationPageSummary,
-  type UploadedImage,
-} from '@/services';
+} from '@/services/invitationPageService';
 import {
   EmptyState,
   FilterToolbar,

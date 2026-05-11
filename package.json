@@ -50,6 +50,7 @@
     "test:first-birthday-page-rendering": "node --experimental-strip-types --loader ./scripts/ts-path-loader.mjs scripts/test-first-birthday-page-rendering.mts",
     "test:first-birthday-hydration-stability": "node --experimental-strip-types --loader ./scripts/ts-path-loader.mjs scripts/test-first-birthday-hydration-stability.mts",
     "test:event-input-box-sizing": "node --experimental-strip-types --loader ./scripts/ts-path-loader.mjs scripts/test-event-input-box-sizing.mts",
+    "test:project-guardrails": "node --experimental-strip-types --loader ./scripts/ts-path-loader.mjs scripts/test-project-guardrails.mts",
     "seed:dummy-events": "node --experimental-strip-types --loader ./scripts/ts-path-loader.mjs scripts/seed-dummy-events.mts",
     "test:rules": "firebase emulators:exec --only firestore \"node --experimental-strip-types --loader ./scripts/ts-path-loader.mjs scripts/test-firestore-rules-emulator.mts\"",
     "test:slug-index": "node --experimental-strip-types --loader ./scripts/ts-path-loader.mjs scripts/test-event-slug-index.mts",
@@ -62,7 +63,7 @@
     "lint": "npm run lint:web && npm run lint:mobile",
     "check": "npm run lint && npm run typecheck",
     "test:smoke": "npm run sync:memory-metadata && npm run clean:next && next build",
-    "test:regression": "npm run test:image-upload-optimization && npm run test:admin-owner-image-upload-routing && npm run test:public-access-block-reasons && npm run test:mobile-save-entitlement-policy && npm run test:mobile-session-security-policy",
+    "test:regression": "npm run test:image-upload-optimization && npm run test:admin-owner-image-upload-routing && npm run test:public-access-block-reasons && npm run test:mobile-save-entitlement-policy && npm run test:mobile-session-security-policy && npm run test:security-hardening && npm run test:project-guardrails",
     "test": "npm run test:regression && npm run sync:memory-metadata && npm run clean:next && next build",
     "deploy:firebase:rules": "firebase deploy --only firestore,storage",
     "deploy:firebase": "npm run deploy:firebase:rules"

@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 
-import type { InvitationPageSummary } from '@/services';
+import type { InvitationPageSummary } from '@/services/invitationPageService';
 import { getInvitationPublicAccessState } from '@/lib/invitationPublicAccess';
 import type { InvitationProductTier } from '@/types/invitationPage';
 

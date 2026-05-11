@@ -7,6 +7,7 @@ import {
   readEditableImageUploadFormData,
   saveServerOptimizedEditableImage,
 } from '@/server/editableImageUploadService';
+import { toSafeHttpErrorResponse } from '@/server/apiErrorResponse';
 import {
   applyScopedRateLimit,
   buildRateLimitHeaders,
@@ -63,10 +64,7 @@ export async function POST(
     });
   } catch (error) {
     if (error instanceof CustomerApiAuthError || error instanceof EditableImageUploadError) {
-      return NextResponse.json(
-        { error: error.message },
-        { status: error.status }
-      );
+      return toSafeHttpErrorResponse(error);
     }
 
     console.error('[customer/events/images] failed to upload image', error);

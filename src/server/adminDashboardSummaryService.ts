@@ -1,6 +1,6 @@
 import 'server-only';
 
-import { DUE_SOON_DAYS, RECENT_COMMENT_DAYS } from '@/app/admin/_components/adminPageUtils';
+import { DUE_SOON_DAYS, RECENT_COMMENT_DAYS } from '@/lib/adminDashboardPolicy';
 
 import { firestoreAdminDashboardRepository } from './repositories/adminDashboardRepository';
 import { listStoredEventSummaries } from './repositories/eventRepository';

@@ -1,4 +1,4 @@
-import type { DisplayPeriod } from '@/services';
+import type { DisplayPeriod } from '@/services/displayPeriodService';
 import {
   EVENT_TYPE_KEYS,
   getEventTypeDisplayLabel,
@@ -13,6 +13,11 @@ import {
   getEventPreviewLinks,
   getWeddingPreviewThemeKeys,
 } from '@/lib/eventPreviewLinks';
+import {
+  COMMENTS_PER_PAGE,
+  DUE_SOON_DAYS,
+  RECENT_COMMENT_DAYS,
+} from '@/lib/adminDashboardPolicy';
 import { getPageWizardCreateHrefForEventType } from '@/app/page-wizard/pageWizardEventConfig';
 import type { StatusTone } from './StatusBadge';
 
@@ -57,9 +62,7 @@ export type PeriodStatusFilter =
   | 'expired'
   | 'inactive';
 
-export const COMMENTS_PER_PAGE = 10;
-export const RECENT_COMMENT_DAYS = 7;
-export const DUE_SOON_DAYS = 7;
+export { COMMENTS_PER_PAGE, DUE_SOON_DAYS, RECENT_COMMENT_DAYS };
 
 export const ADMIN_SECTIONS: AdminSectionItem[] = [
   { key: 'customers', label: '고객 관리' },
