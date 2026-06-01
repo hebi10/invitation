@@ -150,7 +150,9 @@
 
 [data-admin-ui] .admin-button-primary {
   background: var(--admin-color-primary);
+  border-color: var(--admin-color-primary);
   color: #ffffff;
+  box-shadow: 0 1px 2px rgba(37, 99, 235, 0.18);
 }
 
 [data-admin-ui] .admin-button-secondary {
@@ -166,8 +168,24 @@
 }
 
 [data-admin-ui] .admin-button-danger {
-  background: var(--admin-color-danger-soft);
-  border-color: rgba(220, 38, 38, 0.12);
+  background: #fff7f7;
+  border-color: rgba(220, 38, 38, 0.28);
   color: var(--admin-color-danger);
+  font-weight: 700;
 }
 
+[data-admin-ui] .admin-button-primary:hover:not(:disabled) {
+  background: var(--admin-color-primary-strong);
+  border-color: var(--admin-color-primary-strong);
+}
+
+[data-admin-ui] .admin-button-secondary:hover:not(:disabled),
+[data-admin-ui] .admin-button-ghost:hover:not(:disabled) {
+  border-color: var(--admin-color-border-strong);
+  background: var(--admin-color-surface-muted);
+}
+
+[data-admin-ui] .admin-button-danger:hover:not(:disabled) {
+  background: var(--admin-color-danger-soft);
+  border-color: rgba(220, 38, 38, 0.42);
+}

@@ -244,9 +244,6 @@ function EventInvitationPageBody(options: EventInvitationRouteOptions) {
         </div>
       ) : null}
       <ThemeRenderer state={readyState} options={{ ...options, theme: weddingTheme }} />
-      {!readyState.adminNotice ? (
-        <div className={styles.pageRefreshFloating}>{refreshButton}</div>
-      ) : null}
       {shouldRenderMusic ? (
         <BackgroundMusic
           autoPlay

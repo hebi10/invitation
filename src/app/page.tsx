@@ -6,27 +6,27 @@ import styles from './page.module.css';
 const mainLinks = [
   {
     href: '/shin-minje-kim-hyunji/romantic/',
-    label: '샘플 청첩장 보기',
-    description: '하객이 받는 모바일 화면',
+    label: '샘플 보기',
+    description: '하객에게 보이는 실제 화면',
     variant: 'primary',
   },
   {
     href: 'https://kmong.com/gig/686626',
-    label: '제작 문의하기',
-    description: '상품 안내 페이지로 이동',
+    label: '제작 문의',
+    description: '상품 안내와 상담',
     variant: 'secondary',
     external: true,
   },
   {
     href: '/my-invitations',
     label: '내 청첩장',
-    description: '내가 보유한 청첩장을 확인하고 관리하기',
+    description: '보유한 이벤트 관리',
     variant: 'secondary',
   },
   {
     href: '/admin',
     label: '관리자 페이지',
-    description: '운영 화면으로 이동',
+    description: '운영 도구 열기',
     variant: 'secondary',
   },
 ] as const;
@@ -59,6 +59,8 @@ const includedFeatures = [
   '예식 후 추억 페이지',
 ] as const;
 
+const heroFacts = ['청첩장 제작', '공개 상태 관리', '방명록과 사진 관리'] as const;
+
 export default function Home() {
   return (
     <main className={styles.page}>
@@ -70,13 +72,18 @@ export default function Home() {
         <div className={styles.heroCopy}>
           <p className={styles.eyebrow}>초대부터 예식 후 기록까지</p>
           <h1 id="service-title" className={styles.title}>
-            모바일 청첩장을 만들고, 공유하고, 관리하는 서비스
+            모바일 청첩장 제작과 운영을 한곳에서
           </h1>
           <p className={styles.description}>
-            예식 정보와 사진을 입력하면 하객에게 보낼 수 있는 모바일 청첩장이
-            만들어집니다. 공개 상태, 방명록, 사진, 추억 페이지까지 한곳에서
-            이어서 관리할 수 있습니다.
+            예식 정보, 사진, 지도, 방명록을 입력하고 공개 상태와 노출 기간을
+            관리합니다. 제작 후에도 수정과 공유, 추억 페이지 관리까지 같은
+            흐름에서 이어갈 수 있습니다.
           </p>
+          <ul className={styles.heroFacts} aria-label="주요 기능">
+            {heroFacts.map((fact) => (
+              <li key={fact}>{fact}</li>
+            ))}
+          </ul>
 
           <div className={styles.heroLinks} aria-label="바로가기">
             {mainLinks.map((link) => (
@@ -121,8 +128,8 @@ export default function Home() {
             />
           </div>
           <div className={styles.previewText}>
-            <strong>하객에게는 보기 쉬운 모바일 화면으로</strong>
-            <span>사진, 일정, 장소, 방명록을 한 화면 흐름으로 안내합니다.</span>
+            <strong>하객 화면은 모바일 기준으로 정리됩니다.</strong>
+            <span>사진, 일정, 장소, 방명록을 한 흐름으로 확인할 수 있습니다.</span>
           </div>
         </aside>
       </section>

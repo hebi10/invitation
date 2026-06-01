@@ -117,10 +117,11 @@ export function FirstBirthdayThemeRenderer({
     theme === 'first-birthday-mint' ? styles.mint : styles.pink
   }`;
   const hasGiftAccounts = model.dadAccounts.length > 0 || model.momAccounts.length > 0;
+  const hasCoverImage = Boolean(model.coverImageUrl.trim());
 
   return (
     <main className={rootClassName} aria-label={`${model.babyName} 돌잔치 초대장`}>
-      <section className={styles.hero}>
+      <section className={`${styles.hero} ${hasCoverImage ? '' : styles.heroNoImage}`}>
         <div className={styles.heroInner}>
           <div className={styles.heroImage}>
             {model.coverImageUrl ? (

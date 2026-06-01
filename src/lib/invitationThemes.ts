@@ -32,7 +32,7 @@ export const INVITATION_THEME_METADATA_REGISTRY = [
       sampleUrls: {
         standard: 'https://msgnote.kr/kim-taehyun-choi-yuna/emotional/',
         deluxe: 'https://msgnote.kr/lee-junho-park-somin/emotional/',
-        premium: 'https://msgnote.kr/shin-minje-kim-hyunji/emotional/',
+        premium: 'https://msgnote.kr/an-doyoung-yoon-jisoo/emotional/',
       },
     },
     shareTitleMode: 'metadata',
@@ -53,7 +53,7 @@ export const INVITATION_THEME_METADATA_REGISTRY = [
       sampleUrls: {
         standard: 'https://msgnote.kr/kim-taehyun-choi-yuna/romantic/',
         deluxe: 'https://msgnote.kr/lee-junho-park-somin/romantic/',
-        premium: 'https://msgnote.kr/shin-minje-kim-hyunji/romantic/',
+        premium: 'https://msgnote.kr/an-doyoung-yoon-jisoo/romantic/',
       },
     },
     shareTitleMode: 'metadata',
@@ -73,7 +73,7 @@ export const INVITATION_THEME_METADATA_REGISTRY = [
       sampleUrls: {
         standard: 'https://msgnote.kr/kim-taehyun-choi-yuna/simple/',
         deluxe: 'https://msgnote.kr/lee-junho-park-somin/simple/',
-        premium: 'https://msgnote.kr/shin-minje-kim-hyunji/simple/',
+        premium: 'https://msgnote.kr/an-doyoung-yoon-jisoo/simple/',
       },
     },
     shareTitleMode: 'couple',

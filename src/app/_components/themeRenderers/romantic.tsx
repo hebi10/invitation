@@ -173,6 +173,7 @@ function RomanticLoader({
     <WeddingLoaderMessage
       brideName={brideName}
       groomName={groomName}
+      mainImage={heroImageUrl || INTRO_IMAGE_URL}
       onLoadComplete={onLoadComplete}
       duration={2600}
       styles={styles}

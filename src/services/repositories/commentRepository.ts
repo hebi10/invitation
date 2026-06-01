@@ -1,7 +1,10 @@
 import { buildGuestbookCommentStatusPatch } from '@/lib/guestbookComments';
 import type { DocumentData, UpdateData } from 'firebase/firestore';
 
-import { ensureClientFirestoreState } from './clientFirestoreRepositoryCore';
+import {
+  ensureClientFirestoreState,
+  toClientRepositoryDate,
+} from './clientFirestoreRepositoryCore';
 import {
   listClientEventSummaries,
   resolveClientStoredEventBySlug,
@@ -49,7 +52,58 @@ async function readCommentApiResponse(response: Response) {
   }
 }
 
+async function listPublicCommentsApiResponse(response: Response) {
+  const payload = (await response.json().catch(() => null)) as
+    | {
+        comments?: Array<Record<string, unknown>>;
+        error?: string;
+      }
+    | null;
+
+  if (!response.ok) {
+    throw new Error(
+      typeof payload?.error === 'string' && payload.error.trim()
+        ? payload.error
+        : '방명록을 불러오지 못했습니다.'
+    );
+  }
+
+  return Array.isArray(payload?.comments)
+    ? payload.comments
+        .map((comment) => {
+          const id = typeof comment.id === 'string' ? comment.id.trim() : '';
+          const pageSlug =
+            typeof comment.pageSlug === 'string' ? comment.pageSlug.trim() : '';
+
+          if (!id || !pageSlug) {
+            return null;
+          }
+
+          return {
+            id,
+            author: typeof comment.author === 'string' ? comment.author : '',
+            message: typeof comment.message === 'string' ? comment.message : '',
+            pageSlug,
+            createdAt: toClientRepositoryDate(comment.createdAt, new Date(0)),
+          };
+        })
+        .filter((comment): comment is Comment => comment !== null)
+    : [];
+}
+
 async function listEventCommentsByPageSlug(pageSlug: string) {
+  if (typeof window !== 'undefined') {
+    return listPublicCommentsApiResponse(
+      await fetch(
+        `/api/guestbook/comments?pageSlug=${encodeURIComponent(pageSlug)}`,
+        {
+          method: 'GET',
+          cache: 'no-store',
+        }
+      )
+    );
+  }
+
   const resolvedEvent = await resolveClientStoredEventBySlug(pageSlug);
   if (!resolvedEvent) {
     return [];

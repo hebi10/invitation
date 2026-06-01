@@ -139,20 +139,6 @@ function BirthdayInvitationPageBody(options: EventInvitationRouteOptions) {
         </div>
       ) : null}
       <ThemeRenderer state={readyState} />
-      {!readyState.adminNotice ? (
-        <div className={styles.floatingRefresh}>
-          <button
-            type="button"
-            className={styles.floatingRefreshButton}
-            onClick={() => {
-              void readyState.refreshPage();
-            }}
-            disabled={readyState.isRefreshingPage}
-          >
-            {readyState.isRefreshingPage ? '새로고침 중' : '새로고침'}
-          </button>
-        </div>
-      ) : null}
       {shouldRenderMusic ? (
         <BackgroundMusic
           autoPlay

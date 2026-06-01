@@ -68,6 +68,23 @@ assert(
     /isProduction[\s\S]*Content-Security-Policy/m.test(nextConfig),
   'production must send an enforced Content-Security-Policy header while non-production may stay report-only.'
 );
+for (const expectedCspSource of [
+  'https://fonts.googleapis.com',
+  'https://fonts.gstatic.com',
+  'https://t1.daumcdn.net',
+  'https://apis.google.com',
+]) {
+  assert(
+    nextConfig.includes(expectedCspSource),
+    `CSP must allow required production asset source ${expectedCspSource}.`
+  );
+}
+assert(
+  !/script-src[^"`]*\*/.test(nextConfig) &&
+    !/style-src[^"`]*\*/.test(nextConfig) &&
+    !/font-src[^"`]*\*/.test(nextConfig),
+  'CSP script/style/font directives must not use wildcard sources.'
+);
 
 const mobileImageRoute = readText('src/app/api/mobile/client-editor/pages/[slug]/images/route.ts');
 assert(

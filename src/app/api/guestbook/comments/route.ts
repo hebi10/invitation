@@ -1,5 +1,9 @@
 ﻿import { NextResponse } from 'next/server';
 
+import {
+  isGuestbookCommentVisibleToPublic,
+  readGuestbookCommentDate,
+} from '@/lib/guestbookComments';
 import { normalizeInvitationPageSlugInput } from '@/lib/invitationPagePersistence';
 import { firestoreEventCommentRepository } from '@/server/repositories/eventCommentRepository';
 import { resolveStoredEventBySlug } from '@/server/repositories/eventRepository';
@@ -26,6 +30,11 @@ type GuestbookCommentRequestBody = {
   author?: unknown;
   message?: unknown;
 };
+
+function normalizeCommentDate(value: unknown) {
+  const date = readGuestbookCommentDate(value);
+  return date ? date.toISOString() : new Date(0).toISOString();
+}
 
 function normalizeText(value: unknown) {
   return typeof value === 'string' ? value.replace(/\s+/g, ' ').trim() : '';
@@ -85,6 +94,63 @@ function isEventPublic(
   }
 
   return true;
+}
+
+export async function GET(request: Request) {
+  const { searchParams } = new URL(request.url);
+  const pageSlug = normalizeInvitationPageSlugInput(searchParams.get('pageSlug') ?? '');
+
+  if (!pageSlug) {
+    return NextResponse.json(
+      { error: '청첩장 주소를 확인해 주세요.' },
+      { status: 400 }
+    );
+  }
+
+  if (!firestoreEventCommentRepository.isAvailable()) {
+    return NextResponse.json(
+      { error: '방명록 저장소를 사용할 수 없습니다.' },
+      { status: 503 }
+    );
+  }
+
+  const resolvedEvent = await resolveStoredEventBySlug(pageSlug);
+  if (!resolvedEvent) {
+    return NextResponse.json(
+      { error: '청첩장을 찾을 수 없습니다.' },
+      { status: 404 }
+    );
+  }
+
+  if (!isEventPublic(resolvedEvent.summary)) {
+    return NextResponse.json(
+      { error: '현재 방명록을 조회할 수 없는 청첩장입니다.' },
+      { status: 403 }
+    );
+  }
+
+  try {
+    const comments = (await firestoreEventCommentRepository.listByPageSlug(pageSlug))
+      .filter((comment) => isGuestbookCommentVisibleToPublic(comment.data))
+      .map((comment) => ({
+        id: comment.id,
+        author: typeof comment.data.author === 'string' ? comment.data.author : '',
+        message: typeof comment.data.message === 'string' ? comment.data.message : '',
+        pageSlug: comment.pageSlug,
+        createdAt: normalizeCommentDate(comment.data.createdAt),
+      }));
+
+    return NextResponse.json({
+      success: true,
+      comments,
+    });
+  } catch (error) {
+    console.error('[guestbook/comments] failed to list comments', error);
+    return NextResponse.json(
+      { error: '방명록을 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.' },
+      { status: 500 }
+    );
+  }
 }
 
 export async function POST(request: Request) {

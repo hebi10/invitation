@@ -26,6 +26,8 @@ interface WeddingLoaderMessageProps extends WeddingLoaderMessageBaseProps {
   messageClassName: string;
 }
 
+const EMPTY_PRELOAD_IMAGES: string[] = [];
+
 function preloadSingleImage(
   imageUrl: string,
   options: {
@@ -73,7 +75,7 @@ export default function WeddingLoaderMessage({
   groomName,
   onLoadComplete,
   duration = 3000,
-  preloadImages = [],
+  preloadImages = EMPTY_PRELOAD_IMAGES,
   mainImage,
   styles,
   loadingMessages,
@@ -97,6 +99,8 @@ export default function WeddingLoaderMessage({
     const deferredImages = preloadImages
       .filter((imageUrl) => imageUrl && !criticalImages.includes(imageUrl))
       .slice(0, 1);
+
+    setImagesLoaded(false);
 
     if (criticalImages.length === 0) {
       setImagesLoaded(true);

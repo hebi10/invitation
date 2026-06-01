@@ -8,7 +8,6 @@ import {
 import {
   clampInvitationMusicVolume,
   DEFAULT_INVITATION_MUSIC_VOLUME,
-  findFirstActiveInvitationMusicTrack,
   normalizeInvitationMusicSelection,
 } from '@/lib/musicLibrary';
 import {
@@ -113,11 +112,10 @@ export function createWeddingPageConfig(input: WeddingPageConfigInput): Invitati
   const brideName = input.couple.bride.name;
   const displayName = input.displayName ?? createWeddingDisplayName(input.couple);
   const metadataTitle = input.metadata.title ?? `${displayName} 결혼식에 초대합니다`;
-  const defaultMusicTrack = findFirstActiveInvitationMusicTrack();
   const normalizedMusicSelection = normalizeInvitationMusicSelection({
-    categoryId: input.musicCategoryId ?? defaultMusicTrack?.categoryId,
-    trackId: input.musicTrackId ?? defaultMusicTrack?.id,
-    storagePath: input.musicStoragePath ?? defaultMusicTrack?.storagePath,
+    categoryId: input.musicCategoryId,
+    trackId: input.musicTrackId,
+    storagePath: input.musicStoragePath,
   });
 
   return {

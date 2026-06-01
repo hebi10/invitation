@@ -93,6 +93,12 @@
   padding: 34px 18px 30px;
 }
 
+.heroNoImage {
+  min-height: 72vh;
+  align-items: center;
+  padding-top: 54px;
+}
+
 .heroInner {
   width: min(100%, 430px);
   margin: 0 auto;
@@ -124,6 +130,10 @@
   font-size: 1.6rem;
 }
 
+.heroNoImage .heroImage {
+  display: none;
+}
+
 .heroCopy {
   margin-top: -42px;
   position: relative;
@@ -133,6 +143,10 @@
   border: 1px solid var(--fb-border);
   text-align: center;
   box-shadow: 0 18px 50px rgba(45, 28, 35, 0.12);
+}
+
+.heroNoImage .heroCopy {
+  margin-top: 0;
 }
 
 .title {

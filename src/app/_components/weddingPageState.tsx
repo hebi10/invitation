@@ -473,7 +473,11 @@ export function useWeddingInvitationState(
   }, [error]);
 
   useEffect(() => {
-    if (!pageConfig?.musicStoragePath?.trim() || pageConfig.musicUrl?.trim()) {
+    if (
+      pageConfig?.musicEnabled !== true ||
+      !pageConfig.musicStoragePath?.trim() ||
+      pageConfig.musicUrl?.trim()
+    ) {
       return;
     }
 
@@ -507,7 +511,7 @@ export function useWeddingInvitationState(
     return () => {
       cancelled = true;
     };
-  }, [pageConfig?.musicStoragePath, pageConfig?.musicUrl]);
+  }, [pageConfig?.musicEnabled, pageConfig?.musicStoragePath, pageConfig?.musicUrl]);
 
   useEffect(() => {
     const loadingDelay = options.loadingDelay ?? themeDefinition.defaultLoadingDelay;
@@ -580,7 +584,10 @@ export function useWeddingInvitationState(
     ) ||
     galleryPreviewImageUrls[0] ||
     mainImageUrl;
-  const preloadImages = (heroImageUrl ? [heroImageUrl] : []).slice(0, 1);
+  const preloadImages = useMemo(
+    () => (heroImageUrl ? [heroImageUrl] : []).slice(0, 1),
+    [heroImageUrl]
+  );
 
   const giftInfo = themedPageData?.giftInfo;
   const hasGiftAccounts = Boolean(

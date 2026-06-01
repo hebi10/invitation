@@ -33,15 +33,21 @@ export function createWeddingThemeRenderer(
 ) {
   function WeddingThemeRenderer(props: WeddingThemeRendererProps) {
     const { state } = props;
+    const isLoaderVisible = state.isLoading || state.imagesLoading;
 
-    if (state.isLoading || state.imagesLoading) {
-      return <>{definition.renderLoader(props)}</>;
-    }
-
-    return (
+    const pageContent = (
       <main
         role="main"
         className={definition.rootClassName}
+        aria-hidden={isLoaderVisible ? true : undefined}
+        style={
+          isLoaderVisible
+            ? {
+                pointerEvents: 'none',
+                visibility: 'hidden',
+              }
+            : undefined
+        }
         aria-label={`${state.pageConfig.groomName}과 ${state.pageConfig.brideName}의 결혼식 초대장${
           definition.ariaLabelSuffix ?? ''
         }`}
@@ -50,6 +56,13 @@ export function createWeddingThemeRenderer(
           <Fragment key={index}>{renderSection(props)}</Fragment>
         ))}
       </main>
+    );
+
+    return (
+      <>
+        {isLoaderVisible ? definition.renderLoader(props) : null}
+        {pageContent}
+      </>
     );
   }
 

@@ -46,7 +46,7 @@ export default createWeddingThemeRenderer({
           <CoverSimple
             title={state.pageConfig.displayName}
             subtitle={pageData?.subtitle ?? 'A day when two hearts become one'}
-            weddingDate={`${state.pageConfig.date} ${pageData?.ceremonyTime ?? ''}`}
+            weddingDate={state.pageConfig.date}
             ceremonyTime={pageData?.ceremonyTime}
             venueName={state.pageConfig.venue}
             primaryActionTargetId="wedding-info"

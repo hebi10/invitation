@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
 
 import {
   applyWizardDateInputToConfig,
@@ -46,5 +47,22 @@ assert.equal(prepared.weddingDateTime.hour, 14);
 assert.equal(prepared.weddingDateTime.minute, 30);
 assert.equal(prepared.pageData?.ceremonyTime, '오후 2:30');
 assert.equal(prepared.pageData?.ceremony?.time, '오후 2:30');
+
+for (const rendererPath of [
+  'src/app/_components/themeRenderers/emotional.tsx',
+  'src/app/_components/themeRenderers/simple.tsx',
+]) {
+  const source = fs.readFileSync(rendererPath, 'utf8');
+  assert.equal(
+    source.includes('weddingDate={`${state.pageConfig.date} ${pageData?.ceremonyTime ?? \'\'}'),
+    false,
+    `${rendererPath} should pass the date separately so Cover does not duplicate ceremony time`
+  );
+  assert.equal(
+    source.includes('weddingDate={state.pageConfig.date}'),
+    true,
+    `${rendererPath} should let Cover append ceremonyTime once`
+  );
+}
 
 console.log('page wizard schedule time checks passed');
