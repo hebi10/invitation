@@ -10,7 +10,12 @@ function readText(relativePath: string) {
 
 const sessionSource = readText('src/server/clientEditorSession.ts');
 const mobileApiSource = readText('src/server/clientEditorMobileApi.ts');
+const highRiskVerifyRouteSource = readText(
+  'src/app/api/mobile/client-editor/high-risk/verify/route.ts'
+);
 const highRiskSource = readText('src/server/mobileClientEditorHighRisk.ts');
+const mobileAuthContextSource = readText('apps/mobile/src/contexts/AuthContext.tsx');
+const mobileApiAuthSource = readText('apps/mobile/src/lib/apiAuth.ts');
 
 for (const field of ['sessionId', 'ownerUid', 'eventId', 'deviceIdHash', 'issuedVia']) {
   assert(
@@ -43,5 +48,26 @@ for (const field of ['sessionId', 'deviceIdHash', 'allowedActions']) {
     `High-risk mobile token must include ${field} binding.`
   );
 }
+
+assert(
+  highRiskVerifyRouteSource.includes('verifyRecentCustomerAuth') &&
+    highRiskVerifyRouteSource.includes('customerIdToken') &&
+    highRiskVerifyRouteSource.includes('decoded.auth_time') &&
+    highRiskVerifyRouteSource.includes('isRecentlyIssuedMobileSession') &&
+    highRiskVerifyRouteSource.includes('recent_auth_required'),
+  'High-risk verification must require recent customer authentication or a recently issued device-bound mobile session.'
+);
+
+assert(
+  mobileApiAuthSource.includes('customerIdToken?: string | null') &&
+    mobileApiAuthSource.includes('customerIdToken: customerIdToken ?? null'),
+  'Mobile high-risk verification requests must include the current customer id token when available.'
+);
+
+assert(
+  mobileAuthContextSource.includes('customerSessionRef.current') &&
+    mobileAuthContextSource.includes('verifyMobileClientEditorHighRiskSession('),
+  'Mobile high-risk flow must pass the current customer session token through the API helper.'
+);
 
 console.log('mobile session security policy checks passed');

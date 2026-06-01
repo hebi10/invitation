@@ -6,6 +6,7 @@ import {
   getWeddingPageBySlug,
   type WeddingPageConfig,
 } from '@/config/weddingPages';
+import { getEventSamplePageBySlug } from '@/config/eventSamplePages';
 import {
   buildInvitationVariants,
   createInvitationVariantAvailability,
@@ -99,6 +100,11 @@ export interface ServerCreateInvitationPageDraftResult {
 }
 
 function buildSamplePage(pageSlug: string): InvitationPage | null {
+  const eventSample = getEventSamplePageBySlug(pageSlug);
+  if (eventSample) {
+    return sanitizeHeartIconPlaceholdersDeep(eventSample);
+  }
+
   const sample = getWeddingPageBySlug(pageSlug);
   if (!sample) {
     return null;
@@ -435,11 +441,16 @@ async function loadServerInvitationPageBySlug(
   options: Required<ServerInvitationPageLookupOptions>
 ) {
   const firestoreAvailable = firestoreEventRepository.isAvailable();
+  const eventSamplePage = getEventSamplePageBySlug(pageSlug);
   const shouldUseSampleFallback = canUseSampleFallback(
     options.sampleFallbackMode,
     firestoreAvailable
   );
-  const samplePage = shouldUseSampleFallback ? buildSamplePage(pageSlug) : null;
+  const samplePage = eventSamplePage
+    ? sanitizeHeartIconPlaceholdersDeep(eventSamplePage)
+    : shouldUseSampleFallback
+      ? buildSamplePage(pageSlug)
+      : null;
 
   if (!firestoreAvailable) {
     if (!samplePage) {
@@ -887,6 +898,14 @@ export async function getServerInvitationPageDefaultThemeBySlug(
     return DEFAULT_INVITATION_THEME;
   }
 
+  const samplePage = buildSamplePage(normalizedPageSlug);
+  const sampleDefaultTheme = samplePage
+    ? getAvailableInvitationVariantKeys(samplePage.variants)[0]
+    : null;
+  if (sampleDefaultTheme) {
+    return sampleDefaultTheme;
+  }
+
   try {
     const registryRecord = await getRegistryByPageSlug(normalizedPageSlug);
     return registryRecord?.defaultTheme ?? DEFAULT_INVITATION_THEME;
@@ -905,6 +924,11 @@ export async function getServerInvitationPageEventTypeBySlug(
   const normalizedPageSlug = normalizeInvitationPageSlugInput(pageSlug);
   if (!normalizedPageSlug) {
     return DEFAULT_EVENT_TYPE;
+  }
+
+  const samplePage = buildSamplePage(normalizedPageSlug);
+  if (samplePage?.eventType) {
+    return normalizeEventTypeKey(samplePage.eventType, DEFAULT_EVENT_TYPE);
   }
 
   try {
@@ -927,7 +951,11 @@ export async function getServerInvitationPageSampleBySlug(
     return null;
   }
 
-  return getWeddingPageBySlug(normalizedPageSlug) ?? null;
+  return (
+    getEventSamplePageBySlug(normalizedPageSlug) ??
+    getWeddingPageBySlug(normalizedPageSlug) ??
+    null
+  );
 }
 
 export async function getServerInvitationPageOrSampleSeed(

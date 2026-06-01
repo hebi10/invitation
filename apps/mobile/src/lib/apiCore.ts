@@ -1,10 +1,12 @@
 import Constants from 'expo-constants';
 
 import { toUserFacingApiMessage } from './apiErrors';
+import { getOrCreateMobileDeviceId } from './storage';
 
 export const PRODUCTION_API_BASE_URL = 'https://msgnote.kr';
 
 const TRANSIENT_LOCAL_API_PORTS = new Set(['3000', '3001']);
+const MOBILE_DEVICE_ID_HEADER = 'x-mobile-device-id';
 const ALLOWED_API_HOSTS = new Set([
   'msgnote.kr',
   'www.msgnote.kr',
@@ -134,13 +136,59 @@ async function waitForRetry(delayMs: number) {
   await new Promise((resolve) => setTimeout(resolve, delayMs));
 }
 
+function normalizeHeaders(headers: HeadersInit | undefined): Record<string, string> {
+  const normalizedHeaders: Record<string, string> = {};
+
+  if (!headers) {
+    return normalizedHeaders;
+  }
+
+  if (Array.isArray(headers)) {
+    for (const [key, value] of headers) {
+      normalizedHeaders[key] = value;
+    }
+    return normalizedHeaders;
+  }
+
+  if (typeof Headers !== 'undefined' && headers instanceof Headers) {
+    headers.forEach((value, key) => {
+      normalizedHeaders[key] = value;
+    });
+    return normalizedHeaders;
+  }
+
+  return {
+    ...(headers as Record<string, string>),
+  };
+}
+
+function hasHeader(headers: Record<string, string>, headerName: string) {
+  const normalizedHeaderName = headerName.toLowerCase();
+  return Object.keys(headers).some((key) => key.toLowerCase() === normalizedHeaderName);
+}
+
+async function appendMobileDeviceIdHeader(init: RequestInit) {
+  const headers = normalizeHeaders(init.headers);
+
+  if (!hasHeader(headers, MOBILE_DEVICE_ID_HEADER)) {
+    const mobileDeviceId = await getOrCreateMobileDeviceId();
+    headers[MOBILE_DEVICE_ID_HEADER] = mobileDeviceId;
+  }
+
+  return {
+    ...init,
+    headers,
+  };
+}
+
 export async function fetchWithRetry(input: RequestInfo | URL, init: RequestInit = {}) {
   const method = (init.method ?? 'GET').toUpperCase();
   const maxRetries = method === 'GET' ? DEFAULT_GET_RETRY_COUNT : 0;
+  const requestInit = await appendMobileDeviceIdHeader(init);
 
   for (let attempt = 0; ; attempt += 1) {
     try {
-      const response = await fetch(input, init);
+      const response = await fetch(input, requestInit);
 
       if (attempt >= maxRetries || !RETRYABLE_STATUS_CODES.has(response.status)) {
         return response;
@@ -186,17 +234,20 @@ export function createHeaders(token?: string, highRiskToken?: string) {
 export async function uploadFormDataResponse<T>(
   url: string,
   token: string,
-  formData: FormData
+  formData: FormData,
+  highRiskToken?: string
 ): Promise<T> {
   if (typeof XMLHttpRequest === 'undefined') {
     return readJsonResponse<T>(
       await fetchWithRetry(url, {
         method: 'POST',
-        headers: createHeaders(token),
+        headers: createHeaders(token, highRiskToken),
         body: formData,
       })
     );
   }
+
+  const mobileDeviceId = await getOrCreateMobileDeviceId();
 
   return new Promise<T>((resolve, reject) => {
     const request = new XMLHttpRequest();
@@ -204,8 +255,12 @@ export async function uploadFormDataResponse<T>(
     request.open('POST', url);
     request.timeout = 30000;
     request.setRequestHeader('Accept', 'application/json');
+    request.setRequestHeader('x-mobile-device-id', mobileDeviceId);
     if (token) {
       request.setRequestHeader('Authorization', `Bearer ${token}`);
+    }
+    if (highRiskToken) {
+      request.setRequestHeader('x-mobile-client-editor-high-risk-token', highRiskToken);
     }
 
     request.onload = () => {

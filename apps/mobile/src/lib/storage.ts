@@ -5,7 +5,11 @@ type StorageOptions = {
   sensitive?: boolean;
 };
 
+export const MOBILE_DEVICE_ID_STORAGE_KEY = 'mobile-invitation:device-id';
+
 const warnedSensitiveWebStorageKeys = new Set<string>();
+let cachedMobileDeviceId: string | null = null;
+let pendingMobileDeviceId: Promise<string> | null = null;
 
 function normalizeNativeStorageKey(key: string) {
   const trimmed = key.trim();
@@ -124,4 +128,80 @@ export async function setStoredJson(
   options: StorageOptions = {}
 ) {
   await setStoredString(key, JSON.stringify(value), options);
+}
+
+function normalizeMobileDeviceId(value: string | null | undefined) {
+  const normalized = value?.trim() ?? '';
+  if (!normalized || normalized.length > 128) {
+    return '';
+  }
+
+  return /^[a-zA-Z0-9._:-]+$/.test(normalized) ? normalized : '';
+}
+
+function readRandomUuid() {
+  const cryptoProvider = globalThis.crypto as
+    | {
+        randomUUID?: () => string;
+        getRandomValues?: (array: Uint8Array) => Uint8Array;
+      }
+    | undefined;
+
+  if (typeof cryptoProvider?.randomUUID === 'function') {
+    return cryptoProvider.randomUUID();
+  }
+
+  if (typeof cryptoProvider?.getRandomValues === 'function') {
+    const bytes = cryptoProvider.getRandomValues(new Uint8Array(16));
+    bytes[6] = (bytes[6] & 0x0f) | 0x40;
+    bytes[8] = (bytes[8] & 0x3f) | 0x80;
+    const hex = [...bytes].map((byte) => byte.toString(16).padStart(2, '0')).join('');
+    return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(
+      16,
+      20
+    )}-${hex.slice(20)}`;
+  }
+
+  return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 14)}`;
+}
+
+function createMobileDeviceId() {
+  return `mid_${readRandomUuid()}`;
+}
+
+export async function getOrCreateMobileDeviceId() {
+  if (cachedMobileDeviceId) {
+    return cachedMobileDeviceId;
+  }
+
+  if (!pendingMobileDeviceId) {
+    pendingMobileDeviceId = (async () => {
+      try {
+        const storedDeviceId = normalizeMobileDeviceId(
+          await getStoredString(MOBILE_DEVICE_ID_STORAGE_KEY)
+        );
+        if (storedDeviceId) {
+          cachedMobileDeviceId = storedDeviceId;
+          return storedDeviceId;
+        }
+      } catch {
+        // Continue with an in-memory id if secure storage is temporarily unavailable.
+      }
+
+      const nextDeviceId = createMobileDeviceId();
+      cachedMobileDeviceId = nextDeviceId;
+
+      try {
+        await setStoredString(MOBILE_DEVICE_ID_STORAGE_KEY, nextDeviceId);
+      } catch {
+        // The id is still usable for the current app session.
+      }
+
+      return nextDeviceId;
+    })().finally(() => {
+      pendingMobileDeviceId = null;
+    });
+  }
+
+  return pendingMobileDeviceId;
 }

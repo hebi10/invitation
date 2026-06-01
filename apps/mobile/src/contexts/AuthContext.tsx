@@ -193,10 +193,16 @@ export function AuthProvider({ children }: PropsWithChildren) {
       }
 
       try {
+        const currentCustomerSession = customerSessionRef.current;
+        const customerIdToken =
+          currentCustomerSession && !hasCustomerSessionExpired(currentCustomerSession)
+            ? currentCustomerSession.idToken
+            : null;
         const response = await verifyMobileClientEditorHighRiskSession(
           apiBaseUrl,
           session.pageSlug,
-          session.token
+          session.token,
+          customerIdToken
         );
 
         updateHighRiskSession(response.session);
@@ -216,7 +222,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
         } as const;
       }
     },
-    [apiBaseUrl, session, updateHighRiskSession]
+    [apiBaseUrl, hasCustomerSessionExpired, session, updateHighRiskSession]
   );
 
   const getHighRiskToken = useCallback(

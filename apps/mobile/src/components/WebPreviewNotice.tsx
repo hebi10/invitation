@@ -1,24 +1,52 @@
-import { BulletList } from './BulletList';
-import { SectionCard } from './SectionCard';
+import { StyleSheet, View } from 'react-native';
+
+import { useVisualPreferences } from '../contexts/PreferencesContext';
+
+import { AppText } from './AppText';
 
 type WebPreviewNoticeProps = {
   title?: string;
   description?: string;
 };
 
-const WEB_PREVIEW_NOTICE_ITEMS = [
-  'Expo 웹 빌드는 내부 QA와 UI 미리보기 용도로만 제공됩니다.',
-  '웹에서는 페이지 로그인, 생성, 운영 편집 기능을 지원하지 않습니다.',
-  '실제 운영은 Next 웹 편집기 또는 Expo 네이티브 앱에서 진행해 주세요.',
-];
-
 export function WebPreviewNotice({
-  title = '웹 미리보기 안내',
-  description = '현재 화면은 Expo 웹 빌드에서 열려 있습니다.',
+  title = '웹 미리보기',
+  description = '결제와 보안 저장소는 앱 빌드에서 최종 확인해 주세요.',
 }: WebPreviewNoticeProps) {
+  const { palette } = useVisualPreferences();
+
   return (
-    <SectionCard title={title} description={description} badge="미리보기 전용">
-      <BulletList items={WEB_PREVIEW_NOTICE_ITEMS} />
-    </SectionCard>
+    <View
+      style={[
+        styles.notice,
+        {
+          backgroundColor: palette.noticeSoft,
+          borderColor: palette.cardBorder,
+        },
+      ]}
+    >
+      <AppText variant="caption" color={palette.notice} style={styles.title}>
+        {title}
+      </AppText>
+      <AppText variant="caption" color={palette.textMuted} style={styles.description}>
+        {description}
+      </AppText>
+    </View>
   );
 }
+
+const styles = StyleSheet.create({
+  notice: {
+    borderWidth: 1,
+    borderRadius: 14,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    gap: 2,
+  },
+  title: {
+    fontWeight: '700',
+  },
+  description: {
+    lineHeight: 18,
+  },
+});

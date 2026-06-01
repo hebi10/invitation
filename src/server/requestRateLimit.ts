@@ -1,5 +1,7 @@
 import 'server-only';
 
+import { createHash } from 'node:crypto';
+
 import { firestoreRateLimitRepository } from './repositories/rateLimitRepository';
 
 type RateLimitEntry = {
@@ -70,6 +72,48 @@ export function shouldFailClosedRateLimit({
   return nodeEnv === 'production' && isFailClosedRateLimitScope(readRateLimitScope(key));
 }
 
+function normalizeClientAddress(value: string | null | undefined) {
+  const normalized = value?.trim() ?? '';
+  if (!normalized || normalized.length > 96) {
+    return null;
+  }
+
+  if (!/^[a-zA-Z0-9:._-]+$/.test(normalized)) {
+    return null;
+  }
+
+  return normalized;
+}
+
+function readFirstForwardedAddress(value: string | null | undefined) {
+  return normalizeClientAddress(
+    value
+      ?.split(',')
+      .map((entry) => entry.trim())
+      .find(Boolean)
+  );
+}
+
+function shouldTrustProxyClientIpHeaders() {
+  return (
+    process.env.TRUST_PROXY_CLIENT_IP_HEADERS === 'true' ||
+    process.env.VERCEL === '1'
+  );
+}
+
+export function hashRateLimitKeyPart(
+  value: string | null | undefined,
+  label = 'hash'
+) {
+  const normalized = value?.trim() ?? '';
+  if (!normalized) {
+    return null;
+  }
+
+  const digest = createHash('sha256').update(normalized).digest('base64url');
+  return `${label}-${digest.slice(0, 32)}`;
+}
+
 function getRateLimitStore() {
   const globalScope = globalThis as typeof globalThis & {
     [RATE_LIMIT_STORE_KEY]?: Map<string, RateLimitEntry>;
@@ -83,17 +127,19 @@ function getRateLimitStore() {
 }
 
 export function readRequestClientKey(request: Request) {
-  const forwardedFor = request.headers.get('x-forwarded-for')?.trim() ?? '';
-  const realIp = request.headers.get('x-real-ip')?.trim() ?? '';
+  const trustedProxyClientIpHeaders = shouldTrustProxyClientIpHeaders();
+  const vercelForwardedFor = trustedProxyClientIpHeaders
+    ? readFirstForwardedAddress(request.headers.get('x-vercel-forwarded-for'))
+    : null;
+  const forwardedFor = trustedProxyClientIpHeaders
+    ? readFirstForwardedAddress(request.headers.get('x-forwarded-for'))
+    : null;
+  const realIp = normalizeClientAddress(request.headers.get('x-real-ip'));
   const userAgent = request.headers.get('user-agent')?.trim() ?? 'unknown-agent';
 
-  const forwardedIp = forwardedFor
-    .split(',')
-    .map((value) => value.trim())
-    .find(Boolean);
-
-  const clientIp = forwardedIp || realIp || 'unknown-ip';
-  const normalizedUserAgent = userAgent.slice(0, 120);
+  const clientIp = vercelForwardedFor || realIp || forwardedFor || 'unknown-ip';
+  const normalizedUserAgent =
+    hashRateLimitKeyPart(userAgent.slice(0, 240), 'ua') ?? 'ua-unknown';
 
   return `${clientIp}:${normalizedUserAgent}`;
 }

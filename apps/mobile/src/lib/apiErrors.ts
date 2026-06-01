@@ -42,6 +42,8 @@ const ERROR_MESSAGE_MAP: Record<string, string> = {
   'Not enough tickets.': '보유 티켓이 부족합니다.',
   'Recent authentication is required for this action.':
     '민감한 작업이라 로그인 세션을 다시 확인해야 합니다.',
+  'Recent customer authentication is required.':
+    '민감한 작업이라 최근 고객 로그인이 필요합니다. 고객 계정으로 다시 로그인한 뒤 진행해 주세요.',
   'Too many high-risk verification attempts. Please try again later.':
     '재인증 시도가 너무 많습니다. 잠시 후 다시 시도해 주세요.',
   'Page slug is required.': '청첩장 주소를 다시 확인해 주세요.',

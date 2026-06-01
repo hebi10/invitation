@@ -91,9 +91,9 @@ export const INVITATION_THEME_METADATA_REGISTRY = [
     preview: {
       description: '커튼형 인트로와 성장 갤러리를 강조하는 핑크 톤 돌잔치 디자인입니다.',
       sampleUrls: {
-        standard: 'https://msgnote.kr/first-birthday-sample/first-birthday-pink/',
-        deluxe: 'https://msgnote.kr/first-birthday-sample/first-birthday-pink/',
-        premium: 'https://msgnote.kr/first-birthday-sample/first-birthday-pink/',
+        standard: 'https://msgnote.kr/first-birthday-ian-spring/first-birthday-pink/',
+        deluxe: 'https://msgnote.kr/first-birthday-ian-spring/first-birthday-pink/',
+        premium: 'https://msgnote.kr/first-birthday-ian-spring/first-birthday-pink/',
       },
     },
     shareTitleMode: 'metadata',
@@ -111,9 +111,9 @@ export const INVITATION_THEME_METADATA_REGISTRY = [
     preview: {
       description: '민트와 블루 포인트로 아기의 첫 생일을 맑게 보여주는 디자인입니다.',
       sampleUrls: {
-        standard: 'https://msgnote.kr/first-birthday-sample/first-birthday-mint/',
-        deluxe: 'https://msgnote.kr/first-birthday-sample/first-birthday-mint/',
-        premium: 'https://msgnote.kr/first-birthday-sample/first-birthday-mint/',
+        standard: 'https://msgnote.kr/first-birthday-seoah-mint/first-birthday-mint/',
+        deluxe: 'https://msgnote.kr/first-birthday-seoah-mint/first-birthday-mint/',
+        premium: 'https://msgnote.kr/first-birthday-seoah-mint/first-birthday-mint/',
       },
     },
     shareTitleMode: 'metadata',
@@ -131,9 +131,9 @@ export const INVITATION_THEME_METADATA_REGISTRY = [
     preview: {
       description: '깔끔한 레이아웃과 절제된 컬러로 생일 파티 정보를 정리합니다.',
       sampleUrls: {
-        standard: 'https://msgnote.kr/birthday-sample/birthday-minimal/',
-        deluxe: 'https://msgnote.kr/birthday-sample/birthday-minimal/',
-        premium: 'https://msgnote.kr/birthday-sample/birthday-minimal/',
+        standard: 'https://msgnote.kr/birthday-minseo-picnic/birthday-minimal/',
+        deluxe: 'https://msgnote.kr/birthday-minseo-picnic/birthday-minimal/',
+        premium: 'https://msgnote.kr/birthday-minseo-picnic/birthday-minimal/',
       },
     },
     shareTitleMode: 'metadata',
@@ -151,9 +151,9 @@ export const INVITATION_THEME_METADATA_REGISTRY = [
     preview: {
       description: '꽃 장식과 따뜻한 컬러로 생일 파티의 축하 분위기를 강조합니다.',
       sampleUrls: {
-        standard: 'https://msgnote.kr/birthday-sample/birthday-floral/',
-        deluxe: 'https://msgnote.kr/birthday-sample/birthday-floral/',
-        premium: 'https://msgnote.kr/birthday-sample/birthday-floral/',
+        standard: 'https://msgnote.kr/birthday-jiwoo-rooftop/birthday-floral/',
+        deluxe: 'https://msgnote.kr/birthday-jiwoo-rooftop/birthday-floral/',
+        premium: 'https://msgnote.kr/birthday-jiwoo-rooftop/birthday-floral/',
       },
     },
     shareTitleMode: 'metadata',
@@ -171,9 +171,9 @@ export const INVITATION_THEME_METADATA_REGISTRY = [
     preview: {
       description: '기념식, 공식 행사, 리셉션에 어울리는 차분한 행사 초대장 디자인입니다.',
       sampleUrls: {
-        standard: 'https://msgnote.kr/general-event-sample/general-event-elegant/',
-        deluxe: 'https://msgnote.kr/general-event-sample/general-event-elegant/',
-        premium: 'https://msgnote.kr/general-event-sample/general-event-elegant/',
+        standard: 'https://msgnote.kr/general-event-brand-night/general-event-elegant/',
+        deluxe: 'https://msgnote.kr/general-event-brand-night/general-event-elegant/',
+        premium: 'https://msgnote.kr/general-event-brand-night/general-event-elegant/',
       },
     },
     shareTitleMode: 'metadata',
@@ -191,9 +191,9 @@ export const INVITATION_THEME_METADATA_REGISTRY = [
     preview: {
       description: '파티, 쇼케이스, 브랜드 이벤트에 어울리는 비비드 행사 초대장 디자인입니다.',
       sampleUrls: {
-        standard: 'https://msgnote.kr/general-event-sample/general-event-vivid/',
-        deluxe: 'https://msgnote.kr/general-event-sample/general-event-vivid/',
-        premium: 'https://msgnote.kr/general-event-sample/general-event-vivid/',
+        standard: 'https://msgnote.kr/general-event-summer-networking/general-event-vivid/',
+        deluxe: 'https://msgnote.kr/general-event-summer-networking/general-event-vivid/',
+        premium: 'https://msgnote.kr/general-event-summer-networking/general-event-vivid/',
       },
     },
     shareTitleMode: 'metadata',
@@ -211,9 +211,9 @@ export const INVITATION_THEME_METADATA_REGISTRY = [
     preview: {
       description: '브랜드 소개, 오픈 혜택, 오시는 길을 내추럴 톤으로 정리합니다.',
       sampleUrls: {
-        standard: 'https://msgnote.kr/opening-sample/opening-natural/',
-        deluxe: 'https://msgnote.kr/opening-sample/opening-natural/',
-        premium: 'https://msgnote.kr/opening-sample/opening-natural/',
+        standard: 'https://msgnote.kr/opening-bloom-cafe/opening-natural/',
+        deluxe: 'https://msgnote.kr/opening-bloom-cafe/opening-natural/',
+        premium: 'https://msgnote.kr/opening-bloom-cafe/opening-natural/',
       },
     },
     shareTitleMode: 'metadata',
@@ -231,9 +231,9 @@ export const INVITATION_THEME_METADATA_REGISTRY = [
     preview: {
       description: 'Grand Opening 인상을 강조하고 핵심 방문 정보를 빠르게 전달합니다.',
       sampleUrls: {
-        standard: 'https://msgnote.kr/opening-sample/opening-modern/',
-        deluxe: 'https://msgnote.kr/opening-sample/opening-modern/',
-        premium: 'https://msgnote.kr/opening-sample/opening-modern/',
+        standard: 'https://msgnote.kr/opening-studio-nova/opening-modern/',
+        deluxe: 'https://msgnote.kr/opening-studio-nova/opening-modern/',
+        premium: 'https://msgnote.kr/opening-studio-nova/opening-modern/',
       },
     },
     shareTitleMode: 'metadata',

@@ -80,7 +80,7 @@ export function SectionCard({
               isEmphasis ? styles.emphasisTitle : null,
               {
                 color: palette.text,
-                fontSize: (isHero ? 22 : isEmphasis ? 20 : 18) * fontScale,
+                fontSize: (isHero ? 21 : isEmphasis ? 19 : 17) * fontScale,
               },
             ]}
           >
@@ -140,17 +140,17 @@ export function SectionCard({
 const styles = StyleSheet.create({
   card: {
     borderWidth: 1,
-    borderRadius: 24,
+    borderRadius: 16,
+    padding: 16,
+    gap: 12,
+  },
+  heroCard: {
     padding: 18,
     gap: 14,
   },
-  heroCard: {
-    padding: 20,
-    gap: 16,
-  },
   emphasisCard: {
-    padding: 20,
-    gap: 16,
+    padding: 18,
+    gap: 14,
     borderWidth: 1.5,
   },
   header: {
@@ -167,13 +167,13 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   title: {
-    fontWeight: '800',
+    fontWeight: '700',
   },
   heroTitle: {
-    lineHeight: 28,
+    lineHeight: 27,
   },
   emphasisTitle: {
-    lineHeight: 26,
+    lineHeight: 25,
   },
   description: {
     lineHeight: 21,
@@ -195,7 +195,7 @@ const styles = StyleSheet.create({
     paddingVertical: 7,
   },
   badgeText: {
-    fontWeight: '700',
+    fontWeight: '600',
   },
   body: {
     gap: 10,

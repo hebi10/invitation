@@ -2,8 +2,11 @@ import { getPublicKakaoJavaScriptKey } from '@/lib/publicRuntimeConfig';
 import type { KakaoAddressSearchResult, KakaoMapsSdk } from '@/types/kakao';
 
 const KAKAO_MAPS_SCRIPT_ID = 'kakao-maps-sdk';
-const LEGACY_KAKAO_MAPS_COMPAT_KEY = '234add558ffec30aa714eb4644df46e3';
 let kakaoMapsSdkPromise: Promise<KakaoMapsSdk> | null = null;
+
+function getCompatibilityKakaoJavaScriptKey() {
+  return process.env.NEXT_PUBLIC_KAKAO_COMPATIBILITY_JAVASCRIPT_KEY?.trim() ?? '';
+}
 
 function buildKakaoMapsSdkUrl(appKey: string) {
   const params = new URLSearchParams({
@@ -34,7 +37,7 @@ export async function loadKakaoMapsSdk(): Promise<KakaoMapsSdk> {
     kakaoMapsSdkPromise = new Promise((resolve, reject) => {
       const keyCandidates = Array.from(
         new Set(
-          [getPublicKakaoJavaScriptKey(), LEGACY_KAKAO_MAPS_COMPAT_KEY]
+          [getPublicKakaoJavaScriptKey(), getCompatibilityKakaoJavaScriptKey()]
             .map((candidate) => candidate.trim())
             .filter(Boolean)
         )
@@ -82,7 +85,7 @@ export async function loadKakaoMapsSdk(): Promise<KakaoMapsSdk> {
 
           if (candidateIndex + 1 < keyCandidates.length) {
             console.warn(
-              '[kakaoMaps] failed to load SDK with current key, retrying compatibility key'
+              '[kakaoMaps] failed to load SDK with current key, retrying configured compatibility key'
             );
             tryLoadWithKey(candidateIndex + 1);
             return;

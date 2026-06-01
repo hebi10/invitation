@@ -128,7 +128,8 @@ export async function validateMobileClientEditorSession(
 export async function verifyMobileClientEditorHighRiskSession(
   baseUrl: string,
   pageSlug: string,
-  token: string
+  token: string,
+  customerIdToken?: string | null
 ) {
   return readJsonResponse<MobileHighRiskVerificationResponse>(
     await fetchWithRetry(buildApiUrl(baseUrl, '/api/mobile/client-editor/high-risk/verify'), {
@@ -139,6 +140,7 @@ export async function verifyMobileClientEditorHighRiskSession(
       },
       body: JSON.stringify({
         pageSlug,
+        customerIdToken: customerIdToken ?? null,
       }),
     })
   );

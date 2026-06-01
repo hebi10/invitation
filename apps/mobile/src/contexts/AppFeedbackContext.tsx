@@ -236,7 +236,7 @@ export function AppFeedbackProvider({ children }: PropsWithChildren) {
   return (
     <AppFeedbackContext.Provider value={value}>
       {children}
-      <View pointerEvents="box-none" style={styles.overlay}>
+      <View style={styles.overlay}>
         {isOffline ? (
           <View
             accessible
@@ -293,6 +293,7 @@ export function useAppFeedback() {
 const styles = StyleSheet.create({
   overlay: {
     ...StyleSheet.absoluteFillObject,
+    pointerEvents: 'box-none',
   },
   offlineBanner: {
     position: 'absolute',
@@ -315,11 +316,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     paddingHorizontal: 16,
     paddingVertical: 14,
-    shadowColor: '#000000',
-    shadowOpacity: 0.12,
-    shadowRadius: 12,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 10,
+    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.12)',
   },
   toastText: {
     lineHeight: 20,

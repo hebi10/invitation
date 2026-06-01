@@ -256,8 +256,11 @@ export default function CreateScreen() {
 
             {isTicketOnlySectionVisible ? (
               <Animated.View
-                pointerEvents={isTicketOnlySectionExpanded ? 'auto' : 'none'}
-                style={[styles.ticketOnlySectionBody, ticketOnlyAnimatedStyle]}
+                style={[
+                  styles.ticketOnlySectionBody,
+                  ticketOnlyAnimatedStyle,
+                  { pointerEvents: isTicketOnlySectionExpanded ? 'auto' : 'none' },
+                ]}
               >
                 <AppText variant="muted" style={styles.helperText}>
                   새 청첩장 생성과 별개로, 기간 연장·디자인 추가·업그레이드에 쓸 티켓만 먼저 구매할 수 있습니다.

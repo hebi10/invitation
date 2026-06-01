@@ -38,14 +38,14 @@ export function BirthdayThemeRenderer({ state, theme }: BirthdayThemeRendererPro
     <main className={rootClassName} aria-label={`${model.name} 생일 초대장`}>
       <section className={styles.hero}>
         <div className={styles.heroInner}>
-          <span className={styles.eyebrow}>Birthday Party</span>
+          <span className={styles.eyebrow}>생일 초대</span>
           <h1 className={styles.title}>{model.name}</h1>
           <p className={styles.subtitle}>{model.subtitle}</p>
           <div className={styles.heroImage}>
             {model.coverImageUrl ? (
               <img src={model.coverImageUrl} alt={`${model.name} 대표 이미지`} />
             ) : (
-              <div className={styles.heroImageFallback}>Happy Birthday</div>
+              <div className={styles.heroImageFallback}>생일 축하</div>
             )}
           </div>
           <div className={styles.quickInfo}>
@@ -68,7 +68,7 @@ export function BirthdayThemeRenderer({ state, theme }: BirthdayThemeRendererPro
       <section className={styles.section}>
         <div className={styles.sectionInner}>
           <div className={styles.sectionHeader}>
-            <span className={styles.sectionKicker}>Invitation</span>
+            <span className={styles.sectionKicker}>초대의 글</span>
             <h2 className={styles.sectionTitle}>초대 문구</h2>
           </div>
           <div className={styles.messageCard}>
@@ -81,7 +81,7 @@ export function BirthdayThemeRenderer({ state, theme }: BirthdayThemeRendererPro
       <section className={`${styles.section} ${styles.sectionAlt}`}>
         <div className={styles.sectionInner}>
           <div className={styles.sectionHeader}>
-            <span className={styles.sectionKicker}>Party Info</span>
+            <span className={styles.sectionKicker}>파티 안내</span>
             <h2 className={styles.sectionTitle}>일정과 장소</h2>
           </div>
           <div className={styles.detailCard}>

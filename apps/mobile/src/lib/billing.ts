@@ -81,6 +81,10 @@ function getRevenueCatApiKey() {
   return '';
 }
 
+function isProductionNativeRuntime() {
+  return Platform.OS !== 'web' && process.env.NODE_ENV === 'production';
+}
+
 function createBillingAppUserId() {
   const randomSuffix = Math.random().toString(36).slice(2, 10);
   return `mid_${Date.now().toString(36)}_${randomSuffix}`;
@@ -218,7 +222,12 @@ export async function purchaseBillingProduct(
   options: { appUserId?: string | null } = {}
 ) {
   const appUserId = await getOrCreateBillingAppUserId(options.appUserId);
-  if (!getRevenueCatApiKey() || !loadPurchasesModule()) {
+  const purchasesModule = loadPurchasesModule();
+  if (!getRevenueCatApiKey() || !purchasesModule) {
+    if (isProductionNativeRuntime()) {
+      throw new Error(getBillingUnavailableMessage());
+    }
+
     return createMockPurchaseResult(productId, appUserId);
   }
 

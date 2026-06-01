@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server';
 import {
   applyScopedRateLimit,
   buildRateLimitHeaders,
+  hashRateLimitKeyPart,
 } from '@/server/requestRateLimit';
 
 const MOBILE_CUSTOMER_AUTH_REFRESH_RATE_LIMIT = {
@@ -56,7 +57,7 @@ export async function POST(request: Request) {
   const rateLimitResult = await applyScopedRateLimit({
     request,
     scope: 'mobile-customer-auth-refresh',
-    keyParts: [refreshToken ? 'present' : 'missing'],
+    keyParts: [hashRateLimitKeyPart(refreshToken, 'refresh') ?? 'missing-refresh'],
     ...MOBILE_CUSTOMER_AUTH_REFRESH_RATE_LIMIT,
   });
   const rateLimitHeaders = buildRateLimitHeaders(rateLimitResult);

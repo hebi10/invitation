@@ -44,7 +44,7 @@ export function AppScreen({
         contentContainerStyle={[
           styles.content,
           {
-            paddingTop: insets.top + 32,
+            paddingTop: insets.top + 24,
             paddingBottom: insets.bottom + 16,
           },
           contentContainerStyle,
@@ -55,7 +55,7 @@ export function AppScreen({
       >
         <View style={styles.header}>
           <View style={styles.headerCopy}>
-            <Text style={[styles.title, { color: palette.text, fontSize: 28 * fontScale }]}>
+            <Text style={[styles.title, { color: palette.text, fontSize: 26 * fontScale }]}>
               {title}
             </Text>
             {subtitle ? (
@@ -96,7 +96,7 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   title: {
-    fontWeight: '800',
+    fontWeight: '700',
   },
   subtitle: {
     lineHeight: 22,

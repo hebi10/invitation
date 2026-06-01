@@ -81,7 +81,7 @@ export default function GuideScreen() {
             <AppText style={styles.sampleGroupTitle}>{group.title}</AppText>
             {group.items.map((item) => (
               <View
-                key={item.url}
+                key={`${group.themeKey}-${item.tier}`}
                 style={[
                   styles.sampleCard,
                   { backgroundColor: palette.surfaceMuted, borderColor: palette.cardBorder },

@@ -155,7 +155,7 @@ export function FirstBirthdayThemeRenderer({
       <section className={styles.section}>
         <div className={styles.sectionInner}>
           <div className={styles.sectionHeader}>
-            <span className={styles.sectionKicker}>Invitation</span>
+            <span className={styles.sectionKicker}>초대의 글</span>
             <h2 className={styles.sectionTitle}>초대합니다</h2>
           </div>
           <div className={styles.messageCard}>
@@ -168,7 +168,7 @@ export function FirstBirthdayThemeRenderer({
       <section className={`${styles.section} ${styles.sectionAlt}`}>
         <div className={styles.sectionInner}>
           <div className={styles.sectionHeader}>
-            <span className={styles.sectionKicker}>Growth Gallery</span>
+            <span className={styles.sectionKicker}>성장 앨범</span>
             <h2 className={styles.sectionTitle}>성장 갤러리</h2>
           </div>
           {model.galleryImageUrls.length > 0 ? (

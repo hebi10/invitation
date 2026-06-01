@@ -123,7 +123,7 @@ function OpeningInvitationSections({
       </nav>
 
       <section className={styles.section} id="greeting">
-        <SectionHeader label="Invitation" title="새로운 시작에 초대합니다" />
+        <SectionHeader label="초대의 글" title="새로운 시작에 초대합니다" />
         <p className={styles.messageText}>{model.greeting}</p>
       </section>
 
@@ -265,7 +265,7 @@ export function OpeningThemeRenderer({ state, theme }: OpeningThemeRendererProps
       <div className={styles.shell}>
         <section className={styles.hero}>
           <div className={styles.heroInner}>
-            <span className={styles.eyebrow}>Grand Opening</span>
+            <span className={styles.eyebrow}>새로운 시작</span>
             <div>
               <h1 className={styles.heroTitle}>{model.businessName}</h1>
               <p className={styles.brandName}>{model.brandName}</p>
@@ -277,7 +277,7 @@ export function OpeningThemeRenderer({ state, theme }: OpeningThemeRendererProps
               </div>
             ) : (
               <div className={styles.heroImage}>
-                <div className={styles.imageFallback}>Grand Opening</div>
+                <div className={styles.imageFallback}>오픈 준비 중</div>
               </div>
             )}
             <div className={styles.heroMeta}>
