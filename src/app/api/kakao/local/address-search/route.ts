@@ -117,7 +117,7 @@ export async function GET(request: Request) {
     return NextResponse.json(
       { error: 'Kakao Local REST API 키가 설정되지 않았습니다.' },
       {
-        status: 500,
+        status: 503,
         headers: buildRateLimitHeaders(rateLimitResult),
       }
     );
@@ -186,7 +186,7 @@ export async function GET(request: Request) {
           '카카오 주소 검색 요청에 실패했습니다. 잠시 후 다시 시도해 주세요.',
       },
       {
-        status: 500,
+        status: 502,
         headers: buildRateLimitHeaders(rateLimitResult),
       }
     );

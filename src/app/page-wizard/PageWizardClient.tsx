@@ -74,6 +74,8 @@ import {
   composeDisplayName,
   composeGreetingAuthor,
   createInitialWizardConfig,
+  applyWizardDateInputToConfig,
+  applyWizardTimeInputToConfig,
   hasText,
   type WizardStepKey,
 } from './pageWizardData';
@@ -1213,27 +1215,14 @@ export default function PageWizardClient({
   /* Handlers: Date/Time */
 
   const handleDateInputChange = (value: string) => {
-    if (!value) {
-      return;
-    }
-
-    const [year, month, day] = value.split('-').map((item) => Number(item));
     updateForm((draft) => {
-      draft.weddingDateTime.year = year;
-      draft.weddingDateTime.month = month - 1;
-      draft.weddingDateTime.day = day;
+      applyWizardDateInputToConfig(draft, value);
     });
   };
 
   const handleTimeInputChange = (value: string) => {
-    if (!value) {
-      return;
-    }
-
-    const [hour, minute] = value.split(':').map((item) => Number(item));
     updateForm((draft) => {
-      draft.weddingDateTime.hour = hour;
-      draft.weddingDateTime.minute = minute;
+      applyWizardTimeInputToConfig(draft, value);
     });
   };
 

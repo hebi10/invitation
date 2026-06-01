@@ -52,6 +52,9 @@ export default function ScheduleStep({
                   )}`
                 : ''
             }
+            onInput={(event) =>
+              onDateInputChange((event.currentTarget as HTMLInputElement).value)
+            }
             onChange={(event) => onDateInputChange(event.target.value)}
           />
         </label>
@@ -66,6 +69,9 @@ export default function ScheduleStep({
                     weddingDate.getMinutes()
                   ).padStart(2, '0')}`
                 : ''
+            }
+            onInput={(event) =>
+              onTimeInputChange((event.currentTarget as HTMLInputElement).value)
             }
             onChange={(event) => onTimeInputChange(event.target.value)}
           />

@@ -701,10 +701,103 @@ export function formatTimeLabel(date: Date) {
   }).format(date);
 }
 
+export type WizardDateInputParts = {
+  year: number;
+  month: number;
+  day: number;
+};
+
+export type WizardTimeInputParts = {
+  hour: number;
+  minute: number;
+};
+
+export function parseWizardDateInput(value: string): WizardDateInputParts | null {
+  const match = value.trim().match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!match) {
+    return null;
+  }
+
+  const year = Number(match[1]);
+  const month = Number(match[2]) - 1;
+  const day = Number(match[3]);
+  const date = new Date(year, month, day);
+
+  if (
+    !Number.isInteger(year) ||
+    !Number.isInteger(month) ||
+    !Number.isInteger(day) ||
+    date.getFullYear() !== year ||
+    date.getMonth() !== month ||
+    date.getDate() !== day
+  ) {
+    return null;
+  }
+
+  return { year, month, day };
+}
+
+export function parseWizardTimeInput(value: string): WizardTimeInputParts | null {
+  const match = value.trim().match(/^(\d{2}):(\d{2})$/);
+  if (!match) {
+    return null;
+  }
+
+  const hour = Number(match[1]);
+  const minute = Number(match[2]);
+
+  if (
+    !Number.isInteger(hour) ||
+    !Number.isInteger(minute) ||
+    hour < 0 ||
+    hour > 23 ||
+    minute < 0 ||
+    minute > 59
+  ) {
+    return null;
+  }
+
+  return { hour, minute };
+}
+
+export function applyWizardDateInputToConfig(
+  config: InvitationPageSeed,
+  value: string
+) {
+  const parsed = parseWizardDateInput(value);
+  if (!parsed) {
+    return false;
+  }
+
+  config.weddingDateTime.year = parsed.year;
+  config.weddingDateTime.month = parsed.month;
+  config.weddingDateTime.day = parsed.day;
+  return true;
+}
+
+export function applyWizardTimeInputToConfig(
+  config: InvitationPageSeed,
+  value: string
+) {
+  const parsed = parseWizardTimeInput(value);
+  if (!parsed) {
+    return false;
+  }
+
+  config.weddingDateTime.hour = parsed.hour;
+  config.weddingDateTime.minute = parsed.minute;
+  return true;
+}
+
 export function buildWeddingDateObject(formState: InvitationPageSeed) {
   const { year, month, day, hour, minute } = formState.weddingDateTime;
 
   if (
+    !Number.isInteger(year) ||
+    !Number.isInteger(month) ||
+    !Number.isInteger(day) ||
+    !Number.isInteger(hour) ||
+    !Number.isInteger(minute) ||
     year < 1900 ||
     month < 0 ||
     month > 11 ||
