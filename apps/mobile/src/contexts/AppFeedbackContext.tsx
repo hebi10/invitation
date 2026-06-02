@@ -44,7 +44,9 @@ type AppFeedbackContextValue = {
 };
 
 const DEFAULT_TOAST_DURATION_MS = 2800;
-const CONNECTIVITY_POLL_INTERVAL_MS = 30000;
+const CONNECTIVITY_MIN_POLL_INTERVAL_MS = 30000;
+const CONNECTIVITY_MAX_POLL_INTERVAL_MS = 120000;
+const CONNECTIVITY_REQUEST_TIMEOUT_MS = 6000;
 const SUCCESS_VIBRATION_DURATION_MS = 12;
 const AppFeedbackContext = createContext<AppFeedbackContextValue | null>(null);
 
@@ -55,6 +57,8 @@ export function AppFeedbackProvider({ children }: PropsWithChildren) {
   const [toast, setToast] = useState<AppToastState | null>(null);
   const [isOffline, setIsOffline] = useState(false);
   const dismissTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const connectivityDelayRef = useRef(CONNECTIVITY_MIN_POLL_INTERVAL_MS);
+  const connectivityRequestIdRef = useRef(0);
 
   const dismissToast = useCallback(() => {
     if (dismissTimeoutRef.current) {
@@ -103,15 +107,28 @@ export function AppFeedbackProvider({ children }: PropsWithChildren) {
   );
 
   const refreshConnectivity = useCallback(async () => {
+    const requestId = connectivityRequestIdRef.current + 1;
+    connectivityRequestIdRef.current = requestId;
+
     if (isExpoWebPreview) {
       if (typeof navigator !== 'undefined' && navigator.onLine === false) {
         setIsOffline(true);
+        connectivityDelayRef.current = Math.min(
+          connectivityDelayRef.current * 2,
+          CONNECTIVITY_MAX_POLL_INTERVAL_MS
+        );
         return;
       }
 
       setIsOffline(false);
+      connectivityDelayRef.current = CONNECTIVITY_MIN_POLL_INTERVAL_MS;
       return;
     }
+
+    const controller = new AbortController();
+    const timeout = setTimeout(() => {
+      controller.abort();
+    }, CONNECTIVITY_REQUEST_TIMEOUT_MS);
 
     try {
       const response = await fetch(
@@ -121,33 +138,72 @@ export function AppFeedbackProvider({ children }: PropsWithChildren) {
             Accept: 'application/json',
           },
           cache: 'no-store',
+          signal: controller.signal,
         }
       );
 
-      setIsOffline(!response.ok && response.status >= 500);
+      if (connectivityRequestIdRef.current !== requestId) {
+        return;
+      }
+
+      const nextIsOffline = !response.ok && response.status >= 500;
+      setIsOffline(nextIsOffline);
+      connectivityDelayRef.current = nextIsOffline
+        ? Math.min(connectivityDelayRef.current * 2, CONNECTIVITY_MAX_POLL_INTERVAL_MS)
+        : CONNECTIVITY_MIN_POLL_INTERVAL_MS;
     } catch {
+      if (connectivityRequestIdRef.current !== requestId) {
+        return;
+      }
+
       setIsOffline(true);
+      connectivityDelayRef.current = Math.min(
+        connectivityDelayRef.current * 2,
+        CONNECTIVITY_MAX_POLL_INTERVAL_MS
+      );
+    } finally {
+      clearTimeout(timeout);
     }
   }, [apiBaseUrl, isExpoWebPreview]);
 
   useEffect(() => {
-    void refreshConnectivity();
+    let cancelled = false;
+    let timer: ReturnType<typeof setTimeout> | null = null;
 
-    const interval = setInterval(() => {
-      void refreshConnectivity();
-    }, CONNECTIVITY_POLL_INTERVAL_MS);
+    const scheduleConnectivityCheck = () => {
+      timer = setTimeout(() => {
+        void runConnectivityCheck();
+      }, connectivityDelayRef.current);
+    };
+
+    const runConnectivityCheck = async () => {
+      await refreshConnectivity();
+      if (!cancelled) {
+        scheduleConnectivityCheck();
+      }
+    };
+
+    void runConnectivityCheck();
 
     if (!isExpoWebPreview || typeof window === 'undefined') {
       return () => {
-        clearInterval(interval);
+        cancelled = true;
+        if (timer) {
+          clearTimeout(timer);
+        }
       };
     }
 
     const handleOnline = () => {
+      connectivityDelayRef.current = CONNECTIVITY_MIN_POLL_INTERVAL_MS;
       setIsOffline(false);
       void refreshConnectivity();
     };
     const handleOffline = () => {
+      connectivityDelayRef.current = Math.min(
+        connectivityDelayRef.current * 2,
+        CONNECTIVITY_MAX_POLL_INTERVAL_MS
+      );
       setIsOffline(true);
     };
 
@@ -155,7 +211,10 @@ export function AppFeedbackProvider({ children }: PropsWithChildren) {
     window.addEventListener('offline', handleOffline);
 
     return () => {
-      clearInterval(interval);
+      cancelled = true;
+      if (timer) {
+        clearTimeout(timer);
+      }
       window.removeEventListener('online', handleOnline);
       window.removeEventListener('offline', handleOffline);
     };

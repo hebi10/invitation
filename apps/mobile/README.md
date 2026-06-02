@@ -48,3 +48,8 @@
 ## 검증
 - `npm --prefix apps/mobile run lint`
 - `npm --prefix apps/mobile run typecheck`
+- `npm run android:verify:kotlin`
+- `npm run android:verify:debug`
+
+현재 모바일 앱은 Expo managed 구성이라 네이티브 Android 프로젝트가 저장소에 포함되어 있지 않습니다.
+`android:verify:*` 스크립트는 이 상태를 확인하고, 네이티브 프로젝트가 생긴 경우 안전한 Gradle 검증 스크립트를 먼저 추가하도록 막습니다.

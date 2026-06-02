@@ -17,6 +17,8 @@
     "mb:build:android:internal": "npm --prefix apps/mobile run build:android:internal",
     "mb:build:android:play": "npm --prefix apps/mobile run build:android:play",
     "mb:submit:android:play": "npm --prefix apps/mobile run submit:android:play",
+    "android:verify:kotlin": "node scripts/verify-expo-managed-android.mjs kotlin",
+    "android:verify:debug": "node scripts/verify-expo-managed-android.mjs debug",
     "sync:memory-metadata": "node scripts/sync-memory-page-metadata.mjs",
     "backfill:events": "node --experimental-strip-types --loader ./scripts/ts-path-loader.mjs scripts/backfill-events.mts",
     "delete:legacy-event-collections": "node --experimental-strip-types --loader ./scripts/ts-path-loader.mjs scripts/delete-legacy-event-collections.mts",
