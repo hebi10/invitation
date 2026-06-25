@@ -27,9 +27,6 @@
 
 ## 이벤트 운영
 
-- [이벤트 백필 실행 가이드](./event-backfill-runbook.md): 이벤트 도메인 백필 실행 절차
-- [이벤트 운영 모니터링 가이드](./event-rollout-monitoring.md): rollout 상태와 mismatch 점검 방식
-- [이벤트 전환 체크리스트](./event-cutover-checklist.md): legacy 전환과 운영 확인 항목
 - [이벤트 타입 레지스트리](./event-type-registry.md): 지원 이벤트 타입과 확장 기준
 - [생일 이벤트 PoC](./event-type-birthday-poc.md): 생일 이벤트 타입 도입 기록
 

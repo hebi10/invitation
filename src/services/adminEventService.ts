@@ -11,9 +11,6 @@ export interface DeleteAdminEventResponse {
     eventSecrets: number;
     slugIndexes: number;
     billingFulfillments: number;
-    writeThroughFailures: number;
-    readFallbackLogs: number;
-    rolloutMismatches: number;
   };
 }
 

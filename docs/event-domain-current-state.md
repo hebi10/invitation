@@ -29,7 +29,6 @@
 ## 운영 기준
 - 기본 운영 모드는 `event-only`다. legacy 컬렉션을 fallback 또는 rollback 기준으로 삼지 않는다.
 - read-through/write-through, slug index backfill, legacy 삭제 이력은 새 작업 판단 기준이 아니라 장애 분석용 배경이다.
-- 배포 전환과 운영 점검은 `event-rollout-monitoring.md`와 실제 스크립트를 기준으로 확인한다.
 
 ## 검증 명령
 - `npm run qa:event-rollout`

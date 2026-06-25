@@ -27,13 +27,6 @@ export interface CommentInput {
 
 export type { Comment };
 
-export interface CommentRepository {
-  isAvailable(): boolean;
-  create(input: CommentInput): Promise<void>;
-  list(pageSlug?: string): Promise<Comment[]>;
-  scheduleDelete(commentId: string, collectionName: string): Promise<void>;
-}
-
 function isEventCommentCollectionPath(collectionName: string) {
   return collectionName.startsWith(EVENT_COLLECTION_PREFIX);
 }
@@ -166,12 +159,12 @@ async function listAllEventComments() {
   return commentGroups.flat();
 }
 
-export const commentRepository: CommentRepository = {
+export const commentRepository = {
   isAvailable() {
     return process.env.NEXT_PUBLIC_USE_FIREBASE === 'true';
   },
 
-  async create(input) {
+  async create(input: CommentInput) {
     const pageSlug = requireTrimmedString(input.pageSlug, {
       fieldLabel: 'Page slug',
       message: 'Required comment fields are missing.',
@@ -200,7 +193,7 @@ export const commentRepository: CommentRepository = {
     );
   },
 
-  async list(pageSlug) {
+  async list(pageSlug?: string) {
     const normalizedPageSlug = pageSlug?.trim() ? pageSlug.trim() : undefined;
     if (!normalizedPageSlug) {
       return listAllEventComments();
@@ -209,7 +202,7 @@ export const commentRepository: CommentRepository = {
     return listEventCommentsByPageSlug(normalizedPageSlug);
   },
 
-  async scheduleDelete(commentId, collectionName) {
+  async scheduleDelete(commentId: string, collectionName: string) {
     const normalizedCommentId = requireTrimmedString(commentId, {
       fieldLabel: 'Comment id',
       message: 'Comment collection path is required.',

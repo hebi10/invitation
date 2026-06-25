@@ -117,10 +117,7 @@ assert(
 
 const broadServicesImports = sourceFiles.filter((filePath) => {
   const sourcePath = normalizeSourcePath(filePath);
-  if (
-    sourcePath === 'src/services/index.ts' ||
-    sourcePath.startsWith('src/services/')
-  ) {
+  if (sourcePath.startsWith('src/services/')) {
     return false;
   }
 

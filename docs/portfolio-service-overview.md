@@ -91,6 +91,5 @@
 
 ## 11. 참고 문서
 - 이벤트 도메인 현재 기준: `event-domain-current-state.md`
-- 운영 모니터링: `event-rollout-monitoring.md`
 - 서비스와 저장소 경계: `service-repository-boundary.md`
 - 보안 정리와 검증: `security-hardening-checklist.md`

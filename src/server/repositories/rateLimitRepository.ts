@@ -22,11 +22,6 @@ export type RateLimitRepositoryResult = {
   retryAfterSeconds: number;
 };
 
-export interface RateLimitRepository {
-  isAvailable(): boolean;
-  apply(input: RateLimitRepositoryInput): Promise<RateLimitRepositoryResult>;
-}
-
 function buildRateLimitDocumentId(key: string) {
   return createHash('sha256').update(key).digest('hex');
 }
@@ -58,12 +53,12 @@ function readStoredResetAt(data: Record<string, unknown> | undefined) {
   return null;
 }
 
-export const firestoreRateLimitRepository: RateLimitRepository = {
+export const firestoreRateLimitRepository = {
   isAvailable() {
     return Boolean(getServerFirestore());
   },
 
-  async apply(input) {
+  async apply(input: RateLimitRepositoryInput) {
     const normalizedKey = input.key.trim();
     const limit = Math.max(1, Math.trunc(input.limit));
     const windowMs = Math.max(1000, Math.trunc(input.windowMs));

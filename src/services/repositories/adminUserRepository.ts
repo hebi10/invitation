@@ -3,17 +3,12 @@ import { requireTrimmedString } from './repositoryValidators';
 
 const ADMIN_USERS_COLLECTION = 'admin-users';
 
-export interface AdminUserRepository {
-  isAvailable(): boolean;
-  isEnabled(uid: string): Promise<boolean>;
-}
-
-export const adminUserRepository: AdminUserRepository = {
+export const adminUserRepository = {
   isAvailable() {
     return process.env.NEXT_PUBLIC_USE_FIREBASE === 'true';
   },
 
-  async isEnabled(uid) {
+  async isEnabled(uid: string) {
     const normalizedUid = requireTrimmedString(uid, {
       fieldLabel: 'User id',
       message: '관리자 사용자 정보가 올바르지 않습니다.',

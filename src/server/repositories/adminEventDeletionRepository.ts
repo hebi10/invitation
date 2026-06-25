@@ -9,9 +9,6 @@ import {
 
 const EVENT_SECRETS_COLLECTION = 'eventSecrets';
 const BILLING_FULFILLMENTS_COLLECTION = 'billingFulfillments';
-const EVENT_WRITE_THROUGH_FAILURES_COLLECTION = 'event-write-through-failures';
-const EVENT_READ_FALLBACK_LOGS_COLLECTION = 'event-read-fallback-logs';
-const EVENT_ROLLOUT_MISMATCHES_COLLECTION = 'event-rollout-mismatches';
 
 type DeleteCountResult = {
   deletedCount: number;
@@ -25,9 +22,6 @@ export type DeleteAdminEventResult = {
     eventSecrets: number;
     slugIndexes: number;
     billingFulfillments: number;
-    writeThroughFailures: number;
-    readFallbackLogs: number;
-    rolloutMismatches: number;
   };
 };
 
@@ -151,29 +145,12 @@ export async function deleteEventAndOperationalRecordsBySlug(
     db.collection(BILLING_FULFILLMENTS_COLLECTION).where('targetPageSlug', '==', canonicalSlug),
   ]);
 
-  const writeThroughFailureRefs = await collectQueryRefs([
-    db
-      .collection(EVENT_WRITE_THROUGH_FAILURES_COLLECTION)
-      .where('pageSlug', '==', canonicalSlug),
-  ]);
-
-  const readFallbackRefs = await collectQueryRefs([
-    db.collection(EVENT_READ_FALLBACK_LOGS_COLLECTION).where('lookupValue', '==', canonicalSlug),
-  ]);
-
-  const mismatchRefs = await collectQueryRefs([
-    db.collection(EVENT_ROLLOUT_MISMATCHES_COLLECTION).where('lookupValue', '==', canonicalSlug),
-  ]);
-
   const eventDocumentDeleteCount = await deleteDocumentRecursively(eventDocRef);
   const eventSecretsDeleteCount = await deleteDocumentIfExists(
     db.collection(EVENT_SECRETS_COLLECTION).doc(eventId)
   );
   const slugIndexesDeleteResult = await deleteRefs(slugIndexRefs);
   const billingDeleteResult = await deleteRefs(billingRefs);
-  const writeThroughFailureDeleteResult = await deleteRefs(writeThroughFailureRefs);
-  const readFallbackDeleteResult = await deleteRefs(readFallbackRefs);
-  const mismatchDeleteResult = await deleteRefs(mismatchRefs);
 
   return {
     eventId,
@@ -183,9 +160,6 @@ export async function deleteEventAndOperationalRecordsBySlug(
       eventSecrets: eventSecretsDeleteCount,
       slugIndexes: slugIndexesDeleteResult.deletedCount,
       billingFulfillments: billingDeleteResult.deletedCount,
-      writeThroughFailures: writeThroughFailureDeleteResult.deletedCount,
-      readFallbackLogs: readFallbackDeleteResult.deletedCount,
-      rolloutMismatches: mismatchDeleteResult.deletedCount,
     },
   };
 }
