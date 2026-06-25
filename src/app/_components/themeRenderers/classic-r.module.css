@@ -1,0 +1,307 @@
+.classicTheme {
+  --classic-bg: #fbfaf7;
+  --classic-ink: #302a24;
+  --classic-muted: #7d746b;
+  --classic-line: rgba(48, 42, 36, 0.26);
+  --classic-line-soft: rgba(48, 42, 36, 0.14);
+  background: var(--classic-bg);
+  color: var(--classic-ink);
+  max-width: 700px;
+  margin: 0 auto;
+}
+
+.loaderContainer {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: grid;
+  place-items: center;
+  padding: 2rem;
+  background: #fbfaf7;
+  color: var(--classic-ink);
+}
+
+.loaderInner {
+  width: min(100%, 340px);
+  text-align: center;
+}
+
+.loaderDate {
+  margin-bottom: 1.25rem;
+  font-family: var(--font-gowun-dodum);
+  font-size: 0.78rem;
+  letter-spacing: 0.22em;
+  color: var(--classic-muted);
+  text-transform: uppercase;
+}
+
+.loaderNames {
+  display: grid;
+  gap: 0.35rem;
+  margin-bottom: 1.4rem;
+  font-family: var(--font-display);
+  font-size: clamp(2rem, 11vw, 3rem);
+  line-height: 1.08;
+}
+
+.loaderAmpersand {
+  font-family: var(--font-gowun-dodum);
+  font-size: 0.58em;
+  color: var(--classic-muted);
+}
+
+.loaderDivider {
+  width: 72px;
+  height: 1px;
+  margin: 0 auto 1.2rem;
+  background: var(--classic-line);
+}
+
+.loaderHeading {
+  margin: 0;
+  font-family: var(--font-gowun-dodum);
+  font-size: 0.86rem;
+  font-weight: 400;
+  letter-spacing: 0.08em;
+  color: var(--classic-muted);
+}
+
+.loaderSubtitle {
+  margin: 0.45rem 0 0;
+  font-family: var(--font-gowun-dodum);
+  font-size: 0.8rem;
+  color: var(--classic-muted);
+}
+
+.progressContainer {
+  width: min(100%, 240px);
+  height: 1px;
+  margin: 1.5rem auto 0;
+  background: rgba(48, 42, 36, 0.12);
+  overflow: hidden;
+}
+
+.progressBar {
+  height: 100%;
+  background: var(--classic-ink);
+  transition: width 0.5s ease;
+}
+
+.loadingText {
+  margin: 1rem 0 0;
+  font-family: var(--font-gowun-dodum);
+  font-size: 0.78rem;
+  color: var(--classic-muted);
+}
+
+.hero {
+  min-height: 100svh;
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  padding: 2.25rem 1.25rem 1.8rem;
+  background: #fbfaf7;
+}
+
+.heroTop {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  font-family: var(--font-gowun-dodum);
+  font-size: 0.72rem;
+  letter-spacing: 0.16em;
+  color: var(--classic-muted);
+  text-transform: uppercase;
+}
+
+.heroImageFrame {
+  align-self: center;
+  position: relative;
+  width: 100%;
+  aspect-ratio: 4 / 5;
+  margin: 2rem 0 1.6rem;
+  overflow: hidden;
+  background: #eee9e1;
+  border: 1px solid var(--classic-line);
+}
+
+.heroImage {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.heroFallback {
+  width: 100%;
+  height: 100%;
+  background:
+    linear-gradient(135deg, rgba(48, 42, 36, 0.08), rgba(255, 255, 255, 0)),
+    #eee9e1;
+}
+
+.heroCopy {
+  text-align: center;
+}
+
+.heroNames {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: clamp(2.45rem, 13vw, 4rem);
+  font-weight: 400;
+  line-height: 1.05;
+  letter-spacing: 0;
+}
+
+.heroNameLine {
+  display: block;
+}
+
+.heroAnd {
+  display: block;
+  margin: 0.18rem 0;
+  font-family: var(--font-gowun-dodum);
+  font-size: 0.36em;
+  color: var(--classic-muted);
+}
+
+.heroMeta {
+  margin: 1.1rem auto 0;
+  max-width: 24rem;
+  font-family: var(--font-gowun-dodum);
+  font-size: 0.92rem;
+  line-height: 1.8;
+  color: var(--classic-muted);
+}
+
+.heroScroll {
+  margin-top: 1.4rem;
+  font-family: var(--font-gowun-dodum);
+  font-size: 0.7rem;
+  letter-spacing: 0.18em;
+  color: rgba(48, 42, 36, 0.46);
+  text-transform: uppercase;
+}
+
+.classicTheme :global([class*="Simple_container"]),
+.classicTheme :global([class*="Simple_wrapper"]),
+.classicTheme :global([class*="Simple_card"]) {
+  background: transparent !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}
+
+.classicTheme :global([class*="Simple_container"]),
+.classicTheme :global([class*="Simple_wrapper"]) {
+  margin: 0 !important;
+  padding: 3.25rem 1.25rem !important;
+  border-top: 1px solid var(--classic-line-soft) !important;
+}
+
+.classicTheme :global([class*="Simple_card"]) {
+  padding: 1.6rem 1.25rem !important;
+  border: 1px solid var(--classic-line) !important;
+}
+
+.classicTheme :global([class*="Simple_imageWrapper"]),
+.classicTheme :global([class*="Simple_mapContainer"]),
+.classicTheme :global([class*="Simple_mapFrame"]),
+.classicTheme :global([class*="Simple_kakaoMapWrapper"]) {
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}
+
+.classicTheme :global([class*="Simple_imagePlaceholder"]) {
+  background: #eee9e1 !important;
+}
+
+.classicTheme :global([class*="Simple_form"]),
+.classicTheme :global([class*="Simple_commentItem"]),
+.classicTheme :global([class*="Simple_accountCard"]),
+.classicTheme :global([class*="Simple_countdownContainer"]),
+.classicTheme :global([class*="Simple_detailItem"]),
+.classicTheme :global([class*="Simple_venueInfo"]),
+.classicTheme :global([class*="Simple_tabs"]),
+.classicTheme :global([class*="Simple_calendarGrid"]),
+.classicTheme :global([class*="Simple_weekdaysHeader"]),
+.classicTheme :global([class*="Simple_familyRow"]) {
+  background: rgba(251, 250, 247, 0.72) !important;
+  border: 1px solid var(--classic-line-soft) !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}
+
+.classicTheme :global([class*="Simple_scheduleItem"]),
+.classicTheme :global([class*="Simple_transportItem"]),
+.classicTheme :global([class*="Simple_notice"]),
+.classicTheme :global([class*="Simple_error"]) {
+  border: 1px solid var(--classic-line-soft) !important;
+}
+
+.classicTheme :global([class*="Simple_messageWrapper"]),
+.classicTheme :global([class*="Simple_message"]),
+.classicTheme :global([class*="Simple_messageLine"]) {
+  border: 0 !important;
+}
+
+.classicTheme :global([class*="Simple_tab"]),
+.classicTheme :global([class*="Simple_navButton"]),
+.classicTheme :global([class*="Simple_moreButton"]),
+.classicTheme :global([class*="Simple_submitButton"]),
+.classicTheme :global([class*="Simple_copyButton"]),
+.classicTheme :global([class*="Simple_addressCopyButton"]),
+.classicTheme :global([class*="Simple_pageButton"]),
+.classicTheme :global([class*="Simple_pageNumber"]),
+.classicTheme :global([class*="Simple_iconBtn"]),
+.classicTheme :global([class*="Simple_phoneButton"]),
+.classicTheme :global([class*="Simple_accountButton"]) {
+  background: transparent !important;
+  border: 1px solid var(--classic-line) !important;
+  color: var(--classic-ink) !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}
+
+.classicTheme :global(button) {
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}
+
+.classicTheme :global([class*="Simple_input"]),
+.classicTheme :global([class*="Simple_textarea"]),
+.classicTheme :global(input),
+.classicTheme :global(textarea),
+.classicTheme :global(select) {
+  background: #fbfaf7 !important;
+  border: 1px solid var(--classic-line) !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}
+
+.classicTheme :global([class*="Simple_dayCell"]),
+.classicTheme :global([class*="Simple_eventDay"]),
+.classicTheme :global([class*="Simple_orderBadge"]),
+.classicTheme :global([class*="Simple_scheduleTime"]) {
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}
+
+.classicTheme :global(h2),
+.classicTheme :global(h3) {
+  color: var(--classic-ink) !important;
+  letter-spacing: 0.02em !important;
+}
+
+.classicTheme :global([class*="Simple_sectionTitle"]),
+.classicTheme :global([class*="Simple_title"]) {
+  margin-bottom: 1.4rem !important;
+}
+
+@media (min-width: 700px) {
+  .hero {
+    padding-inline: 2.2rem;
+  }
+
+  .heroImageFrame {
+    aspect-ratio: 5 / 6;
+  }
+}

@@ -17,7 +17,7 @@ const contentSecurityPolicyReportOnly = [
   "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://t1.kakaocdn.net https://dapi.kakao.com https://t1.daumcdn.net https://apis.google.com",
   "connect-src 'self' https://*.googleapis.com https://*.firebaseio.com https://firebasestorage.googleapis.com https://api.revenuecat.com https://dapi.kakao.com",
   "frame-src 'self' https://*.firebaseapp.com",
-  "form-action 'self'",
+  "form-action 'self' https://sharer.kakao.com",
 ].join("; ");
 
 const contentSecurityPolicy = [
@@ -32,7 +32,7 @@ const contentSecurityPolicy = [
   "script-src 'self' 'unsafe-inline' https://t1.kakaocdn.net https://dapi.kakao.com https://t1.daumcdn.net https://apis.google.com",
   "connect-src 'self' https://*.googleapis.com https://*.firebaseio.com https://firebasestorage.googleapis.com https://api.revenuecat.com https://dapi.kakao.com",
   "frame-src 'self' https://*.firebaseapp.com",
-  "form-action 'self'",
+  "form-action 'self' https://sharer.kakao.com",
   "upgrade-insecure-requests",
 ].join("; ");
 

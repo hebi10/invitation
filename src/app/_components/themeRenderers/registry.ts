@@ -3,6 +3,7 @@ import type { ComponentType } from 'react';
 import type { InvitationThemeKey } from '@/lib/invitationThemes';
 
 import type { WeddingThemeRendererProps } from '../weddingPageRenderers';
+import ClassicRenewalThemeRenderer from './classic-r';
 import EmotionalThemeRenderer from './emotional';
 import RomanticThemeRenderer from './romantic';
 import SimpleThemeRenderer from './simple';
@@ -27,6 +28,10 @@ export const WEDDING_THEME_RENDERER_REGISTRY = [
   {
     key: 'simple',
     component: SimpleThemeRenderer,
+  },
+  {
+    key: 'classic-r',
+    component: ClassicRenewalThemeRenderer,
   },
 ] as const satisfies readonly WeddingThemeRendererRegistryEntry[];
 

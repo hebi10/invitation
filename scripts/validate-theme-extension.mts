@@ -130,8 +130,9 @@ async function main() {
 
   pushFailure(
     failures,
-    themeStepSource.includes('INVITATION_THEME_KEYS.map'),
-    'Web wizard must render theme options by iterating INVITATION_THEME_KEYS.'
+    themeStepSource.includes('getSelectableThemeKeysForEventType(') &&
+      themeStepSource.includes('selectableThemeKeys.map'),
+    'Web wizard must render theme options from event-type selectable theme helpers.'
   );
   pushFailure(
     failures,
@@ -145,12 +146,12 @@ async function main() {
     'Ticket modal must render theme options by iterating purchasableThemes.'
   );
 
-  themeKeys.forEach((themeKey) => {
+  selectableThemes.forEach((themeKey) => {
     const registryPattern = new RegExp(`key:\\s*'${themeKey}'`);
     pushFailure(
       failures,
       registryPattern.test(rendererRegistrySource),
-      `Web renderer registry is missing theme "${themeKey}".`
+      `Web wedding renderer registry is missing selectable theme "${themeKey}".`
     );
   });
 
@@ -334,7 +335,7 @@ async function main() {
     `Theme extension validation passed for ${themeKeys.length} registered theme(s).`
   );
   console.log(
-    'For a new theme rollout, run this script with --expected-theme-count=3 and follow docs/theme-extension-test-plan.md.'
+    'For a new theme rollout, run this script with the updated registered theme count and follow docs/theme-extension-test-plan.md.'
   );
 }
 

@@ -82,6 +82,27 @@ export const INVITATION_THEME_METADATA_REGISTRY = [
     sortOrder: 20,
   },
   {
+    key: 'classic-r',
+    label: '클래식 리뉴얼',
+    adminLabel: '클래식 리뉴얼',
+    variantLabel: '클래식 리뉴얼',
+    pathSuffix: '/classic-r',
+    wizardDescription: '사진과 타이포그래피를 차분하게 구성한 프리미엄 리뉴얼 디자인입니다.',
+    preview: {
+      description:
+        '하트와 장식 애니메이션을 덜어내고 첫 화면의 고급감을 살린 프리미엄 청첩장 테마입니다.',
+      sampleUrls: {
+        standard: 'https://msgnote.kr/kim-taehyun-choi-yuna/classic-r/',
+        deluxe: 'https://msgnote.kr/lee-junho-park-somin/classic-r/',
+        premium: 'https://msgnote.kr/an-doyoung-yoon-jisoo/classic-r/',
+      },
+    },
+    shareTitleMode: 'metadata',
+    documentTitleSuffix: ' (Classic Renewal)',
+    ariaLabelSuffix: ' (Classic Renewal)',
+    sortOrder: 25,
+  },
+  {
     key: 'first-birthday-pink',
     label: '핑크 봄날',
     adminLabel: 'First Birthday Pink',
@@ -270,6 +291,13 @@ export const INVITATION_THEME_SALES_POLICY_REGISTRY = {
     allowsAdditionalPurchase: true,
   },
   simple: {
+    isDefault: false,
+    canBeDefault: true,
+    isSelectableAtCreation: true,
+    isPurchasable: true,
+    allowsAdditionalPurchase: true,
+  },
+  'classic-r': {
     isDefault: false,
     canBeDefault: true,
     isSelectableAtCreation: true,

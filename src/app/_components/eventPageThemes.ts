@@ -20,7 +20,7 @@ export interface EventInvitationRouteOptions {
   eventType?: EventTypeKey;
 }
 
-type ShareButtonVariant = 'default';
+type ShareButtonVariant = 'default' | 'classic';
 
 export interface EventThemeDefinition {
   documentTitleSuffix: string;
@@ -41,6 +41,16 @@ const defaultShareContainer = {
     backgroundColor: '#fff',
     borderBottom: '1px solid #f0f0f0',
     padding: '10px 0',
+    display: 'block',
+  },
+} satisfies EventThemeDefinition['shareContainer'];
+
+const classicShareContainer = {
+  className: 'kakao_share',
+  style: {
+    backgroundColor: '#fbfaf7',
+    borderBottom: '1px solid rgba(48, 42, 36, 0.18)',
+    padding: '12px 20px 24px',
     display: 'block',
   },
 } satisfies EventThemeDefinition['shareContainer'];
@@ -67,8 +77,8 @@ const themeDefinitions = INVITATION_THEME_KEYS.reduce<Record<EventThemeKey, Even
     accumulator[theme] = {
       documentTitleSuffix: definition.documentTitleSuffix,
       ariaLabelSuffix: definition.ariaLabelSuffix,
-      shareButtonVariant: 'default',
-      shareContainer: defaultShareContainer,
+      shareButtonVariant: theme === 'classic-r' ? 'classic' : 'default',
+      shareContainer: theme === 'classic-r' ? classicShareContainer : defaultShareContainer,
       getShareTitle: resolveShareTitle,
       getShareDescription: resolveShareDescription,
     };

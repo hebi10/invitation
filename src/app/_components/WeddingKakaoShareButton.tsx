@@ -13,7 +13,7 @@ interface WeddingKakaoShareButtonProps {
   imageUrl: string;
   fallbackImageUrl?: string;
   shareMode?: InvitationShareMode;
-  variant?: 'default' | 'space';
+  variant?: 'default' | 'space' | 'classic';
 }
 
 const buttonBaseStyle = {
@@ -47,6 +47,13 @@ const buttonVariantStyles = {
     color: '#f5f8ff',
     borderColor: 'rgba(200, 220, 255, 0.24)',
     boxShadow: '0 12px 30px rgba(53, 83, 140, 0.22)',
+  },
+  classic: {
+    background: '#fbfaf7',
+    color: '#302a24',
+    borderColor: 'rgba(48, 42, 36, 0.28)',
+    boxShadow: 'none',
+    borderRadius: '0',
   },
 } as const;
 
@@ -165,6 +172,7 @@ export default function WeddingKakaoShareButton({
   const [feedbackMessage, setFeedbackMessage] = useState('');
   const [resolvedCardImageUrl, setResolvedCardImageUrl] = useState('');
   const variantStyle = buttonVariantStyles[variant];
+  const isClassicVariant = variant === 'classic';
   const kakaoAppKey = getPublicKakaoJavaScriptKey();
   const shareImageCandidates = useMemo(() => {
     const origin = typeof window === 'undefined' ? '' : window.location.origin;
@@ -322,28 +330,30 @@ export default function WeddingKakaoShareButton({
         type="button"
         style={{
           ...buttonBaseStyle,
-          background: variantStyle.background,
-          color: variantStyle.color,
-          boxShadow: variantStyle.boxShadow,
-          borderColor: variantStyle.borderColor,
+          ...variantStyle,
         }}
       >
         <span
           aria-hidden="true"
           style={{
-            width: '28px',
-            height: '28px',
-            borderRadius: '999px',
+            width: isClassicVariant ? 'auto' : '28px',
+            height: isClassicVariant ? 'auto' : '28px',
+            borderRadius: isClassicVariant ? '0' : '999px',
             display: 'inline-flex',
             alignItems: 'center',
             justifyContent: 'center',
             background:
-              variant === 'space' ? 'rgba(255,255,255,0.14)' : 'rgba(59,45,22,0.08)',
-            fontSize: '0.82rem',
+              variant === 'space'
+                ? 'rgba(255,255,255,0.14)'
+                : isClassicVariant
+                  ? 'transparent'
+                  : 'rgba(59,45,22,0.08)',
+            fontSize: isClassicVariant ? '0.72rem' : '0.82rem',
             fontWeight: 700,
+            letterSpacing: isClassicVariant ? '0.14em' : '0',
           }}
         >
-          K
+          {isClassicVariant ? 'KAKAO' : 'K'}
         </span>
         <span>{buttonLabel}</span>
       </button>

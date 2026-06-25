@@ -66,6 +66,12 @@ for (const header of [
   );
 }
 
+assert(
+  nextConfig.includes("form-action 'self' https://sharer.kakao.com"),
+  'next.config.ts',
+  'CSP form-action must allow Kakao share popup form posts.'
+);
+
 const apiDirectory = path.join(repoRoot, 'src', 'app', 'api');
 if (existsSync(apiDirectory)) {
   for (const routeFile of listRouteFiles(apiDirectory)) {

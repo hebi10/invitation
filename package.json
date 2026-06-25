@@ -9,6 +9,7 @@
     "dev": "npm run clean:next && next dev",
     "clean:next": "node -e \"require('fs').rmSync('.next',{recursive:true,force:true})\"",
     "validate:theme-extension": "npx --yes tsx --conditions react-server scripts/validate-theme-extension.mts",
+    "test:classic-r-theme": "npx --yes tsx --conditions react-server scripts/test-classic-r-theme.mts",
     "lint:web": "eslint .",
     "lint:mobile": "npm --prefix apps/mobile run lint",
     "mb:start": "npm --prefix apps/mobile run start",
