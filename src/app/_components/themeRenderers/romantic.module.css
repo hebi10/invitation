@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500&family=Noto+Sans+KR:wght@400;500;700&family=Noto+Serif+KR:wght@300;400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500&family=Nanum+Myeongjo:wght@400;700&family=Noto+Sans+KR:wght@400;500;700&family=Noto+Serif+KR:wght@300;400;500&display=swap');
 
 .romanticTheme {
   --romantic-bg: #fdf8f5;
@@ -13,7 +13,7 @@
   --romantic-display: 'Cormorant Garamond', serif;
   --romantic-serif: 'Noto Serif KR', serif;
   --romantic-sans: 'Noto Sans KR', sans-serif;
-  --romantic-name: 'Cormorant Garamond', 'Noto Serif KR', serif;
+  --romantic-name: 'Nanum Myeongjo', 'Noto Serif KR', serif;
   width: min(100%, 500px);
   max-width: 500px;
   margin: 0 auto;
@@ -128,12 +128,12 @@
   right: 2.25rem;
   transform: translateY(-25%);
   text-align: center;
-  font-family: var(--romantic-name);
+  font-family: var(--romantic-name, 'Nanum Myeongjo', 'Noto Serif KR', serif);
   font-size: clamp(3.1rem, 11vw, 4.4rem);
-  font-weight: 300;
+  font-weight: 400;
   line-height: 1.08;
-  letter-spacing: -0.01em;
-  color: var(--romantic-text);
+  letter-spacing: 0.02em;
+  color: var(--romantic-text, #2a1f1f);
   z-index: 1;
 }
 
