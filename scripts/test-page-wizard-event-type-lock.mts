@@ -11,17 +11,11 @@ import {
   getSelectableThemeKeysForEventType,
   isDedicatedPageWizardEventType,
 } from '../src/app/page-wizard/pageWizardEventConfig.ts';
-import {
-  BIRTHDAY_THEME_KEYS,
-} from '../src/app/_components/birthday/birthdayThemes.ts';
-import {
-  GENERAL_EVENT_THEME_KEYS,
-} from '../src/app/_components/generalEvent/generalEventThemes.ts';
-import {
-  getSelectableFirstBirthdayThemeKeys,
-} from '../src/app/_components/firstBirthday/firstBirthdayThemes.ts';
-import { OPENING_THEME_KEYS } from '../src/app/_components/opening/openingThemes.ts';
 import { getWizardSteps } from '../src/app/page-wizard/pageWizardData.ts';
+import { BIRTHDAY_THEME_KEYS } from '../src/lib/birthdayThemes.ts';
+import { getSelectableFirstBirthdayThemeKeys } from '../src/lib/firstBirthdayThemes.ts';
+import { GENERAL_EVENT_THEME_KEYS } from '../src/lib/generalEventThemes.ts';
+import { OPENING_THEME_KEYS } from '../src/lib/openingThemes.ts';
 import type { EventTypeKey } from '../src/lib/eventTypes.ts';
 import { getSelectableInvitationThemeKeys } from '../src/lib/invitationThemes.ts';
 
@@ -75,6 +69,21 @@ for (const { category, href, eventType } of lockedCreateRoutes) {
       : path.join(process.cwd(), 'src/app', href, 'page.tsx');
 
   assert.equal(fs.existsSync(routeFile), true, `${href} route file should exist`);
+
+  const routeDirectory = path.dirname(routeFile);
+  const layoutFile = path.join(routeDirectory, 'layout.tsx');
+  assert.equal(
+    fs.existsSync(layoutFile),
+    true,
+    `${href} must provide the authenticated wizard layout`
+  );
+  if (fs.existsSync(layoutFile)) {
+    assert.match(
+      fs.readFileSync(layoutFile, 'utf8'),
+      /AuthenticatedAppProviders/,
+      `${href} layout must provide auth and TanStack Query context`
+    );
+  }
 
   assert.equal(
     getPageWizardCreateHrefForEventType(eventType),

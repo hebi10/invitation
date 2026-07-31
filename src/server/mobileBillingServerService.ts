@@ -285,7 +285,8 @@ export async function fulfillServerMobilePageCreationPurchase(
   }
 
   const verifiedTransaction = await verifyRevenueCatNonSubscriptionTransaction(purchase);
-  const lockRecord = await acquireBillingFulfillmentLock(purchase, definition);
+  const lock = await acquireBillingFulfillmentLock(purchase, definition);
+  const lockRecord = lock.record;
 
   if (lockRecord.status === 'fulfilled' && lockRecord.createdPageSlug) {
     return buildMobileDraftCreationResponse(origin, lockRecord.createdPageSlug, {
@@ -303,6 +304,10 @@ export async function fulfillServerMobilePageCreationPurchase(
       deviceId: input.deviceId,
       issuedVia: 'purchase',
     });
+  }
+
+  if (!lock.acquired) {
+    throw new Error('This purchase is already being processed.');
   }
 
   try {
@@ -365,13 +370,18 @@ export async function fulfillServerMobileTicketPackPurchase(
   }
 
   const verifiedTransaction = await verifyRevenueCatNonSubscriptionTransaction(purchase);
-  const lockRecord = await acquireBillingFulfillmentLock(purchase, definition);
+  const lock = await acquireBillingFulfillmentLock(purchase, definition);
+  const lockRecord = lock.record;
 
   if (lockRecord.status === 'fulfilled') {
     return {
       success: true,
       ticketCount: await getServerPageTicketCount(targetPageSlug),
     };
+  }
+
+  if (!lock.acquired) {
+    throw new Error('This purchase is already being processed.');
   }
 
   const authorizedSession = await authorizeMobileClientEditorToken(targetPageSlug, targetToken, {

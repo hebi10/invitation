@@ -20,49 +20,63 @@ service firebase.storage {
         ).data.ownerUid == request.auth.uid;
     }
 
-    function hasPublishedEventSummary(eventId) {
-      return eventId is string &&
-        firestore.exists(/databases/(default)/documents/events/$(eventId)) &&
-        firestore.get(/databases/(default)/documents/events/$(eventId)).data.visibility.published == true;
+    function hasEventDisplayPeriodMap(data) {
+      return data.keys().hasAny(['displayPeriod']) &&
+        data.displayPeriod is map;
     }
 
-    function hasEventDisplayPeriod(eventId) {
-      return eventId is string &&
-        firestore.exists(/databases/(default)/documents/events/$(eventId)) &&
-        (
+    function hasActiveEventDisplayPeriod(data) {
+      return hasEventDisplayPeriodMap(data) &&
+        data.displayPeriod.keys().hasAny(['isActive']) &&
+        data.displayPeriod.isActive == true;
+    }
+
+    function hasCompleteEventDisplayPeriod(data) {
+      return hasActiveEventDisplayPeriod(data) &&
+        data.displayPeriod.keys().hasAll(['startDate', 'endDate']) &&
+        data.displayPeriod.startDate is timestamp &&
+        data.displayPeriod.endDate is timestamp;
+    }
+
+    function hasLegacyEventDisplayPeriod(data) {
+      return !hasEventDisplayPeriodMap(data) &&
+        data.keys().hasAny(['visibility']) &&
+        data.visibility is map &&
+        data.visibility.keys().hasAll(['displayStartAt', 'displayEndAt']) &&
+        data.visibility.displayStartAt is timestamp &&
+        data.visibility.displayEndAt is timestamp;
+    }
+
+    function isWithinEventDisplayPeriodData(data) {
+      return hasActiveEventDisplayPeriod(data)
+        ? (
+          hasCompleteEventDisplayPeriod(data) &&
+          request.time >= data.displayPeriod.startDate &&
+          request.time <= data.displayPeriod.endDate
+        )
+        : (
+          !hasLegacyEventDisplayPeriod(data) ||
           (
-            firestore.get(/databases/(default)/documents/events/$(eventId)).data.displayPeriod is map &&
-            firestore.get(/databases/(default)/documents/events/$(eventId)).data.displayPeriod.isActive == true &&
-            firestore.get(/databases/(default)/documents/events/$(eventId)).data.displayPeriod.startDate is timestamp &&
-            firestore.get(/databases/(default)/documents/events/$(eventId)).data.displayPeriod.endDate is timestamp
-          ) ||
-          (
-            !(firestore.get(/databases/(default)/documents/events/$(eventId)).data.displayPeriod is map) &&
-            firestore.get(/databases/(default)/documents/events/$(eventId)).data.visibility.displayStartAt is timestamp &&
-            firestore.get(/databases/(default)/documents/events/$(eventId)).data.visibility.displayEndAt is timestamp
+            request.time >= data.visibility.displayStartAt &&
+            request.time <= data.visibility.displayEndAt
           )
         );
     }
 
-    function isWithinEventDisplayPeriod(eventId) {
-      return !hasEventDisplayPeriod(eventId) ||
-        (
-          (
-            firestore.get(/databases/(default)/documents/events/$(eventId)).data.displayPeriod is map &&
-            request.time >= firestore.get(/databases/(default)/documents/events/$(eventId)).data.displayPeriod.startDate &&
-            request.time <= firestore.get(/databases/(default)/documents/events/$(eventId)).data.displayPeriod.endDate
-          ) ||
-          (
-            !(firestore.get(/databases/(default)/documents/events/$(eventId)).data.displayPeriod is map) &&
-            request.time >= firestore.get(/databases/(default)/documents/events/$(eventId)).data.visibility.displayStartAt &&
-            request.time <= firestore.get(/databases/(default)/documents/events/$(eventId)).data.visibility.displayEndAt
-          )
-        );
+    function canReadPublicEventData(data) {
+      return data.keys().hasAny(['visibility']) &&
+        data.visibility is map &&
+        data.visibility.keys().hasAny(['published']) &&
+        data.visibility.published == true &&
+        isWithinEventDisplayPeriodData(data);
     }
 
     function canReadPublicEvent(eventId) {
-      return hasPublishedEventSummary(eventId) &&
-        isWithinEventDisplayPeriod(eventId);
+      return eventId is string &&
+        firestore.exists(/databases/(default)/documents/events/$(eventId)) &&
+        canReadPublicEventData(
+          firestore.get(/databases/(default)/documents/events/$(eventId)).data
+        );
     }
 
     function canReadPublicEventBySlug(pageSlug) {
@@ -90,7 +104,7 @@ service firebase.storage {
 
     function isImageWriteRequest() {
       return request.resource != null &&
-        request.resource.size < 10 * 1024 * 1024 &&
+        request.resource.size <= 8 * 1024 * 1024 &&
         request.resource.contentType.matches('image/.*');
     }
 

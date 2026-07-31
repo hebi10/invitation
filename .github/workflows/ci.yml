@@ -41,3 +41,6 @@ jobs:
 
       - name: Regression tests
         run: npm run test:regression
+
+      - name: Stability fast checks
+        run: npm run test:stability:fast

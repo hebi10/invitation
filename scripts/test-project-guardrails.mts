@@ -1,6 +1,8 @@
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import path from 'node:path';
 
+import { getWeddingPageBySlug } from '@/config/weddingPages';
+
 const repoRoot = process.cwd();
 const findings: string[] = [];
 
@@ -46,6 +48,18 @@ assert(
   'memory route static params must include Firestore memory-page metadata snapshot slugs.'
 );
 
+const homePage = readText('src/app/page.tsx');
+const homeSampleHref = homePage.match(
+  /href:\s*'\/([^/]+)\/([^/]+)\/',\s*label:\s*'샘플 보기'/
+);
+assert(Boolean(homeSampleHref), 'Home page must expose one explicit sample invitation link.');
+if (homeSampleHref) {
+  assert(
+    Boolean(getWeddingPageBySlug(homeSampleHref[1])),
+    `Home sample link must point to an existing seed slug: ${homeSampleHref[1]}`
+  );
+}
+
 const ciPath = path.join(repoRoot, '.github', 'workflows', 'ci.yml');
 assert(existsSync(ciPath), 'GitHub Actions CI workflow must exist at .github/workflows/ci.yml.');
 
@@ -56,6 +70,7 @@ if (existsSync(ciPath)) {
     'npm run check',
     'npm run test:security-hardening',
     'npm run test:regression',
+    'npm run test:stability:fast',
   ]) {
     assert(ci.includes(expected), `CI workflow must run ${expected}.`);
   }

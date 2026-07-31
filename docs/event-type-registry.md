@@ -3,7 +3,7 @@
 ## 목적
 - 이벤트 타입 key와 표시용 메타를 한 곳에서 관리한다.
 - `wedding` 기본값 판단을 개별 저장소/매퍼 하드코딩이 아니라 공통 레지스트리 기준으로 통일한다.
-- 이후 `birthday`, `seventieth`, `etc`를 붙일 때 수정 범위를 예측 가능하게 만든다.
+- 활성 타입과 준비 중 타입의 renderer/editor/wizard 연결 상태를 한 표에서 확인한다.
 
 ## 기준 파일
 - `src/lib/eventTypes.ts`
@@ -12,8 +12,10 @@
 | key | label | admin label | customer label | enabled | default renderer | default editor | default wizard |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | `wedding` | 모바일 청첩장 | 청첩장 | 내 청첩장 | `true` | `wedding-default` | `wedding-page-editor` | `wedding-page-wizard` |
-| `birthday` | 생일/돌잔치 | 생일/돌잔치 | 내 생일/돌잔치 페이지 | `true` | `birthday-default` | `birthday-page-editor` | `birthday-page-wizard` |
+| `first-birthday` | 돌잔치 초대장 | 돌잔치 | 내 돌잔치 초대장 | `true` | `first-birthday-default` | `first-birthday-page-editor` | `first-birthday-page-wizard` |
+| `birthday` | 생일 초대장 | 생일 | 내 생일 초대장 | `true` | `birthday-default` | `birthday-page-editor` | `birthday-page-wizard` |
 | `general-event` | 일반 행사 초대장 | 일반 행사 | 내 행사 초대장 | `true` | `general-event-default` | `general-event-page-editor` | `general-event-page-wizard` |
+| `opening` | 개업 초대장 | 개업 | 내 개업 초대장 | `true` | `opening-default` | `opening-page-editor` | `opening-page-wizard` |
 | `seventieth` | 칠순 잔치 | 칠순 잔치 | 내 칠순 잔치 페이지 | `false` | `seventieth-default` | `seventieth-page-editor` | `seventieth-page-wizard` |
 | `etc` | 기타 이벤트 | 기타 이벤트 | 내 이벤트 페이지 | `false` | `generic-default` | `generic-page-editor` | `generic-page-wizard` |
 
@@ -48,14 +50,12 @@
 
 ## 이번 단계 후 상태
 - 공개 페이지는 이제 `eventType -> renderer` 레지스트리를 통해 렌더러를 고른다.
-- 현재 실제로 등록된 renderer는 `wedding`, `birthday` 두 개다.
-- `birthday`는 PoC용으로 활성화되어 선택/저장/목록 표시까지 열려 있다.
-- `birthday`의 renderer는 현재 wedding 공개 페이지 구현을 재사용한다.
+- 현재 활성 타입 `wedding`, `first-birthday`, `birthday`, `general-event`, `opening`에는 각각 등록된 renderer와 전용 생성 진입 경로가 있다.
+- 생성 경로는 결혼식 `/page-wizard`, 생일 `/birthday-wizard`, 돌잔치 `/first-birthday-wizard`, 일반 행사 `/general-event-wizard`, 개업 `/opening-wizard`다.
 - `seventieth`, `etc`는 메타만 준비된 상태이고, renderer가 없거나 비활성 상태면 `wedding` renderer로 fallback한다.
 - 잘못된 event type 문자열은 `normalizeEventTypeKey`로 정규화한 뒤 기본값 `wedding`으로 처리한다.
 - web wizard도 이제 `eventType -> step config` 구조를 먼저 가진다.
-- 현재 실제 생성 가능한 타입은 `wedding`, `birthday`이고, 나머지는 `준비 중`으로만 노출된다.
-- 다만 `birthday`의 실제 본문 구조와 일부 step 문구는 아직 wedding 구현을 재사용한다.
+- 현재 실제 생성 가능한 타입은 위 다섯 활성 타입이며, `seventieth`, `etc`는 비활성 준비 항목이다.
 
 ## `wedding` 하드코딩 분류
 ### 1. 지금 기본값으로 필요한 곳
@@ -69,7 +69,7 @@
   - `src/app/_components/eventPageThemes.ts`
   - `src/app/_components/EventInvitationPage.tsx`
   - 내부 구현은 아직 wedding theme renderer를 사용
-- page-wizard / page-editor의 본문 구조
+- page-wizard의 공통 본문 구조
   - 일정, 예식장, 방명록, 이미지 필드 구조가 wedding 중심
 - config/seed 기반 legacy fallback
   - `src/config/weddingPages.ts`
@@ -77,8 +77,8 @@
 
 ### 3. 이후 분리해야 할 곳
 - 이벤트별 editor registry
-- `birthday`, `seventieth`, `etc`용 실제 wizard step config
-- `birthday`, `seventieth`, `etc`용 실제 renderer 구현
+- `seventieth`, `etc`용 실제 wizard step config
+- `seventieth`, `etc`용 실제 renderer 구현
 - 타입별 생성 진입점과 이벤트 전용 정렬 규칙
 
 ## 판단 기준

@@ -233,7 +233,7 @@ function buildDownloadUrl(bucketName: string, storagePath: string, token: string
   )}?alt=media&token=${token}`;
 }
 
-function validateServerSideImagePayload(
+export function validateServerSideImagePayload(
   file: File,
   buffer: Buffer,
   assetKind: EditableImageAssetKind

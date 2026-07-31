@@ -42,6 +42,21 @@ export interface CustomerWalletPageCreationInput {
   defaultTheme: InvitationThemeKey;
 }
 
+type CustomerPageCreationDependencies = {
+  adjustBalance: typeof firestoreCustomerWalletRepository.adjustBalance;
+  createDraft: typeof createServerInvitationPageDraftFromSeed;
+  assignOwner: typeof firestoreEventRepository.assignOwnerBySlug;
+  cleanupDraft: typeof deleteAdminEventBySlug;
+};
+
+const defaultCustomerPageCreationDependencies: CustomerPageCreationDependencies = {
+  adjustBalance: (input) =>
+    firestoreCustomerWalletRepository.adjustBalance(input),
+  createDraft: createServerInvitationPageDraftFromSeed,
+  assignOwner: (input) => firestoreEventRepository.assignOwnerBySlug(input),
+  cleanupDraft: deleteAdminEventBySlug,
+};
+
 export async function getCustomerWalletSummary(ownerUid: string) {
   return firestoreCustomerWalletRepository.findSummaryByOwnerUid(ownerUid);
 }
@@ -131,14 +146,16 @@ export async function recordMobileTicketPackAssignedToEvent(
 }
 
 export async function createCustomerInvitationPageFromWalletCredit(
-  input: CustomerWalletPageCreationInput
+  input: CustomerWalletPageCreationInput,
+  dependencies: CustomerPageCreationDependencies =
+    defaultCustomerPageCreationDependencies
 ) {
   const normalizedOwnerUid = input.ownerUid.trim();
   if (!normalizedOwnerUid) {
     throw new Error('로그인 계정을 확인하지 못했습니다.');
   }
 
-  await firestoreCustomerWalletRepository.adjustBalance({
+  await dependencies.adjustBalance({
     ownerUid: normalizedOwnerUid,
     kind: 'pageCreation',
     direction: 'debit',
@@ -155,7 +172,7 @@ export async function createCustomerInvitationPageFromWalletCredit(
   > | null = null;
 
   try {
-    createdDraft = await createServerInvitationPageDraftFromSeed({
+    createdDraft = await dependencies.createDraft({
       seedSlug: input.seedSlug,
       slugBase: input.slugBase,
       groomName: input.groomName,
@@ -166,7 +183,7 @@ export async function createCustomerInvitationPageFromWalletCredit(
       initialDisplayPeriodMonths: 6,
     });
 
-    const assignedEvent = await firestoreEventRepository.assignOwnerBySlug({
+    const assignedEvent = await dependencies.assignOwner({
       pageSlug: createdDraft.slug,
       ownerUid: normalizedOwnerUid,
       ownerEmail: input.ownerEmail ?? null,
@@ -180,7 +197,7 @@ export async function createCustomerInvitationPageFromWalletCredit(
     };
   } catch (error) {
     if (createdDraft?.slug) {
-      await deleteAdminEventBySlug(createdDraft.slug).catch((cleanupError) => {
+      await dependencies.cleanupDraft(createdDraft.slug).catch((cleanupError) => {
         console.error(
           '[customerWalletServerService] failed to clean up partially created event',
           cleanupError
@@ -188,7 +205,7 @@ export async function createCustomerInvitationPageFromWalletCredit(
       });
     }
 
-    await firestoreCustomerWalletRepository.adjustBalance({
+    await dependencies.adjustBalance({
       ownerUid: normalizedOwnerUid,
       kind: 'pageCreation',
       direction: 'credit',

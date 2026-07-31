@@ -31,13 +31,18 @@ export interface BillingFulfillmentRecord {
   provider?: string | null;
 }
 
+export type BillingFulfillmentLockResult = {
+  record: BillingFulfillmentRecord;
+  acquired: boolean;
+};
+
 export interface BillingFulfillmentRepository {
   isAvailable(): boolean;
   findByTransactionId(transactionId: string): Promise<BillingFulfillmentRecord | null>;
   acquireLock(
     purchase: BillingFulfillmentPurchaseInput,
     kind: BillingFulfillmentKind
-  ): Promise<BillingFulfillmentRecord>;
+  ): Promise<BillingFulfillmentLockResult>;
   update(
     transactionId: string,
     patch: Partial<BillingFulfillmentRecord>
@@ -209,6 +214,13 @@ export const firestoreBillingFulfillmentRepository: BillingFulfillmentRepository
         throw new Error('This purchase record is already linked to another request.');
       }
 
+      if (!existing) {
+        return {
+          record: currentRecord,
+          acquired: true,
+        };
+      }
+
       if (currentRecord.status === 'failed') {
         const nextRecord = {
           ...currentRecord,
@@ -217,10 +229,16 @@ export const firestoreBillingFulfillmentRepository: BillingFulfillmentRepository
           lastError: null,
         };
         transaction.set(docRef, nextRecord, { merge: true });
-        return nextRecord;
+        return {
+          record: nextRecord,
+          acquired: true,
+        };
       }
 
-      return currentRecord;
+      return {
+        record: currentRecord,
+        acquired: false,
+      };
     });
   },
 

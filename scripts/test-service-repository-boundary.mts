@@ -6,6 +6,10 @@ const ROOT_TO_SCAN = path.normalize('src/services');
 const ALLOWED_PREFIX = path.normalize('src/services/repositories/');
 const FORBIDDEN_PATTERNS = [
   {
+    label: 'firebase-admin firestore import',
+    pattern: /from\s+['"]firebase-admin\/firestore['"]/,
+  },
+  {
     label: 'dynamic firestore import',
     pattern: /import\s*\(\s*['"]firebase\/firestore['"]\s*\)/,
   },

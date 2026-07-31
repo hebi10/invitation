@@ -9,6 +9,14 @@ const ALLOWED_PREFIXES = [
 ];
 const FORBIDDEN_PATTERNS = [
   {
+    label: 'firebase-admin firestore import',
+    pattern: /from\s+['"]firebase-admin\/firestore['"]/,
+  },
+  {
+    label: 'firebase client firestore import',
+    pattern: /from\s+['"]firebase\/firestore['"]/,
+  },
+  {
     label: 'getServerFirestore',
     pattern: /\bgetServerFirestore\s*\(/,
   },

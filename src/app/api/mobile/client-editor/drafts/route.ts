@@ -20,7 +20,10 @@ import {
   canCreateCustomerOwnedInvitation,
   CUSTOMER_EMAIL_VERIFICATION_REQUIRED_MESSAGE,
 } from '@/server/customerAuthVerification';
-import { getServerAuth } from '@/server/firebaseAdmin';
+import {
+  CustomerApiAuthError,
+  verifyCustomerRequest,
+} from '@/server/customerApiAuth';
 import {
   createServerInvitationPageDraftFromSeed,
   getServerEditableInvitationPageConfig,
@@ -42,19 +45,30 @@ function isMobileDraftCreationEnabled() {
   return process.env.MOBILE_DRAFT_CREATION_ENABLED === 'true';
 }
 
-async function verifyMobileCustomerUid(request: Request) {
-  const authHeader = request.headers.get('authorization') ?? '';
-  const idToken = authHeader.startsWith('Bearer ') ? authHeader.slice(7).trim() : '';
-  if (!idToken) {
-    return null;
-  }
+async function verifyMobileCustomerRequest(request: Request) {
+  try {
+    return {
+      identity: await verifyCustomerRequest(request),
+      response: null,
+    } as const;
+  } catch (error) {
+    if (error instanceof CustomerApiAuthError) {
+      return {
+        identity: null,
+        response: NextResponse.json(
+          {
+            error:
+              error.status === 401
+                ? 'Customer authentication is required.'
+                : GENERIC_SERVER_ERROR_MESSAGE,
+          },
+          { status: error.status }
+        ),
+      } as const;
+    }
 
-  const serverAuth = getServerAuth();
-  if (!serverAuth) {
-    throw new Error('Firebase Admin Auth is not available.');
+    throw error;
   }
-
-  return serverAuth.verifyIdToken(idToken);
 }
 
 export async function POST(request: Request) {
@@ -66,13 +80,11 @@ export async function POST(request: Request) {
       );
     }
 
-    const customerIdentity = await verifyMobileCustomerUid(request);
-    if (!customerIdentity) {
-      return NextResponse.json(
-        { error: 'Customer authentication is required.' },
-        { status: 401 }
-      );
+    const customerAuth = await verifyMobileCustomerRequest(request);
+    if (customerAuth.response) {
+      return customerAuth.response;
     }
+    const customerIdentity = customerAuth.identity;
 
     if (!canCreateCustomerOwnedInvitation(customerIdentity)) {
       return NextResponse.json(

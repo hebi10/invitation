@@ -11,14 +11,20 @@ import {
   validateInvitationPageSlugBase,
 } from '@/lib/invitationPageSlug';
 import { normalizeInvitationProductTier } from '@/lib/invitationProducts';
-import { GENERIC_SERVER_ERROR_MESSAGE } from '@/server/apiErrorResponse';
+import {
+  GENERIC_SERVER_ERROR_MESSAGE,
+  toSafeHttpErrorResponse,
+} from '@/server/apiErrorResponse';
+import {
+  CustomerApiAuthError,
+  verifyCustomerRequest,
+} from '@/server/customerApiAuth';
 import {
   canCreateCustomerOwnedInvitation,
   CUSTOMER_EMAIL_VERIFICATION_REQUIRED_MESSAGE,
 } from '@/server/customerAuthVerification';
 import { createCustomerInvitationPageFromWalletCredit } from '@/server/customerWalletServerService';
 import { listCustomerOwnedEventSummaries } from '@/server/customerEventsService';
-import { getServerAuth } from '@/server/firebaseAdmin';
 import {
   applyScopedRateLimit,
   buildRateLimitHeaders,
@@ -29,66 +35,24 @@ const CUSTOMER_EVENT_CREATE_RATE_LIMIT = {
   windowMs: 10 * 60 * 1000,
 } as const;
 
-async function verifyCustomer(request: Request) {
-  const authHeader = request.headers.get('authorization') ?? '';
-  const idToken = authHeader.startsWith('Bearer ') ? authHeader.slice(7).trim() : '';
-
-  if (!idToken) {
-    return {
-      error: NextResponse.json(
-        { error: '로그인 토큰이 없습니다. 다시 로그인해 주세요.' },
-        { status: 401 }
-      ),
-      decodedToken: null,
-    };
-  }
-
-  const serverAuth = getServerAuth();
-  if (!serverAuth) {
-    return {
-      error: NextResponse.json(
-        { error: GENERIC_SERVER_ERROR_MESSAGE },
-        { status: 500 }
-      ),
-      decodedToken: null,
-    };
-  }
-
-  const decodedToken = await serverAuth.verifyIdToken(idToken).catch(() => null);
-  if (!decodedToken) {
-    return {
-      error: NextResponse.json(
-        { error: '로그인 세션이 만료되었습니다. 다시 로그인해 주세요.' },
-        { status: 401 }
-      ),
-      decodedToken: null,
-    };
-  }
-
-  return {
-    error: null,
-    decodedToken,
-  };
-}
-
 function readTrimmedString(value: unknown) {
   return typeof value === 'string' ? value.trim() : '';
 }
 
 export async function GET(request: Request) {
   try {
-    const customer = await verifyCustomer(request);
-    if (customer.error || !customer.decodedToken) {
-      return customer.error;
-    }
-
-    const events = await listCustomerOwnedEventSummaries(customer.decodedToken.uid);
+    const customer = await verifyCustomerRequest(request);
+    const events = await listCustomerOwnedEventSummaries(customer.uid);
 
     return NextResponse.json({
       success: true,
       events,
     });
   } catch (error) {
+    if (error instanceof CustomerApiAuthError) {
+      return toSafeHttpErrorResponse(error);
+    }
+
     console.error('[api/customer/events] failed to list owned events', error);
     return NextResponse.json(
       { error: '내 청첩장 목록을 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.' },
@@ -99,12 +63,9 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
-    const customer = await verifyCustomer(request);
-    if (customer.error || !customer.decodedToken) {
-      return customer.error;
-    }
+    const customer = await verifyCustomerRequest(request);
 
-    if (!canCreateCustomerOwnedInvitation(customer.decodedToken)) {
+    if (!canCreateCustomerOwnedInvitation(customer)) {
       return NextResponse.json(
         { error: CUSTOMER_EMAIL_VERIFICATION_REQUIRED_MESSAGE },
         { status: 403 }
@@ -140,7 +101,7 @@ export async function POST(request: Request) {
     const rateLimitResult = await applyScopedRateLimit({
       request,
       scope: 'customer-event-create',
-      keyParts: [customer.decodedToken.uid, slugBase || 'missing-slug'],
+      keyParts: [customer.uid, slugBase || 'missing-slug'],
       ...CUSTOMER_EVENT_CREATE_RATE_LIMIT,
     });
     const rateLimitHeaders = buildRateLimitHeaders(rateLimitResult);
@@ -185,9 +146,9 @@ export async function POST(request: Request) {
     }
 
     const created = await createCustomerInvitationPageFromWalletCredit({
-      ownerUid: customer.decodedToken.uid,
-      ownerEmail: customer.decodedToken.email ?? null,
-      ownerDisplayName: customer.decodedToken.name ?? null,
+      ownerUid: customer.uid,
+      ownerEmail: customer.email ?? null,
+      ownerDisplayName: customer.name ?? null,
       seedSlug,
       slugBase: slugValidation.normalizedSlugBase,
       groomName,
@@ -201,6 +162,10 @@ export async function POST(request: Request) {
       ...created,
     }, { headers: rateLimitHeaders });
   } catch (error) {
+    if (error instanceof CustomerApiAuthError) {
+      return toSafeHttpErrorResponse(error);
+    }
+
     console.error('[api/customer/events] failed to create owned event', error);
     return NextResponse.json(
       { error: GENERIC_SERVER_ERROR_MESSAGE },

@@ -1,3 +1,10 @@
+# AI 하네스 인수인계 기록
+
+> 이 문서는 과거 작업 시점의 인수인계 기록입니다. 현재 라우트와 구현 판단은
+> `README.md`, `docs/event-domain-current-state.md`, 실제 코드를 우선합니다.
+> 아래 기록의 과거 `/page-wizard/opening` 경로는 현재 `/opening-wizard`로
+> 대체되었습니다.
+
 ### 인수인계 (최대 3개)
 
 1. 개업 초대장 웹 위저드 분기 정리
@@ -6,9 +13,8 @@
    - 남은 이유: 현재는 개업 전용 테마 색상은 기존 공용 스타일을 사용하므로 추후 톤 조정이 필요하면 `page.module.css`와 `opening` 전용 토큰 추가 고려.
 
 2. 개업 전용 위저드 진입경로 추가
-   - 내용: `/page-wizard/opening/page.tsx`를 추가해 쿼리 없이 `forcedEventType="opening"`로 진입하도록 구성했습니다.
-   - 내용: `src/app/admin/_components/AdminPagesTab.tsx`의 새 페이지 생성 링크에 `activePageCategory === 'opening'`일 때 `/page-wizard/opening`이 선택되도록 연결했습니다.
-   - 남은 이유: 이벤트 리스트/필터에서 `/page-wizard/opening?eventType=...` 경로를 사용하는 타 화면 링크가 있으면 동일 기준으로 정리 필요.
+   - 과거 내용: `/page-wizard/opening/page.tsx`를 추가해 쿼리 없이 `forcedEventType="opening"`로 진입하도록 구성했습니다.
+   - 현재 기준: 개업 생성 진입점과 관리자 링크는 `/opening-wizard`를 사용합니다.
 
 3. 이벤트 타입 안내 문구 업데이트
    - 내용: `EventTypeStep` 상단 안내 문구를 고정 문장 대신 `enabled` 이벤트 타입 메타 기반으로 동적으로 구성해, opening 추가 시 하드코딩 갱신을 줄였습니다.
@@ -22,5 +28,5 @@
    - 다음 작업 권장: `AdminPagesTab.tsx`의 opening 전용 안내/테이블 라벨만 선택적으로 분기.
 
 2. 공개 화면 QA
-   - 현재 상태: 위저드 진입과 문구/라우트는 정상화되었으나 실제 `/page-wizard/opening` + `/page-wizard/{slug}` 경로의 체감 검증이 남음.
+   - 현재 상태: 위저드 진입과 문구/라우트는 정상화되었으나 실제 `/opening-wizard` + `/page-wizard/{slug}` 경로의 체감 검증이 남음.
    - 다음 작업 권장: 브라우저로 로딩 화면, 생성 흐름, 마이그레이션되지 않은 slug 편집 플로우를 회귀 테스트.

@@ -85,8 +85,9 @@
 
 ## 고객 소유 이벤트 조회 경계
 - `/my-invitations`의 내 청첩장 목록은 클라이언트 Firestore 직접 조회 대신 `/api/customer/events`를 통해 서버 Admin SDK로 읽는다.
+- 웹 고객 API와 모바일 고객 API는 공통 `src/server/customerApiAuth.ts`의 Firebase ID token 검증을 사용하고, 인증 오류를 일관된 401 응답으로 정규화한다.
 - 고객 조회 API는 Firebase ID token을 `Authorization: Bearer`로 전달하고 서버에서 검증한 UID의 `ownerUid`와 일치하는 이벤트만 반환한다.
-- `/page-wizard/[slug]`, `/page-wizard/[slug]/result`, `/page-editor/[slug]`의 비관리자 소유권/편집 설정 확인은 `/api/customer/events/[slug]/ownership`, `/api/customer/events/[slug]/editable` 서버 API를 사용한다.
+- `/page-wizard/[slug]`, `/page-wizard/[slug]/result`의 비관리자 소유권/편집 설정 확인은 `/api/customer/events/[slug]/ownership`, `/api/customer/events/[slug]/editable` 서버 API를 사용한다.
 - 고객 위저드 진입 시 Storage listing fallback과 클라이언트 Firestore 이미지 정리 저장은 실행하지 않는다.
 - 고객 위저드의 이미지 업로드는 Firebase 로그인 계정의 이벤트 소유권을 Storage rules가 확인하는 직접 업로드 경로를 사용한다.
 - 고객 위저드는 editable API가 `claimable`을 반환하면 비밀번호 claim을 제공하지 않고 관리자 계정 연결 안내를 표시한다.
@@ -102,6 +103,16 @@
 - 고객 청첩장 생성 API는 `/api/customer/events` `POST`에서 제작권 1개를 차감한 뒤 이벤트 초안을 만들고 소유권을 연결하며, 중간 실패 시 생성된 초안 정리와 제작권 환불을 시도한다.
 - 모바일 티켓팩 결제는 이벤트 잔액 적립을 유지하되, 고객 계정에 연결된 이벤트라면 지갑 원장에도 구매/배정 이력을 남긴다.
 
+## 결제 이행 잠금 경계
+- `src/server/repositories/billingFulfillmentRepository.ts`의 잠금 결과는 레코드와 `acquired` 여부를 함께 반환한다.
+- 새 요청 또는 실패 상태 재시도만 잠금을 획득하며, 이미 처리 중인 동시 요청은 페이지 생성·티켓 적립 같은 부수효과를 실행하지 않는다.
+- 완료된 요청이나 기존 생성 페이지가 있으면 저장된 결과를 재사용해 결제 이행의 멱등성을 유지한다.
+
+## 이미지 업로드 검증 경계
+- 서버 편집 이미지 업로드는 `src/server/editableImageUploadService.ts`에서 파일 signature와 실제 byte 기반 형식, 해상도, 픽셀 수를 검증한다.
+- Storage Rules는 소유자·관리자 권한, `image/*` MIME, 애플리케이션 정책과 같은 8MB 이하 크기를 검증한다.
+- Storage Rules는 파일 byte 내용을 해석하지 못하므로 MIME 위조 방어는 서버 업로드 경로의 byte 검증에 의존한다.
+
 ## 남겨둔 예외
 - `memoryPageService`는 Firestore 경로는 repository로 분리했지만, Storage 업로드/삭제는 도메인 서비스에 남겨뒀다.
 - 서버 전용 `src/server/repositories/*`는 별도 rollout 문서 기준으로 관리한다.
@@ -111,5 +122,9 @@
 - `npm run test:service-repository-boundary`
 - `npm run test:customer-api-auth`
 - `npm run test:rate-limit-policy`
+- `npm run test:customer-wallet-compensation`
+- `npm run test:billing-fulfillment-lock`
+- `npm run test:editable-image-upload-validation`
+- `npm run test:rules:all`
 - `npm run typecheck:web`
 - `npm run lint:web`

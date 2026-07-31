@@ -1,7 +1,7 @@
-# 모바일 청첩장 운영 서비스 포트폴리오 정리
+# 모바일 이벤트 초대장 운영 서비스 포트폴리오 정리
 
 ## 1. 한 줄 소개
-모바일 청첩장의 생성, 공개, 관리자 편집, 운영 관리, 추억 페이지 확장까지 한 흐름으로 다루는 Next.js + Firebase 기반 운영형 서비스입니다.
+결혼식, 돌잔치, 생일, 일반 행사, 개업 초대장의 생성·공개·소유자 편집·운영 관리와 추억 페이지 확장까지 한 흐름으로 다루는 Next.js + Firebase 기반 운영형 서비스입니다.
 
 단순히 예쁜 청첩장 화면을 만드는 프로젝트가 아니라, 관리자가 여러 청첩장을 생성·편집·운영하고 하객이 공개 페이지를 보는 실제 서비스 흐름을 목표로 합니다.
 
@@ -19,13 +19,14 @@
 | 관리자 | 청첩장 생성, 편집, 공개 상태, 노출 기간, 이미지 관리 | 여러 페이지를 한 콘솔에서 운영 |
 
 ## 4. 전체 흐름
-1. 관리자가 `/page-wizard`에서 청첩장 초안을 생성합니다.
+1. 관리자는 이벤트 타입에 맞는 `/page-wizard`, `/birthday-wizard`, `/first-birthday-wizard`, `/general-event-wizard`, `/opening-wizard`에서 초안을 생성합니다.
 2. 위자드가 기본 정보, 일정, 장소, 이미지, 인사말, 계좌, 최종 확인을 단계별로 저장합니다.
 3. Firestore는 `events/{eventId}`와 `events/{eventId}/content/current`를 기준으로 공개 상태와 본문을 관리합니다.
 4. 하객은 `/{slug}` 또는 `/{slug}/{theme}`에서 공개 청첩장을 봅니다.
-5. 관리자는 `/page-editor/{slug}`에서 고객 편집기 화면을 열어 내용을 수정합니다.
-6. 관리자는 `/admin`에서 공개 상태, 노출 기간, 이미지, 방명록과 고객 계정 연결을 운영합니다.
-7. 결혼식 이후 `/memory/{slug}` 추억 페이지로 경험을 확장할 수 있습니다.
+5. 관리자는 전체 이벤트를, 고객은 `ownerUid`가 연결된 본인 이벤트를 `/page-wizard/{slug}`에서 수정합니다.
+6. 고객은 `/my-invitations`에서 본인 이벤트와 제작권을 확인하고 `/my-invitations/create`에서 새 이벤트를 생성할 수 있습니다.
+7. 관리자는 `/admin`에서 공개 상태, 노출 기간, 이미지, 방명록과 고객 계정 연결을 운영합니다.
+8. 결혼식 이후 `/memory/{slug}` 추억 페이지로 경험을 확장할 수 있습니다.
 
 ## 5. 화면 요약
 | 화면 | 역할 | 강조 포인트 | 추천 캡처 |
@@ -35,10 +36,12 @@
 | `/admin?tab=pages` | 청첩장 목록 관리 | 공개 상태, 테마 링크, 편집 이동 | `screenshots/03-admin-pages-tab.png` |
 | `/admin?tab=periods` | 노출 기간 관리 | 공개 여부와 노출 기간을 분리 | `screenshots/05-admin-periods-tab.png` |
 | `/page-wizard` | 신규 초안 생성 | 템플릿과 slug 기반 빠른 시작 | `screenshots/06-page-wizard-create.png` |
-| `/page-wizard/{slug}` | 관리자 위자드 편집 | 모바일 중심 단계형 입력 흐름 | `screenshots/07-page-wizard-detail.png` |
+| `/birthday-wizard`, `/first-birthday-wizard` | 생일·돌잔치 초안 생성 | 이벤트별 문구와 테마 선택 | `screenshots/06-birthday-wizard.png` |
+| `/general-event-wizard`, `/opening-wizard` | 행사·개업 초안 생성 | 이벤트별 문구와 테마 선택 | `screenshots/06-event-wizard.png` |
+| `/page-wizard/{slug}` | 관리자·소유자 위자드 편집 | 모바일 중심 단계형 입력 흐름 | `screenshots/07-page-wizard-detail.png` |
 | `/page-wizard/{slug}/result` | 저장 결과 확인 | 저장 직후 공개 URL과 입력 요약 확인 | `screenshots/08-page-wizard-result.png` |
-| `/page-editor` | 관리자 전용 고객 편집 시작 | 관리자만 draft 생성 또는 진입 가능 | `screenshots/09-page-editor-create.png` |
-| `/page-editor/{slug}` | 관리자 전용 고객 편집기 | 관리자 권한 확인, 자동 저장, 미리보기 | `screenshots/10-page-editor-detail.png` |
+| `/my-invitations` | 고객 이벤트 대시보드 | 소유 이벤트와 방명록 관리 | `screenshots/09-my-invitations.png` |
+| `/my-invitations/create` | 고객 신규 이벤트 생성 | 제작권 확인 후 이벤트 생성 | `screenshots/10-customer-create.png` |
 | `/{slug}/emotional` | 감성형 공개 청첩장 | 사진과 분위기 중심 공개 화면 | `screenshots/11-public-emotional.png` |
 | `/{slug}/romantic` | 로맨틱형 공개 청첩장 | 같은 데이터의 부드러운 카드형 테마 | `screenshots/12-public-romantic.png` |
 | `/{slug}/simple` | 심플형 공개 청첩장 | 같은 데이터의 정보 중심 테마 | `screenshots/13-public-simple.png` |
@@ -51,7 +54,7 @@
 | 모바일 앱 | `apps/mobile` Expo 프로젝트 |
 | 데이터 | Firestore `events`, `eventSlugIndex`, `customerWallets`, `billingFulfillments`, `rateLimits` |
 | 파일 | Firebase Storage, 공개 읽기는 Firestore 공개 상태와 연동 |
-| 권한 | 웹 편집은 관리자 전용, 모바일 고객 흐름과 공개 방문자는 API와 rules에서 분리 |
+| 권한 | 관리자는 전체 운영, 고객은 `ownerUid` 소유 이벤트만 편집하며 공개 방문자는 API와 rules에서 분리 |
 | 운영 방어 | 서버 repository 경계, Firestore 기반 rate limit, RevenueCat 서버 키 검증 |
 | 웹 배포 | Firebase App Hosting 기준 SSR/API 런타임 |
 
@@ -59,15 +62,15 @@
 ### 공개 청첩장
 `slug`가 `eventSlugIndex/{slug}`에서 `eventId`로 해석되고, 공개 상태와 표시 기간을 통과하면 `events/{eventId}`와 `content/current`를 렌더링합니다.
 
-### 관리자 편집 저장
-웹 편집기는 관리자 권한 확인 후 저장하고, 서버는 repository 계층을 통해 Firestore에 기록합니다. 직접 Firestore 접근은 경계 테스트에서 차단합니다.
+### 관리자·고객 편집 저장
+관리자는 관리자 권한을, 고객은 Firebase ID token과 `ownerUid` 소유권을 확인한 후 저장합니다. 서버는 repository 계층을 통해 Firestore에 기록하며 직접 Firestore 접근은 경계 테스트에서 차단합니다.
 
 ### 이미지 업로드
 편집기에서 Storage에 업로드한 뒤 URL과 메타데이터를 청첩장 설정에 연결합니다. 공개 파일 읽기는 공개 이벤트 상태와 연결됩니다.
 
 ## 8. 보여줄 수 있는 강점
 - 랜딩 페이지가 아니라 생성, 편집, 공개, 운영, 사후 페이지까지 이어지는 서비스 구조
-- 웹 편집을 관리자 전용으로 제한하고 모바일 고객 흐름과 분리한 운영 모델
+- 관리자 전체 운영과 고객 소유 이벤트 편집을 분리한 권한 모델
 - 공개 상태와 표시 기간을 함께 다루는 실제 운영 정책
 - `emotional`, `romantic`, `simple` 테마 렌더러와 이벤트 타입을 확장할 수 있는 구조
 - repository 경계와 QA 스크립트로 데이터 접근 원칙을 검증하는 흐름
@@ -84,7 +87,7 @@
 ## 10. 캡처 우선순위
 1. 공개 청첩장 감성형
 2. 공개 청첩장 로맨틱형
-3. 관리자 전용 고객 편집기
+3. 관리자·소유자 위자드 편집기
 4. 관리자 대시보드
 5. 위자드 편집 화면
 6. 노출 기간 또는 고객 계정 연결 탭

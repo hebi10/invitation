@@ -10,7 +10,10 @@ import {
   canCreateCustomerOwnedInvitation,
   CUSTOMER_EMAIL_VERIFICATION_REQUIRED_MESSAGE,
 } from '@/server/customerAuthVerification';
-import { getServerAuth } from '@/server/firebaseAdmin';
+import {
+  CustomerApiAuthError,
+  verifyCustomerRequest,
+} from '@/server/customerApiAuth';
 import {
   fulfillServerMobilePageCreationPurchase,
   fulfillServerMobileTicketPackPurchase,
@@ -31,43 +34,28 @@ function readTrimmedString(value: unknown) {
 }
 
 async function verifyMobileCustomerRequest(request: Request) {
-  const authHeader = request.headers.get('authorization') ?? '';
-  const idToken = authHeader.startsWith('Bearer ') ? authHeader.slice(7).trim() : '';
-
-  if (!idToken) {
-    return {
-      identity: null,
-      response: NextResponse.json(
-        { error: 'Customer authentication is required.' },
-        { status: 401 }
-      ),
-    } as const;
-  }
-
-  const serverAuth = getServerAuth();
-  if (!serverAuth) {
-    return {
-      identity: null,
-      response: NextResponse.json(
-        { error: GENERIC_SERVER_ERROR_MESSAGE },
-        { status: 500 }
-      ),
-    } as const;
-  }
-
   try {
     return {
-      identity: await serverAuth.verifyIdToken(idToken),
+      identity: await verifyCustomerRequest(request),
       response: null,
     } as const;
-  } catch {
-    return {
-      identity: null,
-      response: NextResponse.json(
-        { error: 'Customer authentication is required.' },
-        { status: 401 }
-      ),
-    } as const;
+  } catch (error) {
+    if (error instanceof CustomerApiAuthError) {
+      return {
+        identity: null,
+        response: NextResponse.json(
+          {
+            error:
+              error.status === 401
+                ? 'Customer authentication is required.'
+                : GENERIC_SERVER_ERROR_MESSAGE,
+          },
+          { status: error.status }
+        ),
+      } as const;
+    }
+
+    throw error;
   }
 }
 

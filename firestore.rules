@@ -90,35 +90,54 @@ service cloud.firestore {
         );
     }
 
-    function hasEventDisplayPeriodData(data) {
-      return (
-        data.displayPeriod is map &&
-        data.displayPeriod.isActive == true &&
+    function hasEventDisplayPeriodMap(data) {
+      return data.keys().hasAny(['displayPeriod']) &&
+        data.displayPeriod is map;
+    }
+
+    function hasActiveEventDisplayPeriod(data) {
+      return hasEventDisplayPeriodMap(data) &&
+        data.displayPeriod.keys().hasAny(['isActive']) &&
+        data.displayPeriod.isActive == true;
+    }
+
+    function hasCompleteEventDisplayPeriod(data) {
+      return hasActiveEventDisplayPeriod(data) &&
+        data.displayPeriod.keys().hasAll(['startDate', 'endDate']) &&
         data.displayPeriod.startDate is timestamp &&
-        data.displayPeriod.endDate is timestamp
-      ) || (
-        !(data.displayPeriod is map) &&
+        data.displayPeriod.endDate is timestamp;
+    }
+
+    function hasLegacyEventDisplayPeriod(data) {
+      return !hasEventDisplayPeriodMap(data) &&
+        data.keys().hasAny(['visibility']) &&
+        data.visibility is map &&
+        data.visibility.keys().hasAll(['displayStartAt', 'displayEndAt']) &&
         data.visibility.displayStartAt is timestamp &&
-        data.visibility.displayEndAt is timestamp
-      );
+        data.visibility.displayEndAt is timestamp;
     }
 
     function isWithinEventDisplayPeriodData(data) {
-      return !hasEventDisplayPeriodData(data) ||
-        (
-          data.displayPeriod is map &&
+      return hasActiveEventDisplayPeriod(data)
+        ? (
+          hasCompleteEventDisplayPeriod(data) &&
           request.time >= data.displayPeriod.startDate &&
           request.time <= data.displayPeriod.endDate
-        ) ||
-        (
-          !(data.displayPeriod is map) &&
-          request.time >= data.visibility.displayStartAt &&
-          request.time <= data.visibility.displayEndAt
+        )
+        : (
+          !hasLegacyEventDisplayPeriod(data) ||
+          (
+            request.time >= data.visibility.displayStartAt &&
+            request.time <= data.visibility.displayEndAt
+          )
         );
     }
 
     function canReadPublicEventData(data) {
-      return data.visibility.published == true &&
+      return data.keys().hasAny(['visibility']) &&
+        data.visibility is map &&
+        data.visibility.keys().hasAny(['published']) &&
+        data.visibility.published == true &&
         isWithinEventDisplayPeriodData(data);
     }
 
@@ -178,7 +197,7 @@ service cloud.firestore {
       }
 
       match /linkTokens/{tokenId} {
-        allow read, write: if isAdmin() || isEventOwnerById(eventId);
+        allow read, write: if isAdmin();
       }
 
       match /auditLogs/{logId} {

@@ -31,6 +31,16 @@ type RateLimitResult = {
   retryAfterSeconds: number;
 };
 
+type RateLimitRepository = Pick<
+  typeof firestoreRateLimitRepository,
+  'isAvailable' | 'apply'
+>;
+
+type ApplyRateLimitDependencies = {
+  repository?: RateLimitRepository;
+  nodeEnv?: string;
+};
+
 const RATE_LIMIT_STORE_KEY = '__invitation_rate_limit_store__';
 const RATE_LIMIT_SLOW_APPLY_MS = 500;
 const FAIL_CLOSED_RATE_LIMIT_SCOPES = new Set([
@@ -215,12 +225,21 @@ function applyLocalRateLimitFallback(options: RateLimitOptions): RateLimitResult
   };
 }
 
-export async function applyRateLimit(options: RateLimitOptions) {
-  if (firestoreRateLimitRepository.isAvailable()) {
+export async function applyRateLimit(
+  options: RateLimitOptions,
+  dependencies: ApplyRateLimitDependencies = {}
+) {
+  const repository = dependencies.repository ?? firestoreRateLimitRepository;
+  const failClosed = shouldFailClosedRateLimit({
+    key: options.key,
+    nodeEnv: dependencies.nodeEnv,
+  });
+
+  if (repository.isAvailable()) {
     const startedAt = Date.now();
 
     try {
-      const result = await firestoreRateLimitRepository.apply(options);
+      const result = await repository.apply(options);
       const elapsedMs = Date.now() - startedAt;
 
       if (elapsedMs >= RATE_LIMIT_SLOW_APPLY_MS) {
@@ -234,7 +253,7 @@ export async function applyRateLimit(options: RateLimitOptions) {
       return result;
     } catch (error) {
       console.error('[rate-limit] Firestore rate limit failed; using local fallback', error);
-      if (shouldFailClosedRateLimit({ key: options.key })) {
+      if (failClosed) {
         const resetAt = Date.now() + options.windowMs;
         return {
           allowed: false,
@@ -247,7 +266,7 @@ export async function applyRateLimit(options: RateLimitOptions) {
     }
   }
 
-  if (shouldFailClosedRateLimit({ key: options.key })) {
+  if (failClosed) {
     const resetAt = Date.now() + options.windowMs;
     return {
       allowed: false,

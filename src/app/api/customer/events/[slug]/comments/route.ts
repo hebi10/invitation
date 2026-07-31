@@ -1,24 +1,15 @@
 import { NextResponse } from 'next/server';
 
-import { GENERIC_SERVER_ERROR_MESSAGE, getInternalErrorReason } from '@/server/apiErrorResponse';
+import {
+  GENERIC_SERVER_ERROR_MESSAGE,
+  getInternalErrorReason,
+  toSafeHttpErrorResponse,
+} from '@/server/apiErrorResponse';
+import {
+  CustomerApiAuthError,
+  verifyCustomerUid,
+} from '@/server/customerApiAuth';
 import { listCustomerEventGuestbookComments } from '@/server/customerEventsService';
-import { getServerAuth } from '@/server/firebaseAdmin';
-
-async function verifyCustomerUid(request: Request) {
-  const authHeader = request.headers.get('authorization') ?? '';
-  const idToken = authHeader.startsWith('Bearer ') ? authHeader.slice(7).trim() : '';
-  if (!idToken) {
-    return null;
-  }
-
-  const serverAuth = getServerAuth();
-  if (!serverAuth) {
-    throw new Error('Firebase Admin Auth를 초기화하지 못했습니다.');
-  }
-
-  const decodedToken = await serverAuth.verifyIdToken(idToken);
-  return decodedToken.uid;
-}
 
 export async function GET(
   request: Request,
@@ -26,13 +17,6 @@ export async function GET(
 ) {
   try {
     const ownerUid = await verifyCustomerUid(request);
-    if (!ownerUid) {
-      return NextResponse.json(
-        { error: '로그인 토큰이 없습니다. 다시 로그인해 주세요.' },
-        { status: 401 }
-      );
-    }
-
     const { slug } = await context.params;
     const comments = await listCustomerEventGuestbookComments(ownerUid, slug);
 
@@ -41,6 +25,10 @@ export async function GET(
       comments,
     });
   } catch (error) {
+    if (error instanceof CustomerApiAuthError) {
+      return toSafeHttpErrorResponse(error);
+    }
+
     const message = getInternalErrorReason(error);
     const status =
       message === '로그인한 계정에 연결된 청첩장만 관리할 수 있습니다.' ? 403 : 500;

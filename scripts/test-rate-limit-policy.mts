@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 
 import {
+  applyRateLimit,
   buildScopedRateLimitKey,
   hashRateLimitKeyPart,
   isFailClosedRateLimitScope,
@@ -81,5 +82,69 @@ const refreshKeyB = buildScopedRateLimitKey(
 assert.notEqual(refreshKeyA, refreshKeyB);
 assert.equal(refreshKeyA.includes(refreshTokenA), false);
 assert.equal(refreshKeyB.includes(refreshTokenB), false);
+
+const failingRepository = {
+  isAvailable: () => true,
+  apply: async () => {
+    throw new Error('rate limit store unavailable');
+  },
+};
+
+const originalConsoleError = console.error;
+console.error = () => undefined;
+try {
+  assert.equal(
+    (
+      await applyRateLimit(
+        {
+          key: 'mobile-billing-fulfill:user-1',
+          limit: 3,
+          windowMs: 60_000,
+        },
+        {
+          repository: failingRepository,
+          nodeEnv: 'production',
+        }
+      )
+    ).allowed,
+    false
+  );
+
+  assert.equal(
+    (
+      await applyRateLimit(
+        {
+          key: 'mobile-billing-fulfill:user-2',
+          limit: 3,
+          windowMs: 60_000,
+        },
+        {
+          repository: failingRepository,
+          nodeEnv: 'development',
+        }
+      )
+    ).allowed,
+    true
+  );
+
+  assert.equal(
+    (
+      await applyRateLimit(
+        {
+          key: 'kakao-local-address-search:user-3',
+          limit: 3,
+          windowMs: 60_000,
+        },
+        {
+          repository: failingRepository,
+          nodeEnv: 'production',
+        }
+      )
+    ).allowed,
+    true
+  );
+} finally {
+  console.error = originalConsoleError;
+}
 
 console.log('rate limit fail-closed policy checks passed');

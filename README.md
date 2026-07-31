@@ -5,9 +5,10 @@
 현재 프로젝트의 핵심 방향은 아래와 같습니다.
 
 - 공개 청첩장 테마는 `emotional`, `romantic`, `simple` 3가지를 사용합니다.
+- 활성 이벤트 타입은 `wedding`, `first-birthday`, `birthday`, `general-event`, `opening`이며 `seventieth`, `etc`는 비활성 준비 항목입니다.
 - 공개 URL은 `/{slug}`에서 기본 테마를 직접 렌더링하고, `/{slug}/emotional`, `/{slug}/romantic`, `/{slug}/simple`를 테마별 실제 경로로 사용합니다.
 - 공개 청첩장은 `Firestore 우선 + 로컬 sample fallback` 구조로 렌더링합니다.
-- 웹 고객 편집기(`/page-editor/[slug]`)와 청첩장 만들기(`/page-wizard`)는 관리자 전용으로 동작합니다.
+- 관리자는 이벤트별 위저드에서 새 페이지를 만들고, 고객은 Firebase 계정의 `ownerUid`와 연결된 `/page-wizard/{slug}`에서 본인 이벤트를 편집합니다.
 - Firestore source of truth는 `events/{eventId}` 축입니다.
 - 공개 주소 `slug`는 `eventSlugIndex/{slug}`로 `eventId`에 매핑합니다.
 - 비밀번호는 `eventSecrets/{eventId}`, 결제는 `billingFulfillments/{transactionId}`를 기준으로 처리합니다.
@@ -43,6 +44,8 @@
   메인 페이지
 - `/{slug}`
   기본 테마 공개 청첩장
+- `/{slug}/{theme}`
+  이벤트 타입에서 지원하는 테마의 공개 경로
 - `/{slug}/emotional`
   감성형 청첩장
 - `/{slug}/romantic`
@@ -56,14 +59,22 @@
 
 - `/admin`
   관리자 대시보드
-- `/page-editor`
-  관리자 전용 고객 편집기 시작 페이지
-- `/page-editor/{slug}`
-  관리자 전용 고객 청첩장 편집기
 - `/page-wizard`
-  관리자용 신규 페이지 생성 시작 화면
+  관리자용 결혼식 페이지 생성 화면
+- `/birthday-wizard`
+  관리자용 생일 초대장 생성 화면
+- `/first-birthday-wizard`
+  관리자용 돌잔치 초대장 생성 화면
+- `/general-event-wizard`
+  관리자용 일반 행사 초대장 생성 화면
+- `/opening-wizard`
+  관리자용 개업 초대장 생성 화면
 - `/page-wizard/{slug}`
-  관리자용 페이지 생성 / 수정 화면
+  관리자 또는 해당 이벤트 소유자의 편집 화면
+- `/my-invitations`
+  고객 본인 이벤트 대시보드
+- `/my-invitations/create`
+  고객 제작권을 사용하는 신규 이벤트 생성 화면
 
 ### 모바일 앱
 
@@ -82,9 +93,9 @@
 - `src/services/invitationPageService.ts`
 - `src/config/weddingPages.ts`
 
-### 고객 편집기
+### 이벤트 생성·편집
 
-고객 편집기는 청첩장 페이지를 단계적으로 수정할 수 있는 편집 화면이며, 현재 웹에서는 관리자만 접근할 수 있습니다.
+신규 페이지 생성은 이벤트 타입별 위저드에서 시작합니다. 기존 페이지는 `/page-wizard/{slug}`에서 관리자 또는 Firebase 계정의 `ownerUid`가 일치하는 고객만 편집할 수 있습니다.
 
 주요 기능:
 
@@ -92,13 +103,13 @@
 - 실시간 섹션 미리보기
 - 감성형 / 로맨틱형 / 심플형 미리보기 전환
 - 자동 저장
-- 페이지별 비밀번호 기반 진입
+- 관리자 또는 소유자 계정 기반 진입
 
 관련 파일:
 
-- `src/app/page-editor/PageEditorClient.tsx`
-- `src/app/page-editor/pageEditorPanels.tsx`
-- `src/app/page-editor/PageEditorSectionPreview.tsx`
+- `src/app/page-wizard/PageWizardClient.tsx`
+- `src/app/page-wizard/pageWizardEventConfig.ts`
+- `src/app/my-invitations/MyInvitationsClient.tsx`
 
 ### 관리자
 
@@ -149,8 +160,12 @@ src/
   app/
     [slug]/
     admin/
+    birthday-wizard/
+    first-birthday-wizard/
+    general-event-wizard/
     memory/
-    page-editor/
+    my-invitations/
+    opening-wizard/
     page-wizard/
   components/
     admin/
@@ -216,8 +231,9 @@ scripts/
 - 공개 주소와 운영 화면에서 보이는 식별자는 `slug`다.
 - 실제 Firestore 원본 문서는 `eventId` 기준으로 읽고 쓴다.
 - `slug`는 항상 `eventSlugIndex/{slug}`를 통해 `eventId`로 해석한다.
-- `/page-wizard`, `/page-editor/{slug}`, 모바일 운영 화면은 모두 이 구조를 기준 저장소로 사용한다.
-- 웹 고객 편집기는 관리자 전용으로 제한하고, 모바일 편집기는 Firestore에 직접 쓰지 않고 서버 API 또는 repository를 통해 저장한다.
+- `/page-wizard`, `/page-wizard/{slug}`, 고객 대시보드와 모바일 운영 화면은 모두 이 구조를 기준 저장소로 사용한다.
+- 웹 고객 API와 모바일 편집기는 Firestore에 직접 쓰지 않고 공통 인증 helper를 거친 서버 API 또는 repository를 통해 저장한다.
+- `/api/client-editor/**`는 현재 UI 라우트가 아니라 모바일·호환성 영향 확인 대상 API 경계다.
 
 #### 본문 / 방명록 / 비밀번호 / 결제
 
@@ -471,14 +487,14 @@ npm run mb:web
 ### 직접 실행 스크립트
 
 
-## 고객 편집기 개요
+## 이벤트 편집 개요
 
-`/page-editor/{slug}`는 청첩장 내용을 단계적으로 수정할 수 있도록 만든 편집기이며, 현재 웹에서는 관리자만 사용할 수 있습니다.
+`/page-wizard/{slug}`는 이벤트 내용을 단계적으로 수정하는 현재 웹 편집 경로입니다. 관리자는 전체 이벤트를 운영할 수 있고, 고객은 Firebase 로그인 후 `ownerUid`가 일치하는 본인 이벤트만 편집할 수 있습니다.
 
 주요 기능:
 
-- 관리자 로그인 후 편집 가능
-- 비관리자 사용자는 관리자 전용 안내 문구만 확인 가능
+- 관리자 또는 이벤트 소유자 로그인 후 편집 가능
+- 비로그인 사용자와 비소유자는 로그인 또는 권한 안내만 확인 가능
 - 섹션별 입력
 - 자동 저장
 - 감성형 / 로맨틱형 / 심플형 미리보기 전환
@@ -565,8 +581,9 @@ npm run mb:web
 - `/{slug}/romantic`
 - `/{slug}/simple`
 - `/admin`
-- `/page-editor/{slug}`
 - `/page-wizard/{slug}`
+- `/my-invitations`
+- `/opening-wizard`
 
 `firebase.json`은 정적 Hosting `out/` 배포 설정을 제거하고 Firestore / Storage rules 배포 설정만 유지합니다. 웹 런타임은 Firebase App Hosting backend가 담당합니다.
 
@@ -589,6 +606,8 @@ npm run mb:web
 
 ```bash
 npm run check
+npm run test:stability:fast
+npm run qa:stability
 npm run build
 npm run test:smoke
 ```
@@ -609,7 +628,7 @@ npm run build
 - `src/app/[slug]/[theme]/page.tsx`
 - `src/app/page-wizard/[slug]/page.tsx`
 - `src/app/admin/AdminPageClient.tsx`
-- `src/app/page-editor/PageEditorClient.tsx`
+- `src/app/my-invitations/MyInvitationsClient.tsx`
 - `src/server/invitationPageServerService.ts`
 - `src/server/clientEditorSession.ts`
 - `src/services/invitationPageService.ts`

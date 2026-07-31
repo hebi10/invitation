@@ -5,7 +5,7 @@ import styles from './page.module.css';
 
 const mainLinks = [
   {
-    href: '/shin-minje-kim-hyunji/romantic/',
+    href: '/kim-shinlang-na-sinbu/romantic/',
     label: '샘플 보기',
     description: '하객에게 보이는 실제 화면',
     variant: 'primary',
