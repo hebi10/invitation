@@ -45,6 +45,18 @@ function listRouteFiles(directory: string): string[] {
   return files;
 }
 
+function listSourceFiles(directory: string): string[] {
+  return readdirSync(directory).flatMap((entry) => {
+    const fullPath = path.join(directory, entry);
+    const stats = statSync(fullPath);
+    if (stats.isDirectory()) {
+      return listSourceFiles(fullPath);
+    }
+
+    return /\.(?:ts|tsx)$/.test(entry) ? [fullPath] : [];
+  });
+}
+
 const gitignore = readText('.gitignore');
 assert(
   /(^|\r?\n)\.gstack\/(\r?\n|$)/.test(gitignore),
@@ -95,6 +107,34 @@ if (existsSync(apiDirectory)) {
     );
   }
 }
+
+const firestoreRules = readText('firestore.rules');
+assert(
+  !/match\s+\/ownershipInvites\b/.test(firestoreRules),
+  'firestore.rules',
+  'Ownership invites must not gain a direct client allow rule.'
+);
+
+const ownershipInviteRepositoryPath = path.join(
+  repoRoot,
+  'src',
+  'server',
+  'repositories',
+  'eventOwnershipInviteRepository.ts'
+);
+const ownershipInviteStorageReferences = listSourceFiles(path.join(repoRoot, 'src'))
+  .filter((file) => readFileSync(file, 'utf8').includes("'ownershipInvites'"));
+assert(
+  ownershipInviteStorageReferences.length === 1 &&
+    ownershipInviteStorageReferences[0] === ownershipInviteRepositoryPath,
+  'src/server/repositories/eventOwnershipInviteRepository.ts',
+  'The server ownership invite repository must remain the only source write path.'
+);
+assert(
+  readFileSync(ownershipInviteRepositoryPath, 'utf8').includes('runTransaction'),
+  'src/server/repositories/eventOwnershipInviteRepository.ts',
+  'Ownership invite writes must stay transaction-backed.'
+);
 
 if (findings.length > 0) {
   for (const finding of findings) {

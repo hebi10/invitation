@@ -96,6 +96,15 @@
 - 위저드 클라이언트도 `/api/customer/events` 소유 목록에 같은 slug가 있으면 claimable 응답을 그대로 믿지 않고 소유 이벤트 fallback config를 적용한다.
 - `/my-invitations`의 고객 방명록 조회/삭제는 `/api/customer/events/[slug]/comments`와 `/api/customer/events/[slug]/comments/[commentId]`를 사용하고, 서버에서 ownerUid를 다시 확인한다.
 
+## 고객 연결 초대 경계
+- 관리자 웹 생성 이벤트는 기존 소유권을 덮어쓰지 않으며 신규 초안만 `ownerUid: null`로 시작한다.
+- 관리자는 `/api/admin/events/[slug]/ownership-invite`에서 7일 만료 링크를 발급한다. 원문 토큰은 URL fragment에만 포함하고 Firestore `events/{eventId}/ownershipInvites/current`에는 SHA-256 해시만 저장한다.
+- `/connect/[slug]`는 fragment를 브라우저 메모리에서만 읽고 공개 상태 API로 검증한 뒤 로그인 또는 회원가입과 이메일 인증을 안내한다.
+- 인증 고객은 `/api/customer/events/[slug]/ownership-invite`에서 링크를 한 번만 소비한다. 서버 Repository 트랜잭션이 현재 소유자와 초대 상태를 함께 확인하고 `ownerUid` 변경과 소비 처리를 원자적으로 기록한다.
+- 재발급은 현재 초대 문서를 교체해 이전 링크를 즉시 무효화한다. 사용 완료 후에는 토큰 없는 `/page-wizard/{slug}`로 이동한다.
+- 임의의 미연결 slug는 self-claim 대상이 아니다. 관리자 발급 토큰과 인증된 Firebase 고객 신원이 모두 확인되어야 한다.
+- Firestore Rules는 익명, 이벤트 소유자, 관리자 브라우저의 `ownershipInvites` 직접 읽기와 쓰기를 모두 차단한다.
+
 ## 고객 이용권 지갑 경계
 - 고객 제작권과 모바일 초대장 생성 티켓 지급/소비 이력은 `src/server/repositories/customerWalletRepository.ts`가 Firestore `customerWallets` 경로를 전담한다.
 - 관리자 지급은 `/api/admin/customers/wallet`을 통해서만 처리하고, 클라이언트는 `src/services/adminCustomerService.ts` 공개 함수를 호출한다.

@@ -260,6 +260,17 @@ await db.collection('events').doc('event-1').collection('comments').doc('comment
 await db.collection('events').doc('event-1').collection('linkTokens').doc('token-1').set({
   status: 'active',
 });
+await db
+  .collection('events')
+  .doc('event-1')
+  .collection('ownershipInvites')
+  .doc('current')
+  .set({
+    tokenHash: 'hash-only',
+    status: 'active',
+    createdAt: now,
+    expiresAt: after,
+  });
 await db.collection('eventSecrets').doc('event-1').set({ passwordHash: 'hash' });
 await db.collection('billingFulfillments').doc('transaction-1').set({
   status: 'processing',
@@ -392,6 +403,37 @@ await expectDenied(
   ),
   'link token write by owner'
 );
+
+for (const identity of [
+  { uid: undefined, label: 'anonymous visitor' },
+  { uid: 'owner-1', label: 'event owner' },
+  { uid: 'admin-1', label: 'administrator' },
+]) {
+  await expectDenied(
+    await restGet('events/event-1/ownershipInvites/current', identity.uid),
+    `ownership invite read by ${identity.label}`
+  );
+  await expectDenied(
+    await restPatch(
+      'events/event-1/ownershipInvites/current',
+      { status: 'consumed' },
+      identity.uid
+    ),
+    `ownership invite update by ${identity.label}`
+  );
+  await expectDenied(
+    await restPatch(
+      'events/event-1/ownershipInvites/new-invite',
+      { status: 'active' },
+      identity.uid
+    ),
+    `ownership invite create by ${identity.label}`
+  );
+  await expectDenied(
+    await restDelete('events/event-1/ownershipInvites/current', identity.uid),
+    `ownership invite delete by ${identity.label}`
+  );
+}
 
 await deleteApp(app);
 console.log('firestore rules emulator checks passed');

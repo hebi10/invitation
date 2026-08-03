@@ -30,6 +30,10 @@ import {
 } from '@/services/adminDashboardService';
 import { deleteAdminEventByPageSlug } from '@/services/adminEventService';
 import {
+  issueAdminOwnershipInvite,
+  type AdminOwnershipInviteResult,
+} from '@/services/eventOwnershipInviteService';
+import {
   deleteComment,
   getAllComments,
   type Comment,
@@ -80,6 +84,7 @@ export function useAdminData({
   const [deletingPageSlug, setDeletingPageSlug] = useState<string | null>(null);
   const [deletingCustomerUid, setDeletingCustomerUid] = useState<string | null>(null);
   const [ownershipActionToken, setOwnershipActionToken] = useState<string | null>(null);
+  const [issuingOwnershipInviteSlug, setIssuingOwnershipInviteSlug] = useState<string | null>(null);
   const [walletGrantActionToken, setWalletGrantActionToken] = useState<string | null>(null);
 
   const shouldLoadPages =
@@ -421,6 +426,34 @@ export function useAdminData({
     [confirm, pages, refreshAdminData, showToast]
   );
 
+  const handleIssueOwnershipInvite = useCallback(
+    async (pageSlug: string): Promise<AdminOwnershipInviteResult | null> => {
+      setIssuingOwnershipInviteSlug(pageSlug);
+
+      try {
+        const result = await issueAdminOwnershipInvite(pageSlug);
+        showToast({
+          title: '고객 연결 링크를 만들었습니다.',
+          message: '7일 동안 사용할 수 있으며 가장 최근에 만든 링크만 유효합니다.',
+          tone: 'success',
+        });
+        return result;
+      } catch (error) {
+        console.error(error);
+        showToast({
+          title: '고객 연결 링크 발급에 실패했습니다.',
+          message:
+            error instanceof Error ? error.message : '잠시 후 다시 시도해 주세요.',
+          tone: 'error',
+        });
+        return null;
+      } finally {
+        setIssuingOwnershipInviteSlug(null);
+      }
+    },
+    [showToast]
+  );
+
   const handleGrantCustomerWalletCredit = useCallback(
     async (
       uid: string,
@@ -753,6 +786,7 @@ export function useAdminData({
     deletingPageSlug,
     deletingCustomerUid,
     ownershipActionToken,
+    issuingOwnershipInviteSlug,
     walletGrantActionToken,
 
     refreshPages,
@@ -764,6 +798,7 @@ export function useAdminData({
     handleDeletePage,
     handleAssignCustomerOwnership,
     handleClearCustomerOwnership,
+    handleIssueOwnershipInvite,
     handleGrantCustomerWalletCredit,
     handleDeleteCustomerAccount,
     handleTogglePublished,

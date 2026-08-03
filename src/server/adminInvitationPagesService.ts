@@ -16,6 +16,7 @@ import {
 import type { InvitationPageSummary } from '@/services/invitationPageService';
 import type { InvitationPage } from '@/types/invitationPage';
 
+import { listServerAdminUserIds } from './adminUserServerService';
 import {
   firestoreEventRepository,
   listStoredEventSummaries,
@@ -36,7 +37,8 @@ function buildFallbackVariants(summary: EventSummaryRecord, displayName: string)
 
 function buildAdminInvitationPageSummary(
   summary: EventSummaryRecord,
-  page: InvitationPage | null
+  page: InvitationPage | null,
+  adminUserIds: Set<string>
 ): InvitationPageSummary {
   const displayName =
     page?.displayName || summary.displayName || summary.title || summary.slug;
@@ -44,6 +46,12 @@ function buildAdminInvitationPageSummary(
     page?.productTier,
     DEFAULT_INVITATION_PRODUCT_TIER
   );
+  const ownerUid = summary.ownerUid?.trim() ?? '';
+  const ownershipKind = !ownerUid
+    ? 'unassigned'
+    : adminUserIds.has(ownerUid)
+      ? 'admin'
+      : 'customer';
 
   return {
     slug: summary.slug,
@@ -64,11 +72,15 @@ function buildAdminInvitationPageSummary(
     variants: page?.variants ?? buildFallbackVariants(summary, displayName),
     dataSource: 'firestore',
     hasCustomConfig: summary.hasCustomContent,
+    ownershipKind,
   };
 }
 
 export async function listAdminInvitationPageSummaries() {
-  const eventSummaries = await listStoredEventSummaries();
+  const [eventSummaries, adminUserIds] = await Promise.all([
+    listStoredEventSummaries(),
+    listServerAdminUserIds(),
+  ]);
   const pages = await Promise.all(
     eventSummaries.map(async (summary) => {
       const contentRecord = await firestoreEventRepository.findContentBySlug(summary.slug);
@@ -78,7 +90,7 @@ export async function listAdminInvitationPageSummaries() {
           })
         : null;
 
-      return buildAdminInvitationPageSummary(summary, page);
+      return buildAdminInvitationPageSummary(summary, page, adminUserIds);
     })
   );
 

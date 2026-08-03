@@ -1,6 +1,6 @@
 ﻿'use client';
 
-import { useCallback, useEffect, useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 
 import FirebaseAuthLoginCard from '@/app/_components/FirebaseAuthLoginCard';
@@ -8,10 +8,12 @@ import { DisplayPeriodManager, ImageManager, MemoryPageManager } from '@/compone
 import { useAdmin } from '@/contexts';
 import { getEventTypeDisplayLabel } from '@/lib/eventTypes';
 import type { InvitationPageSummary } from '@/services/invitationPageService';
+import type { AdminOwnershipInviteResult } from '@/services/eventOwnershipInviteService';
 
 import {
   AdminCommentsTab,
   AdminCustomerAccountsTab,
+  AdminOwnershipInviteDialog,
   AdminPagesTab,
   StatusBadge,
   SummaryCards,
@@ -95,6 +97,8 @@ export default function AdminPageClient() {
     return value;
   })();
   const { confirm, showToast } = useAdminOverlay();
+  const [ownershipInvite, setOwnershipInvite] =
+    useState<AdminOwnershipInviteResult | null>(null);
 
   /* ── URL query ── */
 
@@ -163,6 +167,7 @@ export default function AdminPageClient() {
     deletingPageSlug,
     deletingCustomerUid,
     ownershipActionToken,
+    issuingOwnershipInviteSlug,
     walletGrantActionToken,
     refreshPages,
     fetchComments,
@@ -172,6 +177,7 @@ export default function AdminPageClient() {
     handleDeletePage,
     handleAssignCustomerOwnership,
     handleClearCustomerOwnership,
+    handleIssueOwnershipInvite,
     handleGrantCustomerWalletCredit,
     handleDeleteCustomerAccount,
     handleTogglePublished,
@@ -187,6 +193,34 @@ export default function AdminPageClient() {
     await logout();
     dataLogout();
     router.replace(safePathname, { scroll: false });
+  };
+
+  const issueOwnershipInviteAndOpen = async (pageSlug: string) => {
+    const result = await handleIssueOwnershipInvite(pageSlug);
+    if (result) {
+      setOwnershipInvite(result);
+    }
+  };
+
+  const reissueOwnershipInvite = async () => {
+    if (!ownershipInvite) {
+      return;
+    }
+
+    const approved = await confirm({
+      title: '고객 연결 링크를 다시 만들까요?',
+      description: '기존 링크는 즉시 사용할 수 없게 되고 새로 만든 링크만 유효합니다.',
+      confirmLabel: '재발급',
+      cancelLabel: '취소',
+    });
+    if (!approved) {
+      return;
+    }
+
+    const result = await handleIssueOwnershipInvite(ownershipInvite.slug);
+    if (result) {
+      setOwnershipInvite(result);
+    }
   };
 
   useEffect(() => {
@@ -892,7 +926,11 @@ export default function AdminPageClient() {
               updatingVariantToken={updatingVariantToken}
               updatingTierPageSlug={updatingTierPageSlug}
               deletingPageSlug={deletingPageSlug}
+              issuingOwnershipInviteSlug={issuingOwnershipInviteSlug}
               onDeletePage={(page) => void handleDeletePage(page)}
+              onIssueOwnershipInvite={(pageSlug) =>
+                void issueOwnershipInviteAndOpen(pageSlug)
+              }
             />
           ) : null}
 
@@ -930,6 +968,7 @@ export default function AdminPageClient() {
               accounts={customerAccounts}
               unassignedEvents={unassignedCustomerEvents}
               ownershipActionToken={ownershipActionToken}
+              issuingOwnershipInviteSlug={issuingOwnershipInviteSlug}
               walletGrantActionToken={walletGrantActionToken}
               deletingCustomerUid={deletingCustomerUid}
               onRefresh={() => void fetchCustomerAccounts()}
@@ -937,6 +976,9 @@ export default function AdminPageClient() {
                 void handleAssignCustomerOwnership(uid, pageSlug)
               }
               onClear={(pageSlug) => void handleClearCustomerOwnership(pageSlug)}
+              onIssueOwnershipInvite={(pageSlug) =>
+                void issueOwnershipInviteAndOpen(pageSlug)
+              }
               onGrantWalletCredit={(uid, grant) =>
                 void handleGrantCustomerWalletCredit(uid, grant)
               }
@@ -954,6 +996,12 @@ export default function AdminPageClient() {
           ) : null}
         </section>
       </div>
+      <AdminOwnershipInviteDialog
+        invite={ownershipInvite}
+        isReissuing={issuingOwnershipInviteSlug === ownershipInvite?.slug}
+        onClose={() => setOwnershipInvite(null)}
+        onReissue={reissueOwnershipInvite}
+      />
     </div>
   );
 }

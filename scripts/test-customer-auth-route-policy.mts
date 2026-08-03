@@ -2,6 +2,11 @@ import assert from 'node:assert/strict';
 import { readdirSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 
+import {
+  canCreateCustomerOwnedInvitation,
+  canUseVerifiedCustomerFeatures,
+} from '@/server/customerAuthVerification';
+
 const repoRoot = process.cwd();
 const customerApiRoot = path.join(repoRoot, 'src', 'app', 'api', 'customer');
 
@@ -36,5 +41,25 @@ for (const routeFile of listRouteFiles(customerApiRoot)) {
     `${relativePath} must verify the customer through customerApiAuth.`
   );
 }
+
+assert.equal(canUseVerifiedCustomerFeatures({ email_verified: true }), true);
+assert.equal(
+  canUseVerifiedCustomerFeatures({
+    email_verified: false,
+    firebase: { sign_in_provider: 'google.com', identities: {} },
+  }),
+  true
+);
+assert.equal(
+  canUseVerifiedCustomerFeatures({
+    email_verified: false,
+    firebase: { sign_in_provider: 'password', identities: {} },
+  }),
+  false
+);
+assert.equal(
+  canCreateCustomerOwnedInvitation({ email_verified: true }),
+  canUseVerifiedCustomerFeatures({ email_verified: true })
+);
 
 console.log('customer auth route policy checks passed');

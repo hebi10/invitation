@@ -58,7 +58,9 @@ interface AdminPagesTabProps {
   updatingVariantToken: string | null;
   updatingTierPageSlug: string | null;
   deletingPageSlug: string | null;
+  issuingOwnershipInviteSlug: string | null;
   onDeletePage: (page: InvitationPageSummary) => void;
+  onIssueOwnershipInvite: (pageSlug: string) => void;
 }
 
 export default function AdminPagesTab({
@@ -84,7 +86,9 @@ export default function AdminPagesTab({
   updatingVariantToken,
   updatingTierPageSlug,
   deletingPageSlug,
+  issuingOwnershipInviteSlug,
   onDeletePage,
+  onIssueOwnershipInvite,
 }: AdminPagesTabProps) {
 
   const [currentPage, setCurrentPage] = useState(1);
@@ -348,6 +352,9 @@ export default function AdminPagesTab({
                     const previewAccess = getInvitationPublicAccessState(page);
                     const isUpdatingPublished = updatingPublishedPageSlug === page.slug;
                     const isDeletingPage = deletingPageSlug === page.slug;
+                    const canIssueOwnershipInvite = page.ownershipKind !== 'customer';
+                    const isIssuingOwnershipInvite =
+                      issuingOwnershipInviteSlug === page.slug;
                     const selectedVariantKey = selectedVariantByPage[page.slug] ?? '';
                     const selectedVariant = links.find(
                       (link) => link.key === selectedVariantKey
@@ -378,6 +385,21 @@ export default function AdminPagesTab({
                                     {formatDateTime(page.createdAt)}
                                   </p>
                                 ) : null}
+                                <StatusBadge
+                                  tone={
+                                    page.ownershipKind === 'customer'
+                                      ? 'success'
+                                      : page.ownershipKind === 'admin'
+                                        ? 'primary'
+                                        : 'warning'
+                                  }
+                                >
+                                  {page.ownershipKind === 'customer'
+                                    ? '고객 연결됨'
+                                    : page.ownershipKind === 'admin'
+                                      ? '관리자 소유'
+                                      : '미연결'}
+                                </StatusBadge>
                               </div>
                               <select
                                 className="admin-select"
@@ -568,6 +590,18 @@ export default function AdminPagesTab({
                               >
                                 모바일
                               </a>
+                              {canIssueOwnershipInvite ? (
+                                <button
+                                  type="button"
+                                  className="admin-button admin-button-secondary"
+                                  disabled={isIssuingOwnershipInvite}
+                                  onClick={() => onIssueOwnershipInvite(page.slug)}
+                                >
+                                  {isIssuingOwnershipInvite
+                                    ? '링크 발급 중'
+                                    : '고객 연결 링크'}
+                                </button>
+                              ) : null}
                               <button
                                 type="button"
                                 className="admin-button admin-button-danger"
@@ -595,6 +629,9 @@ export default function AdminPagesTab({
                 page
               );
               const isDeletingPage = deletingPageSlug === page.slug;
+              const canIssueOwnershipInvite = page.ownershipKind !== 'customer';
+              const isIssuingOwnershipInvite =
+                issuingOwnershipInviteSlug === page.slug;
               const selectedVariantKey = selectedVariantByPage[page.slug] ?? '';
               const selectedVariant = links.find((link) => link.key === selectedVariantKey);
               const selectedMissingShortcut = SHORTCUT_ITEMS.find(
@@ -618,6 +655,21 @@ export default function AdminPagesTab({
                           {formatDateTime(page.createdAt)}
                         </p>
                       ) : null}
+                      <StatusBadge
+                        tone={
+                          page.ownershipKind === 'customer'
+                            ? 'success'
+                            : page.ownershipKind === 'admin'
+                              ? 'primary'
+                              : 'warning'
+                        }
+                      >
+                        {page.ownershipKind === 'customer'
+                          ? '고객 연결됨'
+                          : page.ownershipKind === 'admin'
+                            ? '관리자 소유'
+                            : '미연결'}
+                      </StatusBadge>
                       <select
                         className="admin-select"
                         value={page.productTier}
@@ -786,6 +838,18 @@ export default function AdminPagesTab({
                       >
                         모바일
                       </a>
+                      {canIssueOwnershipInvite ? (
+                        <button
+                          type="button"
+                          className="admin-button admin-button-secondary"
+                          disabled={isIssuingOwnershipInvite}
+                          onClick={() => onIssueOwnershipInvite(page.slug)}
+                        >
+                          {isIssuingOwnershipInvite
+                            ? '링크 발급 중'
+                            : '고객 연결 링크'}
+                        </button>
+                      ) : null}
                       <button
                         type="button"
                         className="admin-button admin-button-danger"

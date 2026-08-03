@@ -10,11 +10,14 @@ const TRUSTED_CUSTOMER_SIGN_IN_PROVIDERS = new Set([
 export const CUSTOMER_EMAIL_VERIFICATION_REQUIRED_MESSAGE =
   '회원가입 계정은 인증 메일 확인 후 청첩장을 생성할 수 있습니다. 받은 편지함에서 인증 링크를 확인하거나 Google로 로그인해 주세요.';
 
+export const CUSTOMER_VERIFIED_FEATURE_REQUIRED_MESSAGE =
+  '회원가입 계정은 인증 메일 확인 후 청첩장을 연결할 수 있습니다. 받은 편지함에서 인증 링크를 확인하거나 Google로 로그인해 주세요.';
+
 type CustomerCreationIdentity = Partial<
   Pick<DecodedIdToken, 'email_verified' | 'firebase'>
 >;
 
-export function canCreateCustomerOwnedInvitation(
+export function canUseVerifiedCustomerFeatures(
   decodedToken: CustomerCreationIdentity
 ) {
   const signInProvider =
@@ -26,4 +29,10 @@ export function canCreateCustomerOwnedInvitation(
     decodedToken.email_verified === true ||
     TRUSTED_CUSTOMER_SIGN_IN_PROVIDERS.has(signInProvider)
   );
+}
+
+export function canCreateCustomerOwnedInvitation(
+  decodedToken: CustomerCreationIdentity
+) {
+  return canUseVerifiedCustomerFeatures(decodedToken);
 }

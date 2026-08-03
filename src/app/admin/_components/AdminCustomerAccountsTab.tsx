@@ -27,11 +27,13 @@ interface AdminCustomerAccountsTabProps {
   accounts: AdminCustomerAccountSummary[];
   unassignedEvents: AdminCustomerLinkedEventSummary[];
   ownershipActionToken: string | null;
+  issuingOwnershipInviteSlug: string | null;
   walletGrantActionToken: string | null;
   deletingCustomerUid: string | null;
   onRefresh: () => void;
   onAssign: (uid: string, pageSlug: string) => void;
   onClear: (pageSlug: string) => void;
+  onIssueOwnershipInvite: (pageSlug: string) => void;
   onDeleteAccount: (uid: string) => void;
   onGrantWalletCredit: (
     uid: string,
@@ -120,11 +122,13 @@ export default function AdminCustomerAccountsTab({
   accounts,
   unassignedEvents,
   ownershipActionToken,
+  issuingOwnershipInviteSlug,
   walletGrantActionToken,
   deletingCustomerUid,
   onRefresh,
   onAssign,
   onClear,
+  onIssueOwnershipInvite,
   onDeleteAccount,
   onGrantWalletCredit,
 }: AdminCustomerAccountsTabProps) {
@@ -448,6 +452,9 @@ export default function AdminCustomerAccountsTab({
     const isClearing = selectedEvent
       ? ownershipActionToken === `clear:${selectedEvent.slug}`
       : false;
+    const isIssuingOwnershipInvite = selectedEvent
+      ? issuingOwnershipInviteSlug === selectedEvent.slug
+      : false;
 
     return (
       <div className={styles.linkedEventCompact}>
@@ -504,6 +511,16 @@ export default function AdminCustomerAccountsTab({
               >
                 미리보기
               </a>
+              {account.isAdmin ? (
+                <button
+                  type="button"
+                  className="admin-button admin-button-secondary"
+                  disabled={isIssuingOwnershipInvite}
+                  onClick={() => onIssueOwnershipInvite(selectedEvent.slug)}
+                >
+                  {isIssuingOwnershipInvite ? '링크 발급 중' : '고객 연결 링크'}
+                </button>
+              ) : null}
               <button
                 type="button"
                 className="admin-button admin-button-danger"
@@ -526,6 +543,7 @@ export default function AdminCustomerAccountsTab({
     const assignmentQuery = getDraftAssignmentQuery(account.uid);
     const filteredAssignableEvents = getFilteredAssignableEvents(account.uid);
     const isAssigning = ownershipActionToken === `assign:${account.uid}:${selectedSlug}`;
+    const isIssuingSelectedInvite = issuingOwnershipInviteSlug === selectedSlug;
     const isDeletingAccount = deletingCustomerUid === account.uid;
 
     return (
@@ -654,6 +672,18 @@ export default function AdminCustomerAccountsTab({
                   onClick={() => onAssign(account.uid, selectedSlug)}
                 >
                   {isAssigning ? '연결 중..' : '청첩장 연결'}
+                </button>
+                <button
+                  type="button"
+                  className="admin-button admin-button-secondary"
+                  disabled={
+                    !selectedSlug ||
+                    !filteredAssignableEvents.some((event) => event.slug === selectedSlug) ||
+                    isIssuingSelectedInvite
+                  }
+                  onClick={() => onIssueOwnershipInvite(selectedSlug)}
+                >
+                  {isIssuingSelectedInvite ? '링크 발급 중' : '고객 연결 링크'}
                 </button>
               </div>
               <span className={styles.actionHint}>

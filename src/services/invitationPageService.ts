@@ -69,6 +69,7 @@ export interface InvitationPageSummary {
   variants: InvitationPage['variants'];
   dataSource: 'seed' | 'firestore';
   hasCustomConfig: boolean;
+  ownershipKind: 'unassigned' | 'admin' | 'customer';
 }
 
 export interface EditableInvitationPageConfig {
@@ -179,6 +180,10 @@ function normalizeAdminInvitationPageSummary(
         : {},
     dataSource: 'firestore' as const,
     hasCustomConfig: input.hasCustomConfig === true,
+    ownershipKind:
+      input.ownershipKind === 'unassigned' || input.ownershipKind === 'admin'
+        ? input.ownershipKind
+        : 'customer',
   } satisfies InvitationPageSummary;
 }
 
@@ -292,6 +297,7 @@ function toInvitationPageSummary(
     variants: page.variants,
     dataSource: options.dataSource,
     hasCustomConfig: options.hasCustomConfig,
+    ownershipKind: 'customer',
   };
 }
 
@@ -613,6 +619,7 @@ export async function createInvitationPageDraftFromSeed(
     seedSourceSlug: seed.slug,
     createdAt: now,
     updatedAt: now,
+    initializeOwnerFromCurrentAuth: false,
   });
 
   await upsertRegistryRecord(firestore, slug, {

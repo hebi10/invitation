@@ -9,6 +9,7 @@
 - 공개 URL은 `/{slug}`에서 기본 테마를 직접 렌더링하고, `/{slug}/emotional`, `/{slug}/romantic`, `/{slug}/simple`를 테마별 실제 경로로 사용합니다.
 - 공개 청첩장은 `Firestore 우선 + 로컬 sample fallback` 구조로 렌더링합니다.
 - 관리자는 이벤트별 위저드에서 새 페이지를 만들고, 고객은 Firebase 계정의 `ownerUid`와 연결된 `/page-wizard/{slug}`에서 본인 이벤트를 편집합니다.
+- 관리자가 만든 신규 페이지는 미연결 상태로 유지되며, 관리자가 발급한 7일·1회용 고객 연결 링크를 통해서만 인증된 고객 계정에 자동 연결됩니다.
 - Firestore source of truth는 `events/{eventId}` 축입니다.
 - 공개 주소 `slug`는 `eventSlugIndex/{slug}`로 `eventId`에 매핑합니다.
 - 비밀번호는 `eventSecrets/{eventId}`, 결제는 `billingFulfillments/{transactionId}`를 기준으로 처리합니다.
@@ -217,6 +218,8 @@ scripts/
   - 방명록/댓글
 - `events/{eventId}/linkTokens/{tokenId}`
   - 모바일 1회용 연동 링크
+- `events/{eventId}/ownershipInvites/current`
+  - 관리자 발급 고객 연결 토큰의 해시, 만료와 사용 상태(서버 전용)
 - `events/{eventId}/auditLogs/{logId}`
   - 고위험 작업 및 운영 로그
 - `eventSecrets/{eventId}`
@@ -233,6 +236,7 @@ scripts/
 - `slug`는 항상 `eventSlugIndex/{slug}`를 통해 `eventId`로 해석한다.
 - `/page-wizard`, `/page-wizard/{slug}`, 고객 대시보드와 모바일 운영 화면은 모두 이 구조를 기준 저장소로 사용한다.
 - 웹 고객 API와 모바일 편집기는 Firestore에 직접 쓰지 않고 공통 인증 helper를 거친 서버 API 또는 repository를 통해 저장한다.
+- 고객 연결은 관리자 발급 URL의 fragment 토큰을 `/connect/{slug}`가 메모리에서만 읽고, 로그인·이메일 인증 뒤 서버 트랜잭션으로 소비한다. 임의의 미연결 slug만으로는 고객이 소유권을 가져갈 수 없다.
 - `/api/client-editor/**`는 현재 UI 라우트가 아니라 모바일·호환성 영향 확인 대상 API 경계다.
 
 #### 본문 / 방명록 / 비밀번호 / 결제
@@ -324,6 +328,8 @@ memory-images/{pageSlug}/...
   공개 이벤트 조건 충족 시 읽기 가능, 쓰기는 관리자 또는 서버 경유
 - `events/{eventId}/comments/{commentId}`
   공개 이벤트 조건 충족 시 읽기 가능, 공개 작성은 서버 API 경유, 관리자 수정/삭제
+- `events/{eventId}/ownershipInvites/{inviteId}`
+  익명·소유자·관리자 브라우저 접근을 모두 차단하고 서버 Repository만 접근
 - `eventSecrets`, `eventSlugIndex`, `billingFulfillments`
   관리자 전용 또는 서버 운영 보조 컬렉션
 

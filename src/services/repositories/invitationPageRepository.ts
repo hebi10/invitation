@@ -42,6 +42,7 @@ export interface ClientInvitationPageRepository {
     createdAt: Date;
     updatedAt: Date;
     seedSourceSlug?: string | null;
+    initializeOwnerFromCurrentAuth?: boolean;
   }): Promise<void>;
   upsertRegistryBySlug(
     pageSlug: string,
@@ -197,6 +198,7 @@ export const clientInvitationPageRepository: ClientInvitationPageRepository = {
       seedSourceSlug: input.seedSourceSlug ?? null,
       createdAt: input.createdAt,
       updatedAt: input.updatedAt,
+      initializeOwnerFromCurrentAuth: input.initializeOwnerFromCurrentAuth,
     });
   },
 

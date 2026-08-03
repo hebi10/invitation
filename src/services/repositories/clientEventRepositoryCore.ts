@@ -14,6 +14,7 @@ import {
   type ClientEventSummaryRecord,
 } from './mappers/clientEventRepositoryMapper';
 import type { StoredInvitationPageConfigRecord } from './mappers/invitationPageRepositoryMapper';
+import { resolveNextClientEventOwner } from './clientEventOwnershipPolicy';
 
 export const CLIENT_EVENTS_COLLECTION = 'events';
 export const CLIENT_EVENT_CONTENT_COLLECTION = 'content';
@@ -52,6 +53,7 @@ export interface ClientEventSummaryWriteInput {
   ownerUid?: string | null;
   ownerEmail?: string | null;
   ownerDisplayName?: string | null;
+  initializeOwnerFromCurrentAuth?: boolean;
 }
 
 function normalizePageSlug(pageSlug: string) {
@@ -453,21 +455,32 @@ export async function upsertClientEventSummary(
     DEFAULT_INVITATION_THEME;
   const nextHasCustomConfig =
     input.hasCustomConfig ?? existingSummary?.hasCustomContent ?? false;
-  const nextOwnerUid =
-    existingSummary?.ownerUid ??
-    input.ownerUid ??
-    currentAuthOwner?.uid ??
-    null;
-  const nextOwnerEmail =
-    existingSummary?.ownerEmail ??
-    input.ownerEmail ??
-    currentAuthOwner?.email ??
-    null;
-  const nextOwnerDisplayName =
-    existingSummary?.ownerDisplayName ??
-    input.ownerDisplayName ??
-    currentAuthOwner?.displayName ??
-    null;
+  const nextOwner = resolveNextClientEventOwner({
+    existingEventFound: Boolean(existingSummary),
+    existing: existingSummary
+      ? {
+          ownerUid: existingSummary.ownerUid,
+          ownerEmail: existingSummary.ownerEmail,
+          ownerDisplayName: existingSummary.ownerDisplayName,
+        }
+      : null,
+    requested: {
+      ownerUid: input.ownerUid ?? null,
+      ownerEmail: input.ownerEmail ?? null,
+      ownerDisplayName: input.ownerDisplayName ?? null,
+    },
+    currentAuthOwner: currentAuthOwner
+      ? {
+          ownerUid: currentAuthOwner.uid,
+          ownerEmail: currentAuthOwner.email,
+          ownerDisplayName: currentAuthOwner.displayName,
+        }
+      : null,
+    initializeOwnerFromCurrentAuth: input.initializeOwnerFromCurrentAuth !== false,
+  });
+  const nextOwnerUid = nextOwner.ownerUid;
+  const nextOwnerEmail = nextOwner.ownerEmail;
+  const nextOwnerDisplayName = nextOwner.ownerDisplayName;
   const nextHasPassword =
     input.hasPassword !== undefined
       ? input.hasPassword === true
@@ -619,6 +632,7 @@ export async function saveClientEventContentBySlug(input: {
   seedSourceSlug?: string | null;
   createdAt?: Date | null;
   updatedAt?: Date | null;
+  initializeOwnerFromCurrentAuth?: boolean;
 }) {
   const normalizedPageSlug = normalizePageSlug(input.slug);
   if (!normalizedPageSlug) {
@@ -642,6 +656,7 @@ export async function saveClientEventContentBySlug(input: {
     createdAt: input.createdAt ?? null,
     updatedAt: input.updatedAt ?? new Date(),
     seedSourceSlug: input.seedSourceSlug ?? null,
+    initializeOwnerFromCurrentAuth: input.initializeOwnerFromCurrentAuth,
   });
 
   const firestore = await ensureClientFirestoreState();
