@@ -18,7 +18,7 @@ import { DUMMY_EVENT_SEEDS } from './seed-dummy-events.mts';
 
 assert.deepEqual(
   SHORTCUT_ITEMS.map((item) => item.key),
-  ['emotional', 'romantic', 'simple']
+  ['emotional', 'romantic', 'simple', 'classic-r']
 );
 
 const firstBirthdayLinks = getPageCategoryPreviewLinks('first-birthday', {

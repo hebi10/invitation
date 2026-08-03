@@ -126,12 +126,8 @@
 - `memory-pages`는 이벤트 도메인과 합치지 않고 별도 유지한다.
 
 ## 검증
-- `npm run test:service-repository-boundary`
-- `npm run test:customer-api-auth`
-- `npm run test:rate-limit-policy`
-- `npm run test:customer-wallet-compensation`
-- `npm run test:billing-fulfillment-lock`
-- `npm run test:editable-image-upload-validation`
-- `npm run test:rules:all`
+- `npm run test:architecture`
+- `npm run test:security`
+- `npm run test:emulator`
 - `npm run typecheck:web`
 - `npm run lint:web`

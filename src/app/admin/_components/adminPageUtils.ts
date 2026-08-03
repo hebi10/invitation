@@ -28,6 +28,7 @@ export type AdminTab =
   | 'images'
   | 'comments'
   | 'periods';
+export type AdminPrimaryView = 'events' | 'comments' | 'customers';
 export type AdminSection = 'customers' | 'events';
 export interface AdminSectionItem {
   key: AdminSection;
@@ -400,6 +401,22 @@ export function getSectionForTab(tab: AdminTab): AdminSection {
 
 export function parseTab(value: string | null): AdminTab {
   return TAB_ITEMS.some((tab) => tab.key === value) ? (value as AdminTab) : 'pages';
+}
+
+export function parseAdminPrimaryView(tab: AdminTab): AdminPrimaryView {
+  if (tab === 'comments') return 'comments';
+  if (tab === 'accounts') return 'customers';
+  return 'events';
+}
+
+export function resolveLegacyEventTypeFilter(
+  pageType: string | null,
+  pageCategory: string | null
+): PageEventTypeFilter {
+  const parsedPageType = parsePageEventType(pageType);
+  if (parsedPageType !== 'all') return parsedPageType;
+  if (!pageCategory) return 'all';
+  return getPageCategoryEventTypeFilter(parsePageCategory(pageCategory)) ?? 'all';
 }
 
 export function parseShortcut(value: string | null): 'all' | ShortcutKey {

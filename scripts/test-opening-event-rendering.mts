@@ -15,7 +15,7 @@ import {
   isOpeningThemeKey,
   normalizeOpeningThemeKey,
   resolveOpeningRouteTheme,
-} from '../src/app/_components/opening/openingThemes.ts';
+} from '../src/lib/openingThemes.ts';
 import {
   getPageCategoryEventTypeFilter,
   isImplementedPageCategory,

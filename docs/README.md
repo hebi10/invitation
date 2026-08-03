@@ -33,5 +33,7 @@
 - `npm run typecheck:web`
 - `npm run typecheck:mobile`
 - `npm run check`
-- `npm run test:smoke`
-- `npm run qa:event-rollout`
+- `npm test`
+- `npm run test:security`
+- `npm run test:architecture`
+- `npm run test:emulator`

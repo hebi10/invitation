@@ -2,6 +2,7 @@ export { default as AdminCommentsTab } from './AdminCommentsTab';
 export { default as AdminCustomerAccountsTab } from './AdminCustomerAccountsTab';
 export { default as AdminOwnershipInviteDialog } from './AdminOwnershipInviteDialog';
 export { default as AdminPagesTab } from './AdminPagesTab';
+export { default as AdminShell } from './AdminShell';
 export { AdminOverlayProvider, useAdminOverlay } from './AdminOverlayProvider';
 export { default as EmptyState } from './EmptyState';
 export { default as FilterToolbar } from './FilterToolbar';

@@ -113,7 +113,7 @@
 ## 실행 명령
 
 ```bash
-npm run test:api-repository-boundary
+npm run test:architecture
 ```
 
 ## 남은 범위

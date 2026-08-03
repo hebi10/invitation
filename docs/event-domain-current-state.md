@@ -15,7 +15,7 @@
 
 ## Repository Boundary
 - API, server service, customer/mobile/admin 흐름은 Firestore를 직접 호출하지 않고 `src/server/repositories/*` 또는 클라이언트 repository를 거친다.
-- `src/server/repositories/` 바깥의 서버 직접 Firestore 접근은 `npm run test:api-repository-boundary`에서 차단한다.
+- `src/server/repositories/` 바깥의 서버 직접 Firestore 접근은 `npm run test:architecture`에서 차단한다.
 - 공개 방명록 작성은 `POST /api/guestbook/comments`만 허용하고, Firestore rules는 클라이언트 직접 create를 막는다.
 - Storage 공개 `get`은 Firestore 공개 상태와 표시 기간에 연동하고, `list`는 관리자 또는 소유자 관리 흐름만 허용한다.
 
@@ -31,7 +31,7 @@
 - read-through/write-through, slug index backfill, legacy 삭제 이력은 새 작업 판단 기준이 아니라 장애 분석용 배경이다.
 
 ## 검증 명령
-- `npm run qa:event-rollout`
-- `npm run test:service-repository-boundary`
+- `npm run test:architecture`
+- `npm run test:security`
 - `npm run typecheck:web`
 - `npm run lint:web`

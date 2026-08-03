@@ -5,7 +5,7 @@ import {
   BIRTHDAY_THEME_KEYS,
   isBirthdayThemeKey,
   resolveBirthdayRouteTheme,
-} from '../src/app/_components/birthday/birthdayThemes.ts';
+} from '../src/lib/birthdayThemes.ts';
 import {
   getInvitationThemePathSuffix,
   isInvitationThemeKey,

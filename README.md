@@ -457,8 +457,12 @@ npm run typecheck
 npm run preview
 npm run lint
 npm run check
-npm run test:smoke
-npm run test:api-repository-boundary
+npm test
+npm run test:security
+npm run test:architecture
+npm run test:emulator
+npm run test:all
+npm run validate:theme-extension
 npm run deploy:firebase
 
 npm run mb:start
@@ -483,8 +487,14 @@ npm run mb:web
   `next start -p 3000`
 - `check`
   루트 lint + 웹/모바일 typecheck를 한 번에 실행
-- `test:smoke`
-  `next build` 기준의 최소 smoke 검증
+- `test`
+  에뮬레이터가 필요 없는 핵심·보안·아키텍처 테스트를 실행
+- `test:security`, `test:architecture`
+  목적별 테스트 묶음을 선택해서 실행
+- `test:emulator`
+  Firestore / Storage 에뮬레이터가 필요한 테스트를 실행
+- `test:all`
+  기본 테스트와 에뮬레이터 테스트를 모두 실행
 - `deploy:firebase`
   Firestore / Storage rules만 배포
 
@@ -610,18 +620,14 @@ npm run mb:web
 
 ```bash
 npm run check
-npm run test:stability:fast
-npm run qa:stability
+npm test
 npm run build
-npm run test:smoke
 ```
 
-필요하면 개별 검증도 바로 실행할 수 있습니다.
+Firebase 에뮬레이터까지 포함하려면 다음 명령을 추가로 실행합니다.
 
 ```bash
-npm run lint
-npm run typecheck
-npm run build
+npm run test:emulator
 ```
 
 ## 참고 파일

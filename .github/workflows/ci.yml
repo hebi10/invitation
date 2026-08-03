@@ -33,14 +33,8 @@ jobs:
       - name: Lint and typecheck
         run: npm run check
 
-      - name: Security hardening
-        run: npm run test:security-hardening
+      - name: Test
+        run: npm test
 
-      - name: Project guardrails
-        run: npm run test:project-guardrails
-
-      - name: Regression tests
-        run: npm run test:regression
-
-      - name: Stability fast checks
-        run: npm run test:stability:fast
+      - name: Build
+        run: npm run build

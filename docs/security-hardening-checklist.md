@@ -56,12 +56,9 @@
 ## 배포 전 확인 명령
 ```bash
 npm run check
-npm run qa:event-rollout
-npm run test:customer-api-auth
-npm run test:rate-limit-policy
-npm run test:rules:all
-npm run test:auth-hardening
-npm run test:api-resilience
+npm run test:security
+npm run test:architecture
+npm run test:emulator
 npm run build
 git diff --check
 ```

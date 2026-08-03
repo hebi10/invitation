@@ -68,9 +68,8 @@ if (existsSync(ciPath)) {
   for (const expected of [
     'npm ci',
     'npm run check',
-    'npm run test:security-hardening',
-    'npm run test:regression',
-    'npm run test:stability:fast',
+    'npm test',
+    'npm run build',
   ]) {
     assert(ci.includes(expected), `CI workflow must run ${expected}.`);
   }

@@ -127,6 +127,9 @@ export function useAdminData({
     gcTime: ADMIN_GC_TIME_MS,
     refetchOnWindowFocus: false,
   });
+  const { refetch: refetchPagesQuery } = pagesQuery;
+  const { refetch: refetchCommentsQuery } = commentsQuery;
+  const { refetch: refetchAccountsQuery } = accountsQuery;
 
   const pages = useMemo(() => pagesQuery.data ?? [], [pagesQuery.data]);
   const comments = useMemo(() => commentsQuery.data ?? [], [commentsQuery.data]);
@@ -155,6 +158,19 @@ export function useAdminData({
   const summaryRefreshing = dashboardSummaryQuery.isRefetching;
   const accountsLoading = accountsQuery.isPending;
   const accountsRefreshing = accountsQuery.isRefetching;
+  const pagesError = pagesQuery.error instanceof Error ? pagesQuery.error : null;
+  const commentsError = commentsQuery.error instanceof Error ? commentsQuery.error : null;
+  const accountsError = accountsQuery.error instanceof Error ? accountsQuery.error : null;
+
+  const retryPages = useCallback(async () => {
+    await refetchPagesQuery();
+  }, [refetchPagesQuery]);
+  const retryComments = useCallback(async () => {
+    await refetchCommentsQuery();
+  }, [refetchCommentsQuery]);
+  const retryAccounts = useCallback(async () => {
+    await refetchAccountsQuery();
+  }, [refetchAccountsQuery]);
 
   useEffect(() => {
     if (!isAdminLoggedIn) {
@@ -780,6 +796,9 @@ export function useAdminData({
     summaryRefreshing,
     accountsLoading,
     accountsRefreshing,
+    pagesError,
+    commentsError,
+    accountsError,
     updatingPublishedPageSlug,
     updatingVariantToken,
     updatingTierPageSlug,
@@ -793,6 +812,9 @@ export function useAdminData({
     fetchComments,
     fetchCustomerAccounts,
     fetchSummarySources,
+    retryPages,
+    retryComments,
+    retryAccounts,
 
     handleDeleteComment,
     handleDeletePage,
