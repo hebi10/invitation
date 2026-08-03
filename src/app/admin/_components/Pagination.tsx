@@ -1,4 +1,5 @@
 import uiStyles from './AdminUi.module.css';
+import { getPaginationItems } from './adminPageUtils';
 
 interface PaginationProps {
   currentPage: number;
@@ -19,8 +20,10 @@ export default function Pagination({
     return null;
   }
 
-  const startItem = (currentPage - 1) * pageSize + 1;
-  const endItem = Math.min(currentPage * pageSize, totalItems);
+  const safeCurrentPage = Math.min(Math.max(1, currentPage), totalPages);
+  const startItem = (safeCurrentPage - 1) * pageSize + 1;
+  const endItem = Math.min(safeCurrentPage * pageSize, totalItems);
+  const paginationItems = getPaginationItems(safeCurrentPage, totalPages);
 
   return (
     <div className={uiStyles.paginationBar}>
@@ -32,30 +35,39 @@ export default function Pagination({
         <button
           type="button"
           className="admin-button admin-button-ghost"
-          onClick={() => onPageChange(Math.max(1, currentPage - 1))}
-          disabled={currentPage === 1}
+          aria-label="이전 페이지"
+          onClick={() => onPageChange(Math.max(1, safeCurrentPage - 1))}
+          disabled={safeCurrentPage === 1}
         >
           &#60;
         </button>
 
         <div className={uiStyles.pageNumberGroup}>
-          {Array.from({ length: totalPages }, (_, index) => index + 1).map((pageNumber) => (
-            <button
-              key={pageNumber}
-              type="button"
-              className={`${uiStyles.pageNumber} ${currentPage === pageNumber ? uiStyles.pageNumberActive : ''}`}
-              onClick={() => onPageChange(pageNumber)}
-            >
-              {pageNumber}
-            </button>
-          ))}
+          {paginationItems.map((item) =>
+            typeof item === 'number' ? (
+              <button
+                key={item}
+                type="button"
+                className={`${uiStyles.pageNumber} ${safeCurrentPage === item ? uiStyles.pageNumberActive : ''}`}
+                aria-current={safeCurrentPage === item ? 'page' : undefined}
+                onClick={() => onPageChange(item)}
+              >
+                {item}
+              </button>
+            ) : (
+              <span key={item} className={uiStyles.pageEllipsis} aria-hidden="true">
+                …
+              </span>
+            )
+          )}
         </div>
 
         <button
           type="button"
           className="admin-button admin-button-ghost"
-          onClick={() => onPageChange(Math.min(totalPages, currentPage + 1))}
-          disabled={currentPage === totalPages}
+          aria-label="다음 페이지"
+          onClick={() => onPageChange(Math.min(totalPages, safeCurrentPage + 1))}
+          disabled={safeCurrentPage === totalPages}
         >
           &#62;
         </button>

@@ -258,6 +258,42 @@
   margin-top: 6px;
 }
 
+.queryLoading,
+.queryError,
+.queryErrorCompact {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 18px 0;
+  border-bottom: 1px solid var(--admin-color-border);
+  color: var(--admin-color-text-muted);
+  font-size: 0.875rem;
+  line-height: 1.6;
+}
+
+.queryError,
+.queryErrorCompact {
+  padding: 14px;
+  border: 1px solid rgba(220, 38, 38, 0.28);
+  background: var(--admin-color-danger-soft);
+  color: var(--admin-color-text-secondary);
+}
+
+.queryErrorCompact {
+  margin-bottom: 12px;
+}
+
+.queryError strong,
+.queryErrorCompact strong {
+  color: var(--admin-color-danger);
+}
+
+.queryError p,
+.queryErrorCompact p {
+  margin-top: 2px;
+}
+
 .paginationBar {
   display: flex;
   align-items: center;
@@ -304,6 +340,19 @@
   color: #ffffff;
 }
 
+.pageEllipsis {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  color: var(--admin-color-text-muted);
+}
+
+.pageNumber:focus-visible {
+  outline: 2px solid var(--admin-color-primary);
+  outline-offset: 2px;
+}
+
 @media (max-width: 1180px) {
   .summaryGrid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -319,6 +368,11 @@
   .paginationBar {
     flex-direction: column;
     align-items: stretch;
+  }
+
+  .queryError,
+  .queryErrorCompact {
+    align-items: flex-start;
   }
 }
 

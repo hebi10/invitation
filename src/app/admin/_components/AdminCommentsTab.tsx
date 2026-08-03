@@ -1,6 +1,6 @@
 import type { Comment } from '@/services/commentService';
 
-import { EmptyState, FilterToolbar, Pagination, StatusBadge } from '.';
+import { AdminQueryState, EmptyState, FilterToolbar, Pagination, StatusBadge } from '.';
 import {
   COMMENT_AGE_LABELS,
   COMMENTS_PER_PAGE,
@@ -12,6 +12,7 @@ import styles from '../page.module.css';
 interface AdminCommentsTabProps {
   commentsLoading: boolean;
   commentsRefreshing: boolean;
+  commentsError: Error | null;
   comments: Comment[];
   filteredComments: Comment[];
   currentComments: Comment[];
@@ -20,19 +21,23 @@ interface AdminCommentsTabProps {
   commentSearch: string;
   selectedPageSlug: string;
   commentAgeFilter: CommentAgeFilter;
+  isEventFilterActive: boolean;
   chips: Array<{ id: string; label: string; onRemove: () => void }>;
   commentPageOptions: Array<{ value: string; label: string }>;
   onRefresh: () => void;
+  onRetryComments: () => void;
   onQueryChange: (updates: Record<string, string | null>) => void;
   onDeleteComment: (comment: Comment) => void;
+  mobileReadOnly: boolean;
 }
 
 function resetCommentFilters(
   onQueryChange: (updates: Record<string, string | null>) => void
 ) {
   onQueryChange({
+    event: null,
     commentQ: null,
-    commentPageSlug: null,
+    commentPageSlug: 'all',
     commentAge: null,
     commentPage: '1',
   });
@@ -41,6 +46,7 @@ function resetCommentFilters(
 export default function AdminCommentsTab({
   commentsLoading,
   commentsRefreshing,
+  commentsError,
   comments,
   filteredComments,
   currentComments,
@@ -49,26 +55,56 @@ export default function AdminCommentsTab({
   commentSearch,
   selectedPageSlug,
   commentAgeFilter,
+  isEventFilterActive,
   chips,
   commentPageOptions,
   onRefresh,
+  onRetryComments,
   onQueryChange,
   onDeleteComment,
+  mobileReadOnly,
 }: AdminCommentsTabProps) {
   const startIndex = (currentPage - 1) * COMMENTS_PER_PAGE;
+  const selectedEventLabel = commentPageOptions.find(
+    (option) => option.value === selectedPageSlug
+  )?.label;
+  const hasCachedComments = comments.length > 0;
 
   return (
     <div className={styles.panelStack}>
       <div className={styles.sectionHeader}>
         <div>
           <h2 className={styles.sectionTitle}>방명록 관리</h2>
-          <p className={styles.sectionDescription}>
-            검색어와 페이지, 기간 필터로 댓글을 빠르게 좁혀 보고 필요한 댓글만 바로
-            삭제할 수 있습니다.
-          </p>
         </div>
-        <p className={styles.sectionMeta}>현재 {filteredComments.length}개 댓글</p>
+        <p className={styles.sectionMeta}>결과 {filteredComments.length}개</p>
       </div>
+
+      {mobileReadOnly ? (
+        <p className={styles.mobileReadOnlyNotice}>
+          모바일에서는 방명록 조회만 지원합니다. 삭제는 PC 관리자 화면을 이용해 주세요.
+        </p>
+      ) : null}
+
+      {isEventFilterActive ? (
+        <div className={styles.selectionContext}>
+          <p className={styles.sectionMeta}>
+            선택 이벤트 · {selectedEventLabel ?? selectedPageSlug}
+          </p>
+          <button
+            type="button"
+            className="admin-button admin-button-ghost"
+            onClick={() =>
+              onQueryChange({
+                event: null,
+                commentPageSlug: 'all',
+                commentPage: '1',
+              })
+            }
+          >
+            전체 방명록 보기
+          </button>
+        </div>
+      ) : null}
 
       <FilterToolbar
         fields={
@@ -157,14 +193,42 @@ export default function AdminCommentsTab({
         chips={chips}
       />
 
-      {commentsLoading ? (
-        <div className={styles.loadingState}>
-          <div className={styles.loadingSpinner}></div>
-          <p className={styles.loadingText}>방명록 목록을 불러오는 중입니다.</p>
-        </div>
+      {commentsError && hasCachedComments ? (
+        <AdminQueryState
+          loading={false}
+          error={commentsError}
+          empty={false}
+          emptyTitle=""
+          emptyDescription=""
+          onRetry={onRetryComments}
+          compact={true}
+          errorTitle="방명록 최신 정보를 불러오지 못했습니다."
+        />
+      ) : null}
+
+      {commentsLoading && !hasCachedComments ? (
+        <AdminQueryState
+          loading={true}
+          error={null}
+          empty={false}
+          emptyTitle=""
+          emptyDescription=""
+          onRetry={onRetryComments}
+          loadingMessage="방명록을 불러오는 중입니다."
+        />
+      ) : commentsError && !hasCachedComments ? (
+        <AdminQueryState
+          loading={false}
+          error={commentsError}
+          empty={false}
+          emptyTitle=""
+          emptyDescription=""
+          onRetry={onRetryComments}
+          errorTitle="방명록을 불러오지 못했습니다."
+        />
       ) : currentComments.length > 0 ? (
         <>
-          <div className={styles.tableCard}>
+          {!mobileReadOnly ? <div className={styles.tableCard}>
             <div className={styles.tableScroll} tabIndex={0} role="region" aria-label="방명록 테이블">
               <table className={styles.dataTable}>
                 <thead>
@@ -214,7 +278,7 @@ export default function AdminCommentsTab({
                 </tbody>
               </table>
             </div>
-          </div>
+          </div> : null}
 
           <div className={styles.mobileList}>
             {currentComments.map((comment, index) => (
@@ -237,7 +301,7 @@ export default function AdminCommentsTab({
                   {formatDateTime(comment.createdAt)}
                 </p>
 
-                <div className={styles.mobileCardActions}>
+                {!mobileReadOnly ? <div className={styles.mobileCardActions}>
                   <button
                     type="button"
                     className="admin-button admin-button-danger"
@@ -245,7 +309,7 @@ export default function AdminCommentsTab({
                   >
                     삭제
                   </button>
-                </div>
+                </div> : null}
               </article>
             ))}
           </div>
@@ -269,17 +333,6 @@ export default function AdminCommentsTab({
             comments.length === 0
               ? '댓글이 등록되면 이 탭에서 검색과 삭제를 바로 관리할 수 있습니다.'
               : '검색어나 페이지, 기간 필터가 너무 좁게 잡혀 있을 수 있습니다.'
-          }
-          highlights={
-            comments.length === 0
-              ? [
-                  '페이지와 기간 필터로 댓글을 빠르게 좁혀 볼 수 있습니다.',
-                  '삭제 전에는 작성자와 등록 시각을 한 번 더 확인하는 흐름을 권장합니다.',
-                ]
-              : [
-                  '필터를 초기화하면 전체 댓글 목록으로 다시 돌아갑니다.',
-                  '현재 조건 그대로 다시 조회하려면 새로고침을 사용하세요.',
-                ]
           }
           actionLabel={comments.length === 0 ? '새로고침' : '필터 초기화'}
           onAction={

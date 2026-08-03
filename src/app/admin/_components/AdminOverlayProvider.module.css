@@ -21,7 +21,33 @@
   border-radius: var(--admin-radius-md);
   border: 1px solid var(--admin-color-border);
   background: var(--admin-color-surface);
-  box-shadow: var(--admin-shadow-md);
+}
+
+.toastHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.toastDismiss {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  margin: -4px -6px -4px 0;
+  border: 0;
+  background: transparent;
+  color: var(--admin-color-text-secondary);
+  font-size: 1.125rem;
+  line-height: 1;
+}
+
+.toastDismiss:focus-visible,
+.dialogButton:focus-visible {
+  outline: 2px solid var(--admin-color-primary);
+  outline-offset: 2px;
 }
 
 .toastTitle {
@@ -79,7 +105,6 @@
   border-radius: var(--admin-radius-lg);
   border: 1px solid var(--admin-color-border);
   background: var(--admin-color-surface);
-  box-shadow: var(--admin-shadow-md);
 }
 
 .dialogTitle {

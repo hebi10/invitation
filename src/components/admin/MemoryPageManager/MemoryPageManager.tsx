@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   EmptyState,
   FilterToolbar,
@@ -82,7 +82,11 @@ function prepareDraftWithSelectedComments(draft: MemoryPage, sourceComments: Com
   };
 }
 
-export default function MemoryPageManager() {
+interface MemoryPageManagerProps {
+  initialPageSlug?: string;
+}
+
+export default function MemoryPageManager({ initialPageSlug }: MemoryPageManagerProps) {
   const { isAdminLoggedIn } = useAdmin();
   const { confirm, showToast } = useAdminOverlay();
 
@@ -101,6 +105,7 @@ export default function MemoryPageManager() {
   const [exists, setExists] = useState(false);
   const [error, setError] = useState('');
   const [recentPageSlugs, setRecentPageSlugs] = useState<string[]>([]);
+  const appliedInitialPageSlugRef = useRef<string | null>(null);
 
   useEffect(() => {
     if (!isAdminLoggedIn) {
@@ -140,6 +145,19 @@ export default function MemoryPageManager() {
       cancelled = true;
     };
   }, [isAdminLoggedIn]);
+
+  useEffect(() => {
+    if (
+      !initialPageSlug ||
+      appliedInitialPageSlugRef.current === initialPageSlug ||
+      !pages.some((page) => page.slug === initialPageSlug)
+    ) {
+      return;
+    }
+
+    appliedInitialPageSlugRef.current = initialPageSlug;
+    setSelectedPageSlug(initialPageSlug);
+  }, [initialPageSlug, pages]);
 
   useEffect(() => {
     if (!selectedPageSlug || !isAdminLoggedIn) {

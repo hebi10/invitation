@@ -460,6 +460,88 @@ export function numberFromParam(value: string | null, fallback: number) {
   return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
 }
 
+export type PaginationItem = number | 'ellipsis-left' | 'ellipsis-right';
+
+export function getPaginationItems(currentPage: number, totalPages: number): PaginationItem[] {
+  if (!Number.isFinite(totalPages) || totalPages < 1) {
+    return [];
+  }
+
+  const safeTotalPages = Math.floor(totalPages);
+  const safeCurrentPage = Math.min(
+    Math.max(1, Math.floor(Number.isFinite(currentPage) ? currentPage : 1)),
+    safeTotalPages
+  );
+  const visiblePages = new Set<number>([1, safeTotalPages]);
+
+  for (
+    let page = Math.max(1, safeCurrentPage - 2);
+    page <= Math.min(safeTotalPages, safeCurrentPage + 2);
+    page += 1
+  ) {
+    visiblePages.add(page);
+  }
+
+  const result: PaginationItem[] = [];
+  const sortedPages = [...visiblePages].sort((left, right) => left - right);
+
+  sortedPages.forEach((page, index) => {
+    const previousPage = sortedPages[index - 1];
+    if (previousPage && page - previousPage > 1) {
+      result.push(previousPage === 1 ? 'ellipsis-left' : 'ellipsis-right');
+    }
+    result.push(page);
+  });
+
+  return result;
+}
+
+export function getAdminQueryErrorMessage(error: Error) {
+  const errorCode =
+    typeof (error as Error & { code?: unknown }).code === 'string'
+      ? ((error as Error & { code: string }).code).toLowerCase()
+      : '';
+  const normalizedMessage = error.message.toLowerCase();
+
+  if (
+    errorCode === 'permission-denied' ||
+    errorCode.endsWith('/permission-denied') ||
+    errorCode === 'unauthenticated' ||
+    errorCode.endsWith('/unauthenticated')
+  ) {
+    return '관리자 권한을 확인한 뒤 다시 시도해 주세요.';
+  }
+
+  if (
+    errorCode === 'unavailable' ||
+    errorCode.endsWith('/unavailable') ||
+    errorCode === 'network-request-failed' ||
+    errorCode.endsWith('/network-request-failed')
+  ) {
+    return '잠시 서비스에 연결할 수 없습니다. 네트워크를 확인하고 다시 시도해 주세요.';
+  }
+
+  if (
+    normalizedMessage.includes('permission-denied') ||
+    normalizedMessage.includes('permission denied') ||
+    normalizedMessage.includes('insufficient permissions') ||
+    normalizedMessage.includes('unauthorized') ||
+    normalizedMessage.includes('forbidden')
+  ) {
+    return '관리자 권한을 확인한 뒤 다시 시도해 주세요.';
+  }
+
+  if (
+    normalizedMessage.includes('unavailable') ||
+    normalizedMessage.includes('network-request-failed') ||
+    normalizedMessage.includes('network request failed')
+  ) {
+    return '잠시 서비스에 연결할 수 없습니다. 네트워크를 확인하고 다시 시도해 주세요.';
+  }
+
+  return '네트워크 상태를 확인하고 다시 시도해 주세요.';
+}
+
 export function isRecentComment(date: Date) {
   return daysBetween(date, new Date()) <= RECENT_COMMENT_DAYS;
 }

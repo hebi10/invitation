@@ -42,6 +42,8 @@ export const DEFAULT_ADMIN_EVENT_FILTERS: AdminEventFilters = {
 };
 
 export const ADMIN_EVENT_TYPE_OPTIONS = listEnabledEventTypes();
+export const ADMIN_EVENTS_PER_PAGE = 20;
+export type AdminEventCountFilter = 'all' | 'published' | 'private' | 'unassigned';
 
 function isAdminEnabledEventType(value: string): value is AdminEnabledEventTypeKey {
   return ADMIN_EVENT_TYPE_OPTIONS.includes(value as EventTypeKey);
@@ -96,12 +98,94 @@ export function filterAdminEvents(
 }
 
 export function getAdminEventCounts(pages: InvitationPageSummary[]) {
+  const enabledPages = pages.filter((page) => ADMIN_EVENT_TYPE_OPTIONS.includes(page.eventType));
+
   return {
-    total: pages.length,
-    published: pages.filter((page) => page.published).length,
-    private: pages.filter((page) => !page.published).length,
-    unassigned: pages.filter((page) => page.ownershipKind === 'unassigned').length,
+    total: enabledPages.length,
+    published: enabledPages.filter((page) => page.published).length,
+    private: enabledPages.filter((page) => !page.published).length,
+    unassigned: enabledPages.filter((page) => page.ownershipKind === 'unassigned').length,
   };
+}
+
+export function getAdminEventCountQuery(
+  filter: AdminEventCountFilter
+): Record<string, string | null> {
+  if (filter === 'all') {
+    return {
+      published: null,
+      ownership: null,
+      event: null,
+      page: '1',
+    };
+  }
+
+  if (filter === 'unassigned') {
+    return {
+      ownership: 'unassigned',
+      event: null,
+      page: '1',
+    };
+  }
+
+  return {
+    published: filter,
+    event: null,
+    page: '1',
+  };
+}
+
+export function isAdminEventDetailCloseKey(key: string) {
+  return key === 'Escape';
+}
+
+export function getAdminEventPage(
+  pages: InvitationPageSummary[],
+  requestedPage: number,
+  pageSize = ADMIN_EVENTS_PER_PAGE
+) {
+  const safePageSize = Math.max(1, Math.trunc(pageSize));
+  const totalPages = Math.max(1, Math.ceil(pages.length / safePageSize));
+  const currentPage = Math.min(Math.max(1, Math.trunc(requestedPage) || 1), totalPages);
+  const startIndex = (currentPage - 1) * safePageSize;
+
+  return {
+    items: pages.slice(startIndex, startIndex + safePageSize),
+    currentPage,
+    totalPages,
+  };
+}
+
+export function shouldIncludeAdminComment({
+  commentPageSlug,
+  selectedPageSlug,
+  categoryPageSlugs,
+  hasLegacyPageCategory,
+}: {
+  commentPageSlug: string;
+  selectedPageSlug: string;
+  categoryPageSlugs: ReadonlySet<string>;
+  hasLegacyPageCategory: boolean;
+}) {
+  if (selectedPageSlug !== 'all') {
+    return commentPageSlug === selectedPageSlug;
+  }
+
+  return !hasLegacyPageCategory || categoryPageSlugs.has(commentPageSlug);
+}
+
+export function shouldClearMissingAdminEvent({
+  selectedSlug,
+  loading,
+  error,
+  hasSelectedPage,
+}: {
+  selectedSlug: string | null;
+  loading: boolean;
+  error: Error | null;
+  hasSelectedPage: boolean;
+}) {
+  return Boolean(selectedSlug && !loading && !error && !hasSelectedPage);
 }
 
 export function getAdminEventCapabilities(page: InvitationPageSummary) {

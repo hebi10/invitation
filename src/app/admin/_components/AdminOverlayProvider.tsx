@@ -36,40 +36,111 @@ export function AdminOverlayProvider({ children }: { children: React.ReactNode }
   const [toasts, setToasts] = useState<ToastItem[]>([]);
   const [pendingConfirm, setPendingConfirm] = useState<PendingConfirm | null>(null);
   const nextToastId = useRef(1);
+  const toastTimersRef = useRef(new Map<number, number>());
+  const previousFocusRef = useRef<HTMLElement | null>(null);
+  const pendingConfirmRef = useRef<PendingConfirm | null>(null);
+  const focusRestoreFrameRef = useRef<number | null>(null);
 
-  const showToast = (toast: Omit<ToastItem, 'id'>) => {
+  const cancelScheduledFocusRestore = useCallback(() => {
+    const frame = focusRestoreFrameRef.current;
+    if (frame !== null) {
+      window.cancelAnimationFrame(frame);
+      focusRestoreFrameRef.current = null;
+    }
+  }, []);
+
+  const dismissToast = useCallback((id: number) => {
+    const timer = toastTimersRef.current.get(id);
+    if (timer !== undefined) {
+      window.clearTimeout(timer);
+      toastTimersRef.current.delete(id);
+    }
+
+    setToasts((previous) => previous.filter((item) => item.id !== id));
+  }, []);
+
+  const showToast = useCallback((toast: Omit<ToastItem, 'id'>) => {
     const id = nextToastId.current++;
     setToasts((prev) => {
       const next = [...prev, { id, ...toast }];
-      return next.length > 5 ? next.slice(-5) : next;
+      if (next.length <= 5) {
+        return next;
+      }
+
+      const removedToast = next[0];
+      const removedTimer = toastTimersRef.current.get(removedToast.id);
+      if (removedTimer !== undefined) {
+        window.clearTimeout(removedTimer);
+        toastTimersRef.current.delete(removedToast.id);
+      }
+      return next.slice(-5);
     });
 
-    window.setTimeout(() => {
-      setToasts((prev) => prev.filter((item) => item.id !== id));
-    }, 2600);
-  };
+    const timer = window.setTimeout(() => dismissToast(id), 5000);
+    toastTimersRef.current.set(id, timer);
+  }, [dismissToast]);
 
-  const confirm = (options: ConfirmOptions) =>
+  const confirm = useCallback((options: ConfirmOptions) =>
     new Promise<boolean>((resolve) => {
-      setPendingConfirm({ ...options, resolve });
-    });
+      const activeConfirm = pendingConfirmRef.current;
+      const hasPendingFocusRestore = focusRestoreFrameRef.current !== null;
+      if (hasPendingFocusRestore) {
+        cancelScheduledFocusRestore();
+      }
+
+      if (activeConfirm) {
+        activeConfirm.resolve(false);
+      } else if (!hasPendingFocusRestore) {
+        previousFocusRef.current =
+          document.activeElement instanceof HTMLElement ? document.activeElement : null;
+      }
+
+      const nextConfirm = { ...options, resolve };
+      pendingConfirmRef.current = nextConfirm;
+      setPendingConfirm(nextConfirm);
+    }), [cancelScheduledFocusRestore]);
 
   useEffect(() => {
+    const toastTimers = toastTimersRef.current;
+
     return () => {
-      if (pendingConfirm) {
-        pendingConfirm.resolve(false);
+      toastTimers.forEach((timer) => window.clearTimeout(timer));
+      toastTimers.clear();
+      const activeConfirm = pendingConfirmRef.current;
+      pendingConfirmRef.current = null;
+      activeConfirm?.resolve(false);
+      cancelScheduledFocusRestore();
+      const previousFocus = previousFocusRef.current;
+      previousFocusRef.current = null;
+      if (previousFocus?.isConnected) {
+        previousFocus.focus();
       }
     };
-  }, [pendingConfirm]);
+  }, [cancelScheduledFocusRestore]);
+
+  const restorePreviousFocus = useCallback(() => {
+    cancelScheduledFocusRestore();
+    focusRestoreFrameRef.current = window.requestAnimationFrame(() => {
+      focusRestoreFrameRef.current = null;
+      const previousFocus = previousFocusRef.current;
+      previousFocusRef.current = null;
+      if (previousFocus?.isConnected) {
+        previousFocus.focus();
+      }
+    });
+  }, [cancelScheduledFocusRestore]);
 
   const closeConfirm = useCallback((result: boolean) => {
-    if (!pendingConfirm) {
+    const activeConfirm = pendingConfirmRef.current;
+    if (!activeConfirm) {
       return;
     }
 
-    pendingConfirm.resolve(result);
+    activeConfirm.resolve(result);
+    pendingConfirmRef.current = null;
     setPendingConfirm(null);
-  }, [pendingConfirm]);
+    restorePreviousFocus();
+  }, [restorePreviousFocus]);
 
   const dialogRef = useRef<HTMLDivElement | null>(null);
 
@@ -81,6 +152,29 @@ export function AdminOverlayProvider({ children }: { children: React.ReactNode }
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
         closeConfirm(false);
+        return;
+      }
+
+      if (event.key !== 'Tab') {
+        return;
+      }
+
+      const focusable = getFocusableDialogElements(dialogRef.current);
+      if (focusable.length === 0) {
+        return;
+      }
+
+      const activeElement = document.activeElement as HTMLElement | null;
+      const activeIndex = activeElement ? focusable.indexOf(activeElement) : -1;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+
+      if (event.shiftKey && activeIndex <= 0) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && (activeIndex === -1 || activeIndex === focusable.length - 1)) {
+        event.preventDefault();
+        first.focus();
       }
     };
 
@@ -88,8 +182,11 @@ export function AdminOverlayProvider({ children }: { children: React.ReactNode }
 
     const dialog = dialogRef.current;
     if (dialog) {
-      const confirmButton = dialog.querySelector<HTMLButtonElement>('[data-confirm-action]');
-      confirmButton?.focus();
+      const initialFocusSelector =
+        pendingConfirm.tone === 'danger' ? '[data-cancel-action]' : '[data-confirm-action]';
+      getFocusableDialogElements(dialog)
+        .find((element) => element.matches(initialFocusSelector))
+        ?.focus();
     }
 
     return () => document.removeEventListener('keydown', handleKeyDown);
@@ -104,7 +201,17 @@ export function AdminOverlayProvider({ children }: { children: React.ReactNode }
           <div className={styles.toastViewport} aria-live="polite" aria-atomic="true">
             {toasts.map((toast) => (
               <div key={toast.id} className={`${styles.toast} ${styles[`tone${capitalize(toast.tone)}`]}`}>
-                <strong className={styles.toastTitle}>{toast.title}</strong>
+                <div className={styles.toastHeader}>
+                  <strong className={styles.toastTitle}>{toast.title}</strong>
+                  <button
+                    type="button"
+                    className={styles.toastDismiss}
+                    aria-label="토스트 닫기"
+                    onClick={() => dismissToast(toast.id)}
+                  >
+                    ×
+                  </button>
+                </div>
                 {toast.message ? <p className={styles.toastMessage}>{toast.message}</p> : null}
               </div>
             ))}
@@ -120,27 +227,6 @@ export function AdminOverlayProvider({ children }: { children: React.ReactNode }
               aria-modal="true"
               aria-labelledby="admin-confirm-title"
               onClick={(event) => event.stopPropagation()}
-              onKeyDown={(event) => {
-                if (event.key === 'Tab') {
-                  const focusable = dialogRef.current?.querySelectorAll<HTMLElement>(
-                    'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
-                  );
-                  if (!focusable || focusable.length === 0) {
-                    return;
-                  }
-
-                  const first = focusable[0];
-                  const last = focusable[focusable.length - 1];
-
-                  if (event.shiftKey && document.activeElement === first) {
-                    event.preventDefault();
-                    last.focus();
-                  } else if (!event.shiftKey && document.activeElement === last) {
-                    event.preventDefault();
-                    first.focus();
-                  }
-                }
-              }}
             >
               <h2 id="admin-confirm-title" className={styles.dialogTitle}>
                 {pendingConfirm.title}
@@ -152,6 +238,7 @@ export function AdminOverlayProvider({ children }: { children: React.ReactNode }
               <div className={styles.dialogActions}>
                 <button
                   type="button"
+                  data-cancel-action
                   className={`${styles.dialogButton} ${styles.dialogCancel}`}
                   onClick={() => closeConfirm(false)}
                 >
@@ -188,4 +275,25 @@ export function useAdminOverlay() {
 
 function capitalize(value: string) {
   return value.charAt(0).toUpperCase() + value.slice(1);
+}
+
+function getFocusableDialogElements(dialog: HTMLDivElement | null) {
+  if (!dialog) {
+    return [];
+  }
+
+  return [...dialog.querySelectorAll<HTMLElement>(
+    'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+  )].filter((element) => {
+    const style = window.getComputedStyle(element);
+    return (
+      element.tabIndex >= 0 &&
+      !element.matches(':disabled') &&
+      element.getAttribute('aria-hidden') !== 'true' &&
+      !element.closest('[aria-hidden="true"]') &&
+      style.display !== 'none' &&
+      style.visibility !== 'hidden' &&
+      element.getClientRects().length > 0
+    );
+  });
 }

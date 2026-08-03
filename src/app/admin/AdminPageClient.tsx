@@ -6,26 +6,21 @@ import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import FirebaseAuthLoginCard from '@/app/_components/FirebaseAuthLoginCard';
 import { DisplayPeriodManager, ImageManager, MemoryPageManager } from '@/components/admin';
 import { useAdmin } from '@/contexts';
-import { getEventTypeDisplayLabel } from '@/lib/eventTypes';
 import type { AdminOwnershipInviteResult } from '@/services/eventOwnershipInviteService';
 
 import {
   AdminCommentsTab,
   AdminCustomerAccountsTab,
   AdminOwnershipInviteDialog,
-  AdminPagesTab,
+  AdminEventWorkspace,
   AdminShell,
   StatusBadge,
   useAdminOverlay,
 } from './_components';
 import {
   COMMENTS_PER_PAGE,
-  PAGE_SORT_LABELS,
-  PAGE_STATUS_LABELS,
   RECENT_COMMENT_DAYS,
-  TOTAL_SHORTCUT_COUNT,
   getDefaultTabForSection,
-  getAvailableShortcuts,
   getPageCategoryEventTypeFilter,
   getSectionForTab,
   getTabsForSection,
@@ -34,14 +29,19 @@ import {
   parseAdminPrimaryView,
   parseCommentAge,
   parsePageCategory,
-  parsePageSort,
-  parsePageStatus,
-  parsePageEventType,
   parsePeriodFilter,
   parseSection,
-  parseShortcut,
   parseTab,
+  resolveLegacyEventTypeFilter,
 } from './_components/adminPageUtils';
+import {
+  parseAdminEventOwnership,
+  parseAdminEventPublished,
+  parseAdminEventSort,
+  parseAdminEventType,
+  shouldIncludeAdminComment,
+  type AdminEventFilters,
+} from './_components/adminEventWorkspaceModel';
 import { useAdminData } from './_hooks/useAdminData';
 import styles from './page.module.css';
 
@@ -72,6 +72,19 @@ export default function AdminPageClient() {
   const { confirm, showToast } = useAdminOverlay();
   const [ownershipInvite, setOwnershipInvite] =
     useState<AdminOwnershipInviteResult | null>(null);
+  const [mobileViewportState, setMobileViewportState] = useState<
+    'unknown' | 'mobile' | 'desktop'
+  >('unknown');
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia('(max-width: 767px)');
+    const syncViewport = () =>
+      setMobileViewportState(mediaQuery.matches ? 'mobile' : 'desktop');
+
+    syncViewport();
+    mediaQuery.addEventListener('change', syncViewport);
+    return () => mediaQuery.removeEventListener('change', syncViewport);
+  }, []);
 
   /* ── URL query ── */
 
@@ -90,22 +103,47 @@ export default function AdminPageClient() {
     : getDefaultTabForSection(activeSection, activePageCategory);
   const activePrimaryView = parseAdminPrimaryView(activeTab);
   const pageSearch = safeSearchParams.get('pageQ') ?? '';
-  const pageEventTypeFilter = parsePageEventType(safeSearchParams.get('pageType'));
-  const pageShortcutFilter = parseShortcut(safeSearchParams.get('shortcut'));
-  const pageStatusFilter = parsePageStatus(safeSearchParams.get('pageStatus'));
-  const pageSort = parsePageSort(safeSearchParams.get('pageSort'));
+  const requestedPageTypeParam = safeSearchParams.get('pageType');
+  const eventFilters: AdminEventFilters = {
+    query: pageSearch,
+    eventType: parseAdminEventType(
+      requestedPageTypeParam !== null || requestedPageCategoryParam !== null
+        ? resolveLegacyEventTypeFilter(
+            requestedPageTypeParam,
+            requestedPageCategoryParam
+          )
+        : null
+    ),
+    published: parseAdminEventPublished(safeSearchParams.get('published')),
+    ownership: parseAdminEventOwnership(safeSearchParams.get('ownership')),
+    sort: parseAdminEventSort(safeSearchParams.get('pageSort')),
+  };
+  const selectedEventSlug = safeSearchParams.get('event');
   const commentSearch = safeSearchParams.get('commentQ') ?? '';
-  const selectedPageSlug = safeSearchParams.get('commentPageSlug') ?? 'all';
+  const requestedCommentPageSlug = safeSearchParams.get('commentPageSlug');
+  const selectedPageSlug =
+    requestedCommentPageSlug ?? selectedEventSlug ?? 'all';
+  const isEventCommentFilterActive = selectedPageSlug !== 'all';
   const commentAgeFilter = parseCommentAge(safeSearchParams.get('commentAge'));
   const currentPage = numberFromParam(safeSearchParams.get('commentPage'), 1);
+  const currentEventPage = numberFromParam(safeSearchParams.get('page'), 1);
   const periodStatusFilter = parsePeriodFilter(safeSearchParams.get('periodStatus'));
   const activePageCategoryEventType = getPageCategoryEventTypeFilter(activePageCategory);
+  const requestedRelatedEventType = parseAdminEventType(requestedPageTypeParam);
+  const relatedManagerEventTypeFilter =
+    requestedRelatedEventType === 'all'
+      ? activePageCategoryEventType
+      : requestedRelatedEventType;
 
   const updateQuery = useCallback((updates: Record<string, string | null>) => {
     const nextParams = new URLSearchParams(safeSearchParams.toString());
 
     Object.entries(updates).forEach(([key, value]) => {
-      if (value === null || value === '' || value === 'all') {
+      if (
+        value === null ||
+        value === '' ||
+        (value === 'all' && key !== 'commentPageSlug')
+      ) {
         nextParams.delete(key);
       } else {
         nextParams.set(key, value);
@@ -127,20 +165,25 @@ export default function AdminPageClient() {
     unassignedCustomerEvents,
     pagesLoading,
     pagesRefreshing,
-    commentsLoading,
-    commentsRefreshing,
-    summaryLoading,
-    accountsLoading,
-    accountsRefreshing,
     updatingPublishedPageSlug,
     updatingVariantToken,
     updatingTierPageSlug,
     deletingPageSlug,
+    commentsLoading,
+    commentsRefreshing,
+    accountsLoading,
+    accountsRefreshing,
+    pagesError,
+    commentsError,
+    accountsError,
     deletingCustomerUid,
     ownershipActionToken,
     issuingOwnershipInviteSlug,
     walletGrantActionToken,
     refreshPages,
+    retryPages,
+    retryComments,
+    retryAccounts,
     fetchComments,
     fetchCustomerAccounts,
     fetchSummarySources,
@@ -149,12 +192,12 @@ export default function AdminPageClient() {
     handleAssignCustomerOwnership,
     handleClearCustomerOwnership,
     handleIssueOwnershipInvite,
-    handleGrantCustomerWalletCredit,
-    handleDeleteCustomerAccount,
     handleTogglePublished,
     handleChangeTier,
     handleEnableVariant,
     handleDisableVariant,
+    handleGrantCustomerWalletCredit,
+    handleDeleteCustomerAccount,
     handleLogout: dataLogout,
   } = useAdminData({ isAdminLoggedIn, activeTab, showToast, confirm });
 
@@ -171,6 +214,20 @@ export default function AdminPageClient() {
     if (result) {
       setOwnershipInvite(result);
     }
+  };
+
+  const requestOwnershipInviteForDetail = async (pageSlug: string) => {
+    const approved = await confirm({
+      title: '고객 연결 링크를 발급할까요?',
+      description: '기존에 발급한 고객 연결 링크가 있다면 새 링크를 발급한 뒤 사용할 수 없게 됩니다.',
+      confirmLabel: '링크 발급',
+      cancelLabel: '취소',
+    });
+    if (!approved) {
+      return;
+    }
+
+    await issueOwnershipInviteAndOpen(pageSlug);
   };
 
   const reissueOwnershipInvite = async () => {
@@ -204,7 +261,9 @@ export default function AdminPageClient() {
     const needsCanonicalSection = requestedSectionParam !== activeSection;
     const needsCanonicalTab = requestedTabParam !== activeTab;
     const needsCanonicalPageCategory =
-      activeSection === 'events' && requestedPageCategoryParam !== activePageCategory;
+      activeSection === 'events' &&
+      requestedPageCategoryParam !== null &&
+      requestedPageCategoryParam !== activePageCategory;
 
     if (!needsCanonicalSection && !needsCanonicalTab && !needsCanonicalPageCategory) {
       return;
@@ -213,7 +272,7 @@ export default function AdminPageClient() {
     const nextParams = new URLSearchParams(safeSearchParams.toString());
     nextParams.set('section', activeSection);
     nextParams.set('tab', activeTab);
-    if (activeSection === 'events') {
+    if (activeSection === 'events' && requestedPageCategoryParam !== null) {
       nextParams.set('pageCategory', activePageCategory);
     }
 
@@ -233,83 +292,13 @@ export default function AdminPageClient() {
     safeSearchParams,
   ]);
 
-  /* ── Filtered / sorted views ── */
-
-  const filteredPages = useMemo(() => {
-    return [...pages]
-      .filter((page) => {
-        const links = getAvailableShortcuts(page);
-        const matchesPageCategory =
-          !activePageCategoryEventType || page.eventType === activePageCategoryEventType;
-        const matchesSearch = `${page.displayName} ${page.slug} ${
-          page.description ?? ''
-        } ${page.venue ?? ''} ${getEventTypeDisplayLabel(page.eventType)}`
-          .toLowerCase()
-          .includes(pageSearch.trim().toLowerCase());
-        const matchesEventType =
-          pageEventTypeFilter === 'all' || page.eventType === pageEventTypeFilter;
-        const matchesShortcut =
-          pageShortcutFilter === 'all' ||
-          links.some((link) => link.key === pageShortcutFilter);
-        const matchesStatus =
-          pageStatusFilter === 'all' ||
-          (pageStatusFilter === 'complete' &&
-            links.length === TOTAL_SHORTCUT_COUNT) ||
-          (pageStatusFilter === 'partial' &&
-            links.length > 0 &&
-            links.length < TOTAL_SHORTCUT_COUNT) ||
-          (pageStatusFilter === 'empty' && links.length === 0);
-
-        return (
-          matchesPageCategory &&
-          matchesSearch &&
-          matchesEventType &&
-          matchesShortcut &&
-          matchesStatus
-        );
-      })
-      .sort((left, right) => {
-        if (pageSort === 'name') {
-          return left.displayName.localeCompare(right.displayName, 'ko');
-        }
-
-        if (pageSort === 'coverage') {
-          return (
-            getAvailableShortcuts(right).length - getAvailableShortcuts(left).length
-          );
-        }
-
-        const rightCreatedAt = right.createdAt?.getTime() ?? 0;
-        const leftCreatedAt = left.createdAt?.getTime() ?? 0;
-        if (rightCreatedAt !== leftCreatedAt) {
-          return rightCreatedAt - leftCreatedAt;
-        }
-
-        const rightUpdatedAt = right.updatedAt?.getTime() ?? 0;
-        const leftUpdatedAt = left.updatedAt?.getTime() ?? 0;
-        if (rightUpdatedAt !== leftUpdatedAt) {
-          return rightUpdatedAt - leftUpdatedAt;
-        }
-
-        return right.slug.localeCompare(left.slug, 'ko');
-      });
-  }, [
-    activePageCategoryEventType,
-    pageEventTypeFilter,
-    pageSearch,
-    pageShortcutFilter,
-    pageSort,
-    pageStatusFilter,
-    pages,
-  ]);
-
   const categoryPages = useMemo(() => {
-    if (!activePageCategoryEventType) {
-      return [];
+    if (requestedPageCategoryParam === null || !activePageCategoryEventType) {
+      return pages;
     }
 
     return pages.filter((page) => page.eventType === activePageCategoryEventType);
-  }, [activePageCategoryEventType, pages]);
+  }, [activePageCategoryEventType, pages, requestedPageCategoryParam]);
 
   const categoryPageSlugs = useMemo(
     () => new Set(categoryPages.map((page) => page.slug)),
@@ -318,23 +307,25 @@ export default function AdminPageClient() {
 
   const filteredComments = useMemo(() => {
     return comments.filter((comment) => {
-      const matchesPageCategory =
-        !activePageCategoryEventType || categoryPageSlugs.has(comment.pageSlug);
+      const matchesScope = shouldIncludeAdminComment({
+        commentPageSlug: comment.pageSlug,
+        selectedPageSlug,
+        categoryPageSlugs,
+        hasLegacyPageCategory: requestedPageCategoryParam !== null,
+      });
       const matchesSearch = `${comment.author} ${comment.message} ${comment.pageSlug}`
         .toLowerCase()
         .includes(commentSearch.trim().toLowerCase());
-      const matchesPage =
-        selectedPageSlug === 'all' || comment.pageSlug === selectedPageSlug;
       const matchesAge =
         commentAgeFilter === 'all' || isRecentComment(comment.createdAt);
-      return matchesPageCategory && matchesSearch && matchesPage && matchesAge;
+      return matchesScope && matchesSearch && matchesAge;
     });
   }, [
-    activePageCategoryEventType,
     categoryPageSlugs,
     commentAgeFilter,
     commentSearch,
     comments,
+    requestedPageCategoryParam,
     selectedPageSlug,
   ]);
 
@@ -349,18 +340,26 @@ export default function AdminPageClient() {
   );
 
   const pageNameMap = useMemo(
-    () => new Map(categoryPages.map((page) => [page.slug, page.displayName])),
-    [categoryPages]
+    () => new Map(pages.map((page) => [page.slug, page.displayName])),
+    [pages]
   );
 
   const commentPageOptions = useMemo(() => {
     const categoryCommentPageSlugs = comments
       .map((comment) => comment.pageSlug)
-      .filter((pageSlug) => !activePageCategoryEventType || categoryPageSlugs.has(pageSlug));
+      .filter(
+        (pageSlug) =>
+          requestedPageCategoryParam === null ||
+          categoryPageSlugs.has(pageSlug) ||
+          pageSlug === selectedPageSlug
+      );
+
+    const selectedPage = pages.find((page) => page.slug === selectedPageSlug);
 
     return [
       ...new Set([
         ...categoryPages.map((page) => page.slug),
+        ...(selectedPage ? [selectedPage.slug] : []),
         ...categoryCommentPageSlugs,
       ]),
     ]
@@ -375,11 +374,13 @@ export default function AdminPageClient() {
         label: pageNameMap.get(slug) ? `${pageNameMap.get(slug)} (${slug})` : slug,
       }));
   }, [
-    activePageCategoryEventType,
     categoryPageSlugs,
     categoryPages,
     comments,
     pageNameMap,
+    pages,
+    requestedPageCategoryParam,
+    selectedPageSlug,
   ]);
 
   useEffect(() => {
@@ -387,46 +388,6 @@ export default function AdminPageClient() {
       updateQuery({ commentPage: String(normalizedCurrentPage) });
     }
   }, [currentPage, normalizedCurrentPage, updateQuery]);
-
-  /* ── Filter chips ── */
-
-  const pageFilterChips = [
-    pageSearch
-      ? {
-          id: 'page-search',
-          label: `검색: ${pageSearch}`,
-          onRemove: () => updateQuery({ pageQ: null }),
-        }
-      : null,
-    pageShortcutFilter !== 'all'
-      ? {
-          id: 'page-shortcut',
-          label: `테마: ${pageShortcutFilter}`,
-          onRemove: () => updateQuery({ shortcut: null }),
-        }
-      : null,
-    pageEventTypeFilter !== 'all'
-      ? {
-          id: 'page-type',
-          label: `이벤트: ${getEventTypeDisplayLabel(pageEventTypeFilter)}`,
-          onRemove: () => updateQuery({ pageType: null }),
-        }
-      : null,
-    pageStatusFilter !== 'all'
-      ? {
-          id: 'page-status',
-          label: `상태: ${PAGE_STATUS_LABELS[pageStatusFilter]}`,
-          onRemove: () => updateQuery({ pageStatus: null }),
-        }
-      : null,
-    pageSort !== 'newest'
-      ? {
-          id: 'page-sort',
-          label: `정렬: ${PAGE_SORT_LABELS[pageSort]}`,
-          onRemove: () => updateQuery({ pageSort: null }),
-        }
-      : null,
-  ].filter(Boolean) as Array<{ id: string; label: string; onRemove: () => void }>;
 
   const commentFilterChips = [
     commentSearch
@@ -441,7 +402,11 @@ export default function AdminPageClient() {
           id: 'comment-page',
           label: `페이지: ${selectedPageSlug}`,
           onRemove: () =>
-            updateQuery({ commentPageSlug: null, commentPage: '1' }),
+            updateQuery({
+              event: null,
+              commentPageSlug: 'all',
+              commentPage: '1',
+            }),
         }
       : null,
     commentAgeFilter !== 'all'
@@ -514,57 +479,48 @@ export default function AdminPageClient() {
         onNavigate={(view) => updateQuery(PRIMARY_VIEW_QUERY[view])}
         onLogout={() => void handleLogout()}
       >
-        <section className={styles.panel}
-        >
+        <section className={styles.panel}>
           {activeTab === 'pages' ? (
-            <AdminPagesTab
+            <AdminEventWorkspace
+              pages={pages}
               loading={pagesLoading}
               refreshing={pagesRefreshing}
-              summaryLoading={summaryLoading}
-              weddingPages={categoryPages}
-              filteredPages={filteredPages}
-              pageSearch={pageSearch}
-              pageEventTypeFilter={pageEventTypeFilter}
-              pageShortcutFilter={pageShortcutFilter}
-              pageStatusFilter={pageStatusFilter}
-              pageSort={pageSort}
-              activePageCategory={activePageCategory}
-              chips={pageFilterChips}
+              error={pagesError}
+              filters={eventFilters}
+              selectedSlug={selectedEventSlug}
+              currentPage={currentEventPage}
+              updatingPublishedSlug={updatingPublishedPageSlug}
+              updatingVariantToken={updatingVariantToken}
+              updatingTierSlug={updatingTierPageSlug}
+              deletingSlug={deletingPageSlug}
+              issuingInviteSlug={issuingOwnershipInviteSlug}
               onQueryChange={updateQuery}
               onRefresh={() => void refreshPages()}
-              onTogglePublished={(page, nextPublished) =>
-                void handleTogglePublished(page, nextPublished)
-              }
-              onChangeTier={(page, nextTier) =>
-                void handleChangeTier(page, nextTier)
-              }
-              onEnableVariant={(page, variantKey) =>
-                void handleEnableVariant(page, variantKey)
-              }
-              onDisableVariant={(page, variantKey) =>
-                void handleDisableVariant(page, variantKey)
-              }
-              updatingPublishedPageSlug={updatingPublishedPageSlug}
-              updatingVariantToken={updatingVariantToken}
-              updatingTierPageSlug={updatingTierPageSlug}
-              deletingPageSlug={deletingPageSlug}
-              issuingOwnershipInviteSlug={issuingOwnershipInviteSlug}
-              onDeletePage={(page) => void handleDeletePage(page)}
-              onIssueOwnershipInvite={(pageSlug) =>
-                void issueOwnershipInviteAndOpen(pageSlug)
-              }
+              onRetry={() => void retryPages()}
+              onTogglePublished={(page, next) => void handleTogglePublished(page, next)}
+              onChangeTier={(page, next) => void handleChangeTier(page, next)}
+              onEnableVariant={(page, theme) => void handleEnableVariant(page, theme)}
+              onDisableVariant={(page, theme) => void handleDisableVariant(page, theme)}
+              onIssueOwnershipInvite={(slug) => void requestOwnershipInviteForDetail(slug)}
+              onDelete={(page) => void handleDeletePage(page)}
             />
           ) : null}
 
-          {activeTab === 'memory' ? <MemoryPageManager /> : null}
+          {activeTab === 'memory' ? (
+            <MemoryPageManager initialPageSlug={selectedEventSlug ?? undefined} />
+          ) : null}
           {activeTab === 'images' ? (
-            <ImageManager eventTypeFilter={activePageCategoryEventType} />
+            <ImageManager
+              eventTypeFilter={relatedManagerEventTypeFilter}
+              initialPageSlug={selectedEventSlug ?? undefined}
+            />
           ) : null}
 
           {activeTab === 'comments' ? (
             <AdminCommentsTab
               commentsLoading={commentsLoading}
               commentsRefreshing={commentsRefreshing}
+              commentsError={commentsError}
               comments={comments}
               filteredComments={filteredComments}
               currentComments={currentComments}
@@ -573,11 +529,14 @@ export default function AdminPageClient() {
               commentSearch={commentSearch}
               selectedPageSlug={selectedPageSlug}
               commentAgeFilter={commentAgeFilter}
+              isEventFilterActive={isEventCommentFilterActive}
               chips={commentFilterChips}
               commentPageOptions={commentPageOptions}
               onRefresh={() => void fetchComments()}
+              onRetryComments={() => void retryComments()}
               onQueryChange={updateQuery}
               onDeleteComment={(comment) => void handleDeleteComment(comment)}
+              mobileReadOnly={mobileViewportState !== 'desktop'}
             />
           ) : null}
 
@@ -585,13 +544,17 @@ export default function AdminPageClient() {
             <AdminCustomerAccountsTab
               loading={accountsLoading}
               refreshing={accountsRefreshing}
+              error={accountsError}
               accounts={customerAccounts}
               unassignedEvents={unassignedCustomerEvents}
               ownershipActionToken={ownershipActionToken}
               issuingOwnershipInviteSlug={issuingOwnershipInviteSlug}
               walletGrantActionToken={walletGrantActionToken}
               deletingCustomerUid={deletingCustomerUid}
+              selectedEventSlug={selectedEventSlug}
+              mobileReadOnly={mobileViewportState !== 'desktop'}
               onRefresh={() => void fetchCustomerAccounts()}
+              onRetry={() => void retryAccounts()}
               onAssign={(uid, pageSlug) =>
                 void handleAssignCustomerOwnership(uid, pageSlug)
               }
@@ -610,7 +573,8 @@ export default function AdminPageClient() {
             <DisplayPeriodManager
               isVisible={true}
               statusFilter={periodStatusFilter}
-              eventTypeFilter={activePageCategoryEventType}
+              eventTypeFilter={relatedManagerEventTypeFilter}
+              initialPageSlug={selectedEventSlug ?? undefined}
               onDataChanged={() => void fetchSummarySources()}
             />
           ) : null}

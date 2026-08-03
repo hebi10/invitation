@@ -1,7 +1,10 @@
 export { default as AdminCommentsTab } from './AdminCommentsTab';
 export { default as AdminCustomerAccountsTab } from './AdminCustomerAccountsTab';
+export { default as AdminEventWorkspace } from './AdminEventWorkspace';
+export { default as AdminEventDetailPanel } from './AdminEventDetailPanel';
 export { default as AdminOwnershipInviteDialog } from './AdminOwnershipInviteDialog';
 export { default as AdminPagesTab } from './AdminPagesTab';
+export { default as AdminQueryState } from './AdminQueryState';
 export { default as AdminShell } from './AdminShell';
 export { AdminOverlayProvider, useAdminOverlay } from './AdminOverlayProvider';
 export { default as EmptyState } from './EmptyState';

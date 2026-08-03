@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
 import {
   deleteDisplayPeriod,
@@ -31,6 +31,7 @@ interface DisplayPeriodManagerProps {
   isVisible: boolean;
   statusFilter?: PeriodStatusFilter;
   eventTypeFilter?: EventTypeKey | null;
+  initialPageSlug?: string;
   onDataChanged?: () => void;
 }
 
@@ -111,6 +112,7 @@ export default function DisplayPeriodManager({
   isVisible,
   statusFilter = 'all',
   eventTypeFilter = 'wedding',
+  initialPageSlug,
   onDataChanged,
 }: DisplayPeriodManagerProps) {
   const [periods, setPeriods] = useState<DisplayPeriod[]>([]);
@@ -128,6 +130,7 @@ export default function DisplayPeriodManager({
     isActive: true,
   });
   const { confirm, showToast } = useAdminOverlay();
+  const appliedInitialPageSlugRef = useRef<string | null>(null);
 
   const loadData = async () => {
     try {
@@ -249,6 +252,25 @@ export default function DisplayPeriodManager({
     () => new Map(periods.map((period) => [period.pageSlug, period])),
     [periods]
   );
+
+  useEffect(() => {
+    if (
+      !initialPageSlug ||
+      appliedInitialPageSlugRef.current === initialPageSlug
+    ) {
+      return;
+    }
+
+    const selectedPage = pages.find((page) => page.slug === initialPageSlug);
+    if (!selectedPage) {
+      return;
+    }
+
+    appliedInitialPageSlugRef.current = initialPageSlug;
+    setEditingPageSlug(selectedPage.slug);
+    setFormError('');
+    setFormData(createFormState(selectedPage, periodsByPage.get(selectedPage.slug)));
+  }, [initialPageSlug, pages, periodsByPage]);
 
   const filteredPages = useMemo(() => {
     const normalizedQuery = searchQuery.trim().toLowerCase();

@@ -10,7 +10,7 @@ import type {
 } from '@/services/adminCustomerService';
 import type { InvitationProductTier } from '@/types/invitationPage';
 
-import { EmptyState, FilterToolbar, Pagination, StatusBadge } from '.';
+import { AdminQueryState, EmptyState, FilterToolbar, Pagination, StatusBadge } from '.';
 import {
   filterAssignableEvents,
   getAssignableEventTypeOptions,
@@ -20,17 +20,22 @@ import { formatDateTime } from './adminPageUtils';
 import styles from '../page.module.css';
 
 const CUSTOMER_ACCOUNTS_PAGE_SIZE = 5;
+type CustomerConnectionFilter = 'all' | 'linked' | 'unlinked';
 
 interface AdminCustomerAccountsTabProps {
   loading: boolean;
   refreshing: boolean;
+  error: Error | null;
   accounts: AdminCustomerAccountSummary[];
   unassignedEvents: AdminCustomerLinkedEventSummary[];
   ownershipActionToken: string | null;
   issuingOwnershipInviteSlug: string | null;
   walletGrantActionToken: string | null;
   deletingCustomerUid: string | null;
+  selectedEventSlug: string | null;
+  mobileReadOnly: boolean;
   onRefresh: () => void;
+  onRetry: () => void;
   onAssign: (uid: string, pageSlug: string) => void;
   onClear: (pageSlug: string) => void;
   onIssueOwnershipInvite: (pageSlug: string) => void;
@@ -119,13 +124,17 @@ function getLedgerStatusLabel(status: string) {
 export default function AdminCustomerAccountsTab({
   loading,
   refreshing,
+  error,
   accounts,
   unassignedEvents,
   ownershipActionToken,
   issuingOwnershipInviteSlug,
   walletGrantActionToken,
   deletingCustomerUid,
+  selectedEventSlug,
+  mobileReadOnly,
   onRefresh,
+  onRetry,
   onAssign,
   onClear,
   onIssueOwnershipInvite,
@@ -133,6 +142,7 @@ export default function AdminCustomerAccountsTab({
   onGrantWalletCredit,
 }: AdminCustomerAccountsTabProps) {
   const [searchQuery, setSearchQuery] = useState('');
+  const [connectionFilter, setConnectionFilter] = useState<CustomerConnectionFilter>('all');
   const [currentPage, setCurrentPage] = useState(1);
   const [draftAssignments, setDraftAssignments] = useState<Record<string, string>>({});
   const [draftAssignmentEventTypes, setDraftAssignmentEventTypes] = useState<
@@ -154,11 +164,19 @@ export default function AdminCustomerAccountsTab({
 
   const filteredAccounts = useMemo(() => {
     const normalizedQuery = searchQuery.trim().toLowerCase();
-    if (!normalizedQuery) {
-      return accounts;
-    }
-
     return accounts.filter((account) => {
+      const matchesConnection =
+        connectionFilter === 'all' ||
+        (connectionFilter === 'linked' && account.linkedEvents.length > 0) ||
+        (connectionFilter === 'unlinked' && account.linkedEvents.length === 0);
+      if (!matchesConnection) {
+        return false;
+      }
+
+      if (!normalizedQuery) {
+        return true;
+      }
+
       const linkedEventSearchText = account.linkedEvents
         .map(
           (event) =>
@@ -170,12 +188,7 @@ export default function AdminCustomerAccountsTab({
         .toLowerCase()
         .includes(normalizedQuery);
     });
-  }, [accounts, searchQuery]);
-
-  const totalLinkedEvents = useMemo(
-    () => accounts.reduce((sum, account) => sum + account.linkedEvents.length, 0),
-    [accounts]
-  );
+  }, [accounts, connectionFilter, searchQuery]);
   const assignableEventTypeOptions = useMemo(
     () => getAssignableEventTypeOptions(unassignedEvents),
     [unassignedEvents]
@@ -192,7 +205,7 @@ export default function AdminCustomerAccountsTab({
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchQuery]);
+  }, [connectionFilter, searchQuery]);
 
   useEffect(() => {
     if (currentPage !== normalizedCurrentPage) {
@@ -205,10 +218,61 @@ export default function AdminCustomerAccountsTab({
       return null;
     }
 
-    const selectedSlug = selectedLinkedEvents[account.uid] ?? '';
+    const selectedSlug = selectedLinkedEvents[account.uid] ?? selectedEventSlug ?? '';
     return (
       account.linkedEvents.find((event) => event.slug === selectedSlug) ??
       account.linkedEvents[0]
+    );
+  };
+
+  const renderMobileAccountCard = (
+    account: AdminCustomerAccountSummary,
+    index: number
+  ) => {
+    const providerLabels = getProviderLabels(account.providerIds);
+
+    return (
+      <article className={styles.accountCard} key={account.uid}>
+        <div className={styles.accountCardHeader}>
+          <div className={styles.accountCardIdentity}>
+            <span className={styles.rowNumber}>{index + 1}</span>
+            <div className={styles.identityStack}>
+              <h3 className={styles.accountCardTitle}>
+                {account.displayName || account.email || account.uid}
+              </h3>
+              <p className={styles.tableSubtext}>{account.email ?? '이메일 없음'}</p>
+              <p className={styles.tableSubtext}>UID · {account.uid}</p>
+            </div>
+          </div>
+          <StatusBadge tone={account.disabled ? 'danger' : 'success'}>
+            {account.disabled ? '비활성화' : '사용 가능'}
+          </StatusBadge>
+        </div>
+
+        <div className={styles.accountCardMetaGrid}>
+          <span>로그인 수단 · {providerLabels.join(', ')}</span>
+          <span>최근 로그인 · {formatDateValue(account.lastSignInAt)}</span>
+          <span>연결된 이벤트 · {account.linkedEvents.length}개</span>
+        </div>
+
+        <section className={styles.accountCardSection}>
+          <h4 className={styles.accountCardSectionTitle}>연결된 이벤트</h4>
+          {account.linkedEvents.length > 0 ? (
+            <ul className={styles.mobileLinkedEventList}>
+              {account.linkedEvents.map((event) => (
+                <li key={`${account.uid}:${event.slug}`}>
+                  <strong>{event.displayName}</strong>
+                  <span>
+                    {getEventTypeDisplayLabel(event.eventType, 'admin')} · /{event.slug}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <span className={styles.emptyInlineText}>연결된 이벤트가 없습니다.</span>
+          )}
+        </section>
+      </article>
     );
   };
 
@@ -445,13 +509,10 @@ export default function AdminCustomerAccountsTab({
 
   const renderLinkedEventManager = (account: AdminCustomerAccountSummary) => {
     if (!account.linkedEvents.length) {
-      return <span className={styles.emptyInlineText}>연결된 청첩장이 없습니다.</span>;
+      return <span className={styles.emptyInlineText}>연결된 이벤트가 없습니다.</span>;
     }
 
     const selectedEvent = getSelectedLinkedEvent(account);
-    const isClearing = selectedEvent
-      ? ownershipActionToken === `clear:${selectedEvent.slug}`
-      : false;
     const isIssuingOwnershipInvite = selectedEvent
       ? issuingOwnershipInviteSlug === selectedEvent.slug
       : false;
@@ -487,7 +548,7 @@ export default function AdminCustomerAccountsTab({
           <>
             <div className={styles.linkedEventCompactMeta}>
               <span>/{selectedEvent.slug}</span>
-              <span>테마 {selectedEvent.defaultTheme}</span>
+              <span>기본 테마 {selectedEvent.defaultTheme}</span>
               <span>수정 {formatDateValue(selectedEvent.updatedAt)}</span>
             </div>
             <div className={styles.tableActions}>
@@ -521,14 +582,6 @@ export default function AdminCustomerAccountsTab({
                   {isIssuingOwnershipInvite ? '링크 발급 중' : '고객 연결 링크'}
                 </button>
               ) : null}
-              <button
-                type="button"
-                className="admin-button admin-button-danger"
-                disabled={isClearing}
-                onClick={() => onClear(selectedEvent.slug)}
-              >
-                {isClearing ? '해제 중..' : '연결 해제'}
-              </button>
             </div>
           </>
         ) : null}
@@ -545,6 +598,10 @@ export default function AdminCustomerAccountsTab({
     const isAssigning = ownershipActionToken === `assign:${account.uid}:${selectedSlug}`;
     const isIssuingSelectedInvite = issuingOwnershipInviteSlug === selectedSlug;
     const isDeletingAccount = deletingCustomerUid === account.uid;
+    const selectedLinkedEvent = getSelectedLinkedEvent(account);
+    const isClearing = selectedLinkedEvent
+      ? ownershipActionToken === `clear:${selectedLinkedEvent.slug}`
+      : false;
 
     return (
       <article className={styles.accountCard} key={account.uid}>
@@ -573,34 +630,19 @@ export default function AdminCustomerAccountsTab({
             {account.missingAuthUser ? (
               <StatusBadge tone="danger">삭제된 계정</StatusBadge>
             ) : null}
-            {!account.isAdmin ? (
-              <button
-                type="button"
-                className={styles.accountHeaderDangerButton}
-                disabled={isDeletingAccount}
-                onClick={() => onDeleteAccount(account.uid)}
-                title="Firebase 계정과 지갑 데이터를 삭제하고 연결된 청첩장을 비공개로 전환합니다."
-              >
-                {isDeletingAccount
-                  ? '처리 중'
-                  : account.missingAuthUser
-                    ? '잔여 정리'
-                    : '탈퇴 처리'}
-              </button>
-            ) : null}
           </div>
         </div>
 
         <div className={styles.accountCardMetaGrid}>
           <span>로그인 수단 · {providerLabels.join(', ')}</span>
           <span>최근 로그인 · {formatDateValue(account.lastSignInAt)}</span>
-          <span>연결된 청첩장 · {account.linkedEvents.length}개</span>
+          <span>연결된 이벤트 · {account.linkedEvents.length}개</span>
         </div>
 
         <div className={styles.accountCardBody}>
           <section className={`${styles.accountCardSection} ${styles.accountConnectSection}`}>
             <div className={styles.accountCardSectionHeader}>
-              <h4 className={styles.accountCardSectionTitle}>새 청첩장 연결</h4>
+              <h4 className={styles.accountCardSectionTitle}>새 이벤트 연결</h4>
               <StatusBadge tone={unassignedEvents.length > 0 ? 'warning' : 'neutral'}>
                 전체 미연결 {unassignedEvents.length}개
               </StatusBadge>
@@ -628,7 +670,7 @@ export default function AdminCustomerAccountsTab({
                   </select>
                 </label>
                 <label className="admin-field">
-                  <span className="admin-field-label">초대장 검색</span>
+                  <span className="admin-field-label">이벤트 검색</span>
                   <input
                     className="admin-input"
                     type="search"
@@ -653,7 +695,7 @@ export default function AdminCustomerAccountsTab({
                     }))
                   }
                 >
-                  <option value="">연결할 청첩장 선택</option>
+                  <option value="">연결할 이벤트 선택</option>
                   {filteredAssignableEvents.map((event) => (
                     <option key={event.slug} value={event.slug}>
                       [{getEventTypeDisplayLabel(event.eventType)}] {event.displayName} ({event.slug})
@@ -671,7 +713,7 @@ export default function AdminCustomerAccountsTab({
                   }
                   onClick={() => onAssign(account.uid, selectedSlug)}
                 >
-                  {isAssigning ? '연결 중..' : '청첩장 연결'}
+                  {isAssigning ? '연결 중..' : '이벤트 연결'}
                 </button>
                 <button
                   type="button"
@@ -688,19 +730,19 @@ export default function AdminCustomerAccountsTab({
               </div>
               <span className={styles.actionHint}>
                 {account.missingAuthUser
-                  ? '삭제된 계정에는 청첩장을 연결할 수 없습니다.'
+                  ? '삭제된 계정에는 이벤트를 연결할 수 없습니다.'
                   : unassignedEvents.length > 0
                     ? filteredAssignableEvents.length > 0
-                      ? `선택 조건에 맞는 미연결 초대장 ${filteredAssignableEvents.length}개 중에서 연결할 수 있습니다.`
-                      : '선택한 조건에 맞는 미연결 초대장이 없습니다.'
-                    : '현재 바로 연결할 수 있는 미연결 청첩장이 없습니다.'}
+                      ? `선택 조건에 맞는 미연결 이벤트 ${filteredAssignableEvents.length}개를 연결할 수 있습니다.`
+                      : '선택한 조건에 맞는 미연결 이벤트가 없습니다.'
+                    : '현재 바로 연결할 수 있는 미연결 이벤트가 없습니다.'}
               </span>
             </div>
           </section>
 
           <section className={styles.accountCardSection}>
             <div className={styles.accountCardSectionHeader}>
-              <h4 className={styles.accountCardSectionTitle}>연결된 청첩장</h4>
+              <h4 className={styles.accountCardSectionTitle}>연결된 이벤트</h4>
               <StatusBadge tone={account.linkedEvents.length > 0 ? 'primary' : 'neutral'}>
                 {account.linkedEvents.length}개
               </StatusBadge>
@@ -718,6 +760,39 @@ export default function AdminCustomerAccountsTab({
             {renderWalletManager(account)}
           </section>
         </div>
+
+        {!account.isAdmin || selectedLinkedEvent ? (
+          <details className={styles.accountDangerArea}>
+            <summary>위험 작업</summary>
+            <p>소유권 연결 해제와 계정 정리는 되돌리기 어렵습니다.</p>
+            <div className={styles.tableActions}>
+              {selectedLinkedEvent ? (
+                <button
+                  type="button"
+                  className="admin-button admin-button-danger"
+                  disabled={isClearing}
+                  onClick={() => onClear(selectedLinkedEvent.slug)}
+                >
+                  {isClearing ? '해제 중..' : '선택 이벤트 연결 해제'}
+                </button>
+              ) : null}
+              {!account.isAdmin ? (
+                <button
+                  type="button"
+                  className="admin-button admin-button-danger"
+                  disabled={isDeletingAccount}
+                  onClick={() => onDeleteAccount(account.uid)}
+                >
+                  {isDeletingAccount
+                    ? '처리 중'
+                    : account.missingAuthUser
+                      ? '잔여 정리'
+                      : '계정 탈퇴 처리'}
+                </button>
+              ) : null}
+            </div>
+          </details>
+        ) : null}
       </article>
     );
   };
@@ -725,38 +800,50 @@ export default function AdminCustomerAccountsTab({
   return (
     <div className={styles.panelStack}>
       <div className={styles.sectionHeader}>
-        <div>
-          <h2 className={styles.sectionTitle}>고객 계정</h2>
-          <p className={styles.sectionDescription}>
-            Firebase 로그인 계정과 청첩장 소유권을 연결해 고객이 `/my-invitations`에서
-            바로 수정하고 관리할 수 있게 합니다.
-          </p>
-        </div>
-        <p className={styles.sectionMeta}>
-          계정 {accounts.length}개 · 화면 표시 최대 5개 · 연결된 이벤트 {totalLinkedEvents}개 · 미연결 이벤트{' '}
-          {unassignedEvents.length}개
-        </p>
+        <h2 className={styles.sectionTitle}>고객 관리</h2>
+        <p className={styles.sectionMeta}>결과 {filteredAccounts.length}명</p>
       </div>
+
+      {mobileReadOnly ? (
+        <p className={styles.mobileReadOnlyNotice}>
+          모바일에서는 고객과 연결 이벤트 조회만 지원합니다. 연결, 이용권 지급,
+          삭제는 PC 관리자 화면을 이용해 주세요.
+        </p>
+      ) : null}
+
+      {selectedEventSlug ? (
+        <div className={styles.selectionContext}>
+          <p className={styles.sectionMeta}>선택 이벤트 · {selectedEventSlug}</p>
+        </div>
+      ) : null}
 
       <FilterToolbar
         fields={
           <>
             <label className="admin-field">
-              <span className="admin-field-label">고객 계정 검색</span>
+              <span className="admin-field-label">검색</span>
               <input
                 className="admin-input"
                 type="search"
-                placeholder="이메일, 이름, UID, 청첩장 주소 검색"
+                placeholder="이름, 이메일, UID, 이벤트 주소 검색"
                 value={searchQuery}
                 onChange={(event) => setSearchQuery(event.target.value)}
               />
             </label>
-            <div className={styles.metaStack}>
-              <span className={styles.toolbarNote}>
-                아직 어떤 계정에도 연결되지 않은 청첩장만 바로 연결할 수 있습니다.
-                이미 다른 계정에 연결된 청첩장은 먼저 연결 해제 후 다시 연결해 주세요.
-              </span>
-            </div>
+            <label className="admin-field">
+              <span className="admin-field-label">연결 상태</span>
+              <select
+                className="admin-select"
+                value={connectionFilter}
+                onChange={(event) =>
+                  setConnectionFilter(event.target.value as CustomerConnectionFilter)
+                }
+              >
+                <option value="all">전체</option>
+                <option value="linked">이벤트 연결</option>
+                <option value="unlinked">미연결</option>
+              </select>
+            </label>
           </>
         }
         actions={
@@ -769,43 +856,90 @@ export default function AdminCustomerAccountsTab({
             >
               {refreshing ? '새로고침 중' : loading ? '불러오는 중' : '새로고침'}
             </button>
-            {searchQuery ? (
+            {searchQuery || connectionFilter !== 'all' ? (
               <button
                 type="button"
                 className="admin-button admin-button-ghost"
-                onClick={() => setSearchQuery('')}
+                onClick={() => {
+                  setSearchQuery('');
+                  setConnectionFilter('all');
+                }}
               >
-                검색 초기화
+                필터 초기화
               </button>
             ) : null}
           </>
         }
         chips={
-          searchQuery
-            ? [
-                {
-                  id: 'customer-account-search',
-                  label: `검색: ${searchQuery}`,
-                  onRemove: () => setSearchQuery(''),
-                },
-              ]
-            : []
+          [
+            ...(searchQuery
+              ? [
+                  {
+                    id: 'customer-account-search',
+                    label: `검색: ${searchQuery}`,
+                    onRemove: () => setSearchQuery(''),
+                  },
+                ]
+              : []),
+            ...(connectionFilter !== 'all'
+              ? [
+                  {
+                    id: 'customer-connection-filter',
+                    label: connectionFilter === 'linked' ? '이벤트 연결' : '미연결',
+                    onRemove: () => setConnectionFilter('all'),
+                  },
+                ]
+              : []),
+          ]
         }
       />
 
-      {loading ? (
-        <div className={styles.loadingState}>
-          <div className={styles.loadingSpinner}></div>
-          <p className={styles.loadingText}>고객 계정과 연결된 청첩장을 불러오는 중입니다.</p>
-        </div>
+      {error && accounts.length > 0 ? (
+        <AdminQueryState
+          loading={false}
+          error={error}
+          empty={false}
+          emptyTitle=""
+          emptyDescription=""
+          onRetry={onRetry}
+          compact={true}
+          errorTitle="고객 계정 최신 정보를 불러오지 못했습니다."
+        />
+      ) : null}
+
+      {loading && accounts.length === 0 ? (
+        <AdminQueryState
+          loading={true}
+          error={null}
+          empty={false}
+          emptyTitle=""
+          emptyDescription=""
+          onRetry={onRetry}
+          loadingMessage="고객 계정을 불러오는 중입니다."
+        />
+      ) : error && accounts.length === 0 ? (
+        <AdminQueryState
+          loading={false}
+          error={error}
+          empty={false}
+          emptyTitle=""
+          emptyDescription=""
+          onRetry={onRetry}
+          errorTitle="고객 계정을 불러오지 못했습니다."
+        />
       ) : filteredAccounts.length > 0 ? (
         <>
           <div className={styles.accountCardList}>
             {paginatedAccounts.map((account, index) =>
-              renderAccountCard(
-                account,
-                (normalizedCurrentPage - 1) * CUSTOMER_ACCOUNTS_PAGE_SIZE + index
-              )
+              mobileReadOnly
+                ? renderMobileAccountCard(
+                    account,
+                    (normalizedCurrentPage - 1) * CUSTOMER_ACCOUNTS_PAGE_SIZE + index
+                  )
+                : renderAccountCard(
+                    account,
+                    (normalizedCurrentPage - 1) * CUSTOMER_ACCOUNTS_PAGE_SIZE + index
+                  )
             )}
           </div>
           <Pagination
@@ -819,23 +953,24 @@ export default function AdminCustomerAccountsTab({
       ) : (
         <EmptyState
           title={
-            searchQuery
+            searchQuery || connectionFilter !== 'all'
               ? '검색 조건에 맞는 고객 계정이 없습니다.'
               : '관리할 고객 계정이 아직 없습니다.'
           }
           description={
-            searchQuery
-              ? '검색어를 다시 확인하거나 새로고침으로 최신 목록을 불러와 주세요.'
-              : 'Firebase Authentication에 등록된 고객 계정이 보이면 여기서 청첩장을 연결해 사용자 페이지로 보낼 수 있습니다.'
+            searchQuery || connectionFilter !== 'all'
+              ? '검색어나 연결 상태를 조정해 다시 확인해 주세요.'
+              : '고객 계정이 등록되면 여기에서 이벤트 연결과 이용권 지급을 관리할 수 있습니다.'
           }
-          highlights={[
-            '미연결 청첩장을 고객 계정에 연결하면 /my-invitations 에서 바로 관리할 수 있습니다.',
-            '이미 다른 계정에 연결된 청첩장은 먼저 연결 해제 후 다시 연결해 주세요.',
-          ]}
-          actionLabel={searchQuery ? '검색 초기화' : '새로고침'}
-          onAction={searchQuery ? () => setSearchQuery('') : onRefresh}
-          secondaryActionLabel={searchQuery ? '새로고침' : undefined}
-          onSecondaryAction={searchQuery ? onRefresh : undefined}
+          actionLabel={searchQuery || connectionFilter !== 'all' ? '필터 초기화' : '새로고침'}
+          onAction={
+            searchQuery || connectionFilter !== 'all'
+              ? () => {
+                  setSearchQuery('');
+                  setConnectionFilter('all');
+                }
+              : onRefresh
+          }
         />
       )}
     </div>

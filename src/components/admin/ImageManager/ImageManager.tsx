@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { useAdmin } from '@/contexts';
 import type { EventTypeKey } from '@/lib/eventTypes';
@@ -25,9 +25,13 @@ import styles from './ImageManager.module.css';
 
 interface ImageManagerProps {
   eventTypeFilter?: EventTypeKey | null;
+  initialPageSlug?: string;
 }
 
-export default function ImageManager({ eventTypeFilter = 'wedding' }: ImageManagerProps) {
+export default function ImageManager({
+  eventTypeFilter = 'wedding',
+  initialPageSlug,
+}: ImageManagerProps) {
   const { isAdminLoggedIn } = useAdmin();
   const { confirm, showToast } = useAdminOverlay();
 
@@ -42,6 +46,7 @@ export default function ImageManager({ eventTypeFilter = 'wedding' }: ImageManag
   const [error, setError] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [expandedPages, setExpandedPages] = useState<Record<string, boolean>>({});
+  const appliedInitialPageSlugRef = useRef<string | null>(null);
 
   const loadData = useCallback(async () => {
     try {
@@ -176,6 +181,19 @@ export default function ImageManager({ eventTypeFilter = 'wedding' }: ImageManag
         : pages,
     [eventTypeFilter, pages]
   );
+
+  useEffect(() => {
+    if (
+      !initialPageSlug ||
+      appliedInitialPageSlugRef.current === initialPageSlug ||
+      !pages.some((page) => page.slug === initialPageSlug)
+    ) {
+      return;
+    }
+
+    appliedInitialPageSlugRef.current = initialPageSlug;
+    setSelectedPage(initialPageSlug);
+  }, [initialPageSlug, pages]);
 
   useEffect(() => {
     if (selectedPage && !visiblePages.some((page) => page.slug === selectedPage)) {
