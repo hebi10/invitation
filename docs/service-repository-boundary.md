@@ -43,8 +43,6 @@
   - `repositoryValidators.ts`
 - shared error
   - `repositoryErrors.ts`
-- compare utility
-  - `repositoryCompare.ts`
 
 ## 호출 흐름
 1. UI / 훅이 `src/services/*` 공개 함수를 호출한다.

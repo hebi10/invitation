@@ -68,7 +68,7 @@ export const leeJunhoParkSominConfig: WeddingPageConfig = createWeddingPageConfi
     images: {
       wedding:
         'https://firebasestorage.googleapis.com/v0/b/invitation-35d60.firebasestorage.app/o/wedding-images%2Flee-junho-park-somin%2Fthum.jpg?alt=media&token=2f3d2c5e-8e9b-4b5c-a7dd-1234567890ab',
-      favicon: '/images/favicon.ico',
+      favicon: '/favicon.ico',
     },
   },
   pageData: {

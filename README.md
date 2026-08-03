@@ -22,9 +22,7 @@
 - 문서 허브: `docs/README.md`
 - 새 테마 추가 체크리스트: `docs/new-theme-checklist.md`
 - 모바일 청첩장 연동 기준: `docs/mobile-client-editor-policy.md`
-- Expo 영향 범위 점검: `docs/expo-impact-assessment.md`
 - 이벤트 도메인 현재 기준: `docs/event-domain-current-state.md`
-- 웹 생성 흐름 정리: `docs/web-page-wizard-alignment.md`
 - 서비스 개요 문서: `docs/portfolio-service-overview.md`
 
 ## 기술 스택

@@ -75,7 +75,7 @@ export const leeJonghunChoiInConfig: WeddingPageConfig = createWeddingPageConfig
     images: {
       wedding:
         'https://firebasestorage.googleapis.com/v0/b/invitation-35d60.firebasestorage.app/o/wedding-images%2Flee-jonghun-choi-in%2Fkakao_thum.jpg?alt=media&token=f233363f-5328-409d-bacb-e88a7810323f',
-      favicon: '/images/favicon.ico',
+      favicon: '/favicon.ico',
     },
   },
   pageData: {

@@ -69,7 +69,7 @@ export const anDoyoungYoonJisooConfig: WeddingPageConfig = createWeddingPageConf
     images: {
       wedding:
         'https://firebasestorage.googleapis.com/v0/b/invitation-35d60.firebasestorage.app/o/wedding-images%2Fan-doyoung-yoon-jisoo%2Fmain.jpg?alt=media&token=4495e9e0-503f-4c3a-8cf4-4ba84b826822',
-      favicon: '/images/favicon.ico',
+      favicon: '/favicon.ico',
     },
   },
   pageData: {

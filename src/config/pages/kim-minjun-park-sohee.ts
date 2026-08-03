@@ -68,7 +68,7 @@ export const kimMinjunParkSoheeConfig: WeddingPageConfig = createWeddingPageConf
     images: {
       wedding:
         'https://firebasestorage.googleapis.com/v0/b/invitation-35d60.firebasestorage.app/o/wedding-images%2Fkim-minjun-park-sohee%2Fthum.jpg?alt=media',
-      favicon: '/images/favicon.ico',
+      favicon: '/favicon.ico',
     },
   },
   pageData: {

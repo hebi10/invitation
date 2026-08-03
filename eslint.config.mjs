@@ -22,7 +22,6 @@ export default [
       'apps/mobile/apps/**',
       'apps/mobile/expo-env.d.ts',
       'coverage/**',
-      'playwright-report/**',
       'test-results/**',
     ],
   },

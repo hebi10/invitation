@@ -3,7 +3,6 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 const ROOTS_TO_SCAN = ['src/app/api', 'src/server', 'src/services'];
-const EXTRA_FILES_TO_SCAN = ['scripts/seed-invitation-pages.mjs'];
 const FORBIDDEN_PATTERNS = [
   {
     label: 'legacy invitation config collection',
@@ -54,7 +53,6 @@ function walkFiles(root: string): string[] {
 function findViolations() {
   const files = [
     ...ROOTS_TO_SCAN.flatMap(walkFiles),
-    ...EXTRA_FILES_TO_SCAN.filter((filePath) => fs.existsSync(filePath)),
   ];
 
   return files.flatMap((filePath) => {

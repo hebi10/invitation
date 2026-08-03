@@ -68,7 +68,7 @@ export const shinMinjeKimHyunjiConfig: WeddingPageConfig = createWeddingPageConf
     images: {
       wedding:
         'https://firebasestorage.googleapis.com/v0/b/invitation-35d60.firebasestorage.app/o/wedding-images%2Fkim-shinlang-na-sinbu%2Fthum.jpg?alt=media&token=c5eef8b5-a83b-4a4c-b5bb-2491feaba51c',
-      favicon: '/images/favicon.ico',
+      favicon: '/favicon.ico',
     },
   },
   pageData: {

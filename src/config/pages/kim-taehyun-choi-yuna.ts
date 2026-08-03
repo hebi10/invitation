@@ -68,7 +68,7 @@ export const kimTaehyunChoiYunaConfig: WeddingPageConfig = createWeddingPageConf
     images: {
       wedding:
         'https://firebasestorage.googleapis.com/v0/b/invitation-35d60.firebasestorage.app/o/wedding-images%2Fkim-taehyun-choi-yuna%2Fthum.jpg?alt=media&token=7a8b9c0d-1e2f-3g4h-5i6j-0987654321ba',
-      favicon: '/images/favicon.ico',
+      favicon: '/favicon.ico',
     },
   },
   pageData: {
