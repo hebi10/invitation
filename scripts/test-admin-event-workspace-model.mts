@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 
 import {
   DEFAULT_ADMIN_EVENT_FILTERS,
+  ADMIN_EVENT_PAGE_SIZE_OPTIONS,
   filterAdminEvents,
   getAdminEventCapabilities,
   getAdminEventCounts,
@@ -13,6 +14,7 @@ import {
   shouldClearMissingAdminEvent,
   shouldIncludeAdminComment,
   parseAdminEventOwnership,
+  parseAdminEventPageSize,
   parseAdminEventPublished,
   parseAdminEventSort,
   parseAdminEventType,
@@ -102,6 +104,13 @@ assert.equal(parseAdminEventOwnership('customer'), 'customer');
 assert.equal(parseAdminEventOwnership('unknown'), 'all');
 assert.equal(parseAdminEventSort('name'), 'name');
 assert.equal(parseAdminEventSort('unknown'), 'updated');
+assert.deepEqual(ADMIN_EVENT_PAGE_SIZE_OPTIONS, [10, 20, 50, 100]);
+assert.equal(parseAdminEventPageSize('10'), 10);
+assert.equal(parseAdminEventPageSize('20'), 20);
+assert.equal(parseAdminEventPageSize('50'), 50);
+assert.equal(parseAdminEventPageSize('100'), 100);
+assert.equal(parseAdminEventPageSize('30'), 10);
+assert.equal(parseAdminEventPageSize(null), 10);
 assert.deepEqual(getAdminEventCounts(pages), {
   total: 5,
   published: 1,
@@ -209,6 +218,14 @@ assert.deepEqual(getAdminEventPage(pages, 2, 2), {
 assert.deepEqual(getAdminEventPage(pages, 99, 2), {
   items: [pages[4]],
   currentPage: 3,
+  totalPages: 3,
+});
+const pagedEvents = Array.from({ length: 21 }, (_, index) =>
+  makePage(`paged-${index + 1}`, 'wedding')
+);
+assert.deepEqual(getAdminEventPage(pagedEvents, 2), {
+  items: pagedEvents.slice(10, 20),
+  currentPage: 2,
   totalPages: 3,
 });
 assert.equal(

@@ -1,0 +1,104 @@
+.banner {
+  position: sticky;
+  z-index: 1000;
+  top: 0;
+  display: flex;
+  min-height: 52px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 9px 18px;
+  border-bottom: 1px solid #c6a76f;
+  background: #fff8e8;
+  color: #3d321f;
+  font-family: var(--font-sans);
+}
+
+.copy {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 12px;
+}
+
+.copy strong {
+  flex: none;
+  padding: 3px 8px;
+  background: #72572c;
+  color: #fff;
+  font-size: 0.78rem;
+}
+
+.copy span {
+  overflow: hidden;
+  font-size: 0.84rem;
+  line-height: 1.4;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.actions,
+.roles {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 6px;
+}
+
+.roles button,
+.exit {
+  min-height: 32px;
+  padding: 5px 10px;
+  border: 1px solid #b99a63;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.roles button[aria-pressed='true'] {
+  background: #72572c;
+  color: #fff;
+}
+
+.exit {
+  border-color: #715b48;
+}
+
+.error {
+  margin: 0;
+  color: #9b2c2c;
+  font-size: 0.78rem;
+}
+
+@media (max-width: 760px) {
+  .banner {
+    align-items: flex-start;
+    gap: 8px;
+    padding: 8px 10px;
+  }
+
+  .copy {
+    display: grid;
+    gap: 3px;
+  }
+
+  .copy strong {
+    width: fit-content;
+  }
+
+  .copy span {
+    display: -webkit-box;
+    overflow: hidden;
+    font-size: 0.72rem;
+    white-space: normal;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+  }
+
+  .actions {
+    display: grid;
+  }
+}

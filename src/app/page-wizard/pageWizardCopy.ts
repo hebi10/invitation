@@ -12,11 +12,10 @@ export function getWizardCopy(eventType: EventTypeKey) {
       editLoginDescription:
         '행사 초대장에 연결된 고객 계정으로 로그인하면 편집 화면을 이용할 수 있습니다.',
       createLoginHelper: '행사 초대장 생성은 관리자 권한이 확인된 계정에서만 가능합니다.',
-      editLoginHelper:
-        '아직 계정에 연결되지 않은 행사 초대장은 관리자에게 계정 연결을 요청해 주세요.',
-      claimTitle: '관리자에게 행사 초대장 연결을 요청해 주세요',
+      editLoginHelper: '관리자가 전달한 행사 초대장 편집 URL로 접속해 주세요.',
+      claimTitle: '이 계정으로 행사 초대장 편집을 시작할까요?',
       claimDescription:
-        '이 행사 초대장은 아직 현재 로그인 계정과 연결되어 있지 않습니다. 고객 계정에 연결된 행사 초대장만 편집할 수 있습니다.',
+        '편집 시작을 누르면 현재 계정에 연결되며, 이후에는 다른 계정에서 수정할 수 없습니다.',
       blockedTitle: '이 행사 초대장은 현재 계정으로 관리할 수 없습니다.',
       listButton: '내 행사 초대장으로 이동',
       emptyTitle: '행사 초대장 정보를 아직 불러오지 못했습니다.',
@@ -36,10 +35,10 @@ export function getWizardCopy(eventType: EventTypeKey) {
       createLoginDescription: '관리자 계정으로 로그인한 뒤 새 개업 초대장 생성 화면을 이용해 주세요.',
       editLoginDescription: '개업 초대장에 연결된 고객 계정으로 로그인하면 편집 화면을 이용할 수 있습니다.',
       createLoginHelper: '개업 초대장 생성은 관리자 권한이 확인된 계정에서만 가능합니다.',
-      editLoginHelper: '아직 계정에 연결되지 않은 개업 초대장은 관리자에게 계정 연결을 요청해 주세요.',
-      claimTitle: '관리자에게 개업 초대장 연결을 요청해 주세요',
+      editLoginHelper: '관리자가 전달한 개업 초대장 편집 URL로 접속해 주세요.',
+      claimTitle: '이 계정으로 개업 초대장 편집을 시작할까요?',
       claimDescription:
-        '이 개업 초대장은 아직 현재 로그인 계정과 연결되어 있지 않습니다. 고객 계정에 연결된 개업 초대장만 편집할 수 있습니다.',
+        '편집 시작을 누르면 현재 계정에 연결되며, 이후에는 다른 계정에서 수정할 수 없습니다.',
       blockedTitle: '이 개업 초대장은 현재 계정으로 관리할 수 없습니다.',
       listButton: '내 개업 초대장으로 이동',
       emptyTitle: '개업 초대장 정보를 아직 불러오지 못했습니다.',
@@ -59,10 +58,10 @@ export function getWizardCopy(eventType: EventTypeKey) {
     editLoginDescription:
       '청첩장에 연결된 고객 계정으로 로그인하면 편집 화면을 이용할 수 있습니다.',
     createLoginHelper: '청첩장 생성은 관리자 권한이 확인된 계정에서만 가능합니다.',
-    editLoginHelper: '아직 계정에 연결되지 않은 청첩장은 관리자에게 계정 연결을 요청해 주세요.',
-    claimTitle: '관리자에게 청첩장 연결을 요청해 주세요',
+    editLoginHelper: '관리자가 전달한 청첩장 편집 URL로 접속해 주세요.',
+    claimTitle: '이 계정으로 청첩장 편집을 시작할까요?',
     claimDescription:
-      '이 청첩장은 아직 현재 로그인 계정과 연결되어 있지 않습니다. 고객 계정에 연결된 청첩장만 편집할 수 있습니다.',
+      '편집 시작을 누르면 현재 계정에 연결되며, 이후에는 다른 계정에서 수정할 수 없습니다.',
     blockedTitle: '이 청첩장은 현재 계정으로 관리할 수 없습니다.',
     listButton: '내 청첩장으로 이동',
     emptyTitle: '청첩장 정보를 아직 불러오지 못했습니다.',

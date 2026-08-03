@@ -16,39 +16,22 @@ import {
   getInvitationThemeAdminLabel,
   type InvitationThemeKey,
 } from '@/lib/invitationThemes';
+import type { AdminCustomerAccountsSnapshot } from '@/services/adminCustomerService';
+import type { AdminDashboardSummarySnapshot } from '@/services/adminDashboardService';
 import {
-  assignAdminCustomerEventOwnership,
-  clearAdminCustomerEventOwnership,
-  deleteAdminCustomerAccount,
-  getAdminCustomerAccountsSnapshot,
-  grantAdminCustomerWalletCredit,
-  type AdminCustomerAccountsSnapshot,
-} from '@/services/adminCustomerService';
-import {
-  getAdminDashboardSummary,
-  type AdminDashboardSummarySnapshot,
-} from '@/services/adminDashboardService';
-import { deleteAdminEventByPageSlug } from '@/services/adminEventService';
-import {
-  issueAdminOwnershipInvite,
   type AdminOwnershipInviteResult,
 } from '@/services/eventOwnershipInviteService';
 import {
-  deleteComment,
-  getAllComments,
   type Comment,
   type CommentSummary,
 } from '@/services/commentService';
 import {
-  getAllManagedInvitationPages,
-  setInvitationPageProductTier,
-  setInvitationPagePublished,
-  setInvitationPageVariantAvailability,
   type InvitationPageSummary,
 } from '@/services/invitationPageService';
 import type { InvitationProductTier } from '@/types/invitationPage';
 
 import { RECENT_COMMENT_DAYS, type AdminTab } from '../_components/adminPageUtils';
+import type { AdminDataGateway } from './adminDataGateway';
 
 type ToastFn = (toast: { title: string; message?: string; tone: 'success' | 'error' | 'info' }) => void;
 type ConfirmFn = (options: {
@@ -64,6 +47,7 @@ interface UseAdminDataParams {
   activeTab: AdminTab;
   showToast: ToastFn;
   confirm: ConfirmFn;
+  gateway: AdminDataGateway;
 }
 
 const EMPTY_COMMENT_SUMMARY: CommentSummary = {
@@ -76,6 +60,7 @@ export function useAdminData({
   activeTab,
   showToast,
   confirm,
+  gateway,
 }: UseAdminDataParams) {
   const queryClient = useQueryClient();
   const [updatingPublishedPageSlug, setUpdatingPublishedPageSlug] = useState<string | null>(null);
@@ -98,7 +83,7 @@ export function useAdminData({
   const dashboardSummaryQuery = useQuery<AdminDashboardSummarySnapshot>({
     queryKey: appQueryKeys.adminDashboardSummary(RECENT_COMMENT_DAYS),
     enabled: isAdminLoggedIn,
-    queryFn: async () => getAdminDashboardSummary(),
+    queryFn: async () => gateway.getDashboardSummary(),
     staleTime: ADMIN_STALE_TIME_MS,
     gcTime: ADMIN_GC_TIME_MS,
     refetchOnWindowFocus: false,
@@ -106,7 +91,7 @@ export function useAdminData({
   const pagesQuery = useQuery<InvitationPageSummary[]>({
     queryKey: appQueryKeys.adminInvitationPages,
     enabled: shouldLoadPages,
-    queryFn: async () => getAllManagedInvitationPages(),
+    queryFn: async () => gateway.getPages(),
     staleTime: ADMIN_STALE_TIME_MS,
     gcTime: ADMIN_GC_TIME_MS,
     refetchOnWindowFocus: false,
@@ -114,7 +99,7 @@ export function useAdminData({
   const commentsQuery = useQuery<Comment[]>({
     queryKey: appQueryKeys.adminComments,
     enabled: shouldLoadComments,
-    queryFn: async () => getAllComments(),
+    queryFn: async () => gateway.getComments(),
     staleTime: ADMIN_STALE_TIME_MS,
     gcTime: ADMIN_GC_TIME_MS,
     refetchOnWindowFocus: false,
@@ -122,7 +107,7 @@ export function useAdminData({
   const accountsQuery = useQuery<AdminCustomerAccountsSnapshot>({
     queryKey: appQueryKeys.adminCustomerAccounts,
     enabled: shouldLoadAccounts,
-    queryFn: async () => getAdminCustomerAccountsSnapshot(),
+    queryFn: async () => gateway.getCustomerAccounts(),
     staleTime: ADMIN_STALE_TIME_MS,
     gcTime: ADMIN_GC_TIME_MS,
     refetchOnWindowFocus: false,
@@ -302,7 +287,7 @@ export function useAdminData({
       }
 
       try {
-        await deleteComment(comment.id, comment.collectionName);
+        await gateway.deleteComment(comment);
         await refreshAdminData({
           summary: true,
           comments: true,
@@ -313,7 +298,7 @@ export function useAdminData({
         showToast({ title: '댓글 삭제에 실패했습니다.', tone: 'error' });
       }
     },
-    [confirm, refreshAdminData, showToast]
+    [confirm, gateway, refreshAdminData, showToast]
   );
 
   const handleDeletePage = useCallback(
@@ -333,7 +318,7 @@ export function useAdminData({
       setDeletingPageSlug(page.slug);
 
       try {
-        await deleteAdminEventByPageSlug(page.slug);
+        await gateway.deleteEvent(page.slug);
         await refreshAdminData({
           summary: true,
           pages: true,
@@ -354,7 +339,7 @@ export function useAdminData({
         setDeletingPageSlug(null);
       }
     },
-    [confirm, refreshAdminData, showToast]
+    [confirm, gateway, refreshAdminData, showToast]
   );
 
   const handleAssignCustomerOwnership = useCallback(
@@ -375,7 +360,7 @@ export function useAdminData({
       setOwnershipActionToken(nextToken);
 
       try {
-        await assignAdminCustomerEventOwnership(uid, pageSlug);
+        await gateway.assignOwnership(uid, pageSlug);
         await refreshAdminData({
           accounts: true,
           pages: true,
@@ -396,7 +381,7 @@ export function useAdminData({
         setOwnershipActionToken(null);
       }
     },
-    [confirm, pages, refreshAdminData, showToast]
+    [confirm, gateway, pages, refreshAdminData, showToast]
   );
 
   const handleClearCustomerOwnership = useCallback(
@@ -418,7 +403,7 @@ export function useAdminData({
       setOwnershipActionToken(nextToken);
 
       try {
-        await clearAdminCustomerEventOwnership(pageSlug);
+        await gateway.clearOwnership(pageSlug);
         await refreshAdminData({
           accounts: true,
           pages: true,
@@ -439,7 +424,7 @@ export function useAdminData({
         setOwnershipActionToken(null);
       }
     },
-    [confirm, pages, refreshAdminData, showToast]
+    [confirm, gateway, pages, refreshAdminData, showToast]
   );
 
   const handleIssueOwnershipInvite = useCallback(
@@ -447,7 +432,7 @@ export function useAdminData({
       setIssuingOwnershipInviteSlug(pageSlug);
 
       try {
-        const result = await issueAdminOwnershipInvite(pageSlug);
+        const result = await gateway.issueOwnershipInvite(pageSlug);
         showToast({
           title: '고객 연결 링크를 만들었습니다.',
           message: '7일 동안 사용할 수 있으며 가장 최근에 만든 링크만 유효합니다.',
@@ -467,7 +452,7 @@ export function useAdminData({
         setIssuingOwnershipInviteSlug(null);
       }
     },
-    [showToast]
+    [gateway, showToast]
   );
 
   const handleGrantCustomerWalletCredit = useCallback(
@@ -501,8 +486,7 @@ export function useAdminData({
       setWalletGrantActionToken(nextToken);
 
       try {
-        await grantAdminCustomerWalletCredit({
-          uid,
+        await gateway.grantWalletCredit(uid, {
           kind: grant.kind,
           quantity: grant.quantity,
           tier: grant.kind === 'pageCreation' ? grant.tier ?? 'standard' : null,
@@ -527,7 +511,7 @@ export function useAdminData({
         setWalletGrantActionToken(null);
       }
     },
-    [confirm, customerAccounts, refreshAdminData, showToast]
+    [confirm, customerAccounts, gateway, refreshAdminData, showToast]
   );
 
   const handleDeleteCustomerAccount = useCallback(
@@ -552,7 +536,7 @@ export function useAdminData({
       setDeletingCustomerUid(uid);
 
       try {
-        const result = await deleteAdminCustomerAccount(uid);
+        const result = await gateway.deleteCustomer(uid);
         await refreshAdminData({
           accounts: true,
           pages: true,
@@ -576,7 +560,7 @@ export function useAdminData({
         setDeletingCustomerUid(null);
       }
     },
-    [confirm, customerAccounts, refreshAdminData, showToast]
+    [confirm, customerAccounts, gateway, refreshAdminData, showToast]
   );
 
   const handleTogglePublished = useCallback(
@@ -600,9 +584,7 @@ export function useAdminData({
       setUpdatingPublishedPageSlug(page.slug);
 
       try {
-        await setInvitationPagePublished(page.slug, nextPublished, {
-          defaultTheme: page.defaultTheme,
-        });
+        await gateway.setPublished(page, nextPublished);
         await refreshAdminData({
           summary: true,
           pages: true,
@@ -622,7 +604,7 @@ export function useAdminData({
         setUpdatingPublishedPageSlug(null);
       }
     },
-    [confirm, refreshAdminData, showToast]
+    [confirm, gateway, refreshAdminData, showToast]
   );
 
   const handleEnableVariant = useCallback(
@@ -643,10 +625,7 @@ export function useAdminData({
       setUpdatingVariantToken(token);
 
       try {
-        await setInvitationPageVariantAvailability(page.slug, variantKey, true, {
-          published: page.published,
-          defaultTheme: page.defaultTheme,
-        });
+        await gateway.setVariant(page, variantKey, true);
         await refreshAdminData({
           pages: true,
           invitationPageSlug: page.slug,
@@ -665,7 +644,7 @@ export function useAdminData({
         setUpdatingVariantToken(null);
       }
     },
-    [confirm, refreshAdminData, showToast]
+    [confirm, gateway, refreshAdminData, showToast]
   );
 
   const handleDisableVariant = useCallback(
@@ -699,10 +678,7 @@ export function useAdminData({
       setUpdatingVariantToken(token);
 
       try {
-        await setInvitationPageVariantAvailability(page.slug, variantKey, false, {
-          published: page.published,
-          defaultTheme: page.defaultTheme,
-        });
+        await gateway.setVariant(page, variantKey, false);
         await refreshAdminData({
           pages: true,
           invitationPageSlug: page.slug,
@@ -721,7 +697,7 @@ export function useAdminData({
         setUpdatingVariantToken(null);
       }
     },
-    [confirm, refreshAdminData, showToast]
+    [confirm, gateway, refreshAdminData, showToast]
   );
 
   const handleChangeTier = useCallback(
@@ -744,7 +720,7 @@ export function useAdminData({
       setUpdatingTierPageSlug(page.slug);
 
       try {
-        await setInvitationPageProductTier(page.slug, nextTier);
+        await gateway.setTier(page, nextTier);
         await refreshAdminData({
           pages: true,
           invitationPageSlug: page.slug,
@@ -760,7 +736,7 @@ export function useAdminData({
         setUpdatingTierPageSlug(null);
       }
     },
-    [confirm, refreshAdminData, showToast]
+    [confirm, gateway, refreshAdminData, showToast]
   );
 
   const handleLogout = useCallback(() => {

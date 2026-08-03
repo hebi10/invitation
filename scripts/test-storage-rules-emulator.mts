@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 
 import { deleteApp as deleteAdminApp } from 'firebase-admin/app';
 import { Timestamp } from 'firebase-admin/firestore';
+import { getStorage as getAdminStorage } from 'firebase-admin/storage';
 import { deleteApp, initializeApp } from 'firebase/app';
 import {
   connectStorageEmulator,
@@ -213,6 +214,33 @@ await db.collection('memory-pages').doc('private-memory').set({
 });
 
 const smallImage = new Uint8Array([1, 2, 3, 4]);
+const adminApp = getServerFirebaseAdminApp();
+assert.ok(adminApp, 'Firebase Admin app must be available.');
+await getAdminStorage(adminApp)
+  .bucket(bucket)
+  .file('demo-wedding-images/sample.png')
+  .save(smallImage, { contentType: 'image/png' });
+
+for (const [context, label] of [
+  [anonymous, 'anonymous visitor'],
+  [owner, 'event owner'],
+  [admin, 'administrator'],
+] as const) {
+  await expectDenied(
+    download(context.storage, 'demo-wedding-images/sample.png'),
+    `demo image read by ${label}`
+  );
+  await expectDenied(
+    upload(
+      context.storage,
+      `demo-wedding-images/${label.replace(/\s+/g, '-')}.png`,
+      smallImage,
+      'image/png'
+    ),
+    `demo image write by ${label}`
+  );
+}
+
 for (const slug of [
   'public-event',
   'private-event',
@@ -364,9 +392,6 @@ await Promise.all(
   [anonymous, owner, other, admin, disabledAdmin].map(({ app }) => deleteApp(app))
 );
 await db.terminate();
-const adminApp = getServerFirebaseAdminApp();
-if (adminApp) {
-  await deleteAdminApp(adminApp);
-}
+await deleteAdminApp(adminApp);
 
 console.log('storage rules emulator checks passed');

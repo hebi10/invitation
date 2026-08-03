@@ -22,6 +22,7 @@ export function useWizardNavigation({
   steps,
   getValidationForStep,
   persistDraft,
+  getEditPath,
   slideToStep,
   clearNotice,
   showErrorNotice,
@@ -36,6 +37,7 @@ export function useWizardNavigation({
   steps: WizardStepDefinition[];
   getValidationForStep: (stepKey: WizardStepKey) => StepValidation;
   persistDraft: (options?: WizardPersistDraftOptions) => Promise<string | null>;
+  getEditPath: (slug: string) => string;
   slideToStep: (stepKey: WizardStepKey) => void;
   clearNotice: () => void;
   showErrorNotice: (error: unknown, fallback?: string) => void;
@@ -84,7 +86,7 @@ export function useWizardNavigation({
       nextSlug = savedSlug;
 
       if (nextSlug && typeof window !== 'undefined') {
-        const nextPath = `/page-wizard/${encodeURIComponent(nextSlug)}`;
+        const nextPath = getEditPath(nextSlug);
         const nextUrl = `${nextPath}${window.location.search}${window.location.hash}`;
 
         if (window.location.pathname !== nextPath) {
@@ -111,6 +113,7 @@ export function useWizardNavigation({
   }, [
     activeStep.key,
     getValidationForStep,
+    getEditPath,
     persistDraft,
     resolvedPersistedSlug,
     scrollToTop,

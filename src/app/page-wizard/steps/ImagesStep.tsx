@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 
 import styles from '../page.module.css';
 import type { ImagesStepProps, UploadFieldKind } from '../pageWizardShared';
+import DemoExperienceImagePicker from './DemoExperienceImagePicker';
 
 type SingleImageCardProps = {
   title: string;
@@ -117,6 +118,8 @@ export default function ImagesStep({
   onKakaoCardImageRemove,
   onGalleryImageRemove,
   onGalleryImageMove,
+  experience = false,
+  onDemoImageSelect,
 }: ImagesStepProps) {
   const galleryImages = useMemo(
     () => formState.pageData?.galleryImages ?? [],
@@ -188,6 +191,12 @@ export default function ImagesStep({
 
   return (
     <div className={styles.fieldGrid}>
+      {experience && onDemoImageSelect ? (
+        <DemoExperienceImagePicker
+          selectedImage={coverImage}
+          onSelect={onDemoImageSelect}
+        />
+      ) : null}
       <SingleImageCard
         title="대표 이미지"
         description={

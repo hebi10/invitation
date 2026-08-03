@@ -132,6 +132,7 @@ await db.recursiveDelete(db.collection('admin-users'));
 await db.recursiveDelete(db.collection('eventSecrets'));
 await db.recursiveDelete(db.collection('billingFulfillments'));
 await db.recursiveDelete(db.collection('settings'));
+await db.recursiveDelete(db.collection('demoExperiences'));
 
 await db.collection('admin-users').doc('admin-1').set({ enabled: true });
 await db.collection('admin-users').doc('admin-disabled').set({ enabled: false });
@@ -276,6 +277,9 @@ await db.collection('billingFulfillments').doc('transaction-1').set({
   status: 'processing',
 });
 await db.collection('settings').doc('app').set({ enabled: true });
+await db.collection('demoExperiences').doc('2026-08-03').set({
+  dateKey: '2026-08-03',
+});
 
 await expectAllowed(await restGet('events/event-1'), 'public event read by visitor');
 await expectDenied(await restGet('events/event-2'), 'private event read by visitor');
@@ -409,6 +413,18 @@ for (const identity of [
   { uid: 'owner-1', label: 'event owner' },
   { uid: 'admin-1', label: 'administrator' },
 ]) {
+  await expectDenied(
+    await restGet('demoExperiences/2026-08-03', identity.uid),
+    `demo experience read by ${identity.label}`
+  );
+  await expectDenied(
+    await restPatch(
+      'demoExperiences/2026-08-03',
+      { dateKey: '2026-08-03' },
+      identity.uid
+    ),
+    `demo experience write by ${identity.label}`
+  );
   await expectDenied(
     await restGet('events/event-1/ownershipInvites/current', identity.uid),
     `ownership invite read by ${identity.label}`

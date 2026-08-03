@@ -8,6 +8,7 @@ import Link from 'next/link';
 import FirebaseAuthLoginCard from '@/app/_components/FirebaseAuthLoginCard';
 import { normalizeFormConfig } from '@/app/page-wizard/pageWizardEditorUtils';
 import { useAdmin } from '@/contexts';
+import { buildAppRoutes, type AppRoutes } from '@/lib/demoExperienceRoutes';
 import {
   FIFTEEN_MINUTES_MS,
   THIRTY_MINUTES_MS,
@@ -30,9 +31,17 @@ import {
   getWizardSteps,
 } from './pageWizardData';
 import { formatSavedAt, getNoticeClassName } from './pageWizardShared';
+import {
+  productionWizardPersistenceGateway,
+  type WizardPersistenceGateway,
+} from './wizardPersistenceGateway';
 
 interface PageWizardResultClientProps {
   slug: string;
+  gateway?: WizardPersistenceGateway;
+  routes?: AppRoutes;
+  experience?: boolean;
+  onContinueAsCustomer?: () => Promise<void> | void;
 }
 
 type ResultLoadState =
@@ -43,6 +52,10 @@ type ResultLoadState =
 
 export default function PageWizardResultClient({
   slug,
+  gateway = productionWizardPersistenceGateway,
+  routes = buildAppRoutes('production'),
+  experience = false,
+  onContinueAsCustomer,
 }: PageWizardResultClientProps) {
   const { authUser, isAdminLoading, isAdminLoggedIn, isLoggedIn } = useAdmin();
   const resultQuery = useQuery<ResultLoadState>({
@@ -51,6 +64,14 @@ export default function PageWizardResultClient({
     queryFn: async () => {
       if (!isLoggedIn) {
         return { status: 'logged-out' } satisfies ResultLoadState;
+      }
+
+      if (experience) {
+        const editable = await gateway.loadEditable(slug, isAdminLoggedIn);
+        return {
+          status: 'ready',
+          configState: editable,
+        } satisfies ResultLoadState;
       }
 
       let rawEditableConfig: EditableInvitationPageConfig | null = null;
@@ -200,7 +221,7 @@ export default function PageWizardResultClient({
               >
                 {resultQuery.isRefetching ? '새로고침 중' : '새로고침'}
               </button>
-              <Link className={styles.primaryButton} href="/my-invitations">
+              <Link className={styles.primaryButton} href={routes.customerDashboard()}>
                 내 이벤트로 이동
               </Link>
             </div>
@@ -232,11 +253,11 @@ export default function PageWizardResultClient({
               >
                 {resultQuery.isRefetching ? '새로고침 중' : '새로고침'}
               </button>
-              <Link href="/my-invitations" className={styles.secondaryButton}>
+              <Link href={routes.customerDashboard()} className={styles.secondaryButton}>
                 내 청첩장으로 이동
               </Link>
               <Link
-                href={`/page-wizard/${encodeURIComponent(slug)}`}
+                href={routes.wizardEdit(slug)}
                 className={styles.secondaryButton}
               >
                 편집 화면으로 돌아가기
@@ -248,12 +269,10 @@ export default function PageWizardResultClient({
     );
   }
 
-  const livePagePath = buildEventPreviewPath(
-    slug,
-    configState.config.eventType,
-    previewTheme
-  );
-  const redirectPath = `/${slug}`;
+  const livePagePath = experience
+    ? routes.preview(slug, previewTheme)
+    : buildEventPreviewPath(slug, configState.config.eventType, previewTheme);
+  const redirectPath = experience ? livePagePath : `/${slug}`;
 
   return (
     <main className={styles.page}>
@@ -290,9 +309,19 @@ export default function PageWizardResultClient({
             </div>
           </div>
           <div className={`${styles.inlineActions} ${styles.resultActionRow}`}>
-            <Link href={livePagePath} className={styles.primaryButton}>
-              바로 확인하기
-            </Link>
+            {experience && onContinueAsCustomer ? (
+              <button
+                type="button"
+                className={styles.primaryButton}
+                onClick={() => void onContinueAsCustomer()}
+              >
+                고객 화면으로 전환해 계속 입력하기
+              </button>
+            ) : (
+              <Link href={livePagePath} className={styles.primaryButton}>
+                바로 확인하기
+              </Link>
+            )}
             <button
               type="button"
               className={styles.secondaryButton}
@@ -302,7 +331,7 @@ export default function PageWizardResultClient({
               {resultQuery.isRefetching ? '새로고침 중' : '새로고침'}
             </button>
             <Link
-              href={`/page-wizard/${encodeURIComponent(slug)}`}
+              href={routes.wizardEdit(slug)}
               className={styles.secondaryButton}
             >
               편집 화면으로 돌아가기

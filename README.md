@@ -75,6 +75,19 @@
 - `/my-invitations/create`
   고객 제작권을 사용하는 신규 이벤트 생성 화면
 
+### 일일 공용 체험
+
+- `/experience/admin`
+  실제 관리자 UI를 재사용하는 체험 시작 화면. 결혼식 샘플 15개와 당일 공용 작업 청첩장을 관리합니다.
+- `/experience/page-wizard/{slug}`
+  실제 결혼식 위저드를 재사용하는 체험 생성·편집 화면입니다.
+- `/experience/my-invitations`
+  고객 역할에서 당일 공용 작업 청첩장을 관리하는 화면입니다.
+- `/experience/preview/{slug}/{theme}`
+  실제 청첩장 테마 렌더러를 사용하는 체험 미리보기입니다.
+
+체험 데이터는 KST 날짜별 `demoExperiences/{dateKey}` 아래에만 저장됩니다. 같은 날의 모든 체험자는 하나의 `금일 체험 청첩장`을 공유하며 version 충돌 검사를 거쳐 저장합니다. 다음 KST 자정부터 새 날짜 공간과 샘플 15개가 사용되므로 운영 `events`, 고객 계정, 결제, Storage 데이터와 섞이지 않습니다. 체험에서는 이메일 전송, 결제, 외부 공유, 임의 이미지 업로드를 실행하지 않습니다.
+
 ### 모바일 앱
 
 - `apps/mobile`
@@ -389,6 +402,8 @@ FIREBASE_PROJECT_ID=
 GOOGLE_CLOUD_PROJECT=
 GCLOUD_PROJECT=
 CLIENT_EDITOR_SESSION_SECRET=
+DEMO_EXPERIENCE_SESSION_SECRET=
+DEMO_EXPERIENCE_CLEANUP_SECRET=
 MOBILE_DRAFT_CREATION_ENABLED=
 MEMORY_METADATA_SYNC_STRICT=true
 NEXT_DISABLE_WEBPACK_BUILD_WORKER=
@@ -403,6 +418,10 @@ REVENUECAT_SERVER_API_KEY=
   로컬 스크립트 실행용 서비스 계정 JSON 파일 경로. 파일은 저장소 루트에 두지 않습니다.
 - `CLIENT_EDITOR_SESSION_SECRET`
   고객 편집 세션 서명용 서버 전용 비밀값
+- `DEMO_EXPERIENCE_SESSION_SECRET`
+  날짜·역할이 포함된 체험 세션 쿠키 서명용 서버 전용 비밀값
+- `DEMO_EXPERIENCE_CLEANUP_SECRET`
+  지난 날짜의 체험 전용 문서만 정리하는 `/api/experience/cleanup` 호출용 서버 비밀값. Scheduler 연결은 별도 배포 승인 후 설정합니다.
 - `MEMORY_METADATA_SYNC_STRICT`
   추억 페이지 메타데이터 동기화 실패 시 빌드 실패 처리
 - `NEXT_DISABLE_WEBPACK_BUILD_WORKER`

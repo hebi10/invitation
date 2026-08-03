@@ -256,6 +256,16 @@ export function AnonymousAdminProvider({ children }: { children: ReactNode }) {
   );
 }
 
+export function AdminSessionProvider({
+  children,
+  value,
+}: {
+  children: ReactNode;
+  value: AdminContextType;
+}) {
+  return <AdminContext.Provider value={value}>{children}</AdminContext.Provider>;
+}
+
 export function useAdmin() {
   const context = useContext(AdminContext);
   if (!context) {

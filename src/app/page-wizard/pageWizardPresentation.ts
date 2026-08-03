@@ -32,10 +32,10 @@ const WEDDING_PRESENTATION: PageWizardPresentation = {
   editLoginTitle: '청첩장 편집을 위해 로그인해 주세요',
   editLoginDescription:
     '청첩장에 연결된 고객 계정으로 로그인하면 편집 화면을 이용할 수 있습니다.',
-  editLoginHelper: '아직 계정에 연결되지 않은 청첩장은 관리자에게 계정 연결을 요청해 주세요.',
-  ownershipTitle: '관리자에게 청첩장 연결을 요청해 주세요',
+  editLoginHelper: '관리자가 전달한 청첩장 편집 URL로 접속해 주세요.',
+  ownershipTitle: '이 계정으로 청첩장 편집을 시작할까요?',
   ownershipDescription:
-    '이 청첩장은 현재 계정으로 연동되어 있지 않습니다. 관리자를 통해 고객 계정에 연결된 청첩장만 편집할 수 있습니다.',
+    '편집 시작을 누르면 이 청첩장이 현재 계정에 연결되며, 이후에는 다른 계정에서 수정할 수 없습니다.',
   accessTitle: '이 청첩장은 현재 계정으로 관리할 수 없습니다.',
   fallbackTitle: '청첩장 정보를 확인하고 있습니다.',
   fallbackDescription: '다시 시도해 주세요. 로그인 상태와 청첩장 연동 상태를 확인해 주세요.',
@@ -56,11 +56,10 @@ const BIRTHDAY_PRESENTATION: PageWizardPresentation = {
   editLoginTitle: '생일 초대장 편집을 위해 로그인해 주세요',
   editLoginDescription:
     '생일 초대장에 연결된 고객 계정으로 로그인하면 편집 화면을 이용할 수 있습니다.',
-  editLoginHelper:
-    '아직 계정에 연결되지 않은 생일 초대장은 관리자에게 계정 연결을 요청해 주세요.',
-  ownershipTitle: '관리자에게 생일 초대장 연결을 요청해 주세요',
+  editLoginHelper: '관리자가 전달한 생일 초대장 편집 URL로 접속해 주세요.',
+  ownershipTitle: '이 계정으로 생일 초대장 편집을 시작할까요?',
   ownershipDescription:
-    '이 생일 초대장은 현재 계정으로 연동되어 있지 않습니다. 관리자에게 요청된 고객 연동으로만 편집할 수 있습니다.',
+    '편집 시작을 누르면 이 생일 초대장이 현재 계정에 연결되며, 이후에는 다른 계정에서 수정할 수 없습니다.',
   accessTitle: '이 생일 초대장은 현재 계정으로 관리할 수 없습니다.',
   fallbackTitle: '생일 초대장 정보를 확인하고 있습니다.',
   fallbackDescription: '다시 시도해 주세요. 로그인 상태와 생일 초대장 연동 상태를 확인해 주세요.',
@@ -81,11 +80,10 @@ const FIRST_BIRTHDAY_PRESENTATION: PageWizardPresentation = {
   editLoginTitle: '돌잔치 초대장 편집을 위해 로그인해 주세요',
   editLoginDescription:
     '돌잔치 초대장에 연결된 고객 계정으로 로그인하면 편집 화면을 이용할 수 있습니다.',
-  editLoginHelper:
-    '아직 계정에 연결되지 않은 돌잔치 초대장은 관리자에게 계정 연결을 요청해 주세요.',
-  ownershipTitle: '관리자에게 돌잔치 초대장 연결을 요청해 주세요',
+  editLoginHelper: '관리자가 전달한 돌잔치 초대장 편집 URL로 접속해 주세요.',
+  ownershipTitle: '이 계정으로 돌잔치 초대장 편집을 시작할까요?',
   ownershipDescription:
-    '이 돌잔치 초대장은 현재 계정으로 연동되어 있지 않습니다. 고객 계정에 연결된 초대장만 편집할 수 있습니다.',
+    '편집 시작을 누르면 이 돌잔치 초대장이 현재 계정에 연결되며, 이후에는 다른 계정에서 수정할 수 없습니다.',
   accessTitle: '이 돌잔치 초대장은 현재 계정으로 관리할 수 없습니다.',
   fallbackTitle: '돌잔치 초대장 정보를 확인하고 있습니다.',
   fallbackDescription:
@@ -107,11 +105,10 @@ const GENERAL_EVENT_PRESENTATION: PageWizardPresentation = {
   editLoginTitle: '행사 초대장 편집을 위해 로그인해 주세요',
   editLoginDescription:
     '행사 초대장에 연결된 고객 계정으로 로그인하면 편집 화면을 이용할 수 있습니다.',
-  editLoginHelper:
-    '아직 계정에 연결되지 않은 행사 초대장은 관리자에게 계정 연결을 요청해 주세요.',
-  ownershipTitle: '관리자에게 행사 초대장 연결을 요청해 주세요',
+  editLoginHelper: '관리자가 전달한 행사 초대장 편집 URL로 접속해 주세요.',
+  ownershipTitle: '이 계정으로 행사 초대장 편집을 시작할까요?',
   ownershipDescription:
-    '이 행사 초대장은 현재 계정으로 연동되어 있지 않습니다. 관리자 또는 고객 계정 연결로만 편집할 수 있습니다.',
+    '편집 시작을 누르면 이 행사 초대장이 현재 계정에 연결되며, 이후에는 다른 계정에서 수정할 수 없습니다.',
   accessTitle: '이 행사 초대장은 현재 계정으로 관리할 수 없습니다.',
   fallbackTitle: '행사 초대장 정보를 확인하고 있습니다.',
   fallbackDescription:
@@ -133,10 +130,10 @@ const OPENING_PRESENTATION: PageWizardPresentation = {
   editLoginTitle: '개업 초대장 편집을 위해 로그인해 주세요',
   editLoginDescription:
     '개업 초대장에 연결된 고객 계정으로 로그인하면 편집 화면을 이용할 수 있습니다.',
-  editLoginHelper: '아직 계정에 연결되지 않은 개업 초대장은 관리자에게 계정 연결을 요청해 주세요.',
-  ownershipTitle: '관리자에게 개업 초대장 연결을 요청해 주세요',
+  editLoginHelper: '관리자가 전달한 개업 초대장 편집 URL로 접속해 주세요.',
+  ownershipTitle: '이 계정으로 개업 초대장 편집을 시작할까요?',
   ownershipDescription:
-    '이 개업 초대장은 현재 계정으로 연동되어 있지 않습니다. 관리자에게 요청된 고객 연동으로만 편집할 수 있습니다.',
+    '편집 시작을 누르면 이 개업 초대장이 현재 계정에 연결되며, 이후에는 다른 계정에서 수정할 수 없습니다.',
   accessTitle: '이 개업 초대장은 현재 계정으로 관리할 수 없습니다.',
   fallbackTitle: '개업 초대장 정보를 확인하고 있습니다.',
   fallbackDescription:

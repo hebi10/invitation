@@ -207,7 +207,7 @@ function EventInvitationPageBody(options: EventInvitationRouteOptions) {
     Boolean(readyState.pageConfig.musicUrl?.trim());
 
   const shareButton =
-    shareFeatures.shareMode !== 'none' ? (
+    options.externalShareEnabled !== false && shareFeatures.shareMode !== 'none' ? (
       <WeddingKakaoShareButton
         title={themeDefinition.getShareTitle(readyState.pageConfig)}
         description={themeDefinition.getShareDescription(readyState.pageConfig)}

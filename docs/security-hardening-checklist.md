@@ -9,6 +9,7 @@
 - Web admin-only: `/admin`, `/page-wizard`, `/birthday-wizard`, `/first-birthday-wizard`, `/general-event-wizard`, `/opening-wizard`
 - Web owner-editable: `/page-wizard/{slug}`
 - Web customer dashboard: `/login`, `/signup`, `/my-invitations`, `/my-invitations/create`
+- Web daily experience: `/experience/admin`, `/experience/page-wizard/{slug}`, `/experience/my-invitations`, `/experience/preview/{slug}/{theme}`
 - Mobile: Expo 로그인, 생성, 운영 대시보드, 방명록 관리
 
 ## 배포 / 비밀값 기준
@@ -44,6 +45,14 @@
   - [ ] `eventSlugIndex` update는 기존 slug와 eventId를 유지하고 기존 eventId 소유자만 허용
   - [ ] 고객 탈퇴 API는 연결 청첩장 즉시 비공개, 소유권 해제, 고객 지갑 삭제, Firebase Auth 삭제를 서버 Admin SDK 경로에서만 처리함
   - [ ] 모바일 링크 토큰 발급·교환은 서버 API와 고위험 재인증을 거치며 클라이언트 Rules 직접 접근이 차단됨
+- 일일 공용 체험
+  - [ ] 체험 세션은 운영 Firebase Auth와 분리된 HttpOnly 서명 쿠키를 사용하고 날짜·역할을 검증함
+  - [ ] 체험 API mutation은 same-origin 및 요청별 rate limit을 적용함
+  - [ ] KST 자정 이후 이전 세션은 410 rollover 안내를 반환하고 새 날짜의 seed 15개만 사용함
+  - [ ] 모든 체험 데이터는 `demoExperiences/{dateKey}` 아래에만 저장되고 운영 `events`, 고객, 결제 collection은 변경하지 않음
+  - [ ] Firestore/Storage client rules가 체험 경로의 직접 read/write를 관리자 포함 전부 차단함
+  - [ ] cleanup API는 서버 비밀값과 과거 날짜만 허용하며 현재·미래·비정상 경로는 거부함
+  - [ ] 체험 UI에서 이메일, 결제, 외부 공유, 임의 이미지 업로드가 실행되지 않음
 - Repository hygiene
   - [ ] 저장소 루트에 서비스 계정 JSON 파일이 없음
   - [ ] `.codex/`, `.codex-logs/` 같은 로컬 도구 산출물이 git에 추적되지 않음

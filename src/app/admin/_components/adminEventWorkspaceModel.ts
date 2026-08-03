@@ -42,7 +42,9 @@ export const DEFAULT_ADMIN_EVENT_FILTERS: AdminEventFilters = {
 };
 
 export const ADMIN_EVENT_TYPE_OPTIONS = listEnabledEventTypes();
-export const ADMIN_EVENTS_PER_PAGE = 20;
+export const ADMIN_EVENT_PAGE_SIZE_OPTIONS = [10, 20, 50, 100] as const;
+export type AdminEventPageSize = (typeof ADMIN_EVENT_PAGE_SIZE_OPTIONS)[number];
+export const ADMIN_EVENTS_PER_PAGE: AdminEventPageSize = ADMIN_EVENT_PAGE_SIZE_OPTIONS[0];
 export type AdminEventCountFilter = 'all' | 'published' | 'private' | 'unassigned';
 
 function isAdminEnabledEventType(value: string): value is AdminEnabledEventTypeKey {
@@ -65,6 +67,14 @@ export function parseAdminEventOwnership(value: string | null) {
 
 export function parseAdminEventSort(value: string | null) {
   return value === 'event-date' || value === 'name' ? value : 'updated';
+}
+
+export function parseAdminEventPageSize(value: string | null): AdminEventPageSize {
+  const parsed = Number(value);
+  return (
+    ADMIN_EVENT_PAGE_SIZE_OPTIONS.find((option) => option === parsed) ??
+    ADMIN_EVENTS_PER_PAGE
+  );
 }
 
 export function filterAdminEvents(

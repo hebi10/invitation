@@ -391,6 +391,56 @@ export async function getCustomerEventOwnershipStatus(
   return { status: 'missing', summary: null };
 }
 
+export async function claimCustomerEventForCurrentAccount(
+  pageSlug: string
+): Promise<EditableInvitationPageConfig> {
+  const normalizedPageSlug = normalizeInvitationPageSlugInput(pageSlug);
+  if (!normalizedPageSlug) {
+    throw new Error('청첩장 주소가 올바르지 않습니다.');
+  }
+
+  const idToken = await getCurrentFirebaseIdToken({ forceRefresh: true });
+  if (!idToken) {
+    throw new Error('로그인 상태를 확인하지 못했습니다. 다시 로그인해 주세요.');
+  }
+
+  const response = await fetch(
+    `/api/customer/events/${encodeURIComponent(normalizedPageSlug)}/ownership/`,
+    {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${idToken}`,
+      },
+    }
+  );
+  const payload = (await response.json().catch(() => null)) as
+    | {
+        status?: unknown;
+        config?: unknown;
+        error?: string;
+      }
+    | null;
+
+  if (!response.ok) {
+    throw new Error(
+      typeof payload?.error === 'string' && payload.error.trim()
+        ? payload.error
+        : '청첩장을 현재 계정에 연결하지 못했습니다.'
+    );
+  }
+
+  if (payload?.status !== 'ready') {
+    throw new Error('연결된 청첩장 편집 정보를 확인하지 못했습니다.');
+  }
+
+  const editableConfig = normalizeEditableConfig(payload.config);
+  if (!editableConfig) {
+    throw new Error('연결된 청첩장 데이터를 확인하지 못했습니다.');
+  }
+
+  return editableConfig;
+}
+
 export async function getCustomerEditableInvitationPageState(
   pageSlug: string
 ): Promise<CustomerEditableInvitationPageState> {

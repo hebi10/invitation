@@ -1,33 +1,27 @@
 import Image from 'next/image';
 import Link from 'next/link';
 
+import ExperienceStartButton from './_components/ExperienceStartButton';
+import { getHomeLinkRenderProps } from './_components/homeInteractionPolicy';
+
 import styles from './page.module.css';
 
+const salesHref = 'https://kmong.com/gig/686626';
+
 const mainLinks = [
+  {
+    href: salesHref,
+    label: '제작 문의',
+    description: '상품 안내와 상담 · 새 창',
+    variant: 'primary',
+    external: true,
+  },
   {
     href: '/kim-shinlang-na-sinbu/romantic/',
     label: '샘플 보기',
     description: '하객에게 보이는 실제 화면',
-    variant: 'primary',
-  },
-  {
-    href: 'https://kmong.com/gig/686626',
-    label: '제작 문의',
-    description: '상품 안내와 상담',
     variant: 'secondary',
-    external: true,
-  },
-  {
-    href: '/my-invitations',
-    label: '내 청첩장',
-    description: '보유한 이벤트 관리',
-    variant: 'secondary',
-  },
-  {
-    href: '/admin',
-    label: '관리자 페이지',
-    description: '운영 도구 열기',
-    variant: 'secondary',
+    external: false,
   },
 ] as const;
 
@@ -59,25 +53,73 @@ const includedFeatures = [
   '예식 후 추억 페이지',
 ] as const;
 
-const heroFacts = ['청첩장 제작', '공개 상태 관리', '방명록과 사진 관리'] as const;
+const heroFacts = ['모바일 초대장 제작', '제작 후 직접 수정', '예식 후 기록 보관'] as const;
+
+const operationSignals = [
+  {
+    label: '공개 상태',
+    value: '공개 중',
+  },
+  {
+    label: '방명록',
+    value: '한곳에서 관리',
+  },
+  {
+    label: '사진과 일정',
+    value: '언제든 수정',
+  },
+] as const;
+
+function MainActions({ className }: { className: string }) {
+  return (
+    <div className={className} aria-label="주요 바로가기">
+      {mainLinks.map((link) =>
+        link.external === true ? (
+          <a
+            key={link.href}
+            href={link.href}
+            {...getHomeLinkRenderProps(true)}
+            className={styles.primaryLink}
+          >
+            <span>{link.label}</span>
+            <small>{link.description}</small>
+          </a>
+        ) : (
+          <Link key={link.href} href={link.href} className={styles.secondaryLink}>
+            <span>{link.label}</span>
+            <small>{link.description}</small>
+          </Link>
+        )
+      )}
+    </div>
+  );
+}
 
 export default function Home() {
   return (
     <main className={styles.page}>
       <header className={styles.header}>
-        <span className={styles.brand}>모바일 청첩장</span>
+        <Link href="/" className={styles.brand} aria-label="모바일 청첩장 홈">
+          모바일 청첩장
+        </Link>
+        <nav className={styles.headerActions} aria-label="고객 메뉴">
+          <Link href="/my-invitations">내 청첩장</Link>
+          <Link href="/admin">관리자</Link>
+        </nav>
       </header>
 
       <section className={styles.hero} aria-labelledby="service-title">
         <div className={styles.heroCopy}>
-          <p className={styles.eyebrow}>초대부터 예식 후 기록까지</p>
+          <p className={styles.eyebrow}>초대장을 만드는 날부터, 추억을 남기는 날까지</p>
           <h1 id="service-title" className={styles.title}>
-            모바일 청첩장 제작과 운영을 한곳에서
+            예쁜 초대장을 넘어,
+            <br />
+            오래 관리되는 청첩장
           </h1>
           <p className={styles.description}>
-            예식 정보, 사진, 지도, 방명록을 입력하고 공개 상태와 노출 기간을
-            관리합니다. 제작 후에도 수정과 공유, 추억 페이지 관리까지 같은
-            흐름에서 이어갈 수 있습니다.
+            예식 정보와 사진을 담아 공유하고, 공개 상태와 방명록을 직접
+            관리하세요. 제작 이후의 수정부터 예식 후 기록까지 한 흐름으로
+            이어집니다.
           </p>
           <ul className={styles.heroFacts} aria-label="주요 기능">
             {heroFacts.map((fact) => (
@@ -85,51 +127,57 @@ export default function Home() {
             ))}
           </ul>
 
-          <div className={styles.heroLinks} aria-label="바로가기">
-            {mainLinks.map((link) => (
-              link.href !== '/admin' ? (
-                <a
-                  key={link.href}
-                  href={link.href}
-                  target="_blank"
-                  rel="noreferrer"
-                  className={
-                    link.variant === 'primary'
-                      ? styles.primaryLink
-                      : styles.secondaryLink
-                  }
-                >
-                  <span>{link.label}</span>
-                  <small>{link.description}</small>
-                </a>
-              ) : (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  className={styles.secondaryLink}
-                >
-                  <span>{link.label}</span>
-                  <small>{link.description}</small>
-                </Link>
-              )
-            ))}
-          </div>
+          <MainActions className={styles.heroLinks} />
         </div>
 
-        <aside className={styles.preview} aria-label="청첩장 미리보기">
-          <div className={styles.phoneFrame}>
-            <Image
-              src="/images/intro_romantic.png"
-              alt="모바일 청첩장 샘플 이미지"
-              width={460}
-              height={690}
-              priority
-              className={styles.previewImage}
-            />
+        <aside className={styles.preview} aria-label="청첩장과 운영 화면 미리보기">
+          <div className={styles.previewStage}>
+            <div className={styles.phoneFrame}>
+              <div className={styles.phoneTop} aria-hidden="true">
+                <span />
+              </div>
+              <div className={styles.invitationScreen}>
+                <Image
+                  src="/images/intro_romantic.png"
+                  alt="야외 웨딩 아치가 담긴 로맨틱 청첩장 표지"
+                  width={460}
+                  height={690}
+                  priority
+                  className={styles.previewImage}
+                />
+                <div className={styles.invitationCopy}>
+                  <span>WEDDING INVITATION</span>
+                  <strong>김신랑 · 나신부</strong>
+                  <p>2026. 04. 14 · 오후 3시</p>
+                  <small>더케이웨딩홀</small>
+                </div>
+              </div>
+            </div>
+
+            <div className={styles.operationPanel}>
+              <div className={styles.operationHeader}>
+                <div>
+                  <span>제작 후 관리</span>
+                  <strong>한 페이지에서 계속</strong>
+                </div>
+                <span className={styles.liveStatus}>
+                  <i aria-hidden="true" /> 공개 중
+                </span>
+              </div>
+              <dl className={styles.operationList}>
+                {operationSignals.map((signal) => (
+                  <div key={signal.label}>
+                    <dt>{signal.label}</dt>
+                    <dd>{signal.value}</dd>
+                  </div>
+                ))}
+              </dl>
+              <p>초대장을 전달한 뒤에도 필요한 내용을 바로 반영할 수 있습니다.</p>
+            </div>
           </div>
           <div className={styles.previewText}>
-            <strong>하객 화면은 모바일 기준으로 정리됩니다.</strong>
-            <span>사진, 일정, 장소, 방명록을 한 흐름으로 확인할 수 있습니다.</span>
+            <strong>하객에게는 단정하게, 주인공에게는 관리하기 쉽게.</strong>
+            <span>실제 샘플 화면과 제작 이후의 운영 흐름을 함께 보여드립니다.</span>
           </div>
         </aside>
       </section>
@@ -163,6 +211,40 @@ export default function Home() {
           </ul>
         </div>
       </section>
+
+      <section className={styles.section} aria-labelledby="demo-title">
+        <div className={styles.demoBand}>
+          <div>
+            <p className={styles.bandLabel}>운영 데모</p>
+            <h2 id="demo-title">제작 이후의 관리 흐름도 직접 확인할 수 있습니다.</h2>
+            <p>
+              공용 체험 데이터로 관리자 화면부터 고객 연결까지 살펴보세요.
+              개인정보 없이 안전하게 둘러볼 수 있습니다.
+            </p>
+          </div>
+          <div className={styles.demoAction}>
+            <ExperienceStartButton />
+          </div>
+        </div>
+      </section>
+
+      <section className={styles.section} aria-labelledby="final-cta-title">
+        <div className={styles.finalCta}>
+          <div>
+            <p>초대의 시작부터 예식 후 기록까지</p>
+            <h2 id="final-cta-title">우리의 이야기가 오래 이어지는 청첩장을 준비하세요.</h2>
+          </div>
+          <MainActions className={styles.finalActions} />
+        </div>
+      </section>
+
+      <footer className={styles.footer}>
+        <span>모바일 청첩장</span>
+        <nav aria-label="서비스 메뉴">
+          <Link href="/my-invitations">내 청첩장</Link>
+          <Link href="/admin">관리자</Link>
+        </nav>
+      </footer>
     </main>
   );
 }

@@ -1,0 +1,114 @@
+.wrapper {
+  position: relative;
+}
+
+.trigger {
+  display: inline-flex;
+  width: 100%;
+  height: 68px;
+  flex-direction: column;
+  justify-content: center;
+  gap: 3px;
+  padding: 13px 18px;
+  border: 1px solid #2f4d45;
+  background: #2f4d45;
+  color: #fff;
+  text-align: left;
+  cursor: pointer;
+}
+
+.trigger:focus-visible,
+.noticeActions button:focus-visible {
+  outline: 2px solid #9b6b37;
+  outline-offset: 3px;
+}
+
+.trigger span {
+  font-size: 1rem;
+  font-weight: 800;
+}
+
+.trigger small {
+  font-size: 0.82rem;
+  opacity: 0.82;
+}
+
+.notice {
+  position: fixed;
+  z-index: 20;
+  inset: 50% auto auto 50%;
+  transform: translate(-50%, -50%);
+  width: min(430px, calc(100vw - 48px));
+  max-height: min(640px, calc(100vh - 48px));
+  margin: 0;
+  padding: 18px;
+  border: 1px solid #bdb3a8;
+  background: #fff;
+  color: #302a25;
+  overflow-y: auto;
+}
+
+.notice::backdrop {
+  background: rgba(30, 26, 22, 0.54);
+}
+
+.notice:focus-visible {
+  outline: 2px solid #9b6b37;
+  outline-offset: 4px;
+}
+
+.notice strong {
+  font-size: 0.95rem;
+}
+
+.notice ul {
+  margin: 12px 0;
+  padding-left: 20px;
+  color: #655b53;
+  font-size: 0.82rem;
+  line-height: 1.65;
+}
+
+.noticeActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.noticeActions button {
+  min-height: 44px;
+  padding: 7px 12px;
+  border: 1px solid #2f4d45;
+  background: #fff;
+  color: #2f4d45;
+  font: inherit;
+  font-size: 0.84rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.noticeActions button:last-child {
+  background: #2f4d45;
+  color: #fff;
+}
+
+.notice p {
+  margin: 10px 0 0;
+  color: #a33131;
+  font-size: 0.8rem;
+}
+
+@media (max-width: 520px) {
+  .notice {
+    inset: auto 12px 12px;
+    width: auto;
+    max-height: calc(100vh - 24px);
+    transform: none;
+    padding: 20px 18px 18px;
+  }
+
+  .noticeActions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+}

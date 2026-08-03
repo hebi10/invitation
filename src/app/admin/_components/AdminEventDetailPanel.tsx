@@ -6,6 +6,7 @@ import { getEventTypeDisplayLabel } from '@/lib/eventTypes';
 import type { InvitationPageSummary } from '@/services/invitationPageService';
 import type { InvitationThemeKey } from '@/lib/invitationThemes';
 import type { InvitationProductTier } from '@/types/invitationPage';
+import type { AppRoutes } from '@/lib/demoExperienceRoutes';
 
 import {
   getAdminEventCapabilities,
@@ -33,6 +34,8 @@ interface AdminEventDetailPanelProps {
   onOpenRelated: (query: Record<string, string>) => void;
   onIssueOwnershipInvite: (slug: string) => void;
   onDelete: (page: InvitationPageSummary) => void;
+  routes: AppRoutes;
+  experience: boolean;
 }
 
 type RelatedCapability = Extract<
@@ -106,6 +109,8 @@ export default function AdminEventDetailPanel({
   onOpenRelated,
   onIssueOwnershipInvite,
   onDelete,
+  routes,
+  experience,
 }: AdminEventDetailPanelProps) {
   const panelRef = useRef<HTMLElement>(null);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
@@ -113,6 +118,7 @@ export default function AdminEventDetailPanel({
   const capabilities = getAdminEventCapabilities(page);
   const previewLinks = getAdminEventPreviewLinks(page);
   const preview = previewLinks.find((link) => link.isDefault) ?? previewLinks[0];
+  const isReadOnlySeed = experience && page.slug.startsWith('demo-seed-');
   const relatedCapabilities = capabilities.filter(
     (capability): capability is RelatedCapability =>
       capability === 'images' ||
@@ -210,13 +216,15 @@ export default function AdminEventDetailPanel({
       </dl>
 
       <div className={styles.eventDetailActions}>
-        <a className="admin-button admin-button-primary" href={`/page-wizard/${page.slug}`}>
-          편집
-        </a>
+        {!isReadOnlySeed ? (
+          <a className="admin-button admin-button-primary" href={routes.wizardEdit(page.slug)}>
+            편집
+          </a>
+        ) : null}
         {preview ? (
           <a
             className="admin-button admin-button-secondary"
-            href={preview.path}
+            href={routes.preview(page.slug, preview.theme)}
             target="_blank"
             rel="noreferrer"
           >
@@ -230,7 +238,7 @@ export default function AdminEventDetailPanel({
         <select
           className="admin-select"
           value={page.published ? 'published' : 'private'}
-          disabled={updatingPublished}
+          disabled={updatingPublished || isReadOnlySeed}
           onChange={(event) => onTogglePublished(page, event.currentTarget.value === 'published')}
           aria-label={`${page.displayName} 공개 상태`}
         >
@@ -248,7 +256,7 @@ export default function AdminEventDetailPanel({
             <select
               className="admin-select"
               value={page.productTier}
-              disabled={updatingTier}
+              disabled={updatingTier || isReadOnlySeed}
               onChange={(event) =>
                 onChangeTier(page, event.currentTarget.value as InvitationProductTier)
               }
@@ -280,7 +288,7 @@ export default function AdminEventDetailPanel({
                       <button
                         type="button"
                         className="admin-button admin-button-ghost"
-                        disabled={isUpdating}
+                        disabled={isUpdating || isReadOnlySeed}
                         onClick={() =>
                           isAvailable
                             ? onDisableVariant(page, theme.key)
@@ -331,7 +339,10 @@ export default function AdminEventDetailPanel({
         </section>
       ) : null}
 
-      {!isMobileSheet ? <details className={styles.eventDangerArea}>
+      {isReadOnlySeed ? (
+        <p>기본 체험 데이터는 조회 전용입니다.</p>
+      ) : null}
+      {!isMobileSheet && !isReadOnlySeed ? <details className={styles.eventDangerArea}>
         <summary>위험 작업</summary>
         <p>고객 연결 링크 발급과 삭제는 되돌리기 어려운 작업입니다.</p>
         {page.ownershipKind !== 'customer' ? (

@@ -1,5 +1,6 @@
 import { getEventTypeDisplayLabel } from '@/lib/eventTypes';
 import type { InvitationPageSummary } from '@/services/invitationPageService';
+import type { AppRoutes } from '@/lib/demoExperienceRoutes';
 
 import styles from '../page.module.css';
 
@@ -7,6 +8,8 @@ interface AdminEventMobileListProps {
   pages: InvitationPageSummary[];
   selectedSlug: string | null;
   onSelect: (slug: string) => void;
+  routes: AppRoutes;
+  experience: boolean;
 }
 
 function formatDate(value: string) {
@@ -32,6 +35,8 @@ export default function AdminEventMobileList({
   pages,
   selectedSlug,
   onSelect,
+  routes,
+  experience,
 }: AdminEventMobileListProps) {
   if (pages.length === 0) return null;
 
@@ -39,6 +44,7 @@ export default function AdminEventMobileList({
     <div className={styles.eventMobileList} aria-label="이벤트 목록">
       {pages.map((page) => {
         const isSelected = selectedSlug === page.slug;
+        const isReadOnlySeed = experience && page.slug.startsWith('demo-seed-');
 
         return (
           <article
@@ -52,6 +58,9 @@ export default function AdminEventMobileList({
                   {getEventTypeDisplayLabel(page.eventType, 'admin')}
                 </p>
                 <h2 className={styles.eventMobileCardTitle}>{page.displayName}</h2>
+                {experience && page.slug === 'daily-experience-wedding' ? (
+                  <small>금일 체험 청첩장</small>
+                ) : null}
                 <p className={styles.eventMobileCardDate}>{formatDate(page.date)}</p>
               </div>
               <span
@@ -76,9 +85,13 @@ export default function AdminEventMobileList({
               >
                 상세 보기
               </button>
-              <a className={styles.eventEditLink} href={`/page-wizard/${page.slug}`}>
-                편집
-              </a>
+              {isReadOnlySeed ? (
+                <span>조회 전용</span>
+              ) : (
+                <a className={styles.eventEditLink} href={routes.wizardEdit(page.slug)}>
+                  편집
+                </a>
+              )}
             </div>
           </article>
         );

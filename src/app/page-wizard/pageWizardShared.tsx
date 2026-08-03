@@ -111,6 +111,8 @@ export interface GreetingStepProps extends WizardStepProps {
 }
 
 export interface ImagesStepProps extends WizardStepProps {
+  experience?: boolean;
+  onDemoImageSelect?: (imageUrl: string) => void;
   canUploadImages: boolean;
   maxGalleryImages: number;
   uploadingField: UploadFieldKind | null;

@@ -303,6 +303,29 @@ async function loadWeddingInvitationPage(
   }
 }
 
+async function loadWeddingInvitationPageWithOptions(
+  options: WeddingInvitationRouteOptions,
+  isAdminLoggedIn: boolean
+): Promise<WeddingPageQueryResult> {
+  if (!options.pageLoader) {
+    return loadWeddingInvitationPage(options.slug, isAdminLoggedIn);
+  }
+
+  try {
+    const page = await options.pageLoader(options.slug);
+    return page
+      ? { status: 'ready', pageConfig: page, blockMessage: null }
+      : { status: 'blocked', pageConfig: null, blockMessage: BLOCKED_MESSAGE };
+  } catch (error) {
+    console.error('[weddingPageState] custom page loader failed', error);
+    return {
+      status: 'blocked',
+      pageConfig: null,
+      blockMessage: LOAD_FAILED_MESSAGE,
+    };
+  }
+}
+
 function isStorageManagedImageUrl(imageUrl?: string | null) {
   return Boolean(imageUrl?.includes('firebasestorage.googleapis.com'));
 }
@@ -366,20 +389,21 @@ export function useWeddingInvitationState(
   );
   const configuredMainImageUrl = pageConfig?.metadata.images.wedding?.trim() ?? '';
   const shouldLoadStorageFallbackImages = useMemo(() => {
-    if (!isAdminLoggedIn || !pageConfig) {
+    if (options.allowStorageImages === false || !isAdminLoggedIn || !pageConfig) {
       return false;
     }
 
     const hasConfiguredGallery = Boolean(configuredGalleryImageUrls.length);
     return !hasConfiguredGallery;
-  }, [configuredGalleryImageUrls.length, isAdminLoggedIn, pageConfig]);
+  }, [configuredGalleryImageUrls.length, isAdminLoggedIn, options.allowStorageImages, pageConfig]);
   const shouldLoadStorageManagedImages = useMemo(
     () =>
+      options.allowStorageImages !== false &&
       isAdminLoggedIn &&
       [configuredMainImageUrl, ...configuredGalleryImageUrls].some((imageUrl) =>
         isStorageManagedImageUrl(imageUrl)
       ),
-    [configuredGalleryImageUrls, configuredMainImageUrl, isAdminLoggedIn]
+    [configuredGalleryImageUrls, configuredMainImageUrl, isAdminLoggedIn, options.allowStorageImages]
   );
   const {
     images: storageImages,
@@ -392,9 +416,12 @@ export function useWeddingInvitationState(
     allowListing: isAdminLoggedIn,
   });
   const pageQuery = useQuery<WeddingPageQueryResult>({
-    queryKey: appQueryKeys.invitationPage(options.slug, isAdminLoggedIn ? 'admin' : 'public'),
+    queryKey: appQueryKeys.invitationPage(
+      options.slug,
+      options.queryScope ?? (isAdminLoggedIn ? 'admin' : 'public')
+    ),
     enabled: shouldRunClientPageQuery,
-    queryFn: async () => loadWeddingInvitationPage(options.slug, isAdminLoggedIn),
+    queryFn: async () => loadWeddingInvitationPageWithOptions(options, isAdminLoggedIn),
     staleTime: FIFTEEN_MINUTES_MS,
     gcTime: THIRTY_MINUTES_MS,
     refetchOnWindowFocus: false,
@@ -474,6 +501,7 @@ export function useWeddingInvitationState(
 
   useEffect(() => {
     if (
+      options.allowStorageImages === false ||
       pageConfig?.musicEnabled !== true ||
       !pageConfig.musicStoragePath?.trim() ||
       pageConfig.musicUrl?.trim()
@@ -511,7 +539,12 @@ export function useWeddingInvitationState(
     return () => {
       cancelled = true;
     };
-  }, [pageConfig?.musicEnabled, pageConfig?.musicStoragePath, pageConfig?.musicUrl]);
+  }, [
+    options.allowStorageImages,
+    pageConfig?.musicEnabled,
+    pageConfig?.musicStoragePath,
+    pageConfig?.musicUrl,
+  ]);
 
   useEffect(() => {
     const loadingDelay = options.loadingDelay ?? themeDefinition.defaultLoadingDelay;

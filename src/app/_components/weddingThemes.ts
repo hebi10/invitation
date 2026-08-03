@@ -16,6 +16,10 @@ export interface WeddingInvitationRouteOptions {
   initialBlockMessage?: string | null;
   loadingDelay?: number;
   showGuestbook?: boolean;
+  pageLoader?: (slug: string) => Promise<InvitationPage | null>;
+  queryScope?: 'admin' | 'public' | 'experience';
+  allowStorageImages?: boolean;
+  externalShareEnabled?: boolean;
 }
 
 type ShareButtonVariant = 'default';

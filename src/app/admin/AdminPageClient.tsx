@@ -6,6 +6,7 @@ import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import FirebaseAuthLoginCard from '@/app/_components/FirebaseAuthLoginCard';
 import { DisplayPeriodManager, ImageManager, MemoryPageManager } from '@/components/admin';
 import { useAdmin } from '@/contexts';
+import { buildAppRoutes, type AppRoutes } from '@/lib/demoExperienceRoutes';
 import type { AdminOwnershipInviteResult } from '@/services/eventOwnershipInviteService';
 
 import {
@@ -36,6 +37,7 @@ import {
 } from './_components/adminPageUtils';
 import {
   parseAdminEventOwnership,
+  parseAdminEventPageSize,
   parseAdminEventPublished,
   parseAdminEventSort,
   parseAdminEventType,
@@ -43,6 +45,11 @@ import {
   type AdminEventFilters,
 } from './_components/adminEventWorkspaceModel';
 import { useAdminData } from './_hooks/useAdminData';
+import {
+  demoExperienceAdminDataGateway,
+  productionAdminDataGateway,
+  type AdminDataGateway,
+} from './_hooks/adminDataGateway';
 import styles from './page.module.css';
 
 const PRIMARY_VIEW_QUERY = {
@@ -51,7 +58,20 @@ const PRIMARY_VIEW_QUERY = {
   customers: { section: 'customers', tab: 'accounts' },
 } as const;
 
-export default function AdminPageClient() {
+interface AdminPageClientProps {
+  gateway?: AdminDataGateway;
+  routes?: AppRoutes;
+  experience?: boolean;
+}
+
+export default function AdminPageClient({
+  gateway: gatewayOverride,
+  routes: routesOverride,
+  experience = false,
+}: AdminPageClientProps) {
+  const gateway = gatewayOverride ??
+    (experience ? demoExperienceAdminDataGateway : productionAdminDataGateway);
+  const routes = routesOverride ?? buildAppRoutes(experience ? 'experience' : 'production');
   const { adminUser, isAdminLoggedIn, isAdminLoading, logout } = useAdmin();
   const router = useRouter();
   const pathname = usePathname();
@@ -101,6 +121,10 @@ export default function AdminPageClient() {
   const activeTab = sectionTabs.some((tab) => tab.key === requestedTab)
     ? requestedTab
     : getDefaultTabForSection(activeSection, activePageCategory);
+  const renderedActiveTab =
+    experience && (activeTab === 'memory' || activeTab === 'images' || activeTab === 'periods')
+      ? 'pages'
+      : activeTab;
   const activePrimaryView = parseAdminPrimaryView(activeTab);
   const pageSearch = safeSearchParams.get('pageQ') ?? '';
   const requestedPageTypeParam = safeSearchParams.get('pageType');
@@ -127,6 +151,9 @@ export default function AdminPageClient() {
   const commentAgeFilter = parseCommentAge(safeSearchParams.get('commentAge'));
   const currentPage = numberFromParam(safeSearchParams.get('commentPage'), 1);
   const currentEventPage = numberFromParam(safeSearchParams.get('page'), 1);
+  const currentEventPageSize = parseAdminEventPageSize(
+    safeSearchParams.get('pageSize')
+  );
   const periodStatusFilter = parsePeriodFilter(safeSearchParams.get('periodStatus'));
   const activePageCategoryEventType = getPageCategoryEventTypeFilter(activePageCategory);
   const requestedRelatedEventType = parseAdminEventType(requestedPageTypeParam);
@@ -199,7 +226,13 @@ export default function AdminPageClient() {
     handleGrantCustomerWalletCredit,
     handleDeleteCustomerAccount,
     handleLogout: dataLogout,
-  } = useAdminData({ isAdminLoggedIn, activeTab, showToast, confirm });
+  } = useAdminData({
+    isAdminLoggedIn,
+    activeTab: renderedActiveTab,
+    showToast,
+    confirm,
+    gateway,
+  });
 
   /* ── Handlers ── */
 
@@ -438,12 +471,12 @@ export default function AdminPageClient() {
       <div className={styles.container}>
         <div className={styles.loginShell}>
           <div className={styles.headerActions}>
-            <a className="admin-button admin-button-ghost" href="/">
+            <a className="admin-button admin-button-ghost" href={routes.home()}>
               메인으로 돌아가기
             </a>
             <a
               className="admin-button admin-button-secondary"
-              href="/my-invitations"
+              href={routes.customerDashboard()}
               target="_blank"
               rel="noreferrer"
             >
@@ -478,9 +511,10 @@ export default function AdminPageClient() {
         adminEmail={adminUser?.email ?? '관리자'}
         onNavigate={(view) => updateQuery(PRIMARY_VIEW_QUERY[view])}
         onLogout={() => void handleLogout()}
+        brandHref={routes.admin()}
       >
         <section className={styles.panel}>
-          {activeTab === 'pages' ? (
+          {renderedActiveTab === 'pages' ? (
             <AdminEventWorkspace
               pages={pages}
               loading={pagesLoading}
@@ -489,6 +523,7 @@ export default function AdminPageClient() {
               filters={eventFilters}
               selectedSlug={selectedEventSlug}
               currentPage={currentEventPage}
+              pageSize={currentEventPageSize}
               updatingPublishedSlug={updatingPublishedPageSlug}
               updatingVariantToken={updatingVariantToken}
               updatingTierSlug={updatingTierPageSlug}
@@ -503,20 +538,22 @@ export default function AdminPageClient() {
               onDisableVariant={(page, theme) => void handleDisableVariant(page, theme)}
               onIssueOwnershipInvite={(slug) => void requestOwnershipInviteForDetail(slug)}
               onDelete={(page) => void handleDeletePage(page)}
+              routes={routes}
+              experience={experience}
             />
           ) : null}
 
-          {activeTab === 'memory' ? (
+          {!experience && renderedActiveTab === 'memory' ? (
             <MemoryPageManager initialPageSlug={selectedEventSlug ?? undefined} />
           ) : null}
-          {activeTab === 'images' ? (
+          {!experience && renderedActiveTab === 'images' ? (
             <ImageManager
               eventTypeFilter={relatedManagerEventTypeFilter}
               initialPageSlug={selectedEventSlug ?? undefined}
             />
           ) : null}
 
-          {activeTab === 'comments' ? (
+          {renderedActiveTab === 'comments' ? (
             <AdminCommentsTab
               commentsLoading={commentsLoading}
               commentsRefreshing={commentsRefreshing}
@@ -540,7 +577,7 @@ export default function AdminPageClient() {
             />
           ) : null}
 
-          {activeTab === 'accounts' ? (
+          {renderedActiveTab === 'accounts' ? (
             <AdminCustomerAccountsTab
               loading={accountsLoading}
               refreshing={accountsRefreshing}
@@ -566,10 +603,12 @@ export default function AdminPageClient() {
                 void handleGrantCustomerWalletCredit(uid, grant)
               }
               onDeleteAccount={(uid) => void handleDeleteCustomerAccount(uid)}
+              routes={routes}
+              experience={experience}
             />
           ) : null}
 
-          {activeTab === 'periods' ? (
+          {!experience && renderedActiveTab === 'periods' ? (
             <DisplayPeriodManager
               isVisible={true}
               statusFilter={periodStatusFilter}

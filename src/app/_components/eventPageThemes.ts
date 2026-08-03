@@ -18,6 +18,10 @@ export interface EventInvitationRouteOptions {
   loadingDelay?: number;
   showGuestbook?: boolean;
   eventType?: EventTypeKey;
+  pageLoader?: (slug: string) => Promise<InvitationPage | null>;
+  queryScope?: 'admin' | 'public' | 'experience';
+  allowStorageImages?: boolean;
+  externalShareEnabled?: boolean;
 }
 
 type ShareButtonVariant = 'default' | 'classic';

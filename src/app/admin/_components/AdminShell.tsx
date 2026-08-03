@@ -8,6 +8,7 @@ interface AdminShellProps {
   adminEmail: string;
   onNavigate: (view: AdminPrimaryView) => void;
   onLogout: () => void;
+  brandHref: string;
   children: ReactNode;
 }
 
@@ -22,12 +23,13 @@ export default function AdminShell({
   adminEmail,
   onNavigate,
   onLogout,
+  brandHref,
   children,
 }: AdminShellProps) {
   return (
     <div className={styles.adminShell}>
       <header className={styles.adminTopbar}>
-        <a href="/admin" className={styles.adminBrand}>
+        <a href={brandHref} className={styles.adminBrand}>
           운영 관리
         </a>
         <nav aria-label="관리 업무" className={styles.adminPrimaryNav}>

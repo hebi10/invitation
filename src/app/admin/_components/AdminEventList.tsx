@@ -1,5 +1,6 @@
 import { getEventTypeDisplayLabel } from '@/lib/eventTypes';
 import type { InvitationPageSummary } from '@/services/invitationPageService';
+import type { AppRoutes } from '@/lib/demoExperienceRoutes';
 
 import styles from '../page.module.css';
 
@@ -7,6 +8,8 @@ interface AdminEventListProps {
   pages: InvitationPageSummary[];
   selectedSlug: string | null;
   onSelect: (slug: string) => void;
+  routes: AppRoutes;
+  experience: boolean;
 }
 
 function formatDate(value: string) {
@@ -44,6 +47,8 @@ export default function AdminEventList({
   pages,
   selectedSlug,
   onSelect,
+  routes,
+  experience,
 }: AdminEventListProps) {
   if (pages.length === 0) {
     return (
@@ -70,6 +75,7 @@ export default function AdminEventList({
         <tbody>
           {pages.map((page) => {
             const isSelected = selectedSlug === page.slug;
+            const isReadOnlySeed = experience && page.slug.startsWith('demo-seed-');
             return (
               <tr key={page.slug} data-selected={isSelected || undefined}>
                 <td>
@@ -82,6 +88,9 @@ export default function AdminEventList({
                     onClick={() => onSelect(page.slug)}
                   >
                     <strong>{page.displayName}</strong>
+                    {experience && page.slug === 'daily-experience-wedding' ? (
+                      <small>금일 체험 청첩장</small>
+                    ) : null}
                     <span>/{page.slug}</span>
                   </button>
                 </td>
@@ -95,9 +104,13 @@ export default function AdminEventList({
                 <td>{getOwnershipLabel(page)}</td>
                 <td>{formatUpdatedAt(page.updatedAt)}</td>
                 <td>
-                  <a className={styles.eventEditLink} href={`/page-wizard/${page.slug}`}>
-                    편집
-                  </a>
+                  {isReadOnlySeed ? (
+                    <span>조회 전용</span>
+                  ) : (
+                    <a className={styles.eventEditLink} href={routes.wizardEdit(page.slug)}>
+                      편집
+                    </a>
+                  )}
                 </td>
               </tr>
             );

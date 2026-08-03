@@ -4,18 +4,19 @@ import { useEffect, useRef, useState } from 'react';
 
 import type { InvitationPageSummary } from '@/services/invitationPageService';
 import { getEventTypeDisplayLabel } from '@/lib/eventTypes';
-import { getPageWizardCreateHrefForEventType } from '@/app/page-wizard/pageWizardEventConfig';
+import type { AppRoutes } from '@/lib/demoExperienceRoutes';
 import type { InvitationThemeKey } from '@/lib/invitationThemes';
 import type { InvitationProductTier } from '@/types/invitationPage';
 
 import {
   filterAdminEvents,
-  ADMIN_EVENTS_PER_PAGE,
+  ADMIN_EVENT_PAGE_SIZE_OPTIONS,
   ADMIN_EVENT_TYPE_OPTIONS,
   getAdminEventPage,
   getAdminEventCounts,
   getAdminEventCountQuery,
   shouldClearMissingAdminEvent,
+  type AdminEventPageSize,
   type AdminEventFilters as AdminEventFiltersState,
 } from './adminEventWorkspaceModel';
 import AdminEventFilters from './AdminEventFilters';
@@ -35,6 +36,7 @@ interface AdminEventWorkspaceProps {
   filters: AdminEventFiltersState;
   selectedSlug: string | null;
   currentPage: number;
+  pageSize: AdminEventPageSize;
   updatingPublishedSlug: string | null;
   updatingVariantToken: string | null;
   updatingTierSlug: string | null;
@@ -49,6 +51,8 @@ interface AdminEventWorkspaceProps {
   onDisableVariant: (page: InvitationPageSummary, variantKey: InvitationThemeKey) => void;
   onIssueOwnershipInvite: (slug: string) => void;
   onDelete: (page: InvitationPageSummary) => void;
+  routes: AppRoutes;
+  experience: boolean;
 }
 
 export default function AdminEventWorkspace({
@@ -59,6 +63,7 @@ export default function AdminEventWorkspace({
   filters,
   selectedSlug,
   currentPage,
+  pageSize,
   updatingPublishedSlug,
   updatingVariantToken,
   updatingTierSlug,
@@ -73,10 +78,12 @@ export default function AdminEventWorkspace({
   onDisableVariant,
   onIssueOwnershipInvite,
   onDelete,
+  routes,
+  experience,
 }: AdminEventWorkspaceProps) {
   const counts = getAdminEventCounts(pages);
   const filteredPages = filterAdminEvents(pages, filters);
-  const eventPage = getAdminEventPage(filteredPages, currentPage);
+  const eventPage = getAdminEventPage(filteredPages, currentPage, pageSize);
   const selectedPage = selectedSlug ? pages.find((page) => page.slug === selectedSlug) : null;
   const lastSelectedSlug = useRef<string | null>(null);
   const [isMobileViewport, setIsMobileViewport] = useState<boolean | null>(null);
@@ -134,7 +141,9 @@ export default function AdminEventWorkspace({
         <div>
           <h1 className={styles.eventWorkspaceTitle}>이벤트 관리</h1>
           <p className={styles.eventWorkspaceDescription}>
-            이벤트를 찾아 상태를 확인하고 편집 화면으로 이동하세요.
+            {experience
+              ? '15개의 예시와 모두가 함께 수정하는 금일 체험 청첩장을 확인하세요.'
+              : '이벤트를 찾아 상태를 확인하고 편집 화면으로 이동하세요.'}
           </p>
         </div>
         <div className={styles.eventWorkspaceActions}>
@@ -147,10 +156,12 @@ export default function AdminEventWorkspace({
             {refreshing ? '새로고침 중' : '새로고침'}
           </button>
           <details className={styles.eventCreateMenu}>
-            <summary className="admin-button admin-button-primary">새 이벤트 만들기</summary>
+            <summary className="admin-button admin-button-primary">
+              {experience ? '새 청첩장 만들기' : '새 이벤트 만들기'}
+            </summary>
             <div className={styles.eventCreateMenuList}>
-              {ADMIN_EVENT_TYPE_OPTIONS.map((eventType) => (
-                <a key={eventType} href={getPageWizardCreateHrefForEventType(eventType)}>
+              {(experience ? (['wedding'] as const) : ADMIN_EVENT_TYPE_OPTIONS).map((eventType) => (
+                <a key={eventType} href={routes.wizardCreate(eventType)}>
                   {getEventTypeDisplayLabel(eventType)}
                 </a>
               ))}
@@ -218,21 +229,47 @@ export default function AdminEventWorkspace({
           ) : null}
           {eventPage.items.length > 0 ? (
             <>
+              <div className={styles.eventListControls}>
+                <label className={styles.eventPageSizeField}>
+                  <span>페이지당 개수</span>
+                  <select
+                    className="admin-select"
+                    value={String(pageSize)}
+                    onChange={(event) =>
+                      onQueryChange({
+                        pageSize: event.target.value,
+                        page: '1',
+                        event: null,
+                      })
+                    }
+                  >
+                    {ADMIN_EVENT_PAGE_SIZE_OPTIONS.map((option) => (
+                      <option key={option} value={option}>
+                        {option}개
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              </div>
               <AdminEventList
                 pages={eventPage.items}
                 selectedSlug={selectedSlug}
                 onSelect={(slug) => onQueryChange({ event: slug })}
+                routes={routes}
+                experience={experience}
               />
               <AdminEventMobileList
                 pages={eventPage.items}
                 selectedSlug={selectedSlug}
                 onSelect={(slug) => onQueryChange({ event: slug })}
+                routes={routes}
+                experience={experience}
               />
               <Pagination
                 currentPage={eventPage.currentPage}
                 totalPages={eventPage.totalPages}
                 totalItems={filteredPages.length}
-                pageSize={ADMIN_EVENTS_PER_PAGE}
+                pageSize={pageSize}
                 onPageChange={(page) => onQueryChange({ page: String(page), event: null })}
               />
             </>
@@ -263,6 +300,8 @@ export default function AdminEventWorkspace({
               onOpenRelated={onQueryChange}
               onIssueOwnershipInvite={onIssueOwnershipInvite}
               onDelete={onDelete}
+              routes={routes}
+              experience={experience}
             />
           </>
         ) : null}

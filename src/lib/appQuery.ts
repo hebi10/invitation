@@ -6,7 +6,7 @@ export const ADMIN_STALE_TIME_MS = 45 * 1000;
 export const ADMIN_GC_TIME_MS = 10 * 60 * 1000;
 
 export const appQueryKeys = {
-  invitationPage: (slug: string, scope: 'admin' | 'public') =>
+  invitationPage: (slug: string, scope: 'admin' | 'public' | 'experience') =>
     ['invitation-page', slug, scope] as const,
   guestbookComments: (pageSlug: string) => ['guestbook-comments', pageSlug] as const,
   ownedCustomerEvents: (uid: string | null) => ['owned-customer-events', uid] as const,
@@ -21,4 +21,10 @@ export const appQueryKeys = {
   adminInvitationPages: ['admin-invitation-pages'] as const,
   adminComments: ['admin-comments'] as const,
   adminCustomerAccounts: ['admin-customer-accounts'] as const,
+  demoExperienceSession: ['demo-experience-session'] as const,
+  demoExperienceAdmin: (dateKey: string) => ['demo-experience-admin', dateKey] as const,
+  demoExperienceEvent: (dateKey: string, slug: string) =>
+    ['demo-experience-event', dateKey, slug] as const,
+  demoExperienceCustomer: (dateKey: string) =>
+    ['demo-experience-customer', dateKey] as const,
 } as const;

@@ -82,6 +82,22 @@ assert(
     /isProduction[\s\S]*Content-Security-Policy/m.test(nextConfig),
   'production must send an enforced Content-Security-Policy header while non-production may stay report-only.'
 );
+
+const firestoreRules = readText('firestore.rules');
+assert(
+  /match \/demoExperiences\/\{document=\*\*\}[\s\S]*?allow read, write: if false;/.test(
+    firestoreRules
+  ),
+  'Firestore rules must explicitly deny direct demo experience access.'
+);
+
+const storageRules = readText('storage.rules');
+assert(
+  /match \/demo-wedding-images\/\{allPaths=\*\*\}[\s\S]*?allow read, write: if false;/.test(
+    storageRules
+  ),
+  'Storage rules must explicitly deny demo image access and uploads.'
+);
 for (const expectedCspSource of [
   'https://fonts.googleapis.com',
   'https://fonts.gstatic.com',

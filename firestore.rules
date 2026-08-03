@@ -166,6 +166,10 @@ service cloud.firestore {
         canReadPublicEvent(slugIndex.data.eventId);
     }
 
+    match /demoExperiences/{document=**} {
+      allow read, write: if false;
+    }
+
     match /memory-pages/{pageSlug} {
       allow read: if isPublicMemoryPage(resource.data) || isAdmin();
       allow create, update, delete: if isAdmin();

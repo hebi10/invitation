@@ -7,12 +7,7 @@ import {
   type InvitationVariantKey,
 } from '@/lib/invitationVariants';
 
-import {
-  createInvitationPageDraftFromSeed,
-  normalizeInvitationPageSlugBase,
-  saveInvitationPageConfig,
-} from '@/services/invitationPageService';
-import { saveCustomerEditableInvitationPageConfig } from '@/services/customerEventService';
+import { normalizeInvitationPageSlugBase } from '@/services/invitationPageService';
 import type {
   InvitationPageSeed,
   InvitationThemeKey,
@@ -24,11 +19,16 @@ import {
   PLACEHOLDER_GROOM,
   prepareWizardConfigForSave,
 } from '../pageWizardData';
+import {
+  WizardVersionConflictError,
+  type WizardPersistenceGateway,
+} from '../wizardPersistenceGateway';
 
 export type WizardDraftCreationState = {
   slug: string;
   createdFresh: boolean;
   config?: InvitationPageSeed;
+  version?: number | null;
 };
 
 export type WizardPersistDraftOptions = {
@@ -57,6 +57,10 @@ export function useWizardPersistence({
   showNotice,
   showErrorNotice,
   onPersisted,
+  gateway,
+  persistedVersion,
+  setPersistedVersion,
+  onVersionConflict,
 }: {
   formState: InvitationPageSeed | null;
   previewFormState: InvitationPageSeed | null;
@@ -82,12 +86,17 @@ export function useWizardPersistence({
     published: boolean;
     createdFresh: boolean;
   }) => Promise<void> | void;
+  gateway: WizardPersistenceGateway;
+  persistedVersion: number | null;
+  setPersistedVersion: (value: number | null) => void;
+  onVersionConflict?: () => void;
 }) {
   const ensureDraftCreated = useCallback(async (): Promise<WizardDraftCreationState> => {
     if (resolvedPersistedSlug) {
       return {
         slug: resolvedPersistedSlug,
         createdFresh: false,
+        version: persistedVersion,
       };
     }
 
@@ -104,7 +113,7 @@ export function useWizardPersistence({
       throw new Error('올바른 페이지 주소를 먼저 입력해 주세요.');
     }
 
-    const created = await createInvitationPageDraftFromSeed({
+    const created = await gateway.createDraft({
       seedSlug: defaultSeedSlug,
       slugBase: normalizedSlug,
       eventType,
@@ -160,6 +169,7 @@ export function useWizardPersistence({
     setFormState(normalizedCreatedConfig);
     setPublished(false);
     setLastSavedAt(new Date());
+    setPersistedVersion(created.version);
 
     if (created.slug !== normalizedSlug) {
       showNotice(
@@ -172,19 +182,23 @@ export function useWizardPersistence({
       slug: created.slug,
       createdFresh: true,
       config: normalizedCreatedConfig,
+      version: created.version,
     };
   }, [
     defaultSeedSlug,
     defaultTheme,
     eventType,
+    gateway,
     isAdminLoggedIn,
     normalizeFormState,
+    persistedVersion,
     previewFormState,
     resolvedPersistedSlug,
     setFormState,
     setLastSavedAt,
     setPersistedSlug,
     setPublished,
+    setPersistedVersion,
     setSlugInput,
     showNotice,
     slugInput,
@@ -202,7 +216,11 @@ export function useWizardPersistence({
         const draftState = await ensureDraftCreated();
         const nextSlug = draftState.slug;
 
-        if (draftState.createdFresh && options?.publish !== true) {
+        if (
+          draftState.createdFresh &&
+          gateway.draftCreationPersists &&
+          options?.publish !== true
+        ) {
           await onPersisted?.({
             slug: nextSlug,
             config: draftState.config ?? formState,
@@ -216,7 +234,10 @@ export function useWizardPersistence({
           return nextSlug;
         }
 
-        const sourceConfig = draftState.config ?? formState;
+        const sourceConfig =
+          draftState.createdFresh && !gateway.draftCreationPersists
+            ? formState
+            : draftState.config ?? formState;
         const prepared = prepareWizardConfigForSave(sourceConfig, nextSlug);
         const currentAvailableVariantKeys = getAvailableInvitationVariantKeys(
           sourceConfig.variants
@@ -231,29 +252,24 @@ export function useWizardPersistence({
         });
         const nextPublished = options?.publish ?? published;
 
-        const savedEditableConfig = isAdminLoggedIn
-          ? null
-          : await saveCustomerEditableInvitationPageConfig(nextSlug, {
-              config: prepared,
-              published: nextPublished,
-              defaultTheme,
-            });
+        const savedEditableConfig = await gateway.save({
+          slug: nextSlug,
+          config: prepared,
+          published: nextPublished,
+          defaultTheme,
+          expectedVersion: draftState.version ?? persistedVersion,
+          isAdmin: isAdminLoggedIn,
+        });
 
-        if (isAdminLoggedIn) {
-          await saveInvitationPageConfig(prepared, {
-            published: nextPublished,
-            defaultTheme,
-          });
-        }
-
-        const normalized = normalizeFormState(savedEditableConfig?.config ?? prepared);
+        const normalized = normalizeFormState(savedEditableConfig.config ?? prepared);
         setFormState(normalized);
-        setPublished(savedEditableConfig?.published ?? nextPublished);
+        setPublished(savedEditableConfig.published ?? nextPublished);
+        setPersistedVersion(savedEditableConfig.version);
         setLastSavedAt(new Date());
         await onPersisted?.({
           slug: nextSlug,
           config: normalized,
-          published: savedEditableConfig?.published ?? nextPublished,
+          published: savedEditableConfig.published ?? nextPublished,
           createdFresh: draftState.createdFresh,
         });
 
@@ -269,6 +285,9 @@ export function useWizardPersistence({
 
         return nextSlug;
       } catch (error) {
+        if (error instanceof WizardVersionConflictError) {
+          onVersionConflict?.();
+        }
         showErrorNotice(error, '청첩장을 저장하지 못했습니다.');
         return null;
       } finally {
@@ -279,13 +298,17 @@ export function useWizardPersistence({
       defaultTheme,
       ensureDraftCreated,
       formState,
+      gateway,
       isAdminLoggedIn,
       normalizeFormState,
+      onVersionConflict,
+      persistedVersion,
       published,
       setFormState,
       setIsSaving,
       setLastSavedAt,
       setPublished,
+      setPersistedVersion,
       showErrorNotice,
       showNotice,
       onPersisted,

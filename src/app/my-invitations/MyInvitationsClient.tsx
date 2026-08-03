@@ -19,18 +19,20 @@ import {
 } from '@/lib/appQuery';
 import { getEventTypeDisplayLabel } from '@/lib/eventTypes';
 import { getEventPreviewLinks } from '@/lib/eventPreviewLinks';
+import { buildAppRoutes, type AppRoutes } from '@/lib/demoExperienceRoutes';
 import {
-  deleteCustomerEventGuestbookComment,
   type CustomerEventGuestbookComment,
   type CustomerOwnedEventSummary,
-  listCustomerEventGuestbookComments,
-  listOwnedCustomerEvents,
 } from '@/services/customerEventService';
-import { getCustomerWalletSnapshot } from '@/services/customerWalletService';
 import type { CustomerWalletSummary } from '@/types/customerWallet';
 import type { InvitationProductTier } from '@/types/invitationPage';
 
 import styles from './page.module.css';
+import {
+  demoExperienceCustomerDataGateway,
+  productionCustomerDataGateway,
+  type CustomerDataGateway,
+} from './customerDataGateway';
 
 function formatDate(date: Date | null | undefined) {
   if (!date) {
@@ -104,21 +106,33 @@ function getPageCreationCreditTotal(wallet: CustomerWalletSummary | null | undef
 interface OwnedEventCardProps {
   authUid: string | null;
   event: CustomerOwnedEventSummary;
+  gateway: CustomerDataGateway;
+  routes: AppRoutes;
+  experience: boolean;
 }
 
-function OwnedEventCard({ authUid, event }: OwnedEventCardProps) {
+function OwnedEventCard({
+  authUid,
+  event,
+  gateway,
+  routes,
+  experience,
+}: OwnedEventCardProps) {
   const queryClient = useQueryClient();
   const [guestbookOpen, setGuestbookOpen] = useState(false);
   const [previewOpen, setPreviewOpen] = useState(false);
   const [guestbookPage, setGuestbookPage] = useState(1);
   const [deletingCommentId, setDeletingCommentId] = useState('');
-  const wizardHref = `/page-wizard/${encodeURIComponent(event.slug)}`;
+  const wizardHref = routes.wizardEdit(event.slug);
   const previewLinks = getEventPreviewLinks({
     slug: event.slug,
     eventType: event.eventType,
     availableThemes: event.availableThemes,
     defaultTheme: event.defaultTheme,
-  });
+  }).map((preview) => ({
+    ...preview,
+    href: routes.preview(event.slug, preview.theme),
+  }));
   const singlePreviewLink = previewLinks.length === 1 ? previewLinks[0] : null;
   const guestbookQueryKey = appQueryKeys.customerEventGuestbookComments(
     event.slug,
@@ -127,14 +141,14 @@ function OwnedEventCard({ authUid, event }: OwnedEventCardProps) {
   const commentsQuery = useQuery<CustomerEventGuestbookComment[]>({
     queryKey: guestbookQueryKey,
     enabled: guestbookOpen && Boolean(authUid),
-    queryFn: async () => listCustomerEventGuestbookComments(event.slug),
+    queryFn: async () => gateway.listComments(event.slug),
     staleTime: GUESTBOOK_STALE_TIME_MS,
     gcTime: GUESTBOOK_GC_TIME_MS,
     refetchOnWindowFocus: false,
   });
   const deleteMutation = useMutation({
     mutationFn: async (commentId: string) =>
-      deleteCustomerEventGuestbookComment(event.slug, commentId),
+      gateway.deleteComment(event.slug, commentId),
     onSuccess: async () => {
       await queryClient.invalidateQueries({
         queryKey: guestbookQueryKey,
@@ -225,6 +239,7 @@ function OwnedEventCard({ authUid, event }: OwnedEventCardProps) {
             </span>
           </div>
           <h2 className={styles.cardTitle}>{eventTitle}</h2>
+          {experience ? <p className={styles.cardMeta}>오늘의 공용 체험 데이터</p> : null}
           <p className={styles.cardMeta}>주소 /{event.slug}</p>
           <p className={styles.cardMeta}>기본 테마 {event.defaultTheme}</p>
           <p className={styles.cardMeta}>마지막 수정 {formatDate(event.updatedAt)}</p>
@@ -492,7 +507,20 @@ function OwnedEventCard({ authUid, event }: OwnedEventCardProps) {
   );
 }
 
-export default function MyInvitationsClient() {
+interface MyInvitationsClientProps {
+  gateway?: CustomerDataGateway;
+  routes?: AppRoutes;
+  experience?: boolean;
+}
+
+export default function MyInvitationsClient({
+  gateway: gatewayOverride,
+  routes: routesOverride,
+  experience = false,
+}: MyInvitationsClientProps = {}) {
+  const gateway = gatewayOverride ??
+    (experience ? demoExperienceCustomerDataGateway : productionCustomerDataGateway);
+  const routes = routesOverride ?? buildAppRoutes(experience ? 'experience' : 'production');
   const {
     authUser,
     isLoggedIn,
@@ -517,7 +545,7 @@ export default function MyInvitationsClient() {
       isLoggedIn &&
       Boolean(authUser?.uid) &&
       !requiresEmailVerification,
-    queryFn: async () => listOwnedCustomerEvents(authUser?.uid ?? ''),
+    queryFn: async () => gateway.listEvents(authUser?.uid ?? ''),
     staleTime: FIFTEEN_MINUTES_MS,
     gcTime: THIRTY_MINUTES_MS,
     refetchOnWindowFocus: false,
@@ -529,7 +557,7 @@ export default function MyInvitationsClient() {
       isLoggedIn &&
       Boolean(authUser?.uid) &&
       !requiresEmailVerification,
-    queryFn: async () => getCustomerWalletSnapshot(authUser?.uid ?? ''),
+    queryFn: async () => gateway.getWallet(authUser?.uid ?? ''),
     staleTime: FIFTEEN_MINUTES_MS,
     gcTime: THIRTY_MINUTES_MS,
     refetchOnWindowFocus: false,
@@ -611,7 +639,7 @@ export default function MyInvitationsClient() {
     }
 
     setCreateEventNotice('');
-    router.push('/page-wizard', { scroll: false });
+    router.push(routes.wizardCreate('wedding'), { scroll: false });
   };
 
   if (isAdminLoading) {
@@ -718,7 +746,7 @@ export default function MyInvitationsClient() {
           <div className={styles.heroHeader}>
             <div>
               <p className={styles.eyebrow}>My Invitations</p>
-              <h1 className={styles.title}>내 이벤트</h1>
+              <h1 className={styles.title}>{experience ? '내 청첩장' : '내 이벤트'}</h1>
               <p className={styles.description}>
                 연결된 이벤트 페이지를 확인하고 바로 수정할 수 있습니다.
               </p>
@@ -726,22 +754,32 @@ export default function MyInvitationsClient() {
             <div className={styles.summaryStack}>
               <span className={styles.summaryItem}>{authUser?.email ?? '이메일 없음'}</span>
               <span className={styles.summaryItem}>연결된 이벤트 {events.length}개</span>
-              <span className={styles.summaryItem}>
-                보유 제작권 {pageCreationCreditTotal}개
-              </span>
-              <span className={styles.summaryItem}>모바일 초대장 생성 티켓 {operationTicketBalance}장</span>
+              {!experience ? (
+                <>
+                  <span className={styles.summaryItem}>
+                    보유 제작권 {pageCreationCreditTotal}개
+                  </span>
+                  <span className={styles.summaryItem}>
+                    모바일 초대장 생성 티켓 {operationTicketBalance}장
+                  </span>
+                </>
+              ) : (
+                <span className={styles.summaryItem}>금일 공용 체험 청첩장</span>
+              )}
             </div>
           </div>
 
           <div className={styles.heroActions}>
-            <button
-              className={styles.primaryButton}
-              type="button"
-              onClick={handleCreateEvent}
-              disabled={walletLoading}
-            >
-              {walletLoading ? '제작권 확인 중' : '새 이벤트 만들기'}
-            </button>
+            {!experience ? (
+              <button
+                className={styles.primaryButton}
+                type="button"
+                onClick={handleCreateEvent}
+                disabled={walletLoading}
+              >
+                {walletLoading ? '제작권 확인 중' : '새 이벤트 만들기'}
+              </button>
+            ) : null}
             <button
               className={styles.secondaryButton}
               type="button"
@@ -775,6 +813,9 @@ export default function MyInvitationsClient() {
                   authUid={authUser?.uid ?? null}
                   event={event}
                   key={event.eventId}
+                  gateway={gateway}
+                  routes={routes}
+                  experience={experience}
                 />
               ))}
             </div>

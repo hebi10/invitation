@@ -584,6 +584,25 @@
   min-width: 0;
 }
 
+.eventListControls {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 12px;
+}
+
+.eventPageSizeField {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--admin-color-text-muted);
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.eventPageSizeField select {
+  min-width: 92px;
+}
+
 .eventDetailPanel {
   align-self: start;
   padding-left: 20px;

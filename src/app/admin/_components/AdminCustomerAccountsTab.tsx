@@ -3,12 +3,15 @@
 import { useEffect, useMemo, useState } from 'react';
 
 import { getEventTypeDisplayLabel } from '@/lib/eventTypes';
-import { buildEventPreviewPath } from '@/lib/eventPreviewLinks';
+import type { AppRoutes } from '@/lib/demoExperienceRoutes';
 import type {
   AdminCustomerAccountSummary,
   AdminCustomerLinkedEventSummary,
 } from '@/services/adminCustomerService';
-import type { InvitationProductTier } from '@/types/invitationPage';
+import type {
+  InvitationProductTier,
+  InvitationThemeKey,
+} from '@/types/invitationPage';
 
 import { AdminQueryState, EmptyState, FilterToolbar, Pagination, StatusBadge } from '.';
 import {
@@ -49,6 +52,8 @@ interface AdminCustomerAccountsTabProps {
       note?: string | null;
     }
   ) => void;
+  routes: AppRoutes;
+  experience: boolean;
 }
 
 function formatDateValue(value: string | null) {
@@ -140,6 +145,8 @@ export default function AdminCustomerAccountsTab({
   onIssueOwnershipInvite,
   onDeleteAccount,
   onGrantWalletCredit,
+  routes,
+  experience,
 }: AdminCustomerAccountsTabProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [connectionFilter, setConnectionFilter] = useState<CustomerConnectionFilter>('all');
@@ -554,7 +561,7 @@ export default function AdminCustomerAccountsTab({
             <div className={styles.tableActions}>
               <a
                 className="admin-button admin-button-ghost"
-                href={`/page-wizard/${encodeURIComponent(selectedEvent.slug)}`}
+                href={routes.wizardEdit(selectedEvent.slug)}
                 target="_blank"
                 rel="noreferrer"
               >
@@ -562,17 +569,16 @@ export default function AdminCustomerAccountsTab({
               </a>
               <a
                 className="admin-button admin-button-ghost"
-                href={buildEventPreviewPath(
+                href={routes.preview(
                   selectedEvent.slug,
-                  selectedEvent.eventType,
-                  selectedEvent.defaultTheme
+                  selectedEvent.defaultTheme as InvitationThemeKey
                 )}
                 target="_blank"
                 rel="noreferrer"
               >
                 미리보기
               </a>
-              {account.isAdmin ? (
+              {account.isAdmin && !experience ? (
                 <button
                   type="button"
                   className="admin-button admin-button-secondary"

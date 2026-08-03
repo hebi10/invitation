@@ -24,6 +24,15 @@ import { getWeddingPageBySlug } from '@/config/weddingPages';
 import { sanitizeHeartIconPlaceholdersDeep } from '@/utils/textSanitizers';
 
 import {
+  CustomerEventClaimError,
+  resolveCustomerEventClaimState,
+} from './customerEventClaimPolicy';
+import {
+  isServerAdminUserEnabled,
+  listServerAdminUserIds,
+} from './adminUserServerService';
+import { getServerAuth } from './firebaseAdmin';
+import {
   buildServerTrustedMobileInvitationPageConfigForSave,
   getServerEditableInvitationPageConfig,
   saveServerInvitationPageConfig,
@@ -32,6 +41,9 @@ import { listStoredEventSummaries } from './repositories/eventRepository';
 import { resolveStoredEventBySlug } from './repositories/eventRepository';
 import { firestoreEventCommentRepository } from './repositories/eventCommentRepository';
 import type { EventSummaryRecord } from './repositories/eventReadThroughDtos';
+import { claimStoredEventOwnership } from './repositories/customerEventClaimRepository';
+
+export { CustomerEventClaimError } from './customerEventClaimPolicy';
 
 export interface CustomerOwnedEventSummary {
   eventId: string;
@@ -291,16 +303,22 @@ export async function getCustomerEventOwnershipSnapshot(
     };
   }
 
-  if (!eventOwnerUid) {
+  const claimState = resolveCustomerEventClaimState({
+    currentOwnerUid: eventOwnerUid,
+    claimantUid: normalizedOwnerUid,
+    adminUserIds: await listServerAdminUserIds(),
+  });
+
+  if (claimState === 'owner') {
     return {
-      status: 'claimable',
+      status: 'owner',
       summary,
     };
   }
 
-  if (eventOwnerUid === normalizedOwnerUid) {
+  if (claimState === 'claimable') {
     return {
-      status: 'owner',
+      status: 'claimable',
       summary,
     };
   }
@@ -316,6 +334,72 @@ export async function getCustomerEventOwnershipSnapshot(
     status: 'different-owner',
     summary,
   };
+}
+
+type CustomerEventClaimDependencies = {
+  isAdminUserEnabled: (uid: string) => Promise<boolean>;
+  getCustomerIdentity: (uid: string) => Promise<{
+    uid: string;
+    email: string | null;
+    displayName: string | null;
+  }>;
+  claimOwnerBySlug: typeof claimStoredEventOwnership;
+  getEditableSnapshot: typeof getCustomerEditableInvitationPageSnapshot;
+};
+
+const defaultCustomerEventClaimDependencies: CustomerEventClaimDependencies = {
+  isAdminUserEnabled: isServerAdminUserEnabled,
+  async getCustomerIdentity(uid) {
+    const auth = getServerAuth();
+    if (!auth) {
+      throw new CustomerEventClaimError(
+        503,
+        'unavailable',
+        '고객 계정 정보를 확인할 수 없습니다. 잠시 후 다시 시도해 주세요.'
+      );
+    }
+
+    const user = await auth.getUser(uid);
+    return {
+      uid: user.uid,
+      email: user.email ?? null,
+      displayName: user.displayName ?? null,
+    };
+  },
+  claimOwnerBySlug: claimStoredEventOwnership,
+  getEditableSnapshot: getCustomerEditableInvitationPageSnapshot,
+};
+
+export async function claimCustomerEventOwnership(
+  ownerUid: string,
+  pageSlug: string,
+  dependencies: CustomerEventClaimDependencies = defaultCustomerEventClaimDependencies
+) {
+  const normalizedOwnerUid = ownerUid.trim();
+  const normalizedPageSlug = normalizeInvitationPageSlugInput(pageSlug);
+  if (!normalizedOwnerUid || !normalizedPageSlug) {
+    throw new CustomerEventClaimError(
+      400,
+      'invalid',
+      '연결할 청첩장 주소와 고객 계정을 확인해 주세요.'
+    );
+  }
+
+  if (await dependencies.isAdminUserEnabled(normalizedOwnerUid)) {
+    throw new CustomerEventClaimError(
+      403,
+      'admin',
+      '관리자 계정은 고객용 편집 시작 기능을 사용할 수 없습니다.'
+    );
+  }
+
+  const customer = await dependencies.getCustomerIdentity(normalizedOwnerUid);
+  await dependencies.claimOwnerBySlug({
+    pageSlug: normalizedPageSlug,
+    customer,
+  });
+
+  return dependencies.getEditableSnapshot(normalizedOwnerUid, normalizedPageSlug);
 }
 
 export async function getCustomerEditableInvitationPageSnapshot(

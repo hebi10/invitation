@@ -1,0 +1,56 @@
+.picker {
+  display: grid;
+  gap: 14px;
+  padding: 18px;
+  border: 1px solid #d6c49e;
+  background: #fffaf0;
+}
+
+.picker h3,
+.picker p {
+  margin: 0;
+}
+
+.picker p {
+  margin-top: 5px;
+  color: #6c6258;
+  font-size: 0.86rem;
+  line-height: 1.5;
+}
+
+.options {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.options button {
+  display: grid;
+  gap: 6px;
+  padding: 6px;
+  border: 1px solid #cfc5b9;
+  background: #fff;
+  color: #403830;
+  cursor: pointer;
+}
+
+.options button[aria-pressed='true'] {
+  border: 2px solid #72572c;
+}
+
+.options img {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+}
+
+.options span {
+  font-size: 0.76rem;
+  font-weight: 700;
+}
+
+@media (max-width: 680px) {
+  .options {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}

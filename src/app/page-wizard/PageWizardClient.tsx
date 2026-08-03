@@ -21,6 +21,7 @@ import {
   type PersonRole,
 } from '@/app/page-wizard/pageWizardEditorUtils';
 import { useAdmin } from '@/contexts';
+import { buildAppRoutes, type AppRoutes } from '@/lib/demoExperienceRoutes';
 import {
   appQueryKeys,
   THIRTY_MINUTES_MS,
@@ -40,6 +41,7 @@ import { getStorageDownloadUrl } from '@/services/imageService';
 import { searchKakaoLocalAddress } from '@/services/kakaoLocalService';
 import { getInvitationMusicLibraryFromStorage } from '@/services/musicService';
 import {
+  claimCustomerEventForCurrentAccount,
   getCustomerEditableInvitationPageState,
   listOwnedCustomerEvents,
   type CustomerOwnedEventSummary,
@@ -93,6 +95,11 @@ import {
 } from './pageWizardEventConfig';
 import { getPageWizardPresentation } from './pageWizardPresentation';
 import {
+  demoExperienceWizardPersistenceGateway,
+  productionWizardPersistenceGateway,
+  type WizardPersistenceGateway,
+} from './wizardPersistenceGateway';
+import {
   getNoticeClassName,
   getStepIndex,
   type MusicPreviewState,
@@ -123,12 +130,16 @@ const IS_DEV_NOTICE_MODE = process.env.NODE_ENV !== 'production';
 interface PageWizardClientProps {
   initialSlug: string | null;
   forcedEventType?: EventTypeKey;
+  gateway?: WizardPersistenceGateway;
+  routes?: AppRoutes;
+  experience?: boolean;
 }
 
 type ExistingWizardLoadState =
   | {
       status: 'ready';
       editableConfig: EditableInvitationPageConfig;
+      version: number | null;
     }
   | {
       status: 'claim';
@@ -141,7 +152,15 @@ type ExistingWizardLoadState =
 export default function PageWizardClient({
   initialSlug,
   forcedEventType,
+  gateway: gatewayOverride,
+  routes: routesOverride,
+  experience = false,
 }: PageWizardClientProps) {
+  const gateway = gatewayOverride ??
+    (experience
+      ? demoExperienceWizardPersistenceGateway
+      : productionWizardPersistenceGateway);
+  const routes = routesOverride ?? buildAppRoutes(experience ? 'experience' : 'production');
   const router = useRouter();
   const searchParams = useSearchParams();
   const requestedEventType = normalizeEventTypeKey(
@@ -164,6 +183,8 @@ export default function PageWizardClient({
     resetPublishedState,
   } = useWizardVisibilityState(false);
   const [persistedSlug, setPersistedSlug] = useState<string | null>(initialSlug);
+  const [persistedVersion, setPersistedVersion] = useState<number | null>(null);
+  const [hasVersionConflict, setHasVersionConflict] = useState(false);
   const [slugInput, setSlugInput] = useState(initialSlug ?? '');
   const [hasManualSlugOverride, setHasManualSlugOverride] = useState(
     Boolean(initialSlug?.trim())
@@ -174,6 +195,7 @@ export default function PageWizardClient({
   const [, setLastSavedAt] = useState<Date | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [isClaimingOwnership, setIsClaimingOwnership] = useState(false);
   const [isSearchingVenueAddress, setIsSearchingVenueAddress] = useState(false);
   const [uploadingField, setUploadingField] = useState<UploadFieldKind | null>(null);
   const [requiresOwnershipClaim, setRequiresOwnershipClaim] = useState(false);
@@ -199,7 +221,8 @@ export default function PageWizardClient({
 
   const canCreateNew = isAdminLoggedIn;
   const canOpenExistingWizard = Boolean(initialSlug && isLoggedIn);
-  const canUploadImages = isAdminLoggedIn || Boolean(initialSlug && isLoggedIn);
+  const canUploadImages =
+    !experience && (isAdminLoggedIn || Boolean(initialSlug && isLoggedIn));
   const wizardPresentation = getPageWizardPresentation(eventType);
   const pageClassName =
     wizardPresentation.pageClassName === 'birthday'
@@ -218,6 +241,7 @@ export default function PageWizardClient({
       !isAdminLoading &&
       isLoggedIn &&
       !isAdminLoggedIn &&
+      !experience &&
       Boolean(authUser?.uid),
     queryFn: async () => listOwnedCustomerEvents(authUser?.uid ?? ''),
     staleTime: 0,
@@ -271,6 +295,15 @@ export default function PageWizardClient({
     queryFn: async () => {
       if (!initialSlug) {
         throw new Error('기존 청첩장 slug가 없습니다.');
+      }
+
+      if (experience) {
+        const editable = await gateway.loadEditable(initialSlug, isAdminLoggedIn);
+        return {
+          status: 'ready',
+          editableConfig: editable,
+          version: editable.version,
+        } satisfies ExistingWizardLoadState;
       }
 
       let rawEditableConfig: EditableInvitationPageConfig | null = null;
@@ -364,6 +397,7 @@ export default function PageWizardClient({
       return {
         status: 'ready',
         editableConfig,
+        version: null,
       } satisfies ExistingWizardLoadState;
     },
     staleTime: 0,
@@ -441,7 +475,7 @@ export default function PageWizardClient({
   );
 
   const applyLoadedEditableConfig = useCallback(
-    (editableConfig: EditableInvitationPageConfig) => {
+    (editableConfig: EditableInvitationPageConfig, version: number | null = null) => {
       const nextConfig = normalizeFormConfig(editableConfig.config);
       const nextEventType = normalizeEventTypeKey(
         editableConfig.config.eventType,
@@ -462,6 +496,8 @@ export default function PageWizardClient({
           : getDefaultThemeForEventType(nextEventType)
       );
       setLastSavedAt(toDate(editableConfig.lastSavedAt));
+      setPersistedVersion(version);
+      setHasVersionConflict(false);
       setRequiresOwnershipClaim(false);
       setAccessErrorMessage(null);
     },
@@ -493,6 +529,7 @@ export default function PageWizardClient({
       {
         status: 'ready',
         editableConfig: ownedEventFallbackEditableConfig,
+        version: null,
       } satisfies ExistingWizardLoadState
     );
     applyLoadedEditableConfig(ownedEventFallbackEditableConfig);
@@ -515,6 +552,52 @@ export default function PageWizardClient({
   const clearNotice = useCallback(() => {
     setNotice(null);
   }, []);
+
+  const handleClaimOwnership = useCallback(async () => {
+    if (!initialSlug || isClaimingOwnership) {
+      return;
+    }
+
+    setIsClaimingOwnership(true);
+    clearNotice();
+    try {
+      const editableConfig = await claimCustomerEventForCurrentAccount(initialSlug);
+      queryClient.setQueryData(
+        [
+          'page-wizard-existing',
+          initialSlug,
+          authUser?.uid ?? null,
+          isAdminLoggedIn,
+          isLoggedIn,
+        ],
+        {
+          status: 'ready',
+          editableConfig,
+          version: null,
+        } satisfies ExistingWizardLoadState
+      );
+      await queryClient.invalidateQueries({
+        queryKey: appQueryKeys.ownedCustomerEvents(authUser?.uid ?? null),
+      });
+      applyLoadedEditableConfig(editableConfig);
+      showNotice('success', '현재 계정에 연결했습니다. 이제 내용을 편집할 수 있습니다.');
+    } catch (error) {
+      showErrorNotice(error, '청첩장을 현재 계정에 연결하지 못했습니다.');
+    } finally {
+      setIsClaimingOwnership(false);
+    }
+  }, [
+    applyLoadedEditableConfig,
+    authUser?.uid,
+    clearNotice,
+    initialSlug,
+    isAdminLoggedIn,
+    isClaimingOwnership,
+    isLoggedIn,
+    queryClient,
+    showErrorNotice,
+    showNotice,
+  ]);
 
   const updateSwiperLayout = useCallback(() => {
     if (typeof window === 'undefined') {
@@ -639,6 +722,9 @@ export default function PageWizardClient({
     let cancelled = false;
 
     const loadMusicLibrary = async () => {
+      if (experience) {
+        return;
+      }
       const storageLibrary = await getInvitationMusicLibraryFromStorage();
 
       if (cancelled || storageLibrary.length === 0) {
@@ -658,7 +744,7 @@ export default function PageWizardClient({
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [experience]);
 
   useEffect(() => {
     if (resolvedPersistedSlug || hasManualSlugOverride) {
@@ -781,6 +867,8 @@ export default function PageWizardClient({
       resetPublishedState();
       setDefaultTheme(getDefaultThemeForEventType(requestedEventType));
       setLastSavedAt(null);
+      setPersistedVersion(null);
+      setHasVersionConflict(false);
       setRequiresOwnershipClaim(false);
       setAccessErrorMessage(null);
       setIsLoading(false);
@@ -810,6 +898,7 @@ export default function PageWizardClient({
           {
             status: 'ready',
             editableConfig: ownedEventFallbackEditableConfig,
+            version: null,
           } satisfies ExistingWizardLoadState
         );
         applyLoadedEditableConfig(ownedEventFallbackEditableConfig);
@@ -840,7 +929,10 @@ export default function PageWizardClient({
     }
 
     if (wizardLoadQuery.data?.status === 'ready') {
-      applyLoadedEditableConfig(wizardLoadQuery.data.editableConfig);
+      applyLoadedEditableConfig(
+        wizardLoadQuery.data.editableConfig,
+        wizardLoadQuery.data.version
+      );
       setIsLoading(false);
       return;
     }
@@ -1338,6 +1430,10 @@ export default function PageWizardClient({
     normalizeFormState: normalizeFormConfig,
     showNotice,
     showErrorNotice,
+    gateway,
+    persistedVersion,
+    setPersistedVersion,
+    onVersionConflict: () => setHasVersionConflict(true),
     onPersisted: async ({ slug, config, published: nextPublished }) => {
       const nextProductTier = normalizeInvitationProductTier(config.productTier);
 
@@ -1413,11 +1509,12 @@ export default function PageWizardClient({
     steps: wizardSteps,
     getValidationForStep,
     persistDraft,
+    getEditPath: routes.wizardEdit,
     slideToStep,
     clearNotice,
     showErrorNotice,
     onComplete: (savedSlug) => {
-      router.push(`/page-wizard/${encodeURIComponent(savedSlug)}/result`, {
+      router.push(routes.wizardResult(savedSlug), {
         scroll: false,
       });
     },
@@ -1583,6 +1680,17 @@ export default function PageWizardClient({
             onKakaoCardImageRemove={handleKakaoCardImageRemove}
             onGalleryImageRemove={handleGalleryImageRemove}
             onGalleryImageMove={handleGalleryImageMove}
+            experience={experience}
+            onDemoImageSelect={(imageUrl) => {
+              updateForm((draft) => {
+                draft.metadata.images.wedding = imageUrl;
+                draft.metadata.images.social = imageUrl;
+                draft.metadata.images.kakaoCard = imageUrl;
+                if (draft.pageData) {
+                  draft.pageData.galleryImages = [imageUrl];
+                }
+              });
+            }}
           />
         );
       case 'extra':
@@ -1622,7 +1730,20 @@ export default function PageWizardClient({
       return null;
     }
 
-    return <div className={getNoticeClassName(notice.tone)}>{notice.message}</div>;
+    return (
+      <div className={getNoticeClassName(notice.tone)}>
+        {notice.message}
+        {hasVersionConflict && initialSlug ? (
+          <button
+            type="button"
+            className={styles.secondaryButton}
+            onClick={() => void wizardLoadQuery.refetch()}
+          >
+            최신 내용 불러오기
+          </button>
+        ) : null}
+      </div>
+    );
   };
   const isExistingWizardRefreshable = Boolean(
     initialSlug && (isAdminLoggedIn || isLoggedIn)
@@ -1694,18 +1815,19 @@ export default function PageWizardClient({
             <div className={styles.inlineActions}>
               <button
                 type="button"
-                className={styles.secondaryButton}
-                onClick={() => void wizardLoadQuery.refetch()}
-                disabled={isWizardRefreshing}
+                className={styles.primaryButton}
+                onClick={() => void handleClaimOwnership()}
+                disabled={isClaimingOwnership}
               >
-                {isWizardRefreshing ? '다시 불러오는 중...' : '다시 불러오기'}
+                {isClaimingOwnership ? '계정에 연결하는 중...' : '이 계정으로 편집 시작'}
               </button>
               <button
                 type="button"
-                className={styles.primaryButton}
-                onClick={() => void router.push('/my-invitations', { scroll: false })}
+                className={styles.secondaryButton}
+                onClick={() => void wizardLoadQuery.refetch()}
+                disabled={isWizardRefreshing || isClaimingOwnership}
               >
-                {wizardPresentation.myPagesLabel}
+                {isWizardRefreshing ? '다시 불러오는 중...' : '다시 불러오기'}
               </button>
             </div>
           </section>
@@ -1736,7 +1858,9 @@ export default function PageWizardClient({
               <button
                 type="button"
                 className={styles.secondaryButton}
-                onClick={() => void router.push('/my-invitations', { scroll: false })}
+                onClick={() =>
+                  void router.push(routes.customerDashboard(), { scroll: false })
+                }
               >
                 {wizardPresentation.myPagesLabel}
               </button>

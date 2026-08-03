@@ -108,6 +108,10 @@ service firebase.storage {
         request.resource.contentType.matches('image/.*');
     }
 
+    match /demo-wedding-images/{allPaths=**} {
+      allow read, write: if false;
+    }
+
     match /wedding-images {
       allow list: if isAdmin();
     }

@@ -15,6 +15,9 @@ const customerEventService = readText('src/services/customerEventService.ts');
 const wizardPersistence = readText(
   'src/app/page-wizard/hooks/useWizardPersistence.ts'
 );
+const wizardPersistenceGateway = readText(
+  'src/app/page-wizard/wizardPersistenceGateway.ts'
+);
 
 assert(
   customerEditableRoute.includes('export async function POST'),
@@ -32,14 +35,15 @@ assert(
 );
 
 assert(
-  wizardPersistence.includes('saveCustomerEditableInvitationPageConfig'),
-  'Page wizard persistence must call the customer save API for non-admin sessions.'
+  wizardPersistence.includes('gateway.save') &&
+    wizardPersistenceGateway.includes('saveCustomerEditableInvitationPageConfig'),
+  'Page wizard persistence gateway must call the customer save API for non-admin sessions.'
 );
 
 assert(
   wizardPersistence.includes('isAdminLoggedIn') &&
-    wizardPersistence.includes('saveInvitationPageConfig') &&
-    wizardPersistence.includes('saveCustomerEditableInvitationPageConfig'),
+    wizardPersistenceGateway.includes('saveInvitationPageConfig') &&
+    wizardPersistenceGateway.includes('saveCustomerEditableInvitationPageConfig'),
   'Page wizard persistence must keep admin direct saves and split customer saves.'
 );
 
