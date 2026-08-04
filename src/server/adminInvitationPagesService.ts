@@ -1,6 +1,10 @@
 import 'server-only';
 
-import { createInvitationPageFromSeed } from '@/config/weddingPages';
+import { getEventSamplePageBySlug } from '@/config/eventSamplePages';
+import {
+  createInvitationPageFromSeed,
+  getWeddingPageBySlug,
+} from '@/config/weddingPages';
 import { DEFAULT_EVENT_TYPE, normalizeEventTypeKey } from '@/lib/eventTypes';
 import {
   buildInvitationVariants,
@@ -20,8 +24,11 @@ import { listServerAdminUserIds } from './adminUserServerService';
 import {
   firestoreEventRepository,
   listStoredEventSummaries,
+  type StoredInvitationPageConfigRecord,
 } from './repositories/eventRepository';
 import type { EventSummaryRecord } from './repositories/eventReadThroughDtos';
+
+export type AdminInvitationPageSource = 'stored' | 'sample' | 'none';
 
 function isInvitationVariantKey(value: string): value is InvitationVariantKey {
   return INVITATION_VARIANT_KEYS.includes(value as InvitationVariantKey);
@@ -35,13 +42,50 @@ function buildFallbackVariants(summary: EventSummaryRecord, displayName: string)
   });
 }
 
-function buildAdminInvitationPageSummary(
+export function resolveAdminInvitationPage(
+  summary: EventSummaryRecord,
+  contentRecord: StoredInvitationPageConfigRecord | null
+) {
+  const published = summary.visibility?.published ?? summary.published;
+
+  if (contentRecord) {
+    return {
+      page: createInvitationPageFromSeed(contentRecord.config, { published }),
+      source: 'stored' as const,
+    };
+  }
+
+  const eventSample = getEventSamplePageBySlug(summary.slug);
+  if (eventSample) {
+    return {
+      page: { ...eventSample, published },
+      source: 'sample' as const,
+    };
+  }
+
+  const weddingSample = getWeddingPageBySlug(summary.slug);
+  if (!weddingSample) {
+    return { page: null, source: 'none' as const };
+  }
+
+  return {
+    page: createInvitationPageFromSeed(weddingSample, { published }),
+    source: 'sample' as const,
+  };
+}
+
+export function buildAdminInvitationPageSummary(
   summary: EventSummaryRecord,
   page: InvitationPage | null,
-  adminUserIds: Set<string>
+  adminUserIds: Set<string>,
+  source: AdminInvitationPageSource
 ): InvitationPageSummary {
   const displayName =
-    page?.displayName || summary.displayName || summary.title || summary.slug;
+    (source === 'stored' ? page?.displayName : null) ||
+    summary.displayName ||
+    summary.title ||
+    page?.displayName ||
+    summary.slug;
   const productTier = normalizeInvitationProductTier(
     page?.productTier,
     DEFAULT_INVITATION_PRODUCT_TIER
@@ -84,13 +128,9 @@ export async function listAdminInvitationPageSummaries() {
   const pages = await Promise.all(
     eventSummaries.map(async (summary) => {
       const contentRecord = await firestoreEventRepository.findContentBySlug(summary.slug);
-      const page = contentRecord
-        ? createInvitationPageFromSeed(contentRecord.config, {
-            published: summary.visibility?.published ?? summary.published,
-          })
-        : null;
+      const { page, source } = resolveAdminInvitationPage(summary, contentRecord);
 
-      return buildAdminInvitationPageSummary(summary, page, adminUserIds);
+      return buildAdminInvitationPageSummary(summary, page, adminUserIds, source);
     })
   );
 

@@ -129,18 +129,18 @@ export default function WeddingCalendarInteractive({
         <div className={styles.monthHeader}>
           {'monthTitleContainer' in styles ? (
             <div className={styles.monthTitleContainer}>
-              <h4 className={styles.monthTitle}>
+              <h3 className={styles.monthTitle}>
                 {displayMonth.getFullYear()}년 {monthNames[displayMonth.getMonth()]}
-              </h4>
+              </h3>
               {weddingDate && 'monthSubtitle' in styles && (
                 <div className={styles.monthSubtitle}>{weddingDate.getDate()}일 결혼식</div>
               )}
             </div>
           ) : (
             <>
-              <h4 className={styles.monthTitle}>
+              <h3 className={styles.monthTitle}>
                 {displayMonth.getFullYear()}년 {monthNames[displayMonth.getMonth()]}
-              </h4>
+              </h3>
               {weddingDate && 'monthSubtitle' in styles && (
                 <div className={styles.monthSubtitle}>{weddingDate.getDate()}일 결혼식</div>
               )}

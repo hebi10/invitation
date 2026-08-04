@@ -1,6 +1,11 @@
 import type { Metadata, Viewport } from 'next';
 import type { ReactNode } from 'react';
 
+import {
+  PUBLIC_SITE_URL,
+  resolveInvitationAssetUrl,
+  resolveInvitationFaviconUrl,
+} from '@/lib/invitationMetadata';
 import type { InvitationPage } from '@/types/invitationPage';
 
 import { type EventThemeKey, getEventThemeDefinition } from './eventPageThemes';
@@ -11,6 +16,7 @@ export const eventInvitationViewport: Viewport = {
 };
 
 const genericInvitationMetadata: Metadata = {
+  metadataBase: PUBLIC_SITE_URL,
   title: 'Mobile Wedding Invitation',
   description: 'Wedding invitation page',
   robots: {
@@ -31,16 +37,22 @@ export function getEventInvitationMetadata(page?: InvitationPage | null): Metada
 
   const socialPreviewImageUrl =
     page.metadata.images.social?.trim() || page.metadata.images.wedding?.trim() || '';
+  const absoluteSocialPreviewImageUrl = resolveInvitationAssetUrl(
+    socialPreviewImageUrl,
+    PUBLIC_SITE_URL
+  );
+  const faviconUrl = resolveInvitationFaviconUrl(page.metadata.images.favicon);
 
   return {
+    metadataBase: PUBLIC_SITE_URL,
     title: page.metadata.title || page.displayName,
     description: page.metadata.description || page.description,
     keywords: page.metadata.keywords,
     robots: genericInvitationMetadata.robots,
     icons: {
-      icon: page.metadata.images.favicon || '/favicon.ico',
-      shortcut: page.metadata.images.favicon || '/favicon.ico',
-      apple: page.metadata.images.favicon || '/favicon.ico',
+      icon: faviconUrl,
+      shortcut: faviconUrl,
+      apple: faviconUrl,
     },
     openGraph: {
       type: 'website',
@@ -50,10 +62,10 @@ export function getEventInvitationMetadata(page?: InvitationPage | null): Metada
         page.metadata.openGraph.description ||
         page.metadata.description ||
         page.description,
-      images: socialPreviewImageUrl
+      images: absoluteSocialPreviewImageUrl
         ? [
             {
-              url: socialPreviewImageUrl,
+              url: absoluteSocialPreviewImageUrl,
               alt: page.displayName,
             },
           ]
@@ -66,7 +78,7 @@ export function getEventInvitationMetadata(page?: InvitationPage | null): Metada
         page.metadata.twitter.description ||
         page.metadata.description ||
         page.description,
-      images: socialPreviewImageUrl ? [socialPreviewImageUrl] : undefined,
+      images: absoluteSocialPreviewImageUrl ? [absoluteSocialPreviewImageUrl] : undefined,
     },
   };
 }

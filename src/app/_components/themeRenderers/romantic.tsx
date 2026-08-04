@@ -1236,6 +1236,7 @@ function RomanticGiftSection({
                     setCopiedKey((current) => (current === key ? null : current));
                   }, 1800);
                 }}
+                aria-label={`${account.accountHolder} ${copiedKey === key ? '계좌 복사 완료' : '계좌 복사'}`}
               >
                 {copiedKey === key ? '복사됨' : '계좌 복사'}
               </button>

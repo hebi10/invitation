@@ -79,6 +79,7 @@ export default function AdminEventMobileList({
                 className={styles.eventMobileDetailButton}
                 data-event-slug={page.slug}
                 data-event-mobile-select
+                aria-haspopup="dialog"
                 aria-expanded={isSelected}
                 aria-controls="admin-event-detail"
                 onClick={() => onSelect(page.slug)}

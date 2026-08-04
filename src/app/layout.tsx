@@ -1,7 +1,9 @@
 import type { Metadata } from 'next';
+import { PUBLIC_SITE_URL } from '@/lib/invitationMetadata';
 import './globals.css';
 
 export const metadata: Metadata = {
+  metadataBase: PUBLIC_SITE_URL,
   title: {
     default: '모바일 청첩장',
     template: '%s | 모바일 청첩장',

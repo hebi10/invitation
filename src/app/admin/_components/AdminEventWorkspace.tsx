@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef } from 'react';
 
 import type { InvitationPageSummary } from '@/services/invitationPageService';
 import { getEventTypeDisplayLabel } from '@/lib/eventTypes';
@@ -86,16 +86,7 @@ export default function AdminEventWorkspace({
   const eventPage = getAdminEventPage(filteredPages, currentPage, pageSize);
   const selectedPage = selectedSlug ? pages.find((page) => page.slug === selectedSlug) : null;
   const lastSelectedSlug = useRef<string | null>(null);
-  const [isMobileViewport, setIsMobileViewport] = useState<boolean | null>(null);
-
-  useEffect(() => {
-    const mediaQuery = window.matchMedia('(max-width: 767px)');
-    const syncViewport = () => setIsMobileViewport(mediaQuery.matches);
-
-    syncViewport();
-    mediaQuery.addEventListener('change', syncViewport);
-    return () => mediaQuery.removeEventListener('change', syncViewport);
-  }, []);
+  const pendingFocusSlug = useRef<string | null>(null);
 
   useEffect(() => {
     if (
@@ -122,10 +113,12 @@ export default function AdminEventWorkspace({
     }
   }, [selectedPage]);
 
-  const closeDetail = () => {
-    const slugToFocus = lastSelectedSlug.current;
-    onQueryChange({ event: null });
-    window.requestAnimationFrame(() => {
+  useEffect(() => {
+    if (selectedSlug !== null || !pendingFocusSlug.current) return;
+
+    const slugToFocus = pendingFocusSlug.current;
+    pendingFocusSlug.current = null;
+    const focusFrame = window.requestAnimationFrame(() => {
       [...document.querySelectorAll<HTMLButtonElement>('[data-event-slug]')]
         .find(
           (button) =>
@@ -133,6 +126,13 @@ export default function AdminEventWorkspace({
         )
         ?.focus();
     });
+
+    return () => window.cancelAnimationFrame(focusFrame);
+  }, [selectedSlug]);
+
+  const closeDetail = () => {
+    pendingFocusSlug.current = lastSelectedSlug.current;
+    onQueryChange({ event: null });
   };
 
   return (
@@ -276,34 +276,24 @@ export default function AdminEventWorkspace({
           ) : null}
         </div>
         {selectedPage ? (
-          <>
-            <button
-              type="button"
-              className={styles.eventDetailMobileBackdrop}
-              onClick={closeDetail}
-              tabIndex={-1}
-              aria-hidden="true"
-            />
-            <AdminEventDetailPanel
-              page={selectedPage}
-              isMobileSheet={isMobileViewport !== false}
-              updatingPublished={updatingPublishedSlug === selectedPage.slug}
-              updatingTier={updatingTierSlug === selectedPage.slug}
-              updatingVariantToken={updatingVariantToken}
-              deleting={deletingSlug === selectedPage.slug}
-              issuingInvite={issuingInviteSlug === selectedPage.slug}
-              onClose={closeDetail}
-              onTogglePublished={onTogglePublished}
-              onChangeTier={onChangeTier}
-              onEnableVariant={onEnableVariant}
-              onDisableVariant={onDisableVariant}
-              onOpenRelated={onQueryChange}
-              onIssueOwnershipInvite={onIssueOwnershipInvite}
-              onDelete={onDelete}
-              routes={routes}
-              experience={experience}
-            />
-          </>
+          <AdminEventDetailPanel
+            page={selectedPage}
+            updatingPublished={updatingPublishedSlug === selectedPage.slug}
+            updatingTier={updatingTierSlug === selectedPage.slug}
+            updatingVariantToken={updatingVariantToken}
+            deleting={deletingSlug === selectedPage.slug}
+            issuingInvite={issuingInviteSlug === selectedPage.slug}
+            onClose={closeDetail}
+            onTogglePublished={onTogglePublished}
+            onChangeTier={onChangeTier}
+            onEnableVariant={onEnableVariant}
+            onDisableVariant={onDisableVariant}
+            onOpenRelated={onQueryChange}
+            onIssueOwnershipInvite={onIssueOwnershipInvite}
+            onDelete={onDelete}
+            routes={routes}
+            experience={experience}
+          />
         ) : null}
       </div>
     </div>

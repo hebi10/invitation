@@ -92,6 +92,7 @@ export default function GiftInfoThemed({
                 className={styles.copyButton}
                 onClick={() => handleCopy(accountKey, account.bank, account.accountNumber)}
                 type="button"
+                aria-label={`${account.accountHolder} ${copiedKey === accountKey ? copiedLabel : copyLabel}`}
               >
                 {copiedKey === accountKey ? copiedLabel : copyLabel}
               </button>

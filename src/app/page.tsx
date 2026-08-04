@@ -112,8 +112,8 @@ export default function Home() {
         <div className={styles.heroCopy}>
           <p className={styles.eyebrow}>초대장을 만드는 날부터, 추억을 남기는 날까지</p>
           <h1 id="service-title" className={styles.title}>
-            예쁜 초대장을 넘어,
-            <br />
+            단순한 <br />
+            초대장을 넘어,<br />
             오래 관리되는 청첩장
           </h1>
           <p className={styles.description}>

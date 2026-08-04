@@ -3,6 +3,10 @@
 import { useEffect } from 'react';
 
 import { BackgroundMusic } from '@/components';
+import {
+  resolveInvitationAssetUrl,
+  resolveInvitationFaviconUrl,
+} from '@/lib/invitationMetadata';
 import { resolveInvitationFeatures } from '@/lib/invitationProducts';
 import {
   clampInvitationMusicVolume,
@@ -62,9 +66,10 @@ function syncInvitationMetadata(page: EventPageReadyState['pageConfig']) {
 
   const title = page.metadata.title || page.displayName;
   const description = page.metadata.description || page.description;
-  const imageUrl =
+  const rawImageUrl =
     page.metadata.images.social?.trim() || page.metadata.images.wedding?.trim() || '';
-  const faviconUrl = page.metadata.images.favicon || '/favicon.ico';
+  const imageUrl = resolveInvitationAssetUrl(rawImageUrl, window.location.origin);
+  const faviconUrl = resolveInvitationFaviconUrl(page.metadata.images.favicon);
   const pageUrl =
     typeof window !== 'undefined'
       ? `${window.location.origin}${window.location.pathname}`

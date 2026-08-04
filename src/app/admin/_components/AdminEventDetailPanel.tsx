@@ -1,6 +1,7 @@
 'use client';
 
-import { useEffect, useRef, type KeyboardEvent } from 'react';
+import { useEffect, useRef, useState, type KeyboardEvent } from 'react';
+import { createPortal } from 'react-dom';
 
 import { getEventTypeDisplayLabel } from '@/lib/eventTypes';
 import type { InvitationPageSummary } from '@/services/invitationPageService';
@@ -20,7 +21,6 @@ import styles from '../page.module.css';
 
 interface AdminEventDetailPanelProps {
   page: InvitationPageSummary;
-  isMobileSheet: boolean;
   updatingPublished: boolean;
   updatingTier: boolean;
   updatingVariantToken: string | null;
@@ -95,7 +95,6 @@ function getVisibleTabbableElements(container: HTMLElement) {
 
 export default function AdminEventDetailPanel({
   page,
-  isMobileSheet,
   updatingPublished,
   updatingTier,
   updatingVariantToken,
@@ -115,6 +114,7 @@ export default function AdminEventDetailPanel({
   const panelRef = useRef<HTMLElement>(null);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
   const onCloseRef = useRef(onClose);
+  const [portalRoot, setPortalRoot] = useState<HTMLElement | null>(null);
   const capabilities = getAdminEventCapabilities(page);
   const previewLinks = getAdminEventPreviewLinks(page);
   const preview = previewLinks.find((link) => link.isDefault) ?? previewLinks[0];
@@ -133,6 +133,10 @@ export default function AdminEventDetailPanel({
   }, [onClose]);
 
   useEffect(() => {
+    setPortalRoot(document.querySelector<HTMLElement>('[data-admin-ui]') ?? document.body);
+  }, []);
+
+  useEffect(() => {
     const handleDocumentKeyDown = (event: globalThis.KeyboardEvent) => {
       if (!isAdminEventDetailCloseKey(event.key)) return;
 
@@ -145,13 +149,19 @@ export default function AdminEventDetailPanel({
   }, []);
 
   useEffect(() => {
-    if (!isMobileSheet) return;
+    if (!portalRoot) return;
 
-    window.requestAnimationFrame(() => closeButtonRef.current?.focus());
-  }, [isMobileSheet, page.slug]);
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    const focusFrame = window.requestAnimationFrame(() => closeButtonRef.current?.focus());
+
+    return () => {
+      window.cancelAnimationFrame(focusFrame);
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [page.slug, portalRoot]);
 
   const handlePanelKeyDown = (event: KeyboardEvent<HTMLElement>) => {
-    if (!isMobileSheet) return;
     if (event.key !== 'Tab' || !panelRef.current) return;
 
     const tabbableElements = getVisibleTabbableElements(panelRef.current);
@@ -170,85 +180,96 @@ export default function AdminEventDetailPanel({
     }
   };
 
-  return (
-    <aside
-      id="admin-event-detail"
-      ref={panelRef}
-      className={styles.eventDetailPanel}
-      aria-label="이벤트 상세"
-      aria-labelledby={isMobileSheet ? 'admin-event-detail-title' : undefined}
-      aria-modal={isMobileSheet || undefined}
-      role={isMobileSheet ? 'dialog' : undefined}
-      onKeyDown={handlePanelKeyDown}
+  if (!portalRoot) {
+    return null;
+  }
+
+  return createPortal(
+    <div
+      className={styles.eventDetailBackdrop}
+      role="presentation"
+      onMouseDown={(event) => {
+        if (event.target === event.currentTarget) {
+          onClose();
+        }
+      }}
     >
-      <div className={styles.eventDetailHeader}>
-        <div className={styles.eventDetailHeading}>
-          <p className={styles.eventDetailType}>
-            {getEventTypeDisplayLabel(page.eventType, 'admin')}
-          </p>
-          <h2 id="admin-event-detail-title" className={styles.eventDetailTitle}>
-            {page.displayName}
-          </h2>
-        </div>
-        <button
-          ref={closeButtonRef}
-          type="button"
-          className={styles.eventDetailClose}
-          onClick={onClose}
-        >
-          닫기
-        </button>
-      </div>
-
-      <dl className={styles.eventDetailMeta}>
-        <div>
-          <dt>행사일</dt>
-          <dd>{formatDate(page.date)}</dd>
-        </div>
-        <div>
-          <dt>장소</dt>
-          <dd>{page.venue || '장소 미입력'}</dd>
-        </div>
-        <div>
-          <dt>공개 주소</dt>
-          <dd>/{page.slug}</dd>
-        </div>
-      </dl>
-
-      <div className={styles.eventDetailActions}>
-        {!isReadOnlySeed ? (
-          <a className="admin-button admin-button-primary" href={routes.wizardEdit(page.slug)}>
-            편집
-          </a>
-        ) : null}
-        {preview ? (
-          <a
-            className="admin-button admin-button-secondary"
-            href={routes.preview(page.slug, preview.theme)}
-            target="_blank"
-            rel="noreferrer"
+      <section
+        id="admin-event-detail"
+        ref={panelRef}
+        className={styles.eventDetailPanel}
+        aria-labelledby="admin-event-detail-title"
+        aria-modal="true"
+        role="dialog"
+        onKeyDown={handlePanelKeyDown}
+      >
+        <div className={styles.eventDetailHeader}>
+          <div className={styles.eventDetailHeading}>
+            <p className={styles.eventDetailType}>
+              {getEventTypeDisplayLabel(page.eventType, 'admin')}
+            </p>
+            <h2 id="admin-event-detail-title" className={styles.eventDetailTitle}>
+              {page.displayName}
+            </h2>
+          </div>
+          <button
+            ref={closeButtonRef}
+            type="button"
+            className={styles.eventDetailClose}
+            onClick={onClose}
           >
-            미리보기
-          </a>
-        ) : null}
-      </div>
+            닫기
+          </button>
+        </div>
 
-      <label className={styles.eventDetailStatusField}>
-        <span>공개 상태</span>
-        <select
-          className="admin-select"
-          value={page.published ? 'published' : 'private'}
-          disabled={updatingPublished || isReadOnlySeed}
-          onChange={(event) => onTogglePublished(page, event.currentTarget.value === 'published')}
-          aria-label={`${page.displayName} 공개 상태`}
-        >
-          <option value="published">공개</option>
-          <option value="private">비공개</option>
-        </select>
-        {updatingPublished ? <small>변경 중입니다.</small> : null}
-      </label>
+        <dl className={styles.eventDetailMeta}>
+          <div>
+            <dt>행사일</dt>
+            <dd>{formatDate(page.date)}</dd>
+          </div>
+          <div>
+            <dt>장소</dt>
+            <dd>{page.venue || '장소 미입력'}</dd>
+          </div>
+          <div>
+            <dt>공개 주소</dt>
+            <dd>/{page.slug}</dd>
+          </div>
+        </dl>
 
-      {!isMobileSheet ? (
+        <div className={styles.eventDetailActions}>
+          {!isReadOnlySeed ? (
+            <a className="admin-button admin-button-primary" href={routes.wizardEdit(page.slug)}>
+              편집
+            </a>
+          ) : null}
+          {preview ? (
+            <a
+              className="admin-button admin-button-secondary"
+              href={routes.preview(page.slug, preview.theme)}
+              target="_blank"
+              rel="noreferrer"
+            >
+              미리보기
+            </a>
+          ) : null}
+        </div>
+
+        <label className={styles.eventDetailStatusField}>
+          <span>공개 상태</span>
+          <select
+            className="admin-select"
+            value={page.published ? 'published' : 'private'}
+            disabled={updatingPublished || isReadOnlySeed}
+            onChange={(event) => onTogglePublished(page, event.currentTarget.value === 'published')}
+            aria-label={`${page.displayName} 공개 상태`}
+          >
+            <option value="published">공개</option>
+            <option value="private">비공개</option>
+          </select>
+          {updatingPublished ? <small>변경 중입니다.</small> : null}
+        </label>
+
         <section className={styles.eventDetailOperations} aria-labelledby="event-operations-title">
           <h3 id="event-operations-title">운영 설정</h3>
           <label className={styles.eventDetailStatusField}>
@@ -304,66 +325,63 @@ export default function AdminEventDetailPanel({
             </div>
           ) : null}
         </section>
-      ) : null}
 
-      <div className={styles.eventDetailContext}>
-        <p>
-          <strong>노출 기간</strong>
-          <span>{getPeriodLabel(page)}</span>
-        </p>
-        <p>
-          <strong>고객 연결</strong>
-          <span>{getOwnershipLabel(page)}</span>
-        </p>
-      </div>
+        <div className={styles.eventDetailContext}>
+          <p>
+            <strong>노출 기간</strong>
+            <span>{getPeriodLabel(page)}</span>
+          </p>
+          <p>
+            <strong>고객 연결</strong>
+            <span>{getOwnershipLabel(page)}</span>
+          </p>
+        </div>
 
-      <p className={styles.eventDetailMobileNote}>
-        추가 관리는 PC에서 이용해 주세요.
-      </p>
-
-      {!isMobileSheet && relatedCapabilities.length > 0 ? (
-        <section className={styles.eventDetailRelated} aria-labelledby="event-related-title">
-          <h3 id="event-related-title">관련 관리</h3>
-          <div>
-            {relatedCapabilities.map((capability) => (
-              <button
-                key={capability}
-                type="button"
-                className={styles.eventRelatedButton}
-                onClick={() => onOpenRelated(getAdminEventRelatedQuery(page, capability))}
-              >
-                {relatedLabels[capability]}
-              </button>
-            ))}
-          </div>
-        </section>
-      ) : null}
-
-      {isReadOnlySeed ? (
-        <p>기본 체험 데이터는 조회 전용입니다.</p>
-      ) : null}
-      {!isMobileSheet && !isReadOnlySeed ? <details className={styles.eventDangerArea}>
-        <summary>위험 작업</summary>
-        <p>고객 연결 링크 발급과 삭제는 되돌리기 어려운 작업입니다.</p>
-        {page.ownershipKind !== 'customer' ? (
-          <button
-            type="button"
-            className="admin-button admin-button-secondary"
-            disabled={issuingInvite}
-            onClick={() => onIssueOwnershipInvite(page.slug)}
-          >
-            {issuingInvite ? '연결 링크 발급 중' : '고객 연결 링크 발급'}
-          </button>
+        {relatedCapabilities.length > 0 ? (
+          <section className={styles.eventDetailRelated} aria-labelledby="event-related-title">
+            <h3 id="event-related-title">관련 관리</h3>
+            <div>
+              {relatedCapabilities.map((capability) => (
+                <button
+                  key={capability}
+                  type="button"
+                  className={styles.eventRelatedButton}
+                  onClick={() => onOpenRelated(getAdminEventRelatedQuery(page, capability))}
+                >
+                  {relatedLabels[capability]}
+                </button>
+              ))}
+            </div>
+          </section>
         ) : null}
-        <button
-          type="button"
-          className="admin-button admin-button-danger"
-          disabled={deleting}
-          onClick={() => onDelete(page)}
-        >
-          {deleting ? '완전 삭제 중' : '완전 삭제'}
-        </button>
-      </details> : null}
-    </aside>
+
+        {isReadOnlySeed ? <p>기본 체험 데이터는 조회 전용입니다.</p> : null}
+        {!isReadOnlySeed ? (
+          <details className={styles.eventDangerArea}>
+            <summary>위험 작업</summary>
+            <p>고객 연결 링크 발급과 삭제는 되돌리기 어려운 작업입니다.</p>
+            {page.ownershipKind !== 'customer' ? (
+              <button
+                type="button"
+                className="admin-button admin-button-secondary"
+                disabled={issuingInvite}
+                onClick={() => onIssueOwnershipInvite(page.slug)}
+              >
+                {issuingInvite ? '연결 링크 발급 중' : '고객 연결 링크 발급'}
+              </button>
+            ) : null}
+            <button
+              type="button"
+              className="admin-button admin-button-danger"
+              disabled={deleting}
+              onClick={() => onDelete(page)}
+            >
+              {deleting ? '완전 삭제 중' : '완전 삭제'}
+            </button>
+          </details>
+        ) : null}
+      </section>
+    </div>,
+    portalRoot
   );
 }

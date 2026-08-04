@@ -1,3 +1,5 @@
+/* impeccable-disable design-system-color, design-system-radius, design-system-font-size -- 공개 청첩장 캘린더는 관리자 편집기용 DESIGN.md와 독립된 테마 체계를 사용합니다. */
+
 .container {
   width: calc(100% - 12px);
   padding: 3rem 1rem;
@@ -63,7 +65,7 @@
 .monthSubtitle {
   font-family: var(--font-sans);
   font-size: clamp(0.9rem, 2.5vw, 1rem);
-  color: #6c757d;
+  color: #5f6670;
   font-weight: 400;
 }
 
@@ -88,11 +90,11 @@
 }
 
 .weekday:first-child {
-  color: #dc3545;
+  color: #b42318;
 }
 
 .weekday:last-child {
-  color: #007bff;
+  color: #0057b8;
 }
 
 .calendarGrid {
@@ -137,7 +139,7 @@
 
 
 .weddingDay .dayNumber {
-  color: #dc3545;
+  color: #b42318;
   font-weight: 700;
 }
 

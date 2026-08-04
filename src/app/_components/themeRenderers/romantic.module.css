@@ -1,3 +1,5 @@
+/* impeccable-disable design-system-color, design-system-radius, design-system-font-size -- 공개 Romantic 청첩장은 관리자 편집기용 DESIGN.md와 독립된 테마 체계를 사용합니다. */
+
 .romanticTheme,
 .loaderContainer {
   --romantic-bg: #fdf8f5;
@@ -420,7 +422,7 @@
   margin-bottom: 0.2rem;
   text-align: center;
   font-family: var(--romantic-sans);
-  font-size: 0.68rem;
+  font-size: 0.75rem;
   letter-spacing: 0.16em;
   text-transform: uppercase;
   color: var(--romantic-accent);
@@ -448,7 +450,7 @@
   padding: 0.16rem 0.42rem;
   background: var(--romantic-bg-soft);
   font-family: var(--romantic-sans);
-  font-size: 0.64rem;
+  font-size: 0.75rem;
   color: var(--romantic-text-muted);
 }
 
@@ -618,7 +620,7 @@
 .calendarWeekdays span {
   text-align: center;
   font-family: var(--romantic-sans);
-  font-size: 0.62rem;
+  font-size: 0.75rem;
   color: var(--romantic-text-muted);
 }
 
@@ -636,7 +638,7 @@
   border-radius: 0.65rem;
   background: rgba(255, 255, 255, 0.72);
   font-family: var(--romantic-sans);
-  font-size: 0.72rem;
+  font-size: 0.75rem;
   color: var(--romantic-text-muted);
 }
 
@@ -692,7 +694,7 @@
 
 .scheduleSummaryItem span {
   font-family: var(--romantic-sans);
-  font-size: 0.66rem;
+  font-size: 0.75rem;
   letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--romantic-text-muted);
@@ -745,7 +747,7 @@
 
 .scheduleTabLabel {
   font-family: var(--romantic-sans);
-  font-size: 0.68rem;
+  font-size: 0.75rem;
   letter-spacing: 0.1em;
   text-transform: uppercase;
 }
@@ -889,7 +891,7 @@
 .countdownTimeLabel {
   margin-top: 0.35rem;
   font-family: var(--romantic-sans);
-  font-size: 0.67rem;
+  font-size: 0.75rem;
   letter-spacing: 0.18em;
   color: var(--romantic-text-muted);
   text-transform: uppercase;
@@ -1107,7 +1109,7 @@
   padding: 0.42rem 0.75rem;
   background: rgba(255, 255, 255, 0.92);
   font-family: var(--romantic-sans);
-  font-size: 0.68rem;
+  font-size: 0.75rem;
   color: var(--romantic-text-soft);
   box-shadow: 0 10px 24px rgba(42, 31, 31, 0.08);
 }
@@ -1199,7 +1201,7 @@
 .locationLabel {
   margin-bottom: 0.2rem;
   font-family: var(--romantic-sans);
-  font-size: 0.68rem;
+  font-size: 0.75rem;
   letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--romantic-text-muted);
@@ -1290,7 +1292,7 @@
 .accountRole {
   margin-top: 0.18rem;
   font-family: var(--romantic-sans);
-  font-size: 0.68rem;
+  font-size: 0.75rem;
   letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--romantic-accent);
@@ -1298,7 +1300,7 @@
 
 .accountInfo {
   font-family: var(--romantic-sans);
-  font-size: 0.74rem;
+  font-size: 0.75rem;
   color: var(--romantic-text-muted);
 }
 
@@ -1322,7 +1324,7 @@
   padding: 0.5rem 0.85rem;
   background: var(--romantic-bg-soft);
   font-family: var(--romantic-sans);
-  font-size: 0.74rem;
+  font-size: 0.75rem;
   color: var(--romantic-text-soft);
 }
 
@@ -1433,7 +1435,7 @@
   display: block;
   margin-bottom: 0.5rem;
   font-family: var(--romantic-sans);
-  font-size: 0.7rem;
+  font-size: 0.75rem;
   letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--romantic-text-muted);
@@ -1566,7 +1568,7 @@
 
 .commentDate {
   font-family: var(--romantic-sans);
-  font-size: 0.7rem;
+  font-size: 0.75rem;
   letter-spacing: 0.06em;
   color: var(--romantic-text-muted);
 }
@@ -1588,7 +1590,7 @@
   padding: 0.36rem 0.75rem;
   background: rgba(185, 75, 90, 0.08);
   font-family: var(--romantic-sans);
-  font-size: 0.7rem;
+  font-size: 0.75rem;
   color: #b94b5a;
 }
 
@@ -1720,7 +1722,7 @@
 
   .calendarDay {
     border-radius: 0.52rem;
-    font-size: 0.66rem;
+    font-size: 0.75rem;
   }
 
   .mapActions {

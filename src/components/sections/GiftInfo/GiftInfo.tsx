@@ -72,8 +72,10 @@ export default function GiftInfo({
                     </div>
                   </div>
                   <button
+                    type="button"
                     className={styles.copyButton}
                     onClick={() => handleCopy(accountKey, account.bank, account.accountNumber)}
+                    aria-label={`${account.accountHolder} ${copiedKey === accountKey ? '계좌번호 복사 완료' : '계좌번호 복사'}`}
                   >
                     {copiedKey === accountKey ? '복사 완료' : '계좌번호 복사'}
                   </button>
@@ -103,8 +105,10 @@ export default function GiftInfo({
                     </div>
                   </div>
                   <button
+                    type="button"
                     className={styles.copyButton}
                     onClick={() => handleCopy(accountKey, account.bank, account.accountNumber)}
+                    aria-label={`${account.accountHolder} ${copiedKey === accountKey ? '계좌번호 복사 완료' : '계좌번호 복사'}`}
                   >
                     {copiedKey === accountKey ? '복사 완료' : '계좌번호 복사'}
                   </button>
