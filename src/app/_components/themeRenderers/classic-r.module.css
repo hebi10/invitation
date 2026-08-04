@@ -1,9 +1,14 @@
-.classicTheme {
+.classicTheme,
+.loaderContainer {
   --classic-bg: #fbfaf7;
   --classic-ink: #302a24;
-  --classic-muted: #7d746b;
+  --classic-muted-readable: #70665e;
+  --classic-muted: var(--classic-muted-readable);
   --classic-line: rgba(48, 42, 36, 0.26);
   --classic-line-soft: rgba(48, 42, 36, 0.14);
+}
+
+.classicTheme {
   background: var(--classic-bg);
   color: var(--classic-ink);
   max-width: 700px;
@@ -17,7 +22,7 @@
   display: grid;
   place-items: center;
   padding: 2rem;
-  background: #fbfaf7;
+  background: var(--classic-bg);
   color: var(--classic-ink);
 }
 
@@ -84,7 +89,8 @@
 .progressBar {
   height: 100%;
   background: var(--classic-ink);
-  transition: width 0.5s ease;
+  transform-origin: left center;
+  transition: transform 0.5s ease;
 }
 
 .loadingText {
@@ -99,7 +105,7 @@
   display: grid;
   grid-template-rows: auto 1fr auto;
   padding: 2.25rem 1.25rem 1.8rem;
-  background: #fbfaf7;
+  background: var(--classic-bg);
 }
 
 .heroTop {
@@ -178,7 +184,7 @@
   font-family: var(--font-gowun-dodum);
   font-size: 0.7rem;
   letter-spacing: 0.18em;
-  color: rgba(48, 42, 36, 0.46);
+  color: var(--classic-muted);
   text-transform: uppercase;
 }
 
@@ -218,9 +224,9 @@
 .classicTheme :global([class*="Simple_commentItem"]),
 .classicTheme :global([class*="Simple_accountCard"]),
 .classicTheme :global([class*="Simple_countdownContainer"]),
-.classicTheme :global([class*="Simple_detailItem"]),
+.classicTheme :global([data-schedule-detail]),
 .classicTheme :global([class*="Simple_venueInfo"]),
-.classicTheme :global([class*="Simple_tabs"]),
+.classicTheme :global([data-schedule-tabs]),
 .classicTheme :global([class*="Simple_calendarGrid"]),
 .classicTheme :global([class*="Simple_weekdaysHeader"]),
 .classicTheme :global([class*="Simple_familyRow"]) {
@@ -243,7 +249,7 @@
   border: 0 !important;
 }
 
-.classicTheme :global([class*="Simple_tab"]),
+.classicTheme :global([data-schedule-tab]),
 .classicTheme :global([class*="Simple_navButton"]),
 .classicTheme :global([class*="Simple_moreButton"]),
 .classicTheme :global([class*="Simple_submitButton"]),
@@ -262,6 +268,8 @@
 }
 
 .classicTheme :global(button) {
+  min-width: 44px;
+  min-height: 44px;
   border-radius: 0 !important;
   box-shadow: none !important;
 }
@@ -271,10 +279,33 @@
 .classicTheme :global(input),
 .classicTheme :global(textarea),
 .classicTheme :global(select) {
+  min-height: 44px;
   background: #fbfaf7 !important;
   border: 1px solid var(--classic-line) !important;
   border-radius: 0 !important;
   box-shadow: none !important;
+}
+
+.classicTheme :global([data-schedule-tab][aria-selected="true"]) {
+  background: var(--classic-ink) !important;
+  border-color: var(--classic-ink) !important;
+  color: var(--classic-bg) !important;
+  font-weight: 600;
+}
+
+.classicTheme :global([data-schedule-tab][aria-selected="false"]) {
+  background: transparent !important;
+  border-color: var(--classic-line) !important;
+  color: var(--classic-ink) !important;
+}
+
+.classicTheme :global(button:focus-visible),
+.classicTheme :global(input:focus-visible),
+.classicTheme :global(textarea:focus-visible),
+.classicTheme :global(select:focus-visible),
+.classicTheme :global([data-schedule-panel]:focus-visible) {
+  outline: 2px solid var(--classic-ink) !important;
+  outline-offset: 3px;
 }
 
 .classicTheme :global([class*="Simple_dayCell"]),
@@ -296,6 +327,16 @@
   margin-bottom: 1.4rem !important;
 }
 
+.heroTop > span,
+.heroNames,
+.heroMeta,
+.classicTheme :global([data-schedule-tab]),
+.classicTheme :global([data-schedule-panel]),
+.classicTheme :global([data-schedule-guide-item]) {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
 @media (min-width: 700px) {
   .hero {
     padding-inline: 2.2rem;
@@ -303,5 +344,15 @@
 
   .heroImageFrame {
     aspect-ratio: 5 / 6;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .progressBar,
+  .classicTheme :global([data-schedule-tab]),
+  .classicTheme :global([data-schedule-guide-item]),
+  .classicTheme :global([data-schedule-guide-item] button),
+  .classicTheme :global([data-schedule-guide-item] [aria-hidden]) {
+    transition: none !important;
   }
 }

@@ -138,7 +138,7 @@ export default function Home() {
               </div>
               <div className={styles.invitationScreen}>
                 <Image
-                  src="/images/intro_romantic.png"
+                  src="/images/intro_romantic.webp"
                   alt="야외 웨딩 아치가 담긴 로맨틱 청첩장 표지"
                   width={460}
                   height={690}

@@ -63,7 +63,7 @@ export default function AdminEventList({
       <table className={styles.eventListTable}>
         <thead>
           <tr>
-            <th scope="col">이벤트</th>
+            <th scope="col">이벤트 (정보 열기)</th>
             <th scope="col">유형</th>
             <th scope="col">행사일</th>
             <th scope="col">공개 상태</th>

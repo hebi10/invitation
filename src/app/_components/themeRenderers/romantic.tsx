@@ -1,11 +1,8 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 
 import GuestbookThemed from '@/components/sections/Guestbook/GuestbookThemed';
-import WeddingLoaderMessage, {
-  type WeddingLoaderMessageBaseProps,
-} from '@/components/sections/WeddingLoader/WeddingLoaderMessage';
 import { resolveInvitationFeatures } from '@/lib/invitationProducts';
 import type { PersonInfo } from '@/types/invitationPage';
 import { copyTextToClipboard } from '@/utils/copyTextToClipboard';
@@ -27,6 +24,12 @@ import {
 } from '../weddingPageRenderers';
 import styles from './romantic.module.css';
 import RomanticLocationMap from './romanticLocationMap';
+import {
+  resolveRomanticInfoTab,
+  shouldRenderRomanticGallery,
+  shouldRenderRomanticLocation,
+  type RomanticInfoTab,
+} from './romanticState';
 
 interface BankAccount {
   bank: string;
@@ -42,6 +45,8 @@ interface RomanticCountdownProps {
 }
 
 interface RomanticGalleryProps {
+  brideName: string;
+  groomName: string;
   images: string[];
   imagesLoading?: boolean;
   previewImages?: string[];
@@ -57,14 +62,12 @@ interface RomanticScheduleDetail {
   location: string;
 }
 
-type RomanticInfoTab = 'summary' | 'detail' | 'guide';
-
 interface ContactTarget {
   name: string;
   phone?: string;
 }
 
-const INTRO_IMAGE_URL = '/images/intro_romantic.png';
+const INTRO_IMAGE_URL = '/images/intro_romantic.webp';
 const LOADING_MESSAGES = [
   '\uCC08\uB300\uC7A5\uC744 \uC900\uBE44\uD558\uACE0 \uC788\uC2B5\uB2C8\uB2E4.',
   '\uC0AC\uC9C4\uACFC \uC2DD\uC21C\uC744 \uBD88\uB7EC\uC624\uACE0 \uC788\uC2B5\uB2C8\uB2E4.',
@@ -165,46 +168,107 @@ function RomanticLoader({
   heroDateLine,
   heroImageUrl,
   onLoadComplete,
-}: WeddingLoaderMessageBaseProps & {
+}: {
+  brideName: string;
+  groomName: string;
   heroDateLine: string;
   heroImageUrl?: string;
+  onLoadComplete: () => void;
 }) {
+  const [progress, setProgress] = useState(0.08);
+  const [currentMessage, setCurrentMessage] = useState(0);
+  const resolvedHeroImageUrl = heroImageUrl || INTRO_IMAGE_URL;
+
+  useEffect(() => {
+    let cancelled = false;
+    let settled = false;
+    const image = new Image();
+
+    const progressTimer = window.setInterval(() => {
+      setProgress((current) => Math.min(0.92, current + Math.max(0.025, (0.92 - current) * 0.18)));
+    }, 160);
+    const messageTimer = window.setInterval(() => {
+      setCurrentMessage((current) => (current + 1) % LOADING_MESSAGES.length);
+    }, 900);
+
+    const complete = () => {
+      if (cancelled || settled) {
+        return;
+      }
+
+      settled = true;
+      window.clearInterval(progressTimer);
+      window.clearInterval(messageTimer);
+      setProgress(1);
+      window.requestAnimationFrame(() => {
+        if (!cancelled) {
+          onLoadComplete();
+        }
+      });
+    };
+
+    const handleLoad = () => {
+      if (typeof image.decode !== 'function') {
+        complete();
+        return;
+      }
+
+      void image.decode().catch(() => undefined).then(complete);
+    };
+
+    image.decoding = 'async';
+    image.onload = handleLoad;
+    image.onerror = complete;
+    image.src = resolvedHeroImageUrl;
+
+    if (image.complete) {
+      handleLoad();
+    }
+
+    const timeout = window.setTimeout(complete, 8000);
+
+    return () => {
+      cancelled = true;
+      window.clearInterval(progressTimer);
+      window.clearInterval(messageTimer);
+      window.clearTimeout(timeout);
+    };
+  }, [onLoadComplete, resolvedHeroImageUrl]);
+
   return (
-    <WeddingLoaderMessage
-      brideName={brideName}
-      groomName={groomName}
-      mainImage={heroImageUrl || INTRO_IMAGE_URL}
-      onLoadComplete={onLoadComplete}
-      duration={2600}
-      styles={styles}
-      loadingMessages={LOADING_MESSAGES}
-      minLoadTime={1600}
-      messageClassName={styles.loadingText}
-      renderHero={(themeStyles) => (
-        <div className={themeStyles.loaderVisual}>
-          <RomanticHeroVisual
-            imageUrl={heroImageUrl || INTRO_IMAGE_URL}
-            alt=""
-            imageClassName={themeStyles.loaderImage}
-            fallbackClassName={themeStyles.loaderFallback}
-            eager
-          />
-          <div className={themeStyles.loaderOverlay} />
-          <div className={themeStyles.loaderDateLine}>{heroDateLine}</div>
-          <div className={themeStyles.loaderNames}>
-            <span className={themeStyles.loaderNamePrimary}>{groomName}</span>
-            <span className={themeStyles.loaderAmpersand}>&amp;</span>
-            <span className={themeStyles.loaderNamePrimary}>{brideName}</span>
-          </div>
+    <div className={styles.loaderContainer}>
+      <div className={styles.loaderVisual}>
+        <RomanticHeroVisual
+          imageUrl={resolvedHeroImageUrl}
+          alt=""
+          imageClassName={styles.loaderImage}
+          fallbackClassName={styles.loaderFallback}
+          eager
+        />
+        <div className={styles.loaderOverlay} />
+        <div className={styles.loaderDateLine}>{heroDateLine}</div>
+        <div className={styles.loaderNames}>
+          <span className={styles.loaderNamePrimary}>{groomName}</span>
+          <span className={styles.loaderAmpersand}>&amp;</span>
+          <span className={styles.loaderNamePrimary}>{brideName}</span>
         </div>
-      )}
-      renderHeading={({ styles: themeStyles }) => (
-        <h1 className={themeStyles.loaderHeading}>Invitation</h1>
-      )}
-      renderSubtitle={(themeStyles) => (
-        <p className={themeStyles.loaderSubtitle}>모바일 청첩장을 준비하고 있습니다.</p>
-      )}
-    />
+      </div>
+      <h1 className={styles.loaderHeading}>Invitation</h1>
+      <p className={styles.loaderSubtitle}>모바일 청첩장을 준비하고 있습니다.</p>
+      <div
+        className={styles.progressContainer}
+        role="progressbar"
+        aria-label="청첩장 준비 진행률"
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-valuenow={Math.round(progress * 100)}
+      >
+        <div className={styles.progressBar} style={{ transform: `scaleX(${progress})` }} />
+      </div>
+      <p className={styles.loadingText} role="status" aria-live="polite">
+        {LOADING_MESSAGES[currentMessage]}
+      </p>
+    </div>
   );
 }
 
@@ -252,7 +316,7 @@ function RomanticCountdown({
       <div className={styles.countdownContainer}>
         <span className={styles.countdownIcon}>✦</span>
         <div className={styles.countdownContent}>
-          <h4 className={styles.countdownTitle}>{expiredTitle}</h4>
+          <h3 className={styles.countdownTitle}>{expiredTitle}</h3>
           <p className={styles.countdownSubtitle}>{expiredSubtitle}</p>
         </div>
       </div>
@@ -263,7 +327,7 @@ function RomanticCountdown({
     <div className={styles.countdownContainer}>
       <span className={styles.countdownIcon}>✦</span>
       <div className={styles.countdownContent}>
-        <h4 className={styles.countdownTitle}>{title}</h4>
+        <h3 className={styles.countdownTitle}>{title}</h3>
         <div className={styles.countdownTimeDisplay}>
           <div className={styles.countdownTimeUnit}>
             <div className={styles.countdownTimeNumber}>{String(timeLeft.days).padStart(2, '0')}</div>
@@ -579,37 +643,32 @@ function RomanticScheduleSection({
 }) {
   const sanitizedVenueGuide = sanitizeGuideItems(venueGuide);
   const sanitizedWreathGuide = sanitizeGuideItems(wreathGuide);
-  const hasScheduleDetail =
-    hasText(date) ||
-    hasText(time) ||
-    hasText(venue) ||
-    hasText(address) ||
+  const hasDetail =
     hasText(ceremony?.time) ||
     hasText(ceremony?.location) ||
     hasText(reception?.time) ||
     hasText(reception?.location);
   const hasGuide = sanitizedVenueGuide.length > 0 || sanitizedWreathGuide.length > 0;
   const hasSummary = hasText(date) || hasText(time) || hasText(venue) || hasText(address);
+  const scheduleId = useId();
+  const tabRefs = useRef<Array<HTMLButtonElement | null>>([]);
   const [activeTab, setActiveTab] = useState<RomanticInfoTab>(() =>
-    hasSummary ? 'summary' : hasGuide ? 'guide' : 'detail'
+    hasSummary ? 'summary' : hasDetail ? 'detail' : 'guide'
   );
+  const resolvedActiveTab = resolveRomanticInfoTab({
+    activeTab,
+    hasSummary,
+    hasDetail,
+    hasGuide,
+  });
 
   useEffect(() => {
-    if (activeTab === 'summary' && !hasSummary) {
-      setActiveTab(hasGuide ? 'guide' : 'detail');
-      return;
+    if (resolvedActiveTab && resolvedActiveTab !== activeTab) {
+      setActiveTab(resolvedActiveTab);
     }
+  }, [activeTab, resolvedActiveTab]);
 
-    if (activeTab === 'detail' && !hasScheduleDetail) {
-      setActiveTab(hasSummary ? 'summary' : hasGuide ? 'guide' : 'summary');
-    }
-
-    if (activeTab === 'guide' && !hasGuide) {
-      setActiveTab(hasSummary ? 'summary' : hasScheduleDetail ? 'detail' : 'summary');
-    }
-  }, [activeTab, hasSummary, hasScheduleDetail, hasGuide]);
-
-  if (!hasScheduleDetail && !hasGuide) {
+  if (!resolvedActiveTab) {
     return null;
   }
 
@@ -617,9 +676,38 @@ function RomanticScheduleSection({
     ...(hasSummary
       ? [{ key: 'summary' as const, label: '예식 일정', icon: '일정' }]
       : []),
-    ...(hasScheduleDetail ? [{ key: 'detail' as const, label: '세부 안내', icon: '세부' }] : []),
+    ...(hasDetail ? [{ key: 'detail' as const, label: '세부 안내', icon: '세부' }] : []),
     ...(hasGuide ? [{ key: 'guide' as const, label: '안내사항', icon: '안내' }] : []),
   ];
+  const focusTabAt = (index: number) => {
+    const nextTab = scheduleTabs[index];
+    if (!nextTab) {
+      return;
+    }
+
+    setActiveTab(nextTab.key);
+    window.requestAnimationFrame(() => tabRefs.current[index]?.focus());
+  };
+  const handleTabKeyDown = (event: React.KeyboardEvent<HTMLButtonElement>, index: number) => {
+    let nextIndex: number | null = null;
+
+    if (event.key === 'ArrowRight') {
+      nextIndex = (index + 1) % scheduleTabs.length;
+    } else if (event.key === 'ArrowLeft') {
+      nextIndex = (index - 1 + scheduleTabs.length) % scheduleTabs.length;
+    } else if (event.key === 'Home') {
+      nextIndex = 0;
+    } else if (event.key === 'End') {
+      nextIndex = scheduleTabs.length - 1;
+    }
+
+    if (nextIndex === null) {
+      return;
+    }
+
+    event.preventDefault();
+    focusTabAt(nextIndex);
+  };
 
   const renderScheduleDetail = (
     label: string,
@@ -729,11 +817,11 @@ function RomanticScheduleSection({
   );
 
   const renderPanel = () => {
-    if (activeTab === 'summary') {
+    if (resolvedActiveTab === 'summary') {
       return renderSummaryPanel();
     }
 
-    if (activeTab === 'detail') {
+    if (resolvedActiveTab === 'detail') {
       return renderDetailPanel();
     }
 
@@ -741,41 +829,77 @@ function RomanticScheduleSection({
   };
 
   return (
-    <section className={styles.section} id="wedding-info">
+    <section
+      className={styles.section}
+      id="wedding-info"
+      aria-labelledby={`${scheduleId}-heading`}
+    >
       <p className={styles.sectionLabel}>Information</p>
       <div className={styles.sectionDivider} />
-      <h2 className={styles.sectionTitle}>예식 안내</h2>
+      <h2 className={styles.sectionTitle} id={`${scheduleId}-heading`}>
+        예식 안내
+      </h2>
 
       {scheduleTabs.length > 1 ? (
         <div className={styles.scheduleTabs} role="tablist" aria-label="예식 안내 탭">
-          {scheduleTabs.map((tab) => (
+          {scheduleTabs.map((tab, index) => (
             <button
               key={tab.key}
+              ref={(element) => {
+                tabRefs.current[index] = element;
+              }}
+              id={`${scheduleId}-tab-${tab.key}`}
               type="button"
               className={`${styles.scheduleTabButton} ${
-                activeTab === tab.key ? styles.scheduleTabButtonActive : ''
+                resolvedActiveTab === tab.key ? styles.scheduleTabButtonActive : ''
               }`}
               role="tab"
-              aria-selected={activeTab === tab.key}
+              aria-selected={resolvedActiveTab === tab.key}
+              aria-controls={`${scheduleId}-panel`}
+              tabIndex={resolvedActiveTab === tab.key ? 0 : -1}
               onClick={() => setActiveTab(tab.key)}
+              onKeyDown={(event) => handleTabKeyDown(event, index)}
             >
               <span className={styles.scheduleTabLabel}>{tab.label}</span>
-              <span className={styles.scheduleTabValue}>{tab.icon}</span>
+              <span className={styles.scheduleTabValue} aria-hidden="true">
+                {tab.icon}
+              </span>
             </button>
           ))}
         </div>
       ) : null}
 
-      <div className={styles.scheduleTabPanel} role="tabpanel">
-        {renderPanel()}
-      </div>
+      {scheduleTabs.length > 1 ? (
+        <div
+          className={styles.scheduleTabPanel}
+          id={`${scheduleId}-panel`}
+          role="tabpanel"
+          aria-labelledby={`${scheduleId}-tab-${resolvedActiveTab}`}
+          tabIndex={0}
+        >
+          {renderPanel()}
+        </div>
+      ) : (
+        <div className={styles.scheduleTabPanel}>{renderPanel()}</div>
+      )}
     </section>
   );
 }
 
-function RomanticGallery({ images, imagesLoading = false, previewImages }: RomanticGalleryProps) {
+function RomanticGallery({
+  brideName,
+  groomName,
+  images,
+  imagesLoading = false,
+  previewImages,
+}: RomanticGalleryProps) {
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const [visibleCount, setVisibleCount] = useState(6);
+  const lightboxTitleId = useId();
+  const lightboxRef = useRef<HTMLDivElement | null>(null);
+  const lightboxCloseButtonRef = useRef<HTMLButtonElement | null>(null);
+  const galleryTriggerRefs = useRef<Array<HTMLButtonElement | null>>([]);
+  const lightboxTriggerIndexRef = useRef<number | null>(null);
   const touchStartRef = useRef<{ x: number; y: number } | null>(null);
   const touchDeltaRef = useRef({ x: 0, y: 0 });
 
@@ -800,28 +924,77 @@ function RomanticGallery({ images, imagesLoading = false, previewImages }: Roman
 
   useEffect(() => {
     if (selectedIndex === null) {
+      const triggerIndex = lightboxTriggerIndexRef.current;
+      if (triggerIndex !== null) {
+        window.requestAnimationFrame(() => galleryTriggerRefs.current[triggerIndex]?.focus());
+      }
+      lightboxTriggerIndexRef.current = null;
       return;
     }
 
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
+    lightboxCloseButtonRef.current?.focus();
 
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
+        event.preventDefault();
         setSelectedIndex(null);
         return;
       }
 
       if (event.key === 'ArrowLeft') {
+        event.preventDefault();
         setSelectedIndex((current) =>
           current === null ? null : Math.max(0, current - 1)
         );
+        return;
       }
 
       if (event.key === 'ArrowRight') {
+        event.preventDefault();
         setSelectedIndex((current) =>
           current === null ? null : Math.min(images.length - 1, current + 1)
         );
+        return;
+      }
+
+      if (event.key !== 'Tab') {
+        return;
+      }
+
+      const lightbox = lightboxRef.current;
+      if (!lightbox) {
+        return;
+      }
+
+      const focusableElements = Array.from(
+        lightbox.querySelectorAll<HTMLElement>('button:not([disabled]), [href], [tabindex]:not([tabindex="-1"])')
+      ).filter((element) => element.tabIndex !== -1 && element.offsetParent !== null);
+
+      if (focusableElements.length === 0) {
+        event.preventDefault();
+        lightboxCloseButtonRef.current?.focus();
+        return;
+      }
+
+      const firstElement = focusableElements[0];
+      const lastElement = focusableElements[focusableElements.length - 1];
+      const activeElement =
+        document.activeElement instanceof HTMLElement ? document.activeElement : null;
+      const isInsideLightbox = activeElement ? lightbox.contains(activeElement) : false;
+
+      if (event.shiftKey) {
+        if (!isInsideLightbox || activeElement === firstElement) {
+          event.preventDefault();
+          lastElement.focus();
+        }
+        return;
+      }
+
+      if (!isInsideLightbox || activeElement === lastElement) {
+        event.preventDefault();
+        firstElement.focus();
       }
     };
 
@@ -845,6 +1018,11 @@ function RomanticGallery({ images, imagesLoading = false, previewImages }: Roman
   const hasMore = galleryItems.length > visibleCount;
   const remainingCount = Math.max(galleryItems.length - visibleCount, 0);
   const selectedImage = selectedIndex === null ? null : galleryItems[selectedIndex];
+  const openLightbox = (index: number, triggerElement: HTMLButtonElement) => {
+    lightboxTriggerIndexRef.current = index;
+    galleryTriggerRefs.current[index] = triggerElement;
+    setSelectedIndex(index);
+  };
   const handleLightboxTouchStart = (event: React.TouchEvent<HTMLDivElement>) => {
     if (event.touches.length !== 1) {
       resetTouchGesture();
@@ -900,14 +1078,20 @@ function RomanticGallery({ images, imagesLoading = false, previewImages }: Roman
           ? visibleItems.map((image, index) => (
               <button
                 key={`${image.full}-${index}`}
+                ref={(element) => {
+                  galleryTriggerRefs.current[index] = element;
+                }}
                 type="button"
                 className={styles.galleryItem}
-                onClick={() => setSelectedIndex(index)}
+                aria-label={`${groomName}과 ${brideName}의 ${index + 1}번째 사진 크게 보기`}
+                onClick={(event) => openLightbox(index, event.currentTarget)}
               >
                 <img
                   src={image.preview}
-                  alt={`갤러리 이미지 ${index + 1}`}
+                  alt={`${groomName}과 ${brideName}의 결혼식 사진 ${index + 1}`}
                   className={styles.galleryImage}
+                  loading="lazy"
+                  decoding="async"
                 />
               </button>
             ))
@@ -942,16 +1126,25 @@ function RomanticGallery({ images, imagesLoading = false, previewImages }: Roman
 
       {selectedImage ? (
         <div
+          ref={lightboxRef}
           className={styles.galleryLightbox}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby={lightboxTitleId}
           onClick={(event) => {
             if (event.target === event.currentTarget) {
               setSelectedIndex(null);
             }
           }}
         >
+          <h2 className={styles.visuallyHidden} id={lightboxTitleId}>
+            {groomName}과 {brideName}의 결혼식 사진 확대 보기
+          </h2>
           <button
+            ref={lightboxCloseButtonRef}
             type="button"
             className={styles.galleryLightboxClose}
+            aria-label="사진 확대 보기 닫기"
             onClick={() => setSelectedIndex(null)}
           >
             ×
@@ -961,6 +1154,7 @@ function RomanticGallery({ images, imagesLoading = false, previewImages }: Roman
             <button
               type="button"
               className={`${styles.galleryLightboxNav} ${styles.galleryLightboxPrev}`}
+              aria-label="이전 사진 보기"
               onClick={() => moveSelectedImage('prev')}
             >
               ‹
@@ -971,6 +1165,7 @@ function RomanticGallery({ images, imagesLoading = false, previewImages }: Roman
             <button
               type="button"
               className={`${styles.galleryLightboxNav} ${styles.galleryLightboxNext}`}
+              aria-label="다음 사진 보기"
               onClick={() => moveSelectedImage('next')}
             >
               ›
@@ -986,11 +1181,13 @@ function RomanticGallery({ images, imagesLoading = false, previewImages }: Roman
           >
             <img
               src={selectedImage.full}
-              alt={`확대 이미지 ${selectedIndex === null ? 1 : selectedIndex + 1}`}
+              alt={`${groomName}과 ${brideName}의 결혼식 사진 ${selectedIndex === null ? 1 : selectedIndex + 1} 확대 이미지`}
               className={styles.galleryLightboxImage}
+              loading="eager"
+              decoding="async"
               draggable={false}
             />
-            <div className={styles.galleryLightboxCounter}>
+            <div className={styles.galleryLightboxCounter} aria-live="polite" aria-atomic="true">
               {selectedIndex === null ? 1 : selectedIndex + 1} / {galleryItems.length}
             </div>
           </div>
@@ -1097,7 +1294,7 @@ export default createWeddingThemeRenderer({
           {state.heroImageUrl || state.mainImageUrl ? (
             <img
               src={state.heroImageUrl || state.mainImageUrl}
-              alt={`${state.pageConfig.groomName} ${state.pageConfig.brideName} 메인 이미지`}
+              alt={`${state.pageConfig.groomName}과 ${state.pageConfig.brideName}의 결혼식 대표 사진`}
               className={styles.heroImage}
             />
           ) : (
@@ -1127,7 +1324,9 @@ export default createWeddingThemeRenderer({
 
       return (
         <section className={styles.section}>
-          <p className={styles.sectionLabel}>Invitation</p>
+          <h2 className={styles.sectionLabel} aria-label="초대 인사">
+            Invitation
+          </h2>
           <div className={styles.sectionDivider} />
           <p className={styles.greetingText}>
             {greeting || `${state.pageConfig.displayName} 결혼식에 초대합니다.`}
@@ -1151,7 +1350,9 @@ export default createWeddingThemeRenderer({
 
       return (
         <section className={`${styles.section} ${styles.sectionAlt}`}>
-          <p className={styles.sectionLabel}>Date</p>
+          <h2 className={styles.sectionLabel} aria-label="예식 날짜">
+            Date
+          </h2>
           <div className={styles.sectionDivider} />
           <div className={styles.dateCard}>
             <div className={styles.dateMain}>{state.weddingDate.getDate()}</div>
@@ -1196,23 +1397,46 @@ export default createWeddingThemeRenderer({
         />
       );
     },
-    ({ state }) => (
-      <section className={`${styles.section} ${styles.sectionDark} ${styles.gallerySection}`}>
-        <p className={styles.sectionLabel}>Gallery</p>
-        <div className={styles.sectionDivider} />
-        <h2 className={styles.sectionTitle}>우리의 이야기</h2>
-        <RomanticGallery
-          images={state.galleryImageUrls}
-          previewImages={state.galleryPreviewImageUrls}
-          imagesLoading={state.imagesLoading}
-        />
-      </section>
-    ),
+    ({ state }) => {
+      if (!shouldRenderRomanticGallery(state.galleryImageUrls, state.imagesLoading)) {
+        return null;
+      }
+
+      return (
+        <section className={`${styles.section} ${styles.sectionDark} ${styles.gallerySection}`}>
+          <p className={styles.sectionLabel}>Gallery</p>
+          <div className={styles.sectionDivider} />
+          <h2 className={styles.sectionTitle}>우리의 이야기</h2>
+          <RomanticGallery
+            groomName={state.pageConfig.groomName}
+            brideName={state.pageConfig.brideName}
+            images={state.galleryImageUrls}
+            previewImages={state.galleryPreviewImageUrls}
+            imagesLoading={state.imagesLoading}
+          />
+        </section>
+      );
+    },
     ({ state }) => {
       const pageData = getThemePageData(state.pageConfig, 'romantic');
       const address = getCeremonyAddress(state.pageConfig, pageData);
       const contact = getCeremonyContact(state.pageConfig, pageData);
       const description = getMapDescription(state.pageConfig, pageData);
+      const kakaoMap = pageData?.kakaoMap;
+
+      if (
+        !shouldRenderRomanticLocation({
+          venue: state.pageConfig.venue,
+          address,
+          description,
+          contact,
+          latitude: kakaoMap?.latitude,
+          longitude: kakaoMap?.longitude,
+        })
+      ) {
+        return null;
+      }
+
       const rows = [
         {
           icon: '✦',

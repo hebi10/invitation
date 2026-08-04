@@ -65,8 +65,10 @@ export default function LocationMap({
   contact,
   kakaoMapConfig,
 }: LocationMapProps) {
+  const sectionRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<HTMLDivElement>(null);
   const [isClient, setIsClient] = useState(false);
+  const [shouldLoadMap, setShouldLoadMap] = useState(false);
   const [kakaoMapLoaded, setKakaoMapLoaded] = useState(false);
   const [isAddressCopied, setIsAddressCopied] = useState(false);
   const [controlEnabled, setControlEnabled] = useState(false);
@@ -75,6 +77,27 @@ export default function LocationMap({
 
   useEffect(() => {
     setIsClient(true);
+  }, []);
+
+  useEffect(() => {
+    const section = sectionRef.current;
+    if (!section || typeof IntersectionObserver === 'undefined') {
+      setShouldLoadMap(true);
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setShouldLoadMap(true);
+          observer.disconnect();
+        }
+      },
+      { rootMargin: '500px 0px' }
+    );
+
+    observer.observe(section);
+    return () => observer.disconnect();
   }, []);
 
   const initializeKakaoMap = useCallback(() => {
@@ -169,7 +192,7 @@ export default function LocationMap({
   }, [address, hasCoordinates, kakaoMapConfig, venueName]);
 
   useEffect(() => {
-    if (!isClient || (!hasAddress && !hasCoordinates)) {
+    if (!isClient || !shouldLoadMap || (!hasAddress && !hasCoordinates)) {
       return;
     }
 
@@ -180,7 +203,7 @@ export default function LocationMap({
       .catch(() => {
         setKakaoMapLoaded(true);
       });
-  }, [hasAddress, hasCoordinates, initializeKakaoMap, isClient]);
+  }, [hasAddress, hasCoordinates, initializeKakaoMap, isClient, shouldLoadMap]);
 
   const toggleControl = () => {
     const map = window.kakaoMapInstance;
@@ -234,7 +257,7 @@ export default function LocationMap({
 
   return (
     <div className={styles.wrapper}>
-      <div className={styles.container}>
+      <div ref={sectionRef} className={styles.container}>
         <div className={styles.header}>
           <h2 className={styles.title}>오시는 길</h2>
         </div>
@@ -282,6 +305,7 @@ export default function LocationMap({
                 background: 'white',
                 border: '1px solid #ccc',
                 padding: '6px 12px',
+                minHeight: '44px',
                 borderRadius: '6px',
                 fontSize: '12px',
                 cursor: 'pointer',

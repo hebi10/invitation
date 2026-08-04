@@ -5,7 +5,7 @@ import styles from './GallerySimple.module.css';
 
 type GalleryProps = Pick<
   GalleryGridSharedProps,
-  'images' | 'previewImages' | 'imagesLoading' | 'title'
+  'images' | 'previewImages' | 'imagesLoading' | 'title' | 'imageAltPrefix'
 >;
 
 export default function GallerySimple(props: GalleryProps) {

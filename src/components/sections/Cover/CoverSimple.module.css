@@ -78,7 +78,16 @@
   border-radius: 12px;
   object-fit: cover;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-  transition: all 0.3s ease;
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .image,
+  .loadingSpinner,
+  .primaryAction {
+    animation: none;
+    transition: none;
+  }
 }
 
 

@@ -44,9 +44,11 @@ export default function RomanticLocationMap({
   kakaoMapConfig?: RomanticKakaoMapConfig;
   venueName: string;
 }) {
+  const sectionRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<KakaoMapInstance | null>(null);
   const [isClient, setIsClient] = useState(false);
+  const [shouldLoadMap, setShouldLoadMap] = useState(false);
   const [isMapLoaded, setIsMapLoaded] = useState(false);
   const [controlEnabled, setControlEnabled] = useState(false);
   const hasAddress = Boolean(address.trim());
@@ -57,7 +59,28 @@ export default function RomanticLocationMap({
   }, []);
 
   useEffect(() => {
-    if (!isClient) {
+    const section = sectionRef.current;
+    if (!section || typeof IntersectionObserver === 'undefined') {
+      setShouldLoadMap(true);
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setShouldLoadMap(true);
+          observer.disconnect();
+        }
+      },
+      { rootMargin: '500px 0px' }
+    );
+
+    observer.observe(section);
+    return () => observer.disconnect();
+  }, []);
+
+  useEffect(() => {
+    if (!isClient || !shouldLoadMap) {
       return;
     }
 
@@ -155,7 +178,7 @@ export default function RomanticLocationMap({
     return () => {
       cancelled = true;
     };
-  }, [address, hasAddress, hasCoordinates, isClient, kakaoMapConfig, venueName]);
+  }, [address, hasAddress, hasCoordinates, isClient, kakaoMapConfig, shouldLoadMap, venueName]);
 
   const toggleControl = () => {
     const map = mapInstanceRef.current;
@@ -180,7 +203,7 @@ export default function RomanticLocationMap({
   }
 
   return (
-    <div className={styles.mapPlaceholder}>
+    <div ref={sectionRef} className={styles.mapPlaceholder}>
       {isClient ? <div ref={mapRef} className={styles.mapFrame} /> : null}
       {!isMapLoaded ? (
         <div className={styles.mapLoading}>{'\uC9C0\uB3C4\uB97C \uBD88\uB7EC\uC624\uB294 \uC911\uC785\uB2C8\uB2E4.'}</div>

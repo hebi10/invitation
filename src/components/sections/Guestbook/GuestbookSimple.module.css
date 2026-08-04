@@ -49,7 +49,7 @@
 }
 
 .subtitle {
-  font-family: 'Arial', sans-serif;
+  font-family: var(--font-sans);
   font-size: clamp(1rem, 2.8vw, 1.1rem);
   color: #6c757d;
   text-align: center;
@@ -79,10 +79,10 @@
   border: none;
   padding: 0.5rem 1rem;
   border-radius: 6px;
-  font-family: 'Arial', sans-serif;
+  font-family: var(--font-sans);
   font-size: 0.85rem;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: color 0.2s ease, background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease, transform 0.2s ease;
 }
 
 
@@ -97,7 +97,7 @@
 }
 
 .clientWelcome {
-  font-family: 'Arial', sans-serif;
+  font-family: var(--font-sans);
   font-size: 0.9rem;
   color: #495057;
   font-weight: 500;
@@ -109,10 +109,10 @@
   border: none;
   padding: 0.4rem 0.8rem;
   border-radius: 6px;
-  font-family: 'Arial', sans-serif;
+  font-family: var(--font-sans);
   font-size: 0.8rem;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: color 0.2s ease, background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease, transform 0.2s ease;
 }
 
 
@@ -150,7 +150,7 @@
 }
 
 .loginTitle {
-  font-family: 'Arial', sans-serif;
+  font-family: var(--font-sans);
   font-size: 0.95rem;
   color: #495057;
   font-weight: 600;
@@ -166,11 +166,11 @@
   padding: 0.6rem 1rem;
   border: 1px solid #dee2e6;
   border-radius: 6px;
-  font-family: 'Arial', sans-serif;
+  font-family: var(--font-sans);
   font-size: 0.9rem;
   color: #495057;
   background: white;
-  transition: all 0.3s ease;
+  transition: color 0.3s ease, background-color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease, opacity 0.3s ease, transform 0.3s ease;
   min-width: 50px;
 }
 
@@ -186,11 +186,11 @@
   border: none;
   padding: 0.6rem 1.2rem;
   border-radius: 6px;
-  font-family: 'Arial', sans-serif;
+  font-family: var(--font-sans);
   font-size: 0.9rem;
   font-weight: 500;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: color 0.2s ease, background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease, transform 0.2s ease;
   white-space: nowrap;
 }
 
@@ -213,7 +213,7 @@
 
 .label {
   display: block;
-  font-family: 'Arial', sans-serif;
+  font-family: var(--font-sans);
   font-size: 0.9rem;
   color: #495057;
   font-weight: 600;
@@ -226,11 +226,11 @@
   padding: 0.8rem 1rem;
   border: 1px solid #dee2e6;
   border-radius: 8px;
-  font-family: 'Arial', sans-serif;
+  font-family: var(--font-sans);
   font-size: 0.95rem;
   color: #495057;
   background: white;
-  transition: all 0.3s ease;
+  transition: color 0.3s ease, background-color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease, opacity 0.3s ease, transform 0.3s ease;
   box-sizing: border-box;
 }
 
@@ -248,7 +248,7 @@
 }
 
 .charCount {
-  font-family: 'Arial', sans-serif;
+  font-family: var(--font-sans);
   font-size: 0.8rem;
   color: #6c757d;
   text-align: right;
@@ -257,7 +257,7 @@
 
 .errorMessage {
   color: #dc3545;
-  font-family: 'Arial', sans-serif;
+  font-family: var(--font-sans);
   font-size: 0.9rem;
   margin: 0.5rem 0;
   padding: 0.5rem;
@@ -273,11 +273,11 @@
   border: none;
   padding: 1rem 2rem;
   border-radius: 8px;
-  font-family: 'Arial', sans-serif;
+  font-family: var(--font-sans);
   font-size: 1rem;
   font-weight: 500;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: color 0.3s ease, background-color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease, opacity 0.3s ease, transform 0.3s ease;
   margin-top: 1rem;
 }
 
@@ -288,13 +288,18 @@
   transform: none;
 }
 
+.submitButton:focus-visible {
+  outline: 3px solid #2c3e50;
+  outline-offset: 3px;
+}
+
 .commentsList {
   margin-top: 2rem;
 }
 
 .loadingMessage {
   text-align: center;
-  font-family: 'Arial', sans-serif;
+  font-family: var(--font-sans);
   color: #6c757d;
   padding: 2rem;
   font-size: 0.95rem;
@@ -317,7 +322,7 @@
 }
 
 .emptySubMessage {
-  font-family: 'Arial', sans-serif;
+  font-family: var(--font-sans);
   font-size: 0.9rem;
   color: #6c757d;
   margin: 0;
@@ -330,8 +335,31 @@
   border-bottom: 1px solid rgba(0, 0, 0, 0.08);
 }
 
+.refreshButton {
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(148, 163, 184, 0.28);
+  background: rgba(255, 255, 255, 0.82);
+  color: #475569;
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.refreshButton:focus-visible {
+  outline: 3px solid #2c3e50;
+  outline-offset: 3px;
+}
+
+.refreshButton:disabled {
+  cursor: wait;
+  opacity: 0.7;
+}
+
 .commentsCount {
-  font-family: 'Arial', sans-serif;
+  font-family: var(--font-sans);
   display: flex;
   font-size: 0.95rem;
   color: #495057;
@@ -350,7 +378,7 @@
   border-radius: 12px;
   padding: 1.5rem;
   border: 1px solid rgba(0, 0, 0, 0.05);
-  transition: all 0.3s ease;
+  transition: color 0.3s ease, background-color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease, opacity 0.3s ease, transform 0.3s ease;
 }
 
 
@@ -364,7 +392,7 @@
 }
 
 .commentAuthor {
-  font-family: 'Arial', sans-serif;
+  font-family: var(--font-sans);
   font-size: 0.95rem;
   color: #2c3e50;
   font-weight: 600;
@@ -377,7 +405,7 @@
 }
 
 .commentDate {
-  font-family: 'Arial', sans-serif;
+  font-family: var(--font-sans);
   font-size: 0.8rem;
   color: #6c757d;
 }
@@ -388,15 +416,15 @@
   border: none;
   padding: 0.3rem 0.8rem;
   border-radius: 6px;
-  font-family: 'Arial', sans-serif;
+  font-family: var(--font-sans);
   font-size: 0.8rem;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: color 0.3s ease, background-color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease, opacity 0.3s ease, transform 0.3s ease;
 }
 
 
 .commentMessage {
-  font-family: 'Arial', sans-serif;
+  font-family: var(--font-sans);
   font-size: 0.95rem;
   color: #495057;
   line-height: 1.6;
@@ -420,10 +448,16 @@
   border: none;
   padding: 0.4rem 0.8rem;
   border-radius: 6px;
-  font-family: 'Arial', sans-serif;
+  font-family: var(--font-sans);
   font-size: 0.8rem;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: color 0.3s ease, background-color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease, opacity 0.3s ease, transform 0.3s ease;
+  min-height: 44px;
+}
+
+.pageButton:focus-visible {
+  outline: 3px solid #2c3e50;
+  outline-offset: 3px;
 }
 
 
@@ -443,11 +477,17 @@
   border: 1px solid #dee2e6;
   padding: 0.4rem 0.7rem;
   border-radius: 6px;
-  font-family: 'Arial', sans-serif;
+  font-family: var(--font-sans);
   font-size: 0.8rem;
   cursor: pointer;
-  transition: all 0.3s ease;
-  min-width: 32px;
+  transition: color 0.3s ease, background-color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease, opacity 0.3s ease, transform 0.3s ease;
+  min-width: 44px;
+  min-height: 44px;
+}
+
+.pageNumber:focus-visible {
+  outline: 3px solid #2c3e50;
+  outline-offset: 3px;
 }
 
 
@@ -462,7 +502,7 @@
   align-items: center;
   padding: 0.4rem 0.3rem;
   color: #6c757d;
-  font-family: 'Arial', sans-serif;
+  font-family: var(--font-sans);
   font-size: 0.8rem;
   user-select: none;
 }
@@ -544,12 +584,29 @@
   
   .pageNumber {
     padding: 0.4rem 0.6rem;
-    min-width: 30px;
+    min-width: 44px;
+    min-height: 44px;
     font-size: 0.75rem;
   }
   
   .ellipsis {
     padding: 0.4rem 0.25rem;
     font-size: 0.75rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .form {
+    animation: none;
+  }
+
+  .input,
+  .textarea,
+  .submitButton,
+  .refreshButton,
+  .commentItem,
+  .pageButton,
+  .pageNumber {
+    transition: none;
   }
 }

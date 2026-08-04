@@ -1,5 +1,7 @@
 import type { WeddingPageConfig } from '../weddingPages';
 
+import { DEFAULT_SAMPLE_WEDDING_IMAGE_URL } from '../sampleInvitationDefaults';
+
 import {
   ALL_WEDDING_VARIANT_KEYS,
   createWeddingPageConfig,
@@ -66,8 +68,7 @@ export const shinMinjeKimHyunjiConfig: WeddingPageConfig = createWeddingPageConf
     description: metadataDescription,
     keywords: ['결혼식', '웨딩', '청첩장', couple.groom.name, couple.bride.name, '2026년 4월'],
     images: {
-      wedding:
-        'https://firebasestorage.googleapis.com/v0/b/invitation-35d60.firebasestorage.app/o/wedding-images%2Fkim-shinlang-na-sinbu%2Fthum.jpg?alt=media&token=c5eef8b5-a83b-4a4c-b5bb-2491feaba51c',
+      wedding: DEFAULT_SAMPLE_WEDDING_IMAGE_URL,
       favicon: '/favicon.ico',
     },
   },

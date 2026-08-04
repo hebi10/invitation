@@ -85,7 +85,7 @@ const Cover = React.memo(function Cover({
           <Image
             className={`${styles.image} ${imageLoaded ? styles.imageLoaded : ''}`}
             src={imageUrl}
-            alt="Wedding couple"
+            alt={`${groomName}과 ${brideName}의 웨딩 사진`}
             fill
             priority
             sizes="(max-width: 768px) 100vw, 700px"
@@ -94,8 +94,7 @@ const Cover = React.memo(function Cover({
             onError={handleImageError}
             style={{
               objectFit: 'cover',
-              opacity: imageLoaded || preloadComplete ? 1 : 0,
-              transition: 'opacity 0.3s ease-in-out'
+              opacity: imageLoaded || preloadComplete ? 1 : 0
             }}
           />
         ) : null}

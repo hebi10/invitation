@@ -1,5 +1,6 @@
 'use client';
 
+import Image from 'next/image';
 import type { ReactNode } from 'react';
 import { useEffect, useState } from 'react';
 
@@ -82,18 +83,18 @@ export default function CoverFramedThemed({
 
         <div className={styles.imageContainer}>
           {hasImage ? (
-            <img
+            <Image
               className={imageClassName}
               src={imageUrl}
-              alt="Wedding couple"
-              loading="eager"
-              decoding="async"
-              fetchPriority="high"
+              alt={`${groomName}과 ${brideName}의 웨딩 사진`}
+              fill
+              sizes="200px"
+              quality={82}
+              priority
               onLoad={() => setImageLoaded(true)}
               onError={() => setImageError(true)}
               style={{
                 opacity: imageLoaded || preloadComplete ? 1 : 0,
-                transition: 'opacity 0.4s ease-in-out',
               }}
             />
           ) : null}

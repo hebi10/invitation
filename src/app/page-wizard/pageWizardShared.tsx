@@ -26,7 +26,12 @@ import {
 } from './pageWizardData';
 
 export type NoticeTone = 'success' | 'error' | 'neutral';
-export type NoticeState = { tone: NoticeTone; message: string } | null;
+export type NoticeSource = 'general' | 'save' | 'validation';
+export type NoticeState = {
+  tone: NoticeTone;
+  message: string;
+  source?: NoticeSource;
+} | null;
 
 export type UploadFieldKind =
   | 'cover'

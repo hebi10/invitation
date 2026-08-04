@@ -1,0 +1,74 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-08-03T00:00:00+09:00",
+  "title": "Design System: Invitation Page Wizard",
+  "extensions": {
+    "colorMeta": {
+      "action-blue": { "role": "primary", "displayName": "Action Blue", "canonical": "#315efb", "tonalRamp": ["#0b1b57", "#15328f", "#2148cf", "#315efb", "#6685fc", "#9aaffd", "#cad5fe", "#eef2ff"] },
+      "workspace-ink": { "role": "neutral", "displayName": "Workspace Ink", "canonical": "#17191f", "tonalRamp": ["#17191f", "#30333b", "#4a4e58", "#666b76", "#858a94", "#a8acb4", "#cfd2d7", "#f2f3f5"] },
+      "canvas": { "role": "neutral", "displayName": "Quiet Canvas", "canonical": "#f5f6f8", "tonalRamp": ["#202226", "#3c3f45", "#5d6067", "#81848a", "#a6a9ae", "#c9cbd0", "#e4e6e9", "#f5f6f8"] }
+    },
+    "typographyMeta": {
+      "title": { "displayName": "Workspace Title", "purpose": "화면, 영역, 단계 제목" },
+      "body": { "displayName": "Form Body", "purpose": "입력 설명과 도움말" },
+      "label": { "displayName": "Operational Label", "purpose": "상태, 순서, 필드명" }
+    },
+    "shadows": [],
+    "motion": [],
+    "breakpoints": [
+      { "name": "mobile", "value": "767px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "다음 또는 저장을 위한 단일 핵심 행동",
+      "html": "<button class=\"ds-btn-primary\">다음 작업</button>",
+      "css": ".ds-btn-primary { background:#315efb; color:#fff; border:1px solid #315efb; border-radius:6px; padding:12px 18px; font:700 .94rem system-ui,sans-serif; } .ds-btn-primary:hover { background:#2148cf; } .ds-btn-primary:focus-visible { outline:3px solid rgba(49,94,251,.28); outline-offset:2px; }"
+    },
+    {
+      "name": "Secondary Button",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "이전, 닫기, 미리보기 같은 보조 행동",
+      "html": "<button class=\"ds-btn-secondary\">미리보기</button>",
+      "css": ".ds-btn-secondary { background:#fff; color:#17191f; border:1px solid #cbd1d9; border-radius:6px; padding:12px 16px; font:700 .94rem system-ui,sans-serif; } .ds-btn-secondary:hover { border-color:#8a919d; } .ds-btn-secondary:focus-visible { outline:3px solid rgba(49,94,251,.28); outline-offset:2px; }"
+    },
+    {
+      "name": "Text Input",
+      "kind": "input",
+      "refersTo": "input",
+      "description": "관리자와 고객 정보 입력 필드",
+      "html": "<label class=\"ds-field\">이름<input class=\"ds-input\" value=\"홍길동\"></label>",
+      "css": ".ds-field { display:grid; gap:8px; color:#17191f; font:700 .78rem system-ui,sans-serif; } .ds-input { background:#fff; color:#17191f; border:1px solid #cbd1d9; border-radius:6px; padding:12px 14px; font:400 .94rem system-ui,sans-serif; } .ds-input:focus-visible { border-color:#315efb; outline:3px solid rgba(49,94,251,.18); }"
+    },
+    {
+      "name": "Section Navigation",
+      "kind": "nav",
+      "description": "번호, 제목, 완성 상태를 표시하는 작업 목차",
+      "html": "<button class=\"ds-nav-item\"><span>2</span><strong>기본 정보</strong><small>현재 작업</small></button>",
+      "css": ".ds-nav-item { width:100%; display:grid; grid-template-columns:24px 1fr; gap:10px; text-align:left; background:#fff; color:#17191f; border:1px solid #315efb; border-radius:6px; padding:12px; font-family:system-ui,sans-serif; } .ds-nav-item small { grid-column:2; color:#315efb; } .ds-nav-item:focus-visible { outline:3px solid rgba(49,94,251,.28); outline-offset:2px; }"
+    },
+    {
+      "name": "Save Status",
+      "kind": "custom",
+      "description": "편집 내용의 저장 상태를 짧게 전달",
+      "html": "<span class=\"ds-save-status\" role=\"status\">변경사항 있음</span>",
+      "css": ".ds-save-status { color:#8a5300; font:700 .78rem system-ui,sans-serif; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Clear Operations Desk",
+    "overview": "초대장 편집기는 장식물을 감상하는 화면이 아니라 관리자와 고객이 정보를 빠짐없이 완성하는 작업 공간입니다. 시각적 분위기는 차분하고 실용적이며, 현재 위치·오류·저장 상태를 우선적으로 드러냅니다.",
+    "keyCharacteristics": ["중립 캔버스와 흰 작업 표면", "먹색 정보 계층과 하나의 파란 행동 강조", "데스크톱 2열, 모바일 단일 열의 동일한 정보 구조", "얇은 구분선과 제한된 6~8px 반경", "필요할 때만 여는 미리보기"],
+    "rules": [
+      { "name": "The One Action Color Rule", "body": "한 화면의 주된 행동 강조는 Action Blue 하나로 유지합니다.", "section": "colors" },
+      { "name": "The Same Information Rule", "body": "반응형 전환은 필드를 숨기지 않고 배치 방식만 바꿉니다.", "section": "layout" },
+      { "name": "The Flat-by-Default Rule", "body": "정적인 카드에 그림자를 추가하지 않습니다.", "section": "elevation" }
+    ],
+    "dos": ["Do 모든 기존 필드와 검증을 데스크톱과 모바일에 동일하게 제공합니다.", "Do 오류가 있는 첫 단계로 스크롤하고 포커스를 이동합니다.", "Do 미리보기는 요청할 때만 열고 입력 흐름을 우선합니다."],
+    "donts": ["Don't 크림색, 장식용 세리프, 그라디언트로 편집 화면을 웨딩 테마처럼 꾸미지 않습니다.", "Don't 모든 섹션에 그림자와 큰 반경을 반복하지 않습니다.", "Don't 저장되지 않은 변경을 저장됨으로 표현하지 않습니다."]
+  }
+}

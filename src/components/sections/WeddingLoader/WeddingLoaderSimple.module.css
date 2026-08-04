@@ -73,7 +73,7 @@
 }
 
 .subtitle {
-  font-family: 'Arial', sans-serif;
+  font-family: var(--font-sans);
   font-size: clamp(1rem, 3vw, 1.2rem);
   color: #6c757d;
   margin-bottom: 3rem;
@@ -95,11 +95,12 @@
   height: 100%;
   background: linear-gradient(90deg, #2c3e50, #34495e);
   border-radius: 2px;
-  transition: width 0.3s ease;
+  transform-origin: left center;
+  transition: transform 0.3s ease;
 }
 
 .loadingMessage {
-  font-family: 'Arial', sans-serif;
+  font-family: var(--font-sans);
   font-size: clamp(0.9rem, 2.5vw, 1rem);
   color: #495057;
   text-align: center;
@@ -114,6 +115,16 @@
   }
   50% {
     opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .circle,
+  .dot,
+  .loadingMessage,
+  .progressBar {
+    animation: none;
+    transition: none;
   }
 }
 

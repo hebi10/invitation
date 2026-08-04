@@ -1,7 +1,7 @@
 'use client';
 
 import type { RefObject } from 'react';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Image from 'next/image';
 
 import { useScrollAnimation } from '@/hooks';
@@ -14,6 +14,7 @@ export interface GalleryGridSharedProps {
   styles: Record<string, string>;
   preloadAllImages?: boolean;
   showButtonIcons?: boolean;
+  imageAltPrefix?: string;
 }
 
 function preloadSingleImage(url?: string) {
@@ -54,6 +55,7 @@ export default function GalleryGridShared({
   styles,
   preloadAllImages = false,
   showButtonIcons = false,
+  imageAltPrefix,
 }: GalleryGridSharedProps) {
   const { elementRef, isVisible } = useScrollAnimation({
     threshold: 0,
@@ -66,6 +68,9 @@ export default function GalleryGridShared({
   const [loadedPopupImages, setLoadedPopupImages] = useState<Set<string>>(new Set());
   const [isPopupImageLoading, setIsPopupImageLoading] = useState(false);
   const [popupImageError, setPopupImageError] = useState<string | null>(null);
+  const popupContentRef = useRef<HTMLDivElement | null>(null);
+  const popupCloseButtonRef = useRef<HTMLButtonElement | null>(null);
+  const triggerRef = useRef<HTMLButtonElement | null>(null);
 
   const shouldRenderImages = isVisible || selectedIndex !== null;
   const displayImages = useMemo(() => images.slice(0, visibleCount), [images, visibleCount]);
@@ -79,6 +84,13 @@ export default function GalleryGridShared({
   const activeIndex = selectedIndex ?? 0;
   const hasImages = images.length > 0;
   const isPopupBusy = isPopupImageLoading;
+  const isPopupOpen = selectedIndex !== null;
+  const resolvedImageAltPrefix = imageAltPrefix?.trim() || title.trim() || '웨딩 갤러리';
+
+  const getImageAlt = useCallback(
+    (index: number) => `${resolvedImageAltPrefix} ${index + 1}번째 사진`,
+    [resolvedImageAltPrefix]
+  );
 
   useEffect(() => {
     if (!shouldRenderImages || !preloadAllImages) {
@@ -105,6 +117,23 @@ export default function GalleryGridShared({
     setIsPopupImageLoading(false);
     setPopupImageError(null);
   }, []);
+
+  useEffect(() => {
+    if (!isPopupOpen) {
+      return;
+    }
+
+    const focusFrame = window.requestAnimationFrame(() => {
+      popupCloseButtonRef.current?.focus();
+    });
+
+    return () => {
+      window.cancelAnimationFrame(focusFrame);
+      const trigger = triggerRef.current;
+      triggerRef.current = null;
+      trigger?.focus();
+    };
+  }, [isPopupOpen]);
 
   const goToPrevImage = useCallback(() => {
     if (selectedIndex === null || selectedIndex <= 0) {
@@ -133,9 +162,43 @@ export default function GalleryGridShared({
 
     preloadPopupImageSet(images, selectedIndex);
 
-    const handleKeyDown = (event: KeyboardEvent) => {
+    const handleDialogKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
-        setSelectedIndex(null);
+        event.preventDefault();
+        closePopup();
+        return;
+      }
+
+      if (event.key === 'Tab') {
+        const popupContent = popupContentRef.current;
+        if (!popupContent) {
+          return;
+        }
+
+        const focusableElements = Array.from(
+          popupContent.querySelectorAll<HTMLElement>(
+            'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+          )
+        ).filter((element) => element.tabIndex !== -1 && element.offsetParent !== null);
+
+        if (focusableElements.length === 0) {
+          event.preventDefault();
+          popupCloseButtonRef.current?.focus();
+          return;
+        }
+
+        const firstElement = focusableElements[0];
+        const lastElement = focusableElements[focusableElements.length - 1];
+        const activeElement = document.activeElement;
+        const isInsidePopup = activeElement instanceof Node && popupContent.contains(activeElement);
+
+        if (event.shiftKey && (!isInsidePopup || activeElement === firstElement)) {
+          event.preventDefault();
+          lastElement.focus();
+        } else if (!event.shiftKey && (!isInsidePopup || activeElement === lastElement)) {
+          event.preventDefault();
+          firstElement.focus();
+        }
         return;
       }
 
@@ -148,11 +211,11 @@ export default function GalleryGridShared({
       }
     };
 
-    document.addEventListener('keydown', handleKeyDown);
+    document.addEventListener('keydown', handleDialogKeyDown);
     document.body.classList.add('no-scroll');
 
     return () => {
-      document.removeEventListener('keydown', handleKeyDown);
+      document.removeEventListener('keydown', handleDialogKeyDown);
       document.body.classList.remove('no-scroll');
     };
   }, [closePopup, goToNextImage, goToPrevImage, images, selectedIndex]);
@@ -163,7 +226,8 @@ export default function GalleryGridShared({
     };
   }, []);
 
-  const openPopup = (index: number) => {
+  const openPopup = (index: number, trigger: HTMLButtonElement) => {
+    triggerRef.current = trigger;
     preloadPopupImageSet(images, index);
     setSelectedIndex(index);
     setPopupImageError(null);
@@ -186,22 +250,26 @@ export default function GalleryGridShared({
 
               return (
                 <div key={`${image}-${index}`} className={styles.imageWrapper}>
-                  <div className={styles.imageContainer}>
+                  <button
+                    type="button"
+                    className={styles.imageContainer}
+                    aria-label={`${resolvedImageAltPrefix} ${index + 1}번째 사진 크게 보기`}
+                    onClick={(event) => openPopup(index, event.currentTarget)}
+                    onMouseEnter={() => {
+                      preloadPopupImageSet(images, index);
+                    }}
+                    onTouchStart={() => {
+                      preloadPopupImageSet(images, index);
+                    }}
+                  >
                     <Image
                       className={styles.imageItem}
                       src={previewImage}
-                      alt={`Gallery image ${index + 1}`}
+                      alt={getImageAlt(index)}
                       fill
                       sizes="(max-width: 700px) 50vw, 33vw"
                       quality={60}
-                      loading={index === 0 ? 'eager' : 'lazy'}
-                      onClick={() => openPopup(index)}
-                      onMouseEnter={() => {
-                        preloadPopupImageSet(images, index);
-                      }}
-                      onTouchStart={() => {
-                        preloadPopupImageSet(images, index);
-                      }}
+                      loading="lazy"
                       onLoad={() =>
                         setLoadedImages((current) => new Set([...current, previewImage]))
                       }
@@ -209,10 +277,9 @@ export default function GalleryGridShared({
                         objectFit: 'cover',
                         opacity: loadedImages.has(previewImage) ? 1 : 0,
                         transition: 'opacity 0.22s ease',
-                        cursor: 'pointer',
                       }}
                     />
-                  </div>
+                  </button>
                   {!loadedImages.has(previewImage)
                     ? renderLoadingPlaceholder(styles)
                     : null}
@@ -270,9 +337,22 @@ export default function GalleryGridShared({
             }
           }}
         >
-          <div className={styles.popupContent}>
-            <button className={styles.closeButton} onClick={closePopup} type="button">
-              X
+          <div
+            ref={popupContentRef}
+            className={styles.popupContent}
+            role="dialog"
+            aria-modal="true"
+            aria-label={`${resolvedImageAltPrefix} 크게 보기`}
+            aria-busy={isPopupBusy}
+          >
+            <button
+              ref={popupCloseButtonRef}
+              className={styles.closeButton}
+              onClick={closePopup}
+              type="button"
+              aria-label="갤러리 크게 보기 닫기"
+            >
+              <span aria-hidden="true">×</span>
             </button>
 
             <div
@@ -282,6 +362,8 @@ export default function GalleryGridShared({
             >
               {isPopupImageLoading ? (
                 <div
+                  role="status"
+                  aria-live="polite"
                   style={{
                     position: 'absolute',
                     inset: 0,
@@ -301,6 +383,7 @@ export default function GalleryGridShared({
 
               {popupImageError ? (
                 <div
+                  role="alert"
                   style={{
                     position: 'absolute',
                     inset: 0,
@@ -320,7 +403,7 @@ export default function GalleryGridShared({
               <Image
                 key={selectedImage}
                 src={selectedImage}
-                alt="선택된 이미지"
+                alt={getImageAlt(activeIndex)}
                 width={1600}
                 height={1067}
                 sizes="(max-width: 767px) 92vw, 86vw"
@@ -328,7 +411,7 @@ export default function GalleryGridShared({
                 priority
                 fetchPriority="high"
                 className={styles.popupImage}
-                onLoadingComplete={() => {
+                onLoad={() => {
                   setLoadedPopupImages((current) => new Set([...current, selectedImage]));
                   setIsPopupImageLoading(false);
                   setPopupImageError(null);

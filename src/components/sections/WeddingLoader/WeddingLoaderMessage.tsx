@@ -15,7 +15,6 @@ export interface WeddingLoaderMessageBaseProps {
 interface WeddingLoaderMessageProps extends WeddingLoaderMessageBaseProps {
   styles: Record<string, string>;
   loadingMessages: string[];
-  minLoadTime: number;
   renderHero: (styles: Record<string, string>) => ReactNode;
   renderHeading: (args: {
     styles: Record<string, string>;
@@ -79,20 +78,17 @@ export default function WeddingLoaderMessage({
   mainImage,
   styles,
   loadingMessages,
-  minLoadTime,
   renderHero,
   renderHeading,
   renderSubtitle,
   messageClassName,
 }: WeddingLoaderMessageProps) {
-  const [progress, setProgress] = useState(0);
   const [currentMessage, setCurrentMessage] = useState(0);
   const [imagesLoaded, setImagesLoaded] = useState(false);
-  const [minTimeElapsed, setMinTimeElapsed] = useState(false);
-  const [startTime] = useState(Date.now());
 
   useEffect(() => {
     let cancelled = false;
+    let readinessTimeoutId: number | undefined;
     const criticalImages = Array.from(
       new Set([mainImage, preloadImages[0]].filter(Boolean) as string[])
     );
@@ -107,11 +103,16 @@ export default function WeddingLoaderMessage({
       return;
     }
 
-    void Promise.all(
+    const imageReadiness = Promise.all(
       criticalImages.map((imageUrl) =>
         preloadSingleImage(imageUrl, { waitForDecode: true })
       )
-    ).then(() => {
+    );
+    const readinessTimeout = new Promise<void>((resolve) => {
+      readinessTimeoutId = window.setTimeout(resolve, duration);
+    });
+
+    void Promise.race([imageReadiness, readinessTimeout]).then(() => {
       if (!cancelled) {
         setImagesLoaded(true);
       }
@@ -137,53 +138,38 @@ export default function WeddingLoaderMessage({
 
     return () => {
       cancelled = true;
+      if (readinessTimeoutId !== undefined) {
+        window.clearTimeout(readinessTimeoutId);
+      }
     };
-  }, [mainImage, preloadImages]);
+  }, [duration, mainImage, preloadImages]);
 
   useEffect(() => {
-    const progressInterval = window.setInterval(() => {
-      const elapsed = Date.now() - startTime;
-      const targetDuration = imagesLoaded ? minLoadTime : duration;
-      const timeProgress = Math.min((elapsed / targetDuration) * 100, 100);
-
-      setProgress((previous) => Math.max(previous, timeProgress));
-
-      if (elapsed >= minLoadTime) {
-        setMinTimeElapsed(true);
-      }
-
-      if (imagesLoaded && minTimeElapsed && timeProgress >= 100) {
-        window.clearInterval(progressInterval);
-        window.setTimeout(onLoadComplete, 180);
-      }
-    }, 60);
+    if (imagesLoaded) {
+      onLoadComplete();
+      return;
+    }
 
     const messageInterval = window.setInterval(() => {
       setCurrentMessage((previous) => (previous + 1) % loadingMessages.length);
     }, Math.max(duration / 4, 800));
 
     return () => {
-      window.clearInterval(progressInterval);
       window.clearInterval(messageInterval);
     };
-  }, [
-    duration,
-    imagesLoaded,
-    loadingMessages.length,
-    minLoadTime,
-    minTimeElapsed,
-    onLoadComplete,
-    startTime,
-  ]);
+  }, [duration, imagesLoaded, loadingMessages.length, onLoadComplete]);
 
   return (
-    <div className={styles.loaderContainer}>
+    <div className={styles.loaderContainer} role="status" aria-live="polite">
       {renderHero(styles)}
       {renderHeading({ styles, groomName, brideName })}
       {renderSubtitle(styles)}
 
-      <div className={styles.progressContainer}>
-        <div className={styles.progressBar} style={{ width: `${progress}%` }} />
+      <div className={styles.progressContainer} aria-hidden="true">
+        <div
+          className={styles.progressBar}
+          style={{ transform: `scaleX(${imagesLoaded ? 1 : 0.35})` }}
+        />
       </div>
 
       <p className={messageClassName}>{loadingMessages[currentMessage]}</p>

@@ -46,7 +46,7 @@
   overflow: hidden;
   border-radius: 12px;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
-  transition: all 0.3s ease;
+  transition: color 0.3s ease, background-color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease, opacity 0.3s ease, transform 0.3s ease;
   cursor: pointer;
   content-visibility: auto;
   contain: layout paint;
@@ -60,11 +60,21 @@
   left: 0;
   width: 100%;
   height: 100%;
+  display: block;
+  padding: 0;
+  border: 0;
+  background: transparent;
   contain: paint;
+  cursor: pointer;
+}
+
+.imageContainer:focus-visible {
+  outline: 3px solid #2c3e50;
+  outline-offset: -3px;
 }
 
 .imageItem {
-  transition: all 0.3s ease;
+  transition: color 0.3s ease, background-color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease, opacity 0.3s ease, transform 0.3s ease;
   cursor: pointer !important;
 }
 
@@ -124,11 +134,11 @@
   border: none;
   padding: 0.8rem 1.5rem;
   border-radius: 8px;
-  font-family: 'Arial', sans-serif;
+  font-family: var(--font-sans);
   font-size: 0.9rem;
   font-weight: 500;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: color 0.3s ease, background-color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease, opacity 0.3s ease, transform 0.3s ease;
   letter-spacing: 0.3px;
 }
 
@@ -165,16 +175,21 @@
   background: rgba(255, 255, 255, 0.1);
   color: white;
   border: none;
-  width: 40px;
-  height: 40px;
+  width: 44px;
+  height: 44px;
   border-radius: 50%;
   font-size: 1.2rem;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.3s ease;
+  transition: color 0.3s ease, background-color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease, opacity 0.3s ease, transform 0.3s ease;
   backdrop-filter: blur(10px);
+}
+
+.closeButton:focus-visible {
+  outline: 3px solid rgba(255, 255, 255, 0.95);
+  outline-offset: 3px;
 }
 
 
@@ -211,9 +226,11 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.2s ease;
+  transition: color 0.2s ease, background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease, transform 0.2s ease;
   user-select: none;
   line-height: 1;
+  min-width: 44px;
+  min-height: 44px;
 }
 
 .navArrow:focus-visible {
@@ -241,7 +258,7 @@
 }
 
 .imageCounter {
-  font-family: 'Arial', sans-serif;
+  font-family: var(--font-sans);
   font-size: 0.95rem;
   font-weight: 500;
   color: white;
@@ -319,8 +336,8 @@
   
   .closeButton {
     top: -35px;
-    width: 35px;
-    height: 35px;
+    width: 44px;
+    height: 44px;
     font-size: 1rem;
   }
   
@@ -378,5 +395,22 @@
   .imageCounter {
     font-size: 0.85rem;
     min-width: 45px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .imageWrapper,
+  .imageItem,
+  .popupImage,
+  .closeButton,
+  .navigationBar,
+  .navArrow,
+  .moreButton,
+  .lessButton {
+    transition: none !important;
+  }
+
+  .loadingSpinner {
+    animation: none;
   }
 }

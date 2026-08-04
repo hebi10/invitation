@@ -1,3 +1,4 @@
+import TemplateChoiceGroup from '../TemplateChoiceGroup';
 import styles from '../page.module.css';
 import { BIRTHDAY_GREETING_TEMPLATES, DEFAULT_BIRTHDAY_GREETING_MESSAGE } from '../pageWizardData';
 import { renderFieldMeta, type GreetingStepProps } from '../pageWizardShared';
@@ -24,24 +25,20 @@ export default function BirthdayGreetingStep({
         />
       </label>
 
-      <div className={styles.templateRow}>
-        {BIRTHDAY_GREETING_TEMPLATES.map((template) => (
-          <button
-            key={template.label}
-            type="button"
-            className={styles.templateButton}
-            onClick={() =>
-              updateForm((draft) => {
-                if (draft.pageData) {
-                  draft.pageData.greetingMessage = template.value;
-                }
-              })
+      <TemplateChoiceGroup
+        labelId="birthday-greeting-template-title"
+        title="초대 문구 템플릿"
+        description="선택하면 초대 문구에 적용됩니다."
+        templates={BIRTHDAY_GREETING_TEMPLATES}
+        value={formState.pageData?.greetingMessage ?? ''}
+        onSelect={(value) =>
+          updateForm((draft) => {
+            if (draft.pageData) {
+              draft.pageData.greetingMessage = value;
             }
-          >
-            {template.label}
-          </button>
-        ))}
-      </div>
+          })
+        }
+      />
 
       <label className={styles.field}>
         {renderFieldMeta('초대장 서명', 'optional')}

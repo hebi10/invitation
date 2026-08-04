@@ -1,11 +1,63 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { getPublicKakaoJavaScriptKey } from '@/lib/publicRuntimeConfig';
 import type { InvitationShareMode } from '@/types/invitationPage';
 
 import { buildKakaoShareImageCandidates } from './kakaoShareUtils';
+
+const KAKAO_SHARE_SCRIPT_ID = 'kakao-share-sdk';
+const KAKAO_SHARE_SDK_URL = 'https://t1.kakaocdn.net/kakao_js_sdk/2.7.2/kakao.min.js';
+const KAKAO_SHARE_SDK_INTEGRITY =
+  'sha384-TiCUE00h649CAMonG018J2ujOgDKW/kVWlChEuu4jK2vxfAAD0eZxzCKakxg55G4';
+let kakaoShareSdkPromise: Promise<NonNullable<Window['Kakao']>> | null = null;
+
+function loadKakaoShareSdk() {
+  if (window.Kakao) {
+    return Promise.resolve(window.Kakao);
+  }
+
+  if (!kakaoShareSdkPromise) {
+    kakaoShareSdkPromise = new Promise((resolve, reject) => {
+      const existingScript = document.getElementById(
+        KAKAO_SHARE_SCRIPT_ID
+      ) as HTMLScriptElement | null;
+      const handleLoad = () => {
+        if (window.Kakao) {
+          resolve(window.Kakao);
+          return;
+        }
+
+        kakaoShareSdkPromise = null;
+        reject(new Error('Kakao Share SDK did not initialize correctly.'));
+      };
+      const handleError = () => {
+        kakaoShareSdkPromise = null;
+        reject(new Error('Failed to load Kakao Share SDK.'));
+      };
+
+      if (existingScript) {
+        existingScript.addEventListener('load', handleLoad, { once: true });
+        existingScript.addEventListener('error', handleError, { once: true });
+        return;
+      }
+
+      const script = document.createElement('script');
+      script.id = KAKAO_SHARE_SCRIPT_ID;
+      script.src = KAKAO_SHARE_SDK_URL;
+      script.integrity = KAKAO_SHARE_SDK_INTEGRITY;
+      script.crossOrigin = 'anonymous';
+      script.async = true;
+      script.defer = true;
+      script.addEventListener('load', handleLoad, { once: true });
+      script.addEventListener('error', handleError, { once: true });
+      document.head.appendChild(script);
+    });
+  }
+
+  return kakaoShareSdkPromise;
+}
 
 interface WeddingKakaoShareButtonProps {
   title: string;
@@ -27,7 +79,8 @@ const buttonBaseStyle = {
   fontWeight: 600,
   cursor: 'pointer',
   fontSize: '0.95rem',
-  transition: 'all 0.25s ease',
+  transition:
+    'color 0.25s ease, background-color 0.25s ease, border-color 0.25s ease, transform 0.25s ease',
   width: '100%',
   maxWidth: '700px',
   borderRadius: '16px',
@@ -168,6 +221,7 @@ export default function WeddingKakaoShareButton({
   shareMode = 'card',
   variant = 'default',
 }: WeddingKakaoShareButtonProps) {
+  const containerRef = useRef<HTMLDivElement>(null);
   const [isKakaoReady, setIsKakaoReady] = useState(false);
   const [feedbackMessage, setFeedbackMessage] = useState('');
   const [resolvedCardImageUrl, setResolvedCardImageUrl] = useState('');
@@ -179,47 +233,49 @@ export default function WeddingKakaoShareButton({
     return buildKakaoShareImageCandidates([imageUrl, fallbackImageUrl], origin);
   }, [fallbackImageUrl, imageUrl]);
 
+  const prepareKakaoShare = useCallback(async () => {
+    if (!kakaoAppKey) {
+      return false;
+    }
+
+    try {
+      const kakao = await loadKakaoShareSdk();
+      if (!kakao.isInitialized()) {
+        kakao.init(kakaoAppKey);
+      }
+
+      const ready = Boolean(kakao.Share);
+      setIsKakaoReady(ready);
+      return ready;
+    } catch {
+      return false;
+    }
+  }, [kakaoAppKey]);
+
   useEffect(() => {
-    const initKakao = () => {
-      if (!window.Kakao) {
-        return;
-      }
-
-      if (!kakaoAppKey) {
-        console.warn('[WeddingKakaoShareButton] missing Kakao JavaScript key');
-        return;
-      }
-
-      if (!window.Kakao.isInitialized()) {
-        window.Kakao.init(kakaoAppKey);
-      }
-
-      if (window.Kakao.Share) {
-        setIsKakaoReady(true);
-      }
-    };
-
-    if (window.Kakao) {
-      initKakao();
+    const container = containerRef.current;
+    if (!container || !kakaoAppKey) {
       return;
     }
 
-    const checkKakao = window.setInterval(() => {
-      if (window.Kakao) {
-        initKakao();
-        window.clearInterval(checkKakao);
-      }
-    }, 100);
+    if (typeof IntersectionObserver === 'undefined') {
+      void prepareKakaoShare();
+      return;
+    }
 
-    const timeout = window.setTimeout(() => {
-      window.clearInterval(checkKakao);
-    }, 10000);
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          void prepareKakaoShare();
+          observer.disconnect();
+        }
+      },
+      { rootMargin: '600px 0px' }
+    );
 
-    return () => {
-      window.clearInterval(checkKakao);
-      window.clearTimeout(timeout);
-    };
-  }, [kakaoAppKey]);
+    observer.observe(container);
+    return () => observer.disconnect();
+  }, [kakaoAppKey, prepareKakaoShare]);
 
   useEffect(() => {
     if (!feedbackMessage) {
@@ -264,14 +320,14 @@ export default function WeddingKakaoShareButton({
 
   const buttonLabel = useMemo(() => feedbackMessage || '카카오톡 공유하기', [feedbackMessage]);
 
-  const handleKakaoShare = () => {
+  const handleKakaoShare = async () => {
     if (!kakaoAppKey) {
       setFeedbackMessage('카카오 공유 설정이 준비되지 않았습니다.');
       return;
     }
 
-    if (!(window.Kakao && window.Kakao.Share && isKakaoReady)) {
-      setFeedbackMessage('카카오 공유 준비 중입니다.');
+    if (!isKakaoReady && !(await prepareKakaoShare())) {
+      setFeedbackMessage('카카오 공유를 준비하지 못했습니다.');
       return;
     }
 
@@ -316,6 +372,7 @@ export default function WeddingKakaoShareButton({
 
   return (
     <div
+      ref={containerRef}
       style={{
         width: '100%',
         display: 'flex',

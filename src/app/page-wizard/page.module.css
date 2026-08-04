@@ -87,7 +87,6 @@
   height: 100%;
   border-radius: 2px;
   background: var(--color-primary);
-  transition: width 0.35s ease;
 }
 
 .shell {
@@ -267,7 +266,6 @@
   height: 100%;
   border-radius: inherit;
   background: linear-gradient(90deg, #2563eb, #38bdf8);
-  transition: width 0.2s ease;
 }
 
 .statusGrid {
@@ -316,7 +314,7 @@
 
 .stepNavButtonActive {
   border-color: rgba(37, 99, 235, 0.4);
-  box-shadow: inset 3px 0 0 #2563eb;
+  box-shadow: none;
   background: rgba(239, 246, 255, 0.95);
 }
 
@@ -578,9 +576,7 @@
 .choiceCardActive {
   border-color: rgba(37, 99, 235, 0.52);
   background: rgba(239, 246, 255, 0.82);
-  box-shadow:
-    inset 3px 0 0 #2563eb,
-    0 8px 24px rgba(37, 99, 235, 0.08);
+  box-shadow: none;
   transform: translateY(-1px);
 }
 
@@ -1124,9 +1120,7 @@
 .musicOptionCardActive {
   border-color: rgba(37, 99, 235, 0.44);
   background: rgba(239, 246, 255, 0.88);
-  box-shadow:
-    inset 3px 0 0 #2563eb,
-    0 10px 18px rgba(37, 99, 235, 0.1);
+  box-shadow: none;
 }
 
 .musicOptionTitle {
@@ -2241,9 +2235,7 @@
 .musicOptionCardActive {
   border-color: rgba(180, 131, 91, 0.4);
   background: rgba(249, 238, 226, 0.96);
-  box-shadow:
-    inset 3px 0 0 #b4835b,
-    0 12px 20px rgba(122, 93, 63, 0.1);
+  box-shadow: none;
 }
 
 .musicOptionTitle {
@@ -2378,9 +2370,7 @@
 .choiceCardActive {
   border-color: rgba(180, 131, 91, 0.4);
   background: linear-gradient(180deg, rgba(255, 255, 255, 1), rgba(249, 238, 226, 0.98));
-  box-shadow:
-    inset 3px 0 0 #b4835b,
-    0 12px 24px rgba(122, 93, 63, 0.08);
+  box-shadow: none;
 }
 
 .choiceCard:focus-visible {
@@ -2642,9 +2632,7 @@
 .pageFirstBirthday .musicOptionCardActive {
   border-color: rgba(219, 112, 147, 0.42);
   background: linear-gradient(180deg, #ffffff, #fff0f6);
-  box-shadow:
-    inset 3px 0 0 #db7093,
-    0 12px 24px rgba(129, 84, 105, 0.1);
+  box-shadow: none;
 }
 
 .pageFirstBirthday .choiceTag,
@@ -2769,9 +2757,7 @@
 .pageOpening .choiceCardActive {
   border-color: rgba(47, 125, 103, 0.34);
   background: rgba(248, 253, 250, 0.96);
-  box-shadow:
-    inset 3px 0 0 var(--opening-primary),
-    0 12px 24px rgba(38, 73, 60, 0.08);
+  box-shadow: none;
 }
 
 .pageOpening .choiceChevron,
@@ -2905,9 +2891,7 @@
 .pageBirthday .choiceCardActive {
   border-color: rgba(216, 63, 122, 0.36);
   background: rgba(255, 247, 250, 0.96);
-  box-shadow:
-    inset 3px 0 0 var(--birthday-primary),
-    0 12px 24px rgba(86, 41, 74, 0.08);
+  box-shadow: none;
 }
 
 .pageBirthday .choiceChevron,
@@ -2948,4 +2932,465 @@
 .pageBirthday .swiperCard :global(.swiper-pagination-bullet-active) {
   background: var(--birthday-primary);
   box-shadow: 0 6px 14px rgba(216, 63, 122, 0.24);
+}
+
+/* Clean workspace form system */
+
+.page {
+  min-height: 100dvh;
+  padding: 0;
+  background: #f5f6f8;
+  color: #17191f;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+.gateShell {
+  width: min(100% - 32px, 520px);
+  min-height: 100dvh;
+  padding: 48px 0;
+  justify-content: center;
+}
+
+.gateCard,
+.centerCard {
+  padding: 28px;
+  border: 1px solid #dfe3e8;
+  border-radius: 8px;
+  background: #fff;
+  box-shadow: none;
+}
+
+.eyebrow {
+  color: #315efb;
+  font-family: inherit;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.centerTitle,
+.cardTitle,
+.choiceSectionTitle,
+.choiceSelectValue,
+.choiceTitle,
+.assetItemTitle,
+.summaryValue,
+.reviewTitle {
+  color: #17191f;
+  font-family: inherit;
+  letter-spacing: -0.02em;
+}
+
+.centerText,
+.cardText,
+.choiceSectionText,
+.choiceSelectDescription,
+.choiceText,
+.fieldHint,
+.sectionText {
+  color: #626975;
+  font-family: inherit;
+}
+
+.fieldGrid,
+.twoColumnGrid,
+.personGrid,
+.choiceGrid,
+.assetList,
+.reviewList {
+  gap: 16px;
+}
+
+.field {
+  gap: 8px;
+}
+
+.fieldLabelRow {
+  gap: 8px;
+}
+
+.fieldLabel,
+.label {
+  color: #2d3139;
+  font-size: 0.84rem;
+  font-weight: 700;
+}
+
+.requiredBadge,
+.optionalBadge,
+.choiceSectionBadge,
+.choiceTag,
+.choiceSelectedBadge,
+.footerStepBadge,
+.musicVolumeBadge,
+.gallerySummaryIndex {
+  min-height: auto;
+  padding: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  color: #626975;
+  font-family: inherit;
+  font-size: 0.74rem;
+  font-weight: 700;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.choiceSelectedBadge {
+  color: #176b43;
+}
+
+.input,
+.textarea,
+.choiceSelectButton,
+.musicSelectButton {
+  border: 1px solid #cfd5dd;
+  border-radius: 8px;
+  background: #fff;
+  box-shadow: none;
+  color: #17191f;
+  font-family: inherit;
+}
+
+.input {
+  min-height: 48px;
+  padding: 0 14px;
+}
+
+.textarea {
+  min-height: 148px;
+  padding: 14px;
+}
+
+.input:focus,
+.textarea:focus,
+.choiceSelectButton:focus,
+.choiceSelectButton:focus-visible,
+.musicSelectButton:focus,
+.musicSelectButton:focus-visible {
+  outline: 3px solid rgba(49, 94, 251, 0.18);
+  outline-offset: 1px;
+  border-color: #315efb;
+  box-shadow: none;
+}
+
+.choiceSection {
+  gap: 14px;
+  padding: 0 0 28px;
+  border: 0;
+  border-bottom: 1px solid #dfe3e8;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.choiceSection:last-child {
+  padding-bottom: 0;
+  border-bottom: 0;
+}
+
+.choiceSectionHeader {
+  gap: 5px;
+}
+
+.choiceSectionTitle {
+  font-size: 1rem;
+  font-weight: 720;
+}
+
+.choiceSelectButton {
+  min-height: 72px;
+  padding: 12px 14px;
+}
+
+.choiceSelectButtonActive {
+  border-color: #315efb;
+  box-shadow: none;
+}
+
+.choiceSelectLabel {
+  color: #626975;
+  font-size: 0.72rem;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.choiceSelectValue {
+  font-size: 0.94rem;
+  font-weight: 720;
+}
+
+.choiceSelectArrow {
+  color: #626975;
+}
+
+.choiceSelectActionLabel {
+  color: #626975;
+}
+
+.choiceChevron {
+  width: 30px;
+  height: 30px;
+  border: 1px solid #dfe3e8;
+  border-radius: 6px;
+  background: #f5f6f8;
+  color: #454b55;
+}
+
+.choiceOptions {
+  padding: 8px;
+  border: 1px solid #dfe3e8;
+  border-radius: 8px;
+  background: #f5f6f8;
+  box-shadow: none;
+}
+
+.choiceCard {
+  padding: 14px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: #fff;
+  box-shadow: none;
+}
+
+.choiceCardActive {
+  border-color: #315efb;
+  background: #f3f6ff;
+  box-shadow: none;
+}
+
+.choiceCard:focus-visible {
+  outline: 3px solid rgba(49, 94, 251, 0.18);
+  outline-offset: 1px;
+  border-color: #315efb;
+  box-shadow: none;
+}
+
+.formCard,
+.uploadCard,
+.summaryCard,
+.detailsCard,
+.musicIntroCard,
+.musicToggleCard,
+.musicControlCard,
+.musicMetaCard,
+.musicPreviewCard,
+.assetItem,
+.reviewItem,
+.gallerySummaryCard {
+  border: 1px solid #dfe3e8;
+  border-radius: 8px;
+  background: #fff;
+  box-shadow: none;
+}
+
+.formCard {
+  padding: 18px;
+}
+
+.uploadCard,
+.summaryCard,
+.detailsCard,
+.musicIntroCard,
+.musicToggleCard,
+.musicControlCard,
+.musicMetaCard,
+.musicPreviewCard,
+.assetItem,
+.reviewItem,
+.gallerySummaryCard {
+  padding: 16px;
+}
+
+.musicOptionCard,
+.musicSelectButton,
+.musicAudioPlaceholder,
+.musicStoragePath {
+  border-color: #dfe3e8;
+  border-radius: 8px;
+  background: #fff;
+  box-shadow: none;
+  color: #17191f;
+}
+
+.musicOptionCardActive {
+  border-color: #315efb;
+  background: #f3f6ff;
+  box-shadow: none;
+}
+
+.primaryButton,
+.publishButton,
+.secondaryButton,
+.ghostButton,
+.templateButton,
+.textButton {
+  min-height: 44px;
+  padding: 0 14px;
+  border-radius: 8px;
+  box-shadow: none;
+  font-family: inherit;
+  font-size: 0.86rem;
+  font-weight: 700;
+}
+
+.primaryButton,
+.publishButton {
+  border: 1px solid #315efb;
+  background: #315efb;
+  color: #fff;
+}
+
+.secondaryButton,
+.ghostButton,
+.templateButton {
+  border: 1px solid #cfd5dd;
+  background: #fff;
+  color: #2d3139;
+}
+
+.textButton {
+  min-height: 36px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #315efb;
+}
+
+.templateSection {
+  display: grid;
+  gap: 10px;
+}
+
+.templateHeader {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.templateHeader strong {
+  color: #17191f;
+  font-size: 0.86rem;
+  font-weight: 750;
+}
+
+.templateHeader span {
+  color: #626975;
+  font-size: 0.78rem;
+  line-height: 1.45;
+}
+
+.templateButton {
+  min-width: 124px;
+  min-height: 56px;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 2px;
+  padding: 8px 14px;
+  text-align: left;
+}
+
+.templateButtonLabel {
+  color: inherit;
+  font-size: 0.86rem;
+  font-weight: 750;
+}
+
+.templateButtonMeta {
+  color: #626975;
+  font-size: 0.72rem;
+  font-weight: 650;
+}
+
+.templateButtonSelected,
+.templateButton[aria-pressed='true'] {
+  border-color: #315efb;
+  background: #f3f6ff;
+  color: #2148cf;
+}
+
+.templateButtonSelected .templateButtonMeta,
+.templateButton[aria-pressed='true'] .templateButtonMeta {
+  color: #2148cf;
+}
+
+.templateButton:focus-visible {
+  outline: 3px solid rgb(49 94 251 / 24%);
+  outline-offset: 2px;
+}
+
+@media (max-width: 767px) {
+  .templateHeader {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 3px;
+  }
+
+  .templateRow {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .templateButton {
+    width: 100%;
+  }
+}
+
+.notice,
+.inlineNoticeError {
+  margin-bottom: 16px;
+  padding: 12px 14px;
+  border-radius: 6px;
+  font-family: inherit;
+}
+
+.noticeSuccess {
+  border-color: #a8d5bf;
+  background: #f1faf5;
+  color: #176b43;
+}
+
+.noticeError,
+.inlineNoticeError {
+  border-color: #f1b7b2;
+  background: #fff5f4;
+  color: #9f221a;
+}
+
+.noticeNeutral {
+  border-color: #dfe3e8;
+  background: #fff;
+  color: #454b55;
+}
+
+@media (max-width: 640px) {
+  .gateShell {
+    width: min(100% - 24px, 520px);
+    padding: 24px 0;
+  }
+
+  .gateCard,
+  .centerCard {
+    padding: 20px;
+  }
+
+  .formCard,
+  .uploadCard,
+  .summaryCard,
+  .detailsCard,
+  .musicIntroCard,
+  .musicToggleCard,
+  .musicControlCard,
+  .musicMetaCard,
+  .musicPreviewCard,
+  .assetItem,
+  .reviewItem,
+  .gallerySummaryCard {
+    padding: 14px;
+  }
 }

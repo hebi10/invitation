@@ -9,6 +9,13 @@ import {
   type StepValidation,
   type WizardStepKey,
 } from '../pageWizardData';
+import {
+  findWizardSectionByStepKey,
+  getAdjacentWizardSection,
+  getWizardSectionValidation,
+  type WizardSection,
+  type WizardSectionId,
+} from '../pageWizardSections';
 import { getStepIndex } from '../pageWizardShared';
 import type { WizardPersistDraftOptions } from './useWizardPersistence';
 
@@ -20,6 +27,7 @@ export function useWizardNavigation({
   published,
   resolvedPersistedSlug,
   steps,
+  sections,
   getValidationForStep,
   persistDraft,
   getEditPath,
@@ -35,12 +43,17 @@ export function useWizardNavigation({
   published: boolean;
   resolvedPersistedSlug: string | null;
   steps: WizardStepDefinition[];
+  sections: WizardSection[];
   getValidationForStep: (stepKey: WizardStepKey) => StepValidation;
   persistDraft: (options?: WizardPersistDraftOptions) => Promise<string | null>;
   getEditPath: (slug: string) => string;
   slideToStep: (stepKey: WizardStepKey) => void;
   clearNotice: () => void;
-  showErrorNotice: (error: unknown, fallback?: string) => void;
+  showErrorNotice: (
+    error: unknown,
+    fallback?: string,
+    source?: 'general' | 'save' | 'validation'
+  ) => void;
   onComplete?: (savedSlug: string) => void;
 }) {
   const activeStep = useMemo(
@@ -50,6 +63,14 @@ export function useWizardNavigation({
   const activeStepIndex = useMemo(
     () => getStepIndex(activeStep.key, steps),
     [activeStep.key, steps]
+  );
+  const activeSection = useMemo(
+    () => findWizardSectionByStepKey(sections, activeStep.key) ?? sections[0],
+    [activeStep.key, sections]
+  );
+  const activeSectionIndex = useMemo(
+    () => sections.findIndex((section) => section.id === activeSection.id),
+    [activeSection.id, sections]
   );
 
   const scrollToTop = useCallback(() => {
@@ -64,14 +85,24 @@ export function useWizardNavigation({
   }, []);
 
   const handleMoveNext = useCallback(async () => {
-    const validation = getValidationForStep(activeStep.key);
+    const validation = getWizardSectionValidation(activeSection, getValidationForStep);
 
     if (!validation.valid) {
-      showErrorNotice(validation.messages[0] ?? '현재 단계 입력값을 먼저 확인해 주세요.');
+      const invalidStepKey = validation.invalidStepKeys[0];
+
+      if (invalidStepKey) {
+        slideToStep(invalidStepKey);
+      }
+
+      showErrorNotice(
+        validation.messages[0] ?? '현재 단계 입력값을 먼저 확인해 주세요.',
+        undefined,
+        'validation'
+      );
       return;
     }
 
-    if (activeStep.key === 'slug') {
+    if (activeSection.steps.some((step) => step.key === 'slug')) {
       let nextSlug = resolvedPersistedSlug;
       const savedSlug = await persistDraft({
         publish: false,
@@ -93,25 +124,23 @@ export function useWizardNavigation({
           window.history.replaceState(null, '', nextUrl);
         }
       }
-    } else if (
-      activeStep.key !== 'final' &&
-      (resolvedPersistedSlug || (activeStep.key !== 'eventType' && activeStep.key !== 'theme'))
-    ) {
+    } else if (activeSection.id !== 'review' && resolvedPersistedSlug) {
       const savedSlug = await persistDraft({ publish: false, silent: true });
-      if (!savedSlug && !resolvedPersistedSlug) {
+      if (!savedSlug) {
         return;
       }
     }
 
-    const nextStep = steps[getStepIndex(activeStep.key, steps) + 1];
-    if (!nextStep) {
+    const nextSection = getAdjacentWizardSection(sections, activeSection.id, 1);
+    const nextStepKey = nextSection?.steps[0]?.key;
+    if (!nextStepKey) {
       return;
     }
 
-    slideToStep(nextStep.key);
+    slideToStep(nextStepKey);
     scrollToTop();
   }, [
-    activeStep.key,
+    activeSection,
     getValidationForStep,
     getEditPath,
     persistDraft,
@@ -119,18 +148,33 @@ export function useWizardNavigation({
     scrollToTop,
     showErrorNotice,
     slideToStep,
-    steps,
+    sections,
   ]);
 
   const handleMovePrevious = useCallback(() => {
-    const previousStep = steps[getStepIndex(activeStep.key, steps) - 1];
-    if (!previousStep) {
+    const previousSection = getAdjacentWizardSection(sections, activeSection.id, -1);
+    const previousStepKey = previousSection?.steps[0]?.key;
+    if (!previousStepKey) {
       return;
     }
 
-    slideToStep(previousStep.key);
+    slideToStep(previousStepKey);
     clearNotice();
-  }, [activeStep.key, clearNotice, slideToStep, steps]);
+    scrollToTop();
+  }, [activeSection.id, clearNotice, scrollToTop, sections, slideToStep]);
+
+  const handleSelectSection = useCallback((sectionId: WizardSectionId) => {
+    const section = sections.find((candidate) => candidate.id === sectionId);
+    const firstStepKey = section?.steps[0]?.key;
+
+    if (!firstStepKey) {
+      return;
+    }
+
+    slideToStep(firstStepKey);
+    clearNotice();
+    scrollToTop();
+  }, [clearNotice, scrollToTop, sections, slideToStep]);
 
   const handleFinalConfirm = useCallback(async () => {
     const reviewSummary = buildReviewSummary(steps, defaultTheme, previewFormState, {
@@ -143,7 +187,9 @@ export function useWizardNavigation({
       scrollToTop();
       showErrorNotice(
         invalidStep.validation.messages[0] ??
-          `${invalidStep.step.number}단계를 먼저 확인해 주세요.`
+          `${invalidStep.step.number}단계를 먼저 확인해 주세요.`,
+        undefined,
+        'validation'
       );
       return;
     }
@@ -177,8 +223,11 @@ export function useWizardNavigation({
   return {
     activeStep,
     activeStepIndex,
+    activeSection,
+    activeSectionIndex,
     handleMoveNext,
     handleMovePrevious,
+    handleSelectSection,
     handleFinalConfirm,
   };
 }

@@ -78,8 +78,16 @@ export function useWizardPersistence({
   setLastSavedAt: (value: Date | null) => void;
   setIsSaving: (value: boolean) => void;
   normalizeFormState: (config: InvitationPageSeed) => InvitationPageSeed;
-  showNotice: (tone: 'success' | 'error' | 'neutral', message: string) => void;
-  showErrorNotice: (error: unknown, fallback?: string) => void;
+  showNotice: (
+    tone: 'success' | 'error' | 'neutral',
+    message: string,
+    source?: 'general' | 'save' | 'validation'
+  ) => void;
+  showErrorNotice: (
+    error: unknown,
+    fallback?: string,
+    source?: 'general' | 'save' | 'validation'
+  ) => void;
   onPersisted?: (input: {
     slug: string;
     config: InvitationPageSeed;
@@ -279,7 +287,8 @@ export function useWizardPersistence({
             options?.successMessage ??
               (nextPublished
                 ? '페이지를 공개했습니다.'
-                : '청첩장을 저장했습니다.')
+                : '청첩장을 저장했습니다.'),
+            'save'
           );
         }
 
@@ -288,7 +297,7 @@ export function useWizardPersistence({
         if (error instanceof WizardVersionConflictError) {
           onVersionConflict?.();
         }
-        showErrorNotice(error, '청첩장을 저장하지 못했습니다.');
+        showErrorNotice(error, '청첩장을 저장하지 못했습니다.', 'save');
         return null;
       } finally {
         setIsSaving(false);

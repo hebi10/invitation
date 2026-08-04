@@ -94,6 +94,7 @@ export default createWeddingThemeRenderer({
         images={state.galleryImageUrls}
         previewImages={state.galleryPreviewImageUrls}
         imagesLoading={state.imagesLoading}
+        imageAltPrefix={`${state.pageConfig.groomName}과 ${state.pageConfig.brideName}의 웨딩 갤러리`}
       />
     ),
     ({ state }) =>

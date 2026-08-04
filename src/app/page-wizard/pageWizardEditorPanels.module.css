@@ -241,3 +241,124 @@
     flex-direction: column;
   }
 }
+
+/* Clean workspace panel system */
+
+.section {
+  gap: 20px;
+}
+
+.sectionHeader,
+.subCardHeader {
+  gap: 12px;
+}
+
+.sectionTitle,
+.subCardTitle,
+.nestedCardTitle {
+  color: #17191f;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  letter-spacing: -0.015em;
+}
+
+.sectionTitle {
+  font-size: 1.08rem;
+}
+
+.sectionDescription,
+.subCardDescription,
+.fieldHint,
+.countText {
+  color: #626975;
+}
+
+.fieldGrid {
+  gap: 16px;
+}
+
+.label {
+  color: #2d3139;
+  font-size: 0.84rem;
+}
+
+.fieldBadgeRequired,
+.fieldBadgeOptional {
+  min-height: auto;
+  padding: 0;
+  border-radius: 0;
+  background: transparent;
+  font-size: 0.74rem;
+}
+
+.fieldBadgeRequired {
+  color: #315efb;
+}
+
+.fieldBadgeOptional {
+  color: #626975;
+}
+
+.input,
+.textarea {
+  border-color: #cfd5dd;
+  border-radius: 8px;
+  color: #17191f;
+}
+
+.input {
+  min-height: 48px;
+}
+
+.textarea {
+  min-height: 148px;
+  padding: 14px;
+}
+
+.input:focus,
+.textarea:focus {
+  outline: 3px solid rgba(49, 94, 251, 0.18);
+  outline-offset: 1px;
+  border-color: #315efb;
+  box-shadow: none;
+}
+
+.stackColumn {
+  gap: 16px;
+}
+
+.subCard,
+.nestedCard,
+.emptyCard {
+  padding: 16px;
+  border: 1px solid #dfe3e8;
+  border-radius: 6px;
+  background: #fff;
+}
+
+.nestedCard {
+  background: #f8f9fa;
+}
+
+.emptyCard {
+  color: #626975;
+}
+
+.detailsSummary {
+  color: #2d3139;
+}
+
+.ghostButton,
+.textButton {
+  min-height: 44px;
+  border-radius: 8px;
+}
+
+.ghostButton {
+  border-color: #cfd5dd;
+  color: #2d3139;
+}
+
+.textButton {
+  min-height: 36px;
+  color: #315efb;
+}

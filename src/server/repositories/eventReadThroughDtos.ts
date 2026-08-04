@@ -10,6 +10,7 @@ import {
   type InvitationPageDisplayPeriodRecord,
   type InvitationPageRegistryRecord,
 } from '@/lib/invitationPagePersistence';
+import { mergeInvitationSampleFallback } from '@/lib/invitationSampleFallback';
 import type {
   InvitationPageSeed,
   InvitationThemeKey,
@@ -341,14 +342,18 @@ export function buildInvitationPageConfigRecordFromEventContent(
         : undefined,
   } satisfies Record<string, unknown>;
 
-  const config = normalizeInvitationConfigSeed(
+  const sampleConfig = getWeddingPageBySlug(eventSummary.slug) ?? undefined;
+  const normalizedConfig = normalizeInvitationConfigSeed(
     eventSummary.slug,
     contentCandidate,
-    getWeddingPageBySlug(eventSummary.slug) ?? undefined
+    sampleConfig
   );
-  if (!config) {
+  if (!normalizedConfig) {
     return null;
   }
+  const config = sampleConfig
+    ? mergeInvitationSampleFallback(normalizedConfig, sampleConfig)
+    : normalizedConfig;
 
   return {
     slug: config.slug,

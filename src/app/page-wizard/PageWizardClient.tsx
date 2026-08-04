@@ -5,10 +5,6 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { useRouter, useSearchParams } from 'next/navigation';
 
-import type { Swiper as SwiperType } from 'swiper';
-import { Pagination } from 'swiper/modules';
-import { Swiper, SwiperSlide } from 'swiper/react';
-
 import FirebaseAuthLoginCard from '@/app/_components/FirebaseAuthLoginCard';
 import {
   cloneConfig,
@@ -28,6 +24,7 @@ import {
 } from '@/lib/appQuery';
 import {
   DEFAULT_EVENT_TYPE,
+  getEventTypeMeta,
   normalizeEventTypeKey,
   type EventTypeKey,
 } from '@/lib/eventTypes';
@@ -62,6 +59,8 @@ import type {
 import { buildKakaoMapSearchUrl } from '@/utils/kakaoMaps';
 
 import PageWizardStepPreview from './PageWizardStepPreview';
+import PageWizardWorkspace from './PageWizardWorkspace';
+import { revealWizardStep } from './pageWizardFocus';
 import { applyWizardStorageImageFallback } from './pageWizardImageFallback';
 import { useImageUpload } from './hooks/useImageUpload';
 import { useWizardDerivedState } from './hooks/useWizardDerivedState';
@@ -95,15 +94,22 @@ import {
 } from './pageWizardEventConfig';
 import { getPageWizardPresentation } from './pageWizardPresentation';
 import {
+  buildWizardSections,
+  getWizardSectionValidation,
+} from './pageWizardSections';
+import {
+  resolveWizardSaveStatus,
+} from './pageWizardWorkspaceState';
+import {
   demoExperienceWizardPersistenceGateway,
   productionWizardPersistenceGateway,
   type WizardPersistenceGateway,
 } from './wizardPersistenceGateway';
 import {
   getNoticeClassName,
-  getStepIndex,
   type MusicPreviewState,
   type NoticeState,
+  type NoticeSource,
   type UploadFieldKind,
 } from './pageWizardShared';
 import {
@@ -192,7 +198,8 @@ export default function PageWizardClient({
   const [groomEnglishName, setGroomEnglishName] = useState('');
   const [brideEnglishName, setBrideEnglishName] = useState('');
   const [notice, setNotice] = useState<NoticeState>(null);
-  const [, setLastSavedAt] = useState<Date | null>(null);
+  const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [isClaimingOwnership, setIsClaimingOwnership] = useState(false);
@@ -206,14 +213,12 @@ export default function PageWizardClient({
   const {
     openChoicePanel,
     setOpenChoicePanel,
-    getStepViewMode,
-    setStepViewMode,
     toggleChoicePanel,
   } = useWizardPreviewState();
+  const [previewStepKey, setPreviewStepKey] = useState<WizardStepKey | null>(null);
   const [musicPreviewState, setMusicPreviewState] = useState<MusicPreviewState>('idle');
   const wizardCopy = getWizardCopy(eventType);
 
-  const swiperRef = useRef<SwiperType | null>(null);
   const coverUploadInputRef = useRef<HTMLInputElement | null>(null);
   const sharePreviewUploadInputRef = useRef<HTMLInputElement | null>(null);
   const kakaoCardUploadInputRef = useRef<HTMLInputElement | null>(null);
@@ -224,16 +229,7 @@ export default function PageWizardClient({
   const canUploadImages =
     !experience && (isAdminLoggedIn || Boolean(initialSlug && isLoggedIn));
   const wizardPresentation = getPageWizardPresentation(eventType);
-  const pageClassName =
-    wizardPresentation.pageClassName === 'birthday'
-      ? `${styles.page} ${styles.pageBirthday}`
-      : wizardPresentation.pageClassName === 'firstBirthday'
-        ? `${styles.page} ${styles.pageFirstBirthday}`
-        : wizardPresentation.pageClassName === 'generalEvent'
-          ? `${styles.page} ${styles.pageGeneralEvent}`
-          : wizardPresentation.pageClassName === 'opening'
-            ? `${styles.page} ${styles.pageOpening}`
-          : styles.page;
+  const pageClassName = styles.page;
   const ownedEventsQuery = useQuery<CustomerOwnedEventSummary[]>({
     queryKey: appQueryKeys.ownedCustomerEvents(authUser?.uid ?? null),
     enabled:
@@ -425,6 +421,10 @@ export default function PageWizardClient({
     persistedSlug,
     slugInput,
   });
+  const wizardSections = useMemo(
+    () => buildWizardSections(wizardSteps),
+    [wizardSteps]
+  );
   const { getValidationForStep, finalReviewSummary } = useWizardValidation({
     activeStepKey,
     defaultTheme,
@@ -457,18 +457,27 @@ export default function PageWizardClient({
     []
   );
 
-  const showNotice = useCallback((tone: 'success' | 'error' | 'neutral', message: string) => {
+  const showNotice = useCallback((
+    tone: 'success' | 'error' | 'neutral',
+    message: string,
+    source: NoticeSource = 'general'
+  ) => {
     const nextMessage =
       tone === 'error' ? resolveErrorNoticeMessage(message) : message;
 
-    setNotice({ tone, message: nextMessage });
+    setNotice({ tone, message: nextMessage, source });
   }, [resolveErrorNoticeMessage]);
 
   const showErrorNotice = useCallback(
-    (error: unknown, fallback?: string) => {
+    (
+      error: unknown,
+      fallback?: string,
+      source: NoticeSource = 'general'
+    ) => {
       setNotice({
         tone: 'error',
         message: resolveErrorNoticeMessage(error, fallback),
+        source,
       });
     },
     [resolveErrorNoticeMessage]
@@ -496,6 +505,7 @@ export default function PageWizardClient({
           : getDefaultThemeForEventType(nextEventType)
       );
       setLastSavedAt(toDate(editableConfig.lastSavedAt));
+      setHasUnsavedChanges(false);
       setPersistedVersion(version);
       setHasVersionConflict(false);
       setRequiresOwnershipClaim(false);
@@ -599,27 +609,10 @@ export default function PageWizardClient({
     showNotice,
   ]);
 
-  const updateSwiperLayout = useCallback(() => {
-    if (typeof window === 'undefined') {
-      return;
-    }
-
-    window.requestAnimationFrame(() => {
-      window.requestAnimationFrame(() => {
-        const swiper = swiperRef.current;
-        if (!swiper || swiper.destroyed) {
-          return;
-        }
-
-        swiper.updateAutoHeight(0);
-        swiper.update();
-      });
-    });
-  }, []);
-
   /* State updaters */
 
   const updateForm = useCallback((updater: (draft: InvitationPageSeed) => void) => {
+    setHasUnsavedChanges(true);
     setFormState((current) => {
       if (!current) {
         return current;
@@ -653,18 +646,22 @@ export default function PageWizardClient({
     });
   }, [updateForm]);
 
-  const slideToStep = useCallback((stepKey: WizardStepKey) => {
-    const index = getStepIndex(stepKey, wizardSteps);
-    if (index < 0) {
+  const moveToStep = useCallback((stepKey: WizardStepKey) => {
+    if (!wizardSteps.some((step) => step.key === stepKey)) {
       return;
     }
 
-    swiperRef.current?.slideTo(index);
     setActiveStepKey(stepKey);
+    if (typeof window !== 'undefined') {
+      window.requestAnimationFrame(() => {
+        revealWizardStep(stepKey);
+      });
+    }
   }, [wizardSteps]);
 
   const handleGroomEnglishNameChange = useCallback(
     (value: string) => {
+      setHasUnsavedChanges(true);
       setGroomEnglishName(value);
 
       if (resolvedPersistedSlug || hasManualSlugOverride) {
@@ -678,6 +675,7 @@ export default function PageWizardClient({
 
   const handleBrideEnglishNameChange = useCallback(
     (value: string) => {
+      setHasUnsavedChanges(true);
       setBrideEnglishName(value);
 
       if (resolvedPersistedSlug || hasManualSlugOverride) {
@@ -691,6 +689,7 @@ export default function PageWizardClient({
 
   const handleSlugInputChange = useCallback(
     (value: string) => {
+      setHasUnsavedChanges(true);
       setSlugInput(value);
 
       if (resolvedPersistedSlug) {
@@ -809,39 +808,6 @@ export default function PageWizardClient({
   }, [formState?.couple.bride.name, formState?.couple.groom.name]);
 
   useEffect(() => {
-    updateSwiperLayout();
-  }, [activeStepKey, notice, openChoicePanel, updateSwiperLayout]);
-
-  useEffect(() => {
-    if (typeof window === 'undefined') {
-      return;
-    }
-
-    const swiper = swiperRef.current;
-    const activeSlide = swiper?.slides?.[swiper.activeIndex] as HTMLElement | undefined;
-
-    if (!swiper || !activeSlide) {
-      return;
-    }
-
-    updateSwiperLayout();
-
-    if (typeof ResizeObserver === 'undefined') {
-      return;
-    }
-
-    const resizeObserver = new ResizeObserver(() => {
-      updateSwiperLayout();
-    });
-
-    resizeObserver.observe(activeSlide);
-
-    return () => {
-      resizeObserver.disconnect();
-    };
-  }, [activeStepKey, updateSwiperLayout]);
-
-  useEffect(() => {
     if (isAdminLoading) {
       return;
     }
@@ -867,6 +833,7 @@ export default function PageWizardClient({
       resetPublishedState();
       setDefaultTheme(getDefaultThemeForEventType(requestedEventType));
       setLastSavedAt(null);
+      setHasUnsavedChanges(false);
       setPersistedVersion(null);
       setHasVersionConflict(false);
       setRequiresOwnershipClaim(false);
@@ -1435,6 +1402,7 @@ export default function PageWizardClient({
     setPersistedVersion,
     onVersionConflict: () => setHasVersionConflict(true),
     onPersisted: async ({ slug, config, published: nextPublished }) => {
+      setHasUnsavedChanges(false);
       const nextProductTier = normalizeInvitationProductTier(config.productTier);
 
       await Promise.all([
@@ -1495,9 +1463,10 @@ export default function PageWizardClient({
 
   const {
     activeStep,
-    activeStepIndex,
+    activeSection,
     handleMoveNext,
     handleMovePrevious,
+    handleSelectSection,
     handleFinalConfirm,
   } = useWizardNavigation({
     activeStepKey,
@@ -1507,10 +1476,11 @@ export default function PageWizardClient({
     published,
     resolvedPersistedSlug,
     steps: wizardSteps,
+    sections: wizardSections,
     getValidationForStep,
     persistDraft,
     getEditPath: routes.wizardEdit,
-    slideToStep,
+    slideToStep: moveToStep,
     clearNotice,
     showErrorNotice,
     onComplete: (savedSlug) => {
@@ -1528,6 +1498,18 @@ export default function PageWizardClient({
     }
 
     const sharedProps = { formState, previewFormState, updateForm };
+    const setDirtyEventType = (nextEventType: EventTypeKey) => {
+      setHasUnsavedChanges(true);
+      setEventType(nextEventType);
+    };
+    const setDirtyDefaultTheme = (nextTheme: InvitationThemeKey) => {
+      setHasUnsavedChanges(true);
+      setDefaultTheme(nextTheme);
+    };
+    const setDirtyPublished = (nextPublished: boolean) => {
+      setHasUnsavedChanges(true);
+      setPublished(nextPublished);
+    };
 
     switch (stepKey) {
       case 'theme':
@@ -1537,7 +1519,7 @@ export default function PageWizardClient({
               {...sharedProps}
               eventType={eventType}
               defaultTheme={defaultTheme}
-              setDefaultTheme={setDefaultTheme}
+              setDefaultTheme={setDirtyDefaultTheme}
               openChoicePanel={openChoicePanel}
               toggleChoicePanel={toggleChoicePanel}
               onProductTierChange={handleProductTierChange}
@@ -1552,7 +1534,7 @@ export default function PageWizardClient({
             {...sharedProps}
             eventType={eventType}
             defaultTheme={defaultTheme}
-            setDefaultTheme={setDefaultTheme}
+            setDefaultTheme={setDirtyDefaultTheme}
             openChoicePanel={openChoicePanel}
             toggleChoicePanel={toggleChoicePanel}
             onProductTierChange={handleProductTierChange}
@@ -1565,7 +1547,7 @@ export default function PageWizardClient({
           <EventTypeStep
             {...sharedProps}
             eventType={eventType}
-            setEventType={setEventType}
+            setEventType={setDirtyEventType}
           />
         );
       case 'slug':
@@ -1715,7 +1697,7 @@ export default function PageWizardClient({
           <FinalStep
             {...sharedProps}
             published={published}
-            setPublished={setPublished}
+            setPublished={setDirtyPublished}
           />
         );
       default:
@@ -1871,7 +1853,12 @@ export default function PageWizardClient({
     );
   }
 
-  if (!formState || !previewFormState || !(canCreateNew || canOpenExistingWizard)) {
+  if (
+    !formState ||
+    !previewFormState ||
+    !activeSection ||
+    !(canCreateNew || canOpenExistingWizard)
+  ) {
     return (
       <main className={pageClassName}>
         <div className={`${styles.shell} ${styles.gateShell}`}>
@@ -1900,189 +1887,63 @@ export default function PageWizardClient({
 
   /* ── Main wizard ── */
 
+  const eventTypeMeta = getEventTypeMeta(eventType);
+  const saveStatus = resolveWizardSaveStatus({
+    isSaving,
+    hasUnsavedChanges,
+    lastSavedAt,
+    notice,
+  });
+
   return (
-    <main className={pageClassName}>
-      <div className={styles.shell}>
-        <div className={styles.progressBar}>
-          <div className={styles.progressLabels}>
-            <span className={styles.progressCurrent}>
-              {activeStep.number} / {String(wizardSteps.length).padStart(2, '0')}
-            </span>
-            <span className={styles.progressTitle}>{activeStep.title}</span>
-          </div>
-          <div className={styles.progressTrack}>
-            <div
-              className={styles.progressFill}
-              style={{
-                width: `${((activeStepIndex + 1) / wizardSteps.length) * 100}%`,
-              }}
-            />
-          </div>
-        </div>
-
-        {renderNotice()}
-        {isExistingWizardRefreshable ? (
-          <div className={styles.inlineActions}>
-            <button
-              type="button"
-              className={styles.secondaryButton}
-              onClick={() => void wizardLoadQuery.refetch()}
-              disabled={isWizardRefreshing}
-            >
-              {isWizardRefreshing ? '다시 불러오는 중...' : '다시 불러오기'}
-            </button>
-          </div>
-        ) : null}
-
-        <section className={styles.swiperCard}>
-          <Swiper
-            modules={[Pagination]}
-            pagination={{ clickable: true }}
-            spaceBetween={24}
-            autoHeight
-            observer
-            observeParents
-            observeSlideChildren
-            allowTouchMove={false}
-            onSwiper={(instance) => {
-              swiperRef.current = instance;
-              updateSwiperLayout();
-            }}
-            onSlideChange={(instance) => {
-              const nextStep = wizardSteps[instance.activeIndex];
-              if (nextStep) {
-                setActiveStepKey(nextStep.key);
-              }
-
-              updateSwiperLayout();
-            }}
-          >
-            {wizardSteps.map((step, index) => {
-              const validation = getValidationForStep(step.key);
-              const currentViewMode = getStepViewMode(step.key);
-              const shouldRenderBody = Math.abs(index - activeStepIndex) <= 1;
-
-              return (
-                <SwiperSlide key={step.key}>
-                  <div className={styles.slideInner}>
-                    <div className={styles.stepHeader}>
-                      <div className={styles.stepHeaderTop}>
-                        <div className={styles.stepNumber}>{step.number}</div>
-                        <div className={styles.stepMetaRow}>
-                          <span
-                            className={
-                              validation.valid ? styles.stateSuccess : styles.stateError
-                            }
-                          >
-                            {validation.valid ? '입력 완료' : '입력 필요'}
-                          </span>
-                        </div>
-                      </div>
-                      <div className={styles.stepHeaderText}>
-                        <h2 className={styles.stepTitle}>{step.title}</h2>
-                        <p className={styles.stepDescription}>{step.description}</p>
-                      </div>
-                    </div>
-
-                    {!validation.valid ? (
-                      <div className={getNoticeClassName('error')}>
-                        {validation.messages[0] ?? '현재 단계 입력값을 먼저 확인해 주세요.'}
-                      </div>
-                    ) : null}
-
-                    <div className={styles.viewTabs} role="tablist" aria-label={`${step.title} 보기 전환`}>
-                      <button
-                        type="button"
-                        className={`${styles.viewTab} ${
-                          currentViewMode === 'input' ? styles.viewTabActive : ''
-                        }`}
-                        onClick={() => setStepViewMode(step.key, 'input')}
-                      >
-                        입력
-                      </button>
-                      <button
-                        type="button"
-                        className={`${styles.viewTab} ${
-                          currentViewMode === 'preview' ? styles.viewTabActive : ''
-                        }`}
-                        onClick={() => setStepViewMode(step.key, 'preview')}
-                        disabled={!step.previewSection}
-                      >
-                        미리보기
-                      </button>
-                    </div>
-
-                    <div className={styles.slideBody}>
-                      {!shouldRenderBody ? (
-                        <section className={styles.slideIdleCard}>
-                          <p className={styles.slideIdleText}>
-                            이 단계로 이동하면 입력 화면이 열립니다.
-                          </p>
-                        </section>
-                      ) : currentViewMode === 'input' ? (
-                        <section className={styles.formCard}>{renderStepContent(step.key)}</section>
-                      ) : (
-                        <div className={styles.previewPane}>
-                          <PageWizardStepPreview
-                            stepKey={step.key}
-                            theme={defaultTheme}
-                            slug={previewSlug}
-                            formState={previewFormState}
-                            published={published}
-                            reviewSummary={step.key === 'final' ? finalReviewSummary : undefined}
-                          />
-                        </div>
-                      )}
-                    </div>
-
-                    <div className={styles.slideFooter}>
-                      <div className={styles.footerLeft}>
-                        <span className={styles.footerStepBadge}>
-                          {step.number} / {String(wizardSteps.length).padStart(2, '0')}
-                        </span>
-                        {!validation.valid ? (
-                          <p className={styles.footerText}>
-                            {validation.messages[0] ?? '필수 입력을 먼저 완료해 주세요.'}
-                          </p>
-                        ) : null}
-                      </div>
-                      <div className={styles.footerRight}>
-                        <button
-                          type="button"
-                          className={styles.ghostButton}
-                          onClick={handleMovePrevious}
-                          disabled={index === 0 || isSaving}
-                        >
-                          이전
-                        </button>
-                        {step.key === 'final' ? (
-                          <button
-                            type="button"
-                            className={styles.publishButton}
-                            onClick={() => void handleFinalConfirm()}
-                            disabled={isSaving}
-                          >
-                            {published ? '저장 후 공개' : '초안 저장'}
-                          </button>
-                        ) : (
-                          <button
-                            type="button"
-                            className={styles.primaryButton}
-                            onClick={() => void handleMoveNext()}
-                            disabled={isSaving}
-                          >
-                            {isSaving ? '저장 중' : '다음으로'}
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </SwiperSlide>
-              );
-            })}
-          </Swiper>
-        </section>
-      </div>
-    </main>
+    <PageWizardWorkspace
+      title={eventTypeMeta.label}
+      subtitle={resolvedPersistedSlug ? `/${resolvedPersistedSlug}` : '새 페이지 만들기'}
+      sections={wizardSections}
+      activeSection={activeSection}
+      activeStepKey={activeStep.key}
+      getSectionValidation={(section) =>
+        getWizardSectionValidation(section, getValidationForStep)
+      }
+      getStepValidation={getValidationForStep}
+      saveStatus={saveStatus}
+      notice={
+        <>
+          {renderNotice()}
+          {isExistingWizardRefreshable ? (
+            <div className={styles.inlineActions}>
+              <button
+                type="button"
+                className={styles.secondaryButton}
+                onClick={() => void wizardLoadQuery.refetch()}
+                disabled={isWizardRefreshing}
+              >
+                {isWizardRefreshing ? '다시 불러오는 중...' : '다시 불러오기'}
+              </button>
+            </div>
+          ) : null}
+        </>
+      }
+      isSaving={isSaving}
+      published={published}
+      previewStepKey={previewStepKey}
+      renderStepContent={renderStepContent}
+      renderStepPreview={(stepKey) => (
+        <PageWizardStepPreview
+          stepKey={stepKey}
+          theme={defaultTheme}
+          slug={previewSlug}
+          formState={previewFormState}
+          published={published}
+          reviewSummary={stepKey === 'final' ? finalReviewSummary : undefined}
+        />
+      )}
+      onSelectSection={handleSelectSection}
+      onOpenPreview={setPreviewStepKey}
+      onClosePreview={() => setPreviewStepKey(null)}
+      onPrevious={handleMovePrevious}
+      onNext={() => void handleMoveNext()}
+      onFinalConfirm={() => void handleFinalConfirm()}
+    />
   );
 }

@@ -60,11 +60,12 @@
   border: 1px solid #dee2e6;
   padding: 0.8rem 1.5rem;
   border-radius: 8px;
-  font-family: 'Arial', sans-serif;
+  min-height: 44px;
+  font-family: var(--font-sans);
   font-size: 0.9rem;
   font-weight: 500;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: color 0.3s ease, background-color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease, opacity 0.3s ease, transform 0.3s ease;
   color: #6c757d;
 }
 
@@ -143,13 +144,14 @@
   background: white;
   border: 1px solid #dee2e6;
   padding: 0.5rem 1rem;
+  min-height: 44px;
   border-radius: 6px;
   font-size: 0.8rem;
   cursor: pointer;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  font-family: 'Arial', sans-serif;
+  font-family: var(--font-sans);
   color: #495057;
-  transition: all 0.3s ease;
+  transition: color 0.3s ease, background-color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease, opacity 0.3s ease, transform 0.3s ease;
   pointer-events: auto;
 }
 
@@ -192,7 +194,7 @@
 }
 
 .venueLabel {
-  font-family: 'Arial', sans-serif;
+  font-family: var(--font-sans);
   font-size: 0.9rem;
   color: #6c757d;
   font-weight: 600;
@@ -201,7 +203,7 @@
 }
 
 .venueText {
-  font-family: 'Arial', sans-serif;
+  font-family: var(--font-sans);
   font-size: 0.95rem;
   color: #495057;
   line-height: 1.5;
@@ -209,13 +211,16 @@
 }
 
 .venueContact {
-  font-family: 'Arial', sans-serif;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  font-family: var(--font-sans);
   font-size: 0.95rem;
   color: #2c3e50;
   line-height: 1.5;
   font-weight: 600;
   text-decoration: none;
-  transition: all 0.3s ease;
+  transition: color 0.3s ease, background-color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease, opacity 0.3s ease, transform 0.3s ease;
 }
 
 .addressCopyButton {
@@ -224,16 +229,17 @@
   justify-content: center;
   align-self: flex-start;
   padding: 0.45rem 0.95rem;
+  min-height: 44px;
   border: 1px solid rgba(44, 62, 80, 0.14);
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.92);
   color: #2c3e50;
-  font-family: 'Arial', sans-serif;
+  font-family: var(--font-sans);
   font-size: 0.82rem;
   font-weight: 600;
   letter-spacing: 0.01em;
   cursor: pointer;
-  transition: all 0.25s ease;
+  transition: color 0.25s ease, background-color 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease, opacity 0.25s ease, transform 0.25s ease;
   box-shadow: 0 2px 8px rgba(44, 62, 80, 0.06);
 }
 
@@ -265,13 +271,24 @@
   color: white;
   border: none;
   padding: 0.8rem 1.5rem;
+  min-height: 44px;
   border-radius: 8px;
-  font-family: 'Arial', sans-serif;
+  font-family: var(--font-sans);
   font-size: 0.9rem;
   font-weight: 500;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: color 0.3s ease, background-color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease, opacity 0.3s ease, transform 0.3s ease;
   min-width: 120px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mapTab,
+  .zoomButton,
+  .venueContact,
+  .addressCopyButton,
+  .navButton {
+    transition: none;
+  }
 }
 
 

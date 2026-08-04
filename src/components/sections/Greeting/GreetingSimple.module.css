@@ -60,7 +60,7 @@
 }
 
 .author {
-  font-family: 'Arial', sans-serif;
+  font-family: var(--font-sans);
   font-size: clamp(0.9rem, 2.2vw, 1rem);
   color: #6c757d;
   font-weight: 400;
@@ -156,7 +156,7 @@
 }
 
 .label {
-  font-family: 'Arial', sans-serif;
+  font-family: var(--font-sans);
   font-size: 0.85rem;
   color: #6c757d;
   min-width: 24px;
@@ -184,7 +184,7 @@
 }
 
 .orderBadge {
-  font-family: 'Arial', sans-serif;
+  font-family: var(--font-sans);
   font-size: 0.75rem;
   color: #495057;
   background: rgba(108, 117, 125, 0.1);
@@ -198,11 +198,11 @@
   color: #6c757d;
   background: transparent;
   border: 1px solid rgba(108, 117, 125, 0.3);
-  width: 32px;
-  height: 32px;
+  width: 44px;
+  height: 44px;
   border-radius: 50%;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: color 0.2s ease, background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease, transform 0.2s ease;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -258,8 +258,8 @@
   }
 
   .iconBtn {
-    width: 28px;
-    height: 28px;
+    width: 44px;
+    height: 44px;
     font-size: 0.9rem;
   }
 }
@@ -323,13 +323,26 @@
   font-size: 1.5rem;
   color: #aaa;
   cursor: pointer;
-  width: 32px;
-  height: 32px;
+  width: 44px;
+  height: 44px;
   display: flex;
   align-items: center;
   justify-content: center;
   border-radius: 50%;
-  transition: all 0.2s ease;
+  transition: color 0.2s ease, background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease, transform 0.2s ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .modalOverlay,
+  .modalContent {
+    animation: none;
+  }
+
+  .iconBtn,
+  .modalClose,
+  .modalBtn {
+    transition: none;
+  }
 }
 
 
@@ -342,7 +355,7 @@
 }
 
 .phoneNumber {
-  font-family: 'Arial', sans-serif;
+  font-family: var(--font-sans);
   font-size: 1rem;
   color: #666;
   margin-bottom: 1.5rem;
@@ -361,7 +374,7 @@
   border: 2px solid #e9ecef;
   border-radius: 8px;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: color 0.2s ease, background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease, transform 0.2s ease;
   font-family: var(--font-gowun-dodum);
   font-size: 0.9rem;
   color: #495057;

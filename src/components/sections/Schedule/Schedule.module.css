@@ -39,7 +39,7 @@
   font-size: clamp(1.6rem, 5vw, 2.2rem);
   margin-bottom: 2.5rem;
   font-weight: 600;
-  color: var(--primary-color);
+  color: var(--primary-text-color);
   position: relative;
   z-index: 1;
   text-shadow: 0 2px 4px rgba(139, 110, 99, 0.1);
@@ -97,7 +97,7 @@
   font-size: clamp(1.2rem, 4vw, 1.6rem);
   margin-bottom: 1rem;
   font-weight: 600;
-  color: var(--primary-color);
+  color: var(--primary-text-color);
   letter-spacing: 0.02em;
   word-break: keep-all;
   overflow-wrap: break-word;
@@ -185,7 +185,7 @@
   font-family: var(--font-gowun-dodum);
   font-size: 1.1rem;
   margin-bottom: 0.8rem;
-  color: var(--primary-color);
+  color: var(--primary-text-color);
   font-weight: 600;
 }
 
@@ -239,13 +239,13 @@
   font-weight: 500;
   border-radius: 8px;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: color 0.3s ease, background-color 0.3s ease, box-shadow 0.3s ease, transform 0.3s ease;
   position: relative;
 }
 
 
 .tab.active {
-  background: linear-gradient(135deg, #d4a574 0%, #c89d6d 100%);
+  background: linear-gradient(135deg, var(--primary-action-color) 0%, var(--secondary-color) 100%);
   color: #ffffff;
   font-weight: 700;
   box-shadow: 0 4px 12px rgba(212, 165, 116, 0.4);
@@ -278,7 +278,7 @@
   background: rgba(255, 255, 255, 0.8);
   border-radius: 12px;
   border: 1px solid var(--border-soft);
-  transition: all 0.3s ease;
+  transition: border-color 0.3s ease, background-color 0.3s ease;
   overflow: hidden;
 }
 
@@ -293,7 +293,7 @@
   border: none;
   cursor: pointer;
   text-align: left;
-  transition: all 0.3s ease;
+  transition: color 0.3s ease, background-color 0.3s ease;
 }
 
 
@@ -301,7 +301,7 @@
   font-family: var(--font-gowun-dodum);
   font-size: 1.1rem;
   margin: 0;
-  color: var(--primary-color);
+  color: var(--primary-text-color);
   font-weight: 600;
   display: flex;
   align-items: center;
@@ -330,26 +330,29 @@
 }
 
 .guideContentWrapper {
-  max-height: 0;
+  display: grid;
+  grid-template-rows: 0fr;
   overflow: hidden;
   padding: 0 1.5rem;
-  transition: max-height 0.3s ease, padding 0.3s ease;
+  opacity: 0;
+  transition: grid-template-rows 0.3s ease, opacity 0.3s ease;
 }
 
 .guideContentWrapper.expanded {
-  max-height: 1000px;
+  grid-template-rows: 1fr;
   opacity: 1;
-  padding: 1.5rem;
 }
 
 .guideContent {
+  min-height: 0;
+  overflow: hidden;
   font-family: var(--font-gowun-dodum);
   font-size: 0.95rem;
   color: var(--text-secondary);
   line-height: 1.8;
   white-space: pre-line;
   word-break: keep-all;
-  margin: 0;
+  margin: 1.5rem 0;
 }
 
 @media (min-width: 700px) {
@@ -387,3 +390,48 @@
   }
 }
 
+.title,
+.date,
+.time,
+.venue,
+.address,
+.detailTitle,
+.detailInfo,
+.guideTitle,
+.guideContent {
+  overflow-wrap: anywhere;
+}
+
+.mainInfo,
+.detailItem,
+.tabs,
+.tab,
+.guideItem,
+.guideTitle {
+  min-width: 0;
+}
+
+.tab,
+.guideHeader {
+  min-height: 44px;
+}
+
+.tab:focus-visible {
+  outline: 2px solid var(--primary-color);
+  outline-offset: 2px;
+}
+
+.guideHeader:focus-visible {
+  outline: 2px solid var(--primary-color);
+  outline-offset: -3px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tab,
+  .guideItem,
+  .guideHeader,
+  .guideIcon,
+  .guideContentWrapper {
+    transition: none;
+  }
+}

@@ -29,7 +29,13 @@ const core = [
   'test-kakao-share-url-policy',
   'test-opening-event-rendering',
   'test-page-wizard-event-type-lock',
+  'test-page-wizard-workspace',
   'test-page-wizard-schedule-time',
+  'test-romantic-empty-state',
+  'test-sample-invitation-fallback',
+  'test-wedding-theme-accessibility',
+  'test-wedding-theme-performance',
+  'test-wedding-theme-style-contracts',
 ];
 
 const security = [

@@ -61,7 +61,7 @@
 }
 
 .time {
-  font-family: 'Arial', sans-serif;
+  font-family: var(--font-sans);
   font-size: clamp(1.1rem, 3vw, 1.3rem);
   color: #495057;
   margin: 0;
@@ -82,7 +82,7 @@
 }
 
 .address {
-  font-family: 'Arial', sans-serif;
+  font-family: var(--font-sans);
   font-size: clamp(0.95rem, 2.5vw, 1.1rem);
   color: #6c757d;
   margin: 0;
@@ -134,7 +134,7 @@
 }
 
 .detailInfo {
-  font-family: 'Arial', sans-serif;
+  font-family: var(--font-sans);
   font-size: clamp(0.9rem, 2.3vw, 1rem);
   color: #495057;
   margin: 0.3rem 0;
@@ -218,12 +218,12 @@
   border: none;
   background: transparent;
   color: #6c757d;
-  font-family: 'Arial', sans-serif;
+  font-family: var(--font-sans);
   font-size: 0.9rem;
   font-weight: 500;
   border-radius: 8px;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: color 0.3s ease, background-color 0.3s ease, box-shadow 0.3s ease, transform 0.3s ease;
 }
 
 
@@ -258,7 +258,7 @@
   background: rgba(248, 249, 250, 0.8);
   border-radius: 12px;
   border-left: 4px solid #6c757d;
-  transition: all 0.3s ease;
+  transition: border-color 0.3s ease, background-color 0.3s ease;
   overflow: hidden;
 }
 
@@ -273,7 +273,7 @@
   border: none;
   cursor: pointer;
   text-align: left;
-  transition: all 0.3s ease;
+  transition: color 0.3s ease, background-color 0.3s ease;
 }
 
 
@@ -311,28 +311,30 @@
 }
 
 .guideContentWrapper {
-  max-height: 0;
+  display: grid;
+  grid-template-rows: 0fr;
   overflow: hidden;
   padding: 0 1.5rem;
   opacity: 0;
-  transition: max-height 0.4s ease, opacity 0.3s ease, padding 0.3s ease;
+  transition: grid-template-rows 0.4s ease, opacity 0.3s ease;
 }
 
 .guideContentWrapper.expanded {
-  max-height: 1000px;
+  grid-template-rows: 1fr;
   opacity: 1;
-  padding: 1.5rem;
 }
 
 .guideContent {
-  font-family: 'Arial', sans-serif;
+  min-height: 0;
+  overflow: hidden;
+  font-family: var(--font-sans);
   font-size: 0.95rem;
   color: #495057;
   line-height: 1.8;
   white-space: pre-line;
   word-break: keep-all;
   font-weight: 400;
-  margin: 0;
+  margin: 1.5rem 0;
 }
 
 @media (min-width: 700px) {
@@ -392,3 +394,48 @@
   }
 }
 
+.title,
+.date,
+.time,
+.venue,
+.address,
+.detailTitle,
+.detailInfo,
+.guideTitle,
+.guideContent {
+  overflow-wrap: anywhere;
+}
+
+.mainInfo,
+.detailItem,
+.tabs,
+.tab,
+.guideItem,
+.guideTitle {
+  min-width: 0;
+}
+
+.tab,
+.guideHeader {
+  min-height: 44px;
+}
+
+.tab:focus-visible {
+  outline: 2px solid #2c3e50;
+  outline-offset: 2px;
+}
+
+.guideHeader:focus-visible {
+  outline: 2px solid #2c3e50;
+  outline-offset: -3px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tab,
+  .guideItem,
+  .guideHeader,
+  .guideIcon,
+  .guideContentWrapper {
+    transition: none;
+  }
+}

@@ -54,7 +54,6 @@ function ClassicLoader({
       onLoadComplete={onLoadComplete}
       preloadImages={preloadImages}
       duration={2400}
-      minLoadTime={1200}
       styles={styles}
       loadingMessages={LOADING_MESSAGES}
       messageClassName={styles.loadingText}
@@ -150,6 +149,7 @@ export default createWeddingThemeRenderer({
         images={state.galleryImageUrls}
         previewImages={state.galleryPreviewImageUrls}
         imagesLoading={state.imagesLoading}
+        imageAltPrefix={`${state.pageConfig.groomName}과 ${state.pageConfig.brideName}의 웨딩 갤러리`}
       />
     ),
     ({ state }) => {

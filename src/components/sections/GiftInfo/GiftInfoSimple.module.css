@@ -41,7 +41,7 @@
 }
 
 .message {
-  font-family: 'Arial', sans-serif;
+  font-family: var(--font-sans);
   font-size: clamp(1rem, 2.8vw, 1.1rem);
   color: #495057;
   text-align: center;
@@ -83,7 +83,7 @@
   border-radius: 10px;
   padding: 1.2rem 1.5rem;
   border: 1px solid rgba(0, 0, 0, 0.04);
-  transition: all 0.2s ease;
+  transition: color 0.2s ease, background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease, transform 0.2s ease;
 }
 
 
@@ -101,14 +101,14 @@
 }
 
 .accountHolder {
-  font-family: 'Arial', sans-serif;
+  font-family: var(--font-sans);
   font-size: 1rem;
   color: #2c3e50;
   font-weight: 600;
 }
 
 .accountBank {
-  font-family: 'Arial', sans-serif;
+  font-family: var(--font-sans);
   font-size: 0.85rem;
   color: #6c757d;
   font-weight: 500;
@@ -123,16 +123,17 @@
 }
 
 .copyButton {
+  min-height: 44px;
   background: #2c3e50;
   color: white;
   border: none;
   padding: 0.6rem 1rem;
   border-radius: 6px;
-  font-family: 'Arial', sans-serif;
+  font-family: var(--font-sans);
   font-size: 0.85rem;
   font-weight: 500;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: color 0.2s ease, background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease, transform 0.2s ease;
   white-space: nowrap;
   flex-shrink: 0;
 }

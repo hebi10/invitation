@@ -1,5 +1,6 @@
 import { PersonEditorCard } from '@/app/page-wizard/pageWizardEditorPanels';
 
+import TemplateChoiceGroup from '../TemplateChoiceGroup';
 import styles from '../page.module.css';
 import {
   composeGreetingAuthor,
@@ -110,24 +111,20 @@ export default function GreetingStep({
         />
       </label>
 
-      <div className={styles.templateRow}>
-        {GREETING_TEMPLATES.map((template) => (
-          <button
-            key={template.label}
-            type="button"
-            className={styles.templateButton}
-            onClick={() =>
-              updateForm((draft) => {
-                if (draft.pageData) {
-                  draft.pageData.greetingMessage = template.value;
-                }
-              })
+      <TemplateChoiceGroup
+        labelId="greeting-template-title"
+        title="인사말 템플릿"
+        description="선택하면 인사말에 적용됩니다."
+        templates={GREETING_TEMPLATES}
+        value={formState.pageData?.greetingMessage ?? ''}
+        onSelect={(value) =>
+          updateForm((draft) => {
+            if (draft.pageData) {
+              draft.pageData.greetingMessage = value;
             }
-          >
-            {template.label}
-          </button>
-        ))}
-      </div>
+          })
+        }
+      />
 
       <label className={styles.field}>
         {renderFieldMeta('인사말 서명', 'optional')}

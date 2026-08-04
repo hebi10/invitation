@@ -40,7 +40,7 @@
   pointer-events: none;
   padding: 0.5rem;
   border-radius: 12px;
-  transition: all 0.3s ease;
+  transition: color 0.3s ease, background-color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease, opacity 0.3s ease, transform 0.3s ease;
   position: relative;
 }
 
@@ -66,7 +66,7 @@
 
 .title {
   font-size: clamp(1.6rem, 5vw, 2.2rem);
-  color: var(--primary-color);
+  color: var(--primary-text-color);
   margin: 0;
   font-weight: 400;
   font-family: var(--font-gowun-dodum);
@@ -221,7 +221,7 @@
   font-size: 0.95rem;
   font-family: var(--font-gowun-dodum);
   background: rgba(255, 255, 255, 0.9);
-  transition: all 0.3s ease;
+  transition: color 0.3s ease, background-color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease, opacity 0.3s ease, transform 0.3s ease;
   box-sizing: border-box;
   line-height: 1.5;
 }
@@ -277,7 +277,7 @@
 }
 
 .guideMessage {
-  color: var(--primary-color);
+  color: var(--primary-text-color);
   font-weight: 500;
   margin-bottom: 0.4rem;
 }
@@ -321,7 +321,7 @@
 }
 
 .submitButton {
-  background: linear-gradient(135deg, var(--primary-color), rgba(212, 165, 116, 0.8));
+  background: linear-gradient(135deg, var(--primary-action-color), var(--secondary-color));
   color: white;
   padding: 0.875rem 1.5rem;
   border: none;
@@ -330,7 +330,7 @@
   font-family: var(--font-gowun-dodum);
   font-weight: 500;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: color 0.3s ease, background-color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease, opacity 0.3s ease, transform 0.3s ease;
   width: 100%;
   display: flex;
   align-items: center;
@@ -360,6 +360,11 @@
   cursor: not-allowed;
   transform: none;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.submitButton:focus-visible {
+  outline: 3px solid var(--secondary-color);
+  outline-offset: 3px;
 }
 
 .buttonIcon {
@@ -406,7 +411,7 @@
 
 .emptySubMessage {
   font-size: 1rem;
-  color: var(--primary-color);
+  color: var(--primary-text-color);
   font-family: 'Noto Serif KR', serif;
   font-weight: 300;
   margin: 0;
@@ -453,6 +458,29 @@
   animation: heartbeat 2s infinite;
 }
 
+.refreshButton {
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(148, 163, 184, 0.28);
+  background: rgba(255, 255, 255, 0.82);
+  color: #475569;
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.refreshButton:focus-visible {
+  outline: 3px solid var(--secondary-color);
+  outline-offset: 3px;
+}
+
+.refreshButton:disabled {
+  cursor: wait;
+  opacity: 0.7;
+}
+
 @keyframes heartbeat {
   0%, 100% { transform: scale(1); }
   50% { transform: scale(1.05); }
@@ -467,7 +495,7 @@
 }
 
 .commentsCount strong {
-  color: var(--primary-color);
+  color: var(--primary-text-color);
   font-weight: 600;
 }
 
@@ -487,7 +515,7 @@
   border-radius: 12px;
   border: 1px solid rgba(212, 165, 116, 0.15);
   box-shadow: 0 3px 15px rgba(212, 165, 116, 0.08);
-  transition: all 0.3s ease;
+  transition: color 0.3s ease, background-color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease, opacity 0.3s ease, transform 0.3s ease;
   position: relative;
   overflow: hidden;
 }
@@ -545,7 +573,7 @@
 
 .commentAuthorIcon {
   font-size: 1.1rem;
-  color: var(--primary-color);
+  color: var(--primary-text-color);
 }
 
 .commentAuthor {
@@ -592,7 +620,7 @@
 
 .commentQuote {
   font-size: 2rem;
-  color: var(--primary-color);
+  color: var(--primary-text-color);
   font-family: 'Playfair Display', serif;
   line-height: 1;
   position: absolute;
@@ -636,7 +664,7 @@
   padding: 0.4rem 0.8rem;
   font-size: 0.75rem;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: color 0.3s ease, background-color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease, opacity 0.3s ease, transform 0.3s ease;
   margin-left: 0.5rem;
   box-shadow: 0 2px 8px rgba(231, 76, 60, 0.3);
   display: flex;
@@ -732,11 +760,11 @@
   border-radius: 12px;
   backdrop-filter: blur(10px);
   box-shadow: 0 4px 20px rgba(212, 165, 116, 0.1);
-  transition: all 0.3s ease;
+  transition: color 0.3s ease, background-color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease, opacity 0.3s ease, transform 0.3s ease;
 }
 
 .pageButton {
-  background: linear-gradient(135deg, var(--primary-color), rgba(212, 165, 116, 0.8));
+  background: linear-gradient(135deg, var(--primary-action-color), var(--secondary-color));
   color: white;
   border: none;
   border-radius: 10px;
@@ -745,9 +773,10 @@
   font-family: 'Noto Serif KR', serif;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: color 0.3s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.3s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.3s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1), transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   box-shadow: 0 3px 8px rgba(212, 165, 116, 0.3);
   min-width: 70px;
+  min-height: 44px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -772,7 +801,7 @@
   transform: translateY(-1px);
 }
 
-.pageButton:focus:not(:disabled) {
+.pageButton:focus-visible:not(:disabled) {
   outline: 3px solid rgba(212, 165, 116, 0.5);
   outline-offset: 2px;
 }
@@ -815,8 +844,9 @@
   font-family: 'Noto Serif KR', serif;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s ease;
-  min-width: 38px;
+  transition: color 0.2s ease, background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease, transform 0.2s ease;
+  min-width: 44px;
+  min-height: 44px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -825,7 +855,7 @@
   outline: none;
 }
 
-.pageNumber:focus {
+.pageNumber:focus-visible {
   outline: 2px solid rgba(212, 165, 116, 0.6);
   outline-offset: 2px;
 }
@@ -835,7 +865,7 @@
 }
 
 .pageNumber.active {
-  background: var(--primary-color);
+  background: var(--primary-action-color);
   color: white;
   border-color: var(--primary-color);
   box-shadow: 0 2px 8px rgba(212, 165, 116, 0.3);
@@ -843,7 +873,7 @@
 
 /* Ellipsis 스타일 개선 */
 .ellipsis {
-  color: var(--primary-color);
+  color: var(--primary-text-color);
   font-size: 1rem;
   font-weight: bold;
   padding: 0.4rem 0.3rem;
@@ -887,7 +917,7 @@
   font-family: 'Noto Serif KR', serif;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: color 0.3s ease, background-color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease, opacity 0.3s ease, transform 0.3s ease;
   box-shadow: 0 2px 4px rgba(255, 107, 107, 0.3);
   min-width: 38px;
   display: flex;
@@ -1038,7 +1068,7 @@
   font-size: 0.9rem;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: color 0.3s ease, background-color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease, opacity 0.3s ease, transform 0.3s ease;
   display: flex;
   align-items: center;
   gap: 0.5rem;
@@ -1058,7 +1088,7 @@
   font-size: 0.85rem;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: color 0.3s ease, background-color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease, opacity 0.3s ease, transform 0.3s ease;
   display: flex;
   align-items: center;
   gap: 0.5rem;
@@ -1096,7 +1126,7 @@
   padding: 0.4rem 0.8rem;
   font-size: 0.8rem;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: color 0.3s ease, background-color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease, opacity 0.3s ease, transform 0.3s ease;
 }
 
 .clientLoginForm {
@@ -1141,7 +1171,7 @@
   border-radius: 15px;
   font-size: 0.9rem;
   background: rgba(255, 255, 255, 0.9);
-  transition: all 0.3s ease;
+  transition: color 0.3s ease, background-color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease, opacity 0.3s ease, transform 0.3s ease;
   outline: none;
 }
 
@@ -1155,7 +1185,7 @@
 }
 
 .clientLoginButton {
-  background: linear-gradient(135deg, #d4a574, #c19554);
+  background: linear-gradient(135deg, var(--primary-action-color), var(--secondary-color));
   color: white;
   border: none;
   border-radius: 15px;
@@ -1163,7 +1193,7 @@
   font-size: 0.9rem;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: color 0.3s ease, background-color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease, opacity 0.3s ease, transform 0.3s ease;
   box-shadow: 0 4px 12px rgba(212, 165, 116, 0.3);
 }
 
@@ -1189,5 +1219,31 @@
   
   .clientLoginButton {
     white-space: nowrap;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .formIcon,
+  .buttonIcon,
+  .emptyIcon,
+  .commentsIcon,
+  .commentsList::after,
+  .clientPasswordModal {
+    animation: none;
+  }
+
+  .input,
+  .textarea,
+  .submitButton,
+  .refreshButton,
+  .commentItem,
+  .pageButton,
+  .pageNumber {
+    transition: none;
+  }
+
+  .input:focus,
+  .textarea:focus {
+    transform: none;
   }
 }

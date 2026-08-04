@@ -1,7 +1,7 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import type { Dispatch, SetStateAction } from 'react';
+import { useEffect, useId, useMemo, useRef, useState } from 'react';
+import type { Dispatch, KeyboardEvent, SetStateAction } from 'react';
 
 export interface VenueGuideItem {
   title: string;
@@ -44,6 +44,13 @@ interface ScheduleTabbedThemedProps extends ScheduleProps {
   };
 }
 
+type ScheduleTab = 'schedule' | 'guide' | 'wreath';
+
+interface ScheduleTabDefinition {
+  id: ScheduleTab;
+  label: string;
+}
+
 function hasText(value?: string) {
   return Boolean(value?.trim());
 }
@@ -74,29 +81,44 @@ export default function ScheduleTabbedThemed({
   detailStyle,
   detailIcons,
 }: ScheduleTabbedThemedProps) {
-  const [activeTab, setActiveTab] = useState<'schedule' | 'guide' | 'wreath'>('schedule');
-  const [expandedGuideItems, setExpandedGuideItems] = useState<Set<number>>(new Set());
-  const [expandedWreathItems, setExpandedWreathItems] = useState<Set<number>>(new Set());
   const sanitizedVenueGuide = sanitizeGuideItems(venueGuide);
   const sanitizedWreathGuide = sanitizeGuideItems(wreathGuide);
   const hasMainInfo =
     hasText(date) || hasText(time) || hasText(venue) || hasText(address);
   const hasCeremony = hasDetailContent(ceremony);
   const hasReception = hasDetailContent(reception);
+  const hasScheduleInfo = hasMainInfo || hasCeremony || hasReception;
   const hasGuideInfo =
     sanitizedVenueGuide.length > 0 || sanitizedWreathGuide.length > 0;
-  const showTabs = hasGuideInfo;
+  const availableTabs = useMemo<ScheduleTabDefinition[]>(
+    () => [
+      ...(hasScheduleInfo ? [{ id: 'schedule' as const, label: '예식 일정' }] : []),
+      ...(sanitizedVenueGuide.length > 0
+        ? [{ id: 'guide' as const, label: '예식장 안내' }]
+        : []),
+      ...(sanitizedWreathGuide.length > 0
+        ? [{ id: 'wreath' as const, label: '화환 안내' }]
+        : []),
+    ],
+    [hasScheduleInfo, sanitizedVenueGuide.length, sanitizedWreathGuide.length]
+  );
+  const [activeTab, setActiveTab] = useState<ScheduleTab>(
+    () => availableTabs[0]?.id ?? 'schedule'
+  );
+  const [expandedGuideItems, setExpandedGuideItems] = useState<Set<number>>(new Set());
+  const [expandedWreathItems, setExpandedWreathItems] = useState<Set<number>>(new Set());
+  const tabListId = useId();
+  const tabRefs = useRef<Partial<Record<ScheduleTab, HTMLButtonElement | null>>>({});
+  const showTabs = availableTabs.length > 1;
+  const resolvedActiveTab = availableTabs.some((tab) => tab.id === activeTab)
+    ? activeTab
+    : (availableTabs[0]?.id ?? 'schedule');
 
   useEffect(() => {
-    if (activeTab === 'guide' && sanitizedVenueGuide.length === 0) {
-      setActiveTab('schedule');
-      return;
+    if (resolvedActiveTab !== activeTab) {
+      setActiveTab(resolvedActiveTab);
     }
-
-    if (activeTab === 'wreath' && sanitizedWreathGuide.length === 0) {
-      setActiveTab('schedule');
-    }
-  }, [activeTab, sanitizedVenueGuide.length, sanitizedWreathGuide.length]);
+  }, [activeTab, resolvedActiveTab]);
 
   if (!hasMainInfo && !hasCeremony && !hasReception && !hasGuideInfo) {
     return null;
@@ -114,6 +136,36 @@ export default function ScheduleTabbedThemed({
     });
   };
 
+  const getTabId = (tab: ScheduleTab) => `${tabListId}-${tab}-tab`;
+  const getPanelId = (tab: ScheduleTab) => `${tabListId}-${tab}-panel`;
+
+  const handleTabKeyDown = (event: KeyboardEvent<HTMLButtonElement>, tab: ScheduleTab) => {
+    const currentIndex = availableTabs.findIndex((item) => item.id === tab);
+    if (currentIndex < 0) {
+      return;
+    }
+
+    let nextIndex: number | null = null;
+    if (event.key === 'ArrowRight') {
+      nextIndex = (currentIndex + 1) % availableTabs.length;
+    } else if (event.key === 'ArrowLeft') {
+      nextIndex = (currentIndex - 1 + availableTabs.length) % availableTabs.length;
+    } else if (event.key === 'Home') {
+      nextIndex = 0;
+    } else if (event.key === 'End') {
+      nextIndex = availableTabs.length - 1;
+    }
+
+    if (nextIndex === null) {
+      return;
+    }
+
+    event.preventDefault();
+    const nextTab = availableTabs[nextIndex].id;
+    setActiveTab(nextTab);
+    tabRefs.current[nextTab]?.focus();
+  };
+
   const renderGuideContent = (
     items: VenueGuideItem[] | WreathGuideItem[],
     expandedItems: Set<number>,
@@ -121,15 +173,32 @@ export default function ScheduleTabbedThemed({
   ) => (
     <div className={styles.guideContainer}>
       {items.map((item, index) => (
-        <div key={`${item.title}-${index}`} className={styles.guideItem}>
-          <button className={styles.guideHeader} onClick={() => onToggle(index)} aria-expanded={expandedItems.has(index)} type="button">
-            <h5 className={styles.guideTitle}>
-              <span className={`${styles.guideIcon} ${expandedItems.has(index) ? styles.expanded : ''}`}>›</span>
+        <div key={`${item.title}-${index}`} className={styles.guideItem} data-schedule-guide-item>
+          <button
+            className={styles.guideHeader}
+            onClick={() => onToggle(index)}
+            aria-expanded={expandedItems.has(index)}
+            aria-controls={`${tabListId}-${resolvedActiveTab}-guide-${index}`}
+            type="button"
+          >
+            <span className={styles.guideTitle}>
+              <span
+                className={`${styles.guideIcon} ${expandedItems.has(index) ? styles.expanded : ''}`}
+                aria-hidden="true"
+              >
+                ›
+              </span>
               {item.title}
-            </h5>
-            <span className={styles.toggleIcon}>{expandedItems.has(index) ? '−' : '+'}</span>
+            </span>
+            <span className={styles.toggleIcon} aria-hidden="true">
+              {expandedItems.has(index) ? '−' : '+'}
+            </span>
           </button>
-          <div className={`${styles.guideContentWrapper} ${expandedItems.has(index) ? styles.expanded : ''}`}>
+          <div
+            id={`${tabListId}-${resolvedActiveTab}-guide-${index}`}
+            className={`${styles.guideContentWrapper} ${expandedItems.has(index) ? styles.expanded : ''}`}
+            aria-hidden={!expandedItems.has(index)}
+          >
             <p className={styles.guideContent}>{item.content}</p>
           </div>
         </div>
@@ -178,7 +247,7 @@ export default function ScheduleTabbedThemed({
   const renderDetailItem = (label: string, info: { time: string; location: string }, icon?: string) => {
     if (detailStyle === 'simple') {
       return (
-        <div className={styles.detailItem}>
+        <div className={styles.detailItem} data-schedule-detail>
           <h5 className={styles.detailTitle}>{label}</h5>
           <p className={styles.detailInfo}>{info.time}</p>
           <p className={styles.detailInfo}>{info.location}</p>
@@ -187,7 +256,7 @@ export default function ScheduleTabbedThemed({
     }
 
     return (
-      <div className={styles.detailItem}>
+      <div className={styles.detailItem} data-schedule-detail>
         <div className={styles.detailHeader}>
           <span className={styles.detailIcon}>{icon}</span>
           <h5 className={styles.detailTitle}>{label}</h5>
@@ -208,25 +277,39 @@ export default function ScheduleTabbedThemed({
       {subtitle && 'subtitle' in styles && <p className={styles.subtitle}>{subtitle}</p>}
 
       {showTabs && (
-        <div className={styles.tabs}>
-          <button className={`${styles.tab} ${activeTab === 'schedule' ? styles.active : ''}`} onClick={() => setActiveTab('schedule')} type="button">
-            예식 일정
-          </button>
-          {sanitizedVenueGuide.length > 0 && (
-            <button className={`${styles.tab} ${activeTab === 'guide' ? styles.active : ''}`} onClick={() => setActiveTab('guide')} type="button">
-              예식장 안내
+        <div className={styles.tabs} role="tablist" aria-label={`${title} 목록`} data-schedule-tabs>
+          {availableTabs.map((tab) => (
+            <button
+              key={tab.id}
+              ref={(element) => {
+                tabRefs.current[tab.id] = element;
+              }}
+              id={getTabId(tab.id)}
+              className={`${styles.tab} ${resolvedActiveTab === tab.id ? styles.active : ''}`}
+              role="tab"
+              aria-selected={resolvedActiveTab === tab.id}
+              aria-controls={getPanelId(tab.id)}
+              tabIndex={resolvedActiveTab === tab.id ? 0 : -1}
+              onClick={() => setActiveTab(tab.id)}
+              onKeyDown={(event) => handleTabKeyDown(event, tab.id)}
+              data-schedule-tab
+              type="button"
+            >
+              {tab.label}
             </button>
-          )}
-          {sanitizedWreathGuide.length > 0 && (
-            <button className={`${styles.tab} ${activeTab === 'wreath' ? styles.active : ''}`} onClick={() => setActiveTab('wreath')} type="button">
-              화환 안내
-            </button>
-          )}
+          ))}
         </div>
       )}
 
-      {activeTab === 'schedule' && (
-        <div className={'scheduleContent' in styles ? styles.scheduleContent : undefined}>
+      {resolvedActiveTab === 'schedule' && (
+        <div
+          id={showTabs ? getPanelId('schedule') : undefined}
+          className={'scheduleContent' in styles ? styles.scheduleContent : undefined}
+          role={showTabs ? 'tabpanel' : undefined}
+          aria-labelledby={showTabs ? getTabId('schedule') : undefined}
+          tabIndex={showTabs ? 0 : undefined}
+          data-schedule-panel
+        >
           {renderMainInfo()}
 
           {(hasCeremony || hasReception) && (
@@ -240,16 +323,32 @@ export default function ScheduleTabbedThemed({
         </div>
       )}
 
-      {activeTab === 'guide' &&
-        sanitizedVenueGuide.length > 0 &&
-        renderGuideContent(sanitizedVenueGuide, expandedGuideItems, (index) =>
-          toggleExpanded(index, setExpandedGuideItems)
-        )}
-      {activeTab === 'wreath' &&
-        sanitizedWreathGuide.length > 0 &&
-        renderGuideContent(sanitizedWreathGuide, expandedWreathItems, (index) =>
-          toggleExpanded(index, setExpandedWreathItems)
-        )}
+      {resolvedActiveTab === 'guide' && sanitizedVenueGuide.length > 0 && (
+        <div
+          id={showTabs ? getPanelId('guide') : undefined}
+          role={showTabs ? 'tabpanel' : undefined}
+          aria-labelledby={showTabs ? getTabId('guide') : undefined}
+          tabIndex={showTabs ? 0 : undefined}
+          data-schedule-panel
+        >
+          {renderGuideContent(sanitizedVenueGuide, expandedGuideItems, (index) =>
+            toggleExpanded(index, setExpandedGuideItems)
+          )}
+        </div>
+      )}
+      {resolvedActiveTab === 'wreath' && sanitizedWreathGuide.length > 0 && (
+        <div
+          id={showTabs ? getPanelId('wreath') : undefined}
+          role={showTabs ? 'tabpanel' : undefined}
+          aria-labelledby={showTabs ? getTabId('wreath') : undefined}
+          tabIndex={showTabs ? 0 : undefined}
+          data-schedule-panel
+        >
+          {renderGuideContent(sanitizedWreathGuide, expandedWreathItems, (index) =>
+            toggleExpanded(index, setExpandedWreathItems)
+          )}
+        </div>
+      )}
     </>
   );
 

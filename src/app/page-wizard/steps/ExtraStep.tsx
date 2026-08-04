@@ -3,6 +3,7 @@ import {
   GuideSectionPanel,
 } from '@/app/page-wizard/pageWizardEditorPanels';
 
+import TemplateChoiceGroup from '../TemplateChoiceGroup';
 import styles from '../page.module.css';
 import { renderFieldMeta, type ExtraStepProps } from '../pageWizardShared';
 
@@ -84,25 +85,20 @@ export default function ExtraStep({
             }
           />
         </label>
-        <div className={styles.templateRow}>
-          {GIFT_MESSAGE_TEMPLATES.map((template) => (
-            <button
-              key={template.label}
-              type="button"
-              className={styles.templateButton}
-              aria-pressed={giftMessage === template.value}
-              onClick={() =>
-                updateForm((draft) => {
-                  if (draft.pageData?.giftInfo) {
-                    draft.pageData.giftInfo.message = template.value;
-                  }
-                })
+        <TemplateChoiceGroup
+          labelId="gift-message-template-title"
+          title={isFirstBirthday ? '마음 전하기 템플릿' : '축의금 안내 템플릿'}
+          description="선택하면 안내 문구에 적용됩니다."
+          templates={GIFT_MESSAGE_TEMPLATES}
+          value={giftMessage}
+          onSelect={(value) =>
+            updateForm((draft) => {
+              if (draft.pageData?.giftInfo) {
+                draft.pageData.giftInfo.message = value;
               }
-            >
-              {template.label}
-            </button>
-          ))}
-        </div>
+            })
+          }
+        />
       </section>
 
       <div className={styles.twoColumnGrid}>

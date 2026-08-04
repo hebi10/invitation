@@ -1,7 +1,7 @@
 ﻿'use client';
 
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { type ReactNode, useEffect, useMemo, useState } from 'react';
+import { type ReactNode, useEffect, useId, useMemo, useState } from 'react';
 
 import {
   appQueryKeys,
@@ -70,6 +70,8 @@ export default function GuestbookThemed({
   const [statusTone, setStatusTone] = useState<StatusTone>('success');
   const [currentPage, setCurrentPage] = useState(1);
   const [isMobile, setIsMobile] = useState(false);
+  const nameInputId = useId();
+  const messageInputId = useId();
   const commentsQuery = useQuery({
     queryKey: appQueryKeys.guestbookComments(pageSlug),
     enabled: Boolean(pageSlug),
@@ -204,18 +206,35 @@ export default function GuestbookThemed({
     }
 
     if (statusTone === 'error' && styles.errorMessage) {
-      return <p className={styles.errorMessage}>{statusMessage}</p>;
+      return (
+        <p className={styles.errorMessage} role="alert" aria-atomic="true">
+          {statusMessage}
+        </p>
+      );
+    }
+
+    const statusStyle = {
+      margin: '0 0 1rem',
+      textAlign: 'center' as const,
+      color: statusTone === 'error' ? statusColors.error : statusColors.success,
+      fontSize: '0.92rem',
+      fontWeight: 600,
+    };
+
+    if (statusTone === 'error') {
+      return (
+        <p role="alert" aria-atomic="true" style={statusStyle}>
+          {statusMessage}
+        </p>
+      );
     }
 
     return (
       <p
-        style={{
-          margin: '0 0 1rem',
-          textAlign: 'center',
-          color: statusTone === 'error' ? statusColors.error : statusColors.success,
-          fontSize: '0.92rem',
-          fontWeight: 600,
-        }}
+        role="status"
+        aria-live="polite"
+        aria-atomic="true"
+        style={statusStyle}
       >
         {statusMessage}
       </p>
@@ -253,17 +272,18 @@ export default function GuestbookThemed({
           </div>
         ) : null}
 
-        <form className={styles.form} onSubmit={handleSubmit}>
+        <form className={styles.form} onSubmit={handleSubmit} aria-busy={isSubmitting}>
           <div className={cx(styles.formRow, styles.inputGroup)}>
             {hasClass(styles, 'label') ? (
-              <label className={styles.label}>
+              <label className={styles.label} htmlFor={nameInputId}>
                 {hasClass(styles, 'labelIcon') ? (
-                  <span className={styles.labelIcon}>♡</span>
+                  <span className={styles.labelIcon} aria-hidden="true">♡</span>
                 ) : null}
                 이름
               </label>
             ) : null}
             <input
+              id={nameInputId}
               type="text"
               className={styles.input}
               placeholder="이름"
@@ -276,14 +296,15 @@ export default function GuestbookThemed({
 
           <div className={cx(styles.formRow, styles.inputGroup)}>
             {hasClass(styles, 'label') ? (
-              <label className={styles.label}>
+              <label className={styles.label} htmlFor={messageInputId}>
                 {hasClass(styles, 'labelIcon') ? (
-                  <span className={styles.labelIcon}>♡</span>
+                  <span className={styles.labelIcon} aria-hidden="true">♡</span>
                 ) : null}
                 메시지
               </label>
             ) : null}
             <textarea
+              id={messageInputId}
               className={styles.textarea}
               placeholder="축하 메시지를 남겨 주세요."
               value={message}
@@ -364,20 +385,12 @@ export default function GuestbookThemed({
         ) : null}
         <button
           type="button"
+          className={styles.refreshButton}
           onClick={() => {
             void commentsQuery.refetch();
           }}
           disabled={isRefreshingComments}
-          style={{
-            minHeight: '32px',
-            padding: '0 12px',
-            borderRadius: '999px',
-            border: '1px solid rgba(148, 163, 184, 0.28)',
-            background: 'rgba(255,255,255,0.82)',
-            color: '#475569',
-            fontSize: '0.8rem',
-            fontWeight: 700,
-          }}
+          aria-busy={isRefreshingComments}
         >
           {isRefreshingComments ? '새로고침 중' : '새로고침'}
         </button>
@@ -515,6 +528,8 @@ export default function GuestbookThemed({
               className={cx(pageNumberClassName, currentPage === page && activePageClassName)}
               onClick={() => setCurrentPage(page)}
               type="button"
+              aria-label={`${page}페이지`}
+              aria-current={currentPage === page ? 'page' : undefined}
             >
               {page}
             </button>

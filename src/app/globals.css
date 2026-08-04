@@ -2,7 +2,10 @@
 :root {
   /* 기본 Classic 테마 변수 */
   --primary-color: #d4a574;        /* 따뜻한 골드 */
+  --primary-text-color: #7a4e24;   /* 작은 글자에도 읽히는 골드 브라운 */
+  --primary-action-color: #835124; /* 흰 글자와 대비되는 액션 컬러 */
   --secondary-color: #8d6e63;      /* 우아한 브라운 */
+  --accent-brown: #6d4c41;         /* 섹션 아이콘 공통 브라운 */
   --accent-color: #f5e6d3;         /* 부드러운 크림 */
   --text-primary: #3e2723;         /* 진한 브라운 */
   --text-secondary: #5d4037;       /* 중간 브라운 */
@@ -186,7 +189,7 @@ p, span, div {
 .wedding-title {
     font-family: var(--font-display);
     font-weight: 600;
-    color: var(--primary-color);
+    color: var(--primary-text-color);
     text-align: center;
     margin-bottom: 1rem;
     letter-spacing: 0.02em;
@@ -220,12 +223,12 @@ p, span, div {
 }
 
 .wedding-highlight {
-    color: var(--primary-color);
+    color: var(--primary-text-color);
     font-weight: 600;
 }
 
 .wedding-button {
-    background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+    background: linear-gradient(135deg, var(--primary-action-color) 0%, var(--secondary-color) 100%);
     color: white;
     border: none;
     padding: 0.75rem 2rem;
@@ -249,7 +252,7 @@ p, span, div {
 .wedding-divider {
     width: 60px;
     height: 3px;
-    background: linear-gradient(90deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+    background: linear-gradient(90deg, var(--primary-action-color) 0%, var(--secondary-color) 100%);
     margin: 2rem auto;
     border-radius: 2px;
 }

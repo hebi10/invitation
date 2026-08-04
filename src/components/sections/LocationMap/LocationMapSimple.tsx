@@ -57,8 +57,10 @@ export default function LocationMapSimple({
   contact,
   kakaoMapConfig,
 }: LocationMapProps) {
+  const sectionRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<HTMLDivElement>(null);
   const [isClient, setIsClient] = useState(false);
+  const [shouldLoadMap, setShouldLoadMap] = useState(false);
   const [kakaoMapLoaded, setKakaoMapLoaded] = useState(false);
   const [isAddressCopied, setIsAddressCopied] = useState(false);
   const [controlEnabled, setControlEnabled] = useState(false);
@@ -67,6 +69,27 @@ export default function LocationMapSimple({
 
   useEffect(() => {
     setIsClient(true);
+  }, []);
+
+  useEffect(() => {
+    const section = sectionRef.current;
+    if (!section || typeof IntersectionObserver === 'undefined') {
+      setShouldLoadMap(true);
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setShouldLoadMap(true);
+          observer.disconnect();
+        }
+      },
+      { rootMargin: '500px 0px' }
+    );
+
+    observer.observe(section);
+    return () => observer.disconnect();
   }, []);
 
   const initializeKakaoMap = useCallback(() => {
@@ -161,7 +184,7 @@ export default function LocationMapSimple({
   }, [address, hasCoordinates, kakaoMapConfig, venueName]);
 
   useEffect(() => {
-    if (!isClient || (!hasAddress && !hasCoordinates)) {
+    if (!isClient || !shouldLoadMap || (!hasAddress && !hasCoordinates)) {
       return;
     }
 
@@ -172,7 +195,7 @@ export default function LocationMapSimple({
       .catch(() => {
         setKakaoMapLoaded(true);
       });
-  }, [hasAddress, hasCoordinates, initializeKakaoMap, isClient]);
+  }, [hasAddress, hasCoordinates, initializeKakaoMap, isClient, shouldLoadMap]);
 
   const toggleControl = () => {
     const map = window.kakaoMapInstance;
@@ -218,7 +241,7 @@ export default function LocationMapSimple({
 
   return (
     <div className={styles.wrapper}>
-      <div className={styles.container}>
+      <div ref={sectionRef} className={styles.container}>
         <h2 className={styles.title}>오시는 길</h2>
 
         <div className={styles.mapContainer}>
@@ -265,13 +288,15 @@ export default function LocationMapSimple({
               background: 'white',
               border: '1px solid #dee2e6',
               padding: '0.5rem 1rem',
+              minHeight: '44px',
               borderRadius: '6px',
               fontSize: '0.8rem',
               cursor: 'pointer',
               boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
-              fontFamily: 'Arial, sans-serif',
+              fontFamily: 'var(--font-sans)',
               color: '#495057',
-              transition: 'all 0.3s ease',
+              transition:
+                'color 0.3s ease, background-color 0.3s ease, border-color 0.3s ease',
               pointerEvents: 'auto',
             }}
             type="button"

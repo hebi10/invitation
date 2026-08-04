@@ -19,7 +19,6 @@ export default function WeddingLoader(props: WeddingLoaderMessageBaseProps) {
       {...props}
       styles={styles}
       loadingMessages={loadingMessages}
-      minLoadTime={1500}
       messageClassName={styles.loadingText}
       renderHero={(themeStyles) => (
         <div className={themeStyles.heartContainer}>
