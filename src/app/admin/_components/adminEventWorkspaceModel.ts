@@ -24,6 +24,18 @@ export type AdminEventCapabilityKey =
   | 'comments'
   | 'period'
   | 'ownership';
+export type AdminEventDetailTabKey =
+  | 'overview'
+  | 'period'
+  | 'ownership'
+  | 'memory'
+  | 'images'
+  | 'comments';
+
+export interface AdminEventDetailTab {
+  key: AdminEventDetailTabKey;
+  label: string;
+}
 
 export interface AdminEventFilters {
   query: string;
@@ -184,6 +196,35 @@ export function shouldIncludeAdminComment({
   return !hasLegacyPageCategory || categoryPageSlugs.has(commentPageSlug);
 }
 
+export function filterAdminEventComments<T extends { pageSlug: string }>(
+  comments: T[],
+  pageSlug: string
+) {
+  return comments.filter((comment) => comment.pageSlug === pageSlug);
+}
+
+export function validateAdminEventPeriodInput({
+  enabled,
+  startDate,
+  endDate,
+}: {
+  enabled: boolean;
+  startDate: string;
+  endDate: string;
+}) {
+  if (!enabled) return null;
+  if (!startDate || !endDate) return '시작일과 종료일을 모두 입력해 주세요.';
+
+  const start = new Date(startDate);
+  const end = new Date(endDate);
+  if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {
+    return '올바른 날짜를 입력해 주세요.';
+  }
+  if (start >= end) return '종료일은 시작일보다 뒤여야 합니다.';
+
+  return null;
+}
+
 export function shouldClearMissingAdminEvent({
   selectedSlug,
   loading,
@@ -210,6 +251,21 @@ export function getAdminEventCapabilities(page: InvitationPageSummary) {
   if (page.features.maxGalleryImages > 0) capabilities.push('images');
   if (page.features.showGuestbook) capabilities.push('comments');
   return capabilities;
+}
+
+export function getAdminEventDetailTabs(page: InvitationPageSummary): AdminEventDetailTab[] {
+  const capabilities = getAdminEventCapabilities(page);
+  const tabs: AdminEventDetailTab[] = [
+    { key: 'overview', label: '기본 정보' },
+    { key: 'period', label: '노출 기간' },
+    { key: 'ownership', label: '고객 연결' },
+  ];
+
+  if (capabilities.includes('memory')) tabs.push({ key: 'memory', label: '추억 페이지' });
+  if (capabilities.includes('images')) tabs.push({ key: 'images', label: '이미지' });
+  if (capabilities.includes('comments')) tabs.push({ key: 'comments', label: '방명록' });
+
+  return tabs;
 }
 
 export function getAdminEventPreviewLinks(page: InvitationPageSummary) {

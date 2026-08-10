@@ -1,0 +1,136 @@
+'use client';
+
+import { useEffect, useState } from 'react';
+
+import type { InvitationPageSummary } from '@/services/invitationPageService';
+import { deleteDisplayPeriod, setDisplayPeriod } from '@/services/displayPeriodService';
+
+import { validateAdminEventPeriodInput } from './adminEventWorkspaceModel';
+import { useAdminOverlay } from './AdminOverlayProvider';
+import styles from '../page.module.css';
+
+interface AdminEventPeriodTabProps {
+  page: InvitationPageSummary;
+  readOnly?: boolean;
+  onUpdated: () => void | Promise<void>;
+}
+
+function toDateInputValue(value: Date | null) {
+  if (!value) return '';
+  const year = value.getFullYear();
+  const month = String(value.getMonth() + 1).padStart(2, '0');
+  const day = String(value.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+export default function AdminEventPeriodTab({
+  page,
+  readOnly = false,
+  onUpdated,
+}: AdminEventPeriodTabProps) {
+  const { showToast } = useAdminOverlay();
+  const [enabled, setEnabled] = useState(page.displayPeriodEnabled);
+  const [startDate, setStartDate] = useState(toDateInputValue(page.displayPeriodStart));
+  const [endDate, setEndDate] = useState(toDateInputValue(page.displayPeriodEnd));
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    setEnabled(page.displayPeriodEnabled);
+    setStartDate(toDateInputValue(page.displayPeriodStart));
+    setEndDate(toDateInputValue(page.displayPeriodEnd));
+    setError('');
+  }, [page.displayPeriodEnabled, page.displayPeriodEnd, page.displayPeriodStart, page.slug]);
+
+  const handleSubmit = async (event: React.FormEvent) => {
+    event.preventDefault();
+    const validationError = validateAdminEventPeriodInput({ enabled, startDate, endDate });
+    if (validationError) {
+      setError(validationError);
+      return;
+    }
+
+    setSaving(true);
+    setError('');
+    try {
+      if (enabled) {
+        await setDisplayPeriod(
+          page.slug,
+          new Date(`${startDate}T00:00:00`),
+          new Date(`${endDate}T23:59:59`),
+          true
+        );
+      } else {
+        await deleteDisplayPeriod(page.slug);
+      }
+      await onUpdated();
+      showToast({
+        title: enabled ? '노출 기간을 저장했습니다.' : '기간 제한을 해제했습니다.',
+        tone: 'success',
+      });
+    } catch (saveError) {
+      console.error(saveError);
+      setError('노출 기간을 저장하지 못했습니다.');
+      showToast({ title: '노출 기간 저장에 실패했습니다.', tone: 'error' });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <form className={styles.eventManagementForm} onSubmit={handleSubmit}>
+      <div className={styles.eventManagementHeading}>
+        <div>
+          <h3>노출 기간</h3>
+          <p>기간 제한을 끄면 공개 상태인 동안 계속 노출됩니다.</p>
+        </div>
+      </div>
+
+      <label className={styles.eventManagementToggle}>
+        <input
+          type="checkbox"
+          checked={enabled}
+          disabled={readOnly || saving}
+          onChange={(event) => setEnabled(event.target.checked)}
+        />
+        <span>노출 기간 제한 사용</span>
+      </label>
+
+      {enabled ? (
+        <div className={styles.eventManagementFieldGrid}>
+          <label className="admin-field">
+            <span className="admin-field-label">시작일</span>
+            <input
+              className="admin-input"
+              type="date"
+              value={startDate}
+              disabled={readOnly || saving}
+              onChange={(event) => setStartDate(event.target.value)}
+            />
+          </label>
+          <label className="admin-field">
+            <span className="admin-field-label">종료일</span>
+            <input
+              className="admin-input"
+              type="date"
+              value={endDate}
+              disabled={readOnly || saving}
+              onChange={(event) => setEndDate(event.target.value)}
+            />
+          </label>
+        </div>
+      ) : null}
+
+      {error ? <p className={styles.eventManagementError} role="alert">{error}</p> : null}
+      <div className={styles.eventManagementActions}>
+        <button
+          type="submit"
+          className="admin-button admin-button-primary"
+          disabled={readOnly || saving}
+        >
+          {saving ? '저장 중' : '저장'}
+        </button>
+      </div>
+    </form>
+  );
+}

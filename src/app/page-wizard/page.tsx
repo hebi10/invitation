@@ -2,7 +2,7 @@ import { Suspense } from 'react';
 
 import { redirect } from 'next/navigation';
 
-import { normalizeEventTypeKey, type EventTypeKey } from '@/lib/eventTypes';
+import { normalizeEventTypeKey } from '@/lib/eventTypes';
 
 import PageWizardClient from './PageWizardClient';
 import {
@@ -20,16 +20,12 @@ function getSearchParamValue(value: string | string[] | undefined) {
   return Array.isArray(value) ? value[0] : value;
 }
 
-function PageWizardFallback({ eventType }: { eventType: EventTypeKey }) {
-  const isFirstBirthday = eventType === 'first-birthday';
-
+function PageWizardFallback() {
   return (
     <div
       style={{
         minHeight: '100vh',
-        background: isFirstBirthday
-          ? 'linear-gradient(180deg, #fff7fb 0%, #edfdf8 100%)'
-          : '#f8fafc',
+        background: '#f6f6f3',
       }}
     />
   );
@@ -48,7 +44,7 @@ export default async function PageWizardCreatePage({
   }
 
   return (
-    <Suspense fallback={<PageWizardFallback eventType={eventType} />}>
+    <Suspense fallback={<PageWizardFallback />}>
       <PageWizardClient initialSlug={null} forcedEventType={eventType} />
     </Suspense>
   );

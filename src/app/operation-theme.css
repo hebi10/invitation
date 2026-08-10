@@ -1,0 +1,24 @@
+[data-operation-ui] {
+  --operation-color-canvas: #f6f6f3;
+  --operation-color-surface: #ffffff;
+  --operation-color-surface-muted: #f0f0ec;
+  --operation-color-surface-elevated: #fafaf7;
+  --operation-color-text: #1c1d1a;
+  --operation-color-text-secondary: #666862;
+  --operation-color-text-muted: #70726b;
+  --operation-color-border: #d8dad4;
+  --operation-color-border-strong: #c4c7bf;
+  --operation-color-action: #292b27;
+  --operation-color-action-strong: #111210;
+  --operation-color-selection: #eeefea;
+  --operation-color-focus: #596257;
+  --operation-color-success: #3f7054;
+  --operation-color-success-soft: #edf5f0;
+  --operation-color-warning: #8a6428;
+  --operation-color-warning-soft: #faf4e8;
+  --operation-color-danger: #a5423a;
+  --operation-color-danger-soft: #fbefee;
+  --operation-radius-control: 6px;
+  --operation-radius-panel: 8px;
+  --operation-shadow-static: none;
+}

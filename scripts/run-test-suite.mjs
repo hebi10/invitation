@@ -13,6 +13,7 @@ const core = [
   'test-birthday-event-rendering',
   'test-classic-r-theme',
   'test-customer-page-wizard-save-route',
+  'test-customer-account-ui-contracts',
   'test-customer-event-self-claim',
   'test-customer-wallet-compensation',
   'test-demo-experience-core',

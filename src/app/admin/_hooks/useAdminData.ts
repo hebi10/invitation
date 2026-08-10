@@ -45,6 +45,7 @@ type ConfirmFn = (options: {
 interface UseAdminDataParams {
   isAdminLoggedIn: boolean;
   activeTab: AdminTab;
+  selectedEventSlug?: string | null;
   showToast: ToastFn;
   confirm: ConfirmFn;
   gateway: AdminDataGateway;
@@ -58,6 +59,7 @@ const EMPTY_COMMENT_SUMMARY: CommentSummary = {
 export function useAdminData({
   isAdminLoggedIn,
   activeTab,
+  selectedEventSlug,
   showToast,
   confirm,
   gateway,
@@ -77,8 +79,10 @@ export function useAdminData({
     (activeTab === 'pages' ||
       activeTab === 'comments' ||
       activeTab === 'periods');
-  const shouldLoadComments = isAdminLoggedIn && activeTab === 'comments';
-  const shouldLoadAccounts = isAdminLoggedIn && activeTab === 'accounts';
+  const shouldLoadComments =
+    isAdminLoggedIn && (activeTab === 'comments' || Boolean(selectedEventSlug));
+  const shouldLoadAccounts =
+    isAdminLoggedIn && (activeTab === 'accounts' || Boolean(selectedEventSlug));
 
   const dashboardSummaryQuery = useQuery<AdminDashboardSummarySnapshot>({
     queryKey: appQueryKeys.adminDashboardSummary(RECENT_COMMENT_DAYS),

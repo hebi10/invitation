@@ -9,7 +9,7 @@ function FirstBirthdayWizardFallback() {
     <div
       style={{
         minHeight: '100vh',
-        background: 'linear-gradient(180deg, #fff7fb 0%, #edfdf8 100%)',
+        background: '#f6f6f3',
       }}
     />
   );

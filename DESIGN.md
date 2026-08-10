@@ -1,19 +1,20 @@
 ---
-name: Invitation Page Wizard
-description: 누락 없이 초대장 정보를 완성하는 중립적 Operate UI
+name: Invitation Operation UI
+description: 고객 편집과 관리 운영을 하나의 웜 그래파이트 체계로 연결하는 Operate UI
 colors:
-  action-blue: "#315efb"
-  action-blue-strong: "#2148cf"
-  workspace-ink: "#17191f"
-  muted-ink: "#626975"
-  subtle-ink: "#8a919d"
-  divider: "#dfe3e8"
-  divider-strong: "#cbd1d9"
+  action-graphite: "#292b27"
+  action-graphite-strong: "#111210"
+  focus: "#596257"
+  workspace-ink: "#1c1d1a"
+  muted-ink: "#666862"
+  subtle-ink: "#70726b"
+  divider: "#d8dad4"
+  divider-strong: "#c4c7bf"
   surface: "#ffffff"
-  canvas: "#f5f6f8"
-  success: "#176b43"
-  warning: "#8a5300"
-  error: "#b42318"
+  canvas: "#f6f6f3"
+  success: "#3f7054"
+  warning: "#8a6428"
+  error: "#a5423a"
 typography:
   title:
     fontFamily: "system-ui, -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif"
@@ -41,7 +42,7 @@ spacing:
   xl: "32px"
 components:
   button-primary:
-    backgroundColor: "{colors.action-blue}"
+    backgroundColor: "{colors.action-graphite}"
     textColor: "{colors.surface}"
     rounded: "{rounded.control}"
     padding: "12px 18px"
@@ -57,30 +58,32 @@ components:
     padding: "12px 14px"
 ---
 
-# Design System: Invitation Page Wizard
+# Design System: Invitation Operation UI
 
 ## Overview
 
 **Creative North Star: "The Clear Operations Desk"**
 
-초대장 편집기는 장식물을 감상하는 화면이 아니라 관리자와 고객이 정보를 빠짐없이 완성하는 작업 공간입니다. 시각적 분위기는 차분하고 실용적이며, 현재 위치·오류·저장 상태를 우선적으로 드러냅니다. 크림색, 세리프 중심의 웨딩 장식, 과도한 카드와 그림자, 장식용 그라디언트는 이 작업 화면의 기준에서 제외합니다.
+고객 인증·대시보드·생성·편집 화면과 관리자는 장식물을 감상하는 화면이 아니라 정보를 빠짐없이 완성하고 운영하는 작업 공간입니다. 모든 작업 화면은 같은 웜 그래파이트 색과 평면적 문법을 공유하되, 고객 화면은 편안한 계정 관리와 입력 흐름에, 관리자는 빠른 조회와 상태 처리에 집중합니다. 공개 초대장의 이벤트별 테마는 이 작업 UI와 독립적으로 유지합니다.
 
 **Key Characteristics:**
 
 - 중립 캔버스와 흰 작업 표면
-- 먹색 정보 계층과 하나의 파란 행동 강조
+- 먹색 정보 계층과 하나의 차콜 행동 강조
+- 영문 장식 문구와 알약형 지표를 배제한 실제 정보 중심 구성
 - 데스크톱 2열, 모바일 단일 열의 동일한 정보 구조
 - 얇은 구분선과 제한된 6~8px 반경
 - 필요할 때만 여는 미리보기
 
 ## Colors
 
-파란색은 진행 행동에만 제한적으로 쓰고, 대부분의 화면은 중립색의 명도 차와 선으로 구조화합니다.
+작업 화면은 따뜻한 아이보리 캔버스, 흰 표면, 웜 그래파이트 행동색으로 구성합니다. 녹색·황토색·적색은 성공·경고·오류처럼 의미가 있는 상태에만 사용합니다.
 
 ### Primary
 
-- **Action Blue:** 주요 저장·다음 행동과 선택 상태에 사용합니다.
-- **Action Blue Strong:** 강조 텍스트와 눌림 상태에 사용합니다.
+- **Action Graphite:** 주요 저장·다음 행동과 선택 상태에 사용합니다.
+- **Action Graphite Strong:** 눌림 상태와 가장 강한 텍스트에 사용합니다.
+- **Focus:** 키보드 포커스와 입력 활성 상태를 분명하게 표시합니다.
 
 ### Neutral
 
@@ -89,7 +92,7 @@ components:
 - **Surface / Canvas:** 입력 표면과 앱 배경을 분리합니다.
 - **Divider / Divider Strong:** 카드 그림자 대신 영역 경계를 만듭니다.
 
-**The One Action Color Rule.** 한 화면의 주된 행동 강조는 Action Blue 하나로 유지합니다.
+**The One Action Color Rule.** 한 화면의 주된 행동 강조는 Action Graphite 하나로 유지합니다.
 
 ## Typography
 
@@ -103,7 +106,7 @@ components:
 
 ## Layout
 
-최대 폭은 1080px이며 데스크톱에서는 240px 작업 목차와 최대 760px 입력 영역을 32px 간격으로 배치합니다. 상단 작업 바와 하단 행동 바는 현재 상태와 이동 수단을 계속 노출합니다. 모바일에서는 모든 정보를 단일 열로 바꾸고 작업 목차는 모달 목록으로 제공하며, 하단 행동은 엄지 접근 범위에 고정합니다.
+고객 계정 화면과 관리자 셸은 최대 1100px로 제한합니다. 고객 인증 화면은 데스크톱에서 안내와 인증 폼을 2열로, 대시보드는 계정 요약과 이벤트 목록을 구분선 중심으로 배치합니다. 고객 편집기는 최대 1080px 안에서 240px 작업 목차와 최대 760px 입력 영역을 32px 간격으로 배치합니다. 상단 작업 바와 하단 행동 바는 현재 상태와 이동 수단을 계속 노출합니다. 모바일에서는 모든 정보를 단일 열로 바꾸고 작업 목차는 모달 목록으로 제공하며, 하단 행동은 엄지 접근 범위에 고정합니다.
 
 **The Same Information Rule.** 반응형 전환은 필드를 숨기지 않고 배치 방식만 바꿉니다.
 
@@ -121,9 +124,9 @@ components:
 
 ### Buttons
 
-- **Primary:** 파란 배경과 흰 글자, 6px 반경으로 다음·저장 같은 한 가지 핵심 행동을 표시합니다.
+- **Primary:** 차콜 배경과 흰 글자, 6px 반경으로 다음·저장 같은 한 가지 핵심 행동을 표시합니다.
 - **Secondary:** 흰 배경과 중립 테두리로 이전·닫기·미리보기 행동을 표시합니다.
-- **Focus:** `focus-visible`에서 명확한 파란 외곽선을 제공합니다.
+- **Focus:** `focus-visible`에서 명확한 저채도 녹회색 외곽선을 제공합니다.
 
 ### Cards / Containers
 
@@ -134,12 +137,12 @@ components:
 ### Inputs / Fields
 
 - **Style:** 흰 배경, 1px 중립 테두리, 6px 반경을 사용합니다.
-- **Focus:** 파란 테두리나 외곽선으로 편집 위치를 명확히 합니다.
+- **Focus:** 녹회색 테두리나 외곽선으로 편집 위치를 명확히 합니다.
 - **Error:** 붉은색은 검증 실패 메시지와 상태에만 사용합니다.
 
 ### Navigation
 
-데스크톱 목차는 번호·제목·상태를 한 행에 보여주며 현재 영역만 파란색으로 강조합니다. 모바일은 현재 순서를 요약하고 전체 작업 목록을 모달로 엽니다.
+데스크톱 목차는 번호·제목·상태를 한 행에 보여주며 현재 영역만 차콜과 선택 배경으로 강조합니다. 모바일은 현재 순서를 한 번만 요약하고 전체 작업 목록을 모달로 엽니다.
 
 ### Save Status
 

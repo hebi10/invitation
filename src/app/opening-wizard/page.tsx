@@ -9,7 +9,7 @@ function OpeningWizardFallback() {
     <div
       style={{
         minHeight: '100vh',
-        background: 'linear-gradient(180deg, #fafffc 0%, #fffaf4 100%)',
+        background: '#f6f6f3',
       }}
     />
   );

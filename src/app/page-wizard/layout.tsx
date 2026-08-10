@@ -7,5 +7,9 @@ export default function PageWizardLayout({
 }: {
   children: ReactNode;
 }) {
-  return <AuthenticatedAppProviders>{children}</AuthenticatedAppProviders>;
+  return (
+    <AuthenticatedAppProviders>
+      <div data-operation-ui>{children}</div>
+    </AuthenticatedAppProviders>
+  );
 }

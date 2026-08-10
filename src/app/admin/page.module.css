@@ -62,6 +62,7 @@
 
 .adminPrimaryNavItem:focus-visible,
 .adminBrand:focus-visible,
+.adminCustomerPageLink:focus-visible,
 .adminLogoutButton:focus-visible {
   outline: 2px solid var(--admin-color-primary);
   outline-offset: 3px;
@@ -84,6 +85,7 @@
   white-space: nowrap;
 }
 
+.adminCustomerPageLink,
 .adminLogoutButton {
   min-height: 36px;
   padding: 0 12px;
@@ -92,6 +94,16 @@
   color: var(--admin-color-text-secondary);
   font-size: 0.8125rem;
   font-weight: 600;
+}
+
+.adminCustomerPageLink {
+  display: inline-flex;
+  align-items: center;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.adminLogoutButton {
   cursor: pointer;
 }
 
@@ -297,7 +309,7 @@
 
 .tabButtonActive {
   background: var(--admin-color-primary-soft);
-  border-color: rgba(37, 99, 235, 0.16);
+  border-color: color-mix(in srgb, var(--admin-color-primary) 24%, transparent);
   color: var(--admin-color-primary);
 }
 
@@ -606,12 +618,12 @@
   display: grid;
   place-items: center;
   padding: 16px;
-  background: rgba(15, 23, 42, 0.46);
+  background: color-mix(in srgb, var(--admin-color-text) 46%, transparent);
 }
 
 .eventDetailPanel {
   box-sizing: border-box;
-  width: min(760px, calc(100vw - 32px));
+  width: min(1100px, calc(100vw - 32px));
   max-height: calc(100dvh - 32px);
   overflow-y: auto;
   overscroll-behavior: contain;
@@ -619,6 +631,194 @@
   border: 1px solid var(--admin-color-border-strong);
   border-radius: 8px;
   background: var(--admin-color-surface);
+}
+
+.eventDetailTabs {
+  display: flex;
+  gap: 4px;
+  margin: 0 -24px;
+  padding: 12px 24px 0;
+  overflow-x: auto;
+  border-bottom: 1px solid var(--admin-color-border);
+  scrollbar-width: thin;
+}
+
+.eventDetailTab {
+  flex: 0 0 auto;
+  min-height: 42px;
+  padding: 0 12px;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  background: transparent;
+  color: var(--admin-color-text-muted);
+  font: inherit;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.eventDetailTab[aria-selected='true'] {
+  border-bottom-color: var(--admin-color-primary);
+  color: var(--admin-color-text);
+}
+
+.eventDetailTab:focus-visible {
+  outline: 2px solid var(--admin-color-focus);
+  outline-offset: -2px;
+}
+
+.eventDetailTabPanel {
+  min-width: 0;
+}
+
+.eventManagementPanel {
+  display: grid;
+  gap: 18px;
+  padding-top: 18px;
+}
+
+.eventManagementToolbar,
+.eventManagementHeading,
+.eventManagementActions,
+.eventCustomerCard {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.eventManagementToolbar {
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--admin-color-border);
+}
+
+.eventManagementToolbar p,
+.eventManagementHeading h3,
+.eventManagementHeading p,
+.eventManagementError,
+.eventManagementState,
+.eventCustomerCard p,
+.eventCommentList p {
+  margin: 0;
+}
+
+.eventManagementToolbar p,
+.eventManagementHeading h3 {
+  color: var(--admin-color-text);
+  font-size: 0.9375rem;
+  font-weight: 750;
+}
+
+.eventManagementHeading p,
+.eventManagementState,
+.eventCustomerCard p,
+.eventCustomerCard span {
+  margin-top: 4px;
+  color: var(--admin-color-text-muted);
+  font-size: 0.8125rem;
+  line-height: 1.55;
+}
+
+.eventManagementStack,
+.eventManagementForm {
+  display: grid;
+  gap: 18px;
+}
+
+.eventManagementFieldGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.eventManagementToggle {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  color: var(--admin-color-text-secondary);
+  font-size: 0.875rem;
+  font-weight: 700;
+}
+
+.eventManagementToggle input {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--admin-color-primary);
+}
+
+.eventManagementActions {
+  justify-content: flex-start;
+  flex-wrap: wrap;
+}
+
+.eventManagementError {
+  color: var(--admin-color-danger);
+  font-size: 0.8125rem;
+}
+
+.eventManagementState {
+  padding: 20px 0;
+}
+
+.eventCustomerCard {
+  align-items: flex-start;
+  padding: 16px;
+  border: 1px solid var(--admin-color-border);
+  border-radius: 6px;
+}
+
+.eventCustomerCard strong {
+  color: var(--admin-color-text);
+  font-size: 0.9375rem;
+}
+
+.eventCustomerCard span {
+  display: block;
+}
+
+.eventCommentList {
+  display: grid;
+  gap: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.eventCommentList li {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 0;
+  border-top: 1px solid var(--admin-color-border);
+}
+
+.eventCommentList li:last-child {
+  border-bottom: 1px solid var(--admin-color-border);
+}
+
+.eventCommentList strong,
+.eventCommentList span {
+  display: block;
+}
+
+.eventCommentList strong {
+  color: var(--admin-color-text);
+  font-size: 0.8125rem;
+}
+
+.eventCommentList span {
+  margin-top: 2px;
+  color: var(--admin-color-text-muted);
+  font-size: 0.75rem;
+}
+
+.eventCommentList p {
+  margin-top: 8px;
+  color: var(--admin-color-text-secondary);
+  font-size: 0.8125rem;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
 }
 
 .eventDetailHeader {
@@ -652,8 +852,7 @@
   overflow-wrap: anywhere;
 }
 
-.eventDetailClose,
-.eventRelatedButton {
+.eventDetailClose {
   padding: 0;
   border: 0;
   background: transparent;
@@ -810,23 +1009,6 @@
   text-align: right;
 }
 
-.eventDetailRelated {
-  padding: 18px 0;
-  border-bottom: 1px solid var(--admin-color-border);
-}
-
-.eventDetailRelated h3 {
-  margin: 0 0 10px;
-  color: var(--admin-color-text);
-  font-size: 0.875rem;
-}
-
-.eventDetailRelated > div {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px 14px;
-}
-
 .eventDangerArea {
   display: grid;
   gap: 12px;
@@ -870,8 +1052,8 @@
   transition: background-color 0.18s ease, border-color 0.18s ease, color 0.18s ease;
 }
 .innerTabButtonActive {
-  background: rgba(15, 23, 42, 0.06);
-  border-color: rgba(15, 23, 42, 0.08);
+  background: var(--admin-color-primary-soft);
+  border-color: var(--admin-color-border);
   color: var(--admin-color-text);
 }
 .todoPanel {
@@ -879,9 +1061,9 @@
   flex-direction: column;
   gap: 12px;
   padding: 24px;
-  border: 1px dashed rgba(15, 23, 42, 0.16);
+  border: 1px dashed var(--admin-color-border-strong);
   border-radius: var(--admin-radius-lg);
-  background: linear-gradient(180deg, rgba(248, 250, 252, 0.95) 0%, rgba(255, 255, 255, 1) 100%);
+  background: var(--admin-color-surface);
 }
 .todoBadge {
   display: inline-flex;
@@ -890,7 +1072,7 @@
   align-items: center;
   padding: 0 10px;
   border-radius: 999px;
-  background: rgba(37, 99, 235, 0.08);
+  background: var(--admin-color-primary-soft);
   color: var(--admin-color-primary);
   font-size: 0.75rem;
   font-weight: 700;
@@ -993,7 +1175,7 @@
   min-height: 36px;
   padding: 0 12px;
   border-radius: 999px;
-  border: 1px solid rgba(37, 99, 235, 0.12);
+  border: 1px solid color-mix(in srgb, var(--admin-color-primary) 18%, transparent);
   background: var(--admin-color-primary-soft);
   color: var(--admin-color-primary);
   white-space: nowrap;
@@ -1034,7 +1216,7 @@
 }
 
 .shortcutPillActive {
-  border-color: rgba(37, 99, 235, 0.16);
+  border-color: color-mix(in srgb, var(--admin-color-primary) 24%, transparent);
   background: var(--admin-color-primary-soft);
   color: var(--admin-color-primary);
 }
@@ -1191,8 +1373,8 @@
 
 .variantPreviewLink:hover,
 .variantPreviewLink:focus-visible {
-  border-color: rgba(37, 99, 235, 0.32);
-  background: rgba(37, 99, 235, 0.06);
+  border-color: color-mix(in srgb, var(--admin-color-primary) 36%, transparent);
+  background: var(--admin-color-primary-soft);
 }
 
 .variantPreviewItem {
@@ -1910,6 +2092,30 @@
     padding: 18px;
   }
 
+  .eventDetailTabs {
+    margin: 0 -18px;
+    padding-right: 18px;
+    padding-left: 18px;
+  }
+
+  .eventManagementFieldGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .eventManagementToolbar,
+  .eventManagementHeading,
+  .eventCustomerCard,
+  .eventCommentList li {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .eventManagementToolbar :global(.admin-button),
+  .eventCustomerCard :global(.admin-button),
+  .eventCommentList :global(.admin-button) {
+    width: 100%;
+  }
+
   .eventDetailHeader {
     align-items: center;
   }
@@ -1942,12 +2148,10 @@
 
   .eventDetailActions :global(.admin-button),
   .eventDetailStatusField :global(.admin-select),
-  .eventRelatedButton,
   .eventDangerArea summary {
     min-height: 44px;
   }
 
-  .eventRelatedButton,
   .eventDangerArea summary {
     display: inline-flex;
     align-items: center;
@@ -2063,7 +2267,7 @@
   align-items: center;
   justify-content: center;
   padding: 16px;
-  background: rgba(15, 23, 42, 0.36);
+  background: color-mix(in srgb, var(--admin-color-text) 36%, transparent);
 }
 
 .ownershipInviteDialog {
@@ -2113,6 +2317,14 @@
 }
 
 @media (max-width: 640px) {
+  .adminAccountMenu {
+    gap: 8px;
+  }
+
+  .adminAccountEmail {
+    display: none;
+  }
+
   .ownershipInviteActions {
     flex-direction: column-reverse;
   }

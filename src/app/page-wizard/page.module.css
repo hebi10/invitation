@@ -2939,8 +2939,8 @@
 .page {
   min-height: 100dvh;
   padding: 0;
-  background: #f5f6f8;
-  color: #17191f;
+  background: var(--operation-color-canvas);
+  color: var(--operation-color-text);
   font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
 
@@ -2954,14 +2954,14 @@
 .gateCard,
 .centerCard {
   padding: 28px;
-  border: 1px solid #dfe3e8;
-  border-radius: 8px;
-  background: #fff;
+  border: 1px solid var(--operation-color-border);
+  border-radius: var(--operation-radius-panel);
+  background: var(--operation-color-surface);
   box-shadow: none;
 }
 
 .eyebrow {
-  color: #315efb;
+  color: var(--operation-color-action);
   font-family: inherit;
   font-size: 0.78rem;
   font-weight: 700;
@@ -2977,7 +2977,7 @@
 .assetItemTitle,
 .summaryValue,
 .reviewTitle {
-  color: #17191f;
+  color: var(--operation-color-text);
   font-family: inherit;
   letter-spacing: -0.02em;
 }
@@ -2989,7 +2989,7 @@
 .choiceText,
 .fieldHint,
 .sectionText {
-  color: #626975;
+  color: var(--operation-color-text-secondary);
   font-family: inherit;
 }
 
@@ -3012,7 +3012,7 @@
 
 .fieldLabel,
 .label {
-  color: #2d3139;
+  color: var(--operation-color-text);
   font-size: 0.84rem;
   font-weight: 700;
 }
@@ -3030,7 +3030,7 @@
   border-radius: 0;
   background: transparent;
   box-shadow: none;
-  color: #626975;
+  color: var(--operation-color-text-secondary);
   font-family: inherit;
   font-size: 0.74rem;
   font-weight: 700;
@@ -3039,18 +3039,18 @@
 }
 
 .choiceSelectedBadge {
-  color: #176b43;
+  color: var(--operation-color-success);
 }
 
 .input,
 .textarea,
 .choiceSelectButton,
 .musicSelectButton {
-  border: 1px solid #cfd5dd;
-  border-radius: 8px;
-  background: #fff;
+  border: 1px solid var(--operation-color-border-strong);
+  border-radius: var(--operation-radius-control);
+  background: var(--operation-color-surface);
   box-shadow: none;
-  color: #17191f;
+  color: var(--operation-color-text);
   font-family: inherit;
 }
 
@@ -3070,9 +3070,9 @@
 .choiceSelectButton:focus-visible,
 .musicSelectButton:focus,
 .musicSelectButton:focus-visible {
-  outline: 3px solid rgba(49, 94, 251, 0.18);
+  outline: 3px solid color-mix(in srgb, var(--operation-color-focus) 24%, transparent);
   outline-offset: 1px;
-  border-color: #315efb;
+  border-color: var(--operation-color-focus);
   box-shadow: none;
 }
 
@@ -3080,7 +3080,7 @@
   gap: 14px;
   padding: 0 0 28px;
   border: 0;
-  border-bottom: 1px solid #dfe3e8;
+  border-bottom: 1px solid var(--operation-color-border);
   border-radius: 0;
   background: transparent;
   box-shadow: none;
@@ -3106,12 +3106,12 @@
 }
 
 .choiceSelectButtonActive {
-  border-color: #315efb;
+  border-color: var(--operation-color-action);
   box-shadow: none;
 }
 
 .choiceSelectLabel {
-  color: #626975;
+  color: var(--operation-color-text-secondary);
   font-size: 0.72rem;
   letter-spacing: 0;
   text-transform: none;
@@ -3123,48 +3123,48 @@
 }
 
 .choiceSelectArrow {
-  color: #626975;
+  color: var(--operation-color-text-secondary);
 }
 
 .choiceSelectActionLabel {
-  color: #626975;
+  color: var(--operation-color-text-secondary);
 }
 
 .choiceChevron {
   width: 30px;
   height: 30px;
-  border: 1px solid #dfe3e8;
-  border-radius: 6px;
-  background: #f5f6f8;
-  color: #454b55;
+  border: 1px solid var(--operation-color-border);
+  border-radius: var(--operation-radius-control);
+  background: var(--operation-color-surface-muted);
+  color: var(--operation-color-text-secondary);
 }
 
 .choiceOptions {
   padding: 8px;
-  border: 1px solid #dfe3e8;
-  border-radius: 8px;
-  background: #f5f6f8;
+  border: 1px solid var(--operation-color-border);
+  border-radius: var(--operation-radius-panel);
+  background: var(--operation-color-surface-muted);
   box-shadow: none;
 }
 
 .choiceCard {
   padding: 14px;
   border: 1px solid transparent;
-  border-radius: 6px;
-  background: #fff;
+  border-radius: var(--operation-radius-control);
+  background: var(--operation-color-surface);
   box-shadow: none;
 }
 
 .choiceCardActive {
-  border-color: #315efb;
-  background: #f3f6ff;
+  border-color: var(--operation-color-action);
+  background: var(--operation-color-selection);
   box-shadow: none;
 }
 
 .choiceCard:focus-visible {
-  outline: 3px solid rgba(49, 94, 251, 0.18);
+  outline: 3px solid color-mix(in srgb, var(--operation-color-focus) 24%, transparent);
   outline-offset: 1px;
-  border-color: #315efb;
+  border-color: var(--operation-color-focus);
   box-shadow: none;
 }
 
@@ -3180,9 +3180,9 @@
 .assetItem,
 .reviewItem,
 .gallerySummaryCard {
-  border: 1px solid #dfe3e8;
-  border-radius: 8px;
-  background: #fff;
+  border: 1px solid var(--operation-color-border);
+  border-radius: var(--operation-radius-panel);
+  background: var(--operation-color-surface);
   box-shadow: none;
 }
 
@@ -3208,16 +3208,16 @@
 .musicSelectButton,
 .musicAudioPlaceholder,
 .musicStoragePath {
-  border-color: #dfe3e8;
-  border-radius: 8px;
-  background: #fff;
+  border-color: var(--operation-color-border);
+  border-radius: var(--operation-radius-panel);
+  background: var(--operation-color-surface);
   box-shadow: none;
-  color: #17191f;
+  color: var(--operation-color-text);
 }
 
 .musicOptionCardActive {
-  border-color: #315efb;
-  background: #f3f6ff;
+  border-color: var(--operation-color-action);
+  background: var(--operation-color-selection);
   box-shadow: none;
 }
 
@@ -3229,7 +3229,7 @@
 .textButton {
   min-height: 44px;
   padding: 0 14px;
-  border-radius: 8px;
+  border-radius: var(--operation-radius-control);
   box-shadow: none;
   font-family: inherit;
   font-size: 0.86rem;
@@ -3238,17 +3238,17 @@
 
 .primaryButton,
 .publishButton {
-  border: 1px solid #315efb;
-  background: #315efb;
+  border: 1px solid var(--operation-color-action);
+  background: var(--operation-color-action);
   color: #fff;
 }
 
 .secondaryButton,
 .ghostButton,
 .templateButton {
-  border: 1px solid #cfd5dd;
-  background: #fff;
-  color: #2d3139;
+  border: 1px solid var(--operation-color-border-strong);
+  background: var(--operation-color-surface);
+  color: var(--operation-color-text);
 }
 
 .textButton {
@@ -3256,7 +3256,7 @@
   padding: 0;
   border: 0;
   background: transparent;
-  color: #315efb;
+  color: var(--operation-color-action);
 }
 
 .templateSection {
@@ -3272,13 +3272,13 @@
 }
 
 .templateHeader strong {
-  color: #17191f;
+  color: var(--operation-color-text);
   font-size: 0.86rem;
   font-weight: 750;
 }
 
 .templateHeader span {
-  color: #626975;
+  color: var(--operation-color-text-secondary);
   font-size: 0.78rem;
   line-height: 1.45;
 }
@@ -3302,25 +3302,25 @@
 }
 
 .templateButtonMeta {
-  color: #626975;
+  color: var(--operation-color-text-secondary);
   font-size: 0.72rem;
   font-weight: 650;
 }
 
 .templateButtonSelected,
 .templateButton[aria-pressed='true'] {
-  border-color: #315efb;
-  background: #f3f6ff;
-  color: #2148cf;
+  border-color: var(--operation-color-action);
+  background: var(--operation-color-selection);
+  color: var(--operation-color-action-strong);
 }
 
 .templateButtonSelected .templateButtonMeta,
 .templateButton[aria-pressed='true'] .templateButtonMeta {
-  color: #2148cf;
+  color: var(--operation-color-action-strong);
 }
 
 .templateButton:focus-visible {
-  outline: 3px solid rgb(49 94 251 / 24%);
+  outline: 3px solid color-mix(in srgb, var(--operation-color-focus) 28%, transparent);
   outline-offset: 2px;
 }
 
@@ -3350,22 +3350,22 @@
 }
 
 .noticeSuccess {
-  border-color: #a8d5bf;
-  background: #f1faf5;
-  color: #176b43;
+  border-color: color-mix(in srgb, var(--operation-color-success) 34%, white);
+  background: var(--operation-color-success-soft);
+  color: var(--operation-color-success);
 }
 
 .noticeError,
 .inlineNoticeError {
-  border-color: #f1b7b2;
-  background: #fff5f4;
-  color: #9f221a;
+  border-color: color-mix(in srgb, var(--operation-color-danger) 34%, white);
+  background: var(--operation-color-danger-soft);
+  color: var(--operation-color-danger);
 }
 
 .noticeNeutral {
-  border-color: #dfe3e8;
-  background: #fff;
-  color: #454b55;
+  border-color: var(--operation-color-border);
+  background: var(--operation-color-surface);
+  color: var(--operation-color-text-secondary);
 }
 
 @media (max-width: 640px) {
@@ -3393,4 +3393,51 @@
   .gallerySummaryCard {
     padding: 14px;
   }
+}
+
+/* Unified operation surface for event-specific access and loading states */
+
+:is(.pageGeneralEvent, .pageOpening, .pageBirthday, .pageFirstBirthday) {
+  background: var(--operation-color-canvas);
+  color: var(--operation-color-text);
+}
+
+:is(.pageGeneralEvent, .pageOpening, .pageBirthday, .pageFirstBirthday)
+  :is(.gateCard, .centerCard) {
+  border-color: var(--operation-color-border);
+  background: var(--operation-color-surface);
+  box-shadow: none;
+}
+
+:is(.pageGeneralEvent, .pageOpening, .pageBirthday, .pageFirstBirthday)
+  :is(.centerTitle, .cardTitle) {
+  color: var(--operation-color-text);
+}
+
+:is(.pageGeneralEvent, .pageOpening, .pageBirthday, .pageFirstBirthday)
+  :is(.centerText, .cardText) {
+  color: var(--operation-color-text-secondary);
+}
+
+:is(.pageGeneralEvent, .pageOpening, .pageBirthday, .pageFirstBirthday) .eyebrow {
+  color: var(--operation-color-action);
+}
+
+:is(.pageGeneralEvent, .pageOpening, .pageBirthday, .pageFirstBirthday)
+  :is(.primaryButton, .publishButton) {
+  border-color: var(--operation-color-action);
+  background: var(--operation-color-action);
+  color: #fff;
+}
+
+:is(.pageGeneralEvent, .pageOpening, .pageBirthday, .pageFirstBirthday)
+  :is(.secondaryButton, .ghostButton, .templateButton) {
+  border-color: var(--operation-color-border-strong);
+  background: var(--operation-color-surface);
+  color: var(--operation-color-text);
+}
+
+:is(.pageGeneralEvent, .pageOpening, .pageBirthday, .pageFirstBirthday) .gateLoader {
+  border-color: var(--operation-color-border);
+  border-top-color: var(--operation-color-action);
 }

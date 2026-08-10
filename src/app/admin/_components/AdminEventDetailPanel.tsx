@@ -8,14 +8,21 @@ import type { InvitationPageSummary } from '@/services/invitationPageService';
 import type { InvitationThemeKey } from '@/lib/invitationThemes';
 import type { InvitationProductTier } from '@/types/invitationPage';
 import type { AppRoutes } from '@/lib/demoExperienceRoutes';
+import type { Comment } from '@/services/commentService';
+import type { AdminCustomerAccountSummary } from '@/services/adminCustomerService';
+import { ImageManager, MemoryPageManager } from '@/components/admin';
 
 import {
   getAdminEventCapabilities,
+  getAdminEventDetailTabs,
   getAdminEventPreviewLinks,
   getAdminEventRelatedQuery,
   isAdminEventDetailCloseKey,
-  type AdminEventCapabilityKey,
+  type AdminEventDetailTabKey,
 } from './adminEventWorkspaceModel';
+import AdminEventCommentsTab from './AdminEventCommentsTab';
+import AdminEventCustomerTab from './AdminEventCustomerTab';
+import AdminEventPeriodTab from './AdminEventPeriodTab';
 import { SHORTCUT_ITEMS } from './adminPageUtils';
 import styles from '../page.module.css';
 
@@ -26,32 +33,39 @@ interface AdminEventDetailPanelProps {
   updatingVariantToken: string | null;
   deleting: boolean;
   issuingInvite: boolean;
+  comments: Comment[];
+  commentsLoading: boolean;
+  commentsRefreshing: boolean;
+  commentsError: Error | null;
+  customerAccounts: AdminCustomerAccountSummary[];
+  accountsLoading: boolean;
+  accountsError: Error | null;
+  ownershipActionToken: string | null;
   onClose: () => void;
   onTogglePublished: (page: InvitationPageSummary, next: boolean) => void;
   onChangeTier: (page: InvitationPageSummary, next: InvitationProductTier) => void;
   onEnableVariant: (page: InvitationPageSummary, variantKey: InvitationThemeKey) => void;
   onDisableVariant: (page: InvitationPageSummary, variantKey: InvitationThemeKey) => void;
-  onOpenRelated: (query: Record<string, string>) => void;
+  onRefreshEvent: () => void | Promise<void>;
+  onRefreshComments: () => void;
+  onRefreshAccounts: () => void;
+  onDeleteComment: (comment: Comment) => void;
+  onAssignCustomerOwnership: (uid: string, pageSlug: string) => void;
+  onClearCustomerOwnership: (pageSlug: string) => void;
   onIssueOwnershipInvite: (slug: string) => void;
   onDelete: (page: InvitationPageSummary) => void;
   routes: AppRoutes;
   experience: boolean;
 }
 
-type RelatedCapability = Extract<
-  AdminEventCapabilityKey,
-  'images' | 'memory' | 'comments' | 'period' | 'ownership'
->;
-
-const relatedLabels: Record<RelatedCapability, string> = {
-  images: '이미지 관리',
-  memory: '추억 페이지 관리',
-  comments: '방명록 관리',
-  period: '노출 기간 관리',
-  ownership: '고객 연결 관리',
-};
-
 const TIER_OPTIONS: InvitationProductTier[] = ['standard', 'deluxe', 'premium'];
+
+function getFullManagementHref(
+  routes: AppRoutes,
+  query: Record<string, string>
+) {
+  return `${routes.admin()}?${new URLSearchParams(query).toString()}`;
+}
 
 function formatDate(value: string) {
   if (!value) return '일정 미입력';
@@ -100,12 +114,25 @@ export default function AdminEventDetailPanel({
   updatingVariantToken,
   deleting,
   issuingInvite,
+  comments,
+  commentsLoading,
+  commentsRefreshing,
+  commentsError,
+  customerAccounts,
+  accountsLoading,
+  accountsError,
+  ownershipActionToken,
   onClose,
   onTogglePublished,
   onChangeTier,
   onEnableVariant,
   onDisableVariant,
-  onOpenRelated,
+  onRefreshEvent,
+  onRefreshComments,
+  onRefreshAccounts,
+  onDeleteComment,
+  onAssignCustomerOwnership,
+  onClearCustomerOwnership,
   onIssueOwnershipInvite,
   onDelete,
   routes,
@@ -115,18 +142,18 @@ export default function AdminEventDetailPanel({
   const closeButtonRef = useRef<HTMLButtonElement>(null);
   const onCloseRef = useRef(onClose);
   const [portalRoot, setPortalRoot] = useState<HTMLElement | null>(null);
+  const [activeTab, setActiveTab] = useState<AdminEventDetailTabKey>('overview');
   const capabilities = getAdminEventCapabilities(page);
+  const tabs = experience
+    ? getAdminEventDetailTabs(page).filter((tab) => tab.key === 'overview')
+    : getAdminEventDetailTabs(page);
   const previewLinks = getAdminEventPreviewLinks(page);
   const preview = previewLinks.find((link) => link.isDefault) ?? previewLinks[0];
   const isReadOnlySeed = experience && page.slug.startsWith('demo-seed-');
-  const relatedCapabilities = capabilities.filter(
-    (capability): capability is RelatedCapability =>
-      capability === 'images' ||
-      capability === 'memory' ||
-      capability === 'comments' ||
-      capability === 'period' ||
-      capability === 'ownership'
-  );
+
+  useEffect(() => {
+    setActiveTab('overview');
+  }, [page.slug]);
 
   useEffect(() => {
     onCloseRef.current = onClose;
@@ -221,6 +248,31 @@ export default function AdminEventDetailPanel({
             닫기
           </button>
         </div>
+
+        <div className={styles.eventDetailTabs} role="tablist" aria-label="이벤트 관리 항목">
+          {tabs.map((tab) => (
+            <button
+              key={tab.key}
+              id={`admin-event-tab-${tab.key}`}
+              type="button"
+              role="tab"
+              aria-selected={activeTab === tab.key}
+              aria-controls="admin-event-tabpanel"
+              className={styles.eventDetailTab}
+              onClick={() => setActiveTab(tab.key)}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+
+        <div
+          id="admin-event-tabpanel"
+          className={styles.eventDetailTabPanel}
+          role="tabpanel"
+          aria-labelledby={`admin-event-tab-${activeTab}`}
+        >
+        {activeTab === 'overview' ? <>
 
         <dl className={styles.eventDetailMeta}>
           <div>
@@ -337,24 +389,6 @@ export default function AdminEventDetailPanel({
           </p>
         </div>
 
-        {relatedCapabilities.length > 0 ? (
-          <section className={styles.eventDetailRelated} aria-labelledby="event-related-title">
-            <h3 id="event-related-title">관련 관리</h3>
-            <div>
-              {relatedCapabilities.map((capability) => (
-                <button
-                  key={capability}
-                  type="button"
-                  className={styles.eventRelatedButton}
-                  onClick={() => onOpenRelated(getAdminEventRelatedQuery(page, capability))}
-                >
-                  {relatedLabels[capability]}
-                </button>
-              ))}
-            </div>
-          </section>
-        ) : null}
-
         {isReadOnlySeed ? <p>기본 체험 데이터는 조회 전용입니다.</p> : null}
         {!isReadOnlySeed ? (
           <details className={styles.eventDangerArea}>
@@ -380,6 +414,72 @@ export default function AdminEventDetailPanel({
             </button>
           </details>
         ) : null}
+        </> : null}
+
+        {activeTab !== 'overview' ? (
+          <div className={styles.eventManagementPanel}>
+            <div className={styles.eventManagementToolbar}>
+              <p>{tabs.find((tab) => tab.key === activeTab)?.label}</p>
+              <a
+                className="admin-button admin-button-secondary"
+                href={getFullManagementHref(
+                  routes,
+                  getAdminEventRelatedQuery(page, activeTab)
+                )}
+              >
+                전체 관리 화면
+              </a>
+            </div>
+
+            {activeTab === 'period' ? (
+              <AdminEventPeriodTab
+                page={page}
+                readOnly={isReadOnlySeed}
+                onUpdated={onRefreshEvent}
+              />
+            ) : null}
+            {activeTab === 'ownership' ? (
+              <AdminEventCustomerTab
+                page={page}
+                accounts={customerAccounts}
+                loading={accountsLoading}
+                error={accountsError}
+                ownershipActionToken={ownershipActionToken}
+                issuingInvite={issuingInvite}
+                readOnly={isReadOnlySeed}
+                onRefresh={onRefreshAccounts}
+                onAssign={onAssignCustomerOwnership}
+                onClear={onClearCustomerOwnership}
+                onIssueInvite={onIssueOwnershipInvite}
+              />
+            ) : null}
+            {activeTab === 'memory' ? (
+              <MemoryPageManager
+                initialPageSlug={page.slug}
+                lockedPageSlug={page.slug}
+              />
+            ) : null}
+            {activeTab === 'images' ? (
+              <ImageManager
+                eventTypeFilter={page.eventType}
+                initialPageSlug={page.slug}
+                lockedPageSlug={page.slug}
+              />
+            ) : null}
+            {activeTab === 'comments' ? (
+              <AdminEventCommentsTab
+                pageSlug={page.slug}
+                comments={comments}
+                loading={commentsLoading}
+                refreshing={commentsRefreshing}
+                error={commentsError}
+                onRefresh={onRefreshComments}
+                onDelete={onDeleteComment}
+              />
+            ) : null}
+          </div>
+        ) : null}
+        </div>
       </section>
     </div>,
     portalRoot

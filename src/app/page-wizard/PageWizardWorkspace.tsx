@@ -183,7 +183,7 @@ export default function PageWizardWorkspace({
   });
 
   return (
-    <div className={styles.workspace}>
+    <div className={styles.workspace} data-operation-ui>
       <div
         hidden
         aria-hidden="true"
@@ -227,7 +227,6 @@ export default function PageWizardWorkspace({
       <div className={styles.mobileProgress}>
         <div>
           <span>{activeSectionIndex + 1} / {sections.length}</span>
-          <strong>{activeSection.title}</strong>
         </div>
         <button
           ref={mobileNavTriggerRef}
@@ -263,6 +262,8 @@ export default function PageWizardWorkspace({
             {activeSection.steps.map((step) => {
               const validation = getStepValidation(step.key);
               const isActiveStep = step.key === activeStepKey;
+              const isOnlyStepWithSectionTitle =
+                activeSection.steps.length === 1 && step.title === activeSection.title;
 
               return (
                 <section
@@ -270,11 +271,17 @@ export default function PageWizardWorkspace({
                   className={styles.stepSection}
                   data-step-key={step.key}
                   aria-labelledby={`wizard-step-${step.key}`}
+                  aria-current={isActiveStep ? 'step' : undefined}
                   tabIndex={-1}
                 >
                   <div className={styles.stepHeadingRow}>
-                    <div>
-                      <h3 id={`wizard-step-${step.key}`}>{step.title}</h3>
+                    <div className={isOnlyStepWithSectionTitle ? styles.stepHeadingCopyCompact : undefined}>
+                      <h3
+                        id={`wizard-step-${step.key}`}
+                        className={isOnlyStepWithSectionTitle ? styles.visuallyHidden : undefined}
+                      >
+                        {step.title}
+                      </h3>
                       <p>{step.description}</p>
                     </div>
                     {step.previewSection ? (
@@ -293,8 +300,6 @@ export default function PageWizardWorkspace({
                     <div className={styles.validationNotice} role="alert">
                       {validation.messages[0] ?? '입력 내용을 확인해 주세요.'}
                     </div>
-                  ) : isActiveStep ? (
-                    <p className={styles.activeStepHint}>현재 입력 중인 항목입니다.</p>
                   ) : null}
 
                   <div className={styles.stepContent}>

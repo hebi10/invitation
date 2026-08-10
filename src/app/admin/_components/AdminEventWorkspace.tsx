@@ -7,6 +7,8 @@ import { getEventTypeDisplayLabel } from '@/lib/eventTypes';
 import type { AppRoutes } from '@/lib/demoExperienceRoutes';
 import type { InvitationThemeKey } from '@/lib/invitationThemes';
 import type { InvitationProductTier } from '@/types/invitationPage';
+import type { Comment } from '@/services/commentService';
+import type { AdminCustomerAccountSummary } from '@/services/adminCustomerService';
 
 import {
   filterAdminEvents,
@@ -42,6 +44,14 @@ interface AdminEventWorkspaceProps {
   updatingTierSlug: string | null;
   deletingSlug: string | null;
   issuingInviteSlug: string | null;
+  comments: Comment[];
+  commentsLoading: boolean;
+  commentsRefreshing: boolean;
+  commentsError: Error | null;
+  customerAccounts: AdminCustomerAccountSummary[];
+  accountsLoading: boolean;
+  accountsError: Error | null;
+  ownershipActionToken: string | null;
   onQueryChange: (updates: Record<string, string | null>) => void;
   onRefresh: () => void;
   onRetry: () => void;
@@ -50,6 +60,11 @@ interface AdminEventWorkspaceProps {
   onEnableVariant: (page: InvitationPageSummary, variantKey: InvitationThemeKey) => void;
   onDisableVariant: (page: InvitationPageSummary, variantKey: InvitationThemeKey) => void;
   onIssueOwnershipInvite: (slug: string) => void;
+  onRefreshComments: () => void;
+  onRefreshAccounts: () => void;
+  onDeleteComment: (comment: Comment) => void;
+  onAssignCustomerOwnership: (uid: string, pageSlug: string) => void;
+  onClearCustomerOwnership: (pageSlug: string) => void;
   onDelete: (page: InvitationPageSummary) => void;
   routes: AppRoutes;
   experience: boolean;
@@ -69,6 +84,14 @@ export default function AdminEventWorkspace({
   updatingTierSlug,
   deletingSlug,
   issuingInviteSlug,
+  comments,
+  commentsLoading,
+  commentsRefreshing,
+  commentsError,
+  customerAccounts,
+  accountsLoading,
+  accountsError,
+  ownershipActionToken,
   onQueryChange,
   onRefresh,
   onRetry,
@@ -77,6 +100,11 @@ export default function AdminEventWorkspace({
   onEnableVariant,
   onDisableVariant,
   onIssueOwnershipInvite,
+  onRefreshComments,
+  onRefreshAccounts,
+  onDeleteComment,
+  onAssignCustomerOwnership,
+  onClearCustomerOwnership,
   onDelete,
   routes,
   experience,
@@ -283,12 +311,25 @@ export default function AdminEventWorkspace({
             updatingVariantToken={updatingVariantToken}
             deleting={deletingSlug === selectedPage.slug}
             issuingInvite={issuingInviteSlug === selectedPage.slug}
+            comments={comments}
+            commentsLoading={commentsLoading}
+            commentsRefreshing={commentsRefreshing}
+            commentsError={commentsError}
+            customerAccounts={customerAccounts}
+            accountsLoading={accountsLoading}
+            accountsError={accountsError}
+            ownershipActionToken={ownershipActionToken}
             onClose={closeDetail}
             onTogglePublished={onTogglePublished}
             onChangeTier={onChangeTier}
             onEnableVariant={onEnableVariant}
             onDisableVariant={onDisableVariant}
-            onOpenRelated={onQueryChange}
+            onRefreshEvent={onRefresh}
+            onRefreshComments={onRefreshComments}
+            onRefreshAccounts={onRefreshAccounts}
+            onDeleteComment={onDeleteComment}
+            onAssignCustomerOwnership={onAssignCustomerOwnership}
+            onClearCustomerOwnership={onClearCustomerOwnership}
             onIssueOwnershipInvite={onIssueOwnershipInvite}
             onDelete={onDelete}
             routes={routes}

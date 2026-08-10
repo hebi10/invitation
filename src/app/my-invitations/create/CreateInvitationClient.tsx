@@ -238,7 +238,6 @@ export default function CreateInvitationClient() {
       <main className={styles.page}>
         <div className={styles.shell}>
           <section className={styles.hero}>
-            <p className={styles.eyebrow}>Create Invitation</p>
             <h1 className={styles.title}>새 이벤트 만들기</h1>
             <p className={styles.description}>
               로그인 후 보유한 제작권으로 새 이벤트 페이지를 만들 수 있습니다.
@@ -264,18 +263,21 @@ export default function CreateInvitationClient() {
           <section className={styles.hero}>
             <div className={styles.heroHeader}>
               <div>
-                <p className={styles.eyebrow}>Email Verification</p>
                 <h1 className={styles.title}>이메일 인증이 필요합니다</h1>
                 <p className={styles.description}>
                   회원가입 계정은 이메일 인증을 완료한 뒤 새 이벤트를 만들 수 있습니다.
                 </p>
               </div>
-              <div className={styles.summaryStack}>
-                <span className={styles.summaryItem}>
-                  {authUser?.email ?? '이메일 없음'}
-                </span>
-                <span className={styles.summaryItem}>인증 대기</span>
-              </div>
+              <dl className={styles.summaryList}>
+                <div className={styles.summaryRow}>
+                  <dt>계정</dt>
+                  <dd>{authUser?.email ?? '이메일 없음'}</dd>
+                </div>
+                <div className={styles.summaryRow}>
+                  <dt>상태</dt>
+                  <dd>인증 대기</dd>
+                </div>
+              </dl>
             </div>
 
             <div className={styles.heroActions}>
@@ -322,16 +324,21 @@ export default function CreateInvitationClient() {
         <section className={styles.hero}>
           <div className={styles.heroHeader}>
             <div>
-              <p className={styles.eyebrow}>Create Invitation</p>
               <h1 className={styles.title}>새 이벤트 만들기</h1>
               <p className={styles.description}>
                 보유한 제작권을 사용해 한글 이름과 영문 주소를 입력하고 초안 페이지를 생성합니다.
               </p>
             </div>
-            <div className={styles.summaryStack}>
-              <span className={styles.summaryItem}>제작권 {pageCreationCreditTotal}개</span>
-              <span className={styles.summaryItem}>모바일 초대장 생성 티켓 {operationTicketBalance}장</span>
-            </div>
+            <dl className={styles.summaryList}>
+              <div className={styles.summaryRow}>
+                <dt>제작권</dt>
+                <dd>{pageCreationCreditTotal}개</dd>
+              </div>
+              <div className={styles.summaryRow}>
+                <dt>생성 티켓</dt>
+                <dd>{operationTicketBalance}장</dd>
+              </div>
+            </dl>
           </div>
         </section>
 

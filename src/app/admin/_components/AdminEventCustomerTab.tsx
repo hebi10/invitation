@@ -1,0 +1,146 @@
+'use client';
+
+import { useEffect, useMemo, useState } from 'react';
+
+import type { AdminCustomerAccountSummary } from '@/services/adminCustomerService';
+import type { InvitationPageSummary } from '@/services/invitationPageService';
+
+import styles from '../page.module.css';
+
+interface AdminEventCustomerTabProps {
+  page: InvitationPageSummary;
+  accounts: AdminCustomerAccountSummary[];
+  loading: boolean;
+  error: Error | null;
+  ownershipActionToken: string | null;
+  issuingInvite: boolean;
+  readOnly?: boolean;
+  onRefresh: () => void;
+  onAssign: (uid: string, pageSlug: string) => void;
+  onClear: (pageSlug: string) => void;
+  onIssueInvite: (pageSlug: string) => void;
+}
+
+function getProviderLabel(providerId: string) {
+  if (providerId === 'google.com') return 'Google';
+  if (providerId === 'password') return '이메일';
+  return providerId;
+}
+
+export default function AdminEventCustomerTab({
+  page,
+  accounts,
+  loading,
+  error,
+  ownershipActionToken,
+  issuingInvite,
+  readOnly = false,
+  onRefresh,
+  onAssign,
+  onClear,
+  onIssueInvite,
+}: AdminEventCustomerTabProps) {
+  const linkedAccount = useMemo(
+    () => accounts.find((account) => account.linkedEvents.some((event) => event.slug === page.slug)),
+    [accounts, page.slug]
+  );
+  const assignableAccounts = useMemo(
+    () => accounts.filter((account) => !account.isAdmin && !account.disabled),
+    [accounts]
+  );
+  const [selectedUid, setSelectedUid] = useState('');
+
+  useEffect(() => {
+    if (selectedUid && assignableAccounts.some((account) => account.uid === selectedUid)) return;
+    setSelectedUid(assignableAccounts[0]?.uid ?? '');
+  }, [assignableAccounts, selectedUid]);
+
+  if (loading && accounts.length === 0) {
+    return <p className={styles.eventManagementState}>고객 계정을 불러오는 중입니다.</p>;
+  }
+
+  if (error && accounts.length === 0) {
+    return (
+      <div className={styles.eventManagementState}>
+        <p>고객 계정을 불러오지 못했습니다.</p>
+        <button type="button" className="admin-button admin-button-secondary" onClick={onRefresh}>
+          다시 시도
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div className={styles.eventManagementStack}>
+      <div className={styles.eventManagementHeading}>
+        <div>
+          <h3>고객 연결</h3>
+          <p>페이지 비밀번호 대신 로그인 계정 소유권으로 관리 권한을 부여합니다.</p>
+        </div>
+        <button type="button" className="admin-button admin-button-ghost" onClick={onRefresh}>
+          새로고침
+        </button>
+      </div>
+
+      {linkedAccount ? (
+        <div className={styles.eventCustomerCard}>
+          <div>
+            <strong>{linkedAccount.displayName || linkedAccount.email || '이름 미등록 고객'}</strong>
+            <p>{linkedAccount.email || '이메일 정보 없음'}</p>
+            <span>
+              {linkedAccount.providerIds.map(getProviderLabel).join(', ') || '로그인 방식 미확인'}
+            </span>
+          </div>
+          <button
+            type="button"
+            className="admin-button admin-button-danger"
+            disabled={readOnly || ownershipActionToken === `clear:${page.slug}`}
+            onClick={() => onClear(page.slug)}
+          >
+            {ownershipActionToken === `clear:${page.slug}` ? '해제 중' : '연결 해제'}
+          </button>
+        </div>
+      ) : (
+        <div className={styles.eventManagementForm}>
+          <label className="admin-field">
+            <span className="admin-field-label">연결할 고객 계정</span>
+            <select
+              className="admin-select"
+              value={selectedUid}
+              disabled={readOnly || assignableAccounts.length === 0}
+              onChange={(event) => setSelectedUid(event.target.value)}
+            >
+              {assignableAccounts.length === 0 ? (
+                <option value="">연결 가능한 고객 계정이 없습니다.</option>
+              ) : null}
+              {assignableAccounts.map((account) => (
+                <option key={account.uid} value={account.uid}>
+                  {account.displayName || account.email || account.uid}
+                  {account.email ? ` · ${account.email}` : ''}
+                </option>
+              ))}
+            </select>
+          </label>
+          <div className={styles.eventManagementActions}>
+            <button
+              type="button"
+              className="admin-button admin-button-primary"
+              disabled={readOnly || !selectedUid || Boolean(ownershipActionToken)}
+              onClick={() => onAssign(selectedUid, page.slug)}
+            >
+              {ownershipActionToken?.startsWith('assign:') ? '연결 중' : '선택 계정에 연결'}
+            </button>
+            <button
+              type="button"
+              className="admin-button admin-button-secondary"
+              disabled={readOnly || issuingInvite}
+              onClick={() => onIssueInvite(page.slug)}
+            >
+              {issuingInvite ? '링크 발급 중' : '고객 연결 링크 발급'}
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}

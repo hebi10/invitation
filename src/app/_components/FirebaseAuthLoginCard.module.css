@@ -1,63 +1,62 @@
 .card {
+  box-sizing: border-box;
   display: grid;
+  width: 100%;
   gap: 18px;
-  width: min(100%, 460px);
-  padding: 28px;
-  border-radius: 28px;
-  border: 1px solid rgba(148, 163, 184, 0.22);
-  background: rgba(255, 255, 255, 0.92);
-  box-shadow: 0 30px 60px rgba(15, 23, 42, 0.12);
+  padding: 24px;
+  border: 1px solid var(--operation-color-border, #d8dad4);
+  border-radius: var(--operation-radius-panel, 8px);
+  background: var(--operation-color-surface, #ffffff);
+  color: var(--operation-color-text, #1c1d1a);
 }
 
 .cardCompact {
-  width: 100%;
   padding: 20px;
-  border-radius: 22px;
 }
 
 .header {
   display: grid;
-  gap: 8px;
+  gap: 6px;
 }
 
 .title {
   margin: 0;
-  font-size: 1.7rem;
-  line-height: 1.2;
-  letter-spacing: -0.04em;
-  color: #0f172a;
+  color: var(--operation-color-text, #1c1d1a);
+  font-size: 1.25rem;
+  font-weight: 750;
+  line-height: 1.35;
+  letter-spacing: -0.025em;
 }
 
 .description {
+  max-width: 65ch;
   margin: 0;
-  color: #475569;
-  font-size: 0.95rem;
-  line-height: 1.7;
+  color: var(--operation-color-text-secondary, #666862);
+  font-size: 0.875rem;
+  line-height: 1.6;
 }
 
 .modeRow {
-  display: inline-grid;
+  display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 8px;
-  padding: 6px;
-  border-radius: 999px;
-  background: #f8fafc;
+  border-bottom: 1px solid var(--operation-color-border, #d8dad4);
 }
 
 .modeButton {
   min-height: 42px;
   border: 0;
-  border-radius: 999px;
+  border-bottom: 2px solid transparent;
   background: transparent;
-  color: #64748b;
-  font-size: 0.9rem;
-  font-weight: 700;
+  color: var(--operation-color-text-muted, #70726b);
+  font: inherit;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
 }
 
 .modeButtonActive {
-  background: #ffffff;
-  color: #0f172a;
-  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.08);
+  border-bottom-color: var(--operation-color-action, #292b27);
+  color: var(--operation-color-text, #1c1d1a);
 }
 
 .form {
@@ -71,99 +70,139 @@
 }
 
 .label {
-  font-size: 0.88rem;
-  font-weight: 700;
-  color: #334155;
+  color: var(--operation-color-text-secondary, #666862);
+  font-size: 0.8125rem;
+  font-weight: 650;
 }
 
 .input {
-  width: 100%;
-  min-height: 50px;
-  padding: 0 16px;
   box-sizing: border-box;
-  border-radius: 16px;
-  border: 1px solid rgba(148, 163, 184, 0.3);
-  background: #ffffff;
-  color: #0f172a;
-  font-size: 0.95rem;
+  width: 100%;
+  min-height: 44px;
+  padding: 0 14px;
+  border: 1px solid var(--operation-color-border, #d8dad4);
+  border-radius: var(--operation-radius-control, 6px);
+  outline: none;
+  background: var(--operation-color-surface, #ffffff);
+  color: var(--operation-color-text, #1c1d1a);
+  font: inherit;
+  font-size: 0.9375rem;
+}
+
+.input::placeholder {
+  color: var(--operation-color-text-muted, #70726b);
+}
+
+.input:focus-visible,
+.modeButton:focus-visible,
+.primaryButton:focus-visible,
+.googleButton:focus-visible,
+.resendButton:focus-visible {
+  outline: 2px solid var(--operation-color-focus, #596257);
+  outline-offset: 2px;
 }
 
 .helper {
   margin: 0;
-  font-size: 0.86rem;
-  color: #64748b;
-  line-height: 1.6;
+  color: var(--operation-color-text-muted, #70726b);
+  font-size: 0.8125rem;
+  line-height: 1.55;
 }
 
-.error {
-  margin: 0;
-  padding: 10px 12px;
-  border-radius: 14px;
-  background: rgba(239, 68, 68, 0.08);
-  color: #b91c1c;
-  font-size: 0.9rem;
-  line-height: 1.6;
-}
-
+.error,
 .notice {
   margin: 0;
   padding: 10px 12px;
-  border-radius: 14px;
-  background: rgba(34, 197, 94, 0.1);
-  color: #166534;
-  font-size: 0.9rem;
-  line-height: 1.6;
+  border: 1px solid;
+  border-radius: var(--operation-radius-control, 6px);
+  font-size: 0.8125rem;
+  line-height: 1.55;
+}
+
+.error {
+  border-color: color-mix(in srgb, var(--operation-color-danger, #a5423a) 30%, white);
+  background: var(--operation-color-danger-soft, #fbefee);
+  color: var(--operation-color-danger, #a5423a);
+}
+
+.notice {
+  border-color: color-mix(in srgb, var(--operation-color-success, #3f7054) 24%, white);
+  background: var(--operation-color-success-soft, #edf5f0);
+  color: var(--operation-color-success, #3f7054);
 }
 
 .primaryButton,
 .googleButton,
 .resendButton {
-  min-height: 48px;
-  border: 0;
-  border-radius: 999px;
-  font-size: 0.95rem;
-  font-weight: 800;
+  min-height: 44px;
+  padding: 0 14px;
+  border: 1px solid transparent;
+  border-radius: var(--operation-radius-control, 6px);
+  font: inherit;
+  font-size: 0.875rem;
+  font-weight: 650;
+  cursor: pointer;
 }
 
 .primaryButton {
-  background: linear-gradient(135deg, #1e293b, #334155);
-  color: #ffffff;
+  border-color: var(--operation-color-action, #292b27);
+  background: var(--operation-color-action, #292b27);
+  color: var(--operation-color-surface, #ffffff);
 }
 
-.googleButton {
-  background: #ffffff;
-  color: #0f172a;
-  border: 1px solid rgba(148, 163, 184, 0.3);
+.primaryButton:hover:not(:disabled) {
+  border-color: var(--operation-color-action-strong, #111210);
+  background: var(--operation-color-action-strong, #111210);
 }
 
+.googleButton,
 .resendButton {
-  background: #f8fafc;
-  color: #0f172a;
-  border: 1px solid rgba(148, 163, 184, 0.36);
+  border-color: var(--operation-color-border, #d8dad4);
+  background: var(--operation-color-surface, #ffffff);
+  color: var(--operation-color-text, #1c1d1a);
+}
+
+.googleButton:hover:not(:disabled),
+.resendButton:hover:not(:disabled) {
+  border-color: var(--operation-color-border-strong, #c4c7bf);
+  background: var(--operation-color-surface-muted, #f0f0ec);
+}
+
+.primaryButton:disabled,
+.googleButton:disabled,
+.resendButton:disabled {
+  cursor: not-allowed;
+  opacity: 0.56;
 }
 
 .noticeActions {
   display: grid;
-  gap: 10px;
+  gap: 8px;
 }
 
 .divider {
   position: relative;
+  color: var(--operation-color-text-muted, #70726b);
+  font-size: 0.75rem;
   text-align: center;
-  font-size: 0.82rem;
-  color: #94a3b8;
 }
 
 .divider::before {
   content: '';
   position: absolute;
   inset: 50% 0 auto;
-  border-top: 1px solid rgba(148, 163, 184, 0.25);
+  border-top: 1px solid var(--operation-color-border, #d8dad4);
 }
 
 .divider span {
   position: relative;
   display: inline-block;
   padding: 0 10px;
-  background: rgba(255, 255, 255, 0.92);
+  background: var(--operation-color-surface, #ffffff);
+}
+
+@media (max-width: 768px) {
+  .card {
+    padding: 18px;
+  }
 }

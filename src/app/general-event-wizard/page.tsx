@@ -9,8 +9,7 @@ function GeneralEventWizardFallback() {
     <div
       style={{
         minHeight: '100vh',
-        background:
-          'radial-gradient(circle at 50% 0%, rgba(201, 169, 110, 0.16), transparent 34%), #0b0b16',
+        background: '#f6f6f3',
       }}
     />
   );

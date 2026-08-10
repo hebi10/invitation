@@ -26,11 +26,13 @@ import styles from './ImageManager.module.css';
 interface ImageManagerProps {
   eventTypeFilter?: EventTypeKey | null;
   initialPageSlug?: string;
+  lockedPageSlug?: string;
 }
 
 export default function ImageManager({
   eventTypeFilter = 'wedding',
   initialPageSlug,
+  lockedPageSlug,
 }: ImageManagerProps) {
   const { isAdminLoggedIn } = useAdmin();
   const { confirm, showToast } = useAdminOverlay();
@@ -175,12 +177,18 @@ export default function ImageManager({
   };
 
   const visiblePages = useMemo(
-    () =>
-      eventTypeFilter
-        ? pages.filter((page) => page.eventType === eventTypeFilter)
-        : pages,
-    [eventTypeFilter, pages]
+    () => pages.filter((page) =>
+      (!eventTypeFilter || page.eventType === eventTypeFilter) &&
+      (!lockedPageSlug || page.slug === lockedPageSlug)
+    ),
+    [eventTypeFilter, lockedPageSlug, pages]
   );
+
+  useEffect(() => {
+    if (!lockedPageSlug || !pages.some((page) => page.slug === lockedPageSlug)) return;
+    setSelectedPage(lockedPageSlug);
+    setExpandedPages({ [lockedPageSlug]: true });
+  }, [lockedPageSlug, pages]);
 
   useEffect(() => {
     if (
@@ -241,7 +249,7 @@ export default function ImageManager({
 
       <div className={styles.uploadSection}>
         <div className={styles.uploadRow}>
-          <label className="admin-field">
+          {!lockedPageSlug ? <label className="admin-field">
             <span className="admin-field-label">대상 페이지</span>
             <select
               className="admin-select"
@@ -255,7 +263,7 @@ export default function ImageManager({
                 </option>
               ))}
             </select>
-          </label>
+          </label> : null}
 
           <div className={styles.uploadActions}>
             <input
@@ -352,7 +360,7 @@ export default function ImageManager({
         ) : null}
       </div>
 
-      <FilterToolbar
+      {!lockedPageSlug ? <FilterToolbar
         fields={
           <label className="admin-field">
             <span className="admin-field-label">페이지 검색</span>
@@ -397,7 +405,7 @@ export default function ImageManager({
               ]
             : []
         }
-      />
+      /> : null}
 
       {error ? <div className={styles.errorMessage}>{error}</div> : null}
 

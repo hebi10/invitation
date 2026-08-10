@@ -1742,7 +1742,7 @@ export default function PageWizardClient({
 
   if (isLoading || isAdminLoading || isCheckingOwnedEventsBeforeClaim) {
     return (
-      <main className={pageClassName}>
+      <main className={pageClassName} data-operation-ui>
         <div className={`${styles.shell} ${styles.gateShell}`}>
           <section className={`${styles.centerCard} ${styles.gateCard} ${styles.loadingGateCard}`}>
             <div className={styles.gateLoader} aria-hidden />
@@ -1757,7 +1757,7 @@ export default function PageWizardClient({
 
   if (!isAdminLoggedIn && (!initialSlug || !isLoggedIn)) {
     return (
-      <main className={pageClassName}>
+      <main className={pageClassName} data-operation-ui>
         <div className={`${styles.shell} ${styles.gateShell}`}>
           <section className={`${styles.centerCard} ${styles.gateCard}`}>
             <FirebaseAuthLoginCard
@@ -1787,7 +1787,7 @@ export default function PageWizardClient({
 
   if (initialSlug && requiresOwnershipClaim) {
     return (
-      <main className={pageClassName}>
+      <main className={pageClassName} data-operation-ui>
         <div className={`${styles.shell} ${styles.gateShell}`}>
           {renderNotice()}
           <section className={`${styles.centerCard} ${styles.gateCard}`}>
@@ -1820,7 +1820,7 @@ export default function PageWizardClient({
 
   if (initialSlug && accessErrorMessage) {
     return (
-      <main className={pageClassName}>
+      <main className={pageClassName} data-operation-ui>
         <div className={`${styles.shell} ${styles.gateShell}`}>
           <section className={`${styles.centerCard} ${styles.gateCard}`}>
             <p className={styles.eyebrow}>접근 제한</p>
@@ -1860,7 +1860,7 @@ export default function PageWizardClient({
     !(canCreateNew || canOpenExistingWizard)
   ) {
     return (
-      <main className={pageClassName}>
+      <main className={pageClassName} data-operation-ui>
         <div className={`${styles.shell} ${styles.gateShell}`}>
           {renderNotice()}
           <section className={`${styles.centerCard} ${styles.gateCard}`}>

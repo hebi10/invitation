@@ -229,6 +229,7 @@ export default function AdminPageClient({
   } = useAdminData({
     isAdminLoggedIn,
     activeTab: renderedActiveTab,
+    selectedEventSlug,
     showToast,
     confirm,
     gateway,
@@ -512,6 +513,7 @@ export default function AdminPageClient({
         onNavigate={(view) => updateQuery(PRIMARY_VIEW_QUERY[view])}
         onLogout={() => void handleLogout()}
         brandHref={routes.admin()}
+        customerPageHref={routes.customerDashboard()}
       >
         <section className={styles.panel}>
           {renderedActiveTab === 'pages' ? (
@@ -529,6 +531,14 @@ export default function AdminPageClient({
               updatingTierSlug={updatingTierPageSlug}
               deletingSlug={deletingPageSlug}
               issuingInviteSlug={issuingOwnershipInviteSlug}
+              comments={comments}
+              commentsLoading={commentsLoading}
+              commentsRefreshing={commentsRefreshing}
+              commentsError={commentsError}
+              customerAccounts={customerAccounts}
+              accountsLoading={accountsLoading}
+              accountsError={accountsError}
+              ownershipActionToken={ownershipActionToken}
               onQueryChange={updateQuery}
               onRefresh={() => void refreshPages()}
               onRetry={() => void retryPages()}
@@ -537,6 +547,15 @@ export default function AdminPageClient({
               onEnableVariant={(page, theme) => void handleEnableVariant(page, theme)}
               onDisableVariant={(page, theme) => void handleDisableVariant(page, theme)}
               onIssueOwnershipInvite={(slug) => void requestOwnershipInviteForDetail(slug)}
+              onRefreshComments={() => void fetchComments()}
+              onRefreshAccounts={() => void fetchCustomerAccounts()}
+              onDeleteComment={(comment) => void handleDeleteComment(comment)}
+              onAssignCustomerOwnership={(uid, slug) =>
+                void handleAssignCustomerOwnership(uid, slug)
+              }
+              onClearCustomerOwnership={(slug) =>
+                void handleClearCustomerOwnership(slug)
+              }
               onDelete={(page) => void handleDeletePage(page)}
               routes={routes}
               experience={experience}

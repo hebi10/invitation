@@ -1,0 +1,88 @@
+'use client';
+
+import type { Comment } from '@/services/commentService';
+
+import { filterAdminEventComments } from './adminEventWorkspaceModel';
+import styles from '../page.module.css';
+
+interface AdminEventCommentsTabProps {
+  pageSlug: string;
+  comments: Comment[];
+  loading: boolean;
+  refreshing: boolean;
+  error: Error | null;
+  onRefresh: () => void;
+  onDelete: (comment: Comment) => void;
+}
+
+function formatDate(date: Date) {
+  return new Intl.DateTimeFormat('ko-KR', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  }).format(date);
+}
+
+export default function AdminEventCommentsTab({
+  pageSlug,
+  comments,
+  loading,
+  refreshing,
+  error,
+  onRefresh,
+  onDelete,
+}: AdminEventCommentsTabProps) {
+  const eventComments = filterAdminEventComments(comments, pageSlug);
+
+  return (
+    <div className={styles.eventManagementStack}>
+      <div className={styles.eventManagementHeading}>
+        <div>
+          <h3>방명록</h3>
+          <p>선택 이벤트에 등록된 메시지 {eventComments.length}개</p>
+        </div>
+        <button
+          type="button"
+          className="admin-button admin-button-secondary"
+          disabled={refreshing}
+          onClick={onRefresh}
+        >
+          {refreshing ? '새로고침 중' : '새로고침'}
+        </button>
+      </div>
+
+      {loading && comments.length === 0 ? (
+        <p className={styles.eventManagementState}>방명록을 불러오는 중입니다.</p>
+      ) : null}
+      {error && comments.length === 0 ? (
+        <p className={styles.eventManagementError} role="alert">방명록을 불러오지 못했습니다.</p>
+      ) : null}
+      {!loading && !error && eventComments.length === 0 ? (
+        <p className={styles.eventManagementState}>등록된 방명록 메시지가 없습니다.</p>
+      ) : null}
+
+      {eventComments.length > 0 ? (
+        <ul className={styles.eventCommentList}>
+          {eventComments.map((comment) => (
+            <li key={`${comment.collectionName ?? 'comments'}:${comment.id}`}>
+              <div>
+                <strong>{comment.author}</strong>
+                <span>{formatDate(comment.createdAt)}</span>
+                <p>{comment.message}</p>
+              </div>
+              <button
+                type="button"
+                className="admin-button admin-button-danger"
+                onClick={() => onDelete(comment)}
+              >
+                삭제
+              </button>
+            </li>
+          ))}
+        </ul>
+      ) : null}
+    </div>
+  );
+}

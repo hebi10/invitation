@@ -13,7 +13,7 @@ import {
   type InvitationPageSummary,
 } from '@/services/invitationPageService';
 import {
-  getComments,
+  getAllComments,
   type Comment,
 } from '@/services/commentService';
 import {
@@ -84,9 +84,10 @@ function prepareDraftWithSelectedComments(draft: MemoryPage, sourceComments: Com
 
 interface MemoryPageManagerProps {
   initialPageSlug?: string;
+  lockedPageSlug?: string;
 }
 
-export default function MemoryPageManager({ initialPageSlug }: MemoryPageManagerProps) {
+export default function MemoryPageManager({ initialPageSlug, lockedPageSlug }: MemoryPageManagerProps) {
   const { isAdminLoggedIn } = useAdmin();
   const { confirm, showToast } = useAdminOverlay();
 
@@ -160,6 +161,11 @@ export default function MemoryPageManager({ initialPageSlug }: MemoryPageManager
   }, [initialPageSlug, pages]);
 
   useEffect(() => {
+    if (!lockedPageSlug || !pages.some((page) => page.slug === lockedPageSlug)) return;
+    setSelectedPageSlug(lockedPageSlug);
+  }, [lockedPageSlug, pages]);
+
+  useEffect(() => {
     if (!selectedPageSlug || !isAdminLoggedIn) {
       setDraft(null);
       setSourceComments([]);
@@ -180,10 +186,13 @@ export default function MemoryPageManager({ initialPageSlug }: MemoryPageManager
       setCommentSearch('');
 
       try {
-        const [existingPage, comments] = await Promise.all([
+        const [existingPage, allComments] = await Promise.all([
           getMemoryPageByPageSlug(selectedPageSlug),
-          getComments(selectedPageSlug),
+          getAllComments(),
         ]);
+        const comments = allComments.filter(
+          (comment) => comment.pageSlug === selectedPageSlug
+        );
 
         if (cancelled) {
           return;
@@ -522,7 +531,7 @@ export default function MemoryPageManager({ initialPageSlug }: MemoryPageManager
       <FilterToolbar
         fields={
           <>
-            <label className="admin-field">
+            {!lockedPageSlug ? <label className="admin-field">
               <span className="admin-field-label">청첩장 페이지</span>
               <select
                 className="admin-select"
@@ -536,7 +545,7 @@ export default function MemoryPageManager({ initialPageSlug }: MemoryPageManager
                   </option>
                 ))}
               </select>
-            </label>
+            </label> : null}
 
             {draft ? (
               <label className="admin-field">

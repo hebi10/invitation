@@ -233,16 +233,23 @@ function OwnedEventCard({
     <>
       <article className={styles.card}>
         <div className={styles.cardHeader}>
-          <div className={styles.cardBadges}>
-            <span className={styles.typeBadge}>
-              {getEventTypeDisplayLabel(event.eventType)}
-            </span>
-          </div>
+          <p className={styles.eventTypeLabel}>{getEventTypeDisplayLabel(event.eventType)}</p>
           <h2 className={styles.cardTitle}>{eventTitle}</h2>
           {experience ? <p className={styles.cardMeta}>오늘의 공용 체험 데이터</p> : null}
-          <p className={styles.cardMeta}>주소 /{event.slug}</p>
-          <p className={styles.cardMeta}>기본 테마 {event.defaultTheme}</p>
-          <p className={styles.cardMeta}>마지막 수정 {formatDate(event.updatedAt)}</p>
+          <dl className={styles.cardMetaList}>
+            <div className={styles.cardMetaRow}>
+              <dt>주소</dt>
+              <dd>/{event.slug}</dd>
+            </div>
+            <div className={styles.cardMetaRow}>
+              <dt>기본 테마</dt>
+              <dd>{event.defaultTheme}</dd>
+            </div>
+            <div className={styles.cardMetaRow}>
+              <dt>마지막 수정</dt>
+              <dd>{formatDate(event.updatedAt)}</dd>
+            </div>
+          </dl>
         </div>
 
         <div className={styles.actions}>
@@ -303,7 +310,6 @@ function OwnedEventCard({
           >
             <div className={styles.modalHeader}>
               <div className={styles.modalTitleStack}>
-                <p className={styles.eyebrow}>Preview</p>
                 <h3
                   className={styles.modalTitle}
                   id={`preview-title-${event.eventId}`}
@@ -368,7 +374,6 @@ function OwnedEventCard({
           >
             <div className={styles.modalHeader}>
               <div className={styles.modalTitleStack}>
-                <p className={styles.eyebrow}>Guestbook</p>
                 <h3
                   className={styles.modalTitle}
                   id={`guestbook-title-${event.eventId}`}
@@ -658,7 +663,6 @@ export default function MyInvitationsClient({
       <main className={styles.page}>
         <div className={styles.shell}>
           <section className={styles.hero}>
-            <p className={styles.eyebrow}>My Invitations</p>
             <h1 className={styles.title}>내 이벤트</h1>
             <p className={styles.description}>
               로그인한 계정에 연결된 이벤트 페이지를 확인하고 수정할 수 있습니다.
@@ -685,19 +689,22 @@ export default function MyInvitationsClient({
           <section className={styles.hero}>
             <div className={styles.heroHeader}>
               <div>
-                <p className={styles.eyebrow}>Email Verification</p>
                 <h1 className={styles.title}>이메일 인증이 필요합니다</h1>
                 <p className={styles.description}>
                   회원가입 계정은 이메일 인증을 완료한 뒤 내 이벤트와 청첩장 생성 기능을
                   이용할 수 있습니다.
                 </p>
               </div>
-              <div className={styles.summaryStack}>
-                <span className={styles.summaryItem}>
-                  {authUser?.email ?? '이메일 없음'}
-                </span>
-                <span className={styles.summaryItem}>인증 대기</span>
-              </div>
+              <dl className={styles.summaryList}>
+                <div className={styles.summaryRow}>
+                  <dt>계정</dt>
+                  <dd>{authUser?.email ?? '이메일 없음'}</dd>
+                </div>
+                <div className={styles.summaryRow}>
+                  <dt>상태</dt>
+                  <dd>인증 대기</dd>
+                </div>
+              </dl>
             </div>
 
             <div className={styles.heroActions}>
@@ -745,28 +752,38 @@ export default function MyInvitationsClient({
         <section className={styles.hero}>
           <div className={styles.heroHeader}>
             <div>
-              <p className={styles.eyebrow}>My Invitations</p>
               <h1 className={styles.title}>{experience ? '내 청첩장' : '내 이벤트'}</h1>
               <p className={styles.description}>
                 연결된 이벤트 페이지를 확인하고 바로 수정할 수 있습니다.
               </p>
             </div>
-            <div className={styles.summaryStack}>
-              <span className={styles.summaryItem}>{authUser?.email ?? '이메일 없음'}</span>
-              <span className={styles.summaryItem}>연결된 이벤트 {events.length}개</span>
+            <dl className={styles.summaryList}>
+              <div className={styles.summaryRow}>
+                <dt>계정</dt>
+                <dd>{authUser?.email ?? '이메일 없음'}</dd>
+              </div>
+              <div className={styles.summaryRow}>
+                <dt>연결된 이벤트</dt>
+                <dd>{events.length}개</dd>
+              </div>
               {!experience ? (
                 <>
-                  <span className={styles.summaryItem}>
-                    보유 제작권 {pageCreationCreditTotal}개
-                  </span>
-                  <span className={styles.summaryItem}>
-                    모바일 초대장 생성 티켓 {operationTicketBalance}장
-                  </span>
+                  <div className={styles.summaryRow}>
+                    <dt>보유 제작권</dt>
+                    <dd>{pageCreationCreditTotal}개</dd>
+                  </div>
+                  <div className={styles.summaryRow}>
+                    <dt>생성 티켓</dt>
+                    <dd>{operationTicketBalance}장</dd>
+                  </div>
                 </>
               ) : (
-                <span className={styles.summaryItem}>금일 공용 체험 청첩장</span>
+                <div className={styles.summaryRow}>
+                  <dt>운영 방식</dt>
+                  <dd>금일 공용 체험 청첩장</dd>
+                </div>
               )}
-            </div>
+            </dl>
           </div>
 
           <div className={styles.heroActions}>

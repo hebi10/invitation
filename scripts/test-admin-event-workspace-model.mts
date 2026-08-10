@@ -1,11 +1,15 @@
 import assert from 'node:assert/strict';
+import { existsSync, readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 
 import {
   DEFAULT_ADMIN_EVENT_FILTERS,
   ADMIN_EVENT_PAGE_SIZE_OPTIONS,
   filterAdminEvents,
+  filterAdminEventComments,
   getAdminEventCapabilities,
   getAdminEventCounts,
+  getAdminEventDetailTabs,
   getAdminEventPreviewLinks,
   getAdminEventRelatedQuery,
   getAdminEventPage,
@@ -13,6 +17,7 @@ import {
   isAdminEventDetailCloseKey,
   shouldClearMissingAdminEvent,
   shouldIncludeAdminComment,
+  validateAdminEventPeriodInput,
   parseAdminEventOwnership,
   parseAdminEventPageSize,
   parseAdminEventPublished,
@@ -27,6 +32,11 @@ import {
 } from '../src/app/admin/_components/adminPageUtils.ts';
 import { getPageWizardCreateHrefForEventType } from '../src/app/page-wizard/pageWizardEventConfig.ts';
 import type { InvitationPageSummary } from '../src/services/invitationPageService.ts';
+
+function readSource(path: string) {
+  const absolutePath = resolve(process.cwd(), path);
+  return existsSync(absolutePath) ? readFileSync(absolutePath, 'utf8') : '';
+}
 
 function makePage(
   slug: string,
@@ -131,6 +141,48 @@ assert.deepEqual(
 );
 assert.equal(getAdminEventCapabilities(pages[0]).includes('themes'), true);
 assert.equal(getAdminEventCapabilities(pages[0]).includes('memory'), true);
+assert.deepEqual(
+  getAdminEventDetailTabs(pages[0]).map((tab) => tab.key),
+  ['overview', 'period', 'ownership', 'memory', 'images', 'comments']
+);
+assert.deepEqual(
+  getAdminEventDetailTabs(
+    makePage('simple-event', 'general-event', {
+      features: {
+        ...pages[0].features,
+        maxGalleryImages: 0,
+        showGuestbook: false,
+      },
+    })
+  ).map((tab) => tab.key),
+  ['overview', 'period', 'ownership']
+);
+assert.equal(
+  validateAdminEventPeriodInput({
+    enabled: true,
+    startDate: '2026-08-10',
+    endDate: '2026-08-09',
+  }),
+  '종료일은 시작일보다 뒤여야 합니다.'
+);
+assert.equal(
+  validateAdminEventPeriodInput({
+    enabled: true,
+    startDate: '2026-08-10',
+    endDate: '2026-08-11',
+  }),
+  null
+);
+assert.deepEqual(
+  filterAdminEventComments(
+    [
+      { id: '1', pageSlug: 'wedding-one' },
+      { id: '2', pageSlug: 'birthday-one' },
+    ],
+    'wedding-one'
+  ).map((comment) => comment.id),
+  ['1']
+);
 assert.equal(getAdminEventCapabilities(pages[1]).includes('themes'), false);
 assert.equal(
   getAdminEventCapabilities(
@@ -288,6 +340,28 @@ assert.deepEqual(getAdminEventCountQuery('unassigned'), {
 });
 assert.equal(isAdminEventDetailCloseKey('Escape'), true);
 assert.equal(isAdminEventDetailCloseKey('Tab'), false);
+
+const detailPanelSource = readSource('src/app/admin/_components/AdminEventDetailPanel.tsx');
+const adminShellSource = readSource('src/app/admin/_components/AdminShell.tsx');
+const periodTabSource = readSource('src/app/admin/_components/AdminEventPeriodTab.tsx');
+const customerTabSource = readSource('src/app/admin/_components/AdminEventCustomerTab.tsx');
+const commentsTabSource = readSource('src/app/admin/_components/AdminEventCommentsTab.tsx');
+const imageManagerSource = readSource('src/components/admin/ImageManager/ImageManager.tsx');
+const memoryManagerSource = readSource('src/components/admin/MemoryPageManager/MemoryPageManager.tsx');
+
+assert.match(detailPanelSource, /role="tablist"/);
+assert.match(adminShellSource, /customerPageHref/);
+assert.match(adminShellSource, />\s*고객 페이지\s*</);
+assert.match(adminShellSource, /target="_blank"/);
+assert.match(detailPanelSource, /AdminEventPeriodTab/);
+assert.match(detailPanelSource, /AdminEventCustomerTab/);
+assert.match(detailPanelSource, /AdminEventCommentsTab/);
+assert.match(periodTabSource, /validateAdminEventPeriodInput/);
+assert.match(customerTabSource, /onAssign/);
+assert.match(commentsTabSource, /filterAdminEventComments/);
+assert.match(imageManagerSource, /lockedPageSlug/);
+assert.match(memoryManagerSource, /lockedPageSlug/);
+assert.match(memoryManagerSource, /getAllComments/);
 
 assert.deepEqual(
   pages.map((page) => getPageWizardCreateHrefForEventType(page.eventType)),

@@ -10,7 +10,6 @@ import { useAdmin } from '@/contexts';
 import styles from './page.module.css';
 
 interface CustomerAuthPageClientProps {
-  eyebrow: string;
   title: string;
   description: string;
   authTitle: string;
@@ -20,7 +19,6 @@ interface CustomerAuthPageClientProps {
 }
 
 export default function CustomerAuthPageClient({
-  eyebrow,
   title,
   description,
   authTitle,
@@ -45,8 +43,8 @@ export default function CustomerAuthPageClient({
 
   if (isAdminLoading) {
     return (
-      <main className={styles.page}>
-        <div className={styles.shell}>
+      <main className={styles.page} data-operation-ui>
+        <div className={`${styles.shell} ${styles.authShell}`}>
           <section className={styles.loading}>로그인 상태를 확인하는 중입니다.</section>
         </div>
       </main>
@@ -54,10 +52,9 @@ export default function CustomerAuthPageClient({
   }
 
   return (
-    <main className={styles.page}>
-      <div className={styles.shell}>
+    <main className={styles.page} data-operation-ui>
+      <div className={`${styles.shell} ${styles.authShell}`}>
         <section className={styles.hero}>
-          <p className={styles.eyebrow}>{eyebrow}</p>
           <h1 className={styles.title}>{title}</h1>
           <p className={styles.description}>{description}</p>
           <div className={styles.heroActions}>

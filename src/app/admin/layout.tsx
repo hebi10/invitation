@@ -25,7 +25,7 @@ export default function Layout({
 }) {
   return (
     <AuthenticatedAppProviders>
-      <div data-admin-ui>
+      <div data-admin-ui data-operation-ui>
         <AdminOverlayProvider>{children}</AdminOverlayProvider>
       </div>
     </AuthenticatedAppProviders>

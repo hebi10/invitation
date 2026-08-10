@@ -9,6 +9,7 @@ interface AdminShellProps {
   onNavigate: (view: AdminPrimaryView) => void;
   onLogout: () => void;
   brandHref: string;
+  customerPageHref: string;
   children: ReactNode;
 }
 
@@ -24,6 +25,7 @@ export default function AdminShell({
   onNavigate,
   onLogout,
   brandHref,
+  customerPageHref,
   children,
 }: AdminShellProps) {
   return (
@@ -47,6 +49,14 @@ export default function AdminShell({
         </nav>
         <div className={styles.adminAccountMenu}>
           <span className={styles.adminAccountEmail}>{adminEmail}</span>
+          <a
+            className={styles.adminCustomerPageLink}
+            href={customerPageHref}
+            target="_blank"
+            rel="noreferrer"
+          >
+            고객 페이지
+          </a>
           <button
             type="button"
             className={styles.adminLogoutButton}

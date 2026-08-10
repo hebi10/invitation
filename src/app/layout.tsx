@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { PUBLIC_SITE_URL } from '@/lib/invitationMetadata';
 import './globals.css';
+import './operation-theme.css';
 
 export const metadata: Metadata = {
   metadataBase: PUBLIC_SITE_URL,
