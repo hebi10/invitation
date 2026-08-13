@@ -354,9 +354,8 @@ await markEventDeletionStepRunning(firstJob.id, 'delete-event-root');
 await runEventDeletionRepositoryStep(firstJob, 'delete-event-root');
 await runEventDeletionRepositoryStep(firstJob, 'delete-event-root');
 await completeEventDeletionStep(firstJob.id, 'delete-event-root');
-await completeEventDeletionJob(firstJob.id);
-
 await Promise.all([
+  completeEventDeletionJob(firstJob.id),
   markEventDeletionStepRunning(firstJob.id, 'delete-event-root'),
   failEventDeletionStep(
     firstJob.id,
@@ -366,6 +365,12 @@ await Promise.all([
   ),
   completeEventDeletionStep(firstJob.id, 'delete-event-root'),
 ]);
+await failEventDeletionStep(
+  firstJob.id,
+  'delete-event-root',
+  'late-after-completion',
+  true
+);
 
 const completedJobSnapshot = await jobCollection.doc(firstJob.id).get();
 assert.equal(completedJobSnapshot.get('status'), 'completed');

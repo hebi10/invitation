@@ -167,27 +167,32 @@ async function anonymizeEventLedgerRefs(
 
   const db = requireFirestore();
   const deletedEventAt = new Date();
+  let anonymizedCount = 0;
 
   for (let index = 0; index < refs.length; index += 400) {
-    const batch = db.batch();
     const chunk = refs.slice(index, index + 400);
+    anonymizedCount += await db.runTransaction(async (transaction) => {
+      const snapshots = await transaction.getAll(...chunk);
+      let updatedCount = 0;
 
-    chunk.forEach((ref) => {
-      batch.set(
-        ref,
-        {
+      snapshots.forEach((snapshot) => {
+        if (!snapshot.exists) {
+          return;
+        }
+
+        transaction.update(snapshot.ref, {
           eventId: null,
           pageSlug: null,
-          deletedEventAt,
-        },
-        { merge: true }
-      );
-    });
+          deletedEventAt: snapshot.get('deletedEventAt') ?? deletedEventAt,
+        });
+        updatedCount += 1;
+      });
 
-    await batch.commit();
+      return updatedCount;
+    });
   }
 
-  return refs.length;
+  return anonymizedCount;
 }
 
 function requireFirestore() {
