@@ -343,6 +343,177 @@ export async function beginEventDeletion(
   });
 }
 
+async function findLatestEventDeletionJobByCanonicalSlug(
+  canonicalSlug: string
+) {
+  const snapshot = await requireFirestore()
+    .collection(EVENT_DELETION_JOBS_COLLECTION)
+    .where('slug', '==', canonicalSlug)
+    .get();
+  const jobs = snapshot.docs
+    .map((docSnapshot) =>
+      readEventDeletionJob(docSnapshot.id, docSnapshot.data())
+    )
+    .filter((job): job is EventDeletionJob => Boolean(job));
+
+  jobs.sort((left, right) => right.updatedAt.localeCompare(left.updatedAt));
+  return jobs[0] ?? null;
+}
+
+async function resolveCanonicalDeletionJobSlug(pageSlug: string) {
+  const db = requireFirestore();
+  const visitedSlugs = new Set<string>();
+  let canonicalSlug = pageSlug;
+
+  while (!visitedSlugs.has(canonicalSlug)) {
+    visitedSlugs.add(canonicalSlug);
+    const slugSnapshot = await db
+      .collection(EVENT_SLUG_INDEX_COLLECTION)
+      .doc(canonicalSlug)
+      .get();
+    if (!slugSnapshot.exists) {
+      return null;
+    }
+
+    const status = slugSnapshot.get('status');
+    if (status === 'redirect') {
+      const targetSlug = readNonEmptyString(slugSnapshot.get('targetSlug'));
+      if (!targetSlug) {
+        return null;
+      }
+
+      canonicalSlug = targetSlug;
+      continue;
+    }
+
+    return status === 'active' ? canonicalSlug : null;
+  }
+
+  return null;
+}
+
+export async function getEventDeletionJobBySlug(
+  pageSlug: string
+): Promise<EventDeletionJob | null> {
+  const normalizedPageSlug = pageSlug.trim();
+  if (!normalizedPageSlug) {
+    return null;
+  }
+
+  const directJob = await findLatestEventDeletionJobByCanonicalSlug(
+    normalizedPageSlug
+  );
+  if (directJob) {
+    return directJob;
+  }
+
+  const canonicalSlug = await resolveCanonicalDeletionJobSlug(normalizedPageSlug);
+  if (!canonicalSlug || canonicalSlug === normalizedPageSlug) {
+    return null;
+  }
+
+  return findLatestEventDeletionJobByCanonicalSlug(canonicalSlug);
+}
+
+export async function claimFailedEventDeletionJob(
+  pageSlug: string,
+  requestedBy: string
+): Promise<EventDeletionJob | null> {
+  const normalizedPageSlug = pageSlug.trim();
+  const normalizedRequestedBy = requestedBy.trim();
+  if (!normalizedPageSlug || !normalizedRequestedBy) {
+    return null;
+  }
+
+  const candidateJob = await getEventDeletionJobBySlug(normalizedPageSlug);
+  if (!candidateJob) {
+    return null;
+  }
+
+  const db = requireFirestore();
+  const jobRef = db
+    .collection(EVENT_DELETION_JOBS_COLLECTION)
+    .doc(candidateJob.id);
+  return db.runTransaction(async (transaction) => {
+    const jobSnapshot = await transaction.get(jobRef);
+    const job = readEventDeletionJob(jobSnapshot.id, jobSnapshot.data());
+    if (
+      !job ||
+      job.status !== 'failed' ||
+      job.slug !== candidateJob.slug ||
+      job.eventId !== candidateJob.eventId
+    ) {
+      return null;
+    }
+
+    const eventRef = db.collection(EVENTS_COLLECTION).doc(job.eventId);
+    const eventSnapshot = await transaction.get(eventRef);
+    if (eventSnapshot.exists) {
+      if (readNonEmptyString(eventSnapshot.get('slug')) !== job.slug) {
+        return null;
+      }
+
+      const metadataJobId = readNonEmptyString(
+        eventSnapshot.get('deletion.jobId')
+      );
+      if (metadataJobId && metadataJobId !== job.id) {
+        const metadataJobSnapshot = await transaction.get(
+          db.collection(EVENT_DELETION_JOBS_COLLECTION).doc(metadataJobId)
+        );
+        const metadataJob = readEventDeletionJob(
+          metadataJobSnapshot.id,
+          metadataJobSnapshot.data()
+        );
+        if (isActiveEventDeletionJob(metadataJob)) {
+          return null;
+        }
+      }
+    }
+
+    const updatedAt = new Date().toISOString();
+    const claimedJob: EventDeletionJob = {
+      id: job.id,
+      eventId: job.eventId,
+      slug: job.slug,
+      status: 'running',
+      currentStep: job.currentStep,
+      completedSteps: job.completedSteps,
+      requestedBy: normalizedRequestedBy,
+      requestedAt: job.requestedAt,
+      updatedAt,
+    };
+
+    transaction.set(
+      jobRef,
+      {
+        status: claimedJob.status,
+        requestedBy: claimedJob.requestedBy,
+        updatedAt,
+        errorCode: null,
+        retryable: null,
+      },
+      { merge: true }
+    );
+    if (eventSnapshot.exists) {
+      transaction.set(
+        eventRef,
+        {
+          deletion: {
+            jobId: job.id,
+            status: claimedJob.status,
+            currentStep: job.currentStep,
+            requestedAt: job.requestedAt,
+            retryable: null,
+          },
+        },
+        { merge: true }
+      );
+    }
+
+    return claimedJob;
+  });
+}
+
 async function updateEventDeletionCheckpoint(
   jobId: string,
   update: {

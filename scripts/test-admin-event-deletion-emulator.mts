@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 
 import { getApps, initializeApp } from 'firebase-admin/app';
-import { getFirestore } from 'firebase-admin/firestore';
+import { FieldValue, getFirestore } from 'firebase-admin/firestore';
 import { getStorage } from 'firebase-admin/storage';
 
 const projectId = process.env.GCLOUD_PROJECT || 'demo-invitation-rules';
@@ -29,6 +29,7 @@ const repository = await import('@/server/repositories/adminEventDeletionReposit
 
 const {
   beginEventDeletion,
+  claimFailedEventDeletionJob,
   completeEventDeletionJob,
   completeEventDeletionStep,
   failEventDeletionStep,
@@ -217,6 +218,27 @@ await db.collection('eventSlugIndex').doc(incompleteSlug).set({
 });
 const incompleteJob = await beginEventDeletion(incompleteSlug, 'admin-1');
 assert.ok(incompleteJob);
+const incompleteJobBeforeClaim = (
+  await jobCollection.doc(incompleteJob.id).get()
+).data();
+const incompleteEventBeforeClaim = (
+  await db.collection('events').doc(incompleteEventId).get()
+).data();
+assert.equal(
+  await claimFailedEventDeletionJob(incompleteSlug, 'admin-retry'),
+  null,
+  'a pending job must not be claimed for retry'
+);
+assert.deepEqual(
+  (await jobCollection.doc(incompleteJob.id).get()).data(),
+  incompleteJobBeforeClaim,
+  'a rejected retry claim must not mutate the pending job'
+);
+assert.deepEqual(
+  (await db.collection('events').doc(incompleteEventId).get()).data(),
+  incompleteEventBeforeClaim,
+  'a rejected retry claim must not mutate event deletion metadata'
+);
 await assert.rejects(
   completeEventDeletionJob(incompleteJob.id),
   /checkpoint/i,
@@ -226,6 +248,122 @@ assert.equal(
   (await jobCollection.doc(incompleteJob.id).get()).get('status'),
   'pending',
   'a rejected completion must preserve the active status'
+);
+
+const missingMetadataEventId = 'event-missing-deletion-metadata';
+const missingMetadataSlug = 'missing-deletion-metadata';
+const missingMetadataEventRef = db.collection('events').doc(missingMetadataEventId);
+await missingMetadataEventRef.set({
+  eventId: missingMetadataEventId,
+  eventType: 'wedding',
+  slug: missingMetadataSlug,
+  status: 'active',
+  displayName: '삭제 메타데이터 복원 테스트',
+  visibility: { published: false },
+  createdAt: now,
+  updatedAt: now,
+});
+await db.collection('eventSlugIndex').doc(missingMetadataSlug).set({
+  slug: missingMetadataSlug,
+  eventId: missingMetadataEventId,
+  eventType: 'wedding',
+  status: 'active',
+  createdAt: now,
+  updatedAt: now,
+});
+const missingMetadataJob = await beginEventDeletion(
+  missingMetadataSlug,
+  'admin-1'
+);
+assert.ok(missingMetadataJob);
+await completeEventDeletionStep(missingMetadataJob.id, 'block-access');
+await failEventDeletionStep(
+  missingMetadataJob.id,
+  'delete-comments',
+  'firestore-unavailable',
+  true
+);
+await missingMetadataEventRef.update({ deletion: FieldValue.delete() });
+
+const missingMetadataClaims = await Promise.all([
+  claimFailedEventDeletionJob(missingMetadataSlug, 'admin-retry-1'),
+  claimFailedEventDeletionJob(missingMetadataSlug, 'admin-retry-2'),
+]);
+const claimedMissingMetadataJobs = missingMetadataClaims.filter(
+  (job) => job !== null
+);
+assert.equal(
+  claimedMissingMetadataJobs.length,
+  1,
+  'a durable failed job should restore missing event metadata for one retry claimant'
+);
+const claimedMissingMetadataJob = claimedMissingMetadataJobs[0];
+assert.ok(claimedMissingMetadataJob);
+assert.deepEqual(claimedMissingMetadataJob.completedSteps, ['block-access']);
+assert.equal(
+  (await missingMetadataEventRef.get()).get('deletion.jobId'),
+  missingMetadataJob.id
+);
+assert.equal(
+  (await missingMetadataEventRef.get()).get('deletion.status'),
+  'running'
+);
+await markEventDeletionStepRunning(
+  claimedMissingMetadataJob.id,
+  'delete-comments'
+);
+await runEventDeletionRepositoryStep(
+  claimedMissingMetadataJob,
+  'delete-comments'
+);
+await completeEventDeletionStep(
+  claimedMissingMetadataJob.id,
+  'delete-comments'
+);
+assert.deepEqual(
+  (await jobCollection.doc(missingMetadataJob.id).get()).get('completedSteps'),
+  ['block-access', 'delete-comments'],
+  'the winning retry should resume and checkpoint the failed step'
+);
+await failEventDeletionStep(
+  missingMetadataJob.id,
+  'delete-images',
+  'storage-unavailable',
+  true
+);
+await missingMetadataEventRef.set(
+  {
+    deletion: {
+      jobId: incompleteJob.id,
+      status: 'pending',
+      currentStep: incompleteJob.currentStep,
+      requestedAt: incompleteJob.requestedAt,
+    },
+  },
+  { merge: true }
+);
+const activeMismatchJobBeforeClaim = (
+  await jobCollection.doc(missingMetadataJob.id).get()
+).data();
+const activeMismatchEventBeforeClaim = (
+  await missingMetadataEventRef.get()
+).data();
+assert.equal(
+  await claimFailedEventDeletionJob(
+    missingMetadataSlug,
+    'admin-conflicting-retry'
+  ),
+  null,
+  'event metadata pointing to another active job must reject the durable claim'
+);
+assert.deepEqual(
+  (await jobCollection.doc(missingMetadataJob.id).get()).data(),
+  activeMismatchJobBeforeClaim
+);
+assert.deepEqual(
+  (await missingMetadataEventRef.get()).data(),
+  activeMismatchEventBeforeClaim,
+  'an active-job mismatch must be rejected without writes'
 );
 
 await assert.rejects(
@@ -255,6 +393,31 @@ assert.deepEqual(
 );
 assert.equal((await eventRef.get()).get('deletion.status'), 'failed');
 assert.equal((await eventRef.get()).get('deletion.retryable'), true);
+
+const concurrentClaims = await Promise.all([
+  claimFailedEventDeletionJob(pageSlug, 'admin-retry-1'),
+  claimFailedEventDeletionJob('recoverable-delete-alias', 'admin-retry-2'),
+]);
+const claimedJobs = concurrentClaims.filter((job) => job !== null);
+assert.equal(
+  claimedJobs.length,
+  1,
+  'concurrent retries should allow only one failed-job execution claim'
+);
+assert.equal(claimedJobs[0]?.status, 'running');
+assert.deepEqual(claimedJobs[0]?.completedSteps, ['block-access']);
+assert.equal(
+  (await jobCollection.doc(firstJob.id).get()).get('status'),
+  'running',
+  'the winning claim should transition the job to running once'
+);
+assert.equal((await eventRef.get()).get('deletion.status'), 'running');
+assert.ok(
+  ['admin-retry-1', 'admin-retry-2'].includes(
+    (await jobCollection.doc(firstJob.id).get()).get('requestedBy')
+  ),
+  'the claimed job should record the winning retry administrator'
+);
 
 await markEventDeletionStepRunning(firstJob.id, 'delete-comments');
 await runEventDeletionRepositoryStep(firstJob, 'delete-comments');
@@ -352,7 +515,46 @@ await completeEventDeletionStep(firstJob.id, 'delete-content-and-indexes');
 
 await markEventDeletionStepRunning(firstJob.id, 'delete-event-root');
 await runEventDeletionRepositoryStep(firstJob, 'delete-event-root');
-await runEventDeletionRepositoryStep(firstJob, 'delete-event-root');
+await failEventDeletionStep(
+  firstJob.id,
+  'delete-event-root',
+  'checkpoint-write-unavailable',
+  true
+);
+assert.equal(
+  (await eventRef.get()).exists,
+  false,
+  'the event root may already be gone when its checkpoint fails'
+);
+assert.equal(
+  (await db.collection('eventSlugIndex').where('eventId', '==', eventId).get()).empty,
+  true,
+  'post-index retry must not depend on deleted slug indexes'
+);
+
+const postRootClaims = await Promise.all([
+  claimFailedEventDeletionJob(pageSlug, 'admin-post-root-1'),
+  claimFailedEventDeletionJob(pageSlug, 'admin-post-root-2'),
+]);
+const claimedPostRootJobs = postRootClaims.filter((job) => job !== null);
+assert.equal(
+  claimedPostRootJobs.length,
+  1,
+  'a durable failed job should allow only one retry claim after event and indexes are gone'
+);
+const claimedPostRootJob = claimedPostRootJobs[0];
+assert.ok(claimedPostRootJob);
+assert.equal(claimedPostRootJob.status, 'running');
+assert.deepEqual(claimedPostRootJob.completedSteps, [
+  'block-access',
+  'delete-comments',
+  'delete-images',
+  'delete-ownership-references',
+  'delete-content-and-indexes',
+]);
+
+await markEventDeletionStepRunning(claimedPostRootJob.id, 'delete-event-root');
+await runEventDeletionRepositoryStep(claimedPostRootJob, 'delete-event-root');
 await completeEventDeletionStep(firstJob.id, 'delete-event-root');
 await Promise.all([
   completeEventDeletionJob(firstJob.id),
