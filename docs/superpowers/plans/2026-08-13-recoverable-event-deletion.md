@@ -113,6 +113,8 @@ Commit message: `이벤트 삭제 상태 정책 추가`
 - Produces: `failEventDeletionStep(jobId, step, errorCode, retryable): Promise<void>`
 - Produces: `completeEventDeletionJob(jobId): Promise<void>`
 - Produces: `runEventDeletionRepositoryStep(job, step): Promise<DeleteStepResult>`
+- Produces: `getEventDeletionJobBySlug(pageSlug): Promise<EventDeletionJob | null>`
+- Produces: `claimFailedEventDeletionJob(pageSlug, requestedBy): Promise<EventDeletionJob | null>`
 
 - [ ] **Step 1: Write emulator tests for transaction and checkpoint behavior**
 
@@ -127,6 +129,8 @@ Expected: 새 repository 함수가 없어 실패한다.
 - [ ] **Step 3: Implement transaction-backed job creation**
 
 `eventDeletionJobs/{jobId}`와 `events/{eventId}.deletion`을 한 트랜잭션에서 기록한다. 기존 활성 job이 있으면 새 문서를 만들지 않는다. job ID는 이벤트 ID와 요청 nonce를 서버에서 생성하고 클라이언트 입력을 사용하지 않는다.
+
+실패 작업 재시도는 별도 트랜잭션에서 `failed` 상태 확인과 `running` 실행권 획득을 함께 수행한다. 같은 작업의 동시 재시도 중 하나만 실행권을 얻고, 나머지는 삭제 단계를 실행하지 않는다.
 
 - [ ] **Step 4: Split existing deletion into named idempotent steps**
 
@@ -166,6 +170,8 @@ Expected: 새 orchestration API가 없어 실패한다.
 - [ ] **Step 3: Implement the step runner**
 
 고정된 `EVENT_DELETION_STEPS`를 순회하고 실행 전 running, 성공 후 checkpoint, 실패 시 정규화된 error code를 저장한다. 결과는 `success`, `deletionJobId`, `deletionStatus`, `failedStep`, `retryable`만 노출한다.
+
+재시도는 읽기 전용 job 조회로 정상·진행·완료 작업을 거절하고, 실패 작업은 repository의 transactional claim을 얻은 경우에만 runner를 시작한다.
 
 - [ ] **Step 4: Run the focused test and verify GREEN**
 
