@@ -74,6 +74,7 @@ const architecture = [
 ];
 
 const emulator = [
+  'test-admin-event-deletion-emulator',
   'test-billing-fulfillment-lock',
   'test-demo-experience-repository-emulator',
   'test-event-ownership-invite-emulator',
