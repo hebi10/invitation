@@ -30,6 +30,7 @@ import { getInvitationPublicAccessState } from '@/lib/invitationPublicAccess';
 import { DEFAULT_EVENT_TYPE, normalizeEventTypeKey, type EventTypeKey } from '@/lib/eventTypes';
 import type {
   InvitationFeatureFlags,
+  EventDeletionMetadata,
   InvitationPage,
   InvitationProductTier,
   InvitationPageSeed,
@@ -70,6 +71,7 @@ export interface InvitationPageSummary {
   dataSource: 'seed' | 'firestore';
   hasCustomConfig: boolean;
   ownershipKind: 'unassigned' | 'admin' | 'customer';
+  deletion?: EventDeletionMetadata;
 }
 
 export interface EditableInvitationPageConfig {

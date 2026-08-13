@@ -30,6 +30,24 @@ export type InvitationShareMode = 'link' | 'card' | 'none';
 export type InvitationProductTier = 'standard' | 'deluxe' | 'premium';
 export type InvitationThemeKey = RegisteredInvitationThemeKey;
 
+export type EventDeletionJobStatus = 'pending' | 'running' | 'failed';
+
+export type EventDeletionStep =
+  | 'block-access'
+  | 'delete-comments'
+  | 'delete-images'
+  | 'delete-ownership-references'
+  | 'delete-content-and-indexes'
+  | 'delete-event-root';
+
+export type EventDeletionMetadata = {
+  jobId: string;
+  status: EventDeletionJobStatus;
+  currentStep: EventDeletionStep;
+  requestedAt: string;
+  retryable?: boolean;
+};
+
 export interface InvitationFeatureFlags {
   maxGalleryImages: number;
   shareMode: InvitationShareMode;

@@ -7,6 +7,7 @@ const core = [
   'validate-theme-extension',
   'test-admin-created-event-ownership',
   'test-admin-customer-account-assignment-filters',
+  'test-admin-event-deletion-policy',
   'test-admin-event-preview-links',
   'test-admin-event-workspace-model',
   'test-admin-invitation-summary',

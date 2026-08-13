@@ -12,9 +12,12 @@ import {
 } from '@/lib/invitationPagePersistence';
 import { mergeInvitationSampleFallback } from '@/lib/invitationSampleFallback';
 import type {
+  EventDeletionMetadata,
   InvitationPageSeed,
   InvitationThemeKey,
 } from '@/types/invitationPage';
+
+import { readEventDeletionMetadata } from '../eventDeletionPolicy';
 
 import {
   normalizeEventSlugIndexStatus,
@@ -71,6 +74,7 @@ export interface EventSummaryRecord {
   lastSavedAt: Date | null;
   version: number | null;
   migratedFromPageSlug: string | null;
+  deletion?: EventDeletionMetadata | null;
 }
 
 export interface EventContentRecordDto {
@@ -275,6 +279,7 @@ export function normalizeEventSummaryRecord(
     lastSavedAt: toDate(data.lastSavedAt),
     version: readFiniteNumber(data.version),
     migratedFromPageSlug: readNonEmptyString(data.migratedFromPageSlug),
+    deletion: readEventDeletionMetadata(data.deletion),
   };
 }
 
