@@ -3,8 +3,15 @@ import { NextResponse } from 'next/server';
 import { normalizeInvitationPageSlugInput } from '@/lib/invitationPagePersistence';
 import { AdminApiAuthError, verifyAdminRequest } from '@/server/adminApiAuth';
 import { toSafeHttpErrorResponse } from '@/server/apiErrorResponse';
-import { deleteAdminEventBySlug } from '@/server/adminEventDeletionService';
+import {
+  requestAdminEventDeletion,
+  retryAdminEventDeletion,
+} from '@/server/adminEventDeletionService';
 import { getServerInvitationPageBySlug } from '@/server/invitationPageServerService';
+
+type DeleteEventRequestBody = {
+  retry?: unknown;
+};
 
 function toAdminApiErrorResponse(error: unknown) {
   if (error instanceof AdminApiAuthError) {
@@ -66,7 +73,8 @@ export async function DELETE(
   context: { params: Promise<{ slug: string }> }
 ) {
   try {
-    await verifyAdminRequest(request);
+    const adminToken = await verifyAdminRequest(request);
+    const body = (await request.json().catch(() => null)) as DeleteEventRequestBody | null;
 
     const { slug } = await context.params;
     const normalizedPageSlug = normalizeInvitationPageSlugInput(slug);
@@ -78,8 +86,10 @@ export async function DELETE(
       );
     }
 
-    const deletedEvent = await deleteAdminEventBySlug(normalizedPageSlug);
-    if (!deletedEvent) {
+    const deletionResult = body?.retry === true
+      ? await retryAdminEventDeletion(normalizedPageSlug, adminToken.uid)
+      : await requestAdminEventDeletion(normalizedPageSlug, adminToken.uid);
+    if (!deletionResult) {
       return NextResponse.json(
         { error: '삭제할 청첩장을 찾을 수 없습니다.' },
         { status: 404 }
@@ -87,8 +97,7 @@ export async function DELETE(
     }
 
     return NextResponse.json({
-      success: true,
-      ...deletedEvent,
+      ...deletionResult,
     });
   } catch (error) {
     const authErrorResponse = toAdminApiErrorResponse(error);

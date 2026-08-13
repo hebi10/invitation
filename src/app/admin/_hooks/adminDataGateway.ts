@@ -10,7 +10,10 @@ import {
   getAdminDashboardSummary,
   type AdminDashboardSummarySnapshot,
 } from '@/services/adminDashboardService';
-import { deleteAdminEventByPageSlug } from '@/services/adminEventService';
+import {
+  deleteAdminEventByPageSlug,
+  type AdminEventDeletionResult,
+} from '@/services/adminEventService';
 import {
   deleteComment,
   getAllComments,
@@ -53,7 +56,7 @@ export interface AdminDataGateway {
   getComments(): Promise<Comment[]>;
   getCustomerAccounts(): Promise<AdminCustomerAccountsSnapshot>;
   deleteComment(comment: Comment): Promise<void>;
-  deleteEvent(slug: string): Promise<void>;
+  deleteEvent(slug: string, options?: { retry?: boolean }): Promise<AdminEventDeletionResult>;
   setPublished(page: InvitationPageSummary, published: boolean): Promise<void>;
   setTier(page: InvitationPageSummary, tier: InvitationProductTier): Promise<void>;
   setVariant(
@@ -79,8 +82,8 @@ export const productionAdminDataGateway: AdminDataGateway = {
   async deleteComment(comment) {
     await deleteComment(comment.id, comment.collectionName);
   },
-  async deleteEvent(slug) {
-    await deleteAdminEventByPageSlug(slug);
+  deleteEvent(slug, options = {}) {
+    return deleteAdminEventByPageSlug(slug, options);
   },
   async setPublished(page, published) {
     await setInvitationPagePublished(page.slug, published, {
@@ -224,6 +227,10 @@ export const demoExperienceAdminDataGateway: AdminDataGateway = {
     if (!response.ok) {
       throw new Error(await readError(response, '체험 청첩장을 삭제하지 못했습니다.'));
     }
+    return {
+      success: true,
+      deletionStatus: 'completed',
+    };
   },
   async setPublished(page, published) {
     const current = await getDemoEditable(page.slug);

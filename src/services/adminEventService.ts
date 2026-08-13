@@ -1,20 +1,14 @@
 import { normalizeInvitationPageSlugInput } from '@/lib/invitationPagePersistence';
+import type { AdminEventDeletionResult } from '@/server/adminEventDeletionService';
 
 import { getCurrentFirebaseIdToken } from './adminAuth';
 
-export interface DeleteAdminEventResponse {
-  success: boolean;
-  eventId: string;
-  slug: string;
-  deleted: {
-    eventDocument: boolean;
-    eventSecrets: number;
-    slugIndexes: number;
-    billingFulfillments: number;
-  };
-}
+export type { AdminEventDeletionResult };
 
-export async function deleteAdminEventByPageSlug(pageSlug: string) {
+export async function deleteAdminEventByPageSlug(
+  pageSlug: string,
+  options: { retry?: boolean } = {}
+): Promise<AdminEventDeletionResult> {
   const normalizedPageSlug = normalizeInvitationPageSlugInput(pageSlug);
   if (!normalizedPageSlug) {
     throw new Error('삭제할 청첩장 주소가 올바르지 않습니다.');
@@ -29,11 +23,13 @@ export async function deleteAdminEventByPageSlug(pageSlug: string) {
     method: 'DELETE',
     headers: {
       Authorization: `Bearer ${idToken}`,
+      ...(options.retry ? { 'Content-Type': 'application/json' } : {}),
     },
+    body: options.retry ? JSON.stringify({ retry: true }) : undefined,
   });
 
   const payload = (await response.json().catch(() => null)) as
-    | (DeleteAdminEventResponse & { error?: string })
+    | (AdminEventDeletionResult & { error?: string })
     | { error?: string }
     | null;
 
@@ -45,5 +41,5 @@ export async function deleteAdminEventByPageSlug(pageSlug: string) {
     );
   }
 
-  return payload as DeleteAdminEventResponse;
+  return payload as AdminEventDeletionResult;
 }

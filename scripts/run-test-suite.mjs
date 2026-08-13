@@ -8,6 +8,7 @@ const core = [
   'test-admin-created-event-ownership',
   'test-admin-customer-account-assignment-filters',
   'test-admin-event-deletion-policy',
+  'test-admin-event-deletion-ui-contracts',
   'test-admin-event-preview-links',
   'test-admin-event-workspace-model',
   'test-admin-invitation-summary',
