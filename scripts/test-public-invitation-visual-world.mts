@@ -12,6 +12,7 @@ assert.doesNotMatch(poster, /준비 중|이미지 없음/);
 
 const actionCss = read('src/app/_components/public-invitations/shared/InvitationActionLink.module.css');
 assert.match(actionCss, /min-height:\s*44px/);
+assert.match(actionCss, /min-width:\s*44px/);
 assert.match(actionCss, /:focus-visible/);
 
 console.log('public invitation visual-world checks passed');
