@@ -1,0 +1,31 @@
+.poster {
+  display: grid;
+  min-height: 100svh;
+  align-content: center;
+  gap: 1rem;
+  padding: 2rem;
+  background: #f7f6f2;
+  color: #1c1c1a;
+  text-align: center;
+}
+
+.eyebrow,
+.date,
+.location {
+  margin: 0;
+  color: #5e5d58;
+  font-size: 0.875rem;
+  letter-spacing: 0.08em;
+}
+
+.eyebrow {
+  text-transform: uppercase;
+}
+
+.poster h1 {
+  margin: 0;
+  font-size: clamp(2rem, 10vw, 4rem);
+  font-weight: 500;
+  line-height: 1.15;
+  word-break: keep-all;
+}
