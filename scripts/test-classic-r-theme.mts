@@ -43,6 +43,10 @@ assert(
   'classic-r must be registered in WEDDING_THEME_RENDERER_REGISTRY.'
 );
 assert(
+  registrySource.includes("from '../public-invitations/wedding'"),
+  'wedding registry renderers must originate from public-invitations/wedding.'
+);
+assert(
   fs.existsSync('src/app/_components/themeRenderers/classic-r.tsx'),
   'classic-r renderer module must exist.'
 );

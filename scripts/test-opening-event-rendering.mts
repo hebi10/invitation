@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
 
 import {
   EVENT_TYPE_KEYS,
@@ -21,6 +22,21 @@ import {
   isImplementedPageCategory,
 } from '../src/app/admin/_components/adminPageUtils.ts';
 import type { InvitationPage } from '../src/types/invitationPage.ts';
+
+const openingPageSource = fs.readFileSync(
+  'src/app/_components/opening/OpeningInvitationPage.tsx',
+  'utf8'
+);
+const generalEventPageSource = fs.readFileSync(
+  'src/app/_components/generalEvent/GeneralEventInvitationPage.tsx',
+  'utf8'
+);
+
+assert.match(openingPageSource, /from ['"]\.\.\/public-invitations\/opening['"];/);
+assert.match(
+  generalEventPageSource,
+  /from ['"]\.\.\/public-invitations\/general-event['"];/
+);
 
 assert.equal(EVENT_TYPE_KEYS.includes('opening'), true);
 assert.equal(listEnabledEventTypes().includes('opening'), true);

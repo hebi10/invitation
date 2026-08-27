@@ -1,17 +1,19 @@
 import type { ComponentType } from 'react';
 
+import {
+  DawnChapterPage,
+  FirstChapterPage,
+} from '../../public-invitations/first-birthday';
 import type { EventPageReadyState } from '../../eventPageState';
 import type { FirstBirthdayThemeKey } from '../firstBirthdayThemes';
-import FirstBirthdayMintRenderer from './mint';
-import FirstBirthdayPinkRenderer from './pink';
 
 export type FirstBirthdayThemeRendererComponent = ComponentType<{
   state: EventPageReadyState;
 }>;
 
 const firstBirthdayThemeRendererByKey = {
-  'first-birthday-pink': FirstBirthdayPinkRenderer,
-  'first-birthday-mint': FirstBirthdayMintRenderer,
+  'first-birthday-pink': FirstChapterPage,
+  'first-birthday-mint': DawnChapterPage,
 } satisfies Record<FirstBirthdayThemeKey, FirstBirthdayThemeRendererComponent>;
 
 export function getFirstBirthdayThemeRenderer(theme: FirstBirthdayThemeKey) {

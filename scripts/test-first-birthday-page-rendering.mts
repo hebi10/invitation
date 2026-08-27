@@ -9,6 +9,10 @@ const rendererSource = fs.readFileSync(
   'src/app/_components/firstBirthday/themeRenderers/shared.tsx',
   'utf8'
 );
+const registrySource = fs.readFileSync(
+  'src/app/_components/firstBirthday/themeRenderers/registry.ts',
+  'utf8'
+);
 const cssSource = fs.readFileSync(
   'src/app/_components/firstBirthday/FirstBirthdayInvitationPage.module.css',
   'utf8'
@@ -23,6 +27,11 @@ assert.equal(
   source.includes('<ThemeRenderer state={readyState} />'),
   true,
   'first-birthday routes should render the theme body directly'
+);
+assert.equal(
+  registrySource.includes("from '../../public-invitations/first-birthday'"),
+  true,
+  'first-birthday registry renderers must originate from public-invitations/first-birthday'
 );
 assert.equal(
   rendererSource.includes('const hasCoverImage = Boolean(model.coverImageUrl.trim());'),

@@ -1,17 +1,19 @@
 import type { ComponentType } from 'react';
 
+import {
+  BirthdayStoryPage,
+  PartyNotesPage,
+} from '../../public-invitations/birthday';
 import type { EventPageReadyState } from '../../eventPageState';
 import type { BirthdayThemeKey } from '../birthdayThemes';
-import BirthdayFloralRenderer from './floral';
-import BirthdayMinimalRenderer from './minimal';
 
 export type BirthdayThemeRendererComponent = ComponentType<{
   state: EventPageReadyState;
 }>;
 
 const birthdayThemeRendererByKey = {
-  'birthday-minimal': BirthdayMinimalRenderer,
-  'birthday-floral': BirthdayFloralRenderer,
+  'birthday-minimal': PartyNotesPage,
+  'birthday-floral': BirthdayStoryPage,
 } satisfies Record<BirthdayThemeKey, BirthdayThemeRendererComponent>;
 
 export function getBirthdayThemeRenderer(theme: BirthdayThemeKey) {

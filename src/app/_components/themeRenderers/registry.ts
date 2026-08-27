@@ -3,10 +3,12 @@ import type { ComponentType } from 'react';
 import type { InvitationThemeKey } from '@/lib/invitationThemes';
 
 import type { WeddingThemeRendererProps } from '../weddingPageRenderers';
-import ClassicRenewalThemeRenderer from './classic-r';
-import EmotionalThemeRenderer from './emotional';
-import RomanticThemeRenderer from './romantic';
-import SimpleThemeRenderer from './simple';
+import {
+  GardenNotePage,
+  LetterpressPage,
+  PortraitLetterPage,
+  QuietCeremonyPage,
+} from '../public-invitations/wedding';
 
 export type WeddingThemeRendererComponent =
   ComponentType<WeddingThemeRendererProps>;
@@ -19,19 +21,19 @@ type WeddingThemeRendererRegistryEntry = {
 export const WEDDING_THEME_RENDERER_REGISTRY = [
   {
     key: 'emotional',
-    component: EmotionalThemeRenderer,
+    component: PortraitLetterPage,
   },
   {
     key: 'romantic',
-    component: RomanticThemeRenderer,
+    component: GardenNotePage,
   },
   {
     key: 'simple',
-    component: SimpleThemeRenderer,
+    component: QuietCeremonyPage,
   },
   {
     key: 'classic-r',
-    component: ClassicRenewalThemeRenderer,
+    component: LetterpressPage,
   },
 ] as const satisfies readonly WeddingThemeRendererRegistryEntry[];
 

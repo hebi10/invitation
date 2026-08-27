@@ -7,11 +7,14 @@ import { AccessDeniedPage } from '@/utils';
 import { useEventInvitationState } from '../eventPageState';
 import type { EventInvitationRouteOptions } from '../eventPageThemes';
 import {
+  OpeningPosterPage,
+  StudioOpeningPage,
+} from '../public-invitations/opening';
+import {
   DEFAULT_OPENING_THEME,
   normalizeOpeningThemeKey,
   type OpeningThemeKey,
 } from './openingThemes';
-import { OpeningThemeRenderer } from './themeRenderers/shared';
 
 type OpeningRouteOptions = Omit<EventInvitationRouteOptions, 'theme'> & {
   theme: OpeningThemeKey;
@@ -83,7 +86,10 @@ function OpeningInvitationPageBody(options: OpeningRouteOptions) {
     return null;
   }
 
-  return <OpeningThemeRenderer state={state} theme={openingTheme} />;
+  const OpeningPage =
+    openingTheme === 'opening-natural' ? StudioOpeningPage : OpeningPosterPage;
+
+  return <OpeningPage state={state} theme={openingTheme} />;
 }
 
 export function OpeningInvitationRoutePage(options: EventInvitationRouteOptions) {

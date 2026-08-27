@@ -5,11 +5,14 @@ import { AccessDeniedPage } from '@/utils';
 import { useEventInvitationState } from '../eventPageState';
 import type { EventInvitationRouteOptions } from '../eventPageThemes';
 import {
+  NightSchedulePage,
+  ProgramEditionPage,
+} from '../public-invitations/general-event';
+import {
   GENERAL_EVENT_DEFAULT_THEME,
   normalizeGeneralEventThemeKey,
   type GeneralEventThemeKey,
 } from './generalEventThemes';
-import { GeneralEventThemeRenderer } from './themeRenderers/shared';
 
 type GeneralEventRouteOptions = Omit<EventInvitationRouteOptions, 'theme'> & {
   theme: GeneralEventThemeKey;
@@ -40,5 +43,8 @@ export default function GeneralEventInvitationPage(options: GeneralEventRouteOpt
     return null;
   }
 
-  return <GeneralEventThemeRenderer state={state} theme={visualTheme} />;
+  const EventPage =
+    visualTheme === 'general-event-elegant' ? ProgramEditionPage : NightSchedulePage;
+
+  return <EventPage state={state} theme={visualTheme} />;
 }
