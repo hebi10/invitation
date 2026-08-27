@@ -33,6 +33,11 @@ assert.equal(
   true,
   'first-birthday registry renderers must originate from public-invitations/first-birthday'
 );
+assert.doesNotMatch(
+  registrySource,
+  /from ['"]\.\/(?:mint|pink)['"];/,
+  'first-birthday registry must not import legacy renderer modules directly'
+);
 assert.equal(
   rendererSource.includes('const hasCoverImage = Boolean(model.coverImageUrl.trim());'),
   true,

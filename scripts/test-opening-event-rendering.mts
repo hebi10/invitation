@@ -33,9 +33,19 @@ const generalEventPageSource = fs.readFileSync(
 );
 
 assert.match(openingPageSource, /from ['"]\.\.\/public-invitations\/opening['"];/);
+assert.doesNotMatch(
+  openingPageSource,
+  /from ['"]\.\/themeRenderers\/shared['"];/,
+  'opening route must not import the legacy shared renderer directly'
+);
 assert.match(
   generalEventPageSource,
   /from ['"]\.\.\/public-invitations\/general-event['"];/
+);
+assert.doesNotMatch(
+  generalEventPageSource,
+  /from ['"]\.\/themeRenderers\/shared['"];/,
+  'general-event route must not import the legacy shared renderer directly'
 );
 
 assert.equal(EVENT_TYPE_KEYS.includes('opening'), true);

@@ -23,6 +23,11 @@ assert.match(
   /from ['"]\.\.\/public-invitations\/wedding['"];/,
   'wedding renderer registry must import pages from public-invitations/wedding'
 );
+assert.doesNotMatch(
+  weddingRegistry,
+  /from ['"]\.\/(?:classic-r|emotional|romantic|simple)['"];/,
+  'wedding renderer registry must not import legacy renderer modules directly'
+);
 
 const birthdayRegistry = read(
   'src/app/_components/birthday/themeRenderers/registry.ts'
@@ -31,6 +36,11 @@ assert.match(
   birthdayRegistry,
   /from ['"]\.\.\/\.\.\/public-invitations\/birthday['"];/,
   'birthday renderer registry must import pages from public-invitations/birthday'
+);
+assert.doesNotMatch(
+  birthdayRegistry,
+  /from ['"]\.\/(?:floral|minimal)['"];/,
+  'birthday renderer registry must not import legacy renderer modules directly'
 );
 
 const poster = read('src/app/_components/public-invitations/shared/InvitationPoster.tsx');
