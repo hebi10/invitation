@@ -10,6 +10,7 @@ import {
   verifyCustomerUid,
 } from '@/server/customerApiAuth';
 import {
+  CustomerEventClaimError,
   getCustomerEditableInvitationPageSnapshot,
   saveCustomerEditableInvitationPageConfig,
 } from '@/server/customerEventsService';
@@ -29,7 +30,10 @@ export async function GET(
       ...snapshot,
     });
   } catch (error) {
-    if (error instanceof CustomerApiAuthError) {
+    if (
+      error instanceof CustomerApiAuthError ||
+      error instanceof CustomerEventClaimError
+    ) {
       return toSafeHttpErrorResponse(error);
     }
 
@@ -76,7 +80,10 @@ export async function POST(
       ...snapshot,
     });
   } catch (error) {
-    if (error instanceof CustomerApiAuthError) {
+    if (
+      error instanceof CustomerApiAuthError ||
+      error instanceof CustomerEventClaimError
+    ) {
       return toSafeHttpErrorResponse(error);
     }
 

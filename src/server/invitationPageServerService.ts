@@ -41,6 +41,7 @@ import {
   readString,
 } from '@/lib/invitationPageNormalization';
 import type {
+  EventDeletionMetadata,
   InvitationFeatureFlags,
   InvitationPage,
   InvitationPageSeed,
@@ -129,8 +130,11 @@ function mergeDisplayPeriod(
   });
 }
 
-function isPublicInvitationPage(page: InvitationPage) {
-  return getInvitationPublicAccessState(page).isPublic;
+function isPublicInvitationPage(
+  page: InvitationPage,
+  deletion?: EventDeletionMetadata | null
+) {
+  return getInvitationPublicAccessState({ ...page, deletion }).isPublic;
 }
 
 function canUseSampleFallback(
@@ -461,10 +465,11 @@ async function loadServerInvitationPageBySlug(
   }
 
   try {
-    const [registryRecord, configSeed, displayPeriod] = await Promise.all([
+    const [registryRecord, configSeed, displayPeriod, resolvedEvent] = await Promise.all([
       getRegistryByPageSlug(pageSlug),
       getConfigByPageSlug(pageSlug),
       getDisplayPeriodByPageSlug(pageSlug),
+      resolveStoredEventBySlug(pageSlug),
     ]);
 
     const sourceRecord = buildInvitationPageRecord(pageSlug, configSeed, registryRecord, {
@@ -477,7 +482,17 @@ async function loadServerInvitationPageBySlug(
     }
 
     const mergedPage = mergeDisplayPeriod(basePage, displayPeriod);
-    return options.includePrivate || isPublicInvitationPage(mergedPage) ? mergedPage : null;
+    const accessState = getInvitationPublicAccessState({
+      ...mergedPage,
+      deletion: resolvedEvent?.summary.deletion,
+    });
+    if (accessState.reason === 'deleting') {
+      return options.includePrivate
+        ? { ...mergedPage, published: false }
+        : null;
+    }
+
+    return options.includePrivate || accessState.isPublic ? mergedPage : null;
   } catch (error) {
     console.error('[invitationPageServerService] failed to load invitation page', error);
     if (!samplePage) {

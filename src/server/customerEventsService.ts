@@ -42,6 +42,7 @@ import { resolveStoredEventBySlug } from './repositories/eventRepository';
 import { firestoreEventCommentRepository } from './repositories/eventCommentRepository';
 import type { EventSummaryRecord } from './repositories/eventReadThroughDtos';
 import { claimStoredEventOwnership } from './repositories/customerEventClaimRepository';
+import { isEventDeletionBlockingAccess } from './eventDeletionPolicy';
 
 export { CustomerEventClaimError } from './customerEventClaimPolicy';
 
@@ -86,7 +87,15 @@ export type CustomerEventOwnershipSnapshot =
   | {
       status: 'missing';
       summary: null;
+    }
+  | {
+      status: 'unavailable';
+      summary: null;
     };
+
+type CustomerEventAccessDependencies = {
+  resolveEventBySlug: typeof resolveStoredEventBySlug;
+};
 
 function getAvailableThemesForCustomerSummary(
   summary: EventSummaryRecord,
@@ -217,6 +226,7 @@ function buildCustomerGuestbookCommentSummary(
 }
 
 async function requireOwnedEventSummary(ownerUid: string, pageSlug: string) {
+  await assertCustomerEventAccessAvailable(pageSlug);
   const ownership = await getCustomerEventOwnershipSnapshot(ownerUid, pageSlug);
   if (ownership.status !== 'owner') {
     throw new Error('로그인한 계정에 연결된 청첩장만 관리할 수 있습니다.');
@@ -262,7 +272,10 @@ export async function listCustomerOwnedEventSummaries(ownerUid: string) {
 
 export async function getCustomerEventOwnershipSnapshot(
   ownerUid: string,
-  pageSlug: string
+  pageSlug: string,
+  dependencies: CustomerEventAccessDependencies = {
+    resolveEventBySlug: resolveStoredEventBySlug,
+  }
 ): Promise<CustomerEventOwnershipSnapshot> {
   const normalizedOwnerUid = ownerUid.trim();
   const normalizedPageSlug = normalizeInvitationPageSlugInput(pageSlug);
@@ -274,7 +287,14 @@ export async function getCustomerEventOwnershipSnapshot(
     };
   }
 
-  const resolvedEvent = await resolveStoredEventBySlug(normalizedPageSlug);
+  const resolvedEvent = await dependencies.resolveEventBySlug(normalizedPageSlug);
+  if (isEventDeletionBlockingAccess(resolvedEvent?.summary.deletion)) {
+    return {
+      status: 'unavailable',
+      summary: null,
+    };
+  }
+
   const ownedSummary = await findOwnedEventSummaryBySlug(
     normalizedOwnerUid,
     normalizedPageSlug
@@ -345,7 +365,25 @@ type CustomerEventClaimDependencies = {
   }>;
   claimOwnerBySlug: typeof claimStoredEventOwnership;
   getEditableSnapshot: typeof getCustomerEditableInvitationPageSnapshot;
+  resolveEventBySlug?: typeof resolveStoredEventBySlug;
 };
+
+const CUSTOMER_EVENT_DELETION_CONFLICT_MESSAGE =
+  '현재 이용할 수 없는 청첩장입니다. 잠시 후 다시 시도해 주세요.';
+
+async function assertCustomerEventAccessAvailable(
+  pageSlug: string,
+  resolveEventBySlug: typeof resolveStoredEventBySlug = resolveStoredEventBySlug
+) {
+  const resolvedEvent = await resolveEventBySlug(pageSlug);
+  if (isEventDeletionBlockingAccess(resolvedEvent?.summary.deletion)) {
+    throw new CustomerEventClaimError(
+      409,
+      'unavailable',
+      CUSTOMER_EVENT_DELETION_CONFLICT_MESSAGE
+    );
+  }
+}
 
 const defaultCustomerEventClaimDependencies: CustomerEventClaimDependencies = {
   isAdminUserEnabled: isServerAdminUserEnabled,
@@ -368,6 +406,7 @@ const defaultCustomerEventClaimDependencies: CustomerEventClaimDependencies = {
   },
   claimOwnerBySlug: claimStoredEventOwnership,
   getEditableSnapshot: getCustomerEditableInvitationPageSnapshot,
+  resolveEventBySlug: resolveStoredEventBySlug,
 };
 
 export async function claimCustomerEventOwnership(
@@ -384,6 +423,11 @@ export async function claimCustomerEventOwnership(
       '연결할 청첩장 주소와 고객 계정을 확인해 주세요.'
     );
   }
+
+  await assertCustomerEventAccessAvailable(
+    normalizedPageSlug,
+    dependencies.resolveEventBySlug ?? resolveStoredEventBySlug
+  );
 
   if (await dependencies.isAdminUserEnabled(normalizedOwnerUid)) {
     throw new CustomerEventClaimError(
@@ -406,6 +450,7 @@ export async function getCustomerEditableInvitationPageSnapshot(
   ownerUid: string,
   pageSlug: string
 ) {
+  await assertCustomerEventAccessAvailable(pageSlug);
   const ownership = await getCustomerEventOwnershipSnapshot(ownerUid, pageSlug);
 
   if (ownership.status !== 'owner') {
@@ -451,8 +496,12 @@ export async function saveCustomerEditableInvitationPageConfig(
     config: InvitationPageSeed;
     published?: boolean;
     defaultTheme?: InvitationThemeKey;
+  },
+  dependencies: CustomerEventAccessDependencies = {
+    resolveEventBySlug: resolveStoredEventBySlug,
   }
 ) {
+  await assertCustomerEventAccessAvailable(pageSlug, dependencies.resolveEventBySlug);
   const ownership = await getCustomerEventOwnershipSnapshot(ownerUid, pageSlug);
   if (ownership.status !== 'owner') {
     throw new Error('로그인한 계정에 연결된 청첩장만 저장할 수 있습니다.');

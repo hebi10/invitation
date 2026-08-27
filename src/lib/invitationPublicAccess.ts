@@ -1,12 +1,17 @@
+import { isEventDeletionBlockingAccess } from '@/server/eventDeletionPolicy';
+import type { EventDeletionMetadata } from '@/types/invitationPage';
+
 type InvitationPublicAccessInput = {
   published: boolean;
   displayPeriodEnabled: boolean;
   displayPeriodStart: Date | null;
   displayPeriodEnd: Date | null;
+  deletion?: EventDeletionMetadata | null;
 };
 
 export type InvitationPublicAccessReason =
   | 'public'
+  | 'deleting'
   | 'private'
   | 'period-incomplete'
   | 'scheduled'
@@ -29,6 +34,19 @@ const accessDateTimeFormatter = new Intl.DateTimeFormat('ko-KR', {
   minute: '2-digit',
 });
 
+export function shouldRunClientInvitationPageQuery(input: {
+  isAdminLoading: boolean;
+  isAdminLoggedIn: boolean;
+  hasInitialPage: boolean;
+  hasInitialBlockMessage: boolean;
+}) {
+  return (
+    !input.isAdminLoading &&
+    (input.isAdminLoggedIn ||
+      (!input.hasInitialPage && !input.hasInitialBlockMessage))
+  );
+}
+
 function formatAccessDateTime(value: Date | null) {
   return value ? accessDateTimeFormatter.format(value) : null;
 }
@@ -37,6 +55,17 @@ export function getInvitationPublicAccessState(
   page: InvitationPublicAccessInput,
   now: Date = new Date()
 ): InvitationPublicAccessState {
+  if (isEventDeletionBlockingAccess(page.deletion)) {
+    return {
+      isPublic: false,
+      reason: 'deleting',
+      adminLabel: '삭제 진행 중',
+      adminDescription: '삭제 작업이 끝날 때까지 페이지를 공개할 수 없습니다.',
+      adminNotice: '현재 이용할 수 없는 페이지입니다.',
+      visitorMessage: '현재 이용할 수 없는 페이지입니다.',
+    };
+  }
+
   if (!page.published) {
     return {
       isPublic: false,

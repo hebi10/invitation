@@ -5,10 +5,23 @@ import {
   readEventDeletionMetadata,
 } from '../src/server/eventDeletionPolicy.ts';
 import { buildAdminInvitationPageSummary } from '../src/server/adminInvitationPagesService.ts';
+import { createClientEditorSessionValue } from '../src/server/clientEditorSession.ts';
+import { authorizeMobileClientEditorToken } from '../src/server/clientEditorMobileApi.ts';
+import {
+  CustomerEventClaimError,
+  claimCustomerEventOwnership,
+  getCustomerEventOwnershipSnapshot,
+  saveCustomerEditableInvitationPageConfig,
+} from '../src/server/customerEventsService.ts';
 import {
   createAdminEventDeletionService,
   type AdminEventDeletionServiceDependencies,
 } from '../src/server/adminEventDeletionService.ts';
+import {
+  EventOwnershipInviteError,
+  consumeEventOwnershipInvite,
+  issueEventOwnershipInvite,
+} from '../src/server/eventOwnershipInviteService.ts';
 import { normalizeEventSummaryRecord } from '../src/server/repositories/eventReadThroughDtos.ts';
 import type {
   EventDeletionJob,
@@ -89,6 +102,163 @@ assert.deepEqual(
   validDeletion,
   'admin invitation summaries should receive deletion metadata when present'
 );
+
+function isSafeDeletionConflict(error: unknown) {
+  return (
+    error instanceof Error &&
+    'status' in error &&
+    error.status === 409 &&
+    !error.message.includes(validDeletion.jobId) &&
+    !error.message.includes(validDeletion.currentStep)
+  );
+}
+
+{
+  const ownership = await getCustomerEventOwnershipSnapshot(
+    'customer-1',
+    'deleting-event',
+    {
+      resolveEventBySlug: async () => ({
+        summary: { deletion: validDeletion },
+      }) as never,
+    }
+  );
+
+  assert.deepEqual(
+    ownership,
+    { status: 'unavailable', summary: null },
+    'customer access checks should hide deletion metadata behind an unavailable state'
+  );
+}
+
+await assert.rejects(
+  () =>
+    saveCustomerEditableInvitationPageConfig(
+      'customer-1',
+      'deleting-event',
+      { config: { slug: 'deleting-event' } as never },
+      {
+        resolveEventBySlug: async () => ({
+          summary: { deletion: validDeletion },
+        }) as never,
+      }
+    ),
+  isSafeDeletionConflict,
+  'customer saves should return a safe conflict while deletion blocks access'
+);
+
+{
+  let claimCalls = 0;
+
+  await assert.rejects(
+    () =>
+      claimCustomerEventOwnership('customer-1', 'deleting-event', {
+        isAdminUserEnabled: async () => false,
+        getCustomerIdentity: async () => ({
+          uid: 'customer-1',
+          email: 'customer@example.test',
+          displayName: '고객',
+        }),
+        resolveEventBySlug: async () => ({
+          summary: { deletion: validDeletion },
+        }) as never,
+        claimOwnerBySlug: async () => {
+          claimCalls += 1;
+          throw new Error('ownership mutation must not run');
+        },
+        getEditableSnapshot: async () => null as never,
+      }),
+    (error: unknown) =>
+      error instanceof CustomerEventClaimError && isSafeDeletionConflict(error),
+    'customer ownership claims should return a safe conflict while deletion blocks access'
+  );
+  assert.equal(claimCalls, 0, 'blocked ownership claims must not mutate the event');
+}
+
+{
+  let inviteMutationCalls = 0;
+
+  await assert.rejects(
+    () =>
+      issueEventOwnershipInvite(
+        {
+          pageSlug: 'deleting-event',
+          createdByUid: 'admin-1',
+          baseUrl: 'https://example.test',
+        },
+        {
+          resolveEventBySlug: async () => ({
+            summary: { deletion: validDeletion },
+          }) as never,
+          issueStoredInvite: async () => {
+            inviteMutationCalls += 1;
+            throw new Error('ownership invite mutation must not run');
+          },
+        }
+      ),
+    (error: unknown) =>
+      error instanceof EventOwnershipInviteError && isSafeDeletionConflict(error),
+    'ownership invite issuance should return a safe conflict while deletion blocks access'
+  );
+  assert.equal(
+    inviteMutationCalls,
+    0,
+    'blocked ownership invite requests must not write an invite'
+  );
+}
+
+{
+  let consumeMutationCalls = 0;
+
+  await assert.rejects(
+    () =>
+      consumeEventOwnershipInvite(
+        {
+          pageSlug: 'deleting-event',
+          token: 'secret-token',
+          customer: { uid: 'customer-1' },
+        },
+        {
+          resolveEventBySlug: async () => ({
+            summary: { deletion: validDeletion },
+          }) as never,
+          consumeStoredInvite: async () => {
+            consumeMutationCalls += 1;
+            throw new Error('ownership consume mutation must not run');
+          },
+        }
+      ),
+    (error: unknown) =>
+      error instanceof EventOwnershipInviteError && isSafeDeletionConflict(error),
+    'ownership invite consumption should return a safe conflict while deletion blocks access'
+  );
+  assert.equal(
+    consumeMutationCalls,
+    0,
+    'blocked ownership invite consumption must not change ownership'
+  );
+}
+
+{
+  const pageSlug = 'deleting-event';
+  const session = createClientEditorSessionValue({
+    pageSlug,
+    passwordVersion: 1,
+    scopes: ['canEditInvitation'],
+  });
+
+  await assert.rejects(
+    () =>
+      authorizeMobileClientEditorToken(pageSlug, session.value, {
+        deletionBehavior: 'conflict',
+        resolveEventBySlug: async () => ({
+          summary: { deletion: validDeletion },
+        }) as never,
+      }),
+    isSafeDeletionConflict,
+    'mobile editor saves should receive a safe conflict while deletion blocks access'
+  );
+}
 
 const deletionSteps: EventDeletionStep[] = [
   'block-access',

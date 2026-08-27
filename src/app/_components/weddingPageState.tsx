@@ -10,7 +10,10 @@ import { getAdminInvitationPreviewSummary } from '@/lib/adminInvitationPreviewCa
 import { appQueryKeys, FIFTEEN_MINUTES_MS, THIRTY_MINUTES_MS } from '@/lib/appQuery';
 import { USE_FIREBASE } from '@/lib/firebase';
 import { resolveInvitationFeatures } from '@/lib/invitationProducts';
-import { getInvitationPublicAccessState } from '@/lib/invitationPublicAccess';
+import {
+  getInvitationPublicAccessState,
+  shouldRunClientInvitationPageQuery,
+} from '@/lib/invitationPublicAccess';
 import { resolveInvitationPageDataByTheme } from '@/lib/invitationThemePageData';
 import { getCurrentFirebaseIdToken } from '@/services/adminAuth';
 import { getStorageDownloadUrl, type UploadedImage } from '@/services/imageService';
@@ -382,7 +385,12 @@ export function useWeddingInvitationState(
     () => resolveInvitationPageDataByTheme(pageConfig, options.theme),
     [options.theme, pageConfig]
   );
-  const shouldRunClientPageQuery = !isAdminLoading && (isAdminLoggedIn || !initialPage);
+  const shouldRunClientPageQuery = shouldRunClientInvitationPageQuery({
+    isAdminLoading,
+    isAdminLoggedIn,
+    hasInitialPage: Boolean(initialPage),
+    hasInitialBlockMessage: isInitiallyBlocked,
+  });
   const configuredGalleryImageUrls = useMemo(
     () => themedPageData?.galleryImages?.filter((imageUrl) => imageUrl.trim()) ?? [],
     [themedPageData?.galleryImages]

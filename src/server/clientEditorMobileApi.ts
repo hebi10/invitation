@@ -39,6 +39,17 @@ import {
   type StoredMobileClientEditorSessionRecord,
 } from './repositories/mobileClientEditorSessionRepository';
 import { getAuthorizedClientEditorSession } from './clientEditorSessionAuth';
+import { isEventDeletionBlockingAccess } from './eventDeletionPolicy';
+
+export class MobileClientEditorAccessError extends Error {
+  status: number;
+
+  constructor() {
+    super('Invitation page is currently unavailable.');
+    this.name = 'MobileClientEditorAccessError';
+    this.status = 409;
+  }
+}
 
 export const MOBILE_CLIENT_EDITOR_SESSION_TTL_SECONDS = 60 * 60 * 24 * 30;
 const MOBILE_INVITATION_PUBLIC_ORIGIN = 'https://msgnote.kr';
@@ -256,12 +267,20 @@ export function buildMissingMobileClientEditorPermissionError(
 export async function authorizeMobileClientEditorToken(
   pageSlug: string,
   sessionValue: string | undefined | null,
-  options: { deviceId?: string | null } = {}
+  options: {
+    deviceId?: string | null;
+    deletionBehavior?: 'deny' | 'conflict';
+    resolveEventBySlug?: typeof resolveStoredEventBySlug;
+  } = {}
 ) {
   const authorizedSession = await getAuthorizedClientEditorSession(pageSlug, sessionValue);
   if (!authorizedSession) {
     return null;
   }
+
+  const resolvedEvent = await (options.resolveEventBySlug ?? resolveStoredEventBySlug)(
+    pageSlug
+  );
 
   let mobileSession: StoredMobileClientEditorSessionRecord | null = null;
   const sessionId = authorizedSession.session.sessionId?.trim() ?? '';
@@ -293,7 +312,6 @@ export async function authorizeMobileClientEditorToken(
       return null;
     }
 
-    const resolvedEvent = await resolveStoredEventBySlug(pageSlug);
     if (mobileSession.eventId && resolvedEvent?.summary.eventId !== mobileSession.eventId) {
       return null;
     }
@@ -303,6 +321,14 @@ export async function authorizeMobileClientEditorToken(
     }
 
     await firestoreMobileClientEditorSessionRepository.touch(sessionId).catch(() => null);
+  }
+
+  if (isEventDeletionBlockingAccess(resolvedEvent?.summary.deletion)) {
+    if (options.deletionBehavior === 'conflict') {
+      throw new MobileClientEditorAccessError();
+    }
+
+    return null;
   }
 
   const scopes = mobileSession?.scopes ?? authorizedSession.session.scopes ?? [];
@@ -316,10 +342,12 @@ export async function authorizeMobileClientEditorToken(
 
 export async function authorizeMobileClientEditorRequest(
   request: Request,
-  pageSlug: string
+  pageSlug: string,
+  options: { deletionBehavior?: 'deny' | 'conflict' } = {}
 ) {
   return authorizeMobileClientEditorToken(pageSlug, readMobileClientEditorToken(request), {
     deviceId: readMobileClientEditorDeviceId(request),
+    deletionBehavior: options.deletionBehavior,
   });
 }
 

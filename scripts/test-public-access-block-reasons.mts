@@ -1,8 +1,62 @@
 import assert from 'node:assert/strict';
 
-import { getInvitationPublicAccessState } from '@/lib/invitationPublicAccess';
+import {
+  getInvitationPublicAccessState,
+  shouldRunClientInvitationPageQuery,
+} from '@/lib/invitationPublicAccess';
 
 const now = new Date('2026-04-30T12:00:00+09:00');
+
+const deletingAccess = getInvitationPublicAccessState({
+  published: true,
+  displayPeriodEnabled: false,
+  displayPeriodStart: null,
+  displayPeriodEnd: null,
+  deletion: {
+    jobId: 'private-deletion-job',
+    status: 'running',
+    currentStep: 'delete-images',
+    requestedAt: '2026-04-30T00:00:00.000Z',
+  },
+}, now);
+
+assert.equal(
+  deletingAccess.isPublic,
+  false,
+  'deletion in progress must never remain visitor-public'
+);
+assert.equal(deletingAccess.reason, 'deleting');
+assert.equal(
+  deletingAccess.visitorMessage,
+  '현재 이용할 수 없는 페이지입니다.',
+  'visitor responses must not expose deletion job details'
+);
+assert.equal(
+  JSON.stringify(deletingAccess).includes('private-deletion-job'),
+  false,
+  'public access results must not expose deletion metadata'
+);
+
+assert.equal(
+  shouldRunClientInvitationPageQuery({
+    isAdminLoading: false,
+    isAdminLoggedIn: false,
+    hasInitialPage: false,
+    hasInitialBlockMessage: true,
+  }),
+  false,
+  'a server-blocked visitor must not reopen the event through a client query'
+);
+assert.equal(
+  shouldRunClientInvitationPageQuery({
+    isAdminLoading: false,
+    isAdminLoggedIn: true,
+    hasInitialPage: false,
+    hasInitialBlockMessage: true,
+  }),
+  true,
+  'an authenticated administrator may still load a blocked event for recovery'
+);
 
 assert.equal(
   getInvitationPublicAccessState({

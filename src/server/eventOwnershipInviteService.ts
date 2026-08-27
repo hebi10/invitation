@@ -1,6 +1,7 @@
 import 'server-only';
 
 import { normalizeInvitationPageSlugInput } from '@/lib/invitationPagePersistence';
+import { isEventDeletionBlockingAccess } from './eventDeletionPolicy';
 
 import {
   createOwnershipInviteToken,
@@ -13,8 +14,37 @@ import {
   inspectStoredEventOwnershipInvite,
   issueStoredEventOwnershipInvite,
 } from './repositories/eventOwnershipInviteRepository';
+import { resolveStoredEventBySlug } from './repositories/eventRepository';
 
 export { EventOwnershipInviteError };
+
+type EventOwnershipInviteDependencies = {
+  resolveEventBySlug: typeof resolveStoredEventBySlug;
+  issueStoredInvite: typeof issueStoredEventOwnershipInvite;
+  inspectStoredInvite: typeof inspectStoredEventOwnershipInvite;
+  consumeStoredInvite: typeof consumeStoredEventOwnershipInvite;
+};
+
+const defaultEventOwnershipInviteDependencies: EventOwnershipInviteDependencies = {
+  resolveEventBySlug: resolveStoredEventBySlug,
+  issueStoredInvite: issueStoredEventOwnershipInvite,
+  inspectStoredInvite: inspectStoredEventOwnershipInvite,
+  consumeStoredInvite: consumeStoredEventOwnershipInvite,
+};
+
+async function assertOwnershipInviteAccessAvailable(
+  pageSlug: string,
+  dependencies: Pick<EventOwnershipInviteDependencies, 'resolveEventBySlug'>
+) {
+  const resolvedEvent = await dependencies.resolveEventBySlug(pageSlug);
+  if (isEventDeletionBlockingAccess(resolvedEvent?.summary.deletion)) {
+    throw new EventOwnershipInviteError(
+      409,
+      'unavailable',
+      '현재 이용할 수 없는 청첩장입니다. 잠시 후 다시 시도해 주세요.'
+    );
+  }
+}
 
 function normalizeRequiredValue(value: string, message: string) {
   const normalizedValue = value.trim();
@@ -30,7 +60,10 @@ export async function issueEventOwnershipInvite(input: {
   createdByUid: string;
   baseUrl: string;
   now?: Date;
-}) {
+}, dependencies: Pick<
+  EventOwnershipInviteDependencies,
+  'resolveEventBySlug' | 'issueStoredInvite'
+> = defaultEventOwnershipInviteDependencies) {
   const pageSlug = normalizeInvitationPageSlugInput(input.pageSlug);
   const createdByUid = normalizeRequiredValue(
     input.createdByUid,
@@ -48,10 +81,15 @@ export async function issueEventOwnershipInvite(input: {
     );
   }
 
+  await assertOwnershipInviteAccessAvailable(
+    pageSlug,
+    dependencies
+  );
+
   const createdAt = input.now ?? new Date();
   const expiresAt = new Date(createdAt.getTime() + OWNERSHIP_INVITE_TTL_MS);
   const token = createOwnershipInviteToken();
-  const target = await issueStoredEventOwnershipInvite({
+  const target = await dependencies.issueStoredInvite({
     pageSlug,
     tokenHash: hashOwnershipInviteToken(token),
     createdByUid,
@@ -71,7 +109,10 @@ export async function inspectEventOwnershipInvite(input: {
   pageSlug: string;
   token: string;
   now?: Date;
-}) {
+}, dependencies: Pick<
+  EventOwnershipInviteDependencies,
+  'resolveEventBySlug' | 'inspectStoredInvite'
+> = defaultEventOwnershipInviteDependencies) {
   const pageSlug = normalizeInvitationPageSlugInput(input.pageSlug);
   if (!pageSlug) {
     return {
@@ -82,7 +123,12 @@ export async function inspectEventOwnershipInvite(input: {
     };
   }
 
-  return inspectStoredEventOwnershipInvite({
+  await assertOwnershipInviteAccessAvailable(
+    pageSlug,
+    dependencies
+  );
+
+  return dependencies.inspectStoredInvite({
     pageSlug,
     token: input.token,
     now: input.now ?? new Date(),
@@ -98,7 +144,10 @@ export async function consumeEventOwnershipInvite(input: {
     displayName?: string | null;
   };
   now?: Date;
-}) {
+}, dependencies: Pick<
+  EventOwnershipInviteDependencies,
+  'resolveEventBySlug' | 'consumeStoredInvite'
+> = defaultEventOwnershipInviteDependencies) {
   const pageSlug = normalizeInvitationPageSlugInput(input.pageSlug);
   const customerUid = normalizeRequiredValue(
     input.customer.uid,
@@ -112,7 +161,12 @@ export async function consumeEventOwnershipInvite(input: {
     );
   }
 
-  return consumeStoredEventOwnershipInvite({
+  await assertOwnershipInviteAccessAvailable(
+    pageSlug,
+    dependencies
+  );
+
+  return dependencies.consumeStoredInvite({
     pageSlug,
     token: input.token,
     customer: {

@@ -6,12 +6,17 @@ import {
   MOBILE_CLIENT_EDITOR_PAGE_ACTIONS,
 } from '@/contracts/mobileClientEditorPageActions';
 import { isInvitationThemeKey } from '@/lib/invitationThemes';
-import { GENERIC_SERVER_ERROR_MESSAGE, getInternalErrorReason } from '@/server/apiErrorResponse';
+import {
+  GENERIC_SERVER_ERROR_MESSAGE,
+  getInternalErrorReason,
+  toSafeHttpErrorResponse,
+} from '@/server/apiErrorResponse';
 import {
   authorizeMobileClientEditorRequest,
   authorizeMobileClientEditorToken,
   buildMissingMobileClientEditorPermissionError,
   hasMobileClientEditorPermission,
+  MobileClientEditorAccessError,
   type AuthorizedMobileClientEditorAccess,
 } from '@/server/clientEditorMobileApi';
 import {
@@ -261,7 +266,18 @@ export async function POST(
   const { slug } = await context.params;
   const pageSlug = slug.trim();
 
-  const access = await authorizeMobileClientEditorRequest(request, pageSlug);
+  let access: AuthorizedMobileClientEditorAccess | null;
+  try {
+    access = await authorizeMobileClientEditorRequest(request, pageSlug, {
+      deletionBehavior: 'conflict',
+    });
+  } catch (error) {
+    if (error instanceof MobileClientEditorAccessError) {
+      return toSafeHttpErrorResponse(error);
+    }
+
+    throw error;
+  }
   if (!access) {
     return NextResponse.json({ error: 'Unauthorized.' }, { status: 401 });
   }
