@@ -15,8 +15,13 @@ const openingThemesSource = read('src/lib/openingThemes.ts');
 const adminPageUtilsSource = read('src/app/admin/_components/adminPageUtils.ts');
 const studioOpeningPagePath =
   'src/app/_components/public-invitations/opening/studio-opening/Page.tsx';
+const programEditionPagePath =
+  'src/app/_components/public-invitations/general-event/program-edition/Page.tsx';
 const publicOpeningIndexSource = read(
   'src/app/_components/public-invitations/opening/index.ts'
+);
+const publicGeneralEventIndexSource = read(
+  'src/app/_components/public-invitations/general-event/index.ts'
 );
 
 assert.equal(
@@ -41,6 +46,16 @@ assert.match(
   /studio-opening\/Page/,
   'the public opening index should export the dedicated Studio Opening page'
 );
+assert.equal(
+  fs.existsSync(path.resolve(programEditionPagePath)),
+  true,
+  'general-event-elegant should have a dedicated Program Edition renderer'
+);
+assert.match(
+  publicGeneralEventIndexSource,
+  /program-edition\/Page/,
+  'the public general-event index should export the dedicated Program Edition page'
+);
 
 assert.match(openingPageSource, /from ['"]\.\.\/public-invitations\/opening['"];/);
 assert.doesNotMatch(
@@ -61,6 +76,11 @@ assert.doesNotMatch(
   generalEventPageSource,
   /from ['"]\.\/themeRenderers\/shared['"];/,
   'general-event route must not import the legacy shared renderer directly'
+);
+assert.match(
+  generalEventPageSource,
+  /if\s*\(visualTheme\s*===\s*['"]general-event-elegant['"]\)\s*\{[\s\S]*?<ProgramEditionPage state=\{state\}\s*\/>/,
+  'general-event-elegant should remain bound to ProgramEditionPage'
 );
 
 assert.match(

@@ -230,4 +230,108 @@ assert.match(
   'First Chapter inputs should use the accessible control boundary token'
 );
 
+const programEditionPagePath =
+  'src/app/_components/public-invitations/general-event/program-edition/Page.tsx';
+const programEditionCssPath =
+  'src/app/_components/public-invitations/general-event/program-edition/styles.module.css';
+
+assert.equal(
+  existsSync(programEditionPagePath),
+  true,
+  'general-event-elegant should have a dedicated Program Edition page'
+);
+assert.equal(
+  existsSync(programEditionCssPath),
+  true,
+  'Program Edition should own dedicated visual-world styles'
+);
+
+const generalEventIndex = read(
+  'src/app/_components/public-invitations/general-event/index.ts'
+);
+const generalEventRoute = read(
+  'src/app/_components/generalEvent/GeneralEventInvitationPage.tsx'
+);
+const programEditionPage = read(programEditionPagePath);
+const programEditionCss = read(programEditionCssPath);
+
+assert.match(
+  generalEventIndex,
+  /program-edition\/Page/,
+  'the public general-event index should export the dedicated Program Edition page'
+);
+assert.match(
+  generalEventRoute,
+  /if\s*\(visualTheme\s*===\s*['"]general-event-elegant['"]\)\s*\{[\s\S]*?<ProgramEditionPage state=\{state\}\s*\/>/,
+  'general-event-elegant should remain bound to ProgramEditionPage'
+);
+assert.match(programEditionPage, /buildGeneralEventViewModel/);
+assert.match(programEditionPage, /from ['"]\.\.\/\.\.\/shared\/InvitationActionLink['"]/);
+assert.match(
+  programEditionPage,
+  /const sourceProgramItems =\s*state\.pageConfig\.pageData\?\.programItems\?\.filter/,
+  'Program Edition should derive optional program rows from source data'
+);
+assert.match(
+  programEditionPage,
+  /const model = \{[\s\S]*?programItems: sourceProgramItems,[\s\S]*?\};/,
+  'Program Edition should not expose synthesized fallback program rows'
+);
+assert.match(programEditionPage, /model\.programItems\.length\s*>\s*0\s*\?/);
+assert.match(programEditionPage, /<ol[^>]*className=\{styles\.programList\}/);
+assert.match(programEditionPage, /\{item\.time\}/);
+assert.match(programEditionPage, /\{item\.title\}/);
+assert.match(programEditionPage, /item\.description\s*\?/);
+assert.match(
+  programEditionPage,
+  /const hasContact = Boolean\(model\.contactEmail \|\| model\.contactPhone\)/,
+  'Program Edition should only show participation methods backed by contact data'
+);
+assert.match(programEditionPage, /emailHref\s*\?/);
+assert.match(programEditionPage, /phoneHref\s*\?/);
+assert.match(programEditionPage, /href=\{emailHref\}/);
+assert.match(programEditionPage, /href=\{phoneHref\}/);
+assert.match(programEditionPage, /model\.mapUrl\s*\?/);
+assert.match(programEditionPage, /state\.galleryImageUrls\.length\s*>\s*0\s*\?/);
+assert.match(programEditionPage, /features\.showGuestbook\s*\?/);
+assert.doesNotMatch(programEditionPage, /참석 응답 기능은 준비 중|준비 중|RSVP/);
+assert.doesNotMatch(programEditionPage, /General Event|<IntroScreen|setTimeout|setInterval/);
+
+const programEditionOrder = [
+  'data-program-edition-section="poster"',
+  'data-program-edition-section="program"',
+  'data-program-edition-section="participation"',
+  'data-program-edition-section="visit"',
+].map((marker) => programEditionPage.indexOf(marker));
+
+assert.equal(
+  programEditionOrder.every((position) => position >= 0),
+  true,
+  'Program Edition should define poster, program, participation, and visit sections'
+);
+assert.deepEqual(
+  programEditionOrder,
+  [...programEditionOrder].sort((first, second) => first - second),
+  'Program Edition should order poster, program, participation, then visit information'
+);
+assert.doesNotMatch(programEditionCss, /(?:linear|radial|conic)-gradient/);
+assert.doesNotMatch(programEditionCss, /box-shadow/);
+assert.doesNotMatch(programEditionCss, /border-radius:\s*(?:2[4-9]|[3-9]\d|\d{3,})px/);
+assert.match(programEditionCss, /min-height:\s*44px/);
+assert.match(programEditionCss, /:focus-visible/);
+
+const programEditionPaper = programEditionCss.match(
+  /--paper:\s*(#[0-9a-f]{6})/i
+)?.[1];
+const programEditionMuted = programEditionCss.match(
+  /--muted:\s*(#[0-9a-f]{6})/i
+)?.[1];
+
+assert.ok(programEditionPaper, 'Program Edition should define its paper color');
+assert.ok(programEditionMuted, 'Program Edition should define its secondary text color');
+assert.ok(
+  contrastRatio(programEditionPaper, programEditionMuted) >= 4.5,
+  'Program Edition secondary text should meet AA contrast'
+);
+
 console.log('public invitation visual-world checks passed');

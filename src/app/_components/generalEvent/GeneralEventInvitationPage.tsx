@@ -43,8 +43,9 @@ export default function GeneralEventInvitationPage(options: GeneralEventRouteOpt
     return null;
   }
 
-  const EventPage =
-    visualTheme === 'general-event-elegant' ? ProgramEditionPage : NightSchedulePage;
+  if (visualTheme === 'general-event-elegant') {
+    return <ProgramEditionPage state={state} />;
+  }
 
-  return <EventPage state={state} theme={visualTheme} />;
+  return <NightSchedulePage state={state} theme={visualTheme} />;
 }
