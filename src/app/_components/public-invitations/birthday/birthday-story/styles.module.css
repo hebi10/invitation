@@ -539,4 +539,9 @@
   .loadingSpinner {
     animation: none;
   }
+
+  .page .imageItem,
+  .page .popupImage {
+    transition: none !important;
+  }
 }

@@ -52,6 +52,7 @@ assert.equal(
 );
 
 const dawnChapterSource = fs.readFileSync(dawnChapterPagePath, 'utf8');
+const dawnChapterCss = fs.readFileSync(dawnChapterCssPath, 'utf8');
 
 assert.equal(
   source.includes('<FirstBirthdayIntro'),
@@ -169,6 +170,26 @@ assert.match(dawnChapterSource, /features\.showGuestbook\s*\?/);
 assert.match(dawnChapterSource, /FALLBACK_IDENTITY_LABELS/);
 assert.doesNotMatch(dawnChapterSource, /준비 중|이미지 없음|입력해 주세요/);
 assert.doesNotMatch(dawnChapterSource, /First Birthday|setTimeout|setInterval/);
+assert.match(
+  dawnChapterSource,
+  /const heroTitle = visibleBabyName\s*\? `\$\{visibleBabyName\}의 첫 아침`\s*:\s*'우리의 첫 아침';/,
+  'Dawn Chapter should resolve one effective hero title without exposing the adapter placeholder'
+);
+assert.match(
+  dawnChapterSource,
+  /<h1 id="dawn-chapter-title" className=\{styles\.heroTitle\}>\s*\{heroTitle\}\s*<\/h1>/,
+  'Dawn Chapter should always render its effective image hero title as h1'
+);
+assert.doesNotMatch(
+  dawnChapterSource,
+  /<p className=\{styles\.heroTitle\}>/,
+  'Dawn Chapter should not demote its neutral image hero title to a paragraph'
+);
+assert.match(
+  dawnChapterCss,
+  /@media \(prefers-reduced-motion: reduce\) \{[\s\S]*?\.page \.imageItem,\s*\.page \.popupImage \{[\s\S]*?transition:\s*none !important;/,
+  'Dawn Chapter should override shared gallery image transitions for reduced motion'
+);
 
 const dawnChapterSections = [
   'data-dawn-chapter-section="identity"',

@@ -86,6 +86,8 @@ for (const filePath of [
 
 const partyNotesSource = fs.readFileSync(partyNotesPagePath, 'utf8');
 const birthdayStorySource = fs.readFileSync(birthdayStoryPagePath, 'utf8');
+const partyNotesCss = fs.readFileSync(partyNotesCssPath, 'utf8');
+const birthdayStoryCss = fs.readFileSync(birthdayStoryCssPath, 'utf8');
 
 assert.match(birthdayRegistrySource, /'birthday-minimal':\s*PartyNotesPage/);
 assert.match(birthdayRegistrySource, /'birthday-floral':\s*BirthdayStoryPage/);
@@ -107,6 +109,17 @@ assert.match(birthdayStorySource, /const hasLocation = Boolean\(/);
 assert.match(birthdayStorySource, /features\.showGuestbook\s*\?/);
 assert.doesNotMatch(birthdayStorySource, /준비 중|이미지 없음|입력해 주세요/);
 assert.doesNotMatch(birthdayStorySource, /setTimeout|setInterval|<IntroScreen/);
+
+for (const [label, css] of [
+  ['Party Notes', partyNotesCss],
+  ['Birthday Story', birthdayStoryCss],
+] as const) {
+  assert.match(
+    css,
+    /@media \(prefers-reduced-motion: reduce\) \{[\s\S]*?\.page \.imageItem,\s*\.page \.popupImage \{[\s\S]*?transition:\s*none !important;/,
+    `${label} should override shared gallery image transitions for reduced motion`
+  );
+}
 
 const partyNotesSections = [
   'data-party-notes-section="memo"',

@@ -66,6 +66,9 @@ export default function DawnChapterPage({ state }: DawnChapterPageProps) {
     ? `${visibleBabyName} 돌잔치 초대장`
     : '돌잔치 초대장';
   const posterTitle = visibleBabyName || '우리의 첫 번째 생일';
+  const heroTitle = visibleBabyName
+    ? `${visibleBabyName}의 첫 아침`
+    : '우리의 첫 아침';
   const imageAltPrefix = visibleBabyName || '아이';
   const contactHref = model.contact.replace(/[^0-9+]/g, '');
 
@@ -75,18 +78,13 @@ export default function DawnChapterPage({ state }: DawnChapterPageProps) {
         {coverImageUrl ? (
           <section
             className={styles.hero}
-            aria-labelledby={visibleBabyName ? 'dawn-chapter-title' : undefined}
-            aria-label={visibleBabyName ? undefined : '첫 번째 생일'}
+            aria-labelledby="dawn-chapter-title"
           >
             <div className={styles.heroHeading}>
               <p className={styles.heroDate}>{model.dateLabel}</p>
-              {visibleBabyName ? (
-                <h1 id="dawn-chapter-title" className={styles.heroTitle}>
-                  {visibleBabyName}의 첫 아침
-                </h1>
-              ) : (
-                <p className={styles.heroTitle}>우리의 첫 아침</p>
-              )}
+              <h1 id="dawn-chapter-title" className={styles.heroTitle}>
+                {heroTitle}
+              </h1>
             </div>
             <figure className={styles.heroFigure}>
               <img
