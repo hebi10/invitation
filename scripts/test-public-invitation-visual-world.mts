@@ -75,6 +75,61 @@ assert.match(actionCss, /min-height:\s*44px/);
 assert.match(actionCss, /min-width:\s*44px/);
 assert.match(actionCss, /:focus-visible/);
 
+const studioOpeningPagePath =
+  'src/app/_components/public-invitations/opening/studio-opening/Page.tsx';
+const studioOpeningCssPath =
+  'src/app/_components/public-invitations/opening/studio-opening/styles.module.css';
+
+assert.equal(
+  existsSync(studioOpeningPagePath),
+  true,
+  'opening-natural should have a dedicated Studio Opening page'
+);
+assert.equal(
+  existsSync(studioOpeningCssPath),
+  true,
+  'Studio Opening should own dedicated visual-world styles'
+);
+
+const studioOpeningPage = read(studioOpeningPagePath);
+const studioOpeningCss = read(studioOpeningCssPath);
+
+assert.match(studioOpeningPage, /buildOpeningInvitationViewModel/);
+assert.match(studioOpeningPage, /from ['"]\.\.\/\.\.\/shared\/InvitationPoster['"]/);
+assert.match(studioOpeningPage, /from ['"]\.\.\/\.\.\/shared\/InvitationActionLink['"]/);
+assert.match(studioOpeningPage, /model\.benefitItems\.length\s*>\s*0\s*\?/);
+assert.match(studioOpeningPage, /model\.mapUrl\s*\?/);
+assert.match(studioOpeningPage, /지도에서 길찾기/);
+assert.match(studioOpeningPage, /model\.galleryImageUrls\.length\s*>\s*0\s*\?/);
+assert.match(studioOpeningPage, /features\.showGuestbook\s*\?/);
+assert.doesNotMatch(
+  studioOpeningPage,
+  /초대장 열기|오픈 준비 중|setTimeout|setInterval|<IntroScreen/
+);
+assert.doesNotMatch(studioOpeningPage, /준비 중|이미지 없음|입력해 주세요/);
+
+const studioOpeningOrder = [
+  'data-studio-opening-section="identity"',
+  'data-studio-opening-section="services"',
+  'data-studio-opening-section="benefits"',
+  'data-studio-opening-section="visit"',
+].map((marker) => studioOpeningPage.indexOf(marker));
+
+assert.equal(
+  studioOpeningOrder.every((position) => position >= 0),
+  true,
+  'Studio Opening should define every required information section'
+);
+assert.deepEqual(
+  studioOpeningOrder,
+  [...studioOpeningOrder].sort((first, second) => first - second),
+  'Studio Opening should order identity, services, benefits, then visit information'
+);
+assert.doesNotMatch(studioOpeningCss, /(?:linear|radial|conic)-gradient/);
+assert.doesNotMatch(studioOpeningCss, /box-shadow/);
+assert.match(studioOpeningCss, /min-height:\s*44px/);
+assert.match(studioOpeningCss, /:focus-visible/);
+
 const firstChapterPagePath =
   'src/app/_components/public-invitations/first-birthday/first-chapter/Page.tsx';
 const firstChapterCssPath =
