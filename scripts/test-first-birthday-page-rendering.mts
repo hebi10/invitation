@@ -17,6 +17,24 @@ const cssSource = fs.readFileSync(
   'src/app/_components/firstBirthday/FirstBirthdayInvitationPage.module.css',
   'utf8'
 );
+const firstChapterPagePath =
+  'src/app/_components/public-invitations/first-birthday/first-chapter/Page.tsx';
+const firstChapterCssPath =
+  'src/app/_components/public-invitations/first-birthday/first-chapter/styles.module.css';
+
+assert.equal(
+  fs.existsSync(firstChapterPagePath),
+  true,
+  'first-birthday-pink should have a dedicated First Chapter renderer'
+);
+assert.equal(
+  fs.existsSync(firstChapterCssPath),
+  true,
+  'First Chapter should have dedicated visual-world styles'
+);
+
+const firstChapterSource = fs.readFileSync(firstChapterPagePath, 'utf8');
+const firstChapterCss = fs.readFileSync(firstChapterCssPath, 'utf8');
 
 assert.equal(
   source.includes('<FirstBirthdayIntro'),
@@ -53,5 +71,49 @@ assert.equal(
   true,
   'first-birthday no-image hero should not reserve the cover image slot'
 );
+assert.match(
+  firstChapterSource,
+  /buildFirstBirthdayInvitationViewModel\(state\)/,
+  'First Chapter should consume the existing first-birthday view model'
+);
+assert.match(
+  firstChapterSource,
+  /<InvitationPoster/,
+  'First Chapter should use InvitationPoster when its representative image is empty'
+);
+assert.match(
+  firstChapterSource,
+  /model\.galleryImageUrls\.length\s*>\s*0\s*\?/,
+  'First Chapter should omit the whole growth-photo section when the gallery is empty'
+);
+assert.doesNotMatch(
+  firstChapterSource,
+  /First Birthday/,
+  'First Chapter should not use the legacy English kicker'
+);
+
+const orderedSections = [
+  'data-first-chapter-section="identity"',
+  'data-first-chapter-section="growth"',
+  'data-first-chapter-section="schedule"',
+  'data-first-chapter-section="location"',
+  'data-first-chapter-section="guestbook"',
+];
+const sectionPositions = orderedSections.map((section) =>
+  firstChapterSource.indexOf(section)
+);
+
+assert.equal(
+  sectionPositions.every((position) => position >= 0),
+  true,
+  'First Chapter should expose every ordered content landmark'
+);
+assert.deepEqual(
+  [...sectionPositions].sort((left, right) => left - right),
+  sectionPositions,
+  'First Chapter DOM order should be identity, growth, schedule, location, guestbook'
+);
+assert.match(firstChapterCss, /min-height:\s*44px/);
+assert.match(firstChapterCss, /:focus-visible/);
 
 console.log('first birthday page rendering checks passed');

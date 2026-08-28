@@ -53,4 +53,50 @@ assert.match(actionCss, /min-height:\s*44px/);
 assert.match(actionCss, /min-width:\s*44px/);
 assert.match(actionCss, /:focus-visible/);
 
+const firstChapterPagePath =
+  'src/app/_components/public-invitations/first-birthday/first-chapter/Page.tsx';
+const firstChapterCssPath =
+  'src/app/_components/public-invitations/first-birthday/first-chapter/styles.module.css';
+
+assert.equal(
+  existsSync(firstChapterPagePath),
+  true,
+  'first-birthday-pink should have a dedicated First Chapter page'
+);
+assert.equal(
+  existsSync(firstChapterCssPath),
+  true,
+  'First Chapter should own dedicated visual-world styles'
+);
+
+const firstBirthdayIndex = read(
+  'src/app/_components/public-invitations/first-birthday/index.ts'
+);
+const firstBirthdayRegistry = read(
+  'src/app/_components/firstBirthday/themeRenderers/registry.ts'
+);
+const firstChapterPage = read(firstChapterPagePath);
+const firstChapterCss = read(firstChapterCssPath);
+
+assert.match(
+  firstBirthdayIndex,
+  /first-chapter\/Page/,
+  'the public first-birthday index should export the dedicated First Chapter page'
+);
+assert.match(
+  firstBirthdayRegistry,
+  /'first-birthday-pink':\s*FirstChapterPage/,
+  'first-birthday-pink should remain bound to FirstChapterPage'
+);
+assert.match(firstChapterPage, /from ['"]\.\.\/\.\.\/shared\/InvitationPoster['"]/);
+assert.match(firstChapterPage, /const hasContact = Boolean\(model\.contact\.trim\(\)\)/);
+assert.match(firstChapterPage, /const hasLocation = Boolean\(/);
+assert.match(firstChapterPage, /features\.showGuestbook\s*\?/);
+assert.doesNotMatch(firstChapterPage, /<FirstBirthdayIntro|setTimeout|setInterval/);
+assert.doesNotMatch(firstChapterPage, /준비 중|이미지 없음|입력해 주세요/);
+assert.doesNotMatch(firstChapterCss, /(?:linear|radial|conic)-gradient/);
+assert.doesNotMatch(firstChapterCss, /box-shadow/);
+assert.match(firstChapterCss, /min-height:\s*44px/);
+assert.match(firstChapterCss, /:focus-visible/);
+
 console.log('public invitation visual-world checks passed');
