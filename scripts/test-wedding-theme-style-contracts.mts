@@ -17,6 +17,9 @@ const simpleMotion = [
 ].map(read);
 const romanticCss = read('src/app/_components/themeRenderers/romantic.module.css');
 const classicCss = read('src/app/_components/themeRenderers/classic-r.module.css');
+const letterpressCss = read(
+  'src/app/_components/public-invitations/wedding/letterpress/styles.module.css'
+);
 
 assert.match(globals, /--accent-brown:/);
 for (const css of [...emotionalMotion, ...simpleMotion, romanticCss, classicCss]) {
@@ -25,5 +28,14 @@ for (const css of [...emotionalMotion, ...simpleMotion, romanticCss, classicCss]
 assert.match(romanticCss, /--romantic-accent-text:/);
 assert.match(classicCss, /--classic-muted-readable:/);
 assert.match(classicCss, /\[aria-selected=["']true["']\]/);
+assert.doesNotMatch(
+  letterpressCss,
+  /border-radius:\s*(?:[1-9]|\d{2,})px|border-radius:\s*999px/
+);
+assert.doesNotMatch(letterpressCss, /box-shadow/);
+assert.doesNotMatch(letterpressCss, /gradient\(/);
+assert.match(letterpressCss, /min-height:\s*44px/);
+assert.match(letterpressCss, /:focus-visible/);
+assert.match(letterpressCss, /prefers-reduced-motion:\s*reduce/);
 
 console.log('웨딩 테마 스타일 계약 검증 통과');
