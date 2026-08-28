@@ -1,4 +1,9 @@
 import assert from 'node:assert/strict';
+import { spawnSync } from 'node:child_process';
+import { existsSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import path from 'node:path';
+import { pathToFileURL } from 'node:url';
 
 import {
   SHORTCUT_ITEMS,
@@ -19,6 +24,10 @@ import { BIRTHDAY_THEME_META } from '../src/lib/birthdayThemes.ts';
 import { getGeneralEventTheme } from '../src/lib/generalEventThemes.ts';
 import { getOpeningTheme } from '../src/lib/openingThemes.ts';
 import { getEventSamplePageBySlug } from '../src/config/eventSamplePages.ts';
+import {
+  DEFAULT_PUBLIC_SITE_URL,
+  getPublicSiteUrl,
+} from '../src/lib/invitationMetadata.ts';
 import { DUMMY_EVENT_SEEDS } from './seed-dummy-events.mts';
 
 assert.deepEqual(
@@ -27,21 +36,21 @@ assert.deepEqual(
 );
 
 const expectedInvitationThemeMetadata = [
-  ['emotional', '포트레이트 레터', '세로 사진과 짧은 편지가 중심인 여백형 웨딩입니다.'],
-  ['romantic', '가든 노트', '한 줄 식물 장식과 편지형 인사말, 가족 연락 흐름을 담은 웨딩입니다.'],
-  ['simple', '고요한 예식', '일정·장소를 우선하는 절제된 정보 인쇄물입니다.'],
-  ['classic-r', '레터프레스', '고전 활자와 얇은 선, 종이 인쇄물 같은 웨딩입니다.'],
-  ['first-birthday-pink', '퍼스트 챕터', '아이 이름·날짜·성장 한 장면을 기록하는 첫 돌입니다.'],
-  ['first-birthday-mint', '새벽 챕터', '차분한 여백과 날짜 기록 중심의 첫 돌입니다.'],
-  ['birthday-minimal', '파티 노트', '일정·장소·연락처를 우선하는 생일 파티 메모입니다.'],
-  ['birthday-floral', '생일 이야기', '사진과 축하 문장을 중심으로 한 짧은 생일 기록입니다.'],
-  ['opening-natural', '스튜디오 오프닝', '브랜드 소개·서비스·혜택·방문 정보가 이어지는 소개서입니다.'],
-  ['opening-modern', '오프닝 포스터', '상호·오픈일·방문 행동을 대담하게 조판한 포스터입니다.'],
-  ['general-event-elegant', '프로그램 에디션', '행사 정보와 세로 프로그램을 정돈한 격식 있는 에디션입니다.'],
-  ['general-event-vivid', '나이트 스케줄', '야간 행사명과 세로 프로그램을 선명하게 보여주는 일정 포스터입니다.'],
-] as const satisfies ReadonlyArray<readonly [InvitationThemeKey, string, string]>;
+  ['emotional', '포트레이트 레터', '세로 사진과 짧은 편지가 중심인 여백형 웨딩입니다.', '/emotional'],
+  ['romantic', '가든 노트', '한 줄 식물 장식과 편지형 인사말, 가족 연락 흐름을 담은 웨딩입니다.', '/romantic'],
+  ['simple', '고요한 예식', '일정·장소를 우선하는 절제된 정보 인쇄물입니다.', '/simple'],
+  ['classic-r', '레터프레스', '고전 활자와 얇은 선, 종이 인쇄물 같은 웨딩입니다.', '/classic-r'],
+  ['first-birthday-pink', '퍼스트 챕터', '아이 이름·날짜·성장 한 장면을 기록하는 첫 돌입니다.', '/first-birthday-pink'],
+  ['first-birthday-mint', '새벽 챕터', '차분한 여백과 날짜 기록 중심의 첫 돌입니다.', '/first-birthday-mint'],
+  ['birthday-minimal', '파티 노트', '일정·장소·연락처를 우선하는 생일 파티 메모입니다.', '/birthday-minimal'],
+  ['birthday-floral', '생일 이야기', '사진과 축하 문장을 중심으로 한 짧은 생일 기록입니다.', '/birthday-floral'],
+  ['opening-natural', '스튜디오 오프닝', '브랜드 소개·서비스·혜택·방문 정보가 이어지는 소개서입니다.', '/opening-natural'],
+  ['opening-modern', '오프닝 포스터', '상호·오픈일·방문 행동을 대담하게 조판한 포스터입니다.', '/opening-modern'],
+  ['general-event-elegant', '프로그램 에디션', '행사 정보와 세로 프로그램을 정돈한 격식 있는 에디션입니다.', '/general-event-elegant'],
+  ['general-event-vivid', '나이트 스케줄', '야간 행사명과 세로 프로그램을 선명하게 보여주는 일정 포스터입니다.', '/general-event-vivid'],
+] as const satisfies ReadonlyArray<readonly [InvitationThemeKey, string, string, string]>;
 
-for (const [theme, label, description] of expectedInvitationThemeMetadata) {
+for (const [theme, label, description, pathSuffix] of expectedInvitationThemeMetadata) {
   const definition = getInvitationThemeDefinition(theme);
 
   assert.equal(definition.label, label, `${theme} must use its renewed display label`);
@@ -61,6 +70,7 @@ for (const [theme, label, description] of expectedInvitationThemeMetadata) {
     description,
     `${theme} preview description must describe its dedicated visual world`
   );
+  assert.equal(definition.pathSuffix, pathSuffix, `${theme} must preserve its public path suffix`);
 }
 
 assert.deepEqual(BIRTHDAY_THEME_META['birthday-minimal'], {
@@ -241,5 +251,107 @@ for (const theme of [
     allowsAdditionalPurchase: false,
   });
 }
+
+function resolveNpxCliPath() {
+  const nodeDirectory = path.dirname(process.execPath);
+  const candidates = [
+    process.env.npm_execpath
+      ? path.join(path.dirname(process.env.npm_execpath), 'npx-cli.js')
+      : null,
+    path.join(nodeDirectory, 'node_modules', 'npm', 'bin', 'npx-cli.js'),
+    path.resolve(nodeDirectory, '..', 'lib', 'node_modules', 'npm', 'bin', 'npx-cli.js'),
+  ];
+
+  return candidates.find((candidate) => candidate && existsSync(candidate)) ?? null;
+}
+
+const npxCliPath = resolveNpxCliPath();
+assert.ok(npxCliPath, 'the project test runner must provide the npx CLI.');
+
+function getFreshThemePreviewUrl(publicSiteUrl?: string) {
+  const env = { ...process.env };
+  const temporaryDirectory = mkdtempSync(
+    path.join(tmpdir(), 'invitation-theme-preview-url-')
+  );
+  const scriptPath = path.join(temporaryDirectory, 'preview-url.mts');
+  const invitationThemesModuleUrl = pathToFileURL(
+    path.resolve('src/lib/invitationThemes.ts')
+  ).href;
+
+  if (publicSiteUrl === undefined) {
+    delete env.NEXT_PUBLIC_SITE_URL;
+  } else {
+    env.NEXT_PUBLIC_SITE_URL = publicSiteUrl;
+  }
+
+  try {
+    writeFileSync(
+      scriptPath,
+      [
+        `import { getInvitationThemePreviewSampleUrl } from '${invitationThemesModuleUrl}';`,
+        "console.log(getInvitationThemePreviewSampleUrl('emotional', 'standard'));",
+      ].join('\n'),
+      'utf8'
+    );
+
+    const result = spawnSync(
+      process.execPath,
+      [
+        npxCliPath,
+        '--yes',
+        'tsx',
+        '--conditions',
+        'react-server',
+        scriptPath,
+      ],
+      {
+        cwd: process.cwd(),
+        encoding: 'utf8',
+        env,
+      }
+    );
+
+    assert.equal(result.status, 0, result.stderr);
+    return result.stdout.trim();
+  } finally {
+    rmSync(temporaryDirectory, { recursive: true, force: true });
+  }
+}
+
+function withPublicSiteUrl(value: string | undefined, assertion: () => void) {
+  const previous = process.env.NEXT_PUBLIC_SITE_URL;
+
+  try {
+    if (value === undefined) {
+      delete process.env.NEXT_PUBLIC_SITE_URL;
+    } else {
+      process.env.NEXT_PUBLIC_SITE_URL = value;
+    }
+
+    assertion();
+  } finally {
+    if (previous === undefined) {
+      delete process.env.NEXT_PUBLIC_SITE_URL;
+    } else {
+      process.env.NEXT_PUBLIC_SITE_URL = previous;
+    }
+  }
+}
+
+withPublicSiteUrl('https://preview.msgnote.kr/custom-path/', () => {
+  assert.equal(getPublicSiteUrl().origin, 'https://preview.msgnote.kr');
+  assert.equal(
+    getFreshThemePreviewUrl(process.env.NEXT_PUBLIC_SITE_URL),
+    'https://preview.msgnote.kr/kim-taehyun-choi-yuna/emotional/'
+  );
+});
+
+withPublicSiteUrl(undefined, () => {
+  assert.equal(getPublicSiteUrl().toString(), `${DEFAULT_PUBLIC_SITE_URL}/`);
+  assert.equal(
+    getFreshThemePreviewUrl(),
+    'https://invite.msgnote.kr/kim-taehyun-choi-yuna/emotional/'
+  );
+});
 
 console.log('admin event preview link checks passed');
