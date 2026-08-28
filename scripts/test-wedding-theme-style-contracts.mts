@@ -5,6 +5,28 @@ import path from 'node:path';
 const read = (relativePath: string) =>
   readFileSync(path.resolve(process.cwd(), relativePath), 'utf8');
 
+function parseHexColor(value: string) {
+  const hex = value.replace('#', '');
+  return [0, 2, 4].map((offset) => Number.parseInt(hex.slice(offset, offset + 2), 16));
+}
+
+function relativeLuminance(color: string) {
+  const channels = parseHexColor(color).map((channel) => {
+    const normalized = channel / 255;
+    return normalized <= 0.04045
+      ? normalized / 12.92
+      : ((normalized + 0.055) / 1.055) ** 2.4;
+  });
+
+  return 0.2126 * channels[0] + 0.7152 * channels[1] + 0.0722 * channels[2];
+}
+
+function contrastRatio(first: string, second: string) {
+  const lighter = Math.max(relativeLuminance(first), relativeLuminance(second));
+  const darker = Math.min(relativeLuminance(first), relativeLuminance(second));
+  return (lighter + 0.05) / (darker + 0.05);
+}
+
 const globals = read('src/app/globals.css');
 const emotionalMotion = [
   'src/components/sections/WeddingCalendar/WeddingCalendar.module.css',
@@ -43,6 +65,19 @@ for (const themePath of narrativeThemePaths) {
 const narrativeThemeCss = narrativeThemePaths.map((themePath) =>
   read(`${themePath}/styles.module.css`)
 );
+const narrativeThemePages = narrativeThemePaths.map((themePath) =>
+  read(`${themePath}/Page.tsx`)
+);
+const revealHookPath =
+  'src/app/_components/public-invitations/wedding/useImmediateWeddingPageReveal.ts';
+
+assert.equal(
+  existsSync(path.resolve(process.cwd(), revealHookPath)),
+  true,
+  'Narrative wedding pages should share the parent-effect-safe immediate reveal contract'
+);
+
+const revealHook = read(revealHookPath);
 
 assert.match(globals, /--accent-brown:/);
 for (const css of [...emotionalMotion, ...simpleMotion, romanticCss, classicCss]) {
@@ -78,7 +113,41 @@ for (const css of narrativeThemeCss) {
   assert.match(css, /min-height:\s*44px/);
   assert.match(css, /:focus-visible/);
   assert.match(css, /prefers-reduced-motion:\s*reduce/);
+
+  const controlLine = css.match(/--control-line:\s*(#[0-9a-f]{6})/i)?.[1];
+  const inputSurface = css.match(/--input-surface:\s*(#[0-9a-f]{6})/i)?.[1];
+
+  assert.ok(controlLine, 'Narrative wedding themes should define a dedicated control boundary');
+  assert.ok(inputSurface, 'Narrative wedding themes should define an input surface');
+  assert.ok(
+    contrastRatio(controlLine, inputSurface) >= 3,
+    'Guestbook control boundaries should meet 3:1 non-text contrast'
+  );
+  assert.match(
+    css,
+    /\.input,\s*\.textarea\s*\{[^}]*border:\s*1px solid var\(--control-line\);[^}]*background:\s*var\(--input-surface\);/s,
+    'Guestbook inputs should use the dedicated accessible control boundary'
+  );
 }
+
+for (const page of narrativeThemePages) {
+  assert.match(page, /useImmediateWeddingPageReveal/);
+  assert.match(page, /useImmediateWeddingPageReveal\(state\);/);
+  assert.doesNotMatch(page, /useEffect|removeProperty\(['"]overflow['"]\)/);
+}
+
+assert.match(revealHook, /setIsLoading\(false\);/);
+assert.match(
+  revealHook,
+  /releasePageOverflow\(\);\s*const frame = window\.requestAnimationFrame\(releasePageOverflow\);/s,
+  'Immediate reveal should release overflow again after parent effects run'
+);
+assert.match(revealHook, /window\.cancelAnimationFrame\(frame\);/);
+assert.doesNotMatch(
+  revealHook,
+  /if\s*\([^)]*imagesLoading|imagesLoading\s*\?/,
+  'Immediate reveal must not wait for images before releasing the page'
+);
 
 assert.match(
   narrativeThemeCss[0],

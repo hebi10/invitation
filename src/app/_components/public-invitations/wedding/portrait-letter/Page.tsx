@@ -1,7 +1,5 @@
 'use client';
 
-import { useEffect } from 'react';
-
 import GalleryGridShared from '@/components/sections/Gallery/GalleryGridShared';
 import GiftInfoThemed from '@/components/sections/GiftInfo/GiftInfoThemed';
 import GuestbookThemed from '@/components/sections/Guestbook/GuestbookThemed';
@@ -15,13 +13,15 @@ import {
   shouldShowGiftInfo,
 } from '../../../weddingPageRenderers';
 import { InvitationPoster } from '../../shared/InvitationPoster';
+import { useImmediateWeddingPageReveal } from '../useImmediateWeddingPageReveal';
 import letterpressStyles from '../letterpress/styles.module.css';
 import styles from './styles.module.css';
 
 const componentStyles = { ...letterpressStyles, ...styles };
 
 export default function PortraitLetterPage({ state }: WeddingThemeRendererProps) {
-  const { imagesLoading, isLoading, setIsLoading } = state;
+  useImmediateWeddingPageReveal(state);
+
   const page = state.pageConfig;
   const pageData = getThemePageData(page, 'emotional');
   const ceremony = getCeremonySchedule(page, pageData);
@@ -42,13 +42,6 @@ export default function PortraitLetterPage({ state }: WeddingThemeRendererProps)
       ? [{ ...contact, name: contact.name.trim() || contact.role, phone }]
       : [];
   });
-
-  useEffect(() => {
-    setIsLoading(false);
-
-    document.body.style.removeProperty('overflow');
-    document.documentElement.style.removeProperty('overflow');
-  }, [imagesLoading, isLoading, setIsLoading]);
 
   return (
     <main

@@ -4,6 +4,8 @@
   --ink: #1f211f;
   --muted: #5d615c;
   --line: #b7bab4;
+  --control-line: #6f736d;
+  --input-surface: #fbf8f1;
   --focus: #3f5748;
   width: min(100%, 840px);
   margin: 0 auto;
@@ -153,6 +155,22 @@
 .subtitle {
   margin: 0 0 2rem;
   line-height: 1.75;
+}
+
+.input,
+.textarea {
+  width: 100%;
+  min-height: 44px;
+  padding: 0.8rem;
+  border: 1px solid var(--control-line);
+  background: var(--input-surface);
+  color: var(--ink);
+  font: inherit;
+}
+
+.textarea {
+  min-height: 8rem;
+  resize: vertical;
 }
 
 .page :is(a, button, input, textarea):focus-visible {
