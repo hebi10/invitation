@@ -37,5 +37,15 @@ assert.doesNotMatch(letterpressCss, /gradient\(/);
 assert.match(letterpressCss, /min-height:\s*44px/);
 assert.match(letterpressCss, /:focus-visible/);
 assert.match(letterpressCss, /prefers-reduced-motion:\s*reduce/);
+assert.match(
+  letterpressCss,
+  /\.popupLoadingText\s*\{[^}]*color:\s*var\(--paper\);[^}]*\}/s,
+  'Letterpress gallery popup loading copy must use a light foreground on the dark modal.'
+);
+assert.match(
+  letterpressCss,
+  /\.popup\s+:is\(\.closeButton,\s*\.navArrow\):focus-visible\s*\{[^}]*outline:\s*2px\s+solid\s+var\(--paper\);[^}]*\}/s,
+  'Letterpress gallery modal controls must use a high-contrast light focus ring.'
+);
 
 console.log('웨딩 테마 스타일 계약 검증 통과');

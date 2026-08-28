@@ -327,8 +327,12 @@
   animation: letterpress-spin 0.9s linear infinite;
 }
 
-.loadingText,
+.loadingText {
+  font-size: 0.78rem;
+}
+
 .popupLoadingText {
+  color: var(--paper);
   font-size: 0.78rem;
 }
 
@@ -526,6 +530,11 @@
 
 .page :is(a, button, input, textarea):focus-visible {
   outline: 2px solid var(--focus);
+  outline-offset: 3px;
+}
+
+.popup :is(.closeButton, .navArrow):focus-visible {
+  outline: 2px solid var(--paper);
   outline-offset: 3px;
 }
 
