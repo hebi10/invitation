@@ -115,5 +115,27 @@ assert.deepEqual(
 );
 assert.match(firstChapterCss, /min-height:\s*44px/);
 assert.match(firstChapterCss, /:focus-visible/);
+assert.match(
+  firstChapterSource,
+  /FALLBACK_IDENTITY_LABELS/,
+  'First Chapter should identify adapter fallback identity labels at the page boundary'
+);
+assert.doesNotMatch(
+  firstChapterSource,
+  /\{model\.(?:babyName|dadName|momName)\}/,
+  'First Chapter should never render adapter fallback identity fields directly'
+);
+assert.doesNotMatch(
+  firstChapterSource,
+  /\$\{model\.(?:babyName|dadName|momName)\}/,
+  'First Chapter should never interpolate adapter fallback identity fields directly'
+);
+assert.match(
+  firstChapterSource,
+  /<ul className=\{styles\.venueGuide\}>/,
+  'partial transport guidance should use a list that remains valid with either field absent'
+);
+assert.match(firstChapterSource, /<li className=\{styles\.guideRow\}/);
+assert.doesNotMatch(firstChapterSource, /guide\.title \? <dt|guide\.content \? <dd/);
 
 console.log('first birthday page rendering checks passed');

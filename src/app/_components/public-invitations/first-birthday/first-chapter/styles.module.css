@@ -4,6 +4,8 @@
   --ink: #27231f;
   --muted: #6e665e;
   --line: #bdb2a4;
+  --control-line: #8f8478;
+  --input-surface: #faf7f1;
   --accent: #8c4b43;
   --focus: #8c4b43;
   width: min(100%, 760px);
@@ -137,6 +139,11 @@
   border-top: 1px solid var(--ink);
 }
 
+.venueGuide {
+  padding: 0;
+  list-style: none;
+}
+
 .detailRow,
 .guideRow {
   display: grid;
@@ -148,15 +155,15 @@
 
 .detailRow dt,
 .detailRow dd,
-.guideRow dt,
-.guideRow dd {
+.guideTitle,
+.guideContent {
   min-width: 0;
   margin: 0;
   overflow-wrap: anywhere;
 }
 
 .detailRow dt,
-.guideRow dt {
+.guideTitle {
   color: var(--muted);
 }
 
@@ -410,8 +417,8 @@
   width: 100%;
   min-height: 44px;
   padding: 0.8rem;
-  border: 1px solid var(--line);
-  background: #faf7f1;
+  border: 1px solid var(--control-line);
+  background: var(--input-surface);
   color: var(--ink);
   font: inherit;
 }

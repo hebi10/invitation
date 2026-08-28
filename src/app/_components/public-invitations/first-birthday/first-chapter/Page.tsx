@@ -13,6 +13,24 @@ type FirstChapterPageProps = {
   state: EventPageReadyState;
 };
 
+const FALLBACK_IDENTITY_LABELS = new Set(['아기 이름', '아빠', '엄마']);
+
+function getVisibleIdentityText(...candidates: Array<string | undefined>) {
+  return (
+    candidates
+      .map((candidate) => candidate?.trim() ?? '')
+      .find((candidate) => candidate && !FALLBACK_IDENTITY_LABELS.has(candidate)) ?? ''
+  );
+}
+
+function removeFallbackIdentityParts(value: string) {
+  return value
+    .split('·')
+    .map((part) => part.trim())
+    .filter((part) => part && !FALLBACK_IDENTITY_LABELS.has(part))
+    .join(' · ');
+}
+
 export default function FirstChapterPage({ state }: FirstChapterPageProps) {
   const model = buildFirstBirthdayInvitationViewModel(state);
   const features = resolveInvitationFeatures(
@@ -27,19 +45,40 @@ export default function FirstChapterPage({ state }: FirstChapterPageProps) {
   const hasLocation = Boolean(
     model.address.trim() || model.mapUrl.trim() || model.venueGuide.length > 0
   );
+  const visibleBabyName = getVisibleIdentityText(
+    model.babyName,
+    state.pageConfig.displayName,
+    state.pageConfig.metadata.title,
+    state.pageConfig.groomName
+  );
+  const visibleGreetingAuthor = removeFallbackIdentityParts(model.greetingAuthor);
+  const visibleParentNames = [model.dadName, model.momName]
+    .map(removeFallbackIdentityParts)
+    .filter(Boolean);
+  const invitationLabel = visibleBabyName
+    ? `${visibleBabyName} 돌잔치 초대장`
+    : '돌잔치 초대장';
+  const posterTitle = visibleBabyName || model.dateLabel;
+  const imageAltPrefix = visibleBabyName || '아이';
 
   return (
-    <main className={styles.page} aria-label={`${model.babyName} 돌잔치 초대장`}>
+    <main className={styles.page} aria-label={invitationLabel}>
       <div
         className={styles.identity}
         data-first-chapter-section="identity"
       >
         {coverImageUrl ? (
-          <section className={styles.hero} aria-labelledby="first-chapter-title">
+          <section
+            className={styles.hero}
+            aria-labelledby={visibleBabyName ? 'first-chapter-title' : undefined}
+            aria-label={visibleBabyName ? undefined : '첫 번째 생일'}
+          >
             <div className={styles.heroCopy}>
-              <h1 id="first-chapter-title" className={styles.heroTitle}>
-                {model.babyName}
-              </h1>
+              {visibleBabyName ? (
+                <h1 id="first-chapter-title" className={styles.heroTitle}>
+                  {visibleBabyName}
+                </h1>
+              ) : null}
               <p className={styles.heroAge}>한 살</p>
               <p className={styles.heroDate}>{model.dateLabel}</p>
             </div>
@@ -47,20 +86,20 @@ export default function FirstChapterPage({ state }: FirstChapterPageProps) {
               <img
                 className={styles.heroImage}
                 src={coverImageUrl}
-                alt={`${model.babyName} 대표 사진`}
+                alt={`${imageAltPrefix} 대표 사진`}
                 loading="eager"
                 decoding="async"
               />
             </figure>
             <div className={styles.heroMessage}>
               <p>{model.greeting}</p>
-              {model.greetingAuthor ? <span>{model.greetingAuthor}</span> : null}
+              {visibleGreetingAuthor ? <span>{visibleGreetingAuthor}</span> : null}
             </div>
           </section>
         ) : (
           <div className={styles.posterWrap}>
             <InvitationPoster
-              title={`${model.babyName} · 한 살`}
+              title={`${posterTitle} · 한 살`}
               dateLabel={model.dateLabel}
               locationLabel={hasVenue ? model.venueName : undefined}
               tone="first-chapter"
@@ -79,7 +118,7 @@ export default function FirstChapterPage({ state }: FirstChapterPageProps) {
             images={model.galleryImageUrls}
             previewImages={state.galleryPreviewImageUrls}
             imagesLoading={state.imagesLoading}
-            imageAltPrefix={`${model.babyName} 성장 기록`}
+            imageAltPrefix={`${imageAltPrefix} 성장 기록`}
             title="성장 한 장면"
             styles={styles}
           />
@@ -137,14 +176,18 @@ export default function FirstChapterPage({ state }: FirstChapterPageProps) {
           </h2>
           {model.address ? <p className={styles.address}>{model.address}</p> : null}
           {model.venueGuide.length > 0 ? (
-            <dl className={styles.venueGuide}>
+            <ul className={styles.venueGuide}>
               {model.venueGuide.map((guide, index) => (
-                <div className={styles.guideRow} key={`${guide.title}-${index}`}>
-                  {guide.title ? <dt>{guide.title}</dt> : null}
-                  {guide.content ? <dd>{guide.content}</dd> : null}
-                </div>
+                <li className={styles.guideRow} key={`${guide.title}-${index}`}>
+                  {guide.title ? (
+                    <span className={styles.guideTitle}>{guide.title}</span>
+                  ) : null}
+                  {guide.content ? (
+                    <span className={styles.guideContent}>{guide.content}</span>
+                  ) : null}
+                </li>
               ))}
-            </dl>
+            </ul>
           ) : null}
           {model.mapUrl ? (
             <a
@@ -168,7 +211,11 @@ export default function FirstChapterPage({ state }: FirstChapterPageProps) {
             pageSlug={state.pageConfig.slug}
             styles={styles}
             title="축하 메시지"
-            subtitle={`${model.babyName}에게 따뜻한 마음을 남겨 주세요.`}
+            subtitle={
+              visibleBabyName
+                ? `${visibleBabyName}에게 따뜻한 마음을 남겨 주세요.`
+                : '따뜻한 축하의 마음을 남겨 주세요.'
+            }
             statusColors={{
               success: '#35312d',
               error: '#8c4b43',
@@ -177,10 +224,14 @@ export default function FirstChapterPage({ state }: FirstChapterPageProps) {
         </div>
       ) : null}
 
-      <footer className={styles.footer}>
-        <strong>{model.babyName}의 첫 번째 생일</strong>
-        <span>{model.dadName} · {model.momName}</span>
-      </footer>
+      {visibleBabyName || visibleParentNames.length > 0 ? (
+        <footer className={styles.footer}>
+          {visibleBabyName ? <strong>{visibleBabyName}의 첫 번째 생일</strong> : null}
+          {visibleParentNames.length > 0 ? (
+            <span>{visibleParentNames.join(' · ')}</span>
+          ) : null}
+        </footer>
+      ) : null}
     </main>
   );
 }

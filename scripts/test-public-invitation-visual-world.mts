@@ -5,6 +5,28 @@ import path from 'node:path';
 const read = (relativePath: string) =>
   readFileSync(path.resolve(process.cwd(), relativePath), 'utf8');
 
+function parseHexColor(value: string) {
+  const hex = value.replace('#', '');
+  return [0, 2, 4].map((offset) => Number.parseInt(hex.slice(offset, offset + 2), 16));
+}
+
+function relativeLuminance(color: string) {
+  const channels = parseHexColor(color).map((channel) => {
+    const normalized = channel / 255;
+    return normalized <= 0.04045
+      ? normalized / 12.92
+      : ((normalized + 0.055) / 1.055) ** 2.4;
+  });
+
+  return 0.2126 * channels[0] + 0.7152 * channels[1] + 0.0722 * channels[2];
+}
+
+function contrastRatio(first: string, second: string) {
+  const lighter = Math.max(relativeLuminance(first), relativeLuminance(second));
+  const darker = Math.min(relativeLuminance(first), relativeLuminance(second));
+  return (lighter + 0.05) / (darker + 0.05);
+}
+
 const publicInvitationIndexPaths = [
   'src/app/_components/public-invitations/wedding/index.ts',
   'src/app/_components/public-invitations/first-birthday/index.ts',
@@ -98,5 +120,20 @@ assert.doesNotMatch(firstChapterCss, /(?:linear|radial|conic)-gradient/);
 assert.doesNotMatch(firstChapterCss, /box-shadow/);
 assert.match(firstChapterCss, /min-height:\s*44px/);
 assert.match(firstChapterCss, /:focus-visible/);
+
+const controlLine = firstChapterCss.match(/--control-line:\s*(#[0-9a-f]{6})/i)?.[1];
+const inputSurface = firstChapterCss.match(/--input-surface:\s*(#[0-9a-f]{6})/i)?.[1];
+
+assert.ok(controlLine, 'First Chapter should define a dedicated non-text control boundary');
+assert.ok(inputSurface, 'First Chapter should define its input surface color');
+assert.ok(
+  contrastRatio(controlLine, inputSurface) >= 3,
+  'First Chapter input boundary should have at least 3:1 contrast against its surface'
+);
+assert.match(
+  firstChapterCss,
+  /\.input,[\s\S]*?\.textarea\s*\{[\s\S]*?border:\s*1px solid var\(--control-line\)/,
+  'First Chapter inputs should use the accessible control boundary token'
+);
 
 console.log('public invitation visual-world checks passed');
