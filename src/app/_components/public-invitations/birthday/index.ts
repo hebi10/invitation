@@ -1,2 +1,2 @@
-export { default as PartyNotesPage } from '../../birthday/themeRenderers/minimal';
-export { default as BirthdayStoryPage } from '../../birthday/themeRenderers/floral';
+export { default as PartyNotesPage } from './party-notes/Page';
+export { default as BirthdayStoryPage } from './birthday-story/Page';

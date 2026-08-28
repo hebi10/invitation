@@ -322,6 +322,76 @@ assert.match(
   'First Chapter inputs should use the accessible control boundary token'
 );
 
+const chapterThemeFiles = [
+  {
+    name: 'Dawn Chapter',
+    page: 'src/app/_components/public-invitations/first-birthday/dawn-chapter/Page.tsx',
+    css: 'src/app/_components/public-invitations/first-birthday/dawn-chapter/styles.module.css',
+  },
+  {
+    name: 'Party Notes',
+    page: 'src/app/_components/public-invitations/birthday/party-notes/Page.tsx',
+    css: 'src/app/_components/public-invitations/birthday/party-notes/styles.module.css',
+  },
+  {
+    name: 'Birthday Story',
+    page: 'src/app/_components/public-invitations/birthday/birthday-story/Page.tsx',
+    css: 'src/app/_components/public-invitations/birthday/birthday-story/styles.module.css',
+  },
+] as const;
+
+for (const theme of chapterThemeFiles) {
+  assert.equal(existsSync(theme.page), true, `${theme.name} should have a dedicated page`);
+  assert.equal(existsSync(theme.css), true, `${theme.name} should own dedicated styles`);
+
+  const page = read(theme.page);
+  const css = read(theme.css);
+  assert.match(page, /<GalleryGridShared/);
+  assert.match(page, /<GuestbookThemed/);
+  assert.doesNotMatch(page, /준비 중|이미지 없음|입력해 주세요/);
+  assert.doesNotMatch(page, /setTimeout|setInterval|<IntroScreen/);
+  assert.doesNotMatch(css, /(?:linear|radial|conic)-gradient/);
+  assert.doesNotMatch(css, /box-shadow/);
+  assert.doesNotMatch(css, /border-radius:\s*(?:2[4-9]|[3-9]\d|\d{3,})px/);
+  assert.match(css, /min-height:\s*44px/);
+  assert.match(css, /:focus-visible/);
+
+  const paper = css.match(/--paper:\s*(#[0-9a-f]{6})/i)?.[1];
+  const muted = css.match(/--muted:\s*(#[0-9a-f]{6})/i)?.[1];
+  const popup = css.match(/--popup-surface:\s*(#[0-9a-f]{6})/i)?.[1];
+  const popupText = css.match(/--popup-text:\s*(#[0-9a-f]{6})/i)?.[1];
+  const controlLine = css.match(/--control-line:\s*(#[0-9a-f]{6})/i)?.[1];
+  const inputSurface = css.match(/--input-surface:\s*(#[0-9a-f]{6})/i)?.[1];
+  assert.ok(paper, `${theme.name} should define its paper color`);
+  assert.ok(muted, `${theme.name} should define its secondary text color`);
+  assert.ok(popup, `${theme.name} should define its popup surface color`);
+  assert.ok(popupText, `${theme.name} should define its popup text color`);
+  assert.ok(controlLine, `${theme.name} should define its input boundary color`);
+  assert.ok(inputSurface, `${theme.name} should define its input surface color`);
+  assert.ok(
+    contrastRatio(paper, muted) >= 4.5,
+    `${theme.name} secondary text should meet AA contrast`
+  );
+  assert.ok(
+    contrastRatio(popup, popupText) >= 4.5,
+    `${theme.name} popup helper text should meet AA contrast`
+  );
+  assert.ok(
+    contrastRatio(controlLine, inputSurface) >= 3,
+    `${theme.name} input boundary should remain distinguishable from its surface`
+  );
+}
+
+const firstBirthdayIndexForChapterThemes = read(
+  'src/app/_components/public-invitations/first-birthday/index.ts'
+);
+const birthdayIndexForChapterThemes = read(
+  'src/app/_components/public-invitations/birthday/index.ts'
+);
+assert.match(firstBirthdayIndexForChapterThemes, /dawn-chapter\/Page/);
+assert.match(birthdayIndexForChapterThemes, /party-notes\/Page/);
+assert.match(birthdayIndexForChapterThemes, /birthday-story\/Page/);
+
 const programEditionPagePath =
   'src/app/_components/public-invitations/general-event/program-edition/Page.tsx';
 const programEditionCssPath =
