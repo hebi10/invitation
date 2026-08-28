@@ -40,6 +40,9 @@ for (const indexPath of publicInvitationIndexPaths) {
 }
 
 const weddingRegistry = read('src/app/_components/themeRenderers/registry.ts');
+const weddingIndex = read(
+  'src/app/_components/public-invitations/wedding/index.ts'
+);
 assert.match(
   weddingRegistry,
   /from ['"]\.\.\/public-invitations\/wedding['"];/,
@@ -50,6 +53,95 @@ assert.doesNotMatch(
   /from ['"]\.\/(?:classic-r|emotional|romantic|simple)['"];/,
   'wedding renderer registry must not import legacy renderer modules directly'
 );
+
+const weddingNarrativeThemes = [
+  {
+    key: 'emotional',
+    exportName: 'PortraitLetterPage',
+    folder: 'portrait-letter',
+    markers: ['portrait', 'letter', 'schedule', 'location', 'contact', 'gift', 'gallery', 'guestbook'],
+  },
+  {
+    key: 'romantic',
+    exportName: 'GardenNotePage',
+    folder: 'garden-note',
+    markers: ['letter', 'ceremony', 'family', 'gift', 'gallery', 'guestbook'],
+  },
+  {
+    key: 'simple',
+    exportName: 'QuietCeremonyPage',
+    folder: 'quiet-ceremony',
+    markers: ['opening', 'schedule', 'location', 'gift', 'gallery', 'guestbook'],
+  },
+] as const;
+
+for (const theme of weddingNarrativeThemes) {
+  const pagePath = `src/app/_components/public-invitations/wedding/${theme.folder}/Page.tsx`;
+  const cssPath = `src/app/_components/public-invitations/wedding/${theme.folder}/styles.module.css`;
+
+  assert.equal(existsSync(pagePath), true, `${theme.exportName} should have a dedicated page`);
+  assert.equal(existsSync(cssPath), true, `${theme.exportName} should own dedicated styles`);
+  assert.match(
+    weddingIndex,
+    new RegExp(`default as ${theme.exportName}.*${theme.folder}/Page`),
+    `${theme.exportName} should be exported from its dedicated page`
+  );
+  assert.match(
+    weddingRegistry,
+    new RegExp(`key: ['"]${theme.key}['"][\\s\\S]*?component: ${theme.exportName}`),
+    `${theme.key} should remain bound to ${theme.exportName}`
+  );
+
+  const page = read(pagePath);
+  assert.match(page, /getThemePageData/);
+  assert.match(page, /getCeremonySchedule/);
+  assert.match(page, /getCeremonyAddress/);
+  assert.match(page, /shouldShowGiftInfo/);
+  assert.match(page, /from ['"]\.\.\/\.\.\/shared\/InvitationPoster['"]/);
+  assert.match(page, /<GalleryGridShared/);
+  assert.match(page, /<GuestbookThemed/);
+  assert.match(page, /<GiftInfoThemed/);
+  assert.doesNotMatch(page, /WeddingLoader|IntroScreen|setTimeout|setInterval|Scroll/);
+
+  const markerPositions = theme.markers.map((marker) =>
+    page.indexOf(`data-${theme.folder}-section="${marker}"`)
+  );
+  assert.equal(
+    markerPositions.every((position) => position >= 0),
+    true,
+    `${theme.exportName} should define its narrative section markers`
+  );
+  assert.deepEqual(
+    markerPositions,
+    [...markerPositions].sort((first, second) => first - second),
+    `${theme.exportName} should preserve its dedicated information rhythm`
+  );
+}
+
+const portraitLetterPage = read(
+  'src/app/_components/public-invitations/wedding/portrait-letter/Page.tsx'
+);
+const gardenNotePage = read(
+  'src/app/_components/public-invitations/wedding/garden-note/Page.tsx'
+);
+const quietCeremonyPage = read(
+  'src/app/_components/public-invitations/wedding/quiet-ceremony/Page.tsx'
+);
+
+assert.match(portraitLetterPage, /className=\{styles\.portraitHero\}/);
+assert.match(gardenNotePage, /data-garden-note-decoration="botanical-line"/);
+assert.equal(
+  gardenNotePage.match(/data-garden-note-decoration=/g)?.length,
+  1,
+  'Garden Note should use one botanical decoration only'
+);
+assert.match(
+  gardenNotePage,
+  /\[page\.couple\.groom\.father,\s*page\.couple\.groom\.mother,\s*page\.couple\.bride\.father,\s*page\.couple\.bride\.mother\]/s,
+  'Garden Note should prioritize family contacts'
+);
+assert.match(quietCeremonyPage, /heroImageUrl\s*\?/);
+assert.match(quietCeremonyPage, /className=\{styles\.informationHero\}/);
 
 const birthdayRegistry = read(
   'src/app/_components/birthday/themeRenderers/registry.ts'

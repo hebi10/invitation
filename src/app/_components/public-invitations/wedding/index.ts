@@ -1,4 +1,4 @@
-export { default as PortraitLetterPage } from '../../themeRenderers/emotional';
-export { default as GardenNotePage } from '../../themeRenderers/romantic';
-export { default as QuietCeremonyPage } from '../../themeRenderers/simple';
+export { default as PortraitLetterPage } from './portrait-letter/Page';
+export { default as GardenNotePage } from './garden-note/Page';
+export { default as QuietCeremonyPage } from './quiet-ceremony/Page';
 export { default as LetterpressPage } from './letterpress/Page';

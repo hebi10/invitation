@@ -1,0 +1,187 @@
+.page {
+  --paper: #f7f7f4;
+  --paper-deep: #e8e8e3;
+  --ink: #1f211f;
+  --muted: #5d615c;
+  --line: #b7bab4;
+  --focus: #3f5748;
+  width: min(100%, 840px);
+  margin: 0 auto;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-gowun-dodum), sans-serif;
+}
+
+.page ::selection {
+  background: var(--ink);
+  color: var(--paper);
+}
+
+.photoHero {
+  padding: clamp(1.5rem, 6vw, 3.5rem);
+  border-bottom: 1px solid var(--ink);
+}
+
+.photoCopy {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1.5rem;
+  padding-bottom: 1.25rem;
+}
+
+.photoCopy h1,
+.informationNames {
+  margin: 0;
+  font-family: var(--font-display), serif;
+  font-size: clamp(1.8rem, 7vw, 3.2rem);
+  font-weight: 500;
+  line-height: 1.15;
+  letter-spacing: -0.025em;
+  word-break: keep-all;
+}
+
+.informationNames {
+  margin-top: 0;
+}
+
+.photoCopy p {
+  margin: 0;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.photoHero figure {
+  aspect-ratio: 16 / 10;
+  margin: 0;
+  overflow: hidden;
+  background: var(--paper-deep);
+}
+
+.photoHero img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.informationHero {
+  min-height: 72svh;
+  display: grid;
+  align-content: center;
+  gap: 2rem;
+  padding: clamp(2rem, 8vw, 5rem);
+  border-bottom: 1px solid var(--ink);
+}
+
+.posterWrap {
+  border-bottom: 1px solid var(--line);
+}
+
+.scheduleSection,
+.locationSection,
+.container {
+  padding: clamp(3.25rem, 10vw, 5.5rem) clamp(1.5rem, 8vw, 4.5rem);
+}
+
+.scheduleSection,
+.locationSection {
+  display: grid;
+  grid-template-columns: minmax(5.5rem, 0.3fr) minmax(0, 1fr);
+  gap: clamp(1.5rem, 6vw, 4rem);
+  border-bottom: 1px solid var(--line);
+}
+
+.sectionHeading,
+.title {
+  margin: 0;
+  font-size: clamp(1rem, 4vw, 1.25rem);
+  font-weight: 500;
+  line-height: 1.4;
+  letter-spacing: 0;
+}
+
+.title {
+  margin-bottom: 2rem;
+  text-align: left;
+}
+
+.facts {
+  margin: 0;
+  border-top: 1px solid var(--ink);
+}
+
+.facts div {
+  display: grid;
+  grid-template-columns: minmax(4rem, 0.28fr) 1fr;
+  gap: 1rem;
+  padding: 1.15rem 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.facts dt,
+.facts dd {
+  margin: 0;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.facts dt,
+.subtitle {
+  color: var(--muted);
+}
+
+.mapLink {
+  grid-column: 2;
+  min-width: 44px;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  justify-self: start;
+  padding: 0 0.9rem;
+  border: 1px solid var(--ink);
+  color: var(--ink);
+  text-decoration: none;
+}
+
+.container {
+  border-bottom: 1px solid var(--line);
+}
+
+.subtitle {
+  margin: 0 0 2rem;
+  line-height: 1.75;
+}
+
+.page :is(a, button, input, textarea):focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 3px;
+}
+
+@media (min-width: 760px) {
+  .page {
+    border-right: 1px solid var(--line);
+    border-left: 1px solid var(--line);
+  }
+}
+
+@media (max-width: 560px) {
+  .photoCopy,
+  .scheduleSection,
+  .locationSection {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .mapLink {
+    grid-column: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .page {
+    scroll-behavior: auto;
+  }
+}
