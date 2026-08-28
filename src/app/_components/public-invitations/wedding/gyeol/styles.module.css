@@ -9,9 +9,9 @@
   --focus: #304c3b;
   --popup-surface: #151715;
   --popup-text: #f6f3ea;
-  width: 100%;
+  width: min(100%, 640px);
   min-width: 0;
-  margin: 0;
+  margin: 0 auto;
   background: var(--paper);
   color: var(--ink);
   font-family: var(--font-gowun-dodum), "Noto Sans KR", sans-serif;

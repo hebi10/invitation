@@ -7,7 +7,7 @@
   --control-line: #6f736d;
   --input-surface: #fbf8f1;
   --focus: #3f5748;
-  width: min(100%, 840px);
+  width: min(100%, 640px);
   margin: 0 auto;
   background: var(--paper);
   color: var(--ink);

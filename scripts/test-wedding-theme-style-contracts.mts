@@ -32,6 +32,7 @@ const activeThemePaths = [
   'src/app/_components/public-invitations/wedding/portrait-letter',
   'src/app/_components/public-invitations/wedding/garden-note',
   'src/app/_components/public-invitations/wedding/quiet-ceremony',
+  'src/app/_components/public-invitations/wedding/gyeol',
 ] as const;
 
 for (const themePath of activeThemePaths) {
@@ -72,6 +73,14 @@ assert.equal(
 );
 
 const revealHook = read(revealHookPath);
+
+for (const css of activeThemeCss) {
+  assert.match(
+    css,
+    /\.page\s*\{[^}]*width:\s*min\(100%,\s*640px\);[^}]*margin:\s*0 auto;/s,
+    'Every wedding theme should use a centered 640px public invitation canvas'
+  );
+}
 
 assert.doesNotMatch(
   letterpressCss,

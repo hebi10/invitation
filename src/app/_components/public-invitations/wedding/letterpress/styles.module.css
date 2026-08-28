@@ -5,7 +5,7 @@
   --muted: #686056;
   --line: #b9ae9d;
   --focus: #655f47;
-  width: min(100%, 720px);
+  width: min(100%, 640px);
   margin: 0 auto;
   background: var(--paper);
   color: var(--ink);
