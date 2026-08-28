@@ -17,6 +17,10 @@ const studioOpeningPagePath =
   'src/app/_components/public-invitations/opening/studio-opening/Page.tsx';
 const programEditionPagePath =
   'src/app/_components/public-invitations/general-event/program-edition/Page.tsx';
+const openingPosterPagePath =
+  'src/app/_components/public-invitations/opening/opening-poster/Page.tsx';
+const nightSchedulePagePath =
+  'src/app/_components/public-invitations/general-event/night-schedule/Page.tsx';
 const publicOpeningIndexSource = read(
   'src/app/_components/public-invitations/opening/index.ts'
 );
@@ -56,6 +60,26 @@ assert.match(
   /program-edition\/Page/,
   'the public general-event index should export the dedicated Program Edition page'
 );
+assert.equal(
+  fs.existsSync(path.resolve(openingPosterPagePath)),
+  true,
+  'opening-modern should have a dedicated Opening Poster renderer'
+);
+assert.match(
+  publicOpeningIndexSource,
+  /default as OpeningPosterPage.*opening-poster\/Page/,
+  'the public opening index should export the dedicated Opening Poster page'
+);
+assert.equal(
+  fs.existsSync(path.resolve(nightSchedulePagePath)),
+  true,
+  'general-event-vivid should have a dedicated Night Schedule renderer'
+);
+assert.match(
+  publicGeneralEventIndexSource,
+  /default as NightSchedulePage.*night-schedule\/Page/,
+  'the public general-event index should export the dedicated Night Schedule page'
+);
 
 assert.match(openingPageSource, /from ['"]\.\.\/public-invitations\/opening['"];/);
 assert.doesNotMatch(
@@ -82,6 +106,34 @@ assert.match(
   /if\s*\(visualTheme\s*===\s*['"]general-event-elegant['"]\)\s*\{[\s\S]*?<ProgramEditionPage state=\{state\}\s*\/>/,
   'general-event-elegant should remain bound to ProgramEditionPage'
 );
+assert.match(
+  openingPageSource,
+  /openingTheme\s*===\s*['"]opening-natural['"]\s*\?\s*StudioOpeningPage\s*:\s*OpeningPosterPage/,
+  'opening-modern should remain bound to OpeningPosterPage'
+);
+assert.match(
+  openingPageSource,
+  /return <OpeningPage state=\{state\}\s*\/>;/,
+  'opening route should render either dedicated page without legacy theme props'
+);
+assert.match(
+  generalEventPageSource,
+  /return <NightSchedulePage state=\{state\}\s*\/>;/,
+  'general-event-vivid should remain bound to NightSchedulePage'
+);
+
+for (const dedicatedPagePath of [openingPosterPagePath, nightSchedulePagePath]) {
+  if (!fs.existsSync(path.resolve(dedicatedPagePath))) {
+    continue;
+  }
+
+  const dedicatedPageSource = read(dedicatedPagePath);
+  assert.doesNotMatch(
+    dedicatedPageSource,
+    /초대장 열기|오픈 준비 중|참석 응답 기능은 준비 중|<IntroScreen|setTimeout|setInterval/,
+    `${dedicatedPagePath} must not force intro, loader, or unfinished RSVP copy`
+  );
+}
 
 assert.match(
   eventTypesSource,

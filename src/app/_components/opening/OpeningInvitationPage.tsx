@@ -89,7 +89,7 @@ function OpeningInvitationPageBody(options: OpeningRouteOptions) {
   const OpeningPage =
     openingTheme === 'opening-natural' ? StudioOpeningPage : OpeningPosterPage;
 
-  return <OpeningPage state={state} theme={openingTheme} />;
+  return <OpeningPage state={state} />;
 }
 
 export function OpeningInvitationRoutePage(options: EventInvitationRouteOptions) {

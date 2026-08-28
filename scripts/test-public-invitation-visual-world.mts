@@ -496,4 +496,114 @@ assert.ok(
   'Program Edition secondary text should meet AA contrast'
 );
 
+const openingPosterPagePath =
+  'src/app/_components/public-invitations/opening/opening-poster/Page.tsx';
+const openingPosterCssPath =
+  'src/app/_components/public-invitations/opening/opening-poster/styles.module.css';
+const nightSchedulePagePath =
+  'src/app/_components/public-invitations/general-event/night-schedule/Page.tsx';
+const nightScheduleCssPath =
+  'src/app/_components/public-invitations/general-event/night-schedule/styles.module.css';
+
+for (const [pagePath, cssPath, name] of [
+  [openingPosterPagePath, openingPosterCssPath, 'Opening Poster'],
+  [nightSchedulePagePath, nightScheduleCssPath, 'Night Schedule'],
+] as const) {
+  assert.equal(existsSync(pagePath), true, `${name} should have a dedicated page`);
+  assert.equal(existsSync(cssPath), true, `${name} should own dedicated styles`);
+
+  const page = read(pagePath);
+  const css = read(cssPath);
+  assert.match(page, /from ['"]\.\.\/\.\.\/shared\/InvitationPoster['"]/);
+  assert.match(page, /from ['"]\.\.\/\.\.\/shared\/InvitationActionLink['"]/);
+  assert.doesNotMatch(
+    page,
+    /초대장 열기|오픈 준비 중|참석 응답 기능은 준비 중|준비 중|<IntroScreen|setTimeout|setInterval/
+  );
+  assert.doesNotMatch(css, /(?:linear|radial|conic)-gradient/);
+  assert.doesNotMatch(css, /box-shadow/);
+  assert.doesNotMatch(css, /border-radius:\s*(?:2[4-9]|[3-9]\d|\d{3,})px/);
+  assert.match(css, /min-height:\s*44px/);
+  assert.match(css, /:focus-visible/);
+  assert.match(css, /@media\s*\(prefers-reduced-motion:\s*reduce\)/);
+}
+
+const openingPosterPage = read(openingPosterPagePath);
+const openingPosterCss = read(openingPosterCssPath);
+assert.match(openingPosterPage, /buildOpeningInvitationViewModel/);
+assert.match(
+  openingPosterPage,
+  /const sourceBrandItems =\s*pageData\?\.venueGuide\?\.filter/,
+  'Opening Poster should gate service rows on source opening data'
+);
+assert.match(
+  openingPosterPage,
+  /const sourceBenefitItems =\s*pageData\?\.wreathGuide\?\.filter/,
+  'Opening Poster should gate benefits on source opening data'
+);
+assert.match(openingPosterPage, /sourceBrandItems\.length\s*>\s*0\s*\?/);
+assert.match(openingPosterPage, /sourceBenefitItems\.length\s*>\s*0\s*\?/);
+assert.match(openingPosterPage, /model\.galleryImageUrls\.length\s*>\s*0\s*\?/);
+assert.match(openingPosterPage, /features\.showGuestbook\s*\?/);
+assert.match(openingPosterPage, /hasVisitInformation\s*\?/);
+assert.match(openingPosterPage, /hasContact\s*\?/);
+assert.match(openingPosterPage, /<InvitationPoster/);
+assert.match(openingPosterPage, /<InvitationActionLink/);
+assert.doesNotMatch(openingPosterCss, /font-weight:\s*(?:8\d{2}|9\d{2})/);
+
+const nightSchedulePage = read(nightSchedulePagePath);
+const nightScheduleCss = read(nightScheduleCssPath);
+assert.match(nightSchedulePage, /buildGeneralEventViewModel/);
+assert.match(
+  nightSchedulePage,
+  /const sourceProgramItems =\s*pageData\?\.programItems\?\.filter/,
+  'Night Schedule should gate program rows on source event data'
+);
+assert.match(nightSchedulePage, /sourceProgramItems\.length\s*>\s*0\s*\?/);
+assert.match(nightSchedulePage, /<ol[^>]*className=\{styles\.scheduleList\}/);
+assert.match(nightSchedulePage, /emailHref\s*\?/);
+assert.match(nightSchedulePage, /phoneHref\s*\?/);
+assert.match(nightSchedulePage, /hasParticipationMethod\s*\?/);
+assert.match(nightSchedulePage, /hasVisitInformation\s*\?/);
+assert.match(nightSchedulePage, /model\.mapUrl\s*\?/);
+
+const nightPaper = nightScheduleCss.match(/--paper:\s*(#[0-9a-f]{6})/i)?.[1];
+const nightMuted = nightScheduleCss.match(/--muted:\s*(#[0-9a-f]{6})/i)?.[1];
+const nightPopup = nightScheduleCss.match(
+  /--popup-surface:\s*(#[0-9a-f]{6})/i
+)?.[1];
+const nightPopupText = nightScheduleCss.match(
+  /--popup-text:\s*(#[0-9a-f]{6})/i
+)?.[1];
+const nightControlLine = nightScheduleCss.match(
+  /--control-line:\s*(#[0-9a-f]{6})/i
+)?.[1];
+const nightInputSurface = nightScheduleCss.match(
+  /--input-surface:\s*(#[0-9a-f]{6})/i
+)?.[1];
+
+assert.ok(nightPaper, 'Night Schedule should define its dark paper color');
+assert.ok(nightMuted, 'Night Schedule should define its secondary text color');
+assert.ok(nightPopup, 'Night Schedule should define its popup surface color');
+assert.ok(nightPopupText, 'Night Schedule should define its popup text color');
+assert.ok(nightControlLine, 'Night Schedule should define its input boundary color');
+assert.ok(nightInputSurface, 'Night Schedule should define its input surface color');
+assert.ok(
+  contrastRatio(nightPaper, nightMuted) >= 4.5,
+  'Night Schedule secondary text should meet AA contrast'
+);
+assert.ok(
+  contrastRatio(nightPopup, nightPopupText) >= 4.5,
+  'Night Schedule popup helper text should meet AA contrast'
+);
+assert.ok(
+  contrastRatio(nightControlLine, nightInputSurface) >= 3,
+  'Night Schedule input boundary should remain distinguishable from its surface'
+);
+assert.match(
+  nightScheduleCss,
+  /\.popupLoadingText,\s*\.imageCounter\s*\{[\s\S]*?color:\s*var\(--popup-text\)/,
+  'Night Schedule popup loading and counter text should use the popup foreground'
+);
+
 console.log('public invitation visual-world checks passed');

@@ -1,2 +1,2 @@
 export { default as StudioOpeningPage } from './studio-opening/Page';
-export { OpeningThemeRenderer as OpeningPosterPage } from '../../opening/themeRenderers/shared';
+export { default as OpeningPosterPage } from './opening-poster/Page';

@@ -47,5 +47,5 @@ export default function GeneralEventInvitationPage(options: GeneralEventRouteOpt
     return <ProgramEditionPage state={state} />;
   }
 
-  return <NightSchedulePage state={state} theme={visualTheme} />;
+  return <NightSchedulePage state={state} />;
 }
