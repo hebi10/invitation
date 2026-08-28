@@ -43,10 +43,11 @@ export default function NightSchedulePage({ state }: NightSchedulePageProps) {
   const sourceGreeting = pageData?.greetingMessage?.trim() ?? '';
   const sourceVenueName =
     pageData?.venueName?.trim() || state.pageConfig.venue.trim();
+  const sourceAddress = pageData?.ceremonyAddress?.trim() ?? '';
   const emailHref = buildEmailHref(model.contactEmail);
   const phoneHref = buildPhoneHref(model.contactPhone);
   const hasParticipationMethod = Boolean(emailHref || phoneHref);
-  const hasVisitInformation = Boolean(model.address || model.mapUrl);
+  const hasVisitInformation = Boolean(sourceAddress || model.mapUrl);
   const features = resolveInvitationFeatures(
     state.pageConfig.productTier,
     state.pageConfig.features
@@ -111,10 +112,10 @@ export default function NightSchedulePage({ state }: NightSchedulePageProps) {
                 <dd>{sourceVenueName}</dd>
               </div>
             ) : null}
-            {model.address ? (
+            {sourceAddress ? (
               <div className={styles.detailRow}>
                 <dt>주소</dt>
-                <dd>{model.address}</dd>
+                <dd>{sourceAddress}</dd>
               </div>
             ) : null}
           </dl>

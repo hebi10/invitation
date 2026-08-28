@@ -566,6 +566,26 @@ assert.match(nightSchedulePage, /phoneHref\s*\?/);
 assert.match(nightSchedulePage, /hasParticipationMethod\s*\?/);
 assert.match(nightSchedulePage, /hasVisitInformation\s*\?/);
 assert.match(nightSchedulePage, /model\.mapUrl\s*\?/);
+assert.match(
+  nightSchedulePage,
+  /const sourceAddress = pageData\?\.ceremonyAddress\?\.trim\(\) \?\? ['"]['"];/,
+  'Night Schedule should derive its address directly from source ceremonyAddress data'
+);
+assert.match(
+  nightSchedulePage,
+  /const hasVisitInformation = Boolean\(sourceAddress \|\| model\.mapUrl\);/,
+  'Night Schedule should not let synthesized adapter address copy open visit information'
+);
+assert.match(
+  nightSchedulePage,
+  /sourceAddress\s*\?\s*\([\s\S]*?<dt>주소<\/dt>[\s\S]*?<dd>\{sourceAddress\}<\/dd>/,
+  'Night Schedule should only populate the address row with source ceremonyAddress data'
+);
+assert.doesNotMatch(
+  nightSchedulePage,
+  /model\.address/,
+  'Night Schedule must not treat adapter mapDescription fallback as an address'
+);
 
 const nightPaper = nightScheduleCss.match(/--paper:\s*(#[0-9a-f]{6})/i)?.[1];
 const nightMuted = nightScheduleCss.match(/--muted:\s*(#[0-9a-f]{6})/i)?.[1];
