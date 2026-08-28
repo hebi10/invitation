@@ -441,6 +441,7 @@
 
 .input,
 .textarea {
+  box-sizing: border-box;
   width: 100%;
   min-height: 44px;
   padding: 0.8rem;

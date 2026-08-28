@@ -173,6 +173,57 @@ assert.match(actionCss, /min-height:\s*44px/);
 assert.match(actionCss, /min-width:\s*44px/);
 assert.match(actionCss, /:focus-visible/);
 
+const publicInvitationGuestbookStylePaths = [
+  'src/app/_components/public-invitations/wedding/portrait-letter/styles.module.css',
+  'src/app/_components/public-invitations/wedding/garden-note/styles.module.css',
+  'src/app/_components/public-invitations/wedding/quiet-ceremony/styles.module.css',
+  'src/app/_components/public-invitations/wedding/letterpress/styles.module.css',
+  'src/app/_components/public-invitations/first-birthday/first-chapter/styles.module.css',
+  'src/app/_components/public-invitations/first-birthday/dawn-chapter/styles.module.css',
+  'src/app/_components/public-invitations/birthday/party-notes/styles.module.css',
+  'src/app/_components/public-invitations/birthday/birthday-story/styles.module.css',
+  'src/app/_components/public-invitations/general-event/program-edition/styles.module.css',
+  'src/app/_components/public-invitations/general-event/night-schedule/styles.module.css',
+  'src/app/_components/public-invitations/opening/studio-opening/styles.module.css',
+  'src/app/_components/public-invitations/opening/opening-poster/styles.module.css',
+] as const;
+
+for (const cssPath of publicInvitationGuestbookStylePaths) {
+  const css = read(cssPath);
+  const guestbookControlRule = css.match(
+    /\.input,\s*\.textarea\s*\{([\s\S]*?)\}/
+  )?.[1];
+
+  assert.ok(
+    guestbookControlRule,
+    `${cssPath} should define shared guestbook input and textarea styles`
+  );
+  assert.match(
+    guestbookControlRule,
+    /box-sizing:\s*border-box/,
+    `${cssPath} should keep padded guestbook controls inside their 100% container width`
+  );
+
+  const placeholderRule = css.match(
+    /\.input::placeholder,\s*\.textarea::placeholder\s*\{([\s\S]*?)\}/
+  )?.[1];
+
+  assert.ok(
+    placeholderRule,
+    `${cssPath} should define guestbook placeholder contrast instead of using the browser default`
+  );
+  assert.match(
+    placeholderRule,
+    /color:\s*(?:var\(--muted\)|#aeb1b8)/i,
+    `${cssPath} should use its readable secondary color for guestbook placeholders`
+  );
+  assert.match(
+    placeholderRule,
+    /opacity:\s*1/,
+    `${cssPath} should prevent browser placeholder opacity from lowering contrast`
+  );
+}
+
 const studioOpeningPagePath =
   'src/app/_components/public-invitations/opening/studio-opening/Page.tsx';
 const studioOpeningCssPath =

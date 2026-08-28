@@ -430,6 +430,7 @@
 
 .input,
 .textarea {
+  box-sizing: border-box;
   width: 100%;
   min-height: 44px;
   padding: 0.8rem;
@@ -437,6 +438,12 @@
   background: var(--control-surface);
   color: var(--ink);
   font: inherit;
+}
+
+.input::placeholder,
+.textarea::placeholder {
+  color: var(--muted);
+  opacity: 1;
 }
 
 .textarea {

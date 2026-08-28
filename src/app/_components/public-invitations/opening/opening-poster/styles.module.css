@@ -464,6 +464,7 @@
 
 .input,
 .textarea {
+  box-sizing: border-box;
   width: 100%;
   min-height: 44px;
   padding: 0.8rem;
@@ -473,6 +474,12 @@
   color: var(--ink);
   caret-color: var(--accent);
   font: inherit;
+}
+
+.input::placeholder,
+.textarea::placeholder {
+  color: var(--muted);
+  opacity: 1;
 }
 
 .textarea {
