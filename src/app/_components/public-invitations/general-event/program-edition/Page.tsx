@@ -7,6 +7,7 @@ import { resolveInvitationFeatures } from '@/lib/invitationProducts';
 import type { EventPageReadyState } from '../../../eventPageState';
 import { buildGeneralEventViewModel } from '../../../generalEvent/generalEventAdapter';
 import { InvitationActionLink } from '../../shared/InvitationActionLink';
+import { PublicInvitationDateFeature } from '../../shared/PublicInvitationDateFeature';
 import styles from './styles.module.css';
 
 type ProgramEditionPageProps = {
@@ -48,7 +49,9 @@ export default function ProgramEditionPage({ state }: ProgramEditionPageProps) {
   const emailHref = buildEmailHref(model.contactEmail);
   const phoneHref = buildPhoneHref(model.contactPhone);
   const hasParticipationMethod = hasContact && Boolean(emailHref || phoneHref);
-  const hasVisitInformation = Boolean(model.address || model.mapUrl);
+  const hasVisitInformation = Boolean(
+    model.address || model.mapDescription || model.mapUrl
+  );
 
   return (
     <main className={styles.page} aria-label={`${model.title} 행사 초대장`}>
@@ -97,6 +100,14 @@ export default function ProgramEditionPage({ state }: ProgramEditionPageProps) {
         </section>
       ) : null}
 
+      <PublicInvitationDateFeature
+        className={styles.section}
+        eventDate={state.weddingDate}
+        page={state.pageConfig}
+        title="행사까지"
+        titleClassName={styles.sectionTitle}
+      />
+
       {hasParticipationMethod ? (
         <section
           className={`${styles.section} ${styles.participation}`}
@@ -143,6 +154,12 @@ export default function ProgramEditionPage({ state }: ProgramEditionPageProps) {
               <div className={styles.detailRow}>
                 <dt>주소</dt>
                 <dd>{model.address}</dd>
+              </div>
+            ) : null}
+            {model.mapDescription ? (
+              <div className={styles.detailRow}>
+                <dt>안내</dt>
+                <dd>{model.mapDescription}</dd>
               </div>
             ) : null}
           </dl>

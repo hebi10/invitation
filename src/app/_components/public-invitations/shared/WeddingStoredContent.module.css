@@ -1,0 +1,99 @@
+.content {
+  display: grid;
+  gap: 1.75rem;
+}
+
+.group {
+  display: grid;
+  gap: 0.75rem;
+  padding-block-start: 1rem;
+  border-block-start: 1px solid currentColor;
+}
+
+.group h3,
+.group p,
+.group dl,
+.group ul {
+  margin: 0;
+}
+
+.group h3 {
+  font-size: 1rem;
+  font-weight: 500;
+}
+
+.facts {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.facts div {
+  display: grid;
+  grid-template-columns: minmax(4.5rem, 0.3fr) minmax(0, 1fr);
+  gap: 1rem;
+}
+
+.facts dt {
+  opacity: 0.72;
+}
+
+.facts dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.guides {
+  display: grid;
+  gap: 1rem;
+  padding: 0;
+  list-style: none;
+}
+
+.guides li {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.guides strong {
+  font-weight: 500;
+}
+
+.guides span,
+.description {
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 44px;
+  min-height: 44px;
+  padding-inline: 1rem;
+  border: 1px solid currentColor;
+  color: inherit;
+  text-decoration: none;
+}
+
+.action:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 3px;
+}
+
+@media (max-width: 390px) {
+  .facts div {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0.2rem;
+  }
+
+  .action {
+    flex: 1 1 10rem;
+  }
+}

@@ -6,7 +6,10 @@ import { resolveInvitationFeatures } from '@/lib/invitationProducts';
 
 import type { EventPageReadyState } from '../../../eventPageState';
 import { buildFirstBirthdayInvitationViewModel } from '../../../firstBirthday/firstBirthdayAdapter';
+import { FirstBirthdayGiftAccounts } from '../../shared/FirstBirthdayGiftAccounts';
 import { InvitationPoster } from '../../shared/InvitationPoster';
+import { PublicInvitationDateFeature } from '../../shared/PublicInvitationDateFeature';
+import { resolveFirstBirthdayHeroTitle } from '../../shared/identityModel';
 import styles from './styles.module.css';
 
 type FirstChapterPageProps = {
@@ -59,6 +62,7 @@ export default function FirstChapterPage({ state }: FirstChapterPageProps) {
     ? `${visibleBabyName} 돌잔치 초대장`
     : '돌잔치 초대장';
   const posterTitle = visibleBabyName || model.dateLabel;
+  const heroTitle = resolveFirstBirthdayHeroTitle(visibleBabyName);
   const imageAltPrefix = visibleBabyName || '아이';
 
   return (
@@ -70,15 +74,12 @@ export default function FirstChapterPage({ state }: FirstChapterPageProps) {
         {coverImageUrl ? (
           <section
             className={styles.hero}
-            aria-labelledby={visibleBabyName ? 'first-chapter-title' : undefined}
-            aria-label={visibleBabyName ? undefined : '첫 번째 생일'}
+            aria-labelledby="first-chapter-title"
           >
             <div className={styles.heroCopy}>
-              {visibleBabyName ? (
-                <h1 id="first-chapter-title" className={styles.heroTitle}>
-                  {visibleBabyName}
-                </h1>
-              ) : null}
+              <h1 id="first-chapter-title" className={styles.heroTitle}>
+                {heroTitle}
+              </h1>
               <p className={styles.heroAge}>한 살</p>
               <p className={styles.heroDate}>{model.dateLabel}</p>
             </div>
@@ -165,6 +166,14 @@ export default function FirstChapterPage({ state }: FirstChapterPageProps) {
         ) : null}
       </section>
 
+      <PublicInvitationDateFeature
+        className={styles.section}
+        eventDate={model.countdownDate}
+        page={state.pageConfig}
+        title="돌잔치까지"
+        titleClassName={styles.sectionTitle}
+      />
+
       {hasLocation ? (
         <section
           className={styles.section}
@@ -201,6 +210,14 @@ export default function FirstChapterPage({ state }: FirstChapterPageProps) {
           ) : null}
         </section>
       ) : null}
+
+      <FirstBirthdayGiftAccounts
+        className={styles.section}
+        dadAccounts={model.dadAccounts}
+        giftMessage={model.giftMessage}
+        momAccounts={model.momAccounts}
+        titleClassName={styles.sectionTitle}
+      />
 
       {features.showGuestbook ? (
         <div

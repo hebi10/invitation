@@ -13,6 +13,10 @@ import {
   shouldShowGiftInfo,
 } from '../../../weddingPageRenderers';
 import { InvitationPoster } from '../../shared/InvitationPoster';
+import { PublicInvitationDateFeature } from '../../shared/PublicInvitationDateFeature';
+import { WeddingStoredContent } from '../../shared/WeddingStoredContent';
+import { resolveGardenFamilyMember } from '../../shared/identityModel';
+import { buildWeddingStoredContent } from '../../shared/weddingStoredContentModel';
 import { useImmediateWeddingPageReveal } from '../useImmediateWeddingPageReveal';
 import letterpressStyles from '../letterpress/styles.module.css';
 import styles from './styles.module.css';
@@ -26,26 +30,15 @@ export default function GardenNotePage({ state }: WeddingThemeRendererProps) {
   const pageData = getThemePageData(page, 'romantic');
   const ceremony = getCeremonySchedule(page, pageData);
   const ceremonyAddress = getCeremonyAddress(page, pageData).trim();
+  const storedContent = buildWeddingStoredContent(page, pageData);
   const heroImageUrl = state.mainImageUrl.trim();
-  const greeting = pageData?.greetingMessage
-    ?.replace(/<br\s*\/?>/gi, '\n')
-    .trim();
-  const greetingAuthor = pageData?.greetingAuthor?.trim();
+  const greeting = storedContent.greetingMessage;
+  const greetingAuthor = storedContent.greetingAuthor;
   const features = resolveInvitationFeatures(page.productTier, page.features);
   const familyMembers = [page.couple.groom.father, page.couple.groom.mother, page.couple.bride.father, page.couple.bride.mother]
     .flatMap((member, index) => {
-      const phone = member?.phone?.trim();
-
-      if (!member || !phone) {
-        return [];
-      }
-
-      return [{
-        side: index < 2 ? '신랑측' : '신부측',
-        relation: member.relation.trim() || (index % 2 === 0 ? '아버지' : '어머니'),
-        name: member.name.trim() || member.relation,
-        phone,
-      }];
+      const resolvedMember = resolveGardenFamilyMember(member, index);
+      return resolvedMember ? [resolvedMember] : [];
     });
 
   return (
@@ -92,6 +85,15 @@ export default function GardenNotePage({ state }: WeddingThemeRendererProps) {
         )}
       </section>
 
+      <PublicInvitationDateFeature
+        className={styles.ceremonySection}
+        eventDate={state.weddingDate}
+        mode="calendar-countdown"
+        page={page}
+        title="결혼식까지"
+        titleClassName={styles.sectionHeading}
+      />
+
       <section
         id="wedding-info"
         className={styles.ceremonySection}
@@ -107,12 +109,13 @@ export default function GardenNotePage({ state }: WeddingThemeRendererProps) {
           <p className={styles.ceremonyVenue}>{page.venue}</p>
           {ceremonyAddress ? <p>{ceremonyAddress}</p> : null}
         </div>
-        {pageData?.mapUrl?.trim() ? (
-          <a className={styles.mapLink} href={pageData.mapUrl.trim()} target="_blank" rel="noreferrer">
-            지도에서 보기
-          </a>
-        ) : null}
       </section>
+
+      <WeddingStoredContent
+        className={styles.ceremonySection}
+        model={storedContent}
+        titleClassName={styles.sectionHeading}
+      />
 
       {familyMembers.length > 0 ? (
         <section
@@ -128,7 +131,7 @@ export default function GardenNotePage({ state }: WeddingThemeRendererProps) {
               <li key={`${member.side}-${member.relation}-${member.name}`}>
                 <div>
                   <span>{member.side}</span>
-                  <strong>{member.relation} {member.name}</strong>
+                  <strong>{member.displayName}</strong>
                 </div>
                 <div className={styles.familyActions}>
                   <a href={`tel:${member.phone}`} aria-label={`${member.name}에게 전화하기`}>

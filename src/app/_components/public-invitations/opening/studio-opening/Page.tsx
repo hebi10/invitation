@@ -8,6 +8,7 @@ import type { EventPageReadyState } from '../../../eventPageState';
 import { buildOpeningInvitationViewModel } from '../../../opening/openingAdapter';
 import { InvitationActionLink } from '../../shared/InvitationActionLink';
 import { InvitationPoster } from '../../shared/InvitationPoster';
+import { PublicInvitationDateFeature } from '../../shared/PublicInvitationDateFeature';
 import styles from './styles.module.css';
 
 type StudioOpeningPageProps = {
@@ -139,6 +140,14 @@ export default function StudioOpeningPage({ state }: StudioOpeningPageProps) {
           </div>
         </section>
       ) : null}
+
+      <PublicInvitationDateFeature
+        className={styles.section}
+        eventDate={model.openingDate}
+        page={state.pageConfig}
+        title="오픈까지"
+        titleClassName={styles.sectionTitle}
+      />
 
       <section
         className={styles.visit}

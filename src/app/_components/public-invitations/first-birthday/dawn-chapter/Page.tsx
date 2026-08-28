@@ -6,8 +6,10 @@ import { resolveInvitationFeatures } from '@/lib/invitationProducts';
 
 import type { EventPageReadyState } from '../../../eventPageState';
 import { buildFirstBirthdayInvitationViewModel } from '../../../firstBirthday/firstBirthdayAdapter';
+import { FirstBirthdayGiftAccounts } from '../../shared/FirstBirthdayGiftAccounts';
 import { InvitationActionLink } from '../../shared/InvitationActionLink';
 import { InvitationPoster } from '../../shared/InvitationPoster';
+import { PublicInvitationDateFeature } from '../../shared/PublicInvitationDateFeature';
 import styles from './styles.module.css';
 
 type DawnChapterPageProps = {
@@ -172,6 +174,14 @@ export default function DawnChapterPage({ state }: DawnChapterPageProps) {
         ) : null}
       </section>
 
+      <PublicInvitationDateFeature
+        className={styles.section}
+        eventDate={model.countdownDate}
+        page={state.pageConfig}
+        title="돌잔치까지"
+        titleClassName={styles.sectionTitle}
+      />
+
       {hasLocation ? (
         <section
           className={styles.section}
@@ -203,6 +213,14 @@ export default function DawnChapterPage({ state }: DawnChapterPageProps) {
           ) : null}
         </section>
       ) : null}
+
+      <FirstBirthdayGiftAccounts
+        className={styles.section}
+        dadAccounts={model.dadAccounts}
+        giftMessage={model.giftMessage}
+        momAccounts={model.momAccounts}
+        titleClassName={styles.sectionTitle}
+      />
 
       {features.showGuestbook ? (
         <div className={styles.guestbook} data-dawn-chapter-section="guestbook">

@@ -7,6 +7,7 @@ import { resolveInvitationFeatures } from '@/lib/invitationProducts';
 import type { EventPageReadyState } from '../../../eventPageState';
 import { buildBirthdayInvitationViewModel } from '../../../birthday/birthdayAdapter';
 import { InvitationActionLink } from '../../shared/InvitationActionLink';
+import { PublicInvitationDateFeature } from '../../shared/PublicInvitationDateFeature';
 import styles from './styles.module.css';
 
 type PartyNotesPageProps = {
@@ -88,6 +89,14 @@ export default function PartyNotesPage({ state }: PartyNotesPageProps) {
           ) : null}
         </dl>
       </section>
+
+      <PublicInvitationDateFeature
+        className={styles.section}
+        eventDate={model.countdownDate}
+        page={state.pageConfig}
+        title="생일까지"
+        titleClassName={styles.sectionTitle}
+      />
 
       {hasContact ? (
         <section

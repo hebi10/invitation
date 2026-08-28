@@ -5,36 +5,47 @@ import path from 'node:path';
 const read = (relativePath: string) =>
   readFileSync(path.resolve(process.cwd(), relativePath), 'utf8');
 
-const loader = read('src/components/sections/WeddingLoader/WeddingLoaderMessage.tsx');
-const emotionalLoader = read('src/components/sections/WeddingLoader/WeddingLoader.tsx');
-const simpleLoader = read('src/components/sections/WeddingLoader/WeddingLoaderSimple.tsx');
-const cover = read('src/components/sections/Cover/CoverFramedThemed.tsx');
-const layout = read('src/app/_components/EventInvitationLayout.tsx');
-const kakaoShare = read('src/app/_components/WeddingKakaoShareButton.tsx');
-const emotionalMap = read('src/components/sections/LocationMap/LocationMap.tsx');
-const simpleMap = read('src/components/sections/LocationMap/LocationMapSimple.tsx');
-const romanticMap = read('src/app/_components/themeRenderers/romanticLocationMap.tsx');
-const romantic = read('src/app/_components/themeRenderers/romantic.tsx');
 const sharedGallery = read('src/components/sections/Gallery/GalleryGridShared.tsx');
-const romanticCss = read('src/app/_components/themeRenderers/romantic.module.css');
+const registry = read('src/app/_components/themeRenderers/registry.ts');
+const revealHook = read(
+  'src/app/_components/public-invitations/wedding/useImmediateWeddingPageReveal.ts'
+);
 const samples = read('src/config/sampleInvitationDefaults.ts');
+const activePagePaths = [
+  'letterpress',
+  'portrait-letter',
+  'garden-note',
+  'quiet-ceremony',
+].map(
+  (theme) =>
+    `src/app/_components/public-invitations/wedding/${theme}/Page.tsx`
+);
+const activePages = activePagePaths.map(read);
 
-assert.doesNotMatch(loader, /minLoadTime/);
-assert.doesNotMatch(emotionalLoader, /minLoadTime/);
-assert.doesNotMatch(simpleLoader, /minLoadTime/);
-assert.match(loader, /transform:\s*`scaleX\(/);
-assert.match(cover, /from ['"]next\/image['"]/);
-assert.match(cover, /<Image/);
-assert.doesNotMatch(layout, /beforeInteractive|<Script/);
-assert.match(kakaoShare, /KAKAO_SHARE_SCRIPT_ID/);
-assert.match(kakaoShare, /IntersectionObserver/);
-assert.match(emotionalMap, /IntersectionObserver/);
-assert.match(simpleMap, /IntersectionObserver/);
-assert.match(romanticMap, /IntersectionObserver/);
-assert.doesNotMatch(romanticCss, /@import\s+url/);
-assert.match(romantic, /loading=["']lazy["']/);
 assert.match(sharedGallery, /loading=["']lazy["']/);
 assert.doesNotMatch(sharedGallery, /onLoadingComplete/);
+assert.match(registry, /component:\s*PortraitLetterPage/);
+assert.match(registry, /component:\s*GardenNotePage/);
+assert.match(registry, /component:\s*QuietCeremonyPage/);
+assert.match(registry, /component:\s*LetterpressPage/);
+
+for (const [index, page] of activePages.entries()) {
+  assert.match(page, /loading="eager"/);
+  assert.doesNotMatch(page, /minLoadTime|setTimeout|<WeddingLoader|<IntroScreen/);
+  assert.match(page, /<GalleryGridShared/);
+
+  if (activePagePaths[index].includes('letterpress')) {
+    assert.match(page, /setIsLoading\(false\);/);
+    assert.match(page, /window\.requestAnimationFrame\(releasePageOverflow\)/);
+  } else {
+    assert.match(page, /useImmediateWeddingPageReveal\(state\);/);
+  }
+}
+
+assert.match(revealHook, /setIsLoading\(false\);/);
+assert.match(revealHook, /window\.requestAnimationFrame\(releasePageOverflow\)/);
+assert.match(revealHook, /window\.cancelAnimationFrame\(frame\);/);
+assert.doesNotMatch(revealHook, /setTimeout|minLoadTime/);
 assert.match(samples, /\.webp/);
 assert.ok(
   statSync(path.resolve(process.cwd(), 'public/images/sample-wedding-romantic.webp')).size <

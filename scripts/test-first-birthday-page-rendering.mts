@@ -1,20 +1,11 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 
-const source = fs.readFileSync(
-  'src/app/_components/firstBirthday/FirstBirthdayInvitationPage.tsx',
-  'utf8'
-);
-const rendererSource = fs.readFileSync(
-  'src/app/_components/firstBirthday/themeRenderers/shared.tsx',
-  'utf8'
-);
+import { resolveGalleryOpacityTransition } from '../src/components/sections/Gallery/galleryMotion.ts';
+import { resolveFirstBirthdayHeroTitle } from '../src/app/_components/public-invitations/shared/identityModel.ts';
+
 const registrySource = fs.readFileSync(
   'src/app/_components/firstBirthday/themeRenderers/registry.ts',
-  'utf8'
-);
-const cssSource = fs.readFileSync(
-  'src/app/_components/firstBirthday/FirstBirthdayInvitationPage.module.css',
   'utf8'
 );
 const firstChapterPagePath =
@@ -55,16 +46,6 @@ const dawnChapterSource = fs.readFileSync(dawnChapterPagePath, 'utf8');
 const dawnChapterCss = fs.readFileSync(dawnChapterCssPath, 'utf8');
 
 assert.equal(
-  source.includes('<FirstBirthdayIntro'),
-  false,
-  'first-birthday routes should not be blocked behind the intro card'
-);
-assert.equal(
-  source.includes('<ThemeRenderer state={readyState} />'),
-  true,
-  'first-birthday routes should render the theme body directly'
-);
-assert.equal(
   registrySource.includes("from '../../public-invitations/first-birthday'"),
   true,
   'first-birthday registry renderers must originate from public-invitations/first-birthday'
@@ -73,21 +54,6 @@ assert.doesNotMatch(
   registrySource,
   /from ['"]\.\/(?:mint|pink)['"];/,
   'first-birthday registry must not import legacy renderer modules directly'
-);
-assert.equal(
-  rendererSource.includes('const hasCoverImage = Boolean(model.coverImageUrl.trim());'),
-  true,
-  'first-birthday renderer should distinguish empty image data before laying out the hero'
-);
-assert.equal(
-  rendererSource.includes('styles.heroNoImage'),
-  true,
-  'first-birthday renderer should apply a compact hero state when no cover image exists'
-);
-assert.equal(
-  cssSource.includes('.heroNoImage .heroImage'),
-  true,
-  'first-birthday no-image hero should not reserve the cover image slot'
 );
 assert.match(
   firstChapterSource,
@@ -108,6 +74,18 @@ assert.doesNotMatch(
   firstChapterSource,
   /First Birthday/,
   'First Chapter should not use the legacy English kicker'
+);
+assert.equal(resolveFirstBirthdayHeroTitle(''), '첫 번째 생일');
+assert.equal(resolveFirstBirthdayHeroTitle('하루'), '하루');
+assert.match(
+  firstChapterSource,
+  /const heroTitle = resolveFirstBirthdayHeroTitle\(visibleBabyName\);/,
+  'First Chapter should resolve its empty-identity h1 through the active identity contract'
+);
+assert.match(
+  firstChapterSource,
+  /<h1 id="first-chapter-title" className=\{styles\.heroTitle\}>\s*\{heroTitle\}\s*<\/h1>/,
+  'First Chapter should always render the resolved image hero title as h1'
 );
 
 const orderedSections = [
@@ -185,10 +163,12 @@ assert.doesNotMatch(
   /<p className=\{styles\.heroTitle\}>/,
   'Dawn Chapter should not demote its neutral image hero title to a paragraph'
 );
-assert.match(
+assert.equal(resolveGalleryOpacityTransition(true, 300), 'none');
+assert.equal(resolveGalleryOpacityTransition(false, 300), 'opacity 0.3s ease');
+assert.doesNotMatch(
   dawnChapterCss,
-  /@media \(prefers-reduced-motion: reduce\) \{[\s\S]*?\.page \.imageItem,\s*\.page \.popupImage \{[\s\S]*?transition:\s*none !important;/,
-  'Dawn Chapter should override shared gallery image transitions for reduced motion'
+  /\.page \.imageItem,\s*\.page \.popupImage/,
+  'Dawn Chapter should rely on the active shared gallery reduced-motion contract'
 );
 
 const dawnChapterSections = [

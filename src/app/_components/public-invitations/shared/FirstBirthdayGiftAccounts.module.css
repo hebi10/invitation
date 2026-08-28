@@ -1,0 +1,72 @@
+.content {
+  display: grid;
+  gap: 1.5rem;
+}
+
+.message {
+  margin: 0;
+  white-space: pre-line;
+}
+
+.group {
+  display: grid;
+  gap: 0.75rem;
+  padding-block-start: 1rem;
+  border-block-start: 1px solid currentColor;
+}
+
+.groupTitle {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 500;
+}
+
+.account {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 1rem;
+  padding-block: 0.75rem;
+  border-block-end: 1px solid color-mix(in srgb, currentColor 28%, transparent);
+}
+
+.accountInfo {
+  display: grid;
+  min-width: 0;
+  gap: 0.25rem;
+}
+
+.accountInfo strong {
+  font-weight: 500;
+}
+
+.accountNumber {
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+
+.copyButton {
+  min-width: 44px;
+  min-height: 44px;
+  padding-inline: 0.9rem;
+  border: 1px solid currentColor;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  font: inherit;
+}
+
+.copyButton:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 3px;
+}
+
+@media (max-width: 390px) {
+  .account {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .copyButton {
+    width: 100%;
+  }
+}

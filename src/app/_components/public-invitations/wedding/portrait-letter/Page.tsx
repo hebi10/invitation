@@ -13,6 +13,9 @@ import {
   shouldShowGiftInfo,
 } from '../../../weddingPageRenderers';
 import { InvitationPoster } from '../../shared/InvitationPoster';
+import { PublicInvitationDateFeature } from '../../shared/PublicInvitationDateFeature';
+import { WeddingStoredContent } from '../../shared/WeddingStoredContent';
+import { buildWeddingStoredContent } from '../../shared/weddingStoredContentModel';
 import { useImmediateWeddingPageReveal } from '../useImmediateWeddingPageReveal';
 import letterpressStyles from '../letterpress/styles.module.css';
 import styles from './styles.module.css';
@@ -26,11 +29,10 @@ export default function PortraitLetterPage({ state }: WeddingThemeRendererProps)
   const pageData = getThemePageData(page, 'emotional');
   const ceremony = getCeremonySchedule(page, pageData);
   const ceremonyAddress = getCeremonyAddress(page, pageData).trim();
+  const storedContent = buildWeddingStoredContent(page, pageData);
   const heroImageUrl = state.mainImageUrl.trim();
-  const invitationMessage = pageData?.greetingMessage
-    ?.replace(/<br\s*\/?>/gi, '\n')
-    .trim();
-  const invitationAuthor = pageData?.greetingAuthor?.trim();
+  const invitationMessage = storedContent.greetingMessage;
+  const invitationAuthor = storedContent.greetingAuthor;
   const features = resolveInvitationFeatures(page.productTier, page.features);
   const contacts = [
     { side: '신랑측', role: page.couple.groom.order || '신랑', ...page.couple.groom },
@@ -100,6 +102,15 @@ export default function PortraitLetterPage({ state }: WeddingThemeRendererProps)
         </section>
       ) : null}
 
+      <PublicInvitationDateFeature
+        className={styles.scheduleSection}
+        eventDate={state.weddingDate}
+        mode="calendar-countdown"
+        page={page}
+        title="결혼식까지"
+        titleClassName={styles.sectionHeading}
+      />
+
       <section
         id="wedding-info"
         className={styles.scheduleSection}
@@ -134,12 +145,13 @@ export default function PortraitLetterPage({ state }: WeddingThemeRendererProps)
           </h2>
           {ceremonyAddress ? <p>{ceremonyAddress}</p> : null}
         </div>
-        {pageData?.mapUrl?.trim() ? (
-          <a href={pageData.mapUrl.trim()} target="_blank" rel="noreferrer">
-            지도에서 보기
-          </a>
-        ) : null}
       </section>
+
+      <WeddingStoredContent
+        className={styles.scheduleSection}
+        model={storedContent}
+        titleClassName={styles.sectionHeading}
+      />
 
       {contacts.length > 0 ? (
         <section

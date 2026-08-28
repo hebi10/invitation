@@ -27,29 +27,14 @@ function contrastRatio(first: string, second: string) {
   return (lighter + 0.05) / (darker + 0.05);
 }
 
-const globals = read('src/app/globals.css');
-const emotionalMotion = [
-  'src/components/sections/WeddingCalendar/WeddingCalendar.module.css',
-  'src/components/sections/Guestbook/Guestbook.module.css',
-  'src/components/sections/LocationMap/LocationMap.module.css',
-].map(read);
-const simpleMotion = [
-  'src/components/sections/Schedule/ScheduleSimple.module.css',
-  'src/components/sections/Gallery/GallerySimple.module.css',
-].map(read);
-const romanticCss = read('src/app/_components/themeRenderers/romantic.module.css');
-const classicCss = read('src/app/_components/themeRenderers/classic-r.module.css');
-const letterpressCss = read(
-  'src/app/_components/public-invitations/wedding/letterpress/styles.module.css'
-);
-
-const narrativeThemePaths = [
+const activeThemePaths = [
+  'src/app/_components/public-invitations/wedding/letterpress',
   'src/app/_components/public-invitations/wedding/portrait-letter',
   'src/app/_components/public-invitations/wedding/garden-note',
   'src/app/_components/public-invitations/wedding/quiet-ceremony',
 ] as const;
 
-for (const themePath of narrativeThemePaths) {
+for (const themePath of activeThemePaths) {
   assert.equal(
     existsSync(path.resolve(process.cwd(), themePath, 'Page.tsx')),
     true,
@@ -62,11 +47,20 @@ for (const themePath of narrativeThemePaths) {
   );
 }
 
-const narrativeThemeCss = narrativeThemePaths.map((themePath) =>
+const activeThemeCss = activeThemePaths.map((themePath) =>
   read(`${themePath}/styles.module.css`)
 );
-const narrativeThemePages = narrativeThemePaths.map((themePath) =>
+const activeThemePages = activeThemePaths.map((themePath) =>
   read(`${themePath}/Page.tsx`)
+);
+const letterpressCss = activeThemeCss[0];
+const narrativeThemeCss = activeThemeCss.slice(1);
+const narrativeThemePages = activeThemePages.slice(1);
+const dateFeatureCss = read(
+  'src/app/_components/public-invitations/shared/PublicInvitationDateFeature.module.css'
+);
+const storedContentCss = read(
+  'src/app/_components/public-invitations/shared/WeddingStoredContent.module.css'
 );
 const revealHookPath =
   'src/app/_components/public-invitations/wedding/useImmediateWeddingPageReveal.ts';
@@ -79,13 +73,6 @@ assert.equal(
 
 const revealHook = read(revealHookPath);
 
-assert.match(globals, /--accent-brown:/);
-for (const css of [...emotionalMotion, ...simpleMotion, romanticCss, classicCss]) {
-  assert.match(css, /prefers-reduced-motion:\s*reduce/);
-}
-assert.match(romanticCss, /--romantic-accent-text:/);
-assert.match(classicCss, /--classic-muted-readable:/);
-assert.match(classicCss, /\[aria-selected=["']true["']\]/);
 assert.doesNotMatch(
   letterpressCss,
   /border-radius:\s*(?:[1-9]|\d{2,})px|border-radius:\s*999px/
@@ -130,10 +117,24 @@ for (const css of narrativeThemeCss) {
   );
 }
 
+for (const css of [dateFeatureCss, storedContentCss]) {
+  assert.doesNotMatch(css, /(?:linear|radial|conic)-gradient/);
+  assert.doesNotMatch(css, /box-shadow/);
+  assert.doesNotMatch(css, /border-radius/);
+}
+assert.match(storedContentCss, /min-height:\s*44px/);
+assert.match(storedContentCss, /:focus-visible/);
+assert.match(dateFeatureCss, /\.eventDay\s*\{[^}]*font-weight:\s*700;/s);
+
 for (const page of narrativeThemePages) {
   assert.match(page, /useImmediateWeddingPageReveal/);
   assert.match(page, /useImmediateWeddingPageReveal\(state\);/);
   assert.doesNotMatch(page, /useEffect|removeProperty\(['"]overflow['"]\)/);
+}
+
+for (const page of activeThemePages) {
+  assert.match(page, /<PublicInvitationDateFeature/);
+  assert.match(page, /<WeddingStoredContent/);
 }
 
 assert.match(revealHook, /setIsLoading\(false\);/);

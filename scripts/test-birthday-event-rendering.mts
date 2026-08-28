@@ -12,6 +12,7 @@ import {
   isInvitationThemeKey,
 } from '../src/lib/invitationThemes.ts';
 import { getPageWizardPresentation } from '../src/app/page-wizard/pageWizardPresentation.ts';
+import { resolveGalleryOpacityTransition } from '../src/components/sections/Gallery/galleryMotion.ts';
 import {
   getPageCategoryEventTypeFilter,
   isImplementedPageCategory,
@@ -110,14 +111,16 @@ assert.match(birthdayStorySource, /features\.showGuestbook\s*\?/);
 assert.doesNotMatch(birthdayStorySource, /준비 중|이미지 없음|입력해 주세요/);
 assert.doesNotMatch(birthdayStorySource, /setTimeout|setInterval|<IntroScreen/);
 
+assert.equal(resolveGalleryOpacityTransition(true, 200), 'none');
+assert.equal(resolveGalleryOpacityTransition(false, 200), 'opacity 0.2s ease');
 for (const [label, css] of [
   ['Party Notes', partyNotesCss],
   ['Birthday Story', birthdayStoryCss],
 ] as const) {
-  assert.match(
+  assert.doesNotMatch(
     css,
-    /@media \(prefers-reduced-motion: reduce\) \{[\s\S]*?\.page \.imageItem,\s*\.page \.popupImage \{[\s\S]*?transition:\s*none !important;/,
-    `${label} should override shared gallery image transitions for reduced motion`
+    /\.page \.imageItem,\s*\.page \.popupImage/,
+    `${label} should rely on the active shared gallery reduced-motion contract`
   );
 }
 

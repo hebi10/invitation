@@ -210,3 +210,14 @@
     scroll-behavior: auto;
   }
 }
+
+.greetingMessage {
+  margin: 0;
+  line-height: 1.9;
+  white-space: pre-line;
+}
+
+.greetingAuthor {
+  margin: 1rem 0 0;
+  color: var(--muted);
+}

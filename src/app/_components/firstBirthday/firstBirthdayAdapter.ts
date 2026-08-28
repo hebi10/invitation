@@ -91,8 +91,7 @@ export function buildFirstBirthdayInvitationViewModel(
     venueGuide: (pageData?.venueGuide ?? []).filter(
       (item) => hasText(item.title) || hasText(item.content)
     ),
-    giftMessage:
-      giftInfo?.message?.trim() || '전해 주시는 따뜻한 마음을 감사히 간직하겠습니다.',
+    giftMessage: giftInfo?.message?.trim() || '',
     dadAccounts: giftInfo?.groomAccounts ?? [],
     momAccounts: giftInfo?.brideAccounts ?? [],
   };

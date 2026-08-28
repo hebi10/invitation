@@ -8,6 +8,7 @@ import type { EventPageReadyState } from '../../../eventPageState';
 import { buildGeneralEventViewModel } from '../../../generalEvent/generalEventAdapter';
 import { InvitationActionLink } from '../../shared/InvitationActionLink';
 import { InvitationPoster } from '../../shared/InvitationPoster';
+import { PublicInvitationDateFeature } from '../../shared/PublicInvitationDateFeature';
 import styles from './styles.module.css';
 
 type NightSchedulePageProps = {
@@ -95,6 +96,14 @@ export default function NightSchedulePage({ state }: NightSchedulePageProps) {
           </ol>
         </section>
       ) : null}
+
+      <PublicInvitationDateFeature
+        className={styles.schedule}
+        eventDate={state.weddingDate}
+        page={state.pageConfig}
+        title="행사까지"
+        titleClassName={styles.sectionTitle}
+      />
 
       {hasVisitInformation ? (
         <section

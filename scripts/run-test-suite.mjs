@@ -36,6 +36,7 @@ const core = [
   'test-page-wizard-event-type-lock',
   'test-page-wizard-workspace',
   'test-page-wizard-schedule-time',
+  'test-public-invitation-behavior',
   'test-public-invitation-visual-world',
   'test-romantic-empty-state',
   'test-sample-invitation-fallback',

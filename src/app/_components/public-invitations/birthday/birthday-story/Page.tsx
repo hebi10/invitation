@@ -8,6 +8,7 @@ import type { EventPageReadyState } from '../../../eventPageState';
 import { buildBirthdayInvitationViewModel } from '../../../birthday/birthdayAdapter';
 import { InvitationActionLink } from '../../shared/InvitationActionLink';
 import { InvitationPoster } from '../../shared/InvitationPoster';
+import { PublicInvitationDateFeature } from '../../shared/PublicInvitationDateFeature';
 import styles from './styles.module.css';
 
 type BirthdayStoryPageProps = {
@@ -135,6 +136,14 @@ export default function BirthdayStoryPage({ state }: BirthdayStoryPageProps) {
           ) : null}
         </dl>
       </section>
+
+      <PublicInvitationDateFeature
+        className={styles.schedule}
+        eventDate={model.countdownDate}
+        page={state.pageConfig}
+        title="생일까지"
+        titleClassName={styles.sectionTitle}
+      />
 
       {hasLocation ? (
         <section

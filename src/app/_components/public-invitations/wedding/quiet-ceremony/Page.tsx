@@ -13,6 +13,9 @@ import {
   shouldShowGiftInfo,
 } from '../../../weddingPageRenderers';
 import { InvitationPoster } from '../../shared/InvitationPoster';
+import { PublicInvitationDateFeature } from '../../shared/PublicInvitationDateFeature';
+import { WeddingStoredContent } from '../../shared/WeddingStoredContent';
+import { buildWeddingStoredContent } from '../../shared/weddingStoredContentModel';
 import { useImmediateWeddingPageReveal } from '../useImmediateWeddingPageReveal';
 import letterpressStyles from '../letterpress/styles.module.css';
 import styles from './styles.module.css';
@@ -26,6 +29,7 @@ export default function QuietCeremonyPage({ state }: WeddingThemeRendererProps) 
   const pageData = getThemePageData(page, 'simple');
   const ceremony = getCeremonySchedule(page, pageData);
   const ceremonyAddress = getCeremonyAddress(page, pageData).trim();
+  const storedContent = buildWeddingStoredContent(page, pageData);
   const heroImageUrl = state.mainImageUrl.trim();
   const features = resolveInvitationFeatures(page.productTier, page.features);
 
@@ -76,6 +80,34 @@ export default function QuietCeremonyPage({ state }: WeddingThemeRendererProps) 
         )}
       </div>
 
+      {storedContent.greetingMessage ? (
+        <section
+          className={styles.scheduleSection}
+          aria-labelledby="quiet-ceremony-greeting"
+        >
+          <h2 id="quiet-ceremony-greeting" className={styles.sectionHeading}>
+            초대의 글
+          </h2>
+          <p className={styles.greetingMessage}>
+            {storedContent.greetingMessage}
+          </p>
+          {storedContent.greetingAuthor ? (
+            <p className={styles.greetingAuthor}>
+              {storedContent.greetingAuthor}
+            </p>
+          ) : null}
+        </section>
+      ) : null}
+
+      <PublicInvitationDateFeature
+        className={styles.scheduleSection}
+        eventDate={state.weddingDate}
+        mode="calendar-countdown"
+        page={page}
+        title="결혼식까지"
+        titleClassName={styles.sectionHeading}
+      />
+
       <section
         id="wedding-info"
         className={styles.scheduleSection}
@@ -119,12 +151,13 @@ export default function QuietCeremonyPage({ state }: WeddingThemeRendererProps) 
             </div>
           ) : null}
         </dl>
-        {pageData?.mapUrl?.trim() ? (
-          <a className={styles.mapLink} href={pageData.mapUrl.trim()} target="_blank" rel="noreferrer">
-            지도에서 보기
-          </a>
-        ) : null}
       </section>
+
+      <WeddingStoredContent
+        className={styles.locationSection}
+        model={storedContent}
+        titleClassName={styles.sectionHeading}
+      />
 
       {shouldShowGiftInfo(state) ? (
         <div data-quiet-ceremony-section="gift">

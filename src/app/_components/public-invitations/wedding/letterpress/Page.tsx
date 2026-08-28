@@ -15,6 +15,9 @@ import {
   shouldShowGiftInfo,
 } from '../../../weddingPageRenderers';
 import { InvitationPoster } from '../../shared/InvitationPoster';
+import { PublicInvitationDateFeature } from '../../shared/PublicInvitationDateFeature';
+import { WeddingStoredContent } from '../../shared/WeddingStoredContent';
+import { buildWeddingStoredContent } from '../../shared/weddingStoredContentModel';
 import styles from './styles.module.css';
 
 export default function LetterpressPage({ state }: WeddingThemeRendererProps) {
@@ -23,11 +26,10 @@ export default function LetterpressPage({ state }: WeddingThemeRendererProps) {
   const pageData = getThemePageData(page, 'classic-r');
   const ceremony = getCeremonySchedule(page, pageData);
   const ceremonyAddress = getCeremonyAddress(page, pageData);
+  const storedContent = buildWeddingStoredContent(page, pageData);
   const heroImageUrl = state.mainImageUrl.trim();
-  const invitationMessage = pageData?.greetingMessage
-    ?.replace(/<br\s*\/?>/gi, '\n')
-    .trim();
-  const invitationAuthor = pageData?.greetingAuthor?.trim();
+  const invitationMessage = storedContent.greetingMessage;
+  const invitationAuthor = storedContent.greetingAuthor;
   const features = resolveInvitationFeatures(page.productTier, page.features);
   const contactCandidates = [
     {
@@ -152,6 +154,15 @@ export default function LetterpressPage({ state }: WeddingThemeRendererProps) {
         </section>
       ) : null}
 
+      <PublicInvitationDateFeature
+        className={styles.section}
+        eventDate={state.weddingDate}
+        mode="calendar-countdown"
+        page={page}
+        title="결혼식까지"
+        titleClassName={styles.sectionTitle}
+      />
+
       <section
         id="wedding-info"
         className={styles.section}
@@ -184,6 +195,12 @@ export default function LetterpressPage({ state }: WeddingThemeRendererProps) {
           ) : null}
         </dl>
       </section>
+
+      <WeddingStoredContent
+        className={styles.section}
+        model={storedContent}
+        titleClassName={styles.sectionTitle}
+      />
 
       {contacts.length > 0 ? (
         <section

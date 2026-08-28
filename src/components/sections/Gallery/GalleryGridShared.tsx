@@ -1,10 +1,39 @@
 'use client';
 
 import type { RefObject } from 'react';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from 'react';
 import Image from 'next/image';
 
 import { useScrollAnimation } from '@/hooks';
+
+import { resolveGalleryOpacityTransition } from './galleryMotion';
+
+const REDUCED_MOTION_QUERY = '(prefers-reduced-motion: reduce)';
+
+function subscribeToReducedMotion(onChange: () => void) {
+  if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') {
+    return () => undefined;
+  }
+
+  const mediaQuery = window.matchMedia(REDUCED_MOTION_QUERY);
+  mediaQuery.addEventListener('change', onChange);
+  return () => mediaQuery.removeEventListener('change', onChange);
+}
+
+function getReducedMotionSnapshot() {
+  return (
+    typeof window !== 'undefined' &&
+    typeof window.matchMedia === 'function' &&
+    window.matchMedia(REDUCED_MOTION_QUERY).matches
+  );
+}
 
 export interface GalleryGridSharedProps {
   images: string[];
@@ -68,6 +97,11 @@ export default function GalleryGridShared({
   const [loadedPopupImages, setLoadedPopupImages] = useState<Set<string>>(new Set());
   const [isPopupImageLoading, setIsPopupImageLoading] = useState(false);
   const [popupImageError, setPopupImageError] = useState<string | null>(null);
+  const prefersReducedMotion = useSyncExternalStore(
+    subscribeToReducedMotion,
+    getReducedMotionSnapshot,
+    () => false
+  );
   const popupContentRef = useRef<HTMLDivElement | null>(null);
   const popupCloseButtonRef = useRef<HTMLButtonElement | null>(null);
   const triggerRef = useRef<HTMLButtonElement | null>(null);
@@ -276,7 +310,10 @@ export default function GalleryGridShared({
                       style={{
                         objectFit: 'cover',
                         opacity: loadedImages.has(previewImage) ? 1 : 0,
-                        transition: 'opacity 0.22s ease',
+                        transition: resolveGalleryOpacityTransition(
+                          prefersReducedMotion,
+                          220
+                        ),
                       }}
                     />
                   </button>
@@ -427,7 +464,10 @@ export default function GalleryGridShared({
                   maxWidth: '92vw',
                   maxHeight: '78dvh',
                   opacity: isPopupImageLoading || Boolean(popupImageError) ? 0 : 1,
-                  transition: 'opacity 0.18s ease',
+                  transition: resolveGalleryOpacityTransition(
+                    prefersReducedMotion,
+                    180
+                  ),
                 }}
               />
             </div>

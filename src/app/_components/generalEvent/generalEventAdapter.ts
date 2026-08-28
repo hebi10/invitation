@@ -14,6 +14,7 @@ export type GeneralEventViewModel = {
   timeLabel: string;
   venueName: string;
   address: string;
+  mapDescription: string;
   mapUrl: string;
   programItems: GeneralEventProgramItem[];
   contactName: string;
@@ -102,8 +103,8 @@ export function buildGeneralEventViewModel(
     dateLabel: formatEventDate(eventDate, page.date),
     timeLabel: formatEventTime(eventDate, pageData.ceremonyTime),
     venueName: pageData.venueName?.trim() || page.venue || '장소 미정',
-    address:
-      pageData.ceremonyAddress?.trim() || pageData.mapDescription?.trim() || '',
+    address: pageData.ceremonyAddress?.trim() || '',
+    mapDescription: pageData.mapDescription?.trim() || '',
     mapUrl: pageData.mapUrl?.trim() || '',
     programItems,
     contactName: pageData.contactName?.trim() || pageData.ceremonyContact?.trim() || '',
