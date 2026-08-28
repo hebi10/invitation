@@ -21,18 +21,18 @@ assert(isInvitationThemeKey(themeKey), 'classic-r must be registered as an invit
 
 const definition = getInvitationThemeDefinition(themeKey);
 assert(definition.pathSuffix === '/classic-r', 'classic-r must use /classic-r route suffix.');
-assert(definition.label === '클래식 리뉴얼', 'classic-r must expose the Korean display label.');
+assert(definition.label === '레터프레스', 'classic-r must expose the Letterpress display label.');
 assert(
-  definition.adminLabel === '클래식 리뉴얼',
+  definition.adminLabel === '레터프레스',
   'classic-r admin label must be Korean to match the admin selector.'
 );
 assert(
-  definition.variantLabel === '클래식 리뉴얼',
+  definition.variantLabel === '레터프레스',
   'classic-r variant label must be Korean to match preview labels.'
 );
 assert(
-  definition.preview.description.includes('프리미엄'),
-  'classic-r preview description must communicate the premium positioning.'
+  definition.preview.description.includes('고전 활자와 얇은 선'),
+  'classic-r preview description must describe the Letterpress visual world.'
 );
 
 const policy = getInvitationThemeSalesPolicy(themeKey);

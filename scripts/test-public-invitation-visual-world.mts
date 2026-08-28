@@ -43,6 +43,7 @@ const weddingRegistry = read('src/app/_components/themeRenderers/registry.ts');
 const weddingIndex = read(
   'src/app/_components/public-invitations/wedding/index.ts'
 );
+const invitationThemeMetadata = read('src/lib/invitationThemes.ts');
 assert.match(
   weddingRegistry,
   /from ['"]\.\.\/public-invitations\/wedding['"];/,
@@ -52,6 +53,11 @@ assert.doesNotMatch(
   weddingRegistry,
   /from ['"]\.\/(?:classic-r|emotional|romantic|simple)['"];/,
   'wedding renderer registry must not import legacy renderer modules directly'
+);
+assert.doesNotMatch(
+  invitationThemeMetadata,
+  /커튼형 인트로|꽃 장식과 따뜻한 컬러|비비드 행사 초대장/,
+  'theme metadata must not retain visual language from replaced public renderers'
 );
 
 const weddingNarrativeThemes = [

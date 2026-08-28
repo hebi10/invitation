@@ -28,13 +28,13 @@ function buildThemePreviewUrl(path: string) {
 export const INVITATION_THEME_METADATA_REGISTRY = [
   {
     key: 'emotional',
-    label: '감성형',
-    adminLabel: 'Emotional',
-    variantLabel: 'Emotional',
+    label: '포트레이트 레터',
+    adminLabel: '포트레이트 레터',
+    variantLabel: '포트레이트 레터',
     pathSuffix: '/emotional',
-    wizardDescription: '사진과 분위기를 중심으로 보여주는 감성형 디자인입니다.',
+    wizardDescription: '세로 사진과 짧은 편지가 중심인 여백형 웨딩입니다.',
     preview: {
-      description: '사진과 분위기를 중심으로 보여주는 감성형 디자인입니다.',
+      description: '세로 사진과 짧은 편지가 중심인 여백형 웨딩입니다.',
       sampleUrls: {
         standard: buildThemePreviewUrl('/kim-taehyun-choi-yuna/emotional/'),
         deluxe: buildThemePreviewUrl('/lee-junho-park-somin/emotional/'),
@@ -48,14 +48,13 @@ export const INVITATION_THEME_METADATA_REGISTRY = [
   },
   {
     key: 'romantic',
-    label: '로맨틱형',
-    adminLabel: 'Romantic',
-    variantLabel: 'Romantic',
+    label: '가든 노트',
+    adminLabel: '가든 노트',
+    variantLabel: '가든 노트',
     pathSuffix: '/romantic',
-    wizardDescription: '은은한 분홍 톤과 카드형 섹션으로 구성한 감성 로맨틱 디자인입니다.',
+    wizardDescription: '한 줄 식물 장식과 편지형 인사말, 가족 연락 흐름을 담은 웨딩입니다.',
     preview: {
-      description:
-        '은은한 로맨틱 톤과 포인트 카드 배치로 초대장의 분위기를 강조한 테마입니다.',
+      description: '한 줄 식물 장식과 편지형 인사말, 가족 연락 흐름을 담은 웨딩입니다.',
       sampleUrls: {
         standard: buildThemePreviewUrl('/kim-taehyun-choi-yuna/romantic/'),
         deluxe: buildThemePreviewUrl('/lee-junho-park-somin/romantic/'),
@@ -69,13 +68,13 @@ export const INVITATION_THEME_METADATA_REGISTRY = [
   },
   {
     key: 'simple',
-    label: '심플형',
-    adminLabel: 'Simple',
-    variantLabel: 'Simple',
+    label: '고요한 예식',
+    adminLabel: '고요한 예식',
+    variantLabel: '고요한 예식',
     pathSuffix: '/simple',
-    wizardDescription: '정보를 깔끔하게 정리해 보여주는 심플형 디자인입니다.',
+    wizardDescription: '일정·장소를 우선하는 절제된 정보 인쇄물입니다.',
     preview: {
-      description: '정보를 깔끔하게 정리해 보여주는 심플형 디자인입니다.',
+      description: '일정·장소를 우선하는 절제된 정보 인쇄물입니다.',
       sampleUrls: {
         standard: buildThemePreviewUrl('/kim-taehyun-choi-yuna/simple/'),
         deluxe: buildThemePreviewUrl('/lee-junho-park-somin/simple/'),
@@ -89,14 +88,13 @@ export const INVITATION_THEME_METADATA_REGISTRY = [
   },
   {
     key: 'classic-r',
-    label: '클래식 리뉴얼',
-    adminLabel: '클래식 리뉴얼',
-    variantLabel: '클래식 리뉴얼',
+    label: '레터프레스',
+    adminLabel: '레터프레스',
+    variantLabel: '레터프레스',
     pathSuffix: '/classic-r',
-    wizardDescription: '사진과 타이포그래피를 차분하게 구성한 프리미엄 리뉴얼 디자인입니다.',
+    wizardDescription: '고전 활자와 얇은 선, 종이 인쇄물 같은 웨딩입니다.',
     preview: {
-      description:
-        '하트와 장식 애니메이션을 덜어내고 첫 화면의 고급감을 살린 프리미엄 청첩장 테마입니다.',
+      description: '고전 활자와 얇은 선, 종이 인쇄물 같은 웨딩입니다.',
       sampleUrls: {
         standard: buildThemePreviewUrl('/kim-taehyun-choi-yuna/classic-r/'),
         deluxe: buildThemePreviewUrl('/lee-junho-park-somin/classic-r/'),
@@ -110,13 +108,13 @@ export const INVITATION_THEME_METADATA_REGISTRY = [
   },
   {
     key: 'first-birthday-pink',
-    label: '핑크 봄날',
-    adminLabel: 'First Birthday Pink',
-    variantLabel: '핑크 봄날',
+    label: '퍼스트 챕터',
+    adminLabel: '퍼스트 챕터',
+    variantLabel: '퍼스트 챕터',
     pathSuffix: '/first-birthday-pink',
-    wizardDescription: '부드러운 핑크와 봄날 장식을 중심으로 구성한 돌잔치 디자인입니다.',
+    wizardDescription: '아이 이름·날짜·성장 한 장면을 기록하는 첫 돌입니다.',
     preview: {
-      description: '커튼형 인트로와 성장 갤러리를 강조하는 핑크 톤 돌잔치 디자인입니다.',
+      description: '아이 이름·날짜·성장 한 장면을 기록하는 첫 돌입니다.',
       sampleUrls: {
         standard: buildThemePreviewUrl('/first-birthday-ian-spring/first-birthday-pink/'),
         deluxe: buildThemePreviewUrl('/first-birthday-ian-spring/first-birthday-pink/'),
@@ -130,13 +128,13 @@ export const INVITATION_THEME_METADATA_REGISTRY = [
   },
   {
     key: 'first-birthday-mint',
-    label: '민트 새벽',
-    adminLabel: 'First Birthday Mint',
-    variantLabel: '민트 새벽',
+    label: '새벽 챕터',
+    adminLabel: '새벽 챕터',
+    variantLabel: '새벽 챕터',
     pathSuffix: '/first-birthday-mint',
-    wizardDescription: '차분한 민트와 새벽빛 포인트를 적용한 돌잔치 디자인입니다.',
+    wizardDescription: '차분한 여백과 날짜 기록 중심의 첫 돌입니다.',
     preview: {
-      description: '민트와 블루 포인트로 아기의 첫 생일을 맑게 보여주는 디자인입니다.',
+      description: '차분한 여백과 날짜 기록 중심의 첫 돌입니다.',
       sampleUrls: {
         standard: buildThemePreviewUrl('/first-birthday-seoah-mint/first-birthday-mint/'),
         deluxe: buildThemePreviewUrl('/first-birthday-seoah-mint/first-birthday-mint/'),
@@ -150,13 +148,13 @@ export const INVITATION_THEME_METADATA_REGISTRY = [
   },
   {
     key: 'birthday-minimal',
-    label: '생일 미니멀',
-    adminLabel: 'Birthday Minimal',
-    variantLabel: 'Birthday Minimal',
+    label: '파티 노트',
+    adminLabel: '파티 노트',
+    variantLabel: '파티 노트',
     pathSuffix: '/birthday-minimal',
-    wizardDescription: '모던한 타이포그래피와 차분한 정보 구조로 생일 초대장을 구성합니다.',
+    wizardDescription: '일정·장소·연락처를 우선하는 생일 파티 메모입니다.',
     preview: {
-      description: '깔끔한 레이아웃과 절제된 컬러로 생일 파티 정보를 정리합니다.',
+      description: '일정·장소·연락처를 우선하는 생일 파티 메모입니다.',
       sampleUrls: {
         standard: buildThemePreviewUrl('/birthday-minseo-picnic/birthday-minimal/'),
         deluxe: buildThemePreviewUrl('/birthday-minseo-picnic/birthday-minimal/'),
@@ -170,13 +168,13 @@ export const INVITATION_THEME_METADATA_REGISTRY = [
   },
   {
     key: 'birthday-floral',
-    label: '생일 플로럴',
-    adminLabel: 'Birthday Floral',
-    variantLabel: 'Birthday Floral',
+    label: '생일 이야기',
+    adminLabel: '생일 이야기',
+    variantLabel: '생일 이야기',
     pathSuffix: '/birthday-floral',
-    wizardDescription: '부드러운 플로럴 톤과 장식 요소로 생일 초대장 분위기를 만듭니다.',
+    wizardDescription: '사진과 축하 문장을 중심으로 한 짧은 생일 기록입니다.',
     preview: {
-      description: '꽃 장식과 따뜻한 컬러로 생일 파티의 축하 분위기를 강조합니다.',
+      description: '사진과 축하 문장을 중심으로 한 짧은 생일 기록입니다.',
       sampleUrls: {
         standard: buildThemePreviewUrl('/birthday-jiwoo-rooftop/birthday-floral/'),
         deluxe: buildThemePreviewUrl('/birthday-jiwoo-rooftop/birthday-floral/'),
@@ -190,13 +188,13 @@ export const INVITATION_THEME_METADATA_REGISTRY = [
   },
   {
     key: 'general-event-elegant',
-    label: '행사 엘레강스',
-    adminLabel: 'General Event Elegant',
-    variantLabel: 'General Event Elegant',
+    label: '프로그램 에디션',
+    adminLabel: '프로그램 에디션',
+    variantLabel: '프로그램 에디션',
     pathSuffix: '/general-event-elegant',
-    wizardDescription: '어두운 배경과 골드 포인트로 격식 있는 행사 초대장을 구성합니다.',
+    wizardDescription: '행사 정보와 세로 프로그램을 정돈한 격식 있는 에디션입니다.',
     preview: {
-      description: '기념식, 공식 행사, 리셉션에 어울리는 차분한 행사 초대장 디자인입니다.',
+      description: '행사 정보와 세로 프로그램을 정돈한 격식 있는 에디션입니다.',
       sampleUrls: {
         standard: buildThemePreviewUrl('/general-event-brand-night/general-event-elegant/'),
         deluxe: buildThemePreviewUrl('/general-event-brand-night/general-event-elegant/'),
@@ -210,13 +208,13 @@ export const INVITATION_THEME_METADATA_REGISTRY = [
   },
   {
     key: 'general-event-vivid',
-    label: '행사 비비드',
-    adminLabel: 'General Event Vivid',
-    variantLabel: 'General Event Vivid',
+    label: '나이트 스케줄',
+    adminLabel: '나이트 스케줄',
+    variantLabel: '나이트 스케줄',
     pathSuffix: '/general-event-vivid',
-    wizardDescription: '강한 컬러와 파티 무드로 활기 있는 행사 초대장을 구성합니다.',
+    wizardDescription: '야간 행사명과 세로 프로그램을 선명하게 보여주는 일정 포스터입니다.',
     preview: {
-      description: '파티, 쇼케이스, 브랜드 이벤트에 어울리는 비비드 행사 초대장 디자인입니다.',
+      description: '야간 행사명과 세로 프로그램을 선명하게 보여주는 일정 포스터입니다.',
       sampleUrls: {
         standard: buildThemePreviewUrl('/general-event-summer-networking/general-event-vivid/'),
         deluxe: buildThemePreviewUrl('/general-event-summer-networking/general-event-vivid/'),
@@ -230,13 +228,13 @@ export const INVITATION_THEME_METADATA_REGISTRY = [
   },
   {
     key: 'opening-natural',
-    label: '개업 내추럴',
-    adminLabel: 'Opening Natural',
-    variantLabel: 'Opening Natural',
+    label: '스튜디오 오프닝',
+    adminLabel: '스튜디오 오프닝',
+    variantLabel: '스튜디오 오프닝',
     pathSuffix: '/opening-natural',
-    wizardDescription: '따뜻한 색감과 안정적인 정보 구조로 개업 소식을 전하는 디자인입니다.',
+    wizardDescription: '브랜드 소개·서비스·혜택·방문 정보가 이어지는 소개서입니다.',
     preview: {
-      description: '브랜드 소개, 오픈 혜택, 오시는 길을 내추럴 톤으로 정리합니다.',
+      description: '브랜드 소개·서비스·혜택·방문 정보가 이어지는 소개서입니다.',
       sampleUrls: {
         standard: buildThemePreviewUrl('/opening-bloom-cafe/opening-natural/'),
         deluxe: buildThemePreviewUrl('/opening-bloom-cafe/opening-natural/'),
@@ -250,13 +248,13 @@ export const INVITATION_THEME_METADATA_REGISTRY = [
   },
   {
     key: 'opening-modern',
-    label: '개업 모던',
-    adminLabel: 'Opening Modern',
-    variantLabel: 'Opening Modern',
+    label: '오프닝 포스터',
+    adminLabel: '오프닝 포스터',
+    variantLabel: '오프닝 포스터',
     pathSuffix: '/opening-modern',
-    wizardDescription: '강한 대비와 브랜디드 톤으로 개업 정보를 선명하게 보여주는 디자인입니다.',
+    wizardDescription: '상호·오픈일·방문 행동을 대담하게 조판한 포스터입니다.',
     preview: {
-      description: 'Grand Opening 인상을 강조하고 핵심 방문 정보를 빠르게 전달합니다.',
+      description: '상호·오픈일·방문 행동을 대담하게 조판한 포스터입니다.',
       sampleUrls: {
         standard: buildThemePreviewUrl('/opening-studio-nova/opening-modern/'),
         deluxe: buildThemePreviewUrl('/opening-studio-nova/opening-modern/'),

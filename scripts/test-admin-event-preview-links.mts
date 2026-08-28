@@ -9,10 +9,15 @@ import {
   getEventPreviewLinks,
 } from '../src/lib/eventPreviewLinks.ts';
 import {
+  getInvitationThemeDefinition,
   getInvitationThemePreviewSampleUrl,
+  getInvitationThemeSalesPolicy,
   type InvitationThemeKey,
   type InvitationThemePreviewProductTier,
 } from '../src/lib/invitationThemes.ts';
+import { BIRTHDAY_THEME_META } from '../src/lib/birthdayThemes.ts';
+import { getGeneralEventTheme } from '../src/lib/generalEventThemes.ts';
+import { getOpeningTheme } from '../src/lib/openingThemes.ts';
 import { getEventSamplePageBySlug } from '../src/config/eventSamplePages.ts';
 import { DUMMY_EVENT_SEEDS } from './seed-dummy-events.mts';
 
@@ -20,6 +25,56 @@ assert.deepEqual(
   SHORTCUT_ITEMS.map((item) => item.key),
   ['emotional', 'romantic', 'simple', 'classic-r']
 );
+
+const expectedInvitationThemeMetadata = [
+  ['emotional', '포트레이트 레터', '세로 사진과 짧은 편지가 중심인 여백형 웨딩입니다.'],
+  ['romantic', '가든 노트', '한 줄 식물 장식과 편지형 인사말, 가족 연락 흐름을 담은 웨딩입니다.'],
+  ['simple', '고요한 예식', '일정·장소를 우선하는 절제된 정보 인쇄물입니다.'],
+  ['classic-r', '레터프레스', '고전 활자와 얇은 선, 종이 인쇄물 같은 웨딩입니다.'],
+  ['first-birthday-pink', '퍼스트 챕터', '아이 이름·날짜·성장 한 장면을 기록하는 첫 돌입니다.'],
+  ['first-birthday-mint', '새벽 챕터', '차분한 여백과 날짜 기록 중심의 첫 돌입니다.'],
+  ['birthday-minimal', '파티 노트', '일정·장소·연락처를 우선하는 생일 파티 메모입니다.'],
+  ['birthday-floral', '생일 이야기', '사진과 축하 문장을 중심으로 한 짧은 생일 기록입니다.'],
+  ['opening-natural', '스튜디오 오프닝', '브랜드 소개·서비스·혜택·방문 정보가 이어지는 소개서입니다.'],
+  ['opening-modern', '오프닝 포스터', '상호·오픈일·방문 행동을 대담하게 조판한 포스터입니다.'],
+  ['general-event-elegant', '프로그램 에디션', '행사 정보와 세로 프로그램을 정돈한 격식 있는 에디션입니다.'],
+  ['general-event-vivid', '나이트 스케줄', '야간 행사명과 세로 프로그램을 선명하게 보여주는 일정 포스터입니다.'],
+] as const satisfies ReadonlyArray<readonly [InvitationThemeKey, string, string]>;
+
+for (const [theme, label, description] of expectedInvitationThemeMetadata) {
+  const definition = getInvitationThemeDefinition(theme);
+
+  assert.equal(definition.label, label, `${theme} must use its renewed display label`);
+  assert.equal(definition.adminLabel, label, `${theme} admin label must match its display label`);
+  assert.equal(
+    definition.variantLabel,
+    label,
+    `${theme} variant label must match its display label`
+  );
+  assert.equal(
+    definition.wizardDescription,
+    description,
+    `${theme} wizard description must describe its dedicated visual world`
+  );
+  assert.equal(
+    definition.preview.description,
+    description,
+    `${theme} preview description must describe its dedicated visual world`
+  );
+}
+
+assert.deepEqual(BIRTHDAY_THEME_META['birthday-minimal'], {
+  label: '파티 노트',
+  description: '일정·장소·연락처를 우선하는 생일 파티 메모입니다.',
+});
+assert.deepEqual(BIRTHDAY_THEME_META['birthday-floral'], {
+  label: '생일 이야기',
+  description: '사진과 축하 문장을 중심으로 한 짧은 생일 기록입니다.',
+});
+assert.equal(getOpeningTheme('opening-natural').label, '스튜디오 오프닝');
+assert.equal(getOpeningTheme('opening-modern').label, '오프닝 포스터');
+assert.equal(getGeneralEventTheme('general-event-elegant').label, '프로그램 에디션');
+assert.equal(getGeneralEventTheme('general-event-vivid').label, '나이트 스케줄');
 
 const firstBirthdayLinks = getPageCategoryPreviewLinks('first-birthday', {
   slug: 'first-birthday-ian-spring',
@@ -100,6 +155,29 @@ const previewProductTiers: InvitationThemePreviewProductTier[] = [
   'deluxe',
   'premium',
 ];
+const expectedWeddingPreviewSamplePaths: Array<
+  [InvitationThemeKey, InvitationThemePreviewProductTier, string]
+> = [
+  ['emotional', 'standard', '/kim-taehyun-choi-yuna/emotional/'],
+  ['emotional', 'deluxe', '/lee-junho-park-somin/emotional/'],
+  ['emotional', 'premium', '/an-doyoung-yoon-jisoo/emotional/'],
+  ['romantic', 'standard', '/kim-taehyun-choi-yuna/romantic/'],
+  ['romantic', 'deluxe', '/lee-junho-park-somin/romantic/'],
+  ['romantic', 'premium', '/an-doyoung-yoon-jisoo/romantic/'],
+  ['simple', 'standard', '/kim-taehyun-choi-yuna/simple/'],
+  ['simple', 'deluxe', '/lee-junho-park-somin/simple/'],
+  ['simple', 'premium', '/an-doyoung-yoon-jisoo/simple/'],
+  ['classic-r', 'standard', '/kim-taehyun-choi-yuna/classic-r/'],
+  ['classic-r', 'deluxe', '/lee-junho-park-somin/classic-r/'],
+  ['classic-r', 'premium', '/an-doyoung-yoon-jisoo/classic-r/'],
+];
+
+for (const [theme, productTier, expectedPath] of expectedWeddingPreviewSamplePaths) {
+  const sampleUrl = getInvitationThemePreviewSampleUrl(theme, productTier);
+  assert.ok(sampleUrl, `${theme} should have a ${productTier} sample URL`);
+  assert.equal(new URL(sampleUrl).pathname, expectedPath);
+}
+
 const expectedPreviewSamplePaths: Array<[InvitationThemeKey, string]> = [
   ['first-birthday-pink', '/first-birthday-ian-spring/first-birthday-pink/'],
   ['first-birthday-mint', '/first-birthday-seoah-mint/first-birthday-mint/'],
@@ -133,6 +211,35 @@ for (const [theme, expectedPath] of expectedPreviewSamplePaths) {
       `${theme} ${productTier} sample slug should have a runtime public fallback`
     );
   }
+}
+
+for (const theme of ['emotional', 'romantic', 'simple', 'classic-r'] as const) {
+  assert.deepEqual(getInvitationThemeSalesPolicy(theme), {
+    isDefault: theme === 'emotional',
+    canBeDefault: true,
+    isSelectableAtCreation: true,
+    isPurchasable: true,
+    allowsAdditionalPurchase: true,
+  });
+}
+
+for (const theme of [
+  'first-birthday-pink',
+  'first-birthday-mint',
+  'birthday-minimal',
+  'birthday-floral',
+  'general-event-elegant',
+  'general-event-vivid',
+  'opening-natural',
+  'opening-modern',
+] as const) {
+  assert.deepEqual(getInvitationThemeSalesPolicy(theme), {
+    isDefault: false,
+    canBeDefault: true,
+    isSelectableAtCreation: false,
+    isPurchasable: false,
+    allowsAdditionalPurchase: false,
+  });
 }
 
 console.log('admin event preview link checks passed');

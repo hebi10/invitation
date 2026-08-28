@@ -29,7 +29,7 @@ export const GENERAL_EVENT_DEFAULT_THEME: GeneralEventThemeKey = 'general-event-
 export const GENERAL_EVENT_THEMES: Record<GeneralEventThemeKey, GeneralEventVisualTheme> = {
   'general-event-elegant': {
     key: 'general-event-elegant',
-    label: '모던 & 엘레강스',
+    label: '프로그램 에디션',
     shortLabel: 'Elegant',
     accent: '#c9a96e',
     accentText: '#0b0b16',
@@ -48,7 +48,7 @@ export const GENERAL_EVENT_THEMES: Record<GeneralEventThemeKey, GeneralEventVisu
   },
   'general-event-vivid': {
     key: 'general-event-vivid',
-    label: '파티 & 비비드',
+    label: '나이트 스케줄',
     shortLabel: 'Vivid',
     accent: '#ff4db8',
     accentText: '#ffffff',

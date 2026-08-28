@@ -15,12 +15,12 @@ export const BIRTHDAY_THEME_PREVIEW_CANDIDATES = [
 
 export const BIRTHDAY_THEME_META = {
   'birthday-minimal': {
-    label: '모던 미니멀',
-    description: '절제된 타이포그래피와 선명한 대비로 생일 파티 정보를 정리합니다.',
+    label: '파티 노트',
+    description: '일정·장소·연락처를 우선하는 생일 파티 메모입니다.',
   },
   'birthday-floral': {
-    label: '로맨틱 플로럴',
-    description: '부드러운 플로럴 장식과 따뜻한 톤으로 초대 분위기를 만듭니다.',
+    label: '생일 이야기',
+    description: '사진과 축하 문장을 중심으로 한 짧은 생일 기록입니다.',
   },
 } as const satisfies Record<
   BirthdayThemeKey,

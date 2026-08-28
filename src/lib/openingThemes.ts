@@ -29,7 +29,7 @@ export const DEFAULT_OPENING_THEME: OpeningThemeKey = 'opening-natural';
 export const OPENING_THEMES: Record<OpeningThemeKey, OpeningVisualTheme> = {
   'opening-natural': {
     key: 'opening-natural',
-    label: '따뜻한 내추럴',
+    label: '스튜디오 오프닝',
     shortLabel: 'Natural',
     background: '#faf7f2',
     surface: '#fffdf8',
@@ -47,7 +47,7 @@ export const OPENING_THEMES: Record<OpeningThemeKey, OpeningVisualTheme> = {
   },
   'opening-modern': {
     key: 'opening-modern',
-    label: '모던 브랜디드',
+    label: '오프닝 포스터',
     shortLabel: 'Modern',
     background: '#0f0f0f',
     surface: '#1b1b1b',
