@@ -102,6 +102,26 @@ assert.match(studioOpeningPage, /model\.mapUrl\s*\?/);
 assert.match(studioOpeningPage, /지도에서 길찾기/);
 assert.match(studioOpeningPage, /model\.galleryImageUrls\.length\s*>\s*0\s*\?/);
 assert.match(studioOpeningPage, /features\.showGuestbook\s*\?/);
+assert.match(
+  studioOpeningPage,
+  /const tagline = state\.pageConfig\.description\.trim\(\);/,
+  'Studio Opening should derive its tagline from source description data'
+);
+assert.match(
+  studioOpeningPage,
+  /const greeting = pageData\?\.greetingMessage\?\.trim\(\) \?\? ['"]['"];/,
+  'Studio Opening should derive its greeting from source opening data'
+);
+assert.match(
+  studioOpeningPage,
+  /tagline\s*\?\s*<p className=\{styles\.tagline\}>\{tagline\}<\/p>\s*:\s*null/,
+  'Studio Opening should omit an absent source tagline'
+);
+assert.match(
+  studioOpeningPage,
+  /greeting\s*\?\s*<p className=\{styles\.greeting\}>\{greeting\}<\/p>\s*:\s*null/,
+  'Studio Opening should omit an absent source greeting'
+);
 assert.doesNotMatch(
   studioOpeningPage,
   /초대장 열기|오픈 준비 중|setTimeout|setInterval|<IntroScreen/
@@ -129,6 +149,25 @@ assert.doesNotMatch(studioOpeningCss, /(?:linear|radial|conic)-gradient/);
 assert.doesNotMatch(studioOpeningCss, /box-shadow/);
 assert.match(studioOpeningCss, /min-height:\s*44px/);
 assert.match(studioOpeningCss, /:focus-visible/);
+
+const studioPopupSurface = studioOpeningCss.match(
+  /--popup-surface:\s*(#[0-9a-f]{6})/i
+)?.[1];
+const studioPopupForeground = studioOpeningCss.match(
+  /--accent-contrast:\s*(#[0-9a-f]{6})/i
+)?.[1];
+
+assert.ok(studioPopupSurface, 'Studio Opening should define its popup surface color');
+assert.ok(studioPopupForeground, 'Studio Opening should define its popup foreground color');
+assert.ok(
+  contrastRatio(studioPopupSurface, studioPopupForeground) >= 4.5,
+  'Studio Opening popup helper text should meet AA contrast'
+);
+assert.match(
+  studioOpeningCss,
+  /\.popupLoadingText,\s*\.imageCounter\s*\{[\s\S]*?color:\s*var\(--accent-contrast\)/,
+  'Studio Opening popup loading and counter text should use the light popup foreground'
+);
 
 const firstChapterPagePath =
   'src/app/_components/public-invitations/first-birthday/first-chapter/Page.tsx';

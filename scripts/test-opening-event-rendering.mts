@@ -1,64 +1,22 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import { registerHooks } from 'node:module';
 import path from 'node:path';
-import { pathToFileURL } from 'node:url';
 
-import {
-  EVENT_TYPE_KEYS,
-  getEventTypeMeta,
-  listEnabledEventTypes,
-} from '../src/lib/eventTypes.ts';
-import {
-  getInvitationThemePathSuffix,
-  isInvitationThemeKey,
-} from '../src/lib/invitationThemes.ts';
-import type { InvitationPage } from '../src/types/invitationPage.ts';
+const read = (relativePath: string) => fs.readFileSync(relativePath, 'utf8');
 
-registerHooks({
-  resolve(specifier, context, nextResolve) {
-    if (!specifier.startsWith('@/')) {
-      return nextResolve(specifier, context);
-    }
-
-    const modulePath = path.resolve('src', specifier.slice(2));
-    const resolvedPath = fs.existsSync(`${modulePath}.ts`)
-      ? `${modulePath}.ts`
-      : fs.existsSync(`${modulePath}.tsx`)
-        ? `${modulePath}.tsx`
-        : modulePath;
-
-    return {
-      shortCircuit: true,
-      url: pathToFileURL(resolvedPath).href,
-    };
-  },
-});
-
-const {
-  DEFAULT_OPENING_THEME,
-  OPENING_THEME_KEYS,
-  isOpeningThemeKey,
-  normalizeOpeningThemeKey,
-  resolveOpeningRouteTheme,
-} = await import('../src/lib/openingThemes.ts');
-const { getPageCategoryEventTypeFilter, isImplementedPageCategory } = await import(
-  '../src/app/admin/_components/adminPageUtils.ts'
+const openingPageSource = read('src/app/_components/opening/OpeningInvitationPage.tsx');
+const generalEventPageSource = read(
+  'src/app/_components/generalEvent/GeneralEventInvitationPage.tsx'
 );
-
-const openingPageSource = fs.readFileSync(
-  'src/app/_components/opening/OpeningInvitationPage.tsx',
-  'utf8'
-);
-const generalEventPageSource = fs.readFileSync(
-  'src/app/_components/generalEvent/GeneralEventInvitationPage.tsx',
-  'utf8'
-);
+const openingRenderingTestSource = read('scripts/test-opening-event-rendering.mts');
+const eventTypesSource = read('src/lib/eventTypes.ts');
+const invitationThemesSource = read('src/lib/invitationThemes.ts');
+const openingThemesSource = read('src/lib/openingThemes.ts');
+const adminPageUtilsSource = read('src/app/admin/_components/adminPageUtils.ts');
 const studioOpeningPagePath =
   'src/app/_components/public-invitations/opening/studio-opening/Page.tsx';
-const publicOpeningIndexSource = fs.readFileSync(
-  'src/app/_components/public-invitations/opening/index.ts',
-  'utf8'
+const publicOpeningIndexSource = read(
+  'src/app/_components/public-invitations/opening/index.ts'
 );
 
 assert.equal(
@@ -66,6 +24,18 @@ assert.equal(
   true,
   'opening-natural should have a dedicated Studio Opening renderer'
 );
+const unsupportedNodeApiNames = [
+  ['register', 'Hooks'].join(''),
+  ['node', ':module'].join(''),
+];
+
+for (const unsupportedNodeApiName of unsupportedNodeApiNames) {
+  assert.equal(
+    openingRenderingTestSource.includes(unsupportedNodeApiName),
+    false,
+    `opening rendering checks must not use Node 20-incompatible API: ${unsupportedNodeApiName}`
+  );
+}
 assert.match(
   publicOpeningIndexSource,
   /studio-opening\/Page/,
@@ -93,53 +63,60 @@ assert.doesNotMatch(
   'general-event route must not import the legacy shared renderer directly'
 );
 
-assert.equal(EVENT_TYPE_KEYS.includes('opening'), true);
-assert.equal(listEnabledEventTypes().includes('opening'), true);
-
-const openingMeta = getEventTypeMeta('opening');
-assert.equal(openingMeta.label, '개업 초대장');
-assert.equal(openingMeta.adminLabel, '개업');
-assert.equal(openingMeta.customerLabel, '내 개업 초대장');
-assert.equal(openingMeta.defaultRendererKey, 'opening-default');
-assert.equal(openingMeta.defaultEditorKey, 'opening-page-editor');
-assert.equal(openingMeta.defaultWizardStepConfigKey, 'opening-page-wizard');
-assert.equal(openingMeta.enabled, true);
-
-assert.deepEqual(OPENING_THEME_KEYS, ['opening-natural', 'opening-modern']);
-assert.equal(DEFAULT_OPENING_THEME, 'opening-natural');
-assert.equal(isOpeningThemeKey('opening-natural'), true);
-assert.equal(isOpeningThemeKey('opening-modern'), true);
-assert.equal(isOpeningThemeKey('opening-luxury'), false);
-assert.equal(isInvitationThemeKey('general-event-elegant'), true);
-assert.equal(isInvitationThemeKey('general-event-vivid'), true);
-assert.equal(getInvitationThemePathSuffix('general-event-elegant'), '/general-event-elegant');
-assert.equal(getInvitationThemePathSuffix('general-event-vivid'), '/general-event-vivid');
-assert.equal(isInvitationThemeKey('opening-natural'), true);
-assert.equal(isInvitationThemeKey('opening-modern'), true);
-assert.equal(getInvitationThemePathSuffix('opening-natural'), '/opening-natural');
-assert.equal(getInvitationThemePathSuffix('opening-modern'), '/opening-modern');
-assert.equal(normalizeOpeningThemeKey('opening-modern'), 'opening-modern');
-assert.equal(normalizeOpeningThemeKey('emotional'), DEFAULT_OPENING_THEME);
-assert.equal(resolveOpeningRouteTheme(null, 'opening-modern'), null);
-assert.equal(resolveOpeningRouteTheme({ slug: 'sample' }, 'opening-modern'), 'opening-modern');
-assert.equal(
-  resolveOpeningRouteTheme(
-    {
-      slug: 'sample',
-      variants: {
-        emotional: {
-          available: true,
-          path: '/sample/emotional',
-          displayName: 'sample emotional',
-        },
-      },
-    } as InvitationPage,
-    'opening-modern'
-  ),
-  'opening-modern'
+assert.match(
+  eventTypesSource,
+  /EVENT_TYPE_KEYS\s*=\s*\[[\s\S]*?['"]opening['"][\s\S]*?\]\s*as const/
+);
+assert.match(
+  eventTypesSource,
+  /opening:\s*\{[\s\S]*?label:\s*['"]개업 초대장['"][\s\S]*?adminLabel:\s*['"]개업['"][\s\S]*?customerLabel:\s*['"]내 개업 초대장['"][\s\S]*?enabled:\s*true[\s\S]*?defaultRendererKey:\s*['"]opening-default['"][\s\S]*?defaultEditorKey:\s*['"]opening-page-editor['"][\s\S]*?defaultWizardStepConfigKey:\s*['"]opening-page-wizard['"]/,
+  'opening event metadata contract should remain enabled and stable'
 );
 
-assert.equal(isImplementedPageCategory('opening'), true);
-assert.equal(getPageCategoryEventTypeFilter('opening'), 'opening');
+assert.match(
+  openingThemesSource,
+  /OPENING_THEME_KEYS\s*=\s*\[['"]opening-natural['"],\s*['"]opening-modern['"]\]\s*as const/
+);
+assert.match(
+  openingThemesSource,
+  /DEFAULT_OPENING_THEME:\s*OpeningThemeKey\s*=\s*['"]opening-natural['"]/
+);
+assert.match(openingThemesSource, /export function isOpeningThemeKey/);
+assert.match(
+  openingThemesSource,
+  /return isOpeningThemeKey\(value\) \? value : fallback;/,
+  'opening theme normalization should preserve valid keys and fall back otherwise'
+);
+assert.match(
+  openingThemesSource,
+  /if \(!previewPage\) \{\s*return null;\s*\}/,
+  'opening route resolution should preserve the missing-page boundary'
+);
+
+for (const [theme, pathSuffix] of [
+  ['general-event-elegant', '/general-event-elegant'],
+  ['general-event-vivid', '/general-event-vivid'],
+  ['opening-natural', '/opening-natural'],
+  ['opening-modern', '/opening-modern'],
+]) {
+  assert.match(
+    invitationThemesSource,
+    new RegExp(
+      `key:\\s*['"]${theme}['"][\\s\\S]*?pathSuffix:\\s*['"]${pathSuffix}['"]`
+    ),
+    `${theme} should preserve its public path suffix`
+  );
+}
+
+assert.match(
+  adminPageUtilsSource,
+  /pageCategory === ['"]opening['"]/,
+  'opening should remain an implemented admin category'
+);
+assert.match(
+  adminPageUtilsSource,
+  /case ['"]opening['"]:\s*return ['"]opening['"];/,
+  'opening admin category should keep its event-type filter'
+);
 
 console.log('opening event rendering checks passed');

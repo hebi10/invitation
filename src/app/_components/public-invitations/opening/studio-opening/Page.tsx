@@ -38,6 +38,8 @@ export default function StudioOpeningPage({ state }: StudioOpeningPageProps) {
   const hasVenue = Boolean(
     pageData?.venueName?.trim() || state.pageConfig.venue.trim()
   );
+  const tagline = state.pageConfig.description.trim();
+  const greeting = pageData?.greetingMessage?.trim() ?? '';
   const mapDescription = pageData?.mapDescription?.trim() ?? '';
 
   return (
@@ -56,8 +58,8 @@ export default function StudioOpeningPage({ state }: StudioOpeningPageProps) {
               <h1 id="studio-opening-title" className={styles.businessName}>
                 {model.businessName}
               </h1>
-              <p className={styles.tagline}>{model.tagline}</p>
-              <p className={styles.greeting}>{model.greeting}</p>
+              {tagline ? <p className={styles.tagline}>{tagline}</p> : null}
+              {greeting ? <p className={styles.greeting}>{greeting}</p> : null}
             </div>
             <figure className={styles.heroFigure}>
               <img
@@ -78,8 +80,8 @@ export default function StudioOpeningPage({ state }: StudioOpeningPageProps) {
               tone="studio-opening"
             />
             <div className={styles.posterCopy}>
-              <p className={styles.tagline}>{model.tagline}</p>
-              <p className={styles.greeting}>{model.greeting}</p>
+              {tagline ? <p className={styles.tagline}>{tagline}</p> : null}
+              {greeting ? <p className={styles.greeting}>{greeting}</p> : null}
             </div>
           </div>
         )}

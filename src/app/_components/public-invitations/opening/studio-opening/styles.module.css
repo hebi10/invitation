@@ -6,6 +6,7 @@
   --line: #aab3aa;
   --accent: #2e5a46;
   --accent-contrast: #ffffff;
+  --popup-surface: #181e1a;
   width: min(100%, 760px);
   margin: 0 auto;
   background: var(--paper);
@@ -278,11 +279,15 @@
 }
 
 .loadingText,
-.popupLoadingText,
-.imageCounter,
 .commentDate,
 .commentActions {
   color: var(--muted);
+  font-size: 0.78rem;
+}
+
+.popupLoadingText,
+.imageCounter {
+  color: var(--accent-contrast);
   font-size: 0.78rem;
 }
 
@@ -313,7 +318,7 @@
   display: grid;
   place-items: center;
   padding: 4rem 1rem 1rem;
-  background: rgb(24 30 26 / 94%);
+  background: var(--popup-surface);
 }
 
 .popupContent {
