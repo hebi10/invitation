@@ -1,4 +1,21 @@
-export const PUBLIC_SITE_URL = new URL('https://msgnote.kr');
+export const DEFAULT_PUBLIC_SITE_URL = 'https://invite.msgnote.kr';
+
+export function getPublicSiteUrl(value = process.env.NEXT_PUBLIC_SITE_URL) {
+  try {
+    const siteUrl = new URL(value?.trim() || DEFAULT_PUBLIC_SITE_URL);
+
+    if (siteUrl.protocol !== 'https:' && siteUrl.protocol !== 'http:') {
+      throw new Error('Unsupported public site URL protocol.');
+    }
+
+    return siteUrl;
+  } catch {
+    return new URL(DEFAULT_PUBLIC_SITE_URL);
+  }
+}
+
+export const PUBLIC_SITE_URL = getPublicSiteUrl();
+export const PUBLIC_SITE_ORIGIN = PUBLIC_SITE_URL.origin;
 
 const LEGACY_FAVICON_PATHS = new Set(['/images/favicon.ico']);
 

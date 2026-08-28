@@ -1,4 +1,6 @@
-﻿export type InvitationThemePreviewProductTier = 'standard' | 'deluxe' | 'premium';
+﻿import { PUBLIC_SITE_URL } from './invitationMetadata';
+
+export type InvitationThemePreviewProductTier = 'standard' | 'deluxe' | 'premium';
 
 type InvitationThemePreviewInfo = {
   description: string;
@@ -19,6 +21,10 @@ type InvitationThemeMetadataEntry = {
   sortOrder: number;
 };
 
+function buildThemePreviewUrl(path: string) {
+  return new URL(path, PUBLIC_SITE_URL).toString();
+}
+
 export const INVITATION_THEME_METADATA_REGISTRY = [
   {
     key: 'emotional',
@@ -30,9 +36,9 @@ export const INVITATION_THEME_METADATA_REGISTRY = [
     preview: {
       description: '사진과 분위기를 중심으로 보여주는 감성형 디자인입니다.',
       sampleUrls: {
-        standard: 'https://msgnote.kr/kim-taehyun-choi-yuna/emotional/',
-        deluxe: 'https://msgnote.kr/lee-junho-park-somin/emotional/',
-        premium: 'https://msgnote.kr/an-doyoung-yoon-jisoo/emotional/',
+        standard: buildThemePreviewUrl('/kim-taehyun-choi-yuna/emotional/'),
+        deluxe: buildThemePreviewUrl('/lee-junho-park-somin/emotional/'),
+        premium: buildThemePreviewUrl('/an-doyoung-yoon-jisoo/emotional/'),
       },
     },
     shareTitleMode: 'metadata',
@@ -51,9 +57,9 @@ export const INVITATION_THEME_METADATA_REGISTRY = [
       description:
         '은은한 로맨틱 톤과 포인트 카드 배치로 초대장의 분위기를 강조한 테마입니다.',
       sampleUrls: {
-        standard: 'https://msgnote.kr/kim-taehyun-choi-yuna/romantic/',
-        deluxe: 'https://msgnote.kr/lee-junho-park-somin/romantic/',
-        premium: 'https://msgnote.kr/an-doyoung-yoon-jisoo/romantic/',
+        standard: buildThemePreviewUrl('/kim-taehyun-choi-yuna/romantic/'),
+        deluxe: buildThemePreviewUrl('/lee-junho-park-somin/romantic/'),
+        premium: buildThemePreviewUrl('/an-doyoung-yoon-jisoo/romantic/'),
       },
     },
     shareTitleMode: 'metadata',
@@ -71,9 +77,9 @@ export const INVITATION_THEME_METADATA_REGISTRY = [
     preview: {
       description: '정보를 깔끔하게 정리해 보여주는 심플형 디자인입니다.',
       sampleUrls: {
-        standard: 'https://msgnote.kr/kim-taehyun-choi-yuna/simple/',
-        deluxe: 'https://msgnote.kr/lee-junho-park-somin/simple/',
-        premium: 'https://msgnote.kr/an-doyoung-yoon-jisoo/simple/',
+        standard: buildThemePreviewUrl('/kim-taehyun-choi-yuna/simple/'),
+        deluxe: buildThemePreviewUrl('/lee-junho-park-somin/simple/'),
+        premium: buildThemePreviewUrl('/an-doyoung-yoon-jisoo/simple/'),
       },
     },
     shareTitleMode: 'couple',
@@ -92,9 +98,9 @@ export const INVITATION_THEME_METADATA_REGISTRY = [
       description:
         '하트와 장식 애니메이션을 덜어내고 첫 화면의 고급감을 살린 프리미엄 청첩장 테마입니다.',
       sampleUrls: {
-        standard: 'https://msgnote.kr/kim-taehyun-choi-yuna/classic-r/',
-        deluxe: 'https://msgnote.kr/lee-junho-park-somin/classic-r/',
-        premium: 'https://msgnote.kr/an-doyoung-yoon-jisoo/classic-r/',
+        standard: buildThemePreviewUrl('/kim-taehyun-choi-yuna/classic-r/'),
+        deluxe: buildThemePreviewUrl('/lee-junho-park-somin/classic-r/'),
+        premium: buildThemePreviewUrl('/an-doyoung-yoon-jisoo/classic-r/'),
       },
     },
     shareTitleMode: 'metadata',
@@ -112,9 +118,9 @@ export const INVITATION_THEME_METADATA_REGISTRY = [
     preview: {
       description: '커튼형 인트로와 성장 갤러리를 강조하는 핑크 톤 돌잔치 디자인입니다.',
       sampleUrls: {
-        standard: 'https://msgnote.kr/first-birthday-ian-spring/first-birthday-pink/',
-        deluxe: 'https://msgnote.kr/first-birthday-ian-spring/first-birthday-pink/',
-        premium: 'https://msgnote.kr/first-birthday-ian-spring/first-birthday-pink/',
+        standard: buildThemePreviewUrl('/first-birthday-ian-spring/first-birthday-pink/'),
+        deluxe: buildThemePreviewUrl('/first-birthday-ian-spring/first-birthday-pink/'),
+        premium: buildThemePreviewUrl('/first-birthday-ian-spring/first-birthday-pink/'),
       },
     },
     shareTitleMode: 'metadata',
@@ -132,9 +138,9 @@ export const INVITATION_THEME_METADATA_REGISTRY = [
     preview: {
       description: '민트와 블루 포인트로 아기의 첫 생일을 맑게 보여주는 디자인입니다.',
       sampleUrls: {
-        standard: 'https://msgnote.kr/first-birthday-seoah-mint/first-birthday-mint/',
-        deluxe: 'https://msgnote.kr/first-birthday-seoah-mint/first-birthday-mint/',
-        premium: 'https://msgnote.kr/first-birthday-seoah-mint/first-birthday-mint/',
+        standard: buildThemePreviewUrl('/first-birthday-seoah-mint/first-birthday-mint/'),
+        deluxe: buildThemePreviewUrl('/first-birthday-seoah-mint/first-birthday-mint/'),
+        premium: buildThemePreviewUrl('/first-birthday-seoah-mint/first-birthday-mint/'),
       },
     },
     shareTitleMode: 'metadata',
@@ -152,9 +158,9 @@ export const INVITATION_THEME_METADATA_REGISTRY = [
     preview: {
       description: '깔끔한 레이아웃과 절제된 컬러로 생일 파티 정보를 정리합니다.',
       sampleUrls: {
-        standard: 'https://msgnote.kr/birthday-minseo-picnic/birthday-minimal/',
-        deluxe: 'https://msgnote.kr/birthday-minseo-picnic/birthday-minimal/',
-        premium: 'https://msgnote.kr/birthday-minseo-picnic/birthday-minimal/',
+        standard: buildThemePreviewUrl('/birthday-minseo-picnic/birthday-minimal/'),
+        deluxe: buildThemePreviewUrl('/birthday-minseo-picnic/birthday-minimal/'),
+        premium: buildThemePreviewUrl('/birthday-minseo-picnic/birthday-minimal/'),
       },
     },
     shareTitleMode: 'metadata',
@@ -172,9 +178,9 @@ export const INVITATION_THEME_METADATA_REGISTRY = [
     preview: {
       description: '꽃 장식과 따뜻한 컬러로 생일 파티의 축하 분위기를 강조합니다.',
       sampleUrls: {
-        standard: 'https://msgnote.kr/birthday-jiwoo-rooftop/birthday-floral/',
-        deluxe: 'https://msgnote.kr/birthday-jiwoo-rooftop/birthday-floral/',
-        premium: 'https://msgnote.kr/birthday-jiwoo-rooftop/birthday-floral/',
+        standard: buildThemePreviewUrl('/birthday-jiwoo-rooftop/birthday-floral/'),
+        deluxe: buildThemePreviewUrl('/birthday-jiwoo-rooftop/birthday-floral/'),
+        premium: buildThemePreviewUrl('/birthday-jiwoo-rooftop/birthday-floral/'),
       },
     },
     shareTitleMode: 'metadata',
@@ -192,9 +198,9 @@ export const INVITATION_THEME_METADATA_REGISTRY = [
     preview: {
       description: '기념식, 공식 행사, 리셉션에 어울리는 차분한 행사 초대장 디자인입니다.',
       sampleUrls: {
-        standard: 'https://msgnote.kr/general-event-brand-night/general-event-elegant/',
-        deluxe: 'https://msgnote.kr/general-event-brand-night/general-event-elegant/',
-        premium: 'https://msgnote.kr/general-event-brand-night/general-event-elegant/',
+        standard: buildThemePreviewUrl('/general-event-brand-night/general-event-elegant/'),
+        deluxe: buildThemePreviewUrl('/general-event-brand-night/general-event-elegant/'),
+        premium: buildThemePreviewUrl('/general-event-brand-night/general-event-elegant/'),
       },
     },
     shareTitleMode: 'metadata',
@@ -212,9 +218,9 @@ export const INVITATION_THEME_METADATA_REGISTRY = [
     preview: {
       description: '파티, 쇼케이스, 브랜드 이벤트에 어울리는 비비드 행사 초대장 디자인입니다.',
       sampleUrls: {
-        standard: 'https://msgnote.kr/general-event-summer-networking/general-event-vivid/',
-        deluxe: 'https://msgnote.kr/general-event-summer-networking/general-event-vivid/',
-        premium: 'https://msgnote.kr/general-event-summer-networking/general-event-vivid/',
+        standard: buildThemePreviewUrl('/general-event-summer-networking/general-event-vivid/'),
+        deluxe: buildThemePreviewUrl('/general-event-summer-networking/general-event-vivid/'),
+        premium: buildThemePreviewUrl('/general-event-summer-networking/general-event-vivid/'),
       },
     },
     shareTitleMode: 'metadata',
@@ -232,9 +238,9 @@ export const INVITATION_THEME_METADATA_REGISTRY = [
     preview: {
       description: '브랜드 소개, 오픈 혜택, 오시는 길을 내추럴 톤으로 정리합니다.',
       sampleUrls: {
-        standard: 'https://msgnote.kr/opening-bloom-cafe/opening-natural/',
-        deluxe: 'https://msgnote.kr/opening-bloom-cafe/opening-natural/',
-        premium: 'https://msgnote.kr/opening-bloom-cafe/opening-natural/',
+        standard: buildThemePreviewUrl('/opening-bloom-cafe/opening-natural/'),
+        deluxe: buildThemePreviewUrl('/opening-bloom-cafe/opening-natural/'),
+        premium: buildThemePreviewUrl('/opening-bloom-cafe/opening-natural/'),
       },
     },
     shareTitleMode: 'metadata',
@@ -252,9 +258,9 @@ export const INVITATION_THEME_METADATA_REGISTRY = [
     preview: {
       description: 'Grand Opening 인상을 강조하고 핵심 방문 정보를 빠르게 전달합니다.',
       sampleUrls: {
-        standard: 'https://msgnote.kr/opening-studio-nova/opening-modern/',
-        deluxe: 'https://msgnote.kr/opening-studio-nova/opening-modern/',
-        premium: 'https://msgnote.kr/opening-studio-nova/opening-modern/',
+        standard: buildThemePreviewUrl('/opening-studio-nova/opening-modern/'),
+        deluxe: buildThemePreviewUrl('/opening-studio-nova/opening-modern/'),
+        premium: buildThemePreviewUrl('/opening-studio-nova/opening-modern/'),
       },
     },
     shareTitleMode: 'metadata',
@@ -492,4 +498,3 @@ export function getAdditionalPurchasableInvitationThemeKeys(
     (theme) => theme !== excludedTheme
   );
 }
-

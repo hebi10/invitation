@@ -359,6 +359,9 @@ source of truth는 `events/{eventId}` 축이며, legacy 컬렉션 rules는 제�
 ```env
 NEXT_PUBLIC_USE_FIREBASE=true
 
+# 공개 웹 앱의 기준 URL (운영: https://invite.msgnote.kr)
+NEXT_PUBLIC_SITE_URL=https://invite.msgnote.kr
+
 NEXT_PUBLIC_FIREBASE_API_KEY=
 NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=
 NEXT_PUBLIC_FIREBASE_PROJECT_ID=
@@ -379,6 +382,8 @@ EXPO_PUBLIC_REVENUECAT_IOS_API_KEY=
 
 - `NEXT_PUBLIC_USE_FIREBASE`
   Firebase 실제 사용 여부
+- `NEXT_PUBLIC_SITE_URL`
+  공유 URL, SEO metadata, 위저드 주소 미리보기에 사용할 공개 웹 앱 기준 URL. 값이 없거나 올바른 HTTP(S) URL이 아니면 `https://invite.msgnote.kr`를 사용합니다.
 - `NEXT_PUBLIC_FIREBASE_*`
   Firebase Web SDK 설정
 - `NEXT_PUBLIC_KAKAO_JAVASCRIPT_KEY`

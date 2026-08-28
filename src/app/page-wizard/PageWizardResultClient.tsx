@@ -9,6 +9,7 @@ import FirebaseAuthLoginCard from '@/app/_components/FirebaseAuthLoginCard';
 import { normalizeFormConfig } from '@/app/page-wizard/pageWizardEditorUtils';
 import { useAdmin } from '@/contexts';
 import { buildAppRoutes, type AppRoutes } from '@/lib/demoExperienceRoutes';
+import { PUBLIC_SITE_ORIGIN } from '@/lib/invitationMetadata';
 import {
   FIFTEEN_MINUTES_MS,
   THIRTY_MINUTES_MS,
@@ -289,11 +290,11 @@ export default function PageWizardResultClient({
           <div className={`${styles.fieldGrid} ${styles.resultMetaGrid}`}>
             <div className={styles.previewUrlCard}>
               <span className={styles.summaryLabel}>공유 URL</span>
-              <strong className={styles.previewUrlValue}>https://msgnote.kr{redirectPath}</strong>
+              <strong className={styles.previewUrlValue}>{PUBLIC_SITE_ORIGIN}{redirectPath}</strong>
             </div>
             <div className={styles.previewUrlCard}>
               <span className={styles.summaryLabel}>실제 페이지 URL</span>
-              <strong className={styles.previewUrlValue}>https://msgnote.kr{livePagePath}</strong>
+              <strong className={styles.previewUrlValue}>{PUBLIC_SITE_ORIGIN}{livePagePath}</strong>
             </div>
             <div className={styles.previewUrlCard}>
               <span className={styles.summaryLabel}>마지막 저장 시간</span>

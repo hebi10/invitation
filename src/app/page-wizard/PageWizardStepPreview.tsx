@@ -5,6 +5,7 @@ import {
   normalizeInvitationMusicSelection,
 } from '@/lib/musicLibrary';
 import { resolveInvitationFeatures } from '@/lib/invitationProducts';
+import { PUBLIC_SITE_ORIGIN } from '@/lib/invitationMetadata';
 import {
   getGeneralEventTheme,
   normalizeGeneralEventThemeKey,
@@ -207,7 +208,7 @@ export default function PageWizardStepPreview({
           <span className={styles.previewCaption}>공개 후 이 주소로 접속합니다.</span>
         </div>
         <div className={styles.previewUrlCard}>
-          <span className={styles.previewUrlValue}>https://msgnote.kr/{slug}</span>
+          <span className={styles.previewUrlValue}>{PUBLIC_SITE_ORIGIN}/{slug}</span>
         </div>
       </section>
     );
