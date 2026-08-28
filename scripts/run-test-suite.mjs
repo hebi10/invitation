@@ -28,6 +28,7 @@ const core = [
   'test-event-ownership-invite-policy',
   'test-event-slug-index',
   'test-first-birthday-page-rendering',
+  'test-gyeol-theme',
   'test-image-upload-optimization',
   'test-invitation-metadata',
   'test-homepage-ui-contracts',

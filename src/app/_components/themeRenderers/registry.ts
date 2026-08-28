@@ -5,6 +5,7 @@ import type { InvitationThemeKey } from '@/lib/invitationThemes';
 import type { WeddingThemeRendererProps } from '../weddingPageRenderers';
 import {
   GardenNotePage,
+  GyeolPage,
   LetterpressPage,
   PortraitLetterPage,
   QuietCeremonyPage,
@@ -34,6 +35,10 @@ export const WEDDING_THEME_RENDERER_REGISTRY = [
   {
     key: 'classic-r',
     component: LetterpressPage,
+  },
+  {
+    key: 'gyeol',
+    component: GyeolPage,
   },
 ] as const satisfies readonly WeddingThemeRendererRegistryEntry[];
 
