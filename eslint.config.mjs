@@ -21,6 +21,7 @@ export default [
       'apps/mobile/web-build/**',
       'apps/mobile/apps/**',
       'apps/mobile/expo-env.d.ts',
+      'next-env.d.ts',
       'coverage/**',
       'test-results/**',
     ],

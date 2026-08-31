@@ -98,6 +98,8 @@ import {
   getWizardSectionValidation,
 } from './pageWizardSections';
 import {
+  markWizardStepInteraction,
+  resolveWizardSelectionInteraction,
   resolveWizardSaveStatus,
 } from './pageWizardWorkspaceState';
 import {
@@ -178,9 +180,14 @@ export default function PageWizardClient({
   const { authUser, isAdminLoading, isAdminLoggedIn, isLoggedIn } = useAdmin();
 
   const [formState, setFormState] = useState<InvitationPageSeed | null>(null);
+  const formStateRef = useRef<InvitationPageSeed | null>(null);
+  formStateRef.current = formState;
   const [eventType, setEventType] = useState<EventTypeKey>(requestedEventType);
   const [defaultTheme, setDefaultTheme] = useState<InvitationThemeKey>(
     getDefaultThemeForEventType(requestedEventType)
+  );
+  const [interactedStepKeys, setInteractedStepKeys] = useState<Set<WizardStepKey>>(
+    () => new Set()
   );
   const {
     published,
@@ -493,6 +500,7 @@ export default function PageWizardClient({
 
       setFormState(nextConfig);
       setEventType(nextEventType);
+      setInteractedStepKeys(new Set());
       setPersistedSlug(initialSlug);
       setSlugInput(initialSlug ?? editableConfig.slug);
       setHasManualSlugOverride(true);
@@ -612,16 +620,20 @@ export default function PageWizardClient({
   /* State updaters */
 
   const updateForm = useCallback((updater: (draft: InvitationPageSeed) => void) => {
-    setHasUnsavedChanges(true);
-    setFormState((current) => {
-      if (!current) {
-        return current;
-      }
+    const current = formStateRef.current;
+    if (!current) {
+      return;
+    }
 
-      const next = cloneConfig(current);
-      updater(next);
-      return next;
-    });
+    const next = cloneConfig(current);
+    updater(next);
+    if (JSON.stringify(next) === JSON.stringify(current)) {
+      return;
+    }
+
+    formStateRef.current = next;
+    setFormState(next);
+    setHasUnsavedChanges(true);
   }, []);
 
   const handleProductTierChange = useCallback((tier: InvitationProductTier) => {
@@ -825,6 +837,7 @@ export default function PageWizardClient({
 
       setFormState(nextConfig);
       setEventType(normalizeEventTypeKey(nextConfig.eventType, DEFAULT_EVENT_TYPE));
+      setInteractedStepKeys(new Set());
       setPersistedSlug(null);
       setSlugInput('');
       setHasManualSlugOverride(false);
@@ -1497,14 +1510,40 @@ export default function PageWizardClient({
       return null;
     }
 
-    const sharedProps = { formState, previewFormState, updateForm };
+    const markStepInteraction = (stepKey: WizardStepKey) => {
+      setInteractedStepKeys((current) => markWizardStepInteraction(current, stepKey));
+    };
+    const sharedProps = {
+      formState,
+      previewFormState,
+      updateForm: (updater: (draft: InvitationPageSeed) => void) => {
+        markStepInteraction(stepKey);
+        updateForm(updater);
+      },
+    };
     const setDirtyEventType = (nextEventType: EventTypeKey) => {
-      setHasUnsavedChanges(true);
+      const selection = resolveWizardSelectionInteraction(eventType, nextEventType);
+      if (selection.hasExplicitSelection) {
+        markStepInteraction('eventType');
+      }
+      if (!selection.hasUnsavedChanges) {
+        return;
+      }
+
       setEventType(nextEventType);
+      setHasUnsavedChanges(true);
     };
     const setDirtyDefaultTheme = (nextTheme: InvitationThemeKey) => {
-      setHasUnsavedChanges(true);
+      const selection = resolveWizardSelectionInteraction(defaultTheme, nextTheme);
+      if (selection.hasExplicitSelection) {
+        markStepInteraction('theme');
+      }
+      if (!selection.hasUnsavedChanges) {
+        return;
+      }
+
       setDefaultTheme(nextTheme);
+      setHasUnsavedChanges(true);
     };
     const setDirtyPublished = (nextPublished: boolean) => {
       setHasUnsavedChanges(true);
@@ -1906,6 +1945,10 @@ export default function PageWizardClient({
         getWizardSectionValidation(section, getValidationForStep)
       }
       getStepValidation={getValidationForStep}
+      formState={formState}
+      slugStepState={slugStepState}
+      interactedStepKeys={interactedStepKeys}
+      hasPersistedData={Boolean(resolvedPersistedSlug)}
       saveStatus={saveStatus}
       notice={
         <>

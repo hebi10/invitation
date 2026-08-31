@@ -342,6 +342,8 @@ assert.equal(isAdminEventDetailCloseKey('Escape'), true);
 assert.equal(isAdminEventDetailCloseKey('Tab'), false);
 
 const detailPanelSource = readSource('src/app/admin/_components/AdminEventDetailPanel.tsx');
+const adminEventFiltersSource = readSource('src/app/admin/_components/AdminEventFilters.tsx');
+const adminEventWorkspaceSource = readSource('src/app/admin/_components/AdminEventWorkspace.tsx');
 const adminShellSource = readSource('src/app/admin/_components/AdminShell.tsx');
 const periodTabSource = readSource('src/app/admin/_components/AdminEventPeriodTab.tsx');
 const customerTabSource = readSource('src/app/admin/_components/AdminEventCustomerTab.tsx');
@@ -362,6 +364,25 @@ assert.match(commentsTabSource, /filterAdminEventComments/);
 assert.match(imageManagerSource, /lockedPageSlug/);
 assert.match(memoryManagerSource, /lockedPageSlug/);
 assert.match(memoryManagerSource, /getAllComments/);
+assert.match(adminEventFiltersSource, /<details/);
+assert.match(adminEventFiltersSource, /상세 필터/);
+assert.match(adminEventFiltersSource, /role="search"/);
+assert.match(adminEventFiltersSource, /activeAdvancedFilterCount/);
+assert.match(adminEventFiltersSource, /개 적용/);
+assert.match(adminEventFiltersSource, /aria-label="이벤트 검색 및 필터"/);
+assert.ok(
+  adminEventFiltersSource.indexOf('페이지당 개수') > adminEventFiltersSource.indexOf('<details'),
+  '페이지당 개수 선택은 상세 필터 안에 있어야 합니다.'
+);
+assert.match(
+  adminEventFiltersSource,
+  /onQueryChange\(\{\s*pageSize: event\.currentTarget\.value,\s*page: '1',\s*event: null,\s*\}\)/
+);
+assert.match(
+  adminEventWorkspaceSource,
+  /<AdminEventFilters\s+filters=\{filters\}\s+pageSize=\{pageSize\}\s+onQueryChange=\{onQueryChange\}/
+);
+assert.doesNotMatch(adminEventWorkspaceSource, /페이지당 개수/);
 
 assert.deepEqual(
   pages.map((page) => getPageWizardCreateHrefForEventType(page.eventType)),

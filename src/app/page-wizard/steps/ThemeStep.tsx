@@ -23,6 +23,16 @@ import {
 } from '../pageWizardShared';
 import { getSelectableThemeKeysForEventType } from '../pageWizardEventConfig';
 
+function ThemePreview({ theme, label }: { theme: string; label: string }) {
+  return (
+    <div className={styles.themePreview} data-theme-preview={theme} aria-hidden="true">
+      <span className={styles.themePreviewKicker}>디자인 미리보기</span>
+      <span className={styles.themePreviewTitle}>{label}</span>
+      <span className={styles.themePreviewRule} />
+    </div>
+  );
+}
+
 export default function ThemeStep({
   eventType,
   formState,
@@ -95,7 +105,7 @@ export default function ThemeStep({
             </span>
           </button>
           {openChoicePanel === 'theme' ? (
-            <div className={styles.choiceOptions}>
+            <div className={`${styles.choiceOptions} ${styles.themeOptions}`}>
               {(selectableThemeKeys as GeneralEventThemeKey[]).map((themeKey) => {
                 const theme = getGeneralEventTheme(themeKey);
                 const isActive = selectedGeneralEventTheme === themeKey;
@@ -105,20 +115,23 @@ export default function ThemeStep({
                     key={themeKey}
                     type="button"
                     aria-pressed={isActive}
-                    className={`${styles.choiceCard} ${
+                    className={`${styles.choiceCard} ${styles.themeCard} ${
                       isActive ? styles.choiceCardActive : ''
                     }`}
                     onClick={() => {
-                      updateForm((draft) => {
-                        if (draft.pageData) {
-                          draft.pageData.generalEventTheme = themeKey;
-                        }
-                      });
                       setDefaultTheme(themeKey);
+                      if (!isActive) {
+                        updateForm((draft) => {
+                          if (draft.pageData) {
+                            draft.pageData.generalEventTheme = themeKey;
+                          }
+                        });
+                      }
                       setOpenChoicePanel(null);
                     }}
                     disabled={isSelectionLocked}
                   >
+                    <ThemePreview theme={themeKey} label={theme.label} />
                     <div className={styles.choiceCardTop}>
                       <span className={styles.choiceTag}>일반 행사</span>
                       {isActive ? (
@@ -264,7 +277,7 @@ export default function ThemeStep({
           </span>
         </button>
         {openChoicePanel === 'theme' ? (
-          <div className={styles.choiceOptions}>
+          <div className={`${styles.choiceOptions} ${styles.themeOptions}`}>
             {selectableThemeKeys.map((theme) => {
               const isActive = defaultTheme === theme;
 
@@ -273,34 +286,37 @@ export default function ThemeStep({
                   key={theme}
                   type="button"
                   aria-pressed={isActive}
-                  className={`${styles.choiceCard} ${
+                  className={`${styles.choiceCard} ${styles.themeCard} ${
                     isActive ? styles.choiceCardActive : ''
                   }`}
                   onClick={() => {
                     setDefaultTheme(theme);
-                    updateForm((draft) => {
-                      const currentAvailableVariantKeys = getAvailableInvitationVariantKeys(
-                        draft.variants
-                      );
-                      const nextAvailableVariantKeys =
-                        currentAvailableVariantKeys.length > 1
-                          ? currentAvailableVariantKeys
-                          : [theme];
+                    if (!isActive) {
+                      updateForm((draft) => {
+                        const currentAvailableVariantKeys = getAvailableInvitationVariantKeys(
+                          draft.variants
+                        );
+                        const nextAvailableVariantKeys =
+                          currentAvailableVariantKeys.length > 1
+                            ? currentAvailableVariantKeys
+                            : [theme];
 
-                      draft.variants = buildInvitationVariants(
-                        draft.slug,
-                        draft.displayName,
-                        {
-                          availability: createInvitationVariantAvailability(
-                            nextAvailableVariantKeys as InvitationVariantKey[]
-                          ),
-                        }
-                      );
-                    });
+                        draft.variants = buildInvitationVariants(
+                          draft.slug,
+                          draft.displayName,
+                          {
+                            availability: createInvitationVariantAvailability(
+                              nextAvailableVariantKeys as InvitationVariantKey[]
+                            ),
+                          }
+                        );
+                      });
+                    }
                     setOpenChoicePanel(null);
                   }}
                   disabled={isSelectionLocked}
                 >
+                  <ThemePreview theme={theme} label={getThemeLabel(theme)} />
                   <div className={styles.choiceCardTop}>
                     <span className={styles.choiceTag}>디자인</span>
                     {isActive ? (

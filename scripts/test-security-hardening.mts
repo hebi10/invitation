@@ -1,3 +1,4 @@
+import assert from 'node:assert/strict';
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import path from 'node:path';
 
@@ -18,7 +19,7 @@ function readText(relativePath: string) {
   return readFileSync(path.join(repoRoot, relativePath), 'utf8');
 }
 
-function assert(condition: boolean, file: string, message: string) {
+function check(condition: boolean, file: string, message: string) {
   if (!condition) {
     findings.push({ file, message });
   }
@@ -58,7 +59,7 @@ function listSourceFiles(directory: string): string[] {
 }
 
 const gitignore = readText('.gitignore');
-assert(
+check(
   /(^|\r?\n)\.gstack\/(\r?\n|$)/.test(gitignore),
   '.gitignore',
   '.gstack/ must be ignored so local security reports are not committed.'
@@ -71,14 +72,14 @@ for (const header of [
   'Referrer-Policy',
   'Permissions-Policy',
 ]) {
-  assert(
+  check(
     nextConfig.includes(header),
     'next.config.ts',
     `Missing baseline security header: ${header}.`
   );
 }
 
-assert(
+check(
   nextConfig.includes("form-action 'self' https://sharer.kakao.com"),
   'next.config.ts',
   'CSP form-action must allow Kakao share popup form posts.'
@@ -90,7 +91,7 @@ if (existsSync(apiDirectory)) {
     const source = readFileSync(routeFile, 'utf8');
     const relativePath = path.relative(repoRoot, routeFile);
 
-    assert(
+    check(
       !/NextResponse\.json\(\s*\{\s*(?:error|message|details):\s*(?:error|err)\.message\s*\}/m.test(
         source
       ),
@@ -98,7 +99,7 @@ if (existsSync(apiDirectory)) {
       'Route returns raw error.message in a JSON response.'
     );
 
-    assert(
+    check(
       !/(?:error|err)\s+instanceof\s+Error\s*&&\s*(?:error|err)\.message\.trim\(\)\s*\?\s*(?:error|err)\.message/m.test(
         source
       ),
@@ -109,30 +110,48 @@ if (existsSync(apiDirectory)) {
 }
 
 const firestoreRules = readText('firestore.rules');
-assert(
+check(
   !/match\s+\/ownershipInvites\b/.test(firestoreRules),
   'firestore.rules',
   'Ownership invites must not gain a direct client allow rule.'
 );
 
-const ownershipInviteRepositoryPath = path.join(
-  repoRoot,
-  'src',
-  'server',
-  'repositories',
-  'eventOwnershipInviteRepository.ts'
+const ownershipInviteRepositoryPath = 'src/server/repositories/eventOwnershipInviteRepository.ts';
+const adminEventDeletionRepositoryPath =
+  'src/server/repositories/adminEventDeletionRepository.ts';
+const ownershipInviteReferences = listSourceFiles(path.join(repoRoot, 'src'))
+  .filter((file) => readFileSync(file, 'utf8').includes("'ownershipInvites'"))
+  .map((file) => path.relative(repoRoot, file).replaceAll(path.sep, '/'));
+const allowedOwnershipInviteRepositories = new Set([
+  ownershipInviteRepositoryPath,
+  adminEventDeletionRepositoryPath,
+]);
+assert.deepEqual(
+  ownershipInviteReferences.sort(),
+  [...allowedOwnershipInviteRepositories].sort()
 );
-const ownershipInviteStorageReferences = listSourceFiles(path.join(repoRoot, 'src'))
-  .filter((file) => readFileSync(file, 'utf8').includes("'ownershipInvites'"));
-assert(
-  ownershipInviteStorageReferences.length === 1 &&
-    ownershipInviteStorageReferences[0] === ownershipInviteRepositoryPath,
-  'src/server/repositories/eventOwnershipInviteRepository.ts',
-  'The server ownership invite repository must remain the only source write path.'
+
+const ownershipInviteRepositorySource = readText(ownershipInviteRepositoryPath);
+const adminEventDeletionRepositorySource = readText(adminEventDeletionRepositoryPath);
+const ownershipInviteCreateOrUpdate = /transaction\.set\(\s*inviteRef\b/;
+const ownershipInviteDelete =
+  /deleteEventSubcollection\(\s*job\.eventId,\s*EVENT_OWNERSHIP_INVITES_COLLECTION\s*\)/;
+
+check(
+  ownershipInviteCreateOrUpdate.test(ownershipInviteRepositorySource) &&
+    !ownershipInviteDelete.test(ownershipInviteRepositorySource),
+  ownershipInviteRepositoryPath,
+  'Ownership invite creation and updates must remain in the ownership invite repository.'
 );
-assert(
-  readFileSync(ownershipInviteRepositoryPath, 'utf8').includes('runTransaction'),
-  'src/server/repositories/eventOwnershipInviteRepository.ts',
+check(
+  ownershipInviteDelete.test(adminEventDeletionRepositorySource) &&
+    !ownershipInviteCreateOrUpdate.test(adminEventDeletionRepositorySource),
+  adminEventDeletionRepositoryPath,
+  'Ownership invite cleanup must remain limited to the admin deletion repository.'
+);
+check(
+  ownershipInviteRepositorySource.includes('runTransaction'),
+  ownershipInviteRepositoryPath,
   'Ownership invite writes must stay transaction-backed.'
 );
 

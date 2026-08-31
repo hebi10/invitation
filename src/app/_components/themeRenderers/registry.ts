@@ -2,7 +2,12 @@ import type { ComponentType } from 'react';
 
 import type { InvitationThemeKey } from '@/lib/invitationThemes';
 
-import type { WeddingThemeRendererProps } from '../weddingPageRenderers';
+import weddingClosingStyles from '../WeddingClosing.module.css';
+import {
+  getWeddingThemeClosingDefinition,
+  withWeddingClosing,
+  type WeddingThemeRendererProps,
+} from '../weddingPageRenderers';
 import {
   GardenNotePage,
   GyeolPage,
@@ -43,7 +48,18 @@ export const WEDDING_THEME_RENDERER_REGISTRY = [
 ] as const satisfies readonly WeddingThemeRendererRegistryEntry[];
 
 const weddingThemeRendererByKey = Object.fromEntries(
-  WEDDING_THEME_RENDERER_REGISTRY.map((entry) => [entry.key, entry.component])
+  WEDDING_THEME_RENDERER_REGISTRY.map((entry) => {
+    const closingDefinition = getWeddingThemeClosingDefinition(entry.key);
+
+    return [
+      entry.key,
+      withWeddingClosing(entry.component, {
+        renderClosing: closingDefinition.renderClosing,
+        theme: entry.key,
+        canvasClassName: weddingClosingStyles.canvas,
+      }),
+    ];
+  })
 ) as Record<InvitationThemeKey, WeddingThemeRendererComponent>;
 
 export function getWeddingThemeRenderer(theme: InvitationThemeKey) {

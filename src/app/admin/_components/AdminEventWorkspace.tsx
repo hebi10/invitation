@@ -12,7 +12,6 @@ import type { AdminCustomerAccountSummary } from '@/services/adminCustomerServic
 
 import {
   filterAdminEvents,
-  ADMIN_EVENT_PAGE_SIZE_OPTIONS,
   ADMIN_EVENT_TYPE_OPTIONS,
   getAdminEventPage,
   getAdminEventCounts,
@@ -213,7 +212,11 @@ export default function AdminEventWorkspace({
         </button>
       </div>
 
-      <AdminEventFilters filters={filters} onQueryChange={onQueryChange} />
+      <AdminEventFilters
+        filters={filters}
+        pageSize={pageSize}
+        onQueryChange={onQueryChange}
+      />
 
       <div className={styles.eventWorkspaceContent}>
         <div className={styles.eventWorkspaceList}>
@@ -257,28 +260,6 @@ export default function AdminEventWorkspace({
           ) : null}
           {eventPage.items.length > 0 ? (
             <>
-              <div className={styles.eventListControls}>
-                <label className={styles.eventPageSizeField}>
-                  <span>페이지당 개수</span>
-                  <select
-                    className="admin-select"
-                    value={String(pageSize)}
-                    onChange={(event) =>
-                      onQueryChange({
-                        pageSize: event.target.value,
-                        page: '1',
-                        event: null,
-                      })
-                    }
-                  >
-                    {ADMIN_EVENT_PAGE_SIZE_OPTIONS.map((option) => (
-                      <option key={option} value={option}>
-                        {option}개
-                      </option>
-                    ))}
-                  </select>
-                </label>
-              </div>
               <AdminEventList
                 pages={eventPage.items}
                 selectedSlug={selectedSlug}

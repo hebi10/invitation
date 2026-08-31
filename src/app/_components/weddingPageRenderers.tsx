@@ -1,5 +1,5 @@
-import { Fragment } from 'react';
-import type { ReactNode } from 'react';
+import React, { Fragment } from 'react';
+import type { ComponentType, ReactNode } from 'react';
 
 import {
   resolveCeremonyScheduleDetail,
@@ -9,6 +9,7 @@ import {
 import type { InvitationPage, InvitationScheduleDetail } from '@/types/invitationPage';
 import type { InvitationThemeKey } from '@/lib/invitationThemes';
 
+import { WeddingClosing } from './WeddingClosing';
 import type { WeddingPageReadyState } from './weddingPageState';
 import type { WeddingInvitationRouteOptions } from './weddingThemes';
 
@@ -21,11 +22,71 @@ export type WeddingThemeSectionSlot = (
   props: WeddingThemeRendererProps
 ) => ReactNode;
 
+export const WEDDING_THEME_CLOSING_DEFINITIONS = [
+  { key: 'emotional', renderClosing: true },
+  { key: 'romantic', renderClosing: true },
+  { key: 'simple', renderClosing: true },
+  { key: 'classic-r', renderClosing: true },
+  { key: 'gyeol', renderClosing: true },
+] as const satisfies readonly {
+  key: InvitationThemeKey;
+  renderClosing: boolean;
+}[];
+
+export function getWeddingThemeClosingDefinition(theme: InvitationThemeKey) {
+  const definition = WEDDING_THEME_CLOSING_DEFINITIONS.find(
+    (candidate) => candidate.key === theme
+  );
+
+  if (!definition) {
+    throw new Error(`웨딩 테마 마무리 정책을 찾을 수 없습니다: ${theme}`);
+  }
+
+  return definition;
+}
+
 export interface WeddingThemeRendererDefinition {
   ariaLabelSuffix?: string;
   rootClassName?: string;
+  renderClosing?: boolean;
   renderLoader: WeddingThemeSectionSlot;
   sections: WeddingThemeSectionSlot[];
+}
+
+export interface WeddingClosingRendererOptions {
+  renderClosing?: boolean;
+  theme: InvitationThemeKey;
+  canvasClassName?: string;
+}
+
+export function withWeddingClosing(
+  ThemeRenderer: ComponentType<WeddingThemeRendererProps>,
+  options: WeddingClosingRendererOptions
+) {
+  function WeddingThemeRendererWithClosing(props: WeddingThemeRendererProps) {
+    const renderClosing = options.renderClosing ?? true;
+
+    return (
+      <div
+        className={options.canvasClassName}
+        data-wedding-closing-canvas
+        data-theme={options.theme}
+      >
+        <ThemeRenderer {...props} />
+        {renderClosing ? (
+          <WeddingClosing
+            groomName={props.state.pageConfig.groomName}
+            brideName={props.state.pageConfig.brideName}
+            theme={options.theme}
+          />
+        ) : null}
+      </div>
+    );
+  }
+
+  WeddingThemeRendererWithClosing.displayName = `WithWeddingClosing(${ThemeRenderer.displayName ?? ThemeRenderer.name ?? 'WeddingThemeRenderer'})`;
+
+  return WeddingThemeRendererWithClosing;
 }
 
 export function createWeddingThemeRenderer(
@@ -55,6 +116,13 @@ export function createWeddingThemeRenderer(
         {definition.sections.map((renderSection, index) => (
           <Fragment key={index}>{renderSection(props)}</Fragment>
         ))}
+        {definition.renderClosing ?? true ? (
+          <WeddingClosing
+            groomName={state.pageConfig.groomName}
+            brideName={state.pageConfig.brideName}
+            theme={props.options.theme}
+          />
+        ) : null}
       </main>
     );
 

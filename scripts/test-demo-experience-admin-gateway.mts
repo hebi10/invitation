@@ -8,6 +8,7 @@ const workspace = readFileSync(
   'src/app/admin/_components/AdminEventWorkspace.tsx',
   'utf8'
 );
+const experienceAdminLayoutSource = readFileSync('src/app/experience/admin/layout.tsx', 'utf8');
 
 assert.match(gateway, /demoExperienceAdminDataGateway/);
 assert.match(hook, /gateway\.getPages/);
@@ -15,5 +16,6 @@ assert.match(hook, /gateway\.deleteEvent/);
 assert.doesNotMatch(hook, /getAllManagedInvitationPages\(\)/);
 assert.match(adminPage, /routes=/);
 assert.match(workspace, /금일 체험 청첩장/);
+assert.match(experienceAdminLayoutSource, /data-operation-ui/);
 
 console.log('demo experience admin gateway checks passed');

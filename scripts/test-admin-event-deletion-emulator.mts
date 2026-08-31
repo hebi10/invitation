@@ -43,17 +43,112 @@ const eventRef = db.collection('events').doc(eventId);
 const jobCollection = db.collection('eventDeletionJobs');
 const storagePath = `wedding-images/${pageSlug}/photo.png`;
 
-for (const collectionName of [
+const TEST_COLLECTIONS = [
   'events',
   'eventSlugIndex',
   'eventSecrets',
   'billingFulfillments',
   'eventDeletionJobs',
   'customerWallets',
-]) {
-  await db.recursiveDelete(db.collection(collectionName));
+];
+
+type CleanupTask = () => Promise<void>;
+
+async function runCleanupTasks(tasks: CleanupTask[]) {
+  const results = await Promise.allSettled(
+    tasks.map((task) => Promise.resolve().then(task))
+  );
+  const failures = results.flatMap((result) =>
+    result.status === 'rejected' ? [result.reason] : []
+  );
+
+  if (failures.length > 0) {
+    throw new AggregateError(failures, 'Test cleanup failed.');
+  }
 }
-await bucket.deleteFiles({ prefix: `wedding-images/${pageSlug}/`, force: true });
+
+async function runTestWithCleanup(testBody: CleanupTask, cleanup: CleanupTask) {
+  const [bodyResult] = await Promise.allSettled([Promise.resolve().then(testBody)]);
+  const [cleanupResult] = await Promise.allSettled([Promise.resolve().then(cleanup)]);
+
+  if (bodyResult.status === 'rejected' && cleanupResult.status === 'rejected') {
+    throw new AggregateError(
+      [bodyResult.reason, cleanupResult.reason],
+      'Test body and cleanup both failed.'
+    );
+  }
+  if (bodyResult.status === 'rejected') {
+    throw bodyResult.reason;
+  }
+  if (cleanupResult.status === 'rejected') {
+    throw cleanupResult.reason;
+  }
+}
+
+async function clearTestCollections() {
+  await runCleanupTasks(
+    TEST_COLLECTIONS.map(
+      (collectionName) => () => db.recursiveDelete(db.collection(collectionName))
+    )
+  );
+}
+
+async function clearTestState() {
+  await runCleanupTasks([
+    clearTestCollections,
+    () => bucket.deleteFiles({ prefix: `wedding-images/${pageSlug}/`, force: true }),
+  ]);
+}
+
+const cleanupCalls: string[] = [];
+await assert.rejects(
+  runCleanupTasks([
+    () => {
+      cleanupCalls.push('failed-cleanup');
+      throw new Error('injected cleanup failure');
+    },
+    async () => {
+      cleanupCalls.push('subsequent-cleanup');
+    },
+  ])
+);
+assert.deepEqual(
+  cleanupCalls,
+  ['failed-cleanup', 'subsequent-cleanup'],
+  'a rejected cleanup must not skip subsequent cleanup callbacks'
+);
+
+const bodyFailure = new Error('injected test body failure');
+const cleanupFailure = new Error('injected final cleanup failure');
+await assert.rejects(
+  runTestWithCleanup(
+    () => {
+      throw bodyFailure;
+    },
+    () => {
+      throw cleanupFailure;
+    }
+  ),
+  (error: unknown) => {
+    assert.ok(error instanceof AggregateError);
+    assert.deepEqual(error.errors, [bodyFailure, cleanupFailure]);
+    return true;
+  },
+  'body and cleanup failures must both be reported'
+);
+await assert.rejects(
+  runTestWithCleanup(
+    async () => undefined,
+    () => {
+      throw cleanupFailure;
+    }
+  ),
+  (error: unknown) => error === cleanupFailure,
+  'cleanup failure must fail a successful test body'
+);
+
+await runTestWithCleanup(async () => {
+  await clearTestState();
 
 const now = new Date('2026-08-13T00:00:00.000Z');
 await eventRef.set({
@@ -624,3 +719,4 @@ assert.equal(
 );
 
 console.log('admin event deletion emulator checks passed');
+}, clearTestState);

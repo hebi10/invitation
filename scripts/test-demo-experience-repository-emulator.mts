@@ -13,9 +13,83 @@ process.env.NEXT_PUBLIC_USE_FIREBASE = 'true';
 process.env.FIREBASE_PROJECT_ID = PROJECT_ID;
 process.env.GOOGLE_CLOUD_PROJECT = PROJECT_ID;
 
-if (getApps().length === 0) {
-  initializeApp({ projectId: PROJECT_ID });
+const app = getApps()[0] ?? initializeApp({ projectId: PROJECT_ID });
+const db = getFirestore(app);
+
+const TEST_COLLECTIONS = ['events', 'eventSlugIndex', 'demoExperiences'];
+
+type CleanupTask = () => Promise<void>;
+
+async function runCleanupTasks(tasks: CleanupTask[]) {
+  const results = await Promise.allSettled(
+    tasks.map((task) => Promise.resolve().then(task))
+  );
+  const failures = results.flatMap((result) =>
+    result.status === 'rejected' ? [result.reason] : []
+  );
+
+  if (failures.length > 0) {
+    throw new AggregateError(failures, 'Test cleanup failed.');
+  }
 }
+
+async function runTestWithCleanup(testBody: CleanupTask, cleanup: CleanupTask) {
+  const [bodyResult] = await Promise.allSettled([Promise.resolve().then(testBody)]);
+  const [cleanupResult] = await Promise.allSettled([Promise.resolve().then(cleanup)]);
+
+  if (bodyResult.status === 'rejected' && cleanupResult.status === 'rejected') {
+    throw new AggregateError(
+      [bodyResult.reason, cleanupResult.reason],
+      'Test body and cleanup both failed.'
+    );
+  }
+  if (bodyResult.status === 'rejected') {
+    throw bodyResult.reason;
+  }
+  if (cleanupResult.status === 'rejected') {
+    throw cleanupResult.reason;
+  }
+}
+
+async function clearTestCollections() {
+  await runCleanupTasks(
+    TEST_COLLECTIONS.map(
+      (collectionName) => () => db.recursiveDelete(db.collection(collectionName))
+    )
+  );
+}
+
+const bodyFailure = new Error('injected test body failure');
+const cleanupFailure = new Error('injected final cleanup failure');
+await assert.rejects(
+  runTestWithCleanup(
+    () => {
+      throw bodyFailure;
+    },
+    () => {
+      throw cleanupFailure;
+    }
+  ),
+  (error: unknown) => {
+    assert.ok(error instanceof AggregateError);
+    assert.deepEqual(error.errors, [bodyFailure, cleanupFailure]);
+    return true;
+  },
+  'body and cleanup failures must both be reported'
+);
+await assert.rejects(
+  runTestWithCleanup(
+    async () => undefined,
+    () => {
+      throw cleanupFailure;
+    }
+  ),
+  (error: unknown) => error === cleanupFailure,
+  'cleanup failure must fail a successful test body'
+);
+
+await runTestWithCleanup(async () => {
+  await clearTestCollections();
 
 const [{ createDemoExperienceSeedEvents, DEMO_EXPERIENCE_DAILY_SLUG }, repositoryModule] =
   await Promise.all([
@@ -72,10 +146,8 @@ const firstSeedComments = await firestoreDemoExperienceRepository.listComments(
 );
 assert.equal(firstSeedComments.length, seeds[1]!.comments.length);
 
-const app = getApps()[0];
-assert.ok(app);
-const db = getFirestore(app);
 assert.equal((await db.collection('events').get()).size, 0);
 assert.equal((await db.collection('eventSlugIndex').get()).size, 0);
 
 console.log('demo experience repository emulator checks passed');
+}, clearTestCollections);

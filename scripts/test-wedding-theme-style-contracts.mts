@@ -65,6 +65,70 @@ const storedContentCss = read(
 );
 const revealHookPath =
   'src/app/_components/public-invitations/wedding/useImmediateWeddingPageReveal.ts';
+const weddingRendererSource = read('src/app/_components/weddingPageRenderers.tsx');
+const weddingRegistrySource = read('src/app/_components/themeRenderers/registry.ts');
+const weddingClosingPath = 'src/app/_components/WeddingClosing.tsx';
+const weddingClosingCssPath = 'src/app/_components/WeddingClosing.module.css';
+
+assert.equal(
+  existsSync(path.resolve(process.cwd(), weddingClosingPath)),
+  true,
+  'WeddingClosing should exist as the shared last-slot component'
+);
+assert.equal(
+  existsSync(path.resolve(process.cwd(), weddingClosingCssPath)),
+  true,
+  'WeddingClosing should own independent themed styling'
+);
+
+const weddingClosingSource = read(weddingClosingPath);
+const weddingClosingCss = read(weddingClosingCssPath);
+const closingBaseRule = weddingClosingCss.match(/\.closing\s*\{([^}]*)\}/s)?.[1];
+
+assert.ok(closingBaseRule, 'WeddingClosing should define its base visual contract');
+assert.doesNotMatch(
+  closingBaseRule,
+  /--closing-(?:background|foreground|line|muted):/,
+  'The closing element must not override themed custom properties inherited from its canvas'
+);
+
+assert.match(weddingRendererSource, /<WeddingClosing/);
+assert.match(weddingRegistrySource, /withWeddingClosing/);
+assert.match(weddingRegistrySource, /getWeddingThemeClosingDefinition/);
+assert.match(weddingClosingSource, /data-wedding-closing/);
+assert.match(weddingClosingSource, /귀한 걸음과 따뜻한 마음에 감사드립니다/);
+assert.match(
+  weddingClosingCss,
+  /\.canvas\s*\{[^}]*width:\s*min\(100%,\s*640px\);[^}]*margin:\s*0 auto;/s,
+  'The shared closing canvas should match the centered 640px invitation width'
+);
+
+const closingThemeTokens = {
+  emotional: ['#f6f1e8', '#29251f', '#b8aa99', '#655c51'],
+  romantic: ['#f3f1e6', '#263129', '#aab5a7', '#5a675d'],
+  simple: ['#f7f7f4', '#1f211f', '#b7bab4', '#5d615c'],
+  'classic-r': ['#f3efe6', '#2c2822', '#b9ae9d', '#686056'],
+  gyeol: ['#f3f0e8', '#171916', '#a7ab9f', '#555950'],
+} as const;
+
+for (const [theme, tokens] of Object.entries(closingThemeTokens)) {
+  const themeRule = weddingClosingCss.match(
+    new RegExp(`\\.canvas\\[data-theme=['"]${theme}['"]\\]\\s*\\{([^}]*)\\}`)
+  )?.[1];
+
+  assert.ok(themeRule, `${theme} should define an explicit closing canvas variant`);
+
+  for (const token of tokens) {
+    assert.match(
+      themeRule,
+      new RegExp(token),
+      `${theme} closing should use its public invitation palette token ${token}`
+    );
+  }
+}
+
+assert.doesNotMatch(weddingClosingCss, /box-shadow|border-radius/);
+assert.doesNotMatch(weddingClosingCss, /font-weight:\s*(?:8\d{2}|9\d{2})/);
 
 assert.equal(
   existsSync(path.resolve(process.cwd(), revealHookPath)),

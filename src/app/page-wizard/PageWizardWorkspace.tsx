@@ -11,6 +11,7 @@ import {
 
 import type {
   StepValidation,
+  SlugStepState,
   WizardStepKey,
 } from './pageWizardData';
 import type {
@@ -18,7 +19,13 @@ import type {
   WizardSectionId,
   WizardSectionValidation,
 } from './pageWizardSections';
-import type { WizardSaveStatus } from './pageWizardWorkspaceState';
+import {
+  getWizardSaveStatusLabel,
+  getWizardSectionStatus,
+  hasMeaningfulInputForWizardStep,
+  type WizardSaveStatus,
+} from './pageWizardWorkspaceState';
+import type { InvitationPageSeed } from '@/types/invitationPage';
 import styles from './PageWizardWorkspace.module.css';
 
 type PageWizardWorkspaceProps = {
@@ -29,6 +36,10 @@ type PageWizardWorkspaceProps = {
   activeStepKey: WizardStepKey;
   getSectionValidation: (section: WizardSection) => WizardSectionValidation;
   getStepValidation: (stepKey: WizardStepKey) => StepValidation;
+  formState: InvitationPageSeed;
+  slugStepState: SlugStepState;
+  interactedStepKeys: ReadonlySet<WizardStepKey>;
+  hasPersistedData: boolean;
   saveStatus: WizardSaveStatus;
   notice: ReactNode;
   isSaving: boolean;
@@ -52,14 +63,6 @@ FIRST VIEWPORT: 상단 작업 바, 왼쪽 목차, 중앙 입력, 하단 주요 �
 FORM: Operate 모드의 2열 데스크톱·단일 열 모바일 편집 워크스페이스.
 -->`;
 
-const SAVE_STATUS_LABELS: Record<WizardSaveStatus, string> = {
-  idle: '아직 저장되지 않음',
-  dirty: '변경사항 있음',
-  saving: '저장 중',
-  saved: '저장됨',
-  error: '저장 실패',
-};
-
 export default function PageWizardWorkspace({
   title,
   subtitle,
@@ -68,6 +71,10 @@ export default function PageWizardWorkspace({
   activeStepKey,
   getSectionValidation,
   getStepValidation,
+  formState,
+  slugStepState,
+  interactedStepKeys,
+  hasPersistedData,
   saveStatus,
   notice,
   isSaving,
@@ -157,13 +164,20 @@ export default function PageWizardWorkspace({
   const renderSectionButtons = () => sections.map((section, index) => {
     const validation = getSectionValidation(section);
     const isActive = section.id === activeSection.id;
-    const statusLabel = isActive
-      ? '현재 작업'
-      : validation.valid
-        ? '완료'
-        : validation.invalidStepKeys.length > 0
-          ? `확인 필요 ${validation.invalidStepKeys.length}개`
-          : '미입력';
+    const hasMeaningfulInput = section.steps.some((step) =>
+      hasMeaningfulInputForWizardStep(step.key, {
+        formState,
+        slugStepState,
+        hasStepInteraction: interactedStepKeys.has(step.key),
+        hasPersistedData,
+      })
+    );
+    const statusLabel = getWizardSectionStatus({
+      isActive,
+      valid: validation.valid,
+      hasMeaningfulInput,
+      invalidStepCount: validation.invalidStepKeys.length,
+    });
 
     return (
       <button
@@ -209,7 +223,7 @@ export default function PageWizardWorkspace({
               role="status"
               aria-live="polite"
             >
-              {SAVE_STATUS_LABELS[saveStatus]}
+              {getWizardSaveStatusLabel(saveStatus)}
             </span>
             {activePreviewStep ? (
               <button

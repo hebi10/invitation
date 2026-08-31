@@ -41,12 +41,14 @@ export default function BirthdayThemeStep({
 
   const handleThemeSelect = (theme: BirthdayThemeKey) => {
     setDefaultTheme(theme);
-    updateForm((draft) => {
-      draft.pageData = {
-        ...draft.pageData,
-        birthdayTheme: theme,
-      };
-    });
+    if (theme !== selectedTheme) {
+      updateForm((draft) => {
+        draft.pageData = {
+          ...draft.pageData,
+          birthdayTheme: theme,
+        };
+      });
+    }
     setOpenChoicePanel(null);
   };
 

@@ -1,9 +1,71 @@
 import assert from 'node:assert/strict';
+import { spawnSync } from 'node:child_process';
 import { existsSync, readFileSync } from 'node:fs';
+import { register } from 'node:module';
 import path from 'node:path';
+import process from 'node:process';
+
+register(new URL('./test-css-module-loader.mjs', import.meta.url), import.meta.url);
+
+const weddingPageRenderers = await import(
+  '../src/app/_components/weddingPageRenderers.tsx'
+);
 
 const read = (relativePath: string) =>
   readFileSync(path.resolve(process.cwd(), relativePath), 'utf8');
+
+function resolveNpxCliPath() {
+  const nodeDirectory = path.dirname(process.execPath);
+  const candidates = [
+    process.env.npm_execpath
+      ? path.join(path.dirname(process.env.npm_execpath), 'npx-cli.js')
+      : null,
+    path.join(nodeDirectory, 'node_modules', 'npm', 'bin', 'npx-cli.js'),
+    path.resolve(nodeDirectory, '..', 'lib', 'node_modules', 'npm', 'bin', 'npx-cli.js'),
+  ];
+
+  return candidates.find((candidate) => candidate && existsSync(candidate)) ?? null;
+}
+
+const weddingClosingDefinitions =
+  weddingPageRenderers.WEDDING_THEME_CLOSING_DEFINITIONS;
+assert.ok(
+  Array.isArray(weddingClosingDefinitions),
+  'the real wedding registry should expose the shared closing policy for every public theme'
+);
+
+if (!Array.isArray(weddingClosingDefinitions)) {
+  throw new Error('Wedding closing definitions are unavailable');
+}
+
+assert.deepEqual(
+  weddingClosingDefinitions.map((definition) => definition.key),
+  ['emotional', 'romantic', 'simple', 'classic-r', 'gyeol'],
+  'every actual public wedding theme should have one registry closing policy'
+);
+
+const npxCliPath = resolveNpxCliPath();
+assert.ok(npxCliPath, 'the registry runtime check requires the project npx CLI');
+
+const productionRegistryCheck = spawnSync(
+  process.execPath,
+  [npxCliPath, '--yes', 'tsx', 'scripts/test-wedding-renderer-registry-runtime.mts'],
+  {
+    cwd: process.cwd(),
+    shell: false,
+    stdio: 'inherit',
+  }
+);
+
+assert.equal(
+  productionRegistryCheck.status,
+  0,
+  'the production wedding registry should render one final closing for every public theme'
+);
+
+if (productionRegistryCheck.error) {
+  throw productionRegistryCheck.error;
+}
 
 function parseHexColor(value: string) {
   const hex = value.replace('#', '');

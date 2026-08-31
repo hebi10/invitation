@@ -17,6 +17,7 @@ import {
   getInvitationThemeDefinition,
   getInvitationThemePreviewSampleUrl,
   getInvitationThemeSalesPolicy,
+  INVITATION_THEME_KEYS,
   type InvitationThemeKey,
   type InvitationThemePreviewProductTier,
 } from '../src/lib/invitationThemes.ts';
@@ -30,9 +31,21 @@ import {
 } from '../src/lib/invitationMetadata.ts';
 import { DUMMY_EVENT_SEEDS } from './seed-dummy-events.mts';
 
+const expectedWeddingThemes = [
+  'emotional',
+  'romantic',
+  'gyeol',
+  'simple',
+  'classic-r',
+] as const;
+
 assert.deepEqual(
   SHORTCUT_ITEMS.map((item) => item.key),
-  ['emotional', 'romantic', 'simple', 'classic-r']
+  expectedWeddingThemes
+);
+assert.deepEqual(
+  INVITATION_THEME_KEYS.filter((theme) => getInvitationThemeSalesPolicy(theme).isSelectableAtCreation),
+  expectedWeddingThemes
 );
 
 const expectedInvitationThemeMetadata = [
@@ -72,6 +85,20 @@ for (const [theme, label, description, pathSuffix] of expectedInvitationThemeMet
   );
   assert.equal(definition.pathSuffix, pathSuffix, `${theme} must preserve its public path suffix`);
 }
+
+const gyeolThemeDefinition = getInvitationThemeDefinition('gyeol');
+assert.equal(gyeolThemeDefinition.label, '결');
+assert.equal(gyeolThemeDefinition.adminLabel, '결');
+assert.equal(gyeolThemeDefinition.variantLabel, '결');
+assert.equal(
+  gyeolThemeDefinition.wizardDescription,
+  '큰 사진과 한국어 활자로 장면과 예식 정보를 엮은 에디토리얼 웨딩입니다.'
+);
+assert.equal(
+  gyeolThemeDefinition.preview.description,
+  '화면을 채우는 사진과 비대칭 조판으로 구성한 한국형 웨딩 에디토리얼입니다.'
+);
+assert.equal(gyeolThemeDefinition.pathSuffix, '/gyeol');
 
 assert.deepEqual(BIRTHDAY_THEME_META['birthday-minimal'], {
   label: '파티 노트',
@@ -159,6 +186,20 @@ assert.deepEqual(
   ]
 );
 
+const gyeolPreview = {
+  label: '결',
+  path: '/kim-shinlang-na-sinbu/gyeol',
+};
+assert.deepEqual(
+  getEventPreviewLinks({
+    slug: 'kim-shinlang-na-sinbu',
+    eventType: 'wedding',
+    availableThemes: ['gyeol'],
+    defaultTheme: 'gyeol',
+  }).map(({ label, path }) => ({ label, path })),
+  [gyeolPreview]
+);
+
 const seededSlugs = new Set(DUMMY_EVENT_SEEDS.map((seed) => seed.slug));
 const previewProductTiers: InvitationThemePreviewProductTier[] = [
   'standard',
@@ -174,6 +215,9 @@ const expectedWeddingPreviewSamplePaths: Array<
   ['romantic', 'standard', '/kim-taehyun-choi-yuna/romantic/'],
   ['romantic', 'deluxe', '/lee-junho-park-somin/romantic/'],
   ['romantic', 'premium', '/an-doyoung-yoon-jisoo/romantic/'],
+  ['gyeol', 'standard', '/kim-taehyun-choi-yuna/gyeol/'],
+  ['gyeol', 'deluxe', '/lee-junho-park-somin/gyeol/'],
+  ['gyeol', 'premium', '/an-doyoung-yoon-jisoo/gyeol/'],
   ['simple', 'standard', '/kim-taehyun-choi-yuna/simple/'],
   ['simple', 'deluxe', '/lee-junho-park-somin/simple/'],
   ['simple', 'premium', '/an-doyoung-yoon-jisoo/simple/'],
@@ -223,7 +267,7 @@ for (const [theme, expectedPath] of expectedPreviewSamplePaths) {
   }
 }
 
-for (const theme of ['emotional', 'romantic', 'simple', 'classic-r'] as const) {
+for (const theme of expectedWeddingThemes) {
   assert.deepEqual(getInvitationThemeSalesPolicy(theme), {
     isDefault: theme === 'emotional',
     canBeDefault: true,

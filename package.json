@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "engines": {
-    "node": ">=20"
+    "node": ">=20.19.4"
   },
   "scripts": {
     "dev": "npm run clean:next && next dev",
@@ -40,12 +40,12 @@
   },
   "dependencies": {
     "@tanstack/react-query": "^5.83.0",
-    "firebase": "^12.0.0",
-    "next": "^15.4.8",
+    "firebase": "^12.18.0",
+    "next": "^15.5.24",
     "react": "^19.1.2",
     "react-dom": "^19.1.2",
     "server-only": "^0.0.1",
-    "sharp": "^0.34.3",
+    "sharp": "^0.35.4",
     "swiper": "^12.1.3"
   },
   "devDependencies": {
@@ -54,8 +54,12 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9.39.4",
-    "eslint-config-next": "^15.4.8",
-    "firebase-admin": "^13.7.0",
+    "eslint-config-next": "^15.5.24",
+    "firebase-admin": "^13.10.0",
     "typescript": "^5"
+  },
+  "overrides": {
+    "postcss": "8.5.26",
+    "uuid": "11.1.1"
   }
 }

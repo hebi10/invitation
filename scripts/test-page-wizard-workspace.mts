@@ -1,7 +1,11 @@
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 
 import { EVENT_TYPE_KEYS } from '../src/lib/eventTypes.ts';
-import { getWizardSteps } from '../src/app/page-wizard/pageWizardData.ts';
+import {
+  createInitialWizardConfig,
+  getWizardSteps,
+} from '../src/app/page-wizard/pageWizardData.ts';
 import {
   buildWizardSections,
   findWizardSectionByStepKey,
@@ -10,7 +14,14 @@ import {
   getWizardSectionValidation,
 } from '../src/app/page-wizard/pageWizardSections.ts';
 import { revealWizardStep } from '../src/app/page-wizard/pageWizardFocus.ts';
-import { resolveWizardSaveStatus } from '../src/app/page-wizard/pageWizardWorkspaceState.ts';
+import {
+  hasMeaningfulInputForWizardStep,
+  getWizardSaveStatusLabel,
+  getWizardSectionStatus,
+  markWizardStepInteraction,
+  resolveWizardSelectionInteraction,
+  resolveWizardSaveStatus,
+} from '../src/app/page-wizard/pageWizardWorkspaceState.ts';
 import { getSelectedTemplateLabel } from '../src/app/page-wizard/pageWizardTemplateSelection.ts';
 
 for (const eventType of EVENT_TYPE_KEYS) {
@@ -100,6 +111,128 @@ assert.equal(
   'error',
   'save failures must take priority over dirty state'
 );
+
+assert.equal(getWizardSaveStatusLabel('idle'), '편집 준비됨');
+assert.equal(getWizardSaveStatusLabel('dirty'), '변경사항 있음');
+assert.equal(
+  getWizardSectionStatus({
+    isActive: false,
+    valid: true,
+    hasMeaningfulInput: false,
+  }),
+  '미입력'
+);
+assert.equal(
+  getWizardSectionStatus({
+    isActive: false,
+    valid: false,
+    hasMeaningfulInput: true,
+    invalidStepCount: 2,
+  }),
+  '확인 필요 2개'
+);
+
+const emptySlugStepState = {
+  slugInput: '',
+  persistedSlug: null,
+  groomKoreanName: '',
+  brideKoreanName: '',
+  groomEnglishName: '',
+  brideEnglishName: '',
+};
+
+assert.equal(
+  hasMeaningfulInputForWizardStep('eventType', {
+    formState: null,
+    slugStepState: emptySlugStepState,
+  }),
+  false,
+  '기본 이벤트 타입만으로는 작업 영역을 완료로 표시하면 안 됩니다.'
+);
+assert.equal(
+  hasMeaningfulInputForWizardStep('eventType', {
+    formState: null,
+    slugStepState: emptySlugStepState,
+    hasEventTypeSelection: true,
+  }),
+  true,
+  '사용자가 이벤트 타입을 직접 고르면 작업 영역을 완료로 표시해야 합니다.'
+);
+const interactedStepKeys = markWizardStepInteraction(new Set(), 'eventType');
+assert.equal(
+  hasMeaningfulInputForWizardStep('eventType', {
+    formState: null,
+    slugStepState: emptySlugStepState,
+    hasEventTypeSelection: interactedStepKeys.has('eventType'),
+  }),
+  true,
+  '기본 이벤트 타입 카드를 다시 선택해도 상호작용을 기록해야 합니다.'
+);
+const themeInteractedStepKeys = markWizardStepInteraction(new Set(), 'theme');
+assert.equal(
+  hasMeaningfulInputForWizardStep('theme', {
+    formState: null,
+    slugStepState: emptySlugStepState,
+    hasThemeSelection: themeInteractedStepKeys.has('theme'),
+  }),
+  true,
+  '저장 전 테마를 선택하면 테마 작업 영역을 완료로 표시해야 합니다.'
+);
+
+const sameThemeSelection = resolveWizardSelectionInteraction('classic', 'classic');
+assert.deepEqual(
+  sameThemeSelection,
+  { hasExplicitSelection: true, hasUnsavedChanges: false },
+  '현재 테마를 다시 선택하면 선택 확인만 기록하고 미저장 상태로 만들면 안 됩니다.'
+);
+
+const changedThemeSelection = resolveWizardSelectionInteraction('classic', 'gyeol');
+assert.deepEqual(
+  changedThemeSelection,
+  { hasExplicitSelection: true, hasUnsavedChanges: true },
+  '다른 테마를 선택하면 선택 확인과 미저장 상태를 모두 기록해야 합니다.'
+);
+
+const seededBirthdayConfig = createInitialWizardConfig('birthday');
+assert.ok(
+  seededBirthdayConfig.pageData?.greetingMessage?.trim(),
+  '생일 신규 위저드 fixture에는 초기 seed 인사말이 있어야 합니다.'
+);
+assert.equal(
+  hasMeaningfulInputForWizardStep('greeting', {
+    formState: seededBirthdayConfig,
+    slugStepState: emptySlugStepState,
+  }),
+  false,
+  '초기 seed 인사말만 있는 신규 위저드는 인사말 작업을 완료로 표시하면 안 됩니다.'
+);
+assert.equal(
+  hasMeaningfulInputForWizardStep('greeting', {
+    formState: seededBirthdayConfig,
+    slugStepState: emptySlugStepState,
+    hasStepInteraction: true,
+  }),
+  true,
+  '초기 인사말을 사용자가 명시적으로 확인하면 완료로 표시할 수 있어야 합니다.'
+);
+assert.equal(
+  hasMeaningfulInputForWizardStep('final', {
+    formState: null,
+    slugStepState: emptySlugStepState,
+  }),
+  false,
+  '검토 단계는 별도 입력이 없으므로 초기 상태에서 미입력이어야 합니다.'
+);
+
+const themeStepSource = readFileSync(
+  new URL('../src/app/page-wizard/steps/ThemeStep.tsx', import.meta.url),
+  'utf8'
+);
+
+assert.match(themeStepSource, /aria-pressed=\{isActive\}/);
+assert.match(themeStepSource, /getThemeLabel\(theme\)/);
+assert.match(themeStepSource, /getThemeDescription\(theme\)/);
+assert.match(themeStepSource, /data-theme-preview=\{theme\}/);
 
 const focusActions: Array<[string, unknown]> = [];
 const didRevealStep = revealWizardStep('slug', () => ({

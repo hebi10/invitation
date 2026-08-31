@@ -4,9 +4,9 @@
 
 현재 프로젝트의 핵심 방향은 아래와 같습니다.
 
-- 공개 청첩장 테마는 `emotional`, `romantic`, `simple` 3가지를 사용합니다.
+- 공개 테마는 중앙 메타데이터 레지스트리와 이벤트 유형별 renderer registry에서 파생합니다. 현재 유형별 지원 테마는 아래 [이벤트 유형별 테마 레지스트리](#이벤트-유형별-테마-레지스트리)를 기준으로 확인합니다.
 - 활성 이벤트 타입은 `wedding`, `first-birthday`, `birthday`, `general-event`, `opening`이며 `seventieth`, `etc`는 비활성 준비 항목입니다.
-- 공개 URL은 `/{slug}`에서 기본 테마를 직접 렌더링하고, `/{slug}/emotional`, `/{slug}/romantic`, `/{slug}/simple`를 테마별 실제 경로로 사용합니다.
+- 공개 URL은 `/{slug}`에서 이벤트 유형별 기본 테마를 렌더링하고, `/{slug}/{theme}`에서 해당 유형이 지원하는 테마 경로를 사용합니다.
 - 공개 청첩장은 `Firestore 우선 + 로컬 sample fallback` 구조로 렌더링합니다.
 - 관리자는 이벤트별 위저드에서 새 페이지를 만들고, 고객은 Firebase 계정의 `ownerUid`와 연결된 `/page-wizard/{slug}`에서 본인 이벤트를 편집합니다.
 - 관리자가 만든 신규 페이지는 미연결 상태로 유지되며, 관리자가 발급한 7일·1회용 고객 연결 링크를 통해서만 인증된 고객 계정에 자동 연결됩니다.
@@ -20,7 +20,7 @@
 ## 추가 문서
 
 - 문서 허브: `docs/README.md`
-- 새 테마 추가 체크리스트: `docs/new-theme-checklist.md`
+- 테마 확장 체크리스트: `docs/new-theme-checklist.md`
 - 모바일 청첩장 연동 기준: `docs/mobile-client-editor-policy.md`
 - 이벤트 도메인 현재 기준: `docs/event-domain-current-state.md`
 - 서비스 개요 문서: `docs/portfolio-service-overview.md`
@@ -46,11 +46,15 @@
 - `/{slug}/{theme}`
   이벤트 타입에서 지원하는 테마의 공개 경로
 - `/{slug}/emotional`
-  감성형 청첩장
+  웨딩 `emotional` 테마(포트레이트 레터)
 - `/{slug}/romantic`
-  로맨틱형 청첩장
+  웨딩 `romantic` 테마(가든 노트)
+- `/{slug}/gyeol`
+  웨딩 `gyeol` 테마(GYEOL, 결)
 - `/{slug}/simple`
-  심플형 청첩장
+  웨딩 `simple` 테마(고요한 예식)
+- `/{slug}/classic-r`
+  웨딩 `classic-r` 테마(레터프레스)
 - `/memory/{slug}`
   추억 페이지
 
@@ -113,7 +117,7 @@
 
 - 섹션별 입력
 - 실시간 섹션 미리보기
-- 감성형 / 로맨틱형 / 심플형 미리보기 전환
+- 이벤트 유형별 지원 테마 미리보기 전환
 - 자동 저장
 - 관리자 또는 소유자 계정 기반 진입
 
@@ -137,20 +141,25 @@
 - `src/app/admin/_components/*`
 - `src/components/admin/*`
 
-## 테마 시스템
+## 이벤트 유형별 테마 레지스트리
 
-현재 실제 운영 테마는 아래 3개입니다.
+테마 수를 문서에 고정하지 않고 실제 코드 레지스트리에서 지원 목록을 관리합니다. 공통 메타데이터와 판매 정책은 `src/lib/invitationThemes.ts`가 source of truth이며, 공개 렌더러 연결은 `src/app/_components/eventPageRendererRegistry.tsx`와 이벤트 유형별 theme renderer registry가 담당합니다.
 
-- `emotional`
-- `romantic`
-- `simple`
+| 이벤트 유형 | 지원 테마 키 | 공개 렌더 연결·테마 정의 기준 |
+| --- | --- | --- |
+| `wedding` | `emotional` (포트레이트 레터), `romantic` (가든 노트), `gyeol` (GYEOL/결), `simple` (고요한 예식), `classic-r` (레터프레스) | `src/app/_components/themeRenderers/registry.ts` |
+| `first-birthday` | `first-birthday-pink` (퍼스트 챕터), `first-birthday-mint` (새벽 챕터) | `src/app/_components/firstBirthday/themeRenderers/registry.ts` |
+| `birthday` | `birthday-minimal` (파티 노트), `birthday-floral` (생일 이야기) | `src/app/_components/birthday/themeRenderers/registry.ts` |
+| `general-event` | `general-event-elegant` (프로그램 에디션), `general-event-vivid` (나이트 스케줄) | render adapter: `src/app/_components/eventPageRendererRegistry.tsx` · theme metadata: `src/lib/generalEventThemes.ts` |
+| `opening` | `opening-natural` (스튜디오 오프닝), `opening-modern` (오프닝 포스터) | render adapter: `src/app/_components/eventPageRendererRegistry.tsx` · theme metadata: `src/lib/openingThemes.ts` |
+| `seventieth`, `etc` | 비활성 준비 항목으로 공개 테마 없음 | `src/lib/eventTypes.ts` |
 
 URL 규칙:
 
 - `/{slug}`는 기본 테마를 직접 렌더링합니다.
-- `/{slug}/emotional`은 `emotional` 실제 페이지입니다.
-- `/{slug}/romantic`은 `romantic` 실제 페이지입니다.
-- `/{slug}/simple`은 `simple` 실제 페이지입니다.
+- `/{slug}/{theme}`는 해당 이벤트 유형의 registry에 등록된 테마만 렌더링하며, 미지원 테마는 404 정책을 따릅니다.
+- 웨딩의 `gyeol`은 문서·URL 키가 `gyeol`, 메타데이터 표기는 `GYEOL`/`결`을 사용합니다.
+- 웨딩의 `classic-r`는 레터프레스 renderer와 `/classic-r` 경로를 사용합니다.
 
 공유 URL, 카카오 공유, SEO canonical은 현재 렌더링 중인 공개 경로 기준으로 맞춰집니다.
 
@@ -158,7 +167,12 @@ URL 규칙:
 
 - `src/app/_components/themeRenderers/emotional.tsx`
 - `src/app/_components/themeRenderers/romantic.tsx`
+- `src/app/_components/themeRenderers/classic-r.tsx`
 - `src/app/_components/themeRenderers/simple.tsx`
+- `src/app/_components/public-invitations/wedding/gyeol/`
+- `src/app/_components/themeRenderers/registry.ts`
+- `src/app/_components/eventPageRendererRegistry.tsx`
+- `src/lib/invitationThemes.ts`
 - `src/lib/invitationVariants.ts`
 - `src/app/_components/weddingThemes.ts`
 
@@ -510,10 +524,12 @@ npm run mb:web
   루트 lint + 웹/모바일 typecheck를 한 번에 실행
 - `test`
   에뮬레이터가 필요 없는 핵심·보안·아키텍처 테스트를 실행
-- `test:security`, `test:architecture`
-  목적별 테스트 묶음을 선택해서 실행
+- `test:architecture`
+  API·service·repository·route 문서 경계를 검사
+- `test:security`
+  Firebase 에뮬레이터 없이 보안 헤더, 인증·인가 경계와 정적 보안 정책을 검사
 - `test:emulator`
-  Firestore / Storage 에뮬레이터가 필요한 테스트를 실행
+  Firebase CLI와 Java를 사용해 `demo-invitation-rules` 프로젝트의 Firestore / Storage 에뮬레이터 테스트를 실행
 - `test:all`
   기본 테스트와 에뮬레이터 테스트를 모두 실행
 - `deploy:firebase`
@@ -532,7 +548,7 @@ npm run mb:web
 - 비로그인 사용자와 비소유자는 로그인 또는 권한 안내만 확인 가능
 - 섹션별 입력
 - 자동 저장
-- 감성형 / 로맨틱형 / 심플형 미리보기 전환
+- 이벤트 유형별 지원 테마 미리보기 전환
 - 공개 상태 전환
 - 기본값 복원
 - 변경 취소
@@ -608,7 +624,9 @@ npm run mb:web
 - `/{slug}`
 - `/{slug}/emotional`
 - `/{slug}/romantic`
+- `/{slug}/gyeol`
 - `/{slug}/simple`
+- `/{slug}/classic-r`
 - `/admin`
 - `/page-wizard/{slug}`
 - `/my-invitations`

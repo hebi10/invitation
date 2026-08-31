@@ -46,6 +46,10 @@ export default function EventTypeStep({
                   }
 
                   setEventType(eventTypeKey);
+                  if (eventTypeKey === eventType) {
+                    return;
+                  }
+
                   updateForm((draft) => {
                     draft.eventType = eventTypeKey as EventTypeKey;
                   });

@@ -8,7 +8,7 @@ export default function ExperienceAdminLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div data-admin-ui>
+    <div data-admin-ui data-operation-ui>
       <AdminOverlayProvider>{children}</AdminOverlayProvider>
     </div>
   );
