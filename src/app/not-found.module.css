@@ -1,0 +1,77 @@
+.page {
+  min-height: 100svh;
+  display: grid;
+  align-items: center;
+  padding: 64px 24px;
+  background: var(--operation-color-canvas);
+}
+
+.content {
+  width: min(100%, 480px);
+  margin: 0 auto;
+}
+
+.title {
+  margin: 0;
+  font-size: clamp(24px, 4vw, 32px);
+  font-weight: 500;
+  line-height: 1.5;
+  letter-spacing: -0.03em;
+  word-break: keep-all;
+  text-wrap: balance;
+}
+
+.description {
+  margin: 24px 0 0;
+  color: var(--operation-color-text-secondary);
+  font-size: 15px;
+  line-height: 1.9;
+  word-break: keep-all;
+  overflow-wrap: anywhere;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 36px;
+}
+
+.primary,
+.secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 46px;
+  padding: 10px 20px;
+  font-size: 14px;
+  font-weight: 500;
+  text-decoration: none;
+}
+
+.primary {
+  background: var(--operation-color-action);
+  color: var(--operation-color-surface);
+}
+
+.secondary {
+  border: 1px solid var(--operation-color-border-strong);
+  color: var(--operation-color-text);
+}
+
+.actions a:focus-visible {
+  outline: 2px solid var(--operation-color-focus);
+  outline-offset: 4px;
+}
+
+.code {
+  margin: 40px 0 0;
+  color: var(--operation-color-text-muted);
+  font-size: 12px;
+}
+
+@media (max-width: 380px) {
+  .page { padding: 48px 24px; }
+  .actions { gap: 10px; }
+  .primary, .secondary { padding-inline: 16px; }
+}
