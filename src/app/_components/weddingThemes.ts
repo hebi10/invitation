@@ -62,6 +62,24 @@ const resolveShareDescription = (pageConfig: InvitationPage) =>
   pageConfig.description.trim() ||
   buildDefaultInvitationDescription(pageConfig);
 
+export const WEDDING_SHARE_PALETTES: Record<string, { paper: string; ink: string; line: string }> = {
+  emotional: { paper: '#ffffff', ink: '#3e3730', line: '#e6ded3' },
+  romantic: { paper: '#ffffff', ink: '#344037', line: '#dce4d7' },
+  simple: { paper: '#ffffff', ink: '#292c2a', line: '#dce0db' },
+  'classic-r': { paper: '#fcfaf5', ink: '#362f27', line: '#ded5c7' },
+  gyeol: { paper: '#ffffff', ink: '#38363e', line: '#e4dfe9' },
+};
+
+export function getWeddingShareContainer(theme: string) {
+  const palette = WEDDING_SHARE_PALETTES[theme];
+  if (!palette) return undefined;
+  return { style: {
+    backgroundColor: palette.paper, width: 'min(100%, 480px)', margin: '0 auto',
+    padding: '0 30px 32px', boxSizing: 'border-box',
+    '--share-paper': palette.paper, '--share-ink': palette.ink, '--share-line': palette.line,
+  } as CSSProperties };
+}
+
 const themeDefinitions = INVITATION_THEME_KEYS.reduce<
   Record<WeddingThemeKey, WeddingThemeDefinition>
 >((accumulator, theme) => {
@@ -70,10 +88,8 @@ const themeDefinitions = INVITATION_THEME_KEYS.reduce<
   accumulator[theme] = {
     documentTitleSuffix: definition.documentTitleSuffix,
     ariaLabelSuffix: definition.ariaLabelSuffix,
-    shareButtonVariant: theme === 'gyeol' ? 'minimal' : 'default',
-    shareContainer: theme === 'gyeol'
-      ? { style: { backgroundColor: '#fff', width: 'min(100%, 480px)', margin: '0 auto', padding: '0 30px 32px', boxSizing: 'border-box' } }
-      : defaultShareContainer,
+    shareButtonVariant: WEDDING_SHARE_PALETTES[theme] ? 'minimal' : 'default',
+    shareContainer: getWeddingShareContainer(theme) ?? defaultShareContainer,
     getShareTitle: resolveShareTitle,
     getShareDescription: resolveShareDescription,
   };

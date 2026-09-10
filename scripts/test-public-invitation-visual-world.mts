@@ -4,6 +4,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import { register } from 'node:module';
 import path from 'node:path';
 import process from 'node:process';
+import { readWeddingStyles } from './wedding-style-test-helpers.mts';
 
 register(new URL('./test-css-module-loader.mjs', import.meta.url), import.meta.url);
 
@@ -127,19 +128,19 @@ const weddingNarrativeThemes = [
     key: 'emotional',
     exportName: 'PortraitLetterPage',
     folder: 'portrait-letter',
-    markers: ['portrait', 'letter', 'schedule', 'location', 'contact', 'gift', 'gallery', 'guestbook'],
+    markers: ['portrait', 'letter', 'contact', 'gallery', 'schedule', 'gift', 'guestbook'],
   },
   {
     key: 'romantic',
     exportName: 'GardenNotePage',
     folder: 'garden-note',
-    markers: ['letter', 'ceremony', 'family', 'gift', 'gallery', 'guestbook'],
+    markers: ['portrait', 'letter', 'family', 'gallery', 'ceremony', 'gift', 'guestbook'],
   },
   {
     key: 'simple',
     exportName: 'QuietCeremonyPage',
     folder: 'quiet-ceremony',
-    markers: ['opening', 'schedule', 'location', 'gift', 'gallery', 'guestbook'],
+    markers: ['hero', 'invitation', 'contact', 'gallery', 'schedule', 'gift', 'guestbook'],
   },
 ] as const;
 
@@ -197,19 +198,16 @@ const quietCeremonyPage = read(
 );
 
 assert.match(portraitLetterPage, /className=\{styles\.portraitHero\}/);
-assert.match(gardenNotePage, /data-garden-note-decoration="botanical-line"/);
-assert.equal(
-  gardenNotePage.match(/data-garden-note-decoration=/g)?.length,
-  1,
-  'Garden Note should use one botanical decoration only'
-);
+assert.match(gardenNotePage, /className=\{styles\.noteHero\}/);
+assert.doesNotMatch(gardenNotePage, /data-garden-note-decoration=/);
 assert.match(
   gardenNotePage,
   /\[page\.couple\.groom\.father,\s*page\.couple\.groom\.mother,\s*page\.couple\.bride\.father,\s*page\.couple\.bride\.mother\]/s,
   'Garden Note should prioritize family contacts'
 );
 assert.match(quietCeremonyPage, /heroImageUrl\s*\?/);
-assert.match(quietCeremonyPage, /className=\{styles\.informationHero\}/);
+assert.match(quietCeremonyPage, /<InvitationPoster[\s\S]*?tone="minimal"/);
+assert.match(quietCeremonyPage, /className=\{styles\.posterScene\}/);
 
 const birthdayRegistry = read(
   'src/app/_components/birthday/themeRenderers/registry.ts'
@@ -251,7 +249,8 @@ const publicInvitationGuestbookStylePaths = [
 ] as const;
 
 for (const cssPath of publicInvitationGuestbookStylePaths) {
-  const css = read(cssPath);
+  const isWedding = cssPath.includes('/wedding/');
+  const css = isWedding ? readWeddingStyles(cssPath) : read(cssPath);
   const guestbookControlRule = css.match(
     /\.input,\s*\.textarea\s*\{([\s\S]*?)\}/
   )?.[1];
@@ -261,7 +260,7 @@ for (const cssPath of publicInvitationGuestbookStylePaths) {
     `${cssPath} should define shared guestbook input and textarea styles`
   );
   assert.match(
-    guestbookControlRule,
+    isWedding ? css.match(/\.page \*,[^}]*\}/s)?.[0] ?? guestbookControlRule : guestbookControlRule,
     /box-sizing:\s*border-box/,
     `${cssPath} should keep padded guestbook controls inside their 100% container width`
   );

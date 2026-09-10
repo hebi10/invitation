@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
+import { lastHexToken, readWeddingStyles } from './wedding-style-test-helpers.mts';
 
 const read = (relativePath: string) =>
   readFileSync(path.resolve(process.cwd(), relativePath), 'utf8');
@@ -49,14 +50,12 @@ for (const themePath of activeThemePaths) {
 }
 
 const activeThemeCss = activeThemePaths.map((themePath) =>
-  read(`${themePath}/styles.module.css`)
+  readWeddingStyles(`${themePath}/styles.module.css`)
 );
 const activeThemePages = activeThemePaths.map((themePath) =>
   read(`${themePath}/Page.tsx`)
 );
-const letterpressCss = activeThemeCss[0];
 const narrativeThemeCss = activeThemeCss.slice(1);
-const narrativeThemePages = activeThemePages.slice(1);
 const dateFeatureCss = read(
   'src/app/_components/public-invitations/shared/PublicInvitationDateFeature.module.css'
 );
@@ -99,15 +98,15 @@ assert.match(weddingClosingSource, /data-wedding-closing/);
 assert.match(weddingClosingSource, /귀한 걸음과 따뜻한 마음에 감사드립니다/);
 assert.match(
   weddingClosingCss,
-  /\.canvas\s*\{[^}]*width:\s*min\(100%,\s*640px\);[^}]*margin:\s*0 auto;/s,
-  'The shared closing canvas should match the centered 640px invitation width'
+  /\.canvas\s*\{[^}]*width:\s*min\(100%,\s*480px\);[^}]*margin:\s*0 auto;/s,
+  'The shared closing canvas should match the centered 480px invitation width'
 );
 
 const closingThemeTokens = {
-  emotional: ['#f6f1e8', '#29251f', '#b8aa99', '#655c51'],
-  romantic: ['#f3f1e6', '#263129', '#aab5a7', '#5a675d'],
-  simple: ['#f7f7f4', '#1f211f', '#b7bab4', '#5d615c'],
-  'classic-r': ['#f3efe6', '#2c2822', '#b9ae9d', '#686056'],
+  emotional: ['#ffffff', '#3e3730', '#e6ded3', '#74695d'],
+  romantic: ['#ffffff', '#344037', '#dce4d7', '#657064'],
+  simple: ['#ffffff', '#292c2a', '#dce0db', '#676d68'],
+  'classic-r': ['#fcfaf5', '#362f27', '#ded5c7', '#71665b'],
   gyeol: ['#ffffff', '#38363e', '#e4dfe9', '#706b78'],
 } as const;
 
@@ -138,8 +137,8 @@ assert.equal(
 
 const revealHook = read(revealHookPath);
 
-for (const [index, css] of activeThemeCss.entries()) {
-  const canvasWidth = activeThemePaths[index].endsWith('/gyeol') ? 480 : 640;
+for (const css of activeThemeCss) {
+  const canvasWidth = 480;
   assert.match(
     css,
     new RegExp(`\\.page\\s*\\{[^}]*width:\\s*min\\(100%,\\s*${canvasWidth}px\\);[^}]*margin:\\s*0 auto;`, 's'),
@@ -147,36 +146,29 @@ for (const [index, css] of activeThemeCss.entries()) {
   );
 }
 
-assert.doesNotMatch(
-  letterpressCss,
-  /border-radius:\s*(?:[1-9]|\d{2,})px|border-radius:\s*999px/
-);
-assert.doesNotMatch(letterpressCss, /box-shadow/);
-assert.doesNotMatch(letterpressCss, /gradient\(/);
-assert.match(letterpressCss, /min-height:\s*44px/);
-assert.match(letterpressCss, /:focus-visible/);
-assert.match(letterpressCss, /prefers-reduced-motion:\s*reduce/);
-assert.match(
-  letterpressCss,
-  /\.popupLoadingText\s*\{[^}]*color:\s*var\(--paper\);[^}]*\}/s,
-  'Letterpress gallery popup loading copy must use a light foreground on the dark modal.'
-);
-assert.match(
-  letterpressCss,
-  /\.popup\s+:is\(\.closeButton,\s*\.navArrow\):focus-visible\s*\{[^}]*outline:\s*2px\s+solid\s+var\(--paper\);[^}]*\}/s,
-  'Letterpress gallery modal controls must use a high-contrast light focus ring.'
-);
+for (const css of activeThemeCss) {
+  assert.match(css, /\.popupLoadingText,\s*\.popup \.imageCounter\s*\{[^}]*color:\s*var\(--popup-text\);/s);
+  assert.match(css, /\.popup button:focus-visible\s*\{[^}]*outline-color:\s*#fff;/s);
+}
 
-for (const css of narrativeThemeCss) {
+for (const css of activeThemeCss) {
   assert.doesNotMatch(css.replace(/\.heroCopy\s*\{[^}]*\}/s, ''), /(?:linear|radial|conic)-gradient/);
   assert.doesNotMatch(css, /box-shadow/);
   assert.doesNotMatch(css, /border-radius:\s*999px/);
+  assert.doesNotMatch(css, /border-radius:\s*[1-9]\d*px/);
+  assert.doesNotMatch(css, /width:\s*min\(100%,\s*640px\)/);
+  assert.match(css, /font-size:\s*14px/);
+  assert.match(css, /padding:\s*86px 30px 0/);
   assert.match(css, /min-height:\s*44px/);
   assert.match(css, /:focus-visible/);
   assert.match(css, /prefers-reduced-motion:\s*reduce/);
 
-  const controlLine = css.match(/--control-line:\s*(#[0-9a-f]{6})/i)?.[1];
-  const inputSurface = css.match(/--input-surface:\s*(#[0-9a-f]{6})/i)?.[1];
+  const controlLine = lastHexToken(css, 'control-line');
+  const inputSurface = lastHexToken(css, 'input-surface');
+  const paper = lastHexToken(css, 'paper');
+  const muted = lastHexToken(css, 'muted');
+  assert.ok(paper && muted, 'Each theme must retain readable secondary text on its own palette');
+  assert.ok(contrastRatio(paper, muted) >= 4.5, 'Secondary text should meet AA contrast');
 
   assert.ok(controlLine, 'Narrative wedding themes should define a dedicated control boundary');
   assert.ok(inputSurface, 'Narrative wedding themes should define an input surface');
@@ -200,7 +192,7 @@ assert.match(storedContentCss, /min-height:\s*44px/);
 assert.match(storedContentCss, /:focus-visible/);
 assert.match(dateFeatureCss, /\.eventDay\s*\{[^}]*font-weight:\s*700;/s);
 
-for (const page of narrativeThemePages) {
+for (const page of activeThemePages) {
   assert.match(page, /useImmediateWeddingPageReveal/);
   assert.match(page, /useImmediateWeddingPageReveal\(state\);/);
   assert.doesNotMatch(page, /useEffect|removeProperty\(['"]overflow['"]\)/);
@@ -209,6 +201,12 @@ for (const page of narrativeThemePages) {
 for (const page of activeThemePages) {
   assert.match(page, /<PublicInvitationDateFeature/);
   assert.match(page, /<WeddingStoredContent/);
+  assert.match(page, /<LocationMap/);
+  assert.match(page, /layout="carousel"/);
+  assert.match(page, /collapsibleAccounts/);
+  assert.match(page, /collapsibleForm/);
+  assert.match(page, /<details/);
+  assert.doesNotMatch(page, /from ['"]\.\.\/letterpress\/styles\.module\.css/);
 }
 
 assert.match(revealHook, /setIsLoading\(false\);/);
@@ -226,13 +224,14 @@ assert.doesNotMatch(
 
 assert.match(
   narrativeThemeCss[0],
-  /\.portraitHero\s*\{[^}]*min-height:\s*100svh/s,
-  'Portrait Letter should open with a full-height portrait scene'
+  /\.portraitHero\s*\{/,
+  'Portrait Letter should retain its photographic portrait cover without a forced full-height panel'
 );
+assert.doesNotMatch(narrativeThemeCss[0], /min-height:\s*100svh/);
 assert.match(
   narrativeThemeCss[1],
-  /\.botanicalLine\s*\{/,
-  'Garden Note should own one restrained botanical line ornament'
+  /\.noteHero\s*\{/,
+  'Garden Note should retain its garden-note cover composition'
 );
 assert.doesNotMatch(
   narrativeThemeCss[1],
@@ -241,8 +240,8 @@ assert.doesNotMatch(
 );
 assert.match(
   narrativeThemeCss[2],
-  /\.informationHero\s*\{/,
-  'Quiet Ceremony should own an information-first no-image hero'
+  /\.hero\s*\{/,
+  'Quiet Ceremony should retain its dedicated cover styling'
 );
 
 console.log('웨딩 테마 스타일 계약 검증 통과');

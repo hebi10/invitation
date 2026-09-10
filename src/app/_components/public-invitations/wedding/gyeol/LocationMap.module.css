@@ -1,6 +1,6 @@
 .locationMap {
   width: 100%;
-  background: #fff;
+  background: var(--paper, #fff);
 }
 
 .viewport {
@@ -28,7 +28,7 @@
   align-items: center;
   gap: 12px;
   padding: 24px;
-  color: #68636c;
+  color: var(--muted, #68636c);
   font-size: 13px;
   line-height: 1.7;
   text-align: center;
@@ -43,7 +43,7 @@
   display: inline-flex;
   min-height: 44px;
   align-items: center;
-  color: #756383;
+  color: var(--accent, #756383);
   text-underline-offset: 4px;
 }
 
@@ -60,10 +60,10 @@
 .actions button {
   min-height: 44px;
   padding: 10px 14px;
-  border: 1px solid #ded8e2;
+  border: 1px solid var(--line, #ded8e2);
   border-radius: 0;
-  background: #fff;
-  color: #65596e;
+  background: var(--paper, #fff);
+  color: var(--ink, #65596e);
   font: inherit;
   font-weight: 500;
   cursor: pointer;
@@ -72,6 +72,6 @@
 .actions button:focus-visible,
 .actions a:focus-visible,
 .message a:focus-visible {
-  outline: 2px solid #756383;
+  outline: 2px solid var(--focus, #756383);
   outline-offset: 4px;
 }

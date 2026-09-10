@@ -29,17 +29,12 @@ assert.match(registry, /component:\s*GardenNotePage/);
 assert.match(registry, /component:\s*QuietCeremonyPage/);
 assert.match(registry, /component:\s*LetterpressPage/);
 
-for (const [index, page] of activePages.entries()) {
+for (const page of activePages) {
   assert.match(page, /loading="eager"/);
   assert.doesNotMatch(page, /minLoadTime|setTimeout|<WeddingLoader|<IntroScreen/);
   assert.match(page, /<GalleryGridShared/);
 
-  if (activePagePaths[index].includes('letterpress')) {
-    assert.match(page, /setIsLoading\(false\);/);
-    assert.match(page, /window\.requestAnimationFrame\(releasePageOverflow\)/);
-  } else {
-    assert.match(page, /useImmediateWeddingPageReveal\(state\);/);
-  }
+  assert.match(page, /useImmediateWeddingPageReveal\(state\);/);
 }
 
 assert.match(revealHook, /setIsLoading\(false\);/);

@@ -89,9 +89,9 @@ const buttonBaseStyle = {
 
 const buttonVariantStyles = {
   minimal: {
-    background: '#fff',
-    color: '#38363e',
-    borderColor: '#e4dfe9',
+    background: 'var(--share-paper, #fff)',
+    color: 'var(--share-ink, #38363e)',
+    borderColor: 'var(--share-line, #e4dfe9)',
     boxShadow: 'none',
     borderRadius: '0',
     fontSize: '13px',

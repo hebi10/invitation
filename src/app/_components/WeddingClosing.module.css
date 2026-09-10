@@ -1,39 +1,39 @@
 .canvas {
-  width: min(100%, 640px);
+  width: min(100%, 480px);
   min-width: 0;
   margin: 0 auto;
 }
 
 .canvas[data-theme='emotional'] {
-  --closing-background: #f6f1e8;
-  --closing-foreground: #29251f;
-  --closing-line: #b8aa99;
-  --closing-muted: #655c51;
+  --closing-background: #ffffff;
+  --closing-foreground: #3e3730;
+  --closing-line: #e6ded3;
+  --closing-muted: #74695d;
   --closing-font: var(--font-gowun-dodum), serif;
 }
 
 .canvas[data-theme='romantic'] {
-  --closing-background: #f3f1e6;
-  --closing-foreground: #263129;
-  --closing-line: #aab5a7;
-  --closing-muted: #5a675d;
+  --closing-background: #ffffff;
+  --closing-foreground: #344037;
+  --closing-line: #dce4d7;
+  --closing-muted: #657064;
   --closing-font: var(--font-gowun-dodum), serif;
 }
 
 .canvas[data-theme='simple'] {
-  --closing-background: #f7f7f4;
-  --closing-foreground: #1f211f;
-  --closing-line: #b7bab4;
-  --closing-muted: #5d615c;
+  --closing-background: #ffffff;
+  --closing-foreground: #292c2a;
+  --closing-line: #dce0db;
+  --closing-muted: #676d68;
   --closing-font: var(--font-gowun-dodum), sans-serif;
 }
 
 .canvas[data-theme='classic-r'] {
-  --closing-background: #f3efe6;
-  --closing-foreground: #2c2822;
-  --closing-line: #b9ae9d;
-  --closing-muted: #686056;
-  --closing-font: var(--font-gowun-dodum), serif;
+  --closing-background: #fcfaf5;
+  --closing-foreground: #362f27;
+  --closing-line: #ded5c7;
+  --closing-muted: #71665b;
+  --closing-font: 'Wedding Myeongjo', serif;
 }
 
 .canvas[data-theme='gyeol'] {
@@ -45,23 +45,13 @@
   --closing-font: var(--font-gowun-dodum), "Noto Sans KR", sans-serif;
 }
 
-.closing[data-theme='gyeol'] {
-  border: 0;
-  padding: 72px 24px 48px;
-  gap: 16px;
-}
-
-.closing[data-theme='gyeol'] p:first-child { font-size: 16px; }
-.closing[data-theme='gyeol'] p:last-child { font-size: 12px; }
-.closing[data-theme='gyeol'] span { display: none; }
-
 .closing {
   box-sizing: border-box;
   display: grid;
   justify-items: center;
   gap: 1rem;
-  padding: clamp(3.5rem, 12vw, 5.5rem) 1.5rem;
-  border-top: 1px solid var(--closing-line, #b7b0a7);
+  padding: 72px 24px 48px;
+  border: 0;
   background: var(--closing-background, #f7f5ef);
   color: var(--closing-foreground, #2f2a25);
   font-family: var(--closing-font, var(--font-serif, Georgia, serif));
@@ -74,21 +64,17 @@
 }
 
 .closing p:first-child {
-  font-size: clamp(1.25rem, 5vw, 1.75rem);
+  font-size: 16px;
   font-weight: 500;
   letter-spacing: 0.04em;
 }
 
-.closing span {
-  width: 2.5rem;
-  height: 1px;
-  background: var(--closing-line, #b7b0a7);
-}
+.closing span { display: none; }
 
 .closing p:last-child {
   color: var(--closing-muted, #625b53);
   font-family: var(--font-gowun-dodum, "Noto Sans KR", sans-serif);
-  font-size: 0.9rem;
+  font-size: 12px;
   font-weight: 500;
   line-height: 1.8;
 }

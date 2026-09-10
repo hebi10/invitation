@@ -1,5 +1,7 @@
 import type { CSSProperties } from 'react';
 
+import { getWeddingShareContainer, WEDDING_SHARE_PALETTES } from './weddingThemes';
+
 import {
   getInvitationThemeDefinition,
   INVITATION_THEME_KEYS,
@@ -81,10 +83,8 @@ const themeDefinitions = INVITATION_THEME_KEYS.reduce<Record<EventThemeKey, Even
     accumulator[theme] = {
       documentTitleSuffix: definition.documentTitleSuffix,
       ariaLabelSuffix: definition.ariaLabelSuffix,
-      shareButtonVariant: theme === 'gyeol' ? 'minimal' : theme === 'classic-r' ? 'classic' : 'default',
-      shareContainer: theme === 'gyeol'
-        ? { style: { backgroundColor: '#fff', width: 'min(100%, 480px)', margin: '0 auto', padding: '0 30px 32px', boxSizing: 'border-box' } }
-        : theme === 'classic-r' ? classicShareContainer : defaultShareContainer,
+      shareButtonVariant: WEDDING_SHARE_PALETTES[theme] ? 'minimal' : theme === 'classic-r' ? 'classic' : 'default',
+      shareContainer: getWeddingShareContainer(theme) ?? (theme === 'classic-r' ? classicShareContainer : defaultShareContainer),
       getShareTitle: resolveShareTitle,
       getShareDescription: resolveShareDescription,
     };

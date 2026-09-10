@@ -52,9 +52,9 @@ export const INVITATION_THEME_METADATA_REGISTRY = [
     adminLabel: '가든 노트',
     variantLabel: '가든 노트',
     pathSuffix: '/romantic',
-    wizardDescription: '한 줄 식물 장식과 편지형 인사말, 가족 연락 흐름을 담은 웨딩입니다.',
+    wizardDescription: '세이지 빛 글과 사진, 여백 속 편지와 가족의 마음을 담은 웨딩입니다.',
     preview: {
-      description: '한 줄 식물 장식과 편지형 인사말, 가족 연락 흐름을 담은 웨딩입니다.',
+      description: '세이지 빛 글과 사진, 여백 속 편지와 가족의 마음을 담은 웨딩입니다.',
       sampleUrls: {
         standard: buildThemePreviewUrl('/kim-taehyun-choi-yuna/romantic/'),
         deluxe: buildThemePreviewUrl('/lee-junho-park-somin/romantic/'),
@@ -92,9 +92,9 @@ export const INVITATION_THEME_METADATA_REGISTRY = [
     adminLabel: '고요한 예식',
     variantLabel: '고요한 예식',
     pathSuffix: '/simple',
-    wizardDescription: '일정·장소를 우선하는 절제된 정보 인쇄물입니다.',
+    wizardDescription: '작은 이름과 일정, 사진이 흰 여백 속에 이어지는 담백한 웨딩입니다.',
     preview: {
-      description: '일정·장소를 우선하는 절제된 정보 인쇄물입니다.',
+      description: '작은 이름과 일정, 사진이 흰 여백 속에 이어지는 담백한 웨딩입니다.',
       sampleUrls: {
         standard: buildThemePreviewUrl('/kim-taehyun-choi-yuna/simple/'),
         deluxe: buildThemePreviewUrl('/lee-junho-park-somin/simple/'),
@@ -112,9 +112,9 @@ export const INVITATION_THEME_METADATA_REGISTRY = [
     adminLabel: '레터프레스',
     variantLabel: '레터프레스',
     pathSuffix: '/classic-r',
-    wizardDescription: '고전 활자와 얇은 선, 종이 인쇄물 같은 웨딩입니다.',
+    wizardDescription: '고전 명조와 옅은 종이색, 사진의 여백을 살린 웨딩입니다.',
     preview: {
-      description: '고전 활자와 얇은 선, 종이 인쇄물 같은 웨딩입니다.',
+      description: '고전 명조와 옅은 종이색, 사진의 여백을 살린 웨딩입니다.',
       sampleUrls: {
         standard: buildThemePreviewUrl('/kim-taehyun-choi-yuna/classic-r/'),
         deluxe: buildThemePreviewUrl('/lee-junho-park-somin/classic-r/'),

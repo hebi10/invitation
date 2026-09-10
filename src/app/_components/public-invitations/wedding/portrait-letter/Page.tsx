@@ -17,10 +17,11 @@ import { PublicInvitationDateFeature } from '../../shared/PublicInvitationDateFe
 import { WeddingStoredContent } from '../../shared/WeddingStoredContent';
 import { buildWeddingStoredContent } from '../../shared/weddingStoredContentModel';
 import { useImmediateWeddingPageReveal } from '../useImmediateWeddingPageReveal';
-import letterpressStyles from '../letterpress/styles.module.css';
-import styles from './styles.module.css';
+import baseStyles from '../gyeol/styles.module.css';
+import themeStyles from './styles.module.css';
+import LocationMap from '../gyeol/LocationMap';
 
-const componentStyles = { ...letterpressStyles, ...styles };
+const styles: Record<string, string> = { ...baseStyles, ...themeStyles, page: `${baseStyles.page} ${themeStyles.page}` };
 
 export default function PortraitLetterPage({ state }: WeddingThemeRendererProps) {
   useImmediateWeddingPageReveal(state);
@@ -34,6 +35,10 @@ export default function PortraitLetterPage({ state }: WeddingThemeRendererProps)
   const invitationMessage = storedContent.greetingMessage;
   const invitationAuthor = storedContent.greetingAuthor;
   const features = resolveInvitationFeatures(page.productTier, page.features);
+  const venuePhone = storedContent.ceremonyContact.replace(/[^\d+]/g, '');
+  const hasAdditionalGuide = Boolean(
+    storedContent.reception || storedContent.venueGuide.length || storedContent.wreathGuide.length
+  );
   const contacts = [
     { side: '신랑측', role: page.couple.groom.order || '신랑', ...page.couple.groom },
     { side: '신부측', role: page.couple.bride.order || '신부', ...page.couple.bride },
@@ -52,122 +57,53 @@ export default function PortraitLetterPage({ state }: WeddingThemeRendererProps)
     >
       <div data-portrait-letter-section="portrait">
         {heroImageUrl ? (
-          <section
-            className={styles.portraitHero}
-            aria-labelledby="portrait-letter-couple"
-          >
+          <section className={styles.portraitHero} aria-labelledby="portrait-letter-couple">
             <figure className={styles.portraitFrame}>
-              <img
-                src={heroImageUrl}
-                alt={`${page.displayName} 대표 사진`}
-                className={styles.portraitImage}
-                loading="eager"
-                decoding="async"
-              />
+              <img src={heroImageUrl} alt={`${page.displayName} 대표 사진`} className={styles.portraitImage} loading="eager" decoding="async" />
             </figure>
             <div className={styles.portraitCaption}>
               <h1 id="portrait-letter-couple" className={styles.coupleNames}>
-                {page.groomName}
-                <span aria-hidden="true"> 그리고 </span>
-                {page.brideName}
+                {page.groomName}<span aria-hidden="true"> 그리고 </span>{page.brideName}
               </h1>
-              <p>{page.date}</p>
+              <p>{page.date}{ceremony?.time ? ` · ${ceremony.time}` : ''}</p>
+              <p>{page.venue}</p>
             </div>
           </section>
         ) : (
           <div className={styles.posterScene}>
-            <InvitationPoster
-              title={page.displayName}
-              dateLabel={page.date}
-              locationLabel={page.venue}
-              tone="paper"
-            />
+            <InvitationPoster title={page.displayName} dateLabel={page.date} locationLabel={page.venue} tone="paper" />
           </div>
         )}
       </div>
 
       {invitationMessage ? (
         <section
-          className={styles.letterSection}
+          className={styles.invitationSection}
           data-portrait-letter-section="letter"
-          aria-labelledby="portrait-letter-title"
+          aria-labelledby="portrait-letter-invitation-title"
         >
-          <h2 id="portrait-letter-title" className={styles.sectionHeading}>
+          <h2 id="portrait-letter-invitation-title" className={styles.heading}>
             당신께 보내는 초대
           </h2>
-          <p className={styles.letterBody}>{invitationMessage}</p>
-          {invitationAuthor ? (
-            <p className={styles.letterAuthor}>{invitationAuthor}</p>
-          ) : null}
+          <div className={styles.invitationCopy}>
+            <p>{invitationMessage}</p>
+            {invitationAuthor ? <p className={styles.invitationAuthor}>{invitationAuthor}</p> : null}
+          </div>
         </section>
       ) : null}
 
-      <PublicInvitationDateFeature
-        className={styles.scheduleSection}
-        eventDate={state.weddingDate}
-        mode="calendar-countdown"
-        page={page}
-        title="결혼식까지"
-        titleClassName={styles.sectionHeading}
-      />
-
-      <section
-        id="wedding-info"
-        className={styles.scheduleSection}
-        data-portrait-letter-section="schedule"
-        aria-labelledby="portrait-letter-schedule"
-      >
-        <h2 id="portrait-letter-schedule" className={styles.sectionHeading}>
-          약속한 날
-        </h2>
-        <dl className={styles.scheduleList}>
-          <div>
-            <dt>날짜</dt>
-            <dd>{page.date}</dd>
-          </div>
-          {ceremony?.time ? (
-            <div>
-              <dt>시간</dt>
-              <dd>{ceremony.time}</dd>
-            </div>
-          ) : null}
-        </dl>
-      </section>
-
-      <section
-        className={styles.locationSection}
-        data-portrait-letter-section="location"
-        aria-labelledby="portrait-letter-location"
-      >
-        <div>
-          <h2 id="portrait-letter-location" className={styles.locationTitle}>
-            {page.venue}
-          </h2>
-          {ceremonyAddress ? <p>{ceremonyAddress}</p> : null}
-        </div>
-      </section>
-
-      <WeddingStoredContent
-        className={styles.scheduleSection}
-        model={storedContent}
-        titleClassName={styles.sectionHeading}
-      />
-
       {contacts.length > 0 ? (
-        <section
+        <details
           className={styles.contactSection}
           data-portrait-letter-section="contact"
-          aria-labelledby="portrait-letter-contact"
         >
-          <h2 id="portrait-letter-contact" className={styles.sectionHeading}>
-            두 사람에게 연락하기
-          </h2>
+          <summary className={styles.disclosureSummary}>두 사람에게 연락하기</summary>
           <ul className={styles.contactList}>
             {contacts.map((contact) => (
-              <li key={contact.side}>
-                <div>
-                  <span className={styles.contactSide}>{contact.side}</span>
-                  <strong>{contact.name}</strong>
+              <li key={`${contact.side}-${contact.role}-${contact.phone}`}>
+                <div className={styles.contactIdentity}>
+                  <span>{contact.side}</span>
+                  <strong>{contact.role} {contact.name}</strong>
                 </div>
                 <div className={styles.contactActions}>
                   <a href={`tel:${contact.phone}`} aria-label={`${contact.name}에게 전화하기`}>
@@ -180,22 +116,7 @@ export default function PortraitLetterPage({ state }: WeddingThemeRendererProps)
               </li>
             ))}
           </ul>
-        </section>
-      ) : null}
-
-      {shouldShowGiftInfo(state) ? (
-        <div data-portrait-letter-section="gift">
-          <GiftInfoThemed
-            groomAccounts={state.giftInfo?.groomAccounts ?? []}
-            brideAccounts={state.giftInfo?.brideAccounts ?? []}
-            message={state.giftInfo?.message}
-            styles={componentStyles}
-            title="마음 전하실 곳"
-            groomSectionTitle="신랑측 계좌"
-            brideSectionTitle="신부측 계좌"
-            copyLabel="복사"
-          />
-        </div>
+        </details>
       ) : null}
 
       {state.galleryImageUrls.length > 0 ? (
@@ -205,7 +126,67 @@ export default function PortraitLetterPage({ state }: WeddingThemeRendererProps)
             previewImages={state.galleryPreviewImageUrls}
             imageAltPrefix={`${page.groomName}과 ${page.brideName}의 웨딩 갤러리`}
             title="함께한 장면"
-            styles={componentStyles}
+            layout="carousel"
+            styles={styles}
+          />
+        </div>
+      ) : null}
+
+      <section
+        id="wedding-info"
+        className={styles.scheduleSection}
+        data-portrait-letter-section="schedule"
+        aria-labelledby="portrait-letter-schedule-title"
+      >
+        <h2 id="portrait-letter-schedule-title" className={styles.heading}>오시는 길</h2>
+        <div className={styles.scheduleContent}>
+          <p className={styles.venueName}>{page.venue}</p>
+          <p>{page.date}{ceremony?.time ? ` · ${ceremony.time}` : ''}</p>
+          {ceremonyAddress ? <address className={styles.address}>{ceremonyAddress}</address> : null}
+          {venuePhone ? <a className={styles.venuePhone} href={`tel:${venuePhone}`} aria-label="예식장에 전화하기">{storedContent.ceremonyContact}</a> : null}
+        </div>
+        {storedContent.mapHref ? (
+          <LocationMap
+            address={ceremonyAddress}
+            venueName={page.venue}
+            kakaoMapConfig={pageData?.kakaoMap}
+            mapHref={storedContent.mapHref}
+          />
+        ) : null}
+        {storedContent.mapDescription ? <p className={styles.travelNote}>{storedContent.mapDescription}</p> : null}
+        {hasAdditionalGuide ? (
+          <details className={styles.guideDisclosure}>
+            <summary className={styles.disclosureSummary}>식사 · 방문 안내 자세히 보기</summary>
+            <WeddingStoredContent
+              className={styles.storedSection}
+              model={{ ...storedContent, ceremonyContact: '', mapDescription: '', mapHref: '' }}
+              titleClassName={styles.guideTitle}
+            />
+          </details>
+        ) : null}
+      </section>
+
+      <PublicInvitationDateFeature
+        className={styles.dateSection}
+        eventDate={state.weddingDate}
+        mode="calendar-countdown"
+        page={page}
+        title="저희, 결혼합니다"
+        titleClassName={styles.heading}
+      />
+
+      {shouldShowGiftInfo(state) ? (
+        <div data-portrait-letter-section="gift">
+          <GiftInfoThemed
+            groomAccounts={state.giftInfo?.groomAccounts ?? []}
+            brideAccounts={state.giftInfo?.brideAccounts ?? []}
+            message={state.giftInfo?.message}
+            styles={styles}
+            title="마음 전하실 곳"
+            groomSectionTitle="신랑측 계좌"
+            brideSectionTitle="신부측 계좌"
+            copyLabel="복사"
+            collapsibleAccounts
           />
         </div>
       ) : null}
@@ -214,10 +195,11 @@ export default function PortraitLetterPage({ state }: WeddingThemeRendererProps)
         <div data-portrait-letter-section="guestbook">
           <GuestbookThemed
             pageSlug={page.slug}
-            styles={componentStyles}
+            styles={styles}
             title="답장을 남겨 주세요"
             subtitle="두 사람에게 전하고 싶은 마음을 적어 주세요."
-            statusColors={{ success: '#425b4b', error: '#963f38' }}
+            statusColors={{ success: '#355b45', error: '#9b3f36' }}
+            collapsibleForm
           />
         </div>
       ) : null}
