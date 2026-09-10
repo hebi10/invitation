@@ -86,3 +86,10 @@
     transition-duration: 0.01ms !important;
   }
 }
+
+/* Match the invitation paper and type, including the standalone homepage sample. */
+.closing { width: min(100%, 480px); margin: 0 auto; padding: 64px 30px 48px; background: #fff; font-family: var(--font-sans), sans-serif; }
+.closing[data-theme='emotional'] { background: #fcfaf6; font-family: 'Wedding Myeongjo', serif; }
+.closing[data-theme='gyeol'] { background: #faf8f3; font-family: 'Wedding Myeongjo', serif; }
+.closing p:last-child { font-family: inherit; font-weight: 400; word-break: keep-all; }
+.closing[data-theme='classic-r'] { justify-items: start; text-align: left; }

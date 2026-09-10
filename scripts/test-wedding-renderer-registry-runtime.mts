@@ -132,7 +132,7 @@ for (const { key: theme } of WEDDING_THEME_CLOSING_DEFINITIONS) {
     }
     assert.equal((html.match(/data-public-invitation-feature="calendar-countdown"/g) ?? []).length, 1);
     const galleryBeforeInvitation = html.indexOf('data-wedding-section="gallery"') < html.indexOf('data-wedding-section="invitation"');
-    assert.equal(galleryBeforeInvitation, theme === 'romantic' || theme === 'classic-r');
+    assert.equal(galleryBeforeInvitation, false, `${theme} should introduce the couple before the gallery`);
     const calendarBeforeSchedule = html.indexOf('data-public-invitation-feature=') < html.indexOf('data-wedding-section="schedule"');
     assert.equal(calendarBeforeSchedule, theme === 'gyeol' || theme === 'classic-r');
     const heading = html.match(/<h1[\s\S]*?<\/h1>/)?.[0];

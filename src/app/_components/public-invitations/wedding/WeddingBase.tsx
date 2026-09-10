@@ -1,5 +1,6 @@
 'use client';
 
+import { useRef } from 'react';
 import GalleryGridShared from '@/components/sections/Gallery/GalleryGridShared';
 import GiftInfoThemed from '@/components/sections/GiftInfo/GiftInfoThemed';
 import GuestbookThemed from '@/components/sections/Guestbook/GuestbookThemed';
@@ -19,11 +20,14 @@ import { PublicInvitationDateFeature } from '../shared/PublicInvitationDateFeatu
 import { WeddingStoredContent } from '../shared/WeddingStoredContent';
 import { buildWeddingStoredContent } from '../shared/weddingStoredContentModel';
 import { useImmediateWeddingPageReveal } from './useImmediateWeddingPageReveal';
+import { useWeddingMotion } from './useWeddingMotion';
 import LocationMap from './gyeol/LocationMap';
 import styles from './WeddingBase.module.css';
 
 export default function WeddingBase({ state, theme, demoComments, showMap = true }: WeddingThemeRendererProps & { theme: InvitationThemeKey; demoComments?: Comment[]; showMap?: boolean }) {
   useImmediateWeddingPageReveal(state);
+  const pageRef = useRef<HTMLElement>(null);
+  useWeddingMotion(pageRef, theme);
 
   const page = state.pageConfig;
   const pageData = getThemePageData(page, theme);
@@ -53,7 +57,7 @@ export default function WeddingBase({ state, theme, demoComments, showMap = true
     },
     {
       side: '신랑측',
-      role: page.couple.groom.order || '신랑',
+      role: '신랑',
       name: page.couple.groom.name,
       phone: page.couple.groom.phone,
     },
@@ -71,7 +75,7 @@ export default function WeddingBase({ state, theme, demoComments, showMap = true
     },
     {
       side: '신부측',
-      role: page.couple.bride.order || '신부',
+      role: '신부',
       name: page.couple.bride.name,
       phone: page.couple.bride.phone,
     },
@@ -91,7 +95,7 @@ export default function WeddingBase({ state, theme, demoComments, showMap = true
   });
 
   const gallery = (state.galleryImageUrls.length > 0 ? (
-        <div data-wedding-section="gallery">
+        <div id="wedding-gallery" data-wedding-section="gallery">
           <GalleryGridShared
             images={state.galleryImageUrls}
             previewImages={state.galleryPreviewImageUrls}
@@ -114,13 +118,17 @@ export default function WeddingBase({ state, theme, demoComments, showMap = true
 
   return (
     <main
+      ref={pageRef}
       className={styles.page}
       data-design={theme}
       aria-label={`${page.groomName}과 ${page.brideName}의 결혼식 초대장`}
     >
       <WeddingCover theme={theme} page={page} imageUrl={heroImageUrl} time={ceremony?.time} />
+      <nav className={styles.quickLinks} aria-label="청첩장 바로가기">
+        {state.galleryImageUrls.length > 0 ? <a href="#wedding-gallery">사진 보기</a> : null}
+        <a href="#wedding-info">예식 안내</a>
+      </nav>
 
-      {theme === 'romantic' || theme === 'classic-r' ? gallery : null}
       {invitationMessage ? (
         <section
           className={styles.invitationSection}
@@ -130,7 +138,7 @@ export default function WeddingBase({ state, theme, demoComments, showMap = true
           <h2 id="wedding-invitation-title" className={styles.heading}>
             초대의 글
           </h2>
-          <div className={styles.invitationCopy}>
+          <div className={styles.invitationCopy} data-wedding-motion="passage">
             <p>{invitationMessage}</p>
             {invitationAuthor ? <p className={styles.invitationAuthor}>{invitationAuthor}</p> : null}
           </div>
@@ -164,7 +172,7 @@ export default function WeddingBase({ state, theme, demoComments, showMap = true
         </details>
       ) : null}
 
-      {theme !== 'romantic' && theme !== 'classic-r' ? gallery : null}
+      {gallery}
 
       {theme === 'gyeol' || theme === 'classic-r' ? calendar : null}
       <section

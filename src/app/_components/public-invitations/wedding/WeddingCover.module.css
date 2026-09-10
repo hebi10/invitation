@@ -1,30 +1,33 @@
 .cover { color: inherit; overflow-wrap: anywhere; }
 .cover p, .cover h1, .cover figure { margin: 0; }
 .photo { display: block; width: 100%; height: auto; }
-.names { display: flex; justify-content: center; align-items: baseline; flex-wrap: wrap; gap: 16px; font-size: 24px; font-weight: 500; line-height: 1.7; }
+.names { display: grid; grid-template-columns: minmax(0, auto) auto minmax(0, auto); justify-content: center; align-items: baseline; gap: 16px; font-size: 24px; font-weight: 500; line-height: 1.7; }
+.names > span, .editorialNames > span { min-width: 0; }
 .join { font-size: 14px; font-weight: 400; }
-.date, .venue { font-size: 12px; line-height: 1.9; }
+.date, .venue { font-size: 13px; line-height: 1.9; }
+.date { display: flex; flex-wrap: wrap; justify-content: center; column-gap: 10px; }
+.date > span { max-width: 100%; }
 .cover .date { margin-top: 22px; }
 .basic { padding: 64px 30px 0; text-align: center; }
 .basic .basicPhoto { margin: 34px 0 22px; }
-.photographic { position: relative; background: #323330; color: #fff; }
-.photographic .photo { height: 720px; max-height: 95svh; min-height: 520px; object-fit: cover; }
-.photoCopy { position: absolute; inset: auto 0 0; padding: 90px 24px 42px; background: linear-gradient(transparent, rgba(0,0,0,.82)); text-align: center; }
+.photographic { position: relative; display: grid; background: #323330; color: #fff; }
+.photographic .photo { grid-area: 1 / 1; height: 100%; min-height: 520px; max-height: 720px; object-fit: cover; }
+.photoCopy { grid-area: 1 / 1; align-self: end; position: relative; padding: 90px 24px 42px; background: linear-gradient(transparent, rgba(0,0,0,.82)); text-align: center; }
 .photoCopy .names { font-family: 'Wedding Myeongjo', serif; font-size: 30px; }
 .photoCopy .date { margin-top: 16px; }
-.withoutPhoto { min-height: 420px; }
+.withoutPhoto { min-height: 360px; background: #f3f1eb; color: #30322f; }
+.withoutPhoto .photoCopy { align-self: center; padding-block: 64px; background: none; }
 .letter { padding: 72px 42px 0; text-align: left; font-family: 'Wedding Myeongjo', serif; }
 .letter .names { justify-content: flex-start; font-size: 20px; gap: 12px; }
 .letter .letterTitle { margin-top: 16px; font-size: 14px; }
 .letter .letterPhoto { width: 68%; margin: 38px 0 28px auto; }
-.letter .date { margin-top: 0; }
+.letter .date { margin-top: 28px; justify-content: flex-start; }
 .editorial { display: grid; grid-template-columns: 34px minmax(0,1fr) 30px; padding-top: 48px; }
 .editorialNames { position: relative; z-index: 1; grid-column: 1 / 3; grid-row: 1; align-self: start; padding: 0 0 22px 28px; display: grid; gap: 0; font-size: 34px; font-weight: 500; line-height: 1.35; letter-spacing: -.03em; }
 .editorialNames span:last-child { margin-left: 52px; }
 .editorialPhoto { grid-column: 2 / 4; grid-row: 2; }
-.editorialPhoto:empty { min-height: 160px; background: #f2f2ef; }
 .editorialMeta { grid-column: 2 / 3; padding: 0 0 0 32px; text-align: right; }
-.editorialMeta .date { margin-top: 20px; }
+.editorialMeta .date { margin-top: 20px; justify-content: flex-end; }
 .traditional { padding: 64px 34px 0; font-family: 'Wedding Myeongjo', serif; text-align: center; }
 .traditionalTitle { display: flex; justify-content: center; gap: 52px; min-height: 220px; }
 .vow { writing-mode: vertical-rl; text-align: left; font-size: 14px; line-height: 2.5; letter-spacing: .15em; }
@@ -41,4 +44,7 @@
  .traditionalTitle { gap: 32px; }
  .names { font-size: 21px; gap: 12px; }
  .editorialNames { font-size: 30px; }
+ .photoCopy .names { font-size: 26px; }
+ .editorialMeta { padding-left: 12px; }
+ .verticalNames { font-size: 25px; gap: 20px; }
 }

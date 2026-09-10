@@ -175,8 +175,7 @@ for (const theme of weddingNarrativeThemes) {
 
   const markerPositions = ['invitation', 'contact', 'gallery', 'schedule', 'gift', 'guestbook'].map(marker => page.indexOf('data-wedding-section="' + marker + '"'));
   assert.ok(markerPositions.every(position => position >= 0));
-  assert.match(page, /theme === 'romantic' \|\| theme === 'classic-r' \? gallery : null/);
-  assert.match(page, /theme !== 'romantic' && theme !== 'classic-r' \? gallery : null/);
+  assert.equal((page.match(/\{gallery\}/g) ?? []).length, 1);
 }
 
 const birthdayRegistry = read(
