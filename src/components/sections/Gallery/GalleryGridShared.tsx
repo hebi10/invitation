@@ -12,6 +12,7 @@ import {
 import Image from 'next/image';
 
 import { useScrollAnimation } from '@/hooks';
+import { useDialogLayer } from '@/hooks/useDialogLayer';
 
 import { resolveGalleryOpacityTransition } from './galleryMotion';
 
@@ -164,22 +165,7 @@ export default function GalleryGridShared({
     setPopupImageError(null);
   }, []);
 
-  useEffect(() => {
-    if (!isPopupOpen) {
-      return;
-    }
-
-    const focusFrame = window.requestAnimationFrame(() => {
-      popupCloseButtonRef.current?.focus();
-    });
-
-    return () => {
-      window.cancelAnimationFrame(focusFrame);
-      const trigger = triggerRef.current;
-      triggerRef.current = null;
-      trigger?.focus();
-    };
-  }, [isPopupOpen]);
+  useDialogLayer(popupContentRef, { open: isPopupOpen, onClose: closePopup });
 
   const goToPrevImage = useCallback(() => {
     if (selectedIndex === null || selectedIndex <= 0) {
@@ -209,62 +195,26 @@ export default function GalleryGridShared({
     preloadPopupImageSet(images, selectedIndex);
 
     const handleDialogKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
-        event.preventDefault();
-        closePopup();
-        return;
-      }
-
-      if (event.key === 'Tab') {
-        const popupContent = popupContentRef.current;
-        if (!popupContent) {
-          return;
-        }
-
-        const focusableElements = Array.from(
-          popupContent.querySelectorAll<HTMLElement>(
-            'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
-          )
-        ).filter((element) => element.tabIndex !== -1 && element.offsetParent !== null);
-
-        if (focusableElements.length === 0) {
-          event.preventDefault();
-          popupCloseButtonRef.current?.focus();
-          return;
-        }
-
-        const firstElement = focusableElements[0];
-        const lastElement = focusableElements[focusableElements.length - 1];
-        const activeElement = document.activeElement;
-        const isInsidePopup = activeElement instanceof Node && popupContent.contains(activeElement);
-
-        if (event.shiftKey && (!isInsidePopup || activeElement === firstElement)) {
-          event.preventDefault();
-          lastElement.focus();
-        } else if (!event.shiftKey && (!isInsidePopup || activeElement === lastElement)) {
-          event.preventDefault();
-          firstElement.focus();
-        }
-        return;
-      }
+      const target = event.target instanceof Element ? event.target : null;
+      if (target?.closest('[role="dialog"]') !== popupContentRef.current) return;
 
       if (event.key === 'ArrowLeft') {
+        event.preventDefault();
         goToPrevImage();
       }
 
       if (event.key === 'ArrowRight') {
+        event.preventDefault();
         goToNextImage();
       }
     };
 
     document.addEventListener('keydown', handleDialogKeyDown);
-    document.body.classList.add('no-scroll');
 
     return () => {
       document.removeEventListener('keydown', handleDialogKeyDown);
-      document.body.classList.remove('no-scroll');
     };
-  }, [closePopup, goToNextImage, goToPrevImage, images, selectedIndex]);
+  }, [goToNextImage, goToPrevImage, images, selectedIndex]);
 
   useEffect(() => {
     return () => {
@@ -274,6 +224,7 @@ export default function GalleryGridShared({
 
   const openPopup = (index: number, trigger: HTMLButtonElement) => {
     triggerRef.current = trigger;
+    triggerRef.current.focus();
     preloadPopupImageSet(images, index);
     setSelectedIndex(index);
     setPopupImageError(null);
@@ -434,6 +385,7 @@ export default function GalleryGridShared({
           >
             <button
               ref={popupCloseButtonRef}
+              data-dialog-initial-focus
               className={styles.closeButton}
               onClick={closePopup}
               type="button"

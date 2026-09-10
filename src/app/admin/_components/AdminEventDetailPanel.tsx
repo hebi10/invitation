@@ -1,7 +1,9 @@
 'use client';
 
-import { useEffect, useRef, useState, type KeyboardEvent } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
+import { useDialogLayer } from '@/hooks/useDialogLayer';
+import { AdminWorkGuardProvider, useAdminWorkNavigation } from './AdminWorkGuard';
 
 import { getEventTypeDisplayLabel } from '@/lib/eventTypes';
 import type { InvitationPageSummary } from '@/services/invitationPageService';
@@ -11,13 +13,15 @@ import type { AppRoutes } from '@/lib/demoExperienceRoutes';
 import type { Comment } from '@/services/commentService';
 import type { AdminCustomerAccountSummary } from '@/services/adminCustomerService';
 import { ImageManager, MemoryPageManager } from '@/components/admin';
+import WeddingCover from '@/app/_components/public-invitations/wedding/WeddingCover';
+import { sampleWeddingPage, SAMPLE_WEDDING_IMAGES } from '@/config/homeWeddingSample';
 
 import {
   getAdminEventCapabilities,
   getAdminEventDetailTabs,
   getAdminEventPreviewLinks,
   getAdminEventRelatedQuery,
-  isAdminEventDetailCloseKey,
+  getAdminEventVisibility,
   type AdminEventDetailTabKey,
 } from './adminEventWorkspaceModel';
 import AdminEventCommentsTab from './AdminEventCommentsTab';
@@ -49,7 +53,7 @@ interface AdminEventDetailPanelProps {
   onRefreshEvent: () => void | Promise<void>;
   onRefreshComments: () => void;
   onRefreshAccounts: () => void;
-  onDeleteComment: (comment: Comment) => void;
+  onDeleteComment: (comment: Comment) => void | Promise<void>;
   onAssignCustomerOwnership: (uid: string, pageSlug: string) => void;
   onClearCustomerOwnership: (pageSlug: string) => void;
   onIssueOwnershipInvite: (slug: string) => void;
@@ -81,7 +85,7 @@ function formatDate(value: string) {
 }
 
 function getPeriodLabel(page: InvitationPageSummary) {
-  if (!page.displayPeriodEnabled) return '상시 노출';
+  if (!page.displayPeriodEnabled) return '기간 제한 없음';
 
   const formatter = new Intl.DateTimeFormat('ko-KR', {
     year: 'numeric',
@@ -99,15 +103,11 @@ function getOwnershipLabel(page: InvitationPageSummary) {
   return '고객 미연결';
 }
 
-function getVisibleTabbableElements(container: HTMLElement) {
-  return [
-    ...container.querySelectorAll<HTMLElement>(
-      'a[href], button:not([disabled]), select:not([disabled]), textarea:not([disabled]), input:not([disabled]), [tabindex]:not([tabindex="-1"])'
-    ),
-  ].filter((element) => element.offsetParent !== null && element.getAttribute('aria-hidden') !== 'true');
+export default function AdminEventDetailPanel(props: AdminEventDetailPanelProps) {
+  return <AdminWorkGuardProvider key={props.page.slug}><EventDetailWorkspace {...props} /></AdminWorkGuardProvider>;
 }
 
-export default function AdminEventDetailPanel({
+function EventDetailWorkspace({
   page,
   updatingPublished,
   updatingTier,
@@ -140,7 +140,9 @@ export default function AdminEventDetailPanel({
 }: AdminEventDetailPanelProps) {
   const panelRef = useRef<HTMLElement>(null);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
-  const onCloseRef = useRef(onClose);
+  const work = useAdminWorkNavigation();
+  const busy = work.busy || updatingPublished || updatingTier || !!updatingVariantToken || deleting || issuingInvite || !!ownershipActionToken;
+  const requestClose = () => { if (!busy) work.request(onClose); };
   const [portalRoot, setPortalRoot] = useState<HTMLElement | null>(null);
   const [activeTab, setActiveTab] = useState<AdminEventDetailTabKey>('overview');
   const capabilities = getAdminEventCapabilities(page);
@@ -156,56 +158,9 @@ export default function AdminEventDetailPanel({
   }, [page.slug]);
 
   useEffect(() => {
-    onCloseRef.current = onClose;
-  }, [onClose]);
-
-  useEffect(() => {
     setPortalRoot(document.querySelector<HTMLElement>('[data-admin-ui]') ?? document.body);
   }, []);
-
-  useEffect(() => {
-    const handleDocumentKeyDown = (event: globalThis.KeyboardEvent) => {
-      if (!isAdminEventDetailCloseKey(event.key)) return;
-
-      event.preventDefault();
-      onCloseRef.current();
-    };
-
-    document.addEventListener('keydown', handleDocumentKeyDown);
-    return () => document.removeEventListener('keydown', handleDocumentKeyDown);
-  }, []);
-
-  useEffect(() => {
-    if (!portalRoot) return;
-
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-    const focusFrame = window.requestAnimationFrame(() => closeButtonRef.current?.focus());
-
-    return () => {
-      window.cancelAnimationFrame(focusFrame);
-      document.body.style.overflow = previousOverflow;
-    };
-  }, [page.slug, portalRoot]);
-
-  const handlePanelKeyDown = (event: KeyboardEvent<HTMLElement>) => {
-    if (event.key !== 'Tab' || !panelRef.current) return;
-
-    const tabbableElements = getVisibleTabbableElements(panelRef.current);
-    if (tabbableElements.length === 0) return;
-
-    const first = tabbableElements[0];
-    const last = tabbableElements[tabbableElements.length - 1];
-    const activeElement = document.activeElement;
-
-    if (event.shiftKey && (activeElement === first || !panelRef.current.contains(activeElement))) {
-      event.preventDefault();
-      last.focus();
-    } else if (!event.shiftKey && activeElement === last) {
-      event.preventDefault();
-      first.focus();
-    }
-  };
+  useDialogLayer(panelRef, { open: !!portalRoot, onClose: requestClose, blocked: busy });
 
   if (!portalRoot) {
     return null;
@@ -217,7 +172,7 @@ export default function AdminEventDetailPanel({
       role="presentation"
       onMouseDown={(event) => {
         if (event.target === event.currentTarget) {
-          onClose();
+          requestClose();
         }
       }}
     >
@@ -228,25 +183,29 @@ export default function AdminEventDetailPanel({
         aria-labelledby="admin-event-detail-title"
         aria-modal="true"
         role="dialog"
-        onKeyDown={handlePanelKeyDown}
+
       >
         <div className={styles.eventDetailHeader}>
           <div className={styles.eventDetailHeading}>
             <p className={styles.eventDetailType}>
-              {getEventTypeDisplayLabel(page.eventType, 'admin')}
+              {getEventTypeDisplayLabel(page.eventType, 'admin')} · {getAdminEventVisibility(page).label}
             </p>
             <h2 id="admin-event-detail-title" className={styles.eventDetailTitle}>
               {page.displayName}
             </h2>
           </div>
+          <div className={styles.eventHeaderActions}>
+          {preview ? <a className="admin-button admin-button-secondary" href={routes.preview(page.slug, preview.theme)} target="_blank" rel="noreferrer">미리보기</a> : null}
           <button
             ref={closeButtonRef}
             type="button"
             className={styles.eventDetailClose}
-            onClick={onClose}
+            onClick={requestClose}
+            disabled={busy}
           >
             닫기
           </button>
+          </div>
         </div>
 
         <div className={styles.eventDetailTabs} role="tablist" aria-label="이벤트 관리 항목">
@@ -259,7 +218,8 @@ export default function AdminEventDetailPanel({
               aria-selected={activeTab === tab.key}
               aria-controls="admin-event-tabpanel"
               className={styles.eventDetailTab}
-              onClick={() => setActiveTab(tab.key)}
+              disabled={busy}
+              onClick={() => work.request(() => setActiveTab(tab.key))}
             >
               {tab.label}
             </button>
@@ -324,6 +284,7 @@ export default function AdminEventDetailPanel({
 
         <section className={styles.eventDetailOperations} aria-labelledby="event-operations-title">
           <h3 id="event-operations-title">운영 설정</h3>
+          <p>공개 상태와 상품 등급, 테마 변경은 확인 후 바로 반영됩니다.</p>
           <label className={styles.eventDetailStatusField}>
             <span>상품 등급</span>
             <select
@@ -346,7 +307,7 @@ export default function AdminEventDetailPanel({
 
           {capabilities.includes('themes') ? (
             <div className={styles.eventThemeManager}>
-              <p>청첩장 테마</p>
+              <p>청첩장 테마 · 디자인 비교용 샘플</p>
               <ul>
                 {SHORTCUT_ITEMS.map((theme) => {
                   const isAvailable = page.variants?.[theme.key]?.available === true;
@@ -354,6 +315,9 @@ export default function AdminEventDetailPanel({
 
                   return (
                     <li key={theme.key}>
+                      <div className={styles.eventThemeThumbnail} aria-hidden="true">
+                        <div><WeddingCover theme={theme.key} page={sampleWeddingPage} imageUrl={SAMPLE_WEDDING_IMAGES[0]} titleId={`admin-theme-cover-${theme.key}`} /></div>
+                      </div>
                       <span>
                         {theme.label}
                         {theme.key === page.defaultTheme ? ' · 기본' : ''}
@@ -368,7 +332,7 @@ export default function AdminEventDetailPanel({
                             : onEnableVariant(page, theme.key)
                         }
                       >
-                        {isUpdating ? '처리 중' : isAvailable ? '제거' : '생성'}
+                        {isUpdating ? '처리 중' : isAvailable ? '미리보기 제거' : '미리보기 추가'}
                       </button>
                     </li>
                   );
@@ -393,17 +357,7 @@ export default function AdminEventDetailPanel({
         {!isReadOnlySeed ? (
           <details className={styles.eventDangerArea}>
             <summary>위험 작업</summary>
-            <p>고객 연결 링크 발급과 삭제는 되돌리기 어려운 작업입니다.</p>
-            {page.ownershipKind !== 'customer' ? (
-              <button
-                type="button"
-                className="admin-button admin-button-secondary"
-                disabled={issuingInvite}
-                onClick={() => onIssueOwnershipInvite(page.slug)}
-              >
-                {issuingInvite ? '연결 링크 발급 중' : '고객 연결 링크 발급'}
-              </button>
-            ) : null}
+            <p>이벤트와 연결된 운영 데이터를 완전히 삭제합니다. 삭제 후에는 복구할 수 없습니다.</p>
             <button
               type="button"
               className="admin-button admin-button-danger"
@@ -422,6 +376,12 @@ export default function AdminEventDetailPanel({
               <p>{tabs.find((tab) => tab.key === activeTab)?.label}</p>
               <a
                 className="admin-button admin-button-secondary"
+                onClick={(event) => {
+                  if (event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
+                  event.preventDefault();
+                  const href = event.currentTarget.href;
+                  if (!busy) work.request(() => { window.location.href = href; });
+                }}
                 href={getFullManagementHref(
                   routes,
                   getAdminEventRelatedQuery(page, activeTab)
@@ -479,6 +439,9 @@ export default function AdminEventDetailPanel({
             ) : null}
           </div>
         ) : null}
+        </div>
+        <div className={styles.eventWorkStatus} role="status">
+          {busy ? '처리 중입니다. 완료될 때까지 기다려 주세요.' : work.dirty ? '저장하지 않은 변경 내용이 있습니다.' : '현재 저장된 정보를 표시합니다.'}
         </div>
       </section>
     </div>,

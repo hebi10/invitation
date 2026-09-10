@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
+import { useAdminWorkGuard } from '@/app/admin/_components/AdminWorkGuard';
 import { useAdmin } from '@/contexts';
 import type { EventTypeKey } from '@/lib/eventTypes';
 import {
@@ -44,7 +45,9 @@ export default function ImageManager({
   const [pages, setPages] = useState<InvitationPageSummary[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isUploading, setIsUploading] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState<Record<string, boolean>>({});
+  const [uploadProgress, setUploadProgress] = useState<Record<string, 'pending' | 'success' | 'failed'>>({});
+  const [deleting, setDeleting] = useState(false);
+  useAdminWorkGuard({ dirty: selectedFiles.length > 0, busy: isUploading || deleting });
   const [error, setError] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [expandedPages, setExpandedPages] = useState<Record<string, boolean>>({});
@@ -97,7 +100,9 @@ export default function ImageManager({
     previewUrls.forEach((url) => URL.revokeObjectURL(url));
 
     const nextFiles = Array.from(files);
+    event.target.value = '';
     const nextPreviewUrls = nextFiles.map((file) => URL.createObjectURL(file));
+    setUploadProgress({});
     setSelectedFiles(nextFiles);
     setPreviewUrls(nextPreviewUrls);
     setError('');
@@ -112,28 +117,26 @@ export default function ImageManager({
     try {
       setIsUploading(true);
       setError('');
-      const progressMap = Object.fromEntries(
-        selectedFiles.map((file) => [file.name, false])
-      );
-      setUploadProgress(progressMap);
-
-      await Promise.all(
-        selectedFiles.map(async (file) => {
+      const files = [...selectedFiles];
+      setUploadProgress(Object.fromEntries(files.map((file, index) => [index + ': ' + file.name, 'pending'])));
+      const results = await Promise.allSettled(files.map(async (file, index) => {
+        const key = index + ': ' + file.name;
+        try {
           await uploadImage(file, selectedPage);
-          setUploadProgress((prev) => ({ ...prev, [file.name]: true }));
-        })
-      );
-
+          setUploadProgress((current) => ({ ...current, [key]: 'success' }));
+        } catch (uploadError) {
+          setUploadProgress((current) => ({ ...current, [key]: 'failed' }));
+          throw uploadError;
+        }
+      }));
+      const failedFiles = files.filter((_, index) => results[index].status === 'rejected');
       previewUrls.forEach((url) => URL.revokeObjectURL(url));
-      setSelectedFiles([]);
-      setPreviewUrls([]);
-      setUploadProgress({});
+      setSelectedFiles(failedFiles);
+      setPreviewUrls(failedFiles.map((file) => URL.createObjectURL(file)));
       await loadData();
-      showToast({
-        title: '이미지 업로드가 완료되었습니다.',
-        message: `${selectedFiles.length}개 파일`,
-        tone: 'success',
-      });
+      const completedCount = files.length - failedFiles.length;
+      if (failedFiles.length) setError('성공한 이미지는 반영되었습니다. 남은 실패 파일만 다시 업로드해 주세요.');
+      showToast({ title: failedFiles.length ? '일부 이미지를 업로드하지 못했습니다.' : '이미지 업로드가 완료되었습니다.', message: '완료 ' + completedCount + '개 · 실패 ' + failedFiles.length + '개', tone: failedFiles.length ? 'error' : 'success' });
     } catch (uploadError) {
       console.error(uploadError);
       setError('이미지 업로드에 실패했습니다.');
@@ -160,6 +163,7 @@ export default function ImageManager({
     }
 
     try {
+      setDeleting(true);
       await deleteImage(imagePath);
       await loadData();
       showToast({
@@ -173,7 +177,7 @@ export default function ImageManager({
         title: '이미지 삭제에 실패했습니다.',
         tone: 'error',
       });
-    }
+    } finally { setDeleting(false); }
   };
 
   const visiblePages = useMemo(
@@ -254,6 +258,7 @@ export default function ImageManager({
             <select
               className="admin-select"
               value={selectedPage}
+              disabled={isUploading || deleting || selectedFiles.length > 0}
               onChange={(event) => setSelectedPage(event.target.value)}
             >
               <option value="">페이지를 선택해 주세요.</option>
@@ -272,6 +277,7 @@ export default function ImageManager({
               type="file"
               accept="image/*"
               multiple
+              disabled={isUploading || deleting}
               onChange={handleFileSelect}
             />
             <label className="admin-button admin-button-ghost" htmlFor="file-upload">
@@ -280,11 +286,17 @@ export default function ImageManager({
             <button
               className="admin-button admin-button-primary"
               onClick={() => void handleUpload()}
-              disabled={isUploading || selectedFiles.length === 0}
+              disabled={isUploading || deleting || !selectedPage || selectedFiles.length === 0}
               type="button"
             >
               {isUploading ? '업로드 중..' : `업로드${selectedFiles.length > 0 ? ` (${selectedFiles.length})` : ''}`}
             </button>
+            {selectedFiles.length > 0 ? <button type="button" className="admin-button admin-button-ghost" disabled={isUploading || deleting} onClick={() => {
+              previewUrls.forEach((url) => URL.revokeObjectURL(url));
+              setPreviewUrls([]);
+              setSelectedFiles([]);
+              setUploadProgress({});
+            }}>선택 취소</button> : null}
           </div>
         </div>
 
@@ -320,13 +332,13 @@ export default function ImageManager({
           </div>
         ) : null}
 
-        {isUploading && Object.keys(uploadProgress).length > 0 ? (
+        {Object.keys(uploadProgress).length > 0 ? (
           <div className={styles.uploadProgress}>
             {Object.entries(uploadProgress).map(([fileName, completed]) => (
               <div key={fileName} className={styles.progressItem}>
                 <span className={styles.fileName}>{fileName}</span>
-                <StatusBadge tone={completed ? 'success' : 'primary'}>
-                  {completed ? '완료' : '업로드 중'}
+                <StatusBadge tone={completed === 'success' ? 'success' : completed === 'failed' ? 'danger' : 'primary'}>
+                  {completed === 'success' ? '완료' : completed === 'failed' ? '실패 · 재시도 대기' : '업로드 중'}
                 </StatusBadge>
               </div>
             ))}
@@ -452,6 +464,7 @@ export default function ImageManager({
                           <button
                             type="button"
                             className="admin-button admin-button-danger"
+                            disabled={isUploading || deleting}
                             onClick={() => void handleDelete(image.path)}
                           >
                             삭제

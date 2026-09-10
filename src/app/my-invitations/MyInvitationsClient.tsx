@@ -3,7 +3,8 @@
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { useDialogLayer } from '@/hooks/useDialogLayer';
 
 import { useAdmin } from '@/contexts';
 import {
@@ -121,6 +122,8 @@ function OwnedEventCard({
   const queryClient = useQueryClient();
   const [guestbookOpen, setGuestbookOpen] = useState(false);
   const [previewOpen, setPreviewOpen] = useState(false);
+  const previewDialogRef = useRef<HTMLElement | null>(null);
+  const guestbookDialogRef = useRef<HTMLElement | null>(null);
   const [guestbookPage, setGuestbookPage] = useState(1);
   const [deletingCommentId, setDeletingCommentId] = useState('');
   const wizardHref = routes.wizardEdit(event.slug);
@@ -199,27 +202,10 @@ function OwnedEventCard({
     deleteMutation.mutate(comment.id);
   };
 
-  useEffect(() => {
-    if (!guestbookOpen && !previewOpen) {
-      return;
-    }
-
-    const previousOverflow = document.body.style.overflow;
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
-        setGuestbookOpen(false);
-        setPreviewOpen(false);
-      }
-    };
-
-    document.body.style.overflow = 'hidden';
-    window.addEventListener('keydown', handleKeyDown);
-
-    return () => {
-      document.body.style.overflow = previousOverflow;
-      window.removeEventListener('keydown', handleKeyDown);
-    };
-  }, [guestbookOpen, previewOpen]);
+  const closePreview = () => setPreviewOpen(false);
+  const closeGuestbook = () => { if (!deleteMutation.isPending) setGuestbookOpen(false); };
+  useDialogLayer(previewDialogRef, { open: previewOpen, onClose: closePreview });
+  useDialogLayer(guestbookDialogRef, { open: guestbookOpen, onClose: closeGuestbook, blocked: deleteMutation.isPending });
 
   useEffect(() => {
     if (!guestbookOpen || guestbookPage <= guestbookTotalPages) {
@@ -298,11 +284,12 @@ function OwnedEventCard({
           role="presentation"
           onMouseDown={(event) => {
             if (event.target === event.currentTarget) {
-              setPreviewOpen(false);
+              closePreview();
             }
           }}
         >
           <section
+            ref={previewDialogRef}
             className={styles.modalDialog}
             role="dialog"
             aria-modal="true"
@@ -323,7 +310,7 @@ function OwnedEventCard({
               <button
                 className={styles.modalCloseButton}
                 type="button"
-                onClick={() => setPreviewOpen(false)}
+                onClick={closePreview}
                 aria-label="미리보기 선택 팝업 닫기"
               >
                 닫기
@@ -362,11 +349,12 @@ function OwnedEventCard({
           role="presentation"
           onMouseDown={(event) => {
             if (event.target === event.currentTarget) {
-              setGuestbookOpen(false);
+              closeGuestbook();
             }
           }}
         >
           <section
+            ref={guestbookDialogRef}
             className={styles.modalDialog}
             role="dialog"
             aria-modal="true"
@@ -387,7 +375,8 @@ function OwnedEventCard({
               <button
                 className={styles.modalCloseButton}
                 type="button"
-                onClick={() => setGuestbookOpen(false)}
+                onClick={closeGuestbook}
+                disabled={deleteMutation.isPending}
                 aria-label="방명록 팝업 닫기"
               >
                 닫기

@@ -1,6 +1,7 @@
 'use client';
 
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
+import { useDialogLayer } from '@/hooks/useDialogLayer';
 import styles from './AdminOverlayProvider.module.css';
 
 type ToastTone = 'success' | 'error' | 'info';
@@ -144,53 +145,7 @@ export function AdminOverlayProvider({ children }: { children: React.ReactNode }
 
   const dialogRef = useRef<HTMLDivElement | null>(null);
 
-  useEffect(() => {
-    if (!pendingConfirm) {
-      return;
-    }
-
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
-        closeConfirm(false);
-        return;
-      }
-
-      if (event.key !== 'Tab') {
-        return;
-      }
-
-      const focusable = getFocusableDialogElements(dialogRef.current);
-      if (focusable.length === 0) {
-        return;
-      }
-
-      const activeElement = document.activeElement as HTMLElement | null;
-      const activeIndex = activeElement ? focusable.indexOf(activeElement) : -1;
-      const first = focusable[0];
-      const last = focusable[focusable.length - 1];
-
-      if (event.shiftKey && activeIndex <= 0) {
-        event.preventDefault();
-        last.focus();
-      } else if (!event.shiftKey && (activeIndex === -1 || activeIndex === focusable.length - 1)) {
-        event.preventDefault();
-        first.focus();
-      }
-    };
-
-    document.addEventListener('keydown', handleKeyDown);
-
-    const dialog = dialogRef.current;
-    if (dialog) {
-      const initialFocusSelector =
-        pendingConfirm.tone === 'danger' ? '[data-cancel-action]' : '[data-confirm-action]';
-      getFocusableDialogElements(dialog)
-        .find((element) => element.matches(initialFocusSelector))
-        ?.focus();
-    }
-
-    return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [pendingConfirm, closeConfirm]);
+  useDialogLayer(dialogRef, { open: !!pendingConfirm, onClose: () => closeConfirm(false) });
 
   return (
     <AdminOverlayContext.Provider value={{ showToast, confirm }}>
@@ -238,6 +193,7 @@ export function AdminOverlayProvider({ children }: { children: React.ReactNode }
               <div className={styles.dialogActions}>
                 <button
                   type="button"
+                  data-dialog-initial-focus={pendingConfirm.tone === 'danger' ? true : undefined}
                   data-cancel-action
                   className={`${styles.dialogButton} ${styles.dialogCancel}`}
                   onClick={() => closeConfirm(false)}
@@ -246,6 +202,7 @@ export function AdminOverlayProvider({ children }: { children: React.ReactNode }
                 </button>
                 <button
                   type="button"
+                  data-dialog-initial-focus={pendingConfirm.tone !== 'danger' ? true : undefined}
                   data-confirm-action
                   className={`${styles.dialogButton} ${styles.dialogConfirm} ${
                     pendingConfirm.tone === 'danger' ? styles.dialogConfirmDanger : ''
@@ -275,25 +232,4 @@ export function useAdminOverlay() {
 
 function capitalize(value: string) {
   return value.charAt(0).toUpperCase() + value.slice(1);
-}
-
-function getFocusableDialogElements(dialog: HTMLDivElement | null) {
-  if (!dialog) {
-    return [];
-  }
-
-  return [...dialog.querySelectorAll<HTMLElement>(
-    'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
-  )].filter((element) => {
-    const style = window.getComputedStyle(element);
-    return (
-      element.tabIndex >= 0 &&
-      !element.matches(':disabled') &&
-      element.getAttribute('aria-hidden') !== 'true' &&
-      !element.closest('[aria-hidden="true"]') &&
-      style.display !== 'none' &&
-      style.visibility !== 'hidden' &&
-      element.getClientRects().length > 0
-    );
-  });
 }

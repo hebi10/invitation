@@ -1,12 +1,13 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 import type { InvitationPageSummary } from '@/services/invitationPageService';
 import { deleteDisplayPeriod, setDisplayPeriod } from '@/services/displayPeriodService';
 
 import { validateAdminEventPeriodInput } from './adminEventWorkspaceModel';
 import { useAdminOverlay } from './AdminOverlayProvider';
+import { useAdminWorkGuard } from './AdminWorkGuard';
 import styles from '../page.module.css';
 
 interface AdminEventPeriodTabProps {
@@ -34,22 +35,38 @@ export default function AdminEventPeriodTab({
   const [endDate, setEndDate] = useState(toDateInputValue(page.displayPeriodEnd));
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+  const saveInProgress = useRef(false);
+  const loadedSlug = useRef(page.slug);
+  const [savedValues, setSavedValues] = useState({
+    enabled: page.displayPeriodEnabled,
+    startDate: toDateInputValue(page.displayPeriodStart),
+    endDate: toDateInputValue(page.displayPeriodEnd),
+  });
+  const dirty = enabled !== savedValues.enabled ||
+    (enabled && (startDate !== savedValues.startDate || endDate !== savedValues.endDate));
+  const dirtyRef = useRef(dirty);
+  useEffect(() => { dirtyRef.current = dirty; }, [dirty]);
 
   useEffect(() => {
+    if (loadedSlug.current === page.slug && dirtyRef.current) return;
+    loadedSlug.current = page.slug;
     setEnabled(page.displayPeriodEnabled);
     setStartDate(toDateInputValue(page.displayPeriodStart));
     setEndDate(toDateInputValue(page.displayPeriodEnd));
+    setSavedValues({ enabled: page.displayPeriodEnabled, startDate: toDateInputValue(page.displayPeriodStart), endDate: toDateInputValue(page.displayPeriodEnd) });
     setError('');
   }, [page.displayPeriodEnabled, page.displayPeriodEnd, page.displayPeriodStart, page.slug]);
 
-  const handleSubmit = async (event: React.FormEvent) => {
-    event.preventDefault();
+  const saveChanges = useCallback(async (): Promise<boolean> => {
+    if (readOnly || saveInProgress.current) return false;
+    if (!dirty) return true;
     const validationError = validateAdminEventPeriodInput({ enabled, startDate, endDate });
     if (validationError) {
       setError(validationError);
-      return;
+      return false;
     }
 
+    saveInProgress.current = true;
     setSaving(true);
     setError('');
     try {
@@ -64,25 +81,39 @@ export default function AdminEventPeriodTab({
         await deleteDisplayPeriod(page.slug);
       }
       await onUpdated();
+      setSavedValues({ enabled, startDate, endDate });
       showToast({
         title: enabled ? '노출 기간을 저장했습니다.' : '기간 제한을 해제했습니다.',
         tone: 'success',
       });
+      return true;
     } catch (saveError) {
       console.error(saveError);
       setError('노출 기간을 저장하지 못했습니다.');
       showToast({ title: '노출 기간 저장에 실패했습니다.', tone: 'error' });
+      return false;
     } finally {
+      saveInProgress.current = false;
       setSaving(false);
     }
+  }, [dirty, enabled, endDate, onUpdated, page.slug, readOnly, showToast, startDate]);
+
+  useAdminWorkGuard({ dirty: !readOnly && dirty, busy: saving, save: saveChanges });
+
+  const cancelChanges = () => {
+    setEnabled(savedValues.enabled);
+    setStartDate(savedValues.startDate);
+    setEndDate(savedValues.endDate);
+    setError('');
   };
 
   return (
-    <form className={styles.eventManagementForm} onSubmit={handleSubmit}>
+    <form className={styles.eventManagementForm} onSubmit={(event) => { event.preventDefault(); void saveChanges(); }}>
       <div className={styles.eventManagementHeading}>
         <div>
           <h3>노출 기간</h3>
           <p>기간 제한을 끄면 공개 상태인 동안 계속 노출됩니다.</p>
+          <p>{page.published ? '현재 공개 중입니다. 저장한 기간이 노출에 적용됩니다.' : '현재 비공개입니다. 기간을 저장해도 공개 상태는 바뀌지 않습니다.'}</p>
         </div>
       </div>
 
@@ -122,13 +153,17 @@ export default function AdminEventPeriodTab({
       ) : null}
 
       {error ? <p className={styles.eventManagementError} role="alert">{error}</p> : null}
+      <p role="status">{saving ? '변경 내용을 저장하고 있습니다.' : dirty ? '저장하지 않은 변경사항이 있습니다.' : '저장된 설정입니다.'}</p>
       <div className={styles.eventManagementActions}>
+        <button type="button" className="admin-button admin-button-secondary" onClick={cancelChanges} disabled={readOnly || saving || !dirty}>
+          변경 취소
+        </button>
         <button
           type="submit"
           className="admin-button admin-button-primary"
-          disabled={readOnly || saving}
+          disabled={readOnly || saving || !dirty}
         >
-          {saving ? '저장 중' : '저장'}
+          {saving ? '저장 중' : error ? '기간 저장 다시 시도' : '기간 저장'}
         </button>
       </div>
     </form>

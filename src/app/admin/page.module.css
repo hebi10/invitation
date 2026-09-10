@@ -2386,3 +2386,41 @@
   .adminMain { min-width: 0; padding-top: 12px; }
 }
 @media (max-width: 1199px) { .customerWorkspace { grid-template-columns: minmax(0, 1fr); } }
+
+/* Event workspace: the task stays in view while its content scrolls. */
+.eventDetailPanel {
+  display: flex;
+  flex-direction: column;
+  height: min(880px, calc(100dvh - 48px));
+  max-height: calc(100dvh - 48px);
+  padding: 0;
+  overflow: hidden;
+  border-radius: 0;
+}
+.eventDetailHeader { flex: 0 0 auto; margin: 0; padding: 20px 24px 14px; }
+.eventHeaderActions { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.eventDetailTabs { flex: 0 0 auto; margin: 0; padding: 0 24px 12px; border: 0; gap: 6px; }
+.eventDetailTab { border: 1px solid transparent; font-weight: 500; }
+.eventDetailTab[aria-selected='true'] { border-color: var(--admin-color-border); background: var(--admin-color-surface-muted); }
+.eventDetailTabPanel { flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 8px 24px 24px; scrollbar-width: thin; }
+.eventWorkStatus { flex: 0 0 auto; padding: 12px 24px; background: var(--admin-color-surface-muted); color: var(--admin-color-text-secondary); font-size: 12px; }
+.eventDetailOperations > p { margin: 0; color: var(--admin-color-text-secondary); font-size: 13px; }
+.eventThemeManager ul { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 16px; }
+.eventThemeManager li, .eventThemeManager li:last-child { display: flex; flex-direction: column; align-items: stretch; justify-content: flex-start; gap: 10px; border: 0; }
+.eventThemeManager li > span { color: var(--admin-color-text); font-weight: 500; }
+.eventThemeThumbnail { height: 235px; overflow: hidden; background: #fff; border: 1px solid var(--admin-color-border); position: relative; }
+.eventThemeThumbnail > div { width: 375px; position: absolute; top: 0; left: 50%; transform: translateX(-50%) scale(.44); transform-origin: top center; color: #292b27; font-family: serif; }
+.eventDetailContext { border: 0; background: var(--admin-color-surface-muted); padding: 16px; }
+.eventDangerArea { padding: 16px; border: 1px solid var(--admin-color-border); }
+.eventDetailClose:disabled, .eventDetailTab:disabled { opacity: .5; cursor: wait; }
+@media (max-width: 640px) {
+  .eventDetailBackdrop { padding: 0; }
+  .eventDetailPanel { width: 100vw; height: 100dvh; max-height: 100dvh; border: 0; padding: 0; }
+  .eventDetailHeader { padding: 16px; gap: 8px; }
+  .eventDetailTitle { font-size: 20px; }
+  .eventDetailTabs { padding: 0 16px 12px; margin: 0; }
+  .eventDetailTabPanel { padding: 0 16px 20px; }
+  .eventWorkStatus { padding: 10px 16px; }
+  .eventHeaderActions { gap: 4px; }
+  .eventHeaderActions :global(.admin-button) { padding: 0 8px; }
+}

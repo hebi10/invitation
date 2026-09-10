@@ -2,8 +2,6 @@
 
 import {
   type ReactNode,
-  useCallback,
-  useEffect,
   useMemo,
   useRef,
   useState,
@@ -28,6 +26,7 @@ import {
 } from './pageWizardWorkspaceState';
 import type { InvitationPageSeed } from '@/types/invitationPage';
 import styles from './PageWizardWorkspace.module.css';
+import { useDialogLayer } from '@/hooks/useDialogLayer';
 
 type PageWizardWorkspaceProps = {
   title: string;
@@ -97,10 +96,8 @@ export default function PageWizardWorkspace({
   onSave,
 }: PageWizardWorkspaceProps) {
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
-  const previewTriggerRef = useRef<HTMLButtonElement | null>(null);
-  const mobileNavTriggerRef = useRef<HTMLButtonElement | null>(null);
-  const previewCloseRef = useRef<HTMLButtonElement | null>(null);
-  const mobileNavCloseRef = useRef<HTMLButtonElement | null>(null);
+  const previewDialogRef = useRef<HTMLElement | null>(null);
+  const mobileNavDialogRef = useRef<HTMLElement | null>(null);
   const activeSectionIndex = sections.findIndex(
     (section) => section.id === activeSection.id
   );
@@ -111,62 +108,17 @@ export default function PageWizardWorkspace({
   );
   const isDialogOpen = isMobileNavOpen || previewStepKey !== null;
 
-  const closePreview = useCallback(() => {
-    onClosePreview();
-    requestAnimationFrame(() => previewTriggerRef.current?.focus());
-  }, [onClosePreview]);
-
-  const closeMobileNav = useCallback(() => {
-    setIsMobileNavOpen(false);
-    requestAnimationFrame(() => mobileNavTriggerRef.current?.focus());
-  }, []);
-
-  useEffect(() => {
-    if (!previewStepKey) {
-      return;
-    }
-
-    previewCloseRef.current?.focus();
-
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
-        closePreview();
-      }
-    };
-
-    document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [closePreview, previewStepKey]);
-
-  useEffect(() => {
-    if (!isMobileNavOpen) {
-      return;
-    }
-
-    mobileNavCloseRef.current?.focus();
-
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
-        closeMobileNav();
-      }
-    };
-
-    document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [closeMobileNav, isMobileNavOpen]);
+  const closePreview = () => onClosePreview();
+  const closeMobileNav = () => setIsMobileNavOpen(false);
+  useDialogLayer(previewDialogRef, { open: previewStepKey !== null, onClose: closePreview });
+  useDialogLayer(mobileNavDialogRef, { open: isMobileNavOpen, onClose: closeMobileNav });
 
   const handleSectionSelect = (sectionId: WizardSectionId) => {
     onSelectSection(sectionId);
     setIsMobileNavOpen(false);
   };
 
-  const openPreview = (
-    stepKey: WizardStepKey,
-    trigger: HTMLButtonElement
-  ) => {
-    previewTriggerRef.current = trigger;
-    onOpenPreview(stepKey);
-  };
+  const openPreview = (stepKey: WizardStepKey) => onOpenPreview(stepKey);
 
   const renderSectionButtons = () => sections.map((section, index) => {
     const validation = getSectionValidation(section);
@@ -248,7 +200,7 @@ export default function PageWizardWorkspace({
               <button
                 type="button"
                 className={styles.secondaryAction}
-                onClick={(event) => openPreview(activePreviewStep.key, event.currentTarget)}
+                onClick={() => openPreview(activePreviewStep.key)}
               >
                 미리보기
               </button>
@@ -262,7 +214,6 @@ export default function PageWizardWorkspace({
           <span>{activeSectionIndex + 1} / {sections.length}</span>
         </div>
         <button
-          ref={mobileNavTriggerRef}
           type="button"
           className={styles.mobileSectionTrigger}
           aria-expanded={isMobileNavOpen}
@@ -349,7 +300,7 @@ export default function PageWizardWorkspace({
                         type="button"
                         className={styles.stepPreviewAction}
                         aria-pressed={previewStepKey === step.key}
-                        onClick={(event) => openPreview(step.key, event.currentTarget)}
+                        onClick={() => openPreview(step.key)}
                       >
                         미리보기
                       </button>
@@ -418,6 +369,7 @@ export default function PageWizardWorkspace({
       {isMobileNavOpen ? (
         <div className={styles.overlay}>
           <section
+            ref={mobileNavDialogRef}
             className={styles.mobileNavDialog}
             role="dialog"
             aria-modal="true"
@@ -426,7 +378,6 @@ export default function PageWizardWorkspace({
             <header className={styles.dialogHeader}>
               <h2 id="wizard-mobile-nav-title">작업 영역</h2>
               <button
-                ref={mobileNavCloseRef}
                 type="button"
                 className={styles.closeAction}
                 onClick={closeMobileNav}
@@ -445,6 +396,7 @@ export default function PageWizardWorkspace({
       {previewStepKey ? (
         <div className={styles.previewOverlay}>
           <section
+            ref={previewDialogRef}
             className={styles.previewPanel}
             role="dialog"
             aria-modal="true"
@@ -459,7 +411,6 @@ export default function PageWizardWorkspace({
                 </h2>
               </div>
               <button
-                ref={previewCloseRef}
                 type="button"
                 className={styles.closeAction}
                 onClick={closePreview}

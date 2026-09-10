@@ -7,9 +7,10 @@ interface Props {
   page: InvitationPage;
   imageUrl: string;
   time?: string;
+  titleId?: string;
 }
 
-export default function WeddingCover({ theme, page, imageUrl, time }: Props) {
+export default function WeddingCover({ theme, page, imageUrl, time, titleId = 'wedding-cover-title' }: Props) {
   const names = <><span>{page.groomName}</span><span aria-hidden="true" className={styles.join}>·</span><span>{page.brideName}</span></>;
   const date = <p className={styles.date}>{page.date}{time ? ` · ${time}` : ''}</p>;
   const photo = imageUrl ? <img src={imageUrl} alt={`${page.displayName} 대표 사진`} className={styles.photo} loading="eager" decoding="async" /> : null;
@@ -19,18 +20,18 @@ export default function WeddingCover({ theme, page, imageUrl, time }: Props) {
   });
 
   if (theme === 'romantic') return (
-    <section className={`${styles.cover} ${styles.photographic} ${!imageUrl ? styles.withoutPhoto : ''}`} aria-labelledby="wedding-cover-title">
+    <section className={`${styles.cover} ${styles.photographic} ${!imageUrl ? styles.withoutPhoto : ''}`} aria-labelledby={titleId}>
       {photo}
       <div className={styles.photoCopy}>
-        <h1 id="wedding-cover-title" className={styles.names}>{names}</h1>
+        <h1 id={titleId} className={styles.names}>{names}</h1>
         {date}<p className={styles.venue}>{page.venue}</p>
       </div>
     </section>
   );
 
   if (theme === 'emotional') return (
-    <section className={`${styles.cover} ${styles.letter}`} aria-labelledby="wedding-cover-title">
-      <h1 id="wedding-cover-title" className={styles.names}>{names}</h1>
+    <section className={`${styles.cover} ${styles.letter}`} aria-labelledby={titleId}>
+      <h1 id={titleId} className={styles.names}>{names}</h1>
       <p className={styles.letterTitle}>소중한 당신께</p>
       {photo ? <figure className={styles.letterPhoto}>{photo}</figure> : null}
       {date}<p className={styles.venue}>{page.venue}</p>
@@ -38,18 +39,18 @@ export default function WeddingCover({ theme, page, imageUrl, time }: Props) {
   );
 
   if (theme === 'classic-r') return (
-    <section className={`${styles.cover} ${styles.editorial}`} aria-labelledby="wedding-cover-title">
-      <h1 id="wedding-cover-title" className={styles.editorialNames}><span>{page.groomName}</span><span>{page.brideName}</span></h1>
+    <section className={`${styles.cover} ${styles.editorial}`} aria-labelledby={titleId}>
+      <h1 id={titleId} className={styles.editorialNames}><span>{page.groomName}</span><span>{page.brideName}</span></h1>
       <div className={styles.editorialPhoto}>{photo}</div>
       <div className={styles.editorialMeta}>{date}<p className={styles.venue}>{page.venue}</p></div>
     </section>
   );
 
   if (theme === 'gyeol') return (
-    <section className={`${styles.cover} ${styles.traditional}`} aria-labelledby="wedding-cover-title">
+    <section className={`${styles.cover} ${styles.traditional}`} aria-labelledby={titleId}>
       <div className={styles.traditionalTitle}>
         <p className={styles.vow}>두 사람의 인연,<br />하나의 약속</p>
-        <h1 id="wedding-cover-title" className={styles.verticalNames}><span>{page.groomName}</span><span>{page.brideName}</span></h1>
+        <h1 id={titleId} className={styles.verticalNames}><span>{page.groomName}</span><span>{page.brideName}</span></h1>
       </div>
       <div className={styles.families}>{family}</div>
       {date}<p className={styles.venue}>{page.venue}</p>
@@ -58,8 +59,8 @@ export default function WeddingCover({ theme, page, imageUrl, time }: Props) {
   );
 
   return (
-    <section className={`${styles.cover} ${styles.basic}`} aria-labelledby="wedding-cover-title">
-      <h1 id="wedding-cover-title" className={styles.names}>{names}</h1>
+    <section className={`${styles.cover} ${styles.basic}`} aria-labelledby={titleId}>
+      <h1 id={titleId} className={styles.names}>{names}</h1>
       {date}
       {photo ? <figure className={styles.basicPhoto}>{photo}</figure> : null}
       <p className={styles.venue}>{page.venue}</p>

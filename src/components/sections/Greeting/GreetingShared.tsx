@@ -1,6 +1,7 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
+import { useDialogLayer } from '@/hooks/useDialogLayer';
 
 export interface FamilyMember {
   relation: string;
@@ -89,6 +90,7 @@ export default function GreetingShared({
     } else if (typeof document !== 'undefined' && document.activeElement instanceof HTMLElement) {
       modalTriggerRef.current = document.activeElement;
     }
+    modalTriggerRef.current?.focus();
     setContactModal(person);
   };
 
@@ -96,71 +98,7 @@ export default function GreetingShared({
     setContactModal(null);
   };
 
-  useEffect(() => {
-    if (!contactModal) {
-      const trigger = modalTriggerRef.current;
-      if (trigger && typeof trigger.focus === 'function') {
-        trigger.focus();
-      }
-      modalTriggerRef.current = null;
-      return;
-    }
-
-    modalCloseButtonRef.current?.focus();
-
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
-        event.preventDefault();
-        closeContactModal();
-        return;
-      }
-
-      if (event.key !== 'Tab') {
-        return;
-      }
-
-      const modal = modalContentRef.current;
-      if (!modal) {
-        return;
-      }
-
-      const focusableElements = Array.from(
-        modal.querySelectorAll<HTMLElement>(
-          'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
-        )
-      ).filter((element) => element.tabIndex !== -1 && element.offsetParent !== null);
-
-      if (focusableElements.length === 0) {
-        event.preventDefault();
-        modalCloseButtonRef.current?.focus();
-        return;
-      }
-
-      const firstElement = focusableElements[0];
-      const lastElement = focusableElements[focusableElements.length - 1];
-      const activeElement = document.activeElement instanceof HTMLElement ? document.activeElement : null;
-      const isInsideModal = activeElement ? modal.contains(activeElement) : false;
-
-      if (event.shiftKey) {
-        if (!isInsideModal || activeElement === firstElement) {
-          event.preventDefault();
-          lastElement.focus();
-        }
-        return;
-      }
-
-      if (!isInsideModal || activeElement === lastElement) {
-        event.preventDefault();
-        firstElement.focus();
-      }
-    };
-
-    document.addEventListener('keydown', handleKeyDown);
-
-    return () => {
-      document.removeEventListener('keydown', handleKeyDown);
-    };
-  }, [contactModal]);
+  useDialogLayer(modalContentRef, { open: Boolean(contactModal), onClose: closeContactModal });
 
   if (!hasMessage && !showFamilySection) {
     return null;
@@ -294,6 +232,7 @@ export default function GreetingShared({
           >
             <button
               ref={modalCloseButtonRef}
+              data-dialog-initial-focus
               className={styles.modalClose}
               onClick={closeContactModal}
               aria-label="연락처 모달 닫기"

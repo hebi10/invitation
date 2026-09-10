@@ -542,7 +542,7 @@ export default function AdminPageClient({
               onIssueOwnershipInvite={(slug) => void requestOwnershipInviteForDetail(slug)}
               onRefreshComments={() => void fetchComments()}
               onRefreshAccounts={() => void fetchCustomerAccounts()}
-              onDeleteComment={(comment) => void handleDeleteComment(comment)}
+              onDeleteComment={(comment) => handleDeleteComment(comment)}
               onAssignCustomerOwnership={(uid, slug) =>
                 void handleAssignCustomerOwnership(uid, slug)
               }
@@ -584,7 +584,7 @@ export default function AdminPageClient({
               onRefresh={() => void fetchComments()}
               onRetryComments={() => void retryComments()}
               onQueryChange={updateQuery}
-              onDeleteComment={(comment) => void handleDeleteComment(comment)}
+              onDeleteComment={(comment) => handleDeleteComment(comment)}
               mobileReadOnly={mobileViewportState !== 'desktop'}
             />
           ) : null}

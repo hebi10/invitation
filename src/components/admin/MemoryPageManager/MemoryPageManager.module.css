@@ -425,3 +425,5 @@
     max-height: 420px;
   }
 }
+
+.workFields { min-width: 0; margin: 0; padding: 0; border: 0; }

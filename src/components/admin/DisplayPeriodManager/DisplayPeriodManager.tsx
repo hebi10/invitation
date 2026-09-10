@@ -1,5 +1,6 @@
 'use client';
 
+import { useAdminWorkGuard } from '@/app/admin/_components/AdminWorkGuard';
 import { useEffect, useMemo, useRef, useState } from 'react';
 
 import {
@@ -115,6 +116,8 @@ export default function DisplayPeriodManager({
   initialPageSlug,
   onDataChanged,
 }: DisplayPeriodManagerProps) {
+  const [saving, setSaving] = useState(false);
+  const [initialForm, setInitialForm] = useState('');
   const [periods, setPeriods] = useState<DisplayPeriod[]>([]);
   const [pages, setPages] = useState<InvitationPageSummary[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -162,6 +165,7 @@ export default function DisplayPeriodManager({
     setLocalStatusFilter(statusFilter);
   }, [statusFilter]);
 
+  const dirty = Boolean(editingPageSlug && JSON.stringify(formData) !== initialForm);
   const resetForm = () => {
     setEditingPageSlug(null);
     setFormError('');
@@ -173,23 +177,25 @@ export default function DisplayPeriodManager({
     });
   };
 
-  const handleSubmit = async (event: React.FormEvent) => {
-    event.preventDefault();
+  const handleSubmit = async (event?: React.FormEvent): Promise<boolean> => {
+    event?.preventDefault();
+    if (saving) return false;
 
     if (!formData.pageSlug || !formData.startDate || !formData.endDate) {
       setFormError('시작일과 종료일을 모두 입력해 주세요.');
-      return;
+      return false;
     }
 
-    const startDate = new Date(formData.startDate);
-    const endDate = new Date(formData.endDate);
+    const startDate = new Date(`${formData.startDate}T00:00:00`);
+    const endDate = new Date(`${formData.endDate}T23:59:59`);
 
-    if (startDate >= endDate) {
+    if (Number.isNaN(startDate.getTime()) || Number.isNaN(endDate.getTime()) || formData.startDate >= formData.endDate) {
       setFormError('종료일은 시작일보다 뒤여야 합니다.');
-      return;
+      return false;
     }
 
     try {
+      setSaving(true);
       setFormError('');
       await setDisplayPeriod(
         formData.pageSlug,
@@ -204,6 +210,7 @@ export default function DisplayPeriodManager({
         title: '노출 기간이 저장되었습니다.',
         tone: 'success',
       });
+      return true;
     } catch (submitError) {
       console.error(submitError);
       setFormError('노출 기간 저장에 실패했습니다.');
@@ -211,14 +218,17 @@ export default function DisplayPeriodManager({
         title: '노출 기간 저장에 실패했습니다.',
         tone: 'error',
       });
-    }
+      return false;
+    } finally { setSaving(false); }
   };
+
+  useAdminWorkGuard({ dirty, busy: saving, save: () => handleSubmit() });
 
   const handleDelete = async (pageSlug: string) => {
     const approved = await confirm({
-      title: '노출 기간을 삭제할까요?',
-      description: '삭제하면 기간 제한이 해제됩니다.',
-      confirmLabel: '삭제',
+      title: '기간 제한을 해제할까요?',
+      description: `${pages.find((page) => page.slug === pageSlug)?.displayName ?? pageSlug}의 기간 제한을 해제합니다. 공개 설정이 켜져 있으면 계속 노출됩니다.`,
+      confirmLabel: '기간 제한 해제',
       cancelLabel: '취소',
       tone: 'danger',
     });
@@ -228,6 +238,7 @@ export default function DisplayPeriodManager({
     }
 
     try {
+      setSaving(true);
       await deleteDisplayPeriod(pageSlug);
       await loadData();
       if (editingPageSlug === pageSlug) {
@@ -235,17 +246,17 @@ export default function DisplayPeriodManager({
       }
       onDataChanged?.();
       showToast({
-        title: '노출 기간을 삭제했습니다.',
+        title: '기간 제한을 해제했습니다.',
         tone: 'success',
       });
     } catch (deleteError) {
       console.error(deleteError);
-      setLoadError('노출 기간 삭제에 실패했습니다.');
+      setLoadError('기간 제한 해제에 실패했습니다.');
       showToast({
-        title: '노출 기간 삭제에 실패했습니다.',
+        title: '기간 제한 해제에 실패했습니다.',
         tone: 'error',
       });
-    }
+    } finally { setSaving(false); }
   };
 
   const periodsByPage = useMemo(
@@ -270,6 +281,7 @@ export default function DisplayPeriodManager({
     setEditingPageSlug(selectedPage.slug);
     setFormError('');
     setFormData(createFormState(selectedPage, periodsByPage.get(selectedPage.slug)));
+    setInitialForm(JSON.stringify(createFormState(selectedPage, periodsByPage.get(selectedPage.slug))));
   }, [initialPageSlug, pages, periodsByPage]);
 
   const filteredPages = useMemo(() => {
@@ -420,10 +432,13 @@ export default function DisplayPeriodManager({
                   <button
                     type="button"
                     className="admin-button admin-button-secondary"
-                    onClick={() => {
+                    disabled={saving}
+                    onClick={async () => {
+                      if (dirty && !(await confirm({ title: '변경사항을 버릴까요?', description: '입력한 노출 기간을 저장하지 않고 다른 설정을 엽니다.', confirmLabel: '변경 버리기', cancelLabel: '계속 편집', tone: 'danger' }))) return;
                       setEditingPageSlug(page.slug);
                       setFormError('');
                       setFormData(createFormState(page, period));
+                      setInitialForm(JSON.stringify(createFormState(page, period)));
                     }}
                   >
                     {period ? '수정' : '기간 설정'}
@@ -432,15 +447,17 @@ export default function DisplayPeriodManager({
                     <button
                       type="button"
                       className="admin-button admin-button-danger"
+                      disabled={saving}
                       onClick={() => void handleDelete(period.pageSlug)}
                     >
-                      삭제
+                      기간 제한 해제
                     </button>
                   ) : null}
                 </div>
 
                 {isEditing ? (
                   <form className={styles.inlineEditor} onSubmit={handleSubmit}>
+                    <fieldset disabled={saving} className={styles.workFields}>
                     <div className={styles.inlineEditorHeader}>
                       <div>
                         <h5 className={styles.inlineEditorTitle}>
@@ -450,7 +467,7 @@ export default function DisplayPeriodManager({
                           {page.displayName} ({page.slug})
                         </p>
                       </div>
-                      <StatusBadge tone="primary">Inline Edit</StatusBadge>
+                      <StatusBadge tone="primary">{dirty ? '저장 필요' : '기간 설정'}</StatusBadge>
                     </div>
 
                     <div className={styles.formGrid}>
@@ -505,16 +522,17 @@ export default function DisplayPeriodManager({
 
                     <div className={styles.formActions}>
                       <button type="submit" className="admin-button admin-button-primary">
-                        저장
+                        {saving ? '저장 중' : '저장'}
                       </button>
                       <button
                         type="button"
                         className="admin-button admin-button-ghost"
-                        onClick={resetForm}
+                        onClick={async () => { if (!dirty || await confirm({ title: '변경사항을 버릴까요?', description: '입력한 노출 기간을 저장하지 않습니다.', confirmLabel: '변경 버리기', cancelLabel: '계속 편집', tone: 'danger' })) resetForm(); }}
                       >
                         취소
                       </button>
                     </div>
+                    </fieldset>
                   </form>
                 ) : null}
               </div>

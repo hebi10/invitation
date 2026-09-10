@@ -1,6 +1,7 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useRef } from 'react';
+import { useDialogLayer } from '@/hooks/useDialogLayer';
 
 import type { AdminOwnershipInviteResult } from '@/services/eventOwnershipInviteService';
 
@@ -24,23 +25,8 @@ export default function AdminOwnershipInviteDialog({
   const dialogRef = useRef<HTMLDivElement | null>(null);
   const linkInputRef = useRef<HTMLInputElement | null>(null);
 
-  useEffect(() => {
-    if (!invite) {
-      return;
-    }
-
-    linkInputRef.current?.focus();
-    linkInputRef.current?.select();
-
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
-        onClose();
-      }
-    };
-
-    document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [invite, onClose]);
+  const closeDialog = () => { if (!isReissuing) onClose(); };
+  useDialogLayer(dialogRef, { open: Boolean(invite), onClose: closeDialog, blocked: isReissuing });
 
   if (!invite) {
     return null;
@@ -67,7 +53,7 @@ export default function AdminOwnershipInviteDialog({
   };
 
   return (
-    <div className={styles.ownershipInviteBackdrop} role="presentation" onClick={onClose}>
+    <div className={styles.ownershipInviteBackdrop} role="presentation" onClick={closeDialog}>
       <div
         ref={dialogRef}
         className={styles.ownershipInviteDialog}
@@ -75,28 +61,7 @@ export default function AdminOwnershipInviteDialog({
         aria-modal="true"
         aria-labelledby="ownership-invite-dialog-title"
         onClick={(event) => event.stopPropagation()}
-        onKeyDown={(event) => {
-          if (event.key !== 'Tab') {
-            return;
-          }
-
-          const focusable = dialogRef.current?.querySelectorAll<HTMLElement>(
-            'button, input, [href], [tabindex]:not([tabindex="-1"])'
-          );
-          if (!focusable?.length) {
-            return;
-          }
-
-          const first = focusable[0];
-          const last = focusable[focusable.length - 1];
-          if (event.shiftKey && document.activeElement === first) {
-            event.preventDefault();
-            last.focus();
-          } else if (!event.shiftKey && document.activeElement === last) {
-            event.preventDefault();
-            first.focus();
-          }
-        }}
+        aria-busy={isReissuing}
       >
         <h2 id="ownership-invite-dialog-title" className={styles.ownershipInviteTitle}>
           고객 연결 링크
@@ -109,10 +74,12 @@ export default function AdminOwnershipInviteDialog({
           <span className="admin-field-label">{invite.slug} 연결 링크</span>
           <input
             ref={linkInputRef}
+            data-dialog-initial-focus
             className="admin-input"
             type="text"
             value={invite.url}
             readOnly
+            onFocus={(event) => event.currentTarget.select()}
           />
         </label>
 
@@ -125,7 +92,8 @@ export default function AdminOwnershipInviteDialog({
           <button
             type="button"
             className="admin-button admin-button-ghost"
-            onClick={onClose}
+            onClick={closeDialog}
+            disabled={isReissuing}
           >
             닫기
           </button>
@@ -140,6 +108,7 @@ export default function AdminOwnershipInviteDialog({
           <button
             type="button"
             className="admin-button admin-button-primary"
+            disabled={isReissuing}
             onClick={() => void copyInviteUrl()}
           >
             링크 복사

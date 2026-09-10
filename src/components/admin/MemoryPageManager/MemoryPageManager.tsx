@@ -1,5 +1,6 @@
 'use client';
 
+import { useAdminWorkGuard } from '@/app/admin/_components/AdminWorkGuard';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   EmptyState,
@@ -94,6 +95,9 @@ export default function MemoryPageManager({ initialPageSlug, lockedPageSlug }: M
   const [pages, setPages] = useState<InvitationPageSummary[]>([]);
   const [selectedPageSlug, setSelectedPageSlug] = useState('');
   const [draft, setDraft] = useState<MemoryPage | null>(null);
+  const [savedSnapshot, setSavedSnapshot] = useState('');
+  const setSavedDraft = (value: MemoryPage) => { setDraft(value); setSavedSnapshot(JSON.stringify(value)); };
+  const dirty = Boolean(draft && JSON.stringify(draft) !== savedSnapshot);
   const [sourceComments, setSourceComments] = useState<Comment[]>([]);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [uploadCategory, setUploadCategory] =
@@ -103,6 +107,7 @@ export default function MemoryPageManager({ initialPageSlug, lockedPageSlug }: M
   const [draftLoading, setDraftLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [uploadSummary, setUploadSummary] = useState('');
   const [exists, setExists] = useState(false);
   const [error, setError] = useState('');
   const [recentPageSlugs, setRecentPageSlugs] = useState<string[]>([]);
@@ -201,7 +206,7 @@ export default function MemoryPageManager({ initialPageSlug, lockedPageSlug }: M
         setSourceComments(comments);
 
         if (existingPage) {
-          setDraft(prepareDraftWithSelectedComments(existingPage, comments));
+          setSavedDraft(prepareDraftWithSelectedComments(existingPage, comments));
           setExists(true);
           return;
         }
@@ -211,7 +216,7 @@ export default function MemoryPageManager({ initialPageSlug, lockedPageSlug }: M
           return;
         }
 
-        setDraft(prepareDraftWithSelectedComments(nextDraft, comments));
+        setSavedDraft(prepareDraftWithSelectedComments(nextDraft, comments));
         setExists(false);
       } catch (loadError) {
         console.error(loadError);
@@ -274,9 +279,9 @@ export default function MemoryPageManager({ initialPageSlug, lockedPageSlug }: M
     setDraft((current) => (current ? { ...current, [field]: value } : current));
   };
 
-  const persist = async (mode: 'save' | 'publish') => {
-    if (!draft) {
-      return;
+  const persist = async (mode: 'save' | 'publish'): Promise<boolean> => {
+    if (!draft || saving || uploading || selectedFiles.length > 0) {
+      return false;
     }
 
     const preparedDraft = prepareDraftWithSelectedComments(
@@ -295,6 +300,8 @@ export default function MemoryPageManager({ initialPageSlug, lockedPageSlug }: M
       setDraft(preparedDraft);
 
       const savedDraft = await saveMemoryPage(preparedDraft);
+      setSavedDraft(prepareDraftWithSelectedComments(savedDraft, sourceComments));
+      setExists(true);
       const nextDraft =
         mode === 'publish'
           ? await publishMemoryPage(
@@ -303,7 +310,7 @@ export default function MemoryPageManager({ initialPageSlug, lockedPageSlug }: M
             )
           : savedDraft;
 
-      setDraft(prepareDraftWithSelectedComments(nextDraft, sourceComments));
+      setSavedDraft(prepareDraftWithSelectedComments(nextDraft, sourceComments));
       setExists(true);
       showToast({
         title:
@@ -312,15 +319,25 @@ export default function MemoryPageManager({ initialPageSlug, lockedPageSlug }: M
             : '추억 페이지를 저장했습니다.',
         tone: 'success',
       });
+      return true;
     } catch (saveError) {
       console.error(saveError);
       showToast({
         title: '추억 페이지 저장에 실패했습니다.',
         tone: 'error',
       });
+      return false;
     } finally {
       setSaving(false);
     }
+  };
+
+  useAdminWorkGuard({ dirty: dirty || selectedFiles.length > 0, busy: saving || uploading, save: () => persist('save') });
+
+  const changePage = async (slug: string) => {
+    if (saving || uploading) return;
+    if ((dirty || selectedFiles.length > 0) && !(await confirm({ title: '저장하지 않은 변경사항을 버릴까요?', description: '현재 추억 페이지의 변경사항을 저장하지 않고 다른 이벤트로 이동합니다.', confirmLabel: '변경 버리기', cancelLabel: '계속 편집', tone: 'danger' }))) return;
+    setSelectedPageSlug(slug);
   };
 
   const handleUnpublish = async () => {
@@ -331,7 +348,7 @@ export default function MemoryPageManager({ initialPageSlug, lockedPageSlug }: M
     try {
       setSaving(true);
       const nextDraft = await unpublishMemoryPage(draft.pageSlug);
-      setDraft(prepareDraftWithSelectedComments(nextDraft, sourceComments));
+      setSavedDraft(prepareDraftWithSelectedComments(nextDraft, sourceComments));
       showToast({
         title: '추억 페이지를 비공개로 전환했습니다.',
         tone: 'success',
@@ -354,7 +371,7 @@ export default function MemoryPageManager({ initialPageSlug, lockedPageSlug }: M
 
     const approved = await confirm({
       title: '추억 페이지를 삭제할까요?',
-      description: 'memory-pages 문서와 직접 업로드한 이미지를 함께 삭제합니다.',
+      description: '선택한 이벤트의 추억 페이지와 직접 업로드한 사진을 함께 삭제합니다. 삭제 후에는 복구할 수 없습니다.',
       confirmLabel: '삭제',
       cancelLabel: '취소',
       tone: 'danger',
@@ -365,9 +382,10 @@ export default function MemoryPageManager({ initialPageSlug, lockedPageSlug }: M
     }
 
     try {
+      setSaving(true);
       await deleteMemoryPage(draft.pageSlug);
       const nextDraft = await createMemoryPageDraftFromInvitation(draft.pageSlug);
-      setDraft(prepareDraftWithSelectedComments(nextDraft, sourceComments));
+      setSavedDraft(prepareDraftWithSelectedComments(nextDraft, sourceComments));
       setExists(false);
       showToast({
         title: '추억 페이지를 삭제했습니다.',
@@ -379,7 +397,7 @@ export default function MemoryPageManager({ initialPageSlug, lockedPageSlug }: M
         title: '추억 페이지 삭제에 실패했습니다.',
         tone: 'error',
       });
-    }
+    } finally { setSaving(false); }
   };
 
   const handleImportInvitationImages = async () => {
@@ -388,6 +406,7 @@ export default function MemoryPageManager({ initialPageSlug, lockedPageSlug }: M
     }
 
     try {
+      setUploading(true);
       const nextGalleryImages = await mergeInvitationGalleryImages(
         draft.pageSlug,
         draft.galleryImages
@@ -402,7 +421,7 @@ export default function MemoryPageManager({ initialPageSlug, lockedPageSlug }: M
           : (nextHeroImage?.thumbnailUrl ?? nextHeroImage?.url ?? ''),
       });
       showToast({
-        title: '청첩장 이미지를 가져왔습니다.',
+        title: '사진을 가져왔습니다. 페이지를 저장해 반영해 주세요.',
         tone: 'success',
       });
     } catch (importError) {
@@ -411,7 +430,7 @@ export default function MemoryPageManager({ initialPageSlug, lockedPageSlug }: M
         title: '청첩장 이미지 가져오기에 실패했습니다.',
         tone: 'error',
       });
-    }
+    } finally { setUploading(false); }
   };
 
   const handleUploadImages = async () => {
@@ -421,12 +440,17 @@ export default function MemoryPageManager({ initialPageSlug, lockedPageSlug }: M
 
     try {
       setUploading(true);
-      const uploadedImages = await uploadMemoryImages(
-        draft.pageSlug,
-        selectedFiles,
-        uploadCategory,
-        draft.galleryImages.length
-      );
+      const uploadedImages: MemoryGalleryImage[] = [];
+      const failedFiles: File[] = [];
+      // Sequential batches preserve the service's timestamp-based file paths.
+      for (const file of selectedFiles) {
+        const [result] = await Promise.allSettled([
+          uploadMemoryImages(draft.pageSlug, [file], uploadCategory, draft.galleryImages.length + uploadedImages.length),
+        ]);
+        if (result.status === 'fulfilled') uploadedImages.push(...result.value);
+        else failedFiles.push(file);
+      }
+      setUploadSummary(`완료 ${uploadedImages.length}개 · 실패 ${failedFiles.length}개${failedFiles.length ? ` · 재시도 대상: ${failedFiles.map((file) => file.name).join(', ')}` : ''}`);
       const nextGalleryImages = normalizeOrder([
         ...draft.galleryImages,
         ...uploadedImages,
@@ -440,10 +464,10 @@ export default function MemoryPageManager({ initialPageSlug, lockedPageSlug }: M
           ? draft.heroThumbnailUrl
           : (nextHeroImage?.thumbnailUrl ?? nextHeroImage?.url ?? ''),
       });
-      setSelectedFiles([]);
+      setSelectedFiles(failedFiles);
       showToast({
-        title: '이미지를 업로드했습니다.',
-        tone: 'success',
+        title: failedFiles.length ? '실패한 사진만 다시 업로드해 주세요.' : '사진 업로드 완료 · 페이지 저장이 필요합니다.',
+        tone: failedFiles.length ? 'error' : 'success',
       });
     } catch (uploadError) {
       console.error(uploadError);
@@ -461,7 +485,10 @@ export default function MemoryPageManager({ initialPageSlug, lockedPageSlug }: M
       return;
     }
 
+    const approved = await confirm({ title: '추억 페이지 이미지를 제거할까요?', description: '직접 업로드한 파일은 즉시 삭제됩니다. 제거한 구성은 페이지를 저장해 반영해 주세요.', confirmLabel: '이미지 제거', cancelLabel: '취소', tone: 'danger' });
+    if (!approved) return;
     try {
+      setUploading(true);
       await deleteMemoryImageAsset(image);
       const nextGalleryImages = normalizeOrder(
         draft.galleryImages.filter((item) => item.id !== image.id)
@@ -482,7 +509,7 @@ export default function MemoryPageManager({ initialPageSlug, lockedPageSlug }: M
         title: '이미지 제거에 실패했습니다.',
         tone: 'error',
       });
-    }
+    } finally { setUploading(false); }
   };
 
   const addCommentToSelection = (comment: Comment) => {
@@ -536,7 +563,8 @@ export default function MemoryPageManager({ initialPageSlug, lockedPageSlug }: M
               <select
                 className="admin-select"
                 value={selectedPageSlug}
-                onChange={(event) => setSelectedPageSlug(event.target.value)}
+                disabled={saving || uploading}
+                onChange={(event) => void changePage(event.target.value)}
               >
                 <option value="">청첩장을 선택하세요</option>
                 {pages.map((page) => (
@@ -567,6 +595,7 @@ export default function MemoryPageManager({ initialPageSlug, lockedPageSlug }: M
               <button
                 type="button"
                 className="admin-button admin-button-secondary"
+                disabled={saving || uploading}
                 onClick={() => void handleImportInvitationImages()}
               >
                 청첩장 이미지 가져오기
@@ -615,7 +644,8 @@ export default function MemoryPageManager({ initialPageSlug, lockedPageSlug }: M
                   key={page.slug}
                   type="button"
                   className="admin-button admin-button-ghost"
-                  onClick={() => setSelectedPageSlug(page.slug)}
+                  disabled={saving || uploading}
+                  onClick={() => void changePage(page.slug)}
                 >
                   {page.displayName}
                 </button>
@@ -632,7 +662,7 @@ export default function MemoryPageManager({ initialPageSlug, lockedPageSlug }: M
       ) : null}
 
       {selectedPageSlug && !draftLoading && draft ? (
-        <>
+        <fieldset disabled={saving || uploading} className={styles.workFields}>
           <section className={styles.panel}>
             <div className={styles.formGrid}>
               <label className="admin-field">
@@ -765,9 +795,11 @@ export default function MemoryPageManager({ initialPageSlug, lockedPageSlug }: M
                   type="file"
                   accept="image/*"
                   multiple
-                  onChange={(event) =>
-                    setSelectedFiles(Array.from(event.target.files ?? []))
-                  }
+                  onChange={(event) => {
+                    setSelectedFiles(Array.from(event.target.files ?? []));
+                    setUploadSummary('');
+                    event.target.value = '';
+                  }}
                 />
                 <label className="admin-button admin-button-ghost" htmlFor="memory-upload">
                   파일 선택
@@ -782,6 +814,7 @@ export default function MemoryPageManager({ initialPageSlug, lockedPageSlug }: M
                     ? '업로드 중...'
                     : `업로드${selectedFiles.length > 0 ? ` (${selectedFiles.length})` : ''}`}
                 </button>
+                {selectedFiles.length > 0 ? <button type="button" className="admin-button admin-button-ghost" onClick={() => setSelectedFiles([])}>선택 취소</button> : null}
               </div>
             </div>
 
@@ -971,6 +1004,8 @@ export default function MemoryPageManager({ initialPageSlug, lockedPageSlug }: M
 
           <div className={styles.footerBar}>
             <div className={styles.footerMeta}>
+              {uploadSummary ? <span role="status">{uploadSummary}</span> : null}
+              <span role="status">{uploading ? '사진 업로드 중' : saving ? '저장 중' : selectedFiles.length > 0 ? '선택한 사진을 먼저 업로드해 주세요' : dirty ? '변경사항 있음 · 저장 필요' : '변경사항 없음'}</span>
               <span className={styles.footerLabel}>공유 주소</span>
               <strong>{previewPath || '-'}</strong>
             </div>
@@ -980,7 +1015,7 @@ export default function MemoryPageManager({ initialPageSlug, lockedPageSlug }: M
                   type="button"
                   className="admin-button admin-button-ghost"
                   onClick={() => void handleUnpublish()}
-                  disabled={saving}
+                  disabled={saving || uploading || dirty || selectedFiles.length > 0}
                 >
                   비공개 전환
                 </button>
@@ -989,7 +1024,7 @@ export default function MemoryPageManager({ initialPageSlug, lockedPageSlug }: M
                 type="button"
                 className="admin-button admin-button-danger"
                 onClick={() => void handleDeletePage()}
-                disabled={saving}
+                disabled={saving || uploading || selectedFiles.length > 0}
               >
                 삭제
               </button>
@@ -997,21 +1032,21 @@ export default function MemoryPageManager({ initialPageSlug, lockedPageSlug }: M
                 type="button"
                 className="admin-button admin-button-primary"
                 onClick={() => void persist('save')}
-                disabled={saving}
+                disabled={saving || uploading || selectedFiles.length > 0}
               >
-                {saving ? '저장 중...' : exists ? '저장' : '청첩장 생성'}
+                {saving ? '저장 중...' : exists ? '변경사항 저장' : '추억 페이지 생성'}
               </button>
               <button
                 type="button"
                 className="admin-button admin-button-secondary"
                 onClick={() => void persist('publish')}
-                disabled={saving}
+                disabled={saving || uploading || selectedFiles.length > 0}
               >
-                공개
+                저장 후 공개
               </button>
             </div>
           </div>
-        </>
+        </fieldset>
       ) : null}
     </div>
   );

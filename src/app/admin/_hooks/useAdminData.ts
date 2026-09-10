@@ -281,7 +281,7 @@ export function useAdminData({
     async (comment: Comment) => {
       const approved = await confirm({
         title: '댓글을 삭제할까요?',
-        description: `${comment.author} 님의 댓글을 삭제하면 복구할 수 없습니다.`,
+        description: `${comment.author} 님의 댓글 “${comment.message.slice(0, 80)}${comment.message.length > 80 ? '…' : ''}”을 삭제합니다. 삭제 후에는 복구할 수 없습니다.`,
         confirmLabel: '삭제',
         cancelLabel: '취소',
         tone: 'danger',

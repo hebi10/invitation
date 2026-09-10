@@ -172,3 +172,7 @@
     width: 100%;
   }
 }
+
+.dialog { max-height: calc(100dvh - 32px); overflow-y: auto; border-radius: 0; }
+.dialogActions { flex-wrap: wrap; }
+.dialogButton { border-radius: 0; font-weight: 500; }
