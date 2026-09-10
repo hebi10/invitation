@@ -23,6 +23,7 @@ import {
   WizardVersionConflictError,
   type WizardPersistenceGateway,
 } from '../wizardPersistenceGateway';
+import { resolveWizardPublishedState } from '../pageWizardWorkspaceState';
 
 export type WizardDraftCreationState = {
   slug: string;
@@ -258,7 +259,7 @@ export function useWizardPersistence({
         prepared.variants = buildInvitationVariants(nextSlug, prepared.displayName, {
           availability: createInvitationVariantAvailability(nextAvailableVariantKeys),
         });
-        const nextPublished = options?.publish ?? published;
+        const nextPublished = resolveWizardPublishedState(published, options?.publish);
 
         const savedEditableConfig = await gateway.save({
           slug: nextSlug,
@@ -271,7 +272,9 @@ export function useWizardPersistence({
 
         const normalized = normalizeFormState(savedEditableConfig.config ?? prepared);
         setFormState(normalized);
-        setPublished(savedEditableConfig.published ?? nextPublished);
+        if (options?.publish !== undefined) {
+          setPublished(savedEditableConfig.published ?? nextPublished);
+        }
         setPersistedVersion(savedEditableConfig.version);
         setLastSavedAt(new Date());
         await onPersisted?.({
@@ -285,9 +288,7 @@ export function useWizardPersistence({
           showNotice(
             'success',
             options?.successMessage ??
-              (nextPublished
-                ? '페이지를 공개했습니다.'
-                : '청첩장을 저장했습니다.'),
+              '변경사항을 저장했습니다.',
             'save'
           );
         }

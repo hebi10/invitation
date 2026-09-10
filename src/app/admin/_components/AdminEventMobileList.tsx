@@ -1,3 +1,4 @@
+import { getAdminEventVisibility } from './adminEventWorkspaceModel';
 import { getEventTypeDisplayLabel } from '@/lib/eventTypes';
 import type { InvitationPageSummary } from '@/services/invitationPageService';
 import type { AppRoutes } from '@/lib/demoExperienceRoutes';
@@ -67,7 +68,7 @@ export default function AdminEventMobileList({
                 className={styles.eventState}
                 data-state={page.published ? 'published' : 'private'}
               >
-                {page.published ? '공개' : '비공개'}
+                {getAdminEventVisibility(page).label}
               </span>
             </div>
 

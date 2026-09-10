@@ -2,6 +2,7 @@
 
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { getCustomerAssignmentConfirmation } from '@/lib/adminCustomerSelection';
 
 import {
   clearAdminInvitationPreviewCache,
@@ -349,9 +350,14 @@ export function useAdminData({
   const handleAssignCustomerOwnership = useCallback(
     async (uid: string, pageSlug: string) => {
       const pageName = pages.find((page) => page.slug === pageSlug)?.displayName ?? pageSlug;
+      const description = getCustomerAssignmentConfirmation(customerAccounts, uid, pageName, pageSlug);
+      if (!description) {
+        showToast({ title: '연결할 고객을 다시 선택해 주세요.', tone: 'error' });
+        return;
+      }
       const approved = await confirm({
         title: '고객 계정에 청첩장을 연결할까요?',
-        description: `${pageName} 청첩장을 선택한 고객 계정에 연결합니다.`,
+        description,
         confirmLabel: '연결',
         cancelLabel: '취소',
       });
@@ -385,7 +391,7 @@ export function useAdminData({
         setOwnershipActionToken(null);
       }
     },
-    [confirm, gateway, pages, refreshAdminData, showToast]
+    [confirm, customerAccounts, gateway, pages, refreshAdminData, showToast]
   );
 
   const handleClearCustomerOwnership = useCallback(

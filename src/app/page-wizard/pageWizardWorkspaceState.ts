@@ -1,5 +1,6 @@
 import type { NoticeState } from './pageWizardShared';
 import type { WizardStepKey, SlugStepState } from './pageWizardData';
+import { buildWeddingDateObject, formatDateLabel, formatTimeLabel } from './pageWizardData';
 import type { BankAccount, InvitationPageSeed } from '@/types/invitationPage';
 
 export type WizardSaveStatus =
@@ -110,6 +111,37 @@ export function hasMeaningfulInputForWizardStep(
     default:
       return false;
   }
+}
+
+export function resolveWizardPublishedState(savedPublished: boolean, requestedPublished?: boolean) {
+  return requestedPublished ?? savedPublished;
+}
+
+export function buildWizardReviewFacts(config: InvitationPageSeed, imagesValid: boolean) {
+  const valueOrMissing = (value?: string) => value?.trim() || '미입력';
+  const eventType = config.eventType ?? 'wedding';
+  const facts: { label: string; value: string }[] = [];
+  if (eventType === 'wedding') {
+    facts.push({ label: '신랑 · 신부', value: `${valueOrMissing(config.couple.groom.name)} · ${valueOrMissing(config.couple.bride.name)}` });
+  } else if (eventType === 'birthday') {
+    facts.push({ label: '생일 주인공', value: valueOrMissing(config.couple.groom.name) });
+  } else {
+    facts.push({ label: eventType === 'first-birthday' ? '아기 이름' : eventType === 'opening' ? '상호명' : '행사명', value: valueOrMissing(config.displayName) });
+  }
+  if ((eventType === 'wedding' || eventType === 'birthday') && config.displayName.trim()) {
+    facts.push({ label: '표지 제목', value: config.displayName.trim() });
+  }
+  if (eventType === 'first-birthday') {
+    facts.push({ label: '아빠 · 엄마', value: `${valueOrMissing(config.couple.groom.name)} · ${valueOrMissing(config.couple.bride.name)}` });
+  }
+  const date = buildWeddingDateObject(config);
+  facts.push(
+    { label: '일정', value: date ? `${formatDateLabel(date)} ${formatTimeLabel(date)}` : '미입력 · 확인 필요' },
+    { label: '장소', value: valueOrMissing(config.venue) },
+    { label: '주소', value: valueOrMissing(config.pageData?.ceremonyAddress) },
+    { label: '대표 이미지', value: `${config.metadata.images.wedding?.trim() ? '등록됨' : '미등록'}${imagesValid ? '' : ' · 사진 설정 확인 필요'}` },
+  );
+  return facts;
 }
 
 export function getWizardSaveStatusLabel(status: WizardSaveStatus) {

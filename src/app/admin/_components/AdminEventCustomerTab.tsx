@@ -45,14 +45,23 @@ export default function AdminEventCustomerTab({
     [accounts, page.slug]
   );
   const assignableAccounts = useMemo(
-    () => accounts.filter((account) => !account.isAdmin && !account.disabled),
+    () => accounts.filter((account) => !account.isAdmin && !account.disabled && !account.missingAuthUser),
     [accounts]
   );
   const [selectedUid, setSelectedUid] = useState('');
+  const [customerQuery, setCustomerQuery] = useState('');
+  const filteredAccounts = assignableAccounts.filter((account) =>
+    `${account.displayName ?? ''} ${account.email ?? ''}`.toLocaleLowerCase().includes(customerQuery.trim().toLocaleLowerCase())
+  );
+
+  useEffect(() => {
+    setSelectedUid('');
+    setCustomerQuery('');
+  }, [page.slug]);
 
   useEffect(() => {
     if (selectedUid && assignableAccounts.some((account) => account.uid === selectedUid)) return;
-    setSelectedUid(assignableAccounts[0]?.uid ?? '');
+    setSelectedUid('');
   }, [assignableAccounts, selectedUid]);
 
   if (loading && accounts.length === 0) {
@@ -103,6 +112,13 @@ export default function AdminEventCustomerTab({
       ) : (
         <div className={styles.eventManagementForm}>
           <label className="admin-field">
+            <span className="admin-field-label">고객 이름 또는 이메일 검색</span>
+            <input className="admin-input" type="search" value={customerQuery}
+              disabled={readOnly}
+              onChange={(event) => { setCustomerQuery(event.target.value); setSelectedUid(''); }}
+              placeholder="이름 또는 이메일" />
+          </label>
+          <label className="admin-field">
             <span className="admin-field-label">연결할 고객 계정</span>
             <select
               className="admin-select"
@@ -110,10 +126,8 @@ export default function AdminEventCustomerTab({
               disabled={readOnly || assignableAccounts.length === 0}
               onChange={(event) => setSelectedUid(event.target.value)}
             >
-              {assignableAccounts.length === 0 ? (
-                <option value="">연결 가능한 고객 계정이 없습니다.</option>
-              ) : null}
-              {assignableAccounts.map((account) => (
+              <option value="">{filteredAccounts.length ? '연결할 고객을 선택해 주세요' : '검색된 고객 계정이 없습니다'}</option>
+              {filteredAccounts.map((account) => (
                 <option key={account.uid} value={account.uid}>
                   {account.displayName || account.email || account.uid}
                   {account.email ? ` · ${account.email}` : ''}

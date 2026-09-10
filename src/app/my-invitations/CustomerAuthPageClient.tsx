@@ -54,18 +54,19 @@ export default function CustomerAuthPageClient({
   return (
     <main className={styles.page} data-operation-ui>
       <div className={`${styles.shell} ${styles.authShell}`}>
-        <section className={styles.hero}>
+        <section className={styles.authIntro}>
           <h1 className={styles.title}>{title}</h1>
           <p className={styles.description}>{description}</p>
           <div className={styles.heroActions}>
-            <Link className={styles.secondaryButton} href="/my-invitations">
-              내 청첩장으로 이동
+            <Link className={styles.backLink} href="/">
+              홈으로 돌아가기
             </Link>
           </div>
         </section>
 
         <FirebaseAuthLoginCard
           title={authTitle}
+          hideTitle
           description={authDescription}
           helperText={authHelperText}
           initialMode={initialMode}

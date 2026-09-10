@@ -1,5 +1,5 @@
 [data-operation-ui] {
-  --operation-color-canvas: #f6f6f3;
+  --operation-color-canvas: #f8f8f7;
   --operation-color-surface: #ffffff;
   --operation-color-surface-muted: #f0f0ec;
   --operation-color-surface-elevated: #fafaf7;
@@ -7,7 +7,7 @@
   --operation-color-text-secondary: #666862;
   --operation-color-text-muted: #70726b;
   --operation-color-border: #d8dad4;
-  --operation-color-border-strong: #c4c7bf;
+  --operation-color-border-strong: #8c9087;
   --operation-color-action: #292b27;
   --operation-color-action-strong: #111210;
   --operation-color-selection: #eeefea;
@@ -18,7 +18,19 @@
   --operation-color-warning-soft: #faf4e8;
   --operation-color-danger: #a5423a;
   --operation-color-danger-soft: #fbefee;
-  --operation-radius-control: 6px;
-  --operation-radius-panel: 8px;
+  --operation-radius-control: 0px;
+  --operation-radius-panel: 0px;
   --operation-shadow-static: none;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-size: 14px;
+  line-height: 1.65;
+  color: var(--operation-color-text);
+  caret-color: var(--operation-color-action);
 }
+
+[data-operation-ui] ::selection {
+  color: var(--operation-color-text);
+  background: #e5e7e1;
+}
+
+[data-operation-ui] :is(input, textarea, select, button) { font-family: inherit; }

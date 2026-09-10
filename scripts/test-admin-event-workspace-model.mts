@@ -9,6 +9,7 @@ import {
   filterAdminEventComments,
   getAdminEventCapabilities,
   getAdminEventCounts,
+  getAdminEventVisibility,
   getAdminEventDetailTabs,
   getAdminEventPreviewLinks,
   getAdminEventRelatedQuery,
@@ -390,3 +391,15 @@ assert.deepEqual(
 );
 
 console.log('admin event workspace model checks passed');
+
+const currentTime = Date.now();
+const visibleBase = { published: true, displayPeriodEnabled: true, displayPeriodStart: new Date(currentTime - 86400000), displayPeriodEnd: new Date(currentTime + 86400000) };
+assert.equal(getAdminEventVisibility(visibleBase).label, '곧 종료');
+assert.equal(getAdminEventVisibility({ ...visibleBase, published: false }).label, '비공개');
+assert.equal(getAdminEventVisibility({ ...visibleBase, displayPeriodEnabled: false }).label, '노출 중');
+assert.equal(getAdminEventVisibility({ ...visibleBase, displayPeriodStart: null }).label, '기간 확인 필요');
+assert.equal(getAdminEventVisibility({ ...visibleBase, displayPeriodStart: new Date(currentTime + 3600000) }).label, '시작 전');
+assert.equal(getAdminEventVisibility({ ...visibleBase, displayPeriodEnd: new Date(currentTime - 3600000) }).label, '만료');
+const periodPages = [makePage('ending', 'wedding', visibleBase), makePage('private-ending', 'wedding', { ...visibleBase, published: false })];
+assert.deepEqual(filterAdminEvents(periodPages, { ...DEFAULT_ADMIN_EVENT_FILTERS, visibility: 'due-soon' }).map((page) => page.slug), ['ending']);
+assert.deepEqual(filterAdminEvents(periodPages, { ...DEFAULT_ADMIN_EVENT_FILTERS, visibility: 'expired' }), []);

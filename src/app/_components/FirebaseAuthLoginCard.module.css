@@ -3,15 +3,15 @@
   display: grid;
   width: 100%;
   gap: 18px;
-  padding: 24px;
-  border: 1px solid var(--operation-color-border, #d8dad4);
+  padding: 0;
+  border: 0;
   border-radius: var(--operation-radius-panel, 8px);
   background: var(--operation-color-surface, #ffffff);
   color: var(--operation-color-text, #1c1d1a);
 }
 
 .cardCompact {
-  padding: 20px;
+  padding: 0;
 }
 
 .header {
@@ -23,7 +23,7 @@
   margin: 0;
   color: var(--operation-color-text, #1c1d1a);
   font-size: 1.25rem;
-  font-weight: 750;
+  font-weight: 500;
   line-height: 1.35;
   letter-spacing: -0.025em;
 }
@@ -39,13 +39,13 @@
 .modeRow {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  border-bottom: 1px solid var(--operation-color-border, #d8dad4);
+  border: 0;
 }
 
 .modeButton {
   min-height: 42px;
   border: 0;
-  border-bottom: 2px solid transparent;
+  border: 1px solid transparent;
   background: transparent;
   color: var(--operation-color-text-muted, #70726b);
   font: inherit;
@@ -55,7 +55,8 @@
 }
 
 .modeButtonActive {
-  border-bottom-color: var(--operation-color-action, #292b27);
+  background: var(--operation-color-surface-muted, #f0f0ec);
+  border-color: var(--operation-color-action, #292b27);
   color: var(--operation-color-text, #1c1d1a);
 }
 
@@ -72,7 +73,7 @@
 .label {
   color: var(--operation-color-text-secondary, #666862);
   font-size: 0.8125rem;
-  font-weight: 650;
+  font-weight: 500;
 }
 
 .input {
@@ -80,13 +81,13 @@
   width: 100%;
   min-height: 44px;
   padding: 0 14px;
-  border: 1px solid var(--operation-color-border, #d8dad4);
+  border: 1px solid var(--operation-color-border-strong, #8c9087);
   border-radius: var(--operation-radius-control, 6px);
   outline: none;
   background: var(--operation-color-surface, #ffffff);
   color: var(--operation-color-text, #1c1d1a);
   font: inherit;
-  font-size: 0.9375rem;
+  font-size: 16px;
 }
 
 .input::placeholder {
@@ -140,7 +141,7 @@
   border-radius: var(--operation-radius-control, 6px);
   font: inherit;
   font-size: 0.875rem;
-  font-weight: 650;
+  font-weight: 500;
   cursor: pointer;
 }
 
@@ -150,10 +151,7 @@
   color: var(--operation-color-surface, #ffffff);
 }
 
-.primaryButton:hover:not(:disabled) {
-  border-color: var(--operation-color-action-strong, #111210);
-  background: var(--operation-color-action-strong, #111210);
-}
+
 
 .googleButton,
 .resendButton {
@@ -162,11 +160,7 @@
   color: var(--operation-color-text, #1c1d1a);
 }
 
-.googleButton:hover:not(:disabled),
-.resendButton:hover:not(:disabled) {
-  border-color: var(--operation-color-border-strong, #c4c7bf);
-  background: var(--operation-color-surface-muted, #f0f0ec);
-}
+
 
 .primaryButton:disabled,
 .googleButton:disabled,
@@ -203,6 +197,6 @@
 
 @media (max-width: 768px) {
   .card {
-    padding: 18px;
+    padding: 0;
   }
 }

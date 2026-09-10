@@ -242,8 +242,8 @@ function OwnedEventCard({
               <dd>/{event.slug}</dd>
             </div>
             <div className={styles.cardMetaRow}>
-              <dt>기본 테마</dt>
-              <dd>{event.defaultTheme}</dd>
+              <dt>공개 상태</dt>
+              <dd>{event.published ? '공개' : '초안 · 비공개'}</dd>
             </div>
             <div className={styles.cardMetaRow}>
               <dt>마지막 수정</dt>
@@ -649,7 +649,7 @@ export default function MyInvitationsClient({
 
   if (isAdminLoading) {
     return (
-      <main className={styles.page}>
+      <main className={styles.page} data-operation-ui>
         <div className={styles.shell}>
           <section className={styles.loading}>로그인 상태를 확인하는 중입니다.</section>
           <LegalFooter />
@@ -766,26 +766,11 @@ export default function MyInvitationsClient({
                 <dt>연결된 이벤트</dt>
                 <dd>{events.length}개</dd>
               </div>
-              {!experience ? (
-                <>
-                  <div className={styles.summaryRow}>
-                    <dt>보유 제작권</dt>
-                    <dd>{pageCreationCreditTotal}개</dd>
-                  </div>
-                  <div className={styles.summaryRow}>
-                    <dt>생성 티켓</dt>
-                    <dd>{operationTicketBalance}장</dd>
-                  </div>
-                </>
-              ) : (
-                <div className={styles.summaryRow}>
-                  <dt>운영 방식</dt>
-                  <dd>금일 공용 체험 청첩장</dd>
-                </div>
-              )}
+
             </dl>
           </div>
 
+          {!experience ? <p className={styles.creationBalance}>새 이벤트 제작 · 제작권 {pageCreationCreditTotal}개 / 생성 티켓 {operationTicketBalance}장</p> : null}
           <div className={styles.heroActions}>
             {!experience ? (
               <button

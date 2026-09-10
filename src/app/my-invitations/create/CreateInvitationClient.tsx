@@ -68,6 +68,7 @@ export default function CreateInvitationClient() {
   const [defaultTheme, setDefaultTheme] =
     useState<InvitationThemeKey>(DEFAULT_INVITATION_THEME);
   const [notice, setNotice] = useState('');
+  const [creditConfirmed, setCreditConfirmed] = useState(false);
   const [verificationNotice, setVerificationNotice] = useState('');
   const [verificationError, setVerificationError] = useState('');
   const [verificationRefreshing, setVerificationRefreshing] = useState(false);
@@ -220,12 +221,17 @@ export default function CreateInvitationClient() {
       return;
     }
 
+    if (!creditConfirmed) {
+      setNotice('선택한 제작권 1개 사용에 동의해 주세요.');
+      return;
+    }
+
     createMutation.mutate();
   };
 
   if (isAdminLoading || walletQuery.isLoading) {
     return (
-      <main className={styles.page}>
+      <main className={styles.page} data-operation-ui>
         <div className={styles.shell}>
           <section className={styles.loading}>생성 가능 여부를 확인하는 중입니다.</section>
         </div>
@@ -326,7 +332,7 @@ export default function CreateInvitationClient() {
             <div>
               <h1 className={styles.title}>새 이벤트 만들기</h1>
               <p className={styles.description}>
-                보유한 제작권을 사용해 한글 이름과 영문 주소를 입력하고 초안 페이지를 생성합니다.
+                제작권을 선택하고 기본 정보를 입력하면 초안이 만들어집니다.
               </p>
             </div>
             <dl className={styles.summaryList}>
@@ -344,7 +350,7 @@ export default function CreateInvitationClient() {
 
         <section className={styles.section}>
           <div className={styles.sectionHeader}>
-            <h2 className={styles.sectionTitle}>기본 정보</h2>
+            <h2 className={styles.sectionTitle}>청첩장 준비</h2>
             <p className={styles.sectionDescription}>
               생성 후에는 내 이벤트 목록에서 상세 정보와 이미지를 이어서 입력할 수 있습니다.
             </p>
@@ -354,6 +360,8 @@ export default function CreateInvitationClient() {
 
           {pageCreationCreditTotal > 0 ? (
             <div className={styles.formCard}>
+              <fieldset className={styles.formGroup}>
+                <legend>1. 사용할 제작권</legend>
               <div className={styles.walletCreditGrid}>
                 {PRODUCT_TIERS.map((tier) => (
                   <span
@@ -368,8 +376,27 @@ export default function CreateInvitationClient() {
                   </span>
                 ))}
               </div>
-
-              <div className={styles.formGrid}>
+                <label className={styles.field}>
+                  <span>사용할 제작권</span>
+                  <select
+                    className={styles.input}
+                    value={productTier}
+                    onChange={(event) => {
+                      setProductTier(event.target.value as InvitationProductTier);
+                      setCreditConfirmed(false);
+                    }}
+                  >
+                    {availableTiers.map((tier) => (
+                      <option key={tier} value={tier}>
+                        {tier.toUpperCase()} 제작권 {wallet?.pageCreationCredits[tier] ?? 0}개
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              </fieldset>
+              <fieldset className={styles.formGroup}>
+                <legend>2. 두 사람의 기본 정보</legend>
+                <div className={styles.formGrid}>
                 <label className={styles.field}>
                   <span>신랑 한글 이름</span>
                   <input
@@ -407,31 +434,6 @@ export default function CreateInvitationClient() {
                   />
                 </label>
                 <label className={styles.field}>
-                  <span>청첩장 주소</span>
-                  <input
-                    className={styles.input}
-                    value={slugBase}
-                    onChange={(event) => handleSlugChange(event.target.value)}
-                    placeholder="예: kim-shinlang-na-sinbu"
-                  />
-                </label>
-                <label className={styles.field}>
-                  <span>사용할 제작권</span>
-                  <select
-                    className={styles.input}
-                    value={productTier}
-                    onChange={(event) =>
-                      setProductTier(event.target.value as InvitationProductTier)
-                    }
-                  >
-                    {availableTiers.map((tier) => (
-                      <option key={tier} value={tier}>
-                        {tier.toUpperCase()} 제작권 {wallet?.pageCreationCredits[tier] ?? 0}개
-                      </option>
-                    ))}
-                  </select>
-                </label>
-                <label className={styles.field}>
                   <span>기본 디자인</span>
                   <select
                     className={styles.input}
@@ -446,6 +448,28 @@ export default function CreateInvitationClient() {
                       </option>
                     ))}
                   </select>
+                </label>
+                </div>
+              </fieldset>
+              <fieldset className={styles.formGroup}>
+                <legend>3. 청첩장 주소 확인</legend>
+                <label className={styles.field}>
+                  <span>청첩장 주소</span>
+                  <input
+                    className={styles.input}
+                    value={slugBase}
+                    onChange={(event) => handleSlugChange(event.target.value)}
+                    placeholder="예: kim-shinlang-na-sinbu"
+                  />
+                </label>
+                <p className={styles.sectionDescription}>영문 이름으로 주소가 만들어집니다. 원하는 주소로 수정할 수 있습니다.</p>
+              </fieldset>
+              <div className={styles.consumption}>
+                <p><strong>{productTier.toUpperCase()} 제작권 1개 사용</strong></p>
+                <p>초안 생성 시 선택한 제작권이 차감됩니다. 생성 티켓은 사용하지 않습니다.</p>
+                <label className={styles.confirmation}>
+                  <input type="checkbox" checked={creditConfirmed} onChange={(event) => setCreditConfirmed(event.target.checked)} />
+                  <span>선택한 제작권 1개 사용을 확인했습니다.</span>
                 </label>
               </div>
 

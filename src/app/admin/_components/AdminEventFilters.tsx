@@ -25,10 +25,12 @@ export default function AdminEventFilters({
     filters.ownership !== 'all',
     filters.sort !== 'updated',
     pageSize !== ADMIN_EVENTS_PER_PAGE,
+    Boolean(filters.visibility && filters.visibility !== 'all'),
   ].filter(Boolean).length;
 
   const resetFilters = () => {
     onQueryChange({
+      visibility: null,
       pageQ: null,
       pageType: null,
       published: null,
@@ -85,6 +87,12 @@ export default function AdminEventFilters({
           {activeAdvancedFilterCount > 0 ? ` · ${activeAdvancedFilterCount}개 적용` : ''}
         </summary>
         <div className={styles.eventAdvancedFilterGrid}>
+          <label className={styles.eventFilterField}>
+            <span className={styles.eventFilterLabel}>노출 점검</span>
+            <select className="admin-select" value={filters.visibility ?? 'all'} onChange={(event) => onQueryChange({ visibility: event.currentTarget.value, event: null, page: '1' })}>
+              <option value="all">전체</option><option value="due-soon">7일 내 종료</option><option value="expired">기간 만료</option>
+            </select>
+          </label>
           <label className={styles.eventFilterField}>
             <span className={styles.eventFilterLabel}>유형</span>
             <select

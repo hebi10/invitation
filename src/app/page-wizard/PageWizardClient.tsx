@@ -191,6 +191,8 @@ export default function PageWizardClient({
   );
   const {
     published,
+    persistedPublished,
+    setPersistedPublished,
     setPublished,
     applyPublishedState,
     resetPublishedState,
@@ -207,6 +209,15 @@ export default function PageWizardClient({
   const [notice, setNotice] = useState<NoticeState>(null);
   const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  useEffect(() => {
+    if (!hasUnsavedChanges) return;
+    const handleBeforeUnload = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+      event.returnValue = '';
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [hasUnsavedChanges]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [isClaimingOwnership, setIsClaimingOwnership] = useState(false);
@@ -1396,7 +1407,7 @@ export default function PageWizardClient({
     previewFormState,
     eventType,
     defaultTheme,
-    published,
+    published: persistedPublished,
     resolvedPersistedSlug,
     slugInput,
     defaultSeedSlug: DEFAULT_SEED_SLUG,
@@ -1415,7 +1426,8 @@ export default function PageWizardClient({
     setPersistedVersion,
     onVersionConflict: () => setHasVersionConflict(true),
     onPersisted: async ({ slug, config, published: nextPublished }) => {
-      setHasUnsavedChanges(false);
+      setPersistedPublished(nextPublished);
+      setHasUnsavedChanges(published !== nextPublished);
       const nextProductTier = normalizeInvitationProductTier(config.productTier);
 
       await Promise.all([
@@ -1936,7 +1948,7 @@ export default function PageWizardClient({
 
   return (
     <PageWizardWorkspace
-      title={eventTypeMeta.label}
+      title={formState.displayName || [formState.groomName, formState.brideName].filter(Boolean).join(' · ') || eventTypeMeta.label}
       subtitle={resolvedPersistedSlug ? `/${resolvedPersistedSlug}` : '새 페이지 만들기'}
       sections={wizardSections}
       activeSection={activeSection}
@@ -1950,6 +1962,8 @@ export default function PageWizardClient({
       interactedStepKeys={interactedStepKeys}
       hasPersistedData={Boolean(resolvedPersistedSlug)}
       saveStatus={saveStatus}
+      lastSavedAt={lastSavedAt}
+      persistedPublished={persistedPublished}
       notice={
         <>
           {renderNotice()}
@@ -1987,6 +2001,7 @@ export default function PageWizardClient({
       onPrevious={handleMovePrevious}
       onNext={() => void handleMoveNext()}
       onFinalConfirm={() => void handleFinalConfirm()}
+      onSave={() => void persistDraft({ successMessage: '내용을 저장했습니다. 공개 상태는 유지됩니다.' })}
     />
   );
 }

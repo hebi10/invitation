@@ -14,6 +14,7 @@ interface FirebaseAuthLoginCardProps {
   compact?: boolean;
   helperText?: string | null;
   initialMode?: 'login' | 'register';
+  hideTitle?: boolean;
 }
 
 export default function FirebaseAuthLoginCard({
@@ -24,6 +25,7 @@ export default function FirebaseAuthLoginCard({
   compact = false,
   helperText = null,
   initialMode = 'login',
+  hideTitle = false,
 }: FirebaseAuthLoginCardProps) {
   const {
     authUser,
@@ -165,7 +167,7 @@ export default function FirebaseAuthLoginCard({
   return (
     <section className={`${styles.card} ${compact ? styles.cardCompact : ''}`}>
       <div className={styles.header}>
-        <h2 className={styles.title}>{title}</h2>
+        {!hideTitle && <h2 className={styles.title}>{title}</h2>}
         <p className={styles.description}>{description}</p>
       </div>
 

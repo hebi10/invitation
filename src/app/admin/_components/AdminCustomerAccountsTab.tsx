@@ -1,6 +1,7 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 
 import { getEventTypeDisplayLabel } from '@/lib/eventTypes';
 import type { AppRoutes } from '@/lib/demoExperienceRoutes';
@@ -22,7 +23,7 @@ import {
 import { formatDateTime } from './adminPageUtils';
 import styles from '../page.module.css';
 
-const CUSTOMER_ACCOUNTS_PAGE_SIZE = 5;
+const CUSTOMER_ACCOUNTS_PAGE_SIZE = 10;
 type CustomerConnectionFilter = 'all' | 'linked' | 'unlinked';
 
 interface AdminCustomerAccountsTabProps {
@@ -148,9 +149,30 @@ export default function AdminCustomerAccountsTab({
   routes,
   experience,
 }: AdminCustomerAccountsTabProps) {
-  const [searchQuery, setSearchQuery] = useState('');
-  const [connectionFilter, setConnectionFilter] = useState<CustomerConnectionFilter>('all');
-  const [currentPage, setCurrentPage] = useState(1);
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const updateCustomerQuery = (updates: Record<string, string | null>) => {
+    const params = new URLSearchParams(searchParams?.toString() ?? '');
+    Object.entries(updates).forEach(([key, value]) => {
+      if (value) params.set(key, value);
+      else params.delete(key);
+    });
+    router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+  };
+  const searchQuery = searchParams?.get('customerQ') ?? '';
+  const requestedConnection = searchParams?.get('customerConnection');
+  const connectionFilter: CustomerConnectionFilter = requestedConnection === 'linked' || requestedConnection === 'unlinked' ? requestedConnection : 'all';
+  const parsedPage = Number(searchParams?.get('customerPage') ?? 1);
+  const currentPage = Number.isFinite(parsedPage) ? Math.max(1, Math.trunc(parsedPage)) : 1;
+  const setSearchQuery = (value: string) => updateCustomerQuery({ customerQ: value, customerPage: null });
+  const setConnectionFilter = (value: CustomerConnectionFilter) => updateCustomerQuery({ customerConnection: value === 'all' ? null : value, customerPage: null });
+  const setCurrentPage = (value: number) => updateCustomerQuery({ customerPage: String(value) });
+  const contextualAccount = selectedEventSlug ? accounts.find((account) => account.linkedEvents.some((event) => event.slug === selectedEventSlug)) : undefined;
+  const selectedCustomerUid = searchParams?.get('customer') || contextualAccount?.uid || '';
+  const selectedAccount = accounts.find((account) => account.uid === selectedCustomerUid);
+  const requestedDetailTab = searchParams?.get('customerDetail');
+  const customerDetailTab = requestedDetailTab === 'wallet' || requestedDetailTab === 'management' ? requestedDetailTab : 'events';
   const [draftAssignments, setDraftAssignments] = useState<Record<string, string>>({});
   const [draftAssignmentEventTypes, setDraftAssignmentEventTypes] = useState<
     Record<string, AssignmentEventTypeFilter>
@@ -209,16 +231,6 @@ export default function AdminCustomerAccountsTab({
     (normalizedCurrentPage - 1) * CUSTOMER_ACCOUNTS_PAGE_SIZE,
     normalizedCurrentPage * CUSTOMER_ACCOUNTS_PAGE_SIZE
   );
-
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [connectionFilter, searchQuery]);
-
-  useEffect(() => {
-    if (currentPage !== normalizedCurrentPage) {
-      setCurrentPage(normalizedCurrentPage);
-    }
-  }, [currentPage, normalizedCurrentPage]);
 
   const getSelectedLinkedEvent = (account: AdminCustomerAccountSummary) => {
     if (!account.linkedEvents.length) {
@@ -645,7 +657,14 @@ export default function AdminCustomerAccountsTab({
           <span>연결된 이벤트 · {account.linkedEvents.length}개</span>
         </div>
 
+        <nav className={styles.customerDetailNav} aria-label="고객 상세 항목">
+          {([{ key: 'events', label: '이벤트' }, { key: 'wallet', label: '이용권' }, { key: 'management', label: '관리' }] as const).map((tab) => (
+            <button type="button" key={tab.key} aria-current={customerDetailTab === tab.key ? 'page' : undefined}
+              onClick={() => updateCustomerQuery({ customerDetail: tab.key })}>{tab.label}</button>
+          ))}
+        </nav>
         <div className={styles.accountCardBody}>
+          {customerDetailTab === 'events' ? <>
           <section className={`${styles.accountCardSection} ${styles.accountConnectSection}`}>
             <div className={styles.accountCardSectionHeader}>
               <h4 className={styles.accountCardSectionTitle}>새 이벤트 연결</h4>
@@ -756,7 +775,8 @@ export default function AdminCustomerAccountsTab({
             {renderLinkedEventManager(account)}
           </section>
 
-          <section className={styles.accountCardSection}>
+          </> : null}
+          {customerDetailTab === 'wallet' ? <section className={styles.accountCardSection}>
             <div className={styles.accountCardSectionHeader}>
               <h4 className={styles.accountCardSectionTitle}>보유 이용권</h4>
               <StatusBadge tone="neutral">
@@ -764,11 +784,11 @@ export default function AdminCustomerAccountsTab({
               </StatusBadge>
             </div>
             {renderWalletManager(account)}
-          </section>
+          </section> : null}
         </div>
 
-        {!account.isAdmin || selectedLinkedEvent ? (
-          <details className={styles.accountDangerArea}>
+        {customerDetailTab === 'management' && (!account.isAdmin || selectedLinkedEvent) ? (
+          <details className={styles.accountDangerArea} open>
             <summary>위험 작업</summary>
             <p>소유권 연결 해제와 계정 정리는 되돌리기 어렵습니다.</p>
             <div className={styles.tableActions}>
@@ -867,8 +887,7 @@ export default function AdminCustomerAccountsTab({
                 type="button"
                 className="admin-button admin-button-ghost"
                 onClick={() => {
-                  setSearchQuery('');
-                  setConnectionFilter('all');
+                  updateCustomerQuery({ customerQ: null, customerConnection: null, customerPage: null });
                 }}
               >
                 필터 초기화
@@ -935,19 +954,35 @@ export default function AdminCustomerAccountsTab({
         />
       ) : filteredAccounts.length > 0 ? (
         <>
-          <div className={styles.accountCardList}>
-            {paginatedAccounts.map((account, index) =>
-              mobileReadOnly
-                ? renderMobileAccountCard(
-                    account,
-                    (normalizedCurrentPage - 1) * CUSTOMER_ACCOUNTS_PAGE_SIZE + index
-                  )
-                : renderAccountCard(
-                    account,
-                    (normalizedCurrentPage - 1) * CUSTOMER_ACCOUNTS_PAGE_SIZE + index
-                  )
-            )}
-          </div>
+          {mobileReadOnly ? (
+            <div className={styles.accountCardList}>
+              {paginatedAccounts.map((account, index) => renderMobileAccountCard(account, (normalizedCurrentPage - 1) * CUSTOMER_ACCOUNTS_PAGE_SIZE + index))}
+            </div>
+          ) : (
+            <div className={styles.customerWorkspace}>
+              <div className={styles.customerListFrame}>
+                <table className={styles.customerListTable}>
+                  <thead><tr><th scope="col">고객</th><th scope="col">연결</th><th scope="col">상태</th></tr></thead>
+                  <tbody>{paginatedAccounts.map((account) => (
+                    <tr key={account.uid} data-selected={account.uid === selectedCustomerUid || undefined}>
+                      <td><button type="button" className={styles.customerSelectButton} aria-current={account.uid === selectedCustomerUid ? 'true' : undefined}
+                        onClick={() => updateCustomerQuery({ customer: account.uid, customerDetail: null, event: null })}>
+                        <strong>{account.displayName || account.email || '이름 미등록 고객'}</strong><span>{account.email ?? '이메일 없음'}</span>
+                      </button></td>
+                      <td>{account.linkedEvents.length}개</td>
+                      <td>{account.missingAuthUser ? '삭제된 계정' : account.disabled ? '비활성' : account.isAdmin ? '관리자' : '사용 가능'}</td>
+                    </tr>
+                  ))}</tbody>
+                </table>
+              </div>
+              <section className={styles.customerDetailPane} aria-label="선택한 고객 상세">
+                {selectedAccount ? <>
+                  <button type="button" className="admin-button admin-button-ghost" onClick={() => updateCustomerQuery({ customer: null, customerDetail: null, event: null })}>상세 닫기</button>
+                  {renderAccountCard(selectedAccount, accounts.indexOf(selectedAccount))}
+                </> : <p className={styles.customerSelectionHint}>고객을 선택하면 연결 이벤트와 이용권을 관리할 수 있습니다.</p>}
+              </section>
+            </div>
+          )}
           <Pagination
             currentPage={normalizedCurrentPage}
             totalPages={totalPages}
@@ -972,8 +1007,7 @@ export default function AdminCustomerAccountsTab({
           onAction={
             searchQuery || connectionFilter !== 'all'
               ? () => {
-                  setSearchQuery('');
-                  setConnectionFilter('all');
+                  updateCustomerQuery({ customerQ: null, customerConnection: null, customerPage: null });
                 }
               : onRefresh
           }

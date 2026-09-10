@@ -21,6 +21,8 @@ import {
   markWizardStepInteraction,
   resolveWizardSelectionInteraction,
   resolveWizardSaveStatus,
+  resolveWizardPublishedState,
+  buildWizardReviewFacts,
 } from '../src/app/page-wizard/pageWizardWorkspaceState.ts';
 import { getSelectedTemplateLabel } from '../src/app/page-wizard/pageWizardTemplateSelection.ts';
 
@@ -261,5 +263,44 @@ assert.equal(
   null,
   '사용자가 템플릿 문구를 직접 수정하면 선택 상태를 해제해야 합니다.'
 );
+
+const navigationSource = readFileSync(
+  new URL('../src/app/page-wizard/hooks/useWizardNavigation.ts', import.meta.url), 'utf8'
+);
+const reviewConfig = createInitialWizardConfig('wedding');
+reviewConfig.displayName = '이전 표지 제목';
+reviewConfig.couple.groom.name = '수정한 신랑';
+reviewConfig.couple.bride.name = '수정한 신부';
+reviewConfig.venue = '수정한 장소';
+reviewConfig.pageData = { ...reviewConfig.pageData, venueName: '이전 장소', ceremonyAddress: '수정한 주소' };
+reviewConfig.weddingDateTime = { year: 2027, month: 3, day: 12, hour: 16, minute: 30 };
+reviewConfig.metadata.images.wedding = 'https://example.com/photo.jpg';
+const facts = buildWizardReviewFacts(reviewConfig, false);
+assert.equal(facts.find((item) => item.label === '신랑 · 신부')?.value, '수정한 신랑 · 수정한 신부');
+assert.equal(facts.find((item) => item.label === '표지 제목')?.value, '이전 표지 제목');
+assert.equal(facts.find((item) => item.label === '장소')?.value, '수정한 장소');
+assert.equal(facts.find((item) => item.label === '주소')?.value, '수정한 주소');
+assert.match(facts.find((item) => item.label === '일정')?.value ?? '', /2027/);
+assert.match(facts.find((item) => item.label === '대표 이미지')?.value ?? '', /확인 필요/);
+for (const eventType of ['birthday', 'first-birthday', 'opening', 'general-event'] as const) {
+  reviewConfig.eventType = eventType;
+  const identity = buildWizardReviewFacts(reviewConfig, true)[0];
+  assert.equal(identity.value, eventType === 'birthday' ? '수정한 신랑' : '이전 표지 제목');
+}
+assert.doesNotMatch(navigationSource, /publish:\s*false/,
+  '다음 작업 이동은 기존 공개 상태를 비공개로 바꾸면 안 됩니다.');
+assert.match(navigationSource, /publish:\s*published/,
+  '최종 확인은 사용자가 명시한 공개 선택을 저장해야 합니다.');
+assert.equal(resolveWizardPublishedState(true), true, '공개된 페이지의 일반 저장은 공개를 유지합니다.');
+assert.equal(resolveWizardPublishedState(false), false, '새 초안의 일반 저장은 비공개를 유지합니다.');
+assert.equal(resolveWizardPublishedState(true, false), false, '최종 비공개 선택은 적용합니다.');
+assert.equal(resolveWizardPublishedState(false, true), true, '최종 공개 선택은 적용합니다.');
+const persistenceSource = readFileSync(
+  new URL('../src/app/page-wizard/hooks/useWizardPersistence.ts', import.meta.url), 'utf8'
+);
+assert.match(persistenceSource, /resolveWizardPublishedState\(published, options\?\.publish\)/);
+assert.match(persistenceSource, /변경사항을 저장했습니다/);
+assert.doesNotMatch(persistenceSource, /페이지를 공개했습니다/,
+  '일반 내용 저장에 공개 변경 성공 메시지를 표시하면 안 됩니다.');
 
 console.log('page wizard workspace mapping checks passed');

@@ -21,6 +21,7 @@ import type {
 } from './pageWizardSections';
 import {
   getWizardSaveStatusLabel,
+  buildWizardReviewFacts,
   getWizardSectionStatus,
   hasMeaningfulInputForWizardStep,
   type WizardSaveStatus,
@@ -41,6 +42,8 @@ type PageWizardWorkspaceProps = {
   interactedStepKeys: ReadonlySet<WizardStepKey>;
   hasPersistedData: boolean;
   saveStatus: WizardSaveStatus;
+  lastSavedAt: Date | null;
+  persistedPublished: boolean;
   notice: ReactNode;
   isSaving: boolean;
   published: boolean;
@@ -53,6 +56,7 @@ type PageWizardWorkspaceProps = {
   onPrevious: () => void;
   onNext: () => void;
   onFinalConfirm: () => void;
+  onSave: () => void;
 };
 
 const DIRECTION_CONTRACT = `<!--
@@ -76,6 +80,8 @@ export default function PageWizardWorkspace({
   interactedStepKeys,
   hasPersistedData,
   saveStatus,
+  lastSavedAt,
+  persistedPublished,
   notice,
   isSaving,
   published,
@@ -88,6 +94,7 @@ export default function PageWizardWorkspace({
   onPrevious,
   onNext,
   onFinalConfirm,
+  onSave,
 }: PageWizardWorkspaceProps) {
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
   const previewTriggerRef = useRef<HTMLButtonElement | null>(null);
@@ -185,6 +192,7 @@ export default function PageWizardWorkspace({
         type="button"
         className={`${styles.sectionButton} ${isActive ? styles.sectionButtonActive : ''}`}
         aria-current={isActive ? 'step' : undefined}
+        disabled={isSaving}
         onClick={() => handleSectionSelect(section.id)}
       >
         <span className={styles.sectionIndex}>{index + 1}</span>
@@ -218,6 +226,9 @@ export default function PageWizardWorkspace({
             </div>
           </div>
           <div className={styles.topActions}>
+            <span className={styles.publicationStatus}>
+              {persistedPublished ? '공개 중' : '비공개 초안'}
+            </span>
             <span
               className={`${styles.saveStatus} ${styles[`saveStatus_${saveStatus}`]}`}
               role="status"
@@ -225,6 +236,14 @@ export default function PageWizardWorkspace({
             >
               {getWizardSaveStatusLabel(saveStatus)}
             </span>
+            {lastSavedAt ? (
+              <time className={styles.savedTime} dateTime={lastSavedAt.toISOString()}>
+                {lastSavedAt.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })}
+              </time>
+            ) : null}
+            <button type="button" className={styles.primaryAction} onClick={onSave} disabled={isSaving}>
+              {isSaving ? '저장 중' : saveStatus === 'error' ? '저장 다시 시도' : '내용 저장'}
+            </button>
             {activePreviewStep ? (
               <button
                 type="button"
@@ -272,6 +291,33 @@ export default function PageWizardWorkspace({
             <p>{activeSection.description}</p>
           </header>
 
+          {isFinalSection ? (
+            <section className={styles.reviewSummary} aria-label="입력 내용 검토">
+              <h3>공유 전 확인</h3>
+              <dl className={styles.reviewFacts}>
+                {buildWizardReviewFacts(formState, getStepValidation('images').valid).map((fact) => (
+                  <div key={fact.label}><dt>{fact.label}</dt><dd>{fact.value}</dd></div>
+                ))}
+                <div><dt>저장 후 공개 상태</dt><dd>{published ? '공개' : '비공개'}</dd></div>
+              </dl>
+              {formState.metadata.images.wedding ? (
+                <img className={styles.reviewImage} src={formState.metadata.images.wedding} alt="등록한 대표 이미지 확인" />
+              ) : null}
+              <div className={styles.reviewChecks}>
+                {sections.filter((section) => section.id !== 'review').map((section) => {
+                  const validation = getSectionValidation(section);
+                  return (
+                    <button key={section.id} type="button" disabled={isSaving} onClick={() => handleSectionSelect(section.id)} className={styles.reviewCheck}>
+                      <strong>{section.title}</strong>
+                      <span>{validation.valid ? '입력 확인 · 수정' : validation.messages[0] || '필수 입력 확인'}</span>
+                    </button>
+                  );
+                })}
+              </div>
+              <p className={styles.saveHelp}>내용 저장은 현재 공개 상태를 유지합니다. 공개 여부 변경은 아래 최종 저장 버튼에서 적용됩니다.</p>
+            </section>
+          ) : null}
+
           <div className={styles.stepList}>
             {activeSection.steps.map((step) => {
               const validation = getStepValidation(step.key);
@@ -317,7 +363,14 @@ export default function PageWizardWorkspace({
                   ) : null}
 
                   <div className={styles.stepContent}>
-                    {renderStepContent(step.key)}
+                    <fieldset className={styles.editorFields} disabled={isSaving} aria-label={`${step.title} 입력`}>
+                    {step.key === 'music' || step.key === 'extra' ? (
+                      <details className={styles.optionalSection} open={!validation.valid}>
+                        <summary>{step.title} 설정</summary>
+                        {renderStepContent(step.key)}
+                      </details>
+                    ) : renderStepContent(step.key)}
+                    </fieldset>
                   </div>
                 </section>
               );
@@ -345,7 +398,7 @@ export default function PageWizardWorkspace({
                 onClick={onFinalConfirm}
                 disabled={isSaving}
               >
-                {published ? '저장 후 공개' : '초안 저장'}
+                {isSaving ? '저장 중' : published ? '저장 후 공개' : persistedPublished ? '비공개로 저장' : '초안 저장'}
               </button>
             ) : (
               <button
@@ -354,7 +407,7 @@ export default function PageWizardWorkspace({
                 onClick={onNext}
                 disabled={isSaving}
               >
-                {isSaving ? '저장 중' : '다음 작업'}
+                {isSaving ? '저장 중' : '저장 후 다음'}
               </button>
             )}
           </div>

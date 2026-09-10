@@ -105,7 +105,6 @@ export function useWizardNavigation({
     if (activeSection.steps.some((step) => step.key === 'slug')) {
       let nextSlug = resolvedPersistedSlug;
       const savedSlug = await persistDraft({
-        publish: false,
         silent: Boolean(nextSlug),
         successMessage: '페이지를 생성했습니다. 다음 단계로 이동합니다.',
       });
@@ -125,7 +124,7 @@ export function useWizardNavigation({
         }
       }
     } else if (activeSection.id !== 'review' && resolvedPersistedSlug) {
-      const savedSlug = await persistDraft({ publish: false, silent: true });
+      const savedSlug = await persistDraft({ silent: true });
       if (!savedSlug) {
         return;
       }

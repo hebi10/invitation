@@ -19,7 +19,7 @@
   position: sticky;
   top: 0;
   z-index: 20;
-  border-bottom: 1px solid var(--workspace-line);
+  border: 1px solid var(--workspace-line);
   background: var(--workspace-surface);
 }
 
@@ -56,7 +56,7 @@
   overflow: hidden;
   color: var(--workspace-ink);
   font-size: 1rem;
-  font-weight: 750;
+  font-weight: 700;
   line-height: 1.35;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -76,7 +76,7 @@
   flex: 0 0 auto;
   color: var(--workspace-accent-strong);
   font-size: 0.78rem;
-  font-weight: 750;
+  font-weight: 700;
 }
 
 .topActions,
@@ -84,6 +84,113 @@
   display: flex;
   align-items: center;
   gap: 8px;
+}
+
+.topActions {
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.publicationStatus,
+.savedTime {
+  color: var(--workspace-muted);
+  font-size: 0.75rem;
+  white-space: nowrap;
+}
+
+.publicationStatus {
+  color: var(--workspace-ink);
+  padding: 5px 8px;
+  background: var(--workspace-canvas);
+}
+
+.reviewSummary {
+  padding: 24px;
+  margin-bottom: 24px;
+  background: var(--workspace-surface);
+  border: 1px solid var(--workspace-line);
+}
+
+.reviewSummary h3 {
+  margin: 0 0 20px;
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.reviewFacts {
+  display: grid;
+  gap: 14px;
+  margin: 0;
+  font-size: 0.86rem;
+}
+
+.reviewFacts > div {
+  display: grid;
+  grid-template-columns: 130px minmax(0, 1fr);
+  gap: 16px;
+}
+
+.reviewFacts dt,
+.saveHelp {
+  color: var(--workspace-muted);
+}
+
+.reviewFacts dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.reviewImage {
+  display: block;
+  width: 120px;
+  height: 150px;
+  object-fit: contain;
+  margin-top: 20px;
+  background: var(--workspace-canvas);
+}
+
+.reviewChecks {
+  display: grid;
+  gap: 8px;
+  margin-top: 24px;
+}
+
+.reviewCheck {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  padding: 12px;
+  border: 1px solid var(--workspace-line);
+  background: var(--workspace-surface);
+  color: var(--workspace-ink);
+  font: inherit;
+  font-size: 0.82rem;
+  text-align: left;
+  cursor: pointer;
+}
+
+.reviewCheck strong {
+  flex-shrink: 0;
+  font-weight: 500;
+}
+
+.reviewCheck span {
+  color: var(--workspace-muted);
+}
+
+.saveHelp {
+  margin: 20px 0 0;
+  font-size: 0.8rem;
+  line-height: 1.6;
+}
+
+.optionalSection summary {
+  padding: 14px;
+  margin-bottom: 16px;
+  border: 1px solid var(--workspace-line);
+  font-size: 0.86rem;
+  cursor: pointer;
 }
 
 .saveStatus {
@@ -183,7 +290,7 @@
 
 .sectionButtonActive .sectionIndex {
   color: var(--workspace-accent-strong);
-  font-weight: 750;
+  font-weight: 700;
 }
 
 .sectionButtonText {
@@ -210,21 +317,20 @@
 
 .sectionHeader {
   padding: 4px 0 24px;
-  border-bottom: 1px solid var(--workspace-line-strong);
 }
 
 .sectionPosition {
   color: var(--workspace-accent-strong);
   font-size: 0.8rem;
-  font-weight: 750;
+  font-weight: 700;
   font-variant-numeric: tabular-nums;
 }
 
 .sectionHeader h2 {
   margin-top: 10px;
   color: var(--workspace-ink);
-  font-size: clamp(1.55rem, 3vw, 2rem);
-  font-weight: 760;
+  font-size: 1.5rem;
+  font-weight: 700;
   letter-spacing: -0.025em;
   line-height: 1.2;
 }
@@ -239,11 +345,23 @@
 
 .stepList {
   display: grid;
+  gap: 24px;
 }
 
 .stepSection {
-  padding: 32px 0 36px;
-  border-bottom: 1px solid var(--workspace-line);
+  padding: 24px;
+  background: var(--workspace-surface);
+}
+
+.editorFields {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.editorFields:disabled {
+  opacity: 0.65;
 }
 
 .stepHeadingRow {
@@ -256,7 +374,7 @@
 .stepHeadingRow h3 {
   color: var(--workspace-ink);
   font-size: 1.08rem;
-  font-weight: 740;
+  font-weight: 700;
   letter-spacing: -0.015em;
   line-height: 1.4;
 }
@@ -293,7 +411,7 @@
   margin-top: 16px;
   padding: 12px 14px;
   border: 1px solid #f1b7b2;
-  border-radius: 6px;
+  border-radius: var(--operation-radius-control);
   background: #fff5f4;
   color: #9f221a;
   font-size: 0.84rem;
@@ -313,7 +431,7 @@
   justify-content: center;
   font: inherit;
   font-size: 0.86rem;
-  font-weight: 720;
+  font-weight: 700;
   text-decoration: none;
   cursor: pointer;
 }
@@ -333,8 +451,8 @@
 }
 
 .primaryAction:hover:not(:disabled) {
-  border-color: var(--operation-color-action-strong);
-  background: var(--operation-color-action-strong);
+  border-color: var(--workspace-accent);
+  background: var(--workspace-accent);
 }
 
 .stepPreviewAction {
@@ -357,7 +475,7 @@
   position: fixed;
   inset: auto 0 0;
   z-index: 25;
-  border-top: 1px solid var(--workspace-line);
+  border: 1px solid var(--workspace-line);
   background: var(--workspace-surface);
 }
 
@@ -422,7 +540,7 @@
 .dialogHeader {
   min-height: 72px;
   padding: 14px 18px;
-  border-bottom: 1px solid var(--workspace-line);
+  border: 1px solid var(--workspace-line);
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -432,7 +550,7 @@
 .dialogHeader h2 {
   color: var(--workspace-ink);
   font-size: 1.05rem;
-  font-weight: 740;
+  font-weight: 700;
 }
 
 .dialogLabel {
@@ -464,7 +582,7 @@
   .mobileProgress {
     min-height: 60px;
     padding: 8px 16px;
-    border-bottom: 1px solid var(--workspace-line);
+    border: 1px solid var(--workspace-line);
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -481,7 +599,7 @@
   .mobileProgress span {
     color: var(--workspace-accent-strong);
     font-size: 0.72rem;
-    font-weight: 750;
+    font-weight: 700;
   }
 
   .mobileSectionTrigger {
@@ -507,7 +625,7 @@
   }
 
   .stepSection {
-    padding: 28px 0 32px;
+    padding: 20px 16px;
   }
 
   .stepHeadingRow {
@@ -535,6 +653,34 @@
 }
 
 @media (max-width: 520px) {
+  .topBarInner {
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .topActions {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .topActions .primaryAction {
+    margin-left: auto;
+  }
+
+  .reviewSummary {
+    padding: 16px;
+  }
+
+  .reviewFacts > div {
+    grid-template-columns: 90px minmax(0, 1fr);
+    gap: 8px;
+  }
+
+  .reviewCheck {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+  }
   .identity {
     max-width: 58vw;
   }

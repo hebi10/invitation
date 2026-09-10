@@ -1,3 +1,4 @@
+import { getPeriodStatusMeta } from './adminPageUtils';
 import { getEventPreviewLinks } from '@/lib/eventPreviewLinks';
 import {
   getEventTypeDisplayLabel,
@@ -43,6 +44,7 @@ export interface AdminEventFilters {
   published: AdminEventPublishedFilter;
   ownership: AdminEventOwnershipFilter;
   sort: AdminEventSort;
+  visibility?: 'all' | 'due-soon' | 'expired';
 }
 
 export const DEFAULT_ADMIN_EVENT_FILTERS: AdminEventFilters = {
@@ -105,7 +107,8 @@ export function filterAdminEvents(
         (filters.eventType === 'all' || page.eventType === filters.eventType) &&
         (filters.published === 'all' ||
           page.published === (filters.published === 'published')) &&
-        (filters.ownership === 'all' || page.ownershipKind === filters.ownership)
+        (filters.ownership === 'all' || page.ownershipKind === filters.ownership) &&
+        (!filters.visibility || filters.visibility === 'all' || getAdminEventVisibility(page).label === (filters.visibility === 'due-soon' ? '곧 종료' : '만료'))
       );
     })
     .sort((left, right) => {
@@ -291,7 +294,7 @@ export function getAdminEventRelatedQuery(
 ): Record<string, string> {
   const base = { event: page.slug, pageType: page.eventType };
   if (capability === 'ownership') {
-    return { section: 'customers', tab: 'accounts', ...base };
+    return { section: 'customers', tab: 'accounts', customer: '', customerQ: '', customerConnection: '', customerPage: '', customerDetail: '', ...base };
   }
   if (capability === 'comments') {
     return {
@@ -303,4 +306,13 @@ export function getAdminEventRelatedQuery(
   }
   const tab = capability === 'period' ? 'periods' : capability;
   return { section: 'events', tab, ...base };
+}
+
+export function getAdminEventVisibility(page: Pick<InvitationPageSummary, 'published' | 'displayPeriodEnabled' | 'displayPeriodStart' | 'displayPeriodEnd'>) {
+  if (!page.published) return { label: '비공개', description: '공개 설정이 꺼져 있습니다.' };
+  if (!page.displayPeriodEnabled) return { label: '노출 중', description: '기간 제한 없이 공개 중입니다.' };
+  if (!page.displayPeriodStart || !page.displayPeriodEnd || Number.isNaN(page.displayPeriodStart.getTime()) || Number.isNaN(page.displayPeriodEnd.getTime())) {
+    return { label: '기간 확인 필요', description: '공개 기간이 올바르게 설정되지 않았습니다.' };
+  }
+  return getPeriodStatusMeta({ pageSlug: '', isActive: true, startDate: page.displayPeriodStart, endDate: page.displayPeriodEnd, createdAt: page.displayPeriodStart, updatedAt: page.displayPeriodStart });
 }

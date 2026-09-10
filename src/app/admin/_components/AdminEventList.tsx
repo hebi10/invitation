@@ -1,3 +1,4 @@
+import { getAdminEventVisibility } from './adminEventWorkspaceModel';
 import { getEventTypeDisplayLabel } from '@/lib/eventTypes';
 import type { InvitationPageSummary } from '@/services/invitationPageService';
 import type { AppRoutes } from '@/lib/demoExperienceRoutes';
@@ -66,7 +67,7 @@ export default function AdminEventList({
             <th scope="col">이벤트</th>
             <th scope="col">유형</th>
             <th scope="col">행사일</th>
-            <th scope="col">공개 상태</th>
+            <th scope="col">공개 설정 · 노출</th>
             <th scope="col">고객 연결</th>
             <th scope="col">최근 수정</th>
             <th scope="col">편집</th>
@@ -99,7 +100,7 @@ export default function AdminEventList({
                 <td>{formatDate(page.date)}</td>
                 <td>
                   <span className={styles.eventState} data-state={page.published ? 'published' : 'private'}>
-                    {page.published ? '공개' : '비공개'}
+                    {page.published ? `공개 · ${getAdminEventVisibility(page).label}` : '비공개'}
                   </span>
                 </td>
                 <td>{getOwnershipLabel(page)}</td>

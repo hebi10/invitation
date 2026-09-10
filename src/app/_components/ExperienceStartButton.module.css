@@ -10,8 +10,8 @@
   justify-content: center;
   gap: 3px;
   padding: 13px 18px;
-  border: 1px solid #2f4d45;
-  background: #2f4d45;
+  border: 1px solid #292b27;
+  background: #292b27;
   color: #fff;
   text-align: left;
   cursor: pointer;
@@ -19,13 +19,13 @@
 
 .trigger:focus-visible,
 .noticeActions button:focus-visible {
-  outline: 2px solid #9b6b37;
+  outline: 2px solid #596257;
   outline-offset: 3px;
 }
 
 .trigger span {
   font-size: 1rem;
-  font-weight: 800;
+  font-weight: 500;
 }
 
 .trigger small {
@@ -53,7 +53,7 @@
 }
 
 .notice:focus-visible {
-  outline: 2px solid #9b6b37;
+  outline: 2px solid #596257;
   outline-offset: 4px;
 }
 
@@ -78,9 +78,9 @@
 .noticeActions button {
   min-height: 44px;
   padding: 7px 12px;
-  border: 1px solid #2f4d45;
+  border: 1px solid #292b27;
   background: #fff;
-  color: #2f4d45;
+  color: #292b27;
   font: inherit;
   font-size: 0.84rem;
   font-weight: 700;
@@ -88,7 +88,7 @@
 }
 
 .noticeActions button:last-child {
-  background: #2f4d45;
+  background: #292b27;
   color: #fff;
 }
 

@@ -15,8 +15,8 @@ interface AdminShellProps {
 
 const PRIMARY_NAV_ITEMS: Array<{ key: AdminPrimaryView; label: string }> = [
   { key: 'events', label: '이벤트' },
-  { key: 'comments', label: '방명록' },
   { key: 'customers', label: '고객' },
+  { key: 'comments', label: '방명록' },
 ];
 
 export default function AdminShell({

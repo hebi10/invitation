@@ -15,7 +15,6 @@ import {
   AdminOwnershipInviteDialog,
   AdminEventWorkspace,
   AdminShell,
-  StatusBadge,
   useAdminOverlay,
 } from './_components';
 import {
@@ -141,6 +140,7 @@ export default function AdminPageClient({
     published: parseAdminEventPublished(safeSearchParams.get('published')),
     ownership: parseAdminEventOwnership(safeSearchParams.get('ownership')),
     sort: parseAdminEventSort(safeSearchParams.get('pageSort')),
+    visibility: safeSearchParams.get('visibility') === 'due-soon' ? 'due-soon' : safeSearchParams.get('visibility') === 'expired' ? 'expired' : 'all',
   };
   const selectedEventSlug = safeSearchParams.get('event');
   const commentSearch = safeSearchParams.get('commentQ') ?? '';
@@ -485,17 +485,10 @@ export default function AdminPageClient({
             </a>
           </div>
           <div className={styles.loginCard}>
-            <StatusBadge tone="neutral">Admin Access</StatusBadge>
-            <div className={styles.loginHeader}>
-              <h1 className={styles.loginTitle}>관리자 로그인</h1>
-              <p className={styles.loginDescription}>
-                Firebase Auth 관리자 계정으로만 로그인할 수 있습니다.
-              </p>
-            </div>
             <FirebaseAuthLoginCard
               title="관리자 로그인"
-              description="Firebase Authentication으로 로그인한 뒤 관리자 권한이 있는 계정만 관리자 화면에 접근할 수 있습니다."
-              helperText="기본 이메일 로그인과 Google 로그인만 지원합니다."
+              description="관리자 계정으로 로그인해 이벤트와 고객을 관리하세요."
+              helperText="이메일 또는 Google 계정으로 로그인할 수 있습니다."
               requireAdmin
               allowSignUp={false}
             />
