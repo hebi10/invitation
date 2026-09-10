@@ -14,6 +14,8 @@ import Image from 'next/image';
 import { useScrollAnimation } from '@/hooks';
 import { useDialogLayer } from '@/hooks/useDialogLayer';
 
+import WeddingGallerySwiper, { type WeddingGalleryVariant } from './WeddingGallerySwiper';
+
 import { resolveGalleryOpacityTransition } from './galleryMotion';
 
 const REDUCED_MOTION_QUERY = '(prefers-reduced-motion: reduce)';
@@ -46,6 +48,7 @@ export interface GalleryGridSharedProps {
   showButtonIcons?: boolean;
   imageAltPrefix?: string;
   layout?: 'grid' | 'carousel';
+  swiperVariant?: WeddingGalleryVariant;
 }
 
 function preloadSingleImage(url?: string) {
@@ -88,6 +91,7 @@ export default function GalleryGridShared({
   showButtonIcons = false,
   imageAltPrefix,
   layout = 'grid',
+  swiperVariant,
 }: GalleryGridSharedProps) {
   const { elementRef, isVisible } = useScrollAnimation({
     threshold: 0,
@@ -240,7 +244,9 @@ export default function GalleryGridShared({
       <section ref={elementRef as RefObject<HTMLElement>} className={styles.container}>
         <h2 className={styles.title}>{title}</h2>
 
-        {shouldRenderImages && hasImages ? (
+        {swiperVariant && hasImages ? (
+          <WeddingGallerySwiper images={images} previewImages={previewImages} variant={swiperVariant} reducedMotion={prefersReducedMotion} altPrefix={resolvedImageAltPrefix} onOpen={openPopup} />
+        ) : shouldRenderImages && hasImages ? (
           <div className={isCarousel ? styles.carousel : styles.imageGrid}>
             {(isCarousel ? images.slice(carouselIndex, carouselIndex + 1) : displayImages).map((image, offset) => {
               const index = isCarousel ? carouselIndex : offset;
@@ -301,7 +307,7 @@ export default function GalleryGridShared({
           </div>
         )}
 
-        {isCarousel && hasImages && (
+        {!swiperVariant && isCarousel && hasImages && (
           <div className={styles.carouselControls}>
             <button
               type="button"
@@ -335,7 +341,7 @@ export default function GalleryGridShared({
           </div>
         )}
 
-        {!isCarousel && images.length > 6 && (
+        {!swiperVariant && !isCarousel && images.length > 6 && (
           <div className={styles.buttonContainer}>
             {hasMoreImages && (
               <button

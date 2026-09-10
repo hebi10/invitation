@@ -1,0 +1,31 @@
+.gallery { min-width: 0; max-width: 100%; overflow: hidden; }
+.track { width: 100%; padding: 12px 0; touch-action: pan-y; }
+.track:focus-visible { outline: 1px solid currentColor; outline-offset: -2px; }
+.track :global(.swiper-wrapper) { transition-timing-function: cubic-bezier(.22, .61, .36, 1); }
+.slide { height: auto; min-width: 0; }
+.photoButton { display: block; width: 100%; aspect-ratio: 3 / 4; padding: 0; border: 0; background: var(--paper-soft, #f4f3ef); cursor: zoom-in; overflow: hidden; }
+.photoButton:focus-visible { outline: 2px solid var(--ink, #292b27); outline-offset: -3px; }
+.photo { display: block; width: 100%; height: 100%; object-fit: contain; }
+.controls { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 12px; color: var(--muted, #666); font-size: 12px; font-variant-numeric: tabular-nums; }
+.controls button { min-height: 44px; padding: 0 8px; border: 0; background: transparent; color: inherit; font: inherit; cursor: pointer; }
+.controls button:disabled { opacity: .35; cursor: default; }
+.controls button:focus-visible { outline: 1px solid currentColor; outline-offset: -2px; }
+.controls > span { display: flex; gap: 10px; }
+.progress { height: 2px; background: var(--paper-soft, #eee); margin: 0 8px; }
+.progress span { display: block; height: 100%; background: var(--ink, #292b27); transition: width .6s cubic-bezier(.22, .61, .36, 1); }
+.hint { margin: 16px 0 0; text-align: center; font-size: 11px; line-height: 1.7; color: var(--muted, #666); }
+.error { display: grid; place-content: center; padding: 20px; height: 100%; font-size: 12px; line-height: 1.8; color: var(--muted, #666); }
+.gallery[data-gallery-variant='simple'] .slide { opacity: .5; transform: scale(.96); transition: opacity .6s, transform .6s; }
+.gallery[data-gallery-variant='simple'] :global(.swiper-slide-active) { opacity: 1; transform: scale(1); }
+.gallery[data-gallery-variant='romantic'] .photoButton { aspect-ratio: 4 / 5; }
+.gallery[data-gallery-variant='romantic'] .photo { object-fit: cover; }
+.gallery[data-gallery-variant='emotional'] .track { width: 85%; overflow: visible; }
+.gallery[data-gallery-variant='emotional'] .photoButton { padding: 10px 10px 28px; background: #f5f3ee; }
+.gallery[data-gallery-variant='classic-r'] .photoButton { aspect-ratio: 2 / 3; }
+.gallery[data-gallery-variant='classic-r'] .photo { object-fit: cover; }
+.gallery[data-gallery-variant='gyeol'] .track { width: 86%; }
+.gallery[data-gallery-variant='gyeol'] .photoButton { aspect-ratio: 3 / 4; }
+@media (prefers-reduced-motion: reduce) {
+  .gallery *, .gallery :global(.swiper-wrapper) { transition-duration: 0s !important; }
+  .gallery[data-gallery-variant='simple'] .slide { transform: none; }
+}

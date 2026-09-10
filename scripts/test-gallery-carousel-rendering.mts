@@ -33,4 +33,17 @@ const grid = render(Array.from({ length: 7 }, (_, i) => `/${i}.jpg`));
 assert.match(grid, /class="image-grid"/);
 assert.match(grid, /더보기\(1장\)/);
 assert.doesNotMatch(grid, /carousel-controls/);
+for (const swiperVariant of ['simple', 'romantic', 'emotional', 'classic-r', 'gyeol'] as const) {
+  const renderSwiper = (images: string[]) => renderToStaticMarkup(React.createElement(GalleryGridShared, {
+    images, layout: 'carousel', swiperVariant, styles,
+  }));
+  assert.equal(renderSwiper([]), '', `${swiperVariant}: empty gallery remains absent`);
+  const one = renderSwiper(['/one.jpg']);
+  assert.match(one, new RegExp(`data-gallery-variant="${swiperVariant}"`));
+  assert.doesNotMatch(one, /이전 사진|다음 사진/, 'A single photo does not show unusable navigation');
+  const seven = renderSwiper(Array.from({ length: 7 }, (_, i) => `/${i}.jpg`));
+  assert.equal((seven.match(/swiper-slide"/g) ?? []).length, 7, 'Every photo is reachable without a separate more button');
+  assert.doesNotMatch(seven, /더보기/);
+  assert.match(seven, /다음 사진/);
+}
 console.log('Gallery carousel server rendering checks passed');

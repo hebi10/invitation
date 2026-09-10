@@ -97,7 +97,8 @@ export default function WeddingBase({ state, theme, demoComments, showMap = true
             previewImages={state.galleryPreviewImageUrls}
             imageAltPrefix={`${page.groomName}과 ${page.brideName}의 웨딩 갤러리`}
             title="사진"
-            layout={theme === 'romantic' || theme === 'classic-r' ? 'grid' : 'carousel'}
+            layout="carousel"
+            swiperVariant={theme === 'romantic' || theme === 'emotional' || theme === 'classic-r' || theme === 'gyeol' ? theme : 'simple'}
             styles={styles}
           />
         </div>
