@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { SAMPLE_INVITATION_PATH } from '@/config/homeWeddingSample';
 
 import ExperienceStartButton from './_components/ExperienceStartButton';
 import { getHomeLinkRenderProps } from './_components/homeInteractionPolicy';
@@ -19,7 +20,7 @@ export default function Home() {
           <h1 id="service-title" className={styles.title}>소중한 날을 담아,<br />한 장의 청첩장으로.</h1>
           <p className={styles.description}>사진과 인사말, 예식 일정과 오시는 길을 담으세요. 링크로 전하고, 필요한 내용은 직접 수정할 수 있습니다.</p>
           <div className={styles.heroLinks}>
-            <Link href="/kim-shinlang-na-sinbu/romantic/" className={styles.primaryLink}>청첩장 샘플 보기</Link>
+            <Link href={SAMPLE_INVITATION_PATH} className={styles.primaryLink}>청첩장 샘플 보기</Link>
             <a href="https://kmong.com/gig/686626" {...getHomeLinkRenderProps(true)} className={styles.secondaryLink}>제작 문의 <span>새 창</span></a>
           </div>
           <Link href="/my-invitations" className={styles.textLink}>이미 제작하셨나요? 내 청첩장 관리</Link>
@@ -28,14 +29,14 @@ export default function Home() {
           <div className={styles.phone}>
             <div className={styles.phoneSpeaker} aria-hidden="true" />
             <iframe
-              src="/kim-shinlang-na-sinbu/romantic/"
-              title="사진 중심형 청첩장 · 화면 안에서 스크롤하며 둘러보기"
+              src={SAMPLE_INVITATION_PATH}
+              title="기본형 청첩장 · 화면 안에서 스크롤하며 둘러보기"
               className={styles.phoneScreen}
               aria-describedby="preview-instruction"
             />
           </div>
           <p id="preview-instruction" className={styles.previewCaption}>화면 안에서 스크롤하며 청첩장을 둘러보세요.</p>
-          <a href="/kim-shinlang-na-sinbu/romantic/" target="_blank" rel="noopener noreferrer" className={styles.previewOpen}>청첩장 크게 보기 · 새 창</a>
+          <a href={SAMPLE_INVITATION_PATH} target="_blank" rel="noopener noreferrer" className={styles.previewOpen}>청첩장 크게 보기 · 새 창</a>
         </div>
       </section>
       <section className={styles.workspace} aria-labelledby="workspace-title">

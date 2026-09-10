@@ -87,7 +87,7 @@ const nextConfig: NextConfig = {
       },
       {
         // The homepage embeds this public sample only; other routes remain unframeable.
-        source: "/kim-shinlang-na-sinbu/romantic/",
+        source: "/sample-invitation/",
         headers: securityHeaders.map((header) => {
           if (header.key === "X-Frame-Options") {
             return { ...header, value: "SAMEORIGIN" };

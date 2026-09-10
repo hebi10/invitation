@@ -3,6 +3,7 @@
 import GalleryGridShared from '@/components/sections/Gallery/GalleryGridShared';
 import GiftInfoThemed from '@/components/sections/GiftInfo/GiftInfoThemed';
 import GuestbookThemed from '@/components/sections/Guestbook/GuestbookThemed';
+import type { Comment } from '@/services/commentService';
 import { resolveInvitationFeatures } from '@/lib/invitationProducts';
 
 import type { WeddingThemeRendererProps } from '../../weddingPageRenderers';
@@ -21,7 +22,7 @@ import { useImmediateWeddingPageReveal } from './useImmediateWeddingPageReveal';
 import LocationMap from './gyeol/LocationMap';
 import styles from './WeddingBase.module.css';
 
-export default function WeddingBase({ state, theme }: WeddingThemeRendererProps & { theme: InvitationThemeKey }) {
+export default function WeddingBase({ state, theme, demoComments, showMap = true }: WeddingThemeRendererProps & { theme: InvitationThemeKey; demoComments?: Comment[]; showMap?: boolean }) {
   useImmediateWeddingPageReveal(state);
 
   const page = state.pageConfig;
@@ -175,10 +176,10 @@ export default function WeddingBase({ state, theme }: WeddingThemeRendererProps 
         <div className={styles.scheduleContent}>
           <p className={styles.venueName}>{page.venue}</p>
           <p>{page.date}{ceremony?.time ? ` · ${ceremony.time}` : ''}</p>
-          {ceremonyAddress ? <address className={styles.address}>{ceremonyAddress}</address> : null}
+          {ceremonyAddress && ceremonyAddress !== page.venue ? <address className={styles.address}>{ceremonyAddress}</address> : null}
           {venuePhone ? <a className={styles.venuePhone} href={`tel:${venuePhone}`} aria-label="예식장에 전화하기">{storedContent.ceremonyContact}</a> : null}
         </div>
-        {storedContent.mapHref ? (
+        {showMap && storedContent.mapHref ? (
           <LocationMap
             address={ceremonyAddress}
             venueName={page.venue}
@@ -221,6 +222,7 @@ export default function WeddingBase({ state, theme }: WeddingThemeRendererProps 
         <div data-wedding-section="guestbook">
           <GuestbookThemed
             pageSlug={page.slug}
+            demoComments={demoComments}
             styles={styles}
             title="축하의 마음"
             subtitle="두 사람에게 따뜻한 한마디를 남겨 주세요."

@@ -55,7 +55,7 @@ const emptyGift = renderToStaticMarkup(React.createElement(GiftInfoThemed, {
 assert.doesNotMatch(emptyGift, /<details/, 'Empty account groups should remain absent');
 
 const pageSlug = 'compact-sections-test';
-const renderGuestbook = (collapsibleForm?: boolean) => {
+const renderGuestbook = (collapsibleForm?: boolean, demoComments?: import('../src/services/commentService').Comment[]) => {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   queryClient.setQueryData(appQueryKeys.guestbookComments(pageSlug), [{
     id: 'test-comment', pageSlug, author: '축하하는 친구',
@@ -64,7 +64,7 @@ const renderGuestbook = (collapsibleForm?: boolean) => {
   try {
     return renderToStaticMarkup(React.createElement(QueryClientProvider, { client: queryClient },
       React.createElement(GuestbookThemed, {
-        pageSlug, collapsibleForm,
+        pageSlug, collapsibleForm, demoComments,
         styles: { formDisclosure: 'form-disclosure', formSummary: 'form-summary', label: 'label' },
         title: '축하의 말', subtitle: '따뜻한 마음을 남겨 주세요.',
         statusColors: { success: '#000', error: '#333' },
@@ -94,3 +94,10 @@ for (const markup of [defaultGuestbook, compactGuestbook]) {
 assert.ok(compactGuestbook.indexOf('</details>') < compactGuestbook.indexOf('축하하는 친구'),
   'Existing comments stay outside the collapsed form');
 console.log('Wedding compact sections server rendering checks passed');
+
+const demoMarkup = renderGuestbook(true, [{ id: 'demo-only', pageSlug, author: '샘플 친구', message: '샘플 축하 메시지', createdAt: new Date('2026-09-10T00:00:00Z') }]);
+assert.ok(demoMarkup.includes('샘플 친구'));
+assert.ok(demoMarkup.includes('샘플 방명록 · 작성한 글은 저장되지 않습니다'));
+assert.ok(!demoMarkup.includes('축하하는 친구'), 'Demo comments must not expose the real page query cache');
+assert.ok(!demoMarkup.includes('새로고침'), 'Demo mode must not offer a server refresh');
+assert.ok(!renderGuestbook(true, []).includes('축하하는 친구'), 'Empty demo mode remains isolated');

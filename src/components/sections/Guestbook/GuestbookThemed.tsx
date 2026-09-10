@@ -26,6 +26,7 @@ interface GuestbookThemedProps {
   };
   emptyIcon?: ReactNode;
   collapsibleForm?: boolean;
+  demoComments?: Comment[];
 }
 
 type StatusTone = 'success' | 'error';
@@ -62,6 +63,7 @@ export default function GuestbookThemed({
   statusColors,
   emptyIcon,
   collapsibleForm = false,
+  demoComments,
 }: GuestbookThemedProps) {
   const queryClient = useQueryClient();
 
@@ -72,18 +74,22 @@ export default function GuestbookThemed({
   const [statusTone, setStatusTone] = useState<StatusTone>('success');
   const [currentPage, setCurrentPage] = useState(1);
   const [isMobile, setIsMobile] = useState(false);
+  const [localComments, setLocalComments] = useState<Comment[]>([]);
+  const isDemo = demoComments !== undefined;
   const nameInputId = useId();
   const messageInputId = useId();
   const commentsQuery = useQuery({
-    queryKey: appQueryKeys.guestbookComments(pageSlug),
-    enabled: Boolean(pageSlug),
-    queryFn: async () => getComments(pageSlug),
+    queryKey: isDemo
+      ? [...appQueryKeys.guestbookComments(pageSlug), 'demo']
+      : appQueryKeys.guestbookComments(pageSlug),
+    enabled: !isDemo && Boolean(pageSlug),
+    queryFn: async () => isDemo ? [] : getComments(pageSlug),
     staleTime: GUESTBOOK_STALE_TIME_MS,
     gcTime: GUESTBOOK_GC_TIME_MS,
     refetchOnWindowFocus: false,
   });
-  const comments = commentsQuery.data ?? [];
-  const isRefreshingComments = commentsQuery.isRefetching;
+  const comments = isDemo ? [...localComments, ...(demoComments ?? [])] : commentsQuery.data ?? [];
+  const isRefreshingComments = !isDemo && commentsQuery.isRefetching;
 
   const commentsPerPage = 5;
   const totalPages = Math.max(1, Math.ceil(comments.length / commentsPerPage));
@@ -143,13 +149,13 @@ export default function GuestbookThemed({
   }, [currentPage, totalPages]);
 
   useEffect(() => {
-    if (!commentsQuery.error) {
+    if (isDemo || !commentsQuery.error) {
       return;
     }
 
     console.error('Failed to load comments', commentsQuery.error);
     showStatus('방명록을 불러오지 못했습니다.', 'error');
-  }, [commentsQuery.error]);
+  }, [commentsQuery.error, isDemo]);
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -161,6 +167,20 @@ export default function GuestbookThemed({
 
     setIsSubmitting(true);
     try {
+      if (isDemo) {
+        setLocalComments((current) => [{
+          id: `demo-${crypto.randomUUID()}`,
+          pageSlug,
+          author: name.trim(),
+          message: message.trim(),
+          createdAt: new Date(),
+        }, ...current]);
+        setName('');
+        setMessage('');
+        setCurrentPage(1);
+        showStatus('샘플 글을 추가했습니다. 작성한 글은 저장되지 않습니다.', 'success');
+        return;
+      }
       await addComment({
         pageSlug,
         author: name.trim(),
@@ -255,6 +275,7 @@ export default function GuestbookThemed({
           {titleContent}
         </div>
         <p className={styles.subtitle}>{subtitle}</p>
+        {isDemo ? <p className={styles.subtitle}>샘플 방명록 · 작성한 글은 저장되지 않습니다</p> : null}
       </>
     );
 
@@ -385,17 +406,17 @@ export default function GuestbookThemed({
             {currentPage} / {totalPages}
           </span>
         ) : null}
-        <button
+        {!isDemo ? <button
           type="button"
           className={styles.refreshButton}
           onClick={() => {
-            void commentsQuery.refetch();
+            if (!isDemo) void commentsQuery.refetch();
           }}
-          disabled={isRefreshingComments}
+          disabled={isDemo || isRefreshingComments}
           aria-busy={isRefreshingComments}
         >
           {isRefreshingComments ? '새로고침 중' : '새로고침'}
-        </button>
+        </button> : null}
       </div>
     </div>
   );

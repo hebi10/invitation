@@ -1,0 +1,24 @@
+{
+  "tool": "built-in image_gen",
+  "purpose": "메인 기본형 청첩장 전용 가상 인물 사진",
+  "assets": [
+    {
+      "file": "portrait.webp",
+      "prompt": "Create one photorealistic refined Korean wedding editorial photograph, vertical portrait 2:3. Fictional Korean bride and groom in their late twenties, bride with long dark hair in a simple low bun, ivory silk sleeveless wedding dress, groom short black hair in charcoal suit and white shirt. Full length standing close together in a sunlit cream limestone courtyard, a few white flowers and soft olive branches. Natural candid expressions, realistic hands, elegant restrained composition, generous quiet space above heads, soft overcast daylight, neutral ivory and sage palette, medium-format film photography, subtle natural grain. No typography, no collage, no border, no watermark. This is a fictional sample invitation photograph."
+    },
+    {
+      "file": "bouquet.webp",
+      "prompt": "One photorealistic wedding editorial detail photograph, portrait 2:3, close-up of a small loose bouquet of white cosmos, white sweet peas and olive leaves held gently in a bride's hands against a plain ivory silk wedding dress. Only hands and torso, no face. Cream limestone courtyard softly blurred in background, soft overcast daylight, muted ivory and sage palette, subtle fine film grain, understated Korean wedding editorial quality. Natural anatomy with realistic fingers. No text, no collage, no border, no watermark. Fictional sample invitation image, cohesive neutral natural-light photography."
+    },
+    {
+      "file": "walk.webp",
+      "reference": "portrait.webp",
+      "prompt": "Create a second photograph from this fictional couple's same wedding session. Preserve exact faces, hair, ivory dress, charcoal suit, natural ivory/sage color grading and cream limestone courtyard. Portrait 2:3 composition, candid full body view from slightly farther away: the couple walking together hand in hand along an olive tree lined stone path, looking at one another and smiling gently, dress flowing naturally, soft overcast daylight, subtle film grain. Distinct composition from original portrait, professional natural editorial photo. No text, no collage, no border, no watermark."
+    }
+  ],
+  "encoding": {
+    "width": 960,
+    "format": "webp",
+    "quality": 85
+  }
+}
