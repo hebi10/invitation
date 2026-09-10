@@ -27,6 +27,7 @@ interface GiftInfoThemedProps extends GiftInfoProps {
   wrapInCard?: boolean;
   showTopDecoration?: boolean;
   showBottomDecoration?: boolean;
+  collapsibleAccounts?: boolean;
 }
 
 export default function GiftInfoThemed({
@@ -43,6 +44,7 @@ export default function GiftInfoThemed({
   wrapInCard = false,
   showTopDecoration = false,
   showBottomDecoration = false,
+  collapsibleAccounts = false,
 }: GiftInfoThemedProps) {
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
 
@@ -71,34 +73,45 @@ export default function GiftInfoThemed({
       return null;
     }
 
+    const accountCards = accounts.map((account, index) => {
+      const accountKey = `${sectionKey}-${index}`;
+
+      return (
+        <div key={accountKey} className={styles.accountCard}>
+          <div className={styles.accountInfo}>
+            <div className={styles.accountRow}>
+              <span className={styles.accountHolder}>{account.accountHolder}</span>
+            </div>
+            <div className={styles.accountRow}>
+              <span className={styles.accountBank}>{account.bank}</span>
+              <span className={styles.accountNumber}>{account.accountNumber}</span>
+            </div>
+          </div>
+          <button
+            className={styles.copyButton}
+            onClick={() => handleCopy(accountKey, account.bank, account.accountNumber)}
+            type="button"
+            aria-label={`${account.accountHolder} ${copiedKey === accountKey ? copiedLabel : copyLabel}`}
+          >
+            {copiedKey === accountKey ? copiedLabel : copyLabel}
+          </button>
+        </div>
+      );
+    });
+
+    if (collapsibleAccounts) {
+      return (
+        <details className={styles.accountSection}>
+          <summary className={styles.accountSummary}>{sectionTitle}</summary>
+          {accountCards}
+        </details>
+      );
+    }
+
     return (
       <div className={styles.accountSection}>
         <h3 className={styles.sectionTitle}>{sectionTitle}</h3>
-        {accounts.map((account, index) => {
-          const accountKey = `${sectionKey}-${index}`;
-
-          return (
-            <div key={accountKey} className={styles.accountCard}>
-              <div className={styles.accountInfo}>
-                <div className={styles.accountRow}>
-                  <span className={styles.accountHolder}>{account.accountHolder}</span>
-                </div>
-                <div className={styles.accountRow}>
-                  <span className={styles.accountBank}>{account.bank}</span>
-                  <span className={styles.accountNumber}>{account.accountNumber}</span>
-                </div>
-              </div>
-              <button
-                className={styles.copyButton}
-                onClick={() => handleCopy(accountKey, account.bank, account.accountNumber)}
-                type="button"
-                aria-label={`${account.accountHolder} ${copiedKey === accountKey ? copiedLabel : copyLabel}`}
-              >
-                {copiedKey === accountKey ? copiedLabel : copyLabel}
-              </button>
-            </div>
-          );
-        })}
+        {accountCards}
       </div>
     );
   };

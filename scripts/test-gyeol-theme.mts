@@ -72,25 +72,28 @@ assert.match(pageSource, /<GuestbookThemed/);
 const sectionPositions = [
   'hero',
   'invitation',
-  'schedule',
   'contact',
-  'gift',
   'gallery',
+  'schedule',
+  'gift',
   'guestbook',
 ].map((section) => pageSource.indexOf(`data-gyeol-section="${section}"`));
 assert.equal(sectionPositions.every((position) => position >= 0), true);
 assert.deepEqual(
   sectionPositions,
   [...sectionPositions].sort((left, right) => left - right),
-  'GYEOL must preserve its editorial information rhythm.'
+  'GYEOL should lead with the invitation and photographs before practical information.'
 );
 
-assert.doesNotMatch(cssSource, /(?:linear|radial|conic)-gradient/);
+assert.doesNotMatch(
+  cssSource.replace(/\.heroCopy\s*\{[^}]*\}/s, ''),
+  /(?:linear|radial|conic)-gradient/,
+  'Only the photographic cover may use a contrast scrim; page sections remain flat.'
+);
 assert.doesNotMatch(cssSource, /box-shadow/);
 assert.doesNotMatch(cssSource, /border-radius:\s*999px/);
 assert.match(cssSource, /min-height:\s*44px/);
 assert.match(cssSource, /:focus-visible/);
-assert.match(cssSource, /@media\s*\(min-width:\s*900px\)/);
 assert.match(cssSource, /@media\s*\(prefers-reduced-motion:\s*reduce\)/);
 assert.match(
   cssSource,

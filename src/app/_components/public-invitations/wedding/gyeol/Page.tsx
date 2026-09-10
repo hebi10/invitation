@@ -18,6 +18,7 @@ import { WeddingStoredContent } from '../../shared/WeddingStoredContent';
 import { buildWeddingStoredContent } from '../../shared/weddingStoredContentModel';
 import { useImmediateWeddingPageReveal } from '../useImmediateWeddingPageReveal';
 import styles from './styles.module.css';
+import LocationMap from './LocationMap';
 
 export default function GyeolPage({ state }: WeddingThemeRendererProps) {
   useImmediateWeddingPageReveal(state);
@@ -31,6 +32,10 @@ export default function GyeolPage({ state }: WeddingThemeRendererProps) {
   const invitationMessage = storedContent.greetingMessage;
   const invitationAuthor = storedContent.greetingAuthor;
   const features = resolveInvitationFeatures(page.productTier, page.features);
+  const venuePhone = storedContent.ceremonyContact.replace(/[^\d+]/g, '');
+  const hasAdditionalGuide = Boolean(
+    storedContent.reception || storedContent.venueGuide.length || storedContent.wreathGuide.length
+  );
   const contactCandidates = [
     {
       side: '신랑측',
@@ -101,13 +106,15 @@ export default function GyeolPage({ state }: WeddingThemeRendererProps) {
               />
             </figure>
             <div className={styles.heroCopy}>
+              <p className={styles.coverTitle} aria-hidden="true">Our<br />Wedding Day</p>
               <h1 id="gyeol-couple-name" className={styles.heroNames}>
                 <span>{page.groomName}</span>
-                <span className={styles.nameJoin} aria-hidden="true">과</span>
+                <span className={styles.nameJoin} aria-hidden="true">&amp;</span>
                 <span>{page.brideName}</span>
               </h1>
               <div className={styles.heroMeta}>
                 <p>{page.date}</p>
+                {ceremony?.time ? <p>{ceremony.time}</p> : null}
                 <p>{page.venue}</p>
               </div>
             </div>
@@ -131,7 +138,7 @@ export default function GyeolPage({ state }: WeddingThemeRendererProps) {
           aria-labelledby="gyeol-invitation-title"
         >
           <h2 id="gyeol-invitation-title" className={styles.heading}>
-            두 사람의 결이<br />하나로 이어지는 날
+            소중한 분들을 초대합니다
           </h2>
           <div className={styles.invitationCopy}>
             <p>{invitationMessage}</p>
@@ -140,65 +147,12 @@ export default function GyeolPage({ state }: WeddingThemeRendererProps) {
         </section>
       ) : null}
 
-      <PublicInvitationDateFeature
-        className={styles.dateSection}
-        eventDate={state.weddingDate}
-        mode="calendar-countdown"
-        page={page}
-        title="기다리는 날"
-        titleClassName={styles.heading}
-      />
-
-      <section
-        id="wedding-info"
-        className={styles.scheduleSection}
-        data-gyeol-section="schedule"
-        aria-labelledby="gyeol-schedule-title"
-      >
-        <div className={styles.scheduleHeading}>
-          <h2 id="gyeol-schedule-title" className={styles.heading}>
-            예식 안내
-          </h2>
-          <p>오래 기억될 하루에 귀한 걸음을 청합니다.</p>
-        </div>
-        <div className={styles.scheduleContent}>
-          <dl className={styles.details}>
-            <div>
-              <dt>날짜</dt>
-              <dd>{page.date}</dd>
-            </div>
-            {ceremony?.time ? (
-              <div>
-                <dt>시간</dt>
-                <dd>{ceremony.time}</dd>
-              </div>
-            ) : null}
-            <div>
-              <dt>장소</dt>
-              <dd>{page.venue}</dd>
-            </div>
-          </dl>
-          {ceremonyAddress ? (
-            <address className={styles.address}>{ceremonyAddress}</address>
-          ) : null}
-        </div>
-      </section>
-
-      <WeddingStoredContent
-        className={styles.storedSection}
-        model={storedContent}
-        titleClassName={styles.heading}
-      />
-
       {contacts.length > 0 ? (
-        <section
+        <details
           className={styles.contactSection}
           data-gyeol-section="contact"
-          aria-labelledby="gyeol-contact-title"
         >
-          <h2 id="gyeol-contact-title" className={styles.heading}>
-            마음을 전하는 방법
-          </h2>
+          <summary className={styles.disclosureSummary}>가족에게 연락하기</summary>
           <ul className={styles.contactList}>
             {contacts.map((contact) => (
               <li key={`${contact.side}-${contact.role}-${contact.phone}`}>
@@ -217,8 +171,64 @@ export default function GyeolPage({ state }: WeddingThemeRendererProps) {
               </li>
             ))}
           </ul>
-        </section>
+        </details>
       ) : null}
+
+      {state.galleryImageUrls.length > 0 ? (
+        <div data-gyeol-section="gallery">
+          <GalleryGridShared
+            images={state.galleryImageUrls}
+            previewImages={state.galleryPreviewImageUrls}
+            imageAltPrefix={`${page.groomName}과 ${page.brideName}의 웨딩 갤러리`}
+            title="우리의 순간"
+            layout="carousel"
+            styles={styles}
+          />
+        </div>
+      ) : null}
+
+      <section
+        id="wedding-info"
+        className={styles.scheduleSection}
+        data-gyeol-section="schedule"
+        aria-labelledby="gyeol-schedule-title"
+      >
+        <h2 id="gyeol-schedule-title" className={styles.heading}>오시는 길</h2>
+        <div className={styles.scheduleContent}>
+          <p className={styles.venueName}>{page.venue}</p>
+          <p>{page.date}{ceremony?.time ? ` · ${ceremony.time}` : ''}</p>
+          {ceremonyAddress ? <address className={styles.address}>{ceremonyAddress}</address> : null}
+          {venuePhone ? <a className={styles.venuePhone} href={`tel:${venuePhone}`} aria-label="예식장에 전화하기">{storedContent.ceremonyContact}</a> : null}
+        </div>
+        {storedContent.mapHref ? (
+          <LocationMap
+            address={ceremonyAddress}
+            venueName={page.venue}
+            kakaoMapConfig={pageData?.kakaoMap}
+            mapHref={storedContent.mapHref}
+          />
+        ) : null}
+        {storedContent.mapDescription ? <p className={styles.travelNote}>{storedContent.mapDescription}</p> : null}
+        {hasAdditionalGuide ? (
+          <details className={styles.guideDisclosure}>
+            <summary className={styles.disclosureSummary}>식사 · 방문 안내 자세히 보기</summary>
+            <WeddingStoredContent
+              className={styles.storedSection}
+              model={{ ...storedContent, ceremonyContact: '', mapDescription: '', mapHref: '' }}
+              titleClassName={styles.guideTitle}
+            />
+          </details>
+        ) : null}
+      </section>
+
+      <PublicInvitationDateFeature
+        className={styles.dateSection}
+        eventDate={state.weddingDate}
+        mode="calendar-countdown"
+        page={page}
+        title="저희, 결혼합니다"
+        titleClassName={styles.heading}
+      />
 
       {shouldShowGiftInfo(state) ? (
         <div data-gyeol-section="gift">
@@ -231,18 +241,7 @@ export default function GyeolPage({ state }: WeddingThemeRendererProps) {
             groomSectionTitle="신랑측 계좌"
             brideSectionTitle="신부측 계좌"
             copyLabel="복사"
-          />
-        </div>
-      ) : null}
-
-      {state.galleryImageUrls.length > 0 ? (
-        <div data-gyeol-section="gallery">
-          <GalleryGridShared
-            images={state.galleryImageUrls}
-            previewImages={state.galleryPreviewImageUrls}
-            imageAltPrefix={`${page.groomName}과 ${page.brideName}의 웨딩 갤러리`}
-            title="함께 쌓인 장면"
-            styles={styles}
+            collapsibleAccounts
           />
         </div>
       ) : null}
@@ -252,9 +251,10 @@ export default function GyeolPage({ state }: WeddingThemeRendererProps) {
           <GuestbookThemed
             pageSlug={page.slug}
             styles={styles}
-            title="두 사람에게 남기는 글"
-            subtitle="축하의 마음을 천천히 적어 주세요."
+            title="축하의 마음"
+            subtitle="두 사람에게 따뜻한 한마디를 남겨 주세요."
             statusColors={{ success: '#355b45', error: '#9b3f36' }}
+            collapsibleForm
           />
         </div>
       ) : null}

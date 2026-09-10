@@ -72,9 +72,9 @@ export const INVITATION_THEME_METADATA_REGISTRY = [
     adminLabel: '결',
     variantLabel: '결',
     pathSuffix: '/gyeol',
-    wizardDescription: '큰 사진과 한국어 활자로 장면과 예식 정보를 엮은 에디토리얼 웨딩입니다.',
+    wizardDescription: '사진과 작은 글, 흰 여백이 자연스럽게 이어지는 웨딩입니다.',
     preview: {
-      description: '화면을 채우는 사진과 비대칭 조판으로 구성한 한국형 웨딩 에디토리얼입니다.',
+      description: '사진 중심의 표지와 한 장씩 보는 갤러리, 간결한 예식 안내를 담았습니다.',
       sampleUrls: {
         standard: buildThemePreviewUrl('/kim-taehyun-choi-yuna/gyeol/'),
         deluxe: buildThemePreviewUrl('/lee-junho-park-somin/gyeol/'),

@@ -25,6 +25,7 @@ interface GuestbookThemedProps {
     error: string;
   };
   emptyIcon?: ReactNode;
+  collapsibleForm?: boolean;
 }
 
 type StatusTone = 'success' | 'error';
@@ -60,6 +61,7 @@ export default function GuestbookThemed({
   subtitle,
   statusColors,
   emptyIcon,
+  collapsibleForm = false,
 }: GuestbookThemedProps) {
   const queryClient = useQueryClient();
 
@@ -590,7 +592,14 @@ export default function GuestbookThemed({
 
       {renderHeader()}
       {renderStatus()}
-      {renderForm()}
+      {collapsibleForm ? (
+        <details className={styles.formDisclosure}>
+          <summary className={styles.formSummary}>축하 글 남기기</summary>
+          {renderForm()}
+        </details>
+      ) : (
+        renderForm()
+      )}
       {commentsSectionClassName ? (
         <div className={commentsSectionClassName}>{commentsBlock}</div>
       ) : (

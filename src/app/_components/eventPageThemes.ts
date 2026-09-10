@@ -24,7 +24,7 @@ export interface EventInvitationRouteOptions {
   externalShareEnabled?: boolean;
 }
 
-type ShareButtonVariant = 'default' | 'classic';
+type ShareButtonVariant = 'default' | 'classic' | 'minimal';
 
 export interface EventThemeDefinition {
   documentTitleSuffix: string;
@@ -81,8 +81,10 @@ const themeDefinitions = INVITATION_THEME_KEYS.reduce<Record<EventThemeKey, Even
     accumulator[theme] = {
       documentTitleSuffix: definition.documentTitleSuffix,
       ariaLabelSuffix: definition.ariaLabelSuffix,
-      shareButtonVariant: theme === 'classic-r' ? 'classic' : 'default',
-      shareContainer: theme === 'classic-r' ? classicShareContainer : defaultShareContainer,
+      shareButtonVariant: theme === 'gyeol' ? 'minimal' : theme === 'classic-r' ? 'classic' : 'default',
+      shareContainer: theme === 'gyeol'
+        ? { style: { backgroundColor: '#fff', width: 'min(100%, 480px)', margin: '0 auto', padding: '0 30px 32px', boxSizing: 'border-box' } }
+        : theme === 'classic-r' ? classicShareContainer : defaultShareContainer,
       getShareTitle: resolveShareTitle,
       getShareDescription: resolveShareDescription,
     };

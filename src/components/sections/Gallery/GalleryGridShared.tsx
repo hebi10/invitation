@@ -44,6 +44,7 @@ export interface GalleryGridSharedProps {
   preloadAllImages?: boolean;
   showButtonIcons?: boolean;
   imageAltPrefix?: string;
+  layout?: 'grid' | 'carousel';
 }
 
 function preloadSingleImage(url?: string) {
@@ -85,6 +86,7 @@ export default function GalleryGridShared({
   preloadAllImages = false,
   showButtonIcons = false,
   imageAltPrefix,
+  layout = 'grid',
 }: GalleryGridSharedProps) {
   const { elementRef, isVisible } = useScrollAnimation({
     threshold: 0,
@@ -93,6 +95,7 @@ export default function GalleryGridShared({
   });
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const [visibleCount, setVisibleCount] = useState(6);
+  const [carouselIndex, setCarouselIndex] = useState(0);
   const [loadedImages, setLoadedImages] = useState<Set<string>>(new Set());
   const [loadedPopupImages, setLoadedPopupImages] = useState<Set<string>>(new Set());
   const [isPopupImageLoading, setIsPopupImageLoading] = useState(false);
@@ -105,6 +108,15 @@ export default function GalleryGridShared({
   const popupContentRef = useRef<HTMLDivElement | null>(null);
   const popupCloseButtonRef = useRef<HTMLButtonElement | null>(null);
   const triggerRef = useRef<HTMLButtonElement | null>(null);
+
+  const lastIndex = Math.max(0, images.length - 1);
+  if (carouselIndex > lastIndex) {
+    setCarouselIndex(lastIndex);
+  }
+  if (selectedIndex !== null && (images.length === 0 || selectedIndex > lastIndex)) {
+    setSelectedIndex(images.length === 0 ? null : lastIndex);
+  }
+  const isCarousel = layout === 'carousel';
 
   const shouldRenderImages = isVisible || selectedIndex !== null;
   const displayImages = useMemo(() => images.slice(0, visibleCount), [images, visibleCount]);
@@ -278,12 +290,15 @@ export default function GalleryGridShared({
         <h2 className={styles.title}>{title}</h2>
 
         {shouldRenderImages && hasImages ? (
-          <div className={styles.imageGrid}>
-            {displayImages.map((image, index) => {
-              const previewImage = displayPreviewImages[index] ?? image;
+          <div className={isCarousel ? styles.carousel : styles.imageGrid}>
+            {(isCarousel ? images.slice(carouselIndex, carouselIndex + 1) : displayImages).map((image, offset) => {
+              const index = isCarousel ? carouselIndex : offset;
+              const previewImage = isCarousel
+                ? previewImages?.[index] ?? image
+                : displayPreviewImages[index] ?? image;
 
               return (
-                <div key={`${image}-${index}`} className={styles.imageWrapper}>
+                <div key={isCarousel ? 'carousel-image' : `${image}-${index}`} className={styles.imageWrapper}>
                   <button
                     type="button"
                     className={styles.imageContainer}
@@ -297,18 +312,19 @@ export default function GalleryGridShared({
                     }}
                   >
                     <Image
+                      key={previewImage}
                       className={styles.imageItem}
                       src={previewImage}
                       alt={getImageAlt(index)}
                       fill
-                      sizes="(max-width: 700px) 50vw, 33vw"
+                      sizes={isCarousel ? '(max-width: 700px) 90vw, 600px' : '(max-width: 700px) 50vw, 33vw'}
                       quality={60}
                       loading="lazy"
                       onLoad={() =>
                         setLoadedImages((current) => new Set([...current, previewImage]))
                       }
                       style={{
-                        objectFit: 'cover',
+                        objectFit: isCarousel ? 'contain' : 'cover',
                         opacity: loadedImages.has(previewImage) ? 1 : 0,
                         transition: resolveGalleryOpacityTransition(
                           prefersReducedMotion,
@@ -325,8 +341,8 @@ export default function GalleryGridShared({
             })}
           </div>
         ) : (
-          <div className={styles.imageGrid} aria-hidden="true">
-            {Array.from({ length: Math.min(6, Math.max(images.length, 3)) }).map((_, index) => (
+          <div className={isCarousel ? styles.carousel : styles.imageGrid} aria-hidden="true">
+            {Array.from({ length: isCarousel ? 1 : Math.min(6, Math.max(images.length, 3)) }).map((_, index) => (
               <div key={index} className={styles.imageWrapper}>
                 {renderLoadingPlaceholder(styles)}
               </div>
@@ -334,7 +350,41 @@ export default function GalleryGridShared({
           </div>
         )}
 
-        {images.length > 6 && (
+        {isCarousel && hasImages && (
+          <div className={styles.carouselControls}>
+            <button
+              type="button"
+              className={styles.carouselButton}
+              style={{ minWidth: 44, minHeight: 44 }}
+              disabled={carouselIndex === 0}
+              onClick={() => {
+                const nextIndex = Math.max(0, carouselIndex - 1);
+                preloadPopupImageSet(images, nextIndex);
+                setCarouselIndex(nextIndex);
+              }}
+            >
+              이전 사진
+            </button>
+            <span className={styles.carouselCounter} aria-live="polite" aria-atomic="true">
+              {carouselIndex + 1} / {images.length}
+            </span>
+            <button
+              type="button"
+              className={styles.carouselButton}
+              style={{ minWidth: 44, minHeight: 44 }}
+              disabled={carouselIndex >= images.length - 1}
+              onClick={() => {
+                const nextIndex = Math.min(images.length - 1, carouselIndex + 1);
+                preloadPopupImageSet(images, nextIndex);
+                setCarouselIndex(nextIndex);
+              }}
+            >
+              다음 사진
+            </button>
+          </div>
+        )}
+
+        {!isCarousel && images.length > 6 && (
           <div className={styles.buttonContainer}>
             {hasMoreImages && (
               <button

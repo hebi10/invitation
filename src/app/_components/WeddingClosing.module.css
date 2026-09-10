@@ -37,12 +37,23 @@
 }
 
 .canvas[data-theme='gyeol'] {
-  --closing-background: #f3f0e8;
-  --closing-foreground: #171916;
-  --closing-line: #a7ab9f;
-  --closing-muted: #555950;
+  width: min(100%, 480px);
+  --closing-background: #ffffff;
+  --closing-foreground: #38363e;
+  --closing-line: #e4dfe9;
+  --closing-muted: #706b78;
   --closing-font: var(--font-gowun-dodum), "Noto Sans KR", sans-serif;
 }
+
+.closing[data-theme='gyeol'] {
+  border: 0;
+  padding: 72px 24px 48px;
+  gap: 16px;
+}
+
+.closing[data-theme='gyeol'] p:first-child { font-size: 16px; }
+.closing[data-theme='gyeol'] p:last-child { font-size: 12px; }
+.closing[data-theme='gyeol'] span { display: none; }
 
 .closing {
   box-sizing: border-box;

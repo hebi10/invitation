@@ -108,7 +108,7 @@ const closingThemeTokens = {
   romantic: ['#f3f1e6', '#263129', '#aab5a7', '#5a675d'],
   simple: ['#f7f7f4', '#1f211f', '#b7bab4', '#5d615c'],
   'classic-r': ['#f3efe6', '#2c2822', '#b9ae9d', '#686056'],
-  gyeol: ['#f3f0e8', '#171916', '#a7ab9f', '#555950'],
+  gyeol: ['#ffffff', '#38363e', '#e4dfe9', '#706b78'],
 } as const;
 
 for (const [theme, tokens] of Object.entries(closingThemeTokens)) {
@@ -138,11 +138,12 @@ assert.equal(
 
 const revealHook = read(revealHookPath);
 
-for (const css of activeThemeCss) {
+for (const [index, css] of activeThemeCss.entries()) {
+  const canvasWidth = activeThemePaths[index].endsWith('/gyeol') ? 480 : 640;
   assert.match(
     css,
-    /\.page\s*\{[^}]*width:\s*min\(100%,\s*640px\);[^}]*margin:\s*0 auto;/s,
-    'Every wedding theme should use a centered 640px public invitation canvas'
+    new RegExp(`\\.page\\s*\\{[^}]*width:\\s*min\\(100%,\\s*${canvasWidth}px\\);[^}]*margin:\\s*0 auto;`, 's'),
+    'Every wedding theme should use its centered public invitation canvas'
   );
 }
 
@@ -167,7 +168,7 @@ assert.match(
 );
 
 for (const css of narrativeThemeCss) {
-  assert.doesNotMatch(css, /(?:linear|radial|conic)-gradient/);
+  assert.doesNotMatch(css.replace(/\.heroCopy\s*\{[^}]*\}/s, ''), /(?:linear|radial|conic)-gradient/);
   assert.doesNotMatch(css, /box-shadow/);
   assert.doesNotMatch(css, /border-radius:\s*999px/);
   assert.match(css, /min-height:\s*44px/);

@@ -1,0 +1,77 @@
+.locationMap {
+  width: 100%;
+  background: #fff;
+}
+
+.viewport {
+  position: relative;
+  width: 100%;
+  height: 240px;
+}
+
+.map {
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.interactive {
+  pointer-events: auto;
+}
+
+.message {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 12px;
+  padding: 24px;
+  color: #68636c;
+  font-size: 13px;
+  line-height: 1.7;
+  text-align: center;
+}
+
+.message p {
+  margin: 0;
+}
+
+.message a,
+.actions a {
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
+  color: #756383;
+  text-underline-offset: 4px;
+}
+
+.actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  padding-top: 12px;
+  font-size: 12px;
+}
+
+.actions button {
+  min-height: 44px;
+  padding: 10px 14px;
+  border: 1px solid #ded8e2;
+  border-radius: 0;
+  background: #fff;
+  color: #65596e;
+  font: inherit;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.actions button:focus-visible,
+.actions a:focus-visible,
+.message a:focus-visible {
+  outline: 2px solid #756383;
+  outline-offset: 4px;
+}

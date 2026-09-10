@@ -29,6 +29,8 @@ const core = [
   'test-event-slug-index',
   'test-first-birthday-page-rendering',
   'test-gyeol-theme',
+  'test-gallery-carousel-rendering',
+  'test-wedding-compact-sections-rendering',
   'test-image-upload-optimization',
   'test-invitation-metadata',
   'test-homepage-ui-contracts',
@@ -167,11 +169,19 @@ if (!selectedTests) {
   process.exit(1);
 }
 
+// Hook-based components need React's client server-rendering entrypoint.
+const clientRenderingTests = new Set([
+  'test-gallery-carousel-rendering',
+  'test-wedding-compact-sections-rendering',
+]);
+
 for (const testId of selectedTests) {
   console.log(`\n[test-suite] ${testId}`);
   const result = spawnSync(
     process.execPath,
-    [npxCliPath, '--yes', 'tsx', '--conditions', 'react-server', testFilePath(testId)],
+    [npxCliPath, '--yes', 'tsx',
+      ...(clientRenderingTests.has(testId) ? [] : ['--conditions', 'react-server']),
+      testFilePath(testId)],
     {
       cwd: process.cwd(),
       env: process.env,

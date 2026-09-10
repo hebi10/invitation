@@ -22,7 +22,7 @@ export interface WeddingInvitationRouteOptions {
   externalShareEnabled?: boolean;
 }
 
-type ShareButtonVariant = 'default';
+type ShareButtonVariant = 'default' | 'minimal';
 
 interface WeddingThemeDefinition {
   documentTitleSuffix: string;
@@ -70,8 +70,10 @@ const themeDefinitions = INVITATION_THEME_KEYS.reduce<
   accumulator[theme] = {
     documentTitleSuffix: definition.documentTitleSuffix,
     ariaLabelSuffix: definition.ariaLabelSuffix,
-    shareButtonVariant: 'default',
-    shareContainer: defaultShareContainer,
+    shareButtonVariant: theme === 'gyeol' ? 'minimal' : 'default',
+    shareContainer: theme === 'gyeol'
+      ? { style: { backgroundColor: '#fff', width: 'min(100%, 480px)', margin: '0 auto', padding: '0 30px 32px', boxSizing: 'border-box' } }
+      : defaultShareContainer,
     getShareTitle: resolveShareTitle,
     getShareDescription: resolveShareDescription,
   };

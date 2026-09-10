@@ -65,7 +65,7 @@ interface WeddingKakaoShareButtonProps {
   imageUrl: string;
   fallbackImageUrl?: string;
   shareMode?: InvitationShareMode;
-  variant?: 'default' | 'space' | 'classic';
+  variant?: 'default' | 'space' | 'classic' | 'minimal';
 }
 
 const buttonBaseStyle = {
@@ -88,6 +88,15 @@ const buttonBaseStyle = {
 } as const;
 
 const buttonVariantStyles = {
+  minimal: {
+    background: '#fff',
+    color: '#38363e',
+    borderColor: '#e4dfe9',
+    boxShadow: 'none',
+    borderRadius: '0',
+    fontSize: '13px',
+    fontWeight: 500,
+  },
   default: {
     background: 'linear-gradient(135deg, #fff8df 0%, #f6edd0 100%)',
     color: '#3b2d16',
