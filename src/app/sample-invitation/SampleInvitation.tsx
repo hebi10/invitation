@@ -4,13 +4,13 @@ import AppQueryProvider from '../AppQueryProvider';
 import WeddingBase from '../_components/public-invitations/wedding/WeddingBase';
 import { WeddingClosing } from '../_components/WeddingClosing';
 import type { WeddingPageReadyState } from '../_components/weddingPageState';
-import { sampleWeddingPage, sampleWeddingComments, SAMPLE_WEDDING_IMAGES } from '@/config/homeWeddingSample';
+import { sampleWeddingPage, sampleWeddingComments, SAMPLE_WEDDING_IMAGES, SAMPLE_WEDDING_COVER } from '@/config/homeWeddingSample';
 import styles from './page.module.css';
 
 const sampleState: WeddingPageReadyState = {
   status: 'ready', blockMessage: null, pageConfig: sampleWeddingPage,
   isLoading: false, setIsLoading: () => {}, isRefreshingPage: false, refreshPage: async () => {}, imagesLoading: false,
-  heroImageUrl: SAMPLE_WEDDING_IMAGES[0], mainImageUrl: SAMPLE_WEDDING_IMAGES[0],
+  heroImageUrl: SAMPLE_WEDDING_COVER, mainImageUrl: SAMPLE_WEDDING_COVER,
   galleryImageUrls: SAMPLE_WEDDING_IMAGES, galleryPreviewImageUrls: SAMPLE_WEDDING_IMAGES, preloadImages: [], adminNotice: null,
   weddingDate: new Date('2027-04-17T14:00:00+09:00'), hasGiftAccounts: false, giftInfo: undefined,
 };

@@ -14,6 +14,21 @@
       "file": "walk.webp",
       "reference": "portrait.webp",
       "prompt": "Create a second photograph from this fictional couple's same wedding session. Preserve exact faces, hair, ivory dress, charcoal suit, natural ivory/sage color grading and cream limestone courtyard. Portrait 2:3 composition, candid full body view from slightly farther away: the couple walking together hand in hand along an olive tree lined stone path, looking at one another and smiling gently, dress flowing naturally, soft overcast daylight, subtle film grain. Distinct composition from original portrait, professional natural editorial photo. No text, no collage, no border, no watermark."
+    },
+    {
+      "file": "steps.webp",
+      "reference": "portrait.webp",
+      "prompt": "Generate ONE new photorealistic wedding editorial photograph from the exact same fictional Korean couple's session as the reference. Reference is for identities, outfits and color style only: preserve the bride and groom's facial features, dark hair, ivory sleeveless silk dress and charcoal suit with dark tie. Muted ivory and sage, soft daylight, cream limestone villa and olive garden, realistic anatomy, understated fine film grain. Vertical 2:3 portrait. No text, collage, frame or watermark. A genuinely different scene and camera angle: seated together on broad stone garden steps, bride on left resting her head gently on groom's shoulder, groom on right smiling softly towards her. Medium full seated composition, bouquet laid on the step beside them, relaxed intimate moment. No standing portrait pose."
+    },
+    {
+      "file": "archway.webp",
+      "reference": "portrait.webp",
+      "prompt": "Generate ONE new photorealistic wedding editorial photograph from the exact same fictional Korean couple's session as the reference. Reference is for identities, outfits and color style only: preserve the bride and groom's facial features, dark hair, ivory sleeveless silk dress and charcoal suit with dark tie. Muted ivory and sage, soft daylight, cream limestone villa and olive garden, realistic anatomy, understated fine film grain. Vertical 2:3 portrait. No text, collage, frame or watermark. A genuinely different scene: rear view of the bride and groom under a cream stone archway, arms gently around each other's waist, looking out toward a softly lit olive garden. Flowing dress train visible. Full length architectural composition, elegant natural light. Faces mostly turned away. No walking or front-facing pose."
+    },
+    {
+      "file": "closeup.webp",
+      "reference": "portrait.webp",
+      "prompt": "Generate ONE new photorealistic wedding editorial photograph from the exact same fictional Korean couple's session as the reference. Reference is for identities, outfits and color style only: preserve the bride and groom's facial features, dark hair, ivory sleeveless silk dress and charcoal suit with dark tie. Muted ivory and sage, soft daylight, cream limestone villa and olive garden, realistic anatomy, understated fine film grain. Vertical 2:3 portrait. No text, collage, frame or watermark. A genuinely different scene: waist-up candid close portrait, bride and groom face to face with foreheads almost touching and relaxed smiles, bride on right, groom on left, softly blurred olive leaves behind them. Bouquet not visible. Intimate editorial crop emphasizing expressions, beautiful realistic skin, soft light."
     }
   ],
   "encoding": {

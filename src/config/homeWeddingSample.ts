@@ -3,10 +3,13 @@ import type { InvitationPage } from '@/types/invitationPage';
 import type { Comment } from '@/services/commentService';
 
 export const SAMPLE_INVITATION_PATH = '/sample-invitation/';
+export const SAMPLE_WEDDING_COVER = '/images/home-wedding/portrait.webp';
 export const SAMPLE_WEDDING_IMAGES = [
-  '/images/home-wedding/portrait.webp',
+  '/images/home-wedding/steps.webp',
   '/images/home-wedding/walk.webp',
   '/images/home-wedding/bouquet.webp',
+  '/images/home-wedding/archway.webp',
+  '/images/home-wedding/closeup.webp',
 ];
 
 const seed = createWeddingPageConfig({
@@ -23,7 +26,7 @@ const seed = createWeddingPageConfig({
   productTier: 'premium',
   features: { maxGalleryImages: 18, showCountdown: true, showGuestbook: true, showMusic: false, shareMode: 'none' },
   variants: { simple: { available: true, path: SAMPLE_INVITATION_PATH, displayName: '기본형 샘플' } },
-  metadata: { title: '이서준 · 김하은 — 기본형 샘플', images: { wedding: SAMPLE_WEDDING_IMAGES[0], favicon: '/favicon.ico' } },
+  metadata: { title: '이서준 · 김하은 — 기본형 샘플', images: { wedding: SAMPLE_WEDDING_COVER, favicon: '/favicon.ico' } },
   pageData: {
     ceremonyTime: '오후 2:00',
     greetingMessage: '함께 걷는 길 위에서\n서로의 가장 편안한 하루가 되었습니다.\n\n작은 기쁨은 나누고\n어려운 날에는 손을 더 꼭 잡으며\n이제 평생을 함께하려 합니다.\n\n저희의 첫걸음에 함께하시어\n따뜻한 축복을 보내주시면 감사하겠습니다.',

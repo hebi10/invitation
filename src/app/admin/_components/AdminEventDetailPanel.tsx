@@ -14,7 +14,7 @@ import type { Comment } from '@/services/commentService';
 import type { AdminCustomerAccountSummary } from '@/services/adminCustomerService';
 import { ImageManager, MemoryPageManager } from '@/components/admin';
 import WeddingCover from '@/app/_components/public-invitations/wedding/WeddingCover';
-import { sampleWeddingPage, SAMPLE_WEDDING_IMAGES } from '@/config/homeWeddingSample';
+import { sampleWeddingPage, SAMPLE_WEDDING_COVER } from '@/config/homeWeddingSample';
 
 import {
   getAdminEventCapabilities,
@@ -316,7 +316,7 @@ function EventDetailWorkspace({
                   return (
                     <li key={theme.key}>
                       <div className={styles.eventThemeThumbnail} aria-hidden="true">
-                        <div><WeddingCover theme={theme.key} page={sampleWeddingPage} imageUrl={SAMPLE_WEDDING_IMAGES[0]} titleId={`admin-theme-cover-${theme.key}`} /></div>
+                        <div><WeddingCover theme={theme.key} page={sampleWeddingPage} imageUrl={SAMPLE_WEDDING_COVER} titleId={`admin-theme-cover-${theme.key}`} /></div>
                       </div>
                       <span>
                         {theme.label}
