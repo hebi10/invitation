@@ -99,7 +99,7 @@ const SLUG_STEP_TEMPLATE: WizardStepTemplate = {
 const BASIC_STEP_TEMPLATE: WizardStepTemplate = {
   key: 'basic',
   title: '기본 정보',
-  description: '첫 화면에 보일 이름과 짧은 문구를 입력합니다.',
+  description: '표지에 표시될 이름을 확인합니다. 예식 일시와 장소는 다음 단계에서 입력합니다.',
   previewSection: 'cover',
   highlights: ['신랑 이름', '신부 이름', '표지 제목과 부제'],
 };

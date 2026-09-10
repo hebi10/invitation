@@ -98,6 +98,19 @@ const nextConfig: NextConfig = {
           return header;
         }),
       },
+      {
+        // Only the local preview is embeddable; authenticated routes remain protected.
+        source: "/wizard-preview/",
+        headers: securityHeaders.map((header) => {
+          if (header.key === "X-Frame-Options") {
+            return { ...header, value: "SAMEORIGIN" };
+          }
+          if (header.key.startsWith("Content-Security-Policy")) {
+            return { ...header, value: header.value.replace("frame-ancestors 'none'", "frame-ancestors 'self'") };
+          }
+          return header;
+        }),
+      },
     ];
   },
   async redirects() {

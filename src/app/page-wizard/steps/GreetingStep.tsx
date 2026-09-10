@@ -149,6 +149,7 @@ export default function GreetingStep({
         <PersonEditorCard
           role="groom"
           label="신랑 정보"
+          nameReadOnly={formState.eventType === 'wedding'}
           person={formState.couple.groom}
           disabled={false}
           onPersonFieldChange={onPersonFieldChange}
@@ -157,6 +158,7 @@ export default function GreetingStep({
         <PersonEditorCard
           role="bride"
           label="신부 정보"
+          nameReadOnly={formState.eventType === 'wedding'}
           person={formState.couple.bride}
           disabled={false}
           onPersonFieldChange={onPersonFieldChange}

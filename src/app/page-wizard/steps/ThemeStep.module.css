@@ -1,0 +1,26 @@
+@font-face { font-family: 'Wedding Myeongjo'; font-style: normal; font-weight: 400 700; font-display: swap; src: url('/fonts/wedding/NanumMyeongjo-Korean.woff2') format('woff2'); unicode-range: U+1100-11FF, U+2000-206F, U+3000-318F, U+3200-33FF, U+AC00-D7AF, U+FF00-FFEF; }
+@font-face { font-family: 'Wedding Myeongjo'; font-style: normal; font-weight: 400 700; font-display: swap; src: url('/fonts/wedding/NanumMyeongjo-Latin.woff2') format('woff2'); unicode-range: U+0000-00FF; }
+.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 196px), 1fr)); gap: 20px; }
+.card { min-width: 0; display: flex; flex-direction: column; border: 1px solid #d6d6d1; background: #fff; }
+.card[data-selected='true'] { border-color: #262626; outline: 1px solid #262626; }
+.coverWindow { width: 180px; height: 348px; overflow: hidden; margin: 12px auto 0; background: #fff; color: #282824; }
+.coverCanvas { width: 360px; transform: scale(.5); transform-origin: top left; pointer-events: none; }
+.coverCanvas[data-theme='emotional'] { background: #fcfaf6; }
+.coverCanvas[data-theme='gyeol'] { background: #faf8f3; }
+.details { display: flex; flex: 1; flex-direction: column; gap: 12px; padding: 18px; }
+.title { display: flex; align-items: baseline; justify-content: space-between; flex-wrap: wrap; gap: 6px; margin: 0; color: #262626; font-size: 15px; font-weight: 500; }
+.title span { color: #525252; font-size: 12px; }
+.description { margin: 0; color: #525252; font-size: 13px; line-height: 1.75; }
+.actions { display: flex; gap: 8px; margin-top: auto; padding-top: 6px; }
+.previewButton, .selectButton { min-height: 44px; padding: 8px 12px; border: 1px solid #a3a3a3; background: #fff; color: #262626; font: inherit; font-size: 13px; cursor: pointer; }
+.previewButton { flex: 1; }
+.selectButton { background: #262626; color: #fff; border-color: #262626; }
+.selectButton:disabled { background: #eee; color: #656565; border-color: #d4d4d4; cursor: default; }
+.previewButton:focus-visible, .selectButton:focus-visible, .dialogHeader button:focus-visible { outline: 2px solid #262626; outline-offset: 3px; }
+.backdrop { position: fixed; inset: 0; z-index: 1400; display: flex; align-items: center; justify-content: center; padding: 16px; background: rgb(0 0 0 / .5); }
+.dialog { width: min(100%, 500px); max-height: calc(100dvh - 32px); overflow-y: auto; overscroll-behavior: contain; background: #fff; color: #262626; }
+.dialogHeader { position: sticky; top: 0; z-index: 1; display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 12px 16px; background: #fff; }
+.dialogHeader h3 { margin: 0; font-size: 17px; font-weight: 500; }
+.dialogHeader button { min-height: 44px; padding: 8px 12px; border: 1px solid #a3a3a3; background: #fff; color: #262626; font: inherit; font-size: 13px; cursor: pointer; }
+.dialogHint { margin: 0; padding: 0 16px 12px; color: #525252; font-size: 13px; line-height: 1.6; }
+@media (max-width: 520px) { .backdrop { padding: 8px; } .dialog { max-height: calc(100dvh - 16px); } }

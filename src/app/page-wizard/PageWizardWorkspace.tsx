@@ -46,6 +46,7 @@ type PageWizardWorkspaceProps = {
   notice: ReactNode;
   isSaving: boolean;
   published: boolean;
+  fullPreview?: ReactNode;
   previewStepKey: WizardStepKey | null;
   renderStepContent: (stepKey: WizardStepKey) => ReactNode;
   renderStepPreview: (stepKey: WizardStepKey) => ReactNode;
@@ -85,6 +86,7 @@ export default function PageWizardWorkspace({
   isSaving,
   published,
   previewStepKey,
+  fullPreview,
   renderStepContent,
   renderStepPreview,
   onSelectSection,
@@ -96,6 +98,14 @@ export default function PageWizardWorkspace({
   onSave,
 }: PageWizardWorkspaceProps) {
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
+  const [isFullPreviewOpen, setIsFullPreviewOpen] = useState(false);
+  const [attemptedSteps, setAttemptedSteps] = useState<Set<WizardStepKey>>(new Set());
+  const fullPreviewDialogRef = useRef<HTMLElement | null>(null);
+  const attempt = (action: () => void, allSections = false) => {
+    const steps = allSections ? sections.flatMap(section => section.steps) : activeSection.steps;
+    setAttemptedSteps(previous => new Set([...previous, ...steps.map(step => step.key)]));
+    action();
+  };
   const previewDialogRef = useRef<HTMLElement | null>(null);
   const mobileNavDialogRef = useRef<HTMLElement | null>(null);
   const activeSectionIndex = sections.findIndex(
@@ -106,7 +116,9 @@ export default function PageWizardWorkspace({
     () => activeSection.steps.find((step) => Boolean(step.previewSection)) ?? null,
     [activeSection.steps]
   );
-  const isDialogOpen = isMobileNavOpen || previewStepKey !== null;
+  const isDialogOpen = isMobileNavOpen || isFullPreviewOpen || previewStepKey !== null;
+  const closeFullPreview = () => setIsFullPreviewOpen(false);
+  useDialogLayer(fullPreviewDialogRef, { open: isFullPreviewOpen, onClose: closeFullPreview });
 
   const closePreview = () => onClosePreview();
   const closeMobileNav = () => setIsMobileNavOpen(false);
@@ -124,6 +136,7 @@ export default function PageWizardWorkspace({
     const validation = getSectionValidation(section);
     const isActive = section.id === activeSection.id;
     const hasMeaningfulInput = section.steps.some((step) =>
+      (hasPersistedData || interactedStepKeys.has(step.key) || attemptedSteps.has(step.key)) &&
       hasMeaningfulInputForWizardStep(step.key, {
         formState,
         slugStepState,
@@ -133,7 +146,7 @@ export default function PageWizardWorkspace({
     );
     const statusLabel = getWizardSectionStatus({
       isActive,
-      valid: validation.valid,
+      valid: validation.valid || !(hasPersistedData || section.steps.some(step => interactedStepKeys.has(step.key) || attemptedSteps.has(step.key))),
       hasMeaningfulInput,
       invalidStepCount: validation.invalidStepKeys.length,
     });
@@ -193,16 +206,16 @@ export default function PageWizardWorkspace({
                 {lastSavedAt.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })}
               </time>
             ) : null}
-            <button type="button" className={styles.primaryAction} onClick={onSave} disabled={isSaving}>
+            <button type="button" className={styles.primaryAction} onClick={() => attempt(onSave, true)} disabled={isSaving}>
               {isSaving ? '저장 중' : saveStatus === 'error' ? '저장 다시 시도' : '내용 저장'}
             </button>
-            {activePreviewStep ? (
+            {fullPreview || activePreviewStep ? (
               <button
                 type="button"
                 className={styles.secondaryAction}
-                onClick={() => openPreview(activePreviewStep.key)}
+                onClick={() => fullPreview ? setIsFullPreviewOpen(true) : activePreviewStep && openPreview(activePreviewStep.key)}
               >
-                미리보기
+                {fullPreview ? '청첩장 미리보기' : '입력 내용 확인'}
               </button>
             ) : null}
           </div>
@@ -223,7 +236,7 @@ export default function PageWizardWorkspace({
         </button>
       </div>
 
-      <div className={styles.layout}>
+      <div className={`${styles.layout} ${fullPreview ? styles.layoutWithPreview : ''}`}>
         <aside className={styles.desktopNav}>
           <nav className={styles.sectionNav} aria-label="작업 영역">
             <p className={styles.navHeading}>작업 영역</p>
@@ -271,6 +284,7 @@ export default function PageWizardWorkspace({
 
           <div className={styles.stepList}>
             {activeSection.steps.map((step) => {
+              if (fullPreview && step.key === 'basic') return null;
               const validation = getStepValidation(step.key);
               const isActiveStep = step.key === activeStepKey;
               const isOnlyStepWithSectionTitle =
@@ -302,14 +316,14 @@ export default function PageWizardWorkspace({
                         aria-pressed={previewStepKey === step.key}
                         onClick={() => openPreview(step.key)}
                       >
-                        미리보기
+                        입력 내용 확인
                       </button>
                     ) : null}
                   </div>
 
-                  {!validation.valid ? (
+                  {!validation.valid && (interactedStepKeys.has(step.key) || attemptedSteps.has(step.key)) ? (
                     <div className={styles.validationNotice} role="alert">
-                      {validation.messages[0] ?? '입력 내용을 확인해 주세요.'}
+                      {validation.messages.length ? <ul>{validation.messages.map(message => <li key={message}>{message}</li>)}</ul> : '입력 내용을 확인해 주세요.'}
                     </div>
                   ) : null}
 
@@ -328,11 +342,17 @@ export default function PageWizardWorkspace({
             })}
           </div>
         </main>
+        {fullPreview ? <aside className={styles.livePreview} aria-label="청첩장 실시간 미리보기">
+          <h2>청첩장 미리보기</h2>
+          {fullPreview}
+        </aside> : null}
       </div>
 
       <footer className={styles.actionBar}>
         <div className={styles.actionBarInner}>
-          <span className={styles.actionContext}>{activeSection.title}</span>
+          <div className={styles.actionContext}><span>{activeSection.title}</span>
+            <p>{persistedPublished ? '내용을 저장하면 공개 중인 청첩장에도 바로 반영됩니다.' : '저장한 내용은 최종 공개 전까지 초안으로 유지됩니다.'}</p>
+          </div>
           <div className={styles.actionButtons}>
             <button
               type="button"
@@ -346,7 +366,7 @@ export default function PageWizardWorkspace({
               <button
                 type="button"
                 className={styles.primaryAction}
-                onClick={onFinalConfirm}
+                onClick={() => attempt(onFinalConfirm, true)}
                 disabled={isSaving}
               >
                 {isSaving ? '저장 중' : published ? '저장 후 공개' : persistedPublished ? '비공개로 저장' : '초안 저장'}
@@ -355,7 +375,7 @@ export default function PageWizardWorkspace({
               <button
                 type="button"
                 className={styles.primaryAction}
-                onClick={onNext}
+                onClick={() => attempt(onNext)}
                 disabled={isSaving}
               >
                 {isSaving ? '저장 중' : '저장 후 다음'}
@@ -393,6 +413,15 @@ export default function PageWizardWorkspace({
         </div>
       ) : null}
 
+      {isFullPreviewOpen ? <div className={styles.previewOverlay}>
+        <section ref={fullPreviewDialogRef} className={styles.previewPanel} role="dialog" aria-modal="true" aria-labelledby="wizard-full-preview-title">
+          <header className={styles.dialogHeader}>
+            <h2 id="wizard-full-preview-title">청첩장 미리보기</h2>
+            <button type="button" className={styles.closeAction} onClick={closeFullPreview}>닫기</button>
+          </header>
+          <div className={styles.previewContent}>{fullPreview}</div>
+        </section>
+      </div> : null}
       {previewStepKey ? (
         <div className={styles.previewOverlay}>
           <section
@@ -404,7 +433,7 @@ export default function PageWizardWorkspace({
           >
             <header className={styles.dialogHeader}>
               <div>
-                <span className={styles.dialogLabel}>미리보기</span>
+                <span className={styles.dialogLabel}>입력 내용 확인</span>
                 <h2 id="wizard-preview-title">
                   {activeSection.steps.find((step) => step.key === previewStepKey)?.title
                     ?? '초대장 화면'}

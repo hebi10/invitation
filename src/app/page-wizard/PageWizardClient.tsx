@@ -1,5 +1,7 @@
 ﻿'use client';
 
+import WeddingWizardPreview from './WeddingWizardPreview';
+
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
@@ -440,8 +442,8 @@ export default function PageWizardClient({
     slugInput,
   });
   const wizardSections = useMemo(
-    () => buildWizardSections(wizardSteps),
-    [wizardSteps]
+    () => buildWizardSections(wizardSteps, eventType),
+    [wizardSteps, eventType]
   );
   const { getValidationForStep, finalReviewSummary } = useWizardValidation({
     activeStepKey,
@@ -1948,6 +1950,7 @@ export default function PageWizardClient({
 
   return (
     <PageWizardWorkspace
+        fullPreview={eventType === 'wedding' ? <WeddingWizardPreview formState={formState} theme={defaultTheme} /> : undefined}
       title={formState.displayName || [formState.groomName, formState.brideName].filter(Boolean).join(' · ') || eventTypeMeta.label}
       subtitle={resolvedPersistedSlug ? `/${resolvedPersistedSlug}` : '새 페이지 만들기'}
       sections={wizardSections}

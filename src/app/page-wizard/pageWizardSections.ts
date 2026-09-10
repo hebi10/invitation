@@ -66,9 +66,11 @@ const SECTION_DEFINITIONS: WizardSectionDefinition[] = [
   },
 ];
 
-export function buildWizardSections(steps: WizardStepDefinition[]): WizardSection[] {
+export function buildWizardSections(steps: WizardStepDefinition[], eventType?: string): WizardSection[] {
   return SECTION_DEFINITIONS.flatMap((definition) => {
-    const allowedStepKeys = new Set(definition.stepKeys);
+    if (eventType === 'wedding' && definition.id === 'basic') return [];
+    const allowedStepKeys = new Set<WizardStepKey>(eventType === 'wedding' && definition.id === 'setup'
+      ? [...definition.stepKeys, 'basic'] : definition.stepKeys);
     const sectionSteps = steps.filter((step) => allowedStepKeys.has(step.key));
 
     if (sectionSteps.length === 0) {
@@ -78,7 +80,8 @@ export function buildWizardSections(steps: WizardStepDefinition[]): WizardSectio
     return [{
       id: definition.id,
       title: definition.title,
-      description: definition.description,
+      description: eventType === 'wedding' && definition.id === 'setup'
+        ? '디자인을 고르고 두 분의 이름과 페이지 주소를 입력합니다.' : definition.description,
       steps: sectionSteps,
     }];
   });

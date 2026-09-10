@@ -574,7 +574,6 @@
   }
 
   .productLabel,
-  .topActions .secondaryAction,
   .desktopNav {
     display: none;
   }
@@ -706,4 +705,22 @@
   .workspace *::after {
     scroll-behavior: auto !important;
   }
+}
+
+.livePreview { display: none; }
+.livePreview h2 { margin: 0 0 12px; font-size: 14px; font-weight: 500; }
+.validationNotice ul { margin: 0; padding-left: 18px; }
+.actionContext { white-space: normal; }
+.actionContext p { margin: 5px 0 0; font-size: 12px; font-weight: 400; line-height: 1.5; }
+@media (min-width: 1200px) {
+  .topBarInner, .actionBarInner { width: min(100%, 1480px); }
+  .layoutWithPreview { width: min(100%, 1480px); grid-template-columns: 180px minmax(0, 1fr) 340px; gap: 28px; }
+  .livePreview { display: block; position: sticky; top: 104px; min-width: 0; }
+}
+@media (max-width: 900px) {
+  .actionBarInner { flex-wrap: wrap; gap: 8px; }
+  .actionContext { display: block; width: 100%; }
+  .actionContext > span { display: none; }
+  .actionContext p { margin: 0; }
+  .layout { padding-bottom: 150px; }
 }

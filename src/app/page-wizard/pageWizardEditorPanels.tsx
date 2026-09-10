@@ -16,6 +16,7 @@ interface PersonEditorCardProps {
   label: string;
   person: PersonInfo;
   disabled: boolean;
+  nameReadOnly?: boolean;
   onPersonFieldChange: (
     role: PersonRole,
     field: 'name' | 'order' | 'phone',
@@ -90,6 +91,7 @@ export function PersonEditorCard({
   label,
   person,
   disabled,
+  nameReadOnly = false,
   onPersonFieldChange,
   onParentFieldChange,
 }: PersonEditorCardProps) {
@@ -99,12 +101,18 @@ export function PersonEditorCard({
         <div>
           <h3 className={styles.subCardTitle}>{label}</h3>
           <p className={styles.subCardDescription}>
-            이름은 꼭 입력하고, 호칭과 연락처는 필요한 경우에만 추가해 주세요.
+            {nameReadOnly
+              ? '이름은 시작 설정에서 수정할 수 있습니다. 호칭과 연락처는 필요한 경우에만 추가해 주세요.'
+              : '이름은 꼭 입력하고, 호칭과 연락처는 필요한 경우에만 추가해 주세요.'}
           </p>
         </div>
       </div>
 
       <div className={styles.fieldGrid}>
+        {nameReadOnly ? <div className={styles.field}>
+          <span className={styles.label}>이름</span>
+          <span>{person.name || '시작 설정에서 이름을 입력해 주세요'}</span>
+        </div> : (
         <label className={styles.field}>
           {renderFieldMeta('이름', 'required', '청첩장에 직접 노출되는 이름입니다.')}
           <input
@@ -117,6 +125,7 @@ export function PersonEditorCard({
             disabled={disabled}
           />
         </label>
+        )}
 
         <label className={styles.field}>
           {renderFieldMeta('호칭', 'optional', '장남, 차녀처럼 가족 호칭을 적을 때 사용합니다.')}

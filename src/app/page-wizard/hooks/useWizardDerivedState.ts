@@ -44,7 +44,7 @@ export function useWizardDerivedState({
     () =>
       getWizardSteps({
         eventType: activeEventType,
-        includeSetupSteps: !initialSlug,
+        includeSetupSteps: activeEventType === 'wedding' || !initialSlug,
         includeEventTypeStep,
         includeMusic: invitationFeatures.showMusic,
       }),

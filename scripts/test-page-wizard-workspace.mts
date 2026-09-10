@@ -34,7 +34,7 @@ for (const eventType of EVENT_TYPE_KEYS) {
         includeSetupSteps,
         includeEventTypeStep,
       });
-      const sections = buildWizardSections(steps);
+      const sections = buildWizardSections(steps, eventType);
       const flattened = flattenWizardSectionStepKeys(sections);
 
       assert.deepEqual(
