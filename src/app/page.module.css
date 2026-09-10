@@ -14,9 +14,13 @@
 .secondaryLink { border: 1px solid #dcdcdc; background: #fff; color: #333; }
 .secondaryLink span { font-size: 11px; color: #737373; }
 .textLink { display: inline-flex; align-items: center; min-height: 44px; margin-top: 16px; color: #626262; font-size: 12px; text-decoration: underline; text-underline-offset: 4px; }
-.preview { display: block; width: min(100%, 420px); justify-self: end; }
-.previewImage { display: block; width: 100%; height: auto; aspect-ratio: 4 / 5; object-fit: cover; object-position: center 65%; }
+.preview { width: min(100%, 374px); min-width: 0; justify-self: center; }
+.phone { padding: 20px 7px 12px; background: #252525; border: 1px solid #555; border-radius: 36px; }
+.phoneSpeaker { width: 44px; height: 4px; margin: 0 auto 12px; border-radius: 4px; background: #737373; }
+.phoneScreen { display: block; width: 100%; aspect-ratio: 360 / 680; border: 0; border-radius: 22px; background: #fff; }
+.phoneScreen:focus-visible { outline: 2px solid #fff; outline-offset: 3px; }
 .previewCaption { display: block; margin-top: 14px; color: #666; font-size: 12px; text-align: center; }
+.previewOpen { display: flex; align-items: center; justify-content: center; min-height: 44px; color: #626262; font-size: 12px; text-decoration: underline; text-underline-offset: 4px; }
 .workspace { padding: 36px; background: #f7f7f7; }
 .sectionIntro h2 { margin: 0; font-size: 20px; font-weight: 500; }
 .sectionIntro p { margin: 10px 0 0; color: #666; font-size: 13px; line-height: 1.7; }

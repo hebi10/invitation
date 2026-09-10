@@ -1,4 +1,3 @@
-import Image from 'next/image';
 import Link from 'next/link';
 
 import ExperienceStartButton from './_components/ExperienceStartButton';
@@ -25,10 +24,19 @@ export default function Home() {
           </div>
           <Link href="/my-invitations" className={styles.textLink}>이미 제작하셨나요? 내 청첩장 관리</Link>
         </div>
-        <Link href="/kim-shinlang-na-sinbu/romantic/" className={styles.preview} aria-label="로맨틱 청첩장 샘플 보기">
-          <Image src="/images/sample-wedding-romantic.webp" alt="꽃과 나무로 둘러싸인 야외 웨딩 아치" width={853} height={1844} priority sizes="(max-width: 700px) 100vw, 480px" className={styles.previewImage} />
-          <span className={styles.previewCaption}>사진으로 시작하는 초대 · 샘플 보기</span>
-        </Link>
+        <div className={styles.preview}>
+          <div className={styles.phone}>
+            <div className={styles.phoneSpeaker} aria-hidden="true" />
+            <iframe
+              src="/kim-shinlang-na-sinbu/romantic/"
+              title="로맨틱 청첩장 · 화면 안에서 스크롤하며 둘러보기"
+              className={styles.phoneScreen}
+              aria-describedby="preview-instruction"
+            />
+          </div>
+          <p id="preview-instruction" className={styles.previewCaption}>화면 안에서 스크롤하며 청첩장을 둘러보세요.</p>
+          <a href="/kim-shinlang-na-sinbu/romantic/" target="_blank" rel="noopener noreferrer" className={styles.previewOpen}>청첩장 크게 보기 · 새 창</a>
+        </div>
       </section>
       <section className={styles.workspace} aria-labelledby="workspace-title">
         <div className={styles.sectionIntro}>

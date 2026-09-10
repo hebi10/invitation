@@ -85,6 +85,19 @@ const nextConfig: NextConfig = {
         source: "/:path*",
         headers: securityHeaders,
       },
+      {
+        // The homepage embeds this public sample only; other routes remain unframeable.
+        source: "/kim-shinlang-na-sinbu/romantic/",
+        headers: securityHeaders.map((header) => {
+          if (header.key === "X-Frame-Options") {
+            return { ...header, value: "SAMEORIGIN" };
+          }
+          if (header.key.startsWith("Content-Security-Policy")) {
+            return { ...header, value: header.value.replace("frame-ancestors 'none'", "frame-ancestors 'self'") };
+          }
+          return header;
+        }),
+      },
     ];
   },
   async redirects() {
