@@ -322,6 +322,17 @@ function EventDetailWorkspace({
                         {theme.label}
                         {theme.key === page.defaultTheme ? ' · 기본' : ''}
                       </span>
+                      {isAvailable ? (
+                        <a
+                          className="admin-button admin-button-secondary"
+                          href={routes.preview(page.slug, theme.key)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          aria-label={`${theme.label} 청첩장 페이지 열기 (새 탭)`}
+                        >
+                          페이지 열기
+                        </a>
+                      ) : null}
                       <button
                         type="button"
                         className="admin-button admin-button-ghost"
