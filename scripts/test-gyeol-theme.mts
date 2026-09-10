@@ -23,7 +23,7 @@ if (!isInvitationThemeKey(themeKey)) {
 }
 
 const definition = getInvitationThemeDefinition(themeKey);
-assert.equal(definition.label, '결');
+assert.equal(definition.label, '전통형');
 assert.equal(definition.pathSuffix, '/gyeol');
 assert.equal(
   buildInvitationThemeRoutePath('kim-taehyun-choi-yuna', themeKey),
@@ -49,12 +49,14 @@ const pagePath = path.resolve(
 );
 const cssPath = path.resolve(
   process.cwd(),
-  'src/app/_components/public-invitations/wedding/gyeol/styles.module.css'
+  'src/app/_components/public-invitations/wedding/WeddingBase.module.css'
 );
 assert.equal(existsSync(pagePath), true, 'GYEOL must own a dedicated page.');
 assert.equal(existsSync(cssPath), true, 'GYEOL must own dedicated styles.');
 
-const pageSource = readFileSync(pagePath, 'utf8');
+const wrapper = readFileSync(pagePath, 'utf8');
+assert.match(wrapper, /<WeddingBase \{\.\.\.props\} theme="gyeol"/);
+const pageSource = readFileSync(path.resolve(process.cwd(), 'src/app/_components/public-invitations/wedding/WeddingBase.tsx'), 'utf8');
 const cssSource = readFileSync(cssPath, 'utf8');
 const registrySource = readFileSync(
   path.resolve(process.cwd(), 'src/app/_components/themeRenderers/registry.ts'),
@@ -70,20 +72,16 @@ assert.match(pageSource, /<GiftInfoThemed/);
 assert.match(pageSource, /<GuestbookThemed/);
 
 const sectionPositions = [
-  'hero',
   'invitation',
   'contact',
   'gallery',
   'schedule',
   'gift',
   'guestbook',
-].map((section) => pageSource.indexOf(`data-gyeol-section="${section}"`));
+].map((section) => pageSource.indexOf(`data-wedding-section="${section}"`));
 assert.equal(sectionPositions.every((position) => position >= 0), true);
-assert.deepEqual(
-  sectionPositions,
-  [...sectionPositions].sort((left, right) => left - right),
-  'GYEOL should lead with the invitation and photographs before practical information.'
-);
+assert.match(pageSource, /theme !== 'romantic' && theme !== 'classic-r' \? gallery : null/);
+assert.match(pageSource, /theme === 'gyeol' \|\| theme === 'classic-r' \? calendar : null/);
 
 assert.doesNotMatch(
   cssSource.replace(/\.heroCopy\s*\{[^}]*\}/s, ''),
@@ -100,11 +98,10 @@ assert.match(
   /scrollbar-color:\s*var\(--ink\)\s+var\(--paper\)/,
   'GYEOL must theme the document scrollbar with its own paper and ink colors.'
 );
-assert.match(
-  cssSource,
-  /\.heroImage\s*\{[\s\S]*?animation:\s*gyeol-image-settle/,
-  'GYEOL must own one restrained hero image motion.'
-);
-assert.match(cssSource, /@keyframes\s+gyeol-image-settle/);
-
+const coverSource = readFileSync(path.resolve(process.cwd(), 'src/app/_components/public-invitations/wedding/WeddingCover.tsx'), 'utf8');
+const coverCss = readFileSync(path.resolve(process.cwd(), 'src/app/_components/public-invitations/wedding/WeddingCover.module.css'), 'utf8');
+assert.match(coverSource, /theme === 'gyeol'/);
+assert.match(coverSource, /styles\.traditional/);
+assert.match(coverSource, /styles\.families/);
+assert.match(coverCss, /writing-mode:\s*vertical-rl/);
 console.log('GYEOL theme registry behavior passed.');

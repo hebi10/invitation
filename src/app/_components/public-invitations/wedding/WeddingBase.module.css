@@ -1,20 +1,20 @@
 .page {
   --paper: #ffffff;
-  --paper-soft: #f8f6fb;
-  --ink: #38363e;
-  --muted: #706b78;
-  --accent: #80639b;
-  --line: #e4dfe9;
+  --paper-soft: #f6f5f2;
+  --ink: #292929;
+  --muted: #68645f;
+  --accent: #393939;
+  --line: #e2dfda;
   --control-line: #92899c;
   --input-surface: #ffffff;
-  --focus: #76558f;
+  --focus: #53504b;
   --popup-text: #ffffff;
   width: min(100%, 480px);
   min-width: 0;
   margin: 0 auto;
   background: var(--paper);
   color: var(--ink);
-  font-family: 'Gyeol Dodum', sans-serif;
+  font-family: var(--font-sans), sans-serif;
   --font-gowun-dodum: 'Gyeol Dodum';
   --font-alex-brush: 'Gyeol Brush';
   font-size: 14px;
@@ -27,63 +27,10 @@
 .page ::selection { background: #e9e1f0; color: var(--ink); }
 :global(html):has(.page) {
   --paper: #ffffff;
-  --ink: #38363e;
+  --ink: #292929;
   scrollbar-color: var(--ink) var(--paper);
   scrollbar-width: thin;
 }
-
-/* A single photographic cover; no separate title panel. */
-.hero { position: relative; isolation: isolate; }
-.heroFigure { margin: 0; background: #f5f4f3; }
-.heroImage {
-  display: block;
-  width: 100%;
-  height: auto;
-  animation: gyeol-image-settle 1.1s ease-out both;
-}
-.heroCopy {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 28px 18px 22px;
-  color: #fff;
-  text-align: center;
-  /* Photo scrim: protect white lettering while leaving the faces clear. */
-  background: linear-gradient(180deg,
-    rgba(24, 22, 28, 0.58) 0,
-    rgba(24, 22, 28, 0.58) 110px,
-    transparent 200px,
-    transparent calc(100% - 200px),
-    rgba(24, 22, 28, 0.64) calc(100% - 140px),
-    rgba(24, 22, 28, 0.72) 100%);
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
-}
-.coverTitle {
-  margin: 0;
-  font-family: var(--font-alex-brush), var(--font-display), serif;
-  font-size: clamp(34px, 10vw, 48px);
-  font-weight: 400;
-  line-height: 0.98;
-}
-.heroNames {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  align-items: baseline;
-  gap: 12px;
-  margin: auto 0 8px;
-  font-family: var(--font-gowun-dodum), sans-serif;
-  font-size: 20px;
-  font-weight: 500;
-  line-height: 1.5;
-  letter-spacing: 0.08em;
-}
-.nameJoin { font-family: var(--font-display), serif; font-size: 17px; font-style: italic; }
-.heroMeta { font-size: 12px; line-height: 1.7; }
-.heroMeta p { margin: 0; }
-.posterScene { padding: 64px 24px 8px; }
 
 /* Space, rather than panels, separates the passages. */
 .invitationSection, .scheduleSection, .container {
@@ -94,8 +41,8 @@
 }
 .heading, .title {
   margin: 0 0 32px;
-  color: var(--accent);
-  font-family: var(--font-gowun-dodum), sans-serif;
+  color: var(--ink);
+  font-family: inherit;
   font-size: 15px;
   font-weight: 500;
   font-style: normal;
@@ -289,3 +236,33 @@ details[open] > :is(.disclosureSummary, .accountSummary, .formSummary)::after { 
   src: url('/fonts/gyeol/GowunDodum-Latin.woff2') format('woff2');
   unicode-range: U+0000-00FF;
 }
+
+/* Shared behavior; each composition has its own reading rhythm. */
+.page[data-design='emotional'] { --paper: #fcfaf6; --paper-soft: #f3f0e9; font-family: 'Wedding Myeongjo', serif; }
+.page[data-design='emotional'] .invitationSection { padding: 48px 42px 0; text-align: left; }
+.page[data-design='emotional'] .invitationCopy { max-width: none; line-height: 2.35; }
+.page[data-design='emotional'] .invitationCopy .invitationAuthor { text-align: right; }
+.page[data-design='emotional'] .heading { text-align: left; }
+.page[data-design='emotional'] .carousel { max-width: 260px; }
+.page[data-design='emotional'] .dateSection { background: transparent; }
+.page[data-design='romantic'] .container { padding-inline: 0; }
+.page[data-design='romantic'] .imageGrid { grid-template-columns: 1fr; gap: 24px; }
+.page[data-design='romantic'] .imageWrapper { aspect-ratio: auto; }
+.page[data-design='romantic'] .imageContainer { aspect-ratio: 3 / 4; }
+.page[data-design='romantic'] .imageItem { object-fit: contain; }
+.page[data-design='romantic'] .container:has(.accountsContainer),
+.page[data-design='romantic'] .container:has(.commentsList) { padding-inline: 30px; }
+.page[data-design='classic-r'] .heading, .page[data-design='classic-r'] .title { text-align: left; font-size: 22px; letter-spacing: -.02em; }
+.page[data-design='classic-r'] .invitationSection { padding-top: 64px; text-align: left; }
+.page[data-design='classic-r'] .invitationCopy { margin: 0 0 0 auto; max-width: 290px; }
+.page[data-design='classic-r'] .imageGrid { align-items: start; gap: 28px 14px; }
+.page[data-design='classic-r'] .imageWrapper:nth-child(2n) { margin-top: 54px; }
+.page[data-design='classic-r'] .imageWrapper:nth-child(3n) { grid-column: 1 / -1; width: 84%; }
+.page[data-design='classic-r'] .dateSection { background: transparent; }
+.page[data-design='gyeol'] { --paper: #faf8f3; --paper-soft: #f2eee5; --accent: #574638; font-family: 'Wedding Myeongjo', serif; }
+.page[data-design='gyeol'] .heading { font-family: 'Wedding Myeongjo', serif; letter-spacing: .12em; }
+.page[data-design='gyeol'] .invitationCopy { max-width: 280px; line-height: 2.5; }
+.page[data-design='gyeol'] .carousel { max-width: 280px; }
+.page[data-design='gyeol'] .dateSection { background: transparent; }
+@font-face { font-family: 'Wedding Myeongjo'; font-style: normal; font-weight: 400 700; font-display: swap; src: url('/fonts/wedding/NanumMyeongjo-Korean.woff2') format('woff2'); unicode-range: U+1100-11FF, U+2000-206F, U+3000-318F, U+3200-33FF, U+AC00-D7AF, U+FF00-FFEF; }
+@font-face { font-family: 'Wedding Myeongjo'; font-style: normal; font-weight: 400 700; font-display: swap; src: url('/fonts/wedding/NanumMyeongjo-Latin.woff2') format('woff2'); unicode-range: U+0000-00FF; }

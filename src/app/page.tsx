@@ -29,7 +29,7 @@ export default function Home() {
             <div className={styles.phoneSpeaker} aria-hidden="true" />
             <iframe
               src="/kim-shinlang-na-sinbu/romantic/"
-              title="로맨틱 청첩장 · 화면 안에서 스크롤하며 둘러보기"
+              title="사진 중심형 청첩장 · 화면 안에서 스크롤하며 둘러보기"
               className={styles.phoneScreen}
               aria-describedby="preview-instruction"
             />

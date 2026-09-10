@@ -1,5 +1,10 @@
 import assert from 'node:assert/strict';
-import { register } from 'node:module';
+import { createRequire, register } from 'node:module';
+import React from 'react';
+import { renderToStaticMarkup } from 'react-dom/server';
+import { getRequiredWeddingPageBySlug } from '../src/config/weddingPages.ts';
+
+Object.assign(globalThis, { React });
 
 register(new URL('./test-css-module-loader.mjs', import.meta.url), import.meta.url);
 
@@ -86,3 +91,57 @@ for (const definition of WEDDING_THEME_CLOSING_DEFINITIONS) {
 }
 
 console.log('production wedding renderer closing checks passed');
+
+// Render the real five-theme composition, including shared interactive section shells.
+const require = createRequire(import.meta.url);
+const { QueryClient, QueryClientProvider } = require('@tanstack/react-query') as typeof import('@tanstack/react-query');
+const page = structuredClone(getRequiredWeddingPageBySlug('kim-taehyun-choi-yuna'));
+page.groomName = '테스트 신랑';
+page.brideName = '테스트 신부';
+page.couple.groom.name = page.groomName;
+page.couple.bride.name = page.brideName;
+page.couple.groom.phone = '01000000000';
+page.productTier = 'premium';
+page.features = { maxGalleryImages: 18, shareMode: 'card', showMusic: true, showCountdown: true, showGuestbook: true };
+page.pageData = {
+  ...page.pageData,
+  greetingMessage: '실제 저장된 초대 문구',
+  ceremonyAddress: '테스트 장소 주소',
+  giftInfo: { groomAccounts: [{ bank: '테스트은행', accountNumber: '000000', accountHolder: '테스트 신랑' }], brideAccounts: [], message: '마음 전하기' },
+};
+const state = {
+  status: 'ready', pageConfig: page, isLoading: false, imagesLoading: false,
+  setIsLoading: () => undefined,
+  mainImageUrl: 'https://example.com/hero.jpg', heroImageUrl: 'https://example.com/hero.jpg',
+  galleryImageUrls: ['https://example.com/gallery.jpg'], galleryPreviewImageUrls: ['https://example.com/thumbnail.jpg'],
+  weddingDate: new Date(2027, 3, 12, 16, 30), giftInfo: page.pageData.giftInfo, hasGiftAccounts: true,
+} as never;
+const renderedCovers = new Set<string>();
+for (const { key: theme } of WEDDING_THEME_CLOSING_DEFINITIONS) {
+  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  try {
+    const html = renderToStaticMarkup(React.createElement(QueryClientProvider, { client: queryClient },
+      React.createElement(getWeddingThemeRenderer(theme), { state, options: { theme } })
+    ));
+    assert.equal((html.match(/<h1\b/g) ?? []).length, 1, `${theme} must expose exactly one cover heading`);
+    assert.ok(html.includes(page.groomName) && html.includes(page.brideName));
+    assert.ok(html.includes('tel:01000000000') && html.includes('sms:01000000000'));
+    for (const section of ['invitation', 'contact', 'gallery', 'schedule', 'gift', 'guestbook']) {
+      assert.equal((html.match(new RegExp(`data-wedding-section="${section}"`, 'g')) ?? []).length, 1,
+        `${theme} must render its ${section} exactly once`);
+    }
+    assert.equal((html.match(/data-public-invitation-feature="calendar-countdown"/g) ?? []).length, 1);
+    const galleryBeforeInvitation = html.indexOf('data-wedding-section="gallery"') < html.indexOf('data-wedding-section="invitation"');
+    assert.equal(galleryBeforeInvitation, theme === 'romantic' || theme === 'classic-r');
+    const calendarBeforeSchedule = html.indexOf('data-public-invitation-feature=') < html.indexOf('data-wedding-section="schedule"');
+    assert.equal(calendarBeforeSchedule, theme === 'gyeol' || theme === 'classic-r');
+    const heading = html.match(/<h1[\s\S]*?<\/h1>/)?.[0];
+    const cover = html.match(/<section[^>]*aria-labelledby="wedding-cover-title"[\s\S]*?<\/section>/)?.[0];
+    assert.ok(heading && cover, `${theme} must render an accessible cover`);
+    renderedCovers.add(cover);
+  } finally {
+    queryClient.clear();
+  }
+}
+assert.equal(renderedCovers.size, 5, 'The five wedding variants must render distinct cover compositions');
+console.log('Five wedding compositions and preserved sections rendered successfully');

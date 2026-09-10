@@ -42,20 +42,27 @@ for (const themePath of activeThemePaths) {
     true,
     `${themePath} should own a dedicated page`
   );
-  assert.equal(
-    existsSync(path.resolve(process.cwd(), themePath, 'styles.module.css')),
-    true,
-    `${themePath} should own dedicated styles`
-  );
+  const page = read(themePath + '/Page.tsx');
+  assert.match(page, /import WeddingBase from ['"]\.\.\/WeddingBase['"]/);
+  assert.match(page, /<WeddingBase \{\.\.\.props\} theme="(?:emotional|romantic|simple|classic-r|gyeol)"/);
 }
 
-const activeThemeCss = activeThemePaths.map((themePath) =>
-  readWeddingStyles(`${themePath}/styles.module.css`)
-);
-const activeThemePages = activeThemePaths.map((themePath) =>
-  read(`${themePath}/Page.tsx`)
-);
-const narrativeThemeCss = activeThemeCss.slice(1);
+const activeThemeCss = [readWeddingStyles('src/app/_components/public-invitations/wedding/WeddingBase.module.css')];
+const activeThemePages = [read('src/app/_components/public-invitations/wedding/WeddingBase.tsx')];
+const coverSource = read('src/app/_components/public-invitations/wedding/WeddingCover.tsx');
+const coverCss = read('src/app/_components/public-invitations/wedding/WeddingCover.module.css');
+const sharedBaseRule = activeThemeCss[0].match(/\.page\s*\{([^}]*)\}/s)?.[1] ?? '';
+for (const theme of ['simple', 'emotional', 'romantic', 'classic-r', 'gyeol']) {
+  const themeRule = activeThemeCss[0].match(new RegExp(`\\.page\\[data-design=['"]${theme}['"]\\]\\s*\\{([^}]*)\\}`))?.[1] ?? '';
+  const palette = sharedBaseRule + themeRule;
+  const paper = lastHexToken(palette, 'paper');
+  const muted = lastHexToken(palette, 'muted');
+  const control = lastHexToken(palette, 'control-line');
+  const input = lastHexToken(palette, 'input-surface');
+  assert.ok(paper && muted && control && input, `${theme} must resolve its shared and overridden palette`);
+  assert.ok(contrastRatio(paper, muted) >= 4.5, `${theme} secondary text must remain readable`);
+  assert.ok(contrastRatio(control, input) >= 3, `${theme} form boundaries must remain distinguishable`);
+}
 const dateFeatureCss = read(
   'src/app/_components/public-invitations/shared/PublicInvitationDateFeature.module.css'
 );
@@ -103,11 +110,11 @@ assert.match(
 );
 
 const closingThemeTokens = {
-  emotional: ['#ffffff', '#3e3730', '#e6ded3', '#74695d'],
+  emotional: ['#fcfaf6', '#3e3730', '#e6ded3', '#74695d'],
   romantic: ['#ffffff', '#344037', '#dce4d7', '#657064'],
   simple: ['#ffffff', '#292c2a', '#dce0db', '#676d68'],
-  'classic-r': ['#fcfaf5', '#362f27', '#ded5c7', '#71665b'],
-  gyeol: ['#ffffff', '#38363e', '#e4dfe9', '#706b78'],
+  'classic-r': ['#ffffff', '#362f27', '#ded5c7', '#71665b'],
+  gyeol: ['#faf8f3', '#38363e', '#e4dfe9', '#706b78'],
 } as const;
 
 for (const [theme, tokens] of Object.entries(closingThemeTokens)) {
@@ -202,7 +209,7 @@ for (const page of activeThemePages) {
   assert.match(page, /<PublicInvitationDateFeature/);
   assert.match(page, /<WeddingStoredContent/);
   assert.match(page, /<LocationMap/);
-  assert.match(page, /layout="carousel"/);
+  assert.match(page, /layout=\{theme === 'romantic' \|\| theme === 'classic-r' \? 'grid' : 'carousel'\}/);
   assert.match(page, /collapsibleAccounts/);
   assert.match(page, /collapsibleForm/);
   assert.match(page, /<details/);
@@ -222,26 +229,14 @@ assert.doesNotMatch(
   'Immediate reveal must not wait for images before releasing the page'
 );
 
-assert.match(
-  narrativeThemeCss[0],
-  /\.portraitHero\s*\{/,
-  'Portrait Letter should retain its photographic portrait cover without a forced full-height panel'
-);
-assert.doesNotMatch(narrativeThemeCss[0], /min-height:\s*100svh/);
-assert.match(
-  narrativeThemeCss[1],
-  /\.noteHero\s*\{/,
-  'Garden Note should retain its garden-note cover composition'
-);
-assert.doesNotMatch(
-  narrativeThemeCss[1],
-  /flower|floral/i,
-  'Garden Note must not introduce flower decoration'
-);
-assert.match(
-  narrativeThemeCss[2],
-  /\.hero\s*\{/,
-  'Quiet Ceremony should retain its dedicated cover styling'
-);
-
+for (const theme of ['romantic', 'emotional', 'classic-r', 'gyeol']) {
+  assert.ok(coverSource.includes("theme === '" + theme + "'"));
+}
+for (const layout of ['basic', 'photographic', 'letter', 'editorial', 'traditional']) {
+  assert.ok(coverSource.includes('styles.' + layout));
+  assert.ok(coverCss.includes('.' + layout));
+}
+assert.match(coverSource, /imageUrl \?/);
+assert.doesNotMatch(coverCss.replace(/\.photoCopy\s*\{[^}]*\}/s, ''), /(?:linear|radial|conic)-gradient/);
+assert.doesNotMatch(coverCss, /box-shadow|font-weight:\s*[89]\d{2}/);
 console.log('웨딩 테마 스타일 계약 검증 통과');

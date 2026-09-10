@@ -5,11 +5,11 @@
 }
 
 .canvas[data-theme='emotional'] {
-  --closing-background: #ffffff;
+  --closing-background: #fcfaf6;
   --closing-foreground: #3e3730;
   --closing-line: #e6ded3;
   --closing-muted: #74695d;
-  --closing-font: var(--font-gowun-dodum), serif;
+  --closing-font: 'Wedding Myeongjo', serif;
 }
 
 .canvas[data-theme='romantic'] {
@@ -29,7 +29,7 @@
 }
 
 .canvas[data-theme='classic-r'] {
-  --closing-background: #fcfaf5;
+  --closing-background: #ffffff;
   --closing-foreground: #362f27;
   --closing-line: #ded5c7;
   --closing-muted: #71665b;
@@ -38,7 +38,7 @@
 
 .canvas[data-theme='gyeol'] {
   width: min(100%, 480px);
-  --closing-background: #ffffff;
+  --closing-background: #faf8f3;
   --closing-foreground: #38363e;
   --closing-line: #e4dfe9;
   --closing-muted: #706b78;

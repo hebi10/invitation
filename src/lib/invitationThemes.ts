@@ -28,13 +28,13 @@ function buildThemePreviewUrl(path: string) {
 export const INVITATION_THEME_METADATA_REGISTRY = [
   {
     key: 'emotional',
-    label: '포트레이트 레터',
-    adminLabel: '포트레이트 레터',
-    variantLabel: '포트레이트 레터',
+    label: '편지형',
+    adminLabel: '편지형',
+    variantLabel: '편지형',
     pathSuffix: '/emotional',
-    wizardDescription: '세로 사진과 짧은 편지가 중심인 여백형 웨딩입니다.',
+    wizardDescription: '두 사람의 인사말을 편지처럼 읽고 예식 안내로 이어지는 청첩장입니다.',
     preview: {
-      description: '세로 사진과 짧은 편지가 중심인 여백형 웨딩입니다.',
+      description: '두 사람의 인사말을 편지처럼 읽고 예식 안내로 이어지는 청첩장입니다.',
       sampleUrls: {
         standard: buildThemePreviewUrl('/kim-taehyun-choi-yuna/emotional/'),
         deluxe: buildThemePreviewUrl('/lee-junho-park-somin/emotional/'),
@@ -48,13 +48,13 @@ export const INVITATION_THEME_METADATA_REGISTRY = [
   },
   {
     key: 'romantic',
-    label: '가든 노트',
-    adminLabel: '가든 노트',
-    variantLabel: '가든 노트',
+    label: '사진 중심형',
+    adminLabel: '사진 중심형',
+    variantLabel: '사진 중심형',
     pathSuffix: '/romantic',
-    wizardDescription: '세이지 빛 글과 사진, 여백 속 편지와 가족의 마음을 담은 웨딩입니다.',
+    wizardDescription: '웨딩 사진을 크게 보여주고 두 사람의 순간을 따라 읽는 청첩장입니다.',
     preview: {
-      description: '세이지 빛 글과 사진, 여백 속 편지와 가족의 마음을 담은 웨딩입니다.',
+      description: '웨딩 사진을 크게 보여주고 두 사람의 순간을 따라 읽는 청첩장입니다.',
       sampleUrls: {
         standard: buildThemePreviewUrl('/kim-taehyun-choi-yuna/romantic/'),
         deluxe: buildThemePreviewUrl('/lee-junho-park-somin/romantic/'),
@@ -68,13 +68,13 @@ export const INVITATION_THEME_METADATA_REGISTRY = [
   },
   {
     key: 'gyeol',
-    label: '결',
-    adminLabel: '결',
-    variantLabel: '결',
+    label: '전통형',
+    adminLabel: '전통형',
+    variantLabel: '전통형',
     pathSuffix: '/gyeol',
-    wizardDescription: '사진과 작은 글, 흰 여백이 자연스럽게 이어지는 웨딩입니다.',
+    wizardDescription: '단정한 글과 여백으로 예식의 격식과 가족의 마음을 전하는 청첩장입니다.',
     preview: {
-      description: '사진 중심의 표지와 한 장씩 보는 갤러리, 간결한 예식 안내를 담았습니다.',
+      description: '단정한 글과 여백으로 예식의 격식과 가족의 마음을 전하는 청첩장입니다.',
       sampleUrls: {
         standard: buildThemePreviewUrl('/kim-taehyun-choi-yuna/gyeol/'),
         deluxe: buildThemePreviewUrl('/lee-junho-park-somin/gyeol/'),
@@ -88,13 +88,13 @@ export const INVITATION_THEME_METADATA_REGISTRY = [
   },
   {
     key: 'simple',
-    label: '고요한 예식',
-    adminLabel: '고요한 예식',
-    variantLabel: '고요한 예식',
+    label: '기본형',
+    adminLabel: '기본형',
+    variantLabel: '기본형',
     pathSuffix: '/simple',
-    wizardDescription: '작은 이름과 일정, 사진이 흰 여백 속에 이어지는 담백한 웨딩입니다.',
+    wizardDescription: '이름과 예식 일정, 장소를 간결하게 정리한 기본 청첩장입니다.',
     preview: {
-      description: '작은 이름과 일정, 사진이 흰 여백 속에 이어지는 담백한 웨딩입니다.',
+      description: '이름과 예식 일정, 장소를 간결하게 정리한 기본 청첩장입니다.',
       sampleUrls: {
         standard: buildThemePreviewUrl('/kim-taehyun-choi-yuna/simple/'),
         deluxe: buildThemePreviewUrl('/lee-junho-park-somin/simple/'),
@@ -108,13 +108,13 @@ export const INVITATION_THEME_METADATA_REGISTRY = [
   },
   {
     key: 'classic-r',
-    label: '레터프레스',
-    adminLabel: '레터프레스',
-    variantLabel: '레터프레스',
+    label: '에디토리얼형',
+    adminLabel: '에디토리얼형',
+    variantLabel: '에디토리얼형',
     pathSuffix: '/classic-r',
-    wizardDescription: '고전 명조와 옅은 종이색, 사진의 여백을 살린 웨딩입니다.',
+    wizardDescription: '사진과 글의 크기와 배치를 달리해 잡지처럼 구성한 청첩장입니다.',
     preview: {
-      description: '고전 명조와 옅은 종이색, 사진의 여백을 살린 웨딩입니다.',
+      description: '사진과 글의 크기와 배치를 달리해 잡지처럼 구성한 청첩장입니다.',
       sampleUrls: {
         standard: buildThemePreviewUrl('/kim-taehyun-choi-yuna/classic-r/'),
         deluxe: buildThemePreviewUrl('/lee-junho-park-somin/classic-r/'),

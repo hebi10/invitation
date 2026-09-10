@@ -49,10 +49,10 @@ assert.deepEqual(
 );
 
 const expectedInvitationThemeMetadata = [
-  ['emotional', '포트레이트 레터', '세로 사진과 짧은 편지가 중심인 여백형 웨딩입니다.', '/emotional'],
-  ['romantic', '가든 노트', '한 줄 식물 장식과 편지형 인사말, 가족 연락 흐름을 담은 웨딩입니다.', '/romantic'],
-  ['simple', '고요한 예식', '일정·장소를 우선하는 절제된 정보 인쇄물입니다.', '/simple'],
-  ['classic-r', '레터프레스', '고전 활자와 얇은 선, 종이 인쇄물 같은 웨딩입니다.', '/classic-r'],
+  ['emotional', '편지형', '두 사람의 인사말을 편지처럼 읽고 예식 안내로 이어지는 청첩장입니다.', '/emotional'],
+  ['romantic', '사진 중심형', '웨딩 사진을 크게 보여주고 두 사람의 순간을 따라 읽는 청첩장입니다.', '/romantic'],
+  ['simple', '기본형', '이름과 예식 일정, 장소를 간결하게 정리한 기본 청첩장입니다.', '/simple'],
+  ['classic-r', '에디토리얼형', '사진과 글의 크기와 배치를 달리해 잡지처럼 구성한 청첩장입니다.', '/classic-r'],
   ['first-birthday-pink', '퍼스트 챕터', '아이 이름·날짜·성장 한 장면을 기록하는 첫 돌입니다.', '/first-birthday-pink'],
   ['first-birthday-mint', '새벽 챕터', '차분한 여백과 날짜 기록 중심의 첫 돌입니다.', '/first-birthday-mint'],
   ['birthday-minimal', '파티 노트', '일정·장소·연락처를 우선하는 생일 파티 메모입니다.', '/birthday-minimal'],
@@ -87,16 +87,16 @@ for (const [theme, label, description, pathSuffix] of expectedInvitationThemeMet
 }
 
 const gyeolThemeDefinition = getInvitationThemeDefinition('gyeol');
-assert.equal(gyeolThemeDefinition.label, '결');
-assert.equal(gyeolThemeDefinition.adminLabel, '결');
-assert.equal(gyeolThemeDefinition.variantLabel, '결');
+assert.equal(gyeolThemeDefinition.label, '전통형');
+assert.equal(gyeolThemeDefinition.adminLabel, '전통형');
+assert.equal(gyeolThemeDefinition.variantLabel, '전통형');
 assert.equal(
   gyeolThemeDefinition.wizardDescription,
-  '큰 사진과 한국어 활자로 장면과 예식 정보를 엮은 에디토리얼 웨딩입니다.'
+  '단정한 글과 여백으로 예식의 격식과 가족의 마음을 전하는 청첩장입니다.'
 );
 assert.equal(
   gyeolThemeDefinition.preview.description,
-  '화면을 채우는 사진과 비대칭 조판으로 구성한 한국형 웨딩 에디토리얼입니다.'
+  '단정한 글과 여백으로 예식의 격식과 가족의 마음을 전하는 청첩장입니다.'
 );
 assert.equal(gyeolThemeDefinition.pathSuffix, '/gyeol');
 
@@ -187,7 +187,7 @@ assert.deepEqual(
 );
 
 const gyeolPreview = {
-  label: '결',
+  label: '전통형',
   path: '/kim-shinlang-na-sinbu/gyeol',
 };
 assert.deepEqual(

@@ -7,6 +7,7 @@ import path from 'node:path';
 export function readWeddingStyles(cssPath: string) {
   const absolutePath = path.resolve(process.cwd(), cssPath);
   const ownCss = readFileSync(absolutePath, 'utf8');
+  if (path.basename(absolutePath) === 'WeddingBase.module.css') return ownCss;
   const page = readFileSync(path.join(path.dirname(absolutePath), 'Page.tsx'), 'utf8');
   const baseImport = page.match(/import (\w+) from ['"](\.\.\/gyeol\/styles\.module\.css)['"]/);
   if (!baseImport) return ownCss;

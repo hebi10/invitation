@@ -11,16 +11,8 @@ const revealHook = read(
   'src/app/_components/public-invitations/wedding/useImmediateWeddingPageReveal.ts'
 );
 const samples = read('src/config/sampleInvitationDefaults.ts');
-const activePagePaths = [
-  'letterpress',
-  'portrait-letter',
-  'garden-note',
-  'quiet-ceremony',
-].map(
-  (theme) =>
-    `src/app/_components/public-invitations/wedding/${theme}/Page.tsx`
-);
-const activePages = activePagePaths.map(read);
+const activePages = [read('src/app/_components/public-invitations/wedding/WeddingBase.tsx')];
+const cover = read('src/app/_components/public-invitations/wedding/WeddingCover.tsx');
 
 assert.match(sharedGallery, /loading=["']lazy["']/);
 assert.doesNotMatch(sharedGallery, /onLoadingComplete/);
@@ -30,7 +22,7 @@ assert.match(registry, /component:\s*QuietCeremonyPage/);
 assert.match(registry, /component:\s*LetterpressPage/);
 
 for (const page of activePages) {
-  assert.match(page, /loading="eager"/);
+  assert.match(cover, /loading="eager"/);
   assert.doesNotMatch(page, /minLoadTime|setTimeout|<WeddingLoader|<IntroScreen/);
   assert.match(page, /<GalleryGridShared/);
 

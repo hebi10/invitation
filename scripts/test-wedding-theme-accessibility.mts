@@ -20,14 +20,7 @@ const storedContent = read(
 const storedContentCss = read(
   'src/app/_components/public-invitations/shared/WeddingStoredContent.module.css'
 );
-const activeWeddingPages = [
-  'letterpress',
-  'portrait-letter',
-  'garden-note',
-  'quiet-ceremony',
-].map((theme) =>
-  read(`src/app/_components/public-invitations/wedding/${theme}/Page.tsx`)
-);
+const activeWeddingPages = [read('src/app/_components/public-invitations/wedding/WeddingBase.tsx')];
 
 assert.match(sharedGallery, /role=["']dialog["']/);
 assert.match(sharedGallery, /aria-modal=["']true["']/);

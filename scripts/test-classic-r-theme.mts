@@ -21,17 +21,17 @@ assert(isInvitationThemeKey(themeKey), 'classic-r must be registered as an invit
 
 const definition = getInvitationThemeDefinition(themeKey);
 assert(definition.pathSuffix === '/classic-r', 'classic-r must use /classic-r route suffix.');
-assert(definition.label === '레터프레스', 'classic-r must expose the Letterpress display label.');
+assert(definition.label === '에디토리얼형', 'classic-r must expose the Letterpress display label.');
 assert(
-  definition.adminLabel === '레터프레스',
+  definition.adminLabel === '에디토리얼형',
   'classic-r admin label must be Korean to match the admin selector.'
 );
 assert(
-  definition.variantLabel === '레터프레스',
+  definition.variantLabel === '에디토리얼형',
   'classic-r variant label must be Korean to match preview labels.'
 );
 assert(
-  definition.preview.description.includes('고전 활자와 얇은 선'),
+  definition.preview.description.includes('잡지처럼'),
   'classic-r preview description must describe the Letterpress visual world.'
 );
 
@@ -63,61 +63,14 @@ assert(
   'classic-r must resolve to LetterpressPage in the wedding theme registry.'
 );
 
-const letterpressPageSource = fs.readFileSync(letterpressPagePath, 'utf8');
-for (const requiredContract of [
-  'InvitationPoster',
-  'getThemePageData',
-  'getCeremonySchedule',
-  'getCeremonyAddress',
-  'shouldShowGiftInfo',
-]) {
-  assert(
-    letterpressPageSource.includes(requiredContract),
-    `Letterpress page must consume ${requiredContract}.`
-  );
+const wrapper = fs.readFileSync(letterpressPagePath, 'utf8');
+assert(wrapper.includes('theme="classic-r"'), 'classic-r wrapper must pass its actual theme key.');
+const base = fs.readFileSync('src/app/_components/public-invitations/wedding/WeddingBase.tsx', 'utf8');
+for (const contract of ['getThemePageData(page, theme)', 'getCeremonySchedule', 'getCeremonyAddress', 'shouldShowGiftInfo', '<GalleryGridShared', '<GuestbookThemed', '<GiftInfoThemed', '<PublicInvitationDateFeature', '<WeddingStoredContent', 'useImmediateWeddingPageReveal(state)']) {
+  assert(base.includes(contract), 'Shared wedding base must preserve ' + contract);
 }
-assert(
-  /useEffect\([\s\S]*?setIsLoading\(false\)/.test(letterpressPageSource),
-  'Letterpress page must immediately release the existing page loading state.'
-);
-assert(
-  /document\.body\.style\.removeProperty\(['"]overflow['"]\)/.test(
-    letterpressPageSource
-  ) &&
-    /document\.documentElement\.style\.removeProperty\(['"]overflow['"]\)/.test(
-      letterpressPageSource
-    ),
-  'Letterpress page must release the global scroll lock without waiting for images.'
-);
-assert(
-  !/isLoaderVisible|renderLoader|minLoadTime/.test(letterpressPageSource),
-  'Letterpress page must render its body without a loader gate.'
-);
-assert(
-  /state\.galleryImageUrls\.length\s*>\s*0/.test(letterpressPageSource),
-  'Letterpress page must omit the gallery when no gallery images are available.'
-);
-assert(
-  !/Scroll|eyebrow=/.test(letterpressPageSource),
-  'Letterpress page must not render Scroll copy or a default English kicker.'
-);
-
-const sectionOrder = [
-  'hero',
-  'invitation',
-  'schedule',
-  'contact',
-  'gift',
-  'gallery',
-  'guestbook',
-].map((section) => letterpressPageSource.indexOf(`data-letterpress-section="${section}"`));
-assert(
-  sectionOrder.every((position) => position >= 0),
-  'Letterpress page must expose every required information section.'
-);
-assert(
-  sectionOrder.every((position, index) => index === 0 || sectionOrder[index - 1] < position),
-  'Letterpress information must follow hero, invitation, schedule, contact, gift, gallery, guestbook order.'
-);
-
+assert(/state\.galleryImageUrls\.length\s*>\s*0/.test(base), 'Empty gallery must remain absent.');
+const cover = fs.readFileSync('src/app/_components/public-invitations/wedding/WeddingCover.tsx', 'utf8');
+assert(cover.includes("theme === 'classic-r'"), 'Editorial layout must have a dedicated cover branch.');
+assert(cover.includes('styles.editorialNames'), 'Editorial layout must retain its separate typographic composition.');
 console.log('classic-r theme wiring passed.');

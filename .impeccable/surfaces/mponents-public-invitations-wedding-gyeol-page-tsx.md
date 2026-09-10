@@ -1,31 +1,27 @@
 ---
 version: 1
 slug: "mponents-public-invitations-wedding-gyeol-page-tsx"
-primary_target: "src/app/_components/public-invitations/wedding/gyeol/Page.tsx"
-related_targets: ["src/app/_components/public-invitations/wedding/gyeol/styles.module.css"]
+primary_target: "src/app/_components/public-invitations/wedding/WeddingBase.tsx"
+related_targets: ["src/app/_components/public-invitations/wedding/WeddingBase.module.css", "src/app/_components/public-invitations/wedding/WeddingCover.tsx", "src/app/_components/public-invitations/wedding/WeddingCover.module.css", "src/app/_components/public-invitations/wedding/gyeol/Page.tsx", "src/app/_components/public-invitations/wedding/quiet-ceremony/Page.tsx", "src/app/_components/public-invitations/wedding/garden-note/Page.tsx", "src/app/_components/public-invitations/wedding/portrait-letter/Page.tsx", "src/app/_components/public-invitations/wedding/letterpress/Page.tsx"]
 ---
 
-# GYEOL 공개 웨딩 테마
+# 공개 웨딩 초대장 5개 디자인
 
-- **Decision:** `direct-approved-gyeol-2026-09-10`
-- **Scope / mode:** 공개 웨딩 초대장 `gyeol`의 Experience 표면과, 사용자 추가 승인으로 기존 분위기를 유지하며 공통 기준을 확장한 웨딩 4개 테마를 기록한다. 운영 UI `DESIGN.md`는 변경하지 않는다.
-- **Audience / job:** 하객이 두 사람의 사진과 한글 초대 서사를 경험한 뒤 예식 일정·장소를 확인하고 연락·축의·방명록 행동을 완료한다.
-- **Direction:** `결 / GYEOL` — 최대 480px의 흰색 연속 캔버스를 중앙 정렬하고 모든 화면에서 단일 열로 흐른다. 구획은 넉넉한 여백으로 나누며, 대표 사진은 원본 비율을 유지한다. 사진 위에 흰색 영문 필기체 제목과 두 사람의 이름·일정을 얹고 상하 그라데이션으로 가독성을 확보한다.
-- **Color / type:** 배경 `#ffffff`, 본문 `#38363e`, 보조 글자 `#706b78`, 절제된 라벤더 제목 `#80639b`, 얇은 제어선 `#e4dfe9`를 사용한다. 달력과 방명록 항목에는 연한 라벤더 `#f8f6fb`를 적용한다. 한글은 로컬 Gowun Dodum 기반 `Gyeol Dodum`으로 본문 14px, 섹션 제목 15px·500, 보조 정보 11–13px를 사용한다. 표지의 `Our Wedding Day`는 로컬 Alex Brush 기반 `Gyeol Brush` 34–48px·400이며 이름은 20px·500이다.
-- **Story order:** 대표 사진 → 초대 글 → 가족 연락 → 우리의 순간 갤러리 → 오시는 길·지도·방문 안내 → 달력·카운트다운 → 계좌 → 방명록. 선택 데이터나 기능 설정에 따라 관련 섹션을 숨기되 남은 정보의 순서는 유지한다.
-- **Interactions:** 가족 연락, 신랑측·신부측 계좌, 방명록 입력, 식사·방문 상세 안내는 기본 접힘으로 시작한다. 갤러리는 사진 한 장씩 넘기며 원본 비율을 보존해 보여 주고 기존 확대 대화상자를 유지한다. 지도 링크가 있으면 실제 Kakao 지도를 지연 로드하며, 좌표가 없거나 유효하지 않으면 주소를 검색한다. 이동·확대는 사용자가 켜도록 하고, 로드 실패 시 외부 지도 링크를 제공한다.
-- **Constraints:** 기존 웨딩 데이터 헬퍼와 공유 갤러리·계좌·방명록 기능을 재사용하며 저장 스키마, API, 공개 URL, 인증·인가 계약을 바꾸지 않는다. 키보드 포커스, 주요 행동의 44px 영역, 감소 모션 호환을 유지한다. 대표 사진이 없으면 기존 초대장 포스터를 표시한다.
-- **Memorable moment:** 원본 비율의 웨딩 사진 위 흰색 필기체 표지에서 작은 라벤더 한글 제목과 여백 중심의 초대 서사로 자연스럽게 이어진다.
-- **Unresolved:** 없음.
+- **Decision:** 사용자 승인에 따라 기존 색상 중심 변형을 교체하고 기본형·사진형·편지형·에디토리얼·전통의 다섯 구조로 구성한다
+- **Scope / mode:** 하객이 두 사람의 사진과 초대 글을 읽고 일정·장소·연락·축의·방명록으로 이어지는 Experience 표면이다. 운영 UI의 DESIGN.md와 독립적으로 관리한다
+- **Shared implementation:** 기존 테마 키와 라우트는 유지하며 5개 Page 래퍼가 WeddingBase를 호출한다. 본문과 기능은 WeddingBase.tsx/CSS, 표지는 WeddingCover.tsx/CSS에서 구성한다
+- **Canvas / type:** 최대 480px의 단일 열과 넉넉한 세로 여백을 공유한다. 기본 배경은 #ffffff, 본문 #292929, 보조 #68645f, 강조 #393939이며 본문 14px, 일반 제목 15px·500이다. 편지형과 전통은 로컬 Nanum Myeongjo 기반 Wedding Myeongjo를 사용한다
 
-## 공통 기준 확장
+| 테마 키 · 방향 | 표지와 조판 | 본문과 사진 |
+| --- | --- | --- |
+| simple · 기본형 | 중앙 이름 24px, 일정, 좌우 여백 안 원본 비율 사진, 장소 순서 | 고딕 중심의 중앙 정렬 본문, 한 장씩 넘기는 갤러리, 오시는 길 다음 달력 |
+| romantic · 사진형 | 화면 폭 사진 위 하단 흰 이름 30px·명조와 일정·장소, 어두운 하단 그라데이션 | 표지 사진은 높이에 맞춰 잘라 채움. 갤러리를 초대 글보다 앞에 두고 큰 단일 열로 배치. 오시는 길 다음 달력 |
+| emotional · 편지형 | #fcfaf6 배경, 왼쪽 이름 20px와 ‘소중한 당신께’, 오른쪽에 작은 사진, 하단 일정·장소 | 왼쪽 초대 글과 오른쪽 서명, 260px 갤러리, 배경 구획 없는 달력 |
+| classic-r · 에디토리얼 | 위아래 이름 34px에 수평 단차, 오른쪽 끝까지 이어지는 사진, 오른쪽 일정·장소 | 22px 왼쪽 제목, 오른쪽으로 밀린 초대 글. 초대 글 앞 비대칭 갤러리와 오시는 길 앞 달력 |
+| gyeol · 전통 | #faf8f3 배경, 세로 약속 문구와 이름 28px, 가족 관계·이름과 일정·장소 다음 사진 | 명조 중앙 조판과 넓은 행간, 280px 갤러리, 오시는 길 앞 달력. 강조 #574638 |
 
-- **Shared implementation:** `portrait-letter`, `garden-note`, `quiet-ceremony`, `letterpress`는 `gyeol/styles.module.css`와 실제 지도 `gyeol/LocationMap`을 재사용하고 테마 CSS로 색상·폰트·표지를 조정한다. 모두 최대 480px의 연속 단일 열, 원본 비율 대표 사진, 작은 본문·섹션 제목, 한 장씩 넘기는 갤러리를 유지한다.
-- **Flow / disclosure:** 표지 → 초대 글 → 연락 → 갤러리 → 오시는 길·지도·방문 안내 → 달력·카운트다운 → 계좌 → 방명록 순서다. 연락, 식사·방문 상세 안내, 양측 계좌, 방명록 입력은 기본 접힘이다. 연락 대상은 `portrait-letter`가 두 사람, `garden-note`가 부모, `quiet-ceremony`와 `letterpress`가 두 사람과 부모이며 기존 데이터 필터를 유지한다.
-
-| 테마 | 배경 / 본문 / 강조 | 폰트 | 표지의 차이 |
-| --- | --- | --- | --- |
-| `portrait-letter` | `#ffffff` / `#3e3730` / `#82694e` | Gyeol Dodum | 좌우 여백 안의 사진 아래 이름·일정·장소, 이름 23px·500 및 작은 ‘그리고’ |
-| `garden-note` | `#ffffff` / `#344037` / `#58724e` | Gyeol Dodum | 세이지색 이름·일정 아래 전체 폭 사진, 사진 아래 장소, 이름 25px·500 |
-| `quiet-ceremony` | `#ffffff` / `#292c2a` / `#48534b` | Gyeol Dodum | 이름·일정·장소 아래 좌우 여백 안의 사진, 이름 23px·500 및 슬래시 |
-| `letterpress` | `#fcfaf5` / `#362f27` / `#79634a` | 로컬 Nanum Myeongjo 기반 Wedding Myeongjo | 따뜻한 종이색 위 여백 안의 사진과 하단 이름·일정·장소, 이름 26px·500 및 가운뎃점 |
+- **Story order:** 기본형·편지형은 표지 → 초대 글 → 연락 → 갤러리 → 오시는 길 → 달력 → 계좌 → 방명록이다. 사진형은 갤러리를 표지 바로 뒤에 둔다. 에디토리얼은 갤러리를 표지 바로 뒤에, 달력을 오시는 길 앞에 둔다. 전통은 기본 순서에서 달력을 오시는 길 앞으로 옮긴다. 선택 데이터가 없으면 해당 섹션을 숨긴다
+- **Shared interactions:** 가족 연락, 양측 계좌, 방명록 입력, 식사·방문 안내는 기본 접힘이다. 연락 대상은 전화번호가 있는 두 사람과 부모다. 기존 공유 갤러리 확대, 계좌 복사, 방명록 기능과 달력·카운트다운을 재사용한다
+- **Map:** 지도 링크가 있으면 기존 gyeol/LocationMap을 사용한다. 실제 Kakao 지도 지연 로드, 유효 좌표 또는 주소 검색, 사용자 선택에 따른 지도 이동·확대, 로드 실패 시 외부 지도 링크를 유지한다
+- **Constraints:** 저장 스키마, API, 권한과 공개 URL 계약을 보존한다. 주요 행동의 44px 영역, 키보드 포커스, 감소 모션을 공유한다. 사진이 없으면 사진 영역을 생략하고 이름·일정·장소를 남긴다. 사진형은 사진 없는 표지 배경을 제공한다
+- **Review evidence:** 동일 사진을 사용한 5개 380px 모바일 캡처와 5개 PC 캡처에서 구조적 차이, 중앙 캔버스, 본문 흐름을 확인했다. 임시 로컬 사진 3장을 사용한 사진형·에디토리얼 모바일 갤러리 캡처에서 큰 단일 열과 단차가 있는 비대칭 배열을 추가 확인했다. 메인 검증에서 갤러리 확대 → 다음 → Escape 후 첫 트리거 초점 복귀를 확인했다. 검토용 사진은 실제 고객 갤러리를 변경하지 않았다. 지도는 로딩 상태로 촬영되어 SDK 로드 및 타일 완료 상태는 이 검증 범위에서 제외한다

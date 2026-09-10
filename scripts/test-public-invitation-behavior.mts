@@ -269,10 +269,7 @@ assert.equal(
 );
 
 const activeDateFeaturePages = [
-  'src/app/_components/public-invitations/wedding/portrait-letter/Page.tsx',
-  'src/app/_components/public-invitations/wedding/garden-note/Page.tsx',
-  'src/app/_components/public-invitations/wedding/quiet-ceremony/Page.tsx',
-  'src/app/_components/public-invitations/wedding/letterpress/Page.tsx',
+  'src/app/_components/public-invitations/wedding/WeddingBase.tsx',
   'src/app/_components/public-invitations/first-birthday/first-chapter/Page.tsx',
   'src/app/_components/public-invitations/first-birthday/dawn-chapter/Page.tsx',
   'src/app/_components/public-invitations/birthday/party-notes/Page.tsx',
@@ -291,7 +288,7 @@ for (const pagePath of activeDateFeaturePages) {
   );
 }
 
-for (const pagePath of activeDateFeaturePages.slice(0, 4)) {
+for (const pagePath of activeDateFeaturePages.filter((pagePath) => pagePath.includes('/wedding/'))) {
   const pageSource = read(pagePath);
   assert.match(pageSource, /buildWeddingStoredContent/);
   assert.match(pageSource, /<WeddingStoredContent/);

@@ -146,7 +146,7 @@ const weddingNarrativeThemes = [
 
 for (const theme of weddingNarrativeThemes) {
   const pagePath = `src/app/_components/public-invitations/wedding/${theme.folder}/Page.tsx`;
-  const cssPath = `src/app/_components/public-invitations/wedding/${theme.folder}/styles.module.css`;
+  const cssPath = 'src/app/_components/public-invitations/wedding/WeddingBase.module.css';
 
   assert.equal(existsSync(pagePath), true, `${theme.exportName} should have a dedicated page`);
   assert.equal(existsSync(cssPath), true, `${theme.exportName} should own dedicated styles`);
@@ -161,53 +161,23 @@ for (const theme of weddingNarrativeThemes) {
     `${theme.key} should remain bound to ${theme.exportName}`
   );
 
-  const page = read(pagePath);
+  const wrapper = read(pagePath);
+  assert.ok(wrapper.includes('theme="' + theme.key + '"'));
+  const page = read('src/app/_components/public-invitations/wedding/WeddingBase.tsx');
   assert.match(page, /getThemePageData/);
   assert.match(page, /getCeremonySchedule/);
   assert.match(page, /getCeremonyAddress/);
   assert.match(page, /shouldShowGiftInfo/);
-  assert.match(page, /from ['"]\.\.\/\.\.\/shared\/InvitationPoster['"]/);
   assert.match(page, /<GalleryGridShared/);
   assert.match(page, /<GuestbookThemed/);
   assert.match(page, /<GiftInfoThemed/);
   assert.doesNotMatch(page, /WeddingLoader|IntroScreen|setTimeout|setInterval|Scroll/);
 
-  const markerPositions = theme.markers.map((marker) =>
-    page.indexOf(`data-${theme.folder}-section="${marker}"`)
-  );
-  assert.equal(
-    markerPositions.every((position) => position >= 0),
-    true,
-    `${theme.exportName} should define its narrative section markers`
-  );
-  assert.deepEqual(
-    markerPositions,
-    [...markerPositions].sort((first, second) => first - second),
-    `${theme.exportName} should preserve its dedicated information rhythm`
-  );
+  const markerPositions = ['invitation', 'contact', 'gallery', 'schedule', 'gift', 'guestbook'].map(marker => page.indexOf('data-wedding-section="' + marker + '"'));
+  assert.ok(markerPositions.every(position => position >= 0));
+  assert.match(page, /theme === 'romantic' \|\| theme === 'classic-r' \? gallery : null/);
+  assert.match(page, /theme !== 'romantic' && theme !== 'classic-r' \? gallery : null/);
 }
-
-const portraitLetterPage = read(
-  'src/app/_components/public-invitations/wedding/portrait-letter/Page.tsx'
-);
-const gardenNotePage = read(
-  'src/app/_components/public-invitations/wedding/garden-note/Page.tsx'
-);
-const quietCeremonyPage = read(
-  'src/app/_components/public-invitations/wedding/quiet-ceremony/Page.tsx'
-);
-
-assert.match(portraitLetterPage, /className=\{styles\.portraitHero\}/);
-assert.match(gardenNotePage, /className=\{styles\.noteHero\}/);
-assert.doesNotMatch(gardenNotePage, /data-garden-note-decoration=/);
-assert.match(
-  gardenNotePage,
-  /\[page\.couple\.groom\.father,\s*page\.couple\.groom\.mother,\s*page\.couple\.bride\.father,\s*page\.couple\.bride\.mother\]/s,
-  'Garden Note should prioritize family contacts'
-);
-assert.match(quietCeremonyPage, /heroImageUrl\s*\?/);
-assert.match(quietCeremonyPage, /<InvitationPoster[\s\S]*?tone="minimal"/);
-assert.match(quietCeremonyPage, /className=\{styles\.posterScene\}/);
 
 const birthdayRegistry = read(
   'src/app/_components/birthday/themeRenderers/registry.ts'
@@ -234,10 +204,7 @@ assert.match(actionCss, /min-width:\s*44px/);
 assert.match(actionCss, /:focus-visible/);
 
 const publicInvitationGuestbookStylePaths = [
-  'src/app/_components/public-invitations/wedding/portrait-letter/styles.module.css',
-  'src/app/_components/public-invitations/wedding/garden-note/styles.module.css',
-  'src/app/_components/public-invitations/wedding/quiet-ceremony/styles.module.css',
-  'src/app/_components/public-invitations/wedding/letterpress/styles.module.css',
+  'src/app/_components/public-invitations/wedding/WeddingBase.module.css',
   'src/app/_components/public-invitations/first-birthday/first-chapter/styles.module.css',
   'src/app/_components/public-invitations/first-birthday/dawn-chapter/styles.module.css',
   'src/app/_components/public-invitations/birthday/party-notes/styles.module.css',
