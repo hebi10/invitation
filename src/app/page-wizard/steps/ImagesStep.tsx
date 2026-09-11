@@ -3,6 +3,12 @@ import { useEffect, useMemo, useState } from 'react';
 import styles from '../page.module.css';
 import type { ImagesStepProps, UploadFieldKind } from '../pageWizardShared';
 import DemoExperienceImagePicker from './DemoExperienceImagePicker';
+import previewStyles from './ShareImagePreview.module.css';
+
+const SHARE_PRESETS = [
+  { url: '/images/share-defaults/ivory-flowers.webp', label: '아이보리 꽃' },
+  { url: '/images/share-defaults/rings-ribbon.webp', label: '반지와 리본' },
+];
 
 type SingleImageCardProps = {
   title: string;
@@ -21,6 +27,10 @@ type SingleImageCardProps = {
   onTriggerPicker: (kind: UploadFieldKind) => void;
   onRemove: () => void;
   onImageError: () => void;
+  fallbackImage?: string;
+  shareTitle?: string;
+  shareDescription?: string;
+  onPresetSelect?: (url: string) => void;
 };
 
 function SingleImageCard({
@@ -40,8 +50,16 @@ function SingleImageCard({
   onTriggerPicker,
   onRemove,
   onImageError,
+  fallbackImage = '',
+  shareTitle = '',
+  shareDescription = '',
+  onPresetSelect,
 }: SingleImageCardProps) {
   const hasImage = Boolean(imageUrl);
+  const effectiveImage = imageUrl || fallbackImage;
+  const isShare = uploadKind === 'sharePreview' || uploadKind === 'kakaoCard';
+  const [failedUrl, setFailedUrl] = useState('');
+  const previewImage = effectiveImage && failedUrl !== effectiveImage ? effectiveImage : '';
 
   return (
     <section className={styles.uploadCard}>
@@ -70,14 +88,23 @@ function SingleImageCard({
             type="button"
             className={styles.secondaryButton}
             onClick={onRemove}
-            disabled={!hasImage}
+            disabled={!hasImage || isUploading}
           >
             {removeLabel}
           </button>
         </div>
       </div>
 
-      <div className={styles.assetPreview}>
+      {isShare ? <div className={previewStyles.preview}>
+        <p className={previewStyles.caption}>{uploadKind === 'kakaoCard' ? '카카오 공유 카드 예시' : '링크를 보냈을 때의 예시'}</p>
+        <div className={previewStyles.card}>
+          {previewImage ? <img className={previewStyles.image} src={previewImage} alt={`${title} 실제 적용 이미지`} onError={() => setFailedUrl(effectiveImage)} />
+            : <div className={previewStyles.empty}>{effectiveImage ? '이미지를 불러오지 못했습니다. 다시 업로드하거나 기본 이미지를 선택해 주세요.' : '대표 이미지를 등록하거나 아래 기본 이미지를 선택해 주세요.'}</div>}
+          <div className={previewStyles.copy}><strong>{shareTitle || '초대합니다'}</strong><p>{shareDescription || '소중한 날 함께해 주세요.'}</p><span>초대장 링크</span></div>
+          {uploadKind === 'kakaoCard' ? <div className={previewStyles.cardAction}>초대장 보기</div> : null}
+        </div>
+        <p className={previewStyles.caption}>{hasImage ? (SHARE_PRESETS.some(item => item.url === imageUrl) ? '선택한 기본 이미지 사용 중' : '등록한 이미지 사용 중') : fallbackImage ? '별도 이미지 미등록 · 아래 안내 순서에 따라 자동 적용 중' : '적용할 이미지가 없습니다.'}</p>
+      </div> : <div className={styles.assetPreview}>
         {hasImage && !isBroken ? (
           <img
             className={styles.assetPreviewImage}
@@ -91,15 +118,25 @@ function SingleImageCard({
             {hasImage ? `${title}를 불러오지 못했습니다.` : placeholder}
           </div>
         )}
-      </div>
+      </div>}
+
+      {isShare && onPresetSelect ? <fieldset className={previewStyles.presets}>
+        <legend>기본 이미지 선택</legend>
+        {SHARE_PRESETS.map(preset => <button key={preset.url} type="button" aria-pressed={imageUrl === preset.url} disabled={isUploading || !canUploadImages} onClick={() => onPresetSelect(preset.url)}>
+          <img src={preset.url} alt="" loading="lazy" /><span>{preset.label}{imageUrl === preset.url ? ' · 선택됨' : ''}</span>
+        </button>)}
+        <p>직접 올릴 사진이 없을 때 선택하세요. 내용 저장 후 실제 공유 이미지에 반영됩니다.</p>
+      </fieldset> : null}
 
       <p className={styles.cardText}>{emptyHint}</p>
+      {isShare ? <p className={previewStyles.caption}>보내는 앱에 따라 사진의 잘리는 범위와 문구 배치가 달라질 수 있습니다. 얼굴과 중요한 내용은 중앙에 배치해 주세요.</p> : null}
     </section>
   );
 }
 
 export default function ImagesStep({
   formState,
+  updateForm,
   previewFormState,
   canUploadImages,
   maxGalleryImages,
@@ -224,8 +261,12 @@ export default function ImagesStep({
 
       <SingleImageCard
         title="공유 미리보기 이미지"
-        description="카카오 링크 미리보기와 og:image, twitter:image에 사용하는 이미지입니다."
+        description="카카오톡이나 SNS에 초대장 링크를 붙여넣었을 때 보이는 사진입니다."
         imageUrl={socialPreviewImage}
+        fallbackImage={coverImage}
+        shareTitle={formState.metadata.title || formState.displayName}
+        shareDescription={formState.metadata.description || formState.description}
+        onPresetSelect={formState.eventType === 'wedding' ? url => updateForm(draft => { draft.metadata.images.social = url; }) : undefined}
         isBroken={brokenSingleImages.sharePreview}
         placeholder="공유 미리보기 이미지 미리보기"
         emptyHint="등록하지 않으면 대표 이미지를 공유 미리보기 이미지로 사용합니다."
@@ -243,8 +284,12 @@ export default function ImagesStep({
 
       <SingleImageCard
         title="카카오 카드 이미지"
-        description="카카오 카드 형식 공유(feed)에 사용하는 전용 이미지입니다."
+        description="청첩장의 카카오톡 공유 버튼을 눌렀을 때 보내는 카드 사진입니다."
         imageUrl={kakaoCardImage}
+        fallbackImage={socialPreviewImage || coverImage}
+        shareTitle={formState.metadata.title || formState.displayName}
+        shareDescription={formState.metadata.description || formState.description || [formState.date, formState.venue].filter(Boolean).join(' · ')}
+        onPresetSelect={formState.eventType === 'wedding' ? url => updateForm(draft => { draft.metadata.images.kakaoCard = url; }) : undefined}
         isBroken={brokenSingleImages.kakaoCard}
         placeholder="카카오 카드 이미지 미리보기"
         emptyHint="등록하지 않으면 공유 미리보기 이미지, 그다음 대표 이미지 순서로 사용합니다."

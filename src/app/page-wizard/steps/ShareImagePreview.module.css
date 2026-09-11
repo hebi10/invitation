@@ -1,0 +1,20 @@
+.preview { padding: 20px; background: #f3f3ef; display: grid; gap: 12px; }
+.caption { margin: 0; color: #60615c; font-size: 12px; line-height: 1.8; }
+.card { width: min(100%, 360px); margin-inline: auto; border: 1px solid #deded7; background: #fff; overflow: hidden; }
+.image { display: block; width: 100%; aspect-ratio: 1.91; object-fit: cover; }
+.empty { min-height: 150px; padding: 24px; display: grid; place-items: center; color: #64645e; font-size: 13px; line-height: 1.8; text-align: center; }
+.copy { padding: 18px; overflow-wrap: anywhere; }
+.copy strong { display: block; color: #282925; font-size: 16px; font-weight: 500; line-height: 1.6; }
+.copy p { margin: 6px 0 12px; color: #60615c; font-size: 13px; line-height: 1.7; }
+.copy span { color: #76766f; font-size: 11px; }
+.cardAction { margin: 0 18px 18px; padding: 12px; background: #f1f1ec; text-align: center; color: #34352e; font-size: 13px; }
+.presets { padding: 0; margin: 20px 0 0; border: 0; display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 12px; min-width: 0; }
+.presets legend { margin-bottom: 12px; font-size: 14px; }
+.presets button { padding: 6px; border: 1px solid #d6d7cf; background: #fff; color: #34352e; cursor: pointer; font: inherit; min-width: 0; }
+.presets button[aria-pressed="true"] { border-color: #34352e; background: #f2f3ec; }
+.presets button:focus-visible { outline: 2px solid #34352e; outline-offset: 3px; }
+.presets button:disabled { opacity: .5; cursor: default; }
+.presets img { width: 100%; aspect-ratio: 1.91; object-fit: cover; display: block; }
+.presets span { display: block; padding: 12px 4px; font-size: 13px; }
+.presets p { grid-column: 1 / -1; margin: 0; color: #60615c; font-size: 12px; line-height: 1.8; }
+@media (max-width: 420px) { .preview { padding: 12px; } }
