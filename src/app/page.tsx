@@ -57,7 +57,7 @@ export default function Home() {
           </div>
           <div>
             <h3>먼저 체험해 보세요</h3>
-            <p>공용 샘플로 제작 이후의 관리 흐름을 살펴봅니다.</p>
+            <p>준비된 청첩장을 직접 수정하고, 완성 화면과 관리자 기능까지 살펴보세요.</p>
             <ExperienceStartButton />
           </div>
         </div>

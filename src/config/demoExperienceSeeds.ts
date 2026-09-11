@@ -12,11 +12,11 @@ import type { InvitationPageSeed, InvitationThemeKey } from '@/types/invitationP
 export const DEMO_EXPERIENCE_DAILY_SLUG = 'daily-experience-wedding';
 
 export const DEMO_EXPERIENCE_IMAGE_OPTIONS = [
-  '/images/001.png',
-  '/images/002.png',
-  '/images/003.png',
-  '/images/004.png',
-  '/images/005.png',
+  '/images/experience/cover.webp',
+  '/images/experience/gallery-01.webp',
+  '/images/experience/gallery-02.webp',
+  '/images/experience/gallery-03.webp',
+  '/images/experience/gallery-04.webp',
 ] as const;
 
 const THEME_SEQUENCE: InvitationThemeKey[] = [

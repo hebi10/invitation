@@ -42,6 +42,47 @@ import {
 } from './repositories/demoExperienceRepository';
 
 const RECENT_COMMENT_DAYS = 7;
+const LEGACY_DEMO_IMAGES: Record<string, string> = {
+  '/images/001.png': '/images/experience/cover.webp',
+  '/images/002.png': '/images/experience/gallery-01.webp',
+  '/images/003.png': '/images/experience/gallery-02.webp',
+  '/images/004.png': '/images/experience/gallery-03.webp',
+  '/images/005.png': '/images/experience/gallery-04.webp',
+};
+
+function normalizeDemoExperienceImages(config: InvitationPageSeed): InvitationPageSeed {
+  const normalized = structuredClone(config);
+  const imagePath = (value: string) => LEGACY_DEMO_IMAGES[value] ?? value;
+  const oldCover = config.metadata.images.wedding;
+  normalized.metadata.images.wedding = imagePath(oldCover);
+  for (const key of ['social', 'kakaoCard'] as const) {
+    const value = config.metadata.images[key];
+    if (value) normalized.metadata.images[key] = imagePath(value);
+  }
+  if (normalized.pageData) {
+    const dataBlocks = [normalized.pageData, ...Object.values(normalized.pageData.themeOverrides ?? {})];
+    for (const data of dataBlocks) {
+      if (!data) continue;
+      const gallery = data.galleryImages;
+      if (gallery) {
+        const hasLegacy = Boolean(LEGACY_DEMO_IMAGES[oldCover]) || gallery.some((value) => Boolean(LEGACY_DEMO_IMAGES[value]));
+        const mapped = gallery.map(imagePath);
+        if (hasLegacy) {
+          data.galleryImages = [...new Set(mapped)].filter((value) => value !== normalized.metadata.images.wedding);
+          if (gallery.length && data.galleryImages.length === 0) {
+            data.galleryImages = Object.values(LEGACY_DEMO_IMAGES).filter((value) => value !== normalized.metadata.images.wedding);
+          }
+          if (data.galleryImageThumbnailUrls) data.galleryImageThumbnailUrls = [...data.galleryImages];
+        } else {
+          data.galleryImages = mapped;
+        }
+      }
+      if (data.coverImageThumbnailUrl) data.coverImageThumbnailUrl = imagePath(data.coverImageThumbnailUrl);
+      if (data.galleryImageThumbnailUrls) data.galleryImageThumbnailUrls = data.galleryImageThumbnailUrls.map(imagePath);
+    }
+  }
+  return normalized;
+}
 
 export interface DemoExperienceEditableEvent {
   kind: DemoExperienceStoredEvent['kind'];
@@ -136,7 +177,7 @@ function toEditableEvent(event: DemoExperienceStoredEvent): DemoExperienceEditab
     version: event.version,
     editableConfig: {
       slug: event.slug,
-      config: event.config,
+      config: normalizeDemoExperienceImages(event.config),
       published: event.published,
       defaultTheme: event.defaultTheme,
       productTier,
@@ -224,6 +265,46 @@ function buildDailyDraft(seed: DemoExperienceStoredEvent): DemoExperienceStoredE
   config.description = '오늘 모든 체험자가 함께 수정하는 체험용 모바일 청첩장입니다.';
   config.metadata.title = config.displayName;
   config.metadata.description = config.description;
+  config.metadata.openGraph = { title: config.displayName, description: config.description };
+  config.metadata.twitter = { title: config.displayName, description: config.description };
+  config.metadata.keywords = ['체험용 청첩장', config.groomName, config.brideName];
+  const ceremonyTime = `${config.weddingDateTime.hour < 12 ? '오전' : '오후'} ${config.weddingDateTime.hour % 12 || 12}시${config.weddingDateTime.minute ? ` ${config.weddingDateTime.minute}분` : ''}`;
+  config.couple = {
+    groom: { name: config.groomName, phone: '010-0000-0000' },
+    bride: { name: config.brideName, phone: '010-0000-0000' },
+  };
+  config.musicEnabled = false;
+  config.musicTrackId = '';
+  config.musicStoragePath = '';
+  config.musicUrl = '';
+  config.pageData = {
+    subtitle: '두 사람이 함께 시작하는 새로운 날',
+    groom: config.couple.groom,
+    bride: config.couple.bride,
+    greetingMessage: '서로를 이해하고 아끼며\n함께하는 새로운 시작을 준비합니다.\n\n소중한 날 함께해 주셔서\n저희의 시작을 축복해 주세요.',
+    greetingAuthor: `${config.groomName} · ${config.brideName}`,
+    ceremonyTime,
+    ceremony: { time: ceremonyTime, location: config.venue },
+    venueName: config.venue,
+    ceremonyAddress: '서울특별시 강남구 테헤란로 123 (체험용 예시 장소)',
+    ceremonyContact: '02-0000-0000',
+    kakaoMap: { latitude: 37.5048, longitude: 127.028, level: 3, markerTitle: config.venue },
+    mapUrl: 'https://map.kakao.com/link/map/37.5048,127.028',
+    mapDescription: `${config.venue}의 위치를 확인하는 체험용 지도입니다. 실제 예식 장소가 아닙니다.`,
+    venueGuide: [
+      { title: '교통 안내', content: '주소 검색과 지도 연결 기능을 체험할 수 있도록 예시 주소가 입력되어 있습니다.' },
+      { title: '식사 안내', content: '식사는 예식 30분 전부터 이용하실 수 있습니다. 체험용 안내 문구를 자유롭게 수정해 보세요.' },
+    ],
+    wreathGuide: [{ title: '화환 안내', content: '체험용 청첩장입니다. 실제 화환 배송이나 방문은 진행하지 않습니다.' }],
+    giftInfo: {
+      groomAccounts: [{ bank: '체험은행', accountNumber: '000-0000-0000', accountHolder: config.groomName }],
+      brideAccounts: [{ bank: '체험은행', accountNumber: '000-0000-0000', accountHolder: config.brideName }],
+      message: '마음만으로도 충분합니다. 아래는 계좌 안내 기능을 확인하기 위한 가상 정보입니다.',
+    },
+    galleryImages: DEMO_EXPERIENCE_IMAGE_OPTIONS.filter(
+      (image) => image !== config.metadata.images.wedding
+    ),
+  };
   config.variants = buildInvitationVariants(config.slug, config.displayName, {
     availability: createInvitationVariantAvailability(availableThemes),
   });
@@ -270,7 +351,10 @@ export async function listDemoExperienceEvents(
   repository: DemoExperienceRepository = firestoreDemoExperienceRepository
 ) {
   const dateKey = await bootstrapDailyDemoExperience(now, repository);
-  const events = await repository.listEvents(dateKey);
+  const events = (await repository.listEvents(dateKey)).map((event) => ({
+    ...event,
+    config: normalizeDemoExperienceImages(event.config),
+  }));
   return {
     dateKey,
     events:
@@ -346,6 +430,37 @@ export async function beginDemoDailyWorkspace(
   return { dateKey, ...toEditableEvent(buildDailyDraft(seed)) };
 }
 
+// One shared workspace per KST day. Preparing a session must never reset saved input.
+export async function prepareDemoDailyWorkspace(
+  now = new Date(),
+  repository: DemoExperienceRepository = firestoreDemoExperienceRepository
+) {
+  const draft = await beginDemoDailyWorkspace('demo-seed-07', now, repository);
+  if (draft.version > 0) {
+    return draft;
+  }
+  try {
+    const saved = await repository.saveDailyWorkspace({
+      dateKey: draft.dateKey,
+      slug: DEMO_EXPERIENCE_DAILY_SLUG,
+      expectedVersion: 0,
+      config: draft.editableConfig.config,
+      published: false,
+      defaultTheme: draft.editableConfig.defaultTheme,
+    });
+    return { dateKey: draft.dateKey, ...toEditableEvent(saved) };
+  } catch (error) {
+    if (!(error instanceof DemoExperienceVersionConflictError)) {
+      throw error;
+    }
+    const current = await repository.findEventBySlug(draft.dateKey, DEMO_EXPERIENCE_DAILY_SLUG);
+    if (!current) {
+      throw error;
+    }
+    return { dateKey: draft.dateKey, ...toEditableEvent(current) };
+  }
+}
+
 export async function getDemoEditableEvent(
   role: DemoExperienceRole,
   slug: string,
@@ -379,11 +494,12 @@ export async function saveDemoDailyWorkspace(
     );
   }
 
-  assertApprovedDemoImages(input.config);
+  const imageNormalizedConfig = normalizeDemoExperienceImages(input.config);
+  assertApprovedDemoImages(imageNormalizedConfig);
 
   const normalizedConfig = mergeInvitationPageSeed(
     undefined,
-    { ...input.config, slug: DEMO_EXPERIENCE_DAILY_SLUG },
+    { ...imageNormalizedConfig, slug: DEMO_EXPERIENCE_DAILY_SLUG },
     DEMO_EXPERIENCE_DAILY_SLUG,
     { fallbackTheme: input.defaultTheme }
   );

@@ -13,7 +13,7 @@ export default function DemoExperienceImagePicker({
     <section className={styles.picker} aria-labelledby="demo-image-picker-title">
       <div>
         <h3 id="demo-image-picker-title">체험용 샘플 이미지</h3>
-        <p>운영 저장소에 업로드하지 않고 아래 승인된 이미지 중 하나를 선택합니다.</p>
+        <p>체험을 위해 AI로 생성한 웨딩 사진입니다. 원하는 사진을 선택해 바꿔 보세요.</p>
       </div>
       <div className={styles.options}>
         {DEMO_EXPERIENCE_IMAGE_OPTIONS.map((imageUrl, index) => (

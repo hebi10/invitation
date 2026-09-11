@@ -14,6 +14,7 @@ export default function ExperienceStartButton() {
   const router = useRouter();
   const triggerRef = useRef<HTMLButtonElement>(null);
   const noticeRef = useRef<HTMLDialogElement>(null);
+  const startingRef = useRef(false);
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
@@ -36,6 +37,8 @@ export default function ExperienceStartButton() {
   }, [open]);
 
   const start = async () => {
+    if (startingRef.current) return;
+    startingRef.current = true;
     setLoading(true);
     setErrorMessage('');
     try {
@@ -47,8 +50,9 @@ export default function ExperienceStartButton() {
       if (!response.ok) {
         throw new Error(payload?.error || '체험을 시작하지 못했습니다.');
       }
-      router.push('/experience/admin');
+      router.push('/experience/my-invitations');
     } catch (error) {
+      startingRef.current = false;
       setErrorMessage(error instanceof Error ? error.message : '체험을 시작하지 못했습니다.');
     } finally {
       setLoading(false);
@@ -66,7 +70,7 @@ export default function ExperienceStartButton() {
         onClick={() => setOpen(true)}
       >
         <span>직접 체험하기</span>
-        <small>관리자부터 고객 관리까지</small>
+        <small>고객 입력부터 완성된 청첩장, 관리자 화면까지</small>
       </button>
       {open ? (
         <dialog
@@ -89,8 +93,16 @@ export default function ExperienceStartButton() {
             }
           }}
         >
-          <strong>오늘의 공용 체험 데이터를 사용합니다.</strong>
+          <strong>직접 수정하고, 완성된 청첩장까지 확인해 보세요.</strong>
+          <ol>
+            <li>고객 화면에서 미리 연결된 청첩장을 엽니다.</li>
+            <li>준비된 이름·일정·사진을 확인하고 일부 내용을 수정합니다.</li>
+            <li>저장한 내용이 실제 디자인에 반영되는지 확인합니다.</li>
+            <li>관리자로 전환해 제작 후 운영 기능도 살펴봅니다.</li>
+          </ol>
           <ul>
+            <li>화면마다 안내 팝업이 다음 작업을 알려드립니다. 실제 버튼을 눌러 진행해 주세요.</li>
+            <li>다시 시작해도 오늘의 입력 내용을 이어서 사용합니다.</li>
             <li>모든 체험자가 같은 “금일 체험 청첩장”을 함께 수정합니다.</li>
             <li>매일 00:00(KST)에 초기화됩니다.</li>
             <li>이름·연락처 등 실제 개인정보는 입력하지 마세요.</li>

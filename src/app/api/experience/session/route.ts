@@ -2,7 +2,7 @@ import { randomUUID } from 'node:crypto';
 
 import { NextResponse } from 'next/server';
 
-import { getKstDateKey } from '@/lib/demoExperienceTime';
+import { prepareDemoDailyWorkspace } from '@/server/demoExperienceService';
 import {
   assertSameOriginDemoMutation,
   DemoExperienceRequestError,
@@ -68,8 +68,15 @@ export async function POST(request: Request) {
       );
     }
 
+    const workspace = await prepareDemoDailyWorkspace();
+    let sessionId: string = randomUUID();
+    try {
+      sessionId = requireDemoExperienceSession(request).sessionId;
+    } catch (error) {
+      if (!(error instanceof DemoExperienceRequestError)) throw error;
+    }
     return createSessionResponse(
-      { sessionId: randomUUID(), role: 'admin', dateKey: getKstDateKey() },
+      { sessionId, role: 'customer', dateKey: workspace.dateKey },
       headers
     );
   } catch (error) {
@@ -118,4 +125,3 @@ export async function DELETE(request: Request) {
       : NextResponse.json({ error: '체험을 종료하지 못했습니다.' }, { status: 500 });
   }
 }
-

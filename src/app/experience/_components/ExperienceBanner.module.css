@@ -8,9 +8,9 @@
   justify-content: space-between;
   gap: 18px;
   padding: 9px 18px;
-  border-bottom: 1px solid #c6a76f;
-  background: #fff8e8;
-  color: #3d321f;
+  border: 1px solid #d5d7d0;
+  background: #f5f5f2;
+  color: #292b27;
   font-family: var(--font-sans);
 }
 
@@ -24,7 +24,7 @@
 .copy strong {
   flex: none;
   padding: 3px 8px;
-  background: #72572c;
+  background: #292b27;
   color: #fff;
   font-size: 0.78rem;
 }
@@ -49,7 +49,7 @@
 .exit {
   min-height: 32px;
   padding: 5px 10px;
-  border: 1px solid #b99a63;
+  border: 1px solid #bfc1bb;
   background: transparent;
   color: inherit;
   font: inherit;
@@ -59,12 +59,12 @@
 }
 
 .roles button[aria-pressed='true'] {
-  background: #72572c;
+  background: #292b27;
   color: #fff;
 }
 
 .exit {
-  border-color: #715b48;
+  border-color: #bfc1bb;
 }
 
 .error {

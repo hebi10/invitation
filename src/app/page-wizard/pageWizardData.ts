@@ -1152,7 +1152,8 @@ export function buildStepValidation(
   stepKey: WizardStepKey,
   theme: InvitationThemeKey | null,
   formState: InvitationPageSeed | null,
-  slugState: SlugStepState
+  slugState: SlugStepState,
+  allowedImagePaths: readonly string[] = []
 ): StepValidation {
   if (!formState && stepKey !== 'theme' && stepKey !== 'slug') {
     return { valid: false, messages: ['페이지 데이터를 먼저 불러와 주세요.'] };
@@ -1358,16 +1359,18 @@ export function buildStepValidation(
     }
     case 'images': {
       const messages: string[] = [];
+      const validImage = (value: string | undefined) =>
+        Boolean(value && (allowedImagePaths.includes(value) || isValidUrl(value)));
       if (!hasText(formState?.metadata.images.wedding)) {
         messages.push('대표 이미지를 업로드해 주세요.');
       }
       if (
         hasText(formState?.metadata.images.wedding) &&
-        !isValidUrl(formState?.metadata.images.wedding)
+        !validImage(formState?.metadata.images.wedding)
       ) {
         messages.push('대표 이미지를 다시 업로드해 주세요.');
       }
-      if ((formState?.pageData?.galleryImages ?? []).some((value) => !isValidUrl(value))) {
+      if ((formState?.pageData?.galleryImages ?? []).some((value) => !validImage(value))) {
         messages.push('갤러리 이미지를 다시 업로드해 주세요.');
       }
       return { valid: messages.length === 0, messages };
@@ -1430,10 +1433,11 @@ export function buildReviewSummary(
   steps: WizardStepDefinition[],
   theme: InvitationThemeKey | null,
   formState: InvitationPageSeed | null,
-  slugState: SlugStepState
+  slugState: SlugStepState,
+  allowedImagePaths: readonly string[] = []
 ) {
   return steps.map((step) => ({
     step,
-    validation: buildStepValidation(step.key, theme, formState, slugState),
+    validation: buildStepValidation(step.key, theme, formState, slugState, allowedImagePaths),
   }));
 }

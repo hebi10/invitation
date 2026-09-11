@@ -237,6 +237,7 @@ function EventInvitationPageBody(options: EventInvitationRouteOptions) {
 
   return (
     <>
+      {options.queryScope === 'experience' && !isLoaderVisible ? <span hidden data-experience-preview-ready="true" /> : null}
       {readyState.adminNotice ? (
         <div className={styles.adminNoticeBar}>
           <div className={styles.adminNoticeInner}>

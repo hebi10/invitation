@@ -227,10 +227,10 @@ function OwnedEventCard({
           <Link
             className={styles.primaryButton}
             href={wizardHref}
-            target="_blank"
+            target={experience ? undefined : '_blank'}
             rel="noopener noreferrer"
           >
-            수정하기
+            {experience ? '내용 수정' : '수정하기'}
           </Link>
           {singlePreviewLink ? (
             <Link
@@ -674,7 +674,7 @@ export default function MyInvitationsClient({
   }
 
   return (
-    <main className={styles.page}>
+    <main className={styles.page} data-experience-customer-ready={experience && events.length > 0 ? 'true' : undefined}>
       <div className={styles.shell}>
         <section className={styles.hero}>
           <div className={styles.heroHeader}>

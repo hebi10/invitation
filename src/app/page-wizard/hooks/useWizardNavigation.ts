@@ -3,7 +3,6 @@ import { useCallback, useMemo } from 'react';
 import type { InvitationPageSeed, InvitationThemeKey } from '@/types/invitationPage';
 
 import {
-  buildReviewSummary,
   type WizardStepDefinition,
   type SlugStepState,
   type StepValidation,
@@ -21,9 +20,6 @@ import type { WizardPersistDraftOptions } from './useWizardPersistence';
 
 export function useWizardNavigation({
   activeStepKey,
-  defaultTheme,
-  previewFormState,
-  slugStepState,
   published,
   resolvedPersistedSlug,
   steps,
@@ -136,10 +132,12 @@ export function useWizardNavigation({
       return;
     }
 
+    clearNotice();
     slideToStep(nextStepKey);
     scrollToTop();
   }, [
     activeSection,
+    clearNotice,
     getValidationForStep,
     getEditPath,
     persistDraft,
@@ -176,9 +174,10 @@ export function useWizardNavigation({
   }, [clearNotice, scrollToTop, sections, slideToStep]);
 
   const handleFinalConfirm = useCallback(async () => {
-    const reviewSummary = buildReviewSummary(steps, defaultTheme, previewFormState, {
-      ...slugStepState,
-    });
+    const reviewSummary = steps.map(step => ({
+      step,
+      validation: getValidationForStep(step.key),
+    }));
     const invalidStep = reviewSummary.find((item) => !item.validation.valid);
 
     if (invalidStep) {
@@ -207,15 +206,13 @@ export function useWizardNavigation({
     scrollToTop();
     onComplete?.(savedSlug);
   }, [
-    defaultTheme,
+    getValidationForStep,
     onComplete,
     persistDraft,
-    previewFormState,
     published,
     scrollToTop,
     showErrorNotice,
     slideToStep,
-    slugStepState,
     steps,
   ]);
 

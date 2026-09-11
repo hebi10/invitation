@@ -29,6 +29,7 @@ import styles from './PageWizardWorkspace.module.css';
 import { useDialogLayer } from '@/hooks/useDialogLayer';
 
 type PageWizardWorkspaceProps = {
+  experience?: boolean;
   setupOnly?: boolean;
   canManageSetup?: boolean;
   setupContent?: ReactNode;
@@ -71,6 +72,7 @@ FORM: Operate 모드의 2열 데스크톱·단일 열 모바일 편집 워크스
 -->`;
 
 export default function PageWizardWorkspace({
+  experience = false,
   setupOnly = false,
   canManageSetup = false,
   setupContent,
@@ -176,7 +178,7 @@ export default function PageWizardWorkspace({
   });
 
   return (
-    <div className={styles.workspace} data-operation-ui>
+    <div className={styles.workspace} data-operation-ui data-experience-step={experience ? activeStepKey : undefined}>
       <div
         hidden
         aria-hidden="true"

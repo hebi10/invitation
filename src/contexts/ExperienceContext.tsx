@@ -69,7 +69,7 @@ export function ExperienceProvider({ children }: { children: ReactNode }) {
     }
     queryClient.clear();
     setSession(payload.session);
-    router.replace(`${routes.admin()}?reset=1`);
+    router.replace(`${routes.customerDashboard()}?reset=1`);
   }, [queryClient, router, routes]);
 
   useEffect(() => {
@@ -118,7 +118,10 @@ export function ExperienceProvider({ children }: { children: ReactNode }) {
 
   const switchRole = useCallback(
     async (role: DemoExperienceRole) => {
-      if (session?.role === role) return;
+      if (session?.role === role) {
+        router.push(role === 'admin' ? routes.admin() : routes.customerDashboard());
+        return;
+      }
       const response = await fetch('/api/experience/session', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },

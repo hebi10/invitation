@@ -1,5 +1,7 @@
 ﻿'use client';
 
+import { DEMO_EXPERIENCE_IMAGE_OPTIONS } from '@/config/demoExperienceSeeds';
+
 import WeddingWizardPreview from './WeddingWizardPreview';
 import WizardCustomerConnection from './WizardCustomerConnection';
 
@@ -449,6 +451,7 @@ export default function PageWizardClient({
     [wizardSteps, eventType]
   );
   const { getValidationForStep, finalReviewSummary } = useWizardValidation({
+    experience,
     activeStepKey,
     defaultTheme,
     previewFormState,
@@ -1671,7 +1674,7 @@ export default function PageWizardClient({
                 draft.metadata.images.social = imageUrl;
                 draft.metadata.images.kakaoCard = imageUrl;
                 if (draft.pageData) {
-                  draft.pageData.galleryImages = [imageUrl];
+                  draft.pageData.galleryImages = DEMO_EXPERIENCE_IMAGE_OPTIONS.filter(image => image !== imageUrl);
                 }
               });
             }}
@@ -1893,6 +1896,7 @@ export default function PageWizardClient({
 
   return (
     <PageWizardWorkspace
+      experience={experience}
       canManageSetup={isAdminLoggedIn}
       setupOnly={setupOnly}
       setupContent={isAdminLoggedIn && setupOnly ? <WizardCustomerConnection slug={resolvedPersistedSlug} disabled={isSaving}

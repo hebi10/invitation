@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { useCallback, useRef } from 'react';
 
 import {
   buildInvitationVariants,
@@ -100,6 +100,7 @@ export function useWizardPersistence({
   setPersistedVersion: (value: number | null) => void;
   onVersionConflict?: () => void;
 }) {
+  const savingRef = useRef(false);
   const ensureDraftCreated = useCallback(async (): Promise<WizardDraftCreationState> => {
     if (resolvedPersistedSlug) {
       return {
@@ -215,10 +216,11 @@ export function useWizardPersistence({
 
   const persistDraft = useCallback(
     async (options?: WizardPersistDraftOptions): Promise<string | null> => {
-      if (!formState) {
+      if (!formState || savingRef.current) {
         return null;
       }
 
+      savingRef.current = true;
       setIsSaving(true);
 
       try {
@@ -283,6 +285,7 @@ export function useWizardPersistence({
         showErrorNotice(error, '청첩장을 저장하지 못했습니다.', 'save');
         return null;
       } finally {
+        savingRef.current = false;
         setIsSaving(false);
       }
     },

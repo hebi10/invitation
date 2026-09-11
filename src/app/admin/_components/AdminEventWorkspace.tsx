@@ -185,7 +185,7 @@ export default function AdminEventWorkspace({
           </button>
           <details className={styles.eventCreateMenu}>
             <summary className="admin-button admin-button-primary">
-              {experience ? '새 청첩장 만들기' : '새 이벤트 만들기'}
+              {experience ? '오늘의 청첩장 편집' : '새 이벤트 만들기'}
             </summary>
             <div className={styles.eventCreateMenuList}>
               {(experience ? (['wedding'] as const) : ADMIN_EVENT_TYPE_OPTIONS).map((eventType) => (

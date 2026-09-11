@@ -1,5 +1,7 @@
 'use client';
 
+import { DEMO_EXPERIENCE_IMAGE_OPTIONS } from '@/config/demoExperienceSeeds';
+
 import { useQuery } from '@tanstack/react-query';
 import { useMemo } from 'react';
 
@@ -170,8 +172,8 @@ export default function PageWizardResultClient({
       brideKoreanName: previewFormState.couple.bride.name,
       groomEnglishName: '',
       brideEnglishName: '',
-    });
-  }, [configState, previewFormState, previewTheme, slug, wizardSteps]);
+    }, experience ? DEMO_EXPERIENCE_IMAGE_OPTIONS : []);
+  }, [configState, previewFormState, previewTheme, slug, wizardSteps, experience]);
 
   if (isLoading || isAdminLoading) {
     return (
@@ -276,7 +278,7 @@ export default function PageWizardResultClient({
   const redirectPath = experience ? livePagePath : `/${slug}`;
 
   return (
-    <main className={styles.page}>
+    <main className={styles.page} data-experience-result-ready={experience ? 'true' : undefined}>
       <div className={styles.shell}>
         <section className={`${styles.summaryCard} ${styles.resultSummaryCard}`}>
           <p className={styles.eyebrow}>저장 완료</p>
@@ -289,12 +291,12 @@ export default function PageWizardResultClient({
           </p>
           <div className={`${styles.fieldGrid} ${styles.resultMetaGrid}`}>
             <div className={styles.previewUrlCard}>
-              <span className={styles.summaryLabel}>공유 URL</span>
-              <strong className={styles.previewUrlValue}>{PUBLIC_SITE_ORIGIN}{redirectPath}</strong>
+              <span className={styles.summaryLabel}>{experience ? '체험 페이지 경로' : '공유 URL'}</span>
+              <strong className={styles.previewUrlValue}>{experience ? '' : PUBLIC_SITE_ORIGIN}{redirectPath}</strong>
             </div>
             <div className={styles.previewUrlCard}>
               <span className={styles.summaryLabel}>실제 페이지 URL</span>
-              <strong className={styles.previewUrlValue}>{PUBLIC_SITE_ORIGIN}{livePagePath}</strong>
+              <strong className={styles.previewUrlValue}>{experience ? '' : PUBLIC_SITE_ORIGIN}{livePagePath}</strong>
             </div>
             <div className={styles.previewUrlCard}>
               <span className={styles.summaryLabel}>마지막 저장 시간</span>
@@ -310,7 +312,10 @@ export default function PageWizardResultClient({
             </div>
           </div>
           <div className={`${styles.inlineActions} ${styles.resultActionRow}`}>
-            {experience && onContinueAsCustomer ? (
+            <Link href={livePagePath} className={styles.primaryButton}>
+              {experience ? '청첩장 열기' : '바로 확인하기'}
+            </Link>
+            {experience && isAdminLoggedIn && onContinueAsCustomer ? (
               <button
                 type="button"
                 className={styles.primaryButton}
@@ -318,11 +323,7 @@ export default function PageWizardResultClient({
               >
                 고객 화면으로 전환해 계속 입력하기
               </button>
-            ) : (
-              <Link href={livePagePath} className={styles.primaryButton}>
-                바로 확인하기
-              </Link>
-            )}
+            ) : null}
             <button
               type="button"
               className={styles.secondaryButton}
@@ -342,7 +343,7 @@ export default function PageWizardResultClient({
 
         {!configState.published ? (
           <div className={getNoticeClassName('neutral')}>
-            현재 페이지는 비공개 초안 상태입니다. 공개 페이지에서는 아직 보이지 않을 수 있습니다.
+            {experience ? '체험용 청첩장입니다. 공개 상태와 관계없이 위 버튼에서 저장한 디자인을 확인할 수 있습니다.' : '현재 페이지는 비공개 초안 상태입니다. 공개 페이지에서는 아직 보이지 않을 수 있습니다.'}
           </div>
         ) : null}
 

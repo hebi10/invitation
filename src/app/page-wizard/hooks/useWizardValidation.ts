@@ -1,3 +1,4 @@
+import { DEMO_EXPERIENCE_IMAGE_OPTIONS } from '@/config/demoExperienceSeeds';
 import { useCallback, useMemo } from 'react';
 
 import type { InvitationPageSeed, InvitationThemeKey } from '@/types/invitationPage';
@@ -17,12 +18,14 @@ function cloneSlugStepState(slugStepState: SlugStepState): SlugStepState {
 }
 
 export function useWizardValidation({
+  experience = false,
   activeStepKey,
   defaultTheme,
   previewFormState,
   slugStepState,
   steps,
 }: {
+  experience?: boolean;
   activeStepKey: WizardStepKey;
   defaultTheme: InvitationThemeKey;
   previewFormState: InvitationPageSeed | null;
@@ -35,9 +38,10 @@ export function useWizardValidation({
         stepKey,
         defaultTheme,
         previewFormState,
-        cloneSlugStepState(slugStepState)
+        cloneSlugStepState(slugStepState),
+        experience ? DEMO_EXPERIENCE_IMAGE_OPTIONS : []
       ),
-    [defaultTheme, previewFormState, slugStepState]
+    [defaultTheme, previewFormState, slugStepState, experience]
   );
 
   const finalReviewSummary = useMemo(() => {
@@ -49,9 +53,10 @@ export function useWizardValidation({
       steps,
       defaultTheme,
       previewFormState,
-      cloneSlugStepState(slugStepState)
+      cloneSlugStepState(slugStepState),
+        experience ? DEMO_EXPERIENCE_IMAGE_OPTIONS : []
     );
-  }, [activeStepKey, defaultTheme, previewFormState, slugStepState, steps]);
+  }, [activeStepKey, defaultTheme, previewFormState, slugStepState, steps, experience]);
 
   return {
     getValidationForStep,

@@ -1,4 +1,7 @@
 import assert from 'node:assert/strict';
+import { resolveExperienceGuideStep } from '../src/app/experience/_components/experienceGuideModel.ts';
+import { buildStepValidation } from '../src/app/page-wizard/pageWizardData.ts';
+import { createDemoExperienceSeedEvents, DEMO_EXPERIENCE_IMAGE_OPTIONS } from '../src/config/demoExperienceSeeds.ts';
 import { readFileSync } from 'node:fs';
 
 const gateway = readFileSync('src/app/page-wizard/wizardPersistenceGateway.ts', 'utf8');
@@ -35,3 +38,22 @@ assert.doesNotMatch(navigationHook, /`\/page-wizard\/\$\{/);
 assert.doesNotMatch(experienceWizardPage, /getServerInvitationPageBySlug/);
 
 console.log('demo experience wizard checks passed');
+
+const config = createDemoExperienceSeedEvents('2026-09-11')[6].config;
+const slugState = { slugInput: config.slug, persistedSlug: config.slug };
+assert.equal(buildStepValidation('images', 'simple', config, slugState).valid, false);
+assert.equal(buildStepValidation('images', 'simple', config, slugState, DEMO_EXPERIENCE_IMAGE_OPTIONS).valid, true);
+const invalid = structuredClone(config);
+invalid.metadata.images.wedding = '/images/unapproved.png';
+assert.equal(buildStepValidation('images', 'simple', invalid, slugState, DEMO_EXPERIENCE_IMAGE_OPTIONS).valid, false);
+assert.equal(resolveExperienceGuideStep('/experience/my-invitations', {}), null);
+assert.equal(resolveExperienceGuideStep('/experience/my-invitations', { customerReady: true })?.id, 'customer');
+assert.equal(resolveExperienceGuideStep('/experience/page-wizard/demo/result', { wizardStep: 'final' }), null);
+assert.equal(resolveExperienceGuideStep('/experience/page-wizard/demo/result', { resultReady: true })?.id, 'result');
+assert.equal(resolveExperienceGuideStep('/experience/page-wizard/demo', { wizardStep: 'venue' })?.id, 'schedule');
+assert.equal(resolveExperienceGuideStep('/experience/page-wizard/demo', { wizardStep: 'music' })?.id, 'media');
+assert.equal(resolveExperienceGuideStep('/experience/preview/demo/simple', {}), null);
+assert.equal(resolveExperienceGuideStep('/experience/preview/demo/simple', { previewReady: true })?.id, 'preview');
+assert.equal(resolveExperienceGuideStep('/my-invitations', { customerReady: true }), null);
+assert.match(experienceWizardPage, /redirect/);
+assert.match(experienceWizardPage, /DEMO_EXPERIENCE_DAILY_SLUG/);
