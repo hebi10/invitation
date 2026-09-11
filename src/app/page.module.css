@@ -24,7 +24,7 @@
 .workspace { padding: 36px; background: #f7f7f7; }
 .sectionIntro h2 { margin: 0; font-size: 20px; font-weight: 500; }
 .sectionIntro p { margin: 10px 0 0; color: #666; font-size: 13px; line-height: 1.7; }
-.workspaceLinks { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 32px; margin-top: 38px; }
+.workspaceLinks { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 32px; margin-top: 38px; }
 .workspaceLinks h3 { margin: 0; font-size: 15px; font-weight: 500; }
 .workspaceLinks p { min-height: 48px; margin: 12px 0 20px; color: #666; font-size: 13px; line-height: 1.8; word-break: keep-all; }
 .footer { display: flex; justify-content: space-between; align-items: center; margin-top: 48px; color: #737373; font-size: 12px; }

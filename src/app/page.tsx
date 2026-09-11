@@ -24,6 +24,7 @@ export default function Home() {
             <a href="https://kmong.com/gig/686626" {...getHomeLinkRenderProps(true)} className={styles.secondaryLink}>제작 문의 <span>새 창</span></a>
           </div>
           <Link href="/my-invitations" className={styles.textLink}>이미 제작하셨나요? 내 청첩장 관리</Link>
+          <ExperienceStartButton />
         </div>
         <div className={styles.preview}>
           <div className={styles.phone}>
@@ -54,11 +55,6 @@ export default function Home() {
             <h3>운영 관리</h3>
             <p>이벤트의 공개 상태와 고객 연결을 관리합니다.</p>
             <Link href="/admin" className={styles.secondaryLink}>운영 관리로 이동</Link>
-          </div>
-          <div>
-            <h3>먼저 체험해 보세요</h3>
-            <p>준비된 청첩장을 직접 수정하고, 완성 화면과 관리자 기능까지 살펴보세요.</p>
-            <ExperienceStartButton />
           </div>
         </div>
       </section>

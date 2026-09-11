@@ -61,6 +61,7 @@ export default function ExperienceStartButton() {
 
   return (
     <div className={styles.wrapper}>
+      <span className={styles.audience}>채용 담당자이신가요?</span>
       <button
         ref={triggerRef}
         type="button"
@@ -69,8 +70,7 @@ export default function ExperienceStartButton() {
         aria-haspopup="dialog"
         onClick={() => setOpen(true)}
       >
-        <span>직접 체험하기</span>
-        <small>고객 입력부터 완성된 청첩장, 관리자 화면까지</small>
+        프로젝트 체험하기
       </button>
       {open ? (
         <dialog
