@@ -65,7 +65,7 @@ const resolveShareDescription = (pageConfig: InvitationPage) =>
 export const WEDDING_SHARE_PALETTES: Record<string, { paper: string; ink: string; line: string }> = {
   emotional: { paper: '#fcfaf6', ink: '#3e3730', line: '#e6ded3' },
   romantic: { paper: '#ffffff', ink: '#344037', line: '#dce4d7' },
-  simple: { paper: '#ffffff', ink: '#292c2a', line: '#dce0db' },
+  simple: { paper: '#faf9f6', ink: '#282725', line: '#b5ada2' },
   'classic-r': { paper: '#ffffff', ink: '#362f27', line: '#ded5c7' },
   gyeol: { paper: '#faf8f3', ink: '#38363e', line: '#e4dfe9' },
 };

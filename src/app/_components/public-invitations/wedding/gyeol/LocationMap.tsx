@@ -8,6 +8,7 @@ import { loadKakaoMapsSdk } from '@/utils/kakaoMaps';
 import styles from './LocationMap.module.css';
 
 interface LocationMapProps {
+  appearance?: 'simple';
   address: string;
   venueName: string;
   kakaoMapConfig?: {
@@ -25,7 +26,7 @@ function validCoordinates(latitude: number, longitude: number) {
     && !(latitude === 0 && longitude === 0);
 }
 
-export default function LocationMap({ address, venueName, kakaoMapConfig, mapHref }: LocationMapProps) {
+export default function LocationMap({ address, venueName, kakaoMapConfig, mapHref, appearance }: LocationMapProps) {
   const sectionRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const instanceRef = useRef<KakaoMapInstance | null>(null);
@@ -141,7 +142,7 @@ export default function LocationMap({ address, venueName, kakaoMapConfig, mapHre
   };
 
   return (
-    <div ref={sectionRef} className={styles.locationMap}>
+    <div ref={sectionRef} className={styles.locationMap} data-appearance={appearance}>
       <div className={styles.viewport}>
         <div
           ref={containerRef}

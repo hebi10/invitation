@@ -93,3 +93,8 @@
 .closing[data-theme='gyeol'] { background: #faf8f3; font-family: 'Wedding Myeongjo', serif; }
 .closing p:last-child { font-family: inherit; font-weight: 400; word-break: keep-all; }
 .closing[data-theme='classic-r'] { justify-items: start; text-align: left; }
+
+.closing[data-theme='simple'] { position: relative; padding: 88px 24px 40px; background: #faf9f6; color: #282725; gap: 20px; }
+.closing[data-theme='simple']::before { content: ''; position: absolute; top: 44px; left: 24px; right: 24px; height: 1px; background: #e6e2dc; }
+.closing[data-theme='simple'] p:first-child { font-family: 'Wedding Myeongjo', serif; font-size: 22px; }
+.closing[data-theme='simple'] p:last-child { max-width: 290px; font-size: 15px; line-height: 1.8; color: #716e69; }

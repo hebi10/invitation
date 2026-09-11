@@ -32,6 +32,8 @@ const core = [
   'test-gyeol-theme',
   'test-gallery-carousel-rendering',
   'test-wedding-compact-sections-rendering',
+  'test-wedding-calendar',
+  'test-simple-wedding-rendering',
   'test-image-upload-optimization',
   'test-invitation-metadata',
   'test-homepage-ui-contracts',
@@ -172,6 +174,7 @@ if (!selectedTests) {
 
 // Hook-based components need React's client server-rendering entrypoint.
 const clientRenderingTests = new Set([
+  'test-simple-wedding-rendering',
   'test-gallery-carousel-rendering',
   'test-wedding-compact-sections-rendering',
 ]);

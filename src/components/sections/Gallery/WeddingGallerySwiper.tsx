@@ -26,8 +26,8 @@ export default function WeddingGallerySwiper({ images, previewImages, variant, r
   const [failedImages, setFailedImages] = useState<Set<string>>(new Set());
   const count = images.length;
   const activeIndex = Math.min(index, Math.max(0, count - 1));
-  const strip = variant === 'simple' || variant === 'classic-r';
-  const effect = reducedMotion ? 'slide' : variant === 'romantic' ? 'fade' : strip ? 'slide' : 'creative';
+  const strip = variant === 'classic-r';
+  const effect = reducedMotion ? 'slide' : variant === 'romantic' ? 'fade' : strip || variant === 'simple' ? 'slide' : 'creative';
   const move = (direction: -1 | 1) => {
     const swiper = swiperRef.current;
     if (!swiper || swiper.destroyed) return;
@@ -49,7 +49,7 @@ export default function WeddingGallerySwiper({ images, previewImages, variant, r
       modules={[A11y, EffectCreative, EffectFade]}
       effect={effect}
       speed={reducedMotion ? 0 : variant === 'romantic' ? 750 : 600}
-      slidesPerView={count > 1 && strip ? variant === 'classic-r' ? 1.35 : 1.14 : 1}
+      slidesPerView={count > 1 && strip ? 1.35 : 1}
       centeredSlides={strip}
       spaceBetween={strip ? 16 : 0}
       grabCursor={count > 1}

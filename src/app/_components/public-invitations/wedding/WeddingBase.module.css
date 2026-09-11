@@ -295,3 +295,57 @@ details[open] > :is(.disclosureSummary, .accountSummary, .formSummary)::after { 
   .contactList li { flex-wrap: wrap; }
   .contactActions { margin-left: auto; }
 }
+
+/* Simple Wedding: shared content and interactions, with one measured paper layout. */
+.page[data-design='simple'] {
+  --paper: #faf9f6; --paper-soft: #f0ede7; --ink: #282725;
+  --muted: #716e69; --accent: #514c44; --line: #e6e2dc;
+  --control-line: #91897e; --input-surface: #ffffff; --focus: #514c44;
+  --section-space: 88px;
+  font-size: 15px; line-height: 1.8;
+}
+:global(body):has(.page[data-design='simple']) { background-color: #faf9f6; }
+.page[data-design='simple'] ::selection { background: #e6e2dc; }
+.page[data-design='simple'] :is(.invitationSection, .scheduleSection, .container, .ceremonySection, .transportSection) {
+  width: calc(100% - 48px); margin: 88px auto 0; padding: 0; text-align: center;
+}
+.page[data-design='simple'] :is(.heading, .title) {
+  display: flex; align-items: center; gap: 18px; margin: 0 0 28px;
+  font-family: 'Wedding Myeongjo', serif; font-size: 20px; font-weight: 500;
+  letter-spacing: .02em; line-height: 1.6; text-align: left;
+}
+.page[data-design='simple'] :is(.heading, .title)::after { content: ''; height: 1px; flex: 1; background: var(--line); }
+.page[data-design='simple'] .quickLinks { width: calc(100% - 48px); margin: 22px auto 0; padding: 0; gap: 12px; }
+.page[data-design='simple'] .quickLinks a { flex: 1; min-height: 48px; padding: 10px 8px; justify-content: center; border: 1px solid var(--control-line); color: var(--ink); font-size: 14px; text-decoration: none; }
+.page[data-design='simple'] .invitationCopy { max-width: 300px; font-size: 15px; line-height: 1.9; }
+.page[data-design='simple'] .invitationAuthor { margin-top: 28px; font-size: 15px; color: var(--ink); }
+.page[data-design='simple'] .contactSection { width: calc(100% - 48px); margin-top: 28px; }
+.page[data-design='simple'] :is(.disclosureSummary, .accountSummary, .formSummary) { min-height: 48px; background: transparent; border-color: var(--control-line); font-size: 14px; font-weight: 400; }
+.page[data-design='simple'] .contactIdentity span { font-size: 13px; }
+.page[data-design='simple'] .contactIdentity strong { font-size: 15px; }
+.page[data-design='simple'] .contactList { margin-top: 24px; }
+.page[data-design='simple'] .contactList li { padding: 12px 0; }
+.page[data-design='simple'] .contactActions a { min-height: 48px; font-size: 14px; }
+.page[data-design='simple'] .carousel { max-width: 100%; }
+.page[data-design='simple'] .ceremonyContent { display: grid; gap: 4px; margin: 0 0 24px; }
+.page[data-design='simple'] .ceremonyContent p { margin: 0; }
+.page[data-design='simple'] .ceremonyContent .venueName { margin-top: 12px; font-size: 18px; font-family: 'Wedding Myeongjo', serif; }
+.page[data-design='simple'] .calendarDisclosure { margin-top: 12px; }
+.page[data-design='simple'] .dateSection { width: 100%; margin: 24px auto 0; padding: 20px 8px; }
+.page[data-design='simple'] .dateSection .heading { display: none; }
+.page[data-design='simple'] .scheduleContent { font-size: 15px; gap: 8px; margin-bottom: 24px; }
+.page[data-design='simple'] .scheduleContent .venueName { font-size: 20px; font-family: 'Wedding Myeongjo', serif; }
+.page[data-design='simple'] .address { font-size: 15px; }
+.page[data-design='simple'] .travelNote { font-size: 14px; line-height: 1.8; }
+.page[data-design='simple'] .guideDisclosure { margin-top: 0; }
+.page[data-design='simple'] .storedSection { font-size: 15px; line-height: 1.8; }
+.page[data-design='simple'] .storedSection > h2 { display: none; }
+.page[data-design='simple'] .storedSection h3 { font-size: 16px; }
+.page[data-design='simple'] :is(.message, .subtitle) { margin: 0 auto 28px; font-size: 15px; line-height: 1.8; }
+.page[data-design='simple'] .accountCard { flex-wrap: wrap; padding: 20px 0; }
+.page[data-design='simple'] :is(.accountRow, .accountHolder) { font-size: 15px; }
+.page[data-design='simple'] :is(.copyButton, .moreButton, .submitButton, .refreshButton, .pageButton, .pageNumber) { min-height: 48px; font-size: 14px; }
+.page[data-design='simple'] .copyButton { background: transparent; border-color: var(--control-line); }
+.page[data-design='simple'] .formSummary { color: var(--ink); }
+.page[data-design='simple'] :is(.label, .commentsCount, .commentsCount strong, .commentDate) { font-size: 13px; }
+.page[data-design='simple'] .commentMessage { font-size: 15px; }

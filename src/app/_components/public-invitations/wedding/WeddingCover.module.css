@@ -48,3 +48,18 @@
  .editorialMeta { padding-left: 12px; }
  .verticalNames { font-size: 25px; gap: 20px; }
 }
+
+/* Simple Wedding: an invitation on warm paper, with a portrait at its centre. */
+.basic { padding: 40px 24px 0; background: #faf9f6; color: #282725; }
+.basic .invitationLabel { color: #716e69; font-size: 11px; letter-spacing: .3em; line-height: 1.8; }
+.basic .salutation { margin-top: 28px; color: #716e69; font-size: 14px; }
+.basic .names { margin-top: 8px; font-family: 'Wedding Myeongjo', serif; font-size: 26px; font-weight: 500; gap: 12px; }
+.basic .introduction { margin-top: 14px; color: #716e69; font-size: 15px; line-height: 1.8; }
+.basic .basicPhoto { width: 92%; margin: 28px auto 24px; aspect-ratio: 3 / 4; overflow: hidden; }
+.basic .photo { width: 100%; height: 100%; object-fit: cover; }
+.basic .date { margin-top: 24px; column-gap: 6px; font-size: 15px; line-height: 1.8; }
+.basic .venue { margin-top: 4px; font-size: 15px; line-height: 1.8; }
+@media (max-width: 359px) {
+  .basic .names { font-size: 24px; gap: 10px; }
+  .basic .date { flex-direction: column; }
+}
