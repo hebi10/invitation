@@ -4,6 +4,7 @@ import path from 'node:path';
 import process from 'node:process';
 
 const core = [
+  'test-background-music-playback',
   'validate-theme-extension',
   'test-admin-created-event-ownership',
   'test-admin-customer-selection',

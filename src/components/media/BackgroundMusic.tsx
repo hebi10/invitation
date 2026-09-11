@@ -33,6 +33,7 @@ export default function BackgroundMusic({
   );
   const [isInitialControlHintFading, setIsInitialControlHintFading] = useState(false);
   const audioRef = useRef<HTMLAudioElement>(null);
+  const controlRef = useRef<HTMLButtonElement>(null);
   const hasAutoPlayedRef = useRef(false);
   const isPlaybackTransitionRef = useRef(false);
   const previousMusicUrlRef = useRef('');
@@ -63,8 +64,8 @@ export default function BackgroundMusic({
 
     try {
       await audio.play();
-      setIsPlaying(true);
-      return true;
+      setIsPlaying(!audio.paused);
+      return !audio.paused;
     } catch (error) {
       console.error('재생 오류:', error);
       setIsPlaying(false);
@@ -84,7 +85,7 @@ export default function BackgroundMusic({
       volume,
       DEFAULT_INVITATION_MUSIC_VOLUME
     );
-  }, [volume]);
+  }, [volume, normalizedMusicUrl]);
 
   useEffect(() => {
     const audio = audioRef.current;
@@ -151,7 +152,11 @@ export default function BackgroundMusic({
       return;
     }
 
-    const handleFirstInteraction = async () => {
+    const handleFirstInteraction = async (event: Event) => {
+      // The music control handles its own gesture, including touch followed by click.
+      if (event.target && controlRef.current?.contains(event.target as Node)) {
+        return;
+      }
       if (hasAutoPlayedRef.current) {
         return;
       }
@@ -172,7 +177,7 @@ export default function BackgroundMusic({
     ];
 
     events.forEach((eventName) => {
-      document.addEventListener(eventName, handleFirstInteraction, { once: true });
+      document.addEventListener(eventName, handleFirstInteraction);
     });
 
     return () => {
@@ -186,6 +191,9 @@ export default function BackgroundMusic({
     if (!normalizedMusicUrl) {
       return;
     }
+
+    // A manual choice takes precedence over subsequent page interactions.
+    hasAutoPlayedRef.current = true;
 
     if (isPlaying) {
       pauseAudio();
@@ -218,6 +226,7 @@ export default function BackgroundMusic({
       />
 
       <button
+        ref={controlRef}
         type="button"
         onClick={togglePlay}
         className={`${styles.toggleButton} ${isPlaying ? styles.on : styles.off}`}
