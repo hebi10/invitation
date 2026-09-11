@@ -80,33 +80,37 @@ export default function WeddingIntro({ style, slug, groomName, brideName, date, 
             const timeline = gsap.timeline({ onComplete: complete });
             if (style === 'cinema') {
               const photo = element.querySelector<HTMLImageElement>('[data-photo]');
-              const cover = connectToCover ? document.querySelector<HTMLImageElement>('[data-wedding-cover-photo]') : null;
-              const destination = cover?.getBoundingClientRect();
               const stage = element.querySelector<HTMLElement>('[data-style="cinema"]');
-              const origin = stage?.getBoundingClientRect();
-              const canConnect = photo && cover && destination && origin && cover.complete && cover.naturalWidth > 0
-                && destination.width > 0 && destination.height > 0 && destination.top < window.innerHeight && destination.bottom > 0;
+              timeline.eventCallback('onComplete', null);
               timeline
                 .to(select('[data-shutter="top"]'), { yPercent: -100, duration: .85, ease: 'power3.inOut' }, 0)
                 .to(select('[data-shutter="bottom"]'), { yPercent: 100, duration: .85, ease: 'power3.inOut' }, 0)
                 .fromTo(select('[data-copy]'), { y: 12, opacity: 0 }, { y: 0, opacity: 1, duration: .65, stagger: .16, ease: 'power2.out' }, .5)
                 .to(select('[data-copy]'), { y: -8, opacity: 0, duration: .4 }, 2.7);
-              if (canConnect) {
-                // Keep the real image in layout; GSAP restores its visibility on completion/skip.
-                gsap.set(cover, { visibility: 'hidden' });
-                gsap.set(stage, { overflow: 'visible' });
-                gsap.set(photo, { position: 'fixed', left: origin.left, top: origin.top, width: origin.width, height: origin.height, objectPosition: getComputedStyle(cover).objectPosition });
-                timeline
-                  .to(element, { backgroundColor: 'rgba(30, 33, 31, 0)', duration: .8 }, 2.9)
-                  .to(stage, { backgroundColor: 'rgba(38, 39, 35, 0)', duration: .8 }, 2.9)
-                  .to(select('[data-photo-shade]'), { opacity: 0, duration: .8 }, 2.9)
-                  .to(photo, { left: destination.left, top: destination.top, width: destination.width, height: destination.height, duration: 1.1, ease: 'power3.inOut' }, 2.9)
-                  .to(select('[data-skip]'), { opacity: 0, duration: .25 }, 3.65);
-              } else {
-                // Standalone editor previews have no full-size cover to land on.
-                if (photo) timeline.fromTo(photo, { scale: 1.06 }, { scale: 1, duration: 3.2, ease: 'power2.out' }, 0);
-                timeline.to(element, { opacity: 0, duration: .6 }, 3.1);
-              }
+              // The iframe's cover may still be loading at the start. Resolve its
+              // current geometry at the handoff, after the name-reading interval.
+              timeline.call(() => context?.add(() => {
+                const cover = connectToCover ? document.querySelector<HTMLImageElement>('[data-wedding-cover-photo]') : null;
+                const destination = cover?.getBoundingClientRect();
+                const origin = stage?.getBoundingClientRect();
+                const canConnect = photo && cover && destination && origin && cover.complete && cover.naturalWidth > 0
+                  && destination.width > 0 && destination.height > 0;
+                const landing = gsap.timeline({ onComplete: complete });
+                if (canConnect) {
+                  // Keep the real image in layout; GSAP restores its visibility on completion/skip.
+                  gsap.set(cover, { visibility: 'hidden' });
+                  gsap.set(stage, { overflow: 'visible' });
+                  gsap.set(photo, { position: 'fixed', left: origin.left, top: origin.top, width: origin.width, height: origin.height, objectPosition: getComputedStyle(cover).objectPosition });
+                  landing
+                    .to(element, { backgroundColor: 'rgba(30, 33, 31, 0)', duration: .8 }, 0)
+                    .to(stage, { backgroundColor: 'rgba(38, 39, 35, 0)', duration: .8 }, 0)
+                    .to(select('[data-photo-shade]'), { opacity: 0, duration: .8 }, 0)
+                    .to(photo, { left: destination.left, top: destination.top, width: destination.width, height: destination.height, duration: 1.1, ease: 'power3.inOut' }, 0)
+                    .to(select('[data-skip]'), { opacity: 0, duration: .25 }, .75);
+                } else {
+                  landing.to(element, { opacity: 0, duration: .6 });
+                }
+              }), [], 2.9);
             } else {
               timeline.fromTo(select('[data-glow]'), { xPercent: -160, opacity: 0 }, { xPercent: 160, opacity: .8, duration: 2.1, ease: 'power1.inOut' }, 0)
                 .fromTo(select('[data-spark]'), { opacity: 0, scale: .2, y: 12 }, { opacity: .7, scale: 1, y: -12, duration: 1, stagger: .045, yoyo: true, repeat: 1 }, 0);
