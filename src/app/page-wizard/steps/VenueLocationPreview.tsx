@@ -11,6 +11,7 @@ import {
 } from '@/utils/kakaoMaps';
 
 import styles from '../page.module.css';
+import locationStyles from './VenueLocationPreview.module.css';
 
 type VenueLocationPreviewProps = {
   venueName: string;
@@ -125,35 +126,41 @@ export default function VenueLocationPreview({
   }
 
   return (
-    <div className={styles.autoInfoCard}>
-      <div className={styles.autoInfoHeader}>
-        <div className={styles.autoInfoTitleRow}>
+    <section className={locationStyles.preview} aria-label="선택 위치 확인">
+      <div className={locationStyles.header}>
+        <div className={locationStyles.titleRow}>
           <strong className={styles.cardTitle}>선택 위치 확인</strong>
-          <span className={hasCoordinates ? styles.choiceSectionBadge : styles.autoStatusHint}>
-            {hasCoordinates ? '지도 연결 완료' : '주소 찾기 후 지도 확인 가능'}
+          <span className={locationStyles.status} role="status">
+            {mapLoadState === 'ready'
+              ? '지도 확인 가능'
+              : mapLoadState === 'error'
+              ? '지도 연결을 확인해 주세요'
+              : hasCoordinates
+              ? '지도 불러오는 중'
+              : '주소 찾기가 필요합니다'}
           </span>
         </div>
         <p className={styles.fieldHint}>
-          주소 찾기 결과가 아래 지도와 주소 카드에 바로 반영됩니다.
+          지도에 표시된 위치가 실제 장소와 일치하는지 확인해 주세요.
         </p>
       </div>
 
-      <div className={styles.autoInfoGrid}>
-        <div className={`${styles.autoInfoItem} ${styles.autoInfoItemWide}`}>
-          <span className={styles.autoInfoLabel}>{venueLabel}명</span>
-          <span className={styles.autoInfoValue}>{resolvedVenueName}</span>
+      <dl className={locationStyles.details}>
+        <div>
+          <dt>{venueLabel} 이름</dt>
+          <dd>{resolvedVenueName}</dd>
         </div>
-        <div className={`${styles.autoInfoItem} ${styles.autoInfoItemWide}`}>
-          <span className={styles.autoInfoLabel}>선택 주소</span>
-          <span className={styles.autoInfoValue}>{address}</span>
+        <div>
+          <dt>주소</dt>
+          <dd>{address || '주소를 입력해 주세요.'}</dd>
         </div>
-      </div>
+      </dl>
 
       {hasCoordinates ? (
-        <div className={styles.venueMapPreviewFrame}>
-          <div ref={mapRef} className={styles.venueMapPreviewCanvas} />
+        <div className={locationStyles.mapFrame}>
+          <div ref={mapRef} className={locationStyles.mapCanvas} aria-label={`${resolvedVenueName} 위치 지도`} />
           {mapLoadState !== 'ready' ? (
-            <div className={styles.venueMapPreviewOverlay}>
+            <div className={locationStyles.mapOverlay}>
               <span>
                 {mapLoadState === 'error'
                   ? '지도를 불러오지 못했습니다. 아래 지도 앱으로 위치를 확인해 주세요.'
@@ -163,22 +170,22 @@ export default function VenueLocationPreview({
           ) : null}
         </div>
       ) : (
-        <div className={styles.autoInfoEmpty}>
+        <div className={locationStyles.empty}>
           주소 찾기를 누르면 선택된 위치가 여기 지도에 바로 표시됩니다.
         </div>
       )}
 
-      <div className={styles.venueMapPreviewActions}>
+      <div className={locationStyles.actions}>
         <button
           type="button"
-          className={`${styles.secondaryButton} ${styles.venueMapPreviewAction}`}
+          className={styles.secondaryButton}
           onClick={() => window.open(kakaoMapUrl, '_blank', 'noopener,noreferrer')}
         >
           카카오맵 열기
         </button>
         <button
           type="button"
-          className={`${styles.secondaryButton} ${styles.venueMapPreviewAction}`}
+          className={styles.secondaryButton}
           onClick={() =>
             window.open(buildNaverMapSearchUrl(address), '_blank', 'noopener,noreferrer')
           }
@@ -187,7 +194,7 @@ export default function VenueLocationPreview({
         </button>
         <button
           type="button"
-          className={`${styles.secondaryButton} ${styles.venueMapPreviewAction}`}
+          className={styles.secondaryButton}
           onClick={() =>
             window.open(buildGoogleMapSearchUrl(address), '_blank', 'noopener,noreferrer')
           }
@@ -195,6 +202,6 @@ export default function VenueLocationPreview({
           구글 지도
         </button>
       </div>
-    </div>
+    </section>
   );
 }

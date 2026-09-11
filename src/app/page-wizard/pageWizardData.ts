@@ -522,6 +522,7 @@ export function resolveWizardStepConfig(eventType: unknown) {
 }
 
 export function getWizardSteps(options: {
+  setupOnly?: boolean;
   eventType?: EventTypeKey;
   includeSetupSteps: boolean;
   includeEventTypeStep?: boolean;
@@ -532,6 +533,7 @@ export function getWizardSteps(options: {
     ? [...stepConfig.commonSetupSteps, ...stepConfig.eventSpecificSteps]
     : [...stepConfig.editSteps];
   const stepKeys = baseKeys.filter((stepKey) => {
+    if (options.setupOnly && options.includeSetupSteps && !stepConfig.commonSetupSteps.includes(stepKey)) return false;
     if (options.includeEventTypeStep === false && stepKey === 'eventType') {
       return false;
     }

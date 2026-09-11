@@ -45,7 +45,7 @@ function getWeddingThemeKeys() {
 export const PAGE_WIZARD_EVENT_CONFIGS = {
   wedding: {
     eventType: 'wedding',
-    createHref: '/page-wizard',
+    createHref: '/page-wizard/edit',
     defaultTheme: DEFAULT_INVITATION_THEME,
     selectableThemeKeys: getWeddingThemeKeys(),
   },
@@ -113,5 +113,6 @@ export function isThemeSelectableForEventType(
 }
 
 export function isDedicatedPageWizardEventType(eventType: EventTypeKey) {
-  return getPageWizardCreateHrefForEventType(eventType) !== '/page-wizard';
+  const href = getPageWizardCreateHrefForEventType(eventType);
+  return href !== '/page-wizard' && href !== '/page-wizard/edit';
 }

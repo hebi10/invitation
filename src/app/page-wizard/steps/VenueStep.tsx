@@ -1,5 +1,6 @@
 import VenueLocationPreview from './VenueLocationPreview';
 import styles from '../page.module.css';
+import locationStyles from './VenueLocationPreview.module.css';
 import { renderFieldMeta, type VenueStepProps } from '../pageWizardShared';
 
 export default function VenueStep({
@@ -24,7 +25,8 @@ export default function VenueStep({
   const venueLabel = isGeneralEvent ? '행사 장소' : isFirstBirthday ? '돌잔치 장소' : '예식장';
 
   return (
-    <div className={styles.fieldGrid}>
+    <section className={`${styles.fieldGrid} ${locationStyles.venueSection}`} aria-label="장소 안내 입력">
+      <h3 className={locationStyles.sectionTitle}>장소 안내</h3>
       <label className={styles.field}>
         {renderFieldMeta(`${venueLabel} 이름`, 'required')}
         <input
@@ -149,6 +151,6 @@ export default function VenueStep({
           }
         />
       </label>
-    </div>
+    </section>
   );
 }

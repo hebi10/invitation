@@ -5,11 +5,10 @@ import { useState } from 'react';
 import { assignAdminCustomerEventOwnership, clearAdminCustomerEventOwnership, getAdminCustomerAccountsSnapshot } from '@/services/adminCustomerService';
 import styles from './page.module.css';
 
-export default function WizardCustomerConnection({ slug, disabled, experience, onCreate, onBusyChange }: {
+export default function WizardCustomerConnection({ slug, disabled, experience, onBusyChange }: {
   slug: string | null;
   disabled: boolean;
   experience: boolean;
-  onCreate: () => void;
   onBusyChange: (busy: boolean) => void;
 }) {
   const queryClient = useQueryClient();
@@ -65,7 +64,6 @@ export default function WizardCustomerConnection({ slug, disabled, experience, o
     <p className={styles.sectionText}>연결한 고객은 내 초대장에서 내용과 사진을 편집할 수 있습니다.</p>
     {!slug ? <>
       <p className={styles.fieldHint}>위의 이름과 주소를 입력해 초대장을 먼저 생성해 주세요.</p>
-      <button type="button" className={styles.primaryButton} disabled={disabled} onClick={onCreate}>초대장 생성</button>
     </> : experience ? <p className={styles.fieldHint}>체험에서는 실제 고객 계정을 연결하지 않습니다.</p>
       : accounts.isPending ? <p role="status">고객 목록을 불러오고 있습니다.</p>
       : linked ? <>

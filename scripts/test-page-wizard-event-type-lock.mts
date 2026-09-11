@@ -24,7 +24,7 @@ const lockedCreateRoutes: Array<{
   href: string;
   eventType: EventTypeKey;
 }> = [
-  { category: 'invitation', href: '/page-wizard', eventType: 'wedding' },
+  { category: 'invitation', href: '/page-wizard/edit', eventType: 'wedding' },
   { category: 'birthday', href: '/birthday-wizard', eventType: 'birthday' },
   {
     category: 'first-birthday',
@@ -64,14 +64,14 @@ for (const { category, href, eventType } of lockedCreateRoutes) {
   );
 
   const routeFile =
-    href === '/page-wizard'
-      ? path.join(process.cwd(), 'src/app/page-wizard/page.tsx')
+    href === '/page-wizard/edit'
+      ? path.join(process.cwd(), 'src/app/page-wizard/edit/page.tsx')
       : path.join(process.cwd(), 'src/app', href, 'page.tsx');
 
   assert.equal(fs.existsSync(routeFile), true, `${href} route file should exist`);
 
   const routeDirectory = path.dirname(routeFile);
-  const layoutFile = path.join(routeDirectory, 'layout.tsx');
+  const layoutFile = path.join(eventType === 'wedding' ? path.dirname(routeDirectory) : routeDirectory, 'layout.tsx');
   assert.equal(
     fs.existsSync(layoutFile),
     true,

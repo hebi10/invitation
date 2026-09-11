@@ -138,6 +138,7 @@ const IS_DEV_NOTICE_MODE = process.env.NODE_ENV !== 'production';
 
 interface PageWizardClientProps {
   initialSlug: string | null;
+  setupOnly?: boolean;
   forcedEventType?: EventTypeKey;
   gateway?: WizardPersistenceGateway;
   routes?: AppRoutes;
@@ -160,6 +161,7 @@ type ExistingWizardLoadState =
 
 export default function PageWizardClient({
   initialSlug,
+  setupOnly = !initialSlug,
   forcedEventType,
   gateway: gatewayOverride,
   routes: routesOverride,
@@ -227,7 +229,7 @@ export default function PageWizardClient({
   const [requiresOwnershipClaim, setRequiresOwnershipClaim] = useState(false);
   const [accessErrorMessage, setAccessErrorMessage] = useState<string | null>(null);
   const [activeStepKey, setActiveStepKey] = useState<WizardStepKey>(
-    initialSlug ? 'basic' : isEventTypeFixed ? 'theme' : 'eventType'
+    setupOnly ? (isEventTypeFixed ? 'theme' : 'eventType') : 'basic'
   );
   const {
     openChoicePanel,
@@ -436,7 +438,8 @@ export default function PageWizardClient({
     formState,
     groomEnglishName,
     includeEventTypeStep: !isEventTypeFixed,
-    canManageSetup: isAdminLoggedIn,
+    canManageSetup: isAdminLoggedIn && setupOnly,
+    setupOnly,
     initialSlug,
     persistedSlug,
     slugInput,
@@ -769,7 +772,7 @@ export default function PageWizardClient({
       return;
     }
 
-    if (!isAdminLoggedIn && (!initialSlug || !isLoggedIn)) {
+    if (!isAdminLoggedIn && (setupOnly || !initialSlug || !isLoggedIn)) {
       setFormState(null);
       setRequiresOwnershipClaim(false);
       setAccessErrorMessage(null);
@@ -886,6 +889,7 @@ export default function PageWizardClient({
     isAdminLoading,
     isAdminLoggedIn,
     isLoggedIn,
+    setupOnly,
     isOwnedEventsCheckPendingForInitialSlug,
     ownedEventFallbackEditableConfig,
     queryClient,
@@ -1463,7 +1467,7 @@ export default function PageWizardClient({
       return;
     }
     const slug = await persistDraft({ successMessage: '초대장을 생성했습니다. 고객을 연결해 주세요.' });
-    if (slug) window.history.replaceState(null, '', routes.wizardEdit(slug));
+    if (slug && !experience) window.history.replaceState(null, '', `/page-wizard/edit?slug=${encodeURIComponent(slug)}`);
   };
 
   const renderStepContent = (stepKey: WizardStepKey) => {
@@ -1754,24 +1758,24 @@ export default function PageWizardClient({
     );
   }
 
-  if (!isAdminLoggedIn && (!initialSlug || !isLoggedIn)) {
+  if (!isAdminLoggedIn && (setupOnly || !initialSlug || !isLoggedIn)) {
     return (
       <main className={pageClassName} data-operation-ui>
         <div className={`${styles.shell} ${styles.gateShell}`}>
           <section className={`${styles.centerCard} ${styles.gateCard}`}>
             <FirebaseAuthLoginCard
               title={
-                initialSlug
+                initialSlug && !setupOnly
                   ? wizardPresentation.editLoginTitle
                   : wizardPresentation.createLoginTitle
               }
               description={
-                initialSlug
+                initialSlug && !setupOnly
                   ? wizardPresentation.editLoginDescription
                   : wizardPresentation.createLoginDescription
               }
               helperText={
-                initialSlug
+                initialSlug && !setupOnly
                   ? wizardPresentation.editLoginHelper
                   : wizardPresentation.createLoginHelper
               }
@@ -1890,12 +1894,12 @@ export default function PageWizardClient({
   return (
     <PageWizardWorkspace
       canManageSetup={isAdminLoggedIn}
-      setupContent={isAdminLoggedIn ? <WizardCustomerConnection slug={resolvedPersistedSlug} disabled={isSaving}
-        experience={experience} onBusyChange={setIsConnectingCustomer}
-        onCreate={() => void handleCreateInSetup()} /> : undefined}
+      setupOnly={setupOnly}
+      setupContent={isAdminLoggedIn && setupOnly ? <WizardCustomerConnection slug={resolvedPersistedSlug} disabled={isSaving}
+        experience={experience} onBusyChange={setIsConnectingCustomer} /> : undefined}
         fullPreview={eventType === 'wedding' ? <WeddingWizardPreview formState={formState} theme={defaultTheme} /> : undefined}
-      title={formState.displayName || [formState.groomName, formState.brideName].filter(Boolean).join(' · ') || eventTypeMeta.label}
-      subtitle={resolvedPersistedSlug ? `/${resolvedPersistedSlug}` : '새 페이지 만들기'}
+      title={`${eventTypeMeta.label} ${setupOnly ? '생성 및 고객 연결' : '내용 입력'}`}
+      subtitle={resolvedPersistedSlug ? `${formState.displayName || eventTypeMeta.label} · /${resolvedPersistedSlug}` : '관리자 전용 · 초대장을 만든 뒤 고객에게 연결해 주세요.'}
       sections={wizardSections}
       activeSection={activeSection}
       activeStepKey={activeStep.key}
@@ -1945,9 +1949,16 @@ export default function PageWizardClient({
       onOpenPreview={setPreviewStepKey}
       onClosePreview={() => setPreviewStepKey(null)}
       onPrevious={handleMovePrevious}
-      onNext={() => void handleMoveNext()}
+      onNext={() => {
+        if (!setupOnly) { void handleMoveNext(); return; }
+        if (!resolvedPersistedSlug) { void handleCreateInSetup(); return; }
+        void (async () => {
+          if (hasUnsavedChanges && !await persistDraft({ silent: true })) return;
+          router.push(routes.wizardEdit(resolvedPersistedSlug));
+        })();
+      }}
       onFinalConfirm={() => void handleFinalConfirm()}
-      onSave={() => void persistDraft({ successMessage: '내용을 저장했습니다. 공개 상태는 유지됩니다.' })}
+      onSave={() => setupOnly && !resolvedPersistedSlug ? void handleCreateInSetup() : void persistDraft({ successMessage: '내용을 저장했습니다. 공개 상태는 유지됩니다.' })}
     />
   );
 }

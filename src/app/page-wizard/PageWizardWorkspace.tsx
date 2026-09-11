@@ -29,6 +29,7 @@ import styles from './PageWizardWorkspace.module.css';
 import { useDialogLayer } from '@/hooks/useDialogLayer';
 
 type PageWizardWorkspaceProps = {
+  setupOnly?: boolean;
   canManageSetup?: boolean;
   setupContent?: ReactNode;
   title: string;
@@ -70,6 +71,7 @@ FORM: Operate 모드의 2열 데스크톱·단일 열 모바일 편집 워크스
 -->`;
 
 export default function PageWizardWorkspace({
+  setupOnly = false,
   canManageSetup = false,
   setupContent,
   title,
@@ -115,7 +117,7 @@ export default function PageWizardWorkspace({
   const activeSectionIndex = sections.findIndex(
     (section) => section.id === activeSection.id
   );
-  const isFinalSection = activeSectionIndex === sections.length - 1;
+  const isFinalSection = activeSection.id === 'review';
   const activePreviewStep = useMemo(
     () => activeSection.steps.find((step) => Boolean(step.previewSection)) ?? null,
     [activeSection.steps]
@@ -211,7 +213,7 @@ export default function PageWizardWorkspace({
               </time>
             ) : null}
             <button type="button" className={styles.primaryAction} onClick={() => attempt(onSave, true)} disabled={isSaving}>
-              {isSaving ? '저장 중' : saveStatus === 'error' ? '저장 다시 시도' : '내용 저장'}
+              {isSaving ? '저장 중' : saveStatus === 'error' ? '저장 다시 시도' : setupOnly ? (hasPersistedData ? '설정 저장' : '초대장 생성') : '내용 저장'}
             </button>
             {fullPreview || activePreviewStep ? (
               <button
@@ -226,7 +228,7 @@ export default function PageWizardWorkspace({
         </div>
       </header>
 
-      <div className={styles.mobileProgress}>
+      {!setupOnly ? <div className={styles.mobileProgress}>
         <div>
           <span>{activeSectionIndex + 1} / {sections.length}</span>
         </div>
@@ -238,9 +240,9 @@ export default function PageWizardWorkspace({
         >
           전체 작업
         </button>
-      </div>
+      </div> : null}
 
-      <div className={`${styles.layout} ${fullPreview ? styles.layoutWithPreview : ''}`}>
+      <div className={`${styles.layout} ${fullPreview ? styles.layoutWithPreview : ''} ${setupOnly ? styles.setupLayout : ''}`}>
         <aside className={styles.desktopNav}>
           <nav className={styles.sectionNav} aria-label="작업 영역">
             <p className={styles.navHeading}>작업 영역</p>
@@ -358,14 +360,14 @@ export default function PageWizardWorkspace({
             <p>{persistedPublished ? '내용을 저장하면 공개 중인 청첩장에도 바로 반영됩니다.' : '저장한 내용은 최종 공개 전까지 초안으로 유지됩니다.'}</p>
           </div>
           <div className={styles.actionButtons}>
-            <button
+            {!setupOnly ? <button
               type="button"
               className={styles.secondaryAction}
               onClick={onPrevious}
               disabled={activeSectionIndex === 0 || isSaving}
             >
               이전
-            </button>
+            </button> : null}
             {isFinalSection ? (
               <button
                 type="button"
@@ -382,7 +384,7 @@ export default function PageWizardWorkspace({
                 onClick={() => attempt(onNext)}
                 disabled={isSaving}
               >
-                {isSaving ? '저장 중' : '저장 후 다음'}
+                {isSaving ? '저장 중' : setupOnly ? (hasPersistedData ? '내용 입력으로' : '초대장 생성') : '저장 후 다음'}
               </button>
             )}
           </div>

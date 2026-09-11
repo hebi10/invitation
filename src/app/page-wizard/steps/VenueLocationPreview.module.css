@@ -1,0 +1,125 @@
+.venueSection {
+  margin-top: 32px;
+}
+
+.sectionTitle {
+  margin: 0;
+  color: var(--operation-color-text);
+  font-size: 1rem;
+  font-weight: 500;
+  line-height: 1.5;
+}
+
+.preview {
+  display: grid;
+  gap: 16px;
+  min-width: 0;
+  padding: 20px;
+  border: 1px solid var(--operation-color-border, #d8d8d3);
+  background: var(--operation-color-surface, #fff);
+}
+
+.header {
+  display: grid;
+  gap: 6px;
+}
+
+.titleRow {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+}
+
+.status {
+  color: var(--operation-color-text-secondary);
+  font-size: 0.78rem;
+  line-height: 1.6;
+}
+
+.details {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+}
+
+.details > div {
+  display: grid;
+  grid-template-columns: 90px minmax(0, 1fr);
+  gap: 12px;
+  line-height: 1.7;
+}
+
+.details dt {
+  color: var(--operation-color-text-secondary);
+  font-size: 0.82rem;
+}
+
+.details dd {
+  margin: 0;
+  color: var(--operation-color-text);
+  font-size: 0.9rem;
+  overflow-wrap: anywhere;
+}
+
+.mapFrame {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid var(--operation-color-border, #d8d8d3);
+  background: #f4f4f1;
+}
+
+.mapCanvas {
+  width: 100%;
+  height: 260px;
+}
+
+.mapOverlay {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: #f4f4f1;
+  color: var(--operation-color-text-secondary);
+  font-size: 0.86rem;
+  line-height: 1.7;
+  text-align: center;
+}
+
+.empty {
+  padding: 20px;
+  background: #f4f4f1;
+  color: var(--operation-color-text-secondary);
+  font-size: 0.86rem;
+  line-height: 1.7;
+}
+
+.actions {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.actions > button {
+  min-width: 0;
+  min-height: 44px;
+  padding: 10px 8px;
+  font-size: 0.82rem;
+}
+
+@media (max-width: 600px) {
+  .preview {
+    padding: 16px;
+  }
+
+  .details > div {
+    grid-template-columns: 1fr;
+    gap: 2px;
+  }
+
+  .mapCanvas {
+    height: 220px;
+  }
+}

@@ -311,3 +311,8 @@ assert.doesNotMatch(persistenceSource, /페이지를 공개했습니다/,
   '일반 내용 저장에 공개 변경 성공 메시지를 표시하면 안 됩니다.');
 
 console.log('page wizard workspace mapping checks passed');
+
+const setupOnlySteps = getWizardSteps({ eventType: 'wedding', includeSetupSteps: true, setupOnly: true, includeEventTypeStep: false });
+assert.deepEqual(setupOnlySteps.map(step => step.key), ['theme', 'slug'], '관리자 생성 화면에는 시작 설정만 표시합니다.');
+assert.equal(buildWizardSections(setupOnlySteps, 'wedding').length, 1);
+assert.equal(getWizardSteps({ eventType: 'wedding', includeSetupSteps: false }).some(step => ['theme', 'slug', 'eventType'].includes(step.key)), false, '주소별 내용 편집에는 시작 설정이 없습니다.');

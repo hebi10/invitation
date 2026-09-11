@@ -5,6 +5,7 @@ export const INVITATION_PAGE_RESERVED_SLUGS = [
   'api',
   'billing',
   'create',
+  'edit',
   'login',
   'memory',
   'page-editor',
