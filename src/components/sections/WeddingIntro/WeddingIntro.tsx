@@ -155,7 +155,7 @@ export default function WeddingIntro({ style, slug, groomName, brideName, date, 
             </button>
           </div>
           <p className={styles.envelopeHint}>{opening ? '초대장을 펼치고 있어요' : '금빛 봉인을 눌러 열어 주세요'}</p>
-        </div> : <div className={styles.copy}>
+        </div> : <div className={styles.copy} tabIndex={-1} data-dialog-initial-focus>
           <p className={styles.eyebrow} data-copy>OUR WEDDING DAY</p>
           <h1 className={styles.names} data-copy>{names}</h1>
           {style !== 'cinema' ? <p className={styles.message} data-copy>우리의 가장 아름다운 시작에<br />함께해 주세요</p> : null}
