@@ -134,8 +134,8 @@ for (const { key: theme } of WEDDING_THEME_CLOSING_DEFINITIONS) {
     const galleryBeforeInvitation = html.indexOf('data-wedding-section="gallery"') < html.indexOf('data-wedding-section="invitation"');
     assert.equal(galleryBeforeInvitation, false, `${theme} should introduce the couple before the gallery`);
     const calendarBeforeSchedule = html.indexOf('data-public-invitation-feature=') < html.indexOf('data-wedding-section="schedule"');
-    assert.equal(calendarBeforeSchedule, theme === 'simple' || theme === 'gyeol' || theme === 'classic-r',
-      'Simple keeps its optional calendar inside the ceremony section before directions');
+    assert.equal(calendarBeforeSchedule, true,
+      'Every design keeps its optional calendar inside the ceremony section before directions');
     const heading = html.match(/<h1[\s\S]*?<\/h1>/)?.[0];
     const cover = html.match(/<section[^>]*aria-labelledby="wedding-cover-title"[\s\S]*?<\/section>/)?.[0];
     assert.ok(heading && cover, `${theme} must render an accessible cover`);

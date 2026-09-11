@@ -26,8 +26,12 @@ export default function WeddingGallerySwiper({ images, previewImages, variant, r
   const [failedImages, setFailedImages] = useState<Set<string>>(new Set());
   const count = images.length;
   const activeIndex = Math.min(index, Math.max(0, count - 1));
-  const strip = variant === 'classic-r';
-  const effect = reducedMotion ? 'slide' : variant === 'romantic' ? 'fade' : strip || variant === 'simple' ? 'slide' : 'creative';
+  const strip = variant === 'emotional';
+  const album = variant === 'romantic' || variant === 'gyeol';
+  const companionIndexes = album
+    ? Array.from({ length: Math.min(2, Math.max(0, count - 1)) }, (_, offset) => (activeIndex + offset + 1) % count)
+    : [];
+  const effect = reducedMotion ? 'slide' : variant === 'romantic' ? 'fade' : variant === 'gyeol' ? 'creative' : 'slide';
   const move = (direction: -1 | 1) => {
     const swiper = swiperRef.current;
     if (!swiper || swiper.destroyed) return;
@@ -43,25 +47,22 @@ export default function WeddingGallerySwiper({ images, previewImages, variant, r
       event.currentTarget.querySelector<HTMLElement>('.swiper')?.focus();
     }}
   >
+    <div className={styles.composition} data-has-companions={companionIndexes.length > 0 ? 'true' : undefined}>
     <Swiper
       key={`${variant}-${reducedMotion}-${images.join('|')}`}
       className={styles.track}
       modules={[A11y, EffectCreative, EffectFade]}
       effect={effect}
       speed={reducedMotion ? 0 : variant === 'romantic' ? 750 : 600}
-      slidesPerView={count > 1 && strip ? 1.35 : 1}
+      slidesPerView={count > 1 && strip ? 1.4 : 1}
       centeredSlides={strip}
-      spaceBetween={strip ? 16 : 0}
+      spaceBetween={strip ? 10 : 0}
       grabCursor={count > 1}
       allowTouchMove={count > 1}
       watchOverflow
       watchSlidesProgress
       fadeEffect={{ crossFade: true }}
-      creativeEffect={variant === 'emotional' ? {
-        perspective: false,
-        prev: { translate: ['-12%', 0, 0], rotate: [0, 0, -4], scale: .9, opacity: 0 },
-        next: { translate: ['100%', 0, 0], rotate: [0, 0, 4], scale: .96, opacity: 1 },
-      } : {
+      creativeEffect={{
         perspective: false,
         prev: { translate: [0, '-8%', 0], opacity: 0, scale: .98 },
         next: { translate: [0, '12%', 0], opacity: 0, scale: 1 },
@@ -94,6 +95,24 @@ export default function WeddingGallerySwiper({ images, previewImages, variant, r
         </SwiperSlide>;
       })}
     </Swiper>
+    {companionIndexes.length > 0 ? <div className={styles.companions} aria-label="다른 사진 선택">
+      {companionIndexes.map((imageIndex, slot) => {
+        const src = previewImages?.[imageIndex] || images[imageIndex];
+        return <button key={slot} type="button" className={styles.companion}
+          aria-label={`${altPrefix} ${imageIndex + 1}번째 사진 선택`}
+          onClick={() => {
+            const swiper = swiperRef.current;
+            if (swiper && !swiper.destroyed) swiper.slideTo(imageIndex);
+          }}
+        >
+          {failedImages.has(src) ? <span className={styles.error}>사진 선택</span> : <img
+            className={styles.photo} src={src} alt="" loading="lazy" decoding="async"
+            onError={() => setFailedImages((current) => new Set([...current, src]))}
+          />}
+        </button>;
+      })}
+    </div> : null}
+    </div>
     {count > 1 ? <>
       <div className={styles.controls}>
         <button type="button" disabled={activeIndex === 0} onClick={() => move(-1)}>이전 사진</button>

@@ -21,13 +21,13 @@ assert(isInvitationThemeKey(themeKey), 'classic-r must be registered as an invit
 
 const definition = getInvitationThemeDefinition(themeKey);
 assert(definition.pathSuffix === '/classic-r', 'classic-r must use /classic-r route suffix.');
-assert(definition.label === '에디토리얼형', 'classic-r must expose the Letterpress display label.');
+assert(definition.label === '모던형', 'classic-r must expose the Letterpress display label.');
 assert(
-  definition.adminLabel === '에디토리얼형',
+  definition.adminLabel === '모던형',
   'classic-r admin label must be Korean to match the admin selector.'
 );
 assert(
-  definition.variantLabel === '에디토리얼형',
+  definition.variantLabel === '모던형',
   'classic-r variant label must be Korean to match preview labels.'
 );
 assert(

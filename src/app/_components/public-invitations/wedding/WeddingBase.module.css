@@ -237,33 +237,6 @@ details[open] > :is(.disclosureSummary, .accountSummary, .formSummary)::after { 
   unicode-range: U+0000-00FF;
 }
 
-/* Shared behavior; each composition has its own reading rhythm. */
-.page[data-design='emotional'] { --paper: #fcfaf6; --paper-soft: #f3f0e9; font-family: 'Wedding Myeongjo', serif; }
-.page[data-design='emotional'] .invitationSection { padding: 48px 42px 0; text-align: left; }
-.page[data-design='emotional'] .invitationCopy { max-width: none; line-height: 2.35; }
-.page[data-design='emotional'] .invitationCopy .invitationAuthor { text-align: right; }
-.page[data-design='emotional'] .heading { text-align: left; }
-.page[data-design='emotional'] .carousel { max-width: 260px; }
-.page[data-design='emotional'] .dateSection { background: transparent; }
-.page[data-design='romantic'] .container { padding-inline: 0; }
-.page[data-design='romantic'] .imageGrid { grid-template-columns: 1fr; gap: 24px; }
-.page[data-design='romantic'] .imageWrapper { aspect-ratio: auto; }
-.page[data-design='romantic'] .imageContainer { aspect-ratio: 3 / 4; }
-.page[data-design='romantic'] .imageItem { object-fit: contain; }
-.page[data-design='romantic'] .container:has(.accountsContainer),
-.page[data-design='romantic'] .container:has(.commentsList) { padding-inline: 30px; }
-.page[data-design='classic-r'] .heading, .page[data-design='classic-r'] .title { text-align: left; font-size: 22px; letter-spacing: -.02em; }
-.page[data-design='classic-r'] .invitationSection { padding-top: 64px; text-align: left; }
-.page[data-design='classic-r'] .invitationCopy { margin: 0 0 0 auto; max-width: 290px; }
-.page[data-design='classic-r'] .imageGrid { align-items: start; gap: 28px 14px; }
-.page[data-design='classic-r'] .imageWrapper:nth-child(2n) { margin-top: 54px; }
-.page[data-design='classic-r'] .imageWrapper:nth-child(3n) { grid-column: 1 / -1; width: 84%; }
-.page[data-design='classic-r'] .dateSection { background: transparent; }
-.page[data-design='gyeol'] { --paper: #faf8f3; --paper-soft: #f2eee5; --accent: #574638; font-family: 'Wedding Myeongjo', serif; }
-.page[data-design='gyeol'] .heading { font-family: 'Wedding Myeongjo', serif; letter-spacing: .12em; }
-.page[data-design='gyeol'] .invitationCopy { max-width: 280px; line-height: 2.5; }
-.page[data-design='gyeol'] .carousel { max-width: 280px; }
-.page[data-design='gyeol'] .dateSection { background: transparent; }
 @font-face { font-family: 'Wedding Myeongjo'; font-style: normal; font-weight: 400 700; font-display: swap; src: url('/fonts/wedding/NanumMyeongjo-Korean.woff2') format('woff2'); unicode-range: U+1100-11FF, U+2000-206F, U+3000-318F, U+3200-33FF, U+AC00-D7AF, U+FF00-FFEF; }
 @font-face { font-family: 'Wedding Myeongjo'; font-style: normal; font-weight: 400 700; font-display: swap; src: url('/fonts/wedding/NanumMyeongjo-Latin.woff2') format('woff2'); unicode-range: U+0000-00FF; }
 
@@ -282,19 +255,7 @@ details[open] > :is(.disclosureSummary, .accountSummary, .formSummary)::after { 
 .commentItem { padding: 10px 0; background: transparent; }
 .commentDate { font-size: 12px; }
 .commentMessage { margin-top: 8px; line-height: 1.9; }
-.page[data-design='romantic'] .container { padding-inline: 30px; }
-.page[data-design='romantic'] [data-wedding-section='gallery'] .container { padding-inline: 0; }
-.page[data-design='romantic'] .invitationCopy { font-family: 'Wedding Myeongjo', serif; line-height: 2.3; }
-.page[data-design='emotional'] .invitationSection { padding-top: 44px; }
-.page[data-design='emotional'] .title { text-align: left; }
-.page[data-design='classic-r'] .invitationCopy { max-width: 310px; }
-.page[data-design='gyeol'] .invitationCopy { line-height: 2.35; }
-@media (max-width: 359px) {
-  .page[data-design='emotional'] .invitationSection { padding-inline: 26px; }
-  .quickLinks { gap: 16px; }
-  .contactList li { flex-wrap: wrap; }
-  .contactActions { margin-left: auto; }
-}
+@media (max-width: 359px) { .contactList li { flex-wrap: wrap; } .contactActions { margin-left: auto; } }
 
 /* Simple Wedding: shared content and interactions, with one measured paper layout. */
 .page[data-design='simple'] {
@@ -305,47 +266,98 @@ details[open] > :is(.disclosureSummary, .accountSummary, .formSummary)::after { 
   font-size: 15px; line-height: 1.8;
 }
 :global(body):has(.page[data-design='simple']) { background-color: #faf9f6; }
-.page[data-design='simple'] ::selection { background: #e6e2dc; }
-.page[data-design='simple'] :is(.invitationSection, .scheduleSection, .container, .ceremonySection, .transportSection) {
+.page ::selection { background: #e6e2dc; }
+.page :is(.invitationSection, .scheduleSection, .container, .ceremonySection, .transportSection) {
   width: calc(100% - 48px); margin: 88px auto 0; padding: 0; text-align: center;
 }
-.page[data-design='simple'] :is(.heading, .title) {
+.page :is(.heading, .title) {
   display: flex; align-items: center; gap: 18px; margin: 0 0 28px;
   font-family: 'Wedding Myeongjo', serif; font-size: 20px; font-weight: 500;
   letter-spacing: .02em; line-height: 1.6; text-align: left;
 }
-.page[data-design='simple'] :is(.heading, .title)::after { content: ''; height: 1px; flex: 1; background: var(--line); }
-.page[data-design='simple'] .quickLinks { width: calc(100% - 48px); margin: 22px auto 0; padding: 0; gap: 12px; }
-.page[data-design='simple'] .quickLinks a { flex: 1; min-height: 48px; padding: 10px 8px; justify-content: center; border: 1px solid var(--control-line); color: var(--ink); font-size: 14px; text-decoration: none; }
-.page[data-design='simple'] .invitationCopy { max-width: 300px; font-size: 15px; line-height: 1.9; }
-.page[data-design='simple'] .invitationAuthor { margin-top: 28px; font-size: 15px; color: var(--ink); }
-.page[data-design='simple'] .contactSection { width: calc(100% - 48px); margin-top: 28px; }
-.page[data-design='simple'] :is(.disclosureSummary, .accountSummary, .formSummary) { min-height: 48px; background: transparent; border-color: var(--control-line); font-size: 14px; font-weight: 400; }
-.page[data-design='simple'] .contactIdentity span { font-size: 13px; }
-.page[data-design='simple'] .contactIdentity strong { font-size: 15px; }
-.page[data-design='simple'] .contactList { margin-top: 24px; }
-.page[data-design='simple'] .contactList li { padding: 12px 0; }
-.page[data-design='simple'] .contactActions a { min-height: 48px; font-size: 14px; }
-.page[data-design='simple'] .carousel { max-width: 100%; }
-.page[data-design='simple'] .ceremonyContent { display: grid; gap: 4px; margin: 0 0 24px; }
-.page[data-design='simple'] .ceremonyContent p { margin: 0; }
-.page[data-design='simple'] .ceremonyContent .venueName { margin-top: 12px; font-size: 18px; font-family: 'Wedding Myeongjo', serif; }
-.page[data-design='simple'] .calendarDisclosure { margin-top: 12px; }
-.page[data-design='simple'] .dateSection { width: 100%; margin: 24px auto 0; padding: 20px 8px; }
-.page[data-design='simple'] .dateSection .heading { display: none; }
-.page[data-design='simple'] .scheduleContent { font-size: 15px; gap: 8px; margin-bottom: 24px; }
-.page[data-design='simple'] .scheduleContent .venueName { font-size: 20px; font-family: 'Wedding Myeongjo', serif; }
-.page[data-design='simple'] .address { font-size: 15px; }
-.page[data-design='simple'] .travelNote { font-size: 14px; line-height: 1.8; }
-.page[data-design='simple'] .guideDisclosure { margin-top: 0; }
-.page[data-design='simple'] .storedSection { font-size: 15px; line-height: 1.8; }
-.page[data-design='simple'] .storedSection > h2 { display: none; }
-.page[data-design='simple'] .storedSection h3 { font-size: 16px; }
-.page[data-design='simple'] :is(.message, .subtitle) { margin: 0 auto 28px; font-size: 15px; line-height: 1.8; }
-.page[data-design='simple'] .accountCard { flex-wrap: wrap; padding: 20px 0; }
-.page[data-design='simple'] :is(.accountRow, .accountHolder) { font-size: 15px; }
-.page[data-design='simple'] :is(.copyButton, .moreButton, .submitButton, .refreshButton, .pageButton, .pageNumber) { min-height: 48px; font-size: 14px; }
-.page[data-design='simple'] .copyButton { background: transparent; border-color: var(--control-line); }
-.page[data-design='simple'] .formSummary { color: var(--ink); }
-.page[data-design='simple'] :is(.label, .commentsCount, .commentsCount strong, .commentDate) { font-size: 13px; }
-.page[data-design='simple'] .commentMessage { font-size: 15px; }
+.page :is(.heading, .title)::after { content: ''; height: 1px; flex: 1; background: var(--line); }
+.page .quickLinks { width: calc(100% - 48px); margin: 22px auto 0; padding: 0; gap: 12px; }
+.page .quickLinks a { flex: 1; min-height: 48px; padding: 10px 8px; justify-content: center; border: 1px solid var(--control-line); color: var(--ink); font-size: 14px; text-decoration: none; }
+.page .invitationCopy { max-width: 300px; font-size: 15px; line-height: 1.9; }
+.page .invitationAuthor { margin-top: 28px; font-size: 15px; color: var(--ink); }
+.page .contactSection { width: calc(100% - 48px); margin-top: 28px; }
+.page :is(.disclosureSummary, .accountSummary, .formSummary) { min-height: 48px; background: transparent; border-color: var(--control-line); font-size: 14px; font-weight: 400; }
+.page .contactIdentity span { font-size: 13px; }
+.page .contactIdentity strong { font-size: 15px; }
+.page .contactList { margin-top: 24px; }
+.page .contactList li { padding: 12px 0; }
+.page .contactActions a { min-height: 48px; font-size: 14px; }
+.page .carousel { max-width: 100%; }
+.page .ceremonyContent { display: grid; gap: 4px; margin: 0 0 24px; }
+.page .ceremonyContent p { margin: 0; }
+.page .ceremonyContent .venueName { margin-top: 12px; font-size: 18px; font-family: 'Wedding Myeongjo', serif; }
+.page .calendarDisclosure { margin-top: 12px; }
+.page .dateSection { width: 100%; margin: 24px auto 0; padding: 20px 8px; }
+.page .dateSection .heading { display: none; }
+.page .scheduleContent { font-size: 15px; gap: 8px; margin-bottom: 24px; }
+.page .scheduleContent .venueName { font-size: 20px; font-family: 'Wedding Myeongjo', serif; }
+.page .address { font-size: 15px; }
+.page .travelNote { font-size: 14px; line-height: 1.8; }
+.page .guideDisclosure { margin-top: 0; }
+.page .storedSection { font-size: 15px; line-height: 1.8; }
+.page .storedSection > h2 { display: none; }
+.page .storedSection h3 { font-size: 16px; }
+.page :is(.message, .subtitle) { margin: 0 auto 28px; font-size: 15px; line-height: 1.8; }
+.page .accountCard { flex-wrap: wrap; padding: 20px 0; }
+.page :is(.accountRow, .accountHolder) { font-size: 15px; }
+.page :is(.copyButton, .moreButton, .submitButton, .refreshButton, .pageButton, .pageNumber) { min-height: 48px; font-size: 14px; }
+.page .copyButton { background: transparent; border-color: var(--control-line); }
+.page .formSummary { color: var(--ink); }
+.page :is(.label, .commentsCount, .commentsCount strong, .commentDate) { font-size: 13px; }
+.page .commentMessage { font-size: 15px; }
+
+/* Four compositions share the basic invitation's width and practical sections. */
+.page:not([data-design='simple']) { font-size: 15px; line-height: 1.8; --section-space: 80px; }
+.page:not([data-design='simple']) :is(.invitationSection, .scheduleSection, .container, .ceremonySection, .transportSection) { margin-top: var(--section-space); }
+.page[data-design='classic-r'] {
+  --paper: #fff; --paper-soft: #f3f3f1; --ink: #20201e; --muted: #62635e;
+  --accent: #20201e; --line: #c9cac5; --control-line: #858780; --focus: #20201e;
+}
+.page[data-design='romantic'] {
+  --paper: #fbf8f3; --paper-soft: #f1eae0; --ink: #4d4135; --muted: #766657;
+  --accent: #65543f; --line: #d9cfc0; --control-line: #948572; --focus: #65543f;
+  --section-space: 88px;
+}
+.page[data-design='gyeol'] {
+  --paper: #f8f3e9; --paper-soft: #f0e8da; --ink: #493b2f; --muted: #786550;
+  --accent: #705a3f; --line: #b8a17c; --control-line: #988164; --focus: #705a3f;
+  font-family: 'Wedding Myeongjo', serif;
+}
+.page[data-design='emotional'] {
+  --paper: #f8f9f5; --paper-soft: #eef1e8; --ink: #344638; --muted: #61705a;
+  --accent: #536649; --line: #c2cdbb; --control-line: #839278; --focus: #536649;
+  --section-space: 80px;
+}
+.page:not([data-design='simple']) ::selection { background: var(--paper-soft); color: var(--ink); }
+.page[data-design='classic-r'] :is(.heading, .title) { font-family: var(--font-sans), sans-serif; font-size: 22px; font-weight: 700; letter-spacing: -.02em; gap: 16px; }
+.page[data-design='classic-r'] .invitationCopy { text-align: left; margin-left: auto; margin-right: 0; max-width: 300px; }
+.page[data-design='classic-r'] .invitationAuthor { text-align: right; }
+.page[data-design='classic-r'] :is(.venueName, .ceremonyContent .venueName, .scheduleContent .venueName) { font-family: var(--font-sans), sans-serif; font-weight: 700; }
+.page[data-design='classic-r'] .quickLinks a:first-child { background: var(--ink); color: #fff; border-color: var(--ink); }
+.page[data-design='romantic'] :is(.heading, .title) { font-size: 22px; }
+.page[data-design='romantic'] .invitationCopy { font-family: 'Wedding Myeongjo', serif; line-height: 2.1; }
+.page[data-design='romantic'] [data-wedding-section='gallery'] .container { width: calc(100% - 32px); }
+.page[data-design='romantic'] [data-wedding-section='gallery'] .title { margin-inline: 8px; }
+.page[data-design='romantic'] .quickLinks a:first-child { background: var(--accent); border-color: var(--accent); color: #fff; }
+.page[data-design='gyeol'] :is(.heading, .title) { justify-content: center; text-align: center; gap: 14px; letter-spacing: .04em; }
+.page[data-design='gyeol'] :is(.heading, .title)::before { content: ''; height: 1px; flex: 1; background: var(--line); }
+.page[data-design='gyeol'] .invitationCopy { line-height: 2.1; }
+.page[data-design='gyeol'] .invitationSection { position: relative; padding-top: 30px; }
+.page[data-design='gyeol'] .invitationSection::before { content: ''; display: block; width: 56px; height: 38px; margin: -48px auto 26px; background: url('/images/wedding-concepts/classic-ornament.webp') center / contain no-repeat; pointer-events: none; }
+.page[data-design='emotional'] :is(.heading, .title) { position: relative; justify-content: center; margin-bottom: 32px; padding-bottom: 32px; font-size: 22px; text-align: center; }
+.page[data-design='emotional'] :is(.heading, .title)::after { position: absolute; bottom: 0; left: calc(50% - 23px); width: 46px; height: 28px; background: url('/images/wedding-concepts/garden-sprig.webp') center / contain no-repeat; }
+.page[data-design='emotional'] .invitationCopy { font-family: 'Gyeol Dodum', sans-serif; font-size: 16px; line-height: 2; }
+.page[data-design='emotional'] :is(.quickLinks a:first-child, .formSummary) { background: var(--accent); color: #fff; border-color: var(--accent); }
+.page[data-design='emotional'] .disclosureSummary { text-align: left; padding-inline: 16px; }
+.page[data-design='emotional'] [data-wedding-section='gallery'] .container { width: 100%; }
+.page[data-design='emotional'] [data-wedding-section='gallery'] .title { margin-inline: 24px; }
+.page[data-design='emotional'] .message { max-width: 300px; }
+@media (max-width: 359px) {
+  .page:not([data-design='simple']) :is(.heading, .title) { font-size: 20px; }
+  .page[data-design='classic-r'] .invitationCopy { max-width: 100%; }
+}

@@ -23,7 +23,7 @@ if (!isInvitationThemeKey(themeKey)) {
 }
 
 const definition = getInvitationThemeDefinition(themeKey);
-assert.equal(definition.label, '전통형');
+assert.equal(definition.label, '클래식형');
 assert.equal(definition.pathSuffix, '/gyeol');
 assert.equal(
   buildInvitationThemeRoutePath('kim-taehyun-choi-yuna', themeKey),
@@ -80,8 +80,9 @@ const sectionPositions = [
   'guestbook',
 ].map((section) => pageSource.indexOf(`data-wedding-section="${section}"`));
 assert.equal(sectionPositions.every((position) => position >= 0), true);
-assert.match(pageSource, /theme !== 'romantic' && theme !== 'classic-r' \? gallery : null/);
-assert.match(pageSource, /theme === 'gyeol' \|\| theme === 'classic-r' \? calendar : null/);
+assert.match(pageSource, /\{gallery\}/);
+assert.match(pageSource, /data-wedding-section="ceremony"/);
+assert.match(pageSource, /features.showCountdown \? <details/);
 
 assert.doesNotMatch(
   cssSource.replace(/\.heroCopy\s*\{[^}]*\}/s, ''),
@@ -102,6 +103,6 @@ const coverSource = readFileSync(path.resolve(process.cwd(), 'src/app/_component
 const coverCss = readFileSync(path.resolve(process.cwd(), 'src/app/_components/public-invitations/wedding/WeddingCover.module.css'), 'utf8');
 assert.match(coverSource, /theme === 'gyeol'/);
 assert.match(coverSource, /styles\.traditional/);
-assert.match(coverSource, /styles\.families/);
-assert.match(coverCss, /writing-mode:\s*vertical-rl/);
+assert.match(coverSource, /styles\.classicOrnament/);
+assert.match(coverCss, /classic-ornament\.webp/);
 console.log('GYEOL theme registry behavior passed.');

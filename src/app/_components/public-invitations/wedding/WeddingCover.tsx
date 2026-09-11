@@ -14,25 +14,23 @@ export default function WeddingCover({ theme, page, imageUrl, time, titleId = 'w
   const names = <><span>{page.groomName}</span><span aria-hidden="true" className={styles.join}>·</span><span>{page.brideName}</span></>;
   const date = <p className={styles.date} data-wedding-motion="copy"><span>{page.date}</span>{time ? <span>{time}</span> : null}</p>;
   const photo = imageUrl ? <img src={imageUrl} alt={`${page.displayName} 대표 사진`} className={styles.photo} data-wedding-motion="photo" loading="eager" decoding="async" /> : null;
-  const family = [page.couple.groom, page.couple.bride].map((person, index) => {
-    const parents = [person.father?.name, person.mother?.name].filter(Boolean).join(' · ');
-    return <p key={index}>{parents ? <span>{parents}의 {person.order || (index === 0 ? '아들' : '딸')}</span> : <span>{index === 0 ? '신랑' : '신부'}</span>}<strong>{person.name}</strong></p>;
-  });
-
   if (theme === 'romantic') return (
     <section className={`${styles.cover} ${styles.photographic} ${!imageUrl ? styles.withoutPhoto : ''}`} aria-labelledby={titleId}>
       {photo}
       <div className={styles.photoCopy}>
+        <p className={styles.conceptLabel}>WEDDING INVITATION</p>
         <h1 data-wedding-motion="copy" id={titleId} className={styles.names}>{names}</h1>
-        {date}<p className={styles.venue} data-wedding-motion="copy">{page.venue}</p>
+        <p className={styles.conceptIntroduction}>서로의 하루가 되어<br />이제 평생을 함께하려 합니다.</p>
       </div>
+      <div className={styles.photoMeta}>{date}<p className={styles.venue} data-wedding-motion="copy">{page.venue}</p></div>
     </section>
   );
 
   if (theme === 'emotional') return (
     <section className={`${styles.cover} ${styles.letter}`} aria-labelledby={titleId}>
+      <p className={styles.conceptIntroduction}>평생을 함께하고 싶은<br />사람을 만났습니다.</p>
       <h1 data-wedding-motion="copy" id={titleId} className={styles.names}>{names}</h1>
-      <p className={styles.letterTitle} data-wedding-motion="copy">소중한 당신께</p>
+      <p className={styles.letterTitle} data-wedding-motion="copy">소중한 날 함께해 주세요.</p>
       {photo ? <figure className={styles.letterPhoto}>{photo}</figure> : null}
       {date}<p className={styles.venue} data-wedding-motion="copy">{page.venue}</p>
     </section>
@@ -40,21 +38,30 @@ export default function WeddingCover({ theme, page, imageUrl, time, titleId = 'w
 
   if (theme === 'classic-r') return (
     <section className={`${styles.cover} ${styles.editorial}`} aria-labelledby={titleId}>
-      <h1 data-wedding-motion="copy" id={titleId} className={styles.editorialNames}><span>{page.groomName}</span><span>{page.brideName}</span></h1>
-      {photo ? <div className={styles.editorialPhoto}>{photo}</div> : null}
+      <p className={styles.conceptLabel}>WEDDING INVITATION</p>
+      <h1 data-wedding-motion="copy" id={titleId} className={styles.editorialNames}>{names}</h1>
+      <p className={styles.conceptIntroduction}>서로의 오늘이 되어,<br />평생을 함께 걸어가려 합니다.</p>
+      {photo ? <div className={styles.editorialPicture}><div className={styles.editorialPhoto}>{photo}</div><span className={styles.editorialRail} aria-hidden="true">OUR SPECIAL DAY</span></div> : null}
       <div className={styles.editorialMeta}>{date}<p className={styles.venue} data-wedding-motion="copy">{page.venue}</p></div>
     </section>
   );
 
   if (theme === 'gyeol') return (
     <section className={`${styles.cover} ${styles.traditional}`} aria-labelledby={titleId}>
+      <div className={styles.classicOrnament} aria-hidden="true" />
+      <p className={styles.conceptLabel}>WEDDING INVITATION</p>
       <div className={styles.traditionalTitle}>
-        <p className={styles.vow}>두 사람의 인연,<br />하나의 약속</p>
-        <h1 data-wedding-motion="copy" id={titleId} className={styles.verticalNames}><span>{page.groomName}</span><span>{page.brideName}</span></h1>
+        <h1 data-wedding-motion="copy" id={titleId} className={styles.names}>{names}</h1>
+        <p className={styles.conceptIntroduction}>소중한 날에 귀한 걸음으로 함께해 주세요.</p>
       </div>
-      <div className={styles.families} data-wedding-motion="copy">{family}</div>
-      {date}<p className={styles.venue} data-wedding-motion="copy">{page.venue}</p>
       {photo ? <figure className={styles.traditionalPhoto}>{photo}</figure> : null}
+      {date}<p className={styles.venue} data-wedding-motion="copy">{page.venue}</p>
+      <div className={styles.families}>
+        {[page.couple.groom, page.couple.bride].map((person, index) => {
+          const parents = [person.father?.name, person.mother?.name].filter(Boolean).join(' · ');
+          return parents ? <p key={index}>{parents}의 {person.order || (index === 0 ? '아들' : '딸')} <strong>{person.name}</strong></p> : null;
+        })}
+      </div>
     </section>
   );
 

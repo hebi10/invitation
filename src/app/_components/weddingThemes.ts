@@ -63,11 +63,11 @@ const resolveShareDescription = (pageConfig: InvitationPage) =>
   buildDefaultInvitationDescription(pageConfig);
 
 export const WEDDING_SHARE_PALETTES: Record<string, { paper: string; ink: string; line: string }> = {
-  emotional: { paper: '#fcfaf6', ink: '#3e3730', line: '#e6ded3' },
-  romantic: { paper: '#ffffff', ink: '#344037', line: '#dce4d7' },
+  emotional: { paper: '#f8f9f5', ink: '#344638', line: '#abb8a3' },
+  romantic: { paper: '#fbf8f3', ink: '#4d4135', line: '#c7b9a5' },
   simple: { paper: '#faf9f6', ink: '#282725', line: '#b5ada2' },
-  'classic-r': { paper: '#ffffff', ink: '#362f27', line: '#ded5c7' },
-  gyeol: { paper: '#faf8f3', ink: '#38363e', line: '#e4dfe9' },
+  'classic-r': { paper: '#ffffff', ink: '#20201e', line: '#999b96' },
+  gyeol: { paper: '#f8f3e9', ink: '#493b2f', line: '#b8a17c' },
 };
 
 export function getWeddingShareContainer(theme: string) {

@@ -32,11 +32,11 @@ import {
 import { DUMMY_EVENT_SEEDS } from './seed-dummy-events.mts';
 
 const expectedWeddingThemes = [
-  'emotional',
-  'romantic',
-  'gyeol',
   'simple',
   'classic-r',
+  'romantic',
+  'gyeol',
+  'emotional',
 ] as const;
 
 assert.deepEqual(
@@ -49,10 +49,10 @@ assert.deepEqual(
 );
 
 const expectedInvitationThemeMetadata = [
-  ['emotional', '편지형', '두 사람의 인사말을 편지처럼 읽고 예식 안내로 이어지는 청첩장입니다.', '/emotional'],
-  ['romantic', '사진 중심형', '웨딩 사진을 크게 보여주고 두 사람의 순간을 따라 읽는 청첩장입니다.', '/romantic'],
+  ['emotional', '내추럴형', '은은한 초록빛과 식물 장식, 편안한 여백으로 두 사람의 시작을 전하는 청첩장입니다.', '/emotional'],
+  ['romantic', '포토형', '따뜻한 색감과 큰 사진, 앨범처럼 이어지는 갤러리로 두 사람의 순간을 담은 청첩장입니다.', '/romantic'],
   ['simple', '기본형', '이름과 예식 일정, 장소를 간결하게 정리한 기본 청첩장입니다.', '/simple'],
-  ['classic-r', '에디토리얼형', '사진과 글의 크기와 배치를 달리해 잡지처럼 구성한 청첩장입니다.', '/classic-r'],
+  ['classic-r', '모던형', '흑백 대비와 단정한 고딕 글씨, 번호를 붙인 섹션으로 잡지처럼 구성한 청첩장입니다.', '/classic-r'],
   ['first-birthday-pink', '퍼스트 챕터', '아이 이름·날짜·성장 한 장면을 기록하는 첫 돌입니다.', '/first-birthday-pink'],
   ['first-birthday-mint', '새벽 챕터', '차분한 여백과 날짜 기록 중심의 첫 돌입니다.', '/first-birthday-mint'],
   ['birthday-minimal', '파티 노트', '일정·장소·연락처를 우선하는 생일 파티 메모입니다.', '/birthday-minimal'],
@@ -87,16 +87,16 @@ for (const [theme, label, description, pathSuffix] of expectedInvitationThemeMet
 }
 
 const gyeolThemeDefinition = getInvitationThemeDefinition('gyeol');
-assert.equal(gyeolThemeDefinition.label, '전통형');
-assert.equal(gyeolThemeDefinition.adminLabel, '전통형');
-assert.equal(gyeolThemeDefinition.variantLabel, '전통형');
+assert.equal(gyeolThemeDefinition.label, '클래식형');
+assert.equal(gyeolThemeDefinition.adminLabel, '클래식형');
+assert.equal(gyeolThemeDefinition.variantLabel, '클래식형');
 assert.equal(
   gyeolThemeDefinition.wizardDescription,
-  '단정한 글과 여백으로 예식의 격식과 가족의 마음을 전하는 청첩장입니다.'
+  '크림색 바탕과 명조 글씨, 섬세한 장식으로 예식의 격식을 담은 청첩장입니다.'
 );
 assert.equal(
   gyeolThemeDefinition.preview.description,
-  '단정한 글과 여백으로 예식의 격식과 가족의 마음을 전하는 청첩장입니다.'
+  '크림색 바탕과 명조 글씨, 섬세한 장식으로 예식의 격식을 담은 청첩장입니다.'
 );
 assert.equal(gyeolThemeDefinition.pathSuffix, '/gyeol');
 
@@ -187,7 +187,7 @@ assert.deepEqual(
 );
 
 const gyeolPreview = {
-  label: '전통형',
+  label: '클래식형',
   path: '/kim-shinlang-na-sinbu/gyeol',
 };
 assert.deepEqual(

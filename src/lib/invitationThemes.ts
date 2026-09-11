@@ -28,13 +28,13 @@ function buildThemePreviewUrl(path: string) {
 export const INVITATION_THEME_METADATA_REGISTRY = [
   {
     key: 'emotional',
-    label: '편지형',
-    adminLabel: '편지형',
-    variantLabel: '편지형',
+    label: '내추럴형',
+    adminLabel: '내추럴형',
+    variantLabel: '내추럴형',
     pathSuffix: '/emotional',
-    wizardDescription: '두 사람의 인사말을 편지처럼 읽고 예식 안내로 이어지는 청첩장입니다.',
+    wizardDescription: '은은한 초록빛과 식물 장식, 편안한 여백으로 두 사람의 시작을 전하는 청첩장입니다.',
     preview: {
-      description: '두 사람의 인사말을 편지처럼 읽고 예식 안내로 이어지는 청첩장입니다.',
+      description: '은은한 초록빛과 식물 장식, 편안한 여백으로 두 사람의 시작을 전하는 청첩장입니다.',
       sampleUrls: {
         standard: buildThemePreviewUrl('/kim-taehyun-choi-yuna/emotional/'),
         deluxe: buildThemePreviewUrl('/lee-junho-park-somin/emotional/'),
@@ -44,17 +44,17 @@ export const INVITATION_THEME_METADATA_REGISTRY = [
     shareTitleMode: 'metadata',
     documentTitleSuffix: '',
     ariaLabelSuffix: '',
-    sortOrder: 10,
+    sortOrder: 50,
   },
   {
     key: 'romantic',
-    label: '사진 중심형',
-    adminLabel: '사진 중심형',
-    variantLabel: '사진 중심형',
+    label: '포토형',
+    adminLabel: '포토형',
+    variantLabel: '포토형',
     pathSuffix: '/romantic',
-    wizardDescription: '웨딩 사진을 크게 보여주고 두 사람의 순간을 따라 읽는 청첩장입니다.',
+    wizardDescription: '따뜻한 색감과 큰 사진, 앨범처럼 이어지는 갤러리로 두 사람의 순간을 담은 청첩장입니다.',
     preview: {
-      description: '웨딩 사진을 크게 보여주고 두 사람의 순간을 따라 읽는 청첩장입니다.',
+      description: '따뜻한 색감과 큰 사진, 앨범처럼 이어지는 갤러리로 두 사람의 순간을 담은 청첩장입니다.',
       sampleUrls: {
         standard: buildThemePreviewUrl('/kim-taehyun-choi-yuna/romantic/'),
         deluxe: buildThemePreviewUrl('/lee-junho-park-somin/romantic/'),
@@ -64,17 +64,17 @@ export const INVITATION_THEME_METADATA_REGISTRY = [
     shareTitleMode: 'metadata',
     documentTitleSuffix: ' (Romantic)',
     ariaLabelSuffix: ' (Romantic)',
-    sortOrder: 15,
+    sortOrder: 30,
   },
   {
     key: 'gyeol',
-    label: '전통형',
-    adminLabel: '전통형',
-    variantLabel: '전통형',
+    label: '클래식형',
+    adminLabel: '클래식형',
+    variantLabel: '클래식형',
     pathSuffix: '/gyeol',
-    wizardDescription: '단정한 글과 여백으로 예식의 격식과 가족의 마음을 전하는 청첩장입니다.',
+    wizardDescription: '크림색 바탕과 명조 글씨, 섬세한 장식으로 예식의 격식을 담은 청첩장입니다.',
     preview: {
-      description: '단정한 글과 여백으로 예식의 격식과 가족의 마음을 전하는 청첩장입니다.',
+      description: '크림색 바탕과 명조 글씨, 섬세한 장식으로 예식의 격식을 담은 청첩장입니다.',
       sampleUrls: {
         standard: buildThemePreviewUrl('/kim-taehyun-choi-yuna/gyeol/'),
         deluxe: buildThemePreviewUrl('/lee-junho-park-somin/gyeol/'),
@@ -84,7 +84,7 @@ export const INVITATION_THEME_METADATA_REGISTRY = [
     shareTitleMode: 'metadata',
     documentTitleSuffix: ' (GYEOL)',
     ariaLabelSuffix: ' (결)',
-    sortOrder: 18,
+    sortOrder: 40,
   },
   {
     key: 'simple',
@@ -104,17 +104,17 @@ export const INVITATION_THEME_METADATA_REGISTRY = [
     shareTitleMode: 'couple',
     documentTitleSuffix: ' (Simple)',
     ariaLabelSuffix: ' (Simple)',
-    sortOrder: 20,
+    sortOrder: 10,
   },
   {
     key: 'classic-r',
-    label: '에디토리얼형',
-    adminLabel: '에디토리얼형',
-    variantLabel: '에디토리얼형',
+    label: '모던형',
+    adminLabel: '모던형',
+    variantLabel: '모던형',
     pathSuffix: '/classic-r',
-    wizardDescription: '사진과 글의 크기와 배치를 달리해 잡지처럼 구성한 청첩장입니다.',
+    wizardDescription: '흑백 대비와 단정한 고딕 글씨, 번호를 붙인 섹션으로 잡지처럼 구성한 청첩장입니다.',
     preview: {
-      description: '사진과 글의 크기와 배치를 달리해 잡지처럼 구성한 청첩장입니다.',
+      description: '흑백 대비와 단정한 고딕 글씨, 번호를 붙인 섹션으로 잡지처럼 구성한 청첩장입니다.',
       sampleUrls: {
         standard: buildThemePreviewUrl('/kim-taehyun-choi-yuna/classic-r/'),
         deluxe: buildThemePreviewUrl('/lee-junho-park-somin/classic-r/'),
@@ -124,7 +124,7 @@ export const INVITATION_THEME_METADATA_REGISTRY = [
     shareTitleMode: 'metadata',
     documentTitleSuffix: ' (Classic Renewal)',
     ariaLabelSuffix: ' (Classic Renewal)',
-    sortOrder: 25,
+    sortOrder: 20,
   },
   {
     key: 'first-birthday-pink',

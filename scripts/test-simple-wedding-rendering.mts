@@ -97,10 +97,21 @@ for (const section of order) {
 assert.ok(simple.includes('캘린더에 저장'));
 assert.equal((simple.match(/id="wedding-info"/g) ?? []).length, 1);
 assert.equal((simple.match(/id="wedding-location"/g) ?? []).length, 1);
-assert.ok(!nonSimple.includes('data-wedding-section="ceremony"'));
-assert.ok(!nonSimple.includes('data-wedding-section="transport"'));
-assert.ok(!nonSimple.includes('캘린더에 저장'));
-assert.ok(nonSimple.indexOf('저장아버지') < nonSimple.indexOf('href="tel:01011112222"'), 'Other themes retain parent-first contacts');
+for (const theme of ['classic-r', 'romantic', 'gyeol', 'emotional'] as const) {
+  const html = render(theme);
+  let lastPosition = -1;
+  for (const section of order) {
+    const position = html.indexOf(`data-wedding-section="${section}"`);
+    assert.ok(position > lastPosition, `${theme} should retain the basic information order: ${section}`);
+    lastPosition = position;
+  }
+  assert.ok(html.includes('캘린더에 저장'));
+  const contactMarkup = html.slice(html.indexOf('data-wedding-section="contact"'), html.indexOf('data-wedding-section="gallery"'));
+  assert.ok(contactMarkup.indexOf('href="tel:01011112222"') < contactMarkup.indexOf('저장아버지'));
+  assert.ok(html.includes(state.mainImageUrl));
+  assert.equal((html.match(/id="wedding-info"/g) ?? []).length, 1);
+  assert.equal((html.match(/id="wedding-location"/g) ?? []).length, 1);
+}
 const empty = structuredClone(page);
 empty.couple = { groom: { name: page.groomName }, bride: { name: page.brideName } };
 empty.pageData = {};
@@ -110,4 +121,4 @@ for (const section of ['invitation', 'contact', 'gallery', 'transport', 'gift', 
   assert.ok(!emptyMarkup.includes(`data-wedding-section="${section}"`), `Empty optional content should be omitted: ${section}`);
 }
 assert.ok(!emptyMarkup.includes('예식 달력 보기'));
-console.log('simple wedding stored content, section order and non-simple preservation checks passed');
+console.log('wedding stored content and shared section order across five designs passed');

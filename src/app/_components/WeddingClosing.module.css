@@ -98,3 +98,20 @@
 .closing[data-theme='simple']::before { content: ''; position: absolute; top: 44px; left: 24px; right: 24px; height: 1px; background: #e6e2dc; }
 .closing[data-theme='simple'] p:first-child { font-family: 'Wedding Myeongjo', serif; font-size: 22px; }
 .closing[data-theme='simple'] p:last-child { max-width: 290px; font-size: 15px; line-height: 1.8; color: #716e69; }
+
+.closing:not([data-theme='simple']) { position: relative; padding: 88px 24px 48px; gap: 20px; }
+.closing:not([data-theme='simple']) p:first-child { font-size: 22px; }
+.closing:not([data-theme='simple']) p:last-child { max-width: 290px; font-size: 15px; line-height: 1.8; }
+.closing[data-theme='classic-r'] { color: #20201e; background: #fff; }
+.closing[data-theme='classic-r']::before { content: ''; position: absolute; top: 40px; left: 24px; right: 24px; height: 1px; background: #c9cac5; }
+.closing[data-theme='classic-r'] p:first-child { font-weight: 700; }
+.closing[data-theme='classic-r'] p:last-child { color: #62635e; }
+.closing[data-theme='romantic'] { background: #fbf8f3; color: #4d4135; font-family: 'Wedding Myeongjo', serif; }
+.closing[data-theme='romantic'] p:last-child { color: #766657; }
+.closing[data-theme='romantic']::after { content: 'Always together'; font-family: 'Gyeol Brush', cursive; font-size: 30px; color: #766657; margin-top: 12px; }
+.closing[data-theme='gyeol'] { background: #f8f3e9; color: #493b2f; }
+.closing[data-theme='gyeol']::before { content: ''; width: 60px; height: 42px; background: url('/images/wedding-concepts/classic-ornament.webp') center / contain no-repeat; }
+.closing[data-theme='gyeol'] p:last-child { color: #786550; }
+.closing[data-theme='emotional'] { background: #f8f9f5; color: #344638; padding-top: 110px; }
+.closing[data-theme='emotional']::before { content: ''; position: absolute; top: 30px; width: 100px; height: 65px; background: url('/images/wedding-concepts/garden-sprig.webp') center / contain no-repeat; }
+.closing[data-theme='emotional'] p:last-child { color: #61705a; }

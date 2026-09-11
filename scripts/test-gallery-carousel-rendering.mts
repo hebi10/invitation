@@ -41,9 +41,19 @@ for (const swiperVariant of ['simple', 'romantic', 'emotional', 'classic-r', 'gy
   const one = renderSwiper(['/one.jpg']);
   assert.match(one, new RegExp(`data-gallery-variant="${swiperVariant}"`));
   assert.doesNotMatch(one, /이전 사진|다음 사진/, 'A single photo does not show unusable navigation');
+  assert.doesNotMatch(one, /다른 사진 선택/, 'A single photo does not duplicate itself into an album');
   const seven = renderSwiper(Array.from({ length: 7 }, (_, i) => `/${i}.jpg`));
   assert.equal((seven.match(/swiper-slide"/g) ?? []).length, 7, 'Every photo is reachable without a separate more button');
   assert.doesNotMatch(seven, /더보기/);
   assert.match(seven, /다음 사진/);
+  if (swiperVariant === 'romantic' || swiperVariant === 'gyeol') {
+    assert.match(seven, /aria-label="다른 사진 선택"/);
+    assert.equal((seven.match(/번째 사진 선택"/g) ?? []).length, 2, 'Albums provide two companion photos');
+    assert.doesNotMatch(seven, /1번째 사진 선택"/, 'The active hero is excluded from companion photos');
+    const two = renderSwiper(['/one.jpg', '/two.jpg']);
+    assert.equal((two.match(/번째 사진 선택"/g) ?? []).length, 1, 'A two-photo album never repeats a companion');
+  } else {
+    assert.doesNotMatch(seven, /다른 사진 선택/, 'Single-photo and strip layouts stay focused on their track');
+  }
 }
 console.log('Gallery carousel server rendering checks passed');

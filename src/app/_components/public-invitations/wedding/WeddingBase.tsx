@@ -32,7 +32,6 @@ export default function WeddingBase({ state, theme, demoComments, showMap = true
   useWeddingMotion(pageRef, theme);
 
   const page = state.pageConfig;
-  const isSimple = theme === 'simple';
   const pageData = getThemePageData(page, theme);
   const ceremony = getCeremonySchedule(page, pageData);
   const ceremonyAddress = getCeremonyAddress(page, pageData).trim();
@@ -83,9 +82,7 @@ export default function WeddingBase({ state, theme, demoComments, showMap = true
       phone: page.couple.bride.phone,
     },
   ];
-  const orderedContactCandidates = isSimple
-    ? [contactCandidates[2], contactCandidates[0], contactCandidates[1], contactCandidates[5], contactCandidates[3], contactCandidates[4]]
-    : contactCandidates;
+  const orderedContactCandidates = [contactCandidates[2], contactCandidates[0], contactCandidates[1], contactCandidates[5], contactCandidates[3], contactCandidates[4]];
   const contacts = orderedContactCandidates.flatMap((contact) => {
     const phone = contact.phone?.trim();
 
@@ -180,7 +177,6 @@ export default function WeddingBase({ state, theme, demoComments, showMap = true
 
       {gallery}
 
-      {isSimple ? (
         <section id="wedding-info" className={styles.ceremonySection} data-wedding-section="ceremony" aria-labelledby="wedding-ceremony-title">
           <h2 id="wedding-ceremony-title" className={styles.heading}>예식 안내</h2>
           <div className={styles.ceremonyContent}>
@@ -194,10 +190,8 @@ export default function WeddingBase({ state, theme, demoComments, showMap = true
             {calendar}
           </details> : null}
         </section>
-      ) : null}
-      {theme === 'gyeol' || theme === 'classic-r' ? calendar : null}
       <section
-        id={isSimple ? 'wedding-location' : 'wedding-info'}
+        id="wedding-location"
         className={styles.scheduleSection}
         data-wedding-section="schedule"
         aria-labelledby="wedding-schedule-title"
@@ -205,13 +199,12 @@ export default function WeddingBase({ state, theme, demoComments, showMap = true
         <h2 id="wedding-schedule-title" className={styles.heading}>오시는 길</h2>
         <div className={styles.scheduleContent}>
           <p className={styles.venueName}>{page.venue}</p>
-          {!isSimple ? <p>{page.date}{ceremony?.time ? ` · ${ceremony.time}` : ''}</p> : null}
           {ceremonyAddress && ceremonyAddress !== page.venue ? <address className={styles.address}>{ceremonyAddress}</address> : null}
           {venuePhone ? <a className={styles.venuePhone} href={`tel:${venuePhone}`} aria-label="예식장에 전화하기">{storedContent.ceremonyContact}</a> : null}
         </div>
         {showMap && storedContent.mapHref ? (
           <LocationMap
-            appearance={isSimple ? 'simple' : undefined}
+            appearance="simple"
             address={ceremonyAddress}
             venueName={page.venue}
             kakaoMapConfig={pageData?.kakaoMap}
@@ -219,19 +212,9 @@ export default function WeddingBase({ state, theme, demoComments, showMap = true
           />
         ) : null}
         {storedContent.mapDescription ? <p className={styles.travelNote}>{storedContent.mapDescription}</p> : null}
-        {hasAdditionalGuide && !isSimple ? (
-          <details className={styles.guideDisclosure}>
-            <summary className={styles.disclosureSummary}>식사 · 방문 안내 자세히 보기</summary>
-            <WeddingStoredContent
-              className={styles.storedSection}
-              model={{ ...storedContent, ceremonyContact: '', mapDescription: '', mapHref: '' }}
-              titleClassName={styles.guideTitle}
-            />
-          </details>
-        ) : null}
       </section>
 
-      {isSimple && hasAdditionalGuide ? (
+      {hasAdditionalGuide ? (
         <section className={styles.transportSection} data-wedding-section="transport" aria-labelledby="wedding-transport-title">
           <h2 id="wedding-transport-title" className={styles.heading}>교통 · 방문 안내</h2>
           <details className={styles.guideDisclosure}>
@@ -240,7 +223,6 @@ export default function WeddingBase({ state, theme, demoComments, showMap = true
           </details>
         </section>
       ) : null}
-      {!isSimple && theme !== 'gyeol' && theme !== 'classic-r' ? calendar : null}
 
       {shouldShowGiftInfo(state) ? (
         <div data-wedding-section="gift">
@@ -252,7 +234,7 @@ export default function WeddingBase({ state, theme, demoComments, showMap = true
             title="마음 전하실 곳"
             groomSectionTitle="신랑측 계좌"
             brideSectionTitle="신부측 계좌"
-            copyLabel={isSimple ? '계좌번호 복사' : '복사'}
+            copyLabel="계좌번호 복사"
             collapsibleAccounts
           />
         </div>
