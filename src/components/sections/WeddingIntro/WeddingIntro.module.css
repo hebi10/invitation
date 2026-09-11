@@ -18,7 +18,11 @@
   isolation: isolate;
   background: #262723;
 }
-.stage[data-style="light"] { background: radial-gradient(ellipse at 50% 40%, #4b4435 0, #24251f 55%, #171c19 100%); }
+.backdrop[data-wedding-intro-style="light"], .backdrop[data-wedding-intro-style="envelope"] { background: #f3eee5; color: #443f36; --intro-gold: #9a8054; }
+.backdrop[data-wedding-intro-style="light"] { clip-path: inset(0); }
+.stage[data-style="light"] { background: #f3eee5 url('/images/wedding-intro/ivory-paper.webp') center / 480px; color: #443f36; }
+.stage[data-style="light"] .names { font-family: 'Wedding Myeongjo', serif; }
+.lightGreeting { margin: 0 0 24px; font-size: 14px; color: #716450; }
 .stage[data-style="envelope"] { background: #f3eee5; color: #443f36; }
 .photo { width: 100%; height: 100%; object-fit: cover; position: absolute; inset: 0; }
 .photoShade { position: absolute; inset: 0; background: linear-gradient(180deg, #111b, #1119 80px, #1110 30%, #1117 65%, #111c); }
@@ -41,20 +45,24 @@
 .skip:focus-visible { outline: 1px solid currentColor; outline-offset: 3px; }
 .seal:focus-visible { outline: 2px solid currentColor; outline-offset: 5px; }
 .lights { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
-.glow { position: absolute; width: 65%; height: 150%; top: -25%; left: 20%; background: linear-gradient(105deg, transparent 30%, #ecd5a015 45%, #ffedc14a 50%, #ecd5a015 55%, transparent 70%); transform: rotate(-18deg); }
-.lights i { position: absolute; left: var(--x); top: var(--y); width: var(--size); height: var(--size); background: var(--intro-gold); border-radius: 50%; box-shadow: 0 0 14px 3px #f6dbaa40; }
+.glow { position: absolute; width: 180%; height: 160%; top: -30%; left: -40%; background: linear-gradient(110deg, transparent 15%, #dfbe7820 33%, #fffdf3ed 49%, #fff8df80 59%, transparent 80%); transform: rotate(-12deg); }
 .envelopeScene { height: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 70px 24px; }
 .envelopeScene > .eyebrow { color: #8c7752; margin-bottom: 12px; }
-.invite { font-size: 15px; margin: 0 0 70px; }
+.invite { font-family: 'Wedding Myeongjo', serif; font-size: 20px; margin: 0 0 90px; }
+.invite:focus { outline: none; }
 .envelope { position: relative; width: 100%; max-width: 370px; aspect-ratio: 1.45; perspective: 900px; background: #d8cbb6; }
 .letter, .envelopeFront, .flap { background-image: url('/images/wedding-intro/ivory-paper.webp'); background-size: 480px; }
-.letter { position: absolute; inset: 12px 12px 0; padding: 34px 12px 20px; text-align: center; background-color: #fffdf7; border: 1px solid #d3c5af; z-index: 1; }
+.letter { position: absolute; inset: 12px 12px 0; padding: 12px; text-align: center; background-color: #fffdf7; border: 1px solid #d3c5af; z-index: 1; }
+.letterPhoto { display: block; width: 100%; height: 60%; object-fit: cover; margin-bottom: 10px; }
+.cardFlight { position: fixed; opacity: 0; pointer-events: none; object-fit: cover; z-index: 4; }
+.address { position: absolute; inset: auto 20px 18px; z-index: 3; display: grid; gap: 6px; font-family: 'Wedding Myeongjo', serif; font-size: 12px; text-align: center; pointer-events: none; }
+.address span:last-child { font-size: 10px; color: #766b59; }
 .letter .eyebrow { font-size: 8px; margin-bottom: 16px; }
-.letter .names { font-size: clamp(20px, 5.5vw, 27px); }
-.letter > p { font-size: 11px; line-height: 1.8; }
+.letter .names { font-size: clamp(17px, 4.5vw, 22px); font-family: 'Wedding Myeongjo', serif; }
+.letter > p { font-size: 10px; line-height: 1.8; margin: 6px 0 0; }
 .envelopeFront { position: absolute; inset: 0; z-index: 2; background-color: #e8dfcf; clip-path: polygon(0 0, 50% 52%, 100% 0, 100% 100%, 0 100%); }
 .flap { position: absolute; inset: 0 0 43%; z-index: 3; background-color: #e7dfd0; clip-path: polygon(0 0, 100% 0, 50% 100%); transform-origin: center top; backface-visibility: hidden; filter: brightness(.96); }
-.seal { position: absolute; left: 50%; top: 52%; transform: translate(-50%, -50%); padding: 0; border: 0; background: transparent; z-index: 4; cursor: pointer; width: 88px; height: 88px; }
+.seal { position: absolute; left: 50%; top: 48%; transform: translate(-50%, -50%); padding: 0; border: 0; background: transparent; z-index: 4; cursor: pointer; width: 72px; height: 72px; }
 .seal img { display: block; width: 100%; height: 100%; object-fit: contain; }
 .envelopeHint { margin-top: 35px; font-size: 12px; color: #766b59; }
 @media (max-height: 620px) { .invite { margin-bottom: 35px; } .envelope { max-width: 285px; } .envelopeScene { padding-top: 60px; } .stage[data-style="cinema"] .copy { padding-bottom: 55px; } }
