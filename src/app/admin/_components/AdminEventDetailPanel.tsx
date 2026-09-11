@@ -7,7 +7,7 @@ import { AdminWorkGuardProvider, useAdminWorkNavigation } from './AdminWorkGuard
 
 import { getEventTypeDisplayLabel } from '@/lib/eventTypes';
 import type { InvitationPageSummary } from '@/services/invitationPageService';
-import type { InvitationThemeKey } from '@/lib/invitationThemes';
+import { getInvitationThemeWizardDescription, type InvitationThemeKey } from '@/lib/invitationThemes';
 import type { InvitationProductTier } from '@/types/invitationPage';
 import type { AppRoutes } from '@/lib/demoExperienceRoutes';
 import type { Comment } from '@/services/commentService';
@@ -307,21 +307,23 @@ function EventDetailWorkspace({
 
           {capabilities.includes('themes') ? (
             <div className={styles.eventThemeManager}>
-              <p>청첩장 테마 · 디자인 비교용 샘플</p>
+              <h4 className={styles.eventThemeHeading}>청첩장 디자인</h4>
+              <p className={styles.eventThemeHelp}>같은 샘플 사진으로 5종의 구성을 비교하세요. ‘고객 페이지 열기’에서는 {page.displayName}님의 저장된 사진과 내용을 확인할 수 있습니다.</p>
               <ul>
                 {SHORTCUT_ITEMS.map((theme) => {
                   const isAvailable = page.variants?.[theme.key]?.available === true;
                   const isUpdating = updatingVariantToken === `${page.slug}:${theme.key}`;
 
                   return (
-                    <li key={theme.key}>
+                    <li key={theme.key} data-current={theme.key === page.defaultTheme}>
                       <div className={styles.eventThemeThumbnail} aria-hidden="true">
                         <div><WeddingCover theme={theme.key} page={sampleWeddingPage} imageUrl={SAMPLE_WEDDING_COVER} titleId={`admin-theme-cover-${theme.key}`} /></div>
                       </div>
-                      <span>
-                        {theme.label}
-                        {theme.key === page.defaultTheme ? ' · 기본' : ''}
-                      </span>
+                      <div className={styles.eventThemeIdentity}>
+                        <strong>{theme.label}</strong>
+                        <span>{theme.key === page.defaultTheme ? '기본 적용' : isAvailable ? '연결됨' : '미연결'}</span>
+                      </div>
+                      <p className={styles.eventThemeDescription}>{getInvitationThemeWizardDescription(theme.key)}</p>
                       {isAvailable ? (
                         <a
                           className="admin-button admin-button-secondary"
@@ -330,9 +332,9 @@ function EventDetailWorkspace({
                           rel="noopener noreferrer"
                           aria-label={`${theme.label} 청첩장 페이지 열기 (새 탭)`}
                         >
-                          페이지 열기
+                          고객 페이지 열기
                         </a>
-                      ) : null}
+                      ) : <span className={styles.eventThemeUnavailable}>디자인 연결 후 페이지를 열 수 있습니다.</span>}
                       <button
                         type="button"
                         className="admin-button admin-button-ghost"
@@ -342,8 +344,9 @@ function EventDetailWorkspace({
                             ? onDisableVariant(page, theme.key)
                             : onEnableVariant(page, theme.key)
                         }
+                        aria-label={`${theme.label} ${isAvailable ? '디자인 연결 해제' : '디자인 연결'}`}
                       >
-                        {isUpdating ? '처리 중' : isAvailable ? '미리보기 제거' : '미리보기 추가'}
+                        {isUpdating ? '처리 중' : isAvailable ? '연결 해제' : '디자인 연결'}
                       </button>
                     </li>
                   );

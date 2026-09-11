@@ -52,7 +52,7 @@ const expectedInvitationThemeMetadata = [
   ['emotional', '내추럴형', '은은한 초록빛과 식물 장식, 편안한 여백으로 두 사람의 시작을 전하는 청첩장입니다.', '/emotional'],
   ['romantic', '포토형', '따뜻한 색감과 큰 사진, 앨범처럼 이어지는 갤러리로 두 사람의 순간을 담은 청첩장입니다.', '/romantic'],
   ['simple', '기본형', '이름과 예식 일정, 장소를 간결하게 정리한 기본 청첩장입니다.', '/simple'],
-  ['classic-r', '모던형', '흑백 대비와 단정한 고딕 글씨, 번호를 붙인 섹션으로 잡지처럼 구성한 청첩장입니다.', '/classic-r'],
+  ['classic-r', '모던형', '흑백 대비와 단정한 고딕 글씨, 또렷한 제목과 여백으로 잡지처럼 구성한 청첩장입니다.', '/classic-r'],
   ['first-birthday-pink', '퍼스트 챕터', '아이 이름·날짜·성장 한 장면을 기록하는 첫 돌입니다.', '/first-birthday-pink'],
   ['first-birthday-mint', '새벽 챕터', '차분한 여백과 날짜 기록 중심의 첫 돌입니다.', '/first-birthday-mint'],
   ['birthday-minimal', '파티 노트', '일정·장소·연락처를 우선하는 생일 파티 메모입니다.', '/birthday-minimal'],

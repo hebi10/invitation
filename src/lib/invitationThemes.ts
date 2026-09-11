@@ -112,9 +112,9 @@ export const INVITATION_THEME_METADATA_REGISTRY = [
     adminLabel: '모던형',
     variantLabel: '모던형',
     pathSuffix: '/classic-r',
-    wizardDescription: '흑백 대비와 단정한 고딕 글씨, 번호를 붙인 섹션으로 잡지처럼 구성한 청첩장입니다.',
+    wizardDescription: '흑백 대비와 단정한 고딕 글씨, 또렷한 제목과 여백으로 잡지처럼 구성한 청첩장입니다.',
     preview: {
-      description: '흑백 대비와 단정한 고딕 글씨, 번호를 붙인 섹션으로 잡지처럼 구성한 청첩장입니다.',
+      description: '흑백 대비와 단정한 고딕 글씨, 또렷한 제목과 여백으로 잡지처럼 구성한 청첩장입니다.',
       sampleUrls: {
         standard: buildThemePreviewUrl('/kim-taehyun-choi-yuna/classic-r/'),
         deluxe: buildThemePreviewUrl('/lee-junho-park-somin/classic-r/'),

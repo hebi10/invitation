@@ -621,9 +621,9 @@ export function useAdminData({
     async (page: InvitationPageSummary, variantKey: InvitationThemeKey) => {
       const variantLabel = getInvitationThemeAdminLabel(variantKey);
       const approved = await confirm({
-        title: `${variantLabel} 미리보기를 추가할까요?`,
-        description: `${page.displayName} 페이지에 ${variantLabel} 미리보기를 추가합니다.`,
-        confirmLabel: '추가',
+        title: `${variantLabel} 디자인을 연결할까요?`,
+        description: `${page.displayName} 페이지에 ${variantLabel} 디자인을 연결합니다.`,
+        confirmLabel: '연결',
         cancelLabel: '취소',
       });
 
@@ -641,13 +641,13 @@ export function useAdminData({
           invitationPageSlug: page.slug,
         });
         showToast({
-          title: `${variantLabel} 미리보기를 추가했습니다.`,
+          title: `${variantLabel} 디자인을 연결했습니다.`,
           tone: 'success',
         });
       } catch (error) {
         console.error(error);
         showToast({
-          title: `${variantLabel} 미리보기 추가에 실패했습니다.`,
+          title: `${variantLabel} 디자인 연결에 실패했습니다.`,
           tone: 'error',
         });
       } finally {
@@ -666,16 +666,16 @@ export function useAdminData({
 
       if (availableVariantCount <= 1) {
         showToast({
-          title: '최소 1개의 미리보기는 유지해야 합니다.',
+          title: '최소 1개의 디자인은 연결되어 있어야 합니다.',
           tone: 'error',
         });
         return;
       }
 
       const approved = await confirm({
-        title: `${variantLabel} 미리보기를 제거할까요?`,
-        description: `${page.displayName} 페이지에서 ${variantLabel} 미리보기를 제거합니다.`,
-        confirmLabel: '제거',
+        title: `${variantLabel} 디자인 연결을 해제할까요?`,
+        description: `${page.displayName} 페이지에서 ${variantLabel} 디자인 연결을 해제합니다.`,
+        confirmLabel: '연결 해제',
         cancelLabel: '취소',
         tone: 'danger',
       });
@@ -694,13 +694,13 @@ export function useAdminData({
           invitationPageSlug: page.slug,
         });
         showToast({
-          title: `${variantLabel} 미리보기를 제거했습니다.`,
+          title: `${variantLabel} 디자인 연결을 해제했습니다.`,
           tone: 'success',
         });
       } catch (error) {
         console.error(error);
         showToast({
-          title: `${variantLabel} 미리보기 제거에 실패했습니다.`,
+          title: `${variantLabel} 디자인 연결 해제에 실패했습니다.`,
           tone: 'error',
         });
       } finally {
