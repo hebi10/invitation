@@ -179,6 +179,7 @@ if (!selectedTests) {
 
 // Hook-based components need React's client server-rendering entrypoint.
 const clientRenderingTests = new Set([
+  'test-wedding-intro-policy',
   'test-simple-wedding-rendering',
   'test-gallery-carousel-rendering',
   'test-wedding-compact-sections-rendering',

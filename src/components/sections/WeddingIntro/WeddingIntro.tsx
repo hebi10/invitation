@@ -14,6 +14,7 @@ type Props = {
 
 export default function WeddingIntro({ style, slug, groomName, brideName, date, imageUrl, theme = 'simple', preview = false, connectToCover = !preview, onComplete }: Props) {
   const [visible, setVisible] = useState(false);
+  const [resolved, setResolved] = useState(false);
   const [opening, setOpening] = useState(false);
   const root = useRef<HTMLDivElement>(null);
   const completeRef = useRef(onComplete);
@@ -35,6 +36,7 @@ export default function WeddingIntro({ style, slug, groomName, brideName, date, 
     setOpening(false);
     let seen = false;
     try { seen = sessionStorage.getItem(weddingIntroSessionKey(slug)) === 'seen'; } catch { /* Private mode can deny storage. */ }
+    setResolved(true);
     if (shouldShowWeddingIntro({ style, preview, hash: window.location.hash, seen })) setVisible(true);
     else { setVisible(false); completeRef.current?.(); }
   }, [style, slug, preview]);
@@ -125,6 +127,14 @@ export default function WeddingIntro({ style, slug, groomName, brideName, date, 
     };
   }, [visible, style, connectToCover, complete]);
 
+  // Portals cannot render on the server. Cover the first HTML paint inline until
+  // the layout effect can decide whether to show the intro or reveal the page.
+  if (!resolved && style !== 'none') return <>
+    <div className={styles.backdrop} data-wedding-intro-pending="true" aria-hidden="true">
+      <div className={styles.stage} data-style={style} />
+    </div>
+    <noscript><style>{'[data-wedding-intro-pending="true"] { display: none !important; }'}</style></noscript>
+  </>;
   if (!visible) return null;
   const names = <>{groomName}<span aria-hidden="true"> · </span>{brideName}</>;
   return createPortal(
