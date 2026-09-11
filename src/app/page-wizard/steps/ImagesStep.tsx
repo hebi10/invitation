@@ -59,7 +59,29 @@ function SingleImageCard({
   const effectiveImage = imageUrl || fallbackImage;
   const isShare = uploadKind === 'sharePreview' || uploadKind === 'kakaoCard';
   const [failedUrl, setFailedUrl] = useState('');
+  const [presetSelection, setPresetSelection] = useState<{ previous: string; selected: string } | null>(null);
+  const isPresetSelected = SHARE_PRESETS.some(preset => preset.url === imageUrl);
+  const previousImage = presetSelection?.selected === imageUrl ? presetSelection.previous : '';
   const previewImage = effectiveImage && failedUrl !== effectiveImage ? effectiveImage : '';
+
+  const cancelPreset = () => {
+    onPresetSelect?.(previousImage);
+    setPresetSelection(null);
+  };
+
+  const selectPreset = (url: string) => {
+    if (url === imageUrl) {
+      cancelPreset();
+      return;
+    }
+    setPresetSelection({
+      previous: presetSelection?.selected === imageUrl
+        ? presetSelection.previous
+        : isPresetSelected ? '' : imageUrl,
+      selected: url,
+    });
+    onPresetSelect?.(url);
+  };
 
   return (
     <section className={styles.uploadCard}>
@@ -87,7 +109,7 @@ function SingleImageCard({
           <button
             type="button"
             className={styles.secondaryButton}
-            onClick={onRemove}
+            onClick={() => { setPresetSelection(null); onRemove(); }}
             disabled={!hasImage || isUploading}
           >
             {removeLabel}
@@ -122,9 +144,11 @@ function SingleImageCard({
 
       {isShare && onPresetSelect ? <fieldset className={previewStyles.presets}>
         <legend>기본 이미지 선택</legend>
-        {SHARE_PRESETS.map(preset => <button key={preset.url} type="button" aria-pressed={imageUrl === preset.url} disabled={isUploading || !canUploadImages} onClick={() => onPresetSelect(preset.url)}>
+        {SHARE_PRESETS.map(preset => <button key={preset.url} type="button" aria-pressed={imageUrl === preset.url} disabled={isUploading || !canUploadImages} onClick={() => selectPreset(preset.url)}>
           <img src={preset.url} alt="" loading="lazy" /><span>{preset.label}{imageUrl === preset.url ? ' · 선택됨' : ''}</span>
         </button>)}
+        {isPresetSelected ? <button type="button" disabled={isUploading || !canUploadImages} onClick={cancelPreset}>기본 이미지 선택 취소</button> : null}
+        {isPresetSelected ? <p>{previousImage ? '취소하면 이번 화면에서 선택하기 전의 이미지로 돌아갑니다.' : '취소하면 별도 이미지 없이 아래 안내 순서로 자동 적용됩니다.'} 선택한 이미지를 다시 눌러도 취소할 수 있습니다.</p> : null}
         <p>직접 올릴 사진이 없을 때 선택하세요. 내용 저장 후 실제 공유 이미지에 반영됩니다.</p>
       </fieldset> : null}
 
