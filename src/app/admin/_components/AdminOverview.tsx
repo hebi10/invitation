@@ -53,7 +53,7 @@ export default function AdminOverview({
     <div className={styles.overview}>
       <header className={styles.header}>
         <div><h1>운영 홈</h1><p>이벤트 현황과 최근 소식을 확인하고 필요한 작업으로 이동하세요.</p></div>
-        <a className="admin-button admin-button-primary" href={createHref}>새 이벤트</a>
+        <a className="admin-button admin-button-primary" href={createHref} target="_blank" rel="noopener noreferrer">새 이벤트</a>
       </header>
       <section aria-label="이벤트 운영 현황">
         <AdminQueryState loading={pagesLoading} error={pagesError} empty={false}

@@ -189,7 +189,7 @@ export default function AdminEventWorkspace({
             </summary>
             <div className={styles.eventCreateMenuList}>
               {(experience ? (['wedding'] as const) : ADMIN_EVENT_TYPE_OPTIONS).map((eventType) => (
-                <a key={eventType} href={routes.wizardCreate(eventType)}>
+                <a key={eventType} href={routes.wizardCreate(eventType)} target="_blank" rel="noopener noreferrer">
                   {getEventTypeDisplayLabel(eventType)}
                 </a>
               ))}
