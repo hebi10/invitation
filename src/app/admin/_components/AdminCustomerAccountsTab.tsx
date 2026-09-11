@@ -336,7 +336,7 @@ export default function AdminCustomerAccountsTab({
 
   const getGrantDraft = (uid: string) =>
     grantDrafts[uid] ?? {
-      tier: 'standard' as InvitationProductTier,
+      tier: 'premium' as InvitationProductTier,
       pageCreationQuantity: '1',
       operationTicketQuantity: '1',
       note: '',
@@ -373,14 +373,13 @@ export default function AdminCustomerAccountsTab({
       <div className={styles.walletPanel}>
         <p className={styles.walletSectionLabel}>현재 보유</p>
         <div className={styles.walletSummaryGrid}>
+          {account.wallet.pageCreationCredits.standard + account.wallet.pageCreationCredits.deluxe > 0 ? (
+            <span className={styles.walletMetric}>
+              기존 제작권 보관 {account.wallet.pageCreationCredits.standard + account.wallet.pageCreationCredits.deluxe}개
+            </span>
+          ) : null}
           <span className={styles.walletMetric}>
-            STANDARD {account.wallet.pageCreationCredits.standard}
-          </span>
-          <span className={styles.walletMetric}>
-            DELUXE {account.wallet.pageCreationCredits.deluxe}
-          </span>
-          <span className={styles.walletMetric}>
-            PREMIUM {account.wallet.pageCreationCredits.premium}
+            초대장 제작권 {account.wallet.pageCreationCredits.premium}
           </span>
           <span className={styles.walletMetric}>
             모바일 초대장 생성 티켓 {account.wallet.operationTicketBalance}장
@@ -390,28 +389,11 @@ export default function AdminCustomerAccountsTab({
           최근 갱신 · {formatWalletUpdatedAt(account.wallet.updatedAt)}
         </p>
         <p className={styles.tableSubtext}>
-          새 이벤트 생성은 STANDARD/DELUXE/PREMIUM 제작권만 사용합니다. 모바일 초대장 생성
+          새 제작권은 모든 초대장 기능을 포함합니다. 기존 제작권 잔액은 별도로 보관됩니다. 모바일 초대장 생성
           티켓은 모바일 앱에서 생성/배정되는 초대장용입니다.
         </p>
 
         <div className={styles.walletGrantGrid}>
-          <label className="admin-field">
-            <span className="admin-field-label">제작권 등급</span>
-            <select
-              className="admin-input"
-              value={draft.tier}
-              disabled={account.missingAuthUser}
-              onChange={(event) =>
-                updateGrantDraft(account.uid, {
-                  tier: event.target.value as InvitationProductTier,
-                })
-              }
-            >
-              <option value="standard">STANDARD</option>
-              <option value="deluxe">DELUXE</option>
-              <option value="premium">PREMIUM</option>
-            </select>
-          </label>
           <label className="admin-field">
             <span className="admin-field-label">제작권 수량</span>
             <input
@@ -510,7 +492,7 @@ export default function AdminCustomerAccountsTab({
                   <strong>
                     {getLedgerDirectionLabel(entry.direction)} ·{' '}
                     {entry.kind === 'pageCreation'
-                      ? `${entry.tier?.toUpperCase() ?? '제작권'} ${entry.quantity}개`
+                      ? `초대장 제작권 ${entry.quantity}개`
                       : `모바일 초대장 생성 티켓 ${entry.quantity}장`}
                   </strong>
                   <span>

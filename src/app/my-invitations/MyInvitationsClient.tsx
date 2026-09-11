@@ -1,7 +1,6 @@
 'use client';
 
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useRef, useState } from 'react';
 import { useDialogLayer } from '@/hooks/useDialogLayer';
@@ -25,8 +24,6 @@ import {
   type CustomerEventGuestbookComment,
   type CustomerOwnedEventSummary,
 } from '@/services/customerEventService';
-import type { CustomerWalletSummary } from '@/types/customerWallet';
-import type { InvitationProductTier } from '@/types/invitationPage';
 
 import styles from './page.module.css';
 import {
@@ -60,7 +57,6 @@ function getCommentStatusLabel(status: CustomerEventGuestbookComment['status']) 
   }
 }
 
-const PRODUCT_TIERS: InvitationProductTier[] = ['standard', 'deluxe', 'premium'];
 const GUESTBOOK_MODAL_PAGE_SIZE = 10;
 
 function LegalFooter() {
@@ -91,17 +87,6 @@ function getPaginationPageNumbers(currentPage: number, totalPages: number) {
   );
 
   return Array.from({ length: maxVisiblePages }, (_, index) => firstPage + index);
-}
-
-function getPageCreationCreditTotal(wallet: CustomerWalletSummary | null | undefined) {
-  if (!wallet) {
-    return 0;
-  }
-
-  return PRODUCT_TIERS.reduce(
-    (sum, tier) => sum + wallet.pageCreationCredits[tier],
-    0
-  );
 }
 
 interface OwnedEventCardProps {
@@ -519,13 +504,10 @@ export default function MyInvitationsClient({
     authUser,
     isLoggedIn,
     isAdminLoading,
-    isAdminLoggedIn,
     logout,
     refreshSession,
     sendVerificationEmail,
   } = useAdmin();
-  const router = useRouter();
-  const [createEventNotice, setCreateEventNotice] = useState('');
   const [verificationNotice, setVerificationNotice] = useState('');
   const [verificationError, setVerificationError] = useState('');
   const [verificationRefreshing, setVerificationRefreshing] = useState(false);
@@ -544,32 +526,13 @@ export default function MyInvitationsClient({
     gcTime: THIRTY_MINUTES_MS,
     refetchOnWindowFocus: false,
   });
-  const walletQuery = useQuery<CustomerWalletSummary>({
-    queryKey: appQueryKeys.customerWallet(authUser?.uid ?? null),
-    enabled:
-      !isAdminLoading &&
-      isLoggedIn &&
-      Boolean(authUser?.uid) &&
-      !requiresEmailVerification,
-    queryFn: async () => gateway.getWallet(authUser?.uid ?? ''),
-    staleTime: FIFTEEN_MINUTES_MS,
-    gcTime: THIRTY_MINUTES_MS,
-    refetchOnWindowFocus: false,
-  });
   const events = eventsQuery.data ?? [];
-  const wallet = walletQuery.data ?? null;
-  const pageCreationCreditTotal = getPageCreationCreditTotal(wallet);
-  const operationTicketBalance = wallet?.operationTicketBalance ?? 0;
-  const canCreateFromWallet = pageCreationCreditTotal > 0;
-  const walletLoading = walletQuery.isFetching && !walletQuery.data;
   const loading = eventsQuery.isFetching && !eventsQuery.data;
-  const refreshing = eventsQuery.isRefetching || walletQuery.isRefetching;
+  const refreshing = eventsQuery.isRefetching;
   const errorMessage =
     eventsQuery.error instanceof Error
       ? eventsQuery.error.message
-      : walletQuery.error instanceof Error
-        ? walletQuery.error.message
-        : '';
+      : '';
 
   const handleResendVerificationEmail = async () => {
     setVerificationLoading(true);
@@ -609,31 +572,6 @@ export default function MyInvitationsClient({
       '아직 이메일 인증이 확인되지 않았습니다. 받은 편지함의 인증 링크를 먼저 열어 주세요. 메일이 없으면 스팸 메일함도 확인해 주세요.'
     );
     setVerificationRefreshing(false);
-  };
-
-  const handleCreateEvent = () => {
-    if (walletLoading) {
-      setCreateEventNotice('보유 제작권을 확인하는 중입니다. 잠시 후 다시 눌러 주세요.');
-      return;
-    }
-
-    if (canCreateFromWallet) {
-      setCreateEventNotice('');
-      router.push('/my-invitations/create', { scroll: false });
-      return;
-    }
-
-    if (!isAdminLoggedIn) {
-      setCreateEventNotice(
-        operationTicketBalance > 0
-          ? '모바일 초대장 생성 티켓은 보유 중이지만 새 이벤트 생성에는 제작권이 필요합니다. 제작권이 필요하면 관리자에게 문의해 주세요.'
-          : '보유한 제작권이 없습니다. 새 이벤트가 필요하면 관리자에게 문의해 주세요.'
-      );
-      return;
-    }
-
-    setCreateEventNotice('');
-    router.push(routes.wizardCreate('wedding'), { scroll: false });
   };
 
   if (isAdminLoading) {
@@ -680,7 +618,7 @@ export default function MyInvitationsClient({
               <div>
                 <h1 className={styles.title}>이메일 인증이 필요합니다</h1>
                 <p className={styles.description}>
-                  회원가입 계정은 이메일 인증을 완료한 뒤 내 이벤트와 청첩장 생성 기능을
+                  회원가입 계정은 이메일 인증을 완료한 뒤 내 이벤트 편집 기능을
                   이용할 수 있습니다.
                 </p>
               </div>
@@ -759,24 +697,12 @@ export default function MyInvitationsClient({
             </dl>
           </div>
 
-          {!experience ? <p className={styles.creationBalance}>새 이벤트 제작 · 제작권 {pageCreationCreditTotal}개 / 생성 티켓 {operationTicketBalance}장</p> : null}
           <div className={styles.heroActions}>
-            {!experience ? (
-              <button
-                className={styles.primaryButton}
-                type="button"
-                onClick={handleCreateEvent}
-                disabled={walletLoading}
-              >
-                {walletLoading ? '제작권 확인 중' : '새 이벤트 만들기'}
-              </button>
-            ) : null}
             <button
               className={styles.secondaryButton}
               type="button"
               onClick={() => {
                 void eventsQuery.refetch();
-                void walletQuery.refetch();
               }}
               disabled={refreshing}
             >
@@ -786,11 +712,6 @@ export default function MyInvitationsClient({
               로그아웃
             </button>
           </div>
-          {createEventNotice ? (
-            <p className={styles.notice} role="status">
-              {createEventNotice}
-            </p>
-          ) : null}
         </section>
 
         {events.length > 0 ? (
@@ -821,7 +742,7 @@ export default function MyInvitationsClient({
 
         {!loading && events.length === 0 ? (
           <section className={styles.emptyState}>
-            아직 연결된 이벤트가 없습니다. 새 이벤트를 만들거나 관리자에게 계정 연결을 요청해 주세요.
+            아직 연결된 이벤트가 없습니다. 관리자에게 초대장 생성과 계정 연결을 요청해 주세요.
           </section>
         ) : null}
 

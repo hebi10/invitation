@@ -13,31 +13,19 @@ import type {
 export const DEFAULT_INVITATION_THEME: InvitationThemeKey = DEFAULT_THEME_KEY;
 export const DEFAULT_INVITATION_PRODUCT_TIER: InvitationProductTier = 'premium';
 
-export const INVITATION_PRODUCT_FEATURES: Record<
-  InvitationProductTier,
-  InvitationFeatureFlags
-> = {
-  standard: {
-    maxGalleryImages: 6,
-    shareMode: 'link',
-    showMusic: false,
-    showCountdown: false,
-    showGuestbook: false,
-  },
-  deluxe: {
-    maxGalleryImages: 12,
-    shareMode: 'card',
-    showMusic: true,
-    showCountdown: false,
-    showGuestbook: false,
-  },
-  premium: {
-    maxGalleryImages: 18,
-    shareMode: 'card',
-    showMusic: true,
-    showCountdown: true,
-    showGuestbook: true,
-  },
+const DEFAULT_FEATURES: InvitationFeatureFlags = {
+  maxGalleryImages: 18,
+  shareMode: 'card',
+  showMusic: true,
+  showCountdown: true,
+  showGuestbook: true,
+};
+
+// Keep legacy keys readable without retaining discontinued feature limits.
+export const INVITATION_PRODUCT_FEATURES: Record<InvitationProductTier, InvitationFeatureFlags> = {
+  standard: { ...DEFAULT_FEATURES },
+  deluxe: { ...DEFAULT_FEATURES },
+  premium: { ...DEFAULT_FEATURES },
 };
 
 export interface InvitationTemplateDefinition {
@@ -71,7 +59,9 @@ export function resolveInvitationFeatures(
   overrides?: Partial<InvitationFeatureFlags> | null
 ): InvitationFeatureFlags {
   const normalizedTier = normalizeInvitationProductTier(tier);
-  const base = INVITATION_PRODUCT_FEATURES[normalizedTier];
+  const base = INVITATION_PRODUCT_FEATURES.premium;
+  // Old records persisted the former tier defaults as feature overrides.
+  if (normalizedTier !== 'premium') return { ...base };
 
   return {
     maxGalleryImages:
@@ -97,32 +87,12 @@ export function resolveInvitationFeatures(
 }
 
 export function buildInvitationTemplateDefinitions(seedSlug: string) {
-  const tierDescriptionByProduct: Record<InvitationProductTier, string> = {
-    standard:
-      '맞춤 문구 제작, 갤러리 이미지 최대 6장, 카카오톡 링크 형식 공유(URL 공유)를 포함합니다.',
-    deluxe:
-      'STANDARD 전체 포함, 갤러리 이미지 최대 12장, 음악 포함, 카카오톡 카드 형식 공유를 포함합니다.',
-    premium:
-      'DELUXE 전체 포함, 갤러리 이미지 최대 18장, 캘린더 카운트다운, 방명록 기능을 포함합니다.',
-  };
-
-  const tiers: InvitationProductTier[] = ['standard', 'deluxe', 'premium'];
-
-  const definitions: Array<{
-    theme: InvitationThemeKey;
-    productTier: InvitationProductTier;
-    displayName: string;
-    description: string;
-  }> = INVITATION_THEME_KEYS.flatMap((theme) => {
-    const themeLabel = getInvitationThemeLabel(theme);
-
-    return tiers.map((productTier) => ({
-      theme,
-      productTier,
-      displayName: `${themeLabel} ${productTier.toUpperCase()}`,
-      description: `${themeLabel} ${tierDescriptionByProduct[productTier]}`,
-    }));
-  });
+  const definitions = INVITATION_THEME_KEYS.map((theme) => ({
+    theme,
+    productTier: DEFAULT_INVITATION_PRODUCT_TIER,
+    displayName: getInvitationThemeLabel(theme),
+    description: '사진 최대 18장, 음악, 카카오톡 카드 공유, 캘린더와 방명록을 사용할 수 있습니다.',
+  }));
 
   return definitions.map((entry) => ({
     id: `${entry.theme}-${entry.productTier}`,

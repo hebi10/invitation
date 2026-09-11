@@ -479,7 +479,7 @@ export function useAdminData({
       const accountName = account?.displayName || account?.email || uid;
       const grantLabel =
         grant.kind === 'pageCreation'
-          ? `${(grant.tier ?? 'standard').toUpperCase()} 제작권 ${grant.quantity}개`
+          ? `초대장 제작권 ${grant.quantity}개`
           : `모바일 초대장 생성 티켓 ${grant.quantity}장`;
       const approved = await confirm({
         title: '고객에게 이용권을 지급할까요?',
@@ -499,7 +499,7 @@ export function useAdminData({
         await gateway.grantWalletCredit(uid, {
           kind: grant.kind,
           quantity: grant.quantity,
-          tier: grant.kind === 'pageCreation' ? grant.tier ?? 'standard' : null,
+          tier: grant.kind === 'pageCreation' ? grant.tier ?? 'premium' : null,
           note: grant.note ?? null,
         });
         await refreshAdminData({

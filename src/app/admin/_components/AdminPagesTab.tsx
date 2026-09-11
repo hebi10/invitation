@@ -28,7 +28,6 @@ import styles from '../page.module.css';
 
 const PAGE_SIZE_OPTIONS = [10, 30, 50, 100] as const;
 
-const TIER_OPTIONS: InvitationProductTier[] = ['standard', 'deluxe', 'premium'];
 
 function parsePageSize(value: string) {
   const parsed = Number(value);
@@ -79,12 +78,10 @@ export default function AdminPagesTab({
   onQueryChange,
   onRefresh,
   onTogglePublished,
-  onChangeTier,
   onEnableVariant,
   onDisableVariant,
   updatingPublishedPageSlug,
   updatingVariantToken,
-  updatingTierPageSlug,
   deletingPageSlug,
   issuingOwnershipInviteSlug,
   onDeletePage,
@@ -401,21 +398,6 @@ export default function AdminPagesTab({
                                       : '미연결'}
                                 </StatusBadge>
                               </div>
-                              <select
-                                className="admin-select"
-                                value={page.productTier}
-                                disabled={updatingTierPageSlug === page.slug}
-                                onChange={(event) =>
-                                  onChangeTier(page, event.target.value as InvitationProductTier)
-                                }
-                                aria-label={`${page.displayName} 서비스 등급`}
-                              >
-                                {TIER_OPTIONS.map((tier) => (
-                                  <option key={tier} value={tier}>
-                                    {tier.toUpperCase()}
-                                  </option>
-                                ))}
-                              </select>
                             </div>
                           </div>
                         </td>
@@ -670,21 +652,6 @@ export default function AdminPagesTab({
                             ? '관리자 소유'
                             : '미연결'}
                       </StatusBadge>
-                      <select
-                        className="admin-select"
-                        value={page.productTier}
-                        disabled={updatingTierPageSlug === page.slug}
-                        onChange={(event) =>
-                          onChangeTier(page, event.target.value as InvitationProductTier)
-                        }
-                        aria-label={`${page.displayName} 서비스 등급`}
-                      >
-                        {TIER_OPTIONS.map((tier) => (
-                          <option key={tier} value={tier}>
-                            {tier.toUpperCase()}
-                          </option>
-                        ))}
-                      </select>
                     </div>
                     <div className={styles.statusCell}>
                       <StatusBadge tone={page.published ? 'success' : 'neutral'}>

@@ -78,14 +78,13 @@ assert.equal(premiumDateFeature.countdownLabel, 'D-8');
 assert.equal(premiumDateFeature.monthLabel, '2026년 10월');
 assert.equal(premiumDateFeature.calendarWeeks.flat().includes(18), true);
 
-assert.equal(
+assert.ok(
   buildPublicInvitationDateFeature(
     { productTier: 'standard' },
     eventDate,
     { now, mode: 'countdown' }
   ),
-  null,
-  'standard must not expose a premium countdown section'
+  'legacy invitations should expose the included countdown section'
 );
 assert.equal(
   buildPublicInvitationDateFeature(

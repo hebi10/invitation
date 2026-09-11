@@ -6,8 +6,6 @@ import {
   verifyCustomerUid,
 } from '@/server/customerApiAuth';
 import {
-  CustomerEventClaimError,
-  claimCustomerEventOwnership,
   getCustomerEventOwnershipSnapshot,
 } from '@/server/customerEventsService';
 
@@ -37,31 +35,15 @@ export async function GET(
   }
 }
 
-export async function POST(
-  request: Request,
-  context: { params: Promise<{ slug: string }> }
-) {
+export async function POST(request: Request) {
   try {
-    const ownerUid = await verifyCustomerUid(request);
-    const { slug } = await context.params;
-    const snapshot = await claimCustomerEventOwnership(ownerUid, slug);
-
-    return NextResponse.json({
-      success: true,
-      ...snapshot,
-    });
-  } catch (error) {
-    if (
-      error instanceof CustomerApiAuthError ||
-      error instanceof CustomerEventClaimError
-    ) {
-      return toSafeHttpErrorResponse(error);
-    }
-
-    console.error('[api/customer/events/ownership] failed to claim ownership', error);
+    await verifyCustomerUid(request);
     return NextResponse.json(
-      { error: '청첩장을 현재 계정에 연결하지 못했습니다. 잠시 후 다시 시도해 주세요.' },
-      { status: 500 }
+      { error: '고객 연결은 관리자만 가능합니다. 관리자에게 연결을 요청해 주세요.' },
+      { status: 403 }
     );
+  } catch (error) {
+    if (error instanceof CustomerApiAuthError) return toSafeHttpErrorResponse(error);
+    return NextResponse.json({ error: '요청을 확인할 수 없습니다.' }, { status: 500 });
   }
 }

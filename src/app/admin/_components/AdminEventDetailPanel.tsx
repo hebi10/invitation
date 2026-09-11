@@ -61,7 +61,6 @@ interface AdminEventDetailPanelProps {
   experience: boolean;
 }
 
-const TIER_OPTIONS: InvitationProductTier[] = ['standard', 'deluxe', 'premium'];
 
 function getFullManagementHref(
   routes: AppRoutes,
@@ -123,7 +122,6 @@ function EventDetailWorkspace({
   ownershipActionToken,
   onClose,
   onTogglePublished,
-  onChangeTier,
   onEnableVariant,
   onDisableVariant,
   onRefreshEvent,
@@ -168,7 +166,7 @@ function EventDetailWorkspace({
               {page.displayName}
             </h1>
             <p className={detailStyles.summary}>{formatDate(page.date)} · {page.venue || '장소 미입력'}</p>
-            <p className={detailStyles.summary}>{page.published ? '공개' : '비공개'} · {page.productTier.toUpperCase()}{page.defaultTheme ? ` / ${getInvitationThemeAdminLabel(page.defaultTheme)}` : ''}</p>
+            <p className={detailStyles.summary}>{page.published ? '공개' : '비공개'}{page.defaultTheme ? ` · ${getInvitationThemeAdminLabel(page.defaultTheme)}` : ''}</p>
           </div>
           <div className={styles.eventHeaderActions}>
           {preview ? <a className="admin-button admin-button-secondary" href={routes.preview(page.slug, preview.theme)} target="_blank" rel="noreferrer">미리보기</a> : null}
@@ -243,37 +241,15 @@ function EventDetailWorkspace({
           ) : null}
         </div>
 
-        <section className={styles.eventDetailOperations} aria-labelledby="event-operations-title">
-          {experience ? <label className={styles.eventDetailStatusField}>
+        {experience ? <section className={styles.eventDetailOperations} aria-label="공개 설정">
+          <label className={styles.eventDetailStatusField}>
             <span>공개 상태</span>
             <select className="admin-select" value={page.published ? 'published' : 'private'} disabled={updatingPublished || isReadOnlySeed}
               onChange={(event) => onTogglePublished(page, event.currentTarget.value === 'published')} aria-label={`${page.displayName} 공개 상태`}>
               <option value="published">공개</option><option value="private">비공개</option>
             </select>
-          </label> : null}
-          <h3 id="event-operations-title">운영 설정</h3>
-          <p>상품 등급 변경은 확인 후 바로 반영됩니다. 공개 상태와 기간은 공개·노출에서 관리하세요.</p>
-          <label className={styles.eventDetailStatusField}>
-            <span>상품 등급</span>
-            <select
-              className="admin-select"
-              value={page.productTier}
-              disabled={updatingTier || isReadOnlySeed}
-              onChange={(event) =>
-                onChangeTier(page, event.currentTarget.value as InvitationProductTier)
-              }
-              aria-label={`${page.displayName} 상품 등급`}
-            >
-              {TIER_OPTIONS.map((tier) => (
-                <option key={tier} value={tier}>
-                  {tier.toUpperCase()}
-                </option>
-              ))}
-            </select>
-            {updatingTier ? <small>변경 중입니다.</small> : null}
           </label>
-
-        </section>
+        </section> : null}
 
         <div className={styles.eventDetailContext}>
           <p>
