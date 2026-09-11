@@ -34,7 +34,9 @@ export function useAdminWorkNavigation() {
   return context;
 }
 
-export function AdminWorkGuardProvider({ children }: { children: ReactNode }) {
+export function AdminWorkGuardProvider({ children, blocked = false }: { children: ReactNode; blocked?: boolean }) {
+  const blockedRef = useRef(blocked);
+  blockedRef.current = blocked;
   const [work, setWork] = useState<Work | null>(null);
   const workRef = useRef<Work | null>(null);
   const [pending, setPending] = useState<(() => void) | null>(null);
@@ -51,7 +53,7 @@ export function AdminWorkGuardProvider({ children }: { children: ReactNode }) {
   }, []);
   const register = useCallback((next: Work | null) => { workRef.current = next; setWork(next); }, []);
   const request = useCallback((action: () => void) => {
-    if (workRef.current?.busy) return;
+    if (blockedRef.current || workRef.current?.busy) return;
     if (workRef.current?.dirty) { setError(''); setPending(() => action); }
     else proceed(action);
   }, [proceed]);
@@ -66,7 +68,7 @@ export function AdminWorkGuardProvider({ children }: { children: ReactNode }) {
     } catch { setError('저장하지 못했습니다. 입력은 그대로 유지됩니다.'); }
     finally { setSaving(false); }
   };
-  return <Context.Provider value={{ register, request, isLeaving, dirty: !!work?.dirty, busy: !!work?.busy }}>
+  return <Context.Provider value={{ register, request, isLeaving, dirty: !!work?.dirty, busy: blocked || !!work?.busy }}>
     {children}
     {pending ? <div className={styles.dialogBackdrop} onClick={close}>
       <div ref={ref} className={styles.dialog} role="dialog" aria-modal="true" aria-labelledby="unsaved-work-title" onClick={(event) => event.stopPropagation()}>

@@ -164,6 +164,7 @@ export default function AdminEventWorkspace({
 
   return (
     <div className={styles.eventWorkspace}>
+      {!selectedPage ? <>
       <header className={styles.eventWorkspaceHeader}>
         <div>
           <h1 className={styles.eventWorkspaceTitle}>이벤트 관리</h1>
@@ -218,8 +219,9 @@ export default function AdminEventWorkspace({
         onQueryChange={onQueryChange}
       />
 
+      </> : null}
       <div className={styles.eventWorkspaceContent}>
-        <div className={styles.eventWorkspaceList}>
+        {!selectedPage ? <div className={styles.eventWorkspaceList}>
           <AdminQueryState
             loading={loading && pages.length === 0}
             error={error && pages.length === 0 ? error : null}
@@ -283,7 +285,7 @@ export default function AdminEventWorkspace({
               />
             </>
           ) : null}
-        </div>
+        </div> : null}
         {selectedPage ? (
           <AdminEventDetailPanel
             page={selectedPage}

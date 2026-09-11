@@ -1,0 +1,29 @@
+.overview { display: grid; gap: 32px; }
+.header { display: flex; align-items: flex-start; justify-content: space-between; gap: 24px; }
+.header h1 { margin: 0; font-size: 26px; font-weight: 500; color: var(--admin-color-text); }
+.header p { margin: 12px 0 0; color: var(--admin-color-text-muted); font-size: 14px; line-height: 1.7; }
+.header > a { flex-shrink: 0; }
+.summary { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 12px; }
+.summary button { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 80px; padding: 20px; border: 1px solid var(--admin-color-border); background: var(--admin-color-surface, #fff); color: var(--admin-color-text); cursor: pointer; text-align: left; font: inherit; }
+.summary button > span { font-size: 13px; color: var(--admin-color-text-muted); }
+.summary strong { font-size: 24px; font-weight: 500; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.summary small { margin-left: 4px; font-size: 12px; font-weight: 400; }
+.columns { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 32px; }
+.columns > section { min-width: 0; }
+.sectionHeading { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; margin-bottom: 16px; }
+.sectionHeading h2 { margin: 0; font-size: 18px; font-weight: 500; }
+.sectionHeading button { border: 0; padding: 8px 0; min-height: 40px; background: transparent; color: var(--admin-color-text-muted); font: inherit; font-size: 13px; text-decoration: underline; text-underline-offset: 4px; cursor: pointer; }
+.list { display: grid; gap: 12px; margin: 0; padding: 0; list-style: none; }
+.eventButton, .commentButton { width: 100%; padding: 16px 0; border: 0; background: transparent; color: var(--admin-color-text); font: inherit; text-align: left; cursor: pointer; }
+.eventButton { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
+.eventText, .commentButton { display: grid; gap: 8px; }
+.eventText { min-width: 0; }
+.eventText strong, .commentHeading strong { font-size: 15px; font-weight: 500; overflow-wrap: anywhere; }
+.eventText > span, .message { font-size: 13px; line-height: 1.65; overflow-wrap: anywhere; }
+.overview small { color: var(--admin-color-text-muted); font-size: 12px; line-height: 1.5; }
+.state { flex-shrink: 0; font-size: 12px; color: var(--admin-color-text-muted); }
+.commentHeading { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; }
+.message { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.overview button:focus-visible { outline: 2px solid var(--admin-color-primary); outline-offset: 3px; }
+@media (max-width: 1023px) { .summary { grid-template-columns: repeat(2, minmax(0, 1fr)); } .columns { grid-template-columns: minmax(0, 1fr); } }
+@media (max-width: 479px) { .header { flex-direction: column; gap: 16px; } .summary button { padding: 16px 12px; } .summary strong { font-size: 22px; } }

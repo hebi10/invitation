@@ -50,6 +50,8 @@ import {
   type AdminDataGateway,
 } from './_hooks/adminDataGateway';
 import styles from './page.module.css';
+import AdminOverview from './_components/AdminOverview';
+import { AdminWorkGuardProvider } from './_components/AdminWorkGuard';
 
 const PRIMARY_VIEW_QUERY = {
   events: { section: 'events', tab: 'pages' },
@@ -107,6 +109,7 @@ export default function AdminPageClient({
 
   /* ── URL query ── */
 
+  const isHomeView = safeSearchParams.get('view') === 'home';
   const requestedTabParam = safeSearchParams.get('tab');
   const requestedSectionParam = safeSearchParams.get('section');
   const requestedPageCategoryParam = safeSearchParams.get('pageCategory');
@@ -121,10 +124,10 @@ export default function AdminPageClient({
     ? requestedTab
     : getDefaultTabForSection(activeSection, activePageCategory);
   const renderedActiveTab =
-    experience && (activeTab === 'memory' || activeTab === 'images' || activeTab === 'periods')
+    isHomeView || (experience && (activeTab === 'memory' || activeTab === 'images' || activeTab === 'periods'))
       ? 'pages'
       : activeTab;
-  const activePrimaryView = parseAdminPrimaryView(activeTab);
+  const activePrimaryView = isHomeView ? 'home' : parseAdminPrimaryView(activeTab);
   const pageSearch = safeSearchParams.get('pageQ') ?? '';
   const requestedPageTypeParam = safeSearchParams.get('pageType');
   const eventFilters: AdminEventFilters = {
@@ -228,7 +231,7 @@ export default function AdminPageClient({
     handleLogout: dataLogout,
   } = useAdminData({
     isAdminLoggedIn,
-    activeTab: renderedActiveTab,
+    activeTab: isHomeView ? 'comments' : renderedActiveTab,
     selectedEventSlug,
     showToast,
     confirm,
@@ -499,17 +502,37 @@ export default function AdminPageClient({
   }
 
   return (
+    <AdminWorkGuardProvider blocked={Boolean(
+      updatingPublishedPageSlug || updatingVariantToken || updatingTierPageSlug ||
+      deletingPageSlug || deletingCustomerUid || ownershipActionToken ||
+      issuingOwnershipInviteSlug || walletGrantActionToken
+    )}>
     <div className={styles.container}>
       <AdminShell
         activeView={activePrimaryView}
         adminEmail={adminUser?.email ?? '관리자'}
-        onNavigate={(view) => updateQuery(PRIMARY_VIEW_QUERY[view])}
+        onNavigate={(view) => updateQuery(view === 'home'
+          ? { view: 'home', section: 'events', tab: 'pages', event: null }
+          : { ...PRIMARY_VIEW_QUERY[view], view: null, event: null })}
         onLogout={() => void handleLogout()}
         brandHref={routes.admin()}
         customerPageHref={routes.customerDashboard()}
       >
         <section className={styles.panel}>
-          {renderedActiveTab === 'pages' ? (
+          {isHomeView ? (
+            <AdminOverview
+              pages={pages}
+              comments={comments}
+              pagesLoading={pagesLoading}
+              commentsLoading={commentsLoading}
+              pagesError={pagesError}
+              commentsError={commentsError}
+              onRetryPages={() => void retryPages()}
+              onRetryComments={() => void retryComments()}
+              onNavigate={updateQuery}
+              createHref={routes.wizardCreate('wedding')}
+            />
+          ) : renderedActiveTab === 'pages' ? (
             <AdminEventWorkspace
               pages={pages}
               loading={pagesLoading}
@@ -638,5 +661,6 @@ export default function AdminPageClient({
         onReissue={reissueOwnershipInvite}
       />
     </div>
+    </AdminWorkGuardProvider>
   );
 }

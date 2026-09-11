@@ -1,13 +1,11 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { createPortal } from 'react-dom';
-import { useDialogLayer } from '@/hooks/useDialogLayer';
-import { AdminWorkGuardProvider, useAdminWorkNavigation } from './AdminWorkGuard';
+import { useAdminWorkNavigation } from './AdminWorkGuard';
 
 import { getEventTypeDisplayLabel } from '@/lib/eventTypes';
 import type { InvitationPageSummary } from '@/services/invitationPageService';
-import { getInvitationThemeWizardDescription, type InvitationThemeKey } from '@/lib/invitationThemes';
+import { getInvitationThemeAdminLabel, getInvitationThemeWizardDescription, type InvitationThemeKey } from '@/lib/invitationThemes';
 import type { InvitationProductTier } from '@/types/invitationPage';
 import type { AppRoutes } from '@/lib/demoExperienceRoutes';
 import type { Comment } from '@/services/commentService';
@@ -29,6 +27,7 @@ import AdminEventCustomerTab from './AdminEventCustomerTab';
 import AdminEventPeriodTab from './AdminEventPeriodTab';
 import { SHORTCUT_ITEMS } from './adminPageUtils';
 import styles from '../page.module.css';
+import detailStyles from './AdminEventDetailPage.module.css';
 
 interface AdminEventDetailPanelProps {
   page: InvitationPageSummary;
@@ -104,7 +103,7 @@ function getOwnershipLabel(page: InvitationPageSummary) {
 }
 
 export default function AdminEventDetailPanel(props: AdminEventDetailPanelProps) {
-  return <AdminWorkGuardProvider key={props.page.slug}><EventDetailWorkspace {...props} /></AdminWorkGuardProvider>;
+  return <EventDetailWorkspace key={props.page.slug} {...props} />;
 }
 
 function EventDetailWorkspace({
@@ -139,15 +138,13 @@ function EventDetailWorkspace({
   experience,
 }: AdminEventDetailPanelProps) {
   const panelRef = useRef<HTMLElement>(null);
-  const closeButtonRef = useRef<HTMLButtonElement>(null);
   const work = useAdminWorkNavigation();
   const busy = work.busy || updatingPublished || updatingTier || !!updatingVariantToken || deleting || issuingInvite || !!ownershipActionToken;
   const requestClose = () => { if (!busy) work.request(onClose); };
-  const [portalRoot, setPortalRoot] = useState<HTMLElement | null>(null);
   const [activeTab, setActiveTab] = useState<AdminEventDetailTabKey>('overview');
   const capabilities = getAdminEventCapabilities(page);
   const tabs = experience
-    ? getAdminEventDetailTabs(page).filter((tab) => tab.key === 'overview')
+    ? getAdminEventDetailTabs(page).filter((tab) => tab.key === 'overview' || tab.key === 'design')
     : getAdminEventDetailTabs(page);
   const previewLinks = getAdminEventPreviewLinks(page);
   const preview = previewLinks.find((link) => link.isDefault) ?? previewLinks[0];
@@ -157,58 +154,37 @@ function EventDetailWorkspace({
     setActiveTab('overview');
   }, [page.slug]);
 
-  useEffect(() => {
-    setPortalRoot(document.querySelector<HTMLElement>('[data-admin-ui]') ?? document.body);
-  }, []);
-  useDialogLayer(panelRef, { open: !!portalRoot, onClose: requestClose, blocked: busy });
+  useEffect(() => { panelRef.current?.focus(); }, [page.slug]);
 
-  if (!portalRoot) {
-    return null;
-  }
-
-  return createPortal(
-    <div
-      className={styles.eventDetailBackdrop}
-      role="presentation"
-      onMouseDown={(event) => {
-        if (event.target === event.currentTarget) {
-          requestClose();
-        }
-      }}
-    >
-      <section
-        id="admin-event-detail"
-        ref={panelRef}
-        className={styles.eventDetailPanel}
-        aria-labelledby="admin-event-detail-title"
-        aria-modal="true"
-        role="dialog"
-
-      >
+  return (
+      <section id="admin-event-detail" ref={panelRef} tabIndex={-1} className={detailStyles.page} aria-labelledby="admin-event-detail-title">
+        <button type="button" className={detailStyles.back} disabled={busy} onClick={requestClose}>이벤트 목록으로</button>
         <div className={styles.eventDetailHeader}>
           <div className={styles.eventDetailHeading}>
             <p className={styles.eventDetailType}>
               {getEventTypeDisplayLabel(page.eventType, 'admin')} · {getAdminEventVisibility(page).label}
             </p>
-            <h2 id="admin-event-detail-title" className={styles.eventDetailTitle}>
+            <h1 id="admin-event-detail-title" className={styles.eventDetailTitle}>
               {page.displayName}
-            </h2>
+            </h1>
+            <p className={detailStyles.summary}>{formatDate(page.date)} · {page.venue || '장소 미입력'}</p>
+            <p className={detailStyles.summary}>{page.published ? '공개' : '비공개'} · {page.productTier.toUpperCase()}{page.defaultTheme ? ` / ${getInvitationThemeAdminLabel(page.defaultTheme)}` : ''}</p>
           </div>
           <div className={styles.eventHeaderActions}>
           {preview ? <a className="admin-button admin-button-secondary" href={routes.preview(page.slug, preview.theme)} target="_blank" rel="noreferrer">미리보기</a> : null}
           <button
-            ref={closeButtonRef}
             type="button"
-            className={styles.eventDetailClose}
+            className={detailStyles.close} aria-label="이벤트 상세 닫기" title="이벤트 목록으로"
             onClick={requestClose}
             disabled={busy}
           >
-            닫기
+            <img src="/images/admin/close.webp" alt="" width="18" height="18" />
           </button>
           </div>
         </div>
 
-        <div className={styles.eventDetailTabs} role="tablist" aria-label="이벤트 관리 항목">
+        <div className={detailStyles.layout}>
+        <div className={detailStyles.tabs} role="tablist" aria-label="이벤트 관리 항목">
           {tabs.map((tab) => (
             <button
               key={tab.key}
@@ -228,7 +204,7 @@ function EventDetailWorkspace({
 
         <div
           id="admin-event-tabpanel"
-          className={styles.eventDetailTabPanel}
+          className={detailStyles.content}
           role="tabpanel"
           aria-labelledby={`admin-event-tab-${activeTab}`}
         >
@@ -267,24 +243,16 @@ function EventDetailWorkspace({
           ) : null}
         </div>
 
-        <label className={styles.eventDetailStatusField}>
-          <span>공개 상태</span>
-          <select
-            className="admin-select"
-            value={page.published ? 'published' : 'private'}
-            disabled={updatingPublished || isReadOnlySeed}
-            onChange={(event) => onTogglePublished(page, event.currentTarget.value === 'published')}
-            aria-label={`${page.displayName} 공개 상태`}
-          >
-            <option value="published">공개</option>
-            <option value="private">비공개</option>
-          </select>
-          {updatingPublished ? <small>변경 중입니다.</small> : null}
-        </label>
-
         <section className={styles.eventDetailOperations} aria-labelledby="event-operations-title">
+          {experience ? <label className={styles.eventDetailStatusField}>
+            <span>공개 상태</span>
+            <select className="admin-select" value={page.published ? 'published' : 'private'} disabled={updatingPublished || isReadOnlySeed}
+              onChange={(event) => onTogglePublished(page, event.currentTarget.value === 'published')} aria-label={`${page.displayName} 공개 상태`}>
+              <option value="published">공개</option><option value="private">비공개</option>
+            </select>
+          </label> : null}
           <h3 id="event-operations-title">운영 설정</h3>
-          <p>공개 상태와 상품 등급, 테마 변경은 확인 후 바로 반영됩니다.</p>
+          <p>상품 등급 변경은 확인 후 바로 반영됩니다. 공개 상태와 기간은 공개·노출에서 관리하세요.</p>
           <label className={styles.eventDetailStatusField}>
             <span>상품 등급</span>
             <select
@@ -305,7 +273,37 @@ function EventDetailWorkspace({
             {updatingTier ? <small>변경 중입니다.</small> : null}
           </label>
 
-          {capabilities.includes('themes') ? (
+        </section>
+
+        <div className={styles.eventDetailContext}>
+          <p>
+            <strong>노출 기간</strong>
+            <span>{getPeriodLabel(page)}</span>
+          </p>
+          <p>
+            <strong>고객 연결</strong>
+            <span>{getOwnershipLabel(page)}</span>
+          </p>
+        </div>
+
+        {isReadOnlySeed ? <p>기본 체험 데이터는 조회 전용입니다.</p> : null}
+        {!isReadOnlySeed ? (
+          <details className={styles.eventDangerArea}>
+            <summary>위험 작업</summary>
+            <p>이벤트와 연결된 운영 데이터를 완전히 삭제합니다. 삭제 후에는 복구할 수 없습니다.</p>
+            <button
+              type="button"
+              className="admin-button admin-button-danger"
+              disabled={deleting}
+              onClick={() => onDelete(page)}
+            >
+              {deleting ? '완전 삭제 중' : '완전 삭제'}
+            </button>
+          </details>
+        ) : null}
+        </> : null}
+
+        {activeTab === 'design' ? <>          {capabilities.includes('themes') ? (
             <div className={styles.eventThemeManager}>
               <h4 className={styles.eventThemeHeading}>청첩장 디자인</h4>
               <p className={styles.eventThemeHelp}>같은 샘플 사진으로 5종의 구성을 비교하세요. ‘고객 페이지 열기’에서는 {page.displayName}님의 저장된 사진과 내용을 확인할 수 있습니다.</p>
@@ -354,37 +352,9 @@ function EventDetailWorkspace({
               </ul>
             </div>
           ) : null}
-        </section>
+</> : null}
 
-        <div className={styles.eventDetailContext}>
-          <p>
-            <strong>노출 기간</strong>
-            <span>{getPeriodLabel(page)}</span>
-          </p>
-          <p>
-            <strong>고객 연결</strong>
-            <span>{getOwnershipLabel(page)}</span>
-          </p>
-        </div>
-
-        {isReadOnlySeed ? <p>기본 체험 데이터는 조회 전용입니다.</p> : null}
-        {!isReadOnlySeed ? (
-          <details className={styles.eventDangerArea}>
-            <summary>위험 작업</summary>
-            <p>이벤트와 연결된 운영 데이터를 완전히 삭제합니다. 삭제 후에는 복구할 수 없습니다.</p>
-            <button
-              type="button"
-              className="admin-button admin-button-danger"
-              disabled={deleting}
-              onClick={() => onDelete(page)}
-            >
-              {deleting ? '완전 삭제 중' : '완전 삭제'}
-            </button>
-          </details>
-        ) : null}
-        </> : null}
-
-        {activeTab !== 'overview' ? (
+        {activeTab !== 'overview' && activeTab !== 'design' ? (
           <div className={styles.eventManagementPanel}>
             <div className={styles.eventManagementToolbar}>
               <p>{tabs.find((tab) => tab.key === activeTab)?.label}</p>
@@ -405,6 +375,22 @@ function EventDetailWorkspace({
               </a>
             </div>
 
+            {activeTab === 'period' ? <>        <label className={styles.eventDetailStatusField}>
+          <span>공개 상태</span>
+          <select
+            className="admin-select"
+            value={page.published ? 'published' : 'private'}
+            disabled={updatingPublished || isReadOnlySeed}
+            onChange={(event) => onTogglePublished(page, event.currentTarget.value === 'published')}
+            aria-label={`${page.displayName} 공개 상태`}
+          >
+            <option value="published">공개</option>
+            <option value="private">비공개</option>
+          </select>
+          {updatingPublished ? <small>변경 중입니다.</small> : null}
+        </label>
+
+</> : null}
             {activeTab === 'period' ? (
               <AdminEventPeriodTab
                 page={page}
@@ -457,8 +443,7 @@ function EventDetailWorkspace({
         <div className={styles.eventWorkStatus} role="status">
           {busy ? '처리 중입니다. 완료될 때까지 기다려 주세요.' : work.dirty ? '저장하지 않은 변경 내용이 있습니다.' : '현재 저장된 정보를 표시합니다.'}
         </div>
+        </div>
       </section>
-    </div>,
-    portalRoot
   );
 }

@@ -95,7 +95,7 @@ export default function AdminOwnershipInviteDialog({
             onClick={closeDialog}
             disabled={isReissuing}
           >
-            닫기
+            <img src="/images/admin/close.webp" alt="닫기" width="18" height="18" />
           </button>
           <button
             type="button"

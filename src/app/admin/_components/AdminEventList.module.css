@@ -1,0 +1,215 @@
+.eventFilters {
+  display: grid;
+  gap: 18px;
+  padding: 20px;
+  background: var(--admin-color-surface-muted, #f6f6f3);
+}
+
+.eventPrimaryFilters {
+  display: grid;
+  grid-template-columns: minmax(220px, 1fr) minmax(132px, 180px) auto;
+  align-items: end;
+  gap: 12px;
+}
+
+.eventAdvancedFilterGrid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(110px, 1fr));
+  gap: 12px;
+}
+
+.eventSearchField,
+.eventFilterField {
+  display: grid;
+  min-width: 0;
+  gap: 7px;
+}
+
+.eventFilterLabel {
+  color: var(--admin-color-text-secondary);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.eventFilters input,
+.eventFilters select {
+  min-height: 44px;
+  width: 100%;
+}
+
+.eventFilterReset {
+  min-height: 44px;
+  padding: 8px 14px;
+  border: 1px solid var(--admin-color-border);
+  background: var(--admin-color-surface, #fff);
+  color: var(--admin-color-text);
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.eventListFrame {
+  overflow-x: auto;
+}
+
+.eventListTable {
+  width: 100%;
+  min-width: 1000px;
+  border-collapse: collapse;
+  font-variant-numeric: tabular-nums;
+}
+
+.eventListTable th {
+  padding: 15px 12px;
+  background: var(--admin-color-surface-muted, #f6f6f3);
+  color: var(--admin-color-text-secondary);
+  font-size: 12px;
+  font-weight: 500;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.eventListTable td {
+  padding: 18px 12px;
+  color: var(--admin-color-text-secondary);
+  font-size: 13px;
+  line-height: 1.6;
+  vertical-align: middle;
+}
+
+.eventListTable tbody tr:nth-child(even) {
+  background: var(--admin-color-surface-muted, #f6f6f3);
+}
+
+.eventListTable tbody tr[data-selected='true'] {
+  background: var(--admin-color-primary-soft);
+}
+
+.eventSelectButton {
+  display: grid;
+  gap: 4px;
+  min-height: 44px;
+  max-width: 245px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--admin-color-text);
+  font: inherit;
+  cursor: pointer;
+  text-align: left;
+}
+
+.eventSelectButton strong {
+  font-size: 15px;
+  font-weight: 500;
+  overflow-wrap: anywhere;
+}
+
+.eventSelectButton span {
+  overflow: hidden;
+  color: var(--admin-color-text-muted);
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cellStack {
+  display: grid;
+  gap: 4px;
+  min-width: 136px;
+  max-width: 190px;
+  overflow-wrap: anywhere;
+}
+
+.cellStack small,
+.visibility {
+  color: var(--admin-color-text-muted);
+  font-size: 12px;
+}
+
+.visibility {
+  display: block;
+  margin-top: 4px;
+  white-space: nowrap;
+}
+
+.eventState {
+  color: var(--admin-color-text);
+  font-size: 13px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.eventState[data-state='private'] {
+  color: var(--admin-color-text-muted);
+}
+
+.rowActions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  white-space: nowrap;
+}
+
+.rowActions a,
+.rowActions button,
+.eventEditLink,
+.eventMobileDetailButton {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--admin-color-text);
+  font: inherit;
+  font-size: 13px;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  cursor: pointer;
+}
+
+.eventListEmpty {
+  padding: 48px 16px;
+  color: var(--admin-color-text-muted);
+  font-size: 14px;
+  text-align: center;
+  line-height: 1.8;
+}
+
+.eventMobileList {
+  display: none;
+}
+
+.eventFilters :focus-visible,
+.eventListFrame :focus-visible,
+.eventMobileList :focus-visible {
+  outline: 2px solid var(--admin-color-text);
+  outline-offset: 3px;
+}
+
+@media (max-width: 1050px) {
+  .eventAdvancedFilterGrid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+
+@media (max-width: 767px) {
+  .eventFilters { padding: 16px; }
+  .eventPrimaryFilters { grid-template-columns: minmax(0, 1fr) auto; }
+  .eventSearchField { grid-column: 1 / -1; }
+  .eventAdvancedFilterGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .eventListFrame { display: none; }
+  .eventMobileList { display: grid; gap: 12px; }
+  .eventMobileCard { display: grid; gap: 12px; padding: 20px; background: var(--admin-color-surface-muted, #f6f6f3); }
+  .eventMobileCard[data-selected='true'] { background: var(--admin-color-primary-soft); }
+  .eventMobileCardHeader { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
+  .eventMobileCardText { min-width: 0; }
+  .eventMobileCardType,
+  .eventMobileCardTitle,
+  .eventMobileCardDate,
+  .eventMobileCardOwnership { margin: 0; overflow-wrap: anywhere; }
+  .eventMobileCardType,
+  .eventMobileCardDate,
+  .eventMobileCardOwnership { color: var(--admin-color-text-secondary); font-size: 13px; line-height: 1.6; }
+  .eventMobileCardTitle { margin: 5px 0 10px; color: var(--admin-color-text); font-size: 18px; line-height: 1.5; font-weight: 500; }
+  .eventMobileCardActions { display: flex; align-items: center; flex-wrap: wrap; gap: 22px; }
+}

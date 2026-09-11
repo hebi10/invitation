@@ -6,6 +6,7 @@ import type { Comment } from '@/services/commentService';
 import { filterAdminEventComments } from './adminEventWorkspaceModel';
 import { useAdminWorkGuard } from './AdminWorkGuard';
 import styles from '../page.module.css';
+import workspace from './AdminPeopleWorkspace.module.css';
 
 interface AdminEventCommentsTabProps {
   pageSlug: string;
@@ -50,7 +51,7 @@ export default function AdminEventCommentsTab({
     try {
       await onDelete(comment);
     } catch {
-      setDeleteError('댓글을 삭제하지 못했습니다. 다시 시도해 주세요.');
+      setDeleteError('방명록을 삭제하지 못했습니다. 다시 시도해 주세요.');
     } finally {
       deletionInProgress.current = false;
       setDeletingId(null);
@@ -94,15 +95,18 @@ export default function AdminEventCommentsTab({
                 <span>{formatDate(comment.createdAt)}</span>
                 <p>{comment.message}</p>
               </div>
+              <details className={workspace.actions}>
+                <summary aria-label={`${comment.author} 방명록 작업`}>작업</summary>
               <button
                 type="button"
                 className="admin-button admin-button-danger"
                 onClick={() => void handleDelete(comment)}
                 disabled={deletingId !== null}
-                aria-label={`${comment.author}의 댓글 삭제`}
+                aria-label={`${comment.author}의 방명록 삭제`}
               >
-                {deletingId === comment.id ? '삭제 중' : '댓글 삭제'}
+                {deletingId === comment.id ? '삭제 중' : '방명록 삭제'}
               </button>
+              </details>
             </li>
           ))}
         </ul>

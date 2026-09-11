@@ -22,6 +22,8 @@ import {
 } from './adminCustomerAssignmentFilters';
 import { formatDateTime } from './adminPageUtils';
 import styles from '../page.module.css';
+import workspace from './AdminPeopleWorkspace.module.css';
+import { getInvitationThemeAdminLabel, isInvitationThemeKey } from '@/lib/invitationThemes';
 
 const CUSTOMER_ACCOUNTS_PAGE_SIZE = 10;
 type CustomerConnectionFilter = 'all' | 'linked' | 'unlinked';
@@ -260,7 +262,7 @@ export default function AdminCustomerAccountsTab({
                 {account.displayName || account.email || account.uid}
               </h3>
               <p className={styles.tableSubtext}>{account.email ?? '이메일 없음'}</p>
-              <p className={styles.tableSubtext}>UID · {account.uid}</p>
+              <details className={workspace.accountId}><summary>계정 정보</summary><p>고객 식별번호 · {account.uid}</p></details>
             </div>
           </div>
           <StatusBadge tone={account.disabled ? 'danger' : 'success'}>
@@ -567,10 +569,12 @@ export default function AdminCustomerAccountsTab({
           <>
             <div className={styles.linkedEventCompactMeta}>
               <span>/{selectedEvent.slug}</span>
-              <span>기본 테마 {selectedEvent.defaultTheme}</span>
+              <span>디자인 · {isInvitationThemeKey(selectedEvent.defaultTheme) ? getInvitationThemeAdminLabel(selectedEvent.defaultTheme) : '기본 디자인'}</span>
+              <span>{selectedEvent.published ? '공개' : '비공개'}</span>
               <span>수정 {formatDateValue(selectedEvent.updatedAt)}</span>
             </div>
             <div className={styles.tableActions}>
+              <a className="admin-button admin-button-secondary" href={`${routes.admin()}?section=events&tab=pages&event=${encodeURIComponent(selectedEvent.slug)}`}>이벤트 관리</a>
               <a
                 className="admin-button admin-button-ghost"
                 href={routes.wizardEdit(selectedEvent.slug)}
@@ -634,7 +638,7 @@ export default function AdminCustomerAccountsTab({
                 {account.isAdmin ? <StatusBadge tone="primary">관리자</StatusBadge> : null}
               </div>
               <p className={styles.tableSubtext}>{account.email ?? '이메일 없음'}</p>
-              <p className={styles.tableSubtext}>UID · {account.uid}</p>
+              <details className={workspace.accountId}><summary>계정 정보</summary><p>고객 식별번호 · {account.uid}</p></details>
             </div>
           </div>
 
@@ -665,6 +669,15 @@ export default function AdminCustomerAccountsTab({
         </nav>
         <div className={styles.accountCardBody}>
           {customerDetailTab === 'events' ? <>
+          <section className={styles.accountCardSection}>
+            <div className={styles.accountCardSectionHeader}>
+              <h4 className={styles.accountCardSectionTitle}>연결된 이벤트</h4>
+              <StatusBadge tone={account.linkedEvents.length > 0 ? 'primary' : 'neutral'}>{account.linkedEvents.length}개</StatusBadge>
+            </div>
+            {renderLinkedEventManager(account)}
+          </section>
+          <details className={workspace.connectDisclosure}>
+            <summary>새 이벤트 연결</summary>
           <section className={`${styles.accountCardSection} ${styles.accountConnectSection}`}>
             <div className={styles.accountCardSectionHeader}>
               <h4 className={styles.accountCardSectionTitle}>새 이벤트 연결</h4>
@@ -765,15 +778,7 @@ export default function AdminCustomerAccountsTab({
             </div>
           </section>
 
-          <section className={styles.accountCardSection}>
-            <div className={styles.accountCardSectionHeader}>
-              <h4 className={styles.accountCardSectionTitle}>연결된 이벤트</h4>
-              <StatusBadge tone={account.linkedEvents.length > 0 ? 'primary' : 'neutral'}>
-                {account.linkedEvents.length}개
-              </StatusBadge>
-            </div>
-            {renderLinkedEventManager(account)}
-          </section>
+          </details>
 
           </> : null}
           {customerDetailTab === 'wallet' ? <section className={styles.accountCardSection}>
@@ -788,9 +793,10 @@ export default function AdminCustomerAccountsTab({
         </div>
 
         {customerDetailTab === 'management' && (!account.isAdmin || selectedLinkedEvent) ? (
-          <details className={styles.accountDangerArea} open>
+          <details className={styles.accountDangerArea}>
             <summary>위험 작업</summary>
             <p>소유권 연결 해제와 계정 정리는 되돌리기 어렵습니다.</p>
+            {selectedLinkedEvent ? <p>연결 해제 대상 · {selectedLinkedEvent.displayName}</p> : null}
             <div className={styles.tableActions}>
               {selectedLinkedEvent ? (
                 <button
@@ -826,7 +832,7 @@ export default function AdminCustomerAccountsTab({
   return (
     <div className={styles.panelStack}>
       <div className={styles.sectionHeader}>
-        <h2 className={styles.sectionTitle}>고객 관리</h2>
+        <div><h1 className={styles.sectionTitle}>고객 관리</h1><p className={workspace.description}>고객을 선택해 연결 이벤트와 이용권을 관리합니다.</p></div>
         <p className={styles.sectionMeta}>결과 {filteredAccounts.length}명</p>
       </div>
 
@@ -839,7 +845,7 @@ export default function AdminCustomerAccountsTab({
 
       {selectedEventSlug ? (
         <div className={styles.selectionContext}>
-          <p className={styles.sectionMeta}>선택 이벤트 · {selectedEventSlug}</p>
+          <p className={styles.sectionMeta}>선택 이벤트 · {contextualAccount?.linkedEvents.find((event) => event.slug === selectedEventSlug)?.displayName ?? unassignedEvents.find((event) => event.slug === selectedEventSlug)?.displayName ?? selectedEventSlug}</p>
         </div>
       ) : null}
 
@@ -851,7 +857,7 @@ export default function AdminCustomerAccountsTab({
               <input
                 className="admin-input"
                 type="search"
-                placeholder="이름, 이메일, UID, 이벤트 주소 검색"
+                placeholder="이름, 이메일 또는 이벤트 검색"
                 value={searchQuery}
                 onChange={(event) => setSearchQuery(event.target.value)}
               />
@@ -959,28 +965,26 @@ export default function AdminCustomerAccountsTab({
               {paginatedAccounts.map((account, index) => renderMobileAccountCard(account, (normalizedCurrentPage - 1) * CUSTOMER_ACCOUNTS_PAGE_SIZE + index))}
             </div>
           ) : (
-            <div className={styles.customerWorkspace}>
+            <div className={workspace.customerWorkspace}>
               <div className={styles.customerListFrame}>
                 <table className={styles.customerListTable}>
-                  <thead><tr><th scope="col">고객</th><th scope="col">연결</th><th scope="col">상태</th></tr></thead>
+                  <thead><tr><th scope="col">고객</th><th scope="col">연결 이벤트</th><th scope="col">상태</th><th scope="col">최근 로그인</th></tr></thead>
                   <tbody>{paginatedAccounts.map((account) => (
                     <tr key={account.uid} data-selected={account.uid === selectedCustomerUid || undefined}>
                       <td><button type="button" className={styles.customerSelectButton} aria-current={account.uid === selectedCustomerUid ? 'true' : undefined}
                         onClick={() => updateCustomerQuery({ customer: account.uid, customerDetail: null, event: null })}>
-                        <strong>{account.displayName || account.email || '이름 미등록 고객'}</strong><span>{account.email ?? '이메일 없음'}</span>
+                        <strong>{account.displayName || account.email || '이름 미등록 고객'}</strong>{account.displayName && account.displayName !== account.email ? <span>{account.email ?? '이메일 없음'}</span> : null}
                       </button></td>
-                      <td>{account.linkedEvents.length}개</td>
-                      <td>{account.missingAuthUser ? '삭제된 계정' : account.disabled ? '비활성' : account.isAdmin ? '관리자' : '사용 가능'}</td>
+                      <td><span className={workspace.eventName}>{account.linkedEvents[0]?.displayName ?? '미연결'}</span>{account.linkedEvents.length > 1 ? <span className={workspace.description}> 외 {account.linkedEvents.length - 1}개</span> : null}</td>
+                      <td>{account.missingAuthUser ? '삭제된 계정' : account.disabled ? '비활성' : account.isAdmin ? '관리자' : '사용 가능'}</td><td>{formatDateValue(account.lastSignInAt)}</td>
                     </tr>
                   ))}</tbody>
                 </table>
               </div>
-              <section className={styles.customerDetailPane} aria-label="선택한 고객 상세">
-                {selectedAccount ? <>
-                  <button type="button" className="admin-button admin-button-ghost" onClick={() => updateCustomerQuery({ customer: null, customerDetail: null, event: null })}>상세 닫기</button>
+              {selectedAccount ? <section className={`${styles.customerDetailPane} ${workspace.customerDetail}`} aria-label="선택한 고객 상세">
+                  <button type="button" className={`admin-button admin-button-ghost ${workspace.closeButton}`} aria-label="고객 상세 닫기" title="고객 상세 닫기" onClick={() => updateCustomerQuery({ customer: null, customerDetail: null, event: null })}><img src="/images/admin/close.webp" alt="" width={16} height={16} /></button>
                   {renderAccountCard(selectedAccount, accounts.indexOf(selectedAccount))}
-                </> : <p className={styles.customerSelectionHint}>고객을 선택하면 연결 이벤트와 이용권을 관리할 수 있습니다.</p>}
-              </section>
+              </section> : null}
             </div>
           )}
           <Pagination

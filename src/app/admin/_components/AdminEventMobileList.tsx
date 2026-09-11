@@ -3,7 +3,10 @@ import { getEventTypeDisplayLabel } from '@/lib/eventTypes';
 import type { InvitationPageSummary } from '@/services/invitationPageService';
 import type { AppRoutes } from '@/lib/demoExperienceRoutes';
 
-import styles from '../page.module.css';
+import { getInvitationThemeAdminLabel } from '@/lib/invitationThemes';
+import { buildEventPreviewPath } from '@/lib/eventPreviewLinks';
+
+import styles from './AdminEventList.module.css';
 
 interface AdminEventMobileListProps {
   pages: InvitationPageSummary[];
@@ -46,6 +49,8 @@ export default function AdminEventMobileList({
       {pages.map((page) => {
         const isSelected = selectedSlug === page.slug;
         const isReadOnlySeed = experience && page.slug.startsWith('demo-seed-');
+        const visibility = getAdminEventVisibility(page);
+        const previewHref = experience ? routes.preview(page.slug, page.defaultTheme) : buildEventPreviewPath(page.slug, page.eventType, page.defaultTheme);
 
         return (
           <article
@@ -56,23 +61,24 @@ export default function AdminEventMobileList({
             <div className={styles.eventMobileCardHeader}>
               <div className={styles.eventMobileCardText}>
                 <p className={styles.eventMobileCardType}>
-                  {getEventTypeDisplayLabel(page.eventType, 'admin')}
+                  {page.eventType === 'wedding' ? getInvitationThemeAdminLabel(page.defaultTheme) : getEventTypeDisplayLabel(page.eventType, 'admin')}
                 </p>
                 <h2 className={styles.eventMobileCardTitle}>{page.displayName}</h2>
                 {experience && page.slug === 'daily-experience-wedding' ? (
                   <small>금일 체험 청첩장</small>
                 ) : null}
                 <p className={styles.eventMobileCardDate}>{formatDate(page.date)}</p>
+                <p className={styles.eventMobileCardDate}>{page.venue || '장소 미입력'}</p>
               </div>
               <span
                 className={styles.eventState}
                 data-state={page.published ? 'published' : 'private'}
               >
-                {getAdminEventVisibility(page).label}
+                {page.published ? '공개' : '비공개'}
               </span>
             </div>
 
-            <p className={styles.eventMobileCardOwnership}>{getOwnershipLabel(page)}</p>
+            <p className={styles.eventMobileCardOwnership}>{getOwnershipLabel(page)}{page.published ? ` · ${!page.displayPeriodEnabled ? '기간 제한 없음' : visibility.label === '만료' ? '노출 종료' : visibility.label}` : ''}</p>
 
             <div className={styles.eventMobileCardActions}>
               <button
@@ -80,7 +86,6 @@ export default function AdminEventMobileList({
                 className={styles.eventMobileDetailButton}
                 data-event-slug={page.slug}
                 data-event-mobile-select
-                aria-haspopup="dialog"
                 aria-expanded={isSelected}
                 aria-controls="admin-event-detail"
                 onClick={() => onSelect(page.slug)}
@@ -94,6 +99,7 @@ export default function AdminEventMobileList({
                   편집
                 </a>
               )}
+              <a className={styles.eventEditLink} href={previewHref} target="_blank" rel="noopener noreferrer" aria-label={`${page.displayName} 미리보기 (새 창)`}>미리보기</a>
             </div>
           </article>
         );

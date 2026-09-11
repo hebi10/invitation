@@ -27,6 +27,7 @@ export type AdminEventCapabilityKey =
   | 'ownership';
 export type AdminEventDetailTabKey =
   | 'overview'
+  | 'design'
   | 'period'
   | 'ownership'
   | 'memory'
@@ -260,7 +261,8 @@ export function getAdminEventDetailTabs(page: InvitationPageSummary): AdminEvent
   const capabilities = getAdminEventCapabilities(page);
   const tabs: AdminEventDetailTab[] = [
     { key: 'overview', label: '기본 정보' },
-    { key: 'period', label: '노출 기간' },
+    ...(capabilities.includes('themes') ? [{ key: 'design' as const, label: '디자인' }] : []),
+    { key: 'period', label: '공개·노출' },
     { key: 'ownership', label: '고객 연결' },
   ];
 

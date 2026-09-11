@@ -1,6 +1,6 @@
 import type { Comment } from '@/services/commentService';
 
-import { AdminQueryState, EmptyState, FilterToolbar, Pagination, StatusBadge } from '.';
+import { AdminQueryState, EmptyState, FilterToolbar, Pagination } from '.';
 import {
   COMMENT_AGE_LABELS,
   COMMENTS_PER_PAGE,
@@ -8,6 +8,7 @@ import {
   type CommentAgeFilter,
 } from './adminPageUtils';
 import styles from '../page.module.css';
+import workspace from './AdminPeopleWorkspace.module.css';
 
 interface AdminCommentsTabProps {
   commentsLoading: boolean;
@@ -64,17 +65,19 @@ export default function AdminCommentsTab({
   onDeleteComment,
   mobileReadOnly,
 }: AdminCommentsTabProps) {
-  const startIndex = (currentPage - 1) * COMMENTS_PER_PAGE;
-  const selectedEventLabel = commentPageOptions.find(
-    (option) => option.value === selectedPageSlug
-  )?.label;
+  const eventLabel = (slug: string) => {
+    const label = commentPageOptions.find((option) => option.value === slug)?.label;
+    return label?.endsWith(` (${slug})`) ? label.slice(0, -(` (${slug})`.length)) : label || slug;
+  };
+  const selectedEventLabel = eventLabel(selectedPageSlug);
   const hasCachedComments = comments.length > 0;
 
   return (
     <div className={styles.panelStack}>
       <div className={styles.sectionHeader}>
         <div>
-          <h2 className={styles.sectionTitle}>방명록 관리</h2>
+          <h1 className={styles.sectionTitle}>방명록 관리</h1>
+          <p className={workspace.description}>이벤트별 축하 메시지를 확인하고 관리합니다.</p>
         </div>
         <p className={styles.sectionMeta}>결과 {filteredComments.length}개</p>
       </div>
@@ -114,7 +117,7 @@ export default function AdminCommentsTab({
               <input
                 className="admin-input"
                 type="search"
-                placeholder="작성자, 메시지, slug로 찾기"
+                placeholder="작성자 또는 메시지 검색"
                 value={commentSearch}
                 onChange={(event) =>
                   onQueryChange({
@@ -126,7 +129,7 @@ export default function AdminCommentsTab({
             </label>
 
             <label className="admin-field">
-              <span className="admin-field-label">페이지</span>
+              <span className="admin-field-label">이벤트</span>
               <select
                 className="admin-select"
                 value={selectedPageSlug}
@@ -137,17 +140,17 @@ export default function AdminCommentsTab({
                   })
                 }
               >
-                <option value="all">전체 페이지</option>
+                <option value="all">전체 이벤트</option>
                 {commentPageOptions.map((pageOption) => (
                   <option key={pageOption.value} value={pageOption.value}>
-                    {pageOption.label}
+                    {eventLabel(pageOption.value)}
                   </option>
                 ))}
               </select>
             </label>
 
             <label className="admin-field">
-              <span className="admin-field-label">기간</span>
+              <span className="admin-field-label">등록 기간</span>
               <select
                 className="admin-select"
                 value={commentAgeFilter}
@@ -233,31 +236,30 @@ export default function AdminCommentsTab({
               <table className={styles.dataTable}>
                 <thead>
                   <tr>
-                    <th>번호</th>
                     <th>작성자</th>
-                    <th>페이지</th>
+                    <th>이벤트</th>
                     <th>메시지</th>
                     <th>등록일</th>
                     <th>작업</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {currentComments.map((comment, index) => (
+                  {currentComments.map((comment) => (
                     <tr
                       key={`${comment.collectionName ?? 'comments'}:${comment.id}`}
                       className={styles.tableRowInteractive}
                     >
-                      <td className={styles.numberCell}>
-                        {filteredComments.length - (startIndex + index)}
-                      </td>
                       <td>
                         <span className={styles.tableTitle}>{comment.author}</span>
                       </td>
                       <td>
-                        <StatusBadge tone="neutral">{comment.pageSlug}</StatusBadge>
+                        <span className={workspace.eventName}>{eventLabel(comment.pageSlug)}</span>
                       </td>
                       <td>
-                        <p className={styles.messagePreview}>{comment.message}</p>
+                        <details className={workspace.messageDetails}>
+                          <summary>{comment.message}</summary>
+                          <p>{comment.message}</p>
+                        </details>
                       </td>
                       <td>
                         <span className={styles.tableSubtext}>
@@ -265,13 +267,10 @@ export default function AdminCommentsTab({
                         </span>
                       </td>
                       <td>
-                        <button
-                          type="button"
-                          className="admin-button admin-button-danger"
-                          onClick={() => onDeleteComment(comment)}
-                        >
-                          삭제
-                        </button>
+                        <details className={workspace.actions}>
+                          <summary aria-label={`${comment.author} 방명록 작업`}>작업</summary>
+                          <button type="button" className="admin-button admin-button-danger" onClick={() => onDeleteComment(comment)}>삭제</button>
+                        </details>
                       </td>
                     </tr>
                   ))}
@@ -280,8 +279,8 @@ export default function AdminCommentsTab({
             </div>
           </div> : null}
 
-          <div className={styles.mobileList}>
-            {currentComments.map((comment, index) => (
+          <div className={mobileReadOnly ? workspace.mobileComments : styles.mobileList}>
+            {currentComments.map((comment) => (
               <article
                 key={`${comment.collectionName ?? 'comments'}:${comment.id}`}
                 className={styles.mobileCard}
@@ -289,11 +288,9 @@ export default function AdminCommentsTab({
                 <div className={styles.mobileCardHead}>
                   <div>
                     <h3 className={styles.mobileCardTitle}>{comment.author}</h3>
-                    <p className={styles.mobileCardSlug}>
-                      #{filteredComments.length - (startIndex + index)}
-                    </p>
+
                   </div>
-                  <StatusBadge tone="neutral">{comment.pageSlug}</StatusBadge>
+                  <span className={workspace.eventName}>{eventLabel(comment.pageSlug)}</span>
                 </div>
 
                 <p className={styles.mobileCommentMessage}>{comment.message}</p>
@@ -302,13 +299,10 @@ export default function AdminCommentsTab({
                 </p>
 
                 {!mobileReadOnly ? <div className={styles.mobileCardActions}>
-                  <button
-                    type="button"
-                    className="admin-button admin-button-danger"
-                    onClick={() => onDeleteComment(comment)}
-                  >
-                    삭제
-                  </button>
+                  <details className={workspace.actions}>
+                    <summary aria-label={`${comment.author} 방명록 작업`}>작업</summary>
+                    <button type="button" className="admin-button admin-button-danger" onClick={() => onDeleteComment(comment)}>삭제</button>
+                  </details>
                 </div> : null}
               </article>
             ))}
@@ -331,8 +325,8 @@ export default function AdminCommentsTab({
           }
           description={
             comments.length === 0
-              ? '댓글이 등록되면 이 탭에서 검색과 삭제를 바로 관리할 수 있습니다.'
-              : '검색어나 페이지, 기간 필터가 너무 좁게 잡혀 있을 수 있습니다.'
+              ? '방명록이 등록되면 이 탭에서 검색과 삭제를 바로 관리할 수 있습니다.'
+              : '검색어나 이벤트, 등록 기간 필터가 너무 좁게 잡혀 있을 수 있습니다.'
           }
           actionLabel={comments.length === 0 ? '새로고침' : '필터 초기화'}
           onAction={

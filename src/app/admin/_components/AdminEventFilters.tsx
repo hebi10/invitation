@@ -1,13 +1,12 @@
 import { getEventTypeDisplayLabel } from '@/lib/eventTypes';
 
 import {
-  ADMIN_EVENTS_PER_PAGE,
   ADMIN_EVENT_PAGE_SIZE_OPTIONS,
   ADMIN_EVENT_TYPE_OPTIONS,
   type AdminEventPageSize,
   type AdminEventFilters as AdminEventFiltersState,
 } from './adminEventWorkspaceModel';
-import styles from '../page.module.css';
+import styles from './AdminEventList.module.css';
 
 interface AdminEventFiltersProps {
   filters: AdminEventFiltersState;
@@ -20,14 +19,6 @@ export default function AdminEventFilters({
   pageSize,
   onQueryChange,
 }: AdminEventFiltersProps) {
-  const activeAdvancedFilterCount = [
-    filters.eventType !== 'all',
-    filters.ownership !== 'all',
-    filters.sort !== 'updated',
-    pageSize !== ADMIN_EVENTS_PER_PAGE,
-    Boolean(filters.visibility && filters.visibility !== 'all'),
-  ].filter(Boolean).length;
-
   const resetFilters = () => {
     onQueryChange({
       visibility: null,
@@ -39,6 +30,7 @@ export default function AdminEventFilters({
       event: null,
       pageCategory: null,
       page: null,
+      pageSize: null,
     });
   };
 
@@ -77,20 +69,15 @@ export default function AdminEventFilters({
           </select>
         </label>
         <button type="button" className={styles.eventFilterReset} onClick={resetFilters}>
-          초기화
+          필터 초기화
         </button>
       </div>
 
-      <details className={styles.eventAdvancedFilters}>
-        <summary>
-          상세 필터
-          {activeAdvancedFilterCount > 0 ? ` · ${activeAdvancedFilterCount}개 적용` : ''}
-        </summary>
         <div className={styles.eventAdvancedFilterGrid}>
           <label className={styles.eventFilterField}>
-            <span className={styles.eventFilterLabel}>노출 점검</span>
+            <span className={styles.eventFilterLabel}>노출 기간</span>
             <select className="admin-select" value={filters.visibility ?? 'all'} onChange={(event) => onQueryChange({ visibility: event.currentTarget.value, event: null, page: '1' })}>
-              <option value="all">전체</option><option value="due-soon">7일 내 종료</option><option value="expired">기간 만료</option>
+              <option value="all">전체</option><option value="due-soon">7일 내 종료</option><option value="expired">노출 종료</option>
             </select>
           </label>
           <label className={styles.eventFilterField}>
@@ -160,7 +147,6 @@ export default function AdminEventFilters({
             </select>
           </label>
         </div>
-      </details>
     </form>
   );
 }

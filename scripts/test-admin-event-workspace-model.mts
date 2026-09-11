@@ -144,7 +144,7 @@ assert.equal(getAdminEventCapabilities(pages[0]).includes('themes'), true);
 assert.equal(getAdminEventCapabilities(pages[0]).includes('memory'), true);
 assert.deepEqual(
   getAdminEventDetailTabs(pages[0]).map((tab) => tab.key),
-  ['overview', 'period', 'ownership', 'memory', 'images', 'comments']
+  ['overview', 'design', 'period', 'ownership', 'memory', 'images', 'comments']
 );
 assert.deepEqual(
   getAdminEventDetailTabs(
@@ -365,16 +365,13 @@ assert.match(commentsTabSource, /filterAdminEventComments/);
 assert.match(imageManagerSource, /lockedPageSlug/);
 assert.match(memoryManagerSource, /lockedPageSlug/);
 assert.match(memoryManagerSource, /getAllComments/);
-assert.match(adminEventFiltersSource, /<details/);
-assert.match(adminEventFiltersSource, /상세 필터/);
+assert.doesNotMatch(adminEventFiltersSource, /<details/);
 assert.match(adminEventFiltersSource, /role="search"/);
-assert.match(adminEventFiltersSource, /activeAdvancedFilterCount/);
-assert.match(adminEventFiltersSource, /개 적용/);
 assert.match(adminEventFiltersSource, /aria-label="이벤트 검색 및 필터"/);
-assert.ok(
-  adminEventFiltersSource.indexOf('페이지당 개수') > adminEventFiltersSource.indexOf('<details'),
-  '페이지당 개수 선택은 상세 필터 안에 있어야 합니다.'
-);
+assert.match(adminEventFiltersSource, /페이지당 개수/);
+assert.doesNotMatch(detailPanelSource, /createPortal|aria-modal="true"/);
+assert.match(detailPanelSource, /activeTab === 'design'/);
+assert.match(detailPanelSource, /이벤트 목록으로/);
 assert.match(
   adminEventFiltersSource,
   /onQueryChange\(\{\s*pageSize: event\.currentTarget\.value,\s*page: '1',\s*event: null,\s*\}\)/

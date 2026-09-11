@@ -164,7 +164,7 @@ export function AdminOverlayProvider({ children }: { children: React.ReactNode }
                     aria-label="토스트 닫기"
                     onClick={() => dismissToast(toast.id)}
                   >
-                    ×
+                    <img src="/images/admin/close.webp" alt="" width="16" height="16" />
                   </button>
                 </div>
                 {toast.message ? <p className={styles.toastMessage}>{toast.message}</p> : null}
