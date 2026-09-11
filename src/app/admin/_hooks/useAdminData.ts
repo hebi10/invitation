@@ -2,6 +2,7 @@
 
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { getEventDeletionFailureMessage, isEventDeletionComplete } from '@/lib/adminEventDeletionState';
 import { getCustomerAssignmentConfirmation } from '@/lib/adminCustomerSelection';
 
 import {
@@ -308,10 +309,15 @@ export function useAdminData({
 
   const handleDeletePage = useCallback(
     async (page: InvitationPageSummary) => {
+      const retry = page.deletion?.status === 'failed';
+      if (retry && page.deletion?.retryable !== true) {
+        showToast({ title: '삭제 원인 확인이 필요합니다.', message: '이 삭제 작업은 자동으로 재시도할 수 없습니다.', tone: 'error' });
+        return;
+      }
       const approved = await confirm({
-        title: '청첩장을 완전 삭제할까요?',
+        title: retry ? '중단된 삭제를 재시도할까요?' : '청첩장을 완전 삭제할까요?',
         description: `${page.displayName} 페이지와 연결된 운영 데이터가 모두 삭제됩니다.`,
-        confirmLabel: '완전 삭제',
+        confirmLabel: retry ? '삭제 재시도' : '완전 삭제',
         cancelLabel: '취소',
         tone: 'danger',
       });
@@ -323,7 +329,7 @@ export function useAdminData({
       setDeletingPageSlug(page.slug);
 
       try {
-        await gateway.deleteEvent(page.slug);
+        const result = await gateway.deleteEvent(page.slug, { retry });
         await refreshAdminData({
           summary: true,
           pages: true,
@@ -331,6 +337,9 @@ export function useAdminData({
           accounts: true,
           invitationPageSlug: page.slug,
         });
+        if (!isEventDeletionComplete(result)) {
+          throw new Error(getEventDeletionFailureMessage(result));
+        }
         showToast({ title: '청첩장을 완전 삭제했습니다.', tone: 'success' });
       } catch (error) {
         console.error(error);

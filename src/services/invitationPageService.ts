@@ -1,3 +1,4 @@
+import { readEventDeletionMetadata } from '@/server/eventDeletionPolicy';
 import {
   createInvitationPageFromSeed,
   getAllWeddingPageSeeds,
@@ -182,6 +183,7 @@ function normalizeAdminInvitationPageSummary(
         : {},
     dataSource: 'firestore' as const,
     hasCustomConfig: input.hasCustomConfig === true,
+    deletion: readEventDeletionMetadata(input.deletion) ?? undefined,
     ownershipKind:
       input.ownershipKind === 'unassigned' || input.ownershipKind === 'admin'
         ? input.ownershipKind

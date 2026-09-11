@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { isEventDeletionComplete, getEventDeletionFailureMessage, getEventDeletionButtonLabel } from '../src/lib/adminEventDeletionState.ts';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
@@ -84,3 +85,18 @@ assert.match(
 );
 
 console.log('admin event deletion UI contract checks passed');
+
+assert.equal(isEventDeletionComplete({ success: false, deletionStatus: 'failed', retryable: true }), false);
+assert.equal(isEventDeletionComplete({ success: true }), false);
+assert.equal(isEventDeletionComplete({ success: true, deletionStatus: 'completed' }), true);
+assert.match(getEventDeletionFailureMessage({ success: false, failedStep: 'delete-ownership-references', retryable: true }), /고객 연결 및 이용 기록 정리.*삭제 재시도/);
+assert.equal(getEventDeletionButtonLabel({ jobId: 'test', status: 'failed', currentStep: 'delete-ownership-references', requestedAt: '', retryable: true }), '삭제 재시도');
+const hook = readSource('src/app/admin/_hooks/useAdminData.ts');
+assert.match(hook, /gateway.deleteEvent\(page.slug, \{ retry \}\)/);
+assert.ok(hook.indexOf('if (!isEventDeletionComplete(result))') < hook.indexOf("showToast({ title: '청첩장을 완전 삭제했습니다.'"));
+const indexes = JSON.parse(readSource('firestore.indexes.json'));
+for (const field of ['eventId', 'pageSlug']) {
+  assert.ok(indexes.fieldOverrides.some((item: { collectionGroup: string; fieldPath: string; indexes: {queryScope: string; order?: string}[] }) => item.collectionGroup === 'ledger' && item.fieldPath === field && item.indexes.some(index => index.queryScope === 'COLLECTION_GROUP' && index.order === 'ASCENDING')));
+}
+
+assert.match(readSource('src/services/invitationPageService.ts'), /deletion: readEventDeletionMetadata\(input.deletion\)/, 'client summary must preserve server deletion state for retries');

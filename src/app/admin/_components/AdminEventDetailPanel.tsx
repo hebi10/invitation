@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useAdminWorkNavigation } from './AdminWorkGuard';
 
+import { getEventDeletionButtonLabel, getEventDeletionFailureMessage } from '@/lib/adminEventDeletionState';
 import { getEventTypeDisplayLabel } from '@/lib/eventTypes';
 import type { InvitationPageSummary } from '@/services/invitationPageService';
 import { getInvitationThemeAdminLabel, getInvitationThemeWizardDescription, type InvitationThemeKey } from '@/lib/invitationThemes';
@@ -266,6 +267,7 @@ function EventDetailWorkspace({
         {!isReadOnlySeed ? (
           <details className={styles.eventDangerArea}>
             <summary>위험 작업</summary>
+            {page.deletion?.status === 'failed' ? <p role="alert">{getEventDeletionFailureMessage({ success: false, failedStep: page.deletion.currentStep, retryable: page.deletion.retryable })}</p> : null}
             <p>이벤트와 연결된 운영 데이터를 완전히 삭제합니다. 삭제 후에는 복구할 수 없습니다.</p>
             <button
               type="button"
@@ -273,7 +275,7 @@ function EventDetailWorkspace({
               disabled={deleting}
               onClick={() => onDelete(page)}
             >
-              {deleting ? '완전 삭제 중' : '완전 삭제'}
+              {deleting ? '완전 삭제 중' : getEventDeletionButtonLabel(page.deletion)}
             </button>
           </details>
         ) : null}
