@@ -490,6 +490,14 @@ const WIZARD_STEP_CONFIGS: Record<WizardStepConfigKey, WizardStepConfigDefinitio
 };
 
 function getWizardStepTemplate(stepKey: WizardStepKey, eventType?: EventTypeKey) {
+  if ((!eventType || eventType === 'wedding') && stepKey === 'music') {
+    return {
+      ...MUSIC_STEP_TEMPLATE,
+      title: '첫 화면 연출과 음악',
+      description: '청첩장이 열리는 연출을 고르고 배경음악을 설정합니다.',
+      highlights: ['첫 화면 연출', '연출 미리보기', '배경음악'],
+    };
+  }
   if (eventType === 'birthday') {
     return BIRTHDAY_WIZARD_STEP_TEMPLATE_MAP[stepKey] ?? WIZARD_STEP_TEMPLATE_MAP[stepKey];
   }

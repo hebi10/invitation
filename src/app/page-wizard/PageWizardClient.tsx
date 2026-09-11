@@ -4,6 +4,7 @@ import { DEMO_EXPERIENCE_IMAGE_OPTIONS } from '@/config/demoExperienceSeeds';
 
 import WeddingWizardPreview from './WeddingWizardPreview';
 import WizardCustomerConnection from './WizardCustomerConnection';
+import IntroSettings from './steps/IntroSettings';
 
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -1695,7 +1696,10 @@ export default function PageWizardClient({
         );
       case 'music':
         return (
-          <MusicStep {...sharedProps} musicPreviewState={musicPreviewState} />
+          <>
+            {eventType === 'wedding' ? <IntroSettings {...sharedProps} theme={defaultTheme} /> : null}
+            <MusicStep {...sharedProps} musicPreviewState={musicPreviewState} />
+          </>
         );
       case 'final':
         return (

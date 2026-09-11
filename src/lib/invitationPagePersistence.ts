@@ -17,6 +17,7 @@ import {
   resolveInvitationFeatures,
 } from '@/lib/invitationProducts';
 import { DEFAULT_EVENT_TYPE, normalizeEventTypeKey } from '@/lib/eventTypes';
+import { normalizeWeddingIntroStyle } from '@/lib/weddingIntro';
 import {
   buildInvitationVariants,
   createInvitationVariantAvailability,
@@ -436,6 +437,7 @@ export function mergeInvitationPageSeed(
     venue,
     productTier,
     features,
+    introStyle: normalizeWeddingIntroStyle(candidate.introStyle ?? base?.introStyle),
     musicEnabled:
       typeof candidate.musicEnabled === 'boolean'
         ? candidate.musicEnabled

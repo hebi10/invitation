@@ -6,6 +6,8 @@ import process from 'node:process';
 const core = [
   'test-background-music-playback',
   'test-music-editor',
+  'test-wedding-intro-settings',
+  'test-wedding-intro-policy',
   'validate-theme-extension',
   'test-admin-created-event-ownership',
   'test-admin-customer-selection',

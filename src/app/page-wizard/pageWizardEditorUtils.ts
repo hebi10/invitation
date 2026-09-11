@@ -5,6 +5,7 @@ import type {
   InvitationScheduleDetail,
   PersonInfo,
 } from '@/types/invitationPage';
+import { normalizeWeddingIntroStyle } from '@/lib/weddingIntro';
 import {
   clampInvitationMusicVolume,
   DEFAULT_INVITATION_MUSIC_VOLUME,
@@ -110,6 +111,7 @@ export function normalizeFormConfig(config: InvitationPageSeed): InvitationPageS
 
   return {
     ...nextConfig,
+    introStyle: normalizeWeddingIntroStyle(nextConfig.introStyle),
     groomName: nextConfig.couple.groom.name,
     brideName: nextConfig.couple.bride.name,
     musicEnabled:

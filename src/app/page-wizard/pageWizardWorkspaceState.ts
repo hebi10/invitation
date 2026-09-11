@@ -2,6 +2,7 @@ import type { NoticeState } from './pageWizardShared';
 import type { WizardStepKey, SlugStepState } from './pageWizardData';
 import { buildWeddingDateObject, formatDateLabel, formatTimeLabel } from './pageWizardData';
 import type { BankAccount, InvitationPageSeed } from '@/types/invitationPage';
+import { normalizeWeddingIntroStyle, WEDDING_INTRO_OPTIONS } from '@/lib/weddingIntro';
 
 export type WizardSaveStatus =
   | 'idle'
@@ -104,7 +105,7 @@ export function hasMeaningfulInputForWizardStep(
         hasAccountInput(formState?.pageData?.giftInfo?.brideAccounts) ||
         hasText(formState?.pageData?.giftInfo?.message);
     case 'music':
-      return Boolean(formState?.musicEnabled) ||
+      return normalizeWeddingIntroStyle(formState?.introStyle) !== 'none' || Boolean(formState?.musicEnabled) ||
         hasText(formState?.musicTrackId) ||
         hasText(formState?.musicStoragePath) ||
         hasText(formState?.musicUrl);
@@ -123,6 +124,7 @@ export function buildWizardReviewFacts(config: InvitationPageSeed, imagesValid: 
   const facts: { label: string; value: string }[] = [];
   if (eventType === 'wedding') {
     facts.push({ label: '신랑 · 신부', value: `${valueOrMissing(config.couple.groom.name)} · ${valueOrMissing(config.couple.bride.name)}` });
+    facts.push({ label: '첫 화면 연출', value: WEDDING_INTRO_OPTIONS.find(option => option.value === normalizeWeddingIntroStyle(config.introStyle))?.label ?? '사용 안 함' });
   } else if (eventType === 'birthday') {
     facts.push({ label: '생일 주인공', value: valueOrMissing(config.couple.groom.name) });
   } else {

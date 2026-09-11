@@ -1,0 +1,56 @@
+.backdrop {
+  --intro-gold: #d6bb85;
+  position: fixed;
+  inset: 0;
+  z-index: 12000;
+  display: grid;
+  place-items: center;
+  background: #1e211f;
+  color: #fff9ee;
+}
+.backdrop[data-theme="emotional"] { --intro-gold: #c5caa2; }
+.stage {
+  position: relative;
+  width: min(100%, 480px);
+  height: 100%;
+  max-height: 100dvh;
+  overflow: hidden;
+  isolation: isolate;
+  background: #262723;
+}
+.stage[data-style="light"] { background: radial-gradient(ellipse at 50% 40%, #4b4435 0, #24251f 55%, #171c19 100%); }
+.stage[data-style="envelope"] { background: #f3eee5; color: #443f36; }
+.photo { width: 100%; height: 100%; object-fit: cover; position: absolute; inset: 0; }
+.photoShade { position: absolute; inset: 0; background: linear-gradient(180deg, #1113, #1110 20%, #1117 65%, #111c); }
+.shutter { position: absolute; inset: 0 0 50%; background: #20211e; z-index: 3; }
+.shutter[data-shutter="bottom"] { inset: 50% 0 0; }
+.copy { position: absolute; inset: 0; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 40px 24px 85px; text-align: center; }
+.copy [data-copy] { opacity: 0; }
+.stage[data-style="cinema"] .copy { justify-content: flex-end; padding-bottom: max(120px, 15vh); }
+.eyebrow { display: block; font-family: Arial, sans-serif; font-size: 10px; font-weight: 500; letter-spacing: .27em; line-height: 1.8; margin: 0 0 24px; }
+.names { font-family: 'Noto Serif KR', 'Batang', serif; font-size: clamp(24px, 6.5vw, 32px); font-weight: 500; line-height: 1.65; margin: 0; word-break: keep-all; overflow-wrap: anywhere; }
+.names span { color: var(--intro-gold); font-size: .75em; padding: 0 6px; }
+.message { font-family: 'Noto Serif KR', 'Batang', serif; font-size: 15px; line-height: 1.9; margin: 28px 0; }
+.date { font-size: 12px; letter-spacing: .04em; margin: 8px 0 0; line-height: 1.8; }
+.skip { position: absolute; right: 20px; top: max(20px, env(safe-area-inset-top)); z-index: 5; min-height: 44px; padding: 10px 14px; border: 1px solid #ffffff80; color: inherit; background: #171b1966; font: inherit; font-size: 12px; }
+.stage[data-style="envelope"] .skip { border-color: #bdb4a6; background: #faf8f2; }
+.skip:focus-visible, .seal:focus-visible { outline: 2px solid currentColor; outline-offset: 5px; }
+.lights { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
+.glow { position: absolute; width: 65%; height: 150%; top: -25%; left: 20%; background: linear-gradient(105deg, transparent 30%, #ecd5a015 45%, #ffedc14a 50%, #ecd5a015 55%, transparent 70%); transform: rotate(-18deg); }
+.lights i { position: absolute; left: var(--x); top: var(--y); width: var(--size); height: var(--size); background: var(--intro-gold); border-radius: 50%; box-shadow: 0 0 14px 3px #f6dbaa40; }
+.envelopeScene { height: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 70px 24px; }
+.envelopeScene > .eyebrow { color: #8c7752; margin-bottom: 12px; }
+.invite { font-size: 15px; margin: 0 0 70px; }
+.envelope { position: relative; width: 100%; max-width: 370px; aspect-ratio: 1.45; perspective: 900px; background: #d8cbb6; }
+.letter, .envelopeFront, .flap { background-image: url('/images/wedding-intro/ivory-paper.webp'); background-size: 480px; }
+.letter { position: absolute; inset: 12px 12px 0; padding: 34px 12px 20px; text-align: center; background-color: #fffdf7; border: 1px solid #d3c5af; z-index: 1; }
+.letter .eyebrow { font-size: 8px; margin-bottom: 16px; }
+.letter .names { font-size: clamp(20px, 5.5vw, 27px); }
+.letter > p { font-size: 11px; line-height: 1.8; }
+.envelopeFront { position: absolute; inset: 0; z-index: 2; background-color: #e8dfcf; clip-path: polygon(0 0, 50% 52%, 100% 0, 100% 100%, 0 100%); }
+.flap { position: absolute; inset: 0 0 43%; z-index: 3; background-color: #e7dfd0; clip-path: polygon(0 0, 100% 0, 50% 100%); transform-origin: center top; backface-visibility: hidden; filter: brightness(.96); }
+.seal { position: absolute; left: 50%; top: 52%; transform: translate(-50%, -50%); padding: 0; border: 0; background: transparent; z-index: 4; cursor: pointer; width: 88px; height: 88px; }
+.seal img { display: block; width: 100%; height: 100%; object-fit: contain; }
+.envelopeHint { margin-top: 35px; font-size: 12px; color: #766b59; }
+@media (max-height: 620px) { .invite { margin-bottom: 35px; } .envelope { max-width: 285px; } .envelopeScene { padding-top: 60px; } .stage[data-style="cinema"] .copy { padding-bottom: 55px; } }
+@media (prefers-reduced-motion: reduce) { .shutter { display: none; } .lights { display: none; } .copy [data-copy] { opacity: 1; } }

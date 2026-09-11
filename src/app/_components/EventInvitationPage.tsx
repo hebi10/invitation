@@ -1,6 +1,8 @@
 'use client';
 
 import { useEffect } from 'react';
+import { normalizeWeddingIntroStyle } from '@/lib/weddingIntro';
+import WeddingIntro from '@/components/sections/WeddingIntro/WeddingIntro';
 
 import { BackgroundMusic } from '@/components';
 import {
@@ -155,26 +157,6 @@ function EventInvitationPageBody(options: EventInvitationRouteOptions) {
     syncInvitationMetadata(state.pageConfig);
   }, [state]);
 
-  useEffect(() => {
-    if (state.status !== 'ready') {
-      return;
-    }
-
-    const shouldLockScroll = state.isLoading || state.imagesLoading;
-    const previousBodyOverflow = document.body.style.overflow;
-    const previousHtmlOverflow = document.documentElement.style.overflow;
-
-    if (shouldLockScroll) {
-      document.body.style.overflow = 'hidden';
-      document.documentElement.style.overflow = 'hidden';
-    }
-
-    return () => {
-      document.body.style.overflow = previousBodyOverflow;
-      document.documentElement.style.overflow = previousHtmlOverflow;
-    };
-  }, [state.status, state.isLoading, state.imagesLoading]);
-
   if (state.status === 'blocked') {
     return (
       <AccessDeniedPage
@@ -250,6 +232,17 @@ function EventInvitationPageBody(options: EventInvitationRouteOptions) {
         </div>
       ) : null}
       <ThemeRenderer state={readyState} options={{ ...options, theme: weddingTheme }} />
+      {normalizeWeddingIntroStyle(readyState.pageConfig.introStyle) !== 'none' ? (
+        <WeddingIntro
+          style={normalizeWeddingIntroStyle(readyState.pageConfig.introStyle)}
+          slug={readyState.pageConfig.slug}
+          groomName={readyState.pageConfig.groomName}
+          brideName={readyState.pageConfig.brideName}
+          date={readyState.pageConfig.date}
+          imageUrl={readyState.mainImageUrl}
+          theme={weddingTheme}
+        />
+      ) : null}
       {shouldRenderMusic ? (
         <BackgroundMusic
           autoPlay
