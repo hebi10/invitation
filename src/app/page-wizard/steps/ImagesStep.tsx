@@ -112,7 +112,7 @@ function SingleImageCard({
             onClick={() => { setPresetSelection(null); onRemove(); }}
             disabled={!hasImage || isUploading}
           >
-            {removeLabel}
+            {isPresetSelected ? '기본 이미지 제거' : removeLabel}
           </button>
         </div>
       </div>
