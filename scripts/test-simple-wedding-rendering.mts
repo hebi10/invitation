@@ -5,6 +5,25 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { createInvitationPageFromSeed, getRequiredWeddingPageBySlug } from '../src/config/weddingPages.ts';
 import type { WeddingPageReadyState } from '../src/app/_components/weddingPageState.tsx';
 import type { InvitationThemeKey } from '../src/lib/invitationThemes.ts';
+import { resolveWeddingCoverImage } from '../src/lib/weddingCoverImage.ts';
+
+const savedCover = 'https://firebasestorage.googleapis.com/v0/b/test/o/saved-cover.jpg';
+const beforeStorage = resolveWeddingCoverImage({ configuredUrl: savedCover });
+const afterStorage = resolveWeddingCoverImage({
+  configuredUrl: savedCover,
+  fallbackUrl: 'https://example.com/old-main.jpg',
+  fallbackThumbnailUrl: 'https://example.com/gallery-first.jpg',
+});
+assert.deepEqual(afterStorage, beforeStorage, '저장소 로딩 후에도 지정된 표지 사진 유지');
+assert.equal(afterStorage.mainImageUrl, savedCover);
+assert.deepEqual(resolveWeddingCoverImage({
+  configuredUrl: savedCover, matchingThumbnailUrl: 'https://example.com/saved-cover-thumb.jpg',
+}), { mainImageUrl: savedCover, heroImageUrl: 'https://example.com/saved-cover-thumb.jpg' });
+assert.deepEqual(resolveWeddingCoverImage({
+  configuredUrl: '', fallbackUrl: 'https://example.com/main.jpg',
+  fallbackThumbnailUrl: 'https://example.com/main-thumb.jpg',
+}), { mainImageUrl: 'https://example.com/main.jpg', heroImageUrl: 'https://example.com/main-thumb.jpg' });
+assert.deepEqual(resolveWeddingCoverImage({ configuredUrl: '' }), { mainImageUrl: '', heroImageUrl: '' });
 
 Object.assign(globalThis, { React });
 register(new URL('./test-css-module-loader.mjs', import.meta.url), import.meta.url);

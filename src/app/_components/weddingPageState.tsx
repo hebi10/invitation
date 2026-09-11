@@ -15,6 +15,7 @@ import {
   shouldRunClientInvitationPageQuery,
 } from '@/lib/invitationPublicAccess';
 import { resolveInvitationPageDataByTheme } from '@/lib/invitationThemePageData';
+import { resolveWeddingCoverImage } from '@/lib/weddingCoverImage';
 import { getCurrentFirebaseIdToken } from '@/services/adminAuth';
 import { getStorageDownloadUrl, type UploadedImage } from '@/services/imageService';
 import { getInvitationPageBySlug } from '@/services/invitationPageService';
@@ -587,13 +588,6 @@ export function useWeddingInvitationState(
     resolveStorageManagedImageUrl(imageUrl, galleryImages[index]?.url)
   );
   const configuredMainImage = findStorageImageByUrl(storageImages, configuredMainImageUrl);
-  const mainImageUrl =
-    resolveStorageManagedImageUrl(
-      configuredMainImageUrl,
-      configuredMainImage?.url ?? mainImage?.url ?? resolvedConfiguredGalleryImageUrls[0]
-    ) ||
-    resolvedConfiguredGalleryImageUrls[0] ||
-    '';
   const galleryImageUrls =
     resolvedConfiguredGalleryImageUrls.length > 0
       ? resolvedConfiguredGalleryImageUrls.slice(0, galleryFeatures.maxGalleryImages)
@@ -614,17 +608,12 @@ export function useWeddingInvitationState(
       : galleryImages
           .map((image) => image.thumbnailUrl ?? image.url)
           .slice(0, galleryFeatures.maxGalleryImages);
-  const heroImageUrl =
-    resolveStorageManagedImageUrl(
-      configuredMainImageUrl,
-      configuredMainImage?.thumbnailUrl ??
-        configuredMainImage?.url ??
-        mainImage?.thumbnailUrl ??
-        mainImage?.url ??
-        galleryPreviewImageUrls[0]
-    ) ||
-    galleryPreviewImageUrls[0] ||
-    mainImageUrl;
+  const { mainImageUrl, heroImageUrl } = resolveWeddingCoverImage({
+    configuredUrl: configuredMainImageUrl,
+    matchingThumbnailUrl: configuredMainImage?.thumbnailUrl,
+    fallbackUrl: mainImage?.url ?? resolvedConfiguredGalleryImageUrls[0],
+    fallbackThumbnailUrl: mainImage?.thumbnailUrl ?? mainImage?.url ?? galleryPreviewImageUrls[0],
+  });
   const preloadImages = useMemo(
     () => (heroImageUrl ? [heroImageUrl] : []).slice(0, 1),
     [heroImageUrl]
