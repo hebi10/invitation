@@ -19,74 +19,28 @@ export interface InvitationMusicCategory {
   tracks: InvitationMusicTrack[];
 }
 
-const musicLibrarySource: InvitationMusicCategory[] = [
-  {
-    id: 'romantic',
-    label: '로맨틱',
-    tracks: [
-      {
-        id: 'romantic-memory-lane',
-        categoryId: 'romantic',
-        title: 'Memory Lane',
-        artist: 'Invitation Studio',
-        storagePath: 'music/romantic/memory-lane.mp3',
-        active: true,
-      },
-      {
-        id: 'romantic-golden-light',
-        categoryId: 'romantic',
-        title: 'Golden Light',
-        artist: 'Invitation Studio',
-        storagePath: 'music/romantic/golden-light.mp3',
-        active: true,
-      },
-    ],
-  },
-  {
-    id: 'classic',
-    label: '클래식',
-    tracks: [
-      {
-        id: 'classic-spring-vow',
-        categoryId: 'classic',
-        title: 'Spring Vow',
-        artist: 'Invitation Studio',
-        storagePath: 'music/classic/spring-vow.mp3',
-        active: true,
-      },
-      {
-        id: 'classic-waltz-of-you',
-        categoryId: 'classic',
-        title: 'Waltz Of You',
-        artist: 'Invitation Studio',
-        storagePath: 'music/classic/waltz-of-you.mp3',
-        active: true,
-      },
-    ],
-  },
-  {
-    id: 'cinematic',
-    label: '시네마틱',
-    tracks: [
-      {
-        id: 'cinematic-first-scene',
-        categoryId: 'cinematic',
-        title: 'First Scene',
-        artist: 'Invitation Studio',
-        storagePath: 'music/cinematic/first-scene.mp3',
-        active: true,
-      },
-      {
-        id: 'cinematic-sunset-credits',
-        categoryId: 'cinematic',
-        title: 'Sunset Credits',
-        artist: 'Invitation Studio',
-        storagePath: 'music/cinematic/sunset-credits.mp3',
-        active: true,
-      },
-    ],
-  },
-];
+// Firebase Storage의 현재 18곡과 동일한 목록입니다. 조회 실패 시에도 실제 곡만 표시합니다.
+const musicCatalog = [
+  ['01-romantic-piano', '01 Romantic Piano', ['Petals_on_the_Lawn', 'Sunlight_on_the_Aisle', 'Sunlight_on_the_Floor']],
+  ['02-acoustic-warm', '02 Acoustic Warm', ['First_Light_on_the_Lawn', 'Morning_in_the_Arbor', 'The_Quiet_Promise']],
+  ['03-elegant-classic', '03 Elegant Classic', ['A_Quiet_Promise', 'Morning_Vows', 'Stained_Glass_Afternoon']],
+  ['04-bright-lovely', '04 Bright Lovely', ['Before_the_Vows', 'Paper_Lace', 'Sunlight_on_the_Aisle']],
+  ['05-emotional-cinematic', '05 Emotional Cinematic', ['Before_The_Vows', 'Sunlight_on_the_Aisle', 'Vows_at_Dawn']],
+  ['06-modern-lofi', '06 Modern Lofi', ['Sunday_Morning_View', 'Vows_by_the_Window', 'Vows_in_Morning_Light']],
+] as const;
+
+const musicLibrarySource: InvitationMusicCategory[] = musicCatalog.map(([id, label, files]) => ({
+  id,
+  label,
+  tracks: files.map(file => ({
+    id: `${id}-${file.toLowerCase().replace(/_/g, '-')}`,
+    categoryId: id,
+    title: file.split('_').map(word => word[0].toUpperCase() + word.slice(1)).join(' '),
+    artist: 'Invitation Studio',
+    storagePath: `music/${id}/${file}.mp3`,
+    active: true,
+  })),
+}));
 
 function cloneMusicLibrary(source: InvitationMusicCategory[]) {
   return source.map((category) => ({

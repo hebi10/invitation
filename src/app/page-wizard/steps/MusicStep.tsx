@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 import {
   DEFAULT_INVITATION_MUSIC_VOLUME,
@@ -36,14 +36,19 @@ export default function MusicStep({
     DEFAULT_INVITATION_MUSIC_VOLUME
   );
   const previewMusicUrl = formState.musicUrl?.trim() ?? '';
+  const previewAudioRef = useRef<HTMLAudioElement>(null);
+
+  useEffect(() => {
+    if (previewAudioRef.current) previewAudioRef.current.volume = musicVolume;
+  }, [musicVolume, previewMusicUrl, formState.musicEnabled]);
 
   const handleMusicEnabledChange = (enabled: boolean) => {
     updateForm((draft) => {
       const draftDefaultTrack = findFirstActiveInvitationMusicTrack(draft.musicCategoryId);
       const normalizedDraftSelection = normalizeInvitationMusicSelection({
-        categoryId: draft.musicCategoryId ?? draftDefaultTrack?.categoryId,
-        trackId: draft.musicTrackId ?? draftDefaultTrack?.id,
-        storagePath: draft.musicStoragePath ?? draftDefaultTrack?.storagePath,
+        categoryId: draft.musicCategoryId || draftDefaultTrack?.categoryId,
+        trackId: draft.musicTrackId || draftDefaultTrack?.id,
+        storagePath: draft.musicStoragePath || draftDefaultTrack?.storagePath,
       });
 
       draft.musicEnabled = enabled;
@@ -263,7 +268,7 @@ export default function MusicStep({
         <span className={styles.summaryLabel}>미리 듣기</span>
         {formState.musicEnabled ? (
           previewMusicUrl ? (
-            <audio className={styles.musicAudio} controls preload="none" src={previewMusicUrl} />
+            <audio ref={previewAudioRef} className={styles.musicAudio} controls preload="none" src={previewMusicUrl} />
           ) : musicPreviewState === 'loading' ? (
             <div className={styles.musicAudioPlaceholder}>선택한 곡을 불러오는 중입니다.</div>
           ) : (

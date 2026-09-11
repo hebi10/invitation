@@ -209,7 +209,7 @@ function EventInvitationPageBody(options: EventInvitationRouteOptions) {
     !isLoaderVisible &&
     shareFeatures.showMusic &&
     readyState.pageConfig.musicEnabled === true &&
-    Boolean(readyState.pageConfig.musicUrl?.trim());
+    Boolean(readyState.pageConfig.musicUrl?.trim() || readyState.musicLoadError);
 
   const shareButton =
     options.externalShareEnabled !== false && shareFeatures.shareMode !== 'none' ? (
@@ -258,6 +258,8 @@ function EventInvitationPageBody(options: EventInvitationRouteOptions) {
             DEFAULT_INVITATION_MUSIC_VOLUME
           )}
           musicUrl={readyState.pageConfig.musicUrl}
+          loadError={readyState.musicLoadError}
+          onRetryLoad={readyState.retryMusicLoad}
         />
       ) : null}
       {!isLoaderVisible && shareButton !== null

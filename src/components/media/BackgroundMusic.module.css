@@ -11,6 +11,7 @@
 }
 
 .toggleButton {
+  min-height: 44px;
   padding: 8px 16px;
   border: 1px solid #ddd;
   border-radius: 20px;
@@ -22,6 +23,17 @@
   transition: all 0.3s ease;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   letter-spacing: 0.5px;
+}
+
+.errorMessage {
+  max-width: min(260px, calc(100vw - 30px));
+  margin: 0;
+  padding: 10px 12px;
+  border: 1px solid #d8dad4;
+  background: #fff;
+  color: #444;
+  font-size: 12px;
+  line-height: 1.6;
 }
 
 

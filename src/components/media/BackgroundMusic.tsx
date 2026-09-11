@@ -14,6 +14,8 @@ interface BackgroundMusicProps {
   volume?: number;
   musicIndex?: number;
   musicUrl?: string;
+  loadError?: boolean;
+  onRetryLoad?: () => void;
   initialControlHintText?: string;
   initialControlHintDurationMs?: number;
 }
@@ -23,10 +25,13 @@ export default function BackgroundMusic({
   volume = DEFAULT_INVITATION_MUSIC_VOLUME,
   musicIndex: _musicIndex = 0,
   musicUrl: customMusicUrl,
+  loadError = false,
+  onRetryLoad,
   initialControlHintText,
   initialControlHintDurationMs = 3000,
 }: BackgroundMusicProps) {
   const [isPlaying, setIsPlaying] = useState(false);
+  const [playbackError, setPlaybackError] = useState('');
   const [isAtTop, setIsAtTop] = useState(true);
   const [shouldRenderInitialControlHint, setShouldRenderInitialControlHint] = useState(
     Boolean(initialControlHintText?.trim())
@@ -39,6 +44,9 @@ export default function BackgroundMusic({
   const previousMusicUrlRef = useRef('');
   const normalizedMusicUrl = customMusicUrl?.trim() ?? '';
   const normalizedInitialControlHintText = initialControlHintText?.trim() ?? '';
+  const errorMessage = loadError
+    ? '음악을 불러오지 못했어요. 연결 상태를 확인하고 다시 시도해 주세요.'
+    : playbackError;
 
   const pauseAudio = useCallback(() => {
     const audio = audioRef.current;
@@ -61,6 +69,7 @@ export default function BackgroundMusic({
     }
 
     isPlaybackTransitionRef.current = true;
+    setPlaybackError('');
 
     try {
       await audio.play();
@@ -69,6 +78,9 @@ export default function BackgroundMusic({
     } catch (error) {
       console.error('재생 오류:', error);
       setIsPlaying(false);
+      setPlaybackError(error instanceof Error && error.name === 'NotAllowedError'
+        ? '음악을 켜려면 아래 버튼을 눌러 주세요.'
+        : '음악을 불러오지 못했어요. 연결 상태를 확인하고 다시 시도해 주세요.');
       return false;
     } finally {
       isPlaybackTransitionRef.current = false;
@@ -106,6 +118,7 @@ export default function BackgroundMusic({
 
     previousMusicUrlRef.current = normalizedMusicUrl;
     hasAutoPlayedRef.current = false;
+    setPlaybackError('');
     pauseAudio();
     audio.load();
   }, [normalizedMusicUrl, pauseAudio]);
@@ -189,54 +202,58 @@ export default function BackgroundMusic({
 
   const togglePlay = async () => {
     if (!normalizedMusicUrl) {
+      onRetryLoad?.();
       return;
     }
 
     // A manual choice takes precedence over subsequent page interactions.
     hasAutoPlayedRef.current = true;
 
-    if (isPlaying) {
+    if (audioRef.current && !audioRef.current.paused) {
       pauseAudio();
       return;
     }
 
+    if (audioRef.current?.error) audioRef.current.load();
     const played = await playAudio();
     if (played) {
       hasAutoPlayedRef.current = true;
     }
   };
 
-  if (!normalizedMusicUrl) {
+  if (!normalizedMusicUrl && !loadError) {
     return null;
   }
 
   return (
     <div className={styles.musicPlayer}>
-      <audio
+      {normalizedMusicUrl ? <audio
         ref={audioRef}
         src={normalizedMusicUrl}
         loop
         preload="auto"
         onPause={() => setIsPlaying(false)}
-        onPlay={() => setIsPlaying(true)}
+        onPlay={() => { setIsPlaying(true); setPlaybackError(''); }}
         onError={() => {
-          console.error('음악 로드 실패:', normalizedMusicUrl);
           setIsPlaying(false);
+          setPlaybackError('음악을 불러오지 못했어요. 연결 상태를 확인하고 다시 시도해 주세요.');
         }}
-      />
+      /> : null}
 
       <button
         ref={controlRef}
         type="button"
         onClick={togglePlay}
         className={`${styles.toggleButton} ${isPlaying ? styles.on : styles.off}`}
-        aria-label={isPlaying ? 'BGM OFF' : 'BGM ON'}
-        title={isPlaying ? 'BGM OFF' : 'BGM ON'}
+        aria-label={isPlaying ? '음악 끄기' : errorMessage ? '음악 다시 시도' : '음악 켜기'}
+        title={isPlaying ? '음악 끄기' : errorMessage ? '음악 다시 시도' : '음악 켜기'}
       >
-        {isPlaying ? 'OFF' : 'ON'}
+        {isPlaying ? '음악 끄기' : errorMessage ? '음악 다시 시도' : '음악 켜기'}
       </button>
 
-      {shouldRenderInitialControlHint ? (
+      {errorMessage ? <p className={styles.errorMessage} role="status">{errorMessage}</p> : null}
+
+      {!errorMessage && shouldRenderInitialControlHint ? (
         <div
           className={`${styles.autoPlayHint} ${styles.initialControlHint} ${
             isInitialControlHintFading ? styles.initialControlHintFading : ''
@@ -249,10 +266,10 @@ export default function BackgroundMusic({
         </div>
       ) : null}
 
-      {!shouldRenderInitialControlHint && !hasAutoPlayedRef.current && !isPlaying && isAtTop ? (
+      {!errorMessage && !shouldRenderInitialControlHint && !hasAutoPlayedRef.current && !isPlaying && isAtTop ? (
         <div className={styles.autoPlayHint}>
           <span style={{ fontSize: '0.7rem', color: '#838383' }}>
-            음악 ON/OFF
+            버튼을 눌러 음악을 켤 수 있어요
           </span>
         </div>
       ) : null}

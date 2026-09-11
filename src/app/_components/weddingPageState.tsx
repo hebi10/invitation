@@ -38,6 +38,8 @@ type WeddingPageBaseState = {
   galleryPreviewImageUrls: string[];
   preloadImages: string[];
   adminNotice: string | null;
+  musicLoadError?: boolean;
+  retryMusicLoad?: () => void;
 };
 
 export interface WeddingPageLoadingState extends WeddingPageBaseState {
@@ -381,6 +383,12 @@ export function useWeddingInvitationState(
   );
   const [pageConfig, setPageConfig] = useState<InvitationPage | null>(initialPage);
   const [isLoading, setIsLoading] = useState(true);
+  const [musicLoadError, setMusicLoadError] = useState(false);
+  const [musicLoadAttempt, setMusicLoadAttempt] = useState(0);
+  const retryMusicLoad = useCallback(() => {
+    setMusicLoadError(false);
+    setMusicLoadAttempt(attempt => attempt + 1);
+  }, []);
   const { isAdminLoading, isAdminLoggedIn } = useAdmin();
   const themedPageData = useMemo(
     () => resolveInvitationPageDataByTheme(pageConfig, options.theme),
@@ -509,6 +517,7 @@ export function useWeddingInvitationState(
   }, [error]);
 
   useEffect(() => {
+    setMusicLoadError(false);
     if (
       options.allowStorageImages === false ||
       pageConfig?.musicEnabled !== true ||
@@ -523,7 +532,9 @@ export function useWeddingInvitationState(
 
     const resolveMusicUrl = async () => {
       const downloadUrl = await getStorageDownloadUrl(musicStoragePath);
-      if (!downloadUrl || cancelled) {
+      if (cancelled) return;
+      if (!downloadUrl) {
+        setMusicLoadError(true);
         return;
       }
 
@@ -543,7 +554,9 @@ export function useWeddingInvitationState(
       });
     };
 
-    void resolveMusicUrl();
+    void resolveMusicUrl().catch(() => {
+      if (!cancelled) setMusicLoadError(true);
+    });
 
     return () => {
       cancelled = true;
@@ -553,6 +566,7 @@ export function useWeddingInvitationState(
     pageConfig?.musicEnabled,
     pageConfig?.musicStoragePath,
     pageConfig?.musicUrl,
+    musicLoadAttempt,
   ]);
 
   useEffect(() => {
@@ -625,6 +639,8 @@ export function useWeddingInvitationState(
   );
 
   const baseState: WeddingPageBaseState = {
+    musicLoadError,
+    retryMusicLoad,
     isLoading,
     setIsLoading,
     isRefreshingPage: isPageRefetching,

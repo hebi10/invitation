@@ -2,6 +2,7 @@
 
 import {
   type ReactNode,
+  useEffect,
   useMemo,
   useRef,
   useState,
@@ -70,6 +71,21 @@ STORY: 현재 위치와 오류를 확인하고, 관련 정보를 입력하고, �
 FIRST VIEWPORT: 상단 작업 바, 왼쪽 목차, 중앙 입력, 하단 주요 동작.
 FORM: Operate 모드의 2열 데스크톱·단일 열 모바일 편집 워크스페이스.
 -->`;
+
+function OptionalSettings({ invalid, title, children }: { invalid: boolean; title: string; children: ReactNode }) {
+  const [open, setOpen] = useState(invalid);
+
+  useEffect(() => {
+    if (invalid) setOpen(true);
+  }, [invalid]);
+
+  return (
+    <details className={styles.optionalSection} open={open} onToggle={event => setOpen(event.currentTarget.open)}>
+      <summary>{title} 설정</summary>
+      {children}
+    </details>
+  );
+}
 
 export default function PageWizardWorkspace({
   experience = false,
@@ -337,10 +353,9 @@ export default function PageWizardWorkspace({
                   <div className={styles.stepContent}>
                     <fieldset className={styles.editorFields} disabled={isSaving} aria-label={`${step.title} 입력`}>
                     {step.key === 'music' || step.key === 'extra' ? (
-                      <details className={styles.optionalSection} open={!validation.valid}>
-                        <summary>{step.title} 설정</summary>
+                      <OptionalSettings invalid={!validation.valid} title={step.title}>
                         {renderStepContent(step.key)}
-                      </details>
+                      </OptionalSettings>
                     ) : renderStepContent(step.key)}
                     </fieldset>
                   </div>
