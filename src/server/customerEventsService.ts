@@ -520,11 +520,7 @@ export async function saveCustomerEditableInvitationPageConfig(
   }
 
   const entitlementTrustedConfig =
-    buildServerTrustedMobileInvitationPageConfigForSave({
-      ...input.config,
-      slug: currentEditableConfig.config.slug,
-      eventType: currentEditableConfig.config.eventType,
-    }, {
+    buildServerTrustedMobileInvitationPageConfigForSave(input.config, {
       ...currentEditableConfig.config,
       productTier: currentEditableConfig.productTier,
       features: currentEditableConfig.features,
@@ -532,7 +528,7 @@ export async function saveCustomerEditableInvitationPageConfig(
 
   await saveServerInvitationPageConfig(entitlementTrustedConfig, {
     published: currentEditableConfig.published,
-    defaultTheme: input.defaultTheme ?? currentEditableConfig.defaultTheme,
+    defaultTheme: currentEditableConfig.defaultTheme,
   });
 
   return getCustomerEditableInvitationPageSnapshot(ownerUid, normalizedPageSlug);

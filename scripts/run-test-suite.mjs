@@ -36,6 +36,7 @@ const core = [
   'test-simple-wedding-rendering',
   'test-image-upload-optimization',
   'test-invitation-metadata',
+  'test-invitation-product-policy',
   'test-homepage-ui-contracts',
   'test-kakao-share-url-policy',
   'test-opening-event-rendering',

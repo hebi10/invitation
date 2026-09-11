@@ -74,10 +74,10 @@ export type SlugStepState = {
 
 const THEME_STEP_TEMPLATE: WizardStepTemplate = {
   key: 'theme',
-  title: '디자인과 상품 선택',
-  description: '청첩장 기본 디자인과 상품 구성을 먼저 선택합니다.',
+  title: '디자인 선택',
+  description: '실제 청첩장을 미리 보고 디자인을 선택합니다.',
   previewSection: 'cover',
-  highlights: ['기본 디자인', '상품 등급', '사용 가능 기능 확인'],
+  highlights: ['기본 디자인', '사용 가능 기능 확인'],
 };
 
 const EVENT_TYPE_STEP_TEMPLATE: WizardStepTemplate = {
@@ -106,8 +106,8 @@ const BASIC_STEP_TEMPLATE: WizardStepTemplate = {
 
 const BIRTHDAY_THEME_STEP_TEMPLATE: WizardStepTemplate = {
   ...THEME_STEP_TEMPLATE,
-  description: '생일 초대장에 사용할 디자인과 서비스 구성을 선택합니다.',
-  highlights: ['생일 디자인', '상품 등급', '사용 가능 기능 확인'],
+  description: '생일 초대장에 사용할 디자인을 선택합니다.',
+  highlights: ['생일 디자인', '사용 가능 기능 확인'],
 };
 
 const BIRTHDAY_BASIC_STEP_TEMPLATE: WizardStepTemplate = {
@@ -136,7 +136,7 @@ const BIRTHDAY_GREETING_STEP_TEMPLATE: WizardStepTemplate = {
 
 const FIRST_BIRTHDAY_THEME_STEP_TEMPLATE: WizardStepTemplate = {
   ...THEME_STEP_TEMPLATE,
-  description: '돌잔치 초대장에 사용할 핑크 또는 민트 디자인과 서비스 구성을 선택합니다.',
+  description: '돌잔치 초대장에 사용할 핑크 또는 민트 디자인을 선택합니다.',
   highlights: ['돌잔치 디자인', '성장 갤러리', '방명록 제공 범위'],
 };
 
@@ -221,8 +221,8 @@ const BIRTHDAY_EXTRA_STEP_TEMPLATE: WizardStepTemplate = {
 
 const GENERAL_EVENT_THEME_STEP_TEMPLATE: WizardStepTemplate = {
   ...THEME_STEP_TEMPLATE,
-  description: '일반 행사 초대장에 사용할 elegant 또는 vivid 디자인과 서비스 구성을 선택합니다.',
-  highlights: ['행사 전용 디자인', '상품 등급', '방명록 제공 범위'],
+  description: '일반 행사 초대장에 사용할 elegant 또는 vivid 디자인을 선택합니다.',
+  highlights: ['행사 전용 디자인', '방명록 제공 범위'],
 };
 
 const GENERAL_EVENT_BASIC_STEP_TEMPLATE: WizardStepTemplate = {
@@ -1170,14 +1170,9 @@ export function buildStepValidation(
     }
     case 'theme': {
       const hasValidTheme = isInvitationThemeKey(theme);
-      const hasValidTier =
-        formState?.productTier === 'standard' ||
-        formState?.productTier === 'deluxe' ||
-        formState?.productTier === 'premium';
-
       return {
-        valid: hasValidTheme && hasValidTier,
-        messages: hasValidTheme && hasValidTier ? [] : ['디자인과 상품 구성을 먼저 선택해 주세요.'],
+        valid: hasValidTheme,
+        messages: hasValidTheme ? [] : ['디자인을 선택해 주세요.'],
       };
     }
     case 'slug': {

@@ -39,9 +39,9 @@ function buildPreview(seed: InvitationPageSeed, theme: InvitationThemeKey): Wedd
   };
   const data = resolveInvitationPageDataByTheme(page, theme);
   const cover = seed.metadata.images.wedding.trim() || SAMPLE_WEDDING_COVER;
-  const images = data?.galleryImages?.filter((url) => url.trim()) ?? [];
+  const images = Array.from(new Set(data?.galleryImages?.map((url) => url.trim()).filter((url) => url && url !== cover) ?? []));
   const features = resolveInvitationFeatures(page.productTier, page.features);
-  const gallery = (images.length ? images : SAMPLE_WEDDING_IMAGES).slice(0, features.maxGalleryImages);
+  const gallery = (images.length ? images : SAMPLE_WEDDING_IMAGES.filter((url) => url !== cover)).slice(0, features.maxGalleryImages);
   page.pageData = {
     ...data,
     themeOverrides: undefined,
@@ -64,11 +64,15 @@ function buildPreview(seed: InvitationPageSeed, theme: InvitationThemeKey): Wedd
 }
 
 export default function WizardPreviewClient() {
-  const [draft, setDraft] = useState<{ seed: InvitationPageSeed; theme: InvitationThemeKey }>({ seed: sampleWeddingPage, theme: 'simple' });
+  const [draft, setDraft] = useState<{ seed: InvitationPageSeed; theme: InvitationThemeKey } | null>(null);
   useEffect(() => {
     const receive = (event: MessageEvent) => {
       if (window.parent === window || event.origin !== window.location.origin || event.source !== window.parent) return;
       const message = event.data;
+      if (message?.type === 'wedding-wizard-preview:top') {
+        window.scrollTo({ top: 0, behavior: 'instant' });
+        return;
+      }
       if (message?.type !== 'wedding-wizard-preview:update' || !themes.includes(message.theme)) return;
       const seed = message.formState;
       if (!seed || typeof seed.slug !== 'string' || !seed.couple?.groom || !seed.couple?.bride || !seed.metadata?.images || !seed.weddingDateTime) return;
@@ -82,11 +86,11 @@ export default function WizardPreviewClient() {
     if (window.parent !== window) window.parent.postMessage({ type: 'wedding-wizard-preview:ready' }, window.location.origin);
     return () => window.removeEventListener('message', receive);
   }, []);
-  const state = useMemo(() => buildPreview(draft.seed, draft.theme), [draft]);
+  const state = useMemo(() => draft ? buildPreview(draft.seed, draft.theme) : null, [draft]);
+  if (!draft || !state) return <p className={styles.notice} role="status">편집 화면의 입력 내용을 기다리고 있습니다.</p>;
   return (
     <AppQueryProvider>
       <div className={styles.canvas}>
-      <p className={styles.notice}>디자인 확인용 미리보기 · 미입력 항목에는 예시 정보와 AI 생성 사진이 표시됩니다. 지도는 생략되며 방명록은 실제로 등록되지 않습니다.</p>
       <WeddingBase state={state} options={{ slug: state.pageConfig.slug, theme: draft.theme }} theme={draft.theme} demoComments={sampleWeddingComments} showMap={false} />
       <WeddingClosing groomName={state.pageConfig.groomName} brideName={state.pageConfig.brideName} theme={draft.theme} />
       </div>

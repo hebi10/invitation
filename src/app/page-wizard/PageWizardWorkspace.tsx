@@ -29,6 +29,8 @@ import styles from './PageWizardWorkspace.module.css';
 import { useDialogLayer } from '@/hooks/useDialogLayer';
 
 type PageWizardWorkspaceProps = {
+  canManageSetup?: boolean;
+  setupContent?: ReactNode;
   title: string;
   subtitle: string;
   sections: WizardSection[];
@@ -68,6 +70,8 @@ FORM: Operate 모드의 2열 데스크톱·단일 열 모바일 편집 워크스
 -->`;
 
 export default function PageWizardWorkspace({
+  canManageSetup = false,
+  setupContent,
   title,
   subtitle,
   sections,
@@ -278,13 +282,12 @@ export default function PageWizardWorkspace({
                   );
                 })}
               </div>
-              <p className={styles.saveHelp}>내용 저장은 현재 공개 상태를 유지합니다. 공개 여부 변경은 아래 최종 저장 버튼에서 적용됩니다.</p>
+              <p className={styles.saveHelp}>{canManageSetup ? '내용 저장은 현재 공개 상태를 유지합니다. 공개 여부 변경은 아래 최종 저장 버튼에서 적용됩니다.' : '내용을 저장하면 현재 공개 상태가 유지됩니다. 공개 여부는 관리자가 설정합니다.'}</p>
             </section>
           ) : null}
 
           <div className={styles.stepList}>
             {activeSection.steps.map((step) => {
-              if (fullPreview && step.key === 'basic') return null;
               const validation = getStepValidation(step.key);
               const isActiveStep = step.key === activeStepKey;
               const isOnlyStepWithSectionTitle =
@@ -309,7 +312,7 @@ export default function PageWizardWorkspace({
                       </h3>
                       <p>{step.description}</p>
                     </div>
-                    {step.previewSection ? (
+                    {step.previewSection && !fullPreview ? (
                       <button
                         type="button"
                         className={styles.stepPreviewAction}
@@ -341,6 +344,7 @@ export default function PageWizardWorkspace({
               );
             })}
           </div>
+          {activeSection.id === 'setup' && canManageSetup ? setupContent : null}
         </main>
         {fullPreview ? <aside className={styles.livePreview} aria-label="청첩장 실시간 미리보기">
           <h2>청첩장 미리보기</h2>
@@ -369,7 +373,7 @@ export default function PageWizardWorkspace({
                 onClick={() => attempt(onFinalConfirm, true)}
                 disabled={isSaving}
               >
-                {isSaving ? '저장 중' : published ? '저장 후 공개' : persistedPublished ? '비공개로 저장' : '초안 저장'}
+                {isSaving ? '저장 중' : !canManageSetup ? '내용 저장 완료' : published ? '저장 후 공개' : persistedPublished ? '비공개로 저장' : '초안 저장'}
               </button>
             ) : (
               <button
@@ -403,7 +407,7 @@ export default function PageWizardWorkspace({
                 onClick={closeMobileNav}
                 aria-label="작업 영역 닫기"
               >
-                닫기
+                <img src="/images/admin/close.webp" width={16} height={16} alt="" />
               </button>
             </header>
             <nav className={styles.mobileNavList} aria-label="모바일 작업 영역">
@@ -417,7 +421,7 @@ export default function PageWizardWorkspace({
         <section ref={fullPreviewDialogRef} className={styles.previewPanel} role="dialog" aria-modal="true" aria-labelledby="wizard-full-preview-title">
           <header className={styles.dialogHeader}>
             <h2 id="wizard-full-preview-title">청첩장 미리보기</h2>
-            <button type="button" className={styles.closeAction} onClick={closeFullPreview}>닫기</button>
+            <button type="button" className={styles.closeAction} onClick={closeFullPreview} aria-label="미리보기 닫기"><img src="/images/admin/close.webp" width={16} height={16} alt="" /></button>
           </header>
           <div className={styles.previewContent}>{fullPreview}</div>
         </section>
@@ -445,7 +449,7 @@ export default function PageWizardWorkspace({
                 onClick={closePreview}
                 aria-label="미리보기 닫기"
               >
-                닫기
+                <img src="/images/admin/close.webp" width={16} height={16} alt="" />
               </button>
             </header>
             <div className={styles.previewContent}>

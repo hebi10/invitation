@@ -102,7 +102,7 @@ export function PersonEditorCard({
           <h3 className={styles.subCardTitle}>{label}</h3>
           <p className={styles.subCardDescription}>
             {nameReadOnly
-              ? '이름은 시작 설정에서 수정할 수 있습니다. 호칭과 연락처는 필요한 경우에만 추가해 주세요.'
+              ? '이름은 기본 정보에서 수정할 수 있습니다. 호칭과 연락처는 필요한 경우에만 추가해 주세요.'
               : '이름은 꼭 입력하고, 호칭과 연락처는 필요한 경우에만 추가해 주세요.'}
           </p>
         </div>
@@ -111,7 +111,7 @@ export function PersonEditorCard({
       <div className={styles.fieldGrid}>
         {nameReadOnly ? <div className={styles.field}>
           <span className={styles.label}>이름</span>
-          <span>{person.name || '시작 설정에서 이름을 입력해 주세요'}</span>
+          <span>{person.name || '기본 정보에서 이름을 입력해 주세요'}</span>
         </div> : (
         <label className={styles.field}>
           {renderFieldMeta('이름', 'required', '청첩장에 직접 노출되는 이름입니다.')}

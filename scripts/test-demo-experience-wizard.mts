@@ -23,8 +23,10 @@ assert.match(persistenceHook, /version: created\.version/);
 assert.match(persistenceHook, /expectedVersion: draftState\.version \?\? persistedVersion/);
 assert.match(
   persistenceHook,
-  /draftState\.createdFresh && !gateway\.draftCreationPersists\s*\? formState/
+  /const sourceConfig = formState/
 );
+assert.doesNotMatch(persistenceHook, /gateway\.draftCreationPersists &&/,
+  '최초 생성도 입력 중인 디자인과 본문을 저장해야 합니다.');
 assert.match(wizardClient, /persistedVersion/);
 assert.match(gateway, /VERSION_CONFLICT/);
 assert.match(wizardClient, /routes\.wizardResult/);

@@ -31,7 +31,7 @@ const SECTION_DEFINITIONS: WizardSectionDefinition[] = [
   {
     id: 'setup',
     title: '시작 설정',
-    description: '페이지 유형과 기본 구성을 정합니다.',
+    description: '관리자가 초대장을 생성하고 고객 계정을 연결합니다.',
     stepKeys: ['eventType', 'theme', 'slug'],
   },
   {
@@ -66,11 +66,9 @@ const SECTION_DEFINITIONS: WizardSectionDefinition[] = [
   },
 ];
 
-export function buildWizardSections(steps: WizardStepDefinition[], eventType?: string): WizardSection[] {
+export function buildWizardSections(steps: WizardStepDefinition[], _eventType?: string): WizardSection[] {
   return SECTION_DEFINITIONS.flatMap((definition) => {
-    if (eventType === 'wedding' && definition.id === 'basic') return [];
-    const allowedStepKeys = new Set<WizardStepKey>(eventType === 'wedding' && definition.id === 'setup'
-      ? [...definition.stepKeys, 'basic'] : definition.stepKeys);
+    const allowedStepKeys = new Set<WizardStepKey>(definition.stepKeys);
     const sectionSteps = steps.filter((step) => allowedStepKeys.has(step.key));
 
     if (sectionSteps.length === 0) {
@@ -80,8 +78,7 @@ export function buildWizardSections(steps: WizardStepDefinition[], eventType?: s
     return [{
       id: definition.id,
       title: definition.title,
-      description: eventType === 'wedding' && definition.id === 'setup'
-        ? '디자인을 고르고 두 분의 이름과 페이지 주소를 입력합니다.' : definition.description,
+      description: definition.description,
       steps: sectionSteps,
     }];
   });

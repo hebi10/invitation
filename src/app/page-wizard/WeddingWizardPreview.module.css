@@ -1,6 +1,13 @@
-.preview { width: 100%; min-width: 0; }
+.preview { display: grid; gap: 12px; width: 100%; min-width: 0; }
 .canvas { width: min(100%, 480px); margin-inline: auto; background: #fff; }
+.toolbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; color: #262626; font-size: 14px; font-weight: 500; }
+.toolbar button, .status button { padding: 8px 10px; border: 1px solid #d4d4d4; background: #fff; color: #404040; font: inherit; cursor: pointer; }
+.toolbar button:disabled { opacity: .5; cursor: default; }
+.hint { margin: 0; color: #626262; font-size: 12px; line-height: 1.7; }
 .notice, .status { margin: 0; padding: 12px 16px; color: #525252; background: #f5f5f5; font-size: 13px; line-height: 1.65; }
 .status { background: #fff; }
-.frame { display: block; width: 100%; height: clamp(300px, calc(100dvh - 290px), 760px); border: 6px solid #262626; border-radius: 24px; background: #fff; }
+.phone { box-sizing: border-box; width: min(100%, 390px); margin-inline: auto; padding: 6px; border-radius: 26px; background: #262626; overflow: hidden; }
+.frame { display: block; width: 100%; height: clamp(440px, calc(100dvh - 260px), 760px); border: 0; border-radius: 20px; background: #fff; }
 .frame:focus-visible { outline: 2px solid #262626; outline-offset: 2px; }
+.toolbar button:focus-visible, .status button:focus-visible { outline: 2px solid #262626; outline-offset: 3px; }
+@media (max-width: 480px) { .frame { height: min(680px, 75dvh); min-height: 360px; } }

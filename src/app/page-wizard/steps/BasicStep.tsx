@@ -197,17 +197,19 @@ export default function BasicStep({
   return (
     <div className={styles.fieldGrid}>
       <div className={styles.twoColumnGrid}>
-        <div className={styles.field}>
-          <span className={styles.summaryLabel}>신랑 이름</span>
-          <strong className={styles.summaryValue}>{formState.couple.groom.name || '이름을 입력해 주세요'}</strong>
-        </div>
-        <div className={styles.field}>
-          <span className={styles.summaryLabel}>신부 이름</span>
-          <strong className={styles.summaryValue}>{formState.couple.bride.name || '이름을 입력해 주세요'}</strong>
-        </div>
+        <label className={styles.field}>
+          {renderFieldMeta('신랑 이름', 'required')}
+          <input className={styles.input} value={formState.couple.groom.name} placeholder="신랑 이름"
+            onChange={(event) => onPersonFieldChange('groom', 'name', event.target.value)} />
+        </label>
+        <label className={styles.field}>
+          {renderFieldMeta('신부 이름', 'required')}
+          <input className={styles.input} value={formState.couple.bride.name} placeholder="신부 이름"
+            onChange={(event) => onPersonFieldChange('bride', 'name', event.target.value)} />
+        </label>
       </div>
       <p className={styles.sectionText}>
-        이름은 ‘시작 설정’에서 수정할 수 있습니다. 표지에는 두 분의 이름과 예식 일시·장소가 표시됩니다.
+        표지에는 두 분의 이름과 예식 일시·장소가 표시됩니다.
         초대 문구는 ‘인사말과 관계 정보’, 링크를 보낼 때 표시되는 문구는 ‘검토 및 저장’에서 작성해 주세요.
       </p>
     </div>

@@ -31,7 +31,7 @@ import {
   type WizardStepDefinition,
   type WizardStepKey,
 } from './pageWizardData';
-import { getEventTypeDescription, getEventTypeLabel, getProductTierLabel, getThemeLabel } from './pageWizardShared';
+import { getEventTypeDescription, getEventTypeLabel, getThemeLabel } from './pageWizardShared';
 
 type WizardReviewItem = {
   step: WizardStepDefinition;
@@ -163,7 +163,7 @@ export default function PageWizardStepPreview({
     return (
       <section className={styles.previewSummary}>
         <div className={styles.previewHeader}>
-          <h3 className={styles.previewTitle}>선택하신 서비스</h3>
+          <h3 className={styles.previewTitle}>선택한 디자인</h3>
           <div className={styles.previewPillRow}>
             <span className={styles.previewPill}>
               {isBirthday
@@ -172,7 +172,6 @@ export default function PageWizardStepPreview({
                   ? generalEventTheme.label
                   : getThemeLabel(theme)}
             </span>
-            <span className={styles.previewPill}>{getProductTierLabel(formState.productTier ?? 'premium')}</span>
           </div>
         </div>
         <div className={styles.previewKeyList}>

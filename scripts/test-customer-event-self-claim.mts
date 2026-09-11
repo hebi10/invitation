@@ -102,22 +102,19 @@ const readSource = (relativePath: string) =>
 const ownershipRoute = readSource(
   'src/app/api/customer/events/[slug]/ownership/route.ts'
 );
-const customerEventClient = readSource('src/services/customerEventService.ts');
-const pageWizardClient = readSource('src/app/page-wizard/PageWizardClient.tsx');
+const creationRoute = readSource('src/app/api/customer/events/route.ts');
+const dashboard = readSource('src/app/my-invitations/MyInvitationsClient.tsx');
+const creationScreen = readSource('src/app/my-invitations/create/CreateInvitationClient.tsx');
 
-assert(
-  ownershipRoute.includes('export async function POST') &&
-    ownershipRoute.includes('claimCustomerEventOwnership'),
-  'the customer ownership route should expose the authenticated self-claim action'
-);
-assert(
-  customerEventClient.includes('claimCustomerEventForCurrentAccount'),
-  'the browser customer service should expose the self-claim request'
-);
-assert(
-  pageWizardClient.includes('claimCustomerEventForCurrentAccount') &&
-    pageWizardClient.includes('이 계정으로 편집 시작'),
-  'the page wizard should offer an explicit self-claim action before editing'
-);
+assert.match(ownershipRoute, /export async function POST/);
+assert.match(ownershipRoute, /await verifyCustomerUid\(request\)/);
+assert.match(ownershipRoute, /status: 403/);
+assert.doesNotMatch(ownershipRoute, /claimCustomerEventOwnership/);
+assert.match(creationRoute, /await verifyCustomerRequest\(request\)/);
+assert.match(creationRoute, /status: 403/);
+assert.doesNotMatch(creationRoute, /createCustomerInvitationPageFromWalletCredit/);
+assert.doesNotMatch(dashboard, /handleCreateEvent|creationBalance|pageCreationCredits/);
+assert.doesNotMatch(creationScreen, /createOwnedCustomerEvent|PRODUCT_TIERS/);
+assert.match(creationScreen, /isAdminLoggedIn \?/);
 
-console.log('customer event self-claim checks passed');
+console.log('customer event self-claim restrictions passed');

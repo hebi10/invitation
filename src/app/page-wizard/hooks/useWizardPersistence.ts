@@ -225,28 +225,8 @@ export function useWizardPersistence({
         const draftState = await ensureDraftCreated();
         const nextSlug = draftState.slug;
 
-        if (
-          draftState.createdFresh &&
-          gateway.draftCreationPersists &&
-          options?.publish !== true
-        ) {
-          await onPersisted?.({
-            slug: nextSlug,
-            config: draftState.config ?? formState,
-            published: false,
-            createdFresh: true,
-          });
-          if (!options?.silent) {
-            showNotice('success', options?.successMessage ?? '청첩장을 저장했습니다.');
-          }
-
-          return nextSlug;
-        }
-
-        const sourceConfig =
-          draftState.createdFresh && !gateway.draftCreationPersists
-            ? formState
-            : draftState.config ?? formState;
+        // The creation API reserves the address; persist the editor content as well.
+        const sourceConfig = formState;
         const prepared = prepareWizardConfigForSave(sourceConfig, nextSlug);
         const currentAvailableVariantKeys = getAvailableInvitationVariantKeys(
           sourceConfig.variants
@@ -260,6 +240,8 @@ export function useWizardPersistence({
           availability: createInvitationVariantAvailability(nextAvailableVariantKeys),
         });
         const nextPublished = resolveWizardPublishedState(published, options?.publish);
+
+        if (draftState.createdFresh) setFormState(prepared);
 
         const savedEditableConfig = await gateway.save({
           slug: nextSlug,

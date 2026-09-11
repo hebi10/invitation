@@ -7,6 +7,7 @@ export default function FinalStep({
   updateForm,
   published,
   setPublished,
+  canManagePublication = false,
 }: FinalStepProps) {
   return (
     <div className={styles.fieldGrid}>
@@ -40,16 +41,16 @@ export default function FinalStep({
           }
         />
       </label>
-      <label className={styles.switchRow}>
+      {canManagePublication ? <label className={styles.switchRow}>
         <input
           type="checkbox"
           checked={published}
           onChange={(event) => setPublished(event.target.checked)}
         />
         저장 후 바로 공개하기
-      </label>
+      </label> : null}
       <p className={styles.sectionText}>
-        {published
+        {!canManagePublication ? '현재 공개 상태를 유지하며 입력한 내용을 저장합니다. 공개 여부는 관리자가 설정합니다.' : published
           ? '저장하면 입력한 내용이 공개 페이지에 반영됩니다. 링크를 받은 손님이 볼 수 있습니다.'
           : '공개하지 않고 저장합니다. 손님에게 보내기 전에 공개 여부를 확인해 주세요.'}
       </p>

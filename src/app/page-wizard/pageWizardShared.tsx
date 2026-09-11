@@ -14,7 +14,6 @@ import { getEventTypeMeta, type EventTypeKey } from '@/lib/eventTypes';
 import { toDate } from '@/lib/invitationPageNormalization';
 import type {
   InvitationPageSeed,
-  InvitationProductTier,
   InvitationThemeKey,
 } from '@/types/invitationPage';
 
@@ -39,7 +38,7 @@ export type UploadFieldKind =
   | 'kakaoCard'
   | 'gallery';
 export type SlideViewMode = 'input' | 'preview';
-export type ChoicePanelKey = 'theme' | 'tier' | null;
+export type ChoicePanelKey = 'theme' | null;
 export type MusicPreviewState = 'idle' | 'loading' | 'ready' | 'error';
 
 export interface WizardStepProps {
@@ -54,7 +53,6 @@ export interface ThemeStepProps extends WizardStepProps {
   setDefaultTheme: (theme: InvitationThemeKey) => void;
   openChoicePanel: ChoicePanelKey;
   toggleChoicePanel: (panel: Exclude<ChoicePanelKey, null>) => void;
-  onProductTierChange: (tier: InvitationProductTier) => void;
   setOpenChoicePanel: (panel: ChoicePanelKey) => void;
   isSelectionLocked: boolean;
 }
@@ -162,6 +160,7 @@ export interface MusicStepProps extends WizardStepProps {
 }
 
 export interface FinalStepProps extends WizardStepProps {
+  canManagePublication?: boolean;
   published: boolean;
   setPublished: (value: boolean) => void;
 }
@@ -181,22 +180,6 @@ export function getEventTypeDescription(eventType: EventTypeKey) {
 
 export function getThemeDescription(theme: InvitationThemeKey) {
   return getInvitationThemeWizardDescription(theme);
-}
-
-export function getProductTierLabel(tier: InvitationProductTier) {
-  return tier.toUpperCase();
-}
-
-export function getProductTierDescription(tier: InvitationProductTier) {
-  switch (tier) {
-    case 'standard':
-      return '맞춤 문구 제작, 갤러리 이미지 최대 6장, 카카오톡 링크 형식 공유 (URL 공유)';
-    case 'deluxe':
-      return 'STANDARD 전체 포함, 갤러리 이미지 최대 12장, 음악 포함, 카카오톡 카드 형식 공유';
-    case 'premium':
-    default:
-      return 'DELUXE 전체 포함, 갤러리 이미지 최대 18장, 캘린더 카운트다운, 방명록 기능';
-  }
 }
 
 export function getNoticeClassName(tone: NoticeTone) {
@@ -262,5 +245,3 @@ export function getStepIndex(
 ) {
   return steps.findIndex((step) => step.key === stepKey);
 }
-
-export const PRODUCT_TIERS: InvitationProductTier[] = ['standard', 'deluxe', 'premium'];

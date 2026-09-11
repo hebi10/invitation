@@ -21,11 +21,8 @@ import {
   normalizeGeneralEventThemeKey,
 } from '@/app/_components/generalEvent/generalEventThemes';
 import {
-  getProductTierDescription,
-  getProductTierLabel,
   getThemeDescription,
   getThemeLabel,
-  PRODUCT_TIERS,
   type ThemeStepProps,
 } from '../pageWizardShared';
 import { getSelectableThemeKeysForEventType } from '../pageWizardEventConfig';
@@ -71,8 +68,8 @@ function WeddingThemeChoices({
         </p>
         <p className={styles.fieldHint}>
           {isSelectionLocked
-            ? '첫 저장이 완료되어 디자인과 서비스는 이 화면에서 변경할 수 없습니다. 현재 디자인의 미리보기는 계속 사용할 수 있습니다.'
-            : '디자인과 서비스는 첫 저장 후 이 화면에서 바꿀 수 없습니다. 저장 전에 확인해 주세요.'}
+            ? '첫 저장이 완료되어 디자인은 이 화면에서 변경할 수 없습니다. 현재 디자인의 미리보기는 계속 사용할 수 있습니다.'
+            : '디자인은 첫 저장 후 이 화면에서 바꿀 수 없습니다. 저장 전에 확인해 주세요.'}
         </p>
       </div>
       <div className={themeStyles.grid}>
@@ -122,7 +119,6 @@ export default function ThemeStep({
   setDefaultTheme,
   openChoicePanel,
   toggleChoicePanel,
-  onProductTierChange,
   setOpenChoicePanel,
   isSelectionLocked,
 }: ThemeStepProps) {
@@ -232,80 +228,7 @@ export default function ThemeStep({
           ) : null}
         </section>
 
-        <section className={styles.choiceSection}>
-          <div className={styles.choiceSectionHeader}>
-            <span className={styles.choiceSectionBadge}>서비스</span>
-            <h3 className={styles.choiceSectionTitle}>서비스 구성 선택</h3>
-            <p className={styles.choiceSectionText}>
-              갤러리 수, 공유 방식, 방명록 제공 범위를 고릅니다.
-            </p>
-          </div>
-          <button
-            type="button"
-            className={`${styles.choiceSelectButton} ${
-              openChoicePanel === 'tier' ? styles.choiceSelectButtonActive : ''
-            }`}
-            aria-expanded={openChoicePanel === 'tier'}
-            onClick={() => {
-              if (!isSelectionLocked) {
-                toggleChoicePanel('tier');
-              }
-            }}
-            disabled={isSelectionLocked}
-          >
-            <div className={styles.choiceSelectMeta}>
-              <span className={styles.choiceSelectLabel}>현재 서비스</span>
-              <strong className={styles.choiceSelectValue}>
-                {getProductTierLabel(formState.productTier ?? 'premium')}
-              </strong>
-              <span className={styles.choiceSelectDescription}>
-                {getProductTierDescription(formState.productTier ?? 'premium')}
-              </span>
-            </div>
-            <span className={styles.choiceSelectArrow}>
-              <span
-                className={`${styles.choiceChevron} ${
-                  openChoicePanel === 'tier' ? styles.choiceChevronOpen : ''
-                }`}
-                aria-hidden="true"
-              >
-                ▾
-              </span>
-            </span>
-          </button>
-          {openChoicePanel === 'tier' ? (
-            <div className={styles.choiceOptions}>
-              {PRODUCT_TIERS.map((tier) => {
-                const isActive = formState.productTier === tier;
 
-                return (
-                  <button
-                    key={tier}
-                    type="button"
-                    aria-pressed={isActive}
-                    className={`${styles.choiceCard} ${
-                      isActive ? styles.choiceCardActive : ''
-                    }`}
-                    onClick={() => {
-                      onProductTierChange(tier);
-                      setOpenChoicePanel(null);
-                    }}
-                    disabled={isSelectionLocked}
-                  >
-                    <div className={styles.choiceCardTop}>
-                      <span className={styles.choiceTag}>서비스 플랜</span>
-                      {isActive ? (
-                        <span className={styles.choiceSelectedBadge}>선택됨</span>
-                      ) : null}
-                    </div>
-                    <h3 className={styles.choiceTitle}>{getProductTierLabel(tier)}</h3>
-                    <p className={styles.choiceText}>{getProductTierDescription(tier)}</p>
-                  </button>
-                );
-              })}
-            </div>
-          ) : null}
-        </section>
       </div>
     );
   }
@@ -423,86 +346,7 @@ export default function ThemeStep({
       </section>
       )}
 
-      <section className={styles.choiceSection}>
-        <div className={styles.choiceSectionHeader}>
-          <span className={styles.choiceSectionBadge}>서비스</span>
-          <h3 className={styles.choiceSectionTitle}>서비스 구성 선택</h3>
-          <p className={styles.choiceSectionText}>
-            갤러리 수, 공유 방식, 방명록 제공 범위를 고릅니다.
-          </p>
-        </div>
-        <button
-          type="button"
-          className={`${styles.choiceSelectButton} ${
-            openChoicePanel === 'tier' ? styles.choiceSelectButtonActive : ''
-          }`}
-          aria-expanded={openChoicePanel === 'tier'}
-          onClick={() => {
-            if (!isSelectionLocked) {
-              toggleChoicePanel('tier');
-            }
-          }}
-          disabled={isSelectionLocked}
-        >
-          <div className={styles.choiceSelectMeta}>
-            <span className={styles.choiceSelectLabel}>현재 서비스</span>
-            <strong className={styles.choiceSelectValue}>
-              {getProductTierLabel(formState.productTier ?? 'premium')}
-            </strong>
-            <span className={styles.choiceSelectDescription}>
-              {getProductTierDescription(formState.productTier ?? 'premium')}
-            </span>
-          </div>
-          <span className={styles.choiceSelectArrow}>
-            <span
-              className={`${styles.choiceChevron} ${
-                openChoicePanel === 'tier' ? styles.choiceChevronOpen : ''
-              }`}
-              aria-hidden="true"
-            >
-              ▾
-            </span>
-          </span>
-        </button>
-        {openChoicePanel === 'tier' ? (
-          <div className={styles.choiceOptions}>
-            {PRODUCT_TIERS.map((tier) => {
-              const isActive = formState.productTier === tier;
 
-              return (
-                <button
-                  key={tier}
-                  type="button"
-                  aria-pressed={isActive}
-                  className={`${styles.choiceCard} ${
-                    isActive ? styles.choiceCardActive : ''
-                  }`}
-                  onClick={() => {
-                    onProductTierChange(tier);
-                    setOpenChoicePanel(null);
-                  }}
-                  disabled={isSelectionLocked}
-                >
-                  <div className={styles.choiceCardTop}>
-                    <span className={styles.choiceTag}>서비스 플랜</span>
-                    {isActive ? (
-                      <span className={styles.choiceSelectedBadge}>선택됨</span>
-                    ) : null}
-                  </div>
-                  <h3 className={styles.choiceTitle}>{getProductTierLabel(tier)}</h3>
-                  <p className={styles.choiceText}>{getProductTierDescription(tier)}</p>
-                </button>
-              );
-            })}
-          </div>
-        ) : null}
-
-        {isSelectionLocked ? (
-          <p className={styles.fieldHint}>
-            변경을 원하시면 관리자에게 문의해주세요.
-          </p>
-        ) : null}
-      </section>
     </div>
   );
 }

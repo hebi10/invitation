@@ -66,6 +66,13 @@ const weddingSteps = getWizardSteps({
   includeEventTypeStep: false,
 });
 const weddingSections = buildWizardSections(weddingSteps);
+const customerSteps = getWizardSteps({ eventType: 'wedding', includeSetupSteps: false });
+const customerSections = buildWizardSections(customerSteps, 'wedding');
+assert.equal(customerSections.some(section => section.id === 'setup'), false,
+  '고객 편집에는 시작 설정이 없어야 합니다.');
+assert.equal(customerSections[0].id, 'basic', '고객은 이름을 편집할 기본 정보부터 시작합니다.');
+assert.deepEqual(customerSections.flatMap(section => section.steps.map(step => step.key)),
+  customerSteps.map(step => step.key), '시작 설정을 숨겨도 고객 편집 단계가 누락되면 안 됩니다.');
 const setupSection = weddingSections.find((section) => section.id === 'setup');
 
 assert.ok(setupSection, 'wedding create wizard should provide the setup section');

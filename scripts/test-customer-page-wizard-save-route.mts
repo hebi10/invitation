@@ -48,3 +48,9 @@ assert(
 );
 
 console.log('customer page wizard save route checks passed');
+
+const customerServer = readText('src/server/customerEventsService.ts');
+assert.match(customerServer, /requestedSlug !== normalizedPageSlug/);
+assert.match(customerServer, /published: currentEditableConfig.published/);
+assert.match(customerServer, /defaultTheme: currentEditableConfig.defaultTheme/);
+assert.match(customerServer, /buildServerTrustedMobileInvitationPageConfigForSave\(input.config/);
