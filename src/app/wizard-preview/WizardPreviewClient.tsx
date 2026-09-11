@@ -11,6 +11,8 @@ import { resolveInvitationPageDataByTheme } from '@/lib/invitationThemePageData'
 import { resolveInvitationFeatures } from '@/lib/invitationProducts';
 import { applyDerivedWizardDefaults, buildWeddingDateObject } from '../page-wizard/pageWizardData';
 import styles from '../page-wizard/WeddingWizardPreview.module.css';
+import WeddingIntro from '@/components/sections/WeddingIntro/WeddingIntro';
+import { normalizeWeddingIntroStyle } from '@/lib/weddingIntro';
 
 const themes: InvitationThemeKey[] = ['simple', 'emotional', 'romantic', 'gyeol', 'classic-r'];
 const idle = () => {};
@@ -65,12 +67,14 @@ function buildPreview(seed: InvitationPageSeed, theme: InvitationThemeKey): Wedd
 
 export default function WizardPreviewClient() {
   const [draft, setDraft] = useState<{ seed: InvitationPageSeed; theme: InvitationThemeKey } | null>(null);
+  const [introRun, setIntroRun] = useState(0);
   useEffect(() => {
     const receive = (event: MessageEvent) => {
       if (window.parent === window || event.origin !== window.location.origin || event.source !== window.parent) return;
       const message = event.data;
       if (message?.type === 'wedding-wizard-preview:top') {
         window.scrollTo({ top: 0, behavior: 'instant' });
+        setIntroRun(run => run + 1);
         return;
       }
       if (message?.type !== 'wedding-wizard-preview:update' || !themes.includes(message.theme)) return;
@@ -94,6 +98,18 @@ export default function WizardPreviewClient() {
       <WeddingBase state={state} options={{ slug: state.pageConfig.slug, theme: draft.theme }} theme={draft.theme} demoComments={sampleWeddingComments} showMap={false} />
       <WeddingClosing groomName={state.pageConfig.groomName} brideName={state.pageConfig.brideName} theme={draft.theme} />
       </div>
+      <WeddingIntro
+        key={`${normalizeWeddingIntroStyle(draft.seed.introStyle)}:${introRun}`}
+        style={normalizeWeddingIntroStyle(draft.seed.introStyle)}
+        slug={state.pageConfig.slug}
+        groomName={state.pageConfig.groomName}
+        brideName={state.pageConfig.brideName}
+        date={state.pageConfig.date}
+        imageUrl={state.mainImageUrl}
+        theme={draft.theme}
+        preview
+        connectToCover
+      />
     </AppQueryProvider>
   );
 }

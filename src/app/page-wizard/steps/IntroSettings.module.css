@@ -4,6 +4,8 @@
   margin-bottom: 32px;
   color: #292b28;
 }
+.inlinePreview { display: grid; gap: 16px; min-width: 0; scroll-margin-top: 100px; }
+.previewHeading { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
 
 .title {
   margin: 0 0 8px;

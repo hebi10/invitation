@@ -9,10 +9,10 @@ import styles from './WeddingIntro.module.css';
 
 type Props = {
   style: WeddingIntroStyle; slug: string; groomName: string; brideName: string;
-  date: string; imageUrl: string; theme?: string; preview?: boolean; onComplete?: () => void;
+  date: string; imageUrl: string; theme?: string; preview?: boolean; connectToCover?: boolean; onComplete?: () => void;
 };
 
-export default function WeddingIntro({ style, slug, groomName, brideName, date, imageUrl, theme = 'simple', preview = false, onComplete }: Props) {
+export default function WeddingIntro({ style, slug, groomName, brideName, date, imageUrl, theme = 'simple', preview = false, connectToCover = !preview, onComplete }: Props) {
   const [visible, setVisible] = useState(false);
   const [opening, setOpening] = useState(false);
   const root = useRef<HTMLDivElement>(null);
@@ -78,7 +78,7 @@ export default function WeddingIntro({ style, slug, groomName, brideName, date, 
             const timeline = gsap.timeline({ onComplete: complete });
             if (style === 'cinema') {
               const photo = element.querySelector<HTMLImageElement>('[data-photo]');
-              const cover = preview ? null : document.querySelector<HTMLImageElement>('[data-wedding-cover-photo]');
+              const cover = connectToCover ? document.querySelector<HTMLImageElement>('[data-wedding-cover-photo]') : null;
               const destination = cover?.getBoundingClientRect();
               const stage = element.querySelector<HTMLElement>('[data-style="cinema"]');
               const origin = stage?.getBoundingClientRect();
@@ -123,7 +123,7 @@ export default function WeddingIntro({ style, slug, groomName, brideName, date, 
       context?.revert();
       openEnvelopeRef.current = complete;
     };
-  }, [visible, style, preview, complete]);
+  }, [visible, style, connectToCover, complete]);
 
   if (!visible) return null;
   const names = <>{groomName}<span aria-hidden="true"> · </span>{brideName}</>;
@@ -161,7 +161,7 @@ export default function WeddingIntro({ style, slug, groomName, brideName, date, 
           {style !== 'cinema' ? <p className={styles.message} data-copy>우리의 가장 아름다운 시작에<br />함께해 주세요</p> : null}
           <p className={styles.date} data-copy>{date}</p>
         </div>}
-        <button className={styles.skip} data-skip onClick={complete}>{preview ? '미리보기 닫기' : '건너뛰기'}</button>
+        <button className={styles.skip} data-skip onClick={complete}>{preview && !connectToCover ? '미리보기 닫기' : '건너뛰기'}</button>
       </div>
     </div>, document.body,
   );
