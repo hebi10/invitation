@@ -50,6 +50,8 @@ export default function WeddingIntro({ style, slug, groomName, brideName, date, 
     const preference = window.matchMedia('(prefers-reduced-motion: reduce)');
     const onPreferenceChange = () => { if (preference.matches) complete(); };
     preference.addEventListener('change', onPreferenceChange);
+    // A changed viewport invalidates the measured destination; reveal the cover safely.
+    window.addEventListener('resize', complete);
     // A tap before the animation module is ready still opens the invitation.
     openEnvelopeRef.current = complete;
 
@@ -75,15 +77,40 @@ export default function WeddingIntro({ style, slug, groomName, brideName, date, 
           } else {
             const timeline = gsap.timeline({ onComplete: complete });
             if (style === 'cinema') {
-              timeline.fromTo(select('[data-photo]'), { scale: 1.12 }, { scale: 1, duration: 2.8, ease: 'power2.out' }, 0)
+              const photo = element.querySelector<HTMLImageElement>('[data-photo]');
+              const cover = preview ? null : document.querySelector<HTMLImageElement>('[data-wedding-cover-photo]');
+              const destination = cover?.getBoundingClientRect();
+              const stage = element.querySelector<HTMLElement>('[data-style="cinema"]');
+              const origin = stage?.getBoundingClientRect();
+              const canConnect = photo && cover && destination && origin && cover.complete && cover.naturalWidth > 0
+                && destination.width > 0 && destination.height > 0 && destination.top < window.innerHeight && destination.bottom > 0;
+              timeline
                 .to(select('[data-shutter="top"]'), { yPercent: -100, duration: .85, ease: 'power3.inOut' }, 0)
-                .to(select('[data-shutter="bottom"]'), { yPercent: 100, duration: .85, ease: 'power3.inOut' }, 0);
+                .to(select('[data-shutter="bottom"]'), { yPercent: 100, duration: .85, ease: 'power3.inOut' }, 0)
+                .fromTo(select('[data-copy]'), { y: 12, opacity: 0 }, { y: 0, opacity: 1, duration: .65, stagger: .16, ease: 'power2.out' }, .5)
+                .to(select('[data-copy]'), { y: -8, opacity: 0, duration: .4 }, 2.7);
+              if (canConnect) {
+                // Keep the real image in layout; GSAP restores its visibility on completion/skip.
+                gsap.set(cover, { visibility: 'hidden' });
+                gsap.set(stage, { overflow: 'visible' });
+                gsap.set(photo, { position: 'fixed', left: origin.left, top: origin.top, width: origin.width, height: origin.height, objectPosition: getComputedStyle(cover).objectPosition });
+                timeline
+                  .to(element, { backgroundColor: 'rgba(30, 33, 31, 0)', duration: .8 }, 2.9)
+                  .to(stage, { backgroundColor: 'rgba(38, 39, 35, 0)', duration: .8 }, 2.9)
+                  .to(select('[data-photo-shade]'), { opacity: 0, duration: .8 }, 2.9)
+                  .to(photo, { left: destination.left, top: destination.top, width: destination.width, height: destination.height, duration: 1.1, ease: 'power3.inOut' }, 2.9)
+                  .to(select('[data-skip]'), { opacity: 0, duration: .25 }, 3.65);
+              } else {
+                // Standalone editor previews have no full-size cover to land on.
+                if (photo) timeline.fromTo(photo, { scale: 1.06 }, { scale: 1, duration: 3.2, ease: 'power2.out' }, 0);
+                timeline.to(element, { opacity: 0, duration: .6 }, 3.1);
+              }
             } else {
               timeline.fromTo(select('[data-glow]'), { xPercent: -160, opacity: 0 }, { xPercent: 160, opacity: .8, duration: 2.1, ease: 'power1.inOut' }, 0)
                 .fromTo(select('[data-spark]'), { opacity: 0, scale: .2, y: 12 }, { opacity: .7, scale: 1, y: -12, duration: 1, stagger: .045, yoyo: true, repeat: 1 }, 0);
-            }
-            timeline.fromTo(select('[data-copy]'), { y: 16, opacity: 0 }, { y: 0, opacity: 1, duration: .7, stagger: .14, ease: 'power2.out' }, .45)
+              timeline.fromTo(select('[data-copy]'), { y: 16, opacity: 0 }, { y: 0, opacity: 1, duration: .7, stagger: .14, ease: 'power2.out' }, .45)
               .to(element, { opacity: 0, duration: .45 }, 2.45);
+            }
           }
         }, element);
       }).catch(() => { if (!disposed) complete(); });
@@ -92,10 +119,11 @@ export default function WeddingIntro({ style, slug, groomName, brideName, date, 
       disposed = true;
       window.clearTimeout(fallback);
       preference.removeEventListener('change', onPreferenceChange);
+      window.removeEventListener('resize', complete);
       context?.revert();
       openEnvelopeRef.current = complete;
     };
-  }, [visible, style, complete]);
+  }, [visible, style, preview, complete]);
 
   if (!visible) return null;
   const names = <>{groomName}<span aria-hidden="true"> · </span>{brideName}</>;
@@ -104,7 +132,7 @@ export default function WeddingIntro({ style, slug, groomName, brideName, date, 
       <div className={styles.stage} data-style={style}>
         {style === 'cinema' ? <>
           {imageUrl ? <img className={styles.photo} data-photo src={imageUrl} alt="" onError={event => { event.currentTarget.style.visibility = 'hidden'; }} /> : null}
-          <div className={styles.photoShade} />
+          <div className={styles.photoShade} data-photo-shade />
           <div className={styles.shutter} data-shutter="top" />
           <div className={styles.shutter} data-shutter="bottom" />
         </> : null}
@@ -130,10 +158,10 @@ export default function WeddingIntro({ style, slug, groomName, brideName, date, 
         </div> : <div className={styles.copy}>
           <p className={styles.eyebrow} data-copy>OUR WEDDING DAY</p>
           <h1 className={styles.names} data-copy>{names}</h1>
-          <p className={styles.message} data-copy>우리의 가장 아름다운 시작에<br />함께해 주세요</p>
+          {style !== 'cinema' ? <p className={styles.message} data-copy>우리의 가장 아름다운 시작에<br />함께해 주세요</p> : null}
           <p className={styles.date} data-copy>{date}</p>
         </div>}
-        <button className={styles.skip} onClick={complete}>{preview ? '미리보기 닫기' : '건너뛰기'}</button>
+        <button className={styles.skip} data-skip onClick={complete}>{preview ? '미리보기 닫기' : '건너뛰기'}</button>
       </div>
     </div>, document.body,
   );

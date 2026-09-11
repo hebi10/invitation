@@ -27,6 +27,9 @@
 .copy { position: absolute; inset: 0; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 40px 24px 85px; text-align: center; }
 .copy [data-copy] { opacity: 0; }
 .stage[data-style="cinema"] .copy { justify-content: flex-end; padding-bottom: max(120px, 15vh); }
+.stage[data-style="cinema"] .date { margin-top: 22px; }
+.stage[data-style="cinema"] .names { font-family: 'Wedding Myeongjo', 'Noto Serif KR', 'Batang', serif; }
+.backdrop[data-theme="classic-r"] .names { font-family: Arial, sans-serif; font-weight: 700; }
 .eyebrow { display: block; font-family: Arial, sans-serif; font-size: 10px; font-weight: 500; letter-spacing: .27em; line-height: 1.8; margin: 0 0 24px; }
 .names { font-family: 'Noto Serif KR', 'Batang', serif; font-size: clamp(24px, 6.5vw, 32px); font-weight: 500; line-height: 1.65; margin: 0; word-break: keep-all; overflow-wrap: anywhere; }
 .names span { color: var(--intro-gold); font-size: .75em; padding: 0 6px; }
