@@ -11,7 +11,7 @@ type WebPreviewNoticeProps = {
 
 export function WebPreviewNotice({
   title = '웹 미리보기',
-  description = '결제와 보안 저장소는 앱 빌드에서 최종 확인해 주세요.',
+  description = '화면과 제작 초안을 확인할 수 있습니다. 결제와 청첩장 운영은 앱에서 이용해 주세요.',
 }: WebPreviewNoticeProps) {
   const { palette } = useVisualPreferences();
 

@@ -45,6 +45,7 @@ type UseCreateFormOptions = DraftStore &
   AuthActions & {
     apiBaseUrl: string;
     isExpoWebPreview: boolean;
+    onOpenTicketPurchase: () => void;
   };
 
 type CreateSlugAvailabilityState = {
@@ -84,6 +85,7 @@ export function useCreateForm({
   loginCustomer,
   logoutCustomer,
   isExpoWebPreview,
+  onOpenTicketPurchase,
 }: UseCreateFormOptions) {
   const router = useRouter();
 
@@ -479,6 +481,7 @@ export function useCreateForm({
     setSelectedTheme,
     setNotice,
     moveToStep,
+    onOpenTicketPurchase,
   });
 
   const hasDraftableInput = useMemo(

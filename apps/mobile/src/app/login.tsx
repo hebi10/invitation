@@ -181,7 +181,7 @@ export default function LoginScreen() {
     return (
       <AppScreen
         title="웹 미리보기"
-        subtitle="Expo 웹 빌드에서는 실제 로그인과 운영 편집 기능을 제한합니다."
+        subtitle="청첩장 연동과 운영 편집은 앱에서 이용해 주세요. 웹에서는 화면과 초안을 확인할 수 있습니다."
         contentContainerStyle={styles.screenContent}
       >
         <WebPreviewNotice />
@@ -204,12 +204,12 @@ export default function LoginScreen() {
   return (
     <AppScreen
       title="청첩장 연동"
-      subtitle="앱 연동 링크나 저장된 세션으로 운영 화면에 들어갑니다."
+      subtitle="앱 연동 링크나 이 기기에 저장된 청첩장으로 운영 화면에 들어갑니다."
       contentContainerStyle={styles.screenContent}
     >
       <SectionCard
         title="비밀번호 없는 앱 연동"
-        description="새 청첩장은 생성 탭에서 고객 계정으로 로그인한 뒤 결제하면 자동으로 연결됩니다. 다른 기기에서는 운영 화면에서 발급한 앱 연동 링크를 사용해 주세요."
+        description="새 청첩장은 구매 탭에서 고객 계정으로 로그인한 뒤 결제하면 자동으로 연결됩니다. 다른 기기에서는 운영 화면에서 발급한 앱 연동 링크를 사용해 주세요."
       >
         <ActionButton onPress={() => router.replace('/create')} fullWidth>
           새 청첩장 만들기

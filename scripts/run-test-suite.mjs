@@ -4,6 +4,7 @@ import path from 'node:path';
 import process from 'node:process';
 
 const core = [
+  'test-mobile-purchase-summary',
   'test-wedding-url-themes',
   'test-mobile-wedding-design-access',
   'test-background-music-playback',
@@ -59,6 +60,7 @@ const core = [
 ];
 
 const security = [
+  'test-password-recovery',
   'test-admin-api-auth',
   'test-admin-owner-image-upload-routing',
   'test-customer-api-auth',

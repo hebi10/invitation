@@ -4,15 +4,13 @@ import { Alert, Platform, StyleSheet, View } from 'react-native';
 import { ActionButton } from '../../components/ActionButton';
 import { AppScreen } from '../../components/AppScreen';
 import { AppText } from '../../components/AppText';
-import { BulletList } from '../../components/BulletList';
 import { SectionCard } from '../../components/SectionCard';
 import { WebPreviewNotice } from '../../components/WebPreviewNotice';
-import { quickStartItems } from '../../constants/content';
+import { quickStartItems, servicePlans } from '../../constants/content';
 import { useAppFeedback } from '../../contexts/AppFeedbackContext';
 import { useDrafts } from '../../contexts/DraftsContext';
 import { usePreferences } from '../../contexts/PreferencesContext';
 import { formatPrice } from '../../lib/format';
-import { getInvitationThemeLabel } from '../../lib/invitationThemes';
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -55,7 +53,7 @@ export default function HomeScreen() {
   return (
     <AppScreen
       title="모바일 청첩장"
-      subtitle="새 청첩장 생성, 기존 페이지 연동, 초안 관리와 샘플 확인까지 한 화면에서 바로 시작할 수 있습니다."
+      subtitle="두 사람의 소식을 준비하고, 내 청첩장을 이어서 관리하세요."
     >
       {isExpoWebPreview ? <WebPreviewNotice /> : null}
 
@@ -78,7 +76,7 @@ export default function HomeScreen() {
         </View>
         {isExpoWebPreview ? (
           <AppText variant="muted" style={styles.emptyText}>
-            Expo 웹에서는 로그인과 운영 인증이 제한됩니다. 실제 작업은 라이브 사이트 또는 Next 운영 환경에서 진행해 주세요.
+            웹에서는 화면과 초안을 확인할 수 있습니다. 청첩장 연동과 운영은 앱에서 이용해 주세요.
           </AppText>
         ) : null}
       </SectionCard>
@@ -109,13 +107,13 @@ export default function HomeScreen() {
                   {(draft.groomName || '신랑')} · {(draft.brideName || '신부')}
                 </AppText>
                 <AppText variant="muted" style={styles.draftMeta}>
-                  {draft.servicePlan.toUpperCase()} / {getInvitationThemeLabel(draft.theme)}
+                  {draft.servicePlan.toUpperCase()} · 모든 웨딩 디자인 포함
                 </AppText>
                 <AppText variant="muted" style={styles.draftMeta}>
-                  예상 금액 {formatPrice(draft.estimatedPrice)} · 티켓 {draft.ticketCount}장
+                  제작 금액 {formatPrice(servicePlans.find((plan) => plan.tier === draft.servicePlan)?.price ?? 0)}
                 </AppText>
                 <AppText variant="muted" style={styles.draftMeta}>
-                  URL 초안{' '}
+                  청첩장 주소{' '}
                   {draft.pageIdentifier || '추천 주소가 자동으로 준비됩니다.'}
                 </AppText>
               </View>
@@ -134,9 +132,14 @@ export default function HomeScreen() {
 
       <SectionCard
         title="빠른 시작"
-        description="서비스 흐름만 보고 바로 다음 단계로 들어갈 수 있도록 정리했습니다."
+        description="원하는 작업을 선택해 바로 이동하세요."
       >
-        <BulletList items={quickStartItems} />
+        {quickStartItems.map((label, index) => (
+          <ActionButton key={label} variant="secondary" fullWidth
+            onPress={() => router.push((['/create', '/login', '/guide'] as const)[index])}>
+            {label}
+          </ActionButton>
+        ))}
       </SectionCard>
     </AppScreen>
   );

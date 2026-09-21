@@ -16,6 +16,7 @@ type UseCreateTicketIntentOptions = {
   setSelectedTheme: (theme: MobileInvitationThemeKey | null) => void;
   setNotice: (message: string) => void;
   moveToStep: (step: CreateStepKey) => void;
+  onOpenTicketPurchase: () => void;
 };
 
 export function useCreateTicketIntent({
@@ -23,6 +24,7 @@ export function useCreateTicketIntent({
   setSelectedTheme,
   setNotice,
   moveToStep,
+  onOpenTicketPurchase,
 }: UseCreateTicketIntentOptions) {
   const {
     ticketIntent: ticketIntentParam,
@@ -68,6 +70,17 @@ export function useCreateTicketIntent({
       return;
     }
 
+    if (normalizedTicketIntent === 'extend' || normalizedTicketIntent === 'upgrade') {
+      setNotice(
+        normalizedTicketIntent === 'extend'
+          ? '기간 연장에 필요한 티켓 수량을 선택해 주세요.'
+          : '서비스 업그레이드에 필요한 티켓 수량을 선택해 주세요.'
+      );
+      onOpenTicketPurchase();
+      setHandledTicketIntentKey(intentKey);
+      return;
+    }
+
     if (isValidCreateStepProductTier(normalizedTargetPlan)) {
       setSelectedPlan(normalizedTargetPlan);
     }
@@ -76,12 +89,8 @@ export function useCreateTicketIntent({
       setSelectedTheme(normalizedTargetTheme);
     }
 
-    if (normalizedTicketIntent === 'extend') {
-      setNotice('기간 연장용 티켓은 아래 티켓 구매에서 별도로 구매할 수 있습니다.');
-    } else if (normalizedTicketIntent === 'extra-page') {
+    if (normalizedTicketIntent === 'extra-page') {
       setNotice('티켓 사용: 추가 청첩장 생성 흐름으로 이동했습니다.');
-    } else if (normalizedTicketIntent === 'upgrade') {
-      setNotice('업그레이드용 티켓은 아래 티켓 구매에서 별도로 구매할 수 있습니다.');
     }
 
     moveToStep('info');
@@ -89,6 +98,7 @@ export function useCreateTicketIntent({
   }, [
     handledTicketIntentKey,
     moveToStep,
+    onOpenTicketPurchase,
     normalizedTargetPlan,
     normalizedTargetTheme,
     normalizedTicketIntent,
