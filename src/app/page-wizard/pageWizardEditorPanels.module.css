@@ -438,7 +438,19 @@
   width: 100%;
   min-width: 0;
   box-sizing: border-box;
+  padding: 24px;
+  gap: 20px;
 }
+
+.blockNumber { flex: 0 0 36px; width: 36px; height: 36px; display: inline-grid; place-items: center; border-radius: 50%; background: #505b45; color: #fff; font-size: 14px; font-weight: 500; }
+.familyHeading { display: flex; align-items: flex-start; gap: 16px; min-width: 0; }
+.familyHeading .subCardDescription { margin-top: 6px; font-size: 13px; }
+.personCard .subCardTitle, .basicCard .subCardTitle { font-size: 20px; font-weight: 500; line-height: 1.5; }
+.familyToggle { min-height: 44px; padding: 0 12px; flex-shrink: 0; border: 1px solid var(--operation-color-border-strong); background: #fff; color: var(--operation-color-text); font: inherit; font-size: 13px; cursor: pointer; }
+.familyToggle:focus-visible { outline: 2px solid var(--operation-color-focus); outline-offset: 3px; }
+.personCard > .detailsGroup > .detailsSummary { display: none; }
+.personCard > .personFields > .phoneField { flex-basis: auto; width: 260px; max-width: 100%; }
+.personCard .detailsBody { padding-top: 0; }
 
 .personCard .subCardTitle {
   overflow-wrap: anywhere;
@@ -551,7 +563,7 @@
 }
 
 .basicCard {
-  padding: 20px;
+  padding: 24px;
 }
 
 .basicContent {
@@ -563,7 +575,7 @@
 }
 
 .basicContent > :first-child {
-  flex: 1 1 300px;
+  flex: 1 1 376px;
   min-width: 0;
 }
 
@@ -589,6 +601,11 @@
 
 @media (max-width: 640px) {
   .basicCard { padding: 16px; }
+  .personCard { padding: 16px; }
+  .familyHeading { gap: 12px; }
+  .personCard .subCardTitle, .basicCard .subCardTitle { font-size: 18px; }
+  .familyToggle { align-self: flex-end; }
+  .blockNumber { flex-basis: 32px; width: 32px; height: 32px; }
   .subCard {
     padding: 12px;
   }

@@ -117,19 +117,27 @@ export function PersonEditorCard({
   onPersonFieldChange,
   onParentFieldChange,
 }: PersonEditorCardProps) {
+  const [parentsOpen, setParentsOpen] = useState(false);
   return (
     <div className={`${styles.subCard} ${styles.personCard}`} data-preview-step="family">
       <div className={styles.subCardHeader}>
-        <div>
+        <div className={styles.familyHeading}>
+          <span className={styles.blockNumber} aria-hidden="true">{role === 'groom' ? '02' : '03'}</span>
+          <div>
           <h3 className={styles.subCardTitle}>
-            {label}{nameReadOnly && person.name ? ` · ${person.name}` : ''}
+            {nameReadOnly ? (role === 'groom' ? '신랑측 가족 정보' : '신부측 가족 정보') : label}
           </h3>
           <p className={styles.subCardDescription}>
             {nameReadOnly
               ? '가족 정보는 선택입니다. 연락처는 공개할 때만 입력해 주세요.'
               : '이름을 입력해 주세요. 연락처는 공개할 때만 입력해 주세요.'}
           </p>
+          </div>
         </div>
+        <button type="button" className={styles.familyToggle} aria-expanded={parentsOpen}
+          aria-controls={`parents-${role}`} onClick={() => setParentsOpen(open => !open)}>
+          {parentsOpen ? '부모님 정보 접기' : '부모님 정보 보기'}
+        </button>
       </div>
 
       <div className={styles.personFields}>
@@ -178,7 +186,8 @@ export function PersonEditorCard({
         </label>
       </div>
 
-      <details className={styles.detailsGroup}>
+      <details id={`parents-${role}`} className={styles.detailsGroup} open={parentsOpen}
+        onToggle={event => setParentsOpen(event.currentTarget.open)}>
         <summary className={styles.detailsSummary}>
           부모님 정보
           <span className={styles.familySummary}>

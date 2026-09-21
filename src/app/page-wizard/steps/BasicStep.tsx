@@ -199,6 +199,7 @@ export default function BasicStep({
   return (
     <section className={panelStyles.basicCard}>
       <div className={panelStyles.sectionTitleRow}>
+        <span className={panelStyles.blockNumber} aria-hidden="true">01</span>
         <h3 className={panelStyles.subCardTitle}>신랑·신부 기본 정보</h3>
       </div>
       <div className={panelStyles.basicContent}>

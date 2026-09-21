@@ -223,6 +223,7 @@ export default function PageWizardWorkspace({
       <header className={styles.topBar}>
         <div className={styles.topBarInner}>
           <div className={styles.identity}>
+            {formState.eventType === 'wedding' ? <span className={styles.wordmark}>WEDDING</span> : null}
             <div>
               <h1>{title}</h1>
               <p>{subtitle}</p>
@@ -286,6 +287,7 @@ export default function PageWizardWorkspace({
         <main className={styles.content}>
           {notice}
 
+          <div className={styles.sectionIntro}>
           <header className={styles.sectionHeader}>
             <span className={styles.sectionPosition}>
               {activeSectionIndex + 1} / {sections.length}
@@ -294,9 +296,14 @@ export default function PageWizardWorkspace({
             <p>{activeSection.description}</p>
           </header>
           <aside className={styles.inputTip} aria-label="입력 안내">
-            <strong>필요한 정보부터 간단하게</strong>
-            <p>필수 항목을 먼저 입력해 주세요. 가족·교통·계좌 등 선택 정보는 필요할 때 펼쳐 작성할 수 있습니다.</p>
+            <strong>입력 팁</strong>
+            <ul>
+              <li>필수 항목부터 차례로 입력해 주세요.</li>
+              <li>가족·교통·계좌 정보는 선택 사항입니다.</li>
+              <li>입력한 내용은 미리보기에 바로 반영됩니다.</li>
+            </ul>
           </aside>
+          </div>
           <div className={styles.stepList}>
             {activeSection.steps.map((step) => {
               const validation = getStepValidation(step.key);
