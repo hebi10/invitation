@@ -1,4 +1,5 @@
 .page {
+  --font-sans: 'Apple SD Gothic Neo', 'Malgun Gothic', system-ui, sans-serif;
   --paper: #ffffff;
   --paper-soft: #f6f5f2;
   --ink: #292929;
@@ -263,7 +264,7 @@ details[open] > :is(.disclosureSummary, .accountSummary, .formSummary)::after { 
   --muted: #716e69; --accent: #514c44; --line: #e6e2dc;
   --control-line: #91897e; --input-surface: #ffffff; --focus: #514c44;
   --section-space: 88px;
-  font-size: 15px; line-height: 1.8;
+  font-size: 16px; line-height: 1.8;
 }
 :global(body):has(.page[data-design='simple']) { background-color: #faf9f6; }
 .page ::selection { background: #e6e2dc; }
@@ -312,7 +313,7 @@ details[open] > :is(.disclosureSummary, .accountSummary, .formSummary)::after { 
 .page .commentMessage { font-size: 15px; }
 
 /* Shared controls remain familiar; each paper has its own reading composition. */
-.page:not([data-design='simple']) { font-size: 15px; line-height: 1.8; --section-space: 80px; }
+.page:not([data-design='simple']) { font-size: 16px; line-height: 1.8; --section-space: 80px; }
 .page:not([data-design='simple']) :is(.invitationSection, .scheduleSection, .container, .ceremonySection, .transportSection) { margin-top: var(--section-space); }
 .page[data-design='classic-r'] {
   --paper: #fff; --paper-soft: #f3f3f1; --ink: #20201e; --muted: #62635e;
@@ -335,7 +336,7 @@ details[open] > :is(.disclosureSummary, .accountSummary, .formSummary)::after { 
 }
 .page:not([data-design='simple']) ::selection { background: var(--paper-soft); color: var(--ink); }
 .page :is(.heading, .title)::after { content: none; }
-.page[data-design='simple'] :is(.heading, .title) { font-size: 18px; justify-content: center; text-align: center; }
+.page[data-design='simple'] :is(.heading, .title) { font-size: 22px; justify-content: center; text-align: center; }
 .page[data-design='simple'] .invitationSection { margin-top: 64px; }
 
 /* Modern: a narrow title column and a generous reading column. */
@@ -391,3 +392,30 @@ details[open] > :is(.disclosureSummary, .accountSummary, .formSummary)::after { 
   .page[data-design='romantic'] .invitationSection { width: calc(100% - 48px); }
   .page[data-design='emotional'] .ceremonyContent { grid-template-columns: 1fr; }
 }
+
+/* Display faces carry the invitation; practical information uses clear Gothic text. */
+.page :is(.invitationCopy, .invitationAuthor, .scheduleContent, .address, .travelNote,
+  .storedSection, .message, .subtitle, .accountRow, .accountHolder, .commentMessage,
+  .contactIdentity strong, .authorName) { font-size: 16px; }
+.page :is(.quickLinks, .contactSection, .scheduleContent, .travelNote, .storedSection,
+  .accountsContainer, .commentsList, .formDisclosure, .ceremonyContent, .dateSection) {
+  font-family: var(--font-sans);
+}
+.page :is(.quickLinks a, .disclosureSummary, .accountSummary, .formSummary,
+  .copyButton, .moreButton, .lessButton, .submitButton, .refreshButton, .pageButton,
+  .pageNumber, .carouselButton, .contactActions a, .venuePhone) {
+  font-family: var(--font-sans); font-size: 15px; font-weight: 500; line-height: 1.6;
+}
+.page :is(.label, .commentsCount, .commentsCount strong, .commentDate, .pageInfo,
+  .contactIdentity span, .carouselCounter, .loadingText, .emptyState, .errorMessage,
+  .imageCounter, .popupLoadingText) { font-size: 14px; }
+.page :is(.input, .textarea) { font-family: var(--font-sans); font-size: 16px; line-height: 1.75; }
+.page :is(.accountNumber, .dateSection) { font-variant-numeric: tabular-nums; }
+.page .dateSection time { font-size: 14px; }
+.page .dateSection strong { font-size: 22px; }
+.page .dateSection [aria-label$='달력'] span { font-size: 14px; }
+.page .invitationCopy { max-width: 340px; line-height: 2; }
+.page[data-design='classic-r'] .invitationCopy { max-width: none; }
+.page :is(.message, .subtitle, .commentMessage, .storedSection) { line-height: 1.9; }
+.page .accountRow { overflow-wrap: anywhere; }
+.page .ceremonyContent { font-size: 16px; }

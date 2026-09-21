@@ -94,7 +94,8 @@ const buttonVariantStyles = {
     borderColor: 'var(--share-line, #e4dfe9)',
     boxShadow: 'none',
     borderRadius: '0',
-    fontSize: '13px',
+    fontSize: '15px',
+    fontFamily: "'Apple SD Gothic Neo', 'Malgun Gothic', system-ui, sans-serif",
     fontWeight: 500,
   },
   default: {
@@ -428,7 +429,7 @@ export default function WeddingKakaoShareButton({
           style={{
             margin: 0,
             textAlign: 'center',
-            fontSize: '0.84rem',
+            fontSize: variant === 'minimal' ? '14px' : '0.84rem',
             color:
               variant === 'space'
                 ? 'rgba(245, 248, 255, 0.76)'

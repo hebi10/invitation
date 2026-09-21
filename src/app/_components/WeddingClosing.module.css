@@ -46,6 +46,7 @@
 }
 
 .closing {
+  --font-sans: 'Apple SD Gothic Neo', 'Malgun Gothic', system-ui, sans-serif;
   box-sizing: border-box;
   display: grid;
   justify-items: center;
@@ -97,11 +98,11 @@
 .closing[data-theme='simple'] { position: relative; padding: 88px 24px 40px; background: #faf9f6; color: #282725; gap: 20px; }
 .closing[data-theme='simple']::before { content: ''; position: absolute; top: 44px; left: 24px; right: 24px; height: 1px; background: #e6e2dc; }
 .closing[data-theme='simple'] p:first-child { font-family: 'Wedding Myeongjo', serif; font-size: 22px; }
-.closing[data-theme='simple'] p:last-child { max-width: 290px; font-size: 15px; line-height: 1.8; color: #716e69; }
+.closing[data-theme='simple'] p:last-child { max-width: 290px; font-size: 16px; line-height: 1.8; color: #716e69; }
 
 .closing:not([data-theme='simple']) { position: relative; padding: 88px 24px 48px; gap: 20px; }
 .closing:not([data-theme='simple']) p:first-child { font-size: 22px; }
-.closing:not([data-theme='simple']) p:last-child { max-width: 290px; font-size: 15px; line-height: 1.8; }
+.closing:not([data-theme='simple']) p:last-child { max-width: 290px; font-size: 16px; line-height: 1.8; }
 .closing[data-theme='classic-r'] { color: #20201e; background: #fff; }
 .closing[data-theme='classic-r']::before { content: ''; position: absolute; top: 40px; left: 24px; right: 24px; height: 1px; background: #c9cac5; }
 .closing[data-theme='classic-r'] p:first-child { font-weight: 700; }
