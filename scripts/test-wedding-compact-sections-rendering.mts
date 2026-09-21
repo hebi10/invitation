@@ -17,6 +17,14 @@ const { default: GiftInfoThemed } = await import(
 const { default: GuestbookThemed } = await import(
   '../src/components/sections/Guestbook/GuestbookThemed.tsx'
 );
+const { WeddingClosing } = await import('../src/app/_components/WeddingClosing.tsx');
+for (const month of [0, 5, 11]) {
+  const closing = renderToStaticMarkup(React.createElement(WeddingClosing, {
+    groomName: '김신랑', brideName: '이신부', theme: 'gyeol',
+    weddingDateTime: { year: 2026, month, day: 20, hour: 15, minute: 0 },
+  }));
+  assert.ok(closing.includes(`2026. ${String(month + 1).padStart(2, '0')}. 20`), 'Classic closing must display zero-based stored months as calendar months');
+}
 
 const giftProps = {
   styles: { accountSection: 'account-section', accountSummary: 'account-summary' },

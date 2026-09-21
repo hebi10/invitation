@@ -87,3 +87,7 @@
 .locationMap[data-appearance='natural'] .actions { gap: 8px; font-size: 14px; }
 .locationMap[data-appearance='natural'] .actions :is(a, button) { min-height: 46px; border-color: var(--line); }
 .mapControl { position: absolute; top: 8px; right: 8px; z-index: 2; min-height: 44px; padding: 8px 10px; border: 1px solid var(--control-line); background: var(--paper); color: var(--ink); font: inherit; font-size: 12px; cursor: pointer; }
+.locationMap[data-appearance='classic'] .viewport { height: 190px; }
+.locationMap[data-appearance='classic'] .actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; font-family: 'Wedding Myeongjo', serif; font-size: 13px; }
+.locationMap[data-appearance='classic'] .actions a { justify-content: center; padding: 8px 4px; min-height: 44px; border: 1px solid var(--control-line); text-decoration: none; text-align: center; }
+.mapControl:focus-visible { outline: 2px solid var(--focus); outline-offset: 3px; }

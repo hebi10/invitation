@@ -151,6 +151,12 @@ export default function WeddingBase({ state, theme, demoComments, showMap = true
           <div className={styles.invitationCopy} data-wedding-motion="passage">
             <p>{invitationMessage}</p>
             {invitationAuthor ? <p className={styles.invitationAuthor}>{invitationAuthor}</p> : null}
+            {theme === 'gyeol' ? <div className={styles.classicFamilies}>
+              {[page.couple.groom, page.couple.bride].map((person, index) => {
+                const parents = [person.father?.name, person.mother?.name].filter(Boolean).join(' · ');
+                return parents ? <p key={index}>{parents}의 {person.order || (index === 0 ? '아들' : '딸')} {person.name}</p> : null;
+              })}
+            </div> : null}
           </div>
         </section>
       ) : null}
@@ -187,7 +193,12 @@ export default function WeddingBase({ state, theme, demoComments, showMap = true
         <section id="wedding-info" className={styles.ceremonySection} data-wedding-section="ceremony" aria-labelledby="wedding-ceremony-title">
           <h2 id="wedding-ceremony-title" className={styles.heading}>예식 안내</h2>
           <div className={styles.ceremonyContent}>
-            <p>{page.date}</p>
+            {theme === 'gyeol' ? <div className={styles.classicDate} aria-label={page.date}>
+              <span>{new Date(Date.UTC(page.weddingDateTime.year, page.weddingDateTime.month, page.weddingDateTime.day)).toLocaleDateString('en-US', { month: 'long', timeZone: 'UTC' }).toUpperCase()}</span>
+              <strong>{page.weddingDateTime.day}</strong>
+              <span>{page.weddingDateTime.year}</span>
+              <span>{new Date(Date.UTC(page.weddingDateTime.year, page.weddingDateTime.month, page.weddingDateTime.day)).toLocaleDateString('ko-KR', { weekday: 'long', timeZone: 'UTC' })}</span>
+            </div> : <p>{page.date}</p>}
             {ceremony?.time ? <p>{ceremony.time}</p> : null}
             <p className={styles.venueName}>{page.venue}</p>
           </div>
@@ -211,7 +222,7 @@ export default function WeddingBase({ state, theme, demoComments, showMap = true
         </div>
         {showMap && storedContent.mapHref ? (
           <LocationMap
-            appearance={theme === 'emotional' ? 'natural' : 'simple'}
+            appearance={theme === 'emotional' ? 'natural' : theme === 'gyeol' ? 'classic' : 'simple'}
             address={ceremonyAddress}
             venueName={page.venue}
             kakaoMapConfig={pageData?.kakaoMap}

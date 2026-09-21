@@ -43,19 +43,17 @@
 .editorialMeta .date { justify-content: start; margin-top: 0; font-size: 16px; font-weight: 500; font-variant-numeric: tabular-nums; }
 .editorialMeta .venue { margin-top: 6px; font-size: 16px; }
 
-/* A complete formal invitation frame, including the family names. */
-.traditional { padding: 26px 22px 0; font-family: 'Wedding Myeongjo', serif; text-align: center; background: var(--paper, #f8f3e9); color: #493e2f; }
-.traditionalFrame { padding: 30px 20px 28px; border: 1px solid #bbaa8e; outline: 1px solid #d2c5ae; outline-offset: -6px; }
-.classicOrnament { width: 76px; height: 48px; margin: 0 auto 24px; background: url('/images/wedding-concepts/classic-ornament.webp') center / contain no-repeat; }
-.traditionalTitle .names { font-size: 28px; gap: 10px; }
-.traditional .conceptIntroduction { max-width: 210px; margin: 16px auto 0; font-size: 16px; word-break: keep-all; }
+/* An open, double-line paper cover with a monogram taken from the couple's names. */
+.traditional { padding: 20px 16px 24px; font-family: 'Wedding Myeongjo', serif; text-align: center; background: #f6f0e5; color: #3e332a; }
+.traditionalFrame { padding: 30px 18px 28px; border: 1px solid #d8c8b4; outline: 1px solid #ad9478; outline-offset: -7px; background: #fbf8f2; }
+.traditional .traditionalEyebrow { font-family: var(--font-sans); font-size: 11px; line-height: 1.8; letter-spacing: .2em; color: #7a6b5c; }
+.traditionalMonogram { display: grid; place-items: center; min-height: 24px; margin: 14px auto; color: #69513a; font-size: 15px; letter-spacing: .12em; line-height: 1.6; }
+.traditionalTitle .names { font-size: 29px; gap: 10px; line-height: 1.65; }
+.traditional .conceptIntroduction { max-width: 220px; margin: 14px auto 0; color: #7a6b5c; font-size: 15px; line-height: 1.9; word-break: keep-all; }
 .traditional .traditionalPhoto { margin: 28px 0; }
-.traditionalPhoto .photo { aspect-ratio: 4 / 5; object-fit: cover; }
-.traditional .date { margin-top: 28px; }
-.traditional .venue { margin-top: 4px; }
-.families { font-family: var(--font-sans); display: grid; gap: 7px; margin-top: 28px; font-size: 14px; line-height: 1.9; }
-.families:empty { display: none; }
-.families strong { margin-left: 6px; font-size: 16px; font-weight: 500; }
+.traditionalPhoto .photo { aspect-ratio: 6 / 5; object-fit: cover; }
+.traditional .date { margin-top: 24px; font-family: inherit; font-size: 16px; color: #69513a; }
+.traditional .venue { margin-top: 6px; font-family: inherit; font-size: 16px; }
 
 /* Quiet ivory paper gives the names and photograph room to breathe. */
 .basic { padding: 70px 34px 0; background: #faf9f6; color: #302e2a; text-align: center; }
@@ -72,9 +70,9 @@
   .photoCopy .names { font-size: 27px; gap: 10px; }
   .editorial { padding-inline: 24px; }
   .editorialNames { font-size: 28px; gap: 10px; }
-  .traditional { padding-inline: 16px; }
-  .traditionalFrame { padding-inline: 16px; }
-  .traditionalTitle .names { font-size: 24px; gap: 8px; }
+  .traditional { padding-inline: 12px; }
+  .traditionalFrame { padding-inline: 14px; }
+  .traditionalTitle .names { font-size: 28px; gap: 7px; }
   .letter { padding-inline: 20px; }
   .basic { padding-inline: 26px; }
   .letter .names, .basic .names { font-size: 25px; gap: 10px; }

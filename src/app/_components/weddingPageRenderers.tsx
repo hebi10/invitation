@@ -78,6 +78,7 @@ export function withWeddingClosing(
             groomName={props.state.pageConfig.groomName}
             brideName={props.state.pageConfig.brideName}
             theme={options.theme}
+            weddingDateTime={props.state.pageConfig.weddingDateTime}
           />
         ) : null}
       </div>
@@ -121,6 +122,7 @@ export function createWeddingThemeRenderer(
             groomName={state.pageConfig.groomName}
             brideName={state.pageConfig.brideName}
             theme={props.options.theme}
+            weddingDateTime={state.pageConfig.weddingDateTime}
           />
         ) : null}
       </main>

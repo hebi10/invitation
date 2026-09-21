@@ -407,6 +407,67 @@ details[open] > :is(.disclosureSummary, .accountSummary, .formSummary)::after { 
 .page .accountRow { overflow-wrap: anywhere; }
 .page .ceremonyContent { font-size: 16px; }
 
+/* Classic print: warm paper, measured type and restrained bronze frames. */
+.page[data-design='gyeol'] {
+  --paper: #f6f0e5; --paper-soft: #fbf8f2; --ink: #3e332a; --muted: #7a6b5c;
+  --accent: #69513a; --line: #d8c8b4; --control-line: #96816a; --focus: #69513a;
+  --section-space: 56px; font-size: 15px; padding-bottom: 40px;
+}
+:global(body):has(.page[data-design='gyeol']) { background: #eeece8; }
+.page[data-design='gyeol'] :is(.invitationSection, .scheduleSection, .container, .transportSection) { width: 100%; margin-top: 0; padding: 48px 28px 0; }
+.page[data-design='gyeol'] .invitationSection { background: var(--paper-soft); padding-top: 40px; }
+.page[data-design='gyeol'] :is(.heading, .title) { flex-direction: column; gap: 7px; margin-bottom: 22px; font-size: 20px; line-height: 1.6; }
+.page[data-design='gyeol'] :is(.heading, .title)::before { display: block; font-family: 'Wedding Myeongjo', serif; font-size: 10px; font-weight: 500; letter-spacing: .24em; color: var(--muted); }
+.page[data-design='gyeol'] .invitationSection .heading::before { content: 'INVITATION'; }
+.page[data-design='gyeol'] [data-wedding-section='gallery'] .title::before { content: 'GALLERY'; }
+.page[data-design='gyeol'] .ceremonySection .heading::before { content: 'THE WEDDING DAY'; }
+.page[data-design='gyeol'] .scheduleSection .heading::before { content: 'LOCATION'; }
+.page[data-design='gyeol'] [data-wedding-section='guestbook'] .title::before { content: 'GUESTBOOK'; }
+.page[data-design='gyeol'] .quickLinks { width: 100%; margin: 0; padding: 10px 20px; gap: 4px; background: var(--paper-soft); }
+.page[data-design='gyeol'] .quickLinks a { font-family: 'Wedding Myeongjo', serif; font-size: 13px; text-decoration: none; min-height: 44px; color: var(--accent); }
+.page[data-design='gyeol'] .invitationCopy { max-width: 320px; font-size: 15px; line-height: 2.1; }
+.page[data-design='gyeol'] .invitationAuthor { margin-top: 20px; font-size: 14px; }
+.page[data-design='gyeol'] .classicFamilies { margin-top: 20px; font-size: 13px; color: var(--muted); line-height: 2; }
+.page[data-design='gyeol'] .contactSection { width: 100%; margin: 0; padding: 22px 28px 32px; background: var(--paper-soft); }
+.page[data-design='gyeol'] :is(.disclosureSummary, .accountSummary, .formSummary, .copyButton) { min-height: 46px; font-family: 'Wedding Myeongjo', serif; font-size: 14px; color: var(--accent); background: transparent; border-color: var(--control-line); }
+.page[data-design='gyeol'] .contactSection .disclosureSummary { border: 0; text-decoration: underline; text-underline-offset: 7px; }
+.page[data-design='gyeol'] .ceremonySection { position: relative; width: calc(100% - 40px); margin-top: 48px; padding: 32px 18px; border: 1px solid var(--line); outline: 1px solid var(--line); outline-offset: -6px; background: var(--paper-soft); }
+.page[data-design='gyeol'] .ceremonyContent { gap: 8px; font-family: 'Wedding Myeongjo', serif; font-size: 15px; }
+.page[data-design='gyeol'] .ceremonyContent .venueName { margin: 6px 0 0; font-size: 18px; }
+.page[data-design='gyeol'] .classicDate { display: grid; justify-items: center; gap: 2px; color: var(--accent); }
+.page[data-design='gyeol'] .classicDate span { font-size: 13px; letter-spacing: .08em; }
+.page[data-design='gyeol'] .classicDate strong { font-size: 34px; font-weight: 700; line-height: 1.2; }
+.page[data-design='gyeol'] .classicDate span:last-child { margin-top: 14px; font-size: 15px; }
+.page[data-design='gyeol'] .ceremonySection > button { min-height: 46px; background: transparent; border: 1px solid var(--control-line); color: var(--accent); font-family: inherit; font-size: 14px; }
+.page[data-design='gyeol'] .scheduleContent { gap: 4px; margin-bottom: 18px; font-family: 'Wedding Myeongjo', serif; }
+.page[data-design='gyeol'] .scheduleContent .venueName { font-size: 18px; }
+.page[data-design='gyeol'] :is(.address, .venuePhone) { font-size: 14px; }
+.page[data-design='gyeol'] .travelNote { font-size: 13px; text-align: center; margin: 16px 0 0; }
+.page[data-design='gyeol'] .transportSection { padding-top: 38px; }
+.page[data-design='gyeol'] .transportSection .heading::before { content: ''; width: 7px; height: 7px; transform: rotate(45deg); border: 1px solid var(--line); margin-bottom: 16px; }
+.page[data-design='gyeol'] :is(.message, .subtitle) { margin: 0 auto 24px; max-width: 310px; font-size: 15px; line-height: 1.9; }
+.page[data-design='gyeol'] .accountsContainer { gap: 0; }
+.page[data-design='gyeol'] .accountSummary { justify-content: space-between; padding: 14px 0; border: 0; }
+.page[data-design='gyeol'] .accountSection { position: relative; }
+.page[data-design='gyeol'] .accountSection::after { content: ''; position: absolute; bottom: 0; left: 0; width: 100%; height: 1px; background: var(--line); }
+.page[data-design='gyeol'] :is(.accountRow, .accountHolder, .contactIdentity strong) { font-size: 14px; }
+.page[data-design='gyeol'] .commentsHeader { gap: 8px; }
+.page[data-design='gyeol'] :is(.commentsCount, .commentsCount strong, .pageInfo, .commentDate, .refreshButton) { font-size: 12px; }
+.page[data-design='gyeol'] .commentsGrid { gap: 0; }
+.page[data-design='gyeol'] .commentItem { display: grid; gap: 6px; padding: 20px 0; position: relative; }
+.page[data-design='gyeol'] .commentItem + .commentItem::before { content: ''; position: absolute; top: 0; width: 100%; height: 1px; background: var(--line); }
+.page[data-design='gyeol'] .commentHeader { display: contents; }
+.page[data-design='gyeol'] .commentAuthor { order: 0; }
+.page[data-design='gyeol'] .commentHeader > div:last-child { order: 2; }
+.page[data-design='gyeol'] .authorName { font-size: 14px; font-weight: 500; }
+.page[data-design='gyeol'] .commentMessage { order: 1; font-size: 15px; margin: 0; line-height: 1.9; }
+.page[data-design='gyeol'] :is(.pageNumber, .pageButton) { border: 0; min-width: 36px; min-height: 44px; padding: 6px; font-size: 13px; background: transparent; }
+.page[data-design='gyeol'] :is(.active, .pageButtonActive) { color: white; background: var(--accent); }
+@media (max-width: 359px) {
+  .page[data-design='gyeol'] :is(.invitationSection, .scheduleSection, .container, .transportSection, .contactSection) { padding-inline: 20px; }
+  .page[data-design='gyeol'] .ceremonySection { width: calc(100% - 28px); padding-inline: 14px; }
+}
+
 /* Natural paper: restrained botanical detail, a consistent reading rhythm. */
 .page[data-design='emotional'] {
   --paper: #faf9f5; --paper-soft: #eef1e8; --ink: #2f342d; --muted: #626b5e;

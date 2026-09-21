@@ -41,10 +41,50 @@
 .gallery[data-gallery-variant='classic-r'] .photoButton { aspect-ratio: 3 / 2; }
 .gallery[data-gallery-variant='classic-r'] .photo { object-fit: cover; }
 .gallery[data-gallery-variant='classic-r'] .controls { color: var(--ink, #262626); }
-.gallery[data-gallery-variant='gyeol'] .photoButton { aspect-ratio: 3 / 2; }
-.gallery[data-gallery-variant='gyeol'] .photo { object-fit: cover; }
-.gallery[data-gallery-variant='gyeol'] .companions { grid-template-columns: repeat(2, minmax(0, 1fr)); margin-top: 6px; }
-.gallery[data-gallery-variant='gyeol'] .companion { aspect-ratio: 3 / 2; }
+.gallery[data-gallery-variant='gyeol'] {
+  color: var(--ink, #3e332a);
+  font-family: 'Wedding Myeongjo', serif;
+}
+.gallery[data-gallery-variant='gyeol'] .photoButton {
+  aspect-ratio: 4 / 3;
+  padding: 10px;
+  border: 1px solid #d8c8b4;
+  background: #fbf8f2;
+}
+.gallery[data-gallery-variant='gyeol'] .photoButton .photo { object-fit: contain; }
+.gallery[data-gallery-variant='gyeol'] .companions {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 14px;
+}
+.gallery[data-gallery-variant='gyeol'] .companion {
+  aspect-ratio: 3 / 2;
+  padding: 5px;
+  border: 1px solid #d8c8b4;
+  background: #fbf8f2;
+}
+.gallery[data-gallery-variant='gyeol'] .companion:only-child {
+  grid-column: 1 / -1;
+  width: calc((100% - 12px) / 2);
+  justify-self: center;
+}
+.gallery[data-gallery-variant='gyeol'] .controls {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  gap: 12px;
+  margin-top: 18px;
+  color: #69513a;
+  font-size: 14px;
+}
+.gallery[data-gallery-variant='gyeol'] .controls > button:first-child { justify-self: start; }
+.gallery[data-gallery-variant='gyeol'] .controls > button:last-child { justify-self: end; }
+.gallery[data-gallery-variant='gyeol'] .controls > span { letter-spacing: 0.08em; }
+.gallery[data-gallery-variant='gyeol'] .controls > span:only-child { grid-column: 2; }
+.gallery[data-gallery-variant='gyeol'] .hint {
+  margin-top: 10px;
+  color: #7a6b5c;
+  font-size: 13px;
+}
 @media (prefers-reduced-motion: reduce) {
   .gallery *, .gallery :global(.swiper-wrapper) { transition-duration: 0s !important; }
   .gallery[data-gallery-variant='simple'] .slide { transform: none; }

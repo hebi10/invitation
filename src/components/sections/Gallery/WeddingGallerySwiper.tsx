@@ -125,14 +125,14 @@ export default function WeddingGallerySwiper({ images, previewImages, variant, r
       })}
     </div> : null}
     </div>
-    {count > 1 ? <>
+    {count > 1 || (variant === 'gyeol' && count === 1) ? <>
       <div className={styles.controls}>
-        <button type="button" disabled={activeIndex === 0} onClick={() => move(-1)}>이전 사진</button>
+        {count > 1 ? <button type="button" disabled={activeIndex === 0} onClick={() => move(-1)}>이전 사진</button> : null}
         <span aria-live="polite" aria-atomic="true" aria-label={`${count}장 중 ${activeIndex + 1}번째 사진`}>{String(activeIndex + 1).padStart(2, '0')} / {String(count).padStart(2, '0')}</span>
-        <button type="button" disabled={activeIndex === count - 1} onClick={() => move(1)}>다음 사진</button>
+        {count > 1 ? <button type="button" disabled={activeIndex === count - 1} onClick={() => move(1)}>다음 사진</button> : null}
       </div>
-      <div className={styles.progress} aria-hidden="true"><span style={{ width: `${((activeIndex + 1) / count) * 100}%` }} /></div>
-      <p className={styles.hint}>옆으로 넘겨 보세요 · 사진을 누르면 크게 볼 수 있어요</p>
+      {variant !== 'gyeol' ? <div className={styles.progress} aria-hidden="true"><span style={{ width: `${((activeIndex + 1) / count) * 100}%` }} /></div> : null}
+      <p className={styles.hint}>{variant === 'gyeol' ? '사진을 누르면 크게 감상하실 수 있습니다.' : '옆으로 넘겨 보세요 · 사진을 누르면 크게 볼 수 있어요'}</p>
     </> : null}
   </div>;
 }

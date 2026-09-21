@@ -110,9 +110,11 @@
 .closing[data-theme='romantic'] { background: #fbf8f3; color: #4d4135; font-family: 'Wedding Myeongjo', serif; }
 .closing[data-theme='romantic'] p:last-child { color: #766657; }
 .closing[data-theme='romantic']::after { content: 'Always together'; font-family: 'Gyeol Brush', cursive; font-size: 30px; color: #766657; margin-top: 12px; }
-.closing[data-theme='gyeol'] { background: #f8f3e9; color: #493b2f; }
-.closing[data-theme='gyeol']::before { content: ''; width: 60px; height: 42px; background: url('/images/wedding-concepts/classic-ornament.webp') center / contain no-repeat; }
-.closing[data-theme='gyeol'] p:last-child { color: #786550; }
+.closing[data-theme='gyeol'] { background: #fbf8f2; color: #3e332a; padding: 56px 24px; gap: 20px; }
+.classicMonogram { display: grid; place-items: center; width: 76px; min-height: 52px; border: 1px solid #d8c8b4; color: #69513a; font-size: 22px; line-height: 1.6; }
+.closing[data-theme='gyeol'] .classicNames { font-size: 24px; font-weight: 500; line-height: 1.7; }
+.closing[data-theme='gyeol'] .classicThanks { max-width: 290px; font-size: 16px; font-weight: 400; line-height: 1.9; color: #7a6b5c; }
+.closing[data-theme='gyeol'] .classicDate { font-size: 14px; line-height: 1.8; color: #7a6b5c; }
 .closing[data-theme='emotional'] { background: #faf9f5; color: #344638; padding: 48px 24px 56px; gap: 16px; }
 .closing[data-theme='emotional']::before { content: ''; width: 64px; height: 42px; margin-bottom: 4px; background: url('/images/wedding-concepts/garden-sprig.webp') center / contain no-repeat; }
 .closing[data-theme='emotional'] p:first-child { font-size: 22px; letter-spacing: .02em; }
