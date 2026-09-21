@@ -222,7 +222,11 @@ export default function SlugStep({
         <span className={styles.summaryLabel}>주소 미리보기</span>
         <strong className={styles.summaryValue}>/{previewSlug}</strong>
         <p className={styles.sectionText}>
-          {persistedSlug
+          {eventType === 'wedding'
+            ? persistedSlug
+              ? '첫 저장이 완료되어 주소는 이 화면에서 변경할 수 없습니다. 같은 청첩장을 모든 디자인 주소에서 열 수 있습니다.'
+              : '주소는 첫 저장 후 이 화면에서 변경할 수 없습니다. 같은 청첩장을 모든 디자인 주소에서 열 수 있습니다. 같은 주소가 있으면 주소 끝에 문자가 자동으로 추가될 수 있습니다.'
+            : persistedSlug
             ? '첫 저장이 완료되어 주소와 디자인은 이 화면에서 변경할 수 없습니다. 이름과 본문은 계속 수정할 수 있습니다.'
             : '주소와 디자인은 첫 저장 후 이 화면에서 변경할 수 없습니다. 저장하기 전에 확인해 주세요. 같은 주소가 있으면 주소 끝에 문자가 자동으로 추가될 수 있습니다.'}
         </p>

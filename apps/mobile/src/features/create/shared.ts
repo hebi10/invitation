@@ -25,8 +25,6 @@ import type {
 
 export const TICKET_USAGE_ITEMS = [
   '티켓 1장: 1개월 연장',
-  '티켓 1장: 디자인 변경',
-  '티켓 2장: 같은 청첩장에 다른 디자인 추가',
   '티켓 2장: 서비스 업그레이드',
 ] as const;
 
@@ -142,12 +140,6 @@ export function buildCreateValidationRules(input: {
       section: 'basic',
       passed: slugValidation.isValid,
       errorMessage: getCreateSlugValidationMessage(slugValidation.reason),
-    },
-    {
-      label: '디자인 선택',
-      section: 'selection',
-      passed: Boolean(input.selectedTheme),
-      errorMessage: '디자인을 먼저 선택해 주세요.',
     },
   ];
 }

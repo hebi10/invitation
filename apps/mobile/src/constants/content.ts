@@ -73,7 +73,7 @@ export const guideSections = [
   {
     title: '시작 순서',
     items: [
-      '서비스와 디자인을 선택합니다.',
+      '서비스를 선택합니다. 모든 웨딩 디자인을 함께 사용할 수 있습니다.',
       '고객 계정으로 로그인하고 생성 흐름을 진행합니다.',
       '예식 정보와 문구를 입력하면 페이지가 생성됩니다.',
       '생성 후에는 운영 탭에서 링크 공유, 공개 전환, 방명록 관리를 이어서 할 수 있습니다.',
@@ -92,9 +92,7 @@ export const guideSections = [
     items: [
       '티켓은 할인 없이 1장당 1,000원입니다.',
       '티켓 1장: 1개월 연장',
-      '티켓 1장: 기본 디자인 변경',
       '티켓 1장: 모바일 청첩장 1개 추가 생성',
-      '티켓 2장: 같은 청첩장에 다른 디자인 추가',
       '티켓 2장: 서비스 업그레이드',
     ],
   },
@@ -172,9 +170,7 @@ export const quickStartItems = [
 
 export const ticketActions = [
   { key: 'extend', label: '기간 1개월 연장', tickets: 1 },
-  { key: 'theme-change', label: '디자인 변경', tickets: 1 },
   { key: 'extra-page', label: '청첩장 1개 추가 생성', tickets: 1 },
-  { key: 'extra-variant', label: '같은 청첩장에 다른 디자인 추가', tickets: 2 },
   { key: 'upgrade', label: '서비스 업그레이드', tickets: 2 },
 ] as const;
 

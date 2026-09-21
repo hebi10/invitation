@@ -95,7 +95,7 @@ export function useCreateForm({
   const [selectedPlan, setSelectedPlan] =
     useState<MobileInvitationProductTier>('standard');
   const [selectedTheme, setSelectedTheme] =
-    useState<MobileInvitationThemeKey | null>(null);
+    useState<MobileInvitationThemeKey | null>(DEFAULT_INVITATION_THEME);
   const [customerEmail, setCustomerEmail] = useState('');
   const [customerPassword, setCustomerPassword] = useState('');
   const [groomKoreanName, setGroomKoreanName] = useState('');
@@ -372,8 +372,8 @@ export function useCreateForm({
 
     if (currentStep === 'selection') {
       return selectionValidationMessages.length === 0
-        ? '2단계 서비스와 디자인 선택을 마쳤습니다.'
-        : '2단계 서비스와 디자인 선택을 진행해 주세요.';
+        ? '2단계 서비스 선택을 마쳤습니다.'
+        : '2단계 서비스 선택을 진행해 주세요.';
     }
 
     return infoValidationMessages.length === 0
@@ -585,7 +585,7 @@ export function useCreateForm({
           step: 'selection' as const,
           message:
             selectionValidationMessages[0] ??
-            '서비스와 디자인 선택을 먼저 확인해 주세요.',
+            '서비스 선택을 먼저 확인해 주세요.',
         };
       }
 
@@ -691,13 +691,7 @@ export function useCreateForm({
       return;
     }
 
-    if (!selectedTheme) {
-      setNotice('초안 저장 전에는 디자인을 먼저 선택해 주세요.');
-      moveToStep('selection');
-      return;
-    }
-
-    await persistDraft(selectedTheme, {
+    await persistDraft(selectedTheme ?? DEFAULT_INVITATION_THEME, {
       notice:
         '작성 중인 초안을 저장했습니다. 다음에도 같은 화면에서 이어서 만들 수 있습니다.',
     });

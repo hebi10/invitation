@@ -441,7 +441,7 @@ const WIZARD_STEP_CONFIGS: Record<WizardStepConfigKey, WizardStepConfigDefinitio
   'wedding-page-wizard': {
     key: 'wedding-page-wizard',
     eventType: 'wedding',
-    commonSetupSteps: ['eventType', 'theme', 'slug'],
+    commonSetupSteps: ['eventType', 'slug'],
     eventSpecificSteps: WEDDING_EVENT_STEP_KEYS,
     editSteps: WEDDING_EVENT_STEP_KEYS,
   },

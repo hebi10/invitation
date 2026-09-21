@@ -154,6 +154,7 @@ export function getEventPreviewThemeKeys({
     case 'opening':
       return [...OPENING_PREVIEW_THEME_KEYS];
     case 'wedding':
+      return getWeddingPreviewThemeKeys();
     default: {
       const validAvailableThemes = availableThemes.filter(isWeddingPreviewThemeKey);
       const fallbackTheme = getEventTypeDefaultPreviewTheme(

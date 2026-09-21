@@ -264,6 +264,7 @@ type VariantLink = {
 
 type VariantCarrier = {
   slug: string;
+  eventType?: EventTypeKey;
   variants?: Partial<Record<ShortcutKey, VariantLink>>;
 };
 
@@ -288,7 +289,9 @@ export function formatDateTime(date: Date) {
 }
 
 export function getAvailableShortcuts(page: VariantCarrier) {
-  return SHORTCUT_ITEMS.filter(({ key }) => page.variants?.[key]?.available).map(
+  return SHORTCUT_ITEMS.filter(({ key }) =>
+    (!page.eventType || page.eventType === 'wedding') || page.variants?.[key]?.available
+  ).map(
     ({ key, label }) => ({
       key,
       label,

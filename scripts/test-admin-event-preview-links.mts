@@ -12,6 +12,7 @@ import {
 import {
   buildEventPreviewPath,
   getEventPreviewLinks,
+  getWeddingPreviewThemeKeys,
 } from '../src/lib/eventPreviewLinks.ts';
 import {
   getInvitationThemeDefinition,
@@ -196,8 +197,12 @@ assert.deepEqual(
     eventType: 'wedding',
     availableThemes: ['gyeol'],
     defaultTheme: 'gyeol',
-  }).map(({ label, path }) => ({ label, path })),
+  }).filter(({ theme }) => theme === 'gyeol').map(({ label, path }) => ({ label, path })),
   [gyeolPreview]
+);
+assert.deepEqual(
+  getEventPreviewLinks({ slug: 'single', eventType: 'wedding', availableThemes: ['gyeol'] }).map(({ theme }) => theme),
+  getWeddingPreviewThemeKeys()
 );
 
 const seededSlugs = new Set(DUMMY_EVENT_SEEDS.map((seed) => seed.slug));

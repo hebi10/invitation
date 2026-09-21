@@ -62,6 +62,12 @@ export function useCreateTicketIntent({
       return;
     }
 
+    if (normalizedTicketIntent === 'extra-variant' || normalizedTicketIntent === 'theme-change') {
+      setNotice('모든 웨딩 디자인은 별도 티켓 없이 디자인별 주소로 열 수 있습니다.');
+      setHandledTicketIntentKey(intentKey);
+      return;
+    }
+
     if (isValidCreateStepProductTier(normalizedTargetPlan)) {
       setSelectedPlan(normalizedTargetPlan);
     }
@@ -74,8 +80,6 @@ export function useCreateTicketIntent({
       setNotice('티켓 사용: 기간 1개월 연장 준비를 위해 구매 탭으로 이동했습니다.');
     } else if (normalizedTicketIntent === 'extra-page') {
       setNotice('티켓 사용: 추가 청첩장 생성 흐름으로 이동했습니다.');
-    } else if (normalizedTicketIntent === 'extra-variant') {
-      setNotice('티켓 사용: 같은 청첩장에 다른 디자인을 추가하는 구매 흐름으로 이동했습니다.');
     } else if (normalizedTicketIntent === 'upgrade') {
       setNotice('티켓 사용: 서비스 업그레이드 구매 흐름으로 이동했습니다.');
     }

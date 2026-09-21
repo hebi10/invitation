@@ -1,14 +1,7 @@
-import { View } from 'react-native';
-
 import { ActionButton } from '../../../../components/ActionButton';
 import { AppText } from '../../../../components/AppText';
-import { ChoiceChip } from '../../../../components/ChoiceChip';
 import { SectionCard } from '../../../../components/SectionCard';
 import { TextField } from '../../../../components/TextField';
-import {
-  INVITATION_THEME_KEYS,
-  getInvitationThemeLabel,
-} from '../../../../lib/invitationThemes';
 import type { ManageFormState, ManageStringFieldKey } from '../../shared';
 import { manageStyles } from '../../manageStyles';
 
@@ -45,24 +38,11 @@ export function SettingsEditorStep({
       </SectionCard>
 
       <SectionCard
-        title="기본 테마와 공개 상태"
-        description="기본 테마 변경은 티켓 사용에서만 가능하며, 여기서는 현재 상태만 확인합니다."
+        title="공개 상태"
+        description="청첩장의 공개 여부를 설정합니다."
       >
-        <AppText variant="caption" style={manageStyles.helperText}>
-          현재 기본 테마
-        </AppText>
-        <View style={manageStyles.chipRow}>
-          {INVITATION_THEME_KEYS.map((themeKey) => (
-            <ChoiceChip
-              key={`settings-default-theme-${themeKey}`}
-              label={getInvitationThemeLabel(themeKey)}
-              selected={form.defaultTheme === themeKey}
-              onPress={() => {}}
-            />
-          ))}
-        </View>
         <AppText variant="muted" style={manageStyles.helperText}>
-          기본 테마를 바꾸려면 운영 탭의 `티켓 사용`에서 디자인 변경을 진행해 주세요.
+          모든 웨딩 디자인은 별도 연결이나 티켓 없이 디자인별 주소로 열 수 있습니다.
         </AppText>
 
         <ActionButton

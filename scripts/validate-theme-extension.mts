@@ -142,8 +142,11 @@ async function main() {
   );
   pushFailure(
     failures,
-    ticketModalSource.includes('purchasableThemes.map('),
-    'Ticket modal must render theme options by iterating purchasableThemes.'
+    !ticketModalSource.includes('onApplyThemeChange') &&
+      !ticketModalSource.includes('onPurchaseTargetTheme') &&
+      ticketModalSource.includes('onExtendDisplayPeriod') &&
+      ticketModalSource.includes('onGoToUpgrade'),
+    'Ticket modal must omit wedding design purchases while preserving period extension and upgrades.'
   );
 
   selectableThemes.forEach((themeKey) => {

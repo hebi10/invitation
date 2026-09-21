@@ -289,7 +289,7 @@ function OwnedEventCard({
                   미리볼 디자인 선택
                 </h3>
                 <p className={styles.modalDescription}>
-                  {eventTitle}에 연결된 디자인 중 하나를 선택해 공개 화면을 확인할 수 있습니다.
+                  {eventTitle}의 디자인별 공개 화면을 확인할 수 있습니다.
                 </p>
               </div>
               <button

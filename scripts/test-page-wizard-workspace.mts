@@ -313,6 +313,8 @@ assert.doesNotMatch(persistenceSource, /페이지를 공개했습니다/,
 console.log('page wizard workspace mapping checks passed');
 
 const setupOnlySteps = getWizardSteps({ eventType: 'wedding', includeSetupSteps: true, setupOnly: true, includeEventTypeStep: false });
-assert.deepEqual(setupOnlySteps.map(step => step.key), ['theme', 'slug'], '관리자 생성 화면에는 시작 설정만 표시합니다.');
+assert.deepEqual(setupOnlySteps.map(step => step.key), ['slug'], '웨딩 생성 화면에는 디자인 선택 없이 주소 설정만 표시합니다.');
+assert.equal(weddingSteps.some(step => step.key === 'theme'), false, '웨딩 초대장은 디자인 선택을 요구하지 않습니다.');
+assert.equal(getWizardSteps({ eventType: 'birthday', includeSetupSteps: true }).some(step => step.key === 'theme'), true, '생일 초대장의 디자인 선택은 유지합니다.');
 assert.equal(buildWizardSections(setupOnlySteps, 'wedding').length, 1);
 assert.equal(getWizardSteps({ eventType: 'wedding', includeSetupSteps: false }).some(step => ['theme', 'slug', 'eventType'].includes(step.key)), false, '주소별 내용 편집에는 시작 설정이 없습니다.');

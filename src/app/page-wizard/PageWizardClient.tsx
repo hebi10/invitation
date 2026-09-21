@@ -232,7 +232,9 @@ export default function PageWizardClient({
   const [requiresOwnershipClaim, setRequiresOwnershipClaim] = useState(false);
   const [accessErrorMessage, setAccessErrorMessage] = useState<string | null>(null);
   const [activeStepKey, setActiveStepKey] = useState<WizardStepKey>(
-    setupOnly ? (isEventTypeFixed ? 'theme' : 'eventType') : 'basic'
+    setupOnly
+      ? (isEventTypeFixed ? (requestedEventType === 'wedding' ? 'slug' : 'theme') : 'eventType')
+      : 'basic'
   );
   const {
     openChoicePanel,

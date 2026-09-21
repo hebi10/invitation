@@ -19,6 +19,7 @@ import {
   DEFAULT_INVITATION_THEME,
   isInvitationThemeKey,
 } from '@/lib/invitationThemes';
+import { withWeddingThemeAvailability } from '@/lib/weddingThemePolicy';
 
 import { anDoyoungYoonJisooConfig } from './pages/an-doyoung-yoon-jisoo';
 import { kimMinjunParkSoheeConfig } from './pages/kim-minjun-park-sohee';
@@ -158,7 +159,7 @@ export function createInvitationPageFromSeed(
     resolveAvailableInvitationVariant(seed.variants, DEFAULT_INVITATION_THEME) ??
     DEFAULT_INVITATION_THEME;
 
-  return {
+  return withWeddingThemeAvailability({
     ...seed,
     variants: normalizeSeedVariants(seed, fallbackTheme, {
       collapseLegacyAllTrue: hasExplicitFallbackTheme,
@@ -167,7 +168,7 @@ export function createInvitationPageFromSeed(
     displayPeriodEnabled: overrides.displayPeriodEnabled ?? false,
     displayPeriodStart: overrides.displayPeriodStart ?? null,
     displayPeriodEnd: overrides.displayPeriodEnd ?? null,
-  };
+  });
 }
 
 export function getAllWeddingPageSeeds(): WeddingPageConfig[] {

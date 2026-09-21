@@ -76,7 +76,7 @@ function LinkedInvitationCardPanel({
           `공개 상태: ${card.published ? '공개 중' : '비공개'}`,
           `서비스: ${card.productTier.toUpperCase()}`,
           `기본 테마: ${getInvitationThemeLabel(card.defaultTheme)}`,
-          `연결된 디자인: ${formatThemeList(getLinkedInvitationThemeKeys(card))}`,
+          `사용 가능한 디자인: ${formatThemeList(getLinkedInvitationThemeKeys(card))}`,
           `보유 티켓: ${card.ticketCount}장`,
           `노출 기간: ${formatDisplayPeriod(card.displayPeriod)}`,
           `배경음악: ${card.showMusic ? '사용 가능' : '미제공'}`,

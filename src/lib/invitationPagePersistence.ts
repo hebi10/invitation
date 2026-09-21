@@ -18,6 +18,7 @@ import {
 } from '@/lib/invitationProducts';
 import { DEFAULT_EVENT_TYPE, normalizeEventTypeKey } from '@/lib/eventTypes';
 import { normalizeWeddingIntroStyle } from '@/lib/weddingIntro';
+import { withWeddingThemeAvailability } from '@/lib/weddingThemePolicy';
 import {
   buildInvitationVariants,
   createInvitationVariantAvailability,
@@ -481,7 +482,7 @@ export function mergeInvitationPageSeed(
     return null;
   }
 
-  return normalizedSeed;
+  return withWeddingThemeAvailability(normalizedSeed);
 }
 
 export function normalizeInvitationConfigSeed(

@@ -40,6 +40,7 @@ import {
   normalizeInvitationTheme,
   readString,
 } from '@/lib/invitationPageNormalization';
+import { withWeddingThemeAvailability } from '@/lib/weddingThemePolicy';
 import type {
   EventDeletionMetadata,
   InvitationFeatureFlags,
@@ -307,7 +308,7 @@ function buildDraftConfigFromSeed(
     availability: createInvitationVariantAvailability([overrides.theme as InvitationVariantKey]),
   });
 
-  return nextSeed;
+  return withWeddingThemeAvailability(nextSeed);
 }
 
 async function isInvitationPageSlugTaken(pageSlug: string) {

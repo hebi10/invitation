@@ -59,8 +59,8 @@ for (const { category, href, eventType } of lockedCreateRoutes) {
   );
   assert.equal(
     steps[0]?.key,
-    'theme',
-    `${href} should start from the theme step after the event type is fixed`
+    eventType === 'wedding' ? 'slug' : 'theme',
+    `${href} should skip wedding design selection and preserve other event theme steps`
   );
 
   const routeFile =

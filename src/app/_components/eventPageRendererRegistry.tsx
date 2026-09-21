@@ -14,6 +14,8 @@ import {
   type InvitationThemeKey,
 } from '@/lib/invitationThemes';
 import { resolveAvailableInvitationVariant } from '@/lib/invitationVariants';
+import { isWeddingPreviewThemeKey } from '@/lib/eventPreviewLinks';
+import { resolveWeddingRouteTheme } from '@/lib/weddingThemePolicy';
 import type { InvitationPage } from '@/types/invitationPage';
 
 import {
@@ -125,13 +127,16 @@ function createWeddingBackedRenderer(
     },
     viewport: eventInvitationViewport,
     isThemeSupported(theme): theme is InvitationThemeKey {
-      return isInvitationThemeKey(theme);
+      return eventType === 'wedding' ? isWeddingPreviewThemeKey(theme) : isInvitationThemeKey(theme);
     },
     normalizeTheme(theme, fallback = DEFAULT_INVITATION_THEME) {
       const themeFallback = normalizeInvitationThemeKey(fallback, DEFAULT_INVITATION_THEME);
       return normalizeInvitationThemeKey(theme, themeFallback);
     },
     resolveRouteTheme(previewPage, requestedTheme, defaultTheme) {
+      if (eventType === 'wedding') {
+        return resolveWeddingRouteTheme(previewPage, requestedTheme, defaultTheme);
+      }
       const preferredTheme = normalizeInvitationThemeKey(
         requestedTheme ?? defaultTheme,
         DEFAULT_INVITATION_THEME

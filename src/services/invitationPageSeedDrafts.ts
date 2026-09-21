@@ -14,6 +14,7 @@ import {
   clampInvitationMusicVolume,
   DEFAULT_INVITATION_MUSIC_VOLUME,
 } from '@/lib/musicLibrary';
+import { withWeddingThemeAvailability } from '@/lib/weddingThemePolicy';
 import type {
   InvitationFeatureFlags,
   InvitationPageSeed,
@@ -206,5 +207,5 @@ export function buildDraftConfigFromSeed(
     },
   };
 
-  return nextSeed;
+  return withWeddingThemeAvailability(nextSeed);
 }

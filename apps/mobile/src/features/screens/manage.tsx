@@ -36,7 +36,6 @@ import {
 } from '../../lib/api';
 import { buildManageAppDeepLink } from '../../lib/appDeepLink';
 import {
-  DEFAULT_INVITATION_THEME,
   getInvitationThemeLabel,
 } from '../../lib/invitationThemes';
 import {
@@ -73,7 +72,6 @@ export default function ManageScreen() {
     adjustTicketCount,
     extendDisplayPeriod,
     setDisplayPeriod,
-    setVariantAvailability,
     setPublishedState,
     transferTicketCount,
   } = useInvitationOps();
@@ -225,39 +223,25 @@ export default function ManageScreen() {
 
   const {
     ticketModalVisible,
-    currentTheme,
-    availableThemes,
-    purchasableThemes,
-    selectedTargetTheme,
     isExtendingDisplayPeriod,
-    isApplyingTicketThemeChange,
-    isPurchasingTargetTheme,
-    isSelectedTargetThemeAvailable,
-    isSelectedTargetThemeCurrent,
     isTransferringTickets,
     ticketTransferTargetCards,
     selectedTicketTransferTargetCard,
     ticketTransferCount,
     ticketTransferCountOptions,
     upgradeTargetPlan,
-    setSelectedTargetTheme,
     setTicketTransferTargetSlug,
     setTicketTransferCount,
     handleOpenTicketModal,
     closeTicketModal,
-    handleApplyTicketThemeChange,
     handleExtendDisplayPeriod,
-    handlePurchaseTargetTheme,
     handleTransferTicketCount,
   } = useTicketOperations({
     activeLinkedInvitationCard,
     additionalLinkedInvitationCards,
-    dashboardVariants: dashboard?.page.config.variants,
-    invitationForm,
     adjustTicketCount,
     extendDisplayPeriod,
     setDisplayPeriod,
-    setVariantAvailability,
     transferTicketCount,
     setNotice,
     setLinkedInvitationCards,
@@ -503,35 +487,6 @@ export default function ManageScreen() {
         ...(options.targetTheme ? { targetTheme: options.targetTheme } : {}),
       },
     });
-  };
-
-  const handleOpenTargetThemePreview = async () => {
-    const previewUrl =
-      (activeLinkedInvitationCard
-        ? getLinkedInvitationThemePreviewUrl(activeLinkedInvitationCard, selectedTargetTheme)
-        : null) ??
-      dashboard?.links.previewUrls[selectedTargetTheme];
-    if (!previewUrl) {
-      setNotice('선택한 디자인 미리보기를 아직 불러오지 못했습니다.');
-      return;
-    }
-
-    try {
-      try {
-        await WebBrowser.openBrowserAsync(previewUrl, {
-          enableDefaultShareMenuItem: true,
-          controlsColor: palette.accent,
-          createTask: true,
-        });
-        return;
-      } catch {
-        // noop
-      }
-
-      await Linking.openURL(previewUrl);
-    } catch {
-      setNotice('선택한 디자인 미리보기를 열지 못했습니다. 잠시 후 다시 시도해 주세요.');
-    }
   };
 
   return (
@@ -800,21 +755,9 @@ export default function ManageScreen() {
         fontScale={fontScale}
         availableTicketCount={activeLinkedInvitationCard?.ticketCount ?? 0}
         currentPlan={activeLinkedInvitationCard?.productTier ?? 'standard'}
-        currentTheme={currentTheme ?? DEFAULT_INVITATION_THEME}
-        availableThemes={availableThemes}
-        purchasableThemes={purchasableThemes}
-        selectedTargetTheme={selectedTargetTheme}
         upgradeTargetPlan={upgradeTargetPlan}
         isExtendingDisplayPeriod={isExtendingDisplayPeriod}
-        isApplyingThemeChange={isApplyingTicketThemeChange}
-        isPurchasingTargetTheme={isPurchasingTargetTheme}
-        isSelectedTargetThemeAvailable={isSelectedTargetThemeAvailable}
-        isSelectedTargetThemeCurrent={isSelectedTargetThemeCurrent}
-        onSelectTargetTheme={setSelectedTargetTheme}
         onExtendDisplayPeriod={() => void handleExtendDisplayPeriod()}
-        onApplyThemeChange={() => void handleApplyTicketThemeChange()}
-        onOpenTargetThemePreview={() => void handleOpenTargetThemePreview()}
-        onPurchaseTargetTheme={() => void handlePurchaseTargetTheme()}
         transferTargetCards={ticketTransferTargetCards.map((item) => ({
           slug: item.slug,
           displayName: item.displayName,
@@ -838,13 +781,13 @@ export default function ManageScreen() {
         visible={Boolean(previewLinkTargetCard)}
         onClose={closePreviewLinkModal}
         title="디자인 링크 열기"
-        description="연결된 디자인이 여러 개면 원하는 테마 링크를 골라서 바로 열 수 있습니다."
+        description="원하는 웨딩 디자인의 링크를 골라서 바로 열 수 있습니다."
         palette={palette}
         fontScale={fontScale}
       >
         <SectionCard
           title={previewLinkTargetCard?.displayName.trim() || '연동된 청첩장'}
-          description="관리자 페이지의 디자인 미리보기처럼 현재 연결된 테마별 경로를 바로 열 수 있습니다."
+          description="모든 웨딩 디자인을 별도 연결 없이 디자인별 주소로 열 수 있습니다."
         >
           <BulletList
             items={[
@@ -853,7 +796,7 @@ export default function ManageScreen() {
                   ? getInvitationThemeLabel(previewLinkTargetCard.defaultTheme)
                   : '-'
               }`,
-              `연결된 디자인: ${formatThemeList(previewLinkThemeKeys)}`,
+              `사용 가능한 디자인: ${formatThemeList(previewLinkThemeKeys)}`,
             ]} />
           <View style={manageStyles.actionRow}>
             {previewLinkTargetCard

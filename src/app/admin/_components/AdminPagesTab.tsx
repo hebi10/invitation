@@ -78,10 +78,7 @@ export default function AdminPagesTab({
   onQueryChange,
   onRefresh,
   onTogglePublished,
-  onEnableVariant,
-  onDisableVariant,
   updatingPublishedPageSlug,
-  updatingVariantToken,
   deletingPageSlug,
   issuingOwnershipInviteSlug,
   onDeletePage,
@@ -157,7 +154,7 @@ export default function AdminPagesTab({
       <div className={styles.createPanelActions}>
         <p className={styles.createPanelMeta}>
           새 페이지 생성은 모바일 생성 흐름에서 시작합니다. 상세 편집으로 들어가기 전에
-          템플릿, 패키지, slug와 기본 정보를 먼저 설정해 주세요.
+          패키지, 주소와 기본 정보를 먼저 설정해 주세요.
         </p>
         <div className={styles.tableActions}>
           <a
@@ -174,9 +171,7 @@ export default function AdminPagesTab({
       {isWeddingCategory ? (
         <div className={styles.shortcutStrip}>
         {SHORTCUT_ITEMS.map((shortcut) => {
-          const count = weddingPages.filter(
-            (page) => page.variants?.[shortcut.key]?.available
-          ).length;
+          const count = weddingPages.length;
           const isActive = pageShortcutFilter === shortcut.key;
 
           return (
@@ -356,15 +351,6 @@ export default function AdminPagesTab({
                     const selectedVariant = links.find(
                       (link) => link.key === selectedVariantKey
                     );
-                    const selectedMissingShortcut = SHORTCUT_ITEMS.find(
-                      (shortcut) => shortcut.key === selectedVariantKey
-                    );
-                    const isSelectedVariantUpdating =
-                      !!selectedVariantKey &&
-                      updatingVariantToken === `${page.slug}:${selectedVariantKey}`;
-                    const missingShortcuts = SHORTCUT_ITEMS.filter(
-                      (shortcut) => !page.variants?.[shortcut.key]?.available
-                    );
 
                     return (
                       <tr key={page.slug} className={styles.tableRowInteractive}>
@@ -455,86 +441,14 @@ export default function AdminPagesTab({
                               <option value="" disabled>
                                 디자인을 선택하세요
                               </option>
-                              {links.length > 0 ? (
-                                <optgroup label="생성된 디자인">
-                                  {links.map((link) => (
-                                    <option
-                                      key={`${page.slug}-existing-${link.key}`}
-                                      value={link.key}
-                                      disabled={updatingVariantToken === `${page.slug}:${link.key}`}
-                                    >
-                                      {link.label}
-                                    </option>
-                                  ))}
-                                </optgroup>
-                              ) : null}
-                              {missingShortcuts.length > 0 ? (
-                                <optgroup label="미생성 디자인">
-                                  {missingShortcuts.map((shortcut) => (
-                                    <option
-                                      key={`${page.slug}-create-${shortcut.key}`}
-                                      value={shortcut.key}
-                                      disabled={
-                                        updatingVariantToken === `${page.slug}:${shortcut.key}`
-                                      }
-                                    >
-                                      {shortcut.label}
-                                    </option>
-                                  ))}
-                                </optgroup>
-                              ) : null}
-                              {links.length === 0 && missingShortcuts.length === 0 ? (
-                                <option value="" disabled>
-                                  선택 가능한 디자인이 없습니다.
-                                </option>
-                              ) : null}
+                              {links.map((link) => (
+                                <option key={link.key} value={link.key}>{link.label}</option>
+                              ))}
                             </select>
-                            {selectedVariantKey ? (
-                              <div className={styles.actionStack}>
-                                <p className={styles.tableSubtext}>
-                                  선택: {selectedVariant ? selectedVariant.label : selectedMissingShortcut?.label}
-                                </p>
-                                <p className={styles.tableSubtext}>
-                                  상태: {selectedVariant ? '생성됨' : '미생성'}
-                                </p>
-                                {selectedVariant ? (
-                                  <>
-                                    <button
-                                      type="button"
-                                      className="admin-button admin-button-primary"
-                                      disabled={isSelectedVariantUpdating}
-                                      onClick={() => {
-                                        if (selectedVariant.path) {
-                                          window.open(selectedVariant.path, '_blank', 'noopener,noreferrer');
-                                        }
-                                      }}
-                                    >
-                                      열기
-                                    </button>
-                                    <button
-                                      type="button"
-                                      className="admin-button admin-button-secondary"
-                                      disabled={isSelectedVariantUpdating}
-                                      onClick={() =>
-                                        onDisableVariant(page, selectedVariantKey as ShortcutKey)
-                                      }
-                                    >
-                                      제거
-                                    </button>
-                                  </>
-                                ) : (
-                                  <button
-                                    type="button"
-                                    className="admin-button admin-button-primary"
-                                    disabled={isSelectedVariantUpdating}
-                                    onClick={() =>
-                                      onEnableVariant(page, selectedVariantKey as ShortcutKey)
-                                    }
-                                  >
-                                    생성
-                                  </button>
-                                )}
-                              </div>
+                            {selectedVariant ? (
+                              <a className="admin-button admin-button-primary" href={selectedVariant.path} target="_blank" rel="noopener noreferrer">
+                                {selectedVariant.label} 열기
+                              </a>
                             ) : null}
                             </div>
                           )}
@@ -616,15 +530,6 @@ export default function AdminPagesTab({
                 issuingOwnershipInviteSlug === page.slug;
               const selectedVariantKey = selectedVariantByPage[page.slug] ?? '';
               const selectedVariant = links.find((link) => link.key === selectedVariantKey);
-              const selectedMissingShortcut = SHORTCUT_ITEMS.find(
-                (shortcut) => shortcut.key === selectedVariantKey
-              );
-              const isSelectedVariantUpdating =
-                !!selectedVariantKey &&
-                updatingVariantToken === `${page.slug}:${selectedVariantKey}`;
-              const missingShortcuts = SHORTCUT_ITEMS.filter(
-                (shortcut) => !page.variants?.[shortcut.key]?.available
-              );
 
               return (
                 <article key={page.slug} className={styles.mobileCard}>
@@ -709,88 +614,14 @@ export default function AdminPagesTab({
                         <option value="" disabled>
                           디자인을 선택하세요
                         </option>
-                        {links.length > 0 ? (
-                          <optgroup label="생성된 디자인">
-                            {links.map((link) => (
-                              <option
-                                key={`${page.slug}-mobile-existing-${link.key}`}
-                                value={link.key}
-                                disabled={
-                                  updatingVariantToken === `${page.slug}:${link.key}`
-                                }
-                              >
-                                {link.label}
-                              </option>
-                            ))}
-                          </optgroup>
-                        ) : null}
-                        {missingShortcuts.length > 0 ? (
-                          <optgroup label="미생성 디자인">
-                            {missingShortcuts.map((shortcut) => (
-                              <option
-                                key={`${page.slug}-mobile-create-${shortcut.key}`}
-                                value={shortcut.key}
-                                disabled={
-                                  updatingVariantToken === `${page.slug}:${shortcut.key}`
-                                }
-                              >
-                                {shortcut.label}
-                              </option>
-                            ))}
-                          </optgroup>
-                        ) : null}
-                        {links.length === 0 && missingShortcuts.length === 0 ? (
-                          <option value="" disabled>
-                            선택 가능한 디자인이 없습니다.
-                          </option>
-                        ) : null}
+                        {links.map((link) => (
+                          <option key={link.key} value={link.key}>{link.label}</option>
+                        ))}
                       </select>
-                      {selectedVariantKey ? (
-                      <div className={styles.actionStack}>
-                        <p className={styles.tableSubtext}>
-                          선택: {selectedVariant ? selectedVariant.label : selectedMissingShortcut?.label}
-                        </p>
-                        <p className={styles.tableSubtext}>
-                          상태: {selectedVariant ? '생성됨' : '미생성'}
-                        </p>
-                        {selectedVariant ? (
-                          <>
-                            <button
-                              type="button"
-                              className="admin-button admin-button-primary"
-                              disabled={isSelectedVariantUpdating}
-                              onClick={() => {
-                                if (selectedVariant.path) {
-                                  window.open(selectedVariant.path, '_blank', 'noopener,noreferrer');
-                                }
-                              }}
-                            >
-                              열기
-                            </button>
-                            <button
-                              type="button"
-                              className="admin-button admin-button-secondary"
-                              disabled={isSelectedVariantUpdating}
-                              onClick={() =>
-                                onDisableVariant(page, selectedVariantKey as ShortcutKey)
-                              }
-                            >
-                              제거
-                            </button>
-                          </>
-                        ) : (
-                          <button
-                            type="button"
-                            className="admin-button admin-button-primary"
-                            disabled={isSelectedVariantUpdating}
-                            onClick={() =>
-                              onEnableVariant(page, selectedVariantKey as ShortcutKey)
-                            }
-                          >
-                            생성
-                          </button>
-                        )}
-                      </div>
+                      {selectedVariant ? (
+                        <a className="admin-button admin-button-primary" href={selectedVariant.path} target="_blank" rel="noopener noreferrer">
+                          {selectedVariant.label} 열기
+                        </a>
                       ) : null}
                     </>
                   )}

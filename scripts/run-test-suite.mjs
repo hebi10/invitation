@@ -4,6 +4,8 @@ import path from 'node:path';
 import process from 'node:process';
 
 const core = [
+  'test-wedding-url-themes',
+  'test-mobile-wedding-design-access',
   'test-background-music-playback',
   'test-music-editor',
   'test-wedding-intro-settings',

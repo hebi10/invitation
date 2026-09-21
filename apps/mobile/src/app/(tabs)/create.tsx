@@ -48,6 +48,7 @@ import { usePreferences } from '../../contexts/PreferencesContext';
 import { useNoticeToast } from '../../hooks/useNoticeToast';
 import { formatPrice } from '../../lib/format';
 import { findGuideSamplePageUrl } from '../../constants/content';
+import { DEFAULT_INVITATION_THEME } from '../../lib/invitationThemes';
 
 export default function CreateScreen() {
   const isExpoWebPreview = Platform.OS === 'web';
@@ -107,9 +108,9 @@ export default function CreateScreen() {
     : STICKY_CTA_BAR_HEIGHT;
   const stickyBarBottomInset = Math.max(insets.bottom, 12);
   const screenBottomPadding = stickyBarHeight + stickyBarBottomInset + 24;
-  const selectedGuideSampleUrl = createForm.selectedTheme
-    ? findGuideSamplePageUrl(createForm.selectedTheme, createForm.selectedPlanInfo.tier)
-    : null;
+  const [sampleTheme, setSampleTheme] = useState(DEFAULT_INVITATION_THEME);
+  const selectedGuideSampleUrl = findGuideSamplePageUrl(sampleTheme, createForm.selectedPlanInfo.tier);
+  const sampleThemeInfo = designThemes.find((theme) => theme.key === sampleTheme);
 
   useNoticeToast(createForm.notice);
   useNoticeToast(authError, { tone: 'error' });
@@ -263,7 +264,7 @@ export default function CreateScreen() {
                 ]}
               >
                 <AppText variant="muted" style={styles.helperText}>
-                  새 청첩장 생성과 별개로, 기간 연장·디자인 추가·업그레이드에 쓸 티켓만 먼저 구매할 수 있습니다.
+                  새 청첩장 생성과 별개로, 기간 연장·업그레이드에 쓸 티켓만 먼저 구매할 수 있습니다.
                 </AppText>
 
                 <View style={styles.ticketPresetRow}>
@@ -643,7 +644,7 @@ export default function CreateScreen() {
 
           {createForm.currentStep === 'selection' ? (
             <SectionCard
-              title="2. 서비스와 디자인 선택"
+              title="2. 서비스 선택"
               description="모든 서비스는 하위 서비스를 포함합니다."
               badge={
                 createForm.selectionValidationMessages.length === 0
@@ -713,8 +714,8 @@ export default function CreateScreen() {
                   <ChoiceChip
                     key={`theme-quick-${theme.key}`}
                     label={theme.label}
-                    selected={createForm.selectedTheme === theme.key}
-                    onPress={() => createForm.setSelectedTheme(theme.key)}
+                    selected={sampleTheme === theme.key}
+                    onPress={() => setSampleTheme(theme.key)}
                   />
                 ))}
               </View>
@@ -729,18 +730,17 @@ export default function CreateScreen() {
                 ]}
               >
                 <AppText variant="caption" color={palette.textMuted} style={styles.selectionSummaryLabel}>
-                  현재 선택한 디자인
+                  디자인 샘플 미리보기
                 </AppText>
                 <AppText variant="title" style={styles.selectionSummaryValue}>
-                  {createForm.selectedThemeInfo?.label ?? '아직 선택하지 않았습니다'}
+                  {sampleThemeInfo?.label}
                 </AppText>
                 <AppText
                   variant="muted"
                   style={styles.selectionSummaryDescription}
                   numberOfLines={2}
                 >
-                  {createForm.selectedThemeInfo?.description ??
-                    '위 선택 버튼에서 원하는 디자인을 고르면 해당 샘플 링크를 바로 열 수 있습니다.'}
+                  청첩장을 한 번 만들면 주소 뒤에 디자인 이름을 붙여 모든 웨딩 디자인을 열 수 있습니다. 샘플은 미리보기용입니다.
                 </AppText>
                 <View
                   style={[
@@ -758,7 +758,7 @@ export default function CreateScreen() {
                     numberOfLines={2}
                   >
                     {selectedGuideSampleUrl ??
-                      '서비스와 디자인을 선택하면 가이드에 있는 샘플 링크를 여기서 바로 열 수 있습니다.'}
+                      '선택한 서비스의 디자인 샘플을 여기서 열 수 있습니다.'}
                   </AppText>
                 </View>
                 <ActionButton
@@ -912,9 +912,9 @@ export default function CreateScreen() {
                 <AppText style={styles.summaryValue}>{createForm.selectedPlanInfo.name}</AppText>
               </View>
               <View style={styles.summaryRow}>
-                <AppText style={styles.summaryLabel}>선택한 디자인</AppText>
+                <AppText style={styles.summaryLabel}>사용 가능한 디자인</AppText>
                 <AppText style={styles.summaryValue}>
-                  {createForm.selectedThemeInfo?.label ?? '선택 필요'}
+                  모든 웨딩 디자인
                 </AppText>
               </View>
               <View style={styles.summaryRow}>
@@ -1018,7 +1018,7 @@ export default function CreateScreen() {
         authError={authError}
         palette={palette}
         serviceName={createForm.selectedPlanInfo.name}
-        selectedThemeLabel={createForm.selectedThemeInfo?.label ?? '선택 필요'}
+        selectedThemeLabel="모든 웨딩 디자인"
         ticketCount={createForm.ticketCount}
         ticketPrice={createForm.ticketPrice}
         slugPreview={createForm.publicUrlPreview}
