@@ -67,6 +67,8 @@ export function MusicEditorStep({
             </AppText>
             <Pressable
               accessibilityRole="button"
+              accessibilityLabel={`음악 카테고리, ${selectedMusicCategoryLabel}`}
+              accessibilityState={{ expanded: openMusicDropdown === 'category', disabled: !form.musicEnabled || musicLibraryLoading }}
               disabled={!form.musicEnabled || musicLibraryLoading}
               onPress={() =>
                 onToggleMusicDropdown(openMusicDropdown === 'category' ? null : 'category')
@@ -104,6 +106,7 @@ export function MusicEditorStep({
                       <Pressable
                         key={`music-category-${category.id}`}
                         accessibilityRole="button"
+                        accessibilityState={{ selected }}
                         onPress={() => onSelectMusicCategory(category.id)}
                         style={[
                           manageStyles.dropdownOption,
@@ -139,6 +142,8 @@ export function MusicEditorStep({
             </AppText>
             <Pressable
               accessibilityRole="button"
+              accessibilityLabel={`곡 선택, ${selectedMusicTrackLabel}`}
+              accessibilityState={{ expanded: openMusicDropdown === 'track', disabled: !form.musicEnabled || musicLibraryLoading || availableMusicTracks.length === 0 }}
               disabled={!form.musicEnabled || musicLibraryLoading || availableMusicTracks.length === 0}
               onPress={() =>
                 onToggleMusicDropdown(openMusicDropdown === 'track' ? null : 'track')
@@ -179,6 +184,7 @@ export function MusicEditorStep({
                       <Pressable
                         key={`music-track-${track.id}`}
                         accessibilityRole="button"
+                        accessibilityState={{ selected }}
                         onPress={() => onSelectMusicTrack(track.id)}
                         style={[
                           manageStyles.dropdownOption,

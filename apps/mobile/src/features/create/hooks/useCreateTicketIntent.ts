@@ -77,14 +77,14 @@ export function useCreateTicketIntent({
     }
 
     if (normalizedTicketIntent === 'extend') {
-      setNotice('티켓 사용: 기간 1개월 연장 준비를 위해 구매 탭으로 이동했습니다.');
+      setNotice('기간 연장용 티켓은 아래 티켓 구매에서 별도로 구매할 수 있습니다.');
     } else if (normalizedTicketIntent === 'extra-page') {
       setNotice('티켓 사용: 추가 청첩장 생성 흐름으로 이동했습니다.');
     } else if (normalizedTicketIntent === 'upgrade') {
-      setNotice('티켓 사용: 서비스 업그레이드 구매 흐름으로 이동했습니다.');
+      setNotice('업그레이드용 티켓은 아래 티켓 구매에서 별도로 구매할 수 있습니다.');
     }
 
-    moveToStep('ticket');
+    moveToStep('info');
     setHandledTicketIntentKey(intentKey);
   }, [
     handledTicketIntentKey,

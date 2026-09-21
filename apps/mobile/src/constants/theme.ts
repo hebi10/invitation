@@ -8,6 +8,7 @@ export type AppPalette = {
   surface: string;
   surfaceMuted: string;
   cardBorder: string;
+  inputBorder: string;
   text: string;
   textMuted: string;
   accent: string;
@@ -25,6 +26,7 @@ const lightPalette: AppPalette = {
   surface: '#ffffff',
   surfaceMuted: '#f0f1ee',
   cardBorder: '#d8dad4',
+  inputBorder: '#85897f',
   text: '#1c1d1a',
   textMuted: '#666862',
   accent: '#292b27',
@@ -42,6 +44,7 @@ const darkPalette: AppPalette = {
   surface: '#1e201c',
   surfaceMuted: '#282b25',
   cardBorder: '#44483f',
+  inputBorder: '#818779',
   text: '#f3f4f0',
   textMuted: '#b9bdb3',
   accent: '#e3e7dc',

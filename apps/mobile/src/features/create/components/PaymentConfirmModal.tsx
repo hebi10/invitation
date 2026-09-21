@@ -14,8 +14,6 @@ type PaymentConfirmModalProps = {
   palette: ReturnType<typeof getPalette>;
   serviceName: string;
   selectedThemeLabel: string;
-  ticketCount: number;
-  ticketPrice: number;
   slugPreview: string;
   totalPrice: number;
 };
@@ -29,8 +27,6 @@ export function PaymentConfirmModal({
   palette,
   serviceName,
   selectedThemeLabel,
-  ticketCount,
-  ticketPrice,
   slugPreview,
   totalPrice,
 }: PaymentConfirmModalProps) {
@@ -78,12 +74,6 @@ export function PaymentConfirmModal({
             <View style={styles.summaryRow}>
               <AppText style={styles.summaryLabel}>디자인</AppText>
               <AppText style={styles.summaryValue}>{selectedThemeLabel}</AppText>
-            </View>
-            <View style={styles.summaryRow}>
-              <AppText style={styles.summaryLabel}>추가 티켓</AppText>
-              <AppText style={styles.summaryValue}>
-                {ticketCount}장 / {formatPrice(ticketPrice)}
-              </AppText>
             </View>
             <View style={styles.summaryRow}>
               <AppText style={styles.summaryLabel}>청첩장 주소</AppText>

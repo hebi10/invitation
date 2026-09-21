@@ -74,6 +74,7 @@ export function SectionCard({
       <View style={[styles.header, isHero ? styles.heroHeader : null]}>
         <View style={styles.copy}>
           <Text
+            accessibilityRole="header"
             style={[
               styles.title,
               isHero ? styles.heroTitle : null,

@@ -19,14 +19,11 @@ import type {
 import {
   buildCreateValidationRules,
   buildSuggestedCreateSlugBase,
-  calculateTicketPrice,
   CREATE_STEPS,
+  getCreatePurchaseSummary,
   designThemes,
-  getAdjacentSupportedTicketCount,
   getCreateSlugAvailabilityMessage,
-  normalizeSupportedCreateTicketCount,
   servicePlans,
-  TICKET_UNIT_PRICE,
   type CreateStepKey,
 } from '../shared';
 import { useCreateDraftSync } from './useCreateDraftSync';
@@ -65,8 +62,6 @@ type DraftPayloadOverrides = Partial<{
   brideName: string;
   groomEnglishName: string;
   brideEnglishName: string;
-  estimatedPrice: number;
-  ticketCount: number;
 }>;
 
 const INITIAL_SLUG_AVAILABILITY_STATE: CreateSlugAvailabilityState = {
@@ -105,7 +100,6 @@ export function useCreateForm({
   const [slugSuggestionSeed, setSlugSuggestionSeed] = useState(() => createRandomSuffix(6));
   const [pageIdentifier, setPageIdentifier] = useState('');
   const [hasCustomPageIdentifier, setHasCustomPageIdentifier] = useState(false);
-  const [ticketCount, setTicketCount] = useState(0);
   const [notice, setNotice] = useState('');
   const [paymentModalVisible, setPaymentModalVisible] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -133,8 +127,7 @@ export function useCreateForm({
       2
     );
   }, [selectedPlanInfo]);
-  const ticketPrice = useMemo(() => calculateTicketPrice(ticketCount), [ticketCount]);
-  const totalPrice = selectedPlanInfo.price + ticketPrice;
+  const totalPrice = getCreatePurchaseSummary({ servicePlan: selectedPlan }).estimatedPrice;
 
   const suggestedSlugBase = useMemo(() => {
     if (!groomEnglishName.trim() && !brideEnglishName.trim()) {
@@ -348,26 +341,20 @@ export function useCreateForm({
       info: infoValidationMessages.length === 0,
       selection:
         infoValidationMessages.length === 0 && selectionValidationMessages.length === 0,
-      ticket: currentStep === 'review' || ticketCount > 0,
       review: currentStep === 'review' && validationMessages.length === 0,
     }),
     [
       currentStep,
       infoValidationMessages.length,
       selectionValidationMessages.length,
-      ticketCount,
       validationMessages.length,
     ]
   );
   const currentProgressLabel = useMemo(() => {
     if (currentStep === 'review') {
       return validationMessages.length === 0
-        ? '4단계 결제 확인 준비가 끝났습니다.'
-        : '4단계 결제 전 입력 내용을 다시 확인해 주세요.';
-    }
-
-    if (currentStep === 'ticket') {
-      return '3단계 추가 티켓 구성을 확인하고 있습니다.';
+        ? '3단계 결제 확인 준비가 끝났습니다.'
+        : '3단계 결제 전 입력 내용을 다시 확인해 주세요.';
     }
 
     if (currentStep === 'selection') {
@@ -422,8 +409,7 @@ export function useCreateForm({
       brideEnglishName: overrides.brideEnglishName ?? brideEnglishName.trim(),
       weddingDate: '',
       venue: '',
-      estimatedPrice: overrides.estimatedPrice ?? totalPrice,
-      ticketCount: overrides.ticketCount ?? ticketCount,
+      ...getCreatePurchaseSummary({ servicePlan: overrides.servicePlan ?? selectedPlan }),
       notes: '',
     }),
     [
@@ -435,8 +421,6 @@ export function useCreateForm({
       hasCustomPageIdentifier,
       selectedPlan,
       selectedTheme,
-      ticketCount,
-      totalPrice,
     ]
   );
 
@@ -465,7 +449,6 @@ export function useCreateForm({
       setSlugSuggestionSeed(nextSeed);
       setHasCustomPageIdentifier(Boolean(storedPageIdentifier));
       setPageIdentifier(storedPageIdentifier || nextSuggestedSlugBase);
-      setTicketCount(normalizeSupportedCreateTicketCount(draft.ticketCount));
       setPaymentModalVisible(false);
       setCurrentStep('info');
       setSlugAvailability(INITIAL_SLUG_AVAILABILITY_STATE);
@@ -478,8 +461,6 @@ export function useCreateForm({
           brideName: draft.brideName,
           groomEnglishName: storedGroomEnglishName,
           brideEnglishName: storedBrideEnglishName,
-          estimatedPrice: draft.estimatedPrice,
-          ticketCount: draft.ticketCount,
         })
       );
     },
@@ -509,7 +490,6 @@ export function useCreateForm({
           brideEnglishName.trim() ||
           (hasCustomPageIdentifier && effectivePageIdentifier.trim()) ||
           selectedTheme ||
-          ticketCount > 0 ||
           selectedPlan !== 'standard'
       ),
     [
@@ -521,7 +501,6 @@ export function useCreateForm({
       hasCustomPageIdentifier,
       selectedPlan,
       selectedTheme,
-      ticketCount,
     ]
   );
 
@@ -632,7 +611,6 @@ export function useCreateForm({
     setSlugSuggestionSeed(createRandomSuffix(6));
     setPageIdentifier('');
     setHasCustomPageIdentifier(false);
-    setTicketCount(0);
     setSlugAvailability(INITIAL_SLUG_AVAILABILITY_STATE);
     resetDraftSync();
     lastDraftSnapshotRef.current = '';
@@ -641,26 +619,6 @@ export function useCreateForm({
     setNotice('');
     clearAuthError();
   }, [clearAuthError, resetDraftSync]);
-
-  const updateTicketCount = useCallback((nextCount: number) => {
-    setTicketCount(normalizeSupportedCreateTicketCount(nextCount));
-  }, []);
-
-  const decreaseTicketCount = useCallback(() => {
-    setTicketCount((currentCount) =>
-      getAdjacentSupportedTicketCount(currentCount, 'decrease')
-    );
-  }, []);
-
-  const increaseTicketCount = useCallback(() => {
-    setTicketCount((currentCount) =>
-      getAdjacentSupportedTicketCount(currentCount, 'increase')
-    );
-  }, []);
-
-  const resetTicketCount = useCallback(() => {
-    setTicketCount(0);
-  }, []);
 
   const handleCustomerLogin = useCallback(async () => {
     const loggedIn = await loginCustomer(customerEmail, customerPassword);
@@ -918,13 +876,6 @@ export function useCreateForm({
     pageIdentifier,
     setPageIdentifier: handlePageIdentifierChange,
     pageIdentifierHelperText,
-    ticketCount,
-    updateTicketCount,
-    decreaseTicketCount,
-    increaseTicketCount,
-    resetTicketCount,
-    ticketPrice,
-    ticketUnitPrice: TICKET_UNIT_PRICE,
     totalPrice,
     slugBase,
     publicUrlPreview,

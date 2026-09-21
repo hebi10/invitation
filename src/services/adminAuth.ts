@@ -141,6 +141,39 @@ function applyPreferredAuthLanguage(auth: { languageCode: string | null }) {
   auth.languageCode = 'ko';
 }
 
+export async function sendFirebasePasswordReset(
+  email: string
+): Promise<{ success: boolean; errorMessage?: string }> {
+  const normalizedEmail = email.trim();
+  if (!normalizedEmail) {
+    return { success: false, errorMessage: '가입한 이메일을 입력해 주세요.' };
+  }
+  if (!USE_FIREBASE) {
+    return { success: false, errorMessage: '현재 비밀번호 재설정을 사용할 수 없습니다.' };
+  }
+  try {
+    const { auth, authModule } = await getAuthModules();
+    if (!auth) {
+      return { success: false, errorMessage: '인증 서비스를 연결하지 못했습니다. 잠시 후 다시 시도해 주세요.' };
+    }
+    applyPreferredAuthLanguage(auth);
+    await authModule.sendPasswordResetEmail(auth, normalizedEmail);
+    return { success: true };
+  } catch (error) {
+    const code = typeof error === 'object' && error !== null && 'code' in error ? error.code : '';
+    // 등록 여부를 드러내지 않도록 동일한 완료 안내를 제공합니다.
+    if (code === 'auth/user-not-found') return { success: true };
+    return {
+      success: false,
+      errorMessage: code === 'auth/invalid-email'
+        ? '올바른 이메일 주소를 입력해 주세요.'
+        : code === 'auth/too-many-requests'
+          ? '요청이 많습니다. 잠시 후 다시 시도해 주세요.'
+          : '재설정 메일을 요청하지 못했습니다. 연결을 확인하고 다시 시도해 주세요.',
+    };
+  }
+}
+
 async function readAdminSessionResponse(response: Response) {
   const payload = (await response.json().catch(() => null)) as
     | {

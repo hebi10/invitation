@@ -37,12 +37,17 @@ export const CREATE_PAGE_IDENTIFIER_MAX_LENGTH = PAGE_SLUG_BASE_MAX_LENGTH;
 
 export const CREATE_STEPS = [
   { key: 'info', label: '기본 정보' },
-  { key: 'selection', label: '선택' },
-  { key: 'ticket', label: '추가 티켓' },
+  { key: 'selection', label: '서비스' },
   { key: 'review', label: '결제' },
 ] as const;
 
 export type CreateValidationSection = 'basic' | 'selection';
+
+export function getCreatePurchaseSummary(input: { servicePlan: MobileInvitationProductTier }) {
+  const plan = servicePlans.find((item) => item.tier === input.servicePlan) ?? servicePlans[0];
+  // 이전 초안에 남은 추가 티켓은 별도 결제 상품이므로 생성 요금에 포함하지 않습니다.
+  return { ticketCount: 0, estimatedPrice: plan.price };
+}
 export type CreateStepKey = (typeof CREATE_STEPS)[number]['key'];
 
 export type CreateValidationRule = {

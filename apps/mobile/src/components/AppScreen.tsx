@@ -55,7 +55,7 @@ export function AppScreen({
       >
         <View style={styles.header}>
           <View style={styles.headerCopy}>
-            <Text style={[styles.title, { color: palette.text, fontSize: 26 * fontScale }]}>
+            <Text accessibilityRole="header" style={[styles.title, { color: palette.text, fontSize: 26 * fontScale }]}>
               {title}
             </Text>
             {subtitle ? (

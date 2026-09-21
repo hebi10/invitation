@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import Link from 'next/link';
 
 import { useAdmin } from '@/contexts';
 
@@ -259,6 +260,8 @@ export default function FirebaseAuthLoginCard({
               : '이메일로 로그인'}
         </button>
       </form>
+
+      {!isRegisterMode ? <Link className={styles.helper} href="/forgot-password">비밀번호를 잊으셨나요?</Link> : null}
 
       <div className={styles.divider}>
         <span>또는</span>

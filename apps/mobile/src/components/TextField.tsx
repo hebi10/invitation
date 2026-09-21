@@ -93,7 +93,7 @@ export function TextField({
           multiline ? styles.multiline : null,
           {
             backgroundColor: palette.surface,
-            borderColor: focused ? palette.accent : palette.cardBorder,
+            borderColor: focused ? palette.accent : palette.inputBorder,
             color: palette.text,
             fontSize: 15 * fontScale,
             opacity: editable ? 1 : 0.6,
