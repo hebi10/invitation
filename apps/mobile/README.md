@@ -23,7 +23,8 @@
 ## Google Play 결제 설정
 - Android 앱 빌드 환경에 `EXPO_PUBLIC_REVENUECAT_ANDROID_API_KEY`를 설정합니다. RevenueCat의 Google Play 앱 공개 키(`goog_` 접두사)를 사용합니다. Test Store 키는 허용하지 않습니다.
 - API 서버 환경에는 `REVENUECAT_SERVER_API_KEY`를 설정합니다. 서버 키는 모바일 앱에 넣지 않습니다.
-- Play Console의 일회성 상품과 RevenueCat의 Google Play 상품을 다음 ID로 연결합니다: `page_creation_standard`, `page_creation_deluxe`, `page_creation_premium`, `ticket_pack_1`, `ticket_pack_3`, `ticket_pack_6`.
+- Play Console의 일회성 상품과 RevenueCat의 Google Play 상품을 다음 ID로 연결합니다: `page_creation_premium`, `ticket_pack_1`, `ticket_pack_3`, `ticket_pack_6`.
+- 청첩장 제작은 PREMIUM 한 가지이며 9,900원입니다. Play Console에서도 `page_creation_premium`의 한국 가격을 KRW 9,900으로 맞춰야 구매가 진행됩니다. 기존 STANDARD/DELUXE ID는 과거 영수증 처리에만 유지합니다.
 - 제작권과 티켓은 반복 구매가 필요하므로 RevenueCat에서 소모성 상품으로 설정합니다. Play Console에서 상품을 활성화하고 RevenueCat에 Google 서비스 계정 연결을 완료해야 합니다.
 - 웹·Expo Go에서는 실제 구매를 확인할 수 없습니다. Google Play 내부 테스트 트랙에 배포한 Android 앱에서 라이선스 테스터로 상품 조회·구매·취소·서버 지급을 검증합니다.
 - 데모 거래 생성과 서버 검증 우회는 제거되었습니다. 결제 설정이 없으면 오류를 표시하며, Google Play가 아닌 스토어의 거래는 지급하지 않습니다.

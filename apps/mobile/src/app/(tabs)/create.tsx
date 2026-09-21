@@ -36,7 +36,6 @@ import {
   STICKY_CTA_BAR_HEIGHT,
   TICKET_PRESET_COUNTS,
   TICKET_USAGE_ITEMS,
-  servicePlans,
 } from '../../features/create/shared';
 import { useAuth } from '../../contexts/AuthContext';
 import { useAppFeedback } from '../../contexts/AppFeedbackContext';
@@ -201,7 +200,7 @@ export default function CreateScreen() {
       <View style={[styles.screenRoot, { backgroundColor: palette.background }]}>
         <AppScreen
           title="구매"
-          subtitle="기본 정보를 입력하고 서비스를 선택해 청첩장을 만들어 보세요."
+          subtitle="기본 정보를 입력하고 프리미엄 청첩장을 만들어 보세요."
           scrollRef={scrollRef}
           contentContainerStyle={{ paddingBottom: screenBottomPadding }}
         >
@@ -469,28 +468,17 @@ export default function CreateScreen() {
 
           {createForm.currentStep === 'selection' ? (
             <SectionCard
-              title="2. 서비스 선택"
-              description="모든 서비스는 하위 서비스를 포함합니다."
+              title="2. 프리미엄 구성"
+              description="한 번의 결제로 모든 웨딩 디자인과 기능을 이용할 수 있습니다."
               badge={
                 createForm.selectionValidationMessages.length === 0
-                  ? '선택 완료'
+                  ? '구성 확인'
                   : `${createForm.selectionValidationMessages.length}개 확인 필요`
               }
               badgeTone={
                 createForm.selectionValidationMessages.length === 0 ? 'success' : 'notice'
               }
             >
-              <View style={styles.chipRow}>
-                {servicePlans.map((plan) => (
-                  <ChoiceChip
-                    key={plan.name}
-                    label={plan.name}
-                    selected={createForm.selectedPlan === plan.tier}
-                    onPress={() => createForm.setSelectedPlan(plan.tier)}
-                  />
-                ))}
-              </View>
-
               <View
                 style={[
                   styles.selectionSummaryCard,
@@ -501,7 +489,7 @@ export default function CreateScreen() {
                 ]}
               >
                 <AppText variant="caption" color={palette.textMuted} style={styles.selectionSummaryLabel}>
-                  현재 선택한 서비스
+                  프리미엄 청첩장
                 </AppText>
                 <AppText variant="title" style={styles.selectionSummaryValue}>
                   {createForm.selectedPlanInfo.name} · {formatPrice(createForm.selectedPlanInfo.price)}
@@ -573,7 +561,7 @@ export default function CreateScreen() {
               variant="emphasis"
             >
               <View style={styles.summaryRow}>
-                <AppText style={styles.summaryLabel}>선택한 서비스</AppText>
+                <AppText style={styles.summaryLabel}>제작 상품</AppText>
                 <AppText style={styles.summaryValue}>{createForm.selectedPlanInfo.name}</AppText>
               </View>
               <View style={styles.summaryRow}>
@@ -648,7 +636,7 @@ export default function CreateScreen() {
                   ]}
                 >
                   <AppText variant="muted" style={styles.helperText}>
-                    새 청첩장 생성과 별개로, 기간 연장·업그레이드에 쓸 티켓만 먼저 구매할 수 있습니다.
+                    새 청첩장 생성과 별개로, 기간 연장에 쓸 티켓을 구매할 수 있습니다.
                   </AppText>
 
                   <View style={styles.ticketPresetRow}>

@@ -1,3 +1,4 @@
+import { MOBILE_BILLING_PREMIUM_PRICE_KRW } from '../lib/mobileBillingProducts';
 import type {
   MobileInvitationProductTier,
   MobileInvitationThemeKey,
@@ -11,43 +12,17 @@ import {
 
 export const servicePlans = [
   {
-    name: 'STANDARD',
-    tier: 'standard' as MobileInvitationProductTier,
-    price: 5000,
-    priceLabel: '5,000원',
-    description:
-      '맞춤 문구 시작, 갤러리 최대 6장, 카카오톡 링크 형식 공유(URL 공유)를 제공합니다.',
-    features: [
-      '기본 노출 기간 6개월',
-      '맞춤 문구 시작',
-      '갤러리 최대 6장',
-      'URL 링크 공유',
-    ],
-  },
-  {
-    name: 'DELUXE',
-    tier: 'deluxe' as MobileInvitationProductTier,
-    price: 10000,
-    priceLabel: '10,000원',
-    description:
-      'STANDARD 전체 포함, 갤러리 최대 12장, 배경음악 포함, 카카오톡 카드 형식 공유를 제공합니다.',
-    features: [
-      'STANDARD 전체 포함',
-      '갤러리 최대 12장',
-      '배경음악 지원',
-      '카카오톡 카드 공유',
-    ],
-  },
-  {
     name: 'PREMIUM',
     tier: 'premium' as MobileInvitationProductTier,
-    price: 15000,
-    priceLabel: '15,000원',
-    description:
-      'DELUXE 전체 포함, 갤러리 최대 18장, 캘린더·카운트다운, 방명록 기능을 제공합니다.',
+    price: MOBILE_BILLING_PREMIUM_PRICE_KRW,
+    priceLabel: '9,900원',
+    description: '사진 최대 18장, 배경음악, 카카오톡 카드 공유, 캘린더·카운트다운과 방명록을 모두 제공합니다.',
     features: [
-      'DELUXE 전체 포함',
+      '기본 노출 기간 6개월',
+      '모든 웨딩 디자인 포함',
       '갤러리 최대 18장',
+      '배경음악 지원',
+      '카카오톡 카드 공유',
       '캘린더·카운트다운',
       '방명록 기능',
     ],
@@ -74,7 +49,7 @@ export const guideSections = [
     items: [
       '계정이 없다면 회원가입 후 이메일 인증을 완료합니다.',
       '구매 탭에서 로그인하고 두 사람의 이름과 청첩장 주소를 입력합니다.',
-      '서비스를 선택하고 앱에서 Google Play 결제를 진행합니다. 모든 웨딩 디자인이 포함됩니다.',
+      '프리미엄 구성과 9,900원 금액을 확인하고 앱에서 Google Play 결제를 진행합니다.',
       '생성 후 운영 탭에서 예식 정보와 사진을 입력하고 청첩장을 공유합니다.',
     ],
   },
@@ -93,7 +68,6 @@ export const guideSections = [
       '티켓은 청첩장 제작 결제에 포함되지 않습니다. 청첩장 연동 후 별도로 구매합니다.',
       '티켓 1장: 1개월 연장',
       '티켓 1장: 모바일 청첩장 1개 추가 생성',
-      '티켓 2장: 서비스 업그레이드',
     ],
   },
 ] as const;
@@ -117,8 +91,6 @@ export const faqItems = [
 ] as const;
 
 const GUIDE_SAMPLE_PRODUCT_TIERS: MobileInvitationProductTier[] = [
-  'standard',
-  'deluxe',
   'premium',
 ];
 
@@ -171,7 +143,6 @@ export const quickStartItems = [
 export const ticketActions = [
   { key: 'extend', label: '기간 1개월 연장', tickets: 1 },
   { key: 'extra-page', label: '청첩장 1개 추가 생성', tickets: 1 },
-  { key: 'upgrade', label: '서비스 업그레이드', tickets: 2 },
 ] as const;
 
 export const settingsNotes = [

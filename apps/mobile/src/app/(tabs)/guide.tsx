@@ -19,7 +19,6 @@ import { useAppFeedback } from '../../contexts/AppFeedbackContext';
 export default function GuideScreen() {
   const { palette } = usePreferences();
   const { showToast } = useAppFeedback();
-  const [showPlans, setShowPlans] = useState(false);
   const [showPolicies, setShowPolicies] = useState(false);
 
   return (
@@ -35,13 +34,10 @@ export default function GuideScreen() {
         <ThemePreviewGallery />
       </SectionCard>
       <SectionCard
-        title="서비스 상품 비교"
-        description="STANDARD 5,000원 · DELUXE 10,000원 · PREMIUM 15,000원"
+        title="프리미엄 청첩장"
+        description="모든 웨딩 디자인과 기능을 하나의 상품으로 이용합니다."
       >
-        <ActionButton variant="secondary" onPress={() => setShowPlans(!showPlans)} accessibilityState={{ expanded: showPlans }}>
-          {showPlans ? '상품 비교 접기' : '상품별 구성 보기'}
-        </ActionButton>
-        {showPlans ? servicePlans.map((plan) => (
+        {servicePlans.map((plan) => (
           <View
             key={plan.name}
             style={[
@@ -60,7 +56,7 @@ export default function GuideScreen() {
             </AppText>
             <BulletList items={plan.features} />
           </View>
-        )) : null}
+        ))}
       </SectionCard>
 
       <SectionCard title="자주 묻는 질문">

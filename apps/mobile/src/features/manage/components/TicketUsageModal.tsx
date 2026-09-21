@@ -7,14 +7,10 @@ import { ChoiceChip } from '../../../components/ChoiceChip';
 import { InvitationEditorModalShell } from '../../../components/manage/InvitationEditorModalShell';
 import { SectionCard } from '../../../components/SectionCard';
 import type { getPalette } from '../../../constants/theme';
-import type {
-  MobileInvitationProductTier,
-} from '../../../types/mobileInvitation';
 import { manageStyles } from '../manageStyles';
 
 const TICKET_USAGE_ITEMS = [
   '티켓 1장: 노출 기간 1개월 연장',
-  '티켓 2장: 서비스 업그레이드',
 ] as const;
 
 type TicketUsageModalProps = {
@@ -23,8 +19,6 @@ type TicketUsageModalProps = {
   palette: ReturnType<typeof getPalette>;
   fontScale: number;
   availableTicketCount: number;
-  currentPlan: MobileInvitationProductTier;
-  upgradeTargetPlan: MobileInvitationProductTier | null;
   isExtendingDisplayPeriod: boolean;
   transferTargetCards: Array<{
     slug: string;
@@ -39,20 +33,7 @@ type TicketUsageModalProps = {
   onSelectTicketTransferCount: (count: number) => void;
   onExtendDisplayPeriod: () => void;
   onTransferTickets: () => void;
-  onGoToUpgrade: () => void;
 };
-
-function getPlanLabel(plan: MobileInvitationProductTier) {
-  if (plan === 'standard') {
-    return 'STANDARD';
-  }
-
-  if (plan === 'deluxe') {
-    return 'DELUXE';
-  }
-
-  return 'PREMIUM';
-}
 
 export function TicketUsageModal({
   visible,
@@ -60,8 +41,6 @@ export function TicketUsageModal({
   palette,
   fontScale,
   availableTicketCount,
-  currentPlan,
-  upgradeTargetPlan,
   isExtendingDisplayPeriod,
   transferTargetCards,
   selectedTransferTargetSlug,
@@ -72,7 +51,6 @@ export function TicketUsageModal({
   onSelectTicketTransferCount,
   onExtendDisplayPeriod,
   onTransferTickets,
-  onGoToUpgrade,
 }: TicketUsageModalProps) {
   return (
     <InvitationEditorModalShell
@@ -104,22 +82,6 @@ export function TicketUsageModal({
           fullWidth
         >
           1개월 연장 적용
-        </ActionButton>
-      </SectionCard>
-
-      <SectionCard
-        title="서비스 업그레이드"
-        description={`티켓 2장 사용 / 현재 ${getPlanLabel(currentPlan)}`}
-      >
-        <AppText variant="muted" style={manageStyles.helperText}>
-          {upgradeTargetPlan
-            ? `${getPlanLabel(upgradeTargetPlan)} 상품으로 업그레이드할 수 있습니다.`
-            : '현재가 최고 등급 상품이라 추가 업그레이드는 필요하지 않습니다.'}
-        </AppText>
-        <ActionButton onPress={onGoToUpgrade} disabled={!upgradeTargetPlan} fullWidth>
-          {upgradeTargetPlan
-            ? `${getPlanLabel(upgradeTargetPlan)} 업그레이드 진행`
-            : '업그레이드 가능한 상품이 없습니다'}
         </ActionButton>
       </SectionCard>
 

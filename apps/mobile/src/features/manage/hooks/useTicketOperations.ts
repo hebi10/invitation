@@ -4,7 +4,6 @@ import { useAuth } from '../../../contexts/AuthContext';
 import type { LinkedInvitationCard } from '../../../lib/linkedInvitationCardsModel';
 import type {
   MobileDisplayPeriodSummary,
-  MobileInvitationProductTier,
 } from '../../../types/mobileInvitation';
 type UseTicketOperationsOptions = {
   activeLinkedInvitationCard: LinkedInvitationCard | null;
@@ -68,22 +67,6 @@ export function useTicketOperations({
 
     return options;
   }, [activeLinkedInvitationCard?.ticketCount]);
-
-  const upgradeTargetPlan = useMemo<MobileInvitationProductTier | null>(() => {
-    if (!activeLinkedInvitationCard) {
-      return null;
-    }
-
-    if (activeLinkedInvitationCard.productTier === 'standard') {
-      return 'deluxe';
-    }
-
-    if (activeLinkedInvitationCard.productTier === 'deluxe') {
-      return 'premium';
-    }
-
-    return null;
-  }, [activeLinkedInvitationCard]);
 
   useEffect(() => {
     if (ticketTransferTargetCards.length === 0) {
@@ -258,7 +241,6 @@ export function useTicketOperations({
     selectedTicketTransferTargetCard,
     ticketTransferCount,
     ticketTransferCountOptions,
-    upgradeTargetPlan,
     setTicketTransferTargetSlug,
     setTicketTransferCount,
     handleOpenTicketModal,

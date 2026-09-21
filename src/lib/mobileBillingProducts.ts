@@ -1,5 +1,8 @@
 export type MobileBillingProductTier = 'standard' | 'deluxe' | 'premium';
 
+export const MOBILE_BILLING_PREMIUM_PRICE_KRW = 9900;
+
+// 과거 결제 영수증 해석을 위한 ID는 유지합니다. 신규 판매는 PREMIUM만 사용합니다.
 export const MOBILE_BILLING_PAGE_CREATION_PRODUCTS = {
   standard: 'page_creation_standard',
   deluxe: 'page_creation_deluxe',
@@ -36,9 +39,9 @@ export type MobileBillingProductDefinition =
       ticketCount: MobileBillingTicketPackCount;
     };
 
-export const MOBILE_BILLING_PAGE_CREATION_PRODUCT_IDS = Object.values(
-  MOBILE_BILLING_PAGE_CREATION_PRODUCTS
-) as MobileBillingPageCreationProductId[];
+export const MOBILE_BILLING_PAGE_CREATION_PRODUCT_IDS: MobileBillingPageCreationProductId[] = [
+  MOBILE_BILLING_PAGE_CREATION_PRODUCTS.premium,
+];
 
 export const MOBILE_BILLING_TICKET_PACK_PRODUCT_IDS = MOBILE_BILLING_TICKET_PACK_COUNTS.map(
   (count) => MOBILE_BILLING_TICKET_PACK_PRODUCTS[count]
@@ -79,7 +82,7 @@ const mobileBillingProductDefinitionById = Object.fromEntries(
 export function isMobileBillingProductId(value: unknown): value is MobileBillingProductId {
   return (
     typeof value === 'string' &&
-    MOBILE_BILLING_PRODUCT_IDS.includes(value as MobileBillingProductId)
+    Object.hasOwn(mobileBillingProductDefinitionById, value)
   );
 }
 
@@ -90,9 +93,9 @@ export function getMobileBillingProductDefinition(
 }
 
 export function getMobileBillingPageCreationProductId(
-  productTier: MobileBillingProductTier
+  _productTier?: MobileBillingProductTier
 ) {
-  return MOBILE_BILLING_PAGE_CREATION_PRODUCTS[productTier];
+  return MOBILE_BILLING_PAGE_CREATION_PRODUCTS.premium;
 }
 
 export function getMobileBillingTicketPackProductId(

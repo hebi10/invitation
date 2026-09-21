@@ -91,7 +91,7 @@ export function useCreateForm({
   const router = useRouter();
 
   const [selectedPlan, setSelectedPlan] =
-    useState<MobileInvitationProductTier>('standard');
+    useState<MobileInvitationProductTier>('premium');
   const [selectedTheme, setSelectedTheme] =
     useState<MobileInvitationThemeKey | null>(DEFAULT_INVITATION_THEME);
   const [customerEmail, setCustomerEmail] = useState('');
@@ -443,7 +443,7 @@ export function useCreateForm({
             )
           : '');
 
-      setSelectedPlan(draft.servicePlan);
+      setSelectedPlan('premium');
       setSelectedTheme(draft.theme);
       setGroomKoreanName(draft.groomName);
       setBrideKoreanName(draft.brideName);
@@ -457,7 +457,7 @@ export function useCreateForm({
       setSlugAvailability(INITIAL_SLUG_AVAILABILITY_STATE);
       lastDraftSnapshotRef.current = JSON.stringify(
         buildDraftPayload({
-          servicePlan: draft.servicePlan,
+          servicePlan: 'premium',
           theme: draft.theme,
           pageIdentifier: draft.pageIdentifier,
           groomName: draft.groomName,
@@ -494,7 +494,7 @@ export function useCreateForm({
           brideEnglishName.trim() ||
           (hasCustomPageIdentifier && effectivePageIdentifier.trim()) ||
           selectedTheme ||
-          selectedPlan !== 'standard'
+          selectedPlan !== 'premium'
       ),
     [
       brideKoreanName,
@@ -605,7 +605,7 @@ export function useCreateForm({
   }, [currentStepIndex, moveToStep]);
 
   const resetForm = useCallback(() => {
-    setSelectedPlan('standard');
+    setSelectedPlan('premium');
     setSelectedTheme(null);
     setCustomerPassword('');
     setGroomKoreanName('');

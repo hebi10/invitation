@@ -107,10 +107,10 @@ export default function HomeScreen() {
                   {(draft.groomName || '신랑')} · {(draft.brideName || '신부')}
                 </AppText>
                 <AppText variant="muted" style={styles.draftMeta}>
-                  {draft.servicePlan.toUpperCase()} · 모든 웨딩 디자인 포함
+                  PREMIUM · 모든 웨딩 디자인 포함
                 </AppText>
                 <AppText variant="muted" style={styles.draftMeta}>
-                  제작 금액 {formatPrice(servicePlans.find((plan) => plan.tier === draft.servicePlan)?.price ?? 0)}
+                  제작 금액 {formatPrice(servicePlans[0].price)}
                 </AppText>
                 <AppText variant="muted" style={styles.draftMeta}>
                   청첩장 주소{' '}

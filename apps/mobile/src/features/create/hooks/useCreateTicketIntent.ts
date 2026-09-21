@@ -6,7 +6,6 @@ import type {
   MobileInvitationThemeKey,
 } from '../../../types/mobileInvitation';
 import {
-  isValidCreateStepProductTier,
   isValidCreateStepThemeKey,
   type CreateStepKey,
 } from '../shared';
@@ -70,20 +69,18 @@ export function useCreateTicketIntent({
       return;
     }
 
-    if (normalizedTicketIntent === 'extend' || normalizedTicketIntent === 'upgrade') {
-      setNotice(
-        normalizedTicketIntent === 'extend'
-          ? '기간 연장에 필요한 티켓 수량을 선택해 주세요.'
-          : '서비스 업그레이드에 필요한 티켓 수량을 선택해 주세요.'
-      );
+    if (normalizedTicketIntent === 'upgrade') {
+      setNotice('모든 청첩장은 프리미엄 기능을 제공합니다. 별도 업그레이드는 필요하지 않습니다.');
+      setHandledTicketIntentKey(intentKey);
+      return;
+    }
+    if (normalizedTicketIntent === 'extend') {
+      setNotice('기간 연장에 필요한 티켓 수량을 선택해 주세요.');
       onOpenTicketPurchase();
       setHandledTicketIntentKey(intentKey);
       return;
     }
-
-    if (isValidCreateStepProductTier(normalizedTargetPlan)) {
-      setSelectedPlan(normalizedTargetPlan);
-    }
+    setSelectedPlan('premium');
 
     if (isValidCreateStepThemeKey(normalizedTargetTheme)) {
       setSelectedTheme(normalizedTargetTheme);

@@ -1,8 +1,10 @@
 import { NativeModules, Platform } from 'react-native';
 import Purchases from 'react-native-purchases';
 
-import type {
-  MobileBillingProductId,
+import {
+  MOBILE_BILLING_PREMIUM_PRICE_KRW,
+  MOBILE_BILLING_PRODUCT_IDS,
+  type MobileBillingProductId,
 } from './mobileBillingProducts';
 import { getStoredString, setStoredString } from './storage';
 
@@ -175,6 +177,9 @@ export async function purchaseBillingProduct(
   productId: MobileBillingProductId,
   options: { appUserId?: string | null } = {}
 ) {
+  if (!MOBILE_BILLING_PRODUCT_IDS.includes(productId)) {
+    throw new Error('현재 판매하지 않는 상품입니다. 프리미엄 상품을 이용해 주세요.');
+  }
   const { purchases, appUserId } = await ensureBillingConfigured(options);
   const type = purchases.PRODUCT_CATEGORY?.NON_SUBSCRIPTION ?? 'NON_SUBSCRIPTION';
   const products = await purchases.getProducts([productId], type);
@@ -182,6 +187,11 @@ export async function purchaseBillingProduct(
 
   if (!targetProduct) {
     throw new Error('Google Play Console 또는 RevenueCat에 결제 상품이 아직 준비되지 않았습니다.');
+  }
+
+  if (productId === 'page_creation_premium' &&
+      (targetProduct.currencyCode !== 'KRW' || targetProduct.price !== MOBILE_BILLING_PREMIUM_PRICE_KRW)) {
+    throw new Error('스토어의 프리미엄 가격이 9,900원으로 확인되지 않아 결제를 중단했습니다. 고객 문의로 확인해 주세요.');
   }
 
   const purchaseResult = await purchases.purchaseStoreProduct(targetProduct);

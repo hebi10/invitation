@@ -6,13 +6,13 @@ import ts from 'typescript';
 const source = ts.transpileModule(readFileSync('apps/mobile/src/lib/billing.ts', 'utf8'), {
   compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, esModuleInterop: true },
 }).outputText;
-const productId = 'page_creation_standard';
-function load(options: { os?: string; key?: string; missingSdk?: boolean; missingNative?: boolean; missingProduct?: boolean; failure?: object; transactionId?: string } = {}) {
+const productId = 'page_creation_premium';
+function load(options: { os?: string; key?: string; missingSdk?: boolean; missingNative?: boolean; missingProduct?: boolean; failure?: object; price?: number; currency?: string; transactionId?: string } = {}) {
   const calls: string[] = [];
   const sdk = {
     configure: ({ appUserID }: { appUserID: string }) => calls.push(`configure:${appUserID}`),
     logIn: async (id: string) => { calls.push(`login:${id}`); },
-    getProducts: async () => { calls.push('products'); return options.missingProduct ? [] : [{ identifier: productId }]; },
+    getProducts: async () => { calls.push('products'); return options.missingProduct ? [] : [{ identifier: productId, price: options.price ?? 9900, currencyCode: options.currency ?? 'KRW' }]; },
     purchaseStoreProduct: async () => {
       calls.push('purchase');
       if (options.failure) throw options.failure;
@@ -22,6 +22,7 @@ function load(options: { os?: string; key?: string; missingSdk?: boolean; missin
   };
   const exports: Record<string, unknown> = {};
   const require = (id: string) => {
+    if (id === './mobileBillingProducts') return { MOBILE_BILLING_PREMIUM_PRICE_KRW: 9900, MOBILE_BILLING_PRODUCT_IDS: [productId, 'ticket_pack_1', 'ticket_pack_3', 'ticket_pack_6'] };
     if (id === 'react-native') return { Platform: { OS: options.os ?? 'android' }, NativeModules: { RNPurchases: options.missingNative ? null : {} } };
     if (id === 'react-native-purchases') return { default: options.missingSdk ? null : sdk, __esModule: true };
     if (id === './storage') return { getStoredString: async () => 'customer-1', setStoredString: async () => {} };
@@ -49,4 +50,11 @@ await assert.rejects(load({ missingProduct: true }).purchase(productId, { appUse
 await assert.rejects(load({ transactionId: '' }).purchase(productId, { appUserId: 'customer-1' }));
 const cancelled = { userCancelled: true };
 await assert.rejects(load({ failure: cancelled }).purchase(productId, { appUserId: 'customer-1' }), error => error === cancelled);
+
+
+await assert.rejects(load({ price: 15000 }).purchase(productId, { appUserId: 'customer-1' }));
+await assert.rejects(load({ currency: 'USD' }).purchase(productId, { appUserId: 'customer-1' }));
+
+await assert.rejects(load().purchase('page_creation_standard', { appUserId: 'customer-1' }));
+await assert.rejects(load().purchase('page_creation_deluxe', { appUserId: 'customer-1' }));
 console.log('mobile real billing client checks passed (no purchase made)');

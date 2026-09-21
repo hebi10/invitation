@@ -45,7 +45,6 @@ import {
 } from '../../lib/linkedInvitationCards';
 import { copyTextWithFallback } from '../../lib/textTransfer';
 import type {
-  MobileInvitationProductTier,
   MobileInvitationThemeKey,
 } from '../../types/mobileInvitation';
 
@@ -229,7 +228,6 @@ export default function ManageScreen() {
     selectedTicketTransferTargetCard,
     ticketTransferCount,
     ticketTransferCountOptions,
-    upgradeTargetPlan,
     setTicketTransferTargetSlug,
     setTicketTransferCount,
     handleOpenTicketModal,
@@ -469,24 +467,6 @@ export default function ManageScreen() {
     } catch {
       setNotice('디자인 링크를 열지 못했습니다. 잠시 후 다시 시도해 주세요.');
     }
-  };
-
-  const handleRouteToCreateWithTicketIntent = (
-    ticketIntent: 'extend' | 'extra-page' | 'extra-variant' | 'upgrade',
-    options: {
-      targetPlan?: MobileInvitationProductTier;
-      targetTheme?: MobileInvitationThemeKey;
-    } = {}
-  ) => {
-    closeTicketModal();
-    router.push({
-      pathname: '/create',
-      params: {
-        ticketIntent,
-        ...(options.targetPlan ? { targetPlan: options.targetPlan } : {}),
-        ...(options.targetTheme ? { targetTheme: options.targetTheme } : {}),
-      },
-    });
   };
 
   return (
@@ -754,8 +734,6 @@ export default function ManageScreen() {
         palette={palette}
         fontScale={fontScale}
         availableTicketCount={activeLinkedInvitationCard?.ticketCount ?? 0}
-        currentPlan={activeLinkedInvitationCard?.productTier ?? 'standard'}
-        upgradeTargetPlan={upgradeTargetPlan}
         isExtendingDisplayPeriod={isExtendingDisplayPeriod}
         onExtendDisplayPeriod={() => void handleExtendDisplayPeriod()}
         transferTargetCards={ticketTransferTargetCards.map((item) => ({
@@ -770,11 +748,6 @@ export default function ManageScreen() {
         onSelectTransferTarget={setTicketTransferTargetSlug}
         onSelectTicketTransferCount={setTicketTransferCount}
         onTransferTickets={() => void handleTransferTicketCount()}
-        onGoToUpgrade={() =>
-          handleRouteToCreateWithTicketIntent('upgrade', {
-            targetPlan: upgradeTargetPlan ?? undefined,
-          })
-        }
       />
 
       <InvitationEditorModalShell

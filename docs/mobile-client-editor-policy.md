@@ -113,4 +113,4 @@
 - 모바일 생성 결제의 `appUserId`는 Firebase Auth 고객 UID를 사용한다.
 - 생성 이행 API는 Firebase ID 토큰을 검증한 뒤 `ownerUid`를 이벤트에 연결하므로, 모바일에서 만든 청첩장도 PC `/my-invitations`에 바로 노출된다.
 - 개발 환경을 포함해 데모 결제와 검증 우회는 허용하지 않는다. Android 앱의 Google Play 구매와 RevenueCat 서버 검증이 모두 완료된 거래만 처리한다. 키가 없거나 Test Store 키이면 구매를 차단한다.
-- 모바일 가격은 STANDARD 5,000원, DELUXE 10,000원, PREMIUM 15,000원이며, 추가 티켓은 할인 없이 1장당 1,000원으로 계산한다.
+- 모바일 신규 제작은 PREMIUM 단일 상품 9,900원이며, 추가 티켓은 할인 없이 1장당 1,000원으로 계산한다.

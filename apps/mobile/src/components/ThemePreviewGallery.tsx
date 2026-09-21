@@ -24,7 +24,7 @@ const previewImages: Record<string, number> = {
   emotional: naturalPreview,
 };
 
-export function ThemePreviewGallery({ tier = 'standard' }: { tier?: MobileInvitationProductTier }) {
+export function ThemePreviewGallery({ tier = 'premium' }: { tier?: MobileInvitationProductTier }) {
   const { palette } = useVisualPreferences();
   const { showToast } = useAppFeedback();
   const openPreview = async (url: string) => {

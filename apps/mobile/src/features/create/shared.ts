@@ -25,7 +25,6 @@ import type {
 
 export const TICKET_USAGE_ITEMS = [
   '티켓 1장: 1개월 연장',
-  '티켓 2장: 서비스 업그레이드',
 ] as const;
 
 export const TICKET_UNIT_PRICE = ticketPricing.unitPrice;
@@ -232,7 +231,7 @@ export function getCreateSlugAvailabilityMessage(
 export function isValidCreateStepProductTier(
   value: string | undefined
 ): value is MobileInvitationProductTier {
-  return value === 'standard' || value === 'deluxe' || value === 'premium';
+  return value === 'premium';
 }
 
 export function isValidCreateStepThemeKey(
