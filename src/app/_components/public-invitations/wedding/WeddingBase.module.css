@@ -407,6 +407,75 @@ details[open] > :is(.disclosureSummary, .accountSummary, .formSummary)::after { 
 .page .accountRow { overflow-wrap: anywhere; }
 .page .ceremonyContent { font-size: 16px; }
 
+/* Photo story: broad images alternate with quiet, readable information. */
+.page[data-design='romantic'] {
+  --paper: #faf8f4; --paper-soft: #f1eae0; --ink: #2c2925; --muted: #716b62;
+  --accent: #292723; --line: #ddd7ce; --control-line: #91887a; --focus: #514a42;
+  --section-space: 56px; font-size: 15px; padding-bottom: 48px;
+}
+:global(body):has(.page[data-design='romantic']) { background: #eeece8; }
+.page[data-design='romantic'] :is(.invitationSection, .scheduleSection, .container, .transportSection) { width: calc(100% - 48px); margin-top: 56px; padding: 0; }
+.page[data-design='romantic'] :is(.heading, .title) { display: flex; flex-direction: column; align-items: center; gap: 8px; font-size: 21px; line-height: 1.6; margin-bottom: 22px; }
+.page[data-design='romantic'] :is(.heading, .title)::before { font-family: 'Gyeol Brush', cursive; font-size: 23px; font-weight: 400; letter-spacing: 0; color: var(--muted); }
+.page[data-design='romantic'] .invitationSection .heading::before { content: 'Invitation'; }
+.page[data-design='romantic'] .ceremonySection > .heading::before { content: 'The Wedding Day'; }
+.page[data-design='romantic'] .scheduleSection .heading::before { content: 'Location'; }
+.page[data-design='romantic'] [data-wedding-section='guestbook'] .title::before { content: 'Guestbook'; }
+.page[data-design='romantic'] .quickLinks { width: 100%; margin: 0; gap: 0; padding: 16px 12px; background: var(--paper); }
+.page[data-design='romantic'] .quickLinks a { display: flex; flex-direction: column; gap: 6px; font-size: 12px; min-height: 70px; text-decoration: none; }
+.page[data-design='romantic'] .quickLinks a::before { font-family: 'Wedding Myeongjo', serif; font-size: 11px; letter-spacing: .06em; }
+.page[data-design='romantic'] .quickLinks a[href='#wedding-gallery']::before { content: '01  GALLERY'; }
+.page[data-design='romantic'] .quickLinks a[href='#wedding-info']::before { content: '02  WEDDING'; }
+.page[data-design='romantic'] .quickLinks a[href='#wedding-location']::before { content: '03  LOCATION'; }
+.page[data-design='romantic'] .invitationCopy { max-width: 300px; font-family: 'Wedding Myeongjo', serif; font-size: 15px; line-height: 2.1; }
+.page[data-design='romantic'] .invitationAuthor { margin-top: 24px; font-size: 14px; }
+.page[data-design='romantic'] .contactSection { width: calc(100% - 48px); margin-top: 24px; }
+.page[data-design='romantic'] :is(.disclosureSummary, .accountSummary, .formSummary, .copyButton) { min-height: 46px; font-size: 14px; background: transparent; color: var(--ink); border-color: var(--control-line); }
+.page[data-design='romantic'] .storyPhoto { position: relative; margin: 44px 12px 0; overflow: hidden; background: var(--paper-soft); }
+.page[data-design='romantic'] .storyPhoto img { display: block; width: 100%; aspect-ratio: 4 / 5; object-fit: cover; }
+.page[data-design='romantic'] .storyPhoto figcaption { position: absolute; inset: auto 0 0; margin: 0; padding: 38px 22px 20px; background: linear-gradient(transparent, rgba(0,0,0,.62)); color: white; text-align: left; font-family: 'Gyeol Brush', cursive; font-size: 27px; line-height: 1.25; }
+.page[data-design='romantic'] .storyInterlude { margin: 0; }
+.page[data-design='romantic'] .storyInterlude img { aspect-ratio: 16 / 10; }
+.page[data-design='romantic'] .storyInterlude figcaption { text-align: right; }
+.page[data-design='romantic'] [data-wedding-section='gallery'] .container { width: calc(100% - 24px); }
+.page[data-design='romantic'] .ceremonySection { width: 100%; margin-top: 56px; padding: 36px 24px; background: var(--paper-soft); }
+.page[data-design='romantic'] .ceremonyContent { gap: 6px; font-size: 14px; }
+.page[data-design='romantic'] .photoDate { display: grid; justify-items: center; gap: 4px; }
+.page[data-design='romantic'] .photoDate span:first-child { font-family: 'Wedding Myeongjo', serif; font-size: 22px; }
+.page[data-design='romantic'] .photoDate strong { font-family: 'Wedding Myeongjo', serif; font-size: 34px; font-weight: 500; line-height: 1.35; }
+.page[data-design='romantic'] .photoDate span:last-child { font-size: 14px; margin-top: 6px; }
+.page[data-design='romantic'] .ceremonyContent .venueName { font-size: 18px; margin-top: 12px; }
+.page[data-design='romantic'] .ceremonySection > button { min-height: 46px; font-size: 14px; background: transparent; color: var(--ink); border-color: var(--control-line); }
+.page[data-design='romantic'] .scheduleContent { gap: 4px; margin-bottom: 16px; font-size: 15px; }
+.page[data-design='romantic'] .scheduleContent .venueName { font-size: 18px; }
+.page[data-design='romantic'] :is(.address, .venuePhone, .travelNote) { font-size: 14px; }
+.page[data-design='romantic'] .travelNote { margin: 14px 0 0; text-align: center; }
+.page[data-design='romantic'] .transportSection { margin-top: 40px; }
+.page[data-design='romantic'] :is(.message, .subtitle) { max-width: 300px; margin: 0 auto 24px; font-size: 15px; line-height: 1.9; }
+.page[data-design='romantic'] .accountsContainer { gap: 0; }
+.page[data-design='romantic'] .accountSection { position: relative; }
+.page[data-design='romantic'] .accountSection::after { content: ''; position: absolute; bottom: 0; left: 0; width: 100%; height: 1px; background: var(--line); }
+.page[data-design='romantic'] .accountSummary { justify-content: space-between; padding: 12px 0; border: 0; }
+.page[data-design='romantic'] :is(.accountRow, .accountHolder, .contactIdentity strong) { font-size: 14px; }
+.page[data-design='romantic'] .formSummary { background: var(--accent); color: white; border-color: var(--accent); }
+.page[data-design='romantic'] .commentsHeader { gap: 8px; }
+.page[data-design='romantic'] :is(.commentsCount, .commentsCount strong, .pageInfo, .commentDate, .refreshButton) { font-size: 12px; }
+.page[data-design='romantic'] .commentsGrid { gap: 0; }
+.page[data-design='romantic'] .commentItem { display: grid; gap: 6px; padding: 22px 0; position: relative; }
+.page[data-design='romantic'] .commentItem + .commentItem::before { content: ''; position: absolute; top: 0; width: 100%; height: 1px; background: var(--line); }
+.page[data-design='romantic'] .commentHeader { display: contents; }
+.page[data-design='romantic'] .commentAuthor { order: 1; }
+.page[data-design='romantic'] .commentHeader > div:last-child { order: 2; }
+.page[data-design='romantic'] .authorName { font-size: 13px; font-weight: 500; color: var(--muted); }
+.page[data-design='romantic'] .commentMessage { order: 0; margin: 0 0 6px; font-family: 'Wedding Myeongjo', serif; font-size: 15px; line-height: 1.95; }
+.page[data-design='romantic'] :is(.pageNumber, .pageButton) { min-width: 36px; min-height: 44px; padding: 6px; font-size: 13px; background: transparent; }
+.page[data-design='romantic'] :is(.active, .pageButtonActive) { background: var(--accent); color: white; }
+@media (max-width: 359px) {
+  .page[data-design='romantic'] :is(.invitationSection, .scheduleSection, .container, .transportSection, .contactSection) { width: calc(100% - 40px); }
+  .page[data-design='romantic'] .quickLinks a::before { font-size: 10px; }
+  .page[data-design='romantic'] :is(.pageNumber, .pageButton) { min-width: 32px; padding-inline: 5px; }
+}
+
 /* Classic print: warm paper, measured type and restrained bronze frames. */
 .page[data-design='gyeol'] {
   --paper: #f6f0e5; --paper-soft: #fbf8f2; --ink: #3e332a; --muted: #7a6b5c;

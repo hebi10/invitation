@@ -159,7 +159,11 @@ for (const css of activeThemeCss) {
 }
 
 for (const css of activeThemeCss) {
-  assert.doesNotMatch(css.replace(/\.heroCopy\s*\{[^}]*\}/s, ''), /(?:linear|radial|conic)-gradient/);
+  // Photo text needs localized contrast; decorative surface gradients remain disallowed.
+  const surfacesWithoutPhotoScrims = css
+    .replace(/\.heroCopy\s*\{[^}]*\}/s, '')
+    .replace(/\.page\[data-design='romantic'\] \.storyPhoto figcaption\s*\{[^}]*\}/g, '');
+  assert.doesNotMatch(surfacesWithoutPhotoScrims, /(?:linear|radial|conic)-gradient/);
   assert.doesNotMatch(css, /box-shadow/);
   assert.doesNotMatch(css, /border-radius:\s*999px/);
   assert.doesNotMatch(css, /border-radius:\s*[1-9]\d*px/);
@@ -237,6 +241,8 @@ for (const layout of ['basic', 'photographic', 'letter', 'editorial', 'tradition
   assert.ok(coverCss.includes('.' + layout));
 }
 assert.match(coverSource, /imageUrl \?/);
-assert.doesNotMatch(coverCss.replace(/\.photoCopy\s*\{[^}]*\}/s, ''), /(?:linear|radial|conic)-gradient/);
+assert.doesNotMatch(coverCss
+  .replace(/\.photoCopy\s*\{[^}]*\}/s, '')
+  .replace(/\.photographic \.photoEyebrow\s*\{[^}]*\}/s, ''), /(?:linear|radial|conic)-gradient/);
 assert.doesNotMatch(coverCss, /box-shadow|font-weight:\s*[89]\d{2}/);
 console.log('웨딩 테마 스타일 계약 검증 통과');

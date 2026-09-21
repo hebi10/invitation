@@ -188,6 +188,11 @@ export default function WeddingBase({ state, theme, demoComments, showMap = true
         </details>
       ) : null}
 
+      {theme === 'romantic' && state.galleryImageUrls[0] ? <figure className={styles.storyPhoto}>
+        <img src={state.galleryImageUrls[0]} alt={`${page.groomName}과 ${page.brideName}의 웨딩 사진`} loading="lazy" decoding="async" />
+        <figcaption>The day<br />we become one.</figcaption>
+      </figure> : null}
+
       {gallery}
 
         <section id="wedding-info" className={styles.ceremonySection} data-wedding-section="ceremony" aria-labelledby="wedding-ceremony-title">
@@ -197,6 +202,10 @@ export default function WeddingBase({ state, theme, demoComments, showMap = true
               <span>{new Date(Date.UTC(page.weddingDateTime.year, page.weddingDateTime.month, page.weddingDateTime.day)).toLocaleDateString('en-US', { month: 'long', timeZone: 'UTC' }).toUpperCase()}</span>
               <strong>{page.weddingDateTime.day}</strong>
               <span>{page.weddingDateTime.year}</span>
+              <span>{new Date(Date.UTC(page.weddingDateTime.year, page.weddingDateTime.month, page.weddingDateTime.day)).toLocaleDateString('ko-KR', { weekday: 'long', timeZone: 'UTC' })}</span>
+            </div> : theme === 'romantic' ? <div className={styles.photoDate} aria-label={page.date}>
+              <span>{page.weddingDateTime.year}</span>
+              <strong>{String(page.weddingDateTime.month + 1).padStart(2, '0')}.{String(page.weddingDateTime.day).padStart(2, '0')}</strong>
               <span>{new Date(Date.UTC(page.weddingDateTime.year, page.weddingDateTime.month, page.weddingDateTime.day)).toLocaleDateString('ko-KR', { weekday: 'long', timeZone: 'UTC' })}</span>
             </div> : <p>{page.date}</p>}
             {ceremony?.time ? <p>{ceremony.time}</p> : null}
@@ -208,6 +217,10 @@ export default function WeddingBase({ state, theme, demoComments, showMap = true
             {calendar}
           </details> : null}
         </section>
+      {theme === 'romantic' && state.galleryImageUrls[1] ? <figure className={`${styles.storyPhoto} ${styles.storyInterlude}`}>
+        <img src={state.galleryImageUrls[1]} alt={`${page.groomName}과 ${page.brideName}의 웨딩 사진 2`} loading="lazy" decoding="async" />
+        <figcaption>For a more<br />beautiful tomorrow.</figcaption>
+      </figure> : null}
       <section
         id="wedding-location"
         className={styles.scheduleSection}
@@ -222,7 +235,7 @@ export default function WeddingBase({ state, theme, demoComments, showMap = true
         </div>
         {showMap && storedContent.mapHref ? (
           <LocationMap
-            appearance={theme === 'emotional' ? 'natural' : theme === 'gyeol' ? 'classic' : 'simple'}
+            appearance={theme === 'emotional' ? 'natural' : theme === 'gyeol' ? 'classic' : theme === 'romantic' ? 'photo' : 'simple'}
             address={ceremonyAddress}
             venueName={page.venue}
             kakaoMapConfig={pageData?.kakaoMap}

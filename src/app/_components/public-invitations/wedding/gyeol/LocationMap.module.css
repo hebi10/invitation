@@ -91,3 +91,6 @@
 .locationMap[data-appearance='classic'] .actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; font-family: 'Wedding Myeongjo', serif; font-size: 13px; }
 .locationMap[data-appearance='classic'] .actions a { justify-content: center; padding: 8px 4px; min-height: 44px; border: 1px solid var(--control-line); text-decoration: none; text-align: center; }
 .mapControl:focus-visible { outline: 2px solid var(--focus); outline-offset: 3px; }
+.locationMap[data-appearance='photo'] .viewport { height: 190px; }
+.locationMap[data-appearance='photo'] .actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; font-size: 13px; }
+.locationMap[data-appearance='photo'] .actions a { justify-content: center; min-height: 44px; text-align: center; text-decoration: underline; }

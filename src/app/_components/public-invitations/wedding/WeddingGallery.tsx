@@ -36,6 +36,7 @@ export default function WeddingGallery({
       imageAltPrefix={imageAltPrefix}
       title="사진"
       gridOverview={theme === 'emotional'}
+      editorialOverview={theme === 'romantic'}
       layout={usesGrid ? 'grid' : 'carousel'}
       swiperVariant={usesGrid ? undefined : theme === 'gyeol' ? 'gyeol' : 'simple'}
       styles={usesGrid ? {
@@ -46,6 +47,8 @@ export default function WeddingGallery({
         imageContainer: [styles.imageContainer, galleryStyles.imageContainer].filter(Boolean).join(' '),
         overviewCard: galleryStyles.overviewCard,
         overviewCount: galleryStyles.overviewCount,
+        storyCaption: galleryStyles.storyCaption,
+        photoUnavailable: galleryStyles.photoUnavailable,
       } : styles}
     />
   );

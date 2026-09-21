@@ -107,9 +107,13 @@
 .closing[data-theme='classic-r']::before { content: ''; position: absolute; top: 40px; left: 24px; right: 24px; height: 1px; background: #c9cac5; }
 .closing[data-theme='classic-r'] p:first-child { font-weight: 700; }
 .closing[data-theme='classic-r'] p:last-child { color: #62635e; }
-.closing[data-theme='romantic'] { background: #fbf8f3; color: #4d4135; font-family: 'Wedding Myeongjo', serif; }
-.closing[data-theme='romantic'] p:last-child { color: #766657; }
-.closing[data-theme='romantic']::after { content: 'Always together'; font-family: 'Gyeol Brush', cursive; font-size: 30px; color: #766657; margin-top: 12px; }
+.closing[data-theme='romantic'] { background: #faf8f4; color: #2c2925; font-family: 'Wedding Myeongjo', serif; padding: 0; gap: 0; }
+.photoFinalImage { display: block; width: 100%; aspect-ratio: 4 / 5; object-fit: cover; }
+.photoFinalCopy { display: grid; justify-items: center; gap: 18px; padding: 48px 24px 56px; }
+.closing[data-theme='romantic'] .photoFinalPhrase { font-family: 'Gyeol Brush', cursive; font-size: 30px; font-weight: 400; line-height: 1.6; color: #777168; }
+.closing[data-theme='romantic'] .photoFinalNames { font-size: 22px; font-weight: 500; line-height: 1.7; }
+.closing[data-theme='romantic'] .photoFinalThanks { font-family: var(--font-sans); font-size: 15px; font-weight: 400; line-height: 1.9; color: #777168; }
+.closing[data-theme='romantic'] .photoFinalDate { font-family: var(--font-sans); font-size: 14px; line-height: 1.8; color: #777168; }
 .closing[data-theme='gyeol'] { background: #fbf8f2; color: #3e332a; padding: 56px 24px; gap: 20px; }
 .classicMonogram { display: grid; place-items: center; width: 76px; min-height: 52px; border: 1px solid #d8c8b4; color: #69513a; font-size: 22px; line-height: 1.6; }
 .closing[data-theme='gyeol'] .classicNames { font-size: 24px; font-weight: 500; line-height: 1.7; }

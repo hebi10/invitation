@@ -8,6 +8,7 @@ import {
   useRef,
   useState,
   useSyncExternalStore,
+  Fragment,
 } from 'react';
 import Image from 'next/image';
 
@@ -50,6 +51,7 @@ export interface GalleryGridSharedProps {
   layout?: 'grid' | 'carousel';
   swiperVariant?: WeddingGalleryVariant;
   gridOverview?: boolean;
+  editorialOverview?: boolean;
 }
 
 function preloadSingleImage(url?: string) {
@@ -94,6 +96,7 @@ export default function GalleryGridShared({
   layout = 'grid',
   swiperVariant,
   gridOverview = false,
+  editorialOverview = false,
 }: GalleryGridSharedProps) {
   const { elementRef, isVisible } = useScrollAnimation({
     threshold: 0,
@@ -104,6 +107,7 @@ export default function GalleryGridShared({
   const [visibleCount, setVisibleCount] = useState(6);
   const [carouselIndex, setCarouselIndex] = useState(0);
   const [loadedImages, setLoadedImages] = useState<Set<string>>(new Set());
+  const [failedThumbnailImages, setFailedThumbnailImages] = useState<Set<string>>(new Set());
   const [loadedPopupImages, setLoadedPopupImages] = useState<Set<string>>(new Set());
   const [isPopupImageLoading, setIsPopupImageLoading] = useState(false);
   const [popupImageError, setPopupImageError] = useState<string | null>(null);
@@ -126,8 +130,9 @@ export default function GalleryGridShared({
   const isCarousel = layout === 'carousel';
 
   const isGridOverview = gridOverview && !isCarousel && !swiperVariant;
-  const thumbnailCount = isGridOverview ? 4 : visibleCount;
-  const shouldRenderImages = isGridOverview || isVisible || selectedIndex !== null;
+  const isEditorialOverview = editorialOverview && !isCarousel && !swiperVariant;
+  const thumbnailCount = isEditorialOverview ? 6 : isGridOverview ? 4 : visibleCount;
+  const shouldRenderImages = isEditorialOverview || isGridOverview || isVisible || selectedIndex !== null;
   const displayImages = useMemo(() => images.slice(0, thumbnailCount), [images, thumbnailCount]);
   const displayPreviewImages = useMemo(
     () => (previewImages ?? images).slice(0, thumbnailCount),
@@ -251,15 +256,18 @@ export default function GalleryGridShared({
         {swiperVariant && hasImages ? (
           <WeddingGallerySwiper images={images} previewImages={previewImages} variant={swiperVariant} reducedMotion={prefersReducedMotion} altPrefix={resolvedImageAltPrefix} onOpen={openPopup} />
         ) : shouldRenderImages && hasImages ? (
-          <div className={isCarousel ? styles.carousel : styles.imageGrid}>
+          <div className={isCarousel ? styles.carousel : styles.imageGrid} data-photo-count={displayImages.length}>
             {(isCarousel ? images.slice(carouselIndex, carouselIndex + 1) : displayImages).map((image, offset) => {
               const index = isCarousel ? carouselIndex : offset;
               const previewImage = isCarousel
                 ? previewImages?.[index] ?? image
                 : displayPreviewImages[index] ?? image;
+              const thumbnailImage = isEditorialOverview && failedThumbnailImages.has(previewImage) ? image : previewImage;
+              const thumbnailFailed = isEditorialOverview && failedThumbnailImages.has(thumbnailImage);
 
               return (
-                <div key={isCarousel ? 'carousel-image' : `${image}-${index}`} className={styles.imageWrapper}>
+                <Fragment key={isCarousel ? 'carousel-image' : `${image}-${index}`}>
+                <div className={styles.imageWrapper} data-photo-position={index + 1}>
                   <button
                     type="button"
                     className={styles.imageContainer}
@@ -272,35 +280,38 @@ export default function GalleryGridShared({
                       preloadPopupImageSet(images, index);
                     }}
                   >
-                    <Image
-                      key={previewImage}
+                    {thumbnailFailed ? <span className={styles.photoUnavailable}>사진을 불러오지 못했습니다.<br />눌러서 원본 보기</span> : <Image
+                      key={thumbnailImage}
                       className={styles.imageItem}
-                      src={previewImage}
+                      src={thumbnailImage}
                       alt={getImageAlt(index)}
                       fill
-                      sizes={isCarousel ? '(max-width: 700px) 90vw, 600px' : '(max-width: 700px) 50vw, 33vw'}
+                      sizes={isCarousel || (isEditorialOverview && (index === 0 || index === 3)) ? '(max-width: 700px) 90vw, 600px' : '(max-width: 700px) 50vw, 33vw'}
                       quality={60}
                       loading="lazy"
                       onLoad={() =>
-                        setLoadedImages((current) => new Set([...current, previewImage]))
+                        setLoadedImages((current) => new Set([...current, thumbnailImage]))
                       }
+                      onError={isEditorialOverview ? () => setFailedThumbnailImages(current => new Set([...current, thumbnailImage])) : undefined}
                       style={{
                         objectFit: isCarousel ? 'contain' : 'cover',
-                        opacity: loadedImages.has(previewImage) ? 1 : 0,
+                        opacity: isEditorialOverview || loadedImages.has(previewImage) ? 1 : 0,
                         transition: resolveGalleryOpacityTransition(
                           prefersReducedMotion,
                           220
                         ),
                       }}
-                    />
+                    />}
                   </button>
-                  {!loadedImages.has(previewImage)
+                  {!isEditorialOverview && !loadedImages.has(previewImage)
                     ? renderLoadingPlaceholder(styles)
                     : null}
                 </div>
+                {isEditorialOverview && index === Math.min(3, displayImages.length) - 1 ? <p className={styles.storyCaption}>Our story</p> : null}
+                </Fragment>
               );
             })}
-            {isGridOverview ? (
+            {isGridOverview || isEditorialOverview ? (
               <button
                 type="button"
                 className={styles.overviewCard}
@@ -356,7 +367,7 @@ export default function GalleryGridShared({
           </div>
         )}
 
-        {!swiperVariant && !isCarousel && !isGridOverview && images.length > 6 && (
+        {!swiperVariant && !isCarousel && !isGridOverview && !isEditorialOverview && images.length > 6 && (
           <div className={styles.buttonContainer}>
             {hasMoreImages && (
               <button

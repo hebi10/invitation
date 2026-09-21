@@ -10,6 +10,7 @@ export interface WeddingClosingProps {
   theme: InvitationThemeKey;
   className?: string;
   weddingDateTime?: InvitationPage['weddingDateTime'];
+  imageUrl?: string;
 }
 
 export function WeddingClosing({
@@ -18,6 +19,7 @@ export function WeddingClosing({
   theme,
   className,
   weddingDateTime,
+  imageUrl,
 }: WeddingClosingProps) {
   const closingClassName = [styles.closing, className].filter(Boolean).join(' ');
 
@@ -28,7 +30,17 @@ export function WeddingClosing({
       data-theme={theme}
       aria-label={`${groomName}과 ${brideName}의 결혼식 초대 마무리`}
     >
-      {theme === 'gyeol' ? (
+      {theme === 'romantic' ? (
+        <>
+          {imageUrl ? <img className={styles.photoFinalImage} src={imageUrl} alt={`${groomName} · ${brideName}의 웨딩 사진`} loading="lazy" decoding="async" /> : null}
+          <div className={styles.photoFinalCopy}>
+            <p className={styles.photoFinalPhrase}>Always together</p>
+            <p className={styles.photoFinalNames}>{groomName} · {brideName}</p>
+            <p className={styles.photoFinalThanks}>귀한 걸음과 따뜻한 마음에<br />감사드립니다</p>
+            {weddingDateTime ? <p className={styles.photoFinalDate}>{weddingDateTime.year}. {String(weddingDateTime.month + 1).padStart(2, '0')}. {String(weddingDateTime.day).padStart(2, '0')}</p> : null}
+          </div>
+        </>
+      ) : theme === 'gyeol' ? (
         <>
           <div className={styles.classicMonogram} aria-hidden="true">
             {[groomName, brideName].map((name) => Array.from(name.trim())[0]).filter(Boolean).join(' · ')}

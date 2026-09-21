@@ -17,8 +17,11 @@ export default function WeddingCover({ theme, page, imageUrl, time, titleId = 'w
   if (theme === 'romantic') return (
     <section className={`${styles.cover} ${styles.photographic} ${!imageUrl ? styles.withoutPhoto : ''}`} aria-labelledby={titleId}>
       {photo}
+      <p className={styles.photoEyebrow}>WEDDING INVITATION</p>
       <div className={styles.photoCopy}>
-        <h1 data-wedding-motion="copy" id={titleId} className={styles.names}>{names}</h1>
+        <h1 data-wedding-motion="copy" id={titleId} className={styles.names}>
+          <span>{page.groomName}</span><span aria-hidden="true" className={styles.join}>&amp;</span><span>{page.brideName}</span>
+        </h1>
         <div className={styles.photoMeta}>{date}<p className={styles.venue} data-wedding-motion="copy">{page.venue}</p></div>
       </div>
     </section>

@@ -79,6 +79,7 @@ export function withWeddingClosing(
             brideName={props.state.pageConfig.brideName}
             theme={options.theme}
             weddingDateTime={props.state.pageConfig.weddingDateTime}
+            imageUrl={props.state.galleryImageUrls.at(-1)}
           />
         ) : null}
       </div>
@@ -123,6 +124,7 @@ export function createWeddingThemeRenderer(
             brideName={state.pageConfig.brideName}
             theme={props.options.theme}
             weddingDateTime={state.pageConfig.weddingDateTime}
+            imageUrl={state.galleryImageUrls.at(-1)}
           />
         ) : null}
       </main>

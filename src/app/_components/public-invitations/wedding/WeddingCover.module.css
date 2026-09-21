@@ -11,14 +11,17 @@
 .conceptIntroduction { font-size: 16px; font-weight: 400; line-height: 2; }
 
 /* The portrait fills the first screen; the saved names and date share its lower edge. */
-.photographic { position: relative; isolation: isolate; display: flex; align-items: end; min-height: clamp(580px, 86svh, 780px); background: #454941; color: #fff; }
+.photographic { position: relative; isolation: isolate; display: flex; align-items: end; min-height: clamp(620px, 92svh, 820px); background: #454941; color: #fff; }
 .photographic > .photo { position: absolute; z-index: -2; inset: 0; width: 100%; height: 100%; object-fit: cover; }
-.photoCopy { width: 100%; padding: 110px 30px 40px; background: linear-gradient(180deg, transparent, rgba(17, 23, 18, .78) 96px, rgba(17, 23, 18, .9)); text-align: left; }
-.photoCopy .names { justify-content: start; gap: 12px; font-size: 32px; }
-.photoMeta .date { margin-top: 20px; justify-content: start; font-size: 16px; }
-.photoMeta .venue { margin-top: 4px; color: #f2f1ed; }
+.photographic .photoEyebrow { position: absolute; inset: 0 0 auto; padding: 30px 24px 72px; background: linear-gradient(rgba(24,22,20,.6), transparent); font-family: var(--font-sans); font-size: 11px; font-weight: 500; line-height: 1.8; letter-spacing: .2em; text-align: center; }
+.photoCopy { width: 100%; box-sizing: border-box; padding: 88px 30px 36px; background: linear-gradient(180deg, transparent, rgba(24,22,20,.58) 32%, rgba(24,22,20,.8)); text-align: left; }
+.photoCopy .names { grid-template-columns: minmax(0, 1fr); justify-content: start; justify-items: start; gap: 3px; font-size: 32px; line-height: 1.5; }
+.photoCopy .names .join { font-size: 18px; line-height: 1.4; }
+.photoMeta .date { margin-top: 20px; justify-content: start; font-size: 14px; line-height: 1.8; }
+.photoMeta .venue { margin-top: 6px; color: #f7f4ef; font-size: 14px; line-height: 1.8; }
 .withoutPhoto { min-height: 430px; background: #edece5; color: #30352f; }
 .withoutPhoto .photoCopy { background: none; }
+.withoutPhoto .photoEyebrow { background: none; }
 .withoutPhoto .photoMeta .venue { color: #53594f; }
 
 /* A compact botanical invitation: names and greeting introduce the photograph. */
@@ -67,7 +70,7 @@
 @media (max-width: 359px) {
   .names { font-size: 24px; gap: 10px; }
   .photoCopy { padding-inline: 24px; padding-bottom: 32px; }
-  .photoCopy .names { font-size: 27px; gap: 10px; }
+  .photoCopy .names { font-size: 28px; gap: 3px; }
   .editorial { padding-inline: 24px; }
   .editorialNames { font-size: 28px; gap: 10px; }
   .traditional { padding-inline: 12px; }
