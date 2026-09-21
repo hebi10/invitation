@@ -61,6 +61,13 @@
   display: flex;
   flex-direction: column;
   gap: 8px;
+  min-width: 0;
+}
+
+/* Keep controls aligned when only one field has supporting copy. */
+.field > .fieldHint {
+  order: 1;
+  margin-top: 0;
 }
 
 .fieldWide {
