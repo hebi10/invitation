@@ -485,10 +485,6 @@ details[open] > :is(.disclosureSummary, .accountSummary, .formSummary)::after { 
 .page[data-design='classic-r'] [data-wedding-section='guestbook'] .title::after { content: 'GUESTBOOK'; }
 .page[data-design='classic-r'] .quickLinks { width: calc(100% - 32px); padding: 14px 0; margin: 0 auto; gap: 8px; }
 .page[data-design='classic-r'] .quickLinks a { flex-direction: column; gap: 3px; font-size: 12px; min-height: 60px; text-decoration: none; }
-.page[data-design='classic-r'] .quickLinks a::before { font-size: 10px; color: var(--muted); }
-.page[data-design='classic-r'] .quickLinks a[href='#wedding-gallery']::before { content: '01'; }
-.page[data-design='classic-r'] .quickLinks a[href='#wedding-info']::before { content: '02'; }
-.page[data-design='classic-r'] .quickLinks a[href='#wedding-location']::before { content: '03'; }
 .page[data-design='classic-r'] .invitationCopy { margin-left: 56px; font-size: 15px; line-height: 2; }
 .page[data-design='classic-r'] .invitationAuthor { margin-top: 24px; font-size: 14px; }
 .page[data-design='classic-r'] .contactSection { margin-top: 24px; }

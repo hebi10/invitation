@@ -36,23 +36,15 @@
 .letter .date { margin-top: 18px; font-size: 15px; line-height: 1.8; }
 .letter .venue { margin-top: 3px; color: #54624f; font-size: 15px; line-height: 1.8; }
 
-/* A magazine cover pairs a tall photograph with a compact column of names and dates. */
-.editorial { padding: 28px 24px 24px; background: #fff; color: #171717; font-family: var(--font-sans); text-align: left; }
-.editorialHeading { display: flex; align-items: end; justify-content: space-between; gap: 16px; margin-bottom: 24px; font-size: 12px; font-weight: 500; line-height: 1.5; letter-spacing: .12em; }
-.editorialHeading > span { font-size: 13px; letter-spacing: .06em; }
-.editorialLayout { display: grid; grid-template-columns: minmax(0, 3fr) minmax(116px, 2fr); align-items: stretch; gap: 18px; }
-.editorialText { display: flex; flex-direction: column; min-width: 0; padding-top: 8px; }
-.editorial .editorialKicker { margin-bottom: 24px; font-size: 10px; line-height: 1.6; letter-spacing: .12em; color: #666; }
-.editorialNames { display: grid; grid-template-columns: minmax(0, 1fr); justify-items: start; gap: 3px; font-family: var(--font-sans); font-size: 30px; font-weight: 500; line-height: 1.45; letter-spacing: -.04em; }
-.editorialNames .join { font-size: 16px; font-weight: 400; }
-.editorial .editorialPhoto { min-height: 360px; overflow: hidden; }
+/* Names lead into a broad photograph; the compact schedule closes on the right. */
+.editorial { padding: 32px 24px 16px; background: #fff; color: #171717; font-family: var(--font-sans); text-align: left; }
+.editorial .editorialHeading { margin-bottom: 24px; font-size: 10px; font-weight: 500; line-height: 1.6; letter-spacing: .14em; color: #666; }
+.editorialNames { display: grid; grid-template-columns: minmax(0, 1fr); justify-items: start; gap: 0; font-family: var(--font-sans); font-size: 34px; font-weight: 500; line-height: 1.35; letter-spacing: -.03em; }
+.editorial .editorialPhoto { margin-top: 26px; aspect-ratio: 1; overflow: hidden; }
 .editorialPhoto .photo { height: 100%; object-fit: cover; }
-.editorialMeta { margin-top: auto; padding-top: 32px; }
-.editorial .editorialDateNumber { margin-bottom: 14px; font-size: 34px; font-weight: 500; line-height: 1.15; letter-spacing: -.055em; font-variant-numeric: tabular-nums; }
-.editorialMeta .date { display: grid; justify-content: start; margin-top: 0; font-size: 13px; line-height: 1.8; font-weight: 400; font-variant-numeric: tabular-nums; }
-.editorialMeta .venue { margin-top: 10px; font-size: 14px; line-height: 1.7; }
-.editorialWithoutPhoto { grid-template-columns: minmax(0, 1fr); }
-.editorialWithoutPhoto .editorialText { min-height: 330px; }
+.editorialMeta { margin-top: 20px; text-align: right; }
+.editorialMeta .date { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 0 5px; margin-top: 0; font-size: 13px; line-height: 1.8; font-weight: 400; font-variant-numeric: tabular-nums; }
+.editorialMeta .venue { margin-top: 4px; font-size: 14px; line-height: 1.7; }
 
 /* An open, double-line paper cover with a monogram taken from the couple's names. */
 .traditional { padding: 20px 16px 24px; font-family: 'Wedding Myeongjo', serif; text-align: center; background: #f6f0e5; color: #3e332a; }
@@ -81,8 +73,7 @@
   .photoCopy { padding-inline: 24px; padding-bottom: 32px; }
   .photoCopy .names { font-size: 28px; gap: 3px; }
   .editorial { padding-inline: 16px; }
-  .editorialLayout { gap: 14px; }
-  .editorialNames { font-size: 28px; gap: 3px; }
+  .editorialNames { font-size: 32px; gap: 0; }
   .traditional { padding-inline: 12px; }
   .traditionalFrame { padding-inline: 14px; }
   .traditionalTitle .names { font-size: 28px; gap: 7px; }
