@@ -267,10 +267,14 @@ assert.equal(
   'opacity 0.22s ease'
 );
 
-const activeDateFeaturePages = [
-  'src/app/_components/public-invitations/wedding/WeddingBase.tsx',
+const firstBirthdayPages = [
   'src/app/_components/public-invitations/first-birthday/first-chapter/Page.tsx',
   'src/app/_components/public-invitations/first-birthday/dawn-chapter/Page.tsx',
+] as const;
+
+const activeDateFeaturePages = [
+  'src/app/_components/public-invitations/wedding/WeddingBase.tsx',
+  ...firstBirthdayPages,
   'src/app/_components/public-invitations/birthday/party-notes/Page.tsx',
   'src/app/_components/public-invitations/birthday/birthday-story/Page.tsx',
   'src/app/_components/public-invitations/opening/studio-opening/Page.tsx',
@@ -293,8 +297,12 @@ for (const pagePath of activeDateFeaturePages.filter((pagePath) => pagePath.incl
   assert.match(pageSource, /<WeddingStoredContent/);
 }
 
-for (const pagePath of activeDateFeaturePages.slice(4, 6)) {
-  assert.match(read(pagePath), /<FirstBirthdayGiftAccounts/);
+for (const pagePath of firstBirthdayPages) {
+  assert.match(
+    read(pagePath),
+    /<FirstBirthdayGiftAccounts/,
+    `${pagePath} must consume the shared first-birthday gift accounts`
+  );
 }
 
 const gallerySource = read(

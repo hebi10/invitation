@@ -1,7 +1,7 @@
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import path from 'node:path';
 
-import { getWeddingPageBySlug } from '@/config/weddingPages';
+import { SAMPLE_INVITATION_PATH, sampleWeddingPage } from '@/config/homeWeddingSample';
 
 const repoRoot = process.cwd();
 const findings: string[] = [];
@@ -49,16 +49,21 @@ assert(
 );
 
 const homePage = readText('src/app/page.tsx');
-const homeSampleHref = homePage.match(
-  /href:\s*'\/([^/]+)\/([^/]+)\/',\s*label:\s*'샘플 보기'/
+assert(
+  /<Link\b[^>]*href=\{SAMPLE_INVITATION_PATH\}[^>]*>청첩장 샘플 보기<\/Link>/.test(homePage),
+  'Home page must expose an explicit link to the shared sample invitation route.'
 );
-assert(Boolean(homeSampleHref), 'Home page must expose one explicit sample invitation link.');
-if (homeSampleHref) {
-  assert(
-    Boolean(getWeddingPageBySlug(homeSampleHref[1])),
-    `Home sample link must point to an existing seed slug: ${homeSampleHref[1]}`
-  );
-}
+assert(
+  /^\/[a-z0-9-]+\/$/.test(SAMPLE_INVITATION_PATH) &&
+    existsSync(path.join(repoRoot, 'src/app', SAMPLE_INVITATION_PATH.slice(1), 'page.tsx')),
+  'Home sample link must point to an existing sample route.'
+);
+assert(
+  sampleWeddingPage.published &&
+    sampleWeddingPage.variants.simple?.available === true &&
+    sampleWeddingPage.variants.simple.path === SAMPLE_INVITATION_PATH,
+  'Home sample must provide a public invitation for the linked route.'
+);
 
 const ciPath = path.join(repoRoot, '.github', 'workflows', 'ci.yml');
 assert(existsSync(ciPath), 'GitHub Actions CI workflow must exist at .github/workflows/ci.yml.');

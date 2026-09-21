@@ -384,7 +384,7 @@ assert.doesNotMatch(adminEventWorkspaceSource, /페이지당 개수/);
 
 assert.deepEqual(
   pages.map((page) => getPageWizardCreateHrefForEventType(page.eventType)),
-  ['/page-wizard', '/first-birthday-wizard', '/birthday-wizard', '/general-event-wizard', '/opening-wizard']
+  ['/page-wizard/edit', '/first-birthday-wizard', '/birthday-wizard', '/general-event-wizard', '/opening-wizard']
 );
 
 console.log('admin event workspace model checks passed');
