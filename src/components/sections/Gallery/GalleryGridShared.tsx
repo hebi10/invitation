@@ -52,6 +52,7 @@ export interface GalleryGridSharedProps {
   swiperVariant?: WeddingGalleryVariant;
   gridOverview?: boolean;
   editorialOverview?: boolean;
+  modernOverview?: boolean;
 }
 
 function preloadSingleImage(url?: string) {
@@ -97,6 +98,7 @@ export default function GalleryGridShared({
   swiperVariant,
   gridOverview = false,
   editorialOverview = false,
+  modernOverview = false,
 }: GalleryGridSharedProps) {
   const { elementRef, isVisible } = useScrollAnimation({
     threshold: 0,
@@ -131,8 +133,10 @@ export default function GalleryGridShared({
 
   const isGridOverview = gridOverview && !isCarousel && !swiperVariant;
   const isEditorialOverview = editorialOverview && !isCarousel && !swiperVariant;
-  const thumbnailCount = isEditorialOverview ? 6 : isGridOverview ? 4 : visibleCount;
-  const shouldRenderImages = isEditorialOverview || isGridOverview || isVisible || selectedIndex !== null;
+  const isModernOverview = modernOverview && !isCarousel && !swiperVariant;
+  const supportsThumbnailFallback = isEditorialOverview || isModernOverview;
+  const thumbnailCount = supportsThumbnailFallback ? 6 : isGridOverview ? 4 : visibleCount;
+  const shouldRenderImages = supportsThumbnailFallback || isGridOverview || isVisible || selectedIndex !== null;
   const displayImages = useMemo(() => images.slice(0, thumbnailCount), [images, thumbnailCount]);
   const displayPreviewImages = useMemo(
     () => (previewImages ?? images).slice(0, thumbnailCount),
@@ -262,8 +266,8 @@ export default function GalleryGridShared({
               const previewImage = isCarousel
                 ? previewImages?.[index] ?? image
                 : displayPreviewImages[index] ?? image;
-              const thumbnailImage = isEditorialOverview && failedThumbnailImages.has(previewImage) ? image : previewImage;
-              const thumbnailFailed = isEditorialOverview && failedThumbnailImages.has(thumbnailImage);
+              const thumbnailImage = supportsThumbnailFallback && failedThumbnailImages.has(previewImage) ? image : previewImage;
+              const thumbnailFailed = supportsThumbnailFallback && failedThumbnailImages.has(thumbnailImage);
 
               return (
                 <Fragment key={isCarousel ? 'carousel-image' : `${image}-${index}`}>
@@ -292,10 +296,10 @@ export default function GalleryGridShared({
                       onLoad={() =>
                         setLoadedImages((current) => new Set([...current, thumbnailImage]))
                       }
-                      onError={isEditorialOverview ? () => setFailedThumbnailImages(current => new Set([...current, thumbnailImage])) : undefined}
+                      onError={supportsThumbnailFallback ? () => setFailedThumbnailImages(current => new Set([...current, thumbnailImage])) : undefined}
                       style={{
                         objectFit: isCarousel ? 'contain' : 'cover',
-                        opacity: isEditorialOverview || loadedImages.has(previewImage) ? 1 : 0,
+                        opacity: supportsThumbnailFallback || loadedImages.has(previewImage) ? 1 : 0,
                         transition: resolveGalleryOpacityTransition(
                           prefersReducedMotion,
                           220
@@ -303,7 +307,8 @@ export default function GalleryGridShared({
                       }}
                     />}
                   </button>
-                  {!isEditorialOverview && !loadedImages.has(previewImage)
+                  {isModernOverview ? <span className={styles.photoNumber} aria-hidden="true">{String(index + 1).padStart(2, '0')}</span> : null}
+                  {!supportsThumbnailFallback && !loadedImages.has(previewImage)
                     ? renderLoadingPlaceholder(styles)
                     : null}
                 </div>
@@ -311,15 +316,15 @@ export default function GalleryGridShared({
                 </Fragment>
               );
             })}
-            {isGridOverview || isEditorialOverview ? (
+            {isGridOverview || isEditorialOverview || isModernOverview ? (
               <button
                 type="button"
                 className={styles.overviewCard}
                 aria-label={`전체 사진 ${images.length}장 보기`}
                 onClick={(event) => openPopup(0, event.currentTarget)}
               >
-                <span>전체 사진 보기</span>
-                <span className={styles.overviewCount}>{images.length}장</span>
+                <span>{isModernOverview ? 'VIEW ALL PHOTOS' : '전체 사진 보기'}</span>
+                <span className={styles.overviewCount}>{isModernOverview ? `${String(displayImages.length).padStart(2, '0')} / ${String(images.length).padStart(2, '0')}` : `${images.length}장`}</span>
               </button>
             ) : null}
           </div>
@@ -367,7 +372,7 @@ export default function GalleryGridShared({
           </div>
         )}
 
-        {!swiperVariant && !isCarousel && !isGridOverview && !isEditorialOverview && images.length > 6 && (
+        {!swiperVariant && !isCarousel && !isGridOverview && !isEditorialOverview && !isModernOverview && images.length > 6 && (
           <div className={styles.buttonContainer}>
             {hasMoreImages && (
               <button

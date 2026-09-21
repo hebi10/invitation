@@ -37,6 +37,7 @@ export default function WeddingGallery({
       title="사진"
       gridOverview={theme === 'emotional'}
       editorialOverview={theme === 'romantic'}
+      modernOverview={theme === 'classic-r'}
       layout={usesGrid ? 'grid' : 'carousel'}
       swiperVariant={usesGrid ? undefined : theme === 'gyeol' ? 'gyeol' : 'simple'}
       styles={usesGrid ? {
@@ -49,6 +50,7 @@ export default function WeddingGallery({
         overviewCount: galleryStyles.overviewCount,
         storyCaption: galleryStyles.storyCaption,
         photoUnavailable: galleryStyles.photoUnavailable,
+        photoNumber: galleryStyles.photoNumber,
       } : styles}
     />
   );

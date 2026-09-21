@@ -24,33 +24,54 @@
 
 /* Keep DOM order intact so the grid, keyboard and enlargement agree. */
 .editorial .imageGrid {
-  grid-template-columns: repeat(5, minmax(0, 1fr));
-  gap: 12px;
-  align-items: stretch;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px 8px;
+  align-items: start;
 }
 
 .editorial .imageWrapper {
-  grid-column: span 3;
-  aspect-ratio: 1;
-}
-
-.editorial .imageWrapper:nth-child(even) {
-  grid-column: span 2;
+  grid-column: span 1;
   aspect-ratio: auto;
+  overflow: visible;
+  background: transparent;
 }
 
-.editorial .imageWrapper:nth-child(4n + 3) {
-  grid-column: span 2;
-  aspect-ratio: 2 / 3;
+.editorial .imageContainer {
+  aspect-ratio: 4 / 5;
+  height: auto;
+  overflow: hidden;
+  background: var(--paper-soft, #f4f3ef);
 }
 
-.editorial .imageWrapper:nth-child(4n + 4) {
-  grid-column: span 3;
+.photoNumber {
+  display: block;
+  padding-top: 8px;
+  color: var(--ink, #262626);
+  font-family: var(--font-sans, sans-serif);
+  font-size: 12px;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.4;
 }
 
-.editorial .imageWrapper:last-child:nth-child(odd) {
+.editorial .overviewCard {
   grid-column: 1 / -1;
-  aspect-ratio: 4 / 3;
+  flex-direction: row;
+  justify-content: space-between;
+  min-height: 56px;
+  margin-top: 4px;
+  padding: 14px 16px;
+  border: 1px solid var(--ink, #262626);
+  background: transparent;
+  color: var(--ink, #262626);
+  font-family: var(--font-sans, sans-serif);
+  font-size: 13px;
+  letter-spacing: 0.04em;
+}
+
+.editorial .overviewCount {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
 }
 
 .album .imageGrid {
@@ -171,9 +192,12 @@
 
 @media (max-width: 359px) {
   .imageGrid,
-  .editorial .imageGrid,
   .album .imageGrid {
     gap: 10px;
+  }
+
+  .editorial .imageGrid {
+    gap: 16px 6px;
   }
 
   .natural .imageGrid {

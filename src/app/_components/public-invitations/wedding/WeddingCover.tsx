@@ -42,9 +42,20 @@ export default function WeddingCover({ theme, page, imageUrl, time, titleId = 'w
 
   if (theme === 'classic-r') return (
     <section className={`${styles.cover} ${styles.editorial}`} aria-labelledby={titleId}>
-      <h1 data-wedding-motion="copy" id={titleId} className={styles.editorialNames}>{names}</h1>
-      {photo ? <figure className={styles.editorialPhoto}>{photo}</figure> : null}
-      <div className={styles.editorialMeta}>{date}<p className={styles.venue} data-wedding-motion="copy">{page.venue}</p></div>
+      <div className={styles.editorialHeading}><p>WEDDING<br />INVITATION</p><span>{page.weddingDateTime.year}</span></div>
+      <div className={`${styles.editorialLayout} ${!photo ? styles.editorialWithoutPhoto : ''}`}>
+        {photo ? <figure className={styles.editorialPhoto}>{photo}</figure> : null}
+        <div className={styles.editorialText}>
+          <p className={styles.editorialKicker}>OUR SPECIAL DAY</p>
+          <h1 data-wedding-motion="copy" id={titleId} className={styles.editorialNames}>
+            <span>{page.groomName}</span><span aria-hidden="true" className={styles.join}>×</span><span>{page.brideName}</span>
+          </h1>
+          <div className={styles.editorialMeta}>
+            <p className={styles.editorialDateNumber}>{String(page.weddingDateTime.month + 1).padStart(2, '0')}.{String(page.weddingDateTime.day).padStart(2, '0')}</p>
+            {date}<p className={styles.venue} data-wedding-motion="copy">{page.venue}</p>
+          </div>
+        </div>
+      </div>
     </section>
   );
 

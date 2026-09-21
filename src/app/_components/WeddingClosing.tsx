@@ -30,7 +30,15 @@ export function WeddingClosing({
       data-theme={theme}
       aria-label={`${groomName}과 ${brideName}의 결혼식 초대 마무리`}
     >
-      {theme === 'romantic' ? (
+      {theme === 'classic-r' ? (
+        <>
+          <p className={styles.modernEyebrow}>OUR WEDDING DAY</p>
+          <p className={styles.modernNames}>{groomName}<br />{brideName}</p>
+          {weddingDateTime ? <p className={styles.modernDate}>{weddingDateTime.year}. {String(weddingDateTime.month + 1).padStart(2, '0')}. {String(weddingDateTime.day).padStart(2, '0')}</p> : null}
+          <p className={styles.modernThanks}>THANK YOU</p>
+          <p className={styles.modernMessage}>귀한 걸음과 따뜻한 마음에 감사드립니다</p>
+        </>
+      ) : theme === 'romantic' ? (
         <>
           {imageUrl ? <img className={styles.photoFinalImage} src={imageUrl} alt={`${groomName} · ${brideName}의 웨딩 사진`} loading="lazy" decoding="async" /> : null}
           <div className={styles.photoFinalCopy}>

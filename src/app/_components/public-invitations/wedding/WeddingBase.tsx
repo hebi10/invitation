@@ -203,7 +203,7 @@ export default function WeddingBase({ state, theme, demoComments, showMap = true
               <strong>{page.weddingDateTime.day}</strong>
               <span>{page.weddingDateTime.year}</span>
               <span>{new Date(Date.UTC(page.weddingDateTime.year, page.weddingDateTime.month, page.weddingDateTime.day)).toLocaleDateString('ko-KR', { weekday: 'long', timeZone: 'UTC' })}</span>
-            </div> : theme === 'romantic' ? <div className={styles.photoDate} aria-label={page.date}>
+            </div> : theme === 'romantic' || theme === 'classic-r' ? <div className={styles.photoDate} aria-label={page.date}>
               <span>{page.weddingDateTime.year}</span>
               <strong>{String(page.weddingDateTime.month + 1).padStart(2, '0')}.{String(page.weddingDateTime.day).padStart(2, '0')}</strong>
               <span>{new Date(Date.UTC(page.weddingDateTime.year, page.weddingDateTime.month, page.weddingDateTime.day)).toLocaleDateString('ko-KR', { weekday: 'long', timeZone: 'UTC' })}</span>
@@ -235,7 +235,7 @@ export default function WeddingBase({ state, theme, demoComments, showMap = true
         </div>
         {showMap && storedContent.mapHref ? (
           <LocationMap
-            appearance={theme === 'emotional' ? 'natural' : theme === 'gyeol' ? 'classic' : theme === 'romantic' ? 'photo' : 'simple'}
+            appearance={theme === 'emotional' ? 'natural' : theme === 'gyeol' ? 'classic' : theme === 'romantic' || theme === 'classic-r' ? 'photo' : 'simple'}
             address={ceremonyAddress}
             venueName={page.venue}
             kakaoMapConfig={pageData?.kakaoMap}
