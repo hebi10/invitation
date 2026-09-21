@@ -27,6 +27,7 @@ import {
 } from './pageWizardWorkspaceState';
 import type { InvitationPageSeed } from '@/types/invitationPage';
 import styles from './PageWizardWorkspace.module.css';
+import { WizardFieldValidationProvider } from './WizardFieldValidation';
 import { useDialogLayer } from '@/hooks/useDialogLayer';
 
 type PageWizardWorkspaceProps = {
@@ -202,13 +203,11 @@ export default function PageWizardWorkspace({
       />
 
       <div
-        inert={isDialogOpen ? true : undefined}
         aria-hidden={isDialogOpen ? true : undefined}
       >
       <header className={styles.topBar}>
         <div className={styles.topBarInner}>
           <div className={styles.identity}>
-            <span className={styles.productLabel}>초대장 편집</span>
             <div>
               <h1>{title}</h1>
               <p>{subtitle}</p>
@@ -249,6 +248,7 @@ export default function PageWizardWorkspace({
       {!setupOnly ? <div className={styles.mobileProgress}>
         <div>
           <span>{activeSectionIndex + 1} / {sections.length}</span>
+          <strong>{activeSection.title}</strong>
         </div>
         <button
           type="button"
@@ -279,32 +279,7 @@ export default function PageWizardWorkspace({
             <p>{activeSection.description}</p>
           </header>
 
-          {isFinalSection ? (
-            <section className={styles.reviewSummary} aria-label="입력 내용 검토">
-              <h3>공유 전 확인</h3>
-              <dl className={styles.reviewFacts}>
-                {buildWizardReviewFacts(formState, getStepValidation('images').valid).map((fact) => (
-                  <div key={fact.label}><dt>{fact.label}</dt><dd>{fact.value}</dd></div>
-                ))}
-                <div><dt>저장 후 공개 상태</dt><dd>{published ? '공개' : '비공개'}</dd></div>
-              </dl>
-              {formState.metadata.images.wedding ? (
-                <img className={styles.reviewImage} src={formState.metadata.images.wedding} alt="등록한 대표 이미지 확인" />
-              ) : null}
-              <div className={styles.reviewChecks}>
-                {sections.filter((section) => section.id !== 'review').map((section) => {
-                  const validation = getSectionValidation(section);
-                  return (
-                    <button key={section.id} type="button" disabled={isSaving} onClick={() => handleSectionSelect(section.id)} className={styles.reviewCheck}>
-                      <strong>{section.title}</strong>
-                      <span>{validation.valid ? '입력 확인 · 수정' : validation.messages[0] || '필수 입력 확인'}</span>
-                    </button>
-                  );
-                })}
-              </div>
-              <p className={styles.saveHelp}>{canManageSetup ? '내용 저장은 현재 공개 상태를 유지합니다. 공개 여부 변경은 아래 최종 저장 버튼에서 적용됩니다.' : '내용을 저장하면 현재 공개 상태가 유지됩니다. 공개 여부는 관리자가 설정합니다.'}</p>
-            </section>
-          ) : null}
+
 
           <div className={styles.stepList}>
             {activeSection.steps.map((step) => {
@@ -332,14 +307,14 @@ export default function PageWizardWorkspace({
                       </h3>
                       <p>{step.description}</p>
                     </div>
-                    {step.previewSection && !fullPreview ? (
+                    {step.previewSection ? (
                       <button
                         type="button"
                         className={styles.stepPreviewAction}
                         aria-pressed={previewStepKey === step.key}
-                        onClick={() => openPreview(step.key)}
+                        onClick={() => fullPreview ? setIsFullPreviewOpen(true) : openPreview(step.key)}
                       >
-                        입력 내용 확인
+                        {fullPreview ? '편집 위치 미리보기' : '입력 내용 확인'}
                       </button>
                     ) : null}
                   </div>
@@ -351,18 +326,47 @@ export default function PageWizardWorkspace({
                   ) : null}
 
                   <div className={styles.stepContent}>
-                    <fieldset className={styles.editorFields} disabled={isSaving} aria-label={`${step.title} 입력`}>
-                    {step.key === 'music' || step.key === 'extra' ? (
+                    <WizardFieldValidationProvider messages={validation.messages} enabled={!validation.valid && (interactedStepKeys.has(step.key) || attemptedSteps.has(step.key))}>
+                    <fieldset className={styles.editorFields} disabled={isSaving} aria-label={`${step.title} 입력`}
+                      onBlurCapture={() => setAttemptedSteps(previous => previous.has(step.key) ? previous : new Set([...previous, step.key]))}>
+                    {(step.key === 'music' || step.key === 'extra') && activeSection.steps.length > 1 ? (
                       <OptionalSettings invalid={!validation.valid} title={step.title}>
                         {renderStepContent(step.key)}
                       </OptionalSettings>
                     ) : renderStepContent(step.key)}
                     </fieldset>
+                    </WizardFieldValidationProvider>
                   </div>
                 </section>
               );
             })}
           </div>
+          {isFinalSection ? (
+            <section className={styles.reviewSummary} aria-label="입력 내용 검토">
+              <h3>공유 전 확인</h3>
+              <dl className={styles.reviewFacts}>
+                {buildWizardReviewFacts(formState, getStepValidation('images').valid).map((fact) => (
+                  <div key={fact.label}><dt>{fact.label}</dt><dd>{fact.value}</dd></div>
+                ))}
+                <div><dt>저장 후 공개 상태</dt><dd>{published ? '공개' : '비공개'}</dd></div>
+              </dl>
+              {formState.metadata.images.wedding ? (
+                <img className={styles.reviewImage} src={formState.metadata.images.wedding} alt="등록한 대표 이미지 확인" />
+              ) : null}
+              <div className={styles.reviewChecks}>
+                {sections.filter((section) => section.id !== 'review').map((section) => {
+                  const validation = getSectionValidation(section);
+                  return (
+                    <button key={section.id} type="button" disabled={isSaving} onClick={() => handleSectionSelect(section.id)} className={styles.reviewCheck}>
+                      <strong>{section.title}</strong>
+                      <span>{validation.valid ? '입력 확인 · 수정' : validation.messages[0] || '필수 입력 확인'}</span>
+                    </button>
+                  );
+                })}
+              </div>
+              <p className={styles.saveHelp}>{canManageSetup ? '내용 저장은 현재 공개 상태를 유지합니다. 공개 여부 변경은 아래 최종 저장 버튼에서 적용됩니다.' : '내용을 저장하면 현재 공개 상태가 유지됩니다. 공개 여부는 관리자가 설정합니다.'}</p>
+            </section>
+          ) : null}
           {activeSection.id === 'setup' && canManageSetup ? setupContent : null}
         </main>
         {fullPreview ? <aside className={styles.livePreview} aria-label="청첩장 실시간 미리보기">

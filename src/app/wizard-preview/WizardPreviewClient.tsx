@@ -72,6 +72,13 @@ export default function WizardPreviewClient() {
     const receive = (event: MessageEvent) => {
       if (window.parent === window || event.origin !== window.location.origin || event.source !== window.parent) return;
       const message = event.data;
+      if (message?.type === 'wedding-wizard-preview:section') {
+        const targets: Record<string, string> = { greeting: 'invitation', images: 'gallery', schedule: 'ceremony', venue: 'schedule', extra: 'gift' };
+        const section = targets[message.step];
+        if (section) document.querySelector(`[data-wedding-section="${section}"]`)?.scrollIntoView({ block: 'start' });
+        else window.scrollTo({ top: 0, behavior: 'instant' });
+        return;
+      }
       if (message?.type === 'wedding-wizard-preview:top') {
         window.scrollTo({ top: 0, behavior: 'instant' });
         setIntroRun(run => run + 1);

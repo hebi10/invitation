@@ -1,3 +1,4 @@
+import { WizardField } from '../WizardFieldValidation';
 import { PersonEditorCard } from '@/app/page-wizard/pageWizardEditorPanels';
 
 import TemplateChoiceGroup from '../TemplateChoiceGroup';
@@ -16,11 +17,29 @@ export default function GreetingStep({
   updateForm,
   onPersonFieldChange,
   onParentFieldChange,
-}: GreetingStepProps) {
+  mode = 'all',
+}: GreetingStepProps & { mode?: 'all' | 'greeting' | 'family' }) {
+  const familyFields = (
+    <div className={styles.fieldGrid}>
+      {(['groom', 'bride'] as const).map((role) => (
+        <PersonEditorCard
+          key={role}
+          role={role}
+          label={role === 'groom' ? '신랑·가족 정보' : '신부·가족 정보'}
+          nameReadOnly={formState.eventType === 'wedding'}
+          person={formState.couple[role]}
+          disabled={false}
+          onPersonFieldChange={onPersonFieldChange}
+          onParentFieldChange={onParentFieldChange}
+        />
+      ))}
+    </div>
+  );
+  if (mode === 'family') return formState.eventType === 'wedding' ? familyFields : null;
   if (formState.eventType === 'first-birthday') {
     return (
       <div className={styles.fieldGrid}>
-        <label className={styles.field}>
+        <WizardField label={'인사말'} className={styles.field}>
           {renderFieldMeta('인사말', 'required')}
           <textarea
             className={styles.textarea}
@@ -34,9 +53,9 @@ export default function GreetingStep({
               })
             }
           />
-        </label>
+        </WizardField>
 
-        <label className={styles.field}>
+        <WizardField label={'인사말 서명'} className={styles.field}>
           {renderFieldMeta('인사말 서명', 'optional')}
           <input
             className={styles.input}
@@ -50,7 +69,7 @@ export default function GreetingStep({
               })
             }
           />
-        </label>
+        </WizardField>
       </div>
     );
   }
@@ -58,7 +77,7 @@ export default function GreetingStep({
   if (formState.eventType === 'opening') {
     return (
       <div className={styles.fieldGrid}>
-        <label className={styles.field}>
+        <WizardField label={'개업 인사말'} className={styles.field}>
           {renderFieldMeta('개업 인사말', 'required')}
           <textarea
             className={styles.textarea}
@@ -72,9 +91,9 @@ export default function GreetingStep({
               })
             }
           />
-        </label>
+        </WizardField>
 
-        <label className={styles.field}>
+        <WizardField label={'인사말 서명'} className={styles.field}>
           {renderFieldMeta('인사말 서명', 'optional')}
           <input
             className={styles.input}
@@ -88,14 +107,14 @@ export default function GreetingStep({
               })
             }
           />
-        </label>
+        </WizardField>
       </div>
     );
   }
 
   return (
     <div className={styles.fieldGrid}>
-      <label className={styles.field}>
+      <WizardField label={'인사말'} className={styles.field}>
         {renderFieldMeta('인사말', 'required')}
         <textarea
           className={styles.textarea}
@@ -109,12 +128,12 @@ export default function GreetingStep({
             })
           }
         />
-      </label>
+      </WizardField>
 
       <TemplateChoiceGroup
         labelId="greeting-template-title"
         title="인사말 템플릿"
-        description="선택하면 인사말에 적용됩니다."
+        description="문구를 미리 보고 마음에 드는 인사말을 적용해 주세요."
         templates={GREETING_TEMPLATES}
         value={formState.pageData?.greetingMessage ?? ''}
         onSelect={(value) =>
@@ -126,7 +145,7 @@ export default function GreetingStep({
         }
       />
 
-      <label className={styles.field}>
+      <WizardField label={'인사말 서명'} className={styles.field}>
         {renderFieldMeta('인사말 서명', 'optional')}
         <input
           className={styles.input}
@@ -143,28 +162,9 @@ export default function GreetingStep({
             })
           }
         />
-      </label>
+      </WizardField>
 
-      <div className={styles.twoColumnGrid}>
-        <PersonEditorCard
-          role="groom"
-          label="신랑 정보"
-          nameReadOnly={formState.eventType === 'wedding'}
-          person={formState.couple.groom}
-          disabled={false}
-          onPersonFieldChange={onPersonFieldChange}
-          onParentFieldChange={onParentFieldChange}
-        />
-        <PersonEditorCard
-          role="bride"
-          label="신부 정보"
-          nameReadOnly={formState.eventType === 'wedding'}
-          person={formState.couple.bride}
-          disabled={false}
-          onPersonFieldChange={onPersonFieldChange}
-          onParentFieldChange={onParentFieldChange}
-        />
-      </div>
+      {mode === 'all' ? familyFields : null}
     </div>
   );
 }

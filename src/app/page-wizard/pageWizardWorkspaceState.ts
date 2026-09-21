@@ -143,6 +143,14 @@ export function buildWizardReviewFacts(config: InvitationPageSeed, imagesValid: 
     { label: '주소', value: valueOrMissing(config.pageData?.ceremonyAddress) },
     { label: '대표 이미지', value: `${config.metadata.images.wedding?.trim() ? '등록됨' : '미등록'}${imagesValid ? '' : ' · 사진 설정 확인 필요'}` },
   );
+  if (eventType === 'wedding') {
+    const gift = config.pageData?.giftInfo;
+    facts.push(
+      { label: '갤러리', value: `${config.pageData?.galleryImages?.length ?? 0}장` },
+      { label: '계좌 안내', value: `신랑측 ${gift?.groomAccounts?.length ?? 0}개 · 신부측 ${gift?.brideAccounts?.length ?? 0}개` },
+      { label: '연락처', value: `신랑 ${config.couple.groom.phone?.trim() || '미공개'} · 신부 ${config.couple.bride.phone?.trim() || '미공개'}` },
+    );
+  }
   return facts;
 }
 

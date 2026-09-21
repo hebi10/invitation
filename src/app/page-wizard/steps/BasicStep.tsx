@@ -1,3 +1,4 @@
+import { WizardField } from '../WizardFieldValidation';
 import styles from '../page.module.css';
 import { renderFieldMeta, type BasicStepProps } from '../pageWizardShared';
 
@@ -197,20 +198,19 @@ export default function BasicStep({
   return (
     <div className={styles.fieldGrid}>
       <div className={styles.twoColumnGrid}>
-        <label className={styles.field}>
+        <WizardField label="신랑 이름" className={styles.field}>
           {renderFieldMeta('신랑 이름', 'required')}
           <input className={styles.input} value={formState.couple.groom.name} placeholder="신랑 이름"
             onChange={(event) => onPersonFieldChange('groom', 'name', event.target.value)} />
-        </label>
-        <label className={styles.field}>
+        </WizardField>
+        <WizardField label="신부 이름" className={styles.field}>
           {renderFieldMeta('신부 이름', 'required')}
           <input className={styles.input} value={formState.couple.bride.name} placeholder="신부 이름"
             onChange={(event) => onPersonFieldChange('bride', 'name', event.target.value)} />
-        </label>
+        </WizardField>
       </div>
       <p className={styles.sectionText}>
-        표지에는 두 분의 이름과 예식 일시·장소가 표시됩니다.
-        초대 문구는 ‘인사말과 관계 정보’, 링크를 보낼 때 표시되는 문구는 ‘검토 및 저장’에서 작성해 주세요.
+        청첩장에 표시할 이름을 입력해 주세요.
       </p>
     </div>
   );

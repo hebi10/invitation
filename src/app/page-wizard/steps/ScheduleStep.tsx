@@ -1,4 +1,6 @@
+import { WizardField } from '../WizardFieldValidation';
 import styles from '../page.module.css';
+import panelStyles from '../pageWizardEditorPanels.module.css';
 import { buildWeddingDateObject } from '../pageWizardData';
 import { renderFieldMeta, type ScheduleStepProps } from '../pageWizardShared';
 
@@ -8,7 +10,8 @@ export default function ScheduleStep({
   currentWeddingSummary,
   onDateInputChange,
   onTimeInputChange,
-}: ScheduleStepProps) {
+  mode = 'all',
+}: ScheduleStepProps & { mode?: 'primary' | 'details' | 'all' }) {
   const weddingDate = buildWeddingDateObject(previewFormState);
   const isOpening = previewFormState.eventType === 'opening';
 
@@ -36,8 +39,9 @@ export default function ScheduleStep({
 
   return (
     <div className={styles.fieldGrid}>
+      {mode !== 'details' ? (<>
       <div className={styles.twoColumnGrid}>
-        <label className={styles.field}>
+        <WizardField label={isOpening ? '오픈 날짜' : '예식 날짜'} className={styles.field}>
           {renderFieldMeta(isOpening ? '오픈 날짜' : '예식 날짜', 'required')}
           <input
             className={styles.input}
@@ -57,8 +61,8 @@ export default function ScheduleStep({
             }
             onChange={(event) => onDateInputChange(event.target.value)}
           />
-        </label>
-        <label className={styles.field}>
+        </WizardField>
+        <WizardField label={isOpening ? '오픈 시간' : '예식 시간'} className={styles.field}>
           {renderFieldMeta(isOpening ? '오픈 시간' : '예식 시간', 'required')}
           <input
             className={styles.input}
@@ -75,7 +79,7 @@ export default function ScheduleStep({
             }
             onChange={(event) => onTimeInputChange(event.target.value)}
           />
-        </label>
+        </WizardField>
       </div>
 
       <div className={styles.summaryCard}>
@@ -83,12 +87,20 @@ export default function ScheduleStep({
         <strong className={styles.summaryValue}>{currentWeddingSummary}</strong>
       </div>
 
+      </>) : null}
+      {mode !== 'primary' ? (
+      <details className={panelStyles.detailsGroup}>
+        <summary className={panelStyles.detailsSummary}>
+          {isOpening ? '영업시간·예약 안내' : '본식 상세·피로연 안내'}
+          <span className={panelStyles.familySummary}>선택 입력</span>
+        </summary>
+        <div className={`${styles.fieldGrid} ${panelStyles.detailsBody}`}>
       <div className={styles.twoColumnGrid}>
         <label className={styles.field}>
           {renderFieldMeta(
-            isOpening ? '영업 시작 시간' : '본식 시간',
+            isOpening ? '영업 시작 시간 안내' : '별도 시간 안내 문구',
             'optional',
-            isOpening ? '예: 오전 10시' : '예: 오후 2시 30분'
+            isOpening ? '예: 오전 10시' : '예: 오후 2시 30분부터 입장'
           )}
           <input
             className={styles.input}
@@ -97,7 +109,7 @@ export default function ScheduleStep({
               previewFormState.pageData?.ceremonyTime ??
               ''
             }
-            placeholder={isOpening ? '예: 오전 10시' : '예: 오후 2시 30분'}
+            placeholder={isOpening ? '예: 오전 10시' : '예: 오후 2시 30분부터 입장'}
             onChange={(event) =>
               handleScheduleDetailChange('ceremony', 'time', event.target.value)
             }
@@ -105,7 +117,7 @@ export default function ScheduleStep({
         </label>
         <label className={styles.field}>
           {renderFieldMeta(
-            isOpening ? '매장 내 위치' : '본식 장소',
+            isOpening ? '매장 내 위치' : '층·홀 이름',
             'optional',
             isOpening ? '예: 1층 쇼룸' : '예: 3층 그랜드홀'
           )}
@@ -152,6 +164,9 @@ export default function ScheduleStep({
           />
         </label>
       </div>
+        </div>
+      </details>
+      ) : null}
     </div>
   );
 }

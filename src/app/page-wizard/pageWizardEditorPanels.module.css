@@ -359,6 +359,80 @@
 }
 
 .textButton {
-  min-height: 36px;
+  min-height: 44px;
   color: var(--operation-color-action);
+}
+
+/* Keep nested family and account inputs as wide as their parent section. */
+.input,
+.textarea {
+  min-width: 0;
+  font-size: 16px;
+}
+
+.label {
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.sectionDescription,
+.subCardDescription,
+.fieldHint,
+.countText {
+  font-size: 14px;
+}
+
+.nestedCard {
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+
+.detailsSummary {
+  min-height: 48px;
+  padding: 12px 0;
+  box-sizing: border-box;
+  font-size: 15px;
+  font-weight: 500;
+}
+
+.detailsSummary:focus-visible,
+.textButton:focus-visible,
+.ghostButton:focus-visible {
+  outline: 2px solid var(--operation-color-focus);
+  outline-offset: 3px;
+}
+
+.familySummary {
+  margin-left: 12px;
+  color: var(--operation-color-text-secondary);
+  font-size: 14px;
+  font-weight: 400;
+  overflow-wrap: anywhere;
+}
+
+.templatePreview {
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+  border: 1px solid var(--operation-color-border);
+  color: var(--operation-color-text);
+  font-size: 16px;
+}
+
+.templatePreview p {
+  margin: 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  line-height: 1.8;
+}
+
+@media (max-width: 640px) {
+  .subCard {
+    padding: 12px;
+  }
+
+  .textButton {
+    padding: 0 8px;
+  }
 }

@@ -1,0 +1,6 @@
+.error {
+  display: block;
+  color: var(--operation-color-danger);
+  font-size: 14px;
+  line-height: 1.6;
+}

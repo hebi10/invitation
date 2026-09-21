@@ -1,3 +1,4 @@
+import { WizardField } from '../WizardFieldValidation';
 import VenueLocationPreview from './VenueLocationPreview';
 import styles from '../page.module.css';
 import locationStyles from './VenueLocationPreview.module.css';
@@ -22,12 +23,12 @@ export default function VenueStep({
     formState.pageData?.kakaoMap?.markerTitle?.trim() || selectedVenueName || selectedAddress;
   const isFirstBirthday = formState.eventType === 'first-birthday';
   const isGeneralEvent = formState.eventType === 'general-event';
-  const venueLabel = isGeneralEvent ? '행사 장소' : isFirstBirthday ? '돌잔치 장소' : '예식장';
+  const venueLabel = formState.eventType === 'opening' ? '매장' : isGeneralEvent ? '행사 장소' : isFirstBirthday ? '돌잔치 장소' : '예식장';
 
   return (
     <section className={`${styles.fieldGrid} ${locationStyles.venueSection}`} aria-label="장소 안내 입력">
       <h3 className={locationStyles.sectionTitle}>장소 안내</h3>
-      <label className={styles.field}>
+      <WizardField label={`${venueLabel} 이름`} className={styles.field}>
         {renderFieldMeta(`${venueLabel} 이름`, 'required')}
         <input
           className={styles.input}
@@ -53,13 +54,13 @@ export default function VenueStep({
             })
           }
         />
-      </label>
+      </WizardField>
 
-      <label className={styles.field}>
+      <WizardField label={'주소'} className={styles.field}>
         {renderFieldMeta(
           '주소',
           'required',
-          '도로명 주소나 지번 주소 모두 입력 가능합니다. 주소 입력 후 "주소 찾기" 버튼을 눌러주세요.',
+          '도로명 또는 지번 주소를 입력한 뒤 지도 위치를 확인해 주세요.',
         )}
         <input
           className={styles.input}
@@ -87,7 +88,7 @@ export default function VenueStep({
             })
           }
         />
-      </label>
+      </WizardField>
 
       <div className={styles.inlineActions}>
         <button
@@ -96,10 +97,10 @@ export default function VenueStep({
           onClick={onSearchAddress}
           disabled={isSearchingAddress || !(formState.pageData?.ceremonyAddress ?? '').trim()}
         >
-          {isSearchingAddress ? '주소 확인 중' : '주소 찾기'}
+          {isSearchingAddress ? '위치 확인 중' : '지도 위치 확인'}
         </button>
         <span className={hasCoordinates ? styles.choiceSectionBadge : styles.autoStatusHint}>
-          {hasCoordinates ? '입력 완료' : '지도 링크가 연결됩니다. 오류가 나면 다시 입력해 주세요.'}
+          {hasCoordinates ? '지도 위치 확인 완료' : '주소를 입력하고 지도 위치를 확인해 주세요.'}
         </span>
       </div>
 
@@ -114,10 +115,12 @@ export default function VenueStep({
         />
       ) : null}
 
-      <label className={styles.field}>
+      <WizardField label={`${venueLabel} 연락처`} className={styles.field}>
         {renderFieldMeta(`${venueLabel} 연락처`, 'optional')}
         <input
           className={styles.input}
+          type="tel"
+          inputMode="tel"
           value={formState.pageData?.ceremonyContact ?? ''}
           placeholder="02-1234-5678"
           onChange={(event) =>
@@ -128,10 +131,10 @@ export default function VenueStep({
             })
           }
         />
-      </label>
+      </WizardField>
 
-      <label className={styles.field}>
-        {renderFieldMeta('안내 문구', 'optional')}
+      <WizardField label={'오시는 길 안내 문구'} className={styles.field}>
+        {renderFieldMeta('오시는 길 안내 문구', 'optional')}
         <textarea
           className={styles.textarea}
           value={formState.pageData?.mapDescription ?? ''}
@@ -150,7 +153,7 @@ export default function VenueStep({
             })
           }
         />
-      </label>
+      </WizardField>
     </section>
   );
 }

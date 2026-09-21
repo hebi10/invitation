@@ -26,6 +26,7 @@ const GIFT_MESSAGE_TEMPLATES = [
 ] as const;
 
 export default function ExtraStep({
+  mode = 'all',
   formState,
   updateForm,
   onAccountAdd,
@@ -34,7 +35,7 @@ export default function ExtraStep({
   onGuideAdd,
   onGuideRemove,
   onGuideChange,
-}: ExtraStepProps) {
+}: ExtraStepProps & { mode?: 'all' | 'accounts' | 'guides' }) {
   const giftMessage = formState.pageData?.giftInfo?.message ?? '';
   const isFirstBirthday = formState.eventType === 'first-birthday';
 
@@ -69,6 +70,7 @@ export default function ExtraStep({
 
   return (
     <div className={styles.fieldGrid}>
+      {mode !== 'guides' ? <>
       <section className={styles.formCard}>
         <label className={styles.field}>
           {renderFieldMeta(isFirstBirthday ? '마음 전하기 안내 문구' : '축의금 안내 문구', 'optional')}
@@ -88,7 +90,7 @@ export default function ExtraStep({
         <TemplateChoiceGroup
           labelId="gift-message-template-title"
           title={isFirstBirthday ? '마음 전하기 템플릿' : '축의금 안내 템플릿'}
-          description="선택하면 안내 문구에 적용됩니다."
+          description="문구를 미리 확인한 뒤 적용해 주세요."
           templates={GIFT_MESSAGE_TEMPLATES}
           value={giftMessage}
           onSelect={(value) =>
@@ -124,7 +126,8 @@ export default function ExtraStep({
         />
       </div>
 
-      <section className={styles.formCard}>
+      </> : null}
+      {mode !== 'accounts' ? <section className={styles.formCard}>
         <GuideSectionPanel
           kind="venueGuide"
           title="교통 · 방문 안내"
@@ -149,7 +152,7 @@ export default function ExtraStep({
           onRemove={onGuideRemove}
           onChange={onGuideChange}
         />
-      </section>
+      </section> : null}
     </div>
   );
 }

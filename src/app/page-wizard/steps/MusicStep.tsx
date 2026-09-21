@@ -131,7 +131,7 @@ export default function MusicStep({
 
       <section className={`${styles.formCard} ${styles.musicControlCard}`}>
         <div className={`${styles.twoColumnGrid} ${styles.musicControlGrid}`}>
-          <label className={`${styles.field} ${styles.musicField}`}>
+          <div className={`${styles.field} ${styles.musicField}`}>
             {renderFieldMeta('음악 카테고리', 'optional')}
             <button
               type="button"
@@ -144,7 +144,7 @@ export default function MusicStep({
                 )
               }
               aria-expanded={openOptionPanel === 'category'}
-              aria-haspopup="listbox"
+              aria-label={`음악 카테고리: ${selectedCategory?.label ?? '선택'}`}
               disabled={!formState.musicEnabled}
             >
               <span className={styles.musicSelectButtonValue}>
@@ -156,13 +156,14 @@ export default function MusicStep({
             </button>
 
             {openOptionPanel === 'category' ? (
-              <div className={styles.musicOptionList} role="radiogroup" aria-label="음악 카테고리 옵션">
+              <div className={styles.musicOptionList} role="group" aria-label="음악 카테고리 옵션">
                 {INVITATION_MUSIC_LIBRARY.map((category) => {
                   const isActive = category.id === musicCategoryId;
 
                   return (
                     <button
                       key={`music-category-${category.id}`}
+                      aria-pressed={isActive}
                       type="button"
                       className={`${styles.musicOptionCard} ${isActive ? styles.musicOptionCardActive : ''}`}
                       onClick={() => {
@@ -178,9 +179,9 @@ export default function MusicStep({
                 })}
               </div>
             ) : null}
-          </label>
+          </div>
 
-          <label className={`${styles.field} ${styles.musicField}`}>
+          <div className={`${styles.field} ${styles.musicField}`}>
             {renderFieldMeta('곡 선택', 'optional')}
             <button
               type="button"
@@ -191,7 +192,7 @@ export default function MusicStep({
                 setOpenOptionPanel((current) => (current === 'track' ? null : 'track'))
               }
               aria-expanded={openOptionPanel === 'track'}
-              aria-haspopup="listbox"
+              aria-label={`곡 선택: ${selectedTrack?.title ?? '선택'}`}
               disabled={!formState.musicEnabled || musicTracks.length === 0}
             >
               <span className={styles.musicSelectButtonValue}>
@@ -207,7 +208,7 @@ export default function MusicStep({
             </button>
 
             {openOptionPanel === 'track' ? (
-              <div className={styles.musicOptionList} role="radiogroup" aria-label="음악 곡 옵션">
+              <div className={styles.musicOptionList} role="group" aria-label="음악 곡 옵션">
                 {musicTracks.length > 0 ? (
                   musicTracks.map((track) => {
                     const isActive = selectedTrack?.id === track.id;
@@ -215,6 +216,7 @@ export default function MusicStep({
                     return (
                       <button
                         key={`music-track-${track.id}`}
+                        aria-pressed={isActive}
                         type="button"
                         className={`${styles.musicOptionCard} ${isActive ? styles.musicOptionCardActive : ''}`}
                         onClick={() => {
@@ -233,14 +235,16 @@ export default function MusicStep({
                 )}
               </div>
             ) : null}
-          </label>
+          </div>
 
           <label className={`${styles.field} ${styles.musicField} ${styles.fieldWide}`}>
-            {renderFieldMeta('볼륨', 'optional', '0은 음소거, 1은 최대 음량입니다.')}
+            {renderFieldMeta('볼륨', 'optional', '0%는 음소거, 100%는 최대 음량입니다.')}
             <div className={styles.musicRangeRow}>
               <input
                 className={styles.musicRangeInput}
                 type="range"
+                aria-label="배경음악 볼륨"
+                aria-valuetext={`${Math.round(musicVolume * 100)}%`}
                 min={0}
                 max={1}
                 step={0.05}

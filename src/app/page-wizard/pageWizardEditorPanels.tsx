@@ -148,6 +148,9 @@ export function PersonEditorCard({
           )}
           <input
             className={styles.input}
+            type="tel"
+            inputMode="tel"
+            autoComplete="tel"
             value={person.phone ?? ''}
             placeholder="예: 010-1234-5678"
             onChange={(event) =>
@@ -159,7 +162,12 @@ export function PersonEditorCard({
       </div>
 
       <details className={styles.detailsGroup}>
-        <summary className={styles.detailsSummary}>부모님 정보 추가 입력</summary>
+        <summary className={styles.detailsSummary}>
+          부모님 정보
+          <span className={styles.familySummary}>
+            {[person.father?.name, person.mother?.name].filter(Boolean).join(' · ') || '선택 입력'}
+          </span>
+        </summary>
         <div className={styles.detailsBody}>
           {(['father', 'mother'] as const).map((parentRole) => {
             const parent = person[parentRole];
@@ -217,6 +225,8 @@ export function PersonEditorCard({
                     {renderFieldMeta('연락처', 'optional')}
                     <input
                       className={styles.input}
+                      type="tel"
+                      inputMode="tel"
                       value={parent?.phone ?? ''}
                       placeholder="예: 010-1234-5678"
                       onChange={(event) =>
@@ -408,10 +418,11 @@ export function AccountSectionPanel({
                   {renderFieldMeta(
                     '계좌번호',
                     'optional',
-                    '하이픈을 포함해 적으면 손님이 읽기 더 편합니다.'
+                    '숫자만 입력해도 됩니다. 앞자리 0을 포함해 정확히 적어 주세요.'
                   )}
                   <input
                     className={styles.input}
+                    inputMode="numeric"
                     value={account.accountNumber}
                     placeholder="예: 123456-78-901234"
                     onChange={(event) =>

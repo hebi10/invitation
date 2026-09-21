@@ -4,6 +4,7 @@ import styles from '../page.module.css';
 import type { ImagesStepProps, UploadFieldKind } from '../pageWizardShared';
 import DemoExperienceImagePicker from './DemoExperienceImagePicker';
 import previewStyles from './ShareImagePreview.module.css';
+import imageStyles from './ImagesStep.module.css';
 
 const SHARE_PRESETS = [
   { url: '/images/share-defaults/ivory-flowers.webp', label: '아이보리 꽃' },
@@ -181,7 +182,8 @@ export default function ImagesStep({
   onGalleryImageMove,
   experience = false,
   onDemoImageSelect,
-}: ImagesStepProps) {
+  mode = 'all',
+}: ImagesStepProps & { mode?: 'all' | 'photos' | 'sharing' }) {
   const galleryImages = useMemo(
     () => formState.pageData?.galleryImages ?? [],
     [formState.pageData?.galleryImages]
@@ -252,13 +254,13 @@ export default function ImagesStep({
 
   return (
     <div className={styles.fieldGrid}>
-      {experience && onDemoImageSelect ? (
+      {mode !== 'sharing' && experience && onDemoImageSelect ? (
         <DemoExperienceImagePicker
           selectedImage={coverImage}
           onSelect={onDemoImageSelect}
         />
       ) : null}
-      <SingleImageCard
+      {mode !== 'sharing' ? <SingleImageCard
         title="대표 이미지"
         description={
           isGeneralEvent
@@ -281,62 +283,16 @@ export default function ImagesStep({
         onTriggerPicker={onTriggerPicker}
         onRemove={onCoverImageRemove}
         onImageError={() => markSingleImageAsBroken('cover')}
-      />
+      /> : null}
 
-      <SingleImageCard
-        title="공유 미리보기 이미지"
-        description="카카오톡이나 SNS에 초대장 링크를 붙여넣었을 때 보이는 사진입니다."
-        imageUrl={socialPreviewImage}
-        fallbackImage={coverImage}
-        shareTitle={formState.metadata.title || formState.displayName}
-        shareDescription={formState.metadata.description || formState.description}
-        onPresetSelect={formState.eventType === 'wedding' ? url => updateForm(draft => { draft.metadata.images.social = url; }) : undefined}
-        isBroken={brokenSingleImages.sharePreview}
-        placeholder="공유 미리보기 이미지 미리보기"
-        emptyHint="등록하지 않으면 대표 이미지를 공유 미리보기 이미지로 사용합니다."
-        removeLabel="공유 미리보기 제거"
-        uploadLabel="공유 이미지 올리기"
-        uploadKind="sharePreview"
-        isUploading={uploadingField === 'sharePreview'}
-        canUploadImages={canUploadImages}
-        inputRef={sharePreviewUploadInputRef}
-        onUpload={(event) => void onSharePreviewUpload(event)}
-        onTriggerPicker={onTriggerPicker}
-        onRemove={onSharePreviewImageRemove}
-        onImageError={() => markSingleImageAsBroken('sharePreview')}
-      />
-
-      <SingleImageCard
-        title="카카오 카드 이미지"
-        description="청첩장의 카카오톡 공유 버튼을 눌렀을 때 보내는 카드 사진입니다."
-        imageUrl={kakaoCardImage}
-        fallbackImage={socialPreviewImage || coverImage}
-        shareTitle={formState.metadata.title || formState.displayName}
-        shareDescription={formState.metadata.description || formState.description || [formState.date, formState.venue].filter(Boolean).join(' · ')}
-        onPresetSelect={formState.eventType === 'wedding' ? url => updateForm(draft => { draft.metadata.images.kakaoCard = url; }) : undefined}
-        isBroken={brokenSingleImages.kakaoCard}
-        placeholder="카카오 카드 이미지 미리보기"
-        emptyHint="등록하지 않으면 공유 미리보기 이미지, 그다음 대표 이미지 순서로 사용합니다."
-        removeLabel="카카오 카드 제거"
-        uploadLabel="카카오 카드 올리기"
-        uploadKind="kakaoCard"
-        isUploading={uploadingField === 'kakaoCard'}
-        canUploadImages={canUploadImages}
-        inputRef={kakaoCardUploadInputRef}
-        onUpload={(event) => void onKakaoCardUpload(event)}
-        onTriggerPicker={onTriggerPicker}
-        onRemove={onKakaoCardImageRemove}
-        onImageError={() => markSingleImageAsBroken('kakaoCard')}
-      />
-
-      <section className={styles.uploadCard}>
+      {mode !== 'sharing' ? <section className={styles.uploadCard}>
         <div className={styles.uploadHeader}>
           <div>
             <h3 className={styles.cardTitle}>
               {isFirstBirthday ? '성장 갤러리 이미지' : '갤러리 이미지'}
             </h3>
             <p className={styles.cardText}>
-              최대 {maxGalleryImages}장까지 업로드할 수 있습니다.
+              {galleryImages.length} / {maxGalleryImages}장 · 여러 사진을 한 번에 선택할 수 있습니다.
             </p>
           </div>
           <div className={styles.inlineActions}>
@@ -364,7 +320,7 @@ export default function ImagesStep({
         </div>
 
         {galleryImages.length > 0 ? (
-          <div className={styles.gallerySummaryCard}>
+          <div className={imageStyles.gallery}>
             <button
               type="button"
               className={styles.gallerySummaryButton}
@@ -378,47 +334,45 @@ export default function ImagesStep({
                 </span>
               </div>
               <span className={styles.gallerySummaryAction}>
-                {isGalleryExpanded ? '간단하게 보기' : '모든 이미지 전체보기'}
+                {isGalleryExpanded ? '사진 상세 닫기' : '사진 상세 보기'}
               </span>
             </button>
 
-            <div className={styles.gallerySummaryRow}>
+            <div className={imageStyles.galleryGrid} role="group" aria-label="갤러리 사진 순서">
               {galleryImages.map((imageUrl, index) => (
                 <button
                   key={`gallery-summary-${index}`}
                   type="button"
-                  className={`${styles.gallerySummaryItem} ${
-                    selectedGalleryIndex === index ? styles.gallerySummaryItemActive : ''
-                  }`}
+                  className={imageStyles.galleryPhoto}
                   onClick={() => setSelectedGalleryIndex(index)}
                   aria-label={`갤러리 이미지 ${index + 1} 선택`}
                   aria-pressed={selectedGalleryIndex === index}
                 >
                   {imageUrl && !brokenGalleryIndexes[index] ? (
                     <img
-                      className={styles.gallerySummaryImage}
+                      className={imageStyles.galleryImage}
                       src={imageUrl}
-                      alt={`갤러리 요약 ${index + 1}`}
+                      alt=""
                       loading="lazy"
                       decoding="async"
                       onError={() => handleGalleryImageError(index)}
                     />
                   ) : (
-                    <div className={styles.gallerySummaryPlaceholder}>{index + 1}</div>
+                    <div className={imageStyles.galleryPlaceholder}>사진 확인 필요</div>
                   )}
-                  <span className={styles.gallerySummaryIndex}>{index + 1}</span>
+                  <span className={imageStyles.galleryCaption}>{index + 1}번{selectedGalleryIndex === index ? ' · 선택됨' : ''}</span>
                 </button>
               ))}
             </div>
 
-            <div className={styles.gallerySummaryToolbar}>
-              <span className={styles.gallerySummarySelection}>
+            <div className={imageStyles.galleryToolbar}>
+              <span className={imageStyles.selectionStatus} role="status" aria-live="polite">
                 {selectedGalleryIndex + 1}번 이미지 선택 중
               </span>
-              <div className={styles.gallerySummaryToolbarActions}>
+              <div className={imageStyles.galleryActions}>
                 <button
                   type="button"
-                  className={styles.gallerySummaryMoveButton}
+                  className={imageStyles.galleryAction}
                   onClick={() => handleMoveSelectedGalleryImage('up')}
                   disabled={selectedGalleryIndex === 0}
                 >
@@ -426,11 +380,18 @@ export default function ImagesStep({
                 </button>
                 <button
                   type="button"
-                  className={styles.gallerySummaryMoveButton}
+                  className={imageStyles.galleryAction}
                   onClick={() => handleMoveSelectedGalleryImage('down')}
                   disabled={selectedGalleryIndex === galleryImages.length - 1}
                 >
                   뒤로 이동
+                </button>
+                <button
+                  type="button"
+                  className={imageStyles.galleryAction}
+                  onClick={() => onGalleryImageRemove(selectedGalleryIndex)}
+                >
+                  선택 사진 제거
                 </button>
               </div>
             </div>
@@ -491,10 +452,56 @@ export default function ImagesStep({
           </div>
         ) : (
           <div className={styles.assetPlaceholder}>
-            아직 등록된 갤러리 이미지가 없습니다.
+            함께 보여주고 싶은 사진을 ‘갤러리 올리기’에서 선택해 주세요.
           </div>
         )}
-      </section>
+      </section> : null}
+
+      {mode !== 'photos' ? <SingleImageCard
+        title="공유 미리보기 이미지"
+        description="카카오톡이나 SNS에 초대장 링크를 붙여넣었을 때 보이는 사진입니다."
+        imageUrl={socialPreviewImage}
+        fallbackImage={coverImage}
+        shareTitle={formState.metadata.title || formState.displayName}
+        shareDescription={formState.metadata.description || formState.description}
+        onPresetSelect={formState.eventType === 'wedding' ? url => updateForm(draft => { draft.metadata.images.social = url; }) : undefined}
+        isBroken={brokenSingleImages.sharePreview}
+        placeholder="공유 미리보기 이미지 미리보기"
+        emptyHint="등록하지 않으면 대표 이미지를 공유 미리보기 이미지로 사용합니다."
+        removeLabel="공유 미리보기 제거"
+        uploadLabel="공유 이미지 올리기"
+        uploadKind="sharePreview"
+        isUploading={uploadingField === 'sharePreview'}
+        canUploadImages={canUploadImages}
+        inputRef={sharePreviewUploadInputRef}
+        onUpload={(event) => void onSharePreviewUpload(event)}
+        onTriggerPicker={onTriggerPicker}
+        onRemove={onSharePreviewImageRemove}
+        onImageError={() => markSingleImageAsBroken('sharePreview')}
+      /> : null}
+
+      {mode !== 'photos' ? <SingleImageCard
+        title="카카오 카드 이미지"
+        description="청첩장의 카카오톡 공유 버튼을 눌렀을 때 보내는 카드 사진입니다."
+        imageUrl={kakaoCardImage}
+        fallbackImage={socialPreviewImage || coverImage}
+        shareTitle={formState.metadata.title || formState.displayName}
+        shareDescription={formState.metadata.description || formState.description || [formState.date, formState.venue].filter(Boolean).join(' · ')}
+        onPresetSelect={formState.eventType === 'wedding' ? url => updateForm(draft => { draft.metadata.images.kakaoCard = url; }) : undefined}
+        isBroken={brokenSingleImages.kakaoCard}
+        placeholder="카카오 카드 이미지 미리보기"
+        emptyHint="등록하지 않으면 공유 미리보기 이미지, 그다음 대표 이미지 순서로 사용합니다."
+        removeLabel="카카오 카드 제거"
+        uploadLabel="카카오 카드 올리기"
+        uploadKind="kakaoCard"
+        isUploading={uploadingField === 'kakaoCard'}
+        canUploadImages={canUploadImages}
+        inputRef={kakaoCardUploadInputRef}
+        onUpload={(event) => void onKakaoCardUpload(event)}
+        onTriggerPicker={onTriggerPicker}
+        onRemove={onKakaoCardImageRemove}
+        onImageError={() => markSingleImageAsBroken('kakaoCard')}
+      /> : null}
     </div>
   );
 }

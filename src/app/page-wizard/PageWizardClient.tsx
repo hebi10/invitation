@@ -7,7 +7,7 @@ import WizardCustomerConnection from './WizardCustomerConnection';
 import IntroSettings from './steps/IntroSettings';
 
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 
 import { useRouter, useSearchParams } from 'next/navigation';
 
@@ -1476,7 +1476,7 @@ export default function PageWizardClient({
     if (slug && !experience) window.history.replaceState(null, '', `/page-wizard/edit?slug=${encodeURIComponent(slug)}`);
   };
 
-  const renderStepContent = (stepKey: WizardStepKey) => {
+  const renderStepContent = (stepKey: WizardStepKey, imageMode: 'photos' | 'sharing' = 'photos'): ReactNode => {
     if (!formState || !previewFormState) {
       return null;
     }
@@ -1594,10 +1594,10 @@ export default function PageWizardClient({
           );
         }
         return (
-          <BasicStep
-            {...sharedProps}
-            onPersonFieldChange={handlePersonFieldChange}
-          />
+          <>
+            <BasicStep {...sharedProps} onPersonFieldChange={handlePersonFieldChange} />
+            {eventType === 'wedding' ? <GreetingStep {...sharedProps} mode="family" onPersonFieldChange={handlePersonFieldChange} onParentFieldChange={handleParentFieldChange} /> : null}
+          </>
         );
       case 'schedule':
         if (eventType === 'birthday' || eventType === 'first-birthday') {
@@ -1620,6 +1620,7 @@ export default function PageWizardClient({
         return (
           <>
             <ScheduleStep
+              mode={eventType === 'wedding' ? 'primary' : 'all'}
               {...sharedProps}
               currentWeddingSummary={currentWeddingSummary}
               onDateInputChange={handleDateInputChange}
@@ -1630,6 +1631,8 @@ export default function PageWizardClient({
               isSearchingAddress={isSearchingVenueAddress}
               onSearchAddress={() => void handleVenueAddressSearch()}
             />
+            {eventType === 'wedding' ? <ScheduleStep {...sharedProps} mode="details" currentWeddingSummary={currentWeddingSummary} onDateInputChange={handleDateInputChange} onTimeInputChange={handleTimeInputChange} /> : null}
+            {eventType === 'wedding' ? <ExtraStep {...sharedProps} mode="guides" onAccountAdd={handleAccountAdd} onAccountRemove={handleAccountRemove} onAccountChange={handleAccountChange} onGuideAdd={handleGuideAdd} onGuideRemove={handleGuideRemove} onGuideChange={handleGuideChange} onGuideTemplateApply={handleGuideTemplateApply} /> : null}
           </>
         );
       case 'greeting':
@@ -1644,6 +1647,7 @@ export default function PageWizardClient({
         }
         return (
           <GreetingStep
+            mode={eventType === 'wedding' ? 'greeting' : 'all'}
             {...sharedProps}
             onPersonFieldChange={handlePersonFieldChange}
             onParentFieldChange={handleParentFieldChange}
@@ -1652,6 +1656,7 @@ export default function PageWizardClient({
       case 'images':
         return (
           <ImagesStep
+            mode={eventType === 'wedding' ? imageMode : 'all'}
             {...sharedProps}
             canUploadImages={canUploadImages}
             maxGalleryImages={maxGalleryImages}
@@ -1686,6 +1691,7 @@ export default function PageWizardClient({
       case 'extra':
         return (
           <ExtraStep
+            mode={eventType === 'wedding' ? 'accounts' : 'all'}
             {...sharedProps}
             onAccountAdd={handleAccountAdd}
             onAccountRemove={handleAccountRemove}
@@ -1705,12 +1711,10 @@ export default function PageWizardClient({
         );
       case 'final':
         return (
-          <FinalStep
-            {...sharedProps}
-            canManagePublication={isAdminLoggedIn}
-            published={published}
-            setPublished={setDirtyPublished}
-          />
+          <>
+            <FinalStep {...sharedProps} canManagePublication={isAdminLoggedIn} published={published} setPublished={setDirtyPublished} />
+            {eventType === 'wedding' ? renderStepContent('images', 'sharing') : null}
+          </>
         );
       default:
         return null;
@@ -1907,7 +1911,7 @@ export default function PageWizardClient({
       setupOnly={setupOnly}
       setupContent={isAdminLoggedIn && setupOnly ? <WizardCustomerConnection slug={resolvedPersistedSlug} disabled={isSaving}
         experience={experience} onBusyChange={setIsConnectingCustomer} /> : undefined}
-        fullPreview={eventType === 'wedding' ? <WeddingWizardPreview formState={formState} theme={defaultTheme} /> : undefined}
+        fullPreview={eventType === 'wedding' ? <WeddingWizardPreview formState={formState} theme={defaultTheme} activeStepKey={activeStepKey} /> : undefined}
       title={`${eventTypeMeta.label} ${setupOnly ? '생성 및 고객 연결' : '내용 입력'}`}
       subtitle={resolvedPersistedSlug ? `${formState.displayName || eventTypeMeta.label} · /${resolvedPersistedSlug}` : '관리자 전용 · 초대장을 만든 뒤 고객에게 연결해 주세요.'}
       sections={wizardSections}

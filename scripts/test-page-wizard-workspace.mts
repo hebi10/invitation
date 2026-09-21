@@ -48,8 +48,8 @@ for (const eventType of EVENT_TYPE_KEYS) {
         `${eventType} 단계가 작업 영역에 중복되면 안 됩니다.`
       );
       assert.ok(
-        sections.length > 0 && sections.length <= 6,
-        `${eventType} 작업 영역은 1개 이상 6개 이하여야 합니다.`
+        sections.length > 0 && sections.length <= (eventType === 'wedding' ? 8 : 6),
+        `${eventType} 작업 영역 개수가 허용 범위 안이어야 합니다.`
       );
       assert.equal(
         sections.every((section) => section.steps.length > 0),
@@ -68,6 +68,7 @@ const weddingSteps = getWizardSteps({
 const weddingSections = buildWizardSections(weddingSteps);
 const customerSteps = getWizardSteps({ eventType: 'wedding', includeSetupSteps: false });
 const customerSections = buildWizardSections(customerSteps, 'wedding');
+assert.deepEqual(customerSections.map(section => section.id), ['basic', 'schedule', 'greeting', 'media', 'music', 'accounts', 'review'], '고객이 사진, 음악, 계좌를 각각 찾을 수 있어야 합니다.');
 assert.equal(customerSections.some(section => section.id === 'setup'), false,
   '고객 편집에는 시작 설정이 없어야 합니다.');
 assert.equal(customerSections[0].id, 'basic', '고객은 이름을 편집할 기본 정보부터 시작합니다.');
@@ -318,3 +319,6 @@ assert.equal(weddingSteps.some(step => step.key === 'theme'), false, '웨딩 초
 assert.equal(getWizardSteps({ eventType: 'birthday', includeSetupSteps: true }).some(step => step.key === 'theme'), true, '생일 초대장의 디자인 선택은 유지합니다.');
 assert.equal(buildWizardSections(setupOnlySteps, 'wedding').length, 1);
 assert.equal(getWizardSteps({ eventType: 'wedding', includeSetupSteps: false }).some(step => ['theme', 'slug', 'eventType'].includes(step.key)), false, '주소별 내용 편집에는 시작 설정이 없습니다.');
+
+const workspaceSource = readFileSync(new URL('../src/app/page-wizard/PageWizardWorkspace.tsx', import.meta.url), 'utf8');
+assert.doesNotMatch(workspaceSource, /inert=\{/, '팝업 배경 차단은 useDialogLayer 한 곳에서 관리해야 종료 후 입력이 복구됩니다.');
