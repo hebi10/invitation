@@ -373,19 +373,6 @@ details[open] > :is(.disclosureSummary, .accountSummary, .formSummary)::after { 
 .page[data-design='gyeol'] .contactSection { margin-top: 40px; }
 .page[data-design='gyeol'] .contactIdentity { gap: 6px; }
 
-/* Botanical: a letter on sage paper; foliage is reserved for the cover/closing. */
-.page[data-design='emotional'] :is(.heading, .title) { justify-content: flex-start; margin-bottom: 28px; font-size: 22px; text-align: left; }
-.page[data-design='emotional'] .quickLinks { width: 100%; margin: 0; padding: 8px 24px; background: var(--paper-soft); }
-.page[data-design='emotional'] .invitationSection { width: 100%; margin-top: 0; padding: 48px 32px; background: var(--paper-soft); }
-.page[data-design='emotional'] .invitationSection .heading { justify-content: center; text-align: center; }
-.page[data-design='emotional'] .invitationCopy { font-family: 'Gyeol Dodum', sans-serif; font-size: 16px; line-height: 2.1; }
-.page[data-design='emotional'] .invitationAuthor { margin-top: 32px; }
-.page[data-design='emotional'] .formSummary { background: var(--accent); color: #fff; border-color: var(--accent); }
-.page[data-design='emotional'] .disclosureSummary { text-align: left; padding-inline: 16px; }
-.page[data-design='emotional'] .ceremonySection { text-align: left; }
-.page[data-design='emotional'] .ceremonyContent { grid-template-columns: 1fr auto; align-items: baseline; gap: 12px; }
-.page[data-design='emotional'] .ceremonyContent .venueName { grid-column: 1 / -1; font-size: 24px; margin-top: 16px; }
-.page[data-design='emotional'] :is(.message, .subtitle) { max-width: 300px; margin-left: 0; text-align: left; }
 @media (max-width: 359px) {
   .page:not([data-design='simple']) :is(.heading, .title) { font-size: 20px; }
   .page[data-design='classic-r'] .invitationSection { grid-template-columns: 1fr; gap: 24px; }
@@ -419,3 +406,74 @@ details[open] > :is(.disclosureSummary, .accountSummary, .formSummary)::after { 
 .page :is(.message, .subtitle, .commentMessage, .storedSection) { line-height: 1.9; }
 .page .accountRow { overflow-wrap: anywhere; }
 .page .ceremonyContent { font-size: 16px; }
+
+/* Natural paper: restrained botanical detail, a consistent reading rhythm. */
+.page[data-design='emotional'] {
+  --paper: #faf9f5; --paper-soft: #eef1e8; --ink: #2f342d; --muted: #626b5e;
+  --accent: #536649; --line: #cfd5c8; --control-line: #7a8671; --focus: #4f6149;
+  --section-space: 56px;
+  font-size: 15px;
+}
+:global(body):has(.page[data-design='emotional']) { background-color: #f3f4ef; }
+.page[data-design='emotional'] :is(.invitationSection, .scheduleSection, .container, .ceremonySection, .transportSection) {
+  width: calc(100% - 48px); margin-top: 56px; padding: 0; text-align: center;
+}
+.page[data-design='emotional'] :is(.heading, .title) {
+  display: flex; flex-direction: column; justify-content: center; align-items: center;
+  gap: 9px; margin-bottom: 20px; font-size: 20px; font-weight: 500; line-height: 1.6; text-align: center;
+}
+.page[data-design='emotional'] :is(.heading, .title)::before {
+  content: ''; display: block; width: 30px; height: 20px;
+  background: url('/images/wedding-concepts/garden-sprig.webp') center / contain no-repeat;
+}
+.page[data-design='emotional'] .quickLinks {
+  width: calc(100% - 48px); margin: 20px auto 0; padding: 8px 0 16px; gap: 8px; flex-wrap: nowrap;
+}
+.page[data-design='emotional'] .quickLinks a {
+  flex-direction: column; gap: 8px; padding: 8px 4px; min-height: 66px;
+  font-size: 13px; color: var(--accent); text-decoration: none;
+}
+.page[data-design='emotional'] .invitationSection { margin-top: 40px; }
+.page[data-design='emotional'] .invitationCopy { max-width: 330px; font-family: 'Gyeol Dodum', var(--font-sans); font-size: 15px; line-height: 2.05; }
+.page[data-design='emotional'] .invitationAuthor { margin-top: 24px; font-size: 14px; color: var(--muted); }
+.page[data-design='emotional'] .contactSection { margin-top: 24px; }
+.page[data-design='emotional'] :is(.disclosureSummary, .accountSummary, .formSummary) { min-height: 46px; padding: 10px 16px; font-size: 14px; border-color: var(--line); }
+.page[data-design='emotional'] .disclosureSummary { justify-content: space-between; text-align: left; }
+.page[data-design='emotional'] .ceremonyContent { display: grid; grid-template-columns: 1fr; gap: 4px; font-size: 15px; line-height: 1.8; text-align: center; }
+.page[data-design='emotional'] .ceremonyContent .venueName { margin-top: 10px; font-size: 18px; font-weight: 700; }
+.page[data-design='emotional'] .ceremonySection > button { background: var(--accent); border-color: var(--accent); color: white; min-height: 46px; font-size: 14px; }
+.page[data-design='emotional'] .scheduleContent { gap: 4px; margin-bottom: 18px; }
+.page[data-design='emotional'] .scheduleContent .venueName { font-size: 18px; font-weight: 700; }
+.page[data-design='emotional'] .address { font-size: 14px; line-height: 1.8; }
+.page[data-design='emotional'] .venuePhone { min-height: 36px; font-size: 14px; }
+.page[data-design='emotional'] .travelNote { margin: 14px 0 0; font-size: 13px; line-height: 1.8; text-align: center; }
+.page[data-design='emotional'] .guideSummary { margin: 12px 0 0; font-size: 13px; line-height: 1.8; color: var(--muted); }
+.page[data-design='emotional'] :is(.message, .subtitle) { max-width: 320px; margin: 0 auto 24px; font-size: 15px; line-height: 1.9; text-align: center; }
+.page[data-design='emotional'] .accountsContainer { gap: 10px; }
+.page[data-design='emotional'] .accountSummary { justify-content: flex-start; gap: 10px; text-align: left; }
+.page[data-design='emotional'] .accountActionLabel { margin-left: auto; font-size: 13px; color: var(--muted); }
+.page[data-design='emotional'] .accountCard { padding: 18px 4px; gap: 10px; }
+.page[data-design='emotional'] :is(.accountRow, .accountHolder, .contactIdentity strong) { font-size: 15px; }
+.page[data-design='emotional'] .formSummary { justify-content: center; background: var(--accent); color: #fff; border-color: var(--accent); }
+.page[data-design='emotional'] .formDisclosure { margin-top: 24px; }
+.page[data-design='emotional'] .commentsList { margin-top: 28px; }
+.page[data-design='emotional'] .commentsHeader { gap: 8px; align-items: center; }
+.page[data-design='emotional'] :is(.commentsCount, .commentsCount strong, .pageInfo, .commentDate) { font-size: 13px; }
+.page[data-design='emotional'] .refreshButton { min-height: 44px; padding: 8px 4px; font-size: 13px; }
+.page[data-design='emotional'] .commentsGrid { gap: 0; margin-top: 8px; }
+.page[data-design='emotional'] .commentItem { position: relative; padding: 20px 0; }
+.page[data-design='emotional'] .commentItem + .commentItem::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px; background: var(--line); opacity: .65; }
+.page[data-design='emotional'] .commentHeader { align-items: baseline; gap: 8px; }
+.page[data-design='emotional'] .authorName { font-size: 14px; font-weight: 700; }
+.page[data-design='emotional'] .commentDate { color: var(--muted); }
+.page[data-design='emotional'] .commentMessage { margin: 10px 0 0; font-size: 15px; line-height: 1.9; }
+.page[data-design='emotional'] .pagination { gap: 6px; margin-top: 24px; }
+.page[data-design='emotional'] .pageNumbers { gap: 4px; }
+.page[data-design='emotional'] :is(.pageNumber, .pageButton) { min-width: 40px; min-height: 44px; padding: 7px; font-size: 13px; background: transparent; }
+.page[data-design='emotional'] :is(.active, .pageButtonActive) { background: var(--accent); color: white; border-color: var(--accent); }
+@media (max-width: 359px) {
+  .page[data-design='emotional'] :is(.invitationSection, .scheduleSection, .container, .ceremonySection, .transportSection, .contactSection, .quickLinks) { width: calc(100% - 40px); }
+  .page[data-design='emotional'] :is(.heading, .title) { font-size: 19px; }
+  .page[data-design='emotional'] .pagination { gap: 4px; }
+  .page[data-design='emotional'] :is(.pageNumber, .pageButton) { min-width: 32px; padding-inline: 5px; }
+}

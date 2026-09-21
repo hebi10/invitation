@@ -21,16 +21,17 @@
 .withoutPhoto .photoCopy { background: none; }
 .withoutPhoto .photoMeta .venue { color: #53594f; }
 
-/* A natural letter, with sage paper and a small botanical signature. */
-.letter { padding: 40px 28px 24px; background: var(--paper-soft, #eef1e8); color: #354536; text-align: center; }
-.letter .names { font-size: 28px; gap: 12px; }
-.letter .conceptIntroduction { color: #54624f; }
-.letter .letterPhoto { margin: 28px 0 0; aspect-ratio: 4 / 5; overflow: hidden; }
+/* A compact botanical invitation: names and greeting introduce the photograph. */
+.letter { padding: 24px 24px 24px; background: var(--paper, #faf9f5); color: #354536; text-align: center; }
+.letterSprig { width: 56px; height: 36px; margin: 0 auto 12px; background: url('/images/wedding-concepts/garden-sprig.webp') center / contain no-repeat; }
+.letter .letterEyebrow { margin-bottom: 12px; font-family: var(--font-sans); font-size: 11px; font-weight: 500; line-height: 1.6; letter-spacing: .22em; color: #747d6a; }
+.letter .names { font-size: 30px; gap: 12px; line-height: 1.5; }
+.letter .conceptIntroduction { color: #626b58; font-size: 15px; line-height: 1.8; }
+.letter .letterPhoto { margin: 24px 0 0; aspect-ratio: 1; overflow: hidden; }
 .letterPhoto .photo { height: 100%; object-fit: cover; }
-.letterMessage { display: grid; justify-items: center; gap: 16px; margin-top: 28px; }
-.letterMessage::before { content: ''; width: 50px; height: 32px; background: url('/images/wedding-concepts/garden-sprig.webp') center / contain no-repeat; }
-.letter .date { margin-top: 28px; }
-.letter .venue { margin-top: 3px; color: #54624f; }
+.letterMessage { margin-top: 12px; }
+.letter .date { margin-top: 18px; font-size: 15px; line-height: 1.8; }
+.letter .venue { margin-top: 3px; color: #54624f; font-size: 15px; line-height: 1.8; }
 
 /* Names, photograph and event details share one left edge. */
 .editorial { padding: 36px 24px 0; background: #fff; color: #242622; text-align: left; }
@@ -74,6 +75,7 @@
   .traditional { padding-inline: 16px; }
   .traditionalFrame { padding-inline: 16px; }
   .traditionalTitle .names { font-size: 24px; gap: 8px; }
-  .letter, .basic { padding-inline: 26px; }
+  .letter { padding-inline: 20px; }
+  .basic { padding-inline: 26px; }
   .letter .names, .basic .names { font-size: 25px; gap: 10px; }
 }

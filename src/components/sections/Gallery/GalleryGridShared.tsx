@@ -49,6 +49,7 @@ export interface GalleryGridSharedProps {
   imageAltPrefix?: string;
   layout?: 'grid' | 'carousel';
   swiperVariant?: WeddingGalleryVariant;
+  gridOverview?: boolean;
 }
 
 function preloadSingleImage(url?: string) {
@@ -92,6 +93,7 @@ export default function GalleryGridShared({
   imageAltPrefix,
   layout = 'grid',
   swiperVariant,
+  gridOverview = false,
 }: GalleryGridSharedProps) {
   const { elementRef, isVisible } = useScrollAnimation({
     threshold: 0,
@@ -123,11 +125,13 @@ export default function GalleryGridShared({
   }
   const isCarousel = layout === 'carousel';
 
-  const shouldRenderImages = isVisible || selectedIndex !== null;
-  const displayImages = useMemo(() => images.slice(0, visibleCount), [images, visibleCount]);
+  const isGridOverview = gridOverview && !isCarousel && !swiperVariant;
+  const thumbnailCount = isGridOverview ? 4 : visibleCount;
+  const shouldRenderImages = isGridOverview || isVisible || selectedIndex !== null;
+  const displayImages = useMemo(() => images.slice(0, thumbnailCount), [images, thumbnailCount]);
   const displayPreviewImages = useMemo(
-    () => (previewImages ?? images).slice(0, visibleCount),
-    [images, previewImages, visibleCount]
+    () => (previewImages ?? images).slice(0, thumbnailCount),
+    [images, previewImages, thumbnailCount]
   );
   const hasMoreImages = images.length > visibleCount;
   const remainingCount = images.length - visibleCount;
@@ -296,6 +300,17 @@ export default function GalleryGridShared({
                 </div>
               );
             })}
+            {isGridOverview ? (
+              <button
+                type="button"
+                className={styles.overviewCard}
+                aria-label={`전체 사진 ${images.length}장 보기`}
+                onClick={(event) => openPopup(0, event.currentTarget)}
+              >
+                <span>전체 사진 보기</span>
+                <span className={styles.overviewCount}>{images.length}장</span>
+              </button>
+            ) : null}
           </div>
         ) : (
           <div className={isCarousel ? styles.carousel : styles.imageGrid} aria-hidden="true">
@@ -341,7 +356,7 @@ export default function GalleryGridShared({
           </div>
         )}
 
-        {!swiperVariant && !isCarousel && images.length > 6 && (
+        {!swiperVariant && !isCarousel && !isGridOverview && images.length > 6 && (
           <div className={styles.buttonContainer}>
             {hasMoreImages && (
               <button

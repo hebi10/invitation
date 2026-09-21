@@ -8,7 +8,7 @@ import { loadKakaoMapsSdk } from '@/utils/kakaoMaps';
 import styles from './LocationMap.module.css';
 
 interface LocationMapProps {
-  appearance?: 'simple';
+  appearance?: 'simple' | 'natural';
   address: string;
   venueName: string;
   kakaoMapConfig?: {
@@ -33,6 +33,7 @@ export default function LocationMap({ address, venueName, kakaoMapConfig, mapHre
   const [shouldLoad, setShouldLoad] = useState(false);
   const [status, setStatus] = useState<'loading' | 'ready' | 'failed'>('loading');
   const [controlsEnabled, setControlsEnabled] = useState(false);
+  const [directionsHref, setDirectionsHref] = useState('');
   const latitude = kakaoMapConfig?.latitude;
   const longitude = kakaoMapConfig?.longitude;
   const level = kakaoMapConfig?.level;
@@ -61,6 +62,7 @@ export default function LocationMap({ address, venueName, kakaoMapConfig, mapHre
     const container = containerRef.current;
     setStatus('loading');
     setControlsEnabled(false);
+    setDirectionsHref('');
 
     const fail = () => {
       if (cancelled) return;
@@ -106,6 +108,7 @@ export default function LocationMap({ address, venueName, kakaoMapConfig, mapHre
         map.setDraggable(false);
         marker = new kakao.maps.Marker({ map, position });
         instanceRef.current = map;
+        setDirectionsHref(`https://map.kakao.com/link/to/${encodeURIComponent(venueName)},${lat},${lng}`);
         if (typeof ResizeObserver !== 'undefined') {
           resizeObserver = new ResizeObserver(() => {
             if (cancelled) return;
@@ -130,7 +133,7 @@ export default function LocationMap({ address, venueName, kakaoMapConfig, mapHre
       instanceRef.current = null;
       container?.replaceChildren();
     };
-  }, [address, latitude, longitude, level, shouldLoad]);
+  }, [address, latitude, longitude, level, shouldLoad, venueName]);
 
   const toggleControls = () => {
     const map = instanceRef.current;
@@ -158,12 +161,15 @@ export default function LocationMap({ address, venueName, kakaoMapConfig, mapHre
           </div>
         )}
       </div>
+      {appearance === 'natural' && status === 'ready' ? <button className={styles.mapControl} type="button" onClick={toggleControls} aria-pressed={controlsEnabled}>
+        {controlsEnabled ? '지도 조작 마치기' : '지도 확대·이동'}
+      </button> : null}
       {status === 'ready' && (
         <div className={styles.actions}>
-          <button type="button" onClick={toggleControls} aria-pressed={controlsEnabled}>
-            {controlsEnabled ? '지도 이동·확대 끄기' : '지도 이동·확대 켜기'}
-          </button>
-          <a href={mapHref} target="_blank" rel="noopener noreferrer">큰 지도 보기</a>
+          {appearance === 'natural' && directionsHref ? <a href={directionsHref} target="_blank" rel="noopener noreferrer">지도 앱에서 길찾기</a> : <button type="button" onClick={toggleControls} aria-pressed={controlsEnabled}>
+            {appearance === 'natural' ? (controlsEnabled ? '지도 조작 마치기' : '지도 확대·이동') : (controlsEnabled ? '지도 이동·확대 끄기' : '지도 이동·확대 켜기')}
+          </button>}
+          <a href={mapHref} target="_blank" rel="noopener noreferrer">{appearance === 'natural' ? '카카오맵 보기' : '큰 지도 보기'}</a>
         </div>
       )}
     </div>

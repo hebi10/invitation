@@ -113,6 +113,7 @@
 .closing[data-theme='gyeol'] { background: #f8f3e9; color: #493b2f; }
 .closing[data-theme='gyeol']::before { content: ''; width: 60px; height: 42px; background: url('/images/wedding-concepts/classic-ornament.webp') center / contain no-repeat; }
 .closing[data-theme='gyeol'] p:last-child { color: #786550; }
-.closing[data-theme='emotional'] { background: #f8f9f5; color: #344638; padding-top: 110px; }
-.closing[data-theme='emotional']::before { content: ''; position: absolute; top: 30px; width: 100px; height: 65px; background: url('/images/wedding-concepts/garden-sprig.webp') center / contain no-repeat; }
+.closing[data-theme='emotional'] { background: #faf9f5; color: #344638; padding: 48px 24px 56px; gap: 16px; }
+.closing[data-theme='emotional']::before { content: ''; width: 64px; height: 42px; margin-bottom: 4px; background: url('/images/wedding-concepts/garden-sprig.webp') center / contain no-repeat; }
+.closing[data-theme='emotional'] p:first-child { font-size: 22px; letter-spacing: .02em; }
 .closing[data-theme='emotional'] p:last-child { color: #61705a; }

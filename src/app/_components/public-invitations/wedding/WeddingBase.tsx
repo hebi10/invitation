@@ -16,6 +16,7 @@ import {
   shouldShowGiftInfo,
 } from '../../weddingPageRenderers';
 import WeddingCover from './WeddingCover';
+import WeddingActionIcon from './WeddingActionIcon';
 import WeddingCalendarDownload from './WeddingCalendarDownload';
 import type { InvitationThemeKey } from '@/lib/invitationThemes';
 import { PublicInvitationDateFeature } from '../shared/PublicInvitationDateFeature';
@@ -44,6 +45,11 @@ export default function WeddingBase({ state, theme, demoComments, showMap = true
   const hasAdditionalGuide = Boolean(
     storedContent.reception || storedContent.venueGuide.length || storedContent.wreathGuide.length
   );
+  const guideSummary = [...new Set([
+    ...storedContent.venueGuide.map(item => item.title),
+    ...storedContent.wreathGuide.map(item => item.title),
+    ...(storedContent.reception ? ['피로연 안내'] : []),
+  ].filter(Boolean))].join(' · ');
   const contactCandidates = [
     {
       side: '신랑측',
@@ -126,9 +132,11 @@ export default function WeddingBase({ state, theme, demoComments, showMap = true
     >
       <WeddingCover theme={theme} page={page} imageUrl={heroImageUrl} time={ceremony?.time} />
       <nav className={styles.quickLinks} aria-label="청첩장 바로가기">
-        {state.galleryImageUrls.length > 0 ? <a href="#wedding-gallery">사진 보기</a> : null}
-        <a href="#wedding-info">예식 안내</a>
-        <a href="#wedding-location">오시는 길</a>
+        {state.galleryImageUrls.length > 0 ? <a href="#wedding-gallery">{theme === 'emotional' ? <WeddingActionIcon kind="photo" /> : null}사진 보기</a> : null}
+        {theme === 'emotional' && shouldShowGiftInfo(state)
+          ? <a href="#wedding-accounts"><WeddingActionIcon kind="accounts" />계좌 안내</a>
+          : <a href="#wedding-info">{theme === 'emotional' ? <WeddingActionIcon kind="calendar" /> : null}예식 안내</a>}
+        <a href="#wedding-location">{theme === 'emotional' ? <WeddingActionIcon kind="pin" /> : null}오시는 길</a>
       </nav>
 
       {invitationMessage ? (
@@ -203,7 +211,7 @@ export default function WeddingBase({ state, theme, demoComments, showMap = true
         </div>
         {showMap && storedContent.mapHref ? (
           <LocationMap
-            appearance="simple"
+            appearance={theme === 'emotional' ? 'natural' : 'simple'}
             address={ceremonyAddress}
             venueName={page.venue}
             kakaoMapConfig={pageData?.kakaoMap}
@@ -220,19 +228,21 @@ export default function WeddingBase({ state, theme, demoComments, showMap = true
             <summary className={styles.disclosureSummary}>교통 · 식사 안내 자세히 보기</summary>
             <WeddingStoredContent className={styles.storedSection} model={{ ...storedContent, ceremonyContact: '', mapDescription: '', mapHref: '' }} titleClassName={styles.guideTitle} />
           </details>
+          {theme === 'emotional' && guideSummary ? <p className={styles.guideSummary}>{guideSummary}</p> : null}
         </section>
       ) : null}
 
       {shouldShowGiftInfo(state) ? (
-        <div data-wedding-section="gift">
+        <div id="wedding-accounts" data-wedding-section="gift">
           <GiftInfoThemed
             groomAccounts={state.giftInfo?.groomAccounts ?? []}
             brideAccounts={state.giftInfo?.brideAccounts ?? []}
             message={state.giftInfo?.message}
             styles={styles}
             title="마음 전하실 곳"
-            groomSectionTitle="신랑측 계좌"
-            brideSectionTitle="신부측 계좌"
+            groomSectionTitle={theme === 'emotional' ? '신랑측' : '신랑측 계좌'}
+            brideSectionTitle={theme === 'emotional' ? '신부측' : '신부측 계좌'}
+            accountActionLabel={theme === 'emotional' ? '계좌 보기' : undefined}
             copyLabel="계좌번호 복사"
             collapsibleAccounts
           />

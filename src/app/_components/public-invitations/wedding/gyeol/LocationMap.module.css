@@ -1,4 +1,5 @@
 .locationMap {
+  position: relative;
   font-family: var(--font-sans), sans-serif;
   width: 100%;
   background: var(--paper, #fff);
@@ -77,8 +78,12 @@
   outline-offset: 4px;
 }
 
-.locationMap[data-appearance='simple'] .viewport { height: auto; aspect-ratio: 9 / 5; min-height: 180px; }
-.locationMap[data-appearance='simple'] .map { position: absolute; inset: 0; }
-.locationMap[data-appearance='simple'] .actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; font-size: 15px; }
-.locationMap[data-appearance='simple'] .actions :is(a, button) { display: flex; justify-content: center; align-items: center; min-height: 48px; padding: 8px; border: 1px solid var(--control-line); background: transparent; text-decoration: none; text-align: center; }
-.locationMap[data-appearance='simple'] .message { font-size: 14px; background: var(--paper-soft); }
+.locationMap:is([data-appearance='simple'], [data-appearance='natural']) .viewport { height: auto; aspect-ratio: 9 / 5; min-height: 180px; }
+.locationMap:is([data-appearance='simple'], [data-appearance='natural']) .map { position: absolute; inset: 0; }
+.locationMap:is([data-appearance='simple'], [data-appearance='natural']) .actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; font-size: 15px; }
+.locationMap:is([data-appearance='simple'], [data-appearance='natural']) .actions :is(a, button) { display: flex; justify-content: center; align-items: center; min-height: 48px; padding: 8px; border: 1px solid var(--control-line); background: transparent; text-decoration: none; text-align: center; }
+.locationMap:is([data-appearance='simple'], [data-appearance='natural']) .message { font-size: 14px; background: var(--paper-soft); }
+
+.locationMap[data-appearance='natural'] .actions { gap: 8px; font-size: 14px; }
+.locationMap[data-appearance='natural'] .actions :is(a, button) { min-height: 46px; border-color: var(--line); }
+.mapControl { position: absolute; top: 8px; right: 8px; z-index: 2; min-height: 44px; padding: 8px 10px; border: 1px solid var(--control-line); background: var(--paper); color: var(--ink); font: inherit; font-size: 12px; cursor: pointer; }

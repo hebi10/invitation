@@ -26,11 +26,13 @@ export default function WeddingCover({ theme, page, imageUrl, time, titleId = 'w
 
   if (theme === 'emotional') return (
     <section className={`${styles.cover} ${styles.letter}`} aria-labelledby={titleId}>
+      <div className={styles.letterSprig} aria-hidden="true" />
+      <p className={styles.letterEyebrow}>WEDDING INVITATION</p>
       <h1 data-wedding-motion="copy" id={titleId} className={styles.names}>{names}</h1>
-      {photo ? <figure className={styles.letterPhoto}>{photo}</figure> : null}
       <div className={styles.letterMessage}>
         <p className={styles.conceptIntroduction}>평생을 함께하고 싶은<br />사람을 만났습니다.</p>
       </div>
+      {photo ? <figure className={styles.letterPhoto}>{photo}</figure> : null}
       {date}<p className={styles.venue} data-wedding-motion="copy">{page.venue}</p>
     </section>
   );

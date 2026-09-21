@@ -28,6 +28,7 @@ interface GiftInfoThemedProps extends GiftInfoProps {
   showTopDecoration?: boolean;
   showBottomDecoration?: boolean;
   collapsibleAccounts?: boolean;
+  accountActionLabel?: string;
 }
 
 export default function GiftInfoThemed({
@@ -45,6 +46,7 @@ export default function GiftInfoThemed({
   showTopDecoration = false,
   showBottomDecoration = false,
   collapsibleAccounts = false,
+  accountActionLabel,
 }: GiftInfoThemedProps) {
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
 
@@ -102,7 +104,10 @@ export default function GiftInfoThemed({
     if (collapsibleAccounts) {
       return (
         <details className={styles.accountSection}>
-          <summary className={styles.accountSummary}>{sectionTitle}</summary>
+          <summary className={styles.accountSummary}>
+            {accountActionLabel ? <span>{sectionTitle}</span> : sectionTitle}
+            {accountActionLabel ? <span className={styles.accountActionLabel}>{accountActionLabel}</span> : null}
+          </summary>
           {accountCards}
         </details>
       );
