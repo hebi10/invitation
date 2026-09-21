@@ -13,6 +13,7 @@ type TicketPurchaseSuccessState = {
 type TicketPurchaseSuccessModalProps = {
   visible: boolean;
   onClose: () => void;
+  onExtend: () => void;
   palette: ReturnType<typeof getPalette>;
   success: TicketPurchaseSuccessState | null;
 };
@@ -20,6 +21,7 @@ type TicketPurchaseSuccessModalProps = {
 export function TicketPurchaseSuccessModal({
   visible,
   onClose,
+  onExtend,
   palette,
   success,
 }: TicketPurchaseSuccessModalProps) {
@@ -72,7 +74,9 @@ export function TicketPurchaseSuccessModal({
               </AppText>
             </View>
 
-            <ActionButton onPress={onClose} fullWidth>
+            <AppText variant="muted">티켓 구매만으로 이용 기간이 연장되지는 않습니다. 운영 화면에서 티켓을 사용해 주세요.</AppText>
+            <ActionButton onPress={onExtend} fullWidth>기간 연장하러 가기</ActionButton>
+            <ActionButton onPress={onClose} variant="secondary" fullWidth>
               확인
             </ActionButton>
           </ScrollView>

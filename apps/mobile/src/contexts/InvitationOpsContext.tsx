@@ -53,8 +53,8 @@ type InvitationOpsContextValue = {
   ) => Promise<boolean>;
   setPublishedState: (published: boolean) => Promise<boolean>;
   extendDisplayPeriod: (
-    months?: number
-  ) => Promise<MobileDisplayPeriodSummary | null>;
+    requestId: string
+  ) => Promise<(MobileDisplayPeriodSummary & { ticketCount: number }) | null>;
   setDisplayPeriod: (
     period: MobileDisplayPeriodSummary
   ) => Promise<MobileDisplayPeriodSummary | null>;
@@ -471,7 +471,7 @@ export function InvitationOpsProvider({ children }: PropsWithChildren) {
   );
 
   const extendDisplayPeriod = useCallback(
-    async (months = 1) => {
+    async (requestId: string) => {
       if (!session) {
         reportAuthError('기간을 연장할 청첩장이 연동되어 있지 않습니다.');
         return null;
@@ -482,7 +482,7 @@ export function InvitationOpsProvider({ children }: PropsWithChildren) {
           apiBaseUrl,
           session.pageSlug,
           session.token,
-          months,
+          requestId,
           getHighRiskToken(session.pageSlug) ?? undefined
         );
 
@@ -493,7 +493,9 @@ export function InvitationOpsProvider({ children }: PropsWithChildren) {
         };
 
         applyDisplayPeriod(displayPeriod);
-        return displayPeriod;
+        setDashboard((current) => current ? { ...current, ticketCount: response.ticketCount } : current);
+        setPageSummary((current) => current ? { ...current, ticketCount: response.ticketCount } : current);
+        return { ...displayPeriod, ticketCount: response.ticketCount };
       } catch (error) {
         reportAuthError(
           error instanceof Error ? error.message : '노출 기간을 연장하지 못했습니다.'

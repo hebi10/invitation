@@ -33,6 +33,8 @@ type TicketUsageModalProps = {
   onSelectTicketTransferCount: (count: number) => void;
   onExtendDisplayPeriod: () => void;
   onTransferTickets: () => void;
+  notice: string;
+  onBuyTickets: () => void;
 };
 
 export function TicketUsageModal({
@@ -51,6 +53,8 @@ export function TicketUsageModal({
   onSelectTicketTransferCount,
   onExtendDisplayPeriod,
   onTransferTickets,
+  notice,
+  onBuyTickets,
 }: TicketUsageModalProps) {
   return (
     <InvitationEditorModalShell
@@ -72,17 +76,19 @@ export function TicketUsageModal({
       </SectionCard>
 
       <SectionCard title="기간 1개월 연장" description="티켓 1장 사용">
+        {notice ? <AppText accessibilityRole="alert" color={palette.notice}>{notice}</AppText> : null}
         <AppText variant="muted" style={manageStyles.helperText}>
           현재 청첩장의 노출 기간 종료일을 기준으로 1개월 연장합니다.
         </AppText>
         <ActionButton
           onPress={onExtendDisplayPeriod}
           loading={isExtendingDisplayPeriod}
-          disabled={availableTicketCount < 1}
           fullWidth
         >
-          1개월 연장 적용
+          {availableTicketCount > 0 ? '1개월 연장 적용' : '이전 연장 결과 다시 확인'}
         </ActionButton>
+        <ActionButton variant="secondary" onPress={onBuyTickets} disabled={isExtendingDisplayPeriod}>티켓 구매하기</ActionButton>
+        <AppText variant="caption">이전 요청의 결과를 확인하지 못했다면 다시 눌러 확인할 수 있습니다. 같은 요청에는 티켓이 중복 차감되지 않습니다.</AppText>
       </SectionCard>
 
       {transferTargetCards.length > 0 ? (

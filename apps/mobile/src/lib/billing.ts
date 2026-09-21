@@ -194,7 +194,12 @@ export async function purchaseBillingProduct(
     throw new Error('스토어의 프리미엄 가격이 9,900원으로 확인되지 않아 결제를 중단했습니다. 고객 문의로 확인해 주세요.');
   }
 
-  const purchaseResult = await purchases.purchaseStoreProduct(targetProduct);
+  const purchaseResult = await purchases.purchaseStoreProduct(targetProduct).catch((error: unknown) => {
+    if (error && typeof error === 'object' && 'userCancelled' in error && error.userCancelled === true) {
+      throw new Error('결제를 취소했습니다. 준비가 되면 다시 진행해 주세요.');
+    }
+    throw error;
+  });
   if (purchaseResult.productIdentifier !== productId ||
       !purchaseResult.transaction?.transactionIdentifier?.trim()) {
     throw new Error('Google Play 거래 정보를 확인하지 못했습니다. 고객 문의로 확인해 주세요.');

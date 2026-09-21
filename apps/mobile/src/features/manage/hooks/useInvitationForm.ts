@@ -8,6 +8,7 @@ import {
 } from 'react';
 
 import { useAuth } from '../../../contexts/AuthContext';
+import { useIsFocused } from '@react-navigation/native';
 import type {
   MobileInvitationDashboard,
   MobileInvitationSeed,
@@ -61,6 +62,7 @@ export function useInvitationForm({
   setNotice,
 }: UseInvitationFormOptions) {
   const { runHighRiskAction } = useAuth();
+  const isFocused = useIsFocused();
   const [form, setFormState] = useState<ManageFormState>(EMPTY_FORM);
   const [editorModalVisible, setEditorModalVisible] = useState(false);
   const [editorPreparingVisible, setEditorPreparingVisible] = useState(false);
@@ -145,7 +147,7 @@ export function useInvitationForm({
   }, [dashboard, hydrateForm, isFormDirty, isFormHydrationLocked]);
 
   useEffect(() => {
-    if (!dashboard || !pendingManageOnboarding) {
+    if (!isFocused || !dashboard || !pendingManageOnboarding) {
       return;
     }
 
@@ -159,7 +161,7 @@ export function useInvitationForm({
     setEditorModalVisible(true);
     clearPendingManageOnboarding();
     setNotice('운영 첫 진입이므로 편집 모달에서 예식 정보를 바로 입력해 주세요.');
-  }, [clearPendingManageOnboarding, dashboard, pendingManageOnboarding, setNotice]);
+  }, [clearPendingManageOnboarding, dashboard, isFocused, pendingManageOnboarding, setNotice]);
 
   const setForm = useCallback<Dispatch<SetStateAction<ManageFormState>>>(
     (value) => {
@@ -454,6 +456,7 @@ export function useInvitationForm({
     onboardingVisible,
     onboardingStepIndex,
     isSaving,
+    isFormDirty,
     onboardingValidationMessage,
     galleryPreviewItems,
     previewGalleryImages,

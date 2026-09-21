@@ -49,7 +49,7 @@ assert(success.calls.includes('login:customer-2'));
 await assert.rejects(load({ missingProduct: true }).purchase(productId, { appUserId: 'customer-1' }));
 await assert.rejects(load({ transactionId: '' }).purchase(productId, { appUserId: 'customer-1' }));
 const cancelled = { userCancelled: true };
-await assert.rejects(load({ failure: cancelled }).purchase(productId, { appUserId: 'customer-1' }), error => error === cancelled);
+await assert.rejects(load({ failure: cancelled }).purchase(productId, { appUserId: 'customer-1' }), /결제를 취소했습니다/);
 
 
 await assert.rejects(load({ price: 15000 }).purchase(productId, { appUserId: 'customer-1' }));

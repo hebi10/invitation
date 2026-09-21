@@ -1,6 +1,8 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
 import { useAuth } from '../../../contexts/AuthContext';
+import { usePreferences } from '../../../contexts/PreferencesContext';
+import { completeTicketExtensionRequest, getOrCreateTicketExtensionRequest } from '../../../lib/pendingTicketExtension';
 import type { LinkedInvitationCard } from '../../../lib/linkedInvitationCardsModel';
 import type {
   MobileDisplayPeriodSummary,
@@ -8,13 +10,9 @@ import type {
 type UseTicketOperationsOptions = {
   activeLinkedInvitationCard: LinkedInvitationCard | null;
   additionalLinkedInvitationCards: LinkedInvitationCard[];
-  adjustTicketCount: (amount: number) => Promise<number | null>;
   extendDisplayPeriod: (
-    months?: number
-  ) => Promise<MobileDisplayPeriodSummary | null>;
-  setDisplayPeriod: (
-    period: MobileDisplayPeriodSummary
-  ) => Promise<MobileDisplayPeriodSummary | null>;
+    requestId: string
+  ) => Promise<(MobileDisplayPeriodSummary & { ticketCount: number }) | null>;
   transferTicketCount: (
     targetPageSlug: string,
     targetToken: string,
@@ -28,15 +26,15 @@ type UseTicketOperationsOptions = {
 export function useTicketOperations({
   activeLinkedInvitationCard,
   additionalLinkedInvitationCards,
-  adjustTicketCount,
   extendDisplayPeriod,
-  setDisplayPeriod,
   transferTicketCount,
   setNotice,
   setLinkedInvitationCards,
   formatDateLabel,
 }: UseTicketOperationsOptions) {
-  const { runHighRiskAction } = useAuth();
+  const { runHighRiskAction, customerSession, session } = useAuth();
+  const { apiBaseUrl } = usePreferences();
+  const extensionInFlight = useRef(false);
   const [ticketModalVisible, setTicketModalVisible] = useState(false);
   const [isExtendingDisplayPeriod, setIsExtendingDisplayPeriod] = useState(false);
   const [isTransferringTickets, setIsTransferringTickets] = useState(false);
@@ -98,6 +96,7 @@ export function useTicketOperations({
       return;
     }
 
+    setNotice('');
     setTicketTransferCount(1);
     setTicketTransferTargetSlug(ticketTransferTargetCards[0]?.slug ?? null);
     setTicketModalVisible(true);
@@ -108,52 +107,40 @@ export function useTicketOperations({
   };
 
   const handleExtendDisplayPeriod = async () => {
-    if (!activeLinkedInvitationCard) {
+    if (!activeLinkedInvitationCard || !session || extensionInFlight.current) {
       return;
     }
-
-    if (activeLinkedInvitationCard.ticketCount < 1) {
-      setNotice('노출 기간 1개월 연장에는 티켓 1장이 필요합니다. 먼저 티켓을 구매해 주세요.');
-      return;
-    }
-
-    const previousDisplayPeriod = activeLinkedInvitationCard.displayPeriod;
+    const scope = JSON.stringify([apiBaseUrl, activeLinkedInvitationCard.slug, customerSession?.uid ?? session.token]);
     await runHighRiskAction(
       {
         title: '노출 기간을 연장할까요?',
         description:
-          '노출 기간 연장은 티켓을 차감하는 민감한 작업입니다. 로그인 세션을 다시 확인한 뒤 진행합니다.',
+          '티켓 1장을 사용해 노출 기간을 1개월 연장합니다. 응답을 받지 못한 요청은 같은 요청으로 다시 확인합니다.',
         confirmLabel: '연장하기',
       },
       async () => {
+        if (extensionInFlight.current) return false;
+        extensionInFlight.current = true;
         setIsExtendingDisplayPeriod(true);
-        const displayPeriodResult = await extendDisplayPeriod(1);
-
-        if (!displayPeriodResult) {
-          setIsExtendingDisplayPeriod(false);
+        try {
+          const requestId = await getOrCreateTicketExtensionRequest(scope);
+          const result = await extendDisplayPeriod(requestId);
+          if (!result) {
+            setNotice('기간 연장 결과를 확인하지 못했습니다. 다시 연장하기를 누르면 같은 요청을 확인하며, 티켓을 중복 차감하지 않습니다.');
+            return false;
+          }
+          await completeTicketExtensionRequest(scope, requestId);
+          const endDateLabel = result.endDate ? formatDateLabel(result.endDate) : '종료일 확인 필요';
+          setTicketModalVisible(false);
+          setNotice(`노출 기간 연장을 확인했습니다. 종료일은 ${endDateLabel}이며 남은 티켓은 ${result.ticketCount}장입니다.`);
+          return true;
+        } catch {
+          setNotice('연장 요청을 안전하게 저장하거나 확인하지 못했습니다. 잠시 후 다시 시도해 주세요.');
           return false;
-        }
-
-        const nextTicketCount = await adjustTicketCount(-1);
-        if (nextTicketCount === null) {
-          const rolledBack = await setDisplayPeriod(previousDisplayPeriod);
+        } finally {
+          extensionInFlight.current = false;
           setIsExtendingDisplayPeriod(false);
-          setNotice(
-            rolledBack
-              ? '티켓 차감이 실패해 노출 기간 연장을 취소했습니다.'
-              : '티켓 차감이 실패했고 노출 기간 롤백도 확인하지 못했습니다. 운영 화면에서 상태를 다시 확인해 주세요.'
-          );
-          return false;
         }
-
-        const endDateLabel = displayPeriodResult.endDate
-          ? formatDateLabel(displayPeriodResult.endDate)
-          : '종료일 확인 필요';
-
-        setIsExtendingDisplayPeriod(false);
-        setTicketModalVisible(false);
-        setNotice(`노출 기간을 1개월 연장했습니다. 새 종료일은 ${endDateLabel}입니다.`);
-        return true;
       }
     );
   };

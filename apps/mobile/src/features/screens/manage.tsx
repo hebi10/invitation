@@ -1,7 +1,7 @@
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
-import { useState } from 'react';
-import { Linking, ScrollView, View } from 'react-native';
+import { useEffect, useRef, useState } from 'react';
+import { Keyboard, Linking, ScrollView, View } from 'react-native';
 
 import { EditorPreparingModal } from '../manage/components/EditorPreparingModal';
 import { GuestbookModal } from '../manage/components/GuestbookModal';
@@ -40,10 +40,10 @@ import {
 } from '../../lib/invitationThemes';
 import {
   getLinkedInvitationThemeKeys,
-  getLinkedInvitationThemePreviewUrl,
   type LinkedInvitationCard,
 } from '../../lib/linkedInvitationCards';
 import { copyTextWithFallback } from '../../lib/textTransfer';
+import { createPrivatePreviewUrl } from '../../lib/apiPreview';
 import type {
   MobileInvitationThemeKey,
 } from '../../types/mobileInvitation';
@@ -68,9 +68,7 @@ export default function ManageScreen() {
     pageSummary,
     refreshDashboard,
     saveCurrentPageConfig,
-    adjustTicketCount,
     extendDisplayPeriod,
-    setDisplayPeriod,
     setPublishedState,
     transferTicketCount,
   } = useInvitationOps();
@@ -79,6 +77,12 @@ export default function ManageScreen() {
   const [isEditorFinalizing, setIsEditorFinalizing] = useState(false);
   const [isIssuingAppLink, setIsIssuingAppLink] = useState(false);
   const [isRevokingAppLink, setIsRevokingAppLink] = useState(false);
+  const [confirmDiscard, setConfirmDiscard] = useState(false);
+  const [savedNextSteps, setSavedNextSteps] = useState(false);
+  const [advancedExpanded, setAdvancedExpanded] = useState(false);
+  const [isOpeningPreview, setIsOpeningPreview] = useState(false);
+  const { ticketIntent, targetPageSlug } = useLocalSearchParams<{ ticketIntent?: string; targetPageSlug?: string }>();
+  const handledTicketIntent = useRef<string | null>(null);
 
   useNoticeToast(notice);
   useNoticeToast(authError, { tone: 'error' });
@@ -151,13 +155,18 @@ export default function ManageScreen() {
     setNotice,
   });
 
-  const handleCloseEditorModal = async () => {
+  const handleCloseEditorModal = async (discard = false) => {
     if (imageUpload.uploadProgress) {
       setNotice('이미지 업로드가 끝난 뒤 편집창을 닫아 주세요.');
       return;
     }
 
-    if (isEditorFinalizing) {
+    if (isEditorFinalizing || invitationForm.isSaving) {
+      return;
+    }
+
+    if (invitationForm.isFormDirty && !discard) {
+      setConfirmDiscard(true);
       return;
     }
 
@@ -165,6 +174,7 @@ export default function ManageScreen() {
     try {
       const cleaned = await imageUpload.discardTrackedUploads();
       invitationForm.closeEditorModal();
+      setConfirmDiscard(false);
 
       if (!cleaned) {
         setNotice(
@@ -177,6 +187,7 @@ export default function ManageScreen() {
   };
 
   const handleSaveEditor = async () => {
+    Keyboard.dismiss();
     if (imageUpload.uploadProgress) {
       setNotice('이미지 업로드가 끝난 뒤 저장해 주세요.');
       return;
@@ -199,6 +210,8 @@ export default function ManageScreen() {
 
       const cleaned = await imageUpload.finalizeTrackedUploads(invitationForm.form);
       invitationForm.closeEditorModal();
+      setConfirmDiscard(false);
+      setSavedNextSteps(true);
       setNotice(
         cleaned
           ? '운영 정보를 저장했습니다.'
@@ -237,9 +250,7 @@ export default function ManageScreen() {
   } = useTicketOperations({
     activeLinkedInvitationCard,
     additionalLinkedInvitationCards,
-    adjustTicketCount,
     extendDisplayPeriod,
-    setDisplayPeriod,
     transferTicketCount,
     setNotice,
     setLinkedInvitationCards,
@@ -247,6 +258,10 @@ export default function ManageScreen() {
   });
 
   const handleCopyPublicUrl = async (card: LinkedInvitationCard) => {
+    if (!card.published) {
+      setNotice('미리보기로 내용을 확인한 뒤 공개해 주세요. 공개 후 하객에게 주소를 공유할 수 있습니다.');
+      return;
+    }
     const address = card.publicUrl?.trim() || card.slug;
     if (!address) {
       setNotice('복사할 청첩장 주소를 아직 확인하지 못했습니다.');
@@ -264,6 +279,26 @@ export default function ManageScreen() {
       setNotice('청첩장 주소를 전달하지 못했습니다. 잠시 후 다시 시도해 주세요.');
     }
   };
+
+  useEffect(() => {
+    if (ticketIntent !== 'extend') { handledTicketIntent.current = null; return; }
+    if (!activeLinkedInvitationCard || !dashboard) return;
+    const key = `${ticketIntent}:${targetPageSlug ?? activeLinkedInvitationCard.slug}`;
+    if (handledTicketIntent.current === key) return;
+    if (targetPageSlug && activeLinkedInvitationCard.slug !== targetPageSlug) {
+      const target = additionalLinkedInvitationCards.find(card => card.slug === targetPageSlug);
+      if (target && !activatingLinkedInvitationSlug && handledTicketIntent.current !== `switch:${key}`) {
+        handledTicketIntent.current = `switch:${key}`;
+        void handleActivateLinkedInvitation(target);
+      }
+      return;
+    }
+    if (dashboard.page.slug !== activeLinkedInvitationCard.slug) return;
+    handledTicketIntent.current = key;
+    handleOpenTicketModal();
+    router.setParams({ ticketIntent: undefined, targetPageSlug: undefined });
+  }, [ticketIntent, targetPageSlug, activeLinkedInvitationCard, additionalLinkedInvitationCards,
+    dashboard, activatingLinkedInvitationSlug, handleActivateLinkedInvitation, handleOpenTicketModal]);
 
   const handleOpenInApp = async () => {
     const manageAppLink = buildManageAppDeepLink();
@@ -442,17 +477,18 @@ export default function ManageScreen() {
     card: LinkedInvitationCard,
     themeKey: MobileInvitationThemeKey
   ) => {
-    const targetUrl = getLinkedInvitationThemePreviewUrl(card, themeKey);
-
-    if (!targetUrl) {
-      setNotice('열 수 있는 디자인 링크를 찾지 못했습니다.');
+    const previewSession = card.session ?? (session?.pageSlug === card.slug ? session : null);
+    if (!previewSession || isOpeningPreview) {
+      if (!previewSession) setNotice('다시 로그인한 뒤 미리보기를 열어 주세요.');
       return;
     }
 
+    setIsOpeningPreview(true);
     try {
+      const targetUrl = await createPrivatePreviewUrl(apiBaseUrl, card.slug, previewSession.token, themeKey);
       try {
         await WebBrowser.openBrowserAsync(targetUrl, {
-          enableDefaultShareMenuItem: true,
+          enableDefaultShareMenuItem: false,
           controlsColor: palette.accent,
           createTask: true,
         });
@@ -465,7 +501,9 @@ export default function ManageScreen() {
       await Linking.openURL(targetUrl);
       closePreviewLinkModal();
     } catch {
-      setNotice('디자인 링크를 열지 못했습니다. 잠시 후 다시 시도해 주세요.');
+      setNotice('미리보기를 열지 못했습니다. 로그인과 네트워크 연결을 확인한 뒤 다시 시도해 주세요.');
+    } finally {
+      setIsOpeningPreview(false);
     }
   };
 
@@ -473,7 +511,7 @@ export default function ManageScreen() {
     <>
       <AppScreen
         title="운영"
-        subtitle="연동된 페이지의 공개 상태, 문구, 링크, 방명록을 모바일에서 바로 관리합니다."
+        subtitle="내용을 완성하고 미리보기로 확인한 뒤 공개·공유해 주세요."
       >
         {showDashboardSyncLoading ? (
           <SectionCard
@@ -521,6 +559,33 @@ export default function ManageScreen() {
           </View>
         ) : null}
 
+        {dashboard && activeLinkedInvitationCard ? (
+          <SectionCard title={savedNextSteps ? '저장했습니다. 이제 완성 화면을 확인해 주세요.' : '내 청첩장 제작'}
+            description="내용 입력 → 미리보기 → 공개 → 공유 순서로 진행합니다.">
+            <AppText variant="muted">{dashboard.page.published
+              ? '현재 공개 중입니다. 수정한 내용을 확인한 뒤 하객에게 공유해 주세요.'
+              : '현재 비공개입니다. 미리보기는 나만 확인할 수 있으며, 공개 전까지 하객에게 보이지 않습니다.'}</AppText>
+            <View style={manageStyles.actionRow}>
+              <ActionButton variant="secondary" onPress={() => void invitationForm.openEditorModal()}>내용 편집</ActionButton>
+              <ActionButton loading={isOpeningPreview} onPress={handleOpenUrl}>미리보기</ActionButton>
+              {!dashboard.page.published ? <ActionButton variant="secondary"
+                onPress={() => void invitationForm.handleTogglePublished()}>확인 후 공개하기</ActionButton> :
+                <ActionButton onPress={() => void handleCopyPublicUrl(activeLinkedInvitationCard)}>공유 주소 복사</ActionButton>}
+            </View>
+          </SectionCard>
+        ) : null}
+
+        {ticketIntent === 'extend' && targetPageSlug && activeLinkedInvitationCard?.slug !== targetPageSlug ? (
+          <SectionCard title="티켓을 구매한 청첩장으로 이동해 주세요."
+            description="연동 전환에 실패했다면 다시 열거나 해당 청첩장을 연동한 뒤 기간을 연장할 수 있습니다.">
+            <ActionButton loading={Boolean(activatingLinkedInvitationSlug)} onPress={() => {
+              const target = additionalLinkedInvitationCards.find(card => card.slug === targetPageSlug);
+              if (target) void handleActivateLinkedInvitation(target);
+              else void handleLinkAnotherInvitation(targetPageSlug);
+            }}>구매한 청첩장 다시 열기</ActionButton>
+          </SectionCard>
+        ) : null}
+
         <LinkedInvitationsSection
           activeLinkedInvitationCard={activeLinkedInvitationCard}
           additionalLinkedInvitationCards={additionalLinkedInvitationCards}
@@ -543,7 +608,10 @@ export default function ManageScreen() {
           onActivateLinkedInvitation={(card) => void handleActivateLinkedInvitation(card)}
         />
 
-        {session ? (
+        <ActionButton variant="secondary" onPress={() => setAdvancedExpanded(value => !value)}>
+          {advancedExpanded ? '기기 연동 설정 접기' : '다른 기기·청첩장 연동 설정'}
+        </ActionButton>
+        {advancedExpanded && session ? (
           <SectionCard
             title="앱 연동 링크"
             description="다른 기기에서는 1회용 앱 연동 링크로 바로 진입할 수 있습니다."
@@ -577,14 +645,14 @@ export default function ManageScreen() {
           </SectionCard>
         ) : null}
 
-        <SectionCard
+        {advancedExpanded ? <SectionCard
           title="연동 전환"
           description="현재 연동을 종료하고 다른 청첩장을 새로 연동합니다."
         >
           <ActionButton variant="secondary" onPress={() => void handleLinkAnotherInvitation()} fullWidth>
             다른 청첩장 연동하기
           </ActionButton>
-        </SectionCard>
+        </SectionCard> : null}
       </AppScreen>
 
       <EditorPreparingModal
@@ -596,12 +664,19 @@ export default function ManageScreen() {
         visible={invitationForm.editorModalVisible}
         onClose={() => void handleCloseEditorModal()}
         title="청첩장 정보 수정"
-        description="/page-wizard처럼 단계별로 입력하면 더 편하게 관리할 수 있습니다."
+        description="순서대로 내용을 입력하고 저장한 뒤 완성 화면을 확인해 주세요."
         palette={palette}
         fontScale={fontScale}
         cardStyle={manageStyles.previewLinkModalCard}
         closeDisabled={isEditorBusy}
+        contentDisabled={isEditorBusy}
         closeLoading={isEditorFinalizing && !invitationForm.isSaving}
+        closeConfirmation={confirmDiscard ? <View style={{ gap: 8, flex: 1 }}>
+          <AppText>저장하지 않은 변경사항이 있습니다.</AppText>
+          <ActionButton onPress={() => void handleSaveEditor()} loading={isEditorBusy}>저장 후 닫기</ActionButton>
+          <ActionButton variant="secondary" onPress={() => setConfirmDiscard(false)}>계속 편집</ActionButton>
+          <ActionButton variant="danger" disabled={isEditorBusy} onPress={() => void handleCloseEditorModal(true)}>변경 취소하고 닫기</ActionButton>
+        </View> : undefined}
       >
         <View style={manageStyles.editorStepHeader}>
           <AppText style={manageStyles.editorStepTitle}>
@@ -675,6 +750,7 @@ export default function ManageScreen() {
           </AppText>
         ) : null}
 
+        {notice ? <AppText accessibilityRole="alert" color={palette.notice}>{notice}</AppText> : null}
         <View style={manageStyles.editorStepActions}>
           <ActionButton
             variant="secondary"
@@ -703,7 +779,7 @@ export default function ManageScreen() {
             loading={invitationForm.isSaving || isEditorFinalizing}
             disabled={Boolean(imageUpload.uploadProgress)}
           >
-            운영 정보 저장
+            저장하고 확인하기
           </ActionButton>
         </View>
       </InvitationEditorModalShell>
@@ -729,6 +805,8 @@ export default function ManageScreen() {
       />
 
       <TicketUsageModal
+        notice={notice || authError || ''}
+        onBuyTickets={() => { closeTicketModal(); router.push('/create?ticketIntent=extend'); }}
         visible={ticketModalVisible}
         onClose={closeTicketModal}
         palette={palette}
@@ -753,8 +831,8 @@ export default function ManageScreen() {
       <InvitationEditorModalShell
         visible={Boolean(previewLinkTargetCard)}
         onClose={closePreviewLinkModal}
-        title="디자인 링크 열기"
-        description="원하는 웨딩 디자인의 링크를 골라서 바로 열 수 있습니다."
+        title="청첩장 미리보기"
+        description="공개 전에 원하는 디자인으로 내용을 확인해 주세요."
         palette={palette}
         fontScale={fontScale}
       >
@@ -778,6 +856,7 @@ export default function ManageScreen() {
                   key={`preview-link-${previewLinkTargetCard.slug}-${themeKey}`}
                   variant={themeKey === previewLinkTargetCard.defaultTheme ? 'primary' : 'secondary'}
                   onPress={() => void handleOpenThemeLink(previewLinkTargetCard, themeKey)}
+                  disabled={isOpeningPreview}
                   style={manageStyles.actionHalfButton}
                 >
                   {`${getInvitationThemeLabel(themeKey)} 링크 열기`}

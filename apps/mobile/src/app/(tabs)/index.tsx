@@ -6,7 +6,8 @@ import { AppScreen } from '../../components/AppScreen';
 import { AppText } from '../../components/AppText';
 import { SectionCard } from '../../components/SectionCard';
 import { WebPreviewNotice } from '../../components/WebPreviewNotice';
-import { quickStartItems, servicePlans } from '../../constants/content';
+import { ThemePreviewGallery } from '../../components/ThemePreviewGallery';
+import { servicePlans, ticketPricing } from '../../constants/content';
 import { useAppFeedback } from '../../contexts/AppFeedbackContext';
 import { useDrafts } from '../../contexts/DraftsContext';
 import { usePreferences } from '../../contexts/PreferencesContext';
@@ -58,9 +59,15 @@ export default function HomeScreen() {
       {isExpoWebPreview ? <WebPreviewNotice /> : null}
 
       <SectionCard
-        title="지금 바로 시작하기"
-        description="신규 고객은 새 청첩장을 만들고, 기존 고객은 페이지 연동으로 바로 운영 화면으로 들어갈 수 있습니다."
+        title={`프리미엄 청첩장 · ${formatPrice(servicePlans[0].price)}`}
+        description="모든 웨딩 디자인과 기본 노출 기간 4개월이 포함됩니다."
       >
+        <AppText variant="muted" style={styles.emptyText}>
+          연장이 필요하면 티켓 1장({formatPrice(ticketPricing.unitPrice)})으로 1개월을 추가할 수 있습니다.
+        </AppText>
+        <AppText style={styles.emptyText}>
+          기본 정보 입력 → 결제 → 내용과 사진 완성 → 확인 후 공개·공유
+        </AppText>
         <View style={styles.primaryActionColumn}>
           <ActionButton onPress={() => router.push('/create')} fullWidth>
             새 청첩장 만들기
@@ -74,11 +81,7 @@ export default function HomeScreen() {
             기존 페이지 연동
           </ActionButton>
         </View>
-        {isExpoWebPreview ? (
-          <AppText variant="muted" style={styles.emptyText}>
-            웹에서는 화면과 초안을 확인할 수 있습니다. 청첩장 연동과 운영은 앱에서 이용해 주세요.
-          </AppText>
-        ) : null}
+        <ThemePreviewGallery />
       </SectionCard>
 
       <SectionCard
@@ -131,15 +134,12 @@ export default function HomeScreen() {
       </SectionCard>
 
       <SectionCard
-        title="빠른 시작"
-        description="원하는 작업을 선택해 바로 이동하세요."
+        title="이용 안내"
+        description="제작 방법과 기간 연장 정책이 궁금하신가요?"
       >
-        {quickStartItems.map((label, index) => (
-          <ActionButton key={label} variant="secondary" fullWidth
-            onPress={() => router.push((['/create', '/login', '/guide'] as const)[index])}>
-            {label}
-          </ActionButton>
-        ))}
+        <ActionButton variant="secondary" fullWidth onPress={() => router.push('/guide')}>
+          이용 가이드 보기
+        </ActionButton>
       </SectionCard>
     </AppScreen>
   );

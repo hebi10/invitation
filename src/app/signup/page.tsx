@@ -1,8 +1,10 @@
 import CustomerAuthPageClient from '@/app/my-invitations/CustomerAuthPageClient';
+import { isMobileAccountSource } from '@/lib/mobileAccountReturn';
 
 export const dynamic = 'force-dynamic';
 
-export default function SignupPage() {
+export default async function SignupPage({ searchParams }: { searchParams: Promise<{ from?: string | string[] }> }) {
+  const mobileReturn = isMobileAccountSource((await searchParams).from);
   return (
     <CustomerAuthPageClient
       title="회원가입"
@@ -11,6 +13,7 @@ export default function SignupPage() {
       authDescription="이메일 또는 Google 계정으로 시작하세요."
       authHelperText="이메일로 가입하셨다면 받은 편지함의 인증 링크를 확인해 주세요. 인증 후 청첩장을 만들 수 있습니다."
       initialMode="register"
+      mobileReturn={mobileReturn}
     />
   );
 }

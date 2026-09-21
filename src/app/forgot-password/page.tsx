@@ -1,14 +1,19 @@
 'use client';
 
 import Link from 'next/link';
-import { useState, type FormEvent } from 'react';
+import { Suspense, useState, type FormEvent } from 'react';
+import { useSearchParams } from 'next/navigation';
+import MobileAccountReturn from '@/app/_components/MobileAccountReturn';
+import { isMobileAccountSource } from '@/lib/mobileAccountReturn';
 
 import { sendFirebasePasswordReset } from '@/services/adminAuth';
 
 import cardStyles from '@/app/_components/FirebaseAuthLoginCard.module.css';
 import styles from '@/app/my-invitations/page.module.css';
 
-export default function ForgotPasswordPage() {
+function ForgotPasswordContent() {
+  const searchParams = useSearchParams();
+  const mobileReturn = isMobileAccountSource(searchParams.get('from'));
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -49,7 +54,12 @@ export default function ForgotPasswordPage() {
           <button className={cardStyles.primaryButton} type="submit" disabled={loading}>{loading ? '요청 중...' : '재설정 메일 요청'}</button>
           <Link className={styles.backLink} href="/login">로그인으로 돌아가기</Link>
         </form>
+        {mobileReturn ? <MobileAccountReturn passwordReset /> : null}
       </div>
     </main>
   );
+}
+
+export default function ForgotPasswordPage() {
+  return <Suspense fallback={<main className={styles.page}>화면을 불러오는 중입니다.</main>}><ForgotPasswordContent /></Suspense>;
 }

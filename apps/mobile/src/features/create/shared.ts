@@ -109,8 +109,6 @@ export function buildCreateValidationRules(input: {
 }): CreateValidationRule[] {
   const groomKoreanName = input.groomKoreanName.trim();
   const brideKoreanName = input.brideKoreanName.trim();
-  const groomEnglishName = input.groomEnglishName.trim();
-  const brideEnglishName = input.brideEnglishName.trim();
   const pageIdentifier = input.pageIdentifier.trim();
   const slugValidation = validatePageSlugBase(pageIdentifier);
 
@@ -126,18 +124,6 @@ export function buildCreateValidationRules(input: {
       section: 'basic',
       passed: Boolean(brideKoreanName),
       errorMessage: '신부 한글 이름을 입력해 주세요.',
-    },
-    {
-      label: '신랑 영문 이름',
-      section: 'basic',
-      passed: Boolean(groomEnglishName),
-      errorMessage: '신랑 영문 이름을 입력해 주세요.',
-    },
-    {
-      label: '신부 영문 이름',
-      section: 'basic',
-      passed: Boolean(brideEnglishName),
-      errorMessage: '신부 영문 이름을 입력해 주세요.',
     },
     {
       label: '청첩장 주소',

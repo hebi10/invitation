@@ -1,11 +1,11 @@
-import { useRouter } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import type { useAuth } from '../../../contexts/AuthContext';
 import type { useDrafts } from '../../../contexts/DraftsContext';
 import { checkMobileInvitationSlugAvailability } from '../../../lib/api';
 import { purchaseBillingProduct } from '../../../lib/billing';
-import { runPendingBillingPurchase } from '../../../lib/pendingBillingPurchase';
+import { getPendingBillingRequest, recoverPendingBillingPurchase, runPendingBillingPurchase, type PurchaseRequest } from '../../../lib/pendingBillingPurchase';
 import { createRandomSuffix } from '../../../lib/id';
 import { DEFAULT_INVITATION_THEME } from '../../../lib/invitationThemes';
 import { getMobileBillingPageCreationProductId } from '../../../lib/mobileBillingProducts';
@@ -106,6 +106,35 @@ export function useCreateForm({
   const [notice, setNotice] = useState('');
   const [paymentModalVisible, setPaymentModalVisible] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [creationCompleted, setCreationCompleted] = useState(false);
+  const [pendingCreation, setPendingCreation] = useState<PurchaseRequest | null>(null);
+  const refreshPendingCreation = useCallback(async () => {
+    if (!customerSession) { setPendingCreation(null); return; }
+    try {
+      const pending = await getPendingBillingRequest({ appUserId: customerSession.uid, apiBaseUrl });
+      setPendingCreation(pending?.target.action === 'createInvitationPage' ? pending : null);
+    } catch (error) {
+      setNotice(error instanceof Error ? error.message : '이전 결제를 확인하지 못했습니다.');
+    }
+  }, [apiBaseUrl, customerSession]);
+  useFocusEffect(useCallback(() => { void refreshPendingCreation(); }, [refreshPendingCreation]));
+  const handleRecoverCreation = useCallback(async () => {
+    if (!customerSession || isExpoWebPreview) return;
+    setIsSubmitting(true);
+    setNotice('이전 결제를 추가 결제 없이 이어서 처리하고 있습니다.');
+    try {
+      await recoverPendingBillingPurchase({ appUserId: customerSession.uid, apiBaseUrl }, (request, receipt) => {
+        if (request.target.action !== 'createInvitationPage') throw new Error('청첩장 제작 결제가 아닙니다.');
+        return createInvitationPage(request.target.input, { billingPurchase: receipt });
+      });
+      setPendingCreation(null);
+      setPaymentModalVisible(false);
+      setCreationCompleted(true);
+      setNotice('');
+    } catch (error) {
+      setNotice(error instanceof Error ? error.message : '이전 결제를 반영하지 못했습니다.');
+    } finally { setIsSubmitting(false); }
+  }, [apiBaseUrl, createInvitationPage, customerSession, isExpoWebPreview]);
   const [currentStep, setCurrentStep] = useState<CreateStepKey>('info');
   const [slugAvailability, setSlugAvailability] = useState<CreateSlugAvailabilityState>(
     INITIAL_SLUG_AVAILABILITY_STATE
@@ -133,10 +162,6 @@ export function useCreateForm({
   const totalPrice = getCreatePurchaseSummary({ servicePlan: selectedPlan }).estimatedPrice;
 
   const suggestedSlugBase = useMemo(() => {
-    if (!groomEnglishName.trim() && !brideEnglishName.trim()) {
-      return '';
-    }
-
     return buildSuggestedCreateSlugBase(
       groomEnglishName.trim(),
       brideEnglishName.trim(),
@@ -508,12 +533,9 @@ export function useCreateForm({
   const canAutoSaveProgress = useMemo(
     () =>
       Boolean(
-        groomKoreanName.trim() &&
-          brideKoreanName.trim() &&
-          groomEnglishName.trim() &&
-          brideEnglishName.trim()
+        groomKoreanName.trim() && brideKoreanName.trim()
       ),
-    [brideKoreanName, brideEnglishName, groomEnglishName, groomKoreanName]
+    [brideKoreanName, groomKoreanName]
   );
 
   const persistDraft = useCallback(
@@ -641,11 +663,9 @@ export function useCreateForm({
   const handleSaveDraft = useCallback(async () => {
     if (
       !groomKoreanName.trim() ||
-      !brideKoreanName.trim() ||
-      !groomEnglishName.trim() ||
-      !brideEnglishName.trim()
+      !brideKoreanName.trim()
     ) {
-      setNotice('초안 저장 전에는 신랑·신부의 한글 이름과 영문 이름을 모두 입력해 주세요.');
+      setNotice('초안 저장 전에는 신랑·신부의 한글 이름을 입력해 주세요.');
       moveToStep('info');
       return;
     }
@@ -655,9 +675,7 @@ export function useCreateForm({
         '작성 중인 초안을 저장했습니다. 다음에도 같은 화면에서 이어서 만들 수 있습니다.',
     });
   }, [
-    brideEnglishName,
     brideKoreanName,
-    groomEnglishName,
     groomKoreanName,
     moveToStep,
     persistDraft,
@@ -693,7 +711,7 @@ export function useCreateForm({
 
     if (isExpoWebPreview) {
       setNotice(
-        'Expo 웹 미리보기에서는 실제 페이지 생성 요청을 보낼 수 없습니다. 모바일 앱이나 Next 운영 환경에서 진행해 주세요.'
+        '웹에서는 초안을 준비할 수 있습니다. 결제와 청첩장 생성은 모바일 앱에서 진행해 주세요.'
       );
       return;
     }
@@ -757,7 +775,7 @@ export function useCreateForm({
   const handleConfirmCreate = useCallback(async () => {
     if (isExpoWebPreview) {
       setNotice(
-        'Expo 웹 미리보기에서는 실제 페이지를 만들 수 없습니다. 모바일 앱이나 Next 운영 환경에서 진행해 주세요.'
+        '웹에서는 초안을 준비할 수 있습니다. 결제와 청첩장 생성은 모바일 앱에서 진행해 주세요.'
       );
       setPaymentModalVisible(false);
       return;
@@ -818,18 +836,21 @@ export function useCreateForm({
     setIsSubmitting(false);
 
     if (!created) {
+      await refreshPendingCreation();
       return;
     }
 
-    if (editingDraftId) {
-      await removeDraft(editingDraftId);
-    }
-
+    const completedDraftId = editingDraftId;
     resetForm();
     setNotice(
-      'Google Play 결제가 완료되어 청첩장을 만들었습니다. 운영 화면에서 상세 정보를 이어서 입력해 주세요.'
+      'Google Play 결제가 완료되었습니다. 청첩장 제작 시작을 눌러 상세 정보를 입력해 주세요.'
     );
-    router.replace('/manage');
+    setPaymentModalVisible(false);
+    setPendingCreation(null);
+    setCreationCompleted(true);
+    if (completedDraftId) {
+      try { await removeDraft(completedDraftId); } catch { /* 결제 완료 화면은 로컬 초안 정리 실패와 무관하게 유지합니다. */ }
+    }
   }, [
     apiBaseUrl,
     brideKoreanName,
@@ -844,7 +865,7 @@ export function useCreateForm({
     moveToStep,
     removeDraft,
     resetForm,
-    router,
+    refreshPendingCreation,
     selectedPlan,
     selectedTheme,
     slugBase,
@@ -886,6 +907,10 @@ export function useCreateForm({
     notice,
     setNotice,
     paymentModalVisible,
+    pendingCreation,
+    handleRecoverCreation,
+    creationCompleted,
+    handleStartEditing: () => { setCreationCompleted(false); router.replace('/manage'); },
     closePaymentModal,
     isSubmitting,
     currentStep,

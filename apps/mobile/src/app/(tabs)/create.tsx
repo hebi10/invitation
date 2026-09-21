@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useFocusEffect } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   Animated,
@@ -30,6 +30,7 @@ import { useCreateForm } from '../../features/create/hooks/useCreateForm';
 import { useCreateTicketPurchase } from '../../features/create/hooks/useCreateTicketPurchase';
 import {
   CREATE_STEPS,
+  designThemes,
   CREATE_PAGE_IDENTIFIER_MAX_LENGTH,
   MAX_TICKET_COUNT,
   STICKY_CTA_BAR_COMPACT_HEIGHT,
@@ -46,6 +47,7 @@ import { useNoticeToast } from '../../hooks/useNoticeToast';
 import { formatPrice } from '../../lib/format';
 
 export default function CreateScreen() {
+  const router = useRouter();
   const isExpoWebPreview = Platform.OS === 'web';
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
@@ -195,6 +197,20 @@ export default function CreateScreen() {
     ],
   } as const;
 
+  const pendingInput = createForm.pendingCreation?.target.action === 'createInvitationPage' ? createForm.pendingCreation.target.input : null;
+  const pendingCreationSummary = pendingInput ? `${pendingInput.groomKoreanName} · ${pendingInput.brideKoreanName} / ${pendingInput.slugBase} / ${designThemes.find((theme) => theme.key === pendingInput.theme)?.label ?? '선택한 디자인'}` : '';
+  const pendingTicketSlug = ticketPurchase.pendingTickets?.target.action === 'grantTicketPack' ? ticketPurchase.pendingTickets.target.pageSlug : '';
+
+  if (createForm.creationCompleted) {
+    return <AppScreen title="결제가 완료되었습니다" subtitle="청첩장 제작을 시작해 주세요.">
+      <SectionCard title="프리미엄 청첩장 준비 완료" description="아직 하객에게 공개되지 않은 초안입니다.">
+        <AppText>기본 이용 기간 4개월이 시작되었습니다. 예식 정보와 사진을 입력하고 미리보기를 확인한 뒤 공개해 주세요.</AppText>
+        {pageSummary?.displayPeriod.endDate ? <AppText>이용 종료일: {new Date(pageSummary.displayPeriod.endDate).toLocaleDateString('ko-KR')}</AppText> : null}
+        <ActionButton onPress={createForm.handleStartEditing} fullWidth>청첩장 제작 시작</ActionButton>
+      </SectionCard>
+    </AppScreen>;
+  }
+
   return (
     <>
       <View style={[styles.screenRoot, { backgroundColor: palette.background }]}>
@@ -258,6 +274,14 @@ export default function CreateScreen() {
             </View>
           </View>
 
+          {pendingInput ? <SectionCard title="완료되지 않은 제작 결제가 있습니다" description={pendingCreationSummary}>
+            <AppText>현재 작성 내용과 별개로, 결제 당시의 이름·주소·디자인으로 이어서 처리합니다. 추가 결제는 없습니다.</AppText>
+            <ActionButton loading={createForm.isSubmitting} disabled={isExpoWebPreview} onPress={() => void createForm.handleRecoverCreation()} fullWidth>이전 결제 이어서 처리</ActionButton>
+          </SectionCard> : null}
+          {pendingTicketSlug ? <SectionCard title="완료되지 않은 티켓 결제가 있습니다" description={`결제 대상: ${pendingTicketSlug}`}>
+            <AppText>선택한 대상과 별개로, 원래 결제한 청첩장에 티켓을 적립합니다. 추가 결제는 없습니다.</AppText>
+            <ActionButton loading={ticketPurchase.isTicketPurchaseSubmitting} disabled={isExpoWebPreview} onPress={() => void ticketPurchase.handleRecoverTickets()} fullWidth>티켓 결제 이어서 처리</ActionButton>
+          </SectionCard> : null}
           {createForm.notice ? (
             <View
               style={[
@@ -397,7 +421,7 @@ export default function CreateScreen() {
                   placeholder="예: 나신부"
                 />
                 <TextField
-                  label="신랑 영문 이름"
+                  label="신랑 영문 이름 (선택)"
                   value={createForm.groomEnglishName}
                   onChangeText={createForm.setGroomEnglishName}
                   placeholder="예: minje-shin"
@@ -405,7 +429,7 @@ export default function CreateScreen() {
                   autoCorrect={false}
                 />
                 <TextField
-                  label="신부 영문 이름"
+                  label="신부 영문 이름 (선택)"
                   value={createForm.brideEnglishName}
                   onChangeText={createForm.setBrideEnglishName}
                   placeholder="예: hyunji-kim"
@@ -523,7 +547,7 @@ export default function CreateScreen() {
               />
 
               <AppText variant="muted" style={styles.selectionSummaryDescription}>
-                청첩장을 한 번 만들면 주소 뒤에 디자인 이름을 붙여 모든 웨딩 디자인을 열 수 있습니다. 샘플은 미리보기용입니다.
+                모든 웨딩 디자인이 포함됩니다. 제작 후 미리보기에서 원하는 디자인으로 확인할 수 있습니다.
               </AppText>
               <ThemePreviewGallery tier={createForm.selectedPlanInfo.tier} />
 
@@ -588,6 +612,7 @@ export default function CreateScreen() {
                   제작 초안 저장
                 </ActionButton>
               </View>
+              <AppText variant="caption">생성일부터 기본 4개월 이용할 수 있습니다. 제작 기간도 포함되며, 이후 티켓 1장(1,000원)으로 1개월씩 연장합니다.</AppText>
             </SectionCard>
           ) : null}
           <View onLayout={(event) => setTicketSectionY(event.nativeEvent.layout.y)}>
@@ -834,6 +859,10 @@ export default function CreateScreen() {
         onConfirm={() => void createForm.handleConfirmCreate()}
         loading={createForm.isSubmitting || isAuthenticating}
         authError={authError}
+        notice={createForm.notice}
+        hasPendingPurchase={Boolean(createForm.pendingCreation)}
+        recoverySummary={pendingCreationSummary}
+        onRecover={() => void createForm.handleRecoverCreation()}
         palette={palette}
         serviceName={createForm.selectedPlanInfo.name}
         selectedThemeLabel="모든 웨딩 디자인"
@@ -846,6 +875,8 @@ export default function CreateScreen() {
         onClose={ticketPurchase.closeTicketOnlyModal}
         onConfirm={ticketPurchase.handleConfirmTicketOnlyPurchase}
         loading={ticketPurchase.isTicketPurchaseSubmitting}
+        pendingTarget={pendingTicketSlug}
+        onRecover={() => void ticketPurchase.handleRecoverTickets()}
         authError={authError}
         notice={createForm.notice}
         palette={palette}
@@ -863,6 +894,11 @@ export default function CreateScreen() {
       <TicketPurchaseSuccessModal
         visible={ticketPurchase.ticketPurchaseSuccess !== null}
         onClose={ticketPurchase.closeTicketPurchaseSuccess}
+        onExtend={() => {
+          const targetPageSlug = ticketPurchase.ticketPurchaseSuccess?.targetPageSlug;
+          ticketPurchase.closeTicketPurchaseSuccess();
+          router.push({ pathname: '/manage', params: { ticketIntent: 'extend', targetPageSlug } });
+        }}
         palette={palette}
         success={ticketPurchase.ticketPurchaseSuccess}
       />

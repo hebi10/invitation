@@ -19,6 +19,8 @@ type TicketOnlyPurchaseModalProps = {
   loading: boolean;
   authError: string | null;
   notice: string;
+  pendingTarget: string;
+  onRecover: () => void;
   palette: ReturnType<typeof getPalette>;
   ticketCount: number;
   ticketUnitPrice: number;
@@ -38,6 +40,8 @@ export function TicketOnlyPurchaseModal({
   loading,
   authError,
   notice,
+  pendingTarget,
+  onRecover,
   palette,
   ticketCount,
   ticketUnitPrice,
@@ -167,10 +171,11 @@ export function TicketOnlyPurchaseModal({
             ) : null}
 
             <View style={styles.actionColumn}>
+              {pendingTarget ? <><AppText>기존 결제 대상: {pendingTarget}. 이 청첩장에 추가 결제 없이 티켓을 적립합니다.</AppText><ActionButton onPress={onRecover} loading={loading} fullWidth>티켓 결제 이어서 처리</ActionButton></> : null}
               <ActionButton variant="secondary" onPress={onClose} fullWidth>
                 다시 확인하기
               </ActionButton>
-              <ActionButton onPress={onConfirm} loading={loading} fullWidth>
+              <ActionButton onPress={onConfirm} loading={loading} disabled={Boolean(pendingTarget)} fullWidth>
                 Google Play로 티켓 구매
               </ActionButton>
             </View>

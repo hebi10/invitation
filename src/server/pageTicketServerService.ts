@@ -10,6 +10,10 @@ export async function adjustServerPageTicketCount(pageSlug: string, amount: numb
   return firestoreEventTicketRepository.adjustTicketCountByPageSlug(pageSlug, amount);
 }
 
+export async function redeemServerDisplayPeriodTicket(pageSlug: string, requestId: string) {
+  return firestoreEventTicketRepository.redeemDisplayPeriodTicketByPageSlug(pageSlug, requestId);
+}
+
 export async function transferServerPageTicketCount(
   sourcePageSlug: string,
   targetPageSlug: string,

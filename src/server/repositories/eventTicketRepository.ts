@@ -12,6 +12,12 @@ export interface EventTicketRepository {
   isAvailable(): boolean;
   getTicketCountByPageSlug(pageSlug: string): Promise<number>;
   adjustTicketCountByPageSlug(pageSlug: string, amount: number): Promise<number>;
+  redeemDisplayPeriodTicketByPageSlug(pageSlug: string, requestId: string): Promise<{
+    enabled: boolean;
+    startDate: Date;
+    endDate: Date;
+    ticketCount: number;
+  }>;
   transferTicketCountByPageSlug(
     sourcePageSlug: string,
     targetPageSlug: string,
@@ -70,6 +76,60 @@ export const firestoreEventTicketRepository: EventTicketRepository = {
     }
 
     return (await fetchEventTicketCountByPageSlug(normalizedPageSlug)) ?? 0;
+  },
+
+  async redeemDisplayPeriodTicketByPageSlug(pageSlug, requestId) {
+    if (!/^[a-zA-Z0-9_-]{16,128}$/.test(requestId)) {
+      throw Object.assign(new Error('올바른 연장 요청 번호가 필요합니다.'), { status: 400 });
+    }
+    const normalizedPageSlug = normalizePageSlug(pageSlug);
+    const db = getServerFirestore();
+    if (!db) throw new Error('Server Firestore is not available.');
+    const event = await resolveStoredEventBySlug(normalizedPageSlug);
+    if (!event) throw Object.assign(new Error('청첩장을 찾을 수 없습니다.'), { status: 404 });
+    const eventRef = db.collection(EVENTS_COLLECTION).doc(event.summary.eventId);
+    const requestRef = db.collection('mobileTicketExtensions').doc(`${event.summary.eventId}_${requestId}`);
+
+    return db.runTransaction(async (transaction) => {
+      const [snapshot, receipt] = await Promise.all([
+        transaction.get(eventRef), transaction.get(requestRef),
+      ]);
+      const summary = snapshot.exists
+        ? normalizeEventSummaryRecord(snapshot.id, snapshot.data() ?? {}, normalizedPageSlug)
+        : null;
+      if (!summary) throw Object.assign(new Error('청첩장을 찾을 수 없습니다.'), { status: 404 });
+      const period = summary.displayPeriod;
+      if (!period?.startDate || !period.endDate) {
+        throw Object.assign(new Error('노출 기간이 설정되지 않았습니다.'), { status: 409 });
+      }
+      const currentCount = readTicketCount(summary.ticketBalance ?? summary.ticketCount);
+      // Return the current authoritative state for a replay, even after later operations.
+      if (receipt.exists) {
+        return { enabled: period.isActive, startDate: period.startDate, endDate: period.endDate, ticketCount: currentCount };
+      }
+      if (currentCount < 1) {
+        throw Object.assign(new Error('기간 연장에는 티켓 1장이 필요합니다.'), { status: 409 });
+      }
+      const nextEndDate = new Date(period.endDate);
+      const day = nextEndDate.getUTCDate();
+      nextEndDate.setUTCDate(1);
+      nextEndDate.setUTCMonth(nextEndDate.getUTCMonth() + 1);
+      const lastDay = new Date(Date.UTC(nextEndDate.getUTCFullYear(), nextEndDate.getUTCMonth() + 1, 0)).getUTCDate();
+      nextEndDate.setUTCDate(Math.min(day, lastDay));
+      const ticketCount = currentCount - 1;
+      const now = new Date();
+      transaction.set(eventRef, {
+        stats: { ticketCount, ticketBalance: ticketCount },
+        displayPeriod: { isActive: true, startDate: period.startDate, endDate: nextEndDate },
+        visibility: { displayStartAt: period.startDate, displayEndAt: nextEndDate },
+        updatedAt: now,
+        version: (summary.version ?? 0) + 1,
+      }, { merge: true });
+      transaction.set(requestRef, {
+        eventId: summary.eventId, requestId, months: 1, ticketsUsed: 1, createdAt: now,
+      });
+      return { enabled: true, startDate: period.startDate, endDate: nextEndDate, ticketCount };
+    });
   },
 
   async adjustTicketCountByPageSlug(pageSlug, amount) {

@@ -5,8 +5,8 @@ import type { useAuth } from '../../../contexts/AuthContext';
 import type { useInvitationOps } from '../../../contexts/InvitationOpsContext';
 import { fulfillMobileBillingTicketPack } from '../../../lib/api';
 import { purchaseBillingProduct } from '../../../lib/billing';
-import { runPendingBillingPurchase } from '../../../lib/pendingBillingPurchase';
-import { getMobileBillingTicketPackProductId } from '../../../lib/mobileBillingProducts';
+import { getPendingBillingRequest, recoverPendingBillingPurchase, runPendingBillingPurchase, type PurchaseRequest } from '../../../lib/pendingBillingPurchase';
+import { getMobileBillingProductDefinition, getMobileBillingTicketPackProductId } from '../../../lib/mobileBillingProducts';
 import {
   buildLinkedInvitationCardFromPageSummary,
   getLinkedInvitationCards,
@@ -53,7 +53,18 @@ export function useCreateTicketPurchase({
   const [selectedTicketTargetSlug, setSelectedTicketTargetSlug] = useState<string | null>(null);
   const [isTicketPurchaseSubmitting, setIsTicketPurchaseSubmitting] = useState(false);
   const [ticketPurchaseSuccess, setTicketPurchaseSuccess] =
-    useState<TicketPurchaseSuccessState | null>(null);
+    useState<(TicketPurchaseSuccessState & { targetPageSlug: string }) | null>(null);
+  const [pendingTickets, setPendingTickets] = useState<PurchaseRequest | null>(null);
+  const refreshPendingTickets = useCallback(async () => {
+    if (!customerSession) { setPendingTickets(null); return; }
+    try {
+      const pending = await getPendingBillingRequest({ appUserId: customerSession.uid, apiBaseUrl });
+      setPendingTickets(pending?.target.action === 'grantTicketPack' ? pending : null);
+    } catch (error) {
+      setNotice(error instanceof Error ? error.message : '이전 결제를 확인하지 못했습니다.');
+    }
+  }, [apiBaseUrl, customerSession, setNotice]);
+  useFocusEffect(useCallback(() => { void refreshPendingTickets(); }, [refreshPendingTickets]));
   const ticketPrice = calculateTicketPrice(ticketOnlyCount);
 
   const reloadLinkedInvitationCards = useCallback(async () => {
@@ -177,6 +188,33 @@ export function useCreateTicketPurchase({
     setTicketPurchaseSuccess(null);
   }, []);
 
+  const handleRecoverTickets = useCallback(async () => {
+    if (!customerSession) return;
+    setIsTicketPurchaseSubmitting(true);
+    setNotice('이전 티켓 결제를 추가 결제 없이 이어서 처리하고 있습니다.');
+    try {
+      const result = await recoverPendingBillingPurchase({ appUserId: customerSession.uid, apiBaseUrl }, async (request, receipt) => {
+        if (request.target.action !== 'grantTicketPack') throw new Error('티켓 결제가 아닙니다.');
+        const targetSlug = request.target.pageSlug;
+        const target = linkedInvitationCards.find((card) => card.slug === targetSlug);
+        if (!target?.session) throw new Error('기존 결제 대상 청첩장을 먼저 연동해 주세요.');
+        const fulfillment = await fulfillMobileBillingTicketPack(apiBaseUrl, { purchase: receipt, targetPageSlug: targetSlug, targetToken: target.session.token });
+        return { target, ticketCount: fulfillment.ticketCount, productId: request.productId };
+      });
+      const definition = getMobileBillingProductDefinition(result.productId);
+      const cards = linkedInvitationCards.map((card) => card.slug === result.target.slug ? { ...card, ticketCount: result.ticketCount, updatedAt: Date.now() } : card);
+      setLinkedInvitationCards(cards);
+      setPendingTickets(null);
+      setTicketOnlyModalVisible(false);
+      setTicketPurchaseSuccess({ ticketCount: definition.kind === 'ticketPack' ? definition.ticketCount : 0, targetDisplayName: result.target.displayName || result.target.slug, targetPageSlug: result.target.slug, nextTicketCount: result.ticketCount });
+      setNotice('');
+      await persistLinkedInvitationCards(cards);
+      if (session?.pageSlug === result.target.slug) await refreshDashboard();
+    } catch (error) {
+      setNotice(error instanceof Error ? error.message : '이전 티켓 결제를 반영하지 못했습니다.');
+    } finally { setIsTicketPurchaseSubmitting(false); }
+  }, [apiBaseUrl, customerSession, linkedInvitationCards, refreshDashboard, session, setNotice]);
+
   const handleConfirmTicketOnlyPurchase = useCallback(async () => {
     clearAuthError();
     setNotice('');
@@ -235,6 +273,7 @@ export function useCreateTicketPurchase({
     setIsTicketPurchaseSubmitting(false);
 
     if (nextTicketCount === null) {
+      await refreshPendingTickets();
       return;
     }
 
@@ -249,25 +288,28 @@ export function useCreateTicketPurchase({
     );
 
     setLinkedInvitationCards(nextLinkedInvitationCards);
-    await persistLinkedInvitationCards(nextLinkedInvitationCards);
-
-    if (session && selectedTicketTargetCard.slug === session.pageSlug) {
-      await refreshDashboard();
-    }
-
     setTicketOnlyModalVisible(false);
+    setPendingTickets(null);
     resetTicketOnlyCount();
     setTicketPurchaseSuccess({
       ticketCount: ticketOnlyCount,
       targetDisplayName: purchaseTargetDisplayName,
+      targetPageSlug: selectedTicketTargetCard.slug,
       nextTicketCount,
     });
+    try {
+      await persistLinkedInvitationCards(nextLinkedInvitationCards);
+      if (session && selectedTicketTargetCard.slug === session.pageSlug) await refreshDashboard();
+    } catch {
+      setNotice('티켓 적립은 완료되었습니다. 최신 보유 수량은 운영 화면을 새로고침해 확인해 주세요.');
+    }
   }, [
     apiBaseUrl,
     clearAuthError,
     customerSession,
     linkedInvitationCards,
     refreshDashboard,
+    refreshPendingTickets,
     resetTicketOnlyCount,
     selectedTicketTargetCard,
     session,
@@ -276,6 +318,8 @@ export function useCreateTicketPurchase({
   ]);
 
   return {
+    pendingTickets,
+    handleRecoverTickets,
     ticketOnlyCount,
     updateTicketOnlyCount,
     decreaseTicketOnlyCount,

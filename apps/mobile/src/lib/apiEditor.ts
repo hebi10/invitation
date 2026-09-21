@@ -223,12 +223,13 @@ export async function extendMobileInvitationDisplayPeriod(
   baseUrl: string,
   pageSlug: string,
   token: string,
-  months = 1,
+  requestId: string,
   highRiskToken?: string
 ) {
   return readJsonResponse<{
     success: boolean;
     enabled: boolean;
+    ticketCount: number;
     startDate: string | null;
     endDate: string | null;
   }>(
@@ -241,8 +242,8 @@ export async function extendMobileInvitationDisplayPeriod(
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          action: MOBILE_CLIENT_EDITOR_PAGE_ACTIONS.extendDisplayPeriod,
-          months,
+          action: MOBILE_CLIENT_EDITOR_PAGE_ACTIONS.redeemDisplayPeriodTicket,
+          requestId,
         }),
       }
     )

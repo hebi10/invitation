@@ -1,4 +1,4 @@
-﻿import type { PropsWithChildren } from 'react';
+import type { PropsWithChildren, ReactNode } from 'react';
 
 import {
   KeyboardAvoidingView,
@@ -27,6 +27,8 @@ type InvitationEditorModalShellProps = PropsWithChildren<{
   closeAccessibilityLabel?: string;
   closeDisabled?: boolean;
   closeLoading?: boolean;
+  closeConfirmation?: ReactNode;
+  contentDisabled?: boolean;
 }>;
 
 export function InvitationEditorModalShell({
@@ -40,6 +42,8 @@ export function InvitationEditorModalShell({
   closeAccessibilityLabel,
   closeDisabled = false,
   closeLoading = false,
+  closeConfirmation,
+  contentDisabled = false,
   children,
 }: InvitationEditorModalShellProps) {
   const insets = useSafeAreaInsets();
@@ -106,11 +110,16 @@ export function InvitationEditorModalShell({
               keyboardShouldPersistTaps="handled"
               keyboardDismissMode="on-drag"
             >
-              {children}
+              <View pointerEvents={contentDisabled ? 'none' : 'auto'}
+                accessibilityElementsHidden={contentDisabled}
+                importantForAccessibility={contentDisabled ? 'no-hide-descendants' : 'auto'}
+                style={{ gap: 12 }}>
+                {children}
+              </View>
             </ScrollView>
 
             <View style={styles.actions}>
-              <ActionButton
+              {closeConfirmation ?? <ActionButton
                 variant="secondary"
                 onPress={onClose}
                 disabled={closeDisabled}
@@ -118,7 +127,7 @@ export function InvitationEditorModalShell({
                 accessibilityLabel={closeAccessibilityLabel ?? `${title} 닫기`}
               >
                 닫기
-              </ActionButton>
+              </ActionButton>}
             </View>
           </View>
         </KeyboardAvoidingView>

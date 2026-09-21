@@ -128,9 +128,7 @@ export async function POST(request: Request) {
       if (
         !slugBase ||
         !groomKoreanName ||
-        !brideKoreanName ||
-        !groomEnglishName ||
-        !brideEnglishName
+        !brideKoreanName
       ) {
         return NextResponse.json(
           { error: 'Invitation page draft input is required.' },

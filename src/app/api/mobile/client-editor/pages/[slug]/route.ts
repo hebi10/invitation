@@ -21,16 +21,14 @@ import {
 } from '@/server/clientEditorMobileApi';
 import {
   buildServerTrustedMobileInvitationPageConfigForSave,
-  extendServerInvitationPageDisplayPeriod,
   getServerEditableInvitationPageConfig,
   restoreServerInvitationPageConfig,
   saveServerInvitationPageConfig,
-  setServerInvitationPageDisplayPeriod,
   setServerInvitationPagePublished,
   setServerInvitationPageVariantAvailability,
 } from '@/server/invitationPageServerService';
 import {
-  adjustServerPageTicketCount,
+  redeemServerDisplayPeriodTicket,
   transferServerPageTicketCount,
 } from '@/server/pageTicketServerService';
 import {
@@ -59,6 +57,7 @@ type MobileClientEditorPageActionBody = {
   available?: unknown;
   amount?: unknown;
   months?: unknown;
+  requestId?: unknown;
   enabled?: unknown;
   startDate?: unknown;
   endDate?: unknown;
@@ -77,15 +76,6 @@ function readTheme(value: unknown) {
 
 function readVariantKey(value: unknown) {
   return isInvitationThemeKey(value) ? value : undefined;
-}
-
-function readDate(value: unknown) {
-  if (typeof value !== 'string' || !value.trim()) {
-    return null;
-  }
-
-  const parsed = new Date(value);
-  return Number.isNaN(parsed.getTime()) ? null : parsed;
 }
 
 function buildTrustedPageConfig(
@@ -123,7 +113,8 @@ async function resolveHighRiskRequirement(
     };
   }
 
-  if (action === MOBILE_CLIENT_EDITOR_PAGE_ACTIONS.extendDisplayPeriod) {
+  if (action === MOBILE_CLIENT_EDITOR_PAGE_ACTIONS.extendDisplayPeriod ||
+      action === MOBILE_CLIENT_EDITOR_PAGE_ACTIONS.redeemDisplayPeriodTicket) {
     return {
       action: 'managePaidFeature',
       metadata: {
@@ -325,6 +316,14 @@ export async function POST(
     );
   }
 
+  if (action === MOBILE_CLIENT_EDITOR_PAGE_ACTIONS.redeemDisplayPeriodTicket &&
+      !hasMobileClientEditorPermission(access.permissions, 'canManageTickets')) {
+    return NextResponse.json(
+      { error: buildMissingMobileClientEditorPermissionError('canManageTickets') },
+      { status: 403, headers: buildRateLimitHeaders(rateLimitResult) }
+    );
+  }
+
   const highRiskRequirement = await resolveHighRiskRequirement(pageSlug, action, body);
   if (highRiskRequirement) {
     const highRiskAccess = authorizeMobileClientEditorHighRiskToken(
@@ -451,86 +450,33 @@ export async function POST(
       );
     }
 
-    if (action === MOBILE_CLIENT_EDITOR_PAGE_ACTIONS.adjustTicketCount) {
-      if (typeof body?.amount !== 'number' || !Number.isFinite(body.amount)) {
-        return NextResponse.json(
-          { error: 'Ticket count adjustment amount is required.' },
-          { status: 400 }
-        );
-      }
-
-      const ticketCount = await adjustServerPageTicketCount(pageSlug, body.amount);
-      await writeHighRiskActionAuditLog(access, pageSlug, highRiskRequirement, 'success', null, {
-        amount: body.amount,
-        ticketCount,
-      });
+    if (action === MOBILE_CLIENT_EDITOR_PAGE_ACTIONS.extendDisplayPeriod ||
+        action === MOBILE_CLIENT_EDITOR_PAGE_ACTIONS.adjustTicketCount ||
+        action === MOBILE_CLIENT_EDITOR_PAGE_ACTIONS.setDisplayPeriod) {
       return NextResponse.json(
-        { success: true, ticketCount },
-        { headers: buildRateLimitHeaders(rateLimitResult) }
+        { error: '티켓으로 기간을 연장하려면 최신 앱에서 다시 시도해 주세요.' },
+        { status: 409, headers: buildRateLimitHeaders(rateLimitResult) }
       );
     }
 
-    if (action === MOBILE_CLIENT_EDITOR_PAGE_ACTIONS.extendDisplayPeriod) {
-      const months =
-        typeof body?.months === 'number' && Number.isFinite(body.months)
-          ? Math.max(1, Math.trunc(body.months))
-          : 1;
-
-      const displayPeriod = await extendServerInvitationPageDisplayPeriod(pageSlug, months);
+    if (action === MOBILE_CLIENT_EDITOR_PAGE_ACTIONS.redeemDisplayPeriodTicket) {
+      if (typeof body?.requestId !== 'string' || !/^[a-zA-Z0-9_-]{16,128}$/.test(body.requestId)) {
+        return NextResponse.json({ error: '올바른 연장 요청 번호가 필요합니다.' }, { status: 400 });
+      }
+      const displayPeriod = await redeemServerDisplayPeriodTicket(pageSlug, body.requestId);
       await writeHighRiskActionAuditLog(access, pageSlug, highRiskRequirement, 'success', null, {
-        months,
+        months: 1,
+        requestId: body.requestId,
+        ticketCount: displayPeriod.ticketCount,
         endDate: displayPeriod.endDate.toISOString(),
       });
       return NextResponse.json(
         {
           success: true,
+          enabled: displayPeriod.enabled,
+          ticketCount: displayPeriod.ticketCount,
           startDate: displayPeriod.startDate.toISOString(),
           endDate: displayPeriod.endDate.toISOString(),
-        },
-        { headers: buildRateLimitHeaders(rateLimitResult) }
-      );
-    }
-
-    if (action === MOBILE_CLIENT_EDITOR_PAGE_ACTIONS.setDisplayPeriod) {
-      if (typeof body?.enabled !== 'boolean') {
-        return NextResponse.json(
-          { error: 'Display period enabled state is required.' },
-          { status: 400 }
-        );
-      }
-
-      const startDate = readDate(body?.startDate);
-      const endDate = readDate(body?.endDate);
-
-      if (body.enabled && (!startDate || !endDate)) {
-        return NextResponse.json(
-          {
-            error:
-              body?.startDate || body?.endDate
-                ? 'Display period date is invalid.'
-                : 'Display period dates are required.',
-          },
-          { status: 400 }
-        );
-      }
-
-      const displayPeriod = await setServerInvitationPageDisplayPeriod(pageSlug, {
-        enabled: body.enabled,
-        startDate,
-        endDate,
-      });
-      await writeHighRiskActionAuditLog(access, pageSlug, highRiskRequirement, 'success', null, {
-        enabled: displayPeriod.enabled,
-        startDate: displayPeriod.startDate?.toISOString() ?? null,
-        endDate: displayPeriod.endDate?.toISOString() ?? null,
-      });
-
-      return NextResponse.json(
-        {
-          success: true,
-          enabled: displayPeriod.enabled,
-          startDate: displayPeriod.startDate?.toISOString() ?? null,
-          endDate: displayPeriod.endDate?.toISOString() ?? null,
         },
         { headers: buildRateLimitHeaders(rateLimitResult) }
       );
@@ -625,6 +571,10 @@ export async function POST(
       'failure',
       getInternalErrorReason(error)
     );
+    if (action === MOBILE_CLIENT_EDITOR_PAGE_ACTIONS.redeemDisplayPeriodTicket &&
+        error instanceof Error && 'status' in error && typeof error.status === 'number') {
+      return toSafeHttpErrorResponse(error as Error & { status: number });
+    }
     return NextResponse.json(
       { error: GENERIC_SERVER_ERROR_MESSAGE },
       { status: 500 }

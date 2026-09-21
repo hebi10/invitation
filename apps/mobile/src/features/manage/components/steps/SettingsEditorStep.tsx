@@ -50,7 +50,7 @@ export function SettingsEditorStep({
           onPress={() => onSetPublished(!form.published)}
           fullWidth
         >
-          {form.published ? '현재 공개 상태 유지' : '현재 비공개 상태 유지'}
+          {form.published ? '비공개로 변경' : '공개로 변경'}
         </ActionButton>
       </SectionCard>
     </>

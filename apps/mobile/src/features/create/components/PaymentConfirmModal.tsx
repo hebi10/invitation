@@ -11,6 +11,10 @@ type PaymentConfirmModalProps = {
   onConfirm: () => void;
   loading: boolean;
   authError: string | null;
+  notice: string;
+  hasPendingPurchase: boolean;
+  recoverySummary: string;
+  onRecover: () => void;
   palette: ReturnType<typeof getPalette>;
   serviceName: string;
   selectedThemeLabel: string;
@@ -24,12 +28,18 @@ export function PaymentConfirmModal({
   onConfirm,
   loading,
   authError,
+  notice,
+  hasPendingPurchase,
+  recoverySummary,
+  onRecover,
   palette,
   serviceName,
   selectedThemeLabel,
   slugPreview,
   totalPrice,
 }: PaymentConfirmModalProps) {
+  const expectedEnd = new Date();
+  expectedEnd.setMonth(expectedEnd.getMonth() + 4);
   return (
     <Modal visible={visible} animationType="fade" transparent onRequestClose={onClose}>
       <View style={styles.overlay}>
@@ -64,7 +74,7 @@ export function PaymentConfirmModal({
               Google Play 결제
             </AppText>
             <AppText variant="muted" style={styles.description}>
-              Google Play 결제가 완료되면 청첩장을 생성하고 운영 탭으로 바로 이동합니다.
+              Google Play 결제가 완료되면 청첩장이 생성됩니다. 완료 화면에서 제작을 시작할 수 있습니다.
             </AppText>
 
             <View style={styles.summaryRow}>
@@ -86,6 +96,13 @@ export function PaymentConfirmModal({
               </AppText>
             </View>
 
+            <AppText variant="caption">
+              기본 이용 기간은 결제 후 청첩장 생성일부터 4개월이며, 제작 중인 기간도 포함됩니다.
+              오늘 생성 시 예상 종료일: {expectedEnd.toLocaleDateString('ko-KR')}.
+              이후 티켓 1장(1,000원)으로 1개월씩 연장할 수 있습니다.
+            </AppText>
+            {notice ? <AppText accessibilityRole="alert" color={palette.danger}>{notice}</AppText> : null}
+
             {authError ? (
               <AppText variant="caption" color={palette.danger} style={styles.errorText}>
                 {authError}
@@ -93,10 +110,11 @@ export function PaymentConfirmModal({
             ) : null}
 
             <View style={styles.actionColumn}>
+              {hasPendingPurchase ? <><AppText>기존 결제 대상: {recoverySummary}. 현재 입력 대신 이 내용으로 처리하며 추가 결제는 없습니다.</AppText><ActionButton onPress={onRecover} loading={loading} fullWidth>이전 결제 이어서 처리</ActionButton></> : null}
               <ActionButton variant="secondary" onPress={onClose} fullWidth>
                 다시 확인하기
               </ActionButton>
-              <ActionButton onPress={onConfirm} loading={loading} fullWidth>
+              <ActionButton onPress={onConfirm} loading={loading} disabled={hasPendingPurchase} fullWidth>
                 Google Play 결제 후 페이지 생성
               </ActionButton>
             </View>

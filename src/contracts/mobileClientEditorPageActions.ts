@@ -7,6 +7,7 @@ export const MOBILE_CLIENT_EDITOR_PAGE_ACTIONS = {
   setVariantAvailability: 'setVariantAvailability',
   adjustTicketCount: 'adjustTicketCount',
   extendDisplayPeriod: 'extendDisplayPeriod',
+  redeemDisplayPeriodTicket: 'redeemDisplayPeriodTicket',
   setDisplayPeriod: 'setDisplayPeriod',
   transferTicketCount: 'transferTicketCount',
 } as const;
@@ -21,6 +22,7 @@ export const MOBILE_CLIENT_EDITOR_PAGE_ACTION_REQUIRED_PERMISSIONS = {
   [MOBILE_CLIENT_EDITOR_PAGE_ACTIONS.setVariantAvailability]: 'canManagePublication',
   [MOBILE_CLIENT_EDITOR_PAGE_ACTIONS.adjustTicketCount]: 'canManageTickets',
   [MOBILE_CLIENT_EDITOR_PAGE_ACTIONS.extendDisplayPeriod]: 'canManageDisplayPeriod',
+  [MOBILE_CLIENT_EDITOR_PAGE_ACTIONS.redeemDisplayPeriodTicket]: 'canManageDisplayPeriod',
   [MOBILE_CLIENT_EDITOR_PAGE_ACTIONS.setDisplayPeriod]: 'canManageDisplayPeriod',
   [MOBILE_CLIENT_EDITOR_PAGE_ACTIONS.transferTicketCount]: 'canManageTickets',
 } as const satisfies Record<MobileClientEditorPageAction, MobileClientEditorPermissionKey>;

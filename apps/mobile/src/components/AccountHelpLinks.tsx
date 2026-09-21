@@ -14,7 +14,9 @@ export function AccountHelpLinks() {
     if (opening) return;
     setOpening(true);
     try {
-      const url = new URL(path, apiBaseUrl).toString();
+      const accountUrl = new URL(path, apiBaseUrl);
+      accountUrl.searchParams.set('from', 'mobile');
+      const url = accountUrl.toString();
       try {
         await WebBrowser.openBrowserAsync(url, { controlsColor: palette.accent, createTask: true });
       } catch {
@@ -32,7 +34,8 @@ export function AccountHelpLinks() {
     <View style={styles.container}>
       <ActionButton variant="secondary" disabled={opening} onPress={() => void openAccountPage('/signup')} accessibilityHint="브라우저에서 회원가입 페이지를 엽니다" fullWidth>회원가입</ActionButton>
       <ActionButton variant="secondary" disabled={opening} onPress={() => void openAccountPage('/forgot-password')} accessibilityHint="브라우저에서 비밀번호 재설정 페이지를 엽니다" fullWidth>비밀번호 재설정</ActionButton>
-      <AppText variant="caption">브라우저에서 가입과 이메일 인증 또는 비밀번호 재설정을 마친 뒤 앱으로 돌아와 로그인해 주세요.</AppText>
+      <AppText variant="caption">회원가입과 비밀번호 재설정은 브라우저에서 진행합니다. 이메일로 가입하면 받은 편지함의 인증 링크까지 확인해 주세요.</AppText>
+      <AppText variant="caption">완료 후 브라우저를 닫거나 앱 전환으로 이 화면에 돌아와, 가입한 이메일과 비밀번호로 로그인해 주세요. 웹사이트 로그인과 앱 로그인은 별도로 진행됩니다.</AppText>
     </View>
   );
 }

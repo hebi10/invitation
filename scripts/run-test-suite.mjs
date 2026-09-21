@@ -60,6 +60,10 @@ const core = [
 ];
 
 const security = [
+  'test-mobile-private-preview',
+  'test-mobile-create-validation',
+  'test-mobile-account-return',
+  'test-mobile-ticket-extension',
   'test-mobile-real-billing-client',
   'test-mobile-real-billing-server',
   'test-mobile-pending-billing',

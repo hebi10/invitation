@@ -2,7 +2,7 @@ import type { MobileInvitationCreationInput } from '../types/mobileInvitation';
 import type { MobileBillingProductId } from './mobileBillingProducts';
 import { getStoredString, setStoredString } from './storage';
 
-type PurchaseRequest = {
+export type PurchaseRequest = {
   appUserId: string;
   productId: MobileBillingProductId;
   apiBaseUrl: string;
@@ -39,6 +39,25 @@ async function readPendingPurchase() {
   } catch {
     throw new Error('이전 결제 정보를 확인하지 못했습니다. 추가 결제 전에 고객 문의로 확인해 주세요.');
   }
+}
+
+export async function getPendingBillingRequest(scope: { appUserId: string; apiBaseUrl: string }) {
+  const pending = await readPendingPurchase();
+  if (!pending || pending.request.appUserId !== scope.appUserId || pending.request.apiBaseUrl !== scope.apiBaseUrl) return null;
+  // Return a copy: editing the preview must never change the paid target.
+  return JSON.parse(JSON.stringify(pending.request)) as PurchaseRequest;
+}
+
+export async function recoverPendingBillingPurchase<T>(
+  scope: { appUserId: string; apiBaseUrl: string },
+  fulfill: (request: PurchaseRequest, receipt: Receipt) => Promise<T>
+): Promise<T> {
+  const request = await getPendingBillingRequest(scope);
+  if (!request) throw new Error('현재 계정에서 이어서 처리할 결제가 없습니다. 결제한 계정으로 로그인해 주세요.');
+  return runPendingBillingPurchase(request, {
+    purchase: async () => { throw new Error('복구 중에는 새 결제를 진행하지 않습니다.'); },
+    fulfill: (receipt) => fulfill(request, receipt),
+  });
 }
 
 export async function runPendingBillingPurchase<T>(
