@@ -66,7 +66,7 @@ assert(
 const wrapper = fs.readFileSync(letterpressPagePath, 'utf8');
 assert(wrapper.includes('theme="classic-r"'), 'classic-r wrapper must pass its actual theme key.');
 const base = fs.readFileSync('src/app/_components/public-invitations/wedding/WeddingBase.tsx', 'utf8');
-for (const contract of ['getThemePageData(page, theme)', 'getCeremonySchedule', 'getCeremonyAddress', 'shouldShowGiftInfo', '<GalleryGridShared', '<GuestbookThemed', '<GiftInfoThemed', '<PublicInvitationDateFeature', '<WeddingStoredContent', 'useImmediateWeddingPageReveal(state)']) {
+for (const contract of ['getThemePageData(page, theme)', 'getCeremonySchedule', 'getCeremonyAddress', 'shouldShowGiftInfo', '<WeddingGallery', '<GuestbookThemed', '<GiftInfoThemed', '<PublicInvitationDateFeature', '<WeddingStoredContent', 'useImmediateWeddingPageReveal(state)']) {
   assert(base.includes(contract), 'Shared wedding base must preserve ' + contract);
 }
 assert(/state\.galleryImageUrls\.length\s*>\s*0/.test(base), 'Empty gallery must remain absent.');

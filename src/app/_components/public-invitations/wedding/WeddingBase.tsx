@@ -1,7 +1,7 @@
 'use client';
 
 import { useRef } from 'react';
-import GalleryGridShared from '@/components/sections/Gallery/GalleryGridShared';
+import WeddingGallery from './WeddingGallery';
 import GiftInfoThemed from '@/components/sections/GiftInfo/GiftInfoThemed';
 import GuestbookThemed from '@/components/sections/Guestbook/GuestbookThemed';
 import type { Comment } from '@/services/commentService';
@@ -99,13 +99,11 @@ export default function WeddingBase({ state, theme, demoComments, showMap = true
 
   const gallery = (state.galleryImageUrls.length > 0 ? (
         <div id="wedding-gallery" data-wedding-section="gallery">
-          <GalleryGridShared
+          <WeddingGallery
+            theme={theme}
             images={state.galleryImageUrls}
             previewImages={state.galleryPreviewImageUrls}
             imageAltPrefix={`${page.groomName}과 ${page.brideName}의 웨딩 갤러리`}
-            title="사진"
-            layout="carousel"
-            swiperVariant={theme === 'romantic' || theme === 'emotional' || theme === 'classic-r' || theme === 'gyeol' ? theme : 'simple'}
             styles={styles}
           />
         </div>
@@ -130,6 +128,7 @@ export default function WeddingBase({ state, theme, demoComments, showMap = true
       <nav className={styles.quickLinks} aria-label="청첩장 바로가기">
         {state.galleryImageUrls.length > 0 ? <a href="#wedding-gallery">사진 보기</a> : null}
         <a href="#wedding-info">예식 안내</a>
+        <a href="#wedding-location">오시는 길</a>
       </nav>
 
       {invitationMessage ? (

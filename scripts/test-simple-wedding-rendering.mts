@@ -30,6 +30,7 @@ register(new URL('./test-css-module-loader.mjs', import.meta.url), import.meta.u
 const require = createRequire(import.meta.url);
 const { QueryClient, QueryClientProvider } = require('@tanstack/react-query') as typeof import('@tanstack/react-query');
 const { default: WeddingBase } = await import('../src/app/_components/public-invitations/wedding/WeddingBase.tsx');
+const { default: WeddingGallery } = await import('../src/app/_components/public-invitations/wedding/WeddingGallery.tsx');
 const { WeddingClosing } = await import('../src/app/_components/WeddingClosing.tsx');
 
 const page = createInvitationPageFromSeed(structuredClone(getRequiredWeddingPageBySlug('kim-taehyun-choi-yuna')));
@@ -121,4 +122,21 @@ for (const section of ['invitation', 'contact', 'gallery', 'transport', 'gift', 
   assert.ok(!emptyMarkup.includes(`data-wedding-section="${section}"`), `Empty optional content should be omitted: ${section}`);
 }
 assert.ok(!emptyMarkup.includes('예식 달력 보기'));
+for (const theme of ['simple', 'classic-r', 'romantic', 'gyeol', 'emotional'] as const) {
+  const noPhoto = render(theme, { ...state, pageConfig: empty, mainImageUrl: '', heroImageUrl: '', galleryImageUrls: [], galleryPreviewImageUrls: [] });
+  assert.ok(!noPhoto.includes('data-wedding-cover-photo'), `${theme}: no blank cover image`);
+  assert.ok(!noPhoto.includes('href="#wedding-gallery"'), `${theme}: no empty gallery jump`);
+  assert.ok(noPhoto.includes('href="#wedding-location"'), `${theme}: directions remain reachable`);
+  assert.ok(noPhoto.includes(page.groomName) && noPhoto.includes(page.venue));
+  for (const count of [0, 1, 2, 6, 7]) {
+    const images = Array.from({ length: count }, (_, index) => `https://example.com/photo-${index}.jpg`);
+    const previews = images.map((image) => image.replace('.jpg', '-thumb.jpg'));
+    const gallery = WeddingGallery({ theme, images, previewImages: previews, imageAltPrefix: '저장된 사진', styles: { popup: 'shared-dialog' } });
+    assert.equal(gallery.props.layout, theme === 'simple' || theme === 'gyeol' ? 'carousel' : 'grid');
+    assert.equal(gallery.props.swiperVariant, theme === 'simple' || theme === 'gyeol' ? theme : undefined);
+    assert.deepEqual(gallery.props.images, images, `${theme}: original order and full gallery retained`);
+    assert.deepEqual(gallery.props.previewImages, previews);
+    assert.equal(gallery.props.styles.popup, 'shared-dialog', `${theme}: accessible enlargement reused`);
+  }
+}
 console.log('wedding stored content and shared section order across five designs passed');

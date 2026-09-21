@@ -1,0 +1,107 @@
+.gallery {
+  min-width: 0;
+}
+
+.imageGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.imageWrapper {
+  position: relative;
+  min-width: 0;
+  overflow: hidden;
+  aspect-ratio: 3 / 4;
+  background: var(--paper-soft);
+}
+
+/* Keep DOM order intact so the grid, keyboard and enlargement agree. */
+.editorial .imageGrid {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 12px;
+  align-items: stretch;
+}
+
+.editorial .imageWrapper {
+  grid-column: span 3;
+  aspect-ratio: 1;
+}
+
+.editorial .imageWrapper:nth-child(even) {
+  grid-column: span 2;
+  aspect-ratio: auto;
+}
+
+.editorial .imageWrapper:nth-child(4n + 3) {
+  grid-column: span 2;
+  aspect-ratio: 2 / 3;
+}
+
+.editorial .imageWrapper:nth-child(4n + 4) {
+  grid-column: span 3;
+}
+
+.editorial .imageWrapper:last-child:nth-child(odd) {
+  grid-column: 1 / -1;
+  aspect-ratio: 4 / 3;
+}
+
+.album .imageGrid {
+  gap: 14px;
+}
+
+.album .imageWrapper {
+  grid-column: 1 / -1;
+  aspect-ratio: 4 / 3;
+}
+
+.album .imageWrapper:first-child {
+  aspect-ratio: 4 / 5;
+}
+
+.album .imageWrapper:nth-child(2),
+.album .imageWrapper:nth-child(3) {
+  grid-column: span 1;
+  aspect-ratio: 3 / 4;
+}
+
+.album .imageWrapper:nth-child(2):last-child {
+  grid-column: 1 / -1;
+  aspect-ratio: 4 / 3;
+}
+
+.natural .imageGrid {
+  gap: 20px 12px;
+  align-items: center;
+}
+
+.natural .imageWrapper:nth-child(3n + 1) {
+  grid-column: 1 / -1;
+  aspect-ratio: 3 / 2;
+}
+
+.natural .imageWrapper:nth-child(3n) {
+  aspect-ratio: 1;
+}
+
+.natural .imageWrapper:nth-child(3n + 2):last-child {
+  grid-column: 1 / -1;
+  aspect-ratio: 4 / 3;
+}
+
+.natural .imageWrapper:only-child {
+  aspect-ratio: 4 / 5;
+}
+
+@media (max-width: 359px) {
+  .imageGrid,
+  .editorial .imageGrid,
+  .album .imageGrid {
+    gap: 10px;
+  }
+
+  .natural .imageGrid {
+    gap: 16px 10px;
+  }
+}

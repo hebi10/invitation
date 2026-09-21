@@ -6,6 +6,7 @@ const read = (relativePath: string) =>
   readFileSync(path.resolve(process.cwd(), relativePath), 'utf8');
 
 const sharedGallery = read('src/components/sections/Gallery/GalleryGridShared.tsx');
+const weddingGallery = read('src/app/_components/public-invitations/wedding/WeddingGallery.tsx');
 const registry = read('src/app/_components/themeRenderers/registry.ts');
 const revealHook = read(
   'src/app/_components/public-invitations/wedding/useImmediateWeddingPageReveal.ts'
@@ -16,6 +17,8 @@ const cover = read('src/app/_components/public-invitations/wedding/WeddingCover.
 
 assert.match(sharedGallery, /loading=["']lazy["']/);
 assert.doesNotMatch(sharedGallery, /onLoadingComplete/);
+assert.match(weddingGallery, /<GalleryGridShared/);
+assert.doesNotMatch(weddingGallery, /preloadAllImages/);
 assert.match(registry, /component:\s*PortraitLetterPage/);
 assert.match(registry, /component:\s*GardenNotePage/);
 assert.match(registry, /component:\s*QuietCeremonyPage/);
@@ -24,7 +27,7 @@ assert.match(registry, /component:\s*LetterpressPage/);
 for (const page of activePages) {
   assert.match(cover, /loading="eager"/);
   assert.doesNotMatch(page, /minLoadTime|setTimeout|<WeddingLoader|<IntroScreen/);
-  assert.match(page, /<GalleryGridShared/);
+  assert.match(page, /<WeddingGallery/);
 
   assert.match(page, /useImmediateWeddingPageReveal\(state\);/);
 }

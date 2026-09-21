@@ -67,7 +67,7 @@ assert.match(registrySource, /key:\s*['"]gyeol['"][\s\S]*?component:\s*GyeolPage
 assert.match(pageSource, /useImmediateWeddingPageReveal\(state\)/);
 assert.match(pageSource, /<PublicInvitationDateFeature/);
 assert.match(pageSource, /<WeddingStoredContent/);
-assert.match(pageSource, /<GalleryGridShared/);
+assert.match(pageSource, /<WeddingGallery/);
 assert.match(pageSource, /<GiftInfoThemed/);
 assert.match(pageSource, /<GuestbookThemed/);
 

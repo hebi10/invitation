@@ -209,8 +209,7 @@ for (const page of activeThemePages) {
   assert.match(page, /<PublicInvitationDateFeature/);
   assert.match(page, /<WeddingStoredContent/);
   assert.match(page, /<LocationMap/);
-  assert.match(page, /layout="carousel"/);
-  assert.match(page, /swiperVariant=/);
+  assert.match(page, /<WeddingGallery/);
   assert.match(page, /collapsibleAccounts/);
   assert.match(page, /collapsibleForm/);
   assert.match(page, /<details/);

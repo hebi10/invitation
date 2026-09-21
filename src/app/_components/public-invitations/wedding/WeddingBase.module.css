@@ -276,8 +276,8 @@ details[open] > :is(.disclosureSummary, .accountSummary, .formSummary)::after { 
   letter-spacing: .02em; line-height: 1.6; text-align: left;
 }
 .page :is(.heading, .title)::after { content: ''; height: 1px; flex: 1; background: var(--line); }
-.page .quickLinks { width: calc(100% - 48px); margin: 22px auto 0; padding: 0; gap: 12px; }
-.page .quickLinks a { flex: 1; min-height: 48px; padding: 10px 8px; justify-content: center; border: 1px solid var(--control-line); color: var(--ink); font-size: 14px; text-decoration: none; }
+.page .quickLinks { width: calc(100% - 48px); margin: 12px auto 0; padding: 0; gap: 8px; flex-wrap: wrap; }
+.page .quickLinks a { flex: 1; min-height: 48px; padding: 10px 4px; justify-content: center; color: var(--ink); font-size: 14px; text-decoration: underline; text-underline-offset: 6px; }
 .page .invitationCopy { max-width: 300px; font-size: 15px; line-height: 1.9; }
 .page .invitationAuthor { margin-top: 28px; font-size: 15px; color: var(--ink); }
 .page .contactSection { width: calc(100% - 48px); margin-top: 28px; }
@@ -311,7 +311,7 @@ details[open] > :is(.disclosureSummary, .accountSummary, .formSummary)::after { 
 .page :is(.label, .commentsCount, .commentsCount strong, .commentDate) { font-size: 13px; }
 .page .commentMessage { font-size: 15px; }
 
-/* Four compositions share the basic invitation's width and practical sections. */
+/* Shared controls remain familiar; each paper has its own reading composition. */
 .page:not([data-design='simple']) { font-size: 15px; line-height: 1.8; --section-space: 80px; }
 .page:not([data-design='simple']) :is(.invitationSection, .scheduleSection, .container, .ceremonySection, .transportSection) { margin-top: var(--section-space); }
 .page[data-design='classic-r'] {
@@ -334,30 +334,59 @@ details[open] > :is(.disclosureSummary, .accountSummary, .formSummary)::after { 
   --section-space: 80px;
 }
 .page:not([data-design='simple']) ::selection { background: var(--paper-soft); color: var(--ink); }
-.page[data-design='classic-r'] :is(.heading, .title) { font-family: var(--font-sans), sans-serif; font-size: 22px; font-weight: 700; letter-spacing: -.02em; gap: 16px; }
-.page[data-design='classic-r'] .invitationCopy { text-align: left; margin-left: auto; margin-right: 0; max-width: 300px; }
-.page[data-design='classic-r'] .invitationAuthor { text-align: right; }
+.page :is(.heading, .title)::after { content: none; }
+.page[data-design='simple'] :is(.heading, .title) { font-size: 18px; justify-content: center; text-align: center; }
+.page[data-design='simple'] .invitationSection { margin-top: 64px; }
+
+/* Modern: a narrow title column and a generous reading column. */
+.page[data-design='classic-r'] :is(.heading, .title) { font-family: var(--font-sans), sans-serif; font-size: 24px; font-weight: 700; letter-spacing: -.03em; }
+.page[data-design='classic-r'] .invitationSection { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 2.5fr); gap: 24px; text-align: left; }
+.page[data-design='classic-r'] .invitationSection .heading { display: block; font-size: 18px; margin: 0; }
+.page[data-design='classic-r'] .invitationCopy { text-align: left; margin: 0; max-width: none; line-height: 2; }
+.page[data-design='classic-r'] .invitationAuthor { text-align: left; }
 .page[data-design='classic-r'] :is(.venueName, .ceremonyContent .venueName, .scheduleContent .venueName) { font-family: var(--font-sans), sans-serif; font-weight: 700; }
-.page[data-design='classic-r'] .quickLinks a:first-child { background: var(--ink); color: #fff; border-color: var(--ink); }
-.page[data-design='romantic'] :is(.heading, .title) { font-size: 22px; }
-.page[data-design='romantic'] .invitationCopy { font-family: 'Wedding Myeongjo', serif; line-height: 2.1; }
-.page[data-design='romantic'] [data-wedding-section='gallery'] .container { width: calc(100% - 32px); }
-.page[data-design='romantic'] [data-wedding-section='gallery'] .title { margin-inline: 8px; }
-.page[data-design='romantic'] .quickLinks a:first-child { background: var(--accent); border-color: var(--accent); color: #fff; }
+.page[data-design='classic-r'] .ceremonySection { width: 100%; padding: 40px 24px; background: var(--ink); color: var(--paper); --control-line: #898b84; --focus: #ffffff; }
+.page[data-design='classic-r'] .ceremonySection :is(.heading, .disclosureSummary, button) { color: var(--paper); }
+.page[data-design='classic-r'] .ceremonyContent { text-align: left; font-size: 18px; }
+.page[data-design='classic-r'] .ceremonyContent .venueName { margin-top: 24px; font-size: 26px; }
+.page[data-design='classic-r'] .calendarDisclosure[open] { padding-bottom: 16px; }
+.page[data-design='classic-r'] .dateSection { background: var(--paper); padding: 24px 12px; }
+.page[data-design='classic-r'] .scheduleContent { text-align: left; }
+.page[data-design='classic-r'] :is(.message, .subtitle) { margin-left: 0; text-align: left; }
+
+/* Photo story: quiet passages between the cover and the album. */
+.page[data-design='romantic'] :is(.heading, .title) { justify-content: center; text-align: center; font-size: 22px; }
+.page[data-design='romantic'] .invitationSection { width: calc(100% - 80px); margin-top: 72px; }
+.page[data-design='romantic'] .invitationCopy { font-family: 'Wedding Myeongjo', serif; font-size: 16px; line-height: 2.2; }
+.page[data-design='romantic'] .contactSection { margin-top: 36px; }
+.page[data-design='romantic'] .ceremonySection { padding: 40px 24px; background: var(--paper-soft); }
+.page[data-design='romantic'] .ceremonyContent { font-family: 'Wedding Myeongjo', serif; font-size: 18px; gap: 10px; }
+.page[data-design='romantic'] .ceremonyContent .venueName { margin-top: 18px; font-size: 24px; }
+
+/* Formal: the ceremony becomes a printed invitation inside the paper. */
 .page[data-design='gyeol'] :is(.heading, .title) { justify-content: center; text-align: center; gap: 14px; letter-spacing: .04em; }
-.page[data-design='gyeol'] :is(.heading, .title)::before { content: ''; height: 1px; flex: 1; background: var(--line); }
-.page[data-design='gyeol'] .invitationCopy { line-height: 2.1; }
-.page[data-design='gyeol'] .invitationSection { position: relative; padding-top: 30px; }
-.page[data-design='gyeol'] .invitationSection::before { content: ''; display: block; width: 56px; height: 38px; margin: -48px auto 26px; background: url('/images/wedding-concepts/classic-ornament.webp') center / contain no-repeat; pointer-events: none; }
-.page[data-design='emotional'] :is(.heading, .title) { position: relative; justify-content: center; margin-bottom: 32px; padding-bottom: 32px; font-size: 22px; text-align: center; }
-.page[data-design='emotional'] :is(.heading, .title)::after { position: absolute; bottom: 0; left: calc(50% - 23px); width: 46px; height: 28px; background: url('/images/wedding-concepts/garden-sprig.webp') center / contain no-repeat; }
-.page[data-design='emotional'] .invitationCopy { font-family: 'Gyeol Dodum', sans-serif; font-size: 16px; line-height: 2; }
-.page[data-design='emotional'] :is(.quickLinks a:first-child, .formSummary) { background: var(--accent); color: #fff; border-color: var(--accent); }
+.page[data-design='gyeol'] .invitationCopy { line-height: 2.25; }
+.page[data-design='gyeol'] .ceremonySection { padding: 40px 20px; border: 1px solid var(--line); }
+.page[data-design='gyeol'] .ceremonyContent { gap: 12px; font-size: 17px; }
+.page[data-design='gyeol'] .ceremonyContent .venueName { margin-block: 16px; font-size: 24px; }
+.page[data-design='gyeol'] .contactSection { margin-top: 40px; }
+.page[data-design='gyeol'] .contactIdentity { gap: 6px; }
+
+/* Botanical: a letter on sage paper; foliage is reserved for the cover/closing. */
+.page[data-design='emotional'] :is(.heading, .title) { justify-content: flex-start; margin-bottom: 28px; font-size: 22px; text-align: left; }
+.page[data-design='emotional'] .invitationSection { width: 100%; padding: 44px 32px; background: var(--paper-soft); }
+.page[data-design='emotional'] .invitationSection .heading { justify-content: center; text-align: center; }
+.page[data-design='emotional'] .invitationCopy { font-family: 'Gyeol Dodum', sans-serif; font-size: 16px; line-height: 2.1; }
+.page[data-design='emotional'] .invitationAuthor { margin-top: 32px; }
+.page[data-design='emotional'] .formSummary { background: var(--accent); color: #fff; border-color: var(--accent); }
 .page[data-design='emotional'] .disclosureSummary { text-align: left; padding-inline: 16px; }
-.page[data-design='emotional'] [data-wedding-section='gallery'] .container { width: 100%; }
-.page[data-design='emotional'] [data-wedding-section='gallery'] .title { margin-inline: 24px; }
-.page[data-design='emotional'] .message { max-width: 300px; }
+.page[data-design='emotional'] .ceremonySection { text-align: left; }
+.page[data-design='emotional'] .ceremonyContent { grid-template-columns: 1fr auto; align-items: baseline; gap: 12px; }
+.page[data-design='emotional'] .ceremonyContent .venueName { grid-column: 1 / -1; font-size: 24px; margin-top: 16px; }
+.page[data-design='emotional'] :is(.message, .subtitle) { max-width: 300px; margin-left: 0; text-align: left; }
 @media (max-width: 359px) {
   .page:not([data-design='simple']) :is(.heading, .title) { font-size: 20px; }
-  .page[data-design='classic-r'] .invitationCopy { max-width: 100%; }
+  .page[data-design='classic-r'] .invitationSection { grid-template-columns: 1fr; gap: 24px; }
+  .page[data-design='romantic'] .invitationSection { width: calc(100% - 48px); }
+  .page[data-design='emotional'] .ceremonyContent { grid-template-columns: 1fr; }
 }
