@@ -8,7 +8,7 @@ import { loadKakaoMapsSdk } from '@/utils/kakaoMaps';
 import styles from './LocationMap.module.css';
 
 interface LocationMapProps {
-  appearance?: 'simple' | 'natural' | 'classic' | 'photo';
+  appearance?: 'simple' | 'natural' | 'classic' | 'photo' | 'basic';
   address: string;
   venueName: string;
   kakaoMapConfig?: {
@@ -161,12 +161,12 @@ export default function LocationMap({ address, venueName, kakaoMapConfig, mapHre
           </div>
         )}
       </div>
-      {(appearance === 'natural' || appearance === 'classic' || appearance === 'photo') && status === 'ready' ? <button className={styles.mapControl} type="button" onClick={toggleControls} aria-pressed={controlsEnabled}>
+      {(appearance === 'natural' || appearance === 'classic' || appearance === 'photo' || appearance === 'basic') && status === 'ready' ? <button className={styles.mapControl} type="button" onClick={toggleControls} aria-pressed={controlsEnabled}>
         {controlsEnabled ? '지도 조작 마치기' : '지도 확대·이동'}
       </button> : null}
       {status === 'ready' && (
         <div className={styles.actions}>
-          {(appearance === 'natural' || appearance === 'classic' || appearance === 'photo') && directionsHref ? <a href={directionsHref} target="_blank" rel="noopener noreferrer">지도 앱에서 길찾기</a> : <button type="button" onClick={toggleControls} aria-pressed={controlsEnabled}>
+          {(appearance === 'natural' || appearance === 'classic' || appearance === 'photo' || appearance === 'basic') && directionsHref ? <a href={directionsHref} target="_blank" rel="noopener noreferrer">지도 앱에서 길찾기</a> : <button type="button" onClick={toggleControls} aria-pressed={controlsEnabled}>
             {appearance === 'natural' ? (controlsEnabled ? '지도 조작 마치기' : '지도 확대·이동') : (controlsEnabled ? '지도 이동·확대 끄기' : '지도 이동·확대 켜기')}
           </button>}
           <a href={mapHref} target="_blank" rel="noopener noreferrer">{appearance === 'natural' ? '카카오맵 보기' : '큰 지도 보기'}</a>

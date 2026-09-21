@@ -91,9 +91,9 @@
 }
 
 .gallery[data-gallery-variant='simple'] .track { padding: 0; }
-.gallery[data-gallery-variant='simple'] .photoButton { aspect-ratio: 4 / 5; }
+.gallery[data-gallery-variant='simple'] .photoButton { aspect-ratio: 3 / 2; }
 .gallery[data-gallery-variant='simple'] .photo { object-fit: cover; }
-.gallery[data-gallery-variant='simple'] .controls { margin-top: 8px; font-size: 15px; }
+.gallery[data-gallery-variant='simple'] .controls { margin-top: 8px; font-size: 13px; font-variant-numeric: tabular-nums; }
 .gallery[data-gallery-variant='simple'] .controls button { min-height: 48px; padding-inline: 0; }
 .gallery[data-gallery-variant='simple'] .progress { height: 1px; margin: 0; background: var(--line, #e6e2dc); }
-.gallery[data-gallery-variant='simple'] .hint { margin-top: 12px; font-size: 14px; line-height: 1.8; }
+.gallery[data-gallery-variant='simple'] .hint { margin-top: 12px; font-size: 13px; line-height: 1.8; }

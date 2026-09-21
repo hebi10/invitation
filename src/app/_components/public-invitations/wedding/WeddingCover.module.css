@@ -67,13 +67,14 @@
 .traditional .venue { margin-top: 6px; font-family: inherit; font-size: 16px; }
 
 /* Quiet ivory paper gives the names and photograph room to breathe. */
-.basic { padding: 70px 34px 0; background: #faf9f6; color: #302e2a; text-align: center; }
+.basic { padding: 40px 24px 24px; background: #fafaf7; color: #292a27; text-align: center; }
+.basic .basicEyebrow { margin-bottom: 20px; font-family: var(--font-sans); font-size: 11px; font-weight: 500; line-height: 1.7; letter-spacing: .18em; color: #6f7069; }
 .basic .names { font-size: 28px; gap: 12px; }
-.basic .introduction { margin-top: 22px; color: #6c675e; font-size: 16px; line-height: 2; }
-.basic .basicPhoto { margin: 40px auto 28px; aspect-ratio: 3 / 4; overflow: hidden; }
+.basic .introduction { margin-top: 20px; color: #6f7069; font-size: 14px; line-height: 1.9; }
+.basic .basicPhoto { width: 92%; margin: 24px auto; aspect-ratio: 4 / 5; overflow: hidden; }
 .basic .photo { height: 100%; object-fit: cover; }
-.basic .date { margin-top: 28px; }
-.basic .venue { margin-top: 4px; color: #6c675e; }
+.basic .date { margin-top: 24px; font-size: 13px; line-height: 1.8; color: #6f7069; }
+.basic .venue { margin-top: 6px; color: #292a27; font-size: 15px; line-height: 1.8; }
 
 @media (max-width: 359px) {
   .names { font-size: 24px; gap: 10px; }
@@ -86,6 +87,7 @@
   .traditionalFrame { padding-inline: 14px; }
   .traditionalTitle .names { font-size: 28px; gap: 7px; }
   .letter { padding-inline: 20px; }
-  .basic { padding-inline: 26px; }
-  .letter .names, .basic .names { font-size: 25px; gap: 10px; }
+  .basic { padding-inline: 20px; }
+  .letter .names { font-size: 25px; gap: 10px; }
+  .basic .names { font-size: 26px; gap: 10px; }
 }

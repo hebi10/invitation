@@ -94,3 +94,6 @@
 .locationMap[data-appearance='photo'] .viewport { height: 190px; }
 .locationMap[data-appearance='photo'] .actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; font-size: 13px; }
 .locationMap[data-appearance='photo'] .actions a { justify-content: center; min-height: 44px; text-align: center; text-decoration: underline; }
+.locationMap[data-appearance='basic'] .viewport { height: 200px; }
+.locationMap[data-appearance='basic'] .actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; font-size: 13px; }
+.locationMap[data-appearance='basic'] .actions a { justify-content: center; min-height: 46px; padding: 8px 4px; border: 1px solid var(--control-line); background: #fff; text-align: center; text-decoration: none; }

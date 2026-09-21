@@ -407,6 +407,60 @@ details[open] > :is(.disclosureSummary, .accountSummary, .formSummary)::after { 
 .page .accountRow { overflow-wrap: anywhere; }
 .page .ceremonyContent { font-size: 16px; }
 
+/* Simple invitation: balanced headings and familiar, consistent controls. */
+.page[data-design='simple'] {
+  --paper: #fafaf7; --paper-soft: #f5f5f1; --ink: #292a27; --muted: #6f7069;
+  --accent: #333530; --line: #d9dad4; --control-line: #898b83; --focus: #333530;
+  --section-space: 64px; font-size: 15px; padding-bottom: 40px;
+}
+:global(body):has(.page[data-design='simple']) { background: #fafaf7; }
+.page[data-design='simple'] :is(.invitationSection, .scheduleSection, .container, .ceremonySection, .transportSection) { width: calc(100% - 48px); margin-top: 64px; padding: 0; text-align: center; }
+.page[data-design='simple'] :is(.heading, .title) { display: flex; align-items: center; justify-content: center; gap: 16px; font-size: 18px; font-weight: 500; line-height: 1.7; letter-spacing: .02em; margin-bottom: 22px; text-align: center; }
+.page[data-design='simple'] :is(.heading, .title)::before,
+.page[data-design='simple'] :is(.heading, .title)::after { content: ''; flex: 1; height: 1px; min-width: 12px; background: var(--line); }
+.page[data-design='simple'] .quickLinks { width: calc(100% - 48px); margin: 20px auto 0; gap: 0; padding: 0; flex-wrap: nowrap; }
+.page[data-design='simple'] .quickLinks a { position: relative; font-size: 13px; min-height: 48px; text-decoration: none; padding: 10px 4px; }
+.page[data-design='simple'] .quickLinks a + a::before { content: ''; position: absolute; left: 0; width: 1px; height: 14px; background: var(--line); }
+.page[data-design='simple'] .invitationSection { margin-top: 44px; }
+.page[data-design='simple'] .invitationCopy { max-width: 280px; font-size: 15px; line-height: 1.95; }
+.page[data-design='simple'] .invitationAuthor { margin-top: 22px; font-size: 14px; }
+.page[data-design='simple'] .contactSection { width: calc(100% - 48px); margin-top: 24px; }
+.page[data-design='simple'] :is(.disclosureSummary, .accountSummary, .formSummary) { min-height: 46px; padding: 10px 14px; font-size: 14px; font-weight: 500; border-color: var(--control-line); background: #fff; }
+.page[data-design='simple'] .ceremonySection { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.page[data-design='simple'] .ceremonySection > :is(.heading, .ceremonyContent) { grid-column: 1 / -1; }
+.page[data-design='simple'] .ceremonySection > .heading { margin-bottom: 12px; }
+.page[data-design='simple'] .ceremonyContent { gap: 4px; margin-bottom: 14px; font-size: 15px; }
+.page[data-design='simple'] .ceremonyContent .venueName { margin-top: 8px; font-size: 17px; font-weight: 500; }
+.page[data-design='simple'] .ceremonySection > button { margin: 0; min-height: 46px; padding: 10px 6px; font-size: 14px; background: #fff; }
+.page[data-design='simple'] .calendarDisclosure { margin: 0; }
+.page[data-design='simple'] .calendarDisclosure > summary { padding-inline: 6px; gap: 8px; }
+.page[data-design='simple'] .calendarDisclosure[open] { grid-column: 1 / -1; }
+.page[data-design='simple'] .ceremonySection:has(.calendarDisclosure[open]) > button { grid-column: 1 / -1; }
+.page[data-design='simple'] .dateSection .heading { display: none; }
+.page[data-design='simple'] .scheduleContent { gap: 6px; margin-bottom: 20px; font-size: 15px; }
+.page[data-design='simple'] .scheduleContent .venueName { font-size: 17px; }
+.page[data-design='simple'] :is(.address, .venuePhone) { font-size: 14px; }
+.page[data-design='simple'] .travelNote { margin: 14px 0 0; font-size: 13px; text-align: center; }
+.page[data-design='simple'] :is(.message, .subtitle) { max-width: 300px; margin: 0 auto 24px; font-size: 14px; line-height: 1.9; }
+.page[data-design='simple'] .accountsContainer { gap: 10px; }
+.page[data-design='simple'] .accountSummary { justify-content: space-between; }
+.page[data-design='simple'] :is(.accountRow, .accountHolder, .contactIdentity strong) { font-size: 14px; }
+.page[data-design='simple'] .formSummary { background: var(--accent); color: white; border-color: var(--accent); }
+.page[data-design='simple'] .commentsHeader { gap: 8px; }
+.page[data-design='simple'] :is(.commentsCount, .commentsCount strong, .pageInfo, .commentDate, .refreshButton) { font-size: 12px; }
+.page[data-design='simple'] .commentsGrid { gap: 0; }
+.page[data-design='simple'] .commentItem { position: relative; padding: 24px 0; }
+.page[data-design='simple'] .commentItem + .commentItem::before { content: ''; position: absolute; top: 0; width: 100%; height: 1px; background: var(--line); }
+.page[data-design='simple'] .authorName { font-size: 14px; font-weight: 500; }
+.page[data-design='simple'] .commentMessage { margin: 10px 0 0; font-size: 15px; line-height: 1.9; }
+.page[data-design='simple'] :is(.pageNumber, .pageButton) { min-width: 36px; min-height: 44px; padding: 6px; font-size: 13px; background: transparent; }
+.page[data-design='simple'] :is(.active, .pageButtonActive) { background: var(--accent); color: white; }
+@media (max-width: 359px) {
+  .page[data-design='simple'] :is(.invitationSection, .scheduleSection, .container, .ceremonySection, .transportSection, .contactSection, .quickLinks) { width: calc(100% - 40px); }
+  .page[data-design='simple'] :is(.heading, .title) { gap: 10px; }
+  .page[data-design='simple'] :is(.pageNumber, .pageButton) { min-width: 32px; padding-inline: 5px; }
+}
+
 /* Modern editorial: numbered sections, precise grids and two dark anchors. */
 .page[data-design='classic-r'] {
   --paper: #ffffff; --paper-soft: #f5f4ef; --ink: #252523; --muted: #6f6f69;

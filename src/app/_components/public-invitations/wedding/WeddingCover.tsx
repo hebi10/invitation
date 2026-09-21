@@ -78,6 +78,7 @@ export default function WeddingCover({ theme, page, imageUrl, time, titleId = 'w
 
   return (
     <section className={`${styles.cover} ${styles.basic}`} aria-labelledby={titleId}>
+      <p className={styles.basicEyebrow}>WEDDING INVITATION</p>
       <h1 data-wedding-motion="copy" id={titleId} className={styles.names}>{names}</h1>
       <p className={styles.introduction}>둘이 하나가 되는 특별한 날<br />함께해 주세요.</p>
       {photo ? <figure className={styles.basicPhoto}>{photo}</figure> : null}

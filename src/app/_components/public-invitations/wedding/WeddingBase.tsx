@@ -235,7 +235,7 @@ export default function WeddingBase({ state, theme, demoComments, showMap = true
         </div>
         {showMap && storedContent.mapHref ? (
           <LocationMap
-            appearance={theme === 'emotional' ? 'natural' : theme === 'gyeol' ? 'classic' : theme === 'romantic' || theme === 'classic-r' ? 'photo' : 'simple'}
+            appearance={theme === 'emotional' ? 'natural' : theme === 'gyeol' ? 'classic' : theme === 'romantic' || theme === 'classic-r' ? 'photo' : 'basic'}
             address={ceremonyAddress}
             venueName={page.venue}
             kakaoMapConfig={pageData?.kakaoMap}

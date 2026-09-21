@@ -30,7 +30,13 @@ export function WeddingClosing({
       data-theme={theme}
       aria-label={`${groomName}과 ${brideName}의 결혼식 초대 마무리`}
     >
-      {theme === 'classic-r' ? (
+      {theme === 'simple' ? (
+        <>
+          <p className={styles.simpleNames}>{groomName} · {brideName}</p>
+          <p className={styles.simpleThanks}>귀한 걸음과 따뜻한 마음에 감사드립니다</p>
+          {weddingDateTime ? <p className={styles.simpleDate}>{weddingDateTime.year}. {String(weddingDateTime.month + 1).padStart(2, '0')}. {String(weddingDateTime.day).padStart(2, '0')}</p> : null}
+        </>
+      ) : theme === 'classic-r' ? (
         <>
           <p className={styles.modernEyebrow}>OUR WEDDING DAY</p>
           <p className={styles.modernNames}>{groomName}<br />{brideName}</p>
