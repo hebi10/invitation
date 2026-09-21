@@ -180,7 +180,7 @@ export async function createCustomerInvitationPageFromWalletCredit(
       published: false,
       defaultTheme: input.defaultTheme,
       productTier: input.productTier,
-      initialDisplayPeriodMonths: 6,
+      initialDisplayPeriodMonths: 4,
     });
 
     const assignedEvent = await dependencies.assignOwner({

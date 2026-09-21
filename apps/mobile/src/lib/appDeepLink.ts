@@ -6,7 +6,7 @@ const APP_LINK_SCHEME = 'mobileinvitation';
 const APP_LINK_WEB_HOSTS = new Set(['msgnote.kr', 'www.msgnote.kr']);
 const APP_LINK_WEB_PREFIXES = new Set(['app', 'mobile']);
 const LOGIN_REDIRECT_PATHS = new Set(['/', '/guide', '/create', '/manage', '/settings']);
-const VALID_TICKET_INTENTS = new Set(['extend', 'extra-page', 'extra-variant', 'upgrade']);
+const VALID_TICKET_INTENTS = new Set(['extend']);
 const VALID_PRODUCT_TIERS = new Set(['standard', 'deluxe', 'premium']);
 const VALID_THEME_KEYS = new Set(INVITATION_THEME_KEYS);
 

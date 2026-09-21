@@ -28,7 +28,8 @@ function createDependencies(options: {
         calls.push(adjustment.direction === 'debit' ? 'debit' : 'refund');
         return {} as never;
       },
-      createDraft: async () => {
+      createDraft: async (draft: { initialDisplayPeriodMonths?: number }) => {
+        assert.equal(draft.initialDisplayPeriodMonths, 4);
         calls.push('create');
         if (options.createError) {
           throw options.createError;

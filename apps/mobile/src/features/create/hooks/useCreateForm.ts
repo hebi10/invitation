@@ -478,10 +478,7 @@ export function useCreateForm({
   });
 
   useCreateTicketIntent({
-    setSelectedPlan,
-    setSelectedTheme,
     setNotice,
-    moveToStep,
     onOpenTicketPurchase,
   });
 

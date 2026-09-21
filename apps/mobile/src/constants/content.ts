@@ -18,7 +18,7 @@ export const servicePlans = [
     priceLabel: '9,900원',
     description: '사진 최대 18장, 배경음악, 카카오톡 카드 공유, 캘린더·카운트다운과 방명록을 모두 제공합니다.',
     features: [
-      '기본 노출 기간 6개월',
+      '기본 노출 기간 4개월',
       '모든 웨딩 디자인 포함',
       '갤러리 최대 18장',
       '배경음악 지원',
@@ -56,7 +56,7 @@ export const guideSections = [
   {
     title: '이용 정책',
     items: [
-      '기본 노출 기간은 6개월입니다.',
+      '기본 노출 기간은 4개월입니다.',
       '결과물 파일이 아닌 링크 형식으로 공유합니다.',
       '다른 기기에서는 앱 연동 링크로 내 청첩장을 이어서 관리할 수 있습니다.',
     ],
@@ -67,7 +67,6 @@ export const guideSections = [
       '티켓은 할인 없이 1장당 1,000원입니다.',
       '티켓은 청첩장 제작 결제에 포함되지 않습니다. 청첩장 연동 후 별도로 구매합니다.',
       '티켓 1장: 1개월 연장',
-      '티켓 1장: 모바일 청첩장 1개 추가 생성',
     ],
   },
 ] as const;
@@ -142,7 +141,6 @@ export const quickStartItems = [
 
 export const ticketActions = [
   { key: 'extend', label: '기간 1개월 연장', tickets: 1 },
-  { key: 'extra-page', label: '청첩장 1개 추가 생성', tickets: 1 },
 ] as const;
 
 export const settingsNotes = [

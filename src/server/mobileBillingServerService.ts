@@ -305,7 +305,7 @@ export async function fulfillServerMobilePageCreationPurchase(
       published: false,
       defaultTheme,
       productTier: definition.productTier,
-      initialDisplayPeriodMonths: 6,
+      initialDisplayPeriodMonths: 4,
     });
 
     const resolvedCreatedEvent = await firestoreEventRepository.assignOwnerBySlug({
