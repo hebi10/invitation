@@ -5,6 +5,7 @@ import type { useAuth } from '../../../contexts/AuthContext';
 import type { useDrafts } from '../../../contexts/DraftsContext';
 import { checkMobileInvitationSlugAvailability } from '../../../lib/api';
 import { purchaseBillingProduct } from '../../../lib/billing';
+import { runPendingBillingPurchase } from '../../../lib/pendingBillingPurchase';
 import { createRandomSuffix } from '../../../lib/id';
 import { DEFAULT_INVITATION_THEME } from '../../../lib/invitationThemes';
 import { getMobileBillingPageCreationProductId } from '../../../lib/mobileBillingProducts';
@@ -797,14 +798,16 @@ export function useCreateForm({
     let created = false;
 
     try {
-      const purchase = await purchaseBillingProduct(billingProductId, {
+      created = await runPendingBillingPurchase({
         appUserId: customerSession.uid,
-      });
-      created = await createInvitationPage(createInput, {
-        billingPurchase: {
-          appUserId: purchase.appUserId,
-          productId: purchase.productIdentifier,
-          transactionId: purchase.transactionIdentifier,
+        productId: billingProductId,
+        apiBaseUrl,
+        target: { action: 'createInvitationPage', input: createInput },
+      }, {
+        purchase: () => purchaseBillingProduct(billingProductId, { appUserId: customerSession.uid }),
+        fulfill: (receipt) => createInvitationPage(createInput, { billingPurchase: receipt }),
+        onResume: () => {
+          setNotice('이전 결제를 추가 결제 없이 다시 반영하고 있습니다.');
         },
       });
     } catch (error) {
@@ -831,6 +834,7 @@ export function useCreateForm({
     );
     router.replace('/manage');
   }, [
+    apiBaseUrl,
     brideKoreanName,
     brideEnglishName,
     clearAuthError,

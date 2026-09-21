@@ -1,4 +1,5 @@
-import { Platform } from 'react-native';
+import { NativeModules, Platform } from 'react-native';
+import Purchases from 'react-native-purchases';
 
 import type {
   MobileBillingProductId,
@@ -37,6 +38,7 @@ type PurchasesModule = {
     appUserID?: string | null;
   }) => void;
   setLogLevel?: (level: string) => void;
+  logIn: (appUserId: string) => Promise<unknown>;
   getProducts: (
     productIdentifiers: string[],
     type?: string
@@ -68,21 +70,10 @@ let billingConfigurationPromise: Promise<{
   appUserId: string;
 }> | null = null;
 let configuredBillingAppUserId: string | null = null;
+let billingIdentityQueue: Promise<unknown> = Promise.resolve();
 
 function getRevenueCatApiKey() {
-  if (Platform.OS === 'android') {
-    return process.env.EXPO_PUBLIC_REVENUECAT_ANDROID_API_KEY?.trim() ?? '';
-  }
-
-  if (Platform.OS === 'ios') {
-    return process.env.EXPO_PUBLIC_REVENUECAT_IOS_API_KEY?.trim() ?? '';
-  }
-
-  return '';
-}
-
-function isProductionNativeRuntime() {
-  return Platform.OS !== 'web' && process.env.NODE_ENV === 'production';
+  return process.env.EXPO_PUBLIC_REVENUECAT_ANDROID_API_KEY?.trim() ?? '';
 }
 
 function createBillingAppUserId() {
@@ -107,75 +98,29 @@ async function getOrCreateBillingAppUserId(preferredAppUserId?: string | null) {
   return nextAppUserId;
 }
 
-function loadPurchasesModule() {
-  try {
-    const dynamicRequire = Function('return require')() as (id: string) => unknown;
-    const purchasesModule = dynamicRequire('react-native-purchases') as
-      | PurchasesModule
-      | { default?: PurchasesModule };
-
-    if (
-      purchasesModule &&
-      typeof purchasesModule === 'object' &&
-      'default' in purchasesModule &&
-      purchasesModule.default
-    ) {
-      return purchasesModule.default;
-    }
-
-    return purchasesModule as PurchasesModule;
-  } catch {
-    return null;
-  }
+function loadPurchasesModule(): PurchasesModule | null {
+  // 정적 import를 사용해 Metro가 네이티브 결제 SDK를 앱 번들에 포함합니다.
+  return Purchases as unknown as PurchasesModule | null;
 }
 
 function getBillingUnavailableMessage() {
-  if (Platform.OS === 'web') {
-    return 'Expo 웹에서는 Google Play Billing을 사용할 수 없습니다.';
+  if (Platform.OS !== 'android') {
+    return 'Google Play 결제는 Android 앱에서만 이용할 수 있습니다.';
   }
-
-  if (!getRevenueCatApiKey()) {
-    return 'RevenueCat 공개 API 키가 설정되지 않아 Google Play Billing을 시작할 수 없습니다.';
+  if (!getRevenueCatApiKey().startsWith('goog_')) {
+    return 'Google Play 결제 설정을 확인할 수 없습니다. 잠시 후 다시 시도해 주세요.';
   }
-
-  return 'react-native-purchases 패키지가 설치되지 않아 Google Play Billing을 사용할 수 없습니다.';
-}
-
-function createMockPurchaseResult(
-  productId: MobileBillingProductId,
-  appUserId: string
-): MobileBillingPurchaseResult {
-  const purchaseDate = new Date().toISOString();
-  const transactionIdentifier = `mock_${productId}_${Date.now().toString(36)}_${Math.random()
-    .toString(36)
-    .slice(2, 10)}`;
-
-  return {
-    appUserId,
-    customerInfo: {
-      originalAppUserId: appUserId,
-      nonSubscriptionTransactions: [
-        {
-          productIdentifier: productId,
-          purchaseDate,
-          transactionIdentifier,
-        },
-      ],
-    },
-    productIdentifier: productId,
-    transactionIdentifier,
-    purchaseDate,
-  };
+  return 'Google Play 결제를 시작하지 못했습니다. 스토어에서 설치한 앱을 사용해 주세요.';
 }
 
 export async function ensureBillingConfigured(options: { appUserId?: string | null } = {}) {
-  if (Platform.OS === 'web') {
+  if (Platform.OS !== 'android' || !NativeModules.RNPurchases || !getRevenueCatApiKey().startsWith('goog_')) {
     throw new Error(getBillingUnavailableMessage());
   }
 
   const requestedAppUserId = await getOrCreateBillingAppUserId(options.appUserId);
 
-  if (!billingConfigurationPromise || configuredBillingAppUserId !== requestedAppUserId) {
+  if (!billingConfigurationPromise) {
     billingConfigurationPromise = (async () => {
       const purchases = loadPurchasesModule();
       if (!purchases) {
@@ -208,7 +153,16 @@ export async function ensureBillingConfigured(options: { appUserId?: string | nu
     });
   }
 
-  return billingConfigurationPromise;
+  const configured = await billingConfigurationPromise;
+  const nextIdentity = billingIdentityQueue.catch(() => undefined).then(async () => {
+    if (configuredBillingAppUserId !== requestedAppUserId) {
+      await configured.purchases.logIn(requestedAppUserId);
+      configuredBillingAppUserId = requestedAppUserId;
+    }
+    return { purchases: configured.purchases, appUserId: requestedAppUserId };
+  });
+  billingIdentityQueue = nextIdentity;
+  return nextIdentity;
 }
 
 export async function fetchBillingProducts(productIds: readonly MobileBillingProductId[]) {
@@ -221,18 +175,9 @@ export async function purchaseBillingProduct(
   productId: MobileBillingProductId,
   options: { appUserId?: string | null } = {}
 ) {
-  const appUserId = await getOrCreateBillingAppUserId(options.appUserId);
-  const purchasesModule = loadPurchasesModule();
-  if (!getRevenueCatApiKey() || !purchasesModule) {
-    if (isProductionNativeRuntime()) {
-      throw new Error(getBillingUnavailableMessage());
-    }
-
-    return createMockPurchaseResult(productId, appUserId);
-  }
-
-  const { purchases } = await ensureBillingConfigured({ appUserId });
-  const products = await fetchBillingProducts([productId]);
+  const { purchases, appUserId } = await ensureBillingConfigured(options);
+  const type = purchases.PRODUCT_CATEGORY?.NON_SUBSCRIPTION ?? 'NON_SUBSCRIPTION';
+  const products = await purchases.getProducts([productId], type);
   const targetProduct = products.find((product) => product.identifier === productId);
 
   if (!targetProduct) {
@@ -240,10 +185,13 @@ export async function purchaseBillingProduct(
   }
 
   const purchaseResult = await purchases.purchaseStoreProduct(targetProduct);
+  if (purchaseResult.productIdentifier !== productId ||
+      !purchaseResult.transaction?.transactionIdentifier?.trim()) {
+    throw new Error('Google Play 거래 정보를 확인하지 못했습니다. 고객 문의로 확인해 주세요.');
+  }
 
   return {
-    appUserId:
-      purchaseResult.customerInfo.originalAppUserId?.trim() || appUserId,
+    appUserId,
     customerInfo: purchaseResult.customerInfo,
     productIdentifier: purchaseResult.productIdentifier as MobileBillingProductId,
     transactionIdentifier: purchaseResult.transaction.transactionIdentifier,

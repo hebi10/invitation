@@ -5,6 +5,7 @@ import type { useAuth } from '../../../contexts/AuthContext';
 import type { useInvitationOps } from '../../../contexts/InvitationOpsContext';
 import { fulfillMobileBillingTicketPack } from '../../../lib/api';
 import { purchaseBillingProduct } from '../../../lib/billing';
+import { runPendingBillingPurchase } from '../../../lib/pendingBillingPurchase';
 import { getMobileBillingTicketPackProductId } from '../../../lib/mobileBillingProducts';
 import {
   buildLinkedInvitationCardFromPageSummary,
@@ -204,17 +205,21 @@ export function useCreateTicketPurchase({
     let nextTicketCount: number | null = null;
 
     try {
-      const purchase = await purchaseBillingProduct(billingProductId, {
+      const fulfillment = await runPendingBillingPurchase({
         appUserId: customerSession.uid,
-      });
-      const fulfillment = await fulfillMobileBillingTicketPack(apiBaseUrl, {
-        purchase: {
-          appUserId: purchase.appUserId,
-          productId: purchase.productIdentifier,
-          transactionId: purchase.transactionIdentifier,
+        productId: billingProductId,
+        apiBaseUrl,
+        target: { action: 'grantTicketPack', pageSlug: selectedTicketTargetCard.slug },
+      }, {
+        purchase: () => purchaseBillingProduct(billingProductId, { appUserId: customerSession.uid }),
+        fulfill: (receipt) => fulfillMobileBillingTicketPack(apiBaseUrl, {
+          purchase: receipt,
+          targetPageSlug: selectedTicketTargetCard.slug,
+          targetToken: selectedTicketTargetCard.session.token,
+        }),
+        onResume: () => {
+          setNotice('이전 결제를 추가 결제 없이 다시 반영하고 있습니다.');
         },
-        targetPageSlug: selectedTicketTargetCard.slug,
-        targetToken: selectedTicketTargetCard.session.token,
       });
 
       nextTicketCount = fulfillment.ticketCount;

@@ -68,27 +68,6 @@ function getRevenueCatApiKey() {
   return process.env.REVENUECAT_SERVER_API_KEY?.trim() ?? '';
 }
 
-function isMockBillingFulfillmentAllowed() {
-  return (
-    process.env.NODE_ENV !== 'production' ||
-    process.env.MOBILE_BILLING_ALLOW_MOCK === 'true'
-  );
-}
-
-function buildMockTransactionRecord(
-  purchase: MobileBillingPurchaseReceipt
-): RevenueCatTransactionRecord | null {
-  if (!purchase.transactionId.startsWith('mock_') || !isMockBillingFulfillmentAllowed()) {
-    return null;
-  }
-
-  return {
-    productIdentifier: purchase.productId,
-    transactionIdentifier: purchase.transactionId,
-    purchaseDate: new Date().toISOString(),
-  };
-}
-
 async function getBillingFulfillmentRecord(transactionId: string) {
   return firestoreBillingFulfillmentRepository.findByTransactionId(transactionId);
 }
@@ -114,31 +93,34 @@ async function markBillingFulfillmentFailed(transactionId: string, error: string
   await firestoreBillingFulfillmentRepository.markFailed(transactionId, error);
 }
 
-function collectTransactionCandidateIds(record: Record<string, unknown>) {
-  return [
-    record.transactionIdentifier,
-    record.transaction_id,
-    record.storeTransactionId,
-    record.store_transaction_id,
-    record.id,
-  ]
-    .filter((value): value is string => typeof value === 'string' && value.trim().length > 0)
-    .map((value) => value.trim());
-}
-
-function normalizeRevenueCatTransactionRecord(input: unknown): RevenueCatTransactionRecord | null {
+function normalizeRevenueCatTransactionRecord(
+  input: unknown,
+  productId: MobileBillingProductId
+): RevenueCatTransactionRecord | null {
   if (!input || typeof input !== 'object') {
     return null;
   }
 
   const record = input as Record<string, unknown>;
+  if (record.store !== 'play_store' || record.refunded_at) {
+    return null;
+  }
+
+  // REST v1 identifies the product through the non_subscriptions map key.
   const productIdentifier =
     typeof record.productIdentifier === 'string' && record.productIdentifier.trim()
       ? record.productIdentifier.trim()
       : typeof record.product_id === 'string' && record.product_id.trim()
         ? record.product_id.trim()
+        : productId;
+  // Prefer the Google Play order identifier. Accepting both identifiers for one
+  // purchase would create separate fulfillment locks and allow duplicate grants.
+  const transactionIdentifier =
+    typeof record.store_transaction_id === 'string' && record.store_transaction_id.trim()
+      ? record.store_transaction_id.trim()
+      : typeof record.id === 'string'
+        ? record.id.trim()
         : '';
-  const transactionIdentifier = collectTransactionCandidateIds(record)[0] ?? '';
 
   if (!productIdentifier || !transactionIdentifier) {
     return null;
@@ -159,9 +141,8 @@ function normalizeRevenueCatTransactionRecord(input: unknown): RevenueCatTransac
 async function verifyRevenueCatNonSubscriptionTransaction(
   purchase: MobileBillingPurchaseReceipt
 ) {
-  const mockTransaction = buildMockTransactionRecord(purchase);
-  if (mockTransaction) {
-    return mockTransaction;
+  if (purchase.transactionId.startsWith('mock_')) {
+    throw new Error('The Google Play purchase could not be verified yet.');
   }
 
   const apiKey = getRevenueCatApiKey();
@@ -199,7 +180,7 @@ async function verifyRevenueCatNonSubscriptionTransaction(
     : [];
 
   const verifiedTransaction = matchingTransactions
-    .map((entry) => normalizeRevenueCatTransactionRecord(entry))
+    .map((entry) => normalizeRevenueCatTransactionRecord(entry, purchase.productId))
     .filter((entry): entry is RevenueCatTransactionRecord => entry !== null)
     .find(
       (entry) =>

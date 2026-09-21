@@ -35,16 +35,11 @@ assert(
 );
 
 assert(
-  billingSource.includes('isProductionNativeRuntime') &&
-    /if\s*\([^)]*isProductionNativeRuntime\(\)[\s\S]*throw new Error\(getBillingUnavailableMessage\(\)\)/.test(
-      billingSource
-    ),
-  'Production native billing must fail clearly when RevenueCat configuration or native module is unavailable.'
-);
-
-assert(
-  billingSource.includes('return createMockPurchaseResult(productId, appUserId)'),
-  'Development and web preview billing must retain the existing mock purchase fallback.'
+  !billingSource.includes('createMockPurchaseResult') &&
+    !billingSource.includes('isProductionNativeRuntime') &&
+    billingSource.includes("Platform.OS !== 'android'") &&
+    billingSource.includes("startsWith('goog_')"),
+  'Every environment must require Google Play billing without a mock fallback.'
 );
 
 console.log('mobile device id and billing policy checks passed');
