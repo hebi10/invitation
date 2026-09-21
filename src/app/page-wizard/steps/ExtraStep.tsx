@@ -5,6 +5,7 @@ import {
 
 import TemplateChoiceGroup from '../TemplateChoiceGroup';
 import styles from '../page.module.css';
+import blockStyles from './WizardVenueBlocks.module.css';
 import { renderFieldMeta, type ExtraStepProps } from '../pageWizardShared';
 
 const GIFT_MESSAGE_TEMPLATES = [
@@ -42,7 +43,13 @@ export default function ExtraStep({
   if (formState.eventType === 'opening') {
     return (
       <div className={styles.fieldGrid}>
-        <section className={styles.formCard}>
+        <section className={blockStyles.stack}>
+          <details className={blockStyles.optional}>
+          <summary className={blockStyles.summary}>
+            브랜드 소개 <span className={blockStyles.badge}>선택</span>
+            <span className={blockStyles.summaryText}>{(formState.pageData?.venueGuide ?? []).length ? `${(formState.pageData?.venueGuide ?? []).length}개 안내 · 열어서 확인 및 수정` : '필요한 안내만 추가해 주세요'}</span>
+          </summary>
+          <div className={blockStyles.body}>
           <GuideSectionPanel
             kind="venueGuide"
             title="브랜드 소개"
@@ -53,6 +60,14 @@ export default function ExtraStep({
             onRemove={onGuideRemove}
             onChange={onGuideChange}
           />
+          </div>
+        </details>
+          <details className={blockStyles.optional}>
+          <summary className={blockStyles.summary}>
+            오픈 기념 혜택 <span className={blockStyles.badge}>선택</span>
+            <span className={blockStyles.summaryText}>{(formState.pageData?.wreathGuide ?? []).length ? `${(formState.pageData?.wreathGuide ?? []).length}개 안내 · 열어서 확인 및 수정` : '필요한 안내만 추가해 주세요'}</span>
+          </summary>
+          <div className={blockStyles.body}>
           <GuideSectionPanel
             kind="wreathGuide"
             title="오픈 기념 혜택"
@@ -63,6 +78,8 @@ export default function ExtraStep({
             onRemove={onGuideRemove}
             onChange={onGuideChange}
           />
+          </div>
+        </details>
         </section>
       </div>
     );
@@ -127,8 +144,14 @@ export default function ExtraStep({
       </div>
 
       </> : null}
-      {mode !== 'accounts' ? <section className={styles.formCard}>
-        <GuideSectionPanel
+      {mode !== 'accounts' ? <section className={blockStyles.stack} aria-label="교통 및 추가 안내" data-preview-step="guide">
+        <details className={blockStyles.optional}>
+          <summary className={blockStyles.summary}>
+            교통 · 방문 안내 <span className={blockStyles.badge}>선택</span>
+            <span className={blockStyles.summaryText}>{(formState.pageData?.venueGuide ?? []).length ? `${(formState.pageData?.venueGuide ?? []).length}개 안내 · 열어서 확인 및 수정` : '필요한 안내만 추가해 주세요'}</span>
+          </summary>
+          <div className={blockStyles.body}>
+          <GuideSectionPanel
           kind="venueGuide"
           title="교통 · 방문 안내"
           description="주차, 대중교통, 건물 위치처럼 손님 안내에 필요한 내용을 적습니다."
@@ -138,7 +161,15 @@ export default function ExtraStep({
           onRemove={onGuideRemove}
           onChange={onGuideChange}
         />
-        <GuideSectionPanel
+          </div>
+        </details>
+        <details className={blockStyles.optional}>
+          <summary className={blockStyles.summary}>
+            {isFirstBirthday ? '추가 안내' : '화환 안내'} <span className={blockStyles.badge}>선택</span>
+            <span className={blockStyles.summaryText}>{(formState.pageData?.wreathGuide ?? []).length ? `${(formState.pageData?.wreathGuide ?? []).length}개 안내 · 열어서 확인 및 수정` : '필요한 안내만 추가해 주세요'}</span>
+          </summary>
+          <div className={blockStyles.body}>
+          <GuideSectionPanel
           kind="wreathGuide"
           title={isFirstBirthday ? '추가 안내' : '화환 안내'}
           description={
@@ -152,6 +183,8 @@ export default function ExtraStep({
           onRemove={onGuideRemove}
           onChange={onGuideChange}
         />
+          </div>
+        </details>
       </section> : null}
     </div>
   );

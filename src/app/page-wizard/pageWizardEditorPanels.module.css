@@ -436,7 +436,6 @@
 
 .personCard {
   width: 100%;
-  max-width: 480px;
   min-width: 0;
   box-sizing: border-box;
 }
@@ -470,7 +469,126 @@
   max-width: 260px;
 }
 
+.parentGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr));
+  gap: 28px;
+}
+
+.parentGrid .personFields {
+  display: grid;
+  grid-template-columns: minmax(84px, 110px) minmax(0, 180px);
+  gap: 12px;
+}
+
+.parentGrid .nameField,
+.parentGrid .relationField {
+  width: auto;
+}
+
+.parentGrid .phoneField {
+  grid-column: 1 / -1;
+}
+
+.familyHint {
+  margin: 0 0 8px;
+  color: var(--operation-color-text-secondary);
+  font-size: 14px;
+  line-height: 1.7;
+}
+
+.repeatableCard,
+.basicCard {
+  border: 1px solid var(--operation-color-border);
+  background: var(--operation-color-surface);
+  min-width: 0;
+}
+
+.repeatableSummary {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 5px 16px;
+  padding: 16px;
+  min-height: 48px;
+  cursor: pointer;
+  list-style: none;
+}
+
+.repeatableSummary::-webkit-details-marker { display: none; }
+
+.repeatableSummary:focus-visible {
+  outline: 2px solid var(--operation-color-focus);
+  outline-offset: 2px;
+}
+
+.repeatableTitle {
+  font-size: 16px;
+  font-weight: 500;
+  overflow-wrap: anywhere;
+}
+
+.repeatableDescription {
+  grid-column: 1;
+  font-size: 14px;
+  color: var(--operation-color-text-secondary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.disclosureAction {
+  grid-column: 2;
+  grid-row: 1 / 3;
+  align-self: center;
+  font-size: 14px;
+  color: var(--operation-color-action);
+}
+
+.repeatableBody {
+  display: grid;
+  gap: 12px;
+  padding: 0 16px 16px;
+}
+
+.basicCard {
+  padding: 20px;
+}
+
+.basicContent {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 20px;
+  margin-top: 16px;
+}
+
+.basicContent > :first-child {
+  flex: 1 1 300px;
+  min-width: 0;
+}
+
+.namePreview {
+  flex: 1 1 180px;
+  padding: 20px 16px;
+  background: var(--operation-color-surface-muted);
+  text-align: center;
+  overflow-wrap: anywhere;
+}
+
+.namePreview p {
+  margin: 0 0 10px;
+  font-size: 13px;
+  color: var(--operation-color-text-secondary);
+}
+
+.namePreview strong {
+  font-size: 21px;
+  font-weight: 500;
+  line-height: 1.6;
+}
+
 @media (max-width: 640px) {
+  .basicCard { padding: 16px; }
   .subCard {
     padding: 12px;
   }

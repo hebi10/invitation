@@ -49,6 +49,7 @@ const core = [
   'test-opening-event-rendering',
   'test-page-wizard-event-type-lock',
   'test-page-wizard-workspace',
+  'test-wizard-editor-disclosures',
   'test-page-wizard-schedule-time',
   'test-public-invitation-behavior',
   'test-public-invitation-visual-world',
@@ -190,6 +191,7 @@ if (!selectedTests) {
 
 // Hook-based components need React's client server-rendering entrypoint.
 const clientRenderingTests = new Set([
+  'test-wizard-editor-disclosures',
   'test-wedding-intro-policy',
   'test-simple-wedding-rendering',
   'test-gallery-carousel-rendering',

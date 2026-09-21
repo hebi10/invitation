@@ -1,5 +1,6 @@
 import { WizardField } from '../WizardFieldValidation';
 import styles from '../page.module.css';
+import panelStyles from '../pageWizardEditorPanels.module.css';
 import { renderFieldMeta, type BasicStepProps } from '../pageWizardShared';
 
 export default function BasicStep({
@@ -196,7 +197,11 @@ export default function BasicStep({
   }
 
   return (
-    <div className={styles.fieldGrid}>
+    <section className={panelStyles.basicCard}>
+      <div className={panelStyles.sectionTitleRow}>
+        <h3 className={panelStyles.subCardTitle}>신랑·신부 기본 정보</h3>
+      </div>
+      <div className={panelStyles.basicContent}>
       <div className={styles.coupleNameFields}>
         <WizardField label="신랑 이름" className={styles.field}>
           {renderFieldMeta('신랑 이름', 'required')}
@@ -209,9 +214,12 @@ export default function BasicStep({
             onChange={(event) => onPersonFieldChange('bride', 'name', event.target.value)} />
         </WizardField>
       </div>
-      <p className={styles.sectionText}>
-        청첩장에 표시할 이름을 입력해 주세요.
-      </p>
-    </div>
+      <div className={panelStyles.namePreview} aria-label="화면에 표시될 이름">
+        <p>화면에 표시될 이름</p>
+        <strong>{formState.couple.groom.name || '신랑 이름'} · {formState.couple.bride.name || '신부 이름'}</strong>
+      </div>
+      </div>
+      <p className={panelStyles.fieldHint}>청첩장에 표시할 이름을 입력해 주세요.</p>
+    </section>
   );
 }

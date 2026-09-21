@@ -1,7 +1,7 @@
 import { WizardField } from '../WizardFieldValidation';
 import VenueLocationPreview from './VenueLocationPreview';
 import styles from '../page.module.css';
-import locationStyles from './VenueLocationPreview.module.css';
+import blockStyles from './WizardVenueBlocks.module.css';
 import { renderFieldMeta, type VenueStepProps } from '../pageWizardShared';
 
 export default function VenueStep({
@@ -26,8 +26,9 @@ export default function VenueStep({
   const venueLabel = formState.eventType === 'opening' ? '매장' : isGeneralEvent ? '행사 장소' : isFirstBirthday ? '돌잔치 장소' : '예식장';
 
   return (
-    <section className={`${styles.fieldGrid} ${locationStyles.venueSection}`} aria-label="장소 안내 입력">
-      <h3 className={locationStyles.sectionTitle}>장소 안내</h3>
+    <div className={blockStyles.stack} data-preview-step="venue">
+    <section className={blockStyles.block} aria-label="장소 안내 입력">
+      <h3 className={blockStyles.title}>장소 정보</h3>
       <WizardField label={`${venueLabel} 이름`} className={styles.field}>
         {renderFieldMeta(`${venueLabel} 이름`, 'required')}
         <input
@@ -90,6 +91,28 @@ export default function VenueStep({
         />
       </WizardField>
 
+      <WizardField label={`${venueLabel} 연락처`} className={`${styles.field} ${blockStyles.contact}`}>
+        {renderFieldMeta(`${venueLabel} 연락처`, 'optional')}
+        <input
+          className={styles.input}
+          type="tel"
+          inputMode="tel"
+          value={formState.pageData?.ceremonyContact ?? ''}
+          placeholder="02-1234-5678"
+          onChange={(event) =>
+            updateForm((draft) => {
+              if (draft.pageData) {
+                draft.pageData.ceremonyContact = event.target.value;
+              }
+            })
+          }
+        />
+      </WizardField>
+
+    </section>
+    <section className={`${blockStyles.block} ${blockStyles.mapBlock}`} aria-label="지도 및 길찾기 설정">
+      <h3 className={blockStyles.title}>지도 및 길찾기</h3>
+      <p className={blockStyles.description}>주소로 위치를 확인하고 손님에게 안내할 지도를 살펴보세요.</p>
       <div className={styles.inlineActions}>
         <button
           type="button"
@@ -115,24 +138,13 @@ export default function VenueStep({
         />
       ) : null}
 
-      <WizardField label={`${venueLabel} 연락처`} className={styles.field}>
-        {renderFieldMeta(`${venueLabel} 연락처`, 'optional')}
-        <input
-          className={styles.input}
-          type="tel"
-          inputMode="tel"
-          value={formState.pageData?.ceremonyContact ?? ''}
-          placeholder="02-1234-5678"
-          onChange={(event) =>
-            updateForm((draft) => {
-              if (draft.pageData) {
-                draft.pageData.ceremonyContact = event.target.value;
-              }
-            })
-          }
-        />
-      </WizardField>
-
+    </section>
+    <details className={blockStyles.optional}>
+      <summary className={blockStyles.summary}>
+        <span>오시는 길 요약 문구 <span className={blockStyles.badge}>선택</span></span>
+        <span className={blockStyles.summaryText}>{formState.pageData?.mapDescription?.trim() || '필요한 경우 짧게 안내해 주세요'}</span>
+      </summary>
+      <div className={blockStyles.body}>
       <WizardField label={'오시는 길 안내 문구'} className={styles.field}>
         {renderFieldMeta('오시는 길 안내 문구', 'optional')}
         <textarea
@@ -154,6 +166,8 @@ export default function VenueStep({
           }
         />
       </WizardField>
-    </section>
+      </div>
+    </details>
+    </div>
   );
 }

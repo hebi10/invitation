@@ -1,6 +1,6 @@
 import { WizardField } from '../WizardFieldValidation';
 import styles from '../page.module.css';
-import panelStyles from '../pageWizardEditorPanels.module.css';
+import blockStyles from './WizardVenueBlocks.module.css';
 import { buildWeddingDateObject } from '../pageWizardData';
 import { renderFieldMeta, type ScheduleStepProps } from '../pageWizardShared';
 
@@ -13,6 +13,12 @@ export default function ScheduleStep({
   mode = 'all',
 }: ScheduleStepProps & { mode?: 'primary' | 'details' | 'all' }) {
   const weddingDate = buildWeddingDateObject(previewFormState);
+  const detailSummary = [
+    previewFormState.pageData?.ceremony?.time ?? previewFormState.pageData?.ceremonyTime,
+    previewFormState.pageData?.ceremony?.location,
+    previewFormState.pageData?.reception?.time,
+    previewFormState.pageData?.reception?.location,
+  ].filter((value) => value?.trim()).join(' · ');
   const isOpening = previewFormState.eventType === 'opening';
 
   const handleScheduleDetailChange = (
@@ -39,8 +45,9 @@ export default function ScheduleStep({
 
   return (
     <div className={styles.fieldGrid}>
-      {mode !== 'details' ? (<>
-      <div className={styles.twoColumnGrid}>
+      {mode !== 'details' ? (<section className={blockStyles.block}>
+      <h3 className={blockStyles.title}>{isOpening ? '오픈 일정' : '예식 일정'}</h3>
+      <div className={blockStyles.inlineFields}>
         <WizardField label={isOpening ? '오픈 날짜' : '예식 날짜'} className={styles.field}>
           {renderFieldMeta(isOpening ? '오픈 날짜' : '예식 날짜', 'required')}
           <input
@@ -87,14 +94,15 @@ export default function ScheduleStep({
         <strong className={styles.summaryValue}>{currentWeddingSummary}</strong>
       </div>
 
-      </>) : null}
+      </section>) : null}
       {mode !== 'primary' ? (
-      <details className={panelStyles.detailsGroup}>
-        <summary className={panelStyles.detailsSummary}>
+      <details className={blockStyles.optional}>
+        <summary className={blockStyles.summary}>
           {isOpening ? '영업시간·예약 안내' : '본식 상세·피로연 안내'}
-          <span className={panelStyles.familySummary}>선택 입력</span>
+          <span className={blockStyles.badge}>선택</span>
+          <span className={blockStyles.summaryText}>{detailSummary || '필요한 경우에만 입력해 주세요'}</span>
         </summary>
-        <div className={`${styles.fieldGrid} ${panelStyles.detailsBody}`}>
+        <div className={`${styles.fieldGrid} ${blockStyles.body}`}>
       <div className={styles.twoColumnGrid}>
         <label className={styles.field}>
           {renderFieldMeta(

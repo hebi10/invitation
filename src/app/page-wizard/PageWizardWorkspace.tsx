@@ -2,6 +2,9 @@
 
 import {
   type ReactNode,
+  type ReactElement,
+  cloneElement,
+  isValidElement,
   useEffect,
   useMemo,
   useRef,
@@ -29,6 +32,7 @@ import type { InvitationPageSeed } from '@/types/invitationPage';
 import styles from './PageWizardWorkspace.module.css';
 import { WizardFieldValidationProvider } from './WizardFieldValidation';
 import { useDialogLayer } from '@/hooks/useDialogLayer';
+import { isPreviewStep, type PreviewStep } from '../wizard-preview/previewSections';
 
 type PageWizardWorkspaceProps = {
   experience?: boolean;
@@ -67,10 +71,10 @@ type PageWizardWorkspaceProps = {
 
 const DIRECTION_CONTRACT = `<!--
 THESIS: 초대장 편집기는 장식 화면이 아니라 누락 없이 정보를 완성하는 작업 공간이다.
-OWN-WORLD: 중립 배경, 먹색 글자, 파란 단일 강조, 시스템 고딕, 1px 구분선, 6~8px 제어 반경.
-STORY: 현재 위치와 오류를 확인하고, 관련 정보를 입력하고, 필요할 때 미리본 뒤 저장한다.
-FIRST VIEWPORT: 상단 작업 바, 왼쪽 목차, 중앙 입력, 하단 주요 동작.
-FORM: Operate 모드의 2열 데스크톱·단일 열 모바일 편집 워크스페이스.
+OWN-WORLD: 중립 배경, 먹색 글자, 올리브 단일 강조, 시스템 고딕, 얇은 카드 테두리.
+STORY: 핵심 정보를 먼저 입력하고, 선택 정보를 펼쳐 작성하며, 반영 위치를 확인하고 저장한다.
+FIRST VIEWPORT: 상단 저장 바, 왼쪽 진행 목차, 중앙 입력 블록, 오른쪽 미리보기, 하단 다음 동작.
+FORM: Operate 모드의 3열 데스크톱·단일 열 모바일 작성 도우미.
 -->`;
 
 function OptionalSettings({ invalid, title, children }: { invalid: boolean; title: string; children: ReactNode }) {
@@ -124,6 +128,16 @@ export default function PageWizardWorkspace({
 }: PageWizardWorkspaceProps) {
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
   const [isFullPreviewOpen, setIsFullPreviewOpen] = useState(false);
+  const [focusedPreviewStep, setFocusedPreviewStep] = useState<PreviewStep>(activeStepKey);
+  useEffect(() => setFocusedPreviewStep(activeStepKey), [activeStepKey]);
+  const focusedPreview = isValidElement(fullPreview)
+    ? cloneElement(fullPreview as ReactElement<{ activeStepKey: PreviewStep }>, { activeStepKey: focusedPreviewStep })
+    : fullPreview;
+  const focusPreview = (step: PreviewStep, reveal = false) => {
+    setFocusedPreviewStep(step);
+    window.dispatchEvent(new CustomEvent('wizard-preview-focus', { detail: { step } }));
+    if (reveal && window.matchMedia('(max-width: 1199px)').matches) setIsFullPreviewOpen(true);
+  };
   const [attemptedSteps, setAttemptedSteps] = useState<Set<WizardStepKey>>(new Set());
   const fullPreviewDialogRef = useRef<HTMLElement | null>(null);
   const attempt = (action: () => void, allSections = false) => {
@@ -182,6 +196,7 @@ export default function PageWizardWorkspace({
         type="button"
         className={`${styles.sectionButton} ${isActive ? styles.sectionButtonActive : ''}`}
         aria-current={isActive ? 'step' : undefined}
+        data-status={!validation.valid && (hasPersistedData || section.steps.some(step => attemptedSteps.has(step.key))) ? 'error' : hasMeaningfulInput && validation.valid ? 'complete' : 'empty'}
         disabled={isSaving}
         onClick={() => handleSectionSelect(section.id)}
       >
@@ -229,7 +244,7 @@ export default function PageWizardWorkspace({
                 {lastSavedAt.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })}
               </time>
             ) : null}
-            <button type="button" className={styles.primaryAction} onClick={() => attempt(onSave, true)} disabled={isSaving}>
+            <button type="button" className={styles.secondaryAction} onClick={() => attempt(onSave, true)} disabled={isSaving}>
               {isSaving ? '저장 중' : saveStatus === 'error' ? '저장 다시 시도' : setupOnly ? (hasPersistedData ? '설정 저장' : '초대장 생성') : '내용 저장'}
             </button>
             {fullPreview || activePreviewStep ? (
@@ -278,9 +293,10 @@ export default function PageWizardWorkspace({
             <h2>{activeSection.title}</h2>
             <p>{activeSection.description}</p>
           </header>
-
-
-
+          <aside className={styles.inputTip} aria-label="입력 안내">
+            <strong>필요한 정보부터 간단하게</strong>
+            <p>필수 항목을 먼저 입력해 주세요. 가족·교통·계좌 등 선택 정보는 필요할 때 펼쳐 작성할 수 있습니다.</p>
+          </aside>
           <div className={styles.stepList}>
             {activeSection.steps.map((step) => {
               const validation = getStepValidation(step.key);
@@ -296,6 +312,11 @@ export default function PageWizardWorkspace({
                   aria-labelledby={`wizard-step-${step.key}`}
                   aria-current={isActiveStep ? 'step' : undefined}
                   tabIndex={-1}
+                  onFocusCapture={(event) => {
+                    if (!fullPreview) return;
+                    const target = (event.target as HTMLElement).closest<HTMLElement>('[data-preview-step]')?.dataset.previewStep;
+                    focusPreview(isPreviewStep(target) ? target : step.key);
+                  }}
                 >
                   <div className={styles.stepHeadingRow}>
                     <div className={isOnlyStepWithSectionTitle ? styles.stepHeadingCopyCompact : undefined}>
@@ -311,10 +332,10 @@ export default function PageWizardWorkspace({
                       <button
                         type="button"
                         className={styles.stepPreviewAction}
-                        aria-pressed={previewStepKey === step.key}
-                        onClick={() => fullPreview ? setIsFullPreviewOpen(true) : openPreview(step.key)}
+                        aria-pressed={fullPreview ? focusedPreviewStep === step.key : previewStepKey === step.key}
+                        onClick={() => fullPreview ? focusPreview(step.key, true) : openPreview(step.key)}
                       >
-                        {fullPreview ? '편집 위치 미리보기' : '입력 내용 확인'}
+                        {fullPreview ? '미리보기에서 위치 보기' : '입력 내용 확인'}
                       </button>
                     ) : null}
                   </div>
@@ -371,7 +392,7 @@ export default function PageWizardWorkspace({
         </main>
         {fullPreview ? <aside className={styles.livePreview} aria-label="청첩장 실시간 미리보기">
           <h2>청첩장 미리보기</h2>
-          {fullPreview}
+          {focusedPreview}
         </aside> : null}
       </div>
 
@@ -446,7 +467,7 @@ export default function PageWizardWorkspace({
             <h2 id="wizard-full-preview-title">청첩장 미리보기</h2>
             <button type="button" className={styles.closeAction} onClick={closeFullPreview} aria-label="미리보기 닫기"><img src="/images/admin/close.webp" width={16} height={16} alt="" /></button>
           </header>
-          <div className={styles.previewContent}>{fullPreview}</div>
+          <div className={styles.previewContent}>{focusedPreview}</div>
         </section>
       </div> : null}
       {previewStepKey ? (

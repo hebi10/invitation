@@ -13,6 +13,7 @@ import { applyDerivedWizardDefaults, buildWeddingDateObject } from '../page-wiza
 import styles from '../page-wizard/WeddingWizardPreview.module.css';
 import WeddingIntro from '@/components/sections/WeddingIntro/WeddingIntro';
 import { normalizeWeddingIntroStyle } from '@/lib/weddingIntro';
+import { isPreviewStep, previewSections, type PreviewStep } from './previewSections';
 
 const themes: InvitationThemeKey[] = ['simple', 'emotional', 'romantic', 'gyeol', 'classic-r'];
 const idle = () => {};
@@ -68,18 +69,23 @@ function buildPreview(seed: InvitationPageSeed, theme: InvitationThemeKey): Wedd
 export default function WizardPreviewClient() {
   const [draft, setDraft] = useState<{ seed: InvitationPageSeed; theme: InvitationThemeKey } | null>(null);
   const [introRun, setIntroRun] = useState(0);
+  const [focus, setFocus] = useState<{ step: PreviewStep; revision: number } | null>(null);
+  const [showIntro, setShowIntro] = useState(false);
   useEffect(() => {
     const receive = (event: MessageEvent) => {
       if (window.parent === window || event.origin !== window.location.origin || event.source !== window.parent) return;
       const message = event.data;
       if (message?.type === 'wedding-wizard-preview:section') {
-        const targets: Record<string, string> = { greeting: 'invitation', images: 'gallery', schedule: 'ceremony', venue: 'schedule', extra: 'gift' };
-        const section = targets[message.step];
-        if (section) document.querySelector(`[data-wedding-section="${section}"]`)?.scrollIntoView({ block: 'start' });
-        else window.scrollTo({ top: 0, behavior: 'instant' });
+        if (!isPreviewStep(message.step)) return;
+        const step = message.step;
+        setShowIntro(step === 'music');
+        if (step === 'music') setIntroRun(run => run + 1);
+        setFocus(previous => ({ step, revision: (previous?.revision ?? 0) + 1 }));
         return;
       }
       if (message?.type === 'wedding-wizard-preview:top') {
+        setFocus(null);
+        setShowIntro(true);
         window.scrollTo({ top: 0, behavior: 'instant' });
         setIntroRun(run => run + 1);
         return;
@@ -98,6 +104,25 @@ export default function WizardPreviewClient() {
     return () => window.removeEventListener('message', receive);
   }, []);
   const state = useMemo(() => draft ? buildPreview(draft.seed, draft.theme) : null, [draft]);
+  useEffect(() => {
+    if (!state || !focus) return;
+    // Section messages can arrive before the first draft commit. Resolve the
+    // element after React renders, and re-resolve when preview content changes.
+    let target: HTMLElement | null = null;
+    const frame = window.requestAnimationFrame(() => {
+      target = document.querySelector<HTMLElement>(previewSections[focus.step].selector);
+      if (!target) {
+        window.scrollTo({ top: 0, behavior: 'instant' });
+        return;
+      }
+      target.dataset.wizardPreviewFocus = 'true';
+      target.scrollIntoView({ block: 'start', behavior: 'instant' });
+    });
+    return () => {
+      window.cancelAnimationFrame(frame);
+      if (target) delete target.dataset.wizardPreviewFocus;
+    };
+  }, [state, focus]);
   if (!draft || !state) return <p className={styles.notice} role="status">편집 화면의 입력 내용을 기다리고 있습니다.</p>;
   return (
     <AppQueryProvider>
@@ -105,7 +130,7 @@ export default function WizardPreviewClient() {
       <WeddingBase state={state} options={{ slug: state.pageConfig.slug, theme: draft.theme }} theme={draft.theme} demoComments={sampleWeddingComments} showMap={false} />
       <WeddingClosing groomName={state.pageConfig.groomName} brideName={state.pageConfig.brideName} theme={draft.theme} />
       </div>
-      <WeddingIntro
+      {showIntro && <WeddingIntro
         key={`${normalizeWeddingIntroStyle(draft.seed.introStyle)}:${introRun}`}
         style={normalizeWeddingIntroStyle(draft.seed.introStyle)}
         slug={state.pageConfig.slug}
@@ -116,7 +141,7 @@ export default function WizardPreviewClient() {
         theme={draft.theme}
         preview
         connectToCover
-      />
+      />}
     </AppQueryProvider>
   );
 }

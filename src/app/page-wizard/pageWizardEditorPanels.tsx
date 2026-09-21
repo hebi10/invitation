@@ -1,8 +1,30 @@
+import { useState, type ReactNode } from 'react';
 import type { BankAccount, PersonInfo } from '@/types/invitationPage';
 
 import styles from './pageWizardEditorPanels.module.css';
 
 const MAX_REPEATABLE_ITEMS = 3;
+
+function RepeatableEditor({ title, summary, initiallyOpen, children }: {
+  title: string;
+  summary: string;
+  initiallyOpen: boolean;
+  children: ReactNode;
+}) {
+  const [open, setOpen] = useState(initiallyOpen);
+
+  return (
+    <details className={styles.repeatableCard} open={open}
+      onToggle={(event) => setOpen(event.currentTarget.open)}>
+      <summary className={styles.repeatableSummary}>
+        <span className={styles.repeatableTitle}>{title}</span>
+        <span className={styles.repeatableDescription}>{summary}</span>
+        <span className={styles.disclosureAction}>{open ? '접기' : '수정'}</span>
+      </summary>
+      <div className={styles.repeatableBody}>{children}</div>
+    </details>
+  );
+}
 
 type PersonRole = 'groom' | 'bride';
 type ParentRole = 'father' | 'mother';
@@ -96,7 +118,7 @@ export function PersonEditorCard({
   onParentFieldChange,
 }: PersonEditorCardProps) {
   return (
-    <div className={`${styles.subCard} ${styles.personCard}`}>
+    <div className={`${styles.subCard} ${styles.personCard}`} data-preview-step="family">
       <div className={styles.subCardHeader}>
         <div>
           <h3 className={styles.subCardTitle}>
@@ -104,8 +126,8 @@ export function PersonEditorCard({
           </h3>
           <p className={styles.subCardDescription}>
             {nameReadOnly
-              ? '이름은 위에서 수정해 주세요. 호칭·관계는 선택 사항이며, 연락처는 손님에게 공개할 경우에만 입력해 주세요.'
-              : '이름은 꼭 입력해 주세요. 호칭·관계는 선택 사항이며, 연락처는 손님에게 공개할 경우에만 입력해 주세요.'}
+              ? '가족 정보는 선택입니다. 연락처는 공개할 때만 입력해 주세요.'
+              : '이름을 입력해 주세요. 연락처는 공개할 때만 입력해 주세요.'}
           </p>
         </div>
       </div>
@@ -164,6 +186,8 @@ export function PersonEditorCard({
           </span>
         </summary>
         <div className={styles.detailsBody}>
+          <p className={styles.familyHint}>입력하지 않아도 됩니다. 표시하지 않을 분의 관계·이름·연락처는 모두 비워 주세요.</p>
+          <div className={styles.parentGrid}>
           {(['father', 'mother'] as const).map((parentRole) => {
             const parent = person[parentRole];
 
@@ -235,6 +259,7 @@ export function PersonEditorCard({
               </div>
             );
           })}
+          </div>
         </div>
       </details>
     </div>
@@ -279,14 +304,12 @@ export function GuideSectionPanel({
       <div className={styles.stackColumn}>
         {items.length > 0 ? (
           items.map((item, index) => (
-            <div key={`${kind}-${index}`} className={styles.subCard}>
+            <RepeatableEditor key={`${kind}-${index}`}
+              title={item.title.trim() || `안내 항목 ${index + 1}`}
+              summary={item.content.trim() || '제목과 안내 내용을 입력해 주세요.'}
+              initiallyOpen={!item.title.trim() && !item.content.trim()}>
               <div className={styles.subCardHeader}>
-                <div>
-                  <h3 className={styles.subCardTitle}>안내 항목 {index + 1}</h3>
-                  <p className={styles.subCardDescription}>
-                    짧은 제목과 손님이 바로 이해할 수 있는 설명 문장을 함께 적어 주세요.
-                  </p>
-                </div>
+                <h3 className={styles.subCardTitle}>안내 항목 {index + 1}</h3>
                 <button
                   type="button"
                   className={styles.textButton}
@@ -328,7 +351,7 @@ export function GuideSectionPanel({
                   />
                 </label>
               </div>
-            </div>
+            </RepeatableEditor>
           ))
         ) : (
           <div className={styles.emptyCard}>등록된 안내 항목이 없습니다.</div>
@@ -373,13 +396,13 @@ export function AccountSectionPanel({
       <div className={styles.stackColumn}>
         {accounts.length > 0 ? (
           accounts.map((account, index) => (
-            <div key={`${kind}-${index}`} className={styles.nestedCard}>
+            <RepeatableEditor key={`${kind}-${index}`}
+              title={[account.accountHolder, account.bank].filter(Boolean).join(' · ') || `계좌 ${index + 1}`}
+              summary={account.accountNumber || '은행명, 계좌번호, 예금주를 입력해 주세요.'}
+              initiallyOpen={!account.bank.trim() || !account.accountNumber.trim() || !account.accountHolder.trim()}>
               <div className={styles.subCardHeader}>
                 <div>
                   <h4 className={styles.nestedCardTitle}>계좌 {index + 1}</h4>
-                  <p className={styles.subCardDescription}>
-                    은행명, 계좌번호, 예금주를 한 세트로 입력해 주세요.
-                  </p>
                 </div>
                 <button
                   type="button"
@@ -436,7 +459,7 @@ export function AccountSectionPanel({
                   />
                 </label>
               </div>
-            </div>
+            </RepeatableEditor>
           ))
         ) : (
           <div className={styles.emptyCard}>등록된 계좌가 없습니다.</div>
