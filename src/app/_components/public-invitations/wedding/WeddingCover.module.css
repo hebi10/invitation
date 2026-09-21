@@ -22,29 +22,25 @@
 .withoutPhoto .photoMeta .venue { color: #53594f; }
 
 /* A natural letter, with sage paper and a small botanical signature. */
-.letter { position: relative; padding: 62px 34px 24px; background: var(--paper-soft, #eef1e8); color: #354536; text-align: left; }
-.letter::before { content: ''; display: block; width: 86px; height: 90px; margin: 0 0 26px auto; background: url('/images/wedding-concepts/garden-sprig.webp') center / contain no-repeat; }
-.letter .names { justify-content: start; font-size: 28px; gap: 12px; }
-.letter .conceptIntroduction { margin-top: 24px; color: #54624f; }
-.letter .letterTitle { margin-top: 10px; font-family: 'Wedding Myeongjo', serif; font-size: 16px; line-height: 1.9; }
-.letter .letterPhoto { margin: 36px 0 26px 20px; aspect-ratio: 4 / 5; overflow: hidden; }
+.letter { padding: 40px 28px 24px; background: var(--paper-soft, #eef1e8); color: #354536; text-align: center; }
+.letter .names { font-size: 28px; gap: 12px; }
+.letter .conceptIntroduction { color: #54624f; }
+.letter .letterPhoto { margin: 28px 0 0; aspect-ratio: 4 / 5; overflow: hidden; }
 .letterPhoto .photo { height: 100%; object-fit: cover; }
-.letter .date { justify-content: start; margin-top: 28px; }
+.letterMessage { display: grid; justify-items: center; gap: 16px; margin-top: 28px; }
+.letterMessage::before { content: ''; width: 50px; height: 32px; background: url('/images/wedding-concepts/garden-sprig.webp') center / contain no-repeat; }
+.letter .date { margin-top: 28px; }
 .letter .venue { margin-top: 3px; color: #54624f; }
 
-/* A left-aligned editorial opening, with a date masthead and offset portrait. */
-.editorial { padding: 34px 28px 0; background: #fff; color: #242622; text-align: left; }
-.editorialDate .date { justify-content: start; margin-top: 0; font-size: 16px; font-weight: 500; font-variant-numeric: tabular-nums; }
-.editorialNames { display: grid; grid-template-columns: minmax(0, 1fr); justify-items: start; font-size: 34px; font-weight: 500; line-height: 1.35; letter-spacing: -.035em; }
-.editorial .editorialNames { margin-top: 40px; }
-.editorialNames .join { margin-block: 5px; font-size: 20px; line-height: 1; }
-.editorial .conceptIntroduction { margin-top: 22px; color: #5b6057; }
-.editorialPicture { display: grid; grid-template-columns: 34px minmax(0, 1fr); margin-top: 32px; }
-.editorialPhoto { aspect-ratio: 3 / 4; overflow: hidden; }
+/* Names, photograph and event details share one left edge. */
+.editorial { padding: 36px 24px 0; background: #fff; color: #242622; text-align: left; }
+.editorialNames { display: grid; grid-template-columns: minmax(0, auto) auto minmax(0, auto); justify-content: start; align-items: baseline; gap: 12px; font-size: 32px; font-weight: 500; line-height: 1.45; letter-spacing: -.03em; }
+.editorialNames .join { font-size: 16px; }
+.editorial .editorialPhoto { margin-top: 24px; aspect-ratio: 4 / 5; overflow: hidden; }
 .editorialPhoto .photo { height: 100%; object-fit: cover; }
-.editorialRail { align-self: end; justify-self: start; padding-bottom: 2px; writing-mode: vertical-rl; font-size: 10px; letter-spacing: .15em; color: #62695d; }
-.editorialMeta { margin: 18px 0 0 34px; text-align: left; }
-.editorialMeta .venue { font-size: 16px; }
+.editorialMeta { margin-top: 24px; }
+.editorialMeta .date { justify-content: start; margin-top: 0; font-size: 16px; font-weight: 500; font-variant-numeric: tabular-nums; }
+.editorialMeta .venue { margin-top: 6px; font-size: 16px; }
 
 /* A complete formal invitation frame, including the family names. */
 .traditional { padding: 26px 22px 0; font-family: 'Wedding Myeongjo', serif; text-align: center; background: var(--paper, #f8f3e9); color: #493e2f; }
@@ -74,7 +70,7 @@
   .photoCopy { padding-inline: 24px; padding-bottom: 32px; }
   .photoCopy .names { font-size: 27px; gap: 10px; }
   .editorial { padding-inline: 24px; }
-  .editorialNames { font-size: 30px; }
+  .editorialNames { font-size: 28px; gap: 10px; }
   .traditional { padding-inline: 16px; }
   .traditionalFrame { padding-inline: 16px; }
   .traditionalTitle .names { font-size: 24px; gap: 8px; }

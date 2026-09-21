@@ -27,20 +27,19 @@ export default function WeddingCover({ theme, page, imageUrl, time, titleId = 'w
   if (theme === 'emotional') return (
     <section className={`${styles.cover} ${styles.letter}`} aria-labelledby={titleId}>
       <h1 data-wedding-motion="copy" id={titleId} className={styles.names}>{names}</h1>
-      <p className={styles.conceptIntroduction}>평생을 함께하고 싶은<br />사람을 만났습니다.</p>
-      <p className={styles.letterTitle} data-wedding-motion="copy">소중한 날 함께해 주세요.</p>
       {photo ? <figure className={styles.letterPhoto}>{photo}</figure> : null}
+      <div className={styles.letterMessage}>
+        <p className={styles.conceptIntroduction}>평생을 함께하고 싶은<br />사람을 만났습니다.</p>
+      </div>
       {date}<p className={styles.venue} data-wedding-motion="copy">{page.venue}</p>
     </section>
   );
 
   if (theme === 'classic-r') return (
     <section className={`${styles.cover} ${styles.editorial}`} aria-labelledby={titleId}>
-      <div className={styles.editorialDate}>{date}</div>
       <h1 data-wedding-motion="copy" id={titleId} className={styles.editorialNames}>{names}</h1>
-      <p className={styles.conceptIntroduction}>서로의 오늘이 되어,<br />평생을 함께 걸어가려 합니다.</p>
-      {photo ? <div className={styles.editorialPicture}><span className={styles.editorialRail} aria-hidden="true">WEDDING INVITATION</span><div className={styles.editorialPhoto}>{photo}</div></div> : null}
-      <div className={styles.editorialMeta}><p className={styles.venue} data-wedding-motion="copy">{page.venue}</p></div>
+      {photo ? <figure className={styles.editorialPhoto}>{photo}</figure> : null}
+      <div className={styles.editorialMeta}>{date}<p className={styles.venue} data-wedding-motion="copy">{page.venue}</p></div>
     </section>
   );
 
