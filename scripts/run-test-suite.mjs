@@ -62,6 +62,7 @@ const core = [
 const security = [
   'test-mobile-real-billing-client',
   'test-mobile-real-billing-server',
+  'test-mobile-pending-billing',
   'test-password-recovery',
   'test-admin-api-auth',
   'test-admin-owner-image-upload-routing',

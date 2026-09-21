@@ -202,6 +202,7 @@ export function useCreateTicketPurchase({
     setIsTicketPurchaseSubmitting(true);
 
     const billingProductId = getMobileBillingTicketPackProductId(ticketOnlyCount);
+    const targetToken = selectedTicketTargetCard.session.token;
     let nextTicketCount: number | null = null;
 
     try {
@@ -215,7 +216,7 @@ export function useCreateTicketPurchase({
         fulfill: (receipt) => fulfillMobileBillingTicketPack(apiBaseUrl, {
           purchase: receipt,
           targetPageSlug: selectedTicketTargetCard.slug,
-          targetToken: selectedTicketTargetCard.session.token,
+          targetToken,
         }),
         onResume: () => {
           setNotice('이전 결제를 추가 결제 없이 다시 반영하고 있습니다.');

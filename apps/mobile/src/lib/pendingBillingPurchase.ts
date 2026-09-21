@@ -19,7 +19,7 @@ let isProcessing = false;
 
 function stableJson(value: unknown): string {
   if (value && typeof value === 'object' && !Array.isArray(value)) {
-    return JSON.stringify(Object.fromEntries(Object.entries(value).sort(([a], [b]) => a.localeCompare(b)).map(([key, item]) => [key, JSON.parse(stableJson(item))])));
+    return JSON.stringify(Object.fromEntries(Object.entries(value).filter(([, item]) => item !== undefined).sort(([a], [b]) => a.localeCompare(b)).map(([key, item]) => [key, JSON.parse(stableJson(item))])));
   }
   return JSON.stringify(value);
 }

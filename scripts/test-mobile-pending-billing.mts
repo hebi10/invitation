@@ -8,11 +8,15 @@ const source = ts.transpileModule(readFileSync('apps/mobile/src/lib/pendingBilli
 }).outputText;
 let stored: string | null = null;
 let purchases = 0;
+let failReceiptStorage = false;
 function load() {
   const exports: Record<string, unknown> = {};
   runInNewContext(source, { exports, require: () => ({
     getStoredString: async () => stored,
-    setStoredString: async (_key: string, value: string | null) => { stored = value; },
+    setStoredString: async (_key: string, value: string | null) => {
+      if (value && failReceiptStorage) throw new Error('storage unavailable');
+      stored = value;
+    },
   }) });
   return exports.runPendingBillingPurchase as (request: object, options: object) => Promise<unknown>;
 }
@@ -47,4 +51,16 @@ await new Promise((resolve) => setTimeout(resolve, 0));
 await assert.rejects(concurrent(request, { purchase, fulfill: async () => 1 }), /진행/);
 release?.();
 await first;
+const failedStorage = load();
+failReceiptStorage = true;
+await assert.rejects(failedStorage(request, { purchase, fulfill: async () => 1 }), /앱을 닫지/);
+const afterFailure = purchases;
+failReceiptStorage = false;
+await failedStorage(request, { purchase, fulfill: async () => 1 });
+assert.equal(purchases, afterFailure, 'An in-memory receipt must prevent repurchasing when persistence fails');
+const createRequest = { ...request, target: { action: 'createInvitationPage', input: { slugBase: 'pair', theme: 'simple' } } };
+const create = load();
+await assert.rejects(create(createRequest, { purchase, fulfill: async () => false }), /다시/);
+await assert.rejects(create({ ...createRequest, target: { action: 'createInvitationPage', input: { slugBase: 'other', theme: 'simple' } } }, { purchase, fulfill: async () => true }), /미처리/);
+await create({ ...createRequest, target: { action: 'createInvitationPage', input: { theme: 'simple', unused: undefined, slugBase: 'pair' } } }, { purchase, fulfill: async () => true });
 console.log('pending billing purchase recovery checks passed (no payments)');
