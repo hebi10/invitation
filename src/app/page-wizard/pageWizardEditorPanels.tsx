@@ -96,25 +96,24 @@ export function PersonEditorCard({
   onParentFieldChange,
 }: PersonEditorCardProps) {
   return (
-    <div className={styles.subCard}>
+    <div className={`${styles.subCard} ${styles.personCard}`}>
       <div className={styles.subCardHeader}>
         <div>
-          <h3 className={styles.subCardTitle}>{label}</h3>
+          <h3 className={styles.subCardTitle}>
+            {label}{nameReadOnly && person.name ? ` · ${person.name}` : ''}
+          </h3>
           <p className={styles.subCardDescription}>
             {nameReadOnly
-              ? '이름은 기본 정보에서 수정할 수 있습니다. 호칭과 연락처는 필요한 경우에만 추가해 주세요.'
-              : '이름은 꼭 입력하고, 호칭과 연락처는 필요한 경우에만 추가해 주세요.'}
+              ? '이름은 위에서 수정해 주세요. 호칭·관계는 선택 사항이며, 연락처는 손님에게 공개할 경우에만 입력해 주세요.'
+              : '이름은 꼭 입력해 주세요. 호칭·관계는 선택 사항이며, 연락처는 손님에게 공개할 경우에만 입력해 주세요.'}
           </p>
         </div>
       </div>
 
-      <div className={styles.fieldGrid}>
-        {nameReadOnly ? <div className={styles.field}>
-          <span className={styles.label}>이름</span>
-          <span>{person.name || '기본 정보에서 이름을 입력해 주세요'}</span>
-        </div> : (
-        <label className={styles.field}>
-          {renderFieldMeta('이름', 'required', '청첩장에 직접 노출되는 이름입니다.')}
+      <div className={styles.personFields}>
+        {!nameReadOnly && (
+        <label className={`${styles.field} ${styles.nameField}`}>
+          {renderFieldMeta('이름', 'required')}
           <input
             className={styles.input}
             value={person.name ?? ''}
@@ -127,8 +126,8 @@ export function PersonEditorCard({
         </label>
         )}
 
-        <label className={styles.field}>
-          {renderFieldMeta('호칭', 'optional', '장남, 차녀처럼 가족 호칭을 적을 때 사용합니다.')}
+        <label className={`${styles.field} ${styles.relationField}`}>
+          {renderFieldMeta('호칭', 'optional')}
           <input
             className={styles.input}
             value={person.order ?? ''}
@@ -140,12 +139,8 @@ export function PersonEditorCard({
           />
         </label>
 
-        <label className={`${styles.field} ${styles.fieldWide}`}>
-          {renderFieldMeta(
-            '연락처',
-            'optional',
-            '손님에게 직접 연락처를 공개할 때만 입력해 주세요.'
-          )}
+        <label className={`${styles.field} ${styles.phoneField}`}>
+          {renderFieldMeta('연락처', 'optional')}
           <input
             className={styles.input}
             type="tel"
@@ -178,13 +173,9 @@ export function PersonEditorCard({
                   {parentRole === 'father' ? '아버님 정보' : '어머님 정보'}
                 </h4>
 
-                <div className={styles.fieldGrid}>
-                  <label className={styles.field}>
-                    {renderFieldMeta(
-                      '관계',
-                      'optional',
-                      '아버지, 어머니처럼 표기될 관계를 적어 주세요.'
-                    )}
+                <div className={styles.personFields}>
+                  <label className={`${styles.field} ${styles.relationField}`}>
+                    {renderFieldMeta('관계', 'optional')}
                     <input
                       className={styles.input}
                       value={parent?.relation ?? ''}
@@ -203,7 +194,7 @@ export function PersonEditorCard({
                     />
                   </label>
 
-                  <label className={styles.field}>
+                  <label className={`${styles.field} ${styles.nameField}`}>
                     {renderFieldMeta('이름', 'optional')}
                     <input
                       className={styles.input}
@@ -221,7 +212,7 @@ export function PersonEditorCard({
                     />
                   </label>
 
-                  <label className={`${styles.field} ${styles.fieldWide}`}>
+                  <label className={`${styles.field} ${styles.phoneField}`}>
                     {renderFieldMeta('연락처', 'optional')}
                     <input
                       className={styles.input}

@@ -197,7 +197,7 @@ export default function BasicStep({
 
   return (
     <div className={styles.fieldGrid}>
-      <div className={styles.twoColumnGrid}>
+      <div className={styles.coupleNameFields}>
         <WizardField label="신랑 이름" className={styles.field}>
           {renderFieldMeta('신랑 이름', 'required')}
           <input className={styles.input} value={formState.couple.groom.name} placeholder="신랑 이름"

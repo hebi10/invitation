@@ -434,6 +434,42 @@
   line-height: 1.8;
 }
 
+.personCard {
+  width: 100%;
+  max-width: 480px;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+.personCard .subCardTitle {
+  overflow-wrap: anywhere;
+}
+
+.personFields {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 16px;
+}
+
+.nameField {
+  width: 180px;
+  max-width: 100%;
+}
+
+.relationField {
+  width: 140px;
+  max-width: 100%;
+}
+
+.phoneField {
+  flex-basis: 100%;
+}
+
+.phoneField .input {
+  max-width: 260px;
+}
+
 @media (max-width: 640px) {
   .subCard {
     padding: 12px;
