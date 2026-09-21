@@ -147,9 +147,8 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   draftCard: {
-    borderWidth: 1,
-    borderRadius: 18,
-    padding: 14,
+    borderRadius: 0,
+    padding: 16,
     gap: 12,
   },
   draftCopy: {

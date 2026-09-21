@@ -114,16 +114,15 @@ export function RecentLinkedInvitationsSection({
 const styles = StyleSheet.create({
   card: {
     borderWidth: 1,
-    borderRadius: 18,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    gap: 10,
+    borderRadius: 0,
+    padding: 16,
+    gap: 16,
   },
   header: {
     gap: 4,
   },
   title: {
-    fontWeight: '800',
+    fontWeight: '500',
   },
   status: {
     fontWeight: '700',
@@ -141,6 +140,7 @@ const styles = StyleSheet.create({
   },
   actionButton: {
     flexGrow: 1,
-    flexBasis: '48%',
+    flexBasis: 120,
+    minWidth: 120,
   },
 });

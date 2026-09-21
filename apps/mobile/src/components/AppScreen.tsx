@@ -44,8 +44,8 @@ export function AppScreen({
         contentContainerStyle={[
           styles.content,
           {
-            paddingTop: insets.top + 24,
-            paddingBottom: insets.bottom + 16,
+            paddingTop: insets.top + 32,
+            paddingBottom: insets.bottom + 32,
           },
           contentContainerStyle,
         ]}
@@ -62,7 +62,7 @@ export function AppScreen({
               <Text
                 style={[
                   styles.subtitle,
-                  { color: palette.textMuted, fontSize: 15 * fontScale },
+                  { color: palette.textMuted, fontSize: 15 * fontScale, lineHeight: 24 * fontScale },
                 ]}
               >
                 {subtitle}
@@ -82,21 +82,25 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   content: {
+    width: '100%',
+    maxWidth: 640,
+    alignSelf: 'center',
     paddingHorizontal: 20,
-    gap: 16,
+    gap: 24,
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
     gap: 12,
+    paddingBottom: 8,
   },
   headerCopy: {
     flex: 1,
-    gap: 6,
+    gap: 10,
   },
   title: {
-    fontWeight: '700',
+    fontWeight: '500',
   },
   subtitle: {
     lineHeight: 22,

@@ -36,17 +36,21 @@ const styles = StyleSheet.create({
   },
   card: {
     borderWidth: 1,
-    borderRadius: 24,
+    borderRadius: 0,
+    width: '100%',
+    maxWidth: 480,
+    alignSelf: 'center',
     padding: 24,
     gap: 12,
   },
   title: {
-    fontWeight: '800',
+    fontWeight: '500',
   },
   text: {
     lineHeight: 22,
   },
   link: {
-    fontWeight: '700',
+    fontWeight: '500',
+    paddingVertical: 14,
   },
 });

@@ -22,8 +22,10 @@ export default function TabsLayout() {
         },
         tabBarStyle: {
           backgroundColor: palette.surface,
-          borderTopColor: palette.cardBorder,
-          height: 60 + insets.bottom,
+          borderTopWidth: 0,
+          elevation: 0,
+          boxShadow: 'none',
+          height: 76 + insets.bottom + 18 * (fontScale - 1),
           paddingBottom: Math.max(insets.bottom, 8),
           paddingTop: 8,
         },
@@ -32,7 +34,9 @@ export default function TabsLayout() {
         tabBarInactiveTintColor: palette.textMuted,
         tabBarLabelStyle: {
           fontSize: 12 * fontScale,
-          fontWeight: '700',
+          lineHeight: 18 * fontScale,
+          flexShrink: 0,
+          fontWeight: '500',
         },
       }}
     >

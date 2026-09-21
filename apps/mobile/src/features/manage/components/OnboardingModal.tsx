@@ -1,4 +1,4 @@
-import { Modal, Pressable, View } from 'react-native';
+import { Modal, Pressable, ScrollView, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ActionButton } from '../../../components/ActionButton';
@@ -61,55 +61,61 @@ export function OnboardingModal({
             },
           ]}
         >
-          <View style={manageStyles.modalHeader}>
-            <View style={manageStyles.modalHeaderCopy}>
-              <AppText variant="caption" color={palette.accent} style={manageStyles.modalEyebrow}>
-                운영 시작 안내
-              </AppText>
-              <AppText variant="title" style={manageStyles.modalTitle}>
-                {ONBOARDING_STEPS[stepIndex].title}
-              </AppText>
-              <AppText variant="muted" style={manageStyles.modalDescription}>
-                {ONBOARDING_STEPS[stepIndex].description}
-              </AppText>
+          <ScrollView
+            style={manageStyles.modalScroll}
+            contentContainerStyle={manageStyles.modalScrollContent}
+            keyboardShouldPersistTaps="handled"
+          >
+            <View style={manageStyles.modalHeader}>
+              <View style={manageStyles.modalHeaderCopy}>
+                <AppText variant="caption" color={palette.accent} style={manageStyles.modalEyebrow}>
+                  운영 시작 안내
+                </AppText>
+                <AppText variant="title" style={manageStyles.modalTitle}>
+                  {ONBOARDING_STEPS[stepIndex].title}
+                </AppText>
+                <AppText variant="muted" style={manageStyles.modalDescription}>
+                  {ONBOARDING_STEPS[stepIndex].description}
+                </AppText>
+              </View>
+              <View style={[manageStyles.modalBadge, { backgroundColor: palette.accentSoft }]}>
+                <AppText variant="caption" color={palette.accent} style={manageStyles.modalBadgeText}>
+                  {stepIndex + 1} / {ONBOARDING_STEPS.length}
+                </AppText>
+              </View>
             </View>
-            <View style={[manageStyles.modalBadge, { backgroundColor: palette.accentSoft }]}>
-              <AppText variant="caption" color={palette.accent} style={manageStyles.modalBadgeText}>
-                {stepIndex + 1} / {ONBOARDING_STEPS.length}
+
+            <OnboardingStepContent
+              stepIndex={stepIndex}
+              form={form}
+              onUpdateField={onUpdateField}
+              onUpdatePersonName={onUpdatePersonName}
+              onSetPublished={onSetPublished}
+            />
+
+            {validationMessage ? (
+              <AppText color={palette.danger} style={manageStyles.modalErrorText}>
+                {validationMessage}
               </AppText>
+            ) : null}
+            {authError ? (
+              <AppText color={palette.danger} style={manageStyles.modalErrorText}>
+                {authError}
+              </AppText>
+            ) : null}
+
+            <View style={manageStyles.modalActions}>
+              <ActionButton variant="secondary" onPress={onClose}>
+                나중에 입력
+              </ActionButton>
+              <ActionButton variant="secondary" onPress={onPrevious} disabled={stepIndex === 0}>
+                이전
+              </ActionButton>
+              <ActionButton onPress={() => void onNext()} loading={isSaving}>
+                {stepIndex === ONBOARDING_STEPS.length - 1 ? '저장하고 시작' : '다음'}
+              </ActionButton>
             </View>
-          </View>
-
-          <OnboardingStepContent
-            stepIndex={stepIndex}
-            form={form}
-            onUpdateField={onUpdateField}
-            onUpdatePersonName={onUpdatePersonName}
-            onSetPublished={onSetPublished}
-          />
-
-          {validationMessage ? (
-            <AppText color={palette.danger} style={manageStyles.modalErrorText}>
-              {validationMessage}
-            </AppText>
-          ) : null}
-          {authError ? (
-            <AppText color={palette.danger} style={manageStyles.modalErrorText}>
-              {authError}
-            </AppText>
-          ) : null}
-
-          <View style={manageStyles.modalActions}>
-            <ActionButton variant="secondary" onPress={onClose}>
-              나중에 입력
-            </ActionButton>
-            <ActionButton variant="secondary" onPress={onPrevious} disabled={stepIndex === 0}>
-              이전
-            </ActionButton>
-            <ActionButton onPress={() => void onNext()} loading={isSaving}>
-              {stepIndex === ONBOARDING_STEPS.length - 1 ? '저장하고 시작' : '다음'}
-            </ActionButton>
-          </View>
+          </ScrollView>
         </View>
       </View>
     </Modal>

@@ -6,12 +6,14 @@ export const manageStyles = StyleSheet.create({
   },
   editorStepHeader: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     alignItems: 'center',
     justifyContent: 'space-between',
     gap: 12,
   },
   editorStepTitle: {
-    fontWeight: '800',
+    flexShrink: 1,
+    fontWeight: '500',
   },
   editorStepCounter: {
     fontWeight: '700',
@@ -32,6 +34,7 @@ export const manageStyles = StyleSheet.create({
     gap: 10,
   },
   loadingText: {
+    flexShrink: 1,
     lineHeight: 20,
   },
   linkText: {
@@ -43,19 +46,19 @@ export const manageStyles = StyleSheet.create({
     gap: 8,
   },
   actionHalfButton: {
-    width: '48%',
-    flexBasis: '48%',
+    minWidth: 120,
+    flexBasis: 120,
     flexGrow: 1,
   },
   noticeBanner: {
     borderWidth: 1,
-    borderRadius: 16,
+    borderRadius: 0,
     paddingHorizontal: 14,
     paddingVertical: 12,
   },
   secondaryActionCard: {
     borderWidth: 1,
-    borderRadius: 16,
+    borderRadius: 0,
     paddingHorizontal: 12,
     paddingVertical: 12,
     gap: 10,
@@ -70,8 +73,8 @@ export const manageStyles = StyleSheet.create({
     lineHeight: 18,
   },
   previewFrame: {
-    borderWidth: 1.5,
-    borderRadius: 18,
+    borderWidth: 1,
+    borderRadius: 0,
     padding: 10,
     overflow: 'hidden',
   },
@@ -82,31 +85,31 @@ export const manageStyles = StyleSheet.create({
   coverPreviewImage: {
     width: '100%',
     height: '100%',
-    borderRadius: 12,
-    backgroundColor: '#f3efe8',
+    borderRadius: 0,
+    backgroundColor: '#f8f8f7',
   },
   emptyImageState: {
     borderWidth: 1,
-    borderRadius: 18,
+    borderRadius: 0,
     paddingHorizontal: 14,
     paddingVertical: 16,
   },
   uploadProgressCard: {
     borderWidth: 1,
-    borderRadius: 18,
+    borderRadius: 0,
     paddingHorizontal: 14,
     paddingVertical: 12,
     gap: 4,
   },
   uploadProgressTitle: {
-    fontWeight: '800',
+    fontWeight: '500',
   },
   galleryList: {
     gap: 10,
   },
   galleryCard: {
     borderWidth: 1,
-    borderRadius: 18,
+    borderRadius: 0,
     padding: 12,
     gap: 12,
   },
@@ -117,14 +120,14 @@ export const manageStyles = StyleSheet.create({
   galleryPreviewImage: {
     width: '100%',
     height: '100%',
-    borderRadius: 12,
-    backgroundColor: '#f3efe8',
+    borderRadius: 0,
+    backgroundColor: '#f8f8f7',
   },
   galleryCardCopy: {
     gap: 4,
   },
   galleryCardTitle: {
-    fontWeight: '800',
+    fontWeight: '500',
   },
   galleryCardMeta: {
     lineHeight: 18,
@@ -136,12 +139,12 @@ export const manageStyles = StyleSheet.create({
   },
   mapPreviewCard: {
     borderWidth: 1,
-    borderRadius: 18,
+    borderRadius: 0,
     padding: 14,
     gap: 8,
   },
   mapPreviewTitle: {
-    fontWeight: '800',
+    fontWeight: '500',
   },
   mapPreviewAddress: {
     lineHeight: 19,
@@ -151,16 +154,17 @@ export const manageStyles = StyleSheet.create({
   },
   selectedInvitationCard: {
     borderWidth: 1,
-    borderRadius: 16,
+    borderRadius: 0,
     paddingHorizontal: 12,
     paddingVertical: 10,
     gap: 4,
   },
   invitationCardExpanded: {
-    gap: 10,
+    gap: 16,
   },
   invitationCardHeaderRow: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     justifyContent: 'space-between',
     alignItems: 'center',
     gap: 8,
@@ -169,7 +173,8 @@ export const manageStyles = StyleSheet.create({
     gap: 10,
   },
   selectedInvitationTitle: {
-    fontWeight: '800',
+    flexShrink: 1,
+    fontWeight: '500',
   },
   selectedInvitationHint: {
     lineHeight: 18,
@@ -179,12 +184,12 @@ export const manageStyles = StyleSheet.create({
   },
   personCard: {
     borderWidth: 1,
-    borderRadius: 18,
+    borderRadius: 0,
     padding: 12,
     gap: 10,
   },
   personCardTitle: {
-    fontWeight: '800',
+    fontWeight: '500',
   },
   personSectionLabel: {
     fontWeight: '700',
@@ -197,7 +202,8 @@ export const manageStyles = StyleSheet.create({
   },
   halfField: {
     flexGrow: 1,
-    flexBasis: '48%',
+    flexBasis: 140,
+    minWidth: 140,
   },
   chipRow: {
     flexDirection: 'row',
@@ -212,7 +218,7 @@ export const manageStyles = StyleSheet.create({
   },
   dropdownButton: {
     minHeight: 48,
-    borderRadius: 16,
+    borderRadius: 0,
     borderWidth: 1,
     paddingHorizontal: 14,
     paddingVertical: 12,
@@ -231,13 +237,15 @@ export const manageStyles = StyleSheet.create({
   },
   dropdownList: {
     borderWidth: 1,
-    borderRadius: 16,
+    borderRadius: 0,
     padding: 10,
     gap: 8,
   },
   dropdownOption: {
+    minHeight: 48,
+    justifyContent: 'center',
     borderWidth: 1,
-    borderRadius: 14,
+    borderRadius: 0,
     paddingHorizontal: 12,
     paddingVertical: 10,
   },
@@ -252,28 +260,30 @@ export const manageStyles = StyleSheet.create({
   },
   commentCard: {
     borderWidth: 1,
-    borderRadius: 18,
+    borderRadius: 0,
     padding: 14,
     gap: 12,
   },
   commentStatusRow: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     alignItems: 'center',
     justifyContent: 'space-between',
     gap: 8,
   },
   commentStatusBadge: {
-    borderRadius: 999,
+    borderRadius: 0,
     paddingHorizontal: 10,
     paddingVertical: 5,
   },
   commentStatusBadgeText: {
-    fontWeight: '800',
+    fontWeight: '500',
   },
   commentCopy: {
     gap: 4,
   },
   commentAuthor: {
+    flexShrink: 1,
     fontWeight: '700',
   },
   commentMessage: {
@@ -314,6 +324,7 @@ export const manageStyles = StyleSheet.create({
   },
   paginationRow: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     alignItems: 'center',
     justifyContent: 'space-between',
     gap: 10,
@@ -329,12 +340,22 @@ export const manageStyles = StyleSheet.create({
   },
   modalBackdrop: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(15, 12, 10, 0.58)',
+    backgroundColor: 'rgba(17, 18, 16, 0.58)',
   },
   modalCard: {
+    maxHeight: '90%',
+    width: '100%',
+    maxWidth: 640,
+    alignSelf: 'center',
     borderWidth: 1,
-    borderRadius: 28,
-    padding: 20,
+    borderRadius: 0,
+    padding: 16,
+    gap: 16,
+  },
+  modalScroll: {
+    flexGrow: 0,
+  },
+  modalScrollContent: {
     gap: 16,
   },
   modalHeader: {
@@ -345,24 +366,25 @@ export const manageStyles = StyleSheet.create({
   },
   modalHeaderCopy: {
     flex: 1,
+    minWidth: 0,
     gap: 6,
   },
   modalEyebrow: {
-    fontWeight: '800',
+    fontWeight: '500',
   },
   modalTitle: {
-    fontWeight: '800',
+    fontWeight: '500',
   },
   modalDescription: {
     lineHeight: 21,
   },
   modalBadge: {
-    borderRadius: 999,
+    borderRadius: 0,
     paddingHorizontal: 10,
     paddingVertical: 6,
   },
   modalBadgeText: {
-    fontWeight: '800',
+    fontWeight: '500',
   },
   modalErrorText: {
     lineHeight: 19,

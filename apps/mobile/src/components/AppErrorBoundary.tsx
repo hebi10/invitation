@@ -3,6 +3,10 @@ import type { PropsWithChildren } from 'react';
 import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
+import { getPalette } from '../constants/theme';
+
+const palette = getPalette('light');
+
 type AppErrorBoundaryState = {
   hasError: boolean;
 };
@@ -77,7 +81,7 @@ export class AppErrorBoundary extends React.Component<
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: '#f7f4ee',
+    backgroundColor: palette.background,
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 20,
@@ -85,21 +89,21 @@ const styles = StyleSheet.create({
   card: {
     width: '100%',
     maxWidth: 360,
-    borderRadius: 24,
+    borderRadius: 0,
     borderWidth: 1,
-    borderColor: '#e4dacc',
-    backgroundColor: '#ffffff',
+    borderColor: palette.cardBorder,
+    backgroundColor: palette.surface,
     paddingHorizontal: 20,
     paddingVertical: 24,
     gap: 14,
   },
   title: {
-    color: '#1f1b16',
+    color: palette.text,
     fontSize: 22,
-    fontWeight: '800',
+    fontWeight: '500',
   },
   description: {
-    color: '#6d6256',
+    color: palette.textMuted,
     fontSize: 15,
     lineHeight: 22,
   },
@@ -110,8 +114,8 @@ const styles = StyleSheet.create({
   },
   button: {
     flex: 1,
-    minHeight: 46,
-    borderRadius: 14,
+    minHeight: 48,
+    borderRadius: 0,
     borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
@@ -119,21 +123,21 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
   },
   primaryButton: {
-    backgroundColor: '#9a5f3d',
-    borderColor: '#9a5f3d',
+    backgroundColor: palette.accent,
+    borderColor: palette.accent,
   },
   secondaryButton: {
-    backgroundColor: '#ffffff',
-    borderColor: '#d9c7b7',
+    backgroundColor: palette.surface,
+    borderColor: palette.cardBorder,
   },
   buttonText: {
     fontSize: 14,
-    fontWeight: '700',
+    fontWeight: '500',
   },
   primaryButtonText: {
-    color: '#ffffff',
+    color: palette.surface,
   },
   secondaryButtonText: {
-    color: '#6d6256',
+    color: palette.text,
   },
 });

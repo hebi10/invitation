@@ -1,4 +1,4 @@
-import { Modal, Pressable, StyleSheet, View } from 'react-native';
+import { Modal, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
 import { getPalette } from '../../../constants/theme';
 import { ActionButton } from '../../../components/ActionButton';
@@ -32,8 +32,8 @@ export function TicketPurchaseSuccessModal({
           style={[
             styles.backdrop,
             {
-              backgroundColor: palette.background,
-              opacity: 0.78,
+              backgroundColor: '#111210',
+              opacity: 0.58,
             },
           ]}
           onPress={onClose}
@@ -47,7 +47,7 @@ export function TicketPurchaseSuccessModal({
             },
           ]}
         >
-          <View style={styles.content}>
+          <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
             <AppText variant="title" style={styles.title}>
               구매 완료됐습니다
             </AppText>
@@ -75,7 +75,7 @@ export function TicketPurchaseSuccessModal({
             <ActionButton onPress={onClose} fullWidth>
               확인
             </ActionButton>
-          </View>
+          </ScrollView>
         </View>
       </View>
     </Modal>
@@ -85,6 +85,7 @@ export function TicketPurchaseSuccessModal({
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
+    paddingVertical: 24,
     justifyContent: 'center',
     paddingHorizontal: 20,
   },
@@ -92,35 +93,47 @@ const styles = StyleSheet.create({
     ...StyleSheet.absoluteFillObject,
   },
   card: {
+    maxHeight: '88%',
+    width: '100%',
+    maxWidth: 520,
+    alignSelf: 'center',
     borderWidth: 1,
-    borderRadius: 28,
-    padding: 20,
-    gap: 14,
+    borderRadius: 0,
+    padding: 16,
+    gap: 16,
   },
   content: {
-    gap: 14,
+    gap: 16,
+  },
+  scroll: {
+    flexGrow: 0,
   },
   title: {
-    fontWeight: '800',
+    fontWeight: '500',
   },
   description: {
     lineHeight: 21,
   },
   summaryRow: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
     gap: 16,
   },
   summaryLabel: {
-    lineHeight: 20,
+    flexShrink: 1,
+    lineHeight: 22,
   },
   summaryValue: {
     flexShrink: 1,
+    minWidth: 0,
     textAlign: 'right',
     fontWeight: '700',
   },
   totalLabel: {
-    fontWeight: '800',
+    flexShrink: 1,
+    textAlign: 'right',
+    fontWeight: '700',
   },
 });

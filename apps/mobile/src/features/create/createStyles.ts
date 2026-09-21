@@ -17,15 +17,16 @@ export const createStyles = StyleSheet.create({
   },
   stepTab: {
     flexGrow: 1,
+    flexBasis: 72,
     minWidth: 72,
     borderWidth: 1,
-    borderRadius: 16,
+    borderRadius: 0,
     paddingHorizontal: 12,
     paddingVertical: 12,
     gap: 4,
   },
   stepTabIndex: {
-    fontWeight: '800',
+    fontWeight: '500',
   },
   stepTabLabel: {
     fontWeight: '700',
@@ -41,13 +42,13 @@ export const createStyles = StyleSheet.create({
     gap: 8,
   },
   selectionFeatureChip: {
-    borderRadius: 999,
+    borderRadius: 0,
     paddingHorizontal: 10,
     paddingVertical: 6,
   },
   selectionSummaryCard: {
     borderWidth: 1,
-    borderRadius: 18,
+    borderRadius: 0,
     paddingHorizontal: 14,
     paddingVertical: 14,
     gap: 6,
@@ -56,14 +57,14 @@ export const createStyles = StyleSheet.create({
     fontWeight: '700',
   },
   selectionSummaryValue: {
-    fontWeight: '800',
+    fontWeight: '500',
   },
   selectionSummaryDescription: {
     lineHeight: 21,
   },
   sampleLinkBox: {
     borderWidth: 1,
-    borderRadius: 16,
+    borderRadius: 0,
     paddingHorizontal: 12,
     paddingVertical: 12,
   },
@@ -77,8 +78,9 @@ export const createStyles = StyleSheet.create({
     lineHeight: 21,
   },
   ticketOnlySectionToggle: {
+    minHeight: 48,
     borderWidth: 1,
-    borderRadius: 18,
+    borderRadius: 0,
     paddingHorizontal: 14,
     paddingVertical: 12,
     flexDirection: 'row',
@@ -88,6 +90,7 @@ export const createStyles = StyleSheet.create({
   },
   ticketOnlySectionToggleCopy: {
     flex: 1,
+    minWidth: 0,
     gap: 4,
   },
   ticketOnlySectionToggleTitle: {
@@ -109,7 +112,7 @@ export const createStyles = StyleSheet.create({
   },
   noticeBox: {
     borderWidth: 1,
-    borderRadius: 16,
+    borderRadius: 0,
     paddingHorizontal: 12,
     paddingVertical: 10,
     gap: 6,
@@ -120,7 +123,7 @@ export const createStyles = StyleSheet.create({
   },
   securityGuideCard: {
     borderWidth: 1,
-    borderRadius: 18,
+    borderRadius: 0,
     paddingHorizontal: 14,
     paddingVertical: 12,
     gap: 6,
@@ -132,7 +135,7 @@ export const createStyles = StyleSheet.create({
   },
   ticketCounterCard: {
     borderWidth: 1,
-    borderRadius: 20,
+    borderRadius: 0,
     padding: 14,
     flexDirection: 'row',
     alignItems: 'center',
@@ -142,7 +145,7 @@ export const createStyles = StyleSheet.create({
   ticketCounterButton: {
     width: 52,
     height: 52,
-    borderRadius: 16,
+    borderRadius: 0,
     borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
@@ -151,7 +154,7 @@ export const createStyles = StyleSheet.create({
     opacity: 0.45,
   },
   ticketCounterButtonLabel: {
-    fontWeight: '800',
+    fontWeight: '500',
   },
   ticketCounterValueBox: {
     flex: 1,
@@ -159,14 +162,14 @@ export const createStyles = StyleSheet.create({
     gap: 4,
   },
   ticketCounterValue: {
-    fontWeight: '800',
+    fontWeight: '500',
   },
   ticketCounterCaption: {
     fontWeight: '600',
   },
   ticketSummaryCard: {
     borderWidth: 1,
-    borderRadius: 18,
+    borderRadius: 0,
     paddingHorizontal: 14,
     paddingVertical: 12,
     gap: 6,
@@ -177,20 +180,25 @@ export const createStyles = StyleSheet.create({
   },
   summaryRow: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
     gap: 16,
   },
   summaryLabel: {
-    lineHeight: 20,
+    flexShrink: 1,
+    lineHeight: 22,
   },
   summaryValue: {
     flexShrink: 1,
+    minWidth: 0,
     textAlign: 'right',
     fontWeight: '700',
   },
   totalLabel: {
-    fontWeight: '800',
+    flexShrink: 1,
+    textAlign: 'right',
+    fontWeight: '700',
   },
   actionColumn: {
     gap: 10,
@@ -200,10 +208,8 @@ export const createStyles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    borderTopWidth: 1,
     paddingHorizontal: 20,
     paddingVertical: 12,
-    boxShadow: '0 -4px 10px rgba(0, 0, 0, 0.08)',
   },
   stickyBarCompact: {
     paddingTop: 8,
@@ -223,6 +229,7 @@ export const createStyles = StyleSheet.create({
     flex: 1,
     minWidth: 0,
     flexDirection: 'row',
+    flexWrap: 'wrap',
     alignItems: 'baseline',
     gap: 6,
   },
@@ -230,7 +237,7 @@ export const createStyles = StyleSheet.create({
     fontWeight: '700',
   },
   stickyPriceValue: {
-    fontWeight: '800',
+    fontWeight: '500',
   },
   stickyActionRow: {
     flexDirection: 'row',
@@ -241,14 +248,16 @@ export const createStyles = StyleSheet.create({
     width: 'auto',
   },
   stickyPrimaryActionButton: {
+    minHeight: 48,
     minWidth: 96,
-    borderRadius: 16,
+    borderRadius: 0,
     paddingHorizontal: 14,
     paddingVertical: 10,
   },
   stickySecondaryActionButton: {
+    minHeight: 48,
     minWidth: 72,
-    borderRadius: 16,
+    borderRadius: 0,
     paddingHorizontal: 12,
     paddingVertical: 10,
   },

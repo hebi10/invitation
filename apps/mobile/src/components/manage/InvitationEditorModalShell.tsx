@@ -57,6 +57,7 @@ export function InvitationEditorModalShell({
         style={[
           styles.overlay,
           {
+            paddingTop: insets.top + 16,
             paddingBottom: Math.max(insets.bottom, 18),
           },
         ]}
@@ -65,8 +66,8 @@ export function InvitationEditorModalShell({
           style={[
             styles.backdrop,
             {
-              backgroundColor: palette.background,
-              opacity: 0.78,
+              backgroundColor: '#111210',
+              opacity: 0.5,
             },
           ]}
         />
@@ -92,7 +93,7 @@ export function InvitationEditorModalShell({
               <Text
                 style={[
                   styles.description,
-                  { color: palette.textMuted, fontSize: 13 * fontScale },
+                  { color: palette.textMuted, fontSize: 13 * fontScale, lineHeight: 20 * fontScale },
                 ]}
               >
                 {description}
@@ -138,19 +139,22 @@ const styles = StyleSheet.create({
   },
   keyboardAvoiding: {
     width: '100%',
+    maxWidth: 640,
+    alignSelf: 'center',
+    flexShrink: 1,
   },
   card: {
     maxHeight: '92%',
     borderWidth: 1,
-    borderRadius: 24,
+    borderRadius: 0,
     padding: 16,
-    gap: 12,
+    gap: 20,
   },
   header: {
     gap: 4,
   },
   title: {
-    fontWeight: '800',
+    fontWeight: '500',
   },
   description: {
     lineHeight: 20,
@@ -164,4 +168,3 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
 });
-

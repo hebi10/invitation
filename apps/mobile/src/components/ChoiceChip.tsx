@@ -24,7 +24,7 @@ export function ChoiceChip({ label, selected, onPress }: ChoiceChipProps) {
       style={({ pressed }) => [
         styles.chip,
         {
-          backgroundColor: selected ? palette.accentSoft : palette.surfaceMuted,
+          backgroundColor: selected ? palette.accent : palette.surface,
           borderColor: selected ? palette.accent : palette.cardBorder,
           opacity: pressed ? 0.88 : 1,
         },
@@ -34,7 +34,7 @@ export function ChoiceChip({ label, selected, onPress }: ChoiceChipProps) {
         style={[
           styles.label,
           {
-            color: selected ? palette.accent : palette.text,
+            color: selected ? palette.surface : palette.text,
             fontSize: 13 * fontScale,
           },
         ]}
@@ -48,11 +48,13 @@ export function ChoiceChip({ label, selected, onPress }: ChoiceChipProps) {
 const styles = StyleSheet.create({
   chip: {
     borderWidth: 1,
-    borderRadius: 999,
+    borderRadius: 0,
+    minHeight: 48,
+    justifyContent: 'center',
     paddingHorizontal: 14,
     paddingVertical: 10,
   },
   label: {
-    fontWeight: '700',
+    fontWeight: '500',
   },
 });

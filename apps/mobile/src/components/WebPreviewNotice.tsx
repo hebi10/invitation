@@ -28,7 +28,7 @@ export function WebPreviewNotice({
       <AppText variant="caption" color={palette.notice} style={styles.title}>
         {title}
       </AppText>
-      <AppText variant="caption" color={palette.textMuted} style={styles.description}>
+      <AppText variant="caption" color={palette.notice} style={styles.description}>
         {description}
       </AppText>
     </View>
@@ -38,7 +38,7 @@ export function WebPreviewNotice({
 const styles = StyleSheet.create({
   notice: {
     borderWidth: 1,
-    borderRadius: 14,
+    borderRadius: 0,
     paddingHorizontal: 14,
     paddingVertical: 10,
     gap: 2,

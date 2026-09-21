@@ -128,35 +128,34 @@ export default function GuideScreen() {
 
 const styles = StyleSheet.create({
   planCard: {
-    borderWidth: 1,
-    borderRadius: 18,
-    padding: 14,
+    borderRadius: 0,
+    padding: 16,
     gap: 8,
   },
   planHeader: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     justifyContent: 'space-between',
     gap: 12,
   },
   planName: {
-    fontWeight: '800',
+    fontWeight: '500',
   },
   planPrice: {
-    fontWeight: '800',
+    fontWeight: '700',
   },
   planDescription: {
     lineHeight: 21,
   },
   sampleGroup: {
-    gap: 10,
+    gap: 16,
   },
   sampleGroupTitle: {
-    fontWeight: '800',
+    fontWeight: '500',
   },
   sampleCard: {
-    borderWidth: 1,
-    borderRadius: 18,
-    padding: 14,
+    borderRadius: 0,
+    padding: 16,
     gap: 10,
   },
   sampleCopy: {
@@ -173,6 +172,7 @@ const styles = StyleSheet.create({
   },
   faqItem: {
     gap: 6,
+    paddingVertical: 8,
   },
   faqQuestion: {
     fontWeight: '700',

@@ -58,8 +58,8 @@ export function TicketOnlyPurchaseModal({
           style={[
             styles.backdrop,
             {
-              backgroundColor: palette.background,
-              opacity: 0.78,
+              backgroundColor: '#111210',
+              opacity: 0.58,
             },
           ]}
           onPress={onClose}
@@ -184,6 +184,7 @@ export function TicketOnlyPurchaseModal({
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
+    paddingVertical: 24,
     justifyContent: 'center',
     paddingHorizontal: 20,
   },
@@ -191,11 +192,14 @@ const styles = StyleSheet.create({
     ...StyleSheet.absoluteFillObject,
   },
   card: {
+    width: '100%',
+    maxWidth: 520,
+    alignSelf: 'center',
     maxHeight: '88%',
     borderWidth: 1,
-    borderRadius: 28,
-    padding: 20,
-    gap: 14,
+    borderRadius: 0,
+    padding: 16,
+    gap: 16,
   },
   scroll: {
     flexGrow: 0,
@@ -205,27 +209,32 @@ const styles = StyleSheet.create({
     paddingBottom: 2,
   },
   title: {
-    fontWeight: '800',
+    fontWeight: '500',
   },
   description: {
     lineHeight: 21,
   },
   summaryRow: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
     gap: 16,
   },
   summaryLabel: {
-    lineHeight: 20,
+    flexShrink: 1,
+    lineHeight: 22,
   },
   summaryValue: {
     flexShrink: 1,
+    minWidth: 0,
     textAlign: 'right',
     fontWeight: '700',
   },
   totalLabel: {
-    fontWeight: '800',
+    flexShrink: 1,
+    textAlign: 'right',
+    fontWeight: '700',
   },
   actionColumn: {
     gap: 10,
@@ -240,7 +249,7 @@ const styles = StyleSheet.create({
   },
   noticeBox: {
     borderWidth: 1,
-    borderRadius: 16,
+    borderRadius: 0,
     paddingHorizontal: 12,
     paddingVertical: 10,
     gap: 6,

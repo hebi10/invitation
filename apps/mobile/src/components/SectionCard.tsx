@@ -91,7 +91,7 @@ export function SectionCard({
               style={[
                 styles.description,
                 isHero ? styles.heroDescription : null,
-                { color: palette.textMuted, fontSize: 14 * fontScale },
+                { color: palette.textMuted, fontSize: 14 * fontScale, lineHeight: 22 * fontScale },
               ]}
             >
               {description}
@@ -140,18 +140,18 @@ export function SectionCard({
 const styles = StyleSheet.create({
   card: {
     borderWidth: 1,
-    borderRadius: 16,
-    padding: 16,
-    gap: 12,
+    borderRadius: 0,
+    padding: 20,
+    gap: 20,
   },
   heroCard: {
-    padding: 18,
-    gap: 14,
+    padding: 20,
+    gap: 20,
   },
   emphasisCard: {
-    padding: 18,
-    gap: 14,
-    borderWidth: 1.5,
+    padding: 20,
+    gap: 20,
+    borderWidth: 1,
   },
   header: {
     flexDirection: 'row',
@@ -167,7 +167,7 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   title: {
-    fontWeight: '700',
+    fontWeight: '500',
   },
   heroTitle: {
     lineHeight: 27,
@@ -184,7 +184,8 @@ const styles = StyleSheet.create({
   badge: {
     paddingHorizontal: 10,
     paddingVertical: 6,
-    borderRadius: 999,
+    borderRadius: 0,
+    maxWidth: '40%',
   },
   heroBadge: {
     paddingHorizontal: 12,
@@ -195,9 +196,9 @@ const styles = StyleSheet.create({
     paddingVertical: 7,
   },
   badgeText: {
-    fontWeight: '600',
+    fontWeight: '500',
   },
   body: {
-    gap: 10,
+    gap: 16,
   },
 });

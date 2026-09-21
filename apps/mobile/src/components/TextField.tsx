@@ -1,3 +1,5 @@
+import { useState } from 'react';
+
 import {
   StyleSheet,
   TextInput,
@@ -59,6 +61,7 @@ export function TextField({
   inputStyle,
 }: TextFieldProps) {
   const { palette, fontScale } = useVisualPreferences();
+  const [focused, setFocused] = useState(false);
 
   return (
     <View style={[styles.wrapper, containerStyle]}>
@@ -70,6 +73,10 @@ export function TextField({
         onChangeText={onChangeText}
         placeholder={placeholder}
         placeholderTextColor={palette.textMuted}
+        selectionColor={palette.accentSoft}
+        cursorColor={palette.accent}
+        onFocus={() => setFocused(true)}
+        onBlur={() => setFocused(false)}
         secureTextEntry={secureTextEntry}
         multiline={multiline}
         autoCapitalize={autoCapitalize}
@@ -86,7 +93,7 @@ export function TextField({
           multiline ? styles.multiline : null,
           {
             backgroundColor: palette.surface,
-            borderColor: palette.cardBorder,
+            borderColor: focused ? palette.accent : palette.cardBorder,
             color: palette.text,
             fontSize: 15 * fontScale,
             opacity: editable ? 1 : 0.6,
@@ -108,11 +115,12 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   label: {
-    fontWeight: '700',
+    fontWeight: '500',
   },
   input: {
     borderWidth: 1,
-    borderRadius: 16,
+    borderRadius: 0,
+    minHeight: 48,
     paddingHorizontal: 14,
     paddingVertical: 12,
   },

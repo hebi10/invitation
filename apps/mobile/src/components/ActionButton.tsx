@@ -51,7 +51,7 @@ export function ActionButton({
       ? palette.accent
       : variant === 'danger'
         ? palette.danger
-        : palette.accentSoft;
+        : palette.surface;
   const defaultTextColor =
     variant === 'primary' || variant === 'danger' ? palette.surface : palette.accent;
   const defaultBorderColor =
@@ -59,7 +59,7 @@ export function ActionButton({
       ? palette.accent
       : variant === 'danger'
         ? palette.danger
-        : palette.accent;
+        : palette.cardBorder;
   const resolvedBackgroundColor = backgroundColor ?? defaultBackgroundColor;
   const resolvedBorderColor = borderColor ?? defaultBorderColor;
   const resolvedTextColor = labelColor ?? defaultTextColor;
@@ -99,10 +99,10 @@ export function ActionButton({
 
 const styles = StyleSheet.create({
   button: {
-    minHeight: 44,
+    minHeight: 48,
     paddingHorizontal: 16,
     paddingVertical: 12,
-    borderRadius: 14,
+    borderRadius: 0,
     borderWidth: 1,
   },
   fullWidth: {
@@ -115,6 +115,8 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   label: {
-    fontWeight: '700',
+    fontWeight: '500',
+    textAlign: 'center',
+    flexShrink: 1,
   },
 });
