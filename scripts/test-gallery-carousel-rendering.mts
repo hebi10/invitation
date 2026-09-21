@@ -10,6 +10,43 @@ register(new URL('./test-css-module-loader.mjs', import.meta.url), import.meta.u
 const { default: GalleryGridShared } = await import(
   '../src/components/sections/Gallery/GalleryGridShared.tsx'
 );
+const { default: WeddingGallerySwiper } = await import(
+  '../src/components/sections/Gallery/WeddingGallerySwiper.tsx'
+);
+
+// Invoke the rendered Image error callbacks inside an SSR hook owner so React
+// applies the actual component state updates without adding a DOM test runtime.
+const findImages = (node: React.ReactNode): React.ReactElement<{ src: string; onError: () => void }>[] => {
+  if (!React.isValidElement(node)) return [];
+  const props = node.props as { src?: string; onError?: () => void; children?: React.ReactNode | ((state: { isActive: boolean }) => React.ReactNode) };
+  if (props.src && props.onError) return [node as React.ReactElement<{ src: string; onError: () => void }>];
+  const children = typeof props.children === 'function' ? props.children({ isActive: true }) : props.children;
+  return React.Children.toArray(children).flatMap(findImages);
+};
+for (const distinctPreview of [true, false]) {
+  const original = 'https://example.com/original.jpg';
+  const preview = distinctPreview ? 'https://example.com/preview.jpg' : original;
+  const attempts: string[] = [];
+  function FailureHarness() {
+    const tree = WeddingGallerySwiper({
+      images: ['/first.jpg', original], previewImages: ['/first.jpg', preview],
+      variant: 'gyeol', reducedMotion: true, altPrefix: '갤러리', onOpen: () => undefined,
+    });
+    const failedPhoto = findImages(tree).filter((image) => image.props.src === preview || image.props.src === original);
+    if (failedPhoto.length) {
+      assert.equal(failedPhoto.length, 2, 'Slide and companion should share the same fallback source');
+      attempts.push(failedPhoto[0].props.src);
+      assert.ok(attempts.length <= 2, 'Image failures must not retry indefinitely');
+      failedPhoto[1].props.onError();
+    }
+    return tree;
+  }
+  const failed = renderToStaticMarkup(React.createElement(FailureHarness));
+  assert.deepEqual(attempts, distinctPreview ? [preview, original] : [original]);
+  assert.match(failed, /사진을 불러오지 못했습니다/);
+  assert.match(failed, /눌러서 원본 보기/);
+  assert.match(failed, /2번째 사진 선택/, 'Failed companions remain selectable');
+}
 
 const styles = {
   imageGrid: 'image-grid', imageWrapper: 'image-wrapper', carousel: 'carousel',

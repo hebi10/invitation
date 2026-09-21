@@ -1,6 +1,7 @@
 'use client';
 
 import { useRef, useState } from 'react';
+import Image from 'next/image';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { A11y, EffectCreative, EffectFade } from 'swiper/modules';
 import type { Swiper as SwiperInstance } from 'swiper';
@@ -73,7 +74,8 @@ export default function WeddingGallerySwiper({ images, previewImages, variant, r
       tabIndex={0}
     >
       {images.map((image, imageIndex) => {
-        const src = previewImages?.[imageIndex] || image;
+        const preview = previewImages?.[imageIndex] || image;
+        const src = failedImages.has(preview) ? image : preview;
         return <SwiperSlide key={`${image}-${imageIndex}`} className={styles.slide}>
           {({ isActive }) => <button
             type="button"
@@ -83,9 +85,14 @@ export default function WeddingGallerySwiper({ images, previewImages, variant, r
             aria-label={`${altPrefix} ${imageIndex + 1}번째 사진 크게 보기`}
             onClick={(event) => onOpen(imageIndex, event.currentTarget)}
           >
-            {failedImages.has(src) ? <span className={styles.error}>사진을 불러오지 못했습니다.<br />눌러서 원본 보기</span> : <img
+            {failedImages.has(src) ? <span className={styles.error}>사진을 불러오지 못했습니다.<br />눌러서 원본 보기</span> : <Image
+              key={src}
+              unoptimized
               className={styles.photo}
               src={src}
+              width={1200}
+              height={1600}
+              sizes="(max-width: 700px) 90vw, 600px"
               alt={`${altPrefix} ${imageIndex + 1}번째 사진`}
               loading="lazy"
               decoding="async"
@@ -97,7 +104,9 @@ export default function WeddingGallerySwiper({ images, previewImages, variant, r
     </Swiper>
     {companionIndexes.length > 0 ? <div className={styles.companions} aria-label="다른 사진 선택">
       {companionIndexes.map((imageIndex, slot) => {
-        const src = previewImages?.[imageIndex] || images[imageIndex];
+        const image = images[imageIndex];
+        const preview = previewImages?.[imageIndex] || image;
+        const src = failedImages.has(preview) ? image : preview;
         return <button key={slot} type="button" className={styles.companion}
           aria-label={`${altPrefix} ${imageIndex + 1}번째 사진 선택`}
           onClick={() => {
@@ -105,7 +114,10 @@ export default function WeddingGallerySwiper({ images, previewImages, variant, r
             if (swiper && !swiper.destroyed) swiper.slideTo(imageIndex);
           }}
         >
-          {failedImages.has(src) ? <span className={styles.error}>사진 선택</span> : <img
+          {failedImages.has(src) ? <span className={styles.error}>사진 선택</span> : <Image
+            key={src}
+            unoptimized
+            width={600} height={400} sizes="(max-width: 700px) 45vw, 300px"
             className={styles.photo} src={src} alt="" loading="lazy" decoding="async"
             onError={() => setFailedImages((current) => new Set([...current, src]))}
           />}

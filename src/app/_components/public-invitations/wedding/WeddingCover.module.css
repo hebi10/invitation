@@ -22,7 +22,7 @@
 .withoutPhoto .photoMeta .venue { color: #53594f; }
 
 /* A natural letter, with sage paper and a small botanical signature. */
-.letter { position: relative; padding: 62px 34px 0; background: #f1f3eb; color: #354536; text-align: left; }
+.letter { position: relative; padding: 62px 34px 24px; background: var(--paper-soft, #eef1e8); color: #354536; text-align: left; }
 .letter::before { content: ''; display: block; width: 86px; height: 90px; margin: 0 0 26px auto; background: url('/images/wedding-concepts/garden-sprig.webp') center / contain no-repeat; }
 .letter .names { justify-content: start; font-size: 28px; gap: 12px; }
 .letter .conceptIntroduction { margin-top: 24px; color: #54624f; }
@@ -47,7 +47,7 @@
 .editorialMeta .venue { font-size: 14px; }
 
 /* A complete formal invitation frame, including the family names. */
-.traditional { padding: 26px 22px 0; font-family: 'Wedding Myeongjo', serif; text-align: center; background: #f7f2e8; color: #493e2f; }
+.traditional { padding: 26px 22px 0; font-family: 'Wedding Myeongjo', serif; text-align: center; background: var(--paper, #f8f3e9); color: #493e2f; }
 .traditionalFrame { padding: 30px 20px 28px; border: 1px solid #bbaa8e; outline: 1px solid #d2c5ae; outline-offset: -6px; }
 .classicOrnament { width: 76px; height: 48px; margin: 0 auto 24px; background: url('/images/wedding-concepts/classic-ornament.webp') center / contain no-repeat; }
 .traditionalTitle .names { font-size: 28px; gap: 10px; }

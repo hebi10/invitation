@@ -374,7 +374,8 @@ details[open] > :is(.disclosureSummary, .accountSummary, .formSummary)::after { 
 
 /* Botanical: a letter on sage paper; foliage is reserved for the cover/closing. */
 .page[data-design='emotional'] :is(.heading, .title) { justify-content: flex-start; margin-bottom: 28px; font-size: 22px; text-align: left; }
-.page[data-design='emotional'] .invitationSection { width: 100%; padding: 44px 32px; background: var(--paper-soft); }
+.page[data-design='emotional'] .quickLinks { width: 100%; margin: 0; padding: 8px 24px; background: var(--paper-soft); }
+.page[data-design='emotional'] .invitationSection { width: 100%; margin-top: 0; padding: 48px 32px; background: var(--paper-soft); }
 .page[data-design='emotional'] .invitationSection .heading { justify-content: center; text-align: center; }
 .page[data-design='emotional'] .invitationCopy { font-family: 'Gyeol Dodum', sans-serif; font-size: 16px; line-height: 2.1; }
 .page[data-design='emotional'] .invitationAuthor { margin-top: 32px; }
