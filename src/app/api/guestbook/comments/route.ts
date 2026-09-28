@@ -5,6 +5,7 @@ import {
   readGuestbookCommentDate,
 } from '@/lib/guestbookComments';
 import { normalizeInvitationPageSlugInput } from '@/lib/invitationPagePersistence';
+import { parseCommentPageRequest } from '@/lib/guestbookPagination';
 import { firestoreEventCommentRepository } from '@/server/repositories/eventCommentRepository';
 import { resolveStoredEventBySlug } from '@/server/repositories/eventRepository';
 import {
@@ -98,6 +99,12 @@ function isEventPublic(
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
+  let pageRequest;
+  try {
+    pageRequest = parseCommentPageRequest(searchParams);
+  } catch (error) {
+    return NextResponse.json({ error: error instanceof Error ? error.message : '방명록 페이지 주소를 확인해 주세요.' }, { status: 400 });
+  }
   const pageSlug = normalizeInvitationPageSlugInput(searchParams.get('pageSlug') ?? '');
 
   if (!pageSlug) {
@@ -130,7 +137,8 @@ export async function GET(request: Request) {
   }
 
   try {
-    const comments = (await firestoreEventCommentRepository.listByPageSlug(pageSlug))
+    const page = pageRequest ? await firestoreEventCommentRepository.listPublicPageBySlug(pageSlug, pageRequest) : null;
+    const comments = (page ? page.comments : await firestoreEventCommentRepository.listByPageSlug(pageSlug))
       .filter((comment) => isGuestbookCommentVisibleToPublic(comment.data))
       .map((comment) => ({
         id: comment.id,
@@ -143,6 +151,7 @@ export async function GET(request: Request) {
     return NextResponse.json({
       success: true,
       comments,
+      ...(page ? { nextCursor: page.nextCursor, hasMore: page.hasMore } : {}),
     });
   } catch (error) {
     console.error('[guestbook/comments] failed to list comments', error);

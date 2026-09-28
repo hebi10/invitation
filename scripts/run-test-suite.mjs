@@ -43,6 +43,10 @@ const core = [
   'test-simple-wedding-rendering',
   'test-image-upload-optimization',
   'test-invitation-metadata',
+  'test-memory-dynamic-metadata',
+  'test-wizard-image-upload-state',
+  'test-guestbook-pagination',
+  'test-guestbook-query-states',
   'test-invitation-product-policy',
   'test-homepage-ui-contracts',
   'test-kakao-share-url-policy',
@@ -86,6 +90,11 @@ const security = [
   'test-mobile-session-security-policy',
   'test-public-access-block-reasons',
   'test-rate-limit-policy',
+  'test-event-security-boundary',
+  'test-event-summary-write-isolation',
+  'test-public-event-summary',
+  'test-mobile-async-session',
+  'test-mobile-auth-recovery',
   'test-security-hardening',
 ];
 
@@ -191,6 +200,7 @@ if (!selectedTests) {
 
 // Hook-based components need React's client server-rendering entrypoint.
 const clientRenderingTests = new Set([
+  'test-guestbook-query-states',
   'test-wizard-editor-disclosures',
   'test-wedding-intro-policy',
   'test-simple-wedding-rendering',

@@ -1,20 +1,12 @@
 import type { Metadata } from 'next';
 
-import { getAllWeddingPageSlugs, getWeddingPageBySlug } from '@/config/weddingPages';
-import {
-  getMemoryPageMetadataBySlug,
-  getMemoryPageMetadataSlugs,
-} from '@/lib/memoryPageMetadataSnapshot';
+import { getWeddingPageBySlug } from '@/config/weddingPages';
+import { getPublicMemoryPageMetadata } from '@/server/memoryPageMetadataService';
 
 import MemoryPageClient from './MemoryPageClient';
 
-export const dynamicParams = false;
-
-export function generateStaticParams() {
-  return Array.from(
-    new Set([...getAllWeddingPageSlugs(), ...getMemoryPageMetadataSlugs()])
-  ).map((slug) => ({ slug }));
-}
+export const dynamic = 'force-dynamic';
+export const dynamicParams = true;
 
 function buildDefaultMetadata(slug: string) {
   const page = getWeddingPageBySlug(slug);
@@ -43,7 +35,7 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { slug } = await params;
   const defaults = buildDefaultMetadata(slug);
-  const memoryMetadata = getMemoryPageMetadataBySlug(slug);
+  const memoryMetadata = await getPublicMemoryPageMetadata(slug);
   const isPublished = Boolean(
     memoryMetadata && memoryMetadata.enabled && memoryMetadata.visibility !== 'private'
   );
@@ -75,7 +67,7 @@ export async function generateMetadata({
   return {
     title,
     description,
-    openGraph: defaults.page
+    openGraph: isPublished || defaults.page
       ? {
           type: 'website',
           locale: 'ko_KR',
@@ -85,13 +77,13 @@ export async function generateMetadata({
             ? [
                 {
                   url: image,
-                  alt: defaults.page.displayName,
+                  alt: memoryMetadata?.title || defaults.page?.displayName || title,
                 },
               ]
             : undefined,
         }
       : undefined,
-    twitter: defaults.page
+    twitter: isPublished || defaults.page
       ? {
           card: 'summary_large_image',
           title,

@@ -1,6 +1,6 @@
 import Constants from 'expo-constants';
 
-import { toUserFacingApiMessage } from './apiErrors';
+import { MobileApiError, toUserFacingApiMessage } from './apiErrors';
 import { getOrCreateMobileDeviceId } from './storage';
 
 export const PRODUCTION_API_BASE_URL = 'https://msgnote.kr';
@@ -209,7 +209,7 @@ export async function readJsonResponse<T>(response: Response): Promise<T> {
     | null;
 
   if (!response.ok) {
-    throw new Error(toUserFacingApiMessage(payload?.error));
+    throw new MobileApiError(toUserFacingApiMessage(payload?.error), response.status);
   }
 
   return payload as T;

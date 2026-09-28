@@ -149,19 +149,28 @@ export function InvitationOpsProvider({ children }: PropsWithChildren) {
   const [pageSummary, setPageSummary] = useState<MobilePageSummary | null>(null);
   const [dashboardLoading, setDashboardLoading] = useState(false);
 
-  const isRefreshingDashboardRef = useRef(false);
+  const sessionScope = session ? `${apiBaseUrl}|${session.pageSlug}|${session.token}` : null;
+  const currentSessionScopeRef = useRef(sessionScope);
+  currentSessionScopeRef.current = sessionScope;
+  const isCurrentSession = useCallback(
+    () => sessionScope !== null && currentSessionScopeRef.current === sessionScope,
+    [sessionScope]
+  );
+  const isRefreshingDashboardRef = useRef<string | null>(null);
   const hasRequestedInitialDashboardRefreshRef = useRef<string | null>(null);
 
   useEffect(() => {
+    setDashboardLoading(false);
     if (!session) {
       setDashboard(null);
       setPageSummary(null);
       hasRequestedInitialDashboardRefreshRef.current = null;
     }
-  }, [session]);
+  }, [session, sessionScope]);
 
   useEffect(() => {
-    if (!initialDashboardSeed) {
+    if (!session || !initialDashboardSeed ||
+      (initialDashboardSeed.dashboardPage?.slug ?? initialDashboardSeed.pageFallback?.slug) !== session.pageSlug) {
       return;
     }
 
@@ -178,14 +187,14 @@ export function InvitationOpsProvider({ children }: PropsWithChildren) {
       snapshot ? buildPageSummary(snapshot) : initialDashboardSeed.pageFallback
     );
     consumeInitialDashboardSeed();
-  }, [consumeInitialDashboardSeed, initialDashboardSeed]);
+  }, [consumeInitialDashboardSeed, initialDashboardSeed, session]);
 
   const patchDashboard = useCallback(
     (
       updater: (current: MobileInvitationDashboard) => MobileInvitationDashboard
     ) => {
       setDashboard((current) => {
-        if (!current) {
+        if (!current || !isCurrentSession() || current.page.slug !== session?.pageSlug) {
           return current;
         }
 
@@ -194,13 +203,13 @@ export function InvitationOpsProvider({ children }: PropsWithChildren) {
         return nextDashboard;
       });
     },
-    []
+    [isCurrentSession, session?.pageSlug]
   );
 
   const applyDisplayPeriod = useCallback(
     (displayPeriod: MobileDisplayPeriodSummary) => {
       setDashboard((current) => {
-        if (!current) {
+        if (!current || !isCurrentSession() || current.page.slug !== session?.pageSlug) {
           return current;
         }
 
@@ -210,7 +219,7 @@ export function InvitationOpsProvider({ children }: PropsWithChildren) {
         };
       });
       setPageSummary((current) => {
-        if (!current) {
+        if (!current || !isCurrentSession() || current.slug !== session?.pageSlug) {
           return current;
         }
 
@@ -220,7 +229,7 @@ export function InvitationOpsProvider({ children }: PropsWithChildren) {
         };
       });
     },
-    []
+    [isCurrentSession, session?.pageSlug]
   );
 
   const refreshDashboard = useCallback(async (options: { includeComments?: boolean } = {}) => {
@@ -228,11 +237,11 @@ export function InvitationOpsProvider({ children }: PropsWithChildren) {
       return false;
     }
 
-    if (isRefreshingDashboardRef.current) {
+    if (isRefreshingDashboardRef.current === sessionScope) {
       return false;
     }
 
-    isRefreshingDashboardRef.current = true;
+    isRefreshingDashboardRef.current = sessionScope;
     setDashboardLoading(true);
 
     try {
@@ -245,10 +254,12 @@ export function InvitationOpsProvider({ children }: PropsWithChildren) {
         }
       );
 
+      if (!isCurrentSession() || nextDashboard.page.slug !== session.pageSlug) return false;
       setDashboard(nextDashboard);
       setPageSummary(buildPageSummary(nextDashboard));
       return true;
     } catch (error) {
+      if (!isCurrentSession()) return false;
       reportAuthError(
         error instanceof Error
           ? error.message
@@ -256,10 +267,10 @@ export function InvitationOpsProvider({ children }: PropsWithChildren) {
       );
       return false;
     } finally {
-      setDashboardLoading(false);
-      isRefreshingDashboardRef.current = false;
+      if (isCurrentSession()) setDashboardLoading(false);
+      if (isRefreshingDashboardRef.current === sessionScope) isRefreshingDashboardRef.current = null;
     }
-  }, [apiBaseUrl, reportAuthError, session]);
+  }, [apiBaseUrl, isCurrentSession, reportAuthError, session, sessionScope]);
 
   const saveCurrentPageConfig = useCallback(
     async (
@@ -271,6 +282,10 @@ export function InvitationOpsProvider({ children }: PropsWithChildren) {
     ) => {
       if (!session) {
         reportAuthError('청첩장을 연동해야 저장할 수 있습니다.');
+        return false;
+      }
+      if (!isCurrentSession() || config.slug !== session.pageSlug) {
+        reportAuthError('편집 중인 청첩장이 변경되었습니다. 현재 청첩장을 다시 열어 주세요.');
         return false;
       }
 
@@ -294,7 +309,8 @@ export function InvitationOpsProvider({ children }: PropsWithChildren) {
           getHighRiskToken(session.pageSlug) ?? undefined
         );
 
-        patchDashboard((current) => ({
+        if (!isCurrentSession()) return false;
+        patchDashboard((current) => current.page.slug !== session.pageSlug ? current : ({
           ...current,
           page: {
             ...current.page,
@@ -305,12 +321,13 @@ export function InvitationOpsProvider({ children }: PropsWithChildren) {
         }));
         return true;
       } catch (error) {
+        if (!isCurrentSession()) return false;
         reportAuthError(
           error instanceof Error ? error.message : '청첩장 저장에 실패했습니다.'
         );
         return false;
       } finally {
-        setDashboardLoading(false);
+        if (isCurrentSession()) setDashboardLoading(false);
       }
     },
     [
@@ -318,6 +335,7 @@ export function InvitationOpsProvider({ children }: PropsWithChildren) {
       dashboard?.page.defaultTheme,
       dashboard?.page.published,
       getHighRiskToken,
+      isCurrentSession,
       patchDashboard,
       reportAuthError,
       session,
@@ -326,7 +344,7 @@ export function InvitationOpsProvider({ children }: PropsWithChildren) {
 
   const setPublishedState = useCallback(
     async (published: boolean) => {
-      if (!session || !dashboard) {
+      if (!session || !dashboard || !isCurrentSession() || dashboard.page.slug !== session.pageSlug) {
         reportAuthError('청첩장을 연동해야 공개 상태를 변경할 수 있습니다.');
         return false;
       }
@@ -343,6 +361,7 @@ export function InvitationOpsProvider({ children }: PropsWithChildren) {
           getHighRiskToken(session.pageSlug) ?? undefined
         );
 
+        if (!isCurrentSession()) return false;
         patchDashboard((current) => ({
           ...current,
           page: {
@@ -352,20 +371,21 @@ export function InvitationOpsProvider({ children }: PropsWithChildren) {
         }));
         return true;
       } catch (error) {
+        if (!isCurrentSession()) return false;
         reportAuthError(
           error instanceof Error ? error.message : '공개 상태를 변경하지 못했습니다.'
         );
         return false;
       } finally {
-        setDashboardLoading(false);
+        if (isCurrentSession()) setDashboardLoading(false);
       }
     },
-    [apiBaseUrl, dashboard, getHighRiskToken, patchDashboard, reportAuthError, session]
+    [apiBaseUrl, dashboard, getHighRiskToken, isCurrentSession, patchDashboard, reportAuthError, session]
   );
 
   const setVariantAvailability = useCallback(
     async (variantKey: MobileInvitationThemeKey, available: boolean) => {
-      if (!session || !dashboard) {
+      if (!session || !dashboard || !isCurrentSession() || dashboard.page.slug !== session.pageSlug) {
         reportAuthError('청첩장을 연동해야 디자인 구성을 변경할 수 있습니다.');
         return false;
       }
@@ -386,6 +406,7 @@ export function InvitationOpsProvider({ children }: PropsWithChildren) {
           getHighRiskToken(session.pageSlug) ?? undefined
         );
 
+        if (!isCurrentSession()) return false;
         patchDashboard((current) => {
           const sourceVariants = current.page.config.variants ?? {};
           const sourceVariant = sourceVariants[variantKey];
@@ -409,6 +430,7 @@ export function InvitationOpsProvider({ children }: PropsWithChildren) {
         });
         return true;
       } catch (error) {
+        if (!isCurrentSession()) return false;
         reportAuthError(
           error instanceof Error
             ? error.message
@@ -416,10 +438,10 @@ export function InvitationOpsProvider({ children }: PropsWithChildren) {
         );
         return false;
       } finally {
-        setDashboardLoading(false);
+        if (isCurrentSession()) setDashboardLoading(false);
       }
     },
-    [apiBaseUrl, dashboard, getHighRiskToken, patchDashboard, reportAuthError, session]
+    [apiBaseUrl, dashboard, getHighRiskToken, isCurrentSession, patchDashboard, reportAuthError, session]
   );
 
   const adjustTicketCount = useCallback(
@@ -438,8 +460,9 @@ export function InvitationOpsProvider({ children }: PropsWithChildren) {
           getHighRiskToken(session.pageSlug) ?? undefined
         );
 
+        if (!isCurrentSession()) return null;
         setDashboard((current) => {
-          if (!current) {
+          if (!current || !isCurrentSession() || current.page.slug !== session.pageSlug) {
             return current;
           }
 
@@ -449,7 +472,7 @@ export function InvitationOpsProvider({ children }: PropsWithChildren) {
           };
         });
         setPageSummary((current) => {
-          if (!current) {
+          if (!current || !isCurrentSession() || current.slug !== session.pageSlug) {
             return current;
           }
 
@@ -461,13 +484,14 @@ export function InvitationOpsProvider({ children }: PropsWithChildren) {
 
         return response.ticketCount;
       } catch (error) {
+        if (!isCurrentSession()) return null;
         reportAuthError(
           error instanceof Error ? error.message : '티켓 수량을 변경하지 못했습니다.'
         );
         return null;
       }
     },
-    [apiBaseUrl, getHighRiskToken, reportAuthError, session]
+    [apiBaseUrl, getHighRiskToken, isCurrentSession, reportAuthError, session]
   );
 
   const extendDisplayPeriod = useCallback(
@@ -486,6 +510,7 @@ export function InvitationOpsProvider({ children }: PropsWithChildren) {
           getHighRiskToken(session.pageSlug) ?? undefined
         );
 
+        if (!isCurrentSession()) return null;
         const displayPeriod = {
           enabled: response.enabled,
           startDate: response.startDate,
@@ -493,17 +518,18 @@ export function InvitationOpsProvider({ children }: PropsWithChildren) {
         };
 
         applyDisplayPeriod(displayPeriod);
-        setDashboard((current) => current ? { ...current, ticketCount: response.ticketCount } : current);
-        setPageSummary((current) => current ? { ...current, ticketCount: response.ticketCount } : current);
+        setDashboard((current) => current && isCurrentSession() && current.page.slug === session.pageSlug ? { ...current, ticketCount: response.ticketCount } : current);
+        setPageSummary((current) => current && isCurrentSession() && current.slug === session.pageSlug ? { ...current, ticketCount: response.ticketCount } : current);
         return { ...displayPeriod, ticketCount: response.ticketCount };
       } catch (error) {
+        if (!isCurrentSession()) return null;
         reportAuthError(
           error instanceof Error ? error.message : '노출 기간을 연장하지 못했습니다.'
         );
         return null;
       }
     },
-    [apiBaseUrl, applyDisplayPeriod, getHighRiskToken, reportAuthError, session]
+    [apiBaseUrl, applyDisplayPeriod, getHighRiskToken, isCurrentSession, reportAuthError, session]
   );
 
   const setDisplayPeriod = useCallback(
@@ -522,6 +548,7 @@ export function InvitationOpsProvider({ children }: PropsWithChildren) {
           getHighRiskToken(session.pageSlug) ?? undefined
         );
 
+        if (!isCurrentSession()) return null;
         const nextDisplayPeriod = {
           enabled: response.enabled,
           startDate: response.startDate,
@@ -531,13 +558,14 @@ export function InvitationOpsProvider({ children }: PropsWithChildren) {
         applyDisplayPeriod(nextDisplayPeriod);
         return nextDisplayPeriod;
       } catch (error) {
+        if (!isCurrentSession()) return null;
         reportAuthError(
           error instanceof Error ? error.message : '노출 기간을 되돌리지 못했습니다.'
         );
         return null;
       }
     },
-    [apiBaseUrl, applyDisplayPeriod, getHighRiskToken, reportAuthError, session]
+    [apiBaseUrl, applyDisplayPeriod, getHighRiskToken, isCurrentSession, reportAuthError, session]
   );
 
   const transferTicketCount = useCallback(
@@ -560,8 +588,9 @@ export function InvitationOpsProvider({ children }: PropsWithChildren) {
           getHighRiskToken(session.pageSlug) ?? undefined
         );
 
+        if (!isCurrentSession()) return null;
         setDashboard((current) => {
-          if (!current) {
+          if (!current || !isCurrentSession() || current.page.slug !== session.pageSlug) {
             return current;
           }
 
@@ -571,7 +600,7 @@ export function InvitationOpsProvider({ children }: PropsWithChildren) {
           };
         });
         setPageSummary((current) => {
-          if (!current) {
+          if (!current || !isCurrentSession() || current.slug !== session.pageSlug) {
             return current;
           }
 
@@ -586,13 +615,14 @@ export function InvitationOpsProvider({ children }: PropsWithChildren) {
           targetTicketCount: response.targetTicketCount,
         };
       } catch (error) {
+        if (!isCurrentSession()) return null;
         reportAuthError(
           error instanceof Error ? error.message : '티켓을 이동하지 못했습니다.'
         );
         return null;
       }
     },
-    [apiBaseUrl, getHighRiskToken, reportAuthError, session]
+    [apiBaseUrl, getHighRiskToken, isCurrentSession, reportAuthError, session]
   );
 
   const applyManagedComment = useCallback(
@@ -635,12 +665,14 @@ export function InvitationOpsProvider({ children }: PropsWithChildren) {
           action
         );
 
+        if (!isCurrentSession()) return null;
         if (response.comment) {
           applyManagedComment(response.comment);
         }
 
         return response.comment ?? null;
       } catch (error) {
+        if (!isCurrentSession()) return null;
         reportAuthError(
           error instanceof Error
             ? error.message
@@ -649,7 +681,7 @@ export function InvitationOpsProvider({ children }: PropsWithChildren) {
         return null;
       }
     },
-    [apiBaseUrl, applyManagedComment, reportAuthError, session]
+    [apiBaseUrl, applyManagedComment, isCurrentSession, reportAuthError, session]
   );
 
   const deleteComment = useCallback(
@@ -661,10 +693,10 @@ export function InvitationOpsProvider({ children }: PropsWithChildren) {
   );
 
   const derivedDashboard = useMemo(() => {
-    if (dashboard) {
+    if (dashboard && dashboard.page.slug === session?.pageSlug) {
       return dashboard;
     }
-    if (!initialDashboardSeed) {
+    if (!session || !initialDashboardSeed || initialDashboardSeed.dashboardPage?.slug !== session.pageSlug) {
       return null;
     }
     return buildDashboardSnapshot(
@@ -674,30 +706,31 @@ export function InvitationOpsProvider({ children }: PropsWithChildren) {
       initialDashboardSeed.pageFallback,
       initialDashboardSeed.permissions
     );
-  }, [dashboard, initialDashboardSeed]);
+  }, [dashboard, initialDashboardSeed, session]);
 
   const derivedPageSummary = useMemo(() => {
-    if (pageSummary) {
+    if (pageSummary && pageSummary.slug === session?.pageSlug) {
       return pageSummary;
     }
     if (derivedDashboard) {
       return buildPageSummary(derivedDashboard);
     }
-    return initialDashboardSeed?.pageFallback ?? null;
-  }, [derivedDashboard, initialDashboardSeed, pageSummary]);
+    return initialDashboardSeed?.pageFallback?.slug === session?.pageSlug
+      ? initialDashboardSeed?.pageFallback ?? null : null;
+  }, [derivedDashboard, initialDashboardSeed, pageSummary, session?.pageSlug]);
 
   useEffect(() => {
-    if (!session || !derivedDashboard || dashboardLoading) {
+    if (!session || dashboardLoading) {
       return;
     }
 
-    if (hasRequestedInitialDashboardRefreshRef.current === session.pageSlug) {
+    if (hasRequestedInitialDashboardRefreshRef.current === sessionScope) {
       return;
     }
 
-    hasRequestedInitialDashboardRefreshRef.current = session.pageSlug;
+    hasRequestedInitialDashboardRefreshRef.current = sessionScope;
     void refreshDashboard();
-  }, [dashboardLoading, derivedDashboard, refreshDashboard, session]);
+  }, [dashboardLoading, refreshDashboard, session, sessionScope]);
 
   const value = useMemo<InvitationOpsContextValue>(
     () => ({

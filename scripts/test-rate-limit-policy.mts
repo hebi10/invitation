@@ -49,7 +49,14 @@ const untrustedForwardedRequest = new Request('https://msgnote.kr/api/test', {
     'user-agent': 'policy-test-agent',
   },
 });
-assert.match(readRequestClientKey(untrustedForwardedRequest), /^unknown-ip:ua-/);
+const previousTrustProxy = process.env.TRUST_PROXY_CLIENT_IP_HEADERS;
+const previousVercel = process.env.VERCEL;
+process.env.TRUST_PROXY_CLIENT_IP_HEADERS = 'false';
+process.env.VERCEL = '0';
+assert.equal(readRequestClientKey(untrustedForwardedRequest), 'unknown-ip');
+assert.equal(readRequestClientKey(new Request('https://example.test', {
+  headers: { 'x-real-ip': '203.0.113.99', 'user-agent': 'spoofed' },
+})), 'unknown-ip', 'Untrusted headers must not create a fresh rate limit bucket');
 
 const trustedRealIpRequest = new Request('https://msgnote.kr/api/test', {
   headers: {
@@ -58,7 +65,23 @@ const trustedRealIpRequest = new Request('https://msgnote.kr/api/test', {
     'user-agent': 'policy-test-agent',
   },
 });
-assert.match(readRequestClientKey(trustedRealIpRequest), /^203\.0\.113\.7:ua-/);
+process.env.TRUST_PROXY_CLIENT_IP_HEADERS = 'true';
+assert.equal(readRequestClientKey(trustedRealIpRequest), '203.0.113.7');
+for (let attempt = 0; attempt < 6; attempt += 1) {
+  const rotatedAgentRequest = new Request('https://example.test', {
+    headers: { 'x-real-ip': '203.0.113.7', 'user-agent': `rotated-${attempt}` },
+  });
+  const key = buildScopedRateLimitKey(rotatedAgentRequest, 'public-guestbook-comment-create', ['rate-limit-regression']);
+  const result = await applyRateLimit({ key, limit: 5, windowMs: 60_000 }, {
+    repository: { isAvailable: () => false, apply: async () => { throw new Error('unused'); } },
+    nodeEnv: 'development',
+  });
+  assert.equal(result.allowed, attempt < 5, 'Changing User-Agent must not reset the limit');
+}
+if (previousTrustProxy === undefined) delete process.env.TRUST_PROXY_CLIENT_IP_HEADERS;
+else process.env.TRUST_PROXY_CLIENT_IP_HEADERS = previousTrustProxy;
+if (previousVercel === undefined) delete process.env.VERCEL;
+else process.env.VERCEL = previousVercel;
 
 const refreshTokenA = 'refresh-token-a';
 const refreshTokenB = 'refresh-token-b';

@@ -25,6 +25,7 @@ import {
   upsertLinkedInvitationCard,
 } from '../lib/linkedInvitationCards';
 import { getStoredJson, setStoredJson, setStoredString } from '../lib/storage';
+import { isInvalidAuthError } from '../lib/apiErrors';
 import type { MobileClientEditorPermissions } from '../../../../src/types/mobileClientEditor';
 import type {
   MobileEditableInvitationPageConfig,
@@ -311,11 +312,14 @@ export function AuthProvider({ children }: PropsWithChildren) {
           );
         }
         return true;
-      } catch {
-        if (options.clearOnFailure) {
+      } catch (error) {
+        if (options.clearOnFailure && isInvalidAuthError(error)) {
           await clearSession();
-        } else if (options.failureMessage) {
+        } else if (isInvalidAuthError(error) && options.failureMessage) {
           setAuthError(options.failureMessage);
+        } else {
+          if (options.clearOnFailure) setSession(candidateSession);
+          setAuthError('연동 상태를 확인하지 못했습니다. 네트워크 연결을 확인한 뒤 다시 시도해 주세요.');
         }
         return false;
       } finally {
@@ -425,7 +429,12 @@ export function AuthProvider({ children }: PropsWithChildren) {
         await applyCustomerAuthSession(nextSession);
         return nextSession;
       } catch (error) {
-        await clearCustomerSession();
+        if (isInvalidAuthError(error)) {
+          await clearCustomerSession();
+        } else {
+          // Keep the refresh token available for a later retry; never use the expired ID token.
+          updateCustomerSession(candidateSession);
+        }
         setCustomerAuthError(
           error instanceof Error
             ? error.message
@@ -468,31 +477,34 @@ export function AuthProvider({ children }: PropsWithChildren) {
     let mounted = true;
 
     const restore = async () => {
-      const storedSession = await getStoredJson<MobileSessionSummary | null>(
-        SESSION_STORAGE_KEY,
-        null,
-        { sensitive: true }
-      );
-      const storedCustomerSession = await getStoredJson<MobileCustomerAuthSession | null>(
-        CUSTOMER_AUTH_STORAGE_KEY,
-        null,
-        { sensitive: true }
-      );
+      try {
+        const storedSession = await getStoredJson<MobileSessionSummary | null>(
+          SESSION_STORAGE_KEY,
+          null,
+          { sensitive: true }
+        );
+        const storedCustomerSession = await getStoredJson<MobileCustomerAuthSession | null>(
+          CUSTOMER_AUTH_STORAGE_KEY,
+          null,
+          { sensitive: true }
+        );
 
-      if (!mounted) {
-        return;
-      }
+        if (!mounted) {
+          return;
+        }
 
-      if (storedSession) {
-        await restoreSession(storedSession, apiBaseUrl);
-      }
+        if (storedSession) {
+          await restoreSession(storedSession, apiBaseUrl);
+        }
 
-      if (storedCustomerSession) {
-        await refreshCustomerSession(storedCustomerSession);
-      }
+        if (storedCustomerSession) {
+          await refreshCustomerSession(storedCustomerSession);
+        }
 
-      if (mounted) {
-        setIsReady(true);
+      } catch {
+        if (mounted) setAuthError('저장된 로그인 정보를 불러오지 못했습니다. 잠시 후 앱을 다시 열어 주세요.');
+      } finally {
+        if (mounted) setIsReady(true);
       }
     };
 

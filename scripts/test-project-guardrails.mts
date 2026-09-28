@@ -43,9 +43,10 @@ function hasImportFrom(source: string, prefix: string) {
 
 const memoryRoute = readText('src/app/memory/[slug]/page.tsx');
 assert(
-  memoryRoute.includes('getMemoryPageMetadataSlugs') &&
-    /generateStaticParams\(\)[\s\S]*getMemoryPageMetadataSlugs\(\)/m.test(memoryRoute),
-  'memory route static params must include Firestore memory-page metadata snapshot slugs.'
+  memoryRoute.includes("dynamic = 'force-dynamic'") &&
+    memoryRoute.includes('dynamicParams = true') &&
+    memoryRoute.includes('await getPublicMemoryPageMetadata(slug)'),
+  'memory routes must resolve new slugs and current visibility without a rebuild.'
 );
 
 const homePage = readText('src/app/page.tsx');

@@ -85,9 +85,11 @@ assert.match(pageSource, /data-wedding-section="ceremony"/);
 assert.match(pageSource, /features.showCountdown \? <details/);
 
 assert.doesNotMatch(
-  cssSource.replace(/\.heroCopy\s*\{[^}]*\}/s, ''),
+  cssSource
+    .replace(/\.heroCopy\s*\{[^}]*\}/s, '')
+    .replace(/\.page\[data-design='romantic'\] \.storyPhoto figcaption\s*\{[^}]*\}/g, ''),
   /(?:linear|radial|conic)-gradient/,
-  'Only the photographic cover may use a contrast scrim; page sections remain flat.'
+  'Only photographic covers and romantic photo captions may use a contrast scrim; GYEOL sections remain flat.'
 );
 assert.doesNotMatch(cssSource, /box-shadow/);
 assert.doesNotMatch(cssSource, /border-radius:\s*999px/);
@@ -103,6 +105,6 @@ const coverSource = readFileSync(path.resolve(process.cwd(), 'src/app/_component
 const coverCss = readFileSync(path.resolve(process.cwd(), 'src/app/_components/public-invitations/wedding/WeddingCover.module.css'), 'utf8');
 assert.match(coverSource, /theme === 'gyeol'/);
 assert.match(coverSource, /styles\.traditional/);
-assert.match(coverSource, /styles\.classicOrnament/);
-assert.match(coverCss, /classic-ornament\.webp/);
+assert.match(coverSource, /styles\.traditionalMonogram/);
+assert.match(coverCss, /\.traditionalMonogram\s*\{/);
 console.log('GYEOL theme registry behavior passed.');

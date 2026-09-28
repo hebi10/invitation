@@ -2,6 +2,7 @@ import {
   useCallback,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type Dispatch,
   type SetStateAction,
@@ -64,6 +65,7 @@ export function useInvitationForm({
   const { runHighRiskAction } = useAuth();
   const isFocused = useIsFocused();
   const [form, setFormState] = useState<ManageFormState>(EMPTY_FORM);
+  const formPageSlugRef = useRef<string | null>(null);
   const [editorModalVisible, setEditorModalVisible] = useState(false);
   const [editorPreparingVisible, setEditorPreparingVisible] = useState(false);
   const [editorPreparingMessage, setEditorPreparingMessage] = useState('');
@@ -78,6 +80,7 @@ export function useInvitationForm({
     editorModalVisible || editorPreparingVisible || onboardingVisible || isSaving;
 
   const hydrateForm = useCallback((nextDashboard: MobileInvitationDashboard | null) => {
+    formPageSlugRef.current = nextDashboard?.page.slug ?? null;
     if (!nextDashboard) {
       setFormState(EMPTY_FORM);
       setIsFormDirty(false);
@@ -325,6 +328,10 @@ export function useInvitationForm({
       suppressNotice?: boolean;
     }) => {
       if (!dashboard) {
+        return false;
+      }
+      if (formPageSlugRef.current !== dashboard.page.slug) {
+        setNotice('편집 중인 청첩장이 변경되었습니다. 편집 창을 닫고 현재 청첩장을 다시 열어 주세요.');
         return false;
       }
 

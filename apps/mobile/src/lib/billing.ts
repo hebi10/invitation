@@ -16,6 +16,7 @@ type PurchasesStoreTransaction = {
 
 type PurchasesCustomerInfo = {
   originalAppUserId: string;
+  requestDate: string;
   nonSubscriptionTransactions: PurchasesStoreTransaction[];
 };
 
@@ -53,6 +54,7 @@ type PurchasesModule = {
     transaction: PurchasesStoreTransaction;
   }>;
   getCustomerInfo: () => Promise<PurchasesCustomerInfo>;
+  invalidateCustomerInfoCache: () => Promise<void>;
   restorePurchases: () => Promise<PurchasesCustomerInfo>;
   getAppUserID: () => Promise<string>;
 };
@@ -64,6 +66,28 @@ export type MobileBillingPurchaseResult = {
   transactionIdentifier: string;
   purchaseDate: string;
 };
+
+class BillingNotChargedError extends Error {}
+
+export function isDefinitelyUnchargedBillingError(error: unknown) {
+  return error instanceof BillingNotChargedError;
+}
+
+export async function getBillingTransactionHistory(options: { appUserId: string }) {
+  const { purchases, appUserId } = await ensureBillingConfigured(options);
+  if (await purchases.getAppUserID() !== appUserId) {
+    throw new Error('결제 계정이 변경되었습니다. 결제한 계정으로 다시 확인해 주세요.');
+  }
+  await purchases.invalidateCustomerInfoCache();
+  const info = await purchases.getCustomerInfo();
+  if (await purchases.getAppUserID() !== appUserId || !Number.isFinite(Date.parse(info.requestDate)) ||
+      !Array.isArray(info.nonSubscriptionTransactions) || info.nonSubscriptionTransactions.some(transaction =>
+        !transaction.productIdentifier?.trim() || !transaction.transactionIdentifier?.trim() ||
+        !Number.isFinite(Date.parse(transaction.purchaseDate)))) {
+    throw new Error('결제 내역을 확인하지 못했습니다. 잠시 후 다시 시도해 주세요.');
+  }
+  return { transactions: info.nonSubscriptionTransactions, requestDate: info.requestDate };
+}
 
 const BILLING_APP_USER_ID_STORAGE_KEY = 'mobile-invitation:billing-app-user-id';
 
@@ -177,26 +201,33 @@ export async function purchaseBillingProduct(
   productId: MobileBillingProductId,
   options: { appUserId?: string | null } = {}
 ) {
-  if (!MOBILE_BILLING_PRODUCT_IDS.includes(productId)) {
-    throw new Error('현재 판매하지 않는 상품입니다. 프리미엄 상품을 이용해 주세요.');
-  }
-  const { purchases, appUserId } = await ensureBillingConfigured(options);
-  const type = purchases.PRODUCT_CATEGORY?.NON_SUBSCRIPTION ?? 'NON_SUBSCRIPTION';
-  const products = await purchases.getProducts([productId], type);
-  const targetProduct = products.find((product) => product.identifier === productId);
+  let prepared: { purchases: PurchasesModule; appUserId: string; targetProduct: PurchasesStoreProduct };
+  try {
+    if (!MOBILE_BILLING_PRODUCT_IDS.includes(productId)) {
+      throw new Error('현재 판매하지 않는 상품입니다. 프리미엄 상품을 이용해 주세요.');
+    }
+    const { purchases, appUserId } = await ensureBillingConfigured(options);
+    const type = purchases.PRODUCT_CATEGORY?.NON_SUBSCRIPTION ?? 'NON_SUBSCRIPTION';
+    const products = await purchases.getProducts([productId], type);
+    const targetProduct = products.find((product) => product.identifier === productId);
 
-  if (!targetProduct) {
-    throw new Error('Google Play Console 또는 RevenueCat에 결제 상품이 아직 준비되지 않았습니다.');
-  }
+    if (!targetProduct) {
+      throw new Error('Google Play Console 또는 RevenueCat에 결제 상품이 아직 준비되지 않았습니다.');
+    }
 
-  if (productId === 'page_creation_premium' &&
-      (targetProduct.currencyCode !== 'KRW' || targetProduct.price !== MOBILE_BILLING_PREMIUM_PRICE_KRW)) {
-    throw new Error('스토어의 프리미엄 가격이 9,900원으로 확인되지 않아 결제를 중단했습니다. 고객 문의로 확인해 주세요.');
+    if (productId === 'page_creation_premium' &&
+        (targetProduct.currencyCode !== 'KRW' || targetProduct.price !== MOBILE_BILLING_PREMIUM_PRICE_KRW)) {
+      throw new Error('스토어의 프리미엄 가격이 9,900원으로 확인되지 않아 결제를 중단했습니다. 고객 문의로 확인해 주세요.');
+    }
+    prepared = { purchases, appUserId, targetProduct };
+  } catch (error) {
+    throw new BillingNotChargedError(error instanceof Error ? error.message : '결제를 준비하지 못했습니다.');
   }
+  const { purchases, appUserId, targetProduct } = prepared;
 
   const purchaseResult = await purchases.purchaseStoreProduct(targetProduct).catch((error: unknown) => {
     if (error && typeof error === 'object' && 'userCancelled' in error && error.userCancelled === true) {
-      throw new Error('결제를 취소했습니다. 준비가 되면 다시 진행해 주세요.');
+      throw new BillingNotChargedError('결제를 취소했습니다. 준비가 되면 다시 진행해 주세요.');
     }
     throw error;
   });

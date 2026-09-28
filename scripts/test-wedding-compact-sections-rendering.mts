@@ -65,10 +65,10 @@ assert.doesNotMatch(emptyGift, /<details/, 'Empty account groups should remain a
 const pageSlug = 'compact-sections-test';
 const renderGuestbook = (collapsibleForm?: boolean, demoComments?: import('../src/services/commentService').Comment[]) => {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-  queryClient.setQueryData(appQueryKeys.guestbookComments(pageSlug), [{
+  queryClient.setQueryData([...appQueryKeys.guestbookComments(pageSlug), 'page', null], { comments: [{
     id: 'test-comment', pageSlug, author: '축하하는 친구',
     message: '두 분의 결혼을 축하합니다.', createdAt: new Date('2026-09-10T00:00:00Z'),
-  }]);
+  }], hasMore: false, nextCursor: null });
   try {
     return renderToStaticMarkup(React.createElement(QueryClientProvider, { client: queryClient },
       React.createElement(GuestbookThemed, {

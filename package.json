@@ -32,6 +32,7 @@
     "check": "npm run lint && npm run typecheck",
     "test": "node scripts/run-test-suite.mjs",
     "test:security": "node scripts/run-test-suite.mjs security",
+    "test:security:emulator": "firebase emulators:exec --project demo-invitation-review --only firestore \"npx --yes tsx --conditions react-server scripts/test-event-security-boundary-emulator.mts\"",
     "test:architecture": "node scripts/run-test-suite.mjs architecture",
     "test:emulator": "firebase emulators:exec --project demo-invitation-rules --only firestore,storage \"node scripts/run-test-suite.mjs emulator\"",
     "test:all": "npm test && npm run test:emulator",

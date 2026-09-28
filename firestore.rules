@@ -31,12 +31,17 @@ service cloud.firestore {
         request.resource.data.eventId == resource.data.eventId &&
         request.resource.data.slug == resource.data.slug &&
         request.resource.data.ownerUid == resource.data.ownerUid &&
-        !request.resource.data.diff(resource.data).affectedKeys().hasAny([
-          'featureFlags',
-          'productTier',
-          'stats',
-          'ticketBalance',
-          'ticketCount'
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          'title',
+          'displayName',
+          'summary',
+          'defaultTheme',
+          'supportedVariants',
+          'hasCustomConfig',
+          'hasCustomContent',
+          'updatedAt',
+          'lastSavedAt',
+          'version'
         ]);
     }
 
@@ -181,7 +186,7 @@ service cloud.firestore {
     }
 
     match /events/{eventId} {
-      allow read: if isAdmin() || isEventOwnerById(eventId) || canReadPublicEvent(eventId);
+      allow read: if isAdmin() || isEventOwnerById(eventId);
       allow create: if isAdmin();
       allow update, delete: if isAdmin() || canUpdateOwnedEvent(eventId);
 

@@ -150,14 +150,12 @@ export function readRequestClientKey(request: Request) {
   const forwardedFor = trustedProxyClientIpHeaders
     ? readFirstForwardedAddress(request.headers.get('x-forwarded-for'))
     : null;
-  const realIp = normalizeClientAddress(request.headers.get('x-real-ip'));
-  const userAgent = request.headers.get('user-agent')?.trim() ?? 'unknown-agent';
+  const realIp = trustedProxyClientIpHeaders
+    ? normalizeClientAddress(request.headers.get('x-real-ip'))
+    : null;
 
-  const clientIp = vercelForwardedFor || realIp || forwardedFor || 'unknown-ip';
-  const normalizedUserAgent =
-    hashRateLimitKeyPart(userAgent.slice(0, 240), 'ua') ?? 'ua-unknown';
-
-  return `${clientIp}:${normalizedUserAgent}`;
+  // User-controlled client hints must never partition enforcement counters.
+  return vercelForwardedFor || realIp || forwardedFor || 'unknown-ip';
 }
 
 function normalizeRateLimitKeyPart(value: string | number | boolean | null | undefined) {

@@ -59,6 +59,7 @@ type MobileBillingCreatePageInput = {
 };
 
 type RevenueCatTransactionRecord = {
+  revenueCatIdentifier: string | null;
   purchaseDate: string | null;
   productIdentifier: string;
   transactionIdentifier: string;
@@ -113,12 +114,12 @@ function normalizeRevenueCatTransactionRecord(
       : typeof record.product_id === 'string' && record.product_id.trim()
         ? record.product_id.trim()
         : productId;
-  // Prefer the Google Play order identifier. Accepting both identifiers for one
-  // purchase would create separate fulfillment locks and allow duplicate grants.
+  // Both the SDK history alias and checkout order ID resolve to this one lock key.
+  // Wait for the store ID if RC has not populated it yet; never lock an RC alias.
   const transactionIdentifier =
     typeof record.store_transaction_id === 'string' && record.store_transaction_id.trim()
       ? record.store_transaction_id.trim()
-      : typeof record.id === 'string'
+      : typeof record.id === 'string' && record.id.trim().startsWith('GPA.')
         ? record.id.trim()
         : '';
 
@@ -127,6 +128,7 @@ function normalizeRevenueCatTransactionRecord(
   }
 
   return {
+    revenueCatIdentifier: typeof record.id === 'string' ? record.id.trim() : null,
     productIdentifier,
     transactionIdentifier,
     purchaseDate:
@@ -185,7 +187,8 @@ async function verifyRevenueCatNonSubscriptionTransaction(
     .find(
       (entry) =>
         entry.productIdentifier === purchase.productId &&
-        entry.transactionIdentifier === purchase.transactionId
+        (entry.transactionIdentifier === purchase.transactionId ||
+          entry.revenueCatIdentifier === purchase.transactionId)
     );
 
   if (!verifiedTransaction) {
@@ -266,6 +269,7 @@ export async function fulfillServerMobilePageCreationPurchase(
   }
 
   const verifiedTransaction = await verifyRevenueCatNonSubscriptionTransaction(purchase);
+  purchase = { ...purchase, transactionId: verifiedTransaction.transactionIdentifier };
   const lock = await acquireBillingFulfillmentLock(purchase, definition);
   const lockRecord = lock.record;
 
@@ -351,6 +355,7 @@ export async function fulfillServerMobileTicketPackPurchase(
   }
 
   const verifiedTransaction = await verifyRevenueCatNonSubscriptionTransaction(purchase);
+  purchase = { ...purchase, transactionId: verifiedTransaction.transactionIdentifier };
   const lock = await acquireBillingFulfillmentLock(purchase, definition);
   const lockRecord = lock.record;
 

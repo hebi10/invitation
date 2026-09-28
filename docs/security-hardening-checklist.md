@@ -17,6 +17,9 @@
 - 저장소에는 서비스 계정 JSON 파일을 두지 않는다.
 - 서버 비밀값은 Firebase App Hosting Secret Manager 또는 배포 환경 변수로 주입한다.
 - 로컬 스크립트에서 `GOOGLE_APPLICATION_CREDENTIALS`가 필요하면 저장소 밖의 파일 경로를 사용한다.
+- 공개 초대장 요약은 `/api/public/events/{slug}`의 허용 필드만 반환한다. `events/{eventId}` 원본은 관리자와 소유자만 읽으며, 기존 데이터 이동은 필요하지 않다.
+- 공개 요약 API와 클라이언트 대체 조회가 포함된 웹을 먼저 배포·확인한 뒤 Firestore 규칙을 배포한다. 이전 클라이언트는 새 규칙 적용 후 새로고침이 필요할 수 있다.
+- 요청 제한은 User-Agent를 식별자로 사용하지 않는다. `TRUST_PROXY_CLIENT_IP_HEADERS=true`는 배포 프록시가 외부에서 보낸 IP 헤더를 덮어쓰는지 확인한 환경에서만 설정한다. 신뢰 설정이 없으면 IP 헤더를 무시하고 공통 제한을 사용하므로, 배포 전 서로 다른 클라이언트의 제한 분리를 확인한다.
 
 ## 수동 QA 체크리스트
 - Web 관리자 전용
@@ -66,6 +69,7 @@
 ```bash
 npm run check
 npm run test:security
+npm run test:security:emulator
 npm run test:architecture
 npm run test:emulator
 npm run build

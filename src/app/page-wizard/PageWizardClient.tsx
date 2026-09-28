@@ -5,6 +5,7 @@ import { DEMO_EXPERIENCE_IMAGE_OPTIONS } from '@/config/demoExperienceSeeds';
 import WeddingWizardPreview from './WeddingWizardPreview';
 import WizardCustomerConnection from './WizardCustomerConnection';
 import IntroSettings from './steps/IntroSettings';
+import { createWizardMutationGuard } from './wizardImageUploadState';
 
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
@@ -215,20 +216,21 @@ export default function PageWizardClient({
   const [notice, setNotice] = useState<NoticeState>(null);
   const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const mutationGuard = useRef(createWizardMutationGuard()).current;
+  const [uploadingField, setUploadingField] = useState<UploadFieldKind | null>(null);
   useEffect(() => {
-    if (!hasUnsavedChanges) return;
+    if (!hasUnsavedChanges && !uploadingField) return;
     const handleBeforeUnload = (event: BeforeUnloadEvent) => {
       event.preventDefault();
       event.returnValue = '';
     };
     window.addEventListener('beforeunload', handleBeforeUnload);
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
-  }, [hasUnsavedChanges]);
+  }, [hasUnsavedChanges, uploadingField]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [isConnectingCustomer, setIsConnectingCustomer] = useState(false);
   const [isSearchingVenueAddress, setIsSearchingVenueAddress] = useState(false);
-  const [uploadingField, setUploadingField] = useState<UploadFieldKind | null>(null);
   const [requiresOwnershipClaim, setRequiresOwnershipClaim] = useState(false);
   const [accessErrorMessage, setAccessErrorMessage] = useState<string | null>(null);
   const [activeStepKey, setActiveStepKey] = useState<WizardStepKey>(
@@ -1347,6 +1349,7 @@ export default function PageWizardClient({
   };
 
   const { ensureDraftCreated, persistDraft } = useWizardPersistence({
+    mutationGuard,
     formState,
     previewFormState,
     eventType,
@@ -1415,6 +1418,7 @@ export default function PageWizardClient({
     handleGalleryImageRemove,
     handleGalleryImageMove,
   } = useImageUpload({
+    mutationGuard,
     canUploadImages,
     uploadRole: isAdminLoggedIn ? 'admin' : 'owner',
     formState,
@@ -1945,7 +1949,8 @@ export default function PageWizardClient({
           ) : null}
         </>
       }
-      isSaving={isSaving || isConnectingCustomer}
+      isSaving={isSaving || isConnectingCustomer || uploadingField !== null}
+      busyLabel={uploadingField ? '이미지 업로드 중' : isConnectingCustomer ? '고객 연결 중' : '저장 중'}
       published={published}
       previewStepKey={previewStepKey}
       renderStepContent={renderStepContent}

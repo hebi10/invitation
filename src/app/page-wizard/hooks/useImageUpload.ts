@@ -11,6 +11,7 @@ import type { InvitationPageSeed } from '@/types/invitationPage';
 
 import type { UploadFieldKind } from '../pageWizardShared';
 import type { WizardDraftCreationState } from './useWizardPersistence';
+import { uploadImageBatch, type WizardMutationGuard } from '../wizardImageUploadState';
 
 type SingleImageFieldKind = Exclude<UploadFieldKind, 'gallery'>;
 
@@ -28,6 +29,7 @@ export function useImageUpload({
   setUploadingField,
   showNotice,
   showErrorNotice,
+  mutationGuard,
 }: {
   canUploadImages: boolean;
   uploadRole: EditableImageUploadRole;
@@ -42,6 +44,7 @@ export function useImageUpload({
   setUploadingField: (value: UploadFieldKind | null) => void;
   showNotice: (tone: 'success' | 'error' | 'neutral', message: string) => void;
   showErrorNotice: (error: unknown, fallback?: string) => void;
+  mutationGuard: WizardMutationGuard;
 }) {
   const handleTriggerPicker = useCallback(
     (kind: UploadFieldKind) => {
@@ -108,6 +111,11 @@ export function useImageUpload({
         return;
       }
 
+      const releaseMutation = mutationGuard.tryStart();
+      if (!releaseMutation) {
+        showNotice('neutral', '진행 중인 저장 또는 업로드가 끝난 뒤 다시 선택해 주세요.');
+        return;
+      }
       setUploadingField(options.fieldKind);
 
       try {
@@ -130,12 +138,14 @@ export function useImageUpload({
       } catch (error) {
         showErrorNotice(error, `${options.errorLabel}를 업로드하지 못했습니다.`);
       } finally {
+        releaseMutation();
         setUploadingField(null);
       }
     },
     [
       canUploadImages,
       ensureDraftCreated,
+      mutationGuard,
       setUploadingField,
       showErrorNotice,
       showNotice,
@@ -220,39 +230,43 @@ export function useImageUpload({
         return;
       }
 
+      const releaseMutation = mutationGuard.tryStart();
+      if (!releaseMutation) {
+        showNotice('neutral', '진행 중인 저장 또는 업로드가 끝난 뒤 다시 선택해 주세요.');
+        return;
+      }
       setUploadingField('gallery');
 
       try {
         const draftState = await ensureDraftCreated();
-        const uploadedUrls: string[] = [];
-
-        for (const file of filesToUpload) {
+        const result = await uploadImageBatch(filesToUpload, async (file) => {
           const uploaded = await uploadEditablePageImage(
             file,
             draftState.slug,
             'gallery',
             uploadRole
           );
-          uploadedUrls.push(uploaded.url);
-        }
-
-        updateForm((draft) => {
-          if (!draft.pageData?.galleryImages) {
-            return;
-          }
-
-          draft.pageData.galleryImages.push(...uploadedUrls);
+          return uploaded.url;
+        }, (url) => {
+          updateForm((draft) => {
+            draft.pageData?.galleryImages?.push(url);
+          });
         });
 
+        if (result.failed.length) {
+          showNotice('error', `${result.succeeded}장은 추가했고 ${result.failed.length}장은 업로드하지 못했습니다. 실패한 파일만 다시 선택해 주세요: ${result.failed.map(file => file.name).join(', ')}`);
+          return;
+        }
         showNotice(
           'success',
-          `갤러리 이미지를 ${uploadedUrls.length}장 업로드했습니다. ${getEditableImageUploadHint(
+          `갤러리 이미지를 ${result.succeeded}장 업로드했습니다. ${getEditableImageUploadHint(
             'gallery'
           )}`
         );
       } catch (error) {
         showErrorNotice(error, '갤러리 이미지를 업로드하지 못했습니다.');
       } finally {
+        releaseMutation();
         setUploadingField(null);
       }
     },
@@ -260,6 +274,7 @@ export function useImageUpload({
       canUploadImages,
       ensureDraftCreated,
       formState?.pageData?.galleryImages?.length,
+      mutationGuard,
       maxGalleryImages,
       setUploadingField,
       showErrorNotice,

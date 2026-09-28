@@ -24,7 +24,6 @@ import {
 const projectRoot = process.cwd();
 const sourceFiles = {
   themeStep: path.join(projectRoot, 'src/app/page-wizard/steps/ThemeStep.tsx'),
-  manageScreen: path.join(projectRoot, 'apps/mobile/src/features/screens/manage.tsx'),
   ticketModal: path.join(
     projectRoot,
     'apps/mobile/src/features/manage/components/TicketUsageModal.tsx'
@@ -105,10 +104,10 @@ async function main() {
 
   pushFailure(
     failures,
-    guideSamplePages.length === themeKeys.length,
-    'Guide sample pages must cover every registered theme.'
+    guideSamplePages.length === selectableThemes.length,
+    'Mobile guide samples must cover the themes selectable in the mobile app.'
   );
-  themeKeys.forEach((themeKey) => {
+  selectableThemes.forEach((themeKey) => {
     pushFailure(
       failures,
       guideSamplePages.some((page) => page.themeKey === themeKey),
@@ -118,12 +117,10 @@ async function main() {
 
   const [
     themeStepSource,
-    manageScreenSource,
     ticketModalSource,
     rendererRegistrySource,
   ] = await Promise.all([
     readSource(sourceFiles.themeStep),
-    readSource(sourceFiles.manageScreen),
     readSource(sourceFiles.ticketModal),
     readSource(sourceFiles.rendererRegistry),
   ]);
@@ -134,19 +131,16 @@ async function main() {
       themeStepSource.includes('selectableThemeKeys.map'),
     'Web wizard must render theme options from event-type selectable theme helpers.'
   );
-  pushFailure(
-    failures,
-    manageScreenSource.includes('getLinkedInvitationThemeKeys(') &&
-      manageScreenSource.includes('getLinkedInvitationThemePreviewUrl('),
-    'Mobile manage screen must use linked theme helpers for labels and preview URLs.'
-  );
+  // Linked theme persistence and preview URLs are exercised below through the
+  // public model functions, independently of which screen or hook calls them.
   pushFailure(
     failures,
     !ticketModalSource.includes('onApplyThemeChange') &&
       !ticketModalSource.includes('onPurchaseTargetTheme') &&
       ticketModalSource.includes('onExtendDisplayPeriod') &&
-      ticketModalSource.includes('onGoToUpgrade'),
-    'Ticket modal must omit wedding design purchases while preserving period extension and upgrades.'
+      ticketModalSource.includes('onBuyTickets') &&
+      ticketModalSource.includes('onTransferTickets'),
+    'Ticket modal must preserve ticket purchases, transfers and period extension without design purchases.'
   );
 
   selectableThemes.forEach((themeKey) => {

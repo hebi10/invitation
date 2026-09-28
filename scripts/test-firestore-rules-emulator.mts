@@ -140,6 +140,7 @@ await db.collection('events').doc('event-1').set({
   eventId: 'event-1',
   slug: 'public-event',
   ownerUid: 'owner-1',
+  ownerEmail: 'customer@example.test',
   displayName: 'Public Event',
   productTier: 'standard',
   featureFlags: {},
@@ -241,6 +242,10 @@ for (const event of periodEvents) {
     },
     displayPeriod: event.displayPeriod,
   });
+  await db.collection('events').doc(event.id).collection('content').doc('current').set({
+    slug: event.slug,
+    content: { displayName: event.slug },
+  });
 }
 await db.collection('eventSlugIndex').doc('public-event').set({
   eventId: 'event-1',
@@ -281,26 +286,29 @@ await db.collection('demoExperiences').doc('2026-08-03').set({
   dateKey: '2026-08-03',
 });
 
-await expectAllowed(await restGet('events/event-1'), 'public event read by visitor');
+await expectDenied(await restGet('events/event-1'), 'public event root contains private customer fields');
+await expectDenied(await restGet('events/event-1', 'other-1'), 'unrelated customer cannot read root account fields');
+await expectAllowed(await restGet('events/event-1', 'admin-1'), 'admin retains event root access');
+await expectAllowed(await restGet('events/event-1/content/current'), 'public content remains readable');
 await expectDenied(await restGet('events/event-2'), 'private event read by visitor');
 await expectAllowed(
-  await restGet('events/event-active-window'),
+  await restGet('events/event-active-window/content/current'),
   'active display period'
 );
 await expectDenied(
-  await restGet('events/event-scheduled'),
+  await restGet('events/event-scheduled/content/current'),
   'scheduled display period'
 );
 await expectDenied(
-  await restGet('events/event-expired'),
+  await restGet('events/event-expired/content/current'),
   'expired display period'
 );
 await expectDenied(
-  await restGet('events/event-incomplete'),
+  await restGet('events/event-incomplete/content/current'),
   'incomplete active display period'
 );
 await expectAllowed(
-  await restGet('events/event-disabled-period'),
+  await restGet('events/event-disabled-period/content/current'),
   'disabled period ignores stale visibility dates'
 );
 await expectAllowed(await restGet('events/event-1', 'owner-1'), 'owned event read by owner');
@@ -313,6 +321,11 @@ for (const [field, value] of [
   ['productTier', 'premium'],
   ['ticketBalance', 99],
   ['slug', 'changed-slug'],
+  ['displayPeriod', { isActive: false }],
+  ['visibility', { published: true, displayEndAt: '2099-01-01' }],
+  ['ownerEmail', 'different@example.test'],
+  ['security', { hasPassword: false }],
+  ['deletion', { status: 'active' }],
 ] as const) {
   await expectDenied(
     await restPatch(`events/event-1`, { [field]: value }, 'owner-1'),

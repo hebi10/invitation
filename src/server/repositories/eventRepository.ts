@@ -1,4 +1,5 @@
 import 'server-only';
+import type { Transaction } from 'firebase-admin/firestore';
 
 import { DEFAULT_EVENT_TYPE, normalizeEventTypeKey } from '@/lib/eventTypes';
 import { normalizeInvitationPageSlugInput, stripUndefinedDeep } from '@/lib/invitationPagePersistence';
@@ -8,6 +9,7 @@ import type {
 } from '@/types/invitationPage';
 
 import { getServerFirestore } from '../firebaseAdmin';
+import { isEventDeletionBlockingAccess } from '../eventDeletionPolicy';
 import {
   buildInvitationPageConfigRecordFromEventContent,
   buildInvitationPageDisplayPeriodRecordFromEventSummary,
@@ -558,7 +560,7 @@ async function fetchEventDisplayPeriodBySlug(pageSlug: string) {
 }
 
 async function writeEventSummaryMirror(
-  resolvedEvent: ResolvedEventRecord | null,
+  transaction: Transaction,
   summary: EventSummaryRecord,
   now: Date
 ) {
@@ -567,10 +569,8 @@ async function writeEventSummaryMirror(
     throw new Error('Server Firestore is not available.');
   }
 
-  await db
-    .collection(EVENTS_COLLECTION)
-    .doc(summary.eventId)
-    .set(
+  transaction.set(
+      db.collection(EVENTS_COLLECTION).doc(summary.eventId),
       {
         eventId: summary.eventId,
         eventType: summary.eventType,
@@ -617,15 +617,6 @@ async function writeEventSummaryMirror(
       { merge: true }
     );
 
-  await syncEventSlugIndexRecord({
-    slug: summary.slug,
-    eventId: summary.eventId,
-    eventType: summary.eventType,
-    status: 'active',
-    targetSlug: null,
-    createdAt: resolvedEvent?.slugIndex?.createdAt ?? now,
-    updatedAt: now,
-  });
 }
 
 async function writeEventContentMirror(
@@ -673,34 +664,51 @@ export async function ensureEventMirrorBySlug(
   const eventId = slugGuard.eventId;
   const now = options.now ?? new Date();
 
-  const registry =
-    options.registry !== undefined
-      ? options.registry
-      : await fetchEventRegistryBySlug(normalizedPageSlug);
-  const content =
-    options.content !== undefined
-      ? options.content
-      : await fetchEventContentBySlug(normalizedPageSlug);
-  const displayPeriod =
-    options.displayPeriod !== undefined
-      ? options.displayPeriod
-      : await fetchEventDisplayPeriodBySlug(normalizedPageSlug);
-
-  const summary = buildEventSummaryFromRepositoryState({
-    pageSlug: normalizedPageSlug,
-    eventId,
-    existing: existingEvent?.summary ?? null,
-    registry,
-    content,
-    displayPeriod,
-    forceCreate: options.forceCreate,
-    now,
+  const db = getServerFirestore();
+  if (!db) {
+    throw new Error('Server Firestore is not available.');
+  }
+  // Re-read inside the transaction so content saves cannot restore an earlier
+  // owner, ticket balance, or display period after another operation commits.
+  const summary = await db.runTransaction(async (transaction) => {
+    const snapshot = await transaction.get(db.collection(EVENTS_COLLECTION).doc(eventId));
+    if (existingEvent && !snapshot.exists) {
+      throw Object.assign(new Error('청첩장을 찾을 수 없습니다.'), { status: 404 });
+    }
+    const current = snapshot.exists
+      ? normalizeEventSummaryRecord(snapshot.id, snapshot.data() ?? {}, normalizedPageSlug)
+      : null;
+    if (isEventDeletionBlockingAccess(current?.deletion)) {
+      throw Object.assign(new Error('현재 이용할 수 없는 청첩장입니다.'), { status: 409 });
+    }
+    const nextSummary = buildEventSummaryFromRepositoryState({
+      pageSlug: normalizedPageSlug,
+      eventId,
+      existing: current,
+      registry: options.registry,
+      content: options.content,
+      displayPeriod: options.displayPeriod,
+      forceCreate: options.forceCreate,
+      now,
+    });
+    if (nextSummary) {
+      await writeEventSummaryMirror(transaction, nextSummary, now);
+    }
+    return nextSummary;
   });
   if (!summary) {
     return existingEvent;
   }
 
-  await writeEventSummaryMirror(existingEvent, summary, now);
+  await syncEventSlugIndexRecord({
+    slug: summary.slug,
+    eventId: summary.eventId,
+    eventType: summary.eventType,
+    status: 'active',
+    targetSlug: null,
+    createdAt: existingEvent?.slugIndex?.createdAt ?? now,
+    updatedAt: now,
+  });
 
   return {
     requestedSlug: normalizedPageSlug,

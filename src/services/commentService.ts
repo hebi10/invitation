@@ -13,6 +13,26 @@ export interface CommentSummary {
 
 const DEFAULT_RECENT_COMMENT_DAYS = 7;
 const mockComments = new Map<string, Comment[]>();
+export type PublicCommentPage = { comments: Comment[]; nextCursor: string | null; hasMore: boolean };
+
+export async function getCommentsPage(pageSlug: string, cursor: string | null = null): Promise<PublicCommentPage> {
+  if (!commentRepository.isAvailable()) {
+    const comments = sortComments([...(mockComments.get(pageSlug) ?? [])]);
+    const offset = Number(cursor ?? 0);
+    const hasMore = comments.length > offset + 5;
+    return { comments: comments.slice(offset, offset + 5), hasMore, nextCursor: hasMore ? String(offset + 5) : null };
+  }
+  const params = new URLSearchParams({ pageSlug, limit: '5' });
+  if (cursor !== null) params.set('cursor', cursor);
+  const response = await fetch(`/api/guestbook/comments?${params}`, { cache: 'no-store' });
+  const payload = await response.json().catch(() => null) as { comments?: Record<string, unknown>[]; nextCursor?: string | null; hasMore?: boolean; error?: string } | null;
+  if (!response.ok) throw new Error(payload?.error || '방명록을 불러오지 못했습니다.');
+  return {
+    comments: (payload?.comments ?? []).map(normalizeAdminComment).filter((comment): comment is Comment => comment !== null),
+    nextCursor: typeof payload?.nextCursor === 'string' ? payload.nextCursor : null,
+    hasMore: payload?.hasMore === true,
+  };
+}
 
 type AdminCommentsApiResponse = {
   success?: boolean;

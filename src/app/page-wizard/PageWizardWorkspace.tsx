@@ -55,6 +55,7 @@ type PageWizardWorkspaceProps = {
   persistedPublished: boolean;
   notice: ReactNode;
   isSaving: boolean;
+  busyLabel?: string;
   published: boolean;
   fullPreview?: ReactNode;
   previewStepKey: WizardStepKey | null;
@@ -113,6 +114,7 @@ export default function PageWizardWorkspace({
   persistedPublished,
   notice,
   isSaving,
+  busyLabel = '저장 중',
   published,
   previewStepKey,
   fullPreview,
@@ -246,7 +248,7 @@ export default function PageWizardWorkspace({
               </time>
             ) : null}
             <button type="button" className={styles.secondaryAction} onClick={() => attempt(onSave, true)} disabled={isSaving}>
-              {isSaving ? '저장 중' : saveStatus === 'error' ? '저장 다시 시도' : setupOnly ? (hasPersistedData ? '설정 저장' : '초대장 생성') : '내용 저장'}
+              {isSaving ? busyLabel : saveStatus === 'error' ? '저장 다시 시도' : setupOnly ? (hasPersistedData ? '설정 저장' : '초대장 생성') : '내용 저장'}
             </button>
             {fullPreview || activePreviewStep ? (
               <button
@@ -424,7 +426,7 @@ export default function PageWizardWorkspace({
                 onClick={() => attempt(onFinalConfirm, true)}
                 disabled={isSaving}
               >
-                {isSaving ? '저장 중' : !canManageSetup ? '내용 저장 완료' : published ? '저장 후 공개' : persistedPublished ? '비공개로 저장' : '초안 저장'}
+                {isSaving ? busyLabel : !canManageSetup ? '내용 저장 완료' : published ? '저장 후 공개' : persistedPublished ? '비공개로 저장' : '초안 저장'}
               </button>
             ) : (
               <button
@@ -433,7 +435,7 @@ export default function PageWizardWorkspace({
                 onClick={() => attempt(onNext)}
                 disabled={isSaving}
               >
-                {isSaving ? '저장 중' : setupOnly ? (hasPersistedData ? '내용 입력으로' : '초대장 생성') : '저장 후 다음'}
+                {isSaving ? busyLabel : setupOnly ? (hasPersistedData ? '내용 입력으로' : '초대장 생성') : '저장 후 다음'}
               </button>
             )}
           </div>

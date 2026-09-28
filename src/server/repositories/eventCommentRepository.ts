@@ -1,4 +1,6 @@
 import 'server-only';
+import { FieldPath, Timestamp } from 'firebase-admin/firestore';
+import { decodeCommentCursor, encodeCommentCursor, paginateLegacyComments, readPublicCommentPage, type CommentPage, type CommentPageRequest } from '@/lib/guestbookPagination';
 
 import { getServerFirestore } from '../firebaseAdmin';
 import { buildEventCommentRecordFromEventDoc } from './eventReadThroughDtos';
@@ -27,6 +29,7 @@ export interface EventCommentRepository {
     }
   ): Promise<{ id: string }>;
   listByPageSlug(pageSlug: string): Promise<StoredEventCommentRecord[]>;
+  listPublicPageBySlug(pageSlug: string, request: CommentPageRequest): Promise<CommentPage<StoredEventCommentRecord>>;
   findByPageSlugAndId(
     pageSlug: string,
     commentId: string
@@ -207,6 +210,37 @@ export const firestoreEventCommentRepository: EventCommentRepository = {
       author,
       message,
       status: input.status,
+    });
+  },
+
+  async listPublicPageBySlug(pageSlug, request) {
+    const resolvedEvent = await resolveStoredEventBySlug(normalizePageSlug(pageSlug));
+    const db = getServerFirestore();
+    if (!resolvedEvent || !db) return { comments: [], nextCursor: null, hasMore: false };
+    const collection = db.collection(EVENTS_COLLECTION).doc(resolvedEvent.summary.eventId).collection(COMMENTS_COLLECTION);
+    const ordered = collection.orderBy('createdAt', 'desc').orderBy(FieldPath.documentId(), 'desc');
+    const initialCursor = request.cursor ? decodeCommentCursor(request.cursor) : null;
+    let legacy = initialCursor?.mode === 'legacy';
+    if (!initialCursor) {
+      // Missing/null/string legacy dates cannot use a Timestamp cursor without loss.
+      const timestampDates = collection.where('createdAt', '>=', new Timestamp(-62135596800, 0))
+        .where('createdAt', '<=', new Timestamp(253402300799, 999999999));
+      const [all, dated] = await Promise.all([collection.count().get(), timestampDates.count().get()]);
+      legacy = all.data().count !== dated.data().count;
+    }
+    if (legacy) return paginateLegacyComments(await fetchEventCommentsByPageSlug(pageSlug), request);
+    return readPublicCommentPage(request, async (cursorValue, limit) => {
+      const cursor = cursorValue ? decodeCommentCursor(cursorValue) : null;
+      const query = cursor ? ordered.startAfter(new Timestamp(cursor.seconds, cursor.nanoseconds), cursor.id) : ordered;
+      const snapshot = await query.limit(limit).get();
+      return snapshot.docs.map(doc => {
+        const data = doc.data();
+        const date = data.createdAt as Timestamp;
+        return {
+          ...buildEventCommentRecordFromEventDoc(resolvedEvent.summary, doc.id, data),
+          cursor: encodeCommentCursor({ mode: 'ordered', id: doc.id, seconds: date.seconds, nanoseconds: date.nanoseconds }),
+        };
+      });
     });
   },
 

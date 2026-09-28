@@ -9,6 +9,7 @@ const source = ts.transpileModule(readFileSync('src/server/mobileBillingServerSe
 
 function loadBilling(entries: unknown[], apiKey = 'test-server-key', responseOk = true) {
   let locks = 0;
+  const lockIds: string[] = [];
   let requests = 0;
   const exports: Record<string, unknown> = {};
   runInNewContext(source, {
@@ -23,8 +24,9 @@ function loadBilling(entries: unknown[], apiKey = 'test-server-key', responseOk 
     require(id: string) {
       if (id === '@/lib/mobileBillingProducts') return { getMobileBillingProductDefinition: () => ({ kind: 'ticketPack', ticketCount: 1 }) };
       if (id === './repositories/billingFulfillmentRepository') return {
-        firestoreBillingFulfillmentRepository: { acquireLock: async () => {
+        firestoreBillingFulfillmentRepository: { acquireLock: async (purchase: { transactionId: string }) => {
           locks += 1;
+          lockIds.push(purchase.transactionId);
           return { acquired: false, record: { status: 'fulfilled' } };
         } },
       };
@@ -36,6 +38,7 @@ function loadBilling(entries: unknown[], apiKey = 'test-server-key', responseOk 
   return {
     run: (transactionId = 'GPA.verified') => fulfill({ appUserId: 'customer-1', productId: 'ticket_pack_1', transactionId }, 'page', 'session'),
     locks: () => locks,
+    lockIds,
     requests: () => requests,
   };
 }
@@ -44,9 +47,11 @@ const real = loadBilling([{ id: 'rc-record', store_transaction_id: 'GPA.verified
 await real.run();
 assert.equal(real.locks(), 1, 'Actual RC v1 map-key product responses must fulfill');
 assert.equal(real.requests(), 1);
-await assert.rejects(real.run('rc-record'), /could not be verified/, 'The RC alias must not create a second fulfillment lock');
-assert.equal(real.locks(), 1);
+await real.run('rc-record');
+assert.deepEqual(real.lockIds, ['GPA.verified', 'GPA.verified'], 'RC history IDs and store callback IDs must acquire the SAME fulfillment lock');
 await loadBilling([{ id: 'GPA.verified', store: 'play_store' }]).run();
+await assert.rejects(loadBilling([{ id: 'rc-only', store: 'play_store' }]).run('rc-only'), /could not be verified/,
+  'A RevenueCat alias without a canonical store ID must not create a potentially duplicate lock');
 
 for (const store of ['app_store', 'test_store', 'promotional', undefined]) {
   const other = loadBilling([{ id: 'GPA.verified', product_id: 'ticket_pack_1', store }]);

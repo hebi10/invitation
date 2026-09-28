@@ -12,6 +12,11 @@ function load(options: { os?: string; key?: string; missingSdk?: boolean; missin
   const sdk = {
     configure: ({ appUserID }: { appUserID: string }) => calls.push(`configure:${appUserID}`),
     logIn: async (id: string) => { calls.push(`login:${id}`); },
+    invalidateCustomerInfoCache: async () => { calls.push('invalidate'); },
+    getAppUserID: async () => 'customer-1',
+    getCustomerInfo: async () => { calls.push('history'); return { requestDate: '2026-09-21T01:00:00Z', nonSubscriptionTransactions: [
+      { productIdentifier: productId, transactionIdentifier: 'rc-previous', purchaseDate: '2026-09-21T00:00:00Z' },
+    ] }; },
     getProducts: async () => { calls.push('products'); return options.missingProduct ? [] : [{ identifier: productId, price: options.price ?? 9900, currencyCode: options.currency ?? 'KRW' }]; },
     purchaseStoreProduct: async () => {
       calls.push('purchase');
@@ -29,7 +34,9 @@ function load(options: { os?: string; key?: string; missingSdk?: boolean; missin
     throw new Error(`Unexpected module ${id}`);
   };
   runInNewContext(source, { exports, require, process: { env: { NODE_ENV: 'development', EXPO_PUBLIC_REVENUECAT_ANDROID_API_KEY: options.key ?? 'goog_example' } } });
-  return { calls, purchase: exports.purchaseBillingProduct as (id: string, options: { appUserId: string }) => Promise<{ appUserId: string; transactionIdentifier: string }> };
+  return { calls, purchase: exports.purchaseBillingProduct as (id: string, options: { appUserId: string }) => Promise<{ appUserId: string; transactionIdentifier: string }>,
+    history: exports.getBillingTransactionHistory as (options: { appUserId: string }) => Promise<{ transactions: { transactionIdentifier: string }[]; requestDate: string }>,
+    definitelyUncharged: exports.isDefinitelyUnchargedBillingError as (error: unknown) => boolean };
 }
 
 for (const options of [{ key: '' }, { key: 'test_example' }, { os: 'web' }, { os: 'ios' }, { missingSdk: true }, { missingNative: true }]) {
@@ -57,4 +64,13 @@ await assert.rejects(load({ currency: 'USD' }).purchase(productId, { appUserId: 
 
 await assert.rejects(load().purchase('page_creation_standard', { appUserId: 'customer-1' }));
 await assert.rejects(load().purchase('page_creation_deluxe', { appUserId: 'customer-1' }));
+const history = load();
+assert.equal(typeof history.history, 'function', 'Recovery must have an API to refresh transaction history without charging');
+assert.equal((await history.history({ appUserId: 'customer-1' })).transactions[0].transactionIdentifier, 'rc-previous');
+assert.deepEqual(history.calls, ['configure:customer-1', 'invalidate', 'history']);
+const abort = load({ failure: cancelled });
+try { await abort.purchase(productId, { appUserId: 'customer-1' }); } catch (error) {
+  assert.equal(abort.definitelyUncharged(error), true, 'Definitive cancellation may release the persisted purchase intent');
+}
+assert.equal(abort.definitelyUncharged(new Error('Network failed')), false, 'An ambiguous store failure must retain the purchase intent');
 console.log('mobile real billing client checks passed (no purchase made)');

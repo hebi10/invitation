@@ -55,7 +55,7 @@ const state: WeddingPageReadyState = {
   status: 'ready', blockMessage: null, pageConfig: page, isLoading: false, setIsLoading: () => undefined,
   isRefreshingPage: false, refreshPage: async () => undefined, imagesLoading: false,
   mainImageUrl: 'https://example.com/stored-cover.jpg', heroImageUrl: 'https://example.com/stored-cover.jpg',
-  galleryImageUrls: ['https://example.com/stored-gallery.jpg'], galleryPreviewImageUrls: ['https://example.com/stored-thumb.jpg'],
+  galleryImageUrls: ['/stored-gallery.jpg'], galleryPreviewImageUrls: ['/stored-thumb.jpg'],
   preloadImages: [], adminNotice: null, weddingDate: new Date(2030, 4, 18, 14, 30),
   hasGiftAccounts: true, giftInfo: page.pageData.giftInfo,
 };

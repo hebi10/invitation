@@ -10,7 +10,7 @@ import {
 } from '@/lib/appQuery';
 import {
   addComment,
-  getComments,
+  getCommentsPage,
   type Comment,
 } from '@/services/commentService';
 import { HeartIcon, HeartIconSimple } from '@/components/icons';
@@ -73,6 +73,7 @@ export default function GuestbookThemed({
   const [statusMessage, setStatusMessage] = useState('');
   const [statusTone, setStatusTone] = useState<StatusTone>('success');
   const [currentPage, setCurrentPage] = useState(1);
+  const [pageCursors, setPageCursors] = useState<Array<string | null>>([null]);
   const [isMobile, setIsMobile] = useState(false);
   const [localComments, setLocalComments] = useState<Comment[]>([]);
   const isDemo = demoComments !== undefined;
@@ -81,22 +82,22 @@ export default function GuestbookThemed({
   const commentsQuery = useQuery({
     queryKey: isDemo
       ? [...appQueryKeys.guestbookComments(pageSlug), 'demo']
-      : appQueryKeys.guestbookComments(pageSlug),
+      : [...appQueryKeys.guestbookComments(pageSlug), 'page', pageCursors[currentPage - 1] ?? null],
     enabled: !isDemo && Boolean(pageSlug),
-    queryFn: async () => isDemo ? [] : getComments(pageSlug),
+    queryFn: async () => getCommentsPage(pageSlug, pageCursors[currentPage - 1] ?? null),
     staleTime: GUESTBOOK_STALE_TIME_MS,
     gcTime: GUESTBOOK_GC_TIME_MS,
     refetchOnWindowFocus: false,
   });
-  const comments = isDemo ? [...localComments, ...(demoComments ?? [])] : commentsQuery.data ?? [];
+  const comments = isDemo ? [...localComments, ...(demoComments ?? [])] : commentsQuery.data?.comments ?? [];
   const isRefreshingComments = !isDemo && commentsQuery.isRefetching;
 
   const commentsPerPage = 5;
   const totalPages = Math.max(1, Math.ceil(comments.length / commentsPerPage));
-  const currentComments = comments.slice(
+  const currentComments = isDemo ? comments.slice(
     (currentPage - 1) * commentsPerPage,
     currentPage * commentsPerPage
-  );
+  ) : comments;
 
   const commentsSectionClassName = styles.commentsSection;
   const commentsListClassName = styles.commentsList;
@@ -143,19 +144,15 @@ export default function GuestbookThemed({
   }, []);
 
   useEffect(() => {
-    if (currentPage > totalPages) {
+    if (isDemo && currentPage > totalPages) {
       setCurrentPage(totalPages);
     }
-  }, [currentPage, totalPages]);
+  }, [currentPage, totalPages, isDemo]);
 
   useEffect(() => {
-    if (isDemo || !commentsQuery.error) {
-      return;
-    }
-
-    console.error('Failed to load comments', commentsQuery.error);
-    showStatus('방명록을 불러오지 못했습니다.', 'error');
-  }, [commentsQuery.error, isDemo]);
+    setCurrentPage(1);
+    setPageCursors([null]);
+  }, [pageSlug]);
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -189,6 +186,7 @@ export default function GuestbookThemed({
       setName('');
       setMessage('');
       setCurrentPage(1);
+      setPageCursors([null]);
       await queryClient.invalidateQueries({
         queryKey: appQueryKeys.guestbookComments(pageSlug),
       });
@@ -384,12 +382,12 @@ export default function GuestbookThemed({
             <span className={styles.commentsIcon}>{resolvedEmptyIcon}</span>
           ) : null}
           <span className={commentsCountClassName}>
-            총 <strong>{comments.length}</strong>개의 메시지
+            {isDemo ? <>총 <strong>{comments.length}</strong>개의 메시지</> : '축하 메시지'}
           </span>
         </div>
       ) : (
         <span className={commentsCountClassName}>
-          총 <strong>{comments.length}</strong>개의 메시지
+          {isDemo ? <>총 <strong>{comments.length}</strong>개의 메시지</> : '축하 메시지'}
         </span>
       )}
 
@@ -401,7 +399,7 @@ export default function GuestbookThemed({
           marginLeft: 'auto',
         }}
       >
-        {styles.pageInfo && totalPages > 1 ? (
+        {styles.pageInfo && isDemo && totalPages > 1 ? (
           <span className={styles.pageInfo}>
             {currentPage} / {totalPages}
           </span>
@@ -513,7 +511,14 @@ export default function GuestbookThemed({
   );
 
   const renderCommentsBody = () => {
+    if (!isDemo && commentsQuery.isPending) {
+      return <p role="status" aria-live="polite">방명록을 불러오는 중입니다.</p>;
+    }
+    if (!isDemo && commentsQuery.isError && !commentsQuery.data) return null;
     if (currentComments.length === 0) {
+      if (!isDemo && (currentPage > 1 || commentsQuery.data?.hasMore)) {
+        return <p>이 페이지에 표시할 메시지가 없습니다.{commentsQuery.data?.hasMore ? ' 다음 페이지를 확인해 주세요.' : ''}</p>;
+      }
       return renderEmptyState();
     }
 
@@ -522,6 +527,21 @@ export default function GuestbookThemed({
   };
 
   const renderPagination = () => {
+    if (!isDemo) {
+      if (currentPage === 1 && !commentsQuery.data?.hasMore) return null;
+      return <nav className={styles.pagination} aria-label="방명록 페이지">
+        <button type="button" className={styles.pageButton} disabled={currentPage === 1 || commentsQuery.isFetching}
+          onClick={() => setCurrentPage(page => page - 1)}>이전</button>
+        <span className={styles.pageInfo} aria-live="polite">{currentPage}페이지</span>
+        <button type="button" className={styles.pageButton} disabled={!commentsQuery.data?.hasMore || commentsQuery.isFetching || commentsQuery.isError}
+          onClick={() => {
+            const nextCursor = commentsQuery.data?.nextCursor;
+            if (!nextCursor) return;
+            setPageCursors(cursors => [...cursors.slice(0, currentPage), nextCursor]);
+            setCurrentPage(page => page + 1);
+          }}>다음</button>
+      </nav>;
+    }
     if (totalPages <= 1) {
       return null;
     }
@@ -581,6 +601,11 @@ export default function GuestbookThemed({
   const commentsBlock = (
     <div className={commentsListClassName}>
       {renderCommentsHeader()}
+      {!isDemo && commentsQuery.isError ? <div role="alert">
+        <p>방명록을 불러오지 못했습니다.{commentsQuery.data ? ' 이전에 불러온 메시지를 표시합니다.' : ''}</p>
+        <button type="button" className={styles.refreshButton} disabled={commentsQuery.isFetching}
+          onClick={() => void commentsQuery.refetch()}>다시 시도</button>
+      </div> : null}
       {renderCommentsBody()}
     </div>
   );

@@ -1,6 +1,7 @@
 import type { MobileInvitationCreationInput } from '../types/mobileInvitation';
 import type { MobileBillingProductId } from './mobileBillingProducts';
 import { getStoredString, setStoredString } from './storage';
+import { getBillingTransactionHistory, isDefinitelyUnchargedBillingError } from './billing';
 
 export type PurchaseRequest = {
   appUserId: string;
@@ -11,7 +12,12 @@ export type PurchaseRequest = {
     | { action: 'grantTicketPack'; pageSlug: string };
 };
 type Receipt = { appUserId: string; productId: MobileBillingProductId; transactionId: string };
-type PendingPurchase = { request: PurchaseRequest; receipt: Receipt };
+type PendingPurchase = {
+  request: PurchaseRequest;
+  receipt: Receipt | null;
+  startedAt?: number;
+  previousTransactionIds?: string[];
+};
 
 const STORAGE_KEY = 'mobile-invitation:pending-billing-purchase';
 let pendingInMemory: PendingPurchase | null = null;
@@ -30,8 +36,12 @@ async function readPendingPurchase() {
   if (!saved) return null;
   try {
     const parsed = JSON.parse(saved) as PendingPurchase;
-    if (!parsed?.request?.target || !parsed.request.appUserId || !parsed.receipt?.transactionId ||
-        parsed.receipt.appUserId !== parsed.request.appUserId || parsed.receipt.productId !== parsed.request.productId) {
+    const validReceipt = parsed.receipt?.transactionId &&
+      parsed.receipt.appUserId === parsed.request?.appUserId && parsed.receipt.productId === parsed.request?.productId;
+    const validIntent = parsed.receipt === null && typeof parsed.startedAt === 'number' &&
+      Number.isFinite(parsed.startedAt) && Array.isArray(parsed.previousTransactionIds) &&
+      parsed.previousTransactionIds.every(id => typeof id === 'string');
+    if (!parsed?.request?.target || !parsed.request.appUserId || (!validReceipt && !validIntent)) {
       throw new Error('Invalid receipt');
     }
     pendingInMemory = parsed;
@@ -77,19 +87,47 @@ export async function runPendingBillingPurchase<T>(
     }
     if (pending) {
       options.onResume?.();
+      if (!pending.receipt) {
+        const history = await getBillingTransactionHistory({ appUserId: request.appUserId });
+        const candidates = history.transactions.filter(transaction =>
+          transaction.productIdentifier === request.productId &&
+          !pending!.previousTransactionIds!.includes(transaction.transactionIdentifier) &&
+          Date.parse(transaction.purchaseDate) >= pending!.startedAt!
+        );
+        if (candidates.length !== 1) {
+          throw new Error('이전 결제의 거래를 아직 확정할 수 없습니다. 잠시 후 다시 확인하거나 고객 문의로 확인해 주세요. 추가 결제는 진행하지 않습니다.');
+        }
+        pending.receipt = { appUserId: request.appUserId, productId: request.productId,
+          transactionId: candidates[0].transactionIdentifier };
+      }
     } else {
-      // Check secure storage before opening Google Play. Do not store auth/session tokens.
-      await setStoredString(STORAGE_KEY, null);
-      const purchase = await options.purchase();
+      // Persist the target and a fresh history baseline BEFORE Google Play can charge.
+      const history = await getBillingTransactionHistory({ appUserId: request.appUserId });
       pending = {
-        request,
-        receipt: {
+        request: JSON.parse(JSON.stringify(request)) as PurchaseRequest,
+        receipt: null,
+        // RC dates can have second precision; use its server clock, never the device clock.
+        startedAt: Math.floor(Date.parse(history.requestDate) / 1000) * 1000,
+        previousTransactionIds: history.transactions.map(transaction => transaction.transactionIdentifier),
+      };
+      await setStoredString(STORAGE_KEY, JSON.stringify(pending));
+      pendingInMemory = pending;
+      try {
+        const purchase = await options.purchase();
+        if (purchase.appUserId !== request.appUserId || purchase.productIdentifier !== request.productId ||
+            !purchase.transactionIdentifier.trim()) throw new Error('결제 거래 정보를 확인하지 못했습니다.');
+        pending.receipt = {
           appUserId: purchase.appUserId,
           productId: purchase.productIdentifier,
           transactionId: purchase.transactionIdentifier,
-        },
-      };
-      pendingInMemory = pending;
+        };
+      } catch (error) {
+        if (isDefinitelyUnchargedBillingError(error)) {
+          await setStoredString(STORAGE_KEY, null);
+          pendingInMemory = null;
+        }
+        throw error;
+      }
     }
     try {
       await setStoredString(STORAGE_KEY, JSON.stringify(pending));
@@ -98,7 +136,7 @@ export async function runPendingBillingPurchase<T>(
     }
     let result: T;
     try {
-      result = await options.fulfill(pending.receipt);
+      result = await options.fulfill(pending.receipt!);
       if (result === false) throw new Error('Fulfillment incomplete');
     } catch {
       throw new Error('결제는 완료되었지만 반영을 확인하지 못했습니다. 같은 정보로 다시 시도하면 추가 결제 없이 이어서 처리합니다.');

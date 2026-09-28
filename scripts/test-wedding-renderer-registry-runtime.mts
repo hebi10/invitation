@@ -19,6 +19,7 @@ const weddingClosingProps = {
   state: {
     isLoading: false,
     imagesLoading: false,
+    galleryImageUrls: [],
     pageConfig: {
       groomName: '도영',
       brideName: '해비',
@@ -113,7 +114,7 @@ const state = {
   status: 'ready', pageConfig: page, isLoading: false, imagesLoading: false,
   setIsLoading: () => undefined,
   mainImageUrl: 'https://example.com/hero.jpg', heroImageUrl: 'https://example.com/hero.jpg',
-  galleryImageUrls: ['https://example.com/gallery.jpg'], galleryPreviewImageUrls: ['https://example.com/thumbnail.jpg'],
+  galleryImageUrls: ['/gallery.jpg'], galleryPreviewImageUrls: ['/thumbnail.jpg'],
   weddingDate: new Date(2027, 3, 12, 16, 30), giftInfo: page.pageData.giftInfo, hasGiftAccounts: true,
 } as never;
 const renderedCovers = new Set<string>();

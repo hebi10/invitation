@@ -24,6 +24,7 @@ import {
   type WizardPersistenceGateway,
 } from '../wizardPersistenceGateway';
 import { resolveWizardPublishedState } from '../pageWizardWorkspaceState';
+import type { WizardMutationGuard } from '../wizardImageUploadState';
 
 export type WizardDraftCreationState = {
   slug: string;
@@ -62,6 +63,7 @@ export function useWizardPersistence({
   persistedVersion,
   setPersistedVersion,
   onVersionConflict,
+  mutationGuard,
 }: {
   formState: InvitationPageSeed | null;
   previewFormState: InvitationPageSeed | null;
@@ -99,6 +101,7 @@ export function useWizardPersistence({
   persistedVersion: number | null;
   setPersistedVersion: (value: number | null) => void;
   onVersionConflict?: () => void;
+  mutationGuard: WizardMutationGuard;
 }) {
   const savingRef = useRef(false);
   const ensureDraftCreated = useCallback(async (): Promise<WizardDraftCreationState> => {
@@ -220,6 +223,12 @@ export function useWizardPersistence({
         return null;
       }
 
+      const releaseMutation = mutationGuard.tryStart();
+      if (!releaseMutation) {
+        showNotice('neutral', '이미지 업로드가 끝난 뒤 저장해 주세요.');
+        return null;
+      }
+
       savingRef.current = true;
       setIsSaving(true);
 
@@ -285,6 +294,7 @@ export function useWizardPersistence({
         showErrorNotice(error, '청첩장을 저장하지 못했습니다.', 'save');
         return null;
       } finally {
+        releaseMutation();
         savingRef.current = false;
         setIsSaving(false);
       }
@@ -294,6 +304,7 @@ export function useWizardPersistence({
       ensureDraftCreated,
       formState,
       gateway,
+      mutationGuard,
       isAdminLoggedIn,
       normalizeFormState,
       onVersionConflict,

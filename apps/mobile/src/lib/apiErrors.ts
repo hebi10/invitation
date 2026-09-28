@@ -1,3 +1,14 @@
+export class MobileApiError extends Error {
+  constructor(message: string, public readonly status: number) {
+    super(message);
+    this.name = 'MobileApiError';
+  }
+}
+
+export function isInvalidAuthError(error: unknown) {
+  return error instanceof MobileApiError && (error.status === 401 || error.status === 403);
+}
+
 const ERROR_MESSAGE_MAP: Record<string, string> = {
   'Invitation page was not found.': '청첩장 페이지를 찾을 수 없습니다.',
   'Invitation page config is required.': '저장할 청첩장 설정이 필요합니다.',

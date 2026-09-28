@@ -96,9 +96,29 @@ async function findClientEventSummaryById(
     return null;
   }
 
-  const snapshot = await firestore.modules.getDoc(
-    firestore.modules.doc(firestore.db, CLIENT_EVENTS_COLLECTION, eventId)
-  );
+  let snapshot;
+  try {
+    snapshot = await firestore.modules.getDoc(
+      firestore.modules.doc(firestore.db, CLIENT_EVENTS_COLLECTION, eventId)
+    );
+  } catch (error) {
+    const code = typeof error === 'object' && error !== null && 'code' in error
+      ? error.code
+      : null;
+    if (code !== 'permission-denied' || !fallbackSlug) throw error;
+
+    // Public clients receive only a server-filtered projection. Owners/admins
+    // continue to use their authenticated Firestore view above.
+    const response = await fetch(`/api/public/events/${encodeURIComponent(fallbackSlug)}/`, {
+      cache: 'no-store',
+    });
+    if (response.status === 404) return null;
+    if (!response.ok) throw new Error('청첩장 정보를 불러오지 못했습니다.');
+    const payload = await response.json() as { summary?: Record<string, unknown> | null };
+    return payload.summary
+      ? normalizeClientEventSummaryRecord(eventId, payload.summary, fallbackSlug)
+      : null;
+  }
   if (!snapshot.exists()) {
     return null;
   }

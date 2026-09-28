@@ -168,7 +168,8 @@ for (const theme of weddingNarrativeThemes) {
   assert.match(page, /getCeremonySchedule/);
   assert.match(page, /getCeremonyAddress/);
   assert.match(page, /shouldShowGiftInfo/);
-  assert.match(page, /<GalleryGridShared/);
+  assert.match(page, /<WeddingGallery/);
+  assert.match(read('src/app/_components/public-invitations/wedding/WeddingGallery.tsx'), /<GalleryGridShared/);
   assert.match(page, /<GuestbookThemed/);
   assert.match(page, /<GiftInfoThemed/);
   assert.doesNotMatch(page, /WeddingLoader|IntroScreen|setTimeout|setInterval|Scroll/);
