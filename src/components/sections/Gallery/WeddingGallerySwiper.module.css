@@ -42,14 +42,14 @@
 .gallery[data-gallery-variant='classic-r'] .photo { object-fit: cover; }
 .gallery[data-gallery-variant='classic-r'] .controls { color: var(--ink, #262626); }
 .gallery[data-gallery-variant='gyeol'] {
-  color: var(--ink, #3e332a);
+  color: #302b26;
   font-family: 'Wedding Myeongjo', serif;
 }
 .gallery[data-gallery-variant='gyeol'] .photoButton {
-  aspect-ratio: 4 / 3;
-  padding: 10px;
-  border: 1px solid #d8c8b4;
-  background: #fbf8f2;
+  aspect-ratio: 4 / 5;
+  padding: 0;
+  border: 0;
+  background: #f6f0e5;
 }
 .gallery[data-gallery-variant='gyeol'] .photoButton .photo { object-fit: contain; }
 .gallery[data-gallery-variant='gyeol'] .companions {
@@ -59,9 +59,9 @@
 }
 .gallery[data-gallery-variant='gyeol'] .companion {
   aspect-ratio: 3 / 2;
-  padding: 5px;
-  border: 1px solid #d8c8b4;
-  background: #fbf8f2;
+  padding: 0;
+  border: 0;
+  background: #f6f0e5;
 }
 .gallery[data-gallery-variant='gyeol'] .companion:only-child {
   grid-column: 1 / -1;
@@ -73,7 +73,7 @@
   grid-template-columns: 1fr auto 1fr;
   gap: 12px;
   margin-top: 18px;
-  color: #69513a;
+  color: #302b26;
   font-size: 14px;
 }
 .gallery[data-gallery-variant='gyeol'] .controls > button:first-child { justify-self: start; }
@@ -82,7 +82,7 @@
 .gallery[data-gallery-variant='gyeol'] .controls > span:only-child { grid-column: 2; }
 .gallery[data-gallery-variant='gyeol'] .hint {
   margin-top: 10px;
-  color: #7a6b5c;
+  color: #70665c;
   font-size: 13px;
 }
 @media (prefers-reduced-motion: reduce) {

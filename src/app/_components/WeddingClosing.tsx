@@ -56,12 +56,9 @@ export function WeddingClosing({
         </>
       ) : theme === 'gyeol' ? (
         <>
-          <div className={styles.classicMonogram} aria-hidden="true">
-            {[groomName, brideName].map((name) => Array.from(name.trim())[0]).filter(Boolean).join(' · ')}
-          </div>
           <p className={styles.classicNames}>{groomName} · {brideName}</p>
           <p className={styles.classicThanks}>귀한 걸음과 따뜻한 마음에<br />감사드립니다</p>
-          {weddingDateTime ? <p className={styles.classicDate}>{weddingDateTime.year}. {String(weddingDateTime.month + 1).padStart(2, '0')}. {String(weddingDateTime.day).padStart(2, '0')}</p> : null}
+          {weddingDateTime ? <p className={styles.classicDate}>{weddingDateTime.year}년 {weddingDateTime.month + 1}월 {weddingDateTime.day}일</p> : null}
         </>
       ) : (<>
       <p>{groomName} · {brideName}</p>

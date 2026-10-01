@@ -44,6 +44,12 @@ export default function WeddingBase({ state, theme, demoComments, showMap = true
     : undefined;
   const invitationMessage = storedContent.greetingMessage;
   const invitationAuthor = storedContent.greetingAuthor;
+  const classicFamilies = theme === 'gyeol'
+    ? [page.couple.groom, page.couple.bride].flatMap((person, index) => {
+        const parents = [person.father?.name, person.mother?.name].filter(Boolean).join(' · ');
+        return parents ? [{ parents, order: person.order || (index === 0 ? '아들' : '딸'), name: person.name }] : [];
+      })
+    : [];
   const features = resolveInvitationFeatures(page.productTier, page.features);
   const venuePhone = storedContent.ceremonyContact.replace(/[^\d+]/g, '');
   const hasAdditionalGuide = Boolean(
@@ -156,11 +162,13 @@ export default function WeddingBase({ state, theme, demoComments, showMap = true
           <div className={styles.invitationCopy} data-wedding-motion="passage">
             <p>{invitationMessage}</p>
             {invitationAuthor ? <p className={styles.invitationAuthor}>{invitationAuthor}</p> : null}
-            {theme === 'gyeol' ? <div className={styles.classicFamilies}>
-              {[page.couple.groom, page.couple.bride].map((person, index) => {
-                const parents = [person.father?.name, person.mother?.name].filter(Boolean).join(' · ');
-                return parents ? <p key={index}>{parents}의 {person.order || (index === 0 ? '아들' : '딸')} {person.name}</p> : null;
-              })}
+            {classicFamilies.length > 0 ? <div className={styles.classicFamilies}>
+              {classicFamilies.map((family, index) => (
+                <p key={index}>
+                  <span>{family.parents}의 {family.order}</span>{' '}
+                  <strong>{family.name}</strong>
+                </p>
+              ))}
             </div> : null}
           </div>
         </section>
@@ -199,16 +207,18 @@ export default function WeddingBase({ state, theme, demoComments, showMap = true
           <h2 id="wedding-ceremony-title" className={styles.heading}>예식 안내</h2>
           <div className={styles.ceremonyContent}>
             {theme === 'gyeol' ? <div className={styles.classicDate} aria-label={page.date}>
-              <span>{new Date(Date.UTC(page.weddingDateTime.year, page.weddingDateTime.month, page.weddingDateTime.day)).toLocaleDateString('en-US', { month: 'long', timeZone: 'UTC' }).toUpperCase()}</span>
-              <strong>{page.weddingDateTime.day}</strong>
-              <span>{page.weddingDateTime.year}</span>
-              <span>{new Date(Date.UTC(page.weddingDateTime.year, page.weddingDateTime.month, page.weddingDateTime.day)).toLocaleDateString('ko-KR', { weekday: 'long', timeZone: 'UTC' })}</span>
+              <span>{page.weddingDateTime.year}년</span>
+              <strong>{page.weddingDateTime.month + 1}월 {page.weddingDateTime.day}일</strong>
+              <span className={styles.classicDateTime}>
+                <span>{new Date(Date.UTC(page.weddingDateTime.year, page.weddingDateTime.month, page.weddingDateTime.day)).toLocaleDateString('ko-KR', { weekday: 'long', timeZone: 'UTC' })}</span>
+                {ceremony?.time ? <span>{ceremony.time}</span> : null}
+              </span>
             </div> : theme === 'romantic' || theme === 'classic-r' ? <div className={styles.photoDate} aria-label={page.date}>
               <span>{page.weddingDateTime.year}</span>
               <strong>{String(page.weddingDateTime.month + 1).padStart(2, '0')}.{String(page.weddingDateTime.day).padStart(2, '0')}</strong>
               <span>{new Date(Date.UTC(page.weddingDateTime.year, page.weddingDateTime.month, page.weddingDateTime.day)).toLocaleDateString('ko-KR', { weekday: 'long', timeZone: 'UTC' })}</span>
             </div> : <p>{page.date}</p>}
-            {ceremony?.time ? <p>{ceremony.time}</p> : null}
+            {theme !== 'gyeol' && ceremony?.time ? <p>{ceremony.time}</p> : null}
             <p className={styles.venueName}>{page.venue}</p>
           </div>
           <WeddingCalendarDownload eventDate={toKoreanWeddingInstant(state.weddingDate)} title={`${page.groomName} · ${page.brideName} 결혼식`} location={[...new Set([page.venue, ceremonyAddress].filter(Boolean))].join(' · ')} />

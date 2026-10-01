@@ -142,6 +142,24 @@ for (const theme of ['simple', 'classic-r', 'romantic', 'gyeol', 'emotional'] as
 }
 console.log('wedding stored content and shared section order across five designs passed');
 
+// The printed Korean date must preserve the stored month, day, weekday and ceremony time.
+for (const dateCase of [
+  { year: 2030, month: 0, day: 1, label: '2030년 1월 1일 화요일', expected: '2030년1월1일화요일오후2시30분' },
+  { year: 2028, month: 1, day: 29, label: '2028년 2월 29일 화요일', expected: '2028년2월29일화요일오후2시30분' },
+  { year: 2030, month: 11, day: 31, label: '2030년 12월 31일 화요일', expected: '2030년12월31일화요일오후2시30분' },
+]) {
+  const suppliedPage = structuredClone(page);
+  suppliedPage.date = dateCase.label;
+  suppliedPage.weddingDateTime = { ...page.weddingDateTime, year: dateCase.year, month: dateCase.month, day: dateCase.day };
+  const beforeDateRender = JSON.stringify(suppliedPage);
+  const html = render('gyeol', { ...state, pageConfig: suppliedPage });
+  const ceremony = html.slice(html.indexOf('id="wedding-info"'), html.indexOf('id="wedding-location"'));
+  const ceremonyText = ceremony.replace(/^[^>]*>/, '').replace(/<[^>]+>/g, '').replace(/\s/g, '');
+  assert.ok(ceremonyText.includes(dateCase.expected), `GYEOL ceremony must show the saved Korean date and time: ${dateCase.label}`);
+  assert.equal(JSON.stringify(suppliedPage), beforeDateRender, 'Date presentation must not mutate saved data');
+}
+console.log('GYEOL Korean ceremony date, leap day and month boundaries passed');
+
 // Selecting a story preview must not repeat cover/closing photos or hide originals from the viewer.
 const storyCover = '/story-cover.jpg';
 function renderPhotoStory(images: string[]) {

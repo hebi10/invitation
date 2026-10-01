@@ -61,15 +61,12 @@ export default function WeddingCover({ theme, page, imageUrl, time, titleId = 'w
     <section className={`${styles.cover} ${styles.traditional}`} aria-labelledby={titleId}>
       <div className={styles.traditionalFrame}>
         <p className={styles.traditionalEyebrow}>WEDDING INVITATION</p>
-        <div className={styles.traditionalMonogram} aria-hidden="true">
-          {[page.groomName, page.brideName].map((name) => Array.from(name.trim())[0]).filter(Boolean).join(' · ')}
-        </div>
         <div className={styles.traditionalTitle}>
           <h1 data-wedding-motion="copy" id={titleId} className={styles.names}>{names}</h1>
           <p className={styles.conceptIntroduction}>소중한 날에 귀한 걸음으로 함께해 주세요.</p>
         </div>
-        {photo ? <figure className={styles.traditionalPhoto}>{photo}</figure> : null}
         {date}<p className={styles.venue} data-wedding-motion="copy">{page.venue}</p>
+        {photo ? <figure className={styles.traditionalPhoto}>{photo}</figure> : null}
       </div>
     </section>
   );

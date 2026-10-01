@@ -23,7 +23,7 @@ for (const month of [0, 5, 11]) {
     groomName: '김신랑', brideName: '이신부', theme: 'gyeol',
     weddingDateTime: { year: 2026, month, day: 20, hour: 15, minute: 0 },
   }));
-  assert.ok(closing.includes(`2026. ${String(month + 1).padStart(2, '0')}. 20`), 'Classic closing must display zero-based stored months as calendar months');
+  assert.ok(closing.includes(`2026년 ${month + 1}월 20일`), 'Classic closing must display zero-based stored months as Korean calendar months');
 }
 
 const giftProps = {

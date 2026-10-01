@@ -102,9 +102,6 @@ assert.match(
   'GYEOL must theme the document scrollbar with its own paper and ink colors.'
 );
 const coverSource = readFileSync(path.resolve(process.cwd(), 'src/app/_components/public-invitations/wedding/WeddingCover.tsx'), 'utf8');
-const coverCss = readFileSync(path.resolve(process.cwd(), 'src/app/_components/public-invitations/wedding/WeddingCover.module.css'), 'utf8');
 assert.match(coverSource, /theme === 'gyeol'/);
 assert.match(coverSource, /styles\.traditional/);
-assert.match(coverSource, /styles\.traditionalMonogram/);
-assert.match(coverCss, /\.traditionalMonogram\s*\{/);
 console.log('GYEOL theme registry behavior passed.');

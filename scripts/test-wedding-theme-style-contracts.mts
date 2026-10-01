@@ -114,7 +114,7 @@ const closingThemeTokens = {
   romantic: ['#ffffff', '#344037', '#dce4d7', '#657064'],
   simple: ['#ffffff', '#292c2a', '#dce0db', '#676d68'],
   'classic-r': ['#ffffff', '#362f27', '#ded5c7', '#71665b'],
-  gyeol: ['#faf8f3', '#38363e', '#e4dfe9', '#706b78'],
+  gyeol: ['#f6f0e5', '#302b26', '#d8c8b4', '#70665c'],
 } as const;
 
 for (const [theme, tokens] of Object.entries(closingThemeTokens)) {
