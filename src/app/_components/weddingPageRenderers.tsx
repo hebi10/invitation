@@ -8,6 +8,7 @@ import {
 } from '@/lib/invitationThemePageData';
 import type { InvitationPage, InvitationScheduleDetail } from '@/types/invitationPage';
 import type { InvitationThemeKey } from '@/lib/invitationThemes';
+import { getRomanticPhotoSequence } from '@/lib/romanticPhotoSequence';
 
 import { WeddingClosing } from './WeddingClosing';
 import type { WeddingPageReadyState } from './weddingPageState';
@@ -59,6 +60,12 @@ export interface WeddingClosingRendererOptions {
   canvasClassName?: string;
 }
 
+function getClosingImage(state: WeddingPageReadyState, theme: InvitationThemeKey) {
+  return theme === 'romantic'
+    ? getRomanticPhotoSequence(state.galleryImageUrls, state.mainImageUrl, state.galleryPreviewImageUrls).closingImageUrl
+    : state.galleryImageUrls.at(-1);
+}
+
 export function withWeddingClosing(
   ThemeRenderer: ComponentType<WeddingThemeRendererProps>,
   options: WeddingClosingRendererOptions
@@ -79,7 +86,7 @@ export function withWeddingClosing(
             brideName={props.state.pageConfig.brideName}
             theme={options.theme}
             weddingDateTime={props.state.pageConfig.weddingDateTime}
-            imageUrl={props.state.galleryImageUrls.at(-1)}
+            imageUrl={getClosingImage(props.state, options.theme)}
           />
         ) : null}
       </div>
@@ -124,7 +131,7 @@ export function createWeddingThemeRenderer(
             brideName={state.pageConfig.brideName}
             theme={props.options.theme}
             weddingDateTime={state.pageConfig.weddingDateTime}
-            imageUrl={state.galleryImageUrls.at(-1)}
+            imageUrl={getClosingImage(state, props.options.theme)}
           />
         ) : null}
       </main>

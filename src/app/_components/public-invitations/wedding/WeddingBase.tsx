@@ -7,6 +7,7 @@ import GuestbookThemed from '@/components/sections/Guestbook/GuestbookThemed';
 import type { Comment } from '@/services/commentService';
 import { resolveInvitationFeatures } from '@/lib/invitationProducts';
 import { toKoreanWeddingInstant } from '@/lib/weddingCalendar';
+import { getRomanticPhotoSequence } from '@/lib/romanticPhotoSequence';
 
 import type { WeddingThemeRendererProps } from '../../weddingPageRenderers';
 import {
@@ -38,6 +39,9 @@ export default function WeddingBase({ state, theme, demoComments, showMap = true
   const ceremonyAddress = getCeremonyAddress(page, pageData).trim();
   const storedContent = buildWeddingStoredContent(page, pageData);
   const heroImageUrl = state.mainImageUrl.trim();
+  const romanticPhotos = theme === 'romantic'
+    ? getRomanticPhotoSequence(state.galleryImageUrls, heroImageUrl, state.galleryPreviewImageUrls)
+    : undefined;
   const invitationMessage = storedContent.greetingMessage;
   const invitationAuthor = storedContent.greetingAuthor;
   const features = resolveInvitationFeatures(page.productTier, page.features);
@@ -109,6 +113,7 @@ export default function WeddingBase({ state, theme, demoComments, showMap = true
             theme={theme}
             images={state.galleryImageUrls}
             previewImages={state.galleryPreviewImageUrls}
+            overviewIndices={romanticPhotos?.previewIndices}
             imageAltPrefix={`${page.groomName}과 ${page.brideName}의 웨딩 갤러리`}
             styles={styles}
           />
@@ -188,11 +193,6 @@ export default function WeddingBase({ state, theme, demoComments, showMap = true
         </details>
       ) : null}
 
-      {theme === 'romantic' && state.galleryImageUrls[0] ? <figure className={styles.storyPhoto}>
-        <img src={state.galleryImageUrls[0]} alt={`${page.groomName}과 ${page.brideName}의 웨딩 사진`} loading="lazy" decoding="async" />
-        <figcaption>The day<br />we become one.</figcaption>
-      </figure> : null}
-
       {gallery}
 
         <section id="wedding-info" className={styles.ceremonySection} data-wedding-section="ceremony" aria-labelledby="wedding-ceremony-title">
@@ -217,10 +217,6 @@ export default function WeddingBase({ state, theme, demoComments, showMap = true
             {calendar}
           </details> : null}
         </section>
-      {theme === 'romantic' && state.galleryImageUrls[1] ? <figure className={`${styles.storyPhoto} ${styles.storyInterlude}`}>
-        <img src={state.galleryImageUrls[1]} alt={`${page.groomName}과 ${page.brideName}의 웨딩 사진 2`} loading="lazy" decoding="async" />
-        <figcaption>For a more<br />beautiful tomorrow.</figcaption>
-      </figure> : null}
       <section
         id="wedding-location"
         className={styles.scheduleSection}

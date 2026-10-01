@@ -9,6 +9,7 @@ interface WeddingGalleryProps {
   theme: InvitationThemeKey;
   images: string[];
   previewImages?: string[];
+  overviewIndices?: number[];
   imageAltPrefix: string;
   styles: Record<string, string>;
 }
@@ -23,6 +24,7 @@ export default function WeddingGallery({
   theme,
   images,
   previewImages,
+  overviewIndices,
   imageAltPrefix,
   styles,
 }: WeddingGalleryProps) {
@@ -33,6 +35,7 @@ export default function WeddingGallery({
     <GalleryGridShared
       images={images}
       previewImages={previewImages}
+      overviewIndices={theme === 'romantic' ? overviewIndices : undefined}
       imageAltPrefix={imageAltPrefix}
       title="사진"
       gridOverview={theme === 'emotional'}
@@ -48,7 +51,6 @@ export default function WeddingGallery({
         imageContainer: [styles.imageContainer, galleryStyles.imageContainer].filter(Boolean).join(' '),
         overviewCard: galleryStyles.overviewCard,
         overviewCount: galleryStyles.overviewCount,
-        storyCaption: galleryStyles.storyCaption,
         photoUnavailable: galleryStyles.photoUnavailable,
         photoNumber: galleryStyles.photoNumber,
       } : styles}

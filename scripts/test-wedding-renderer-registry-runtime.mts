@@ -19,6 +19,7 @@ const weddingClosingProps = {
   state: {
     isLoading: false,
     imagesLoading: false,
+    mainImageUrl: '',
     galleryImageUrls: [],
     pageConfig: {
       groomName: '도영',

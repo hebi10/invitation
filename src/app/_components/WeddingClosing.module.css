@@ -110,13 +110,13 @@
 .closing[data-theme='classic-r'] .modernDate { margin-top: 4px; font-size: 15px; font-variant-numeric: tabular-nums; line-height: 1.8; }
 .closing[data-theme='classic-r'] .modernThanks { margin-top: 32px; font-size: 24px; font-weight: 500; line-height: 1.4; letter-spacing: -.02em; }
 .closing[data-theme='classic-r'] p.modernMessage { max-width: 280px; font-size: 15px; line-height: 1.9; color: #c9c9c9; }
-.closing[data-theme='romantic'] { background: #faf8f4; color: #2c2925; font-family: 'Wedding Myeongjo', serif; padding: 0; gap: 0; }
-.photoFinalImage { display: block; width: 100%; aspect-ratio: 4 / 5; object-fit: cover; }
-.photoFinalCopy { display: grid; justify-items: center; gap: 18px; padding: 48px 24px 56px; }
-.closing[data-theme='romantic'] .photoFinalPhrase { font-family: 'Gyeol Brush', cursive; font-size: 30px; font-weight: 400; line-height: 1.6; color: #777168; }
-.closing[data-theme='romantic'] .photoFinalNames { font-size: 22px; font-weight: 500; line-height: 1.7; }
-.closing[data-theme='romantic'] .photoFinalThanks { font-family: var(--font-sans); font-size: 15px; font-weight: 400; line-height: 1.9; color: #777168; }
-.closing[data-theme='romantic'] .photoFinalDate { font-family: var(--font-sans); font-size: 14px; line-height: 1.8; color: #777168; }
+.closing[data-theme='romantic'] { grid-template-columns: minmax(0, 1fr); background: #faf8f4; color: #2c2925; font-family: 'Wedding Myeongjo', serif; padding: 0; gap: 0; overflow-wrap: anywhere; }
+.photoFinalImage { display: block; width: 100%; min-width: 0; aspect-ratio: 4 / 5; object-fit: cover; }
+.photoFinalCopy { box-sizing: border-box; display: grid; grid-template-columns: minmax(0, 1fr); justify-items: center; width: 100%; min-width: 0; gap: 12px; padding: 36px 24px 44px; }
+.closing[data-theme='romantic'] p.photoFinalPhrase { max-width: 100%; margin-bottom: 4px; font-family: 'Gyeol Brush', cursive; font-size: 32px; font-weight: 400; line-height: 1.35; letter-spacing: 0; color: #70695f; }
+.closing[data-theme='romantic'] p.photoFinalNames { min-width: 0; max-width: 100%; font-size: 22px; font-weight: 500; line-height: 1.65; word-break: keep-all; }
+.closing[data-theme='romantic'] p.photoFinalThanks { max-width: 280px; font-family: var(--font-sans); font-size: 15px; font-weight: 400; line-height: 1.9; color: #70695f; }
+.closing[data-theme='romantic'] p.photoFinalDate { max-width: 100%; margin-top: 4px; font-family: var(--font-sans); font-size: 15px; font-weight: 500; font-variant-numeric: tabular-nums; line-height: 1.8; color: #70695f; }
 .closing[data-theme='gyeol'] { background: #fbf8f2; color: #3e332a; padding: 56px 24px; gap: 20px; }
 .classicMonogram { display: grid; place-items: center; width: 76px; min-height: 52px; border: 1px solid #d8c8b4; color: #69513a; font-size: 22px; line-height: 1.6; }
 .closing[data-theme='gyeol'] .classicNames { font-size: 24px; font-weight: 500; line-height: 1.7; }
@@ -129,4 +129,5 @@
 
 @media (max-width: 359px) {
   .closing[data-theme='classic-r'] { padding-inline: 20px; }
+  .photoFinalCopy { padding-inline: 20px; }
 }

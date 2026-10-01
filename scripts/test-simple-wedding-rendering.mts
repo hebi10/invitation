@@ -32,6 +32,7 @@ const { QueryClient, QueryClientProvider } = require('@tanstack/react-query') as
 const { default: WeddingBase } = await import('../src/app/_components/public-invitations/wedding/WeddingBase.tsx');
 const { default: WeddingGallery } = await import('../src/app/_components/public-invitations/wedding/WeddingGallery.tsx');
 const { WeddingClosing } = await import('../src/app/_components/WeddingClosing.tsx');
+const { withWeddingClosing } = await import('../src/app/_components/weddingPageRenderers.tsx');
 
 const page = createInvitationPageFromSeed(structuredClone(getRequiredWeddingPageBySlug('kim-taehyun-choi-yuna')));
 page.groomName = '저장신랑';
@@ -140,3 +141,39 @@ for (const theme of ['simple', 'classic-r', 'romantic', 'gyeol', 'emotional'] as
   }
 }
 console.log('wedding stored content and shared section order across five designs passed');
+
+// Selecting a story preview must not repeat cover/closing photos or hide originals from the viewer.
+const storyCover = '/story-cover.jpg';
+function renderPhotoStory(images: string[]) {
+  const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  const Story = withWeddingClosing(
+    (props) => React.createElement(WeddingBase, { ...props, theme: 'romantic', demoComments: [], showMap: false }),
+    { theme: 'romantic' },
+  );
+  try {
+    return renderToStaticMarkup(React.createElement(QueryClientProvider, { client },
+      React.createElement(Story, {
+        state: { ...state, mainImageUrl: storyCover, heroImageUrl: storyCover, galleryImageUrls: images, galleryPreviewImageUrls: images },
+        options: { slug: page.slug, theme: 'romantic' },
+      }),
+    ));
+  } finally { client.clear(); }
+}
+const photoStoryImages = [storyCover, '/story-a.jpg', '/story-a.jpg', '/story-b.jpg', '/story-c.jpg'];
+const photoStory = renderPhotoStory(photoStoryImages);
+const photoSources = [...photoStory.matchAll(/<img\b[^>]*\bsrc="([^"]+)"/g)].map((match) => {
+  const url = new URL(match[1].replaceAll('&amp;', '&'), 'https://example.com');
+  return url.searchParams.get('url') ?? match[1];
+});
+assert.deepEqual(photoSources, [storyCover, '/story-a.jpg', '/story-b.jpg', '/story-c.jpg'],
+  'Cover, preview and closing each display their own image once in saved order');
+assert.match(photoStory, /전체 사진 5장 보기/, 'The full viewer keeps originals omitted from the story preview');
+assert.deepEqual(photoStoryImages, [storyCover, '/story-a.jpg', '/story-a.jpg', '/story-b.jpg', '/story-c.jpg']);
+for (const images of [[], ['/story-a.jpg'], ['/story-a.jpg', '/story-b.jpg'], [storyCover]]) {
+  const html = renderPhotoStory(images);
+  const footer = html.slice(html.indexOf('<footer'));
+  assert.doesNotMatch(footer, /<img\b/, 'Small collections end with thanks without repeating a photograph');
+  assert.ok(footer.includes('귀한 걸음과 따뜻한 마음에'));
+  if (images.length) assert.ok(html.includes(`전체 사진 ${images.length}장 보기`));
+}
+console.log('Romantic cover, gallery and closing image allocation passed');

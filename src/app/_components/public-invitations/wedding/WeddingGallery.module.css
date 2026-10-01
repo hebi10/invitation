@@ -85,48 +85,18 @@
 }
 
 .album .imageWrapper {
-  grid-column: 1 / -1;
-  aspect-ratio: 16 / 10;
-}
-
-.album .imageWrapper:first-child {
-  aspect-ratio: 16 / 10;
-}
-
-.album .imageWrapper[data-photo-position='2'],
-.album .imageWrapper[data-photo-position='3'],
-.album .imageWrapper[data-photo-position='5'],
-.album .imageWrapper[data-photo-position='6'] {
   grid-column: span 1;
   aspect-ratio: 4 / 5;
 }
 
-.album .imageWrapper[data-photo-position='5'],
-.album .imageWrapper[data-photo-position='6'] {
-  aspect-ratio: 3 / 4;
-}
-
-.album .imageWrapper[data-photo-position='6'] {
-  margin-top: 24px;
+.album .imageWrapper:first-child {
+  grid-column: 1 / -1;
 }
 
 .album .imageGrid[data-photo-count='2'] .imageWrapper[data-photo-position='2'],
-.album .imageGrid[data-photo-count='5'] .imageWrapper[data-photo-position='5'] {
+.album .imageGrid[data-photo-count='4'] .imageWrapper[data-photo-position='4'],
+.album .imageGrid[data-photo-count='6'] .imageWrapper[data-photo-position='6'] {
   grid-column: 1 / -1;
-  aspect-ratio: 16 / 10;
-}
-
-.storyCaption {
-  grid-column: 1 / -1;
-  margin: 0;
-  padding: 24px 12px;
-  text-align: center;
-  color: var(--ink, #37332f);
-  font-family: 'Wedding Myeongjo', serif;
-  font-size: 20px;
-  font-style: italic;
-  font-weight: 400;
-  line-height: 1.6;
 }
 
 .album .overviewCard {

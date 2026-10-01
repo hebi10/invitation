@@ -13,6 +13,9 @@ const { default: GalleryGridShared } = await import(
 const { default: WeddingGallerySwiper } = await import(
   '../src/components/sections/Gallery/WeddingGallerySwiper.tsx'
 );
+const { default: WeddingGallery } = await import(
+  '../src/app/_components/public-invitations/wedding/WeddingGallery.tsx'
+);
 
 // Invoke the rendered Image error callbacks inside an SSR hook owner so React
 // applies the actual component state updates without adding a DOM test runtime.
@@ -70,6 +73,102 @@ const grid = render(Array.from({ length: 7 }, (_, i) => `/${i}.jpg`));
 assert.match(grid, /class="image-grid"/);
 assert.match(grid, /더보기\(1장\)/);
 assert.doesNotMatch(grid, /carousel-controls/);
+
+const albumImages = ['/cover.jpg', '/one.jpg', '/two.jpg', '/three.jpg', '/closing.jpg'];
+const albumPreviews = albumImages.map((image) => image.replace('.jpg', '-preview.jpg'));
+const selectedAlbum = renderToStaticMarkup(React.createElement(GalleryGridShared, {
+  images: albumImages, previewImages: albumPreviews, editorialOverview: true,
+  overviewIndices: [3, 1, 3, -1, 99, 1.5, Number.NaN], styles, imageAltPrefix: '앨범',
+}));
+assert.deepEqual(
+  [...selectedAlbum.matchAll(/aria-label="앨범 (\d+)번째 사진 크게 보기"/g)].map((match) => Number(match[1])),
+  [4, 2],
+  'Overview selection keeps original photo indices and ignores invalid or repeated entries'
+);
+assert.deepEqual(
+  [...selectedAlbum.matchAll(/data-photo-position="(\d+)"/g)].map((match) => Number(match[1])),
+  [1, 2],
+  'Layout positions follow the visible sequence, independently of original photo indices'
+);
+assert.match(selectedAlbum, /data-photo-count="2"/);
+assert.match(selectedAlbum, /three-preview\.jpg/);
+assert.match(selectedAlbum, /one-preview\.jpg/);
+assert.doesNotMatch(selectedAlbum, /Our story/);
+const emptyAlbumSelection = renderToStaticMarkup(React.createElement(GalleryGridShared, {
+  images: albumImages, editorialOverview: true, overviewIndices: [], styles,
+}));
+assert.doesNotMatch(emptyAlbumSelection, /번째 사진 크게 보기/);
+assert.match(emptyAlbumSelection, /aria-label="전체 사진 5장 보기"/,
+  'An empty overview keeps every saved photo reachable through the full gallery');
+
+type InteractiveElementProps = {
+  children?: React.ReactNode;
+  src?: string;
+  'aria-label'?: string;
+  onClick?: (event: React.MouseEvent<HTMLButtonElement>) => void;
+};
+function findElements(node: React.ReactNode): React.ReactElement<InteractiveElementProps>[] {
+  if (!React.isValidElement<InteractiveElementProps>(node)) return [];
+  return [node, ...React.Children.toArray(node.props.children).flatMap(findElements)];
+}
+const popupSteps = [
+  { action: '앨범 4번째 사진 크게 보기', image: undefined },
+  { action: '다음 이미지', image: '/three.jpg' },
+  { action: '이전 이미지', image: '/closing.jpg' },
+  { action: '갤러리 크게 보기 닫기', image: '/three.jpg' },
+  { action: '전체 사진 5장 보기', image: undefined },
+  { action: undefined, image: '/cover.jpg' },
+];
+let popupStep = 0;
+function OverviewPopupHarness() {
+  const tree = GalleryGridShared({
+    images: albumImages, previewImages: albumPreviews, editorialOverview: true,
+    overviewIndices: [3, 1], styles, imageAltPrefix: '앨범',
+  });
+  const elements = findElements(tree);
+  const popupPhoto = elements.find((element) => element.props.src && !element.props.src.includes('-preview'));
+  const step = popupSteps[popupStep];
+  assert.equal(popupPhoto?.props.src, step.image,
+    `Popup step ${popupStep}: selection and navigation use the complete original photo sequence`);
+  if (step.action) {
+    const button = elements.find((element) => element.props['aria-label'] === step.action);
+    assert.ok(button?.props.onClick, `Missing gallery action: ${step.action}`);
+    popupStep += 1;
+    button.props.onClick({ currentTarget: { focus() {} } } as unknown as React.MouseEvent<HTMLButtonElement>);
+  }
+  return tree;
+}
+renderToStaticMarkup(React.createElement(OverviewPopupHarness));
+assert.equal(popupStep, popupSteps.length - 1);
+
+for (const theme of ['romantic', 'classic-r', 'emotional'] as const) {
+  const themed = renderToStaticMarkup(React.createElement(WeddingGallery, {
+    theme, images: albumImages, overviewIndices: [2], imageAltPrefix: '테마', styles,
+  }));
+  const photoNumbers = [...themed.matchAll(/aria-label="테마 (\d+)번째 사진 크게 보기"/g)].map((match) => Number(match[1]));
+  assert.deepEqual(photoNumbers, theme === 'romantic' ? [3] : theme === 'emotional' ? [1, 2, 3, 4] : [1, 2, 3, 4, 5],
+    `${theme}: curated selection only affects the romantic album`);
+}
+
+const overviewFailures: string[] = [];
+function OverviewFailureHarness() {
+  const tree = GalleryGridShared({
+    images: albumImages, previewImages: albumPreviews, editorialOverview: true,
+    overviewIndices: [2], styles,
+  });
+  const photo = findImages(tree)[0];
+  if (photo) {
+    overviewFailures.push(photo.props.src);
+    assert.ok(overviewFailures.length <= 2, 'Overview fallback must stop after preview and original fail');
+    photo.props.onError();
+  }
+  return tree;
+}
+const unavailableOverview = renderToStaticMarkup(React.createElement(OverviewFailureHarness));
+assert.deepEqual(overviewFailures, ['/two-preview.jpg', '/two.jpg']);
+assert.match(unavailableOverview, /사진을 불러오지 못했습니다/);
+assert.match(unavailableOverview, /3번째 사진 크게 보기/);
+
 for (const swiperVariant of ['simple', 'romantic', 'emotional', 'classic-r', 'gyeol'] as const) {
   const renderSwiper = (images: string[]) => renderToStaticMarkup(React.createElement(GalleryGridShared, {
     images, layout: 'carousel', swiperVariant, styles,
