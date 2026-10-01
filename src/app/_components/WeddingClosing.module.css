@@ -104,12 +104,12 @@
 .closing:not([data-theme='simple']) { position: relative; padding: 88px 24px 48px; gap: 20px; }
 .closing:not([data-theme='simple']) p:first-child { font-size: 22px; }
 .closing:not([data-theme='simple']) p:last-child { max-width: 290px; font-size: 16px; line-height: 1.8; }
-.closing[data-theme='classic-r'] { color: #fff; background: #171717; padding: 48px 24px; gap: 20px; font-family: var(--font-sans); }
-.closing[data-theme='classic-r'] .modernEyebrow { font-size: 11px; font-weight: 500; line-height: 1.7; letter-spacing: .14em; color: #c9c9c9; }
-.closing[data-theme='classic-r'] .modernNames { font-size: 30px; font-weight: 500; line-height: 1.5; letter-spacing: -.035em; }
-.closing[data-theme='classic-r'] .modernDate { font-size: 16px; font-variant-numeric: tabular-nums; line-height: 1.8; }
-.closing[data-theme='classic-r'] .modernThanks { margin-top: 20px; font-size: 24px; font-weight: 500; line-height: 1.4; letter-spacing: -.02em; }
-.closing[data-theme='classic-r'] .modernMessage { max-width: 280px; font-size: 14px; line-height: 1.8; color: #c9c9c9; }
+.closing[data-theme='classic-r'] { grid-template-columns: minmax(0, 1fr); color: #fff; background: #171717; padding: 56px 24px 48px; gap: 12px; font-family: var(--font-sans); overflow-wrap: anywhere; }
+.closing[data-theme='classic-r'] p.modernEyebrow { font-size: 11px; font-weight: 500; line-height: 1.7; letter-spacing: .12em; color: #c9c9c9; }
+.closing[data-theme='classic-r'] .modernNames { min-width: 0; max-width: 100%; font-size: 32px; font-weight: 500; line-height: 1.4; letter-spacing: -.03em; }
+.closing[data-theme='classic-r'] .modernDate { margin-top: 4px; font-size: 15px; font-variant-numeric: tabular-nums; line-height: 1.8; }
+.closing[data-theme='classic-r'] .modernThanks { margin-top: 32px; font-size: 24px; font-weight: 500; line-height: 1.4; letter-spacing: -.02em; }
+.closing[data-theme='classic-r'] p.modernMessage { max-width: 280px; font-size: 15px; line-height: 1.9; color: #c9c9c9; }
 .closing[data-theme='romantic'] { background: #faf8f4; color: #2c2925; font-family: 'Wedding Myeongjo', serif; padding: 0; gap: 0; }
 .photoFinalImage { display: block; width: 100%; aspect-ratio: 4 / 5; object-fit: cover; }
 .photoFinalCopy { display: grid; justify-items: center; gap: 18px; padding: 48px 24px 56px; }
@@ -126,3 +126,7 @@
 .closing[data-theme='emotional']::before { content: ''; width: 64px; height: 42px; margin-bottom: 4px; background: url('/images/wedding-concepts/garden-sprig.webp') center / contain no-repeat; }
 .closing[data-theme='emotional'] p:first-child { font-size: 22px; letter-spacing: .02em; }
 .closing[data-theme='emotional'] p:last-child { color: #61705a; }
+
+@media (max-width: 359px) {
+  .closing[data-theme='classic-r'] { padding-inline: 20px; }
+}

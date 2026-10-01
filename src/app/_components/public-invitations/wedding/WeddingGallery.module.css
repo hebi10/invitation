@@ -25,7 +25,7 @@
 /* Keep DOM order intact so the grid, keyboard and enlargement agree. */
 .editorial .imageGrid {
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 20px 8px;
+  gap: 24px 12px;
   align-items: start;
 }
 
@@ -43,15 +43,17 @@
   background: var(--paper-soft, #f4f3ef);
 }
 
-.photoNumber {
+.editorial .photoNumber {
   display: block;
   padding-top: 8px;
-  color: var(--ink, #262626);
+  color: var(--muted, #666666);
   font-family: var(--font-sans, sans-serif);
   font-size: 12px;
   font-weight: 500;
   font-variant-numeric: tabular-nums;
-  line-height: 1.4;
+  line-height: 1.5;
+  letter-spacing: 0.04em;
+  text-align: left;
 }
 
 .editorial .overviewCard {
@@ -59,18 +61,21 @@
   flex-direction: row;
   justify-content: space-between;
   min-height: 56px;
-  margin-top: 4px;
+  margin-top: 8px;
   padding: 14px 16px;
   border: 1px solid var(--ink, #262626);
   background: transparent;
   color: var(--ink, #262626);
   font-family: var(--font-sans, sans-serif);
-  font-size: 13px;
-  letter-spacing: 0.04em;
+  font-size: 14px;
+  letter-spacing: 0.02em;
 }
 
 .editorial .overviewCount {
+  color: var(--muted, #666666);
+  font-size: 12px;
   font-variant-numeric: tabular-nums;
+  letter-spacing: 0.04em;
   white-space: nowrap;
 }
 
@@ -197,7 +202,7 @@
   }
 
   .editorial .imageGrid {
-    gap: 16px 6px;
+    gap: 20px 8px;
   }
 
   .natural .imageGrid {

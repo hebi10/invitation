@@ -46,7 +46,6 @@ export default function WeddingCover({ theme, page, imageUrl, time, titleId = 'w
       <h1 data-wedding-motion="copy" id={titleId} className={styles.editorialNames}>
         <span>{page.groomName}</span><span>{page.brideName}</span>
       </h1>
-      {photo ? <figure className={styles.editorialPhoto}>{photo}</figure> : null}
       <div className={styles.editorialMeta}>
         <p className={styles.date} data-wedding-motion="copy">
           <span>{page.weddingDateTime.year}.{String(page.weddingDateTime.month + 1).padStart(2, '0')}.{String(page.weddingDateTime.day).padStart(2, '0')} {new Date(Date.UTC(page.weddingDateTime.year, page.weddingDateTime.month, page.weddingDateTime.day)).toLocaleDateString('en-US', { weekday: 'short', timeZone: 'UTC' }).toUpperCase()}</span>
@@ -54,6 +53,7 @@ export default function WeddingCover({ theme, page, imageUrl, time, titleId = 'w
         </p>
         <p className={styles.venue} data-wedding-motion="copy">{page.venue}</p>
       </div>
+      {photo ? <figure className={styles.editorialPhoto}>{photo}</figure> : null}
     </section>
   );
 
