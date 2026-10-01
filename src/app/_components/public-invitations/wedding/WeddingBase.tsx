@@ -206,6 +206,19 @@ export default function WeddingBase({ state, theme, demoComments, showMap = true
         <section id="wedding-info" className={styles.ceremonySection} data-wedding-section="ceremony" aria-labelledby="wedding-ceremony-title">
           <h2 id="wedding-ceremony-title" className={styles.heading}>예식 안내</h2>
           <div className={styles.ceremonyContent}>
+            {theme === 'emotional' ? <>
+              <div className={styles.gardenDate} aria-label={page.date}>
+                <span>{page.weddingDateTime.year}년</span>
+                <strong>{String(page.weddingDateTime.month + 1).padStart(2, '0')}.{String(page.weddingDateTime.day).padStart(2, '0')}</strong>
+              </div>
+              <div className={styles.gardenDetails}>
+                <p className={styles.gardenDateTime}>
+                  <span>{new Date(Date.UTC(page.weddingDateTime.year, page.weddingDateTime.month, page.weddingDateTime.day)).toLocaleDateString('ko-KR', { weekday: 'long', timeZone: 'UTC' })}</span>
+                  {ceremony?.time ? <span>{ceremony.time}</span> : null}
+                </p>
+                <p className={styles.venueName}>{page.venue}</p>
+              </div>
+            </> : <>
             {theme === 'gyeol' ? <div className={styles.classicDate} aria-label={page.date}>
               <span>{page.weddingDateTime.year}년</span>
               <strong>{page.weddingDateTime.month + 1}월 {page.weddingDateTime.day}일</strong>
@@ -220,6 +233,7 @@ export default function WeddingBase({ state, theme, demoComments, showMap = true
             </div> : <p>{page.date}</p>}
             {theme !== 'gyeol' && ceremony?.time ? <p>{ceremony.time}</p> : null}
             <p className={styles.venueName}>{page.venue}</p>
+            </>}
           </div>
           <WeddingCalendarDownload eventDate={toKoreanWeddingInstant(state.weddingDate)} title={`${page.groomName} · ${page.brideName} 결혼식`} location={[...new Set([page.venue, ceremonyAddress].filter(Boolean))].join(' · ')} />
           {features.showCountdown ? <details className={styles.calendarDisclosure}>

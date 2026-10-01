@@ -54,6 +54,14 @@ export function WeddingClosing({
             {weddingDateTime ? <p className={styles.photoFinalDate}>{weddingDateTime.year}. {String(weddingDateTime.month + 1).padStart(2, '0')}. {String(weddingDateTime.day).padStart(2, '0')}</p> : null}
           </div>
         </>
+      ) : theme === 'emotional' ? (
+        <>
+          <p className={styles.letterThanks}>귀한 걸음과 따뜻한 마음에<br />감사드립니다</p>
+          <div className={styles.letterSignoff}>
+            <div className={styles.letterSprig} aria-hidden="true" />
+            <p className={styles.letterNames}>{groomName}<br />{brideName}</p>
+          </div>
+        </>
       ) : theme === 'gyeol' ? (
         <>
           <p className={styles.classicNames}>{groomName} · {brideName}</p>

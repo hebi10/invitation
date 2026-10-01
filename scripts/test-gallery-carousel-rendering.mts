@@ -119,27 +119,32 @@ const popupSteps = [
   { action: '전체 사진 5장 보기', image: undefined },
   { action: undefined, image: '/cover.jpg' },
 ];
-let popupStep = 0;
-function OverviewPopupHarness() {
-  const tree = GalleryGridShared({
-    images: albumImages, previewImages: albumPreviews, editorialOverview: true,
-    overviewIndices: [3, 1], styles, imageAltPrefix: '앨범',
-  });
-  const elements = findElements(tree);
-  const popupPhoto = elements.find((element) => element.props.src && !element.props.src.includes('-preview'));
-  const step = popupSteps[popupStep];
-  assert.equal(popupPhoto?.props.src, step.image,
-    `Popup step ${popupStep}: selection and navigation use the complete original photo sequence`);
-  if (step.action) {
-    const button = elements.find((element) => element.props['aria-label'] === step.action);
-    assert.ok(button?.props.onClick, `Missing gallery action: ${step.action}`);
-    popupStep += 1;
-    button.props.onClick({ currentTarget: { focus() {} } } as unknown as React.MouseEvent<HTMLButtonElement>);
+for (const overviewProps of [
+  { editorialOverview: true, overviewIndices: [3, 1] },
+  { gridOverview: true },
+]) {
+  let popupStep = 0;
+  function OverviewPopupHarness() {
+    const tree = GalleryGridShared({
+      images: albumImages, previewImages: albumPreviews,
+      ...overviewProps, styles, imageAltPrefix: '앨범',
+    });
+    const elements = findElements(tree);
+    const popupPhoto = elements.find((element) => element.props.src && !element.props.src.includes('-preview'));
+    const step = popupSteps[popupStep];
+    assert.equal(popupPhoto?.props.src, step.image,
+      `Popup step ${popupStep}: selection and navigation use the complete original photo sequence`);
+    if (step.action) {
+      const button = elements.find((element) => element.props['aria-label'] === step.action);
+      assert.ok(button?.props.onClick, `Missing gallery action: ${step.action}`);
+      popupStep += 1;
+      button.props.onClick({ currentTarget: { focus() {} } } as unknown as React.MouseEvent<HTMLButtonElement>);
+    }
+    return tree;
   }
-  return tree;
+  renderToStaticMarkup(React.createElement(OverviewPopupHarness));
+  assert.equal(popupStep, popupSteps.length - 1);
 }
-renderToStaticMarkup(React.createElement(OverviewPopupHarness));
-assert.equal(popupStep, popupSteps.length - 1);
 
 for (const theme of ['romantic', 'classic-r', 'emotional'] as const) {
   const themed = renderToStaticMarkup(React.createElement(WeddingGallery, {
@@ -148,6 +153,52 @@ for (const theme of ['romantic', 'classic-r', 'emotional'] as const) {
   const photoNumbers = [...themed.matchAll(/aria-label="테마 (\d+)번째 사진 크게 보기"/g)].map((match) => Number(match[1]));
   assert.deepEqual(photoNumbers, theme === 'romantic' ? [3] : theme === 'emotional' ? [1, 2, 3, 4] : [1, 2, 3, 4, 5],
     `${theme}: curated selection only affects the romantic album`);
+}
+
+for (const [count, expectedPhotos] of [
+  [0, []], [1, [1]], [2, [1, 2]], [3, [1, 2, 3]],
+  [4, [1, 2, 3, 4]], [5, [1, 2, 3, 4]],
+] as const) {
+  const gallery = renderToStaticMarkup(React.createElement(WeddingGallery, {
+    theme: 'emotional', images: albumImages.slice(0, count),
+    imageAltPrefix: '가든', styles,
+  }));
+  assert.deepEqual(
+    [...gallery.matchAll(/aria-label="가든 (\d+)번째 사진 크게 보기"/g)].map((match) => Number(match[1])),
+    expectedPhotos,
+    `Natural gallery with ${count} saved photos keeps at most four ordered previews`
+  );
+  if (count === 0) {
+    assert.equal(gallery, '', 'Empty natural galleries have no heading or unusable full-gallery action');
+  } else {
+    assert.match(gallery, new RegExp(`aria-label="전체 사진 ${count}장 보기"`));
+  }
+}
+
+for (const distinctPreview of [true, false]) {
+  const original = '/natural-original.jpg';
+  const preview = distinctPreview ? '/natural-preview.jpg' : original;
+  const attempts: string[] = [];
+  function NaturalFailureHarness() {
+    const tree = GalleryGridShared({
+      images: [original], previewImages: [preview], gridOverview: true,
+      styles, imageAltPrefix: '가든',
+    });
+    const photo = findImages(tree)[0];
+    if (photo) {
+      attempts.push(photo.props.src);
+      assert.ok(attempts.length <= 2, 'Natural photo fallback must stop after preview and original fail');
+      photo.props.onError();
+    }
+    return tree;
+  }
+  const failed = renderToStaticMarkup(React.createElement(NaturalFailureHarness));
+  assert.deepEqual(attempts, distinctPreview ? [preview, original] : [original],
+    'Natural previews retry the original once and do not retry an identical URL');
+  assert.match(failed, /사진을 불러오지 못했습니다/);
+  assert.match(failed, /눌러서 원본 보기/);
+  assert.match(failed, /aria-label="가든 1번째 사진 크게 보기"/);
+  assert.doesNotMatch(failed, /이미지 로딩 중/, 'Failed natural previews must leave the loading state');
 }
 
 const overviewFailures: string[] = [];

@@ -160,6 +160,25 @@ for (const dateCase of [
 }
 console.log('GYEOL Korean ceremony date, leap day and month boundaries passed');
 
+// The garden letter separates its date from details without changing saved facts.
+for (const dateCase of [
+  { year: 2030, month: 0, day: 1, label: '2030년 1월 1일 화요일', expected: '2030년01.01화요일오후2시30분' },
+  { year: 2028, month: 1, day: 29, label: '2028년 2월 29일 화요일', expected: '2028년02.29화요일오후2시30분' },
+  { year: 2030, month: 11, day: 31, label: '2030년 12월 31일 화요일', expected: '2030년12.31화요일오후2시30분' },
+]) {
+  const suppliedPage = structuredClone(page);
+  suppliedPage.date = dateCase.label;
+  suppliedPage.weddingDateTime = { ...page.weddingDateTime, year: dateCase.year, month: dateCase.month, day: dateCase.day };
+  const beforeDateRender = JSON.stringify(suppliedPage);
+  const html = render('emotional', { ...state, pageConfig: suppliedPage });
+  const ceremony = html.slice(html.indexOf('id="wedding-info"'), html.indexOf('id="wedding-location"'));
+  const ceremonyText = ceremony.replace(/^[^>]*>/, '').replace(/<[^>]+>/g, '').replace(/\s/g, '');
+  assert.ok(ceremonyText.includes(dateCase.expected), `Garden letter must preserve the saved date and time: ${dateCase.label}`);
+  assert.equal((ceremonyText.match(/오후2시30분/g) ?? []).length, 1, 'Ceremony time should appear once');
+  assert.equal(JSON.stringify(suppliedPage), beforeDateRender, 'Garden date presentation must not mutate saved data');
+}
+console.log('Garden letter ceremony date, leap day and month boundaries passed');
+
 // Selecting a story preview must not repeat cover/closing photos or hide originals from the viewer.
 const storyCover = '/story-cover.jpg';
 function renderPhotoStory(images: string[]) {

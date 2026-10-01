@@ -136,8 +136,8 @@ export default function GalleryGridShared({
   const isEditorialOverview = editorialOverview && !isCarousel && !swiperVariant;
   const isModernOverview = modernOverview && !isCarousel && !swiperVariant;
   const isCuratedOverview = overviewIndices !== undefined && !isCarousel && !swiperVariant;
-  const supportsThumbnailFallback = isEditorialOverview || isModernOverview;
-  const thumbnailCount = supportsThumbnailFallback ? 6 : isGridOverview ? 4 : visibleCount;
+  const supportsThumbnailFallback = isEditorialOverview || isModernOverview || isGridOverview;
+  const thumbnailCount = isGridOverview ? 4 : isEditorialOverview || isModernOverview ? 6 : visibleCount;
   const shouldRenderImages = supportsThumbnailFallback || isGridOverview || isCuratedOverview || isVisible || selectedIndex !== null;
   const displayIndices = useMemo(() => {
     if (!isCuratedOverview) {
@@ -272,6 +272,7 @@ export default function GalleryGridShared({
               const previewImage = previewImages?.[index] ?? image;
               const thumbnailImage = supportsThumbnailFallback && failedThumbnailImages.has(previewImage) ? image : previewImage;
               const thumbnailFailed = supportsThumbnailFallback && failedThumbnailImages.has(thumbnailImage);
+              const isLargeNaturalPhoto = isGridOverview && (offset === 0 || offset === 3 || displayIndices.length === 2);
 
               return (
                 <div key={isCarousel ? 'carousel-image' : `${image}-${index}`} className={styles.imageWrapper} data-photo-position={offset + 1}>
@@ -293,7 +294,7 @@ export default function GalleryGridShared({
                       src={thumbnailImage}
                       alt={getImageAlt(index)}
                       fill
-                      sizes={isCarousel || (isEditorialOverview && (offset === 0 || (displayIndices.length % 2 === 0 && offset === displayIndices.length - 1))) ? '(max-width: 700px) 90vw, 600px' : '(max-width: 700px) 50vw, 33vw'}
+                      sizes={isLargeNaturalPhoto ? '(max-width: 700px) 80vw, 346px' : isCarousel || (isEditorialOverview && (offset === 0 || (displayIndices.length % 2 === 0 && offset === displayIndices.length - 1))) ? '(max-width: 700px) 90vw, 600px' : '(max-width: 700px) 50vw, 33vw'}
                       quality={60}
                       loading="lazy"
                       onLoad={() =>
@@ -301,7 +302,7 @@ export default function GalleryGridShared({
                       }
                       onError={supportsThumbnailFallback ? () => setFailedThumbnailImages(current => new Set([...current, thumbnailImage])) : undefined}
                       style={{
-                        objectFit: isCarousel ? 'contain' : 'cover',
+                        objectFit: isCarousel || (isGridOverview && offset === 0) ? 'contain' : 'cover',
                         opacity: supportsThumbnailFallback || loadedImages.has(previewImage) ? 1 : 0,
                         transition: resolveGalleryOpacityTransition(
                           prefersReducedMotion,

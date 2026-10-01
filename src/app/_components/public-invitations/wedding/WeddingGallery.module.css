@@ -120,17 +120,61 @@
 }
 
 .natural .imageGrid {
-  gap: 10px;
-  align-items: stretch;
+  gap: 16px 12px;
+  align-items: start;
+}
+
+.natural .imageWrapper {
+  aspect-ratio: 4 / 3;
+  background: var(--paper, #faf9f5);
+}
+
+.natural .imageContainer {
+  background: var(--paper, #faf9f5);
 }
 
 .natural .imageWrapper:first-child {
   grid-column: 1 / -1;
-  aspect-ratio: 2 / 1;
+  width: 80%;
+  aspect-ratio: 4 / 5;
 }
 
-.natural .imageWrapper:not(:first-child) {
-  aspect-ratio: 4 / 3;
+.natural .imageGrid[data-photo-count='1'] .imageWrapper {
+  justify-self: center;
+}
+
+.natural .imageGrid[data-photo-count='2'] .imageWrapper[data-photo-position='2'],
+.natural .imageWrapper[data-photo-position='4'] {
+  grid-column: 1 / -1;
+  justify-self: end;
+  width: 76%;
+}
+
+.natural .overviewCard {
+  grid-column: 1 / -1;
+  flex-direction: row;
+  justify-content: space-between;
+  width: 100%;
+  min-height: 48px;
+  margin-top: 4px;
+  padding: 8px 0;
+  border: 0;
+  background: transparent;
+  color: var(--accent, #536649);
+  text-align: left;
+}
+
+.natural .overviewCount {
+  color: var(--muted, #626b5e);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.natural .photoUnavailable {
+  padding: 8px;
+  font-size: 13px;
+  line-height: 1.5;
+  text-align: center;
 }
 
 .overviewCard {
@@ -176,6 +220,6 @@
   }
 
   .natural .imageGrid {
-    gap: 8px;
+    gap: 14px 10px;
   }
 }

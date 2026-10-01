@@ -110,7 +110,7 @@ assert.match(
 );
 
 const closingThemeTokens = {
-  emotional: ['#fcfaf6', '#3e3730', '#e6ded3', '#74695d'],
+  emotional: ['#faf9f5', '#2f342d', '#cfd5c8', '#626b5e'],
   romantic: ['#ffffff', '#344037', '#dce4d7', '#657064'],
   simple: ['#ffffff', '#292c2a', '#dce0db', '#676d68'],
   'classic-r': ['#ffffff', '#362f27', '#ded5c7', '#71665b'],

@@ -26,17 +26,18 @@
 .withoutPhoto .photoEyebrow { position: static; padding-bottom: 0; background: none; color: #70695f; }
 .withoutPhoto .photoMeta .venue { color: #70695f; }
 
-/* A compact botanical invitation: names and greeting introduce the photograph. */
-.letter { padding: 24px 24px 24px; background: var(--paper, #faf9f5); color: #354536; text-align: center; }
-.letterSprig { width: 56px; height: 36px; margin: 0 auto 12px; background: url('/images/wedding-concepts/garden-sprig.webp') center / contain no-repeat; }
-.letter .letterEyebrow { margin-bottom: 12px; font-family: var(--font-sans); font-size: 11px; font-weight: 500; line-height: 1.6; letter-spacing: .22em; color: #747d6a; }
-.letter .names { font-size: 30px; gap: 12px; line-height: 1.5; }
-.letter .conceptIntroduction { color: #626b58; font-size: 15px; line-height: 1.8; }
-.letter .letterPhoto { margin: 24px 0 0; aspect-ratio: 1; overflow: hidden; }
+/* A garden letter: the greeting leads, with names and a sprig sharing the paper. */
+.letter { padding: 40px 24px 32px; background: var(--paper, #faf9f5); color: var(--ink, #2f342d); font-family: 'Wedding Myeongjo', serif; text-align: left; }
+.letter .conceptIntroduction { font-size: 26px; font-weight: 500; line-height: 1.7; letter-spacing: -.02em; word-break: keep-all; }
+.letterHeading { display: grid; grid-template-columns: minmax(0, 1fr) 142px; align-items: center; gap: 16px; min-width: 0; margin-top: 24px; }
+.letter .names { grid-template-columns: minmax(0, 1fr); justify-content: start; justify-items: start; gap: 4px; font-size: 24px; font-weight: 500; line-height: 1.5; word-break: keep-all; }
+.letter .names > span { max-width: 100%; }
+.letterSprig { width: 142px; height: 120px; background: url('/images/wedding-concepts/garden-sprig.webp') center / contain no-repeat; }
+.letter .letterPhoto { width: calc(100% - 24px); margin: 24px 0 0 auto; aspect-ratio: 4 / 3; overflow: hidden; }
 .letterPhoto .photo { height: 100%; object-fit: cover; }
-.letterMessage { margin-top: 12px; }
-.letter .date { margin-top: 18px; font-size: 15px; line-height: 1.8; }
-.letter .venue { margin-top: 3px; color: #54624f; font-size: 15px; line-height: 1.8; }
+.letterMeta { min-width: 0; margin-top: 24px; }
+.letter .date { margin-top: 0; justify-content: flex-start; color: var(--ink, #2f342d); font-size: 15px; line-height: 1.8; font-variant-numeric: tabular-nums; }
+.letter .venue { margin-top: 4px; color: var(--muted, #626b5e); font-size: 15px; line-height: 1.8; word-break: keep-all; }
 
 /* Names and the schedule share a reading edge before the cover photograph. */
 .editorial { padding: 32px 24px 16px; background: #fff; color: #171717; font-family: var(--font-sans); text-align: left; }
@@ -83,6 +84,7 @@
   .traditionalTitle .names { font-size: 30px; gap: 7px; }
   .letter { padding-inline: 20px; }
   .basic { padding-inline: 20px; }
-  .letter .names { font-size: 25px; gap: 10px; }
+  .letter .conceptIntroduction { font-size: 24px; }
+  .letter .names { font-size: 22px; }
   .basic .names { font-size: 26px; gap: 10px; }
 }

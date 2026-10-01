@@ -5,10 +5,10 @@
 }
 
 .canvas[data-theme='emotional'] {
-  --closing-background: #fcfaf6;
-  --closing-foreground: #3e3730;
-  --closing-line: #e6ded3;
-  --closing-muted: #74695d;
+  --closing-background: #faf9f5;
+  --closing-foreground: #2f342d;
+  --closing-line: #cfd5c8;
+  --closing-muted: #626b5e;
   --closing-font: 'Wedding Myeongjo', serif;
 }
 
@@ -90,7 +90,7 @@
 
 /* Match the invitation paper and type, including the standalone homepage sample. */
 .closing { width: min(100%, 480px); margin: 0 auto; padding: 64px 30px 48px; background: #fff; font-family: var(--font-sans), sans-serif; }
-.closing[data-theme='emotional'] { background: #fcfaf6; font-family: 'Wedding Myeongjo', serif; }
+.closing[data-theme='emotional'] { background: #faf9f5; font-family: 'Wedding Myeongjo', serif; }
 .closing[data-theme='gyeol'] { background: #f6f0e5; font-family: 'Wedding Myeongjo', serif; }
 .closing p:last-child { font-family: inherit; font-weight: 400; word-break: keep-all; }
 .closing[data-theme='classic-r'] { justify-items: start; text-align: left; }
@@ -121,13 +121,16 @@
 .closing[data-theme='gyeol'] p.classicNames { min-width: 0; max-width: 100%; font-size: 26px; font-weight: 500; line-height: 1.65; letter-spacing: 0; word-break: keep-all; }
 .closing[data-theme='gyeol'] p.classicThanks { max-width: 290px; font-size: 15px; font-weight: 400; line-height: 1.9; color: #70665c; }
 .closing[data-theme='gyeol'] p.classicDate { max-width: 100%; margin-top: 4px; font-size: 15px; line-height: 1.8; color: #57493c; }
-.closing[data-theme='emotional'] { background: #faf9f5; color: #344638; padding: 48px 24px 56px; gap: 16px; }
-.closing[data-theme='emotional']::before { content: ''; width: 64px; height: 42px; margin-bottom: 4px; background: url('/images/wedding-concepts/garden-sprig.webp') center / contain no-repeat; }
-.closing[data-theme='emotional'] p:first-child { font-size: 22px; letter-spacing: .02em; }
-.closing[data-theme='emotional'] p:last-child { color: #61705a; }
+.closing[data-theme='emotional'] { grid-template-columns: minmax(0, 1fr); justify-items: end; background: #faf9f5; color: #2f342d; padding: 64px 24px 48px; gap: 28px; text-align: right; overflow-wrap: anywhere; }
+.closing[data-theme='emotional'] p.letterThanks { max-width: 100%; font-size: 17px; font-weight: 400; line-height: 1.9; letter-spacing: 0; color: #626b5e; word-break: keep-all; }
+.letterSignoff { display: grid; grid-template-columns: 142px minmax(0, 1fr); align-items: center; gap: 16px; width: 100%; min-width: 0; }
+.letterSprig { width: 142px; height: 120px; background: url('/images/wedding-concepts/garden-sprig.webp') center / contain no-repeat; }
+.closing[data-theme='emotional'] p.letterNames { min-width: 0; max-width: 100%; justify-self: end; font-size: 24px; font-weight: 500; line-height: 1.65; letter-spacing: 0; color: #2f342d; word-break: keep-all; }
 
 @media (max-width: 359px) {
   .closing[data-theme='classic-r'] { padding-inline: 20px; }
   .photoFinalCopy { padding-inline: 20px; }
   .closing[data-theme='gyeol'] { padding-inline: 20px; }
+  .closing[data-theme='emotional'] { padding-inline: 20px; }
+  .closing[data-theme='emotional'] p.letterNames { font-size: 22px; }
 }
