@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useRef, useState } from 'react';
 import { useDialogLayer } from '@/hooks/useDialogLayer';
@@ -87,6 +88,34 @@ function getPaginationPageNumbers(currentPage: number, totalPages: number) {
   );
 
   return Array.from({ length: maxVisiblePages }, (_, index) => firstPage + index);
+}
+
+function EventCover({ src, title }: { src?: string | null; title: string }) {
+  const [failedSource, setFailedSource] = useState<string | null>(null);
+  const hasImage = Boolean(src && src !== failedSource);
+
+  return (
+    <div className={styles.cover}>
+      {hasImage && src ? (
+        <Image
+          className={styles.coverImage}
+          src={src}
+          alt={`${title} 대표사진`}
+          width={1000}
+          height={600}
+          unoptimized
+          loading="lazy"
+          decoding="async"
+          onError={() => setFailedSource(src)}
+        />
+      ) : (
+        <div className={styles.coverPlaceholder}>
+          <p>{src ? '대표사진을 불러오지 못했습니다' : '대표사진을 추가해 주세요'}</p>
+          <span>수정하기에서 대표사진을 {src ? '확인' : '등록'}할 수 있습니다.</span>
+        </div>
+      )}
+    </div>
+  );
 }
 
 interface OwnedEventCardProps {
@@ -203,63 +232,71 @@ function OwnedEventCard({
   return (
     <>
       <article className={styles.card}>
-        <div className={styles.cardHeader}>
-          <p className={styles.eventTypeLabel}>{getEventTypeDisplayLabel(event.eventType)}</p>
-          <h2 className={styles.cardTitle}>{eventTitle}</h2>
-          {experience ? <p className={styles.cardMeta}>오늘의 공용 체험 데이터</p> : null}
-          <dl className={styles.cardMetaList}>
-            <div className={styles.cardMetaRow}>
-              <dt>주소</dt>
-              <dd>/{event.slug}</dd>
+        <EventCover src={event.coverImageUrl} title={eventTitle} />
+        <div className={styles.cardBody}>
+          <div className={styles.cardHeader}>
+            <div className={styles.cardTopline}>
+              <p className={styles.eventTypeLabel}>{getEventTypeDisplayLabel(event.eventType)}</p>
+              <span className={`${styles.publicationStatus} ${event.published ? styles.publicationEnabled : ''}`}>
+                공개 설정 · {event.published ? '공개' : '비공개'}
+              </span>
             </div>
-            <div className={styles.cardMetaRow}>
-              <dt>공개 상태</dt>
-              <dd>{event.published ? '공개' : '초안 · 비공개'}</dd>
-            </div>
-            <div className={styles.cardMetaRow}>
-              <dt>마지막 수정</dt>
-              <dd>{formatDate(event.updatedAt)}</dd>
-            </div>
-          </dl>
-        </div>
+            <h3 className={styles.cardTitle}>{eventTitle}</h3>
+            <p className={styles.eventDate}>
+              <span>행사일</span>
+              {event.eventDateLabel || '아직 입력되지 않았습니다'}
+            </p>
+            {experience ? <p className={styles.cardMeta}>오늘의 공용 체험 데이터</p> : null}
+            <dl className={styles.cardMetaList}>
+              <div className={styles.cardMetaRow}>
+                <dt>주소</dt>
+                <dd>/{event.slug}</dd>
+              </div>
+              <div className={styles.cardMetaRow}>
+                <dt>마지막 수정</dt>
+                <dd>{formatDate(event.updatedAt)}</dd>
+              </div>
+            </dl>
+          </div>
 
-        <div className={styles.actions}>
-          <Link
-            className={styles.primaryButton}
-            href={wizardHref}
-            target={experience ? undefined : '_blank'}
-            rel="noopener noreferrer"
-          >
-            {experience ? '내용 수정' : '수정하기'}
-          </Link>
-          {singlePreviewLink ? (
+          <div className={styles.actions}>
             <Link
-              className={styles.secondaryButton}
-              href={singlePreviewLink.href}
-              target="_blank"
+              className={styles.primaryButton}
+              href={wizardHref}
+              target={experience ? undefined : '_blank'}
               rel="noopener noreferrer"
             >
-              미리보기
+              {experience ? '내용 수정' : '수정하기'}
             </Link>
-          ) : (
+            {singlePreviewLink ? (
+              <Link
+                className={styles.secondaryButton}
+                href={singlePreviewLink.href}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                미리보기
+              </Link>
+            ) : (
+              <button
+                className={styles.secondaryButton}
+                type="button"
+                onClick={() => setPreviewOpen(true)}
+              >
+                미리보기
+              </button>
+            )}
             <button
-              className={styles.secondaryButton}
+              className={styles.guestbookButton}
               type="button"
-              onClick={() => setPreviewOpen(true)}
+              onClick={() => {
+                setGuestbookPage(1);
+                setGuestbookOpen(true);
+              }}
             >
-              미리보기
+              방명록 확인
             </button>
-          )}
-          <button
-            className={styles.secondaryButton}
-            type="button"
-            onClick={() => {
-              setGuestbookPage(1);
-              setGuestbookOpen(true);
-            }}
-          >
-            방명록 확인
-          </button>
+          </div>
         </div>
       </article>
 
@@ -676,46 +713,43 @@ export default function MyInvitationsClient({
   return (
     <main className={styles.page} data-experience-customer-ready={experience && events.length > 0 ? 'true' : undefined}>
       <div className={styles.shell}>
-        <section className={styles.hero}>
-          <div className={styles.heroHeader}>
-            <div>
+        <section className={styles.dashboardHeader}>
+          <div className={styles.dashboardIntro}>
+            <div className={styles.titleRow}>
               <h1 className={styles.title}>{experience ? '내 청첩장' : '내 이벤트'}</h1>
-              <p className={styles.description}>
-                연결된 이벤트 페이지를 확인하고 바로 수정할 수 있습니다.
-              </p>
+              <span className={styles.eventCount}>{events.length}개</span>
             </div>
-            <dl className={styles.summaryList}>
-              <div className={styles.summaryRow}>
+            <p className={styles.description}>
+              연결된 이벤트 페이지를 확인하고 바로 수정할 수 있습니다.
+            </p>
+          </div>
+          <div className={styles.accountTools}>
+            <dl className={`${styles.summaryList} ${styles.compactSummary}`}>
+              <div>
                 <dt>계정</dt>
                 <dd>{authUser?.email ?? '이메일 없음'}</dd>
               </div>
-              <div className={styles.summaryRow}>
-                <dt>연결된 이벤트</dt>
-                <dd>{events.length}개</dd>
-              </div>
-
             </dl>
-          </div>
-
-          <div className={styles.heroActions}>
-            <button
-              className={styles.secondaryButton}
-              type="button"
-              onClick={() => {
-                void eventsQuery.refetch();
-              }}
-              disabled={refreshing}
-            >
-              {refreshing ? '새로고침 중' : '새로고침'}
-            </button>
-            <button className={styles.secondaryButton} type="button" onClick={() => void logout()}>
-              로그아웃
-            </button>
+            <div className={styles.accountActions}>
+              <button
+                className={styles.quietButton}
+                type="button"
+                onClick={() => {
+                  void eventsQuery.refetch();
+                }}
+                disabled={refreshing}
+              >
+                {refreshing ? '새로고침 중' : '새로고침'}
+              </button>
+              <button className={styles.quietButton} type="button" onClick={() => void logout()}>
+                로그아웃
+              </button>
+            </div>
           </div>
         </section>
 
         {events.length > 0 ? (
-          <section className={styles.section}>
+          <section className={styles.eventSection}>
             <div className={styles.sectionHeader}>
               <h2 className={styles.sectionTitle}>내 이벤트 목록</h2>
             </div>

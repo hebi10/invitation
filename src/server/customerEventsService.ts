@@ -1,6 +1,7 @@
 import 'server-only';
 
 import type { EventTypeKey } from '@/lib/eventTypes';
+import { getCustomerEventPresentation } from '@/lib/customerEventPresentation';
 import {
   buildGuestbookCommentStatusPatch,
   isGuestbookCommentPendingPurge,
@@ -56,6 +57,8 @@ export interface CustomerOwnedEventSummary {
   defaultTheme: InvitationThemeKey;
   availableThemes: InvitationThemeKey[];
   updatedAt: Date | null;
+  coverImageUrl?: string | null;
+  eventDateLabel?: string | null;
 }
 
 export interface CustomerEventGuestbookCommentSummary {
@@ -132,6 +135,7 @@ function toCustomerOwnedEventSummary(
     defaultTheme: summary.defaultTheme,
     availableThemes: getAvailableThemesForCustomerSummary(summary, config),
     updatedAt: summary.lastSavedAt ?? summary.updatedAt,
+    ...getCustomerEventPresentation(config),
   } satisfies CustomerOwnedEventSummary;
 }
 

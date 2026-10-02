@@ -1,4 +1,5 @@
 import { getAvailableInvitationVariantKeys } from '@/lib/invitationVariants';
+import { getCustomerEventPresentation } from '@/lib/customerEventPresentation';
 import {
   deleteCustomerEventGuestbookComment,
   listCustomerEventGuestbookComments,
@@ -58,6 +59,7 @@ export const demoExperienceCustomerDataGateway: CustomerDataGateway = {
       defaultTheme: event.defaultTheme,
       availableThemes: getAvailableInvitationVariantKeys(event.config.variants),
       updatedAt: readDate(event.updatedAt),
+      ...getCustomerEventPresentation(event.config),
     }));
   },
   async getWallet(ownerUid) {

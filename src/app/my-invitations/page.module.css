@@ -58,6 +58,81 @@
   line-height: 1.65;
 }
 
+.dashboardHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 8px 0 12px;
+}
+
+.dashboardIntro,
+.accountTools {
+  min-width: 0;
+}
+
+.titleRow {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+}
+
+.eventCount {
+  color: var(--operation-color-text-secondary);
+  font-size: 0.9375rem;
+  white-space: nowrap;
+}
+
+.accountTools {
+  display: grid;
+  justify-items: end;
+  gap: 4px;
+}
+
+.summaryList.compactSummary {
+  min-width: 0;
+}
+
+.compactSummary > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 8px;
+  font-size: 0.8125rem;
+}
+
+.compactSummary dt,
+.compactSummary dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.compactSummary dt {
+  color: var(--operation-color-text-muted);
+}
+
+.accountActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.quietButton,
+.guestbookButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 0 10px;
+  border: 0;
+  background: transparent;
+  color: var(--operation-color-text-secondary);
+  font: inherit;
+  font-size: 0.8125rem;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
 .summaryList {
   display: grid;
   flex: 0 0 min(360px, 42%);
@@ -129,6 +204,8 @@
 
 .primaryButton:focus-visible,
 .secondaryButton:focus-visible,
+.quietButton:focus-visible,
+.guestbookButton:focus-visible,
 .modalCloseButton:focus-visible,
 .previewChoiceLink:focus-visible,
 .textButton:focus-visible,
@@ -141,12 +218,18 @@
 }
 
 .primaryButton:disabled,
-.secondaryButton:disabled {
+.secondaryButton:disabled,
+.quietButton:disabled {
   cursor: not-allowed;
   opacity: 0.56;
 }
 
 .section {
+  display: grid;
+  gap: 16px;
+}
+
+.eventSection {
   display: grid;
   gap: 16px;
 }
@@ -182,32 +265,109 @@
   display: flex;
   flex-direction: column;
   min-width: 0;
-  gap: 24px;
-  padding: 24px;
   background: var(--operation-color-surface);
+}
+
+.cover {
+  aspect-ratio: 16 / 9;
+  background: var(--operation-color-surface-muted);
+  overflow: hidden;
+}
+
+.coverImage {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 40%;
+}
+
+.coverPlaceholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  gap: 8px;
+  padding: 24px;
+  color: var(--operation-color-text-secondary);
+  text-align: center;
+}
+
+.coverPlaceholder p {
+  margin: 0;
+  font-size: 0.9375rem;
+  font-weight: 500;
+}
+
+.coverPlaceholder span {
+  font-size: 0.8125rem;
+}
+
+.cardBody {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 20px;
+  padding: 24px 24px 12px;
 }
 
 .cardHeader {
   display: grid;
   min-width: 0;
-  gap: 6px;
+  gap: 10px;
+}
+
+.cardTopline {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 2px;
+}
+
+.publicationStatus {
+  padding: 3px 8px;
+  background: var(--operation-color-surface-muted);
+  color: var(--operation-color-text-secondary);
+  font-size: 0.75rem;
+  line-height: 1.5;
+}
+
+.publicationEnabled {
+  background: var(--operation-color-success-soft);
+  color: var(--operation-color-success);
 }
 
 .eventTypeLabel {
   margin: 0;
   color: var(--operation-color-text-muted);
   font-size: 0.75rem;
-  font-weight: 650;
+  font-weight: 500;
   line-height: 1.4;
 }
 
 .cardTitle {
   margin: 0;
   color: var(--operation-color-text);
-  font-size: 1.25rem;
+  font-size: 1.375rem;
   font-weight: 500;
   line-height: 1.5;
   overflow-wrap: anywhere;
+}
+
+.eventDate {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 10px;
+  margin: 0;
+  font-size: 0.9375rem;
+  line-height: 1.6;
+}
+
+.eventDate span {
+  color: var(--operation-color-text-secondary);
 }
 
 .cardMeta {
@@ -219,8 +379,8 @@
 
 .cardMetaList {
   display: grid;
-  gap: 8px;
-  margin: 12px 0 0;
+  gap: 4px;
+  margin: 6px 0 0;
 }
 
 .cardMetaRow {
@@ -253,8 +413,9 @@
   margin-top: auto;
 }
 
-.actions > .primaryButton {
+.guestbookButton {
   grid-column: 1 / -1;
+  justify-self: end;
 }
 
 .guestbookPanel {
@@ -654,6 +815,30 @@
     gap: 20px;
   }
 
+  .dashboardHeader {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 16px;
+    padding: 8px 4px 0;
+  }
+
+  .accountTools {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 4px 12px;
+  }
+
+  .summaryList.compactSummary {
+    flex: 1 1 180px;
+    width: auto;
+  }
+
+  .accountActions {
+    margin-left: auto;
+  }
+
   .summaryList {
     width: 100%;
     min-width: 0;
@@ -673,8 +858,8 @@
     grid-template-columns: minmax(0, 1fr);
   }
 
-  .card {
-    padding: 20px;
+  .cardBody {
+    padding: 20px 20px 8px;
   }
 
   .modalOverlay {

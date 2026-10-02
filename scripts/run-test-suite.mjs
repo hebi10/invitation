@@ -25,6 +25,7 @@ const core = [
   'test-customer-page-wizard-save-route',
   'test-customer-handoff-completion',
   'test-customer-account-ui-contracts',
+  'test-customer-event-presentation',
   'test-customer-event-self-claim',
   'test-customer-wallet-compensation',
   'test-demo-experience-core',

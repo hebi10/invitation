@@ -1,6 +1,7 @@
 import { InvitationVersionConflictError, requireInvitationContentVersion } from '@/lib/invitationContentVersion';
 import { normalizeInvitationPageSlugInput } from '@/lib/invitationPagePersistence';
 import { DEFAULT_EVENT_TYPE, normalizeEventTypeKey, type EventTypeKey } from '@/lib/eventTypes';
+import { normalizeCustomerEventCoverImageUrl } from '@/lib/customerEventPresentation';
 import {
   DEFAULT_INVITATION_PRODUCT_TIER,
   normalizeInvitationProductTier,
@@ -32,6 +33,8 @@ export interface CustomerOwnedEventSummary {
   defaultTheme: InvitationThemeKey;
   availableThemes: InvitationThemeKey[];
   updatedAt: Date | null;
+  coverImageUrl?: string | null;
+  eventDateLabel?: string | null;
 }
 
 export interface CustomerEventOwnershipSummary extends CustomerOwnedEventSummary {
@@ -161,6 +164,11 @@ function normalizeOwnedEvent(input: unknown): CustomerOwnedEventSummary | null {
     defaultTheme,
     availableThemes: normalizeThemeList(record.availableThemes, defaultTheme),
     updatedAt: readDate(record.updatedAt),
+    coverImageUrl: normalizeCustomerEventCoverImageUrl(record.coverImageUrl),
+    eventDateLabel:
+      typeof record.eventDateLabel === 'string' && record.eventDateLabel.trim()
+        ? record.eventDateLabel.trim()
+        : null,
   };
 }
 
