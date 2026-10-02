@@ -391,6 +391,10 @@ details[open] > :is(.disclosureSummary, .accountSummary, .formSummary)::after { 
 :global(html):has(.page[data-design='simple']) { --paper: #fafafa; --ink: #222222; }
 .page[data-design='simple'] ::selection { background: var(--line); color: var(--ink); }
 .page[data-design='simple'] :is(.invitationSection, .scheduleSection, .container, .ceremonySection, .transportSection) { width: calc(100% - 48px); margin-top: 56px; padding: 0; text-align: center; }
+.page[data-design='simple'] :is(.transportSection, [data-wedding-section='gift'] > .container, [data-wedding-section='guestbook'] > .container) { position: relative; }
+.page[data-design='simple'] :is(.transportSection, [data-wedding-section='gift'] > .container, [data-wedding-section='guestbook'] > .container)::before {
+  content: ''; position: absolute; top: calc(var(--section-space) / -2); left: 50%; width: 36px; height: 1px; background: #d9d9d9; transform: translateX(-50%); pointer-events: none;
+}
 .page[data-design='simple'] :is(.heading, .title) { display: block; font-family: var(--font-sans); font-size: 18px; font-weight: 500; line-height: 1.7; letter-spacing: .02em; margin-bottom: 20px; text-align: center; }
 .page[data-design='simple'] :is(.heading, .title)::before,
 .page[data-design='simple'] :is(.heading, .title)::after { content: none; }
