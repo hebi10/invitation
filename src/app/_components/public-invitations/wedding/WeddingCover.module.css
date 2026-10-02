@@ -62,15 +62,15 @@
 .traditional .venue { margin-top: 4px; font-family: inherit; font-size: 15px; line-height: 1.9; color: #70665c; word-break: keep-all; }
 
 /* A clear, centered invitation keeps the names and date ahead of the photograph. */
-.basic { padding: 40px 24px 28px; background: #fafafa; color: #222222; font-family: var(--font-sans), sans-serif; text-align: center; }
+.basic { padding: 32px 24px 20px; background: #fafafa; color: #222222; font-family: var(--font-sans), sans-serif; text-align: center; }
 .basic .names { font-family: inherit; font-size: 32px; font-weight: 500; gap: 12px; line-height: 1.5; word-break: keep-all; }
 .basic .names > span { max-width: 100%; }
-.basic .basicDate { margin-top: 24px; font-size: 26px; font-weight: 500; line-height: 1.5; font-variant-numeric: tabular-nums; }
+.basic .basicDate { margin-top: 20px; font-size: 26px; font-weight: 500; line-height: 1.5; font-variant-numeric: tabular-nums; }
 .basic .basicSchedule { display: flex; flex-wrap: wrap; justify-content: center; gap: 0 8px; margin-top: 4px; font-size: 15px; line-height: 1.8; color: #666666; }
 .basicSchedule > span { max-width: 100%; }
 .basic .venue { margin-top: 12px; color: #222222; font-size: 16px; line-height: 1.8; word-break: keep-all; }
-.basic .basicPhoto { width: 100%; margin: 24px 0 0; aspect-ratio: 3 / 2; overflow: hidden; }
-.basic .photo { height: 100%; object-fit: cover; }
+.basic .basicPhoto { width: 100%; margin: 20px 0 0; }
+.basic .photo { height: auto; object-fit: contain; }
 
 @media (max-width: 359px) {
   .names { font-size: 24px; gap: 10px; }
