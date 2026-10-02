@@ -26,29 +26,35 @@ const findImages = (node: React.ReactNode): React.ReactElement<{ src: string; on
   const children = typeof props.children === 'function' ? props.children({ isActive: true }) : props.children;
   return React.Children.toArray(children).flatMap(findImages);
 };
-for (const distinctPreview of [true, false]) {
-  const original = 'https://example.com/original.jpg';
-  const preview = distinctPreview ? 'https://example.com/preview.jpg' : original;
-  const attempts: string[] = [];
-  function FailureHarness() {
-    const tree = WeddingGallerySwiper({
-      images: ['/first.jpg', original], previewImages: ['/first.jpg', preview],
-      variant: 'gyeol', reducedMotion: true, altPrefix: '갤러리', onOpen: () => undefined,
-    });
-    const failedPhoto = findImages(tree).filter((image) => image.props.src === preview || image.props.src === original);
-    if (failedPhoto.length) {
-      assert.equal(failedPhoto.length, 2, 'Slide and companion should share the same fallback source');
-      attempts.push(failedPhoto[0].props.src);
-      assert.ok(attempts.length <= 2, 'Image failures must not retry indefinitely');
-      failedPhoto[1].props.onError();
+for (const variant of ['simple', 'gyeol'] as const) {
+  for (const distinctPreview of [true, false]) {
+    const original = 'https://example.com/original.jpg';
+    const preview = distinctPreview ? 'https://example.com/preview.jpg' : original;
+    const attempts: string[] = [];
+    function FailureHarness() {
+      const tree = WeddingGallerySwiper({
+        images: ['/first.jpg', original], previewImages: ['/first.jpg', preview],
+        variant, reducedMotion: true, altPrefix: '갤러리', onOpen: () => undefined,
+      });
+      const failedPhoto = findImages(tree).filter((image) => image.props.src === preview || image.props.src === original);
+      if (failedPhoto.length) {
+        assert.equal(failedPhoto.length, variant === 'gyeol' ? 2 : 1,
+          'The slide and any companion should share the same fallback source');
+        attempts.push(failedPhoto[0].props.src);
+        assert.ok(attempts.length <= 2, 'Image failures must not retry indefinitely');
+        failedPhoto[failedPhoto.length - 1].props.onError();
+      }
+      return tree;
     }
-    return tree;
+    const failed = renderToStaticMarkup(React.createElement(FailureHarness));
+    assert.deepEqual(attempts, distinctPreview ? [preview, original] : [original]);
+    assert.match(failed, /사진을 불러오지 못했습니다/);
+    assert.match(failed, /눌러서 원본 보기/);
+    assert.match(failed, /2번째 사진 크게 보기/, 'Failed photos retain their enlargement action');
+    if (variant === 'gyeol') {
+      assert.match(failed, /2번째 사진 선택/, 'Failed companions remain selectable');
+    }
   }
-  const failed = renderToStaticMarkup(React.createElement(FailureHarness));
-  assert.deepEqual(attempts, distinctPreview ? [preview, original] : [original]);
-  assert.match(failed, /사진을 불러오지 못했습니다/);
-  assert.match(failed, /눌러서 원본 보기/);
-  assert.match(failed, /2번째 사진 선택/, 'Failed companions remain selectable');
 }
 
 const styles = {
@@ -233,6 +239,12 @@ for (const swiperVariant of ['simple', 'romantic', 'emotional', 'classic-r', 'gy
   assert.equal((seven.match(/swiper-slide"/g) ?? []).length, 7, 'Every photo is reachable without a separate more button');
   assert.doesNotMatch(seven, /더보기/);
   assert.match(seven, /다음 사진/);
+  assert.match(seven, /aria-label="7장 중 1번째 사진"/, 'The current photo remains available through the numeric counter');
+  if (swiperVariant === 'simple' || swiperVariant === 'gyeol') {
+    assert.doesNotMatch(seven, /<span style="width:/, 'Simple and classic galleries use the counter without a duplicate progress indicator');
+  } else {
+    assert.match(seven, /<span style="width:/, 'Other gallery variants retain their progress indicator');
+  }
   if (swiperVariant === 'romantic' || swiperVariant === 'gyeol') {
     assert.match(seven, /aria-label="다른 사진 선택"/);
     assert.equal((seven.match(/번째 사진 선택"/g) ?? []).length, 2, 'Albums provide two companion photos');

@@ -27,6 +27,7 @@ import { useImmediateWeddingPageReveal } from './useImmediateWeddingPageReveal';
 import { useWeddingMotion } from './useWeddingMotion';
 import LocationMap from './gyeol/LocationMap';
 import styles from './WeddingBase.module.css';
+import './WeddingFonts.css';
 
 export default function WeddingBase({ state, theme, demoComments, showMap = true }: WeddingThemeRendererProps & { theme: InvitationThemeKey; demoComments?: Comment[]; showMap?: boolean }) {
   useImmediateWeddingPageReveal(state);
@@ -206,7 +207,20 @@ export default function WeddingBase({ state, theme, demoComments, showMap = true
         <section id="wedding-info" className={styles.ceremonySection} data-wedding-section="ceremony" aria-labelledby="wedding-ceremony-title">
           <h2 id="wedding-ceremony-title" className={styles.heading}>예식 안내</h2>
           <div className={styles.ceremonyContent}>
-            {theme === 'emotional' ? <>
+            {theme === 'simple' ? <dl className={styles.simpleCeremonyInfo}>
+              <div className={styles.simpleInfoRow}>
+                <dt>날짜</dt>
+                <dd>{page.date}</dd>
+              </div>
+              {ceremony?.time ? <div className={styles.simpleInfoRow}>
+                <dt>시간</dt>
+                <dd>{ceremony.time}</dd>
+              </div> : null}
+              <div className={styles.simpleInfoRow}>
+                <dt>장소</dt>
+                <dd className={styles.venueName}>{page.venue}</dd>
+              </div>
+            </dl> : theme === 'emotional' ? <>
               <div className={styles.gardenDate} aria-label={page.date}>
                 <span>{page.weddingDateTime.year}년</span>
                 <strong>{String(page.weddingDateTime.month + 1).padStart(2, '0')}.{String(page.weddingDateTime.day).padStart(2, '0')}</strong>

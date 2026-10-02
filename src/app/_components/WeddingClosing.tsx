@@ -3,6 +3,7 @@ import type { InvitationThemeKey } from '@/lib/invitationThemes';
 import type { InvitationPage } from '@/types/invitationPage';
 
 import styles from './WeddingClosing.module.css';
+import './public-invitations/wedding/WeddingFonts.css';
 
 export interface WeddingClosingProps {
   groomName: string;

@@ -1,5 +1,5 @@
 .page {
-  --font-sans: 'Apple SD Gothic Neo', 'Malgun Gothic', system-ui, sans-serif;
+  --font-sans: 'Wedding SUIT', 'Apple SD Gothic Neo', 'Malgun Gothic', system-ui, sans-serif;
   --paper: #ffffff;
   --paper-soft: #f6f5f2;
   --ink: #292929;
@@ -214,33 +214,6 @@ details[open] > :is(.disclosureSummary, .accountSummary, .formSummary)::after { 
   }
 }
 
-@font-face {
-  font-family: 'Gyeol Brush';
-  font-style: normal;
-  font-weight: 400;
-  font-display: swap;
-  src: url('/fonts/gyeol/AlexBrush-Regular.ttf') format('truetype');
-}
-@font-face {
-  font-family: 'Gyeol Dodum';
-  font-style: normal;
-  font-weight: 400 500;
-  font-display: swap;
-  src: url('/fonts/gyeol/GowunDodum-Korean.woff2') format('woff2');
-  unicode-range: U+1100-11FF, U+2000-206F, U+3000-318F, U+3200-33FF, U+AC00-D7AF, U+FF00-FFEF;
-}
-@font-face {
-  font-family: 'Gyeol Dodum';
-  font-style: normal;
-  font-weight: 400 500;
-  font-display: swap;
-  src: url('/fonts/gyeol/GowunDodum-Latin.woff2') format('woff2');
-  unicode-range: U+0000-00FF;
-}
-
-@font-face { font-family: 'Wedding Myeongjo'; font-style: normal; font-weight: 400 700; font-display: swap; src: url('/fonts/wedding/NanumMyeongjo-Korean.woff2') format('woff2'); unicode-range: U+1100-11FF, U+2000-206F, U+3000-318F, U+3200-33FF, U+AC00-D7AF, U+FF00-FFEF; }
-@font-face { font-family: 'Wedding Myeongjo'; font-style: normal; font-weight: 400 700; font-display: swap; src: url('/fonts/wedding/NanumMyeongjo-Latin.woff2') format('woff2'); unicode-range: U+0000-00FF; }
-
 /* Wedding reading rhythm: invitation first, practical information always reachable. */
 .page { --section-space: clamp(60px, 17vw, 82px); }
 .invitationSection, .scheduleSection, .container { padding-top: var(--section-space); }
@@ -407,58 +380,72 @@ details[open] > :is(.disclosureSummary, .accountSummary, .formSummary)::after { 
 .page .accountRow { overflow-wrap: anywhere; }
 .page .ceremonyContent { font-size: 16px; }
 
-/* Simple invitation: balanced headings and familiar, consistent controls. */
+/* Simple invitation: clear facts and familiar controls on neutral paper. */
 .page[data-design='simple'] {
-  --paper: #fafaf7; --paper-soft: #f5f5f1; --ink: #292a27; --muted: #6f7069;
-  --accent: #333530; --line: #d9dad4; --control-line: #898b83; --focus: #333530;
-  --section-space: 64px; font-size: 15px; padding-bottom: 40px;
+  --paper: #fafafa; --paper-soft: #f4f4f4; --ink: #222222; --muted: #666666;
+  --accent: #222222; --line: #dddddd; --control-line: #888888; --focus: #222222;
+  --section-space: 56px; font-size: 15px; padding-bottom: 40px;
 }
-:global(body):has(.page[data-design='simple']) { background: #fafaf7; }
-.page[data-design='simple'] :is(.invitationSection, .scheduleSection, .container, .ceremonySection, .transportSection) { width: calc(100% - 48px); margin-top: 64px; padding: 0; text-align: center; }
-.page[data-design='simple'] :is(.heading, .title) { display: flex; align-items: center; justify-content: center; gap: 16px; font-size: 18px; font-weight: 500; line-height: 1.7; letter-spacing: .02em; margin-bottom: 22px; text-align: center; }
+:global(body):has(.page[data-design='simple']) { background: #fafafa; }
+:global(html):has(.page[data-design='simple']) { --paper: #fafafa; --ink: #222222; }
+.page[data-design='simple'] ::selection { background: var(--line); color: var(--ink); }
+.page[data-design='simple'] :is(.invitationSection, .scheduleSection, .container, .ceremonySection, .transportSection) { width: calc(100% - 48px); margin-top: 56px; padding: 0; text-align: center; }
+.page[data-design='simple'] :is(.heading, .title) { display: block; font-family: var(--font-sans); font-size: 18px; font-weight: 500; line-height: 1.7; letter-spacing: .02em; margin-bottom: 20px; text-align: center; }
 .page[data-design='simple'] :is(.heading, .title)::before,
-.page[data-design='simple'] :is(.heading, .title)::after { content: ''; flex: 1; height: 1px; min-width: 12px; background: var(--line); }
+.page[data-design='simple'] :is(.heading, .title)::after { content: none; }
 .page[data-design='simple'] .quickLinks { width: calc(100% - 48px); margin: 20px auto 0; gap: 0; padding: 0; flex-wrap: nowrap; }
-.page[data-design='simple'] .quickLinks a { position: relative; font-size: 13px; min-height: 48px; text-decoration: none; padding: 10px 4px; }
-.page[data-design='simple'] .quickLinks a + a::before { content: ''; position: absolute; left: 0; width: 1px; height: 14px; background: var(--line); }
+.page[data-design='simple'] .quickLinks a { min-width: 0; font-size: 13px; min-height: 48px; text-decoration: none; padding: 10px 4px; }
 .page[data-design='simple'] .invitationSection { margin-top: 44px; }
 .page[data-design='simple'] .invitationCopy { max-width: 280px; font-size: 15px; line-height: 1.95; }
 .page[data-design='simple'] .invitationAuthor { margin-top: 22px; font-size: 14px; }
 .page[data-design='simple'] .contactSection { width: calc(100% - 48px); margin-top: 24px; }
-.page[data-design='simple'] :is(.disclosureSummary, .accountSummary, .formSummary) { min-height: 46px; padding: 10px 14px; font-size: 14px; font-weight: 500; border-color: var(--control-line); background: #fff; }
+.page[data-design='simple'] :is(.disclosureSummary, .accountSummary, .formSummary) { min-height: 48px; padding: 12px 0; border: 0; background: transparent; font-size: 14px; font-weight: 500; }
+.page[data-design='simple'] :is(.disclosureSummary, .accountSummary) { justify-content: space-between; text-align: left; }
+.page[data-design='simple'] :is(.disclosureSummary, .accountSummary, .formSummary)::after { flex-shrink: 0; }
+.page[data-design='simple'] .contactList { margin-top: 16px; }
+.page[data-design='simple'] .contactList li { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 12px; }
+.page[data-design='simple'] :is(.contactIdentity, .contactIdentity strong) { min-width: 0; overflow-wrap: anywhere; }
 .page[data-design='simple'] .ceremonySection { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
 .page[data-design='simple'] .ceremonySection > :is(.heading, .ceremonyContent) { grid-column: 1 / -1; }
 .page[data-design='simple'] .ceremonySection > .heading { margin-bottom: 12px; }
-.page[data-design='simple'] .ceremonyContent { gap: 4px; margin-bottom: 14px; font-size: 15px; }
-.page[data-design='simple'] .ceremonyContent .venueName { margin-top: 8px; font-size: 17px; font-weight: 500; }
-.page[data-design='simple'] .ceremonySection > button { margin: 0; min-height: 46px; padding: 10px 6px; font-size: 14px; background: #fff; }
+.page[data-design='simple'] .ceremonyContent { grid-template-columns: minmax(0, 1fr); gap: 4px; margin-bottom: 14px; font-size: 15px; text-align: left; }
+.page[data-design='simple'] .simpleCeremonyInfo { display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; min-width: 0; margin: 0; }
+.page[data-design='simple'] .simpleInfoRow { display: grid; grid-template-columns: 40px minmax(0, 1fr); align-items: baseline; gap: 12px; min-width: 0; }
+.page[data-design='simple'] .simpleInfoRow > * { min-width: 0; margin: 0; overflow-wrap: anywhere; }
+.page[data-design='simple'] .simpleInfoRow dt { color: var(--muted); font-size: 14px; }
+.page[data-design='simple'] .simpleInfoRow dd { font-weight: 500; }
+.page[data-design='simple'] .ceremonyContent .venueName { margin: 0; font-family: var(--font-sans); font-size: 15px; font-weight: 500; }
+.page[data-design='simple'] .ceremonySection > button { margin: 0; min-height: 48px; padding: 12px 6px; border: 0; background: transparent; font-size: 14px; text-decoration: underline; text-underline-offset: 5px; }
 .page[data-design='simple'] .calendarDisclosure { margin: 0; }
 .page[data-design='simple'] .calendarDisclosure > summary { padding-inline: 6px; gap: 8px; }
 .page[data-design='simple'] .calendarDisclosure[open] { grid-column: 1 / -1; }
 .page[data-design='simple'] .ceremonySection:has(.calendarDisclosure[open]) > button { grid-column: 1 / -1; }
 .page[data-design='simple'] .dateSection .heading { display: none; }
-.page[data-design='simple'] .scheduleContent { gap: 6px; margin-bottom: 20px; font-size: 15px; }
-.page[data-design='simple'] .scheduleContent .venueName { font-size: 17px; }
+.page[data-design='simple'] :is(.scheduleSection, .transportSection) { text-align: left; }
+.page[data-design='simple'] :is(.scheduleSection, .transportSection) .heading { text-align: left; }
+.page[data-design='simple'] .scheduleContent { grid-template-columns: minmax(0, 1fr); gap: 6px; margin-bottom: 20px; font-size: 15px; }
+.page[data-design='simple'] :is(.ceremonyContent, .scheduleContent) > * { min-width: 0; overflow-wrap: anywhere; }
+.page[data-design='simple'] .scheduleContent .venueName { font-family: var(--font-sans); font-size: 17px; font-weight: 500; text-wrap: wrap; }
 .page[data-design='simple'] :is(.address, .venuePhone) { font-size: 14px; }
-.page[data-design='simple'] .travelNote { margin: 14px 0 0; font-size: 13px; text-align: center; }
+.page[data-design='simple'] .venuePhone { justify-self: start; justify-content: flex-start; min-height: 48px; }
+.page[data-design='simple'] .travelNote { margin: 14px 0 0; font-size: 13px; text-align: left; }
 .page[data-design='simple'] :is(.message, .subtitle) { max-width: 300px; margin: 0 auto 24px; font-size: 14px; line-height: 1.9; }
-.page[data-design='simple'] .accountsContainer { gap: 10px; }
-.page[data-design='simple'] .accountSummary { justify-content: space-between; }
+.page[data-design='simple'] .accountsContainer { gap: 8px; }
+.page[data-design='simple'] .accountCard { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: start; gap: 12px; padding: 16px 0; }
 .page[data-design='simple'] :is(.accountRow, .accountHolder, .contactIdentity strong) { font-size: 14px; }
-.page[data-design='simple'] .formSummary { background: var(--accent); color: white; border-color: var(--accent); }
+.page[data-design='simple'] .copyButton { padding: 12px 0; border: 0; background: transparent; font-size: 13px; text-decoration: underline; text-underline-offset: 5px; }
+.page[data-design='simple'] .formSummary { padding-inline: 14px; background: var(--accent); color: white; }
 .page[data-design='simple'] .commentsHeader { gap: 8px; }
 .page[data-design='simple'] :is(.commentsCount, .commentsCount strong, .pageInfo, .commentDate, .refreshButton) { font-size: 12px; }
+.page[data-design='simple'] .refreshButton { background: transparent; }
 .page[data-design='simple'] .commentsGrid { gap: 0; }
-.page[data-design='simple'] .commentItem { position: relative; padding: 24px 0; }
-.page[data-design='simple'] .commentItem + .commentItem::before { content: ''; position: absolute; top: 0; width: 100%; height: 1px; background: var(--line); }
+.page[data-design='simple'] .commentItem { padding: 16px 0; }
 .page[data-design='simple'] .authorName { font-size: 14px; font-weight: 500; }
-.page[data-design='simple'] .commentMessage { margin: 10px 0 0; font-size: 15px; line-height: 1.9; }
-.page[data-design='simple'] :is(.pageNumber, .pageButton) { min-width: 36px; min-height: 44px; padding: 6px; font-size: 13px; background: transparent; }
+.page[data-design='simple'] .commentMessage { margin: 6px 0 0; font-size: 15px; line-height: 1.9; }
+.page[data-design='simple'] :is(.pageNumber, .pageButton) { min-width: 44px; min-height: 44px; padding: 6px; border: 0; font-size: 13px; background: transparent; }
 .page[data-design='simple'] :is(.active, .pageButtonActive) { background: var(--accent); color: white; }
 @media (max-width: 359px) {
   .page[data-design='simple'] :is(.invitationSection, .scheduleSection, .container, .ceremonySection, .transportSection, .contactSection, .quickLinks) { width: calc(100% - 40px); }
-  .page[data-design='simple'] :is(.heading, .title) { gap: 10px; }
-  .page[data-design='simple'] :is(.pageNumber, .pageButton) { min-width: 32px; padding-inline: 5px; }
 }
 
 /* Modern editorial: numbered sections, precise grids and two dark anchors. */
@@ -503,7 +490,7 @@ details[open] > :is(.disclosureSummary, .accountSummary, .formSummary)::after { 
 .page[data-design='classic-r'] .photoDate { display: grid; grid-template-columns: max-content minmax(0, 1fr); align-items: baseline; gap: 4px 12px; }
 .page[data-design='classic-r'] .photoDate span { font-size: 13px; color: var(--muted); }
 .page[data-design='classic-r'] .photoDate span:first-child { grid-column: 1 / -1; font-variant-numeric: tabular-nums; }
-.page[data-design='classic-r'] .photoDate strong { font-family: 'Wedding Myeongjo', serif; font-weight: 500; font-size: 34px; line-height: 1.4; font-variant-numeric: tabular-nums; }
+.page[data-design='classic-r'] .photoDate strong { font-family: 'Wedding Myeongjo', serif; font-weight: 400; font-size: 34px; line-height: 1.4; font-variant-numeric: tabular-nums; }
 .page[data-design='classic-r'] .ceremonyContent .venueName { font-family: var(--font-sans); font-size: 20px; font-weight: 500; line-height: 1.6; margin-top: 16px; word-break: keep-all; }
 .page[data-design='classic-r'] .ceremonySection > button { min-height: 48px; font-size: 14px; text-align: left; padding-inline: 16px; }
 .page[data-design='classic-r'] .calendarDisclosure > summary { border: 1px solid var(--control-line); padding-inline: 16px; color: var(--ink); }
@@ -563,12 +550,12 @@ details[open] > :is(.disclosureSummary, .accountSummary, .formSummary)::after { 
 }
 :global(body):has(.page[data-design='romantic']) { background: #eeece8; }
 .page[data-design='romantic'] :is(.invitationSection, .scheduleSection, .container, .transportSection) { width: calc(100% - 48px); margin-top: 56px; padding: 0; }
-.page[data-design='romantic'] :is(.heading, .title) { display: flex; flex-direction: column; align-items: center; gap: 8px; font-size: 21px; line-height: 1.6; margin-bottom: 22px; }
+.page[data-design='romantic'] :is(.heading, .title) { display: flex; flex-direction: column; align-items: center; gap: 8px; font-family: 'Wedding Myeongjo', serif; font-size: 21px; font-weight: 400; line-height: 1.6; margin-bottom: 22px; }
 .page[data-design='romantic'] :is(.heading, .title)::before { font-family: 'Gyeol Brush', cursive; font-size: 23px; font-weight: 400; letter-spacing: 0; color: var(--muted); }
 .page[data-design='romantic'] .invitationSection .heading::before { content: 'Invitation'; }
 .page[data-design='romantic'] .quickLinks { width: 100%; margin: 0; gap: 8px; padding: 12px 24px; background: var(--paper); }
 .page[data-design='romantic'] .quickLinks a { font-size: 13px; min-height: 48px; padding-inline: 4px; text-decoration: underline; text-underline-offset: 5px; }
-.page[data-design='romantic'] .invitationCopy { max-width: 310px; font-family: 'Wedding Myeongjo', serif; font-size: 16px; line-height: 2; }
+.page[data-design='romantic'] .invitationCopy { max-width: 310px; font-family: 'Wedding Myeongjo', serif; font-size: 16px; font-weight: 400; line-height: 2; }
 .page[data-design='romantic'] .invitationCopy .invitationAuthor { margin-top: 24px; font-family: var(--font-sans); font-size: 14px; color: var(--muted); }
 .page[data-design='romantic'] .contactSection { width: calc(100% - 48px); margin-top: 24px; }
 .page[data-design='romantic'] :is(.disclosureSummary, .accountSummary, .formSummary, .copyButton) { min-height: 48px; font-size: 14px; font-weight: 500; background: transparent; color: var(--ink); border-color: var(--control-line); }
@@ -579,13 +566,13 @@ details[open] > :is(.disclosureSummary, .accountSummary, .formSummary)::after { 
 .page[data-design='romantic'] :is(.ceremonyContent, .scheduleContent) > * { min-width: 0; overflow-wrap: anywhere; }
 .page[data-design='romantic'] .photoDate { display: grid; grid-template-columns: max-content max-content; justify-content: center; align-items: baseline; gap: 4px 10px; font-variant-numeric: tabular-nums; }
 .page[data-design='romantic'] .photoDate span:first-child { grid-column: 1 / -1; font-size: 15px; color: var(--muted); }
-.page[data-design='romantic'] .photoDate strong { font-family: 'Wedding Myeongjo', serif; font-size: 34px; font-weight: 500; line-height: 1.35; }
+.page[data-design='romantic'] .photoDate strong { font-family: 'Wedding Myeongjo', serif; font-size: 34px; font-weight: 400; line-height: 1.35; }
 .page[data-design='romantic'] .photoDate span:last-child { font-size: 14px; color: var(--muted); }
-.page[data-design='romantic'] .ceremonyContent .venueName { font-size: 20px; margin-top: 12px; line-height: 1.7; }
+.page[data-design='romantic'] .ceremonyContent .venueName { font-family: var(--font-sans); font-size: 20px; font-weight: 500; margin-top: 12px; line-height: 1.7; }
 .page[data-design='romantic'] .ceremonySection > button { min-height: 48px; font-size: 14px; background: transparent; color: var(--ink); border-color: var(--control-line); }
 .page[data-design='romantic'] .scheduleSection { margin-top: 44px; }
 .page[data-design='romantic'] .scheduleContent { grid-template-columns: minmax(0, 1fr); gap: 8px; margin-bottom: 20px; font-size: 15px; }
-.page[data-design='romantic'] .scheduleContent .venueName { font-size: 20px; }
+.page[data-design='romantic'] .scheduleContent .venueName { font-family: var(--font-sans); font-size: 20px; font-weight: 500; }
 .page[data-design='romantic'] :is(.address, .venuePhone, .travelNote) { font-size: 14px; }
 .page[data-design='romantic'] .travelNote { margin: 14px 0 0; text-align: center; }
 .page[data-design='romantic'] .transportSection { margin-top: 32px; }
@@ -614,7 +601,7 @@ details[open] > :is(.disclosureSummary, .accountSummary, .formSummary)::after { 
 .page[data-design='romantic'] .commentAuthor { order: 1; }
 .page[data-design='romantic'] .commentHeader > div:last-child { order: 2; }
 .page[data-design='romantic'] .authorName { font-size: 13px; font-weight: 500; color: var(--muted); }
-.page[data-design='romantic'] .commentMessage { order: 0; margin: 0 0 6px; font-family: 'Wedding Myeongjo', serif; font-size: 16px; line-height: 1.9; }
+.page[data-design='romantic'] .commentMessage { order: 0; margin: 0 0 6px; font-family: 'Wedding Myeongjo', serif; font-size: 16px; font-weight: 400; line-height: 1.9; }
 .page[data-design='romantic'] .refreshButton { background: transparent; }
 .page[data-design='romantic'] :is(.pageNumber, .pageButton) { min-width: 44px; min-height: 44px; padding: 6px; font-size: 13px; background: transparent; }
 .page[data-design='romantic'] :is(.active, .pageButtonActive) { background: var(--accent); color: white; }
@@ -634,17 +621,17 @@ details[open] > :is(.disclosureSummary, .accountSummary, .formSummary)::after { 
 :global(body):has(.page[data-design='gyeol']) { background: #eeece8; }
 .page[data-design='gyeol'] :is(.invitationSection, .scheduleSection, .container, .transportSection) { width: 100%; margin-top: 0; padding: 56px 24px 0; }
 .page[data-design='gyeol'] .invitationSection { background: var(--paper-soft); padding-top: 48px; padding-bottom: 32px; }
-.page[data-design='gyeol'] :is(.heading, .title) { flex-direction: column; gap: 0; margin-bottom: 24px; font-size: 21px; line-height: 1.6; letter-spacing: .02em; }
+.page[data-design='gyeol'] :is(.heading, .title) { flex-direction: column; gap: 0; margin-bottom: 24px; font-family: 'Wedding Myeongjo', serif; font-size: 21px; font-weight: 400; line-height: 1.6; letter-spacing: .02em; }
 .page[data-design='gyeol'] :is(.heading, .title)::before,
 .page[data-design='gyeol'] :is(.heading, .title)::after { content: none; }
 .page[data-design='gyeol'] .quickLinks { width: 100%; margin: 0; padding: 8px 24px; gap: 8px; background: var(--paper-soft); }
 .page[data-design='gyeol'] .quickLinks a { font-size: 14px; text-decoration: underline; text-underline-offset: 5px; min-height: 48px; padding-inline: 0; color: var(--accent); }
-.page[data-design='gyeol'] .invitationCopy { max-width: 320px; font-family: 'Wedding Myeongjo', serif; font-size: 15px; line-height: 2.1; }
+.page[data-design='gyeol'] .invitationCopy { max-width: 320px; font-family: 'Wedding Myeongjo', serif; font-size: 15px; font-weight: 400; line-height: 2.1; }
 .page[data-design='gyeol'] .invitationCopy .invitationAuthor { margin-top: 24px; font-size: 14px; color: var(--muted); }
 .page[data-design='gyeol'] .classicFamilies { display: grid; gap: 12px; margin-top: 32px; font-size: 14px; color: var(--muted); line-height: 1.9; white-space: normal; }
 .page[data-design='gyeol'] .classicFamilies p { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, .55fr); align-items: baseline; gap: 8px; }
 .page[data-design='gyeol'] .classicFamilies span { min-width: 0; text-align: right; }
-.page[data-design='gyeol'] .classicFamilies strong { min-width: 0; color: var(--ink); font-size: 17px; font-weight: 500; text-align: left; }
+.page[data-design='gyeol'] .classicFamilies strong { min-width: 0; color: var(--ink); font-size: 17px; font-weight: 400; text-align: left; }
 .page[data-design='gyeol'] .contactSection { width: 100%; margin: 0; padding: 0 24px 32px; background: var(--paper-soft); }
 .page[data-design='gyeol'] :is(.disclosureSummary, .accountSummary, .formSummary, .copyButton) { min-height: 48px; font-size: 14px; font-weight: 500; color: var(--accent); background: transparent; border: 0; }
 .page[data-design='gyeol'] :is(.disclosureSummary, .accountSummary, .formSummary)::after { flex-shrink: 0; }
@@ -655,10 +642,10 @@ details[open] > :is(.disclosureSummary, .accountSummary, .formSummary)::after { 
 .page[data-design='gyeol'] .ceremonySection { position: relative; width: calc(100% - 48px); margin-top: 56px; padding: 32px 20px; border: 1px solid var(--line); outline: 1px solid var(--line); outline-offset: -6px; background: var(--paper-soft); }
 .page[data-design='gyeol'] .ceremonyContent { grid-template-columns: minmax(0, 1fr); gap: 16px; margin-bottom: 16px; font-family: 'Wedding Myeongjo', serif; font-size: 15px; }
 .page[data-design='gyeol'] :is(.ceremonyContent, .scheduleContent) > * { min-width: 0; overflow-wrap: anywhere; }
-.page[data-design='gyeol'] .ceremonyContent .venueName { margin: 0; font-size: 20px; line-height: 1.7; }
+.page[data-design='gyeol'] .ceremonyContent .venueName { margin: 0; font-family: 'Wedding Myeongjo', serif; font-size: 20px; font-weight: 400; line-height: 1.7; }
 .page[data-design='gyeol'] .classicDate { display: grid; grid-template-columns: minmax(0, 1fr); justify-items: center; gap: 8px; color: var(--ink); }
 .page[data-design='gyeol'] .classicDate > span { min-width: 0; font-family: var(--font-sans); font-size: 15px; color: var(--muted); }
-.page[data-design='gyeol'] .classicDate strong { min-width: 0; font-size: 34px; font-weight: 500; line-height: 1.4; letter-spacing: -.02em; }
+.page[data-design='gyeol'] .classicDate strong { min-width: 0; font-size: 34px; font-weight: 400; line-height: 1.4; letter-spacing: -.02em; }
 .page[data-design='gyeol'] .classicDate .classicDateTime { display: flex; justify-content: center; flex-wrap: wrap; column-gap: 8px; color: var(--ink); }
 .page[data-design='gyeol'] .ceremonySection > button { min-height: 48px; margin-top: 0; padding: 10px 12px; background: transparent; border: 0; color: var(--accent); font-family: var(--font-sans); font-size: 14px; text-decoration: underline; text-underline-offset: 5px; }
 .page[data-design='gyeol'] .calendarDisclosure { margin-top: 8px; }
@@ -666,7 +653,7 @@ details[open] > :is(.disclosureSummary, .accountSummary, .formSummary)::after { 
 .page[data-design='gyeol'] :is(.scheduleSection, .transportSection, [data-wedding-section='gift'], [data-wedding-section='guestbook']) :is(.heading, .title) { align-items: flex-start; text-align: left; }
 .page[data-design='gyeol'] :is(.scheduleSection, .transportSection, .storedSection) { text-align: left; }
 .page[data-design='gyeol'] .scheduleContent { grid-template-columns: minmax(0, 1fr); gap: 8px; margin-bottom: 16px; font-family: var(--font-sans); }
-.page[data-design='gyeol'] .scheduleContent .venueName { font-size: 20px; text-wrap: wrap; }
+.page[data-design='gyeol'] .scheduleContent .venueName { font-family: 'Wedding Myeongjo', serif; font-size: 20px; font-weight: 400; text-wrap: wrap; }
 .page[data-design='gyeol'] :is(.address, .venuePhone) { font-size: 14px; }
 .page[data-design='gyeol'] .venuePhone { justify-self: start; justify-content: flex-start; }
 .page[data-design='gyeol'] .travelNote { font-size: 14px; text-align: left; margin: 16px 0 0; }
@@ -722,7 +709,7 @@ details[open] > :is(.disclosureSummary, .accountSummary, .formSummary)::after { 
   width: calc(100% - 48px); margin-top: 56px; padding: 0; text-align: left;
 }
 .page[data-design='emotional'] :is(.heading, .title) {
-  display: block; margin-bottom: 24px; font-size: 20px; font-weight: 500; line-height: 1.6; text-align: left;
+  display: block; margin-bottom: 24px; font-family: 'Gyeol Dodum', var(--font-sans); font-size: 20px; font-weight: 400; line-height: 1.6; text-align: left;
 }
 .page[data-design='emotional'] :is(.heading, .title)::before,
 .page[data-design='emotional'] :is(.heading, .title)::after { content: none; }
@@ -734,7 +721,7 @@ details[open] > :is(.disclosureSummary, .accountSummary, .formSummary)::after { 
   font-size: 13px; color: var(--accent); text-decoration: none;
 }
 .page[data-design='emotional'] .invitationSection { margin-top: 44px; }
-.page[data-design='emotional'] .invitationCopy { max-width: none; margin: 0; font-family: 'Gyeol Dodum', var(--font-sans); font-size: 16px; line-height: 2.05; text-align: left; }
+.page[data-design='emotional'] .invitationCopy { max-width: none; margin: 0; font-family: 'Gyeol Dodum', var(--font-sans); font-size: 16px; font-weight: 400; line-height: 2.05; text-align: left; }
 .page[data-design='emotional'] .invitationCopy .invitationAuthor { margin-top: 24px; font-size: 15px; color: var(--muted); text-align: right; }
 .page[data-design='emotional'] .contactSection { margin-top: 20px; }
 .page[data-design='emotional'] :is(.disclosureSummary, .accountSummary, .formSummary) {
@@ -749,19 +736,19 @@ details[open] > :is(.disclosureSummary, .accountSummary, .formSummary)::after { 
 .page[data-design='emotional'] .ceremonySection { width: 100%; margin-top: 56px; padding: 32px 24px 24px; background: var(--paper-soft); text-align: left; }
 .page[data-design='emotional'] .ceremonyContent { display: grid; grid-template-columns: minmax(0, .65fr) minmax(0, 1fr); gap: 16px; align-items: start; margin-bottom: 24px; font-size: 18px; line-height: 1.8; text-align: left; }
 .page[data-design='emotional'] :is(.ceremonyContent, .scheduleContent) > * { min-width: 0; overflow-wrap: anywhere; }
-.page[data-design='emotional'] .gardenDate { display: grid; gap: 8px; font-family: 'Wedding Myeongjo', serif; font-variant-numeric: tabular-nums; }
+.page[data-design='emotional'] .gardenDate { display: grid; gap: 8px; font-family: var(--font-sans); font-variant-numeric: tabular-nums; }
 .page[data-design='emotional'] .gardenDate > span { font-family: var(--font-sans); font-size: 14px; color: var(--muted); }
 .page[data-design='emotional'] .gardenDate strong { font-size: 32px; font-weight: 500; line-height: 1.3; letter-spacing: -.02em; }
 .page[data-design='emotional'] .gardenDetails { display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; font-weight: 500; }
 .page[data-design='emotional'] .gardenDateTime { display: grid; grid-template-columns: minmax(0, 1fr); gap: 0; }
 .page[data-design='emotional'] :is(.gardenDetails, .gardenDateTime) > * { min-width: 0; overflow-wrap: anywhere; }
-.page[data-design='emotional'] .ceremonyContent .venueName { margin: 0; font-size: 18px; font-weight: 500; line-height: 1.7; }
+.page[data-design='emotional'] .ceremonyContent .venueName { margin: 0; font-family: var(--font-sans); font-size: 18px; font-weight: 500; line-height: 1.7; }
 .page[data-design='emotional'] .ceremonySection > button { min-height: 48px; margin: 0; padding: 12px 0; border: 0; background: transparent; color: var(--accent); font-size: 14px; text-decoration: underline; text-underline-offset: 5px; }
 .page[data-design='emotional'] .calendarDisclosure { margin-top: 0; }
 .page[data-design='emotional'] .dateSection { margin-top: 16px; padding: 16px 0 0; }
 .page[data-design='emotional'] .dateSection [aria-current='date'] { border-radius: 0; }
 .page[data-design='emotional'] .scheduleContent { grid-template-columns: minmax(0, 1fr); gap: 6px; margin-bottom: 20px; text-align: left; }
-.page[data-design='emotional'] .scheduleContent .venueName { font-size: 18px; font-weight: 500; text-wrap: wrap; }
+.page[data-design='emotional'] .scheduleContent .venueName { font-family: var(--font-sans); font-size: 18px; font-weight: 500; text-wrap: wrap; }
 .page[data-design='emotional'] .address { font-size: 15px; line-height: 1.8; }
 .page[data-design='emotional'] .venuePhone { justify-self: start; justify-content: flex-start; min-height: 48px; font-size: 14px; }
 .page[data-design='emotional'] .travelNote { margin: 16px 0 0; font-size: 15px; line-height: 1.9; text-align: left; }

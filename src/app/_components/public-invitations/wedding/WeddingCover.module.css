@@ -1,7 +1,7 @@
-.cover { color: inherit; overflow-wrap: anywhere; }
+.cover { --font-sans: 'Wedding SUIT', 'Apple SD Gothic Neo', 'Malgun Gothic', system-ui, sans-serif; color: inherit; overflow-wrap: anywhere; }
 .cover p, .cover h1, .cover figure { margin: 0; }
 .photo { display: block; width: 100%; height: auto; }
-.names { display: grid; grid-template-columns: minmax(0, auto) auto minmax(0, auto); justify-content: center; align-items: baseline; gap: 14px; font-family: 'Wedding Myeongjo', serif; font-size: 28px; font-weight: 500; line-height: 1.65; }
+.names { display: grid; grid-template-columns: minmax(0, auto) auto minmax(0, auto); justify-content: center; align-items: baseline; gap: 14px; font-family: 'Wedding Myeongjo', serif; font-size: 28px; font-weight: 400; line-height: 1.65; }
 .names > span, .editorialNames > span { min-width: 0; }
 .join { font-size: 16px; font-weight: 400; }
 .date, .venue { font-family: var(--font-sans); font-size: 16px; line-height: 1.9; }
@@ -27,10 +27,10 @@
 .withoutPhoto .photoMeta .venue { color: #70695f; }
 
 /* A garden letter: the greeting leads, with names and a sprig sharing the paper. */
-.letter { padding: 40px 24px 32px; background: var(--paper, #faf9f5); color: var(--ink, #2f342d); font-family: 'Wedding Myeongjo', serif; text-align: left; }
-.letter .conceptIntroduction { font-size: 26px; font-weight: 500; line-height: 1.7; letter-spacing: -.02em; word-break: keep-all; }
+.letter { padding: 40px 24px 32px; background: var(--paper, #faf9f5); color: var(--ink, #2f342d); font-family: 'Gyeol Dodum', var(--font-sans); text-align: left; }
+.letter .conceptIntroduction { font-size: 26px; font-weight: 400; line-height: 1.7; letter-spacing: -.02em; word-break: keep-all; }
 .letterHeading { display: grid; grid-template-columns: minmax(0, 1fr) 142px; align-items: center; gap: 16px; min-width: 0; margin-top: 24px; }
-.letter .names { grid-template-columns: minmax(0, 1fr); justify-content: start; justify-items: start; gap: 4px; font-size: 24px; font-weight: 500; line-height: 1.5; word-break: keep-all; }
+.letter .names { grid-template-columns: minmax(0, 1fr); justify-content: start; justify-items: start; gap: 4px; font-family: inherit; font-size: 24px; font-weight: 400; line-height: 1.5; word-break: keep-all; }
 .letter .names > span { max-width: 100%; }
 .letterSprig { width: 142px; height: 120px; background: url('/images/wedding-concepts/garden-sprig.webp') center / contain no-repeat; }
 .letter .letterPhoto { width: calc(100% - 24px); margin: 24px 0 0 auto; aspect-ratio: 4 / 3; overflow: hidden; }
@@ -55,7 +55,7 @@
 .traditionalFrame { padding: 30px 18px 28px; border: 1px solid #d8c8b4; outline: 1px solid #ad9478; outline-offset: -7px; background: #fbf8f2; }
 .traditional .traditionalEyebrow { font-family: var(--font-sans); font-size: 11px; font-weight: 500; line-height: 1.8; letter-spacing: .2em; color: #70665c; }
 .traditionalTitle { min-width: 0; margin-top: 24px; }
-.traditionalTitle .names { font-size: 32px; font-weight: 500; gap: 10px; line-height: 1.55; word-break: keep-all; }
+.traditionalTitle .names { font-size: 32px; font-weight: 400; gap: 10px; line-height: 1.55; word-break: keep-all; }
 .traditionalTitle .names > span { max-width: 100%; }
 .traditional .conceptIntroduction { max-width: 220px; margin: 16px auto 0; color: #70665c; font-size: 15px; line-height: 1.9; word-break: keep-all; }
 .traditional .traditionalPhoto { margin: 28px 0 0; }
@@ -63,15 +63,17 @@
 .traditional .date { margin-top: 24px; font-family: inherit; font-size: 15px; line-height: 1.9; color: #57493c; }
 .traditional .venue { margin-top: 4px; font-family: inherit; font-size: 15px; line-height: 1.9; color: #70665c; word-break: keep-all; }
 
-/* Quiet ivory paper gives the names and photograph room to breathe. */
-.basic { padding: 40px 24px 24px; background: #fafaf7; color: #292a27; text-align: center; }
-.basic .basicEyebrow { margin-bottom: 20px; font-family: var(--font-sans); font-size: 11px; font-weight: 500; line-height: 1.7; letter-spacing: .18em; color: #6f7069; }
-.basic .names { font-size: 28px; gap: 12px; }
-.basic .introduction { margin-top: 20px; color: #6f7069; font-size: 14px; line-height: 1.9; }
-.basic .basicPhoto { width: 92%; margin: 24px auto; aspect-ratio: 4 / 5; overflow: hidden; }
+/* A clear, centered invitation keeps the names and date ahead of the photograph. */
+.basic { padding: 40px 24px 28px; background: #fafafa; color: #222222; font-family: var(--font-sans), sans-serif; text-align: center; }
+.basic .names { font-family: inherit; font-size: 32px; font-weight: 500; gap: 12px; line-height: 1.5; word-break: keep-all; }
+.basic .names > span { max-width: 100%; }
+.basic .basicDate { margin-top: 24px; font-size: 26px; font-weight: 500; line-height: 1.5; font-variant-numeric: tabular-nums; }
+.basic .basicSchedule { display: flex; flex-wrap: wrap; justify-content: center; gap: 0 8px; margin-top: 4px; font-size: 15px; line-height: 1.8; color: #666666; }
+.basicSchedule > span { max-width: 100%; }
+.basic .venue { margin-top: 12px; color: #222222; font-size: 16px; line-height: 1.8; word-break: keep-all; }
+.basic .basicPhoto { width: 100%; margin: 24px 0 0; aspect-ratio: 3 / 2; overflow: hidden; }
 .basic .photo { height: 100%; object-fit: cover; }
-.basic .date { margin-top: 24px; font-size: 13px; line-height: 1.8; color: #6f7069; }
-.basic .venue { margin-top: 6px; color: #292a27; font-size: 15px; line-height: 1.8; }
+.basic .introduction { margin-top: 24px; color: #666666; font-size: 14px; line-height: 1.9; }
 
 @media (max-width: 359px) {
   .names { font-size: 24px; gap: 10px; }
@@ -86,5 +88,5 @@
   .basic { padding-inline: 20px; }
   .letter .conceptIntroduction { font-size: 24px; }
   .letter .names { font-size: 22px; }
-  .basic .names { font-size: 26px; gap: 10px; }
+  .basic .names { font-size: 30px; gap: 10px; }
 }

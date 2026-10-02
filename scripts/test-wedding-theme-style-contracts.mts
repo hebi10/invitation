@@ -112,7 +112,7 @@ assert.match(
 const closingThemeTokens = {
   emotional: ['#faf9f5', '#2f342d', '#cfd5c8', '#626b5e'],
   romantic: ['#ffffff', '#344037', '#dce4d7', '#657064'],
-  simple: ['#ffffff', '#292c2a', '#dce0db', '#676d68'],
+  simple: ['#fafafa', '#222222', '#dddddd', '#666666'],
   'classic-r': ['#ffffff', '#362f27', '#ded5c7', '#71665b'],
   gyeol: ['#f6f0e5', '#302b26', '#d8c8b4', '#70665c'],
 } as const;

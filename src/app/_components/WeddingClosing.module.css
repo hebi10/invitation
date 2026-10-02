@@ -9,7 +9,7 @@
   --closing-foreground: #2f342d;
   --closing-line: #cfd5c8;
   --closing-muted: #626b5e;
-  --closing-font: 'Wedding Myeongjo', serif;
+  --closing-font: 'Gyeol Dodum', sans-serif;
 }
 
 .canvas[data-theme='romantic'] {
@@ -17,15 +17,15 @@
   --closing-foreground: #344037;
   --closing-line: #dce4d7;
   --closing-muted: #657064;
-  --closing-font: var(--font-gowun-dodum), serif;
+  --closing-font: 'Wedding Myeongjo', serif;
 }
 
 .canvas[data-theme='simple'] {
-  --closing-background: #ffffff;
-  --closing-foreground: #292c2a;
-  --closing-line: #dce0db;
-  --closing-muted: #676d68;
-  --closing-font: var(--font-gowun-dodum), sans-serif;
+  --closing-background: #fafafa;
+  --closing-foreground: #222222;
+  --closing-line: #dddddd;
+  --closing-muted: #666666;
+  --closing-font: 'Wedding SUIT', sans-serif;
 }
 
 .canvas[data-theme='classic-r'] {
@@ -33,7 +33,7 @@
   --closing-foreground: #362f27;
   --closing-line: #ded5c7;
   --closing-muted: #71665b;
-  --closing-font: 'Wedding Myeongjo', serif;
+  --closing-font: 'Wedding SUIT', sans-serif;
 }
 
 .canvas[data-theme='gyeol'] {
@@ -46,7 +46,7 @@
 }
 
 .closing {
-  --font-sans: 'Apple SD Gothic Neo', 'Malgun Gothic', system-ui, sans-serif;
+  --font-sans: 'Wedding SUIT', 'Apple SD Gothic Neo', 'Malgun Gothic', system-ui, sans-serif;
   box-sizing: border-box;
   display: grid;
   justify-items: center;
@@ -90,16 +90,15 @@
 
 /* Match the invitation paper and type, including the standalone homepage sample. */
 .closing { width: min(100%, 480px); margin: 0 auto; padding: 64px 30px 48px; background: #fff; font-family: var(--font-sans), sans-serif; }
-.closing[data-theme='emotional'] { background: #faf9f5; font-family: 'Wedding Myeongjo', serif; }
+.closing[data-theme='emotional'] { background: #faf9f5; font-family: 'Gyeol Dodum', var(--font-sans); }
 .closing[data-theme='gyeol'] { background: #f6f0e5; font-family: 'Wedding Myeongjo', serif; }
 .closing p:last-child { font-family: inherit; font-weight: 400; word-break: keep-all; }
 .closing[data-theme='classic-r'] { justify-items: start; text-align: left; }
 
-.closing[data-theme='simple'] { position: relative; padding: 72px 24px 40px; background: #fafaf7; color: #292a27; gap: 16px; }
-.closing[data-theme='simple']::before { content: ''; position: absolute; top: 44px; left: 24px; right: 24px; height: 1px; background: #e6e2dc; }
-.closing[data-theme='simple'] .simpleNames { font-family: 'Wedding Myeongjo', serif; font-size: 20px; font-weight: 500; }
-.closing[data-theme='simple'] .simpleThanks { max-width: 290px; font-size: 14px; font-weight: 400; line-height: 1.8; color: #6f7069; }
-.closing[data-theme='simple'] .simpleDate { font-size: 13px; line-height: 1.8; color: #6f7069; }
+.closing[data-theme='simple'] { grid-template-columns: minmax(0, 1fr); padding: 48px 24px 40px; background: #fafafa; color: #222222; font-family: var(--font-sans), sans-serif; gap: 12px; overflow-wrap: anywhere; }
+.closing[data-theme='simple'] p.simpleNames { min-width: 0; max-width: 100%; font-family: inherit; font-size: 20px; font-weight: 500; line-height: 1.6; letter-spacing: 0; word-break: keep-all; }
+.closing[data-theme='simple'] p.simpleThanks { max-width: 280px; font-size: 14px; font-weight: 400; line-height: 1.8; color: #666666; word-break: keep-all; }
+.closing[data-theme='simple'] p.simpleDate { max-width: 100%; font-size: 13px; font-weight: 400; font-variant-numeric: tabular-nums; line-height: 1.8; color: #666666; }
 
 .closing:not([data-theme='simple']) { position: relative; padding: 88px 24px 48px; gap: 20px; }
 .closing:not([data-theme='simple']) p:first-child { font-size: 22px; }
@@ -114,20 +113,21 @@
 .photoFinalImage { display: block; width: 100%; min-width: 0; aspect-ratio: 4 / 5; object-fit: cover; }
 .photoFinalCopy { box-sizing: border-box; display: grid; grid-template-columns: minmax(0, 1fr); justify-items: center; width: 100%; min-width: 0; gap: 12px; padding: 36px 24px 44px; }
 .closing[data-theme='romantic'] p.photoFinalPhrase { max-width: 100%; margin-bottom: 4px; font-family: 'Gyeol Brush', cursive; font-size: 32px; font-weight: 400; line-height: 1.35; letter-spacing: 0; color: #70695f; }
-.closing[data-theme='romantic'] p.photoFinalNames { min-width: 0; max-width: 100%; font-size: 22px; font-weight: 500; line-height: 1.65; word-break: keep-all; }
+.closing[data-theme='romantic'] p.photoFinalNames { min-width: 0; max-width: 100%; font-size: 22px; font-weight: 400; line-height: 1.65; word-break: keep-all; }
 .closing[data-theme='romantic'] p.photoFinalThanks { max-width: 280px; font-family: var(--font-sans); font-size: 15px; font-weight: 400; line-height: 1.9; color: #70695f; }
 .closing[data-theme='romantic'] p.photoFinalDate { max-width: 100%; margin-top: 4px; font-family: var(--font-sans); font-size: 15px; font-weight: 500; font-variant-numeric: tabular-nums; line-height: 1.8; color: #70695f; }
 .closing[data-theme='gyeol'] { grid-template-columns: minmax(0, 1fr); background: #f6f0e5; color: #302b26; padding: 56px 24px; gap: 16px; overflow-wrap: anywhere; }
-.closing[data-theme='gyeol'] p.classicNames { min-width: 0; max-width: 100%; font-size: 26px; font-weight: 500; line-height: 1.65; letter-spacing: 0; word-break: keep-all; }
+.closing[data-theme='gyeol'] p.classicNames { min-width: 0; max-width: 100%; font-size: 26px; font-weight: 400; line-height: 1.65; letter-spacing: 0; word-break: keep-all; }
 .closing[data-theme='gyeol'] p.classicThanks { max-width: 290px; font-size: 15px; font-weight: 400; line-height: 1.9; color: #70665c; }
 .closing[data-theme='gyeol'] p.classicDate { max-width: 100%; margin-top: 4px; font-size: 15px; line-height: 1.8; color: #57493c; }
 .closing[data-theme='emotional'] { grid-template-columns: minmax(0, 1fr); justify-items: end; background: #faf9f5; color: #2f342d; padding: 64px 24px 48px; gap: 28px; text-align: right; overflow-wrap: anywhere; }
 .closing[data-theme='emotional'] p.letterThanks { max-width: 100%; font-size: 17px; font-weight: 400; line-height: 1.9; letter-spacing: 0; color: #626b5e; word-break: keep-all; }
 .letterSignoff { display: grid; grid-template-columns: 142px minmax(0, 1fr); align-items: center; gap: 16px; width: 100%; min-width: 0; }
 .letterSprig { width: 142px; height: 120px; background: url('/images/wedding-concepts/garden-sprig.webp') center / contain no-repeat; }
-.closing[data-theme='emotional'] p.letterNames { min-width: 0; max-width: 100%; justify-self: end; font-size: 24px; font-weight: 500; line-height: 1.65; letter-spacing: 0; color: #2f342d; word-break: keep-all; }
+.closing[data-theme='emotional'] p.letterNames { min-width: 0; max-width: 100%; justify-self: end; font-size: 24px; font-weight: 400; line-height: 1.65; letter-spacing: 0; color: #2f342d; word-break: keep-all; }
 
 @media (max-width: 359px) {
+  .closing[data-theme='simple'] { padding-inline: 20px; }
   .closing[data-theme='classic-r'] { padding-inline: 20px; }
   .photoFinalCopy { padding-inline: 20px; }
   .closing[data-theme='gyeol'] { padding-inline: 20px; }

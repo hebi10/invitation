@@ -1,0 +1,33 @@
+@font-face {
+  font-family: 'Wedding SUIT';
+  font-style: normal;
+  font-weight: 100 700;
+  font-display: swap;
+  src: url('/fonts/wedding/SUIT-Variable.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Gyeol Brush';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('/fonts/gyeol/AlexBrush-Regular.ttf') format('truetype');
+}
+@font-face {
+  font-family: 'Gyeol Dodum';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('/fonts/gyeol/GowunDodum-Korean.woff2') format('woff2');
+  unicode-range: U+1100-11FF, U+2000-206F, U+3000-318F, U+3200-33FF, U+AC00-D7AF, U+FF00-FFEF;
+}
+@font-face {
+  font-family: 'Gyeol Dodum';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('/fonts/gyeol/GowunDodum-Latin.woff2') format('woff2');
+  unicode-range: U+0000-00FF;
+}
+
+@font-face { font-family: 'Wedding Myeongjo'; font-style: normal; font-weight: 400; font-display: swap; src: url('/fonts/wedding/NanumMyeongjo-Korean.woff2') format('woff2'); unicode-range: U+1100-11FF, U+2000-206F, U+3000-318F, U+3200-33FF, U+AC00-D7AF, U+FF00-FFEF; }
+@font-face { font-family: 'Wedding Myeongjo'; font-style: normal; font-weight: 400; font-display: swap; src: url('/fonts/wedding/NanumMyeongjo-Latin.woff2') format('woff2'); unicode-range: U+0000-00FF; }

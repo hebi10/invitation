@@ -179,6 +179,31 @@ for (const dateCase of [
 }
 console.log('Garden letter ceremony date, leap day and month boundaries passed');
 
+// The compact cover puts saved event facts before the photo without losing date boundaries.
+for (const dateCase of [
+  { year: 2030, month: 0, day: 1, expected: '2030.01.01' },
+  { year: 2028, month: 1, day: 29, expected: '2028.02.29' },
+  { year: 2030, month: 11, day: 31, expected: '2030.12.31' },
+]) {
+  const suppliedPage = structuredClone(page);
+  suppliedPage.weddingDateTime = { ...page.weddingDateTime, year: dateCase.year, month: dateCase.month, day: dateCase.day };
+  const beforeDateRender = JSON.stringify(suppliedPage);
+  const html = render('simple', { ...state, pageConfig: suppliedPage });
+  const coverStart = html.indexOf('aria-labelledby="wedding-cover-title"');
+  const cover = html.slice(coverStart, html.indexOf('</section>', coverStart));
+  const coverText = cover.replace(/<[^>]+>/g, '').replace(/\s/g, '');
+  assert.ok(coverText.includes(`${dateCase.expected}화요일`), 'Simple cover must preserve the saved numeric date and weekday');
+  assert.ok(coverText.includes('오후2시30분'), 'Simple cover must retain the stored ceremony time');
+  let previousPosition = -1;
+  for (const value of [page.groomName, dateCase.expected, page.venue, 'data-wedding-cover-photo', '둘이 하나가 되는 특별한 날']) {
+    const position = cover.indexOf(value);
+    assert.ok(position > previousPosition, `Simple cover reading order must lead with event facts: ${value}`);
+    previousPosition = position;
+  }
+  assert.equal(JSON.stringify(suppliedPage), beforeDateRender, 'Simple cover must not mutate saved event facts');
+}
+console.log('Simple cover event order, numeric date and month boundaries passed');
+
 // Selecting a story preview must not repeat cover/closing photos or hide originals from the viewer.
 const storyCover = '/story-cover.jpg';
 function renderPhotoStory(images: string[]) {
