@@ -603,7 +603,7 @@ details[open] > :is(.disclosureSummary, .accountSummary, .formSummary)::after { 
 .page[data-design='romantic'] .authorName { font-size: 13px; font-weight: 500; color: var(--muted); }
 .page[data-design='romantic'] .commentMessage { order: 0; margin: 0 0 6px; font-family: 'Wedding Myeongjo', serif; font-size: 16px; font-weight: 400; line-height: 1.9; }
 .page[data-design='romantic'] .refreshButton { background: transparent; }
-.page[data-design='romantic'] :is(.pageNumber, .pageButton) { min-width: 44px; min-height: 44px; padding: 6px; font-size: 13px; background: transparent; }
+.page[data-design='romantic'] :is(.pageNumber, .pageButton) { border: 0; min-width: 44px; min-height: 44px; padding: 6px; font-size: 13px; background: transparent; }
 .page[data-design='romantic'] :is(.active, .pageButtonActive) { background: var(--accent); color: white; }
 @media (max-width: 359px) {
   .page[data-design='romantic'] :is(.invitationSection, .scheduleSection, .container, .transportSection, .contactSection) { width: calc(100% - 40px); }
