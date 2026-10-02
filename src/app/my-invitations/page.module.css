@@ -173,18 +173,18 @@
 
 .grid {
   display: grid;
-  gap: 12px;
-
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
 }
 
 .card {
   border: 1px solid var(--operation-color-border);
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  align-items: end;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
   gap: 24px;
-  padding: 22px;
-
+  padding: 24px;
+  background: var(--operation-color-surface);
 }
 
 .cardHeader {
@@ -204,9 +204,10 @@
 .cardTitle {
   margin: 0;
   color: var(--operation-color-text);
-  font-size: 1rem;
-  font-weight: 700;
-  line-height: 1.4;
+  font-size: 1.25rem;
+  font-weight: 500;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
 }
 
 .cardMeta {
@@ -217,14 +218,14 @@
 }
 
 .cardMetaList {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px 16px;
-  margin: 2px 0 0;
+  display: grid;
+  gap: 8px;
+  margin: 12px 0 0;
 }
 
 .cardMetaRow {
-  display: inline-flex;
+  display: grid;
+  grid-template-columns: 72px minmax(0, 1fr);
   min-width: 0;
   gap: 6px;
   color: var(--operation-color-text-muted);
@@ -247,7 +248,13 @@
 }
 
 .actions {
-  justify-content: flex-end;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin-top: auto;
+}
+
+.actions > .primaryButton {
+  grid-column: 1 / -1;
 }
 
 .guestbookPanel {
@@ -662,20 +669,12 @@
     width: 100%;
   }
 
+  .grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
   .card {
-    grid-template-columns: 1fr;
-    align-items: stretch;
-    gap: 16px;
-  }
-
-  .cardMetaList {
-    display: grid;
-    gap: 4px;
-  }
-
-  .cardMetaRow {
-    display: grid;
-    grid-template-columns: 78px minmax(0, 1fr);
+    padding: 20px;
   }
 
   .modalOverlay {
