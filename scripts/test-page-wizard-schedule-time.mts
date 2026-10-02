@@ -45,8 +45,9 @@ assert.equal(weddingDate.getMinutes(), 30);
 const prepared = prepareWizardConfigForSave(config, 'qa-schedule-time');
 assert.equal(prepared.weddingDateTime.hour, 14);
 assert.equal(prepared.weddingDateTime.minute, 30);
-assert.equal(prepared.pageData?.ceremonyTime, '오후 2:30');
-assert.equal(prepared.pageData?.ceremony?.time, '오후 2:30');
+// ICU versions use either Korean or Latin day-period labels for ko-KR.
+assert.match(prepared.pageData?.ceremonyTime ?? '', /^(?:오후|PM) 2:30$/);
+assert.match(prepared.pageData?.ceremony?.time ?? '', /^(?:오후|PM) 2:30$/);
 
 for (const rendererPath of [
   'src/app/_components/themeRenderers/emotional.tsx',

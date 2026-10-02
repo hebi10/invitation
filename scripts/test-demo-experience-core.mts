@@ -7,8 +7,8 @@ import {
 } from '@/lib/demoExperienceTime';
 import { buildAppRoutes } from '@/lib/demoExperienceRoutes';
 import { createDemoExperienceSeedEvents, DEMO_EXPERIENCE_DAILY_SLUG } from '@/config/demoExperienceSeeds';
-import { beginDemoDailyWorkspace, prepareDemoDailyWorkspace, saveDemoDailyWorkspace } from '@/server/demoExperienceService';
-import { DemoExperienceVersionConflictError, type DemoExperienceRepository } from '@/server/repositories/demoExperienceRepository';
+import { beginDemoDailyWorkspace, DemoExperienceVersionConflictError, prepareDemoDailyWorkspace, saveDemoDailyWorkspace } from '@/server/demoExperienceService';
+import type { DemoExperienceRepository } from '@/server/repositories/demoExperienceRepository';
 import type { DemoExperienceStoredEvent } from '@/types/demoExperience';
 import { buildStepValidation, type WizardStepKey } from '@/app/page-wizard/pageWizardData';
 
