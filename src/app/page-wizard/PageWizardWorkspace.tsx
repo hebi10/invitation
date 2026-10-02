@@ -33,6 +33,8 @@ import styles from './PageWizardWorkspace.module.css';
 import { WizardFieldValidationProvider } from './WizardFieldValidation';
 import { useDialogLayer } from '@/hooks/useDialogLayer';
 import { isPreviewStep, type PreviewStep } from '../wizard-preview/previewSections';
+import { normalizeWeddingIntroStyle } from '@/lib/weddingIntro';
+import type { WeddingIntroPreview } from './WeddingWizardPreview';
 
 type PageWizardWorkspaceProps = {
   experience?: boolean;
@@ -131,12 +133,30 @@ export default function PageWizardWorkspace({
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
   const [isFullPreviewOpen, setIsFullPreviewOpen] = useState(false);
   const [focusedPreviewStep, setFocusedPreviewStep] = useState<PreviewStep>(activeStepKey);
-  useEffect(() => setFocusedPreviewStep(activeStepKey), [activeStepKey]);
+  const [introPreview, setIntroPreview] = useState<WeddingIntroPreview | null>(null);
+  useEffect(() => {
+    setFocusedPreviewStep(activeStepKey);
+    setIntroPreview(null);
+  }, [activeStepKey, formState.introStyle]);
+  const hasFullPreview = Boolean(fullPreview);
+  useEffect(() => {
+    if (!hasFullPreview) return;
+    const previewIntro = (event: Event) => {
+      const style = normalizeWeddingIntroStyle((event as CustomEvent<{ style?: unknown }>).detail?.style);
+      if (style === 'none') return;
+      setFocusedPreviewStep('music');
+      setIntroPreview({ style });
+      if (window.matchMedia('(max-width: 1199px)').matches) setIsFullPreviewOpen(true);
+    };
+    window.addEventListener('wizard-preview-intro', previewIntro);
+    return () => window.removeEventListener('wizard-preview-intro', previewIntro);
+  }, [hasFullPreview]);
   const focusedPreview = isValidElement(fullPreview)
-    ? cloneElement(fullPreview as ReactElement<{ activeStepKey: PreviewStep }>, { activeStepKey: focusedPreviewStep })
+    ? cloneElement(fullPreview as ReactElement<{ activeStepKey: PreviewStep; introPreview: WeddingIntroPreview | null }>, { activeStepKey: focusedPreviewStep, introPreview })
     : fullPreview;
   const focusPreview = (step: PreviewStep, reveal = false) => {
     setFocusedPreviewStep(step);
+    setIntroPreview(null);
     window.dispatchEvent(new CustomEvent('wizard-preview-focus', { detail: { step } }));
     if (reveal && window.matchMedia('(max-width: 1199px)').matches) setIsFullPreviewOpen(true);
   };
@@ -158,7 +178,10 @@ export default function PageWizardWorkspace({
     [activeSection.steps]
   );
   const isDialogOpen = isMobileNavOpen || isFullPreviewOpen || previewStepKey !== null;
-  const closeFullPreview = () => setIsFullPreviewOpen(false);
+  const closeFullPreview = () => {
+    setIsFullPreviewOpen(false);
+    setIntroPreview(null);
+  };
   useDialogLayer(fullPreviewDialogRef, { open: isFullPreviewOpen, onClose: closeFullPreview });
 
   const closePreview = () => onClosePreview();

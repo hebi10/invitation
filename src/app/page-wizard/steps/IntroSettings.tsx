@@ -1,20 +1,10 @@
 'use client';
 
-import dynamic from 'next/dynamic';
-import { useEffect, useRef, useState } from 'react';
-import { normalizeWeddingIntroStyle, WEDDING_INTRO_OPTIONS, type WeddingIntroStyle } from '@/lib/weddingIntro';
-import type { InvitationThemeKey } from '@/types/invitationPage';
+import { normalizeWeddingIntroStyle, WEDDING_INTRO_OPTIONS } from '@/lib/weddingIntro';
 import type { WizardStepProps } from '../pageWizardShared';
 import styles from './IntroSettings.module.css';
 
-const WeddingWizardPreview = dynamic(() => import('../WeddingWizardPreview'), { ssr: false });
-
-export default function IntroSettings({ formState, updateForm, theme }: WizardStepProps & { theme: InvitationThemeKey }) {
-  const [preview, setPreview] = useState<{ style: WeddingIntroStyle; version: number } | null>(null);
-  const previewRef = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    if (preview) previewRef.current?.scrollIntoView({ block: 'start', behavior: 'instant' });
-  }, [preview]);
+export default function IntroSettings({ formState, updateForm }: WizardStepProps) {
   const selectedStyle = normalizeWeddingIntroStyle(formState.introStyle);
 
   return (
@@ -32,21 +22,12 @@ export default function IntroSettings({ formState, updateForm, theme }: WizardSt
               <span><strong>{option.label}</strong><span className={styles.description}>{option.description}</span></span>
             </label>
             {option.value !== 'none' ? (
-              <button type="button" className={styles.previewButton} aria-label={`${option.label} 연출 보기`} onClick={() => setPreview(current => ({ style: option.value, version: (current?.version ?? 0) + 1 }))}>연출 보기</button>
+              <button type="button" className={styles.previewButton} aria-label={`${option.label} 연출 보기`} onClick={() => window.dispatchEvent(new CustomEvent('wizard-preview-intro', { detail: { style: option.value } }))}>연출 보기</button>
             ) : null}
           </div>
         ))}
       </fieldset>
-      <p className={styles.description}>연출 보기는 저장하지 않고 미리 확인하는 기능입니다. 선택 후 저장하면 실제 청첩장에 적용됩니다. 같은 탭에서 다시 방문하면 연출은 생략됩니다.</p>
-      {preview ? (
-        <div ref={previewRef} className={styles.inlinePreview}>
-          <div className={styles.previewHeading}>
-            <h3 className={styles.title}>{WEDDING_INTRO_OPTIONS.find(option => option.value === preview.style)?.label} 미리보기</h3>
-            <button type="button" className={styles.previewButton} onClick={() => setPreview(null)}>미리보기 닫기</button>
-          </div>
-          <WeddingWizardPreview key={preview.version} formState={{ ...formState, introStyle: preview.style }} theme={theme} />
-        </div>
-      ) : null}
+      <p className={styles.description}>연출 보기를 누르면 청첩장 미리보기에서 재생됩니다. 선택 후 저장하면 실제 청첩장에 적용됩니다. 같은 탭에서 다시 방문하면 연출은 생략됩니다.</p>
     </section>
   );
 }

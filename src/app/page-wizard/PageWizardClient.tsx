@@ -1412,7 +1412,7 @@ export default function PageWizardClient({
       case 'music':
         return (
           <>
-            {eventType === 'wedding' ? <IntroSettings {...sharedProps} theme={defaultTheme} /> : null}
+            {eventType === 'wedding' ? <IntroSettings {...sharedProps} /> : null}
             <MusicStep {...sharedProps} musicPreviewState={musicPreviewState} />
           </>
         );
