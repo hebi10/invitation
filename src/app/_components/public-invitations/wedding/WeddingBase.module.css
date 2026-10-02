@@ -469,18 +469,19 @@ details[open] > :is(.disclosureSummary, .accountSummary, .formSummary)::after { 
 .page[data-design='classic-r'] [data-wedding-section='gallery'] .title::after { content: 'GALLERY'; }
 .page[data-design='classic-r'] .ceremonySection > .heading::after { content: 'THE WEDDING DAY'; }
 .page[data-design='classic-r'] .scheduleSection .heading::after { content: 'LOCATION'; }
-.page[data-design='classic-r'] .transportSection .heading::after { content: 'VISITING GUIDE'; }
-.page[data-design='classic-r'] [data-wedding-section='gift'] .title::after { content: 'ACCOUNT'; }
-.page[data-design='classic-r'] [data-wedding-section='guestbook'] .title::after { content: 'GUESTBOOK'; }
+/* Practical information shares one left edge, without editorial labels. */
+.page[data-design='classic-r'] :is(.transportSection, [data-wedding-section='gift'], [data-wedding-section='guestbook']) :is(.heading, .title) { min-height: 0; padding: 0; margin-bottom: 16px; counter-increment: none; }
+.page[data-design='classic-r'] :is(.transportSection, [data-wedding-section='gift'], [data-wedding-section='guestbook']) :is(.heading, .title)::before,
+.page[data-design='classic-r'] :is(.transportSection, [data-wedding-section='gift'], [data-wedding-section='guestbook']) :is(.heading, .title)::after { content: none; }
 .page[data-design='classic-r'] .quickLinks { width: calc(100% - 48px); padding: 8px 0; margin: 0 auto; gap: 8px; }
 .page[data-design='classic-r'] .quickLinks a { font-size: 13px; min-height: 48px; text-decoration: underline; text-underline-offset: 5px; }
 .page[data-design='classic-r'] .invitationCopy { max-width: none; margin: 0 0 0 var(--editorial-gutter); font-size: 15px; line-height: 2; }
 .page[data-design='classic-r'] .invitationCopy .invitationAuthor { margin-top: 24px; font-size: 14px; color: var(--muted); }
 .page[data-design='classic-r'] .contactSection { margin-top: 24px; }
 .page[data-design='classic-r'] :is(.disclosureSummary, .accountSummary, .formSummary, .copyButton) { min-height: 48px; font-size: 14px; font-weight: 500; background: transparent; border: 0; padding: 12px 0; justify-content: space-between; text-align: left; }
-.page[data-design='classic-r'] :is(.contactSection, .guideDisclosure, .accountSection) > summary { padding-inline: 16px; background: var(--paper-soft); }
-.page[data-design='classic-r'] :is(.guideDisclosure, .accountSection) > summary::after { content: '+'; border: 0; width: 16px; height: auto; transform: none; font-size: 18px; text-align: center; }
-.page[data-design='classic-r'] :is(.guideDisclosure, .accountSection)[open] > summary::after { content: '−'; }
+.page[data-design='classic-r'] .contactSection > summary { padding-inline: 16px; background: var(--paper-soft); }
+.page[data-design='classic-r'] :is(.guideDisclosure, .accountSection) > summary { padding-inline: 0 4px; }
+.page[data-design='classic-r'] :is(.guideDisclosure, .accountSection) > summary::after { flex-shrink: 0; }
 .page[data-design='classic-r'] .ceremonySection {
   --ink: #f5f4ef; --muted: #b9b9b1; --accent: #f5f4ef; --focus: #f5f4ef; --control-line: #85857e;
   width: 100%; margin-top: var(--section-space); padding: 40px 24px; background: #191917; color: var(--ink);
@@ -514,8 +515,8 @@ details[open] > :is(.disclosureSummary, .accountSummary, .formSummary)::after { 
 .page[data-design='classic-r'] .storedSection li { grid-template-columns: minmax(0, 72px) minmax(0, 1fr); column-gap: 16px; }
 .page[data-design='classic-r'] .storedSection li > :only-child { grid-column: 1 / -1; }
 .page[data-design='classic-r'] .storedSection li span { color: var(--muted); }
-.page[data-design='classic-r'] :is(.message, .subtitle) { max-width: none; margin: 0 0 24px var(--editorial-gutter); font-size: 15px; line-height: 1.9; text-align: left; }
-.page[data-design='classic-r'] .accountsContainer { gap: 12px; }
+.page[data-design='classic-r'] :is(.message, .subtitle) { max-width: none; margin: 0 0 20px; font-size: 15px; line-height: 1.9; text-align: left; }
+.page[data-design='classic-r'] .accountsContainer { gap: 4px; }
 .page[data-design='classic-r'] .accountCard { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: start; gap: 8px 16px; padding: 20px 0; }
 .page[data-design='classic-r'] .accountRow { display: grid; gap: 2px; font-size: 14px; }
 .page[data-design='classic-r'] .accountHolder { font-size: 15px; margin-bottom: 6px; }
