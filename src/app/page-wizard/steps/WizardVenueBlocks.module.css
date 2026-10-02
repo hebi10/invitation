@@ -1,6 +1,6 @@
 .stack {
   display: grid;
-  gap: 20px;
+  gap: 28px;
   min-width: 0;
 }
 
@@ -8,9 +8,9 @@
   display: grid;
   gap: 20px;
   min-width: 0;
-  padding: 24px;
-  border: 1px solid var(--operation-color-border, #d8d8d3);
-  background: var(--operation-color-surface, #fff);
+  padding: 0;
+  border: 0;
+  background: transparent;
 }
 
 .mapBlock > section {
@@ -34,25 +34,25 @@
 
 .inlineFields {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 220px));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 16px;
 }
 
 .contact {
   width: 100%;
-  max-width: 280px;
+  max-width: 360px;
 }
 
 .optional {
   min-width: 0;
-  border: 1px solid var(--operation-color-border, #d8d8d3);
-  background: var(--operation-color-surface, #fff);
+  border: 0;
+  background: var(--operation-color-surface-muted, #f8f8f7);
 }
 
 .summary {
-  padding: 20px 24px;
+  padding: 16px 20px;
   cursor: pointer;
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 500;
   line-height: 1.6;
 }
@@ -84,20 +84,20 @@
   display: grid;
   gap: 20px;
   min-width: 0;
-  padding: 0 24px 24px;
+  padding: 4px 20px 20px;
 }
 
 @media (max-width: 600px) {
   .block {
-    padding: 20px 16px;
+    padding: 0;
   }
 
   .summary {
-    padding: 18px 16px;
+    padding: 16px;
   }
 
   .body {
-    padding: 0 16px 20px;
+    padding: 4px 16px 16px;
   }
 
   .inlineFields {

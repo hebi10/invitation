@@ -5,6 +5,7 @@ import {
 
 import TemplateChoiceGroup from '../TemplateChoiceGroup';
 import styles from '../page.module.css';
+import panelStyles from '../pageWizardEditorPanels.module.css';
 import blockStyles from './WizardVenueBlocks.module.css';
 import { renderFieldMeta, type ExtraStepProps } from '../pageWizardShared';
 
@@ -91,7 +92,7 @@ export default function ExtraStep({
       <p className={blockStyles.description}>
         계좌 등록은 선택입니다. 등록할 때는 은행명·계좌번호·예금주를 모두 입력해 주세요.
       </p>
-      <div className={styles.twoColumnGrid}>
+      <div className={panelStyles.accountSections}>
         <AccountSectionPanel
           kind="groomAccounts"
           title={isFirstBirthday ? '아빠 계좌' : '신랑측 계좌'}

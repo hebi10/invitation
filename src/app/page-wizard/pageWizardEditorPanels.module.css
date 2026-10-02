@@ -269,8 +269,13 @@
 }
 
 .sectionTitle {
-  font-size: 1.08rem;
+  font-size: 18px;
+  font-weight: 500;
+  line-height: 1.5;
 }
+
+.subCardTitle,
+.nestedCardTitle { font-size: 16px; font-weight: 500; line-height: 1.5; }
 
 .sectionDescription,
 .subCardDescription,
@@ -313,7 +318,7 @@
 }
 
 .input {
-  min-height: 48px;
+  min-height: 46px;
 }
 
 .textarea {
@@ -323,7 +328,7 @@
 
 .input:focus,
 .textarea:focus {
-  outline: 3px solid color-mix(in srgb, var(--operation-color-focus) 24%, transparent);
+  outline: 2px solid var(--operation-color-focus);
   outline-offset: 1px;
   border-color: var(--operation-color-focus);
   box-shadow: none;
@@ -336,18 +341,23 @@
 .subCard,
 .nestedCard,
 .emptyCard {
-  padding: 16px;
-  border: 1px solid var(--operation-color-border);
-  border-radius: var(--operation-radius-panel);
-  background: var(--operation-color-surface);
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
 }
 
 .nestedCard {
-  background: var(--operation-color-surface-muted);
+  background: transparent;
 }
 
 .emptyCard {
+  padding: 16px;
+  background: var(--operation-color-surface-muted);
   color: var(--operation-color-text-secondary);
+  font-size: 14px;
+  text-align: left;
 }
 
 .detailsSummary {
@@ -356,8 +366,10 @@
 
 .ghostButton,
 .textButton {
-  min-height: 44px;
+  min-height: 46px;
   border-radius: var(--operation-radius-control);
+  font-size: 14px;
+  font-weight: 500;
 }
 
 .ghostButton {
@@ -374,7 +386,7 @@
 .input,
 .textarea {
   min-width: 0;
-  font-size: 16px;
+  font-size: 15px;
 }
 
 .label {
@@ -387,6 +399,13 @@
 .fieldHint,
 .countText {
   font-size: 14px;
+}
+
+.fieldBadgeRequired,
+.fieldBadgeOptional {
+  color: var(--operation-color-text-secondary);
+  font-size: 12px;
+  font-weight: 400;
 }
 
 .nestedCard {
@@ -422,9 +441,10 @@
   display: grid;
   gap: 12px;
   padding: 16px;
-  border: 1px solid var(--operation-color-border);
+  border: 0;
+  background: var(--operation-color-surface-muted);
   color: var(--operation-color-text);
-  font-size: 16px;
+  font-size: 15px;
 }
 
 .templatePreview p {
@@ -438,17 +458,17 @@
   width: 100%;
   min-width: 0;
   box-sizing: border-box;
-  padding: 24px;
+  padding: 0;
   gap: 20px;
 }
 
 .familyHeading { display: flex; align-items: flex-start; gap: 16px; min-width: 0; }
 .familyHeading .subCardDescription { margin-top: 6px; font-size: 13px; }
-.personCard .subCardTitle, .basicCard .subCardTitle { font-size: 20px; font-weight: 500; line-height: 1.5; }
-.familyToggle { min-height: 44px; padding: 0 12px; flex-shrink: 0; border: 1px solid var(--operation-color-border-strong); background: #fff; color: var(--operation-color-text); font: inherit; font-size: 13px; cursor: pointer; }
+.personCard .subCardTitle, .basicCard .subCardTitle { font-size: 18px; font-weight: 500; line-height: 1.5; }
+.familyToggle { min-height: 46px; padding: 0 12px; flex-shrink: 0; border: 1px solid var(--operation-color-border-strong); background: #fff; color: var(--operation-color-text); font: inherit; font-size: 14px; cursor: pointer; }
 .familyToggle:focus-visible { outline: 2px solid var(--operation-color-focus); outline-offset: 3px; }
 .personCard > .detailsGroup > .detailsSummary { display: none; }
-.personCard > .personFields > .phoneField { flex-basis: auto; width: 260px; max-width: 100%; }
+.personCard > .personFields > .phoneField { width: auto; max-width: 100%; }
 .personCard .detailsBody { padding-top: 0; }
 
 .personCard .subCardTitle {
@@ -456,39 +476,39 @@
 }
 
 .personFields {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: flex-start;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: start;
   gap: 16px;
 }
 
 .nameField {
-  width: 180px;
+  width: auto;
   max-width: 100%;
 }
 
 .relationField {
-  width: 140px;
+  width: auto;
   max-width: 100%;
 }
 
 .phoneField {
-  flex-basis: 100%;
+  min-width: 0;
 }
 
 .phoneField .input {
-  max-width: 260px;
+  max-width: none;
 }
 
 .parentGrid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr));
-  gap: 28px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 24px;
 }
 
 .parentGrid .personFields {
   display: grid;
-  grid-template-columns: minmax(84px, 110px) minmax(0, 180px);
+  grid-template-columns: minmax(0, .65fr) minmax(0, 1fr);
   gap: 12px;
 }
 
@@ -508,8 +528,7 @@
   line-height: 1.7;
 }
 
-.repeatableCard,
-.basicCard {
+.repeatableCard {
   border: 1px solid var(--operation-color-border);
   background: var(--operation-color-surface);
   min-width: 0;
@@ -562,32 +581,46 @@
 }
 
 .basicCard {
-  padding: 24px;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
 }
 
 .basicContent {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 20px;
-  margin-top: 16px;
+  display: grid;
+  gap: 16px;
 }
 
 .basicContent > :first-child {
-  flex: 1 1 376px;
   min-width: 0;
 }
+
+.basicNameFields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.signatureField { width: 100%; max-width: 360px; }
+.greetingMessage { min-height: 280px; line-height: 1.8; }
+
+.accountSections { display: grid; gap: 32px; min-width: 0; }
+
+.musicStep { gap: 24px; }
+.musicStep .musicPanel { padding: 0; border: 0; background: transparent; }
+.musicStep .musicControlFields { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px 16px; }
 
 .familyDisclosure {
   min-width: 0;
-  border: 1px solid var(--operation-color-border);
-  background: var(--operation-color-surface);
+  border: 0;
+  background: var(--operation-color-surface-muted);
 }
 
 .familyDisclosureSummary {
-  padding: 20px 24px;
+  padding: 16px 20px;
   cursor: pointer;
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 500;
   line-height: 1.6;
 }
@@ -614,22 +647,33 @@
 }
 
 .familyDisclosure > .personCard {
-  padding-top: 0;
+  padding: 4px 20px 20px;
   border: 0;
 }
 
 @media (max-width: 640px) {
-  .basicCard { padding: 16px; }
-  .personCard { padding: 16px; }
+  .basicCard { padding: 0; }
+  .personCard { padding: 0; }
   .familyHeading { gap: 12px; }
   .personCard .subCardTitle, .basicCard .subCardTitle { font-size: 18px; }
   .familyToggle { align-self: flex-end; }
-  .familyDisclosureSummary { padding: 18px 16px; }
+  .familyDisclosureSummary { padding: 16px; }
+  .familyDisclosure > .personCard { padding: 4px 16px 16px; }
   .subCard {
-    padding: 12px;
+    padding: 0;
   }
 
   .textButton {
     padding: 0 8px;
   }
+}
+
+@media (max-width: 560px) {
+  .parentGrid { grid-template-columns: minmax(0, 1fr); }
+  .personFields { grid-template-columns: minmax(0, 1fr); }
+  .musicStep .musicControlFields { grid-template-columns: minmax(0, 1fr); }
+}
+
+@media (max-width: 380px) {
+  .basicNameFields { grid-template-columns: minmax(0, 1fr); }
 }

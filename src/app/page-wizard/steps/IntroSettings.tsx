@@ -11,7 +11,7 @@ export default function IntroSettings({ formState, updateForm }: WizardStepProps
     <section className={styles.section} aria-labelledby="intro-settings-title">
       <div>
         <h3 id="intro-settings-title" className={styles.title}>첫 화면 연출</h3>
-        <p className={styles.description}>하객이 청첩장을 처음 열었을 때 보여줄 장면입니다. 입력한 이름과 대표 사진으로 연출을 확인해 보세요.</p>
+        <p className={styles.description}>청첩장을 처음 열 때 보여줄 연출을 선택해 주세요.</p>
       </div>
       <fieldset className={styles.options}>
         <legend className={styles.legend}>첫 화면 연출 선택</legend>
@@ -27,7 +27,7 @@ export default function IntroSettings({ formState, updateForm }: WizardStepProps
           </div>
         ))}
       </fieldset>
-      <p className={styles.description}>연출 보기를 누르면 청첩장 미리보기에서 재생됩니다. 선택 후 저장하면 실제 청첩장에 적용됩니다. 같은 탭에서 다시 방문하면 연출은 생략됩니다.</p>
+      <p className={styles.description}>연출 보기는 미리보기에서 재생됩니다. 저장 후 적용되며 같은 탭에서는 처음 방문할 때만 표시됩니다.</p>
     </section>
   );
 }

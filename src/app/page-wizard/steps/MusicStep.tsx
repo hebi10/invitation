@@ -11,6 +11,7 @@ import {
 } from '@/lib/musicLibrary';
 
 import styles from '../page.module.css';
+import panelStyles from '../pageWizardEditorPanels.module.css';
 import { renderFieldMeta, type MusicStepProps } from '../pageWizardShared';
 
 export default function MusicStep({
@@ -107,8 +108,8 @@ export default function MusicStep({
   };
 
   return (
-    <div className={`${styles.fieldGrid} ${styles.musicSection}`}>
-      <section className={`${styles.formCard} ${styles.musicToggleCard}`}>
+    <div className={`${styles.fieldGrid} ${styles.musicSection} ${panelStyles.musicStep}`}>
+      <section className={`${styles.formCard} ${styles.musicToggleCard} ${panelStyles.musicPanel}`}>
         <div className={styles.musicToggleContent}>
           <label className={styles.switchRow}>
             <input
@@ -127,8 +128,8 @@ export default function MusicStep({
       </section>
 
       {formState.musicEnabled ? <>
-      <section className={`${styles.formCard} ${styles.musicControlCard}`}>
-        <div className={`${styles.twoColumnGrid} ${styles.musicControlGrid}`}>
+      <section className={`${styles.formCard} ${styles.musicControlCard} ${panelStyles.musicPanel}`}>
+        <div className={`${styles.twoColumnGrid} ${styles.musicControlGrid} ${panelStyles.musicControlFields}`}>
           <div className={`${styles.field} ${styles.musicField}`}>
             {renderFieldMeta('음악 카테고리', 'optional')}
             <button
@@ -256,7 +257,7 @@ export default function MusicStep({
         </div>
       </section>
 
-      <section className={`${styles.formCard} ${styles.musicPreviewCard}`}>
+      <section className={`${styles.formCard} ${styles.musicPreviewCard} ${panelStyles.musicPanel}`}>
         <span className={styles.summaryLabel}>미리 듣기</span>
         {previewMusicUrl ? (
             <audio ref={previewAudioRef} className={styles.musicAudio} controls preload="none" src={previewMusicUrl} />

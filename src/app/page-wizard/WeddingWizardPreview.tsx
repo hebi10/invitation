@@ -102,13 +102,14 @@ export default function WeddingWizardPreview({ formState, theme, activeStepKey =
             {getWeddingPreviewThemeKeys().map(option => <option key={option} value={option}>{getInvitationThemeLabel(option)}</option>)}
           </select>
         </label> : <span>{getInvitationThemeLabel(theme)}</span>}
-        <button type="button" disabled={!ready} aria-pressed={!viewingTop} onClick={() => focusSection()}>편집 위치 보기</button>
-        <button type="button" disabled={!ready} aria-pressed={viewingTop} onClick={() => {
-          setViewingTop(true);
-          frameRef.current?.contentWindow?.postMessage({ type: 'wedding-wizard-preview:top' }, window.location.origin);
-        }}>{normalizeWeddingIntroStyle(introPreview?.style ?? formState.introStyle) === 'none' ? '처음부터 보기' : '인트로부터 다시 보기'}</button>
+        <div className={styles.positionActions} role="group" aria-label="미리보기 위치">
+          <button type="button" disabled={!ready} aria-pressed={!viewingTop} onClick={() => focusSection()}>편집 위치 보기</button>
+          <button type="button" disabled={!ready} aria-pressed={viewingTop} onClick={() => {
+            setViewingTop(true);
+            frameRef.current?.contentWindow?.postMessage({ type: 'wedding-wizard-preview:top' }, window.location.origin);
+          }}>{normalizeWeddingIntroStyle(introPreview?.style ?? formState.introStyle) === 'none' ? '처음부터 보기' : '인트로부터 다시 보기'}</button>
+        </div>
       </div>
-      {!ready && <div className={styles.status} role="status">{timedOut ? <>미리보기를 불러오지 못했습니다. <button type="button" onClick={reload}>다시 불러오기</button></> : '초대장 미리보기를 준비하고 있습니다.'}</div>}
       <div className={styles.phone}>
         <iframe
           key={frameVersion}
@@ -120,11 +121,15 @@ export default function WeddingWizardPreview({ formState, theme, activeStepKey =
           onLoad={sendPreview}
         />
       </div>
-      <p className={styles.location} role="status">{introPreview ? `${WEDDING_INTRO_OPTIONS.find(option => option.value === introPreview.style)?.label} 미리보기 · 저장되지 않습니다.` : viewingTop ? '청첩장을 처음부터 보고 있습니다.' : `편집 위치 · ${previewSections[focusedStep].label}`}</p>
-      <details className={styles.previewHelp}>
-        <summary>미리보기 안내</summary>
-        <p className={styles.hint}>저장 전 내용이 반영됩니다. 미입력 정보와 사진은 예시이며 저장되지 않습니다. 지도는 실제 페이지에서 확인할 수 있고, 미리보기 방명록은 연습용입니다.{onThemeChange ? ' 디자인 선택은 미리보기에만 적용됩니다.' : ''}</p>
-      </details>
+      <div className={styles.previewMeta}>
+        <p className={styles.location} role="status">{!ready
+          ? timedOut ? <>미리보기를 불러오지 못했습니다. <button type="button" onClick={reload}>다시 불러오기</button></> : '초대장 미리보기를 준비하고 있습니다.'
+          : introPreview ? `${WEDDING_INTRO_OPTIONS.find(option => option.value === introPreview.style)?.label} 미리보기 · 저장되지 않습니다.` : viewingTop ? '청첩장을 처음부터 보고 있습니다.' : `편집 위치 · ${previewSections[focusedStep].label}`}</p>
+        <details className={styles.previewHelp}>
+          <summary>미리보기 안내</summary>
+          <p className={styles.hint}>저장 전 내용이 반영됩니다. 미입력 정보와 사진은 예시이며 저장되지 않습니다. 지도는 실제 페이지에서 확인할 수 있고, 미리보기 방명록은 연습용입니다.{onThemeChange ? ' 디자인 선택은 미리보기에만 적용됩니다.' : ''}</p>
+        </details>
+      </div>
     </div>
   );
 }

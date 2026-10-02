@@ -3,6 +3,7 @@ import { PersonEditorCard } from '@/app/page-wizard/pageWizardEditorPanels';
 
 import TemplateChoiceGroup from '../TemplateChoiceGroup';
 import styles from '../page.module.css';
+import panelStyles from '../pageWizardEditorPanels.module.css';
 import {
   composeGreetingAuthor,
   DEFAULT_GREETING_MESSAGE,
@@ -55,7 +56,7 @@ export default function GreetingStep({
           />
         </WizardField>
 
-        <WizardField label={'인사말 서명'} className={styles.field}>
+        <WizardField label={'인사말 서명'} className={`${styles.field} ${panelStyles.signatureField}`}>
           {renderFieldMeta('인사말 서명', 'optional')}
           <input
             className={styles.input}
@@ -93,7 +94,7 @@ export default function GreetingStep({
           />
         </WizardField>
 
-        <WizardField label={'인사말 서명'} className={styles.field}>
+        <WizardField label={'인사말 서명'} className={`${styles.field} ${panelStyles.signatureField}`}>
           {renderFieldMeta('인사말 서명', 'optional')}
           <input
             className={styles.input}
@@ -117,7 +118,7 @@ export default function GreetingStep({
       <WizardField label={'인사말'} className={styles.field}>
         {renderFieldMeta('인사말', 'required')}
         <textarea
-          className={styles.textarea}
+          className={`${styles.textarea} ${panelStyles.greetingMessage}`}
           value={formState.pageData?.greetingMessage ?? ''}
           placeholder={DEFAULT_GREETING_MESSAGE}
           onChange={(event) =>
@@ -145,7 +146,7 @@ export default function GreetingStep({
         }
       />
 
-      <WizardField label={'인사말 서명'} className={styles.field}>
+      <WizardField label={'인사말 서명'} className={`${styles.field} ${panelStyles.signatureField}`}>
         {renderFieldMeta('인사말 서명', 'optional')}
         <input
           className={styles.input}

@@ -57,6 +57,7 @@ type PageWizardWorkspaceProps = {
   lastSavedAt: Date | null;
   persistedPublished: boolean;
   notice: ReactNode;
+  reloadAction?: ReactNode;
   isSaving: boolean;
   busyLabel?: string;
   published: boolean;
@@ -75,7 +76,7 @@ type PageWizardWorkspaceProps = {
 
 const DIRECTION_CONTRACT = `<!--
 THESIS: 초대장 편집기는 장식 화면이 아니라 누락 없이 정보를 완성하는 작업 공간이다.
-OWN-WORLD: 중립 배경, 먹색 글자, 올리브 단일 강조, 시스템 고딕, 얇은 카드 테두리.
+OWN-WORLD: 중립 배경, 먹색 글자, 차콜 행동 강조, 시스템 고딕, 여백으로 구분한 입력 영역.
 STORY: 핵심 정보를 먼저 입력하고, 선택 정보를 펼쳐 작성하며, 반영 위치를 확인하고 저장한다.
 FIRST VIEWPORT: 상단 저장 바, 왼쪽 진행 목차, 중앙 입력 블록, 오른쪽 미리보기, 하단 다음 동작.
 FORM: Operate 모드의 3열 데스크톱·단일 열 모바일 작성 도우미.
@@ -116,6 +117,7 @@ export default function PageWizardWorkspace({
   lastSavedAt,
   persistedPublished,
   notice,
+  reloadAction,
   isSaving,
   busyLabel = '저장 중',
   published,
@@ -242,7 +244,7 @@ export default function PageWizardWorkspace({
         disabled={isSaving}
         onClick={() => handleSectionSelect(section.id)}
       >
-        <span className={isOptionalWizardSection(section) ? styles.optionalIndex : styles.sectionIndex}>{isOptionalWizardSection(section) ? '선택' : index + 1}</span>
+        {!isOptionalWizardSection(section) ? <span className={styles.sectionIndex} aria-hidden="true">{index + 1}</span> : null}
         <span className={styles.sectionButtonText}>
           <strong>{section.title}</strong>
           <span>{isOptionalWizardSection(section) && !isActive && validation.valid ? hasMeaningfulInput ? '설정됨' : '미사용' : section.id === 'review' && !isActive && validation.valid ? '확인 후 완료' : statusLabel}</span>
@@ -274,28 +276,29 @@ export default function PageWizardWorkspace({
       <header className={styles.topBar}>
         <div className={styles.topBarInner}>
           <div className={styles.identity}>
-            {formState.eventType === 'wedding' ? <span className={styles.wordmark}>WEDDING</span> : null}
             <div>
               <h1>{title}</h1>
               <p>{subtitle}</p>
             </div>
           </div>
           <div className={styles.topActions}>
-            <span className={styles.publicationStatus}>
-              {persistedPublished ? '공개 중' : '비공개 초안'}
-            </span>
-            <span
-              className={`${styles.saveStatus} ${styles[`saveStatus_${saveStatus}`]}`}
-              role="status"
-              aria-live="polite"
-            >
-              {getWizardSaveStatusLabel(saveStatus)}
-            </span>
-            {lastSavedAt ? (
-              <time className={styles.savedTime} dateTime={lastSavedAt.toISOString()}>
-                {lastSavedAt.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })}
-              </time>
-            ) : null}
+            <div className={styles.statusGroup}>
+              <span className={styles.publicationStatus}>
+                {persistedPublished ? '공개 중' : '비공개 초안'}
+              </span>
+              <span
+                className={`${styles.saveStatus} ${styles[`saveStatus_${saveStatus}`]}`}
+                role="status"
+                aria-live="polite"
+              >
+                {getWizardSaveStatusLabel(saveStatus)}
+              </span>
+              {lastSavedAt ? (
+                <time className={styles.savedTime} dateTime={lastSavedAt.toISOString()}>
+                  {lastSavedAt.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })}
+                </time>
+              ) : null}
+            </div>
             <button type="button" className={styles.secondaryAction} onClick={() => attempt(onSave, true)} disabled={isSaving}>
               {isSaving ? busyLabel : saveStatus === 'error' ? '저장 다시 시도' : setupOnly ? (hasPersistedData ? '설정 저장' : '초대장 생성') : '내용 저장'}
             </button>
@@ -303,9 +306,10 @@ export default function PageWizardWorkspace({
               <button
                 type="button"
                 className={styles.secondaryAction}
+                aria-label={fullPreview ? '청첩장 미리보기' : '입력 내용 확인'}
                 onClick={() => fullPreview ? setIsFullPreviewOpen(true) : activePreviewStep && openPreview(activePreviewStep.key)}
               >
-                {fullPreview ? '청첩장 미리보기' : '입력 내용 확인'}
+                {fullPreview ? <><span className={styles.previewButtonPrefix}>청첩장</span>미리보기</> : '입력 내용 확인'}
               </button>
             ) : null}
           </div>
@@ -335,17 +339,17 @@ export default function PageWizardWorkspace({
         </aside>
 
         <main className={styles.content}>
-          {notice}
-
           <div className={styles.sectionIntro}>
-          <header className={styles.sectionHeader}>
-            <span className={styles.sectionPosition}>
-              {sectionPosition}
-            </span>
-            <h2>{activeSection.title}</h2>
-            <p>{activeSection.description}</p>
-          </header>
+            <header className={styles.sectionHeader}>
+              <div className={styles.sectionTitleRow}>
+                <h2>{activeSection.title}</h2>
+                <span className={styles.sectionPosition}>{sectionPosition}</span>
+              </div>
+              <p>{activeSection.description}</p>
+            </header>
+            {reloadAction ? <div className={styles.sectionTools}>{reloadAction}</div> : null}
           </div>
+          {notice}
           {isFinalSection ? (
             <section className={styles.reviewSummary} aria-label="입력 내용 검토" data-step-key="final" tabIndex={-1}>
               <h3>공유 전 확인</h3>
@@ -387,6 +391,7 @@ export default function PageWizardWorkspace({
                 <section
                   key={step.key}
                   className={styles.stepSection}
+                  data-single-step={isOnlyStepWithSectionTitle ? true : undefined}
                   data-step-key={step.key === 'final' ? undefined : step.key}
                   aria-labelledby={`wizard-step-${step.key}`}
                   aria-current={isActiveStep ? 'step' : undefined}
@@ -397,8 +402,8 @@ export default function PageWizardWorkspace({
                     focusPreview(isPreviewStep(target) ? target : step.key);
                   }}
                 >
-                  <div className={styles.stepHeadingRow}>
-                    <div className={isOnlyStepWithSectionTitle ? styles.stepHeadingCopyCompact : undefined}>
+                  <div className={isOnlyStepWithSectionTitle && fullPreview ? styles.visuallyHidden : styles.stepHeadingRow}>
+                    <div>
                       <h3
                         id={`wizard-step-${step.key}`}
                         className={isOnlyStepWithSectionTitle ? styles.visuallyHidden : undefined}
@@ -407,14 +412,14 @@ export default function PageWizardWorkspace({
                       </h3>
                       {!isOnlyStepWithSectionTitle ? <p>{step.description}</p> : null}
                     </div>
-                    {step.previewSection ? (
+                    {step.previewSection && !fullPreview ? (
                       <button
                         type="button"
                         className={styles.stepPreviewAction}
-                        aria-pressed={fullPreview ? focusedPreviewStep === step.key : previewStepKey === step.key}
-                        onClick={() => fullPreview ? focusPreview(step.key, true) : openPreview(step.key)}
+                        aria-pressed={previewStepKey === step.key}
+                        onClick={() => openPreview(step.key)}
                       >
-                        {fullPreview ? '미리보기 위치' : '입력 내용 확인'}
+                        입력 내용 확인
                       </button>
                     ) : null}
                   </div>

@@ -85,8 +85,8 @@ function SingleImageCard({
   };
 
   return (
-    <section className={styles.uploadCard}>
-      <div className={styles.uploadHeader}>
+    <section className={`${styles.uploadCard} ${imageStyles.uploadPanel}`}>
+      <div className={`${styles.uploadHeader} ${imageStyles.uploadHeader}`}>
         <div>
           <h3 className={styles.cardTitle}>{title}</h3>
           <p className={styles.cardText}>{description}</p>
@@ -253,7 +253,7 @@ export default function ImagesStep({
   };
 
   return (
-    <div className={styles.fieldGrid}>
+    <div className={`${styles.fieldGrid} ${imageStyles.imageStep}`}>
       {mode !== 'sharing' && experience && onDemoImageSelect ? (
         <DemoExperienceImagePicker
           selectedImage={coverImage}
@@ -285,8 +285,8 @@ export default function ImagesStep({
         onImageError={() => markSingleImageAsBroken('cover')}
       /> : null}
 
-      {mode !== 'sharing' ? <section className={styles.uploadCard}>
-        <div className={styles.uploadHeader}>
+      {mode !== 'sharing' ? <section className={`${styles.uploadCard} ${imageStyles.uploadPanel}`}>
+        <div className={`${styles.uploadHeader} ${imageStyles.uploadHeader}`}>
           <div>
             <h3 className={styles.cardTitle}>
               {isFirstBirthday ? '성장 갤러리 이미지' : '갤러리 이미지'}

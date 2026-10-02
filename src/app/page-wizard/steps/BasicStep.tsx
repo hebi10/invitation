@@ -197,12 +197,9 @@ export default function BasicStep({
   }
 
   return (
-    <section className={panelStyles.basicCard}>
-      <div className={panelStyles.sectionTitleRow}>
-        <h3 className={panelStyles.subCardTitle}>신랑·신부 기본 정보</h3>
-      </div>
+    <section className={panelStyles.basicCard} aria-label="신랑·신부 기본 정보">
       <div className={panelStyles.basicContent}>
-      <div className={styles.coupleNameFields}>
+      <div className={panelStyles.basicNameFields}>
         <WizardField label="신랑 이름" className={styles.field}>
           {renderFieldMeta('신랑 이름', 'required')}
           <input className={styles.input} value={formState.couple.groom.name} placeholder="신랑 이름"

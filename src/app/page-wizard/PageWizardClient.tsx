@@ -1634,23 +1634,16 @@ export default function PageWizardClient({
       saveStatus={saveStatus}
       lastSavedAt={lastSavedAt}
       persistedPublished={persistedPublished}
-      notice={
-        <>
-          {renderNotice()}
-          {isExistingWizardRefreshable ? (
-            <div className={styles.inlineActions}>
-              <button
-                type="button"
-                className={styles.secondaryButton}
-                onClick={() => void wizardLoadQuery.refetch()}
-                disabled={isWizardRefreshing}
-              >
-                {isWizardRefreshing ? '다시 불러오는 중...' : '다시 불러오기'}
-              </button>
-            </div>
-          ) : null}
-        </>
-      }
+      notice={renderNotice()}
+      reloadAction={isExistingWizardRefreshable ? (
+        <button
+          type="button"
+          onClick={() => void wizardLoadQuery.refetch()}
+          disabled={isWizardRefreshing}
+        >
+          {isWizardRefreshing ? '다시 불러오는 중...' : '다시 불러오기'}
+        </button>
+      ) : null}
       isSaving={isSaving || isConnectingCustomer || uploadingField !== null}
       busyLabel={uploadingField ? '이미지 업로드 중' : isConnectingCustomer ? '고객 연결 중' : '저장 중'}
       published={published}

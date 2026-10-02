@@ -1,8 +1,8 @@
 .section {
   display: grid;
-  gap: 18px;
+  gap: 20px;
   margin-bottom: 32px;
-  color: #292b28;
+  color: var(--operation-color-text);
 }
 .title {
   margin: 0 0 8px;
@@ -13,15 +13,15 @@
 .description {
   display: block;
   margin: 6px 0 0;
-  font-size: 13px;
+  font-size: 14px;
   line-height: 1.7;
-  color: #636760;
+  color: var(--operation-color-text-secondary);
 }
 
 .options {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 12px;
+  gap: 16px;
   border: 0;
   padding: 0;
   margin: 0;
@@ -29,8 +29,13 @@
 }
 
 .legend {
-  font-size: 13px;
-  margin-bottom: 10px;
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
 }
 
 .option {
@@ -38,13 +43,13 @@
   flex-direction: column;
   align-items: flex-start;
   gap: 12px;
-  border: 1px solid #d8dbd4;
+  border: 1px solid var(--operation-color-border);
   padding: 16px;
 }
 
 .option[data-selected='true'] {
-  border-color: #292b28;
-  background: #f5f6f2;
+  border-color: var(--operation-color-action);
+  background: var(--operation-color-surface-muted);
 }
 
 .choice {
@@ -58,27 +63,27 @@
 
 .choice input {
   margin: 4px 0 0;
-  accent-color: #292b28;
+  accent-color: var(--operation-color-action);
 }
 
 .choice strong {
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 500;
 }
 
 .previewButton {
-  min-height: 44px;
+  min-height: 46px;
   padding: 8px 14px;
-  border: 1px solid #bfc3ba;
+  border: 1px solid var(--operation-color-border-strong);
   background: #fff;
-  color: #292b28;
+  color: var(--operation-color-text);
   font: inherit;
-  font-size: 13px;
+  font-size: 14px;
   cursor: pointer;
 }
 
 .previewButton:focus-visible, .choice input:focus-visible {
-  outline: 2px solid #292b28;
+  outline: 2px solid var(--operation-color-focus);
   outline-offset: 3px;
 }
 

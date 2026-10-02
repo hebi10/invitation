@@ -1,8 +1,13 @@
+.imageStep { gap: 32px; min-width: 0; }
+.imageStep .uploadPanel,
+.imageStep > .uploadPanel:first-child { min-width: 0; padding: 0; border: 0; background: transparent; }
+.imageStep .uploadHeader { display: grid; gap: 16px; }
+
 .coverPreview {
   display: grid;
   place-items: center;
   min-height: 160px;
-  margin-top: 16px;
+  margin-top: 0;
   background: var(--operation-color-surface-muted);
 }
 
@@ -24,13 +29,13 @@
 .gallery {
   display: grid;
   gap: 16px;
-  margin-top: 16px;
+  margin-top: 0;
 }
 
 .galleryGrid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 10px;
+  gap: 12px;
 }
 
 .galleryPhoto {
@@ -61,13 +66,13 @@
   display: grid;
   place-items: center;
   background: var(--operation-color-surface-muted);
-  font-size: 12px;
+  font-size: 13px;
 }
 
 .galleryCaption {
   display: block;
   padding: 8px 0 5px;
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 500;
   line-height: 1.4;
 }
@@ -90,7 +95,7 @@
 }
 
 .galleryAction {
-  min-height: 44px;
+  min-height: 46px;
   padding: 0 12px;
   border: 1px solid var(--operation-color-border-strong);
   background: var(--operation-color-surface);
