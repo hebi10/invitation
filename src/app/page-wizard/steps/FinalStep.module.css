@@ -1,0 +1,39 @@
+.shareSummary {
+  display: grid;
+  gap: 20px;
+}
+
+.shareDetails {
+  border: 1px solid var(--operation-color-border);
+  background: var(--operation-color-surface);
+}
+
+.shareDetailsSummary {
+  padding: 18px 20px;
+  color: var(--operation-color-text);
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.6;
+  cursor: pointer;
+}
+
+.shareDetailsSummary:focus-visible {
+  outline: 2px solid var(--operation-color-focus);
+  outline-offset: -4px;
+}
+
+.shareDetailsBody {
+  display: grid;
+  gap: 24px;
+  padding: 4px 20px 20px;
+}
+
+@media (max-width: 639px) {
+  .shareDetailsSummary {
+    padding: 16px;
+  }
+
+  .shareDetailsBody {
+    padding: 0 16px 16px;
+  }
+}

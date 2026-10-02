@@ -442,7 +442,6 @@
   gap: 20px;
 }
 
-.blockNumber { flex: 0 0 36px; width: 36px; height: 36px; display: inline-grid; place-items: center; border-radius: 50%; background: #505b45; color: #fff; font-size: 14px; font-weight: 500; }
 .familyHeading { display: flex; align-items: flex-start; gap: 16px; min-width: 0; }
 .familyHeading .subCardDescription { margin-top: 6px; font-size: 13px; }
 .personCard .subCardTitle, .basicCard .subCardTitle { font-size: 20px; font-weight: 500; line-height: 1.5; }
@@ -579,24 +578,44 @@
   min-width: 0;
 }
 
-.namePreview {
-  flex: 1 1 180px;
-  padding: 20px 16px;
-  background: var(--operation-color-surface-muted);
-  text-align: center;
+.familyDisclosure {
+  min-width: 0;
+  border: 1px solid var(--operation-color-border);
+  background: var(--operation-color-surface);
+}
+
+.familyDisclosureSummary {
+  padding: 20px 24px;
+  cursor: pointer;
+  font-size: 16px;
+  font-weight: 500;
+  line-height: 1.6;
+}
+
+.familyDisclosureSummary:focus-visible {
+  outline: 2px solid var(--operation-color-focus);
+  outline-offset: 3px;
+}
+
+.familyOptional {
+  margin-left: 8px;
+  color: var(--operation-color-text-secondary);
+  font-size: 12px;
+  font-weight: 400;
+}
+
+.familyDisclosureDescription {
+  display: block;
+  margin-top: 4px;
+  color: var(--operation-color-text-secondary);
+  font-size: 14px;
+  font-weight: 400;
   overflow-wrap: anywhere;
 }
 
-.namePreview p {
-  margin: 0 0 10px;
-  font-size: 13px;
-  color: var(--operation-color-text-secondary);
-}
-
-.namePreview strong {
-  font-size: 21px;
-  font-weight: 500;
-  line-height: 1.6;
+.familyDisclosure > .personCard {
+  padding-top: 0;
+  border: 0;
 }
 
 @media (max-width: 640px) {
@@ -605,7 +624,7 @@
   .familyHeading { gap: 12px; }
   .personCard .subCardTitle, .basicCard .subCardTitle { font-size: 18px; }
   .familyToggle { align-self: flex-end; }
-  .blockNumber { flex-basis: 32px; width: 32px; height: 32px; }
+  .familyDisclosureSummary { padding: 18px 16px; }
   .subCard {
     padding: 12px;
   }

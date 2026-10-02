@@ -3,7 +3,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import AppQueryProvider from '../AppQueryProvider';
 import WeddingBase from '../_components/public-invitations/wedding/WeddingBase';
-import { WeddingClosing } from '../_components/WeddingClosing';
+import { withWeddingClosing } from '../_components/weddingPageRenderers';
+import closingStyles from '../_components/WeddingClosing.module.css';
 import type { WeddingPageReadyState } from '../_components/weddingPageState';
 import type { InvitationPage, InvitationPageSeed, InvitationThemeKey } from '@/types/invitationPage';
 import { sampleWeddingPage, sampleWeddingComments, SAMPLE_WEDDING_COVER, SAMPLE_WEDDING_IMAGES } from '@/config/homeWeddingSample';
@@ -18,8 +19,12 @@ import { isPreviewStep, previewSections, type PreviewStep } from './previewSecti
 const themes: InvitationThemeKey[] = ['simple', 'emotional', 'romantic', 'gyeol', 'classic-r'];
 const idle = () => {};
 const refresh = async () => {};
+const previewRenderers = new Map(themes.map(theme => [theme, withWeddingClosing(
+  props => <WeddingBase {...props} theme={theme} demoComments={sampleWeddingComments} showMap={false} />,
+  { theme, canvasClassName: closingStyles.canvas },
+)]));
 
-function buildPreview(seed: InvitationPageSeed, theme: InvitationThemeKey): WeddingPageReadyState {
+export function buildPreview(seed: InvitationPageSeed, theme: InvitationThemeKey): WeddingPageReadyState {
   const derived = applyDerivedWizardDefaults(seed);
   const groom = seed.couple.groom.name.trim() || sampleWeddingPage.groomName;
   const bride = seed.couple.bride.name.trim() || sampleWeddingPage.brideName;
@@ -42,7 +47,7 @@ function buildPreview(seed: InvitationPageSeed, theme: InvitationThemeKey): Wedd
   };
   const data = resolveInvitationPageDataByTheme(page, theme);
   const cover = seed.metadata.images.wedding.trim() || SAMPLE_WEDDING_COVER;
-  const images = Array.from(new Set(data?.galleryImages?.map((url) => url.trim()).filter((url) => url && url !== cover) ?? []));
+  const images = data?.galleryImages?.filter((url) => url.trim()) ?? [];
   const features = resolveInvitationFeatures(page.productTier, page.features);
   const gallery = (images.length ? images : SAMPLE_WEDDING_IMAGES.filter((url) => url !== cover)).slice(0, features.maxGalleryImages);
   page.pageData = {
@@ -64,6 +69,11 @@ function buildPreview(seed: InvitationPageSeed, theme: InvitationThemeKey): Wedd
     giftInfo: data?.giftInfo,
     hasGiftAccounts: Boolean(data?.giftInfo?.groomAccounts?.length || data?.giftInfo?.brideAccounts?.length),
   };
+}
+
+export function WeddingPreviewContent({ state, theme }: { state: WeddingPageReadyState; theme: InvitationThemeKey }) {
+  const Renderer = previewRenderers.get(theme);
+  return Renderer ? <Renderer state={state} options={{ slug: state.pageConfig.slug, theme }} /> : null;
 }
 
 export default function WizardPreviewClient() {
@@ -105,6 +115,13 @@ export default function WizardPreviewClient() {
   }, []);
   const state = useMemo(() => draft ? buildPreview(draft.seed, draft.theme) : null, [draft]);
   useEffect(() => {
+    // A cached frame can announce ready before the parent subscribes. Confirm
+    // each rendered draft without asking the parent to send it again.
+    if (draft && window.parent !== window) {
+      window.parent.postMessage({ type: 'wedding-wizard-preview:rendered' }, window.location.origin);
+    }
+  }, [draft]);
+  useEffect(() => {
     if (!state || !focus) return;
     // Section messages can arrive before the first draft commit. Resolve the
     // element after React renders, and re-resolve when preview content changes.
@@ -127,8 +144,7 @@ export default function WizardPreviewClient() {
   return (
     <AppQueryProvider>
       <div className={styles.canvas}>
-      <WeddingBase state={state} options={{ slug: state.pageConfig.slug, theme: draft.theme }} theme={draft.theme} demoComments={sampleWeddingComments} showMap={false} />
-      <WeddingClosing groomName={state.pageConfig.groomName} brideName={state.pageConfig.brideName} theme={draft.theme} />
+      <WeddingPreviewContent state={state} theme={draft.theme} />
       </div>
       {showIntro && <WeddingIntro
         key={`${normalizeWeddingIntroStyle(draft.seed.introStyle)}:${introRun}`}

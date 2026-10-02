@@ -118,15 +118,15 @@ export function PersonEditorCard({
   onParentFieldChange,
 }: PersonEditorCardProps) {
   const [parentsOpen, setParentsOpen] = useState(false);
-  return (
+  const familyNames = [person.father?.name, person.mother?.name].filter(Boolean).join(' · ');
+  const familySummary = [person.order, familyNames, person.phone?.trim() ? '연락처 입력됨' : '']
+    .filter(Boolean).join(' · ');
+  const editor = (
     <div className={`${styles.subCard} ${styles.personCard}`} data-preview-step="family">
       <div className={styles.subCardHeader}>
         <div className={styles.familyHeading}>
-          <span className={styles.blockNumber} aria-hidden="true">{role === 'groom' ? '02' : '03'}</span>
           <div>
-          <h3 className={styles.subCardTitle}>
-            {nameReadOnly ? (role === 'groom' ? '신랑측 가족 정보' : '신부측 가족 정보') : label}
-          </h3>
+          {!nameReadOnly ? <h3 className={styles.subCardTitle}>{label}</h3> : null}
           <p className={styles.subCardDescription}>
             {nameReadOnly
               ? '가족 정보는 선택입니다. 연락처는 공개할 때만 입력해 주세요.'
@@ -273,6 +273,19 @@ export function PersonEditorCard({
       </details>
     </div>
   );
+
+  return nameReadOnly ? (
+    <details className={styles.familyDisclosure} data-preview-step="family">
+      <summary className={styles.familyDisclosureSummary}>
+        <span>{role === 'groom' ? '신랑측 가족·연락처' : '신부측 가족·연락처'}</span>
+        <span className={styles.familyOptional}>선택</span>
+        <span className={styles.familyDisclosureDescription}>
+          {familySummary || '가족과 공개할 연락처를 추가할 수 있습니다'}
+        </span>
+      </summary>
+      {editor}
+    </details>
+  ) : editor;
 }
 
 export function GuideSectionPanel({
@@ -425,7 +438,7 @@ export function AccountSectionPanel({
 
               <div className={styles.fieldGrid}>
                 <label className={styles.field}>
-                  {renderFieldMeta('은행명', 'optional')}
+                  {renderFieldMeta('은행명', 'required')}
                   <input
                     className={styles.input}
                     value={account.bank}
@@ -440,7 +453,7 @@ export function AccountSectionPanel({
                 <label className={styles.field}>
                   {renderFieldMeta(
                     '계좌번호',
-                    'optional',
+                    'required',
                     '숫자만 입력해도 됩니다. 앞자리 0을 포함해 정확히 적어 주세요.'
                   )}
                   <input
@@ -456,7 +469,7 @@ export function AccountSectionPanel({
                 </label>
 
                 <label className={`${styles.field} ${styles.fieldWide}`}>
-                  {renderFieldMeta('예금주', 'optional')}
+                  {renderFieldMeta('예금주', 'required')}
                   <input
                     className={styles.input}
                     value={account.accountHolder}

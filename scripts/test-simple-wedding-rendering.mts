@@ -239,3 +239,47 @@ for (const images of [[], ['/story-a.jpg'], ['/story-a.jpg', '/story-b.jpg'], [s
   if (images.length) assert.ok(html.includes(`전체 사진 ${images.length}장 보기`));
 }
 console.log('Romantic cover, gallery and closing image allocation passed');
+
+// The editor preview must show the same design and closing content as the public renderer.
+const { buildPreview, WeddingPreviewContent } = await import('../src/app/wizard-preview/WizardPreviewClient.tsx');
+const { getWeddingThemeRenderer } = await import('../src/app/_components/themeRenderers/registry.ts');
+const previewSeed = structuredClone(getRequiredWeddingPageBySlug('kim-taehyun-choi-yuna'));
+previewSeed.metadata.images.wedding = '/preview-cover.jpg';
+previewSeed.features = { showGuestbook: false, showCountdown: true, maxGalleryImages: 18 };
+previewSeed.weddingDateTime = { year: 2030, month: 4, day: 18, hour: 14, minute: 30 };
+previewSeed.pageData = {
+  greetingMessage: '미리보기 공통 인사말',
+  galleryImages: ['/preview-a.jpg', '/preview-b.jpg', '/preview-c.jpg'],
+  themeOverrides: { romantic: { greetingMessage: '사진형 전용 인사말' } },
+};
+const beforePreview = JSON.stringify(previewSeed);
+for (const theme of ['simple', 'emotional', 'romantic', 'gyeol', 'classic-r'] as const) {
+  const previewState = buildPreview(previewSeed, theme);
+  const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  try {
+    const previewHtml = renderToStaticMarkup(React.createElement(QueryClientProvider, { client },
+      React.createElement(WeddingPreviewContent, { state: previewState, theme }),
+    ));
+    const publicHtml = renderToStaticMarkup(React.createElement(QueryClientProvider, { client },
+      React.createElement(getWeddingThemeRenderer(theme), {
+        state: previewState, options: { slug: previewState.pageConfig.slug, theme },
+      }),
+    ));
+    assert.ok(previewHtml.includes(`data-design="${theme}"`), `${theme}: the selected design reaches the preview renderer`);
+    assert.equal(previewHtml.match(/<footer\b[\s\S]*?<\/footer>/)?.[0], publicHtml.match(/<footer\b[\s\S]*?<\/footer>/)?.[0],
+      `${theme}: preview closing must preserve the public design, date and allocated photograph`);
+    // The editor deliberately omits the interactive map; compare the shared cover,
+    // greeting, gallery and ceremony sections before that separate integration.
+    assert.equal(previewHtml.match(/<main\b[\s\S]*?(?=<section id="wedding-location")/)?.[0], publicHtml.match(/<main\b[\s\S]*?(?=<section id="wedding-location")/)?.[0],
+      `${theme}: preview body must preserve the public design and selected theme content`);
+  } finally { client.clear(); }
+}
+assert.equal(JSON.stringify(previewSeed), beforePreview, 'Design previews must not mutate the input draft');
+console.log('Five wedding designs preserve public body and closing content in the editor preview');
+
+previewSeed.pageData.galleryImages = ['/preview-cover.jpg', '/preview-a.jpg', '/preview-a.jpg', '/preview-b.jpg'];
+for (const theme of ['simple', 'emotional', 'romantic', 'gyeol', 'classic-r'] as const) {
+  assert.deepEqual(buildPreview(previewSeed, theme).galleryImageUrls, previewSeed.pageData.galleryImages,
+    `${theme}: the preview must retain all saved gallery images and order, including a selected cover image`);
+}
+console.log('Editor previews retain the configured gallery across five wedding designs');

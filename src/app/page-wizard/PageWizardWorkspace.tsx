@@ -21,6 +21,7 @@ import type {
   WizardSectionId,
   WizardSectionValidation,
 } from './pageWizardSections';
+import { getAdjacentWizardSection, isOptionalWizardSection } from './pageWizardSections';
 import {
   getWizardSaveStatusLabel,
   buildWizardReviewFacts,
@@ -28,7 +29,7 @@ import {
   hasMeaningfulInputForWizardStep,
   type WizardSaveStatus,
 } from './pageWizardWorkspaceState';
-import type { InvitationPageSeed } from '@/types/invitationPage';
+import type { InvitationPageSeed, InvitationThemeKey } from '@/types/invitationPage';
 import styles from './PageWizardWorkspace.module.css';
 import { WizardFieldValidationProvider } from './WizardFieldValidation';
 import { useDialogLayer } from '@/hooks/useDialogLayer';
@@ -134,6 +135,9 @@ export default function PageWizardWorkspace({
   const [isFullPreviewOpen, setIsFullPreviewOpen] = useState(false);
   const [focusedPreviewStep, setFocusedPreviewStep] = useState<PreviewStep>(activeStepKey);
   const [introPreview, setIntroPreview] = useState<WeddingIntroPreview | null>(null);
+  const configuredPreviewTheme = isValidElement<{ theme: InvitationThemeKey }>(fullPreview) ? fullPreview.props.theme : null;
+  const [previewTheme, setPreviewTheme] = useState(configuredPreviewTheme);
+  useEffect(() => { setPreviewTheme(configuredPreviewTheme); }, [configuredPreviewTheme]);
   useEffect(() => {
     setFocusedPreviewStep(activeStepKey);
     setIntroPreview(null);
@@ -152,7 +156,12 @@ export default function PageWizardWorkspace({
     return () => window.removeEventListener('wizard-preview-intro', previewIntro);
   }, [hasFullPreview]);
   const focusedPreview = isValidElement(fullPreview)
-    ? cloneElement(fullPreview as ReactElement<{ activeStepKey: PreviewStep; introPreview: WeddingIntroPreview | null }>, { activeStepKey: focusedPreviewStep, introPreview })
+    ? cloneElement(fullPreview as ReactElement<{ theme?: InvitationThemeKey; onThemeChange: (theme: InvitationThemeKey) => void; activeStepKey: PreviewStep; introPreview: WeddingIntroPreview | null }>, {
+      activeStepKey: focusedPreviewStep,
+      introPreview,
+      theme: previewTheme ?? configuredPreviewTheme ?? undefined,
+      onThemeChange: setPreviewTheme,
+    })
     : fullPreview;
   const focusPreview = (step: PreviewStep, reveal = false) => {
     setFocusedPreviewStep(step);
@@ -173,6 +182,14 @@ export default function PageWizardWorkspace({
     (section) => section.id === activeSection.id
   );
   const isFinalSection = activeSection.id === 'review';
+  const primarySections = sections.filter(section => !isOptionalWizardSection(section));
+  const optionalSections = sections.filter(isOptionalWizardSection);
+  const isOptionalSection = isOptionalWizardSection(activeSection);
+  const sectionPosition = isOptionalSection ? '선택 설정' : `${primarySections.findIndex(section => section.id === activeSection.id) + 1} / ${primarySections.length}`;
+  const nextSection = getAdjacentWizardSection(sections, activeSection.id, 1);
+  const reviewFacts = buildWizardReviewFacts(formState, getStepValidation('images').valid);
+  const mainReviewFacts = reviewFacts.filter((fact, index) => index === 0 || ['일정', '장소', '주소', '대표 이미지'].includes(fact.label));
+  const additionalReviewFacts = reviewFacts.filter(fact => !mainReviewFacts.includes(fact));
   const activePreviewStep = useMemo(
     () => activeSection.steps.find((step) => Boolean(step.previewSection)) ?? null,
     [activeSection.steps]
@@ -196,7 +213,7 @@ export default function PageWizardWorkspace({
 
   const openPreview = (stepKey: WizardStepKey) => onOpenPreview(stepKey);
 
-  const renderSectionButtons = () => sections.map((section, index) => {
+  const renderSectionButtons = (items: WizardSection[]) => items.map((section, index) => {
     const validation = getSectionValidation(section);
     const isActive = section.id === activeSection.id;
     const hasMeaningfulInput = section.steps.some((step) =>
@@ -225,14 +242,23 @@ export default function PageWizardWorkspace({
         disabled={isSaving}
         onClick={() => handleSectionSelect(section.id)}
       >
-        <span className={styles.sectionIndex}>{index + 1}</span>
+        <span className={isOptionalWizardSection(section) ? styles.optionalIndex : styles.sectionIndex}>{isOptionalWizardSection(section) ? '선택' : index + 1}</span>
         <span className={styles.sectionButtonText}>
           <strong>{section.title}</strong>
-          <span>{statusLabel}</span>
+          <span>{isOptionalWizardSection(section) && !isActive && validation.valid ? hasMeaningfulInput ? '설정됨' : '미사용' : section.id === 'review' && !isActive && validation.valid ? '확인 후 완료' : statusLabel}</span>
         </span>
       </button>
     );
   });
+
+  const renderNavigation = () => <>
+    <p className={styles.navHeading}>기본 작성</p>
+    {renderSectionButtons(primarySections)}
+    {optionalSections.length > 0 ? <div className={styles.optionalNav}>
+      <p className={styles.navHeading}>선택 설정</p>
+      {renderSectionButtons(optionalSections)}
+    </div> : null}
+  </>;
 
   return (
     <div className={styles.workspace} data-operation-ui data-experience-step={experience ? activeStepKey : undefined}>
@@ -288,7 +314,7 @@ export default function PageWizardWorkspace({
 
       {!setupOnly ? <div className={styles.mobileProgress}>
         <div>
-          <span>{activeSectionIndex + 1} / {sections.length}</span>
+          <span>{sectionPosition}</span>
           <strong>{activeSection.title}</strong>
         </div>
         <button
@@ -304,8 +330,7 @@ export default function PageWizardWorkspace({
       <div className={`${styles.layout} ${fullPreview ? styles.layoutWithPreview : ''} ${setupOnly ? styles.setupLayout : ''}`}>
         <aside className={styles.desktopNav}>
           <nav className={styles.sectionNav} aria-label="작업 영역">
-            <p className={styles.navHeading}>작업 영역</p>
-            {renderSectionButtons()}
+            {renderNavigation()}
           </nav>
         </aside>
 
@@ -315,32 +340,54 @@ export default function PageWizardWorkspace({
           <div className={styles.sectionIntro}>
           <header className={styles.sectionHeader}>
             <span className={styles.sectionPosition}>
-              {activeSectionIndex + 1} / {sections.length}
+              {sectionPosition}
             </span>
             <h2>{activeSection.title}</h2>
             <p>{activeSection.description}</p>
           </header>
-          <aside className={styles.inputTip} aria-label="입력 안내">
-            <strong>입력 팁</strong>
-            <ul>
-              <li>필수 항목부터 차례로 입력해 주세요.</li>
-              <li>가족·교통·계좌 정보는 선택 사항입니다.</li>
-              <li>입력한 내용은 미리보기에 바로 반영됩니다.</li>
-            </ul>
-          </aside>
           </div>
+          {isFinalSection ? (
+            <section className={styles.reviewSummary} aria-label="입력 내용 검토" data-step-key="final" tabIndex={-1}>
+              <h3>공유 전 확인</h3>
+              <dl className={styles.reviewFacts}>
+                {mainReviewFacts.map((fact) => (
+                  <div key={fact.label}><dt>{fact.label}</dt><dd>{fact.value}</dd></div>
+                ))}
+                <div><dt>저장 후 공개 상태</dt><dd>{published ? '공개' : '비공개'}</dd></div>
+              </dl>
+              {formState.metadata.images.wedding ? (
+                <img className={styles.reviewImage} src={formState.metadata.images.wedding} alt="등록한 대표 이미지 확인" />
+              ) : null}
+              <details className={styles.reviewDetails}>
+                <summary>추가 내용 확인·수정</summary>
+                <dl className={styles.reviewFacts}>
+                  {additionalReviewFacts.map(fact => <div key={fact.label}><dt>{fact.label}</dt><dd>{fact.value}</dd></div>)}
+                </dl>
+                <div className={styles.reviewChecks}>
+                {sections.filter((section) => section.id !== 'review').map((section) => {
+                  const validation = getSectionValidation(section);
+                  return (
+                    <button key={section.id} type="button" disabled={isSaving} onClick={() => handleSectionSelect(section.id)} className={styles.reviewCheck}>
+                      <strong>{section.title}</strong>
+                      <span>{validation.valid ? '입력 확인 · 수정' : validation.messages[0] || '필수 입력 확인'}</span>
+                    </button>
+                  );
+                })}
+                </div>
+              </details>
+            </section>
+          ) : null}
           <div className={styles.stepList}>
             {activeSection.steps.map((step) => {
               const validation = getStepValidation(step.key);
               const isActiveStep = step.key === activeStepKey;
-              const isOnlyStepWithSectionTitle =
-                activeSection.steps.length === 1 && step.title === activeSection.title;
+              const isOnlyStepWithSectionTitle = activeSection.steps.length === 1;
 
               return (
                 <section
                   key={step.key}
                   className={styles.stepSection}
-                  data-step-key={step.key}
+                  data-step-key={step.key === 'final' ? undefined : step.key}
                   aria-labelledby={`wizard-step-${step.key}`}
                   aria-current={isActiveStep ? 'step' : undefined}
                   tabIndex={-1}
@@ -358,7 +405,7 @@ export default function PageWizardWorkspace({
                       >
                         {step.title}
                       </h3>
-                      <p>{step.description}</p>
+                      {!isOnlyStepWithSectionTitle ? <p>{step.description}</p> : null}
                     </div>
                     {step.previewSection ? (
                       <button
@@ -367,7 +414,7 @@ export default function PageWizardWorkspace({
                         aria-pressed={fullPreview ? focusedPreviewStep === step.key : previewStepKey === step.key}
                         onClick={() => fullPreview ? focusPreview(step.key, true) : openPreview(step.key)}
                       >
-                        {fullPreview ? '미리보기에서 위치 보기' : '입력 내용 확인'}
+                        {fullPreview ? '미리보기 위치' : '입력 내용 확인'}
                       </button>
                     ) : null}
                   </div>
@@ -394,32 +441,6 @@ export default function PageWizardWorkspace({
               );
             })}
           </div>
-          {isFinalSection ? (
-            <section className={styles.reviewSummary} aria-label="입력 내용 검토">
-              <h3>공유 전 확인</h3>
-              <dl className={styles.reviewFacts}>
-                {buildWizardReviewFacts(formState, getStepValidation('images').valid).map((fact) => (
-                  <div key={fact.label}><dt>{fact.label}</dt><dd>{fact.value}</dd></div>
-                ))}
-                <div><dt>저장 후 공개 상태</dt><dd>{published ? '공개' : '비공개'}</dd></div>
-              </dl>
-              {formState.metadata.images.wedding ? (
-                <img className={styles.reviewImage} src={formState.metadata.images.wedding} alt="등록한 대표 이미지 확인" />
-              ) : null}
-              <div className={styles.reviewChecks}>
-                {sections.filter((section) => section.id !== 'review').map((section) => {
-                  const validation = getSectionValidation(section);
-                  return (
-                    <button key={section.id} type="button" disabled={isSaving} onClick={() => handleSectionSelect(section.id)} className={styles.reviewCheck}>
-                      <strong>{section.title}</strong>
-                      <span>{validation.valid ? '입력 확인 · 수정' : validation.messages[0] || '필수 입력 확인'}</span>
-                    </button>
-                  );
-                })}
-              </div>
-              <p className={styles.saveHelp}>{canManageSetup ? '내용 저장은 현재 공개 상태를 유지합니다. 공개 여부 변경은 아래 최종 저장 버튼에서 적용됩니다.' : '내용을 저장하면 현재 공개 상태가 유지됩니다. 공개 여부는 관리자가 설정합니다.'}</p>
-            </section>
-          ) : null}
           {activeSection.id === 'setup' && canManageSetup ? setupContent : null}
         </main>
         {fullPreview ? <aside className={styles.livePreview} aria-label="청첩장 실시간 미리보기">
@@ -458,7 +479,7 @@ export default function PageWizardWorkspace({
                 onClick={() => attempt(onNext)}
                 disabled={isSaving}
               >
-                {isSaving ? busyLabel : setupOnly ? (hasPersistedData ? '내용 입력으로' : '초대장 생성') : '저장 후 다음'}
+                {isSaving ? busyLabel : setupOnly ? (hasPersistedData ? '내용 입력으로' : '초대장 생성') : nextSection?.id === 'review' ? '저장 후 최종 확인' : '저장 후 다음'}
               </button>
             )}
           </div>
@@ -487,7 +508,7 @@ export default function PageWizardWorkspace({
               </button>
             </header>
             <nav className={styles.mobileNavList} aria-label="모바일 작업 영역">
-              {renderSectionButtons()}
+              {renderNavigation()}
             </nav>
           </section>
         </div>

@@ -199,7 +199,6 @@ export default function BasicStep({
   return (
     <section className={panelStyles.basicCard}>
       <div className={panelStyles.sectionTitleRow}>
-        <span className={panelStyles.blockNumber} aria-hidden="true">01</span>
         <h3 className={panelStyles.subCardTitle}>신랑·신부 기본 정보</h3>
       </div>
       <div className={panelStyles.basicContent}>
@@ -215,12 +214,7 @@ export default function BasicStep({
             onChange={(event) => onPersonFieldChange('bride', 'name', event.target.value)} />
         </WizardField>
       </div>
-      <div className={panelStyles.namePreview} aria-label="화면에 표시될 이름">
-        <p>화면에 표시될 이름</p>
-        <strong>{formState.couple.groom.name || '신랑 이름'} · {formState.couple.bride.name || '신부 이름'}</strong>
       </div>
-      </div>
-      <p className={panelStyles.fieldHint}>청첩장에 표시할 이름을 입력해 주세요.</p>
     </section>
   );
 }

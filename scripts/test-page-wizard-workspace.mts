@@ -72,6 +72,16 @@ assert.deepEqual(customerSections.map(section => section.id), ['basic', 'schedul
 assert.equal(customerSections.some(section => section.id === 'setup'), false,
   '고객 편집에는 시작 설정이 없어야 합니다.');
 assert.equal(customerSections[0].id, 'basic', '고객은 이름을 편집할 기본 정보부터 시작합니다.');
+assert.equal(getAdjacentWizardSection(customerSections, 'media', 1)?.id, 'review',
+  '사진 저장 후에는 선택 설정을 거치지 않고 최종 확인으로 이동합니다.');
+assert.equal(getAdjacentWizardSection(customerSections, 'review', -1)?.id, 'media',
+  '최종 확인의 이전 버튼은 기본 작성 흐름의 사진 단계로 돌아갑니다.');
+for (const optionalSection of ['music', 'accounts'] as const) {
+  assert.equal(getAdjacentWizardSection(customerSections, optionalSection, 1)?.id, 'review',
+    '선택 설정 저장 후에는 최종 확인으로 이동합니다.');
+  assert.equal(getAdjacentWizardSection(customerSections, optionalSection, -1)?.id, 'media',
+    '선택 설정 이전 버튼은 기본 작성 흐름으로 돌아갑니다.');
+}
 assert.deepEqual(customerSections.flatMap(section => section.steps.map(step => step.key)),
   customerSteps.map(step => step.key), '시작 설정을 숨겨도 고객 편집 단계가 누락되면 안 됩니다.');
 const setupSection = weddingSections.find((section) => section.id === 'setup');

@@ -24,6 +24,7 @@ const family = renderToStaticMarkup(React.createElement(PersonEditorCard, {
   nameReadOnly: true, onPersonFieldChange: noop, onParentFieldChange: noop,
 }));
 assert.equal(openDisclosures(family), 0, 'Optional parents start collapsed even when populated');
+assert.match(family, /^<details\b/, 'Optional family and contact fields start inside a collapsed disclosure');
 assert.match(family, /<summary[^>]*>[\s\S]*김아버지 · 이어머니[\s\S]*?<\/summary>/);
 for (const value of ['김아버지', '이어머니', '010-1111-2222']) {
   assert.ok(family.includes(`value="${value}"`), 'Collapsing must retain saved input values');
@@ -64,9 +65,10 @@ const renderNames = (groom: string, bride: string) => {
     formState: config, previewFormState: config, updateForm: noop, onPersonFieldChange: noop,
   }));
 };
-assert.match(renderNames('김신랑', '이신부'), /<strong>김신랑 · 이신부<\/strong>/);
-assert.match(renderNames('박새이름', '최새이름'), /<strong>박새이름 · 최새이름<\/strong>/,
-  'The name sample must follow current form values');
-assert.match(renderNames('', ''), /<strong>신랑 이름 · 신부 이름<\/strong>/);
+for (const [groom, bride] of [['김신랑', '이신부'], ['박새이름', '최새이름'], ['', '']]) {
+  const names = renderNames(groom, bride);
+  assert.ok(names.includes(`value="${groom}"`));
+  assert.ok(names.includes(`value="${bride}"`));
+}
 
 console.log('wizard editor disclosure rendering checks passed');

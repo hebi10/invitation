@@ -88,7 +88,39 @@ export default function ExtraStep({
   return (
     <div className={styles.fieldGrid}>
       {mode !== 'guides' ? <>
-      <section className={styles.formCard}>
+      <p className={blockStyles.description}>
+        계좌 등록은 선택입니다. 등록할 때는 은행명·계좌번호·예금주를 모두 입력해 주세요.
+      </p>
+      <div className={styles.twoColumnGrid}>
+        <AccountSectionPanel
+          kind="groomAccounts"
+          title={isFirstBirthday ? '아빠 계좌' : '신랑측 계좌'}
+          description="최대 3개까지 등록할 수 있습니다."
+          accounts={formState.pageData?.giftInfo?.groomAccounts ?? []}
+          disabled={false}
+          onAdd={onAccountAdd}
+          onRemove={onAccountRemove}
+          onChange={onAccountChange}
+        />
+        <AccountSectionPanel
+          kind="brideAccounts"
+          title={isFirstBirthday ? '엄마 계좌' : '신부측 계좌'}
+          description="최대 3개까지 등록할 수 있습니다."
+          accounts={formState.pageData?.giftInfo?.brideAccounts ?? []}
+          disabled={false}
+          onAdd={onAccountAdd}
+          onRemove={onAccountRemove}
+          onChange={onAccountChange}
+        />
+      </div>
+
+      <details className={blockStyles.optional}>
+        <summary className={blockStyles.summary}>
+          {isFirstBirthday ? '마음 전하기 안내 문구' : '축의금 안내 문구'}
+          <span className={blockStyles.badge}>선택</span>
+          <span className={blockStyles.summaryText}>{giftMessage.trim() || '계좌 앞에 보여줄 문구를 추가할 수 있습니다'}</span>
+        </summary>
+        <div className={blockStyles.body}>
         <label className={styles.field}>
           {renderFieldMeta(isFirstBirthday ? '마음 전하기 안내 문구' : '축의금 안내 문구', 'optional')}
           <textarea
@@ -118,30 +150,8 @@ export default function ExtraStep({
             })
           }
         />
-      </section>
-
-      <div className={styles.twoColumnGrid}>
-        <AccountSectionPanel
-          kind="groomAccounts"
-        title={isFirstBirthday ? '아빠 계좌' : '신랑측 계좌'}
-          description="최대 3개까지 등록할 수 있습니다."
-          accounts={formState.pageData?.giftInfo?.groomAccounts ?? []}
-          disabled={false}
-          onAdd={onAccountAdd}
-          onRemove={onAccountRemove}
-          onChange={onAccountChange}
-        />
-        <AccountSectionPanel
-          kind="brideAccounts"
-        title={isFirstBirthday ? '엄마 계좌' : '신부측 계좌'}
-          description="최대 3개까지 등록할 수 있습니다."
-          accounts={formState.pageData?.giftInfo?.brideAccounts ?? []}
-          disabled={false}
-          onAdd={onAccountAdd}
-          onRemove={onAccountRemove}
-          onChange={onAccountChange}
-        />
-      </div>
+        </div>
+      </details>
 
       </> : null}
       {mode !== 'accounts' ? <section className={blockStyles.stack} aria-label="교통 및 추가 안내" data-preview-step="guide">

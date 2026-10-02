@@ -74,8 +74,8 @@ const SECTION_DEFINITIONS: WizardSectionDefinition[] = [
   },
   {
     id: 'review',
-    title: '공유·최종 확인',
-    description: '링크 카드와 입력 내용을 확인한 뒤 저장합니다.',
+    title: '최종 확인',
+    description: '이름, 일정, 장소와 공유 카드를 확인하고 마무리해 주세요.',
     stepKeys: ['final'],
   },
 ];
@@ -138,7 +138,14 @@ export function getAdjacentWizardSection(
     return null;
   }
 
-  return sections[currentIndex + offset] ?? null;
+  const candidates = offset === 1
+    ? sections.slice(currentIndex + 1)
+    : sections.slice(0, currentIndex).reverse();
+  return candidates.find(section => !isOptionalWizardSection(section)) ?? null;
+}
+
+export function isOptionalWizardSection(section: WizardSection): boolean {
+  return section.id === 'music' || section.id === 'accounts';
 }
 
 export function getWizardSectionValidation(

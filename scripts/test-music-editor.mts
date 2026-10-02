@@ -58,4 +58,22 @@ for (const volume of [0.35, 0, 1]) {
 const checkbox = renderPreview().nodes.find(node => node.type === 'input' && node.props.type === 'checkbox')!;
 checkbox.props.onChange!({ target: { checked: true } });
 assert.ok(music.findInvitationMusicTrackById(draft.musicTrackId), 'Enabling an empty selection chooses an available track');
+const savedSelection = { ...draft, musicVolume: 0.2 };
+Object.assign(draft, savedSelection);
+renderPreview().nodes.find(node => node.type === 'input' && node.props.type === 'checkbox')!
+  .props.onChange!({ target: { checked: false } });
+assert.equal(draft.musicEnabled, false);
+assert.equal(renderPreview().nodes.some(node => node.props.type === 'range'), false,
+  'Disabled music hides its settings instead of leaving inactive controls in the form');
+assert.equal(renderPreview().nodes.some(node => node.type === 'audio'), false,
+  'Disabling music unmounts the preview player');
+for (const field of ['musicCategoryId', 'musicTrackId', 'musicStoragePath', 'musicVolume'] as const) {
+  assert.equal(draft[field], savedSelection[field], `Disabling preserves ${field}`);
+}
+renderPreview().nodes.find(node => node.type === 'input' && node.props.type === 'checkbox')!
+  .props.onChange!({ target: { checked: true } });
+assert.equal(renderPreview().nodes.some(node => node.props.type === 'range'), true);
+for (const field of ['musicCategoryId', 'musicTrackId', 'musicStoragePath', 'musicVolume'] as const) {
+  assert.equal(draft[field], savedSelection[field], `Re-enabling restores ${field}`);
+}
 console.log('Music editor volume, defaults and persistence checks passed');

@@ -89,10 +89,7 @@ export default function ScheduleStep({
         </WizardField>
       </div>
 
-      <div className={styles.summaryCard}>
-        <span className={styles.summaryLabel}>문장 미리보기</span>
-        <strong className={styles.summaryValue}>{currentWeddingSummary}</strong>
-      </div>
+      <p className={blockStyles.description}>{currentWeddingSummary}</p>
 
       </section>) : null}
       {mode !== 'primary' ? (

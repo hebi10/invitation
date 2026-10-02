@@ -68,7 +68,18 @@ const customer = renderToStaticMarkup(React.createElement(componentExports.defau
 assert.match(customer, /<a[^>]*href="\/my-invitations"[^>]*class="primaryButton"[^>]*>내 청첩장으로 이동<\/a>/,
   'A successful customer save must lead directly to their dashboard');
 assert.match(customer, /href="\/page-wizard\/sample"/, 'Customers can continue editing');
+assert.match(customer, /공유 URL/);
+assert.doesNotMatch(customer, /실제 페이지 URL/,
+  'Customers should see one sharing address rather than two competing URLs');
+assert.match(customer, /비공개 · 마지막 저장 방금/);
+assert.doesNotMatch(customer, /<details[^>]*\bopen(?:=|\s|>)/,
+  'Saved section details are optional on the customer completion screen');
+assert.match(customer, /저장한 내용 자세히 보기/);
 admin = true;
 const administrator = renderToStaticMarkup(React.createElement(componentExports.default, { slug: 'sample' }));
 assert.match(administrator, /href="\/admin"/, 'Administrators return to their own workspace');
+assert.match(administrator, /실제 페이지 URL/,
+  'Administrators retain their page routing details');
+assert.match(administrator, /<details[^>]*\bopen(?:=|\s|>)/,
+  'Administrators retain an expanded saved-content review');
 console.log('Customer completion navigation and fresh saved result checks passed');

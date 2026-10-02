@@ -12,11 +12,6 @@ export default function VenueStep({
 }: VenueStepProps) {
   const latitude = formState.pageData?.kakaoMap?.latitude ?? 0;
   const longitude = formState.pageData?.kakaoMap?.longitude ?? 0;
-  const hasCoordinates =
-    Number.isFinite(latitude) &&
-    Number.isFinite(longitude) &&
-    latitude !== 0 &&
-    longitude !== 0;
   const selectedAddress = formState.pageData?.ceremonyAddress?.trim() ?? '';
   const selectedVenueName = formState.pageData?.venueName?.trim() || formState.venue.trim();
   const markerTitle =
@@ -112,7 +107,6 @@ export default function VenueStep({
     </section>
     <section className={`${blockStyles.block} ${blockStyles.mapBlock}`} aria-label="지도 및 길찾기 설정">
       <h3 className={blockStyles.title}>지도 및 길찾기</h3>
-      <p className={blockStyles.description}>주소로 위치를 확인하고 손님에게 안내할 지도를 살펴보세요.</p>
       <div className={styles.inlineActions}>
         <button
           type="button"
@@ -122,9 +116,7 @@ export default function VenueStep({
         >
           {isSearchingAddress ? '위치 확인 중' : '지도 위치 확인'}
         </button>
-        <span className={hasCoordinates ? styles.choiceSectionBadge : styles.autoStatusHint}>
-          {hasCoordinates ? '지도 위치 확인 완료' : '주소를 입력하고 지도 위치를 확인해 주세요.'}
-        </span>
+        {!selectedAddress ? <span className={styles.autoStatusHint}>주소를 먼저 입력해 주세요.</span> : null}
       </div>
 
       {selectedAddress ? (

@@ -2,6 +2,11 @@
 .canvas { width: min(100%, 480px); margin-inline: auto; background: #fff; }
 .toolbar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; color: #262626; font-size: 14px; font-weight: 500; }
 .toolbar > span { flex-basis: 100%; }
+.themeSelect { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 12px; width: 100%; }
+.themeSelect select { min-height: 44px; width: 100%; min-width: 0; padding: 8px; border: 1px solid #d4d4d4; border-radius: 0; background: #fff; color: #262626; font: inherit; }
+.themeSelect select:focus-visible { outline: 2px solid #262626; outline-offset: 2px; }
+.previewHelp summary { min-height: 44px; padding-block: 12px; color: #626262; font-size: 12px; cursor: pointer; }
+.previewHelp summary:focus-visible { outline: 2px solid #262626; outline-offset: 2px; }
 .toolbar button, .status button { padding: 8px 10px; border: 1px solid #d4d4d4; background: #fff; color: #404040; font: inherit; cursor: pointer; }
 .toolbar button:disabled { opacity: .5; cursor: default; }
 .toolbar button { min-height: 44px; flex: 1; }

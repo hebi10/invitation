@@ -128,18 +128,6 @@ export default function VenueLocationPreview({
   return (
     <section className={locationStyles.preview} aria-label="선택 위치 확인">
       <div className={locationStyles.header}>
-        <div className={locationStyles.titleRow}>
-          <strong className={styles.cardTitle}>선택 위치 확인</strong>
-          <span className={locationStyles.status} role="status">
-            {mapLoadState === 'ready'
-              ? '지도 확인 가능'
-              : mapLoadState === 'error'
-              ? '지도 연결을 확인해 주세요'
-              : hasCoordinates
-              ? '지도 불러오는 중'
-              : '주소 찾기가 필요합니다'}
-          </span>
-        </div>
         <p className={styles.fieldHint}>
           지도에 표시된 위치가 실제 장소와 일치하는지 확인해 주세요.
         </p>
@@ -160,7 +148,7 @@ export default function VenueLocationPreview({
         <div className={locationStyles.mapFrame}>
           <div ref={mapRef} className={locationStyles.mapCanvas} aria-label={`${resolvedVenueName} 위치 지도`} />
           {mapLoadState !== 'ready' ? (
-            <div className={locationStyles.mapOverlay}>
+            <div className={locationStyles.mapOverlay} role="status">
               <span>
                 {mapLoadState === 'error'
                   ? '지도를 불러오지 못했습니다. 아래 지도 앱으로 위치를 확인해 주세요.'
@@ -171,7 +159,7 @@ export default function VenueLocationPreview({
         </div>
       ) : (
         <div className={locationStyles.empty}>
-          주소 찾기를 누르면 선택된 위치가 여기 지도에 바로 표시됩니다.
+          지도 위치 확인을 누르면 선택된 위치가 표시됩니다.
         </div>
       )}
 
@@ -183,6 +171,10 @@ export default function VenueLocationPreview({
         >
           카카오맵 열기
         </button>
+      </div>
+      <details className={locationStyles.otherMaps}>
+        <summary>다른 지도 앱에서 확인</summary>
+        <div className={locationStyles.actions}>
         <button
           type="button"
           className={styles.secondaryButton}
@@ -201,7 +193,8 @@ export default function VenueLocationPreview({
         >
           구글 지도
         </button>
-      </div>
+        </div>
+      </details>
     </section>
   );
 }

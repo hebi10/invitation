@@ -127,17 +127,17 @@ function SingleImageCard({
           {uploadKind === 'kakaoCard' ? <div className={previewStyles.cardAction}>초대장 보기</div> : null}
         </div>
         <p className={previewStyles.caption}>{hasImage ? (SHARE_PRESETS.some(item => item.url === imageUrl) ? '선택한 기본 이미지 사용 중' : '등록한 이미지 사용 중') : fallbackImage ? '별도 이미지 미등록 · 아래 안내 순서에 따라 자동 적용 중' : '적용할 이미지가 없습니다.'}</p>
-      </div> : <div className={styles.assetPreview}>
+      </div> : <div className={imageStyles.coverPreview}>
         {hasImage && !isBroken ? (
           <img
-            className={styles.assetPreviewImage}
+            className={imageStyles.coverImage}
             src={imageUrl}
             alt={`${title} 미리보기`}
             decoding="async"
             onError={onImageError}
           />
         ) : (
-          <div className={styles.assetPlaceholder}>
+          <div className={imageStyles.coverPlaceholder}>
             {hasImage ? `${title}를 불러오지 못했습니다.` : placeholder}
           </div>
         )}
@@ -153,7 +153,7 @@ function SingleImageCard({
         <p>직접 올릴 사진이 없을 때 선택하세요. 내용 저장 후 실제 공유 이미지에 반영됩니다.</p>
       </fieldset> : null}
 
-      <p className={styles.cardText}>{emptyHint}</p>
+      {isShare || !hasImage ? <p className={styles.cardText}>{emptyHint}</p> : null}
       {isShare ? <p className={previewStyles.caption}>보내는 앱에 따라 사진의 잘리는 범위와 문구 배치가 달라질 수 있습니다. 얼굴과 중요한 내용은 중앙에 배치해 주세요.</p> : null}
     </section>
   );

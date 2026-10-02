@@ -43,7 +43,11 @@ export default function MusicStep({
   }, [musicVolume, previewMusicUrl, formState.musicEnabled]);
 
   const handleMusicEnabledChange = (enabled: boolean) => {
+    setOpenOptionPanel(null);
     updateForm((draft) => {
+      draft.musicEnabled = enabled;
+      if (!enabled) return;
+
       const draftDefaultTrack = findFirstActiveInvitationMusicTrack(draft.musicCategoryId);
       const normalizedDraftSelection = normalizeInvitationMusicSelection({
         categoryId: draft.musicCategoryId || draftDefaultTrack?.categoryId,
@@ -51,7 +55,6 @@ export default function MusicStep({
         storagePath: draft.musicStoragePath || draftDefaultTrack?.storagePath,
       });
 
-      draft.musicEnabled = enabled;
       draft.musicVolume = clampInvitationMusicVolume(
         draft.musicVolume,
         DEFAULT_INVITATION_MUSIC_VOLUME
@@ -105,14 +108,6 @@ export default function MusicStep({
 
   return (
     <div className={`${styles.fieldGrid} ${styles.musicSection}`}>
-      <div className={`${styles.summaryCard} ${styles.musicIntroCard}`}>
-        <span className={styles.summaryLabel}>선택 단계</span>
-        <strong className={styles.summaryValue}>배경음악은 필요할 때만 켜면 됩니다.</strong>
-        <p className={styles.sectionText}>
-          방문자가 첫 화면에서 한 번 터치하면 선택한 곡으로 배경음악이 재생됩니다.
-        </p>
-      </div>
-
       <section className={`${styles.formCard} ${styles.musicToggleCard}`}>
         <div className={styles.musicToggleContent}>
           <label className={styles.switchRow}>
@@ -124,11 +119,14 @@ export default function MusicStep({
             <span>배경음악 사용</span>
           </label>
           <p className={styles.musicToggleHint}>
-            비활성화하면 음악은 재생되지 않고, 설정은 유지됩니다.
+            {formState.musicEnabled
+              ? '방문자가 첫 화면을 터치하면 선택한 곡이 재생됩니다.'
+              : '음악 없이도 완성할 수 있습니다. 선택한 곡과 볼륨은 유지됩니다.'}
           </p>
         </div>
       </section>
 
+      {formState.musicEnabled ? <>
       <section className={`${styles.formCard} ${styles.musicControlCard}`}>
         <div className={`${styles.twoColumnGrid} ${styles.musicControlGrid}`}>
           <div className={`${styles.field} ${styles.musicField}`}>
@@ -258,20 +256,9 @@ export default function MusicStep({
         </div>
       </section>
 
-      <div className={`${styles.summaryCard} ${styles.musicMetaCard}`}>
-        <span className={styles.summaryLabel}>선택된 곡</span>
-        <strong className={styles.summaryValue}>
-          {selectedTrack ? `${selectedTrack.title} · ${selectedTrack.artist}` : '선택된 곡 없음'}
-        </strong>
-        <p className={styles.sectionText}>
-          배경음악은 언제든 다시 끄거나 다른 곡으로 바꿀 수 있습니다.
-        </p>
-      </div>
-
       <section className={`${styles.formCard} ${styles.musicPreviewCard}`}>
         <span className={styles.summaryLabel}>미리 듣기</span>
-        {formState.musicEnabled ? (
-          previewMusicUrl ? (
+        {previewMusicUrl ? (
             <audio ref={previewAudioRef} className={styles.musicAudio} controls preload="none" src={previewMusicUrl} />
           ) : musicPreviewState === 'loading' ? (
             <div className={styles.musicAudioPlaceholder}>선택한 곡을 불러오는 중입니다.</div>
@@ -279,13 +266,9 @@ export default function MusicStep({
             <div className={styles.musicAudioPlaceholder}>
               곡 미리듣기를 불러오지 못했습니다. 잠시 후 다시 확인해 주세요.
             </div>
-          )
-        ) : (
-          <div className={styles.musicAudioPlaceholder}>
-            배경음악 사용을 켜면 여기서 바로 미리 들을 수 있습니다.
-          </div>
         )}
       </section>
+      </> : null}
     </div>
   );
 }

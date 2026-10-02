@@ -28,6 +28,7 @@ import { getCustomerEditableInvitationPageState } from '@/services/customerEvent
 import PageWizardStepPreview from './PageWizardStepPreview';
 import { applyWizardStorageImageFallback } from './pageWizardImageFallback';
 import styles from './page.module.css';
+import resultStyles from './PageWizardResultClient.module.css';
 import {
   applyDerivedWizardDefaults,
   buildReviewSummary,
@@ -290,27 +291,32 @@ export default function PageWizardResultClient({
               ? '입력한 내용을 저장했습니다. 관리자 화면에서 고객 연결과 공개 상태를 관리할 수 있습니다.'
               : '입력한 내용을 저장했습니다. 내 청첩장에서 언제든 다시 확인하고 수정할 수 있습니다.'}
           </p>
-          <div className={`${styles.fieldGrid} ${styles.resultMetaGrid}`}>
+          {!isAdminLoggedIn ? (
+            <p className={resultStyles.savedStatus}>
+              {configState.published ? '공개 중' : '비공개'} · 마지막 저장 {formatSavedAt(configState.lastSavedAt)}
+            </p>
+          ) : null}
+          <div className={isAdminLoggedIn ? `${styles.fieldGrid} ${styles.resultMetaGrid}` : resultStyles.customerLink}>
             <div className={styles.previewUrlCard}>
               <span className={styles.summaryLabel}>{experience ? '체험 페이지 경로' : '공유 URL'}</span>
               <strong className={styles.previewUrlValue}>{experience ? '' : PUBLIC_SITE_ORIGIN}{redirectPath}</strong>
             </div>
-            <div className={styles.previewUrlCard}>
+            {isAdminLoggedIn ? <div className={styles.previewUrlCard}>
               <span className={styles.summaryLabel}>실제 페이지 URL</span>
               <strong className={styles.previewUrlValue}>{experience ? '' : PUBLIC_SITE_ORIGIN}{livePagePath}</strong>
-            </div>
-            <div className={styles.previewUrlCard}>
+            </div> : null}
+            {isAdminLoggedIn ? <div className={styles.previewUrlCard}>
               <span className={styles.summaryLabel}>마지막 저장 시간</span>
               <strong className={styles.previewUrlValue}>
                 {formatSavedAt(configState.lastSavedAt)}
               </strong>
-            </div>
-            <div className={styles.previewUrlCard}>
+            </div> : null}
+            {isAdminLoggedIn ? <div className={styles.previewUrlCard}>
               <span className={styles.summaryLabel}>공개 상태</span>
               <strong className={styles.previewUrlValue}>
                 {configState.published ? '저장 후 공개됨' : '비공개 초안'}
               </strong>
-            </div>
+            </div> : null}
           </div>
           <div className={`${styles.inlineActions} ${styles.resultActionRow}`}>
             <Link href={isAdminLoggedIn ? routes.admin() : routes.customerDashboard()} className={styles.primaryButton}>
@@ -328,14 +334,14 @@ export default function PageWizardResultClient({
                 고객 화면으로 전환해 계속 입력하기
               </button>
             ) : null}
-            <button
+            {isAdminLoggedIn ? <button
               type="button"
               className={styles.secondaryButton}
               onClick={() => void resultQuery.refetch()}
               disabled={resultQuery.isRefetching}
             >
               {resultQuery.isRefetching ? '새로고침 중' : '새로고침'}
-            </button>
+            </button> : null}
             <Link
               href={routes.wizardEdit(slug)}
               className={styles.secondaryButton}
@@ -351,19 +357,22 @@ export default function PageWizardResultClient({
           </div>
         ) : null}
 
-        <div className={styles.fieldGrid}>
-          {wizardSteps.map((step) => (
-            <PageWizardStepPreview
-              key={`result-preview-${step.key}`}
-              stepKey={step.key}
-              theme={previewTheme}
-              slug={slug}
-              formState={previewFormState}
-              published={configState.published}
-              reviewSummary={step.key === 'final' ? reviewSummary : undefined}
-            />
-          ))}
-        </div>
+        <details className={resultStyles.savedDetails} open={isAdminLoggedIn}>
+          <summary className={resultStyles.savedDetailsSummary}>저장한 내용 자세히 보기</summary>
+          <div className={styles.fieldGrid}>
+            {wizardSteps.map((step) => (
+              <PageWizardStepPreview
+                key={`result-preview-${step.key}`}
+                stepKey={step.key}
+                theme={previewTheme}
+                slug={slug}
+                formState={previewFormState}
+                published={configState.published}
+                reviewSummary={step.key === 'final' ? reviewSummary : undefined}
+              />
+            ))}
+          </div>
+        </details>
       </div>
     </main>
   );

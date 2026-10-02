@@ -1418,10 +1418,9 @@ export default function PageWizardClient({
         );
       case 'final':
         return (
-          <>
-            <FinalStep {...sharedProps} canManagePublication={isAdminLoggedIn} published={published} setPublished={setDirtyPublished} />
+          <FinalStep {...sharedProps} canManagePublication={isAdminLoggedIn} published={published} setPublished={setDirtyPublished}>
             {eventType === 'wedding' ? renderStepContent('images', 'sharing') : null}
-          </>
+          </FinalStep>
         );
       default:
         return null;

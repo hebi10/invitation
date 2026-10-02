@@ -113,6 +113,7 @@
 }
 
 .reviewSummary {
+  scroll-margin-top: 108px;
   padding: 24px;
   margin-bottom: 24px;
   background: var(--workspace-surface);
@@ -324,13 +325,10 @@
 }
 
 .wordmark { padding-right: 24px; font-family: Georgia, serif; font-size: 14px; letter-spacing: .16em; }
-.sectionIntro { display: grid; grid-template-columns: minmax(0, 1fr) minmax(240px, .85fr); align-items: start; gap: 24px; margin-bottom: 24px; }
+.sectionIntro { margin-bottom: 24px; }
 .sectionIntro .sectionHeader { padding-bottom: 0; }
-.sectionIntro .inputTip { margin: 0; font-size: 13px; }
-.inputTip ul { margin: 6px 0 0; padding-left: 18px; color: var(--workspace-muted); }
-.inputTip li + li { margin-top: 4px; }
 @media (min-width: 901px) {
-  .sectionNav { gap: 16px; }
+  .sectionNav { gap: 8px; }
   .sectionButton { min-height: 60px; padding: 10px 6px; }
   .stepSection[data-step-key='basic'] > .stepHeadingRow { justify-content: flex-end; margin-bottom: 8px; }
   .stepSection[data-step-key='basic'] > .stepHeadingRow > .stepHeadingCopyCompact { display: none; }
@@ -344,17 +342,12 @@
   .sectionIntro { margin-bottom: 16px; }
 }
 
-.inputTip {
-  margin: 0 0 24px;
-  padding: 16px 20px;
-  background: #f0f1eb;
-  color: var(--workspace-ink);
-  font-size: 14px;
-  line-height: 1.7;
-}
-
-.inputTip strong { font-weight: 500; }
-.inputTip p { margin: 4px 0 0; color: var(--workspace-muted); }
+.optionalNav { display: grid; gap: 4px; margin-top: 24px; }
+.optionalIndex { font-size: 11px; line-height: 28px; color: var(--workspace-muted); }
+.reviewDetails { margin-top: 20px; }
+.reviewDetails > summary { min-height: 44px; padding-block: 12px; font-size: 14px; cursor: pointer; }
+.reviewDetails[open] > summary { margin-bottom: 12px; }
+.reviewDetails > summary:focus-visible { outline: 2px solid var(--workspace-accent); outline-offset: 2px; }
 
 .sectionButton[data-status='complete'] .sectionIndex {
   background: #e8ece3;
