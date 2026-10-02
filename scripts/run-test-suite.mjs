@@ -212,6 +212,11 @@ const clientRenderingTests = new Set([
   'test-gallery-carousel-rendering',
   'test-wedding-compact-sections-rendering',
 ]);
+const cssRenderingTests = new Set([
+  ...clientRenderingTests,
+  'test-public-invitation-visual-world',
+]);
+const cssModuleRegisterPath = path.join(scriptsDirectory, 'test-css-module-register.cjs').replaceAll('\\', '/');
 
 for (const testId of selectedTests) {
   console.log(`\n[test-suite] ${testId}`);
@@ -222,7 +227,10 @@ for (const testId of selectedTests) {
       testFilePath(testId)],
     {
       cwd: process.cwd(),
-      env: process.env,
+      // NODE_OPTIONS also reaches the registry rendering subprocess.
+      env: cssRenderingTests.has(testId)
+        ? { ...process.env, NODE_OPTIONS: `${process.env.NODE_OPTIONS ?? ''} --require "${cssModuleRegisterPath}"`.trim() }
+        : process.env,
       shell: false,
       stdio: 'inherit',
     }
