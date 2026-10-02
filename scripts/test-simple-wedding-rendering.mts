@@ -195,7 +195,7 @@ for (const dateCase of [
   assert.ok(coverText.includes(`${dateCase.expected}화요일`), 'Simple cover must preserve the saved numeric date and weekday');
   assert.ok(coverText.includes('오후2시30분'), 'Simple cover must retain the stored ceremony time');
   let previousPosition = -1;
-  for (const value of [page.groomName, dateCase.expected, page.venue, 'data-wedding-cover-photo', '둘이 하나가 되는 특별한 날']) {
+  for (const value of [page.groomName, dateCase.expected, page.venue, 'data-wedding-cover-photo']) {
     const position = cover.indexOf(value);
     assert.ok(position > previousPosition, `Simple cover reading order must lead with event facts: ${value}`);
     previousPosition = position;

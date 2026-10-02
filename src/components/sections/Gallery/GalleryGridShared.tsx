@@ -325,7 +325,7 @@ export default function GalleryGridShared({
                 aria-label={`전체 사진 ${images.length}장 보기`}
                 onClick={(event) => openPopup(0, event.currentTarget)}
               >
-                <span>{isModernOverview ? 'VIEW ALL PHOTOS' : '전체 사진 보기'}</span>
+                <span>전체 사진 보기</span>
                 <span className={styles.overviewCount}>{isModernOverview ? `${String(displayIndices.length).padStart(2, '0')} / ${String(images.length).padStart(2, '0')}` : `${images.length}장`}</span>
               </button>
             ) : null}
@@ -503,7 +503,7 @@ export default function GalleryGridShared({
                   width: 'auto',
                   height: 'auto',
                   maxWidth: '92vw',
-                  maxHeight: '78dvh',
+                  maxHeight: 'var(--gallery-popup-image-max-height, 78dvh)',
                   opacity: isPopupImageLoading || Boolean(popupImageError) ? 0 : 1,
                   transition: resolveGalleryOpacityTransition(
                     prefersReducedMotion,

@@ -18,7 +18,6 @@ export default function WeddingCover({ theme, page, imageUrl, time, titleId = 'w
   if (theme === 'romantic') return (
     <section className={`${styles.cover} ${styles.photographic} ${!imageUrl ? styles.withoutPhoto : ''}`} aria-labelledby={titleId}>
       {photo}
-      <p className={styles.photoEyebrow}>WEDDING INVITATION</p>
       <div className={styles.photoCopy}>
         <h1 data-wedding-motion="copy" id={titleId} className={styles.names}>
           <span>{page.groomName}</span><span aria-hidden="true" className={styles.join}>&amp;</span><span>{page.brideName}</span>
@@ -87,7 +86,6 @@ export default function WeddingCover({ theme, page, imageUrl, time, titleId = 'w
       </p>
       <p className={styles.venue} data-wedding-motion="copy">{page.venue}</p>
       {photo ? <figure className={styles.basicPhoto}>{photo}</figure> : null}
-      <p className={styles.introduction}>둘이 하나가 되는 특별한 날<br />함께해 주세요.</p>
     </section>
   );
 }
