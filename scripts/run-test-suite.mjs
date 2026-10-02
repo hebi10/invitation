@@ -23,6 +23,7 @@ const core = [
   'test-birthday-event-rendering',
   'test-classic-r-theme',
   'test-customer-page-wizard-save-route',
+  'test-customer-handoff-completion',
   'test-customer-account-ui-contracts',
   'test-customer-event-self-claim',
   'test-customer-wallet-compensation',
@@ -84,6 +85,7 @@ const security = [
   'test-demo-experience-cleanup-policy',
   'test-editable-image-upload-validation',
   'test-event-ownership-invite-routes',
+  'test-admin-owner-assignment-concurrency',
   'test-kakao-address-search-error-policy',
   'test-kakao-map-infowindow-sanitization',
   'test-mobile-customer-auth-policy',
@@ -204,6 +206,7 @@ if (!selectedTests) {
 
 // Hook-based components need React's client server-rendering entrypoint.
 const clientRenderingTests = new Set([
+  'test-customer-handoff-completion',
   'test-homepage-ui-contracts',
   'test-guestbook-query-states',
   'test-wizard-editor-disclosures',

@@ -17,10 +17,13 @@ import {
 } from './adminUserServerService';
 import { getServerAuth } from './firebaseAdmin';
 import {
+  EventOwnerAssignmentError,
   firestoreEventRepository,
   listStoredEventSummaries,
   resolveStoredEventBySlug,
 } from './repositories/eventRepository';
+
+export { EventOwnerAssignmentError };
 
 export interface AdminCustomerLinkedEventSummary {
   eventId: string;
@@ -238,12 +241,14 @@ export async function assignAdminCustomerEventOwnership(input: {
   ]);
 
   if (!resolvedEvent) {
-    throw new Error('연결할 청첩장을 찾지 못했습니다.');
+    throw new EventOwnerAssignmentError(404, '연결할 청첩장을 찾지 못했습니다.');
   }
 
   const currentOwnerUid = resolvedEvent.summary.ownerUid?.trim() ?? '';
   if (currentOwnerUid && currentOwnerUid !== normalizedUid) {
-    throw new Error('이미 다른 고객 계정에 연결된 청첩장입니다. 먼저 연결을 해제해 주세요.');
+    throw new EventOwnerAssignmentError(
+      409, '이미 다른 고객 계정에 연결된 청첩장입니다. 먼저 연결을 해제해 주세요.'
+    );
   }
 
   if (currentOwnerUid === normalizedUid) {

@@ -5,6 +5,7 @@ import { GENERIC_SERVER_ERROR_MESSAGE, toSafeHttpErrorResponse } from '@/server/
 import {
   assignAdminCustomerEventOwnership,
   clearAdminCustomerEventOwnership,
+  EventOwnerAssignmentError,
 } from '@/server/adminCustomerAccountsService';
 
 type OwnershipRequestBody = {
@@ -70,7 +71,7 @@ export async function POST(request: Request) {
       { status: 400 }
     );
   } catch (error) {
-    if (error instanceof AdminApiAuthError) {
+    if (error instanceof AdminApiAuthError || error instanceof EventOwnerAssignmentError) {
       return toSafeHttpErrorResponse(error);
     }
 

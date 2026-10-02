@@ -735,6 +735,13 @@ export async function ensureEventMirrorBySlug(
   } satisfies ResolvedEventRecord;
 }
 
+export class EventOwnerAssignmentError extends Error {
+  constructor(public readonly status: 404 | 409, message: string) {
+    super(message);
+    this.name = 'EventOwnerAssignmentError';
+  }
+}
+
 export async function assignEventOwnerBySlug(input: {
   pageSlug: string;
   ownerUid: string;
@@ -761,10 +768,27 @@ export async function assignEventOwnerBySlug(input: {
   }
 
   const now = new Date();
-  await db
-    .collection(EVENTS_COLLECTION)
-    .doc(mirroredEvent.summary.eventId)
-    .set(
+  const eventRef = db.collection(EVENTS_COLLECTION).doc(mirroredEvent.summary.eventId);
+  await db.runTransaction(async (transaction) => {
+    const snapshot = await transaction.get(eventRef);
+    if (!snapshot.exists) {
+      throw new EventOwnerAssignmentError(404, '청첩장을 찾을 수 없습니다.');
+    }
+    const current = normalizeEventSummaryRecord(
+      snapshot.id, snapshot.data() ?? {}, normalizedPageSlug
+    );
+    if (isEventDeletionBlockingAccess(current?.deletion)) {
+      throw new EventOwnerAssignmentError(409, '현재 이용할 수 없는 청첩장입니다.');
+    }
+    if (current?.ownerUid && current.ownerUid !== normalizedOwnerUid) {
+      throw new EventOwnerAssignmentError(
+        409,
+        '이미 다른 고객 계정에 연결된 청첩장입니다. 먼저 연결을 해제해 주세요.'
+      );
+    }
+
+    transaction.set(
+      eventRef,
       {
         ownerUid: normalizedOwnerUid,
         ownerEmail: input.ownerEmail?.trim() || null,
@@ -773,6 +797,7 @@ export async function assignEventOwnerBySlug(input: {
       },
       { merge: true }
     );
+  });
 
   const updatedSummary = await findStoredEventSummaryById(
     mirroredEvent.summary.eventId,

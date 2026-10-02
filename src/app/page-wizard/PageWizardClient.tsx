@@ -1089,6 +1089,9 @@ export default function PageWizardClient({
         queryClient.invalidateQueries({
           queryKey: ['page-wizard-existing', slug],
         }),
+        queryClient.invalidateQueries({
+          queryKey: ['page-wizard-result', slug],
+        }),
       ]);
 
       queryClient.setQueryData(appQueryKeys.editableInvitationPage(slug), {

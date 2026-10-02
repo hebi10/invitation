@@ -286,8 +286,9 @@ export default function PageWizardResultClient({
             {previewFormState.displayName.trim() || `${slug} 결과 페이지`}
           </h1>
           <p className={styles.centerText}>
-            마지막 저장 결과를 단계별로 정리했습니다. 여기에서 전체 입력 내용을 확인하고
-            실제 청첩장으로 바로 이동할 수 있습니다.
+            {isAdminLoggedIn
+              ? '입력한 내용을 저장했습니다. 관리자 화면에서 고객 연결과 공개 상태를 관리할 수 있습니다.'
+              : '입력한 내용을 저장했습니다. 내 청첩장에서 언제든 다시 확인하고 수정할 수 있습니다.'}
           </p>
           <div className={`${styles.fieldGrid} ${styles.resultMetaGrid}`}>
             <div className={styles.previewUrlCard}>
@@ -312,7 +313,10 @@ export default function PageWizardResultClient({
             </div>
           </div>
           <div className={`${styles.inlineActions} ${styles.resultActionRow}`}>
-            <Link href={livePagePath} className={styles.primaryButton}>
+            <Link href={isAdminLoggedIn ? routes.admin() : routes.customerDashboard()} className={styles.primaryButton}>
+              {isAdminLoggedIn ? '관리자 화면으로 이동' : '내 청첩장으로 이동'}
+            </Link>
+            <Link href={livePagePath} className={styles.secondaryButton}>
               {experience ? '청첩장 열기' : '바로 확인하기'}
             </Link>
             {experience && isAdminLoggedIn && onContinueAsCustomer ? (
