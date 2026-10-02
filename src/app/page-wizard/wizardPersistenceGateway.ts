@@ -1,3 +1,5 @@
+import { InvitationVersionConflictError as WizardVersionConflictError, requireInvitationContentVersion } from '@/lib/invitationContentVersion';
+export { InvitationVersionConflictError as WizardVersionConflictError } from '@/lib/invitationContentVersion';
 import {
   createInvitationPageDraftFromSeed,
   getEditableInvitationPageConfig,
@@ -19,7 +21,7 @@ export interface WizardDraftSnapshot {
 }
 
 export interface WizardEditableSnapshot extends EditableInvitationPageConfig {
-  version: number | null;
+  version: number;
 }
 
 export interface WizardPersistenceGateway {
@@ -36,18 +38,9 @@ export interface WizardPersistenceGateway {
   }): Promise<WizardEditableSnapshot>;
 }
 
-export class WizardVersionConflictError extends Error {
-  readonly code = 'VERSION_CONFLICT';
-
-  constructor(public readonly currentVersion: number) {
-    super('다른 체험자가 먼저 수정했습니다. 최신 내용을 불러온 뒤 다시 저장해 주세요.');
-    this.name = 'WizardVersionConflictError';
-  }
-}
-
 function toSnapshot(
   editable: EditableInvitationPageConfig,
-  version: number | null
+  version: number
 ): WizardEditableSnapshot {
   return { ...editable, version };
 }
@@ -62,13 +55,13 @@ export const productionWizardPersistenceGateway: WizardPersistenceGateway = {
   draftCreationPersists: true,
   async createDraft(input) {
     const created = await createInvitationPageDraftFromSeed(input);
-    return { ...created, version: null };
+    return created;
   },
   async loadEditable(slug, isAdmin) {
     if (isAdmin) {
       const editable = await getEditableInvitationPageConfig(slug);
       if (!editable) throw new Error('저장된 청첩장 데이터를 찾을 수 없습니다.');
-      return toSnapshot(editable, null);
+      return toSnapshot(editable, editable.version);
     }
     const state = await getCustomerEditableInvitationPageState(slug);
     if (state.status !== 'ready') {
@@ -76,18 +69,19 @@ export const productionWizardPersistenceGateway: WizardPersistenceGateway = {
         state.status === 'blocked' ? state.message : '현재 계정에 연결된 청첩장이 아닙니다.'
       );
     }
-    return toSnapshot(state.editableConfig, null);
+    return toSnapshot(state.editableConfig, state.editableConfig.version);
   },
   async save(input) {
     if (input.isAdmin) {
-      await saveInvitationPageConfig(input.config, {
+      const saved = await saveInvitationPageConfig(input.config, {
+        expectedVersion: requireInvitationContentVersion(input.expectedVersion),
         published: input.published,
         defaultTheme: input.defaultTheme,
       });
       const productTier = normalizeInvitationProductTier(input.config.productTier);
       return {
         slug: input.slug,
-        config: input.config,
+        config: saved.config,
         published: input.published,
         defaultTheme: input.defaultTheme,
         productTier,
@@ -95,16 +89,17 @@ export const productionWizardPersistenceGateway: WizardPersistenceGateway = {
         hasCustomConfig: true,
         dataSource: 'firestore',
         lastSavedAt: new Date(),
-        version: null,
+        version: saved.version,
       };
     }
 
     const editable = await saveCustomerEditableInvitationPageConfig(input.slug, {
+      expectedVersion: requireInvitationContentVersion(input.expectedVersion),
       config: input.config,
       published: input.published,
       defaultTheme: input.defaultTheme,
     });
-    return toSnapshot(editable, null);
+    return toSnapshot(editable, editable.version);
   },
 };
 

@@ -1,4 +1,5 @@
 import 'server-only';
+import { InvitationVersionConflictError, readInvitationContentVersion, requireInvitationContentVersion } from '@/lib/invitationContentVersion';
 import type { Transaction } from 'firebase-admin/firestore';
 
 import { DEFAULT_EVENT_TYPE, normalizeEventTypeKey } from '@/lib/eventTypes';
@@ -51,6 +52,7 @@ export interface InvitationPageRegistryRecord {
 }
 
 export interface StoredInvitationPageConfigRecord {
+  version: number;
   slug: string;
   config: InvitationPageSeed;
   createdAt: Date | null;
@@ -78,6 +80,10 @@ export interface EventRepository {
   listSummaries(): Promise<EventSummaryRecord[]>;
   findRegistryBySlug(pageSlug: string): Promise<InvitationPageRegistryRecord | null>;
   findContentBySlug(pageSlug: string): Promise<StoredInvitationPageConfigRecord | null>;
+  findEditableBySlug(pageSlug: string): Promise<{
+    registry: InvitationPageRegistryRecord;
+    content: StoredInvitationPageConfigRecord | null;
+  } | null>;
   findDisplayPeriodBySlug(
     pageSlug: string
   ): Promise<InvitationPageDisplayPeriodRecord | null>;
@@ -98,12 +104,15 @@ export interface EventRepository {
     }
   ): Promise<void>;
   saveContentBySlug(input: {
+    expectedVersion: number;
+    published?: boolean;
+    defaultTheme?: InvitationThemeKey;
     slug: string;
     config: InvitationPageSeed;
     seedSourceSlug?: string | null;
     createdAt?: Date | null;
     updatedAt?: Date | null;
-  }): Promise<void>;
+  }): Promise<number>;
   assignOwnerBySlug(input: {
     pageSlug: string;
     ownerUid: string;
@@ -620,6 +629,7 @@ async function writeEventSummaryMirror(
 }
 
 async function writeEventContentMirror(
+  transaction: Transaction,
   eventSummary: EventSummaryRecord,
   contentRecord: StoredInvitationPageConfigRecord,
   now: Date
@@ -629,13 +639,11 @@ async function writeEventContentMirror(
     throw new Error('Server Firestore is not available.');
   }
 
-  await db
-    .collection(EVENTS_COLLECTION)
-    .doc(eventSummary.eventId)
-    .collection(EVENT_CONTENT_COLLECTION)
-    .doc(EVENT_CURRENT_CONTENT_DOC)
-    .set(
+  transaction.set(
+    db.collection(EVENTS_COLLECTION).doc(eventSummary.eventId)
+      .collection(EVENT_CONTENT_COLLECTION).doc(EVENT_CURRENT_CONTENT_DOC),
       {
+        version: contentRecord.version,
         schemaVersion: 1,
         eventType: eventSummary.eventType,
         slug: eventSummary.slug,
@@ -865,6 +873,32 @@ export const firestoreEventRepository: EventRepository = {
     return fetchEventContentBySlug(normalizedPageSlug);
   },
 
+  async findEditableBySlug(pageSlug) {
+    const normalizedPageSlug = normalizePageSlug(pageSlug);
+    if (!normalizedPageSlug) return null;
+    const resolvedEvent = await resolveStoredEventBySlug(normalizedPageSlug);
+    const db = getServerFirestore();
+    if (!db || !resolvedEvent) return null;
+    const eventRef = db.collection(EVENTS_COLLECTION).doc(resolvedEvent.summary.eventId);
+    const contentRef = eventRef.collection(EVENT_CONTENT_COLLECTION).doc(EVENT_CURRENT_CONTENT_DOC);
+    return db.runTransaction(async (transaction) => {
+      const [eventSnapshot, contentSnapshot] = await Promise.all([
+        transaction.get(eventRef), transaction.get(contentRef),
+      ]);
+      if (!eventSnapshot.exists) return null;
+      const summary = normalizeEventSummaryRecord(
+        eventSnapshot.id, eventSnapshot.data() ?? {}, normalizedPageSlug
+      );
+      if (!summary) return null;
+      return {
+        registry: buildInvitationPageRegistryRecordFromEventSummary(summary),
+        content: contentSnapshot.exists
+          ? buildInvitationPageConfigRecordFromEventContent(summary, contentSnapshot.data() ?? {})
+          : null,
+      };
+    });
+  },
+
   async findDisplayPeriodBySlug(pageSlug) {
     const normalizedPageSlug = normalizePageSlug(pageSlug);
     if (!normalizedPageSlug) {
@@ -929,31 +963,60 @@ export const firestoreEventRepository: EventRepository = {
   },
 
   async saveContentBySlug(input) {
+    const expectedVersion = requireInvitationContentVersion(input.expectedVersion);
     const slugGuard = await ensureSlugIndexWriteAllowed(input.slug);
     const normalizedPageSlug = slugGuard.normalizedPageSlug;
-    if (!getServerFirestore()) {
+    const db = getServerFirestore();
+    if (!db) {
       throw new Error('데이터 저장소 연결을 확인하지 못했습니다. 잠시 후 다시 시도해 주세요.');
     }
-
-    const existing = await fetchEventContentBySlug(normalizedPageSlug);
     const now = input.updatedAt ?? new Date();
-    const nextContentRecord: StoredInvitationPageConfigRecord = {
-      slug: normalizedPageSlug,
-      config: input.config,
-      createdAt: existing?.createdAt ?? input.createdAt ?? now,
-      updatedAt: now,
-      seedSourceSlug: input.seedSourceSlug?.trim() || null,
-    };
-    const mirroredEvent = await ensureEventMirrorBySlug(normalizedPageSlug, {
-      content: nextContentRecord,
-      forceCreate: true,
-      now,
+    const eventRef = db.collection(EVENTS_COLLECTION).doc(slugGuard.eventId);
+    const contentRef = eventRef.collection(EVENT_CONTENT_COLLECTION).doc(EVENT_CURRENT_CONTENT_DOC);
+    const indexRef = db.collection(EVENT_SLUG_INDEX_COLLECTION).doc(normalizedPageSlug);
+    return db.runTransaction(async (transaction) => {
+      const [eventSnapshot, contentSnapshot, indexSnapshot] = await Promise.all([
+        transaction.get(eventRef), transaction.get(contentRef), transaction.get(indexRef),
+      ]);
+      if (slugGuard.resolvedEvent && !eventSnapshot.exists) {
+        throw Object.assign(new Error('청첩장을 찾을 수 없습니다.'), { status: 404 });
+      }
+      const current = eventSnapshot.exists
+        ? normalizeEventSummaryRecord(eventSnapshot.id, eventSnapshot.data() ?? {}, normalizedPageSlug)
+        : null;
+      if (isEventDeletionBlockingAccess(current?.deletion)) {
+        throw Object.assign(new Error('현재 이용할 수 없는 청첩장입니다.'), { status: 409 });
+      }
+      const index = indexSnapshot.exists
+        ? normalizeEventSlugIndexRecord(indexSnapshot.id, indexSnapshot.data() ?? {}) : null;
+      assertEventSlugIndexOwnership({ slug: normalizedPageSlug, nextEventId: slugGuard.eventId, existingRecord: index });
+      const stored = contentSnapshot.data() ?? {};
+      const currentVersion = readInvitationContentVersion(stored.version);
+      if (currentVersion !== expectedVersion) throw new InvitationVersionConflictError(currentVersion);
+      const nextContent: StoredInvitationPageConfigRecord = {
+        slug: normalizedPageSlug, config: input.config, version: currentVersion + 1,
+        createdAt: stored.createdAt ?? input.createdAt ?? now, updatedAt: now,
+        seedSourceSlug: input.seedSourceSlug?.trim() || stored.seedSourceSlug || null,
+      };
+      const summary = buildEventSummaryFromRepositoryState({
+        pageSlug: normalizedPageSlug, eventId: slugGuard.eventId, existing: current,
+        content: nextContent, forceCreate: true, now,
+        registry: {
+          docId: normalizedPageSlug, pageSlug: normalizedPageSlug,
+          published: input.published ?? current?.published ?? true,
+          defaultTheme: input.defaultTheme ?? current?.defaultTheme ?? DEFAULT_INVITATION_THEME,
+          hasCustomConfig: true, createdAt: current?.createdAt ?? now, updatedAt: now,
+        },
+      });
+      if (!summary) throw new Error('Failed to build event content summary.');
+      await writeEventSummaryMirror(transaction, summary, now);
+      await writeEventContentMirror(transaction, summary, nextContent, now);
+      transaction.set(indexRef, {
+        slug: normalizedPageSlug, eventId: summary.eventId, eventType: summary.eventType,
+        status: 'active', targetSlug: null, createdAt: index?.createdAt ?? now, updatedAt: now,
+      }, { merge: true });
+      return nextContent.version;
     });
-    if (!mirroredEvent) {
-      throw new Error('Failed to mirror event summary for content write.');
-    }
-
-    await writeEventContentMirror(mirroredEvent.summary, nextContentRecord, now);
   },
 
   async assignOwnerBySlug(input) {

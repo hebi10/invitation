@@ -53,6 +53,7 @@ const core = [
   'test-opening-event-rendering',
   'test-page-wizard-event-type-lock',
   'test-page-wizard-workspace',
+  'test-wizard-form-actions',
   'test-wizard-editor-disclosures',
   'test-page-wizard-schedule-time',
   'test-public-invitation-behavior',
@@ -71,6 +72,7 @@ const security = [
   'test-mobile-ticket-extension',
   'test-mobile-real-billing-client',
   'test-mobile-real-billing-server',
+  'test-mobile-billing-atomic-fulfillment',
   'test-mobile-pending-billing',
   'test-password-recovery',
   'test-admin-api-auth',
@@ -92,6 +94,7 @@ const security = [
   'test-rate-limit-policy',
   'test-event-security-boundary',
   'test-event-summary-write-isolation',
+  'test-invitation-content-concurrency',
   'test-public-event-summary',
   'test-mobile-async-session',
   'test-mobile-auth-recovery',
@@ -111,6 +114,7 @@ const architecture = [
 const emulator = [
   'test-admin-event-deletion-emulator',
   'test-billing-fulfillment-lock',
+  'test-invitation-content-concurrency-emulator',
   'test-demo-experience-repository-emulator',
   'test-event-ownership-invite-emulator',
   'test-firestore-rules-emulator',
@@ -200,6 +204,7 @@ if (!selectedTests) {
 
 // Hook-based components need React's client server-rendering entrypoint.
 const clientRenderingTests = new Set([
+  'test-homepage-ui-contracts',
   'test-guestbook-query-states',
   'test-wizard-editor-disclosures',
   'test-wedding-intro-policy',

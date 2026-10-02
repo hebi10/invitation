@@ -1,3 +1,4 @@
+import { InvitationVersionConflictError, requireInvitationContentVersion } from '@/lib/invitationContentVersion';
 import { normalizeInvitationPageSlugInput } from '@/lib/invitationPagePersistence';
 import { DEFAULT_EVENT_TYPE, normalizeEventTypeKey, type EventTypeKey } from '@/lib/eventTypes';
 import {
@@ -214,6 +215,7 @@ function normalizeEditableConfig(input: unknown): EditableInvitationPageConfig |
     hasCustomConfig: record.hasCustomConfig === true,
     dataSource: record.dataSource === 'firestore' ? 'firestore' : 'seed',
     lastSavedAt: readDate(record.lastSavedAt),
+    version: requireInvitationContentVersion(record.version),
   };
 }
 
@@ -543,6 +545,7 @@ export async function saveCustomerEditableInvitationPageConfig(
   pageSlug: string,
   input: {
     config: InvitationPageSeed;
+    expectedVersion: number;
     published?: boolean;
     defaultTheme?: InvitationThemeKey;
   }
@@ -570,6 +573,7 @@ export async function saveCustomerEditableInvitationPageConfig(
           ...input.config,
           slug: normalizedPageSlug,
         },
+        expectedVersion: input.expectedVersion,
         published: input.published,
         defaultTheme: input.defaultTheme,
       }),
@@ -580,9 +584,14 @@ export async function saveCustomerEditableInvitationPageConfig(
         status?: unknown;
         config?: unknown;
         error?: string;
+        code?: string;
+        currentVersion?: number;
       }
     | null;
 
+  if (response.status === 409 && payload?.code === 'VERSION_CONFLICT') {
+    throw new InvitationVersionConflictError(payload.currentVersion ?? 0);
+  }
   if (!response.ok) {
     throw new Error(
       typeof payload?.error === 'string' && payload.error.trim()

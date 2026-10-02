@@ -1,3 +1,4 @@
+import { isInvitationVersionError, requireInvitationContentVersion } from '@/lib/invitationContentVersion';
 ﻿import { NextResponse } from 'next/server';
 
 import {
@@ -49,6 +50,7 @@ const MOBILE_CLIENT_EDITOR_MUTATION_RATE_LIMIT = {
 } as const;
 
 type MobileClientEditorPageActionBody = {
+  expectedVersion?: unknown;
   action?: unknown;
   config?: InvitationPageSeed;
   published?: unknown;
@@ -263,6 +265,12 @@ export async function POST(
       deletionBehavior: 'conflict',
     });
   } catch (error) {
+    if (isInvitationVersionError(error)) {
+      return NextResponse.json({
+        error: error.message, code: error.code,
+        ...('currentVersion' in error ? { currentVersion: error.currentVersion } : {}),
+      }, { status: error.status });
+    }
     if (error instanceof MobileClientEditorAccessError) {
       return toSafeHttpErrorResponse(error);
     }
@@ -385,13 +393,14 @@ export async function POST(
           features: currentPageConfig.features,
         });
 
-      await saveServerInvitationPageConfig(entitlementTrustedConfig, {
+      const saved = await saveServerInvitationPageConfig(entitlementTrustedConfig, {
+        expectedVersion: requireInvitationContentVersion(body.expectedVersion),
         published: body.published === true,
         defaultTheme,
       });
       await writeHighRiskActionAuditLog(access, pageSlug, highRiskRequirement, 'success');
       return NextResponse.json(
-        { success: true },
+        { success: true, version: saved.version },
         { headers: buildRateLimitHeaders(rateLimitResult) }
       );
     }
@@ -563,6 +572,12 @@ export async function POST(
       );
     }
   } catch (error) {
+    if (isInvitationVersionError(error)) {
+      return NextResponse.json({
+        error: error.message, code: error.code,
+        ...('currentVersion' in error ? { currentVersion: error.currentVersion } : {}),
+      }, { status: error.status });
+    }
     console.error('[mobile/client-editor/pages] failed to process request', error);
     await writeHighRiskActionAuditLog(
       access,

@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { runInNewContext } from 'node:vm';
 import ts from 'typescript';
+import * as contentVersion from '../src/lib/invitationContentVersion.ts';
 
 function load(file: string, dependencies: Record<string, unknown> = {}, globals: Record<string, unknown> = {}) {
   const exports: Record<string, unknown> = {};
@@ -45,6 +46,7 @@ assert.equal(await service.getPublicEventSummary('missing', { resolveEventBySlug
 
 // Exercise the real client mapper and resolver with root read permissions denied.
 const clientMapper = load('src/services/repositories/mappers/clientEventRepositoryMapper.ts', {
+  '@/lib/invitationContentVersion': contentVersion,
   '@/config/weddingPages': { getWeddingPageBySlug: () => null },
   '@/lib/eventTypes': { DEFAULT_EVENT_TYPE: 'wedding', normalizeEventTypeKey: (value: unknown, fallback: string) => value ?? fallback },
   '@/lib/invitationPageNormalization': { normalizeInvitationTheme: (value: unknown) => value ?? 'simple' },

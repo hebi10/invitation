@@ -26,7 +26,6 @@ import {
   getServerInvitationPageDisplayPeriodSummary,
 } from './invitationPageServerService';
 import {
-  adjustServerPageTicketCount,
   getServerPageTicketCount,
 } from './pageTicketServerService';
 import { recordMobileTicketPackAssignedToEvent } from './customerWalletServerService';
@@ -354,22 +353,6 @@ export async function fulfillServerMobileTicketPackPurchase(
     throw new Error('The selected Google Play product is not a ticket pack SKU.');
   }
 
-  const verifiedTransaction = await verifyRevenueCatNonSubscriptionTransaction(purchase);
-  purchase = { ...purchase, transactionId: verifiedTransaction.transactionIdentifier };
-  const lock = await acquireBillingFulfillmentLock(purchase, definition);
-  const lockRecord = lock.record;
-
-  if (lockRecord.status === 'fulfilled') {
-    return {
-      success: true,
-      ticketCount: await getServerPageTicketCount(targetPageSlug),
-    };
-  }
-
-  if (!lock.acquired) {
-    throw new Error('This purchase is already being processed.');
-  }
-
   const authorizedSession = await authorizeMobileClientEditorToken(targetPageSlug, targetToken, {
     deviceId: options.deviceId,
   });
@@ -381,53 +364,44 @@ export async function fulfillServerMobileTicketPackPurchase(
     throw new Error(buildMissingMobileClientEditorPermissionError('canManageTickets'));
   }
 
-  try {
-    const resolvedTargetEvent = await resolveStoredEventBySlug(targetPageSlug);
-    const ticketCount = await adjustServerPageTicketCount(
-      targetPageSlug,
-      definition.ticketCount
-    );
-
-    await updateBillingFulfillmentRecord(purchase.transactionId, {
-      status: 'fulfilled',
-      fulfilledAt: new Date().toISOString(),
-      purchaseDate: verifiedTransaction.purchaseDate,
-      targetPageSlug,
-      grantedTicketCount: definition.ticketCount,
-      eventId: resolvedTargetEvent?.summary.eventId ?? null,
-    });
-
-    const ownerUid = resolvedTargetEvent?.summary.ownerUid?.trim() ?? '';
-    if (ownerUid) {
-      try {
-        await recordMobileTicketPackAssignedToEvent({
-          ownerUid,
-          appUserId: purchase.appUserId,
-          transactionId: purchase.transactionId,
-          productId: purchase.productId,
-          ticketCount: definition.ticketCount,
-          targetPageSlug,
-          eventId: resolvedTargetEvent?.summary.eventId ?? null,
-        });
-      } catch (ledgerError) {
-        console.error(
-          '[mobileBillingServerService] failed to record ticket pack wallet ledger',
-          ledgerError
-        );
-      }
-    }
-
-    return {
-      success: true,
-      ticketCount,
-    };
-  } catch (error) {
-    await markBillingFulfillmentFailed(
-      purchase.transactionId,
-      error instanceof Error ? error.message : 'Failed to fulfill ticket pack purchase.'
-    );
-    throw error;
+  const verifiedTransaction = await verifyRevenueCatNonSubscriptionTransaction(purchase);
+  purchase = { ...purchase, transactionId: verifiedTransaction.transactionIdentifier };
+  const resolvedTargetEvent = await resolveStoredEventBySlug(targetPageSlug);
+  if (!resolvedTargetEvent) {
+    throw new Error('Target invitation page is not available.');
   }
+  const ownerUid = authorizedSession.mobileSession?.ownerUid ??
+    authorizedSession.session.ownerUid ?? resolvedTargetEvent.summary.ownerUid;
+  const result = await firestoreBillingFulfillmentRepository.fulfillTicketPack({
+    purchase,
+    eventId: authorizedSession.mobileSession?.eventId ??
+      authorizedSession.session.eventId ?? resolvedTargetEvent.summary.eventId,
+    targetPageSlug: resolvedTargetEvent.summary.slug,
+    ownerUid,
+    ticketCount: definition.ticketCount,
+    purchaseDate: verifiedTransaction.purchaseDate,
+  });
+
+  if (result.applied && ownerUid) {
+    try {
+      await recordMobileTicketPackAssignedToEvent({
+        ownerUid,
+        appUserId: purchase.appUserId,
+        transactionId: purchase.transactionId,
+        productId: purchase.productId,
+        ticketCount: definition.ticketCount,
+        targetPageSlug,
+        eventId: resolvedTargetEvent.summary.eventId,
+      });
+    } catch (ledgerError) {
+      console.error(
+        '[mobileBillingServerService] failed to record ticket pack wallet ledger',
+        ledgerError
+      );
+    }
+  }
+
+  return { success: true, ticketCount: result.ticketCount };
 }
 
 export async function getServerMobileBillingFulfillmentRecord(transactionId: string) {

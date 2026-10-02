@@ -1,3 +1,4 @@
+import { isInvitationVersionError, requireInvitationContentVersion } from '@/lib/invitationContentVersion';
 import { NextResponse } from 'next/server';
 
 import { isInvitationThemeKey } from '@/lib/invitationThemes';
@@ -30,6 +31,12 @@ export async function GET(
       ...snapshot,
     });
   } catch (error) {
+    if (isInvitationVersionError(error)) {
+      return NextResponse.json({
+        error: error.message, code: error.code,
+        ...('currentVersion' in error ? { currentVersion: error.currentVersion } : {}),
+      }, { status: error.status });
+    }
     if (
       error instanceof CustomerApiAuthError ||
       error instanceof CustomerEventClaimError
@@ -55,6 +62,7 @@ export async function POST(
     const body = (await request.json().catch(() => null)) as
       | {
           config?: unknown;
+          expectedVersion?: unknown;
           published?: unknown;
           defaultTheme?: unknown;
         }
@@ -69,6 +77,7 @@ export async function POST(
 
     const snapshot = await saveCustomerEditableInvitationPageConfig(ownerUid, slug, {
       config: body.config as InvitationPageSeed,
+      expectedVersion: requireInvitationContentVersion(body.expectedVersion),
       published: typeof body.published === 'boolean' ? body.published : undefined,
       defaultTheme: isInvitationThemeKey(body.defaultTheme)
         ? body.defaultTheme
@@ -80,6 +89,12 @@ export async function POST(
       ...snapshot,
     });
   } catch (error) {
+    if (isInvitationVersionError(error)) {
+      return NextResponse.json({
+        error: error.message, code: error.code,
+        ...('currentVersion' in error ? { currentVersion: error.currentVersion } : {}),
+      }, { status: error.status });
+    }
     if (
       error instanceof CustomerApiAuthError ||
       error instanceof CustomerEventClaimError

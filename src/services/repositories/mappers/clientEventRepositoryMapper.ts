@@ -1,3 +1,4 @@
+import { readInvitationContentVersion } from '@/lib/invitationContentVersion';
 import { getWeddingPageBySlug } from '@/config/weddingPages';
 import { DEFAULT_EVENT_TYPE, normalizeEventTypeKey, type EventTypeKey } from '@/lib/eventTypes';
 import { normalizeInvitationTheme } from '@/lib/invitationPageNormalization';
@@ -283,6 +284,7 @@ export function buildInvitationPageConfigRecordFromClientEventContent(
 
   return {
     slug: config.slug,
+    version: readInvitationContentVersion(data.version),
     config,
     createdAt:
       data.createdAt != null

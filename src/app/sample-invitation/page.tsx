@@ -7,4 +7,11 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
-export default function SampleInvitationPage() { return <SampleInvitation />; }
+export default async function SampleInvitationPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ embed?: string | string[] }>;
+}) {
+  const query = await searchParams;
+  return <SampleInvitation embedded={query.embed === '1'} />;
+}

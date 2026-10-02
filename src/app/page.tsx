@@ -30,7 +30,7 @@ export default function Home() {
           <div className={styles.phone}>
             <div className={styles.phoneSpeaker} aria-hidden="true" />
             <iframe
-              src={SAMPLE_INVITATION_PATH}
+              src={`${SAMPLE_INVITATION_PATH}?embed=1`}
               title="기본형 청첩장 · 화면 안에서 스크롤하며 둘러보기"
               className={styles.phoneScreen}
               aria-describedby="preview-instruction"
@@ -42,21 +42,23 @@ export default function Home() {
       </section>
       <section className={styles.workspace} aria-labelledby="workspace-title">
         <div className={styles.sectionIntro}>
-          <h2 id="workspace-title">초대장을 만든 다음에도</h2>
-          <p>내 청첩장을 수정하거나, 운영 화면을 둘러보세요.</p>
+          <h2 id="workspace-title">수정부터 운영까지 이어지는 청첩장</h2>
+          <p>고객의 편집 화면과 공개 청첩장, 관리자 화면이 이렇게 연결됩니다.</p>
         </div>
-        <div className={styles.workspaceLinks}>
-          <div>
-            <h3>내 청첩장</h3>
-            <p>사진과 예식 정보를 수정하고 방명록을 확인합니다.</p>
-            <Link href="/my-invitations" className={styles.secondaryLink}>내 청첩장으로 이동</Link>
-          </div>
-          <div>
-            <h3>운영 관리</h3>
-            <p>이벤트의 공개 상태와 고객 연결을 관리합니다.</p>
-            <Link href="/admin" className={styles.secondaryLink}>운영 관리로 이동</Link>
-          </div>
-        </div>
+        <ol className={styles.workflow}>
+          <li>
+            <h3>고객이 내용 수정</h3>
+            <p>연결된 청첩장에서 이름과 예식 일정, 사진을 직접 수정합니다.</p>
+          </li>
+          <li>
+            <h3>청첩장에서 결과 확인</h3>
+            <p>저장한 내용이 반영된 청첩장을 확인하고 링크로 전합니다.</p>
+          </li>
+          <li>
+            <h3>관리자가 운영</h3>
+            <p>이벤트의 공개 상태와 고객 연결을 관리하고 방명록을 확인합니다.</p>
+          </li>
+        </ol>
       </section>
       <footer className={styles.footer}>
         <span>모바일 청첩장</span>

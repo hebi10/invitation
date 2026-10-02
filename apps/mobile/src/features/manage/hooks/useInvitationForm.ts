@@ -43,6 +43,7 @@ type UseInvitationFormOptions = {
   saveCurrentPageConfig: (
     config: MobileInvitationSeed,
     options?: {
+      expectedVersion?: number;
       published?: boolean;
       defaultTheme?: MobileInvitationThemeKey;
     }
@@ -66,6 +67,7 @@ export function useInvitationForm({
   const isFocused = useIsFocused();
   const [form, setFormState] = useState<ManageFormState>(EMPTY_FORM);
   const formPageSlugRef = useRef<string | null>(null);
+  const formVersionRef = useRef<number | undefined>(undefined);
   const [editorModalVisible, setEditorModalVisible] = useState(false);
   const [editorPreparingVisible, setEditorPreparingVisible] = useState(false);
   const [editorPreparingMessage, setEditorPreparingMessage] = useState('');
@@ -81,6 +83,7 @@ export function useInvitationForm({
 
   const hydrateForm = useCallback((nextDashboard: MobileInvitationDashboard | null) => {
     formPageSlugRef.current = nextDashboard?.page.slug ?? null;
+    formVersionRef.current = nextDashboard?.page.version;
     if (!nextDashboard) {
       setFormState(EMPTY_FORM);
       setIsFormDirty(false);
@@ -349,6 +352,7 @@ export function useInvitationForm({
         setIsSaving(true);
         try {
           return await saveCurrentPageConfig(nextConfig, {
+            expectedVersion: formVersionRef.current,
             published: form.published,
             defaultTheme: form.defaultTheme,
           });
@@ -374,6 +378,7 @@ export function useInvitationForm({
         return false;
       }
 
+      if (typeof formVersionRef.current === 'number') formVersionRef.current += 1;
       setIsFormDirty(false);
 
       if (!options.suppressNotice && options.notice) {

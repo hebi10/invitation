@@ -176,6 +176,7 @@ function toEditableEvent(event: DemoExperienceStoredEvent): DemoExperienceEditab
     kind: event.kind,
     version: event.version,
     editableConfig: {
+      version: event.version,
       slug: event.slug,
       config: normalizeDemoExperienceImages(event.config),
       published: event.published,

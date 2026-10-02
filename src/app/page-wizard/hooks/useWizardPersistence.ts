@@ -96,6 +96,7 @@ export function useWizardPersistence({
     config: InvitationPageSeed;
     published: boolean;
     createdFresh: boolean;
+    version: number;
   }) => Promise<void> | void;
   gateway: WizardPersistenceGateway;
   persistedVersion: number | null;
@@ -275,6 +276,7 @@ export function useWizardPersistence({
           config: normalized,
           published: savedEditableConfig.published ?? nextPublished,
           createdFresh: draftState.createdFresh,
+          version: savedEditableConfig.version,
         });
 
         if (!options?.silent) {

@@ -1,3 +1,4 @@
+import { requireInvitationContentVersion } from '@/lib/invitationContentVersion';
 import { readEventDeletionMetadata } from '@/server/eventDeletionPolicy';
 import {
   createInvitationPageFromSeed,
@@ -76,6 +77,7 @@ export interface InvitationPageSummary {
 }
 
 export interface EditableInvitationPageConfig {
+  version: number;
   slug: string;
   config: InvitationPageSeed;
   published: boolean;
@@ -108,6 +110,7 @@ export interface CreateInvitationPageDraftInput {
 }
 
 export interface CreateInvitationPageDraftResult {
+  version: number;
   slug: string;
   config: InvitationPageSeed;
 }
@@ -480,15 +483,15 @@ export async function getEditableInvitationPageConfig(
           hasCustomConfig: false,
           dataSource: 'seed',
           lastSavedAt: null,
+          version: 0,
       }
       : null;
   }
 
   try {
-    const [registryRecord, configSeed] = await Promise.all([
-      getRegistryByPageSlug(firestore, pageSlug),
-      getConfigByPageSlug(firestore, pageSlug),
-    ]);
+    const editableRecord = await clientInvitationPageRepository.findEditableBySlug(pageSlug);
+    const registryRecord = editableRecord?.registry ?? null;
+    const configSeed = editableRecord?.content ?? null;
 
     const sourceRecord = buildInvitationPageRecord(pageSlug, configSeed, registryRecord);
     if (!sourceRecord) {
@@ -514,7 +517,8 @@ export async function getEditableInvitationPageConfig(
       features,
       hasCustomConfig: sourceRecord.hasCustomConfig,
       dataSource: sourceRecord.dataSource,
-      lastSavedAt: registryRecord?.updatedAt ?? null,
+      lastSavedAt: configSeed?.updatedAt ?? null,
+      version: configSeed?.version ?? 0,
     };
   } catch (error) {
     const errorCode = readRepositoryErrorCode(error);
@@ -534,6 +538,7 @@ export async function getEditableInvitationPageConfig(
 export async function saveInvitationPageConfig(
   config: InvitationPageSeed,
   options: {
+    expectedVersion?: number;
     published?: boolean;
     defaultTheme?: InvitationThemeKey;
   } = {}
@@ -561,22 +566,18 @@ export async function saveInvitationPageConfig(
     throw new Error('데이터 저장소 연결을 확인하지 못했습니다. 잠시 후 다시 시도해 주세요.');
   }
 
-  const existingConfig = await getConfigByPageSlug(firestore, normalizedConfig.slug);
   const now = new Date();
-  await clientInvitationPageRepository.saveConfig({
+  const version = await clientInvitationPageRepository.saveConfig({
     slug: normalizedConfig.slug,
     config: normalizedConfig,
     createdAt: now,
     updatedAt: now,
-  });
-
-  await upsertRegistryRecord(firestore, normalizedConfig.slug, {
+    expectedVersion: requireInvitationContentVersion(options.expectedVersion),
     published: options.published ?? true,
     defaultTheme: options.defaultTheme ?? DEFAULT_INVITATION_THEME,
-    hasCustomConfig: true,
   });
 
-  return existingConfig?.config ?? normalizedConfig;
+  return { config: normalizedConfig, version };
 }
 
 export function getInvitationPageSeedTemplates() {
@@ -617,19 +618,16 @@ export async function createInvitationPageDraftFromSeed(
   });
   const now = new Date();
 
-  await clientInvitationPageRepository.saveConfig({
+  const version = await clientInvitationPageRepository.saveConfig({
     slug,
     config,
+    expectedVersion: 0,
+    published: input.published ?? false,
+    defaultTheme: input.defaultTheme ?? DEFAULT_INVITATION_THEME,
     seedSourceSlug: seed.slug,
     createdAt: now,
     updatedAt: now,
     initializeOwnerFromCurrentAuth: false,
-  });
-
-  await upsertRegistryRecord(firestore, slug, {
-    published: input.published ?? false,
-    defaultTheme: input.defaultTheme ?? DEFAULT_INVITATION_THEME,
-    hasCustomConfig: true,
   });
 
   const initialDisplayPeriodMonths =
@@ -651,6 +649,7 @@ export async function createInvitationPageDraftFromSeed(
   }
 
   return {
+    version,
     slug,
     config,
   };
@@ -778,6 +777,7 @@ export async function setInvitationPageVariantAvailability(
       variants: nextVariants,
     },
     {
+      expectedVersion: editableConfig.version,
       published: options.published ?? editableConfig.published,
       defaultTheme: options.defaultTheme ?? editableConfig.defaultTheme,
     }
@@ -990,6 +990,7 @@ export async function setInvitationPageProductTier(
   await saveInvitationPageConfig(
     { ...editableConfig.config, productTier, features },
     {
+      expectedVersion: editableConfig.version,
       published: editableConfig.published,
       defaultTheme: editableConfig.defaultTheme,
     }

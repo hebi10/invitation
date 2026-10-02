@@ -14,6 +14,7 @@ import type { InvitationPageSeed } from '@/types/invitationPage';
 
 import {
   fetchClientEventContentBySlug,
+  fetchClientEventEditableBySlug,
   listClientEventContentMap,
   listClientEventDisplayPeriodMap,
   listClientEventRegistryMap,
@@ -34,16 +35,20 @@ export interface ClientInvitationPageRepository {
   findRegistryBySlug(pageSlug: string): Promise<InvitationPageRegistryRecord | null>;
   listConfigMap(): Promise<Map<string, StoredInvitationPageConfigRecord>>;
   findConfigBySlug(pageSlug: string): Promise<StoredInvitationPageConfigRecord | null>;
+  findEditableBySlug(pageSlug: string): ReturnType<typeof fetchClientEventEditableBySlug>;
   isSlugTaken(pageSlug: string): Promise<boolean>;
   createUniqueSlug(slugBase: string): Promise<string>;
   saveConfig(input: {
+    expectedVersion: number;
+    published?: boolean;
+    defaultTheme?: InvitationThemeKey;
     slug: string;
     config: InvitationPageSeed;
     createdAt: Date;
     updatedAt: Date;
     seedSourceSlug?: string | null;
     initializeOwnerFromCurrentAuth?: boolean;
-  }): Promise<void>;
+  }): Promise<number>;
   upsertRegistryBySlug(
     pageSlug: string,
     payload: {
@@ -160,6 +165,10 @@ export const clientInvitationPageRepository: ClientInvitationPageRepository = {
     return fetchClientEventContentBySlug(normalizedPageSlug);
   },
 
+  async findEditableBySlug(pageSlug) {
+    return fetchClientEventEditableBySlug(requirePageSlug(pageSlug));
+  },
+
   async isSlugTaken(pageSlug) {
     const normalizedPageSlug = requirePageSlug(pageSlug);
     if (getWeddingPageBySlug(normalizedPageSlug)) {
@@ -192,7 +201,10 @@ export const clientInvitationPageRepository: ClientInvitationPageRepository = {
   async saveConfig(input) {
     const normalizedSlug = requirePageSlug(input.slug);
 
-    await saveClientEventContentBySlug({
+    return saveClientEventContentBySlug({
+      expectedVersion: input.expectedVersion,
+      published: input.published,
+      defaultTheme: input.defaultTheme,
       slug: normalizedSlug,
       config: input.config,
       seedSourceSlug: input.seedSourceSlug ?? null,

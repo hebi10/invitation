@@ -1,3 +1,4 @@
+import { readInvitationContentVersion } from '@/lib/invitationContentVersion';
 import { getWeddingPageBySlug } from '@/config/weddingPages';
 import {
   normalizeInvitationConfigSeed,
@@ -11,6 +12,7 @@ import type { InvitationPageSeed } from '@/types/invitationPage';
 import { toClientRepositoryDate } from '../clientFirestoreRepositoryCore';
 
 export interface StoredInvitationPageConfigRecord {
+  version: number;
   slug: string;
   config: InvitationPageSeed;
   createdAt: Date | null;
@@ -47,6 +49,7 @@ export function normalizeRepositoryConfigRecord(
 
   return {
     slug: config.slug,
+    version: readInvitationContentVersion(data.version),
     config,
     createdAt: toClientRepositoryDate(data.createdAt, new Date()),
     updatedAt: toClientRepositoryDate(data.updatedAt, new Date()),

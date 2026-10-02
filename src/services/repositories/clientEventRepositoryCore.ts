@@ -1,3 +1,5 @@
+import { InvitationVersionConflictError, readInvitationContentVersion, requireInvitationContentVersion } from '@/lib/invitationContentVersion';
+import { isEventDeletionBlockingAccess } from '@/server/eventDeletionPolicy';
 import { ensureFirebaseInit } from '@/lib/firebase';
 import { DEFAULT_EVENT_TYPE, normalizeEventTypeKey, type EventTypeKey } from '@/lib/eventTypes';
 import { DEFAULT_INVITATION_THEME, type InvitationThemeKey } from '@/lib/invitationThemes';
@@ -263,6 +265,28 @@ async function resolveClientStoredEventBySlugInternal(
 
 export async function resolveClientStoredEventBySlug(pageSlug: string) {
   return resolveClientStoredEventBySlugInternal(pageSlug, new Set<string>());
+}
+
+export async function fetchClientEventEditableBySlug(pageSlug: string) {
+  const resolvedEvent = await resolveClientStoredEventBySlug(pageSlug);
+  const firestore = await ensureClientFirestoreState();
+  if (!firestore || !resolvedEvent) return null;
+  const eventRef = firestore.modules.doc(firestore.db, CLIENT_EVENTS_COLLECTION, resolvedEvent.summary.eventId);
+  const contentRef = firestore.modules.doc(firestore.db, CLIENT_EVENTS_COLLECTION, resolvedEvent.summary.eventId, CLIENT_EVENT_CONTENT_COLLECTION, CLIENT_EVENT_CURRENT_CONTENT_DOC);
+  return firestore.modules.runTransaction(firestore.db, async (transaction) => {
+    const [eventSnapshot, contentSnapshot] = await Promise.all([
+      transaction.get(eventRef), transaction.get(contentRef),
+    ]);
+    if (!eventSnapshot.exists()) return null;
+    const summary = normalizeClientEventSummaryRecord(eventSnapshot.id, eventSnapshot.data(), pageSlug);
+    if (!summary) return null;
+    return {
+      registry: buildInvitationPageRegistryRecordFromClientEventSummary(summary),
+      content: contentSnapshot.exists()
+        ? buildInvitationPageConfigRecordFromClientEventContent(summary, contentSnapshot.data())
+        : null,
+    };
+  });
 }
 
 export async function fetchClientEventContentBySlug(pageSlug: string) {
@@ -649,72 +673,70 @@ export async function upsertClientEventSummary(
 export async function saveClientEventContentBySlug(input: {
   slug: string;
   config: InvitationPageSeed;
+  expectedVersion: number;
+  published?: boolean;
+  defaultTheme?: InvitationThemeKey;
   seedSourceSlug?: string | null;
   createdAt?: Date | null;
   updatedAt?: Date | null;
   initializeOwnerFromCurrentAuth?: boolean;
 }) {
+  const expectedVersion = requireInvitationContentVersion(input.expectedVersion);
   const normalizedPageSlug = normalizePageSlug(input.slug);
-  if (!normalizedPageSlug) {
-    throw new Error('Page slug is required.');
-  }
-
-  const nextSupportedVariants = readSupportedVariants(input.config);
-  const resolvedEvent = await upsertClientEventSummary({
-    slug: normalizedPageSlug,
-    eventType: input.config.eventType,
-    displayName: input.config.displayName,
-    summary: input.config.description,
-    published: true,
-    defaultTheme: DEFAULT_INVITATION_THEME,
-    supportedVariants: nextSupportedVariants,
-    featureFlags:
-      typeof input.config.features === 'object' && input.config.features !== null
-        ? (input.config.features as Record<string, unknown>)
-        : {},
-    hasCustomConfig: true,
-    createdAt: input.createdAt ?? null,
-    updatedAt: input.updatedAt ?? new Date(),
-    seedSourceSlug: input.seedSourceSlug ?? null,
-    initializeOwnerFromCurrentAuth: input.initializeOwnerFromCurrentAuth,
-  });
-
+  if (!normalizedPageSlug) throw new Error('Page slug is required.');
   const firestore = await ensureClientFirestoreState();
-  if (!firestore) {
-    throw new Error('Firestore is not initialized.');
-  }
-
+  if (!firestore) throw new Error('Firestore is not initialized.');
+  const resolvedEvent = await resolveClientStoredEventBySlug(normalizedPageSlug);
+  const eventId = resolvedEvent?.summary.eventId ?? buildInitialClientEventIdFromSlug(normalizedPageSlug);
+  const eventRef = firestore.modules.doc(firestore.db, CLIENT_EVENTS_COLLECTION, eventId);
+  const contentRef = firestore.modules.doc(firestore.db, CLIENT_EVENTS_COLLECTION, eventId, CLIENT_EVENT_CONTENT_COLLECTION, CLIENT_EVENT_CURRENT_CONTENT_DOC);
+  const indexRef = firestore.modules.doc(firestore.db, CLIENT_EVENT_SLUG_INDEX_COLLECTION, normalizedPageSlug);
+  const authOwner = input.initializeOwnerFromCurrentAuth !== false ? await getCurrentAuthOwner() : null;
   const now = input.updatedAt ?? new Date();
-  await firestore.modules.setDoc(
-    firestore.modules.doc(
-      firestore.db,
-      CLIENT_EVENTS_COLLECTION,
-      resolvedEvent.summary.eventId,
-      CLIENT_EVENT_CONTENT_COLLECTION,
-      CLIENT_EVENT_CURRENT_CONTENT_DOC
-    ),
-    {
-      schemaVersion: 1,
-      eventType: resolvedEvent.summary.eventType,
-      slug: normalizedPageSlug,
-      content: input.config,
-      themeState: {
-        defaultTheme: resolvedEvent.summary.defaultTheme,
-        variants: input.config.variants ?? {},
-      },
-      productTier: input.config.productTier ?? null,
-      featureFlags:
-        typeof input.config.features === 'object' && input.config.features !== null
-          ? input.config.features
-          : {},
-      seedSourceSlug: input.seedSourceSlug ?? null,
-      createdAt: input.createdAt ?? resolvedEvent.summary.createdAt ?? now,
-      updatedAt: now,
-    },
-    { merge: true }
-  );
-
-  return resolvedEvent;
+  return firestore.modules.runTransaction(firestore.db, async (transaction) => {
+    const [eventSnapshot, contentSnapshot, indexSnapshot] = await Promise.all([
+      transaction.get(eventRef), transaction.get(contentRef), transaction.get(indexRef),
+    ]);
+    if (resolvedEvent && !eventSnapshot.exists()) throw new Error('청첩장을 찾을 수 없습니다.');
+    const eventData = eventSnapshot.data() ?? {};
+    if (isEventDeletionBlockingAccess(eventData.deletion)) throw new Error('현재 이용할 수 없는 청첩장입니다.');
+    const index = indexSnapshot.data();
+    if (index && (index.eventId !== eventId || (index.status !== 'active' && index.status !== 'redirect'))) {
+      throw new Error('이미 사용 중이거나 이용할 수 없는 청첩장 주소입니다.');
+    }
+    const contentData = contentSnapshot.data() ?? {};
+    const version = readInvitationContentVersion(contentData.version);
+    if (version !== expectedVersion) throw new InvitationVersionConflictError(version);
+    const published = input.published ?? eventData.published ?? true;
+    const defaultTheme = input.defaultTheme ?? eventData.defaultTheme ?? DEFAULT_INVITATION_THEME;
+    const eventType = normalizeEventTypeKey(input.config.eventType, eventData.eventType ?? DEFAULT_EVENT_TYPE);
+    // Only content-related fields are written; owner, tickets and display periods stay untouched.
+    transaction.set(eventRef, {
+      ...(!eventSnapshot.exists() ? {
+        status: 'active', ownerUid: authOwner?.uid ?? null, ownerEmail: authOwner?.email ?? null,
+        ownerDisplayName: authOwner?.displayName ?? null, createdAt: input.createdAt ?? now,
+        migratedFromPageSlug: input.seedSourceSlug ?? normalizedPageSlug,
+      } : {}),
+      eventId, slug: normalizedPageSlug, eventType, title: input.config.displayName,
+      displayName: input.config.displayName, summary: input.config.description,
+      supportedVariants: readSupportedVariants(input.config), featureFlags: input.config.features ?? {},
+      published, defaultTheme, visibility: { ...eventData.visibility, published },
+      hasCustomConfig: true, hasCustomContent: true, lastSavedAt: now, updatedAt: now,
+      version: (typeof eventData.version === 'number' ? eventData.version : 0) + 1,
+    }, { merge: true });
+    transaction.set(contentRef, {
+      version: version + 1, schemaVersion: 1, eventType, slug: normalizedPageSlug,
+      content: input.config, themeState: { defaultTheme, variants: input.config.variants ?? {} },
+      productTier: input.config.productTier ?? null, featureFlags: input.config.features ?? {},
+      seedSourceSlug: input.seedSourceSlug ?? contentData.seedSourceSlug ?? null,
+      createdAt: contentData.createdAt ?? input.createdAt ?? now, updatedAt: now,
+    }, { merge: true });
+    transaction.set(indexRef, {
+      slug: normalizedPageSlug, eventId, eventType, status: 'active', targetSlug: null,
+      createdAt: index?.createdAt ?? now, updatedAt: now,
+    }, { merge: true });
+    return version + 1;
+  });
 }
 
 export async function listClientEventRegistryMap() {

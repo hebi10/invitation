@@ -174,6 +174,7 @@ function buildSampleEditableConfig(summary: CustomerOwnedEventSummary) {
     features: resolveInvitationFeatures(productTier, config.features),
     hasCustomConfig: false,
     dataSource: 'sample' as const,
+    version: 0,
     lastSavedAt: summary.updatedAt,
   };
 }
@@ -494,6 +495,7 @@ export async function saveCustomerEditableInvitationPageConfig(
   pageSlug: string,
   input: {
     config: InvitationPageSeed;
+    expectedVersion: number;
     published?: boolean;
     defaultTheme?: InvitationThemeKey;
   },
@@ -527,6 +529,7 @@ export async function saveCustomerEditableInvitationPageConfig(
     });
 
   await saveServerInvitationPageConfig(entitlementTrustedConfig, {
+    expectedVersion: input.expectedVersion,
     published: currentEditableConfig.published,
     defaultTheme: currentEditableConfig.defaultTheme,
   });

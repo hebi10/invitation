@@ -1,2 +1,9 @@
 .sample { --closing-background: #fff; --closing-foreground: #292929; --closing-muted: #686868; width: min(100%, 480px); margin-inline: auto; background: #fff; }
 .notice { margin: 0; padding: 12px 16px; text-align: center; font: 11px/1.7 system-ui, sans-serif; color: #686868; background: #f7f7f5; }
+.serviceLinks { padding: 28px 24px; background: #f8f8f7; color: #292b27; font-family: system-ui, sans-serif; }
+.serviceLinks p { margin: 0 0 16px; font-size: 15px; font-weight: 500; line-height: 1.6; text-align: center; word-break: keep-all; }
+.serviceLinks nav { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; }
+.serviceLinks a { display: inline-flex; min-height: 48px; align-items: center; justify-content: center; gap: 8px; padding: 10px 14px; border: 1px solid #d8dad4; background: #fff; font-size: 13px; }
+.serviceLinks a:last-child { border-color: #292b27; background: #292b27; color: #fff; }
+.serviceLinks span { font-size: 11px; }
+.serviceLinks a:focus-visible { outline: 2px solid #596257; outline-offset: 4px; }

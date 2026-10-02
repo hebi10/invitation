@@ -1,3 +1,4 @@
+import { readInvitationContentVersion } from '@/lib/invitationContentVersion';
 import { getWeddingPageBySlug } from '@/config/weddingPages';
 import { DEFAULT_EVENT_TYPE, normalizeEventTypeKey, type EventTypeKey } from '@/lib/eventTypes';
 import {
@@ -78,6 +79,7 @@ export interface EventSummaryRecord {
 }
 
 export interface EventContentRecordDto {
+  version: number;
   slug: string;
   config: InvitationPageSeed;
   createdAt: Date | null;
@@ -362,6 +364,7 @@ export function buildInvitationPageConfigRecordFromEventContent(
 
   return {
     slug: config.slug,
+    version: readInvitationContentVersion(data.version),
     config,
     createdAt: toDate(data.createdAt) ?? eventSummary.createdAt,
     updatedAt: toDate(data.updatedAt) ?? eventSummary.lastSavedAt ?? eventSummary.updatedAt,

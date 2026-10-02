@@ -94,6 +94,7 @@ export function buildOwnedEventSampleEditableConfig(
     features: resolveInvitationFeatures(productTier, nextConfig.features),
     hasCustomConfig: false,
     dataSource: 'seed',
+    version: 0,
     lastSavedAt: event.updatedAt,
   };
 }

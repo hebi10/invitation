@@ -107,12 +107,13 @@ export async function saveMobileInvitationPageConfig(
   token: string,
   payload: {
     config: MobileInvitationSeed;
+    expectedVersion: number;
     published?: boolean;
     defaultTheme?: MobileInvitationThemeKey;
   },
   highRiskToken?: string
 ) {
-  return readJsonResponse<{ success: boolean }>(
+  return readJsonResponse<{ success: boolean; version: number }>(
     await fetchWithRetry(
       buildApiUrl(baseUrl, `/api/mobile/client-editor/pages/${encodeURIComponent(pageSlug)}`),
       {

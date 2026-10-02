@@ -138,7 +138,13 @@ export async function runPendingBillingPurchase<T>(
     try {
       result = await options.fulfill(pending.receipt!);
       if (result === false) throw new Error('Fulfillment incomplete');
-    } catch {
+    } catch (error) {
+      if (
+        typeof error === 'object' && error !== null && 'code' in error &&
+        error.code === 'BILLING_REVIEW_REQUIRED'
+      ) {
+        throw error;
+      }
       throw new Error('결제는 완료되었지만 반영을 확인하지 못했습니다. 같은 정보로 다시 시도하면 추가 결제 없이 이어서 처리합니다.');
     }
     // Keep the in-memory receipt if deleting the saved receipt fails, too.

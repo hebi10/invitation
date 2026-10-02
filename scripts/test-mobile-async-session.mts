@@ -30,7 +30,7 @@ runInNewContext(source, { exports, require(id: string) {
   if (id === './PreferencesContext') return { usePreferences: () => ({ apiBaseUrl: 'https://example.test' }) };
   if (id === '../lib/api') return {
     fetchMobileInvitationDashboard: (_base: string, slug: string) => new Promise(resolve => { finishRequests[slug] = resolve; }),
-    saveMobileInvitationPageConfig: async () => { saves += 1; await new Promise<void>(resolve => { finishSave = resolve; }); },
+    saveMobileInvitationPageConfig: async () => { saves += 1; await new Promise<void>(resolve => { finishSave = resolve; }); return { success: true, version: 1 }; },
   };
   throw new Error(`Unexpected module ${id}`);
 } });
@@ -48,10 +48,10 @@ finishRequests['page-a']({ page: { slug: 'page-a', config: { displayName: 'A' } 
 assert.equal(await pendingA, false, 'A response must be discarded after switching the active invitation to B');
 render();
 assert.equal((value!.dashboard as { page: { slug: string } }).page.slug, 'page-b', 'An obsolete response must not populate B with A data');
-const save = value!.saveCurrentPageConfig as (config: object) => Promise<boolean>;
+const save = value!.saveCurrentPageConfig as (config: object, options?: { expectedVersion: number }) => Promise<boolean>;
 assert.equal(await save({ slug: 'page-a', displayName: 'A' }), false, 'A form cannot be rewritten to B by replacing its slug');
 assert.equal(saves, 0, 'Mismatched form data must never reach the save API');
-const savingB = save({ slug: 'page-b', displayName: 'Edited B' });
+const savingB = save({ slug: 'page-b', displayName: 'Edited B' }, { expectedVersion: 0 });
 auth = { ...auth, session: { pageSlug: 'page-c', token: 'token-c' } };
 render();
 assert.equal(value!.dashboard, null, 'A newly selected page must hide another page even before effects run');
@@ -64,6 +64,7 @@ assert.equal(await savingB, false, 'An obsolete save completion must not update 
   let index = 0;
   const effects: (() => void)[] = [];
   let saved = 0;
+  const attemptedVersions: number[] = [];
   const form = { groom: { name: 'Groom A' }, bride: { name: 'Bride A' }, galleryImages: [],
     galleryImageThumbnailUrls: [], coverImageThumbnailUrl: '', coverImageUrl: '', kakaoMarkerTitle: '', venue: '', ceremonyAddress: '' };
   const formExports: Record<string, unknown> = {};
@@ -85,19 +86,25 @@ assert.equal(await savingB, false, 'An obsolete save completion must not update 
       buildManageFormFromDashboard: () => form };
     throw new Error(`Unexpected module ${id}`);
   } });
-  let dashboard = { page: { slug: 'page-a', published: false } };
+  let dashboard = { page: { slug: 'page-a', published: false, version: 7 } };
   function renderForm() {
     index = 0;
     const result = (formExports.useInvitationForm as (options: object) => { openEditorModal: () => Promise<void>; persistForm: (options: object) => Promise<boolean> })({
       dashboard, pendingManageOnboarding: null, dashboardLoading: false, clearAuthError() {}, clearPendingManageOnboarding() {},
-      refreshDashboard: async () => true, saveCurrentPageConfig: async () => { saved++; return true; }, setPublishedState: async () => true, setNotice() {},
+      refreshDashboard: async () => true, saveCurrentPageConfig: async (_config: unknown, options: { expectedVersion: number }) => { saved++; attemptedVersions.push(options.expectedVersion); return false; }, setPublishedState: async () => true, setNotice() {},
     });
     for (const effect of effects.splice(0)) effect();
     return result;
   }
   await renderForm().openEditorModal();
   renderForm();
-  dashboard = { page: { slug: 'page-b', published: false } };
+  dashboard = { page: { slug: 'page-a', published: false, version: 8 } };
+  assert.equal(await renderForm().persistForm({}), false);
+  assert.deepEqual(attemptedVersions, [7], 'A background dashboard refresh must not replace the version of the open draft.');
+  assert.equal(await renderForm().persistForm({}), false);
+  assert.deepEqual(attemptedVersions, [7, 7], 'A failed save must retain the original edit version.');
+  saved = 0;
+  dashboard = { page: { slug: 'page-b', published: false, version: 1 } };
   assert.equal(await renderForm().persistForm({}), false, 'An open A form must not save against the newly selected B dashboard');
   assert.equal(saved, 0);
 }

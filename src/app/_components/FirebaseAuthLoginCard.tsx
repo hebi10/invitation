@@ -229,7 +229,7 @@ export default function FirebaseAuthLoginCard({
         </label>
 
         {helperText ? <p className={styles.helper}>{helperText}</p> : null}
-        {noticeMessage ? <p className={styles.notice}>{noticeMessage}</p> : null}
+        {noticeMessage ? <p className={styles.notice} role="status">{noticeMessage}</p> : null}
         {canResendVerification ? (
           <div className={styles.noticeActions}>
             <button
@@ -250,7 +250,7 @@ export default function FirebaseAuthLoginCard({
             </button>
           </div>
         ) : null}
-        {errorMessage ? <p className={styles.error}>{errorMessage}</p> : null}
+        {errorMessage ? <p className={styles.error} role="alert">{errorMessage}</p> : null}
 
         <button className={styles.primaryButton} type="submit" disabled={loading !== null}>
           {loading === 'email'

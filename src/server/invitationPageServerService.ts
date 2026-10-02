@@ -1,3 +1,4 @@
+import { requireInvitationContentVersion } from '@/lib/invitationContentVersion';
 import 'server-only';
 
 import {
@@ -73,6 +74,7 @@ export interface ServerInvitationPageLookupOptions {
 }
 
 export interface ServerEditableInvitationPageConfig {
+  version: number;
   slug: string;
   config: InvitationPageSeed;
   published: boolean;
@@ -97,6 +99,7 @@ export interface ServerCreateInvitationPageDraftInput {
 }
 
 export interface ServerCreateInvitationPageDraftResult {
+  version: number;
   slug: string;
   config: InvitationPageSeed;
 }
@@ -558,15 +561,16 @@ export async function getServerEditableInvitationPageConfig(
           hasCustomConfig: false,
           dataSource: 'sample',
           lastSavedAt: null,
+          version: 0,
         }
       : null;
   }
 
-  const [registryRecord, configSeed] = await Promise.all([
-    getRegistryByPageSlug(normalizedPageSlug),
-    getConfigByPageSlug(normalizedPageSlug),
-  ]);
+  const editableRecord = await firestoreEventRepository.findEditableBySlug(normalizedPageSlug);
+  const registryRecord = editableRecord?.registry ?? null;
+  const contentRecord = editableRecord?.content ?? null;
 
+  const configSeed = contentRecord?.config ?? null;
   const sourceRecord = buildInvitationPageRecord(
     normalizedPageSlug,
     configSeed,
@@ -596,13 +600,15 @@ export async function getServerEditableInvitationPageConfig(
     features,
     hasCustomConfig: sourceRecord.hasCustomConfig,
     dataSource: sourceRecord.dataSource,
-    lastSavedAt: registryRecord?.updatedAt ?? null,
+    lastSavedAt: contentRecord?.updatedAt ?? null,
+    version: contentRecord?.version ?? 0,
   };
 }
 
 export async function saveServerInvitationPageConfig(
   config: InvitationPageSeed,
   options: {
+    expectedVersion?: number;
     published?: boolean;
     defaultTheme?: InvitationThemeKey;
   } = {}
@@ -629,17 +635,16 @@ export async function saveServerInvitationPageConfig(
     throw new Error('데이터 저장소 연결을 확인하지 못했습니다. 잠시 후 다시 시도해 주세요.');
   }
   const now = new Date();
-  await firestoreEventRepository.saveContentBySlug({
+  const version = await firestoreEventRepository.saveContentBySlug({
     slug: normalizedConfig.slug,
     config: normalizedConfig,
     updatedAt: now,
-  });
-
-  await upsertRegistryRecord(normalizedConfig.slug, {
+    expectedVersion: requireInvitationContentVersion(options.expectedVersion),
     published: options.published ?? true,
     defaultTheme: options.defaultTheme ?? DEFAULT_INVITATION_THEME,
-    hasCustomConfig: true,
   });
+
+  return { version, config: normalizedConfig };
 }
 
 export async function createServerInvitationPageDraftFromSeed(
@@ -675,18 +680,15 @@ export async function createServerInvitationPageDraftFromSeed(
     theme: normalizeInvitationTheme(input.defaultTheme),
   });
   const now = new Date();
-  await firestoreEventRepository.saveContentBySlug({
+  const version = await firestoreEventRepository.saveContentBySlug({
     slug,
     config,
+    expectedVersion: 0,
+    published: input.published ?? false,
+    defaultTheme: input.defaultTheme ?? DEFAULT_INVITATION_THEME,
     seedSourceSlug: seed.slug,
     createdAt: now,
     updatedAt: now,
-  });
-
-  await upsertRegistryRecord(slug, {
-    published: input.published ?? false,
-    defaultTheme: input.defaultTheme ?? DEFAULT_INVITATION_THEME,
-    hasCustomConfig: true,
   });
 
   const initialDisplayPeriodMonths =
@@ -708,6 +710,7 @@ export async function createServerInvitationPageDraftFromSeed(
   }
 
   return {
+    version,
     slug,
     config,
   };
@@ -841,6 +844,7 @@ export async function setServerInvitationPageVariantAvailability(
       variants: nextVariants,
     },
     {
+      expectedVersion: editableConfig.version,
       published: options.published ?? editableConfig.published,
       defaultTheme: options.defaultTheme ?? editableConfig.defaultTheme,
     }

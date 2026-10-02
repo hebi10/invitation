@@ -1,3 +1,4 @@
+import { isInvitationVersionError, requireInvitationContentVersion } from '@/lib/invitationContentVersion';
 ﻿import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
 
@@ -104,6 +105,7 @@ export async function POST(
   const body = (await request.json().catch(() => null)) as
     | {
         action?: unknown;
+        expectedVersion?: unknown;
         config?: InvitationPageSeed;
         published?: unknown;
         defaultTheme?: unknown;
@@ -149,12 +151,13 @@ export async function POST(
         );
       }
 
-      await saveServerInvitationPageConfig(trustedConfig, {
+      const saved = await saveServerInvitationPageConfig(trustedConfig, {
+        expectedVersion: requireInvitationContentVersion(body.expectedVersion),
         published: body.published === true,
         defaultTheme,
       });
       return NextResponse.json(
-        { success: true },
+        { success: true, version: saved.version },
         { headers: buildRateLimitHeaders(rateLimitResult) }
       );
     }
@@ -195,6 +198,12 @@ export async function POST(
       }
     );
   } catch (error) {
+    if (isInvitationVersionError(error)) {
+      return NextResponse.json({
+        error: error.message, code: error.code,
+        ...('currentVersion' in error ? { currentVersion: error.currentVersion } : {}),
+      }, { status: error.status });
+    }
     console.error('[client-editor/pages] failed to process request', error);
     return NextResponse.json(
       { error: GENERIC_SERVER_ERROR_MESSAGE },

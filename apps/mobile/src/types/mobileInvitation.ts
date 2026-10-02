@@ -160,6 +160,7 @@ export interface MobileInvitationSeed {
 }
 
 export interface MobileEditableInvitationPageConfig {
+  version: number;
   slug: string;
   config: MobileInvitationSeed;
   published: boolean;

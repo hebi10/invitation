@@ -1,6 +1,9 @@
 import 'server-only';
 
 import { getServerFirestore } from '../firebaseAdmin';
+import { isEventDeletionBlockingAccess } from '../eventDeletionPolicy';
+import { EVENTS_COLLECTION } from './eventRepository';
+import { normalizeEventSummaryRecord } from './eventReadThroughDtos';
 
 const BILLING_FULFILLMENTS_COLLECTION = 'billingFulfillments';
 
@@ -36,6 +39,15 @@ export type BillingFulfillmentLockResult = {
   acquired: boolean;
 };
 
+export type BillingTicketPackFulfillmentInput = {
+  purchase: BillingFulfillmentPurchaseInput;
+  eventId: string;
+  targetPageSlug: string;
+  ownerUid: string | null;
+  ticketCount: number;
+  purchaseDate: string | null;
+};
+
 export interface BillingFulfillmentRepository {
   isAvailable(): boolean;
   findByTransactionId(transactionId: string): Promise<BillingFulfillmentRecord | null>;
@@ -43,6 +55,10 @@ export interface BillingFulfillmentRepository {
     purchase: BillingFulfillmentPurchaseInput,
     kind: BillingFulfillmentKind
   ): Promise<BillingFulfillmentLockResult>;
+  fulfillTicketPack(input: BillingTicketPackFulfillmentInput): Promise<{
+    ticketCount: number;
+    applied: boolean;
+  }>;
   update(
     transactionId: string,
     patch: Partial<BillingFulfillmentRecord>
@@ -239,6 +255,85 @@ export const firestoreBillingFulfillmentRepository: BillingFulfillmentRepository
         record: currentRecord,
         acquired: false,
       };
+    });
+  },
+
+  async fulfillTicketPack(input) {
+    const { purchase } = input;
+    const transactionId = purchase.transactionId.trim();
+    const eventId = input.eventId.trim();
+    const targetPageSlug = input.targetPageSlug.trim();
+    if (
+      !transactionId || !eventId || !targetPageSlug ||
+      !Number.isSafeInteger(input.ticketCount) || input.ticketCount <= 0
+    ) {
+      throw new Error('A verified purchase, target event and ticket count are required.');
+    }
+
+    const db = getServerFirestore();
+    if (!db) throw new Error('Server Firestore is not available.');
+    const fulfillmentRef = db.collection(BILLING_FULFILLMENTS_COLLECTION).doc(transactionId);
+    const eventRef = db.collection(EVENTS_COLLECTION).doc(eventId);
+
+    return db.runTransaction(async (transaction) => {
+      const [fulfillmentSnapshot, eventSnapshot] = await Promise.all([
+        transaction.get(fulfillmentRef),
+        transaction.get(eventRef),
+      ]);
+      const summary = eventSnapshot.exists
+        ? normalizeEventSummaryRecord(eventSnapshot.id, eventSnapshot.data() ?? {})
+        : null;
+      if (!summary || isEventDeletionBlockingAccess(summary.deletion)) {
+        throw new Error('Target invitation page is not available.');
+      }
+      if (summary.slug !== targetPageSlug || summary.ownerUid !== input.ownerUid) {
+        throw new Error('Target invitation page authorization changed.');
+      }
+
+      const currentCount = Math.max(0, Math.trunc(summary.ticketBalance ?? summary.ticketCount ?? 0));
+      if (fulfillmentSnapshot.exists) {
+        const existing = normalizeBillingFulfillmentRecord(transactionId, fulfillmentSnapshot.data() ?? {});
+        if (
+          existing && (
+            existing.appUserId !== purchase.appUserId ||
+            existing.productId !== purchase.productId ||
+            existing.kind !== 'ticketPack' ||
+            (existing.targetPageSlug && existing.targetPageSlug !== targetPageSlug) ||
+            (existing.eventId && existing.eventId !== eventId)
+          )
+        ) {
+          throw new Error('This purchase record is already linked to another request or target.');
+        }
+        if (existing?.status === 'fulfilled' && existing.targetPageSlug === targetPageSlug) {
+          return { ticketCount: currentCount, applied: false };
+        }
+
+        // Older processing/failed records may already have granted tickets in a
+        // separate commit. Never guess whether replaying them would pay twice.
+        throw Object.assign(new Error('This purchase requires manual fulfillment review.'), {
+          code: 'billing-fulfillment-requires-review',
+        });
+      }
+
+      const ticketCount = currentCount + input.ticketCount;
+      const now = new Date();
+      transaction.set(eventRef, {
+        stats: { ticketCount, ticketBalance: ticketCount },
+        updatedAt: now,
+        version: (summary.version ?? 0) + 1,
+      }, { merge: true });
+      transaction.set(fulfillmentRef, {
+        ...buildDefaultBillingFulfillmentRecord(purchase, 'ticketPack'),
+        transactionId,
+        status: 'fulfilled',
+        updatedAt: now.toISOString(),
+        fulfilledAt: now.toISOString(),
+        purchaseDate: input.purchaseDate,
+        targetPageSlug,
+        grantedTicketCount: input.ticketCount,
+        eventId,
+      } satisfies BillingFulfillmentRecord);
+      return { ticketCount, applied: true };
     });
   },
 

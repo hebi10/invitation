@@ -44,6 +44,7 @@ type InvitationOpsContextValue = {
     config: MobileInvitationSeed,
     options?: {
       published?: boolean;
+      expectedVersion?: number;
       defaultTheme?: MobileInvitationThemeKey;
     }
   ) => Promise<boolean>;
@@ -277,6 +278,7 @@ export function InvitationOpsProvider({ children }: PropsWithChildren) {
       config: MobileInvitationSeed,
       options: {
         published?: boolean;
+        expectedVersion?: number;
         defaultTheme?: MobileInvitationThemeKey;
       } = {}
     ) => {
@@ -292,17 +294,21 @@ export function InvitationOpsProvider({ children }: PropsWithChildren) {
       setDashboardLoading(true);
 
       try {
+        if (typeof options.expectedVersion !== 'number' || !Number.isSafeInteger(options.expectedVersion) || options.expectedVersion < 0) {
+          throw new Error('편집 버전 정보가 없습니다. 작성 중인 내용을 복사한 뒤 편집 창을 다시 열어 주세요. 앱이 최신 버전인지 확인해 주세요.');
+        }
         const trustedConfig: MobileInvitationSeed = {
           ...config,
           slug: session.pageSlug,
         };
 
-        await saveMobileInvitationPageConfig(
+        const saved = await saveMobileInvitationPageConfig(
           apiBaseUrl,
           session.pageSlug,
           session.token,
           {
             config: trustedConfig,
+            expectedVersion: options.expectedVersion,
             published: options.published ?? dashboard?.page.published,
             defaultTheme: options.defaultTheme ?? dashboard?.page.defaultTheme,
           },
@@ -314,6 +320,7 @@ export function InvitationOpsProvider({ children }: PropsWithChildren) {
           ...current,
           page: {
             ...current.page,
+            version: saved.version,
             config: trustedConfig,
             published: options.published ?? current.page.published,
             defaultTheme: options.defaultTheme ?? current.page.defaultTheme,

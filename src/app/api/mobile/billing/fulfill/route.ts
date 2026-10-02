@@ -225,6 +225,15 @@ export async function POST(request: Request) {
       { status: 400, headers: rateLimitHeaders }
     );
   } catch (error) {
+    if (
+      typeof error === 'object' && error !== null && 'code' in error &&
+      error.code === 'billing-fulfillment-requires-review'
+    ) {
+      return NextResponse.json({
+        code: 'BILLING_REVIEW_REQUIRED',
+        error: '이전 결제의 지급 여부를 확인해야 합니다. 추가 결제하지 말고 고객 문의로 결제 내역을 확인해 주세요.',
+      }, { status: 409 });
+    }
     console.error('[mobile/billing/fulfill] failed to process request', error);
     return NextResponse.json(
       { error: GENERIC_SERVER_ERROR_MESSAGE },

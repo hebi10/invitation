@@ -15,6 +15,7 @@ export type ClientFirestoreModules = {
   query: FirestoreModule['query'];
   serverTimestamp: FirestoreModule['serverTimestamp'];
   setDoc: FirestoreModule['setDoc'];
+  runTransaction: FirestoreModule['runTransaction'];
   updateDoc: FirestoreModule['updateDoc'];
   where: FirestoreModule['where'];
 };
@@ -50,6 +51,7 @@ export async function ensureClientFirestoreState(): Promise<ClientFirestoreState
       query: firestore.query,
       serverTimestamp: firestore.serverTimestamp,
       setDoc: firestore.setDoc,
+      runTransaction: firestore.runTransaction,
       updateDoc: firestore.updateDoc,
       where: firestore.where,
     };

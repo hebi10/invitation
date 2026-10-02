@@ -8,8 +8,8 @@ const source = ts.transpileModule(readFileSync('src/server/mobileBillingServerSe
 }).outputText;
 
 function loadBilling(entries: unknown[], apiKey = 'test-server-key', responseOk = true) {
-  let locks = 0;
-  const lockIds: string[] = [];
+  let fulfillments = 0;
+  const transactionIds: string[] = [];
   let requests = 0;
   const exports: Record<string, unknown> = {};
   runInNewContext(source, {
@@ -23,11 +23,18 @@ function loadBilling(entries: unknown[], apiKey = 'test-server-key', responseOk 
     },
     require(id: string) {
       if (id === '@/lib/mobileBillingProducts') return { getMobileBillingProductDefinition: () => ({ kind: 'ticketPack', ticketCount: 1 }) };
+      if (id === './clientEditorMobileApi') return {
+        authorizeMobileClientEditorToken: async () => ({ permissions: { canManageTickets: true }, session: { ownerUid: 'customer-1', eventId: 'event-1' } }),
+        hasMobileClientEditorPermission: () => true,
+      };
+      if (id === './repositories/eventRepository') return {
+        resolveStoredEventBySlug: async () => ({ summary: { eventId: 'event-1', slug: 'page', ownerUid: 'customer-1' } }),
+      };
       if (id === './repositories/billingFulfillmentRepository') return {
-        firestoreBillingFulfillmentRepository: { acquireLock: async (purchase: { transactionId: string }) => {
-          locks += 1;
-          lockIds.push(purchase.transactionId);
-          return { acquired: false, record: { status: 'fulfilled' } };
+        firestoreBillingFulfillmentRepository: { fulfillTicketPack: async ({ purchase }: { purchase: { transactionId: string } }) => {
+          fulfillments += 1;
+          transactionIds.push(purchase.transactionId);
+          return { ticketCount: 1, applied: false };
         } },
       };
       if (id === './pageTicketServerService') return { getServerPageTicketCount: async () => 1 };
@@ -37,18 +44,18 @@ function loadBilling(entries: unknown[], apiKey = 'test-server-key', responseOk 
   const fulfill = exports.fulfillServerMobileTicketPackPurchase as (purchase: object, slug: string, token: string) => Promise<unknown>;
   return {
     run: (transactionId = 'GPA.verified') => fulfill({ appUserId: 'customer-1', productId: 'ticket_pack_1', transactionId }, 'page', 'session'),
-    locks: () => locks,
-    lockIds,
+    fulfillments: () => fulfillments,
+    transactionIds,
     requests: () => requests,
   };
 }
 
 const real = loadBilling([{ id: 'rc-record', store_transaction_id: 'GPA.verified', store: 'play_store', purchase_date: '2026-09-21T00:00:00Z' }]);
 await real.run();
-assert.equal(real.locks(), 1, 'Actual RC v1 map-key product responses must fulfill');
+assert.equal(real.fulfillments(), 1, 'Actual RC v1 map-key product responses must fulfill');
 assert.equal(real.requests(), 1);
 await real.run('rc-record');
-assert.deepEqual(real.lockIds, ['GPA.verified', 'GPA.verified'], 'RC history IDs and store callback IDs must acquire the SAME fulfillment lock');
+assert.deepEqual(real.transactionIds, ['GPA.verified', 'GPA.verified'], 'RC history IDs and store callback IDs must use the SAME fulfillment transaction');
 await loadBilling([{ id: 'GPA.verified', store: 'play_store' }]).run();
 await assert.rejects(loadBilling([{ id: 'rc-only', store: 'play_store' }]).run('rc-only'), /could not be verified/,
   'A RevenueCat alias without a canonical store ID must not create a potentially duplicate lock');
@@ -56,11 +63,11 @@ await assert.rejects(loadBilling([{ id: 'rc-only', store: 'play_store' }]).run('
 for (const store of ['app_store', 'test_store', 'promotional', undefined]) {
   const other = loadBilling([{ id: 'GPA.verified', product_id: 'ticket_pack_1', store }]);
   await assert.rejects(other.run(), /could not be verified/);
-  assert.equal(other.locks(), 0, 'Only verified Google Play transactions can reach fulfillment');
+  assert.equal(other.fulfillments(), 0, 'Only verified Google Play transactions can reach fulfillment');
 }
 const demo = loadBilling([]);
 await assert.rejects(demo.run('mock_anything'), /could not be verified/);
-assert.equal(demo.locks(), 0, 'Development and the old environment flag cannot bypass verification');
+assert.equal(demo.fulfillments(), 0, 'Development and the old environment flag cannot bypass verification');
 assert.equal(demo.requests(), 0, 'Fabricated demo receipts must be rejected before external verification');
 await assert.rejects(loadBilling([], '').run(), /REVENUECAT_SERVER_API_KEY/);
 await assert.rejects(loadBilling([], 'key', false).run(), /verification failed/);
