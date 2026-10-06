@@ -20,8 +20,8 @@
 
 .options {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 16px;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 8px;
   border: 0;
   padding: 0;
   margin: 0;
@@ -39,12 +39,13 @@
 }
 
 .option {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 12px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 20px;
   border: 1px solid var(--operation-color-border);
-  padding: 16px;
+  padding: 16px 20px;
+  min-width: 0;
 }
 
 .option[data-selected='true'] {
@@ -53,32 +54,66 @@
 }
 
 .choice {
-  display: flex;
-  align-items: flex-start;
-  gap: 10px;
-  flex: 1;
-  width: 100%;
+  display: grid;
+  grid-template-columns: 18px minmax(0, 1fr);
+  align-items: start;
+  gap: 12px;
+  min-width: 0;
+  min-height: 48px;
   cursor: pointer;
 }
 
 .choice input {
   margin: 4px 0 0;
+  width: 18px;
+  height: 18px;
   accent-color: var(--operation-color-action);
+}
+
+.choiceCopy { min-width: 0; }
+
+.choiceHeading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 10px;
+  line-height: 1.6;
 }
 
 .choice strong {
   font-size: 15px;
   font-weight: 500;
+  word-break: keep-all;
+  overflow-wrap: anywhere;
+}
+
+.selectedLabel {
+  color: var(--operation-color-text-secondary);
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.optionDescription {
+  display: block;
+  margin-top: 4px;
+  color: var(--operation-color-text-secondary);
+  font-size: 14px;
+  line-height: 1.7;
+  word-break: keep-all;
+  overflow-wrap: anywhere;
 }
 
 .previewButton {
-  min-height: 46px;
-  padding: 8px 14px;
-  border: 1px solid var(--operation-color-border-strong);
-  background: #fff;
+  min-height: 44px;
+  padding: 10px 4px;
+  border: 0;
+  background: transparent;
   color: var(--operation-color-text);
   font: inherit;
-  font-size: 14px;
+  font-size: 13px;
+  white-space: nowrap;
+  text-decoration: underline;
+  text-underline-offset: 4px;
   cursor: pointer;
 }
 
@@ -88,5 +123,6 @@
 }
 
 @media (max-width: 560px) {
-  .options { grid-template-columns: 1fr; }
+  .option { grid-template-columns: minmax(0, 1fr); gap: 8px; padding: 16px; }
+  .previewButton { justify-self: start; margin-left: 30px; }
 }

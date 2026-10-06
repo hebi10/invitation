@@ -18,8 +18,14 @@ export default function IntroSettings({ formState, updateForm }: WizardStepProps
         {WEDDING_INTRO_OPTIONS.map(option => (
           <div key={option.value} className={styles.option} data-selected={selectedStyle === option.value}>
             <label className={styles.choice}>
-              <input type="radio" name="wedding-intro-style" value={option.value} checked={selectedStyle === option.value} onChange={() => updateForm(draft => { draft.introStyle = option.value; })} />
-              <span><strong>{option.label}</strong><span className={styles.description}>{option.description}</span></span>
+              <input type="radio" name="wedding-intro-style" value={option.value} checked={selectedStyle === option.value} aria-labelledby={`intro-option-${option.value}`} aria-describedby={`intro-description-${option.value}`} onChange={() => updateForm(draft => { draft.introStyle = option.value; })} />
+              <span className={styles.choiceCopy}>
+                <span className={styles.choiceHeading}>
+                  <strong id={`intro-option-${option.value}`}>{option.label}</strong>
+                  {selectedStyle === option.value ? <span className={styles.selectedLabel} aria-hidden="true">선택됨</span> : null}
+                </span>
+                <span id={`intro-description-${option.value}`} className={styles.optionDescription}>{option.description}</span>
+              </span>
             </label>
             {option.value !== 'none' ? (
               <button type="button" className={styles.previewButton} aria-label={`${option.label} 연출 보기`} onClick={() => window.dispatchEvent(new CustomEvent('wizard-preview-intro', { detail: { style: option.value } }))}>연출 보기</button>
