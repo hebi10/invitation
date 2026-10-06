@@ -24,26 +24,26 @@
 .withoutPhoto .photoCopy { padding-block: 40px; background: none; }
 .withoutPhoto .photoMeta .venue { color: #70695f; }
 
-/* A garden letter: a quiet greeting introduces names and a sprig on the paper. */
-.letter { padding: 40px 24px 32px; background: var(--paper, #faf9f5); color: var(--ink, #2f342d); font-family: 'Gyeol Dodum', var(--font-sans); text-align: left; }
+/* A garden photograph opens the letter; the greeting and sprig follow on the paper. */
+.letter { padding: 24px 24px 32px; background: var(--paper, #faf9f5); color: var(--ink, #2f342d); font-family: 'Gyeol Dodum', var(--font-sans); text-align: left; }
 .letter .conceptIntroduction { color: var(--muted, #626b5e); font-size: 20px; font-weight: 400; line-height: 1.8; letter-spacing: -.02em; word-break: keep-all; }
 .letterHeading { display: grid; grid-template-columns: minmax(0, 1fr) 142px; align-items: center; gap: 16px; min-width: 0; margin-top: 24px; }
 .letter .names { grid-template-columns: minmax(0, 1fr); justify-content: start; justify-items: start; gap: 4px; font-family: inherit; font-size: 30px; font-weight: 400; line-height: 1.4; word-break: keep-all; }
 .letter .names > span { max-width: 100%; line-height: inherit; }
 .letterSprig { width: 100%; height: 120px; background: url('/images/wedding-concepts/garden-sprig.webp') center / contain no-repeat; }
-.letter .letterPhoto { width: calc(100% - 24px); margin: 24px 0 0 auto; }
+.letter .letterPhoto { width: calc(100% - 24px); margin: 0 0 28px auto; }
 .letterPhoto .photo { height: auto; object-fit: contain; }
 .letterMeta { min-width: 0; margin-top: 24px; }
 .letter .date { margin-top: 0; justify-content: flex-start; color: var(--ink, #2f342d); font-size: 15px; line-height: 1.8; font-variant-numeric: tabular-nums; }
 .letter .venue { margin-top: 4px; color: var(--muted, #626b5e); font-size: 15px; line-height: 1.8; word-break: keep-all; }
 
-/* Names and the schedule share a reading edge before the cover photograph. */
-.editorial { padding: 32px 24px 16px; background: #fff; color: #171717; font-family: var(--font-sans); text-align: left; }
+/* The cover photograph leads into names and the schedule on a shared reading edge. */
+.editorial { padding: 24px 24px 16px; background: #fff; color: #171717; font-family: var(--font-sans); text-align: left; }
 .editorial .editorialHeading { margin-bottom: 20px; font-size: 11px; font-weight: 500; line-height: 1.8; letter-spacing: .14em; color: #666; }
 .editorialNames { display: grid; grid-template-columns: minmax(0, 1fr); justify-items: start; gap: 2px; font-family: var(--font-sans); font-size: 34px; font-weight: 500; line-height: 1.35; letter-spacing: -.03em; }
 .editorialNames > span { max-width: 100%; word-break: keep-all; }
-.editorial .editorialPhoto { margin-top: 24px; aspect-ratio: 1; overflow: hidden; }
-.editorialPhoto .photo { height: 100%; object-fit: cover; }
+.editorial .editorialPhoto { margin: 0 0 24px; }
+.editorialPhoto .photo { height: auto; object-fit: contain; }
 .editorialMeta { margin-top: 20px; text-align: left; }
 .editorialMeta .date { display: flex; flex-wrap: wrap; justify-content: flex-start; gap: 0 6px; margin-top: 0; font-size: 15px; line-height: 1.8; font-weight: 500; font-variant-numeric: tabular-nums; }
 .editorialMeta .venue { margin-top: 4px; color: #555; font-size: 15px; line-height: 1.8; word-break: keep-all; }
@@ -61,15 +61,15 @@
 .traditional .date { margin-top: 24px; font-family: inherit; font-size: 15px; line-height: 1.9; color: #57493c; }
 .traditional .venue { margin-top: 4px; font-family: inherit; font-size: 15px; line-height: 1.9; color: #70665c; word-break: keep-all; }
 
-/* A clear, centered invitation keeps the names and date ahead of the photograph. */
-.basic { padding: 32px 24px 20px; background: #fafafa; color: #222222; font-family: var(--font-sans), sans-serif; text-align: center; }
+/* A clear, centered invitation follows the photograph with names and the date. */
+.basic { padding: 24px 24px 20px; background: #fafafa; color: #222222; font-family: var(--font-sans), sans-serif; text-align: center; }
 .basic .names { font-family: inherit; font-size: 32px; font-weight: 500; gap: 12px; line-height: 1.5; word-break: keep-all; }
 .basic .names > span { max-width: 100%; }
 .basic .basicDate { margin-top: 20px; font-size: 26px; font-weight: 500; line-height: 1.5; font-variant-numeric: tabular-nums; }
 .basic .basicSchedule { display: flex; flex-wrap: wrap; justify-content: center; gap: 0 8px; margin-top: 4px; font-size: 15px; line-height: 1.8; color: #666666; }
 .basicSchedule > span { max-width: 100%; }
 .basic .venue { margin-top: 12px; color: #222222; font-size: 16px; line-height: 1.8; word-break: keep-all; }
-.basic .basicPhoto { width: 100%; margin: 20px 0 0; }
+.basic .basicPhoto { width: 100%; margin: 0 0 28px; }
 .basic .photo { height: auto; object-fit: contain; }
 
 @media (max-width: 359px) {

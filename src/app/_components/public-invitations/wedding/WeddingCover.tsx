@@ -29,6 +29,7 @@ export default function WeddingCover({ theme, page, imageUrl, time, titleId = 'w
 
   if (theme === 'emotional') return (
     <section className={`${styles.cover} ${styles.letter}`} aria-labelledby={titleId}>
+      {photo ? <figure className={styles.letterPhoto}>{photo}</figure> : null}
       <p className={styles.conceptIntroduction} data-wedding-motion="copy">평생을 함께하고 싶은<br />사람을 만났습니다.</p>
       <div className={styles.letterHeading}>
         <h1 data-wedding-motion="copy" id={titleId} className={styles.names}>
@@ -36,7 +37,6 @@ export default function WeddingCover({ theme, page, imageUrl, time, titleId = 'w
         </h1>
         <div className={styles.letterSprig} aria-hidden="true" />
       </div>
-      {photo ? <figure className={styles.letterPhoto}>{photo}</figure> : null}
       <div className={styles.letterMeta}>
         {date}<p className={styles.venue} data-wedding-motion="copy">{page.venue}</p>
       </div>
@@ -45,6 +45,7 @@ export default function WeddingCover({ theme, page, imageUrl, time, titleId = 'w
 
   if (theme === 'classic-r') return (
     <section className={`${styles.cover} ${styles.editorial}`} aria-labelledby={titleId}>
+      {photo ? <figure className={styles.editorialPhoto}>{photo}</figure> : null}
       <p className={styles.editorialHeading}>WEDDING INVITATION</p>
       <h1 data-wedding-motion="copy" id={titleId} className={styles.editorialNames}>
         <span>{page.groomName}</span><span>{page.brideName}</span>
@@ -56,7 +57,6 @@ export default function WeddingCover({ theme, page, imageUrl, time, titleId = 'w
         </p>
         <p className={styles.venue} data-wedding-motion="copy">{page.venue}</p>
       </div>
-      {photo ? <figure className={styles.editorialPhoto}>{photo}</figure> : null}
     </section>
   );
 
@@ -76,6 +76,7 @@ export default function WeddingCover({ theme, page, imageUrl, time, titleId = 'w
 
   return (
     <section className={`${styles.cover} ${styles.basic}`} aria-labelledby={titleId}>
+      {photo ? <figure className={styles.basicPhoto}>{photo}</figure> : null}
       <h1 data-wedding-motion="copy" id={titleId} className={styles.names}>{names}</h1>
       <p className={styles.basicDate} data-wedding-motion="copy">
         {page.weddingDateTime.year}.{String(page.weddingDateTime.month + 1).padStart(2, '0')}.{String(page.weddingDateTime.day).padStart(2, '0')}
@@ -85,7 +86,6 @@ export default function WeddingCover({ theme, page, imageUrl, time, titleId = 'w
         {time ? <span>{time}</span> : null}
       </p>
       <p className={styles.venue} data-wedding-motion="copy">{page.venue}</p>
-      {photo ? <figure className={styles.basicPhoto}>{photo}</figure> : null}
     </section>
   );
 }

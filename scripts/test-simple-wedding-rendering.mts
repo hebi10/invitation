@@ -179,7 +179,7 @@ for (const dateCase of [
 }
 console.log('Garden letter ceremony date, leap day and month boundaries passed');
 
-// The compact cover puts saved event facts before the photo without losing date boundaries.
+// The compact cover leads with the photo while preserving saved event facts and date boundaries.
 for (const dateCase of [
   { year: 2030, month: 0, day: 1, expected: '2030.01.01' },
   { year: 2028, month: 1, day: 29, expected: '2028.02.29' },
@@ -195,14 +195,25 @@ for (const dateCase of [
   assert.ok(coverText.includes(`${dateCase.expected}화요일`), 'Simple cover must preserve the saved numeric date and weekday');
   assert.ok(coverText.includes('오후2시30분'), 'Simple cover must retain the stored ceremony time');
   let previousPosition = -1;
-  for (const value of [page.groomName, dateCase.expected, page.venue, 'data-wedding-cover-photo']) {
+  for (const value of ['data-wedding-cover-photo', '<h1', dateCase.expected, page.venue]) {
     const position = cover.indexOf(value);
-    assert.ok(position > previousPosition, `Simple cover reading order must lead with event facts: ${value}`);
+    assert.ok(position > previousPosition, `Simple cover reading order must lead with the photo: ${value}`);
     previousPosition = position;
   }
   assert.equal(JSON.stringify(suppliedPage), beforeDateRender, 'Simple cover must not mutate saved event facts');
 }
 console.log('Simple cover event order, numeric date and month boundaries passed');
+
+for (const theme of ['simple', 'emotional', 'classic-r'] as const) {
+  const html = render(theme);
+  const coverStart = html.indexOf('aria-labelledby="wedding-cover-title"');
+  const cover = html.slice(coverStart, html.indexOf('</section>', coverStart));
+  const photoPosition = cover.indexOf('data-wedding-cover-photo');
+  assert.ok(photoPosition >= 0 && photoPosition < cover.indexOf('<h1'), `${theme}: cover photo should precede the names`);
+  assert.ok(photoPosition < cover.indexOf('<p'), `${theme}: cover photo should precede introductory text`);
+  assert.equal((cover.match(/data-wedding-cover-photo/g) ?? []).length, 1, `${theme}: use the saved main image once`);
+}
+console.log('Simple, natural and modern covers lead with the saved photograph');
 
 // Selecting a story preview must not repeat cover/closing photos or hide originals from the viewer.
 const storyCover = '/story-cover.jpg';
