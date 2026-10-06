@@ -28,7 +28,7 @@ export default function WeddingCover({ theme, page, imageUrl, time, titleId = 'w
   );
 
   if (theme === 'emotional') return (
-    <section className={`${styles.cover} ${styles.letter}`} aria-labelledby={titleId}>
+    <section className={`${styles.cover} ${styles.letter} ${imageUrl ? styles.photoFirst : ''}`} aria-labelledby={titleId}>
       {photo ? <figure className={styles.letterPhoto}>{photo}</figure> : null}
       <p className={styles.conceptIntroduction} data-wedding-motion="copy">평생을 함께하고 싶은<br />사람을 만났습니다.</p>
       <div className={styles.letterHeading}>
@@ -44,7 +44,7 @@ export default function WeddingCover({ theme, page, imageUrl, time, titleId = 'w
   );
 
   if (theme === 'classic-r') return (
-    <section className={`${styles.cover} ${styles.editorial}`} aria-labelledby={titleId}>
+    <section className={`${styles.cover} ${styles.editorial} ${imageUrl ? styles.photoFirst : ''}`} aria-labelledby={titleId}>
       {photo ? <figure className={styles.editorialPhoto}>{photo}</figure> : null}
       <p className={styles.editorialHeading}>WEDDING INVITATION</p>
       <h1 data-wedding-motion="copy" id={titleId} className={styles.editorialNames}>
@@ -75,7 +75,7 @@ export default function WeddingCover({ theme, page, imageUrl, time, titleId = 'w
   );
 
   return (
-    <section className={`${styles.cover} ${styles.basic}`} aria-labelledby={titleId}>
+    <section className={`${styles.cover} ${styles.basic} ${imageUrl ? styles.photoFirst : ''}`} aria-labelledby={titleId}>
       {photo ? <figure className={styles.basicPhoto}>{photo}</figure> : null}
       <h1 data-wedding-motion="copy" id={titleId} className={styles.names}>{names}</h1>
       <p className={styles.basicDate} data-wedding-motion="copy">
