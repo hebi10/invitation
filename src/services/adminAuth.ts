@@ -40,7 +40,7 @@ type FirebaseAuthUserLike = {
   email: string | null;
   displayName?: string | null;
   emailVerified?: boolean;
-  getIdToken: () => Promise<string>;
+  getIdToken: (forceRefresh?: boolean) => Promise<string>;
 };
 
 type FirebaseReloadableAuthUserLike = FirebaseAuthUserLike & {
@@ -260,6 +260,10 @@ async function resolveSignedInAuthSessionSnapshot(
   }
 
   const refreshedUser = auth.currentUser ?? user;
+  if (refreshedUser.emailVerified) {
+    // reload updates account data but leaves cached email_verified token claims unchanged.
+    await refreshedUser.getIdToken(true);
+  }
   const isAdmin = await isUserAdmin(refreshedUser);
 
   return {
@@ -401,6 +405,7 @@ export async function sendCurrentUserEmailVerification(): Promise<EmailVerificat
   }
 
   if (currentUser.emailVerified) {
+    await currentUser.getIdToken(true);
     return {
       success: true,
       user: toAuthUser(currentUser),
@@ -560,7 +565,7 @@ export function observeFirebaseSession(
         } catch (error) {
           console.error('[adminAuth] failed to verify signed-in user', error);
           callback({
-            authUser: toAuthUser(user),
+            authUser: { ...toAuthUser(user), emailVerified: false },
             adminUser: null,
             isAdmin: false,
           });

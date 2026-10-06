@@ -2,11 +2,12 @@
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 
 import FirebaseAuthLoginCard from '@/app/_components/FirebaseAuthLoginCard';
 import MobileAccountReturn from '@/app/_components/MobileAccountReturn';
 import { shouldRedirectCustomerToDashboard } from '@/lib/mobileAccountReturn';
+import { readCustomerAuthReturnTo } from '@/lib/customerAuthReturn';
 import { useAdmin } from '@/contexts';
 
 import styles from './page.module.css';
@@ -32,9 +33,16 @@ export default function CustomerAuthPageClient({
 }: CustomerAuthPageClientProps) {
   const router = useRouter();
   const { authUser, isLoggedIn, isAdminLoading } = useAdmin();
+  const [returnTo, setReturnTo] = useState<string | null>(null);
+  const [returnToReady, setReturnToReady] = useState(false);
 
   useEffect(() => {
-    if (!shouldRedirectCustomerToDashboard({
+    setReturnTo(readCustomerAuthReturnTo(window.location.hash));
+    setReturnToReady(true);
+  }, []);
+
+  useEffect(() => {
+    if (!returnToReady || !shouldRedirectCustomerToDashboard({
       mobileReturn,
       loading: isAdminLoading,
       loggedIn: isLoggedIn,
@@ -44,8 +52,8 @@ export default function CustomerAuthPageClient({
       return;
     }
 
-    router.replace('/my-invitations');
-  }, [authUser, initialMode, isAdminLoading, isLoggedIn, mobileReturn, router]);
+    router.replace(returnTo ?? '/my-invitations');
+  }, [authUser, initialMode, isAdminLoading, isLoggedIn, mobileReturn, returnTo, returnToReady, router]);
 
   if (isAdminLoading) {
     return (
@@ -79,6 +87,7 @@ export default function CustomerAuthPageClient({
             description={authDescription}
             helperText={authHelperText}
             initialMode={initialMode}
+            returnTo={returnTo}
           />
         )}
         {mobileReturn ? <MobileAccountReturn /> : null}

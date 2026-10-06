@@ -8,6 +8,7 @@ import { useMemo } from 'react';
 import Link from 'next/link';
 
 import FirebaseAuthLoginCard from '@/app/_components/FirebaseAuthLoginCard';
+import CustomerEmailVerificationGate from './CustomerEmailVerificationGate';
 import { normalizeFormConfig } from '@/app/page-wizard/pageWizardEditorUtils';
 import { useAdmin } from '@/contexts';
 import { buildAppRoutes, type AppRoutes } from '@/lib/demoExperienceRoutes';
@@ -62,9 +63,11 @@ export default function PageWizardResultClient({
   onContinueAsCustomer,
 }: PageWizardResultClientProps) {
   const { authUser, isAdminLoading, isAdminLoggedIn, isLoggedIn } = useAdmin();
+  const requiresEmailVerification =
+    !experience && isLoggedIn && !isAdminLoggedIn && authUser?.emailVerified !== true;
   const resultQuery = useQuery<ResultLoadState>({
     queryKey: ['page-wizard-result', slug, authUser?.uid ?? null, isAdminLoggedIn, isLoggedIn],
-    enabled: !isAdminLoading,
+    enabled: !isAdminLoading && !requiresEmailVerification,
     queryFn: async () => {
       if (!isLoggedIn) {
         return { status: 'logged-out' } satisfies ResultLoadState;
@@ -175,6 +178,10 @@ export default function PageWizardResultClient({
       brideEnglishName: '',
     }, experience ? DEMO_EXPERIENCE_IMAGE_OPTIONS : []);
   }, [configState, previewFormState, previewTheme, slug, wizardSteps, experience]);
+
+  if (!isAdminLoading && requiresEmailVerification) {
+    return <CustomerEmailVerificationGate />;
+  }
 
   if (isLoading || isAdminLoading) {
     return (

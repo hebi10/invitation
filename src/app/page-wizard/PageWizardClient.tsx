@@ -13,6 +13,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } fro
 import { useRouter, useSearchParams } from 'next/navigation';
 
 import FirebaseAuthLoginCard from '@/app/_components/FirebaseAuthLoginCard';
+import CustomerEmailVerificationGate from './CustomerEmailVerificationGate';
 import {
   cloneConfig,
   normalizeFormConfig,
@@ -174,6 +175,8 @@ export default function PageWizardClient({
   const isEventTypeFixed = Boolean(forcedEventType);
   const queryClient = useQueryClient();
   const { authUser, isAdminLoading, isAdminLoggedIn, isLoggedIn } = useAdmin();
+  const requiresEmailVerification =
+    !experience && isLoggedIn && !isAdminLoggedIn && authUser?.emailVerified !== true;
 
   const [formState, setFormState] = useState<InvitationPageSeed | null>(null);
   const formStateRef = useRef<InvitationPageSeed | null>(null);
@@ -242,9 +245,9 @@ export default function PageWizardClient({
   const galleryUploadInputRef = useRef<HTMLInputElement | null>(null);
 
   const canCreateNew = isAdminLoggedIn;
-  const canOpenExistingWizard = Boolean(initialSlug && isLoggedIn);
+  const canOpenExistingWizard = Boolean(initialSlug && isLoggedIn && !requiresEmailVerification);
   const canUploadImages =
-    !experience && (isAdminLoggedIn || Boolean(initialSlug && isLoggedIn));
+    !experience && !requiresEmailVerification && (isAdminLoggedIn || Boolean(initialSlug && isLoggedIn));
   const wizardPresentation = getPageWizardPresentation(eventType);
   const pageClassName = styles.page;
   const ownedEventsQuery = useQuery<CustomerOwnedEventSummary[]>({
@@ -253,6 +256,7 @@ export default function PageWizardClient({
       Boolean(initialSlug) &&
       !isAdminLoading &&
       isLoggedIn &&
+      !requiresEmailVerification &&
       !isAdminLoggedIn &&
       !experience &&
       Boolean(authUser?.uid),
@@ -288,6 +292,7 @@ export default function PageWizardClient({
       !isAdminLoading &&
       !isAdminLoggedIn &&
       isLoggedIn &&
+      !requiresEmailVerification &&
       authUser?.uid &&
       !ownedEventForInitialSlug &&
       !ownedEventsQuery.isError &&
@@ -304,6 +309,7 @@ export default function PageWizardClient({
     enabled:
       Boolean(initialSlug) &&
       !isAdminLoading &&
+      !requiresEmailVerification &&
       (isAdminLoggedIn || isLoggedIn),
     queryFn: async () => {
       if (!initialSlug) {
@@ -542,6 +548,7 @@ export default function PageWizardClient({
       !initialSlug ||
       !ownedEventFallbackEditableConfig ||
       isAdminLoading ||
+      requiresEmailVerification ||
       !isLoggedIn
     ) {
       return;
@@ -578,6 +585,7 @@ export default function PageWizardClient({
     isAdminLoggedIn,
     isLoggedIn,
     ownedEventFallbackEditableConfig,
+    requiresEmailVerification,
     queryClient,
     requiresOwnershipClaim,
   ]);
@@ -771,7 +779,7 @@ export default function PageWizardClient({
       return;
     }
 
-    if (!isAdminLoggedIn && (setupOnly || !initialSlug || !isLoggedIn)) {
+    if (requiresEmailVerification || (!isAdminLoggedIn && (setupOnly || !initialSlug || !isLoggedIn))) {
       setFormState(null);
       setRequiresOwnershipClaim(false);
       setAccessErrorMessage(null);
@@ -889,6 +897,7 @@ export default function PageWizardClient({
     isAdminLoggedIn,
     isLoggedIn,
     setupOnly,
+    requiresEmailVerification,
     isOwnedEventsCheckPendingForInitialSlug,
     ownedEventFallbackEditableConfig,
     queryClient,
@@ -1461,6 +1470,10 @@ export default function PageWizardClient({
   );
 
   /* ── Loading state ── */
+
+  if (!isAdminLoading && requiresEmailVerification) {
+    return <CustomerEmailVerificationGate />;
+  }
 
   if (isLoading || isAdminLoading || isCheckingOwnedEventsBeforeClaim) {
     return (

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 
 import { normalizeInvitationPageSlugInput } from '@/lib/invitationPagePersistence';
+import { isServerAdminUserEnabled } from '@/server/adminUserServerService';
 import { toSafeHttpErrorResponse } from '@/server/apiErrorResponse';
 import { CustomerApiAuthError, verifyCustomerRequest } from '@/server/customerApiAuth';
 import {
@@ -40,6 +41,13 @@ export async function POST(
     if (!canUseVerifiedCustomerFeatures(customer)) {
       return NextResponse.json(
         { error: CUSTOMER_VERIFIED_FEATURE_REQUIRED_MESSAGE },
+        { status: 403, headers: NO_STORE_HEADERS }
+      );
+    }
+
+    if (await isServerAdminUserEnabled(customer.uid)) {
+      return NextResponse.json(
+        { error: '관리자 계정으로는 청첩장을 연결할 수 없습니다. 고객 계정으로 로그인해 주세요.' },
         { status: 403, headers: NO_STORE_HEADERS }
       );
     }

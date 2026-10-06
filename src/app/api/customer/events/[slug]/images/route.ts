@@ -23,7 +23,7 @@ export async function POST(
   context: { params: Promise<{ slug: string }> }
 ) {
   try {
-    const ownerUid = await verifyCustomerUid(request);
+    const ownerUid = await verifyCustomerUid(request, { requireVerified: true });
     const { slug } = await context.params;
     const pageSlug = slug.trim();
 

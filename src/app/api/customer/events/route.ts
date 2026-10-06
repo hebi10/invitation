@@ -5,7 +5,7 @@ import { listCustomerOwnedEventSummaries } from '@/server/customerEventsService'
 
 export async function GET(request: Request) {
   try {
-    const customer = await verifyCustomerRequest(request);
+    const customer = await verifyCustomerRequest(request, { requireVerified: true });
     const events = await listCustomerOwnedEventSummaries(customer.uid);
 
     return NextResponse.json({

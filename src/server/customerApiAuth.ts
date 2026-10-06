@@ -3,6 +3,7 @@ import 'server-only';
 import type { DecodedIdToken } from 'firebase-admin/auth';
 
 import { getServerAuth } from './firebaseAdmin';
+import { canUseVerifiedCustomerFeatures } from './customerAuthVerification';
 
 export class CustomerApiAuthError extends Error {
   status: number;
@@ -22,6 +23,7 @@ type CustomerAuthVerifier = {
 
 type VerifyCustomerRequestOptions = {
   auth?: CustomerAuthVerifier | null;
+  requireVerified?: boolean;
 };
 
 function readBearerToken(request: Request) {
@@ -46,17 +48,30 @@ export async function verifyCustomerRequest(
     );
   }
 
+  let decodedToken: CustomerDecodedToken;
   try {
-    return await auth.verifyIdToken(idToken);
+    decodedToken = await auth.verifyIdToken(idToken);
   } catch {
     throw new CustomerApiAuthError(
       401,
       '로그인 세션이 만료되었습니다. 다시 로그인해 주세요.'
     );
   }
+
+  if (options.requireVerified && !canUseVerifiedCustomerFeatures(decodedToken)) {
+    throw new CustomerApiAuthError(
+      403,
+      '이메일 인증 후 청첩장을 관리할 수 있습니다. 받은 편지함의 인증 링크를 확인해 주세요.'
+    );
+  }
+
+  return decodedToken;
 }
 
-export async function verifyCustomerUid(request: Request) {
-  const decodedToken = await verifyCustomerRequest(request);
+export async function verifyCustomerUid(
+  request: Request,
+  options: VerifyCustomerRequestOptions = {}
+) {
+  const decodedToken = await verifyCustomerRequest(request, options);
   return decodedToken.uid;
 }

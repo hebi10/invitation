@@ -6,6 +6,7 @@ import { useEffect, useRef, useState } from 'react';
 
 import FirebaseAuthLoginCard from '@/app/_components/FirebaseAuthLoginCard';
 import { useAdmin } from '@/contexts';
+import { buildConnectReturnTo } from '@/lib/customerAuthReturn';
 import {
   consumeCustomerOwnershipInvite,
   inspectOwnershipInvite,
@@ -18,6 +19,7 @@ type ConnectState =
   | 'reading-link'
   | 'checking-link'
   | 'login-required'
+  | 'admin-blocked'
   | 'verification-required'
   | 'connecting'
   | 'expired'
@@ -40,7 +42,7 @@ async function createTokenMarker(token: string) {
 
 function toTerminalState(
   status: Exclude<OwnershipInviteStatus, 'valid'>
-): Exclude<ConnectState, 'reading-link' | 'checking-link' | 'login-required' | 'verification-required' | 'connecting' | 'error'> {
+): Exclude<ConnectState, 'reading-link' | 'checking-link' | 'login-required' | 'admin-blocked' | 'verification-required' | 'connecting' | 'error'> {
   return status;
 }
 
@@ -76,6 +78,7 @@ export default function ConnectOwnershipClient({ slug }: ConnectOwnershipClientP
   const {
     authUser,
     isLoggedIn,
+    isAdminLoggedIn,
     isAdminLoading,
     sendVerificationEmail,
     refreshSession: refreshAuthUser,
@@ -186,6 +189,11 @@ export default function ConnectOwnershipClient({ slug }: ConnectOwnershipClientP
       return;
     }
 
+    if (isAdminLoggedIn) {
+      setState('admin-blocked');
+      return;
+    }
+
     if (!authUser.emailVerified) {
       setState('verification-required');
       return;
@@ -227,6 +235,7 @@ export default function ConnectOwnershipClient({ slug }: ConnectOwnershipClientP
   }, [
     authUser,
     isAdminLoading,
+    isAdminLoggedIn,
     isLoggedIn,
     linkValidated,
     retryNonce,
@@ -289,6 +298,7 @@ export default function ConnectOwnershipClient({ slug }: ConnectOwnershipClientP
               title="고객 계정으로 계속하기"
               description="청첩장을 관리할 계정으로 로그인하거나 새로 가입해 주세요."
               helperText="이메일 가입은 인증 메일 확인 후 자동으로 연결됩니다."
+              returnTo={buildConnectReturnTo(slug, token)}
               allowSignUp
             />
           </div>
@@ -307,6 +317,25 @@ export default function ConnectOwnershipClient({ slug }: ConnectOwnershipClientP
                 <span className={styles.spinner} aria-hidden="true" />
                 <h2 className={styles.statusTitle}>청첩장을 계정에 연결하고 있습니다.</h2>
                 <p className={styles.statusDescription}>완료되면 편집 화면으로 이동합니다.</p>
+              </>
+            ) : null}
+
+            {state === 'admin-blocked' ? (
+              <>
+                <h2 className={styles.statusTitle}>고객에게 전달할 연결 링크입니다.</h2>
+                <p className={styles.statusDescription}>
+                  현재 관리자 계정으로 로그인되어 있습니다. 이 링크를 고객에게 전달하거나 청첩장을 관리할 고객 계정으로 로그인해 주세요.
+                </p>
+                <div className={styles.actions}>
+                  <button
+                    type="button"
+                    className={styles.primaryButton}
+                    disabled={verificationAction !== null}
+                    onClick={() => void logoutCurrentUser()}
+                  >
+                    {verificationAction === 'logout' ? '로그아웃 중' : '다른 고객 계정으로 로그인'}
+                  </button>
+                </div>
               </>
             ) : null}
 

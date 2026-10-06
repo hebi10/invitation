@@ -22,7 +22,7 @@ export async function GET(
   context: { params: Promise<{ slug: string }> }
 ) {
   try {
-    const ownerUid = await verifyCustomerUid(request);
+    const ownerUid = await verifyCustomerUid(request, { requireVerified: true });
     const { slug } = await context.params;
     const snapshot = await getCustomerEditableInvitationPageSnapshot(ownerUid, slug);
 
@@ -57,7 +57,7 @@ export async function POST(
   context: { params: Promise<{ slug: string }> }
 ) {
   try {
-    const ownerUid = await verifyCustomerUid(request);
+    const ownerUid = await verifyCustomerUid(request, { requireVerified: true });
     const { slug } = await context.params;
     const body = (await request.json().catch(() => null)) as
       | {

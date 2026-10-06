@@ -16,7 +16,7 @@ export async function DELETE(
   context: { params: Promise<{ slug: string; commentId: string }> }
 ) {
   try {
-    const ownerUid = await verifyCustomerUid(request);
+    const ownerUid = await verifyCustomerUid(request, { requireVerified: true });
     if (!ownerUid) {
       return NextResponse.json(
         { error: '로그인 토큰이 없습니다. 다시 로그인해 주세요.' },

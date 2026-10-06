@@ -53,7 +53,7 @@ runInNewContext(resultSource, { exports: componentExports, React, require(name: 
     data: { status: 'ready', configState: { config, published: false, defaultTheme: 'simple' } },
     isLoading: false, isFetching: false, isStale: false,
   }) };
-  if (name === '@/contexts') return { useAdmin: () => ({ isLoggedIn: true, isAdminLoggedIn: admin, isAdminLoading: false, authUser: { uid: 'customer' } }) };
+  if (name === '@/contexts') return { useAdmin: () => ({ isLoggedIn: true, isAdminLoggedIn: admin, isAdminLoading: false, authUser: { uid: 'customer', emailVerified: true } }) };
   if (name.endsWith('/demoExperienceRoutes')) return { buildAppRoutes: () => ({ customerDashboard: () => '/my-invitations', admin: () => '/admin', wizardEdit: () => '/page-wizard/sample', preview: () => '/sample' }) };
   if (name.endsWith('/pageWizardEditorUtils')) return { normalizeFormConfig: (value: unknown) => value };
   if (name.endsWith('/pageWizardData')) return { getWizardSteps: () => [], applyDerivedWizardDefaults: (value: unknown) => value, buildReviewSummary: () => [] };

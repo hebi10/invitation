@@ -14,7 +14,7 @@ export async function GET(
   context: { params: Promise<{ slug: string }> }
 ) {
   try {
-    const ownerUid = await verifyCustomerUid(request);
+    const ownerUid = await verifyCustomerUid(request, { requireVerified: true });
     const { slug } = await context.params;
     const snapshot = await getCustomerEventOwnershipSnapshot(ownerUid, slug);
 

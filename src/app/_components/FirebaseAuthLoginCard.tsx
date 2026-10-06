@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 
 import { useAdmin } from '@/contexts';
+import { buildCustomerAuthPath } from '@/lib/customerAuthReturn';
 
 import styles from './FirebaseAuthLoginCard.module.css';
 
@@ -16,6 +17,7 @@ interface FirebaseAuthLoginCardProps {
   helperText?: string | null;
   initialMode?: 'login' | 'register';
   hideTitle?: boolean;
+  returnTo?: string | null;
 }
 
 export default function FirebaseAuthLoginCard({
@@ -27,6 +29,7 @@ export default function FirebaseAuthLoginCard({
   helperText = null,
   initialMode = 'login',
   hideTitle = false,
+  returnTo = null,
 }: FirebaseAuthLoginCardProps) {
   const {
     authUser,
@@ -261,7 +264,7 @@ export default function FirebaseAuthLoginCard({
         </button>
       </form>
 
-      {!isRegisterMode ? <Link className={styles.helper} href="/forgot-password">비밀번호를 잊으셨나요?</Link> : null}
+      {!isRegisterMode ? <Link className={styles.helper} href={buildCustomerAuthPath('/forgot-password', returnTo)}>비밀번호를 잊으셨나요?</Link> : null}
 
       <div className={styles.divider}>
         <span>또는</span>

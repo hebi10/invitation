@@ -82,7 +82,7 @@ function load(file: string): unknown {
     structuredClone, Buffer, URL, fetch: (...args: Parameters<typeof fetch>) => sendRequest(...args),
     require(id: string) {
       if (id === 'server-only') return {};
-      if (id.endsWith('/firebaseAdmin')) return { getServerFirestore: () => db, getServerAuth: () => ({ verifyIdToken: async () => ({ uid: 'owner' }) }) };
+      if (id.endsWith('/firebaseAdmin')) return { getServerFirestore: () => db, getServerAuth: () => ({ verifyIdToken: async () => ({ uid: 'owner', email_verified: true }) }) };
       if (id === '@/lib/firebase') return { USE_FIREBASE: true, ensureFirebaseInit: async () => ({ db, auth: { currentUser: { uid: 'owner', getIdToken: async () => 'test-token' } } }) };
       if (id === 'firebase/firestore') return clientFirestore;
       if (id === 'react') return { useCallback: (callback: unknown) => callback, useRef: (value: unknown) => ({ current: value }) };
