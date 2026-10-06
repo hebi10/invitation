@@ -302,7 +302,7 @@ export default function GalleryGridShared({
                       }
                       onError={supportsThumbnailFallback ? () => setFailedThumbnailImages(current => new Set([...current, thumbnailImage])) : undefined}
                       style={{
-                        objectFit: isCarousel || (isGridOverview && offset === 0) ? 'contain' : 'cover',
+                        objectFit: isCarousel || isGridOverview ? 'contain' : 'cover',
                         opacity: supportsThumbnailFallback || loadedImages.has(previewImage) ? 1 : 0,
                         transition: resolveGalleryOpacityTransition(
                           prefersReducedMotion,
