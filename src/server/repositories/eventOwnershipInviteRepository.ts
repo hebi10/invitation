@@ -43,6 +43,13 @@ export interface EventOwnershipInviteInspection extends EventOwnershipInviteTarg
   status: EventOwnershipInviteStatus;
 }
 
+export interface AdminEventOwnershipInviteStatus {
+  status: 'not-issued' | 'pending' | 'expired' | 'consumed' | 'unavailable';
+  createdAt: Date | null;
+  expiresAt: Date | null;
+  consumedAt: Date | null;
+}
+
 function requireFirestore() {
   const db = getServerFirestore();
   if (!db) {
@@ -173,6 +180,39 @@ async function requireTarget(pageSlug: string) {
     slug: resolvedEvent.summary.slug,
     displayName: getEventDisplayName(resolvedEvent.summary),
   } satisfies EventOwnershipInviteTarget;
+}
+
+export async function getStoredEventOwnershipInviteStatus(input: {
+  pageSlug: string;
+  now: Date;
+}): Promise<AdminEventOwnershipInviteStatus> {
+  const db = requireFirestore();
+  const target = await requireTarget(input.pageSlug);
+  const eventRef = db.collection(EVENTS_COLLECTION).doc(target.eventId);
+  const inviteRef = eventRef.collection(OWNERSHIP_INVITES_COLLECTION).doc(CURRENT_OWNERSHIP_INVITE_DOC);
+  const [eventSnapshot, snapshot] = await db.getAll(eventRef, inviteRef);
+  if (!eventSnapshot.exists) {
+    throw new EventOwnershipInviteError(404, 'missing', '연결할 청첩장을 찾지 못했습니다.');
+  }
+  const data = snapshot.exists ? snapshot.data() ?? {} : {};
+  const createdAt = toDate(data.createdAt);
+  const expiresAt = toDate(data.expiresAt);
+  const consumedAt = toDate(data.consumedAt);
+  let status: AdminEventOwnershipInviteStatus['status'] = data.status === 'consumed'
+    ? 'consumed'
+    : data.status === 'active' && expiresAt
+      ? input.now.getTime() >= expiresAt.getTime() ? 'expired' : 'pending'
+      : 'not-issued';
+  if (status === 'pending') {
+    const ownerUid = typeof eventSnapshot.data()?.ownerUid === 'string'
+      ? eventSnapshot.data()!.ownerUid.trim() : '';
+    if (ownerUid) {
+      const adminSnapshot = await db.collection(ADMIN_USERS_COLLECTION).doc(ownerUid).get();
+      if (!isEnabledAdmin(adminSnapshot)) status = 'unavailable';
+    }
+  }
+
+  return { status, createdAt, expiresAt, consumedAt };
 }
 
 export async function issueStoredEventOwnershipInvite(input: {

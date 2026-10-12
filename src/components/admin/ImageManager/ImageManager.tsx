@@ -4,11 +4,14 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { useAdminWorkGuard } from '@/app/admin/_components/AdminWorkGuard';
 import { useAdmin } from '@/contexts';
+import { getMediaAssetUsage, type MediaUsageReference } from '@/lib/mediaAssets';
 import type { EventTypeKey } from '@/lib/eventTypes';
 import {
   deleteImage,
   getAllPageImages,
-  uploadImage,
+  getImagesByPage,
+  getPageMediaUsageReferences,
+  uploadEditablePageImage,
   type UploadedImage,
 } from '@/services/imageService';
 import {
@@ -39,10 +42,12 @@ export default function ImageManager({
   const { confirm, showToast } = useAdminOverlay();
 
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
-  const [selectedPage, setSelectedPage] = useState('');
+  const [selectedPage, setSelectedPage] = useState(lockedPageSlug ?? initialPageSlug ?? '');
   const [previewUrls, setPreviewUrls] = useState<string[]>([]);
   const [images, setImages] = useState<Record<string, UploadedImage[]>>({});
   const [pages, setPages] = useState<InvitationPageSummary[]>([]);
+  const [usageReferences, setUsageReferences] = useState<Record<string, MediaUsageReference[] | null>>({});
+  const [unusedOnly, setUnusedOnly] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState<Record<string, 'pending' | 'success' | 'failed'>>({});
@@ -58,7 +63,9 @@ export default function ImageManager({
       setIsLoading(true);
       setError('');
       const [nextImages, nextPages] = await Promise.all([
-        getAllPageImages(),
+        lockedPageSlug
+          ? getImagesByPage(lockedPageSlug).then((pageImages) => ({ [lockedPageSlug]: pageImages }))
+          : getAllPageImages(),
         getAllManagedInvitationPages(),
       ]);
       setImages(nextImages);
@@ -66,9 +73,13 @@ export default function ImageManager({
       const visibleNextPages = eventTypeFilter
         ? nextPages.filter((page) => page.eventType === eventTypeFilter)
         : nextPages;
-      if (!selectedPage && visibleNextPages.length > 0) {
-        setSelectedPage(visibleNextPages[0].slug);
-      }
+      setSelectedPage((current) => lockedPageSlug ?? (current || visibleNextPages[0]?.slug || ''));
+      const slugs = lockedPageSlug ? [lockedPageSlug] : visibleNextPages.map((page) => page.slug).filter((slug) => nextImages[slug]?.length);
+      const referenceResults = await Promise.allSettled(slugs.map((slug) => getPageMediaUsageReferences(slug)));
+      setUsageReferences(Object.fromEntries(slugs.map((slug, index) => {
+        const result = referenceResults[index];
+        return [slug, result.status === 'fulfilled' ? result.value : null];
+      })));
     } catch (loadError) {
       console.error(loadError);
       setError('이미지 데이터를 불러오지 못했습니다.');
@@ -79,7 +90,7 @@ export default function ImageManager({
     } finally {
       setIsLoading(false);
     }
-  }, [eventTypeFilter, selectedPage, showToast]);
+  }, [eventTypeFilter, lockedPageSlug, showToast]);
 
   useEffect(() => {
     if (!isAdminLoggedIn) {
@@ -122,7 +133,7 @@ export default function ImageManager({
       const results = await Promise.allSettled(files.map(async (file, index) => {
         const key = index + ': ' + file.name;
         try {
-          await uploadImage(file, selectedPage);
+          await uploadEditablePageImage(file, selectedPage, 'gallery', 'admin');
           setUploadProgress((current) => ({ ...current, [key]: 'success' }));
         } catch (uploadError) {
           setUploadProgress((current) => ({ ...current, [key]: 'failed' }));
@@ -135,8 +146,8 @@ export default function ImageManager({
       setPreviewUrls(failedFiles.map((file) => URL.createObjectURL(file)));
       await loadData();
       const completedCount = files.length - failedFiles.length;
-      if (failedFiles.length) setError('성공한 이미지는 반영되었습니다. 남은 실패 파일만 다시 업로드해 주세요.');
-      showToast({ title: failedFiles.length ? '일부 이미지를 업로드하지 못했습니다.' : '이미지 업로드가 완료되었습니다.', message: '완료 ' + completedCount + '개 · 실패 ' + failedFiles.length + '개', tone: failedFiles.length ? 'error' : 'success' });
+      if (failedFiles.length) setError('성공한 파일은 이미지 목록에 저장되었습니다. 남은 실패 파일만 다시 업로드해 주세요.');
+      showToast({ title: failedFiles.length ? '일부 이미지를 업로드하지 못했습니다.' : '이미지 업로드가 완료되었습니다.', message: '완료 ' + completedCount + '개 · 실패 ' + failedFiles.length + '개. 초대장 편집에서 사진을 선택하고 저장해 주세요.', tone: failedFiles.length ? 'error' : 'success' });
     } catch (uploadError) {
       console.error(uploadError);
       setError('이미지 업로드에 실패했습니다.');
@@ -149,10 +160,19 @@ export default function ImageManager({
     }
   };
 
-  const handleDelete = async (imagePath: string) => {
+  const handleDelete = async (pageSlug: string, image: UploadedImage) => {
+    const references = usageReferences[pageSlug];
+    if (!references) {
+      setError('사용 위치를 확인하지 못해 삭제를 차단했습니다. 목록을 새로고침해 주세요.');
+      return;
+    }
+    if (getMediaAssetUsage(image, references).length > 0) {
+      setError('사용 중인 이미지는 삭제할 수 없습니다. 초대장 또는 추억 페이지 편집에서 먼저 교체하고 저장해 주세요.');
+      return;
+    }
     const approved = await confirm({
       title: '이미지를 삭제할까요?',
-      description: '삭제 후에는 되돌릴 수 없습니다.',
+      description: '이 사진의 원본·본문용·썸네일 파일이 함께 삭제되며 되돌릴 수 없습니다. 삭제 직전에 저장된 사용 위치를 다시 확인합니다.',
       confirmLabel: '삭제',
       cancelLabel: '취소',
       tone: 'danger',
@@ -164,7 +184,8 @@ export default function ImageManager({
 
     try {
       setDeleting(true);
-      await deleteImage(imagePath);
+      setError('');
+      await deleteImage(image.path);
       await loadData();
       showToast({
         title: '이미지를 삭제했습니다.',
@@ -172,9 +193,11 @@ export default function ImageManager({
       });
     } catch (deleteError) {
       console.error(deleteError);
-      setError('이미지 삭제에 실패했습니다.');
+      const message = deleteError instanceof Error ? deleteError.message : '이미지 삭제에 실패했습니다. 목록을 새로고침해 주세요.';
+      setError(message);
       showToast({
         title: '이미지 삭제에 실패했습니다.',
+        message,
         tone: 'error',
       });
     } finally { setDeleting(false); }
@@ -246,7 +269,7 @@ export default function ImageManager({
         <div>
           <h2 className={styles.title}>이미지 관리</h2>
           <p className={styles.description}>
-            페이지를 선택한 뒤 이미지를 업로드하거나 기존 이미지를 교체할 수 있습니다.
+            업로드한 파일은 이미지 목록에 저장됩니다. 초대장에 적용하려면 편집 화면에서 사진을 선택하고 저장해 주세요.
           </p>
         </div>
       </div>
@@ -321,9 +344,13 @@ export default function ImageManager({
           </div>
           <div className={styles.uploadGuideItem}>
             <span className={styles.uploadGuideLabel}>업로드 안내</span>
-            <strong className={styles.uploadGuideValue}>파일을 고른 뒤 업로드 버튼으로 반영</strong>
+            <strong className={styles.uploadGuideValue}>업로드 후 초대장 편집에서 사진 선택·저장</strong>
           </div>
         </div>
+
+        {selectedPage ? <a className={`admin-button admin-button-secondary ${styles.editorLink}`} href={`/page-wizard/${encodeURIComponent(selectedPage)}`}>
+          이 초대장 사진 편집
+        </a> : null}
 
         {selectedFiles.length > 0 ? (
           <div className={styles.uploadInfo}>
@@ -349,11 +376,12 @@ export default function ImageManager({
           <div className={styles.previewGrid}>
             {previewUrls.map((url, index) => (
               <div key={url} className={styles.previewItem}>
-                <img className={styles.previewImage} src={url} alt={`Preview ${index + 1}`} />
+                <img className={styles.previewImage} src={url} alt={`선택한 이미지 ${index + 1}`} />
                 <p className={styles.previewFileName}>{selectedFiles[index]?.name}</p>
                 <button
                   type="button"
                   className="admin-button admin-button-ghost"
+                  disabled={isUploading || deleting}
                   onClick={() => {
                     URL.revokeObjectURL(url);
                     setSelectedFiles((prev) =>
@@ -419,6 +447,16 @@ export default function ImageManager({
         }
       /> : null}
 
+      <div className={styles.mediaFilters}>
+        <label className={styles.unusedFilter}>
+          <input type="checkbox" checked={unusedOnly} onChange={(event) => setUnusedOnly(event.target.checked)} />
+          미사용 이미지만 보기
+        </label>
+        {lockedPageSlug ? <button type="button" className="admin-button admin-button-secondary" disabled={isLoading || isUploading || deleting} onClick={() => void loadData()}>
+          {isLoading ? '새로고침 중..' : '새로고침'}
+        </button> : null}
+      </div>
+
       {error ? <div className={styles.errorMessage}>{error}</div> : null}
 
       {isLoading ? (
@@ -430,6 +468,10 @@ export default function ImageManager({
           {filteredPageSlugs.map((pageSlug) => {
             const pageName = pageMap.get(pageSlug)?.displayName || pageSlug;
             const pageImages = images[pageSlug] || [];
+            const references = usageReferences[pageSlug];
+            const displayedImages = unusedOnly
+              ? pageImages.filter((image) => references && getMediaAssetUsage(image, references).length === 0)
+              : pageImages;
             const isExpanded = expandedPages[pageSlug] ?? false;
 
             return (
@@ -445,12 +487,16 @@ export default function ImageManager({
                     <h3 className={styles.pageSectionTitle}>{pageName}</h3>
                     <p className={styles.pageSectionSlug}>{pageSlug}</p>
                   </div>
-                  <span className={styles.imageCount}>{pageImages.length}개</span>
+                  <span className={styles.imageCount}>{unusedOnly ? `미사용 ${displayedImages.length}개 / 전체 ${pageImages.length}개` : `${pageImages.length}개`}</span>
                 </button>
 
                 {isExpanded ? (
                   <div className={styles.imageGrid}>
-                    {pageImages.map((image) => (
+                    {!references && pageImages.length > 0 ? <p className={styles.usageMessage}>사용 위치를 확인하지 못했습니다. 새로고침 후 다시 확인해 주세요. 삭제는 차단됩니다.</p> : null}
+                    {displayedImages.length === 0 && references ? <p className={styles.usageMessage}>{unusedOnly ? '확인된 미사용 이미지가 없습니다.' : '아직 업로드한 이미지가 없습니다.'}</p> : null}
+                    {displayedImages.map((image) => {
+                      const usage = references ? getMediaAssetUsage(image, references) : null;
+                      return (
                       <div key={image.path} className={styles.imageCard}>
                         <div className={styles.imageWrapper}>
                           <img
@@ -461,17 +507,24 @@ export default function ImageManager({
                         </div>
                         <div className={styles.imageInfo}>
                           <p className={styles.imageName}>{image.name}</p>
+                          <p className={styles.usageMessage}>{usage ? usage.length ? `사용 중 · ${usage.join(', ')}` : '미사용 · 저장된 초대장과 추억 페이지에 참조 없음' : '사용 위치 확인 불가'}</p>
+                          <p className={styles.imageDate}>{image.uploadedAt ? `업로드 ${image.uploadedAt.toLocaleDateString('ko-KR')}` : '업로드 날짜 확인 불가'}</p>
+                          <div className={styles.variantLinks}>
+                            <a href={image.url} target="_blank" rel="noreferrer">본문용</a>
+                            {image.originalUrl ? <a href={image.originalUrl} target="_blank" rel="noreferrer">원본</a> : null}
+                            {image.thumbnailPath !== image.path && image.thumbnailUrl ? <a href={image.thumbnailUrl} target="_blank" rel="noreferrer">썸네일</a> : null}
+                          </div>
                           <button
                             type="button"
                             className="admin-button admin-button-danger"
-                            disabled={isUploading || deleting}
-                            onClick={() => void handleDelete(image.path)}
+                            disabled={isUploading || deleting || !usage || usage.length > 0}
+                            onClick={() => void handleDelete(pageSlug, image)}
                           >
                             삭제
                           </button>
                         </div>
                       </div>
-                    ))}
+                    ); })}
                   </div>
                 ) : null}
               </section>
@@ -493,7 +546,7 @@ export default function ImageManager({
           highlights={
             Object.keys(images).length === 0
               ? [
-                  '페이지를 먼저 고른 뒤 이미지를 선택하고 업로드 버튼으로 반영합니다.',
+                  '페이지를 고른 뒤 이미지를 업로드하고 초대장 편집에서 사진을 선택·저장합니다.',
                   '업로드 전에는 선택한 파일 수와 대상 페이지를 꼭 다시 확인하세요.',
                 ]
               : [

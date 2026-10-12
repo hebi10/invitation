@@ -1,9 +1,11 @@
 import { getAvailableInvitationVariantKeys } from '@/lib/invitationVariants';
 import { getCustomerEventPresentation } from '@/lib/customerEventPresentation';
+import { getInvitationPublicAccessState } from '@/lib/invitationPublicAccess';
 import {
   deleteCustomerEventGuestbookComment,
   listCustomerEventGuestbookComments,
   listOwnedCustomerEvents,
+  updateCustomerEventGuestbookCommentStatus,
   type CustomerEventGuestbookComment,
   type CustomerOwnedEventSummary,
 } from '@/services/customerEventService';
@@ -16,6 +18,7 @@ export interface CustomerDataGateway {
   getWallet(ownerUid: string): Promise<CustomerWalletSummary>;
   listComments(slug: string): Promise<CustomerEventGuestbookComment[]>;
   deleteComment(slug: string, commentId: string): Promise<void>;
+  updateComment?(slug: string, commentId: string, action: 'hide' | 'restore'): Promise<void>;
 }
 
 export const productionCustomerDataGateway: CustomerDataGateway = {
@@ -23,6 +26,7 @@ export const productionCustomerDataGateway: CustomerDataGateway = {
   getWallet: getCustomerWalletSnapshot,
   listComments: listCustomerEventGuestbookComments,
   deleteComment: deleteCustomerEventGuestbookComment,
+  updateComment: updateCustomerEventGuestbookCommentStatus,
 };
 
 async function readError(response: Response, fallback: string) {
@@ -56,6 +60,7 @@ export const demoExperienceCustomerDataGateway: CustomerDataGateway = {
       title: '금일 체험 청첩장',
       displayName: '금일 체험 청첩장',
       published: event.published,
+      publicAccess: getInvitationPublicAccessState({ published: event.published, displayPeriodEnabled: false, displayPeriodStart: null, displayPeriodEnd: null }),
       defaultTheme: event.defaultTheme,
       availableThemes: getAvailableInvitationVariantKeys(event.config.variants),
       updatedAt: readDate(event.updatedAt),

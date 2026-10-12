@@ -76,7 +76,7 @@ import {
   type OpeningThemeKey,
 } from './opening/openingThemes';
 
-export interface EventPageRouteRenderOptions {
+export interface EventPageRouteRenderOptions extends Pick<EventInvitationRouteOptions, 'pageLoader' | 'queryScope' | 'allowStorageImages' | 'externalShareEnabled'> {
   slug: string;
   theme: string;
   initialPageConfig?: InvitationPage | null;

@@ -18,7 +18,7 @@ export class CustomerApiAuthError extends Error {
 type CustomerDecodedToken = Pick<DecodedIdToken, 'uid'> & Partial<DecodedIdToken>;
 
 type CustomerAuthVerifier = {
-  verifyIdToken(idToken: string): Promise<CustomerDecodedToken>;
+  verifyIdToken(idToken: string, checkRevoked?: boolean): Promise<CustomerDecodedToken>;
 };
 
 type VerifyCustomerRequestOptions = {
@@ -50,7 +50,7 @@ export async function verifyCustomerRequest(
 
   let decodedToken: CustomerDecodedToken;
   try {
-    decodedToken = await auth.verifyIdToken(idToken);
+    decodedToken = await auth.verifyIdToken(idToken, true);
   } catch {
     throw new CustomerApiAuthError(
       401,

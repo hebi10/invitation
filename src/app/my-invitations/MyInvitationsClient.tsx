@@ -21,6 +21,7 @@ import {
 import { getEventTypeDisplayLabel } from '@/lib/eventTypes';
 import { getEventPreviewLinks } from '@/lib/eventPreviewLinks';
 import { buildAppRoutes, type AppRoutes } from '@/lib/demoExperienceRoutes';
+import { buildCustomerInvitationPreviewPath, getCustomerInvitationStatus } from '@/lib/customerInvitationWorkspace';
 import {
   type CustomerEventGuestbookComment,
   type CustomerOwnedEventSummary,
@@ -139,6 +140,8 @@ function OwnedEventCard({
   const previewDialogRef = useRef<HTMLElement | null>(null);
   const guestbookDialogRef = useRef<HTMLElement | null>(null);
   const [guestbookPage, setGuestbookPage] = useState(1);
+  const [commentFilter, setCommentFilter] = useState<'all' | 'public' | 'hidden' | 'pending_delete'>('all');
+  const [commentNotice, setCommentNotice] = useState('');
   const [deletingCommentId, setDeletingCommentId] = useState('');
   const wizardHref = routes.wizardEdit(event.slug);
   const previewLinks = getEventPreviewLinks({
@@ -148,7 +151,7 @@ function OwnedEventCard({
     defaultTheme: event.defaultTheme,
   }).map((preview) => ({
     ...preview,
-    href: routes.preview(event.slug, preview.theme),
+    href: experience ? routes.preview(event.slug, preview.theme) : buildCustomerInvitationPreviewPath(event.slug, preview.theme),
   }));
   const singlePreviewLink = previewLinks.length === 1 ? previewLinks[0] : null;
   const guestbookQueryKey = appQueryKeys.customerEventGuestbookComments(
@@ -167,13 +170,26 @@ function OwnedEventCard({
     mutationFn: async (commentId: string) =>
       gateway.deleteComment(event.slug, commentId),
     onSuccess: async () => {
+      setCommentNotice(experience ? '체험 방명록을 삭제했습니다.' : '삭제 예정으로 변경했습니다. 30일이 지나기 전까지 복구할 수 있습니다.');
       await queryClient.invalidateQueries({
         queryKey: guestbookQueryKey,
       });
     },
     onSettled: () => setDeletingCommentId(''),
   });
-  const comments = commentsQuery.data ?? [];
+  const statusMutation = useMutation({
+    mutationFn: async ({ commentId, action }: { commentId: string; action: 'hide' | 'restore' }) => {
+      if (!gateway.updateComment) throw new Error('현재 화면에서는 상태를 변경할 수 없습니다.');
+      await gateway.updateComment(event.slug, commentId, action);
+    },
+    onSuccess: async (_, variables) => {
+      setCommentNotice(variables.action === 'hide' ? '공개 화면에서 숨겼습니다.' : '방명록을 복구했습니다.');
+      await queryClient.invalidateQueries({ queryKey: guestbookQueryKey });
+    },
+  });
+  const commentBusy = deleteMutation.isPending || statusMutation.isPending;
+  const allComments = commentsQuery.data ?? [];
+  const comments = allComments.filter((comment) => commentFilter === 'all' || comment.status === commentFilter);
   const guestbookTotalPages = Math.max(
     1,
     Math.ceil(comments.length / GUESTBOOK_MODAL_PAGE_SIZE)
@@ -196,17 +212,21 @@ function OwnedEventCard({
     guestbookTotalPages
   );
   const eventTitle = event.displayName || event.title || event.slug;
+  const visibility = getCustomerInvitationStatus(event.published, event.publicAccess);
   const guestbookErrorMessage =
     commentsQuery.error instanceof Error
       ? commentsQuery.error.message
       : deleteMutation.error instanceof Error
         ? deleteMutation.error.message
+        : statusMutation.error instanceof Error
+          ? statusMutation.error.message
         : '';
 
   const handleDeleteComment = (comment: CustomerEventGuestbookComment) => {
     if (
       !window.confirm(
-        '선택한 방명록을 삭제 예정 상태로 변경할까요? 삭제 예정 댓글은 공개 화면에 보이지 않습니다.'
+        experience ? '선택한 체험 방명록을 삭제할까요? 체험에서는 삭제한 메시지를 복구할 수 없습니다.'
+          : '선택한 방명록을 삭제 예정으로 변경할까요? 공개 화면에서 숨겨지며 30일 이내에는 복구할 수 있습니다.'
       )
     ) {
       return;
@@ -217,9 +237,9 @@ function OwnedEventCard({
   };
 
   const closePreview = () => setPreviewOpen(false);
-  const closeGuestbook = () => { if (!deleteMutation.isPending) setGuestbookOpen(false); };
+  const closeGuestbook = () => { if (!commentBusy) setGuestbookOpen(false); };
   useDialogLayer(previewDialogRef, { open: previewOpen, onClose: closePreview });
-  useDialogLayer(guestbookDialogRef, { open: guestbookOpen, onClose: closeGuestbook, blocked: deleteMutation.isPending });
+  useDialogLayer(guestbookDialogRef, { open: guestbookOpen, onClose: closeGuestbook, blocked: commentBusy });
 
   useEffect(() => {
     if (!guestbookOpen || guestbookPage <= guestbookTotalPages) {
@@ -237,11 +257,12 @@ function OwnedEventCard({
           <div className={styles.cardHeader}>
             <div className={styles.cardTopline}>
               <p className={styles.eventTypeLabel}>{getEventTypeDisplayLabel(event.eventType)}</p>
-              <span className={`${styles.publicationStatus} ${event.published ? styles.publicationEnabled : ''}`}>
-                공개 설정 · {event.published ? '공개' : '비공개'}
+              <span className={`${styles.publicationStatus} ${visibility.isPublic ? styles.publicationEnabled : ''}`}>
+                실제 노출 · {visibility.label}
               </span>
             </div>
             <h3 className={styles.cardTitle}>{eventTitle}</h3>
+            {visibility.description ? <p className={styles.cardMeta}>{visibility.description}</p> : null}
             <p className={styles.eventDate}>
               <span>행사일</span>
               {event.eventDateLabel || '아직 입력되지 않았습니다'}
@@ -291,6 +312,8 @@ function OwnedEventCard({
               type="button"
               onClick={() => {
                 setGuestbookPage(1);
+                setCommentFilter('all');
+                setCommentNotice('');
                 setGuestbookOpen(true);
               }}
             >
@@ -326,7 +349,7 @@ function OwnedEventCard({
                   미리볼 디자인 선택
                 </h3>
                 <p className={styles.modalDescription}>
-                  {eventTitle}의 디자인별 공개 화면을 확인할 수 있습니다.
+                  {eventTitle}의 저장한 디자인을 확인할 수 있습니다. 소유자 미리보기 주소는 고객에게 공유하지 마세요.
                 </p>
               </div>
               <button
@@ -391,14 +414,14 @@ function OwnedEventCard({
                   {eventTitle} 방명록
                 </h3>
                 <p className={styles.modalDescription}>
-                  공개 청첩장에 남겨진 축하 메시지를 확인하고 관리할 수 있습니다.
+                  {experience ? '체험 청첩장에 남겨진 예시 메시지를 확인할 수 있습니다.' : '축하 메시지를 숨기거나 복구할 수 있습니다. 삭제 예정 메시지는 30일 이내에 복구해 주세요.'}
                 </p>
               </div>
               <button
                 className={styles.modalCloseButton}
                 type="button"
                 onClick={closeGuestbook}
-                disabled={deleteMutation.isPending}
+                disabled={commentBusy}
                 aria-label="방명록 팝업 닫기"
               >
                 닫기
@@ -420,15 +443,24 @@ function OwnedEventCard({
                 </div>
 
                 {guestbookErrorMessage ? (
-                  <p className={styles.error}>{guestbookErrorMessage}</p>
+                  <p className={styles.error} role="alert">{guestbookErrorMessage}</p>
                 ) : null}
+                {commentNotice ? <p className={styles.cardMeta} role="status">{commentNotice}</p> : null}
+                {!experience ? <label className={styles.cardMeta}>
+                  방명록 상태
+                  <select className={styles.secondaryButton} value={commentFilter} disabled={commentBusy}
+                    onChange={(e) => { setCommentFilter(e.target.value as typeof commentFilter); setGuestbookPage(1); }}>
+                    <option value="all">전체</option><option value="public">공개</option>
+                    <option value="hidden">숨김</option><option value="pending_delete">삭제 예정</option>
+                  </select>
+                </label> : null}
 
                 {commentsQuery.isFetching && !commentsQuery.data ? (
                   <p className={styles.cardMeta}>방명록을 불러오는 중입니다.</p>
                 ) : null}
 
                 {!commentsQuery.isFetching && comments.length === 0 ? (
-                  <p className={styles.cardMeta}>아직 등록된 방명록이 없습니다.</p>
+                  <p className={styles.cardMeta}>{allComments.length ? '선택한 상태의 방명록이 없습니다.' : '아직 등록된 방명록이 없습니다.'}</p>
                 ) : null}
 
                 {comments.length > 0 ? (
@@ -444,17 +476,23 @@ function OwnedEventCard({
                                 {getCommentStatusLabel(comment.status)}
                               </p>
                             </div>
+                            <div className={styles.guestbookActions}>
+                            {!experience && gateway.updateComment ? <button type="button" className={styles.secondaryButton}
+                              disabled={commentBusy} onClick={() => { setCommentNotice(''); statusMutation.mutate({ commentId: comment.id, action: comment.status === 'public' ? 'hide' : 'restore' }); }}>
+                              {statusMutation.isPending && statusMutation.variables?.commentId === comment.id ? '변경 중' : comment.status === 'public' ? '숨김' : '복구'}
+                            </button> : null}
                             <button
                               className={styles.dangerButton}
                               type="button"
                               onClick={() => handleDeleteComment(comment)}
                               disabled={
-                                deleteMutation.isPending ||
+                                commentBusy ||
                                 comment.status === 'pending_delete'
                               }
                             >
-                              {deletingCommentId === comment.id ? '삭제 중' : '삭제'}
+                              {deletingCommentId === comment.id ? '처리 중' : experience ? '삭제' : '삭제 예정'}
                             </button>
+                            </div>
                           </div>
                           <p className={styles.guestbookMessage}>{comment.message}</p>
                         </div>

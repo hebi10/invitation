@@ -143,7 +143,7 @@ export default function AdminPageClient({
     published: parseAdminEventPublished(safeSearchParams.get('published')),
     ownership: parseAdminEventOwnership(safeSearchParams.get('ownership')),
     sort: parseAdminEventSort(safeSearchParams.get('pageSort')),
-    visibility: safeSearchParams.get('visibility') === 'due-soon' ? 'due-soon' : safeSearchParams.get('visibility') === 'expired' ? 'expired' : 'all',
+    visibility: safeSearchParams.get('visibility') === 'due-soon' ? 'due-soon' : safeSearchParams.get('visibility') === 'expired' ? 'expired' : safeSearchParams.get('visibility') === 'period-error' ? 'period-error' : 'all',
   };
   const selectedEventSlug = safeSearchParams.get('event');
   const commentSearch = safeSearchParams.get('commentQ') ?? '';
@@ -165,7 +165,7 @@ export default function AdminPageClient({
       ? activePageCategoryEventType
       : requestedRelatedEventType;
 
-  const updateQuery = useCallback((updates: Record<string, string | null>) => {
+  const updateQuery = useCallback((updates: Record<string, string | null>, navigation: 'replace' | 'push' = 'replace') => {
     const nextParams = new URLSearchParams(safeSearchParams.toString());
 
     Object.entries(updates).forEach(([key, value]) => {
@@ -180,11 +180,14 @@ export default function AdminPageClient({
       }
     });
 
-    router.replace(
+    router[navigation](
       `${safePathname}${nextParams.toString() ? `?${nextParams.toString()}` : ''}`,
       { scroll: false }
     );
   }, [router, safePathname, safeSearchParams]);
+  const navigateQuery = useCallback((updates: Record<string, string | null>) => {
+    updateQuery(updates, 'push');
+  }, [updateQuery]);
 
   /* ── Data layer ── */
 
@@ -226,13 +229,13 @@ export default function AdminPageClient({
     handleChangeTier,
     handleEnableVariant,
     handleDisableVariant,
-    handleGrantCustomerWalletCredit,
     handleDeleteCustomerAccount,
     handleLogout: dataLogout,
   } = useAdminData({
     isAdminLoggedIn,
     activeTab: isHomeView ? 'comments' : renderedActiveTab,
     selectedEventSlug,
+    selectedEventDetailTab: safeSearchParams.get('detail'),
     showToast,
     confirm,
     gateway,
@@ -511,9 +514,9 @@ export default function AdminPageClient({
       <AdminShell
         activeView={activePrimaryView}
         adminEmail={adminUser?.email ?? '관리자'}
-        onNavigate={(view) => updateQuery(view === 'home'
-          ? { view: 'home', section: 'events', tab: 'pages', event: null }
-          : { ...PRIMARY_VIEW_QUERY[view], view: null, event: null })}
+        onNavigate={(view) => navigateQuery(view === 'home'
+          ? { view: 'home', section: 'events', tab: 'pages', event: null, detail: null, customer: null, customerDetail: null }
+          : { ...PRIMARY_VIEW_QUERY[view], view: null, event: null, detail: null, customer: null, customerDetail: null })}
         onLogout={() => void handleLogout()}
         brandHref={routes.admin()}
         customerPageHref={routes.customerDashboard()}
@@ -529,7 +532,7 @@ export default function AdminPageClient({
               commentsError={commentsError}
               onRetryPages={() => void retryPages()}
               onRetryComments={() => void retryComments()}
-              onNavigate={updateQuery}
+              onNavigate={navigateQuery}
               createHref={routes.wizardCreate('wedding')}
             />
           ) : renderedActiveTab === 'pages' ? (
@@ -540,6 +543,8 @@ export default function AdminPageClient({
               error={pagesError}
               filters={eventFilters}
               selectedSlug={selectedEventSlug}
+              selectedDetailTab={safeSearchParams.get('detail')}
+              mobileReadOnly={mobileViewportState !== 'desktop'}
               currentPage={currentEventPage}
               pageSize={currentEventPageSize}
               updatingPublishedSlug={updatingPublishedPageSlug}
@@ -556,6 +561,7 @@ export default function AdminPageClient({
               accountsError={accountsError}
               ownershipActionToken={ownershipActionToken}
               onQueryChange={updateQuery}
+              onNavigate={navigateQuery}
               onRefresh={() => void refreshPages()}
               onRetry={() => void retryPages()}
               onTogglePublished={(page, next) => void handleTogglePublished(page, next)}
@@ -579,10 +585,10 @@ export default function AdminPageClient({
           ) : null}
 
           {!experience && renderedActiveTab === 'memory' ? (
-            <MemoryPageManager initialPageSlug={selectedEventSlug ?? undefined} />
+            mobileViewportState !== 'desktop' ? <p className={styles.mobileReadOnlyNotice}>기록 사진과 내용 편집은 PC 관리자 화면을 이용해 주세요.</p> : <MemoryPageManager initialPageSlug={selectedEventSlug ?? undefined} />
           ) : null}
           {!experience && renderedActiveTab === 'images' ? (
-            <ImageManager
+            mobileViewportState !== 'desktop' ? <p className={styles.mobileReadOnlyNotice}>이미지 업로드와 삭제는 PC 관리자 화면을 이용해 주세요.</p> : <ImageManager
               eventTypeFilter={relatedManagerEventTypeFilter}
               initialPageSlug={selectedEventSlug ?? undefined}
             />
@@ -621,7 +627,6 @@ export default function AdminPageClient({
               unassignedEvents={unassignedCustomerEvents}
               ownershipActionToken={ownershipActionToken}
               issuingOwnershipInviteSlug={issuingOwnershipInviteSlug}
-              walletGrantActionToken={walletGrantActionToken}
               deletingCustomerUid={deletingCustomerUid}
               selectedEventSlug={selectedEventSlug}
               mobileReadOnly={mobileViewportState !== 'desktop'}
@@ -633,9 +638,6 @@ export default function AdminPageClient({
               onClear={(pageSlug) => void handleClearCustomerOwnership(pageSlug)}
               onIssueOwnershipInvite={(pageSlug) =>
                 void issueOwnershipInviteAndOpen(pageSlug)
-              }
-              onGrantWalletCredit={(uid, grant) =>
-                void handleGrantCustomerWalletCredit(uid, grant)
               }
               onDeleteAccount={(uid) => void handleDeleteCustomerAccount(uid)}
               routes={routes}

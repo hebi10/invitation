@@ -6,6 +6,7 @@ import { toSafeHttpErrorResponse } from '@/server/apiErrorResponse';
 import {
   EventOwnershipInviteError,
   issueEventOwnershipInvite,
+  getAdminEventOwnershipInviteStatus,
 } from '@/server/eventOwnershipInviteService';
 import {
   applyScopedRateLimit,
@@ -21,6 +22,33 @@ const ADMIN_OWNERSHIP_INVITE_RATE_LIMIT = {
 function withNoStore(response: NextResponse) {
   response.headers.set('cache-control', 'no-store');
   return response;
+}
+
+export async function GET(
+  request: Request,
+  context: { params: Promise<{ slug: string }> }
+) {
+  try {
+    await verifyAdminRequest(request);
+    const { slug } = await context.params;
+    const invite = await getAdminEventOwnershipInviteStatus({ pageSlug: slug });
+    return NextResponse.json({
+      status: invite.status,
+      createdAt: invite.createdAt?.toISOString() ?? null,
+      expiresAt: invite.expiresAt?.toISOString() ?? null,
+      consumedAt: invite.consumedAt?.toISOString() ?? null,
+    }, { headers: NO_STORE_HEADERS });
+  } catch (error) {
+    if (error instanceof AdminApiAuthError || error instanceof EventOwnershipInviteError) {
+      return withNoStore(toSafeHttpErrorResponse(error));
+    }
+
+    console.error('[api/admin/events/ownership-invite] failed to read invite status', error);
+    return NextResponse.json(
+      { error: '청첩장 연결 상태를 확인하지 못했습니다. 잠시 후 다시 시도해 주세요.' },
+      { status: 500, headers: NO_STORE_HEADERS }
+    );
+  }
 }
 
 export async function POST(

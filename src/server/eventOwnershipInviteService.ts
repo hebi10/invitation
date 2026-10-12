@@ -13,6 +13,7 @@ import {
   EventOwnershipInviteError,
   inspectStoredEventOwnershipInvite,
   issueStoredEventOwnershipInvite,
+  getStoredEventOwnershipInviteStatus,
 } from './repositories/eventOwnershipInviteRepository';
 import { resolveStoredEventBySlug } from './repositories/eventRepository';
 
@@ -23,6 +24,7 @@ type EventOwnershipInviteDependencies = {
   issueStoredInvite: typeof issueStoredEventOwnershipInvite;
   inspectStoredInvite: typeof inspectStoredEventOwnershipInvite;
   consumeStoredInvite: typeof consumeStoredEventOwnershipInvite;
+  getStoredInviteStatus: typeof getStoredEventOwnershipInviteStatus;
 };
 
 const defaultEventOwnershipInviteDependencies: EventOwnershipInviteDependencies = {
@@ -30,6 +32,7 @@ const defaultEventOwnershipInviteDependencies: EventOwnershipInviteDependencies 
   issueStoredInvite: issueStoredEventOwnershipInvite,
   inspectStoredInvite: inspectStoredEventOwnershipInvite,
   consumeStoredInvite: consumeStoredEventOwnershipInvite,
+  getStoredInviteStatus: getStoredEventOwnershipInviteStatus,
 };
 
 async function assertOwnershipInviteAccessAvailable(
@@ -53,6 +56,22 @@ function normalizeRequiredValue(value: string, message: string) {
   }
 
   return normalizedValue;
+}
+
+export async function getAdminEventOwnershipInviteStatus(input: {
+  pageSlug: string;
+  now?: Date;
+}, dependencies: Pick<
+  EventOwnershipInviteDependencies,
+  'resolveEventBySlug' | 'getStoredInviteStatus'
+> = defaultEventOwnershipInviteDependencies) {
+  const pageSlug = normalizeInvitationPageSlugInput(input.pageSlug);
+  if (!pageSlug) {
+    throw new EventOwnershipInviteError(400, 'missing', '연결할 청첩장 주소를 확인해 주세요.');
+  }
+
+  await assertOwnershipInviteAccessAvailable(pageSlug, dependencies);
+  return dependencies.getStoredInviteStatus({ pageSlug, now: input.now ?? new Date() });
 }
 
 export async function issueEventOwnershipInvite(input: {

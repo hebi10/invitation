@@ -117,6 +117,9 @@ export function buildAdminInvitationPageSummary(
     dataSource: 'firestore',
     hasCustomConfig: summary.hasCustomContent,
     ownershipKind,
+    ownerUid: summary.ownerUid,
+    ownerEmail: summary.ownerEmail,
+    ownerDisplayName: summary.ownerDisplayName,
     ...(summary.deletion ? { deletion: summary.deletion } : {}),
   };
 }

@@ -45,7 +45,7 @@ export interface AdminEventFilters {
   published: AdminEventPublishedFilter;
   ownership: AdminEventOwnershipFilter;
   sort: AdminEventSort;
-  visibility?: 'all' | 'due-soon' | 'expired';
+  visibility?: 'all' | 'due-soon' | 'expired' | 'period-error';
 }
 
 export const DEFAULT_ADMIN_EVENT_FILTERS: AdminEventFilters = {
@@ -92,6 +92,38 @@ export function parseAdminEventPageSize(value: string | null): AdminEventPageSiz
   );
 }
 
+export function getAdminEventFilterResetQuery(): Record<string, string | null> {
+  return {
+    visibility: null, pageQ: null, pageType: null, published: null,
+    ownership: null, pageSort: null, event: null, detail: null,
+    pageCategory: null, page: '1', pageSize: null,
+  };
+}
+
+export function resolveAdminEventDetailTab(
+  value: string | null,
+  tabs: ReadonlyArray<{ key: AdminEventDetailTabKey }>
+): AdminEventDetailTabKey {
+  return tabs.find((tab) => tab.key === value)?.key ?? 'overview';
+}
+
+export function getAdminEventKeyboardTab(
+  key: string,
+  active: AdminEventDetailTabKey,
+  tabs: ReadonlyArray<{ key: AdminEventDetailTabKey }>,
+  orientation: 'horizontal' | 'vertical'
+): AdminEventDetailTabKey | null {
+  if (!tabs.length) return null;
+  const index = Math.max(0, tabs.findIndex((tab) => tab.key === active));
+  if (key === 'Home') return tabs[0].key;
+  if (key === 'End') return tabs[tabs.length - 1].key;
+  const nextKey = orientation === 'vertical' ? 'ArrowDown' : 'ArrowRight';
+  const previousKey = orientation === 'vertical' ? 'ArrowUp' : 'ArrowLeft';
+  if (key === nextKey) return tabs[(index + 1) % tabs.length].key;
+  if (key === previousKey) return tabs[(index - 1 + tabs.length) % tabs.length].key;
+  return null;
+}
+
 export function filterAdminEvents(
   pages: InvitationPageSummary[],
   filters: AdminEventFilters
@@ -100,7 +132,7 @@ export function filterAdminEvents(
 
   return [...pages]
     .filter((page) => {
-      const searchable = `${page.displayName} ${page.slug} ${page.description} ${page.venue} ${getEventTypeDisplayLabel(page.eventType)}`
+      const searchable = `${page.displayName} ${page.slug} ${page.description} ${page.venue} ${getEventTypeDisplayLabel(page.eventType)} ${page.ownerDisplayName ?? ''} ${page.ownerEmail ?? ''}`
         .toLocaleLowerCase('ko-KR');
       return (
         ADMIN_EVENT_TYPE_OPTIONS.includes(page.eventType) &&
@@ -109,7 +141,9 @@ export function filterAdminEvents(
         (filters.published === 'all' ||
           page.published === (filters.published === 'published')) &&
         (filters.ownership === 'all' || page.ownershipKind === filters.ownership) &&
-        (!filters.visibility || filters.visibility === 'all' || getAdminEventVisibility(page).label === (filters.visibility === 'due-soon' ? '곧 종료' : '만료'))
+        (!filters.visibility || filters.visibility === 'all' || getAdminEventVisibility(page).label === (
+          filters.visibility === 'due-soon' ? '곧 종료' : filters.visibility === 'period-error' ? '기간 확인 필요' : '만료'
+        ))
       );
     })
     .sort((left, right) => {
@@ -313,7 +347,7 @@ export function getAdminEventRelatedQuery(
 export function getAdminEventVisibility(page: Pick<InvitationPageSummary, 'published' | 'displayPeriodEnabled' | 'displayPeriodStart' | 'displayPeriodEnd'>) {
   if (!page.published) return { label: '비공개', description: '공개 설정이 꺼져 있습니다.' };
   if (!page.displayPeriodEnabled) return { label: '노출 중', description: '기간 제한 없이 공개 중입니다.' };
-  if (!page.displayPeriodStart || !page.displayPeriodEnd || Number.isNaN(page.displayPeriodStart.getTime()) || Number.isNaN(page.displayPeriodEnd.getTime())) {
+  if (!page.displayPeriodStart || !page.displayPeriodEnd || Number.isNaN(page.displayPeriodStart.getTime()) || Number.isNaN(page.displayPeriodEnd.getTime()) || page.displayPeriodStart >= page.displayPeriodEnd) {
     return { label: '기간 확인 필요', description: '공개 기간이 올바르게 설정되지 않았습니다.' };
   }
   return getPeriodStatusMeta({ pageSlug: '', isActive: true, startDate: page.displayPeriodStart, endDate: page.displayPeriodEnd, createdAt: page.displayPeriodStart, updatedAt: page.displayPeriodStart });

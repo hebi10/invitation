@@ -6,6 +6,7 @@ import { WEDDING_PAGE_SAMPLES } from '../src/config/weddingPages.ts';
 import * as eventTypes from '../src/lib/eventTypes.ts';
 import * as invitationThemes from '../src/lib/invitationThemes.ts';
 import * as invitationVariants from '../src/lib/invitationVariants.ts';
+import * as invitationPublicAccess from '../src/lib/invitationPublicAccess.ts';
 import type { InvitationPageSeed } from '../src/types/invitationPage.ts';
 import type { EventSummaryRecord } from '../src/server/repositories/eventReadThroughDtos.ts';
 import type { CustomerOwnedEventSummary } from '../src/services/customerEventService.ts';
@@ -23,6 +24,7 @@ function loadModule<T>(file: string, dependencies: Record<string, unknown> = {},
       if (name === '@/lib/eventTypes') return eventTypes;
       if (name === '@/lib/invitationThemes') return invitationThemes;
       if (name === '@/lib/invitationVariants') return invitationVariants;
+      if (name === '@/lib/invitationPublicAccess') return invitationPublicAccess;
       if (name === '@/lib/customerEventPresentation') {
         return loadModule('src/lib/customerEventPresentation.ts');
       }
@@ -57,7 +59,10 @@ const server = loadModule<{
   listCustomerOwnedEventSummaries(uid: string): Promise<CustomerOwnedEventSummary[]>;
 }>('src/server/customerEventsService.ts', {
   './repositories/eventRepository': {
-    listStoredEventSummaries: async () => [summary, { ...summary, eventId: 'other-event', ownerUid: 'other-customer' }],
+    listStoredEventSummaries: async (uid: string) => {
+      assert.equal(uid, 'customer-1', 'Customer event queries must be scoped to the signed-in owner');
+      return [summary];
+    },
   },
   './invitationPageServerService': {
     getServerEditableInvitationPageConfig: async (slug: string) => {
@@ -72,6 +77,7 @@ assert.equal(owned.coverImageUrl, '/images/cover-thumb.jpg', 'The customer list 
 assert.equal(owned.eventDateLabel, '2026. 1. 2.', 'January must preserve the existing zero-based month convention');
 assert.equal(configReadCount, 1, 'Presentation fields should reuse the existing config read');
 assert.equal(owned.published, true);
+assert.equal(owned.publicAccess?.isPublic, true);
 assert.equal(owned.eventId, 'owned-event');
 
 const presentation = loadModule<{
@@ -137,6 +143,7 @@ const client = loadModule<{
 const [normalized] = await client.listOwnedCustomerEvents('customer-1');
 assert.equal(normalized.coverImageUrl, 'https://example.test/cover.jpg', 'Client normalization must preserve presentation fields');
 assert.equal(normalized.eventDateLabel, '2026. 1. 2.');
+assert.equal(normalized.publicAccess?.isPublic, true, 'Actual visibility must survive client normalization');
 apiEvent = { ...apiEvent, coverImageUrl: 'javascript:alert(1)', eventDateLabel: 123 };
 const [invalid] = await client.listOwnedCustomerEvents('customer-1');
 assert.equal(invalid.coverImageUrl, null);

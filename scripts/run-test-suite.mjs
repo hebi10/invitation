@@ -20,10 +20,14 @@ const core = [
   'test-admin-event-preview-links',
   'test-admin-event-workspace-model',
   'test-admin-invitation-summary',
+  'test-admin-ownership-invite-status',
   'test-birthday-event-rendering',
   'test-classic-r-theme',
   'test-customer-page-wizard-save-route',
   'test-customer-handoff-completion',
+  'test-customer-private-preview',
+  'test-customer-guestbook-management',
+  'test-media-asset-management',
   'test-customer-account-ui-contracts',
   'test-customer-event-presentation',
   'test-customer-event-self-claim',
@@ -210,6 +214,7 @@ if (!selectedTests) {
 
 // Hook-based components need React's client server-rendering entrypoint.
 const clientRenderingTests = new Set([
+  'test-customer-private-preview',
   'test-wizard-sharing-preview',
   'test-customer-handoff-completion',
   'test-homepage-ui-contracts',

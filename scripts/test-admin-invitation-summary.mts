@@ -93,6 +93,16 @@ assert.equal(storedSummary.displayName, '사용자 저장 이름');
 assert.equal(storedSummary.date, '2027년 1월 2일');
 assert.equal(storedSummary.venue, '사용자 저장 장소');
 
+const customerSummary = buildAdminInvitationPageSummary(
+  makeSummary({ ownerUid: 'customer-1', ownerEmail: 'customer@example.test', ownerDisplayName: '고객 이름' }),
+  stored.page,
+  new Set(),
+  stored.source
+);
+assert.equal(customerSummary.ownerUid, 'customer-1');
+assert.equal(customerSummary.ownerEmail, 'customer@example.test');
+assert.equal(customerSummary.ownerDisplayName, '고객 이름');
+
 const unknown = resolveAdminInvitationPage(
   makeSummary({
     eventId: 'event-unknown',

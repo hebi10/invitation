@@ -237,7 +237,7 @@ async function ensureStorageModules() {
 
 function buildInvitationGalleryImages(images: UploadedImage[]): MemoryGalleryImage[] {
   return [...images]
-    .sort((left, right) => left.uploadedAt.getTime() - right.uploadedAt.getTime())
+    .sort((left, right) => (left.uploadedAt?.getTime() ?? 0) - (right.uploadedAt?.getTime() ?? 0))
     .map((image, index) => ({
       id: createId('memory-gallery'),
       name: image.name,

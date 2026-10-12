@@ -73,6 +73,9 @@ export interface InvitationPageSummary {
   dataSource: 'seed' | 'firestore';
   hasCustomConfig: boolean;
   ownershipKind: 'unassigned' | 'admin' | 'customer';
+  ownerUid?: string | null;
+  ownerEmail?: string | null;
+  ownerDisplayName?: string | null;
   deletion?: EventDeletionMetadata;
 }
 
@@ -186,6 +189,9 @@ function normalizeAdminInvitationPageSummary(
         : {},
     dataSource: 'firestore' as const,
     hasCustomConfig: input.hasCustomConfig === true,
+    ownerUid: typeof input.ownerUid === 'string' ? input.ownerUid : null,
+    ownerEmail: typeof input.ownerEmail === 'string' ? input.ownerEmail : null,
+    ownerDisplayName: typeof input.ownerDisplayName === 'string' ? input.ownerDisplayName : null,
     deletion: readEventDeletionMetadata(input.deletion) ?? undefined,
     ownershipKind:
       input.ownershipKind === 'unassigned' || input.ownershipKind === 'admin'

@@ -2,6 +2,7 @@
 
 import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
 import { useDialogLayer } from '@/hooks/useDialogLayer';
+import { installAdminHistoryGuard } from './adminHistoryNavigation';
 import styles from './AdminOverlayProvider.module.css';
 
 type Work = { dirty: boolean; busy: boolean; save?: () => Promise<boolean> };
@@ -57,6 +58,10 @@ export function AdminWorkGuardProvider({ children, blocked = false }: { children
     if (workRef.current?.dirty) { setError(''); setPending(() => action); }
     else proceed(action);
   }, [proceed]);
+  useEffect(() => installAdminHistoryGuard(window, {
+    shouldBlock: () => !leaving.current && (blockedRef.current || !!workRef.current?.busy || !!workRef.current?.dirty),
+    request,
+  }), [request]);
   const close = () => { if (!saving) setPending(null); };
   useDialogLayer(ref, { open: !!pending, onClose: close, blocked: saving });
   const saveAndContinue = async () => {

@@ -57,6 +57,8 @@ import {
   resolveStoredEventBySlug,
 } from './repositories/eventRepository';
 
+export { buildServerTrustedMobileInvitationPageConfigForSave } from './invitationContentSavePolicy';
+
 type BuiltInvitationPageRecord = {
   page: InvitationPage;
   dataSource: 'sample' | 'firestore';
@@ -163,27 +165,6 @@ function toEditableSeed(page: InvitationPage): InvitationPageSeed {
   delete seed.displayPeriodStart;
   delete seed.displayPeriodEnd;
   return sanitizeHeartIconPlaceholdersDeep(seed as InvitationPageSeed);
-}
-
-export function buildServerTrustedMobileInvitationPageConfigForSave(
-  requestedConfig: InvitationPageSeed,
-  currentConfig: InvitationPageSeed
-): InvitationPageSeed {
-  return sanitizeHeartIconPlaceholdersDeep({
-    ...requestedConfig,
-    slug: currentConfig.slug,
-    eventType: currentConfig.eventType,
-    pageData: requestedConfig.pageData || currentConfig.pageData
-      ? {
-          ...requestedConfig.pageData,
-          birthdayTheme: currentConfig.pageData?.birthdayTheme,
-          generalEventTheme: currentConfig.pageData?.generalEventTheme,
-        }
-      : undefined,
-    productTier: currentConfig.productTier,
-    features: currentConfig.features,
-    variants: currentConfig.variants,
-  });
 }
 
 function buildDraftConfigFromSeed(
@@ -611,6 +592,7 @@ export async function saveServerInvitationPageConfig(
     expectedVersion?: number;
     published?: boolean;
     defaultTheme?: InvitationThemeKey;
+    customerOwnerUid?: string;
   } = {}
 ) {
   const fallbackTheme = options.defaultTheme
@@ -642,6 +624,7 @@ export async function saveServerInvitationPageConfig(
     expectedVersion: requireInvitationContentVersion(options.expectedVersion),
     published: options.published ?? true,
     defaultTheme: options.defaultTheme ?? DEFAULT_INVITATION_THEME,
+    customerOwnerUid: options.customerOwnerUid,
   });
 
   return { version, config: normalizedConfig };

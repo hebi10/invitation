@@ -2,6 +2,8 @@ import { InvitationVersionConflictError, requireInvitationContentVersion } from 
 import { normalizeInvitationPageSlugInput } from '@/lib/invitationPagePersistence';
 import { DEFAULT_EVENT_TYPE, normalizeEventTypeKey, type EventTypeKey } from '@/lib/eventTypes';
 import { normalizeCustomerEventCoverImageUrl } from '@/lib/customerEventPresentation';
+import type { InvitationPublicAccessState } from '@/lib/invitationPublicAccess';
+import type { InvitationPage } from '@/types/invitationPage';
 import {
   DEFAULT_INVITATION_PRODUCT_TIER,
   normalizeInvitationProductTier,
@@ -35,6 +37,7 @@ export interface CustomerOwnedEventSummary {
   updatedAt: Date | null;
   coverImageUrl?: string | null;
   eventDateLabel?: string | null;
+  publicAccess?: InvitationPublicAccessState;
 }
 
 export interface CustomerEventOwnershipSummary extends CustomerOwnedEventSummary {
@@ -169,7 +172,35 @@ function normalizeOwnedEvent(input: unknown): CustomerOwnedEventSummary | null {
       typeof record.eventDateLabel === 'string' && record.eventDateLabel.trim()
         ? record.eventDateLabel.trim()
         : null,
+    publicAccess: normalizePublicAccess(record.publicAccess),
   };
+}
+
+function normalizePublicAccess(input: unknown): InvitationPublicAccessState | undefined {
+  if (!input || typeof input !== 'object') return undefined;
+  const access = input as Record<string, unknown>;
+  const reasons = ['public', 'deleting', 'private', 'period-incomplete', 'scheduled', 'expired'];
+  if (typeof access.isPublic !== 'boolean' || typeof access.adminLabel !== 'string' ||
+      !reasons.includes(String(access.reason))) return undefined;
+  return {
+    isPublic: access.isPublic,
+    reason: access.reason as InvitationPublicAccessState['reason'],
+    adminLabel: access.adminLabel,
+    adminDescription: typeof access.adminDescription === 'string' ? access.adminDescription : null,
+    adminNotice: typeof access.adminNotice === 'string' ? access.adminNotice : null,
+    visitorMessage: typeof access.visitorMessage === 'string' ? access.visitorMessage : null,
+  };
+}
+
+export async function loadCustomerInvitationPreview(slug: string): Promise<InvitationPage> {
+  const idToken = await getCurrentFirebaseIdToken({ forceRefresh: true });
+  if (!idToken) throw new Error('로그인 상태를 확인하지 못했습니다. 다시 로그인해 주세요.');
+  const response = await fetch(`/api/customer/events/${encodeURIComponent(slug)}/preview/`, {
+    headers: { Authorization: `Bearer ${idToken}` }, cache: 'no-store', referrerPolicy: 'no-referrer',
+  });
+  const payload = (await response.json().catch(() => null)) as { page?: InvitationPage; error?: string } | null;
+  if (!response.ok || !payload?.page) throw new Error(payload?.error || '초대장 미리보기를 불러오지 못했습니다.');
+  return payload.page;
 }
 
 function normalizeOwnershipSummary(input: unknown): CustomerEventOwnershipSummary | null {
@@ -743,5 +774,21 @@ export async function deleteCustomerEventGuestbookComment(
         ? payload.error
         : '방명록 댓글을 삭제하지 못했습니다.'
     );
+  }
+}
+
+export async function updateCustomerEventGuestbookCommentStatus(
+  pageSlug: string, commentId: string, action: 'hide' | 'restore'
+): Promise<void> {
+  const idToken = await getCurrentFirebaseIdToken({ forceRefresh: true });
+  if (!idToken) throw new Error('로그인 상태를 확인하지 못했습니다. 다시 로그인해 주세요.');
+  const response = await fetch(`/api/customer/events/${encodeURIComponent(pageSlug)}/comments/${encodeURIComponent(commentId)}/`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${idToken}` },
+    body: JSON.stringify({ action }),
+  });
+  if (!response.ok) {
+    const payload = (await response.json().catch(() => null)) as { error?: string } | null;
+    throw new Error(payload?.error || '방명록 상태를 변경하지 못했습니다.');
   }
 }

@@ -13,6 +13,8 @@ import { normalizeFormConfig } from '@/app/page-wizard/pageWizardEditorUtils';
 import { useAdmin } from '@/contexts';
 import { buildAppRoutes, type AppRoutes } from '@/lib/demoExperienceRoutes';
 import { PUBLIC_SITE_ORIGIN } from '@/lib/invitationMetadata';
+import { buildCustomerInvitationPreviewPath, getCustomerInvitationStatus } from '@/lib/customerInvitationWorkspace';
+import type { InvitationPublicAccessState } from '@/lib/invitationPublicAccess';
 import {
   FIFTEEN_MINUTES_MS,
   THIRTY_MINUTES_MS,
@@ -53,7 +55,7 @@ type ResultLoadState =
   | { status: 'logged-out' }
   | { status: 'claim' }
   | { status: 'blocked'; errorMessage: string }
-  | { status: 'ready'; configState: EditableInvitationPageConfig };
+  | { status: 'ready'; configState: EditableInvitationPageConfig; publicAccess?: InvitationPublicAccessState };
 
 export default function PageWizardResultClient({
   slug,
@@ -82,6 +84,7 @@ export default function PageWizardResultClient({
       }
 
       let rawEditableConfig: EditableInvitationPageConfig | null = null;
+      let publicAccess: InvitationPublicAccessState | undefined;
       if (isAdminLoggedIn) {
         rawEditableConfig = await getEditableInvitationPageConfig(slug);
       } else {
@@ -98,6 +101,7 @@ export default function PageWizardResultClient({
         }
 
         rawEditableConfig = customerState.editableConfig;
+        publicAccess = customerState.summary.publicAccess;
       }
 
       const editableConfig =
@@ -115,6 +119,7 @@ export default function PageWizardResultClient({
       return {
         status: 'ready',
         configState: editableConfig,
+        publicAccess,
       } satisfies ResultLoadState;
     },
     staleTime: FIFTEEN_MINUTES_MS,
@@ -284,6 +289,8 @@ export default function PageWizardResultClient({
     ? routes.preview(slug, previewTheme)
     : buildEventPreviewPath(slug, configState.config.eventType, previewTheme);
   const redirectPath = experience ? livePagePath : `/${slug}`;
+  const customerPreviewPath = experience ? livePagePath : buildCustomerInvitationPreviewPath(slug, previewTheme);
+  const customerStatus = getCustomerInvitationStatus(configState.published, resultState?.status === 'ready' ? resultState.publicAccess : undefined);
 
   return (
     <main className={styles.page} data-experience-result-ready={experience ? 'true' : undefined}>
@@ -300,7 +307,7 @@ export default function PageWizardResultClient({
           </p>
           {!isAdminLoggedIn ? (
             <p className={resultStyles.savedStatus}>
-              {configState.published ? '공개 중' : '비공개'} · 마지막 저장 {formatSavedAt(configState.lastSavedAt)}
+              {customerStatus.label} · 마지막 저장 {formatSavedAt(configState.lastSavedAt)}
             </p>
           ) : null}
           <div className={isAdminLoggedIn ? `${styles.fieldGrid} ${styles.resultMetaGrid}` : resultStyles.customerLink}>
@@ -329,8 +336,8 @@ export default function PageWizardResultClient({
             <Link href={isAdminLoggedIn ? routes.admin() : routes.customerDashboard()} className={styles.primaryButton}>
               {isAdminLoggedIn ? '관리자 화면으로 이동' : '내 청첩장으로 이동'}
             </Link>
-            <Link href={livePagePath} className={styles.secondaryButton}>
-              {experience ? '청첩장 열기' : '바로 확인하기'}
+            <Link href={isAdminLoggedIn ? livePagePath : customerPreviewPath} className={styles.secondaryButton}>
+              {experience ? '청첩장 열기' : isAdminLoggedIn ? '바로 확인하기' : '저장한 초대장 미리보기'}
             </Link>
             {experience && isAdminLoggedIn && onContinueAsCustomer ? (
               <button

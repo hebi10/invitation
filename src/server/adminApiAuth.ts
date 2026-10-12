@@ -18,7 +18,7 @@ export class AdminApiAuthError extends Error {
 type AdminDecodedToken = Pick<DecodedIdToken, 'uid'> & Partial<DecodedIdToken>;
 
 type AdminAuthVerifier = {
-  verifyIdToken(idToken: string): Promise<AdminDecodedToken>;
+  verifyIdToken(idToken: string, checkRevoked?: boolean): Promise<AdminDecodedToken>;
 };
 
 type VerifyAdminRequestOptions = {
@@ -44,7 +44,7 @@ export async function verifyAdminRequest(
 
   let decodedToken: AdminDecodedToken;
   try {
-    decodedToken = await auth.verifyIdToken(idToken);
+    decodedToken = await auth.verifyIdToken(idToken, true);
   } catch {
     throw new AdminApiAuthError(
       401,

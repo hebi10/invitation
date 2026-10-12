@@ -1,8 +1,12 @@
+'use client';
+
+import { useState } from 'react';
 import { getEventTypeDisplayLabel } from '@/lib/eventTypes';
 
 import {
   ADMIN_EVENT_PAGE_SIZE_OPTIONS,
   ADMIN_EVENT_TYPE_OPTIONS,
+  getAdminEventFilterResetQuery,
   type AdminEventPageSize,
   type AdminEventFilters as AdminEventFiltersState,
 } from './adminEventWorkspaceModel';
@@ -19,19 +23,10 @@ export default function AdminEventFilters({
   pageSize,
   onQueryChange,
 }: AdminEventFiltersProps) {
+  const [advancedOpen, setAdvancedOpen] = useState(false);
+  const advancedFilterCount = [filters.eventType, filters.ownership, filters.visibility ?? 'all'].filter((value) => value !== 'all').length;
   const resetFilters = () => {
-    onQueryChange({
-      visibility: null,
-      pageQ: null,
-      pageType: null,
-      published: null,
-      ownership: null,
-      pageSort: null,
-      event: null,
-      pageCategory: null,
-      page: null,
-      pageSize: null,
-    });
+    onQueryChange(getAdminEventFilterResetQuery());
   };
 
   return (
@@ -48,7 +43,7 @@ export default function AdminEventFilters({
             className="admin-input"
             type="search"
             value={filters.query}
-            placeholder="이벤트명 또는 공개 주소 검색"
+            placeholder="이벤트명·공개 주소·고객 이름·이메일"
             onChange={(event) =>
               onQueryChange({ pageQ: event.currentTarget.value || null, event: null, page: '1' })
             }
@@ -73,11 +68,14 @@ export default function AdminEventFilters({
         </button>
       </div>
 
-        <div className={styles.eventAdvancedFilterGrid}>
+        <button type="button" className={styles.eventAdvancedToggle} aria-expanded={advancedOpen} aria-controls="admin-event-advanced-filters" onClick={() => setAdvancedOpen((open) => !open)}>
+          보조 필터{advancedFilterCount ? ` (${advancedFilterCount}개 적용)` : ''} {advancedOpen ? '접기' : '펼치기'}
+        </button>
+        <div id="admin-event-advanced-filters" className={styles.eventAdvancedFilterGrid} data-expanded={advancedOpen}>
           <label className={styles.eventFilterField}>
             <span className={styles.eventFilterLabel}>노출 기간</span>
             <select className="admin-select" value={filters.visibility ?? 'all'} onChange={(event) => onQueryChange({ visibility: event.currentTarget.value, event: null, page: '1' })}>
-              <option value="all">전체</option><option value="due-soon">7일 내 종료</option><option value="expired">노출 종료</option>
+              <option value="all">전체</option><option value="due-soon">7일 내 종료</option><option value="expired">노출 종료</option><option value="period-error">기간 확인 필요</option>
             </select>
           </label>
           <label className={styles.eventFilterField}>
@@ -112,6 +110,8 @@ export default function AdminEventFilters({
               <option value="unassigned">고객 미연결</option>
             </select>
           </label>
+        </div>
+        <div className={styles.eventListControls} aria-label="목록 표시 설정">
           <label className={styles.eventFilterField}>
             <span className={styles.eventFilterLabel}>정렬</span>
             <select

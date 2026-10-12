@@ -16,6 +16,7 @@ import {
   getAdminEventPage,
   getAdminEventCounts,
   getAdminEventCountQuery,
+  getAdminEventFilterResetQuery,
   shouldClearMissingAdminEvent,
   type AdminEventPageSize,
   type AdminEventFilters as AdminEventFiltersState,
@@ -36,6 +37,8 @@ interface AdminEventWorkspaceProps {
   error: Error | null;
   filters: AdminEventFiltersState;
   selectedSlug: string | null;
+  selectedDetailTab: string | null;
+  mobileReadOnly: boolean;
   currentPage: number;
   pageSize: AdminEventPageSize;
   updatingPublishedSlug: string | null;
@@ -52,6 +55,7 @@ interface AdminEventWorkspaceProps {
   accountsError: Error | null;
   ownershipActionToken: string | null;
   onQueryChange: (updates: Record<string, string | null>) => void;
+  onNavigate: (updates: Record<string, string | null>) => void;
   onRefresh: () => void;
   onRetry: () => void;
   onTogglePublished: (page: InvitationPageSummary, next: boolean) => void;
@@ -76,6 +80,8 @@ export default function AdminEventWorkspace({
   error,
   filters,
   selectedSlug,
+  selectedDetailTab,
+  mobileReadOnly,
   currentPage,
   pageSize,
   updatingPublishedSlug,
@@ -92,6 +98,7 @@ export default function AdminEventWorkspace({
   accountsError,
   ownershipActionToken,
   onQueryChange,
+  onNavigate,
   onRefresh,
   onRetry,
   onTogglePublished,
@@ -114,6 +121,7 @@ export default function AdminEventWorkspace({
   const selectedPage = selectedSlug ? pages.find((page) => page.slug === selectedSlug) : null;
   const lastSelectedSlug = useRef<string | null>(null);
   const pendingFocusSlug = useRef<string | null>(null);
+  const listScroll = useRef(0);
 
   useEffect(() => {
     if (
@@ -124,7 +132,7 @@ export default function AdminEventWorkspace({
         hasSelectedPage: Boolean(selectedPage),
       })
     ) {
-      onQueryChange({ event: null });
+      onQueryChange({ event: null, detail: null });
     }
   }, [error, loading, onQueryChange, selectedPage, selectedSlug]);
 
@@ -141,9 +149,9 @@ export default function AdminEventWorkspace({
   }, [selectedPage]);
 
   useEffect(() => {
-    if (selectedSlug !== null || !pendingFocusSlug.current) return;
+    if (selectedSlug !== null || !lastSelectedSlug.current) return;
 
-    const slugToFocus = pendingFocusSlug.current;
+    const slugToFocus = pendingFocusSlug.current ?? lastSelectedSlug.current;
     pendingFocusSlug.current = null;
     const focusFrame = window.requestAnimationFrame(() => {
       [...document.querySelectorAll<HTMLButtonElement>('[data-event-slug]')]
@@ -151,7 +159,8 @@ export default function AdminEventWorkspace({
           (button) =>
             button.dataset.eventSlug === slugToFocus && button.offsetParent !== null
         )
-        ?.focus();
+        ?.focus({ preventScroll: true });
+      window.scrollTo({ top: listScroll.current, behavior: 'instant' });
     });
 
     return () => window.cancelAnimationFrame(focusFrame);
@@ -159,7 +168,11 @@ export default function AdminEventWorkspace({
 
   const closeDetail = () => {
     pendingFocusSlug.current = lastSelectedSlug.current;
-    onQueryChange({ event: null });
+    onQueryChange({ event: null, detail: null });
+  };
+  const openDetail = (slug: string) => {
+    listScroll.current = window.scrollY;
+    onNavigate({ event: slug, detail: null });
   };
 
   return (
@@ -247,16 +260,7 @@ export default function AdminEventWorkspace({
               description="검색어나 유형, 공개 상태, 고객 연결 필터를 다시 확인해 주세요."
               actionLabel="필터 초기화"
               onAction={() =>
-                onQueryChange({
-                  pageQ: null,
-                  pageType: null,
-                  published: null,
-                  ownership: null,
-                  pageSort: null,
-                  pageCategory: null,
-                  event: null,
-                  page: '1',
-                })
+                onQueryChange(getAdminEventFilterResetQuery())
               }
             />
           ) : null}
@@ -265,14 +269,14 @@ export default function AdminEventWorkspace({
               <AdminEventList
                 pages={eventPage.items}
                 selectedSlug={selectedSlug}
-                onSelect={(slug) => onQueryChange({ event: slug })}
+                onSelect={openDetail}
                 routes={routes}
                 experience={experience}
               />
               <AdminEventMobileList
                 pages={eventPage.items}
                 selectedSlug={selectedSlug}
-                onSelect={(slug) => onQueryChange({ event: slug })}
+                onSelect={openDetail}
                 routes={routes}
                 experience={experience}
               />
@@ -289,6 +293,10 @@ export default function AdminEventWorkspace({
         {selectedPage ? (
           <AdminEventDetailPanel
             page={selectedPage}
+            selectedDetailTab={selectedDetailTab}
+            mobileReadOnly={mobileReadOnly}
+            onDetailTabChange={(detail) => onQueryChange({ detail })}
+            onNavigate={onNavigate}
             updatingPublished={updatingPublishedSlug === selectedPage.slug}
             updatingTier={updatingTierSlug === selectedPage.slug}
             updatingVariantToken={updatingVariantToken}

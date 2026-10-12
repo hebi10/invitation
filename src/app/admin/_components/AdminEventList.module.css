@@ -14,9 +14,12 @@
 
 .eventAdvancedFilterGrid {
   display: grid;
-  grid-template-columns: repeat(5, minmax(110px, 1fr));
+  grid-template-columns: repeat(3, minmax(110px, 1fr));
   gap: 12px;
 }
+
+.eventAdvancedToggle { display: none; }
+.eventListControls { display: grid; grid-template-columns: repeat(2, minmax(132px, 180px)); justify-content: end; gap: 12px; }
 
 .eventSearchField,
 .eventFilterField {
@@ -197,6 +200,10 @@
   .eventPrimaryFilters { grid-template-columns: minmax(0, 1fr) auto; }
   .eventSearchField { grid-column: 1 / -1; }
   .eventAdvancedFilterGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .eventAdvancedFilterGrid[data-expanded='false'] { display: none; }
+  .eventAdvancedToggle { display: inline-flex; align-items: center; min-height: 44px; padding: 0; border: 0; background: transparent; color: var(--admin-color-text); font: inherit; text-decoration: underline; text-underline-offset: 4px; cursor: pointer; }
+  .eventListControls { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .eventFilters input, .eventFilters select { font-size: 16px; }
   .eventListFrame { display: none; }
   .eventMobileList { display: grid; gap: 12px; }
   .eventMobileCard { display: grid; gap: 12px; padding: 20px; background: var(--admin-color-surface-muted, #f6f6f3); }

@@ -1,4 +1,8 @@
 .overview { display: grid; gap: 32px; }
+.attention { display: grid; gap: 12px; }
+.attention h2 { margin: 0; font-size: 18px; font-weight: 500; }
+.attention > div { display: flex; flex-wrap: wrap; gap: 12px 24px; }
+.attention button { min-height: 44px; padding: 0; border: 0; background: transparent; color: var(--admin-color-text); font: inherit; font-size: 14px; text-decoration: underline; text-underline-offset: 4px; cursor: pointer; }
 .header { display: flex; align-items: flex-start; justify-content: space-between; gap: 24px; }
 .header h1 { margin: 0; font-size: 26px; font-weight: 500; color: var(--admin-color-text); }
 .header p { margin: 12px 0 0; color: var(--admin-color-text-muted); font-size: 14px; line-height: 1.7; }

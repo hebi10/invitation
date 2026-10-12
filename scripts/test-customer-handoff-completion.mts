@@ -6,6 +6,7 @@ import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { QueryClient } from '@tanstack/react-query';
 import { appQueryKeys, FIFTEEN_MINUTES_MS } from '../src/lib/appQuery.ts';
+import * as customerWorkspace from '../src/lib/customerInvitationWorkspace.ts';
 
 // Execute the real persistence callback against TanStack's cache: no Firebase requests.
 const wizardSource = ts.createSourceFile('PageWizardClient.tsx',
@@ -41,6 +42,7 @@ client.clear();
 
 // Render the real result component with a local ready state and authentication fixture.
 let admin = false;
+const publicAccess = { current: undefined as unknown };
 const config = { displayName: '우리의 초대장', eventType: 'wedding', couple: { groom: { name: '신랑' }, bride: { name: '신부' } } };
 const componentExports: { default?: React.ComponentType<{ slug: string; experience?: boolean }> } = {};
 const resultSource = ts.transpileModule(readFileSync('src/app/page-wizard/PageWizardResultClient.tsx', 'utf8'), {
@@ -50,7 +52,7 @@ runInNewContext(resultSource, { exports: componentExports, React, require(name: 
   if (name === 'react') return React;
   if (name === 'next/link') return { __esModule: true, default: ({ children, ...props }: React.PropsWithChildren<{ href: string }>) => React.createElement('a', props, children) };
   if (name === '@tanstack/react-query') return { useQuery: () => ({
-    data: { status: 'ready', configState: { config, published: false, defaultTheme: 'simple' } },
+    data: { status: 'ready', configState: { config, published: false, defaultTheme: 'simple' }, publicAccess: publicAccess.current },
     isLoading: false, isFetching: false, isStale: false,
   }) };
   if (name === '@/contexts') return { useAdmin: () => ({ isLoggedIn: true, isAdminLoggedIn: admin, isAdminLoading: false, authUser: { uid: 'customer', emailVerified: true } }) };
@@ -59,6 +61,7 @@ runInNewContext(resultSource, { exports: componentExports, React, require(name: 
   if (name.endsWith('/pageWizardData')) return { getWizardSteps: () => [], applyDerivedWizardDefaults: (value: unknown) => value, buildReviewSummary: () => [] };
   if (name.endsWith('/invitationProducts')) return { resolveInvitationFeatures: () => ({}) };
   if (name.endsWith('/eventPreviewLinks')) return { buildEventPreviewPath: () => '/sample/simple', getEventTypeDefaultPreviewTheme: () => 'simple' };
+  if (name.endsWith('/customerInvitationWorkspace')) return customerWorkspace;
   if (name.endsWith('/pageWizardShared')) return { formatSavedAt: () => '방금', getNoticeClassName: () => 'notice' };
   if (name.endsWith('.module.css')) return { __esModule: true, default: new Proxy({}, { get: (_object, key) => String(key) }) };
   return {};
@@ -75,6 +78,12 @@ assert.match(customer, /비공개 · 마지막 저장 방금/);
 assert.doesNotMatch(customer, /<details[^>]*\bopen(?:=|\s|>)/,
   'Saved section details are optional on the customer completion screen');
 assert.match(customer, /저장한 내용 자세히 보기/);
+assert.match(customer, /href="\/my-invitations\/preview\/sample\/simple"/,
+  'Customers must be able to inspect a private saved draft without publishing it');
+publicAccess.current = { isPublic: false, reason: 'expired', adminLabel: '노출 종료', adminDescription: '공개 기간이 종료되었습니다.' };
+const expiredCustomer = renderToStaticMarkup(React.createElement(componentExports.default, { slug: 'sample' }));
+assert.match(expiredCustomer, /노출 종료 · 마지막 저장 방금/,
+  'The saved result must show actual access state rather than publication setting');
 admin = true;
 const administrator = renderToStaticMarkup(React.createElement(componentExports.default, { slug: 'sample' }));
 assert.match(administrator, /href="\/admin"/, 'Administrators return to their own workspace');

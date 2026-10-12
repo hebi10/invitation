@@ -9,7 +9,7 @@ import ts from 'typescript';
 // Removing the atomic version check must allow two stale snapshots to win this test.
 type Data = Record<string, unknown>;
 type Snapshot = { id: string; exists: boolean; data(): Data | undefined };
-type Reference = { path: string; id: string; collection(name: string): { doc(id: string): Reference }; get(): Promise<Snapshot>; set(data: Data): Promise<Map<string, Data>> };
+type Reference = { path: string; id: string; collection(name: string): { doc(id: string): Reference; get(): Promise<{ docs: Snapshot[] }> }; get(): Promise<Snapshot>; set(data: Data): Promise<Map<string, Data>>; update(data: Data): Promise<Map<string, Data>> };
 type Transaction = { get(reference: Reference): Promise<Snapshot>; set(reference: Reference, data: Data): void };
 type ClientTransaction = { get(reference: Reference): Promise<Omit<Snapshot, 'exists'> & { exists(): boolean }>; set: Transaction['set'] };
 const records = new Map<string, Data>();
@@ -17,12 +17,14 @@ const nativeRequire = createRequire(import.meta.url);
 const modules = new Map<string, { exports: unknown }>();
 let pending = Promise.resolve();
 let afterSummaryRead: (() => void) | null = null;
+let afterEditableRead: (() => void) | null = null;
+let unfilteredEventReads = 0;
 let sendRequest: typeof fetch = async () => { throw new Error('Unexpected network request.'); };
 function ref(documentPath: string): Reference {
   return {
     path: documentPath,
     id: documentPath.split('/').at(-1)!,
-    collection: (name: string) => ({ doc: (id: string) => ref(`${documentPath}/${name}/${id}`) }),
+    collection: (name: string) => collection(`${documentPath}/${name}`),
     get: async () => {
       const value = snapshot(documentPath);
       if (documentPath === 'events/evt_concurrency-test' && afterSummaryRead) {
@@ -33,17 +35,31 @@ function ref(documentPath: string): Reference {
       return value;
     },
     set: async (data: Data) => records.set(documentPath, { ...records.get(documentPath), ...structuredClone(data) }),
+    update: async (data: Data) => records.set(documentPath, { ...records.get(documentPath), ...structuredClone(data) }),
   };
 }
 function snapshot(documentPath: string) {
   const value = structuredClone(records.get(documentPath));
   return { id: documentPath.split('/').at(-1)!, exists: Boolean(value), data: () => value };
 }
-const db = {
-  collection: (name: string) => ({
+function collection(name: string, condition?: { field: string; value: unknown }) {
+  return {
     doc: (id: string) => ref(`${name}/${id}`),
-    get: async () => ({ docs: [...records.keys()].filter((key) => key.startsWith(`${name}/`) && key.split('/').length === 2).map(snapshot) }),
-  }),
+    where: (field: string, operator: string, value: unknown) => {
+      assert.equal(operator, '==');
+      return collection(name, { field, value });
+    },
+    get: async () => {
+      if (name === 'events' && !condition) unfilteredEventReads += 1;
+      return { docs: [...records.keys()]
+        .filter((key) => key.startsWith(`${name}/`) && key.split('/').length === name.split('/').length + 1)
+        .filter((key) => !condition || records.get(key)?.[condition.field] === condition.value)
+        .map(snapshot) };
+    },
+  };
+}
+const db = {
+  collection,
   runTransaction(callback: (transaction: Transaction) => Promise<unknown>) {
     const result = pending.then(async () => {
       const writes: Array<[string, Data]> = [];
@@ -51,6 +67,11 @@ const db = {
         get: (reference: Reference) => Promise.resolve(snapshot(reference.path)),
         set: (reference: Reference, data: Data) => { writes.push([reference.path, structuredClone(data)]); },
       });
+      if (!writes.length && afterEditableRead) {
+        const interleave = afterEditableRead;
+        afterEditableRead = null;
+        interleave();
+      }
       for (const [documentPath, data] of writes) records.set(documentPath, { ...records.get(documentPath), ...data });
       return result;
     });
@@ -211,4 +232,90 @@ for (const readEditable of [service.getServerEditableInvitationPageConfig, clien
   assert.equal(coherent.hasCustomConfig, true);
   assert.equal(coherent.config.displayName, 'New coherent snapshot');
 }
+
+// Publication changes do not bump the content version; a customer save must preserve them.
+const customerService = load('src/server/customerEventsService.ts') as typeof import('../src/server/customerEventsService');
+records.set(eventPath, { ...records.get(eventPath), published: false, visibility: { published: false }, defaultTheme: 'simple', ownerUid: 'owner' });
+const customerDraft = await service.getServerEditableInvitationPageConfig(config.slug);
+afterEditableRead = () => {
+  records.set(eventPath, { ...records.get(eventPath), published: true, visibility: { published: true }, defaultTheme: 'classic-r' });
+};
+const publicationSave = await customerService.saveCustomerEditableInvitationPageConfig('owner', config.slug, {
+  config: { ...customerDraft.config, displayName: 'Customer preserves publication' }, expectedVersion: customerDraft.version,
+  published: false, defaultTheme: 'simple',
+});
+assert.equal(publicationSave.config?.published, true, 'Customer save must preserve the publication state from its write transaction.');
+assert.equal(publicationSave.config?.defaultTheme, 'classic-r', 'Customer save must preserve a concurrent default-theme change.');
+
+const ownershipDraft = await service.getServerEditableInvitationPageConfig(config.slug);
+afterEditableRead = () => {
+  records.set(eventPath, { ...records.get(eventPath), ownerUid: 'new-owner' });
+};
+await assert.rejects(customerService.saveCustomerEditableInvitationPageConfig('owner', config.slug, {
+  config: { ...ownershipDraft.config, displayName: 'Unauthorized stale owner' }, expectedVersion: ownershipDraft.version,
+}), (error: { status?: number }) => error.status === 403);
+assert.equal(records.get(contentPath)?.version, ownershipDraft.version, 'A stale owner must not commit content.');
+assert.equal((records.get(contentPath)?.content as Data)?.displayName, 'Customer preserves publication');
+records.set(eventPath, { ...records.get(eventPath), ownerUid: 'owner' });
+
+const entitlementDraft = await service.getServerEditableInvitationPageConfig(config.slug);
+afterEditableRead = () => {
+  records.set(contentPath, {
+    ...records.get(contentPath), productTier: 'premium', featureFlags: { maxGalleryImages: 18, shareMode: 'card', showMusic: true, showCountdown: true, showGuestbook: true },
+    themeState: { defaultTheme: 'classic-r', variants: { simple: { available: true }, 'classic-r': { available: true } } },
+  });
+};
+const entitlementSave = await customerService.saveCustomerEditableInvitationPageConfig('owner', config.slug, {
+  config: { ...entitlementDraft.config, displayName: 'Customer preserves entitlement' }, expectedVersion: entitlementDraft.version,
+});
+assert.equal(entitlementSave.config?.productTier, 'premium', 'Customer save must retain the current product rights.');
+assert.equal(entitlementSave.config?.features.maxGalleryImages, 18);
+assert.equal(entitlementSave.config?.config.variants['classic-r']?.available, true);
+
+unfilteredEventReads = 0;
+const owned = await customerService.getCustomerEventOwnershipSnapshot('owner', config.slug);
+assert.equal(owned.status, 'owner');
+assert.equal(unfilteredEventReads, 0, 'Single ownership lookup must not scan every event.');
+records.set('events/evt_other', { ...records.get(eventPath), eventId: 'evt_other', slug: 'other', ownerUid: 'other-owner' });
+const ownedList = await customerService.listCustomerOwnedEventSummaries('owner');
+assert.equal(ownedList.length, 1);
+assert.equal(unfilteredEventReads, 0, 'Customer event listing must query only its owner.');
+for (const [metadata, reason, isPublic] of [
+  [{ published: false }, 'private', false],
+  [{ published: true, displayPeriod: { isActive: false } }, 'public', true],
+  [{ published: true, displayPeriod: { isActive: true, startDate: null, endDate: null } }, 'period-incomplete', false],
+  [{ published: true, displayPeriod: { isActive: true, startDate: new Date('2099-01-01'), endDate: new Date('2099-02-01') } }, 'scheduled', false],
+  [{ published: true, displayPeriod: { isActive: true, startDate: new Date('2020-01-01'), endDate: new Date('2020-02-01') } }, 'expired', false],
+  [{ published: true, deletion: { jobId: 'deletion-job', status: 'running', currentStep: 'block-access', requestedAt: now.toISOString() } }, 'deleting', false],
+] as const) {
+  records.set(eventPath, { ...records.get(eventPath), visibility: { published: metadata.published }, displayPeriod: null, deletion: null, ...metadata });
+  const summaries = await customerService.listCustomerOwnedEventSummaries('owner');
+  assert.equal(summaries[0].publicAccess?.reason, reason);
+  assert.equal(summaries[0].publicAccess?.isPublic, isPublic);
+  if (reason !== 'deleting') {
+    const editableSnapshot = await customerService.getCustomerEditableInvitationPageSnapshot('owner', config.slug);
+    assert.equal(editableSnapshot.summary?.publicAccess?.reason, reason, 'Editable summary must expose the same public access state as the customer list.');
+  }
+}
+records.set(eventPath, { ...records.get(eventPath), deletion: null, displayPeriod: null });
+const commentPath = `${eventPath}/comments`;
+for (const [id, status, scheduledDeleteAt] of [
+  ['public-comment', 'public', null],
+  ['hidden-comment', 'hidden', null],
+  ['recoverable-comment', 'pending_delete', new Date('2099-01-01')],
+  ['expired-comment', 'pending_delete', new Date('2020-01-01')],
+] as const) {
+  records.set(`${commentPath}/${id}`, { author: '고객', message: id, pageSlug: config.slug, status, scheduledDeleteAt, createdAt: now });
+}
+const managedComments = await customerService.listCustomerEventGuestbookComments('owner', config.slug);
+assert.equal(managedComments.length, 3, 'Customer manager must list recoverable deleted comments and omit expired comments.');
+assert.equal(managedComments.some((comment) => comment.id === 'recoverable-comment'), true);
+await customerService.updateCustomerEventGuestbookCommentStatus('owner', config.slug, 'public-comment', 'hide');
+assert.equal(records.get(`${commentPath}/public-comment`)?.status, 'hidden');
+await customerService.updateCustomerEventGuestbookCommentStatus('owner', config.slug, 'recoverable-comment', 'restore');
+assert.equal(records.get(`${commentPath}/recoverable-comment`)?.status, 'public');
+assert.equal(records.get(`${commentPath}/recoverable-comment`)?.scheduledDeleteAt, null);
+await assert.rejects(customerService.updateCustomerEventGuestbookCommentStatus('other-owner', config.slug, 'hidden-comment', 'restore'));
+await assert.rejects(customerService.updateCustomerEventGuestbookCommentStatus('owner', config.slug, 'expired-comment', 'restore'));
+assert.equal(records.get(`${commentPath}/expired-comment`)?.status, 'pending_delete');
 console.log('invitation content concurrency checks passed');

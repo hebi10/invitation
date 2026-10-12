@@ -10,6 +10,10 @@ import {
   type GuestbookCommentStatus,
 } from '@/lib/guestbookComments';
 import { normalizeInvitationPageSlugInput } from '@/lib/invitationPagePersistence';
+import {
+  getInvitationPublicAccessState,
+  type InvitationPublicAccessState,
+} from '@/lib/invitationPublicAccess';
 import { getAvailableInvitationVariantKeys } from '@/lib/invitationVariants';
 import {
   DEFAULT_INVITATION_THEME,
@@ -59,6 +63,7 @@ export interface CustomerOwnedEventSummary {
   updatedAt: Date | null;
   coverImageUrl?: string | null;
   eventDateLabel?: string | null;
+  publicAccess?: InvitationPublicAccessState;
 }
 
 export interface CustomerEventGuestbookCommentSummary {
@@ -135,26 +140,15 @@ function toCustomerOwnedEventSummary(
     defaultTheme: summary.defaultTheme,
     availableThemes: getAvailableThemesForCustomerSummary(summary, config),
     updatedAt: summary.lastSavedAt ?? summary.updatedAt,
+    publicAccess: getInvitationPublicAccessState({
+      published: summary.visibility?.published ?? summary.published,
+      displayPeriodEnabled: summary.displayPeriod?.isActive ?? false,
+      displayPeriodStart: summary.displayPeriod?.startDate ?? null,
+      displayPeriodEnd: summary.displayPeriod?.endDate ?? null,
+      deletion: summary.deletion,
+    }),
     ...getCustomerEventPresentation(config),
   } satisfies CustomerOwnedEventSummary;
-}
-
-async function findOwnedEventSummaryBySlug(ownerUid: string, pageSlug: string) {
-  const normalizedOwnerUid = ownerUid.trim();
-  const normalizedPageSlug = normalizeInvitationPageSlugInput(pageSlug);
-  if (!normalizedOwnerUid || !normalizedPageSlug) {
-    return null;
-  }
-
-  const eventSummaries = await listStoredEventSummaries();
-  return (
-    eventSummaries.find((summary) => {
-      return (
-        normalizeInvitationPageSlugInput(summary.slug) === normalizedPageSlug &&
-        summary.ownerUid?.trim() === normalizedOwnerUid
-      );
-    }) ?? null
-  );
 }
 
 function buildSampleEditableConfig(summary: CustomerOwnedEventSummary) {
@@ -246,11 +240,7 @@ export async function listCustomerOwnedEventSummaries(ownerUid: string) {
     return [];
   }
 
-  const eventSummaries = await listStoredEventSummaries();
-
-  const ownedSummaries = eventSummaries.filter(
-    (summary) => summary.ownerUid?.trim() === normalizedOwnerUid
-  );
+  const ownedSummaries = await listStoredEventSummaries(normalizedOwnerUid);
   const customerSummaries = await Promise.all(
     ownedSummaries.map(async (summary) => {
       const editableConfig = await getServerEditableInvitationPageConfig(summary.slug).catch(
@@ -300,18 +290,7 @@ export async function getCustomerEventOwnershipSnapshot(
     };
   }
 
-  const ownedSummary = await findOwnedEventSummaryBySlug(
-    normalizedOwnerUid,
-    normalizedPageSlug
-  );
   if (!resolvedEvent) {
-    if (ownedSummary) {
-      return {
-        status: 'owner',
-        summary: toCustomerOwnedEventSummary(ownedSummary),
-      };
-    }
-
     return {
       status: 'missing',
       summary: null,
@@ -321,10 +300,10 @@ export async function getCustomerEventOwnershipSnapshot(
   const summary = toCustomerOwnedEventSummary(resolvedEvent.summary);
   const eventOwnerUid = resolvedEvent.summary.ownerUid?.trim() ?? '';
 
-  if (ownedSummary && (!eventOwnerUid || eventOwnerUid === normalizedOwnerUid)) {
+  if (eventOwnerUid === normalizedOwnerUid) {
     return {
       status: 'owner',
-      summary: toCustomerOwnedEventSummary(ownedSummary),
+      summary,
     };
   }
 
@@ -345,13 +324,6 @@ export async function getCustomerEventOwnershipSnapshot(
     return {
       status: 'claimable',
       summary,
-    };
-  }
-
-  if (ownedSummary) {
-    return {
-      status: 'owner',
-      summary: toCustomerOwnedEventSummary(ownedSummary),
     };
   }
 
@@ -508,7 +480,7 @@ export async function saveCustomerEditableInvitationPageConfig(
   }
 ) {
   await assertCustomerEventAccessAvailable(pageSlug, dependencies.resolveEventBySlug);
-  const ownership = await getCustomerEventOwnershipSnapshot(ownerUid, pageSlug);
+  const ownership = await getCustomerEventOwnershipSnapshot(ownerUid, pageSlug, dependencies);
   if (ownership.status !== 'owner') {
     throw new Error('로그인한 계정에 연결된 청첩장만 저장할 수 있습니다.');
   }
@@ -534,8 +506,7 @@ export async function saveCustomerEditableInvitationPageConfig(
 
   await saveServerInvitationPageConfig(entitlementTrustedConfig, {
     expectedVersion: input.expectedVersion,
-    published: currentEditableConfig.published,
-    defaultTheme: currentEditableConfig.defaultTheme,
+    customerOwnerUid: ownerUid.trim(),
   });
 
   return getCustomerEditableInvitationPageSnapshot(ownerUid, normalizedPageSlug);
@@ -550,11 +521,7 @@ export async function listCustomerEventGuestbookComments(
   const comments = await firestoreEventCommentRepository.listByPageSlug(summary.slug);
 
   return comments
-    .filter(
-      (comment) =>
-        isGuestbookCommentVisibleToManager(comment.data, now) &&
-        readGuestbookCommentStatus(comment.data) !== 'pending_delete'
-    )
+    .filter((comment) => isGuestbookCommentVisibleToManager(comment.data, now))
     .map((comment) =>
       buildCustomerGuestbookCommentSummary(comment.id, summary.slug, comment.data)
     )
@@ -566,6 +533,34 @@ export async function listCustomerEventGuestbookComments(
       const leftTime = left.createdAt ? new Date(left.createdAt).getTime() : 0;
       return rightTime - leftTime;
     });
+}
+
+export async function updateCustomerEventGuestbookCommentStatus(
+  ownerUid: string,
+  pageSlug: string,
+  commentId: string,
+  action: 'hide' | 'restore'
+) {
+  const summary = await requireOwnedEventSummary(ownerUid, pageSlug);
+  const normalizedCommentId = commentId.trim();
+  if (!normalizedCommentId || (action !== 'hide' && action !== 'restore')) {
+    throw new Error('변경할 방명록과 상태를 확인해 주세요.');
+  }
+
+  const comment = await firestoreEventCommentRepository.findByPageSlugAndId(
+    summary.slug,
+    normalizedCommentId
+  );
+  const now = new Date();
+  if (!comment || isGuestbookCommentPendingPurge(comment.data, now)) {
+    throw new Error('변경할 방명록을 찾을 수 없습니다.');
+  }
+
+  await firestoreEventCommentRepository.updateByPageSlugAndId(
+    summary.slug,
+    normalizedCommentId,
+    { ...buildGuestbookCommentStatusPatch(action, now) }
+  );
 }
 
 export async function scheduleDeleteCustomerEventGuestbookComment(

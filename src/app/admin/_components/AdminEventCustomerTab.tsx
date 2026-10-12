@@ -1,9 +1,13 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 
 import type { AdminCustomerAccountSummary } from '@/services/adminCustomerService';
 import type { InvitationPageSummary } from '@/services/invitationPageService';
+import { getAdminOwnershipInviteStatus } from '@/services/eventOwnershipInviteService';
+import { ADMIN_GC_TIME_MS, ADMIN_STALE_TIME_MS } from '@/lib/appQuery';
+import { getAdminOwnershipInviteStatusQueryOptions } from '../_hooks/adminOwnershipInviteQuery';
 
 import styles from '../page.module.css';
 import { useAdminWorkGuard } from './AdminWorkGuard';
@@ -16,16 +20,30 @@ interface AdminEventCustomerTabProps {
   ownershipActionToken: string | null;
   issuingInvite: boolean;
   readOnly?: boolean;
+  experience?: boolean;
   onRefresh: () => void;
   onAssign: (uid: string, pageSlug: string) => void;
   onClear: (pageSlug: string) => void;
   onIssueInvite: (pageSlug: string) => void;
+  onOpenCustomer: (uid: string, tab: 'events' | 'wallet') => void;
 }
 
 function getProviderLabel(providerId: string) {
   if (providerId === 'google.com') return 'Google';
   if (providerId === 'password') return '이메일';
   return providerId;
+}
+
+const INVITE_STATUS_LABELS = {
+  'not-issued': '미발급',
+  pending: '고객 연결 대기',
+  expired: '만료',
+  consumed: '사용 완료',
+  unavailable: '사용 불가 · 고객 연결됨',
+} as const;
+
+function formatInviteTime(value: Date) {
+  return new Intl.DateTimeFormat('ko-KR', { dateStyle: 'medium', timeStyle: 'short' }).format(value);
 }
 
 export default function AdminEventCustomerTab({
@@ -36,11 +54,26 @@ export default function AdminEventCustomerTab({
   ownershipActionToken,
   issuingInvite,
   readOnly = false,
+  experience = false,
   onRefresh,
   onAssign,
   onClear,
   onIssueInvite,
+  onOpenCustomer,
 }: AdminEventCustomerTabProps) {
+  const inviteStatusOptions = getAdminOwnershipInviteStatusQueryOptions(page.slug, experience);
+  const inviteStatusQuery = useQuery({
+    ...inviteStatusOptions,
+    queryFn: () => getAdminOwnershipInviteStatus(page.slug),
+    staleTime: ADMIN_STALE_TIME_MS,
+    gcTime: ADMIN_GC_TIME_MS,
+    refetchOnWindowFocus: false,
+  });
+  const inviteStatus = inviteStatusQuery.data;
+  const refreshCustomer = () => {
+    onRefresh();
+    if (inviteStatusOptions.enabled) void inviteStatusQuery.refetch();
+  };
   const linkedAccount = useMemo(
     () => accounts.find((account) => account.linkedEvents.some((event) => event.slug === page.slug)),
     [accounts, page.slug]
@@ -52,6 +85,7 @@ export default function AdminEventCustomerTab({
   const [selectedUid, setSelectedUid] = useState('');
   const [customerQuery, setCustomerQuery] = useState('');
   const busy = Boolean(ownershipActionToken) || issuingInvite;
+  const connectionReadOnly = readOnly || experience;
   const selectedAccount = assignableAccounts.find((account) => account.uid === selectedUid);
   useAdminWorkGuard({ dirty: false, busy });
   const filteredAccounts = assignableAccounts.filter((account) =>
@@ -68,34 +102,43 @@ export default function AdminEventCustomerTab({
     setSelectedUid('');
   }, [assignableAccounts, selectedUid]);
 
-  if (loading && accounts.length === 0) {
-    return <p className={styles.eventManagementState}>고객 계정을 불러오는 중입니다.</p>;
-  }
-
-  if (error && accounts.length === 0) {
-    return (
-      <div className={styles.eventManagementState}>
-        <p>고객 계정을 불러오지 못했습니다.</p>
-        <button type="button" className="admin-button admin-button-secondary" onClick={onRefresh}>
-          다시 시도
-        </button>
-      </div>
-    );
-  }
-
   return (
     <div className={styles.eventManagementStack}>
       <div className={styles.eventManagementHeading}>
         <div>
           <h3>고객 연결</h3>
-          <p>고객을 연결하면 해당 계정에서 이 이벤트를 수정할 수 있습니다.</p>
+          <p>관리자가 만든 이벤트를 고객 계정에 연결하면 해당 고객이 내용을 수정할 수 있습니다.</p>
         </div>
-        <button type="button" className="admin-button admin-button-ghost" onClick={onRefresh} disabled={busy}>
-          새로고침
+        <button type="button" className="admin-button admin-button-ghost" onClick={refreshCustomer} disabled={busy || inviteStatusQuery.isFetching}>
+          {inviteStatusQuery.isRefetching ? '새로고침 중' : '새로고침'}
         </button>
       </div>
+      {readOnly && !experience ? <p className={styles.mobileReadOnlyNotice}>조회 전용입니다. 고객 직접 연결, 링크 발급과 연결 해제는 PC 관리자 화면을 이용해 주세요.</p> : null}
 
-      {linkedAccount ? (
+      {experience ? <p className={styles.eventManagementState}>체험 모드에서는 실제 계정 연결 링크를 제공하지 않습니다.</p> : <section className={styles.eventCustomerCard} aria-label="고객 연결 링크 상태">
+        <div>
+          <p>고객 연결 링크 상태</p>
+          {inviteStatusQuery.isPending ? <p role="status">연결 링크 상태를 불러오는 중입니다.</p> : null}
+          {inviteStatus ? <>
+            <strong>{INVITE_STATUS_LABELS[inviteStatus.status]}</strong>
+            {inviteStatus.status === 'unavailable' ? <p>이미 고객 계정에 연결된 이벤트입니다. 기존 연결 링크는 다른 계정에서 사용할 수 없습니다.</p> : null}
+            {([
+              { label: '발급', value: inviteStatus.createdAt },
+              { label: '만료', value: inviteStatus.expiresAt },
+              { label: '사용', value: inviteStatus.consumedAt },
+            ]).map((time) => time.value ? <p key={time.label}>{time.label} · {formatInviteTime(time.value)}</p> : null)}
+          </> : null}
+          {inviteStatusQuery.isError ? <p role="alert">연결 링크 상태를 불러오지 못했습니다. 다시 시도해 주세요.</p> : null}
+        </div>
+        {inviteStatusQuery.isError ? <button type="button" className="admin-button admin-button-secondary" disabled={busy || inviteStatusQuery.isFetching} onClick={() => void inviteStatusQuery.refetch()}>상태 다시 조회</button> : null}
+      </section>}
+
+      {loading && accounts.length === 0 ? <p className={styles.eventManagementState}>고객 계정을 불러오는 중입니다.</p> : error && accounts.length === 0 ? (
+        <div className={styles.eventManagementState}>
+          <p>고객 계정을 불러오지 못했습니다.</p>
+          <button type="button" className="admin-button admin-button-secondary" onClick={refreshCustomer} disabled={busy}>다시 시도</button>
+        </div>
+      ) : linkedAccount ? (
         <div className={styles.eventCustomerCard}>
           <div>
             <p>현재 연결된 고객</p>
@@ -105,18 +148,22 @@ export default function AdminEventCustomerTab({
               {linkedAccount.providerIds.map(getProviderLabel).join(', ') || '로그인 방식 미확인'}
             </span>
           </div>
-          <button
-            type="button"
-            className="admin-button admin-button-danger"
-            disabled={readOnly || busy}
-            onClick={() => onClear(page.slug)}
-          >
-            {ownershipActionToken === `clear:${page.slug}` ? '해제 중' : '연결 해제'}
-          </button>
+          <div className={styles.eventManagementActions}>
+            <button type="button" className="admin-button admin-button-secondary" disabled={busy} onClick={() => onOpenCustomer(linkedAccount.uid, 'events')}>고객 상세 보기</button>
+            <button type="button" className="admin-button admin-button-secondary" disabled={busy} onClick={() => onOpenCustomer(linkedAccount.uid, 'wallet')}>이용권 이력 보기</button>
+            {!connectionReadOnly ? <button
+              type="button"
+              className="admin-button admin-button-danger"
+              disabled={busy}
+              onClick={() => onClear(page.slug)}
+            >
+              {ownershipActionToken === `clear:${page.slug}` ? '해제 중' : '연결 해제'}
+            </button> : null}
+          </div>
         </div>
       ) : (
-        <div className={styles.eventManagementForm}>
-          <p>현재 연결된 고객이 없습니다. 계정을 선택한 뒤 연결 버튼을 눌러 주세요.</p>
+        !connectionReadOnly ? <div className={styles.eventManagementForm}>
+          <p>직접 연결은 아래에서 선택한 고객 계정에 즉시 적용됩니다. 연결 링크는 링크를 받은 사람이 로그인한 계정에 적용되므로 선택 계정과 다를 수 있습니다.</p>
           <label className="admin-field">
             <span className="admin-field-label">고객 이름 또는 이메일 검색</span>
             <input className="admin-input" type="search" value={customerQuery}
@@ -157,10 +204,10 @@ export default function AdminEventCustomerTab({
               disabled={readOnly || busy}
               onClick={() => onIssueInvite(page.slug)}
             >
-              {issuingInvite ? '링크 발급 중' : '고객 연결 링크 발급'}
+              {issuingInvite ? '링크 발급 중' : '로그인 계정 연결 링크 발급'}
             </button>
           </div>
-        </div>
+        </div> : <p className={styles.eventManagementState}>현재 연결된 고객이 없습니다.</p>
       )}
     </div>
   );

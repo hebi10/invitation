@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef } from 'react';
 import { useAdminWorkNavigation } from './AdminWorkGuard';
 
 import { getEventDeletionButtonLabel, getEventDeletionFailureMessage } from '@/lib/adminEventDeletionState';
@@ -21,6 +21,8 @@ import {
   getAdminEventPreviewLinks,
   getAdminEventRelatedQuery,
   getAdminEventVisibility,
+  resolveAdminEventDetailTab,
+  getAdminEventKeyboardTab,
   type AdminEventDetailTabKey,
 } from './adminEventWorkspaceModel';
 import AdminEventCommentsTab from './AdminEventCommentsTab';
@@ -32,6 +34,10 @@ import detailStyles from './AdminEventDetailPage.module.css';
 
 interface AdminEventDetailPanelProps {
   page: InvitationPageSummary;
+  selectedDetailTab: string | null;
+  mobileReadOnly: boolean;
+  onDetailTabChange: (tab: AdminEventDetailTabKey) => void;
+  onNavigate: (updates: Record<string, string | null>) => void;
   updatingPublished: boolean;
   updatingTier: boolean;
   updatingVariantToken: string | null;
@@ -91,8 +97,8 @@ function getPeriodLabel(page: InvitationPageSummary) {
     month: 'short',
     day: 'numeric',
   });
-  const start = page.displayPeriodStart ? formatter.format(page.displayPeriodStart) : '시작일 미정';
-  const end = page.displayPeriodEnd ? formatter.format(page.displayPeriodEnd) : '종료일 미정';
+  const start = page.displayPeriodStart && !Number.isNaN(page.displayPeriodStart.getTime()) ? formatter.format(page.displayPeriodStart) : '시작일 미정';
+  const end = page.displayPeriodEnd && !Number.isNaN(page.displayPeriodEnd.getTime()) ? formatter.format(page.displayPeriodEnd) : '종료일 미정';
   return `${start} ~ ${end}`;
 }
 
@@ -108,6 +114,10 @@ export default function AdminEventDetailPanel(props: AdminEventDetailPanelProps)
 
 function EventDetailWorkspace({
   page,
+  selectedDetailTab,
+  mobileReadOnly,
+  onDetailTabChange,
+  onNavigate,
   updatingPublished,
   updatingTier,
   updatingVariantToken,
@@ -138,7 +148,6 @@ function EventDetailWorkspace({
   const work = useAdminWorkNavigation();
   const busy = work.busy || updatingPublished || updatingTier || !!updatingVariantToken || deleting || issuingInvite || !!ownershipActionToken;
   const requestClose = () => { if (!busy) work.request(onClose); };
-  const [activeTab, setActiveTab] = useState<AdminEventDetailTabKey>('overview');
   const capabilities = getAdminEventCapabilities(page);
   const tabs = experience
     ? getAdminEventDetailTabs(page).filter((tab) => tab.key === 'overview' || tab.key === 'design')
@@ -146,10 +155,15 @@ function EventDetailWorkspace({
   const previewLinks = getAdminEventPreviewLinks(page);
   const preview = previewLinks.find((link) => link.isDefault) ?? previewLinks[0];
   const isReadOnlySeed = experience && page.slug.startsWith('demo-seed-');
-
-  useEffect(() => {
-    setActiveTab('overview');
-  }, [page.slug]);
+  const activeTab = resolveAdminEventDetailTab(selectedDetailTab, tabs);
+  const orientation = mobileReadOnly ? 'horizontal' : 'vertical';
+  const changeTab = (tab: AdminEventDetailTabKey, focus = false) => {
+    if (busy || activeTab === tab) return;
+    work.request(() => {
+      onDetailTabChange(tab);
+      if (focus) document.getElementById(`admin-event-tab-${tab}`)?.focus();
+    });
+  };
 
   useEffect(() => { panelRef.current?.focus(); }, [page.slug]);
 
@@ -181,7 +195,7 @@ function EventDetailWorkspace({
         </div>
 
         <div className={detailStyles.layout}>
-        <div className={detailStyles.tabs} role="tablist" aria-label="이벤트 관리 항목">
+        <div className={detailStyles.tabs} role="tablist" aria-label="이벤트 관리 항목" aria-orientation={orientation}>
           {tabs.map((tab) => (
             <button
               key={tab.key}
@@ -190,9 +204,16 @@ function EventDetailWorkspace({
               role="tab"
               aria-selected={activeTab === tab.key}
               aria-controls="admin-event-tabpanel"
+              tabIndex={activeTab === tab.key ? 0 : -1}
               className={styles.eventDetailTab}
               disabled={busy}
-              onClick={() => work.request(() => setActiveTab(tab.key))}
+              onClick={() => changeTab(tab.key)}
+              onKeyDown={(event) => {
+                const nextTab = getAdminEventKeyboardTab(event.key, tab.key, tabs, orientation);
+                if (!nextTab) return;
+                event.preventDefault();
+                changeTab(nextTab, true);
+              }}
             >
               {tab.label}
             </button>
@@ -262,7 +283,7 @@ function EventDetailWorkspace({
         </div>
 
         {isReadOnlySeed ? <p>기본 체험 데이터는 조회 전용입니다.</p> : null}
-        {!isReadOnlySeed ? (
+        {!isReadOnlySeed && !mobileReadOnly ? (
           <details className={styles.eventDangerArea}>
             <summary>위험 작업</summary>
             {page.deletion?.status === 'failed' ? <p role="alert">{getEventDeletionFailureMessage({ success: false, failedStep: page.deletion.currentStep, retryable: page.deletion.retryable })}</p> : null}
@@ -362,21 +383,26 @@ function EventDetailWorkspace({
                 error={accountsError}
                 ownershipActionToken={ownershipActionToken}
                 issuingInvite={issuingInvite}
-                readOnly={isReadOnlySeed}
+                readOnly={isReadOnlySeed || mobileReadOnly}
+                experience={experience}
                 onRefresh={onRefreshAccounts}
                 onAssign={onAssignCustomerOwnership}
                 onClear={onClearCustomerOwnership}
                 onIssueInvite={onIssueOwnershipInvite}
+                onOpenCustomer={(uid, tab) => work.request(() => onNavigate({
+                  section: 'customers', tab: 'accounts', view: null,
+                  customer: uid, customerDetail: tab, event: page.slug, detail: null,
+                }))}
               />
             ) : null}
             {activeTab === 'memory' ? (
-              <MemoryPageManager
+              mobileReadOnly ? <p className={styles.mobileReadOnlyNotice}>기록 사진과 내용 편집은 PC 관리자 화면을 이용해 주세요.</p> : <MemoryPageManager
                 initialPageSlug={page.slug}
                 lockedPageSlug={page.slug}
               />
             ) : null}
             {activeTab === 'images' ? (
-              <ImageManager
+              mobileReadOnly ? <p className={styles.mobileReadOnlyNotice}>이미지 업로드와 삭제는 PC 관리자 화면을 이용해 주세요.</p> : <ImageManager
                 eventTypeFilter={page.eventType}
                 initialPageSlug={page.slug}
                 lockedPageSlug={page.slug}
@@ -389,6 +415,7 @@ function EventDetailWorkspace({
                 loading={commentsLoading}
                 refreshing={commentsRefreshing}
                 error={commentsError}
+                readOnly={isReadOnlySeed || mobileReadOnly}
                 onRefresh={onRefreshComments}
                 onDelete={onDeleteComment}
               />

@@ -5,11 +5,12 @@ import {
   validateEditableImageFile,
 } from '@/lib/imageUploadPolicy';
 import { getCurrentFirebaseIdToken } from '@/services/adminAuth';
+import { groupMediaAssetFiles, type MediaUsageReference } from '@/lib/mediaAssets';
 import {
   optimizeUploadImage,
   type OptimizeUploadImageOptions,
 } from '@/utils/imageCompression';
-import type { FirebaseStorage, StorageReference } from 'firebase/storage';
+import type { FirebaseStorage } from 'firebase/storage';
 
 export interface UploadedImage {
   name: string;
@@ -19,7 +20,7 @@ export interface UploadedImage {
   originalPath?: string;
   thumbnailUrl?: string;
   thumbnailPath?: string;
-  uploadedAt: Date;
+  uploadedAt: Date | null;
 }
 
 export type PageEditorImageAssetKind = EditableImageAssetKind;
@@ -47,7 +48,7 @@ let firebaseModules: {
   ref: FirebaseStorageModule['ref'];
   uploadBytes: FirebaseStorageModule['uploadBytes'];
   getDownloadURL: FirebaseStorageModule['getDownloadURL'];
-  deleteObject: FirebaseStorageModule['deleteObject'];
+  getMetadata: FirebaseStorageModule['getMetadata'];
   listAll: FirebaseStorageModule['listAll'];
 } | null = null;
 
@@ -73,7 +74,7 @@ const initFirebase = async () => {
           ref: storageModule.ref,
           uploadBytes: storageModule.uploadBytes,
           getDownloadURL: storageModule.getDownloadURL,
-          deleteObject: storageModule.deleteObject,
+          getMetadata: storageModule.getMetadata,
           listAll: storageModule.listAll,
         };
         return;
@@ -190,30 +191,6 @@ function buildUploadMetadata(
 
 function buildThumbnailFileName(fileName: string) {
   return `${THUMBNAIL_FILE_PREFIX}${fileName}`;
-}
-
-function buildThumbnailImagePath(path: string) {
-  const normalizedPath = path.trim();
-  if (!normalizedPath) {
-    return '';
-  }
-
-  const segments = normalizedPath.split('/');
-  const fileName = segments.pop();
-
-  if (!fileName) {
-    return '';
-  }
-
-  if (fileName.startsWith(THUMBNAIL_FILE_PREFIX)) {
-    return normalizedPath;
-  }
-
-  return [...segments, buildThumbnailFileName(fileName)].join('/');
-}
-
-function isThumbnailFileName(fileName: string) {
-  return fileName.startsWith(THUMBNAIL_FILE_PREFIX);
 }
 
 function supportsThumbnailVariant(assetKind?: PageEditorImageAssetKind) {
@@ -561,6 +538,8 @@ async function uploadServerManagedEditablePageImage(
     })
   );
 
+  imageCache.delete(pageSlug);
+
   return {
     ...response,
     uploadedAt: new Date(response.uploadedAt),
@@ -604,41 +583,24 @@ export const getImagesByPage = async (
       `wedding-images/${pageSlug}`
     );
     const imagesList = await firebaseModules.listAll(imagesRef);
-    const thumbnailRefs = new Map<string, StorageReference>();
-    const originalImageRefs = imagesList.items.filter((imageRef) => {
-      if (!isThumbnailFileName(imageRef.name)) {
-        return true;
-      }
-
-      thumbnailRefs.set(imageRef.name.replace(THUMBNAIL_FILE_PREFIX, ''), imageRef);
-      return false;
-    });
-
-    const images: UploadedImage[] = await Promise.all(
-      originalImageRefs.map(async (imageRef) => {
-        const thumbnailRef = thumbnailRefs.get(imageRef.name);
-        const [url, thumbnailUrl] = await Promise.all([
+    const files = await Promise.all(
+      imagesList.items.map(async (imageRef) => {
+        const [url, metadata] = await Promise.all([
           firebaseModules!.getDownloadURL(imageRef),
-          thumbnailRef
-            ? firebaseModules!
-                .getDownloadURL(thumbnailRef)
-                .catch(() => null)
-            : Promise.resolve<string | null>(null),
+          firebaseModules!.getMetadata(imageRef).catch(() => null),
         ]);
+        const createdAt = metadata?.timeCreated ? new Date(metadata.timeCreated) : null;
         return {
           name: imageRef.name,
           url,
           path: imageRef.fullPath,
-          thumbnailUrl: thumbnailUrl ?? url,
-          thumbnailPath: thumbnailRef?.fullPath ?? imageRef.fullPath,
-          uploadedAt: new Date(),
+          uploadedAt: createdAt && Number.isFinite(createdAt.getTime()) ? createdAt : null,
+          variant: metadata?.customMetadata?.variant,
         };
       })
     );
 
-    const sortedImages = images.sort(
-      (left, right) => left.uploadedAt.getTime() - right.uploadedAt.getTime()
-    );
+    const sortedImages = groupMediaAssetFiles(files);
 
     imageCache.set(pageSlug, sortedImages);
 
@@ -670,36 +632,27 @@ export const getImagesByPage = async (
 };
 
 export const deleteImage = async (imagePath: string): Promise<void> => {
-  if (!USE_FIREBASE) {
-    console.log('Mock: 이미지 삭제 요청:', imagePath);
-    return;
-  }
-
-  await initFirebase();
-
-  if (!firebaseModules?.storage) {
-    throw new Error('Firebase가 초기화되지 않았습니다.');
-  }
-
-  try {
-    const imageRef = firebaseModules.ref(firebaseModules.storage, imagePath);
-    await firebaseModules.deleteObject(imageRef);
-
-    const thumbnailPath = buildThumbnailImagePath(imagePath);
-    if (thumbnailPath && thumbnailPath !== imagePath) {
-      const thumbnailRef = firebaseModules.ref(firebaseModules.storage, thumbnailPath);
-      await firebaseModules.deleteObject(thumbnailRef).catch(() => undefined);
-    }
-
-    const pageSlug = extractPageSlugFromImagePath(imagePath);
-    if (pageSlug) {
-      imageCache.delete(pageSlug);
-    }
-  } catch (error) {
-    console.error('이미지 삭제 중 오류 발생:', error);
-    throw new Error('이미지 삭제에 실패했습니다.');
-  }
+  const pageSlug = extractPageSlugFromImagePath(imagePath);
+  if (!pageSlug) throw new Error('삭제할 이미지 경로를 확인해 주세요.');
+  const idToken = await getCurrentFirebaseIdToken({ forceRefresh: true });
+  if (!idToken) throw new Error('로그인 토큰을 확인하지 못했습니다. 다시 로그인해 주세요.');
+  await readJsonResponse(await fetch(`/api/admin/pages/${encodeURIComponent(pageSlug)}/media`, {
+    method: 'DELETE', credentials: 'same-origin',
+    headers: { Authorization: `Bearer ${idToken}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ path: imagePath }),
+  }));
+  imageCache.delete(pageSlug);
 };
+
+export async function getPageMediaUsageReferences(pageSlug: string): Promise<MediaUsageReference[]> {
+  const idToken = await getCurrentFirebaseIdToken({ forceRefresh: true });
+  if (!idToken) throw new Error('로그인 토큰을 확인하지 못했습니다. 다시 로그인해 주세요.');
+  const result = await readJsonResponse<{ references: MediaUsageReference[] }>(await fetch(
+    `/api/admin/pages/${encodeURIComponent(pageSlug)}/media`,
+    { credentials: 'same-origin', headers: { Authorization: `Bearer ${idToken}` }, cache: 'no-store' }
+  ));
+  return result.references;
+}
 
 export const getAllPageImages = async (): Promise<{
   [pageSlug: string]: UploadedImage[];

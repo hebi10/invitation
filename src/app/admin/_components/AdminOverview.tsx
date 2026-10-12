@@ -36,6 +36,11 @@ export default function AdminOverview({
     .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
     .slice(0, 5);
   const pageNames = new Map(pages.map((page) => [page.slug, page.displayName]));
+  const attentionItems: Array<{ label: string; count: number; query: Record<string, string | null> }> = [
+    { label: '고객 미연결', count: counts.unassigned, query: { ownership: 'unassigned' } },
+    { label: '7일 내 종료', count: pages.filter((page) => getAdminEventVisibility(page).label === '곧 종료').length, query: { visibility: 'due-soon' } },
+    { label: '기간 확인 필요', count: pages.filter((page) => getAdminEventVisibility(page).label === '기간 확인 필요').length, query: { visibility: 'period-error' } },
+  ];
   const summaryItems: Array<{ label: string; value: number; query: Record<string, string | null> }> = [
     { label: '전체 이벤트', value: counts.total, query: {} },
     { label: '공개 설정', value: counts.published, query: { published: 'published' } },
@@ -68,6 +73,12 @@ export default function AdminOverview({
           </div>
         )}
       </section>
+      {!pagesLoading && !pagesError ? <section className={styles.attention} aria-label="확인이 필요한 작업">
+        <h2>확인이 필요한 작업</h2>
+        <div>{attentionItems.map((item) => <button key={item.label} type="button" onClick={() => onNavigate({ ...EVENT_QUERY, ...item.query })}>
+          {item.label} {item.count}건 보기
+        </button>)}</div>
+      </section> : null}
       <div className={styles.columns}>
         <section aria-labelledby="recent-events-title">
           <div className={styles.sectionHeading}>

@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 
 import { getEventTypeDisplayLabel } from '@/lib/eventTypes';
@@ -10,7 +10,6 @@ import type {
   AdminCustomerLinkedEventSummary,
 } from '@/services/adminCustomerService';
 import type {
-  InvitationProductTier,
   InvitationThemeKey,
 } from '@/types/invitationPage';
 
@@ -36,7 +35,6 @@ interface AdminCustomerAccountsTabProps {
   unassignedEvents: AdminCustomerLinkedEventSummary[];
   ownershipActionToken: string | null;
   issuingOwnershipInviteSlug: string | null;
-  walletGrantActionToken: string | null;
   deletingCustomerUid: string | null;
   selectedEventSlug: string | null;
   mobileReadOnly: boolean;
@@ -46,15 +44,6 @@ interface AdminCustomerAccountsTabProps {
   onClear: (pageSlug: string) => void;
   onIssueOwnershipInvite: (pageSlug: string) => void;
   onDeleteAccount: (uid: string) => void;
-  onGrantWalletCredit: (
-    uid: string,
-    grant: {
-      kind: 'pageCreation' | 'operationTicket';
-      quantity: number;
-      tier?: InvitationProductTier | null;
-      note?: string | null;
-    }
-  ) => void;
   routes: AppRoutes;
   experience: boolean;
 }
@@ -137,7 +126,6 @@ export default function AdminCustomerAccountsTab({
   unassignedEvents,
   ownershipActionToken,
   issuingOwnershipInviteSlug,
-  walletGrantActionToken,
   deletingCustomerUid,
   selectedEventSlug,
   mobileReadOnly,
@@ -147,20 +135,19 @@ export default function AdminCustomerAccountsTab({
   onClear,
   onIssueOwnershipInvite,
   onDeleteAccount,
-  onGrantWalletCredit,
   routes,
   experience,
 }: AdminCustomerAccountsTabProps) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const updateCustomerQuery = (updates: Record<string, string | null>) => {
+  const updateCustomerQuery = (updates: Record<string, string | null>, navigation: 'replace' | 'push' = 'replace') => {
     const params = new URLSearchParams(searchParams?.toString() ?? '');
     Object.entries(updates).forEach(([key, value]) => {
       if (value) params.set(key, value);
       else params.delete(key);
     });
-    router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+    router[navigation](`${pathname}?${params.toString()}`, { scroll: false });
   };
   const searchQuery = searchParams?.get('customerQ') ?? '';
   const requestedConnection = searchParams?.get('customerConnection');
@@ -175,23 +162,32 @@ export default function AdminCustomerAccountsTab({
   const selectedAccount = accounts.find((account) => account.uid === selectedCustomerUid);
   const requestedDetailTab = searchParams?.get('customerDetail');
   const customerDetailTab = requestedDetailTab === 'wallet' || requestedDetailTab === 'management' ? requestedDetailTab : 'events';
+  const listScroll = useRef(0);
+  const previousCustomer = useRef('');
+  const openCustomer = (uid: string) => {
+    listScroll.current = window.scrollY;
+    updateCustomerQuery({ customer: uid, customerDetail: null, event: null }, 'push');
+  };
+  useEffect(() => {
+    if (selectedCustomerUid) {
+      previousCustomer.current = selectedCustomerUid;
+      return;
+    }
+    if (!previousCustomer.current) return;
+    const uid = previousCustomer.current;
+    previousCustomer.current = '';
+    const frame = window.requestAnimationFrame(() => {
+      document.querySelector<HTMLButtonElement>(`[data-customer-uid="${CSS.escape(uid)}"]`)?.focus({ preventScroll: true });
+      window.scrollTo({ top: listScroll.current, behavior: 'instant' });
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [selectedCustomerUid]);
   const [draftAssignments, setDraftAssignments] = useState<Record<string, string>>({});
   const [draftAssignmentEventTypes, setDraftAssignmentEventTypes] = useState<
     Record<string, AssignmentEventTypeFilter>
   >({});
   const [draftAssignmentQueries, setDraftAssignmentQueries] = useState<Record<string, string>>({});
   const [selectedLinkedEvents, setSelectedLinkedEvents] = useState<Record<string, string>>({});
-  const [grantDrafts, setGrantDrafts] = useState<
-    Record<
-      string,
-      {
-        tier: InvitationProductTier;
-        pageCreationQuantity: string;
-        operationTicketQuantity: string;
-        note: string;
-      }
-    >
-  >({});
 
   const filteredAccounts = useMemo(() => {
     const normalizedQuery = searchQuery.trim().toLowerCase();
@@ -259,7 +255,7 @@ export default function AdminCustomerAccountsTab({
             <span className={styles.rowNumber}>{index + 1}</span>
             <div className={styles.identityStack}>
               <h3 className={styles.accountCardTitle}>
-                {account.displayName || account.email || account.uid}
+                {selectedCustomerUid === account.uid ? account.displayName || account.email || account.uid : <button type="button" className={styles.customerSelectButton} data-customer-uid={account.uid} onClick={() => openCustomer(account.uid)}>{account.displayName || account.email || account.uid}</button>}
               </h3>
               <p className={styles.tableSubtext}>{account.email ?? '이메일 없음'}</p>
               <details className={workspace.accountId}><summary>계정 정보</summary><p>고객 식별번호 · {account.uid}</p></details>
@@ -276,7 +272,11 @@ export default function AdminCustomerAccountsTab({
           <span>연결된 이벤트 · {account.linkedEvents.length}개</span>
         </div>
 
-        <section className={styles.accountCardSection}>
+        {selectedCustomerUid === account.uid ? <nav className={styles.customerDetailNav} aria-label="고객 상세 항목">
+          <button type="button" aria-current={customerDetailTab === 'events' ? 'page' : undefined} onClick={() => updateCustomerQuery({ customerDetail: 'events' })}>이벤트</button>
+          <button type="button" aria-current={customerDetailTab === 'wallet' ? 'page' : undefined} onClick={() => updateCustomerQuery({ customerDetail: 'wallet' })}>이용권 이력</button>
+        </nav> : null}
+        {selectedCustomerUid === account.uid && customerDetailTab === 'wallet' ? renderWalletManager(account) : <section className={styles.accountCardSection}>
           <h4 className={styles.accountCardSectionTitle}>연결된 이벤트</h4>
           {account.linkedEvents.length > 0 ? (
             <ul className={styles.mobileLinkedEventList}>
@@ -286,13 +286,14 @@ export default function AdminCustomerAccountsTab({
                   <span>
                     {getEventTypeDisplayLabel(event.eventType, 'admin')} · /{event.slug}
                   </span>
+                  <button type="button" className="admin-button admin-button-ghost" onClick={() => updateCustomerQuery({ section: 'events', tab: 'pages', view: null, event: event.slug, detail: null, customer: null, customerDetail: null }, 'push')}>이벤트 상세 보기</button>
                 </li>
               ))}
             </ul>
           ) : (
             <span className={styles.emptyInlineText}>연결된 이벤트가 없습니다.</span>
           )}
-        </section>
+        </section>}
       </article>
     );
   };
@@ -334,41 +335,7 @@ export default function AdminCustomerAccountsTab({
     }));
   };
 
-  const getGrantDraft = (uid: string) =>
-    grantDrafts[uid] ?? {
-      tier: 'premium' as InvitationProductTier,
-      pageCreationQuantity: '1',
-      operationTicketQuantity: '1',
-      note: '',
-    };
-
-  const updateGrantDraft = (
-    uid: string,
-    patch: Partial<ReturnType<typeof getGrantDraft>>
-  ) => {
-    setGrantDrafts((current) => ({
-      ...current,
-      [uid]: {
-        ...(current[uid] ?? getGrantDraft(uid)),
-        ...patch,
-      },
-    }));
-  };
-
-  const readGrantQuantity = (value: string) => {
-    const parsed = Number(value);
-    return Number.isFinite(parsed) ? Math.max(0, Math.trunc(parsed)) : 0;
-  };
-
   const renderWalletManager = (account: AdminCustomerAccountSummary) => {
-    const draft = getGrantDraft(account.uid);
-    const isGrantingPageCreation =
-      walletGrantActionToken === `grant:${account.uid}:pageCreation`;
-    const isGrantingOperationTicket =
-      walletGrantActionToken === `grant:${account.uid}:operationTicket`;
-    const pageCreationQuantity = readGrantQuantity(draft.pageCreationQuantity);
-    const operationTicketQuantity = readGrantQuantity(draft.operationTicketQuantity);
-
     return (
       <div className={styles.walletPanel}>
         <p className={styles.walletSectionLabel}>현재 보유</p>
@@ -389,99 +356,8 @@ export default function AdminCustomerAccountsTab({
           최근 갱신 · {formatWalletUpdatedAt(account.wallet.updatedAt)}
         </p>
         <p className={styles.tableSubtext}>
-          새 제작권은 모든 초대장 기능을 포함합니다. 기존 제작권 잔액은 별도로 보관됩니다. 모바일 초대장 생성
-          티켓은 모바일 앱에서 생성/배정되는 초대장용입니다.
+          이용권은 기존 잔액과 이력을 조회하는 용도입니다. 현재 이벤트는 관리자가 생성한 뒤 고객 계정에 연결합니다. 신규 제작권·생성 티켓 지급은 지원하지 않습니다.
         </p>
-
-        <div className={styles.walletGrantGrid}>
-          <label className="admin-field">
-            <span className="admin-field-label">제작권 수량</span>
-            <input
-              className="admin-input"
-              type="number"
-              min="1"
-              step="1"
-              value={draft.pageCreationQuantity}
-              disabled={account.missingAuthUser}
-              onChange={(event) =>
-                updateGrantDraft(account.uid, {
-                  pageCreationQuantity: event.target.value,
-                })
-              }
-            />
-          </label>
-          <button
-            type="button"
-            className="admin-button admin-button-primary"
-            disabled={
-              account.missingAuthUser ||
-              pageCreationQuantity <= 0 ||
-              isGrantingPageCreation
-            }
-            onClick={() =>
-              onGrantWalletCredit(account.uid, {
-                kind: 'pageCreation',
-                tier: draft.tier,
-                quantity: pageCreationQuantity,
-                note: draft.note,
-              })
-            }
-          >
-            {isGrantingPageCreation ? '지급 중..' : '제작권 지급'}
-          </button>
-        </div>
-
-        <div className={styles.walletGrantGrid}>
-          <label className="admin-field">
-            <span className="admin-field-label">모바일 초대장 생성 티켓 수량</span>
-            <input
-              className="admin-input"
-              type="number"
-              min="1"
-              step="1"
-              value={draft.operationTicketQuantity}
-              disabled={account.missingAuthUser}
-              onChange={(event) =>
-                updateGrantDraft(account.uid, {
-                  operationTicketQuantity: event.target.value,
-                })
-              }
-            />
-          </label>
-          <label className="admin-field">
-            <span className="admin-field-label">메모</span>
-            <input
-              className="admin-input"
-              type="text"
-              value={draft.note}
-              disabled={account.missingAuthUser}
-              placeholder="선택 입력"
-              onChange={(event) =>
-                updateGrantDraft(account.uid, {
-                  note: event.target.value,
-                })
-              }
-            />
-          </label>
-          <button
-            type="button"
-            className="admin-button admin-button-secondary"
-            disabled={
-              account.missingAuthUser ||
-              operationTicketQuantity <= 0 ||
-              isGrantingOperationTicket
-            }
-            onClick={() =>
-              onGrantWalletCredit(account.uid, {
-                kind: 'operationTicket',
-                quantity: operationTicketQuantity,
-                note: draft.note,
-              })
-            }
-          >
-            {isGrantingOperationTicket ? '지급 중..' : '모바일 초대장 생성 티켓 지급'}
-          </button>
-        </div>
 
         <div className={styles.walletLedgerPanel}>
           <p className={styles.walletSectionLabel}>최근 이용권 이력</p>
@@ -659,7 +535,7 @@ export default function AdminCustomerAccountsTab({
             {renderLinkedEventManager(account)}
           </section>
           <details className={workspace.connectDisclosure}>
-            <summary>새 이벤트 연결</summary>
+            <summary>관리자가 만든 이벤트 연결</summary>
           <section className={`${styles.accountCardSection} ${styles.accountConnectSection}`}>
             <div className={styles.accountCardSectionHeader}>
               <h4 className={styles.accountCardSectionTitle}>새 이벤트 연결</h4>
@@ -667,6 +543,7 @@ export default function AdminCustomerAccountsTab({
                 전체 미연결 {unassignedEvents.length}개
               </StatusBadge>
             </div>
+            <p className={styles.tableSubtext}>직접 연결은 현재 고객 계정에 적용됩니다. 연결 링크는 링크를 받은 사람이 로그인한 계정에 적용되며 현재 고객 계정으로 제한되지 않습니다.</p>
             <div className={styles.accountConnectPanel}>
               <div className={styles.accountConnectControls}>
                 <label className="admin-field">
@@ -733,7 +610,7 @@ export default function AdminCustomerAccountsTab({
                   }
                   onClick={() => onAssign(account.uid, selectedSlug)}
                 >
-                  {isAssigning ? '연결 중..' : '이벤트 연결'}
+                  {isAssigning ? '연결 중..' : '이 고객 계정에 직접 연결'}
                 </button>
                 <button
                   type="button"
@@ -745,7 +622,7 @@ export default function AdminCustomerAccountsTab({
                   }
                   onClick={() => onIssueOwnershipInvite(selectedSlug)}
                 >
-                  {isIssuingSelectedInvite ? '링크 발급 중' : '고객 연결 링크'}
+                  {isIssuingSelectedInvite ? '링크 발급 중' : '로그인 계정 연결 링크'}
                 </button>
               </div>
               <span className={styles.actionHint}>
@@ -820,7 +697,7 @@ export default function AdminCustomerAccountsTab({
 
       {mobileReadOnly ? (
         <p className={styles.mobileReadOnlyNotice}>
-          모바일에서는 고객과 연결 이벤트 조회만 지원합니다. 연결, 이용권 지급,
+          모바일에서는 고객, 연결 이벤트와 이용권 이력 조회만 지원합니다. 고객 연결과
           삭제는 PC 관리자 화면을 이용해 주세요.
         </p>
       ) : null}
@@ -940,11 +817,14 @@ export default function AdminCustomerAccountsTab({
           onRetry={onRetry}
           errorTitle="고객 계정을 불러오지 못했습니다."
         />
-      ) : filteredAccounts.length > 0 ? (
+      ) : filteredAccounts.length > 0 || selectedAccount ? (
         <>
           {mobileReadOnly ? (
             <div className={styles.accountCardList}>
-              {paginatedAccounts.map((account, index) => renderMobileAccountCard(account, (normalizedCurrentPage - 1) * CUSTOMER_ACCOUNTS_PAGE_SIZE + index))}
+              {selectedAccount ? <>
+                <button type="button" className="admin-button admin-button-ghost" onClick={() => updateCustomerQuery({ customer: null, customerDetail: null, event: null })}>고객 목록으로</button>
+                {renderMobileAccountCard(selectedAccount, accounts.indexOf(selectedAccount))}
+              </> : paginatedAccounts.map((account, index) => renderMobileAccountCard(account, (normalizedCurrentPage - 1) * CUSTOMER_ACCOUNTS_PAGE_SIZE + index))}
             </div>
           ) : (
             <div className={workspace.customerWorkspace}>
@@ -953,8 +833,8 @@ export default function AdminCustomerAccountsTab({
                   <thead><tr><th scope="col">고객</th><th scope="col">연결 이벤트</th><th scope="col">상태</th><th scope="col">최근 로그인</th></tr></thead>
                   <tbody>{paginatedAccounts.map((account) => (
                     <tr key={account.uid} data-selected={account.uid === selectedCustomerUid || undefined}>
-                      <td><button type="button" className={styles.customerSelectButton} aria-current={account.uid === selectedCustomerUid ? 'true' : undefined}
-                        onClick={() => updateCustomerQuery({ customer: account.uid, customerDetail: null, event: null })}>
+                      <td><button type="button" className={styles.customerSelectButton} data-customer-uid={account.uid} aria-current={account.uid === selectedCustomerUid ? 'true' : undefined}
+                        onClick={() => openCustomer(account.uid)}>
                         <strong>{account.displayName || account.email || '이름 미등록 고객'}</strong>{account.displayName && account.displayName !== account.email ? <span>{account.email ?? '이메일 없음'}</span> : null}
                       </button></td>
                       <td><span className={workspace.eventName}>{account.linkedEvents[0]?.displayName ?? '미연결'}</span>{account.linkedEvents.length > 1 ? <span className={workspace.description}> 외 {account.linkedEvents.length - 1}개</span> : null}</td>
@@ -969,13 +849,13 @@ export default function AdminCustomerAccountsTab({
               </section> : null}
             </div>
           )}
-          <Pagination
+          {!mobileReadOnly || !selectedAccount ? <Pagination
             currentPage={normalizedCurrentPage}
             totalPages={totalPages}
             totalItems={filteredAccounts.length}
             pageSize={CUSTOMER_ACCOUNTS_PAGE_SIZE}
             onPageChange={setCurrentPage}
-          />
+          /> : null}
         </>
       ) : (
         <EmptyState
@@ -987,7 +867,7 @@ export default function AdminCustomerAccountsTab({
           description={
             searchQuery || connectionFilter !== 'all'
               ? '검색어나 연결 상태를 조정해 다시 확인해 주세요.'
-              : '고객 계정이 등록되면 여기에서 이벤트 연결과 이용권 지급을 관리할 수 있습니다.'
+              : '고객 계정이 등록되면 여기에서 이벤트 연결과 기존 이용권 이력을 확인할 수 있습니다.'
           }
           actionLabel={searchQuery || connectionFilter !== 'all' ? '필터 초기화' : '새로고침'}
           onAction={

@@ -11,6 +11,8 @@ import type {
 
 import { getServerFirestore } from '../firebaseAdmin';
 import { isEventDeletionBlockingAccess } from '../eventDeletionPolicy';
+import { CustomerEventClaimError } from '../customerEventClaimPolicy';
+import { buildServerTrustedMobileInvitationPageConfigForSave } from '../invitationContentSavePolicy';
 import {
   buildInvitationPageConfigRecordFromEventContent,
   buildInvitationPageDisplayPeriodRecordFromEventSummary,
@@ -105,6 +107,7 @@ export interface EventRepository {
   ): Promise<void>;
   saveContentBySlug(input: {
     expectedVersion: number;
+    customerOwnerUid?: string;
     published?: boolean;
     defaultTheme?: InvitationThemeKey;
     slug: string;
@@ -296,13 +299,16 @@ async function findEventSummaryBySlugQuery(pageSlug: string) {
   return normalizeEventSummaryRecord(matched.id, matched.data() ?? {}, pageSlug);
 }
 
-export async function listStoredEventSummaries() {
+export async function listStoredEventSummaries(ownerUid?: string) {
   const db = getServerFirestore();
   if (!db) {
     return [];
   }
 
-  const snapshot = await db.collection(EVENTS_COLLECTION).get();
+  const collection = db.collection(EVENTS_COLLECTION);
+  const snapshot = await (ownerUid === undefined
+    ? collection
+    : collection.where('ownerUid', '==', ownerUid.trim())).get();
   return snapshot.docs
     .map((docSnapshot) =>
       normalizeEventSummaryRecord(docSnapshot.id, docSnapshot.data() ?? {})
@@ -1012,14 +1018,27 @@ export const firestoreEventRepository: EventRepository = {
       if (isEventDeletionBlockingAccess(current?.deletion)) {
         throw Object.assign(new Error('현재 이용할 수 없는 청첩장입니다.'), { status: 409 });
       }
+      const isCustomerSave = input.customerOwnerUid !== undefined;
+      if (isCustomerSave && (!input.customerOwnerUid?.trim() || current?.ownerUid?.trim() !== input.customerOwnerUid.trim())) {
+        throw new CustomerEventClaimError(403, 'different-owner', '로그인한 계정에 연결된 청첩장만 저장할 수 있습니다.');
+      }
       const index = indexSnapshot.exists
         ? normalizeEventSlugIndexRecord(indexSnapshot.id, indexSnapshot.data() ?? {}) : null;
       assertEventSlugIndexOwnership({ slug: normalizedPageSlug, nextEventId: slugGuard.eventId, existingRecord: index });
       const stored = contentSnapshot.data() ?? {};
       const currentVersion = readInvitationContentVersion(stored.version);
       if (currentVersion !== expectedVersion) throw new InvitationVersionConflictError(currentVersion);
+      const currentContent = isCustomerSave && current
+        ? buildInvitationPageConfigRecordFromEventContent(current, stored) : null;
+      if (isCustomerSave && !currentContent) {
+        throw new CustomerEventClaimError(404, 'missing', '저장된 청첩장 데이터를 찾을 수 없습니다.');
+      }
       const nextContent: StoredInvitationPageConfigRecord = {
-        slug: normalizedPageSlug, config: input.config, version: currentVersion + 1,
+        slug: normalizedPageSlug,
+        config: currentContent
+          ? buildServerTrustedMobileInvitationPageConfigForSave(input.config, currentContent.config)
+          : input.config,
+        version: currentVersion + 1,
         createdAt: stored.createdAt ?? input.createdAt ?? now, updatedAt: now,
         seedSourceSlug: input.seedSourceSlug?.trim() || stored.seedSourceSlug || null,
       };
@@ -1028,8 +1047,8 @@ export const firestoreEventRepository: EventRepository = {
         content: nextContent, forceCreate: true, now,
         registry: {
           docId: normalizedPageSlug, pageSlug: normalizedPageSlug,
-          published: input.published ?? current?.published ?? true,
-          defaultTheme: input.defaultTheme ?? current?.defaultTheme ?? DEFAULT_INVITATION_THEME,
+          published: (isCustomerSave ? current?.published : input.published) ?? current?.published ?? true,
+          defaultTheme: (isCustomerSave ? current?.defaultTheme : input.defaultTheme) ?? current?.defaultTheme ?? DEFAULT_INVITATION_THEME,
           hasCustomConfig: true, createdAt: current?.createdAt ?? now, updatedAt: now,
         },
       });

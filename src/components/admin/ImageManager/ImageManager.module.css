@@ -250,6 +250,50 @@
   word-break: break-all;
 }
 
+.editorLink {
+  margin-top: 16px;
+}
+
+.mediaFilters,
+.variantLinks {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.unusedFilter {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.875rem;
+  color: var(--admin-color-text-secondary);
+}
+
+.usageMessage,
+.imageDate {
+  font-size: 0.875rem;
+  line-height: 1.6;
+  color: var(--admin-color-text-secondary);
+  overflow-wrap: anywhere;
+}
+
+.imageDate {
+  color: var(--admin-color-text-muted);
+}
+
+.variantLinks {
+  justify-content: flex-start;
+  font-size: 0.875rem;
+}
+
+.variantLinks a {
+  color: var(--admin-color-text);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
 @media (max-width: 720px) {
   .uploadGuide {
     grid-template-columns: 1fr;

@@ -14,6 +14,7 @@ interface AdminEventCommentsTabProps {
   loading: boolean;
   refreshing: boolean;
   error: Error | null;
+  readOnly?: boolean;
   onRefresh: () => void;
   onDelete: (comment: Comment) => void | Promise<void>;
 }
@@ -34,6 +35,7 @@ export default function AdminEventCommentsTab({
   loading,
   refreshing,
   error,
+  readOnly = false,
   onRefresh,
   onDelete,
 }: AdminEventCommentsTabProps) {
@@ -44,7 +46,7 @@ export default function AdminEventCommentsTab({
   useAdminWorkGuard({ dirty: false, busy: deletingId !== null });
 
   const handleDelete = async (comment: Comment) => {
-    if (deletionInProgress.current) return;
+    if (readOnly || deletionInProgress.current) return;
     deletionInProgress.current = true;
     setDeletingId(comment.id);
     setDeleteError('');
@@ -74,6 +76,7 @@ export default function AdminEventCommentsTab({
           {refreshing ? '새로고침 중' : '새로고침'}
         </button>
       </div>
+      {readOnly ? <p className={styles.mobileReadOnlyNotice}>조회 전용입니다. 방명록 삭제는 PC 관리자 화면을 이용해 주세요.</p> : null}
 
       {loading && comments.length === 0 ? (
         <p className={styles.eventManagementState}>방명록을 불러오는 중입니다.</p>
@@ -95,7 +98,7 @@ export default function AdminEventCommentsTab({
                 <span>{formatDate(comment.createdAt)}</span>
                 <p>{comment.message}</p>
               </div>
-              <details className={workspace.actions}>
+              {!readOnly ? <details className={workspace.actions}>
                 <summary aria-label={`${comment.author} 방명록 작업`}>작업</summary>
               <button
                 type="button"
@@ -106,7 +109,7 @@ export default function AdminEventCommentsTab({
               >
                 {deletingId === comment.id ? '삭제 중' : '방명록 삭제'}
               </button>
-              </details>
+              </details> : null}
             </li>
           ))}
         </ul>

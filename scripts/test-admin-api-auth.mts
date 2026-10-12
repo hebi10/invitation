@@ -72,14 +72,18 @@ await assertRejectsWithStatus(
   403
 );
 
+let requestedRevocationCheck: boolean | undefined;
 const decodedToken = await verifyAdminRequest(
   requestWithAuthorization('Bearer valid-token'),
   {
     auth: {
-      verifyIdToken: async (token) => ({
-        uid: token === 'valid-token' ? 'admin-1' : 'unexpected',
-        email: 'admin@example.test',
-      }),
+      verifyIdToken: async (token, checkRevoked?: boolean) => {
+        requestedRevocationCheck = checkRevoked;
+        return {
+          uid: token === 'valid-token' ? 'admin-1' : 'unexpected',
+          email: 'admin@example.test',
+        };
+      },
     },
     isAdminEnabled: async (uid) => uid === 'admin-1',
   }
@@ -87,4 +91,19 @@ const decodedToken = await verifyAdminRequest(
 
 assert.equal(decodedToken.uid, 'admin-1');
 assert.equal(decodedToken.email, 'admin@example.test');
+assert.equal(requestedRevocationCheck, true, 'Admin API must check revoked sessions.');
+for (const errorCode of ['auth/id-token-revoked', 'auth/user-disabled']) {
+  await assertRejectsWithStatus(
+    () => verifyAdminRequest(requestWithAuthorization('Bearer revoked-token'), {
+      auth: {
+        verifyIdToken: async (_token, checkRevoked?: boolean) => {
+          if (checkRevoked) throw Object.assign(new Error(errorCode), { code: errorCode });
+          return { uid: 'admin-1' };
+        },
+      },
+      isAdminEnabled: async () => true,
+    }),
+    401
+  );
+}
 console.log('admin API auth checks passed');

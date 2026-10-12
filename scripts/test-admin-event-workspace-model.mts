@@ -1,6 +1,8 @@
 import assert from 'node:assert/strict';
 import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
+import { installAdminHistoryGuard } from '../src/app/admin/_components/adminHistoryNavigation.ts';
+import { getAdminDataLoadPolicy } from '../src/app/admin/_hooks/adminDataLoadPolicy.ts';
 
 import {
   DEFAULT_ADMIN_EVENT_FILTERS,
@@ -24,6 +26,9 @@ import {
   parseAdminEventPublished,
   parseAdminEventSort,
   parseAdminEventType,
+  getAdminEventFilterResetQuery,
+  resolveAdminEventDetailTab,
+  getAdminEventKeyboardTab,
 } from '../src/app/admin/_components/adminEventWorkspaceModel.ts';
 import {
   getPaginationItems,
@@ -390,13 +395,156 @@ assert.deepEqual(
 console.log('admin event workspace model checks passed');
 
 const currentTime = Date.now();
+assert.deepEqual(getAdminDataLoadPolicy({ isAdminLoggedIn: true, activeTab: 'pages', selectedEventSlug: 'one', selectedEventDetailTab: 'overview' }), { pages: true, comments: false, accounts: false, summary: false }, 'event overview must not read all comments, accounts or unused aggregates');
+assert.deepEqual(getAdminDataLoadPolicy({ isAdminLoggedIn: true, activeTab: 'pages', selectedEventSlug: 'one', selectedEventDetailTab: 'comments' }), { pages: true, comments: true, accounts: false, summary: false });
+assert.deepEqual(getAdminDataLoadPolicy({ isAdminLoggedIn: true, activeTab: 'pages', selectedEventSlug: 'one', selectedEventDetailTab: 'ownership' }), { pages: true, comments: false, accounts: true, summary: false });
+assert.deepEqual(getAdminDataLoadPolicy({ isAdminLoggedIn: true, activeTab: 'pages', selectedEventDetailTab: 'ownership' }), { pages: true, comments: false, accounts: false, summary: false }, 'orphan detail queries must not load accounts');
+assert.deepEqual(getAdminDataLoadPolicy({ isAdminLoggedIn: true, activeTab: 'comments', selectedEventSlug: 'one' }), { pages: true, comments: true, accounts: false, summary: false });
+assert.deepEqual(getAdminDataLoadPolicy({ isAdminLoggedIn: true, activeTab: 'accounts' }), { pages: false, comments: false, accounts: true, summary: false });
+assert.deepEqual(getAdminDataLoadPolicy({ isAdminLoggedIn: true, activeTab: 'periods' }), { pages: true, comments: false, accounts: false, summary: true });
+assert.deepEqual(getAdminDataLoadPolicy({ isAdminLoggedIn: false, activeTab: 'pages', selectedEventSlug: 'one', selectedEventDetailTab: 'ownership' }), { pages: false, comments: false, accounts: false, summary: false });
+const resetQuery = getAdminEventFilterResetQuery();
+assert.equal(resetQuery.visibility, null, 'empty-result reset must clear the visibility filter');
+assert.equal(resetQuery.pageQ, null, 'reset must clear event search');
+assert.equal(resetQuery.page, '1', 'reset must return to the first page');
+assert.equal(resolveAdminEventDetailTab('comments', [{ key: 'overview' }, { key: 'comments' }]), 'comments', 'detail query must restore supported tabs');
+assert.equal(resolveAdminEventDetailTab('images', [{ key: 'overview' }]), 'overview', 'unsupported detail tabs must fall back to overview');
+assert.equal(getAdminEventKeyboardTab('ArrowDown', 'overview', [{ key: 'overview' }, { key: 'comments' }], 'vertical'), 'comments', 'vertical tabs must support down arrow');
+assert.equal(getAdminEventKeyboardTab('ArrowUp', 'overview', [{ key: 'overview' }, { key: 'comments' }], 'vertical'), 'comments', 'vertical keyboard navigation must wrap');
+assert.equal(getAdminEventKeyboardTab('ArrowLeft', 'comments', [{ key: 'overview' }, { key: 'comments' }], 'horizontal'), 'overview');
+assert.equal(getAdminEventKeyboardTab('End', 'overview', [{ key: 'overview' }, { key: 'comments' }], 'vertical'), 'comments');
+assert.equal(getAdminEventKeyboardTab('Tab', 'overview', [{ key: 'overview' }], 'vertical'), null);
+const entries: Array<{ url: string; state: Record<string, unknown> }> = [{ url: '/admin?page=2', state: { __NA: true } }];
+let entryIndex = 0;
+const popListeners = new Set<(event: PopStateEvent) => void>();
+const fakeBrowser = {
+  history: {
+    get state() { return entries[entryIndex].state; },
+    pushState(state: Record<string, unknown>, _title: string, url: string) {
+      entries.splice(entryIndex + 1);
+      entries.push({ state, url });
+      entryIndex++;
+    },
+    replaceState(state: Record<string, unknown>, _title: string, url?: string) {
+      entries[entryIndex] = { state, url: url ?? entries[entryIndex].url };
+    },
+    go(delta: number) {
+      const nextIndex = entryIndex + delta;
+      if (nextIndex < 0 || nextIndex >= entries.length) return;
+      entryIndex = nextIndex;
+      for (const listener of popListeners) listener({ state: entries[entryIndex].state, stopImmediatePropagation() {} } as PopStateEvent);
+    },
+  },
+  addEventListener(_type: string, listener: (event: PopStateEvent) => void) { popListeners.add(listener); },
+  removeEventListener(_type: string, listener: (event: PopStateEvent) => void) { popListeners.delete(listener); },
+};
+let dirty = true;
+let pendingTraversal: (() => void) | undefined;
+const uninstallHistoryGuard = installAdminHistoryGuard(
+  fakeBrowser as unknown as Window,
+  { shouldBlock: () => dirty, request: (action: () => void) => { pendingTraversal = action; } }
+);
+fakeBrowser.history.pushState({ __NA: true }, '', '/admin?page=2&event=one&detail=period');
+fakeBrowser.history.go(-1);
+assert.equal(entries[entryIndex].url, '/admin?page=2&event=one&detail=period', 'browser back must keep the unsaved detail visible until a decision');
+assert.ok(pendingTraversal, 'browser back must request the same save/discard decision as UI navigation');
+pendingTraversal = undefined;
+fakeBrowser.history.go(-1);
+assert.equal(entries[entryIndex].url, '/admin?page=2&event=one&detail=period', 'cancelled browser back must preserve the editable detail');
+assert.ok(pendingTraversal, 'a later back request must still ask for a decision');
+pendingTraversal();
+assert.equal(entries[entryIndex].url, '/admin?page=2', 'approved browser back must restore the original list query');
+assert.equal(fakeBrowser.history.state.__NA, true, 'Next navigation state must survive history tracking');
+dirty = false;
+fakeBrowser.history.go(1);
+assert.equal(entries[entryIndex].url, '/admin?page=2&event=one&detail=period', 'clean forward must restore the detail URL');
+uninstallHistoryGuard();
+
+function createExistingHistoryFixture(hasNavigationApi: boolean) {
+  const priorEntries: Array<{ url: string; state: Record<string, unknown> }> = [
+    { url: '/admin?view=home', state: { __NA: true, tree: 'home' } },
+    { url: '/admin?section=customers&tab=accounts', state: { __NA: true, tree: 'customers' } },
+    { url: '/admin?page=2', state: { __NA: true, tree: 'list' } },
+  ];
+  let position = 2;
+  const listeners = new Set<(event: PopStateEvent) => void>();
+  const environment = {
+    ...(hasNavigationApi ? { navigation: { get currentEntry() { return { index: position }; } } } : {}),
+    location: {
+      get href() { return priorEntries[position].url; },
+      assign(url: string) { priorEntries.splice(position + 1); priorEntries.push({ url, state: {} }); position++; },
+    },
+    history: {
+      get state() { return priorEntries[position].state; },
+      pushState(state: Record<string, unknown>, _title: string, url: string) {
+        priorEntries.splice(position + 1); priorEntries.push({ state, url }); position++;
+      },
+      replaceState(state: Record<string, unknown>, _title: string, url?: string) {
+        priorEntries[position] = { state, url: url ?? priorEntries[position].url };
+      },
+      go(delta: number) {
+        const destination = position + delta;
+        if (destination < 0 || destination >= priorEntries.length) return;
+        position = destination;
+        for (const listener of listeners) listener({ state: priorEntries[position].state, stopImmediatePropagation() {} } as PopStateEvent);
+      },
+    },
+    addEventListener(_type: string, listener: (event: PopStateEvent) => void) { listeners.add(listener); },
+    removeEventListener(_type: string, listener: (event: PopStateEvent) => void) { listeners.delete(listener); },
+  };
+  return { environment, get position() { return position; } };
+}
+
+const existingHistory = createExistingHistoryFixture(true);
+let existingPending: (() => void) | undefined;
+const stopExistingGuard = installAdminHistoryGuard(existingHistory.environment as unknown as Window, {
+  shouldBlock: () => true,
+  request: (action) => { existingPending = action; },
+});
+existingHistory.environment.history.pushState({ __NA: true, tree: 'period' }, '', '/admin?page=2&event=one&detail=period');
+existingHistory.environment.history.go(-3);
+assert.equal(existingHistory.position, 3, 'three-entry back into unindexed history must restore the exact original entry');
+assert.equal(existingHistory.environment.location.href, '/admin?page=2&event=one&detail=period', 'a blocked multistep traversal must keep the URL aligned with the editable detail');
+assert.ok(existingPending);
+existingPending();
+assert.equal(existingHistory.position, 0, 'approved multistep back must arrive at its original destination');
+assert.equal(existingHistory.environment.location.href, '/admin?view=home');
+assert.equal(existingHistory.environment.history.state.tree, 'home', 'unindexed Next history state must remain intact');
+existingPending = undefined;
+existingHistory.environment.history.go(2);
+assert.equal(existingHistory.position, 0, 'blocked multistep forward must restore the current unindexed entry');
+assert.ok(existingPending);
+existingPending();
+assert.equal(existingHistory.position, 2, 'approved multistep forward must reach the requested unindexed entry');
+assert.equal(existingHistory.environment.location.href, '/admin?page=2');
+stopExistingGuard();
+
+const legacyHistory = createExistingHistoryFixture(false);
+let legacyPending: (() => void) | undefined;
+const stopLegacyGuard = installAdminHistoryGuard(legacyHistory.environment as unknown as Window, {
+  shouldBlock: () => true,
+  request: (action) => { legacyPending = action; },
+});
+legacyHistory.environment.history.pushState({ __NA: true, tree: 'period' }, '', '/admin?page=2&event=one&detail=period');
+legacyHistory.environment.history.go(-3);
+assert.equal(legacyHistory.environment.location.href, '/admin?page=2&event=one&detail=period', 'unknown history without Navigation API must preserve the current URL instead of guessing a one-entry return');
+assert.equal(legacyHistory.environment.history.state.tree, 'period', 'legacy fallback must preserve the current Next state while the user decides');
+assert.ok(legacyPending);
+legacyPending();
+assert.equal(legacyHistory.environment.location.href, '/admin?view=home', 'approved unknown legacy history must explicitly navigate to its requested URL');
+stopLegacyGuard();
 const visibleBase = { published: true, displayPeriodEnabled: true, displayPeriodStart: new Date(currentTime - 86400000), displayPeriodEnd: new Date(currentTime + 86400000) };
 assert.equal(getAdminEventVisibility(visibleBase).label, '곧 종료');
 assert.equal(getAdminEventVisibility({ ...visibleBase, published: false }).label, '비공개');
 assert.equal(getAdminEventVisibility({ ...visibleBase, displayPeriodEnabled: false }).label, '노출 중');
 assert.equal(getAdminEventVisibility({ ...visibleBase, displayPeriodStart: null }).label, '기간 확인 필요');
+assert.equal(getAdminEventVisibility({ ...visibleBase, displayPeriodStart: new Date(currentTime + 86400000), displayPeriodEnd: new Date(currentTime - 86400000) }).label, '기간 확인 필요', 'inverted periods must be actionable as invalid settings');
 assert.equal(getAdminEventVisibility({ ...visibleBase, displayPeriodStart: new Date(currentTime + 3600000) }).label, '시작 전');
 assert.equal(getAdminEventVisibility({ ...visibleBase, displayPeriodEnd: new Date(currentTime - 3600000) }).label, '만료');
 const periodPages = [makePage('ending', 'wedding', visibleBase), makePage('private-ending', 'wedding', { ...visibleBase, published: false })];
+const ownedPages = [makePage('customer-event', 'wedding', { ownerDisplayName: '김민서', ownerEmail: 'Minseo@Example.test' })];
+assert.deepEqual(filterAdminEvents(ownedPages, { ...DEFAULT_ADMIN_EVENT_FILTERS, query: '김민서' }).map((page) => page.slug), ['customer-event'], 'event search must match the linked customer name');
+assert.deepEqual(filterAdminEvents(ownedPages, { ...DEFAULT_ADMIN_EVENT_FILTERS, query: 'minseo@example.test' }).map((page) => page.slug), ['customer-event'], 'event search must match the linked email regardless of case');
 assert.deepEqual(filterAdminEvents(periodPages, { ...DEFAULT_ADMIN_EVENT_FILTERS, visibility: 'due-soon' }).map((page) => page.slug), ['ending']);
 assert.deepEqual(filterAdminEvents(periodPages, { ...DEFAULT_ADMIN_EVENT_FILTERS, visibility: 'expired' }), []);
+assert.deepEqual(filterAdminEvents([makePage('invalid-period', 'wedding', { ...visibleBase, displayPeriodStart: null }), ...periodPages], { ...DEFAULT_ADMIN_EVENT_FILTERS, visibility: 'period-error' }).map((page) => page.slug), ['invalid-period']);

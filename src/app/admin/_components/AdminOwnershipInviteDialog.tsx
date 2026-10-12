@@ -67,7 +67,7 @@ export default function AdminOwnershipInviteDialog({
           고객 연결 링크
         </h2>
         <p className={styles.ownershipInviteDescription}>
-          이 링크를 고객에게 전달하면 로그인 또는 회원가입 후 청첩장이 자동으로 연결됩니다.
+          이 링크를 받은 사람이 로그인 또는 회원가입한 계정에 청첩장이 연결됩니다. 관리자 화면에서 선택한 고객 계정으로 제한되지 않으므로 전달 대상을 확인해 주세요.
         </p>
 
         <label className="admin-field">

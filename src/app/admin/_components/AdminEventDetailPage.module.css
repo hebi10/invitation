@@ -10,4 +10,4 @@
 .content { min-width: 0; padding: 0 0 40px; }
 .page > [role='status'], .layout > [role='status'] { grid-column: 2; position: static; padding: 16px 0; background: transparent; font-size: 13px; }
 .page :is(button,a):focus-visible { outline: 2px solid var(--admin-color-text); outline-offset: 3px; }
-@media(max-width: 760px) { .layout { grid-template-columns: minmax(0,1fr); gap: 24px; } .tabs { position: static; display: flex; flex-wrap: wrap; } .tabs button { width: auto; } .layout > [role='status'] { grid-column: 1; } }
+@media(max-width: 767px) { .layout { grid-template-columns: minmax(0,1fr); gap: 24px; } .tabs { position: static; display: flex; flex-wrap: wrap; } .tabs button { width: auto; } .layout > [role='status'] { grid-column: 1; } }

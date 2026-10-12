@@ -34,6 +34,8 @@ import type { InvitationProductTier } from '@/types/invitationPage';
 
 import { RECENT_COMMENT_DAYS, type AdminTab } from '../_components/adminPageUtils';
 import type { AdminDataGateway } from './adminDataGateway';
+import { getAdminDataLoadPolicy } from './adminDataLoadPolicy';
+import { invalidateAdminOwnershipInviteStatus } from './adminOwnershipInviteQuery';
 
 type ToastFn = (toast: { title: string; message?: string; tone: 'success' | 'error' | 'info' }) => void;
 type ConfirmFn = (options: {
@@ -48,6 +50,7 @@ interface UseAdminDataParams {
   isAdminLoggedIn: boolean;
   activeTab: AdminTab;
   selectedEventSlug?: string | null;
+  selectedEventDetailTab?: string | null;
   showToast: ToastFn;
   confirm: ConfirmFn;
   gateway: AdminDataGateway;
@@ -62,6 +65,7 @@ export function useAdminData({
   isAdminLoggedIn,
   activeTab,
   selectedEventSlug,
+  selectedEventDetailTab,
   showToast,
   confirm,
   gateway,
@@ -76,19 +80,16 @@ export function useAdminData({
   const [issuingOwnershipInviteSlug, setIssuingOwnershipInviteSlug] = useState<string | null>(null);
   const [walletGrantActionToken, setWalletGrantActionToken] = useState<string | null>(null);
 
-  const shouldLoadPages =
-    isAdminLoggedIn &&
-    (activeTab === 'pages' ||
-      activeTab === 'comments' ||
-      activeTab === 'periods');
-  const shouldLoadComments =
-    isAdminLoggedIn && (activeTab === 'comments' || Boolean(selectedEventSlug));
-  const shouldLoadAccounts =
-    isAdminLoggedIn && (activeTab === 'accounts' || Boolean(selectedEventSlug));
+  const {
+    pages: shouldLoadPages,
+    comments: shouldLoadComments,
+    accounts: shouldLoadAccounts,
+    summary: shouldLoadSummary,
+  } = getAdminDataLoadPolicy({ isAdminLoggedIn, activeTab, selectedEventSlug, selectedEventDetailTab });
 
   const dashboardSummaryQuery = useQuery<AdminDashboardSummarySnapshot>({
     queryKey: appQueryKeys.adminDashboardSummary(RECENT_COMMENT_DAYS),
-    enabled: isAdminLoggedIn,
+    enabled: shouldLoadSummary,
     queryFn: async () => gateway.getDashboardSummary(),
     staleTime: ADMIN_STALE_TIME_MS,
     gcTime: ADMIN_GC_TIME_MS,
@@ -380,6 +381,7 @@ export function useAdminData({
 
       try {
         await gateway.assignOwnership(uid, pageSlug);
+        await invalidateAdminOwnershipInviteStatus(queryClient, pageSlug);
         await refreshAdminData({
           accounts: true,
           pages: true,
@@ -400,7 +402,7 @@ export function useAdminData({
         setOwnershipActionToken(null);
       }
     },
-    [confirm, customerAccounts, gateway, pages, refreshAdminData, showToast]
+    [confirm, customerAccounts, gateway, pages, queryClient, refreshAdminData, showToast]
   );
 
   const handleClearCustomerOwnership = useCallback(
@@ -423,6 +425,7 @@ export function useAdminData({
 
       try {
         await gateway.clearOwnership(pageSlug);
+        await invalidateAdminOwnershipInviteStatus(queryClient, pageSlug);
         await refreshAdminData({
           accounts: true,
           pages: true,
@@ -443,7 +446,7 @@ export function useAdminData({
         setOwnershipActionToken(null);
       }
     },
-    [confirm, gateway, pages, refreshAdminData, showToast]
+    [confirm, gateway, pages, queryClient, refreshAdminData, showToast]
   );
 
   const handleIssueOwnershipInvite = useCallback(
@@ -452,6 +455,7 @@ export function useAdminData({
 
       try {
         const result = await gateway.issueOwnershipInvite(pageSlug);
+        await invalidateAdminOwnershipInviteStatus(queryClient, pageSlug);
         showToast({
           title: '고객 연결 링크를 만들었습니다.',
           message: '7일 동안 사용할 수 있으며 가장 최근에 만든 링크만 유효합니다.',
@@ -471,7 +475,7 @@ export function useAdminData({
         setIssuingOwnershipInviteSlug(null);
       }
     },
-    [gateway, showToast]
+    [gateway, queryClient, showToast]
   );
 
   const handleGrantCustomerWalletCredit = useCallback(
@@ -771,6 +775,9 @@ export function useAdminData({
     });
     queryClient.removeQueries({
       queryKey: appQueryKeys.adminCustomerAccounts,
+    });
+    queryClient.removeQueries({
+      queryKey: ['admin-ownership-invite-status'],
     });
   }, [queryClient]);
 

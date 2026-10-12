@@ -15,6 +15,13 @@ export interface AdminOwnershipInviteResult {
   expiresAt: Date;
 }
 
+export interface AdminOwnershipInviteStatus {
+  status: 'not-issued' | 'pending' | 'expired' | 'consumed' | 'unavailable';
+  createdAt: Date | null;
+  expiresAt: Date | null;
+  consumedAt: Date | null;
+}
+
 type ApiErrorPayload = { error?: unknown } | null;
 
 function readErrorMessage(payload: ApiErrorPayload, fallback: string) {
@@ -39,6 +46,49 @@ function requirePageSlug(pageSlug: string) {
   }
 
   return normalizedPageSlug;
+}
+
+export async function getAdminOwnershipInviteStatus(
+  pageSlug: string
+): Promise<AdminOwnershipInviteStatus> {
+  const normalizedPageSlug = requirePageSlug(pageSlug);
+  const idToken = await getCurrentFirebaseIdToken();
+  if (!idToken) {
+    throw new Error('관리자 로그인 상태를 확인하지 못했습니다. 다시 로그인해 주세요.');
+  }
+
+  const response = await fetch(
+    `/api/admin/events/${encodeURIComponent(normalizedPageSlug)}/ownership-invite`,
+    { method: 'GET', headers: { Authorization: `Bearer ${idToken}` }, cache: 'no-store' }
+  );
+  const payload = (await response.json().catch(() => null)) as {
+    status?: unknown;
+    createdAt?: unknown;
+    expiresAt?: unknown;
+    consumedAt?: unknown;
+    error?: unknown;
+  } | null;
+  if (!response.ok) {
+    throw new Error(readErrorMessage(payload, '청첩장 연결 상태를 확인하지 못했습니다.'));
+  }
+  const status = payload?.status;
+  if (status !== 'not-issued' && status !== 'pending' && status !== 'expired' && status !== 'consumed' && status !== 'unavailable') {
+    throw new Error('청첩장 연결 상태 응답이 올바르지 않습니다.');
+  }
+  function readDate(value: unknown) {
+    if (value == null) return null;
+    const date = typeof value === 'string' ? new Date(value) : null;
+    if (!date || Number.isNaN(date.getTime())) {
+      throw new Error('청첩장 연결 상태 응답이 올바르지 않습니다.');
+    }
+    return date;
+  }
+  return {
+    status,
+    createdAt: readDate(payload?.createdAt),
+    expiresAt: readDate(payload?.expiresAt),
+    consumedAt: readDate(payload?.consumedAt),
+  };
 }
 
 export async function issueAdminOwnershipInvite(
