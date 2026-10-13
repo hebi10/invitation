@@ -22,7 +22,6 @@ import {
   buildMemoryPageUrl,
   createMemoryPageDraftFromInvitation,
   createSelectedCommentSnapshot,
-  deleteMemoryImageAsset,
   deleteMemoryPage,
   getMemoryPageByPageSlug,
   mergeInvitationGalleryImages,
@@ -480,36 +479,23 @@ export default function MemoryPageManager({ initialPageSlug, lockedPageSlug }: M
     }
   };
 
-  const handleRemoveImage = async (image: MemoryGalleryImage) => {
-    if (!draft) {
-      return;
-    }
-
-    const approved = await confirm({ title: '추억 페이지 이미지를 제거할까요?', description: '직접 업로드한 파일은 즉시 삭제됩니다. 제거한 구성은 페이지를 저장해 반영해 주세요.', confirmLabel: '이미지 제거', cancelLabel: '취소', tone: 'danger' });
-    if (!approved) return;
-    try {
-      setUploading(true);
-      await deleteMemoryImageAsset(image);
+  const handleRemoveImage = (image: MemoryGalleryImage) => {
+    setDraft((current) => {
+      if (!current) return current;
       const nextGalleryImages = normalizeOrder(
-        draft.galleryImages.filter((item) => item.id !== image.id)
+        current.galleryImages.filter((item) => item.id !== image.id)
       );
-      const shouldResetHero = draft.heroImage?.id === image.id;
-      const nextHeroImage = shouldResetHero ? nextGalleryImages[0] ?? null : draft.heroImage;
-      setDraft({
-        ...draft,
+      const shouldResetHero = current.heroImage?.id === image.id;
+      const nextHeroImage = shouldResetHero ? nextGalleryImages[0] ?? null : current.heroImage;
+      return {
+        ...current,
         galleryImages: nextGalleryImages,
         heroImage: nextHeroImage,
         heroThumbnailUrl: shouldResetHero
           ? (nextHeroImage?.thumbnailUrl ?? nextHeroImage?.url ?? '')
-          : draft.heroThumbnailUrl,
-      });
-    } catch (deleteError) {
-      console.error(deleteError);
-      showToast({
-        title: '이미지 제거에 실패했습니다.',
-        tone: 'error',
-      });
-    } finally { setUploading(false); }
+          : current.heroThumbnailUrl,
+      };
+    });
   };
 
   const addCommentToSelection = (comment: Comment) => {
@@ -765,7 +751,7 @@ export default function MemoryPageManager({ initialPageSlug, lockedPageSlug }: M
               <div>
                 <h3 className={styles.panelTitle}>이미지</h3>
                 <p className={styles.panelDescription}>
-                  대표 이미지를 지정하고 직접 업로드한 이미지를 관리합니다.
+                  대표 이미지를 지정하고 갤러리를 관리합니다. 갤러리에서 제거한 사진은 페이지 저장 후 반영되며 원본 파일은 보존됩니다.
                 </p>
               </div>
             </div>
@@ -857,10 +843,10 @@ export default function MemoryPageManager({ initialPageSlug, lockedPageSlug }: M
                       </button>
                       <button
                         type="button"
-                        className="admin-button admin-button-danger"
-                        onClick={() => void handleRemoveImage(image)}
+                        className="admin-button admin-button-ghost"
+                        onClick={() => handleRemoveImage(image)}
                       >
-                        제거
+                        갤러리에서 제거
                       </button>
                     </div>
                   </article>

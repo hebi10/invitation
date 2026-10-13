@@ -5,6 +5,7 @@ import type { Comment } from '@/services/commentService';
 
 import { filterAdminEventComments } from './adminEventWorkspaceModel';
 import { useAdminWorkGuard } from './AdminWorkGuard';
+import AdminStaleQueryNotice from './AdminStaleQueryNotice';
 import styles from '../page.module.css';
 import workspace from './AdminPeopleWorkspace.module.css';
 
@@ -81,9 +82,7 @@ export default function AdminEventCommentsTab({
       {loading && comments.length === 0 ? (
         <p className={styles.eventManagementState}>방명록을 불러오는 중입니다.</p>
       ) : null}
-      {error && comments.length === 0 ? (
-        <p className={styles.eventManagementError} role="alert">방명록을 불러오지 못했습니다.</p>
-      ) : null}
+      <AdminStaleQueryNotice error={error} sourceLabel="방명록" hasPreviousData={comments.length > 0} onRetry={onRefresh} />
       {deleteError ? <p className={styles.eventManagementError} role="alert">{deleteError}</p> : null}
       {!loading && !error && eventComments.length === 0 ? (
         <p className={styles.eventManagementState}>등록된 방명록 메시지가 없습니다.</p>

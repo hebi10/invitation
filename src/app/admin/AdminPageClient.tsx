@@ -52,6 +52,7 @@ import {
 import styles from './page.module.css';
 import AdminOverview from './_components/AdminOverview';
 import { AdminWorkGuardProvider } from './_components/AdminWorkGuard';
+import { shouldNormalizeAdminPageQuery } from './_components/adminQueryRecovery';
 
 const PRIMARY_VIEW_QUERY = {
   events: { section: 'events', tab: 'pages' },
@@ -202,6 +203,7 @@ export default function AdminPageClient({
     updatingVariantToken,
     updatingTierPageSlug,
     deletingPageSlug,
+    deletingCommentToken,
     commentsLoading,
     commentsRefreshing,
     accountsLoading,
@@ -423,11 +425,19 @@ export default function AdminPageClient({
     selectedPageSlug,
   ]);
 
+  const commentScopeDependsOnPages = requestedPageCategoryParam !== null && selectedPageSlug === 'all';
   useEffect(() => {
-    if (currentPage !== normalizedCurrentPage) {
+    if (shouldNormalizeAdminPageQuery({
+      requestedPage: currentPage,
+      normalizedPage: normalizedCurrentPage,
+      active: !isHomeView && renderedActiveTab === 'comments',
+      loading: commentsLoading || (commentScopeDependsOnPages && pagesLoading),
+      refreshing: commentsRefreshing || (commentScopeDependsOnPages && pagesRefreshing),
+      error: commentsError ?? (commentScopeDependsOnPages ? pagesError : null),
+    })) {
       updateQuery({ commentPage: String(normalizedCurrentPage) });
     }
-  }, [currentPage, normalizedCurrentPage, updateQuery]);
+  }, [commentScopeDependsOnPages, commentsError, commentsLoading, commentsRefreshing, currentPage, isHomeView, normalizedCurrentPage, pagesError, pagesLoading, pagesRefreshing, renderedActiveTab, updateQuery]);
 
   const commentFilterChips = [
     commentSearch
@@ -507,7 +517,7 @@ export default function AdminPageClient({
   return (
     <AdminWorkGuardProvider blocked={Boolean(
       updatingPublishedPageSlug || updatingVariantToken || updatingTierPageSlug ||
-      deletingPageSlug || deletingCustomerUid || ownershipActionToken ||
+      deletingPageSlug || deletingCommentToken || deletingCustomerUid || ownershipActionToken ||
       issuingOwnershipInviteSlug || walletGrantActionToken
     )}>
     <div className={styles.container}>
@@ -562,7 +572,7 @@ export default function AdminPageClient({
               ownershipActionToken={ownershipActionToken}
               onQueryChange={updateQuery}
               onNavigate={navigateQuery}
-              onRefresh={() => void refreshPages()}
+              onRefresh={() => refreshPages()}
               onRetry={() => void retryPages()}
               onTogglePublished={(page, next) => void handleTogglePublished(page, next)}
               onChangeTier={(page, next) => void handleChangeTier(page, next)}
@@ -596,6 +606,11 @@ export default function AdminPageClient({
 
           {renderedActiveTab === 'comments' ? (
             <AdminCommentsTab
+              deletingCommentToken={deletingCommentToken}
+              eventScopeLoading={commentScopeDependsOnPages && (pagesLoading || pagesRefreshing)}
+              eventScopeError={commentScopeDependsOnPages ? pagesError : null}
+              hasPreviousEventScope={pages.length > 0}
+              onRetryEventScope={() => void retryPages()}
               commentsLoading={commentsLoading}
               commentsRefreshing={commentsRefreshing}
               commentsError={commentsError}

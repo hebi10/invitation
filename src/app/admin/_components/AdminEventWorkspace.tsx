@@ -28,6 +28,7 @@ import AdminEventMobileList from './AdminEventMobileList';
 import AdminQueryState from './AdminQueryState';
 import EmptyState from './EmptyState';
 import Pagination from './Pagination';
+import { shouldNormalizeAdminPageQuery } from './adminQueryRecovery';
 import styles from '../page.module.css';
 
 interface AdminEventWorkspaceProps {
@@ -56,7 +57,7 @@ interface AdminEventWorkspaceProps {
   ownershipActionToken: string | null;
   onQueryChange: (updates: Record<string, string | null>) => void;
   onNavigate: (updates: Record<string, string | null>) => void;
-  onRefresh: () => void;
+  onRefresh: () => void | Promise<void>;
   onRetry: () => void;
   onTogglePublished: (page: InvitationPageSummary, next: boolean) => void;
   onChangeTier: (page: InvitationPageSummary, next: InvitationProductTier) => void;
@@ -137,10 +138,17 @@ export default function AdminEventWorkspace({
   }, [error, loading, onQueryChange, selectedPage, selectedSlug]);
 
   useEffect(() => {
-    if (currentPage !== eventPage.currentPage) {
+    if (shouldNormalizeAdminPageQuery({
+      requestedPage: currentPage,
+      normalizedPage: eventPage.currentPage,
+      active: selectedSlug === null,
+      loading,
+      refreshing,
+      error,
+    })) {
       onQueryChange({ page: String(eventPage.currentPage) });
     }
-  }, [currentPage, eventPage.currentPage, onQueryChange]);
+  }, [currentPage, error, eventPage.currentPage, loading, onQueryChange, refreshing, selectedSlug]);
 
   useEffect(() => {
     if (selectedPage) {
@@ -293,6 +301,8 @@ export default function AdminEventWorkspace({
         {selectedPage ? (
           <AdminEventDetailPanel
             page={selectedPage}
+            eventError={error}
+            eventRefreshing={refreshing}
             selectedDetailTab={selectedDetailTab}
             mobileReadOnly={mobileReadOnly}
             onDetailTabChange={(detail) => onQueryChange({ detail })}

@@ -33,6 +33,7 @@ interface UploadImageOptions {
 
 interface GetImagesByPageOptions {
   allowListing?: boolean;
+  forceRefresh?: boolean;
 }
 
 const USE_FIREBASE = process.env.NEXT_PUBLIC_USE_FIREBASE === 'true';
@@ -562,7 +563,7 @@ export const getImagesByPage = async (
   }
 
   const cachedData = imageCache.get(pageSlug);
-  if (cachedData) {
+  if (cachedData && !options.forceRefresh) {
     return cachedData;
   }
 
@@ -654,7 +655,7 @@ export async function getPageMediaUsageReferences(pageSlug: string): Promise<Med
   return result.references;
 }
 
-export const getAllPageImages = async (): Promise<{
+export const getAllPageImages = async (options: GetImagesByPageOptions = {}): Promise<{
   [pageSlug: string]: UploadedImage[];
 }> => {
   if (!USE_FIREBASE) {
@@ -676,7 +677,7 @@ export const getAllPageImages = async (): Promise<{
     await Promise.all(
       pagesList.prefixes.map(async (pageRef) => {
         const pageSlug = pageRef.name;
-        const pageImages = await getImagesByPage(pageSlug);
+        const pageImages = await getImagesByPage(pageSlug, options);
         allPageImages[pageSlug] = pageImages;
       })
     );

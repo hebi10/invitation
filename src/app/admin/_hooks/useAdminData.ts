@@ -1,7 +1,7 @@
 'use client';
 
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { getEventDeletionFailureMessage, isEventDeletionComplete } from '@/lib/adminEventDeletionState';
 import { getCustomerAssignmentConfirmation } from '@/lib/adminCustomerSelection';
 
@@ -36,6 +36,7 @@ import { RECENT_COMMENT_DAYS, type AdminTab } from '../_components/adminPageUtil
 import type { AdminDataGateway } from './adminDataGateway';
 import { getAdminDataLoadPolicy } from './adminDataLoadPolicy';
 import { invalidateAdminOwnershipInviteStatus } from './adminOwnershipInviteQuery';
+import { lockAdminMutation, settleAdminRefreshTasks } from './adminDataMutationPolicy';
 
 type ToastFn = (toast: { title: string; message?: string; tone: 'success' | 'error' | 'info' }) => void;
 type ConfirmFn = (options: {
@@ -71,6 +72,8 @@ export function useAdminData({
   gateway,
 }: UseAdminDataParams) {
   const queryClient = useQueryClient();
+  const mutationInProgress = useRef(false);
+  const [deletingCommentToken, setDeletingCommentToken] = useState<string | null>(null);
   const [updatingPublishedPageSlug, setUpdatingPublishedPageSlug] = useState<string | null>(null);
   const [updatingVariantToken, setUpdatingVariantToken] = useState<string | null>(null);
   const [updatingTierPageSlug, setUpdatingTierPageSlug] = useState<string | null>(null);
@@ -182,11 +185,14 @@ export function useAdminData({
       comments?: boolean;
       accounts?: boolean;
       invitationPageSlug?: string | null;
+      ownershipInviteSlug?: string | null;
     }) => {
       const tasks: Promise<unknown>[] = [];
 
       if (options.summary) {
-        tasks.push(dashboardSummaryQuery.refetch());
+        tasks.push(shouldLoadSummary
+          ? dashboardSummaryQuery.refetch()
+          : queryClient.invalidateQueries({ queryKey: appQueryKeys.adminDashboardSummary(RECENT_COMMENT_DAYS), refetchType: 'none' }));
       }
 
       if (options.pages) {
@@ -196,6 +202,7 @@ export function useAdminData({
           tasks.push(
             queryClient.invalidateQueries({
               queryKey: appQueryKeys.adminInvitationPages,
+              refetchType: 'none',
             })
           );
         }
@@ -208,6 +215,7 @@ export function useAdminData({
           tasks.push(
             queryClient.invalidateQueries({
               queryKey: appQueryKeys.adminComments,
+              refetchType: 'none',
             })
           );
         }
@@ -220,6 +228,7 @@ export function useAdminData({
           tasks.push(
             queryClient.invalidateQueries({
               queryKey: appQueryKeys.adminCustomerAccounts,
+              refetchType: 'none',
             })
           );
         }
@@ -229,16 +238,19 @@ export function useAdminData({
         tasks.push(
           queryClient.invalidateQueries({
             queryKey: appQueryKeys.invitationPage(options.invitationPageSlug, 'public'),
-          })
+          }, { throwOnError: true })
         );
         tasks.push(
           queryClient.invalidateQueries({
             queryKey: appQueryKeys.invitationPage(options.invitationPageSlug, 'admin'),
-          })
+          }, { throwOnError: true })
         );
       }
 
-      await Promise.all(tasks);
+      if (options.ownershipInviteSlug) {
+        tasks.push(invalidateAdminOwnershipInviteStatus(queryClient, options.ownershipInviteSlug));
+      }
+      return settleAdminRefreshTasks(tasks);
     },
     [
       accountsQuery,
@@ -249,8 +261,17 @@ export function useAdminData({
       shouldLoadAccounts,
       shouldLoadComments,
       shouldLoadPages,
+      shouldLoadSummary,
     ]
   );
+
+  const showMutationSuccess = useCallback((toast: Parameters<ToastFn>[0], refreshed: boolean) => {
+    showToast(refreshed ? toast : {
+      title: '변경사항은 저장되었습니다. 최신 조회에 실패했습니다.',
+      message: `${toast.title} 새로고침 또는 다시 시도로 최신 상태를 확인해 주세요.`,
+      tone: 'info',
+    });
+  }, [showToast]);
 
   const fetchSummarySources = useCallback(async () => {
     await refreshAdminData({
@@ -293,19 +314,22 @@ export function useAdminData({
         return;
       }
 
+      setDeletingCommentToken(`${comment.collectionName ?? 'comments'}:${comment.id}`);
       try {
         await gateway.deleteComment(comment);
-        await refreshAdminData({
+        const refreshed = await refreshAdminData({
           summary: true,
           comments: true,
         });
-        showToast({ title: '댓글을 삭제했습니다.', tone: 'success' });
+        showMutationSuccess({ title: '댓글을 삭제했습니다.', tone: 'success' }, refreshed);
       } catch (deleteError) {
         console.error(deleteError);
         showToast({ title: '댓글 삭제에 실패했습니다.', tone: 'error' });
+      } finally {
+        setDeletingCommentToken(null);
       }
     },
-    [confirm, gateway, refreshAdminData, showToast]
+    [confirm, gateway, refreshAdminData, showToast, showMutationSuccess]
   );
 
   const handleDeletePage = useCallback(
@@ -331,7 +355,7 @@ export function useAdminData({
 
       try {
         const result = await gateway.deleteEvent(page.slug, { retry });
-        await refreshAdminData({
+        const refreshed = await refreshAdminData({
           summary: true,
           pages: true,
           comments: true,
@@ -341,7 +365,7 @@ export function useAdminData({
         if (!isEventDeletionComplete(result)) {
           throw new Error(getEventDeletionFailureMessage(result));
         }
-        showToast({ title: '청첩장을 완전 삭제했습니다.', tone: 'success' });
+        showMutationSuccess({ title: '청첩장을 완전 삭제했습니다.', tone: 'success' }, refreshed);
       } catch (error) {
         console.error(error);
         showToast({
@@ -354,7 +378,7 @@ export function useAdminData({
         setDeletingPageSlug(null);
       }
     },
-    [confirm, gateway, refreshAdminData, showToast]
+    [confirm, gateway, refreshAdminData, showToast, showMutationSuccess]
   );
 
   const handleAssignCustomerOwnership = useCallback(
@@ -381,15 +405,15 @@ export function useAdminData({
 
       try {
         await gateway.assignOwnership(uid, pageSlug);
-        await invalidateAdminOwnershipInviteStatus(queryClient, pageSlug);
-        await refreshAdminData({
+        const refreshed = await refreshAdminData({
           accounts: true,
+          ownershipInviteSlug: pageSlug,
           pages: true,
         });
-        showToast({
+        showMutationSuccess({
           title: '고객 계정에 청첩장을 연결했습니다.',
           tone: 'success',
-        });
+        }, refreshed);
       } catch (error) {
         console.error(error);
         showToast({
@@ -402,7 +426,7 @@ export function useAdminData({
         setOwnershipActionToken(null);
       }
     },
-    [confirm, customerAccounts, gateway, pages, queryClient, refreshAdminData, showToast]
+    [confirm, customerAccounts, gateway, pages, refreshAdminData, showToast, showMutationSuccess]
   );
 
   const handleClearCustomerOwnership = useCallback(
@@ -425,15 +449,15 @@ export function useAdminData({
 
       try {
         await gateway.clearOwnership(pageSlug);
-        await invalidateAdminOwnershipInviteStatus(queryClient, pageSlug);
-        await refreshAdminData({
+        const refreshed = await refreshAdminData({
           accounts: true,
+          ownershipInviteSlug: pageSlug,
           pages: true,
         });
-        showToast({
+        showMutationSuccess({
           title: '고객 계정 연결을 해제했습니다.',
           tone: 'success',
-        });
+        }, refreshed);
       } catch (error) {
         console.error(error);
         showToast({
@@ -446,7 +470,7 @@ export function useAdminData({
         setOwnershipActionToken(null);
       }
     },
-    [confirm, gateway, pages, queryClient, refreshAdminData, showToast]
+    [confirm, gateway, pages, refreshAdminData, showToast, showMutationSuccess]
   );
 
   const handleIssueOwnershipInvite = useCallback(
@@ -455,12 +479,12 @@ export function useAdminData({
 
       try {
         const result = await gateway.issueOwnershipInvite(pageSlug);
-        await invalidateAdminOwnershipInviteStatus(queryClient, pageSlug);
-        showToast({
+        const refreshed = await refreshAdminData({ ownershipInviteSlug: pageSlug });
+        showMutationSuccess({
           title: '고객 연결 링크를 만들었습니다.',
           message: '7일 동안 사용할 수 있으며 가장 최근에 만든 링크만 유효합니다.',
           tone: 'success',
-        });
+        }, refreshed);
         return result;
       } catch (error) {
         console.error(error);
@@ -475,7 +499,7 @@ export function useAdminData({
         setIssuingOwnershipInviteSlug(null);
       }
     },
-    [gateway, queryClient, showToast]
+    [gateway, showToast, showMutationSuccess, refreshAdminData]
   );
 
   const handleGrantCustomerWalletCredit = useCallback(
@@ -515,13 +539,13 @@ export function useAdminData({
           tier: grant.kind === 'pageCreation' ? grant.tier ?? 'premium' : null,
           note: grant.note ?? null,
         });
-        await refreshAdminData({
+        const refreshed = await refreshAdminData({
           accounts: true,
         });
-        showToast({
+        showMutationSuccess({
           title: '고객 이용권을 지급했습니다.',
           tone: 'success',
-        });
+        }, refreshed);
       } catch (error) {
         console.error(error);
         showToast({
@@ -534,7 +558,7 @@ export function useAdminData({
         setWalletGrantActionToken(null);
       }
     },
-    [confirm, customerAccounts, gateway, refreshAdminData, showToast]
+    [confirm, customerAccounts, gateway, refreshAdminData, showToast, showMutationSuccess]
   );
 
   const handleDeleteCustomerAccount = useCallback(
@@ -560,17 +584,17 @@ export function useAdminData({
 
       try {
         const result = await gateway.deleteCustomer(uid);
-        await refreshAdminData({
+        const refreshed = await refreshAdminData({
           accounts: true,
           pages: true,
         });
-        showToast({
+        showMutationSuccess({
           title: '고객 계정을 탈퇴 처리했습니다.',
           message:
             `연결된 청첩장 ${result.detachedEventCount}개의 소유권을 해제하고 ` +
             `${result.unpublishedEventCount}개를 비공개로 전환했습니다.`,
           tone: 'success',
-        });
+        }, refreshed);
       } catch (error) {
         console.error(error);
         showToast({
@@ -583,7 +607,7 @@ export function useAdminData({
         setDeletingCustomerUid(null);
       }
     },
-    [confirm, customerAccounts, gateway, refreshAdminData, showToast]
+    [confirm, customerAccounts, gateway, refreshAdminData, showToast, showMutationSuccess]
   );
 
   const handleTogglePublished = useCallback(
@@ -608,15 +632,15 @@ export function useAdminData({
 
       try {
         await gateway.setPublished(page, nextPublished);
-        await refreshAdminData({
+        const refreshed = await refreshAdminData({
           summary: true,
           pages: true,
           invitationPageSlug: page.slug,
         });
-        showToast({
+        showMutationSuccess({
           title: nextPublished ? '페이지를 공개했습니다.' : '페이지를 비공개로 전환했습니다.',
           tone: 'success',
-        });
+        }, refreshed);
       } catch (error) {
         console.error(error);
         showToast({
@@ -627,7 +651,7 @@ export function useAdminData({
         setUpdatingPublishedPageSlug(null);
       }
     },
-    [confirm, gateway, refreshAdminData, showToast]
+    [confirm, gateway, refreshAdminData, showToast, showMutationSuccess]
   );
 
   const handleEnableVariant = useCallback(
@@ -649,14 +673,14 @@ export function useAdminData({
 
       try {
         await gateway.setVariant(page, variantKey, true);
-        await refreshAdminData({
+        const refreshed = await refreshAdminData({
           pages: true,
           invitationPageSlug: page.slug,
         });
-        showToast({
+        showMutationSuccess({
           title: `${variantLabel} 디자인을 연결했습니다.`,
           tone: 'success',
-        });
+        }, refreshed);
       } catch (error) {
         console.error(error);
         showToast({
@@ -667,7 +691,7 @@ export function useAdminData({
         setUpdatingVariantToken(null);
       }
     },
-    [confirm, gateway, refreshAdminData, showToast]
+    [confirm, gateway, refreshAdminData, showToast, showMutationSuccess]
   );
 
   const handleDisableVariant = useCallback(
@@ -702,14 +726,14 @@ export function useAdminData({
 
       try {
         await gateway.setVariant(page, variantKey, false);
-        await refreshAdminData({
+        const refreshed = await refreshAdminData({
           pages: true,
           invitationPageSlug: page.slug,
         });
-        showToast({
+        showMutationSuccess({
           title: `${variantLabel} 디자인 연결을 해제했습니다.`,
           tone: 'success',
-        });
+        }, refreshed);
       } catch (error) {
         console.error(error);
         showToast({
@@ -720,7 +744,7 @@ export function useAdminData({
         setUpdatingVariantToken(null);
       }
     },
-    [confirm, gateway, refreshAdminData, showToast]
+    [confirm, gateway, refreshAdminData, showToast, showMutationSuccess]
   );
 
   const handleChangeTier = useCallback(
@@ -744,14 +768,14 @@ export function useAdminData({
 
       try {
         await gateway.setTier(page, nextTier);
-        await refreshAdminData({
+        const refreshed = await refreshAdminData({
           pages: true,
           invitationPageSlug: page.slug,
         });
-        showToast({
+        showMutationSuccess({
           title: `상품 등급을 ${nextTier.toUpperCase()}로 변경했습니다.`,
           tone: 'success',
-        });
+        }, refreshed);
       } catch (error) {
         console.error(error);
         showToast({ title: '상품 등급 변경에 실패했습니다.', tone: 'error' });
@@ -759,7 +783,7 @@ export function useAdminData({
         setUpdatingTierPageSlug(null);
       }
     },
-    [confirm, gateway, refreshAdminData, showToast]
+    [confirm, gateway, refreshAdminData, showToast, showMutationSuccess]
   );
 
   const handleLogout = useCallback(() => {
@@ -780,6 +804,23 @@ export function useAdminData({
       queryKey: ['admin-ownership-invite-status'],
     });
   }, [queryClient]);
+
+  const mutations = useMemo(() => ({
+    handleDeleteComment: lockAdminMutation(mutationInProgress, handleDeleteComment, undefined),
+    handleDeletePage: lockAdminMutation(mutationInProgress, handleDeletePage, undefined),
+    handleAssignCustomerOwnership: lockAdminMutation(mutationInProgress, handleAssignCustomerOwnership, undefined),
+    handleClearCustomerOwnership: lockAdminMutation(mutationInProgress, handleClearCustomerOwnership, undefined),
+    handleIssueOwnershipInvite: lockAdminMutation(mutationInProgress, handleIssueOwnershipInvite, null),
+    handleGrantCustomerWalletCredit: lockAdminMutation(mutationInProgress, handleGrantCustomerWalletCredit, undefined),
+    handleDeleteCustomerAccount: lockAdminMutation(mutationInProgress, handleDeleteCustomerAccount, undefined),
+    handleTogglePublished: lockAdminMutation(mutationInProgress, handleTogglePublished, undefined),
+    handleEnableVariant: lockAdminMutation(mutationInProgress, handleEnableVariant, undefined),
+    handleDisableVariant: lockAdminMutation(mutationInProgress, handleDisableVariant, undefined),
+    handleChangeTier: lockAdminMutation(mutationInProgress, handleChangeTier, undefined),
+  }), [handleDeleteComment, handleDeletePage, handleAssignCustomerOwnership,
+    handleClearCustomerOwnership, handleIssueOwnershipInvite, handleGrantCustomerWalletCredit,
+    handleDeleteCustomerAccount, handleTogglePublished, handleEnableVariant,
+    handleDisableVariant, handleChangeTier]);
 
   return {
     pages,
@@ -805,6 +846,7 @@ export function useAdminData({
     updatingVariantToken,
     updatingTierPageSlug,
     deletingPageSlug,
+    deletingCommentToken,
     deletingCustomerUid,
     ownershipActionToken,
     issuingOwnershipInviteSlug,
@@ -818,17 +860,7 @@ export function useAdminData({
     retryComments,
     retryAccounts,
 
-    handleDeleteComment,
-    handleDeletePage,
-    handleAssignCustomerOwnership,
-    handleClearCustomerOwnership,
-    handleIssueOwnershipInvite,
-    handleGrantCustomerWalletCredit,
-    handleDeleteCustomerAccount,
-    handleTogglePublished,
-    handleChangeTier,
-    handleEnableVariant,
-    handleDisableVariant,
+    ...mutations,
     handleLogout,
   };
 }

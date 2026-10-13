@@ -9,6 +9,7 @@ import {
 } from './adminPageUtils';
 import styles from '../page.module.css';
 import workspace from './AdminPeopleWorkspace.module.css';
+import AdminStaleQueryNotice from './AdminStaleQueryNotice';
 
 interface AdminCommentsTabProps {
   commentsLoading: boolean;
@@ -29,7 +30,12 @@ interface AdminCommentsTabProps {
   onRetryComments: () => void;
   onQueryChange: (updates: Record<string, string | null>) => void;
   onDeleteComment: (comment: Comment) => void;
+  deletingCommentToken: string | null;
   mobileReadOnly: boolean;
+  eventScopeLoading?: boolean;
+  eventScopeError?: Error | null;
+  hasPreviousEventScope?: boolean;
+  onRetryEventScope?: () => void;
 }
 
 function resetCommentFilters(
@@ -63,7 +69,12 @@ export default function AdminCommentsTab({
   onRetryComments,
   onQueryChange,
   onDeleteComment,
+  deletingCommentToken,
   mobileReadOnly,
+  eventScopeLoading = false,
+  eventScopeError = null,
+  hasPreviousEventScope = false,
+  onRetryEventScope = onRetryComments,
 }: AdminCommentsTabProps) {
   const eventLabel = (slug: string) => {
     const label = commentPageOptions.find((option) => option.value === slug)?.label;
@@ -71,6 +82,9 @@ export default function AdminCommentsTab({
   };
   const selectedEventLabel = eventLabel(selectedPageSlug);
   const hasCachedComments = comments.length > 0;
+  const scopeUnavailable = (eventScopeLoading || Boolean(eventScopeError)) && !hasPreviousEventScope;
+  const isDeleting = (comment: Comment) =>
+    deletingCommentToken === `${comment.collectionName ?? 'comments'}:${comment.id}`;
 
   return (
     <div className={styles.panelStack}>
@@ -79,7 +93,7 @@ export default function AdminCommentsTab({
           <h1 className={styles.sectionTitle}>방명록 관리</h1>
           <p className={workspace.description}>이벤트별 축하 메시지를 확인하고 관리합니다.</p>
         </div>
-        <p className={styles.sectionMeta}>결과 {filteredComments.length}개</p>
+        <p className={styles.sectionMeta}>{scopeUnavailable ? eventScopeLoading ? '결과 조회 중' : '결과 확인 필요' : `결과 ${filteredComments.length}개`}</p>
       </div>
 
       {mobileReadOnly ? (
@@ -176,7 +190,7 @@ export default function AdminCommentsTab({
               type="button"
               className="admin-button admin-button-secondary"
               onClick={onRefresh}
-              disabled={commentsLoading || commentsRefreshing}
+              disabled={commentsLoading || commentsRefreshing || Boolean(deletingCommentToken)}
             >
               {commentsRefreshing
                 ? '새로고침 중'
@@ -196,6 +210,8 @@ export default function AdminCommentsTab({
         chips={chips}
       />
 
+      <AdminStaleQueryNotice error={eventScopeError} sourceLabel="이벤트 유형" hasPreviousData={hasPreviousEventScope} onRetry={onRetryEventScope} />
+
       {commentsError && hasCachedComments ? (
         <AdminQueryState
           loading={false}
@@ -209,7 +225,10 @@ export default function AdminCommentsTab({
         />
       ) : null}
 
-      {commentsLoading && !hasCachedComments ? (
+      {scopeUnavailable ? eventScopeLoading ? (
+        <AdminQueryState loading error={null} empty={false} emptyTitle="" emptyDescription=""
+          onRetry={onRetryEventScope} loadingMessage="이벤트 유형 정보를 불러오는 중입니다." />
+      ) : null : commentsLoading && !hasCachedComments ? (
         <AdminQueryState
           loading={true}
           error={null}
@@ -269,7 +288,7 @@ export default function AdminCommentsTab({
                       <td>
                         <details className={workspace.actions}>
                           <summary aria-label={`${comment.author} 방명록 작업`}>작업</summary>
-                          <button type="button" className="admin-button admin-button-danger" onClick={() => onDeleteComment(comment)}>삭제</button>
+                          <button type="button" className="admin-button admin-button-danger" disabled={Boolean(deletingCommentToken)} onClick={() => onDeleteComment(comment)}>{isDeleting(comment) ? '삭제 중' : '삭제'}</button>
                         </details>
                       </td>
                     </tr>
@@ -301,7 +320,7 @@ export default function AdminCommentsTab({
                 {!mobileReadOnly ? <div className={styles.mobileCardActions}>
                   <details className={workspace.actions}>
                     <summary aria-label={`${comment.author} 방명록 작업`}>작업</summary>
-                    <button type="button" className="admin-button admin-button-danger" onClick={() => onDeleteComment(comment)}>삭제</button>
+                    <button type="button" className="admin-button admin-button-danger" disabled={Boolean(deletingCommentToken)} onClick={() => onDeleteComment(comment)}>{isDeleting(comment) ? '삭제 중' : '삭제'}</button>
                   </details>
                 </div> : null}
               </article>

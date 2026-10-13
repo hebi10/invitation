@@ -58,14 +58,14 @@ export default function ImageManager({
   const [expandedPages, setExpandedPages] = useState<Record<string, boolean>>({});
   const appliedInitialPageSlugRef = useRef<string | null>(null);
 
-  const loadData = useCallback(async () => {
+  const loadData = useCallback(async (options: { forceRefresh?: boolean } = {}) => {
     try {
       setIsLoading(true);
       setError('');
       const [nextImages, nextPages] = await Promise.all([
         lockedPageSlug
-          ? getImagesByPage(lockedPageSlug).then((pageImages) => ({ [lockedPageSlug]: pageImages }))
-          : getAllPageImages(),
+          ? getImagesByPage(lockedPageSlug, options).then((pageImages) => ({ [lockedPageSlug]: pageImages }))
+          : getAllPageImages(options),
         getAllManagedInvitationPages(),
       ]);
       setImages(nextImages);
@@ -418,7 +418,7 @@ export default function ImageManager({
             <button
               type="button"
               className="admin-button admin-button-secondary"
-              onClick={() => void loadData()}
+              onClick={() => void loadData({ forceRefresh: true })}
               disabled={isLoading}
             >
               {isLoading ? '새로고침 중..' : '새로고침'}
@@ -452,7 +452,7 @@ export default function ImageManager({
           <input type="checkbox" checked={unusedOnly} onChange={(event) => setUnusedOnly(event.target.checked)} />
           미사용 이미지만 보기
         </label>
-        {lockedPageSlug ? <button type="button" className="admin-button admin-button-secondary" disabled={isLoading || isUploading || deleting} onClick={() => void loadData()}>
+        {lockedPageSlug ? <button type="button" className="admin-button admin-button-secondary" disabled={isLoading || isUploading || deleting} onClick={() => void loadData({ forceRefresh: true })}>
           {isLoading ? '새로고침 중..' : '새로고침'}
         </button> : null}
       </div>
@@ -555,9 +555,9 @@ export default function ImageManager({
                 ]
           }
           actionLabel={searchQuery ? '검색 초기화' : '새로고침'}
-          onAction={searchQuery ? () => setSearchQuery('') : () => void loadData()}
+          onAction={searchQuery ? () => setSearchQuery('') : () => void loadData({ forceRefresh: true })}
           secondaryActionLabel={searchQuery ? '현재 조건 새로고침' : undefined}
-          onSecondaryAction={searchQuery ? () => void loadData() : undefined}
+          onSecondaryAction={searchQuery ? () => void loadData({ forceRefresh: true }) : undefined}
         />
       )}
     </div>

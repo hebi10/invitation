@@ -93,7 +93,9 @@ assert.match(getEventDeletionFailureMessage({ success: false, failedStep: 'delet
 assert.equal(getEventDeletionButtonLabel({ jobId: 'test', status: 'failed', currentStep: 'delete-ownership-references', requestedAt: '', retryable: true }), '삭제 재시도');
 const hook = readSource('src/app/admin/_hooks/useAdminData.ts');
 assert.match(hook, /gateway.deleteEvent\(page.slug, \{ retry \}\)/);
-assert.ok(hook.indexOf('if (!isEventDeletionComplete(result))') < hook.indexOf("showToast({ title: '청첩장을 완전 삭제했습니다.'"));
+const completionCheckIndex = hook.indexOf('if (!isEventDeletionComplete(result))');
+const completionNoticeIndex = hook.indexOf("showMutationSuccess({ title: '청첩장을 완전 삭제했습니다.'");
+assert.ok(completionCheckIndex >= 0 && completionNoticeIndex > completionCheckIndex);
 const indexes = JSON.parse(readSource('firestore.indexes.json'));
 for (const field of ['eventId', 'pageSlug']) {
   assert.ok(indexes.fieldOverrides.some((item: { collectionGroup: string; fieldPath: string; indexes: {queryScope: string; order?: string}[] }) => item.collectionGroup === 'ledger' && item.fieldPath === field && item.indexes.some(index => index.queryScope === 'COLLECTION_GROUP' && index.order === 'ASCENDING')));

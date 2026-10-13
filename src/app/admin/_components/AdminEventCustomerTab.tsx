@@ -11,6 +11,7 @@ import { getAdminOwnershipInviteStatusQueryOptions } from '../_hooks/adminOwners
 
 import styles from '../page.module.css';
 import { useAdminWorkGuard } from './AdminWorkGuard';
+import AdminStaleQueryNotice from './AdminStaleQueryNotice';
 
 interface AdminEventCustomerTabProps {
   page: InvitationPageSummary;
@@ -114,6 +115,7 @@ export default function AdminEventCustomerTab({
         </button>
       </div>
       {readOnly && !experience ? <p className={styles.mobileReadOnlyNotice}>조회 전용입니다. 고객 직접 연결, 링크 발급과 연결 해제는 PC 관리자 화면을 이용해 주세요.</p> : null}
+      <AdminStaleQueryNotice error={error} sourceLabel="고객 계정" hasPreviousData={accounts.length > 0} onRetry={refreshCustomer} />
 
       {experience ? <p className={styles.eventManagementState}>체험 모드에서는 실제 계정 연결 링크를 제공하지 않습니다.</p> : <section className={styles.eventCustomerCard} aria-label="고객 연결 링크 상태">
         <div>
@@ -133,12 +135,7 @@ export default function AdminEventCustomerTab({
         {inviteStatusQuery.isError ? <button type="button" className="admin-button admin-button-secondary" disabled={busy || inviteStatusQuery.isFetching} onClick={() => void inviteStatusQuery.refetch()}>상태 다시 조회</button> : null}
       </section>}
 
-      {loading && accounts.length === 0 ? <p className={styles.eventManagementState}>고객 계정을 불러오는 중입니다.</p> : error && accounts.length === 0 ? (
-        <div className={styles.eventManagementState}>
-          <p>고객 계정을 불러오지 못했습니다.</p>
-          <button type="button" className="admin-button admin-button-secondary" onClick={refreshCustomer} disabled={busy}>다시 시도</button>
-        </div>
-      ) : linkedAccount ? (
+      {loading && accounts.length === 0 ? <p className={styles.eventManagementState}>고객 계정을 불러오는 중입니다.</p> : error && accounts.length === 0 ? null : linkedAccount ? (
         <div className={styles.eventCustomerCard}>
           <div>
             <p>현재 연결된 고객</p>

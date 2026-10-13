@@ -14,5 +14,5 @@ export function invalidateAdminOwnershipInviteStatus(queryClient: QueryClient, s
   return queryClient.invalidateQueries({
     queryKey: getAdminOwnershipInviteStatusQueryKey(slug),
     exact: true,
-  });
+  }, { throwOnError: true });
 }

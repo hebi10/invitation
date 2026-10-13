@@ -28,12 +28,15 @@ import {
 import AdminEventCommentsTab from './AdminEventCommentsTab';
 import AdminEventCustomerTab from './AdminEventCustomerTab';
 import AdminEventPeriodTab from './AdminEventPeriodTab';
+import AdminStaleQueryNotice from './AdminStaleQueryNotice';
 import { SHORTCUT_ITEMS } from './adminPageUtils';
 import styles from '../page.module.css';
 import detailStyles from './AdminEventDetailPage.module.css';
 
 interface AdminEventDetailPanelProps {
   page: InvitationPageSummary;
+  eventError: Error | null;
+  eventRefreshing: boolean;
   selectedDetailTab: string | null;
   mobileReadOnly: boolean;
   onDetailTabChange: (tab: AdminEventDetailTabKey) => void;
@@ -114,6 +117,8 @@ export default function AdminEventDetailPanel(props: AdminEventDetailPanelProps)
 
 function EventDetailWorkspace({
   page,
+  eventError,
+  eventRefreshing,
   selectedDetailTab,
   mobileReadOnly,
   onDetailTabChange,
@@ -194,6 +199,7 @@ function EventDetailWorkspace({
           </div>
         </div>
 
+        <AdminStaleQueryNotice error={eventError} sourceLabel="이벤트" hasPreviousData onRetry={() => { void onRefreshEvent(); }} />
         <div className={detailStyles.layout}>
         <div className={detailStyles.tabs} role="tablist" aria-label="이벤트 관리 항목" aria-orientation={orientation}>
           {tabs.map((tab) => (
@@ -424,7 +430,7 @@ function EventDetailWorkspace({
         ) : null}
         </div>
         <div className={styles.eventWorkStatus} role="status">
-          {busy ? '처리 중입니다. 완료될 때까지 기다려 주세요.' : work.dirty ? '저장하지 않은 변경 내용이 있습니다.' : '현재 저장된 정보를 표시합니다.'}
+          {busy ? '처리 중입니다. 완료될 때까지 기다려 주세요.' : work.dirty ? '저장하지 않은 변경 내용이 있습니다.' : eventRefreshing ? '이벤트 최신 정보를 조회하고 있습니다.' : eventError ? '이전에 조회한 이벤트 정보를 표시합니다.' : '현재 저장된 정보를 표시합니다.'}
         </div>
         </div>
       </section>

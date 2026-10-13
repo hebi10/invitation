@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 
 import { getEventTypeDisplayLabel } from '@/lib/eventTypes';
@@ -23,6 +23,7 @@ import { formatDateTime } from './adminPageUtils';
 import styles from '../page.module.css';
 import workspace from './AdminPeopleWorkspace.module.css';
 import { getInvitationThemeAdminLabel, isInvitationThemeKey } from '@/lib/invitationThemes';
+import { shouldNormalizeAdminPageQuery } from './adminQueryRecovery';
 
 const CUSTOMER_ACCOUNTS_PAGE_SIZE = 10;
 type CustomerConnectionFilter = 'all' | 'linked' | 'unlinked';
@@ -138,17 +139,18 @@ export default function AdminCustomerAccountsTab({
   routes,
   experience,
 }: AdminCustomerAccountsTabProps) {
+  const customerBusy = Boolean(ownershipActionToken || issuingOwnershipInviteSlug || deletingCustomerUid);
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const updateCustomerQuery = (updates: Record<string, string | null>, navigation: 'replace' | 'push' = 'replace') => {
+  const updateCustomerQuery = useCallback((updates: Record<string, string | null>, navigation: 'replace' | 'push' = 'replace') => {
     const params = new URLSearchParams(searchParams?.toString() ?? '');
     Object.entries(updates).forEach(([key, value]) => {
       if (value) params.set(key, value);
       else params.delete(key);
     });
     router[navigation](`${pathname}?${params.toString()}`, { scroll: false });
-  };
+  }, [pathname, router, searchParams]);
   const searchQuery = searchParams?.get('customerQ') ?? '';
   const requestedConnection = searchParams?.get('customerConnection');
   const connectionFilter: CustomerConnectionFilter = requestedConnection === 'linked' || requestedConnection === 'unlinked' ? requestedConnection : 'all';
@@ -165,6 +167,7 @@ export default function AdminCustomerAccountsTab({
   const listScroll = useRef(0);
   const previousCustomer = useRef('');
   const openCustomer = (uid: string) => {
+    if (customerBusy) return;
     listScroll.current = window.scrollY;
     updateCustomerQuery({ customer: uid, customerDetail: null, event: null }, 'push');
   };
@@ -229,6 +232,18 @@ export default function AdminCustomerAccountsTab({
     (normalizedCurrentPage - 1) * CUSTOMER_ACCOUNTS_PAGE_SIZE,
     normalizedCurrentPage * CUSTOMER_ACCOUNTS_PAGE_SIZE
   );
+  useEffect(() => {
+    if (shouldNormalizeAdminPageQuery({
+      requestedPage: currentPage,
+      normalizedPage: normalizedCurrentPage,
+      active: !mobileReadOnly || !selectedCustomerUid,
+      loading,
+      refreshing,
+      error,
+    })) {
+      updateCustomerQuery({ customerPage: String(normalizedCurrentPage) });
+    }
+  }, [currentPage, error, loading, mobileReadOnly, normalizedCurrentPage, refreshing, selectedCustomerUid, updateCustomerQuery]);
 
   const getSelectedLinkedEvent = (account: AdminCustomerAccountSummary) => {
     if (!account.linkedEvents.length) {
@@ -255,7 +270,7 @@ export default function AdminCustomerAccountsTab({
             <span className={styles.rowNumber}>{index + 1}</span>
             <div className={styles.identityStack}>
               <h3 className={styles.accountCardTitle}>
-                {selectedCustomerUid === account.uid ? account.displayName || account.email || account.uid : <button type="button" className={styles.customerSelectButton} data-customer-uid={account.uid} onClick={() => openCustomer(account.uid)}>{account.displayName || account.email || account.uid}</button>}
+                {selectedCustomerUid === account.uid ? account.displayName || account.email || account.uid : <button type="button" className={styles.customerSelectButton} data-customer-uid={account.uid} disabled={customerBusy} onClick={() => openCustomer(account.uid)}>{account.displayName || account.email || account.uid}</button>}
               </h3>
               <p className={styles.tableSubtext}>{account.email ?? '이메일 없음'}</p>
               <details className={workspace.accountId}><summary>계정 정보</summary><p>고객 식별번호 · {account.uid}</p></details>
@@ -273,8 +288,8 @@ export default function AdminCustomerAccountsTab({
         </div>
 
         {selectedCustomerUid === account.uid ? <nav className={styles.customerDetailNav} aria-label="고객 상세 항목">
-          <button type="button" aria-current={customerDetailTab === 'events' ? 'page' : undefined} onClick={() => updateCustomerQuery({ customerDetail: 'events' })}>이벤트</button>
-          <button type="button" aria-current={customerDetailTab === 'wallet' ? 'page' : undefined} onClick={() => updateCustomerQuery({ customerDetail: 'wallet' })}>이용권 이력</button>
+          <button type="button" disabled={customerBusy} aria-current={customerDetailTab === 'events' ? 'page' : undefined} onClick={() => updateCustomerQuery({ customerDetail: 'events' })}>이벤트</button>
+          <button type="button" disabled={customerBusy} aria-current={customerDetailTab === 'wallet' ? 'page' : undefined} onClick={() => updateCustomerQuery({ customerDetail: 'wallet' })}>이용권 이력</button>
         </nav> : null}
         {selectedCustomerUid === account.uid && customerDetailTab === 'wallet' ? renderWalletManager(account) : <section className={styles.accountCardSection}>
           <h4 className={styles.accountCardSectionTitle}>연결된 이벤트</h4>
@@ -286,7 +301,7 @@ export default function AdminCustomerAccountsTab({
                   <span>
                     {getEventTypeDisplayLabel(event.eventType, 'admin')} · /{event.slug}
                   </span>
-                  <button type="button" className="admin-button admin-button-ghost" onClick={() => updateCustomerQuery({ section: 'events', tab: 'pages', view: null, event: event.slug, detail: null, customer: null, customerDetail: null }, 'push')}>이벤트 상세 보기</button>
+                  <button type="button" className="admin-button admin-button-ghost" disabled={customerBusy} onClick={() => updateCustomerQuery({ section: 'events', tab: 'pages', view: null, event: event.slug, detail: null, customer: null, customerDetail: null }, 'push')}>이벤트 상세 보기</button>
                 </li>
               ))}
             </ul>
@@ -402,6 +417,7 @@ export default function AdminCustomerAccountsTab({
           <select
             className="admin-input"
             value={selectedEvent?.slug ?? ''}
+            disabled={customerBusy}
             onChange={(event) =>
               setSelectedLinkedEvents((current) => ({
                 ...current,
@@ -432,12 +448,14 @@ export default function AdminCustomerAccountsTab({
               <span>수정 {formatDateValue(selectedEvent.updatedAt)}</span>
             </div>
             <div className={styles.tableActions}>
-              <a className="admin-button admin-button-secondary" href={`${routes.admin()}?section=events&tab=pages&event=${encodeURIComponent(selectedEvent.slug)}`}>이벤트 관리</a>
+              <a className="admin-button admin-button-secondary" aria-disabled={customerBusy} onClick={(event) => { if (customerBusy) event.preventDefault(); }} href={`${routes.admin()}?section=events&tab=pages&event=${encodeURIComponent(selectedEvent.slug)}`}>이벤트 관리</a>
               <a
                 className="admin-button admin-button-ghost"
                 href={routes.wizardEdit(selectedEvent.slug)}
                 target="_blank"
                 rel="noreferrer"
+                aria-disabled={customerBusy}
+                onClick={(event) => { if (customerBusy) event.preventDefault(); }}
               >
                 수정하기
               </a>
@@ -456,7 +474,7 @@ export default function AdminCustomerAccountsTab({
                 <button
                   type="button"
                   className="admin-button admin-button-secondary"
-                  disabled={isIssuingOwnershipInvite}
+                  disabled={customerBusy}
                   onClick={() => onIssueOwnershipInvite(selectedEvent.slug)}
                 >
                   {isIssuingOwnershipInvite ? '링크 발급 중' : '고객 연결 링크'}
@@ -521,7 +539,7 @@ export default function AdminCustomerAccountsTab({
 
         <nav className={styles.customerDetailNav} aria-label="고객 상세 항목">
           {([{ key: 'events', label: '이벤트' }, { key: 'wallet', label: '이용권' }, { key: 'management', label: '관리' }] as const).map((tab) => (
-            <button type="button" key={tab.key} aria-current={customerDetailTab === tab.key ? 'page' : undefined}
+            <button type="button" key={tab.key} disabled={customerBusy} aria-current={customerDetailTab === tab.key ? 'page' : undefined}
               onClick={() => updateCustomerQuery({ customerDetail: tab.key })}>{tab.label}</button>
           ))}
         </nav>
@@ -551,7 +569,7 @@ export default function AdminCustomerAccountsTab({
                   <select
                     className="admin-input"
                     value={assignmentEventType}
-                    disabled={account.missingAuthUser || !unassignedEvents.length}
+                    disabled={customerBusy || account.missingAuthUser || !unassignedEvents.length}
                     onChange={(event) =>
                       updateDraftAssignmentEventType(
                         account.uid,
@@ -573,7 +591,7 @@ export default function AdminCustomerAccountsTab({
                     type="search"
                     value={assignmentQuery}
                     placeholder="이름 또는 URL 검색"
-                    disabled={account.missingAuthUser || !unassignedEvents.length}
+                    disabled={customerBusy || account.missingAuthUser || !unassignedEvents.length}
                     onChange={(event) =>
                       updateDraftAssignmentQuery(account.uid, event.target.value)
                     }
@@ -584,7 +602,7 @@ export default function AdminCustomerAccountsTab({
                 <select
                   className="admin-input"
                   value={selectedSlug}
-                  disabled={account.missingAuthUser || !filteredAssignableEvents.length}
+                  disabled={customerBusy || account.missingAuthUser || !filteredAssignableEvents.length}
                   onChange={(event) =>
                     setDraftAssignments((current) => ({
                       ...current,
@@ -603,7 +621,7 @@ export default function AdminCustomerAccountsTab({
                   type="button"
                   className="admin-button admin-button-primary"
                   disabled={
-                    account.missingAuthUser ||
+                    customerBusy || account.missingAuthUser ||
                     !selectedSlug ||
                     !filteredAssignableEvents.some((event) => event.slug === selectedSlug) ||
                     isAssigning
@@ -616,7 +634,7 @@ export default function AdminCustomerAccountsTab({
                   type="button"
                   className="admin-button admin-button-secondary"
                   disabled={
-                    !selectedSlug ||
+                    customerBusy || !selectedSlug ||
                     !filteredAssignableEvents.some((event) => event.slug === selectedSlug) ||
                     isIssuingSelectedInvite
                   }
@@ -661,7 +679,7 @@ export default function AdminCustomerAccountsTab({
                 <button
                   type="button"
                   className="admin-button admin-button-danger"
-                  disabled={isClearing}
+                  disabled={customerBusy}
                   onClick={() => onClear(selectedLinkedEvent.slug)}
                 >
                   {isClearing ? '해제 중..' : '선택 이벤트 연결 해제'}
@@ -671,7 +689,7 @@ export default function AdminCustomerAccountsTab({
                 <button
                   type="button"
                   className="admin-button admin-button-danger"
-                  disabled={isDeletingAccount}
+                  disabled={customerBusy}
                   onClick={() => onDeleteAccount(account.uid)}
                 >
                   {isDeletingAccount
@@ -743,7 +761,7 @@ export default function AdminCustomerAccountsTab({
               type="button"
               className="admin-button admin-button-secondary"
               onClick={onRefresh}
-              disabled={loading || refreshing}
+              disabled={customerBusy || loading || refreshing}
             >
               {refreshing ? '새로고침 중' : loading ? '불러오는 중' : '새로고침'}
             </button>
@@ -822,7 +840,7 @@ export default function AdminCustomerAccountsTab({
           {mobileReadOnly ? (
             <div className={styles.accountCardList}>
               {selectedAccount ? <>
-                <button type="button" className="admin-button admin-button-ghost" onClick={() => updateCustomerQuery({ customer: null, customerDetail: null, event: null })}>고객 목록으로</button>
+                <button type="button" className="admin-button admin-button-ghost" disabled={customerBusy} onClick={() => updateCustomerQuery({ customer: null, customerDetail: null, event: null })}>고객 목록으로</button>
                 {renderMobileAccountCard(selectedAccount, accounts.indexOf(selectedAccount))}
               </> : paginatedAccounts.map((account, index) => renderMobileAccountCard(account, (normalizedCurrentPage - 1) * CUSTOMER_ACCOUNTS_PAGE_SIZE + index))}
             </div>
@@ -833,7 +851,7 @@ export default function AdminCustomerAccountsTab({
                   <thead><tr><th scope="col">고객</th><th scope="col">연결 이벤트</th><th scope="col">상태</th><th scope="col">최근 로그인</th></tr></thead>
                   <tbody>{paginatedAccounts.map((account) => (
                     <tr key={account.uid} data-selected={account.uid === selectedCustomerUid || undefined}>
-                      <td><button type="button" className={styles.customerSelectButton} data-customer-uid={account.uid} aria-current={account.uid === selectedCustomerUid ? 'true' : undefined}
+                      <td><button type="button" className={styles.customerSelectButton} data-customer-uid={account.uid} disabled={customerBusy} aria-current={account.uid === selectedCustomerUid ? 'true' : undefined}
                         onClick={() => openCustomer(account.uid)}>
                         <strong>{account.displayName || account.email || '이름 미등록 고객'}</strong>{account.displayName && account.displayName !== account.email ? <span>{account.email ?? '이메일 없음'}</span> : null}
                       </button></td>
@@ -844,7 +862,7 @@ export default function AdminCustomerAccountsTab({
                 </table>
               </div>
               {selectedAccount ? <section className={`${styles.customerDetailPane} ${workspace.customerDetail}`} aria-label="선택한 고객 상세">
-                  <button type="button" className={`admin-button admin-button-ghost ${workspace.closeButton}`} aria-label="고객 상세 닫기" title="고객 상세 닫기" onClick={() => updateCustomerQuery({ customer: null, customerDetail: null, event: null })}><img src="/images/admin/close.webp" alt="" width={16} height={16} /></button>
+                  <button type="button" disabled={customerBusy} className={`admin-button admin-button-ghost ${workspace.closeButton}`} aria-label="고객 상세 닫기" title="고객 상세 닫기" onClick={() => updateCustomerQuery({ customer: null, customerDetail: null, event: null })}><img src="/images/admin/close.webp" alt="" width={16} height={16} /></button>
                   {renderAccountCard(selectedAccount, accounts.indexOf(selectedAccount))}
               </section> : null}
             </div>

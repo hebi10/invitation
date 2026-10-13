@@ -14,6 +14,10 @@ const core = [
   'validate-theme-extension',
   'test-admin-created-event-ownership',
   'test-admin-customer-selection',
+  'test-admin-comment-pending-ui',
+  'test-admin-manager-recovery',
+  'test-admin-data-mutations',
+  'test-admin-query-recovery',
   'test-admin-customer-account-assignment-filters',
   'test-admin-event-deletion-policy',
   'test-admin-event-deletion-ui-contracts',
@@ -214,6 +218,7 @@ if (!selectedTests) {
 
 // Hook-based components need React's client server-rendering entrypoint.
 const clientRenderingTests = new Set([
+  'test-admin-query-recovery',
   'test-customer-private-preview',
   'test-wizard-sharing-preview',
   'test-customer-handoff-completion',

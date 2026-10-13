@@ -284,7 +284,7 @@ export default function DisplayPeriodManager({
     setInitialForm(JSON.stringify(createFormState(selectedPage, periodsByPage.get(selectedPage.slug))));
   }, [initialPageSlug, pages, periodsByPage]);
 
-  const filteredPages = useMemo(() => {
+  const matchingPages = useMemo(() => {
     const normalizedQuery = searchQuery.trim().toLowerCase();
 
     return pages.filter((page) => {
@@ -297,6 +297,11 @@ export default function DisplayPeriodManager({
       return matchesEventType && matchesSearch && matchesStatusFilter(localStatusFilter, period);
     });
   }, [eventTypeFilter, localStatusFilter, pages, periodsByPage, searchQuery]);
+
+  const pinnedEditingPage = dirty && editingPageSlug && !matchingPages.some((page) => page.slug === editingPageSlug)
+    ? pages.find((page) => page.slug === editingPageSlug) ?? null
+    : null;
+  const filteredPages = pinnedEditingPage ? [pinnedEditingPage, ...matchingPages] : matchingPages;
 
   const chips = [
     searchQuery
@@ -328,7 +333,7 @@ export default function DisplayPeriodManager({
             이벤트 공개 기간 데이터를 카드 단위로 바로 편집합니다.
           </p>
         </div>
-        <StatusBadge tone="neutral">총 {filteredPages.length}개 페이지</StatusBadge>
+        <StatusBadge tone="neutral">총 {matchingPages.length}개 페이지</StatusBadge>
       </div>
 
       <FilterToolbar
@@ -376,6 +381,10 @@ export default function DisplayPeriodManager({
         }
         chips={chips}
       />
+
+      {pinnedEditingPage ? <p className={styles.description} role="status">
+        {pinnedEditingPage.displayName}의 미저장 편집 내용을 현재 필터와 관계없이 표시합니다. 저장하거나 취소하면 필터 결과로 돌아갑니다.
+      </p> : null}
 
       {loadError ? <div className={styles.errorMessage}>{loadError}</div> : null}
 
