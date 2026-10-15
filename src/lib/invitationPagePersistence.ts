@@ -18,6 +18,7 @@ import {
 } from '@/lib/invitationProducts';
 import { DEFAULT_EVENT_TYPE, normalizeEventTypeKey } from '@/lib/eventTypes';
 import { normalizeWeddingIntroStyle } from '@/lib/weddingIntro';
+import { normalizeWeddingCoverSettings } from '@/lib/weddingCover';
 import { withWeddingThemeAvailability } from '@/lib/weddingThemePolicy';
 import {
   buildInvitationVariants,
@@ -159,6 +160,32 @@ export function normalizeInvitationPageRegistryRecord(
     createdAt: toDate(data.createdAt),
     updatedAt: toDate(data.updatedAt),
   };
+}
+
+function mergeWeddingCoverSettings(base: unknown, candidate: unknown) {
+  const value = candidate === undefined
+    ? base
+    : isRecord(candidate)
+      ? { ...(isRecord(base) ? base : {}), ...candidate }
+      : candidate;
+  return value === undefined ? undefined : normalizeWeddingCoverSettings(value);
+}
+
+function mergeThemeOverrides(base: unknown, candidate: unknown) {
+  const baseOverrides = isRecord(base) ? base : {};
+  const overrides = candidate === undefined ? base : candidate;
+  if (!isRecord(overrides)) return undefined;
+
+  return Object.fromEntries(Object.entries(overrides).map(([theme, value]) => {
+    const baseOverride = isRecord(baseOverrides[theme]) ? baseOverrides[theme] : {};
+    const { weddingCover, ...override } = isRecord(value) ? value : {};
+    return [theme, {
+      ...override,
+      ...(weddingCover !== undefined
+        ? { weddingCover: mergeWeddingCoverSettings(baseOverride.weddingCover, weddingCover) }
+        : {}),
+    }];
+  }));
 }
 
 export function mergeInvitationPageSeed(
@@ -468,7 +495,11 @@ export function mergeInvitationPageSeed(
       ),
     },
     metadata,
-    pageData,
+    pageData: pageData ? {
+      ...pageData,
+      weddingCover: mergeWeddingCoverSettings(base?.pageData?.weddingCover, pageDataInput?.weddingCover),
+      themeOverrides: mergeThemeOverrides(base?.pageData?.themeOverrides, pageDataInput?.themeOverrides),
+    } : undefined,
     variants: normalizedVariants,
   };
 

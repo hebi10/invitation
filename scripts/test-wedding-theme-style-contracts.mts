@@ -240,9 +240,10 @@ for (const layout of ['basic', 'photographic', 'letter', 'editorial', 'tradition
   assert.ok(coverSource.includes('styles.' + layout));
   assert.ok(coverCss.includes('.' + layout));
 }
-assert.match(coverSource, /imageUrl \?/);
+// Photo presence and failed/missing-photo behavior are covered by rendering tests.
 assert.doesNotMatch(coverCss
   .replace(/\.photoCopy\s*\{[^}]*\}/s, '')
+  .replace(/\.cover\[data-cover-position='top'\] \.photoCopy\s*\{[^}]*\}/s, '')
   .replace(/\.photographic \.photoEyebrow\s*\{[^}]*\}/s, ''), /(?:linear|radial|conic)-gradient/);
 assert.doesNotMatch(coverCss, /box-shadow|font-weight:\s*[89]\d{2}/);
 console.log('웨딩 테마 스타일 계약 검증 통과');

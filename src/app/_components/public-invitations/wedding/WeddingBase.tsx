@@ -143,7 +143,7 @@ export default function WeddingBase({ state, theme, demoComments, showMap = true
       data-design={theme}
       aria-label={`${page.groomName}과 ${page.brideName}의 결혼식 초대장`}
     >
-      <WeddingCover theme={theme} page={page} imageUrl={heroImageUrl} time={ceremony?.time} />
+      <WeddingCover theme={theme} page={page} imageUrl={heroImageUrl} time={ceremony?.time} settings={pageData?.weddingCover} />
       <nav className={styles.quickLinks} aria-label="청첩장 바로가기">
         {state.galleryImageUrls.length > 0 ? <a href="#wedding-gallery">{theme === 'emotional' ? <WeddingActionIcon kind="photo" /> : null}사진 보기</a> : null}
         <a href="#wedding-info">{theme === 'emotional' ? <WeddingActionIcon kind="calendar" /> : null}예식 안내</a>
@@ -200,10 +200,6 @@ export default function WeddingBase({ state, theme, demoComments, showMap = true
           </ul>
         </details>
       ) : null}
-
-      {theme === 'vow' && heroImageUrl ? <figure className={vowStyles.portrait} data-wedding-vow-portrait>
-        <img src={heroImageUrl} alt={`${page.displayName} 대표 사진`} loading="lazy" decoding="async" />
-      </figure> : null}
 
       {gallery}
 

@@ -59,6 +59,9 @@ const core = [
   'test-wedding-calendar',
   'test-simple-wedding-rendering',
   'test-vow-wedding-rendering',
+  'test-wedding-cover-rendering',
+  'test-wedding-cover-settings',
+  'test-wedding-cover-editor',
   'test-image-upload-optimization',
   'test-invitation-metadata',
   'test-memory-dynamic-metadata',
@@ -242,6 +245,8 @@ const clientRenderingTests = new Set([
   'test-wedding-intro-policy',
   'test-simple-wedding-rendering',
   'test-vow-wedding-rendering',
+  'test-wedding-cover-rendering',
+  'test-wedding-cover-editor',
   'test-gallery-carousel-rendering',
   'test-wedding-compact-sections-rendering',
 ]);

@@ -77,7 +77,8 @@ export default function WeddingWizardPreview({ formState, theme, activeStepKey =
   useEffect(() => { setFocusedStep(activeStepKey); }, [activeStepKey]);
   useEffect(() => {
     const focus = (event: Event) => {
-      const step: unknown = (event as CustomEvent<{ step?: unknown }>).detail?.step;
+      const detail = (event as CustomEvent<{ step?: unknown; target?: unknown }>).detail;
+      const step: unknown = detail?.target === 'cover' ? 'cover' : detail?.step;
       if (!isPreviewStep(step)) return;
       setFocusedStep(step);
       focusSection(step);

@@ -161,6 +161,7 @@ test('Editor library controls route each explicit selection to its own draft fie
     '../wizardImageLibrarySelection': helper,
     './DemoExperienceImagePicker': { default: () => null },
     './ExistingImagePicker': { default: Picker },
+    './WeddingCoverSettings': { default: () => null },
     './ShareImagePreview.module.css': { default: {} },
   }, 'src/app/page-wizard/steps/ImagesStep.tsx');
   const draft = { eventType: 'wedding', metadata: { images: { wedding: '', social: '', kakaoCard: '' } }, pageData: { galleryImages: ['saved'] } };

@@ -131,6 +131,10 @@ function createPreview() {
       listeners.get('message')?.forEach(listener => listener({ data: { type }, source, origin: messageOrigin }));
       flush();
     },
+    focusCover() {
+      listeners.get('wizard-preview-focus')?.forEach(listener => listener({ detail: { step: 'images', target: 'cover' } }));
+      flush();
+    },
     advance(milliseconds: number) {
       const until = now + milliseconds;
       while (true) {
@@ -152,6 +156,21 @@ function createPreview() {
     unmount() { effects.forEach(effect => effect?.cleanup?.()); },
   };
 }
+
+test('Editing cover settings keeps the preview on the cover without replaying the intro', () => {
+  const preview = createPreview();
+  preview.flush();
+  preview.update({ activeStepKey: 'images' });
+  preview.receive('wedding-wizard-preview:rendered');
+  preview.focusCover();
+  assert.equal(preview.messages.at(-1)?.message.type, 'wedding-wizard-preview:section');
+  assert.equal(preview.messages.at(-1)?.message.step, 'cover');
+  preview.update({ formState: { ...(preview.props.formState as object), pageData: { weddingCover: { focusX: 17, focusY: 80, textPosition: 'top' } } } });
+  const lastSection = preview.messages.filter(entry => entry.message.type === 'wedding-wizard-preview:section').at(-1);
+  assert.equal(lastSection?.message.step, 'cover', 'Draft updates must not jump back to the gallery');
+  assert.ok(!preview.messages.some(entry => entry.message.type === 'wedding-wizard-preview:top'), 'Cover adjustment must not replay the intro');
+  preview.unmount();
+});
 
 test('Child readiness does not finish startup until a draft has actually rendered', () => {
   const preview = createPreview();

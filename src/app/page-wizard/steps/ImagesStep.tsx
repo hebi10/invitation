@@ -5,6 +5,7 @@ import type { ImagesStepProps, UploadFieldKind } from '../pageWizardShared';
 import { applyWizardLibraryImageSelection } from '../wizardImageLibrarySelection';
 import DemoExperienceImagePicker from './DemoExperienceImagePicker';
 import ExistingImagePicker from './ExistingImagePicker';
+import WeddingCoverSettings from './WeddingCoverSettings';
 import previewStyles from './ShareImagePreview.module.css';
 import imageStyles from './ImagesStep.module.css';
 
@@ -197,6 +198,7 @@ export default function ImagesStep({
   onKakaoCardImageRemove,
   onGalleryImageRemove,
   onGalleryImageMove,
+  isAdminLoggedIn = false,
   experience = false,
   onDemoImageSelect,
   mode = 'all',
@@ -290,7 +292,7 @@ export default function ImagesStep({
             ? '행사 초대장 최상단과 공유 화면에 사용하는 메인 이미지입니다.'
             : isFirstBirthday
             ? '돌잔치 초대장 최상단과 첫 화면에 사용하는 메인 이미지입니다.'
-            : '세로 2:3~3:4 사진을 권장합니다. 포토형·클래식형은 미리보기에서 잘리는 부분을 확인해 주세요. 한글 서약장은 사진을 초대 글 뒤에 배치하며, 사진 없이도 완성됩니다.'
+            : '대표 사진은 청첩장 맨 위에 크게 표시됩니다. 세로 사진을 권장하며, 미리보기에서 잘리는 부분을 확인해 주세요. 사진 없이도 이름과 예식 정보가 표시됩니다.'
         }
         imageUrl={coverImage}
         isBroken={brokenSingleImages.cover}
@@ -309,6 +311,19 @@ export default function ImagesStep({
         imageLibraryPageSlug={imageLibraryPageSlug}
         libraryDisabled={Boolean(uploadingField)}
         onLibrarySelect={url => selectLibraryImage('cover', url)}
+      /> : null}
+
+      {mode !== 'sharing' && formState.eventType === 'wedding' && isAdminLoggedIn ? <WeddingCoverSettings
+        settings={formState.pageData?.weddingCover}
+        hasImage={Boolean(formState.metadata.images.wedding?.trim())}
+        isImageBroken={brokenSingleImages.cover}
+        onChange={settings => updateForm(draft => {
+          if (!draft.pageData) draft.pageData = {};
+          draft.pageData.weddingCover = settings;
+        })}
+        onPreviewFocus={() => window.dispatchEvent(new CustomEvent('wizard-preview-focus', {
+          detail: { step: 'images', target: 'cover' },
+        }))}
       /> : null}
 
       {mode !== 'sharing' ? <section className={`${styles.uploadCard} ${imageStyles.uploadPanel}`}>

@@ -6,6 +6,8 @@ import type {
   PersonInfo,
 } from '@/types/invitationPage';
 import { normalizeWeddingIntroStyle } from '@/lib/weddingIntro';
+import { normalizeWeddingCoverSettings } from '@/lib/weddingCover';
+import { isRecord } from '@/lib/invitationPageNormalization';
 import {
   clampInvitationMusicVolume,
   DEFAULT_INVITATION_MUSIC_VOLUME,
@@ -148,6 +150,20 @@ export function normalizeFormConfig(config: InvitationPageSeed): InvitationPageS
     },
     pageData: {
       ...nextConfig.pageData,
+      ...(!nextConfig.eventType || nextConfig.eventType === 'wedding' || nextConfig.pageData?.weddingCover !== undefined
+        ? { weddingCover: normalizeWeddingCoverSettings(nextConfig.pageData?.weddingCover) }
+        : {}),
+      ...(isRecord(nextConfig.pageData?.themeOverrides) ? {
+        themeOverrides: Object.fromEntries(Object.entries(nextConfig.pageData.themeOverrides).map(([theme, value]) => {
+          const { weddingCover, ...override } = isRecord(value) ? value : {};
+          return [theme, {
+            ...override,
+            ...(weddingCover !== undefined
+              ? { weddingCover: normalizeWeddingCoverSettings(weddingCover) }
+              : {}),
+          }];
+        })),
+      } : {}),
       subtitle: nextConfig.pageData?.subtitle ?? '',
       ceremonyTime: ceremony.time,
       ceremonyAddress: nextConfig.pageData?.ceremonyAddress ?? '',

@@ -1,5 +1,9 @@
+'use client';
+
+import { useState, type ReactNode } from 'react';
 import type { InvitationPage } from '@/types/invitationPage';
 import type { InvitationThemeKey } from '@/lib/invitationThemes';
+import { normalizeWeddingCoverSettings, resolveWeddingCoverTextPosition, type WeddingCoverSettings } from '@/lib/weddingCover';
 import styles from './WeddingCover.module.css';
 import './WeddingFonts.css';
 import VowCover from './vow/VowCover';
@@ -10,84 +14,121 @@ interface Props {
   imageUrl: string;
   time?: string;
   titleId?: string;
+  settings?: WeddingCoverSettings;
 }
 
-export default function WeddingCover({ theme, page, imageUrl, time, titleId = 'wedding-cover-title' }: Props) {
-  if (theme === 'vow') return <VowCover page={page} time={time} titleId={titleId} />;
+export default function WeddingCover({ theme, page, imageUrl, time, titleId = 'wedding-cover-title', settings }: Props) {
+  const [imageState, setImageState] = useState({ url: imageUrl, failed: false });
+  if (imageState.url !== imageUrl) {
+    setImageState({ url: imageUrl, failed: false });
+  }
+  const hasPhoto = Boolean(imageUrl && !(imageState.url === imageUrl && imageState.failed));
+  const cover = normalizeWeddingCoverSettings(settings ?? page.pageData?.weddingCover);
+  const position = hasPhoto ? resolveWeddingCoverTextPosition(theme, cover.textPosition) : 'below';
+  const overlay = position !== 'below';
   const names = <><span>{page.groomName}</span><span aria-hidden="true" className={styles.join}>·</span><span>{page.brideName}</span></>;
   const date = <p className={styles.date} data-wedding-motion="copy"><span>{page.date}</span>{time ? <span>{time}</span> : null}</p>;
-  const photo = imageUrl ? <img src={imageUrl} alt={`${page.displayName} 대표 사진`} className={styles.photo} data-wedding-cover-photo data-wedding-motion="photo" loading="eager" decoding="async" /> : null;
-  if (theme === 'romantic') return (
-    <section className={`${styles.cover} ${styles.photographic} ${!imageUrl ? styles.withoutPhoto : ''}`} aria-labelledby={titleId}>
+  const heading = (className = styles.names, children: ReactNode = names) => (
+    <h1 data-wedding-motion="copy" id={titleId} className={className}>{children}</h1>
+  );
+  const photo = hasPhoto ? (
+    <div className={styles.photoFrame} data-wedding-cover-frame>
+      <img src={imageUrl} alt={`${page.displayName} 대표 사진`} className={styles.photo}
+        style={{ objectPosition: `${cover.focusX}% ${cover.focusY}%` }}
+        data-wedding-cover-photo loading="eager" decoding="async"
+        onError={() => setImageState({ url: imageUrl, failed: true })} />
+      {overlay ? <div className={styles.photoCopy}>
+        {heading(theme === 'classic-r' ? styles.editorialNames : styles.names,
+          <><span>{page.groomName}</span><span aria-hidden="true" className={styles.join}>{theme === 'romantic' ? '&' : theme === 'vow' ? '그리고' : '·'}</span><span>{page.brideName}</span></>)}
+      </div> : null}
+    </div>
+  ) : null;
+
+  if (theme === 'vow') return (
+    <section className={`${styles.cover} ${styles.vow}`} data-cover-position={position} aria-labelledby={titleId}>
       {photo}
-      <div className={styles.photoCopy}>
-        <h1 data-wedding-motion="copy" id={titleId} className={styles.names}>
+      <div data-wedding-cover-details><VowCover page={page} time={time} titleId={titleId} showNames={!overlay} /></div>
+    </section>
+  );
+  if (theme === 'romantic') return (
+    <section className={`${styles.cover} ${styles.photographic}`} data-cover-position={position} aria-labelledby={titleId}>
+      {photo}
+      <div className={styles.details} data-wedding-cover-details>
+        {!overlay ? heading(styles.names, <>
           <span>{page.groomName}</span><span aria-hidden="true" className={styles.join}>&amp;</span><span>{page.brideName}</span>
-        </h1>
+        </>) : null}
         <div className={styles.photoMeta}>{date}<p className={styles.venue} data-wedding-motion="copy">{page.venue}</p></div>
       </div>
     </section>
   );
 
   if (theme === 'emotional') return (
-    <section className={`${styles.cover} ${styles.letter} ${imageUrl ? styles.photoFirst : ''}`} aria-labelledby={titleId}>
-      {photo ? <figure className={styles.letterPhoto}>{photo}</figure> : null}
-      <p className={styles.conceptIntroduction} data-wedding-motion="copy">평생을 함께하고 싶은<br />사람을 만났습니다.</p>
-      <div className={styles.letterHeading}>
-        <h1 data-wedding-motion="copy" id={titleId} className={styles.names}>
-          <span>{page.groomName}</span><span>{page.brideName}</span>
-        </h1>
-        <div className={styles.letterSprig} aria-hidden="true" />
-      </div>
-      <div className={styles.letterMeta}>
-        {date}<p className={styles.venue} data-wedding-motion="copy">{page.venue}</p>
+    <section className={`${styles.cover} ${styles.letter}`} data-cover-position={position} aria-labelledby={titleId}>
+      {photo}
+      <div className={styles.details} data-wedding-cover-details>
+        <p className={styles.conceptIntroduction} data-wedding-motion="copy">평생을 함께하고 싶은<br />사람을 만났습니다.</p>
+        <div className={styles.letterHeading}>
+          {!overlay ? heading(styles.names, <>
+            <span>{page.groomName}</span><span>{page.brideName}</span>
+          </>) : null}
+          <div className={styles.letterSprig} aria-hidden="true" />
+        </div>
+        <div className={styles.letterMeta}>
+          {date}<p className={styles.venue} data-wedding-motion="copy">{page.venue}</p>
+        </div>
       </div>
     </section>
   );
 
   if (theme === 'classic-r') return (
-    <section className={`${styles.cover} ${styles.editorial} ${imageUrl ? styles.photoFirst : ''}`} aria-labelledby={titleId}>
-      {photo ? <figure className={styles.editorialPhoto}>{photo}</figure> : null}
-      <p className={styles.editorialHeading}>WEDDING INVITATION</p>
-      <h1 data-wedding-motion="copy" id={titleId} className={styles.editorialNames}>
-        <span>{page.groomName}</span><span>{page.brideName}</span>
-      </h1>
-      <div className={styles.editorialMeta}>
-        <p className={styles.date} data-wedding-motion="copy">
-          <span>{page.weddingDateTime.year}.{String(page.weddingDateTime.month + 1).padStart(2, '0')}.{String(page.weddingDateTime.day).padStart(2, '0')} {new Date(Date.UTC(page.weddingDateTime.year, page.weddingDateTime.month, page.weddingDateTime.day)).toLocaleDateString('en-US', { weekday: 'short', timeZone: 'UTC' }).toUpperCase()}</span>
-          {time ? <span>· {time}</span> : null}
-        </p>
-        <p className={styles.venue} data-wedding-motion="copy">{page.venue}</p>
+    <section className={`${styles.cover} ${styles.editorial}`} data-cover-position={position} aria-labelledby={titleId}>
+      {photo}
+      <div className={styles.details} data-wedding-cover-details>
+        <p className={styles.editorialHeading}>WEDDING INVITATION</p>
+        {!overlay ? heading(styles.editorialNames, <>
+          <span>{page.groomName}</span><span>{page.brideName}</span>
+        </>) : null}
+        <div className={styles.editorialMeta}>
+          <p className={styles.date} data-wedding-motion="copy">
+            <span>{page.weddingDateTime.year}.{String(page.weddingDateTime.month + 1).padStart(2, '0')}.{String(page.weddingDateTime.day).padStart(2, '0')} {new Date(Date.UTC(page.weddingDateTime.year, page.weddingDateTime.month, page.weddingDateTime.day)).toLocaleDateString('en-US', { weekday: 'short', timeZone: 'UTC' }).toUpperCase()}</span>
+            {time ? <span>· {time}</span> : null}
+          </p>
+          <p className={styles.venue} data-wedding-motion="copy">{page.venue}</p>
+        </div>
       </div>
     </section>
   );
 
   if (theme === 'gyeol') return (
-    <section className={`${styles.cover} ${styles.traditional}`} aria-labelledby={titleId}>
-      <div className={styles.traditionalFrame}>
-        <p className={styles.traditionalEyebrow}>WEDDING INVITATION</p>
-        <div className={styles.traditionalTitle}>
-          <h1 data-wedding-motion="copy" id={titleId} className={styles.names}>{names}</h1>
-          <p className={styles.conceptIntroduction}>소중한 날에 귀한 걸음으로 함께해 주세요.</p>
+    <section className={`${styles.cover} ${styles.traditional}`} data-cover-position={position} aria-labelledby={titleId}>
+      {photo}
+      <div className={styles.details} data-wedding-cover-details>
+        <div className={styles.traditionalFrame}>
+          <p className={styles.traditionalEyebrow}>WEDDING INVITATION</p>
+          <div className={styles.traditionalTitle}>
+            {!overlay ? heading() : null}
+            <p className={styles.conceptIntroduction}>소중한 날에 귀한 걸음으로 함께해 주세요.</p>
+          </div>
+          {date}<p className={styles.venue} data-wedding-motion="copy">{page.venue}</p>
         </div>
-        {date}<p className={styles.venue} data-wedding-motion="copy">{page.venue}</p>
-        {photo ? <figure className={styles.traditionalPhoto}>{photo}</figure> : null}
       </div>
     </section>
   );
 
   return (
-    <section className={`${styles.cover} ${styles.basic} ${imageUrl ? styles.photoFirst : ''}`} aria-labelledby={titleId}>
-      {photo ? <figure className={styles.basicPhoto}>{photo}</figure> : null}
-      <h1 data-wedding-motion="copy" id={titleId} className={styles.names}>{names}</h1>
-      <p className={styles.basicDate} data-wedding-motion="copy">
-        {page.weddingDateTime.year}.{String(page.weddingDateTime.month + 1).padStart(2, '0')}.{String(page.weddingDateTime.day).padStart(2, '0')}
-      </p>
-      <p className={styles.basicSchedule} data-wedding-motion="copy">
-        <span>{new Date(Date.UTC(page.weddingDateTime.year, page.weddingDateTime.month, page.weddingDateTime.day)).toLocaleDateString('ko-KR', { weekday: 'long', timeZone: 'UTC' })}</span>
-        {time ? <span>{time}</span> : null}
-      </p>
-      <p className={styles.venue} data-wedding-motion="copy">{page.venue}</p>
+    <section className={`${styles.cover} ${styles.basic}`} data-cover-position={position} aria-labelledby={titleId}>
+      {photo}
+      <div className={styles.details} data-wedding-cover-details>
+        {!overlay ? heading() : null}
+        <p className={styles.basicDate} data-wedding-motion="copy">
+          {page.weddingDateTime.year}.{String(page.weddingDateTime.month + 1).padStart(2, '0')}.{String(page.weddingDateTime.day).padStart(2, '0')}
+        </p>
+        <p className={styles.basicSchedule} data-wedding-motion="copy">
+          <span>{new Date(Date.UTC(page.weddingDateTime.year, page.weddingDateTime.month, page.weddingDateTime.day)).toLocaleDateString('ko-KR', { weekday: 'long', timeZone: 'UTC' })}</span>
+          {time ? <span>{time}</span> : null}
+        </p>
+        <p className={styles.venue} data-wedding-motion="copy">{page.venue}</p>
+      </div>
     </section>
   );
 }

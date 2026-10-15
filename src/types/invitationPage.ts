@@ -1,6 +1,7 @@
 import type { InvitationThemeKey as RegisteredInvitationThemeKey } from '@/lib/invitationThemes';
 import type { EventTypeKey } from '@/lib/eventTypes';
 import type { WeddingIntroStyle } from '@/lib/weddingIntro';
+import type { WeddingCoverSettings } from '@/lib/weddingCover';
 
 export interface FamilyMember {
   relation: string;
@@ -84,6 +85,7 @@ export interface InvitationScheduleDetail {
 
 export interface InvitationPageDataBase {
   subtitle?: string;
+  weddingCover?: WeddingCoverSettings;
   birthdayTheme?: string;
   generalEventTheme?: string;
   ceremonyTime?: string;

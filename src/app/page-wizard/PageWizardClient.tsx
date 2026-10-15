@@ -1385,6 +1385,7 @@ export default function PageWizardClient({
           <ImagesStep
             mode={eventType === 'wedding' ? imageMode : 'all'}
             {...sharedProps}
+            isAdminLoggedIn={isAdminLoggedIn}
             canUploadImages={canUploadImages}
             imageLibraryPageSlug={!experience && isAdminLoggedIn ? resolvedPersistedSlug ?? undefined : undefined}
             maxGalleryImages={maxGalleryImages}

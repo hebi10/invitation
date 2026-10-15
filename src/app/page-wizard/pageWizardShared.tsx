@@ -114,6 +114,7 @@ export interface GreetingStepProps extends WizardStepProps {
 }
 
 export interface ImagesStepProps extends WizardStepProps {
+  isAdminLoggedIn?: boolean;
   experience?: boolean;
   onDemoImageSelect?: (imageUrl: string) => void;
   canUploadImages: boolean;

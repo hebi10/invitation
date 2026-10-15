@@ -50,8 +50,9 @@ assert.ok(!noPhoto.includes('data-wedding-section="gallery"'));
 assert.ok(!noPhoto.includes('href="#wedding-accounts"'), 'Do not link to absent accounts');
 assert.equal((noPhoto.match(/data-wedding-closing="true"/g) ?? []).length, 1);
 const withPhoto = render({ ...state, mainImageUrl: '/saved-vow-photo.jpg' });
-assert.ok(withPhoto.includes('/saved-vow-photo.jpg'), 'Optional saved photo remains available after the introduction');
-assert.ok(withPhoto.indexOf('저장한 초대 문장') < withPhoto.indexOf('data-wedding-vow-portrait'));
+assert.ok(withPhoto.includes('/saved-vow-photo.jpg'), 'Optional saved photo opens the invitation');
+assert.ok(withPhoto.indexOf('data-wedding-cover-photo') < withPhoto.indexOf('저장한 초대 문장'));
+assert.equal((withPhoto.match(/data-wedding-cover-photo/g) ?? []).length, 1, 'The representative photo is not duplicated after the introduction');
 assert.equal(JSON.stringify(state), original, 'Rendering must not alter stored content');
 for (const theme of getWeddingPreviewThemeKeys()) {
   const client = new QueryClient();

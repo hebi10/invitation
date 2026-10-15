@@ -1,8 +1,9 @@
 import type { WizardStepKey } from '../page-wizard/pageWizardData';
 
-export type PreviewStep = WizardStepKey | 'family' | 'guide';
+export type PreviewStep = WizardStepKey | 'family' | 'guide' | 'cover';
 
 export const previewSections: Record<PreviewStep, { label: string; selector: string }> = {
+  cover: { label: '표지 배치', selector: 'main > :first-child' },
   eventType: { label: '표지', selector: 'main > :first-child' },
   theme: { label: '표지', selector: 'main > :first-child' },
   slug: { label: '표지', selector: 'main > :first-child' },

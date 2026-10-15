@@ -132,9 +132,9 @@ export const INVITATION_THEME_METADATA_REGISTRY = [
     adminLabel: '한글 서약장',
     variantLabel: '한글 서약장',
     pathSuffix: '/vow',
-    wizardDescription: '사진 없이도 완성되는 한글 청첩장입니다. 두 사람의 이름과 약속, 예식 일정을 따뜻한 백색 종이 위에 담습니다.',
+    wizardDescription: '큰 대표 사진과 한글 약속이 이어지는 청첩장입니다. 사진 없이도 두 사람의 이름과 예식 일정으로 완성됩니다.',
     preview: {
-      description: '두 사람의 이름과 약속이 중심이 되는 한글 청첩장입니다. 사진은 초대 글 뒤에서 선택적으로 보여줍니다.',
+      description: '대표 사진을 크게 보여준 뒤 두 사람의 이름과 약속을 전하는 한글 청첩장입니다. 사진이 없으면 글 중심 표지로 보여줍니다.',
       sampleUrls: {
         standard: buildThemePreviewUrl('/kim-taehyun-choi-yuna/vow/'),
         deluxe: buildThemePreviewUrl('/lee-junho-park-somin/vow/'),
