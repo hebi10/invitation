@@ -68,6 +68,7 @@ export const WEDDING_SHARE_PALETTES: Record<string, { paper: string; ink: string
   simple: { paper: '#faf9f6', ink: '#282725', line: '#b5ada2' },
   'classic-r': { paper: '#ffffff', ink: '#20201e', line: '#999b96' },
   gyeol: { paper: '#f8f3e9', ink: '#493b2f', line: '#b8a17c' },
+  vow: { paper: '#fcfbf7', ink: '#292722', line: '#aaa49a' },
 };
 
 export function getWeddingShareContainer(theme: string) {

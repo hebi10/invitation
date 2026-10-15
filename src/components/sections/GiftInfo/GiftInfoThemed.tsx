@@ -49,13 +49,17 @@ export default function GiftInfoThemed({
   accountActionLabel,
 }: GiftInfoThemedProps) {
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
+  const [failedCopyKey, setFailedCopyKey] = useState<string | null>(null);
 
   const handleCopy = async (accountKey: string, bank: string, accountNumber: string) => {
     const copied = await copyTextToClipboard(`${bank} ${accountNumber}`);
     if (!copied) {
+      setCopiedKey(null);
+      setFailedCopyKey(accountKey);
       return;
     }
 
+    setFailedCopyKey(null);
     setCopiedKey(accountKey);
     window.setTimeout(() => {
       setCopiedKey((current) => (current === accountKey ? null : current));
@@ -86,8 +90,13 @@ export default function GiftInfoThemed({
             </div>
             <div className={styles.accountRow}>
               <span className={styles.accountBank}>{account.bank}</span>
-              <span className={styles.accountNumber}>{account.accountNumber}</span>
+              <span className={styles.accountNumber} style={{ userSelect: 'text', WebkitUserSelect: 'text' }}>{account.accountNumber}</span>
             </div>
+            {failedCopyKey === accountKey ? (
+              <p className={styles.accountBank} role="status">
+                복사하지 못했어요. 계좌번호를 길게 누르거나 드래그해 직접 복사해 주세요.
+              </p>
+            ) : null}
           </div>
           <button
             className={styles.copyButton}

@@ -69,6 +69,11 @@ export function WeddingClosing({
           <p className={styles.classicThanks}>귀한 걸음과 따뜻한 마음에<br />감사드립니다</p>
           {weddingDateTime ? <p className={styles.classicDate}>{weddingDateTime.year}년 {weddingDateTime.month + 1}월 {weddingDateTime.day}일</p> : null}
         </>
+      ) : theme === 'vow' ? (
+        <>
+          <p className={styles.vowThanks}>함께해 주실 그날을<br />소중히 기다리겠습니다.</p>
+          <p className={styles.vowNames}>{groomName} · {brideName} 드림</p>
+        </>
       ) : (<>
       <p>{groomName} · {brideName}</p>
       <span aria-hidden="true" />

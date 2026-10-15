@@ -2,6 +2,7 @@ import type { InvitationPage } from '@/types/invitationPage';
 import type { InvitationThemeKey } from '@/lib/invitationThemes';
 import styles from './WeddingCover.module.css';
 import './WeddingFonts.css';
+import VowCover from './vow/VowCover';
 
 interface Props {
   theme: InvitationThemeKey;
@@ -12,6 +13,7 @@ interface Props {
 }
 
 export default function WeddingCover({ theme, page, imageUrl, time, titleId = 'wedding-cover-title' }: Props) {
+  if (theme === 'vow') return <VowCover page={page} time={time} titleId={titleId} />;
   const names = <><span>{page.groomName}</span><span aria-hidden="true" className={styles.join}>·</span><span>{page.brideName}</span></>;
   const date = <p className={styles.date} data-wedding-motion="copy"><span>{page.date}</span>{time ? <span>{time}</span> : null}</p>;
   const photo = imageUrl ? <img src={imageUrl} alt={`${page.displayName} 대표 사진`} className={styles.photo} data-wedding-cover-photo data-wedding-motion="photo" loading="eager" decoding="async" /> : null;

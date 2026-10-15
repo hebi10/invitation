@@ -41,7 +41,7 @@ const couple = {
   },
 } as const;
 
-const invitationDescription = `2025년 11월 30일 토요일 오후 11시, ${couple.groom.name}와 ${couple.bride.name}가 하나 되는 날에 소중한 분들을 초대합니다.`;
+const invitationDescription = `2025년 11월 30일 일요일 오전 11시, ${couple.groom.name}와 ${couple.bride.name}가 하나 되는 날에 소중한 분들을 초대합니다.`;
 const metadataDescription = `${invitationDescription} 저희의 새로운 시작을 함께 축복해 주세요.`;
 
 export const anDoyoungYoonJisooConfig: WeddingPageConfig = createWeddingPageConfig({
@@ -101,12 +101,12 @@ export const anDoyoungYoonJisooConfig: WeddingPageConfig = createWeddingPageConf
       {
         title: '화환 안내',
         content:
-          '축하의 뜻을 전하고자 화환을 보내주실 경우\n아래 안내 사항을 참고해 주시기 바랍니다.\n\n예식장: 로얄가든웨딩홀\n예식일시: 2025년 10월 20일 일요일 오후 1시\n수령인: 신랑 안도영 / 신부 윤지수\n연락처: 02-7777-8888',
+          '축하의 뜻을 전하고자 화환을 보내주실 경우\n위 예식 정보의 일시와 장소를 확인해 주시기 바랍니다.\n\n수령인에는 신랑·신부의 성함을 적어 주시고,\n화환 반입 가능 여부는 예식장에 미리 문의해 주세요.',
       },
       {
         title: '배송 시간',
         content:
-          '화환은 예식 전날 오후 또는\n당일 오전 11시까지 도착할 수 있도록\n주문해 주시기 바랍니다.\n\n예식장 측 사정으로 인해\n예식 시작 2시간 전까지는\n반드시 배치가 완료되어야 하오니\n참고 부탁드립니다.',
+          '화환 배송 가능 시간과 반입 장소는\n예식장에 미리 확인해 주시기 바랍니다.\n\n예식 진행에 지장이 없도록\n안내받으신 시간에 맞춰 배송을 부탁드립니다.',
       },
     ],
     giftInfo: {

@@ -38,6 +38,7 @@ const expectedWeddingThemes = [
   'romantic',
   'gyeol',
   'emotional',
+  'vow',
 ] as const;
 
 assert.deepEqual(

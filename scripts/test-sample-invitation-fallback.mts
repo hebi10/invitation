@@ -3,7 +3,10 @@ import { existsSync } from 'node:fs';
 import path from 'node:path';
 
 import { DEFAULT_SAMPLE_WEDDING_IMAGE_URL } from '../src/config/sampleInvitationDefaults';
-import { getRequiredWeddingPageBySlug } from '../src/config/weddingPages';
+import {
+  getRequiredWeddingPageBySlug,
+  WEDDING_PAGE_SAMPLES,
+} from '../src/config/weddingPages';
 import {
   isUsableSampleWeddingImage,
   mergeInvitationSampleFallback,
@@ -126,6 +129,72 @@ assert.equal(personalized.pageData?.ceremonyAddress, '사용자 입력 주소');
 assert.equal(personalized.pageData?.greetingMessage, '사용자 입력 인사말');
 assert.deepEqual(personalized.pageData?.galleryImages, ['/images/user-photo.jpg']);
 assert.equal(personalized.metadata.images.wedding, '/images/user-cover.jpg');
+
+for (const weddingSample of WEDDING_PAGE_SAMPLES) {
+  const updatedEvent = mergeInvitationSampleFallback(
+    {
+      ...weddingSample,
+      date: '2027년 5월 9일',
+      venue: '사용자 웨딩홀',
+      weddingDateTime: { year: 2027, month: 4, day: 9, hour: 13, minute: 30 },
+      pageData: { ...weddingSample.pageData, wreathGuide: [] },
+    },
+    weddingSample
+  );
+
+  for (const guide of updatedEvent.pageData?.wreathGuide ?? []) {
+    assert.doesNotMatch(
+      guide.content,
+      /예식장:|예식일시:|\d{4}년\s*\d+월\s*\d+일|(?:오전|오후)\s*\d+|\d{2,3}-\d{3,4}-\d{4}/,
+      `${weddingSample.slug}: fallback wreath guidance must not reintroduce a different event's details`
+    );
+  }
+
+  for (const description of [weddingSample.description, weddingSample.metadata.description]) {
+    const schedule = description.match(
+      /(\d{4})년 (\d+)월 (\d+)일 (?:([일월화수목금토])요일 )?(오전|오후) (\d+)시/
+    );
+    assert.ok(schedule, `${weddingSample.slug}: sample description includes its ceremony schedule`);
+    const [, year, month, day, weekday, period, hour] = schedule;
+    assert.deepEqual(
+      {
+        year: Number(year),
+        month: Number(month) - 1,
+        day: Number(day),
+        hour: Number(hour) % 12 + (period === '오후' ? 12 : 0),
+      },
+      {
+        year: weddingSample.weddingDateTime.year,
+        month: weddingSample.weddingDateTime.month,
+        day: weddingSample.weddingDateTime.day,
+        hour: weddingSample.weddingDateTime.hour,
+      },
+      `${weddingSample.slug}: description and ceremony schedule must agree`
+    );
+    if (weekday) {
+      assert.equal(
+        weekday,
+        '일월화수목금토'[new Date(Date.UTC(Number(year), Number(month) - 1, Number(day))).getUTCDay()],
+        `${weddingSample.slug}: description weekday must match its calendar date`
+      );
+    }
+  }
+}
+
+const customWreathGuide = [
+  {
+    title: '직접 작성한 화환 안내',
+    content: '예식장: 사용자 웨딩홀\n예식일시: 2027년 5월 9일 일요일 오후 1시 30분\n배송: 오전 11시',
+  },
+];
+assert.deepEqual(
+  mergeInvitationSampleFallback(
+    { ...stored, pageData: { ...stored.pageData, wreathGuide: customWreathGuide } },
+    sample
+  ).pageData?.wreathGuide,
+  customWreathGuide,
+  'saved custom wreath guidance must remain unchanged'
+);
 
 const eventSummary = {
   eventId: 'sample-event',

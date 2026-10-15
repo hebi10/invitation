@@ -1,0 +1,92 @@
+.listDialog.listDialog {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-rows: auto minmax(0, 1fr);
+  align-items: center;
+  justify-items: stretch;
+  gap: 16px;
+  width: min(100%, 680px);
+  max-height: calc(100dvh - 40px);
+  color: #fff;
+}
+
+.listTitle {
+  grid-column: 1;
+  grid-row: 1;
+  margin: 0;
+  font: inherit;
+  font-size: 16px;
+  font-weight: 500;
+  line-height: 1.6;
+}
+
+.listCloseButton.listCloseButton {
+  position: static;
+  grid-column: 2;
+  grid-row: 1;
+  justify-self: end;
+}
+
+.photoList {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  align-content: start;
+  gap: 10px;
+  min-height: 0;
+  max-height: calc(100dvh - 120px);
+  margin: 0;
+  padding: 4px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  list-style: none;
+  scrollbar-color: #969696 #242424;
+}
+
+.photoList[hidden],
+.listTitle[hidden] {
+  display: none;
+}
+
+.listPhoto {
+  position: relative;
+  display: block;
+  width: 100%;
+  min-height: 44px;
+  aspect-ratio: 1;
+  padding: 0;
+  border: 0;
+  background: #292929;
+  color: inherit;
+  cursor: pointer;
+}
+
+.listPhotoUnavailable {
+  display: block;
+  padding: 8px;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.backToList {
+  position: fixed;
+  top: max(12px, env(safe-area-inset-top));
+  left: max(16px, env(safe-area-inset-left));
+  z-index: 2;
+  min-height: 44px;
+  padding: 10px 14px;
+  border: 1px solid #c8c8c8;
+  background: #242424;
+  color: #fff;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.5;
+  cursor: pointer;
+}
+
+.listPhoto:focus-visible,
+.backToList:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 2px;
+}

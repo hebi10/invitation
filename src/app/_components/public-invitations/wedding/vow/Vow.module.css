@@ -1,0 +1,49 @@
+main.page[data-design='vow'] {
+  --paper: #fcfbf7;
+  --paper-soft: #f1eee7;
+  --ink: #292722;
+  --muted: #6b655b;
+  --accent: #39352e;
+  --line: #d8d2c8;
+  --control-line: #aaa49a;
+  --focus: #39352e;
+  --section-space: 64px;
+  font-size: 16px;
+}
+
+:global(body):has(.page[data-design='vow']) { background: #f1eee7; }
+:global(html):has(.page[data-design='vow']) { --paper: #fcfbf7; --ink: #292722; }
+.page[data-design='vow'] ::selection { background: #dfd8cc; color: #292722; }
+.page[data-design='vow'] :is(h2, h3) { font-family: 'Wedding Myeongjo', serif; font-weight: 400; }
+.page[data-design='vow'] h2 { font-size: 22px; letter-spacing: 0; }
+.page[data-design='vow'] [data-wedding-section='invitation'] { padding-top: 64px; }
+.page[data-design='vow'] [data-wedding-section='invitation'] p { font-family: 'Wedding Myeongjo', serif; font-size: 16px; line-height: 2.15; }
+main.page[data-design='vow'] [data-wedding-section='ceremony'] { background: var(--paper-soft); margin-top: 64px; padding: 32px 24px; }
+.page[data-design='vow'] :is(summary, button) { border-radius: 0; box-shadow: none; }
+
+.cover {
+  display: grid;
+  justify-items: center;
+  gap: 36px;
+  padding: 56px 28px 40px;
+  color: #292722;
+  background: #fcfbf7;
+  font-family: 'Wedding Myeongjo', serif;
+  text-align: center;
+  overflow-wrap: anywhere;
+}
+.cover p, .cover h1 { margin: 0; }
+.promise { font-size: 17px; line-height: 2; word-break: keep-all; }
+.names { display: grid; gap: 12px; font-size: 32px; font-weight: 400; line-height: 1.5; letter-spacing: .06em; word-break: keep-all; }
+.names > span { min-width: 0; max-width: 100%; }
+.names .join { color: #6b655b; font-size: 14px; letter-spacing: 0; }
+.schedule { display: grid; gap: 4px; max-width: 100%; color: #4e493f; font-family: 'Wedding SUIT', sans-serif; font-size: 15px; line-height: 1.85; word-break: keep-all; }
+.schedule .venue { margin-top: 8px; color: #292722; font-size: 16px; }
+.portrait { width: calc(100% - 60px); margin: 56px auto 0; }
+.portrait img { display: block; width: 100%; max-height: 520px; height: auto; object-fit: contain; }
+@media (max-width: 359px) {
+  .cover { padding: 40px 22px 32px; gap: 28px; }
+  .names { font-size: 28px; }
+  .promise { font-size: 16px; }
+  .portrait { width: calc(100% - 44px); }
+}

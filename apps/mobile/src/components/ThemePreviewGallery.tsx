@@ -47,8 +47,11 @@ export function ThemePreviewGallery({ tier = 'premium' }: { tier?: MobileInvitat
           const url = findGuideSamplePageUrl(theme.key, tier);
           return (
             <View key={theme.key} style={styles.item}>
-              <Image source={previewImages[theme.key]} style={[styles.image, { backgroundColor: palette.surfaceMuted }]}
-                contentFit="cover" contentPosition="top" alt={`${theme.label} 실제 청첩장 표지 예시`} />
+              {previewImages[theme.key] ? <Image source={previewImages[theme.key]} style={[styles.image, { backgroundColor: palette.surfaceMuted }]}
+                contentFit="cover" contentPosition="top" alt={`${theme.label} 실제 청첩장 표지 예시`} /> : <View style={[styles.image, styles.textPreview, { backgroundColor: palette.surfaceMuted }]}>
+                <AppText style={styles.previewTitle}>{theme.label}</AppText>
+                <AppText variant="muted">사진 없이도 완성되는{ '\n' }두 사람의 약속</AppText>
+              </View>}
               <AppText accessibilityRole="header" style={styles.title}>{theme.label}</AppText>
               <AppText variant="muted" style={styles.description}>{theme.description}</AppText>
               <ActionButton variant="secondary" fullWidth disabled={!url}
@@ -69,6 +72,8 @@ const styles = StyleSheet.create({
   gallery: { gap: 16, paddingBottom: 12, alignItems: 'stretch' },
   item: { width: 176, gap: 12 },
   image: { width: '100%', aspectRatio: 372 / 660 },
+  textPreview: { padding: 20, justifyContent: 'center', gap: 24 },
+  previewTitle: { fontSize: 24, fontWeight: '500' },
   title: { fontWeight: '500' },
   description: { flexGrow: 1 },
 });

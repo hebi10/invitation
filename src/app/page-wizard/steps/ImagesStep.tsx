@@ -290,12 +290,12 @@ export default function ImagesStep({
             ? '행사 초대장 최상단과 공유 화면에 사용하는 메인 이미지입니다.'
             : isFirstBirthday
             ? '돌잔치 초대장 최상단과 첫 화면에 사용하는 메인 이미지입니다.'
-            : '청첩장 최상단과 첫 화면에 사용하는 메인 이미지입니다.'
+            : '세로 2:3~3:4 사진을 권장합니다. 포토형·클래식형은 미리보기에서 잘리는 부분을 확인해 주세요. 한글 서약장은 사진을 초대 글 뒤에 배치하며, 사진 없이도 완성됩니다.'
         }
         imageUrl={coverImage}
         isBroken={brokenSingleImages.cover}
         placeholder="대표 이미지 미리보기"
-        emptyHint="대표 이미지를 등록하지 않으면 첫 화면 이미지가 비어 보일 수 있습니다."
+        emptyHint={formState.eventType === 'wedding' ? '사진 없이도 이름·예식 일정·장소가 표시됩니다.' : '대표 이미지를 등록하거나 기본 이미지를 선택해 주세요.'}
         removeLabel="대표 이미지 제거"
         uploadLabel="대표 이미지 올리기"
         uploadKind="cover"

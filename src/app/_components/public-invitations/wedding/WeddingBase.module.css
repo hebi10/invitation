@@ -99,6 +99,9 @@ details[open] > :is(.disclosureSummary, .accountSummary, .formSummary)::after { 
 .venuePhone { display: inline-flex; align-items: center; justify-content: center; min-height: 44px; color: var(--muted); text-decoration: underline; text-underline-offset: 4px; }
 .travelNote { margin: 24px 0; color: var(--muted); font-size: 13px; line-height: 1.95; text-align: left; white-space: pre-line; }
 .guideDisclosure { margin-top: 24px; }
+.guideSummary { margin: 12px 0 0; color: var(--muted); font-size: 15px; line-height: 1.8; text-align: left; }
+.returnLinks { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px 20px; margin: 48px 24px 0; padding: 16px 0; }
+.returnLinks a { display: inline-flex; align-items: center; min-height: 48px; padding: 0 4px; color: var(--accent); font-size: 15px; text-decoration: underline; text-underline-offset: 5px; }
 .storedSection { padding: 24px 0 0; text-align: left; font-size: 13px; line-height: 1.95; }
 .guideTitle { margin: 0 0 24px; font-size: 14px; font-weight: 500; color: var(--accent); }
 .storedSection > div > div { border: 0; padding: 8px 0; }

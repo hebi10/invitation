@@ -10,13 +10,14 @@ import type { InvitationPage, InvitationPageSeed, InvitationThemeKey } from '@/t
 import { sampleWeddingPage, sampleWeddingComments, SAMPLE_WEDDING_COVER, SAMPLE_WEDDING_IMAGES } from '@/config/homeWeddingSample';
 import { resolveInvitationPageDataByTheme } from '@/lib/invitationThemePageData';
 import { resolveInvitationFeatures } from '@/lib/invitationProducts';
+import { getWeddingPreviewThemeKeys } from '@/lib/eventPreviewLinks';
 import { applyDerivedWizardDefaults, buildWeddingDateObject } from '../page-wizard/pageWizardData';
 import styles from '../page-wizard/WeddingWizardPreview.module.css';
 import WeddingIntro from '@/components/sections/WeddingIntro/WeddingIntro';
 import { normalizeWeddingIntroStyle } from '@/lib/weddingIntro';
 import { isPreviewStep, previewSections, type PreviewStep } from './previewSections';
 
-const themes: InvitationThemeKey[] = ['simple', 'emotional', 'romantic', 'gyeol', 'classic-r'];
+const themes = getWeddingPreviewThemeKeys();
 const idle = () => {};
 const refresh = async () => {};
 const previewRenderers = new Map(themes.map(theme => [theme, withWeddingClosing(
@@ -46,10 +47,10 @@ export function buildPreview(seed: InvitationPageSeed, theme: InvitationThemeKey
     displayPeriodEnd: null,
   };
   const data = resolveInvitationPageDataByTheme(page, theme);
-  const cover = seed.metadata.images.wedding.trim() || SAMPLE_WEDDING_COVER;
+  const cover = seed.metadata.images.wedding.trim() || (theme === 'vow' ? '' : SAMPLE_WEDDING_COVER);
   const images = data?.galleryImages?.filter((url) => url.trim()) ?? [];
   const features = resolveInvitationFeatures(page.productTier, page.features);
-  const gallery = (images.length ? images : SAMPLE_WEDDING_IMAGES.filter((url) => url !== cover)).slice(0, features.maxGalleryImages);
+  const gallery = (images.length || theme === 'vow' ? images : SAMPLE_WEDDING_IMAGES.filter((url) => url !== cover)).slice(0, features.maxGalleryImages);
   page.pageData = {
     ...data,
     themeOverrides: undefined,

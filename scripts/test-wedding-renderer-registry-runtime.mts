@@ -94,7 +94,7 @@ for (const definition of WEDDING_THEME_CLOSING_DEFINITIONS) {
 
 console.log('production wedding renderer closing checks passed');
 
-// Render the real five-theme composition, including shared interactive section shells.
+// Render each registered wedding composition, including shared interactive section shells.
 const require = createRequire(import.meta.url);
 const { QueryClient, QueryClientProvider } = require('@tanstack/react-query') as typeof import('@tanstack/react-query');
 const page = structuredClone(getRequiredWeddingPageBySlug('kim-taehyun-choi-yuna'));
@@ -146,5 +146,5 @@ for (const { key: theme } of WEDDING_THEME_CLOSING_DEFINITIONS) {
     queryClient.clear();
   }
 }
-assert.equal(renderedCovers.size, 5, 'The five wedding variants must render distinct cover compositions');
-console.log('Five wedding compositions and preserved sections rendered successfully');
+assert.equal(renderedCovers.size, WEDDING_THEME_CLOSING_DEFINITIONS.length, 'Every wedding variant must render a distinct cover composition');
+console.log('Wedding compositions and preserved sections rendered successfully');

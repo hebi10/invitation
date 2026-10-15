@@ -29,6 +29,7 @@ export const WEDDING_THEME_CLOSING_DEFINITIONS = [
   { key: 'simple', renderClosing: true },
   { key: 'classic-r', renderClosing: true },
   { key: 'gyeol', renderClosing: true },
+  { key: 'vow', renderClosing: true },
 ] as const satisfies readonly {
   key: InvitationThemeKey;
   renderClosing: boolean;

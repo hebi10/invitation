@@ -110,8 +110,16 @@ assert.match(emptyAlbumSelection, /aria-label="전체 사진 5장 보기"/,
 type InteractiveElementProps = {
   children?: React.ReactNode;
   src?: string;
+  role?: string;
+  hidden?: boolean;
+  loading?: string;
+  disabled?: boolean;
   'aria-label'?: string;
   onClick?: (event: React.MouseEvent<HTMLButtonElement>) => void;
+  onTouchStart?: (event: React.TouchEvent<HTMLDivElement>) => void;
+  onTouchMove?: (event: React.TouchEvent<HTMLDivElement>) => void;
+  onTouchEnd?: (event: React.TouchEvent<HTMLDivElement>) => void;
+  onTouchCancel?: (event: React.TouchEvent<HTMLDivElement>) => void;
 };
 function findElements(node: React.ReactNode): React.ReactElement<InteractiveElementProps>[] {
   if (!React.isValidElement<InteractiveElementProps>(node)) return [];
@@ -123,7 +131,7 @@ const popupSteps = [
   { action: '이전 이미지', image: '/closing.jpg' },
   { action: '갤러리 크게 보기 닫기', image: '/three.jpg' },
   { action: '전체 사진 5장 보기', image: undefined },
-  { action: undefined, image: '/cover.jpg' },
+  { action: undefined, image: undefined },
 ];
 for (const overviewProps of [
   { editorialOverview: true, overviewIndices: [3, 1] },
@@ -140,6 +148,11 @@ for (const overviewProps of [
     const step = popupSteps[popupStep];
     assert.equal(popupPhoto?.props.src, step.image,
       `Popup step ${popupStep}: selection and navigation use the complete original photo sequence`);
+    if (popupStep === popupSteps.length - 1) {
+      const list = elements.find((element) => element.props.role === 'list' && element.props['aria-label'] === '전체 사진 목록');
+      assert.ok(list, 'The full-gallery action opens a selectable photo list instead of the first enlarged photo');
+      assert.equal(findElements(list).filter((element) => element.props.src).length, albumImages.length);
+    }
     if (step.action) {
       const button = elements.find((element) => element.props['aria-label'] === step.action);
       assert.ok(button?.props.onClick, `Missing gallery action: ${step.action}`);
@@ -150,6 +163,99 @@ for (const overviewProps of [
   }
   renderToStaticMarkup(React.createElement(OverviewPopupHarness));
   assert.equal(popupStep, popupSteps.length - 1);
+}
+
+const click = (element: React.ReactElement<InteractiveElementProps> | undefined) => {
+  assert.ok(element?.props.onClick, 'The requested gallery action must be available');
+  element.props.onClick({ currentTarget: { focus() {} } } as unknown as React.MouseEvent<HTMLButtonElement>);
+};
+const touch = (x: number, y: number, touches = 1) => ({
+  touches: Array.from({ length: touches }, (_, identifier) => ({ identifier, clientX: x, clientY: y })),
+  changedTouches: [{ identifier: 0, clientX: x, clientY: y }],
+}) as unknown as React.TouchEvent<HTMLDivElement>;
+
+for (const count of [1, 18]) {
+  const images = Array.from({ length: count }, (_, index) => `/original-${index}.jpg`);
+  const previews = Array.from({ length: count }, (_, index) => `/preview-${index}.jpg`);
+  let phase = 0;
+  function FullGalleryHarness() {
+    const [, forceRender] = React.useReducer((value: number) => value + 1, 0);
+    const tree = GalleryGridShared({ images, previewImages: previews, gridOverview: true, styles, imageAltPrefix: '사진첩' });
+    const elements = findElements(tree);
+    const action = (label: string) => elements.find((element) => element.props['aria-label'] === label);
+    const list = elements.find((element) => element.props.role === 'list' && element.props['aria-label'] === '전체 사진 목록');
+    const original = elements.find((element) => element.props.src?.startsWith('/original-'));
+    const swipeSurface = elements.find((element) => element.props.onTouchEnd);
+    const swipe = (x: number, y = 0) => {
+      assert.ok(swipeSurface?.props.onTouchStart && swipeSurface.props.onTouchEnd, 'Enlarged photos provide touch navigation');
+      swipeSurface.props.onTouchStart(touch(150, 150));
+      swipeSurface.props.onTouchEnd(touch(150 + x, 150 + y, 0));
+    };
+    switch (phase) {
+      case 0:
+        click(action(`전체 사진 ${count}장 보기`));
+        break;
+      case 1: {
+        assert.ok(list, 'Opening all photos must show the list');
+        const thumbnails = findElements(list).filter((element) => element.props.src);
+        assert.deepEqual(thumbnails.map((element) => element.props.src), previews, 'Every saved photo is reachable in order');
+        assert.ok(thumbnails.every((element) => element.props.loading === 'lazy'), 'The full list keeps thumbnail loading deferred');
+        assert.equal(original, undefined, 'Opening the list must not load an enlarged original');
+        click(findElements(list).find((element) => element.props['aria-label'] === `사진첩 ${count}번째 사진 크게 보기`));
+        break;
+      }
+      case 2:
+        assert.equal(original?.props.src, `/original-${count - 1}.jpg`, 'Selecting a list thumbnail opens its corresponding original');
+        assert.equal(action('다음 이미지')?.props.disabled, true, 'The last photo cannot advance past the list');
+        swipe(-100);
+        break;
+      case 3:
+        assert.equal(original?.props.src, `/original-${count - 1}.jpg`, 'A left swipe at the last photo is a no-op');
+        swipe(100);
+        break;
+      case 4:
+        assert.equal(original?.props.src, count === 1 ? '/original-0.jpg' : '/original-16.jpg', 'A right swipe selects the previous photo without wrapping a single photo');
+        swipe(60, 110);
+        break;
+      case 5:
+        assert.equal(original?.props.src, count === 1 ? '/original-0.jpg' : '/original-16.jpg', 'Vertical gestures must not change photos');
+        swipe(-20);
+        break;
+      case 6:
+        assert.equal(original?.props.src, count === 1 ? '/original-0.jpg' : '/original-16.jpg', 'Short touches must not change photos');
+        swipeSurface?.props.onTouchStart?.(touch(150, 150));
+        swipeSurface?.props.onTouchMove?.(touch(150, 150, 2));
+        swipeSurface?.props.onTouchEnd?.(touch(50, 150, 0));
+        break;
+      case 7:
+        assert.equal(original?.props.src, count === 1 ? '/original-0.jpg' : '/original-16.jpg', 'Pinch gestures must not change photos');
+        swipeSurface?.props.onTouchStart?.(touch(150, 150));
+        swipeSurface?.props.onTouchCancel?.(touch(150, 150, 0));
+        swipeSurface?.props.onTouchEnd?.(touch(50, 150, 0));
+        break;
+      case 8:
+        assert.equal(original?.props.src, count === 1 ? '/original-0.jpg' : '/original-16.jpg', 'Canceled touches must not change photos');
+        swipe(-100);
+        break;
+      case 9:
+        assert.equal(original?.props.src, `/original-${count - 1}.jpg`, 'A left swipe selects the next photo');
+        click(action('전체 사진 목록으로 돌아가기'));
+        break;
+      case 10:
+        assert.ok(list, 'The enlarged photo can return to the complete list');
+        assert.equal(original, undefined);
+        click(action('갤러리 크게 보기 닫기'));
+        break;
+      case 11:
+        assert.equal(elements.some((element) => element.props.role === 'dialog'), false, 'Closing the list dismisses the same gallery dialog');
+        return tree;
+    }
+    phase += 1;
+    forceRender();
+    return tree;
+  }
+  renderToStaticMarkup(React.createElement(FullGalleryHarness));
+  assert.equal(phase, 11);
 }
 
 for (const theme of ['romantic', 'classic-r', 'emotional'] as const) {

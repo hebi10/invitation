@@ -4,6 +4,11 @@
   margin: 0 auto;
 }
 
+.canvas[data-theme='vow'] { background: #fcfbf7; }
+.closing[data-theme='vow'] { background: #fcfbf7; color: #292722; font-family: 'Wedding Myeongjo', serif; }
+.closing[data-theme='vow'] p.vowThanks { font-size: 20px; font-weight: 400; line-height: 1.9; letter-spacing: 0; }
+.closing[data-theme='vow'] p.vowNames { font-family: 'Wedding SUIT', sans-serif; font-size: 15px; color: #6b655b; }
+
 .canvas[data-theme='emotional'] {
   --closing-background: #faf9f5;
   --closing-foreground: #2f342d;

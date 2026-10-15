@@ -61,11 +61,11 @@ const defaultCard = renderFinal().split('<details')[0];
 assert.match(defaultCard, /src="\/images\/cover.jpg"/,
   'The cover image is used when no social image was saved');
 const photos = renderToStaticMarkup(React.createElement(ImagesStep, { ...imageProps, mode: 'photos' }));
-assert.doesNotMatch(photos, /대표 이미지를 등록하지 않으면/,
-  'A populated cover must not show the empty-cover warning');
+assert.doesNotMatch(photos, /사진 없이도 이름·예식 일정·장소가 표시됩니다/,
+  'A populated cover must not show the empty-cover guidance');
 config.metadata.images.wedding = '';
 const emptyPhotos = renderToStaticMarkup(React.createElement(ImagesStep, { ...imageProps, mode: 'photos' }));
-assert.match(emptyPhotos, /대표 이미지를 등록하지 않으면/);
+assert.match(emptyPhotos, /사진 없이도 이름·예식 일정·장소가 표시됩니다/);
 assert.equal(updates, 0, 'Previewing or collapsing shared content never mutates saved draft fields');
 assert.equal(config.metadata.title, '직접 작성한 제목');
 assert.equal(config.metadata.description, '직접 작성한 설명');

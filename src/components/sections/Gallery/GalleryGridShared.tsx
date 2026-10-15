@@ -17,6 +17,7 @@ import { useDialogLayer } from '@/hooks/useDialogLayer';
 import WeddingGallerySwiper, { type WeddingGalleryVariant } from './WeddingGallerySwiper';
 
 import { resolveGalleryOpacityTransition } from './galleryMotion';
+import sharedStyles from './GalleryGridShared.module.css';
 
 const REDUCED_MOTION_QUERY = '(prefers-reduced-motion: reduce)';
 
@@ -107,6 +108,7 @@ export default function GalleryGridShared({
     triggerOnce: true,
   });
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
+  const [isFullGalleryOpen, setIsFullGalleryOpen] = useState(false);
   const [visibleCount, setVisibleCount] = useState(6);
   const [carouselIndex, setCarouselIndex] = useState(0);
   const [loadedImages, setLoadedImages] = useState<Set<string>>(new Set());
@@ -122,6 +124,11 @@ export default function GalleryGridShared({
   const popupContentRef = useRef<HTMLDivElement | null>(null);
   const popupCloseButtonRef = useRef<HTMLButtonElement | null>(null);
   const triggerRef = useRef<HTMLButtonElement | null>(null);
+  const listRef = useRef<HTMLUListElement | null>(null);
+  const listPhotoRefs = useRef<(HTMLButtonElement | null)[]>([]);
+  const returnToPhotoRef = useRef<number | null>(null);
+  const listScrollTopRef = useRef(0);
+  const touchStartRef = useRef<{ x: number; y: number; identifier: number } | null>(null);
 
   const lastIndex = Math.max(0, images.length - 1);
   if (carouselIndex > lastIndex) {
@@ -129,6 +136,9 @@ export default function GalleryGridShared({
   }
   if (selectedIndex !== null && (images.length === 0 || selectedIndex > lastIndex)) {
     setSelectedIndex(images.length === 0 ? null : lastIndex);
+  }
+  if (isFullGalleryOpen && images.length === 0) {
+    setIsFullGalleryOpen(false);
   }
   const isCarousel = layout === 'carousel';
 
@@ -154,7 +164,8 @@ export default function GalleryGridShared({
   const activeIndex = selectedIndex ?? 0;
   const hasImages = images.length > 0;
   const isPopupBusy = isPopupImageLoading;
-  const isPopupOpen = selectedIndex !== null;
+  const isPopupOpen = isFullGalleryOpen || selectedIndex !== null;
+  const showFullGallery = isFullGalleryOpen && selectedIndex === null;
   const resolvedImageAltPrefix = imageAltPrefix?.trim() || title.trim() || '웨딩 갤러리';
 
   const getImageAlt = useCallback(
@@ -184,11 +195,25 @@ export default function GalleryGridShared({
 
   const closePopup = useCallback(() => {
     setSelectedIndex(null);
+    setIsFullGalleryOpen(false);
     setIsPopupImageLoading(false);
     setPopupImageError(null);
+    returnToPhotoRef.current = null;
+    listScrollTopRef.current = 0;
+    touchStartRef.current = null;
   }, []);
 
   useDialogLayer(popupContentRef, { open: isPopupOpen, onClose: closePopup });
+
+  useEffect(() => {
+    if (!showFullGallery || returnToPhotoRef.current === null) return;
+
+    const index = Math.min(returnToPhotoRef.current, images.length - 1);
+    listPhotoRefs.current[index]?.focus({ preventScroll: true });
+    if (listRef.current) listRef.current.scrollTop = listScrollTopRef.current;
+    listPhotoRefs.current[index]?.scrollIntoView({ block: 'nearest' });
+    returnToPhotoRef.current = null;
+  }, [images.length, showFullGallery]);
 
   const goToPrevImage = useCallback(() => {
     if (selectedIndex === null || selectedIndex <= 0) {
@@ -246,12 +271,32 @@ export default function GalleryGridShared({
   }, []);
 
   const openPopup = (index: number, trigger: HTMLButtonElement) => {
-    triggerRef.current = trigger;
-    triggerRef.current.focus();
+    if (!images[index]) return;
+    if (!isPopupOpen) {
+      triggerRef.current = trigger;
+      triggerRef.current.focus();
+    } else {
+      listScrollTopRef.current = listRef.current?.scrollTop ?? 0;
+      popupCloseButtonRef.current?.focus();
+    }
     preloadPopupImageSet(images, index);
     setSelectedIndex(index);
     setPopupImageError(null);
     setIsPopupImageLoading(!loadedPopupImages.has(images[index]));
+  };
+
+  const openFullGallery = (trigger?: HTMLButtonElement) => {
+    if (!hasImages) return;
+    if (!isPopupOpen && trigger) {
+      triggerRef.current = trigger;
+      triggerRef.current.focus();
+    }
+    returnToPhotoRef.current = selectedIndex;
+    setIsFullGalleryOpen(true);
+    setSelectedIndex(null);
+    setIsPopupImageLoading(false);
+    setPopupImageError(null);
+    touchStartRef.current = null;
   };
 
   if (!hasImages && !imagesLoading) {
@@ -323,7 +368,7 @@ export default function GalleryGridShared({
                 type="button"
                 className={styles.overviewCard}
                 aria-label={`전체 사진 ${images.length}장 보기`}
-                onClick={(event) => openPopup(0, event.currentTarget)}
+                onClick={(event) => openFullGallery(event.currentTarget)}
               >
                 <span>전체 사진 보기</span>
                 <span className={styles.overviewCount}>{isModernOverview ? `${String(displayIndices.length).padStart(2, '0')} / ${String(images.length).padStart(2, '0')}` : `${images.length}장`}</span>
@@ -405,7 +450,7 @@ export default function GalleryGridShared({
         )}
       </section>
 
-      {selectedImage && (
+      {isPopupOpen && (
         <div
           className={styles.popup}
           onClick={(event) => {
@@ -416,16 +461,16 @@ export default function GalleryGridShared({
         >
           <div
             ref={popupContentRef}
-            className={styles.popupContent}
+            className={`${styles.popupContent} ${showFullGallery ? sharedStyles.listDialog : ''}`}
             role="dialog"
             aria-modal="true"
-            aria-label={`${resolvedImageAltPrefix} 크게 보기`}
+            aria-label={`${resolvedImageAltPrefix} ${showFullGallery ? '전체 사진' : '크게 보기'}`}
             aria-busy={isPopupBusy}
           >
             <button
               ref={popupCloseButtonRef}
               data-dialog-initial-focus
-              className={styles.closeButton}
+              className={`${styles.closeButton} ${showFullGallery ? sharedStyles.listCloseButton : ''}`}
               onClick={closePopup}
               type="button"
               aria-label="갤러리 크게 보기 닫기"
@@ -433,10 +478,69 @@ export default function GalleryGridShared({
               <span aria-hidden="true">×</span>
             </button>
 
+            {isFullGalleryOpen ? (
+              <>
+                <h3 className={sharedStyles.listTitle} hidden={!showFullGallery}>전체 사진 {images.length}장</h3>
+                <ul ref={listRef} className={sharedStyles.photoList} role="list" aria-label="전체 사진 목록" hidden={!showFullGallery}>
+                  {images.map((image, index) => {
+                    const preview = previewImages?.[index] ?? image;
+                    const thumbnail = failedThumbnailImages.has(preview) ? image : preview;
+                    return (
+                      <li key={`${image}-${index}`}>
+                        <button
+                          ref={(element) => { listPhotoRefs.current[index] = element; }}
+                          type="button"
+                          className={sharedStyles.listPhoto}
+                          aria-label={`${resolvedImageAltPrefix} ${index + 1}번째 사진 크게 보기`}
+                          onClick={(event) => openPopup(index, event.currentTarget)}
+                        >
+                          {failedThumbnailImages.has(thumbnail) ? (
+                            <span className={sharedStyles.listPhotoUnavailable}>사진을 불러오지 못했습니다.<br />눌러서 원본 보기</span>
+                          ) : (
+                            <Image src={thumbnail} alt={getImageAlt(index)} fill sizes="(max-width: 700px) 30vw, 210px" quality={60} loading="lazy"
+                              onError={() => setFailedThumbnailImages((current) => new Set([...current, thumbnail]))}
+                              style={{ objectFit: 'cover' }} />
+                          )}
+                        </button>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </>
+            ) : null}
+
+            {selectedImage ? <>
+            <button type="button" className={sharedStyles.backToList} aria-label="전체 사진 목록으로 돌아가기" onClick={() => openFullGallery()}>
+              전체 사진 목록
+            </button>
+
             <div
               className={`${styles.popupImageWrapper} ${
                 isPopupBusy ? styles.popupImageWrapperLoading : ''
               }`}
+              style={{ touchAction: 'pan-y pinch-zoom' }}
+              onTouchStart={(event) => {
+                const touch = event.touches[0];
+                touchStartRef.current = event.touches.length === 1 && touch
+                  ? { x: touch.clientX, y: touch.clientY, identifier: touch.identifier }
+                  : null;
+              }}
+              onTouchMove={(event) => {
+                if (event.touches.length !== 1) touchStartRef.current = null;
+              }}
+              onTouchCancel={() => { touchStartRef.current = null; }}
+              onTouchEnd={(event) => {
+                const start = touchStartRef.current;
+                touchStartRef.current = null;
+                if (!start || event.touches.length > 0) return;
+                const end = Array.from(event.changedTouches).find((touch) => touch.identifier === start.identifier);
+                if (!end) return;
+                const deltaX = end.clientX - start.x;
+                const deltaY = end.clientY - start.y;
+                if (Math.abs(deltaX) < 48 || Math.abs(deltaX) <= Math.abs(deltaY) * 1.25) return;
+                if (deltaX < 0) goToNextImage();
+                else goToPrevImage();
+              }}
             >
               {isPopupImageLoading ? (
                 <div
@@ -528,7 +632,7 @@ export default function GalleryGridShared({
                 {'<'}
               </button>
 
-              <span className={styles.imageCounter}>
+              <span className={styles.imageCounter} aria-live="polite" aria-atomic="true">
                 {activeIndex + 1} / {images.length}
               </span>
 
@@ -542,6 +646,7 @@ export default function GalleryGridShared({
                 {'>'}
               </button>
             </div>
+            </> : null}
           </div>
         </div>
       )}

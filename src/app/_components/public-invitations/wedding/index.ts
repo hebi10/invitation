@@ -3,3 +3,4 @@ export { default as GardenNotePage } from './garden-note/Page';
 export { default as QuietCeremonyPage } from './quiet-ceremony/Page';
 export { default as LetterpressPage } from './letterpress/Page';
 export { default as GyeolPage } from './gyeol/Page';
+export { default as VowPage } from './vow/Page';

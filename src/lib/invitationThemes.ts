@@ -127,6 +127,26 @@ export const INVITATION_THEME_METADATA_REGISTRY = [
     sortOrder: 20,
   },
   {
+    key: 'vow',
+    label: '한글 서약장',
+    adminLabel: '한글 서약장',
+    variantLabel: '한글 서약장',
+    pathSuffix: '/vow',
+    wizardDescription: '사진 없이도 완성되는 한글 청첩장입니다. 두 사람의 이름과 약속, 예식 일정을 따뜻한 백색 종이 위에 담습니다.',
+    preview: {
+      description: '두 사람의 이름과 약속이 중심이 되는 한글 청첩장입니다. 사진은 초대 글 뒤에서 선택적으로 보여줍니다.',
+      sampleUrls: {
+        standard: buildThemePreviewUrl('/kim-taehyun-choi-yuna/vow/'),
+        deluxe: buildThemePreviewUrl('/lee-junho-park-somin/vow/'),
+        premium: buildThemePreviewUrl('/an-doyoung-yoon-jisoo/vow/'),
+      },
+    },
+    shareTitleMode: 'metadata',
+    documentTitleSuffix: '',
+    ariaLabelSuffix: '',
+    sortOrder: 60,
+  },
+  {
     key: 'first-birthday-pink',
     label: '퍼스트 챕터',
     adminLabel: '퍼스트 챕터',
@@ -329,6 +349,13 @@ export const INVITATION_THEME_SALES_POLICY_REGISTRY = {
     allowsAdditionalPurchase: true,
   },
   'classic-r': {
+    isDefault: false,
+    canBeDefault: true,
+    isSelectableAtCreation: true,
+    isPurchasable: true,
+    allowsAdditionalPurchase: true,
+  },
+  vow: {
     isDefault: false,
     canBeDefault: true,
     isSelectableAtCreation: true,

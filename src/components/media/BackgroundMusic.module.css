@@ -1,9 +1,10 @@
 .musicPlayer {
   position: fixed;
   height: fit-content;
-  bottom: 20px;
-  right: 20px;
-  z-index: 9999;
+  bottom: max(20px, env(safe-area-inset-bottom));
+  right: max(20px, env(safe-area-inset-right));
+  /* Keep invitation dialogs above the optional music control. */
+  z-index: 30;
   display: flex;
   flex-direction: column-reverse;
   align-items: flex-end;
@@ -25,17 +26,38 @@
   letter-spacing: 0.5px;
 }
 
-.errorMessage {
-  max-width: min(260px, calc(100vw - 30px));
-  margin: 0;
-  padding: 10px 12px;
+.errorNotice {
+  box-sizing: border-box;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  max-width: min(280px, calc(100vw - 30px));
+  padding: 8px 10px;
   border: 1px solid #d8dad4;
   background: #fff;
+}
+
+.errorMessage {
+  min-width: 0;
+  margin: 0;
   color: #444;
   font-size: 12px;
   line-height: 1.6;
 }
 
+.dismissButton {
+  flex-shrink: 0;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 6px;
+  border: 1px solid #d8dad4;
+  background: #fff;
+  color: #444;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+}
 
 .toggleButton.on {
   background: #333;
@@ -98,8 +120,8 @@
 /* 모바일 대응 */
 @media (max-width: 768px) {
   .musicPlayer {
-    bottom: 15px;
-    right: 15px;
+    bottom: max(15px, env(safe-area-inset-bottom));
+    right: max(15px, env(safe-area-inset-right));
   }
 
   .toggleButton {
@@ -118,7 +140,8 @@
 }
 
 /* 접근성: 포커스 스타일 */
-.toggleButton:focus {
+.toggleButton:focus-visible,
+.dismissButton:focus-visible {
   outline: 2px solid rgba(0, 0, 0, 0.2);
   outline-offset: 2px;
 }

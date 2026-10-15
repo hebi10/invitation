@@ -41,7 +41,7 @@ if (!Array.isArray(weddingClosingDefinitions)) {
 
 assert.deepEqual(
   weddingClosingDefinitions.map((definition) => definition.key),
-  ['emotional', 'romantic', 'simple', 'classic-r', 'gyeol'],
+  ['emotional', 'romantic', 'simple', 'classic-r', 'gyeol', 'vow'],
   'every actual public wedding theme should have one registry closing policy'
 );
 

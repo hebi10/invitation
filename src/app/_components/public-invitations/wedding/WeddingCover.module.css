@@ -73,6 +73,9 @@
 .basic .basicPhoto { width: 100%; margin: 0 0 28px; }
 .basic .photo { height: auto; object-fit: contain; }
 
+/* Reserve space for the invitation details without cropping the saved photo. */
+.basicPhoto .photo, .editorialPhoto .photo, .letterPhoto .photo { max-height: min(52svh, 520px); }
+
 @media (max-width: 359px) {
   .names { font-size: 24px; gap: 10px; }
   .photoCopy { padding-inline: 20px; }

@@ -32,6 +32,7 @@ export default function BackgroundMusic({
 }: BackgroundMusicProps) {
   const [isPlaying, setIsPlaying] = useState(false);
   const [playbackError, setPlaybackError] = useState('');
+  const [isErrorDismissed, setIsErrorDismissed] = useState(false);
   const [isAtTop, setIsAtTop] = useState(true);
   const [shouldRenderInitialControlHint, setShouldRenderInitialControlHint] = useState(
     Boolean(initialControlHintText?.trim())
@@ -39,6 +40,7 @@ export default function BackgroundMusic({
   const [isInitialControlHintFading, setIsInitialControlHintFading] = useState(false);
   const audioRef = useRef<HTMLAudioElement>(null);
   const controlRef = useRef<HTMLButtonElement>(null);
+  const playerRef = useRef<HTMLDivElement>(null);
   const hasAutoPlayedRef = useRef(false);
   const isPlaybackTransitionRef = useRef(false);
   const previousMusicUrlRef = useRef('');
@@ -86,6 +88,10 @@ export default function BackgroundMusic({
       isPlaybackTransitionRef.current = false;
     }
   }, [normalizedMusicUrl]);
+
+  useEffect(() => {
+    setIsErrorDismissed(false);
+  }, [normalizedMusicUrl, loadError]);
 
   useEffect(() => {
     const audio = audioRef.current;
@@ -166,8 +172,11 @@ export default function BackgroundMusic({
     }
 
     const handleFirstInteraction = async (event: Event) => {
-      // The music control handles its own gesture, including touch followed by click.
-      if (event.target && controlRef.current?.contains(event.target as Node)) {
+      // Music controls and notice dismissal handle their own gestures.
+      if (event.target && (
+        playerRef.current?.contains(event.target as Node)
+        || controlRef.current?.contains(event.target as Node)
+      )) {
         return;
       }
       if (hasAutoPlayedRef.current) {
@@ -201,6 +210,7 @@ export default function BackgroundMusic({
   }, [autoPlay, normalizedMusicUrl, playAudio]);
 
   const togglePlay = async () => {
+    setIsErrorDismissed(false);
     if (!normalizedMusicUrl) {
       onRetryLoad?.();
       return;
@@ -226,7 +236,7 @@ export default function BackgroundMusic({
   }
 
   return (
-    <div className={styles.musicPlayer}>
+    <div ref={playerRef} className={styles.musicPlayer}>
       {normalizedMusicUrl ? <audio
         ref={audioRef}
         src={normalizedMusicUrl}
@@ -251,7 +261,22 @@ export default function BackgroundMusic({
         {isPlaying ? '음악 끄기' : errorMessage ? '음악 다시 시도' : '음악 켜기'}
       </button>
 
-      {errorMessage ? <p className={styles.errorMessage} role="status">{errorMessage}</p> : null}
+      {errorMessage && !isErrorDismissed ? (
+        <div className={styles.errorNotice}>
+          <p className={styles.errorMessage} role="status">{errorMessage}</p>
+          <button
+            type="button"
+            className={styles.dismissButton}
+            aria-label="음악 안내 닫기"
+            onClick={() => {
+              setIsErrorDismissed(true);
+              controlRef.current?.focus();
+            }}
+          >
+            닫기
+          </button>
+        </div>
+      ) : null}
 
       {!errorMessage && shouldRenderInitialControlHint ? (
         <div

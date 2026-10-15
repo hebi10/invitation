@@ -8,6 +8,7 @@ const core = [
   'test-wedding-url-themes',
   'test-mobile-wedding-design-access',
   'test-background-music-playback',
+  'test-gift-info-copy',
   'test-music-editor',
   'test-wedding-intro-settings',
   'test-wedding-intro-policy',
@@ -57,6 +58,7 @@ const core = [
   'test-wedding-compact-sections-rendering',
   'test-wedding-calendar',
   'test-simple-wedding-rendering',
+  'test-vow-wedding-rendering',
   'test-image-upload-optimization',
   'test-invitation-metadata',
   'test-memory-dynamic-metadata',
@@ -239,6 +241,7 @@ const clientRenderingTests = new Set([
   'test-wizard-editor-disclosures',
   'test-wedding-intro-policy',
   'test-simple-wedding-rendering',
+  'test-vow-wedding-rendering',
   'test-gallery-carousel-rendering',
   'test-wedding-compact-sections-rendering',
 ]);

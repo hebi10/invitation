@@ -14,6 +14,7 @@ import {
   LetterpressPage,
   PortraitLetterPage,
   QuietCeremonyPage,
+  VowPage,
 } from '../public-invitations/wedding';
 
 export type WeddingThemeRendererComponent =
@@ -44,6 +45,10 @@ export const WEDDING_THEME_RENDERER_REGISTRY = [
   {
     key: 'gyeol',
     component: GyeolPage,
+  },
+  {
+    key: 'vow',
+    component: VowPage,
   },
 ] as const satisfies readonly WeddingThemeRendererRegistryEntry[];
 

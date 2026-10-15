@@ -27,6 +27,7 @@ import { useImmediateWeddingPageReveal } from './useImmediateWeddingPageReveal';
 import { useWeddingMotion } from './useWeddingMotion';
 import LocationMap from './gyeol/LocationMap';
 import styles from './WeddingBase.module.css';
+import vowStyles from './vow/Vow.module.css';
 import './WeddingFonts.css';
 
 export default function WeddingBase({ state, theme, demoComments, showMap = true }: WeddingThemeRendererProps & { theme: InvitationThemeKey; demoComments?: Comment[]; showMap?: boolean }) {
@@ -138,7 +139,7 @@ export default function WeddingBase({ state, theme, demoComments, showMap = true
   return (
     <main
       ref={pageRef}
-      className={styles.page}
+      className={[styles.page, theme === 'vow' ? vowStyles.page : ''].filter(Boolean).join(' ')}
       data-design={theme}
       aria-label={`${page.groomName}과 ${page.brideName}의 결혼식 초대장`}
     >
@@ -199,6 +200,10 @@ export default function WeddingBase({ state, theme, demoComments, showMap = true
           </ul>
         </details>
       ) : null}
+
+      {theme === 'vow' && heroImageUrl ? <figure className={vowStyles.portrait} data-wedding-vow-portrait>
+        <img src={heroImageUrl} alt={`${page.displayName} 대표 사진`} loading="lazy" decoding="async" />
+      </figure> : null}
 
       {gallery}
 
@@ -284,7 +289,7 @@ export default function WeddingBase({ state, theme, demoComments, showMap = true
             <summary className={styles.disclosureSummary}>교통 · 식사 안내 자세히 보기</summary>
             <WeddingStoredContent className={styles.storedSection} model={{ ...storedContent, ceremonyContact: '', mapDescription: '', mapHref: '' }} titleClassName={styles.guideTitle} />
           </details>
-          {theme === 'emotional' && guideSummary ? <p className={styles.guideSummary}>{guideSummary}</p> : null}
+          {guideSummary ? <p className={styles.guideSummary}>{guideSummary}</p> : null}
         </section>
       ) : null}
 
@@ -318,6 +323,11 @@ export default function WeddingBase({ state, theme, demoComments, showMap = true
           />
         </div>
       ) : null}
+      <nav className={styles.returnLinks} aria-label="예식 정보 다시 보기">
+        <a href="#wedding-location">오시는 길</a>
+        <a href="#wedding-info">예식 안내</a>
+        {shouldShowGiftInfo(state) ? <a href="#wedding-accounts">마음 전하기</a> : null}
+      </nav>
     </main>
   );
 }
