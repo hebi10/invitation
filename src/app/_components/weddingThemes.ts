@@ -76,6 +76,7 @@ export function getWeddingShareContainer(theme: string) {
   if (!palette) return undefined;
   return { style: {
     backgroundColor: palette.paper, width: 'min(100%, 480px)', margin: '0 auto',
+    display: 'flow-root',
     padding: '0 30px 32px', boxSizing: 'border-box',
     '--share-paper': palette.paper, '--share-ink': palette.ink, '--share-line': palette.line,
   } as CSSProperties };
