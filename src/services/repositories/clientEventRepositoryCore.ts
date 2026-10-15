@@ -3,6 +3,7 @@ import { isEventDeletionBlockingAccess } from '@/server/eventDeletionPolicy';
 import { ensureFirebaseInit } from '@/lib/firebase';
 import { DEFAULT_EVENT_TYPE, normalizeEventTypeKey, type EventTypeKey } from '@/lib/eventTypes';
 import { DEFAULT_INVITATION_THEME, type InvitationThemeKey } from '@/lib/invitationThemes';
+import { isWeddingPreviewThemeKey } from '@/lib/eventPreviewLinks';
 import type { InvitationPageSeed } from '@/types/invitationPage';
 
 import { ensureClientFirestoreState } from './clientFirestoreRepositoryCore';
@@ -440,6 +441,30 @@ export async function syncClientEventSlugIndexRecord(input: {
     createdAt: existing?.createdAt ?? input.createdAt ?? now,
     updatedAt: now,
   } satisfies ClientEventSlugIndexRecord;
+}
+
+export async function setClientEventDefaultThemeBySlug(pageSlug: string, theme: InvitationThemeKey) {
+  if (!isWeddingPreviewThemeKey(theme)) throw new Error('사용할 수 없는 청첩장 디자인입니다.');
+  const normalizedSlug = normalizePageSlug(pageSlug);
+  const firestore = await ensureClientFirestoreState();
+  if (!firestore) throw new Error('데이터 저장소 연결을 확인하지 못했습니다.');
+  const resolved = await resolveClientStoredEventBySlug(normalizedSlug);
+  if (!resolved) throw new Error('해당 청첩장을 찾을 수 없습니다.');
+  const eventRef = firestore.modules.doc(firestore.db, CLIENT_EVENTS_COLLECTION, resolved.summary.eventId);
+  const indexRef = firestore.modules.doc(firestore.db, CLIENT_EVENT_SLUG_INDEX_COLLECTION, normalizedSlug);
+  await firestore.modules.runTransaction(firestore.db, async (transaction) => {
+    const [eventSnapshot, indexSnapshot] = await Promise.all([transaction.get(eventRef), transaction.get(indexRef)]);
+    if (!eventSnapshot.exists()) throw new Error('해당 청첩장을 찾을 수 없습니다.');
+    const data = eventSnapshot.data();
+    const index = indexSnapshot.data();
+    if (!index || index.eventId !== resolved.summary.eventId || (index.status !== 'active' && index.status !== 'redirect') || data.slug !== resolved.summary.slug) {
+      throw new Error('현재 이용할 수 없는 청첩장 주소입니다.');
+    }
+    if (isEventDeletionBlockingAccess(data.deletion)) throw new Error('현재 이용할 수 없는 청첩장입니다.');
+    if (data.eventType !== 'wedding') throw new Error('청첩장에만 기본 디자인을 설정할 수 있습니다.');
+    // Metadata changes do not modify content versions, visibility, owners or content.
+    transaction.update(eventRef, { defaultTheme: theme, updatedAt: new Date() });
+  });
 }
 
 export async function upsertClientEventSummary(

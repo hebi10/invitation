@@ -29,6 +29,8 @@ function resolveLinkToken(value: string | string[] | undefined) {
   return typeof token === 'string' ? token.trim() : '';
 }
 
+type LinkAttempt = { token: string; status: 'checking' | 'failed' | 'complete' };
+
 export default function LoginScreen() {
   const router = useRouter();
   const params = useLocalSearchParams<{
@@ -52,7 +54,13 @@ export default function LoginScreen() {
   const [recentCards, setRecentCards] = useState<LinkedInvitationCard[]>([]);
   const [isLoadingRecentCards, setIsLoadingRecentCards] = useState(false);
   const [activatingRecentSlug, setActivatingRecentSlug] = useState<string | null>(null);
-  const lastHandledLinkTokenRef = useRef<string | null>(null);
+  const [linkAttempt, setLinkAttempt] = useState<LinkAttempt | null>(null);
+  const [linkRetryNonce, setLinkRetryNonce] = useState(0);
+  const activeLinkTokenRef = useRef(linkToken);
+  activeLinkTokenRef.current = linkToken;
+  const hasUnresolvedLink = Boolean(
+    linkToken && (linkAttempt?.token !== linkToken || linkAttempt.status !== 'complete')
+  );
 
   useNoticeToast(notice);
   useNoticeToast(authError, { tone: 'error' });
@@ -84,34 +92,38 @@ export default function LoginScreen() {
   );
 
   useEffect(() => {
-    if (
-      isBootstrapping ||
-      isExpoWebPreview ||
-      isAuthenticated ||
-      !linkToken ||
-      lastHandledLinkTokenRef.current === linkToken
-    ) {
+    if (isBootstrapping || isExpoWebPreview || !linkToken) {
       return;
     }
 
-    lastHandledLinkTokenRef.current = linkToken;
+    const controller = new AbortController();
+    setLinkAttempt({ token: linkToken, status: 'checking' });
     clearAuthError();
     setNotice('앱 연동 링크를 확인하고 있습니다.');
 
     void (async () => {
-      const authenticated = await loginWithLinkToken(linkToken);
+      const authenticated = await loginWithLinkToken(linkToken, {
+        signal: controller.signal,
+      });
+      if (controller.signal.aborted || activeLinkTokenRef.current !== linkToken) {
+        return;
+      }
       if (!authenticated) {
+        setLinkAttempt({ token: linkToken, status: 'failed' });
+        setNotice('앱 연동 링크를 확인하지 못했습니다. 다시 시도해 주세요.');
         return;
       }
 
+      setLinkAttempt({ token: linkToken, status: 'complete' });
       router.replace(nextPath);
     })();
+    return () => controller.abort();
   }, [
     clearAuthError,
-    isAuthenticated,
     isBootstrapping,
     isExpoWebPreview,
     linkToken,
+    linkRetryNonce,
     loginWithLinkToken,
     nextPath,
     router,
@@ -197,8 +209,41 @@ export default function LoginScreen() {
     );
   }
 
-  if (isAuthenticated) {
+  if (isAuthenticated && !hasUnresolvedLink) {
     return <Redirect href={nextPath} />;
+  }
+
+  if (hasUnresolvedLink) {
+    const failed = linkAttempt?.token === linkToken && linkAttempt.status === 'failed';
+    return (
+      <AppScreen
+        title="청첩장 연동"
+        subtitle={failed ? '새 앱 연동을 완료하지 못했습니다.' : '새 앱 연동 링크를 확인하고 있습니다.'}
+      >
+        <SectionCard
+          title={failed ? '앱 연동을 다시 확인해 주세요' : '앱 연동 확인 중'}
+          description={failed
+            ? '네트워크 연결을 확인한 뒤 다시 시도해 주세요. 링크가 만료되었다면 새 링크를 요청해 주세요.'
+            : '확인이 끝나면 해당 청첩장 운영 화면으로 이동합니다.'}
+        >
+          {failed ? (
+            <ActionButton onPress={() => setLinkRetryNonce((value) => value + 1)} fullWidth>
+              앱 연동 다시 시도
+            </ActionButton>
+          ) : <ActivityIndicator color={palette.accent} />}
+          {failed && isAuthenticated ? (
+            <ActionButton variant="secondary" onPress={() => router.replace(nextPath)} fullWidth>
+              기존 청첩장으로 돌아가기
+            </ActionButton>
+          ) : null}
+          {failed && !isAuthenticated ? (
+            <ActionButton variant="secondary" onPress={() => router.replace('/')} fullWidth>
+              메인 화면으로 이동
+            </ActionButton>
+          ) : null}
+        </SectionCard>
+      </AppScreen>
+    );
   }
 
   return (

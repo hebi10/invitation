@@ -195,6 +195,20 @@
   .eventAdvancedFilterGrid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 }
 
+@media (min-width: 768px) and (max-width: 1279px) {
+  .eventListTable { min-width: 0; table-layout: fixed; }
+  .eventListTable th:nth-child(2), .eventListTable td:nth-child(2),
+  .eventListTable th:nth-child(3), .eventListTable td:nth-child(3),
+  .eventListTable th:nth-child(5), .eventListTable td:nth-child(5),
+  .eventListTable th:nth-child(6), .eventListTable td:nth-child(6) { display: none; }
+  .eventListTable th:first-child { width: 44%; }
+  .eventListTable th:nth-child(4) { width: 22%; }
+  .eventListTable th:last-child { width: 34%; }
+  .eventSelectButton { min-width: 0; max-width: 100%; width: 100%; }
+  .rowActions { flex-wrap: wrap; gap: 4px 10px; }
+  .visibility { white-space: normal; overflow-wrap: anywhere; }
+}
+
 @media (max-width: 767px) {
   .eventFilters { padding: 16px; }
   .eventPrimaryFilters { grid-template-columns: minmax(0, 1fr) auto; }

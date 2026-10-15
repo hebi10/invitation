@@ -36,6 +36,7 @@ import {
 } from '@/lib/invitationProducts';
 import { setInvitationMusicLibrary } from '@/lib/musicLibrary';
 import { toUserFacingKoreanErrorMessage } from '@/lib/userFacingErrorMessage';
+import type { InvitationPublicAccessState } from '@/lib/invitationPublicAccess';
 import { getStorageDownloadUrl } from '@/services/imageService';
 import { searchKakaoLocalAddress } from '@/services/kakaoLocalService';
 import { getInvitationMusicLibraryFromStorage } from '@/services/musicService';
@@ -49,7 +50,6 @@ import {
   getEditableInvitationPageConfig,
   getInvitationPageSeedTemplates,
   normalizeInvitationPageSlugBase,
-  saveInvitationPageConfig,
 } from '@/services/invitationPageService';
 import { toDate } from '@/lib/invitationPageNormalization';
 import type {
@@ -62,7 +62,6 @@ import PageWizardStepPreview from './PageWizardStepPreview';
 import PageWizardWorkspace from './PageWizardWorkspace';
 import { revealWizardStep } from './pageWizardFocus';
 import { createWizardFormActions } from './pageWizardFormActions';
-import { applyWizardStorageImageFallback } from './pageWizardImageFallback';
 import { useImageUpload } from './hooks/useImageUpload';
 import { useWizardDerivedState } from './hooks/useWizardDerivedState';
 import { useWizardNavigation } from './hooks/useWizardNavigation';
@@ -144,6 +143,7 @@ type ExistingWizardLoadState =
       status: 'ready';
       editableConfig: EditableInvitationPageConfig;
       version: number | null;
+      publicAccess?: InvitationPublicAccessState;
     }
   | {
       status: 'claim';
@@ -208,6 +208,10 @@ export default function PageWizardClient({
   const [notice, setNotice] = useState<NoticeState>(null);
   const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [isReloading, setIsReloading] = useState(false);
+  const reloadInFlightRef = useRef(false);
+  const loadedEditorIdentityRef = useRef<string | null>(null);
+  const editorIdentity = JSON.stringify([initialSlug, authUser?.uid, isAdminLoggedIn, experience, requestedEventType]);
   const mutationGuard = useRef(createWizardMutationGuard()).current;
   const [uploadingField, setUploadingField] = useState<UploadFieldKind | null>(null);
   useEffect(() => {
@@ -326,8 +330,10 @@ export default function PageWizardClient({
       }
 
       let rawEditableConfig: EditableInvitationPageConfig | null = null;
+      let publicAccess: InvitationPublicAccessState | undefined;
       if (isAdminLoggedIn) {
         rawEditableConfig = await getEditableInvitationPageConfig(initialSlug);
+        publicAccess = rawEditableConfig?.publicAccess;
       } else {
         const loadOwnedEventFallback = async () => {
           if (!authUser?.uid) {
@@ -343,6 +349,7 @@ export default function PageWizardClient({
           return ownedEvent ? buildOwnedEventSampleEditableConfig(ownedEvent) : null;
         };
         const customerState = await getCustomerEditableInvitationPageState(initialSlug);
+        if (customerState.status === 'ready') publicAccess = customerState.summary.publicAccess;
         if (customerState.status === 'blocked') {
           return {
             status: 'blocked',
@@ -373,52 +380,17 @@ export default function PageWizardClient({
         }
       }
 
-      const editableConfig =
-        rawEditableConfig && isAdminLoggedIn
-          ? await applyWizardStorageImageFallback(rawEditableConfig)
-          : rawEditableConfig;
+      const editableConfig = rawEditableConfig;
 
       if (!editableConfig) {
         return { status: 'claim' } satisfies ExistingWizardLoadState;
-      }
-
-      const coverImageChanged =
-        rawEditableConfig?.config.metadata.images.wedding !==
-        editableConfig.config.metadata.images.wedding;
-      const socialImageChanged =
-        rawEditableConfig?.config.metadata.images.social !==
-        editableConfig.config.metadata.images.social;
-      const kakaoCardImageChanged =
-        rawEditableConfig?.config.metadata.images.kakaoCard !==
-        editableConfig.config.metadata.images.kakaoCard;
-      const galleryImagesChanged =
-        JSON.stringify(rawEditableConfig?.config.pageData?.galleryImages ?? []) !==
-        JSON.stringify(editableConfig.config.pageData?.galleryImages ?? []);
-
-      if (
-        isAdminLoggedIn &&
-        rawEditableConfig &&
-        (coverImageChanged ||
-          socialImageChanged ||
-          kakaoCardImageChanged ||
-          galleryImagesChanged)
-      ) {
-        try {
-          const synced = await saveInvitationPageConfig(editableConfig.config, {
-            expectedVersion: editableConfig.version,
-            published: editableConfig.published,
-            defaultTheme: editableConfig.defaultTheme,
-          });
-          editableConfig.version = synced.version;
-        } catch (syncError) {
-          console.warn('[page-wizard] failed to sync cleaned image references', syncError);
-        }
       }
 
       return {
         status: 'ready',
         editableConfig,
         version: editableConfig.version,
+        publicAccess,
       } satisfies ExistingWizardLoadState;
     },
     staleTime: 0,
@@ -780,6 +752,7 @@ export default function PageWizardClient({
     }
 
     if (requiresEmailVerification || (!isAdminLoggedIn && (setupOnly || !initialSlug || !isLoggedIn))) {
+      loadedEditorIdentityRef.current = null;
       setFormState(null);
       setRequiresOwnershipClaim(false);
       setAccessErrorMessage(null);
@@ -788,6 +761,7 @@ export default function PageWizardClient({
     }
 
     if (!initialSlug) {
+      if (loadedEditorIdentityRef.current === editorIdentity) return;
       const nextConfig = createInitialWizardConfig(requestedEventType);
 
       setFormState(nextConfig);
@@ -807,16 +781,24 @@ export default function PageWizardClient({
       setRequiresOwnershipClaim(false);
       setAccessErrorMessage(null);
       setIsLoading(false);
+      loadedEditorIdentityRef.current = editorIdentity;
       return;
     }
 
-    if (
-      wizardLoadQuery.isPending ||
-      (wizardLoadQuery.isFetching && wizardLoadQuery.data?.status === 'claim')
-    ) {
+    if (wizardLoadQuery.isPending || wizardLoadQuery.isFetching) {
       setRequiresOwnershipClaim(false);
       setAccessErrorMessage(null);
-      setIsLoading(true);
+      setIsLoading(loadedEditorIdentityRef.current !== editorIdentity);
+      return;
+    }
+
+    if (wizardLoadQuery.error) {
+      if (loadedEditorIdentityRef.current !== editorIdentity && ownedEventFallbackEditableConfig) {
+        applyLoadedEditableConfig(ownedEventFallbackEditableConfig);
+        loadedEditorIdentityRef.current = editorIdentity;
+      }
+      showErrorNotice(wizardLoadQuery.error, wizardPresentation.loadErrorMessage);
+      setIsLoading(false);
       return;
     }
 
@@ -836,7 +818,10 @@ export default function PageWizardClient({
             version: ownedEventFallbackEditableConfig.version,
           } satisfies ExistingWizardLoadState
         );
-        applyLoadedEditableConfig(ownedEventFallbackEditableConfig);
+        if (loadedEditorIdentityRef.current !== editorIdentity) {
+          applyLoadedEditableConfig(ownedEventFallbackEditableConfig);
+          loadedEditorIdentityRef.current = editorIdentity;
+        }
         setIsLoading(false);
         return;
       }
@@ -850,12 +835,14 @@ export default function PageWizardClient({
 
       setFormState(null);
       setRequiresOwnershipClaim(true);
+      loadedEditorIdentityRef.current = null;
       setAccessErrorMessage(null);
       setIsLoading(false);
       return;
     }
 
     if (wizardLoadQuery.data?.status === 'blocked') {
+      loadedEditorIdentityRef.current = null;
       setFormState(null);
       setRequiresOwnershipClaim(false);
       setAccessErrorMessage(wizardLoadQuery.data.message);
@@ -864,30 +851,15 @@ export default function PageWizardClient({
     }
 
     if (wizardLoadQuery.data?.status === 'ready') {
-      applyLoadedEditableConfig(
-        wizardLoadQuery.data.editableConfig,
-        wizardLoadQuery.data.version
-      );
+      if (loadedEditorIdentityRef.current !== editorIdentity) {
+        applyLoadedEditableConfig(
+          wizardLoadQuery.data.editableConfig,
+          wizardLoadQuery.data.version
+        );
+        loadedEditorIdentityRef.current = editorIdentity;
+      }
       setIsLoading(false);
       return;
-    }
-
-    if (wizardLoadQuery.error) {
-      if (ownedEventFallbackEditableConfig) {
-        applyLoadedEditableConfig(ownedEventFallbackEditableConfig);
-        setIsLoading(false);
-        return;
-      }
-
-      if (isOwnedEventsCheckPendingForInitialSlug) {
-        setRequiresOwnershipClaim(false);
-        setAccessErrorMessage(null);
-        setIsLoading(true);
-        return;
-      }
-
-      showErrorNotice(wizardLoadQuery.error, wizardPresentation.loadErrorMessage);
-      setIsLoading(false);
     }
   }, [
     applyLoadedEditableConfig,
@@ -902,6 +874,7 @@ export default function PageWizardClient({
     ownedEventFallbackEditableConfig,
     queryClient,
     requestedEventType,
+    editorIdentity,
     resetPublishedState,
     showErrorNotice,
     wizardPresentation.loadErrorMessage,
@@ -1117,6 +1090,39 @@ export default function PageWizardClient({
       } satisfies EditableInvitationPageConfig);
     },
   });
+
+  const handleReloadWizard = async () => {
+    if (reloadInFlightRef.current || isSaving || uploadingField || isConnectingCustomer) return;
+    if (hasUnsavedChanges && !window.confirm('저장하지 않은 변경사항을 버리고 저장된 내용을 다시 불러올까요? 불러오기에 실패하면 현재 입력은 유지됩니다.')) return;
+    const release = mutationGuard.tryStart();
+    if (!release) return;
+    reloadInFlightRef.current = true;
+    setIsReloading(true);
+    try {
+      const result = await wizardLoadQuery.refetch();
+      if (result.error) {
+        showErrorNotice(result.error, '다시 불러오지 못했습니다. 현재 입력은 유지됩니다.');
+        return;
+      }
+      if (result.data?.status === 'ready') {
+        applyLoadedEditableConfig(result.data.editableConfig, result.data.version);
+        loadedEditorIdentityRef.current = editorIdentity;
+        showNotice('neutral', '저장된 내용을 다시 불러왔습니다.');
+      }
+    } catch (error) {
+      showErrorNotice(error, '다시 불러오지 못했습니다. 현재 입력은 유지됩니다.');
+    } finally {
+      reloadInFlightRef.current = false;
+      setIsReloading(false);
+      release();
+    }
+  };
+
+  const handleReturnToList = () => {
+    if (isSaving || uploadingField || isConnectingCustomer || reloadInFlightRef.current) return;
+    if (hasUnsavedChanges && !window.confirm('저장하지 않은 변경사항이 있습니다. 저장하지 않고 목록으로 이동할까요?')) return;
+    router.push(isAdminLoggedIn ? routes.admin() : routes.customerDashboard());
+  };
 
   const {
     handleTriggerPicker,
@@ -1375,6 +1381,7 @@ export default function PageWizardClient({
             mode={eventType === 'wedding' ? imageMode : 'all'}
             {...sharedProps}
             canUploadImages={canUploadImages}
+            imageLibraryPageSlug={!experience && isAdminLoggedIn ? resolvedPersistedSlug ?? undefined : undefined}
             maxGalleryImages={maxGalleryImages}
             uploadingField={uploadingField}
             coverUploadInputRef={coverUploadInputRef}
@@ -1647,18 +1654,21 @@ export default function PageWizardClient({
       saveStatus={saveStatus}
       lastSavedAt={lastSavedAt}
       persistedPublished={persistedPublished}
+      publicAccess={wizardLoadQuery.data?.status === 'ready' ? wizardLoadQuery.data.publicAccess : undefined}
+      onReturnToList={handleReturnToList}
+      returnToListLabel={isAdminLoggedIn ? '이벤트 목록으로' : '내 이벤트로'}
       notice={renderNotice()}
       reloadAction={isExistingWizardRefreshable ? (
         <button
           type="button"
-          onClick={() => void wizardLoadQuery.refetch()}
-          disabled={isWizardRefreshing}
+          onClick={() => void handleReloadWizard()}
+          disabled={isWizardRefreshing || isReloading || isSaving || Boolean(uploadingField) || isConnectingCustomer}
         >
           {isWizardRefreshing ? '다시 불러오는 중...' : '다시 불러오기'}
         </button>
       ) : null}
-      isSaving={isSaving || isConnectingCustomer || uploadingField !== null}
-      busyLabel={uploadingField ? '이미지 업로드 중' : isConnectingCustomer ? '고객 연결 중' : '저장 중'}
+      isSaving={isSaving || isReloading || isConnectingCustomer || uploadingField !== null}
+      busyLabel={isReloading ? '다시 불러오는 중' : uploadingField ? '이미지 업로드 중' : isConnectingCustomer ? '고객 연결 중' : '저장 중'}
       published={published}
       previewStepKey={previewStepKey}
       renderStepContent={renderStepContent}

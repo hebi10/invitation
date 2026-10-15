@@ -2,7 +2,9 @@ import { useEffect, useMemo, useState } from 'react';
 
 import styles from '../page.module.css';
 import type { ImagesStepProps, UploadFieldKind } from '../pageWizardShared';
+import { applyWizardLibraryImageSelection } from '../wizardImageLibrarySelection';
 import DemoExperienceImagePicker from './DemoExperienceImagePicker';
+import ExistingImagePicker from './ExistingImagePicker';
 import previewStyles from './ShareImagePreview.module.css';
 import imageStyles from './ImagesStep.module.css';
 
@@ -32,6 +34,9 @@ type SingleImageCardProps = {
   shareTitle?: string;
   shareDescription?: string;
   onPresetSelect?: (url: string) => void;
+  imageLibraryPageSlug?: string;
+  libraryDisabled?: boolean;
+  onLibrarySelect?: (url: string) => void;
 };
 
 function SingleImageCard({
@@ -55,6 +60,9 @@ function SingleImageCard({
   shareTitle = '',
   shareDescription = '',
   onPresetSelect,
+  imageLibraryPageSlug,
+  libraryDisabled = false,
+  onLibrarySelect,
 }: SingleImageCardProps) {
   const hasImage = Boolean(imageUrl);
   const effectiveImage = imageUrl || fallbackImage;
@@ -117,6 +125,15 @@ function SingleImageCard({
           </button>
         </div>
       </div>
+
+      {imageLibraryPageSlug && onLibrarySelect ? <ExistingImagePicker
+        key={imageLibraryPageSlug}
+        pageSlug={imageLibraryPageSlug}
+        title={title}
+        selectedUrls={imageUrl ? [imageUrl] : []}
+        disabled={!canUploadImages || isUploading || libraryDisabled}
+        onSelect={url => { setPresetSelection(null); onLibrarySelect(url); }}
+      /> : null}
 
       {isShare ? <div className={previewStyles.preview}>
         <p className={previewStyles.caption}>{uploadKind === 'kakaoCard' ? '카카오 공유 카드 예시' : '링크를 보냈을 때의 예시'}</p>
@@ -183,7 +200,8 @@ export default function ImagesStep({
   experience = false,
   onDemoImageSelect,
   mode = 'all',
-}: ImagesStepProps & { mode?: 'all' | 'photos' | 'sharing' }) {
+  imageLibraryPageSlug,
+}: ImagesStepProps & { mode?: 'all' | 'photos' | 'sharing'; imageLibraryPageSlug?: string }) {
   const galleryImages = useMemo(
     () => formState.pageData?.galleryImages ?? [],
     [formState.pageData?.galleryImages]
@@ -252,6 +270,11 @@ export default function ImagesStep({
     setBrokenSingleImages((current) => ({ ...current, [kind]: true }));
   };
 
+  const selectLibraryImage = (kind: UploadFieldKind, imageUrl: string) => {
+    if (!imageLibraryPageSlug || !canUploadImages || uploadingField) return;
+    updateForm(draft => applyWizardLibraryImageSelection(draft, kind, imageUrl, maxGalleryImages));
+  };
+
   return (
     <div className={`${styles.fieldGrid} ${imageStyles.imageStep}`}>
       {mode !== 'sharing' && experience && onDemoImageSelect ? (
@@ -283,6 +306,9 @@ export default function ImagesStep({
         onTriggerPicker={onTriggerPicker}
         onRemove={onCoverImageRemove}
         onImageError={() => markSingleImageAsBroken('cover')}
+        imageLibraryPageSlug={imageLibraryPageSlug}
+        libraryDisabled={Boolean(uploadingField)}
+        onLibrarySelect={url => selectLibraryImage('cover', url)}
       /> : null}
 
       {mode !== 'sharing' ? <section className={`${styles.uploadCard} ${imageStyles.uploadPanel}`}>
@@ -318,6 +344,16 @@ export default function ImagesStep({
             </button>
           </div>
         </div>
+
+        {imageLibraryPageSlug ? <ExistingImagePicker
+          key={imageLibraryPageSlug}
+          pageSlug={imageLibraryPageSlug}
+          title="갤러리 이미지"
+          selectedUrls={galleryImages}
+          disabled={!canUploadImages || Boolean(uploadingField)}
+          selectionLimitReached={galleryImages.length >= maxGalleryImages}
+          onSelect={url => selectLibraryImage('gallery', url)}
+        /> : null}
 
         {galleryImages.length > 0 ? (
           <div className={imageStyles.gallery}>
@@ -478,6 +514,9 @@ export default function ImagesStep({
         onTriggerPicker={onTriggerPicker}
         onRemove={onSharePreviewImageRemove}
         onImageError={() => markSingleImageAsBroken('sharePreview')}
+        imageLibraryPageSlug={imageLibraryPageSlug}
+        libraryDisabled={Boolean(uploadingField)}
+        onLibrarySelect={url => selectLibraryImage('sharePreview', url)}
       /> : null}
 
       {mode !== 'photos' ? <SingleImageCard
@@ -501,6 +540,9 @@ export default function ImagesStep({
         onTriggerPicker={onTriggerPicker}
         onRemove={onKakaoCardImageRemove}
         onImageError={() => markSingleImageAsBroken('kakaoCard')}
+        imageLibraryPageSlug={imageLibraryPageSlug}
+        libraryDisabled={Boolean(uploadingField)}
+        onLibrarySelect={url => selectLibraryImage('kakaoCard', url)}
       /> : null}
     </div>
   );

@@ -1,6 +1,7 @@
 'use client';
 
 import { useAdminWorkGuard } from '@/app/admin/_components/AdminWorkGuard';
+import { validateAdminEventPeriodInput } from '@/app/admin/_components/adminEventWorkspaceModel';
 import { useEffect, useMemo, useRef, useState } from 'react';
 
 import {
@@ -186,13 +187,18 @@ export default function DisplayPeriodManager({
       return false;
     }
 
-    const startDate = new Date(`${formData.startDate}T00:00:00`);
-    const endDate = new Date(`${formData.endDate}T23:59:59`);
-
-    if (Number.isNaN(startDate.getTime()) || Number.isNaN(endDate.getTime()) || formData.startDate >= formData.endDate) {
-      setFormError('종료일은 시작일보다 뒤여야 합니다.');
+    const validationError = validateAdminEventPeriodInput({
+      enabled: true,
+      startDate: formData.startDate,
+      endDate: formData.endDate,
+    });
+    if (validationError) {
+      setFormError(validationError);
       return false;
     }
+
+    const startDate = new Date(`${formData.startDate}T00:00:00`);
+    const endDate = new Date(`${formData.endDate}T23:59:59`);
 
     try {
       setSaving(true);
@@ -512,6 +518,8 @@ export default function DisplayPeriodManager({
                         />
                       </label>
                     </div>
+
+                    <p className={styles.inlineEditorHint}>시작일 0시부터 종료일 23:59:59까지 포함합니다. 같은 날도 설정할 수 있습니다.</p>
 
                     <label className={styles.checkboxLabel}>
                       <input

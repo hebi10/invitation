@@ -3,7 +3,7 @@
 import { DEMO_EXPERIENCE_IMAGE_OPTIONS } from '@/config/demoExperienceSeeds';
 
 import { useQuery } from '@tanstack/react-query';
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 
 import Link from 'next/link';
 
@@ -13,6 +13,7 @@ import { normalizeFormConfig } from '@/app/page-wizard/pageWizardEditorUtils';
 import { useAdmin } from '@/contexts';
 import { buildAppRoutes, type AppRoutes } from '@/lib/demoExperienceRoutes';
 import { PUBLIC_SITE_ORIGIN } from '@/lib/invitationMetadata';
+import { copyTextToClipboard } from '@/utils/copyTextToClipboard';
 import { buildCustomerInvitationPreviewPath, getCustomerInvitationStatus } from '@/lib/customerInvitationWorkspace';
 import type { InvitationPublicAccessState } from '@/lib/invitationPublicAccess';
 import {
@@ -29,7 +30,6 @@ import { getEditableInvitationPageConfig } from '@/services/invitationPageServic
 import { getCustomerEditableInvitationPageState } from '@/services/customerEventService';
 
 import PageWizardStepPreview from './PageWizardStepPreview';
-import { applyWizardStorageImageFallback } from './pageWizardImageFallback';
 import styles from './page.module.css';
 import resultStyles from './PageWizardResultClient.module.css';
 import {
@@ -65,6 +65,8 @@ export default function PageWizardResultClient({
   onContinueAsCustomer,
 }: PageWizardResultClientProps) {
   const { authUser, isAdminLoading, isAdminLoggedIn, isLoggedIn } = useAdmin();
+  const [shareNotice, setShareNotice] = useState('');
+  const [isCopyingLink, setIsCopyingLink] = useState(false);
   const requiresEmailVerification =
     !experience && isLoggedIn && !isAdminLoggedIn && authUser?.emailVerified !== true;
   const resultQuery = useQuery<ResultLoadState>({
@@ -104,10 +106,7 @@ export default function PageWizardResultClient({
         publicAccess = customerState.summary.publicAccess;
       }
 
-      const editableConfig =
-        rawEditableConfig && isAdminLoggedIn
-          ? await applyWizardStorageImageFallback(rawEditableConfig)
-          : rawEditableConfig;
+      const editableConfig = rawEditableConfig;
 
       if (!editableConfig) {
         return {
@@ -291,6 +290,18 @@ export default function PageWizardResultClient({
   const redirectPath = experience ? livePagePath : `/${slug}`;
   const customerPreviewPath = experience ? livePagePath : buildCustomerInvitationPreviewPath(slug, previewTheme);
   const customerStatus = getCustomerInvitationStatus(configState.published, resultState?.status === 'ready' ? resultState.publicAccess : undefined);
+  const guestUrl = `${PUBLIC_SITE_ORIGIN}/${encodeURIComponent(slug)}`;
+  const copyGuestLink = async () => {
+    setIsCopyingLink(true);
+    try {
+      const copied = await copyTextToClipboard(guestUrl);
+      setShareNotice(copied ? '하객용 링크를 복사했습니다.' : '링크를 복사하지 못했습니다. 공유 URL을 길게 누르거나 선택해 복사해 주세요.');
+    } catch {
+      setShareNotice('링크를 복사하지 못했습니다. 공유 URL을 길게 누르거나 선택해 복사해 주세요.');
+    } finally {
+      setIsCopyingLink(false);
+    }
+  };
 
   return (
     <main className={styles.page} data-experience-result-ready={experience ? 'true' : undefined}>
@@ -339,6 +350,8 @@ export default function PageWizardResultClient({
             <Link href={isAdminLoggedIn ? livePagePath : customerPreviewPath} className={styles.secondaryButton}>
               {experience ? '청첩장 열기' : isAdminLoggedIn ? '바로 확인하기' : '저장한 초대장 미리보기'}
             </Link>
+            {!experience ? <button type="button" className={styles.secondaryButton} disabled={isCopyingLink}
+              onClick={() => void copyGuestLink()}>{isCopyingLink ? '복사 중' : '하객용 링크 복사'}</button> : null}
             {experience && isAdminLoggedIn && onContinueAsCustomer ? (
               <button
                 type="button"
@@ -363,6 +376,11 @@ export default function PageWizardResultClient({
               편집 화면으로 돌아가기
             </Link>
           </div>
+          {!experience && !isAdminLoggedIn ? <p className={resultStyles.savedStatus}>
+            미리보기는 로그인한 소유자만 확인할 수 있습니다. 하객에게는 하객용 링크를 전달해 주세요.
+            {!customerStatus.isPublic ? resultState?.status === 'ready' && resultState.publicAccess ? ' 현재 하객이 열 수 없습니다. 실제 노출 상태를 확인한 뒤 공유해 주세요.' : ' 하객에게 전달하기 전에 실제 노출 상태를 확인해 주세요.' : ''}
+          </p> : null}
+          {shareNotice ? <p className={resultStyles.savedStatus} role="status">{shareNotice}</p> : null}
         </section>
 
         {!configState.published ? (

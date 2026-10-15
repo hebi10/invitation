@@ -28,7 +28,7 @@ import {
   normalizeInvitationProductTier,
   resolveInvitationFeatures,
 } from '@/lib/invitationProducts';
-import { getInvitationPublicAccessState } from '@/lib/invitationPublicAccess';
+import { getInvitationPublicAccessState, type InvitationPublicAccessState } from '@/lib/invitationPublicAccess';
 import { DEFAULT_EVENT_TYPE, normalizeEventTypeKey, type EventTypeKey } from '@/lib/eventTypes';
 import type {
   InvitationFeatureFlags,
@@ -44,7 +44,8 @@ import {
   type StoredInvitationPageConfigRecord,
 } from '@/services/repositories/invitationPageRepository';
 
-import { getCurrentFirebaseIdToken } from './adminAuth';
+import { getCurrentFirebaseIdToken, refreshCurrentFirebaseSession } from './adminAuth';
+import { isWeddingPreviewThemeKey } from '@/lib/eventPreviewLinks';
 import {
   buildDraftConfigFromSeed,
   cloneInvitationPageSeed,
@@ -80,6 +81,7 @@ export interface InvitationPageSummary {
 }
 
 export interface EditableInvitationPageConfig {
+  publicAccess?: InvitationPublicAccessState;
   version: number;
   slug: string;
   config: InvitationPageSeed;
@@ -467,31 +469,9 @@ export async function getEditableInvitationPageConfig(
 ): Promise<EditableInvitationPageConfig | null> {
   const seed = getWeddingPageBySlug(pageSlug);
   const fallbackConfig = seed ? sanitizeHeartIconPlaceholdersDeep(seed) : null;
-  const fallbackProductTier = normalizeInvitationProductTier(
-    fallbackConfig?.productTier,
-    DEFAULT_INVITATION_PRODUCT_TIER
-  );
-  const fallbackFeatures = resolveInvitationFeatures(
-    fallbackProductTier,
-    fallbackConfig?.features
-  );
-
   const firestore = await ensureFirestoreState();
   if (!firestore) {
-    return fallbackConfig
-      ? {
-          slug: pageSlug,
-          config: fallbackConfig,
-          published: true,
-          defaultTheme: DEFAULT_INVITATION_THEME,
-          productTier: fallbackProductTier,
-          features: fallbackFeatures,
-          hasCustomConfig: false,
-          dataSource: 'seed',
-          lastSavedAt: null,
-          version: 0,
-      }
-      : null;
+    throw new Error('저장소 연결을 확인하지 못했습니다. 잠시 후 다시 불러와 주세요.');
   }
 
   try {
@@ -518,6 +498,7 @@ export async function getEditableInvitationPageConfig(
       slug: pageSlug,
       config: editableConfig,
       published: sourceRecord.page.published,
+      publicAccess: getInvitationPublicAccessState(sourceRecord.page),
       defaultTheme: registryRecord?.defaultTheme ?? DEFAULT_INVITATION_THEME,
       productTier,
       features,
@@ -537,7 +518,7 @@ export async function getEditableInvitationPageConfig(
     }
 
     console.warn('[invitationPageService] failed to load editable config', error);
-    return null;
+    throw error;
   }
 }
 
@@ -683,6 +664,14 @@ export async function restoreInvitationPageConfig(
     defaultTheme: options.defaultTheme,
     hasCustomConfig: false,
   });
+}
+
+export async function setAdminInvitationPageDefaultTheme(pageSlug: string, theme: InvitationThemeKey) {
+  if (!isWeddingPreviewThemeKey(theme)) throw new Error('사용할 수 없는 청첩장 디자인입니다.');
+  const session = await refreshCurrentFirebaseSession();
+  if (!session.isAdmin) throw new Error('관리자 권한이 필요합니다.');
+  if (!(await ensureFirestoreState())) throw new Error('데이터 저장소 연결을 확인하지 못했습니다. 잠시 후 다시 시도해 주세요.');
+  await clientInvitationPageRepository.setDefaultThemeBySlug(pageSlug, theme);
 }
 
 export async function setInvitationPagePublished(

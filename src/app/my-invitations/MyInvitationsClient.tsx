@@ -19,6 +19,8 @@ import {
   THIRTY_MINUTES_MS,
 } from '@/lib/appQuery';
 import { getEventTypeDisplayLabel } from '@/lib/eventTypes';
+import { PUBLIC_SITE_ORIGIN } from '@/lib/invitationMetadata';
+import { copyTextToClipboard } from '@/utils/copyTextToClipboard';
 import { getEventPreviewLinks } from '@/lib/eventPreviewLinks';
 import { buildAppRoutes, type AppRoutes } from '@/lib/demoExperienceRoutes';
 import { buildCustomerInvitationPreviewPath, getCustomerInvitationStatus } from '@/lib/customerInvitationWorkspace';
@@ -137,6 +139,8 @@ function OwnedEventCard({
   const queryClient = useQueryClient();
   const [guestbookOpen, setGuestbookOpen] = useState(false);
   const [previewOpen, setPreviewOpen] = useState(false);
+  const [shareNotice, setShareNotice] = useState('');
+  const [isCopyingLink, setIsCopyingLink] = useState(false);
   const previewDialogRef = useRef<HTMLElement | null>(null);
   const guestbookDialogRef = useRef<HTMLElement | null>(null);
   const [guestbookPage, setGuestbookPage] = useState(1);
@@ -213,6 +217,18 @@ function OwnedEventCard({
   );
   const eventTitle = event.displayName || event.title || event.slug;
   const visibility = getCustomerInvitationStatus(event.published, event.publicAccess);
+  const guestUrl = `${PUBLIC_SITE_ORIGIN}/${encodeURIComponent(event.slug)}`;
+  const copyGuestLink = async () => {
+    setIsCopyingLink(true);
+    try {
+      const copied = await copyTextToClipboard(guestUrl);
+      setShareNotice(copied ? '하객용 링크를 복사했습니다.' : '링크를 복사하지 못했습니다. 아래 주소를 길게 누르거나 선택해 복사해 주세요.');
+    } catch {
+      setShareNotice('링크를 복사하지 못했습니다. 아래 주소를 길게 누르거나 선택해 복사해 주세요.');
+    } finally {
+      setIsCopyingLink(false);
+    }
+  };
   const guestbookErrorMessage =
     commentsQuery.error instanceof Error
       ? commentsQuery.error.message
@@ -307,6 +323,8 @@ function OwnedEventCard({
                 미리보기
               </button>
             )}
+            {!experience ? <button className={`${styles.secondaryButton} ${styles.shareButton}`} type="button" disabled={isCopyingLink}
+              onClick={() => void copyGuestLink()}>{isCopyingLink ? '복사 중' : '하객용 링크 복사'}</button> : null}
             <button
               className={styles.guestbookButton}
               type="button"
@@ -320,6 +338,12 @@ function OwnedEventCard({
               방명록 확인
             </button>
           </div>
+          {!experience ? <div className={styles.sharingHelp}>
+            <p className={styles.cardMeta}>미리보기는 로그인한 소유자만 확인할 수 있습니다. 하객에게는 하객용 링크를 전달해 주세요.</p>
+            {!visibility.isPublic ? <p className={styles.cardMeta}>{event.publicAccess ? '현재 하객이 열 수 없습니다. 실제 노출 상태를 확인한 뒤 공유해 주세요.' : '하객에게 전달하기 전에 실제 노출 상태를 확인해 주세요.'}</p> : null}
+            {shareNotice ? <p className={styles.cardMeta} role="status">{shareNotice}</p> : null}
+            {shareNotice ? <a className={styles.guestUrl} href={guestUrl} target="_blank" rel="noopener noreferrer">{guestUrl}</a> : null}
+          </div> : null}
         </div>
       </article>
 

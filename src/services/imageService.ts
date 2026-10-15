@@ -574,8 +574,7 @@ export const getImagesByPage = async (
   await initFirebase();
 
   if (!firebaseModules?.storage) {
-    console.warn('Firebase가 초기화되지 않았습니다.');
-    return [];
+    throw new Error('이미지 저장소를 연결하지 못했습니다. 다시 불러와 주세요.');
   }
 
   try {
@@ -620,15 +619,15 @@ export const getImagesByPage = async (
       errorCode === 'permission-denied' ||
       errorCode === 'unauthorized'
     ) {
-      console.warn('이미지 목록 조회 권한이 없어 빈 목록으로 처리합니다.', {
+      console.warn('이미지 목록 조회 권한을 확인하지 못했습니다.', {
         pageSlug,
         errorCode,
       });
-      return [];
+      throw new Error('이미지 목록을 볼 권한을 확인하지 못했습니다. 다시 로그인해 주세요.');
     }
 
     console.warn('이미지 목록 조회 중 오류 발생:', error);
-    return [];
+    throw new Error('이미지 목록을 불러오지 못했습니다. 다시 불러와 주세요.');
   }
 };
 
@@ -665,8 +664,7 @@ export const getAllPageImages = async (options: GetImagesByPageOptions = {}): Pr
   await initFirebase();
 
   if (!firebaseModules?.storage) {
-    console.warn('Firebase가 초기화되지 않았습니다.');
-    return {};
+    throw new Error('이미지 저장소를 연결하지 못했습니다. 다시 불러와 주세요.');
   }
 
   try {
@@ -685,7 +683,7 @@ export const getAllPageImages = async (options: GetImagesByPageOptions = {}): Pr
     return allPageImages;
   } catch (error) {
     console.error('전체 이미지 목록 조회 중 오류 발생:', error);
-    return {};
+    throw error;
   }
 };
 

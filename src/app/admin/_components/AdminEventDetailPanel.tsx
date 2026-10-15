@@ -6,14 +6,12 @@ import { useAdminWorkNavigation } from './AdminWorkGuard';
 import { getEventDeletionButtonLabel, getEventDeletionFailureMessage } from '@/lib/adminEventDeletionState';
 import { getEventTypeDisplayLabel } from '@/lib/eventTypes';
 import type { InvitationPageSummary } from '@/services/invitationPageService';
-import { getInvitationThemeAdminLabel, getInvitationThemeWizardDescription, type InvitationThemeKey } from '@/lib/invitationThemes';
+import { getInvitationThemeAdminLabel, type InvitationThemeKey } from '@/lib/invitationThemes';
 import type { InvitationProductTier } from '@/types/invitationPage';
 import type { AppRoutes } from '@/lib/demoExperienceRoutes';
 import type { Comment } from '@/services/commentService';
 import type { AdminCustomerAccountSummary } from '@/services/adminCustomerService';
 import { ImageManager, MemoryPageManager } from '@/components/admin';
-import WeddingCover from '@/app/_components/public-invitations/wedding/WeddingCover';
-import { sampleWeddingPage, SAMPLE_WEDDING_COVER } from '@/config/homeWeddingSample';
 
 import {
   getAdminEventCapabilities,
@@ -28,8 +26,8 @@ import {
 import AdminEventCommentsTab from './AdminEventCommentsTab';
 import AdminEventCustomerTab from './AdminEventCustomerTab';
 import AdminEventPeriodTab from './AdminEventPeriodTab';
+import AdminEventDesignTab from './AdminEventDesignTab';
 import AdminStaleQueryNotice from './AdminStaleQueryNotice';
-import { SHORTCUT_ITEMS } from './adminPageUtils';
 import styles from '../page.module.css';
 import detailStyles from './AdminEventDetailPage.module.css';
 
@@ -306,36 +304,9 @@ function EventDetailWorkspace({
         ) : null}
         </> : null}
 
-        {activeTab === 'design' ? <>          {capabilities.includes('themes') ? (
-            <div className={styles.eventThemeManager}>
-              <h4 className={styles.eventThemeHeading}>청첩장 디자인</h4>
-              <p className={styles.eventThemeHelp}>하나의 청첩장을 모든 디자인 주소에서 열 수 있습니다. 샘플 사진으로 디자인을 비교하세요. ‘고객 페이지 열기’에서는 {page.displayName}님의 저장된 사진과 내용을 확인할 수 있습니다.</p>
-              <ul>
-                {SHORTCUT_ITEMS.map((theme) => (
-                    <li key={theme.key} data-current={theme.key === page.defaultTheme}>
-                      <div className={styles.eventThemeThumbnail} aria-hidden="true">
-                        <div><WeddingCover theme={theme.key} page={sampleWeddingPage} imageUrl={SAMPLE_WEDDING_COVER} titleId={`admin-theme-cover-${theme.key}`} /></div>
-                      </div>
-                      <div className={styles.eventThemeIdentity}>
-                        <strong>{theme.label}</strong>
-                        <span>{theme.key === page.defaultTheme ? '기본 주소 디자인' : '같은 내용으로 열기'}</span>
-                      </div>
-                      <p className={styles.eventThemeDescription}>{getInvitationThemeWizardDescription(theme.key)}</p>
-                      <a
-                        className="admin-button admin-button-secondary"
-                        href={routes.preview(page.slug, theme.key)}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        aria-label={`${theme.label} 청첩장 페이지 열기 (새 탭)`}
-                      >
-                        고객 페이지 열기
-                      </a>
-                    </li>
-                ))}
-              </ul>
-            </div>
-          ) : null}
-</> : null}
+        {activeTab === 'design' && capabilities.includes('themes') ? (
+          <AdminEventDesignTab page={page} canEdit={!mobileReadOnly && !experience} routes={routes} onUpdated={onRefreshEvent} />
+        ) : null}
 
         {activeTab !== 'overview' && activeTab !== 'design' ? (
           <div className={styles.eventManagementPanel}>

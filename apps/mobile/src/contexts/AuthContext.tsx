@@ -80,7 +80,7 @@ type AuthContextValue = {
   initialDashboardSeed: AuthInitialDashboardSeed | null;
   loginCustomer: (email: string, password: string) => Promise<boolean>;
   logoutCustomer: () => Promise<void>;
-  loginWithLinkToken: (linkToken: string) => Promise<boolean>;
+  loginWithLinkToken: (linkToken: string, options?: { signal?: AbortSignal }) => Promise<boolean>;
   createInvitationPage: (
     input: MobileInvitationCreationInput,
     options?: {
@@ -132,6 +132,10 @@ export function AuthProvider({ children }: PropsWithChildren) {
   const lastApiBaseUrlRef = useRef<string | null>(null);
   const highRiskSessionRef = useRef<MobileHighRiskSessionSummary | null>(null);
   const customerSessionRef = useRef<MobileCustomerAuthSession | null>(null);
+  const linkLoginRequestRef = useRef(0);
+  const sessionCommitQueueRef = useRef<Promise<unknown>>(Promise.resolve());
+  const activeSessionRef = useRef(session);
+  activeSessionRef.current = session;
 
   const updateHighRiskSession = useCallback(
     (nextSession: MobileHighRiskSessionSummary | null) => {
@@ -358,35 +362,55 @@ export function AuthProvider({ children }: PropsWithChildren) {
       },
       options: {
         pendingManageOnboarding?: PendingManageOnboarding | null;
+        shouldApply?: () => boolean;
       } = {}
     ) => {
-      setSession(response.session);
-      updateHighRiskSession(null);
-      setInitialDashboardSeed({
-        dashboardPage: response.dashboardPage,
-        links: response.links,
-        pageFallback: response.page ?? null,
-        ticketCount: response.page?.ticketCount ?? 0,
-        permissions: response.permissions,
+      const commit = sessionCommitQueueRef.current.then(async () => {
+        if (options.shouldApply?.() === false) return false;
+        const previousSession = activeSessionRef.current;
+        await setStoredJson(SESSION_STORAGE_KEY, response.session, {
+          sensitive: true,
+        });
+        if (options.shouldApply?.() === false) {
+          // Finish restoring the previous session before another link can write.
+          await setStoredJson(SESSION_STORAGE_KEY, previousSession, { sensitive: true });
+          return false;
+        }
+        activeSessionRef.current = response.session;
+        setSession(response.session);
+        updateHighRiskSession(null);
+        setInitialDashboardSeed({
+          dashboardPage: response.dashboardPage,
+          links: response.links,
+          pageFallback: response.page ?? null,
+          ticketCount: response.page?.ticketCount ?? 0,
+          permissions: response.permissions,
+        });
+        setPendingManageOnboarding(options.pendingManageOnboarding ?? null);
+        setAuthError(null);
+        return true;
       });
-      setPendingManageOnboarding(options.pendingManageOnboarding ?? null);
-      setAuthError(null);
-      await setStoredJson(SESSION_STORAGE_KEY, response.session, {
-        sensitive: true,
-      });
-
-      if (response.page) {
-        await upsertLinkedInvitationCard(
-          buildLinkedInvitationCardFromPageSummary(response.page, {
-            publicUrl: response.links?.publicUrl ?? null,
-            links: response.links,
-            config: response.dashboardPage?.config,
-            updatedAt: Date.now(),
-            ticketCount: response.page.ticketCount,
-            session: response.session,
-          })
-        );
+      sessionCommitQueueRef.current = commit.catch(() => undefined);
+      if (!(await commit)) {
+        return false;
       }
+      if (response.page) {
+        try {
+          await upsertLinkedInvitationCard(
+            buildLinkedInvitationCardFromPageSummary(response.page, {
+              publicUrl: response.links?.publicUrl ?? null,
+              links: response.links,
+              config: response.dashboardPage?.config,
+              updatedAt: Date.now(),
+              ticketCount: response.page.ticketCount,
+              session: response.session,
+            })
+          );
+        } catch {
+          // A recent-card cache failure must not invalidate the safely persisted session.
+        }
+      }
+      return true;
     },
     [updateHighRiskSession]
   );
@@ -592,23 +616,44 @@ export function AuthProvider({ children }: PropsWithChildren) {
   }, [clearCustomerSession]);
 
   const loginWithLinkToken = useCallback(
-    async (linkToken: string) => {
+    async (linkToken: string, options?: { signal?: AbortSignal }) => {
       const normalizedLinkToken = linkToken.trim();
       if (!normalizedLinkToken) {
         setAuthError('앱 연동 링크 정보를 다시 확인해 주세요.');
         return false;
       }
 
+      const requestId = ++linkLoginRequestRef.current;
       setIsAuthenticating(true);
+      const controller = new AbortController();
+      let rejectInterrupted: (error: Error) => void = () => {};
+      const interrupted = new Promise<never>((_resolve, reject) => {
+        rejectInterrupted = reject;
+      });
+      const cancel = () => {
+        controller.abort();
+        rejectInterrupted(new Error('앱 연동 확인을 취소했습니다.'));
+      };
+      options?.signal?.addEventListener('abort', cancel, { once: true });
+      const timeout = setTimeout(() => {
+        controller.abort();
+        rejectInterrupted(new Error('앱 연동 확인 시간이 초과되었습니다. 네트워크 연결을 확인한 뒤 다시 시도해 주세요.'));
+      }, 30000);
 
       try {
-        const response = await exchangeMobileClientEditorLinkToken(
-          apiBaseUrl,
-          normalizedLinkToken
-        );
-        await applyAuthenticatedSession(response);
-        return true;
+        if (options?.signal?.aborted) return false;
+        const response = await Promise.race([
+          exchangeMobileClientEditorLinkToken(apiBaseUrl, normalizedLinkToken, controller.signal),
+          interrupted,
+        ]);
+        if (requestId !== linkLoginRequestRef.current || controller.signal.aborted) {
+          return false;
+        }
+        return await applyAuthenticatedSession(response, {
+          shouldApply: () => requestId === linkLoginRequestRef.current && !controller.signal.aborted,
+        });
       } catch (error) {
+        if (requestId !== linkLoginRequestRef.current || options?.signal?.aborted) return false;
         setAuthError(
           error instanceof Error
             ? error.message
@@ -616,7 +661,9 @@ export function AuthProvider({ children }: PropsWithChildren) {
         );
         return false;
       } finally {
-        setIsAuthenticating(false);
+        clearTimeout(timeout);
+        options?.signal?.removeEventListener('abort', cancel);
+        if (requestId === linkLoginRequestRef.current) setIsAuthenticating(false);
       }
     },
     [apiBaseUrl, applyAuthenticatedSession]

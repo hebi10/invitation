@@ -147,7 +147,7 @@ export default function ImageManager({
       await loadData();
       const completedCount = files.length - failedFiles.length;
       if (failedFiles.length) setError('성공한 파일은 이미지 목록에 저장되었습니다. 남은 실패 파일만 다시 업로드해 주세요.');
-      showToast({ title: failedFiles.length ? '일부 이미지를 업로드하지 못했습니다.' : '이미지 업로드가 완료되었습니다.', message: '완료 ' + completedCount + '개 · 실패 ' + failedFiles.length + '개. 초대장 편집에서 사진을 선택하고 저장해 주세요.', tone: failedFiles.length ? 'error' : 'success' });
+      showToast({ title: failedFiles.length ? '일부 이미지를 업로드하지 못했습니다.' : '이미지 업로드가 완료되었습니다.', message: '완료 ' + completedCount + '개 · 실패 ' + failedFiles.length + '개. 초대장 편집의 ‘기존 사진에서 선택’에서 사진을 고른 뒤 내용을 저장해 주세요.', tone: failedFiles.length ? 'error' : 'success' });
     } catch (uploadError) {
       console.error(uploadError);
       setError('이미지 업로드에 실패했습니다.');
@@ -269,7 +269,7 @@ export default function ImageManager({
         <div>
           <h2 className={styles.title}>이미지 관리</h2>
           <p className={styles.description}>
-            업로드한 파일은 이미지 목록에 저장됩니다. 초대장에 적용하려면 편집 화면에서 사진을 선택하고 저장해 주세요.
+            업로드한 파일은 이미지 목록에 저장됩니다. 초대장에 적용하려면 편집 화면의 ‘기존 사진에서 선택’에서 사진을 고른 뒤 내용을 저장해 주세요.
           </p>
         </div>
       </div>

@@ -50,10 +50,12 @@ export async function refreshMobileCustomerAuth(baseUrl: string, refreshToken: s
 
 export async function exchangeMobileClientEditorLinkToken(
   baseUrl: string,
-  token: string
+  token: string,
+  signal?: AbortSignal
 ) {
   return readJsonResponse<MobileLoginResponse>(
     await fetchWithRetry(buildApiUrl(baseUrl, '/api/mobile/client-editor/link-tokens/exchange'), {
+      signal,
       method: 'POST',
       headers: {
         ...createHeaders(),

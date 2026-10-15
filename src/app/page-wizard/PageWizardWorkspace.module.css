@@ -94,7 +94,7 @@
 .sectionIndex { font-size: 12px; font-weight: 500; font-variant-numeric: tabular-nums; text-align: center; }
 .sectionButtonText { min-width: 0; display: grid; gap: 3px; }
 .sectionButtonText strong { font-size: 14px; font-weight: 500; line-height: 1.4; }
-.sectionButtonText > span { color: var(--workspace-muted); font-size: 11px; line-height: 1.4; }
+.sectionButtonText > span { color: var(--workspace-muted); font-size: 12px; line-height: 1.4; }
 .sectionButtonActive .sectionButtonText > span { display: none; }
 .sectionButton[data-status='error'] .sectionButtonText > span { color: #a5423a; }
 .optionalNav { display: grid; gap: 4px; margin-top: 28px; }
@@ -253,7 +253,7 @@
   .content { padding: 24px 20px 32px; }
   .mobileProgress { padding-inline: 16px; }
   .sectionIntro { align-items: center; }
-  .sectionTools button { font-size: 11px; }
+  .sectionTools button { font-size: 12px; }
   .stepHeadingRow { flex-wrap: wrap; gap: 8px; }
   .stepPreviewAction { margin-left: auto; }
   .reviewFacts > div { grid-template-columns: 84px minmax(0, 1fr); gap: 12px; }
@@ -265,3 +265,14 @@
 }
 /* Sticky navigation must not inherit a non-scrolling overflow container. */
 :global(html):has(.workspace), :global(body):has(.workspace) { overflow-x: clip; overflow-y: visible; }
+
+.returnAction {
+  min-height: 32px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--workspace-muted);
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}

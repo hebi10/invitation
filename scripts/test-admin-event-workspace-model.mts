@@ -169,7 +169,7 @@ assert.equal(
     startDate: '2026-08-10',
     endDate: '2026-08-09',
   }),
-  '종료일은 시작일보다 뒤여야 합니다.'
+  '종료일은 시작일과 같거나 뒤여야 합니다.'
 );
 assert.equal(
   validateAdminEventPeriodInput({
@@ -178,6 +178,15 @@ assert.equal(
     endDate: '2026-08-11',
   }),
   null
+);
+assert.equal(
+  validateAdminEventPeriodInput({
+    enabled: true,
+    startDate: '2026-08-10',
+    endDate: '2026-08-10',
+  }),
+  null,
+  '같은 날은 시작일 0시부터 종료일 23:59:59까지 노출할 수 있어야 합니다.'
 );
 assert.deepEqual(
   filterAdminEventComments(

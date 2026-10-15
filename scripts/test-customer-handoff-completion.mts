@@ -72,6 +72,8 @@ assert.match(customer, /<a[^>]*href="\/my-invitations"[^>]*class="primaryButton"
   'A successful customer save must lead directly to their dashboard');
 assert.match(customer, /href="\/page-wizard\/sample"/, 'Customers can continue editing');
 assert.match(customer, /공유 URL/);
+assert.match(customer, /하객용 링크 복사/, 'The saved result must offer a direct guest sharing action');
+assert.match(customer, /로그인한 소유자만/, 'Private preview must be distinguishable from a guest link');
 assert.doesNotMatch(customer, /실제 페이지 URL/,
   'Customers should see one sharing address rather than two competing URLs');
 assert.match(customer, /비공개 · 마지막 저장 방금/);
@@ -84,6 +86,7 @@ publicAccess.current = { isPublic: false, reason: 'expired', adminLabel: '노출
 const expiredCustomer = renderToStaticMarkup(React.createElement(componentExports.default, { slug: 'sample' }));
 assert.match(expiredCustomer, /노출 종료 · 마지막 저장 방금/,
   'The saved result must show actual access state rather than publication setting');
+assert.match(expiredCustomer, /하객이 열 수 없습니다/, 'An expired invitation must not imply that copying publishes it');
 admin = true;
 const administrator = renderToStaticMarkup(React.createElement(componentExports.default, { slug: 'sample' }));
 assert.match(administrator, /href="\/admin"/, 'Administrators return to their own workspace');

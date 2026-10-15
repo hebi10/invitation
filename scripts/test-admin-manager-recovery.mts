@@ -4,6 +4,7 @@ import { runInNewContext } from 'node:vm';
 import ts from 'typescript';
 
 import * as mediaAssets from '../src/lib/mediaAssets';
+import * as adminEventWorkspaceModel from '../src/app/admin/_components/adminEventWorkspaceModel';
 
 type Element = { type: unknown; props: Record<string, unknown> };
 type Handler = (event?: { target: { value: string } }) => unknown;
@@ -57,6 +58,7 @@ function componentHarness(file: string, props: Record<string, unknown>, modules:
       if (name === 'react/jsx-runtime') return { jsx: (type: unknown, props: Record<string, unknown>) => ({ type, props }), jsxs: (type: unknown, props: Record<string, unknown>) => ({ type, props }) };
       if (name === '@/contexts') return { useAdmin: () => ({ isAdminLoggedIn: true }) };
       if (name === '@/app/admin/_components/AdminWorkGuard') return { useAdminWorkGuard: () => {} };
+      if (name === '@/app/admin/_components/adminEventWorkspaceModel') return adminEventWorkspaceModel;
       if (name === '@/app/admin/_components') return { EmptyState: 'EmptyState', FilterToolbar: 'FilterToolbar', StatusBadge: 'StatusBadge', useAdminOverlay: () => overlay };
       return modules[name] ?? {};
     },
@@ -202,7 +204,35 @@ async function testPeriodFiltersKeepUnsavedEditorAccessible() {
   assert.equal(component.find('form'), undefined, 'Saved editing cards should return to normal filtering');
 }
 
-const cases = { cache: testExplicitImageRefreshBypassesCache, memory: testMemoryRemovalPreservesOriginalUntilAndAfterSave, period: testPeriodFiltersKeepUnsavedEditorAccessible };
+async function testSameDayPeriodIncludesTheEntireSelectedDate() {
+  const page = { slug: 'page-a', displayName: 'A', eventType: 'wedding', venue: '', published: true, displayPeriodStart: null, displayPeriodEnd: null };
+  const period = { pageSlug: 'page-a', startDate: new Date('2099-01-01T00:00:00'), endDate: new Date('2099-01-10T23:59:59'), isActive: true };
+  let saved: { slug: string; start: Date; end: Date; active: boolean } | undefined;
+  const component = componentHarness('src/components/admin/DisplayPeriodManager/DisplayPeriodManager.tsx', { isVisible: true, initialPageSlug: 'page-a' }, {
+    '@/services/invitationPageService': { getAllManagedInvitationPages: async () => [page] },
+    '@/services/displayPeriodService': {
+      getAllDisplayPeriods: async () => [period],
+      setDisplayPeriod: async (slug: string, start: Date, end: Date, active: boolean) => { saved = { slug, start, end, active }; },
+    },
+    '@/app/admin/_components/adminPageUtils': { DUE_SOON_DAYS: 7, getPeriodStatusMeta: () => ({ label: '시작 전', tone: 'neutral', description: '' }) },
+  });
+  await component.flush();
+  const endInput = component.find('input', (props) => props.type === 'date' && props.value === '2099-01-10');
+  assert.ok(endInput);
+  (endInput.props.onChange as Handler)({ target: { value: '2099-01-01' } });
+  await component.flush();
+  const form = component.find('form');
+  assert.ok(form);
+  await (form.props.onSubmit as Handler)();
+  await component.flush();
+  assert.ok(saved, '같은 날짜를 선택해도 기간을 저장할 수 있어야 합니다.');
+  assert.equal(saved.slug, 'page-a');
+  assert.equal(saved.start.getTime(), new Date('2099-01-01T00:00:00').getTime());
+  assert.equal(saved.end.getTime(), new Date('2099-01-01T23:59:59').getTime());
+  assert.equal(saved.active, true);
+}
+
+const cases = { cache: testExplicitImageRefreshBypassesCache, memory: testMemoryRemovalPreservesOriginalUntilAndAfterSave, period: testPeriodFiltersKeepUnsavedEditorAccessible, sameDay: testSameDayPeriodIncludesTheEntireSelectedDate };
 const selectedCase = process.argv[2] as keyof typeof cases | undefined;
 if (selectedCase) await cases[selectedCase]();
 else for (const test of Object.values(cases)) await test();

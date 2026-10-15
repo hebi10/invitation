@@ -36,6 +36,8 @@ import { useDialogLayer } from '@/hooks/useDialogLayer';
 import { isPreviewStep, type PreviewStep } from '../wizard-preview/previewSections';
 import { normalizeWeddingIntroStyle } from '@/lib/weddingIntro';
 import type { WeddingIntroPreview } from './WeddingWizardPreview';
+import type { InvitationPublicAccessState } from '@/lib/invitationPublicAccess';
+import { getCustomerInvitationStatus } from '@/lib/customerInvitationWorkspace';
 
 type PageWizardWorkspaceProps = {
   experience?: boolean;
@@ -56,6 +58,9 @@ type PageWizardWorkspaceProps = {
   saveStatus: WizardSaveStatus;
   lastSavedAt: Date | null;
   persistedPublished: boolean;
+  publicAccess?: InvitationPublicAccessState;
+  onReturnToList?: () => void;
+  returnToListLabel?: string;
   notice: ReactNode;
   reloadAction?: ReactNode;
   isSaving: boolean;
@@ -116,6 +121,9 @@ export default function PageWizardWorkspace({
   saveStatus,
   lastSavedAt,
   persistedPublished,
+  publicAccess,
+  onReturnToList,
+  returnToListLabel = '목록으로',
   notice,
   reloadAction,
   isSaving,
@@ -134,6 +142,7 @@ export default function PageWizardWorkspace({
   onSave,
 }: PageWizardWorkspaceProps) {
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
+  const publication = getCustomerInvitationStatus(persistedPublished, publicAccess);
   const [isFullPreviewOpen, setIsFullPreviewOpen] = useState(false);
   const [focusedPreviewStep, setFocusedPreviewStep] = useState<PreviewStep>(activeStepKey);
   const [introPreview, setIntroPreview] = useState<WeddingIntroPreview | null>(null);
@@ -277,6 +286,7 @@ export default function PageWizardWorkspace({
         <div className={styles.topBarInner}>
           <div className={styles.identity}>
             <div>
+              {onReturnToList ? <button type="button" className={styles.returnAction} onClick={onReturnToList} disabled={isSaving}>{returnToListLabel}</button> : null}
               <h1>{title}</h1>
               <p>{subtitle}</p>
             </div>
@@ -284,7 +294,7 @@ export default function PageWizardWorkspace({
           <div className={styles.topActions}>
             <div className={styles.statusGroup}>
               <span className={styles.publicationStatus}>
-                {persistedPublished ? '공개 중' : '비공개 초안'}
+                {publication.label}
               </span>
               <span
                 className={`${styles.saveStatus} ${styles[`saveStatus_${saveStatus}`]}`}
@@ -457,7 +467,13 @@ export default function PageWizardWorkspace({
       <footer className={styles.actionBar}>
         <div className={styles.actionBarInner}>
           <div className={styles.actionContext}><span>{activeSection.title}</span>
-            <p>{persistedPublished ? '내용을 저장하면 공개 중인 청첩장에도 바로 반영됩니다.' : '저장한 내용은 최종 공개 전까지 초안으로 유지됩니다.'}</p>
+            <p>{publication.isPublic
+              ? '내용을 저장하면 하객에게 보이는 청첩장에도 바로 반영됩니다.'
+              : publicAccess && publicAccess.reason !== 'private'
+                ? `${publication.label} · ${publication.description ?? '공개·노출 설정을 확인해 주세요.'}`
+                : persistedPublished
+                  ? '공개 설정됨 · 실제 노출 상태는 이벤트 목록에서 확인해 주세요.'
+                  : '저장한 내용은 공개 전까지 초안으로 유지됩니다.'}</p>
           </div>
           <div className={styles.actionButtons}>
             {!setupOnly ? <button

@@ -162,15 +162,23 @@ export default function AdminCustomerAccountsTab({
   const contextualAccount = selectedEventSlug ? accounts.find((account) => account.linkedEvents.some((event) => event.slug === selectedEventSlug)) : undefined;
   const selectedCustomerUid = searchParams?.get('customer') || contextualAccount?.uid || '';
   const selectedAccount = accounts.find((account) => account.uid === selectedCustomerUid);
+  const selectedAccountUid = selectedAccount?.uid;
   const requestedDetailTab = searchParams?.get('customerDetail');
   const customerDetailTab = requestedDetailTab === 'wallet' || requestedDetailTab === 'management' ? requestedDetailTab : 'events';
   const listScroll = useRef(0);
   const previousCustomer = useRef('');
+  const customerDetailRef = useRef<HTMLElement>(null);
   const openCustomer = (uid: string) => {
     if (customerBusy) return;
     listScroll.current = window.scrollY;
     updateCustomerQuery({ customer: uid, customerDetail: null, event: null }, 'push');
   };
+  useEffect(() => {
+    if (!selectedAccountUid) return;
+    const detail = customerDetailRef.current;
+    detail?.focus({ preventScroll: true });
+    detail?.scrollIntoView({ block: 'start', behavior: 'instant' });
+  }, [selectedAccountUid, mobileReadOnly]);
   useEffect(() => {
     if (selectedCustomerUid) {
       previousCustomer.current = selectedCustomerUid;
@@ -838,7 +846,7 @@ export default function AdminCustomerAccountsTab({
       ) : filteredAccounts.length > 0 || selectedAccount ? (
         <>
           {mobileReadOnly ? (
-            <div className={styles.accountCardList}>
+            <div className={styles.accountCardList} ref={selectedAccount ? (node) => { customerDetailRef.current = node; } : undefined} tabIndex={selectedAccount ? -1 : undefined}>
               {selectedAccount ? <>
                 <button type="button" className="admin-button admin-button-ghost" disabled={customerBusy} onClick={() => updateCustomerQuery({ customer: null, customerDetail: null, event: null })}>고객 목록으로</button>
                 {renderMobileAccountCard(selectedAccount, accounts.indexOf(selectedAccount))}
@@ -861,7 +869,7 @@ export default function AdminCustomerAccountsTab({
                   ))}</tbody>
                 </table>
               </div>
-              {selectedAccount ? <section className={`${styles.customerDetailPane} ${workspace.customerDetail}`} aria-label="선택한 고객 상세">
+              {selectedAccount ? <section ref={customerDetailRef} tabIndex={-1} className={`${styles.customerDetailPane} ${workspace.customerDetail}`} aria-label="선택한 고객 상세">
                   <button type="button" disabled={customerBusy} className={`admin-button admin-button-ghost ${workspace.closeButton}`} aria-label="고객 상세 닫기" title="고객 상세 닫기" onClick={() => updateCustomerQuery({ customer: null, customerDetail: null, event: null })}><img src="/images/admin/close.webp" alt="" width={16} height={16} /></button>
                   {renderAccountCard(selectedAccount, accounts.indexOf(selectedAccount))}
               </section> : null}

@@ -258,7 +258,7 @@ export function validateAdminEventPeriodInput({
   if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {
     return '올바른 날짜를 입력해 주세요.';
   }
-  if (start >= end) return '종료일은 시작일보다 뒤여야 합니다.';
+  if (start > end) return '종료일은 시작일과 같거나 뒤여야 합니다.';
 
   return null;
 }

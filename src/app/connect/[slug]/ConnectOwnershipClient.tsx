@@ -139,6 +139,8 @@ export default function ConnectOwnershipClient({ slug }: ConnectOwnershipClientP
     }
 
     let cancelled = false;
+    setLinkValidated(false);
+    setErrorMessage('');
     setState('checking-link');
 
     inspectOwnershipInvite(slug, token)
@@ -172,7 +174,7 @@ export default function ConnectOwnershipClient({ slug }: ConnectOwnershipClientP
     return () => {
       cancelled = true;
     };
-  }, [slug, token, tokenMarker]);
+  }, [retryNonce, slug, token, tokenMarker]);
 
   useEffect(() => {
     if (!linkValidated || !token || !tokenMarker) {
@@ -238,7 +240,6 @@ export default function ConnectOwnershipClient({ slug }: ConnectOwnershipClientP
     isAdminLoggedIn,
     isLoggedIn,
     linkValidated,
-    retryNonce,
     router,
     slug,
     token,
@@ -399,7 +400,7 @@ export default function ConnectOwnershipClient({ slug }: ConnectOwnershipClientP
                   {errorMessage || '잠시 후 다시 시도해 주세요.'}
                 </p>
                 <div className={styles.actions}>
-                  {linkValidated ? (
+                  {token && tokenMarker ? (
                     <button
                       type="button"
                       className={styles.primaryButton}

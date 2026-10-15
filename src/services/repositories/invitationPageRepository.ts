@@ -20,6 +20,7 @@ import {
   listClientEventRegistryMap,
   resolveClientStoredEventBySlug,
   saveClientEventContentBySlug,
+  setClientEventDefaultThemeBySlug,
   upsertClientEventSummary,
 } from './clientEventRepositoryCore';
 import type { StoredInvitationPageConfigRecord } from './mappers/invitationPageRepositoryMapper';
@@ -57,6 +58,7 @@ export interface ClientInvitationPageRepository {
       hasCustomConfig?: boolean;
     }
   ): Promise<void>;
+  setDefaultThemeBySlug(pageSlug: string, theme: InvitationThemeKey): Promise<void>;
   syncDisplayPeriodBySlug(
     pageSlug: string,
     payload: {
@@ -212,6 +214,10 @@ export const clientInvitationPageRepository: ClientInvitationPageRepository = {
       updatedAt: input.updatedAt,
       initializeOwnerFromCurrentAuth: input.initializeOwnerFromCurrentAuth,
     });
+  },
+
+  async setDefaultThemeBySlug(pageSlug, theme) {
+    await setClientEventDefaultThemeBySlug(requirePageSlug(pageSlug), theme);
   },
 
   async upsertRegistryBySlug(pageSlug, payload) {
