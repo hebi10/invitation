@@ -471,7 +471,8 @@ export default function AdminCustomerAccountsTab({
                 className="admin-button admin-button-ghost"
                 href={routes.preview(
                   selectedEvent.slug,
-                  selectedEvent.defaultTheme as InvitationThemeKey
+                  selectedEvent.defaultTheme as InvitationThemeKey,
+                  selectedEvent.eventType
                 )}
                 target="_blank"
                 rel="noreferrer"

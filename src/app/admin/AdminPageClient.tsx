@@ -7,6 +7,7 @@ import FirebaseAuthLoginCard from '@/app/_components/FirebaseAuthLoginCard';
 import { DisplayPeriodManager, ImageManager, MemoryPageManager } from '@/components/admin';
 import { useAdmin } from '@/contexts';
 import { buildAppRoutes, type AppRoutes } from '@/lib/demoExperienceRoutes';
+import { withAdminWizardReturnTo } from '@/lib/adminWizardNavigation';
 import type { AdminOwnershipInviteResult } from '@/services/eventOwnershipInviteService';
 
 import {
@@ -73,7 +74,7 @@ export default function AdminPageClient({
 }: AdminPageClientProps) {
   const gateway = gatewayOverride ??
     (experience ? demoExperienceAdminDataGateway : productionAdminDataGateway);
-  const routes = routesOverride ?? buildAppRoutes(experience ? 'experience' : 'production');
+  const baseRoutes = routesOverride ?? buildAppRoutes(experience ? 'experience' : 'production');
   const { adminUser, isAdminLoggedIn, isAdminLoading, logout } = useAdmin();
   const router = useRouter();
   const pathname = usePathname();
@@ -83,6 +84,7 @@ export default function AdminPageClient({
     () => searchParams ?? new URLSearchParams(),
     [searchParams]
   );
+  const routes = withAdminWizardReturnTo(baseRoutes, `${baseRoutes.admin()}?${safeSearchParams}`);
   const returnPath = (() => {
     const value = safeSearchParams.get('next');
     if (!value || !value.startsWith('/') || value.startsWith('//')) {

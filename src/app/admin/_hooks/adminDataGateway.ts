@@ -86,9 +86,7 @@ export const productionAdminDataGateway: AdminDataGateway = {
     return deleteAdminEventByPageSlug(slug, options);
   },
   async setPublished(page, published) {
-    await setInvitationPagePublished(page.slug, published, {
-      defaultTheme: page.defaultTheme,
-    });
+    await setInvitationPagePublished(page.slug, published);
   },
   async setTier(page, tier) {
     await setInvitationPageProductTier(page.slug, tier);

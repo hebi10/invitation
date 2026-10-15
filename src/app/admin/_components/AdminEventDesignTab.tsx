@@ -76,7 +76,7 @@ export default function AdminEventDesignTab({ page, canEdit, routes, onUpdated }
           <span>{theme.key === page.defaultTheme ? '기본 주소 디자인' : '같은 내용으로 열기'}</span>
         </div>
         <p className={styles.eventThemeDescription}>{getInvitationThemeWizardDescription(theme.key)}</p>
-        <a className="admin-button admin-button-secondary" href={routes.preview(page.slug, theme.key)} target="_blank" rel="noopener noreferrer" aria-label={`${theme.label} 청첩장 페이지 열기 (새 탭)`}>고객 페이지 열기</a>
+        <a className="admin-button admin-button-secondary" href={routes.preview(page.slug, theme.key, page.eventType)} target="_blank" rel="noopener noreferrer" aria-label={`${theme.label} 청첩장 페이지 열기 (새 탭)`}>고객 페이지 열기</a>
         {canEdit ? <button type="button" className="admin-button admin-button-secondary" disabled={pending !== null || theme.key === page.defaultTheme} aria-label={`${theme.label} 기본 주소에 사용`} onClick={() => saveTheme(theme.key)}>{pending === 'save' && attemptedTheme === theme.key ? '저장 중' : theme.key === page.defaultTheme ? '기본 주소 디자인' : '기본 주소에 사용'}</button> : null}
       </li>)}
     </ul>

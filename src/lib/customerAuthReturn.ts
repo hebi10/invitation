@@ -8,6 +8,17 @@ function validateConnectReturnTo(value: string | null | undefined): string | nul
   return match?.[0] === value ? value : null;
 }
 
+function validateCustomerReturnTo(value: string | null | undefined): string | null {
+  const connectReturnTo = validateConnectReturnTo(value);
+  if (connectReturnTo) return connectReturnTo;
+  if (typeof value !== 'string') return null;
+
+  // Only existing local editor and owner-preview paths may survive authentication.
+  // Keep query strings, encoded separators and arbitrary fragments out of this list.
+  const match = /^\/(?:page-wizard\/[A-Za-z0-9_-]+|my-invitations\/preview\/[A-Za-z0-9_-]+\/[A-Za-z0-9_-]+)$/.exec(value);
+  return match?.[0] === value ? value : null;
+}
+
 export function buildConnectReturnTo(slug: string, token: string): string | null {
   return validateConnectReturnTo(`/connect/${slug}#token=${token}`);
 }
@@ -16,7 +27,7 @@ export function buildCustomerAuthPath(
   pathname: '/forgot-password' | '/login',
   returnTo?: string | null
 ): string {
-  const safeReturnTo = validateConnectReturnTo(returnTo);
+  const safeReturnTo = validateCustomerReturnTo(returnTo);
   // Fragments stay in the browser and are excluded from requests and referrers.
   return safeReturnTo ? `${pathname}#returnTo=${encodeURIComponent(safeReturnTo)}` : pathname;
 }
@@ -24,5 +35,5 @@ export function buildCustomerAuthPath(
 export function readCustomerAuthReturnTo(hash: string): string | null {
   if (!hash.startsWith('#')) return null;
   const values = new URLSearchParams(hash.slice(1)).getAll('returnTo');
-  return values.length === 1 ? validateConnectReturnTo(values[0]) : null;
+  return values.length === 1 ? validateCustomerReturnTo(values[0]) : null;
 }

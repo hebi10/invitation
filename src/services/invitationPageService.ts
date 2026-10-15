@@ -674,32 +674,8 @@ export async function setAdminInvitationPageDefaultTheme(pageSlug: string, theme
   await clientInvitationPageRepository.setDefaultThemeBySlug(pageSlug, theme);
 }
 
-export async function setInvitationPagePublished(
-  pageSlug: string,
-  published: boolean,
-  options: {
-    defaultTheme?: InvitationThemeKey;
-  } = {}
-) {
-  const seed = getWeddingPageBySlug(pageSlug);
-
-  const firestore = await ensureFirestoreState();
-  if (!firestore) {
-    throw new Error('데이터 저장소 연결을 확인하지 못했습니다. 잠시 후 다시 시도해 주세요.');
-  }
-
-  const existingConfig = await getConfigByPageSlug(firestore, pageSlug);
-  const existingRegistry = await getRegistryByPageSlug(firestore, pageSlug);
-
-  if (!seed && !existingConfig && !existingRegistry) {
-    throw new Error('해당 페이지 주소를 찾을 수 없습니다.');
-  }
-
-  await upsertRegistryRecord(firestore, pageSlug, {
-    published,
-    defaultTheme: options.defaultTheme ?? existingRegistry?.defaultTheme,
-    hasCustomConfig: existingRegistry?.hasCustomConfig ?? Boolean(existingConfig),
-  });
+export async function setInvitationPagePublished(pageSlug: string, published: boolean) {
+  await clientInvitationPageRepository.updateVisibilityBySlug(pageSlug, { published });
 }
 
 export async function setInvitationPageVariantAvailability(
@@ -941,33 +917,13 @@ export async function getAllManagedInvitationPages(): Promise<InvitationPageSumm
 export async function updateInvitationPageVisibility(
   pageSlug: string,
   payload: {
-    published: boolean;
+    published?: boolean;
     displayPeriodEnabled: boolean;
     displayPeriodStart: Date | null;
     displayPeriodEnd: Date | null;
   }
 ) {
-  const seedPage = buildSeedPage(pageSlug);
-
-  const firestore = await ensureFirestoreState();
-  if (!firestore) {
-    throw new Error('데이터 저장소 연결을 확인하지 못했습니다. 잠시 후 다시 시도해 주세요.');
-  }
-
-  const existingConfig = await getConfigByPageSlug(firestore, pageSlug);
-  const existingRegistry = await getRegistryByPageSlug(firestore, pageSlug);
-
-  if (!seedPage && !existingConfig) {
-    throw new Error('해당 페이지 주소를 찾을 수 없습니다.');
-  }
-
-  await upsertRegistryRecord(firestore, pageSlug, {
-    published: payload.published,
-    defaultTheme: existingRegistry?.defaultTheme,
-    hasCustomConfig: Boolean(existingConfig),
-  });
-
-  await syncDisplayPeriod(firestore, pageSlug, payload);
+  await clientInvitationPageRepository.updateVisibilityBySlug(pageSlug, payload);
 }
 
 export async function setInvitationPageProductTier(

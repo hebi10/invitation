@@ -182,10 +182,14 @@ export async function inspectOwnershipInvite(pageSlug: string, token: string) {
 
 export async function consumeCustomerOwnershipInvite(
   pageSlug: string,
-  token: string
+  token: string,
+  expectedUid: string
 ) {
   const normalizedPageSlug = requirePageSlug(pageSlug);
-  const idToken = await getCurrentFirebaseIdToken({ forceRefresh: true });
+  if (!expectedUid) {
+    throw new Error('연결할 계정을 다시 확인해 주세요.');
+  }
+  const idToken = await getCurrentFirebaseIdToken({ forceRefresh: true, expectedUid });
   if (!idToken) {
     throw new Error('로그인 상태를 확인하지 못했습니다. 다시 로그인해 주세요.');
   }

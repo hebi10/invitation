@@ -472,10 +472,15 @@ export function mergeInvitationPageSeed(
     variants: normalizedVariants,
   };
 
+  const hasRequiredNames =
+    normalizedSeed.eventType === 'opening' || normalizedSeed.eventType === 'general-event'
+      ? Boolean(normalizedSeed.displayName)
+      : Boolean(normalizedSeed.couple.groom.name) &&
+        (normalizedSeed.eventType === 'birthday' || Boolean(normalizedSeed.couple.bride.name));
+
   if (
     !normalizedSeed.slug ||
-    !normalizedSeed.couple.groom.name ||
-    !normalizedSeed.couple.bride.name ||
+    !hasRequiredNames ||
     !normalizedSeed.metadata.images.favicon ||
     getAvailableInvitationVariantKeys(normalizedSeed.variants).length === 0
   ) {

@@ -21,6 +21,7 @@ type ConnectState =
   | 'login-required'
   | 'admin-blocked'
   | 'verification-required'
+  | 'confirm-account'
   | 'connecting'
   | 'expired'
   | 'consumed'
@@ -42,7 +43,7 @@ async function createTokenMarker(token: string) {
 
 function toTerminalState(
   status: Exclude<OwnershipInviteStatus, 'valid'>
-): Exclude<ConnectState, 'reading-link' | 'checking-link' | 'login-required' | 'admin-blocked' | 'verification-required' | 'connecting' | 'error'> {
+): Exclude<ConnectState, 'reading-link' | 'checking-link' | 'login-required' | 'admin-blocked' | 'verification-required' | 'confirm-account' | 'connecting' | 'error'> {
   return status;
 }
 
@@ -96,6 +97,9 @@ export default function ConnectOwnershipClient({ slug }: ConnectOwnershipClientP
   >(null);
   const [retryNonce, setRetryNonce] = useState(0);
   const attemptedConsumeRef = useRef<string | null>(null);
+  const switchingAccountRef = useRef(false);
+  const authUid = authUser?.uid;
+  const emailVerified = authUser?.emailVerified === true;
 
   useEffect(() => {
     let cancelled = false;
@@ -186,65 +190,88 @@ export default function ConnectOwnershipClient({ slug }: ConnectOwnershipClientP
       return;
     }
 
-    if (!isLoggedIn || !authUser) {
+    if (!isLoggedIn || !authUid) {
+      attemptedConsumeRef.current = null;
       setState('login-required');
       return;
     }
 
     if (isAdminLoggedIn) {
+      attemptedConsumeRef.current = null;
       setState('admin-blocked');
       return;
     }
 
-    if (!authUser.emailVerified) {
+    if (!emailVerified) {
+      attemptedConsumeRef.current = null;
       setState('verification-required');
       return;
     }
 
-    const attemptKey = `${authUser.uid}:${slug}:${tokenMarker}`;
+    const attemptKey = `${authUid}:${slug}:${tokenMarker}`;
     if (attemptedConsumeRef.current === attemptKey) {
       return;
     }
 
-    attemptedConsumeRef.current = attemptKey;
-    setState('connecting');
-    setErrorMessage('');
-
-    consumeCustomerOwnershipInvite(slug, token)
-      .then(() => {
-        router.replace(`/page-wizard/${encodeURIComponent(slug)}`);
-      })
-      .catch(async (error) => {
-        attemptedConsumeRef.current = null;
-
-        try {
-          const invite = await inspectOwnershipInvite(slug, token);
-          if (invite.status !== 'valid') {
-            setState(toTerminalState(invite.status));
-            return;
-          }
-        } catch {
-          // The safe consume error below is more useful than a secondary inspect failure.
-        }
-
-        setErrorMessage(
-          error instanceof Error
-            ? error.message
-            : '청첩장을 계정에 연결하지 못했습니다.'
-        );
-        setState('error');
-      });
+    attemptedConsumeRef.current = null;
+    setState('confirm-account');
   }, [
-    authUser,
+    authUid,
+    emailVerified,
     isAdminLoading,
     isAdminLoggedIn,
     isLoggedIn,
     linkValidated,
-    router,
     slug,
     token,
     tokenMarker,
   ]);
+
+  const confirmAccountConnection = async () => {
+    if (
+      state !== 'confirm-account' || !linkValidated || !token || !tokenMarker ||
+      isAdminLoading || !isLoggedIn || isAdminLoggedIn || !authUser?.emailVerified ||
+      attemptedConsumeRef.current || switchingAccountRef.current
+    ) {
+      return;
+    }
+
+    const attemptKey = `${authUser.uid}:${slug}:${tokenMarker}`;
+    attemptedConsumeRef.current = attemptKey;
+    setState('connecting');
+    setErrorMessage('');
+
+    try {
+      await consumeCustomerOwnershipInvite(slug, token, authUser.uid);
+      if (attemptedConsumeRef.current === attemptKey) {
+        router.replace(`/page-wizard/${encodeURIComponent(slug)}`);
+      }
+    } catch (error) {
+      if (attemptedConsumeRef.current !== attemptKey) return;
+
+      try {
+        const invite = await inspectOwnershipInvite(slug, token);
+        if (attemptedConsumeRef.current !== attemptKey) return;
+        if (invite.status !== 'valid') {
+          attemptedConsumeRef.current = null;
+          setLinkValidated(false);
+          setState(toTerminalState(invite.status));
+          return;
+        }
+      } catch {
+        // The safe consume error below is more useful than a secondary inspect failure.
+      }
+
+      if (attemptedConsumeRef.current !== attemptKey) return;
+      attemptedConsumeRef.current = null;
+      setErrorMessage(
+        error instanceof Error
+          ? error.message
+          : '청첩장을 계정에 연결하지 못했습니다.'
+      );
+      setState('error');
+    }
+  };
 
   const resendVerification = async () => {
     setVerificationAction('resend');
@@ -266,30 +293,38 @@ export default function ConnectOwnershipClient({ slug }: ConnectOwnershipClientP
     const snapshot = await refreshAuthUser();
     setVerificationMessage(
       snapshot.authUser?.emailVerified
-        ? '이메일 인증을 확인했습니다. 청첩장을 연결합니다.'
+        ? '이메일 인증을 확인했습니다. 연결할 계정을 확인해 주세요.'
         : '아직 인증되지 않았습니다. 이메일의 인증 링크를 먼저 열어 주세요.'
     );
     setVerificationAction(null);
   };
 
   const logoutCurrentUser = async () => {
+    if (switchingAccountRef.current || attemptedConsumeRef.current) return;
+    switchingAccountRef.current = true;
     setVerificationAction('logout');
-    await logout();
     setVerificationMessage('');
-    setVerificationAction(null);
+    setErrorMessage('');
+    try {
+      await logout();
+    } catch {
+      setErrorMessage('로그아웃하지 못했습니다. 현재 계정을 확인한 뒤 다시 시도해 주세요.');
+    } finally {
+      switchingAccountRef.current = false;
+      setVerificationAction(null);
+    }
   };
 
   const terminalContent = getTerminalContent(state);
   const pageName = displayName || slug;
 
   return (
-    <main className={styles.page}>
+    <main className={styles.page} data-operation-ui>
       <div className={styles.shell}>
         <header className={styles.header}>
-          <p className={styles.eyebrow}>청첩장 계정 연결</p>
           <h1 className={styles.title}>{pageName}</h1>
           <p className={styles.description}>
-            로그인 또는 회원가입을 마치면 이 청첩장을 바로 편집할 수 있습니다.
+            청첩장을 관리할 계정을 확인하고 연결하면 편집을 시작할 수 있습니다.
           </p>
         </header>
 
@@ -298,7 +333,7 @@ export default function ConnectOwnershipClient({ slug }: ConnectOwnershipClientP
             <FirebaseAuthLoginCard
               title="고객 계정으로 계속하기"
               description="청첩장을 관리할 계정으로 로그인하거나 새로 가입해 주세요."
-              helperText="이메일 가입은 인증 메일 확인 후 자동으로 연결됩니다."
+              helperText="이메일 가입은 인증을 마친 뒤 연결할 계정을 확인해 주세요."
               returnTo={buildConnectReturnTo(slug, token)}
               allowSignUp
             />
@@ -318,6 +353,28 @@ export default function ConnectOwnershipClient({ slug }: ConnectOwnershipClientP
                 <span className={styles.spinner} aria-hidden="true" />
                 <h2 className={styles.statusTitle}>청첩장을 계정에 연결하고 있습니다.</h2>
                 <p className={styles.statusDescription}>완료되면 편집 화면으로 이동합니다.</p>
+              </>
+            ) : null}
+
+            {state === 'confirm-account' ? (
+              <>
+                <h2 className={styles.statusTitle}>이 계정에 청첩장을 연결할까요?</h2>
+                <p className={styles.statusDescription}>
+                  {authUser?.email ?? '현재 로그인한 계정'}에 {pageName} 청첩장을 연결합니다.
+                  연결 후 이 계정으로 내용을 확인하고 편집할 수 있습니다.
+                </p>
+                <div className={styles.actions}>
+                  <button type="button" className={styles.primaryButton}
+                    disabled={verificationAction !== null}
+                    onClick={() => void confirmAccountConnection()}>
+                    이 계정으로 연결
+                  </button>
+                  <button type="button" className={styles.secondaryButton}
+                    disabled={verificationAction !== null}
+                    onClick={() => void logoutCurrentUser()}>
+                    {verificationAction === 'logout' ? '계정 전환 중' : '다른 계정 사용'}
+                  </button>
+                </div>
               </>
             ) : null}
 
@@ -414,6 +471,9 @@ export default function ConnectOwnershipClient({ slug }: ConnectOwnershipClientP
                   </Link>
                 </div>
               </>
+            ) : null}
+            {state !== 'error' && errorMessage ? (
+              <p className={styles.errorMessage} role="alert">{errorMessage}</p>
             ) : null}
           </section>
         )}

@@ -24,6 +24,13 @@ export default function WeddingWizardPreview({ formState, theme, activeStepKey =
   const [focusedStep, setFocusedStep] = useState(activeStepKey);
   const [viewingTop, setViewingTop] = useState(false);
   const lastIntroPreview = useRef<WeddingIntroPreview | null>(null);
+  const hasRetriedStartup = useRef(false);
+  const reload = useCallback(() => {
+    lastIntroPreview.current = null;
+    setReady(false);
+    setTimedOut(false);
+    setFrameVersion((version) => version + 1);
+  }, []);
   const sendPreview = useCallback(() => {
     frameRef.current?.contentWindow?.postMessage(
       { type: 'wedding-wizard-preview:update', formState: introPreview ? { ...formState, introStyle: introPreview.style } : formState, theme },
@@ -40,7 +47,6 @@ export default function WeddingWizardPreview({ formState, theme, activeStepKey =
         return;
       }
       if (event.data?.type !== 'wedding-wizard-preview:ready') return;
-      setReady(true);
       sendPreview();
     };
     window.addEventListener('message', receive);
@@ -50,9 +56,18 @@ export default function WeddingWizardPreview({ formState, theme, activeStepKey =
 
   useEffect(() => {
     if (ready) return;
-    const timeout = window.setTimeout(() => setTimedOut(true), 15000);
+    const timeout = window.setTimeout(() => {
+      // A loaded document is not complete until it acknowledges a rendered
+      // draft. Recover a stalled first navigation once, then leave retry explicit.
+      if (!hasRetriedStartup.current) {
+        hasRetriedStartup.current = true;
+        reload();
+        return;
+      }
+      setTimedOut(true);
+    }, 15000);
     return () => window.clearTimeout(timeout);
-  }, [ready, frameVersion]);
+  }, [ready, frameVersion, reload]);
 
   const focusSection = useCallback((step: PreviewStep = focusedStep) => {
     setViewingTop(false);
@@ -82,13 +97,6 @@ export default function WeddingWizardPreview({ formState, theme, activeStepKey =
     setViewingTop(true);
     frameRef.current?.contentWindow?.postMessage({ type: 'wedding-wizard-preview:top' }, window.location.origin);
   }, [ready, introPreview, sendPreview]);
-
-  const reload = () => {
-    lastIntroPreview.current = null;
-    setReady(false);
-    setTimedOut(false);
-    setFrameVersion((version) => version + 1);
-  };
 
   return (
     <div className={styles.preview}>
@@ -123,7 +131,9 @@ export default function WeddingWizardPreview({ formState, theme, activeStepKey =
       </div>
       <div className={styles.previewMeta}>
         <p className={styles.location} role="status">{!ready
-          ? timedOut ? <>미리보기를 불러오지 못했습니다. <button type="button" onClick={reload}>다시 불러오기</button></> : '초대장 미리보기를 준비하고 있습니다.'
+          ? timedOut || frameVersion > 0
+            ? <>{timedOut ? '미리보기를 불러오지 못했습니다.' : '미리보기를 다시 준비하고 있습니다.'} <button type="button" onClick={reload}>다시 불러오기</button></>
+            : '초대장 미리보기를 준비하고 있습니다.'
           : introPreview ? `${WEDDING_INTRO_OPTIONS.find(option => option.value === introPreview.style)?.label} 미리보기 · 저장되지 않습니다.` : viewingTop ? '청첩장을 처음부터 보고 있습니다.' : `편집 위치 · ${previewSections[focusedStep].label}`}</p>
         <details className={styles.previewHelp}>
           <summary>미리보기 안내</summary>

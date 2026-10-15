@@ -14,10 +14,14 @@ function PageWizardResultFallback() {
 
 export default async function PageWizardResultPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ slug: string }>;
+  searchParams?: Promise<{ returnTo?: string | string[] }>;
 }) {
   const { slug } = await params;
+  const query = await searchParams;
+  const returnTo = typeof query?.returnTo === 'string' ? query.returnTo : null;
   const page = await getServerInvitationPageBySlug(slug, {
     includePrivate: true,
   });
@@ -28,7 +32,7 @@ export default async function PageWizardResultPage({
 
   return (
     <Suspense fallback={<PageWizardResultFallback />}>
-      <PageWizardResultClient slug={slug} />
+      <PageWizardResultClient slug={slug} returnTo={returnTo} />
     </Suspense>
   );
 }

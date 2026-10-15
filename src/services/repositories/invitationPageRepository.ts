@@ -21,6 +21,8 @@ import {
   resolveClientStoredEventBySlug,
   saveClientEventContentBySlug,
   setClientEventDefaultThemeBySlug,
+  updateClientEventVisibilityBySlug,
+  type ClientEventVisibilityPatch,
   upsertClientEventSummary,
 } from './clientEventRepositoryCore';
 import type { StoredInvitationPageConfigRecord } from './mappers/invitationPageRepositoryMapper';
@@ -59,6 +61,7 @@ export interface ClientInvitationPageRepository {
     }
   ): Promise<void>;
   setDefaultThemeBySlug(pageSlug: string, theme: InvitationThemeKey): Promise<void>;
+  updateVisibilityBySlug(pageSlug: string, payload: ClientEventVisibilityPatch): Promise<void>;
   syncDisplayPeriodBySlug(
     pageSlug: string,
     payload: {
@@ -220,6 +223,10 @@ export const clientInvitationPageRepository: ClientInvitationPageRepository = {
     await setClientEventDefaultThemeBySlug(requirePageSlug(pageSlug), theme);
   },
 
+  async updateVisibilityBySlug(pageSlug, payload) {
+    await updateClientEventVisibilityBySlug(requirePageSlug(pageSlug), payload);
+  },
+
   async upsertRegistryBySlug(pageSlug, payload) {
     const normalizedPageSlug = requirePageSlug(pageSlug);
     const existingRegistry = await this.findRegistryBySlug(normalizedPageSlug);
@@ -250,32 +257,6 @@ export const clientInvitationPageRepository: ClientInvitationPageRepository = {
   },
 
   async syncDisplayPeriodBySlug(pageSlug, payload) {
-    const normalizedPageSlug = requirePageSlug(pageSlug);
-    const existingRegistry = await this.findRegistryBySlug(normalizedPageSlug);
-    const existingContent = await this.findConfigBySlug(normalizedPageSlug);
-    const existingPeriod = await this.findDisplayPeriodBySlug(normalizedPageSlug);
-
-    await upsertClientEventSummary({
-      slug: normalizedPageSlug,
-      displayName: existingContent?.config.displayName ?? null,
-      summary: existingContent?.config.description ?? null,
-      published: existingRegistry?.published ?? true,
-      defaultTheme: existingRegistry?.defaultTheme ?? DEFAULT_INVITATION_THEME,
-      supportedVariants: existingContent ? Object.keys(existingContent.config.variants ?? {}) : [],
-      featureFlags:
-        existingContent?.config.features && typeof existingContent.config.features === 'object'
-          ? (existingContent.config.features as Record<string, unknown>)
-          : {},
-      hasCustomConfig: existingRegistry?.hasCustomConfig ?? Boolean(existingContent),
-      displayStartAt: payload.displayPeriodEnabled ? payload.displayPeriodStart : null,
-      displayEndAt: payload.displayPeriodEnabled ? payload.displayPeriodEnd : null,
-      createdAt:
-        existingRegistry?.createdAt ??
-        existingContent?.createdAt ??
-        existingPeriod?.createdAt ??
-        new Date(),
-      updatedAt: new Date(),
-      seedSourceSlug: existingContent?.seedSourceSlug ?? null,
-    });
+    await this.updateVisibilityBySlug(requirePageSlug(pageSlug), payload);
   },
 };

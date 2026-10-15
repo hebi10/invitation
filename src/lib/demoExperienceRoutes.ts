@@ -12,7 +12,7 @@ export interface AppRoutes {
   wizardCreate(eventType: EventTypeKey): string;
   wizardEdit(slug: string): string;
   wizardResult(slug: string): string;
-  preview(slug: string, theme: InvitationThemeKey): string;
+  preview(slug: string, theme: InvitationThemeKey, eventType?: EventTypeKey): string;
 }
 
 export function buildAppRoutes(scope: AppRouteScope): AppRoutes {
@@ -37,7 +37,7 @@ export function buildAppRoutes(scope: AppRouteScope): AppRoutes {
     wizardCreate: (eventType) => getPageWizardCreateHrefForEventType(eventType),
     wizardEdit: (slug) => `/page-wizard/${encodeURIComponent(slug)}`,
     wizardResult: (slug) => `/page-wizard/${encodeURIComponent(slug)}/result`,
-    preview: (slug, theme) => buildEventPreviewPath(slug, 'wedding', theme),
+    preview: (slug, theme, eventType = 'wedding') => buildEventPreviewPath(slug, eventType, theme),
   };
 }
 

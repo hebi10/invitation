@@ -7,6 +7,7 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { QueryClient } from '@tanstack/react-query';
 import { appQueryKeys, FIFTEEN_MINUTES_MS } from '../src/lib/appQuery.ts';
 import * as customerWorkspace from '../src/lib/customerInvitationWorkspace.ts';
+import * as adminWizardNavigation from '../src/lib/adminWizardNavigation.ts';
 
 // Execute the real persistence callback against TanStack's cache: no Firebase requests.
 const wizardSource = ts.createSourceFile('PageWizardClient.tsx',
@@ -44,7 +45,7 @@ client.clear();
 let admin = false;
 const publicAccess = { current: undefined as unknown };
 const config = { displayName: '우리의 초대장', eventType: 'wedding', couple: { groom: { name: '신랑' }, bride: { name: '신부' } } };
-const componentExports: { default?: React.ComponentType<{ slug: string; experience?: boolean }> } = {};
+const componentExports: { default?: React.ComponentType<{ slug: string; experience?: boolean; returnTo?: string }> } = {};
 const resultSource = ts.transpileModule(readFileSync('src/app/page-wizard/PageWizardResultClient.tsx', 'utf8'), {
   compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, jsx: ts.JsxEmit.React, esModuleInterop: true },
 }).outputText;
@@ -62,6 +63,7 @@ runInNewContext(resultSource, { exports: componentExports, React, require(name: 
   if (name.endsWith('/invitationProducts')) return { resolveInvitationFeatures: () => ({}) };
   if (name.endsWith('/eventPreviewLinks')) return { buildEventPreviewPath: () => '/sample/simple', getEventTypeDefaultPreviewTheme: () => 'simple' };
   if (name.endsWith('/customerInvitationWorkspace')) return customerWorkspace;
+  if (name.endsWith('/adminWizardNavigation')) return adminWizardNavigation;
   if (name.endsWith('/pageWizardShared')) return { formatSavedAt: () => '방금', getNoticeClassName: () => 'notice' };
   if (name.endsWith('.module.css')) return { __esModule: true, default: new Proxy({}, { get: (_object, key) => String(key) }) };
   return {};
@@ -94,4 +96,18 @@ assert.match(administrator, /실제 페이지 URL/,
   'Administrators retain their page routing details');
 assert.match(administrator, /<details[^>]*\bopen(?:=|\s|>)/,
   'Administrators retain an expanded saved-content review');
+const adminReturnTo = '/admin?pageQ=test&page=3&pageSort=name&event=sample';
+const contextualAdministrator = renderToStaticMarkup(React.createElement(componentExports.default, { slug: 'sample', returnTo: adminReturnTo }));
+const adminBackHref = contextualAdministrator.match(/<a[^>]*href="([^"]+)"[^>]*>관리자 화면으로 이동<\/a>/)?.[1];
+assert.equal(adminBackHref?.replaceAll('&amp;', '&'), adminReturnTo, 'saved results must retain the original administrator list and selected event');
+const contextualEditHref = contextualAdministrator.match(/<a[^>]*href="([^"]+)"[^>]*>편집 화면으로 돌아가기<\/a>/)?.[1];
+assert.ok(contextualEditHref);
+assert.equal(new URL(contextualEditHref.replaceAll('&amp;', '&'), 'https://invitation.test').searchParams.get('returnTo'), adminReturnTo);
+const unsafeAdministrator = renderToStaticMarkup(React.createElement(componentExports.default, { slug: 'sample', returnTo: '//evil.example/admin' }));
+assert.match(unsafeAdministrator, /href="\/admin"/, 'results reject an external administrator return address');
+assert.doesNotMatch(unsafeAdministrator, /evil\.example/);
+admin = false;
+const customerWithAdminContext = renderToStaticMarkup(React.createElement(componentExports.default, { slug: 'sample', returnTo: adminReturnTo }));
+assert.match(customerWithAdminContext, /href="\/my-invitations"[^>]*class="primaryButton"/, 'customers ignore administrator return context');
+assert.match(customerWithAdminContext, /href="\/page-wizard\/sample"/, 'customer editing stays on its original route');
 console.log('Customer completion navigation and fresh saved result checks passed');

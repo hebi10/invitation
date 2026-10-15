@@ -24,6 +24,11 @@ const core = [
   'test-admin-event-preview-links',
   'test-admin-event-workspace-model',
   'test-admin-default-theme',
+  'test-admin-visibility-isolation',
+  'test-admin-navigation-context',
+  'test-customer-followup-flows',
+  'test-wizard-preview-startup',
+  'test-non-wedding-content-read',
   'test-admin-invitation-summary',
   'test-admin-ownership-invite-status',
   'test-birthday-event-rendering',
@@ -81,6 +86,7 @@ const core = [
 ];
 
 const security = [
+  'test-customer-ownership-confirmed-account',
   'test-mobile-private-preview',
   'test-mobile-create-validation',
   'test-mobile-account-return',
@@ -222,6 +228,8 @@ if (!selectedTests) {
 
 // Hook-based components need React's client server-rendering entrypoint.
 const clientRenderingTests = new Set([
+  'test-admin-navigation-context',
+  'test-customer-followup-flows',
   'test-admin-query-recovery',
   'test-customer-private-preview',
   'test-wizard-sharing-preview',

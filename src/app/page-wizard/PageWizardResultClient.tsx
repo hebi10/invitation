@@ -12,6 +12,7 @@ import CustomerEmailVerificationGate from './CustomerEmailVerificationGate';
 import { normalizeFormConfig } from '@/app/page-wizard/pageWizardEditorUtils';
 import { useAdmin } from '@/contexts';
 import { buildAppRoutes, type AppRoutes } from '@/lib/demoExperienceRoutes';
+import { getAdminWizardReturnHref, withAdminWizardReturnTo } from '@/lib/adminWizardNavigation';
 import { PUBLIC_SITE_ORIGIN } from '@/lib/invitationMetadata';
 import { copyTextToClipboard } from '@/utils/copyTextToClipboard';
 import { buildCustomerInvitationPreviewPath, getCustomerInvitationStatus } from '@/lib/customerInvitationWorkspace';
@@ -48,6 +49,7 @@ interface PageWizardResultClientProps {
   gateway?: WizardPersistenceGateway;
   routes?: AppRoutes;
   experience?: boolean;
+  returnTo?: string | null;
   onContinueAsCustomer?: () => Promise<void> | void;
 }
 
@@ -62,9 +64,12 @@ export default function PageWizardResultClient({
   gateway = productionWizardPersistenceGateway,
   routes = buildAppRoutes('production'),
   experience = false,
+  returnTo,
   onContinueAsCustomer,
 }: PageWizardResultClientProps) {
   const { authUser, isAdminLoading, isAdminLoggedIn, isLoggedIn } = useAdmin();
+  const navigationRoutes = isAdminLoggedIn && returnTo ? withAdminWizardReturnTo(routes, returnTo) : routes;
+  const listHref = isAdminLoggedIn ? getAdminWizardReturnHref(returnTo, routes) : routes.customerDashboard();
   const [shareNotice, setShareNotice] = useState('');
   const [isCopyingLink, setIsCopyingLink] = useState(false);
   const requiresEmailVerification =
@@ -268,11 +273,11 @@ export default function PageWizardResultClient({
               >
                 {resultQuery.isRefetching ? '새로고침 중' : '새로고침'}
               </button>
-              <Link href={routes.customerDashboard()} className={styles.secondaryButton}>
-                내 청첩장으로 이동
+              <Link href={listHref} className={styles.secondaryButton}>
+                {isAdminLoggedIn ? '관리자 화면으로 이동' : '내 청첩장으로 이동'}
               </Link>
               <Link
-                href={routes.wizardEdit(slug)}
+                href={navigationRoutes.wizardEdit(slug)}
                 className={styles.secondaryButton}
               >
                 편집 화면으로 돌아가기
@@ -344,7 +349,7 @@ export default function PageWizardResultClient({
             </div> : null}
           </div>
           <div className={`${styles.inlineActions} ${styles.resultActionRow}`}>
-            <Link href={isAdminLoggedIn ? routes.admin() : routes.customerDashboard()} className={styles.primaryButton}>
+            <Link href={listHref} className={styles.primaryButton}>
               {isAdminLoggedIn ? '관리자 화면으로 이동' : '내 청첩장으로 이동'}
             </Link>
             <Link href={isAdminLoggedIn ? livePagePath : customerPreviewPath} className={styles.secondaryButton}>
@@ -370,7 +375,7 @@ export default function PageWizardResultClient({
               {resultQuery.isRefetching ? '새로고침 중' : '새로고침'}
             </button> : null}
             <Link
-              href={routes.wizardEdit(slug)}
+              href={navigationRoutes.wizardEdit(slug)}
               className={styles.secondaryButton}
             >
               편집 화면으로 돌아가기

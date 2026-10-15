@@ -244,23 +244,23 @@ for (const fixture of [
   if (fixture.status === 500) assert.doesNotMatch(payload.error, /permission lookup failed/);
 }
 
-// Execute the real automatic-connect effect with a valid link and each account state.
+// Execute the real account gate with a valid link and each account state.
 const clientAst = ts.createSourceFile(connectClientPath, connectClientSource,
   ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
-let consumeEffect: ts.Expression | undefined;
-function findConsumeEffect(node: ts.Node) {
+let accountGateEffect: ts.Expression | undefined;
+function findAccountGateEffect(node: ts.Node) {
   if (ts.isCallExpression(node) && node.expression.getText(clientAst) === 'useEffect' &&
-    node.arguments[0]?.getText(clientAst).includes('consumeCustomerOwnershipInvite(')) {
-    consumeEffect = node.arguments[0];
+    node.arguments[0]?.getText(clientAst).includes("setState('confirm-account')")) {
+    accountGateEffect = node.arguments[0];
   }
-  ts.forEachChild(node, findConsumeEffect);
+  ts.forEachChild(node, findAccountGateEffect);
 }
-findConsumeEffect(clientAst);
-assert.ok(consumeEffect, 'The automatic connection effect must exist');
+findAccountGateEffect(clientAst);
+assert.ok(accountGateEffect, 'The account confirmation gate must exist');
 for (const fixture of [
   { name: 'administrator', admin: true, loading: false, loggedIn: true, verified: true, state: 'admin-blocked', consumes: 0 },
   { name: 'unverified administrator', admin: true, loading: false, loggedIn: true, verified: false, state: 'admin-blocked', consumes: 0 },
-  { name: 'customer', admin: false, loading: false, loggedIn: true, verified: true, state: 'connecting', consumes: 1 },
+  { name: 'customer', admin: false, loading: false, loggedIn: true, verified: true, state: 'confirm-account', consumes: 0 },
   { name: 'loading permissions', admin: false, loading: true, loggedIn: true, verified: true, state: 'checking-link', consumes: 0 },
   { name: 'signed out', admin: false, loading: false, loggedIn: false, verified: true, state: 'login-required', consumes: 0 },
   { name: 'unverified customer', admin: false, loading: false, loggedIn: true, verified: false, state: 'verification-required', consumes: 0 },
@@ -268,12 +268,13 @@ for (const fixture of [
   let state = '';
   let consumeCount = 0;
   let destination = '';
-  const effect = runInNewContext(ts.transpileModule(`(${consumeEffect.getText(clientAst)});`, {
+  const effect = runInNewContext(ts.transpileModule(`(${accountGateEffect.getText(clientAst)});`, {
     compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.CommonJS },
   }).outputText, {
     linkValidated: true, token: 'invite-token', tokenMarker: 'token-digest', slug: 'sample',
     isAdminLoading: fixture.loading, isAdminLoggedIn: fixture.admin, isLoggedIn: fixture.loggedIn,
     authUser: fixture.loggedIn ? { uid: 'signed-in-user', emailVerified: fixture.verified } : null,
+    authUid: fixture.loggedIn ? 'signed-in-user' : undefined, emailVerified: fixture.verified,
     attemptedConsumeRef: { current: null },
     setState: (next: string) => { state = next; }, setErrorMessage() {},
     consumeCustomerOwnershipInvite: async (slug: string, token: string) => {
@@ -284,7 +285,7 @@ for (const fixture of [
   effect();
   await Promise.resolve();
   assert.equal(state, fixture.state, fixture.name);
-  assert.equal(consumeCount, fixture.consumes, `${fixture.name}: automatic token consumption`);
+  assert.equal(consumeCount, fixture.consumes, `${fixture.name}: a gate must never consume the token without confirmation`);
   assert.equal(destination, fixture.consumes ? '/page-wizard/sample' : '', fixture.name);
 }
 

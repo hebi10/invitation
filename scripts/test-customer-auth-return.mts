@@ -136,6 +136,8 @@ for (const path of [recoveryPath, loginPath, ...customer.redirects]) {
 
 assert.equal(mount(cardFile, { ...cardProps, returnTo: undefined }).href('비밀번호를 잊으셨나요?'), '/forgot-password');
 assert.equal(mount(forgotFile, {}).href('로그인으로 돌아가기'), '/login');
+assert.doesNotMatch(mount(forgotFile, {}).text(), /앱으로 돌아가/,
+  'Ordinary web password recovery must guide customers back to web login');
 assert.deepEqual(mount(loginFile, loginProps, '/login', true).redirects, ['/my-invitations']);
 assert.deepEqual(mount(loginFile, { ...loginProps, mobileReturn: true }, loginPath, true).redirects, [],
   'Mobile account return must retain its existing app return flow');
@@ -148,6 +150,16 @@ assert.deepEqual(mount(loginFile, loginProps, loginPath, true, false).redirects,
 assert.equal(buildConnectReturnTo('wedding-example', 'recovery-token_123'), connectReturn);
 assert.equal(buildConnectReturnTo('../admin', 'token'), null);
 assert.equal(buildConnectReturnTo('sample', 'token&next=evil'), null);
+
+for (const returnTo of ['/page-wizard/our-event', '/my-invitations/preview/our-event/simple']) {
+  const fragment = `#returnTo=${encodeURIComponent(returnTo)}`;
+  assert.equal(mount(cardFile, { ...cardProps, returnTo }).href('비밀번호를 잊으셨나요?'), `/forgot-password${fragment}`,
+    'Editor and owner-preview password recovery must retain their local destination');
+  assert.equal(mount(forgotFile, {}, `/forgot-password${fragment}`).href('로그인으로 돌아가기'), `/login${fragment}`);
+  assert.deepEqual(mount(loginFile, loginProps, `/login${fragment}`, true).redirects, [returnTo]);
+  assert.doesNotMatch(mount(forgotFile, {}, `/forgot-password${fragment}`).text(), /청첩장 연결|앱으로 돌아가/,
+    'An editor or preview return must not be described as ownership connection or app login');
+}
 
 const rejectedReturns = [
   'https://evil.example/connect/sample#token=token',
@@ -168,6 +180,15 @@ const rejectedReturns = [
   '/connect/sample#other=token',
   '/connect/sample#token=token\n',
   ' /connect/sample#token=token',
+  '/page-wizard/../admin',
+  '/page-wizard/%2e%2e',
+  '/page-wizard/sample%2fextra',
+  '/page-wizard/sample?returnTo=https://evil.example',
+  '/page-wizard/sample#token=unexpected',
+  '/my-invitations/preview/sample/simple/extra',
+  '/my-invitations/preview/sample/../admin',
+  '/my-invitations/preview/sample/simple?next=https://evil.example',
+  '/my-invitations/preview/sample/simple\n',
 ];
 for (const returnTo of rejectedReturns) {
   const fragment = `#returnTo=${encodeURIComponent(returnTo)}`;

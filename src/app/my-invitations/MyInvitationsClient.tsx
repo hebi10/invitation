@@ -623,7 +623,7 @@ export default function MyInvitationsClient({
     queryFn: async () => gateway.listEvents(authUser?.uid ?? ''),
     staleTime: FIFTEEN_MINUTES_MS,
     gcTime: THIRTY_MINUTES_MS,
-    refetchOnWindowFocus: false,
+    refetchOnWindowFocus: 'always',
   });
   const events = eventsQuery.data ?? [];
   const loading = eventsQuery.isFetching && !eventsQuery.data;
@@ -631,7 +631,7 @@ export default function MyInvitationsClient({
   const errorMessage =
     eventsQuery.error instanceof Error
       ? eventsQuery.error.message
-      : '';
+      : eventsQuery.isError ? '이벤트 목록을 불러오지 못했습니다.' : '';
 
   const handleResendVerificationEmail = async () => {
     setVerificationLoading(true);
@@ -779,7 +779,7 @@ export default function MyInvitationsClient({
           <div className={styles.dashboardIntro}>
             <div className={styles.titleRow}>
               <h1 className={styles.title}>{experience ? '내 청첩장' : '내 이벤트'}</h1>
-              <span className={styles.eventCount}>{events.length}개</span>
+              {eventsQuery.data ? <span className={styles.eventCount}>{events.length}개</span> : null}
             </div>
             <p className={styles.description}>
               연결된 이벤트 페이지를 확인하고 바로 수정할 수 있습니다.
@@ -830,13 +830,22 @@ export default function MyInvitationsClient({
           </section>
         ) : null}
 
-        {errorMessage ? <p className={styles.error}>{errorMessage}</p> : null}
+        {errorMessage ? (
+          <section className={styles.emptyState} role="alert">
+            <p className={styles.error}>{errorMessage}</p>
+            {eventsQuery.data ? <p>이전에 조회한 목록입니다. 다시 시도하면 최신 내용을 확인할 수 있습니다.</p> : null}
+            <button className={styles.secondaryButton} type="button"
+              onClick={() => void eventsQuery.refetch()} disabled={eventsQuery.isFetching}>
+              {eventsQuery.isFetching ? '다시 불러오는 중' : '다시 시도'}
+            </button>
+          </section>
+        ) : null}
 
         {loading ? (
           <section className={styles.loading}>이벤트 목록을 불러오는 중입니다.</section>
         ) : null}
 
-        {!loading && events.length === 0 ? (
+        {!loading && !eventsQuery.isError && eventsQuery.data && events.length === 0 ? (
           <section className={styles.emptyState}>
             아직 연결된 이벤트가 없습니다. 관리자에게 초대장 생성과 계정 연결을 요청해 주세요.
           </section>

@@ -20,6 +20,7 @@ import {
 } from '@/app/page-wizard/pageWizardEditorUtils';
 import { useAdmin } from '@/contexts';
 import { buildAppRoutes, type AppRoutes } from '@/lib/demoExperienceRoutes';
+import { getAdminWizardReturnHref, withAdminWizardReturnTo } from '@/lib/adminWizardNavigation';
 import {
   appQueryKeys,
   THIRTY_MINUTES_MS,
@@ -1121,7 +1122,9 @@ export default function PageWizardClient({
   const handleReturnToList = () => {
     if (isSaving || uploadingField || isConnectingCustomer || reloadInFlightRef.current) return;
     if (hasUnsavedChanges && !window.confirm('저장하지 않은 변경사항이 있습니다. 저장하지 않고 목록으로 이동할까요?')) return;
-    router.push(isAdminLoggedIn ? routes.admin() : routes.customerDashboard());
+    router.push(isAdminLoggedIn
+      ? getAdminWizardReturnHref(searchParams?.get('returnTo'), routes)
+      : routes.customerDashboard());
   };
 
   const {
@@ -1175,7 +1178,9 @@ export default function PageWizardClient({
     clearNotice,
     showErrorNotice,
     onComplete: (savedSlug) => {
-      router.push(routes.wizardResult(savedSlug), {
+      const returnTo = searchParams?.get('returnTo');
+      const resultRoutes = isAdminLoggedIn && returnTo ? withAdminWizardReturnTo(routes, returnTo) : routes;
+      router.push(resultRoutes.wizardResult(savedSlug), {
         scroll: false,
       });
     },
@@ -1520,6 +1525,7 @@ export default function PageWizardClient({
               }
               requireAdmin={!initialSlug}
               allowSignUp={Boolean(initialSlug)}
+              returnTo={initialSlug && !setupOnly ? routes.wizardEdit(initialSlug) : null}
             />
           </section>
         </div>

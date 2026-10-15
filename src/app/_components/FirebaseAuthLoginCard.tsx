@@ -59,7 +59,7 @@ export default function FirebaseAuthLoginCard({
     setCanResendVerification(true);
     setNoticeMessage((currentMessage) =>
       currentMessage ||
-      '회원가입이 완료됐습니다. 이메일 받은 편지함에서 인증 링크를 확인한 뒤 청첩장을 생성해 주세요.'
+      '회원가입이 완료됐습니다. 이메일 인증 후 관리자가 생성해 연결한 청첩장을 편집할 수 있습니다.'
     );
   }, [authUser, isRegisterMode]);
 

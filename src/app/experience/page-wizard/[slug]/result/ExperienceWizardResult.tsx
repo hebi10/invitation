@@ -6,7 +6,7 @@ import PageWizardResultClient from '@/app/page-wizard/PageWizardResultClient';
 import { demoExperienceWizardPersistenceGateway } from '@/app/page-wizard/wizardPersistenceGateway';
 import { useExperience } from '@/contexts';
 
-export default function ExperienceWizardResult({ slug }: { slug: string }) {
+export default function ExperienceWizardResult({ slug, returnTo }: { slug: string; returnTo?: string | null }) {
   const router = useRouter();
   const { routes, switchRole } = useExperience();
 
@@ -16,6 +16,7 @@ export default function ExperienceWizardResult({ slug }: { slug: string }) {
       gateway={demoExperienceWizardPersistenceGateway}
       routes={routes}
       experience
+      returnTo={returnTo}
       onContinueAsCustomer={async () => {
         await switchRole('customer');
         router.push(routes.wizardEdit(slug));

@@ -63,16 +63,7 @@ export const setDisplayPeriod = async (
   endDate: Date,
   isActive: boolean
 ): Promise<void> => {
-  const invitationPage = await getInvitationPageBySlug(pageSlug, {
-    includeSeedFallback: true,
-    fallbackOnError: true,
-  });
-  if (!invitationPage) {
-    throw new Error('청첩장 문서를 찾을 수 없습니다.');
-  }
-
   await updateInvitationPageVisibility(pageSlug, {
-    published: invitationPage.published,
     displayPeriodEnabled: isActive,
     displayPeriodStart: isActive ? startDate : null,
     displayPeriodEnd: isActive ? endDate : null,
@@ -110,16 +101,7 @@ export const isPageVisible = async (pageSlug: string): Promise<boolean> => {
 };
 
 export const deleteDisplayPeriod = async (pageSlug: string): Promise<void> => {
-  const invitationPage = await getInvitationPageBySlug(pageSlug, {
-    includeSeedFallback: true,
-    fallbackOnError: true,
-  });
-  if (!invitationPage) {
-    throw new Error('청첩장 문서를 찾을 수 없습니다.');
-  }
-
   await updateInvitationPageVisibility(pageSlug, {
-    published: invitationPage.published,
     displayPeriodEnabled: false,
     displayPeriodStart: null,
     displayPeriodEnd: null,

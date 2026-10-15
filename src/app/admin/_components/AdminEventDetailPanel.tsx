@@ -185,7 +185,7 @@ function EventDetailWorkspace({
             <p className={detailStyles.summary}>{page.published ? '공개' : '비공개'}{page.defaultTheme ? ` · ${getInvitationThemeAdminLabel(page.defaultTheme)}` : ''}</p>
           </div>
           <div className={styles.eventHeaderActions}>
-          {preview ? <a className="admin-button admin-button-secondary" href={routes.preview(page.slug, preview.theme)} target="_blank" rel="noreferrer">미리보기</a> : null}
+          {preview ? <a className="admin-button admin-button-secondary" href={routes.preview(page.slug, preview.theme, page.eventType)} target="_blank" rel="noreferrer">미리보기</a> : null}
           <button
             type="button"
             className={detailStyles.close} aria-label="이벤트 상세 닫기" title="이벤트 목록으로"
@@ -256,7 +256,7 @@ function EventDetailWorkspace({
           {preview ? (
             <a
               className="admin-button admin-button-secondary"
-              href={routes.preview(page.slug, preview.theme)}
+              href={routes.preview(page.slug, preview.theme, page.eventType)}
               target="_blank"
               rel="noreferrer"
             >

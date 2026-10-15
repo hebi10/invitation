@@ -5,6 +5,7 @@ import { DEFAULT_EVENT_TYPE, normalizeEventTypeKey, type EventTypeKey } from '@/
 import { DEFAULT_INVITATION_THEME, type InvitationThemeKey } from '@/lib/invitationThemes';
 import { isWeddingPreviewThemeKey } from '@/lib/eventPreviewLinks';
 import type { InvitationPageSeed } from '@/types/invitationPage';
+import type { DocumentData, UpdateData } from 'firebase/firestore';
 
 import { ensureClientFirestoreState } from './clientFirestoreRepositoryCore';
 import {
@@ -464,6 +465,61 @@ export async function setClientEventDefaultThemeBySlug(pageSlug: string, theme: 
     if (data.eventType !== 'wedding') throw new Error('청첩장에만 기본 디자인을 설정할 수 있습니다.');
     // Metadata changes do not modify content versions, visibility, owners or content.
     transaction.update(eventRef, { defaultTheme: theme, updatedAt: new Date() });
+  });
+}
+
+export type ClientEventVisibilityPatch = {
+  published?: boolean;
+  displayPeriodEnabled?: boolean;
+  displayPeriodStart?: Date | null;
+  displayPeriodEnd?: Date | null;
+};
+
+export async function updateClientEventVisibilityBySlug(
+  pageSlug: string,
+  payload: ClientEventVisibilityPatch
+) {
+  if (payload.displayPeriodEnabled && (
+    !(payload.displayPeriodStart instanceof Date) ||
+    !(payload.displayPeriodEnd instanceof Date) ||
+    !Number.isFinite(payload.displayPeriodStart.getTime()) ||
+    !Number.isFinite(payload.displayPeriodEnd.getTime()) ||
+    payload.displayPeriodStart > payload.displayPeriodEnd
+  )) {
+    throw new Error('올바른 전시 기간을 입력해 주세요.');
+  }
+  if (payload.published === undefined && payload.displayPeriodEnabled === undefined) return;
+  const normalizedSlug = normalizePageSlug(pageSlug);
+  const firestore = await ensureClientFirestoreState();
+  if (!firestore) throw new Error('데이터 저장소 연결을 확인하지 못했습니다.');
+  const resolved = await resolveClientStoredEventBySlug(normalizedSlug);
+  if (!resolved) throw new Error('해당 이벤트를 찾을 수 없습니다.');
+  const eventRef = firestore.modules.doc(firestore.db, CLIENT_EVENTS_COLLECTION, resolved.summary.eventId);
+  const indexRef = firestore.modules.doc(firestore.db, CLIENT_EVENT_SLUG_INDEX_COLLECTION, normalizedSlug);
+  await firestore.modules.runTransaction(firestore.db, async (transaction) => {
+    const [eventSnapshot, indexSnapshot] = await Promise.all([transaction.get(eventRef), transaction.get(indexRef)]);
+    if (!eventSnapshot.exists()) throw new Error('해당 이벤트를 찾을 수 없습니다.');
+    const data = eventSnapshot.data();
+    const index = indexSnapshot.data();
+    if (!index || index.eventId !== resolved.summary.eventId ||
+      (index.status !== 'active' && index.status !== 'redirect') || data.slug !== resolved.summary.slug) {
+      throw new Error('현재 이용할 수 없는 이벤트 주소입니다.');
+    }
+    if (isEventDeletionBlockingAccess(data.deletion)) throw new Error('현재 이용할 수 없는 이벤트입니다.');
+    const patch: UpdateData<DocumentData> = { updatedAt: new Date() };
+    if (payload.published !== undefined) {
+      patch.published = payload.published;
+      patch['visibility.published'] = payload.published;
+    }
+    if (payload.displayPeriodEnabled !== undefined) {
+      const start = payload.displayPeriodEnabled ? payload.displayPeriodStart : null;
+      const end = payload.displayPeriodEnabled ? payload.displayPeriodEnd : null;
+      patch['visibility.displayStartAt'] = start;
+      patch['visibility.displayEndAt'] = end;
+      patch.displayPeriod = { isActive: payload.displayPeriodEnabled, startDate: start, endDate: end };
+    }
+    // Preserve concurrent owner, theme, content version and unrelated visibility changes.
+    transaction.update(eventRef, patch);
   });
 }
 

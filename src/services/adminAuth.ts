@@ -473,18 +473,29 @@ export async function logoutFirebaseUser() {
 }
 
 export async function getCurrentFirebaseIdToken(
-  options: { forceRefresh?: boolean } = {}
+  options: { forceRefresh?: boolean; expectedUid?: string } = {}
 ) {
   if (!USE_FIREBASE) {
     return null;
   }
 
   const { auth } = await getAuthModules();
-  if (!auth?.currentUser) {
+  const currentUser = auth?.currentUser;
+  if (!auth || !currentUser) {
     return null;
   }
 
-  return auth.currentUser.getIdToken(options.forceRefresh === true);
+  if (options.expectedUid !== undefined && currentUser.uid !== options.expectedUid) {
+    throw new Error('로그인 계정이 변경되었습니다. 연결할 계정을 다시 확인해 주세요.');
+  }
+
+  // Capture the user before awaiting refresh so a different currentUser cannot
+  // supply the token for an account the customer did not confirm.
+  const idToken = await currentUser.getIdToken(options.forceRefresh === true);
+  if (options.expectedUid !== undefined && auth.currentUser?.uid !== options.expectedUid) {
+    throw new Error('로그인 계정이 변경되었습니다. 연결할 계정을 다시 확인해 주세요.');
+  }
+  return idToken;
 }
 
 export async function refreshCurrentFirebaseSession(): Promise<AuthSessionSnapshot> {

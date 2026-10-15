@@ -56,9 +56,11 @@ function ForgotPasswordContent() {
           </label>
           <p className={cardStyles.helper}>
             Google로 가입하셨다면 Google 로그인을 이용해 주세요.{' '}
-            {returnTo && !mobileReturn
-              ? '재설정을 마친 뒤 아래 로그인으로 돌아가기에서 새 비밀번호로 로그인하면 원래 청첩장 연결을 이어갑니다.'
-              : '재설정을 마친 뒤 앱으로 돌아가 새 비밀번호로 로그인해 주세요.'}
+            {mobileReturn
+              ? '재설정을 마친 뒤 앱으로 돌아가 새 비밀번호로 로그인해 주세요.'
+              : returnTo?.startsWith('/connect/')
+                ? '재설정을 마친 뒤 아래 로그인으로 돌아가기에서 새 비밀번호로 로그인하면 원래 청첩장 연결을 이어갑니다.'
+                : '재설정을 마친 뒤 아래 로그인으로 돌아가기에서 새 비밀번호로 로그인해 주세요.'}
           </p>
           {sent ? <p className={cardStyles.notice} role="status">등록된 이메일이라면 재설정 링크가 전송됩니다. 받은 편지함과 스팸 메일함을 확인해 주세요.</p> : null}
           {error ? <p className={cardStyles.error} role="alert">{error}</p> : null}
