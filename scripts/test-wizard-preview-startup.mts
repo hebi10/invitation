@@ -219,6 +219,57 @@ test('Early ready and iframe load callbacks replay the latest draft and restore 
   preview.unmount();
 });
 
+test('Automatic recovery completes the replacement frame handshake with the latest unsaved draft', () => {
+  const preview = createPreview();
+  preview.flush();
+  preview.load(); // A blank HTTP 200 document loads but never announces ready.
+  const firstWindow = preview.currentWindow;
+  const draft = createInitialWizardConfig('wedding');
+  draft.couple.groom.name = '자동 복구 중 수정한 이름';
+  preview.advance(10000);
+  preview.update({ formState: draft, theme: 'emotional', activeStepKey: 'images' });
+  preview.advance(5000);
+  assert.notEqual(preview.currentWindow, firstWindow);
+
+  // The new document announces readiness before its load event. No manual
+  // click or synthetic load is needed to resend the current input.
+  preview.receive('wedding-wizard-preview:ready');
+  const sent = preview.messages.at(-1)!;
+  assert.equal(sent.source, preview.currentWindow);
+  assert.equal(sent.message.type, 'wedding-wizard-preview:update');
+  assert.equal(sent.message.formState, draft);
+  assert.equal(sent.message.theme, 'emotional');
+  assert.equal(preview.positionDisabled, true);
+  assert.equal(preview.timerCount, 1);
+
+  preview.receive('wedding-wizard-preview:rendered');
+  assert.equal(preview.positionDisabled, false);
+  assert.equal(preview.canRetry, false);
+  assert.equal(preview.timerCount, 0);
+  assert.equal(preview.messages.at(-1)!.message.step, 'images');
+  const recoveredWindow = preview.currentWindow;
+  preview.advance(60000);
+  assert.equal(preview.currentWindow, recoveredWindow);
+  preview.unmount();
+});
+
+test('A slow automatic attempt can finish after its timeout without another reload', () => {
+  const preview = createPreview();
+  preview.flush();
+  preview.advance(30000);
+  assert.match(preview.status, /불러오지 못했습니다/);
+  const pendingWindow = preview.currentWindow;
+  preview.receive('wedding-wizard-preview:ready');
+  assert.equal(preview.messages.at(-1)!.source, pendingWindow);
+  assert.equal(preview.positionDisabled, true);
+  preview.receive('wedding-wizard-preview:rendered');
+  assert.equal(preview.currentWindow, pendingWindow);
+  assert.equal(preview.positionDisabled, false);
+  assert.equal(preview.canRetry, false);
+  assert.doesNotMatch(preview.status, /불러오지 못했습니다/);
+  preview.unmount();
+});
+
 test('The first timeout exposes manual recovery while the single automatic retry is still loading', () => {
   const preview = createPreview();
   preview.flush();
