@@ -26,6 +26,7 @@ APK_SIZE = 195851103
 APK_SHA256 = '6368eec8973ebb011c6f4f9d32afebe3fc64dd3125f2c0b529767e88dccf64ab'
 PACKAGE = 'host.exp.exponent'
 PORT = 8092
+TOOLS_BUTTON_DISABLED = False
 VERIFIED = {'environment': 'Android API 35 / Expo Go 55.0.7',
             'uses_live_account': False, 'api_fixture': 'loopback music-library connectivity only',
             'captures': [], 'status': 'running'}
@@ -91,6 +92,15 @@ def open_route(path):
 
 
 def dismiss_expo_dialog(tree):
+    global TOOLS_BUTTON_DISABLED
+    # Expo Go의 부유 도구 버튼을 실제 설정에서 숨긴다.
+    if not TOOLS_BUTTON_DISABLED:
+        for parent in tree.iter('node'):
+            children = list(parent)
+            if any(child.get('text') == 'Tools button' for child in children):
+                if children and tap(children[-1]):
+                    TOOLS_BUTTON_DISABLED = True
+                    return True
     # 새 Expo Go 설치의 영문 온보딩과 Android 권한/링크 확인만 처리한다.
     labels = {'continue', 'get started', 'continue without signing in', 'got it',
               'allow', 'while using the app', 'only this time', 'open', 'just once',
@@ -118,6 +128,12 @@ def wait_screen(name, path, expected, timeout=180):
                       'Unable to load script', 'Failed to download remote update']
             if any(error in text for error in errors):
                 raise RuntimeError(f'{name}: 앱 오류 화면 감지: {text[:1600]}')
+            floating_tools = next((node for node in tree.iter('node')
+                                   if node.get('package') == PACKAGE
+                                   and node.get('content-desc') == 'Tools'), None)
+            if floating_tools is not None and tap(floating_tools):
+                time.sleep(1)
+                continue
             if all(value in text for value in expected):
                 (OUT / f'{name}.xml').write_text(last_xml)
                 screenshot(name)
@@ -142,12 +158,20 @@ def wait_screen(name, path, expected, timeout=180):
 
 
 def capture_keyboard(tree):
+    adb('shell', 'settings', 'put', 'secure', 'show_ime_with_hard_keyboard', '1')
     for node in tree.iter('node'):
         if node.get('class') == 'android.widget.EditText' and tap(node):
             deadline = time.monotonic() + 20
             while time.monotonic() < deadline:
                 state = adb('shell', 'dumpsys', 'input_method').stdout.decode('utf-8', errors='replace')
                 if re.search(r'(?:mInputShown|isInputViewShown)\s*=\s*true', state):
+                    keyboard_tree, keyboard_xml = hierarchy()
+                    keyboard_visible = any('inputmethod' in node.get('package', '')
+                                           for node in keyboard_tree.iter('node'))
+                    if not keyboard_visible:
+                        time.sleep(1)
+                        continue
+                    (OUT / 'editor-keyboard.xml').write_text(keyboard_xml)
                     screenshot('editor-keyboard')
                     (OUT / 'editor-keyboard-input-method.txt').write_text(state)
                     VERIFIED['captures'].append({'file': 'editor-keyboard.png', 'route': '/design-check',
