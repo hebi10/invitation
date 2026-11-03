@@ -387,8 +387,8 @@ export function useCreateForm({
 
     if (currentStep === 'selection') {
       return selectionValidationMessages.length === 0
-        ? '2단계 서비스 선택을 마쳤습니다.'
-        : '2단계 서비스 선택을 진행해 주세요.';
+        ? '2단계 디자인 확인을 마쳤습니다.'
+        : '2단계 디자인 확인을 진행해 주세요.';
     }
 
     return infoValidationMessages.length === 0
@@ -587,7 +587,7 @@ export function useCreateForm({
           step: 'selection' as const,
           message:
             selectionValidationMessages[0] ??
-            '서비스 선택을 먼저 확인해 주세요.',
+            '디자인 확인을 먼저 확인해 주세요.',
         };
       }
 

@@ -30,14 +30,14 @@ export const TICKET_USAGE_ITEMS = [
 export const TICKET_UNIT_PRICE = ticketPricing.unitPrice;
 export const TICKET_PRESET_COUNTS = [0, ...MOBILE_BILLING_TICKET_PACK_COUNTS] as const;
 export const MAX_TICKET_COUNT = MOBILE_BILLING_TICKET_PACK_COUNTS.at(-1) ?? 0;
-export const STICKY_CTA_BAR_HEIGHT = 30;
-export const STICKY_CTA_BAR_COMPACT_HEIGHT = 30;
+export const STICKY_CTA_BAR_HEIGHT = 48;
+export const STICKY_CTA_BAR_COMPACT_HEIGHT = 88;
 export const CREATE_PAGE_IDENTIFIER_MAX_LENGTH = PAGE_SLUG_BASE_MAX_LENGTH;
 
 export const CREATE_STEPS = [
   { key: 'info', label: '기본 정보' },
-  { key: 'selection', label: '서비스' },
-  { key: 'review', label: '결제' },
+  { key: 'selection', label: '디자인 확인' },
+  { key: 'review', label: '결제 확인' },
 ] as const;
 
 export type CreateValidationSection = 'basic' | 'selection';

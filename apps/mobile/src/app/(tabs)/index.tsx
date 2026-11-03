@@ -1,174 +1,52 @@
 import { useRouter } from 'expo-router';
-import { Alert, Platform, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Platform, StyleSheet, View } from 'react-native';
 
 import { ActionButton } from '../../components/ActionButton';
 import { AppScreen } from '../../components/AppScreen';
 import { AppText } from '../../components/AppText';
+import { DraftInvitationsSection } from '../../components/DraftInvitationsSection';
 import { SectionCard } from '../../components/SectionCard';
 import { WebPreviewNotice } from '../../components/WebPreviewNotice';
-import { ThemePreviewGallery } from '../../components/ThemePreviewGallery';
-import { servicePlans, ticketPricing } from '../../constants/content';
-import { useAppFeedback } from '../../contexts/AppFeedbackContext';
-import { useDrafts } from '../../contexts/DraftsContext';
+import { useAuth } from '../../contexts/AuthContext';
 import { usePreferences } from '../../contexts/PreferencesContext';
-import { formatPrice } from '../../lib/format';
+import ManageScreenContent from '../../features/screens/manage';
 
-export default function HomeScreen() {
+export default function MyInvitationsScreen() {
   const router = useRouter();
+  const { isAuthenticated, isReady: isAuthReady } = useAuth();
+  const { isReady: isPreferencesReady, palette } = usePreferences();
   const isExpoWebPreview = Platform.OS === 'web';
-  const { showToast } = useAppFeedback();
-  const { drafts, removeDraft } = useDrafts();
-  const { palette } = usePreferences();
 
-  const handleEditDraft = (draftId: string) => {
-    router.push({
-      pathname: '/create',
-      params: { draftId },
-    });
-  };
-
-  const handleDeleteDraft = (draftId: string) => {
-    Alert.alert(
-      '초안을 삭제할까요?',
-      '삭제한 초안은 다시 복구할 수 없습니다.',
-      [
-        {
-          text: '취소',
-          style: 'cancel',
-        },
-        {
-          text: '삭제',
-          style: 'destructive',
-          onPress: () => {
-            void removeDraft(draftId).then(() => {
-              showToast('초안을 삭제했습니다.', {
-                tone: 'success',
-              });
-            });
-          },
-        },
-      ]
+  if (!(isAuthReady && isPreferencesReady)) {
+    return (
+      <AppScreen title="내 청첩장">
+        <View style={styles.loading}>
+          <ActivityIndicator color={palette.accent} />
+          <AppText variant="muted">저장한 연동 정보를 확인하고 있습니다.</AppText>
+        </View>
+      </AppScreen>
     );
-  };
+  }
+
+  if (isAuthenticated && !isExpoWebPreview) return <ManageScreenContent />;
 
   return (
-    <AppScreen
-      title="모바일 청첩장"
-      subtitle="두 사람의 소식을 준비하고, 내 청첩장을 이어서 관리하세요."
-    >
+    <AppScreen title="내 청첩장" subtitle="저장한 초안을 이어서 작성하거나 기존 청첩장을 연결하세요.">
       {isExpoWebPreview ? <WebPreviewNotice /> : null}
-
-      <SectionCard
-        title={`프리미엄 청첩장 · ${formatPrice(servicePlans[0].price)}`}
-        description="모든 웨딩 디자인과 기본 노출 기간 4개월이 포함됩니다."
-      >
-        <AppText variant="muted" style={styles.emptyText}>
-          연장이 필요하면 티켓 1장({formatPrice(ticketPricing.unitPrice)})으로 1개월을 추가할 수 있습니다.
-        </AppText>
-        <AppText style={styles.emptyText}>
-          기본 정보 입력 → 결제 → 내용과 사진 완성 → 확인 후 공개·공유
-        </AppText>
-        <View style={styles.primaryActionColumn}>
-          <ActionButton onPress={() => router.push('/create')} fullWidth>
-            새 청첩장 만들기
-          </ActionButton>
-          <ActionButton
-            variant="secondary"
-            onPress={() => router.push('/login')}
-            disabled={isExpoWebPreview}
-            fullWidth
-          >
-            기존 페이지 연동
-          </ActionButton>
-        </View>
-        <ThemePreviewGallery />
-      </SectionCard>
-
-      <SectionCard
-        title="최근 저장한 초안"
-        description="저장한 초안을 이어서 작성하거나 정리할 수 있습니다."
-        badge={`${drafts.length}개`}
-      >
-        {drafts.length === 0 ? (
-          <AppText variant="muted" style={styles.emptyText}>
-            아직 저장한 초안이 없습니다. 먼저 새 청첩장을 만들고 초안을 저장해 보세요.
-          </AppText>
-        ) : (
-          drafts.map((draft) => (
-            <View
-              key={draft.id}
-              style={[
-                styles.draftCard,
-                {
-                  backgroundColor: palette.surfaceMuted,
-                  borderColor: palette.cardBorder,
-                },
-              ]}
-            >
-              <View style={styles.draftCopy}>
-                <AppText style={styles.draftTitle}>
-                  {(draft.groomName || '신랑')} · {(draft.brideName || '신부')}
-                </AppText>
-                <AppText variant="muted" style={styles.draftMeta}>
-                  PREMIUM · 모든 웨딩 디자인 포함
-                </AppText>
-                <AppText variant="muted" style={styles.draftMeta}>
-                  제작 금액 {formatPrice(servicePlans[0].price)}
-                </AppText>
-                <AppText variant="muted" style={styles.draftMeta}>
-                  청첩장 주소{' '}
-                  {draft.pageIdentifier || '추천 주소가 자동으로 준비됩니다.'}
-                </AppText>
-              </View>
-              <View style={styles.draftActionRow}>
-                <ActionButton variant="secondary" onPress={() => handleEditDraft(draft.id)}>
-                  이어서 작성
-                </ActionButton>
-                <ActionButton variant="secondary" onPress={() => handleDeleteDraft(draft.id)}>
-                  삭제
-                </ActionButton>
-              </View>
-            </View>
-          ))
-        )}
-      </SectionCard>
-
-      <SectionCard
-        title="이용 안내"
-        description="제작 방법과 기간 연장 정책이 궁금하신가요?"
-      >
-        <ActionButton variant="secondary" fullWidth onPress={() => router.push('/guide')}>
-          이용 가이드 보기
+      <DraftInvitationsSection />
+      <SectionCard title="청첩장을 준비해 볼까요?" description="새로 만들거나 이미 제작한 청첩장을 이 기기에 연결할 수 있습니다.">
+        <ActionButton fullWidth onPress={() => router.push('/create')}>새 청첩장 만들기</ActionButton>
+        <ActionButton variant="secondary" fullWidth disabled={isExpoWebPreview}
+          onPress={() => router.push({ pathname: '/login', params: { next: '/' } })}>
+          기존 청첩장 연결
         </ActionButton>
+        <AppText variant="muted">PC에서 제작했다면 청첩장의 앱 연동 링크로도 연결할 수 있습니다.</AppText>
       </SectionCard>
+      <ActionButton variant="secondary" fullWidth onPress={() => router.push('/guide')}>제작·연동 방법 보기</ActionButton>
     </AppScreen>
   );
 }
 
 const styles = StyleSheet.create({
-  primaryActionColumn: {
-    gap: 10,
-  },
-  draftCard: {
-    borderRadius: 0,
-    padding: 16,
-    gap: 12,
-  },
-  draftCopy: {
-    gap: 4,
-  },
-  draftTitle: {
-    fontWeight: '700',
-  },
-  draftMeta: {
-    lineHeight: 19,
-  },
-  draftActionRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-  },
-  emptyText: {
-    lineHeight: 21,
-  },
+  loading: { alignItems: 'center', gap: 12, paddingVertical: 32 },
 });

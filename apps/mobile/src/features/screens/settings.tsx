@@ -3,6 +3,8 @@ import { StyleSheet, View } from 'react-native';
 
 import { AppScreen } from '../../components/AppScreen';
 import { AppText } from '../../components/AppText';
+import { Disclosure } from '../../components/Disclosure';
+import { BulletList } from '../../components/BulletList';
 import { ChoiceChip } from '../../components/ChoiceChip';
 import { SectionCard } from '../../components/SectionCard';
 import { settingsNotes } from '../../constants/content';
@@ -45,7 +47,7 @@ export default function SettingsScreen() {
   return (
     <AppScreen
       title="설정"
-      subtitle="라이트·다크 모드와 글자 크기를 현재 기기 기준으로 바로 반영합니다."
+      subtitle="이 기기의 화면 설정과 앱 정보를 확인하세요."
     >
       <SectionCard
         title="화면 설정"
@@ -89,40 +91,22 @@ export default function SettingsScreen() {
         </View>
       </SectionCard>
 
-      <SectionCard
-        title="앱 업데이트 안내"
-        description="새 기능이 반영되지 않거나 같은 오류가 계속되면 현재 앱 버전부터 확인해 주세요."
-        badge={`v${appVersion}`}
-        badgeTone="notice"
-      >
+      <SectionCard title="앱 정보">
         <View style={styles.versionRow}>
-          <View style={styles.versionItem}>
-            <AppText variant="caption" style={styles.settingLabel}>
-              현재 버전
-            </AppText>
-            <AppText>{appVersion}</AppText>
-          </View>
-          <View style={styles.versionItem}>
-            <AppText variant="caption" style={styles.settingLabel}>
-              빌드 번호
-            </AppText>
-            <AppText>{buildVersion}</AppText>
-          </View>
+          <AppText variant="muted">현재 버전</AppText>
+          <AppText>{appVersion}</AppText>
         </View>
-
-        {UPDATE_GUIDE_ITEMS.map((note) => (
-          <AppText key={note} variant="muted" style={styles.accountText}>
-            · {note}
-          </AppText>
-        ))}
+        <View style={styles.versionRow}>
+          <AppText variant="muted">빌드 번호</AppText>
+          <AppText>{buildVersion}</AppText>
+        </View>
+        <Disclosure title="업데이트 안내" description="새 기능이 보이지 않거나 오류가 계속될 때">
+          <BulletList items={UPDATE_GUIDE_ITEMS} />
+        </Disclosure>
       </SectionCard>
 
-      <SectionCard title="안내">
-        {settingsNotes.map((note) => (
-          <AppText key={note} variant="muted" style={styles.accountText}>
-            · {note}
-          </AppText>
-        ))}
+      <SectionCard title="기기 이용 안내">
+        <BulletList items={settingsNotes} />
       </SectionCard>
     </AppScreen>
   );
@@ -140,14 +124,8 @@ const styles = StyleSheet.create({
   versionRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    paddingBottom: 12,
     gap: 12,
-  },
-  versionItem: {
-    flex: 1,
-    minWidth: 120,
-    gap: 4,
-  },
-  accountText: {
-    lineHeight: 20,
   },
 });

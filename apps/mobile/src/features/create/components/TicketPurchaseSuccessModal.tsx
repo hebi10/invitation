@@ -74,7 +74,7 @@ export function TicketPurchaseSuccessModal({
               </AppText>
             </View>
 
-            <AppText variant="muted">티켓 구매만으로 이용 기간이 연장되지는 않습니다. 운영 화면에서 티켓을 사용해 주세요.</AppText>
+            <AppText variant="muted">티켓 구매만으로 이용 기간이 연장되지는 않습니다. 내 청첩장에서 티켓을 사용해 주세요.</AppText>
             <ActionButton onPress={onExtend} fullWidth>기간 연장하러 가기</ActionButton>
             <ActionButton onPress={onClose} variant="secondary" fullWidth>
               확인

@@ -130,7 +130,7 @@ export function TicketOnlyPurchaseModal({
                   ))}
                 </View>
                 <AppText variant="muted" style={styles.helperText}>
-                  선택한 청첩장에 티켓이 적립되고, 운영 탭에서도 같은 수량을 바로 확인할
+                  선택한 청첩장에 티켓이 적립되고, 내 청첩장에서도 같은 수량을 바로 확인할
                   수 있습니다.
                 </AppText>
               </View>

@@ -18,6 +18,7 @@ import { ActionButton } from '../../components/ActionButton';
 import { AppScreen } from '../../components/AppScreen';
 import { AppText } from '../../components/AppText';
 import { BulletList } from '../../components/BulletList';
+import { Disclosure } from '../../components/Disclosure';
 import { ChoiceChip } from '../../components/ChoiceChip';
 import { SectionCard } from '../../components/SectionCard';
 import { TextField } from '../../components/TextField';
@@ -54,6 +55,7 @@ export default function CreateScreen() {
   const scrollRef = useRef<ScrollView | null>(null);
   const autoSaveProgressRef = useRef<(() => Promise<boolean>) | null>(null);
   const ticketOnlySectionAnimation = useRef(new Animated.Value(0)).current;
+  const [measuredStickyBarHeight, setMeasuredStickyBarHeight] = useState(0);
   const [isTicketOnlySectionExpanded, setIsTicketOnlySectionExpanded] = useState(false);
   const [isTicketOnlySectionVisible, setIsTicketOnlySectionVisible] = useState(false);
   const [isTicketOnlySectionReady, setIsTicketOnlySectionReady] = useState(false);
@@ -112,7 +114,10 @@ export default function CreateScreen() {
     ? STICKY_CTA_BAR_COMPACT_HEIGHT
     : STICKY_CTA_BAR_HEIGHT;
   const stickyBarBottomInset = Math.max(insets.bottom, 12);
-  const screenBottomPadding = stickyBarHeight + stickyBarBottomInset + 24;
+  const screenBottomPadding = Math.max(
+    stickyBarHeight + stickyBarBottomInset + 24,
+    measuredStickyBarHeight + 24
+  );
 
   useNoticeToast(createForm.notice);
   useNoticeToast(authError, { tone: 'error' });
@@ -215,8 +220,8 @@ export default function CreateScreen() {
     <>
       <View style={[styles.screenRoot, { backgroundColor: palette.background }]}>
         <AppScreen
-          title="구매"
-          subtitle="기본 정보를 입력하고 프리미엄 청첩장을 만들어 보세요."
+          title="만들기"
+          subtitle="기본 정보를 준비하고 디자인과 결제 내용을 확인하세요."
           scrollRef={scrollRef}
           contentContainerStyle={{ paddingBottom: screenBottomPadding }}
         >
@@ -226,6 +231,15 @@ export default function CreateScreen() {
               description="웹에서는 제작 초안을 준비할 수 있습니다. 결제와 청첩장 생성은 앱에서 진행해 주세요."
             />
           ) : null}
+
+          {pendingInput ? <SectionCard title="완료되지 않은 제작 결제가 있습니다" description={pendingCreationSummary} badge="복구 필요" badgeTone="notice">
+            <AppText>현재 작성 내용과 별개로, 결제 당시의 이름·주소·디자인으로 이어서 처리합니다. 추가 결제는 없습니다.</AppText>
+            <ActionButton loading={createForm.isSubmitting} disabled={isExpoWebPreview} onPress={() => void createForm.handleRecoverCreation()} fullWidth>이전 결제 이어서 처리</ActionButton>
+          </SectionCard> : null}
+          {pendingTicketSlug ? <SectionCard title="완료되지 않은 티켓 결제가 있습니다" description={`결제 대상: ${pendingTicketSlug}`} badge="복구 필요" badgeTone="notice">
+            <AppText>선택한 대상과 별개로, 원래 결제한 청첩장에 티켓을 적립합니다. 추가 결제는 없습니다.</AppText>
+            <ActionButton loading={ticketPurchase.isTicketPurchaseSubmitting} disabled={isExpoWebPreview} onPress={() => void ticketPurchase.handleRecoverTickets()} fullWidth>티켓 결제 이어서 처리</ActionButton>
+          </SectionCard> : null}
 
           <View style={styles.stepTabsSection}>
             <AppText variant="caption" color={palette.textMuted} style={styles.stepTabsCaption}>
@@ -274,14 +288,6 @@ export default function CreateScreen() {
             </View>
           </View>
 
-          {pendingInput ? <SectionCard title="완료되지 않은 제작 결제가 있습니다" description={pendingCreationSummary}>
-            <AppText>현재 작성 내용과 별개로, 결제 당시의 이름·주소·디자인으로 이어서 처리합니다. 추가 결제는 없습니다.</AppText>
-            <ActionButton loading={createForm.isSubmitting} disabled={isExpoWebPreview} onPress={() => void createForm.handleRecoverCreation()} fullWidth>이전 결제 이어서 처리</ActionButton>
-          </SectionCard> : null}
-          {pendingTicketSlug ? <SectionCard title="완료되지 않은 티켓 결제가 있습니다" description={`결제 대상: ${pendingTicketSlug}`}>
-            <AppText>선택한 대상과 별개로, 원래 결제한 청첩장에 티켓을 적립합니다. 추가 결제는 없습니다.</AppText>
-            <ActionButton loading={ticketPurchase.isTicketPurchaseSubmitting} disabled={isExpoWebPreview} onPress={() => void ticketPurchase.handleRecoverTickets()} fullWidth>티켓 결제 이어서 처리</ActionButton>
-          </SectionCard> : null}
           {createForm.notice ? (
             <View
               style={[
@@ -318,7 +324,7 @@ export default function CreateScreen() {
             <>
               <SectionCard
                 title="고객 계정 로그인"
-                description="PC와 같은 고객 계정으로 로그인하면 생성한 청첩장이 내 이벤트에도 바로 연결됩니다."
+                description="PC와 같은 고객 계정으로 로그인하면 생성한 청첩장을 함께 관리할 수 있습니다."
                 badge={createForm.customerSession ? '로그인됨' : '필수'}
                 badgeTone={createForm.customerSession ? 'success' : 'notice'}
               >
@@ -492,8 +498,8 @@ export default function CreateScreen() {
 
           {createForm.currentStep === 'selection' ? (
             <SectionCard
-              title="2. 프리미엄 구성"
-              description="한 번의 결제로 모든 웨딩 디자인과 기능을 이용할 수 있습니다."
+              title="2. 디자인 확인"
+              description="프리미엄 청첩장 한 가지 상품으로, 모든 웨딩 디자인이 포함됩니다."
               badge={
                 createForm.selectionValidationMessages.length === 0
                   ? '구성 확인'
@@ -518,38 +524,16 @@ export default function CreateScreen() {
                 <AppText variant="title" style={styles.selectionSummaryValue}>
                   {createForm.selectedPlanInfo.name} · {formatPrice(createForm.selectedPlanInfo.price)}
                 </AppText>
-                <View style={styles.selectionFeatureRow}>
-                  {createForm.selectedPlanHighlights.map((feature) => (
-                    <View
-                      key={`selected-plan-${feature}`}
-                      style={[
-                        styles.selectionFeatureChip,
-                        {
-                          backgroundColor: palette.accentSoft,
-                        },
-                      ]}
-                    >
-                      <AppText variant="caption" color={palette.textMuted}>
-                        {feature}
-                      </AppText>
-                    </View>
-                  ))}
-                </View>
+                <AppText variant="muted">생성일부터 기본 4개월 · 모든 웨딩 디자인 포함</AppText>
               </View>
 
-              <View
-                style={[
-                  styles.divider,
-                  {
-                    backgroundColor: palette.cardBorder,
-                  },
-                ]}
-              />
-
               <AppText variant="muted" style={styles.selectionSummaryDescription}>
-                모든 웨딩 디자인이 포함됩니다. 제작 후 미리보기에서 원하는 디자인으로 확인할 수 있습니다.
+                갤러리 최대 18장, 배경음악, 카카오톡 카드 공유, 캘린더·카운트다운과 방명록을 제공합니다.
+                제작 후 미리보기에서 원하는 디자인을 확인할 수 있습니다.
               </AppText>
-              <ThemePreviewGallery tier={createForm.selectedPlanInfo.tier} />
+              <Disclosure title="웨딩 디자인 샘플 보기" description="옆으로 넘겨 실제 청첩장 화면 비교">
+                <ThemePreviewGallery tier={createForm.selectedPlanInfo.tier} />
+              </Disclosure>
 
               {createForm.selectionValidationMessages.length > 0 ? (
                 <View
@@ -578,12 +562,20 @@ export default function CreateScreen() {
 
           {createForm.currentStep === 'review' ? (
             <SectionCard
-              title="3. 확인 및 결제"
-              description="선택한 구성과 금액을 마지막으로 확인한 뒤 결제를 진행합니다."
+              title="3. 결제 확인"
+              description="이름과 청첩장 주소, 이용 기간과 금액을 확인해 주세요."
               badge={createForm.validationMessages.length === 0 ? '결제 준비 완료' : '확인 필요'}
               badgeTone={createForm.validationMessages.length === 0 ? 'success' : 'notice'}
               variant="emphasis"
             >
+              <View style={styles.summaryRow}>
+                <AppText style={styles.summaryLabel}>두 사람의 이름</AppText>
+                <AppText style={styles.summaryValue}>{createForm.groomKoreanName} · {createForm.brideKoreanName}</AppText>
+              </View>
+              <View style={styles.summaryRow}>
+                <AppText style={styles.summaryLabel}>청첩장 주소</AppText>
+                <AppText style={styles.summaryValue}>{createForm.publicUrlPreview}</AppText>
+              </View>
               <View style={styles.summaryRow}>
                 <AppText style={styles.summaryLabel}>제작 상품</AppText>
                 <AppText style={styles.summaryValue}>{createForm.selectedPlanInfo.name}</AppText>
@@ -595,13 +587,13 @@ export default function CreateScreen() {
                 </AppText>
               </View>
               <View style={styles.summaryRow}>
-                <AppText style={styles.summaryLabel}>기본 서비스 금액</AppText>
+                <AppText style={styles.summaryLabel}>기본 이용 기간</AppText>
                 <AppText style={styles.summaryValue}>
-                  {formatPrice(createForm.selectedPlanInfo.price)}
+                  생성일부터 4개월
                 </AppText>
               </View>
               <View style={styles.summaryRow}>
-                <AppText style={styles.summaryLabel}>예상 총액</AppText>
+                <AppText style={styles.summaryLabel}>결제 예정 금액</AppText>
                 <AppText variant="display" style={styles.totalLabel}>
                   {formatPrice(createForm.totalPrice)}
                 </AppText>
@@ -612,13 +604,13 @@ export default function CreateScreen() {
                   제작 초안 저장
                 </ActionButton>
               </View>
-              <AppText variant="caption">생성일부터 기본 4개월 이용할 수 있습니다. 제작 기간도 포함되며, 이후 티켓 1장(1,000원)으로 1개월씩 연장합니다.</AppText>
+              <AppText variant="caption">생성일부터 기본 4개월 이용할 수 있으며 제작 기간도 포함됩니다. 추가 티켓은 별도 구매하며, 티켓 1장(1,000원)으로 1개월씩 연장합니다.</AppText>
             </SectionCard>
           ) : null}
           <View onLayout={(event) => setTicketSectionY(event.nativeEvent.layout.y)}>
             <SectionCard
               title="티켓 구매"
-              description="이미 연동된 청첩장에 필요한 티켓만 별도로 적립합니다."
+              description="이미 연결한 청첩장의 기간 연장용 티켓을 별도로 구매합니다."
               badge={`${ticketPurchase.ticketOnlyCount}장`}
               badgeTone="neutral"
             >
@@ -661,7 +653,7 @@ export default function CreateScreen() {
                   ]}
                 >
                   <AppText variant="muted" style={styles.helperText}>
-                    새 청첩장 생성과 별개로, 기간 연장에 쓸 티켓을 구매할 수 있습니다.
+                    새 청첩장 제작 결제와 별개입니다. 아래 적립 대상을 확인한 뒤 구매해 주세요.
                   </AppText>
 
                   <View style={styles.ticketPresetRow}>
@@ -778,7 +770,7 @@ export default function CreateScreen() {
 
                   <AppText variant="muted" style={styles.helperText}>
                     {ticketPurchase.hasLinkedInvitation
-                      ? '결제가 끝나면 선택한 연동 청첩장에 티켓이 바로 적립됩니다.'
+                      ? '선택한 청첩장에 티켓이 적립됩니다. 구매 후 내 청첩장에서 티켓을 사용해야 기간이 연장됩니다.'
                       : '티켓만 구매는 연동된 청첩장이 있을 때만 사용할 수 있습니다. 먼저 페이지를 연동해 주세요.'}
                   </AppText>
                 </Animated.View>
@@ -789,12 +781,14 @@ export default function CreateScreen() {
         </AppScreen>
 
         <View
+          onLayout={(event) => setMeasuredStickyBarHeight(event.nativeEvent.layout.height)}
           style={[
             styles.stickyBar,
             isCompactStickyBar ? styles.stickyBarCompact : null,
             {
               backgroundColor: palette.surface,
               borderTopColor: palette.cardBorder,
+              paddingBottom: stickyBarBottomInset,
             },
           ]}
         >

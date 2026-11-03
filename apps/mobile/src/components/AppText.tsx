@@ -24,27 +24,27 @@ const VARIANT_STYLES: Record<AppTextVariant, TextStyle> = {
   body: {
     fontSize: 14,
     lineHeight: 22,
-    fontWeight: '500',
+    fontWeight: '400',
   },
   title: {
     fontSize: 18,
-    lineHeight: 24,
-    fontWeight: '500',
+    lineHeight: 26,
+    fontWeight: '600',
   },
   display: {
     fontSize: 24,
-    lineHeight: 30,
-    fontWeight: '500',
+    lineHeight: 32,
+    fontWeight: '600',
   },
   caption: {
     fontSize: 12,
     lineHeight: 18,
-    fontWeight: '500',
+    fontWeight: '400',
   },
   muted: {
     fontSize: 14,
     lineHeight: 22,
-    fontWeight: '500',
+    fontWeight: '400',
   },
 };
 

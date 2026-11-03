@@ -4,6 +4,9 @@ import path from 'node:path';
 import process from 'node:process';
 
 const core = [
+  'test-mobile-editor-save-policy',
+  'test-mobile-editor-delimited-rows',
+  'test-mobile-invitation-visibility',
   'test-mobile-purchase-summary',
   'test-wedding-url-themes',
   'test-mobile-wedding-design-access',

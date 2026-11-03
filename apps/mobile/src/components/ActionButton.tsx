@@ -89,7 +89,7 @@ export function ActionButton({
     >
       <View style={styles.content}>
         {loading ? <ActivityIndicator color={resolvedTextColor} size="small" /> : null}
-        <Text style={[styles.label, { color: resolvedTextColor, fontSize: 14 * fontScale }]}>
+        <Text style={[styles.label, { color: resolvedTextColor, fontSize: 15 * fontScale, lineHeight: 22 * fontScale }]}>
           {children}
         </Text>
       </View>
@@ -115,7 +115,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   label: {
-    fontWeight: '500',
+    fontWeight: '600',
     textAlign: 'center',
     flexShrink: 1,
   },

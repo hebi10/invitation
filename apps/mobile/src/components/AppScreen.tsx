@@ -44,7 +44,7 @@ export function AppScreen({
         contentContainerStyle={[
           styles.content,
           {
-            paddingTop: insets.top + 32,
+            paddingTop: insets.top + 24,
             paddingBottom: insets.bottom + 32,
           },
           contentContainerStyle,
@@ -55,7 +55,7 @@ export function AppScreen({
       >
         <View style={styles.header}>
           <View style={styles.headerCopy}>
-            <Text accessibilityRole="header" style={[styles.title, { color: palette.text, fontSize: 26 * fontScale }]}>
+            <Text accessibilityRole="header" style={[styles.title, { color: palette.text, fontSize: 26 * fontScale, lineHeight: 34 * fontScale }]}>
               {title}
             </Text>
             {subtitle ? (
@@ -85,8 +85,8 @@ const styles = StyleSheet.create({
     width: '100%',
     maxWidth: 640,
     alignSelf: 'center',
-    paddingHorizontal: 20,
-    gap: 24,
+    paddingHorizontal: 16,
+    gap: 20,
   },
   header: {
     flexDirection: 'row',
@@ -100,7 +100,7 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   title: {
-    fontWeight: '500',
+    fontWeight: '600',
   },
   subtitle: {
     lineHeight: 22,
