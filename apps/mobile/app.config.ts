@@ -38,7 +38,7 @@ const config: ExpoConfig = {
   ],
   android: {
     package: 'kr.msgnote.mobileinvitation',
-    versionCode: 1,
+    versionCode: 9,
     predictiveBackGestureEnabled: false,
     intentFilters: [
       {

@@ -68,9 +68,10 @@
 `android:verify:*` 스크립트는 이 상태를 확인하고, 네이티브 프로젝트가 생긴 경우 안전한 Gradle 검증 스크립트를 먼저 추가하도록 막습니다.
 
 ## GitHub에서 Android AAB 빌드
-- `.github/workflows/mobile-release.yml`의 `Android AAB 빌드 및 업로드` 작업을 수동 실행합니다. 수동 실행 메뉴는 workflow가 기본 브랜치에 반영된 후 표시됩니다. `mobile-v*` 태그를 올리면 해당 태그의 소스로 AAB 빌드만 실행합니다.
-- 저장소의 Settings → Secrets and variables → Actions에 `EXPO_TOKEN`을 등록합니다. 기존 `hebi96` EAS 프로젝트에서 빌드할 수 있는 Developer 이상 권한을 사용합니다. 토큰·서명 키를 소스나 실행 로그에 넣지 않습니다.
-- 기존 EAS 원격 Android 서명 키를 재사용합니다. 키를 새로 생성하지 않으며, 키 설정이 없으면 빌드가 중단됩니다. 원격 `versionCode`는 기존 Play 업로드 번호 8 이상이어야 하며 production에서 다음 번호로 증가합니다.
-- EAS `production` 환경에 `EXPO_PUBLIC_REVENUECAT_ANDROID_API_KEY`의 운영 Google Play 공개 키를 설정해야 실제 구매가 가능합니다. 서버 키는 앱에 넣지 않습니다.
-- 완료된 `invitation.aab`는 Actions 실행의 Artifacts에 14일간 보관됩니다.
-- Play까지 자동 업로드하려면 EAS의 `kr.msgnote.mobileinvitation` 제출 인증에 Google 서비스 계정이 연결되어 있어야 합니다. 수동 실행에서 `upload_to_play`를 선택하면 **내부 테스트 초안**으로 업로드하며, 공개 출시나 테스터 배포는 하지 않습니다. 선택하지 않으면 AAB만 빌드합니다.
+- `.github/workflows/mobile-release.yml`은 QuickCut과 같이 GitHub runner에서 직접 Gradle로 AAB를 만듭니다. Expo 계정 로그인과 `EXPO_TOKEN`은 필요하지 않습니다. Expo prebuild로 생성한 네이티브 프로젝트는 Git에 넣지 않습니다.
+- 모바일 변경 PR, `main` 또는 `build/mobile-aab` 브랜치의 모바일 변경, 수동 실행을 지원합니다. 수동 실행 메뉴는 workflow가 기본 브랜치에 반영된 후 표시됩니다.
+- 현재 버전은 `1.0.4` / Android `versionCode: 9`입니다. 다음 Play 업로드 때는 `app.config.ts`의 번호를 기존 업로드보다 크게 올립니다. 이 직접 빌드는 EAS 원격 버전 자동 증가를 사용하지 않습니다.
+- 기본 산출물은 **미서명 AAB**이며 Play에 바로 업로드할 수 없습니다. Expo 템플릿의 릴리스 디버그 서명을 명시적으로 해제합니다.
+- PR 이외 실행에서 다음 GitHub Secrets 4개가 모두 있으면 기존 청첩장 키로 후서명합니다: `INVITATION_KEYSTORE_BASE64`, `INVITATION_KEYSTORE_PASSWORD`, `INVITATION_KEY_ALIAS`, `INVITATION_KEY_PASSWORD`. 모두 없으면 미서명 AAB만 보관하며, 일부만 있으면 실패합니다. 다른 앱의 키나 새 키를 사용하지 않습니다.
+- 실제 구매가 가능한 배포용 서명에는 GitHub 변수 또는 Secret `EXPO_PUBLIC_REVENUECAT_ANDROID_API_KEY`의 운영 Google Play 공개 키(`goog_` 접두사)가 필요합니다. EAS 환경 변수는 이 직접 빌드에 자동 전달되지 않습니다. 서버 키는 앱에 넣지 않습니다.
+- AAB는 Actions 실행의 Artifacts에 14일간 보관합니다. 서명 파일만 별도 이름으로 보관하며, Play 업로드·테스터 배포·공개 출시는 자동으로 수행하지 않습니다.

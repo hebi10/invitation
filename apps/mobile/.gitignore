@@ -4,6 +4,8 @@ node_modules/
 .npm-cache/
 .expo-export-test/
 dist/
+/android/
+/ios/
 web-build/
 .DS_Store
 apps/
