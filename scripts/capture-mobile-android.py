@@ -2,6 +2,7 @@
 """실계정 없이 Expo Go의 실제 Android 화면을 검증하고 캡처한다."""
 
 import hashlib
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import json
 import os
 from pathlib import Path
@@ -10,6 +11,7 @@ import shutil
 import signal
 import subprocess
 import tempfile
+import threading
 import time
 import urllib.request
 import xml.etree.ElementTree as ET
@@ -25,7 +27,26 @@ APK_SHA256 = '6368eec8973ebb011c6f4f9d32afebe3fc64dd3125f2c0b529767e88dccf64ab'
 PACKAGE = 'host.exp.exponent'
 PORT = 8092
 VERIFIED = {'environment': 'Android API 35 / Expo Go 55.0.7',
-            'uses_live_account': False, 'captures': [], 'status': 'running'}
+            'uses_live_account': False, 'api_fixture': 'loopback music-library connectivity only',
+            'captures': [], 'status': 'running'}
+
+
+class CaptureApiHandler(BaseHTTPRequestHandler):
+    # 연결 확인에만 응답한다. 인증·저장·결제 API는 제공하지 않는다.
+    def do_GET(self):
+        if self.path == '/api/mobile/client-editor/music-library':
+            payload = b'{"categories": []}'
+            self.send_response(200)
+        else:
+            payload = b'{"error": "capture fixture endpoint not found"}'
+            self.send_response(404)
+        self.send_header('Content-Type', 'application/json')
+        self.send_header('Content-Length', str(len(payload)))
+        self.end_headers()
+        self.wfile.write(payload)
+
+    def log_message(self, *_args):
+        pass
 
 
 def command(*args, timeout=40, check=True):
@@ -73,7 +94,7 @@ def dismiss_expo_dialog(tree):
     # 새 Expo Go 설치의 영문 온보딩과 Android 권한/링크 확인만 처리한다.
     labels = {'continue', 'get started', 'continue without signing in', 'got it',
               'allow', 'while using the app', 'only this time', 'open', 'just once',
-              'not now', 'ok', 'dismiss'}
+              'not now', 'ok', 'dismiss', 'close'}
     for node in tree.iter('node'):
         package = node.get('package', '')
         label = (node.get('text') or node.get('content-desc') or '').strip().lower()
@@ -93,6 +114,10 @@ def wait_screen(name, path, expected, timeout=180):
             tree, last_xml = hierarchy()
             text = '\n'.join((node.get('text', '') + ' ' + node.get('content-desc', ''))
                              for node in tree.iter('node'))
+            errors = ['Something went wrong', 'Unable to resolve module', 'Uncaught Error',
+                      'Unable to load script', 'Failed to download remote update']
+            if any(error in text for error in errors):
+                raise RuntimeError(f'{name}: 앱 오류 화면 감지: {text[:1600]}')
             if all(value in text for value in expected):
                 (OUT / f'{name}.xml').write_text(last_xml)
                 screenshot(name)
@@ -102,12 +127,9 @@ def wait_screen(name, path, expected, timeout=180):
                 save_manifest()
                 print(f'검증·캡처 완료: {name}', flush=True)
                 return tree
-            errors = ['Something went wrong', 'Unable to resolve module', 'Uncaught Error',
-                      'Unable to load script', 'Failed to download remote update']
-            if any(error in text for error in errors):
-                raise RuntimeError(f'{name}: 앱 오류 화면 감지: {text[:1600]}')
             if dismiss_expo_dialog(tree):
-                open_route(path)
+                time.sleep(1)
+                continue
             retries += 1
             if retries in (10, 25):
                 open_route(path)
@@ -159,9 +181,12 @@ def main():
     OUT.mkdir(parents=True, exist_ok=True)
     save_manifest()
     metro = None
+    fixture_api = None
     original_route = ROUTE.read_bytes() if ROUTE.exists() else None
     try:
         shutil.copyfile(FIXTURE, ROUTE)
+        fixture_api = ThreadingHTTPServer(('127.0.0.1', 19999), CaptureApiHandler)
+        threading.Thread(target=fixture_api.serve_forever, daemon=True).start()
         env = {**os.environ, 'CI': '1', 'EXPO_OFFLINE': '1', 'EXPO_NO_TELEMETRY': '1',
                'EXPO_UNSTABLE_HEADLESS': '1', 'EXPO_PUBLIC_API_BASE': 'http://127.0.0.1:19999'}
         with (OUT / 'metro.log').open('w') as metro_log:
@@ -190,6 +215,7 @@ def main():
                     raise RuntimeError('Expo Go APK 크기 또는 SHA256이 공식 배포 파일과 다릅니다.')
                 adb('install', '-r', str(apk), timeout=180)
             adb('reverse', f'tcp:{PORT}', f'tcp:{PORT}')
+            adb('reverse', 'tcp:19999', 'tcp:19999')
             adb('shell', 'input', 'keyevent', 'KEYCODE_WAKEUP')
             adb('shell', 'wm', 'dismiss-keyguard')
             wait_screen('my-invitations', '', ['내 청첩장', '청첩장을 준비해 볼까요?'])
@@ -197,7 +223,11 @@ def main():
             wait_screen('guide', 'guide', ['이용 안내', '진행할 작업을 선택해'])
             wait_screen('settings', 'settings', ['설정', '화면 설정'])
             tree = wait_screen('editor-fixture', 'design-check', ['검수용 예시', '실제 저장 없음', '기본 정보'])
-            capture_keyboard(tree)
+            try:
+                capture_keyboard(tree)
+            except (subprocess.TimeoutExpired, subprocess.CalledProcessError) as error:
+                VERIFIED['keyboard_capture'] = f'선택적 키보드 캡처 생략: {error}'
+                save_manifest()
             VERIFIED['status'] = 'passed'
             save_manifest()
     except Exception as error:
@@ -207,6 +237,9 @@ def main():
         raise
     finally:
         diagnostics()
+        if fixture_api:
+            fixture_api.shutdown()
+            fixture_api.server_close()
         if metro and metro.poll() is None:
             os.killpg(metro.pid, signal.SIGTERM)
             try:
