@@ -2,30 +2,41 @@ import { router } from 'expo-router';
 import { useState } from 'react';
 import { View } from 'react-native';
 import { ActionButton } from '../components/ActionButton';
+import { AppText } from '../components/AppText';
+import { useVisualPreferences } from '../contexts/PreferencesContext';
+import { manageStyles } from '../features/manage/manageStyles';
 import { InvitationEditorWorkspace } from '../components/manage/InvitationEditorWorkspace';
 import { ManageEditorStepContent } from '../features/manage/components/ManageEditorStepContent';
 import { EDITOR_STEPS, EMPTY_FORM, type ManageFormState } from '../features/manage/shared';
 
 export default function DesignCheck() {
+  const { palette } = useVisualPreferences();
   const [step, setStep] = useState(0);
   const [form, setForm] = useState<ManageFormState>({ ...EMPTY_FORM,
-    displayName: '김신랑 · 박신부 결혼합니다', subtitle: '소중한 분들을 초대합니다',
-    groom: { ...EMPTY_FORM.groom, name: '김신랑' }, bride: { ...EMPTY_FORM.bride, name: '박신부' },
+    displayName: '김도윤 · 이서연 결혼합니다', subtitle: '소중한 분들을 초대합니다', description: '서로의 내일을 함께 시작합니다.',
+    groom: { ...EMPTY_FORM.groom, name: '김도윤' }, bride: { ...EMPTY_FORM.bride, name: '이서연' },
     greetingMessage: '저희의 새로운 시작에 함께해 주세요.', published: false,
   });
+  const isLastStep = step === EDITOR_STEPS.length - 1;
   return <InvitationEditorWorkspace visible onClose={() => router.replace('/')} title={EDITOR_STEPS[step].title}
-    description={`화면 검수용 예시 · ${EDITOR_STEPS[step].description}`} status="검수용 예시 · 실제 저장 없음"
-    statusTone="neutral" publicationLabel="비공개 설정" steps={EDITOR_STEPS} activeStepIndex={step}
+    description={EDITOR_STEPS[step].description} status="샘플 청첩장 · 변경 사항 없음"
+    statusTone="neutral" publicationLabel="현재 저장 상태 · 비공개 설정" steps={EDITOR_STEPS} activeStepIndex={step}
     onSelectStep={setStep} onPreview={() => {}} busy={false}
-    compactFooter={<ActionButton fullWidth>내용 저장</ActionButton>}
-    footer={<View style={{ flexDirection: 'row', gap: 8 }}>
-      <ActionButton variant="secondary" disabled={step === 0} onPress={() => setStep(Math.max(0, step - 1))}>이전</ActionButton>
-      <ActionButton style={{ flex: 1 }} onPress={() => setStep(Math.min(EDITOR_STEPS.length - 1, step + 1))}>저장 후 다음</ActionButton>
-    </View>}>
+    compactFooter={<ActionButton fullWidth onPress={() => {}}>내용 저장</ActionButton>}
+    footer={<>
+      <View style={manageStyles.actionRow}>
+        <ActionButton variant="secondary" disabled={step === 0} onPress={() => setStep(Math.max(0, step - 1))}>이전</ActionButton>
+        {!isLastStep ? <ActionButton variant="secondary" onPress={() => {}}>내용 저장</ActionButton> : null}
+        <ActionButton style={{ flexGrow: 1 }} onPress={() => setStep(Math.min(EDITOR_STEPS.length - 1, step + 1))}>
+          {isLastStep ? form.published ? '저장 후 공개' : '저장 완료' : '저장 후 다음'}
+        </ActionButton>
+      </View>
+      <AppText variant="caption" color={palette.textMuted}>내용 저장은 현재 공개 상태를 유지합니다.</AppText>
+    </>}>
     <ManageEditorStepContent stepKey={EDITOR_STEPS[step].key} form={form} savedPublished={false}
       mapPreviewUrl="" mapLatitude={null} mapLongitude={null} galleryPreviewItems={[]}
       maxGalleryImageCount={18} supportsMusicFeature musicLibraryLoading={false} musicCategories={[]}
-      openMusicDropdown={null} selectedMusicCategoryLabel="선택 안 함" selectedMusicTrackLabel="선택 안 함" availableMusicTracks={[]}
+      openMusicDropdown={null} selectedMusicCategoryLabel="선택해 주세요" selectedMusicTrackLabel="먼저 카테고리를 선택해 주세요" availableMusicTracks={[]}
       uploadingImageKind={null} uploadProgress={null} isSearchingAddress={false}
       onUpdateField={(field, value) => setForm(current => ({ ...current, [field]: value }))}
       onUpdatePersonField={(role, field, value) => setForm(current => ({ ...current, [role]: { ...current[role], [field]: value } }))}

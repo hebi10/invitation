@@ -246,7 +246,7 @@ def main():
             wait_screen('create', 'create', ['만들기', '기본 정보를 준비하고'])
             wait_screen('guide', 'guide', ['이용 안내', '진행할 작업을 선택해'])
             wait_screen('settings', 'settings', ['설정', '화면 설정'])
-            tree = wait_screen('editor-fixture', 'design-check', ['검수용 예시', '실제 저장 없음', '기본 정보'])
+            tree = wait_screen('editor-fixture', 'design-check', ['샘플 청첩장 · 변경 사항 없음', '청첩장 편집', '기본 정보'])
             try:
                 capture_keyboard(tree)
             except (subprocess.TimeoutExpired, subprocess.CalledProcessError) as error:

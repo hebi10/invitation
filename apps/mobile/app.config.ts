@@ -16,7 +16,7 @@ const config: ExpoConfig = {
   orientation: 'portrait',
   scheme: 'mobileinvitation',
   userInterfaceStyle: 'automatic',
-  icon: './assets/icon.png',
+  icon: './assets/icon-v2.png',
   splash: {
     image: './assets/splash.jpg',
     resizeMode: 'contain',
@@ -74,7 +74,7 @@ const config: ExpoConfig = {
       'android.permission.RECORD_AUDIO',
     ],
     adaptiveIcon: {
-      foregroundImage: './assets/icon.png',
+      foregroundImage: './assets/icon-v2.png',
       backgroundColor: '#f7efe7',
     },
   },
@@ -93,7 +93,7 @@ const config: ExpoConfig = {
     },
   },
   web: {
-    favicon: './assets/icon.png',
+    favicon: './assets/icon-v2.png',
   },
   experiments: {
     typedRoutes: true,
