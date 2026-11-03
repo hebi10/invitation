@@ -66,3 +66,11 @@
 
 현재 모바일 앱은 Expo managed 구성이라 네이티브 Android 프로젝트가 저장소에 포함되어 있지 않습니다.
 `android:verify:*` 스크립트는 이 상태를 확인하고, 네이티브 프로젝트가 생긴 경우 안전한 Gradle 검증 스크립트를 먼저 추가하도록 막습니다.
+
+## GitHub에서 Android AAB 빌드
+- `.github/workflows/mobile-release.yml`의 `Android AAB 빌드 및 업로드` 작업을 수동 실행합니다. 수동 실행 메뉴는 workflow가 기본 브랜치에 반영된 후 표시됩니다. `mobile-v*` 태그를 올리면 해당 태그의 소스로 AAB 빌드만 실행합니다.
+- 저장소의 Settings → Secrets and variables → Actions에 `EXPO_TOKEN`을 등록합니다. 기존 `hebi96` EAS 프로젝트에서 빌드할 수 있는 Developer 이상 권한을 사용합니다. 토큰·서명 키를 소스나 실행 로그에 넣지 않습니다.
+- 기존 EAS 원격 Android 서명 키를 재사용합니다. 키를 새로 생성하지 않으며, 키 설정이 없으면 빌드가 중단됩니다. 원격 `versionCode`는 기존 Play 업로드 번호 8 이상이어야 하며 production에서 다음 번호로 증가합니다.
+- EAS `production` 환경에 `EXPO_PUBLIC_REVENUECAT_ANDROID_API_KEY`의 운영 Google Play 공개 키를 설정해야 실제 구매가 가능합니다. 서버 키는 앱에 넣지 않습니다.
+- 완료된 `invitation.aab`는 Actions 실행의 Artifacts에 14일간 보관됩니다.
+- Play까지 자동 업로드하려면 EAS의 `kr.msgnote.mobileinvitation` 제출 인증에 Google 서비스 계정이 연결되어 있어야 합니다. 수동 실행에서 `upload_to_play`를 선택하면 **내부 테스트 초안**으로 업로드하며, 공개 출시나 테스터 배포는 하지 않습니다. 선택하지 않으면 AAB만 빌드합니다.
