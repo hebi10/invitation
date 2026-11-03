@@ -1,0 +1,38 @@
+import { router } from 'expo-router';
+import { useState } from 'react';
+import { View } from 'react-native';
+import { ActionButton } from '../components/ActionButton';
+import { InvitationEditorWorkspace } from '../components/manage/InvitationEditorWorkspace';
+import { ManageEditorStepContent } from '../features/manage/components/ManageEditorStepContent';
+import { EDITOR_STEPS, EMPTY_FORM, type ManageFormState } from '../features/manage/shared';
+
+export default function DesignCheck() {
+  const [step, setStep] = useState(0);
+  const [form, setForm] = useState<ManageFormState>({ ...EMPTY_FORM,
+    displayName: '김신랑 · 박신부 결혼합니다', subtitle: '소중한 분들을 초대합니다',
+    groom: { ...EMPTY_FORM.groom, name: '김신랑' }, bride: { ...EMPTY_FORM.bride, name: '박신부' },
+    greetingMessage: '저희의 새로운 시작에 함께해 주세요.', published: false,
+  });
+  return <InvitationEditorWorkspace visible onClose={() => router.replace('/')} title={EDITOR_STEPS[step].title}
+    description={`화면 검수용 예시 · ${EDITOR_STEPS[step].description}`} status="검수용 예시 · 실제 저장 없음"
+    statusTone="neutral" publicationLabel="비공개 설정" steps={EDITOR_STEPS} activeStepIndex={step}
+    onSelectStep={setStep} onPreview={() => {}} busy={false}
+    compactFooter={<ActionButton fullWidth>내용 저장</ActionButton>}
+    footer={<View style={{ flexDirection: 'row', gap: 8 }}>
+      <ActionButton variant="secondary" disabled={step === 0} onPress={() => setStep(Math.max(0, step - 1))}>이전</ActionButton>
+      <ActionButton style={{ flex: 1 }} onPress={() => setStep(Math.min(EDITOR_STEPS.length - 1, step + 1))}>저장 후 다음</ActionButton>
+    </View>}>
+    <ManageEditorStepContent stepKey={EDITOR_STEPS[step].key} form={form} savedPublished={false}
+      mapPreviewUrl="" mapLatitude={null} mapLongitude={null} galleryPreviewItems={[]}
+      maxGalleryImageCount={18} supportsMusicFeature musicLibraryLoading={false} musicCategories={[]}
+      openMusicDropdown={null} selectedMusicCategoryLabel="선택 안 함" selectedMusicTrackLabel="선택 안 함" availableMusicTracks={[]}
+      uploadingImageKind={null} uploadProgress={null} isSearchingAddress={false}
+      onUpdateField={(field, value) => setForm(current => ({ ...current, [field]: value }))}
+      onUpdatePersonField={(role, field, value) => setForm(current => ({ ...current, [role]: { ...current[role], [field]: value } }))}
+      onUpdateParentField={(role, parent, field, value) => setForm(current => ({ ...current, [role]: { ...current[role], [parent]: { ...current[role][parent], [field]: value } } }))}
+      onUploadImage={() => {}} onRemoveSingleImage={() => {}} onMoveGalleryImage={() => {}} onRemoveGalleryImage={() => {}}
+      onSearchAddress={() => {}} onOpenMapUrl={() => {}} onSetMusicEnabled={musicEnabled => setForm(current => ({ ...current, musicEnabled }))}
+      onSetPublished={published => setForm(current => ({ ...current, published }))} onToggleMusicDropdown={() => {}}
+      onSelectMusicCategory={() => {}} onSelectMusicTrack={() => {}} />
+  </InvitationEditorWorkspace>;
+}

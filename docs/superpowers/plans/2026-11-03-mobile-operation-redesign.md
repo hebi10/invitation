@@ -73,3 +73,5 @@
 - 코드 리뷰: 계좌 예금주의 구분 문자 처리, 키보드 표시 중 편집 공간 부족을 보완했다. 공개 확인 취소도 저장 실패와 분리했다.
 - 화면 검수용 임시 design-check 경로는 캡처 후 제거하며 커밋하지 않는다.
 - Node 20.20.2에서 기존 관리자 테스트의 ESM/CommonJS Context 중복을 재현하고 테스트 Provider를 같은 모듈 그래프로 로딩하도록 수정했다. production 코드는 변경하지 않았으며 Node 20·24에서 전체 131개 테스트가 통과했다.
+- GitHub CI의 verify와 firebase-emulators 작업 모두 통과했다.
+- 로컬 Android는 실제 부팅 후 Expo Go 설치 중 VM 종료로 앱 캡처에 실패했다. GitHub Actions KVM 에뮬레이터에서 같은 앱을 촬영하는 별도 캡처 workflow를 추가한다. 검수용 편집 경로는 fixture에서 작업 중에만 임시 생성하고 항상 제거한다.
