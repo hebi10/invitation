@@ -167,7 +167,7 @@ def main():
         with (OUT / 'metro.log').open('w') as metro_log:
             metro = subprocess.Popen(
                 ['npx', '--no-install', 'expo', 'start', '--offline', '--no-dev', '--minify',
-                 '--localhost', '--port', str(PORT)], cwd=APP, env=env,
+                 '--port', str(PORT)], cwd=APP, env=env,
                 stdout=metro_log, stderr=subprocess.STDOUT, start_new_session=True)
             deadline = time.monotonic() + 90
             while True:
