@@ -12,7 +12,7 @@ const configuredApiBaseUrl =
 const config: ExpoConfig = {
   name: '모바일 청첩장',
   slug: 'mobile-invitation-app',
-  version: '1.0.3',
+  version: '1.0.4',
   orientation: 'portrait',
   scheme: 'mobileinvitation',
   userInterfaceStyle: 'automatic',
