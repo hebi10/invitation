@@ -109,17 +109,17 @@ Google Cloud 프로젝트는 `Hebi App Release` (`hebi-app-release-80847404`)입
 | `PLAY_AUTO_DEPLOY_ENABLED` | `true`이면 `main` 변경에 내부 테스트(`internal`) 자동 배포 |
 | `PLAY_WORKLOAD_IDENTITY_PROVIDER` | `projects/973619009476/locations/global/workloadIdentityPools/github/providers/github` |
 | `PLAY_SERVICE_ACCOUNT` | `play-invitation@hebi-app-release-80847404.iam.gserviceaccount.com` |
-| `PLAY_CLOSED_TRACK` | 비공개 테스트 수동 선택 시에만 사용하는 실제 API 트랙 ID. 기본값 없음 |
+| `PLAY_CLOSED_TRACK` | 비공개 테스트 수동 선택 시 실제 API 트랙 ID를 재지정. 입력·변수가 없으면 기존 `alpha`를 조회하며, 미존재·미완료 출시이면 중단 |
 | `PLAY_RELEASE_STATUS` | `completed`가 기본값. 준비용 업로드는 명시적으로 `draft` 선택 |
-| `PLAY_SEND_FOR_REVIEW` | `true`일 때 심사 제출. 기본값은 제출 보류 |
+| `PLAY_SEND_FOR_REVIEW` | 이전 저장소 변수는 사용하지 않음. 승인된 테스트 배포 workflow가 `'true'`를 명시하여 자동 심사 앱의 제출 방식 사용 |
 
-수동 실행은 Actions의 해당 workflow에서 `main`을 선택합니다. `deploy`가 `false`이면 빌드와 읽기 전용 Play 접근 검사만 실행합니다. 실제 배포는 `deploy=true`로 실행하며, `deploy_target`은 `internal`이 기본입니다. 비공개 테스트는 `deploy_target=closed`를 명시적으로 선택하고 `closed_track`에 실제 API 트랙 ID를 넣습니다(비어 있으면 `PLAY_CLOSED_TRACK` 사용). main push는 이 입력이나 비공개 트랙 변수와 무관하게 항상 internal로 배포합니다.
+수동 실행은 Actions의 해당 workflow에서 `main`을 선택합니다. `deploy`가 `false`이면 빌드와 읽기 전용 Play 접근 검사만 실행합니다. 실제 배포는 `deploy=true`로 실행하며, `deploy_target`은 `internal`이 기본입니다. 비공개 테스트는 `deploy_target=closed`를 명시적으로 선택합니다. 트랙은 `closed_track` 입력, `PLAY_CLOSED_TRACK` 변수, 기존 `alpha` 순서로 확인하며 트랙을 새로 만들거나 기존 초안을 버리지 않습니다. main push는 이 입력이나 비공개 트랙 변수와 무관하게 항상 internal로 배포합니다.
 
 트랙을 새로 만들거나 테스터 목록을 바꾸지 않습니다. `production`, `beta`, `internalsharing`, `qa`와 폼 팩터 접두사 ID는 거부하며, closed 선택에서 `internal`도 거부합니다. 임의의 `closed` 이름이나 화면 표시명을 트랙 ID로 추측하지 않습니다. 읽기 전용 접근 검사는 기존 internal 트랙의 실제 출시 상태를 조회하며, 앱 업로드나 출시 변경을 수행하지 않습니다.
 
 ### 게시와 검증
 - 게시 도구는 대상 트랙·버전·AAB SHA-256을 검사합니다. 같은 버전의 다른 파일, 낮은 버전, 대상의 관계없는 초안·진행 중 릴리스, 다른 트랙의 심사·검토 대기 상태를 발견하면 중단합니다.
-- commit에는 `changesInReviewBehavior=ERROR_IF_IN_REVIEW`를 지정하여 기존 심사를 취소하지 않습니다. Google Play API는 심사 전송 시 콘솔의 다른 제출 준비 변경도 함께 제출할 수 있습니다. 트랙 검사만으로 스토어 설명 등 모든 변경이 격리된다고 보장할 수 없으므로, 자동 심사 전송 활성화 전 게시 개요를 확인합니다.
+- commit에는 `changesInReviewBehavior=ERROR_IF_IN_REVIEW`를 지정하여 기존 심사를 취소하지 않습니다. 이 앱은 자동 심사 방식이므로 승인된 테스트 배포는 `--send-for-review`를 전달하고, Google이 거부하는 `changesNotSentForReview` 매개변수를 생략합니다. CLI에서 이 플래그를 생략하면 기존처럼 보류 요청(`changesNotSentForReview=true`)을 유지하며, 거부되어도 제출 방식 변경이나 자동 재시도를 하지 않습니다. Google Play API는 콘솔의 다른 제출 준비 변경도 함께 제출할 수 있으므로 실행 전 게시 개요를 확인합니다.
 - 처음 앱을 게시할 때 콘솔의 앱 설정·동의·첫 비공개 테스트 심사가 필요할 수 있습니다. 이런 오류를 초안 상태 변경이나 보안 옵션 해제로 우회하지 않습니다.
 - 쓰기 API의 통신 결과가 불명확하면 같은 요청을 무조건 다시 보내지 않습니다. commit 후 읽기 API로 버전과 실제 출시 상태를 확인하며, `PUBLISHED`만 테스터 제공 중으로 표시합니다. `IN_REVIEW`, `NOT_SENT_FOR_REVIEW`, `DRAFT`는 각각 심사 중·심사 제출 대기·초안입니다.
 - 서명 산출물은 Play 게시 실패와 별도로 Actions Artifacts에 보관합니다. 결제·서버 배포 설정과 실제 기기 구매·공유 검증은 이 자동화와 별도로 완료해야 합니다.

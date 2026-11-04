@@ -15,7 +15,7 @@ on:
           - internal
           - closed
       closed_track:
-        description: 비공개 테스트의 실제 API 트랙 ID (비우면 PLAY_CLOSED_TRACK 변수 사용)
+        description: 비공개 테스트의 실제 API 트랙 ID (비우면 변수 또는 기존 alpha 확인)
         type: string
         required: false
   pull_request:
@@ -150,7 +150,7 @@ jobs:
           PLAY_AUTO_DEPLOY_ENABLED: ${{ vars.PLAY_AUTO_DEPLOY_ENABLED }}
           INPUT_DEPLOY: ${{ inputs.deploy && 'true' || 'false' }}
           PLAY_DEPLOY_TARGET: ${{ inputs.deploy_target || 'internal' }}
-          PLAY_CLOSED_TRACK: ${{ inputs.closed_track || vars.PLAY_CLOSED_TRACK }}
+          PLAY_CLOSED_TRACK: ${{ inputs.closed_track || vars.PLAY_CLOSED_TRACK || 'alpha' }}
         run: node scripts/mobile-release-policy.mjs ci
       - name: main 서명 및 배포 설정 사전 확인
         if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
@@ -370,7 +370,7 @@ jobs:
           PLAY_TARGET: ${{ needs.bundle.outputs.target }}
           PLAY_TRACK: ${{ needs.bundle.outputs.track }}
           RELEASE_STATUS: ${{ needs.bundle.outputs.status }}
-          PLAY_SEND_FOR_REVIEW: ${{ vars.PLAY_SEND_FOR_REVIEW }}
+          PLAY_SEND_FOR_REVIEW: 'true'
         run: |
           AAB="play-artifacts/$BASE_NAME.aab"
           test -s "$AAB"

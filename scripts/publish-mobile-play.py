@@ -260,8 +260,10 @@ def publish(args, token, data, digest, notes):
         target_path = f"{edit_path}/tracks/{urllib.parse.quote(args.track, safe='')}"
         request(token, "PUT", target_path, payload=body)
         request(token, "POST", f"{edit_path}:validate")
-        query = urllib.parse.urlencode({"changesInReviewBehavior": "ERROR_IF_IN_REVIEW",
-                                       "changesNotSentForReview": str(not args.send_for_review).lower()})
+        parameters = {"changesInReviewBehavior": "ERROR_IF_IN_REVIEW"}
+        if not args.send_for_review:
+            parameters["changesNotSentForReview"] = "true"
+        query = urllib.parse.urlencode(parameters)
         commit_attempted = True
         try:
             request(token, "POST", f"{edit_path}:commit?{query}")

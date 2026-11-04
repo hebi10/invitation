@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { createRequire } from 'node:module';
-import { readFileSync, existsSync, mkdtempSync, rmSync } from 'node:fs';
+import { readFileSync, existsSync, mkdtempSync, rmSync, mkdirSync, writeFileSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
@@ -156,7 +156,7 @@ for (const key of ['target', 'track']) {
 assert.equal(workflow.jobs.bundle.outputs.status, '${{ steps.deployment.outputs.status }}');
 const ciPolicyStep = workflow.jobs.bundle.steps.find((step: { id?: string }) => step.id === 'policy');
 assert.equal(ciPolicyStep.env.PLAY_DEPLOY_TARGET, "${{ inputs.deploy_target || 'internal' }}");
-assert.equal(ciPolicyStep.env.PLAY_CLOSED_TRACK, '${{ inputs.closed_track || vars.PLAY_CLOSED_TRACK }}');
+assert.equal(ciPolicyStep.env.PLAY_CLOSED_TRACK, "${{ inputs.closed_track || vars.PLAY_CLOSED_TRACK || 'alpha' }}");
 const preflightStep = workflow.jobs.bundle.steps.find((step: { id?: string }) => step.id === 'deployment');
 assert.equal(preflightStep.env.PLAY_DEPLOY_TARGET, '${{ steps.policy.outputs.target }}');
 assert.equal(preflightStep.env.PLAY_CLOSED_TRACK, '${{ steps.policy.outputs.track }}');
@@ -219,6 +219,36 @@ assert.equal(publishSteps[0].env.PLAY_TRACK, '${{ needs.bundle.outputs.track }}'
 assert.equal(publishSteps[0].env.RELEASE_STATUS, '${{ needs.bundle.outputs.status }}');
 assert.ok(publishSteps[0].run.includes('--target "$PLAY_TARGET"'));
 assert.ok(publishSteps[0].run.includes('--track "$PLAY_TRACK"'));
+const reviewTemporary = mkdtempSync(path.join(tmpdir(), 'invitation-review-policy-'));
+try {
+  mkdirSync(path.join(reviewTemporary, 'play-artifacts'));
+  writeFileSync(path.join(reviewTemporary, 'play-artifacts/fixture.aab'), 'fixture');
+  for (const [target, track] of [['internal', 'internal'], ['closed', 'alpha']]) {
+    const result = spawnSync('bash', ['-c', 'python3() { printf "%s\\n" "$@"; };\n' + publishSteps[0].run], {
+      cwd: reviewTemporary,
+      env: { ...process.env, PLAY_SEND_FOR_REVIEW: publishSteps[0].env.PLAY_SEND_FOR_REVIEW, BASE_NAME: 'fixture',
+        VERSION_CODE: '211', RELEASE_NAME: 'fixture', PLAY_TARGET: target, PLAY_TRACK: track, RELEASE_STATUS: 'completed' },
+      encoding: 'utf8',
+    });
+    assert.equal(result.status, 0, result.stderr);
+    const args = result.stdout.trim().split('\n');
+    assert.ok(args.includes('--send-for-review'), '허용된 내부 자동·비공개 수동 배포는 자동 심사 앱의 명시적 제출 설정을 전달합니다.');
+    assert.equal(args[args.indexOf('--target') + 1], target);
+    assert.equal(args[args.indexOf('--track') + 1], track);
+  }
+  for (const [inputs, variables, expected] of [
+    [{ closed_track: '' }, { PLAY_CLOSED_TRACK: '' }, 'alpha'],
+    [{ closed_track: '' }, { PLAY_CLOSED_TRACK: 'closed-team' }, 'closed-team'],
+    [{ closed_track: 'explicit-team' }, { PLAY_CLOSED_TRACK: 'closed-team' }, 'explicit-team'],
+  ] as const) {
+    const track = evaluateCondition(ciPolicyStep.env.PLAY_CLOSED_TRACK, {}, inputs, {}, {}, variables);
+    assert.equal(track, expected);
+    assert.deepEqual(resolvePlayTarget({ eventName: 'workflow_dispatch', ref: 'refs/heads/main', target: 'closed', closedTrack: track }), { target: 'closed', track: expected });
+    assert.deepEqual(resolvePlayTarget({ eventName: 'push', ref: 'refs/heads/main', target: 'closed', closedTrack: track }), { target: 'internal', track: 'internal' });
+  }
+} finally {
+  rmSync(reviewTemporary, { recursive: true, force: true });
+}
 const downloadStep = deploySteps.find((step: { uses?: string }) => step.uses?.startsWith('actions/download-artifact@'));
 assert.equal(downloadStep.with.name, '${{ needs.bundle.outputs.artifact_name }}');
 assert.equal(downloadStep.with['run-id'], undefined, '다른 실행의 산출물을 사용하지 않습니다.');

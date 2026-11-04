@@ -11,7 +11,7 @@ import tempfile
 import unittest
 from unittest.mock import patch
 from urllib.error import HTTPError, URLError
-from urllib.parse import urlsplit
+from urllib.parse import parse_qs, urlsplit
 import zipfile
 
 
@@ -226,13 +226,45 @@ class PublisherTests(unittest.TestCase):
         self.assertEqual([call[0] for call in calls[-3:]], ["GET", "GET", "GET"])
         self.assertFalse(any(call[0] == "DELETE" for call in calls))
 
-    def test_explicit_review_submission_uses_false_flag_and_reports_in_review(self):
+    def test_explicit_review_submission_omits_hold_flag_and_reports_in_review(self):
         result, calls, stdout, _ = self.run_main(self.preflight() + self.finish("IN_REVIEW"),
                                                 self.argv + ["--send-for-review"])
         self.assertEqual(result, 0)
         self.assertFalse(json.loads(stdout)["available_to_testers"])
         self.assertEqual(json.loads(stdout)["status"], "in_review")
-        self.assertIn("changesNotSentForReview=false", next(c[2] for c in calls if c[1].endswith(":commit")))
+        self.assertEqual(parse_qs(next(c[2] for c in calls if c[1].endswith(":commit"))),
+                         {"changesInReviewBehavior": ["ERROR_IF_IN_REVIEW"]})
+
+    def test_internal_explicit_review_omits_unsupported_query_parameter(self):
+        argv = self.argv + ["--send-for-review"]
+        argv[argv.index("--target") + 1] = "internal"
+        argv[argv.index("--track") + 1] = "internal"
+        result, calls, stdout, _ = self.run_main(self.preflight(tracks=[{"track": "internal"}]) + self.finish(track="internal"), argv)
+        self.assertEqual(result, 0)
+        self.assertTrue(json.loads(stdout)["available_to_testers"])
+        self.assertEqual(parse_qs(next(c[2] for c in calls if c[1].endswith(":commit"))),
+                         {"changesInReviewBehavior": ["ERROR_IF_IN_REVIEW"]})
+
+    def test_automatic_review_rejection_does_not_override_explicit_hold(self):
+        body = b'{"error":{"code":400,"status":"INVALID_ARGUMENT","message":"Changes are sent for review automatically. The query parameter changesNotSentForReview must not be set."}}'
+        error = HTTPError("https://example.invalid", 400, TOKEN, {}, io.BytesIO(body))
+        result, calls, _, stderr = self.run_main(self.preflight() + self.finish(commit=error)[:-1])
+        self.assertEqual(result, 1)
+        self.assertIn("changesNotSentForReview must not be set", stderr)
+        commit = [call for call in calls if call[1].endswith(":commit")]
+        self.assertEqual(len(commit), 1)
+        self.assertEqual(parse_qs(commit[0][2]), {"changesInReviewBehavior": ["ERROR_IF_IN_REVIEW"],
+                                               "changesNotSentForReview": ["true"]})
+        self.assertFalse(any(call[0] == "DELETE" for call in calls))
+
+    def test_closed_alpha_default_requires_existing_track_and_preserves_draft(self):
+        argv = self.argv + ["--send-for-review"]
+        argv[argv.index("--track") + 1] = "alpha"
+        for tracks in [[{"track": "internal"}], [{"track": "alpha", "releases": [{"versionCodes": ["10"], "status": "draft"}]}]]:
+            with self.subTest(tracks=tracks):
+                result, calls, _, _ = self.run_main(self.preflight(tracks=tracks)[:2] + [("DELETE", EDIT, {})], argv)
+                self.assertEqual(result, 1)
+                self.assertFalse(any(call[0] == "PUT" or call[1].startswith("/upload") or call[1].endswith(":commit") for call in calls))
 
     def test_all_lifecycle_states_are_reported_without_claiming_test_availability(self):
         for lifecycle, status in [("DRAFT", "draft"), ("NOT_SENT_FOR_REVIEW", "not_sent_for_review"),
