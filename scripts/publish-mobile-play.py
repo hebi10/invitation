@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""기존 Google Play 비공개 트랙에 서명된 AAB를 게시합니다."""
+"""기존 Google Play 테스트 트랙에 서명된 AAB를 게시합니다."""
 
 import argparse
 import hashlib
@@ -40,6 +40,7 @@ def arguments(argv):
     parser.add_argument("--aab", type=Path, required=True)
     parser.add_argument("--version-code", type=int, required=True)
     parser.add_argument("--track", required=True)
+    parser.add_argument("--target", choices=("internal", "closed"), default="internal")
     parser.add_argument("--release-name", required=True)
     parser.add_argument("--notes-file", type=Path, required=True)
     parser.add_argument("--status", choices=("draft", "completed"), default="completed")
@@ -50,10 +51,14 @@ def arguments(argv):
 def read_inputs(args, token):
     if not token or "\r" in token or "\n" in token:
         raise PlayError("PLAY_ACCESS_TOKEN 환경변수에 유효한 OAuth access token이 필요합니다.")
-    if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._:-]{0,99}", args.track):
-        raise PlayError("비공개 테스트 트랙 ID 형식이 올바르지 않습니다.")
-    if args.track.rsplit(":", 1)[-1].lower() in {"production", "beta", "internal", "qa"}:
-        raise PlayError("운영·공개·내부 테스트 트랙에는 게시할 수 없습니다.")
+    if args.target == "internal":
+        if args.track != "internal":
+            raise PlayError("내부 테스트 대상은 정확히 internal 트랙만 사용할 수 있습니다.")
+    else:
+        if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._-]{0,99}", args.track):
+            raise PlayError("비공개 테스트 트랙 ID 형식이 올바르지 않습니다.")
+        if args.track.lower() in {"production", "beta", "internal", "internalsharing", "qa"}:
+            raise PlayError("비공개 테스트 대상에는 예약된 트랙 ID를 사용할 수 없습니다.")
     if not 1 <= args.version_code <= 2100000000:
         raise PlayError("versionCode는 1~2100000000 범위의 정수여야 합니다.")
     if not args.release_name.strip() or any(c in args.release_name for c in "\r\n"):
@@ -141,6 +146,7 @@ def verified_result(token, args):
         raise PlayError("커밋 결과 미확정: 새 버전의 실제 출시 상태를 확인할 수 없습니다.", uncertain=True)
     state = states.pop()
     return {"status": STATES[state][0], "version_code": args.version_code, "track": args.track,
+            "target": args.target,
             "lifecycle_state": STATE_PREFIX + state, "available_to_testers": state == "PUBLISHED"}
 
 
@@ -167,7 +173,7 @@ def publish(args, token, data, digest, notes):
         tracks = request(token, "GET", f"{edit_path}/tracks").get("tracks", [])
         targets = [track for track in tracks if track.get("track") == args.track]
         if len(targets) != 1:
-            raise PlayError("설정한 기존 비공개 테스트 트랙을 찾을 수 없습니다.")
+            raise PlayError("설정한 기존 테스트 트랙을 찾을 수 없습니다.")
         if any(release.get("status") != "completed" for release in targets[0].get("releases", [])):
             raise PlayError("대상 트랙에 미완료 출시가 있어 기존 초안을 보호하기 위해 중단했습니다.")
         bundles = request(token, "GET", f"{edit_path}/bundles").get("bundles", [])
@@ -222,7 +228,8 @@ def report(result):
         label = next((label for status, label in STATES.values() if status == result["status"]),
                      "게시 처리 결과 미확정 · Play Console 확인 필요")
         with open(summary, "a", encoding="utf-8") as handle:
-            handle.write(f"Google Play 비공개 테스트: {label}\n\n"
+            target_label = "내부 테스트" if result["target"] == "internal" else "비공개 테스트"
+            handle.write(f"Google Play {target_label}: {label}\n\n"
                          f"- 트랙: `{result['track']}`\n- versionCode: `{result['version_code']}`\n")
 
 
@@ -238,7 +245,7 @@ def main(argv=None):
     except PlayError as error:
         if error.uncertain:
             report({"status": "uncertain", "version_code": args.version_code,
-                    "track": args.track, "available_to_testers": False})
+                    "track": args.track, "target": args.target, "available_to_testers": False})
         print(str(error), file=sys.stderr)
     except Exception:
         print("게시 처리를 완료하지 못했습니다. 입력 파일과 실행 설정을 확인하십시오.", file=sys.stderr)

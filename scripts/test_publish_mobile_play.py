@@ -75,13 +75,13 @@ class PublisherTests(unittest.TestCase):
         self.summary = self.directory / "summary"
         self.argv = ["--aab", str(self.aab), "--version-code", "11", "--track",
                      "closed-team", "--release-name", "1.0.5 (11)",
-                     "--notes-file", str(self.notes), "--status", "completed"]
+                     "--notes-file", str(self.notes), "--target", "closed", "--status", "completed"]
 
     def bundle(self, version=11, sha=None):
         return {"versionCode": version, "sha256": self.digest if sha is None else sha}
 
-    def releases(self, lifecycle="PUBLISHED", version=11):
-        return {"releases": [{"releaseName": "1.0.5 (11)", "track": "closed-team",
+    def releases(self, lifecycle="PUBLISHED", version=11, track="closed-team"):
+        return {"releases": [{"releaseName": "1.0.5 (11)", "track": track,
                               "activeArtifacts": [{"versionCode": version}],
                               "releaseLifecycleState": f"RELEASE_LIFECYCLE_STATE_{lifecycle}"}]}
 
@@ -94,14 +94,14 @@ class PublisherTests(unittest.TestCase):
                     ("GET", f"{BASE}/tracks/{track['track']}/releases",
                      (pending or {}).get(track["track"], {"releases": []})) for track in tracks]
 
-    def finish(self, lifecycle="PUBLISHED", upload=True, commit=None):
+    def finish(self, lifecycle="PUBLISHED", upload=True, commit=None, track="closed-team"):
         steps = []
         if upload:
             steps.append(("POST", "/upload" + EDIT + "/bundles", self.bundle()))
-        steps += [("PUT", f"{EDIT}/tracks/closed-team", {}),
+        steps += [("PUT", f"{EDIT}/tracks/{track}", {}),
                   ("POST", f"{EDIT}:validate", {"id": "our-edit"}),
                   ("POST", f"{EDIT}:commit", commit or {"id": "our-edit"}),
-                  ("GET", f"{BASE}/tracks/closed-team/releases", self.releases(lifecycle))]
+                  ("GET", f"{BASE}/tracks/{track}/releases", self.releases(lifecycle, track=track))]
         return steps
 
     def run_main(self, steps, argv=None, token=TOKEN):
@@ -112,7 +112,10 @@ class PublisherTests(unittest.TestCase):
         with patch.dict(os.environ, env), patch("urllib.request.urlopen", http), \
                 patch("time.sleep"), \
                 contextlib.redirect_stdout(stdout), contextlib.redirect_stderr(stderr):
-            result = self.publisher.main(self.argv if argv is None else argv)
+            try:
+                result = self.publisher.main(self.argv if argv is None else argv)
+            except SystemExit as error:
+                result = error.code
         self.assertEqual(http.steps, [], "A required request was not performed")
         self.assertEqual(http.failures, [], "The publisher emitted an unsafe or unexpected HTTP request")
         for output in (stdout.getvalue(), stderr.getvalue(),
@@ -126,6 +129,7 @@ class PublisherTests(unittest.TestCase):
         self.assertEqual(result, 0)
         self.assertEqual(json.loads(stdout)["status"], "published")
         self.assertTrue(json.loads(stdout)["available_to_testers"])
+        self.assertEqual(json.loads(stdout)["target"], "closed")
         upload = next(call for call in calls if call[1].startswith("/upload"))
         self.assertEqual(upload[2], "uploadType=media")
         self.assertEqual(upload[3], self.aab.read_bytes())
@@ -139,6 +143,88 @@ class PublisherTests(unittest.TestCase):
         self.assertIsNone(commit[3])
         self.assertIn("status=published\n", self.output.read_text())
         self.assertIn("테스터 제공 중", self.summary.read_text())
+        self.assertIn("Google Play 비공개 테스트", self.summary.read_text())
+
+    def test_internal_default_and_explicit_target_publish_only_to_internal(self):
+        tracks = [{"track": "production"}, {"track": "internal", "releases": [
+            {"versionCodes": ["10"], "status": "completed"}]},
+            {"track": "closed-team", "releases": [
+                {"versionCodes": ["10"], "status": "draft"}]}]
+        for explicit in [False, True]:
+            with self.subTest(explicit=explicit):
+                argv = self.argv.copy()
+                argv[argv.index("--track") + 1] = "internal"
+                if explicit:
+                    argv[argv.index("--target") + 1] = "internal"
+                else:
+                    index = argv.index("--target")
+                    del argv[index:index + 2]
+                result, calls, stdout, _ = self.run_main(
+                    self.preflight(tracks=tracks) + self.finish(track="internal"), argv)
+                self.assertEqual(result, 0)
+                self.assertEqual(json.loads(stdout), {
+                    "status": "published", "version_code": 11, "track": "internal",
+                    "target": "internal", "lifecycle_state": "RELEASE_LIFECYCLE_STATE_PUBLISHED",
+                    "available_to_testers": True})
+                update = json.loads(next(call[3] for call in calls if call[0] == "PUT"))
+                self.assertEqual(update["track"], "internal")
+                commit = next(call for call in calls if call[1].endswith(":commit"))
+                self.assertIn("changesInReviewBehavior=ERROR_IF_IN_REVIEW", commit[2])
+                self.assertIn("changesNotSentForReview=true", commit[2])
+                self.assertIn("target=internal\n", self.output.read_text())
+                self.assertIn("Google Play 내부 테스트", self.summary.read_text())
+
+    def test_internal_target_requires_exact_internal_track_before_http(self):
+        for track in ["closed-team", "production", "beta", "internalsharing", "qa",
+                      "INTERNAL", "Internal", "wear:internal", "internal ", " internal",
+                      "internal/", "internal%00", "internal\nstatus=ok"]:
+            with self.subTest(track=track):
+                argv = self.argv.copy()
+                argv[argv.index("--track") + 1] = track
+                argv[argv.index("--target") + 1] = "internal"
+                result, calls, _, _ = self.run_main([], argv)
+                self.assertEqual(result, 1)
+                self.assertEqual(calls, [])
+
+    def test_omitted_target_never_selects_a_closed_track_before_http(self):
+        argv = self.argv.copy()
+        index = argv.index("--target")
+        del argv[index:index + 2]
+        result, calls, _, _ = self.run_main([], argv)
+        self.assertEqual(result, 1)
+        self.assertEqual(calls, [])
+
+    def test_internal_target_existing_draft_is_protected_in_edit_and_lifecycle(self):
+        argv = self.argv.copy()
+        argv[argv.index("--track") + 1] = "internal"
+        argv[argv.index("--target") + 1] = "internal"
+        for source in ["edit", "lifecycle"]:
+            with self.subTest(source=source):
+                if source == "edit":
+                    tracks = [{"track": "internal", "releases": [{
+                        "name": "someone else", "versionCodes": ["10"], "status": "draft"}]}]
+                    steps = self.preflight(tracks=tracks)[:2]
+                else:
+                    steps = self.preflight(tracks=[{"track": "internal"}], pending={
+                        "internal": self.releases("DRAFT", version=10, track="internal")})
+                result, calls, _, _ = self.run_main(steps + [("DELETE", EDIT, {})], argv)
+                self.assertEqual(result, 1)
+                self.assertFalse(any(call[0] == "PUT" or call[1].startswith("/upload") for call in calls))
+
+    def test_internal_uncertain_commit_uses_only_read_verification(self):
+        argv = self.argv.copy()
+        argv[argv.index("--track") + 1] = "internal"
+        argv[argv.index("--target") + 1] = "internal"
+        steps = self.preflight(tracks=[{"track": "internal"}]) + self.finish(
+            track="internal", commit=URLError(TOKEN))[:-1] + [
+            ("GET", f"{BASE}/tracks/internal/releases", {"releases": []})] * 3
+        result, calls, _, stderr = self.run_main(steps, argv)
+        self.assertEqual(result, 1)
+        self.assertIn("미확정", stderr)
+        self.assertIn("target=internal\n", self.output.read_text())
+        self.assertEqual(sum(call[1].endswith(":commit") for call in calls), 1)
+        self.assertEqual([call[0] for call in calls[-3:]], ["GET", "GET", "GET"])
+        self.assertFalse(any(call[0] == "DELETE" for call in calls))
 
     def test_explicit_review_submission_uses_false_flag_and_reports_in_review(self):
         result, calls, stdout, _ = self.run_main(self.preflight() + self.finish("IN_REVIEW"),
@@ -165,8 +251,11 @@ class PublisherTests(unittest.TestCase):
         self.assertEqual(json.loads(next(c[3] for c in calls if c[0] == "PUT"))["releases"][0]["status"], "draft")
 
     def test_reserved_and_unsafe_tracks_fail_before_any_http(self):
-        for track in ["production", "beta", "internal", "qa", "wear:production", "tv:beta",
-                      "automotive:internal", "wear:qa", "PRODUCTION", "a/b", "closed\nstatus=ok"]:
+        for track in ["production", "beta", "internal", "internalsharing", "qa",
+                      "wear:production", "tv:beta", "automotive:internal", "wear:qa",
+                      "wear:internalsharing", "PRODUCTION", "Beta", "INTERNAL", "InternalSharing",
+                      "QA", "wear:PRODUCTION", "a/b", "internal%20", " internal", "internal ",
+                      "wear:closed-team", "closed:team", "closed\nstatus=ok"]:
             with self.subTest(track=track):
                 argv = self.argv.copy()
                 argv[argv.index("--track") + 1] = track

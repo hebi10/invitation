@@ -48,16 +48,26 @@ export function readAndroidGradleMetadata(gradle, expectedVersionCode) {
   return { packageName, versionCode, versionName };
 }
 
+export function resolvePlayTarget(policy) {
+  const target = policy.eventName === 'push' && policy.ref === 'refs/heads/main' ? 'internal' : policy.target ?? 'internal';
+  if (!['internal', 'closed'].includes(target)) throw new Error('PLAY_DEPLOY_TARGET은 internal 또는 closed만 허용합니다.');
+  if (target === 'closed' && (policy.eventName !== 'workflow_dispatch' || !isTrustedReleaseEvent(policy))) {
+    throw new Error('비공개 테스트 대상은 main 수동 실행에서만 선택할 수 있습니다.');
+  }
+  const track = target === 'internal' ? 'internal' : policy.closedTrack ?? '';
+  if (target === 'closed' && (!/^[A-Za-z0-9][A-Za-z0-9._-]{0,99}$/.test(track) || ['production', 'beta', 'internal', 'internalsharing', 'qa'].includes(track.toLowerCase()))) {
+    throw new Error('PLAY_CLOSED_TRACK에 실제 비공개 테스트 트랙 ID를 지정하세요. 운영·공개·내부 트랙은 허용하지 않습니다.');
+  }
+  return { target, track };
+}
+
 export function validatePlayDeployment(policy) {
   if (!shouldDeployRelease(policy)) throw new Error('Play 배포는 main push 자동 배포 또는 main 수동 배포만 허용합니다.');
   if (policy.signed !== 'true') throw new Error('기존 청첩장 키로 서명된 APK/AAB가 필요합니다. 서명 Secrets 4개를 확인하세요.');
-  const track = policy.track ?? '';
-  if (!/^[A-Za-z0-9][A-Za-z0-9._-]{0,99}$/.test(track) || ['production', 'beta', 'internal', 'internalsharing', 'qa'].includes(track.toLowerCase())) {
-    throw new Error('PLAY_CLOSED_TRACK에 실제 비공개 테스트 트랙 ID를 지정하세요. 운영·공개·내부 트랙은 허용하지 않습니다.');
-  }
+  const { target, track } = resolvePlayTarget(policy);
   const status = policy.status || 'completed';
   if (!['completed', 'draft'].includes(status)) throw new Error('PLAY_RELEASE_STATUS는 completed 또는 draft만 허용합니다.');
-  return { track, status };
+  return { target, track, status };
 }
 
 function environmentPolicy() {
@@ -67,7 +77,8 @@ function environmentPolicy() {
     autoDeployEnabled: process.env.PLAY_AUTO_DEPLOY_ENABLED,
     manualDeploy: process.env.INPUT_DEPLOY,
     signed: process.env.SIGNED,
-    track: process.env.PLAY_CLOSED_TRACK,
+    target: process.env.PLAY_DEPLOY_TARGET,
+    closedTrack: process.env.PLAY_CLOSED_TRACK,
     status: process.env.PLAY_RELEASE_STATUS,
   };
 }
@@ -84,7 +95,7 @@ function main() {
   if (command === 'ci') {
     const versionCode = createCiVersionCode(process.env.GITHUB_RUN_NUMBER, process.env.GITHUB_RUN_ATTEMPT);
     const policy = environmentPolicy();
-    writeOutputs({ version_code: versionCode, trusted: isTrustedReleaseEvent(policy), deploy: shouldDeployRelease(policy) });
+    writeOutputs({ version_code: versionCode, trusted: isTrustedReleaseEvent(policy), deploy: shouldDeployRelease(policy), ...resolvePlayTarget(policy) });
     if (process.env.GITHUB_ENV) appendFileSync(process.env.GITHUB_ENV, `EXPO_ANDROID_VERSION_CODE=${versionCode}\n`);
   } else if (command === 'prepare') {
     const gradlePath = process.argv[3];

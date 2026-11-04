@@ -76,7 +76,7 @@
 현재 모바일 앱은 Expo managed 구성이라 네이티브 Android 프로젝트가 저장소에 포함되어 있지 않습니다.
 `android:verify:*` 스크립트는 이 상태를 확인하고, 네이티브 프로젝트가 생긴 경우 안전한 Gradle 검증 스크립트를 먼저 추가하도록 막습니다.
 
-## GitHub에서 APK/AAB 빌드와 Play 비공개 테스트 배포
+## GitHub에서 APK/AAB 빌드와 Play 테스트 배포
 - `.github/workflows/mobile-release.yml`이 Expo prebuild/Gradle로 APK와 AAB를 생성합니다. Expo 계정 로그인과 `EXPO_TOKEN`은 필요하지 않습니다.
 - PR에서는 인증 정보를 전달하지 않고 빌드를 검증합니다. 모바일 앱과 공통 `src/lib`, `src/contracts`, `src/types`, 루트 의존성 변경도 빌드를 실행합니다.
 - 기본 로컬 Android 버전 코드는 `11`입니다. CI는 실행 번호와 재실행 번호를 포함해 버전 코드를 자동 생성하고 `EXPO_ANDROID_VERSION_CODE`로 전달합니다. 표시 버전과 생성된 버전 코드는 산출물 이름·요약에 함께 기록합니다.
@@ -93,23 +93,28 @@ GitHub 저장소 `hebi10/invitation`의 Actions Secrets에 아래 값을 등록�
 | `INVITATION_KEYSTORE_PASSWORD` | JKS 비밀번호 |
 | `INVITATION_KEY_ALIAS` | 기존 업로드 키 별칭 |
 | `INVITATION_KEY_PASSWORD` | 업로드 키 비밀번호 |
-| `GOOGLE_PLAY_SERVICE_ACCOUNT_JSON` | 이 앱의 테스트 출시용 Google 서비스 계정 JSON |
 | `EXPO_PUBLIC_REVENUECAT_ANDROID_API_KEY` | 운영 Google Play 공개 키(`goog_`). 공개 키는 Variable로도 설정 가능 |
 
-배포 작업은 `google-play-testing` environment를 사용합니다. 서비스 계정 JSON은 해당 Environment Secret으로 제한할 수도 있습니다. 서명 Secrets는 빌드 작업에서도 필요하므로 Repository Secret을 사용합니다.
+배포 작업은 `google-play-testing` environment를 사용합니다. 서명 Secrets는 빌드 작업에서도 필요하므로 Repository Secret을 사용합니다. Google 인증은 GitHub OIDC와 기존 WIF 연결을 이용하여 단기 access token을 발급합니다. 서비스 계정 JSON 비밀키 Secret은 사용하지 않습니다.
 
-서비스 계정은 Google Play Console에서 이 앱의 **앱 정보 보기**와 **테스트 트랙 출시** 권한만 부여합니다. 테스터 목록·프로덕션 출시·재무·관리자 권한은 필요하지 않습니다. Google Cloud의 Android Publisher API와 IAM Credentials API를 활성화하고, 공식 인증 Action의 access token 발급에 필요한 서비스 계정 자체의 Token Creator 역할을 확인합니다. JSON·서명 키를 GitHub에 새로 저장하거나 권한을 부여하는 단계는 사용자 확인 후 진행합니다.
+Google Cloud 프로젝트는 `Hebi App Release` (`hebi-app-release-80847404`)입니다. 청첩장 전용 계정 `play-invitation@hebi-app-release-80847404.iam.gserviceaccount.com`과 이 저장소 ID에 제한된 기존 WIF 권한을 재사용합니다. 이 앱의 **앱 정보 보기**와 **테스트 트랙 출시** 권한으로 동작하며, 다른 앱의 서비스 계정을 사용하지 않습니다. `id-token: write`는 main의 인증 작업에만 있고 PR·Android 빌드 작업에는 없습니다.
+
+정책 검사를 통과한 `internal` 빌드는 RevenueCat 공개 키가 비어 있어도 UI·공유 기능 점검용으로 서명할 수 있습니다. 이 경우 앱의 상품 조회·구매는 설정 오류로 중단되고 서버의 영수증 검증·지급 조건도 유지됩니다. 키가 없다고 구매나 청첩장 지급을 성공 처리하지 않습니다. 비공개 테스트 선택과 대상 미확인 서명에는 기존 운영 키 조건을 유지하며, 비어 있지 않은 잘못된 키는 내부 테스트에서도 거부합니다.
 
 ### 배포 설정
 
 | Actions Variable | 값과 의미 |
 | --- | --- |
-| `PLAY_AUTO_DEPLOY_ENABLED` | `true`이면 `main` 변경에 자동 배포 |
-| `PLAY_CLOSED_TRACK` | 콘솔과 API에서 확인한 기존 비공개 테스트 트랙 ID. 기본값 없음 |
+| `PLAY_AUTO_DEPLOY_ENABLED` | `true`이면 `main` 변경에 내부 테스트(`internal`) 자동 배포 |
+| `PLAY_WORKLOAD_IDENTITY_PROVIDER` | `projects/973619009476/locations/global/workloadIdentityPools/github/providers/github` |
+| `PLAY_SERVICE_ACCOUNT` | `play-invitation@hebi-app-release-80847404.iam.gserviceaccount.com` |
+| `PLAY_CLOSED_TRACK` | 비공개 테스트 수동 선택 시에만 사용하는 실제 API 트랙 ID. 기본값 없음 |
 | `PLAY_RELEASE_STATUS` | `completed`가 기본값. 준비용 업로드는 명시적으로 `draft` 선택 |
 | `PLAY_SEND_FOR_REVIEW` | `true`일 때 심사 제출. 기본값은 제출 보류 |
 
-수동 실행의 `deploy`는 기본 `false`이며, `main`에서 `true`로 실행하면 지정 트랙에 게시합니다. 트랙을 새로 만들거나 테스터 목록을 바꾸지 않습니다. `production`, `beta`, `internal`, `qa`와 이 예약 이름의 폼 팩터 트랙은 거부합니다. 임의의 `closed` 이름이나 화면 표시명을 트랙 ID로 추측하지 않습니다.
+수동 실행은 Actions의 해당 workflow에서 `main`을 선택합니다. `deploy`가 `false`이면 빌드와 읽기 전용 Play 접근 검사만 실행합니다. 실제 배포는 `deploy=true`로 실행하며, `deploy_target`은 `internal`이 기본입니다. 비공개 테스트는 `deploy_target=closed`를 명시적으로 선택하고 `closed_track`에 실제 API 트랙 ID를 넣습니다(비어 있으면 `PLAY_CLOSED_TRACK` 사용). main push는 이 입력이나 비공개 트랙 변수와 무관하게 항상 internal로 배포합니다.
+
+트랙을 새로 만들거나 테스터 목록을 바꾸지 않습니다. `production`, `beta`, `internalsharing`, `qa`와 폼 팩터 접두사 ID는 거부하며, closed 선택에서 `internal`도 거부합니다. 임의의 `closed` 이름이나 화면 표시명을 트랙 ID로 추측하지 않습니다. 읽기 전용 접근 검사는 기존 internal 트랙의 실제 출시 상태를 조회하며, 앱 업로드나 출시 변경을 수행하지 않습니다.
 
 ### 게시와 검증
 - 게시 도구는 대상 트랙·버전·AAB SHA-256을 검사합니다. 같은 버전의 다른 파일, 낮은 버전, 대상의 관계없는 초안·진행 중 릴리스, 다른 트랙의 심사·검토 대기 상태를 발견하면 중단합니다.
