@@ -175,3 +175,16 @@ await canceled.hook.handleTogglePublished(page as never, true);
 assert.equal(canceled.calls.includes('publish'), true, 'Canceling confirmation must release the action lock.');
 canceled.close();
 console.log('administrator mutation refresh and concurrency checks passed');
+
+const tierWrites: string[] = [];
+let tierConfirmations = 0;
+const premiumOnly = fixture({ setTier: async (_page: unknown, tier: string) => { tierWrites.push(tier); } }, 'pages', async () => { tierConfirmations += 1; return true; });
+for (const tier of ['standard', 'deluxe'] as const) {
+  await premiumOnly.hook.handleChangeTier(page as never, tier);
+}
+assert.deepEqual(tierWrites, [], '관리자는 폐지된 등급으로 변경할 수 없어야 합니다.');
+assert.equal(tierConfirmations, 0, '폐지된 등급의 변경 확인창은 표시하지 않아야 합니다.');
+await premiumOnly.hook.handleChangeTier({ ...page, productTier: 'standard' } as never, 'premium');
+assert.deepEqual(tierWrites, ['premium'], '과거 청첩장은 프리미엄 상품으로 정리할 수 있어야 합니다.');
+assert.equal(premiumOnly.toasts.at(-1)?.title, '프리미엄 상품으로 변경했습니다.');
+premiumOnly.close();

@@ -4,7 +4,7 @@ import * as billing from '../../../src/lib/mobileBillingProducts';
 import * as content from '../src/constants/content';
 import * as deepLink from '../src/lib/appDeepLink';
 
-assert.ok(content.servicePlans[0].features.includes('기본 노출 기간 4개월'));
+assert.ok(content.servicePlans[0].features.includes('기본 노출 기간 6개월'));
 assert.deepEqual(content.ticketActions.map((action) => action.key), ['extend']);
 for (const intent of ['upgrade', 'extra-page', 'extra-variant']) {
   assert.deepEqual(deepLink.resolveAppDeepLink(`mobileinvitation://create?ticketIntent=${intent}`),
@@ -18,12 +18,12 @@ assert.deepEqual(purchase.CREATE_STEPS.map((step) => step.key), ['info', 'select
 
 for (const ticketCount of [0, 1, 5, 10, 99]) {
   const legacyDraft = { servicePlan: 'standard' as const, ticketCount, estimatedPrice: 999999 };
-  assert.deepEqual(purchase.getCreatePurchaseSummary(legacyDraft), { ticketCount: 0, estimatedPrice: 9900 },
+  assert.deepEqual(purchase.getCreatePurchaseSummary(legacyDraft), { ticketCount: 0, estimatedPrice: 5000 },
     '이전 초안의 추가 티켓과 과거 예상 금액은 현재 생성 결제에 포함되지 않아야 합니다.');
 }
 
 assert.deepEqual(purchase.getCreatePurchaseSummary({ servicePlan: 'premium' }),
-  { ticketCount: 0, estimatedPrice: 9900 }, '선택한 서비스의 생성 상품 금액을 표시해야 합니다.');
+  { ticketCount: 0, estimatedPrice: 5000 }, '선택한 서비스의 생성 상품 금액을 표시해야 합니다.');
 
 console.log('mobile purchase summary tests passed');
 
@@ -33,3 +33,10 @@ assert.deepEqual(billing.MOBILE_BILLING_PAGE_CREATION_PRODUCT_IDS, ['page_creati
 assert.equal(billing.getMobileBillingPageCreationProductId('standard'), 'page_creation_premium');
 assert.equal(billing.getMobileBillingPageCreationProductId('deluxe'), 'page_creation_premium');
 assert.equal(billing.isMobileBillingProductId('page_creation_standard'), true, '기존 결제 영수증은 계속 검증할 수 있어야 합니다.');
+
+assert.equal(content.servicePlans[0].priceLabel, '5,000원');
+assert.equal(content.designThemes.length, 6, '단일 상품에 기존 웨딩 디자인 6개가 모두 포함되어야 합니다.');
+assert.deepEqual(billing.MOBILE_BILLING_TICKET_PACK_COUNTS, [1, 3, 6]);
+for (const tier of ['standard', 'deluxe', 'premium'] as const) {
+  assert.equal(purchase.getCreatePurchaseSummary({ servicePlan: tier }).estimatedPrice, 5000);
+}

@@ -8,6 +8,7 @@ export const INVITATION_PAGE_RESERVED_SLUGS = [
   'edit',
   'login',
   'memory',
+  'mobile-share',
   'page-editor',
   'page-wizard',
   'settings',

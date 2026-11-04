@@ -55,7 +55,7 @@ export function ThemePreviewGallery({ tier = 'premium' }: { tier?: MobileInvitat
               <AppText accessibilityRole="header" style={styles.title}>{theme.label}</AppText>
               <AppText variant="muted" style={styles.description}>{theme.description}</AppText>
               <ActionButton variant="secondary" fullWidth disabled={!url}
-                accessibilityLabel={`${theme.label} ${tier.toUpperCase()} 샘플 열기`}
+                accessibilityLabel={`${theme.label} 프리미엄 샘플 열기`}
                 onPress={() => url ? void openPreview(url) : undefined}>
                 미리보기
               </ActionButton>

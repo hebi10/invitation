@@ -1,3 +1,4 @@
+import { INVITATION_INITIAL_DISPLAY_PERIOD_MONTHS } from '../../lib/invitationProductPolicy';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -209,7 +210,7 @@ export default function CreateScreen() {
   if (createForm.creationCompleted) {
     return <AppScreen title="결제가 완료되었습니다" subtitle="청첩장 제작을 시작해 주세요.">
       <SectionCard title="프리미엄 청첩장 준비 완료" description="아직 하객에게 공개되지 않은 초안입니다.">
-        <AppText>기본 이용 기간 4개월이 시작되었습니다. 예식 정보와 사진을 입력하고 미리보기를 확인한 뒤 공개해 주세요.</AppText>
+        <AppText>기본 이용 기간 {INVITATION_INITIAL_DISPLAY_PERIOD_MONTHS}개월이 시작되었습니다. 예식 정보와 사진을 입력하고 미리보기를 확인한 뒤 공개해 주세요.</AppText>
         {pageSummary?.displayPeriod.endDate ? <AppText>이용 종료일: {new Date(pageSummary.displayPeriod.endDate).toLocaleDateString('ko-KR')}</AppText> : null}
         <ActionButton onPress={createForm.handleStartEditing} fullWidth>청첩장 제작 시작</ActionButton>
       </SectionCard>
@@ -524,7 +525,7 @@ export default function CreateScreen() {
                 <AppText variant="title" style={styles.selectionSummaryValue}>
                   {createForm.selectedPlanInfo.name} · {formatPrice(createForm.selectedPlanInfo.price)}
                 </AppText>
-                <AppText variant="muted">생성일부터 기본 4개월 · 모든 웨딩 디자인 포함</AppText>
+                <AppText variant="muted">생성일부터 기본 {INVITATION_INITIAL_DISPLAY_PERIOD_MONTHS}개월 · 모든 웨딩 디자인 포함</AppText>
               </View>
 
               <AppText variant="muted" style={styles.selectionSummaryDescription}>
@@ -589,7 +590,7 @@ export default function CreateScreen() {
               <View style={styles.summaryRow}>
                 <AppText style={styles.summaryLabel}>기본 이용 기간</AppText>
                 <AppText style={styles.summaryValue}>
-                  생성일부터 4개월
+                  생성일부터 {INVITATION_INITIAL_DISPLAY_PERIOD_MONTHS}개월
                 </AppText>
               </View>
               <View style={styles.summaryRow}>
@@ -604,7 +605,7 @@ export default function CreateScreen() {
                   제작 초안 저장
                 </ActionButton>
               </View>
-              <AppText variant="caption">생성일부터 기본 4개월 이용할 수 있으며 제작 기간도 포함됩니다. 추가 티켓은 별도 구매하며, 티켓 1장(1,000원)으로 1개월씩 연장합니다.</AppText>
+              <AppText variant="caption">생성일부터 기본 {INVITATION_INITIAL_DISPLAY_PERIOD_MONTHS}개월 이용할 수 있으며 제작 기간도 포함됩니다. 추가 티켓은 별도 구매하며, 티켓 1장(1,000원)으로 1개월씩 연장합니다.</AppText>
             </SectionCard>
           ) : null}
           <View onLayout={(event) => setTicketSectionY(event.nativeEvent.layout.y)}>

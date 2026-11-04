@@ -1,0 +1,60 @@
+.page {
+  width: min(100%, 680px);
+  margin: 0 auto;
+  padding: 40px 24px;
+  color: #1c1d1a;
+  background: #f8f8f7;
+}
+
+.page h1 {
+  margin: 8px 0 16px;
+  font-size: clamp(24px, 5vw, 32px);
+  line-height: 1.4;
+}
+
+.eyebrow,
+.description {
+  margin: 0;
+  color: #666862;
+  font-size: 15px;
+  line-height: 1.7;
+}
+
+.card {
+  margin: 24px 0;
+  border: 1px solid #d8dad4;
+  background: #fff;
+}
+
+.image {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: 420px;
+  object-fit: cover;
+}
+
+.content {
+  padding: 24px;
+  overflow-wrap: anywhere;
+}
+
+.content h2 {
+  margin: 0 0 12px;
+  font-size: 22px;
+  line-height: 1.5;
+}
+
+.content p {
+  margin: 0;
+  white-space: pre-line;
+  line-height: 1.7;
+}
+
+.link {
+  display: block;
+  margin: 20px 0;
+  color: inherit;
+  text-align: center;
+  text-decoration: underline;
+}

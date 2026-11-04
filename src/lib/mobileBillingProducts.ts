@@ -1,6 +1,6 @@
 export type MobileBillingProductTier = 'standard' | 'deluxe' | 'premium';
 
-export const MOBILE_BILLING_PREMIUM_PRICE_KRW = 9900;
+export { INVITATION_PREMIUM_PRICE_KRW as MOBILE_BILLING_PREMIUM_PRICE_KRW } from './invitationProductPolicy';
 
 // 과거 결제 영수증 해석을 위한 ID는 유지합니다. 신규 판매는 PREMIUM만 사용합니다.
 export const MOBILE_BILLING_PAGE_CREATION_PRODUCTS = {

@@ -749,13 +749,13 @@ export function useAdminData({
 
   const handleChangeTier = useCallback(
     async (page: InvitationPageSummary, nextTier: InvitationProductTier) => {
-      if (nextTier === page.productTier) {
+      if (nextTier !== 'premium' || nextTier === page.productTier) {
         return;
       }
 
       const approved = await confirm({
         title: '상품 등급을 변경할까요?',
-        description: `${page.displayName} 페이지의 상품 등급을 ${nextTier.toUpperCase()}로 바꿉니다.`,
+        description: `${page.displayName} 페이지의 상품을 프리미엄으로 바꿉니다.`,
         confirmLabel: '변경',
         cancelLabel: '취소',
       });
@@ -773,7 +773,7 @@ export function useAdminData({
           invitationPageSlug: page.slug,
         });
         showMutationSuccess({
-          title: `상품 등급을 ${nextTier.toUpperCase()}로 변경했습니다.`,
+          title: '프리미엄 상품으로 변경했습니다.',
           tone: 'success',
         }, refreshed);
       } catch (error) {

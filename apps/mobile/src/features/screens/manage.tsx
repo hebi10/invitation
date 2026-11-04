@@ -44,6 +44,7 @@ import {
 } from '../../lib/linkedInvitationCards';
 import { copyTextWithFallback } from '../../lib/textTransfer';
 import { createPrivatePreviewUrl } from '../../lib/apiPreview';
+import { buildMobileKakaoShareTarget } from '../../lib/invitationSharing';
 import type {
   MobileInvitationThemeKey,
 } from '../../types/mobileInvitation';
@@ -81,6 +82,8 @@ export default function ManageScreen() {
   const [savedNextSteps, setSavedNextSteps] = useState(false);
   const [advancedExpanded, setAdvancedExpanded] = useState(false);
   const [isOpeningPreview, setIsOpeningPreview] = useState(false);
+  const [kakaoShareTargetCard, setKakaoShareTargetCard] = useState<LinkedInvitationCard | null>(null);
+  const [isOpeningKakaoShare, setIsOpeningKakaoShare] = useState(false);
   const { ticketIntent, targetPageSlug } = useLocalSearchParams<{ ticketIntent?: string; targetPageSlug?: string }>();
   const handledTicketIntent = useRef<string | null>(null);
 
@@ -280,6 +283,46 @@ export default function ManageScreen() {
       );
     } catch {
       setNotice('청첩장 주소를 전달하지 못했습니다. 잠시 후 다시 시도해 주세요.');
+    }
+  };
+
+  const handleOpenKakaoShare = (card: LinkedInvitationCard) => {
+    const targetCard = card.slug === session?.pageSlug && pageSummary
+      ? { ...card, published: pageSummary.published, displayPeriod: pageSummary.displayPeriod }
+      : card;
+    const theme = getLinkedInvitationThemeKeys(targetCard)[0] ?? targetCard.defaultTheme;
+    const target = buildMobileKakaoShareTarget(apiBaseUrl, targetCard, theme);
+    if (!target.url) {
+      setNotice(target.notice);
+      return;
+    }
+    setKakaoShareTargetCard(targetCard);
+  };
+
+  const handleShareTheme = async (card: LinkedInvitationCard, theme: MobileInvitationThemeKey) => {
+    if (isOpeningKakaoShare) return;
+    const target = buildMobileKakaoShareTarget(apiBaseUrl, card, theme);
+    if (!target.url) {
+      setNotice(target.notice);
+      setKakaoShareTargetCard(null);
+      return;
+    }
+    setIsOpeningKakaoShare(true);
+    try {
+      try {
+        await WebBrowser.openBrowserAsync(target.url, {
+          enableDefaultShareMenuItem: false,
+          controlsColor: palette.accent,
+          createTask: true,
+        });
+      } catch {
+        await Linking.openURL(target.url);
+      }
+      setKakaoShareTargetCard(null);
+    } catch {
+      setNotice('카카오톡 공유 화면을 열지 못했습니다. 네트워크 연결을 확인한 뒤 다시 시도해 주세요.');
+    } finally {
+      setIsOpeningKakaoShare(false);
     }
   };
 
@@ -595,6 +638,7 @@ export default function ManageScreen() {
           onTogglePublished={() => void invitationForm.handleTogglePublished()}
           onOpenTicketModal={handleOpenTicketModal}
           onCopyPublicUrl={(card) => void handleCopyPublicUrl(card)}
+          onKakaoShare={handleOpenKakaoShare}
           onOpenInApp={() => void handleOpenInApp()}
           onOpenGuestbook={guestbook.openGuestbookModal}
           onRefresh={() => void handleRefreshManageScreen()}
@@ -820,6 +864,28 @@ export default function ManageScreen() {
                 </ActionButton>
               ))
               : null}
+          </View>
+        </SectionCard>
+      </InvitationEditorModalShell>
+
+      <InvitationEditorModalShell
+        visible={Boolean(kakaoShareTargetCard)}
+        onClose={() => setKakaoShareTargetCard(null)}
+        title="카카오톡 카드 공유"
+        description="같은 청첩장 내용을 원하는 디자인으로 전할 수 있습니다."
+        palette={palette}
+        fontScale={fontScale}
+      >
+        <SectionCard title={kakaoShareTargetCard?.displayName.trim() || '청첩장 공유'}
+          description="디자인을 선택한 뒤 공유 화면에서 받는 사람을 선택해 주세요.">
+          <View style={manageStyles.actionRow}>
+            {kakaoShareTargetCard ? getLinkedInvitationThemeKeys(kakaoShareTargetCard).map(theme => (
+              <ActionButton key={`kakao-share-${theme}`} variant="secondary"
+                onPress={() => void handleShareTheme(kakaoShareTargetCard, theme)}
+                disabled={isOpeningKakaoShare} style={manageStyles.actionHalfButton}>
+                {`${getInvitationThemeLabel(theme)} 카드 공유`}
+              </ActionButton>
+            )) : null}
           </View>
         </SectionCard>
       </InvitationEditorModalShell>

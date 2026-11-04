@@ -1,3 +1,4 @@
+import { INVITATION_INITIAL_DISPLAY_PERIOD_MONTHS, INVITATION_PREMIUM_PRICE_LABEL } from '../lib/invitationProductPolicy';
 import { MOBILE_BILLING_PREMIUM_PRICE_KRW } from '../lib/mobileBillingProducts';
 import type {
   MobileInvitationProductTier,
@@ -15,10 +16,10 @@ export const servicePlans = [
     name: 'PREMIUM',
     tier: 'premium' as MobileInvitationProductTier,
     price: MOBILE_BILLING_PREMIUM_PRICE_KRW,
-    priceLabel: '9,900원',
+    priceLabel: INVITATION_PREMIUM_PRICE_LABEL,
     description: '사진 최대 18장, 배경음악, 카카오톡 카드 공유, 캘린더·카운트다운과 방명록을 모두 제공합니다.',
     features: [
-      '기본 노출 기간 4개월',
+      `기본 노출 기간 ${INVITATION_INITIAL_DISPLAY_PERIOD_MONTHS}개월`,
       '모든 웨딩 디자인 포함',
       '갤러리 최대 18장',
       '배경음악 지원',
@@ -51,7 +52,7 @@ export const guideSections = [
       '계정이 없다면 회원가입 후 이메일 인증을 완료합니다.',
       '만들기에서 로그인하고 두 사람의 이름과 청첩장 주소를 입력합니다.',
       '모든 웨딩 디자인이 포함된 단일 상품입니다. 기본 정보 → 디자인 확인 → 결제 확인 순서로 진행합니다.',
-      '9,900원 금액을 확인하고 앱에서 Google Play 결제를 진행합니다. 웹 미리보기에서는 결제와 실제 생성을 진행하지 않습니다.',
+      `${INVITATION_PREMIUM_PRICE_LABEL} 금액을 확인하고 앱에서 Google Play 결제를 진행합니다. 웹 미리보기에서는 결제와 실제 생성을 진행하지 않습니다.`,
       '생성 후 내 청첩장에서 예식 정보와 사진을 입력합니다. 결제 후에는 비공개 초안으로 준비됩니다.',
     ],
   },
@@ -75,9 +76,9 @@ export const guideSections = [
   },
   {
     title: '이용 기간과 티켓',
-    description: '기본 4개월 · 티켓 1장으로 1개월 연장',
+    description: `기본 ${INVITATION_INITIAL_DISPLAY_PERIOD_MONTHS}개월 · 티켓 1장으로 1개월 연장`,
     items: [
-      '기본 이용 기간은 청첩장 생성일부터 4개월이며 제작 중인 기간도 포함됩니다.',
+      `기본 이용 기간은 청첩장 생성일부터 ${INVITATION_INITIAL_DISPLAY_PERIOD_MONTHS}개월이며 제작 중인 기간도 포함됩니다.`,
       '티켓은 할인 없이 1장당 1,000원이며, 티켓 1장으로 1개월 연장합니다.',
       '티켓은 청첩장 제작 결제에 포함되지 않습니다. 청첩장 연결 후 별도로 구매합니다.',
       '구매 확인 창에서 적립할 청첩장을 확인해 주세요. 티켓은 선택한 청첩장에 적립됩니다.',
@@ -153,7 +154,7 @@ export function findGuideSamplePageUrl(
 export const sampleInvitations = [
   '감성형 디자인 샘플 둘러보기',
   '심플형 디자인 샘플 둘러보기',
-  '서비스 금액과 구성 비교하기',
+  '서비스 금액과 구성 확인하기',
 ] as const;
 
 export const quickStartItems = [

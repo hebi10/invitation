@@ -94,6 +94,7 @@ const core = [
 ];
 
 const security = [
+  'test-mobile-kakao-share',
   'test-customer-ownership-confirmed-account',
   'test-mobile-private-preview',
   'test-mobile-create-validation',

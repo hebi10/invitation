@@ -1,3 +1,4 @@
+import { DEFAULT_INVITATION_PRODUCT_TIER, INVITATION_INITIAL_DISPLAY_PERIOD_MONTHS } from '@/lib/invitationProductPolicy';
 import 'server-only';
 
 import { getAllWeddingPageSeeds } from '@/config/weddingPages';
@@ -307,8 +308,8 @@ export async function fulfillServerMobilePageCreationPurchase(
       brideName: input.brideKoreanName,
       published: false,
       defaultTheme,
-      productTier: definition.productTier,
-      initialDisplayPeriodMonths: 4,
+      productTier: DEFAULT_INVITATION_PRODUCT_TIER,
+      initialDisplayPeriodMonths: INVITATION_INITIAL_DISPLAY_PERIOD_MONTHS,
     });
 
     const resolvedCreatedEvent = await firestoreEventRepository.assignOwnerBySlug({

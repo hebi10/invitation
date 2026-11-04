@@ -1,3 +1,4 @@
+import { INVITATION_INITIAL_DISPLAY_PERIOD_MONTHS } from '../../lib/invitationProductPolicy';
 import { Linking, StyleSheet, View } from 'react-native';
 
 import { guideSections, servicePlans } from '../../constants/content';
@@ -32,7 +33,7 @@ export default function GuideScreen() {
                 <View style={[styles.planSummary, { borderColor: palette.cardBorder }]}>
                   <View style={styles.planHeader}>
                     <AppText style={styles.planName}>프리미엄 청첩장</AppText>
-                    <AppText style={styles.planPrice}>{plan.priceLabel} · 기본 4개월</AppText>
+                    <AppText style={styles.planPrice}>{plan.priceLabel} · 기본 {INVITATION_INITIAL_DISPLAY_PERIOD_MONTHS}개월</AppText>
                   </View>
                   <AppText variant="muted">{plan.description}</AppText>
                   <AppText variant="caption">모든 웨딩 디자인이 포함됩니다. 만들기의 디자인 확인 단계에서 샘플을 볼 수 있습니다.</AppText>

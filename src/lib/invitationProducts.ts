@@ -1,3 +1,4 @@
+import { DEFAULT_INVITATION_PRODUCT_TIER } from './invitationProductPolicy';
 import {
   DEFAULT_INVITATION_THEME as DEFAULT_THEME_KEY,
   getInvitationThemeLabel,
@@ -11,7 +12,7 @@ import type {
 } from '@/types/invitationPage';
 
 export const DEFAULT_INVITATION_THEME: InvitationThemeKey = DEFAULT_THEME_KEY;
-export const DEFAULT_INVITATION_PRODUCT_TIER: InvitationProductTier = 'premium';
+export { DEFAULT_INVITATION_PRODUCT_TIER } from './invitationProductPolicy';
 
 const DEFAULT_FEATURES: InvitationFeatureFlags = {
   maxGalleryImages: 18,

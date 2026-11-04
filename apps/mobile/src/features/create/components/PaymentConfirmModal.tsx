@@ -1,3 +1,4 @@
+import { getInvitationDisplayPeriodEnd, INVITATION_INITIAL_DISPLAY_PERIOD_MONTHS } from '../../../lib/invitationProductPolicy';
 import { Modal, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
 import { getPalette } from '../../../constants/theme';
@@ -38,8 +39,7 @@ export function PaymentConfirmModal({
   slugPreview,
   totalPrice,
 }: PaymentConfirmModalProps) {
-  const expectedEnd = new Date();
-  expectedEnd.setMonth(expectedEnd.getMonth() + 4);
+  const expectedEnd = getInvitationDisplayPeriodEnd(new Date());
   return (
     <Modal visible={visible} animationType="fade" transparent onRequestClose={onClose}>
       <View style={styles.overlay}>
@@ -97,7 +97,7 @@ export function PaymentConfirmModal({
             </View>
 
             <AppText variant="caption">
-              기본 이용 기간은 결제 후 청첩장 생성일부터 4개월이며, 제작 중인 기간도 포함됩니다.
+              기본 이용 기간은 결제 후 청첩장 생성일부터 {INVITATION_INITIAL_DISPLAY_PERIOD_MONTHS}개월이며, 제작 중인 기간도 포함됩니다.
               오늘 생성 시 예상 종료일: {expectedEnd.toLocaleDateString('ko-KR')}.
               이후 티켓 1장(1,000원)으로 1개월씩 연장할 수 있습니다.
             </AppText>

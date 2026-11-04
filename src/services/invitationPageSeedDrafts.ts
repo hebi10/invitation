@@ -62,7 +62,7 @@ export function buildDraftConfigFromSeed(
 ) {
   const nextSeed = cloneInvitationPageSeed(seed);
   const displayName = createInvitationPageDisplayName('', '');
-  const features = resolveInvitationFeatures(overrides.productTier, seed.features);
+  const features = resolveInvitationFeatures(overrides.productTier);
 
   nextSeed.slug = overrides.slug;
   nextSeed.eventType = overrides.eventType;

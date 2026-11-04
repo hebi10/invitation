@@ -12,7 +12,7 @@ const configuredApiBaseUrl =
 const config: ExpoConfig = {
   name: '모바일 청첩장',
   slug: 'mobile-invitation-app',
-  version: '1.0.4',
+  version: '1.0.5',
   orientation: 'portrait',
   scheme: 'mobileinvitation',
   userInterfaceStyle: 'automatic',
@@ -38,7 +38,7 @@ const config: ExpoConfig = {
   ],
   android: {
     package: 'kr.msgnote.mobileinvitation',
-    versionCode: 9,
+    versionCode: 10,
     predictiveBackGestureEnabled: false,
     intentFilters: [
       {
