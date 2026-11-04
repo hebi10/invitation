@@ -125,3 +125,13 @@ Google Cloud 프로젝트는 `Hebi App Release` (`hebi-app-release-80847404`)입
 - 서명 산출물은 Play 게시 실패와 별도로 Actions Artifacts에 보관합니다. 결제·서버 배포 설정과 실제 기기 구매·공유 검증은 이 자동화와 별도로 완료해야 합니다.
 
 공식 안내: [Google 인증 Action](https://github.com/google-github-actions/auth), [Play 출시 트랙](https://developers.google.com/android-publisher/tracks), [API 동시 작업 주의사항](https://developers.google.com/android-publisher/concurrency-considerations).
+
+## 모바일 청첩장 디자인 에셋 (2026-11-04)
+
+- 앱 아이콘: `assets/icon-v3.png` (1024×1024, RGBA)
+- Play 등록용 아이콘: `store/icon.png` (512×512, RGBA)
+- 앱 아이콘 원본: `assets/editorial/app-icon-design-source.webp`
+- 웨딩 화보 원본: `assets/editorial/*.webp` (기능별 독립 에셋)
+- 웨딩 테마 실제 화면 미리보기: `assets/theme-previews/{simple,classic-r,romantic,gyeol,emotional}.jpg` (780×1440)
+
+테마 이미지에는 개발 도구 아이콘과 브라우저 스크롤바가 포함되지 않습니다. 캡처는 `scripts/capture-clean-wedding-previews.mjs`로 재현할 수 있고 아이콘 출력은 `scripts/build-wedding-editorial-icon.mjs`로 생성할 수 있습니다. 해당 이미지·아이콘은 Expo 앱 에셋이며, Play Console의 스토어 등록정보 업데이트는 별도로 확인해야 합니다.
