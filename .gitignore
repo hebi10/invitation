@@ -69,3 +69,7 @@ invitation-35d60-firebase-adminsdk-fbsvc-1d5d9a6e49.json
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Python deployment helper bytecode
+__pycache__/
+*.py[cod]

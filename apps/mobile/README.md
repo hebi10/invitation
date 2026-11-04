@@ -76,11 +76,46 @@
 현재 모바일 앱은 Expo managed 구성이라 네이티브 Android 프로젝트가 저장소에 포함되어 있지 않습니다.
 `android:verify:*` 스크립트는 이 상태를 확인하고, 네이티브 프로젝트가 생긴 경우 안전한 Gradle 검증 스크립트를 먼저 추가하도록 막습니다.
 
-## GitHub에서 Android AAB 빌드
-- `.github/workflows/mobile-release.yml`은 QuickCut과 같이 GitHub runner에서 직접 Gradle로 AAB를 만듭니다. Expo 계정 로그인과 `EXPO_TOKEN`은 필요하지 않습니다. Expo prebuild로 생성한 네이티브 프로젝트는 Git에 넣지 않습니다.
-- 모바일 변경 PR, `main` 또는 `build/mobile-aab` 브랜치의 모바일 변경, 수동 실행을 지원합니다. 수동 실행 메뉴는 workflow가 기본 브랜치에 반영된 후 표시됩니다.
-- 현재 버전은 `1.0.5` / Android `versionCode: 10`입니다. 다음 Play 업로드 때는 `app.config.ts`의 번호를 기존 업로드보다 크게 올립니다. 이 직접 빌드는 EAS 원격 버전 자동 증가를 사용하지 않습니다.
-- 기본 산출물은 **미서명 AAB**이며 Play에 바로 업로드할 수 없습니다. Expo 템플릿의 릴리스 디버그 서명을 명시적으로 해제합니다.
-- PR 이외 실행에서 다음 GitHub Secrets 4개가 모두 있으면 기존 청첩장 키로 후서명합니다: `INVITATION_KEYSTORE_BASE64`, `INVITATION_KEYSTORE_PASSWORD`, `INVITATION_KEY_ALIAS`, `INVITATION_KEY_PASSWORD`. 모두 없으면 미서명 AAB만 보관하며, 일부만 있으면 실패합니다. 다른 앱의 키나 새 키를 사용하지 않습니다.
-- 실제 구매가 가능한 배포용 서명에는 GitHub 변수 또는 Secret `EXPO_PUBLIC_REVENUECAT_ANDROID_API_KEY`의 운영 Google Play 공개 키(`goog_` 접두사)가 필요합니다. EAS 환경 변수는 이 직접 빌드에 자동 전달되지 않습니다. 서버 키는 앱에 넣지 않습니다.
-- AAB는 Actions 실행의 Artifacts에 14일간 보관합니다. 서명 파일만 별도 이름으로 보관하며, Play 업로드·테스터 배포·공개 출시는 자동으로 수행하지 않습니다.
+## GitHub에서 APK/AAB 빌드와 Play 비공개 테스트 배포
+- `.github/workflows/mobile-release.yml`이 Expo prebuild/Gradle로 APK와 AAB를 생성합니다. Expo 계정 로그인과 `EXPO_TOKEN`은 필요하지 않습니다.
+- PR에서는 인증 정보를 전달하지 않고 빌드를 검증합니다. 모바일 앱과 공통 `src/lib`, `src/contracts`, `src/types`, 루트 의존성 변경도 빌드를 실행합니다.
+- 기본 로컬 Android 버전 코드는 `11`입니다. CI는 실행 번호와 재실행 번호를 포함해 버전 코드를 자동 생성하고 `EXPO_ANDROID_VERSION_CODE`로 전달합니다. 표시 버전과 생성된 버전 코드는 산출물 이름·요약에 함께 기록합니다.
+- APK는 `zipalign` 후 `apksigner`로 서명하고 v2 서명과 인증서를 검증합니다. AAB는 `jarsigner`로 서명하고 인증서를 검증합니다. 기존 청첩장 업로드 인증서 SHA-256을 사용하며 다른 앱이나 새 키는 허용하지 않습니다.
+- APK는 별도 설치용 산출물입니다. Google Play 앱 서명 키와 업로드 키가 다른 경우 Play 설치본을 이 APK로 직접 업데이트할 수 없습니다. 테스트 업데이트는 Play 배포를 기준으로 확인합니다.
+- 서명·Play 배포는 `main`의 push 또는 수동 실행에서만 실행할 수 있습니다. 전체 검사와 테스트가 통과한 같은 커밋의 서명 AAB만 게시합니다. PR과 빌드 브랜치는 서명·배포를 수행하지 않습니다.
+
+### 인증 정보
+GitHub 저장소 `hebi10/invitation`의 Actions Secrets에 아래 값을 등록합니다. 실제 값은 문서·로그·Git에 넣지 않습니다.
+
+| Secret | 용도 |
+| --- | --- |
+| `INVITATION_KEYSTORE_BASE64` | 기존 청첩장 업로드 JKS 파일의 Base64 |
+| `INVITATION_KEYSTORE_PASSWORD` | JKS 비밀번호 |
+| `INVITATION_KEY_ALIAS` | 기존 업로드 키 별칭 |
+| `INVITATION_KEY_PASSWORD` | 업로드 키 비밀번호 |
+| `GOOGLE_PLAY_SERVICE_ACCOUNT_JSON` | 이 앱의 테스트 출시용 Google 서비스 계정 JSON |
+| `EXPO_PUBLIC_REVENUECAT_ANDROID_API_KEY` | 운영 Google Play 공개 키(`goog_`). 공개 키는 Variable로도 설정 가능 |
+
+배포 작업은 `google-play-testing` environment를 사용합니다. 서비스 계정 JSON은 해당 Environment Secret으로 제한할 수도 있습니다. 서명 Secrets는 빌드 작업에서도 필요하므로 Repository Secret을 사용합니다.
+
+서비스 계정은 Google Play Console에서 이 앱의 **앱 정보 보기**와 **테스트 트랙 출시** 권한만 부여합니다. 테스터 목록·프로덕션 출시·재무·관리자 권한은 필요하지 않습니다. Google Cloud의 Android Publisher API와 IAM Credentials API를 활성화하고, 공식 인증 Action의 access token 발급에 필요한 서비스 계정 자체의 Token Creator 역할을 확인합니다. JSON·서명 키를 GitHub에 새로 저장하거나 권한을 부여하는 단계는 사용자 확인 후 진행합니다.
+
+### 배포 설정
+
+| Actions Variable | 값과 의미 |
+| --- | --- |
+| `PLAY_AUTO_DEPLOY_ENABLED` | `true`이면 `main` 변경에 자동 배포 |
+| `PLAY_CLOSED_TRACK` | 콘솔과 API에서 확인한 기존 비공개 테스트 트랙 ID. 기본값 없음 |
+| `PLAY_RELEASE_STATUS` | `completed`가 기본값. 준비용 업로드는 명시적으로 `draft` 선택 |
+| `PLAY_SEND_FOR_REVIEW` | `true`일 때 심사 제출. 기본값은 제출 보류 |
+
+수동 실행의 `deploy`는 기본 `false`이며, `main`에서 `true`로 실행하면 지정 트랙에 게시합니다. 트랙을 새로 만들거나 테스터 목록을 바꾸지 않습니다. `production`, `beta`, `internal`, `qa`와 이 예약 이름의 폼 팩터 트랙은 거부합니다. 임의의 `closed` 이름이나 화면 표시명을 트랙 ID로 추측하지 않습니다.
+
+### 게시와 검증
+- 게시 도구는 대상 트랙·버전·AAB SHA-256을 검사합니다. 같은 버전의 다른 파일, 낮은 버전, 대상의 관계없는 초안·진행 중 릴리스, 다른 트랙의 심사·검토 대기 상태를 발견하면 중단합니다.
+- commit에는 `changesInReviewBehavior=ERROR_IF_IN_REVIEW`를 지정하여 기존 심사를 취소하지 않습니다. Google Play API는 심사 전송 시 콘솔의 다른 제출 준비 변경도 함께 제출할 수 있습니다. 트랙 검사만으로 스토어 설명 등 모든 변경이 격리된다고 보장할 수 없으므로, 자동 심사 전송 활성화 전 게시 개요를 확인합니다.
+- 처음 앱을 게시할 때 콘솔의 앱 설정·동의·첫 비공개 테스트 심사가 필요할 수 있습니다. 이런 오류를 초안 상태 변경이나 보안 옵션 해제로 우회하지 않습니다.
+- 쓰기 API의 통신 결과가 불명확하면 같은 요청을 무조건 다시 보내지 않습니다. commit 후 읽기 API로 버전과 실제 출시 상태를 확인하며, `PUBLISHED`만 테스터 제공 중으로 표시합니다. `IN_REVIEW`, `NOT_SENT_FOR_REVIEW`, `DRAFT`는 각각 심사 중·심사 제출 대기·초안입니다.
+- 서명 산출물은 Play 게시 실패와 별도로 Actions Artifacts에 보관합니다. 결제·서버 배포 설정과 실제 기기 구매·공유 검증은 이 자동화와 별도로 완료해야 합니다.
+
+공식 안내: [Google 인증 Action](https://github.com/google-github-actions/auth), [Play 출시 트랙](https://developers.google.com/android-publisher/tracks), [API 동시 작업 주의사항](https://developers.google.com/android-publisher/concurrency-considerations).

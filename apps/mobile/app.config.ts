@@ -1,5 +1,7 @@
 import type { ExpoConfig } from 'expo/config';
 
+import { parseAndroidVersionCode } from '../../scripts/mobile-release-policy.mjs';
+
 declare const process: {
   env: Record<string, string | undefined>;
 };
@@ -38,7 +40,7 @@ const config: ExpoConfig = {
   ],
   android: {
     package: 'kr.msgnote.mobileinvitation',
-    versionCode: 10,
+    versionCode: parseAndroidVersionCode(process.env.EXPO_ANDROID_VERSION_CODE),
     predictiveBackGestureEnabled: false,
     intentFilters: [
       {

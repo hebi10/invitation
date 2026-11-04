@@ -94,6 +94,8 @@ const core = [
 ];
 
 const security = [
+  'test-mobile-release-automation',
+  'test-mobile-play-publish',
   'test-mobile-kakao-share',
   'test-customer-ownership-confirmed-account',
   'test-mobile-private-preview',
