@@ -77,6 +77,64 @@ def read_inputs(args, token):
     return data, hashlib.sha256(data).hexdigest(), notes
 
 
+def request_operation(method, path):
+    endpoint = path.partition("?")[0]
+    edit = re.escape(BASE) + r"/edits/[^/:]+"
+    operations = [
+        ("POST", re.escape(BASE) + r"/edits", "edits.create"),
+        ("GET", edit + r"/tracks", "tracks.list"),
+        ("GET", edit + r"/bundles", "bundles.list"),
+        ("GET", edit + r"/apks", "apks.list"),
+        ("GET", re.escape(BASE) + r"/tracks/[^/]+/releases", "releases.list"),
+        ("POST", r"/upload" + edit + r"/bundles", "bundles.upload"),
+        ("PUT", edit + r"/tracks/[^/]+", "tracks.update"),
+        ("POST", edit + r":validate", "edits.validate"),
+        ("POST", edit + r":commit", "edits.commit"),
+        ("DELETE", edit, "edits.delete"),
+    ]
+    return next((name for expected, pattern, name in operations
+                 if method == expected and re.fullmatch(pattern, endpoint)), "unknown")
+
+
+def safe_google_error(body, token):
+    try:
+        parsed = json.loads(body)
+    except ValueError:
+        return {}
+    error = parsed.get("error") if isinstance(parsed, dict) else None
+    if not isinstance(error, dict):
+        return {}
+    result = {}
+    if type(error.get("code")) is int and 100 <= error["code"] <= 599:
+        result["code"] = error["code"]
+    statuses = {"OK", "CANCELLED", "UNKNOWN", "INVALID_ARGUMENT", "DEADLINE_EXCEEDED",
+                "NOT_FOUND", "ALREADY_EXISTS", "PERMISSION_DENIED", "UNAUTHENTICATED",
+                "RESOURCE_EXHAUSTED", "FAILED_PRECONDITION", "ABORTED", "OUT_OF_RANGE",
+                "UNIMPLEMENTED", "INTERNAL", "UNAVAILABLE", "DATA_LOSS"}
+    status = error.get("status")
+    if isinstance(status, str) and status in statuses and token not in status:
+        result["status"] = status
+    message = error.get("message")
+    if isinstance(message, str):
+        for _ in range(2):
+            message = urllib.parse.unquote(message)
+        message = re.sub(r"\x1b\[[0-?]*[ -/]*[@-~]", "", message)
+        message = " ".join("".join(char for char in message if char.isprintable() or char.isspace()).split())
+        if token and token in "".join(message.split()) and token not in message:
+            message = "[sensitive message omitted]"
+        for value in {token, urllib.parse.quote(token, safe=""), urllib.parse.quote_plus(token)}:
+            if value:
+                message = message.replace(value, "[redacted]")
+        if re.search(r"authorization|bearer|password|passphrase|storepass|keypass|private[_ -]?key|"
+                     r"secret|credential|cookie|api[_-]?key|(?:access|refresh|id)[_-]?token|alias", message, re.I):
+            message = "[sensitive message omitted]"
+        message = re.sub(r"(?i)(?:\b[a-z][a-z0-9+.-]*:)?//[^\s<>\"']+", "[URL omitted]", message)
+        message = message.replace("::", ":")
+        if message:
+            result["message"] = message[:300]
+    return result
+
+
 def request(token, method, path, payload=None, media=None):
     headers = {"Authorization": f"Bearer {token}"}
     data = media
@@ -96,20 +154,26 @@ def request(token, method, path, payload=None, media=None):
         return result
     except urllib.error.HTTPError as error:
         try:
-            message = error.read(16384).decode("utf-8", errors="replace").lower()
+            body = error.read(16384).decode("utf-8", errors="replace")
         except OSError:
-            message = ""
+            body = ""
         finally:
             error.close()
+        message = body.lower()
+        safe_method = method if method in {"GET", "POST", "PUT", "DELETE"} else "UNKNOWN"
+        diagnostic = f"HTTP {error.code}; {safe_method} {request_operation(method, path)}"
+        details = safe_google_error(body, token)
+        if details:
+            diagnostic += "; Google error: " + json.dumps(details, ensure_ascii=False)
         if "only releases with status draft" in message and "draft app" in message:
-            raise PlayError("초기 앱 게시 설정을 Play Console에서 완료해야 합니다. 초안으로 자동 재시도하지 않습니다.") from None
+            raise PlayError(f"초기 앱 게시 설정을 Play Console에서 완료해야 합니다. 초안으로 자동 재시도하지 않습니다. ({diagnostic})") from None
         if error.code == 401:
-            raise PlayError("Google Play 인증 실패 (HTTP 401). OAuth access token을 다시 발급하십시오.") from None
+            raise PlayError(f"Google Play 인증 실패. OAuth access token을 다시 발급하십시오. ({diagnostic})") from None
         if error.code == 403:
-            raise PlayError("Google Play 권한 오류 (HTTP 403). 앱의 테스트 출시 권한과 API 활성화를 확인하십시오.") from None
+            raise PlayError(f"Google Play 권한 오류. 앱의 테스트 출시 권한과 API 활성화를 확인하십시오. ({diagnostic})") from None
         if "changes_already_in_review" in message:
-            raise PlayError("이미 진행 중인 심사가 있습니다. 기존 심사를 취소하지 않고 게시를 중단했습니다.") from None
-        raise PlayError(f"Google Play 요청 실패 (HTTP {error.code}).",
+            raise PlayError(f"이미 진행 중인 심사가 있습니다. 기존 심사를 취소하지 않고 게시를 중단했습니다. ({diagnostic})") from None
+        raise PlayError(f"Google Play 요청 실패 ({diagnostic}).",
                         uncertain=error.code >= 500 or error.code == 408) from None
     except (OSError, ValueError):
         raise PlayError("Google Play 통신 또는 응답 형식 오류입니다.", uncertain=True) from None
