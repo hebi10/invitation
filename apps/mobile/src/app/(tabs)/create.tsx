@@ -19,7 +19,6 @@ import { ActionButton } from '../../components/ActionButton';
 import { AppScreen } from '../../components/AppScreen';
 import { AppText } from '../../components/AppText';
 import { BulletList } from '../../components/BulletList';
-import { Disclosure } from '../../components/Disclosure';
 import { ChoiceChip } from '../../components/ChoiceChip';
 import { SectionCard } from '../../components/SectionCard';
 import { TextField } from '../../components/TextField';
@@ -532,9 +531,10 @@ export default function CreateScreen() {
                 갤러리 최대 18장, 배경음악, 카카오톡 카드 공유, 캘린더·카운트다운과 방명록을 제공합니다.
                 제작 후 미리보기에서 원하는 디자인을 확인할 수 있습니다.
               </AppText>
-              <Disclosure title="웨딩 디자인 샘플 보기" description="옆으로 넘겨 실제 청첩장 화면 비교">
+              <View style={styles.themePreviewSection}>
+                <AppText variant="title">디자인 샘플 미리보기</AppText>
                 <ThemePreviewGallery tier={createForm.selectedPlanInfo.tier} />
-              </Disclosure>
+              </View>
 
               {createForm.selectionValidationMessages.length > 0 ? (
                 <View
@@ -610,8 +610,8 @@ export default function CreateScreen() {
           ) : null}
           <View onLayout={(event) => setTicketSectionY(event.nativeEvent.layout.y)}>
             <SectionCard
-              title="티켓 구매"
-              description="이미 연결한 청첩장의 기간 연장용 티켓을 별도로 구매합니다."
+              title="기존 청첩장 기간 연장"
+              description="새 청첩장 결제와 별개입니다. 이미 연결된 청첩장의 이용 기간을 연장할 때만 사용하세요."
               badge={`${ticketPurchase.ticketOnlyCount}장`}
               badgeTone="neutral"
             >
