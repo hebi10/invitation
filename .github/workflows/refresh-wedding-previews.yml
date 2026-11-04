@@ -1,0 +1,66 @@
+name: Refresh clean wedding previews (editorial branch)
+
+on:
+  push:
+    branches:
+      - design/wedding-editorial-ui-20261104
+    paths:
+      - scripts/capture-clean-wedding-previews.mjs
+      - .github/workflows/refresh-wedding-previews.yml
+
+permissions:
+  contents: write
+
+jobs:
+  capture-and-commit:
+    if: github.repository == 'hebi10/invitation'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Install dependencies
+        run: npm ci --include=dev
+      - name: Install screenshot browser
+        run: |
+          npm install --no-save --package-lock=false playwright@1.56.1
+          npx playwright install --with-deps chromium
+      - name: Start local sample app
+        run: |
+          NEXT_PUBLIC_USE_FIREBASE=false npm run dev -- --port 3000 > /tmp/invitation-next.log 2>&1 &
+          echo $! > /tmp/invitation-next.pid
+          for i in $(seq 1 90); do
+            if curl -sS -o /dev/null http://127.0.0.1:3000/; then break; fi
+            sleep 2
+          done
+      - name: Capture five real themes without developer overlays
+        run: node scripts/capture-clean-wedding-previews.mjs
+      - name: Replace theme JPG assets in editorial branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          cp artifacts/theme-previews/{simple,classic-r,romantic,gyeol,emotional}.jpg apps/mobile/assets/theme-previews/
+          git add apps/mobile/assets/theme-previews/{simple,classic-r,romantic,gyeol,emotional}.jpg
+          if git diff --cached --quiet; then
+            echo "Theme previews already up to date"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "assets(mobile): replace 5 theme screenshots with clean real captures"
+          git pull --rebase origin design/wedding-editorial-ui-20261104
+          git push origin HEAD:refs/heads/design/wedding-editorial-ui-20261104
+      - name: Save capture evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: editorial-theme-previews
+          path: artifacts/theme-previews/
+          if-no-files-found: warn
+          retention-days: 14
