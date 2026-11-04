@@ -28,6 +28,8 @@ on:
       - 'scripts/*mobile*release*'
       - 'scripts/*mobile*play*'
       - 'scripts/test_publish_mobile_play.py'
+      - 'scripts/verify-mobile-release.py'
+      - 'scripts/test_verify_mobile_release.py'
       - '.github/workflows/mobile-release.yml'
   push:
     branches: [main, build/mobile-aab]
@@ -40,6 +42,8 @@ on:
       - 'scripts/*mobile*release*'
       - 'scripts/*mobile*play*'
       - 'scripts/test_publish_mobile_play.py'
+      - 'scripts/verify-mobile-release.py'
+      - 'scripts/test_verify_mobile_release.py'
       - '.github/workflows/mobile-release.yml'
 
 permissions:
@@ -124,6 +128,8 @@ jobs:
       artifact_name: ${{ steps.metadata.outputs.artifact_name }}
       base_name: ${{ steps.metadata.outputs.base_name }}
       version_code: ${{ steps.metadata.outputs.version_code }}
+      version_name: ${{ steps.metadata.outputs.version_name }}
+      build_attempt: ${{ steps.metadata.outputs.build_attempt }}
       release_name: ${{ steps.metadata.outputs.release_name }}
     steps:
       - uses: actions/checkout@v4
@@ -213,6 +219,7 @@ jobs:
         run: |
           npx --no-install expo prebuild --platform android --no-install
           node ../../scripts/mobile-release-policy.mjs prepare android/app/build.gradle
+          printf 'build_attempt=%s\n' "$GITHUB_RUN_ATTEMPT" >> "$GITHUB_OUTPUT"
       - uses: gradle/actions/setup-gradle@v4
       - name: 미서명 APK 및 AAB 빌드
         env:
@@ -262,6 +269,18 @@ jobs:
           INVITATION_KEY_ALIAS: ${{ secrets.INVITATION_KEY_ALIAS }}
           INVITATION_KEY_PASSWORD: ${{ secrets.INVITATION_KEY_PASSWORD }}
         run: bash ../../scripts/sign-mobile-release.sh
+      - name: 고정 bundletool로 AAB 메타데이터 및 출처 검증
+        if: steps.signing.outputs.signed == 'true'
+        env:
+          BASE_NAME: ${{ steps.metadata.outputs.base_name }}
+          VERSION_NAME: ${{ steps.metadata.outputs.version_name }}
+        run: |
+          curl --fail --location --retry 3 'https://github.com/google/bundletool/releases/download/1.18.3/bundletool-all-1.18.3.jar' --output "$RUNNER_TEMP/invitation-bundletool.jar"
+          printf '%s  %s\n' 'a099cfa1543f55593bc2ed16a70a7c67fe54b1747bb7301f37fdfd6d91028e29' "$RUNNER_TEMP/invitation-bundletool.jar" | sha256sum --check
+          bundle="$RUNNER_TEMP/signed-mobile/$BASE_NAME.aab"
+          java -jar "$RUNNER_TEMP/invitation-bundletool.jar" validate --bundle="$bundle"
+          java -jar "$RUNNER_TEMP/invitation-bundletool.jar" dump manifest --bundle="$bundle" --module=base > "$RUNNER_TEMP/invitation-bundle-manifest.xml"
+          python3 ../../scripts/verify-mobile-release.py stage --directory "$RUNNER_TEMP/signed-mobile" --base-name "$BASE_NAME" --manifest "$RUNNER_TEMP/invitation-bundle-manifest.xml" --version-name "$VERSION_NAME" --version-code "$EXPO_ANDROID_VERSION_CODE" --source-sha "$GITHUB_SHA" --run-id "$GITHUB_RUN_ID" --run-attempt "$GITHUB_RUN_ATTEMPT"
       - name: 서명 APK 및 AAB 보관
         if: steps.signing.outputs.signed == 'true'
         uses: actions/upload-artifact@v4
@@ -324,6 +343,13 @@ jobs:
       - name: 동일 실행 서명 산출물 검사
         working-directory: play-artifacts
         run: sha256sum --check SHA256SUMS
+      - name: 다운로드한 APK·AAB의 소스·버전·실행 재검증
+        env:
+          BASE_NAME: ${{ needs.bundle.outputs.base_name }}
+          VERSION_NAME: ${{ needs.bundle.outputs.version_name }}
+          VERSION_CODE: ${{ needs.bundle.outputs.version_code }}
+          BUILD_ATTEMPT: ${{ needs.bundle.outputs.build_attempt }}
+        run: python3 scripts/verify-mobile-release.py verify --directory play-artifacts --base-name "$BASE_NAME" --version-name "$VERSION_NAME" --version-code "$VERSION_CODE" --source-sha "$GITHUB_SHA" --run-id "$GITHUB_RUN_ID" --run-attempt "$BUILD_ATTEMPT"
       - name: Google Play 단기 액세스 토큰 발급
         id: auth
         uses: google-github-actions/auth@v3
