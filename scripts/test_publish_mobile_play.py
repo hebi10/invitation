@@ -341,6 +341,120 @@ class PublisherTests(unittest.TestCase):
         self.assertNotIn("::error::unsafe", stdout + stderr)
         self.assertEqual(sum(c[1].startswith("/upload") for c in calls), 1)
 
+    def test_http_400_reports_safe_google_reason_and_static_upload_operation(self):
+        reason = "Uploaded bundle uses an unsupported target SDK version."
+        body = json.dumps({"error": {"code": 400, "status": "INVALID_ARGUMENT", "message": reason,
+                                      "details": [{"private": TOKEN}], "errors": [{"message": TOKEN}]}}).encode()
+        error = HTTPError("https://example.invalid/" + TOKEN, 400, TOKEN, {"Authorization": TOKEN}, io.BytesIO(body))
+        result, calls, _, stderr = self.run_main(self.preflight() + [
+            ("POST", "/upload" + EDIT + "/bundles", error), ("DELETE", EDIT, {})])
+        self.assertEqual(result, 1)
+        self.assertIn("POST bundles.upload", stderr)
+        self.assertIn('"code": 400', stderr)
+        self.assertIn('"status": "INVALID_ARGUMENT"', stderr)
+        self.assertIn(reason, stderr)
+        self.assertNotIn("https://", stderr)
+        self.assertEqual(sum(c[1].startswith("/upload") for c in calls), 1)
+        self.assertFalse(any(c[0] == "PUT" or c[1].endswith(":commit") for c in calls))
+
+    def test_http_diagnostic_classifies_operations_without_printing_paths(self):
+        cases = [("POST", BASE + "/edits", "edits.create"),
+                 ("GET", EDIT + "/tracks", "tracks.list"),
+                 ("GET", EDIT + "/bundles", "bundles.list"),
+                 ("GET", EDIT + "/apks", "apks.list"),
+                 ("GET", BASE + "/tracks/internal/releases", "releases.list"),
+                 ("POST", "/upload" + EDIT + "/bundles?uploadType=media", "bundles.upload"),
+                 ("PUT", EDIT + "/tracks/internal", "tracks.update"),
+                 ("POST", EDIT + ":validate", "edits.validate"),
+                 ("POST", EDIT + ":commit?changesNotSentForReview=true", "edits.commit"),
+                 ("DELETE", EDIT, "edits.delete"),
+                 ("GET", "/unknown/" + TOKEN, "unknown")]
+        for method, path, operation in cases:
+            with self.subTest(operation=operation):
+                resource = io.BytesIO(b'{}')
+                error = HTTPError("https://example.invalid/" + TOKEN, 400, TOKEN, {}, resource)
+                with patch("urllib.request.urlopen", side_effect=error):
+                    with self.assertRaises(self.publisher.PlayError) as caught:
+                        self.publisher.request(TOKEN, method, path)
+                message = str(caught.exception)
+                self.assertIn(method + " " + operation, message)
+                self.assertNotIn("our-edit", message)
+                self.assertNotIn(TOKEN, message)
+                self.assertNotIn("https://", message)
+                self.assertTrue(resource.closed)
+
+    def test_diagnostic_redacts_tokens_urls_and_credential_expressions(self):
+        messages = ["Safe reason " + TOKEN + " and " + TOKEN,
+                    "Read https://example.invalid/private?value=" + TOKEN + " for SDK details.",
+                    "Read https://user:short-password@example.invalid/private for details.",
+                    "Authorization: Bearer " + TOKEN,
+                    "access_token=" + TOKEN, "refresh_token=short-private-value",
+                    "id_token=short-private-value", "client_secret=short-private-value",
+                    '"private_key":"short-private-value"', "password=short-private-value",
+                    "keystorePassword=short-private-value", "keyPassword=short-private-value",
+                    "keyAlias=short-private-value", '"credentials":{"value":"short-private-value"}',
+                    "-----BEGIN PRIVATE KEY----- short-private-value -----END PRIVATE KEY-----",
+                    "access_token=%70%72%69%76%61%74%65%2D%74%6F%6B%65%6E%2D%6E%65%76%65%72%2D%65%78%70%6F%73%65"]
+        messages += ["Encoded reason " + "".join(f"%{ord(char):02X}" for char in TOKEN),
+                     "Read https%3A%2F%2Fexample.invalid%2Fprivate%3Fvalue%3D" + TOKEN,
+                     "Read https%253A%252F%252Fexample.invalid%252Fprivate%253Fvalue%253D" + TOKEN]
+        messages += [TOKEN[:10] + "\x1b[31m" + TOKEN[10:],
+                     "pass\x1b[31mword=short-private-value",
+                     "Read htt\x1b[31mps://example.invalid/private for details.",
+                     "Read //user:p1234@example.invalid/private for details.",
+                     "api_key=short-private-value", "Cookie: short-private-value",
+                     "alias=short-private-value"]
+        for message in messages:
+            with self.subTest(message=message):
+                body = json.dumps({"error": {"code": 400, "status": "INVALID_ARGUMENT", "message": message}}).encode()
+                error = HTTPError("https://example.invalid", 400, TOKEN, {}, io.BytesIO(body))
+                result, _, stdout, stderr = self.run_main(self.preflight() + [
+                    ("POST", "/upload" + EDIT + "/bundles", error), ("DELETE", EDIT, {})])
+                self.assertEqual(result, 1)
+                self.assertIn("POST bundles.upload", stderr)
+                for private in [TOKEN, "example.invalid", "short-password", "short-private-value", "%70%72%69%76", "BEGIN PRIVATE KEY"]:
+                    self.assertNotIn(private, stdout + stderr)
+
+    def test_malformed_or_untrusted_error_fields_never_fall_back_to_raw_body(self):
+        bodies = [TOKEN.encode(), b'{"error":', b'[]',
+                  json.dumps({"error": [TOKEN]}).encode(),
+                  json.dumps({"error": {"code": TOKEN, "status": TOKEN, "message": {"value": TOKEN}}}).encode(),
+                  json.dumps({"error": {"code": True, "status": "PRIVATE_VALUE", "message": None}}).encode()]
+        for body in bodies:
+            with self.subTest(body=body):
+                error = HTTPError("https://example.invalid", 400, TOKEN, {}, io.BytesIO(body))
+                result, _, _, stderr = self.run_main(self.preflight() + [
+                    ("POST", "/upload" + EDIT + "/bundles", error), ("DELETE", EDIT, {})])
+                self.assertEqual(result, 1)
+                self.assertIn("POST bundles.upload", stderr)
+                self.assertNotIn("PRIVATE_VALUE", stderr)
+                self.assertNotIn('"code": true', stderr)
+
+    def test_http_diagnostic_is_bounded_one_line_and_cannot_inject_workflow_commands(self):
+        body = json.dumps({"error": {"code": 400, "status": "INVALID_ARGUMENT", "message":
+            "Invalid SDK.\r\n\x1b[31m::error::unsafe " + TOKEN + " " + ("safe detail " * 100)}}).encode()
+        error = HTTPError("https://example.invalid", 400, TOKEN, {}, io.BytesIO(body))
+        result, _, _, stderr = self.run_main(self.preflight() + [
+            ("POST", "/upload" + EDIT + "/bundles", error), ("DELETE", EDIT, {})])
+        self.assertEqual(result, 1)
+        self.assertIn("Invalid SDK.", stderr)
+        self.assertIn("POST bundles.upload", stderr)
+        self.assertNotIn("\r", stderr)
+        self.assertNotIn("\x1b", stderr)
+        self.assertNotIn("::error::", stderr)
+        self.assertEqual(len(stderr.splitlines()), 1)
+        self.assertLess(len(stderr), 700)
+
+    def test_diagnostic_preserves_server_and_timeout_uncertainty(self):
+        for code in [408, 500, 503]:
+            with self.subTest(code=code):
+                error = HTTPError("https://example.invalid", code, TOKEN, {}, io.BytesIO(b'{}'))
+                with patch("urllib.request.urlopen", side_effect=error):
+                    with self.assertRaises(self.publisher.PlayError) as caught:
+                        self.publisher.request(TOKEN, "POST", EDIT + ":commit")
+                self.assertTrue(caught.exception.uncertain)
+                self.assertIn("POST edits.commit", str(caught.exception))
+
     def test_commit_transport_failure_uses_read_verification_without_mutation_retry(self):
         result, calls, stdout, _ = self.run_main(self.preflight() + self.finish(commit=URLError(TOKEN)))
         self.assertEqual(result, 0)
