@@ -72,6 +72,21 @@ export function InvitationEditorWorkspace({
             </ActionButton>
             <ActionButton variant="secondary" onPress={onPreview} disabled={busy}>미리보기</ActionButton>
           </View> : null}
+          {!keyboardVisible ? (
+            <View
+              accessibilityRole="progressbar"
+              accessibilityLabel="청첩장 편집 진행 단계"
+              accessibilityValue={{ min: 1, max: steps.length, now: activeStepIndex + 1 }}
+              style={[styles.progressTrack, { backgroundColor: palette.surfaceMuted }]}
+            >
+              <View
+                style={[styles.progressFill, {
+                  backgroundColor: palette.accent,
+                  width: `${((activeStepIndex + 1) / steps.length) * 100}%`,
+                }]}
+              />
+            </View>
+          ) : null}
         </View>
 
         <ScrollView
@@ -114,6 +129,8 @@ const styles = StyleSheet.create({
   statusRow: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', gap: 8 },
   navigation: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   contentsButton: { flexGrow: 1 },
+  progressTrack: { height: 3, overflow: 'hidden' },
+  progressFill: { height: '100%' },
   scroll: { flex: 1 },
   scrollContent: { width: '100%', maxWidth: 720, alignSelf: 'center', padding: 20, gap: 24 },
   contents: { padding: 12, gap: 8 },
