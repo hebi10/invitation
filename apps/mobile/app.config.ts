@@ -18,11 +18,11 @@ const config: ExpoConfig = {
   orientation: 'portrait',
   scheme: 'mobileinvitation',
   userInterfaceStyle: 'automatic',
-  icon: './assets/icon-v2.png',
+  icon: './assets/icon-v3.png',
   splash: {
     image: './assets/splash.jpg',
     resizeMode: 'contain',
-    backgroundColor: '#f7efe7',
+    backgroundColor: '#faf8f5',
   },
   plugins: [
     'expo-router',
@@ -76,8 +76,8 @@ const config: ExpoConfig = {
       'android.permission.RECORD_AUDIO',
     ],
     adaptiveIcon: {
-      foregroundImage: './assets/icon-v2.png',
-      backgroundColor: '#f7efe7',
+      foregroundImage: './assets/icon-v3.png',
+      backgroundColor: '#faf8f5',
     },
   },
   ios: {
@@ -95,7 +95,7 @@ const config: ExpoConfig = {
     },
   },
   web: {
-    favicon: './assets/icon-v2.png',
+    favicon: './assets/icon-v3.png',
   },
   experiments: {
     typedRoutes: true,

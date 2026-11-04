@@ -1,3 +1,4 @@
+import { Image } from 'expo-image';
 import { useState, type ReactNode } from 'react';
 import { StyleSheet, View } from 'react-native';
 
@@ -5,6 +6,7 @@ import { ActionButton } from '../../../components/ActionButton';
 import { AppText } from '../../../components/AppText';
 import { SectionCard } from '../../../components/SectionCard';
 import type { AppPalette } from '../../../constants/theme';
+import { themePreviewImages } from '../../../constants/themePreviewImages';
 import { getInvitationThemeLabel } from '../../../lib/invitationThemes';
 import {
   getLinkedInvitationThemeKeys,
@@ -59,14 +61,27 @@ function LinkedInvitationCardPanel({
 
   return (
     <View style={[styles.invitation, { borderColor: palette.cardBorder }]}>
-      <View style={styles.summary}>
-        <AppText variant="caption" color={palette.textMuted}>{active ? '현재 선택한 청첩장' : '연결한 청첩장'}</AppText>
-        <AppText variant="title">{card.displayName.trim() || '연결한 청첩장'}</AppText>
-        {weddingDate ? <AppText>예식일 {formatDateLabel(weddingDate)}</AppText> : null}
-        <AppText color={statusColor}>{visibility.label}</AppText>
-        <AppText variant="muted">
-          노출 기간 · {card.displayPeriod.enabled ? formatDisplayPeriod(card.displayPeriod) : '기간 제한 없음'}
-        </AppText>
+      <View style={styles.overview}>
+        <Image
+          source={themePreviewImages[card.defaultTheme] ?? themePreviewImages.romantic}
+          style={[styles.coverPreview, { backgroundColor: palette.surfaceMuted }]}
+          contentFit="cover"
+          contentPosition="top"
+          alt={`${card.displayName.trim() || '청첩장'} 디자인 표지`}
+        />
+        <View style={styles.summary}>
+          <AppText variant="caption" color={palette.textMuted}>
+            {active ? '현재 선택한 청첩장' : '연결한 청첩장'}
+          </AppText>
+          <AppText variant="title">{card.displayName.trim() || '연결한 청첩장'}</AppText>
+          {weddingDate ? <AppText variant="muted">예식일 {formatDateLabel(weddingDate)}</AppText> : null}
+          <View style={[styles.statusTag, { backgroundColor: visibility.tone === 'success' ? palette.successSoft : palette.surfaceMuted }]}>
+            <AppText variant="caption" color={statusColor}>{visibility.label}</AppText>
+          </View>
+          <AppText variant="muted">
+            노출 기간 · {card.displayPeriod.enabled ? formatDisplayPeriod(card.displayPeriod) : '기간 제한 없음'}
+          </AppText>
+        </View>
       </View>
 
       {children}
@@ -169,7 +184,10 @@ export function LinkedInvitationsSection({
 
 const styles = StyleSheet.create({
   invitation: { paddingTop: 8, gap: 16 },
-  summary: { gap: 6 },
+  overview: { flexDirection: 'row', gap: 14, alignItems: 'flex-start' },
+  coverPreview: { width: 86, height: 112 },
+  summary: { flex: 1, minWidth: 0, gap: 7 },
+  statusTag: { alignSelf: 'flex-start', paddingHorizontal: 9, paddingVertical: 4 },
   group: { gap: 8 },
   actions: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   action: { flexBasis: 140, flexGrow: 1 },

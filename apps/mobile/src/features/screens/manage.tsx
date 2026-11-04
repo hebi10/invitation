@@ -1,5 +1,7 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
+import { Image } from 'expo-image';
+import ivoryFlowers from '../../../assets/editorial/ivory-flowers.webp';
 import { useEffect, useRef, useState } from 'react';
 import { Keyboard, Linking, View } from 'react-native';
 
@@ -28,6 +30,7 @@ import { InvitationEditorModalShell } from '../../components/manage/InvitationEd
 import { InvitationEditorWorkspace } from '../../components/manage/InvitationEditorWorkspace';
 import { SectionCard } from '../../components/SectionCard';
 import { useAuth } from '../../contexts/AuthContext';
+import { useDrafts } from '../../contexts/DraftsContext';
 import { useInvitationOps } from '../../contexts/InvitationOpsContext';
 import { usePreferences } from '../../contexts/PreferencesContext';
 import {
@@ -51,6 +54,7 @@ import type {
 
 export default function ManageScreen() {
   const { apiBaseUrl, palette, fontScale } = usePreferences();
+  const { drafts, isReady: draftsReady } = useDrafts();
   const {
     activateStoredSession,
     authError,
@@ -644,6 +648,23 @@ export default function ManageScreen() {
           onRefresh={() => void handleRefreshManageScreen()}
           onActivateLinkedInvitation={(card) => void handleActivateLinkedInvitation(card)}
         />
+
+        {!showDashboardSyncLoading && !activeLinkedInvitationCard && draftsReady && drafts.length === 0 ? (
+          <SectionCard
+            title="아직 만든 청첩장이 없어요"
+            description="두 사람의 이름과 예식 정보를 입력해 첫 청첩장을 준비해 보세요."
+          >
+            <Image
+              source={ivoryFlowers}
+              contentFit="cover"
+              style={manageStyles.emptyIllustration}
+              alt="아이보리 웨딩 꽃 장식"
+            />
+            <ActionButton fullWidth onPress={() => router.push('/create')}>
+              새 청첩장 만들기
+            </ActionButton>
+          </SectionCard>
+        ) : null}
 
         <DraftInvitationsSection />
 

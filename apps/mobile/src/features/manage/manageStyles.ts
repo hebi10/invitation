@@ -1,6 +1,10 @@
 import { StyleSheet } from 'react-native';
 
 export const manageStyles = StyleSheet.create({
+  emptyIllustration: {
+    width: '100%',
+    aspectRatio: 1200 / 630,
+  },
   editorPreparingCard: {
     alignItems: 'center',
   },

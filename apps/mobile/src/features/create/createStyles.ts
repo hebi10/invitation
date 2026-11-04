@@ -36,6 +36,9 @@ export const createStyles = StyleSheet.create({
     flexWrap: 'wrap',
     gap: 8,
   },
+  themePreviewSection: {
+    gap: 12,
+  },
   selectionFeatureRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -45,6 +48,10 @@ export const createStyles = StyleSheet.create({
     borderRadius: 0,
     paddingHorizontal: 10,
     paddingVertical: 6,
+  },
+  selectionBannerImage: {
+    width: '100%',
+    aspectRatio: 1200 / 630,
   },
   selectionSummaryCard: {
     borderWidth: 1,

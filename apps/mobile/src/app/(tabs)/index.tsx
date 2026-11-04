@@ -6,6 +6,8 @@ import { AppScreen } from '../../components/AppScreen';
 import { AppText } from '../../components/AppText';
 import { DraftInvitationsSection } from '../../components/DraftInvitationsSection';
 import { SectionCard } from '../../components/SectionCard';
+import { ThemePreviewGallery } from '../../components/ThemePreviewGallery';
+import { WeddingIntroHero } from '../../components/WeddingIntroHero';
 import { WebPreviewNotice } from '../../components/WebPreviewNotice';
 import { useAuth } from '../../contexts/AuthContext';
 import { usePreferences } from '../../contexts/PreferencesContext';
@@ -34,6 +36,7 @@ export default function MyInvitationsScreen() {
     <AppScreen title="내 청첩장" subtitle="저장한 초안을 이어서 작성하거나 기존 청첩장을 연결하세요.">
       {isExpoWebPreview ? <WebPreviewNotice /> : null}
       <DraftInvitationsSection />
+      <WeddingIntroHero />
       <SectionCard title="청첩장을 준비해 볼까요?" description="새로 만들거나 이미 제작한 청첩장을 이 기기에 연결할 수 있습니다.">
         <ActionButton fullWidth onPress={() => router.push('/create')}>새 청첩장 만들기</ActionButton>
         <ActionButton variant="secondary" fullWidth disabled={isExpoWebPreview}
@@ -41,6 +44,12 @@ export default function MyInvitationsScreen() {
           기존 청첩장 연결
         </ActionButton>
         <AppText variant="muted">PC에서 제작했다면 청첩장의 앱 연동 링크로도 연결할 수 있습니다.</AppText>
+      </SectionCard>
+      <SectionCard
+        title="웨딩 디자인 미리보기"
+        description="가입이나 결제 전에 실제 샘플을 살펴볼 수 있습니다."
+      >
+        <ThemePreviewGallery />
       </SectionCard>
       <ActionButton variant="secondary" fullWidth onPress={() => router.push('/guide')}>제작·연동 방법 보기</ActionButton>
     </AppScreen>
