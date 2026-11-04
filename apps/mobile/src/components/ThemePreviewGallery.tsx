@@ -86,7 +86,7 @@ const styles = StyleSheet.create({
   wrapper: { gap: 12 },
   gallery: { gap: 12, paddingBottom: 4, alignItems: 'stretch' },
   item: { width: 190, borderWidth: 1, gap: 0 },
-  image: { width: '100%', aspectRatio: 3 / 4 },
+  image: { width: '100%', aspectRatio: 390 / 720 },
   textPreview: { justifyContent: 'center', alignItems: 'center', padding: 16 },
   copy: { padding: 12, gap: 9, flex: 1 },
   title: { fontWeight: '600' },
