@@ -1,5 +1,7 @@
 import { INVITATION_INITIAL_DISPLAY_PERIOD_MONTHS } from '../../lib/invitationProductPolicy';
 import { Ionicons } from '@expo/vector-icons';
+import { Image } from 'expo-image';
+import ringsRibbonImage from '../../../assets/editorial/rings-ribbon.webp';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
@@ -509,6 +511,12 @@ export default function CreateScreen() {
                 createForm.selectionValidationMessages.length === 0 ? 'success' : 'notice'
               }
             >
+              <Image
+                source={ringsRibbonImage}
+                style={styles.selectionBannerImage}
+                contentFit="cover"
+                alt="화이트 플라워와 결혼 반지로 구성한 웨딩 이미지"
+              />
               <View
                 style={[
                   styles.selectionSummaryCard,
