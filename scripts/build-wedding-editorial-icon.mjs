@@ -14,6 +14,7 @@ for (const target of targets) {
   await fs.mkdir(path.dirname(output), { recursive: true });
   await sharp(source)
     .resize(target.size, target.size, { fit: 'fill', kernel: 'lanczos3' })
+    .ensureAlpha()
     .png({ compressionLevel: 9 })
     .toFile(output);
   const metadata = await sharp(output).metadata();
