@@ -1,0 +1,41 @@
+name: Build editorial wedding icon (design branch)
+
+on:
+  push:
+    branches:
+      - design/wedding-editorial-ui-20261104
+    paths:
+      - scripts/build-wedding-editorial-icon.mjs
+      - .github/workflows/build-wedding-editorial-icon.yml
+
+permissions:
+  contents: write
+
+jobs:
+  build-icon:
+    if: github.repository == 'hebi10/invitation'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Install dependencies
+        run: npm ci --include=dev
+      - name: Generate independently usable Android and store icons
+        run: node scripts/build-wedding-editorial-icon.mjs
+      - name: Commit generated icon files to design branch
+        run: |
+          set -euo pipefail
+          git add apps/mobile/assets/icon-v3.png apps/mobile/store/icon.png
+          if git diff --cached --quiet; then exit 0; fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "assets(mobile): add new editorial app and Play listing icons"
+          git pull --rebase origin design/wedding-editorial-ui-20261104
+          git push origin HEAD:refs/heads/design/wedding-editorial-ui-20261104
