@@ -49,6 +49,10 @@ export const createStyles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 6,
   },
+  selectionBannerImage: {
+    width: '100%',
+    aspectRatio: 1200 / 630,
+  },
   selectionSummaryCard: {
     borderWidth: 1,
     borderRadius: 0,
