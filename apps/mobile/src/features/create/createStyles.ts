@@ -36,6 +36,9 @@ export const createStyles = StyleSheet.create({
     flexWrap: 'wrap',
     gap: 8,
   },
+  themePreviewSection: {
+    gap: 12,
+  },
   selectionFeatureRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
