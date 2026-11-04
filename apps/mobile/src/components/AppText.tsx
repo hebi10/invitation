@@ -22,13 +22,13 @@ type AppTextProps = PropsWithChildren<
 
 const VARIANT_STYLES: Record<AppTextVariant, TextStyle> = {
   body: {
-    fontSize: 14,
-    lineHeight: 22,
+    fontSize: 15,
+    lineHeight: 23,
     fontWeight: '400',
   },
   title: {
-    fontSize: 18,
-    lineHeight: 26,
+    fontSize: 19,
+    lineHeight: 27,
     fontWeight: '600',
   },
   display: {
@@ -37,13 +37,13 @@ const VARIANT_STYLES: Record<AppTextVariant, TextStyle> = {
     fontWeight: '600',
   },
   caption: {
-    fontSize: 12,
-    lineHeight: 18,
+    fontSize: 13,
+    lineHeight: 20,
     fontWeight: '400',
   },
   muted: {
-    fontSize: 14,
-    lineHeight: 22,
+    fontSize: 15,
+    lineHeight: 23,
     fontWeight: '400',
   },
 };
