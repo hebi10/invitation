@@ -1,7 +1,8 @@
 import { Image } from 'expo-image';
 import { StyleSheet, View } from 'react-native';
 
-import { themePreviewImages } from '../constants/themePreviewImages';
+import portraitImage from '../../assets/editorial/wedding-portrait.webp';
+import bouquetImage from '../../assets/editorial/wedding-bouquet.webp';
 import { useVisualPreferences } from '../contexts/PreferencesContext';
 import {
   INVITATION_INITIAL_DISPLAY_PERIOD_MONTHS,
@@ -31,18 +32,18 @@ export function WeddingIntroHero() {
       </View>
       <View style={styles.previews}>
         <Image
-          source={themePreviewImages.romantic}
+          source={portraitImage}
           style={[styles.preview, { backgroundColor: palette.surfaceMuted }]}
           contentFit="cover"
           contentPosition="top"
-          alt="로맨틱 청첩장 디자인 미리보기"
+          alt="웨딩 화보 속 신랑과 신부 사진"
         />
         <Image
-          source={themePreviewImages.emotional}
+          source={bouquetImage}
           style={[styles.preview, { backgroundColor: palette.surfaceMuted }]}
           contentFit="cover"
           contentPosition="top"
-          alt="감성 청첩장 디자인 미리보기"
+          alt="아이보리 꽃다발을 든 신부 사진"
         />
       </View>
     </View>
