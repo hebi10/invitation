@@ -1,9 +1,8 @@
-import type { ReactNode } from 'react';
-import { View } from 'react-native';
+import { useState, type ReactNode } from 'react';
+import { StyleSheet, View } from 'react-native';
 
 import { ActionButton } from '../../../components/ActionButton';
 import { AppText } from '../../../components/AppText';
-import { BulletList } from '../../../components/BulletList';
 import { SectionCard } from '../../../components/SectionCard';
 import type { AppPalette } from '../../../constants/theme';
 import { getInvitationThemeLabel } from '../../../lib/invitationThemes';
@@ -11,15 +10,18 @@ import {
   getLinkedInvitationThemeKeys,
   type LinkedInvitationCard,
 } from '../../../lib/linkedInvitationCards';
-import { manageStyles } from '../manageStyles';
-import { formatDisplayPeriod, formatThemeList } from '../linkedInvitationDisplay';
+import { getInvitationVisibility } from '../invitationVisibility';
+import { formatDateLabel, formatDisplayPeriod, formatThemeList } from '../linkedInvitationDisplay';
 
 type LinkedInvitationCardPanelProps = {
   card: LinkedInvitationCard;
   palette: AppPalette;
-  badgeLabel: string;
+  active?: boolean;
+  published?: boolean;
+  weddingDate?: string;
   publicUrl?: string | null;
   children?: ReactNode;
+  managementActions?: ReactNode;
 };
 
 type LinkedInvitationsSectionProps = {
@@ -30,6 +32,7 @@ type LinkedInvitationsSectionProps = {
   dashboardPublicUrl: string | null;
   dashboardCommentCount: number;
   dashboardPublished: boolean;
+  dashboardWeddingDate?: string;
   canRequestDashboardSync: boolean;
   needsRefreshRetry: boolean;
   activatingLinkedInvitationSlug: string | null;
@@ -38,6 +41,7 @@ type LinkedInvitationsSectionProps = {
   onTogglePublished: () => void;
   onOpenTicketModal: () => void;
   onCopyPublicUrl: (card: LinkedInvitationCard) => void;
+  onKakaoShare: (card: LinkedInvitationCard) => void;
   onOpenInApp: () => void;
   onOpenGuestbook: () => void;
   onRefresh: () => void;
@@ -45,213 +49,129 @@ type LinkedInvitationsSectionProps = {
 };
 
 function LinkedInvitationCardPanel({
-  card,
-  palette,
-  badgeLabel,
-  publicUrl,
-  children,
+  card, palette, active = false, published = card.published, weddingDate,
+  publicUrl, children, managementActions,
 }: LinkedInvitationCardPanelProps) {
+  const [expanded, setExpanded] = useState(false);
+  const visibility = getInvitationVisibility(published, card.displayPeriod);
+  const statusColor = visibility.tone === 'success'
+    ? palette.success : visibility.tone === 'notice' ? palette.notice : palette.textMuted;
+
   return (
-    <View
-      style={[
-        manageStyles.selectedInvitationCard,
-        manageStyles.invitationCardExpanded,
-        {
-          backgroundColor: badgeLabel === '현재 연동' ? palette.surfaceMuted : palette.surface,
-          borderColor: palette.cardBorder,
-        },
-      ]}
-    >
-      <View style={manageStyles.invitationCardHeaderRow}>
-        <AppText style={manageStyles.selectedInvitationTitle}>
-          {card.displayName.trim() || (badgeLabel === '현재 연동' ? '연동한 청첩장' : '추가 연동 청첩장')}
-        </AppText>
-        <AppText color={badgeLabel === '현재 연동' ? palette.accent : palette.textMuted} variant="caption">
-          {badgeLabel}
+    <View style={[styles.invitation, { borderColor: palette.cardBorder }]}>
+      <View style={styles.summary}>
+        <AppText variant="caption" color={palette.textMuted}>{active ? '현재 선택한 청첩장' : '연결한 청첩장'}</AppText>
+        <AppText variant="title">{card.displayName.trim() || '연결한 청첩장'}</AppText>
+        {weddingDate ? <AppText>예식일 {formatDateLabel(weddingDate)}</AppText> : null}
+        <AppText color={statusColor}>{visibility.label}</AppText>
+        <AppText variant="muted">
+          노출 기간 · {card.displayPeriod.enabled ? formatDisplayPeriod(card.displayPeriod) : '기간 제한 없음'}
         </AppText>
       </View>
 
-      <BulletList
-        items={[
-          `공개 상태: ${card.published ? '공개 중' : '비공개'}`,
-          `서비스: ${card.productTier.toUpperCase()}`,
-          `기본 테마: ${getInvitationThemeLabel(card.defaultTheme)}`,
-          `사용 가능한 디자인: ${formatThemeList(getLinkedInvitationThemeKeys(card))}`,
-          `보유 티켓: ${card.ticketCount}장`,
-          `노출 기간: ${formatDisplayPeriod(card.displayPeriod)}`,
-          `배경음악: ${card.showMusic ? '사용 가능' : '미제공'}`,
-          `방명록: ${card.showGuestbook ? '제공' : '미제공'}`,
-        ]}
-      />
-
-      {publicUrl ? (
-        <AppText variant="muted" style={manageStyles.linkText}>
-          {publicUrl}
-        </AppText>
-      ) : null}
-
       {children}
+
+      <ActionButton variant="secondary" onPress={() => setExpanded(value => !value)}
+        accessibilityLabel={`${card.displayName || '청첩장'} 정보와 관리 ${expanded ? '접기' : '펼치기'}`}
+        accessibilityState={{ expanded }}>
+        {expanded ? '정보·관리 접기' : '청첩장 정보·관리 보기'}
+      </ActionButton>
+      {expanded ? (
+        <View style={styles.details}>
+          {managementActions}
+          <View style={styles.summary}>
+            <AppText variant="caption" color={palette.textMuted}>서비스 정보</AppText>
+            <AppText>보유 티켓 {card.ticketCount}장 · 프리미엄</AppText>
+            <AppText variant="muted">기본 디자인 · {getInvitationThemeLabel(card.defaultTheme)}</AppText>
+            <AppText variant="muted">사용 가능한 디자인 · {formatThemeList(getLinkedInvitationThemeKeys(card))}</AppText>
+            <AppText variant="muted">배경음악 {card.showMusic ? '사용 가능' : '미제공'} · 방명록 {card.showGuestbook ? '제공' : '미제공'}</AppText>
+            {publicUrl ? <AppText selectable variant="muted">하객용 주소 · {publicUrl}</AppText> : null}
+          </View>
+        </View>
+      ) : null}
     </View>
   );
 }
 
 export function LinkedInvitationsSection({
-  activeLinkedInvitationCard,
-  additionalLinkedInvitationCards,
-  palette,
-  hasDashboard,
-  dashboardPublicUrl,
-  dashboardCommentCount,
-  dashboardPublished,
-  canRequestDashboardSync,
-  needsRefreshRetry,
-  activatingLinkedInvitationSlug,
-  onOpenEditor,
-  onOpenUrl,
-  onTogglePublished,
-  onOpenTicketModal,
-  onCopyPublicUrl,
-  onOpenInApp,
-  onOpenGuestbook,
-  onRefresh,
-  onActivateLinkedInvitation,
+  activeLinkedInvitationCard, additionalLinkedInvitationCards, palette, hasDashboard,
+  dashboardPublicUrl, dashboardCommentCount, dashboardPublished, dashboardWeddingDate,
+  canRequestDashboardSync, needsRefreshRetry, activatingLinkedInvitationSlug,
+  onOpenEditor, onOpenUrl, onTogglePublished, onOpenTicketModal, onCopyPublicUrl, onKakaoShare,
+  onOpenInApp, onOpenGuestbook, onRefresh, onActivateLinkedInvitation,
 }: LinkedInvitationsSectionProps) {
-  if (!activeLinkedInvitationCard) {
-    return null;
-  }
+  if (!activeLinkedInvitationCard) return null;
 
   return (
-    <SectionCard
-      title="연동된 청첩장"
-      description="현재 연동 정보와 공개 상태를 확인하고, 필요하면 다시 연동할 수 있습니다."
-      badge={`${1 + additionalLinkedInvitationCards.length}개`}
-    >
+    <SectionCard title="연결한 청첩장" badge={`${1 + additionalLinkedInvitationCards.length}개`}>
       <LinkedInvitationCardPanel
-        card={activeLinkedInvitationCard}
-        palette={palette}
-        badgeLabel="현재 연동"
-        publicUrl={hasDashboard ? dashboardPublicUrl : null}
-      >
-        {hasDashboard ? (
+        key={activeLinkedInvitationCard.slug}
+        card={activeLinkedInvitationCard} palette={palette} active
+        published={hasDashboard ? dashboardPublished : activeLinkedInvitationCard.published}
+        weddingDate={dashboardWeddingDate}
+        publicUrl={hasDashboard ? dashboardPublicUrl : activeLinkedInvitationCard.publicUrl}
+        managementActions={hasDashboard ? (
           <>
-            <View style={manageStyles.actionRow}>
-              <ActionButton
-                onPress={onOpenEditor}
-                disabled={!canRequestDashboardSync}
-                style={manageStyles.actionHalfButton}
-              >
-                수정 하기
-              </ActionButton>
-              <ActionButton
-                variant="secondary"
-                onPress={onOpenUrl}
-                style={manageStyles.actionHalfButton}
-              >
-                청첩장 열기
-              </ActionButton>
-              <ActionButton
-                variant={dashboardPublished ? 'danger' : 'primary'}
-                onPress={onTogglePublished}
-                style={manageStyles.actionHalfButton}
-              >
-                {dashboardPublished ? '비공개 전환' : '공개 전환'}
-              </ActionButton>
-              <ActionButton
-                variant="secondary"
-                onPress={onOpenTicketModal}
-                style={manageStyles.actionHalfButton}
-              >
-                티켓 사용
-              </ActionButton>
+            <View style={styles.group}>
+              <AppText variant="caption" color={palette.textMuted}>공개·노출 기간</AppText>
+              <View style={styles.actions}>
+                <ActionButton variant="secondary" onPress={onTogglePublished} style={styles.action}>
+                  {dashboardPublished ? '비공개로 전환' : '공개로 전환'}
+                </ActionButton>
+                <ActionButton variant="secondary" onPress={onOpenTicketModal} style={styles.action}>티켓으로 기간 연장</ActionButton>
+              </View>
             </View>
-
-            <View
-              style={[
-                manageStyles.secondaryActionCard,
-                {
-                  backgroundColor: palette.surface,
-                  borderColor: palette.cardBorder,
-                },
-              ]}
-            >
-              <AppText variant="caption" color={palette.textMuted} style={manageStyles.secondaryActionLabel}>
-                추가 작업
-              </AppText>
-              <View style={manageStyles.actionRow}>
-                <ActionButton
-                  variant="secondary"
-                  onPress={() => onCopyPublicUrl(activeLinkedInvitationCard)}
-                  style={manageStyles.actionHalfButton}
-                >
-                  주소 복사
-                </ActionButton>
-                <ActionButton
-                  variant="secondary"
-                  onPress={onOpenInApp}
-                  style={manageStyles.actionHalfButton}
-                >
-                  앱에서 다시 열기
-                </ActionButton>
-                <ActionButton
-                  variant="secondary"
-                  onPress={onOpenGuestbook}
-                  style={manageStyles.actionHalfButton}
-                >
-                  방명록 열기
-                </ActionButton>
-                <ActionButton
-                  variant="secondary"
-                  onPress={onRefresh}
-                  disabled={!canRequestDashboardSync}
-                  style={manageStyles.actionHalfButton}
-                >
-                  {needsRefreshRetry ? '다시 시도' : '새로고침'}
+            <View style={styles.group}>
+              <AppText variant="caption" color={palette.textMuted}>방명록 · {dashboardCommentCount}개</AppText>
+              <ActionButton variant="secondary" onPress={onOpenGuestbook}>방명록 관리</ActionButton>
+            </View>
+            <View style={styles.group}>
+              <AppText variant="caption" color={palette.textMuted}>기기 연동·동기화</AppText>
+              <View style={styles.actions}>
+                <ActionButton variant="secondary" onPress={onOpenInApp} style={styles.action}>앱 연동으로 다시 열기</ActionButton>
+                <ActionButton variant="secondary" onPress={onRefresh} disabled={!canRequestDashboardSync} style={styles.action}>
+                  {needsRefreshRetry ? '동기화 다시 시도' : '새로고침'}
                 </ActionButton>
               </View>
             </View>
-
-            <AppText variant="muted" style={manageStyles.loadingText}>
-              {dashboardCommentCount === 0
-                ? '아직 등록된 방명록 댓글이 없습니다.'
-                : `${dashboardCommentCount}개의 방명록 댓글이 등록되어 있습니다.`}
-            </AppText>
           </>
         ) : null}
+      >
+        {hasDashboard ? (
+          <View style={styles.group}>
+            <ActionButton fullWidth onPress={onOpenEditor} disabled={!canRequestDashboardSync}>내용 수정</ActionButton>
+            <View style={styles.actions}>
+              <ActionButton variant="secondary" onPress={onOpenUrl} style={styles.action}>미리보기</ActionButton>
+              <ActionButton variant="secondary" onPress={() => onCopyPublicUrl(activeLinkedInvitationCard)} style={styles.action}>하객용 주소 복사</ActionButton>
+            </View>
+            <ActionButton variant="secondary" fullWidth onPress={() => onKakaoShare(activeLinkedInvitationCard)}>카카오톡 카드 공유</ActionButton>
+          </View>
+        ) : null}
       </LinkedInvitationCardPanel>
-
-      {additionalLinkedInvitationCards.length ? (
-        <View style={manageStyles.invitationCardList}>
-          {additionalLinkedInvitationCards.map((item) => (
-            <LinkedInvitationCardPanel
-              key={`linked-invitation-${item.slug}`}
-              card={item}
-              palette={palette}
-              badgeLabel="추가 연동"
-              publicUrl={item.publicUrl}
-            >
-              <View style={manageStyles.actionRow}>
-                <ActionButton
-                  variant="secondary"
-                  onPress={() => onActivateLinkedInvitation(item)}
-                  loading={activatingLinkedInvitationSlug === item.slug}
-                  disabled={Boolean(activatingLinkedInvitationSlug)}
-                  style={manageStyles.actionHalfButton}
-                >
-                  이어서 열기
-                </ActionButton>
-                <ActionButton
-                  variant="secondary"
-                  onPress={() => onCopyPublicUrl(item)}
-                  disabled={Boolean(activatingLinkedInvitationSlug)}
-                  style={manageStyles.actionHalfButton}
-                >
-                  주소 복사
-                </ActionButton>
-              </View>
-            </LinkedInvitationCardPanel>
-          ))}
-        </View>
-      ) : null}
+      {additionalLinkedInvitationCards.map(item => (
+        <LinkedInvitationCardPanel key={item.slug} card={item} palette={palette} publicUrl={item.publicUrl}>
+          <View style={styles.actions}>
+            <ActionButton variant="secondary" onPress={() => onActivateLinkedInvitation(item)}
+              loading={activatingLinkedInvitationSlug === item.slug}
+              disabled={Boolean(activatingLinkedInvitationSlug)} style={styles.action}>
+              이 청첩장 관리
+            </ActionButton>
+            <ActionButton variant="secondary" onPress={() => onCopyPublicUrl(item)}
+              disabled={Boolean(activatingLinkedInvitationSlug)} style={styles.action}>하객용 주소 복사</ActionButton>
+            <ActionButton variant="secondary" onPress={() => onKakaoShare(item)}
+              disabled={Boolean(activatingLinkedInvitationSlug)} style={styles.action}>카카오톡 카드 공유</ActionButton>
+          </View>
+        </LinkedInvitationCardPanel>
+      ))}
     </SectionCard>
   );
 }
+
+const styles = StyleSheet.create({
+  invitation: { paddingTop: 8, gap: 16 },
+  summary: { gap: 6 },
+  group: { gap: 8 },
+  actions: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  action: { flexBasis: 140, flexGrow: 1 },
+  details: { paddingTop: 8, gap: 20 },
+});

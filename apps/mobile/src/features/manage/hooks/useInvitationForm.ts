@@ -17,6 +17,8 @@ import type {
   PendingManageOnboarding,
 } from '../../../types/mobileInvitation';
 import { buildConfigFromForm } from '../buildConfigFromForm';
+import { resolveEditorSavePolicy } from '../editorSavePolicy';
+import { validateEditorRows } from '../editorDelimitedRows';
 import {
   EDITOR_STEPS,
   EMPTY_FORM,
@@ -76,6 +78,9 @@ export function useInvitationForm({
   const [onboardingStepIndex, setOnboardingStepIndex] = useState(0);
   const [isSaving, setIsSaving] = useState(false);
   const [isFormDirty, setIsFormDirty] = useState(false);
+  const [savedPublished, setSavedPublished] = useState(false);
+  const [lastSavedAt, setLastSavedAt] = useState<string | null>(null);
+  const [saveFailed, setSaveFailed] = useState(false);
 
   const isEditingForm = editorModalVisible || onboardingVisible;
   const isFormHydrationLocked =
@@ -84,6 +89,9 @@ export function useInvitationForm({
   const hydrateForm = useCallback((nextDashboard: MobileInvitationDashboard | null) => {
     formPageSlugRef.current = nextDashboard?.page.slug ?? null;
     formVersionRef.current = nextDashboard?.page.version;
+    setSavedPublished(nextDashboard?.page.published ?? false);
+    setLastSavedAt(nextDashboard?.page.lastSavedAt ?? null);
+    setSaveFailed(false);
     if (!nextDashboard) {
       setFormState(EMPTY_FORM);
       setIsFormDirty(false);
@@ -97,6 +105,7 @@ export function useInvitationForm({
   const markFormDirty = useCallback(() => {
     if (isEditingForm) {
       setIsFormDirty(true);
+      setSaveFailed(false);
     }
   }, [isEditingForm]);
 
@@ -166,7 +175,7 @@ export function useInvitationForm({
     setEditorStepIndex(0);
     setEditorModalVisible(true);
     clearPendingManageOnboarding();
-    setNotice('운영 첫 진입이므로 편집 모달에서 예식 정보를 바로 입력해 주세요.');
+    setNotice('기본 정보부터 예식 내용을 입력해 주세요.');
   }, [clearPendingManageOnboarding, dashboard, isFocused, pendingManageOnboarding, setNotice]);
 
   const setForm = useCallback<Dispatch<SetStateAction<ManageFormState>>>(
@@ -329,6 +338,7 @@ export function useInvitationForm({
       closeOnSuccess?: boolean;
       notice?: string;
       suppressNotice?: boolean;
+      applyPublicationChange?: boolean;
     }) => {
       if (!dashboard) {
         return false;
@@ -342,18 +352,42 @@ export function useInvitationForm({
       const brideName = form.bride.name.trim();
 
       if (!groomName || !brideName) {
+        setSaveFailed(true);
+        setEditorStepIndex(0);
         setNotice('신랑과 신부 이름은 비워둘 수 없습니다.');
         return false;
       }
 
-      const nextConfig = buildConfigFromForm({ dashboard, form });
+      for (const [label, value, columns] of [
+        ['신랑측 계좌', form.groomAccountsText, 3],
+        ['신부측 계좌', form.brideAccountsText, 3],
+        ['교통 안내', form.venueGuideText, 2],
+        ['화환 안내', form.wreathGuideText, 2],
+      ] as const) {
+        const incomplete = validateEditorRows(value, columns);
+        if (incomplete !== null) {
+          setSaveFailed(true);
+          setEditorStepIndex(Math.max(0, EDITOR_STEPS.findIndex(step => step.key === 'greeting')));
+          setNotice(`${label} ${incomplete}번째 항목을 모두 입력하거나 해당 항목을 삭제해 주세요.`);
+          return false;
+        }
+      }
 
+      const nextConfig = buildConfigFromForm({ dashboard, form });
+      const savePolicy = resolveEditorSavePolicy({
+        savedPublished,
+        requestedPublished: form.published,
+        applyPublicationChange: options.applyPublicationChange ?? true,
+      });
+
+      let saveAttempted = false;
       const performSave = async () => {
+        saveAttempted = true;
         setIsSaving(true);
         try {
           return await saveCurrentPageConfig(nextConfig, {
             expectedVersion: formVersionRef.current,
-            published: form.published,
+            published: savePolicy.published,
             defaultTheme: form.defaultTheme,
           });
         } finally {
@@ -362,7 +396,7 @@ export function useInvitationForm({
       };
 
       const saved =
-        form.published && !dashboard.page.published
+        savePolicy.requiresPublishConfirmation
           ? await runHighRiskAction(
               {
                 title: '청첩장을 공개할까요?',
@@ -375,11 +409,15 @@ export function useInvitationForm({
           : await performSave();
 
       if (!saved) {
+        setSaveFailed(saveAttempted);
         return false;
       }
 
       if (typeof formVersionRef.current === 'number') formVersionRef.current += 1;
-      setIsFormDirty(false);
+      setSavedPublished(savePolicy.published);
+      setIsFormDirty(savePolicy.hasPendingPublicationChange);
+      setSaveFailed(false);
+      setLastSavedAt(new Date().toISOString());
 
       if (!options.suppressNotice && options.notice) {
         setNotice(options.notice);
@@ -397,6 +435,7 @@ export function useInvitationForm({
       form,
       runHighRiskAction,
       saveCurrentPageConfig,
+      savedPublished,
       setNotice,
     ]
   );
@@ -469,6 +508,9 @@ export function useInvitationForm({
     onboardingStepIndex,
     isSaving,
     isFormDirty,
+    savedPublished,
+    lastSavedAt,
+    saveFailed,
     onboardingValidationMessage,
     galleryPreviewItems,
     previewGalleryImages,

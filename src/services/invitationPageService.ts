@@ -1,3 +1,4 @@
+import { getInvitationDisplayPeriodEnd, INVITATION_INITIAL_DISPLAY_PERIOD_MONTHS } from '@/lib/invitationProductPolicy';
 import { requireInvitationContentVersion } from '@/lib/invitationContentVersion';
 import { readEventDeletionMetadata } from '@/server/eventDeletionPolicy';
 import {
@@ -597,10 +598,7 @@ export async function createInvitationPageDraftFromSeed(
     eventType: normalizeEventTypeKey(input.eventType, DEFAULT_EVENT_TYPE),
     groomName,
     brideName,
-    productTier: normalizeInvitationProductTier(
-      input.productTier,
-      DEFAULT_INVITATION_PRODUCT_TIER
-    ),
+    productTier: DEFAULT_INVITATION_PRODUCT_TIER,
     theme: normalizeInvitationTheme(input.defaultTheme),
   });
   const now = new Date();
@@ -621,12 +619,11 @@ export async function createInvitationPageDraftFromSeed(
     typeof input.initialDisplayPeriodMonths === 'number' &&
     Number.isFinite(input.initialDisplayPeriodMonths)
       ? Math.floor(input.initialDisplayPeriodMonths)
-      : 0;
+      : INVITATION_INITIAL_DISPLAY_PERIOD_MONTHS;
 
   if (initialDisplayPeriodMonths > 0) {
     const displayPeriodStart = new Date(now);
-    const displayPeriodEnd = new Date(now);
-    displayPeriodEnd.setMonth(displayPeriodEnd.getMonth() + initialDisplayPeriodMonths);
+    const displayPeriodEnd = getInvitationDisplayPeriodEnd(now, initialDisplayPeriodMonths);
 
     await syncDisplayPeriod(firestore, slug, {
       displayPeriodEnabled: true,

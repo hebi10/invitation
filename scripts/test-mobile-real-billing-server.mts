@@ -76,3 +76,45 @@ await assert.rejects(loadBilling([{ id: 'GPA.verified', product_id: 'wrong_produ
 const refunded = loadBilling([{ id: 'GPA.verified', store: 'play_store', refunded_at: '2026-09-21T01:00:00Z' }]);
 await assert.rejects(refunded.run(), /could not be verified/);
 console.log('real Google Play server verification checks passed (no external requests)');
+
+const products = await import('../src/lib/mobileBillingProducts.ts');
+const productPolicy = await import('../src/lib/invitationProductPolicy.ts');
+for (const productId of ['page_creation_premium', 'page_creation_standard', 'page_creation_deluxe'] as const) {
+  let createdInput: { productTier: string; initialDisplayPeriodMonths: number } | undefined;
+  const creationExports: Record<string, unknown> = {};
+  runInNewContext(source, {
+    exports: creationExports,
+    process: { env: { REVENUECAT_SERVER_API_KEY: 'test-server-key' } },
+    fetch: async () => ({ ok: true, json: async () => ({ subscriber: { non_subscriptions: {
+      [productId]: [{ id: 'creation-record', store_transaction_id: 'GPA.creation', store: 'play_store', purchase_date: '2026-11-04T00:00:00Z' }],
+    } } }) }),
+    require(id: string) {
+      if (id === '@/lib/mobileBillingProducts') return products;
+      if (id === '@/lib/invitationProductPolicy') return productPolicy;
+      if (id === '@/config/weddingPages') return { getAllWeddingPageSeeds: () => [{ slug: 'sample' }] };
+      if (id === '@/lib/invitationThemes') return { DEFAULT_INVITATION_THEME: 'emotional', isInvitationThemeKey: () => true };
+      if (id === './repositories/billingFulfillmentRepository') return { firestoreBillingFulfillmentRepository: {
+        acquireLock: async () => ({ acquired: true, record: { status: 'processing' } }), update: async () => {}, markFailed: async () => {},
+      } };
+      if (id === './repositories/eventRepository') return { firestoreEventRepository: { assignOwnerBySlug: async () => ({ summary: { eventId: 'created-id' } }) } };
+      if (id === './invitationPageServerService') return {
+        createServerInvitationPageDraftFromSeed: async (input: typeof createdInput) => { createdInput = input; return { slug: 'created-page' }; },
+        getServerEditableInvitationPageConfig: async () => ({ slug: 'created-page', config: { displayName: '초대장' }, productTier: 'premium', published: false, defaultTheme: 'emotional' }),
+        getServerInvitationPageDisplayPeriodSummary: async () => ({ enabled: true, startDate: new Date('2026-11-04Z'), endDate: new Date('2027-05-04Z') }),
+      };
+      if (id === './clientEditorMobileApi') return {
+        createServerBackedMobileClientEditorSession: async () => ({ value: 'local-session', expiresAt: '', scopes: [] }),
+        buildMobileInvitationLinks: () => ({}), resolveMobileClientEditorPermissions: () => ({}),
+      };
+      if (id === './pageTicketServerService') return { getServerPageTicketCount: async () => 0 };
+      return {};
+    },
+  });
+  const create = creationExports.fulfillServerMobilePageCreationPurchase as (origin: string, receipt: object, input: object) => Promise<unknown>;
+  await create('https://example.test', { productId, transactionId: 'GPA.creation', appUserId: 'customer-1' }, {
+    slugBase: 'created-page', groomKoreanName: '신랑', brideKoreanName: '신부', theme: 'emotional', ownerUid: 'customer-1',
+  });
+  assert.equal(createdInput?.initialDisplayPeriodMonths, 6, '검증된 결제는 PC와 동일한 기본 6개월을 부여해야 합니다.');
+  assert.equal(createdInput?.productTier, 'premium', '과거 영수증도 프리미엄 기능으로 생성되어야 합니다.');
+}
+console.log('new and historical verified creation receipts grant premium and six months');

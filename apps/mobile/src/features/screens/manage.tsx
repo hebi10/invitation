@@ -1,7 +1,7 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
 import { useEffect, useRef, useState } from 'react';
-import { Keyboard, Linking, ScrollView, View } from 'react-native';
+import { Keyboard, Linking, View } from 'react-native';
 
 import { EditorPreparingModal } from '../manage/components/EditorPreparingModal';
 import { GuestbookModal } from '../manage/components/GuestbookModal';
@@ -23,13 +23,13 @@ import { ActionButton } from '../../components/ActionButton';
 import { AppScreen } from '../../components/AppScreen';
 import { AppText } from '../../components/AppText';
 import { BulletList } from '../../components/BulletList';
-import { ChoiceChip } from '../../components/ChoiceChip';
+import { DraftInvitationsSection } from '../../components/DraftInvitationsSection';
 import { InvitationEditorModalShell } from '../../components/manage/InvitationEditorModalShell';
+import { InvitationEditorWorkspace } from '../../components/manage/InvitationEditorWorkspace';
 import { SectionCard } from '../../components/SectionCard';
 import { useAuth } from '../../contexts/AuthContext';
 import { useInvitationOps } from '../../contexts/InvitationOpsContext';
 import { usePreferences } from '../../contexts/PreferencesContext';
-import { useNoticeToast } from '../../hooks/useNoticeToast';
 import {
   issueMobileClientEditorLinkToken,
   revokeMobileClientEditorLinkTokens,
@@ -44,6 +44,7 @@ import {
 } from '../../lib/linkedInvitationCards';
 import { copyTextWithFallback } from '../../lib/textTransfer';
 import { createPrivatePreviewUrl } from '../../lib/apiPreview';
+import { buildMobileKakaoShareTarget } from '../../lib/invitationSharing';
 import type {
   MobileInvitationThemeKey,
 } from '../../types/mobileInvitation';
@@ -81,11 +82,10 @@ export default function ManageScreen() {
   const [savedNextSteps, setSavedNextSteps] = useState(false);
   const [advancedExpanded, setAdvancedExpanded] = useState(false);
   const [isOpeningPreview, setIsOpeningPreview] = useState(false);
+  const [kakaoShareTargetCard, setKakaoShareTargetCard] = useState<LinkedInvitationCard | null>(null);
+  const [isOpeningKakaoShare, setIsOpeningKakaoShare] = useState(false);
   const { ticketIntent, targetPageSlug } = useLocalSearchParams<{ ticketIntent?: string; targetPageSlug?: string }>();
   const handledTicketIntent = useRef<string | null>(null);
-
-  useNoticeToast(notice);
-  useNoticeToast(authError, { tone: 'error' });
 
   const invitationForm = useInvitationForm({
     dashboard,
@@ -186,15 +186,15 @@ export default function ManageScreen() {
     }
   };
 
-  const handleSaveEditor = async () => {
+  const handleSaveEditor = async ({ close = true, advance = false, applyPublicationChange = true } = {}) => {
     Keyboard.dismiss();
     if (imageUpload.uploadProgress) {
       setNotice('이미지 업로드가 끝난 뒤 저장해 주세요.');
-      return;
+      return false;
     }
 
     if (invitationForm.isSaving || isEditorFinalizing) {
-      return;
+      return false;
     }
 
     setIsEditorFinalizing(true);
@@ -202,21 +202,27 @@ export default function ManageScreen() {
       const saved = await invitationForm.persistForm({
         notice: '운영 정보를 저장했습니다.',
         suppressNotice: true,
+        applyPublicationChange,
       });
 
       if (!saved) {
-        return;
+        return false;
       }
 
       const cleaned = await imageUpload.finalizeTrackedUploads(invitationForm.form);
-      invitationForm.closeEditorModal();
-      setConfirmDiscard(false);
-      setSavedNextSteps(true);
+      if (close) {
+        invitationForm.closeEditorModal();
+        setConfirmDiscard(false);
+        setSavedNextSteps(true);
+      } else if (advance) {
+        invitationForm.setEditorStepIndex(current => Math.min(EDITOR_STEPS.length - 1, current + 1));
+      }
       setNotice(
         cleaned
           ? '운영 정보를 저장했습니다.'
           : '운영 정보는 저장했지만 임시 업로드 이미지를 정리하지 못했습니다. 잠시 후 다시 확인해 주세요.'
       );
+      return true;
     } finally {
       setIsEditorFinalizing(false);
     }
@@ -277,6 +283,46 @@ export default function ManageScreen() {
       );
     } catch {
       setNotice('청첩장 주소를 전달하지 못했습니다. 잠시 후 다시 시도해 주세요.');
+    }
+  };
+
+  const handleOpenKakaoShare = (card: LinkedInvitationCard) => {
+    const targetCard = card.slug === session?.pageSlug && pageSummary
+      ? { ...card, published: pageSummary.published, displayPeriod: pageSummary.displayPeriod }
+      : card;
+    const theme = getLinkedInvitationThemeKeys(targetCard)[0] ?? targetCard.defaultTheme;
+    const target = buildMobileKakaoShareTarget(apiBaseUrl, targetCard, theme);
+    if (!target.url) {
+      setNotice(target.notice);
+      return;
+    }
+    setKakaoShareTargetCard(targetCard);
+  };
+
+  const handleShareTheme = async (card: LinkedInvitationCard, theme: MobileInvitationThemeKey) => {
+    if (isOpeningKakaoShare) return;
+    const target = buildMobileKakaoShareTarget(apiBaseUrl, card, theme);
+    if (!target.url) {
+      setNotice(target.notice);
+      setKakaoShareTargetCard(null);
+      return;
+    }
+    setIsOpeningKakaoShare(true);
+    try {
+      try {
+        await WebBrowser.openBrowserAsync(target.url, {
+          enableDefaultShareMenuItem: false,
+          controlsColor: palette.accent,
+          createTask: true,
+        });
+      } catch {
+        await Linking.openURL(target.url);
+      }
+      setKakaoShareTargetCard(null);
+    } catch {
+      setNotice('카카오톡 공유 화면을 열지 못했습니다. 네트워크 연결을 확인한 뒤 다시 시도해 주세요.');
+    } finally {
+      setIsOpeningKakaoShare(false);
     }
   };
 
@@ -510,8 +556,8 @@ export default function ManageScreen() {
   return (
     <>
       <AppScreen
-        title="운영"
-        subtitle="내용을 완성하고 미리보기로 확인한 뒤 공개·공유해 주세요."
+        title="내 청첩장"
+        subtitle="청첩장 내용을 수정하고 공개·공유 상태를 확인하세요."
       >
         {showDashboardSyncLoading ? (
           <SectionCard
@@ -532,12 +578,12 @@ export default function ManageScreen() {
             style={[
               manageStyles.noticeBanner,
               {
-                backgroundColor: palette.noticeSoft,
-                borderColor: palette.notice,
+                backgroundColor: palette.surfaceMuted,
+                borderColor: palette.cardBorder,
               },
             ]}
           >
-            <AppText color={palette.notice} style={manageStyles.noticeText}>
+            <AppText color={palette.textMuted} accessibilityLiveRegion="polite" style={manageStyles.noticeText}>
               {notice}
             </AppText>
           </View>
@@ -559,21 +605,10 @@ export default function ManageScreen() {
           </View>
         ) : null}
 
-        {dashboard && activeLinkedInvitationCard ? (
-          <SectionCard title={savedNextSteps ? '저장했습니다. 이제 완성 화면을 확인해 주세요.' : '내 청첩장 제작'}
-            description="내용 입력 → 미리보기 → 공개 → 공유 순서로 진행합니다.">
-            <AppText variant="muted">{dashboard.page.published
-              ? '현재 공개 중입니다. 수정한 내용을 확인한 뒤 하객에게 공유해 주세요.'
-              : '현재 비공개입니다. 미리보기는 나만 확인할 수 있으며, 공개 전까지 하객에게 보이지 않습니다.'}</AppText>
-            <View style={manageStyles.actionRow}>
-              <ActionButton variant="secondary" onPress={() => void invitationForm.openEditorModal()}>내용 편집</ActionButton>
-              <ActionButton loading={isOpeningPreview} onPress={handleOpenUrl}>미리보기</ActionButton>
-              {!dashboard.page.published ? <ActionButton variant="secondary"
-                onPress={() => void invitationForm.handleTogglePublished()}>확인 후 공개하기</ActionButton> :
-                <ActionButton onPress={() => void handleCopyPublicUrl(activeLinkedInvitationCard)}>공유 주소 복사</ActionButton>}
-            </View>
-          </SectionCard>
-        ) : null}
+        {savedNextSteps && dashboard ? <SectionCard title="내용을 저장했습니다."
+          description="저장된 내용을 미리보기에서 확인한 뒤 하객에게 공유하세요.">
+          <ActionButton variant="secondary" loading={isOpeningPreview} onPress={handleOpenUrl}>저장 결과 미리보기</ActionButton>
+        </SectionCard> : null}
 
         {ticketIntent === 'extend' && targetPageSlug && activeLinkedInvitationCard?.slug !== targetPageSlug ? (
           <SectionCard title="티켓을 구매한 청첩장으로 이동해 주세요."
@@ -594,6 +629,7 @@ export default function ManageScreen() {
           dashboardPublicUrl={dashboard?.links.publicUrl ?? null}
           dashboardCommentCount={dashboard?.commentCount ?? 0}
           dashboardPublished={dashboard?.page.published ?? false}
+          dashboardWeddingDate={dashboard?.page.config.date}
           canRequestDashboardSync={canRequestDashboardSync}
           needsRefreshRetry={needsRefreshRetry}
           activatingLinkedInvitationSlug={activatingLinkedInvitationSlug}
@@ -602,11 +638,14 @@ export default function ManageScreen() {
           onTogglePublished={() => void invitationForm.handleTogglePublished()}
           onOpenTicketModal={handleOpenTicketModal}
           onCopyPublicUrl={(card) => void handleCopyPublicUrl(card)}
+          onKakaoShare={handleOpenKakaoShare}
           onOpenInApp={() => void handleOpenInApp()}
           onOpenGuestbook={guestbook.openGuestbookModal}
           onRefresh={() => void handleRefreshManageScreen()}
           onActivateLinkedInvitation={(card) => void handleActivateLinkedInvitation(card)}
         />
+
+        <DraftInvitationsSection />
 
         <ActionButton variant="secondary" onPress={() => setAdvancedExpanded(value => !value)}>
           {advancedExpanded ? '기기 연동 설정 접기' : '다른 기기·청첩장 연동 설정'}
@@ -660,54 +699,58 @@ export default function ManageScreen() {
         message={invitationForm.editorPreparingMessage}
       />
 
-      <InvitationEditorModalShell
+      <InvitationEditorWorkspace
         visible={invitationForm.editorModalVisible}
         onClose={() => void handleCloseEditorModal()}
-        title="청첩장 정보 수정"
-        description="순서대로 내용을 입력하고 저장한 뒤 완성 화면을 확인해 주세요."
-        palette={palette}
-        fontScale={fontScale}
-        cardStyle={manageStyles.previewLinkModalCard}
-        closeDisabled={isEditorBusy}
-        contentDisabled={isEditorBusy}
-        closeLoading={isEditorFinalizing && !invitationForm.isSaving}
-        closeConfirmation={confirmDiscard ? <View style={{ gap: 8, flex: 1 }}>
+        title={invitationForm.currentEditorStep.title}
+        description={invitationForm.currentEditorStep.description}
+        status={invitationForm.isSaving || isEditorFinalizing ? '저장 중' : invitationForm.saveFailed
+          ? '저장 실패 · 입력은 유지됩니다' : invitationForm.isFormDirty ? '변경사항 있음' : '저장됨'}
+        statusTone={invitationForm.saveFailed ? 'danger' : isEditorBusy || invitationForm.isFormDirty ? 'notice' : 'success'}
+        publicationLabel={`현재 저장 상태 · ${invitationForm.savedPublished ? '공개 설정' : '비공개 설정'}`}
+        steps={EDITOR_STEPS}
+        activeStepIndex={invitationForm.editorStepIndex}
+        onSelectStep={invitationForm.setEditorStepIndex}
+        onPreview={() => {
+          if (invitationForm.isFormDirty) {
+            setNotice('미리보기는 저장된 내용을 보여줍니다. 먼저 내용을 저장해 주세요.');
+            return;
+          }
+          if (activeLinkedInvitationCard) void handleOpenThemeLink(activeLinkedInvitationCard, invitationForm.form.defaultTheme);
+        }}
+        busy={isEditorBusy || isOpeningPreview}
+        compactFooter={<ActionButton fullWidth loading={isEditorBusy}
+          onPress={() => void handleSaveEditor({ close: false, applyPublicationChange: false })}>내용 저장</ActionButton>}
+        confirmation={confirmDiscard ? <View style={{ gap: 8 }}>
           <AppText>저장하지 않은 변경사항이 있습니다.</AppText>
-          <ActionButton onPress={() => void handleSaveEditor()} loading={isEditorBusy}>저장 후 닫기</ActionButton>
+          <AppText variant="muted">공개 설정 변경은 최종 단계에서 적용합니다.</AppText>
+          <ActionButton onPress={() => void handleSaveEditor({ applyPublicationChange: false })} loading={isEditorBusy}>내용 저장 후 닫기</ActionButton>
           <ActionButton variant="secondary" onPress={() => setConfirmDiscard(false)}>계속 편집</ActionButton>
           <ActionButton variant="danger" disabled={isEditorBusy} onPress={() => void handleCloseEditorModal(true)}>변경 취소하고 닫기</ActionButton>
         </View> : undefined}
+        footer={<>
+          <View style={manageStyles.actionRow}>
+            <ActionButton variant="secondary" disabled={invitationForm.isFirstEditorStep || isEditorBusy}
+              onPress={() => invitationForm.setEditorStepIndex(current => Math.max(0, current - 1))}>이전</ActionButton>
+            {!invitationForm.isLastEditorStep ? <ActionButton variant="secondary" disabled={isEditorBusy}
+              onPress={() => void handleSaveEditor({ close: false, applyPublicationChange: false })}>내용 저장</ActionButton> : null}
+            <ActionButton loading={isEditorBusy} style={{ flexGrow: 1 }}
+              onPress={() => void handleSaveEditor(invitationForm.isLastEditorStep
+                ? {} : { close: false, advance: true, applyPublicationChange: false })}>
+              {invitationForm.isLastEditorStep
+                ? invitationForm.form.published !== invitationForm.savedPublished
+                  ? invitationForm.form.published ? '저장 후 공개' : '비공개로 저장'
+                  : '저장 완료'
+                : '저장 후 다음'}
+            </ActionButton>
+          </View>
+          <AppText variant="caption" color={palette.textMuted}>내용 저장은 현재 공개 상태를 유지합니다.</AppText>
+        </>}
       >
-        <View style={manageStyles.editorStepHeader}>
-          <AppText style={manageStyles.editorStepTitle}>
-            {invitationForm.currentEditorStep.title}
-          </AppText>
-          <AppText variant="caption" style={manageStyles.editorStepCounter}>
-            {invitationForm.editorStepIndex + 1} / {EDITOR_STEPS.length}
-          </AppText>
-        </View>
-        <AppText variant="muted" style={manageStyles.loadingText}>
-          {invitationForm.currentEditorStep.description}
-        </AppText>
-
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={manageStyles.editorStepChipRow}
-        >
-          {EDITOR_STEPS.map((step, index) => (
-            <ChoiceChip
-              key={step.key}
-              label={step.title}
-              selected={index === invitationForm.editorStepIndex}
-              onPress={() => invitationForm.setEditorStepIndex(index)}
-            />
-          ))}
-        </ScrollView>
-
         <ManageEditorStepContent
           stepKey={invitationForm.currentEditorStep.key}
           form={invitationForm.form}
+          savedPublished={invitationForm.savedPublished}
           mapPreviewUrl={invitationForm.mapPreviewUrl}
           mapLatitude={invitationForm.mapLatitude}
           mapLongitude={invitationForm.mapLongitude}
@@ -738,51 +781,9 @@ export default function ManageScreen() {
           onSelectMusicCategory={musicLibrary.handleSelectMusicCategory}
           onSelectMusicTrack={musicLibrary.handleSelectMusicTrack}
         />
-
-        {notice ? (
-          <AppText color={palette.accent} style={manageStyles.noticeText}>
-            {notice}
-          </AppText>
-        ) : null}
-        {authError ? (
-          <AppText color={palette.danger} style={manageStyles.noticeText}>
-            {authError}
-          </AppText>
-        ) : null}
-
-        {notice ? <AppText accessibilityRole="alert" color={palette.notice}>{notice}</AppText> : null}
-        <View style={manageStyles.editorStepActions}>
-          <ActionButton
-            variant="secondary"
-            onPress={() =>
-              invitationForm.setEditorStepIndex((current) => Math.max(0, current - 1))
-            }
-            disabled={invitationForm.isFirstEditorStep || isEditorBusy}
-          >
-            이전
-          </ActionButton>
-          {!invitationForm.isLastEditorStep ? (
-            <ActionButton
-              variant="secondary"
-              onPress={() =>
-                invitationForm.setEditorStepIndex((current) =>
-                  Math.min(EDITOR_STEPS.length - 1, current + 1)
-                )
-              }
-              disabled={isEditorBusy}
-            >
-              다음
-            </ActionButton>
-          ) : null}
-          <ActionButton
-            onPress={() => void handleSaveEditor()}
-            loading={invitationForm.isSaving || isEditorFinalizing}
-            disabled={Boolean(imageUpload.uploadProgress)}
-          >
-            저장하고 확인하기
-          </ActionButton>
-        </View>
-      </InvitationEditorModalShell>
+        {notice ? <AppText accessibilityRole="alert" color={invitationForm.saveFailed ? palette.danger : palette.textMuted}>{notice}</AppText> : null}
+        {authError ? <AppText accessibilityRole="alert" color={palette.danger}>{authError}</AppText> : null}
+      </InvitationEditorWorkspace>
 
       <GuestbookModal
         visible={guestbook.guestbookModalVisible}
@@ -863,6 +864,28 @@ export default function ManageScreen() {
                 </ActionButton>
               ))
               : null}
+          </View>
+        </SectionCard>
+      </InvitationEditorModalShell>
+
+      <InvitationEditorModalShell
+        visible={Boolean(kakaoShareTargetCard)}
+        onClose={() => setKakaoShareTargetCard(null)}
+        title="카카오톡 카드 공유"
+        description="같은 청첩장 내용을 원하는 디자인으로 전할 수 있습니다."
+        palette={palette}
+        fontScale={fontScale}
+      >
+        <SectionCard title={kakaoShareTargetCard?.displayName.trim() || '청첩장 공유'}
+          description="디자인을 선택한 뒤 공유 화면에서 받는 사람을 선택해 주세요.">
+          <View style={manageStyles.actionRow}>
+            {kakaoShareTargetCard ? getLinkedInvitationThemeKeys(kakaoShareTargetCard).map(theme => (
+              <ActionButton key={`kakao-share-${theme}`} variant="secondary"
+                onPress={() => void handleShareTheme(kakaoShareTargetCard, theme)}
+                disabled={isOpeningKakaoShare} style={manageStyles.actionHalfButton}>
+                {`${getInvitationThemeLabel(theme)} 카드 공유`}
+              </ActionButton>
+            )) : null}
           </View>
         </SectionCard>
       </InvitationEditorModalShell>

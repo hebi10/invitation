@@ -22,7 +22,8 @@ export default function TabsLayout() {
         },
         tabBarStyle: {
           backgroundColor: palette.surface,
-          borderTopWidth: 0,
+          borderTopWidth: 1,
+          borderTopColor: palette.cardBorder,
           elevation: 0,
           boxShadow: 'none',
           height: 76 + insets.bottom + 18 * (fontScale - 1),
@@ -43,51 +44,37 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          title: '홈',
-          tabBarLabel: '홈',
-          tabBarAccessibilityLabel: '홈 탭으로 이동',
+          title: '내 청첩장',
+          tabBarLabel: '내 청첩장',
+          tabBarAccessibilityLabel: '내 청첩장 탭으로 이동',
           tabBarIcon: ({ color, size, focused }) => (
-            <Ionicons name={focused ? 'home' : 'home-outline'} color={color} size={size} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="guide"
-        options={{
-          title: '가이드',
-          tabBarLabel: '가이드',
-          tabBarAccessibilityLabel: '가이드 탭으로 이동',
-          tabBarIcon: ({ color, size, focused }) => (
-            <Ionicons name={focused ? 'book' : 'book-outline'} color={color} size={size} />
+            <Ionicons name={focused ? 'albums' : 'albums-outline'} color={color} size={size} />
           ),
         }}
       />
       <Tabs.Screen
         name="create"
         options={{
-          title: '구매',
-          tabBarLabel: '구매',
-          tabBarAccessibilityLabel: '구매 탭으로 이동',
+          title: '만들기',
+          tabBarLabel: '만들기',
+          tabBarAccessibilityLabel: '만들기 탭으로 이동',
           tabBarIcon: ({ color, size, focused }) => (
-            <Ionicons name={focused ? 'card' : 'card-outline'} color={color} size={size} />
+            <Ionicons name={focused ? 'add-circle' : 'add-circle-outline'} color={color} size={size} />
           ),
         }}
       />
       <Tabs.Screen
-        name="manage"
+        name="guide"
         options={{
-          title: '운영',
-          tabBarLabel: '운영',
-          tabBarAccessibilityLabel: '운영 탭으로 이동',
+          title: '이용 안내',
+          tabBarLabel: '이용 안내',
+          tabBarAccessibilityLabel: '이용 안내 탭으로 이동',
           tabBarIcon: ({ color, size, focused }) => (
-            <Ionicons
-              name={focused ? 'construct' : 'construct-outline'}
-              color={color}
-              size={size}
-            />
+            <Ionicons name={focused ? 'book' : 'book-outline'} color={color} size={size} />
           ),
         }}
       />
+      <Tabs.Screen name="manage" options={{ href: null }} />
       <Tabs.Screen
         name="settings"
         options={{

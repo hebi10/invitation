@@ -1,5 +1,7 @@
 import type { ExpoConfig } from 'expo/config';
 
+import { parseAndroidVersionCode } from '../../scripts/mobile-release-policy.mjs';
+
 declare const process: {
   env: Record<string, string | undefined>;
 };
@@ -12,11 +14,11 @@ const configuredApiBaseUrl =
 const config: ExpoConfig = {
   name: '모바일 청첩장',
   slug: 'mobile-invitation-app',
-  version: '1.0.3',
+  version: '1.0.5',
   orientation: 'portrait',
   scheme: 'mobileinvitation',
   userInterfaceStyle: 'automatic',
-  icon: './assets/icon.png',
+  icon: './assets/icon-v2.png',
   splash: {
     image: './assets/splash.jpg',
     resizeMode: 'contain',
@@ -38,7 +40,7 @@ const config: ExpoConfig = {
   ],
   android: {
     package: 'kr.msgnote.mobileinvitation',
-    versionCode: 1,
+    versionCode: parseAndroidVersionCode(process.env.EXPO_ANDROID_VERSION_CODE),
     predictiveBackGestureEnabled: false,
     intentFilters: [
       {
@@ -74,7 +76,7 @@ const config: ExpoConfig = {
       'android.permission.RECORD_AUDIO',
     ],
     adaptiveIcon: {
-      foregroundImage: './assets/icon.png',
+      foregroundImage: './assets/icon-v2.png',
       backgroundColor: '#f7efe7',
     },
   },
@@ -93,7 +95,7 @@ const config: ExpoConfig = {
     },
   },
   web: {
-    favicon: './assets/icon.png',
+    favicon: './assets/icon-v2.png',
   },
   experiments: {
     typedRoutes: true,

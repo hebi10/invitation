@@ -2,11 +2,11 @@ import { Image } from 'expo-image';
 import * as WebBrowser from 'expo-web-browser';
 import { Linking, Platform, ScrollView, StyleSheet, View } from 'react-native';
 
-import simplePreview from '../../assets/theme-previews/simple.png';
-import modernPreview from '../../assets/theme-previews/classic-r.png';
-import photoPreview from '../../assets/theme-previews/romantic.png';
-import classicPreview from '../../assets/theme-previews/gyeol.png';
-import naturalPreview from '../../assets/theme-previews/emotional.png';
+import simplePreview from '../../assets/theme-previews/simple.jpg';
+import modernPreview from '../../assets/theme-previews/classic-r.jpg';
+import photoPreview from '../../assets/theme-previews/romantic.jpg';
+import classicPreview from '../../assets/theme-previews/gyeol.jpg';
+import naturalPreview from '../../assets/theme-previews/emotional.jpg';
 
 import { designThemes, findGuideSamplePageUrl } from '../constants/content';
 import { useAppFeedback } from '../contexts/AppFeedbackContext';
@@ -55,7 +55,7 @@ export function ThemePreviewGallery({ tier = 'premium' }: { tier?: MobileInvitat
               <AppText accessibilityRole="header" style={styles.title}>{theme.label}</AppText>
               <AppText variant="muted" style={styles.description}>{theme.description}</AppText>
               <ActionButton variant="secondary" fullWidth disabled={!url}
-                accessibilityLabel={`${theme.label} ${tier.toUpperCase()} 샘플 열기`}
+                accessibilityLabel={`${theme.label} 프리미엄 샘플 열기`}
                 onPress={() => url ? void openPreview(url) : undefined}>
                 미리보기
               </ActionButton>

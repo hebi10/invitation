@@ -20,6 +20,7 @@ import { SettingsEditorStep } from './steps/SettingsEditorStep';
 type ManageEditorStepContentProps = {
   stepKey: EditorStepKey;
   form: ManageFormState;
+  savedPublished?: boolean;
   mapPreviewUrl: string;
   mapLatitude: number | null;
   mapLongitude: number | null;
@@ -65,6 +66,7 @@ type ManageEditorStepContentProps = {
 export function ManageEditorStepContent({
   stepKey,
   form,
+  savedPublished,
   mapPreviewUrl,
   mapLatitude,
   mapLongitude,
@@ -165,6 +167,7 @@ export function ManageEditorStepContent({
       return (
         <SettingsEditorStep
           form={form}
+          savedPublished={savedPublished}
           onUpdateField={onUpdateField}
           onSetPublished={onSetPublished}
         />

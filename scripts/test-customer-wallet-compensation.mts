@@ -28,8 +28,9 @@ function createDependencies(options: {
         calls.push(adjustment.direction === 'debit' ? 'debit' : 'refund');
         return {} as never;
       },
-      createDraft: async (draft: { initialDisplayPeriodMonths?: number }) => {
-        assert.equal(draft.initialDisplayPeriodMonths, 4);
+      createDraft: async (draft: { initialDisplayPeriodMonths?: number; productTier?: string }) => {
+        assert.equal(draft.initialDisplayPeriodMonths, 6);
+        assert.equal(draft.productTier, 'premium');
         calls.push('create');
         if (options.createError) {
           throw options.createError;
@@ -129,3 +130,24 @@ assert.deepEqual(cleanupFailure.calls, [
 ]);
 
 console.log('customer wallet compensation checks passed');
+
+for (const tier of ['standard', 'deluxe'] as const) {
+  const legacy = createDependencies();
+  const consumedTiers: string[] = [];
+  await createCustomerInvitationPageFromWalletCredit({ ...input, productTier: tier }, {
+    ...legacy.dependencies,
+    adjustBalance: async (adjustment) => { consumedTiers.push(
+      `${adjustment.direction}:${adjustment.tier}`
+    ); return {} as never; },
+  });
+  assert.deepEqual(consumedTiers, [`debit:${tier}`], '과거 제작권은 원래 잔액에서 차감하고 신규 초안은 프리미엄으로 생성해야 합니다.');
+  const failure = createDependencies({ createError: new Error('create failed') });
+  const restoredTiers: string[] = [];
+  await assert.rejects(createCustomerInvitationPageFromWalletCredit({ ...input, productTier: tier }, {
+    ...failure.dependencies,
+    adjustBalance: async (adjustment) => { restoredTiers.push(
+      `${adjustment.direction}:${adjustment.tier}`
+    ); return {} as never; },
+  }), /create failed/);
+  assert.deepEqual(restoredTiers, [`debit:${tier}`, `credit:${tier}`], '실패한 과거 제작권은 동일한 잔액으로 돌려주어야 합니다.');
+}

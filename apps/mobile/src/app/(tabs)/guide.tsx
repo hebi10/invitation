@@ -1,125 +1,75 @@
-import { useState } from 'react';
+import { INVITATION_INITIAL_DISPLAY_PERIOD_MONTHS } from '../../lib/invitationProductPolicy';
 import { Linking, StyleSheet, View } from 'react-native';
 
-import {
-  faqItems,
-  guideSections,
-  servicePlans,
-} from '../../constants/content';
+import { guideSections, servicePlans } from '../../constants/content';
 import { ActionButton } from '../../components/ActionButton';
 import { AccountHelpLinks } from '../../components/AccountHelpLinks';
-import { ThemePreviewGallery } from '../../components/ThemePreviewGallery';
 import { AppScreen } from '../../components/AppScreen';
 import { AppText } from '../../components/AppText';
 import { BulletList } from '../../components/BulletList';
-import { SectionCard } from '../../components/SectionCard';
+import { Disclosure } from '../../components/Disclosure';
 import { usePreferences } from '../../contexts/PreferencesContext';
 import { useAppFeedback } from '../../contexts/AppFeedbackContext';
 
 export default function GuideScreen() {
-  const { palette } = usePreferences();
+  const { apiBaseUrl, palette } = usePreferences();
   const { showToast } = useAppFeedback();
-  const [showPolicies, setShowPolicies] = useState(false);
+  const plan = servicePlans[0];
+
+  const openHelpLink = (path: string) => {
+    void Linking.openURL(new URL(path, apiBaseUrl).toString()).catch(() => {
+      showToast('안내 페이지를 열지 못했습니다. 연결 상태를 확인하고 다시 시도해 주세요.', { tone: 'error' });
+    });
+  };
 
   return (
-    <AppScreen
-      title="가이드"
-      subtitle="처음 만드는 순서부터 디자인과 이용 안내까지 확인해 보세요."
-    >
-      <SectionCard title={guideSections[0].title}>
-        <BulletList items={guideSections[0].items} />
-        <AccountHelpLinks />
-      </SectionCard>
-      <SectionCard title="웨딩 디자인" description="실제 청첩장의 대표 화면입니다. 미리보기에서 전체 구성을 확인해 보세요.">
-        <ThemePreviewGallery />
-      </SectionCard>
-      <SectionCard
-        title="프리미엄 청첩장"
-        description="모든 웨딩 디자인과 기능을 하나의 상품으로 이용합니다."
-      >
-        {servicePlans.map((plan) => (
-          <View
-            key={plan.name}
-            style={[
-              styles.planCard,
-              { backgroundColor: palette.surfaceMuted, borderColor: palette.cardBorder },
-            ]}
-          >
-            <View style={styles.planHeader}>
-              <AppText style={styles.planName}>{plan.name}</AppText>
-              <AppText color={palette.accent} style={styles.planPrice}>
-                {plan.priceLabel}
-              </AppText>
-            </View>
-            <AppText variant="muted" style={styles.planDescription}>
-              {plan.description}
-            </AppText>
-            <BulletList items={plan.features} />
-          </View>
-        ))}
-      </SectionCard>
-
-      <SectionCard title="자주 묻는 질문">
-        {faqItems.map((item) => (
-          <View key={item.question} style={styles.faqItem}>
-            <AppText style={styles.faqQuestion}>{item.question}</AppText>
-            <AppText variant="muted" style={styles.faqAnswer}>
-              {item.answer}
-            </AppText>
-          </View>
-        ))}
-        <ActionButton variant="secondary" onPress={() => {
-          void Linking.openURL('mailto:sevim0104@naver.com').catch(() => {
-            showToast('메일 앱을 열지 못했습니다. sevim0104@naver.com으로 문의해 주세요.', { tone: 'error' });
-          });
-        }}>
-          고객 문의
-        </ActionButton>
-      </SectionCard>
-      <SectionCard title="이용 및 티켓 안내">
-        <ActionButton variant="secondary" onPress={() => setShowPolicies(!showPolicies)} accessibilityState={{ expanded: showPolicies }}>
-          {showPolicies ? '이용 안내 접기' : '이용 안내 펼치기'}
-        </ActionButton>
-        {showPolicies ? guideSections.slice(1).map((section) => (
-          <View key={section.title} style={styles.faqItem}>
-            <AppText accessibilityRole="header">{section.title}</AppText>
+    <AppScreen title="이용 안내" subtitle="진행할 작업을 선택해 필요한 안내를 확인하세요.">
+      <View style={styles.list}>
+        {guideSections.map((section, index) => (
+          <Disclosure key={section.title} title={section.title} description={section.description}>
             <BulletList items={section.items} />
-          </View>
-        )) : null}
-      </SectionCard>
+            {index === 0 ? (
+              <>
+                <View style={[styles.planSummary, { borderColor: palette.cardBorder }]}>
+                  <View style={styles.planHeader}>
+                    <AppText style={styles.planName}>프리미엄 청첩장</AppText>
+                    <AppText style={styles.planPrice}>{plan.priceLabel} · 기본 {INVITATION_INITIAL_DISPLAY_PERIOD_MONTHS}개월</AppText>
+                  </View>
+                  <AppText variant="muted">{plan.description}</AppText>
+                  <AppText variant="caption">모든 웨딩 디자인이 포함됩니다. 만들기의 디자인 확인 단계에서 샘플을 볼 수 있습니다.</AppText>
+                </View>
+                <AccountHelpLinks />
+              </>
+            ) : null}
+            {index === guideSections.length - 1 ? (
+              <>
+                <ActionButton variant="secondary" onPress={() => {
+                  void Linking.openURL('mailto:sevim0104@naver.com').catch(() => {
+                    showToast('메일 앱을 열지 못했습니다. sevim0104@naver.com으로 문의해 주세요.', { tone: 'error' });
+                  });
+                }} fullWidth>
+                  고객 문의
+                </ActionButton>
+                <AppText variant="caption">sevim0104@naver.com</AppText>
+                <ActionButton variant="secondary" onPress={() => openHelpLink('/privacy/mobile-invitation/')} fullWidth>
+                  개인정보 처리방침
+                </ActionButton>
+                <ActionButton variant="secondary" onPress={() => openHelpLink('/privacy/mobile-invitation/delete-request/')} fullWidth>
+                  계정 및 데이터 삭제 요청
+                </ActionButton>
+              </>
+            ) : null}
+          </Disclosure>
+        ))}
+      </View>
     </AppScreen>
   );
 }
 
 const styles = StyleSheet.create({
-  planCard: {
-    borderRadius: 0,
-    padding: 16,
-    gap: 8,
-  },
-  planHeader: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
-    gap: 12,
-  },
-  planName: {
-    fontWeight: '500',
-  },
-  planPrice: {
-    fontWeight: '700',
-  },
-  planDescription: {
-    lineHeight: 21,
-  },
-  faqItem: {
-    gap: 6,
-    paddingVertical: 8,
-  },
-  faqQuestion: {
-    fontWeight: '700',
-  },
-  faqAnswer: {
-    lineHeight: 21,
-  },
+  list: { gap: 12 },
+  planSummary: { borderTopWidth: 1, paddingTop: 16, gap: 8 },
+  planHeader: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', gap: 8 },
+  planName: { fontWeight: '600' },
+  planPrice: { fontWeight: '600' },
 });

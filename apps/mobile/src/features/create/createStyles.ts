@@ -221,12 +221,12 @@ export const createStyles = StyleSheet.create({
     gap: 10,
   },
   stickyBarContentCompact: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: 'column',
+    alignItems: 'stretch',
     justifyContent: 'space-between',
   },
   stickyPriceBox: {
-    flex: 1,
+    flexShrink: 1,
     minWidth: 0,
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -245,7 +245,7 @@ export const createStyles = StyleSheet.create({
     gap: 6,
   },
   stickyActionRowCompact: {
-    width: 'auto',
+    width: '100%',
   },
   stickyPrimaryActionButton: {
     minHeight: 48,
@@ -262,6 +262,6 @@ export const createStyles = StyleSheet.create({
     paddingVertical: 10,
   },
   stickyActionButtonCompact: {
-    flexGrow: 0,
+    flexGrow: 1,
   },
 });

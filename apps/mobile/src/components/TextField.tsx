@@ -96,6 +96,7 @@ export function TextField({
             borderColor: focused ? palette.accent : palette.inputBorder,
             color: palette.text,
             fontSize: 15 * fontScale,
+            lineHeight: 22 * fontScale,
             opacity: editable ? 1 : 0.6,
           },
           inputStyle,
@@ -115,7 +116,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   label: {
-    fontWeight: '500',
+    fontWeight: '600',
   },
   input: {
     borderWidth: 1,

@@ -25,6 +25,7 @@ const currentRoutes = [
   ['/experience/my-invitations', 'src/app/experience/my-invitations/page.tsx'],
   ['/experience/preview/{slug}/{theme}', 'src/app/experience/preview/[slug]/[[...theme]]/page.tsx'],
   ['/memory/{slug}', 'src/app/memory/[slug]/page.tsx'],
+  ['/mobile-share/{slug}/{theme}', 'src/app/mobile-share/[slug]/[theme]/page.tsx'],
   ['/{slug}', 'src/app/[slug]/page.tsx'],
   ['/{slug}/{theme}', 'src/app/[slug]/[theme]/page.tsx'],
 ] as const;

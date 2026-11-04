@@ -1,3 +1,4 @@
+import { INVITATION_PREMIUM_PRICE_LABEL } from './invitationProductPolicy';
 import { NativeModules, Platform } from 'react-native';
 import Purchases from 'react-native-purchases';
 
@@ -217,7 +218,7 @@ export async function purchaseBillingProduct(
 
     if (productId === 'page_creation_premium' &&
         (targetProduct.currencyCode !== 'KRW' || targetProduct.price !== MOBILE_BILLING_PREMIUM_PRICE_KRW)) {
-      throw new Error('스토어의 프리미엄 가격이 9,900원으로 확인되지 않아 결제를 중단했습니다. 고객 문의로 확인해 주세요.');
+      throw new Error(`스토어의 프리미엄 가격이 ${INVITATION_PREMIUM_PRICE_LABEL}으로 확인되지 않아 결제를 중단했습니다. 고객 문의로 확인해 주세요.`);
     }
     prepared = { purchases, appUserId, targetProduct };
   } catch (error) {

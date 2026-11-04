@@ -2,6 +2,8 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { runInNewContext } from 'node:vm';
 import ts from 'typescript';
+import * as billingProducts from '../src/lib/mobileBillingProducts.ts';
+import * as productPolicy from '../src/lib/invitationProductPolicy.ts';
 
 const source = ts.transpileModule(readFileSync('apps/mobile/src/lib/billing.ts', 'utf8'), {
   compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, esModuleInterop: true },
@@ -17,7 +19,7 @@ function load(options: { os?: string; key?: string; missingSdk?: boolean; missin
     getCustomerInfo: async () => { calls.push('history'); return { requestDate: '2026-09-21T01:00:00Z', nonSubscriptionTransactions: [
       { productIdentifier: productId, transactionIdentifier: 'rc-previous', purchaseDate: '2026-09-21T00:00:00Z' },
     ] }; },
-    getProducts: async () => { calls.push('products'); return options.missingProduct ? [] : [{ identifier: productId, price: options.price ?? 9900, currencyCode: options.currency ?? 'KRW' }]; },
+    getProducts: async () => { calls.push('products'); return options.missingProduct ? [] : [{ identifier: productId, price: options.price ?? 5000, currencyCode: options.currency ?? 'KRW' }]; },
     purchaseStoreProduct: async () => {
       calls.push('purchase');
       if (options.failure) throw options.failure;
@@ -27,7 +29,8 @@ function load(options: { os?: string; key?: string; missingSdk?: boolean; missin
   };
   const exports: Record<string, unknown> = {};
   const require = (id: string) => {
-    if (id === './mobileBillingProducts') return { MOBILE_BILLING_PREMIUM_PRICE_KRW: 9900, MOBILE_BILLING_PRODUCT_IDS: [productId, 'ticket_pack_1', 'ticket_pack_3', 'ticket_pack_6'] };
+    if (id === './mobileBillingProducts') return billingProducts;
+    if (id === './invitationProductPolicy') return productPolicy;
     if (id === 'react-native') return { Platform: { OS: options.os ?? 'android' }, NativeModules: { RNPurchases: options.missingNative ? null : {} } };
     if (id === 'react-native-purchases') return { default: options.missingSdk ? null : sdk, __esModule: true };
     if (id === './storage') return { getStoredString: async () => 'customer-1', setStoredString: async () => {} };
@@ -58,6 +61,10 @@ await assert.rejects(load({ transactionId: '' }).purchase(productId, { appUserId
 const cancelled = { userCancelled: true };
 await assert.rejects(load({ failure: cancelled }).purchase(productId, { appUserId: 'customer-1' }), /결제를 취소했습니다/);
 
+
+const oldPrice = load({ price: 9900 });
+await assert.rejects(oldPrice.purchase(productId, { appUserId: 'customer-1' }));
+assert.equal(oldPrice.calls.includes('purchase'), false, '9,900원 상품은 스토어 결제를 시작하면 안 됩니다.');
 
 await assert.rejects(load({ price: 15000 }).purchase(productId, { appUserId: 'customer-1' }));
 await assert.rejects(load({ currency: 'USD' }).purchase(productId, { appUserId: 'customer-1' }));

@@ -1,3 +1,4 @@
+import { DEFAULT_INVITATION_PRODUCT_TIER, INVITATION_INITIAL_DISPLAY_PERIOD_MONTHS } from '@/lib/invitationProductPolicy';
 import { useCallback, useRef } from 'react';
 
 import {
@@ -135,8 +136,8 @@ export function useWizardPersistence({
       brideName: previewFormState?.couple.bride.name || PLACEHOLDER_BRIDE,
       published: false,
       defaultTheme,
-      productTier: previewFormState?.productTier,
-      initialDisplayPeriodMonths: 6,
+      productTier: DEFAULT_INVITATION_PRODUCT_TIER,
+      initialDisplayPeriodMonths: INVITATION_INITIAL_DISPLAY_PERIOD_MONTHS,
     });
     const normalizedCreatedConfig = normalizeFormState(created.config);
 

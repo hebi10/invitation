@@ -1,10 +1,7 @@
-import { ProtectedTabRoute } from '../../components/ProtectedTabRoute';
-import ManageScreenContent from '../../features/screens/manage';
+import { Redirect, useLocalSearchParams } from 'expo-router';
 
-export default function ManageScreen() {
-  return (
-    <ProtectedTabRoute>
-      <ManageScreenContent />
-    </ProtectedTabRoute>
-  );
+// Keep existing app links and purchase-return parameters on the main list route.
+export default function ManageRoute() {
+  const params = useLocalSearchParams();
+  return <Redirect href={{ pathname: '/', params }} />;
 }

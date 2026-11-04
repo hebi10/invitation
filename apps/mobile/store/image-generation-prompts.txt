@@ -1,0 +1,17 @@
+Mode: built-in image_gen
+
+ICON PROMPT
+Use case: logo-brand.
+Asset type: Google Play Store app icon for an existing Korean mobile wedding invitation creation and management app.
+Input image 1 is the existing icon reference and identity source. Preserve its recognizable invitation envelope plus central heart motif, but redraw it as a polished clean flat mark consistent with a neutral charcoal, grey and warm ivory mobile app.
+Create one finished square icon artwork, full bleed warm ivory background, no transparency. A simple centered sealed invitation envelope, crisp charcoal outlines of consistent medium weight and a single restrained muted peach heart seal at its center. Generous clear safe space around the entire mark, with the envelope and heart contained within the central 64 percent of the square. Use geometric precise flat shapes, clear high contrast and excellent readability at 48 pixels.
+Do not include the old ribbon or small flower; simplify to envelope and heart only. No typography or letters. No outer rounded-square container, no baked corner mask, no shadow, no glow, no gradient, no 3D, no photographic texture, no glossy highlights, no additional decorative objects, no badges or store logos. Keep the envelope large enough to recognize yet safely inset. Output a single clean production-quality square icon, not an icon sheet or mockup.
+
+FEATURE GRAPHIC PROMPT
+Use case: ads-marketing.
+Asset type: Google Play feature graphic for a Korean mobile wedding invitation creation and management app.
+Create one finished very wide horizontal banner, aspect ratio exactly 1024:500 (about 2.048:1), no border. Use the reference image only for brand palette and envelope-heart identity; this is a fresh complementary banner, not the square icon blown up.
+Art direction: restrained flat editorial design. Warm ivory full-bleed background, charcoal typography and delicate dark gray lines, one restrained muted peach heart detail consistent with the reference. A generous balanced composition: clear Korean headline and subline on the left; on the right a simple clean arrangement of two invitation stationery cards with an open envelope and tiny peach heart seal, all illustrated with crisp flat lines, no shadows, no dimensional rendering. Keep all important text and imagery away from the outer 12 percent edges and visually centered for safe cropping.
+Exact Korean headline, fully readable and spelled correctly: "모바일 청첩장"
+Exact Korean subline below: "소중한 날의 초대를 준비하세요"
+No other text, no invented names or dates, no phone or device mockups, no fake app screens, no buttons or calls to install, no store logos, no pricing or badges, no ornamental flowers, no ribbon, no gradient, no shadow, no shiny texture, no photorealism. Keep it sophisticated and quiet, suited to an app with neutral charcoal and gray user interface. Flat background and polished clean typography. Only one banner.

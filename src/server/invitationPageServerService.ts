@@ -1,3 +1,4 @@
+import { getInvitationDisplayPeriodEnd, INVITATION_INITIAL_DISPLAY_PERIOD_MONTHS } from '@/lib/invitationProductPolicy';
 import { requireInvitationContentVersion } from '@/lib/invitationContentVersion';
 import 'server-only';
 
@@ -181,7 +182,7 @@ function buildDraftConfigFromSeed(
   const nextSeed = sanitizeHeartIconPlaceholdersDeep(
     JSON.parse(JSON.stringify(seed)) as InvitationPageSeed
   );
-  const features = resolveInvitationFeatures(overrides.productTier, seed.features);
+  const features = resolveInvitationFeatures(overrides.productTier);
 
   nextSeed.slug = overrides.slug;
   nextSeed.eventType = overrides.eventType;
@@ -656,10 +657,7 @@ export async function createServerInvitationPageDraftFromSeed(
     eventType: normalizeEventTypeKey(input.eventType, DEFAULT_EVENT_TYPE),
     groomName,
     brideName,
-    productTier: normalizeInvitationProductTier(
-      input.productTier,
-      DEFAULT_INVITATION_PRODUCT_TIER
-    ),
+    productTier: DEFAULT_INVITATION_PRODUCT_TIER,
     theme: normalizeInvitationTheme(input.defaultTheme),
   });
   const now = new Date();
@@ -678,12 +676,11 @@ export async function createServerInvitationPageDraftFromSeed(
     typeof input.initialDisplayPeriodMonths === 'number' &&
     Number.isFinite(input.initialDisplayPeriodMonths)
       ? Math.floor(input.initialDisplayPeriodMonths)
-      : 0;
+      : INVITATION_INITIAL_DISPLAY_PERIOD_MONTHS;
 
   if (initialDisplayPeriodMonths > 0) {
     const displayPeriodStart = new Date(now);
-    const displayPeriodEnd = new Date(now);
-    displayPeriodEnd.setMonth(displayPeriodEnd.getMonth() + initialDisplayPeriodMonths);
+    const displayPeriodEnd = getInvitationDisplayPeriodEnd(now, initialDisplayPeriodMonths);
 
     await upsertDisplayPeriodRecord(slug, {
       isActive: true,

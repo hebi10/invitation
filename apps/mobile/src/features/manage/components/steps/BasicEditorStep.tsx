@@ -61,7 +61,7 @@ export function BasicEditorStep({
 
       <SectionCard
         title="신랑 신부 가족 정보"
-        description="/page-wizard와 같은 순서로 이름, 연락처, 가족 정보를 관리합니다."
+        description="이름과 연락처를 입력하고 필요한 가족 정보를 추가합니다."
       >
         <View style={manageStyles.personGrid}>
           <PersonEditorCard

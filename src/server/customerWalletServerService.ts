@@ -1,3 +1,4 @@
+import { DEFAULT_INVITATION_PRODUCT_TIER, INVITATION_INITIAL_DISPLAY_PERIOD_MONTHS } from '@/lib/invitationProductPolicy';
 import 'server-only';
 
 import type { CustomerWalletSummary } from '@/types/customerWallet';
@@ -179,8 +180,8 @@ export async function createCustomerInvitationPageFromWalletCredit(
       brideName: input.brideName,
       published: false,
       defaultTheme: input.defaultTheme,
-      productTier: input.productTier,
-      initialDisplayPeriodMonths: 4,
+      productTier: DEFAULT_INVITATION_PRODUCT_TIER,
+      initialDisplayPeriodMonths: INVITATION_INITIAL_DISPLAY_PERIOD_MONTHS,
     });
 
     const assignedEvent = await dependencies.assignOwner({

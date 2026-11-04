@@ -5,7 +5,12 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { getPublicKakaoJavaScriptKey } from '@/lib/publicRuntimeConfig';
 import type { InvitationShareMode } from '@/types/invitationPage';
 
-import { buildKakaoShareImageCandidates } from './kakaoShareUtils';
+import {
+  buildKakaoShareImageCandidates,
+  buildKakaoCardSharePayload as buildCardSharePayload,
+  buildKakaoLinkSharePayload as buildLinkSharePayload,
+  normalizeKakaoShareLinkUrl,
+} from './kakaoShareUtils';
 
 const KAKAO_SHARE_SCRIPT_ID = 'kakao-share-sdk';
 const KAKAO_SHARE_SDK_URL = 'https://t1.kakaocdn.net/kakao_js_sdk/2.7.2/kakao.min.js';
@@ -64,6 +69,7 @@ interface WeddingKakaoShareButtonProps {
   description: string;
   imageUrl: string;
   fallbackImageUrl?: string;
+  shareUrl?: string;
   shareMode?: InvitationShareMode;
   variant?: 'default' | 'space' | 'classic' | 'minimal';
 }
@@ -119,55 +125,6 @@ const buttonVariantStyles = {
     borderRadius: '0',
   },
 } as const;
-
-function buildLinkSharePayload(shareUrl: string, title: string, description: string) {
-  return {
-    objectType: 'text' as const,
-    text: `${title}\n${description}`,
-    link: {
-      mobileWebUrl: shareUrl,
-      webUrl: shareUrl,
-    },
-    buttons: [
-      {
-        title: '초대장 보기',
-        link: {
-          mobileWebUrl: shareUrl,
-          webUrl: shareUrl,
-        },
-      },
-    ],
-  };
-}
-
-function buildCardSharePayload(
-  shareUrl: string,
-  title: string,
-  description: string,
-  imageUrl: string
-) {
-  return {
-    objectType: 'feed' as const,
-    content: {
-      title,
-      description,
-      imageUrl,
-      link: {
-        mobileWebUrl: shareUrl,
-        webUrl: shareUrl,
-      },
-    },
-    buttons: [
-      {
-        title: '초대장 보기',
-        link: {
-          mobileWebUrl: shareUrl,
-          webUrl: shareUrl,
-        },
-      },
-    ],
-  };
-}
 
 function preloadShareImage(imageUrl: string) {
   if (!imageUrl || typeof window === 'undefined') {
@@ -228,6 +185,7 @@ export default function WeddingKakaoShareButton({
   description,
   imageUrl,
   fallbackImageUrl,
+  shareUrl: requestedShareUrl,
   shareMode = 'card',
   variant = 'default',
 }: WeddingKakaoShareButtonProps) {
@@ -341,7 +299,14 @@ export default function WeddingKakaoShareButton({
       return;
     }
 
-    const shareUrl = `${window.location.origin}${window.location.pathname}`;
+    const shareUrl = normalizeKakaoShareLinkUrl(
+      requestedShareUrl ?? `${window.location.origin}${window.location.pathname}`,
+      window.location.origin
+    );
+    if (!shareUrl) {
+      setFeedbackMessage('공유할 청첩장 공개 주소를 확인하지 못했습니다.');
+      return;
+    }
     const linkPayload = buildLinkSharePayload(shareUrl, title, description);
     const cardImageUrl = resolvedCardImageUrl || shareImageCandidates[0] || '';
 

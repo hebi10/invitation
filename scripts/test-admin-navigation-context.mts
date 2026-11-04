@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
+import { createRequire } from 'node:module';
 import { runInNewContext } from 'node:vm';
 import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
@@ -12,8 +13,12 @@ import {
 } from '../src/lib/adminWizardNavigation.ts';
 import AdminEventDetailPanel from '../src/app/admin/_components/AdminEventDetailPanel.tsx';
 import AdminEventList from '../src/app/admin/_components/AdminEventList.tsx';
-import { AdminWorkGuardProvider } from '../src/app/admin/_components/AdminWorkGuard.tsx';
 import type { InvitationPageSummary } from '../src/services/invitationPageService.ts';
+
+// Match the component tree's CommonJS graph under Node 20/tsx so the provider
+// and its consumers share one React context instead of separate ESM/CJS copies.
+const require = createRequire(import.meta.url);
+const { AdminWorkGuardProvider } = require('../src/app/admin/_components/AdminWorkGuard.tsx') as typeof import('../src/app/admin/_components/AdminWorkGuard.tsx');
 
 Object.assign(globalThis, { React });
 function resolveComponent<T>(component: T): T {

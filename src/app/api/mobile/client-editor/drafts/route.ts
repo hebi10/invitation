@@ -1,4 +1,5 @@
-﻿import { NextResponse } from 'next/server';
+import { DEFAULT_INVITATION_PRODUCT_TIER, INVITATION_INITIAL_DISPLAY_PERIOD_MONTHS } from '@/lib/invitationProductPolicy';
+import { NextResponse } from 'next/server';
 
 import { getAllWeddingPageSeeds } from '@/config/weddingPages';
 import { DEFAULT_INVITATION_THEME, isInvitationThemeKey } from '@/lib/invitationThemes';
@@ -6,7 +7,6 @@ import {
   getInvitationPageSlugValidationErrorMessage,
   validateInvitationPageSlugBase,
 } from '@/lib/invitationPageSlug';
-import { normalizeInvitationProductTier } from '@/lib/invitationProducts';
 import { GENERIC_SERVER_ERROR_MESSAGE } from '@/server/apiErrorResponse';
 import { CLIENT_EDITOR_OWNER_SESSION_VERSION } from '@/server/clientEditorSession';
 import {
@@ -148,7 +148,7 @@ export async function POST(request: Request) {
     const defaultTheme = isInvitationThemeKey(body?.defaultTheme)
       ? body.defaultTheme
       : DEFAULT_INVITATION_THEME;
-    const productTier = normalizeInvitationProductTier(body?.productTier);
+    const productTier = DEFAULT_INVITATION_PRODUCT_TIER;
 
     const createdDraft = await createServerInvitationPageDraftFromSeed({
       seedSlug,
@@ -158,7 +158,7 @@ export async function POST(request: Request) {
       published: false,
       defaultTheme,
       productTier,
-      initialDisplayPeriodMonths: 6,
+      initialDisplayPeriodMonths: INVITATION_INITIAL_DISPLAY_PERIOD_MONTHS,
     });
     const resolvedCreatedEvent = await firestoreEventRepository.assignOwnerBySlug({
       pageSlug: createdDraft.slug,
