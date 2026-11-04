@@ -94,6 +94,8 @@ def request(token, method, path, payload=None, media=None):
             message = error.read(16384).decode("utf-8", errors="replace").lower()
         except OSError:
             message = ""
+        finally:
+            error.close()
         if "only releases with status draft" in message and "draft app" in message:
             raise PlayError("초기 앱 게시 설정을 Play Console에서 완료해야 합니다. 초안으로 자동 재시도하지 않습니다.") from None
         if error.code == 401:

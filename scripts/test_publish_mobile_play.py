@@ -337,6 +337,33 @@ class PublisherTests(unittest.TestCase):
                 self.assertEqual(result, 1)
                 self.assertIn(label, stderr)
 
+    def test_every_http_error_branch_closes_its_response_resource(self):
+        cases = [(400, b"{}"), (401, b"{}"), (403, b"{}"), (409, b"{}"), (500, b"{}"),
+                 (400, b'{"error":{"message":"Only releases with status draft may be created on draft app."}}'),
+                 (400, b'{"error":{"details":[{"reason":"CHANGES_ALREADY_IN_REVIEW"}]}}')]
+        for code, body in cases:
+            with self.subTest(code=code, body=body):
+                resource = io.BytesIO(body)
+                self.addCleanup(resource.close)
+                error = HTTPError("https://example.invalid", code, TOKEN, {}, resource)
+                result, _, _, _ = self.run_main(self.preflight() + [
+                    ("POST", "/upload" + EDIT + "/bundles", error), ("DELETE", EDIT, {})])
+                self.assertEqual(result, 1)
+                self.assertTrue(resource.closed, "The HTTP error response must be closed explicitly")
+
+    def test_http_error_response_is_closed_even_when_reading_its_body_fails(self):
+        class UnreadableBody(io.BytesIO):
+            def read(self, *args):
+                raise OSError(TOKEN)
+
+        resource = UnreadableBody()
+        self.addCleanup(resource.close)
+        error = HTTPError("https://example.invalid", 400, TOKEN, {}, resource)
+        result, _, _, _ = self.run_main(self.preflight() + [
+            ("POST", "/upload" + EDIT + "/bundles", error), ("DELETE", EDIT, {})])
+        self.assertEqual(result, 1)
+        self.assertTrue(resource.closed, "Reading failures must not leak HTTP error responses")
+
     def test_real_cli_reports_missing_token_without_traceback(self):
         env = os.environ.copy()
         env.pop("PLAY_ACCESS_TOKEN", None)

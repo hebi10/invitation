@@ -21,7 +21,9 @@
 - [ ] 외부 연결: 실제 비공개 트랙과 GitHub Secrets 이름을 읽기 전용 확인한다. 자격 증명·신규 권한 등록은 구체적 결과를 제시한 뒤 사용자 확인이 필요하다. 계정 설정과 실제 API 배포 검증 여부를 구분한다.
 
 ## 실제 확인 결과
-- 전체134개 registry 테스트(게시 도구24개 unittest 포함), npm run check, 공식 actionlint1.7.12, Bash 구문, Expo config 평가 및 독립 리뷰 통과.
+- 전체134개 registry 테스트(게시 도구26개 unittest 포함), npm run check, 공식 actionlint1.7.12, Bash 구문, Expo config 평가 및 독립 리뷰 통과.
 - GitHub Actions Secrets/Variables는 처음 확인 시 모두 비어 있었다. PLAY_AUTO_DEPLOY_ENABLED=false, PLAY_SEND_FOR_REVIEW=false, PLAY_RELEASE_STATUS=completed 기본값을 준비했다.
 - Play Alpha는 비활성이고 기존1.0.1 초안과 미완료 트랙 설정이 있다. 실제 API 트랙 ID는 서비스 계정 연결 후 재확인하며 기존 초안을 자동 덮어쓰지 않는다.
 - 실제 네이티브 APK 서명·Play API 인증·비공개 테스트 배포는 외부 인증/권한 설정 후 실행해야 한다.
+
+- 최초 GitHub 실행에서 배포 job의 운영 모드가 단위 테스트에 전파된 문제와 Python3.14의 미종료 HTTPError ResourceWarning을 확인했다. 검사 step만 NODE_ENV=test로 분리하고 모든 오류 응답을 finally에서 닫도록 보완했다. 운영 Secret 추가·토큰 검사 완화 없이 회귀 테스트와 독립 검토를 통과했다.

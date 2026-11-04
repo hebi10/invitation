@@ -109,6 +109,11 @@ for (const event of ['pull_request', 'push']) {
 }
 assert.equal(workflow.on.workflow_dispatch.inputs.deploy.default, false);
 assert.equal(workflow.concurrency['cancel-in-progress'], false);
+const validationStep = workflow.jobs.bundle.steps.find((step: { run?: string }) => step.run?.includes('npm test'));
+assert.ok(validationStep, '전체 테스트를 통과해야 Android 배포 빌드를 진행합니다.');
+const validationEnvironment = { ...workflow.jobs.bundle.env, ...validationStep.env };
+assert.notEqual(validationEnvironment.NODE_ENV, 'production', '서버 단위 테스트에 운영 모드가 전달되면 운영 세션 Secret을 요구합니다.');
+assert.equal(workflow.jobs.bundle.env.NODE_ENV, 'production', 'Android 배포 빌드는 운영 모드를 유지합니다.');
 
 function evaluateCondition(condition: string, github: object, inputs: object = {}, needs: object = {}, steps: object = {}) {
   return Function('github', 'inputs', 'needs', 'steps', `return (${condition.replace(/^\$\{\{\s*|\s*\}\}$/g, '')});`)(github, inputs, needs, steps);

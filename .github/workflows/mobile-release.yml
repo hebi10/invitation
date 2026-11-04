@@ -101,6 +101,8 @@ jobs:
         run: npm ci --include=dev
       - name: 현재 소스 전체 검사
         working-directory: .
+        env:
+          NODE_ENV: test
         run: |
           npm run check
           npm test
