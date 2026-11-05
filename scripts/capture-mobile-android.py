@@ -375,7 +375,7 @@ def main():
                 ('modal-renew-pending', 'renew-pending', ['이용 기간 연장', '미처리 결제가 있습니다']),
                 ('modal-renew-other', 'renew-other', ['이용 기간 연장', '대상 청첩장']),
                 ('modal-renew-loading', 'renew-loading', ['이용 기간 연장', '결제 예정 금액']),
-                ('modal-renew-no-account', 'renew-no-account', ['이용 기간 연장', '소유자 계정'])
+                ('modal-renew-no-account', 'renew-no-account', ['이용 기간 연장', '소유자 계정']),
                 ('modal-preview', 'preview', ['청첩장 미리보기', '디자인 샘플']),
                 ('modal-share', 'share', ['카카오톡 카드 공유', '디자인 샘플']),
                 ('modal-onboarding', 'onboarding', ['운영 시작 안내', '기본 문구와 이름']),
