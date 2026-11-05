@@ -40,7 +40,7 @@ export function PersonEditorCard({
         { backgroundColor: palette.surfaceMuted, borderColor: palette.cardBorder },
       ]}
     >
-      <AppText style={manageStyles.personCardTitle}>{label}</AppText>
+      <AppText variant="title" style={manageStyles.personCardTitle}>{label} 정보</AppText>
       <TextField
         label={`${label} 이름`}
         value={person.name}
@@ -69,7 +69,7 @@ export function PersonEditorCard({
         </View>
       </View>
 
-      <Disclosure title={`${label} 부모님 정보`} description="필요한 이름과 연락처를 입력합니다.">
+      <Disclosure title={`${label} 부모님 정보`} description="필요한 혼주 이름과 연락처를 입력합니다.">
       <AppText variant="caption" style={manageStyles.personSectionLabel}>
         아버지 정보
       </AppText>

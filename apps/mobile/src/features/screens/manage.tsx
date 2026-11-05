@@ -26,6 +26,7 @@ import { AccountInvitationsSection } from '../../components/AccountInvitationsSe
 import { ActionButton } from '../../components/ActionButton';
 import { AppScreen } from '../../components/AppScreen';
 import { AppText } from '../../components/AppText';
+import { ModalFeedback } from '../../components/ModalPrimitives';
 import { BulletList } from '../../components/BulletList';
 import { DraftInvitationsSection } from '../../components/DraftInvitationsSection';
 import { InvitationEditorModalShell } from '../../components/manage/InvitationEditorModalShell';
@@ -757,11 +758,18 @@ export default function ManageScreen() {
         compactFooter={<ActionButton fullWidth loading={isEditorBusy}
           onPress={() => void handleSaveEditor({ close: false, applyPublicationChange: false })}>내용 저장</ActionButton>}
         confirmation={confirmDiscard ? <View style={{ gap: 8 }}>
-          <AppText>저장하지 않은 변경사항이 있습니다.</AppText>
-          <AppText variant="muted">공개 설정 변경은 최종 단계에서 적용합니다.</AppText>
-          <ActionButton onPress={() => void handleSaveEditor({ applyPublicationChange: false })} loading={isEditorBusy}>내용 저장 후 닫기</ActionButton>
-          <ActionButton variant="secondary" onPress={() => setConfirmDiscard(false)}>계속 편집</ActionButton>
-          <ActionButton variant="danger" disabled={isEditorBusy} onPress={() => void handleCloseEditorModal(true)}>변경 취소하고 닫기</ActionButton>
+          <ModalFeedback palette={palette} tone="notice">
+            저장하지 않은 변경사항이 있습니다. 공개 설정 변경은 최종 단계에서 적용합니다.
+          </ModalFeedback>
+          <ActionButton onPress={() => void handleSaveEditor({ applyPublicationChange: false })} loading={isEditorBusy} fullWidth>
+            내용 저장 후 닫기
+          </ActionButton>
+          <ActionButton variant="secondary" onPress={() => setConfirmDiscard(false)} disabled={isEditorBusy} fullWidth>
+            계속 편집
+          </ActionButton>
+          <ActionButton variant="danger" disabled={isEditorBusy} onPress={() => void handleCloseEditorModal(true)} fullWidth>
+            변경 취소하고 닫기
+          </ActionButton>
         </View> : undefined}
         footer={<>
           <View style={manageStyles.actionRow}>
@@ -871,6 +879,7 @@ export default function ManageScreen() {
         onClose={closePreviewLinkModal}
         title="청첩장 미리보기"
         description="디자인을 선택해 실제 청첩장 내용을 확인해 주세요."
+        closeDisabled={isOpeningPreview}
         palette={palette}
         fontScale={fontScale}
       >
@@ -893,6 +902,7 @@ export default function ManageScreen() {
         onClose={() => setKakaoShareTargetCard(null)}
         title="카카오톡 카드 공유"
         description="공유할 디자인을 선택해 하객에게 청첩장을 전달해 주세요."
+        closeDisabled={isOpeningKakaoShare}
         palette={palette}
         fontScale={fontScale}
       >

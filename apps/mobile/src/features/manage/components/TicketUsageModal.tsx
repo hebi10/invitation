@@ -4,6 +4,7 @@ import { ActionButton } from '../../../components/ActionButton';
 import { AppText } from '../../../components/AppText';
 import { BulletList } from '../../../components/BulletList';
 import { ChoiceChip } from '../../../components/ChoiceChip';
+import { ModalFeedback, ModalSummaryRow } from '../../../components/ModalPrimitives';
 import { InvitationEditorModalShell } from '../../../components/manage/InvitationEditorModalShell';
 import { SectionCard } from '../../../components/SectionCard';
 import type { getPalette } from '../../../constants/theme';
@@ -61,22 +62,26 @@ export function TicketUsageModal({
       visible={visible}
       onClose={onClose}
       title="티켓 사용"
-      description="현재 연동된 청첩장에 바로 적용할 수 있는 티켓 기능을 모아 두었습니다."
+      description="현재 청첩장의 노출 기간을 연장하거나 다른 청첩장으로 티켓을 이동합니다."
+      closeDisabled={isExtendingDisplayPeriod || isTransferringTickets}
       palette={palette}
       fontScale={fontScale}
     >
       <SectionCard
-        title="티켓 정책"
-        description="운영 탭에서도 현재 지원하는 티켓 사용 범위를 한 번에 확인할 수 있습니다."
+        title="보유 티켓"
+        description="사용 가능한 티켓 수량과 적용 기준입니다."
       >
-        <AppText variant="muted" style={manageStyles.helperText}>
-          현재 보유 티켓: {availableTicketCount}장
-        </AppText>
+        <ModalSummaryRow
+          label="현재 보유 티켓"
+          value={`${availableTicketCount}장`}
+          palette={palette}
+          total
+        />
         <BulletList items={[...TICKET_USAGE_ITEMS]} />
       </SectionCard>
 
       <SectionCard title="기간 1개월 연장" description="티켓 1장 사용">
-        {notice ? <AppText accessibilityRole="alert" color={palette.notice}>{notice}</AppText> : null}
+        {notice ? <ModalFeedback palette={palette} tone="notice">{notice}</ModalFeedback> : null}
         <AppText variant="muted" style={manageStyles.helperText}>
           현재 청첩장의 노출 기간 종료일을 기준으로 1개월 연장합니다.
         </AppText>
@@ -87,7 +92,14 @@ export function TicketUsageModal({
         >
           {availableTicketCount > 0 ? '1개월 연장 적용' : '이전 연장 결과 다시 확인'}
         </ActionButton>
-        <ActionButton variant="secondary" onPress={onBuyTickets} disabled={isExtendingDisplayPeriod}>티켓 구매하기</ActionButton>
+        <ActionButton
+          variant="secondary"
+          onPress={onBuyTickets}
+          disabled={isExtendingDisplayPeriod || isTransferringTickets}
+          fullWidth
+        >
+          티켓 구매하기
+        </ActionButton>
         <AppText variant="caption">이전 요청의 결과를 확인하지 못했다면 다시 눌러 확인할 수 있습니다. 같은 요청에는 티켓이 중복 차감되지 않습니다.</AppText>
       </SectionCard>
 
@@ -96,6 +108,7 @@ export function TicketUsageModal({
           title="다른 연동 청첩장으로 티켓 이동"
           description="현재 연동된 청첩장의 보유 티켓을 다른 연동 청첩장으로 보낼 수 있습니다."
         >
+          <AppText variant="caption" color={palette.textMuted}>이동할 청첩장</AppText>
           <View style={manageStyles.chipRow}>
             {transferTargetCards.map((item) => (
               <ChoiceChip
@@ -106,8 +119,8 @@ export function TicketUsageModal({
               />
             ))}
           </View>
-          <AppText variant="muted" style={manageStyles.helperText}>
-            이동 대상{' '}
+          <AppText variant="caption" color={palette.textMuted} style={manageStyles.helperText}>
+            선택한 청첩장{' '}
             {transferTargetCards.find((item) => item.slug === selectedTransferTargetSlug)
               ?.displayName.trim() ||
               transferTargetCards.find((item) => item.slug === selectedTransferTargetSlug)
@@ -118,6 +131,7 @@ export function TicketUsageModal({
               ?.ticketCount ?? 0}
             장
           </AppText>
+          <AppText variant="caption" color={palette.textMuted}>이동할 티켓 수량</AppText>
           <View style={manageStyles.chipRow}>
             {ticketTransferCountOptions.map((count) => (
               <ChoiceChip

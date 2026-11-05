@@ -13,6 +13,7 @@ type InvitationEditorModalShellProps = PropsWithChildren<{
   palette: ReturnType<typeof getPalette>;
   fontScale: number;
   cardStyle?: StyleProp<ViewStyle>;
+  placement?: 'center' | 'bottom';
   closeAccessibilityLabel?: string;
   closeDisabled?: boolean;
   closeLoading?: boolean;
@@ -27,6 +28,7 @@ export function InvitationEditorModalShell({
   description,
   palette,
   cardStyle,
+  placement = 'bottom',
   closeAccessibilityLabel,
   closeDisabled = false,
   closeLoading = false,
@@ -40,7 +42,7 @@ export function InvitationEditorModalShell({
       onClose={onClose}
       title={title}
       description={description}
-      placement="bottom"
+      placement={placement}
       palette={palette}
       cardStyle={cardStyle}
       closeDisabled={closeDisabled || closeLoading}

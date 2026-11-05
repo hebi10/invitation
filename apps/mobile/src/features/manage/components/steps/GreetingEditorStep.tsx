@@ -34,8 +34,8 @@ export function GreetingEditorStep({
       </SectionCard>
 
       <SectionCard
-        title="축의금 및 방문 안내"
-        description="하객에게 필요한 계좌와 방문 안내를 항목별로 입력합니다."
+        title="축의금·계좌 정보"
+        description="하객에게 안내할 문구와 신랑·신부측 계좌를 입력합니다."
       >
         <TextField
           label="축의금 안내 문구"
@@ -48,6 +48,12 @@ export function GreetingEditorStep({
           value={form.groomAccountsText} onChange={value => onUpdateField('groomAccountsText', value)} />
         <DelimitedRowsEditor label="신부측 계좌" fields={['은행', '계좌번호', '예금주']}
           value={form.brideAccountsText} onChange={value => onUpdateField('brideAccountsText', value)} />
+      </SectionCard>
+
+      <SectionCard
+        title="교통·화환 안내"
+        description="예식장 방문과 화환 관련 안내를 항목별로 정리합니다."
+      >
         <DelimitedRowsEditor label="교통 안내" fields={['제목', '내용']}
           value={form.venueGuideText} onChange={value => onUpdateField('venueGuideText', value)} />
         <DelimitedRowsEditor label="화환 안내" fields={['제목', '내용']}
