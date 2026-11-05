@@ -68,7 +68,7 @@ function LinkedInvitationCardPanel({
     <View style={[styles.invitation, { borderColor: palette.cardBorder }]}>
       <View style={styles.overview}>
         <Image
-          source={showActualCover ? { uri: actualCover } : themePreviewImages[card.defaultTheme] ?? themePreviewImages.romantic}
+          source={showActualCover && actualCover ? { uri: actualCover } : themePreviewImages[card.defaultTheme] ?? themePreviewImages.romantic}
           style={[styles.coverPreview, { backgroundColor: palette.surfaceMuted }]}
           contentFit="cover"
           contentPosition="top"
