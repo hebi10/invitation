@@ -211,6 +211,43 @@ def capture_keyboard(tree):
     save_manifest()
 
 
+def capture_responsive_views():
+    size_output = adb('shell', 'wm', 'size').stdout.decode('utf-8', errors='replace')
+    physical_size = re.search(r'Physical size:\s*(\d+)x(\d+)', size_output)
+    if not physical_size:
+        raise RuntimeError(f'Android 화면 크기를 확인할 수 없습니다: {size_output}')
+    physical_width = int(physical_size.group(1))
+    layouts = [
+        (320, [
+            ('editor', 'design-check', ['청첩장 편집', '기본 정보']),
+            ('checkout', 'design-check-modals?kind=payment', ['Google Play 결제', '결제 예정 금액']),
+        ]),
+        (360, [
+            ('guide', 'guide', ['이용 안내', '프리미엄 청첩장']),
+            ('settings', 'settings', ['설정', '화면 설정']),
+        ]),
+        (390, [
+            ('editor', 'design-check', ['청첩장 편집', '기본 정보']),
+            ('preview', 'design-check-modals?kind=preview', ['청첩장 미리보기', '디자인 샘플']),
+        ]),
+        (430, [
+            ('settings', 'settings', ['설정', '화면 설정']),
+            ('ticket', 'design-check-modals?kind=ticket', ['티켓 Google Play 결제', '티켓 수량']),
+        ]),
+    ]
+    try:
+        for width_dp, cases in layouts:
+            density = round(physical_width * 160 / width_dp)
+            adb('shell', 'wm', 'density', str(density))
+            time.sleep(3)
+            for label, route, expected in cases:
+                wait_screen(f'layout-{width_dp}-{label}', route, expected)
+            VERIFIED.setdefault('responsive_dp_widths', []).append(width_dp)
+            save_manifest()
+    finally:
+        adb('shell', 'wm', 'density', 'reset', check=False)
+
+
 def diagnostics():
     for filename, args in [('logcat.txt', ('logcat', '-d', '-v', 'threadtime')),
                            ('activity.txt', ('shell', 'dumpsys', 'activity', 'activities')),
@@ -325,6 +362,7 @@ def main():
                 ('system-toast-error', 'toast-error', ['시스템 알림 검수', '알림 검증: 연결 상태를 확인해 주세요.']),
             ]:
                 wait_screen(name, f'design-check-system?kind={kind}', expected)
+            capture_responsive_views()
             VERIFIED['status'] = 'passed'
             save_manifest()
     except Exception as error:
