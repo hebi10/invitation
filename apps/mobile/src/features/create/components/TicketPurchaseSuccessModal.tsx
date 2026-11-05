@@ -1,5 +1,6 @@
-import { Modal, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 
+import { AppModalFrame } from '../../../components/AppModalFrame';
 import { getPalette } from '../../../constants/theme';
 import { ActionButton } from '../../../components/ActionButton';
 import { AppText } from '../../../components/AppText';
@@ -26,98 +27,40 @@ export function TicketPurchaseSuccessModal({
   success,
 }: TicketPurchaseSuccessModalProps) {
   return (
-    <Modal visible={visible} animationType="fade" transparent onRequestClose={onClose}>
-      <View style={styles.overlay}>
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel="티켓 구매 완료 팝업 닫기"
-          style={[
-            styles.backdrop,
-            {
-              backgroundColor: '#111210',
-              opacity: 0.58,
-            },
-          ]}
-          onPress={onClose}
-        />
-        <View
-          style={[
-            styles.card,
-            {
-              backgroundColor: palette.surface,
-              borderColor: palette.cardBorder,
-            },
-          ]}
-        >
-          <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
-            <AppText variant="title" style={styles.title}>
-              구매 완료됐습니다
-            </AppText>
-            <AppText variant="muted" style={styles.description}>
-              선택한 청첩장에 티켓 적립이 정상적으로 완료되었습니다.
-            </AppText>
-
-            <View style={styles.summaryRow}>
-              <AppText style={styles.summaryLabel}>적립 대상</AppText>
-              <AppText style={styles.summaryValue}>
-                {success?.targetDisplayName ?? '-'}
-              </AppText>
-            </View>
-            <View style={styles.summaryRow}>
-              <AppText style={styles.summaryLabel}>구매한 티켓</AppText>
-              <AppText style={styles.summaryValue}>{success?.ticketCount ?? 0}장</AppText>
-            </View>
-            <View style={styles.summaryRow}>
-              <AppText style={styles.summaryLabel}>현재 보유 티켓</AppText>
-              <AppText variant="display" color={palette.success} style={styles.totalLabel}>
-                {success?.nextTicketCount ?? 0}장
-              </AppText>
-            </View>
-
-            <AppText variant="muted">티켓 구매만으로 이용 기간이 연장되지는 않습니다. 내 청첩장에서 티켓을 사용해 주세요.</AppText>
-            <ActionButton onPress={onExtend} fullWidth>기간 연장하러 가기</ActionButton>
-            <ActionButton onPress={onClose} variant="secondary" fullWidth>
-              확인
-            </ActionButton>
-          </ScrollView>
+    <AppModalFrame
+    visible={visible}
+    onClose={onClose}
+    title="구매 완료됐습니다"
+    description="선택한 청첩장에 티켓 적립이 정상적으로 완료되었습니다."
+    placement="center"
+    >
+        <View style={styles.summaryRow}>
+          <AppText style={styles.summaryLabel}>적립 대상</AppText>
+          <AppText style={styles.summaryValue}>
+            {success?.targetDisplayName ?? '-'}
+          </AppText>
         </View>
-      </View>
-    </Modal>
+        <View style={styles.summaryRow}>
+          <AppText style={styles.summaryLabel}>구매한 티켓</AppText>
+          <AppText style={styles.summaryValue}>{success?.ticketCount ?? 0}장</AppText>
+        </View>
+        <View style={styles.summaryRow}>
+          <AppText style={styles.summaryLabel}>현재 보유 티켓</AppText>
+          <AppText variant="display" color={palette.success} style={styles.totalLabel}>
+            {success?.nextTicketCount ?? 0}장
+          </AppText>
+        </View>
+
+        <AppText variant="muted">티켓 구매만으로 이용 기간이 연장되지는 않습니다. 내 청첩장에서 티켓을 사용해 주세요.</AppText>
+        <ActionButton onPress={onExtend} fullWidth>기간 연장하러 가기</ActionButton>
+        <ActionButton onPress={onClose} variant="secondary" fullWidth>
+          확인
+        </ActionButton>
+    </AppModalFrame>
   );
 }
 
 const styles = StyleSheet.create({
-  overlay: {
-    flex: 1,
-    paddingVertical: 24,
-    justifyContent: 'center',
-    paddingHorizontal: 20,
-  },
-  backdrop: {
-    ...StyleSheet.absoluteFillObject,
-  },
-  card: {
-    maxHeight: '88%',
-    width: '100%',
-    maxWidth: 520,
-    alignSelf: 'center',
-    borderWidth: 1,
-    borderRadius: 0,
-    padding: 16,
-    gap: 16,
-  },
-  content: {
-    gap: 16,
-  },
-  scroll: {
-    flexGrow: 0,
-  },
-  title: {
-    fontWeight: '500',
-  },
-  description: {
-    lineHeight: 21,
-  },
   summaryRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
