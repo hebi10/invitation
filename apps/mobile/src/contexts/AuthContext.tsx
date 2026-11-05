@@ -535,10 +535,11 @@ export function AuthProvider({ children }: PropsWithChildren) {
     if (!currentCustomerSession) return null;
     const revision = customerAuthRevisionRef.current;
     const refreshedSession = await refreshCustomerSession(currentCustomerSession);
-    return revision === customerAuthRevisionRef.current &&
-      refreshedSession?.uid === customerSessionRef.current?.uid
-      ? refreshedSession.idToken
-      : null;
+    if (!refreshedSession || revision !== customerAuthRevisionRef.current ||
+        refreshedSession.uid !== customerSessionRef.current?.uid) {
+      return null;
+    }
+    return refreshedSession.idToken;
   }, [refreshCustomerSession]);
 
   useEffect(() => {
