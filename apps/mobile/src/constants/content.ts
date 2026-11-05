@@ -30,10 +30,6 @@ export const servicePlans = [
   },
 ] as const;
 
-export const ticketPricing = {
-  unitPrice: 1000,
-} as const;
-
 export const designThemes = getSelectableInvitationThemeKeys().map((key) => ({
   key,
   label: getInvitationThemeLabel(key),
@@ -75,14 +71,14 @@ export const guideSections = [
     ],
   },
   {
-    title: '이용 기간과 티켓',
-    description: `기본 ${INVITATION_INITIAL_DISPLAY_PERIOD_MONTHS}개월 · 티켓 1장으로 1개월 연장`,
+    title: '이용 기간과 연장',
+    description: `기본 ${INVITATION_INITIAL_DISPLAY_PERIOD_MONTHS}개월 · 5,000원에 6개월 연장`,
     items: [
+      `제작 결제 ${INVITATION_PREMIUM_PRICE_LABEL}에 모든 웨딩 디자인과 기능이 포함됩니다.`,
       `기본 이용 기간은 청첩장 생성일부터 ${INVITATION_INITIAL_DISPLAY_PERIOD_MONTHS}개월이며 제작 중인 기간도 포함됩니다.`,
-      '티켓은 할인 없이 1장당 1,000원이며, 티켓 1장으로 1개월 연장합니다.',
-      '티켓은 청첩장 제작 결제에 포함되지 않습니다. 청첩장 연결 후 별도로 구매합니다.',
-      '구매 확인 창에서 적립할 청첩장을 확인해 주세요. 티켓은 선택한 청첩장에 적립됩니다.',
-      '티켓 구매만으로 기간이 연장되지는 않습니다. 내 청첩장에서 티켓을 사용해 기간을 연장합니다.',
+      '기간 연장은 내 청첩장에서 Google Play로 5,000원을 결제하면 6개월이 추가됩니다.',
+      '아직 이용 기간이 남았다면 기존 종료일부터, 종료되었다면 연장 결제일부터 6개월을 계산합니다.',
+      '미처리 결제가 있다면 새로운 결제를 진행하지 않고 이전 거래를 먼저 복구해 주세요.',
     ],
   },
   {
@@ -161,10 +157,6 @@ export const quickStartItems = [
   '새 청첩장 만들기',
   '기존 페이지 연동하기',
   '샘플 페이지 먼저 둘러보기',
-] as const;
-
-export const ticketActions = [
-  { key: 'extend', label: '기간 1개월 연장', tickets: 1 },
 ] as const;
 
 export const settingsNotes = [
