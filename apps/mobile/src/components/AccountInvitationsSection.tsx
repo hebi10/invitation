@@ -149,6 +149,35 @@ export function AccountInvitationsSection() {
       {!loading && loaded && !error && items.length === 0 ? (
         <AppText variant="muted">계정에 등록된 웨딩 청첩장이 없습니다.</AppText>
       ) : null}
+      <AccountOwnedWeddingCards
+        items={items}
+        currentSlug={session?.pageSlug}
+        openingSlug={openingSlug}
+        busy={isAuthenticating}
+        onOpen={(slug) => void openInvitation(slug)}
+      />
+      <ActionButton variant="secondary" fullWidth onPress={() => { setItems([]); void logoutCustomer(); }}>
+        고객 계정 로그아웃
+      </ActionButton>
+    </SectionCard>
+  );
+}
+
+export function AccountOwnedWeddingCards({
+  items,
+  currentSlug,
+  openingSlug,
+  busy,
+  onOpen,
+}: {
+  items: MobileCustomerOwnedEvent[];
+  currentSlug?: string | null;
+  openingSlug?: string | null;
+  busy?: boolean;
+  onOpen: (slug: string) => void;
+}) {
+  const { palette } = usePreferences();
+  return <View style={styles.list}>
       {items.map((item) => (
         <View key={item.eventId} style={[styles.item, { borderColor: palette.cardBorder }]}>
           {item.coverImageUrl ? (
@@ -169,24 +198,21 @@ export function AccountInvitationsSection() {
             </AppText>
             <ActionButton
               fullWidth
-              variant={session?.pageSlug === item.slug ? 'primary' : 'secondary'}
+              variant={currentSlug === item.slug ? 'primary' : 'secondary'}
               loading={openingSlug === item.slug}
-              disabled={Boolean(openingSlug) || isAuthenticating || session?.pageSlug === item.slug}
-              onPress={() => void openInvitation(item.slug)}
+              disabled={Boolean(openingSlug) || busy || currentSlug === item.slug}
+              onPress={() => onOpen(item.slug)}
             >
-              {session?.pageSlug === item.slug ? '현재 관리 중' : '이 청첩장 관리·수정'}
+              {currentSlug === item.slug ? '현재 관리 중' : '이 청첩장 관리·수정'}
             </ActionButton>
           </View>
         </View>
       ))}
-      <ActionButton variant="secondary" fullWidth onPress={() => { setItems([]); void logoutCustomer(); }}>
-        고객 계정 로그아웃
-      </ActionButton>
-    </SectionCard>
-  );
+  </View>;
 }
 
 const styles = StyleSheet.create({
+  list: { gap: 12 },
   accountRow: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 8, justifyContent: 'space-between' },
   accountEmail: { flex: 1, minWidth: 120 },
   item: { borderWidth: 1, borderRadius: 0, padding: 12, flexDirection: 'row', gap: 12, alignItems: 'flex-start' },
