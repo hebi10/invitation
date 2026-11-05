@@ -5,6 +5,8 @@ import type {
   GuestbookCommentStatus as SharedGuestbookCommentStatus,
 } from '../../../../src/lib/guestbookComments';
 
+import type { WeddingIntroStyle } from '../lib/weddingIntro';
+
 export type MobileInvitationProductTier = 'standard' | 'deluxe' | 'premium';
 export type MobileInvitationThemeKey = SharedMobileInvitationThemeKey;
 export type MobileGuestbookCommentAction = SharedGuestbookCommentAction;
@@ -146,6 +148,7 @@ export interface MobileInvitationSeed {
   productTier?: MobileInvitationProductTier;
   features?: Partial<MobileInvitationFeatureFlags>;
   musicEnabled?: boolean;
+  introStyle?: WeddingIntroStyle;
   musicVolume?: number;
   musicCategoryId?: string;
   musicTrackId?: string;
