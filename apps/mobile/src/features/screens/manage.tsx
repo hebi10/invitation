@@ -634,6 +634,7 @@ export default function ManageScreen() {
           dashboardCommentCount={dashboard?.commentCount ?? 0}
           dashboardPublished={dashboard?.page.published ?? false}
           dashboardWeddingDate={dashboard?.page.config.date}
+          dashboardCoverImageUrl={dashboard?.page.config.pageData?.coverImageThumbnailUrl || dashboard?.page.config.metadata?.images?.wedding || null}
           canRequestDashboardSync={canRequestDashboardSync}
           needsRefreshRetry={needsRefreshRetry}
           activatingLinkedInvitationSlug={activatingLinkedInvitationSlug}
