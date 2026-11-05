@@ -134,8 +134,9 @@ const receipt = records.get('billingFulfillments/GPA.test-renew-1');
 assert.equal(receipt?.kind, 'periodExtension');
 assert.equal(receipt?.status, 'fulfilled');
 const afterFirst = writes;
+records.set('events/event2', { ...seedEvent(), eventId: 'event2', slug: 'page-b' });
 await assert.rejects(repo.fulfillPeriodExtension({
-  ...input('GPA.test-renew-1'), targetPageSlug: 'page-b',
+  ...input('GPA.test-renew-1'), eventId: 'event2', targetPageSlug: 'page-b',
 }), /different purpose or invitation/);
 assert.equal(writes, afterFirst);
 
