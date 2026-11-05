@@ -1,0 +1,68 @@
+name: Play 스토어 대표 아이콘 동기화
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/store-icon-sync.yml
+  workflow_dispatch:
+    inputs:
+      apply:
+        description: "현재 앱의 ko-KR 아이콘을 Play 등록정보에 실제 적용"
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: mobile-android-release
+  cancel-in-progress: false
+
+jobs:
+  store-icon:
+    if: github.repository == 'hebi10/invitation' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    environment: google-play-testing
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - name: 스토어 아이콘 파일 출처 검증
+        run: |
+          test -s apps/mobile/store/icon.png
+          git hash-object apps/mobile/store/icon.png | grep -x '73929f4a16f1c55183a2e20f77993b167693f86d'
+      - name: Google Play 전용 계정 설정 확인
+        env:
+          WORKLOAD_IDENTITY_PROVIDER: ${{ vars.PLAY_WORKLOAD_IDENTITY_PROVIDER }}
+          PLAY_SERVICE_ACCOUNT: ${{ vars.PLAY_SERVICE_ACCOUNT }}
+        run: |
+          test -n "$WORKLOAD_IDENTITY_PROVIDER" || { echo '::error::PLAY_WORKLOAD_IDENTITY_PROVIDER가 필요합니다.'; exit 1; }
+          test -n "$PLAY_SERVICE_ACCOUNT" || { echo '::error::PLAY_SERVICE_ACCOUNT가 필요합니다.'; exit 1; }
+      - name: Google Play OAuth 단기 토큰 발급
+        id: google_auth
+        uses: google-github-actions/auth@v3
+        with:
+          workload_identity_provider: ${{ vars.PLAY_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ vars.PLAY_SERVICE_ACCOUNT }}
+          token_format: access_token
+          access_token_scopes: https://www.googleapis.com/auth/androidpublisher
+          create_credentials_file: false
+          export_environment_variables: false
+      - name: ko-KR 대표 아이콘 확인 및 필요한 경우 갱신
+        env:
+          PLAY_ACCESS_TOKEN: ${{ steps.google_auth.outputs.access_token }}
+          APPLY_ON_PUSH: ${{ github.event_name == 'push' && 'true' || 'false' }}
+          APPLY_MANUAL: ${{ inputs.apply && 'true' || 'false' }}
+        run: |
+          set -euo pipefail
+          if [[ "$APPLY_ON_PUSH" == "true" || "$APPLY_MANUAL" == "true" ]]; then
+            python3 scripts/sync-play-store-icon.py --apply
+          else
+            python3 scripts/sync-play-store-icon.py
+          fi
