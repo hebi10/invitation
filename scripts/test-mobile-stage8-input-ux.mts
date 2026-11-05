@@ -45,6 +45,7 @@ assert.match(capture, /shutil\.copyfile\(KEYBOARD_FIXTURE, KEYBOARD_ROUTE\)/);
 assert.match(capture, /wait_screen\(\s*'editor-keyboard-ready', 'design-check-keyboard'/);
 assert.match(capture, /keyboard_input = next\(/);
 assert.match(capture, /tap\(keyboard_input\)/);
+assert.match(capture, /\['청첩장 편집', '키보드 확인 입력', '저장 후 다음'\]/);
 assert.match(capture, /wait_screen\(\s*'editor-keyboard', 'design-check-keyboard'/);
 assert.match(capture, /timeout=45, launch=False/);
 assert.match(capture, /VERIFIED\['keyboard_capture'\]/);

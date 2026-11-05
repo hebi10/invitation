@@ -330,7 +330,7 @@ def main():
             wait_screen('editor-fixture', 'design-check', ['샘플 청첩장 · 변경 사항 없음', '청첩장 편집', '기본 정보'])
             keyboard_tree = wait_screen(
                 'editor-keyboard-ready', 'design-check-keyboard',
-                ['청첩장 편집', '키보드 확인 입력', '키보드 열기 대기', '저장 후 다음'],
+                ['청첩장 편집', '키보드 확인 입력', '저장 후 다음'],
             )
             keyboard_input = next(
                 (node for node in keyboard_tree.iter('node')
