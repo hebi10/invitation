@@ -213,6 +213,10 @@ export function usePreferenceSettings() {
   return context;
 }
 
+export function useOptionalVisualPreferences() {
+  return useContext(PreferencesVisualContext);
+}
+
 export function useVisualPreferences() {
   const context = useContext(PreferencesVisualContext);
   if (!context) {
