@@ -62,12 +62,12 @@ export function AppModalFrame({
     >
       <KeyboardAvoidingView
         style={styles.root}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
         <View style={[
           styles.overlay,
           placement === 'center' ? styles.center : styles.bottom,
-          { paddingTop: insets.top + 16, paddingBottom: Math.max(insets.bottom, 16) },
+          { paddingTop: insets.top + APP_SPACING.md, paddingBottom: Math.max(insets.bottom, APP_SPACING.md) },
         ]}>
           <Pressable
             accessibilityRole="button"
@@ -141,5 +141,5 @@ const styles = StyleSheet.create({
   scroll: { flexGrow: 0, flexShrink: 1 },
   content: { paddingBottom: APP_SPACING.xs },
   body: { gap: APP_SPACING.sm },
-  footer: { alignItems: 'stretch' },
+  footer: { alignItems: 'stretch', gap: APP_SPACING.xs },
 });

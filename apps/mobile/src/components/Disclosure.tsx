@@ -2,6 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useState, type PropsWithChildren } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
+import { APP_SPACING } from '../constants/uiTokens';
 import { useVisualPreferences } from '../contexts/PreferencesContext';
 import { AppText } from './AppText';
 
@@ -22,13 +23,20 @@ export function Disclosure({ title, description, defaultExpanded = false, childr
         accessibilityLabel={title}
         accessibilityState={{ expanded }}
         onPress={() => setExpanded((current) => !current)}
-        style={({ pressed }) => [styles.toggle, pressed ? { backgroundColor: palette.surfaceMuted } : null]}
+        style={({ pressed }) => [
+          styles.toggle,
+          expanded || pressed ? { backgroundColor: palette.surfaceMuted } : null,
+        ]}
       >
         <View style={styles.copy}>
           <AppText style={styles.title}>{title}</AppText>
           {description ? <AppText variant="muted">{description}</AppText> : null}
         </View>
-        <Ionicons name={expanded ? 'chevron-up' : 'chevron-down'} size={18} color={palette.textMuted} />
+        <Ionicons
+          name={expanded ? 'chevron-up' : 'chevron-down'}
+          size={18}
+          color={expanded ? palette.accent : palette.textMuted}
+        />
       </Pressable>
       {expanded ? <View style={styles.content}>{children}</View> : null}
     </View>
@@ -36,9 +44,15 @@ export function Disclosure({ title, description, defaultExpanded = false, childr
 }
 
 const styles = StyleSheet.create({
-  container: { borderWidth: 1 },
-  toggle: { minHeight: 56, padding: 16, flexDirection: 'row', alignItems: 'center', gap: 16 },
-  copy: { flex: 1, gap: 4 },
+  container: { borderWidth: 1, borderRadius: 0 },
+  toggle: {
+    minHeight: 56,
+    padding: APP_SPACING.md,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: APP_SPACING.md,
+  },
+  copy: { flex: 1, minWidth: 0, gap: APP_SPACING.xs },
   title: { fontWeight: '600' },
-  content: { padding: 16, paddingTop: 0, gap: 16 },
+  content: { padding: APP_SPACING.md, gap: APP_SPACING.md },
 });

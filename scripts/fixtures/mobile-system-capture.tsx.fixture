@@ -1,0 +1,60 @@
+import { useEffect } from 'react';
+import { useLocalSearchParams } from 'expo-router';
+
+import NotFoundScreen from './+not-found';
+import { AppScreen } from '../components/AppScreen';
+import { AppText } from '../components/AppText';
+import { ErrorFallback } from '../components/AppErrorBoundary';
+import { SectionCard } from '../components/SectionCard';
+import { useAppFeedback } from '../contexts/AppFeedbackContext';
+import { usePreferences } from '../contexts/PreferencesContext';
+import SettingsScreenContent from '../features/screens/settings';
+
+export default function SystemDesignCheck() {
+  const { kind } = useLocalSearchParams<{ kind?: string }>();
+  const {
+    themePreference,
+    fontScalePreference,
+    setThemePreference,
+    setFontScalePreference,
+  } = usePreferences();
+  const { showToast } = useAppFeedback();
+
+  useEffect(() => {
+    if (kind === 'dark' && themePreference !== 'dark') {
+      void setThemePreference('dark');
+    }
+    if (kind === 'large' && themePreference !== 'light') {
+      void setThemePreference('light');
+    }
+    if (kind === 'large' && themePreference === 'light' && fontScalePreference !== 'large') {
+      void setFontScalePreference('large');
+    }
+  }, [kind, themePreference, fontScalePreference, setThemePreference, setFontScalePreference]);
+
+  useEffect(() => {
+    if (kind === 'toast-error') {
+      showToast('알림 검증: 연결 상태를 확인해 주세요.', { tone: 'error', durationMs: 30000 });
+    }
+  }, [kind, showToast]);
+
+  if (kind === 'error') {
+    return <ErrorFallback onRetry={() => {}} onGoHome={() => {}} />;
+  }
+
+  if (kind === 'not-found') {
+    return <NotFoundScreen />;
+  }
+
+  if (kind === 'dark' || kind === 'large') {
+    return <SettingsScreenContent />;
+  }
+
+  return (
+    <AppScreen title="시스템 알림 검수" subtitle="알림 메시지 및 복구 안내의 표현을 확인합니다.">
+      <SectionCard title="알림 상태">
+        <AppText variant="muted">연결 상태가 변경되면 화면 하단에 알림이 표시됩니다.</AppText>
+      </SectionCard>
+    </AppScreen>
+  );
+}

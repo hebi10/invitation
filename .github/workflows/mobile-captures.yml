@@ -10,6 +10,7 @@ on:
       - 'scripts/fixtures/mobile-modals-capture.tsx.fixture'
       - 'scripts/fixtures/mobile-owned-list-capture.tsx.fixture'
       - 'scripts/fixtures/mobile-linked-list-capture.tsx.fixture'
+      - 'scripts/fixtures/mobile-system-capture.tsx.fixture'
   workflow_dispatch:
 
 permissions:
