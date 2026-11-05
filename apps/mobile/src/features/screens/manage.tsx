@@ -19,7 +19,7 @@ import { useInvitationForm } from '../manage/hooks/useInvitationForm';
 import { useLinkedInvitationManager } from '../manage/hooks/useLinkedInvitationManager';
 import { useMusicLibrary } from '../manage/hooks/useMusicLibrary';
 import { useTicketOperations } from '../manage/hooks/useTicketOperations';
-import { formatDateLabel, formatThemeList } from '../manage/linkedInvitationDisplay';
+import { formatDateLabel } from '../manage/linkedInvitationDisplay';
 import { manageStyles } from '../manage/manageStyles';
 import { EDITOR_STEPS } from '../manage/shared';
 import { AccountInvitationsSection } from '../../components/AccountInvitationsSection';
@@ -40,9 +40,6 @@ import {
   revokeMobileClientEditorLinkTokens,
 } from '../../lib/api';
 import { buildManageAppDeepLink } from '../../lib/appDeepLink';
-import {
-  getInvitationThemeLabel,
-} from '../../lib/invitationThemes';
 import {
   getLinkedInvitationThemeKeys,
   type LinkedInvitationCard,
