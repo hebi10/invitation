@@ -5,10 +5,27 @@ import type {
   GuestbookCommentStatus as SharedGuestbookCommentStatus,
 } from '../../../../src/lib/guestbookComments';
 
+import type { WeddingIntroStyle } from '../lib/weddingIntro';
+
 export type MobileInvitationProductTier = 'standard' | 'deluxe' | 'premium';
 export type MobileInvitationThemeKey = SharedMobileInvitationThemeKey;
 export type MobileGuestbookCommentAction = SharedGuestbookCommentAction;
 export type MobileGuestbookCommentStatus = SharedGuestbookCommentStatus;
+
+export interface MobileCustomerOwnedEvent {
+  eventId: string;
+  slug: string;
+  eventType: string;
+  title: string | null;
+  displayName: string | null;
+  published: boolean;
+  defaultTheme: MobileInvitationThemeKey;
+  availableThemes: MobileInvitationThemeKey[];
+  updatedAt: string | null;
+  coverImageUrl?: string | null;
+  eventDateLabel?: string | null;
+  publicAccess?: { isPublic: boolean; adminLabel: string };
+}
 
 export interface MobileInvitationVariantLink {
   available: boolean;
@@ -146,6 +163,7 @@ export interface MobileInvitationSeed {
   productTier?: MobileInvitationProductTier;
   features?: Partial<MobileInvitationFeatureFlags>;
   musicEnabled?: boolean;
+  introStyle?: WeddingIntroStyle;
   musicVolume?: number;
   musicCategoryId?: string;
   musicTrackId?: string;

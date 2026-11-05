@@ -1,5 +1,5 @@
-import { router } from 'expo-router';
-import { useState } from 'react';
+import { router, useLocalSearchParams } from 'expo-router';
+import { useEffect, useState } from 'react';
 import { View } from 'react-native';
 import { ActionButton } from '../components/ActionButton';
 import { AppText } from '../components/AppText';
@@ -11,7 +11,9 @@ import { EDITOR_STEPS, EMPTY_FORM, type ManageFormState } from '../features/mana
 
 export default function DesignCheck() {
   const { palette } = useVisualPreferences();
-  const [step, setStep] = useState(0);
+  const { step: requestedStep } = useLocalSearchParams<{ step?: string }>();
+  const [step, setStep] = useState(requestedStep === 'intro' ? EDITOR_STEPS.length - 1 : 0);
+  useEffect(() => { setStep(requestedStep === 'intro' ? EDITOR_STEPS.length - 1 : 0); }, [requestedStep]);
   const [form, setForm] = useState<ManageFormState>({ ...EMPTY_FORM,
     displayName: '김도윤 · 이서연 결혼합니다', subtitle: '소중한 분들을 초대합니다', description: '서로의 내일을 함께 시작합니다.',
     groom: { ...EMPTY_FORM.groom, name: '김도윤' }, bride: { ...EMPTY_FORM.bride, name: '이서연' },
@@ -43,7 +45,9 @@ export default function DesignCheck() {
       onUpdateParentField={(role, parent, field, value) => setForm(current => ({ ...current, [role]: { ...current[role], [parent]: { ...current[role][parent], [field]: value } } }))}
       onUploadImage={() => {}} onRemoveSingleImage={() => {}} onMoveGalleryImage={() => {}} onRemoveGalleryImage={() => {}}
       onSearchAddress={() => {}} onOpenMapUrl={() => {}} onSetMusicEnabled={musicEnabled => setForm(current => ({ ...current, musicEnabled }))}
-      onSetPublished={published => setForm(current => ({ ...current, published }))} onToggleMusicDropdown={() => {}}
+      onSetPublished={published => setForm(current => ({ ...current, published }))}
+      onSetIntroStyle={introStyle => setForm(current => ({ ...current, introStyle }))}
+      onPreviewIntro={() => {}} onToggleMusicDropdown={() => {}}
       onSelectMusicCategory={() => {}} onSelectMusicTrack={() => {}} />
   </InvitationEditorWorkspace>;
 }

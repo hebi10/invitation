@@ -58,6 +58,7 @@ const FAIL_CLOSED_RATE_LIMIT_SCOPES = new Set([
   'mobile-billing-fulfill',
   'mobile-client-editor-comment-mutation',
   'mobile-client-editor-drafts',
+  'mobile-client-editor-account-restore',
   'mobile-client-editor-high-risk-verify',
   'mobile-client-editor-image-cleanup',
   'mobile-client-editor-image-upload',

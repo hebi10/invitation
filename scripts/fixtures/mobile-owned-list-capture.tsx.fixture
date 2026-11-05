@@ -1,0 +1,28 @@
+import { AppScreen } from '../components/AppScreen';
+import { AccountOwnedWeddingCards } from '../components/AccountInvitationsSection';
+import { SectionCard } from '../components/SectionCard';
+import type { MobileCustomerOwnedEvent } from '../types/mobileInvitation';
+
+const mockEvents: MobileCustomerOwnedEvent[] = Array.from({ length: 12 }, (_, index) => ({
+  eventId: `fixture-${index + 1}`,
+  slug: `test-wedding-${index + 1}`,
+  eventType: 'wedding',
+  title: null,
+  displayName: `가상 청첩장 ${index + 1}`,
+  published: index % 2 === 0,
+  defaultTheme: 'simple',
+  availableThemes: ['simple', 'romantic'],
+  updatedAt: null,
+  eventDateLabel: '2027년 4월 17일',
+  coverImageUrl: null,
+}));
+
+export default function AccountListDesignCheck() {
+  return (
+    <AppScreen title="계정별 전체 청첩장" subtitle="12개 샘플 청첩장으로 기기 제한 없는 목록을 검증합니다.">
+      <SectionCard title="전체 청첩장 테스트" badge={`${mockEvents.length}개`}>
+        <AccountOwnedWeddingCards items={mockEvents} onOpen={() => {}} />
+      </SectionCard>
+    </AppScreen>
+  );
+}

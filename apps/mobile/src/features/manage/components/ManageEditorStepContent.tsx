@@ -1,3 +1,4 @@
+import type { WeddingIntroStyle } from '../../../lib/weddingIntro';
 import type { MobileMusicCategory } from '../../../types/mobileInvitation';
 import type { ImageUploadProgressState } from '../hooks/useImageUpload';
 import type {
@@ -58,6 +59,8 @@ type ManageEditorStepContentProps = {
   onOpenMapUrl: () => void | Promise<void>;
   onSetMusicEnabled: (enabled: boolean) => void;
   onSetPublished: (published: boolean) => void;
+  onSetIntroStyle: (style: WeddingIntroStyle) => void;
+  onPreviewIntro: (style: WeddingIntroStyle) => void;
   onToggleMusicDropdown: (panel: MusicDropdownPanel) => void;
   onSelectMusicCategory: (categoryId: string) => void;
   onSelectMusicTrack: (trackId: string) => void;
@@ -93,6 +96,8 @@ export function ManageEditorStepContent({
   onOpenMapUrl,
   onSetMusicEnabled,
   onSetPublished,
+  onSetIntroStyle,
+  onPreviewIntro,
   onToggleMusicDropdown,
   onSelectMusicCategory,
   onSelectMusicTrack,
@@ -170,6 +175,8 @@ export function ManageEditorStepContent({
           savedPublished={savedPublished}
           onUpdateField={onUpdateField}
           onSetPublished={onSetPublished}
+          onSetIntroStyle={onSetIntroStyle}
+          onPreviewIntro={onPreviewIntro}
         />
       );
   }

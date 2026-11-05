@@ -1,6 +1,7 @@
 import { useRouter } from 'expo-router';
 import { ActivityIndicator, Platform, StyleSheet, View } from 'react-native';
 
+import { AccountInvitationsSection } from '../../components/AccountInvitationsSection';
 import { ActionButton } from '../../components/ActionButton';
 import { AppScreen } from '../../components/AppScreen';
 import { AppText } from '../../components/AppText';
@@ -36,6 +37,7 @@ export default function MyInvitationsScreen() {
     <AppScreen title="내 청첩장" subtitle="저장한 초안을 이어서 작성하거나 기존 청첩장을 연결하세요.">
       {isExpoWebPreview ? <WebPreviewNotice /> : null}
       <DraftInvitationsSection />
+      <AccountInvitationsSection />
       <WeddingIntroHero />
       <SectionCard title="청첩장을 준비해 볼까요?" description="새로 만들거나 이미 제작한 청첩장을 이 기기에 연결할 수 있습니다.">
         <ActionButton fullWidth onPress={() => router.push('/create')}>새 청첩장 만들기</ActionButton>

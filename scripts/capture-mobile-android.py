@@ -23,6 +23,8 @@ ROUTE = APP / 'src/app/design-check.tsx'
 FIXTURE = ROOT / 'scripts/fixtures/mobile-editor-capture.tsx.fixture'
 MODALS_ROUTE = APP / 'src/app/design-check-modals.tsx'
 MODALS_FIXTURE = ROOT / 'scripts/fixtures/mobile-modals-capture.tsx.fixture'
+ACCOUNT_ROUTE = APP / 'src/app/design-check-accounts.tsx'
+ACCOUNT_FIXTURE = ROOT / 'scripts/fixtures/mobile-owned-list-capture.tsx.fixture'
 APK_URL = 'https://github.com/expo/expo-go-releases/releases/download/Expo-Go-55.0.7/Expo-Go-55.0.7.apk'
 APK_SIZE = 195851103
 APK_SHA256 = '6368eec8973ebb011c6f4f9d32afebe3fc64dd3125f2c0b529767e88dccf64ab'
@@ -229,9 +231,11 @@ def main():
     fixture_api = None
     original_route = ROUTE.read_bytes() if ROUTE.exists() else None
     original_modals_route = MODALS_ROUTE.read_bytes() if MODALS_ROUTE.exists() else None
+    original_account_route = ACCOUNT_ROUTE.read_bytes() if ACCOUNT_ROUTE.exists() else None
     try:
         shutil.copyfile(FIXTURE, ROUTE)
         shutil.copyfile(MODALS_FIXTURE, MODALS_ROUTE)
+        shutil.copyfile(ACCOUNT_FIXTURE, ACCOUNT_ROUTE)
         fixture_api = ThreadingHTTPServer(('127.0.0.1', 19999), CaptureApiHandler)
         threading.Thread(target=fixture_api.serve_forever, daemon=True).start()
         env = {**os.environ, 'CI': '1', 'EXPO_OFFLINE': '1', 'EXPO_NO_TELEMETRY': '1',
@@ -265,11 +269,13 @@ def main():
             adb('reverse', 'tcp:19999', 'tcp:19999')
             adb('shell', 'input', 'keyevent', 'KEYCODE_WAKEUP')
             adb('shell', 'wm', 'dismiss-keyguard')
-            wait_screen('my-invitations', '', ['내 청첩장', '청첩장을 준비해 볼까요?'])
+            wait_screen('my-invitations', '', ['내 청첩장', '내 계정의 모든 청첩장'])
             wait_screen('create', 'create', ['만들기', '기본 정보를 준비하고'])
             wait_screen('guide', 'guide', ['이용 안내', '진행할 작업을 선택해'])
             wait_screen('settings', 'settings', ['설정', '화면 설정'])
+            wait_screen('account-list-12', 'design-check-accounts', ['계정별 전체 청첩장', '12개', '가상 청첩장 1'])
             tree = wait_screen('editor-fixture', 'design-check', ['샘플 청첩장 · 변경 사항 없음', '청첩장 편집', '기본 정보'])
+            wait_screen('editor-intro', 'design-check?step=intro', ['첫 화면 애니메이션', '빛에 담긴 초대'])
             try:
                 capture_keyboard(tree)
             except (subprocess.TimeoutExpired, subprocess.CalledProcessError) as error:
@@ -311,6 +317,10 @@ def main():
             MODALS_ROUTE.unlink(missing_ok=True)
         else:
             MODALS_ROUTE.write_bytes(original_modals_route)
+        if original_account_route is None:
+            ACCOUNT_ROUTE.unlink(missing_ok=True)
+        else:
+            ACCOUNT_ROUTE.write_bytes(original_account_route)
 
 
 if __name__ == '__main__':

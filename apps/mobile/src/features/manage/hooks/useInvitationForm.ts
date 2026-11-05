@@ -219,6 +219,11 @@ export function useInvitationForm({
     [markFormDirty]
   );
 
+  const setIntroStyle = useCallback((introStyle: ManageFormState['introStyle']) => {
+    setIsFormDirty(true);
+    setFormState((current) => ({ ...current, introStyle }));
+  }, []);
+
   const setMusicEnabled = useCallback(
     (musicEnabled: boolean) => {
       markFormDirty();
@@ -526,6 +531,7 @@ export function useInvitationForm({
     setPublished,
     setDefaultTheme,
     setMusicEnabled,
+    setIntroStyle,
     updatePersonField,
     updateParentField,
     requestDashboardSync,

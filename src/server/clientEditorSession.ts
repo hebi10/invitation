@@ -16,7 +16,7 @@ export interface ClientEditorSessionPayload {
   eventId?: string | null;
   ownerUid?: string | null;
   deviceIdHash?: string | null;
-  issuedVia?: 'purchase' | 'link-token' | 'draft-create' | 'legacy';
+  issuedVia?: 'purchase' | 'link-token' | 'draft-create' | 'account-restore' | 'legacy';
   scopes?: MobileClientEditorScope[];
 }
 
@@ -140,6 +140,7 @@ export function verifyClientEditorSessionValue(sessionValue: string | undefined 
           parsed.issuedVia === 'purchase' ||
           parsed.issuedVia === 'link-token' ||
           parsed.issuedVia === 'draft-create' ||
+          parsed.issuedVia === 'account-restore' ||
           parsed.issuedVia === 'legacy'
             ? parsed.issuedVia
             : undefined,

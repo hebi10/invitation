@@ -9,7 +9,8 @@ const MOBILE_CLIENT_EDITOR_SESSIONS_COLLECTION = 'mobile-client-editor-sessions'
 export type MobileClientEditorSessionIssuedVia =
   | 'purchase'
   | 'link-token'
-  | 'draft-create';
+  | 'draft-create'
+  | 'account-restore';
 
 export interface StoredMobileClientEditorSessionRecord {
   sessionId: string;
@@ -80,7 +81,8 @@ function buildStoredRecord(
     issuedVia:
       data.issuedVia === 'purchase' ||
       data.issuedVia === 'link-token' ||
-      data.issuedVia === 'draft-create'
+      data.issuedVia === 'draft-create' ||
+      data.issuedVia === 'account-restore'
         ? data.issuedVia
         : 'link-token',
     createdAt: normalizeDate(data.createdAt),

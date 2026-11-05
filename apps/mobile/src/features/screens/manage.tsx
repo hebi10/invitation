@@ -19,9 +19,10 @@ import { useInvitationForm } from '../manage/hooks/useInvitationForm';
 import { useLinkedInvitationManager } from '../manage/hooks/useLinkedInvitationManager';
 import { useMusicLibrary } from '../manage/hooks/useMusicLibrary';
 import { useTicketOperations } from '../manage/hooks/useTicketOperations';
-import { formatDateLabel, formatThemeList } from '../manage/linkedInvitationDisplay';
+import { formatDateLabel } from '../manage/linkedInvitationDisplay';
 import { manageStyles } from '../manage/manageStyles';
 import { EDITOR_STEPS } from '../manage/shared';
+import { AccountInvitationsSection } from '../../components/AccountInvitationsSection';
 import { ActionButton } from '../../components/ActionButton';
 import { AppScreen } from '../../components/AppScreen';
 import { AppText } from '../../components/AppText';
@@ -40,14 +41,12 @@ import {
 } from '../../lib/api';
 import { buildManageAppDeepLink } from '../../lib/appDeepLink';
 import {
-  getInvitationThemeLabel,
-} from '../../lib/invitationThemes';
-import {
   getLinkedInvitationThemeKeys,
   type LinkedInvitationCard,
 } from '../../lib/linkedInvitationCards';
 import { copyTextWithFallback } from '../../lib/textTransfer';
 import { createPrivatePreviewUrl } from '../../lib/apiPreview';
+import type { WeddingIntroStyle } from '../../lib/weddingIntro';
 import { buildMobileKakaoShareTarget } from '../../lib/invitationSharing';
 import type {
   MobileInvitationThemeKey,
@@ -267,6 +266,16 @@ export default function ManageScreen() {
     setLinkedInvitationCards,
     formatDateLabel,
   });
+
+  const handlePreviewIntro = async (style: WeddingIntroStyle) => {
+    try {
+      const url = new URL('/mobile-intro-preview/', apiBaseUrl);
+      url.searchParams.set('style', style);
+      await WebBrowser.openBrowserAsync(url.toString(), { controlsColor: palette.accent });
+    } catch {
+      setNotice('첫 화면 연출을 열지 못했습니다. 연결 상태를 확인하고 다시 시도해 주세요.');
+    }
+  };
 
   const handleCopyPublicUrl = async (card: LinkedInvitationCard) => {
     if (!card.published) {
@@ -668,6 +677,8 @@ export default function ManageScreen() {
           </SectionCard>
         ) : null}
 
+        <AccountInvitationsSection />
+
         <DraftInvitationsSection />
 
         <ActionButton variant="secondary" onPress={() => setAdvancedExpanded(value => !value)}>
@@ -800,6 +811,8 @@ export default function ManageScreen() {
           onOpenMapUrl={handleOpenMapUrl}
           onSetMusicEnabled={invitationForm.setMusicEnabled}
           onSetPublished={invitationForm.setPublished}
+          onSetIntroStyle={invitationForm.setIntroStyle}
+          onPreviewIntro={(style) => void handlePreviewIntro(style)}
           onToggleMusicDropdown={musicLibrary.setOpenMusicDropdown}
           onSelectMusicCategory={musicLibrary.handleSelectMusicCategory}
           onSelectMusicTrack={musicLibrary.handleSelectMusicTrack}

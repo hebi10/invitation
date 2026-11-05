@@ -11,6 +11,7 @@ import {
 
 import {
   createMobileInvitationDraft,
+  activateMobileCustomerInvitation,
   exchangeMobileClientEditorLinkToken,
   fulfillMobileBillingPageCreation,
   loginMobileCustomerAuth,
@@ -80,6 +81,8 @@ type AuthContextValue = {
   initialDashboardSeed: AuthInitialDashboardSeed | null;
   loginCustomer: (email: string, password: string) => Promise<boolean>;
   logoutCustomer: () => Promise<void>;
+  getCustomerIdToken: () => Promise<string | null>;
+  activateOwnedInvitation: (slug: string) => Promise<boolean>;
   loginWithLinkToken: (linkToken: string, options?: { signal?: AbortSignal }) => Promise<boolean>;
   createInvitationPage: (
     input: MobileInvitationCreationInput,
@@ -712,6 +715,21 @@ export function AuthProvider({ children }: PropsWithChildren) {
     [apiBaseUrl, applyAuthenticatedSession, getCustomerIdToken]
   );
 
+  const activateOwnedInvitation = useCallback(async (pageSlug: string) => {
+    setIsAuthenticating(true);
+    try {
+      const token = await getCustomerIdToken();
+      if (!token) throw new Error('고객 계정 로그인이 필요합니다.');
+      const response = await activateMobileCustomerInvitation(apiBaseUrl, token, pageSlug);
+      return await applyAuthenticatedSession(response);
+    } catch (error) {
+      setAuthError(error instanceof Error ? error.message : '계정 청첩장을 열지 못했습니다.');
+      return false;
+    } finally {
+      setIsAuthenticating(false);
+    }
+  }, [apiBaseUrl, applyAuthenticatedSession, getCustomerIdToken]);
+
   const logout = useCallback(async () => {
     setAuthError(null);
     await clearSession();
@@ -823,6 +841,8 @@ export function AuthProvider({ children }: PropsWithChildren) {
       initialDashboardSeed,
       loginCustomer,
       logoutCustomer,
+      getCustomerIdToken,
+      activateOwnedInvitation,
       loginWithLinkToken,
       createInvitationPage,
       activateStoredSession,
@@ -852,6 +872,8 @@ export function AuthProvider({ children }: PropsWithChildren) {
       loginWithLinkToken,
       logout,
       logoutCustomer,
+      getCustomerIdToken,
+      activateOwnedInvitation,
       pendingManageOnboarding,
       reportAuthError,
       runHighRiskAction,
