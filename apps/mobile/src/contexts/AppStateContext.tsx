@@ -12,12 +12,12 @@ export function AppStateProvider({ children }: PropsWithChildren) {
     <PreferencesProvider>
       <AppErrorBoundary>
         <AppFeedbackProvider>
-        <DraftsProvider>
-          <AuthProvider>
-            <InvitationOpsProvider>{children}</InvitationOpsProvider>
-          </AuthProvider>
-        </DraftsProvider>
-      </AppFeedbackProvider>
+          <DraftsProvider>
+            <AuthProvider>
+              <InvitationOpsProvider>{children}</InvitationOpsProvider>
+            </AuthProvider>
+          </DraftsProvider>
+        </AppFeedbackProvider>
       </AppErrorBoundary>
     </PreferencesProvider>
   );
