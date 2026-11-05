@@ -11,7 +11,7 @@ import {
 } from '@/server/clientEditorMobileApi';
 import { CustomerApiAuthError, verifyCustomerRequest } from '@/server/customerApiAuth';
 import { getCustomerEventOwnershipSnapshot } from '@/server/customerEventsService';
-import { GENERIC_SERVER_ERROR_MESSAGE } from '@/server/apiErrorResponse';
+import { GENERIC_SERVER_ERROR_MESSAGE, toSafeHttpErrorResponse } from '@/server/apiErrorResponse';
 import {
   getServerEditableInvitationPageConfig,
   getServerInvitationPageDisplayPeriodSummary,
@@ -88,7 +88,7 @@ export async function POST(request: Request) {
     }, { headers });
   } catch (error) {
     if (error instanceof CustomerApiAuthError) {
-      return NextResponse.json({ error: error.message }, { status: error.status });
+      return toSafeHttpErrorResponse(error);
     }
     console.error('[mobile/account-restore] failed to activate owned invitation', error);
     return NextResponse.json({ error: GENERIC_SERVER_ERROR_MESSAGE }, { status: 500 });
