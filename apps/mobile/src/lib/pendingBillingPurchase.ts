@@ -9,7 +9,8 @@ export type PurchaseRequest = {
   apiBaseUrl: string;
   target:
     | { action: 'createInvitationPage'; input: MobileInvitationCreationInput }
-    | { action: 'grantTicketPack'; pageSlug: string };
+    | { action: 'grantTicketPack'; pageSlug: string }
+    | { action: 'extendInvitationPeriod'; pageSlug: string };
 };
 type Receipt = { appUserId: string; productId: MobileBillingProductId; transactionId: string };
 type PendingPurchase = {

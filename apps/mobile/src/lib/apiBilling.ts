@@ -80,3 +80,38 @@ export async function fulfillMobileBillingTicketPack(
   }
   return readJsonResponse<{ success: boolean; ticketCount: number }>(response);
 }
+
+// A verified customer can renew an owned page with the same 5,000 KRW consumable
+// used for creation. A separate action and persisted purchase target prevent reuse.
+export async function fulfillMobileBillingPeriodExtension(
+  baseUrl: string,
+  payload: {
+    purchase: MobileBillingPurchaseReceiptInput;
+    targetPageSlug: string;
+    customerIdToken: string;
+  }
+) {
+  const response = await fetchWithRetry(buildApiUrl(baseUrl, '/api/mobile/billing/fulfill'), {
+    method: 'POST',
+    headers: {
+      ...createHeaders(payload.customerIdToken),
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      action: 'extendInvitationPeriod',
+      purchase: payload.purchase,
+      targetPageSlug: payload.targetPageSlug,
+    }),
+  });
+  if (response.status === 409) {
+    const error = await response.clone().json().catch(() => null) as { code?: unknown } | null;
+    if (error?.code === 'BILLING_REVIEW_REQUIRED') throw new BillingReviewRequiredError();
+  }
+  return readJsonResponse<{
+    success: boolean;
+    enabled: boolean;
+    startDate: string;
+    endDate: string;
+    monthsAdded: number;
+  }>(response);
+}

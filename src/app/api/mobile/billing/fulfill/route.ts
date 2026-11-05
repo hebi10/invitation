@@ -5,6 +5,8 @@ import {
   validateInvitationPageSlugBase,
 } from '@/lib/invitationPageSlug';
 import { isMobileBillingProductId } from '@/lib/mobileBillingProducts';
+import { canOpenOwnedWeddingPage } from '@/lib/mobileAccountOwnership';
+import { getCustomerEventOwnershipSnapshot } from '@/server/customerEventsService';
 import { GENERIC_SERVER_ERROR_MESSAGE } from '@/server/apiErrorResponse';
 import {
   canCreateCustomerOwnedInvitation,
@@ -17,6 +19,7 @@ import {
 import {
   fulfillServerMobilePageCreationPurchase,
   fulfillServerMobileTicketPackPurchase,
+  fulfillServerMobilePeriodExtensionPurchase,
 } from '@/server/mobileBillingServerService';
 import { readMobileClientEditorDeviceId } from '@/server/clientEditorMobileApi';
 import {
@@ -190,6 +193,39 @@ export async function POST(request: Request) {
         }
       );
 
+      return NextResponse.json(response, { headers: rateLimitHeaders });
+    }
+
+    if (action === 'extendInvitationPeriod') {
+      const targetPageSlug = readTrimmedString(body?.targetPageSlug);
+      if (!targetPageSlug || targetPageSlug.length > 100 ||
+          !/^[a-zA-Z0-9][a-zA-Z0-9_-]*$/.test(targetPageSlug)) {
+        return NextResponse.json(
+          { error: '청첩장 주소 형식이 올바르지 않습니다.' },
+          { status: 400, headers: rateLimitHeaders }
+        );
+      }
+
+      const customer = await verifyCustomerRequest(request, { requireVerified: true });
+      if (appUserId !== customer.uid) {
+        return NextResponse.json(
+          { error: '결제한 고객 계정으로 다시 로그인해 주세요.' },
+          { status: 403, headers: rateLimitHeaders }
+        );
+      }
+      const ownership = await getCustomerEventOwnershipSnapshot(customer.uid, targetPageSlug);
+      if (!ownership.summary || !canOpenOwnedWeddingPage(ownership, targetPageSlug)) {
+        return NextResponse.json(
+          { error: '이 계정으로 관리할 수 있는 청첩장이 아닙니다.' },
+          { status: 403, headers: rateLimitHeaders }
+        );
+      }
+
+      const response = await fulfillServerMobilePeriodExtensionPurchase(
+        { appUserId, productId, transactionId },
+        targetPageSlug,
+        customer.uid
+      );
       return NextResponse.json(response, { headers: rateLimitHeaders });
     }
 
