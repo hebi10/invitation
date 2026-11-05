@@ -265,11 +265,12 @@ def main():
             adb('reverse', 'tcp:19999', 'tcp:19999')
             adb('shell', 'input', 'keyevent', 'KEYCODE_WAKEUP')
             adb('shell', 'wm', 'dismiss-keyguard')
-            wait_screen('my-invitations', '', ['내 청첩장', '청첩장을 준비해 볼까요?'])
+            wait_screen('my-invitations', '', ['내 청첩장', '내 계정의 모든 청첩장'])
             wait_screen('create', 'create', ['만들기', '기본 정보를 준비하고'])
             wait_screen('guide', 'guide', ['이용 안내', '진행할 작업을 선택해'])
             wait_screen('settings', 'settings', ['설정', '화면 설정'])
             tree = wait_screen('editor-fixture', 'design-check', ['샘플 청첩장 · 변경 사항 없음', '청첩장 편집', '기본 정보'])
+            wait_screen('editor-intro', 'design-check?step=intro', ['첫 화면 애니메이션', '빛에 담긴 초대', '영화처럼 시작', '당신께 도착한 초대장'])
             try:
                 capture_keyboard(tree)
             except (subprocess.TimeoutExpired, subprocess.CalledProcessError) as error:
