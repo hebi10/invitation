@@ -162,10 +162,7 @@ function makeHarness() {
 }
 
 const key = 'mobile-invitation:customer-auth-session';
-const after = async () => {
-  await Promise.resolve();
-  await Promise.resolve();
-};
+const after = () => new Promise<void>((resolve) => setImmediate(resolve));
 
 {
   const h = makeHarness();
