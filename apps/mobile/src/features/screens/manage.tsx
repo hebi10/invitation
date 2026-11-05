@@ -22,6 +22,7 @@ import { useTicketOperations } from '../manage/hooks/useTicketOperations';
 import { formatDateLabel, formatThemeList } from '../manage/linkedInvitationDisplay';
 import { manageStyles } from '../manage/manageStyles';
 import { EDITOR_STEPS } from '../manage/shared';
+import { AccountInvitationsSection } from '../../components/AccountInvitationsSection';
 import { ActionButton } from '../../components/ActionButton';
 import { AppScreen } from '../../components/AppScreen';
 import { AppText } from '../../components/AppText';
@@ -678,6 +679,8 @@ export default function ManageScreen() {
             </ActionButton>
           </SectionCard>
         ) : null}
+
+        <AccountInvitationsSection />
 
         <DraftInvitationsSection />
 
