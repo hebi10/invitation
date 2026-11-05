@@ -1,5 +1,6 @@
 import { View } from 'react-native';
 
+import { AppText } from '../../../../components/AppText';
 import { SectionCard } from '../../../../components/SectionCard';
 import { TextField } from '../../../../components/TextField';
 import type { ManageFormState, ManageStringFieldKey } from '../../shared';
@@ -15,58 +16,68 @@ export function ScheduleEditorStep({
   onUpdateField,
 }: ScheduleEditorStepProps) {
   return (
-    <SectionCard
-      title="예식 일정 정보"
-      description="예식 일시와 본식, 피로연 장소를 차례대로 입력합니다."
-    >
-      <TextField
-        label="예식 일시 문구"
-        value={form.date}
-        onChangeText={(value) => onUpdateField('date', value)}
-        placeholder="예: 2026.07.12 오후 2시"
-      />
-      <TextField
-        label="예식장 이름"
-        value={form.venue}
-        onChangeText={(value) => onUpdateField('venue', value)}
-        placeholder="예: 소풍컨벤션 서울"
-      />
-      <View style={manageStyles.twoColumnRow}>
-        <View style={manageStyles.halfField}>
-          <TextField
-            label="본식 시간"
-            value={form.ceremonyTime}
-            onChangeText={(value) => onUpdateField('ceremonyTime', value)}
-            placeholder="예: 오후 2시 30분"
-          />
+    <>
+      <SectionCard
+        title="예식 일정"
+        description="하객에게 표시되는 예식 날짜와 예식장 정보를 입력합니다."
+      >
+        <TextField
+          label="예식 일시 문구"
+          value={form.date}
+          onChangeText={(value) => onUpdateField('date', value)}
+          placeholder="예: 2026.07.12 오후 2시"
+        />
+        <TextField
+          label="예식장 이름"
+          value={form.venue}
+          onChangeText={(value) => onUpdateField('venue', value)}
+          placeholder="예: 소풍컨벤션 서울"
+        />
+        <View style={manageStyles.editorFieldGroup}>
+          <AppText variant="caption" style={manageStyles.editorFieldLabel}>본식 안내</AppText>
+          <View style={manageStyles.twoColumnRow}>
+            <View style={manageStyles.halfField}>
+              <TextField
+                label="본식 시간"
+                value={form.ceremonyTime}
+                onChangeText={(value) => onUpdateField('ceremonyTime', value)}
+                placeholder="예: 오후 2시 30분"
+              />
+            </View>
+            <View style={manageStyles.halfField}>
+              <TextField
+                label="본식 장소"
+                value={form.ceremonyLocation}
+                onChangeText={(value) => onUpdateField('ceremonyLocation', value)}
+                placeholder="예: 3층 그랜드홀"
+              />
+            </View>
+          </View>
         </View>
-        <View style={manageStyles.halfField}>
-          <TextField
-            label="본식 장소"
-            value={form.ceremonyLocation}
-            onChangeText={(value) => onUpdateField('ceremonyLocation', value)}
-            placeholder="예: 3층 그랜드홀"
-          />
+      </SectionCard>
+      <SectionCard
+        title="피로연 안내"
+        description="피로연 정보가 있다면 시간과 장소를 입력합니다."
+      >
+        <View style={manageStyles.twoColumnRow}>
+          <View style={manageStyles.halfField}>
+            <TextField
+              label="피로연 시간"
+              value={form.receptionTime}
+              onChangeText={(value) => onUpdateField('receptionTime', value)}
+              placeholder="예: 오후 4시 30분"
+            />
+          </View>
+          <View style={manageStyles.halfField}>
+            <TextField
+              label="피로연 장소"
+              value={form.receptionLocation}
+              onChangeText={(value) => onUpdateField('receptionLocation', value)}
+              placeholder="예: 1층 연회장"
+            />
+          </View>
         </View>
-      </View>
-      <View style={manageStyles.twoColumnRow}>
-        <View style={manageStyles.halfField}>
-          <TextField
-            label="피로연 시간"
-            value={form.receptionTime}
-            onChangeText={(value) => onUpdateField('receptionTime', value)}
-            placeholder="예: 오후 4시 30분"
-          />
-        </View>
-        <View style={manageStyles.halfField}>
-          <TextField
-            label="피로연 장소"
-            value={form.receptionLocation}
-            onChangeText={(value) => onUpdateField('receptionLocation', value)}
-            placeholder="예: 1층 연회장"
-          />
-        </View>
-      </View>
-    </SectionCard>
+      </SectionCard>
+    </>
   );
 }

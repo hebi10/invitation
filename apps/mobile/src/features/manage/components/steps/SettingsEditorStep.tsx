@@ -45,6 +45,11 @@ export function SettingsEditorStep({
               },
             ]}
           >
+            {form.introStyle === option.value ? (
+              <AppText variant="caption" color={palette.accent} style={styles.selectedLabel}>
+                현재 선택한 연출
+              </AppText>
+            ) : null}
             <AppText variant="title">{option.label}</AppText>
             <AppText variant="muted">{option.description}</AppText>
             <ActionButton
@@ -92,7 +97,7 @@ export function SettingsEditorStep({
       >
         <View style={[styles.stateSummary, { backgroundColor: palette.surfaceMuted }]}>
           <AppText variant="caption" color={palette.textMuted}>현재 저장된 공개 설정</AppText>
-          <AppText variant="title" color={savedPublished ? palette.success : palette.text}>
+          <AppText variant="title" color={palette.text}>
             {savedPublished ? '공개' : '비공개'}
           </AppText>
           <AppText variant="muted" style={manageStyles.helperText}>
@@ -108,7 +113,13 @@ export function SettingsEditorStep({
           accessibilityState={{ selected: !form.published }} onPress={() => onSetPublished(false)} fullWidth>
           비공개로 저장
         </ActionButton>
-        {form.published !== savedPublished ? <AppText variant="muted">공개 설정 변경이 아직 적용되지 않았습니다.</AppText> : null}
+        {form.published !== savedPublished ? (
+          <View style={[styles.pendingState, { backgroundColor: palette.noticeSoft }]}>
+            <AppText variant="caption" color={palette.notice}>
+              저장 예정: {form.published ? '공개' : '비공개'} · 아직 적용되지 않았습니다.
+            </AppText>
+          </View>
+        ) : null}
       </SectionCard>
     </>
   );
@@ -116,5 +127,7 @@ export function SettingsEditorStep({
 
 const styles = StyleSheet.create({
   stateSummary: { padding: 14, gap: 6 },
-  introOption: { borderWidth: 1, borderRadius: 0, padding: 12, gap: 10 },
+  introOption: { borderWidth: 1, borderRadius: 0, padding: 14, gap: 10 },
+  selectedLabel: { fontWeight: '600' },
+  pendingState: { padding: 12, gap: 6 },
 });

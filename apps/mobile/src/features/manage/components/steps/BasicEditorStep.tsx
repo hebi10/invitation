@@ -35,8 +35,8 @@ export function BasicEditorStep({
   return (
     <>
       <SectionCard
-        title="기본 소개 정보"
-        description="페이지 제목과 소개 문구를 먼저 정리합니다."
+        title="청첩장 표지·소개"
+        description="청첩장 첫 화면에 표시할 제목과 소개 문구를 입력합니다."
       >
         <TextField
           label="페이지 제목"
@@ -60,7 +60,7 @@ export function BasicEditorStep({
       </SectionCard>
 
       <SectionCard
-        title="신랑 신부 가족 정보"
+        title="신랑·신부 및 가족 정보"
         description="이름과 연락처를 입력하고 필요한 가족 정보를 추가합니다."
       >
         <View style={manageStyles.personGrid}>

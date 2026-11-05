@@ -34,19 +34,20 @@ export function DraftInvitationsSection() {
 
   return (
     <SectionCard title="저장한 초안" description="아직 제작을 완료하지 않은 청첩장입니다." badge={`${drafts.length}개`}>
-      {drafts.map((draft, index) => (
-        <View key={draft.id} style={[
-          styles.draft,
-          index > 0 ? { borderTopWidth: 1, borderTopColor: palette.cardBorder, paddingTop: 16 } : null,
-        ]}>
+      {drafts.map((draft) => (
+        <View
+          key={draft.id}
+          style={[styles.draft, { borderColor: palette.cardBorder, backgroundColor: palette.surface }]}
+        >
           <View style={styles.copy}>
+            <AppText variant="caption" color={palette.textMuted}>저장한 제작 초안</AppText>
             <AppText variant="title">{draft.groomName || '신랑'} · {draft.brideName || '신부'}</AppText>
             <AppText variant="muted">
               {draft.weddingDate ? `예식일 ${formatDateLabel(draft.weddingDate)}` : '예식일 미입력'}
               {draft.venue ? ` · ${draft.venue}` : ''}
             </AppText>
             <AppText variant="caption" color={palette.textMuted}>
-              {draft.pageIdentifier ? `청첩장 주소 /${draft.pageIdentifier}` : '청첩장 주소는 제작 시 정할 수 있습니다.'}
+              {draft.pageIdentifier ? `청첩장 주소 · /${draft.pageIdentifier}` : '청첩장 주소는 제작 시 정할 수 있습니다.'}
             </AppText>
           </View>
           <View style={styles.actions}>
@@ -65,8 +66,8 @@ export function DraftInvitationsSection() {
 }
 
 const styles = StyleSheet.create({
-  draft: { gap: 12 },
+  draft: { borderWidth: 1, borderRadius: 0, padding: 14, gap: 14 },
   copy: { gap: 6 },
   actions: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  continueButton: { flexGrow: 1 },
+  continueButton: { flexGrow: 1, flexBasis: 140, minWidth: 130 },
 });

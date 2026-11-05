@@ -49,17 +49,24 @@ export function MusicEditorStep({
   return (
     <SectionCard
       title="배경음악 설정"
-      description="서비스 등급에 맞는 배경음악 설정은 이 단계에서 따로 관리합니다."
+      description="청첩장 배경음악의 사용 여부와 카테고리·곡·볼륨을 선택합니다."
     >
       {supportsMusicFeature ? (
         <>
           <ActionButton
             variant={form.musicEnabled ? 'primary' : 'secondary'}
             onPress={() => onSetMusicEnabled(!form.musicEnabled)}
+            accessibilityState={{ selected: form.musicEnabled }}
             fullWidth
           >
             {form.musicEnabled ? '배경음악 사용 중' : '배경음악 사용 안 함'}
           </ActionButton>
+
+          {musicLibraryLoading ? (
+            <AppText variant="caption" color={palette.textMuted} accessibilityLiveRegion="polite">
+              음악 목록을 불러오는 중입니다.
+            </AppText>
+          ) : null}
 
           <View style={manageStyles.dropdownField}>
             <AppText variant="caption" style={manageStyles.dropdownLabel}>
@@ -123,6 +130,11 @@ export function MusicEditorStep({
                           <AppText variant="caption" style={manageStyles.dropdownOptionMeta}>
                             {category.tracks.length}곡
                           </AppText>
+                          {selected ? (
+                            <AppText variant="caption" color={palette.accent} style={manageStyles.dropdownOptionSelected}>
+                              선택됨
+                            </AppText>
+                          ) : null}
                         </View>
                       </Pressable>
                     );
@@ -201,6 +213,11 @@ export function MusicEditorStep({
                           <AppText variant="caption" style={manageStyles.dropdownOptionMeta}>
                             {track.artist}
                           </AppText>
+                          {selected ? (
+                            <AppText variant="caption" color={palette.accent} style={manageStyles.dropdownOptionSelected}>
+                              선택됨
+                            </AppText>
+                          ) : null}
                         </View>
                       </Pressable>
                     );
