@@ -33,6 +33,15 @@ function deferred<T>() {
   return { promise, resolve, reject };
 }
 
+type MockAuth = {
+  customerSession: CustomerSession | null;
+  session: { pageSlug: string } | null;
+  loginCustomer(email: string, password: string): Promise<boolean>;
+  logoutCustomer(): Promise<void>;
+  getCustomerIdToken(): Promise<string | null>;
+  activateOwnedInvitation(slug: string): Promise<boolean>;
+};
+
 const source = ts.transpileModule(
   readFileSync('apps/mobile/src/contexts/AuthContext.tsx', 'utf8'), {
     compilerOptions: {
@@ -46,7 +55,7 @@ const source = ts.transpileModule(
 function makeHarness() {
   let cursor = 0;
   const slots: unknown[] = [];
-  let context: Record<string, any> = {};
+  let context = {} as MockAuth;
   const logins = new Map<string, ReturnType<typeof deferred<{session:CustomerSession}>>>();
   const refreshes = new Map<string, ReturnType<typeof deferred<{session:CustomerSession}>>>();
   const activations = new Map<string, ReturnType<typeof deferred<object>>>();
@@ -55,7 +64,7 @@ function makeHarness() {
   const pendingWrites = new Map<string, ReturnType<typeof deferred<void>>>();
   const calls = { refresh: [] as string[], activate: [] as string[] };
 
-  const exports: Record<string, any> = {};
+  const exports: Record<string, unknown> = {};
   runInNewContext(source, {
     exports,
     require(id: string) {
@@ -81,7 +90,7 @@ function makeHarness() {
         };
       }
       if (id === 'react/jsx-runtime') {
-        const jsx = (_type: unknown, props: {value?: Record<string, any>}) => {
+        const jsx = (_type: unknown, props: { value?: MockAuth }) => {
           if (props.value && 'loginCustomer' in props.value) context = props.value;
           return props;
         };
