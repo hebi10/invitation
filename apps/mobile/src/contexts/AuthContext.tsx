@@ -136,6 +136,13 @@ export function AuthProvider({ children }: PropsWithChildren) {
   const highRiskSessionRef = useRef<MobileHighRiskSessionSummary | null>(null);
   const customerSessionRef = useRef<MobileCustomerAuthSession | null>(null);
   const linkLoginRequestRef = useRef(0);
+  const customerAuthRevisionRef = useRef(0);
+  const customerSessionCommitQueueRef = useRef<Promise<unknown>>(Promise.resolve());
+  const customerRefreshInFlightRef = useRef<{
+    revision: number;
+    refreshToken: string;
+    promise: Promise<MobileCustomerAuthSession | null>;
+  } | null>(null);
   const sessionCommitQueueRef = useRef<Promise<unknown>>(Promise.resolve());
   const activeSessionRef = useRef(session);
   activeSessionRef.current = session;
@@ -168,9 +175,16 @@ export function AuthProvider({ children }: PropsWithChildren) {
   }, [updateHighRiskSession]);
 
   const clearCustomerSession = useCallback(async () => {
+    ++customerAuthRevisionRef.current;
+    customerRefreshInFlightRef.current = null;
     updateCustomerSession(null);
     setCustomerAuthError(null);
-    await setStoredString(CUSTOMER_AUTH_STORAGE_KEY, null, { sensitive: true });
+    setIsCustomerAuthenticating(false);
+    const commit = customerSessionCommitQueueRef.current.then(() =>
+      setStoredString(CUSTOMER_AUTH_STORAGE_KEY, null, { sensitive: true })
+    );
+    customerSessionCommitQueueRef.current = commit.catch(() => undefined);
+    await commit;
   }, [updateCustomerSession]);
 
   const hasSessionExpired = useCallback((candidateSession: MobileSessionSummary) => {
@@ -419,57 +433,92 @@ export function AuthProvider({ children }: PropsWithChildren) {
   );
 
   const applyCustomerAuthSession = useCallback(
-    async (nextSession: MobileCustomerAuthSession) => {
-      updateCustomerSession(nextSession);
-      setCustomerAuthError(null);
-      await setStoredJson(CUSTOMER_AUTH_STORAGE_KEY, nextSession, {
-        sensitive: true,
+    async (nextSession: MobileCustomerAuthSession, revision: number) => {
+      const commit = customerSessionCommitQueueRef.current.then(async () => {
+        if (revision !== customerAuthRevisionRef.current) return false;
+        await setStoredJson(CUSTOMER_AUTH_STORAGE_KEY, nextSession, {
+          sensitive: true,
+        });
+        if (revision !== customerAuthRevisionRef.current) return false;
+        updateCustomerSession(nextSession);
+        setCustomerAuthError(null);
+        return true;
       });
+      customerSessionCommitQueueRef.current = commit.catch(() => undefined);
+      return commit;
     },
     [updateCustomerSession]
   );
 
   const refreshCustomerSession = useCallback(
     async (candidateSession: MobileCustomerAuthSession) => {
+      const revision = customerAuthRevisionRef.current;
+      const isCurrent = () => revision === customerAuthRevisionRef.current &&
+        (!customerSessionRef.current || customerSessionRef.current.uid === candidateSession.uid);
+
       if (!candidateSession.refreshToken.trim()) {
-        await clearCustomerSession();
+        if (isCurrent()) await clearCustomerSession();
         return null;
       }
 
       if (!hasCustomerSessionExpired(candidateSession)) {
+        if (!isCurrent()) return null;
         updateCustomerSession(candidateSession);
         return candidateSession;
       }
 
-      setIsCustomerAuthenticating(true);
+      const inFlight = customerRefreshInFlightRef.current;
+      if (inFlight &&
+          inFlight.revision === revision &&
+          inFlight.refreshToken === candidateSession.refreshToken) {
+        return inFlight.promise;
+      }
 
-      try {
-        const response = await refreshMobileCustomerAuth(
-          apiBaseUrl,
-          candidateSession.refreshToken
-        );
-        const nextSession = {
-          ...response.session,
-          email: response.session.email || candidateSession.email,
-          displayName: response.session.displayName ?? candidateSession.displayName,
-        };
-        await applyCustomerAuthSession(nextSession);
-        return nextSession;
-      } catch (error) {
-        if (isInvalidAuthError(error)) {
-          await clearCustomerSession();
-        } else {
-          // Keep the refresh token available for a later retry; never use the expired ID token.
-          updateCustomerSession(candidateSession);
+      setIsCustomerAuthenticating(true);
+      const promise = (async (): Promise<MobileCustomerAuthSession | null> => {
+        try {
+          const response = await refreshMobileCustomerAuth(
+            apiBaseUrl,
+            candidateSession.refreshToken
+          );
+          if (!isCurrent()) return null;
+          const nextSession = {
+            ...response.session,
+            email: response.session.email || candidateSession.email,
+            displayName: response.session.displayName ?? candidateSession.displayName,
+          };
+          const committed = await applyCustomerAuthSession(nextSession, revision);
+          return committed && isCurrent() ? nextSession : null;
+        } catch (error) {
+          if (!isCurrent()) return null;
+          if (isInvalidAuthError(error)) {
+            await clearCustomerSession();
+          } else {
+            // Retain the refresh token for later retry, never reuse the expired ID token.
+            updateCustomerSession(candidateSession);
+          }
+          setCustomerAuthError(
+            error instanceof Error
+              ? error.message
+              : '고객 로그인 정보가 만료되었습니다. 다시 로그인해 주세요.'
+          );
+          return null;
+        } finally {
+          if (isCurrent()) setIsCustomerAuthenticating(false);
         }
-        setCustomerAuthError(
-          error instanceof Error
-            ? error.message
-            : '고객 로그인 정보가 만료되었습니다. 다시 로그인해 주세요.'
-        );
-        return null;
+      })();
+
+      customerRefreshInFlightRef.current = {
+        revision,
+        refreshToken: candidateSession.refreshToken,
+        promise,
+      };
+      try {
+        return await promise;
       } finally {
-        setIsCustomerAuthenticating(false);
+        if (customerRefreshInFlightRef.current?.promise === promise) {
+          customerRefreshInFlightRef.current = null;
+        }
       }
     },
     [
@@ -483,12 +532,13 @@ export function AuthProvider({ children }: PropsWithChildren) {
 
   const getCustomerIdToken = useCallback(async () => {
     const currentCustomerSession = customerSessionRef.current;
-    if (!currentCustomerSession) {
-      return null;
-    }
-
+    if (!currentCustomerSession) return null;
+    const revision = customerAuthRevisionRef.current;
     const refreshedSession = await refreshCustomerSession(currentCustomerSession);
-    return refreshedSession?.idToken ?? null;
+    return revision === customerAuthRevisionRef.current &&
+      refreshedSession?.uid === customerSessionRef.current?.uid
+      ? refreshedSession.idToken
+      : null;
   }, [refreshCustomerSession]);
 
   useEffect(() => {
@@ -590,6 +640,8 @@ export function AuthProvider({ children }: PropsWithChildren) {
         return false;
       }
 
+      const revision = ++customerAuthRevisionRef.current;
+      customerRefreshInFlightRef.current = null;
       setIsCustomerAuthenticating(true);
 
       try {
@@ -598,17 +650,21 @@ export function AuthProvider({ children }: PropsWithChildren) {
           normalizedEmail,
           normalizedPassword
         );
-        await applyCustomerAuthSession(response.session);
-        return true;
+        if (revision !== customerAuthRevisionRef.current) return false;
+        return await applyCustomerAuthSession(response.session, revision);
       } catch (error) {
-        setCustomerAuthError(
-          error instanceof Error
-            ? error.message
-            : '고객 로그인에 실패했습니다. 다시 시도해 주세요.'
-        );
+        if (revision === customerAuthRevisionRef.current) {
+          setCustomerAuthError(
+            error instanceof Error
+              ? error.message
+              : '고객 로그인에 실패했습니다. 다시 시도해 주세요.'
+          );
+        }
         return false;
       } finally {
-        setIsCustomerAuthenticating(false);
+        if (revision === customerAuthRevisionRef.current) {
+          setIsCustomerAuthenticating(false);
+        }
       }
     },
     [apiBaseUrl, applyCustomerAuthSession]
@@ -716,14 +772,23 @@ export function AuthProvider({ children }: PropsWithChildren) {
   );
 
   const activateOwnedInvitation = useCallback(async (pageSlug: string) => {
+    const ownerUid = customerSessionRef.current?.uid;
+    const revision = customerAuthRevisionRef.current;
+    const isCurrent = () => revision === customerAuthRevisionRef.current &&
+      Boolean(ownerUid && customerSessionRef.current?.uid === ownerUid);
+
     setIsAuthenticating(true);
     try {
       const token = await getCustomerIdToken();
+      if (!isCurrent()) return false;
       if (!token) throw new Error('고객 계정 로그인이 필요합니다.');
       const response = await activateMobileCustomerInvitation(apiBaseUrl, token, pageSlug);
-      return await applyAuthenticatedSession(response);
+      if (!isCurrent()) return false;
+      return await applyAuthenticatedSession(response, { shouldApply: isCurrent });
     } catch (error) {
-      setAuthError(error instanceof Error ? error.message : '계정 청첩장을 열지 못했습니다.');
+      if (isCurrent()) {
+        setAuthError(error instanceof Error ? error.message : '계정 청첩장을 열지 못했습니다.');
+      }
       return false;
     } finally {
       setIsAuthenticating(false);

@@ -20,6 +20,7 @@ const core = [
   'test-mobile-stage7-final-qa',
   'test-mobile-stage8-input-ux',
   'test-mobile-stage9-account-reliability',
+  'test-mobile-stage10-auth-transitions',
   'test-background-music-playback',
   'test-gift-info-copy',
   'test-music-editor',
