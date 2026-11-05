@@ -8,6 +8,7 @@ import type {
   MobileInvitationPageData,
   MobileInvitationThemeKey,
 } from '../../types/mobileInvitation';
+import { normalizeWeddingIntroStyle, type WeddingIntroStyle } from '../../lib/weddingIntro';
 import { DEFAULT_INVITATION_THEME } from '../../lib/invitationThemes';
 import { createRandomSuffix } from '../../lib/id';
 
@@ -64,6 +65,7 @@ export type ManageFormState = {
   shareTitle: string;
   shareDescription: string;
   musicEnabled: boolean;
+  introStyle: WeddingIntroStyle;
   musicCategoryId: string;
   musicTrackId: string;
   musicStoragePath: string;
@@ -223,6 +225,7 @@ export const EMPTY_FORM: ManageFormState = {
   shareTitle: '',
   shareDescription: '',
   musicEnabled: false,
+  introStyle: 'none',
   musicCategoryId: '',
   musicTrackId: '',
   musicStoragePath: '',
@@ -567,6 +570,7 @@ export function buildManageFormFromDashboard(
     shareTitle: readString(metadata.title),
     shareDescription: readString(metadata.description),
     musicEnabled: dashboard.page.features.showMusic ? config.musicEnabled === true : false,
+    introStyle: normalizeWeddingIntroStyle(config.introStyle),
     musicCategoryId: readString(config.musicCategoryId),
     musicTrackId: readString(config.musicTrackId),
     musicStoragePath: readString(config.musicStoragePath),
