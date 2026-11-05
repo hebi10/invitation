@@ -56,37 +56,36 @@ export function OnboardingModal({
           {stepIndex + 1} / {ONBOARDING_STEPS.length}
         </AppText>
       </View>
-            <OnboardingStepContent
-              stepIndex={stepIndex}
-              form={form}
-              onUpdateField={onUpdateField}
-              onUpdatePersonName={onUpdatePersonName}
-              onSetPublished={onSetPublished}
-            />
+      <OnboardingStepContent
+        stepIndex={stepIndex}
+        form={form}
+        onUpdateField={onUpdateField}
+        onUpdatePersonName={onUpdatePersonName}
+        onSetPublished={onSetPublished}
+      />
 
-            {validationMessage ? (
-              <AppText color={palette.danger} style={manageStyles.modalErrorText}>
-                {validationMessage}
-              </AppText>
-            ) : null}
-            {authError ? (
-              <AppText color={palette.danger} style={manageStyles.modalErrorText}>
-                {authError}
-              </AppText>
-            ) : null}
+      {validationMessage ? (
+        <AppText color={palette.danger} style={manageStyles.modalErrorText}>
+          {validationMessage}
+        </AppText>
+      ) : null}
+      {authError ? (
+        <AppText color={palette.danger} style={manageStyles.modalErrorText}>
+          {authError}
+        </AppText>
+      ) : null}
 
-            <View style={manageStyles.modalActions}>
-              <ActionButton variant="secondary" onPress={onClose}>
-                나중에 입력
-              </ActionButton>
-              <ActionButton variant="secondary" onPress={onPrevious} disabled={stepIndex === 0}>
-                이전
-              </ActionButton>
-              <ActionButton onPress={() => void onNext()} loading={isSaving}>
-                {stepIndex === ONBOARDING_STEPS.length - 1 ? '저장하고 시작' : '다음'}
-              </ActionButton>
-            </View>
-
+      <View style={manageStyles.modalActions}>
+        <ActionButton variant="secondary" onPress={onClose} disabled={isSaving}>
+          나중에 입력
+        </ActionButton>
+        <ActionButton variant="secondary" onPress={onPrevious} disabled={stepIndex === 0 || isSaving}>
+          이전
+        </ActionButton>
+        <ActionButton onPress={() => void onNext()} loading={isSaving}>
+          {stepIndex === ONBOARDING_STEPS.length - 1 ? '저장하고 시작' : '다음'}
+        </ActionButton>
+      </View>
     </AppModalFrame>
   );
 }
