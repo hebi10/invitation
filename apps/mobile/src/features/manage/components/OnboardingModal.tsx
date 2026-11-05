@@ -1,5 +1,5 @@
-import { Modal, Pressable, ScrollView, View } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { View } from 'react-native';
+import { AppModalFrame } from '../../../components/AppModalFrame';
 
 import { ActionButton } from '../../../components/ActionButton';
 import { AppText } from '../../../components/AppText';
@@ -39,52 +39,23 @@ export function OnboardingModal({
   onSetPublished,
 }: OnboardingModalProps) {
   const { palette } = usePreferences();
-  const insets = useSafeAreaInsets();
 
   return (
-    <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
-      <View
-        style={[
-          manageStyles.modalOverlay,
-          {
-            paddingBottom: Math.max(insets.bottom, 24),
-          },
-        ]}
-      >
-        <Pressable style={manageStyles.modalBackdrop} onPress={onClose} />
-        <View
-          style={[
-            manageStyles.modalCard,
-            {
-              backgroundColor: palette.surface,
-              borderColor: palette.cardBorder,
-            },
-          ]}
-        >
-          <ScrollView
-            style={manageStyles.modalScroll}
-            contentContainerStyle={manageStyles.modalScrollContent}
-            keyboardShouldPersistTaps="handled"
-          >
-            <View style={manageStyles.modalHeader}>
-              <View style={manageStyles.modalHeaderCopy}>
-                <AppText variant="caption" color={palette.accent} style={manageStyles.modalEyebrow}>
-                  운영 시작 안내
-                </AppText>
-                <AppText variant="title" style={manageStyles.modalTitle}>
-                  {ONBOARDING_STEPS[stepIndex].title}
-                </AppText>
-                <AppText variant="muted" style={manageStyles.modalDescription}>
-                  {ONBOARDING_STEPS[stepIndex].description}
-                </AppText>
-              </View>
-              <View style={[manageStyles.modalBadge, { backgroundColor: palette.accentSoft }]}>
-                <AppText variant="caption" color={palette.accent} style={manageStyles.modalBadgeText}>
-                  {stepIndex + 1} / {ONBOARDING_STEPS.length}
-                </AppText>
-              </View>
-            </View>
-
+    <AppModalFrame
+      visible={visible}
+      onClose={onClose}
+      title={ONBOARDING_STEPS[stepIndex].title}
+      description={ONBOARDING_STEPS[stepIndex].description}
+      closeDisabled={isSaving}
+    >
+      <View style={manageStyles.modalHeader}>
+        <AppText variant="caption" color={palette.accent}>
+          운영 시작 안내
+        </AppText>
+        <AppText variant="caption" color={palette.accent}>
+          {stepIndex + 1} / {ONBOARDING_STEPS.length}
+        </AppText>
+      </View>
             <OnboardingStepContent
               stepIndex={stepIndex}
               form={form}
@@ -115,9 +86,7 @@ export function OnboardingModal({
                 {stepIndex === ONBOARDING_STEPS.length - 1 ? '저장하고 시작' : '다음'}
               </ActionButton>
             </View>
-          </ScrollView>
-        </View>
-      </View>
-    </Modal>
+
+    </AppModalFrame>
   );
 }
