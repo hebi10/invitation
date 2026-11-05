@@ -8,6 +8,7 @@ import {
   canActivateLinkedInvitationCard,
   type LinkedInvitationCard,
 } from '../../../lib/linkedInvitationCards';
+import { getInvitationVisibility } from '../../manage/invitationVisibility';
 
 type RecentLinkedInvitationsSectionProps = {
   cards: LinkedInvitationCard[];
@@ -51,6 +52,8 @@ export function RecentLinkedInvitationsSection({
       {cards.map((card) => {
         const canContinue = canActivateLinkedInvitationCard(card);
         const displayName = card.displayName.trim() || '최근 연동한 청첩장';
+        const visibility = getInvitationVisibility(card.published, card.displayPeriod);
+        const hasPublicUrl = Boolean(card.publicUrl?.trim());
 
         return (
           <View
@@ -75,8 +78,11 @@ export function RecentLinkedInvitationsSection({
             </View>
 
             <View style={styles.copy}>
-              <AppText variant="muted">
-                공개 상태: {card.published ? '공개 중' : '비공개'}
+              <AppText
+                variant="muted"
+                color={visibility.tone === 'success' ? palette.success : visibility.tone === 'notice' ? palette.notice : palette.textMuted}
+              >
+                공개 상태: {visibility.label}
               </AppText>
               <AppText variant="muted">최근 연동: {formatRecentLinkedAt(card.updatedAt)}</AppText>
               {card.publicUrl ? (
@@ -98,7 +104,8 @@ export function RecentLinkedInvitationsSection({
               <ActionButton
                 variant="secondary"
                 onPress={() => onCopyLink(card)}
-                disabled={Boolean(activatingSlug)}
+                disabled={Boolean(activatingSlug) || !hasPublicUrl}
+                accessibilityHint={hasPublicUrl ? '하객용 공개 주소를 복사합니다' : '하객용 주소를 확인한 후 사용할 수 있습니다'}
                 style={styles.actionButton}
               >
                 주소 복사

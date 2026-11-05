@@ -1,12 +1,14 @@
 import { router, useFocusEffect } from 'expo-router';
-import { useCallback, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
 
 import { useAuth } from '../contexts/AuthContext';
 import { usePreferences } from '../contexts/PreferencesContext';
 import { getOwnedInvitationStatus } from '../features/manage/ownedInvitationPresentation';
 import { listMobileCustomerInvitations } from '../lib/apiAccount';
+import { createOwnedInvitationListRequestGate } from '../lib/ownedInvitationListRequestGate';
 import type { MobileCustomerOwnedEvent } from '../types/mobileInvitation';
+import { AccountHelpLinks } from './AccountHelpLinks';
 import { ActionButton } from './ActionButton';
 import { AppText } from './AppText';
 import { InvitationSummaryCard } from './InvitationSummaryCard';
@@ -33,27 +35,39 @@ export function AccountInvitationsSection() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [openingSlug, setOpeningSlug] = useState<string | null>(null);
+  const loadGateRef = useRef(createOwnedInvitationListRequestGate());
+  const activeCustomerUidRef = useRef<string | null>(customerSession?.uid ?? null);
+  activeCustomerUidRef.current = customerSession?.uid ?? null;
 
-  const refreshAccountList = useCallback(async (isCancelled: () => boolean) => {
-    setItems([]);
-    setLoaded(false);
-    setError('');
-    if (!customerSession?.uid) {
+  const refreshAccountList = useCallback(async () => {
+    const ownerUid = customerSession?.uid ?? null;
+    if (!ownerUid) {
+      loadGateRef.current.invalidate();
+      setItems([]);
+      setLoaded(false);
+      setError('');
       setLoading(false);
       return;
     }
+
+    const request = loadGateRef.current.begin(ownerUid);
+    const isCurrent = () => loadGateRef.current.isCurrent(request, activeCustomerUidRef.current);
+    setItems([]);
+    setLoaded(false);
+    setError('');
     setLoading(true);
     try {
       const token = await getCustomerIdToken();
+      if (!isCurrent()) return;
       if (!token) throw new Error('로그인 상태가 만료되었습니다. 다시 로그인해 주세요.');
       const owned = await listMobileCustomerInvitations(apiBaseUrl, token);
-      if (!isCancelled()) setItems(owned);
+      if (isCurrent()) setItems(owned);
     } catch (failure) {
-      if (!isCancelled()) {
+      if (isCurrent()) {
         setError(failure instanceof Error ? failure.message : '계정 청첩장 목록을 불러오지 못했습니다.');
       }
     } finally {
-      if (!isCancelled()) {
+      if (isCurrent()) {
         setLoaded(true);
         setLoading(false);
       }
@@ -61,12 +75,12 @@ export function AccountInvitationsSection() {
   }, [apiBaseUrl, customerSession?.uid, getCustomerIdToken]);
 
   useFocusEffect(useCallback(() => {
-    let cancelled = false;
-    void refreshAccountList(() => cancelled);
-    return () => { cancelled = true; };
+    void refreshAccountList();
+    return () => { loadGateRef.current.invalidate(); };
   }, [refreshAccountList]));
 
   const signIn = async () => {
+    if (isCustomerAuthenticating) return;
     if (!email.trim() || !password) {
       setError('계정 이메일과 비밀번호를 입력해 주세요.');
       return;
@@ -76,7 +90,6 @@ export function AccountInvitationsSection() {
     setPassword('');
     if (succeeded) {
       setEmail('');
-      void refreshAccountList(() => false);
     }
   };
 
@@ -88,8 +101,23 @@ export function AccountInvitationsSection() {
       const opened = await activateOwnedInvitation(slug);
       if (opened) router.replace('/');
       else setError('청첩장을 열지 못했습니다. 계정 소유권과 로그인 상태를 확인해 주세요.');
+    } catch {
+      setError('청첩장을 열지 못했습니다. 네트워크 연결 상태를 확인한 뒤 다시 시도해 주세요.');
     } finally {
       setOpeningSlug(null);
+    }
+  };
+
+  const signOut = async () => {
+    loadGateRef.current.invalidate();
+    setItems([]);
+    setLoaded(false);
+    setLoading(false);
+    setError('');
+    try {
+      await logoutCustomer();
+    } catch {
+      setError('로그아웃에 실패했습니다. 다시 시도해 주세요.');
     }
   };
 
@@ -120,13 +148,16 @@ export function AccountInvitationsSection() {
           placeholder="비밀번호"
         />
         {error || customerAuthError ? (
-          <AppText color={palette.danger} accessibilityRole="alert">
-            {error || customerAuthError}
-          </AppText>
+          <View style={[styles.errorState, { backgroundColor: palette.dangerSoft, borderColor: palette.cardBorder }]}>
+            <AppText color={palette.danger} accessibilityRole="alert">
+              {error || customerAuthError}
+            </AppText>
+          </View>
         ) : null}
         <ActionButton onPress={() => void signIn()} loading={isCustomerAuthenticating} fullWidth>
           로그인하고 청첩장 조회
         </ActionButton>
+        <AccountHelpLinks />
       </SectionCard>
     );
   }
@@ -144,7 +175,7 @@ export function AccountInvitationsSection() {
         <ActionButton
           variant="secondary"
           disabled={loading}
-          onPress={() => void refreshAccountList(() => false)}
+          onPress={() => void refreshAccountList()}
         >
           새로고침
         </ActionButton>
@@ -161,7 +192,7 @@ export function AccountInvitationsSection() {
           <ActionButton
             variant="secondary"
             disabled={loading}
-            onPress={() => void refreshAccountList(() => false)}
+            onPress={() => void refreshAccountList()}
             fullWidth
           >
             목록 다시 불러오기
@@ -183,10 +214,15 @@ export function AccountInvitationsSection() {
         items={items}
         currentSlug={session?.pageSlug}
         openingSlug={openingSlug}
-        busy={isAuthenticating}
+        busy={isAuthenticating || loading}
         onOpen={(slug) => void openInvitation(slug)}
       />
-      <ActionButton variant="secondary" fullWidth onPress={() => { setItems([]); void logoutCustomer(); }}>
+      <ActionButton
+        variant="secondary"
+        fullWidth
+        disabled={Boolean(openingSlug) || isAuthenticating || isCustomerAuthenticating}
+        onPress={() => void signOut()}
+      >
         고객 계정 로그아웃
       </ActionButton>
     </SectionCard>

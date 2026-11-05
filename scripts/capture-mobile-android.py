@@ -29,6 +29,10 @@ LINKED_ROUTE = APP / 'src/app/design-check-linked.tsx'
 LINKED_FIXTURE = ROOT / 'scripts/fixtures/mobile-linked-list-capture.tsx.fixture'
 SYSTEM_ROUTE = APP / 'src/app/design-check-system.tsx'
 SYSTEM_FIXTURE = ROOT / 'scripts/fixtures/mobile-system-capture.tsx.fixture'
+ACCOUNT_LOGIN_ROUTE = APP / 'src/app/design-check-account-login.tsx'
+ACCOUNT_LOGIN_FIXTURE = ROOT / 'scripts/fixtures/mobile-account-login-capture.tsx.fixture'
+RECENT_STATUS_ROUTE = APP / 'src/app/design-check-recent-status.tsx'
+RECENT_STATUS_FIXTURE = ROOT / 'scripts/fixtures/mobile-recent-status-capture.tsx.fixture'
 KEYBOARD_ROUTE = APP / 'src/app/design-check-keyboard.tsx'
 KEYBOARD_FIXTURE = ROOT / 'scripts/fixtures/mobile-keyboard-capture.tsx.fixture'
 APK_URL = 'https://github.com/expo/expo-go-releases/releases/download/Expo-Go-55.0.7/Expo-Go-55.0.7.apk'
@@ -278,6 +282,8 @@ def main():
     original_account_route = ACCOUNT_ROUTE.read_bytes() if ACCOUNT_ROUTE.exists() else None
     original_linked_route = LINKED_ROUTE.read_bytes() if LINKED_ROUTE.exists() else None
     original_system_route = SYSTEM_ROUTE.read_bytes() if SYSTEM_ROUTE.exists() else None
+    original_account_login_route = ACCOUNT_LOGIN_ROUTE.read_bytes() if ACCOUNT_LOGIN_ROUTE.exists() else None
+    original_recent_status_route = RECENT_STATUS_ROUTE.read_bytes() if RECENT_STATUS_ROUTE.exists() else None
     original_keyboard_route = KEYBOARD_ROUTE.read_bytes() if KEYBOARD_ROUTE.exists() else None
     try:
         shutil.copyfile(FIXTURE, ROUTE)
@@ -285,6 +291,8 @@ def main():
         shutil.copyfile(ACCOUNT_FIXTURE, ACCOUNT_ROUTE)
         shutil.copyfile(LINKED_FIXTURE, LINKED_ROUTE)
         shutil.copyfile(SYSTEM_FIXTURE, SYSTEM_ROUTE)
+        shutil.copyfile(ACCOUNT_LOGIN_FIXTURE, ACCOUNT_LOGIN_ROUTE)
+        shutil.copyfile(RECENT_STATUS_FIXTURE, RECENT_STATUS_ROUTE)
         shutil.copyfile(KEYBOARD_FIXTURE, KEYBOARD_ROUTE)
         fixture_api = ThreadingHTTPServer(('127.0.0.1', 19999), CaptureApiHandler)
         threading.Thread(target=fixture_api.serve_forever, daemon=True).start()
@@ -326,6 +334,8 @@ def main():
             wait_screen('guide', 'guide', ['이용 안내', '진행할 작업을 선택해'])
             wait_screen('settings', 'settings', ['설정', '화면 설정'])
             wait_screen('account-list-12', 'design-check-accounts', ['계정별 전체 청첩장', '12개', '가상 청첩장 1'])
+            wait_screen('account-sign-in', 'design-check-account-login', ['고객 계정 로그인', '로그인하고 청첩장 조회', '회원가입', '비밀번호 재설정'])
+            wait_screen('recent-linked-status', 'design-check-recent-status', ['최근 연동 상태', '노출 종료', '주소 복사'])
             wait_screen('linked-list', 'design-check-linked', ['연결한 청첩장', '현재 관리 중', '내용 수정'])
             wait_screen('editor-fixture', 'design-check', ['샘플 청첩장 · 변경 사항 없음', '청첩장 편집', '기본 정보'])
             keyboard_tree = wait_screen(
@@ -423,6 +433,14 @@ def main():
             SYSTEM_ROUTE.unlink(missing_ok=True)
         else:
             SYSTEM_ROUTE.write_bytes(original_system_route)
+        if original_account_login_route is None:
+            ACCOUNT_LOGIN_ROUTE.unlink(missing_ok=True)
+        else:
+            ACCOUNT_LOGIN_ROUTE.write_bytes(original_account_login_route)
+        if original_recent_status_route is None:
+            RECENT_STATUS_ROUTE.unlink(missing_ok=True)
+        else:
+            RECENT_STATUS_ROUTE.write_bytes(original_recent_status_route)
         if original_keyboard_route is None:
             KEYBOARD_ROUTE.unlink(missing_ok=True)
         else:

@@ -1,0 +1,41 @@
+import { AppScreen } from '../components/AppScreen';
+import { useVisualPreferences } from '../contexts/PreferencesContext';
+import { RecentLinkedInvitationsSection } from '../features/login/components/RecentLinkedInvitationsSection';
+import type { LinkedInvitationCard } from '../lib/linkedInvitationCards';
+
+const expiredCard: LinkedInvitationCard = {
+  slug: 'sample-expired-wedding',
+  displayName: '예시 청첩장 · 노출 종료',
+  productTier: 'premium',
+  defaultTheme: 'simple',
+  published: true,
+  showMusic: true,
+  showGuestbook: true,
+  publicUrl: null,
+  linkedThemes: [{ key: 'simple', previewUrl: null }],
+  displayPeriod: {
+    enabled: true,
+    startDate: '2024-01-01T00:00:00+09:00',
+    endDate: '2024-12-31T23:59:59+09:00',
+  },
+  updatedAt: 0,
+  ticketCount: 0,
+  session: null,
+  hasResolvedLinkedThemes: true,
+};
+
+export default function RecentStatusDesignCheck() {
+  const { palette } = useVisualPreferences();
+
+  return (
+    <AppScreen title="최근 연동 상태" subtitle="노출 기간과 공개 주소의 일관성을 점검합니다.">
+      <RecentLinkedInvitationsSection
+        cards={[expiredCard]}
+        palette={palette}
+        activatingSlug={null}
+        onContinue={() => {}}
+        onCopyLink={() => {}}
+      />
+    </AppScreen>
+  );
+}
