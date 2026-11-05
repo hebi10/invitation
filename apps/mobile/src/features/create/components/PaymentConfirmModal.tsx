@@ -51,7 +51,7 @@ export function PaymentConfirmModal({
       visible={visible}
       onClose={onClose}
       title="Google Play 결제"
-      description="결제 대상과 금액을 확인해 주세요. 결제가 완료되면 청첩장이 생성됩니다."
+      description="결제 완료 후 청첩장이 생성됩니다."
       placement="center"
       palette={palette}
       closeDisabled={loading}

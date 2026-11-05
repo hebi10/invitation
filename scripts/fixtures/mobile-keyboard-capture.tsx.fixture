@@ -1,0 +1,60 @@
+import { useEffect, useState } from 'react';
+import { Keyboard, View } from 'react-native';
+
+import { ActionButton } from '../components/ActionButton';
+import { AppText } from '../components/AppText';
+import { TextField } from '../components/TextField';
+import { InvitationEditorWorkspace } from '../components/manage/InvitationEditorWorkspace';
+import { useVisualPreferences } from '../contexts/PreferencesContext';
+
+const steps = [{ key: 'basic', title: '기본 정보' }] as const;
+
+export default function KeyboardDesignCheck() {
+  const { palette } = useVisualPreferences();
+  const [value, setValue] = useState('키보드 입력 테스트');
+  const [keyboardVisible, setKeyboardVisible] = useState(false);
+
+  useEffect(() => {
+    const show = Keyboard.addListener('keyboardDidShow', () => setKeyboardVisible(true));
+    const hide = Keyboard.addListener('keyboardDidHide', () => setKeyboardVisible(false));
+    return () => {
+      show.remove();
+      hide.remove();
+    };
+  }, []);
+
+  return (
+    <InvitationEditorWorkspace
+      visible
+      onClose={() => {}}
+      title="기본 정보"
+      description="소프트 키보드와 입력창 및 저장 버튼 배치를 확인합니다."
+      status="변경 사항 없음"
+      statusTone="neutral"
+      publicationLabel="현재 저장 상태 · 비공개 설정"
+      steps={steps}
+      activeStepIndex={0}
+      onSelectStep={() => {}}
+      onPreview={() => {}}
+      busy={false}
+      footer={<ActionButton fullWidth onPress={() => {}}>저장 후 다음</ActionButton>}
+      compactFooter={(
+        <View style={{ gap: 8 }}>
+          <AppText variant="caption" color={palette.textMuted} accessibilityLiveRegion="polite">
+            {keyboardVisible ? '키보드 표시 중' : '키보드 열기 대기'}
+          </AppText>
+          <ActionButton fullWidth onPress={() => {}}>내용 저장</ActionButton>
+        </View>
+      )}
+    >
+      <TextField
+        label="키보드 확인 입력"
+        value={value}
+        onChangeText={setValue}
+        autoFocus
+        returnKeyType="done"
+        helperText="실제 Android 소프트 키보드가 나타나면 하단 저장 버튼도 표시되어야 합니다."
+      />
+    </InvitationEditorWorkspace>
+  );
+}

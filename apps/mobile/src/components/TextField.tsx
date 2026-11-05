@@ -18,6 +18,7 @@ type SupportedTextFieldProps = Pick<
   TextInputProps,
   | 'autoCapitalize'
   | 'autoCorrect'
+  | 'autoFocus'
   | 'editable'
   | 'keyboardType'
   | 'maxLength'
@@ -48,6 +49,7 @@ export function TextField({
   secureTextEntry = false,
   multiline = false,
   autoCorrect,
+  autoFocus = false,
   autoCapitalize = 'sentences',
   keyboardType,
   returnKeyType,
@@ -82,13 +84,14 @@ export function TextField({
         multiline={multiline}
         autoCapitalize={autoCapitalize}
         autoCorrect={autoCorrect}
+        autoFocus={autoFocus}
         keyboardType={keyboardType}
         returnKeyType={returnKeyType}
         onSubmitEditing={onSubmitEditing}
         editable={editable}
         maxLength={maxLength}
         accessibilityLabel={accessibilityLabel ?? label}
-        accessibilityHint={accessibilityHint}
+        accessibilityHint={accessibilityHint ?? helperText}
         style={[
           styles.input,
           multiline ? styles.multiline : null,

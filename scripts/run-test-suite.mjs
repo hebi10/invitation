@@ -18,6 +18,7 @@ const core = [
   'test-mobile-stage5-modal-design',
   'test-mobile-stage6-system-design',
   'test-mobile-stage7-final-qa',
+  'test-mobile-stage8-input-ux',
   'test-background-music-playback',
   'test-gift-info-copy',
   'test-music-editor',
