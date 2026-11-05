@@ -13,6 +13,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import type { AppPalette } from '../constants/theme';
+import { APP_SPACING } from '../constants/uiTokens';
 import { useVisualPreferences } from '../contexts/PreferencesContext';
 import { AppText } from './AppText';
 
@@ -86,7 +87,7 @@ export function AppModalFrame({
           >
             {title ? (
               <View style={styles.header}>
-                <AppText accessibilityRole="header" variant="title" style={styles.title}>
+                <AppText accessibilityRole="header" variant="title">
                   {title}
                 </AppText>
                 {description ? <AppText variant="muted">{description}</AppText> : null}
@@ -118,7 +119,7 @@ export function AppModalFrame({
 
 const styles = StyleSheet.create({
   root: { flex: 1 },
-  overlay: { flex: 1, paddingHorizontal: 16 },
+  overlay: { flex: 1, paddingHorizontal: APP_SPACING.md },
   center: { justifyContent: 'center' },
   bottom: { justifyContent: 'flex-end' },
   backdrop: {
@@ -131,15 +132,14 @@ const styles = StyleSheet.create({
     maxHeight: '92%',
     borderWidth: 1,
     borderRadius: 0,
-    padding: 16,
-    gap: 16,
+    padding: APP_SPACING.md,
+    gap: APP_SPACING.md,
   },
   centerCard: { maxWidth: 520 },
   bottomCard: { maxWidth: 640 },
-  header: { gap: 6 },
-  title: { fontWeight: '600' },
+  header: { gap: APP_SPACING.xs },
   scroll: { flexGrow: 0, flexShrink: 1 },
-  content: { paddingBottom: 4 },
-  body: { gap: 14 },
+  content: { paddingBottom: APP_SPACING.xs },
+  body: { gap: APP_SPACING.sm },
   footer: { alignItems: 'stretch' },
 });

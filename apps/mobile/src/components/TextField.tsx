@@ -10,6 +10,7 @@ import {
   View,
 } from 'react-native';
 
+import { APP_CONTROL_MIN_HEIGHT, getScaledTypography } from '../constants/uiTokens';
 import { useVisualPreferences } from '../contexts/PreferencesContext';
 import { AppText, type AppTextVariant } from './AppText';
 
@@ -91,12 +92,11 @@ export function TextField({
         style={[
           styles.input,
           multiline ? styles.multiline : null,
+          getScaledTypography('body', fontScale),
           {
             backgroundColor: palette.surface,
             borderColor: focused ? palette.accent : palette.inputBorder,
             color: palette.text,
-            fontSize: 15 * fontScale,
-            lineHeight: 22 * fontScale,
             opacity: editable ? 1 : 0.6,
           },
           inputStyle,
@@ -121,7 +121,7 @@ const styles = StyleSheet.create({
   input: {
     borderWidth: 1,
     borderRadius: 0,
-    minHeight: 48,
+    minHeight: APP_CONTROL_MIN_HEIGHT,
     paddingHorizontal: 14,
     paddingVertical: 12,
   },

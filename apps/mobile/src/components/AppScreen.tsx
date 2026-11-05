@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { APP_SPACING, getScaledTypography } from '../constants/uiTokens';
 import { useVisualPreferences } from '../contexts/PreferencesContext';
 
 type AppScreenProps = PropsWithChildren<{
@@ -44,8 +45,8 @@ export function AppScreen({
         contentContainerStyle={[
           styles.content,
           {
-            paddingTop: insets.top + 24,
-            paddingBottom: insets.bottom + 32,
+            paddingTop: insets.top + APP_SPACING.lg,
+            paddingBottom: insets.bottom + APP_SPACING.xl,
           },
           contentContainerStyle,
         ]}
@@ -55,14 +56,14 @@ export function AppScreen({
       >
         <View style={styles.header}>
           <View style={styles.headerCopy}>
-            <Text accessibilityRole="header" style={[styles.title, { color: palette.text, fontSize: 26 * fontScale, lineHeight: 34 * fontScale }]}>
+            <Text accessibilityRole="header" style={[{ color: palette.text }, getScaledTypography('screenTitle', fontScale)]}>
               {title}
             </Text>
             {subtitle ? (
               <Text
                 style={[
-                  styles.subtitle,
-                  { color: palette.textMuted, fontSize: 15 * fontScale, lineHeight: 24 * fontScale },
+                  { color: palette.textMuted },
+                  getScaledTypography('screenSubtitle', fontScale),
                 ]}
               >
                 {subtitle}
@@ -85,8 +86,8 @@ const styles = StyleSheet.create({
     width: '100%',
     maxWidth: 640,
     alignSelf: 'center',
-    paddingHorizontal: 16,
-    gap: 20,
+    paddingHorizontal: APP_SPACING.md,
+    gap: APP_SPACING.lg,
   },
   header: {
     flexDirection: 'row',
@@ -98,11 +99,5 @@ const styles = StyleSheet.create({
   headerCopy: {
     flex: 1,
     gap: 10,
-  },
-  title: {
-    fontWeight: '600',
-  },
-  subtitle: {
-    lineHeight: 22,
   },
 });

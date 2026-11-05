@@ -11,6 +11,7 @@ const core = [
   'test-mobile-purchase-summary',
   'test-wedding-url-themes',
   'test-mobile-wedding-design-access',
+  'test-mobile-ui-tokens',
   'test-background-music-playback',
   'test-gift-info-copy',
   'test-music-editor',
