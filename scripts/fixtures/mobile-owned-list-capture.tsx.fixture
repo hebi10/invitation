@@ -9,7 +9,12 @@ const mockEvents: MobileCustomerOwnedEvent[] = Array.from({ length: 12 }, (_, in
   eventType: 'wedding',
   title: null,
   displayName: `가상 청첩장 ${index + 1}`,
-  published: index % 2 === 0,
+  published: index % 3 !== 2,
+  publicAccess: index % 3 === 0
+    ? { isPublic: true, adminLabel: '공개 중' }
+    : index % 3 === 1
+      ? { isPublic: false, adminLabel: '노출 시작 전' }
+      : { isPublic: false, adminLabel: '비공개' },
   defaultTheme: 'simple',
   availableThemes: ['simple', 'romantic'],
   updatedAt: null,

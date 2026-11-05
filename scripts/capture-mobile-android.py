@@ -25,6 +25,10 @@ MODALS_ROUTE = APP / 'src/app/design-check-modals.tsx'
 MODALS_FIXTURE = ROOT / 'scripts/fixtures/mobile-modals-capture.tsx.fixture'
 ACCOUNT_ROUTE = APP / 'src/app/design-check-accounts.tsx'
 ACCOUNT_FIXTURE = ROOT / 'scripts/fixtures/mobile-owned-list-capture.tsx.fixture'
+LINKED_ROUTE = APP / 'src/app/design-check-linked.tsx'
+LINKED_FIXTURE = ROOT / 'scripts/fixtures/mobile-linked-list-capture.tsx.fixture'
+SYSTEM_ROUTE = APP / 'src/app/design-check-system.tsx'
+SYSTEM_FIXTURE = ROOT / 'scripts/fixtures/mobile-system-capture.tsx.fixture'
 APK_URL = 'https://github.com/expo/expo-go-releases/releases/download/Expo-Go-55.0.7/Expo-Go-55.0.7.apk'
 APK_SIZE = 195851103
 APK_SHA256 = '6368eec8973ebb011c6f4f9d32afebe3fc64dd3125f2c0b529767e88dccf64ab'
@@ -207,6 +211,43 @@ def capture_keyboard(tree):
     save_manifest()
 
 
+def capture_responsive_views():
+    size_output = adb('shell', 'wm', 'size').stdout.decode('utf-8', errors='replace')
+    physical_size = re.search(r'Physical size:\s*(\d+)x(\d+)', size_output)
+    if not physical_size:
+        raise RuntimeError(f'Android 화면 크기를 확인할 수 없습니다: {size_output}')
+    physical_width = int(physical_size.group(1))
+    layouts = [
+        (320, [
+            ('editor', 'design-check', ['청첩장 편집', '기본 정보']),
+            ('checkout', 'design-check-modals?kind=payment', ['Google Play 결제', '결제 예정 금액']),
+        ]),
+        (360, [
+            ('guide', 'guide', ['이용 안내', '프리미엄 청첩장']),
+            ('settings', 'settings', ['설정', '화면 설정']),
+        ]),
+        (390, [
+            ('editor', 'design-check', ['청첩장 편집', '기본 정보']),
+            ('preview', 'design-check-modals?kind=preview', ['청첩장 미리보기', '디자인 샘플']),
+        ]),
+        (430, [
+            ('settings', 'settings', ['설정', '화면 설정']),
+            ('ticket', 'design-check-modals?kind=ticket', ['티켓 Google Play 결제', '티켓 수량']),
+        ]),
+    ]
+    try:
+        for width_dp, cases in layouts:
+            density = round(physical_width * 160 / width_dp)
+            adb('shell', 'wm', 'density', str(density))
+            time.sleep(3)
+            for label, route, expected in cases:
+                wait_screen(f'layout-{width_dp}-{label}', route, expected)
+            VERIFIED.setdefault('responsive_dp_widths', []).append(width_dp)
+            save_manifest()
+    finally:
+        adb('shell', 'wm', 'density', 'reset', check=False)
+
+
 def diagnostics():
     for filename, args in [('logcat.txt', ('logcat', '-d', '-v', 'threadtime')),
                            ('activity.txt', ('shell', 'dumpsys', 'activity', 'activities')),
@@ -232,10 +273,14 @@ def main():
     original_route = ROUTE.read_bytes() if ROUTE.exists() else None
     original_modals_route = MODALS_ROUTE.read_bytes() if MODALS_ROUTE.exists() else None
     original_account_route = ACCOUNT_ROUTE.read_bytes() if ACCOUNT_ROUTE.exists() else None
+    original_linked_route = LINKED_ROUTE.read_bytes() if LINKED_ROUTE.exists() else None
+    original_system_route = SYSTEM_ROUTE.read_bytes() if SYSTEM_ROUTE.exists() else None
     try:
         shutil.copyfile(FIXTURE, ROUTE)
         shutil.copyfile(MODALS_FIXTURE, MODALS_ROUTE)
         shutil.copyfile(ACCOUNT_FIXTURE, ACCOUNT_ROUTE)
+        shutil.copyfile(LINKED_FIXTURE, LINKED_ROUTE)
+        shutil.copyfile(SYSTEM_FIXTURE, SYSTEM_ROUTE)
         fixture_api = ThreadingHTTPServer(('127.0.0.1', 19999), CaptureApiHandler)
         threading.Thread(target=fixture_api.serve_forever, daemon=True).start()
         env = {**os.environ, 'CI': '1', 'EXPO_OFFLINE': '1', 'EXPO_NO_TELEMETRY': '1',
@@ -269,28 +314,55 @@ def main():
             adb('reverse', 'tcp:19999', 'tcp:19999')
             adb('shell', 'input', 'keyevent', 'KEYCODE_WAKEUP')
             adb('shell', 'wm', 'dismiss-keyguard')
-            wait_screen('my-invitations', '', ['내 청첩장', '내 계정의 모든 청첩장'])
+            wait_screen('my-invitations', '', ['내 청첩장', 'MODERN WEDDING EDITORIAL'])
+            wait_screen('login', 'login', ['기존 청첩장 연결', '기기 연동 안내'])
             wait_screen('create', 'create', ['만들기', '기본 정보를 준비하고'])
             wait_screen('guide', 'guide', ['이용 안내', '진행할 작업을 선택해'])
             wait_screen('settings', 'settings', ['설정', '화면 설정'])
             wait_screen('account-list-12', 'design-check-accounts', ['계정별 전체 청첩장', '12개', '가상 청첩장 1'])
+            wait_screen('linked-list', 'design-check-linked', ['연결한 청첩장', '현재 관리 중', '내용 수정'])
             tree = wait_screen('editor-fixture', 'design-check', ['샘플 청첩장 · 변경 사항 없음', '청첩장 편집', '기본 정보'])
-            wait_screen('editor-intro', 'design-check?step=intro', ['첫 화면 애니메이션', '빛에 담긴 초대'])
             try:
                 capture_keyboard(tree)
             except (subprocess.TimeoutExpired, subprocess.CalledProcessError) as error:
                 VERIFIED['keyboard_capture'] = f'선택적 키보드 캡처 생략: {error}'
                 save_manifest()
+            for name, step, expected in [
+                ('editor-schedule', 'schedule', ['청첩장 편집', '예식 일정']),
+                ('editor-location', 'location', ['청첩장 편집', '예식장 주소와 연락처']),
+                ('editor-greeting', 'greeting', ['청첩장 편집', '인사말']),
+                ('editor-images', 'images', ['청첩장 편집', '대표 이미지']),
+                ('editor-music', 'music', ['청첩장 편집', '배경음악 설정']),
+            ]:
+                wait_screen(name, f'design-check?step={step}', expected)
+            wait_screen('editor-intro', 'design-check?step=intro', ['첫 화면 애니메이션', '빛에 담긴 초대'])
             for name, kind, expected in [
                 ('modal-payment', 'payment', ['Google Play 결제', '결제 예정 금액']),
+                ('modal-payment-pending', 'payment-pending', ['Google Play 결제', '이전 결제 이어서 처리']),
                 ('modal-ticket', 'ticket', ['티켓 Google Play 결제', '티켓 수량']),
+                ('modal-ticket-many', 'ticket-many', ['티켓 Google Play 결제', '티켓 수량']),
+                ('modal-ticket-pending', 'ticket-pending', ['티켓 결제 이어서 처리', '기존 결제 대상']),
                 ('modal-success', 'success', ['구매 완료됐습니다', '현재 보유 티켓']),
+                ('modal-ticket-use', 'ticket-use', ['티켓 사용', '현재 보유 티켓']),
                 ('modal-preview', 'preview', ['청첩장 미리보기', '디자인 샘플']),
                 ('modal-share', 'share', ['카카오톡 카드 공유', '디자인 샘플']),
                 ('modal-onboarding', 'onboarding', ['운영 시작 안내', '기본 문구와 이름']),
+                ('modal-onboarding-last', 'onboarding-last', ['인사말과 공개 상태', '저장하고 시작']),
                 ('modal-guestbook', 'guestbook', ['방명록 검색', '방명록 관리']),
+                ('modal-guestbook-filled', 'guestbook-filled', ['방명록 검색', '방명록 관리']),
+                ('modal-risk', 'risk', ['작업 확인', '링크 폐기']),
+                ('modal-preparing', 'preparing', ['청첩장 편집 준비', '편집 정보를 불러오는 중입니다.']),
             ]:
                 wait_screen(name, f'design-check-modals?kind={kind}', expected)
+            for name, kind, expected in [
+                ('settings-dark', 'dark', ['설정', '다크 모드 사용 중']),
+                ('settings-large', 'large', ['설정', '큰 글자 크기 사용 중']),
+                ('system-error', 'error', ['화면 오류', '문제가 발생했습니다', '다시 시도']),
+                ('system-not-found', 'not-found', ['페이지 없음', '페이지를 찾을 수 없습니다']),
+                ('system-toast-error', 'toast-error', ['시스템 알림 검수', '알림 검증: 연결 상태를 확인해 주세요.']),
+            ]:
+                wait_screen(name, f'design-check-system?kind={kind}', expected)
+            capture_responsive_views()
             VERIFIED['status'] = 'passed'
             save_manifest()
     except Exception as error:
@@ -321,6 +393,14 @@ def main():
             ACCOUNT_ROUTE.unlink(missing_ok=True)
         else:
             ACCOUNT_ROUTE.write_bytes(original_account_route)
+        if original_linked_route is None:
+            LINKED_ROUTE.unlink(missing_ok=True)
+        else:
+            LINKED_ROUTE.write_bytes(original_linked_route)
+        if original_system_route is None:
+            SYSTEM_ROUTE.unlink(missing_ok=True)
+        else:
+            SYSTEM_ROUTE.write_bytes(original_system_route)
 
 
 if __name__ == '__main__':

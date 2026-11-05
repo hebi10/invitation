@@ -263,27 +263,21 @@ export default function CreateScreen() {
                     style={[
                       styles.stepTab,
                       {
-                        backgroundColor: isSelected
-                          ? palette.accentSoft
-                          : isCompleted
-                            ? palette.successSoft
-                            : palette.surface,
-                        borderColor: isSelected
-                          ? palette.accent
-                          : isCompleted
-                            ? palette.success
-                            : palette.cardBorder,
+                        backgroundColor: isSelected ? palette.accentSoft : palette.surface,
+                        borderColor: isSelected ? palette.accent : palette.cardBorder,
                       },
                     ]}
                   >
                     <AppText
                       variant="caption"
-                      color={isSelected ? palette.accent : isCompleted ? palette.success : palette.textMuted}
+                      color={isSelected ? palette.accent : palette.textMuted}
                       style={styles.stepTabIndex}
                     >
-                      {index + 1}
+                      {isCompleted && !isSelected ? '완료' : index + 1}
                     </AppText>
-                    <AppText style={styles.stepTabLabel}>{step.label}</AppText>
+                    <AppText variant="caption" style={styles.stepTabLabel}>
+                      {step.label}
+                    </AppText>
                   </Pressable>
                 );
               })}
@@ -529,10 +523,12 @@ export default function CreateScreen() {
                 <AppText variant="caption" color={palette.textMuted} style={styles.selectionSummaryLabel}>
                   프리미엄 청첩장
                 </AppText>
-                <AppText variant="title" style={styles.selectionSummaryValue}>
-                  {createForm.selectedPlanInfo.name} · {formatPrice(createForm.selectedPlanInfo.price)}
+                <AppText variant="display" style={styles.selectionSummaryValue}>
+                  {formatPrice(createForm.selectedPlanInfo.price)}
                 </AppText>
-                <AppText variant="muted">생성일부터 기본 {INVITATION_INITIAL_DISPLAY_PERIOD_MONTHS}개월 · 모든 웨딩 디자인 포함</AppText>
+                <AppText variant="muted">
+                  기본 {INVITATION_INITIAL_DISPLAY_PERIOD_MONTHS}개월 · 웨딩 디자인 5종 모두 포함
+                </AppText>
               </View>
 
               <AppText variant="muted" style={styles.selectionSummaryDescription}>
@@ -601,7 +597,13 @@ export default function CreateScreen() {
                   생성일부터 {INVITATION_INITIAL_DISPLAY_PERIOD_MONTHS}개월
                 </AppText>
               </View>
-              <View style={styles.summaryRow}>
+              <View
+                style={[
+                  styles.summaryRow,
+                  styles.paymentTotalRow,
+                  { backgroundColor: palette.surface, borderColor: palette.cardBorder },
+                ]}
+              >
                 <AppText style={styles.summaryLabel}>결제 예정 금액</AppText>
                 <AppText variant="display" style={styles.totalLabel}>
                   {formatPrice(createForm.totalPrice)}
@@ -795,8 +797,7 @@ export default function CreateScreen() {
             styles.stickyBar,
             isCompactStickyBar ? styles.stickyBarCompact : null,
             {
-              backgroundColor: palette.surface,
-              borderTopColor: palette.cardBorder,
+              backgroundColor: palette.surfaceMuted,
               paddingBottom: stickyBarBottomInset,
             },
           ]}

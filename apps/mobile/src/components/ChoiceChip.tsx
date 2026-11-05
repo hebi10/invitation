@@ -4,6 +4,7 @@ import {
   Text,
 } from 'react-native';
 
+import { APP_CONTROL_MIN_HEIGHT, getScaledTypography } from '../constants/uiTokens';
 import { useVisualPreferences } from '../contexts/PreferencesContext';
 
 type ChoiceChipProps = {
@@ -32,11 +33,8 @@ export function ChoiceChip({ label, selected, onPress }: ChoiceChipProps) {
     >
       <Text
         style={[
-          styles.label,
-          {
-            color: selected ? palette.surface : palette.text,
-            fontSize: 13 * fontScale,
-          },
+          { color: selected ? palette.surface : palette.text },
+          getScaledTypography('chip', fontScale),
         ]}
       >
         {label}
@@ -49,12 +47,9 @@ const styles = StyleSheet.create({
   chip: {
     borderWidth: 1,
     borderRadius: 0,
-    minHeight: 48,
+    minHeight: APP_CONTROL_MIN_HEIGHT,
     justifyContent: 'center',
     paddingHorizontal: 14,
     paddingVertical: 10,
-  },
-  label: {
-    fontWeight: '500',
   },
 });

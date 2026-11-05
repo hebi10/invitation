@@ -15,20 +15,16 @@ export function WeddingIntroHero() {
 
   return (
     <View style={[styles.hero, { backgroundColor: palette.surface, borderColor: palette.cardBorder }]}>
-      <AppText variant="caption" color={palette.accent} style={styles.eyebrow}>
-        MODERN WEDDING EDITORIAL
-      </AppText>
-      <AppText variant="display" style={styles.title}>
-        우리의 이야기를 담은{'\n'}모바일 청첩장
-      </AppText>
-      <AppText variant="muted">
-        결혼식을 위한 특별한 초대장, 취향에 맞는 디자인부터 살펴보세요.
-      </AppText>
-      <View style={[styles.price, { backgroundColor: palette.accentSoft }]}>
-        <AppText color={palette.accent} style={styles.priceLabel}>
-          프리미엄 {INVITATION_PREMIUM_PRICE_LABEL} · {INVITATION_INITIAL_DISPLAY_PERIOD_MONTHS}개월
+      <View style={styles.copy}>
+        <AppText variant="caption" color={palette.textMuted} style={styles.eyebrow}>
+          MODERN WEDDING EDITORIAL
         </AppText>
-        <AppText variant="caption" color={palette.accent}>5가지 디자인 모두 포함</AppText>
+        <AppText variant="display" style={styles.title}>
+          우리의 이야기를 담은{'\n'}모바일 청첩장
+        </AppText>
+        <AppText variant="muted">
+          소중한 결혼식의 순간을 사진과 이야기로 전하는 초대장을 준비하세요.
+        </AppText>
       </View>
       <View style={styles.previews}>
         <Image
@@ -46,16 +42,30 @@ export function WeddingIntroHero() {
           alt="아이보리 꽃다발을 든 신부 사진"
         />
       </View>
+      <View style={[styles.plan, { backgroundColor: palette.surfaceMuted }]}>
+        <AppText style={styles.planTitle}>
+          프리미엄 {INVITATION_PREMIUM_PRICE_LABEL}
+        </AppText>
+        <AppText variant="caption" color={palette.textMuted}>
+          기본 {INVITATION_INITIAL_DISPLAY_PERIOD_MONTHS}개월 · 웨딩 디자인 5종 모두 포함
+        </AppText>
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  hero: { borderWidth: 1, padding: 20, gap: 14 },
-  eyebrow: { fontWeight: '600', letterSpacing: 1.4 },
+  hero: {
+    borderWidth: 1,
+    borderRadius: 0,
+    padding: 20,
+    gap: 16,
+  },
+  copy: { gap: 10 },
+  eyebrow: { fontWeight: '600', letterSpacing: 0.6 },
   title: { fontWeight: '600' },
-  price: { alignSelf: 'flex-start', paddingHorizontal: 12, paddingVertical: 10, gap: 3 },
-  priceLabel: { fontWeight: '600' },
   previews: { flexDirection: 'row', gap: 10 },
   preview: { flex: 1, minWidth: 0, aspectRatio: 4 / 5 },
+  plan: { paddingHorizontal: 14, paddingVertical: 12, gap: 4 },
+  planTitle: { fontWeight: '600' },
 });

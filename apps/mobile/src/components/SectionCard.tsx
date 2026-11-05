@@ -9,6 +9,7 @@ import {
   type ViewStyle,
 } from 'react-native';
 
+import { getScaledTypography } from '../constants/uiTokens';
 import { useVisualPreferences } from '../contexts/PreferencesContext';
 
 type SectionCardProps = PropsWithChildren<{
@@ -76,14 +77,8 @@ export function SectionCard({
           <Text
             accessibilityRole="header"
             style={[
-              styles.title,
-              isHero ? styles.heroTitle : null,
-              isEmphasis ? styles.emphasisTitle : null,
-              {
-                color: palette.text,
-                fontSize: (isHero ? 21 : isEmphasis ? 19 : 18) * fontScale,
-                lineHeight: (isHero ? 29 : 26) * fontScale,
-              },
+              { color: palette.text },
+              getScaledTypography(isHero ? 'heroTitle' : isEmphasis ? 'title' : 'cardTitle', fontScale),
             ]}
           >
             {title}
@@ -91,9 +86,8 @@ export function SectionCard({
           {description ? (
             <Text
               style={[
-                styles.description,
-                isHero ? styles.heroDescription : null,
-                { color: palette.textMuted, fontSize: 14 * fontScale, lineHeight: 22 * fontScale },
+                { color: palette.textMuted },
+                getScaledTypography('cardDescription', fontScale),
               ]}
             >
               {description}
@@ -111,8 +105,8 @@ export function SectionCard({
           >
             <Text
               style={[
-                styles.badgeText,
-                { color: badgeTextColor, fontSize: 12 * fontScale },
+                { color: badgeTextColor },
+                getScaledTypography('badge', fontScale),
               ]}
             >
               {badge}
@@ -169,21 +163,6 @@ const styles = StyleSheet.create({
     minWidth: 0,
     gap: 6,
   },
-  title: {
-    fontWeight: '600',
-  },
-  heroTitle: {
-    lineHeight: 27,
-  },
-  emphasisTitle: {
-    lineHeight: 25,
-  },
-  description: {
-    lineHeight: 21,
-  },
-  heroDescription: {
-    lineHeight: 22,
-  },
   badge: {
     paddingHorizontal: 10,
     paddingVertical: 6,
@@ -197,9 +176,6 @@ const styles = StyleSheet.create({
   emphasisBadge: {
     paddingHorizontal: 12,
     paddingVertical: 7,
-  },
-  badgeText: {
-    fontWeight: '600',
   },
   body: {
     gap: 16,

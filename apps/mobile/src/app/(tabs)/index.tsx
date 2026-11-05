@@ -34,26 +34,39 @@ export default function MyInvitationsScreen() {
   if (isAuthenticated && !isExpoWebPreview) return <ManageScreenContent />;
 
   return (
-    <AppScreen title="내 청첩장" subtitle="저장한 초안을 이어서 작성하거나 기존 청첩장을 연결하세요.">
+    <AppScreen title="내 청첩장" subtitle="모바일 청첩장을 만들거나 기존 청첩장을 이어서 관리하세요.">
       {isExpoWebPreview ? <WebPreviewNotice /> : null}
       <DraftInvitationsSection />
-      <AccountInvitationsSection />
       <WeddingIntroHero />
-      <SectionCard title="청첩장을 준비해 볼까요?" description="새로 만들거나 이미 제작한 청첩장을 이 기기에 연결할 수 있습니다.">
-        <ActionButton fullWidth onPress={() => router.push('/create')}>새 청첩장 만들기</ActionButton>
-        <ActionButton variant="secondary" fullWidth disabled={isExpoWebPreview}
-          onPress={() => router.push({ pathname: '/login', params: { next: '/' } })}>
+      <SectionCard
+        title="청첩장 시작하기"
+        description="새로 만들거나 이미 제작한 청첩장을 이 기기에 연결할 수 있습니다."
+      >
+        <ActionButton fullWidth onPress={() => router.push('/create')}>
+          새 청첩장 만들기
+        </ActionButton>
+        <ActionButton
+          variant="secondary"
+          fullWidth
+          disabled={isExpoWebPreview}
+          onPress={() => router.push({ pathname: '/login', params: { next: '/' } })}
+        >
           기존 청첩장 연결
         </ActionButton>
-        <AppText variant="muted">PC에서 제작했다면 청첩장의 앱 연동 링크로도 연결할 수 있습니다.</AppText>
+        <AppText variant="caption" color={palette.textMuted}>
+          PC에서 만든 청첩장도 같은 고객 계정이나 앱 연동 링크로 관리할 수 있습니다.
+        </AppText>
       </SectionCard>
+      <AccountInvitationsSection />
       <SectionCard
-        title="웨딩 디자인 미리보기"
-        description="가입이나 결제 전에 실제 샘플을 살펴볼 수 있습니다."
+        title="웨딩 디자인 살펴보기"
+        description="결제하기 전에 다섯 가지 청첩장 디자인을 실제 샘플로 확인할 수 있습니다."
       >
         <ThemePreviewGallery />
       </SectionCard>
-      <ActionButton variant="secondary" fullWidth onPress={() => router.push('/guide')}>제작·연동 방법 보기</ActionButton>
+      <ActionButton variant="secondary" fullWidth onPress={() => router.push('/guide')}>
+        제작·연동 방법 보기
+      </ActionButton>
     </AppScreen>
   );
 }

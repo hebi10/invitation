@@ -11,6 +11,7 @@ import {
   type ViewStyle,
 } from 'react-native';
 
+import { APP_CONTROL_MIN_HEIGHT, APP_SPACING, getScaledTypography } from '../constants/uiTokens';
 import { useVisualPreferences } from '../contexts/PreferencesContext';
 
 type ActionButtonProps = PropsWithChildren<{
@@ -89,7 +90,7 @@ export function ActionButton({
     >
       <View style={styles.content}>
         {loading ? <ActivityIndicator color={resolvedTextColor} size="small" /> : null}
-        <Text style={[styles.label, { color: resolvedTextColor, fontSize: 15 * fontScale, lineHeight: 22 * fontScale }]}>
+        <Text style={[styles.label, { color: resolvedTextColor }, getScaledTypography('button', fontScale)]}>
           {children}
         </Text>
       </View>
@@ -99,9 +100,9 @@ export function ActionButton({
 
 const styles = StyleSheet.create({
   button: {
-    minHeight: 48,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    minHeight: APP_CONTROL_MIN_HEIGHT,
+    paddingHorizontal: APP_SPACING.md,
+    paddingVertical: APP_SPACING.sm,
     borderRadius: 0,
     borderWidth: 1,
   },
@@ -112,10 +113,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    gap: 8,
+    gap: APP_SPACING.xs,
   },
   label: {
-    fontWeight: '600',
     textAlign: 'center',
     flexShrink: 1,
   },

@@ -1,13 +1,13 @@
 import type { PropsWithChildren } from 'react';
 
 import {
-  StyleSheet,
   Text,
   type StyleProp,
   type TextProps,
   type TextStyle,
 } from 'react-native';
 
+import { getScaledTypography } from '../constants/uiTokens';
 import { useVisualPreferences } from '../contexts/PreferencesContext';
 
 export type AppTextVariant = 'body' | 'title' | 'display' | 'caption' | 'muted';
@@ -20,34 +20,6 @@ type AppTextProps = PropsWithChildren<
   }
 >;
 
-const VARIANT_STYLES: Record<AppTextVariant, TextStyle> = {
-  body: {
-    fontSize: 15,
-    lineHeight: 23,
-    fontWeight: '400',
-  },
-  title: {
-    fontSize: 19,
-    lineHeight: 27,
-    fontWeight: '600',
-  },
-  display: {
-    fontSize: 24,
-    lineHeight: 32,
-    fontWeight: '600',
-  },
-  caption: {
-    fontSize: 13,
-    lineHeight: 20,
-    fontWeight: '400',
-  },
-  muted: {
-    fontSize: 15,
-    lineHeight: 23,
-    fontWeight: '400',
-  },
-};
-
 export function AppText({
   children,
   variant = 'body',
@@ -56,7 +28,6 @@ export function AppText({
   ...textProps
 }: AppTextProps) {
   const { palette, fontScale } = useVisualPreferences();
-  const variantStyle = VARIANT_STYLES[variant];
   const resolvedColor =
     color ?? (variant === 'muted' ? palette.textMuted : palette.text);
 
@@ -64,19 +35,8 @@ export function AppText({
     <Text
       {...textProps}
       style={[
-        styles.base,
-        {
-          color: resolvedColor,
-          fontSize:
-            typeof variantStyle.fontSize === 'number'
-              ? variantStyle.fontSize * fontScale
-              : variantStyle.fontSize,
-          lineHeight:
-            typeof variantStyle.lineHeight === 'number'
-              ? variantStyle.lineHeight * fontScale
-              : variantStyle.lineHeight,
-          fontWeight: variantStyle.fontWeight,
-        },
+        { color: resolvedColor },
+        getScaledTypography(variant, fontScale),
         style,
       ]}
     >
@@ -85,6 +45,3 @@ export function AppText({
   );
 }
 
-const styles = StyleSheet.create({
-  base: {},
-});
