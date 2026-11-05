@@ -74,7 +74,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 14,
   },
-  thumbnail: { width: 80, height: 110 },
+  thumbnail: { width: 72, height: 132 },
   details: { flex: 1, minWidth: 0, justifyContent: 'center', gap: 10 },
   name: { fontWeight: '600' },
 });
