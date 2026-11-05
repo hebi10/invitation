@@ -8,6 +8,7 @@ on:
       - 'scripts/capture-mobile-android.py'
       - 'scripts/fixtures/mobile-editor-capture.tsx.fixture'
       - 'scripts/fixtures/mobile-modals-capture.tsx.fixture'
+      - 'scripts/fixtures/mobile-owned-list-capture.tsx.fixture'
   workflow_dispatch:
 
 permissions:
