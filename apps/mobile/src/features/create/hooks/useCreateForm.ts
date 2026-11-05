@@ -28,7 +28,6 @@ import {
   type CreateStepKey,
 } from '../shared';
 import { useCreateDraftSync } from './useCreateDraftSync';
-import { useCreateTicketIntent } from './useCreateTicketIntent';
 
 type DraftStore = Pick<ReturnType<typeof useDrafts>, 'drafts' | 'removeDraft' | 'saveDraft'>;
 type AuthActions = Pick<
@@ -46,7 +45,6 @@ type UseCreateFormOptions = DraftStore &
   AuthActions & {
     apiBaseUrl: string;
     isExpoWebPreview: boolean;
-    onOpenTicketPurchase: () => void;
   };
 
 type CreateSlugAvailabilityState = {
@@ -86,7 +84,6 @@ export function useCreateForm({
   loginCustomer,
   logoutCustomer,
   isExpoWebPreview,
-  onOpenTicketPurchase,
 }: UseCreateFormOptions) {
   const router = useRouter();
 
@@ -500,11 +497,6 @@ export function useCreateForm({
     clearAuthError,
     setNotice,
     applyDraft,
-  });
-
-  useCreateTicketIntent({
-    setNotice,
-    onOpenTicketPurchase,
   });
 
   const hasDraftableInput = useMemo(
