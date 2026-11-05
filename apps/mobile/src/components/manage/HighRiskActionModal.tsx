@@ -29,6 +29,8 @@ export function HighRiskActionModal({
   onConfirm,
   onClose,
 }: HighRiskActionModalProps) {
+  const isDestructiveAction = /삭제|폐기|초기화/.test(confirmLabel);
+
   return (
     <InvitationEditorModalShell
       visible={visible}
@@ -45,7 +47,7 @@ export function HighRiskActionModal({
           <ActionButton variant="secondary" onPress={onClose} disabled={loading} fullWidth>
             취소
           </ActionButton>
-          <ActionButton variant="danger" onPress={onConfirm} loading={loading} fullWidth>
+          <ActionButton variant={isDestructiveAction ? 'danger' : 'primary'} onPress={onConfirm} loading={loading} fullWidth>
             {confirmLabel}
           </ActionButton>
         </ModalActionStack>
