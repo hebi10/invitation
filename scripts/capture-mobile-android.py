@@ -297,12 +297,19 @@ def main():
             wait_screen('editor-intro', 'design-check?step=intro', ['첫 화면 애니메이션', '빛에 담긴 초대'])
             for name, kind, expected in [
                 ('modal-payment', 'payment', ['Google Play 결제', '결제 예정 금액']),
+                ('modal-payment-pending', 'payment-pending', ['Google Play 결제', '이전 결제 이어서 처리']),
                 ('modal-ticket', 'ticket', ['티켓 Google Play 결제', '티켓 수량']),
+                ('modal-ticket-many', 'ticket-many', ['티켓 Google Play 결제', '티켓 수량']),
                 ('modal-success', 'success', ['구매 완료됐습니다', '현재 보유 티켓']),
+                ('modal-ticket-use', 'ticket-use', ['티켓 사용', '현재 보유 티켓']),
                 ('modal-preview', 'preview', ['청첩장 미리보기', '디자인 샘플']),
                 ('modal-share', 'share', ['카카오톡 카드 공유', '디자인 샘플']),
                 ('modal-onboarding', 'onboarding', ['운영 시작 안내', '기본 문구와 이름']),
+                ('modal-onboarding-last', 'onboarding-last', ['인사말과 공개 상태', '저장하고 시작']),
                 ('modal-guestbook', 'guestbook', ['방명록 검색', '방명록 관리']),
+                ('modal-guestbook-filled', 'guestbook-filled', ['방명록 검색', '방명록 관리']),
+                ('modal-risk', 'risk', ['작업 확인', '링크 폐기']),
+                ('modal-preparing', 'preparing', ['청첩장 편집 준비', '편집 정보를 불러오는 중입니다.']),
             ]:
                 wait_screen(name, f'design-check-modals?kind={kind}', expected)
             VERIFIED['status'] = 'passed'

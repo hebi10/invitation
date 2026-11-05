@@ -76,8 +76,8 @@ export function GuestbookModal({
     <InvitationEditorModalShell
       visible={visible}
       onClose={onClose}
-      title="연동된 페이지 방명록"
-      description="방명록을 검색하고 숨김, 삭제 예정, 복구 상태를 바로 관리할 수 있습니다."
+      title="방명록 관리"
+      description="하객 방명록을 검색하고 공개·숨김·삭제 예정 상태를 관리합니다."
       palette={palette}
       fontScale={fontScale}
     >
@@ -85,6 +85,7 @@ export function GuestbookModal({
         title="방명록 검색"
         description="작성자 이름이나 내용으로 필요한 방명록을 빠르게 찾습니다."
         badge={`${filteredCount}/${totalCount}`}
+        badgeTone="neutral"
       >
         <TextField
           label="검색어"
@@ -92,7 +93,7 @@ export function GuestbookModal({
           onChangeText={onChangeSearchQuery}
           placeholder="작성자 이름이나 메시지를 입력해 주세요"
         />
-        <AppText variant="caption" style={manageStyles.searchSummaryText}>
+        <AppText variant="caption" color={palette.textMuted} style={manageStyles.searchSummaryText}>
           검색 결과 {filteredCount}개, 페이지 {page}/{totalPages}
         </AppText>
         <ActionButton
@@ -134,8 +135,8 @@ export function GuestbookModal({
                           '하객 화면에서는 보이지 않으며 운영 화면에서 다시 공개할 수 있습니다.',
                       }
                     : {
-                        backgroundColor: palette.accentSoft,
-                        color: palette.accent,
+                        backgroundColor: palette.successSoft,
+                        color: palette.success,
                         label: '공개',
                         helper: '하객 화면에 노출 중인 방명록입니다.',
                       };
@@ -146,13 +147,13 @@ export function GuestbookModal({
                   style={[
                     manageStyles.commentCard,
                     {
-                      backgroundColor: palette.surfaceMuted,
+                      backgroundColor: palette.surface,
                       borderColor: palette.cardBorder,
                     },
                   ]}
                 >
                   <View style={manageStyles.commentStatusRow}>
-                    <AppText style={manageStyles.commentAuthor}>{comment.author}</AppText>
+                    <AppText variant="body" style={manageStyles.commentAuthor}>{comment.author}</AppText>
                     <View
                       style={[
                         manageStyles.commentStatusBadge,
@@ -219,9 +220,12 @@ export function GuestbookModal({
             })}
           </View>
         ) : (
-          <AppText variant="muted" style={manageStyles.loadingText}>
-            검색 조건에 맞는 방명록이 없습니다.
-          </AppText>
+          <View style={[manageStyles.emptyImageState, { backgroundColor: palette.surfaceMuted, borderColor: palette.cardBorder }]}>
+            <AppText variant="title">검색 결과가 없습니다</AppText>
+            <AppText variant="muted" style={manageStyles.loadingText}>
+              검색 조건에 맞는 방명록이 없습니다. 다른 검색어를 입력하거나 새로고침해 주세요.
+            </AppText>
+          </View>
         )}
 
         <View style={manageStyles.paginationRow}>
@@ -232,7 +236,7 @@ export function GuestbookModal({
           >
             이전
           </ActionButton>
-          <AppText style={manageStyles.paginationText}>
+          <AppText variant="caption" style={manageStyles.paginationText} accessibilityLiveRegion="polite">
             {page} / {totalPages}
           </AppText>
           <ActionButton

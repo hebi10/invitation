@@ -15,6 +15,7 @@ const core = [
   'test-mobile-stage2-design',
   'test-mobile-stage3-design',
   'test-mobile-stage4-editor-design',
+  'test-mobile-stage5-modal-design',
   'test-background-music-playback',
   'test-gift-info-copy',
   'test-music-editor',

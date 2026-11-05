@@ -1,28 +1,99 @@
 import { useLocalSearchParams } from 'expo-router';
 
 import { AppText } from '../components/AppText';
+import { HighRiskActionModal } from '../components/manage/HighRiskActionModal';
 import { InvitationEditorModalShell } from '../components/manage/InvitationEditorModalShell';
 import { useVisualPreferences } from '../contexts/PreferencesContext';
 import { PaymentConfirmModal } from '../features/create/components/PaymentConfirmModal';
 import { TicketOnlyPurchaseModal } from '../features/create/components/TicketOnlyPurchaseModal';
 import { TicketPurchaseSuccessModal } from '../features/create/components/TicketPurchaseSuccessModal';
+import { EditorPreparingModal } from '../features/manage/components/EditorPreparingModal';
 import { GuestbookModal } from '../features/manage/components/GuestbookModal';
 import { InvitationThemeActionList } from '../features/manage/components/InvitationThemeActionList';
 import { OnboardingModal } from '../features/manage/components/OnboardingModal';
+import { TicketUsageModal } from '../features/manage/components/TicketUsageModal';
+import type { MobileGuestbookComment } from '../types/mobileInvitation';
 import { EMPTY_FORM } from '../features/manage/shared';
 
 const noop = () => {};
+
+const sampleComments: MobileGuestbookComment[] = [
+  {
+    id: 'sample-public',
+    author: '김하객',
+    message: '두 분의 결혼을 진심으로 축하드립니다.',
+    pageSlug: 'sample-wedding',
+    status: 'public',
+    createdAt: '2026-11-04T09:00:00+09:00',
+    hiddenAt: null,
+    deletedAt: null,
+    scheduledDeleteAt: null,
+    restoredAt: null,
+  },
+  {
+    id: 'sample-hidden',
+    author: '이하객',
+    message: '결혼식 날 뵙겠습니다.',
+    pageSlug: 'sample-wedding',
+    status: 'hidden',
+    createdAt: '2026-11-04T11:00:00+09:00',
+    hiddenAt: '2026-11-04T12:00:00+09:00',
+    deletedAt: null,
+    scheduledDeleteAt: null,
+    restoredAt: null,
+  },
+  {
+    id: 'sample-pending',
+    author: '박하객',
+    message: '행복한 가정 이루세요.',
+    pageSlug: 'sample-wedding',
+    status: 'pending_delete',
+    createdAt: '2026-11-03T09:00:00+09:00',
+    hiddenAt: null,
+    deletedAt: '2026-11-04T12:00:00+09:00',
+    scheduledDeleteAt: '2026-12-04T12:00:00+09:00',
+    restoredAt: null,
+  },
+];
 
 export default function ModalDesignCheck() {
   const { kind } = useLocalSearchParams<{ kind?: string }>();
   const { palette, fontScale } = useVisualPreferences();
 
-  if (kind === 'ticket') {
+  if (kind === 'preparing') {
+    return <EditorPreparingModal visible message="저장된 청첩장 내용을 불러오는 중입니다." />;
+  }
+
+  if (kind === 'risk') {
+    return <HighRiskActionModal
+      visible title="작업 확인" description="현재 연결된 1회용 링크를 폐기합니다."
+      confirmLabel="링크 폐기" errorMessage={null} loading={false}
+      palette={palette} fontScale={fontScale} onConfirm={noop} onClose={noop}
+    />;
+  }
+
+  if (kind === 'ticket-use') {
+    return <TicketUsageModal
+      visible palette={palette} fontScale={fontScale} onClose={noop}
+      availableTicketCount={2} isExtendingDisplayPeriod={false}
+      transferTargetCards={[{ slug: 'another-wedding', displayName: '다른 청첩장', ticketCount: 1 }]}
+      selectedTransferTargetSlug="another-wedding" ticketTransferCount={1}
+      ticketTransferCountOptions={[1, 2]} isTransferringTickets={false}
+      onSelectTransferTarget={noop} onSelectTicketTransferCount={noop}
+      onExtendDisplayPeriod={noop} onTransferTickets={noop} notice=""
+      onBuyTickets={noop}
+    />;
+  }
+
+  if (kind === 'ticket' || kind === 'ticket-many') {
     return <TicketOnlyPurchaseModal
       visible onClose={noop} onConfirm={noop} loading={false} authError={null} notice=""
       pendingTarget="" onRecover={noop} palette={palette} ticketCount={3}
       ticketUnitPrice={1000} ticketPrice={3000} ticketUsageItems={['티켓 1장으로 이용 기간 1개월 연장']}
-      targetOptions={[{ slug: 'sample-wedding', displayName: '김도윤 · 이서연 결혼식' }]}
+      targetOptions={kind === 'ticket-many' ? [
+        { slug: 'sample-wedding', displayName: '김도윤 · 이서연 결혼식' },
+        { slug: 'another-wedding', displayName: '다른 청첩장' },
+      ] : [{ slug: 'sample-wedding', displayName: '김도윤 · 이서연 결혼식' }]}
       selectedTargetSlug="sample-wedding" selectedTargetLabel="김도윤 · 이서연 결혼식"
       currentStoredTicketCount={0} onSelectTarget={noop}
     />;
@@ -54,9 +125,9 @@ export default function ModalDesignCheck() {
     );
   }
 
-  if (kind === 'onboarding') {
+  if (kind === 'onboarding' || kind === 'onboarding-last') {
     return <OnboardingModal
-      visible stepIndex={0}
+      visible stepIndex={kind === 'onboarding-last' ? 2 : 0}
       form={{ ...EMPTY_FORM, groom: { ...EMPTY_FORM.groom, name: '김도윤' }, bride: { ...EMPTY_FORM.bride, name: '이서연' } }}
       isSaving={false} authError={null} validationMessage={null}
       onClose={noop} onPrevious={noop} onNext={noop}
@@ -64,9 +135,12 @@ export default function ModalDesignCheck() {
     />;
   }
 
-  if (kind === 'guestbook') {
+  if (kind === 'guestbook' || kind === 'guestbook-filled') {
     return <GuestbookModal
-      visible totalCount={0} filteredCount={0} comments={[]} searchQuery=""
+      visible totalCount={kind === 'guestbook-filled' ? 3 : 0}
+      filteredCount={kind === 'guestbook-filled' ? 3 : 0}
+      comments={kind === 'guestbook-filled' ? sampleComments : []}
+      searchQuery=""
       page={1} totalPages={1} canRefresh onClose={noop}
       onChangeSearchQuery={noop} onChangePage={noop}
       onHideComment={noop} onScheduleDeleteComment={noop}
@@ -76,8 +150,8 @@ export default function ModalDesignCheck() {
 
   return <PaymentConfirmModal
     visible onClose={noop} onConfirm={noop} loading={false}
-    authError={null} notice="" hasPendingPurchase={false}
-    recoverySummary="" onRecover={noop} palette={palette}
+    authError={null} notice="" hasPendingPurchase={kind === 'payment-pending'}
+    recoverySummary="김도윤 · 이서연 결혼식" onRecover={noop} palette={palette}
     serviceName="프리미엄 청첩장" selectedThemeLabel="모든 웨딩 디자인"
     slugPreview="https://invite.msgnote.kr/sample-wedding/"
     totalPrice={5000}

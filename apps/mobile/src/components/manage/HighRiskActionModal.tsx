@@ -1,8 +1,7 @@
-import { View } from 'react-native';
-
 import type { getPalette } from '../../constants/theme';
 import { ActionButton } from '../ActionButton';
 import { AppText } from '../AppText';
+import { ModalActionStack, ModalFeedback } from '../ModalPrimitives';
 import { InvitationEditorModalShell } from './InvitationEditorModalShell';
 
 type HighRiskActionModalProps = {
@@ -39,20 +38,22 @@ export function HighRiskActionModal({
       palette={palette}
       fontScale={fontScale}
       closeDisabled={loading}
+      contentDisabled={loading}
+      closeConfirmation={(
+        <ModalActionStack>
+          <ActionButton variant="secondary" onPress={onClose} disabled={loading} fullWidth>
+            취소
+          </ActionButton>
+          <ActionButton variant="danger" onPress={onConfirm} loading={loading} fullWidth>
+            {confirmLabel}
+          </ActionButton>
+        </ModalActionStack>
+      )}
     >
-      <View style={{ gap: 12 }}>
-        <AppText variant="muted">
-          로그인 세션을 확인한 뒤 바로 진행할 수 있습니다.
-        </AppText>
-
-        {errorMessage ? (
-          <AppText color={palette.danger}>{errorMessage}</AppText>
-        ) : null}
-
-        <ActionButton onPress={onConfirm} loading={loading} fullWidth>
-          {confirmLabel}
-        </ActionButton>
-      </View>
+      <AppText variant="muted">
+        로그인 세션을 확인한 뒤 이 작업을 실행합니다.
+      </AppText>
+      {errorMessage ? <ModalFeedback palette={palette} tone="error">{errorMessage}</ModalFeedback> : null}
     </InvitationEditorModalShell>
   );
 }

@@ -29,15 +29,23 @@ export function InvitationThemeActionList({
       <AppText variant="muted">
         아래 이미지는 디자인 샘플입니다. 실제 청첩장 내용은 미리보기 또는 공유 시 반영됩니다.
       </AppText>
-      {themes.map((theme) => (
+      {themes.map((theme) => {
+        const isCurrentTheme = currentTheme === theme;
+        return (
         <View
           key={theme}
-          style={[styles.item, { backgroundColor: palette.surface, borderColor: palette.cardBorder }]}
+          style={[
+            styles.item,
+            {
+              backgroundColor: isCurrentTheme ? palette.accentSoft : palette.surface,
+              borderColor: isCurrentTheme ? palette.accent : palette.cardBorder,
+            },
+          ]}
         >
           <Image
             source={themePreviewImages[theme] ?? themePreviewImages.romantic}
             style={[styles.thumbnail, { backgroundColor: palette.surfaceMuted }]}
-            contentFit="cover"
+            contentFit="contain"
             contentPosition="top"
             alt={`${getInvitationThemeLabel(theme)} 디자인 샘플 이미지`}
           />
@@ -45,11 +53,11 @@ export function InvitationThemeActionList({
             <AppText variant="title" style={styles.name}>
               {getInvitationThemeLabel(theme)}
             </AppText>
-            {currentTheme === theme ? (
+            {isCurrentTheme ? (
               <AppText variant="caption" color={palette.accent}>현재 기본 디자인</AppText>
             ) : null}
             <ActionButton
-              variant={currentTheme === theme ? 'primary' : 'secondary'}
+              variant={isCurrentTheme ? 'primary' : 'secondary'}
               fullWidth
               disabled={busy}
               onPress={() => onSelect(theme)}
@@ -59,7 +67,8 @@ export function InvitationThemeActionList({
             </ActionButton>
           </View>
         </View>
-      ))}
+        );
+      })}
     </View>
   );
 }
@@ -69,12 +78,12 @@ const styles = StyleSheet.create({
   item: {
     borderWidth: 1,
     borderRadius: 0,
-    padding: 10,
+    padding: 12,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 14,
+    gap: 12,
   },
-  thumbnail: { width: 72, height: 132 },
-  details: { flex: 1, minWidth: 0, justifyContent: 'center', gap: 10 },
+  thumbnail: { width: 86, height: 116 },
+  details: { flex: 1, minWidth: 0, justifyContent: 'center', gap: 8 },
   name: { fontWeight: '600' },
 });
