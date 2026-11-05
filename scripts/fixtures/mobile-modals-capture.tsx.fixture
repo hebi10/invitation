@@ -85,10 +85,10 @@ export default function ModalDesignCheck() {
     />;
   }
 
-  if (kind === 'ticket' || kind === 'ticket-many') {
+  if (kind === 'ticket' || kind === 'ticket-many' || kind === 'ticket-pending') {
     return <TicketOnlyPurchaseModal
       visible onClose={noop} onConfirm={noop} loading={false} authError={null} notice=""
-      pendingTarget="" onRecover={noop} palette={palette} ticketCount={3}
+      pendingTarget={kind === 'ticket-pending' ? 'sample-wedding' : ''} onRecover={noop} palette={palette} ticketCount={3}
       ticketUnitPrice={1000} ticketPrice={3000} ticketUsageItems={['티켓 1장으로 이용 기간 1개월 연장']}
       targetOptions={kind === 'ticket-many' ? [
         { slug: 'sample-wedding', displayName: '김도윤 · 이서연 결혼식' },

@@ -300,6 +300,7 @@ def main():
                 ('modal-payment-pending', 'payment-pending', ['Google Play 결제', '이전 결제 이어서 처리']),
                 ('modal-ticket', 'ticket', ['티켓 Google Play 결제', '티켓 수량']),
                 ('modal-ticket-many', 'ticket-many', ['티켓 Google Play 결제', '티켓 수량']),
+                ('modal-ticket-pending', 'ticket-pending', ['티켓 결제 이어서 처리', '기존 결제 대상']),
                 ('modal-success', 'success', ['구매 완료됐습니다', '현재 보유 티켓']),
                 ('modal-ticket-use', 'ticket-use', ['티켓 사용', '현재 보유 티켓']),
                 ('modal-preview', 'preview', ['청첩장 미리보기', '디자인 샘플']),

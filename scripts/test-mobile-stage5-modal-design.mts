@@ -100,11 +100,14 @@ assert.match(preparing, /<AppModalFrame/);
 assert.match(preparing, /closeDisabled/);
 assert.match(risk, /closeConfirmation=\{\(/);
 assert.match(risk, /variant="danger"/);
+assert.match(risk, /placement="center"/);
+assert.match(editorShell, /placement=\{placement\}/);
+assert.match(previewShare, /사용 가능한 디자인이 없습니다/);
 assert.match(risk, /onConfirm/);
 assert.match(editorShell, /closeDisabled=\{closeDisabled \|\| closeLoading\}/);
 
 for (const kind of [
-  'payment', 'payment-pending', 'ticket', 'ticket-many', 'success',
+  'payment', 'payment-pending', 'ticket', 'ticket-many', 'ticket-pending', 'success',
   'ticket-use', 'preview', 'share', 'guestbook', 'guestbook-filled',
   'onboarding', 'onboarding-last', 'risk', 'preparing',
 ]) {
@@ -114,4 +117,4 @@ for (const kind of [
     (kind === 'payment' && fixture.includes('return <PaymentConfirmModal')),
     `Fixture should support ${kind}`);
 }
-console.log('mobile stage 5 modal design, action safety and 14-capture contracts passed');
+console.log('mobile stage 5 modal design, action safety and 15-capture contracts passed');

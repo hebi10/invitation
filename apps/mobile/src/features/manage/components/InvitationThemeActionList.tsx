@@ -29,6 +29,9 @@ export function InvitationThemeActionList({
       <AppText variant="muted">
         아래 이미지는 디자인 샘플입니다. 실제 청첩장 내용은 미리보기 또는 공유 시 반영됩니다.
       </AppText>
+      {themes.length === 0 ? (
+        <AppText variant="muted">사용 가능한 디자인이 없습니다. 청첩장 연결 정보를 확인해 주세요.</AppText>
+      ) : null}
       {themes.map((theme) => {
         const isCurrentTheme = currentTheme === theme;
         return (

@@ -35,6 +35,7 @@ export function HighRiskActionModal({
       onClose={onClose}
       title={title}
       description={description}
+      placement="center"
       palette={palette}
       fontScale={fontScale}
       closeDisabled={loading}
