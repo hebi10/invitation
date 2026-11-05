@@ -1,0 +1,36 @@
+name: Invitation design asset export
+
+on:
+  push:
+    branches:
+      - assets/drive-design-export-20261105
+
+permissions:
+  contents: read
+
+jobs:
+  export:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Package previously created design images
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p export/editorial export/icons
+          cp apps/mobile/assets/editorial/*.webp export/editorial/
+          cp apps/mobile/assets/icon-v3.png export/icons/icon-v3-1024.png
+          cp apps/mobile/store/icon.png export/icons/play-store-icon.png
+          cat > export/README.txt <<'EOF'
+          Invitation: source files of 2026-11-04 wedding editorial design
+          editorial/: image assets and app icon design source
+          icons/: final app and Google Play store icons
+          Source: https://github.com/hebi10/invitation
+          EOF
+      - name: Archive design images
+        uses: actions/upload-artifact@v4
+        with:
+          name: invitation-design-images-20261104
+          path: export/
+          if-no-files-found: error
+          retention-days: 7
