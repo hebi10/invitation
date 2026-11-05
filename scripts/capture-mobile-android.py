@@ -93,6 +93,22 @@ def open_route(path):
         '-d', f'exp://127.0.0.1:{PORT}/--/{path}', '-p', PACKAGE)
 
 
+def dismiss_emulator_quickstep_anr(tree):
+    # 에뮬레이터 런처의 ANR만 복구한다. 앱 자체의 ANR는 숨기지 않는다.
+    labels = [
+        (node.get('text') or node.get('content-desc') or '').strip()
+        for node in tree.iter('node')
+    ]
+    if not any("Quickstep isn't responding" in value for value in labels):
+        return False
+    for choice in ('Close app', 'Wait'):
+        for node in tree.iter('node'):
+            label = (node.get('text') or node.get('content-desc') or '').strip()
+            if label == choice and node.get('enabled') == 'true' and tap(node):
+                return True
+    return False
+
+
 def dismiss_expo_dialog(tree):
     global TOOLS_BUTTON_DISABLED
     # Expo Go의 부유 도구 버튼을 실제 설정에서 숨긴다.
@@ -135,6 +151,9 @@ def wait_screen(name, path, expected, timeout=180):
                                    and node.get('content-desc') == 'Tools'), None)
             if floating_tools is not None and tap(floating_tools):
                 time.sleep(1)
+                continue
+            if dismiss_emulator_quickstep_anr(tree):
+                time.sleep(2)
                 continue
             if all(value in text for value in expected):
                 (OUT / f'{name}.xml').write_text(last_xml)
