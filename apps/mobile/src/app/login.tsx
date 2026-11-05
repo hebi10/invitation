@@ -248,18 +248,27 @@ export default function LoginScreen() {
 
   return (
     <AppScreen
-      title="청첩장 연동"
-      subtitle="앱 연동 링크나 이 기기에 저장된 청첩장으로 운영 화면에 들어갑니다."
+      title="기존 청첩장 연결"
+      subtitle="이 기기에 저장된 연동 정보로 기존 청첩장을 다시 열 수 있습니다."
       contentContainerStyle={styles.screenContent}
     >
       <SectionCard
-        title="비밀번호 없는 앱 연동"
-        description="새 청첩장은 구매 탭에서 고객 계정으로 로그인한 뒤 결제하면 자동으로 연결됩니다. 다른 기기에서는 운영 화면에서 발급한 앱 연동 링크를 사용해 주세요."
+        title="기기 연동 안내"
+        description="다른 기기에서 제작한 청첩장은 관리 화면에서 발급한 앱 연동 링크로 연결할 수 있습니다."
       >
-        <ActionButton onPress={() => router.replace('/create')} fullWidth>
+        <AppText variant="muted">
+          새 청첩장을 만들려면 만들기 탭에서 고객 계정으로 로그인해 주세요.
+        </AppText>
+        <ActionButton variant="secondary" onPress={() => router.replace('/create')} fullWidth>
           새 청첩장 만들기
         </ActionButton>
       </SectionCard>
+      {isLoadingRecentCards && recentCards.length === 0 ? (
+        <View style={styles.loadingRow} accessibilityLiveRegion="polite">
+          <ActivityIndicator color={palette.accent} />
+          <AppText variant="muted">최근 연동한 청첩장을 확인하고 있습니다.</AppText>
+        </View>
+      ) : null}
       {!isLoadingRecentCards || recentCards.length ? (
         <RecentLinkedInvitationsSection
           cards={recentCards}

@@ -95,8 +95,8 @@ export function AccountInvitationsSection() {
   if (!customerSession?.uid) {
     return (
       <SectionCard
-        title="내 계정의 모든 청첩장"
-        description="구매에 사용한 고객 계정으로 로그인하면 PC에서 만든 청첩장도 함께 조회할 수 있습니다."
+        title="고객 계정 로그인"
+        description="로그인하면 PC와 앱에서 만든 모든 청첩장을 함께 관리할 수 있습니다."
       >
         <TextField
           label="고객 계정 이메일"
@@ -112,6 +112,10 @@ export function AccountInvitationsSection() {
           value={password}
           onChangeText={setPassword}
           secureTextEntry
+          autoCapitalize="none"
+          autoCorrect={false}
+          returnKeyType="done"
+          onSubmitEditing={() => void signIn()}
           placeholder="비밀번호"
         />
         {error || customerAuthError ? (
@@ -120,7 +124,7 @@ export function AccountInvitationsSection() {
           </AppText>
         ) : null}
         <ActionButton onPress={() => void signIn()} loading={isCustomerAuthenticating} fullWidth>
-          로그인 후 전체 청첩장 보기
+          로그인하고 청첩장 조회
         </ActionButton>
       </SectionCard>
     );

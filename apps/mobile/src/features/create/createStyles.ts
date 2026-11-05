@@ -12,24 +12,23 @@ export const createStyles = StyleSheet.create({
   },
   stepTabsRow: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
     gap: 8,
   },
   stepTab: {
-    flexGrow: 1,
-    flexBasis: 72,
-    minWidth: 72,
+    flex: 1,
+    minWidth: 0,
+    minHeight: 64,
     borderWidth: 1,
     borderRadius: 0,
-    paddingHorizontal: 12,
-    paddingVertical: 12,
+    paddingHorizontal: 10,
+    paddingVertical: 10,
     gap: 4,
   },
   stepTabIndex: {
-    fontWeight: '500',
+    fontWeight: '600',
   },
   stepTabLabel: {
-    fontWeight: '700',
+    fontWeight: '600',
   },
   chipRow: {
     flexDirection: 'row',
@@ -200,7 +199,13 @@ export const createStyles = StyleSheet.create({
     flexShrink: 1,
     minWidth: 0,
     textAlign: 'right',
-    fontWeight: '700',
+    fontWeight: '500',
+  },
+  paymentTotalRow: {
+    borderWidth: 1,
+    borderRadius: 0,
+    padding: 14,
+    alignItems: 'center',
   },
   totalLabel: {
     flexShrink: 1,
@@ -222,6 +227,9 @@ export const createStyles = StyleSheet.create({
     paddingTop: 8,
   },
   stickyBarContent: {
+    width: '100%',
+    maxWidth: 640,
+    alignSelf: 'center',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
