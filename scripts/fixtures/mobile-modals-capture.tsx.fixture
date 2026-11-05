@@ -1,0 +1,85 @@
+import { useLocalSearchParams } from 'expo-router';
+
+import { AppText } from '../components/AppText';
+import { InvitationEditorModalShell } from '../components/manage/InvitationEditorModalShell';
+import { useVisualPreferences } from '../contexts/PreferencesContext';
+import { PaymentConfirmModal } from '../features/create/components/PaymentConfirmModal';
+import { TicketOnlyPurchaseModal } from '../features/create/components/TicketOnlyPurchaseModal';
+import { TicketPurchaseSuccessModal } from '../features/create/components/TicketPurchaseSuccessModal';
+import { GuestbookModal } from '../features/manage/components/GuestbookModal';
+import { InvitationThemeActionList } from '../features/manage/components/InvitationThemeActionList';
+import { OnboardingModal } from '../features/manage/components/OnboardingModal';
+import { EMPTY_FORM } from '../features/manage/shared';
+
+const noop = () => {};
+
+export default function ModalDesignCheck() {
+  const { kind } = useLocalSearchParams<{ kind?: string }>();
+  const { palette, fontScale } = useVisualPreferences();
+
+  if (kind === 'ticket') {
+    return <TicketOnlyPurchaseModal
+      visible onClose={noop} onConfirm={noop} loading={false} authError={null} notice=""
+      pendingTarget="" onRecover={noop} palette={palette} ticketCount={3}
+      ticketUnitPrice={1000} ticketPrice={3000} ticketUsageItems={['티켓 1장으로 이용 기간 1개월 연장']}
+      targetOptions={[{ slug: 'sample-wedding', displayName: '김도윤 · 이서연 결혼식' }]}
+      selectedTargetSlug="sample-wedding" selectedTargetLabel="김도윤 · 이서연 결혼식"
+      currentStoredTicketCount={0} onSelectTarget={noop}
+    />;
+  }
+
+  if (kind === 'success') {
+    return <TicketPurchaseSuccessModal
+      visible onClose={noop} onExtend={noop} palette={palette}
+      success={{ ticketCount: 3, nextTicketCount: 3, targetDisplayName: '김도윤 · 이서연 결혼식' }}
+    />;
+  }
+
+  if (kind === 'preview' || kind === 'share') {
+    return (
+      <InvitationEditorModalShell
+        visible onClose={noop}
+        title={kind === 'preview' ? '청첩장 미리보기' : '카카오톡 카드 공유'}
+        description="현재 청첩장을 공유하기 전에 디자인별 결과를 확인하세요."
+        palette={palette} fontScale={fontScale}
+      >
+        <AppText variant="title">김도윤 · 이서연 결혼식</AppText>
+        <InvitationThemeActionList
+          themes={['simple', 'romantic', 'gyeol', 'classic-r', 'emotional']}
+          currentTheme="simple"
+          action={kind === 'preview' ? 'preview' : 'share'}
+          onSelect={noop}
+        />
+      </InvitationEditorModalShell>
+    );
+  }
+
+  if (kind === 'onboarding') {
+    return <OnboardingModal
+      visible stepIndex={0}
+      form={{ ...EMPTY_FORM, groom: { ...EMPTY_FORM.groom, name: '김도윤' }, bride: { ...EMPTY_FORM.bride, name: '이서연' } }}
+      isSaving={false} authError={null} validationMessage={null}
+      onClose={noop} onPrevious={noop} onNext={noop}
+      onUpdateField={noop} onUpdatePersonName={noop} onSetPublished={noop}
+    />;
+  }
+
+  if (kind === 'guestbook') {
+    return <GuestbookModal
+      visible totalCount={0} filteredCount={0} comments={[]} searchQuery=""
+      page={1} totalPages={1} canRefresh onClose={noop}
+      onChangeSearchQuery={noop} onChangePage={noop}
+      onHideComment={noop} onScheduleDeleteComment={noop}
+      onRestoreComment={noop} onRefresh={noop}
+    />;
+  }
+
+  return <PaymentConfirmModal
+    visible onClose={noop} onConfirm={noop} loading={false}
+    authError={null} notice="" hasPendingPurchase={false}
+    recoverySummary="" onRecover={noop} palette={palette}
+    serviceName="프리미엄 청첩장" selectedThemeLabel="모든 웨딩 디자인"
+    slugPreview="https://invite.msgnote.kr/sample-wedding/"
+    totalPrice={5000}
+  />;
+}

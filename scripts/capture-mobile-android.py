@@ -21,6 +21,8 @@ OUT = ROOT / 'artifacts/mobile-android'
 APP = ROOT / 'apps/mobile'
 ROUTE = APP / 'src/app/design-check.tsx'
 FIXTURE = ROOT / 'scripts/fixtures/mobile-editor-capture.tsx.fixture'
+MODALS_ROUTE = APP / 'src/app/design-check-modals.tsx'
+MODALS_FIXTURE = ROOT / 'scripts/fixtures/mobile-modals-capture.tsx.fixture'
 APK_URL = 'https://github.com/expo/expo-go-releases/releases/download/Expo-Go-55.0.7/Expo-Go-55.0.7.apk'
 APK_SIZE = 195851103
 APK_SHA256 = '6368eec8973ebb011c6f4f9d32afebe3fc64dd3125f2c0b529767e88dccf64ab'
@@ -91,6 +93,22 @@ def open_route(path):
         '-d', f'exp://127.0.0.1:{PORT}/--/{path}', '-p', PACKAGE)
 
 
+def dismiss_emulator_quickstep_anr(tree):
+    # 에뮬레이터 런처의 ANR만 복구한다. 앱 자체의 ANR는 숨기지 않는다.
+    labels = [
+        (node.get('text') or node.get('content-desc') or '').strip()
+        for node in tree.iter('node')
+    ]
+    if not any("Quickstep isn't responding" in value for value in labels):
+        return False
+    for choice in ('Close app', 'Wait'):
+        for node in tree.iter('node'):
+            label = (node.get('text') or node.get('content-desc') or '').strip()
+            if label == choice and node.get('enabled') == 'true' and tap(node):
+                return True
+    return False
+
+
 def dismiss_expo_dialog(tree):
     global TOOLS_BUTTON_DISABLED
     # Expo Go의 부유 도구 버튼을 실제 설정에서 숨긴다.
@@ -133,6 +151,9 @@ def wait_screen(name, path, expected, timeout=180):
                                    and node.get('content-desc') == 'Tools'), None)
             if floating_tools is not None and tap(floating_tools):
                 time.sleep(1)
+                continue
+            if dismiss_emulator_quickstep_anr(tree):
+                time.sleep(2)
                 continue
             if all(value in text for value in expected):
                 (OUT / f'{name}.xml').write_text(last_xml)
@@ -207,8 +228,10 @@ def main():
     metro = None
     fixture_api = None
     original_route = ROUTE.read_bytes() if ROUTE.exists() else None
+    original_modals_route = MODALS_ROUTE.read_bytes() if MODALS_ROUTE.exists() else None
     try:
         shutil.copyfile(FIXTURE, ROUTE)
+        shutil.copyfile(MODALS_FIXTURE, MODALS_ROUTE)
         fixture_api = ThreadingHTTPServer(('127.0.0.1', 19999), CaptureApiHandler)
         threading.Thread(target=fixture_api.serve_forever, daemon=True).start()
         env = {**os.environ, 'CI': '1', 'EXPO_OFFLINE': '1', 'EXPO_NO_TELEMETRY': '1',
@@ -252,6 +275,16 @@ def main():
             except (subprocess.TimeoutExpired, subprocess.CalledProcessError) as error:
                 VERIFIED['keyboard_capture'] = f'선택적 키보드 캡처 생략: {error}'
                 save_manifest()
+            for name, kind, expected in [
+                ('modal-payment', 'payment', ['Google Play 결제', '결제 예정 금액']),
+                ('modal-ticket', 'ticket', ['티켓 Google Play 결제', '티켓 수량']),
+                ('modal-success', 'success', ['구매 완료됐습니다', '현재 보유 티켓']),
+                ('modal-preview', 'preview', ['청첩장 미리보기', '디자인 샘플']),
+                ('modal-share', 'share', ['카카오톡 카드 공유', '디자인 샘플']),
+                ('modal-onboarding', 'onboarding', ['운영 시작 안내', '기본 문구와 이름']),
+                ('modal-guestbook', 'guestbook', ['방명록 검색', '방명록 관리']),
+            ]:
+                wait_screen(name, f'design-check-modals?kind={kind}', expected)
             VERIFIED['status'] = 'passed'
             save_manifest()
     except Exception as error:
@@ -274,6 +307,10 @@ def main():
             ROUTE.unlink(missing_ok=True)
         else:
             ROUTE.write_bytes(original_route)
+        if original_modals_route is None:
+            MODALS_ROUTE.unlink(missing_ok=True)
+        else:
+            MODALS_ROUTE.write_bytes(original_modals_route)
 
 
 if __name__ == '__main__':

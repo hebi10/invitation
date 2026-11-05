@@ -1,7 +1,10 @@
+import { StyleSheet, View } from 'react-native';
+
 import { ActionButton } from '../../../../components/ActionButton';
 import { AppText } from '../../../../components/AppText';
 import { SectionCard } from '../../../../components/SectionCard';
 import { TextField } from '../../../../components/TextField';
+import { useVisualPreferences } from '../../../../contexts/PreferencesContext';
 import type { ManageFormState, ManageStringFieldKey } from '../../shared';
 import { manageStyles } from '../../manageStyles';
 
@@ -18,6 +21,8 @@ export function SettingsEditorStep({
   onUpdateField,
   onSetPublished,
 }: SettingsEditorStepProps) {
+  const { palette } = useVisualPreferences();
+
   return (
     <>
       <SectionCard
@@ -43,9 +48,15 @@ export function SettingsEditorStep({
         title="공개 상태"
         description="선택한 공개 여부는 마지막 저장 버튼을 누르면 적용됩니다."
       >
-        <AppText variant="muted" style={manageStyles.helperText}>
-          현재 저장된 설정: {savedPublished ? '공개' : '비공개'}. 실제 노출은 이용 기간도 함께 확인합니다.
-        </AppText>
+        <View style={[styles.stateSummary, { backgroundColor: palette.surfaceMuted }]}>
+          <AppText variant="caption" color={palette.textMuted}>현재 저장된 공개 설정</AppText>
+          <AppText variant="title" color={savedPublished ? palette.success : palette.text}>
+            {savedPublished ? '공개' : '비공개'}
+          </AppText>
+          <AppText variant="muted" style={manageStyles.helperText}>
+            실제 하객 노출 여부는 이용 기간 설정도 함께 확인합니다.
+          </AppText>
+        </View>
 
         <ActionButton variant={form.published ? 'primary' : 'secondary'}
           accessibilityState={{ selected: form.published }} onPress={() => onSetPublished(true)} fullWidth>
@@ -60,3 +71,7 @@ export function SettingsEditorStep({
     </>
   );
 }
+
+const styles = StyleSheet.create({
+  stateSummary: { padding: 14, gap: 6 },
+});

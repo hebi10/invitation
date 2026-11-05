@@ -55,7 +55,7 @@ export function InvitationEditorWorkspace({
       >
         <View style={[styles.header, { backgroundColor: palette.surface }]}>
           <View style={styles.topRow}>
-            <AppText accessibilityRole="header" style={styles.heading}>청첩장 편집</AppText>
+            <AppText variant="title" accessibilityRole="header" style={styles.heading}>청첩장 편집</AppText>
             <ActionButton variant="secondary" onPress={onClose} disabled={busy}>닫기</ActionButton>
           </View>
           {!keyboardVisible ? <View style={styles.statusRow}>
@@ -107,6 +107,9 @@ export function InvitationEditorWorkspace({
             </View>
           ) : null}
           <View style={styles.sectionHeading}>
+            <AppText variant="caption" color={palette.accent} style={styles.sectionEyebrow}>
+              편집 단계 {activeStepIndex + 1} / {steps.length}
+            </AppText>
             <AppText variant="title" accessibilityRole="header" style={styles.sectionTitle}>{title}</AppText>
             <AppText variant="muted">{description}</AppText>
           </View>
@@ -125,17 +128,18 @@ const styles = StyleSheet.create({
   screen: { flex: 1 },
   header: { width: '100%', maxWidth: 720, alignSelf: 'center', paddingHorizontal: 20, paddingVertical: 12, gap: 10 },
   topRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 12 },
-  heading: { flex: 1, fontWeight: '500' },
+  heading: { flex: 1, fontWeight: '600' },
   statusRow: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', gap: 8 },
   navigation: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   contentsButton: { flexGrow: 1 },
   progressTrack: { height: 3, overflow: 'hidden' },
   progressFill: { height: '100%' },
   scroll: { flex: 1 },
-  scrollContent: { width: '100%', maxWidth: 720, alignSelf: 'center', padding: 20, gap: 24 },
+  scrollContent: { width: '100%', maxWidth: 720, alignSelf: 'center', padding: 16, paddingVertical: 20, gap: 18 },
   contents: { padding: 12, gap: 8 },
   sectionHeading: { gap: 8 },
-  sectionTitle: { fontWeight: '500' },
+  sectionEyebrow: { fontWeight: '600' },
+  sectionTitle: { fontWeight: '600' },
   fields: { gap: 20 },
   footer: { width: '100%', maxWidth: 720, alignSelf: 'center', padding: 16, gap: 10 },
 });

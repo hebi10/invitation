@@ -7,6 +7,7 @@ on:
       - '.github/workflows/mobile-captures.yml'
       - 'scripts/capture-mobile-android.py'
       - 'scripts/fixtures/mobile-editor-capture.tsx.fixture'
+      - 'scripts/fixtures/mobile-modals-capture.tsx.fixture'
   workflow_dispatch:
 
 permissions:

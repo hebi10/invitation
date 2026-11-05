@@ -1,5 +1,6 @@
-import { Modal, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 
+import { AppModalFrame } from '../../../components/AppModalFrame';
 import { getPalette } from '../../../constants/theme';
 import { ActionButton } from '../../../components/ActionButton';
 import { AppText } from '../../../components/AppText';
@@ -54,171 +55,106 @@ export function TicketOnlyPurchaseModal({
   onSelectTarget,
 }: TicketOnlyPurchaseModalProps) {
   return (
-    <Modal visible={visible} animationType="fade" transparent onRequestClose={onClose}>
-      <View style={styles.overlay}>
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel="티켓 Google Play 결제 팝업 닫기"
-          style={[
-            styles.backdrop,
-            {
-              backgroundColor: '#111210',
-              opacity: 0.58,
-            },
-          ]}
-          onPress={onClose}
-        />
-        <View
-          style={[
-            styles.card,
-            {
-              backgroundColor: palette.surface,
-              borderColor: palette.cardBorder,
-            },
-          ]}
-        >
-          <ScrollView
-            style={styles.scroll}
-            contentContainerStyle={styles.scrollContent}
-            keyboardShouldPersistTaps="handled"
-            showsVerticalScrollIndicator={false}
-          >
-            <AppText variant="title" style={styles.title}>
-              티켓 Google Play 결제
-            </AppText>
-            <AppText variant="muted" style={styles.description}>
-              이 창은 추가 티켓을 Google Play Billing으로 구매하기 전 확인 단계입니다.
-              결제가 완료되면 선택한 청첩장에 티켓이 바로 적립됩니다.
-            </AppText>
-
-            <View style={styles.summaryRow}>
-              <AppText style={styles.summaryLabel}>티켓 수량</AppText>
-              <AppText style={styles.summaryValue}>{ticketCount}장</AppText>
-            </View>
-            <View style={styles.summaryRow}>
-              <AppText style={styles.summaryLabel}>장당 금액</AppText>
-              <AppText style={styles.summaryValue}>{formatPrice(ticketUnitPrice)}</AppText>
-            </View>
-            <View style={styles.summaryRow}>
-              <AppText style={styles.summaryLabel}>티켓 결제 예정 금액</AppText>
-              <AppText variant="display" style={styles.totalLabel}>
-                {formatPrice(ticketPrice)}
-              </AppText>
-            </View>
-            <View style={styles.summaryRow}>
-              <AppText style={styles.summaryLabel}>적립 대상</AppText>
-              <AppText style={styles.summaryValue}>{selectedTargetLabel}</AppText>
-            </View>
-            <View style={styles.summaryRow}>
-              <AppText style={styles.summaryLabel}>현재 보유 티켓</AppText>
-              <AppText style={styles.summaryValue}>{currentStoredTicketCount}장</AppText>
-            </View>
-
-            {targetOptions.length > 1 ? (
-              <View style={styles.actionColumn}>
-                <AppText variant="caption" style={styles.summaryLabel}>
-                  티켓 적립 대상 선택
-                </AppText>
-                <View style={styles.chipRow}>
-                  {targetOptions.map((item) => (
-                    <ChoiceChip
-                      key={`ticket-target-${item.slug}`}
-                      label={item.displayName}
-                      selected={selectedTargetSlug === item.slug}
-                      onPress={() => onSelectTarget(item.slug)}
-                    />
-                  ))}
-                </View>
-                <AppText variant="muted" style={styles.helperText}>
-                  선택한 청첩장에 티켓이 적립되고, 내 청첩장에서도 같은 수량을 바로 확인할
-                  수 있습니다.
-                </AppText>
-              </View>
-            ) : null}
-
-            <BulletList items={ticketUsageItems} />
-
-            {notice ? (
-              <View
-                style={[
-                  styles.noticeBox,
-                  {
-                    backgroundColor: palette.noticeSoft,
-                    borderColor: palette.notice,
-                  },
-                ]}
-              >
-                <AppText variant="caption" color={palette.notice} style={styles.noticeText}>
-                  {notice}
-                </AppText>
-              </View>
-            ) : null}
-
-            {authError ? (
-              <View
-                style={[
-                  styles.noticeBox,
-                  {
-                    backgroundColor: palette.dangerSoft,
-                    borderColor: palette.danger,
-                  },
-                ]}
-              >
-                <AppText variant="caption" color={palette.danger} style={styles.noticeText}>
-                  {authError}
-                </AppText>
-              </View>
-            ) : null}
-
-            <View style={styles.actionColumn}>
-              {pendingTarget ? <><AppText>기존 결제 대상: {pendingTarget}. 이 청첩장에 추가 결제 없이 티켓을 적립합니다.</AppText><ActionButton onPress={onRecover} loading={loading} fullWidth>티켓 결제 이어서 처리</ActionButton></> : null}
-              <ActionButton variant="secondary" onPress={onClose} fullWidth>
-                다시 확인하기
-              </ActionButton>
-              <ActionButton onPress={onConfirm} loading={loading} disabled={Boolean(pendingTarget)} fullWidth>
-                Google Play로 티켓 구매
-              </ActionButton>
-            </View>
-          </ScrollView>
+    <AppModalFrame
+    visible={visible}
+    onClose={onClose}
+    title="티켓 Google Play 결제"
+    description="결제 완료 후 선택한 청첩장에 티켓이 적립됩니다."
+    placement="center"
+    >
+        <View style={styles.summaryRow}>
+          <AppText style={styles.summaryLabel}>티켓 수량</AppText>
+          <AppText style={styles.summaryValue}>{ticketCount}장</AppText>
         </View>
-      </View>
-    </Modal>
+        <View style={styles.summaryRow}>
+          <AppText style={styles.summaryLabel}>장당 금액</AppText>
+          <AppText style={styles.summaryValue}>{formatPrice(ticketUnitPrice)}</AppText>
+        </View>
+        <View style={styles.summaryRow}>
+          <AppText style={styles.summaryLabel}>티켓 결제 예정 금액</AppText>
+          <AppText variant="display" style={styles.totalLabel}>
+            {formatPrice(ticketPrice)}
+          </AppText>
+        </View>
+        <View style={styles.summaryRow}>
+          <AppText style={styles.summaryLabel}>적립 대상</AppText>
+          <AppText style={styles.summaryValue}>{selectedTargetLabel}</AppText>
+        </View>
+        <View style={styles.summaryRow}>
+          <AppText style={styles.summaryLabel}>현재 보유 티켓</AppText>
+          <AppText style={styles.summaryValue}>{currentStoredTicketCount}장</AppText>
+        </View>
+
+        {targetOptions.length > 1 ? (
+          <View style={styles.actionColumn}>
+            <AppText variant="caption" style={styles.summaryLabel}>
+              티켓 적립 대상 선택
+            </AppText>
+            <View style={styles.chipRow}>
+              {targetOptions.map((item) => (
+                <ChoiceChip
+                  key={`ticket-target-${item.slug}`}
+                  label={item.displayName}
+                  selected={selectedTargetSlug === item.slug}
+                  onPress={() => onSelectTarget(item.slug)}
+                />
+              ))}
+            </View>
+            <AppText variant="muted" style={styles.helperText}>
+              선택한 청첩장에 티켓이 적립되고, 내 청첩장에서도 같은 수량을 바로 확인할
+              수 있습니다.
+            </AppText>
+          </View>
+        ) : null}
+
+        <BulletList items={ticketUsageItems} />
+
+        {notice ? (
+          <View
+            style={[
+              styles.noticeBox,
+              {
+                backgroundColor: palette.noticeSoft,
+                borderColor: palette.notice,
+              },
+            ]}
+          >
+            <AppText variant="caption" color={palette.notice} style={styles.noticeText}>
+              {notice}
+            </AppText>
+          </View>
+        ) : null}
+
+        {authError ? (
+          <View
+            style={[
+              styles.noticeBox,
+              {
+                backgroundColor: palette.dangerSoft,
+                borderColor: palette.danger,
+              },
+            ]}
+          >
+            <AppText variant="caption" color={palette.danger} style={styles.noticeText}>
+              {authError}
+            </AppText>
+          </View>
+        ) : null}
+
+        <View style={styles.actionColumn}>
+          {pendingTarget ? <><AppText>기존 결제 대상: {pendingTarget}. 이 청첩장에 추가 결제 없이 티켓을 적립합니다.</AppText><ActionButton onPress={onRecover} loading={loading} fullWidth>티켓 결제 이어서 처리</ActionButton></> : null}
+          <ActionButton variant="secondary" onPress={onClose} fullWidth>
+            다시 확인하기
+          </ActionButton>
+          <ActionButton onPress={onConfirm} loading={loading} disabled={Boolean(pendingTarget)} fullWidth>
+            Google Play로 티켓 구매
+          </ActionButton>
+        </View>
+    </AppModalFrame>
   );
 }
 
 const styles = StyleSheet.create({
-  overlay: {
-    flex: 1,
-    paddingVertical: 24,
-    justifyContent: 'center',
-    paddingHorizontal: 20,
-  },
-  backdrop: {
-    ...StyleSheet.absoluteFillObject,
-  },
-  card: {
-    width: '100%',
-    maxWidth: 520,
-    alignSelf: 'center',
-    maxHeight: '88%',
-    borderWidth: 1,
-    borderRadius: 0,
-    padding: 16,
-    gap: 16,
-  },
-  scroll: {
-    flexGrow: 0,
-  },
-  scrollContent: {
-    gap: 14,
-    paddingBottom: 2,
-  },
-  title: {
-    fontWeight: '500',
-  },
-  description: {
-    lineHeight: 21,
-  },
   summaryRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
