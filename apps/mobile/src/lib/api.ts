@@ -5,3 +5,4 @@ export * from './apiBilling';
 export * from './apiEditor';
 export * from './apiImages';
 export * from './apiComments';
+export * from './apiAccount';
