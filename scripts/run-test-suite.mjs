@@ -13,6 +13,7 @@ const core = [
   'test-mobile-wedding-design-access',
   'test-mobile-ui-tokens',
   'test-mobile-stage2-design',
+  'test-mobile-stage3-design',
   'test-background-music-playback',
   'test-gift-info-copy',
   'test-music-editor',

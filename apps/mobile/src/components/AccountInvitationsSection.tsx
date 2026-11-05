@@ -1,14 +1,15 @@
-import { Image } from 'expo-image';
 import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { ActivityIndicator, StyleSheet, View } from 'react-native';
 
 import { useAuth } from '../contexts/AuthContext';
 import { usePreferences } from '../contexts/PreferencesContext';
+import { getOwnedInvitationStatus } from '../features/manage/ownedInvitationPresentation';
 import { listMobileCustomerInvitations } from '../lib/apiAccount';
 import type { MobileCustomerOwnedEvent } from '../types/mobileInvitation';
 import { ActionButton } from './ActionButton';
 import { AppText } from './AppText';
+import { InvitationSummaryCard } from './InvitationSummaryCard';
 import { SectionCard } from './SectionCard';
 import { TextField } from './TextField';
 
@@ -148,10 +149,35 @@ export function AccountInvitationsSection() {
           새로고침
         </ActionButton>
       </View>
-      {loading ? <AppText variant="muted">계정의 청첩장을 불러오는 중입니다.</AppText> : null}
-      {error ? <AppText color={palette.danger} accessibilityRole="alert">{error}</AppText> : null}
+      {loading ? (
+        <View style={styles.loadingRow} accessibilityLiveRegion="polite">
+          <ActivityIndicator color={palette.accent} size="small" />
+          <AppText variant="muted">계정의 청첩장을 불러오는 중입니다.</AppText>
+        </View>
+      ) : null}
+      {error ? (
+        <View style={[styles.errorState, { backgroundColor: palette.dangerSoft, borderColor: palette.danger }]}>
+          <AppText color={palette.danger} accessibilityRole="alert">{error}</AppText>
+          <ActionButton
+            variant="secondary"
+            disabled={loading}
+            onPress={() => void refreshAccountList(() => false)}
+            fullWidth
+          >
+            목록 다시 불러오기
+          </ActionButton>
+        </View>
+      ) : null}
       {!loading && loaded && !error && items.length === 0 ? (
-        <AppText variant="muted">계정에 등록된 웨딩 청첩장이 없습니다.</AppText>
+        <View style={[styles.emptyState, { backgroundColor: palette.surfaceMuted }]}>
+          <AppText variant="title">계정에 등록된 청첩장이 없습니다</AppText>
+          <AppText variant="muted">
+            새 청첩장을 만들거나 다른 고객 계정으로 로그인해 주세요.
+          </AppText>
+          <ActionButton variant="secondary" onPress={() => router.push('/create')} fullWidth>
+            새 청첩장 만들기
+          </ActionButton>
+        </View>
       ) : null}
       <AccountOwnedWeddingCards
         items={items}
@@ -181,45 +207,50 @@ export function AccountOwnedWeddingCards({
   onOpen: (slug: string) => void;
 }) {
   const { palette } = usePreferences();
-  return <View style={styles.list}>
-      {items.map((item) => (
-        <View key={item.eventId} style={[styles.item, { borderColor: palette.cardBorder }]}>
-          {item.coverImageUrl ? (
-            <Image
-              source={{ uri: item.coverImageUrl }}
-              style={[styles.cover, { backgroundColor: palette.surfaceMuted }]}
-              contentFit="cover"
-              alt={`${item.displayName || item.title || '청첩장'} 대표 이미지`}
-            />
-          ) : null}
-          <View style={styles.itemDetails}>
-            <AppText variant="title">{item.displayName || item.title || item.slug}</AppText>
-            <AppText variant="caption" color={palette.textMuted}>
-              {item.eventDateLabel || '예식일 미입력'} · {item.publicAccess?.adminLabel ?? (item.published ? '공개 설정' : '비공개')}
-            </AppText>
+
+  return (
+    <View style={styles.list}>
+      {items.map((item) => {
+        const isSelected = currentSlug === item.slug;
+        const status = getOwnedInvitationStatus(item);
+
+        return (
+          <InvitationSummaryCard
+            key={item.eventId}
+            palette={palette}
+            name={item.displayName || item.title || item.slug}
+            contextLabel={isSelected ? '현재 관리 중 · 계정 소유' : '고객 계정에 등록된 청첩장'}
+            themeKey={item.defaultTheme}
+            imageUrl={item.coverImageUrl}
+            dateLabel={item.eventDateLabel ? `예식일 ${item.eventDateLabel}` : '예식일 미입력'}
+            statusLabel={status.label}
+            statusTone={status.tone}
+            selected={isSelected}
+          >
             <AppText variant="caption" color={palette.textMuted} selectable>
-              {item.slug}
+              청첩장 주소 · /{item.slug}
             </AppText>
             <ActionButton
               fullWidth
-              variant={currentSlug === item.slug ? 'primary' : 'secondary'}
+              variant="secondary"
               loading={openingSlug === item.slug}
-              disabled={Boolean(openingSlug) || busy || currentSlug === item.slug}
+              disabled={Boolean(openingSlug) || busy || isSelected}
               onPress={() => onOpen(item.slug)}
             >
-              {currentSlug === item.slug ? '현재 관리 중' : '이 청첩장 관리·수정'}
+              {isSelected ? '현재 관리 중' : '이 청첩장 관리·수정'}
             </ActionButton>
-          </View>
-        </View>
-      ))}
-  </View>;
+          </InvitationSummaryCard>
+        );
+      })}
+    </View>
+  );
 }
 
 const styles = StyleSheet.create({
   list: { gap: 12 },
   accountRow: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 8, justifyContent: 'space-between' },
   accountEmail: { flex: 1, minWidth: 120 },
-  item: { borderWidth: 1, borderRadius: 0, padding: 12, flexDirection: 'row', gap: 12, alignItems: 'flex-start' },
-  cover: { width: 76, height: 105 },
-  itemDetails: { flex: 1, minWidth: 0, gap: 9 },
+  loadingRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  errorState: { borderWidth: 1, borderRadius: 0, padding: 14, gap: 12 },
+  emptyState: { padding: 16, gap: 12 },
 });

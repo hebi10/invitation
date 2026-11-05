@@ -25,6 +25,8 @@ MODALS_ROUTE = APP / 'src/app/design-check-modals.tsx'
 MODALS_FIXTURE = ROOT / 'scripts/fixtures/mobile-modals-capture.tsx.fixture'
 ACCOUNT_ROUTE = APP / 'src/app/design-check-accounts.tsx'
 ACCOUNT_FIXTURE = ROOT / 'scripts/fixtures/mobile-owned-list-capture.tsx.fixture'
+LINKED_ROUTE = APP / 'src/app/design-check-linked.tsx'
+LINKED_FIXTURE = ROOT / 'scripts/fixtures/mobile-linked-list-capture.tsx.fixture'
 APK_URL = 'https://github.com/expo/expo-go-releases/releases/download/Expo-Go-55.0.7/Expo-Go-55.0.7.apk'
 APK_SIZE = 195851103
 APK_SHA256 = '6368eec8973ebb011c6f4f9d32afebe3fc64dd3125f2c0b529767e88dccf64ab'
@@ -232,10 +234,12 @@ def main():
     original_route = ROUTE.read_bytes() if ROUTE.exists() else None
     original_modals_route = MODALS_ROUTE.read_bytes() if MODALS_ROUTE.exists() else None
     original_account_route = ACCOUNT_ROUTE.read_bytes() if ACCOUNT_ROUTE.exists() else None
+    original_linked_route = LINKED_ROUTE.read_bytes() if LINKED_ROUTE.exists() else None
     try:
         shutil.copyfile(FIXTURE, ROUTE)
         shutil.copyfile(MODALS_FIXTURE, MODALS_ROUTE)
         shutil.copyfile(ACCOUNT_FIXTURE, ACCOUNT_ROUTE)
+        shutil.copyfile(LINKED_FIXTURE, LINKED_ROUTE)
         fixture_api = ThreadingHTTPServer(('127.0.0.1', 19999), CaptureApiHandler)
         threading.Thread(target=fixture_api.serve_forever, daemon=True).start()
         env = {**os.environ, 'CI': '1', 'EXPO_OFFLINE': '1', 'EXPO_NO_TELEMETRY': '1',
@@ -275,6 +279,7 @@ def main():
             wait_screen('guide', 'guide', ['이용 안내', '진행할 작업을 선택해'])
             wait_screen('settings', 'settings', ['설정', '화면 설정'])
             wait_screen('account-list-12', 'design-check-accounts', ['계정별 전체 청첩장', '12개', '가상 청첩장 1'])
+            wait_screen('linked-list', 'design-check-linked', ['연결한 청첩장', '현재 관리 중', '내용 수정'])
             tree = wait_screen('editor-fixture', 'design-check', ['샘플 청첩장 · 변경 사항 없음', '청첩장 편집', '기본 정보'])
             wait_screen('editor-intro', 'design-check?step=intro', ['첫 화면 애니메이션', '빛에 담긴 초대'])
             try:
@@ -322,6 +327,10 @@ def main():
             ACCOUNT_ROUTE.unlink(missing_ok=True)
         else:
             ACCOUNT_ROUTE.write_bytes(original_account_route)
+        if original_linked_route is None:
+            LINKED_ROUTE.unlink(missing_ok=True)
+        else:
+            LINKED_ROUTE.write_bytes(original_linked_route)
 
 
 if __name__ == '__main__':

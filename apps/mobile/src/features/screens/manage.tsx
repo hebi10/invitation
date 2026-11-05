@@ -3,7 +3,7 @@ import * as WebBrowser from 'expo-web-browser';
 import { Image } from 'expo-image';
 import ivoryFlowers from '../../../assets/editorial/ivory-flowers.webp';
 import { useEffect, useRef, useState } from 'react';
-import { Keyboard, Linking, View } from 'react-native';
+import { ActivityIndicator, Keyboard, Linking, View } from 'react-native';
 
 import { EditorPreparingModal } from '../manage/components/EditorPreparingModal';
 import { GuestbookModal } from '../manage/components/GuestbookModal';
@@ -579,7 +579,8 @@ export default function ManageScreen() {
             title="운영 데이터를 불러오는 중"
             description="페이지 설정과 방명록, 공개 링크를 서버에서 확인하고 있습니다."
           >
-            <View style={manageStyles.loadingRow}>
+            <View style={manageStyles.loadingRow} accessibilityLiveRegion="polite">
+              <ActivityIndicator size="small" color={palette.accent} />
               <AppText variant="muted" style={manageStyles.loadingText}>
                 운영 데이터를 동기화하고 있습니다.
               </AppText>
@@ -613,7 +614,7 @@ export default function ManageScreen() {
               },
             ]}
           >
-            <AppText color={palette.danger} style={manageStyles.noticeText}>
+            <AppText color={palette.danger} accessibilityRole="alert" style={manageStyles.noticeText}>
               {authError}
             </AppText>
           </View>
@@ -662,8 +663,8 @@ export default function ManageScreen() {
 
         {!showDashboardSyncLoading && !activeLinkedInvitationCard && draftsReady && drafts.length === 0 ? (
           <SectionCard
-            title="아직 만든 청첩장이 없어요"
-            description="두 사람의 이름과 예식 정보를 입력해 첫 청첩장을 준비해 보세요."
+            title="이 기기에 연결된 청첩장이 없습니다"
+            description="고객 계정에서 기존 청첩장을 불러오거나 새 청첩장을 만들어 보세요."
           >
             <Image
               source={ivoryFlowers}
