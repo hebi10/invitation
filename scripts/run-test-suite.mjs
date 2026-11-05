@@ -4,6 +4,7 @@ import path from 'node:path';
 import process from 'node:process';
 
 const core = [
+  'test-mobile-account-intro',
   'test-mobile-editor-save-policy',
   'test-mobile-editor-delimited-rows',
   'test-mobile-invitation-visibility',
