@@ -225,7 +225,10 @@ function reviewFixture() {
     };
     if (id === '@/server/apiErrorResponse') return { GENERIC_SERVER_ERROR_MESSAGE: '서버 오류가 발생했습니다.' };
     if (id === '@/server/customerAuthVerification') return { canCreateCustomerOwnedInvitation: () => true };
-    if (id === '@/server/customerApiAuth') return { verifyCustomerRequest: async () => ({ uid: 'customer-1' }) };
+    if (id === '@/server/customerApiAuth') return {
+      verifyCustomerRequest: async () => ({ uid: 'customer-1' }),
+      CustomerApiAuthError: class CustomerApiAuthError extends Error {},
+    };
     if (id === '@/server/mobileBillingServerService') return {
       fulfillServerMobileTicketPackPurchase: () => state.run(),
       fulfillServerMobilePageCreationPurchase: async () => ({ page: { slug: 'created-page' } }),
