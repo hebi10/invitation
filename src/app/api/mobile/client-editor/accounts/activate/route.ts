@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { canOpenOwnedWeddingPage } from '@/lib/mobileAccountOwnership';
 
 import { CLIENT_EDITOR_OWNER_SESSION_VERSION } from '@/server/clientEditorSession';
 import {
@@ -42,7 +43,7 @@ export async function POST(request: Request) {
     }
 
     const ownership = await getCustomerEventOwnershipSnapshot(customer.uid, slug);
-    if (ownership.status !== 'owner' || ownership.summary.eventType !== 'wedding') {
+    if (!canOpenOwnedWeddingPage(ownership, slug)) {
       return NextResponse.json({ error: '이 계정으로 관리할 수 있는 청첩장이 아닙니다.' }, { status: 403, headers });
     }
 
