@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type PropsWithChildren, type ReactNode } from 'react';
-import { Keyboard, KeyboardAvoidingView, Modal, Platform, ScrollView, StyleSheet, View } from 'react-native';
+import { Keyboard, KeyboardAvoidingView, Modal, Platform, ScrollView, StyleSheet, View, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { APP_SPACING } from '../../constants/uiTokens';
@@ -29,8 +29,11 @@ export function InvitationEditorWorkspace({
   visible, onClose, title, description, status, statusTone, publicationLabel,
   steps, activeStepIndex, onSelectStep, onPreview, busy, footer, compactFooter, confirmation, children,
 }: InvitationEditorWorkspaceProps) {
-  const { palette } = useVisualPreferences();
+  const { palette, fontScale } = useVisualPreferences();
+  const { width } = useWindowDimensions();
   const insets = useSafeAreaInsets();
+  const compactLayout = width < 360 || (width < 390 && fontScale > 1);
+  const compactPublicationLabel = publicationLabel.replace(/^현재 저장 상태\s*·\s*/, '');
   const scrollRef = useRef<ScrollView>(null);
   const [contentsOpen, setContentsOpen] = useState(false);
   const [keyboardVisible, setKeyboardVisible] = useState(false);
@@ -61,22 +64,33 @@ export function InvitationEditorWorkspace({
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={[styles.screen, { backgroundColor: palette.background, paddingTop: insets.top }]}
       >
-        <View style={[styles.header, { backgroundColor: palette.surface }]}>
+        <View style={[styles.header, compactLayout ? styles.headerNarrow : null, { backgroundColor: palette.surface }]}>
           <View style={styles.topRow}>
             <AppText variant="title" accessibilityRole="header" style={styles.heading}>청첩장 편집</AppText>
             <ActionButton variant="secondary" onPress={onClose} disabled={busy}>닫기</ActionButton>
           </View>
           {!keyboardVisible ? (
-            <View style={styles.statusRow}>
-              <View style={[styles.statusFlag, { backgroundColor: statusBackgroundColor }]}>
-                <AppText variant="caption" color={statusColor} accessibilityLiveRegion="polite">
-                  {status}
+            compactLayout ? (
+              <AppText
+                variant="caption"
+                color={statusColor}
+                numberOfLines={statusTone === 'danger' ? 2 : 1}
+                accessibilityLiveRegion="polite"
+              >
+                {status} · {compactPublicationLabel}
+              </AppText>
+            ) : (
+              <View style={styles.statusRow}>
+                <View style={[styles.statusFlag, { backgroundColor: statusBackgroundColor }]}>
+                  <AppText variant="caption" color={statusColor} accessibilityLiveRegion="polite">
+                    {status}
+                  </AppText>
+                </View>
+                <AppText variant="caption" color={palette.textMuted} style={styles.publicationLabel}>
+                  {publicationLabel}
                 </AppText>
               </View>
-              <AppText variant="caption" color={palette.textMuted} style={styles.publicationLabel}>
-                {publicationLabel}
-              </AppText>
-            </View>
+            )
           ) : null}
           {!keyboardVisible ? <View style={styles.navigation}>
             <ActionButton
@@ -84,7 +98,9 @@ export function InvitationEditorWorkspace({
               accessibilityLabel={`전체 목차, 현재 ${activeStepIndex + 1}단계 ${title}`}
               accessibilityState={{ expanded: contentsOpen }} style={styles.contentsButton}
             >
-              {activeStepIndex + 1} / {steps.length} · {title} {contentsOpen ? '접기' : '목차'}
+              {compactLayout
+                ? `${activeStepIndex + 1} / ${steps.length} · 목차${contentsOpen ? ' 접기' : ''}`
+                : `${activeStepIndex + 1} / ${steps.length} · ${title} ${contentsOpen ? '접기' : '목차'}`}
             </ActionButton>
             <ActionButton variant="secondary" onPress={onPreview} disabled={busy}>미리보기</ActionButton>
           </View> : null}
@@ -106,7 +122,8 @@ export function InvitationEditorWorkspace({
         </View>
 
         <ScrollView
-          ref={scrollRef} style={styles.scroll} contentContainerStyle={styles.scrollContent}
+          ref={scrollRef} style={styles.scroll}
+          contentContainerStyle={[styles.scrollContent, compactLayout ? styles.scrollContentNarrow : null]}
           keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag"
           showsVerticalScrollIndicator={false}
         >
@@ -133,7 +150,17 @@ export function InvitationEditorWorkspace({
           <View pointerEvents={busy ? 'none' : 'auto'} style={styles.fields}>{children}</View>
         </ScrollView>
 
-        <View style={[styles.footer, { backgroundColor: palette.surface, borderColor: palette.cardBorder, paddingBottom: Math.max(insets.bottom, APP_SPACING.md) }]}>
+        <View
+          style={[
+            styles.footer,
+            compactLayout ? styles.footerNarrow : null,
+            {
+              backgroundColor: palette.surface,
+              borderColor: palette.cardBorder,
+              paddingBottom: Math.max(insets.bottom, compactLayout ? APP_SPACING.sm : APP_SPACING.md),
+            },
+          ]}
+        >
           {confirmation ?? (keyboardVisible ? compactFooter : footer)}
         </View>
       </KeyboardAvoidingView>
@@ -151,6 +178,7 @@ const styles = StyleSheet.create({
     paddingVertical: APP_SPACING.sm,
     gap: APP_SPACING.sm,
   },
+  headerNarrow: { paddingVertical: APP_SPACING.xs, gap: APP_SPACING.xs },
   topRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: APP_SPACING.sm },
   heading: { flex: 1, fontWeight: '600' },
   statusRow: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: APP_SPACING.xs },
@@ -169,11 +197,13 @@ const styles = StyleSheet.create({
     paddingVertical: APP_SPACING.lg,
     gap: APP_SPACING.lg,
   },
+  scrollContentNarrow: { paddingVertical: APP_SPACING.sm, gap: APP_SPACING.md },
   contents: { padding: APP_SPACING.md, gap: APP_SPACING.xs },
   sectionHeading: { gap: APP_SPACING.xs },
   sectionEyebrow: { fontWeight: '600' },
   sectionTitle: { fontWeight: '600' },
   fields: { gap: APP_SPACING.md },
+  footerNarrow: { padding: APP_SPACING.sm, gap: APP_SPACING.xs },
   footer: {
     width: '100%',
     maxWidth: 720,

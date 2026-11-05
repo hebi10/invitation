@@ -9,6 +9,7 @@ import {
   View,
   type StyleProp,
   type ViewStyle,
+  useWindowDimensions,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -47,6 +48,8 @@ export function AppModalFrame({
   const appearance = useVisualPreferences();
   const palette = suppliedPalette ?? appearance.palette;
   const insets = useSafeAreaInsets();
+  const { width } = useWindowDimensions();
+  const compactLayout = width < 360;
   const dismiss = () => {
     if (!closeDisabled) onClose();
   };
@@ -80,6 +83,7 @@ export function AppModalFrame({
             accessibilityViewIsModal
             style={[
               styles.card,
+              compactLayout ? styles.cardNarrow : null,
               placement === 'center' ? styles.centerCard : styles.bottomCard,
               { backgroundColor: palette.surface, borderColor: palette.cardBorder },
               cardStyle,
@@ -135,6 +139,7 @@ const styles = StyleSheet.create({
     padding: APP_SPACING.md,
     gap: APP_SPACING.md,
   },
+  cardNarrow: { padding: APP_SPACING.sm, gap: APP_SPACING.sm },
   centerCard: { maxWidth: 520 },
   bottomCard: { maxWidth: 640 },
   header: { gap: APP_SPACING.xs },

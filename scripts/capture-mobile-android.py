@@ -29,6 +29,8 @@ LINKED_ROUTE = APP / 'src/app/design-check-linked.tsx'
 LINKED_FIXTURE = ROOT / 'scripts/fixtures/mobile-linked-list-capture.tsx.fixture'
 SYSTEM_ROUTE = APP / 'src/app/design-check-system.tsx'
 SYSTEM_FIXTURE = ROOT / 'scripts/fixtures/mobile-system-capture.tsx.fixture'
+KEYBOARD_ROUTE = APP / 'src/app/design-check-keyboard.tsx'
+KEYBOARD_FIXTURE = ROOT / 'scripts/fixtures/mobile-keyboard-capture.tsx.fixture'
 APK_URL = 'https://github.com/expo/expo-go-releases/releases/download/Expo-Go-55.0.7/Expo-Go-55.0.7.apk'
 APK_SIZE = 195851103
 APK_SHA256 = '6368eec8973ebb011c6f4f9d32afebe3fc64dd3125f2c0b529767e88dccf64ab'
@@ -138,11 +140,12 @@ def dismiss_expo_dialog(tree):
     return False
 
 
-def wait_screen(name, path, expected, timeout=180):
+def wait_screen(name, path, expected, timeout=180, launch=True):
     deadline = time.monotonic() + timeout
     last_xml = ''
     retries = 0
-    open_route(path)
+    if launch:
+        open_route(path)
     while time.monotonic() < deadline:
         try:
             tree, last_xml = hierarchy()
@@ -174,7 +177,7 @@ def wait_screen(name, path, expected, timeout=180):
                 time.sleep(1)
                 continue
             retries += 1
-            if retries in (10, 25):
+            if launch and retries in (10, 25):
                 open_route(path)
         except (subprocess.TimeoutExpired, ET.ParseError, subprocess.CalledProcessError):
             # 부팅/화면 전환 중 dump가 실패하면 남은 제한 시간 안에서 재시도한다.
@@ -275,12 +278,14 @@ def main():
     original_account_route = ACCOUNT_ROUTE.read_bytes() if ACCOUNT_ROUTE.exists() else None
     original_linked_route = LINKED_ROUTE.read_bytes() if LINKED_ROUTE.exists() else None
     original_system_route = SYSTEM_ROUTE.read_bytes() if SYSTEM_ROUTE.exists() else None
+    original_keyboard_route = KEYBOARD_ROUTE.read_bytes() if KEYBOARD_ROUTE.exists() else None
     try:
         shutil.copyfile(FIXTURE, ROUTE)
         shutil.copyfile(MODALS_FIXTURE, MODALS_ROUTE)
         shutil.copyfile(ACCOUNT_FIXTURE, ACCOUNT_ROUTE)
         shutil.copyfile(LINKED_FIXTURE, LINKED_ROUTE)
         shutil.copyfile(SYSTEM_FIXTURE, SYSTEM_ROUTE)
+        shutil.copyfile(KEYBOARD_FIXTURE, KEYBOARD_ROUTE)
         fixture_api = ThreadingHTTPServer(('127.0.0.1', 19999), CaptureApiHandler)
         threading.Thread(target=fixture_api.serve_forever, daemon=True).start()
         env = {**os.environ, 'CI': '1', 'EXPO_OFFLINE': '1', 'EXPO_NO_TELEMETRY': '1',
@@ -314,6 +319,7 @@ def main():
             adb('reverse', 'tcp:19999', 'tcp:19999')
             adb('shell', 'input', 'keyevent', 'KEYCODE_WAKEUP')
             adb('shell', 'wm', 'dismiss-keyguard')
+            adb('shell', 'settings', 'put', 'secure', 'show_ime_with_hard_keyboard', '1')
             wait_screen('my-invitations', '', ['내 청첩장', 'MODERN WEDDING EDITORIAL'])
             wait_screen('login', 'login', ['기존 청첩장 연결', '기기 연동 안내'])
             wait_screen('create', 'create', ['만들기', '기본 정보를 준비하고'])
@@ -321,12 +327,28 @@ def main():
             wait_screen('settings', 'settings', ['설정', '화면 설정'])
             wait_screen('account-list-12', 'design-check-accounts', ['계정별 전체 청첩장', '12개', '가상 청첩장 1'])
             wait_screen('linked-list', 'design-check-linked', ['연결한 청첩장', '현재 관리 중', '내용 수정'])
-            tree = wait_screen('editor-fixture', 'design-check', ['샘플 청첩장 · 변경 사항 없음', '청첩장 편집', '기본 정보'])
-            try:
-                capture_keyboard(tree)
-            except (subprocess.TimeoutExpired, subprocess.CalledProcessError) as error:
-                VERIFIED['keyboard_capture'] = f'선택적 키보드 캡처 생략: {error}'
-                save_manifest()
+            wait_screen('editor-fixture', 'design-check', ['샘플 청첩장 · 변경 사항 없음', '청첩장 편집', '기본 정보'])
+            keyboard_tree = wait_screen(
+                'editor-keyboard-ready', 'design-check-keyboard',
+                ['청첩장 편집', '키보드 확인 입력', '저장 후 다음'],
+            )
+            keyboard_input = next(
+                (node for node in keyboard_tree.iter('node')
+                 if node.get('class') == 'android.widget.EditText'
+                 and node.get('content-desc') == '키보드 확인 입력'),
+                None,
+            )
+            if keyboard_input is None or not tap(keyboard_input):
+                raise RuntimeError('키보드 검수용 입력창을 실제 터치할 수 없습니다.')
+            wait_screen(
+                'editor-keyboard', 'design-check-keyboard',
+                ['청첩장 편집', '키보드 확인 입력', '키보드 표시 중', '내용 저장'],
+                timeout=45, launch=False,
+            )
+            VERIFIED['keyboard_capture'] = '실제 입력창 터치·keyboardDidShow 이벤트·컴팩트 저장 버튼 확인'
+            VERIFIED['captures'][-1]['keyboard_verified'] = True
+            save_manifest()
+            adb('shell', 'input', 'keyevent', 'KEYCODE_BACK')
             for name, step, expected in [
                 ('editor-schedule', 'schedule', ['청첩장 편집', '예식 일정']),
                 ('editor-location', 'location', ['청첩장 편집', '예식장 주소와 연락처']),
@@ -401,6 +423,10 @@ def main():
             SYSTEM_ROUTE.unlink(missing_ok=True)
         else:
             SYSTEM_ROUTE.write_bytes(original_system_route)
+        if original_keyboard_route is None:
+            KEYBOARD_ROUTE.unlink(missing_ok=True)
+        else:
+            KEYBOARD_ROUTE.write_bytes(original_keyboard_route)
 
 
 if __name__ == '__main__':

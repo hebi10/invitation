@@ -88,7 +88,7 @@ export function TextField({
         editable={editable}
         maxLength={maxLength}
         accessibilityLabel={accessibilityLabel ?? label}
-        accessibilityHint={accessibilityHint}
+        accessibilityHint={accessibilityHint ?? helperText}
         style={[
           styles.input,
           multiline ? styles.multiline : null,
