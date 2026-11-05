@@ -121,22 +121,6 @@ function SingleImageCard({
 
   return (
     <SectionCard title={title} description={description}>
-      <View style={manageStyles.actionRow}>
-        <ActionButton
-          variant="secondary"
-          onPress={() => void onUploadImage(assetKind)}
-          loading={uploadingImageKind === assetKind}
-        >
-          이미지 업로드
-        </ActionButton>
-        <ActionButton
-          variant="danger"
-          onPress={() => onRemoveSingleImage(assetKind)}
-          disabled={!previewUrl}
-        >
-          이미지 제거
-        </ActionButton>
-      </View>
       {previewUrl ? (
         <View
           style={[
@@ -170,6 +154,22 @@ function SingleImageCard({
           </AppText>
         </View>
       )}
+      <View style={manageStyles.actionRow}>
+        <ActionButton
+          variant="secondary"
+          onPress={() => void onUploadImage(assetKind)}
+          loading={uploadingImageKind === assetKind}
+        >
+          이미지 업로드
+        </ActionButton>
+        <ActionButton
+          variant="danger"
+          onPress={() => onRemoveSingleImage(assetKind)}
+          disabled={!previewUrl}
+        >
+          이미지 제거
+        </ActionButton>
+      </View>
     </SectionCard>
   );
 }
