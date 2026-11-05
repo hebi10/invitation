@@ -8,6 +8,7 @@ import { Keyboard, Linking, View } from 'react-native';
 import { EditorPreparingModal } from '../manage/components/EditorPreparingModal';
 import { GuestbookModal } from '../manage/components/GuestbookModal';
 import { LinkedInvitationsSection } from '../manage/components/LinkedInvitationsSection';
+import { InvitationThemeActionList } from '../manage/components/InvitationThemeActionList';
 import { ManageEditorStepContent } from '../manage/components/ManageEditorStepContent';
 import { OnboardingModal } from '../manage/components/OnboardingModal';
 import { TicketUsageModal } from '../manage/components/TicketUsageModal';
@@ -855,61 +856,44 @@ export default function ManageScreen() {
         visible={Boolean(previewLinkTargetCard)}
         onClose={closePreviewLinkModal}
         title="청첩장 미리보기"
-        description="공개 전에 원하는 디자인으로 내용을 확인해 주세요."
+        description="디자인을 선택해 실제 청첩장 내용을 확인해 주세요."
         palette={palette}
         fontScale={fontScale}
       >
-        <SectionCard
-          title={previewLinkTargetCard?.displayName.trim() || '연동된 청첩장'}
-          description="모든 웨딩 디자인을 별도 연결 없이 디자인별 주소로 열 수 있습니다."
-        >
-          <BulletList
-            items={[
-              `기본 테마: ${
-                previewLinkTargetCard
-                  ? getInvitationThemeLabel(previewLinkTargetCard.defaultTheme)
-                  : '-'
-              }`,
-              `사용 가능한 디자인: ${formatThemeList(previewLinkThemeKeys)}`,
-            ]} />
-          <View style={manageStyles.actionRow}>
-            {previewLinkTargetCard
-              ? previewLinkThemeKeys.map((themeKey) => (
-                <ActionButton
-                  key={`preview-link-${previewLinkTargetCard.slug}-${themeKey}`}
-                  variant={themeKey === previewLinkTargetCard.defaultTheme ? 'primary' : 'secondary'}
-                  onPress={() => void handleOpenThemeLink(previewLinkTargetCard, themeKey)}
-                  disabled={isOpeningPreview}
-                  style={manageStyles.actionHalfButton}
-                >
-                  {`${getInvitationThemeLabel(themeKey)} 링크 열기`}
-                </ActionButton>
-              ))
-              : null}
-          </View>
-        </SectionCard>
+        <AppText variant="title">
+          {previewLinkTargetCard?.displayName.trim() || '연동된 청첩장'}
+        </AppText>
+        <InvitationThemeActionList
+          themes={previewLinkThemeKeys}
+          currentTheme={previewLinkTargetCard?.defaultTheme}
+          action="preview"
+          busy={isOpeningPreview}
+          onSelect={(theme) => {
+            if (previewLinkTargetCard) void handleOpenThemeLink(previewLinkTargetCard, theme);
+          }}
+        />
       </InvitationEditorModalShell>
 
       <InvitationEditorModalShell
         visible={Boolean(kakaoShareTargetCard)}
         onClose={() => setKakaoShareTargetCard(null)}
         title="카카오톡 카드 공유"
-        description="같은 청첩장 내용을 원하는 디자인으로 전할 수 있습니다."
+        description="공유할 디자인을 선택해 하객에게 청첩장을 전달해 주세요."
         palette={palette}
         fontScale={fontScale}
       >
-        <SectionCard title={kakaoShareTargetCard?.displayName.trim() || '청첩장 공유'}
-          description="디자인을 선택한 뒤 공유 화면에서 받는 사람을 선택해 주세요.">
-          <View style={manageStyles.actionRow}>
-            {kakaoShareTargetCard ? getLinkedInvitationThemeKeys(kakaoShareTargetCard).map(theme => (
-              <ActionButton key={`kakao-share-${theme}`} variant="secondary"
-                onPress={() => void handleShareTheme(kakaoShareTargetCard, theme)}
-                disabled={isOpeningKakaoShare} style={manageStyles.actionHalfButton}>
-                {`${getInvitationThemeLabel(theme)} 카드 공유`}
-              </ActionButton>
-            )) : null}
-          </View>
-        </SectionCard>
+        <AppText variant="title">
+          {kakaoShareTargetCard?.displayName.trim() || '청첩장 공유'}
+        </AppText>
+        <InvitationThemeActionList
+          themes={kakaoShareTargetCard ? getLinkedInvitationThemeKeys(kakaoShareTargetCard) : []}
+          currentTheme={kakaoShareTargetCard?.defaultTheme}
+          action="share"
+          busy={isOpeningKakaoShare}
+          onSelect={(theme) => {
+            if (kakaoShareTargetCard) void handleShareTheme(kakaoShareTargetCard, theme);
+          }}
+        />
       </InvitationEditorModalShell>
 
       <OnboardingModal
