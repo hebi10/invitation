@@ -140,11 +140,12 @@ def dismiss_expo_dialog(tree):
     return False
 
 
-def wait_screen(name, path, expected, timeout=180):
+def wait_screen(name, path, expected, timeout=180, launch=True):
     deadline = time.monotonic() + timeout
     last_xml = ''
     retries = 0
-    open_route(path)
+    if launch:
+        open_route(path)
     while time.monotonic() < deadline:
         try:
             tree, last_xml = hierarchy()
@@ -176,7 +177,7 @@ def wait_screen(name, path, expected, timeout=180):
                 time.sleep(1)
                 continue
             retries += 1
-            if retries in (10, 25):
+            if launch and retries in (10, 25):
                 open_route(path)
         except (subprocess.TimeoutExpired, ET.ParseError, subprocess.CalledProcessError):
             # 부팅/화면 전환 중 dump가 실패하면 남은 제한 시간 안에서 재시도한다.
@@ -327,11 +328,24 @@ def main():
             wait_screen('account-list-12', 'design-check-accounts', ['계정별 전체 청첩장', '12개', '가상 청첩장 1'])
             wait_screen('linked-list', 'design-check-linked', ['연결한 청첩장', '현재 관리 중', '내용 수정'])
             wait_screen('editor-fixture', 'design-check', ['샘플 청첩장 · 변경 사항 없음', '청첩장 편집', '기본 정보'])
+            keyboard_tree = wait_screen(
+                'editor-keyboard-ready', 'design-check-keyboard',
+                ['청첩장 편집', '키보드 확인 입력', '키보드 열기 대기', '저장 후 다음'],
+            )
+            keyboard_input = next(
+                (node for node in keyboard_tree.iter('node')
+                 if node.get('class') == 'android.widget.EditText'
+                 and node.get('content-desc') == '키보드 확인 입력'),
+                None,
+            )
+            if keyboard_input is None or not tap(keyboard_input):
+                raise RuntimeError('키보드 검수용 입력창을 실제 터치할 수 없습니다.')
             wait_screen(
                 'editor-keyboard', 'design-check-keyboard',
                 ['청첩장 편집', '키보드 확인 입력', '키보드 표시 중', '내용 저장'],
+                timeout=45, launch=False,
             )
-            VERIFIED['keyboard_capture'] = 'keyboardDidShow 이벤트·입력 필드·컴팩트 저장 버튼 확인'
+            VERIFIED['keyboard_capture'] = '실제 입력창 터치·keyboardDidShow 이벤트·컴팩트 저장 버튼 확인'
             VERIFIED['captures'][-1]['keyboard_verified'] = True
             save_manifest()
             adb('shell', 'input', 'keyevent', 'KEYCODE_BACK')

@@ -21,8 +21,6 @@ assert.match(workspace, /keyboardVisible \? compactFooter : footer/);
 assert.match(workspace, /accessibilityRole="progressbar"/);
 assert.match(workspace, /onSelectStep\(index\)/);
 
-assert.match(input, /\| 'autoFocus'/);
-assert.match(input, /autoFocus=\{autoFocus\}/);
 assert.match(input, /accessibilityHint=\{accessibilityHint \?\? helperText\}/);
 assert.match(input, /minHeight: APP_CONTROL_MIN_HEIGHT/);
 
@@ -38,13 +36,17 @@ assert.match(payment, /hasPendingPurchase/);
 assert.match(fixture, /Keyboard\.addListener\('keyboardDidShow'/);
 assert.match(fixture, /Keyboard\.addListener\('keyboardDidHide'/);
 assert.match(fixture, /<TextField/);
-assert.match(fixture, /autoFocus/);
+assert.match(fixture, /키보드 열기 대기/);
 assert.match(fixture, /키보드 표시 중/);
 assert.match(fixture, /compactFooter=/);
 assert.match(fixture, /내용 저장/);
 
 assert.match(capture, /shutil\.copyfile\(KEYBOARD_FIXTURE, KEYBOARD_ROUTE\)/);
+assert.match(capture, /wait_screen\(\s*'editor-keyboard-ready', 'design-check-keyboard'/);
+assert.match(capture, /keyboard_input = next\(/);
+assert.match(capture, /tap\(keyboard_input\)/);
 assert.match(capture, /wait_screen\(\s*'editor-keyboard', 'design-check-keyboard'/);
+assert.match(capture, /timeout=45, launch=False/);
 assert.match(capture, /VERIFIED\['keyboard_capture'\]/);
 assert.match(capture, /\['keyboard_verified'\] = True/);
 assert.match(capture, /KEYBOARD_ROUTE\.unlink\(missing_ok=True\)/);

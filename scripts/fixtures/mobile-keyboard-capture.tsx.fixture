@@ -51,7 +51,6 @@ export default function KeyboardDesignCheck() {
         label="키보드 확인 입력"
         value={value}
         onChangeText={setValue}
-        autoFocus
         returnKeyType="done"
         helperText="실제 Android 소프트 키보드가 나타나면 하단 저장 버튼도 표시되어야 합니다."
       />
