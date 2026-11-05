@@ -22,6 +22,7 @@ type LinkedInvitationCardPanelProps = {
   published?: boolean;
   weddingDate?: string;
   publicUrl?: string | null;
+  coverImageUrl?: string | null;
   children?: ReactNode;
   managementActions?: ReactNode;
 };
@@ -35,6 +36,7 @@ type LinkedInvitationsSectionProps = {
   dashboardCommentCount: number;
   dashboardPublished: boolean;
   dashboardWeddingDate?: string;
+  dashboardCoverImageUrl?: string | null;
   canRequestDashboardSync: boolean;
   needsRefreshRetry: boolean;
   activatingLinkedInvitationSlug: string | null;
@@ -52,9 +54,12 @@ type LinkedInvitationsSectionProps = {
 
 function LinkedInvitationCardPanel({
   card, palette, active = false, published = card.published, weddingDate,
-  publicUrl, children, managementActions,
+  publicUrl, coverImageUrl, children, managementActions,
 }: LinkedInvitationCardPanelProps) {
   const [expanded, setExpanded] = useState(false);
+  const [imageFailed, setImageFailed] = useState(false);
+  const actualCover = coverImageUrl?.trim();
+  const showActualCover = Boolean(actualCover && /^https?:\/\//i.test(actualCover) && !imageFailed);
   const visibility = getInvitationVisibility(published, card.displayPeriod);
   const statusColor = visibility.tone === 'success'
     ? palette.success : visibility.tone === 'notice' ? palette.notice : palette.textMuted;
@@ -63,11 +68,12 @@ function LinkedInvitationCardPanel({
     <View style={[styles.invitation, { borderColor: palette.cardBorder }]}>
       <View style={styles.overview}>
         <Image
-          source={themePreviewImages[card.defaultTheme] ?? themePreviewImages.romantic}
+          source={showActualCover ? { uri: actualCover } : themePreviewImages[card.defaultTheme] ?? themePreviewImages.romantic}
           style={[styles.coverPreview, { backgroundColor: palette.surfaceMuted }]}
           contentFit="cover"
           contentPosition="top"
-          alt={`${card.displayName.trim() || '청첩장'} 디자인 표지`}
+          alt={showActualCover ? `${card.displayName.trim() || '청첩장'} 실제 대표 사진` : `${card.displayName.trim() || '청첩장'} 테마 샘플`}
+          onError={() => setImageFailed(true)}
         />
         <View style={styles.summary}>
           <AppText variant="caption" color={palette.textMuted}>
@@ -111,7 +117,7 @@ function LinkedInvitationCardPanel({
 export function LinkedInvitationsSection({
   activeLinkedInvitationCard, additionalLinkedInvitationCards, palette, hasDashboard,
   dashboardPublicUrl, dashboardCommentCount, dashboardPublished, dashboardWeddingDate,
-  canRequestDashboardSync, needsRefreshRetry, activatingLinkedInvitationSlug,
+  dashboardCoverImageUrl, canRequestDashboardSync, needsRefreshRetry, activatingLinkedInvitationSlug,
   onOpenEditor, onOpenUrl, onTogglePublished, onOpenTicketModal, onCopyPublicUrl, onKakaoShare,
   onOpenInApp, onOpenGuestbook, onRefresh, onActivateLinkedInvitation,
 }: LinkedInvitationsSectionProps) {
@@ -124,6 +130,7 @@ export function LinkedInvitationsSection({
         card={activeLinkedInvitationCard} palette={palette} active
         published={hasDashboard ? dashboardPublished : activeLinkedInvitationCard.published}
         weddingDate={dashboardWeddingDate}
+        coverImageUrl={hasDashboard ? dashboardCoverImageUrl : null}
         publicUrl={hasDashboard ? dashboardPublicUrl : activeLinkedInvitationCard.publicUrl}
         managementActions={hasDashboard ? (
           <>
