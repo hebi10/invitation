@@ -12,6 +12,21 @@ export type MobileInvitationThemeKey = SharedMobileInvitationThemeKey;
 export type MobileGuestbookCommentAction = SharedGuestbookCommentAction;
 export type MobileGuestbookCommentStatus = SharedGuestbookCommentStatus;
 
+export interface MobileCustomerOwnedEvent {
+  eventId: string;
+  slug: string;
+  eventType: string;
+  title: string | null;
+  displayName: string | null;
+  published: boolean;
+  defaultTheme: MobileInvitationThemeKey;
+  availableThemes: MobileInvitationThemeKey[];
+  updatedAt: string | null;
+  coverImageUrl?: string | null;
+  eventDateLabel?: string | null;
+  publicAccess?: { isPublic: boolean; adminLabel: string };
+}
+
 export interface MobileInvitationVariantLink {
   available: boolean;
   path: string;
