@@ -1,4 +1,4 @@
-import { ScrollView, View } from 'react-native';
+import { View } from 'react-native';
 
 import { ActionButton } from '../../../components/ActionButton';
 import { AppText } from '../../../components/AppText';
@@ -110,11 +110,7 @@ export function GuestbookModal({
         description="공개 댓글은 숨기거나 삭제 예정으로 보낼 수 있고, 숨긴 댓글과 삭제 예정 댓글은 다시 복구할 수 있습니다."
       >
         {comments.length ? (
-          <ScrollView
-            style={manageStyles.guestbookList}
-            contentContainerStyle={manageStyles.guestbookListContent}
-            showsVerticalScrollIndicator={false}
-          >
+          <View style={manageStyles.guestbookListContent}>
             {comments.map((comment) => {
               const scheduledDeleteDate = formatScheduledDeleteDate(
                 comment.scheduledDeleteAt
@@ -221,7 +217,7 @@ export function GuestbookModal({
                 </View>
               );
             })}
-          </ScrollView>
+          </View>
         ) : (
           <AppText variant="muted" style={manageStyles.loadingText}>
             검색 조건에 맞는 방명록이 없습니다.
