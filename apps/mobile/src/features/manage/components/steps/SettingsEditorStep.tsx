@@ -4,6 +4,7 @@ import { ActionButton } from '../../../../components/ActionButton';
 import { AppText } from '../../../../components/AppText';
 import { SectionCard } from '../../../../components/SectionCard';
 import { TextField } from '../../../../components/TextField';
+import { WEDDING_INTRO_OPTIONS, type WeddingIntroStyle } from '../../../../lib/weddingIntro';
 import { useVisualPreferences } from '../../../../contexts/PreferencesContext';
 import type { ManageFormState, ManageStringFieldKey } from '../../shared';
 import { manageStyles } from '../../manageStyles';
@@ -13,6 +14,8 @@ type SettingsEditorStepProps = {
   savedPublished?: boolean;
   onUpdateField: (field: ManageStringFieldKey, value: string) => void;
   onSetPublished: (published: boolean) => void;
+  onSetIntroStyle: (style: WeddingIntroStyle) => void;
+  onPreviewIntro: (style: WeddingIntroStyle) => void;
 };
 
 export function SettingsEditorStep({
@@ -20,11 +23,50 @@ export function SettingsEditorStep({
   savedPublished = form.published,
   onUpdateField,
   onSetPublished,
+  onSetIntroStyle,
+  onPreviewIntro,
 }: SettingsEditorStepProps) {
   const { palette } = useVisualPreferences();
 
   return (
     <>
+      <SectionCard
+        title="첫 화면 애니메이션"
+        description="PC 제작기와 동일한 연출을 선택할 수 있습니다. 저장 후 실제 청첩장에 반영됩니다."
+      >
+        {WEDDING_INTRO_OPTIONS.map((option) => (
+          <View
+            key={option.value}
+            style={[
+              styles.introOption,
+              {
+                backgroundColor: form.introStyle === option.value ? palette.accentSoft : palette.surface,
+                borderColor: form.introStyle === option.value ? palette.accent : palette.cardBorder,
+              },
+            ]}
+          >
+            <AppText variant="title">{option.label}</AppText>
+            <AppText variant="muted">{option.description}</AppText>
+            <ActionButton
+              fullWidth
+              variant={form.introStyle === option.value ? 'primary' : 'secondary'}
+              onPress={() => onSetIntroStyle(option.value)}
+              accessibilityState={{ selected: form.introStyle === option.value }}
+            >
+              {form.introStyle === option.value ? '선택됨' : '이 연출 선택'}
+            </ActionButton>
+            {option.value !== 'none' ? (
+              <ActionButton variant="secondary" fullWidth onPress={() => onPreviewIntro(option.value)}>
+                연출 보기
+              </ActionButton>
+            ) : null}
+          </View>
+        ))}
+        <AppText variant="caption" color={palette.textMuted}>
+          미리보기는 PC와 동일한 웹 연출을 샘플 정보로 재생합니다. 실제 데이터는 변경하지 않습니다.
+        </AppText>
+      </SectionCard>
+
       <SectionCard
         title="공유 문구"
         description="링크 공유 때 보이는 제목과 설명을 마지막으로 다듬습니다."
@@ -74,4 +116,5 @@ export function SettingsEditorStep({
 
 const styles = StyleSheet.create({
   stateSummary: { padding: 14, gap: 6 },
+  introOption: { borderWidth: 1, borderRadius: 0, padding: 12, gap: 10 },
 });
