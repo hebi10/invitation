@@ -1,5 +1,6 @@
 import { buildApiUrl, createHeaders, fetchWithRetry, readJsonResponse } from './apiCore';
-import type { MobileCustomerOwnedEvent, MobileLoginResponse } from '../types/mobileInvitation';
+import type { MobileCustomerOwnedEvent } from '../types/mobileInvitation';
+import type { MobileLoginResponse } from './apiTypes';
 
 export async function listMobileCustomerInvitations(baseUrl: string, customerIdToken: string) {
   const result = await readJsonResponse<{ success: boolean; events: MobileCustomerOwnedEvent[] }>(
