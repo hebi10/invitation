@@ -78,6 +78,7 @@ assert.match(capture, /def capture_keyboard\(tree\):/);
 const releaseWorkflow = read('.github/workflows/mobile-release.yml');
 const captureWorkflow = read('.github/workflows/mobile-captures.yml');
 const config = read('apps/mobile/app.config.ts');
+const tabs = read('apps/mobile/src/app/(tabs)/_layout.tsx');
 
 assert.match(releaseWorkflow, /branches: \[main, build\/mobile-aab\]/);
 assert.match(releaseWorkflow, /needs\.bundle\.outputs\.deploy == 'true'/);
@@ -90,6 +91,8 @@ assert.match(config, /backgroundColor: '#faf8f5'/);
 assert.match(config, /predictiveBackGestureEnabled: false/);
 assert.match(config, /'android\.permission\.CAMERA'/);
 assert.match(config, /'android\.permission\.RECORD_AUDIO'/);
+assert.doesNotMatch(tabs, /borderTopWidth|borderBottomWidth|elevation:\\s*[1-9]/);
+assert.match(tabs, /boxShadow: 'none'/);
 
 assert.equal(isTrustedReleaseEvent({ eventName: 'pull_request', ref: 'refs/heads/main' }), false);
 assert.equal(isTrustedReleaseEvent({ eventName: 'push', ref: 'refs/heads/main' }), true);
