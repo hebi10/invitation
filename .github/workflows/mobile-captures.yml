@@ -11,6 +11,8 @@ on:
       - 'scripts/fixtures/mobile-owned-list-capture.tsx.fixture'
       - 'scripts/fixtures/mobile-linked-list-capture.tsx.fixture'
       - 'scripts/fixtures/mobile-system-capture.tsx.fixture'
+      - 'scripts/fixtures/mobile-account-login-capture.tsx.fixture'
+      - 'scripts/fixtures/mobile-recent-status-capture.tsx.fixture'
       - 'scripts/fixtures/mobile-keyboard-capture.tsx.fixture'
   workflow_dispatch:
 

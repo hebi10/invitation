@@ -53,6 +53,7 @@ export default function LoginScreen() {
   const [notice, setNotice] = useState('');
   const [recentCards, setRecentCards] = useState<LinkedInvitationCard[]>([]);
   const [isLoadingRecentCards, setIsLoadingRecentCards] = useState(false);
+  const [recentCardsLoadFailed, setRecentCardsLoadFailed] = useState(false);
   const [activatingRecentSlug, setActivatingRecentSlug] = useState<string | null>(null);
   const [linkAttempt, setLinkAttempt] = useState<LinkAttempt | null>(null);
   const [linkRetryNonce, setLinkRetryNonce] = useState(0);
@@ -67,6 +68,7 @@ export default function LoginScreen() {
 
   const loadRecentCards = useCallback(async () => {
     setIsLoadingRecentCards(true);
+    setRecentCardsLoadFailed(false);
 
     try {
       const cards = await getLinkedInvitationCards();
@@ -75,6 +77,9 @@ export default function LoginScreen() {
           .sort((left, right) => right.updatedAt - left.updatedAt)
           .slice(0, 4)
       );
+    } catch {
+      setRecentCards([]);
+      setRecentCardsLoadFailed(true);
     } finally {
       setIsLoadingRecentCards(false);
     }
@@ -130,10 +135,10 @@ export default function LoginScreen() {
   ]);
 
   const handleCopyLinkedInvitationLink = useCallback(async (card: LinkedInvitationCard) => {
-    const address = card.publicUrl?.trim() || card.slug;
+    const address = card.publicUrl?.trim();
 
     if (!address) {
-      setNotice('복사할 청첩장 주소를 아직 확인하지 못했습니다.');
+      setNotice('하객용 공개 주소를 아직 확인하지 못했습니다.');
       return;
     }
 
@@ -268,6 +273,21 @@ export default function LoginScreen() {
           <ActivityIndicator color={palette.accent} />
           <AppText variant="muted">최근 연동한 청첩장을 확인하고 있습니다.</AppText>
         </View>
+      ) : null}
+      {recentCardsLoadFailed ? (
+        <SectionCard
+          title="최근 연동 기록을 읽지 못했습니다"
+          description="이 기기에 저장된 연동 목록을 확인하는 중 오류가 발생했습니다."
+        >
+          <ActionButton
+            variant="secondary"
+            disabled={isLoadingRecentCards}
+            onPress={() => void loadRecentCards()}
+            fullWidth
+          >
+            연동 기록 다시 불러오기
+          </ActionButton>
+        </SectionCard>
       ) : null}
       {!isLoadingRecentCards || recentCards.length ? (
         <RecentLinkedInvitationsSection

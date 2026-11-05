@@ -1,0 +1,10 @@
+import { AppScreen } from '../components/AppScreen';
+import { AccountInvitationsSection } from '../components/AccountInvitationsSection';
+
+export default function AccountLoginDesignCheck() {
+  return (
+    <AppScreen title="고객 계정 로그인 화면" subtitle="로그인과 계정 복구 버튼을 점검합니다.">
+      <AccountInvitationsSection />
+    </AppScreen>
+  );
+}
