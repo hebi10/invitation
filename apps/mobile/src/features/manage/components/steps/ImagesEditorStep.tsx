@@ -125,10 +125,10 @@ function SingleImageCard({
         <View
           style={[
             manageStyles.previewFrame,
-            manageStyles.coverPreviewFrame,
+            assetKind === 'cover' ? manageStyles.coverPreviewFrame : manageStyles.sharePreviewFrame,
             {
               backgroundColor: palette.surface,
-              borderColor: palette.accent,
+              borderColor: palette.cardBorder,
             },
           ]}
         >
@@ -159,6 +159,7 @@ function SingleImageCard({
           variant="secondary"
           onPress={() => void onUploadImage(assetKind)}
           loading={uploadingImageKind === assetKind}
+          style={manageStyles.imageAction}
         >
           이미지 업로드
         </ActionButton>
@@ -166,6 +167,7 @@ function SingleImageCard({
           variant="danger"
           onPress={() => onRemoveSingleImage(assetKind)}
           disabled={!previewUrl}
+          style={manageStyles.imageAction}
         >
           이미지 제거
         </ActionButton>
@@ -200,7 +202,7 @@ const GalleryPreviewCard = memo(function GalleryPreviewCard({
           manageStyles.galleryPreviewFrame,
           {
             backgroundColor: palette.surface,
-            borderColor: palette.accent,
+            borderColor: palette.cardBorder,
           },
         ]}
       >
@@ -222,6 +224,7 @@ const GalleryPreviewCard = memo(function GalleryPreviewCard({
           variant="secondary"
           onPress={() => onMoveGalleryImage(index, 'up')}
           disabled={isFirst}
+          style={manageStyles.galleryAction}
         >
           앞으로
         </ActionButton>
@@ -229,10 +232,11 @@ const GalleryPreviewCard = memo(function GalleryPreviewCard({
           variant="secondary"
           onPress={() => onMoveGalleryImage(index, 'down')}
           disabled={isLast}
+          style={manageStyles.galleryAction}
         >
           뒤로
         </ActionButton>
-        <ActionButton variant="danger" onPress={() => onRemoveGalleryImage(index)}>
+        <ActionButton variant="danger" onPress={() => onRemoveGalleryImage(index)} style={manageStyles.galleryAction}>
           제거
         </ActionButton>
       </View>
@@ -259,6 +263,7 @@ export function ImagesEditorStep({
     <>
       {uploadProgress ? (
         <View
+          accessibilityLiveRegion="polite"
           style={[
             manageStyles.uploadProgressCard,
             {
@@ -320,6 +325,7 @@ export function ImagesEditorStep({
             onPress={() => void onUploadImage('gallery')}
             loading={uploadingImageKind === 'gallery'}
             disabled={galleryPreviewItems.length >= maxGalleryImageCount}
+            style={manageStyles.imageAction}
           >
             갤러리 이미지 업로드
           </ActionButton>

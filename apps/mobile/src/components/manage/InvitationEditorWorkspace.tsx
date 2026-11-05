@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, type PropsWithChildren, type ReactNode } f
 import { Keyboard, KeyboardAvoidingView, Modal, Platform, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { APP_SPACING } from '../../constants/uiTokens';
 import { useVisualPreferences } from '../../contexts/PreferencesContext';
 import { ActionButton } from '../ActionButton';
 import { AppText } from '../AppText';
@@ -46,6 +47,13 @@ export function InvitationEditorWorkspace({
   }, [activeStepIndex, visible]);
 
   const statusColor = statusTone === 'neutral' ? palette.textMuted : palette[statusTone];
+  const statusBackgroundColor = statusTone === 'success'
+    ? palette.successSoft
+    : statusTone === 'notice'
+      ? palette.noticeSoft
+      : statusTone === 'danger'
+        ? palette.dangerSoft
+        : palette.surfaceMuted;
 
   return (
     <Modal visible={visible} presentationStyle="fullScreen" animationType="none" onRequestClose={onClose}>
@@ -58,10 +66,18 @@ export function InvitationEditorWorkspace({
             <AppText variant="title" accessibilityRole="header" style={styles.heading}>청첩장 편집</AppText>
             <ActionButton variant="secondary" onPress={onClose} disabled={busy}>닫기</ActionButton>
           </View>
-          {!keyboardVisible ? <View style={styles.statusRow}>
-            <AppText variant="caption" color={statusColor} accessibilityLiveRegion="polite">{status}</AppText>
-            <AppText variant="caption" color={palette.textMuted}>{publicationLabel}</AppText>
-          </View> : null}
+          {!keyboardVisible ? (
+            <View style={styles.statusRow}>
+              <View style={[styles.statusFlag, { backgroundColor: statusBackgroundColor }]}>
+                <AppText variant="caption" color={statusColor} accessibilityLiveRegion="polite">
+                  {status}
+                </AppText>
+              </View>
+              <AppText variant="caption" color={palette.textMuted} style={styles.publicationLabel}>
+                {publicationLabel}
+              </AppText>
+            </View>
+          ) : null}
           {!keyboardVisible ? <View style={styles.navigation}>
             <ActionButton
               variant="secondary" onPress={() => setContentsOpen(!contentsOpen)} disabled={busy}
@@ -92,6 +108,7 @@ export function InvitationEditorWorkspace({
         <ScrollView
           ref={scrollRef} style={styles.scroll} contentContainerStyle={styles.scrollContent}
           keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag"
+          showsVerticalScrollIndicator={false}
         >
           {contentsOpen ? (
             <View style={[styles.contents, { backgroundColor: palette.surface }]}>
@@ -116,7 +133,7 @@ export function InvitationEditorWorkspace({
           <View pointerEvents={busy ? 'none' : 'auto'} style={styles.fields}>{children}</View>
         </ScrollView>
 
-        <View style={[styles.footer, { backgroundColor: palette.surface, paddingBottom: Math.max(insets.bottom, 16) }]}>
+        <View style={[styles.footer, { backgroundColor: palette.surface, borderColor: palette.cardBorder, paddingBottom: Math.max(insets.bottom, APP_SPACING.md) }]}>
           {confirmation ?? (keyboardVisible ? compactFooter : footer)}
         </View>
       </KeyboardAvoidingView>
@@ -126,20 +143,44 @@ export function InvitationEditorWorkspace({
 
 const styles = StyleSheet.create({
   screen: { flex: 1 },
-  header: { width: '100%', maxWidth: 720, alignSelf: 'center', paddingHorizontal: 20, paddingVertical: 12, gap: 10 },
-  topRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 12 },
+  header: {
+    width: '100%',
+    maxWidth: 720,
+    alignSelf: 'center',
+    paddingHorizontal: APP_SPACING.md,
+    paddingVertical: APP_SPACING.sm,
+    gap: APP_SPACING.sm,
+  },
+  topRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: APP_SPACING.sm },
   heading: { flex: 1, fontWeight: '600' },
-  statusRow: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', gap: 8 },
-  navigation: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  contentsButton: { flexGrow: 1 },
-  progressTrack: { height: 3, overflow: 'hidden' },
+  statusRow: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: APP_SPACING.xs },
+  statusFlag: { paddingHorizontal: APP_SPACING.sm, paddingVertical: APP_SPACING.xs },
+  publicationLabel: { flexShrink: 1 },
+  navigation: { flexDirection: 'row', flexWrap: 'wrap', gap: APP_SPACING.xs },
+  contentsButton: { flexGrow: 1, minWidth: 0 },
+  progressTrack: { height: 4, overflow: 'hidden' },
   progressFill: { height: '100%' },
   scroll: { flex: 1 },
-  scrollContent: { width: '100%', maxWidth: 720, alignSelf: 'center', padding: 16, paddingVertical: 20, gap: 18 },
-  contents: { padding: 12, gap: 8 },
-  sectionHeading: { gap: 8 },
+  scrollContent: {
+    width: '100%',
+    maxWidth: 720,
+    alignSelf: 'center',
+    padding: APP_SPACING.md,
+    paddingVertical: APP_SPACING.lg,
+    gap: APP_SPACING.lg,
+  },
+  contents: { padding: APP_SPACING.md, gap: APP_SPACING.xs },
+  sectionHeading: { gap: APP_SPACING.xs },
   sectionEyebrow: { fontWeight: '600' },
   sectionTitle: { fontWeight: '600' },
-  fields: { gap: 20 },
-  footer: { width: '100%', maxWidth: 720, alignSelf: 'center', padding: 16, gap: 10 },
+  fields: { gap: APP_SPACING.md },
+  footer: {
+    width: '100%',
+    maxWidth: 720,
+    alignSelf: 'center',
+    borderWidth: 1,
+    borderRadius: 0,
+    padding: APP_SPACING.md,
+    gap: APP_SPACING.sm,
+  },
 });

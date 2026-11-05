@@ -281,12 +281,20 @@ def main():
             wait_screen('account-list-12', 'design-check-accounts', ['계정별 전체 청첩장', '12개', '가상 청첩장 1'])
             wait_screen('linked-list', 'design-check-linked', ['연결한 청첩장', '현재 관리 중', '내용 수정'])
             tree = wait_screen('editor-fixture', 'design-check', ['샘플 청첩장 · 변경 사항 없음', '청첩장 편집', '기본 정보'])
-            wait_screen('editor-intro', 'design-check?step=intro', ['첫 화면 애니메이션', '빛에 담긴 초대'])
             try:
                 capture_keyboard(tree)
             except (subprocess.TimeoutExpired, subprocess.CalledProcessError) as error:
                 VERIFIED['keyboard_capture'] = f'선택적 키보드 캡처 생략: {error}'
                 save_manifest()
+            for name, step, expected in [
+                ('editor-schedule', 'schedule', ['청첩장 편집', '예식 일정']),
+                ('editor-location', 'location', ['청첩장 편집', '예식장 주소와 연락처']),
+                ('editor-greeting', 'greeting', ['청첩장 편집', '인사말']),
+                ('editor-images', 'images', ['청첩장 편집', '대표 이미지']),
+                ('editor-music', 'music', ['청첩장 편집', '배경음악 설정']),
+            ]:
+                wait_screen(name, f'design-check?step={step}', expected)
+            wait_screen('editor-intro', 'design-check?step=intro', ['첫 화면 애니메이션', '빛에 담긴 초대'])
             for name, kind, expected in [
                 ('modal-payment', 'payment', ['Google Play 결제', '결제 예정 금액']),
                 ('modal-ticket', 'ticket', ['티켓 Google Play 결제', '티켓 수량']),

@@ -14,6 +14,7 @@ const core = [
   'test-mobile-ui-tokens',
   'test-mobile-stage2-design',
   'test-mobile-stage3-design',
+  'test-mobile-stage4-editor-design',
   'test-background-music-playback',
   'test-gift-info-copy',
   'test-music-editor',
