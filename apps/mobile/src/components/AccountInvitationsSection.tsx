@@ -31,39 +31,39 @@ export function AccountInvitationsSection() {
   const [loaded, setLoaded] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [version, setVersion] = useState(0);
   const [openingSlug, setOpeningSlug] = useState<string | null>(null);
 
-  useFocusEffect(useCallback(() => {
-    let cancelled = false;
+  const refreshAccountList = useCallback(async (isCancelled: () => boolean) => {
     setItems([]);
     setLoaded(false);
     setError('');
     if (!customerSession?.uid) {
       setLoading(false);
-      return () => { cancelled = true; };
+      return;
     }
     setLoading(true);
-    const load = async () => {
-      try {
-        const token = await getCustomerIdToken();
-        if (!token) throw new Error('로그인 상태가 만료되었습니다. 다시 로그인해 주세요.');
-        const owned = await listMobileCustomerInvitations(apiBaseUrl, token);
-        if (!cancelled) setItems(owned);
-      } catch (failure) {
-        if (!cancelled) {
-          setError(failure instanceof Error ? failure.message : '계정 청첩장 목록을 불러오지 못했습니다.');
-        }
-      } finally {
-        if (!cancelled) {
-          setLoaded(true);
-          setLoading(false);
-        }
+    try {
+      const token = await getCustomerIdToken();
+      if (!token) throw new Error('로그인 상태가 만료되었습니다. 다시 로그인해 주세요.');
+      const owned = await listMobileCustomerInvitations(apiBaseUrl, token);
+      if (!isCancelled()) setItems(owned);
+    } catch (failure) {
+      if (!isCancelled()) {
+        setError(failure instanceof Error ? failure.message : '계정 청첩장 목록을 불러오지 못했습니다.');
       }
-    };
-    void load();
+    } finally {
+      if (!isCancelled()) {
+        setLoaded(true);
+        setLoading(false);
+      }
+    }
+  }, [apiBaseUrl, customerSession?.uid, getCustomerIdToken]);
+
+  useFocusEffect(useCallback(() => {
+    let cancelled = false;
+    void refreshAccountList(() => cancelled);
     return () => { cancelled = true; };
-  }, [apiBaseUrl, customerSession?.uid, getCustomerIdToken, version]));
+  }, [refreshAccountList]));
 
   const signIn = async () => {
     if (!email.trim() || !password) {
@@ -75,7 +75,7 @@ export function AccountInvitationsSection() {
     setPassword('');
     if (succeeded) {
       setEmail('');
-      setVersion((current) => current + 1);
+      void refreshAccountList(() => false);
     }
   };
 
@@ -139,7 +139,7 @@ export function AccountInvitationsSection() {
         <ActionButton
           variant="secondary"
           disabled={loading}
-          onPress={() => setVersion((current) => current + 1)}
+          onPress={() => void refreshAccountList(() => false)}
         >
           새로고침
         </ActionButton>
