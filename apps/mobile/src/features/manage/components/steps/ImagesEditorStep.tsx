@@ -164,7 +164,7 @@ function SingleImageCard({
           이미지 업로드
         </ActionButton>
         <ActionButton
-          variant="danger"
+          variant={previewUrl ? 'danger' : 'secondary'}
           onPress={() => onRemoveSingleImage(assetKind)}
           disabled={!previewUrl}
           style={manageStyles.imageAction}

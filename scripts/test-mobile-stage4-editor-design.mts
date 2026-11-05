@@ -54,6 +54,7 @@ assert.match(images, /assetKind === 'cover' \? manageStyles.coverPreviewFrame : 
 assert.match(images, /onMoveGalleryImage\(index, 'up'\)/);
 assert.match(images, /onMoveGalleryImage\(index, 'down'\)/);
 assert.match(images, /onRemoveSingleImage\(assetKind\)/);
+assert.match(images, /variant=\{previewUrl \? 'danger' : 'secondary'\}/);
 assert.match(images, /onRemoveGalleryImage\(index\)/);
 assert.match(styles, /coverPreviewFrame:\s*\{[^}]*aspectRatio:\s*4 \/ 5/);
 assert.match(styles, /sharePreviewFrame:\s*\{[^}]*aspectRatio:\s*1200 \/ 630/);
