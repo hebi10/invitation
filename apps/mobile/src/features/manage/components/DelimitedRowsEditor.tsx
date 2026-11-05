@@ -19,7 +19,7 @@ export function DelimitedRowsEditor({ label, value, fields, onChange }: Delimite
     <View style={styles.group}>
       <AppText accessibilityRole="header" style={styles.title}>{label}</AppText>
       {rows.map((cells, row) => (
-        <View key={row} style={[styles.row, { backgroundColor: palette.surfaceMuted }]}>
+        <View key={row} style={[styles.row, { backgroundColor: palette.surfaceMuted, borderColor: palette.cardBorder }]}>
           {fields.map((field, column) => <TextField key={field} label={`${field} ${row + 1}`} value={cells[column]}
             onChangeText={next => onChange(updateEditorCell(value, row, column, next, fields.length))} />)}
           <ActionButton variant="secondary" onPress={() => onChange(removeEditorRow(value, row))}
@@ -36,6 +36,6 @@ export function DelimitedRowsEditor({ label, value, fields, onChange }: Delimite
 
 const styles = StyleSheet.create({
   group: { gap: 12 },
-  title: { fontWeight: '500' },
-  row: { padding: 16, gap: 16 },
+  title: { fontWeight: '600' },
+  row: { borderWidth: 1, borderRadius: 0, padding: 12, gap: 12 },
 });

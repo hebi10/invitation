@@ -28,8 +28,8 @@ export function ThemePreviewGallery({ tier = 'premium' }: { tier?: MobileInvitat
 
   return (
     <View style={styles.wrapper}>
-      <AppText variant="muted">
-        모든 디자인이 프리미엄 상품에 포함됩니다. 옆으로 넘겨 비교해 보세요.
+      <AppText variant="caption" color={palette.textMuted}>
+        옆으로 넘겨 다섯 가지 디자인을 비교해 보세요.
       </AppText>
       <ScrollView
         horizontal
@@ -76,7 +76,7 @@ export function ThemePreviewGallery({ tier = 'premium' }: { tier?: MobileInvitat
         })}
       </ScrollView>
       <AppText variant="caption" color={palette.textMuted}>
-        디자인을 누르면 실제 샘플 청첩장을 확인할 수 있습니다.
+        샘플 보기 버튼을 누르면 실제 청첩장을 확인할 수 있습니다.
       </AppText>
     </View>
   );
@@ -85,10 +85,10 @@ export function ThemePreviewGallery({ tier = 'premium' }: { tier?: MobileInvitat
 const styles = StyleSheet.create({
   wrapper: { gap: 12 },
   gallery: { gap: 12, paddingBottom: 4, alignItems: 'stretch' },
-  item: { width: 190, borderWidth: 1, gap: 0 },
+  item: { width: 210, borderWidth: 1, borderRadius: 0, gap: 0 },
   image: { width: '100%', aspectRatio: 390 / 720 },
   textPreview: { justifyContent: 'center', alignItems: 'center', padding: 16 },
-  copy: { padding: 12, gap: 9, flex: 1 },
+  copy: { padding: 14, gap: 10, flex: 1 },
   title: { fontWeight: '600' },
   description: { flexGrow: 1 },
 });

@@ -1,49 +1,36 @@
-import { ActivityIndicator, Modal, View } from 'react-native';
+import { ActivityIndicator, StyleSheet, View } from 'react-native';
 
+import { AppModalFrame } from '../../../components/AppModalFrame';
 import { AppText } from '../../../components/AppText';
 import { usePreferences } from '../../../contexts/PreferencesContext';
-import { manageStyles } from '../manageStyles';
 
 type EditorPreparingModalProps = {
   visible: boolean;
   message: string;
 };
 
-export function EditorPreparingModal({
-  visible,
-  message,
-}: EditorPreparingModalProps) {
+export function EditorPreparingModal({ visible, message }: EditorPreparingModalProps) {
   const { palette } = usePreferences();
 
   return (
-    <Modal
+    <AppModalFrame
       visible={visible}
-      animationType="fade"
-      transparent
-      statusBarTranslucent
-      presentationStyle="overFullScreen"
+      onClose={() => {}}
+      closeDisabled
+      title="청첩장 편집 준비"
+      description="편집 정보를 불러오는 중입니다."
+      placement="center"
+      palette={palette}
     >
-      <View style={manageStyles.modalOverlay}>
-        <View style={manageStyles.modalBackdrop} />
-        <View
-          style={[
-            manageStyles.modalCard,
-            manageStyles.editorPreparingCard,
-            {
-              backgroundColor: palette.surface,
-              borderColor: palette.cardBorder,
-            },
-          ]}
-        >
-          <ActivityIndicator size="large" color={palette.accent} />
-          <AppText style={manageStyles.editorStepTitle}>
-            청첩장 편집 화면을 준비하고 있습니다
-          </AppText>
-          <AppText variant="muted" style={manageStyles.loadingText}>
-            {message}
-          </AppText>
-        </View>
+      <View style={styles.content} accessibilityLiveRegion="polite">
+        <ActivityIndicator size="large" color={palette.accent} />
+        <AppText variant="muted" style={styles.message}>{message}</AppText>
       </View>
-    </Modal>
+    </AppModalFrame>
   );
 }
+
+const styles = StyleSheet.create({
+  content: { alignItems: 'center', gap: 14, paddingVertical: 16 },
+  message: { textAlign: 'center', flexShrink: 1 },
+});

@@ -46,7 +46,7 @@ export function RecentLinkedInvitationsSection({
       title="최근 연동한 청첩장"
       description="이전에 연동한 청첩장은 저장된 세션이 유효할 때 바로 이어서 열 수 있습니다."
       badge={`${cards.length}개`}
-      badgeTone="notice"
+      badgeTone="neutral"
     >
       {cards.map((card) => {
         const canContinue = canActivateLinkedInvitationCard(card);
@@ -64,7 +64,7 @@ export function RecentLinkedInvitationsSection({
             ]}
           >
             <View style={styles.header}>
-              <AppText style={styles.title}>{displayName}</AppText>
+              <AppText variant="body" style={styles.title}>{displayName}</AppText>
               <AppText
                 variant="caption"
                 color={canContinue ? palette.success : palette.textMuted}
@@ -80,7 +80,7 @@ export function RecentLinkedInvitationsSection({
               </AppText>
               <AppText variant="muted">최근 연동: {formatRecentLinkedAt(card.updatedAt)}</AppText>
               {card.publicUrl ? (
-                <AppText variant="muted" style={styles.linkText}>
+                <AppText variant="muted" style={styles.linkText} numberOfLines={2}>
                   {card.publicUrl}
                 </AppText>
               ) : null}
@@ -115,14 +115,14 @@ const styles = StyleSheet.create({
   card: {
     borderWidth: 1,
     borderRadius: 0,
-    padding: 16,
-    gap: 16,
+    padding: 14,
+    gap: 12,
   },
   header: {
     gap: 4,
   },
   title: {
-    fontWeight: '500',
+    fontWeight: '600',
   },
   status: {
     fontWeight: '700',

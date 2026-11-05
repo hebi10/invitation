@@ -1,4 +1,5 @@
 import { StyleSheet } from 'react-native';
+import { APP_SPACING, APP_CONTROL_MIN_HEIGHT } from '../../constants/uiTokens';
 
 export const manageStyles = StyleSheet.create({
   emptyIllustration: {
@@ -23,8 +24,18 @@ export const manageStyles = StyleSheet.create({
     fontWeight: '700',
   },
   editorStepChipRow: {
-    gap: 8,
-    paddingBottom: 4,
+    gap: APP_SPACING.xs,
+    paddingBottom: APP_SPACING.xs,
+  },
+  editorFieldGroup: {
+    backgroundColor: 'transparent',
+    gap: APP_SPACING.md,
+  },
+  editorFieldLabel: {
+    fontWeight: '600',
+  },
+  editorGroupDescription: {
+    lineHeight: 20,
   },
   editorStepActions: {
     flexDirection: 'row',
@@ -47,7 +58,12 @@ export const manageStyles = StyleSheet.create({
   actionRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 8,
+    gap: APP_SPACING.xs,
+  },
+  imageAction: {
+    minWidth: 128,
+    flexGrow: 1,
+    flexBasis: 140,
   },
   actionHalfButton: {
     minWidth: 120,
@@ -84,7 +100,11 @@ export const manageStyles = StyleSheet.create({
   },
   coverPreviewFrame: {
     width: '100%',
-    aspectRatio: 1.45,
+    aspectRatio: 4 / 5,
+  },
+  sharePreviewFrame: {
+    width: '100%',
+    aspectRatio: 1200 / 630,
   },
   coverPreviewImage: {
     width: '100%',
@@ -114,12 +134,12 @@ export const manageStyles = StyleSheet.create({
   galleryCard: {
     borderWidth: 1,
     borderRadius: 0,
-    padding: 12,
-    gap: 12,
+    padding: APP_SPACING.sm,
+    gap: APP_SPACING.sm,
   },
   galleryPreviewFrame: {
     width: '100%',
-    aspectRatio: 1.25,
+    aspectRatio: 4 / 5,
   },
   galleryPreviewImage: {
     width: '100%',
@@ -139,7 +159,12 @@ export const manageStyles = StyleSheet.create({
   galleryCardActions: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 8,
+    gap: APP_SPACING.xs,
+  },
+  galleryAction: {
+    minWidth: 72,
+    flexBasis: 88,
+    flexGrow: 1,
   },
   mapPreviewCard: {
     borderWidth: 1,
@@ -184,16 +209,16 @@ export const manageStyles = StyleSheet.create({
     lineHeight: 18,
   },
   personGrid: {
-    gap: 10,
+    gap: APP_SPACING.sm,
   },
   personCard: {
     borderWidth: 1,
     borderRadius: 0,
-    padding: 12,
-    gap: 10,
+    padding: APP_SPACING.md,
+    gap: APP_SPACING.sm,
   },
   personCardTitle: {
-    fontWeight: '500',
+    fontWeight: '600',
   },
   personSectionLabel: {
     fontWeight: '700',
@@ -202,7 +227,7 @@ export const manageStyles = StyleSheet.create({
   twoColumnRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 8,
+    gap: APP_SPACING.xs,
   },
   halfField: {
     flexGrow: 1,
@@ -221,7 +246,7 @@ export const manageStyles = StyleSheet.create({
     fontWeight: '700',
   },
   dropdownButton: {
-    minHeight: 48,
+    minHeight: APP_CONTROL_MIN_HEIGHT,
     borderRadius: 0,
     borderWidth: 1,
     paddingHorizontal: 14,
@@ -246,7 +271,7 @@ export const manageStyles = StyleSheet.create({
     gap: 8,
   },
   dropdownOption: {
-    minHeight: 48,
+    minHeight: APP_CONTROL_MIN_HEIGHT,
     justifyContent: 'center',
     borderWidth: 1,
     borderRadius: 0,
@@ -255,6 +280,9 @@ export const manageStyles = StyleSheet.create({
   },
   dropdownOptionCopy: {
     gap: 2,
+  },
+  dropdownOptionSelected: {
+    fontWeight: '600',
   },
   dropdownOptionTitle: {
     fontWeight: '700',

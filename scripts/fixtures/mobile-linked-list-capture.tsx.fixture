@@ -1,0 +1,74 @@
+import { AppScreen } from '../components/AppScreen';
+import { useVisualPreferences } from '../contexts/PreferencesContext';
+import { LinkedInvitationsSection } from '../features/manage/components/LinkedInvitationsSection';
+import type { LinkedInvitationCard } from '../lib/linkedInvitationCards';
+
+const noop = () => {};
+
+const activeCard: LinkedInvitationCard = {
+  slug: 'sample-wedding',
+  displayName: '김도윤 · 이서연 결혼식',
+  productTier: 'premium',
+  defaultTheme: 'simple',
+  published: true,
+  showMusic: true,
+  showGuestbook: true,
+  publicUrl: 'https://msgnote.kr/sample-wedding',
+  linkedThemes: [
+    { key: 'simple', previewUrl: null },
+    { key: 'romantic', previewUrl: null },
+  ],
+  displayPeriod: {
+    enabled: true,
+    startDate: '2026-01-01T00:00:00+09:00',
+    endDate: '2027-12-31T23:59:59+09:00',
+  },
+  updatedAt: 0,
+  ticketCount: 2,
+  session: null,
+  hasResolvedLinkedThemes: true,
+};
+
+const otherCard: LinkedInvitationCard = {
+  ...activeCard,
+  slug: 'second-wedding',
+  displayName: '다른 청첩장 · 연동됨',
+  defaultTheme: 'gyeol',
+  published: false,
+  displayPeriod: { enabled: false, startDate: null, endDate: null },
+  ticketCount: 0,
+  publicUrl: 'https://msgnote.kr/second-wedding',
+};
+
+export default function LinkedListDesignCheck() {
+  const { palette } = useVisualPreferences();
+
+  return (
+    <AppScreen title="내 청첩장" subtitle="관리 중인 청첩장과 다른 기기 연동 목록을 확인합니다.">
+      <LinkedInvitationsSection
+        activeLinkedInvitationCard={activeCard}
+        additionalLinkedInvitationCards={[otherCard]}
+        palette={palette}
+        hasDashboard
+        dashboardPublicUrl={activeCard.publicUrl}
+        dashboardCommentCount={3}
+        dashboardPublished
+        dashboardWeddingDate="2027-05-01"
+        dashboardCoverImageUrl={null}
+        canRequestDashboardSync
+        needsRefreshRetry={false}
+        activatingLinkedInvitationSlug={null}
+        onOpenEditor={noop}
+        onOpenUrl={noop}
+        onTogglePublished={noop}
+        onOpenTicketModal={noop}
+        onCopyPublicUrl={noop}
+        onKakaoShare={noop}
+        onOpenInApp={noop}
+        onOpenGuestbook={noop}
+        onRefresh={noop}
+        onActivateLinkedInvitation={noop}
+      />
+    </AppScreen>
+  );
+}

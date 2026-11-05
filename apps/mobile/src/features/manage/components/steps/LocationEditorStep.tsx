@@ -39,7 +39,7 @@ export function LocationEditorStep({
     <>
       <SectionCard
         title="예식장 주소와 연락처"
-        description="주소 검색으로 좌표를 다시 맞추고 지도 설명 문구도 함께 정리합니다."
+        description="예식장 주소와 연락처를 정리하고 검색으로 실제 지도 위치를 확인합니다."
       >
         <TextField
           label="상세 주소"
@@ -48,15 +48,14 @@ export function LocationEditorStep({
           placeholder="예: 서울시 강남구..."
           multiline
         />
-        <View style={manageStyles.actionRow}>
-          <ActionButton
-            variant="secondary"
-            onPress={() => void onSearchAddress()}
-            loading={isSearchingAddress}
-          >
-            주소 검색으로 위치 다시 맞추기
-          </ActionButton>
-        </View>
+        <ActionButton
+          variant="secondary"
+          onPress={() => void onSearchAddress()}
+          loading={isSearchingAddress}
+          fullWidth
+        >
+          주소 검색으로 위치 확인
+        </ActionButton>
         <TextField
           label="예식장 연락처"
           value={form.ceremonyContact}
@@ -89,7 +88,7 @@ export function LocationEditorStep({
               },
             ]}
           >
-            <AppText style={manageStyles.mapPreviewTitle}>
+            <AppText variant="title" style={manageStyles.mapPreviewTitle}>
               {form.venue.trim() || '선택한 예식장 위치'}
             </AppText>
             <AppText variant="muted" style={manageStyles.mapPreviewAddress}>
@@ -114,9 +113,9 @@ export function LocationEditorStep({
               },
             ]}
           >
+            <AppText variant="title">지도 위치 미설정</AppText>
             <AppText variant="muted" style={manageStyles.helperText}>
-              아직 지도 위치가 준비되지 않았습니다. 주소를 검색하면 연결되는 위치를 바로
-              확인할 수 있습니다.
+              주소 검색을 통해 실제 연결되는 위치를 확인해 주세요.
             </AppText>
           </View>
         )}

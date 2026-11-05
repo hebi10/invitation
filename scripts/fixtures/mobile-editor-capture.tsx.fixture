@@ -9,11 +9,17 @@ import { InvitationEditorWorkspace } from '../components/manage/InvitationEditor
 import { ManageEditorStepContent } from '../features/manage/components/ManageEditorStepContent';
 import { EDITOR_STEPS, EMPTY_FORM, type ManageFormState } from '../features/manage/shared';
 
+function resolveCaptureStepIndex(value?: string) {
+  if (value === 'intro') return EDITOR_STEPS.length - 1;
+  const index = EDITOR_STEPS.findIndex((step) => step.key === value);
+  return index < 0 ? 0 : index;
+}
+
 export default function DesignCheck() {
   const { palette } = useVisualPreferences();
   const { step: requestedStep } = useLocalSearchParams<{ step?: string }>();
-  const [step, setStep] = useState(requestedStep === 'intro' ? EDITOR_STEPS.length - 1 : 0);
-  useEffect(() => { setStep(requestedStep === 'intro' ? EDITOR_STEPS.length - 1 : 0); }, [requestedStep]);
+  const [step, setStep] = useState(() => resolveCaptureStepIndex(requestedStep));
+  useEffect(() => { setStep(resolveCaptureStepIndex(requestedStep)); }, [requestedStep]);
   const [form, setForm] = useState<ManageFormState>({ ...EMPTY_FORM,
     displayName: '김도윤 · 이서연 결혼합니다', subtitle: '소중한 분들을 초대합니다', description: '서로의 내일을 함께 시작합니다.',
     groom: { ...EMPTY_FORM.groom, name: '김도윤' }, bride: { ...EMPTY_FORM.bride, name: '이서연' },
