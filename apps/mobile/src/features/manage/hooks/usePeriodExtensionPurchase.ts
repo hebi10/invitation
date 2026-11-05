@@ -146,7 +146,9 @@ export function usePeriodExtensionPurchase({
       });
       setPendingExtensionSlug(null);
       setExtensionModalVisible(false);
-      setNotice('이전 결제를 확인했습니다. 이용 기간 정보를 새로고침해 주세요.');
+      setNotice(pending.target.action === 'grantTicketPack'
+        ? '이전 유료 상품 결제 적립을 확인했습니다. 기존 잔여 이용 권리는 고객 지원을 통해 정산·전환을 문의해 주세요.'
+        : '이전 결제가 확인되어 이용 기간을 연장했습니다. 새로고침 후 종료일을 확인해 주세요.');
       await refreshDashboard().catch(() => undefined);
     } catch (error) {
       setNotice(error instanceof Error ? error.message : '이전 결제를 복구하지 못했습니다.');

@@ -37,6 +37,7 @@ assert.match(bill, /MOBILE_BILLING_PRODUCT_IDS\.includes\(productId\)/);
 assert.match(route, /verifyCustomerRequest\(request, \{ requireVerified: true \}\)/);
 assert.match(route, /getCustomerEventOwnershipSnapshot\(customer\.uid, targetPageSlug\)/);
 assert.match(route, /canOpenOwnedWeddingPage\(ownership, targetPageSlug\)/);
+assert.match(route, /if \(error instanceof CustomerApiAuthError\)/);
 assert.match(service, /verifyRevenueCatNonSubscriptionTransaction\(purchase\)/);
 
 type Data = Record<string, unknown>;

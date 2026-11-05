@@ -261,6 +261,12 @@ export async function POST(request: Request) {
       { status: 400, headers: rateLimitHeaders }
     );
   } catch (error) {
+    if (error instanceof CustomerApiAuthError) {
+      return NextResponse.json(
+        { error: error.status === 401 ? '고객 계정 로그인이 필요합니다.' : CUSTOMER_EMAIL_VERIFICATION_REQUIRED_MESSAGE },
+        { status: error.status }
+      );
+    }
     if (
       typeof error === 'object' && error !== null && 'code' in error &&
       error.code === 'billing-fulfillment-requires-review'
