@@ -83,32 +83,6 @@ export const createStyles = StyleSheet.create({
   helperText: {
     lineHeight: 21,
   },
-  ticketOnlySectionToggle: {
-    minHeight: 48,
-    borderWidth: 1,
-    borderRadius: 0,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: 12,
-  },
-  ticketOnlySectionToggleCopy: {
-    flex: 1,
-    minWidth: 0,
-    gap: 4,
-  },
-  ticketOnlySectionToggleTitle: {
-    fontWeight: '700',
-  },
-  ticketOnlySectionToggleDescription: {
-    lineHeight: 20,
-  },
-  ticketOnlySectionBody: {
-    overflow: 'hidden',
-    gap: 8,
-  },
   divider: {
     height: 1,
     opacity: 0.7,
@@ -133,56 +107,6 @@ export const createStyles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 12,
     gap: 6,
-  },
-  ticketPresetRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-  },
-  ticketCounterCard: {
-    borderWidth: 1,
-    borderRadius: 0,
-    padding: 14,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: 14,
-  },
-  ticketCounterButton: {
-    width: 52,
-    height: 52,
-    borderRadius: 0,
-    borderWidth: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  ticketCounterButtonDisabled: {
-    opacity: 0.45,
-  },
-  ticketCounterButtonLabel: {
-    fontWeight: '500',
-  },
-  ticketCounterValueBox: {
-    flex: 1,
-    alignItems: 'center',
-    gap: 4,
-  },
-  ticketCounterValue: {
-    fontWeight: '500',
-  },
-  ticketCounterCaption: {
-    fontWeight: '600',
-  },
-  ticketSummaryCard: {
-    borderWidth: 1,
-    borderRadius: 0,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    gap: 6,
-  },
-  ticketSummaryText: {
-    lineHeight: 20,
-    fontWeight: '700',
   },
   summaryRow: {
     flexDirection: 'row',

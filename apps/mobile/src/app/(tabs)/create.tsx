@@ -145,7 +145,6 @@ export default function CreateScreen() {
             <AppText>현재 작성 내용과 별개로, 결제 당시의 이름·주소·디자인으로 이어서 처리합니다. 추가 결제는 없습니다.</AppText>
             <ActionButton loading={createForm.isSubmitting} disabled={isExpoWebPreview} onPress={() => void createForm.handleRecoverCreation()} fullWidth>이전 결제 이어서 처리</ActionButton>
           </SectionCard> : null}
-          </SectionCard> : null}
 
           <View style={styles.stepTabsSection}>
             <AppText variant="caption" color={palette.textMuted} style={styles.stepTabsCaption}>
