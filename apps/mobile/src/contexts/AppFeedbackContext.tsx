@@ -18,6 +18,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { AppText } from '../components/AppText';
+import { APP_SPACING } from '../constants/uiTokens';
 import { normalizeApiBaseUrl } from '../lib/api';
 
 import { usePreferences } from './PreferencesContext';
@@ -304,13 +305,13 @@ export function AppFeedbackProvider({ children }: PropsWithChildren) {
             style={[
               styles.offlineBanner,
               {
-                top: insets.top + 12,
-                backgroundColor: palette.dangerSoft,
-                borderColor: palette.danger,
+                top: insets.top + APP_SPACING.sm,
+                backgroundColor: palette.noticeSoft,
+                borderColor: palette.cardBorder,
               },
             ]}
           >
-            <AppText color={palette.danger} style={styles.bannerText}>
+            <AppText color={palette.notice} style={styles.bannerText}>
               오프라인 상태입니다. 연결이 복구되면 다시 시도해 주세요.
             </AppText>
           </View>
@@ -356,28 +357,30 @@ const styles = StyleSheet.create({
   },
   offlineBanner: {
     position: 'absolute',
-    left: 20,
-    right: 20,
+    alignSelf: 'center',
+    width: '90%',
+    maxWidth: 640,
     borderWidth: 1,
     borderRadius: 0,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
+    paddingHorizontal: APP_SPACING.md,
+    paddingVertical: APP_SPACING.sm,
   },
   bannerText: {
-    lineHeight: 20,
-    fontWeight: '700',
+    fontWeight: '600',
+    flexShrink: 1,
   },
   toast: {
     position: 'absolute',
-    left: 20,
-    right: 20,
+    alignSelf: 'center',
+    width: '90%',
+    maxWidth: 640,
     borderWidth: 1,
     borderRadius: 0,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
+    paddingHorizontal: APP_SPACING.md,
+    paddingVertical: APP_SPACING.sm,
   },
   toastText: {
-    lineHeight: 20,
-    fontWeight: '700',
+    fontWeight: '600',
+    flexShrink: 1,
   },
 });

@@ -3,11 +3,12 @@ import { StyleSheet, View } from 'react-native';
 
 import { AppScreen } from '../../components/AppScreen';
 import { AppText } from '../../components/AppText';
-import { Disclosure } from '../../components/Disclosure';
 import { BulletList } from '../../components/BulletList';
 import { ChoiceChip } from '../../components/ChoiceChip';
+import { Disclosure } from '../../components/Disclosure';
 import { SectionCard } from '../../components/SectionCard';
 import { settingsNotes } from '../../constants/content';
+import { APP_SPACING } from '../../constants/uiTokens';
 import { usePreferences } from '../../contexts/PreferencesContext';
 
 const UPDATE_GUIDE_ITEMS = [
@@ -31,6 +32,7 @@ function normalizeVersionLabel(value: unknown) {
 
 export default function SettingsScreen() {
   const {
+    palette,
     fontScalePreference,
     setFontScalePreference,
     setThemePreference,
@@ -44,6 +46,12 @@ export default function SettingsScreen() {
   const buildVersion =
     normalizeVersionLabel(Constants.nativeBuildVersion) || '개발 빌드';
 
+  const themeLabel = themePreference === 'system'
+    ? '시스템 설정에 맞춰 적용'
+    : themePreference === 'light' ? '라이트 모드 사용 중' : '다크 모드 사용 중';
+  const fontScaleLabel = fontScalePreference === 'normal'
+    ? '기본 글자 크기 사용 중' : '큰 글자 크기 사용 중';
+
   return (
     <AppScreen
       title="설정"
@@ -51,56 +59,71 @@ export default function SettingsScreen() {
     >
       <SectionCard
         title="화면 설정"
-        description="변경 즉시 모바일 앱 전체 화면에 반영됩니다."
+        description="선택한 테마와 글자 크기를 즉시 적용합니다."
       >
-        <AppText variant="caption" style={styles.settingLabel}>
-          테마
-        </AppText>
-        <View style={styles.chipRow}>
-          <ChoiceChip
-            label="시스템"
-            selected={themePreference === 'system'}
-            onPress={() => void setThemePreference('system')}
-          />
-          <ChoiceChip
-            label="라이트"
-            selected={themePreference === 'light'}
-            onPress={() => void setThemePreference('light')}
-          />
-          <ChoiceChip
-            label="다크"
-            selected={themePreference === 'dark'}
-            onPress={() => void setThemePreference('dark')}
-          />
+        <View style={styles.settingGroup}>
+          <AppText variant="caption" style={styles.settingLabel}>
+            테마
+          </AppText>
+          <View style={styles.chipRow}>
+            <ChoiceChip
+              label="시스템"
+              selected={themePreference === 'system'}
+              onPress={() => void setThemePreference('system')}
+            />
+            <ChoiceChip
+              label="라이트"
+              selected={themePreference === 'light'}
+              onPress={() => void setThemePreference('light')}
+            />
+            <ChoiceChip
+              label="다크"
+              selected={themePreference === 'dark'}
+              onPress={() => void setThemePreference('dark')}
+            />
+          </View>
+          <AppText variant="caption" color={palette.textMuted} accessibilityLiveRegion="polite">
+            {themeLabel}
+          </AppText>
         </View>
 
-        <AppText variant="caption" style={styles.settingLabel}>
-          글자 크기
-        </AppText>
-        <View style={styles.chipRow}>
-          <ChoiceChip
-            label="기본"
-            selected={fontScalePreference === 'normal'}
-            onPress={() => void setFontScalePreference('normal')}
-          />
-          <ChoiceChip
-            label="크게"
-            selected={fontScalePreference === 'large'}
-            onPress={() => void setFontScalePreference('large')}
-          />
+        <View style={styles.settingGroup}>
+          <AppText variant="caption" style={styles.settingLabel}>
+            글자 크기
+          </AppText>
+          <View style={styles.chipRow}>
+            <ChoiceChip
+              label="기본"
+              selected={fontScalePreference === 'normal'}
+              onPress={() => void setFontScalePreference('normal')}
+            />
+            <ChoiceChip
+              label="크게"
+              selected={fontScalePreference === 'large'}
+              onPress={() => void setFontScalePreference('large')}
+            />
+          </View>
+          <AppText variant="caption" color={palette.textMuted} accessibilityLiveRegion="polite">
+            {fontScaleLabel}
+          </AppText>
         </View>
       </SectionCard>
 
-      <SectionCard title="앱 정보">
-        <View style={styles.versionRow}>
-          <AppText variant="muted">현재 버전</AppText>
-          <AppText>{appVersion}</AppText>
+      <SectionCard title="앱 정보" description="현재 설치된 앱의 버전과 업데이트 안내입니다.">
+        <View style={[styles.versionInfo, { backgroundColor: palette.surfaceMuted }]}>
+          <View style={styles.versionRow}>
+            <AppText variant="caption" color={palette.textMuted}>현재 버전</AppText>
+            <AppText style={styles.versionValue}>{appVersion}</AppText>
+          </View>
+          <View style={styles.versionRow}>
+            <AppText variant="caption" color={palette.textMuted}>빌드 번호</AppText>
+            <AppText style={styles.versionValue}>{buildVersion}</AppText>
+          </View>
         </View>
-        <View style={styles.versionRow}>
-          <AppText variant="muted">빌드 번호</AppText>
-          <AppText>{buildVersion}</AppText>
-        </View>
-        <Disclosure title="업데이트 안내" description="새 기능이 보이지 않거나 오류가 계속될 때">
+        <Disclosure
+          title="업데이트 안내"
+          description="새 기능이 보이지 않거나 오류가 계속될 때"
+        >
           <BulletList items={UPDATE_GUIDE_ITEMS} />
         </Disclosure>
       </SectionCard>
@@ -113,19 +136,28 @@ export default function SettingsScreen() {
 }
 
 const styles = StyleSheet.create({
+  settingGroup: { gap: APP_SPACING.xs },
   chipRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 8,
+    gap: APP_SPACING.xs,
   },
   settingLabel: {
-    fontWeight: '700',
+    fontWeight: '600',
+  },
+  versionInfo: {
+    padding: APP_SPACING.md,
+    gap: APP_SPACING.sm,
   },
   versionRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
+    alignItems: 'baseline',
     justifyContent: 'space-between',
-    paddingBottom: 12,
-    gap: 12,
+    gap: APP_SPACING.xs,
+  },
+  versionValue: {
+    fontWeight: '600',
+    flexShrink: 1,
   },
 });
