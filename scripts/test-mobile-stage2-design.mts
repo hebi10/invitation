@@ -43,7 +43,7 @@ assert.match(create, /styles\.paymentTotalRow/);
 assert.match(create, /INVITATION_INITIAL_DISPLAY_PERIOD_MONTHS/);
 assert.match(create, /createForm\.handlePrimaryStepAction/);
 assert.match(create, /createForm\.handleRecoverCreation\(\)/);
-assert.match(create, /ticketPurchase\.handleRecoverTickets\(\)/);
+assert.doesNotMatch(create, /ticketPurchase|티켓 구매/);
 assert.match(create, /isCompleted && !isSelected \? '완료'/);
 assert.match(createStyles, /paymentTotalRow:\s*\{\s*borderWidth:\s*1/);
 assert.match(createStyles, /stickyBarContent:\s*\{\s*width:\s*'100%',\s*maxWidth:\s*640/);

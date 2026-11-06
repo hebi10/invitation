@@ -26,7 +26,7 @@
   - `canUploadImages`
   - `canManagePublication`
   - `canManageDisplayPeriod`
-  - `canManageTickets`
+  - `canManageTickets` (과거 구매 티켓의 정산·이용을 위한 호환 권한, 신규 판매·관리 UI 없음)
   - `canIssueLinkToken`
 - 클라이언트는 capability를 버튼 노출 제어에만 사용하고, 최종 허용 여부는 서버가 결정한다.
 
@@ -41,7 +41,7 @@
 - 아래 작업은 최근 인증과 감사 로그를 포함한 고위험 보호를 적용한다.
   - 비공개 청첩장의 공개 전환
   - 노출 기간 연장 또는 유료 노출 기간 변경
-  - 티켓 이동
+  - 과거 구매 티켓 이동 (기존 권리 보존을 위한 호환 기능)
   - 앱 연동 링크 발급 및 폐기
   - 향후 추가될 청첩장 삭제, 방명록 전체 삭제
 - 보호 방식은 아래 순서를 따른다.
@@ -89,12 +89,13 @@
   - `apps/mobile/src/features/manage/hooks/useImageUpload.ts`
   - `apps/mobile/src/features/manage/components/ManageEditorStepContent.tsx`
   - `apps/mobile/src/features/manage/components/steps/ImagesEditorStep.tsx`
-- 모바일 티켓 디자인 판정은 React hook 밖의 순수 helper에 두고, 훅과 검증 스크립트가 같은 기준을 사용한다.
-  - `apps/mobile/src/features/manage/ticketThemeValidation.ts`
-  - `apps/mobile/src/features/manage/hooks/useTicketOperations.ts`
-- 모바일 티켓팩 결제는 기존처럼 대상 청첩장에 바로 적립하고, 대상 이벤트가 고객 계정에 연결되어 있으면 `customerWallets/{uid}/ledger`에 구매와 이벤트 배정 이력을 함께 남긴다.
+- 신규 판매 상품은 `page_creation_premium` 5,000원 하나이며, 모든 디자인과 기능을 포함한다.
+- 신규 제작은 결제 확인 시 6개월을 제공한다. 기존 청첩장의 유료 기간 연장은 같은 SKU를 새로 구매하여 6개월 추가한다.
+- 기간 연장에서는 고객 UID·이메일 인증·청첩장 소유권을 확인하고, Google Play/RevenueCat 영수증 검증 후 Firestore 트랜잭션으로 기간과 결제 이행 기록을 함께 저장한다.
+- 과거 티켓팩 구매 기록과 `customerWallets/{uid}/ledger` 내역은 삭제하지 않는다. 이전 앱의 구매 이행 및 호환 서버 로직은 기존 권리 보존을 위해 유지하되, 새 앱에서는 구매·이동·사용 UI를 제공하지 않는다.
   - `src/server/mobileBillingServerService.ts`
-  - `src/server/customerWalletServerService.ts`
+  - `src/server/repositories/billingFulfillmentRepository.ts`
+  - `apps/mobile/src/features/manage/hooks/usePeriodExtensionPurchase.ts`
 - 결제 없는 모바일 직접 초안 생성 API는 운영에서 기본 차단하고, `MOBILE_DRAFT_CREATION_ENABLED=true`일 때만 허용한다.
   - `src/app/api/mobile/client-editor/drafts/route.ts`
 
@@ -111,7 +112,7 @@
 - 모바일 생성 결제의 `appUserId`는 Firebase Auth 고객 UID를 사용한다.
 - 생성 이행 API는 Firebase ID 토큰을 검증한 뒤 `ownerUid`를 이벤트에 연결하므로, 모바일에서 만든 청첩장도 PC `/my-invitations`에 바로 노출된다.
 - 개발 환경을 포함해 데모 결제와 검증 우회는 허용하지 않는다. Android 앱의 Google Play 구매와 RevenueCat 서버 검증이 모두 완료된 거래만 처리한다. 키가 없거나 Test Store 키이면 구매를 차단한다.
-- 모바일 신규 제작은 PREMIUM 단일 상품 5,000원이며, 추가 티켓은 할인 없이 1장당 1,000원으로 계산한다.
+- 모바일 신규 제작과 유료 기간 연장은 모두 PREMIUM 단일 상품 5,000원이다. 티켓팩 신규 판매는 종료하며 과거 구매 기록만 호환 관리한다.
 
 
 ## 결제 이후 제작 및 기간 연장
@@ -121,5 +122,6 @@
 - 모바일 계정 페이지는 `from=mobile`일 때 고정 앱 복귀 링크를 제공하며 임의 redirect URL은 받지 않는다.
 - `POST /api/mobile/client-editor/pages/[slug]/preview`는 인증된 세션에서 최대 15분의 읽기 전용 미리보기 토큰을 발급한다. 앱은 토큰을 URL fragment로 전달하고 브라우저는 즉시 제거한다.
 - 같은 경로의 GET은 미리보기 토큰과 원본 세션의 만료·폐기·이벤트·소유자를 검사한다. 실제 공개 설정을 변경하지 않으며 방명록 작성과 외부 공유를 비활성화한다.
-- 기간 연장은 `redeemDisplayPeriodTicket` 한 요청에서 티켓 1장 차감과 1개월 연장을 Firestore 트랜잭션으로 처리한다. `mobileTicketExtensions`에 요청 ID를 기록하고 앱은 확인 완료까지 같은 ID를 유지한다.
+- 새 기간 연장은 `POST /api/mobile/billing/fulfill`의 `extendInvitationPeriod`로 결제 영수증을 검증하고, 서버에서 거래당 한 번만 6개월 추가한다. 유효한 기간이 남아 있으면 현재 종료일을 기준으로, 이미 종료되었다면 연장 시점을 기준으로 계산한다.
+- 이전 앱의 `redeemDisplayPeriodTicket` 및 `mobileTicketExtensions`는 과거 구매자의 잔여 티켓 사용을 위한 호환 경로로만 유지한다.
 - 기존 모바일 `adjustTicketCount`, `setDisplayPeriod`, `extendDisplayPeriod` 요청은 409로 차단한다. 관리자 서버 기능은 유지한다. 서버와 새 앱을 함께 배포해야 한다.

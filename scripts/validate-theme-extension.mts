@@ -26,7 +26,7 @@ const sourceFiles = {
   themeStep: path.join(projectRoot, 'src/app/page-wizard/steps/ThemeStep.tsx'),
   ticketModal: path.join(
     projectRoot,
-    'apps/mobile/src/features/manage/components/TicketUsageModal.tsx'
+    'apps/mobile/src/features/manage/components/PeriodExtensionModal.tsx'
   ),
   rendererRegistry: path.join(
     projectRoot,
@@ -137,10 +137,11 @@ async function main() {
     failures,
     !ticketModalSource.includes('onApplyThemeChange') &&
       !ticketModalSource.includes('onPurchaseTargetTheme') &&
-      ticketModalSource.includes('onExtendDisplayPeriod') &&
-      ticketModalSource.includes('onBuyTickets') &&
-      ticketModalSource.includes('onTransferTickets'),
-    'Ticket modal must preserve ticket purchases, transfers and period extension without design purchases.'
+      ticketModalSource.includes('onPurchase') &&
+      ticketModalSource.includes('onRecover') &&
+      ticketModalSource.includes('INVITATION_EXTENSION_DISPLAY_PERIOD_MONTHS') &&
+      !ticketModalSource.includes('티켓'),
+    'The period extension modal must only offer 5,000 KRW for six months, without tickets or extra design purchases.'
   );
 
   selectableThemes.forEach((themeKey) => {

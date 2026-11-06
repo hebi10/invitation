@@ -44,11 +44,11 @@ const captures = [
   'editor-intro',
   'modal-payment',
   'modal-payment-pending',
-  'modal-ticket',
-  'modal-ticket-many',
-  'modal-ticket-pending',
-  'modal-success',
-  'modal-ticket-use',
+  'modal-renew',
+  'modal-renew-pending',
+  'modal-renew-other',
+  'modal-renew-loading',
+  'modal-renew-no-account',
   'modal-preview',
   'modal-share',
   'modal-onboarding',
@@ -126,7 +126,7 @@ const manage = read('apps/mobile/src/features/screens/manage.tsx');
 assert.match(manage, /onClose=\{\(\) => void handleCloseEditorModal\(\)\}/);
 assert.match(manage, /onSetIntroStyle=\{invitationForm\.setIntroStyle\}/);
 assert.match(manage, /onKakaoShare=\{handleOpenKakaoShare\}/);
-assert.match(manage, /onTransferTickets=\{\(\) => void handleTransferTicketCount\(\)\}/);
-assert.match(manage, /onExtendDisplayPeriod=\{\(\) => void handleExtendDisplayPeriod\(\)\}/);
+assert.match(manage, /onPurchase=\{\(\) => void handlePurchaseExtension\(\)\}/);
+assert.match(manage, /onRecover=\{\(\) => void handleRecoverExtension\(\)\}/);
 
 console.log('mobile stage 7 integration, responsive and release safety checks passed');

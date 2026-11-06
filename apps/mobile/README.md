@@ -23,12 +23,12 @@
 ## Google Play 결제 설정
 - Android 앱 빌드 환경에 `EXPO_PUBLIC_REVENUECAT_ANDROID_API_KEY`를 설정합니다. RevenueCat의 Google Play 앱 공개 키(`goog_` 접두사)를 사용합니다. Test Store 키는 허용하지 않습니다.
 - API 서버 환경에는 `REVENUECAT_SERVER_API_KEY`를 설정합니다. 서버 키는 모바일 앱에 넣지 않습니다.
-- Play Console의 일회성 상품과 RevenueCat의 Google Play 상품을 다음 ID로 연결합니다: `page_creation_premium`, `ticket_pack_1`, `ticket_pack_3`, `ticket_pack_6`.
+- Play Console의 신규 판매용 일회성 소모성 상품은 **`page_creation_premium` 하나만** RevenueCat의 Google Play 상품과 연결합니다. 동일 상품을 제작(기본 6개월)과 기간 연장(6개월 추가)에 사용합니다. 이전 `ticket_pack_*` 거래 정보는 과거 결제 복구를 위해 서버에서만 유지합니다.
 - 청첩장 제작은 PREMIUM 한 가지이며 5,000원, 생성일부터 기본 6개월입니다. PC와 모바일에 같은 기간을 적용합니다. Play Console에서도 `page_creation_premium`의 한국 가격을 KRW 5,000으로 맞춰야 구매가 진행됩니다. 기존 STANDARD/DELUXE ID는 과거 영수증 처리에만 유지합니다.
-- 제작권과 티켓은 반복 구매가 필요하므로 RevenueCat에서 소모성 상품으로 설정합니다. Play Console에서 상품을 활성화하고 RevenueCat에 Google 서비스 계정 연결을 완료해야 합니다.
+- `page_creation_premium`은 제작 및 연장에 반복 구매하므로 RevenueCat에서 소모성 상품으로 설정합니다. 티켓 상품 신규 판매·티켓 잔액 충전·이동 UI는 제공하지 않습니다. Play Console에서 상품을 활성화하고 RevenueCat에 Google 서비스 계정 연결을 완료해야 합니다.
 - 웹·Expo Go에서는 실제 구매를 확인할 수 없습니다. Google Play 내부 테스트 트랙에 배포한 Android 앱에서 라이선스 테스터로 상품 조회·구매·취소·서버 지급을 검증합니다.
 - 데모 거래 생성과 서버 검증 우회는 제거되었습니다. 결제 설정이 없으면 오류를 표시하며, Google Play가 아닌 스토어의 거래는 지급하지 않습니다.
-- 결제 후 서버 반영 실패 시 기기에 미처리 거래를 보관합니다. 같은 계정·상품·입력 정보로 다시 시도하면 재결제 없이 반영을 재시도합니다. 처리 전에는 앱 데이터 삭제나 재설치를 피하고, 정보를 복구할 수 없다면 주문번호로 고객 문의를 진행합니다.
+- 제작 결제와 기간 연장 결제 후 서버 반영 실패 시 기기에 미처리 거래를 보관합니다. 같은 계정·상품·입력 정보로 다시 시도하면 재결제 없이 반영을 재시도합니다. 처리 전에는 앱 데이터 삭제나 재설치를 피하고, 정보를 복구할 수 없다면 주문번호로 고객 문의를 진행합니다.
 - 공식 설정 안내: https://www.revenuecat.com/docs/getting-started/installation/expo
 
 ## 카카오톡 카드 공유
@@ -45,7 +45,7 @@
 - 서비스/디자인/티켓 견적 계산과 제작 초안 저장
 - 신랑/신부 한글·영문 이름 검증 후 URL 슬러그 자동 생성
 - RevenueCat/Google Play 결제 확인 후 서버 검증을 거쳐 모바일 청첩장 자동 생성
-- 연동된 청첩장 대상 티켓 추가 구매와 서버 지급
+- 연동된 청첩장 대상 5,000원 결제 후 서버 영수증 검증 및 6개월 기간 연장
 - 생성 직후 전체 화면 단계별 편집, 목차와 고정 저장 행동
 - 로그인된 페이지의 공개 상태 변경
 - 내용 저장과 최종 공개 설정 분리, 미저장 종료 확인, 버전 충돌 보호

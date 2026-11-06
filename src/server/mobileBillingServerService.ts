@@ -1,4 +1,4 @@
-import { DEFAULT_INVITATION_PRODUCT_TIER, INVITATION_INITIAL_DISPLAY_PERIOD_MONTHS } from '@/lib/invitationProductPolicy';
+import { DEFAULT_INVITATION_PRODUCT_TIER, INVITATION_INITIAL_DISPLAY_PERIOD_MONTHS, INVITATION_EXTENSION_DISPLAY_PERIOD_MONTHS } from '@/lib/invitationProductPolicy';
 import 'server-only';
 
 import { getAllWeddingPageSeeds } from '@/config/weddingPages';
@@ -7,6 +7,7 @@ import {
   type MobileBillingProductDefinition,
   type MobileBillingProductId,
   getMobileBillingProductDefinition,
+  MOBILE_BILLING_PAGE_CREATION_PRODUCTS,
 } from '@/lib/mobileBillingProducts';
 import {
   CLIENT_EDITOR_OWNER_SESSION_VERSION,
@@ -407,4 +408,36 @@ export async function fulfillServerMobileTicketPackPurchase(
 
 export async function getServerMobileBillingFulfillmentRecord(transactionId: string) {
   return getBillingFulfillmentRecord(transactionId);
+}
+
+// A renewal uses the same published Google Play SKU, but its store transaction
+// is bound atomically to exactly one page and the periodExtension purpose.
+export async function fulfillServerMobilePeriodExtensionPurchase(
+  purchase: MobileBillingPurchaseReceipt,
+  targetPageSlug: string,
+  ownerUid: string
+) {
+  if (purchase.productId !== MOBILE_BILLING_PAGE_CREATION_PRODUCTS.premium ||
+      purchase.appUserId !== ownerUid) {
+    throw new Error('Only a verified premium purchase by the owner can renew a page.');
+  }
+  const event = await resolveStoredEventBySlug(targetPageSlug);
+  if (!event || event.summary.ownerUid !== ownerUid || event.summary.eventType !== 'wedding') {
+    throw new Error('The customer does not own this invitation.');
+  }
+  const verifiedTransaction = await verifyRevenueCatNonSubscriptionTransaction(purchase);
+  const result = await firestoreBillingFulfillmentRepository.fulfillPeriodExtension({
+    purchase: { ...purchase, transactionId: verifiedTransaction.transactionIdentifier },
+    eventId: event.summary.eventId,
+    targetPageSlug: event.summary.slug,
+    ownerUid,
+    purchaseDate: verifiedTransaction.purchaseDate,
+  });
+  return {
+    success: true,
+    enabled: result.enabled,
+    startDate: result.startDate.toISOString(),
+    endDate: result.endDate.toISOString(),
+    monthsAdded: INVITATION_EXTENSION_DISPLAY_PERIOD_MONTHS,
+  };
 }

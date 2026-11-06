@@ -1,12 +1,9 @@
 import { INVITATION_INITIAL_DISPLAY_PERIOD_MONTHS } from '../../lib/invitationProductPolicy';
-import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import ringsRibbonImage from '../../../assets/editorial/rings-ribbon.webp';
-import { useFocusEffect, useRouter } from 'expo-router';
+import { useFocusEffect } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
-  Animated,
-  Easing,
   Platform,
   Pressable,
   ScrollView,
@@ -20,26 +17,18 @@ import { ThemePreviewGallery } from '../../components/ThemePreviewGallery';
 import { ActionButton } from '../../components/ActionButton';
 import { AppScreen } from '../../components/AppScreen';
 import { AppText } from '../../components/AppText';
-import { BulletList } from '../../components/BulletList';
-import { ChoiceChip } from '../../components/ChoiceChip';
 import { SectionCard } from '../../components/SectionCard';
 import { TextField } from '../../components/TextField';
 import { WebPreviewNotice } from '../../components/WebPreviewNotice';
 import { PaymentConfirmModal } from '../../features/create/components/PaymentConfirmModal';
-import { TicketOnlyPurchaseModal } from '../../features/create/components/TicketOnlyPurchaseModal';
-import { TicketPurchaseSuccessModal } from '../../features/create/components/TicketPurchaseSuccessModal';
 import { createStyles as styles } from '../../features/create/createStyles';
 import { useCreateForm } from '../../features/create/hooks/useCreateForm';
-import { useCreateTicketPurchase } from '../../features/create/hooks/useCreateTicketPurchase';
 import {
   CREATE_STEPS,
   designThemes,
   CREATE_PAGE_IDENTIFIER_MAX_LENGTH,
-  MAX_TICKET_COUNT,
   STICKY_CTA_BAR_COMPACT_HEIGHT,
   STICKY_CTA_BAR_HEIGHT,
-  TICKET_PRESET_COUNTS,
-  TICKET_USAGE_ITEMS,
 } from '../../features/create/shared';
 import { useAuth } from '../../contexts/AuthContext';
 import { useAppFeedback } from '../../contexts/AppFeedbackContext';
@@ -50,23 +39,12 @@ import { useNoticeToast } from '../../hooks/useNoticeToast';
 import { formatPrice } from '../../lib/format';
 
 export default function CreateScreen() {
-  const router = useRouter();
   const isExpoWebPreview = Platform.OS === 'web';
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
   const scrollRef = useRef<ScrollView | null>(null);
   const autoSaveProgressRef = useRef<(() => Promise<boolean>) | null>(null);
-  const ticketOnlySectionAnimation = useRef(new Animated.Value(0)).current;
   const [measuredStickyBarHeight, setMeasuredStickyBarHeight] = useState(0);
-  const [isTicketOnlySectionExpanded, setIsTicketOnlySectionExpanded] = useState(false);
-  const [isTicketOnlySectionVisible, setIsTicketOnlySectionVisible] = useState(false);
-  const [isTicketOnlySectionReady, setIsTicketOnlySectionReady] = useState(false);
-  const [ticketSectionY, setTicketSectionY] = useState<number | null>(null);
-  const [shouldScrollToTickets, setShouldScrollToTickets] = useState(false);
-  const openTicketPurchase = useCallback(() => {
-    setIsTicketOnlySectionExpanded(true);
-    setShouldScrollToTickets(true);
-  }, []);
 
   const { apiBaseUrl, palette } = usePreferences();
   const { showToast } = useAppFeedback();
@@ -80,9 +58,8 @@ export default function CreateScreen() {
     isCustomerAuthenticating,
     loginCustomer,
     logoutCustomer,
-    session,
   } = useAuth();
-  const { pageSummary, refreshDashboard } = useInvitationOps();
+  const { pageSummary } = useInvitationOps();
   const { drafts, removeDraft, saveDraft } = useDrafts();
 
   const createForm = useCreateForm({
@@ -98,17 +75,6 @@ export default function CreateScreen() {
     loginCustomer,
     logoutCustomer,
     isExpoWebPreview,
-    onOpenTicketPurchase: openTicketPurchase,
-  });
-
-  const ticketPurchase = useCreateTicketPurchase({
-    apiBaseUrl,
-    pageSummary,
-    session,
-    customerSession,
-    refreshDashboard,
-    clearAuthError,
-    setNotice: createForm.setNotice,
   });
 
   const isCompactStickyBar = width < 390;
@@ -132,41 +98,6 @@ export default function CreateScreen() {
     scrollRef.current?.scrollTo({ y: 0, animated: true });
   }, [createForm.currentStep]);
 
-  useEffect(() => {
-    if (isTicketOnlySectionExpanded) {
-      setIsTicketOnlySectionVisible(true);
-    }
-    setIsTicketOnlySectionReady(false);
-
-    ticketOnlySectionAnimation.stopAnimation();
-    Animated.timing(ticketOnlySectionAnimation, {
-      toValue: isTicketOnlySectionExpanded ? 1 : 0,
-      duration: 220,
-      easing: Easing.out(Easing.cubic),
-      useNativeDriver: false,
-    }).start(({ finished }) => {
-      if (finished && isTicketOnlySectionExpanded) {
-        setIsTicketOnlySectionReady(true);
-      }
-      if (finished && !isTicketOnlySectionExpanded) {
-        setIsTicketOnlySectionVisible(false);
-      }
-    });
-  }, [isTicketOnlySectionExpanded, ticketOnlySectionAnimation]);
-
-  useEffect(() => {
-    if (!shouldScrollToTickets || !isTicketOnlySectionReady || ticketSectionY === null) {
-      return;
-    }
-
-    // 펼침과 레이아웃 측정이 끝난 뒤 한 번만 이동합니다.
-    const frame = requestAnimationFrame(() => {
-      scrollRef.current?.scrollTo({ y: Math.max(0, ticketSectionY - 16), animated: true });
-      setShouldScrollToTickets(false);
-    });
-    return () => cancelAnimationFrame(frame);
-  }, [isTicketOnlySectionReady, shouldScrollToTickets, ticketSectionY]);
-
   useFocusEffect(
     useCallback(() => {
       return () => {
@@ -181,32 +112,8 @@ export default function CreateScreen() {
     }, [showToast])
   );
 
-  const ticketOnlySectionSummary =
-    ticketPurchase.ticketOnlyCount > 0
-      ? `${ticketPurchase.ticketOnlyCount}장이 선택되어 있습니다.`
-      : '필요할 때만 펼쳐서 티켓 수량을 정할 수 있습니다.';
-  const ticketOnlyAnimatedStyle = {
-    maxHeight: ticketOnlySectionAnimation.interpolate({
-      inputRange: [0, 1],
-      outputRange: [0, 1200],
-    }),
-    opacity: ticketOnlySectionAnimation.interpolate({
-      inputRange: [0, 1],
-      outputRange: [0, 1],
-    }),
-    transform: [
-      {
-        translateY: ticketOnlySectionAnimation.interpolate({
-          inputRange: [0, 1],
-          outputRange: [-8, 0],
-        }),
-      },
-    ],
-  } as const;
-
   const pendingInput = createForm.pendingCreation?.target.action === 'createInvitationPage' ? createForm.pendingCreation.target.input : null;
   const pendingCreationSummary = pendingInput ? `${pendingInput.groomKoreanName} · ${pendingInput.brideKoreanName} / ${pendingInput.slugBase} / ${designThemes.find((theme) => theme.key === pendingInput.theme)?.label ?? '선택한 디자인'}` : '';
-  const pendingTicketSlug = ticketPurchase.pendingTickets?.target.action === 'grantTicketPack' ? ticketPurchase.pendingTickets.target.pageSlug : '';
 
   if (createForm.creationCompleted) {
     return <AppScreen title="결제가 완료되었습니다" subtitle="청첩장 제작을 시작해 주세요.">
@@ -237,10 +144,6 @@ export default function CreateScreen() {
           {pendingInput ? <SectionCard title="완료되지 않은 제작 결제가 있습니다" description={pendingCreationSummary} badge="복구 필요" badgeTone="notice">
             <AppText>현재 작성 내용과 별개로, 결제 당시의 이름·주소·디자인으로 이어서 처리합니다. 추가 결제는 없습니다.</AppText>
             <ActionButton loading={createForm.isSubmitting} disabled={isExpoWebPreview} onPress={() => void createForm.handleRecoverCreation()} fullWidth>이전 결제 이어서 처리</ActionButton>
-          </SectionCard> : null}
-          {pendingTicketSlug ? <SectionCard title="완료되지 않은 티켓 결제가 있습니다" description={`결제 대상: ${pendingTicketSlug}`} badge="복구 필요" badgeTone="notice">
-            <AppText>선택한 대상과 별개로, 원래 결제한 청첩장에 티켓을 적립합니다. 추가 결제는 없습니다.</AppText>
-            <ActionButton loading={ticketPurchase.isTicketPurchaseSubmitting} disabled={isExpoWebPreview} onPress={() => void ticketPurchase.handleRecoverTickets()} fullWidth>티켓 결제 이어서 처리</ActionButton>
           </SectionCard> : null}
 
           <View style={styles.stepTabsSection}>
@@ -615,180 +518,9 @@ export default function CreateScreen() {
                   제작 초안 저장
                 </ActionButton>
               </View>
-              <AppText variant="caption">생성일부터 기본 {INVITATION_INITIAL_DISPLAY_PERIOD_MONTHS}개월 이용할 수 있으며 제작 기간도 포함됩니다. 추가 티켓은 별도 구매하며, 티켓 1장(1,000원)으로 1개월씩 연장합니다.</AppText>
+              <AppText variant="caption">제작 결제 5,000원에 모든 디자인과 기능이 포함됩니다. 기본 {INVITATION_INITIAL_DISPLAY_PERIOD_MONTHS}개월 이후 내 청첩장에서 5,000원 결제로 6개월씩 연장할 수 있습니다.</AppText>
             </SectionCard>
           ) : null}
-          <View onLayout={(event) => setTicketSectionY(event.nativeEvent.layout.y)}>
-            <SectionCard
-              title="기존 청첩장 기간 연장"
-              description="새 청첩장 결제와 별개입니다. 이미 연결된 청첩장의 이용 기간을 연장할 때만 사용하세요."
-              badge={`${ticketPurchase.ticketOnlyCount}장`}
-              badgeTone="neutral"
-            >
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel={
-                  isTicketOnlySectionExpanded ? '티켓만 구매 영역 접기' : '티켓만 구매 영역 펼치기'
-                }
-                accessibilityState={{ expanded: isTicketOnlySectionExpanded }}
-                onPress={() => setIsTicketOnlySectionExpanded((current) => !current)}
-                style={[
-                  styles.ticketOnlySectionToggle,
-                  {
-                    backgroundColor: palette.surface,
-                    borderColor: palette.cardBorder,
-                  },
-                ]}
-              >
-                <View style={styles.ticketOnlySectionToggleCopy}>
-                  <AppText style={styles.ticketOnlySectionToggleTitle}>
-                    {isTicketOnlySectionExpanded ? '구매 옵션 접기' : '구매 옵션 열기'}
-                  </AppText>
-                  <AppText variant="muted" style={styles.ticketOnlySectionToggleDescription}>
-                    {ticketOnlySectionSummary}
-                  </AppText>
-                </View>
-                <Ionicons
-                  name={isTicketOnlySectionExpanded ? 'chevron-up' : 'chevron-down'}
-                  size={18}
-                  color={palette.textMuted}
-                />
-              </Pressable>
-
-              {isTicketOnlySectionVisible ? (
-                <Animated.View
-                  style={[
-                    styles.ticketOnlySectionBody,
-                    ticketOnlyAnimatedStyle,
-                    { pointerEvents: isTicketOnlySectionExpanded ? 'auto' : 'none' },
-                  ]}
-                >
-                  <AppText variant="muted" style={styles.helperText}>
-                    새 청첩장 제작 결제와 별개입니다. 아래 적립 대상을 확인한 뒤 구매해 주세요.
-                  </AppText>
-
-                  <View style={styles.ticketPresetRow}>
-                    {TICKET_PRESET_COUNTS.map((count) => (
-                      <ChoiceChip
-                        key={`ticket-only-${count}`}
-                        label={`${count}장`}
-                        selected={ticketPurchase.ticketOnlyCount === count}
-                        onPress={() => ticketPurchase.updateTicketOnlyCount(count)}
-                      />
-                    ))}
-                  </View>
-
-                  <View
-                    style={[
-                      styles.ticketCounterCard,
-                      {
-                        backgroundColor: palette.surfaceMuted,
-                        borderColor: palette.cardBorder,
-                      },
-                    ]}
-                  >
-                    <Pressable
-                      accessibilityRole="button"
-                      accessibilityLabel="이전 티켓 상품으로 이동"
-                      accessibilityHint="지원되는 이전 티켓 상품 수량으로 이동합니다."
-                      accessibilityState={{ disabled: ticketPurchase.ticketOnlyCount <= 0 }}
-                      disabled={ticketPurchase.ticketOnlyCount <= 0}
-                      onPress={ticketPurchase.decreaseTicketOnlyCount}
-                      style={[
-                        styles.ticketCounterButton,
-                        { borderColor: palette.cardBorder, backgroundColor: palette.surface },
-                        ticketPurchase.ticketOnlyCount <= 0
-                          ? styles.ticketCounterButtonDisabled
-                          : null,
-                      ]}
-                    >
-                      <AppText variant="title" style={styles.ticketCounterButtonLabel}>
-                        -
-                      </AppText>
-                    </Pressable>
-                    <View style={styles.ticketCounterValueBox}>
-                      <AppText variant="title" style={styles.ticketCounterValue}>
-                        {ticketPurchase.ticketOnlyCount}
-                      </AppText>
-                      <AppText variant="caption" style={styles.ticketCounterCaption}>
-                        티켓만 별도 구매 수량
-                      </AppText>
-                    </View>
-                    <Pressable
-                      accessibilityRole="button"
-                      accessibilityLabel="다음 티켓 상품으로 이동"
-                      accessibilityHint="지원되는 다음 티켓 상품 수량으로 이동합니다."
-                      accessibilityState={{ disabled: ticketPurchase.ticketOnlyCount >= MAX_TICKET_COUNT }}
-                      disabled={ticketPurchase.ticketOnlyCount >= MAX_TICKET_COUNT}
-                      onPress={ticketPurchase.increaseTicketOnlyCount}
-                      style={[
-                        styles.ticketCounterButton,
-                        { borderColor: palette.cardBorder, backgroundColor: palette.surface },
-                        ticketPurchase.ticketOnlyCount >= MAX_TICKET_COUNT
-                          ? styles.ticketCounterButtonDisabled
-                          : null,
-                      ]}
-                    >
-                      <AppText variant="title" style={styles.ticketCounterButtonLabel}>
-                        +
-                      </AppText>
-                    </Pressable>
-                  </View>
-
-                  <View
-                    style={[
-                      styles.ticketSummaryCard,
-                      {
-                        backgroundColor: palette.surfaceMuted,
-                        borderColor: palette.cardBorder,
-                      },
-                    ]}
-                  >
-                    <View style={styles.summaryRow}>
-                      <AppText style={styles.summaryLabel}>장당 금액</AppText>
-                      <AppText style={styles.summaryValue}>
-                        {formatPrice(ticketPurchase.ticketUnitPrice)}
-                      </AppText>
-                    </View>
-                    <View style={styles.summaryRow}>
-                      <AppText style={styles.summaryLabel}>티켓 금액</AppText>
-                      <AppText style={styles.summaryValue}>
-                        {formatPrice(ticketPurchase.ticketPrice)}
-                      </AppText>
-                    </View>
-                    <View style={styles.summaryRow}>
-                      <AppText style={styles.summaryLabel}>적립 대상</AppText>
-                      <AppText style={styles.summaryValue}>{ticketPurchase.selectedTargetLabel}</AppText>
-                    </View>
-                    <View style={styles.summaryRow}>
-                      <AppText style={styles.summaryLabel}>현재 보유 티켓</AppText>
-                      <AppText style={styles.summaryValue}>{ticketPurchase.storedTicketCount}장</AppText>
-                    </View>
-                  </View>
-
-                  <BulletList items={[...TICKET_USAGE_ITEMS]} />
-
-                  <ActionButton
-                    variant="secondary"
-                    onPress={ticketPurchase.handleOpenTicketOnlyModal}
-                    disabled={
-                      ticketPurchase.ticketOnlyCount <= 0 || !ticketPurchase.hasLinkedInvitation
-                    }
-                    fullWidth
-                  >
-                    티켓만 구매
-                  </ActionButton>
-
-                  <AppText variant="muted" style={styles.helperText}>
-                    {ticketPurchase.hasLinkedInvitation
-                      ? '선택한 청첩장에 티켓이 적립됩니다. 구매 후 내 청첩장에서 티켓을 사용해야 기간이 연장됩니다.'
-                      : '티켓만 구매는 연동된 청첩장이 있을 때만 사용할 수 있습니다. 먼저 페이지를 연동해 주세요.'}
-                  </AppText>
-                </Animated.View>
-              ) : null}
-            </SectionCard>
-          </View>
-
         </AppScreen>
 
         <View
@@ -874,38 +606,6 @@ export default function CreateScreen() {
         totalPrice={createForm.totalPrice}
       />
 
-      <TicketOnlyPurchaseModal
-        visible={ticketPurchase.ticketOnlyModalVisible}
-        onClose={ticketPurchase.closeTicketOnlyModal}
-        onConfirm={ticketPurchase.handleConfirmTicketOnlyPurchase}
-        loading={ticketPurchase.isTicketPurchaseSubmitting}
-        pendingTarget={pendingTicketSlug}
-        onRecover={() => void ticketPurchase.handleRecoverTickets()}
-        authError={authError}
-        notice={createForm.notice}
-        palette={palette}
-        ticketCount={ticketPurchase.ticketOnlyCount}
-        ticketUnitPrice={ticketPurchase.ticketUnitPrice}
-        ticketPrice={ticketPurchase.ticketPrice}
-        ticketUsageItems={TICKET_USAGE_ITEMS}
-        targetOptions={ticketPurchase.ticketTargetOptions}
-        selectedTargetSlug={ticketPurchase.selectedTicketTargetSlug}
-        selectedTargetLabel={ticketPurchase.selectedTargetLabel}
-        currentStoredTicketCount={ticketPurchase.storedTicketCount}
-        onSelectTarget={ticketPurchase.setSelectedTicketTargetSlug}
-      />
-
-      <TicketPurchaseSuccessModal
-        visible={ticketPurchase.ticketPurchaseSuccess !== null}
-        onClose={ticketPurchase.closeTicketPurchaseSuccess}
-        onExtend={() => {
-          const targetPageSlug = ticketPurchase.ticketPurchaseSuccess?.targetPageSlug;
-          ticketPurchase.closeTicketPurchaseSuccess();
-          router.push({ pathname: '/manage', params: { ticketIntent: 'extend', targetPageSlug } });
-        }}
-        palette={palette}
-        success={ticketPurchase.ticketPurchaseSuccess}
-      />
     </>
   );
 }

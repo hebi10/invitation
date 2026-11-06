@@ -5,13 +5,11 @@ import { HighRiskActionModal } from '../components/manage/HighRiskActionModal';
 import { InvitationEditorModalShell } from '../components/manage/InvitationEditorModalShell';
 import { useVisualPreferences } from '../contexts/PreferencesContext';
 import { PaymentConfirmModal } from '../features/create/components/PaymentConfirmModal';
-import { TicketOnlyPurchaseModal } from '../features/create/components/TicketOnlyPurchaseModal';
-import { TicketPurchaseSuccessModal } from '../features/create/components/TicketPurchaseSuccessModal';
 import { EditorPreparingModal } from '../features/manage/components/EditorPreparingModal';
 import { GuestbookModal } from '../features/manage/components/GuestbookModal';
 import { InvitationThemeActionList } from '../features/manage/components/InvitationThemeActionList';
 import { OnboardingModal } from '../features/manage/components/OnboardingModal';
-import { TicketUsageModal } from '../features/manage/components/TicketUsageModal';
+import { PeriodExtensionModal } from '../features/manage/components/PeriodExtensionModal';
 import type { MobileGuestbookComment } from '../types/mobileInvitation';
 import { EMPTY_FORM } from '../features/manage/shared';
 
@@ -72,37 +70,18 @@ export default function ModalDesignCheck() {
     />;
   }
 
-  if (kind === 'ticket-use') {
-    return <TicketUsageModal
-      visible palette={palette} fontScale={fontScale} onClose={noop}
-      availableTicketCount={2} isExtendingDisplayPeriod={false}
-      transferTargetCards={[{ slug: 'another-wedding', displayName: '다른 청첩장', ticketCount: 1 }]}
-      selectedTransferTargetSlug="another-wedding" ticketTransferCount={1}
-      ticketTransferCountOptions={[1, 2]} isTransferringTickets={false}
-      onSelectTransferTarget={noop} onSelectTicketTransferCount={noop}
-      onExtendDisplayPeriod={noop} onTransferTickets={noop} notice=""
-      onBuyTickets={noop}
-    />;
-  }
-
-  if (kind === 'ticket' || kind === 'ticket-many' || kind === 'ticket-pending') {
-    return <TicketOnlyPurchaseModal
-      visible onClose={noop} onConfirm={noop} loading={false} authError={null} notice=""
-      pendingTarget={kind === 'ticket-pending' ? 'sample-wedding' : ''} onRecover={noop} palette={palette} ticketCount={3}
-      ticketUnitPrice={1000} ticketPrice={3000} ticketUsageItems={['티켓 1장으로 이용 기간 1개월 연장']}
-      targetOptions={kind === 'ticket-many' ? [
-        { slug: 'sample-wedding', displayName: '김도윤 · 이서연 결혼식' },
-        { slug: 'another-wedding', displayName: '다른 청첩장' },
-      ] : [{ slug: 'sample-wedding', displayName: '김도윤 · 이서연 결혼식' }]}
-      selectedTargetSlug="sample-wedding" selectedTargetLabel="김도윤 · 이서연 결혼식"
-      currentStoredTicketCount={0} onSelectTarget={noop}
-    />;
-  }
-
-  if (kind === 'success') {
-    return <TicketPurchaseSuccessModal
-      visible onClose={noop} onExtend={noop} palette={palette}
-      success={{ ticketCount: 3, nextTicketCount: 3, targetDisplayName: '김도윤 · 이서연 결혼식' }}
+  if (
+    kind === 'renew' || kind === 'renew-pending' || kind === 'renew-other' ||
+    kind === 'renew-loading' || kind === 'renew-no-account'
+  ) {
+    return <PeriodExtensionModal
+      visible onClose={noop} palette={palette} fontScale={fontScale}
+      targetName="김도윤 · 이서연 결혼식"
+      customerAuthenticated={kind !== 'renew-no-account'}
+      loading={kind === 'renew-loading'} recovering={false}
+      pendingTargetSlug={kind === 'renew-pending' ? 'sample-wedding' : kind === 'renew-other' ? 'another-wedding' : null}
+      currentPageSlug="sample-wedding"
+      onPurchase={noop} onRecover={noop}
     />;
   }
 
