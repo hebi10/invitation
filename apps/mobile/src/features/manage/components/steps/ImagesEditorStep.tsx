@@ -8,6 +8,7 @@ import {
 } from 'react-native';
 
 import { ActionButton } from '../../../../components/ActionButton';
+import { Disclosure } from '../../../../components/Disclosure';
 import { AppText } from '../../../../components/AppText';
 import { SectionCard } from '../../../../components/SectionCard';
 import { useVisualPreferences } from '../../../../contexts/PreferencesContext';
@@ -120,7 +121,9 @@ function SingleImageCard({
   const { palette } = useVisualPreferences();
 
   return (
-    <SectionCard title={title} description={description}>
+    <SectionCard title={title} description={description}
+      badge={previewUrl ? '등록됨' : '미등록'}
+      badgeTone={previewUrl ? 'success' : 'neutral'}>
       {previewUrl ? (
         <View
           style={[
@@ -150,7 +153,7 @@ function SingleImageCard({
           ]}
         >
           <AppText variant="muted" style={manageStyles.helperText}>
-            아직 등록된 이미지가 없습니다.
+            사진을 등록하면 여기에서 미리 볼 수 있습니다.
           </AppText>
         </View>
       )}
@@ -161,7 +164,7 @@ function SingleImageCard({
           loading={uploadingImageKind === assetKind}
           style={manageStyles.imageAction}
         >
-          이미지 업로드
+          {previewUrl ? '사진 교체' : '사진 등록'}
         </ActionButton>
         <ActionButton
           variant={previewUrl ? 'danger' : 'secondary'}
@@ -187,25 +190,15 @@ const GalleryPreviewCard = memo(function GalleryPreviewCard({
   const { palette } = useVisualPreferences();
 
   return (
-    <View
-      style={[
-        manageStyles.galleryCard,
-        {
-          backgroundColor: palette.surfaceMuted,
-          borderColor: palette.cardBorder,
-        },
-      ]}
-    >
-      <View
-        style={[
-          manageStyles.previewFrame,
-          manageStyles.galleryPreviewFrame,
-          {
-            backgroundColor: palette.surface,
-            borderColor: palette.cardBorder,
-          },
-        ]}
-      >
+    <View style={[manageStyles.galleryCard, {
+      backgroundColor: palette.surface,
+      borderColor: palette.cardBorder,
+    }]}>
+      <View style={[
+        manageStyles.previewFrame,
+        manageStyles.galleryPreviewFrame,
+        { backgroundColor: palette.surfaceMuted, borderColor: palette.cardBorder },
+      ]}>
         <PreviewImage
           uri={image.previewUrl}
           alt={`갤러리 이미지 ${index + 1}번 미리보기`}
@@ -213,32 +206,21 @@ const GalleryPreviewCard = memo(function GalleryPreviewCard({
           fit="contain"
         />
       </View>
-      <View style={manageStyles.galleryCardCopy}>
-        <AppText style={manageStyles.galleryCardTitle}>노출 순서 {index + 1}</AppText>
-        <AppText variant="caption" style={manageStyles.galleryCardMeta}>
-          아래 버튼으로 순서를 바꾸고, 필요 없는 이미지는 바로 제거할 수 있습니다.
-        </AppText>
-      </View>
-      <View style={manageStyles.galleryCardActions}>
-        <ActionButton
-          variant="secondary"
-          onPress={() => onMoveGalleryImage(index, 'up')}
-          disabled={isFirst}
-          style={manageStyles.galleryAction}
-        >
-          앞으로
-        </ActionButton>
-        <ActionButton
-          variant="secondary"
-          onPress={() => onMoveGalleryImage(index, 'down')}
-          disabled={isLast}
-          style={manageStyles.galleryAction}
-        >
-          뒤로
-        </ActionButton>
-        <ActionButton variant="danger" onPress={() => onRemoveGalleryImage(index)} style={manageStyles.galleryAction}>
-          제거
-        </ActionButton>
+      <View style={manageStyles.galleryCardBody}>
+        <View style={manageStyles.galleryCardCopy}>
+          <AppText style={manageStyles.galleryCardTitle}>사진 {index + 1}</AppText>
+          <AppText variant="caption" color={palette.textMuted} style={manageStyles.galleryCardMeta}>
+            청첩장에 표시되는 순서입니다.
+          </AppText>
+        </View>
+        <View style={manageStyles.galleryCardActions}>
+          <ActionButton variant="secondary" onPress={() => onMoveGalleryImage(index, 'up')}
+            disabled={isFirst} style={manageStyles.galleryAction}>앞으로</ActionButton>
+          <ActionButton variant="secondary" onPress={() => onMoveGalleryImage(index, 'down')}
+            disabled={isLast} style={manageStyles.galleryAction}>뒤로</ActionButton>
+          <ActionButton variant="danger" onPress={() => onRemoveGalleryImage(index)}
+            style={manageStyles.galleryAction}>제거</ActionButton>
+        </View>
       </View>
     </View>
   );
@@ -287,7 +269,7 @@ export function ImagesEditorStep({
 
       <SingleImageCard
         title="대표 이미지"
-        description="청첩장 최상단에 노출되는 메인 이미지입니다."
+        description="청첩장을 열었을 때 가장 먼저 보이는 사진입니다."
         previewUrl={coverPreviewUrl}
         assetKind="cover"
         uploadingImageKind={uploadingImageKind}
@@ -295,29 +277,34 @@ export function ImagesEditorStep({
         onRemoveSingleImage={onRemoveSingleImage}
       />
 
-      <SingleImageCard
-        title="공유 미리보기 이미지"
-        description="og:image와 twitter:image에 사용하는 링크 미리보기 이미지입니다."
-        previewUrl={sharePreviewUrl}
-        assetKind="share-preview"
-        uploadingImageKind={uploadingImageKind}
-        onUploadImage={onUploadImage}
-        onRemoveSingleImage={onRemoveSingleImage}
-      />
-
-      <SingleImageCard
-        title="카카오 카드 이미지"
-        description="카카오 카드형 공유에 사용하는 전용 이미지입니다."
-        previewUrl={kakaoCardPreviewUrl}
-        assetKind="kakao-card"
-        uploadingImageKind={uploadingImageKind}
-        onUploadImage={onUploadImage}
-        onRemoveSingleImage={onRemoveSingleImage}
-      />
+      <Disclosure
+        title="공유용 이미지 (선택)"
+        description="링크 미리보기와 카카오톡 공유 카드에 별도 사진을 사용하려면 펼쳐 주세요."
+        defaultExpanded={Boolean(sharePreviewUrl || kakaoCardPreviewUrl)}
+      >
+        <SingleImageCard
+          title="링크 미리보기 사진"
+          description="메신저로 청첩장 링크를 보낼 때 미리 보이는 사진입니다."
+          previewUrl={sharePreviewUrl}
+          assetKind="share-preview"
+          uploadingImageKind={uploadingImageKind}
+          onUploadImage={onUploadImage}
+          onRemoveSingleImage={onRemoveSingleImage}
+        />
+        <SingleImageCard
+          title="카카오톡 공유 카드 사진"
+          description="카카오톡 카드형 공유에 사용할 사진입니다."
+          previewUrl={kakaoCardPreviewUrl}
+          assetKind="kakao-card"
+          uploadingImageKind={uploadingImageKind}
+          onUploadImage={onUploadImage}
+          onRemoveSingleImage={onRemoveSingleImage}
+        />
+      </Disclosure>
 
       <SectionCard
-        title={`갤러리 이미지 (${galleryPreviewItems.length}/${maxGalleryImageCount})`}
-        description="갤러리 이미지는 실제 노출 순서대로 정렬하고 필요 없는 이미지는 바로 제거합니다."
+        title={`갤러리 사진 (${galleryPreviewItems.length}/${maxGalleryImageCount})`}
+        description="여러 장의 사진을 등록하고, 하객에게 보여줄 순서를 조정해 주세요."
       >
         <View style={manageStyles.actionRow}>
           <ActionButton
@@ -327,7 +314,7 @@ export function ImagesEditorStep({
             disabled={galleryPreviewItems.length >= maxGalleryImageCount}
             style={manageStyles.imageAction}
           >
-            갤러리 이미지 업로드
+            갤러리 사진 추가
           </ActionButton>
         </View>
         {galleryPreviewItems.length ? (

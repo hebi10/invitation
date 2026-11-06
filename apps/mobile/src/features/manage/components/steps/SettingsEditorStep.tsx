@@ -1,6 +1,7 @@
 import { StyleSheet, View } from 'react-native';
 
 import { ActionButton } from '../../../../components/ActionButton';
+import { Disclosure } from '../../../../components/Disclosure';
 import { AppText } from '../../../../components/AppText';
 import { SectionCard } from '../../../../components/SectionCard';
 import { TextField } from '../../../../components/TextField';
@@ -30,9 +31,9 @@ export function SettingsEditorStep({
 
   return (
     <>
-      <SectionCard
-        title="첫 화면 애니메이션"
-        description="PC 제작기와 동일한 연출을 선택할 수 있습니다. 저장 후 실제 청첩장에 반영됩니다."
+      <Disclosure
+        title="첫 화면 애니메이션 (선택)"
+        description={`현재 선택: ${WEDDING_INTRO_OPTIONS.find(option => option.value === form.introStyle)?.label ?? '없음'} · 변경하려면 펼쳐 주세요.`}
       >
         {WEDDING_INTRO_OPTIONS.map((option) => (
           <View
@@ -70,11 +71,11 @@ export function SettingsEditorStep({
         <AppText variant="caption" color={palette.textMuted}>
           미리보기는 PC와 동일한 웹 연출을 샘플 정보로 재생합니다. 실제 데이터는 변경하지 않습니다.
         </AppText>
-      </SectionCard>
+      </Disclosure>
 
       <SectionCard
-        title="공유 문구"
-        description="링크 공유 때 보이는 제목과 설명을 마지막으로 다듬습니다."
+        title="공유 제목과 설명"
+        description="청첩장 링크를 전달할 때 보이는 글을 확인해 주세요."
       >
         <TextField
           label="공유 제목"
@@ -92,8 +93,8 @@ export function SettingsEditorStep({
       </SectionCard>
 
       <SectionCard
-        title="공개 상태"
-        description="선택한 공개 여부는 마지막 저장 버튼을 누르면 적용됩니다."
+        title="공개 여부 최종 확인"
+        description="공개 여부를 선택한 다음 화면 아래 저장 버튼을 눌러 적용합니다."
       >
         <View style={[styles.stateSummary, { backgroundColor: palette.surfaceMuted }]}>
           <AppText variant="caption" color={palette.textMuted}>현재 저장된 공개 설정</AppText>
@@ -105,14 +106,18 @@ export function SettingsEditorStep({
           </AppText>
         </View>
 
-        <ActionButton variant={form.published ? 'primary' : 'secondary'}
-          accessibilityState={{ selected: form.published }} onPress={() => onSetPublished(true)} fullWidth>
-          저장 후 공개
-        </ActionButton>
-        <ActionButton variant={!form.published ? 'primary' : 'secondary'}
-          accessibilityState={{ selected: !form.published }} onPress={() => onSetPublished(false)} fullWidth>
-          비공개로 저장
-        </ActionButton>
+        <View style={styles.publicActions}>
+          <ActionButton variant={form.published ? 'primary' : 'secondary'}
+            accessibilityState={{ selected: form.published }} onPress={() => onSetPublished(true)}
+            style={styles.publicAction}>
+            공개 선택
+          </ActionButton>
+          <ActionButton variant={!form.published ? 'primary' : 'secondary'}
+            accessibilityState={{ selected: !form.published }} onPress={() => onSetPublished(false)}
+            style={styles.publicAction}>
+            비공개 선택
+          </ActionButton>
+        </View>
         {form.published !== savedPublished ? (
           <View style={[styles.pendingState, { backgroundColor: palette.noticeSoft }]}>
             <AppText variant="caption" color={palette.notice}>
@@ -130,4 +135,6 @@ const styles = StyleSheet.create({
   introOption: { borderWidth: 1, borderRadius: 0, padding: 14, gap: 10 },
   selectedLabel: { fontWeight: '600' },
   pendingState: { padding: 12, gap: 6 },
+  publicActions: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  publicAction: { flexGrow: 1, flexBasis: 118, minWidth: 110 },
 });
