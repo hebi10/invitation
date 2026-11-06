@@ -80,6 +80,12 @@ assert.doesNotMatch(drafts, /borderTopWidth/);
 assert.match(manage, /이 기기에 연결된 청첩장이 없습니다/);
 assert.match(manage, /customerSession\?\.uid \? <AccountInvitationsSection \/>/);
 assert.match(manage, /title="마이페이지"/);
+assert.match(capture, /'account-list-0'/);
+assert.match(capture, /'account-list-1'/);
+assert.match(capture, /'account-list-12'/);
+const ownedFixture = read('scripts/fixtures/mobile-owned-list-capture.tsx.fixture');
+assert.match(ownedFixture, /visibleCount === 0/);
+assert.match(ownedFixture, /mockEvents\.slice\(0, visibleCount\)/);
 assert.match(capture, /linked-list/);
 assert.match(capture, /design-check-linked/);
 
