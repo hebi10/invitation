@@ -382,7 +382,7 @@ def main():
             if intro_toggle is None or not tap(intro_toggle):
                 raise RuntimeError('intro disclosure: 첫 화면 애니메이션 펼침 버튼을 찾거나 누르지 못했습니다.')
             wait_screen('editor-intro', 'design-check?step=intro',
-                        ['첫 화면 애니메이션', '빛에 담긴 초대'], timeout=45, launch=False)
+                        ['첫 화면 애니메이션', '현재 선택한 연출', '사용 안 함'], timeout=45, launch=False)
             for name, kind, expected in [
                 ('modal-payment', 'payment', ['Google Play 결제', '결제 예정 금액']),
                 ('modal-payment-pending', 'payment-pending', ['Google Play 결제', '이전 결제 이어서 처리']),
