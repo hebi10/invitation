@@ -135,11 +135,19 @@ export const manageStyles = StyleSheet.create({
     borderWidth: 1,
     borderRadius: 0,
     padding: APP_SPACING.sm,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    alignItems: 'flex-start',
     gap: APP_SPACING.sm,
   },
   galleryPreviewFrame: {
-    width: '100%',
+    width: 104,
     aspectRatio: 4 / 5,
+  },
+  galleryCardBody: {
+    flex: 1,
+    minWidth: 128,
+    gap: APP_SPACING.sm,
   },
   galleryPreviewImage: {
     width: '100%',
@@ -163,7 +171,7 @@ export const manageStyles = StyleSheet.create({
   },
   galleryAction: {
     minWidth: 72,
-    flexBasis: 88,
+    flexBasis: 84,
     flexGrow: 1,
   },
   mapPreviewCard: {

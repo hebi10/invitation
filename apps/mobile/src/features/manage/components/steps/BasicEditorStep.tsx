@@ -1,5 +1,6 @@
 import { View } from 'react-native';
 
+import { Disclosure } from '../../../../components/Disclosure';
 import { SectionCard } from '../../../../components/SectionCard';
 import { TextField } from '../../../../components/TextField';
 import type {
@@ -35,39 +36,59 @@ export function BasicEditorStep({
   return (
     <>
       <SectionCard
-        title="청첩장 표지·소개"
-        description="청첩장 첫 화면에 표시할 제목과 소개 문구를 입력합니다."
+        title="청첩장 제목과 두 분의 이름"
+        description="하객에게 가장 먼저 보여줄 기본 정보를 입력해 주세요."
       >
         <TextField
-          label="페이지 제목"
+          label="청첩장 제목"
           value={form.displayName}
           onChangeText={(value) => onUpdateField('displayName', value)}
-          placeholder="예: 박준호 김소민 결혼합니다"
+          placeholder="예: 김도윤 · 이서연 결혼합니다"
+          helperText="청첩장 목록과 초대장 상단에 표시되는 이름입니다."
         />
         <TextField
-          label="서브 문구"
+          label="신랑 이름 (필수)"
+          value={form.groom.name}
+          onChangeText={(value) => onUpdatePersonField('groom', 'name', value)}
+          placeholder="예: 김도윤"
+          autoCorrect={false}
+        />
+        <TextField
+          label="신부 이름 (필수)"
+          value={form.bride.name}
+          onChangeText={(value) => onUpdatePersonField('bride', 'name', value)}
+          placeholder="예: 이서연"
+          autoCorrect={false}
+        />
+      </SectionCard>
+      <SectionCard
+        title="표지 소개 문구"
+        description="짧은 초대 문구를 적고, 필요하면 소개 글을 덧붙여 주세요."
+      >
+        <TextField
+          label="한 줄 소개"
           value={form.subtitle}
           onChangeText={(value) => onUpdateField('subtitle', value)}
           placeholder="예: 소중한 분들을 초대합니다"
         />
         <TextField
-          label="소개 문구"
+          label="소개 글 (선택)"
           value={form.description}
           onChangeText={(value) => onUpdateField('description', value)}
-          placeholder="청첩장 첫 화면에 노출될 설명을 입력해 주세요"
+          placeholder="청첩장 첫 화면에 전할 내용을 입력해 주세요"
           multiline
         />
       </SectionCard>
-
-      <SectionCard
-        title="신랑·신부 및 가족 정보"
-        description="이름과 연락처를 입력하고 필요한 가족 정보를 추가합니다."
+      <Disclosure
+        title="연락처·가족 정보 (선택)"
+        description="연락처와 혼주 정보를 추가하려면 펼쳐서 입력해 주세요."
       >
         <View style={manageStyles.personGrid}>
           <PersonEditorCard
             role="groom"
             label="신랑"
             person={form.groom}
+            showNameField={false}
             onUpdatePersonField={onUpdatePersonField}
             onUpdateParentField={onUpdateParentField}
           />
@@ -75,11 +96,12 @@ export function BasicEditorStep({
             role="bride"
             label="신부"
             person={form.bride}
+            showNameField={false}
             onUpdatePersonField={onUpdatePersonField}
             onUpdateParentField={onUpdateParentField}
           />
         </View>
-      </SectionCard>
+      </Disclosure>
     </>
   );
 }

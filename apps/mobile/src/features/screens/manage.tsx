@@ -705,6 +705,7 @@ export default function ManageScreen() {
         steps={EDITOR_STEPS}
         activeStepIndex={invitationForm.editorStepIndex}
         onSelectStep={invitationForm.setEditorStepIndex}
+        onSaveCurrent={() => void handleSaveEditor({ close: false, applyPublicationChange: false })}
         onPreview={() => {
           if (invitationForm.isFormDirty) {
             setNotice('미리보기는 저장된 내용을 보여줍니다. 먼저 내용을 저장해 주세요.');
@@ -747,13 +748,20 @@ export default function ManageScreen() {
         </View> : undefined}
         footer={<>
           <View style={manageStyles.actionRow}>
-            <ActionButton variant="secondary" disabled={invitationForm.isFirstEditorStep || isEditorBusy}
-              onPress={() => invitationForm.setEditorStepIndex(current => Math.max(0, current - 1))}>이전</ActionButton>
-            {!invitationForm.isLastEditorStep ? <ActionButton variant="secondary" disabled={isEditorBusy}
-              onPress={() => void handleSaveEditor({ close: false, applyPublicationChange: false })}>내용 저장</ActionButton> : null}
-            <ActionButton loading={isEditorBusy} style={{ flexGrow: 1 }}
+            <ActionButton
+              variant="secondary"
+              style={manageStyles.actionHalfButton}
+              disabled={invitationForm.isFirstEditorStep || isEditorBusy}
+              onPress={() => invitationForm.setEditorStepIndex(current => Math.max(0, current - 1))}
+            >
+              이전
+            </ActionButton>
+            <ActionButton
+              style={manageStyles.actionHalfButton}
+              loading={isEditorBusy}
               onPress={() => void handleSaveEditor(invitationForm.isLastEditorStep
-                ? {} : { close: false, advance: true, applyPublicationChange: false })}>
+                ? {} : { close: false, advance: true, applyPublicationChange: false })}
+            >
               {invitationForm.isLastEditorStep
                 ? invitationForm.form.published !== invitationForm.savedPublished
                   ? invitationForm.form.published ? '저장 후 공개' : '비공개로 저장'
@@ -761,9 +769,15 @@ export default function ManageScreen() {
                 : '저장 후 다음'}
             </ActionButton>
           </View>
-          <AppText variant="caption" color={palette.textMuted}>내용 저장은 현재 공개 상태를 유지합니다.</AppText>
+          <AppText variant="caption" color={palette.textMuted}>
+            {invitationForm.isLastEditorStep
+              ? '공개 설정은 이 단계의 최종 저장에서만 적용됩니다.'
+              : '저장 후 다음은 저장 성공 후 이동합니다. 상단 저장은 현재 단계에 머물면서 저장합니다.'}
+          </AppText>
         </>}
       >
+        {notice ? <AppText accessibilityRole="alert" color={invitationForm.saveFailed ? palette.danger : palette.textMuted}>{notice}</AppText> : null}
+        {authError ? <AppText accessibilityRole="alert" color={palette.danger}>{authError}</AppText> : null}
         <ManageEditorStepContent
           stepKey={invitationForm.currentEditorStep.key}
           form={invitationForm.form}
@@ -800,8 +814,7 @@ export default function ManageScreen() {
           onSelectMusicCategory={musicLibrary.handleSelectMusicCategory}
           onSelectMusicTrack={musicLibrary.handleSelectMusicTrack}
         />
-        {notice ? <AppText accessibilityRole="alert" color={invitationForm.saveFailed ? palette.danger : palette.textMuted}>{notice}</AppText> : null}
-        {authError ? <AppText accessibilityRole="alert" color={palette.danger}>{authError}</AppText> : null}
+
       </InvitationEditorWorkspace>
 
       <GuestbookModal

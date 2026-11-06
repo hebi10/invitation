@@ -26,10 +26,12 @@ export default function DesignCheck() {
     greetingMessage: '저희의 새로운 시작에 함께해 주세요.', published: false,
   });
   const isLastStep = step === EDITOR_STEPS.length - 1;
+  const showSaveError = requestedStep === 'save-error';
   return <InvitationEditorWorkspace visible onClose={() => router.replace('/')} title={EDITOR_STEPS[step].title}
-    description={EDITOR_STEPS[step].description} status="샘플 청첩장 · 변경 사항 없음"
-    statusTone="neutral" publicationLabel="현재 저장 상태 · 비공개 설정" steps={EDITOR_STEPS} activeStepIndex={step}
-    onSelectStep={setStep} onPreview={() => {}} busy={false}
+    description={EDITOR_STEPS[step].description}
+    status={showSaveError ? '저장 실패 · 입력은 유지됩니다' : '샘플 청첩장 · 변경 사항 없음'}
+    statusTone={showSaveError ? 'danger' : 'neutral'} publicationLabel="현재 저장 상태 · 비공개 설정" steps={EDITOR_STEPS} activeStepIndex={step}
+    onSelectStep={setStep} onPreview={() => {}} onSaveCurrent={() => {}} busy={false}
     compactFooter={<ActionButton fullWidth onPress={() => {}}>내용 저장</ActionButton>}
     compactNavigationFooter={<View style={manageStyles.actionRow}>
       <ActionButton variant="secondary" style={manageStyles.actionHalfButton}
@@ -41,14 +43,20 @@ export default function DesignCheck() {
     </View>}
     footer={<>
       <View style={manageStyles.actionRow}>
-        <ActionButton variant="secondary" disabled={step === 0} onPress={() => setStep(Math.max(0, step - 1))}>이전</ActionButton>
-        {!isLastStep ? <ActionButton variant="secondary" onPress={() => {}}>내용 저장</ActionButton> : null}
-        <ActionButton style={{ flexGrow: 1 }} onPress={() => setStep(Math.min(EDITOR_STEPS.length - 1, step + 1))}>
+        <ActionButton variant="secondary" style={manageStyles.actionHalfButton}
+          disabled={step === 0} onPress={() => setStep(Math.max(0, step - 1))}>이전</ActionButton>
+        <ActionButton style={manageStyles.actionHalfButton}
+          onPress={() => setStep(Math.min(EDITOR_STEPS.length - 1, step + 1))}>
           {isLastStep ? form.published ? '저장 후 공개' : '저장 완료' : '저장 후 다음'}
         </ActionButton>
       </View>
       <AppText variant="caption" color={palette.textMuted}>내용 저장은 현재 공개 상태를 유지합니다.</AppText>
     </>}>
+    {showSaveError ? (
+      <AppText variant="caption" color={palette.danger} accessibilityRole="alert">
+        저장을 완료하지 못했습니다. 입력값은 유지됩니다. 내용을 확인한 뒤 다시 저장해 주세요.
+      </AppText>
+    ) : null}
     <ManageEditorStepContent stepKey={EDITOR_STEPS[step].key} form={form} savedPublished={false}
       mapPreviewUrl="" mapLatitude={null} mapLongitude={null} galleryPreviewItems={[]}
       maxGalleryImageCount={18} supportsMusicFeature musicLibraryLoading={false} musicCategories={[]}

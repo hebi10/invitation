@@ -36,6 +36,7 @@ export default function KeyboardDesignCheck() {
       activeStepIndex={0}
       onSelectStep={() => {}}
       onPreview={() => {}}
+      onSaveCurrent={() => {}}
       busy={false}
       footer={<ActionButton fullWidth onPress={() => {}}>저장 후 다음</ActionButton>}
       compactFooter={(

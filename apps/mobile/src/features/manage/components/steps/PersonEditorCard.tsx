@@ -11,6 +11,7 @@ type PersonEditorCardProps = {
   role: 'groom' | 'bride';
   label: string;
   person: ManagePersonState;
+  showNameField?: boolean;
   onUpdatePersonField: (
     role: 'groom' | 'bride',
     field: 'name' | 'order' | 'phone',
@@ -28,6 +29,7 @@ export function PersonEditorCard({
   role,
   label,
   person,
+  showNameField = true,
   onUpdatePersonField,
   onUpdateParentField,
 }: PersonEditorCardProps) {
@@ -37,20 +39,22 @@ export function PersonEditorCard({
     <View
       style={[
         manageStyles.personCard,
-        { backgroundColor: palette.surfaceMuted, borderColor: palette.cardBorder },
+        { backgroundColor: palette.surface, borderColor: palette.cardBorder },
       ]}
     >
       <AppText variant="title" style={manageStyles.personCardTitle}>{label} 정보</AppText>
-      <TextField
-        label={`${label} 이름`}
-        value={person.name}
-        onChangeText={(value) => onUpdatePersonField(role, 'name', value)}
-        placeholder={`예: ${role === 'groom' ? '박신랑' : '김신부'}`}
-      />
+      {showNameField ? (
+        <TextField
+          label={`${label} 이름`}
+          value={person.name}
+          onChangeText={(value) => onUpdatePersonField(role, 'name', value)}
+          placeholder={`예: ${role === 'groom' ? '박신랑' : '김신부'}`}
+        />
+      ) : null}
       <View style={manageStyles.twoColumnRow}>
         <View style={manageStyles.halfField}>
           <TextField
-            label="서열"
+            label="가족 내 호칭 (선택)"
             value={person.order}
             onChangeText={(value) => onUpdatePersonField(role, 'order', value)}
             placeholder="예: 장남"
@@ -58,7 +62,7 @@ export function PersonEditorCard({
         </View>
         <View style={manageStyles.halfField}>
           <TextField
-            label="연락처"
+            label="연락처 (선택)"
             value={person.phone}
             onChangeText={(value) => onUpdatePersonField(role, 'phone', value)}
             placeholder="예: 010-1234-5678"

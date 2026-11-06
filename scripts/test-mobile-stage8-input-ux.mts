@@ -21,6 +21,8 @@ assert.match(workspace, /keyboardVisible \? compactFooter : compactLayout/);
 assert.match(workspace, /compactNavigationFooter \?\? footer/);
 assert.match(workspace, /accessibilityRole="progressbar"/);
 assert.match(workspace, /onSelectStep\(index\)/);
+assert.match(workspace, /onSaveCurrent/);
+assert.match(workspace, /scrollRef.current\?\.scrollTo\(\{ y: 0, animated: true \}\)/);
 
 assert.match(input, /const resolvedHint = \[accessibilityHint \?\? helperText, errorText\]/);
 assert.match(input, /accessibilityHint=\{resolvedHint \|\| undefined\}/);

@@ -340,6 +340,7 @@ def main():
             wait_screen('recent-linked-status', 'design-check-recent-status', ['최근 연동 상태', '노출 종료', '주소 복사'])
             wait_screen('linked-list', 'design-check-linked', ['기기 연동 청첩장', '현재 관리 중', '내용 수정'])
             wait_screen('editor-fixture', 'design-check', ['샘플 청첩장 · 변경 사항 없음', '청첩장 편집', '기본 정보'])
+            wait_screen('editor-save-error', 'design-check?step=save-error', ['저장 실패', '입력값은 유지됩니다', '기본 정보'])
             keyboard_tree = wait_screen(
                 'editor-keyboard-ready', 'design-check-keyboard',
                 ['청첩장 편집', '키보드 확인 입력', '저장 후 다음'],
@@ -363,13 +364,25 @@ def main():
             adb('shell', 'input', 'keyevent', 'KEYCODE_BACK')
             for name, step, expected in [
                 ('editor-schedule', 'schedule', ['청첩장 편집', '예식 일정']),
-                ('editor-location', 'location', ['청첩장 편집', '예식장 주소와 연락처']),
+                ('editor-location', 'location', ['청첩장 편집', '예식장 주소', '입력한 주소로 위치 검색']),
                 ('editor-greeting', 'greeting', ['청첩장 편집', '인사말']),
                 ('editor-images', 'images', ['청첩장 편집', '대표 이미지']),
                 ('editor-music', 'music', ['청첩장 편집', '배경음악 설정']),
             ]:
                 wait_screen(name, f'design-check?step={step}', expected)
-            wait_screen('editor-intro', 'design-check?step=intro', ['첫 화면 애니메이션', '빛에 담긴 초대'])
+            intro_tree = wait_screen(
+                'editor-intro-closed', 'design-check?step=intro',
+                ['첫 화면 애니메이션 (선택)', '공유 제목과 설명'],
+            )
+            intro_toggle = next(
+                (node for node in intro_tree.iter('node')
+                 if node.get('content-desc') == '첫 화면 애니메이션 (선택)'
+                 and node.get('enabled') == 'true'), None,
+            )
+            if intro_toggle is None or not tap(intro_toggle):
+                raise RuntimeError('intro disclosure: 첫 화면 애니메이션 펼침 버튼을 찾거나 누르지 못했습니다.')
+            wait_screen('editor-intro', 'design-check?step=intro',
+                        ['첫 화면 애니메이션', '현재 선택한 연출', '사용 안 함'], timeout=45, launch=False)
             for name, kind, expected in [
                 ('modal-payment', 'payment', ['Google Play 결제', '결제 예정 금액']),
                 ('modal-payment-pending', 'payment-pending', ['Google Play 결제', '이전 결제 이어서 처리']),

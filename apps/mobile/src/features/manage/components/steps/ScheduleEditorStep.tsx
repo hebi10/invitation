@@ -1,6 +1,5 @@
 import { View } from 'react-native';
 
-import { AppText } from '../../../../components/AppText';
 import { SectionCard } from '../../../../components/SectionCard';
 import { TextField } from '../../../../components/TextField';
 import type { ManageFormState, ManageStringFieldKey } from '../../shared';
@@ -18,14 +17,15 @@ export function ScheduleEditorStep({
   return (
     <>
       <SectionCard
-        title="예식 일정"
-        description="하객에게 표시되는 예식 날짜와 예식장 정보를 입력합니다."
+        title="예식 날짜와 시간"
+        description="예식 날짜·시간은 하객이 가장 먼저 확인하는 정보입니다."
       >
         <TextField
-          label="예식 일시 문구"
+          label="예식 일시"
           value={form.date}
           onChangeText={(value) => onUpdateField('date', value)}
-          placeholder="예: 2026.07.12 오후 2시"
+          placeholder="예: 2027년 5월 6일 오후 2시"
+          helperText="날짜와 시간을 한 문장으로 입력해 주세요. 청첩장에 그대로 표시됩니다."
         />
         <TextField
           label="예식장 이름"
@@ -33,8 +33,12 @@ export function ScheduleEditorStep({
           onChangeText={(value) => onUpdateField('venue', value)}
           placeholder="예: 소풍컨벤션 서울"
         />
+      </SectionCard>
+      <SectionCard
+        title="본식 안내"
+        description="홀 이름이나 층수가 있다면 추가해 주세요."
+      >
         <View style={manageStyles.editorFieldGroup}>
-          <AppText variant="caption" style={manageStyles.editorFieldLabel}>본식 안내</AppText>
           <View style={manageStyles.twoColumnRow}>
             <View style={manageStyles.halfField}>
               <TextField
@@ -56,8 +60,8 @@ export function ScheduleEditorStep({
         </View>
       </SectionCard>
       <SectionCard
-        title="피로연 안내"
-        description="피로연 정보가 있다면 시간과 장소를 입력합니다."
+        title="피로연 안내 (선택)"
+        description="식사·피로연이 별도로 진행될 때만 입력해 주세요."
       >
         <View style={manageStyles.twoColumnRow}>
           <View style={manageStyles.halfField}>

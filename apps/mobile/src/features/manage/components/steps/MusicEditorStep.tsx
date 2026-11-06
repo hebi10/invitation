@@ -59,14 +59,19 @@ export function MusicEditorStep({
             accessibilityState={{ selected: form.musicEnabled }}
             fullWidth
           >
-            {form.musicEnabled ? '배경음악 사용 중' : '배경음악 사용 안 함'}
+            {form.musicEnabled ? '배경음악 사용 중 · 끄기' : '배경음악 사용 안 함 · 켜기'}
           </ActionButton>
 
-          {musicLibraryLoading ? (
-            <AppText variant="caption" color={palette.textMuted} accessibilityLiveRegion="polite">
-              음악 목록을 불러오는 중입니다.
-            </AppText>
-          ) : null}
+          {form.musicEnabled ? (
+            <>
+              <AppText variant="caption" color={palette.textMuted}>
+                아래에서 음악 종류와 곡을 선택한 다음 음량을 조절해 주세요.
+              </AppText>
+              {musicLibraryLoading ? (
+                <AppText variant="caption" color={palette.textMuted} accessibilityLiveRegion="polite">
+                  음악 목록을 불러오는 중입니다.
+                </AppText>
+              ) : null}
 
           <View style={manageStyles.dropdownField}>
             <AppText variant="caption" style={manageStyles.dropdownLabel}>
@@ -231,19 +236,26 @@ export function MusicEditorStep({
             ) : null}
           </View>
 
-          <TextField
-            label="볼륨 (0 ~ 1)"
-            value={form.musicVolume}
-            onChangeText={(value) => onUpdateField('musicVolume', value)}
-            placeholder="예: 0.35"
-            autoCapitalize="none"
-            autoCorrect={false}
-            keyboardType="decimal-pad"
-          />
+              <TextField
+                label="음악 음량 (0~1)"
+                value={form.musicVolume}
+                onChangeText={(value) => onUpdateField('musicVolume', value)}
+                placeholder="예: 0.35"
+                helperText="0은 무음, 1은 최대 음량입니다. 숫자로 입력해 주세요."
+                autoCapitalize="none"
+                autoCorrect={false}
+                keyboardType="decimal-pad"
+              />
+            </>
+          ) : (
+            <AppText variant="caption" color={palette.textMuted}>
+              음악이 꺼져 있습니다. 사용하려면 위 버튼을 눌러 주세요.
+            </AppText>
+          )}
         </>
       ) : (
         <AppText variant="muted" style={manageStyles.helperText}>
-          현재 서비스 등급에서는 배경음악 기능을 제공하지 않습니다.
+          이 청첩장에서는 배경음악 기능을 사용할 수 없습니다.
         </AppText>
       )}
     </SectionCard>
