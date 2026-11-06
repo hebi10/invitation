@@ -22,7 +22,9 @@ assert.match(workspace, /compactNavigationFooter \?\? footer/);
 assert.match(workspace, /accessibilityRole="progressbar"/);
 assert.match(workspace, /onSelectStep\(index\)/);
 
-assert.match(input, /accessibilityHint=\{accessibilityHint \?\? helperText\}/);
+assert.match(input, /const resolvedHint = \[accessibilityHint \?\? helperText, errorText\]/);
+assert.match(input, /accessibilityHint=\{resolvedHint \|\| undefined\}/);
+assert.match(input, /accessibilityRole="alert"/);
 assert.match(input, /minHeight: APP_CONTROL_MIN_HEIGHT/);
 
 assert.match(modal, /useWindowDimensions/);
