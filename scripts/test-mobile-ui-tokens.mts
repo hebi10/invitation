@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 
 import { getFontScale, getPalette, resolveAppColorScheme } from '../apps/mobile/src/constants/theme';
 import {
@@ -27,6 +28,8 @@ function contrastRatio(left: string, right: string) {
 
 for (const scheme of ['light', 'dark'] as const) {
   const palette = getPalette(scheme);
+  assert.ok(contrastRatio(palette.focus, palette.surface) >= 4.5,
+    `${scheme} keyboard focus must be visible against card surfaces`);
   for (const [label, text, background] of [
     ['page title', palette.text, palette.background],
     ['card title', palette.text, palette.surface],
@@ -52,6 +55,27 @@ assert.equal(getFontScale('large'), 1.12);
 
 assert.ok(APP_CONTROL_MIN_HEIGHT >= 48, 'common controls need a 48dp touch target');
 assert.deepEqual(Object.values(APP_SPACING), [8, 12, 16, 24, 32]);
+assert.equal(getPalette('light').background, '#f8f8f7');
+assert.equal(getPalette('light').surface, '#ffffff');
+assert.equal(getPalette('light').accent, '#292b27');
+assert.equal(getPalette('light').cardBorder, '#d8dad4');
+assert.equal(getPalette('light').focus, '#596257');
+assert.deepEqual(
+  (['screenTitle', 'cardTitle', 'body', 'caption'] as const)
+    .map((role) => getScaledTypography(role, 1).fontSize),
+  [25, 17, 14, 12],
+  'DS-01 typography should use the approved sizes'
+);
+
+const chipSource = readFileSync('apps/mobile/src/components/ChoiceChip.tsx', 'utf8');
+assert.match(chipSource, /accessibilityState=\{\{ selected \}\}/);
+assert.match(chipSource, /name="checkmark"/, 'selected chips need a non-color visual indicator');
+
+const inputSource = readFileSync('apps/mobile/src/components/TextField.tsx', 'utf8');
+assert.match(inputSource, /selectionColor=\{palette\.focus\}/);
+assert.match(inputSource, /errorText \? palette\.danger/);
+assert.match(inputSource, /accessibilityRole="alert"/);
+
 
 for (const role of Object.keys(APP_TYPOGRAPHY) as Array<keyof typeof APP_TYPOGRAPHY>) {
   const normal = getScaledTypography(role, 1);

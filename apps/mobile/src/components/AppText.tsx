@@ -10,7 +10,7 @@ import {
 import { getScaledTypography } from '../constants/uiTokens';
 import { useVisualPreferences } from '../contexts/PreferencesContext';
 
-export type AppTextVariant = 'body' | 'title' | 'display' | 'caption' | 'muted';
+export type AppTextVariant = 'body' | 'title' | 'display' | 'cardTitle' | 'caption' | 'muted';
 
 type AppTextProps = PropsWithChildren<
   TextProps & {

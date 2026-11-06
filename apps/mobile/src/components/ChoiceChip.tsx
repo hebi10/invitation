@@ -1,7 +1,9 @@
+import { Ionicons } from '@expo/vector-icons';
 import {
   Pressable,
   StyleSheet,
   Text,
+  View,
 } from 'react-native';
 
 import { APP_CONTROL_MIN_HEIGHT, getScaledTypography } from '../constants/uiTokens';
@@ -19,7 +21,7 @@ export function ChoiceChip({ label, selected, onPress }: ChoiceChipProps) {
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel={label}
+      accessibilityLabel={selected ? `${label}, 선택됨` : label}
       accessibilityState={{ selected }}
       onPress={onPress}
       style={({ pressed }) => [
@@ -31,19 +33,27 @@ export function ChoiceChip({ label, selected, onPress }: ChoiceChipProps) {
         },
       ]}
     >
-      <Text
-        style={[
-          { color: selected ? palette.surface : palette.text },
-          getScaledTypography('chip', fontScale),
-        ]}
-      >
-        {label}
-      </Text>
+      <View style={styles.content}>
+        {selected ? <Ionicons name="checkmark" size={16} color={palette.surface} /> : null}
+        <Text
+          style={[
+            { color: selected ? palette.surface : palette.text },
+            getScaledTypography('chip', fontScale),
+          ]}
+        >
+          {label}
+        </Text>
+      </View>
     </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
+  content: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
   chip: {
     borderWidth: 1,
     borderRadius: 0,

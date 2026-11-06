@@ -75,7 +75,7 @@ export function InvitationSummaryCard({
           <AppText variant="caption" color={palette.textMuted}>
             {contextLabel}
           </AppText>
-          <AppText variant="title" style={styles.name}>{name}</AppText>
+          <AppText variant="cardTitle" style={styles.name}>{name}</AppText>
           {dateLabel ? (
             <AppText variant="caption" color={palette.textMuted}>
               {dateLabel}
