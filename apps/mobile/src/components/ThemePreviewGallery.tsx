@@ -1,6 +1,6 @@
 import { Image } from 'expo-image';
 import * as WebBrowser from 'expo-web-browser';
-import { Linking, Platform, ScrollView, StyleSheet, View } from 'react-native';
+import { Linking, Platform, ScrollView, StyleSheet, View, useWindowDimensions } from 'react-native';
 
 import { designThemes, findGuideSamplePageUrl } from '../constants/content';
 import { themePreviewImages } from '../constants/themePreviewImages';
@@ -12,6 +12,8 @@ import { AppText } from './AppText';
 
 export function ThemePreviewGallery({ tier = 'premium' }: { tier?: MobileInvitationProductTier }) {
   const { palette } = useVisualPreferences();
+  const { width } = useWindowDimensions();
+  const itemWidth = Math.min(248, Math.max(112, Math.floor((width - 76) / 2)));
   const { showToast } = useAppFeedback();
 
   const openPreview = async (url: string) => {
@@ -36,7 +38,7 @@ export function ThemePreviewGallery({ tier = 'premium' }: { tier?: MobileInvitat
         showsHorizontalScrollIndicator={false}
         accessibilityLabel="청첩장 디자인 미리보기"
         contentContainerStyle={styles.gallery}
-        snapToInterval={260}
+        snapToInterval={itemWidth + 12}
         decelerationRate="fast"
       >
         {designThemes.map((theme) => {
@@ -45,7 +47,7 @@ export function ThemePreviewGallery({ tier = 'premium' }: { tier?: MobileInvitat
           return (
             <View
               key={theme.key}
-              style={[styles.item, { borderColor: palette.cardBorder, backgroundColor: palette.surface }]}
+              style={[styles.item, { width: itemWidth, borderColor: palette.cardBorder, backgroundColor: palette.surface }]}
             >
               {preview ? (
                 <Image
@@ -88,10 +90,10 @@ export function ThemePreviewGallery({ tier = 'premium' }: { tier?: MobileInvitat
 const styles = StyleSheet.create({
   wrapper: { gap: 12 },
   gallery: { gap: 12, paddingBottom: 4, alignItems: 'stretch' },
-  item: { width: 248, borderWidth: 1, borderRadius: 0, gap: 0 },
+  item: { borderWidth: 1, borderRadius: 0, gap: 0 },
   image: { width: '100%', aspectRatio: 9 / 14 },
   textPreview: { justifyContent: 'center', alignItems: 'center', padding: 16 },
-  copy: { padding: 14, gap: 10, flex: 1 },
+  copy: { padding: 12, gap: 8, flex: 1 },
   title: { fontWeight: '600' },
   description: { flexGrow: 1 },
 });

@@ -11,6 +11,10 @@ import { WeddingIntroHero } from '../../components/WeddingIntroHero';
 import { WebPreviewNotice } from '../../components/WebPreviewNotice';
 import { useAuth } from '../../contexts/AuthContext';
 import { usePreferences } from '../../contexts/PreferencesContext';
+import {
+  INVITATION_INITIAL_DISPLAY_PERIOD_MONTHS,
+  INVITATION_PREMIUM_PRICE_LABEL,
+} from '../../lib/invitationProductPolicy';
 
 export default function MyInvitationsScreen() {
   const router = useRouter();
@@ -30,13 +34,18 @@ export default function MyInvitationsScreen() {
   }
 
   return (
-    <AppScreen title="홈" subtitle="새 청첩장을 만들거나 원하는 웨딩 디자인을 확인해 보세요.">
+    <AppScreen title="Invitation" subtitle="웨딩 디자인 5종 · 모바일 청첩장 만들기">
       {isExpoWebPreview ? <WebPreviewNotice /> : null}
       <DraftInvitationsSection />
+      <WeddingIntroHero />
       <SectionCard
-        title="청첩장 시작하기"
-        description="새로 만들거나 이미 제작한 청첩장을 이 기기에 연결할 수 있습니다."
+        title="프리미엄 청첩장"
+        description={`생성일부터 ${INVITATION_INITIAL_DISPLAY_PERIOD_MONTHS}개월 · 웨딩 디자인 5종 모두 포함`}
       >
+        <View style={styles.priceRow}>
+          <AppText variant="display" style={styles.price}>{INVITATION_PREMIUM_PRICE_LABEL}</AppText>
+          <AppText variant="caption" color={palette.textMuted}>디자인 추가 요금 없음</AppText>
+        </View>
         <ActionButton fullWidth onPress={() => router.push('/create')}>
           새 청첩장 만들기
         </ActionButton>
@@ -52,7 +61,6 @@ export default function MyInvitationsScreen() {
           PC에서 만든 청첩장도 같은 고객 계정이나 앱 연동 링크로 관리할 수 있습니다.
         </AppText>
       </SectionCard>
-      <WeddingIntroHero />
       <SectionCard
         title="웨딩 디자인 살펴보기"
         description="신민재·김현지 청첩장으로 디자인별 실제 페이지를 확인할 수 있습니다."
@@ -68,4 +76,12 @@ export default function MyInvitationsScreen() {
 
 const styles = StyleSheet.create({
   loading: { alignItems: 'center', gap: 12, paddingVertical: 32 },
+  priceRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    alignItems: 'baseline',
+    justifyContent: 'space-between',
+    gap: 8,
+  },
+  price: { fontSize: 28, lineHeight: 36, fontWeight: '700' },
 });

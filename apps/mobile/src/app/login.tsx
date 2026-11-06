@@ -259,10 +259,15 @@ export default function LoginScreen() {
     >
       <SectionCard
         title="기기 연동 안내"
-        description="다른 기기에서 제작한 청첩장은 관리 화면에서 발급한 앱 연동 링크로 연결할 수 있습니다."
+        description="이미 제작한 청첩장을 앱 연동 링크로 연결하거나 저장된 연동 기록을 열 수 있습니다."
       >
-        <AppText variant="muted">
-          새 청첩장을 만들려면 만들기 탭에서 고객 계정으로 로그인해 주세요.
+        <View style={[styles.linkGuide, { backgroundColor: palette.surfaceMuted }]}>
+          <AppText variant="caption">1. 청첩장 관리 화면에서 앱 연동 링크를 받습니다.</AppText>
+          <AppText variant="caption">2. 이 기기에서 연동 링크를 열어 연결합니다.</AppText>
+          <AppText variant="caption">3. 이전에 연결한 청첩장은 아래 최근 기록에서 다시 열 수 있습니다.</AppText>
+        </View>
+        <AppText variant="caption" color={palette.textMuted}>
+          새 청첩장은 만들기 탭에서 고객 계정 로그인 후 결제할 수 있습니다.
         </AppText>
         <ActionButton variant="secondary" onPress={() => router.replace('/create')} fullWidth>
           새 청첩장 만들기
@@ -322,4 +327,5 @@ const styles = StyleSheet.create({
   bottomAction: {
     marginTop: 'auto',
   },
+  linkGuide: { padding: 12, gap: 8 },
 });

@@ -1,3 +1,4 @@
+import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Platform, StyleSheet, View } from 'react-native';
@@ -25,7 +26,11 @@ import {
   runPendingBillingPurchase,
   type PurchaseRequest,
 } from '../../lib/pendingBillingPurchase';
-import { INVITATION_PREMIUM_PRICE_KRW } from '../../lib/invitationProductPolicy';
+import {
+  INVITATION_INITIAL_DISPLAY_PERIOD_MONTHS,
+  INVITATION_PREMIUM_PRICE_KRW,
+  INVITATION_PREMIUM_PRICE_LABEL,
+} from '../../lib/invitationProductPolicy';
 import type { MobileInvitationCreationInput } from '../../types/mobileInvitation';
 
 function buildPrivateInvitationDraft(): MobileInvitationCreationInput {
@@ -63,6 +68,7 @@ export default function CreateScreen() {
   const [pendingReady, setPendingReady] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [paymentVisible, setPaymentVisible] = useState(false);
+  const [creationCompleted, setCreationCompleted] = useState(false);
   const autoOpenedForUid = useRef<string | null>(null);
   const pendingCheckVersion = useRef(0);
   const customerUid = customerSession?.uid ?? null;
@@ -113,7 +119,7 @@ export default function CreateScreen() {
     setPaymentVisible(false);
     setPending(null);
     setNotice('');
-    router.replace('/guide');
+    setCreationCompleted(true);
   };
 
   const recoverPurchase = async () => {
@@ -173,25 +179,112 @@ export default function CreateScreen() {
     }
   };
 
+  if (creationCompleted) {
+    return (
+      <AppScreen
+        title="제작 시작"
+        subtitle="결제 완료 → 비공개 초안 → 청첩장 정보 입력"
+      >
+        <View style={[styles.successPanel, { backgroundColor: palette.surface, borderColor: palette.cardBorder }]}>
+          <Ionicons name="checkmark-circle-outline" size={48} color={palette.success} />
+          <AppText variant="display" accessibilityRole="header" style={styles.successTitle}>
+            결제가 완료되었습니다
+          </AppText>
+          <AppText variant="muted" style={styles.successDescription}>
+            생성일부터 {INVITATION_INITIAL_DISPLAY_PERIOD_MONTHS}개월 이용할 수 있는 비공개 청첩장이 준비되었습니다.
+          </AppText>
+        </View>
+        <SectionCard title="새 청첩장 초안" badge="비공개" badgeTone="neutral">
+          <View style={styles.summaryRow}>
+            <AppText variant="muted">사용 가능한 디자인</AppText>
+            <AppText>웨딩 디자인 5종</AppText>
+          </View>
+          <View style={styles.summaryRow}>
+            <AppText variant="muted">이용 기간</AppText>
+            <AppText>생성일부터 {INVITATION_INITIAL_DISPLAY_PERIOD_MONTHS}개월</AppText>
+          </View>
+          <AppText variant="caption" color={palette.textMuted}>
+            아직 하객에게 공개되지 않았습니다. 내용을 작성하고 미리본 뒤 공개 여부를 설정할 수 있습니다.
+          </AppText>
+        </SectionCard>
+        <SectionCard
+          title="이제 청첩장을 완성해 주세요"
+          description="기본 정보·예식 일정·장소·인사말·사진·음악·공개 설정을 순서대로 입력합니다."
+        >
+          <ActionButton
+            fullWidth
+            onPress={() => {
+              setCreationCompleted(false);
+              router.replace('/guide');
+            }}
+          >
+            마이페이지에서 편집 시작
+          </ActionButton>
+        </SectionCard>
+      </AppScreen>
+    );
+  }
+
   return (
     <>
       <AppScreen
-        title="만들기"
+        title="청첩장 만들기"
         subtitle="고객 계정 로그인 → Google Play 결제 → 청첩장 정보 입력"
       >
-        {isWebPreview ? <WebPreviewNotice
-          title="웹 생성 제한 안내"
-          description="실제 결제는 Google Play 내부 테스트 또는 스토어 설치 앱에서 진행해 주세요."
-        /> : null}
+        {isWebPreview ? (
+          <WebPreviewNotice
+            title="웹 생성 제한 안내"
+            description="실제 결제는 Google Play 내부 테스트 또는 스토어 설치 앱에서 진행해 주세요."
+          />
+        ) : null}
+        <View style={styles.progressRow} accessibilityLabel="청첩장 만들기 진행 단계">
+          {[
+            { number: 1, label: '로그인' },
+            { number: 2, label: '결제' },
+            { number: 3, label: '정보 입력' },
+          ].map((step) => {
+            const current = customerSession ? 2 : 1;
+            const selected = step.number === current;
+            return (
+              <View
+                key={step.number}
+                style={[
+                  styles.progressStep,
+                  { backgroundColor: selected ? palette.accent : palette.surface, borderColor: selected ? palette.accent : palette.cardBorder },
+                ]}
+              >
+                <AppText
+                  variant="caption"
+                  color={selected ? palette.surface : palette.textMuted}
+                  style={styles.progressText}
+                >
+                  {step.number} {step.label}
+                </AppText>
+              </View>
+            );
+          })}
+        </View>
+        <SectionCard title="프리미엄 청첩장 · 단일 상품" badge={`${INVITATION_INITIAL_DISPLAY_PERIOD_MONTHS}개월 이용`} badgeTone="neutral">
+          <AppText variant="display" style={styles.productPrice}>{INVITATION_PREMIUM_PRICE_LABEL}</AppText>
+          <View style={styles.summaryRow}>
+            <AppText variant="muted">웨딩 디자인 5종 모두 제공</AppText>
+            <AppText style={styles.summaryStrong}>추가 요금 없음</AppText>
+          </View>
+          <AppText variant="caption" color={palette.textMuted}>
+            결제 후 청첩장 주소가 자동 생성됩니다. 신랑·신부 이름, 예식 정보와 사진은 결제 후 입력합니다.
+          </AppText>
+        </SectionCard>
 
         {!customerSession ? (
-          <SectionCard title="1. 고객 계정 로그인"
-            description="로그인한 계정에 구매한 청첩장이 등록됩니다.">
+          <SectionCard
+            title="고객 계정 로그인"
+            description="로그인한 계정으로 청첩장을 구매하고 관리합니다."
+          >
             <TextField
               label="이메일"
               value={email}
               onChangeText={setEmail}
-              placeholder="가입한 이메일"
+              placeholder="이메일을 입력해 주세요"
               keyboardType="email-address"
               autoCapitalize="none"
               autoCorrect={false}
@@ -201,63 +294,102 @@ export default function CreateScreen() {
               value={password}
               onChangeText={setPassword}
               secureTextEntry
-              placeholder="비밀번호"
+              placeholder="비밀번호를 입력해 주세요"
               autoCapitalize="none"
               autoCorrect={false}
               onSubmitEditing={() => void signIn()}
             />
-            <ActionButton loading={isCustomerAuthenticating}
-              onPress={() => void signIn()} fullWidth>로그인</ActionButton>
+            <ActionButton
+              loading={isCustomerAuthenticating}
+              onPress={() => void signIn()}
+              fullWidth
+            >
+              로그인 후 결제 진행
+            </ActionButton>
             <AccountHelpLinks />
           </SectionCard>
         ) : (
-          <SectionCard title="1. 고객 계정 확인" badge="로그인됨" badgeTone="success">
-            <AppText variant="muted" selectable>{customerSession.email}</AppText>
-            <ActionButton variant="secondary" disabled={isSubmitting}
-              onPress={() => void logoutCustomer()} fullWidth>다른 계정으로 로그인</ActionButton>
+          <SectionCard title="고객 계정 확인" badge="로그인됨" badgeTone="success">
+            <AppText variant="caption" color={palette.textMuted}>구매 및 관리 계정</AppText>
+            <AppText selectable>{customerSession.email}</AppText>
+            <ActionButton
+              variant="secondary"
+              disabled={isSubmitting}
+              onPress={() => void logoutCustomer()}
+              fullWidth
+            >
+              다른 계정으로 로그인
+            </ActionButton>
           </SectionCard>
         )}
 
-        <SectionCard title="2. 프리미엄 청첩장 결제"
-          description="결제 완료 후 비공개 청첩장 초안을 만들고 정보 입력 화면으로 이동합니다.">
-          <AppText variant="display">5,000원</AppText>
-          <AppText variant="muted">기본 6개월 · 웨딩 디자인 전체 포함</AppText>
-          <AppText variant="caption" color={palette.textMuted}>
-            예식 정보·신랑 신부 이름·사진은 결제 후 입력합니다. 청첩장 주소는 자동 생성됩니다.
-          </AppText>
-          {!pendingReady && customerSession ? (
-            <View style={styles.loading}>
-              <ActivityIndicator color={palette.accent}/>
-              <AppText variant="muted">이전 결제 기록 확인 중</AppText>
-            </View>
-          ) : null}
-          {pending ? (
-            <>
-              <AppText variant="muted">
-                완료하지 못한 제작 결제가 있습니다. 새 결제 없이 이전 거래부터 복구해 주세요.
+        {customerSession ? (
+          pending ? (
+            <SectionCard
+              title="결제 복구"
+              description="완료하지 못한 거래를 추가 결제 없이 이어서 처리합니다."
+              badge="확인 필요"
+              badgeTone="notice"
+            >
+              <View style={[styles.warning, { backgroundColor: palette.noticeSoft }]}>
+                <AppText color={palette.notice} style={styles.summaryStrong}>
+                  처리할 이전 결제가 있습니다.
+                </AppText>
+                <AppText color={palette.notice}>
+                  새로 결제하지 말고 기존 거래를 먼저 확인해 주세요.
+                </AppText>
+              </View>
+              <View style={styles.summaryRow}>
+                <AppText variant="muted">상품</AppText>
+                <AppText>프리미엄 청첩장</AppText>
+              </View>
+              <View style={styles.summaryRow}>
+                <AppText variant="muted">결제 상품 금액</AppText>
+                <AppText>{INVITATION_PREMIUM_PRICE_LABEL}</AppText>
+              </View>
+              <ActionButton
+                loading={isSubmitting}
+                disabled={isWebPreview || !pendingReady}
+                onPress={() => void recoverPurchase()}
+                fullWidth
+              >
+                이전 결제 이어서 처리
+              </ActionButton>
+              <AppText variant="caption" color={palette.textMuted}>
+                복구가 완료되지 않으면 네트워크와 로그인 계정을 확인하고 같은 거래로 재시도해 주세요. 복구 과정에서 신규 결제를 요청하지 않습니다.
               </AppText>
-              <ActionButton loading={isSubmitting} disabled={isWebPreview}
-                onPress={() => void recoverPurchase()} fullWidth>이전 결제 이어서 처리</ActionButton>
-            </>
+            </SectionCard>
           ) : (
-            <ActionButton
-              onPress={() => setPaymentVisible(true)}
-              disabled={!customerSession || isWebPreview || !pendingReady || isSubmitting}
-              fullWidth
-            >Google Play 결제 확인</ActionButton>
-          )}
-        </SectionCard>
+            <SectionCard
+              title="Google Play 결제"
+              description="결제 확인 후 비공개 청첩장 초안이 생성됩니다."
+            >
+              <View style={styles.summaryRow}>
+                <AppText variant="muted">프리미엄 청첩장</AppText>
+                <AppText>{INVITATION_PREMIUM_PRICE_LABEL}</AppText>
+              </View>
+              {!pendingReady ? (
+                <View style={styles.loading} accessibilityLiveRegion="polite">
+                  <ActivityIndicator color={palette.accent}/>
+                  <AppText variant="muted">이전 결제 기록 확인 중</AppText>
+                </View>
+              ) : null}
+              <ActionButton
+                onPress={() => setPaymentVisible(true)}
+                disabled={isWebPreview || !pendingReady || isSubmitting}
+                fullWidth
+              >
+                Google Play 결제 확인
+              </ActionButton>
+            </SectionCard>
+          )
+        ) : null}
 
-        <SectionCard title="3. 결제 후 정보 입력"
-          description="결제된 비공개 초안을 마이페이지에서 수정합니다.">
-          <AppText variant="muted">
-            신랑·신부 이름, 예식 일정, 장소, 인사말, 사진, 음악, 공개 설정을 차례로 입력한 뒤 디자인별 미리보기와 공유 링크를 확인할 수 있습니다.
+        <View style={[styles.guidance, { backgroundColor: palette.surfaceMuted }]}>
+          <AppText variant="caption" color={palette.textMuted}>
+            결제 완료 후 비공개 청첩장이 생성됩니다. 예식 정보·사진·음악 등은 마이페이지에서 7단계로 입력합니다.
           </AppText>
-          <ActionButton variant="secondary" onPress={() => router.push('/guide')} fullWidth>
-            마이페이지에서 내 청첩장 보기
-          </ActionButton>
-        </SectionCard>
-
+        </View>
         {notice || customerAuthError || authError ? (
           <AppText color={palette.danger} accessibilityRole="alert">
             {notice || customerAuthError || authError}
@@ -287,4 +419,37 @@ export default function CreateScreen() {
 
 const styles = StyleSheet.create({
   loading: { alignItems: 'center', gap: 10, paddingVertical: 12 },
+  progressRow: { flexDirection: 'row', gap: 8 },
+  progressStep: {
+    flex: 1,
+    minWidth: 0,
+    minHeight: 42,
+    borderWidth: 1,
+    borderRadius: 0,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 4,
+    paddingVertical: 8,
+  },
+  progressText: { textAlign: 'center', fontWeight: '600' },
+  productPrice: { fontSize: 30, lineHeight: 40, fontWeight: '700' },
+  summaryRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+    gap: 8,
+  },
+  summaryStrong: { fontWeight: '700' },
+  guidance: { padding: 14 },
+  warning: { padding: 12, gap: 6 },
+  successPanel: {
+    borderWidth: 1,
+    borderRadius: 0,
+    alignItems: 'center',
+    padding: 24,
+    gap: 12,
+  },
+  successTitle: { textAlign: 'center' },
+  successDescription: { textAlign: 'center' },
 });

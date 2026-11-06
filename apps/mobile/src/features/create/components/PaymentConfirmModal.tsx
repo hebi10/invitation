@@ -50,7 +50,7 @@ export function PaymentConfirmModal({
     <AppModalFrame
       visible={visible}
       onClose={onClose}
-      title="Google Play 결제"
+      title="Google Play 결제 확인"
       description="결제 완료 후 청첩장이 생성됩니다."
       placement="center"
       palette={palette}
@@ -62,22 +62,25 @@ export function PaymentConfirmModal({
               이전 결제 이어서 처리
             </ActionButton>
           ) : null}
+          {!hasPendingPurchase ? (
+            <ActionButton onPress={onConfirm} loading={loading} fullWidth>
+              5,000원 결제하기
+            </ActionButton>
+          ) : null}
           <ActionButton variant="secondary" onPress={onClose} disabled={loading} fullWidth>
             다시 확인하기
-          </ActionButton>
-          <ActionButton
-            onPress={onConfirm}
-            loading={loading}
-            disabled={hasPendingPurchase}
-            fullWidth
-          >
-            5,000원 결제하기
           </ActionButton>
         </ModalActionStack>
       )}
     >
       <View style={styles.summary}>
-        <ModalSummaryRow label="구성" value={`${serviceName} · ${selectedThemeLabel}`} palette={palette} />
+        <ModalSummaryRow label="상품" value={serviceName} palette={palette} />
+        <ModalSummaryRow label="구성" value={selectedThemeLabel} palette={palette} />
+        <ModalSummaryRow
+          label="이용 기간"
+          value={`생성일부터 ${INVITATION_INITIAL_DISPLAY_PERIOD_MONTHS}개월`}
+          palette={palette}
+        />
         <ModalSummaryRow label="청첩장 주소" value={slugPreview} palette={palette} />
         <ModalSummaryRow
           label="결제 예정 금액"
@@ -87,8 +90,8 @@ export function PaymentConfirmModal({
         />
       </View>
       <AppText variant="caption" color={palette.textMuted}>
-        생성일부터 {INVITATION_INITIAL_DISPLAY_PERIOD_MONTHS}개월 이용할 수 있으며 제작 기간도 포함됩니다.
-        예상 종료일: {expectedEnd.toLocaleDateString('ko-KR')}. 5,000원 결제로 6개월씩 연장할 수 있습니다.
+        결제 완료 시 비공개 초안이 생성되며 예식 정보와 사진은 이후 입력합니다.
+        이용 기간은 생성일부터 {INVITATION_INITIAL_DISPLAY_PERIOD_MONTHS}개월이고, 예상 종료일은 {expectedEnd.toLocaleDateString('ko-KR')}입니다.
       </AppText>
       {hasPendingPurchase ? (
         <ModalFeedback palette={palette} tone="notice">

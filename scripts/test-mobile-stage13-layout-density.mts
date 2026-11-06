@@ -17,8 +17,8 @@ const tabs = read('apps/mobile/src/app/(tabs)/_layout.tsx');
 const status = read('apps/mobile/src/components/AppStatusScreen.tsx');
 const settings = read('apps/mobile/src/features/screens/settings.tsx');
 
-assert.ok(home.indexOf('title="청첩장 시작하기"') < home.indexOf('<WeddingIntroHero />'),
-  'Creation CTA must precede large hero');
+assert.ok(home.indexOf('<WeddingIntroHero />') < home.indexOf('title="프리미엄 청첩장"'),
+  'HM-01: editorial hero should precede product pricing and creation CTA');
 assert.match(hero, /preview: \{ flex: 1, minWidth: 0, aspectRatio: 1 \}/);
 assert.match(mypage, /<AccountInvitationsSection compactUnauthenticated \/>/);
 assert.match(owned, /compactUnauthenticated && !showLoginForm/);
@@ -26,8 +26,8 @@ assert.match(owned, /onPress=\{\(\) => setShowLoginForm\(true\)\}/);
 assert.match(owned, /compact\s*>/);
 assert.match(summary, /cardCompact: \{ padding: 10, gap: 8 \}/);
 assert.match(summary, /coverCompact: \{ width: 64, height: 84 \}/);
-assert.match(gallery, /item: \{ width: 248/);
-assert.match(gallery, /snapToInterval=\{260\}/);
+assert.match(gallery, /itemWidth = Math\.min\(248/);
+assert.match(gallery, /snapToInterval=\{itemWidth \+ 12\}/);
 assert.match(preview, /getInvitationThemePreviewDescription\(theme\)/);
 assert.match(preview, /thumbnail: \{ width: 108, height: 156 \}/);
 assert.match(editor, /compactNavigationFooter \?\? footer/);

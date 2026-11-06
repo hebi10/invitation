@@ -32,12 +32,35 @@ export function AccountHelpLinks() {
 
   return (
     <View style={styles.container}>
-      <ActionButton variant="secondary" disabled={opening} onPress={() => void openAccountPage('/signup')} accessibilityHint="브라우저에서 회원가입 페이지를 엽니다" fullWidth>회원가입</ActionButton>
-      <ActionButton variant="secondary" disabled={opening} onPress={() => void openAccountPage('/forgot-password')} accessibilityHint="브라우저에서 비밀번호 재설정 페이지를 엽니다" fullWidth>비밀번호 재설정</ActionButton>
-      <AppText variant="caption">회원가입과 비밀번호 재설정은 브라우저에서 진행합니다. 이메일로 가입하면 받은 편지함의 인증 링크까지 확인해 주세요.</AppText>
-      <AppText variant="caption">완료 후 브라우저를 닫거나 앱 전환으로 이 화면에 돌아와, 가입한 이메일과 비밀번호로 로그인해 주세요. 웹사이트 로그인과 앱 로그인은 별도로 진행됩니다.</AppText>
+      <View style={styles.actions}>
+        <ActionButton
+          variant="secondary"
+          disabled={opening}
+          onPress={() => void openAccountPage('/signup')}
+          accessibilityHint="브라우저에서 회원가입 페이지를 엽니다"
+          style={styles.action}
+        >
+          회원가입
+        </ActionButton>
+        <ActionButton
+          variant="secondary"
+          disabled={opening}
+          onPress={() => void openAccountPage('/forgot-password')}
+          accessibilityHint="브라우저에서 비밀번호 재설정 페이지를 엽니다"
+          style={styles.action}
+        >
+          비밀번호 재설정
+        </ActionButton>
+      </View>
+      <AppText variant="caption" color={palette.textMuted}>
+        회원가입·비밀번호 재설정은 브라우저에서 진행합니다. 이메일 인증까지 마친 후 앱으로 돌아와 로그인해 주세요.
+      </AppText>
     </View>
   );
 }
 
-const styles = StyleSheet.create({ container: { gap: 12 } });
+const styles = StyleSheet.create({
+  container: { gap: 10 },
+  actions: { flexDirection: 'row', gap: 8 },
+  action: { flex: 1, minWidth: 0, paddingHorizontal: 8 },
+});
