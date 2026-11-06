@@ -3,6 +3,7 @@ import { readFileSync } from 'node:fs';
 
 import { getOwnedInvitationStatus } from '../apps/mobile/src/features/manage/ownedInvitationPresentation';
 import { getInvitationVisibility } from '../apps/mobile/src/features/manage/invitationVisibility';
+import { formatDateLabel, formatDisplayPeriod } from '../apps/mobile/src/features/manage/linkedInvitationDisplay';
 
 const read = (path: string) => readFileSync(path, 'utf8');
 
@@ -35,6 +36,8 @@ const activePeriod = {
 };
 assert.equal(getInvitationVisibility(true, activePeriod, referenceTime).label, '공개 중');
 assert.equal(getInvitationVisibility(false, activePeriod, referenceTime).label, '비공개');
+assert.equal(formatDateLabel('2026-01-01T00:00:00+09:00'), '2026년 1월 1일');
+assert.match(formatDisplayPeriod(activePeriod), /2026년 1월 1일 ~ 2027년 12월 31일/);
 assert.equal(getInvitationVisibility(true, {
   ...activePeriod,
   startDate: '2027-01-01T00:00:00+09:00',
@@ -88,5 +91,6 @@ assert.match(ownedFixture, /visibleCount === 0/);
 assert.match(ownedFixture, /mockEvents\.slice\(0, visibleCount\)/);
 assert.match(capture, /linked-list/);
 assert.match(capture, /design-check-linked/);
+assert.match(capture, /'기기 연동 청첩장'/);
 
 console.log('Mobile stage 3 invitation list and status presentation tests passed');
