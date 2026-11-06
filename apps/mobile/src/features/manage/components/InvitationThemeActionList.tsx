@@ -1,5 +1,5 @@
 import { Image } from 'expo-image';
-import { StyleSheet, View } from 'react-native';
+import { StyleSheet, View, useWindowDimensions } from 'react-native';
 
 import { ActionButton } from '../../../components/ActionButton';
 import { AppText } from '../../../components/AppText';
@@ -23,7 +23,9 @@ export function InvitationThemeActionList({
   busy = false,
   onSelect,
 }: InvitationThemeActionListProps) {
-  const { palette } = useVisualPreferences();
+  const { palette, fontScale } = useVisualPreferences();
+  const { width } = useWindowDimensions();
+  const compactLayout = width < 360 || (width < 390 && fontScale > 1);
   return (
     <View style={styles.list}>
       <AppText variant="muted">
@@ -39,6 +41,7 @@ export function InvitationThemeActionList({
           key={theme}
           style={[
             styles.item,
+            compactLayout ? styles.itemCompact : null,
             {
               backgroundColor: isCurrentTheme ? palette.accentSoft : palette.surface,
               borderColor: isCurrentTheme ? palette.accent : palette.cardBorder,
@@ -47,13 +50,13 @@ export function InvitationThemeActionList({
         >
           <Image
             source={themePreviewImages[theme] ?? themePreviewImages.romantic}
-            style={[styles.thumbnail, { backgroundColor: palette.surfaceMuted }]}
+            style={[styles.thumbnail, compactLayout ? styles.thumbnailCompact : null, { backgroundColor: palette.surfaceMuted }]}
             contentFit="contain"
             contentPosition="top"
             alt={`${getInvitationThemeLabel(theme)} 디자인 샘플 이미지`}
           />
           <View style={styles.details}>
-            <AppText variant="title" style={styles.name}>
+            <AppText variant="cardTitle" style={styles.name}>
               {getInvitationThemeLabel(theme)}
             </AppText>
             <AppText variant="caption" color={palette.textMuted} numberOfLines={3}>
@@ -90,6 +93,8 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   thumbnail: { width: 108, height: 156 },
+  itemCompact: { padding: 10, gap: 10 },
+  thumbnailCompact: { width: 84, height: 120 },
   details: { flex: 1, minWidth: 0, justifyContent: 'center', gap: 8 },
-  name: { fontWeight: '600' },
+  name: { fontWeight: '700' },
 });

@@ -50,13 +50,15 @@ export function OnboardingModal({
       contentDisabled={isSaving}
       footer={(
         <View style={styles.actions}>
-          <ActionButton variant="secondary" onPress={onClose} disabled={isSaving} style={styles.action}>
-            나중에 입력
-          </ActionButton>
-          <ActionButton variant="secondary" onPress={onPrevious} disabled={stepIndex === 0 || isSaving} style={styles.action}>
-            이전
-          </ActionButton>
-          <ActionButton onPress={() => void onNext()} loading={isSaving} style={styles.action}>
+          <View style={styles.secondaryActions}>
+            <ActionButton variant="secondary" onPress={onClose} disabled={isSaving} style={styles.action}>
+              나중에 입력
+            </ActionButton>
+            <ActionButton variant="secondary" onPress={onPrevious} disabled={stepIndex === 0 || isSaving} style={styles.action}>
+              이전
+            </ActionButton>
+          </View>
+          <ActionButton onPress={() => void onNext()} loading={isSaving} fullWidth>
             {stepIndex === ONBOARDING_STEPS.length - 1 ? '저장하고 시작' : '다음'}
           </ActionButton>
         </View>
@@ -86,6 +88,10 @@ export function OnboardingModal({
           />
         </View>
       </View>
+      {validationMessage ? (
+        <ModalFeedback palette={palette} tone="error">{validationMessage}</ModalFeedback>
+      ) : null}
+      {authError ? <ModalFeedback palette={palette} tone="error">{authError}</ModalFeedback> : null}
       <OnboardingStepContent
         stepIndex={stepIndex}
         form={form}
@@ -93,10 +99,6 @@ export function OnboardingModal({
         onUpdatePersonName={onUpdatePersonName}
         onSetPublished={onSetPublished}
       />
-      {validationMessage ? (
-        <ModalFeedback palette={palette} tone="error">{validationMessage}</ModalFeedback>
-      ) : null}
-      {authError ? <ModalFeedback palette={palette} tone="error">{authError}</ModalFeedback> : null}
     </AppModalFrame>
   );
 }
@@ -106,6 +108,7 @@ const styles = StyleSheet.create({
   progressLabels: { flexDirection: 'row', justifyContent: 'space-between', gap: 12 },
   progressTrack: { height: 4, overflow: 'hidden' },
   progressFill: { height: '100%' },
-  actions: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  actions: { gap: 8 },
+  secondaryActions: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   action: { flexGrow: 1, flexBasis: 110, minWidth: 96 },
 });
