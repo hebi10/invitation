@@ -27,6 +27,14 @@ for (const name of [
 }
 
 const capture = read('scripts/capture-mobile-android.py');
+const hero = read('apps/mobile/src/components/WeddingIntroHero.tsx');
+const basic = read('apps/mobile/src/features/manage/components/steps/BasicEditorStep.tsx');
+
+assert.match(hero, /우리의 이야기를 담은 청첩장/, 'HM-01 hero headline must match the design brief');
+assert.doesNotMatch(hero, /담은\{.\\n.\}/, 'Hero line wrapping should adapt to the screen width');
+assert.match(basic, /hasExistingFamilyInformation/);
+assert.match(basic, /defaultExpanded=\{hasExistingFamilyInformation\}/);
+assert.match(basic, /입력된 연락처·가족 정보가 있습니다/);
 const captures = [
   'my-invitations',
   'login',
