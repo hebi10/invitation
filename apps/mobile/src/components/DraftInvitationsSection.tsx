@@ -33,7 +33,7 @@ export function DraftInvitationsSection() {
   };
 
   return (
-    <SectionCard title="저장한 초안" description="아직 제작을 완료하지 않은 청첩장입니다." badge={`${drafts.length}개`}>
+    <SectionCard title="저장한 초안" description="이전 방식으로 저장한 미결제 초안입니다. 새 제작 방식에서는 결제 후 정보를 입력하며, 기존 초안의 입력값은 자동 이전되지 않습니다." badge={`${drafts.length}개`}>
       {drafts.map((draft) => (
         <View
           key={draft.id}
@@ -51,8 +51,8 @@ export function DraftInvitationsSection() {
             </AppText>
           </View>
           <View style={styles.actions}>
-            <ActionButton style={styles.continueButton} onPress={() => router.push({ pathname: '/create', params: { draftId: draft.id } })}>
-              이어서 작성
+            <ActionButton style={styles.continueButton} onPress={() => router.push('/create')}>
+              새 방식으로 제작
             </ActionButton>
             <ActionButton variant="secondary" onPress={() => handleDelete(draft.id)}
               accessibilityLabel={`${draft.groomName || '신랑'} ${draft.brideName || '신부'} 초안 삭제`}>
