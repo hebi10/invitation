@@ -30,7 +30,8 @@ assert.match(editor, /accessibilityValue=\{\{ min: 1, max: steps.length, now: ac
 assert.match(editor, /accessibilityLiveRegion="polite"/);
 assert.match(editor, /styles.statusFlag/);
 assert.match(editor, /onRequestClose=\{onClose\}/);
-assert.match(editor, /confirmation \?\? \(keyboardVisible \? compactFooter : footer\)/);
+assert.match(editor, /confirmation \?\? \(keyboardVisible \? compactFooter : compactLayout/);
+assert.match(editor, /compactNavigationFooter \?\? footer/);
 assert.match(editor, /pointerEvents=\{busy \? 'none' : 'auto'\}/);
 
 assert.match(basic, /onUpdatePersonField/);

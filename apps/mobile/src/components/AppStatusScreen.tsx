@@ -3,6 +3,7 @@ import {
   StyleSheet,
   Text,
   View,
+  useWindowDimensions,
 } from 'react-native';
 
 import type { AppPalette } from '../constants/theme';
@@ -35,8 +36,11 @@ export function AppStatusScreen({
   statusLabel,
   actions,
 }: AppStatusScreenProps) {
+  const { height } = useWindowDimensions();
+  const topPadding = Math.min(180, Math.max(80, height * 0.2));
+
   return (
-    <View style={[styles.screen, { backgroundColor: palette.background }]}>
+    <View style={[styles.screen, { backgroundColor: palette.background, paddingTop: topPadding }]}>
       <View
         style={[
           styles.card,
@@ -105,7 +109,7 @@ const styles = StyleSheet.create({
   screen: {
     flex: 1,
     alignItems: 'center',
-    justifyContent: 'center',
+    justifyContent: 'flex-start',
     padding: APP_SPACING.lg,
   },
   card: {

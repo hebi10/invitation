@@ -18,7 +18,9 @@ import { InvitationSummaryCard } from './InvitationSummaryCard';
 import { SectionCard } from './SectionCard';
 import { TextField } from './TextField';
 
-export function AccountInvitationsSection() {
+export function AccountInvitationsSection({
+  compactUnauthenticated = false,
+}: { compactUnauthenticated?: boolean } = {}) {
   const { apiBaseUrl, palette } = usePreferences();
   const {
     customerSession,
@@ -38,6 +40,7 @@ export function AccountInvitationsSection() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [openingSlug, setOpeningSlug] = useState<string | null>(null);
+  const [showLoginForm, setShowLoginForm] = useState(false);
   const loadGateRef = useRef(createOwnedInvitationListRequestGate());
   const activeCustomerUidRef = useRef<string | null>(customerSession?.uid ?? null);
   activeCustomerUidRef.current = customerSession?.uid ?? null;
@@ -93,6 +96,7 @@ export function AccountInvitationsSection() {
     setPassword('');
     if (succeeded) {
       setEmail('');
+      setShowLoginForm(false);
     }
   };
 
@@ -127,9 +131,25 @@ export function AccountInvitationsSection() {
   if (!customerSession?.uid) {
     return (
       <SectionCard
-        title="고객 계정 로그인"
-        description="로그인하면 PC와 앱에서 만든 모든 청첩장을 함께 관리할 수 있습니다."
+        title={compactUnauthenticated ? '내 청첩장 확인' : '고객 계정 로그인'}
+        description={compactUnauthenticated
+          ? '로그인하면 제작한 청첩장 목록과 수정·공유 기능을 사용할 수 있습니다.'
+          : '로그인하면 PC와 앱에서 만든 모든 청첩장을 함께 관리할 수 있습니다.'}
       >
+        {compactUnauthenticated && !showLoginForm ? (
+          <>
+            <AppText variant="caption" color={palette.textMuted}>
+              로그인 후 내 청첩장을 확인합니다. 새 청첩장 제작은 만들기 탭에서 진행해 주세요.
+            </AppText>
+            <ActionButton onPress={() => setShowLoginForm(true)} fullWidth>
+              고객 계정 로그인
+            </ActionButton>
+            <ActionButton variant="secondary" onPress={() => router.push({ pathname: '/login', params: { next: '/guide' } })} fullWidth>
+              기존 청첩장 연결
+            </ActionButton>
+          </>
+        ) : (
+          <>
         <TextField
           label="고객 계정 이메일"
           value={email}
@@ -161,6 +181,8 @@ export function AccountInvitationsSection() {
           로그인하고 청첩장 조회
         </ActionButton>
         <AccountHelpLinks />
+          </>
+        )}
       </SectionCard>
     );
   }
@@ -258,7 +280,7 @@ function OwnedInvitationThemeShares({ item }: { item: MobileCustomerOwnedEvent }
   return (
     <View style={styles.shareList}>
       <ActionButton variant="secondary" onPress={() => setExpanded((value) => !value)} fullWidth>
-        {expanded ? '디자인별 공유 접기' : '디자인별 링크 공유'}
+        {expanded ? '디자인별 공유 접기' : '디자인별 공유'}
       </ActionButton>
       {expanded ? themes.map((theme) => (
         <ActionButton key={theme} variant="secondary" onPress={() => void shareTheme(theme)} fullWidth>
@@ -302,6 +324,7 @@ export function AccountOwnedWeddingCards({
             statusLabel={status.label}
             statusTone={status.tone}
             selected={isSelected}
+            compact
           >
             <AppText variant="caption" color={palette.textMuted} selectable>
               청첩장 주소 · /{item.slug}
@@ -313,7 +336,7 @@ export function AccountOwnedWeddingCards({
               disabled={Boolean(openingSlug) || busy || isSelected}
               onPress={() => onOpen(item.slug)}
             >
-              {isSelected ? '현재 관리 중' : '이 청첩장 관리·수정'}
+              {isSelected ? '현재 관리 중' : '관리·수정'}
             </ActionButton>
             <OwnedInvitationThemeShares item={item} />
           </InvitationSummaryCard>
@@ -324,7 +347,7 @@ export function AccountOwnedWeddingCards({
 }
 
 const styles = StyleSheet.create({
-  list: { gap: 12 },
+  list: { gap: 10 },
   shareList: { gap: 8 },
   accountRow: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 8, justifyContent: 'space-between' },
   accountEmail: { flex: 1, minWidth: 120 },

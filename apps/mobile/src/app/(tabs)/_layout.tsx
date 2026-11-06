@@ -48,7 +48,7 @@ export default function TabsLayout() {
           tabBarLabel: '홈',
           tabBarAccessibilityLabel: '홈 탭으로 이동',
           tabBarIcon: ({ color, size, focused }) => (
-            <Ionicons name={focused ? 'albums' : 'albums-outline'} color={color} size={size} />
+            <Ionicons name={focused ? 'home' : 'home-outline'} color={color} size={size} />
           ),
         }}
       />

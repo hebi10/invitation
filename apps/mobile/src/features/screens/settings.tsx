@@ -73,7 +73,7 @@ export default function SettingsScreen() {
         description="선택한 테마와 글자 크기를 즉시 적용합니다."
       >
         <View style={styles.settingGroup}>
-          <AppText variant="caption" style={styles.settingLabel}>
+          <AppText variant="caption" accessibilityRole="header" style={styles.settingLabel}>
             테마
           </AppText>
           <View style={styles.chipRow}>
@@ -99,7 +99,7 @@ export default function SettingsScreen() {
         </View>
 
         <View style={styles.settingGroup}>
-          <AppText variant="caption" style={styles.settingLabel}>
+          <AppText variant="caption" accessibilityRole="header" style={styles.settingLabel}>
             글자 크기
           </AppText>
           <View style={styles.chipRow}>
