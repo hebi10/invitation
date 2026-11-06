@@ -71,7 +71,7 @@ export function PaymentConfirmModal({
             disabled={hasPendingPurchase}
             fullWidth
           >
-            Google Play 결제 후 페이지 생성
+            5,000원 결제하기
           </ActionButton>
         </ModalActionStack>
       )}
