@@ -22,12 +22,14 @@ type InvitationEditorWorkspaceProps = PropsWithChildren<{
   busy: boolean;
   footer: ReactNode;
   compactFooter: ReactNode;
+  compactNavigationFooter?: ReactNode;
   confirmation?: ReactNode;
 }>;
 
 export function InvitationEditorWorkspace({
   visible, onClose, title, description, status, statusTone, publicationLabel,
-  steps, activeStepIndex, onSelectStep, onPreview, busy, footer, compactFooter, confirmation, children,
+  steps, activeStepIndex, onSelectStep, onPreview, busy, footer, compactFooter,
+  compactNavigationFooter, confirmation, children,
 }: InvitationEditorWorkspaceProps) {
   const { palette, fontScale } = useVisualPreferences();
   const { width } = useWindowDimensions();
@@ -141,11 +143,11 @@ export function InvitationEditorWorkspace({
             </View>
           ) : null}
           <View style={styles.sectionHeading}>
-            <AppText variant="caption" color={palette.accent} style={styles.sectionEyebrow}>
+            {!compactLayout ? <AppText variant="caption" color={palette.accent} style={styles.sectionEyebrow}>
               편집 단계 {activeStepIndex + 1} / {steps.length}
-            </AppText>
+            </AppText> : null}
             <AppText variant="title" accessibilityRole="header" style={styles.sectionTitle}>{title}</AppText>
-            <AppText variant="muted">{description}</AppText>
+            <AppText variant="muted" numberOfLines={compactLayout ? 2 : undefined}>{description}</AppText>
           </View>
           <View pointerEvents={busy ? 'none' : 'auto'} style={styles.fields}>{children}</View>
         </ScrollView>
@@ -161,7 +163,7 @@ export function InvitationEditorWorkspace({
             },
           ]}
         >
-          {confirmation ?? (keyboardVisible ? compactFooter : footer)}
+          {confirmation ?? (keyboardVisible ? compactFooter : compactLayout ? (compactNavigationFooter ?? footer) : footer)}
         </View>
       </KeyboardAvoidingView>
     </Modal>
@@ -178,7 +180,7 @@ const styles = StyleSheet.create({
     paddingVertical: APP_SPACING.sm,
     gap: APP_SPACING.sm,
   },
-  headerNarrow: { paddingVertical: APP_SPACING.xs, gap: APP_SPACING.xs },
+  headerNarrow: { paddingVertical: APP_SPACING.xs, gap: 4 },
   topRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: APP_SPACING.sm },
   heading: { flex: 1, fontWeight: '600' },
   statusRow: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: APP_SPACING.xs },
@@ -197,13 +199,13 @@ const styles = StyleSheet.create({
     paddingVertical: APP_SPACING.lg,
     gap: APP_SPACING.lg,
   },
-  scrollContentNarrow: { paddingVertical: APP_SPACING.sm, gap: APP_SPACING.md },
+  scrollContentNarrow: { paddingVertical: APP_SPACING.sm, gap: APP_SPACING.sm },
   contents: { padding: APP_SPACING.md, gap: APP_SPACING.xs },
   sectionHeading: { gap: APP_SPACING.xs },
   sectionEyebrow: { fontWeight: '600' },
   sectionTitle: { fontWeight: '600' },
   fields: { gap: APP_SPACING.md },
-  footerNarrow: { padding: APP_SPACING.sm, gap: APP_SPACING.xs },
+  footerNarrow: { padding: APP_SPACING.xs, gap: APP_SPACING.xs },
   footer: {
     width: '100%',
     maxWidth: 720,

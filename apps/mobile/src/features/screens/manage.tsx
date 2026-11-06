@@ -713,6 +713,22 @@ export default function ManageScreen() {
         busy={isEditorBusy || isOpeningPreview}
         compactFooter={<ActionButton fullWidth loading={isEditorBusy}
           onPress={() => void handleSaveEditor({ close: false, applyPublicationChange: false })}>내용 저장</ActionButton>}
+        compactNavigationFooter={<View style={manageStyles.actionRow}>
+          <ActionButton
+            variant="secondary"
+            style={manageStyles.actionHalfButton}
+            disabled={invitationForm.isFirstEditorStep || isEditorBusy}
+            onPress={() => invitationForm.setEditorStepIndex(current => Math.max(0, current - 1))}
+          >이전</ActionButton>
+          <ActionButton
+            style={manageStyles.actionHalfButton}
+            loading={isEditorBusy}
+            onPress={() => void handleSaveEditor(invitationForm.isLastEditorStep
+              ? {} : { close: false, advance: true, applyPublicationChange: false })}
+          >
+            {invitationForm.isLastEditorStep ? '저장 완료' : '저장 후 다음'}
+          </ActionButton>
+        </View>}
         confirmation={confirmDiscard ? <View style={{ gap: 8 }}>
           <ModalFeedback palette={palette} tone="notice">
             저장하지 않은 변경사항이 있습니다. 공개 설정 변경은 최종 단계에서 적용합니다.

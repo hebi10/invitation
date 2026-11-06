@@ -77,8 +77,7 @@ export function PaymentConfirmModal({
       )}
     >
       <View style={styles.summary}>
-        <ModalSummaryRow label="서비스" value={serviceName} palette={palette} />
-        <ModalSummaryRow label="디자인" value={selectedThemeLabel} palette={palette} />
+        <ModalSummaryRow label="구성" value={`${serviceName} · ${selectedThemeLabel}`} palette={palette} />
         <ModalSummaryRow label="청첩장 주소" value={slugPreview} palette={palette} />
         <ModalSummaryRow
           label="결제 예정 금액"
@@ -104,5 +103,5 @@ export function PaymentConfirmModal({
 }
 
 const styles = StyleSheet.create({
-  summary: { gap: 14 },
+  summary: { gap: 10 },
 });
