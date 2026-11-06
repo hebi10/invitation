@@ -1,14 +1,16 @@
 import Constants from 'expo-constants';
-import { StyleSheet, View } from 'react-native';
+import { Linking, StyleSheet, View } from 'react-native';
 
+import { ActionButton } from '../../components/ActionButton';
 import { AppScreen } from '../../components/AppScreen';
 import { AppText } from '../../components/AppText';
 import { BulletList } from '../../components/BulletList';
 import { ChoiceChip } from '../../components/ChoiceChip';
 import { Disclosure } from '../../components/Disclosure';
 import { SectionCard } from '../../components/SectionCard';
-import { settingsNotes } from '../../constants/content';
+import { guideSections, settingsNotes } from '../../constants/content';
 import { APP_SPACING } from '../../constants/uiTokens';
+import { useAppFeedback } from '../../contexts/AppFeedbackContext';
 import { usePreferences } from '../../contexts/PreferencesContext';
 
 const UPDATE_GUIDE_ITEMS = [
@@ -31,13 +33,22 @@ function normalizeVersionLabel(value: unknown) {
 }
 
 export default function SettingsScreen() {
+  const { showToast } = useAppFeedback();
   const {
+    apiBaseUrl,
     palette,
     fontScalePreference,
     setFontScalePreference,
     setThemePreference,
     themePreference,
   } = usePreferences();
+
+  const openHelpLink = (path: string) => {
+    const href = path.startsWith('mailto:') ? path : new URL(path, apiBaseUrl).toString();
+    void Linking.openURL(href).catch(() => {
+      showToast('안내 페이지를 열지 못했습니다. 연결 상태를 확인하고 다시 시도해 주세요.', { tone: 'error' });
+    });
+  };
 
   const appVersion =
     normalizeVersionLabel(Constants.expoConfig?.version) ||
@@ -128,8 +139,28 @@ export default function SettingsScreen() {
         </Disclosure>
       </SectionCard>
 
+      <SectionCard title="이용 안내" description="청첩장 제작과 운영 방법을 확인할 수 있습니다.">
+        {guideSections.map((section) => (
+          <Disclosure key={section.title} title={section.title} description={section.description}>
+            <BulletList items={section.items} />
+          </Disclosure>
+        ))}
+      </SectionCard>
+
       <SectionCard title="기기 이용 안내">
         <BulletList items={settingsNotes} />
+      </SectionCard>
+
+      <SectionCard title="문의·개인정보" description="문의 및 개인정보 처리에 관한 안내입니다.">
+        <ActionButton variant="secondary" onPress={() => openHelpLink('mailto:sevim0104@naver.com')} fullWidth>
+          고객 문의
+        </ActionButton>
+        <ActionButton variant="secondary" onPress={() => openHelpLink('/privacy/mobile-invitation/')} fullWidth>
+          개인정보 처리방침
+        </ActionButton>
+        <ActionButton variant="secondary" onPress={() => openHelpLink('/privacy/mobile-invitation/delete-request/')} fullWidth>
+          계정 및 데이터 삭제 요청
+        </ActionButton>
       </SectionCard>
     </AppScreen>
   );
