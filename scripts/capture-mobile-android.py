@@ -266,8 +266,8 @@ def capture_responsive_views():
     layouts = [
         (320, [
             ('editor', 'design-check', ['청첩장 편집', '기본 정보']),
-            ('checkout', 'design-check-modals?kind=payment', ['Google Play 결제', '결제 예정 금액']),
             ('settings', 'settings', ['설정', '화면 설정']),
+            ('checkout', 'design-check-modals?kind=payment', ['Google Play 결제', '결제 예정 금액']),
         ]),
         (360, [
             ('guide', 'guide', ['마이페이지', '고객 계정 로그인']),
@@ -276,24 +276,24 @@ def capture_responsive_views():
         ]),
         (390, [
             ('editor', 'design-check', ['청첩장 편집', '기본 정보']),
-            ('preview', 'design-check-modals?kind=preview', ['청첩장 미리보기', '디자인 샘플']),
             ('account-list', 'design-check-accounts', ['계정별 전체 청첩장', '12개']),
+            ('preview', 'design-check-modals?kind=preview', ['청첩장 미리보기', '디자인 샘플']),
         ]),
         (430, [
             ('settings', 'settings', ['설정', '화면 설정']),
-            ('renew', 'design-check-modals?kind=renew', ['이용 기간 연장', '연장 결제 확인']),
             ('home', '', ['Invitation', 'MODERN WEDDING EDITORIAL']),
+            ('renew', 'design-check-modals?kind=renew', ['이용 기간 연장', '연장 결제 확인']),
         ]),
         (600, [
-            ('home', '', ['Invitation', 'MODERN WEDDING EDITORIAL']),
             ('account-list', 'design-check-accounts', ['계정별 전체 청첩장', '12개']),
             ('editor', 'design-check', ['청첩장 편집', '기본 정보']),
+            ('home', '', ['Invitation', 'MODERN WEDDING EDITORIAL']),
             ('checkout', 'design-check-modals?kind=payment', ['Google Play 결제', '결제 예정 금액']),
         ]),
         (840, [
-            ('home', '', ['Invitation', 'MODERN WEDDING EDITORIAL']),
             ('create', 'create', ['청첩장 만들기', '5,000원']),
             ('account-list', 'design-check-accounts', ['계정별 전체 청첩장', '12개']),
+            ('home', '', ['Invitation', 'MODERN WEDDING EDITORIAL']),
             ('preview', 'design-check-modals?kind=preview', ['청첩장 미리보기', '디자인 샘플']),
         ]),
     ]
