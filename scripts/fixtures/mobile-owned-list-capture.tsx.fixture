@@ -1,4 +1,7 @@
+import { View } from 'react-native';
 import { AppScreen } from '../components/AppScreen';
+import { ActionButton } from '../components/ActionButton';
+import { AppText } from '../components/AppText';
 import { AccountOwnedWeddingCards } from '../components/AccountInvitationsSection';
 import { SectionCard } from '../components/SectionCard';
 import type { MobileCustomerOwnedEvent } from '../types/mobileInvitation';
@@ -24,8 +27,12 @@ const mockEvents: MobileCustomerOwnedEvent[] = Array.from({ length: 12 }, (_, in
 
 export default function AccountListDesignCheck() {
   return (
-    <AppScreen title="계정별 전체 청첩장" subtitle="12개 샘플 청첩장으로 기기 제한 없는 목록을 검증합니다.">
-      <SectionCard title="전체 청첩장 테스트" badge={`${mockEvents.length}개`}>
+    <AppScreen title="마이페이지" subtitle="청첩장 목록 · 수정 · 공유 · 이용기간 관리">
+      <SectionCard title="계정별 전체 청첩장" description="12개 샘플 청첩장으로 기기 제한 없는 목록을 검증합니다." badge={`${mockEvents.length}개`}>
+        <View style={{ gap: 8 }}>
+          <AppText variant="caption">총 12개 · 고객 계정에 등록된 목록</AppText>
+          <ActionButton variant="secondary" onPress={() => {}}>새로 만들기</ActionButton>
+        </View>
         <AccountOwnedWeddingCards items={mockEvents} onOpen={() => {}} />
       </SectionCard>
     </AppScreen>

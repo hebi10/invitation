@@ -538,8 +538,8 @@ export default function ManageScreen() {
   return (
     <>
       <AppScreen
-        title="내 청첩장"
-        subtitle="청첩장 내용을 수정하고 공개·공유 상태를 확인하세요."
+        title="마이페이지"
+        subtitle="청첩장 목록 · 수정 · 공유 · 이용기간 관리"
       >
         {showDashboardSyncLoading ? (
           <SectionCard
@@ -593,6 +593,8 @@ export default function ManageScreen() {
           <ActionButton variant="secondary" loading={isOpeningPreview} onPress={handleOpenUrl}>저장 결과 미리보기</ActionButton>
         </SectionCard> : null}
 
+        {customerSession?.uid ? <AccountInvitationsSection /> : null}
+
         <LinkedInvitationsSection
           activeLinkedInvitationCard={activeLinkedInvitationCard}
           additionalLinkedInvitationCards={additionalLinkedInvitationCards}
@@ -635,7 +637,7 @@ export default function ManageScreen() {
           </SectionCard>
         ) : null}
 
-        <AccountInvitationsSection />
+        {!customerSession?.uid ? <AccountInvitationsSection /> : null}
 
         <DraftInvitationsSection />
 

@@ -31,7 +31,7 @@ export default function MyPageScreen() {
   }
 
   return (
-    <AppScreen title="마이페이지" subtitle="내 계정의 청첩장을 확인하고 수정하거나 디자인별로 공유하세요.">
+    <AppScreen title="마이페이지" subtitle="청첩장 목록 · 수정 · 공유 · 이용기간 관리">
       <AccountInvitationsSection compactUnauthenticated />
       <SectionCard
         title="새 청첩장 제작"

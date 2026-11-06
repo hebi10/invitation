@@ -1,5 +1,5 @@
 import { router, useFocusEffect } from 'expo-router';
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useRef, useState, type ReactNode } from 'react';
 import { ActivityIndicator, Share, StyleSheet, View } from 'react-native';
 
 import { DEFAULT_PUBLIC_SITE_URL } from '../../../../src/lib/invitationMetadata';
@@ -189,21 +189,34 @@ export function AccountInvitationsSection({
 
   return (
     <SectionCard
-      title="계정별 전체 청첩장"
-      description="이 계정에서 제작한 청첩장을 전부 표시합니다. 기기 연동 목록의 8개 제한과 별도입니다."
+      title="내 청첩장"
+      description="고객 계정에 등록된 전체 목록입니다. 다른 기기에서 만든 청첩장도 함께 표시됩니다."
       badge={loaded && !error ? `${items.length}개` : undefined}
     >
       <View style={styles.accountRow}>
-        <AppText variant="caption" color={palette.textMuted} style={styles.accountEmail}>
-          {customerSession.email}
-        </AppText>
-        <ActionButton
-          variant="secondary"
-          disabled={loading}
-          onPress={() => void refreshAccountList()}
-        >
-          새로고침
-        </ActionButton>
+        <View style={styles.accountHeading}>
+          <AppText variant="caption" color={palette.textMuted} style={styles.accountEmail} selectable>
+            {customerSession.email}
+          </AppText>
+          {loaded && !error ? (
+            <AppText variant="caption" color={palette.textMuted}>총 {items.length}개 · 고객 계정에 등록된 목록</AppText>
+          ) : null}
+        </View>
+        <View style={styles.accountActions}>
+          <ActionButton
+            variant="secondary"
+            onPress={() => router.push('/create')}
+          >
+            새로 만들기
+          </ActionButton>
+          <ActionButton
+            variant="secondary"
+            disabled={loading}
+            onPress={() => void refreshAccountList()}
+          >
+            새로고침
+          </ActionButton>
+        </View>
       </View>
       {loading ? (
         <View style={styles.loadingRow} accessibilityLiveRegion="polite">
@@ -254,19 +267,18 @@ export function AccountInvitationsSection({
   );
 }
 
-function OwnedInvitationThemeShares({ item }: { item: MobileCustomerOwnedEvent }) {
+function OwnedInvitationThemeShares({
+  item,
+  managementAction,
+}: {
+  item: MobileCustomerOwnedEvent;
+  managementAction: ReactNode;
+}) {
   const { palette } = usePreferences();
   const { showToast } = useAppFeedback();
   const [expanded, setExpanded] = useState(false);
   const themes = [...new Set(item.availableThemes)];
-
-  if (!item.publicAccess?.isPublic || themes.length === 0) {
-    return (
-      <AppText variant="caption" color={palette.textMuted}>
-        공개 설정과 노출 기간을 확인하면 디자인별 공유가 가능합니다.
-      </AppText>
-    );
-  }
+  const canShare = Boolean(item.publicAccess?.isPublic && themes.length > 0);
 
   const shareTheme = async (theme: typeof themes[number]) => {
     const url = `${DEFAULT_PUBLIC_SITE_URL}${buildInvitationThemeRoutePath(item.slug, theme)}`;
@@ -279,14 +291,37 @@ function OwnedInvitationThemeShares({ item }: { item: MobileCustomerOwnedEvent }
 
   return (
     <View style={styles.shareList}>
-      <ActionButton variant="secondary" onPress={() => setExpanded((value) => !value)} fullWidth>
-        {expanded ? '디자인별 공유 접기' : '디자인별 공유'}
-      </ActionButton>
-      {expanded ? themes.map((theme) => (
-        <ActionButton key={theme} variant="secondary" onPress={() => void shareTheme(theme)} fullWidth>
-          {getInvitationThemeLabel(theme)} 공유
+      <View style={styles.cardActions}>
+        {managementAction}
+        <ActionButton
+          variant="secondary"
+          style={styles.cardAction}
+          disabled={!canShare}
+          onPress={() => setExpanded((value) => !value)}
+          accessibilityState={{ expanded }}
+        >
+          {expanded ? '공유 설정 접기' : '공유 설정'}
         </ActionButton>
-      )) : null}
+      </View>
+      {expanded && canShare ? (
+        <View style={styles.shareOptions}>
+          {themes.map((theme) => (
+            <ActionButton
+              key={theme}
+              variant="secondary"
+              onPress={() => void shareTheme(theme)}
+              fullWidth
+            >
+              {getInvitationThemeLabel(theme)} 공유
+            </ActionButton>
+          ))}
+        </View>
+      ) : null}
+      {!canShare ? (
+        <AppText variant="caption" color={palette.textMuted}>
+          공개 설정과 이용기간을 확인한 뒤 디자인별 공유를 이용할 수 있습니다.
+        </AppText>
+      ) : null}
     </View>
   );
 }
@@ -326,19 +361,25 @@ export function AccountOwnedWeddingCards({
             selected={isSelected}
             compact
           >
+            <AppText variant="caption" color={palette.textMuted}>
+              사용 가능한 디자인 · {item.availableThemes.length}종
+            </AppText>
             <AppText variant="caption" color={palette.textMuted} selectable>
               청첩장 주소 · /{item.slug}
             </AppText>
-            <ActionButton
-              fullWidth
-              variant="secondary"
-              loading={openingSlug === item.slug}
-              disabled={Boolean(openingSlug) || busy || isSelected}
-              onPress={() => onOpen(item.slug)}
-            >
-              {isSelected ? '현재 관리 중' : '관리·수정'}
-            </ActionButton>
-            <OwnedInvitationThemeShares item={item} />
+            <OwnedInvitationThemeShares
+              item={item}
+              managementAction={(
+                <ActionButton
+                  style={styles.cardAction}
+                  loading={openingSlug === item.slug}
+                  disabled={Boolean(openingSlug) || busy || isSelected}
+                  onPress={() => onOpen(item.slug)}
+                >
+                  {isSelected ? '현재 관리 중' : '관리·수정'}
+                </ActionButton>
+              )}
+            />
           </InvitationSummaryCard>
         );
       })}
@@ -347,10 +388,15 @@ export function AccountOwnedWeddingCards({
 }
 
 const styles = StyleSheet.create({
-  list: { gap: 10 },
+  list: { gap: 12 },
   shareList: { gap: 8 },
-  accountRow: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 8, justifyContent: 'space-between' },
-  accountEmail: { flex: 1, minWidth: 120 },
+  cardActions: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  cardAction: { flexGrow: 1, flexBasis: 118, minWidth: 108 },
+  shareOptions: { gap: 8 },
+  accountRow: { gap: 12 },
+  accountHeading: { gap: 4 },
+  accountActions: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  accountEmail: { flexShrink: 1 },
   loadingRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   errorState: { borderWidth: 1, borderRadius: 0, padding: 14, gap: 12 },
   emptyState: { padding: 16, gap: 12 },

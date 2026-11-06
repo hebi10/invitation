@@ -57,7 +57,7 @@ export function InvitationSummaryCard({
         styles.card,
         compact ? styles.cardCompact : null,
         {
-          backgroundColor: selected ? palette.accentSoft : palette.surface,
+          backgroundColor: palette.surface,
           borderColor: selected ? palette.accent : palette.cardBorder,
         },
       ]}
@@ -72,27 +72,29 @@ export function InvitationSummaryCard({
           onError={() => setImageFailed(true)}
         />
         <View style={[styles.details, compact ? styles.detailsCompact : null]}>
+          <View style={styles.headingRow}>
+            <AppText variant="cardTitle" style={styles.name}>{name}</AppText>
+            <View style={[styles.status, { backgroundColor: statusBackgroundColor }]}>
+              <AppText variant="caption" color={statusTextColor}>
+                {statusLabel}
+              </AppText>
+            </View>
+          </View>
           <AppText variant="caption" color={palette.textMuted}>
             {contextLabel}
           </AppText>
-          <AppText variant="cardTitle" style={styles.name}>{name}</AppText>
           {dateLabel ? (
             <AppText variant="caption" color={palette.textMuted}>
               {dateLabel}
             </AppText>
           ) : null}
-          <View style={[styles.status, { backgroundColor: statusBackgroundColor }]}>
-            <AppText variant="caption" color={statusTextColor}>
-              {statusLabel}
+          {periodLabel ? (
+            <AppText variant="caption" color={palette.textMuted}>
+              {periodLabel}
             </AppText>
-          </View>
+          ) : null}
         </View>
       </View>
-      {periodLabel ? (
-        <AppText variant="caption" color={palette.textMuted}>
-          {periodLabel}
-        </AppText>
-      ) : null}
       {children}
     </View>
   );
@@ -123,8 +125,15 @@ const styles = StyleSheet.create({
     minWidth: 0,
     gap: 6,
   },
+  headingRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    alignItems: 'center',
+    gap: 8,
+  },
   name: {
     flexShrink: 1,
+    minWidth: 88,
   },
   status: {
     alignSelf: 'flex-start',
