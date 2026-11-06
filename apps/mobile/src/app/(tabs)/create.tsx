@@ -12,6 +12,7 @@ import { WebPreviewNotice } from '../../components/WebPreviewNotice';
 import { useAuth } from '../../contexts/AuthContext';
 import { usePreferences } from '../../contexts/PreferencesContext';
 import { PaymentConfirmModal } from '../../features/create/components/PaymentConfirmModal';
+import { listMobileCustomerInvitations } from '../../lib/apiAccount';
 import { purchaseBillingProduct } from '../../lib/billing';
 import { createRandomSuffix } from '../../lib/id';
 import { DEFAULT_INVITATION_THEME } from '../../lib/invitationThemes';
@@ -47,6 +48,7 @@ export default function CreateScreen() {
     authError,
     clearAuthError,
     createInvitationPage,
+    getCustomerIdToken,
     customerAuthError,
     customerSession,
     isCustomerAuthenticating,
@@ -152,6 +154,9 @@ export default function CreateScreen() {
       target: { action: 'createInvitationPage', input },
     };
     try {
+      const idToken = await getCustomerIdToken();
+      if (!idToken) throw new Error('로그인이 만료되었습니다. 다시 로그인해 주세요.');
+      await listMobileCustomerInvitations(apiBaseUrl, idToken);
       const created = await runPendingBillingPurchase(request, {
         purchase: () => purchaseBillingProduct(productId, { appUserId: customerUid }),
         fulfill: (receipt) => createInvitationPage(input, { billingPurchase: receipt }),
