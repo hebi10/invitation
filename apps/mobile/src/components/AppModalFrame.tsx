@@ -43,13 +43,14 @@ export function AppModalFrame({
   closeDisabled = false,
   cardStyle,
   palette: suppliedPalette,
+  fontScale: suppliedFontScale,
   children,
 }: AppModalFrameProps) {
   const appearance = useVisualPreferences();
   const palette = suppliedPalette ?? appearance.palette;
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
-  const compactLayout = width < 360;
+  const compactLayout = width < 360 || (width < 390 && (suppliedFontScale ?? appearance.fontScale) > 1);
   const dismiss = () => {
     if (!closeDisabled) onClose();
   };
@@ -74,13 +75,14 @@ export function AppModalFrame({
         ]}>
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel="팝업 닫기"
+            accessibilityLabel={closeDisabled ? '처리 중에는 팝업을 닫을 수 없습니다' : '팝업 닫기'}
             style={styles.backdrop}
             onPress={dismiss}
             disabled={closeDisabled}
           />
           <View
             accessibilityViewIsModal
+            onAccessibilityEscape={dismiss}
             style={[
               styles.card,
               compactLayout ? styles.cardNarrow : null,
@@ -143,8 +145,8 @@ const styles = StyleSheet.create({
   centerCard: { maxWidth: 520 },
   bottomCard: { maxWidth: 640 },
   header: { gap: APP_SPACING.xs },
-  scroll: { flexGrow: 0, flexShrink: 1 },
+  scroll: { flexGrow: 0, flexShrink: 1, minHeight: 0 },
   content: { paddingBottom: APP_SPACING.xs },
   body: { gap: APP_SPACING.sm },
-  footer: { alignItems: 'stretch', gap: APP_SPACING.xs },
+  footer: { alignItems: 'stretch', flexShrink: 0, gap: APP_SPACING.xs },
 });
