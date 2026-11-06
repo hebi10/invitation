@@ -23,8 +23,8 @@ export function ErrorFallback({ onRetry, onGoHome }: { onRetry: () => void; onGo
       title="문제가 발생했습니다"
       description="앱 화면을 표시하는 중 문제가 발생했습니다. 다시 시도하거나 홈으로 이동해 주세요."
       actions={[
-        { label: '다시 시도', onPress: onRetry },
-        { label: '홈으로 이동', onPress: onGoHome, variant: 'primary' },
+        { label: '다시 시도', onPress: onRetry, variant: 'primary' },
+        { label: '홈으로 이동', onPress: onGoHome, variant: 'secondary' },
       ]}
     />
   );

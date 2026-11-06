@@ -1,5 +1,6 @@
 import {
   Pressable,
+  ScrollView,
   StyleSheet,
   Text,
   View,
@@ -7,6 +8,7 @@ import {
 } from 'react-native';
 
 import type { AppPalette } from '../constants/theme';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
   APP_CONTROL_MIN_HEIGHT,
   APP_SPACING,
@@ -37,10 +39,16 @@ export function AppStatusScreen({
   actions,
 }: AppStatusScreenProps) {
   const { height } = useWindowDimensions();
-  const topPadding = Math.min(180, Math.max(80, height * 0.2));
+  const insets = useSafeAreaInsets();
+  const topPadding = insets.top + Math.min(120, Math.max(32, height * 0.1));
 
   return (
-    <View style={[styles.screen, { backgroundColor: palette.background, paddingTop: topPadding }]}>
+    <ScrollView
+      style={[styles.screen, { backgroundColor: palette.background }]}
+      contentContainerStyle={[styles.content, { paddingTop: topPadding, paddingBottom: insets.bottom + APP_SPACING.xl }]}
+      keyboardShouldPersistTaps="handled"
+      showsVerticalScrollIndicator={false}
+    >
       <View
         style={[
           styles.card,
@@ -101,16 +109,18 @@ export function AppStatusScreen({
           })}
         </View>
       </View>
-    </View>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  screen: {
-    flex: 1,
+  screen: { flex: 1 },
+  content: {
+    flexGrow: 1,
     alignItems: 'center',
     justifyContent: 'flex-start',
-    padding: APP_SPACING.lg,
+    paddingHorizontal: APP_SPACING.md,
+    gap: APP_SPACING.md,
   },
   card: {
     width: '100%',

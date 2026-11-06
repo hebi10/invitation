@@ -58,6 +58,7 @@ export function AppFeedbackProvider({ children }: PropsWithChildren) {
   const [toast, setToast] = useState<AppToastState | null>(null);
   const [isOffline, setIsOffline] = useState(false);
   const dismissTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const toastSerialRef = useRef(0);
   const connectivityDelayRef = useRef(CONNECTIVITY_MIN_POLL_INTERVAL_MS);
   const connectivityRequestIdRef = useRef(0);
 
@@ -87,8 +88,9 @@ export function AppFeedbackProvider({ children }: PropsWithChildren) {
       }
 
       const tone = options.tone ?? 'neutral';
+      toastSerialRef.current += 1;
       const nextToast = {
-        id: Date.now(),
+        id: toastSerialRef.current,
         message: trimmedMessage,
         tone,
       } satisfies AppToastState;
@@ -102,7 +104,7 @@ export function AppFeedbackProvider({ children }: PropsWithChildren) {
       dismissTimeoutRef.current = setTimeout(() => {
         setToast((current) => (current?.id === nextToast.id ? null : current));
         dismissTimeoutRef.current = null;
-      }, options.durationMs ?? DEFAULT_TOAST_DURATION_MS);
+      }, options.durationMs ?? (tone === 'error' ? 5000 : DEFAULT_TOAST_DURATION_MS));
     },
     []
   );
@@ -234,7 +236,10 @@ export function AppFeedbackProvider({ children }: PropsWithChildren) {
       return;
     }
 
-    AccessibilityInfo.announceForAccessibility(toast.message);
+    const label = toast.tone === 'error' ? '오류'
+      : toast.tone === 'success' ? '성공'
+        : toast.tone === 'notice' ? '주의' : '안내';
+    AccessibilityInfo.announceForAccessibility(`${label} 알림: ${toast.message}`);
   }, [toast]);
 
   useEffect(() => {
@@ -283,6 +288,10 @@ export function AppFeedbackProvider({ children }: PropsWithChildren) {
     };
   }, [palette.cardBorder, palette.danger, palette.dangerSoft, palette.notice, palette.noticeSoft, palette.success, palette.successSoft, palette.surface, palette.text, toast]);
 
+  const toastToneLabel = toast?.tone === 'error' ? '오류'
+    : toast?.tone === 'success' ? '성공'
+      : toast?.tone === 'notice' ? '주의' : '안내';
+
   const value = useMemo<AppFeedbackContextValue>(
     () => ({
       showToast,
@@ -321,6 +330,7 @@ export function AppFeedbackProvider({ children }: PropsWithChildren) {
           <View
             accessible
             accessibilityRole={toast.tone === 'error' ? 'alert' : 'text'}
+            accessibilityLabel={`${toastToneLabel}: ${toast.message}`}
             accessibilityLiveRegion={toast.tone === 'error' ? 'assertive' : 'polite'}
             style={[
               styles.toast,
@@ -331,6 +341,9 @@ export function AppFeedbackProvider({ children }: PropsWithChildren) {
               },
             ]}
           >
+            <AppText variant="caption" color={toastStyle.textColor} style={styles.toastTone}>
+              {toastToneLabel}
+            </AppText>
             <AppText color={toastStyle.textColor} style={styles.toastText}>
               {toast.message}
             </AppText>
@@ -379,6 +392,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: APP_SPACING.md,
     paddingVertical: APP_SPACING.sm,
   },
+  toastTone: { fontWeight: '700', marginBottom: APP_SPACING.xs },
   toastText: {
     fontWeight: '600',
     flexShrink: 1,
