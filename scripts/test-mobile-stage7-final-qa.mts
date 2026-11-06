@@ -71,6 +71,10 @@ const captures = [
   'system-error',
   'system-not-found',
   'system-toast-error',
+  'system-toast-success',
+  'system-toast-notice',
+  'system-toast-neutral',
+  'system-loading',
 ];
 for (const name of captures) {
   assert.ok(capture.includes(`'${name}'`), `Missing Android capture: ${name}`);

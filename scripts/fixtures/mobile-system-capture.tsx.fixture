@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { useLocalSearchParams } from 'expo-router';
+import { ActivityIndicator, View } from 'react-native';
 
 import NotFoundScreen from './+not-found';
 import { AppScreen } from '../components/AppScreen';
@@ -35,8 +36,27 @@ export default function SystemDesignCheck() {
   useEffect(() => {
     if (kind === 'toast-error') {
       showToast('알림 검증: 연결 상태를 확인해 주세요.', { tone: 'error', durationMs: 30000 });
+    } else if (kind === 'toast-success') {
+      showToast('알림 검증: 청첩장 정보를 저장했습니다.', { tone: 'success', durationMs: 30000 });
+    } else if (kind === 'toast-notice') {
+      showToast('알림 검증: 변경 사항을 확인해 주세요.', { tone: 'notice', durationMs: 30000 });
+    } else if (kind === 'toast-neutral') {
+      showToast('알림 검증: 설정이 반영되었습니다.', { tone: 'neutral', durationMs: 30000 });
     }
   }, [kind, showToast]);
+
+  if (kind === 'loading') {
+    return (
+      <AppScreen title="정보 불러오기" subtitle="청첩장 정보를 준비하고 있습니다.">
+        <SectionCard title="청첩장을 확인하고 있습니다">
+          <View style={{ flexDirection: 'row', gap: 12, alignItems: 'center' }} accessibilityLiveRegion="polite">
+            <ActivityIndicator />
+            <AppText variant="muted">청첩장 정보를 불러오는 중입니다.</AppText>
+          </View>
+        </SectionCard>
+      </AppScreen>
+    );
+  }
 
   if (kind === 'error') {
     return <ErrorFallback onRetry={() => {}} onGoHome={() => {}} />;
