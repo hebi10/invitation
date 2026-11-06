@@ -44,9 +44,9 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          title: '내 청첩장',
-          tabBarLabel: '내 청첩장',
-          tabBarAccessibilityLabel: '내 청첩장 탭으로 이동',
+          title: '홈',
+          tabBarLabel: '홈',
+          tabBarAccessibilityLabel: '홈 탭으로 이동',
           tabBarIcon: ({ color, size, focused }) => (
             <Ionicons name={focused ? 'albums' : 'albums-outline'} color={color} size={size} />
           ),
@@ -66,11 +66,11 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="guide"
         options={{
-          title: '이용 안내',
-          tabBarLabel: '이용 안내',
-          tabBarAccessibilityLabel: '이용 안내 탭으로 이동',
+          title: '마이페이지',
+          tabBarLabel: '마이페이지',
+          tabBarAccessibilityLabel: '마이페이지 탭으로 이동',
           tabBarIcon: ({ color, size, focused }) => (
-            <Ionicons name={focused ? 'book' : 'book-outline'} color={color} size={size} />
+            <Ionicons name={focused ? 'person-circle' : 'person-circle-outline'} color={color} size={size} />
           ),
         }}
       />
