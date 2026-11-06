@@ -76,7 +76,7 @@ function LinkedInvitationCardPanel({
       dateLabel={weddingDate ? `예식일 ${formatDateLabel(weddingDate)}` : undefined}
       statusLabel={visibility.label}
       statusTone={visibility.tone}
-      periodLabel={`노출 기간 · ${card.displayPeriod.enabled ? formatDisplayPeriod(card.displayPeriod) : '기간 제한 없음'}`}
+      periodLabel={`이용 기간 · ${card.displayPeriod.enabled ? formatDisplayPeriod(card.displayPeriod) : '기간 제한 없음'}`}
       selected={active}
     >
       {children}
@@ -138,8 +138,8 @@ export function LinkedInvitationsSection({
 
   return (
     <SectionCard
-      title="연결한 청첩장"
-      description="이 기기에 연결한 청첩장입니다. 고객 계정의 전체 청첩장 목록과 별도로 표시됩니다."
+      title="기기 연동 청첩장"
+      description="현재 관리 중인 청첩장과 이 기기에 연결한 다른 청첩장입니다. 고객 계정의 전체 목록과 별도로 표시됩니다."
       badge={`${1 + additionalLinkedInvitationCards.length}개`}
       badgeTone="neutral"
     >
@@ -192,11 +192,10 @@ export function LinkedInvitationsSection({
       >
         {hasDashboard ? (
           <View style={styles.group}>
-            <ActionButton fullWidth onPress={onOpenEditor} disabled={!canRequestDashboardSync}>
-              내용 수정
-            </ActionButton>
             <View style={styles.actions}>
-              <ActionButton variant="secondary" onPress={onOpenUrl} style={styles.action}>미리보기</ActionButton>
+              <ActionButton style={styles.action} onPress={onOpenEditor} disabled={!canRequestDashboardSync}>
+                내용 수정
+              </ActionButton>
               <ActionButton
                 variant="secondary"
                 onPress={() => onKakaoShare(activeLinkedInvitationCard)}
@@ -205,13 +204,18 @@ export function LinkedInvitationsSection({
                 카카오톡 카드 공유
               </ActionButton>
             </View>
-            <ActionButton
-              variant="secondary"
-              fullWidth
-              onPress={() => onCopyPublicUrl(activeLinkedInvitationCard)}
-            >
-              하객용 주소 복사
-            </ActionButton>
+            <View style={styles.actions}>
+              <ActionButton variant="secondary" onPress={onOpenUrl} style={styles.action}>
+                미리보기
+              </ActionButton>
+              <ActionButton
+                variant="secondary"
+                onPress={() => onCopyPublicUrl(activeLinkedInvitationCard)}
+                style={styles.action}
+              >
+                하객용 주소 복사
+              </ActionButton>
+            </View>
           </View>
         ) : (
           <View style={styles.group}>
@@ -235,7 +239,6 @@ export function LinkedInvitationsSection({
         >
           <View style={styles.group}>
             <ActionButton
-              variant="secondary"
               fullWidth
               onPress={() => onActivateLinkedInvitation(item)}
               loading={activatingLinkedInvitationSlug === item.slug}

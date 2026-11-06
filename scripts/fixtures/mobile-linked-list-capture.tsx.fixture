@@ -61,7 +61,7 @@ export default function LinkedListDesignCheck() {
         onOpenEditor={noop}
         onOpenUrl={noop}
         onTogglePublished={noop}
-        onOpenTicketModal={noop}
+        onOpenPeriodExtension={noop}
         onCopyPublicUrl={noop}
         onKakaoShare={noop}
         onOpenInApp={noop}

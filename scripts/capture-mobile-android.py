@@ -333,10 +333,12 @@ def main():
             wait_screen('create', 'create', ['만들기', '고객 계정 로그인'])
             wait_screen('guide', 'guide', ['마이페이지', '고객 계정 로그인'])
             wait_screen('settings', 'settings', ['설정', '화면 설정'])
+            wait_screen('account-list-0', 'design-check-accounts?count=0', ['계정별 전체 청첩장', '0개', '계정에 등록된 청첩장이 없습니다'])
+            wait_screen('account-list-1', 'design-check-accounts?count=1', ['계정별 전체 청첩장', '1개', '가상 청첩장 1'])
             wait_screen('account-list-12', 'design-check-accounts', ['계정별 전체 청첩장', '12개', '가상 청첩장 1'])
             wait_screen('account-sign-in', 'design-check-account-login', ['고객 계정 로그인', '로그인하고 청첩장 조회', '회원가입', '비밀번호 재설정'])
             wait_screen('recent-linked-status', 'design-check-recent-status', ['최근 연동 상태', '노출 종료', '주소 복사'])
-            wait_screen('linked-list', 'design-check-linked', ['연결한 청첩장', '현재 관리 중', '내용 수정'])
+            wait_screen('linked-list', 'design-check-linked', ['기기 연동 청첩장', '현재 관리 중', '내용 수정'])
             wait_screen('editor-fixture', 'design-check', ['샘플 청첩장 · 변경 사항 없음', '청첩장 편집', '기본 정보'])
             keyboard_tree = wait_screen(
                 'editor-keyboard-ready', 'design-check-keyboard',

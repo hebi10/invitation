@@ -3,6 +3,7 @@ import { readFileSync } from 'node:fs';
 
 import { getOwnedInvitationStatus } from '../apps/mobile/src/features/manage/ownedInvitationPresentation';
 import { getInvitationVisibility } from '../apps/mobile/src/features/manage/invitationVisibility';
+import { formatDateLabel, formatDisplayPeriod } from '../apps/mobile/src/features/manage/linkedInvitationDisplay';
 
 const read = (path: string) => readFileSync(path, 'utf8');
 
@@ -35,6 +36,8 @@ const activePeriod = {
 };
 assert.equal(getInvitationVisibility(true, activePeriod, referenceTime).label, '공개 중');
 assert.equal(getInvitationVisibility(false, activePeriod, referenceTime).label, '비공개');
+assert.equal(formatDateLabel('2026-01-01T00:00:00+09:00'), '2026년 1월 1일');
+assert.match(formatDisplayPeriod(activePeriod), /2026년 1월 1일 ~ 2027년 12월 31일/);
 assert.equal(getInvitationVisibility(true, {
   ...activePeriod,
   startDate: '2027-01-01T00:00:00+09:00',
@@ -48,7 +51,9 @@ const manage = read('apps/mobile/src/features/screens/manage.tsx');
 const capture = read('scripts/capture-mobile-android.py');
 
 assert.match(summary, /themePreviewImages\[themeKey\] \?\? themePreviewImages\.simple/);
-assert.match(summary, /selected \? palette\.accentSoft : palette\.surface/);
+assert.match(summary, /borderColor: selected \? palette\.accent : palette\.cardBorder/);
+assert.match(summary, /styles\.headingRow/);
+assert.match(summary, /periodLabel \? \(/);
 assert.match(summary, /statusTone === 'notice' \? palette\.noticeSoft/);
 assert.match(summary, /coverImageUrl|imageUrl/);
 assert.match(account, /<InvitationSummaryCard/);
@@ -56,6 +61,10 @@ assert.match(account, /getOwnedInvitationStatus\(item\)/);
 assert.match(account, /listMobileCustomerInvitations\(apiBaseUrl, token\)/);
 assert.doesNotMatch(account, /MAX_LINKED_INVITATION_CARD_COUNT|slice\(0, 8\)/);
 assert.match(account, /onOpen\(item\.slug\)/);
+assert.match(account, /managementAction=\{\(/);
+assert.match(account, /공유 설정/);
+assert.match(account, /사용 가능한 디자인 · \{item\.availableThemes\.length\}종/);
+assert.match(account, /새로 만들기/);
 assert.match(account, /목록 다시 불러오기/);
 assert.match(account, /계정에 등록된 청첩장이 없습니다/);
 assert.match(linked, /<InvitationSummaryCard/);
@@ -65,11 +74,23 @@ assert.match(linked, /onKakaoShare\(activeLinkedInvitationCard\)/);
 assert.match(linked, /onActivateLinkedInvitation\(item\)/);
 assert.match(linked, /onOpenPeriodExtension/);
 assert.match(linked, /onOpenGuestbook/);
+assert.match(linked, /title="기기 연동 청첩장"/);
+assert.match(linked, /이용 기간 ·/);
+assert.match(linked, /카카오톡 카드 공유/);
 assert.match(linked, /현재 관리 정보를 확인하고 있습니다/);
 assert.match(drafts, /borderWidth: 1/);
 assert.doesNotMatch(drafts, /borderTopWidth/);
 assert.match(manage, /이 기기에 연결된 청첩장이 없습니다/);
+assert.match(manage, /customerSession\?\.uid \? <AccountInvitationsSection \/>/);
+assert.match(manage, /title="마이페이지"/);
+assert.match(capture, /'account-list-0'/);
+assert.match(capture, /'account-list-1'/);
+assert.match(capture, /'account-list-12'/);
+const ownedFixture = read('scripts/fixtures/mobile-owned-list-capture.tsx.fixture');
+assert.match(ownedFixture, /visibleCount === 0/);
+assert.match(ownedFixture, /mockEvents\.slice\(0, visibleCount\)/);
 assert.match(capture, /linked-list/);
 assert.match(capture, /design-check-linked/);
+assert.match(capture, /'기기 연동 청첩장'/);
 
 console.log('Mobile stage 3 invitation list and status presentation tests passed');
