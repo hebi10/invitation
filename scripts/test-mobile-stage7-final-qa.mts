@@ -45,6 +45,8 @@ const captures = [
   'linked-list',
   'editor-fixture',
   'editor-save-error',
+  'editor-family-ready',
+  'editor-family-filled',
   'editor-schedule',
   'editor-location',
   'editor-greeting',
@@ -87,7 +89,7 @@ const captures = [
 for (const name of captures) {
   assert.ok(capture.includes(`'${name}'`), `Missing Android capture: ${name}`);
 }
-for (const width of [320, 360, 390, 430]) {
+for (const width of [320, 360, 390, 430, 600, 840]) {
   assert.ok(capture.includes(`(${width}, [`), `Responsive test missing ${width}dp`);
 }
 assert.match(capture, /def capture_responsive_views\(\):/);
@@ -95,6 +97,17 @@ assert.match(capture, /adb\('shell', 'wm', 'density', 'reset', check=False\)/);
 assert.match(capture, /capture_responsive_views\(\)/);
 assert.match(capture, /VERIFY|VERIFIED\['status'\] = 'passed'/);
 assert.match(capture, /def capture_keyboard\(tree\):/);
+assert.match(capture, /def audit_visible_action\(/);
+assert.match(capture, /action_visibility_audits/);
+assert.match(capture, /audit_visible_action\('modal-keyboard'/);
+assert.match(capture, /audit_visible_action\('editor-keyboard'/);
+assert.match(capture, /'layout-.*-[a-z]+'/);
+const fixture = read('scripts/fixtures/mobile-editor-capture.tsx.fixture');
+const disclosure = read('apps/mobile/src/components/Disclosure.tsx');
+const person = read('apps/mobile/src/features/manage/components/steps/PersonEditorCard.tsx');
+assert.match(fixture, /requestedStep === 'family-filled'/);
+assert.match(disclosure, /expandWhenPopulated/);
+assert.match(person, /hasExistingParentInformation/);
 
 const releaseWorkflow = read('.github/workflows/mobile-release.yml');
 const captureWorkflow = read('.github/workflows/mobile-captures.yml');

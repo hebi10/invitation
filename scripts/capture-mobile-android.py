@@ -402,6 +402,33 @@ def main():
             wait_screen('linked-list', 'design-check-linked', ['기기 연동 청첩장', '현재 관리 중', '내용 수정'])
             wait_screen('editor-fixture', 'design-check', ['샘플 청첩장 · 변경 사항 없음', '청첩장 편집', '기본 정보'])
             wait_screen('editor-save-error', 'design-check?step=save-error', ['저장 실패', '입력값은 유지됩니다', '기본 정보'])
+            wait_screen('editor-family-ready', 'design-check?step=family-filled', ['청첩장 편집', '기본 정보'])
+            for scroll_attempt in range(7):
+                family_tree, family_xml = hierarchy()
+                visible_family_heading = any(
+                    node.get('text') == '신랑 정보'
+                    and (lambda m: m is not None and int(m.group(4)) > int(m.group(2)))(
+                        re.fullmatch(r'\[(\d+),(\d+)\]\[(\d+),(\d+)\]', node.get('bounds', ''))
+                    )
+                    for node in family_tree.iter('node')
+                )
+                if visible_family_heading:
+                    (OUT / 'editor-family-filled.xml').write_text(family_xml)
+                    screenshot('editor-family-filled')
+                    VERIFIED['captures'].append({
+                        'file': 'editor-family-filled.png',
+                        'route': '/design-check?step=family-filled',
+                        'verified_text': ['신랑 정보'],
+                        'fixture': True,
+                        'populated_optional_fields_visible': True,
+                    })
+                    save_manifest()
+                    print('검증·캡처 완료: editor-family-filled', flush=True)
+                    break
+                adb('shell', 'input', 'swipe', '720', '2200', '720', '900', '350')
+                time.sleep(1)
+            else:
+                raise RuntimeError('editor-family-filled: 저장된 혼주·연락처 섹션이 펼쳐진 상태로 표시되지 않았습니다.')
             keyboard_tree = wait_screen(
                 'editor-keyboard-ready', 'design-check-keyboard',
                 ['청첩장 편집', '키보드 확인 입력', '저장 후 다음'],
