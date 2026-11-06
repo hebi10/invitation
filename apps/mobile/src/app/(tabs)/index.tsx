@@ -33,7 +33,6 @@ export default function MyInvitationsScreen() {
     <AppScreen title="홈" subtitle="새 청첩장을 만들거나 원하는 웨딩 디자인을 확인해 보세요.">
       {isExpoWebPreview ? <WebPreviewNotice /> : null}
       <DraftInvitationsSection />
-      <WeddingIntroHero />
       <SectionCard
         title="청첩장 시작하기"
         description="새로 만들거나 이미 제작한 청첩장을 이 기기에 연결할 수 있습니다."
@@ -53,6 +52,7 @@ export default function MyInvitationsScreen() {
           PC에서 만든 청첩장도 같은 고객 계정이나 앱 연동 링크로 관리할 수 있습니다.
         </AppText>
       </SectionCard>
+      <WeddingIntroHero />
       <SectionCard
         title="웨딩 디자인 살펴보기"
         description="신민재·김현지 청첩장으로 디자인별 실제 페이지를 확인할 수 있습니다."

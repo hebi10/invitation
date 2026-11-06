@@ -5,7 +5,7 @@ import { ActionButton } from '../../../components/ActionButton';
 import { AppText } from '../../../components/AppText';
 import { themePreviewImages } from '../../../constants/themePreviewImages';
 import { useVisualPreferences } from '../../../contexts/PreferencesContext';
-import { getInvitationThemeLabel } from '../../../lib/invitationThemes';
+import { getInvitationThemeLabel, getInvitationThemePreviewDescription } from '../../../lib/invitationThemes';
 import type { MobileInvitationThemeKey } from '../../../types/mobileInvitation';
 
 type InvitationThemeActionListProps = {
@@ -56,6 +56,9 @@ export function InvitationThemeActionList({
             <AppText variant="title" style={styles.name}>
               {getInvitationThemeLabel(theme)}
             </AppText>
+            <AppText variant="caption" color={palette.textMuted} numberOfLines={3}>
+              {getInvitationThemePreviewDescription(theme)}
+            </AppText>
             {isCurrentTheme ? (
               <AppText variant="caption" color={palette.accent}>현재 기본 디자인</AppText>
             ) : null}
@@ -86,7 +89,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 12,
   },
-  thumbnail: { width: 86, height: 116 },
+  thumbnail: { width: 108, height: 156 },
   details: { flex: 1, minWidth: 0, justifyContent: 'center', gap: 8 },
   name: { fontWeight: '600' },
 });

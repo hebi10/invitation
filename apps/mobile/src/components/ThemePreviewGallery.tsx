@@ -36,6 +36,8 @@ export function ThemePreviewGallery({ tier = 'premium' }: { tier?: MobileInvitat
         showsHorizontalScrollIndicator={false}
         accessibilityLabel="청첩장 디자인 미리보기"
         contentContainerStyle={styles.gallery}
+        snapToInterval={260}
+        decelerationRate="fast"
       >
         {designThemes.map((theme) => {
           const url = findGuideSamplePageUrl(theme.key, tier);
@@ -49,7 +51,7 @@ export function ThemePreviewGallery({ tier = 'premium' }: { tier?: MobileInvitat
                 <Image
                   source={preview}
                   style={[styles.image, { backgroundColor: palette.surfaceMuted }]}
-                  contentFit="cover"
+                  contentFit="contain"
                   contentPosition="top"
                   alt={`${theme.label} 디자인 참고 이미지`}
                 />
@@ -61,6 +63,7 @@ export function ThemePreviewGallery({ tier = 'premium' }: { tier?: MobileInvitat
               <View style={styles.copy}>
                 <AppText accessibilityRole="header" style={styles.title}>{theme.label}</AppText>
                 <AppText variant="muted" style={styles.description}>{theme.description}</AppText>
+                <AppText variant="caption" color={palette.textMuted}>신민재·김현지 실사용 샘플</AppText>
                 <ActionButton
                   variant="secondary"
                   fullWidth
@@ -85,8 +88,8 @@ export function ThemePreviewGallery({ tier = 'premium' }: { tier?: MobileInvitat
 const styles = StyleSheet.create({
   wrapper: { gap: 12 },
   gallery: { gap: 12, paddingBottom: 4, alignItems: 'stretch' },
-  item: { width: 210, borderWidth: 1, borderRadius: 0, gap: 0 },
-  image: { width: '100%', aspectRatio: 390 / 720 },
+  item: { width: 248, borderWidth: 1, borderRadius: 0, gap: 0 },
+  image: { width: '100%', aspectRatio: 9 / 14 },
   textPreview: { justifyContent: 'center', alignItems: 'center', padding: 16 },
   copy: { padding: 14, gap: 10, flex: 1 },
   title: { fontWeight: '600' },

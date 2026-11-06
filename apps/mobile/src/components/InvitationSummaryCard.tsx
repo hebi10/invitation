@@ -19,6 +19,7 @@ type InvitationSummaryCardProps = PropsWithChildren<{
   statusTone?: InvitationSummaryTone;
   periodLabel?: string | null;
   selected?: boolean;
+  compact?: boolean;
 }>;
 
 export function InvitationSummaryCard({
@@ -32,6 +33,7 @@ export function InvitationSummaryCard({
   statusTone = 'neutral',
   periodLabel,
   selected = false,
+  compact = false,
   children,
 }: InvitationSummaryCardProps) {
   const [imageFailed, setImageFailed] = useState(false);
@@ -53,22 +55,23 @@ export function InvitationSummaryCard({
     <View
       style={[
         styles.card,
+        compact ? styles.cardCompact : null,
         {
           backgroundColor: selected ? palette.accentSoft : palette.surface,
           borderColor: selected ? palette.accent : palette.cardBorder,
         },
       ]}
     >
-      <View style={styles.overview}>
+      <View style={[styles.overview, compact ? styles.overviewCompact : null]}>
         <Image
           source={showsActualCover ? { uri: validImageUrl! } : previewImage}
-          style={[styles.cover, { backgroundColor: palette.surfaceMuted }]}
+          style={[styles.cover, compact ? styles.coverCompact : null, { backgroundColor: palette.surfaceMuted }]}
           contentFit="cover"
           contentPosition="top"
           alt={showsActualCover ? `${name} 실제 대표 사진` : `${name} 디자인 미리보기`}
           onError={() => setImageFailed(true)}
         />
-        <View style={styles.details}>
+        <View style={[styles.details, compact ? styles.detailsCompact : null]}>
           <AppText variant="caption" color={palette.textMuted}>
             {contextLabel}
           </AppText>
@@ -102,6 +105,10 @@ const styles = StyleSheet.create({
     padding: 14,
     gap: 14,
   },
+  cardCompact: { padding: 10, gap: 8 },
+  overviewCompact: { gap: 10 },
+  coverCompact: { width: 64, height: 84 },
+  detailsCompact: { gap: 3 },
   overview: {
     flexDirection: 'row',
     gap: 12,

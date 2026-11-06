@@ -32,9 +32,9 @@ export default function MyPageScreen() {
 
   return (
     <AppScreen title="마이페이지" subtitle="내 계정의 청첩장을 확인하고 수정하거나 디자인별로 공유하세요.">
-      <AccountInvitationsSection />
+      <AccountInvitationsSection compactUnauthenticated />
       <SectionCard
-        title="청첩장 제작"
+        title="새 청첩장 제작"
         description="결제 후 비공개 청첩장이 생성되며, 마이페이지에서 내용을 완성할 수 있습니다."
       >
         <ActionButton onPress={() => router.push('/create')} fullWidth>
