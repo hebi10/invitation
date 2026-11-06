@@ -9,6 +9,10 @@ import { ChoiceChip } from '../../components/ChoiceChip';
 import { Disclosure } from '../../components/Disclosure';
 import { SectionCard } from '../../components/SectionCard';
 import { guideSections, settingsNotes } from '../../constants/content';
+import {
+  INVITATION_INITIAL_DISPLAY_PERIOD_MONTHS,
+  INVITATION_PREMIUM_PRICE_LABEL,
+} from '../../lib/invitationProductPolicy';
 import { APP_SPACING } from '../../constants/uiTokens';
 import { useAppFeedback } from '../../contexts/AppFeedbackContext';
 import { usePreferences } from '../../contexts/PreferencesContext';
@@ -72,9 +76,9 @@ export default function SettingsScreen() {
         title="화면 설정"
         description="선택한 테마와 글자 크기를 즉시 적용합니다."
       >
-        <View style={styles.settingGroup}>
+        <View style={[styles.settingGroup, styles.settingSurface, { backgroundColor: palette.surfaceMuted, borderColor: palette.cardBorder }]}>
           <AppText variant="caption" accessibilityRole="header" style={styles.settingLabel}>
-            테마
+            화면 테마
           </AppText>
           <View style={styles.chipRow}>
             <ChoiceChip
@@ -96,9 +100,12 @@ export default function SettingsScreen() {
           <AppText variant="caption" color={palette.textMuted} accessibilityLiveRegion="polite">
             {themeLabel}
           </AppText>
+          <AppText variant="caption" color={palette.textMuted}>
+            시스템은 휴대전화의 밝기 설정을 따라갑니다.
+          </AppText>
         </View>
 
-        <View style={styles.settingGroup}>
+        <View style={[styles.settingGroup, styles.settingSurface, { backgroundColor: palette.surfaceMuted, borderColor: palette.cardBorder }]}>
           <AppText variant="caption" accessibilityRole="header" style={styles.settingLabel}>
             글자 크기
           </AppText>
@@ -117,7 +124,33 @@ export default function SettingsScreen() {
           <AppText variant="caption" color={palette.textMuted} accessibilityLiveRegion="polite">
             {fontScaleLabel}
           </AppText>
+          <AppText variant="caption" color={palette.textMuted}>
+            큰 글씨를 선택하면 주요 화면과 입력창의 글자가 확대됩니다.
+          </AppText>
         </View>
+      </SectionCard>
+
+      <SectionCard
+        title="이용 안내"
+        description="처음 만들기부터 기간 연장까지 궁금한 항목을 선택해 확인하세요."
+      >
+        <View style={[styles.productSummary, { backgroundColor: palette.surfaceMuted, borderColor: palette.cardBorder }]}>
+          <AppText variant="caption" color={palette.textMuted}>프리미엄 청첩장 · 단일 상품</AppText>
+          <View style={styles.priceRow}>
+            <AppText variant="cardTitle">{INVITATION_PREMIUM_PRICE_LABEL}</AppText>
+            <AppText variant="caption" color={palette.textMuted}>
+              생성일부터 {INVITATION_INITIAL_DISPLAY_PERIOD_MONTHS}개월
+            </AppText>
+          </View>
+          <AppText variant="caption" color={palette.textMuted}>
+            웨딩 디자인 5종 · 결제 후 비공개 초안 생성 · 연장도 5,000원에 6개월
+          </AppText>
+        </View>
+        {guideSections.map((section) => (
+          <Disclosure key={section.title} title={section.title} description={section.description}>
+            <BulletList items={section.items} />
+          </Disclosure>
+        ))}
       </SectionCard>
 
       <SectionCard title="앱 정보" description="현재 설치된 앱의 버전과 업데이트 안내입니다.">
@@ -137,14 +170,6 @@ export default function SettingsScreen() {
         >
           <BulletList items={UPDATE_GUIDE_ITEMS} />
         </Disclosure>
-      </SectionCard>
-
-      <SectionCard title="이용 안내" description="청첩장 제작과 운영 방법을 확인할 수 있습니다.">
-        {guideSections.map((section) => (
-          <Disclosure key={section.title} title={section.title} description={section.description}>
-            <BulletList items={section.items} />
-          </Disclosure>
-        ))}
       </SectionCard>
 
       <SectionCard title="기기 이용 안내">
@@ -167,7 +192,10 @@ export default function SettingsScreen() {
 }
 
 const styles = StyleSheet.create({
-  settingGroup: { gap: APP_SPACING.xs },
+  settingGroup: { gap: APP_SPACING.sm },
+  settingSurface: { borderWidth: 1, borderRadius: 0, padding: APP_SPACING.md },
+  productSummary: { borderWidth: 1, borderRadius: 0, padding: APP_SPACING.md, gap: APP_SPACING.sm },
+  priceRow: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'baseline', justifyContent: 'space-between', gap: APP_SPACING.xs },
   chipRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
