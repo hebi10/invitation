@@ -29,7 +29,7 @@ assert.match(hero, /INVITATION_INITIAL_DISPLAY_PERIOD_MONTHS/);
 assert.match(hero, /borderRadius:\s*0/);
 assert.match(gallery, /themePreviewImages\[theme\.key\]/);
 assert.match(gallery, /findGuideSamplePageUrl/);
-assert.match(gallery, /샘플 보기 버튼을 누르면/);
+assert.match(gallery, /샘플 보기를 누르면 신민재·김현지의 실제 청첩장이 열립니다/);
 
 assert.match(login, /RecentLinkedInvitationsSection/);
 assert.match(login, /최근 연동한 청첩장을 확인하고 있습니다/);
