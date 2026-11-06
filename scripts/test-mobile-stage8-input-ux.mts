@@ -17,7 +17,8 @@ assert.match(workspace, /numberOfLines=\{statusTone === 'danger' \? 2 : 1\}/);
 assert.match(workspace, /styles\.headerNarrow/);
 assert.match(workspace, /styles\.scrollContentNarrow/);
 assert.match(workspace, /styles\.footerNarrow/);
-assert.match(workspace, /keyboardVisible \? compactFooter : footer/);
+assert.match(workspace, /keyboardVisible \? compactFooter : compactLayout/);
+assert.match(workspace, /compactNavigationFooter \?\? footer/);
 assert.match(workspace, /accessibilityRole="progressbar"/);
 assert.match(workspace, /onSelectStep\(index\)/);
 
