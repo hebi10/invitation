@@ -230,7 +230,7 @@ def capture_responsive_views():
             ('checkout', 'design-check-modals?kind=payment', ['Google Play 결제', '결제 예정 금액']),
         ]),
         (360, [
-            ('guide', 'guide', ['이용 안내', '프리미엄 청첩장']),
+            ('guide', 'guide', ['마이페이지', '고객 계정 로그인']),
             ('settings', 'settings', ['설정', '화면 설정']),
         ]),
         (390, [
@@ -328,10 +328,10 @@ def main():
             adb('shell', 'input', 'keyevent', 'KEYCODE_WAKEUP')
             adb('shell', 'wm', 'dismiss-keyguard')
             adb('shell', 'settings', 'put', 'secure', 'show_ime_with_hard_keyboard', '1')
-            wait_screen('my-invitations', '', ['내 청첩장', 'MODERN WEDDING EDITORIAL'])
+            wait_screen('my-invitations', '', ['홈', 'MODERN WEDDING EDITORIAL'])
             wait_screen('login', 'login', ['기존 청첩장 연결', '기기 연동 안내'])
-            wait_screen('create', 'create', ['만들기', '기본 정보를 준비하고'])
-            wait_screen('guide', 'guide', ['이용 안내', '진행할 작업을 선택해'])
+            wait_screen('create', 'create', ['만들기', '고객 계정 로그인'])
+            wait_screen('guide', 'guide', ['마이페이지', '고객 계정 로그인'])
             wait_screen('settings', 'settings', ['설정', '화면 설정'])
             wait_screen('account-list-12', 'design-check-accounts', ['계정별 전체 청첩장', '12개', '가상 청첩장 1'])
             wait_screen('account-sign-in', 'design-check-account-login', ['고객 계정 로그인', '로그인하고 청첩장 조회', '회원가입', '비밀번호 재설정'])

@@ -38,7 +38,7 @@ export const INVITATION_THEME_METADATA_REGISTRY = [
       sampleUrls: {
         standard: buildThemePreviewUrl('/kim-taehyun-choi-yuna/emotional/'),
         deluxe: buildThemePreviewUrl('/lee-junho-park-somin/emotional/'),
-        premium: buildThemePreviewUrl('/an-doyoung-yoon-jisoo/emotional/'),
+        premium: buildThemePreviewUrl('/shin-minje-kim-hyunji/emotional/'),
       },
     },
     shareTitleMode: 'metadata',
@@ -58,7 +58,7 @@ export const INVITATION_THEME_METADATA_REGISTRY = [
       sampleUrls: {
         standard: buildThemePreviewUrl('/kim-taehyun-choi-yuna/romantic/'),
         deluxe: buildThemePreviewUrl('/lee-junho-park-somin/romantic/'),
-        premium: buildThemePreviewUrl('/an-doyoung-yoon-jisoo/romantic/'),
+        premium: buildThemePreviewUrl('/shin-minje-kim-hyunji/romantic/'),
       },
     },
     shareTitleMode: 'metadata',
@@ -78,7 +78,7 @@ export const INVITATION_THEME_METADATA_REGISTRY = [
       sampleUrls: {
         standard: buildThemePreviewUrl('/kim-taehyun-choi-yuna/gyeol/'),
         deluxe: buildThemePreviewUrl('/lee-junho-park-somin/gyeol/'),
-        premium: buildThemePreviewUrl('/an-doyoung-yoon-jisoo/gyeol/'),
+        premium: buildThemePreviewUrl('/shin-minje-kim-hyunji/gyeol/'),
       },
     },
     shareTitleMode: 'metadata',
@@ -98,7 +98,7 @@ export const INVITATION_THEME_METADATA_REGISTRY = [
       sampleUrls: {
         standard: buildThemePreviewUrl('/kim-taehyun-choi-yuna/simple/'),
         deluxe: buildThemePreviewUrl('/lee-junho-park-somin/simple/'),
-        premium: buildThemePreviewUrl('/an-doyoung-yoon-jisoo/simple/'),
+        premium: buildThemePreviewUrl('/shin-minje-kim-hyunji/simple/'),
       },
     },
     shareTitleMode: 'couple',
@@ -118,7 +118,7 @@ export const INVITATION_THEME_METADATA_REGISTRY = [
       sampleUrls: {
         standard: buildThemePreviewUrl('/kim-taehyun-choi-yuna/classic-r/'),
         deluxe: buildThemePreviewUrl('/lee-junho-park-somin/classic-r/'),
-        premium: buildThemePreviewUrl('/an-doyoung-yoon-jisoo/classic-r/'),
+        premium: buildThemePreviewUrl('/shin-minje-kim-hyunji/classic-r/'),
       },
     },
     shareTitleMode: 'metadata',
@@ -138,7 +138,7 @@ export const INVITATION_THEME_METADATA_REGISTRY = [
       sampleUrls: {
         standard: buildThemePreviewUrl('/kim-taehyun-choi-yuna/vow/'),
         deluxe: buildThemePreviewUrl('/lee-junho-park-somin/vow/'),
-        premium: buildThemePreviewUrl('/an-doyoung-yoon-jisoo/vow/'),
+        premium: buildThemePreviewUrl('/shin-minje-kim-hyunji/vow/'),
       },
     },
     shareTitleMode: 'metadata',

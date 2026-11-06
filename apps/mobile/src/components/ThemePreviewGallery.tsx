@@ -29,7 +29,7 @@ export function ThemePreviewGallery({ tier = 'premium' }: { tier?: MobileInvitat
   return (
     <View style={styles.wrapper}>
       <AppText variant="caption" color={palette.textMuted}>
-        옆으로 넘겨 다섯 가지 디자인을 비교해 보세요.
+        옆으로 넘겨 웨딩 디자인을 비교해 보세요.
       </AppText>
       <ScrollView
         horizontal
@@ -51,7 +51,7 @@ export function ThemePreviewGallery({ tier = 'premium' }: { tier?: MobileInvitat
                   style={[styles.image, { backgroundColor: palette.surfaceMuted }]}
                   contentFit="cover"
                   contentPosition="top"
-                  alt={`${theme.label} 실제 청첩장 표지 미리보기`}
+                  alt={`${theme.label} 디자인 참고 이미지`}
                 />
               ) : (
                 <View style={[styles.image, styles.textPreview, { backgroundColor: palette.surfaceMuted }]}>
@@ -76,7 +76,7 @@ export function ThemePreviewGallery({ tier = 'premium' }: { tier?: MobileInvitat
         })}
       </ScrollView>
       <AppText variant="caption" color={palette.textMuted}>
-        샘플 보기 버튼을 누르면 실제 청첩장을 확인할 수 있습니다.
+        이미지는 디자인 참고용입니다. 샘플 보기를 누르면 신민재·김현지의 실제 청첩장이 열립니다.
       </AppText>
     </View>
   );

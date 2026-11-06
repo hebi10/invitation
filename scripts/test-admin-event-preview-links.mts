@@ -217,19 +217,19 @@ const expectedWeddingPreviewSamplePaths: Array<
 > = [
   ['emotional', 'standard', '/kim-taehyun-choi-yuna/emotional/'],
   ['emotional', 'deluxe', '/lee-junho-park-somin/emotional/'],
-  ['emotional', 'premium', '/an-doyoung-yoon-jisoo/emotional/'],
+  ['emotional', 'premium', '/shin-minje-kim-hyunji/emotional/'],
   ['romantic', 'standard', '/kim-taehyun-choi-yuna/romantic/'],
   ['romantic', 'deluxe', '/lee-junho-park-somin/romantic/'],
-  ['romantic', 'premium', '/an-doyoung-yoon-jisoo/romantic/'],
+  ['romantic', 'premium', '/shin-minje-kim-hyunji/romantic/'],
   ['gyeol', 'standard', '/kim-taehyun-choi-yuna/gyeol/'],
   ['gyeol', 'deluxe', '/lee-junho-park-somin/gyeol/'],
-  ['gyeol', 'premium', '/an-doyoung-yoon-jisoo/gyeol/'],
+  ['gyeol', 'premium', '/shin-minje-kim-hyunji/gyeol/'],
   ['simple', 'standard', '/kim-taehyun-choi-yuna/simple/'],
   ['simple', 'deluxe', '/lee-junho-park-somin/simple/'],
-  ['simple', 'premium', '/an-doyoung-yoon-jisoo/simple/'],
+  ['simple', 'premium', '/shin-minje-kim-hyunji/simple/'],
   ['classic-r', 'standard', '/kim-taehyun-choi-yuna/classic-r/'],
   ['classic-r', 'deluxe', '/lee-junho-park-somin/classic-r/'],
-  ['classic-r', 'premium', '/an-doyoung-yoon-jisoo/classic-r/'],
+  ['classic-r', 'premium', '/shin-minje-kim-hyunji/classic-r/'],
 ];
 
 for (const [theme, productTier, expectedPath] of expectedWeddingPreviewSamplePaths) {
