@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useState, type PropsWithChildren } from 'react';
+import { useEffect, useState, type PropsWithChildren } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { APP_SPACING } from '../constants/uiTokens';
@@ -10,11 +10,16 @@ type DisclosureProps = PropsWithChildren<{
   title: string;
   description?: string;
   defaultExpanded?: boolean;
+  expandWhenPopulated?: boolean;
 }>;
 
-export function Disclosure({ title, description, defaultExpanded = false, children }: DisclosureProps) {
+export function Disclosure({ title, description, defaultExpanded = false, expandWhenPopulated = false, children }: DisclosureProps) {
   const { palette } = useVisualPreferences();
   const [expanded, setExpanded] = useState(defaultExpanded);
+
+  useEffect(() => {
+    if (expandWhenPopulated && defaultExpanded) setExpanded(true);
+  }, [defaultExpanded, expandWhenPopulated]);
 
   return (
     <View style={[styles.container, { borderColor: palette.cardBorder, backgroundColor: palette.surface }]}>
