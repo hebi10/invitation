@@ -112,5 +112,5 @@ for (const step of ['schedule', 'location', 'greeting', 'images', 'music']) {
 }
 assert.match(capture, /editor-fixture/);
 assert.match(capture, /editor-intro/);
-assert.match(capture, /'editor-location', 'location', \['청첩장 편집', '예식장 주소', '지도 연결 확인'\]/);
+assert.match(capture, /'editor-location', 'location', \['청첩장 편집', '예식장 주소', '입력한 주소로 위치 검색'\]/);
 console.log('Mobile stage 4 editor design and 7-step capture contracts passed');
