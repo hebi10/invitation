@@ -56,6 +56,7 @@ const captures = [
   'modal-share',
   'modal-onboarding',
   'modal-onboarding-last',
+  'modal-onboarding-error-ready',
   'modal-onboarding-error',
   'modal-guestbook',
   'modal-guestbook-filled',

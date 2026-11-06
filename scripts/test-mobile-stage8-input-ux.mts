@@ -34,7 +34,7 @@ assert.match(modal, /const compactLayout = width < 360/);
 assert.match(modal, /compactLayout \? styles\.cardNarrow : null/);
 assert.match(modal, /keyboardShouldPersistTaps="handled"/);
 assert.match(modal, /onRequestClose=\{dismiss\}/);
-assert.match(payment, /결제 완료 후 청첩장이 생성됩니다/);
+assert.match(payment, /결제 내역을 확인한 뒤 구매해 주세요/);
 assert.match(payment, /onRecover/);
 assert.match(payment, /hasPendingPurchase/);
 

@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import { ActionButton } from '../../../components/ActionButton';
@@ -39,6 +40,11 @@ export function OnboardingModal({
   onSetPublished,
 }: OnboardingModalProps) {
   const { palette } = usePreferences();
+  const [attemptedNext, setAttemptedNext] = useState(false);
+
+  useEffect(() => {
+    setAttemptedNext(false);
+  }, [stepIndex, visible]);
 
   return (
     <AppModalFrame
@@ -58,7 +64,14 @@ export function OnboardingModal({
               이전
             </ActionButton>
           </View>
-          <ActionButton onPress={() => void onNext()} loading={isSaving} fullWidth>
+          <ActionButton
+            onPress={() => {
+              setAttemptedNext(true);
+              void onNext();
+            }}
+            loading={isSaving}
+            fullWidth
+          >
             {stepIndex === ONBOARDING_STEPS.length - 1 ? '저장하고 시작' : '다음'}
           </ActionButton>
         </View>
@@ -88,7 +101,7 @@ export function OnboardingModal({
           />
         </View>
       </View>
-      {validationMessage ? (
+      {attemptedNext && validationMessage ? (
         <ModalFeedback palette={palette} tone="error">{validationMessage}</ModalFeedback>
       ) : null}
       {authError ? <ModalFeedback palette={palette} tone="error">{authError}</ModalFeedback> : null}

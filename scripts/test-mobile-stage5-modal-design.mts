@@ -101,6 +101,8 @@ assert.match(onboarding, /closeDisabled=\{isSaving\}/);
 assert.match(onboarding, /onNext\(\)/);
 assert.match(onboarding, /onSetPublished/);
 assert.match(onboarding, /styles\.secondaryActions/);
+assert.match(onboarding, /attemptedNext && validationMessage/);
+assert.match(onboarding, /setAttemptedNext\(true\)/);
 assert.match(onboarding, /loading=\{isSaving\} fullWidth/);
 assert.match(preparing, /<AppModalFrame/);
 assert.match(preparing, /closeDisabled/);
@@ -126,7 +128,7 @@ for (const kind of [
     (kind === 'payment' && fixture.includes('return <PaymentConfirmModal')),
     `Fixture should support ${kind}`);
 }
-for (const name of ['modal-keyboard-ready', 'modal-keyboard']) {
+for (const name of ['modal-onboarding-error-ready', 'modal-keyboard-ready', 'modal-keyboard']) {
   assert.ok(capture.includes(`'${name}'`), `Android modal keyboard capture missing ${name}`);
 }
 assert.match(fixture, /Keyboard\.addListener\('keyboardDidShow'/);

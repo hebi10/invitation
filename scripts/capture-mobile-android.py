@@ -396,7 +396,7 @@ def main():
                 ('modal-share', 'share', ['카카오톡 카드 공유', '디자인 샘플']),
                 ('modal-onboarding', 'onboarding', ['운영 시작 안내', '기본 문구와 이름']),
                 ('modal-onboarding-last', 'onboarding-last', ['인사말과 공개 상태', '저장하고 시작']),
-                ('modal-onboarding-error', 'onboarding-error', ['기본 문구와 이름', '신랑 이름을 입력해 주세요']),
+                ('modal-onboarding-error-ready', 'onboarding-error', ['기본 문구와 이름', '다음']),
                 ('modal-guestbook', 'guestbook', ['방명록 검색', '방명록 관리']),
                 ('modal-guestbook-filled', 'guestbook-filled', ['방명록 검색', '방명록 관리']),
                 ('modal-guestbook-long', 'guestbook-long', ['방명록 검색', '방명록 관리']),
@@ -405,6 +405,21 @@ def main():
                 ('modal-preparing', 'preparing', ['청첩장 편집 준비', '편집 정보를 불러오는 중입니다.']),
             ]:
                 wait_screen(name, f'design-check-modals?kind={kind}', expected)
+            onboarding_error_tree = wait_screen(
+                'modal-onboarding-error-ready', 'design-check-modals?kind=onboarding-error',
+                ['기본 문구와 이름', '다음'],
+            )
+            onboarding_next_button = next(
+                (node for node in onboarding_error_tree.iter('node')
+                 if (node.get('text') == '다음' or node.get('content-desc') == '다음')
+                 and node.get('enabled') == 'true'), None,
+            )
+            if onboarding_next_button is None or not tap(onboarding_next_button):
+                raise RuntimeError('모달 필수 입력 검증 버튼을 찾거나 누르지 못했습니다.')
+            wait_screen(
+                'modal-onboarding-error', 'design-check-modals?kind=onboarding-error',
+                ['신랑 이름을 입력해 주세요', '다음'], timeout=45, launch=False,
+            )
             modal_keyboard_tree = wait_screen(
                 'modal-keyboard-ready', 'design-check-modals?kind=keyboard',
                 ['입력 모달 키보드 검증', '모달 키보드 테스트 입력', '모달 키보드 열기 대기'],
