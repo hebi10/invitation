@@ -101,7 +101,7 @@ assert.match(capture, /def audit_visible_action\(/);
 assert.match(capture, /action_visibility_audits/);
 assert.match(capture, /audit_visible_action\('modal-keyboard'/);
 assert.match(capture, /audit_visible_action\('editor-keyboard'/);
-assert.match(capture, /'layout-.*-[a-z]+'/);
+assert.match(capture, /f'layout-\{width_dp\}-\{label\}'/);
 const fixture = read('scripts/fixtures/mobile-editor-capture.tsx.fixture');
 const disclosure = read('apps/mobile/src/components/Disclosure.tsx');
 const person = read('apps/mobile/src/features/manage/components/steps/PersonEditorCard.tsx');
