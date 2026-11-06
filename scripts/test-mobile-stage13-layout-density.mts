@@ -1,0 +1,44 @@
+import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+
+const read = (path: string) => readFileSync(path, 'utf8');
+const home = read('apps/mobile/src/app/(tabs)/index.tsx');
+const hero = read('apps/mobile/src/components/WeddingIntroHero.tsx');
+const mypage = read('apps/mobile/src/app/(tabs)/guide.tsx');
+const owned = read('apps/mobile/src/components/AccountInvitationsSection.tsx');
+const summary = read('apps/mobile/src/components/InvitationSummaryCard.tsx');
+const gallery = read('apps/mobile/src/components/ThemePreviewGallery.tsx');
+const preview = read('apps/mobile/src/features/manage/components/InvitationThemeActionList.tsx');
+const editor = read('apps/mobile/src/components/manage/InvitationEditorWorkspace.tsx');
+const manage = read('apps/mobile/src/features/screens/manage.tsx');
+const payment = read('apps/mobile/src/features/create/components/PaymentConfirmModal.tsx');
+const tabs = read('apps/mobile/src/app/(tabs)/_layout.tsx');
+const status = read('apps/mobile/src/components/AppStatusScreen.tsx');
+const settings = read('apps/mobile/src/features/screens/settings.tsx');
+
+assert.ok(home.indexOf('title="청첩장 시작하기"') < home.indexOf('<WeddingIntroHero />'),
+  'Creation CTA must precede large hero');
+assert.match(hero, /preview: \{ flex: 1, minWidth: 0, aspectRatio: 1 \}/);
+assert.match(mypage, /<AccountInvitationsSection compactUnauthenticated \/>/);
+assert.match(owned, /compactUnauthenticated && !showLoginForm/);
+assert.match(owned, /onPress=\{\(\) => setShowLoginForm\(true\)\}/);
+assert.match(owned, /compact\s*\/>/);
+assert.match(summary, /cardCompact: \{ padding: 10, gap: 8 \}/);
+assert.match(summary, /coverCompact: \{ width: 64, height: 84 \}/);
+assert.match(gallery, /item: \{ width: 248/);
+assert.match(gallery, /snapToInterval=\{260\}/);
+assert.match(preview, /getInvitationThemePreviewDescription\(theme\)/);
+assert.match(preview, /thumbnail: \{ width: 108, height: 156 \}/);
+assert.match(editor, /compactNavigationFooter \?\? footer/);
+assert.match(editor, /keyboardVisible \? compactFooter : compactLayout/);
+assert.match(manage, /compactNavigationFooter=\{<View/);
+assert.match(manage, /저장 후 다음/);
+assert.match(payment, /label="구성"/);
+assert.match(payment, /formatPrice\(totalPrice\)/);
+assert.match(payment, /onRecover/);
+assert.match(tabs, /name=\{focused \? 'home' : 'home-outline'\}/);
+assert.match(status, /paddingTop: topPadding/);
+assert.match(status, /justifyContent: 'flex-start'/);
+assert.match(settings, /accessibilityRole="header" style=\{styles.settingLabel\}/);
+assert.doesNotMatch(home + hero + summary + gallery + preview + status, /boxShadow|elevation:\s*[1-9]/);
+console.log('Stage 13: home, account, editor, preview, payment, navigation, errors and settings passed');
