@@ -19,6 +19,7 @@ type InvitationEditorWorkspaceProps = PropsWithChildren<{
   activeStepIndex: number;
   onSelectStep: (index: number) => void;
   onPreview: () => void;
+  onSaveCurrent?: () => void;
   busy: boolean;
   footer: ReactNode;
   compactFooter: ReactNode;
@@ -28,7 +29,7 @@ type InvitationEditorWorkspaceProps = PropsWithChildren<{
 
 export function InvitationEditorWorkspace({
   visible, onClose, title, description, status, statusTone, publicationLabel,
-  steps, activeStepIndex, onSelectStep, onPreview, busy, footer, compactFooter,
+  steps, activeStepIndex, onSelectStep, onPreview, onSaveCurrent, busy, footer, compactFooter,
   compactNavigationFooter, confirmation, children,
 }: InvitationEditorWorkspaceProps) {
   const { palette, fontScale } = useVisualPreferences();
@@ -51,6 +52,12 @@ export function InvitationEditorWorkspace({
     else { setContentsOpen(false); setKeyboardVisible(false); }
   }, [activeStepIndex, visible]);
 
+  useEffect(() => {
+    if (visible && statusTone === 'danger') {
+      scrollRef.current?.scrollTo({ y: 0, animated: true });
+    }
+  }, [statusTone, visible]);
+
   const statusColor = statusTone === 'neutral' ? palette.textMuted : palette[statusTone];
   const statusBackgroundColor = statusTone === 'success'
     ? palette.successSoft
@@ -69,6 +76,16 @@ export function InvitationEditorWorkspace({
         <View style={[styles.header, compactLayout ? styles.headerNarrow : null, { backgroundColor: palette.surface }]}>
           <View style={styles.topRow}>
             <AppText variant="title" accessibilityRole="header" style={styles.heading}>청첩장 편집</AppText>
+            {!keyboardVisible && onSaveCurrent ? (
+              <ActionButton
+                variant="secondary"
+                onPress={onSaveCurrent}
+                disabled={busy}
+                accessibilityLabel="현재 편집 내용 저장"
+              >
+                저장
+              </ActionButton>
+            ) : null}
             <ActionButton variant="secondary" onPress={onClose} disabled={busy}>닫기</ActionButton>
           </View>
           {!keyboardVisible ? (
@@ -130,7 +147,10 @@ export function InvitationEditorWorkspace({
           showsVerticalScrollIndicator={false}
         >
           {contentsOpen ? (
-            <View style={[styles.contents, { backgroundColor: palette.surface }]}>
+            <View style={[styles.contents, { backgroundColor: palette.surface, borderColor: palette.cardBorder }]}>
+              <AppText variant="caption" color={palette.textMuted}>
+                다른 단계로 이동해도 입력값은 남지만 자동 저장되지 않습니다. 저장 버튼으로 먼저 저장해 주세요.
+              </AppText>
               {steps.map((step, index) => (
                 <ActionButton
                   key={step.key} variant={index === activeStepIndex ? 'primary' : 'secondary'}
@@ -146,8 +166,8 @@ export function InvitationEditorWorkspace({
             {!compactLayout ? <AppText variant="caption" color={palette.accent} style={styles.sectionEyebrow}>
               편집 단계 {activeStepIndex + 1} / {steps.length}
             </AppText> : null}
-            <AppText variant="title" accessibilityRole="header" style={styles.sectionTitle}>{title}</AppText>
-            <AppText variant="muted" numberOfLines={compactLayout ? 2 : undefined}>{description}</AppText>
+            <AppText variant="display" accessibilityRole="header" style={styles.sectionTitle}>{title}</AppText>
+            <AppText variant="muted">{description}</AppText>
           </View>
           <View pointerEvents={busy ? 'none' : 'auto'} style={styles.fields}>{children}</View>
         </ScrollView>
@@ -182,7 +202,7 @@ const styles = StyleSheet.create({
   },
   headerNarrow: { paddingVertical: APP_SPACING.xs, gap: 4 },
   topRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: APP_SPACING.sm },
-  heading: { flex: 1, fontWeight: '600' },
+  heading: { flex: 1, minWidth: 0, fontWeight: '700' },
   statusRow: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: APP_SPACING.xs },
   statusFlag: { paddingHorizontal: APP_SPACING.sm, paddingVertical: APP_SPACING.xs },
   publicationLabel: { flexShrink: 1 },
@@ -200,10 +220,10 @@ const styles = StyleSheet.create({
     gap: APP_SPACING.lg,
   },
   scrollContentNarrow: { paddingVertical: APP_SPACING.sm, gap: APP_SPACING.sm },
-  contents: { padding: APP_SPACING.md, gap: APP_SPACING.xs },
-  sectionHeading: { gap: APP_SPACING.xs },
+  contents: { borderWidth: 1, padding: APP_SPACING.md, gap: APP_SPACING.xs },
+  sectionHeading: { gap: APP_SPACING.sm },
   sectionEyebrow: { fontWeight: '600' },
-  sectionTitle: { fontWeight: '600' },
+  sectionTitle: { fontWeight: '700' },
   fields: { gap: APP_SPACING.md },
   footerNarrow: { padding: APP_SPACING.xs, gap: APP_SPACING.xs },
   footer: {

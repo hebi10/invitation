@@ -38,14 +38,15 @@ export function LocationEditorStep({
   return (
     <>
       <SectionCard
-        title="예식장 주소와 연락처"
-        description="예식장 주소와 연락처를 정리하고 검색으로 실제 지도 위치를 확인합니다."
+        title="예식장 주소"
+        description="주소를 입력한 다음 위치를 검색해 하객에게 안내할 지도를 확인해 주세요."
       >
         <TextField
-          label="상세 주소"
+          label="예식장 상세 주소"
           value={form.ceremonyAddress}
           onChangeText={(value) => onUpdateField('ceremonyAddress', value)}
-          placeholder="예: 서울시 강남구..."
+          placeholder="예: 서울특별시 강남구 테헤란로 123"
+          helperText="도로명 주소나 건물명을 정확하게 입력하면 하객이 장소를 찾기 쉽습니다."
           multiline
         />
         <ActionButton
@@ -54,7 +55,7 @@ export function LocationEditorStep({
           loading={isSearchingAddress}
           fullWidth
         >
-          주소 검색으로 위치 확인
+          입력한 주소로 위치 검색
         </ActionButton>
         <TextField
           label="예식장 연락처"
@@ -66,7 +67,7 @@ export function LocationEditorStep({
           keyboardType="phone-pad"
         />
         <TextField
-          label="지도 안내 문구"
+          label="오시는 길 안내 (선택)"
           value={form.mapDescription}
           onChangeText={(value) => onUpdateField('mapDescription', value)}
           placeholder="예: 건물 뒤 주차장을 이용해 주세요."
@@ -75,8 +76,8 @@ export function LocationEditorStep({
       </SectionCard>
 
       <SectionCard
-        title="지도 미리보기"
-        description="주소 검색 결과로 실제 연결되는 위치를 앱 안에서 바로 확인합니다."
+        title="지도 연결 확인"
+        description="하객이 보게 될 지도 연결 정보를 확인합니다."
       >
         {mapPreviewUrl ? (
           <View
@@ -96,11 +97,11 @@ export function LocationEditorStep({
             </AppText>
             {hasValidCoordinates(mapLatitude, mapLongitude) ? (
               <AppText variant="caption" style={manageStyles.mapPreviewMeta}>
-                좌표: {mapLatitude}, {mapLongitude}
+                지도 위치가 확인되었습니다.
               </AppText>
             ) : null}
             <ActionButton variant="secondary" onPress={() => void onOpenMapUrl()} fullWidth>
-              앱 안에서 지도 열기
+              지도에서 위치 확인
             </ActionButton>
           </View>
         ) : (
@@ -115,7 +116,7 @@ export function LocationEditorStep({
           >
             <AppText variant="title">지도 위치 미설정</AppText>
             <AppText variant="muted" style={manageStyles.helperText}>
-              주소 검색을 통해 실제 연결되는 위치를 확인해 주세요.
+              먼저 주소를 입력하고 위치 검색을 선택해 주세요.
             </AppText>
           </View>
         )}

@@ -20,10 +20,18 @@ export function DelimitedRowsEditor({ label, value, fields, onChange }: Delimite
       <AppText accessibilityRole="header" style={styles.title}>{label}</AppText>
       {rows.map((cells, row) => (
         <View key={row} style={[styles.row, { backgroundColor: palette.surfaceMuted, borderColor: palette.cardBorder }]}>
-          {fields.map((field, column) => <TextField key={field} label={`${field} ${row + 1}`} value={cells[column]}
-            onChangeText={next => onChange(updateEditorCell(value, row, column, next, fields.length))} />)}
+          <AppText variant="caption" style={styles.rowTitle}>{label} {row + 1}</AppText>
+          {fields.map((field, column) => (
+            <TextField
+              key={field}
+              label={field}
+              accessibilityLabel={`${label} ${row + 1}번째 ${field}`}
+              value={cells[column]}
+              onChangeText={next => onChange(updateEditorCell(value, row, column, next, fields.length))}
+            />
+          ))}
           <ActionButton variant="secondary" onPress={() => onChange(removeEditorRow(value, row))}
-            accessibilityLabel={`${label} ${row + 1}번째 항목 삭제`}>항목 삭제</ActionButton>
+            accessibilityLabel={`${label} ${row + 1}번째 항목 삭제`}>이 항목 삭제</ActionButton>
         </View>
       ))}
       {rows.length < 3 ? <ActionButton variant="secondary" onPress={() => onChange(appendEditorRow(value, fields.length))}>
@@ -36,6 +44,7 @@ export function DelimitedRowsEditor({ label, value, fields, onChange }: Delimite
 
 const styles = StyleSheet.create({
   group: { gap: 12 },
-  title: { fontWeight: '600' },
+  title: { fontWeight: '700' },
+  rowTitle: { fontWeight: '700' },
   row: { borderWidth: 1, borderRadius: 0, padding: 12, gap: 12 },
 });
