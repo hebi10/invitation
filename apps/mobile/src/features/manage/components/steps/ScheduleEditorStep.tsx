@@ -1,6 +1,5 @@
 import { View } from 'react-native';
 
-import { AppText } from '../../../../components/AppText';
 import { SectionCard } from '../../../../components/SectionCard';
 import { TextField } from '../../../../components/TextField';
 import type { ManageFormState, ManageStringFieldKey } from '../../shared';
