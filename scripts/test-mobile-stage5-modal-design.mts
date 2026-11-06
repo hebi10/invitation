@@ -46,7 +46,7 @@ assert.match(payment, /INVITATION_INITIAL_DISPLAY_PERIOD_MONTHS/);
 assert.match(payment, /formatPrice\(totalPrice\)/);
 assert.match(payment, /hasPendingPurchase/);
 assert.match(payment, /onRecover/);
-assert.match(payment, /disabled=\{hasPendingPurchase\}/);
+assert.match(payment, /\{!hasPendingPurchase \? \(/);
 assert.match(payment, /onConfirm/);
 assert.match(payment, /5,000원 결제하기/, 'Checkout CTA must remain legible at 320dp');
 assert.doesNotMatch(payment, /Google Play 결제 후 페이지 생성/);

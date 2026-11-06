@@ -25,10 +25,14 @@ assert.match(home, /새 청첩장 만들기/);
 
 assert.match(hero, /wedding-portrait\.webp/);
 assert.match(hero, /wedding-bouquet\.webp/);
-assert.match(hero, /INVITATION_PREMIUM_PRICE_LABEL/);
-assert.match(hero, /INVITATION_INITIAL_DISPLAY_PERIOD_MONTHS/);
+assert.match(home, /INVITATION_PREMIUM_PRICE_LABEL/);
+assert.match(home, /INVITATION_INITIAL_DISPLAY_PERIOD_MONTHS/);
+assert.ok(home.indexOf('<WeddingIntroHero />') < home.indexOf('title="프리미엄 청첩장"'));
+assert.match(home, /title="Invitation"/);
+assert.ok(hero.indexOf('<View style={styles.previews}>') < hero.indexOf('<View style={styles.copy}>'));
 assert.match(hero, /borderRadius:\s*0/);
 assert.match(gallery, /themePreviewImages\[theme\.key\]/);
+assert.match(gallery, /Math\.floor\(\(width - 76\) \/ 2\)/);
 assert.match(gallery, /findGuideSamplePageUrl/);
 assert.match(gallery, /샘플 보기를 누르면 신민재·김현지의 실제 청첩장이 열립니다/);
 
@@ -46,6 +50,10 @@ assert.match(create, /recoverPendingBillingPurchase/);
 assert.match(create, /buildPrivateInvitationDraft/);
 assert.match(create, /purchaseBillingProduct\(productId/);
 assert.match(create, /router\.replace\('\/guide'\)/);
+assert.match(create, /title="청첩장 만들기"/);
+assert.match(create, /creationCompleted/);
+assert.match(create, /로그인 후 결제 진행/);
+assert.match(create, /이전 결제 이어서 처리/);
 assert.match(create, /INVITATION_PREMIUM_PRICE_KRW/);
 assert.match(create, /getPendingBillingRequest/);
 assert.match(create, /listMobileCustomerInvitations\(apiBaseUrl, idToken\)/);
