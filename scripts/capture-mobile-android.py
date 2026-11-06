@@ -396,7 +396,6 @@ def main():
                 ('modal-share', 'share', ['카카오톡 카드 공유', '디자인 샘플']),
                 ('modal-onboarding', 'onboarding', ['운영 시작 안내', '기본 문구와 이름']),
                 ('modal-onboarding-last', 'onboarding-last', ['인사말과 공개 상태', '저장하고 시작']),
-                ('modal-onboarding-error-ready', 'onboarding-error', ['기본 문구와 이름', '다음']),
                 ('modal-guestbook', 'guestbook', ['방명록 검색', '방명록 관리']),
                 ('modal-guestbook-filled', 'guestbook-filled', ['방명록 검색', '방명록 관리']),
                 ('modal-guestbook-long', 'guestbook-long', ['방명록 검색', '방명록 관리']),

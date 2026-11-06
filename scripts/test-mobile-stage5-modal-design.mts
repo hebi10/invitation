@@ -103,7 +103,7 @@ assert.match(onboarding, /onSetPublished/);
 assert.match(onboarding, /styles\.secondaryActions/);
 assert.match(onboarding, /attemptedNext && validationMessage/);
 assert.match(onboarding, /setAttemptedNext\(true\)/);
-assert.match(onboarding, /loading=\{isSaving\} fullWidth/);
+assert.match(onboarding, /loading=\{isSaving\}\s*fullWidth/);
 assert.match(preparing, /<AppModalFrame/);
 assert.match(preparing, /closeDisabled/);
 assert.match(risk, /closeConfirmation=\{\(/);
