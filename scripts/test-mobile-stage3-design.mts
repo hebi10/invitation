@@ -50,7 +50,7 @@ const capture = read('scripts/capture-mobile-android.py');
 assert.match(summary, /themePreviewImages\[themeKey\] \?\? themePreviewImages\.simple/);
 assert.match(summary, /borderColor: selected \? palette\.accent : palette\.cardBorder/);
 assert.match(summary, /styles\.headingRow/);
-assert.match(summary, /\{periodLabel\}/);
+assert.match(summary, /periodLabel \? \(/);
 assert.match(summary, /statusTone === 'notice' \? palette\.noticeSoft/);
 assert.match(summary, /coverImageUrl|imageUrl/);
 assert.match(account, /<InvitationSummaryCard/);
