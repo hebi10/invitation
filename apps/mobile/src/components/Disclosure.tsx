@@ -21,6 +21,7 @@ export function Disclosure({ title, description, defaultExpanded = false, childr
       <Pressable
         accessibilityRole="button"
         accessibilityLabel={title}
+        accessibilityHint={expanded ? '접으려면 두 번 탭하세요' : '내용을 펼치려면 두 번 탭하세요'}
         accessibilityState={{ expanded }}
         onPress={() => setExpanded((current) => !current)}
         style={({ pressed }) => [
@@ -29,7 +30,7 @@ export function Disclosure({ title, description, defaultExpanded = false, childr
         ]}
       >
         <View style={styles.copy}>
-          <AppText style={styles.title}>{title}</AppText>
+          <AppText variant="body" style={styles.title}>{title}</AppText>
           {description ? <AppText variant="muted">{description}</AppText> : null}
         </View>
         <Ionicons
@@ -53,6 +54,6 @@ const styles = StyleSheet.create({
     gap: APP_SPACING.md,
   },
   copy: { flex: 1, minWidth: 0, gap: APP_SPACING.xs },
-  title: { fontWeight: '600' },
+  title: { fontWeight: '700' },
   content: { padding: APP_SPACING.md, gap: APP_SPACING.md },
 });

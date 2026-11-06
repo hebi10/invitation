@@ -1,6 +1,7 @@
 import { StyleSheet, Text, View } from 'react-native';
 
 import { useVisualPreferences } from '../contexts/PreferencesContext';
+import { getScaledTypography } from '../constants/uiTokens';
 
 export function BulletList({ items }: { items: readonly string[] }) {
   const { palette, fontScale } = useVisualPreferences();
@@ -16,7 +17,7 @@ export function BulletList({ items }: { items: readonly string[] }) {
           style={styles.row}
         >
           <View style={[styles.dot, { backgroundColor: palette.accent }]} />
-          <Text style={[styles.text, { color: palette.text, fontSize: 14 * fontScale }]}>
+          <Text style={[styles.text, { color: palette.text }, getScaledTypography('body', fontScale)]}>
             {item}
           </Text>
         </View>
@@ -40,8 +41,5 @@ const styles = StyleSheet.create({
     borderRadius: 99,
     marginTop: 7,
   },
-  text: {
-    flex: 1,
-    lineHeight: 21,
-  },
+  text: { flex: 1, minWidth: 0 },
 });
