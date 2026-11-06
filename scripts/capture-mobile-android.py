@@ -364,7 +364,7 @@ def main():
             adb('shell', 'input', 'keyevent', 'KEYCODE_BACK')
             for name, step, expected in [
                 ('editor-schedule', 'schedule', ['청첩장 편집', '예식 일정']),
-                ('editor-location', 'location', ['청첩장 편집', '예식장 주소와 연락처']),
+                ('editor-location', 'location', ['청첩장 편집', '예식장 주소', '지도 연결 확인']),
                 ('editor-greeting', 'greeting', ['청첩장 편집', '인사말']),
                 ('editor-images', 'images', ['청첩장 편집', '대표 이미지']),
                 ('editor-music', 'music', ['청첩장 편집', '배경음악 설정']),
