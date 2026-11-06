@@ -386,6 +386,7 @@ def main():
             for name, kind, expected in [
                 ('modal-payment', 'payment', ['Google Play 결제', '결제 예정 금액']),
                 ('modal-payment-pending', 'payment-pending', ['Google Play 결제', '이전 결제 이어서 처리']),
+                ('modal-payment-error', 'payment-error', ['Google Play 결제 확인', '로그인 확인에 실패했습니다']),
                 ('modal-renew', 'renew', ['이용 기간 연장', '연장 결제 확인']),
                 ('modal-renew-pending', 'renew-pending', ['이용 기간 연장', '미처리 결제가 있습니다']),
                 ('modal-renew-other', 'renew-other', ['이용 기간 연장', '대상 청첩장']),
@@ -395,12 +396,34 @@ def main():
                 ('modal-share', 'share', ['카카오톡 카드 공유', '디자인 샘플']),
                 ('modal-onboarding', 'onboarding', ['운영 시작 안내', '기본 문구와 이름']),
                 ('modal-onboarding-last', 'onboarding-last', ['인사말과 공개 상태', '저장하고 시작']),
+                ('modal-onboarding-error', 'onboarding-error', ['기본 문구와 이름', '신랑 이름을 입력해 주세요']),
                 ('modal-guestbook', 'guestbook', ['방명록 검색', '방명록 관리']),
                 ('modal-guestbook-filled', 'guestbook-filled', ['방명록 검색', '방명록 관리']),
+                ('modal-guestbook-long', 'guestbook-long', ['방명록 검색', '방명록 관리']),
                 ('modal-risk', 'risk', ['작업 확인', '링크 폐기']),
+                ('modal-risk-error', 'risk-error', ['작업 확인', '세션 확인에 실패했습니다']),
                 ('modal-preparing', 'preparing', ['청첩장 편집 준비', '편집 정보를 불러오는 중입니다.']),
             ]:
                 wait_screen(name, f'design-check-modals?kind={kind}', expected)
+            modal_keyboard_tree = wait_screen(
+                'modal-keyboard-ready', 'design-check-modals?kind=keyboard',
+                ['입력 모달 키보드 검증', '모달 키보드 테스트 입력', '모달 키보드 열기 대기'],
+            )
+            modal_keyboard_input = next(
+                (node for node in modal_keyboard_tree.iter('node')
+                 if node.get('class') == 'android.widget.EditText'
+                 and node.get('content-desc') == '모달 키보드 테스트 입력'), None,
+            )
+            if modal_keyboard_input is None or not tap(modal_keyboard_input):
+                raise RuntimeError('모달 키보드 검수용 입력창을 실제 터치할 수 없습니다.')
+            wait_screen(
+                'modal-keyboard', 'design-check-modals?kind=keyboard',
+                ['입력 모달 키보드 검증', '모달 키보드 표시 중', '확인'],
+                timeout=45, launch=False,
+            )
+            VERIFIED['modal_keyboard_capture'] = '모달 입력창 터치·키보드 이벤트·하단 확인 버튼 표시'
+            save_manifest()
+            adb('shell', 'input', 'keyevent', 'KEYCODE_BACK')
             for name, kind, expected in [
                 ('settings-dark', 'dark', ['설정', '다크 모드 사용 중']),
                 ('settings-large', 'large', ['설정', '큰 글자 크기 사용 중']),

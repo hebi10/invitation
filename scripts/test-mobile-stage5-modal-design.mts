@@ -24,6 +24,9 @@ assert.match(frame, /onRequestClose=\{dismiss\}/);
 assert.match(frame, /disabled=\{closeDisabled\}/);
 assert.match(frame, /Platform.OS === 'ios' \? 'padding' : 'height'/);
 assert.match(frame, /accessibilityViewIsModal/);
+assert.match(frame, /onAccessibilityEscape=\{dismiss\}/);
+assert.match(frame, /width < 390 && \(suppliedFontScale \?\? appearance\.fontScale\) > 1/);
+assert.match(frame, /minHeight: 0/);
 
 assert.match(primitives, /export function ModalSummaryRow/);
 assert.match(primitives, /export function ModalFeedback/);
@@ -41,7 +44,10 @@ for (const [name, source] of [
   assert.match(source, /footer=\{\(/, name);
   assert.match(source, /variant="secondary" onPress=\{onClose\} disabled=\{loading\}/, name);
 }
-assert.match(payment, /getInvitationDisplayPeriodEnd\(new Date\(\)\)/);
+assert.doesNotMatch(payment, /getInvitationDisplayPeriodEnd/, 'Do not imply a confirmed expiration date before creation');
+assert.match(payment, /실제 생성일부터/);
+assert.match(payment, /기존 거래 금액/);
+assert.match(payment, /추가 결제를 요청하지 않습니다/);
 assert.match(payment, /INVITATION_INITIAL_DISPLAY_PERIOD_MONTHS/);
 assert.match(payment, /formatPrice\(totalPrice\)/);
 assert.match(payment, /hasPendingPurchase/);
@@ -57,11 +63,15 @@ assert.match(renewal, /INVITATION_PREMIUM_PRICE_LABEL/);
 assert.match(renewal, /onPurchase/);
 assert.match(renewal, /onRecover/);
 assert.match(renewal, /미처리 결제가 있습니다/);
-assert.doesNotMatch(renewal, /onPress=\{onClose\}/, 'Modal shell already has a single close button');
+assert.match(renewal, /closeConfirmation=\{\(/, 'Renewal primary action must stay in the fixed footer');
+assert.match(renewal, /onPress=\{onClose\}/);
+assert.match(renewal, /label="결제 대상"/);
+assert.match(renewal, /현재 청첩장과 이전 결제 대상이 다릅니다/);
 assert.match(previewShare, /onSelect\(theme\)/);
 assert.match(previewShare, /action === 'preview' \? '미리보기' : '카카오톡 공유'/);
 assert.match(previewShare, /isCurrentTheme \? palette\.accentSoft : palette\.surface/);
 assert.match(previewShare, /contentFit="contain"/);
+assert.match(previewShare, /compactLayout \? styles\.thumbnailCompact : null/);
 assert.match(manage, /closeDisabled=\{isOpeningPreview\}/);
 assert.match(manage, /closeDisabled=\{isOpeningKakaoShare\}/);
 assert.match(manage, /confirmDiscard \? <View/);
@@ -76,6 +86,9 @@ assert.match(guestbook, /onChangePage\(Math\.min\(totalPages, page \+ 1\)\)/);
 assert.match(guestbook, /status === 'pending_delete'/);
 assert.match(guestbook, /palette\.successSoft/);
 assert.match(guestbook, /검색 결과가 없습니다/);
+assert.match(guestbook, /timeZone: 'Asia\/Seoul'/);
+assert.match(guestbook, /등록된 방명록이 없습니다/);
+assert.match(guestbook, /accessibilityLabel=\{\x60\$\{comment\.author\}/);
 
 assert.match(manage, /<PeriodExtensionModal/);
 assert.match(manage, /onPurchase=\{\(\) => void handlePurchaseExtension\(\)\}/);
@@ -87,6 +100,8 @@ assert.match(onboarding, /footer=\{\(/);
 assert.match(onboarding, /closeDisabled=\{isSaving\}/);
 assert.match(onboarding, /onNext\(\)/);
 assert.match(onboarding, /onSetPublished/);
+assert.match(onboarding, /styles\.secondaryActions/);
+assert.match(onboarding, /loading=\{isSaving\} fullWidth/);
 assert.match(preparing, /<AppModalFrame/);
 assert.match(preparing, /closeDisabled/);
 assert.match(risk, /closeConfirmation=\{\(/);
@@ -96,12 +111,14 @@ assert.match(risk, /placement="center"/);
 assert.match(editorShell, /placement=\{placement\}/);
 assert.match(previewShare, /사용 가능한 디자인이 없습니다/);
 assert.match(risk, /onConfirm/);
+assert.match(risk, /작업을 처리하고 있습니다/);
 assert.match(editorShell, /closeDisabled=\{closeDisabled \|\| closeLoading\}/);
 
 for (const kind of [
   'payment', 'payment-pending', 'renew', 'renew-pending', 'renew-other',
   'renew-loading', 'renew-no-account', 'preview', 'share', 'guestbook', 'guestbook-filled',
   'onboarding', 'onboarding-last', 'risk', 'preparing',
+  'payment-error', 'onboarding-error', 'guestbook-long', 'risk-error',
 ]) {
   assert.ok(capture.includes(`'modal-${kind}'`),
     `Android screenshot capture should cover ${kind}`);
@@ -109,4 +126,9 @@ for (const kind of [
     (kind === 'payment' && fixture.includes('return <PaymentConfirmModal')),
     `Fixture should support ${kind}`);
 }
-console.log('mobile stage 5 modal design, action safety and 15-capture contracts passed');
+for (const name of ['modal-keyboard-ready', 'modal-keyboard']) {
+  assert.ok(capture.includes(`'${name}'`), `Android modal keyboard capture missing ${name}`);
+}
+assert.match(fixture, /Keyboard\.addListener\('keyboardDidShow'/);
+assert.match(capture, /VERIFIED\['modal_keyboard_capture'\]/);
+console.log('mobile stage 5 modal design, action safety and keyboard capture contracts passed');
