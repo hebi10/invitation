@@ -31,6 +31,14 @@ export default function DesignCheck() {
     statusTone="neutral" publicationLabel="현재 저장 상태 · 비공개 설정" steps={EDITOR_STEPS} activeStepIndex={step}
     onSelectStep={setStep} onPreview={() => {}} busy={false}
     compactFooter={<ActionButton fullWidth onPress={() => {}}>내용 저장</ActionButton>}
+    compactNavigationFooter={<View style={manageStyles.actionRow}>
+      <ActionButton variant="secondary" style={manageStyles.actionHalfButton}
+        disabled={step === 0} onPress={() => setStep(Math.max(0, step - 1))}>이전</ActionButton>
+      <ActionButton style={manageStyles.actionHalfButton}
+        onPress={() => setStep(Math.min(EDITOR_STEPS.length - 1, step + 1))}>
+        {isLastStep ? '저장 완료' : '저장 후 다음'}
+      </ActionButton>
+    </View>}
     footer={<>
       <View style={manageStyles.actionRow}>
         <ActionButton variant="secondary" disabled={step === 0} onPress={() => setStep(Math.max(0, step - 1))}>이전</ActionButton>
