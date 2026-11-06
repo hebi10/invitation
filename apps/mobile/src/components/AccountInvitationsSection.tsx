@@ -1,10 +1,13 @@
 import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useRef, useState } from 'react';
-import { ActivityIndicator, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Share, StyleSheet, View } from 'react-native';
 
+import { DEFAULT_PUBLIC_SITE_URL } from '../../../../src/lib/invitationMetadata';
 import { useAuth } from '../contexts/AuthContext';
+import { useAppFeedback } from '../contexts/AppFeedbackContext';
 import { usePreferences } from '../contexts/PreferencesContext';
 import { getOwnedInvitationStatus } from '../features/manage/ownedInvitationPresentation';
+import { buildInvitationThemeRoutePath, getInvitationThemeLabel } from '../lib/invitationThemes';
 import { listMobileCustomerInvitations } from '../lib/apiAccount';
 import { createOwnedInvitationListRequestGate } from '../lib/ownedInvitationListRequestGate';
 import type { MobileCustomerOwnedEvent } from '../types/mobileInvitation';
@@ -99,7 +102,7 @@ export function AccountInvitationsSection() {
     setError('');
     try {
       const opened = await activateOwnedInvitation(slug);
-      if (opened) router.replace('/');
+      if (opened) router.replace('/guide');
       else setError('청첩장을 열지 못했습니다. 계정 소유권과 로그인 상태를 확인해 주세요.');
     } catch {
       setError('청첩장을 열지 못했습니다. 네트워크 연결 상태를 확인한 뒤 다시 시도해 주세요.');
@@ -229,6 +232,43 @@ export function AccountInvitationsSection() {
   );
 }
 
+function OwnedInvitationThemeShares({ item }: { item: MobileCustomerOwnedEvent }) {
+  const { palette } = usePreferences();
+  const { showToast } = useAppFeedback();
+  const [expanded, setExpanded] = useState(false);
+  const themes = [...new Set(item.availableThemes)];
+
+  if (!item.publicAccess?.isPublic || themes.length === 0) {
+    return (
+      <AppText variant="caption" color={palette.textMuted}>
+        공개 설정과 노출 기간을 확인하면 디자인별 공유가 가능합니다.
+      </AppText>
+    );
+  }
+
+  const shareTheme = async (theme: typeof themes[number]) => {
+    const url = `${DEFAULT_PUBLIC_SITE_URL}${buildInvitationThemeRoutePath(item.slug, theme)}`;
+    try {
+      await Share.share({ message: url });
+    } catch {
+      showToast('공유 창을 열지 못했습니다. 다시 시도해 주세요.', { tone: 'error' });
+    }
+  };
+
+  return (
+    <View style={styles.shareList}>
+      <ActionButton variant="secondary" onPress={() => setExpanded((value) => !value)} fullWidth>
+        {expanded ? '디자인별 공유 접기' : '디자인별 링크 공유'}
+      </ActionButton>
+      {expanded ? themes.map((theme) => (
+        <ActionButton key={theme} variant="secondary" onPress={() => void shareTheme(theme)} fullWidth>
+          {getInvitationThemeLabel(theme)} 공유
+        </ActionButton>
+      )) : null}
+    </View>
+  );
+}
+
 export function AccountOwnedWeddingCards({
   items,
   currentSlug,
@@ -275,6 +315,7 @@ export function AccountOwnedWeddingCards({
             >
               {isSelected ? '현재 관리 중' : '이 청첩장 관리·수정'}
             </ActionButton>
+            <OwnedInvitationThemeShares item={item} />
           </InvitationSummaryCard>
         );
       })}
@@ -284,6 +325,7 @@ export function AccountOwnedWeddingCards({
 
 const styles = StyleSheet.create({
   list: { gap: 12 },
+  shareList: { gap: 8 },
   accountRow: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 8, justifyContent: 'space-between' },
   accountEmail: { flex: 1, minWidth: 120 },
   loadingRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
