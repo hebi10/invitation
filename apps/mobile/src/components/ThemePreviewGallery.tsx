@@ -29,7 +29,7 @@ export function ThemePreviewGallery({ tier = 'premium' }: { tier?: MobileInvitat
   return (
     <View style={styles.wrapper}>
       <AppText variant="caption" color={palette.textMuted}>
-        옆으로 넘겨 다섯 가지 디자인을 비교해 보세요.
+        옆으로 넘겨 웨딩 디자인을 비교해 보세요.
       </AppText>
       <ScrollView
         horizontal
