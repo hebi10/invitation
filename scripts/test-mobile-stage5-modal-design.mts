@@ -48,6 +48,8 @@ assert.match(payment, /hasPendingPurchase/);
 assert.match(payment, /onRecover/);
 assert.match(payment, /disabled=\{hasPendingPurchase\}/);
 assert.match(payment, /onConfirm/);
+assert.match(payment, /5,000원 결제하기/, 'Checkout CTA must remain legible at 320dp');
+assert.doesNotMatch(payment, /Google Play 결제 후 페이지 생성/);
 
 assert.match(renewal, /closeDisabled=\{busy\}/);
 assert.match(renewal, /INVITATION_EXTENSION_DISPLAY_PERIOD_MONTHS/);
@@ -55,6 +57,7 @@ assert.match(renewal, /INVITATION_PREMIUM_PRICE_LABEL/);
 assert.match(renewal, /onPurchase/);
 assert.match(renewal, /onRecover/);
 assert.match(renewal, /미처리 결제가 있습니다/);
+assert.doesNotMatch(renewal, /onPress=\{onClose\}/, 'Modal shell already has a single close button');
 assert.match(previewShare, /onSelect\(theme\)/);
 assert.match(previewShare, /action === 'preview' \? '미리보기' : '카카오톡 공유'/);
 assert.match(previewShare, /isCurrentTheme \? palette\.accentSoft : palette\.surface/);
