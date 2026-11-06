@@ -71,7 +71,7 @@ export function PaymentConfirmModal({
             disabled={hasPendingPurchase}
             fullWidth
           >
-            Google Play 결제 후 페이지 생성
+            5,000원 결제하기
           </ActionButton>
         </ModalActionStack>
       )}
@@ -88,9 +88,8 @@ export function PaymentConfirmModal({
         />
       </View>
       <AppText variant="caption" color={palette.textMuted}>
-        기본 이용 기간은 청첩장 생성일부터 {INVITATION_INITIAL_DISPLAY_PERIOD_MONTHS}개월이며
-        제작 중인 기간도 포함됩니다. 오늘 생성 시 예상 종료일은{' '}
-        {expectedEnd.toLocaleDateString('ko-KR')}입니다. 이후 5,000원 결제로 6개월씩 연장할 수 있습니다.
+        생성일부터 {INVITATION_INITIAL_DISPLAY_PERIOD_MONTHS}개월 이용할 수 있으며 제작 기간도 포함됩니다.
+        예상 종료일: {expectedEnd.toLocaleDateString('ko-KR')}. 5,000원 결제로 6개월씩 연장할 수 있습니다.
       </AppText>
       {hasPendingPurchase ? (
         <ModalFeedback palette={palette} tone="notice">
