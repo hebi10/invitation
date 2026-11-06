@@ -35,6 +35,7 @@ type TextFieldProps = SupportedTextFieldProps & {
   placeholder?: string;
   multiline?: boolean;
   helperText?: string;
+  errorText?: string;
   labelVariant?: AppTextVariant;
   containerStyle?: StyleProp<ViewStyle>;
   inputStyle?: StyleProp<TextStyle>;
@@ -57,12 +58,14 @@ export function TextField({
   accessibilityLabel,
   accessibilityHint,
   helperText,
+  errorText,
   labelVariant = 'caption',
   containerStyle,
   inputStyle,
 }: TextFieldProps) {
   const { palette, fontScale } = useVisualPreferences();
   const [focused, setFocused] = useState(false);
+  const resolvedHint = [accessibilityHint ?? helperText, errorText].filter(Boolean).join(' ');
 
   return (
     <View style={[styles.wrapper, containerStyle]}>
@@ -74,8 +77,8 @@ export function TextField({
         onChangeText={onChangeText}
         placeholder={placeholder}
         placeholderTextColor={palette.textMuted}
-        selectionColor={palette.accentSoft}
-        cursorColor={palette.accent}
+        selectionColor={palette.focus}
+        cursorColor={palette.focus}
         onFocus={() => setFocused(true)}
         onBlur={() => setFocused(false)}
         secureTextEntry={secureTextEntry}
@@ -88,20 +91,26 @@ export function TextField({
         editable={editable}
         maxLength={maxLength}
         accessibilityLabel={accessibilityLabel ?? label}
-        accessibilityHint={accessibilityHint ?? helperText}
+        accessibilityHint={resolvedHint || undefined}
+        accessibilityState={{ disabled: !editable }}
         style={[
           styles.input,
           multiline ? styles.multiline : null,
           getScaledTypography('body', fontScale),
           {
             backgroundColor: palette.surface,
-            borderColor: focused ? palette.accent : palette.inputBorder,
+            borderColor: errorText ? palette.danger : focused ? palette.focus : palette.inputBorder,
             color: palette.text,
             opacity: editable ? 1 : 0.6,
           },
           inputStyle,
         ]}
       />
+      {errorText ? (
+        <AppText variant="caption" color={palette.danger} accessibilityRole="alert">
+          {errorText}
+        </AppText>
+      ) : null}
       {helperText ? (
         <AppText variant="muted" style={styles.helperText}>
           {helperText}

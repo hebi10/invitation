@@ -11,6 +11,7 @@ export type AppPalette = {
   inputBorder: string;
   text: string;
   textMuted: string;
+  focus: string;
   accent: string;
   accentSoft: string;
   notice: string;
@@ -29,6 +30,7 @@ const lightPalette: AppPalette = {
   inputBorder: '#8c9087',
   text: '#1c1d1a',
   textMuted: '#666862',
+  focus: '#596257',
   accent: '#292b27',
   accentSoft: '#eceee9',
   notice: '#8a6428',
@@ -47,6 +49,7 @@ const darkPalette: AppPalette = {
   inputBorder: '#89948a',
   text: '#f5f7f2',
   textMuted: '#bbc5b9',
+  focus: '#b5c9b9',
   accent: '#d9e4d9',
   accentSoft: '#374339',
   notice: '#eecb83',
