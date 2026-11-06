@@ -35,6 +35,8 @@ RECENT_STATUS_ROUTE = APP / 'src/app/design-check-recent-status.tsx'
 RECENT_STATUS_FIXTURE = ROOT / 'scripts/fixtures/mobile-recent-status-capture.tsx.fixture'
 KEYBOARD_ROUTE = APP / 'src/app/design-check-keyboard.tsx'
 KEYBOARD_FIXTURE = ROOT / 'scripts/fixtures/mobile-keyboard-capture.tsx.fixture'
+CREATE_SUCCESS_ROUTE = APP / 'src/app/design-check-create-success.tsx'
+CREATE_SUCCESS_FIXTURE = ROOT / 'scripts/fixtures/mobile-create-success-capture.tsx.fixture'
 APK_URL = 'https://github.com/expo/expo-go-releases/releases/download/Expo-Go-55.0.7/Expo-Go-55.0.7.apk'
 APK_SIZE = 195851103
 APK_SHA256 = '6368eec8973ebb011c6f4f9d32afebe3fc64dd3125f2c0b529767e88dccf64ab'
@@ -346,6 +348,7 @@ def main():
     original_account_login_route = ACCOUNT_LOGIN_ROUTE.read_bytes() if ACCOUNT_LOGIN_ROUTE.exists() else None
     original_recent_status_route = RECENT_STATUS_ROUTE.read_bytes() if RECENT_STATUS_ROUTE.exists() else None
     original_keyboard_route = KEYBOARD_ROUTE.read_bytes() if KEYBOARD_ROUTE.exists() else None
+    original_create_success_route = CREATE_SUCCESS_ROUTE.read_bytes() if CREATE_SUCCESS_ROUTE.exists() else None
     try:
         shutil.copyfile(FIXTURE, ROUTE)
         shutil.copyfile(MODALS_FIXTURE, MODALS_ROUTE)
@@ -355,6 +358,7 @@ def main():
         shutil.copyfile(ACCOUNT_LOGIN_FIXTURE, ACCOUNT_LOGIN_ROUTE)
         shutil.copyfile(RECENT_STATUS_FIXTURE, RECENT_STATUS_ROUTE)
         shutil.copyfile(KEYBOARD_FIXTURE, KEYBOARD_ROUTE)
+        shutil.copyfile(CREATE_SUCCESS_FIXTURE, CREATE_SUCCESS_ROUTE)
         fixture_api = ThreadingHTTPServer(('127.0.0.1', 19999), CaptureApiHandler)
         threading.Thread(target=fixture_api.serve_forever, daemon=True).start()
         env = {**os.environ, 'CI': '1', 'EXPO_OFFLINE': '1', 'EXPO_NO_TELEMETRY': '1',
@@ -392,6 +396,14 @@ def main():
             wait_screen('my-invitations', '', ['홈', 'MODERN WEDDING EDITORIAL'])
             wait_screen('login', 'login', ['기존 청첩장 연결', '기기 연동 안내'])
             wait_screen('create', 'create', ['만들기', '고객 계정 로그인'])
+            success_tree = wait_screen('create-success-fixture', 'design-check-create-success',
+                                      ['제작 시작', '결제가 완료되었습니다', '새 청첩장 초안'])
+            if any(node.get('content-desc') == '마이페이지에서 편집 시작'
+                   and node.get('clickable') == 'true' and node.get('enabled') == 'true'
+                   for node in success_tree.iter('node')):
+                audit_visible_action('create-success-fixture', success_tree, '마이페이지에서 편집 시작')
+            else:
+                raise RuntimeError('create-success-fixture: 마이페이지 편집 행동을 찾지 못했습니다.')
             wait_screen('guide', 'guide', ['마이페이지', '고객 계정 로그인'])
             wait_screen('settings', 'settings', ['설정', '화면 설정'])
             wait_screen('account-list-0', 'design-check-accounts?count=0', ['계정별 전체 청첩장', '0개', '계정에 등록된 청첩장이 없습니다'])
@@ -594,6 +606,10 @@ def main():
             KEYBOARD_ROUTE.unlink(missing_ok=True)
         else:
             KEYBOARD_ROUTE.write_bytes(original_keyboard_route)
+        if original_create_success_route is None:
+            CREATE_SUCCESS_ROUTE.unlink(missing_ok=True)
+        else:
+            CREATE_SUCCESS_ROUTE.write_bytes(original_create_success_route)
 
 
 if __name__ == '__main__':

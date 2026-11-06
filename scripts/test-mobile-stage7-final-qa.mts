@@ -29,16 +29,25 @@ for (const name of [
 const capture = read('scripts/capture-mobile-android.py');
 const hero = read('apps/mobile/src/components/WeddingIntroHero.tsx');
 const basic = read('apps/mobile/src/features/manage/components/steps/BasicEditorStep.tsx');
+const success = read('apps/mobile/src/features/create/components/CreationCompletedView.tsx');
+const create = read('apps/mobile/src/app/(tabs)/create.tsx');
 
 assert.match(hero, /우리의 이야기를 담은 청첩장/, 'HM-01 hero headline must match the design brief');
 assert.doesNotMatch(hero, /담은\{.\\n.\}/, 'Hero line wrapping should adapt to the screen width');
 assert.match(basic, /hasExistingFamilyInformation/);
 assert.match(basic, /defaultExpanded=\{hasExistingFamilyInformation\}/);
 assert.match(basic, /입력된 연락처·가족 정보가 있습니다/);
+assert.match(create, /<CreationCompletedView/);
+assert.match(success, /결제가 완료되었습니다/);
+assert.match(success, /onPress=\{onStartEditing\}/);
+assert.match(success, /마이페이지에서 편집 시작/);
+assert.match(capture, /shutil\.copyfile\(CREATE_SUCCESS_FIXTURE, CREATE_SUCCESS_ROUTE\)/);
+assert.match(capture, /CREATE_SUCCESS_ROUTE\.unlink\(missing_ok=True\)/);
 const captures = [
   'my-invitations',
   'login',
   'create',
+  'create-success-fixture',
   'guide',
   'settings',
   'account-list-12',

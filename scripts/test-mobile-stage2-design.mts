@@ -52,6 +52,7 @@ assert.match(create, /purchaseBillingProduct\(productId/);
 assert.match(create, /router\.replace\('\/guide'\)/);
 assert.match(create, /title="청첩장 만들기"/);
 assert.match(create, /creationCompleted/);
+assert.match(create, /CreationCompletedView/);
 assert.match(create, /로그인 후 결제 진행/);
 assert.match(create, /이전 결제 이어서 처리/);
 assert.match(create, /INVITATION_PREMIUM_PRICE_KRW/);
