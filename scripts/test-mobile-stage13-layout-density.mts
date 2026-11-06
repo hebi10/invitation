@@ -22,7 +22,7 @@ assert.match(hero, /preview: \{ flex: 1, minWidth: 0, aspectRatio: 1 \}/);
 assert.match(mypage, /<AccountInvitationsSection compactUnauthenticated \/>/);
 assert.match(owned, /compactUnauthenticated && !showLoginForm/);
 assert.match(owned, /onPress=\{\(\) => setShowLoginForm\(true\)\}/);
-assert.match(owned, /compact\s*\/>/);
+assert.match(owned, /compact\s*>/);
 assert.match(summary, /cardCompact: \{ padding: 10, gap: 8 \}/);
 assert.match(summary, /coverCompact: \{ width: 64, height: 84 \}/);
 assert.match(gallery, /item: \{ width: 248/);
