@@ -37,7 +37,7 @@ function formatCommentDate(value: string | null) {
     return '작성 시각 정보 없음';
   }
 
-  return date.toLocaleString('ko-KR');
+  return date.toLocaleString('ko-KR', { timeZone: 'Asia/Seoul' });
 }
 
 function formatScheduledDeleteDate(value: string | null) {
@@ -50,7 +50,7 @@ function formatScheduledDeleteDate(value: string | null) {
     return null;
   }
 
-  return date.toLocaleDateString('ko-KR');
+  return date.toLocaleDateString('ko-KR', { timeZone: 'Asia/Seoul' });
 }
 
 export function GuestbookModal({
@@ -92,6 +92,7 @@ export function GuestbookModal({
           value={searchQuery}
           onChangeText={onChangeSearchQuery}
           placeholder="작성자 이름이나 메시지를 입력해 주세요"
+          helperText="작성자와 메시지 내용으로 검색합니다."
         />
         <AppText variant="caption" color={palette.textMuted} style={manageStyles.searchSummaryText}>
           검색 결과 {filteredCount}개, 페이지 {page}/{totalPages}
@@ -178,7 +179,7 @@ export function GuestbookModal({
                     <AppText variant="caption" style={manageStyles.commentMeta}>
                       {formatCommentDate(comment.createdAt)}
                     </AppText>
-                    <AppText variant="caption" style={manageStyles.commentStatusHint}>
+                    <AppText variant="caption" color={statusTone.color} style={manageStyles.commentStatusHint}>
                       {statusTone.helper}
                     </AppText>
                   </View>
@@ -188,6 +189,7 @@ export function GuestbookModal({
                       <ActionButton
                         variant="secondary"
                         onPress={() => void onRestoreComment(comment.id)}
+                        accessibilityLabel={`${comment.author} 방명록 복구`}
                         style={manageStyles.actionHalfButton}
                       >
                         복구
@@ -202,12 +204,14 @@ export function GuestbookModal({
                               : void onHideComment(comment.id)
                           }
                           style={manageStyles.actionHalfButton}
+                          accessibilityLabel={`${comment.author} 방명록 ${comment.status === 'hidden' ? '다시 공개' : '숨김'}`}
                         >
                           {comment.status === 'hidden' ? '다시 공개' : '숨김'}
                         </ActionButton>
                         <ActionButton
                           variant="danger"
                           onPress={() => void onScheduleDeleteComment(comment.id)}
+                          accessibilityLabel={`${comment.author} 방명록 삭제 예정으로 변경`}
                           style={manageStyles.actionHalfButton}
                         >
                           삭제 예정
@@ -221,9 +225,13 @@ export function GuestbookModal({
           </View>
         ) : (
           <View style={[manageStyles.emptyImageState, { backgroundColor: palette.surfaceMuted, borderColor: palette.cardBorder }]}>
-            <AppText variant="title">검색 결과가 없습니다</AppText>
+            <AppText variant="title">
+              {totalCount === 0 ? '등록된 방명록이 없습니다' : '검색 결과가 없습니다'}
+            </AppText>
             <AppText variant="muted" style={manageStyles.loadingText}>
-              검색 조건에 맞는 방명록이 없습니다. 다른 검색어를 입력하거나 새로고침해 주세요.
+              {totalCount === 0
+                ? '하객이 방명록을 남기면 이곳에서 확인하고 관리할 수 있습니다.'
+                : '검색 조건에 맞는 방명록이 없습니다. 다른 검색어를 입력하거나 새로고침해 주세요.'}
             </AppText>
           </View>
         )}

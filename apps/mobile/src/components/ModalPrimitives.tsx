@@ -87,7 +87,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   summaryLabel: { flexShrink: 1, minWidth: 0 },
-  summaryValue: { flexShrink: 1, minWidth: 0, alignItems: 'flex-end' },
+  summaryValue: { flexShrink: 1, minWidth: 0, maxWidth: '100%', alignItems: 'flex-end' },
   valueText: { textAlign: 'right', flexShrink: 1 },
   feedback: {
     borderWidth: 1,

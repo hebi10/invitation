@@ -53,9 +53,19 @@ export function HighRiskActionModal({
         </ModalActionStack>
       )}
     >
+      {isDestructiveAction ? (
+        <ModalFeedback palette={palette} tone="notice">
+          이 작업은 기존 상태를 되돌리지 못할 수 있습니다. 계속하기 전에 대상과 내용을 확인해 주세요.
+        </ModalFeedback>
+      ) : null}
       <AppText variant="muted">
         로그인 세션을 확인한 뒤 이 작업을 실행합니다.
       </AppText>
+      {loading ? (
+        <AppText variant="caption" color={palette.textMuted} accessibilityLiveRegion="polite">
+          작업을 처리하고 있습니다. 완료될 때까지 기다려 주세요.
+        </AppText>
+      ) : null}
       {errorMessage ? <ModalFeedback palette={palette} tone="error">{errorMessage}</ModalFeedback> : null}
     </InvitationEditorModalShell>
   );
