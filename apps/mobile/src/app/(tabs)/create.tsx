@@ -62,9 +62,12 @@ export default function CreateScreen() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [paymentVisible, setPaymentVisible] = useState(false);
   const autoOpenedForUid = useRef<string | null>(null);
+  const pendingCheckVersion = useRef(0);
   const customerUid = customerSession?.uid ?? null;
 
   const refreshPending = useCallback(async () => {
+    const version = ++pendingCheckVersion.current;
+    const isCurrent = () => version === pendingCheckVersion.current;
     setPendingReady(false);
     try {
       if (!customerUid) {
@@ -72,11 +75,11 @@ export default function CreateScreen() {
         return;
       }
       const previous = await getPendingBillingRequest({ appUserId: customerUid, apiBaseUrl });
-      setPending(previous?.target.action === 'createInvitationPage' ? previous : null);
+      if (isCurrent()) setPending(previous?.target.action === 'createInvitationPage' ? previous : null);
     } catch (error) {
-      setNotice(error instanceof Error ? error.message : '이전 결제 정보를 확인하지 못했습니다.');
+      if (isCurrent()) setNotice(error instanceof Error ? error.message : '이전 결제 정보를 확인하지 못했습니다.');
     } finally {
-      setPendingReady(true);
+      if (isCurrent()) setPendingReady(true);
     }
   }, [apiBaseUrl, customerUid]);
 
