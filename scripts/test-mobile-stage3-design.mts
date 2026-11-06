@@ -63,7 +63,7 @@ assert.match(linked, /getInvitationVisibility\(published, card\.displayPeriod\)/
 assert.match(linked, /onOpenEditor/);
 assert.match(linked, /onKakaoShare\(activeLinkedInvitationCard\)/);
 assert.match(linked, /onActivateLinkedInvitation\(item\)/);
-assert.match(linked, /onOpenTicketModal/);
+assert.match(linked, /onOpenPeriodExtension/);
 assert.match(linked, /onOpenGuestbook/);
 assert.match(linked, /현재 관리 정보를 확인하고 있습니다/);
 assert.match(drafts, /borderWidth: 1/);

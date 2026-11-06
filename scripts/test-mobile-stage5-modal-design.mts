@@ -6,11 +6,9 @@ const root = 'apps/mobile/src/';
 const frame = read(root + 'components/AppModalFrame.tsx');
 const primitives = read(root + 'components/ModalPrimitives.tsx');
 const payment = read(root + 'features/create/components/PaymentConfirmModal.tsx');
-const ticket = read(root + 'features/create/components/TicketOnlyPurchaseModal.tsx');
-const success = read(root + 'features/create/components/TicketPurchaseSuccessModal.tsx');
+const renewal = read(root + 'features/manage/components/PeriodExtensionModal.tsx');
 const previewShare = read(root + 'features/manage/components/InvitationThemeActionList.tsx');
 const guestbook = read(root + 'features/manage/components/GuestbookModal.tsx');
-const ticketUsage = read(root + 'features/manage/components/TicketUsageModal.tsx');
 const onboarding = read(root + 'features/manage/components/OnboardingModal.tsx');
 const preparing = read(root + 'features/manage/components/EditorPreparingModal.tsx');
 const risk = read(root + 'components/manage/HighRiskActionModal.tsx');
@@ -36,7 +34,6 @@ assert.match(primitives, /palette\.cardBorder/);
 
 for (const [name, source] of [
   ['payment', payment],
-  ['ticket', ticket],
 ]) {
   assert.match(source, /closeDisabled=\{loading\}/, name);
   assert.match(source, /loading=\{loading\}/, name);
@@ -52,17 +49,12 @@ assert.match(payment, /onRecover/);
 assert.match(payment, /disabled=\{hasPendingPurchase\}/);
 assert.match(payment, /onConfirm/);
 
-assert.match(ticket, /formatPrice\(ticketPrice\)/);
-assert.match(ticket, /currentStoredTicketCount/);
-assert.match(ticket, /onSelectTarget\(item\.slug\)/);
-assert.match(ticket, /selectedTargetSlug === item.slug/);
-assert.match(ticket, /disabled=\{Boolean\(pendingTarget\)\}/);
-assert.match(ticket, /onRecover/);
-assert.match(success, /success\?\.nextTicketCount \?\? 0/);
-assert.match(success, /onExtend/);
-assert.match(success, /onClose/);
-assert.match(success, /티켓 구매만으로 이용 기간이 연장되지는 않습니다/);
-
+assert.match(renewal, /closeDisabled=\{busy\}/);
+assert.match(renewal, /INVITATION_EXTENSION_DISPLAY_PERIOD_MONTHS/);
+assert.match(renewal, /INVITATION_PREMIUM_PRICE_LABEL/);
+assert.match(renewal, /onPurchase/);
+assert.match(renewal, /onRecover/);
+assert.match(renewal, /미처리 결제가 있습니다/);
 assert.match(previewShare, /onSelect\(theme\)/);
 assert.match(previewShare, /action === 'preview' \? '미리보기' : '카카오톡 공유'/);
 assert.match(previewShare, /isCurrentTheme \? palette\.accentSoft : palette\.surface/);
@@ -82,13 +74,9 @@ assert.match(guestbook, /status === 'pending_delete'/);
 assert.match(guestbook, /palette\.successSoft/);
 assert.match(guestbook, /검색 결과가 없습니다/);
 
-assert.match(ticketUsage, /onExtendDisplayPeriod/);
-assert.match(ticketUsage, /onBuyTickets/);
-assert.match(ticketUsage, /onTransferTickets/);
-assert.match(ticketUsage, /onSelectTransferTarget\(item\.slug\)/);
-assert.match(ticketUsage, /onSelectTicketTransferCount\(count\)/);
-assert.match(ticketUsage, /closeDisabled=\{isExtendingDisplayPeriod \|\| isTransferringTickets\}/);
-assert.match(ticketUsage, /현재 보유 티켓/);
+assert.match(manage, /<PeriodExtensionModal/);
+assert.match(manage, /onPurchase=\{\(\) => void handlePurchaseExtension\(\)\}/);
+assert.doesNotMatch(manage, /TicketUsageModal/);
 
 assert.match(onboarding, /ONBOARDING_STEPS\[stepIndex\]/);
 assert.match(onboarding, /accessibilityRole="progressbar"/);
@@ -108,8 +96,8 @@ assert.match(risk, /onConfirm/);
 assert.match(editorShell, /closeDisabled=\{closeDisabled \|\| closeLoading\}/);
 
 for (const kind of [
-  'payment', 'payment-pending', 'ticket', 'ticket-many', 'ticket-pending', 'success',
-  'ticket-use', 'preview', 'share', 'guestbook', 'guestbook-filled',
+  'payment', 'payment-pending', 'renew', 'renew-pending', 'renew-other',
+  'renew-loading', 'renew-no-account', 'preview', 'share', 'guestbook', 'guestbook-filled',
   'onboarding', 'onboarding-last', 'risk', 'preparing',
 ]) {
   assert.ok(capture.includes(`'modal-${kind}'`),

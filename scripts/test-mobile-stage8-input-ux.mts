@@ -58,7 +58,7 @@ assert.match(workflow, /scripts\/fixtures\/mobile-keyboard-capture\.tsx\.fixture
 for (const path of [
   'apps/mobile/src/features/manage/components/steps/BasicEditorStep.tsx',
   'apps/mobile/src/features/manage/components/steps/SettingsEditorStep.tsx',
-  'apps/mobile/src/features/create/components/TicketOnlyPurchaseModal.tsx',
+  'apps/mobile/src/features/manage/components/PeriodExtensionModal.tsx',
 ]) {
   assert.ok(read(path).length > 0, path);
 }

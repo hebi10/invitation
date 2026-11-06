@@ -1,5 +1,7 @@
 import 'server-only';
 
+import { getInvitationDisplayPeriodEnd, INVITATION_EXTENSION_DISPLAY_PERIOD_MONTHS } from '@/lib/invitationProductPolicy';
+
 import { getServerFirestore } from '../firebaseAdmin';
 import { isEventDeletionBlockingAccess } from '../eventDeletionPolicy';
 import { EVENTS_COLLECTION } from './eventRepository';
@@ -7,7 +9,7 @@ import { normalizeEventSummaryRecord } from './eventReadThroughDtos';
 
 const BILLING_FULFILLMENTS_COLLECTION = 'billingFulfillments';
 
-export type BillingFulfillmentKind = 'pageCreation' | 'ticketPack';
+export type BillingFulfillmentKind = 'pageCreation' | 'ticketPack' | 'periodExtension';
 export type BillingFulfillmentStatus = 'processing' | 'fulfilled' | 'failed';
 
 export type BillingFulfillmentPurchaseInput = {
@@ -48,6 +50,14 @@ export type BillingTicketPackFulfillmentInput = {
   purchaseDate: string | null;
 };
 
+export type BillingPeriodExtensionFulfillmentInput = {
+  purchase: BillingFulfillmentPurchaseInput;
+  eventId: string;
+  targetPageSlug: string;
+  ownerUid: string;
+  purchaseDate: string | null;
+};
+
 export interface BillingFulfillmentRepository {
   isAvailable(): boolean;
   findByTransactionId(transactionId: string): Promise<BillingFulfillmentRecord | null>;
@@ -55,6 +65,7 @@ export interface BillingFulfillmentRepository {
     purchase: BillingFulfillmentPurchaseInput,
     kind: BillingFulfillmentKind
   ): Promise<BillingFulfillmentLockResult>;
+  fulfillPeriodExtension(input: BillingPeriodExtensionFulfillmentInput): Promise<{ enabled: boolean; startDate: Date; endDate: Date; applied: boolean }>;
   fulfillTicketPack(input: BillingTicketPackFulfillmentInput): Promise<{
     ticketCount: number;
     applied: boolean;
@@ -100,7 +111,7 @@ function normalizeBillingFulfillmentRecord(
     !productId ||
     typeof data.appUserId !== 'string' ||
     !data.appUserId.trim() ||
-    (data.kind !== 'pageCreation' && data.kind !== 'ticketPack') ||
+    (data.kind !== 'pageCreation' && data.kind !== 'ticketPack' && data.kind !== 'periodExtension') ||
     (data.status !== 'processing' &&
       data.status !== 'fulfilled' &&
       data.status !== 'failed')
@@ -225,7 +236,8 @@ export const firestoreBillingFulfillmentRepository: BillingFulfillmentRepository
 
       if (
         currentRecord.productId !== purchase.productId ||
-        currentRecord.appUserId !== purchase.appUserId
+        currentRecord.appUserId !== purchase.appUserId ||
+        currentRecord.kind !== kind
       ) {
         throw new Error('This purchase record is already linked to another request.');
       }
@@ -255,6 +267,80 @@ export const firestoreBillingFulfillmentRepository: BillingFulfillmentRepository
         record: currentRecord,
         acquired: false,
       };
+    });
+  },
+
+  async fulfillPeriodExtension(input) {
+    const { purchase } = input;
+    const transactionId = purchase.transactionId.trim();
+    const eventId = input.eventId.trim();
+    const targetPageSlug = input.targetPageSlug.trim();
+    if (!transactionId || !eventId || !targetPageSlug || !input.ownerUid.trim() ||
+        purchase.appUserId !== input.ownerUid) {
+      throw new Error('A verified customer purchase and owned invitation are required.');
+    }
+
+    const db = getServerFirestore();
+    if (!db) throw new Error('Server Firestore is not available.');
+    const fulfillmentRef = db.collection(BILLING_FULFILLMENTS_COLLECTION).doc(transactionId);
+    const eventRef = db.collection(EVENTS_COLLECTION).doc(eventId);
+
+    return db.runTransaction(async (transaction) => {
+      const [fulfillmentSnapshot, eventSnapshot] = await Promise.all([
+        transaction.get(fulfillmentRef),
+        transaction.get(eventRef),
+      ]);
+      const summary = eventSnapshot.exists
+        ? normalizeEventSummaryRecord(eventSnapshot.id, eventSnapshot.data() ?? {})
+        : null;
+      if (!summary || isEventDeletionBlockingAccess(summary.deletion) ||
+          summary.slug !== targetPageSlug || summary.eventType !== 'wedding' ||
+          summary.ownerUid !== input.ownerUid) {
+        throw new Error('The customer no longer owns this invitation.');
+      }
+
+      if (fulfillmentSnapshot.exists) {
+        const existing = normalizeBillingFulfillmentRecord(transactionId, fulfillmentSnapshot.data() ?? {});
+        if (!existing || existing.appUserId !== purchase.appUserId ||
+            existing.productId !== purchase.productId || existing.kind !== 'periodExtension' ||
+            existing.targetPageSlug !== targetPageSlug || existing.eventId !== eventId) {
+          throw new Error('This purchase was already used for a different purpose or invitation.');
+        }
+        if (existing.status !== 'fulfilled') {
+          throw Object.assign(new Error('This purchase requires manual fulfillment review.'), {
+            code: 'billing-fulfillment-requires-review',
+          });
+        }
+        const period = summary.displayPeriod;
+        if (!period?.startDate || !period.endDate) {
+          throw new Error('The stored extension period could not be confirmed.');
+        }
+        return { enabled: period.isActive, startDate: period.startDate, endDate: period.endDate, applied: false };
+      }
+
+      const now = new Date();
+      // An active page keeps its unused paid time. An expired page restarts today.
+      const baseDate = summary.displayPeriod?.endDate && summary.displayPeriod.endDate > now
+        ? summary.displayPeriod.endDate
+        : now;
+      const nextEndDate = getInvitationDisplayPeriodEnd(baseDate, INVITATION_EXTENSION_DISPLAY_PERIOD_MONTHS);
+      const startDate = summary.displayPeriod?.startDate ?? now;
+      transaction.set(eventRef, {
+        displayPeriod: { isActive: true, startDate, endDate: nextEndDate },
+        visibility: { displayStartAt: startDate, displayEndAt: nextEndDate },
+        updatedAt: now,
+        version: (summary.version ?? 0) + 1,
+      }, { merge: true });
+      transaction.set(fulfillmentRef, {
+        ...buildDefaultBillingFulfillmentRecord(purchase, 'periodExtension'),
+        status: 'fulfilled',
+        updatedAt: now.toISOString(),
+        fulfilledAt: now.toISOString(),
+        purchaseDate: input.purchaseDate,
+        targetPageSlug,
+        eventId,
+      } satisfies BillingFulfillmentRecord);
+      return { enabled: true, startDate, endDate: nextEndDate, applied: true };
     });
   },
 

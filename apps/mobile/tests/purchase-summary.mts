@@ -5,7 +5,7 @@ import * as content from '../src/constants/content';
 import * as deepLink from '../src/lib/appDeepLink';
 
 assert.ok(content.servicePlans[0].features.includes('기본 노출 기간 6개월'));
-assert.deepEqual(content.ticketActions.map((action) => action.key), ['extend']);
+assert.deepEqual(billing.MOBILE_BILLING_PRODUCT_IDS, ['page_creation_premium'], '새 결제에는 단일 5,000원 상품만 사용해야 합니다.');
 for (const intent of ['upgrade', 'extra-page', 'extra-variant']) {
   assert.deepEqual(deepLink.resolveAppDeepLink(`mobileinvitation://create?ticketIntent=${intent}`),
     { type: 'route', href: '/create' }, '폐지된 티켓 기능은 딥링크로 실행되지 않아야 합니다.');

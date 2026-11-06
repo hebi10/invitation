@@ -1,8 +1,8 @@
-import { router, useLocalSearchParams } from 'expo-router';
+import { router } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
 import { Image } from 'expo-image';
 import ivoryFlowers from '../../../assets/editorial/ivory-flowers.webp';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { ActivityIndicator, Keyboard, Linking, View } from 'react-native';
 
 import { EditorPreparingModal } from '../manage/components/EditorPreparingModal';
@@ -11,15 +11,14 @@ import { LinkedInvitationsSection } from '../manage/components/LinkedInvitations
 import { InvitationThemeActionList } from '../manage/components/InvitationThemeActionList';
 import { ManageEditorStepContent } from '../manage/components/ManageEditorStepContent';
 import { OnboardingModal } from '../manage/components/OnboardingModal';
-import { TicketUsageModal } from '../manage/components/TicketUsageModal';
+import { PeriodExtensionModal } from '../manage/components/PeriodExtensionModal';
 import { useAddressSearch } from '../manage/hooks/useAddressSearch';
 import { useGuestbook } from '../manage/hooks/useGuestbook';
 import { useImageUpload } from '../manage/hooks/useImageUpload';
 import { useInvitationForm } from '../manage/hooks/useInvitationForm';
 import { useLinkedInvitationManager } from '../manage/hooks/useLinkedInvitationManager';
 import { useMusicLibrary } from '../manage/hooks/useMusicLibrary';
-import { useTicketOperations } from '../manage/hooks/useTicketOperations';
-import { formatDateLabel } from '../manage/linkedInvitationDisplay';
+import { usePeriodExtensionPurchase } from '../manage/hooks/usePeriodExtensionPurchase';
 import { manageStyles } from '../manage/manageStyles';
 import { EDITOR_STEPS } from '../manage/shared';
 import { AccountInvitationsSection } from '../../components/AccountInvitationsSection';
@@ -61,6 +60,7 @@ export default function ManageScreen() {
     authError,
     clearAuthError,
     clearPendingManageOnboarding,
+    customerSession,
     getHighRiskToken,
     logout,
     pendingManageOnboarding,
@@ -74,9 +74,7 @@ export default function ManageScreen() {
     pageSummary,
     refreshDashboard,
     saveCurrentPageConfig,
-    extendDisplayPeriod,
     setPublishedState,
-    transferTicketCount,
   } = useInvitationOps();
   const [notice, setNotice] = useState('');
   const [needsRefreshRetry, setNeedsRefreshRetry] = useState(false);
@@ -89,8 +87,6 @@ export default function ManageScreen() {
   const [isOpeningPreview, setIsOpeningPreview] = useState(false);
   const [kakaoShareTargetCard, setKakaoShareTargetCard] = useState<LinkedInvitationCard | null>(null);
   const [isOpeningKakaoShare, setIsOpeningKakaoShare] = useState(false);
-  const { ticketIntent, targetPageSlug } = useLocalSearchParams<{ ticketIntent?: string; targetPageSlug?: string }>();
-  const handledTicketIntent = useRef<string | null>(null);
 
   const invitationForm = useInvitationForm({
     dashboard,
@@ -245,27 +241,18 @@ export default function ManageScreen() {
     Boolean(imageUpload.uploadProgress);
 
   const {
-    ticketModalVisible,
-    isExtendingDisplayPeriod,
-    isTransferringTickets,
-    ticketTransferTargetCards,
-    selectedTicketTransferTargetCard,
-    ticketTransferCount,
-    ticketTransferCountOptions,
-    setTicketTransferTargetSlug,
-    setTicketTransferCount,
-    handleOpenTicketModal,
-    closeTicketModal,
-    handleExtendDisplayPeriod,
-    handleTransferTicketCount,
-  } = useTicketOperations({
+    extensionModalVisible,
+    isPurchasingExtension,
+    pendingExtensionSlug,
+    isRecoveringExtension,
+    openExtensionModal,
+    closeExtensionModal,
+    handlePurchaseExtension,
+    handleRecoverExtension,
+  } = usePeriodExtensionPurchase({
     activeLinkedInvitationCard,
-    additionalLinkedInvitationCards,
-    extendDisplayPeriod,
-    transferTicketCount,
+    refreshDashboard,
     setNotice,
-    setLinkedInvitationCards,
-    formatDateLabel,
   });
 
   const handlePreviewIntro = async (style: WeddingIntroStyle) => {
@@ -340,26 +327,6 @@ export default function ManageScreen() {
       setIsOpeningKakaoShare(false);
     }
   };
-
-  useEffect(() => {
-    if (ticketIntent !== 'extend') { handledTicketIntent.current = null; return; }
-    if (!activeLinkedInvitationCard || !dashboard) return;
-    const key = `${ticketIntent}:${targetPageSlug ?? activeLinkedInvitationCard.slug}`;
-    if (handledTicketIntent.current === key) return;
-    if (targetPageSlug && activeLinkedInvitationCard.slug !== targetPageSlug) {
-      const target = additionalLinkedInvitationCards.find(card => card.slug === targetPageSlug);
-      if (target && !activatingLinkedInvitationSlug && handledTicketIntent.current !== `switch:${key}`) {
-        handledTicketIntent.current = `switch:${key}`;
-        void handleActivateLinkedInvitation(target);
-      }
-      return;
-    }
-    if (dashboard.page.slug !== activeLinkedInvitationCard.slug) return;
-    handledTicketIntent.current = key;
-    handleOpenTicketModal();
-    router.setParams({ ticketIntent: undefined, targetPageSlug: undefined });
-  }, [ticketIntent, targetPageSlug, activeLinkedInvitationCard, additionalLinkedInvitationCards,
-    dashboard, activatingLinkedInvitationSlug, handleActivateLinkedInvitation, handleOpenTicketModal]);
 
   const handleOpenInApp = async () => {
     const manageAppLink = buildManageAppDeepLink();
@@ -626,17 +593,6 @@ export default function ManageScreen() {
           <ActionButton variant="secondary" loading={isOpeningPreview} onPress={handleOpenUrl}>저장 결과 미리보기</ActionButton>
         </SectionCard> : null}
 
-        {ticketIntent === 'extend' && targetPageSlug && activeLinkedInvitationCard?.slug !== targetPageSlug ? (
-          <SectionCard title="티켓을 구매한 청첩장으로 이동해 주세요."
-            description="연동 전환에 실패했다면 다시 열거나 해당 청첩장을 연동한 뒤 기간을 연장할 수 있습니다.">
-            <ActionButton loading={Boolean(activatingLinkedInvitationSlug)} onPress={() => {
-              const target = additionalLinkedInvitationCards.find(card => card.slug === targetPageSlug);
-              if (target) void handleActivateLinkedInvitation(target);
-              else void handleLinkAnotherInvitation(targetPageSlug);
-            }}>구매한 청첩장 다시 열기</ActionButton>
-          </SectionCard>
-        ) : null}
-
         <LinkedInvitationsSection
           activeLinkedInvitationCard={activeLinkedInvitationCard}
           additionalLinkedInvitationCards={additionalLinkedInvitationCards}
@@ -653,7 +609,7 @@ export default function ManageScreen() {
           onOpenEditor={() => void invitationForm.openEditorModal()}
           onOpenUrl={handleOpenUrl}
           onTogglePublished={() => void invitationForm.handleTogglePublished()}
-          onOpenTicketModal={handleOpenTicketModal}
+          onOpenPeriodExtension={openExtensionModal}
           onCopyPublicUrl={(card) => void handleCopyPublicUrl(card)}
           onKakaoShare={handleOpenKakaoShare}
           onOpenInApp={() => void handleOpenInApp()}
@@ -850,28 +806,19 @@ export default function ManageScreen() {
         }
       />
 
-      <TicketUsageModal
-        notice={notice || authError || ''}
-        onBuyTickets={() => { closeTicketModal(); router.push('/create?ticketIntent=extend'); }}
-        visible={ticketModalVisible}
-        onClose={closeTicketModal}
+      <PeriodExtensionModal
+        visible={extensionModalVisible}
+        onClose={closeExtensionModal}
         palette={palette}
         fontScale={fontScale}
-        availableTicketCount={activeLinkedInvitationCard?.ticketCount ?? 0}
-        isExtendingDisplayPeriod={isExtendingDisplayPeriod}
-        onExtendDisplayPeriod={() => void handleExtendDisplayPeriod()}
-        transferTargetCards={ticketTransferTargetCards.map((item) => ({
-          slug: item.slug,
-          displayName: item.displayName,
-          ticketCount: item.ticketCount,
-        }))}
-        selectedTransferTargetSlug={selectedTicketTransferTargetCard?.slug ?? null}
-        ticketTransferCount={ticketTransferCount}
-        ticketTransferCountOptions={ticketTransferCountOptions}
-        isTransferringTickets={isTransferringTickets}
-        onSelectTransferTarget={setTicketTransferTargetSlug}
-        onSelectTicketTransferCount={setTicketTransferCount}
-        onTransferTickets={() => void handleTransferTicketCount()}
+        targetName={activeLinkedInvitationCard?.displayName || activeLinkedInvitationCard?.slug || '청첩장'}
+        customerAuthenticated={Boolean(customerSession)}
+        loading={isPurchasingExtension}
+        recovering={isRecoveringExtension}
+        pendingTargetSlug={pendingExtensionSlug}
+        currentPageSlug={activeLinkedInvitationCard?.slug ?? null}
+        onPurchase={() => void handlePurchaseExtension()}
+        onRecover={() => void handleRecoverExtension()}
       />
 
       <InvitationEditorModalShell

@@ -47,10 +47,11 @@ export const MOBILE_BILLING_TICKET_PACK_PRODUCT_IDS = MOBILE_BILLING_TICKET_PACK
   (count) => MOBILE_BILLING_TICKET_PACK_PRODUCTS[count]
 ) as MobileBillingTicketPackProductId[];
 
-export const MOBILE_BILLING_PRODUCT_IDS = [
+// New purchases use one Google Play consumable SKU for both creation and six-month renewal.
+// Legacy ticket IDs remain parseable only for settling older paid receipts.
+export const MOBILE_BILLING_PRODUCT_IDS: readonly MobileBillingProductId[] = [
   ...MOBILE_BILLING_PAGE_CREATION_PRODUCT_IDS,
-  ...MOBILE_BILLING_TICKET_PACK_PRODUCT_IDS,
-] as const satisfies readonly MobileBillingProductId[];
+];
 
 const mobileBillingProductDefinitions = [
   ...(

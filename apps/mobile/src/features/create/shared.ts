@@ -10,26 +10,13 @@ import { createRandomSuffix } from '../../lib/id';
 import {
   designThemes,
   servicePlans,
-  ticketPricing,
 } from '../../constants/content';
 import { isInvitationThemeKey } from '../../lib/invitationThemes';
-import {
-  MOBILE_BILLING_TICKET_PACK_COUNTS,
-  isMobileBillingTicketPackCount,
-  type MobileBillingTicketPackCount,
-} from '../../lib/mobileBillingProducts';
 import type {
   MobileInvitationProductTier,
   MobileInvitationThemeKey,
 } from '../../types/mobileInvitation';
 
-export const TICKET_USAGE_ITEMS = [
-  '티켓 1장: 1개월 연장',
-] as const;
-
-export const TICKET_UNIT_PRICE = ticketPricing.unitPrice;
-export const TICKET_PRESET_COUNTS = [0, ...MOBILE_BILLING_TICKET_PACK_COUNTS] as const;
-export const MAX_TICKET_COUNT = MOBILE_BILLING_TICKET_PACK_COUNTS.at(-1) ?? 0;
 export const STICKY_CTA_BAR_HEIGHT = 48;
 export const STICKY_CTA_BAR_COMPACT_HEIGHT = 88;
 export const CREATE_PAGE_IDENTIFIER_MAX_LENGTH = PAGE_SLUG_BASE_MAX_LENGTH;
@@ -44,7 +31,6 @@ export type CreateValidationSection = 'basic' | 'selection';
 
 export function getCreatePurchaseSummary(input: { servicePlan: MobileInvitationProductTier }) {
   const plan = servicePlans.find((item) => item.tier === input.servicePlan) ?? servicePlans[0];
-  // 이전 초안에 남은 추가 티켓은 별도 결제 상품이므로 생성 요금에 포함하지 않습니다.
   return { ticketCount: 0, estimatedPrice: plan.price };
 }
 export type CreateStepKey = (typeof CREATE_STEPS)[number]['key'];
@@ -55,49 +41,6 @@ export type CreateValidationRule = {
   passed: boolean;
   errorMessage: string;
 };
-
-export type TicketPurchaseSuccessState = {
-  ticketCount: number;
-  targetDisplayName: string;
-  nextTicketCount: number;
-};
-
-export type SupportedCreateTicketCount = typeof TICKET_PRESET_COUNTS[number];
-
-export function calculateTicketPrice(ticketCount: number) {
-  return ticketCount * TICKET_UNIT_PRICE;
-}
-
-export function isSupportedCreateTicketCount(
-  value: number
-): value is SupportedCreateTicketCount {
-  return TICKET_PRESET_COUNTS.includes(value as SupportedCreateTicketCount);
-}
-
-export function normalizeSupportedCreateTicketCount(value: number) {
-  return isSupportedCreateTicketCount(value) ? value : 0;
-}
-
-export function getAdjacentSupportedTicketCount(
-  currentCount: number,
-  direction: 'decrease' | 'increase'
-) {
-  const currentIndex = TICKET_PRESET_COUNTS.indexOf(
-    normalizeSupportedCreateTicketCount(currentCount)
-  );
-  const nextIndex =
-    direction === 'increase'
-      ? Math.min(TICKET_PRESET_COUNTS.length - 1, currentIndex + 1)
-      : Math.max(0, currentIndex - 1);
-
-  return TICKET_PRESET_COUNTS[nextIndex] ?? 0;
-}
-
-export function isPurchasableTicketPackCount(
-  value: number
-): value is MobileBillingTicketPackCount {
-  return isMobileBillingTicketPackCount(value);
-}
 
 export function buildCreateValidationRules(input: {
   groomKoreanName: string;

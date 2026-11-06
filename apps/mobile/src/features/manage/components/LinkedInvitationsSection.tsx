@@ -42,7 +42,7 @@ type LinkedInvitationsSectionProps = {
   onOpenEditor: () => void;
   onOpenUrl: () => void;
   onTogglePublished: () => void;
-  onOpenTicketModal: () => void;
+  onOpenPeriodExtension: () => void;
   onCopyPublicUrl: (card: LinkedInvitationCard) => void;
   onKakaoShare: (card: LinkedInvitationCard) => void;
   onOpenInApp: () => void;
@@ -94,7 +94,7 @@ function LinkedInvitationCardPanel({
           {managementActions}
           <View style={styles.group}>
             <AppText variant="caption" color={palette.textMuted}>서비스 정보</AppText>
-            <AppText>보유 티켓 {card.ticketCount}장 · 프리미엄</AppText>
+            <AppText>프리미엄 · 모든 기능 포함</AppText>
             <AppText variant="muted">기본 디자인 · {getInvitationThemeLabel(card.defaultTheme)}</AppText>
             <AppText variant="muted">
               사용 가능한 디자인 · {formatThemeList(getLinkedInvitationThemeKeys(card))}
@@ -126,7 +126,7 @@ export function LinkedInvitationsSection({
   onOpenEditor,
   onOpenUrl,
   onTogglePublished,
-  onOpenTicketModal,
+  onOpenPeriodExtension,
   onCopyPublicUrl,
   onKakaoShare,
   onOpenInApp,
@@ -160,8 +160,8 @@ export function LinkedInvitationsSection({
                 <ActionButton variant="secondary" onPress={onTogglePublished} style={styles.action}>
                   {dashboardPublished ? '비공개로 전환' : '공개로 전환'}
                 </ActionButton>
-                <ActionButton variant="secondary" onPress={onOpenTicketModal} style={styles.action}>
-                  티켓으로 기간 연장
+                <ActionButton variant="secondary" onPress={onOpenPeriodExtension} style={styles.action}>
+                  5,000원 · 6개월 연장
                 </ActionButton>
               </View>
             </View>

@@ -21,6 +21,7 @@ const core = [
   'test-mobile-stage8-input-ux',
   'test-mobile-stage9-account-reliability',
   'test-mobile-stage10-auth-transitions',
+  'test-mobile-stage11-single-price',
   'test-background-music-playback',
   'test-gift-info-copy',
   'test-music-editor',
