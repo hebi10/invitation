@@ -444,6 +444,10 @@ def main():
                 ('system-error', 'error', ['화면 오류', '문제가 발생했습니다', '다시 시도']),
                 ('system-not-found', 'not-found', ['페이지 없음', '페이지를 찾을 수 없습니다']),
                 ('system-toast-error', 'toast-error', ['시스템 알림 검수', '알림 검증: 연결 상태를 확인해 주세요.']),
+                ('system-toast-success', 'toast-success', ['시스템 알림 검수', '알림 검증: 청첩장 정보를 저장했습니다.']),
+                ('system-toast-notice', 'toast-notice', ['시스템 알림 검수', '알림 검증: 변경 사항을 확인해 주세요.']),
+                ('system-toast-neutral', 'toast-neutral', ['시스템 알림 검수', '알림 검증: 설정이 반영되었습니다.']),
+                ('system-loading', 'loading', ['정보 불러오기', '청첩장 정보를 불러오는 중입니다.']),
             ]:
                 wait_screen(name, f'design-check-system?kind={kind}', expected)
             capture_responsive_views()
