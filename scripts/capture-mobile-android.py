@@ -100,6 +100,43 @@ def tap(node):
     return True
 
 
+def audit_visible_action(name, tree, label, minimum_dp=44):
+    """실제 클릭 가능 버튼의 영역이 화면 밖으로 잘리지 않았는지 확인한다."""
+    candidates = [
+        node for node in tree.iter('node')
+        if node.get('clickable') == 'true'
+        and node.get('enabled') == 'true'
+        and (node.get('content-desc') or node.get('text') or '').strip() == label
+    ]
+    if not candidates:
+        raise RuntimeError(f'{name}: 클릭 가능한 버튼 {label!r}를 찾지 못했습니다.')
+
+    size_output = adb('shell', 'wm', 'size').stdout.decode('utf-8', errors='replace')
+    width_values = re.findall(r'(?:Physical|Override) size:\s*(\d+)x(\d+)', size_output)
+    density_output = adb('shell', 'wm', 'density').stdout.decode('utf-8', errors='replace')
+    density_values = re.findall(r'(?:Physical|Override) density:\s*(\d+)', density_output)
+    if not width_values or not density_values:
+        raise RuntimeError(f'{name}: Android 화면 크기나 밀도를 확인하지 못했습니다.')
+    window_width, window_height = map(int, width_values[-1])
+    density = int(density_values[-1])
+
+    for node in candidates:
+        points = re.fullmatch(r'\[(\d+),(\d+)\]\[(\d+),(\d+)\]', node.get('bounds', ''))
+        if not points:
+            continue
+        left, top, right, bottom = map(int, points.groups())
+        height_dp = (bottom - top) * 160 / density
+        if 0 <= left < right <= window_width and 0 <= top < bottom <= window_height and height_dp >= minimum_dp:
+            VERIFIED.setdefault('action_visibility_audits', []).append({
+                'screen': name, 'action': label,
+                'height_dp': round(height_dp, 1),
+                'bounds': [left, top, right, bottom],
+            })
+            save_manifest()
+            return
+    raise RuntimeError(f'{name}: {label!r} 버튼이 화면 밖에 있거나 {minimum_dp}dp 미만입니다.')
+
+
 def open_route(path):
     adb('shell', 'am', 'start', '-W', '-a', 'android.intent.action.VIEW',
         '-d', f'exp://127.0.0.1:{PORT}/--/{path}', '-p', PACKAGE)
@@ -228,18 +265,34 @@ def capture_responsive_views():
         (320, [
             ('editor', 'design-check', ['청첩장 편집', '기본 정보']),
             ('checkout', 'design-check-modals?kind=payment', ['Google Play 결제', '결제 예정 금액']),
+            ('settings', 'settings', ['설정', '화면 설정']),
         ]),
         (360, [
             ('guide', 'guide', ['마이페이지', '고객 계정 로그인']),
             ('settings', 'settings', ['설정', '화면 설정']),
+            ('create', 'create', ['청첩장 만들기', '5,000원']),
         ]),
         (390, [
             ('editor', 'design-check', ['청첩장 편집', '기본 정보']),
             ('preview', 'design-check-modals?kind=preview', ['청첩장 미리보기', '디자인 샘플']),
+            ('account-list', 'design-check-accounts', ['계정별 전체 청첩장', '12개']),
         ]),
         (430, [
             ('settings', 'settings', ['설정', '화면 설정']),
             ('renew', 'design-check-modals?kind=renew', ['이용 기간 연장', '연장 결제 확인']),
+            ('home', '', ['Invitation', 'MODERN WEDDING EDITORIAL']),
+        ]),
+        (600, [
+            ('home', '', ['Invitation', 'MODERN WEDDING EDITORIAL']),
+            ('account-list', 'design-check-accounts', ['계정별 전체 청첩장', '12개']),
+            ('editor', 'design-check', ['청첩장 편집', '기본 정보']),
+            ('checkout', 'design-check-modals?kind=payment', ['Google Play 결제', '결제 예정 금액']),
+        ]),
+        (840, [
+            ('home', '', ['Invitation', 'MODERN WEDDING EDITORIAL']),
+            ('create', 'create', ['청첩장 만들기', '5,000원']),
+            ('account-list', 'design-check-accounts', ['계정별 전체 청첩장', '12개']),
+            ('preview', 'design-check-modals?kind=preview', ['청첩장 미리보기', '디자인 샘플']),
         ]),
     ]
     try:
@@ -248,7 +301,15 @@ def capture_responsive_views():
             adb('shell', 'wm', 'density', str(density))
             time.sleep(3)
             for label, route, expected in cases:
-                wait_screen(f'layout-{width_dp}-{label}', route, expected)
+                name = f'layout-{width_dp}-{label}'
+                screen_tree = wait_screen(name, route, expected)
+                if label == 'checkout':
+                    audit_visible_action(name, screen_tree, '5,000원 결제하기')
+                    audit_visible_action(name, screen_tree, '다시 확인하기')
+                elif label == 'editor':
+                    audit_visible_action(name, screen_tree, '저장 후 다음')
+                elif label == 'renew':
+                    audit_visible_action(name, screen_tree, '5,000원 결제로 6개월 연장')
             VERIFIED.setdefault('responsive_dp_widths', []).append(width_dp)
             save_manifest()
     finally:
@@ -359,6 +420,8 @@ def main():
                 timeout=45, launch=False,
             )
             VERIFIED['keyboard_capture'] = '실제 입력창 터치·keyboardDidShow 이벤트·컴팩트 저장 버튼 확인'
+            keyboard_action_tree, _ = hierarchy()
+            audit_visible_action('editor-keyboard', keyboard_action_tree, '내용 저장')
             VERIFIED['captures'][-1]['keyboard_verified'] = True
             save_manifest()
             adb('shell', 'input', 'keyevent', 'KEYCODE_BACK')
@@ -436,6 +499,8 @@ def main():
                 timeout=45, launch=False,
             )
             VERIFIED['modal_keyboard_capture'] = '모달 입력창 터치·키보드 이벤트·하단 확인 버튼 표시'
+            keyboard_button_tree, _ = hierarchy()
+            audit_visible_action('modal-keyboard', keyboard_button_tree, '확인')
             save_manifest()
             adb('shell', 'input', 'keyevent', 'KEYCODE_BACK')
             for name, kind, expected in [
@@ -451,6 +516,7 @@ def main():
             ]:
                 wait_screen(name, f'design-check-system?kind={kind}', expected)
             capture_responsive_views()
+            VERIFIED['responsive_widths_note'] = '600dp/840dp는 Android 에뮬레이터 밀도 기반 폭 시뮬레이션이며 실기기 폴더블·태블릿 검증은 별도입니다.'
             VERIFIED['status'] = 'passed'
             save_manifest()
     except Exception as error:
