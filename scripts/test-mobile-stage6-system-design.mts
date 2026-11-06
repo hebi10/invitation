@@ -15,15 +15,15 @@ const config = read('apps/mobile/app.config.ts');
 const fixture = read('scripts/fixtures/mobile-system-capture.tsx.fixture');
 const capture = read('scripts/capture-mobile-android.py');
 
-assert.match(guide, /<SectionCard\s+title="프리미엄 청첩장"/);
-assert.match(guide, /plan\.priceLabel/);
-assert.match(guide, /INVITATION_INITIAL_DISPLAY_PERIOD_MONTHS/);
-assert.match(guide, /guideSections\.map/);
-assert.match(guide, /<Disclosure/);
-assert.match(guide, /<AccountHelpLinks/);
-assert.match(guide, /\/privacy\/mobile-invitation\//);
-assert.match(guide, /\/privacy\/mobile-invitation\/delete-request\//);
-assert.match(guide, /mailto:sevim0104@naver\.com/);
+assert.match(guide, /title="마이페이지"/);
+assert.match(guide, /<AccountInvitationsSection/);
+assert.match(guide, /<ManageScreenContent/);
+assert.match(guide, /router\.push\('\/create'\)/);
+assert.match(settings, /guideSections\.map/);
+assert.match(settings, /<Disclosure/);
+assert.match(settings, /\/privacy\/mobile-invitation\//);
+assert.match(settings, /\/privacy\/mobile-invitation\/delete-request\//);
+assert.match(settings, /mailto:sevim0104@naver\.com/);
 assert.doesNotMatch(guide, /borderTopWidth|borderBottomWidth|elevation|boxShadow/);
 
 assert.match(disclosure, /accessibilityState=\{\{ expanded \}\}/);
@@ -88,4 +88,4 @@ for (const kind of ['dark', 'large', 'error', 'not-found', 'toast-error'] as con
 }
 assert.match(capture, /shutil\.copyfile\(SYSTEM_FIXTURE, SYSTEM_ROUTE\)/);
 assert.match(capture, /SYSTEM_ROUTE\.unlink\(missing_ok=True\)/);
-console.log('Mobile stage 6 guide, settings, error and system state design checks passed');
+console.log('Mobile stage 6 My Page, settings, privacy and system state checks passed');
