@@ -79,9 +79,6 @@ export function PeriodExtensionModal({
               5,000원 결제하고 6개월 연장
             </ActionButton>
           )}
-          <ActionButton variant="secondary" fullWidth disabled={busy} onPress={onClose}>
-            닫기
-          </ActionButton>
         </View>
       </SectionCard>
     </InvitationEditorModalShell>
