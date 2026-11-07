@@ -37,6 +37,8 @@ KEYBOARD_ROUTE = APP / 'src/app/design-check-keyboard.tsx'
 KEYBOARD_FIXTURE = ROOT / 'scripts/fixtures/mobile-keyboard-capture.tsx.fixture'
 CREATE_SUCCESS_ROUTE = APP / 'src/app/design-check-create-success.tsx'
 CREATE_SUCCESS_FIXTURE = ROOT / 'scripts/fixtures/mobile-create-success-capture.tsx.fixture'
+HOME_QA_ROUTE = APP / 'src/app/design-check-home.tsx'
+HOME_QA_FIXTURE = ROOT / 'scripts/fixtures/mobile-home-capture.tsx.fixture'
 APK_URL = 'https://github.com/expo/expo-go-releases/releases/download/Expo-Go-55.0.7/Expo-Go-55.0.7.apk'
 APK_SIZE = 195851103
 APK_SHA256 = '6368eec8973ebb011c6f4f9d32afebe3fc64dd3125f2c0b529767e88dccf64ab'
@@ -281,11 +283,11 @@ def capture_responsive_views():
         ]),
         (430, [
             ('settings', 'settings', ['설정', '화면 설정']),
-            ('home', '', ['Invitation', 'MODERN WEDDING EDITORIAL']),
+            ('home', 'design-check-home', ['Invitation', 'MODERN WEDDING EDITORIAL']),
             ('renew', 'design-check-modals?kind=renew', ['이용 기간 연장', '연장 결제 확인']),
         ]),
         (600, [
-            ('home', '', ['Invitation', 'MODERN WEDDING EDITORIAL']),
+            ('home', 'design-check-home', ['Invitation', 'MODERN WEDDING EDITORIAL']),
             ('account-list', 'design-check-accounts', ['계정별 전체 청첩장', '12개']),
             ('editor', 'design-check', ['청첩장 편집', '기본 정보']),
             ('checkout', 'design-check-modals?kind=payment', ['Google Play 결제', '결제 예정 금액']),
@@ -293,7 +295,7 @@ def capture_responsive_views():
         (840, [
             ('create', 'create', ['청첩장 만들기', '5,000원']),
             ('account-list', 'design-check-accounts', ['계정별 전체 청첩장', '12개']),
-            ('home', '', ['Invitation', 'MODERN WEDDING EDITORIAL']),
+            ('home', 'design-check-home', ['Invitation', 'MODERN WEDDING EDITORIAL']),
             ('preview', 'design-check-modals?kind=preview', ['청첩장 미리보기', '디자인 샘플']),
         ]),
     ]
@@ -354,6 +356,7 @@ def main():
     original_recent_status_route = RECENT_STATUS_ROUTE.read_bytes() if RECENT_STATUS_ROUTE.exists() else None
     original_keyboard_route = KEYBOARD_ROUTE.read_bytes() if KEYBOARD_ROUTE.exists() else None
     original_create_success_route = CREATE_SUCCESS_ROUTE.read_bytes() if CREATE_SUCCESS_ROUTE.exists() else None
+    original_home_qa_route = HOME_QA_ROUTE.read_bytes() if HOME_QA_ROUTE.exists() else None
     try:
         shutil.copyfile(FIXTURE, ROUTE)
         shutil.copyfile(MODALS_FIXTURE, MODALS_ROUTE)
@@ -364,6 +367,7 @@ def main():
         shutil.copyfile(RECENT_STATUS_FIXTURE, RECENT_STATUS_ROUTE)
         shutil.copyfile(KEYBOARD_FIXTURE, KEYBOARD_ROUTE)
         shutil.copyfile(CREATE_SUCCESS_FIXTURE, CREATE_SUCCESS_ROUTE)
+        shutil.copyfile(HOME_QA_FIXTURE, HOME_QA_ROUTE)
         fixture_api = ThreadingHTTPServer(('127.0.0.1', 19999), CaptureApiHandler)
         threading.Thread(target=fixture_api.serve_forever, daemon=True).start()
         env = {**os.environ, 'CI': '1', 'EXPO_OFFLINE': '1', 'EXPO_NO_TELEMETRY': '1',
@@ -619,6 +623,10 @@ def main():
             CREATE_SUCCESS_ROUTE.unlink(missing_ok=True)
         else:
             CREATE_SUCCESS_ROUTE.write_bytes(original_create_success_route)
+        if original_home_qa_route is None:
+            HOME_QA_ROUTE.unlink(missing_ok=True)
+        else:
+            HOME_QA_ROUTE.write_bytes(original_home_qa_route)
 
 
 if __name__ == '__main__':

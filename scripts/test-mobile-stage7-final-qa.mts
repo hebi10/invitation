@@ -43,6 +43,10 @@ assert.match(success, /onPress=\{onStartEditing\}/);
 assert.match(success, /마이페이지에서 편집 시작/);
 assert.match(capture, /shutil\.copyfile\(CREATE_SUCCESS_FIXTURE, CREATE_SUCCESS_ROUTE\)/);
 assert.match(capture, /CREATE_SUCCESS_ROUTE\.unlink\(missing_ok=True\)/);
+assert.match(capture, /shutil\.copyfile\(HOME_QA_FIXTURE, HOME_QA_ROUTE\)/);
+assert.match(capture, /HOME_QA_ROUTE\.unlink\(missing_ok=True\)/);
+assert.match(capture, /'home', 'design-check-home'/);
+assert.match(read('scripts/fixtures/mobile-home-capture.tsx.fixture'), /\(tabs\)\/index/);
 const captures = [
   'my-invitations',
   'login',
