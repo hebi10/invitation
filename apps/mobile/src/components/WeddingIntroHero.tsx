@@ -32,10 +32,10 @@ export function WeddingIntroHero() {
           MODERN WEDDING EDITORIAL
         </AppText>
         <AppText variant="display" style={styles.title}>
-          우리의 이야기를 담은{'\n'}모바일 청첩장
+          우리의 이야기를 담은 청첩장
         </AppText>
         <AppText variant="muted">
-          소중한 결혼식의 순간을 사진과 이야기로 전하는 초대장을 준비하세요.
+          사진과 이야기로 소중한 날을 전해 보세요.
         </AppText>
       </View>
     </View>
@@ -51,7 +51,7 @@ const styles = StyleSheet.create({
   },
   copy: { gap: 8, padding: 16 },
   eyebrow: { fontWeight: '600', letterSpacing: 0.6 },
-  title: { fontWeight: '600' },
+  title: { fontWeight: '700' },
   previews: { flexDirection: 'row', gap: 0 },
   preview: { flex: 1, minWidth: 0, aspectRatio: 1 },
 });

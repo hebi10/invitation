@@ -35,6 +35,10 @@ RECENT_STATUS_ROUTE = APP / 'src/app/design-check-recent-status.tsx'
 RECENT_STATUS_FIXTURE = ROOT / 'scripts/fixtures/mobile-recent-status-capture.tsx.fixture'
 KEYBOARD_ROUTE = APP / 'src/app/design-check-keyboard.tsx'
 KEYBOARD_FIXTURE = ROOT / 'scripts/fixtures/mobile-keyboard-capture.tsx.fixture'
+CREATE_SUCCESS_ROUTE = APP / 'src/app/design-check-create-success.tsx'
+CREATE_SUCCESS_FIXTURE = ROOT / 'scripts/fixtures/mobile-create-success-capture.tsx.fixture'
+HOME_QA_ROUTE = APP / 'src/app/design-check-home.tsx'
+HOME_QA_FIXTURE = ROOT / 'scripts/fixtures/mobile-home-capture.tsx.fixture'
 APK_URL = 'https://github.com/expo/expo-go-releases/releases/download/Expo-Go-55.0.7/Expo-Go-55.0.7.apk'
 APK_SIZE = 195851103
 APK_SHA256 = '6368eec8973ebb011c6f4f9d32afebe3fc64dd3125f2c0b529767e88dccf64ab'
@@ -98,6 +102,43 @@ def tap(node):
     left, top, right, bottom = map(int, points.groups())
     adb('shell', 'input', 'tap', str((left + right) // 2), str((top + bottom) // 2))
     return True
+
+
+def audit_visible_action(name, tree, label, minimum_dp=44):
+    """실제 클릭 가능 버튼의 영역이 화면 밖으로 잘리지 않았는지 확인한다."""
+    candidates = [
+        node for node in tree.iter('node')
+        if node.get('clickable') == 'true'
+        and node.get('enabled') == 'true'
+        and (node.get('content-desc') or node.get('text') or '').strip() == label
+    ]
+    if not candidates:
+        raise RuntimeError(f'{name}: 클릭 가능한 버튼 {label!r}를 찾지 못했습니다.')
+
+    size_output = adb('shell', 'wm', 'size').stdout.decode('utf-8', errors='replace')
+    width_values = re.findall(r'(?:Physical|Override) size:\s*(\d+)x(\d+)', size_output)
+    density_output = adb('shell', 'wm', 'density').stdout.decode('utf-8', errors='replace')
+    density_values = re.findall(r'(?:Physical|Override) density:\s*(\d+)', density_output)
+    if not width_values or not density_values:
+        raise RuntimeError(f'{name}: Android 화면 크기나 밀도를 확인하지 못했습니다.')
+    window_width, window_height = map(int, width_values[-1])
+    density = int(density_values[-1])
+
+    for node in candidates:
+        points = re.fullmatch(r'\[(\d+),(\d+)\]\[(\d+),(\d+)\]', node.get('bounds', ''))
+        if not points:
+            continue
+        left, top, right, bottom = map(int, points.groups())
+        height_dp = (bottom - top) * 160 / density
+        if 0 <= left < right <= window_width and 0 <= top < bottom <= window_height and height_dp >= minimum_dp:
+            VERIFIED.setdefault('action_visibility_audits', []).append({
+                'screen': name, 'action': label,
+                'height_dp': round(height_dp, 1),
+                'bounds': [left, top, right, bottom],
+            })
+            save_manifest()
+            return
+    raise RuntimeError(f'{name}: {label!r} 버튼이 화면 밖에 있거나 {minimum_dp}dp 미만입니다.')
 
 
 def open_route(path):
@@ -227,19 +268,35 @@ def capture_responsive_views():
     layouts = [
         (320, [
             ('editor', 'design-check', ['청첩장 편집', '기본 정보']),
+            ('settings', 'settings', ['설정', '화면 설정']),
             ('checkout', 'design-check-modals?kind=payment', ['Google Play 결제', '결제 예정 금액']),
         ]),
         (360, [
             ('guide', 'guide', ['마이페이지', '고객 계정 로그인']),
             ('settings', 'settings', ['설정', '화면 설정']),
+            ('create', 'create', ['청첩장 만들기', '5,000원']),
         ]),
         (390, [
             ('editor', 'design-check', ['청첩장 편집', '기본 정보']),
+            ('account-list', 'design-check-accounts', ['계정별 전체 청첩장', '12개']),
             ('preview', 'design-check-modals?kind=preview', ['청첩장 미리보기', '디자인 샘플']),
         ]),
         (430, [
             ('settings', 'settings', ['설정', '화면 설정']),
+            ('home', 'design-check-home', ['Invitation', 'MODERN WEDDING EDITORIAL']),
             ('renew', 'design-check-modals?kind=renew', ['이용 기간 연장', '연장 결제 확인']),
+        ]),
+        (600, [
+            ('home', 'design-check-home', ['Invitation', 'MODERN WEDDING EDITORIAL']),
+            ('account-list', 'design-check-accounts', ['계정별 전체 청첩장', '12개']),
+            ('editor', 'design-check', ['청첩장 편집', '기본 정보']),
+            ('checkout', 'design-check-modals?kind=payment', ['Google Play 결제', '결제 예정 금액']),
+        ]),
+        (840, [
+            ('create', 'create', ['청첩장 만들기', '5,000원']),
+            ('account-list', 'design-check-accounts', ['계정별 전체 청첩장', '12개']),
+            ('home', 'design-check-home', ['Invitation', 'MODERN WEDDING EDITORIAL']),
+            ('preview', 'design-check-modals?kind=preview', ['청첩장 미리보기', '디자인 샘플']),
         ]),
     ]
     try:
@@ -248,7 +305,20 @@ def capture_responsive_views():
             adb('shell', 'wm', 'density', str(density))
             time.sleep(3)
             for label, route, expected in cases:
-                wait_screen(f'layout-{width_dp}-{label}', route, expected)
+                name = f'layout-{width_dp}-{label}'
+                screen_tree = wait_screen(name, route, expected)
+                if label == 'checkout':
+                    audit_visible_action(name, screen_tree, '5,000원 결제하기')
+                    audit_visible_action(name, screen_tree, '다시 확인하기')
+                elif label == 'editor':
+                    audit_visible_action(name, screen_tree, '저장 후 다음')
+                elif label == 'renew':
+                    audit_visible_action(name, screen_tree, '5,000원 결제로 6개월 연장')
+                if label in {'editor', 'checkout', 'preview', 'renew'}:
+                    # QA 전용 전면 모달은 경로 이동 후에도 이전 화면 위에 남을 수 있다.
+                    # 독립 화면 검증을 위해 Expo Go만 초기화한다. 저장·계정·결제 상태는 사용하지 않는다.
+                    adb('shell', 'am', 'force-stop', PACKAGE, check=False)
+                    time.sleep(1)
             VERIFIED.setdefault('responsive_dp_widths', []).append(width_dp)
             save_manifest()
     finally:
@@ -285,6 +355,8 @@ def main():
     original_account_login_route = ACCOUNT_LOGIN_ROUTE.read_bytes() if ACCOUNT_LOGIN_ROUTE.exists() else None
     original_recent_status_route = RECENT_STATUS_ROUTE.read_bytes() if RECENT_STATUS_ROUTE.exists() else None
     original_keyboard_route = KEYBOARD_ROUTE.read_bytes() if KEYBOARD_ROUTE.exists() else None
+    original_create_success_route = CREATE_SUCCESS_ROUTE.read_bytes() if CREATE_SUCCESS_ROUTE.exists() else None
+    original_home_qa_route = HOME_QA_ROUTE.read_bytes() if HOME_QA_ROUTE.exists() else None
     try:
         shutil.copyfile(FIXTURE, ROUTE)
         shutil.copyfile(MODALS_FIXTURE, MODALS_ROUTE)
@@ -294,6 +366,8 @@ def main():
         shutil.copyfile(ACCOUNT_LOGIN_FIXTURE, ACCOUNT_LOGIN_ROUTE)
         shutil.copyfile(RECENT_STATUS_FIXTURE, RECENT_STATUS_ROUTE)
         shutil.copyfile(KEYBOARD_FIXTURE, KEYBOARD_ROUTE)
+        shutil.copyfile(CREATE_SUCCESS_FIXTURE, CREATE_SUCCESS_ROUTE)
+        shutil.copyfile(HOME_QA_FIXTURE, HOME_QA_ROUTE)
         fixture_api = ThreadingHTTPServer(('127.0.0.1', 19999), CaptureApiHandler)
         threading.Thread(target=fixture_api.serve_forever, daemon=True).start()
         env = {**os.environ, 'CI': '1', 'EXPO_OFFLINE': '1', 'EXPO_NO_TELEMETRY': '1',
@@ -331,6 +405,14 @@ def main():
             wait_screen('my-invitations', '', ['홈', 'MODERN WEDDING EDITORIAL'])
             wait_screen('login', 'login', ['기존 청첩장 연결', '기기 연동 안내'])
             wait_screen('create', 'create', ['만들기', '고객 계정 로그인'])
+            success_tree = wait_screen('create-success-fixture', 'design-check-create-success',
+                                      ['제작 시작', '결제가 완료되었습니다', '새 청첩장 초안'])
+            if any(node.get('content-desc') == '마이페이지에서 편집 시작'
+                   and node.get('clickable') == 'true' and node.get('enabled') == 'true'
+                   for node in success_tree.iter('node')):
+                audit_visible_action('create-success-fixture', success_tree, '마이페이지에서 편집 시작')
+            else:
+                raise RuntimeError('create-success-fixture: 마이페이지 편집 행동을 찾지 못했습니다.')
             wait_screen('guide', 'guide', ['마이페이지', '고객 계정 로그인'])
             wait_screen('settings', 'settings', ['설정', '화면 설정'])
             wait_screen('account-list-0', 'design-check-accounts?count=0', ['계정별 전체 청첩장', '0개', '계정에 등록된 청첩장이 없습니다'])
@@ -341,6 +423,37 @@ def main():
             wait_screen('linked-list', 'design-check-linked', ['기기 연동 청첩장', '현재 관리 중', '내용 수정'])
             wait_screen('editor-fixture', 'design-check', ['샘플 청첩장 · 변경 사항 없음', '청첩장 편집', '기본 정보'])
             wait_screen('editor-save-error', 'design-check?step=save-error', ['저장 실패', '입력값은 유지됩니다', '기본 정보'])
+            wait_screen('editor-family-ready', 'design-check?step=family-filled', ['청첩장 편집', '기본 정보'])
+            for scroll_attempt in range(18):
+                family_tree, family_xml = hierarchy()
+                visible_values = []
+                for node in family_tree.iter('node'):
+                    label = (node.get('text') or node.get('content-desc') or '').strip()
+                    if label not in {'김아버지', '신랑 부모님 정보', '신랑 정보'}:
+                        continue
+                    points = re.fullmatch(r'\[(\d+),(\d+)\]\[(\d+),(\d+)\]', node.get('bounds', ''))
+                    if not points:
+                        continue
+                    left, top, right, bottom = map(int, points.groups())
+                    if right > left and bottom > top and top < 2350 and bottom > 980:
+                        visible_values.append(label)
+                if '김아버지' in visible_values:
+                    (OUT / 'editor-family-filled.xml').write_text(family_xml)
+                    screenshot('editor-family-filled')
+                    VERIFIED['captures'].append({
+                        'file': 'editor-family-filled.png',
+                        'route': '/design-check?step=family-filled',
+                        'verified_text': ['김아버지'],
+                        'fixture': True,
+                        'populated_optional_fields_visible': True,
+                    })
+                    save_manifest()
+                    print('검증·캡처 완료: editor-family-filled', flush=True)
+                    break
+                adb('shell', 'input', 'swipe', '720', '1940', '720', '1450', '300')
+                time.sleep(0.7)
+            else:
+                raise RuntimeError('editor-family-filled: 저장된 혼주 이름을 펼쳐진 입력창에서 확인하지 못했습니다.')
             keyboard_tree = wait_screen(
                 'editor-keyboard-ready', 'design-check-keyboard',
                 ['청첩장 편집', '키보드 확인 입력', '저장 후 다음'],
@@ -359,6 +472,8 @@ def main():
                 timeout=45, launch=False,
             )
             VERIFIED['keyboard_capture'] = '실제 입력창 터치·keyboardDidShow 이벤트·컴팩트 저장 버튼 확인'
+            keyboard_action_tree, _ = hierarchy()
+            audit_visible_action('editor-keyboard', keyboard_action_tree, '내용 저장')
             VERIFIED['captures'][-1]['keyboard_verified'] = True
             save_manifest()
             adb('shell', 'input', 'keyevent', 'KEYCODE_BACK')
@@ -436,6 +551,8 @@ def main():
                 timeout=45, launch=False,
             )
             VERIFIED['modal_keyboard_capture'] = '모달 입력창 터치·키보드 이벤트·하단 확인 버튼 표시'
+            keyboard_button_tree, _ = hierarchy()
+            audit_visible_action('modal-keyboard', keyboard_button_tree, '확인')
             save_manifest()
             adb('shell', 'input', 'keyevent', 'KEYCODE_BACK')
             for name, kind, expected in [
@@ -451,6 +568,7 @@ def main():
             ]:
                 wait_screen(name, f'design-check-system?kind={kind}', expected)
             capture_responsive_views()
+            VERIFIED['responsive_widths_note'] = '600dp/840dp는 Android 에뮬레이터 밀도 기반 폭 시뮬레이션이며 실기기 폴더블·태블릿 검증은 별도입니다.'
             VERIFIED['status'] = 'passed'
             save_manifest()
     except Exception as error:
@@ -501,6 +619,14 @@ def main():
             KEYBOARD_ROUTE.unlink(missing_ok=True)
         else:
             KEYBOARD_ROUTE.write_bytes(original_keyboard_route)
+        if original_create_success_route is None:
+            CREATE_SUCCESS_ROUTE.unlink(missing_ok=True)
+        else:
+            CREATE_SUCCESS_ROUTE.write_bytes(original_create_success_route)
+        if original_home_qa_route is None:
+            HOME_QA_ROUTE.unlink(missing_ok=True)
+        else:
+            HOME_QA_ROUTE.write_bytes(original_home_qa_route)
 
 
 if __name__ == '__main__':

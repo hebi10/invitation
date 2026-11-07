@@ -1,0 +1,5 @@
+import { CreationCompletedView } from '../features/create/components/CreationCompletedView';
+
+export default function CreateSuccessDesignCheck() {
+  return <CreationCompletedView onStartEditing={() => {}} />;
+}

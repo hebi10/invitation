@@ -6,6 +6,7 @@ import { TextField } from '../../../../components/TextField';
 import type {
   ManageFormState,
   ManageParentState,
+  ManagePersonState,
   ManageStringFieldKey,
 } from '../../shared';
 import { manageStyles } from '../../manageStyles';
@@ -33,6 +34,13 @@ export function BasicEditorStep({
   onUpdatePersonField,
   onUpdateParentField,
 }: BasicEditorStepProps) {
+  const hasExistingFamilyInformation = ([form.groom, form.bride] as ManagePersonState[])
+    .some((person) => [
+      person.order, person.phone,
+      person.father.relation, person.father.name, person.father.phone,
+      person.mother.relation, person.mother.name, person.mother.phone,
+    ].some((value) => value.trim().length > 0));
+
   return (
     <>
       <SectionCard
@@ -81,7 +89,11 @@ export function BasicEditorStep({
       </SectionCard>
       <Disclosure
         title="연락처·가족 정보 (선택)"
-        description="연락처와 혼주 정보를 추가하려면 펼쳐서 입력해 주세요."
+        description={hasExistingFamilyInformation
+          ? '입력된 연락처·가족 정보가 있습니다. 펼쳐서 확인하거나 수정해 주세요.'
+          : '연락처와 혼주 정보를 추가하려면 펼쳐서 입력해 주세요.'}
+        defaultExpanded={hasExistingFamilyInformation}
+        expandWhenPopulated
       >
         <View style={manageStyles.personGrid}>
           <PersonEditorCard

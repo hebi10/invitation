@@ -27,16 +27,39 @@ for (const name of [
 }
 
 const capture = read('scripts/capture-mobile-android.py');
+const hero = read('apps/mobile/src/components/WeddingIntroHero.tsx');
+const basic = read('apps/mobile/src/features/manage/components/steps/BasicEditorStep.tsx');
+const success = read('apps/mobile/src/features/create/components/CreationCompletedView.tsx');
+const create = read('apps/mobile/src/app/(tabs)/create.tsx');
+
+assert.match(hero, /우리의 이야기를 담은 청첩장/, 'HM-01 hero headline must match the design brief');
+assert.doesNotMatch(hero, /담은\{.\\n.\}/, 'Hero line wrapping should adapt to the screen width');
+assert.match(basic, /hasExistingFamilyInformation/);
+assert.match(basic, /defaultExpanded=\{hasExistingFamilyInformation\}/);
+assert.match(basic, /입력된 연락처·가족 정보가 있습니다/);
+assert.match(create, /<CreationCompletedView/);
+assert.match(success, /결제가 완료되었습니다/);
+assert.match(success, /onPress=\{onStartEditing\}/);
+assert.match(success, /마이페이지에서 편집 시작/);
+assert.match(capture, /shutil\.copyfile\(CREATE_SUCCESS_FIXTURE, CREATE_SUCCESS_ROUTE\)/);
+assert.match(capture, /CREATE_SUCCESS_ROUTE\.unlink\(missing_ok=True\)/);
+assert.match(capture, /shutil\.copyfile\(HOME_QA_FIXTURE, HOME_QA_ROUTE\)/);
+assert.match(capture, /HOME_QA_ROUTE\.unlink\(missing_ok=True\)/);
+assert.match(capture, /'home', 'design-check-home'/);
+assert.match(read('scripts/fixtures/mobile-home-capture.tsx.fixture'), /\(tabs\)\/index/);
 const captures = [
   'my-invitations',
   'login',
   'create',
+  'create-success-fixture',
   'guide',
   'settings',
   'account-list-12',
   'linked-list',
   'editor-fixture',
   'editor-save-error',
+  'editor-family-ready',
+  'editor-family-filled',
   'editor-schedule',
   'editor-location',
   'editor-greeting',
@@ -79,7 +102,7 @@ const captures = [
 for (const name of captures) {
   assert.ok(capture.includes(`'${name}'`), `Missing Android capture: ${name}`);
 }
-for (const width of [320, 360, 390, 430]) {
+for (const width of [320, 360, 390, 430, 600, 840]) {
   assert.ok(capture.includes(`(${width}, [`), `Responsive test missing ${width}dp`);
 }
 assert.match(capture, /def capture_responsive_views\(\):/);
@@ -87,6 +110,17 @@ assert.match(capture, /adb\('shell', 'wm', 'density', 'reset', check=False\)/);
 assert.match(capture, /capture_responsive_views\(\)/);
 assert.match(capture, /VERIFY|VERIFIED\['status'\] = 'passed'/);
 assert.match(capture, /def capture_keyboard\(tree\):/);
+assert.match(capture, /def audit_visible_action\(/);
+assert.match(capture, /action_visibility_audits/);
+assert.match(capture, /audit_visible_action\('modal-keyboard'/);
+assert.match(capture, /audit_visible_action\('editor-keyboard'/);
+assert.match(capture, /f'layout-\{width_dp\}-\{label\}'/);
+const fixture = read('scripts/fixtures/mobile-editor-capture.tsx.fixture');
+const disclosure = read('apps/mobile/src/components/Disclosure.tsx');
+const person = read('apps/mobile/src/features/manage/components/steps/PersonEditorCard.tsx');
+assert.match(fixture, /requestedStep === 'family-filled'/);
+assert.match(disclosure, /expandWhenPopulated/);
+assert.match(person, /hasExistingParentInformation/);
 
 const releaseWorkflow = read('.github/workflows/mobile-release.yml');
 const captureWorkflow = read('.github/workflows/mobile-captures.yml');

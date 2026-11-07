@@ -34,6 +34,9 @@ export function PersonEditorCard({
   onUpdateParentField,
 }: PersonEditorCardProps) {
   const { palette } = usePreferences();
+  const hasExistingParentInformation = [person.father, person.mother].some(
+    (parent) => [parent.relation, parent.name, parent.phone].some((value) => value.trim().length > 0)
+  );
 
   return (
     <View
@@ -73,7 +76,13 @@ export function PersonEditorCard({
         </View>
       </View>
 
-      <Disclosure title={`${label} 부모님 정보`} description="필요한 혼주 이름과 연락처를 입력합니다.">
+      <Disclosure title={`${label} 부모님 정보`}
+        description={hasExistingParentInformation
+          ? '저장된 혼주 정보가 있습니다. 펼쳐서 확인해 주세요.'
+          : '필요한 혼주 이름과 연락처를 입력합니다.'}
+        defaultExpanded={hasExistingParentInformation}
+        expandWhenPopulated
+      >
       <AppText variant="caption" style={manageStyles.personSectionLabel}>
         아버지 정보
       </AppText>
