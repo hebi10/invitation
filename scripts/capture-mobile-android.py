@@ -285,9 +285,9 @@ def capture_responsive_views():
             ('renew', 'design-check-modals?kind=renew', ['이용 기간 연장', '연장 결제 확인']),
         ]),
         (600, [
+            ('home', '', ['Invitation', 'MODERN WEDDING EDITORIAL']),
             ('account-list', 'design-check-accounts', ['계정별 전체 청첩장', '12개']),
             ('editor', 'design-check', ['청첩장 편집', '기본 정보']),
-            ('home', '', ['Invitation', 'MODERN WEDDING EDITORIAL']),
             ('checkout', 'design-check-modals?kind=payment', ['Google Play 결제', '결제 예정 금액']),
         ]),
         (840, [
