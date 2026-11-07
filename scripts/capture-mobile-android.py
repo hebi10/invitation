@@ -312,6 +312,11 @@ def capture_responsive_views():
                     audit_visible_action(name, screen_tree, '저장 후 다음')
                 elif label == 'renew':
                     audit_visible_action(name, screen_tree, '5,000원 결제로 6개월 연장')
+                if label in {'editor', 'checkout', 'preview', 'renew'}:
+                    # QA 전용 전면 모달은 경로 이동 후에도 이전 화면 위에 남을 수 있다.
+                    # 독립 화면 검증을 위해 Expo Go만 초기화한다. 저장·계정·결제 상태는 사용하지 않는다.
+                    adb('shell', 'am', 'force-stop', PACKAGE, check=False)
+                    time.sleep(1)
             VERIFIED.setdefault('responsive_dp_widths', []).append(width_dp)
             save_manifest()
     finally:
