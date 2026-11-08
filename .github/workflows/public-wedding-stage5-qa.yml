@@ -1,0 +1,42 @@
+name: Public wedding Stage 5 QA
+
+on:
+  pull_request:
+    paths:
+      - 'scripts/qa-public-wedding-stage5.py'
+      - '.github/workflows/public-wedding-stage5-qa.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  public-wedding-browser-qa:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install Chromium browser QA
+        run: |
+          python -m pip install --disable-pip-version-check playwright==1.56.0
+          python -m playwright install --with-deps chromium
+      - name: Fetch pinned axe-core accessibility audit library
+        run: |
+          mkdir -p artifacts
+          curl --fail --location --silent --show-error --retry 3 \
+            https://cdnjs.cloudflare.com/ajax/libs/axe-core/4.10.3/axe.min.js \
+            --output artifacts/axe-core-4.10.3.min.js
+          test -s artifacts/axe-core-4.10.3.min.js
+      - name: Audit public invitation in eight responsive widths
+        run: python scripts/qa-public-wedding-stage5.py
+      - name: Preserve QA manifest and actual Chromium screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: invitation-stage5-public-responsive-accessibility
+          path: artifacts/public-wedding-stage5/
+          if-no-files-found: warn
+          retention-days: 21
