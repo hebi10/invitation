@@ -82,7 +82,8 @@ function fixture(overrides: { os?: string; price?: number; currency?: string; mi
 const good = fixture();
 const receipt = await good.purchase(sku, { appUserId: 'customer-1' });
 assert.equal(receipt.purchaseToken, 'valid-store-token', 'Use Play purchase token for backend verification');
-assert.equal(receipt.transactionIdentifier, 'GPA.test.123');
+assert.equal(receipt.transactionIdentifier, receipt.purchaseToken,
+  'The client sends the purchase token; only Google can certify an order ID.');
 assert(good.calls.includes('purchase'));
 await good.finish(receipt.purchaseToken);
 assert.equal(good.calls.filter(x => x === 'finish').length, 1, 'Finish the consumable after server fulfillment');
