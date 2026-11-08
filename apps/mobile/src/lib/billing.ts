@@ -130,7 +130,7 @@ function toTransaction(purchase: Purchase): StoreTransaction {
   }
   return {
     productIdentifier: purchase.productId,
-    transactionIdentifier: purchase.id || token,
+    transactionIdentifier: token,
     purchaseToken: token,
     purchaseDate: new Date(purchase.transactionDate || Date.now()).toISOString(),
   };
