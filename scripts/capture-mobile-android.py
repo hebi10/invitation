@@ -13,6 +13,7 @@ import subprocess
 import tempfile
 import threading
 import time
+import urllib.error
 import urllib.request
 import xml.etree.ElementTree as ET
 
@@ -74,6 +75,30 @@ def command(*args, timeout=40, check=True):
 
 def adb(*args, **kwargs):
     return command('adb', *args, **kwargs)
+
+
+def download_verified_expo_go_apk(destination):
+    for attempt in range(4):
+        try:
+            with urllib.request.urlopen(APK_URL, timeout=90) as response:
+                with destination.open('wb') as output:
+                    shutil.copyfileobj(response, output)
+        except urllib.error.HTTPError as error:
+            destination.unlink(missing_ok=True)
+            if error.code not in (429, 500, 502, 503, 504) or attempt == 3:
+                raise
+            print(f'Expo Go APK download returned HTTP {error.code}; retrying', flush=True)
+        except (urllib.error.URLError, TimeoutError) as error:
+            destination.unlink(missing_ok=True)
+            if attempt == 3:
+                raise
+            print(f'Expo Go APK transient download error: {type(error).__name__}; retrying', flush=True)
+        else:
+            digest = hashlib.sha256(destination.read_bytes()).hexdigest()
+            if destination.stat().st_size != APK_SIZE or digest != APK_SHA256:
+                raise RuntimeError('Expo Go APK 크기 또는 SHA256이 공식 배포 파일과 다릅니다.')
+            return
+        time.sleep(min(5 * 2 ** attempt, 20))
 
 
 def save_manifest():
@@ -392,10 +417,7 @@ def main():
                 time.sleep(1)
             with tempfile.TemporaryDirectory(prefix='mobile-expo-go-') as temp:
                 apk = Path(temp) / 'expo-go.apk'
-                urllib.request.urlretrieve(APK_URL, apk)
-                digest = hashlib.sha256(apk.read_bytes()).hexdigest()
-                if apk.stat().st_size != APK_SIZE or digest != APK_SHA256:
-                    raise RuntimeError('Expo Go APK 크기 또는 SHA256이 공식 배포 파일과 다릅니다.')
+                download_verified_expo_go_apk(apk)
                 adb('install', '-r', str(apk), timeout=180)
             adb('reverse', f'tcp:{PORT}', f'tcp:{PORT}')
             adb('reverse', 'tcp:19999', 'tcp:19999')
