@@ -41,8 +41,14 @@ def open_invitation(page, theme: str):
         raise AssertionError(f"{theme}: public URL returned {resp.status if resp else 'none'}")
     page.get_by_text("김현지", exact=False).first.wait_for(timeout=25000)
     introduction = page.get_by_role("dialog", name="결혼식 초대장 인트로")
+    # Some themes mount the intro after the Firebase page text has appeared.
+    try:
+        introduction.first.wait_for(state="visible", timeout=7500)
+    except PlaywrightTimeout:
+        pass
     if introduction.count() and introduction.first.is_visible():
         page.get_by_role("button", name="건너뛰기").first.click(timeout=12000)
+        introduction.first.wait_for(state="hidden", timeout=15000)
     page.evaluate("document.fonts.ready")
     page.locator('button[aria-label^="음악 "]').first.wait_for(state="visible", timeout=22000)
     page.wait_for_timeout(300)
