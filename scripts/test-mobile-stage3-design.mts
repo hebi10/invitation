@@ -72,7 +72,9 @@ assert.match(linked, /getInvitationVisibility\(published, card\.displayPeriod\)/
 assert.match(linked, /onOpenEditor/);
 assert.match(linked, /onKakaoShare\(activeLinkedInvitationCard\)/);
 assert.match(linked, /onActivateLinkedInvitation\(item\)/);
-assert.match(linked, /onOpenPeriodExtension/);
+assert.match(linked, /onRecoverPendingPurchase/);
+assert.match(linked, /pendingExtensionSlug === activeLinkedInvitationCard\.slug/);
+assert.doesNotMatch(linked, /5,000원 · 6개월 연장/);
 assert.match(linked, /onOpenGuestbook/);
 assert.match(linked, /title="기기 연동 청첩장"/);
 assert.match(linked, /이용 기간 ·/);

@@ -1,0 +1,137 @@
+name: Invitation Play closed track preflight
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/mobile-play-closed-preflight.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  read-play-test-settings:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check existing Google Play WIF configuration
+        env:
+          PROVIDER: ${{ vars.PLAY_WORKLOAD_IDENTITY_PROVIDER }}
+          ACCOUNT: ${{ vars.PLAY_SERVICE_ACCOUNT }}
+        run: |
+          test -n "$PROVIDER" || { echo "::error::Play WIF provider is missing"; exit 1; }
+          test -n "$ACCOUNT" || { echo "::error::Play service account is missing"; exit 1; }
+      - name: Obtain short-lived Android Publisher read token
+        id: auth
+        uses: google-github-actions/auth@v3
+        with:
+          workload_identity_provider: ${{ vars.PLAY_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ vars.PLAY_SERVICE_ACCOUNT }}
+          token_format: access_token
+          access_token_scopes: https://www.googleapis.com/auth/androidpublisher
+          create_credentials_file: false
+          export_environment_variables: false
+      - name: Inspect existing closed track and sale price without changing Play releases
+        env:
+          PLAY_ACCESS_TOKEN: ${{ steps.auth.outputs.access_token }}
+        shell: bash
+        run: |
+          mkdir -p artifacts/play-closed-preflight
+          python3 - <<'PY'
+          import json, os, urllib.error, urllib.parse, urllib.request
+          from pathlib import Path
+
+          pkg = "kr.msgnote.mobileinvitation"
+          root = f"https://androidpublisher.googleapis.com/androidpublisher/v3/applications/{pkg}"
+          token = os.environ["PLAY_ACCESS_TOKEN"]
+          def call(url, method="GET", body=None):
+              req = urllib.request.Request(
+                  url, method=method,
+                  data=(json.dumps(body).encode("utf-8") if body is not None else None),
+                  headers={"Authorization": f"Bearer {token}",
+                           "Content-Type": "application/json",
+                           "Accept": "application/json"},
+              )
+              try:
+                  with urllib.request.urlopen(req, timeout=45) as response:
+                      return json.load(response)
+              except urllib.error.HTTPError as e:
+                  raise RuntimeError(f"Android Publisher API failed: {method} endpoint returned HTTP {e.code}") from None
+
+          # A new uncommitted edit is required to list tracks; NO edit.commit or upload.
+          edit = call(root + "/edits", "POST", {})
+          edit_id = edit.get("id")
+          if not edit_id:
+              raise RuntimeError("Play did not return an edit ID")
+          all_tracks = call(root + f"/edits/{urllib.parse.quote(edit_id)}/tracks").get("tracks", [])
+          excluded = {"production", "beta", "internal", "qa", "internalsharing"}
+          candidates = [t for t in all_tracks
+                        if (t.get("track") or "").lower() not in excluded
+                        and ":" not in (t.get("track") or "")]
+          closed_ids = sorted({t["track"] for t in candidates if t.get("track")})
+          if "alpha" in closed_ids:
+              selected = "alpha"
+          elif len(closed_ids) == 1:
+              selected = closed_ids[0]
+          else:
+              selected = ""
+          group_count = None
+          email_list_visibility = "Google Play API cannot read Console email lists"
+          existing_releases = None
+          if selected:
+              candidate = next(t for t in candidates if t.get("track") == selected)
+              existing_releases = [
+                  {"status": x.get("status"), "versionCodes": x.get("versionCodes")}
+                  for x in candidate.get("releases", [])
+              ]
+              try:
+                  testers = call(root + f"/edits/{urllib.parse.quote(edit_id)}/testers/{urllib.parse.quote(selected)}")
+                  group_count = len(testers.get("googleGroups") or [])
+              except RuntimeError:
+                  group_count = None
+
+          price = {"verified": False, "status": "unknown", "krw": None}
+          try:
+              product = call(root + "/inappproducts/page_creation_premium")
+              kr = (product.get("prices") or {}).get("KR") or product.get("defaultPrice") or {}
+              currency = kr.get("currency", "")
+              micros = kr.get("priceMicros")
+              amount = int(micros) // 1000000 if micros is not None and currency == "KRW" else None
+              price = {"verified": amount == 5000 and product.get("status") == "active",
+                       "status": product.get("status", "unknown"), "krw": amount}
+          except (RuntimeError, ValueError, TypeError):
+              pass
+
+          report = {
+              "package": pkg, "sourceSha": os.environ.get("GITHUB_SHA", ""),
+              "availableClosedTracks": closed_ids, "selectedExistingTrack": selected,
+              "googleGroupCount": group_count,
+              "emailListVisibility": email_list_visibility,
+              "existingReleases": existing_releases,
+              "newPurchaseProduct": "page_creation_premium",
+              "newPurchasePrice": price,
+              "changedPlayRelease": False,
+              "committedPlayEdit": False,
+          }
+          Path("artifacts/play-closed-preflight/report.json").write_text(
+              json.dumps(report, indent=2, ensure_ascii=False) + "\n", encoding="utf-8"
+          )
+          print("Existing closed track count:", len(closed_ids))
+          print("Selected closed track:", selected or "(none / ambiguous)")
+          print("Google Group count:", group_count if group_count is not None else "(not verifiable)")
+          print("Play SKU configured:", price["verified"])
+          if not selected:
+              raise SystemExit("::error::Existing closed test track could not be unambiguously identified")
+          PY
+      - name: Preserve read-only release preflight
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: invitation-play-closed-track-preflight
+          path: artifacts/play-closed-preflight/
+          if-no-files-found: warn
+          retention-days: 14

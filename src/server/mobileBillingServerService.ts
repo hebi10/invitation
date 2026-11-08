@@ -1,4 +1,4 @@
-import { DEFAULT_INVITATION_PRODUCT_TIER, INVITATION_INITIAL_DISPLAY_PERIOD_MONTHS, INVITATION_EXTENSION_DISPLAY_PERIOD_MONTHS } from '@/lib/invitationProductPolicy';
+import { DEFAULT_INVITATION_PRODUCT_TIER, INVITATION_INITIAL_DISPLAY_PERIOD_MONTHS, INVITATION_EXTENSION_DISPLAY_PERIOD_MONTHS, isLegacyMobilePurchaseDate } from '@/lib/invitationProductPolicy';
 import 'server-only';
 
 import { getAllWeddingPageSeeds } from '@/config/weddingPages';
@@ -344,6 +344,14 @@ export async function fulfillServerMobilePageCreationPurchase(
   }
 }
 
+function assertLegacyPaidTransactionDate(purchaseDate: string | null) {
+  if (isLegacyMobilePurchaseDate(purchaseDate)) return;
+  throw Object.assign(
+    new Error('신규 연장·티켓 구매는 지원하지 않습니다. 이미 결제했다면 추가 구매하지 말고 고객 문의로 확인해 주세요.'),
+    { code: 'billing-fulfillment-requires-review' }
+  );
+}
+
 export async function fulfillServerMobileTicketPackPurchase(
   purchase: MobileBillingPurchaseReceipt,
   targetPageSlug: string,
@@ -367,6 +375,7 @@ export async function fulfillServerMobileTicketPackPurchase(
   }
 
   const verifiedTransaction = await verifyRevenueCatNonSubscriptionTransaction(purchase);
+  assertLegacyPaidTransactionDate(verifiedTransaction.purchaseDate);
   purchase = { ...purchase, transactionId: verifiedTransaction.transactionIdentifier };
   const resolvedTargetEvent = await resolveStoredEventBySlug(targetPageSlug);
   if (!resolvedTargetEvent) {
@@ -426,6 +435,7 @@ export async function fulfillServerMobilePeriodExtensionPurchase(
     throw new Error('The customer does not own this invitation.');
   }
   const verifiedTransaction = await verifyRevenueCatNonSubscriptionTransaction(purchase);
+  assertLegacyPaidTransactionDate(verifiedTransaction.purchaseDate);
   const result = await firestoreBillingFulfillmentRepository.fulfillPeriodExtension({
     purchase: { ...purchase, transactionId: verifiedTransaction.transactionIdentifier },
     eventId: event.summary.eventId,

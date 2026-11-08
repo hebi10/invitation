@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { runInNewContext } from 'node:vm';
 import ts from 'typescript';
+import * as productPolicy from '../src/lib/invitationProductPolicy.ts';
 
 const source = ts.transpileModule(readFileSync('src/server/mobileBillingServerService.ts', 'utf8'), {
   compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
@@ -19,10 +20,11 @@ function loadBilling(entries: unknown[], apiKey = 'test-server-key', responseOk 
       requests += 1;
       assert.equal(url, 'https://api.revenuecat.com/v1/subscribers/customer-1');
       assert.equal(options.cache, 'no-store');
-      return { ok: responseOk, json: async () => ({ subscriber: { non_subscriptions: { ticket_pack_1: entries } } }) };
+      return { ok: responseOk, json: async () => ({ subscriber: { non_subscriptions: { ticket_pack_1: entries.map(entry => ({ purchase_date: '2026-09-21T00:00:00Z', ...entry as object })) } } }) };
     },
     require(id: string) {
       if (id === '@/lib/mobileBillingProducts') return { getMobileBillingProductDefinition: () => ({ kind: 'ticketPack', ticketCount: 1 }) };
+      if (id === '@/lib/invitationProductPolicy') return productPolicy;
       if (id === './clientEditorMobileApi') return {
         authorizeMobileClientEditorToken: async () => ({ permissions: { canManageTickets: true }, session: { ownerUid: 'customer-1', eventId: 'event-1' } }),
         hasMobileClientEditorPermission: () => true,
@@ -78,7 +80,7 @@ await assert.rejects(refunded.run(), /could not be verified/);
 console.log('real Google Play server verification checks passed (no external requests)');
 
 const products = await import('../src/lib/mobileBillingProducts.ts');
-const productPolicy = await import('../src/lib/invitationProductPolicy.ts');
+
 for (const productId of ['page_creation_premium', 'page_creation_standard', 'page_creation_deluxe'] as const) {
   let createdInput: { productTier: string; initialDisplayPeriodMonths: number } | undefined;
   const creationExports: Record<string, unknown> = {};

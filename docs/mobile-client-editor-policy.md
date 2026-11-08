@@ -90,8 +90,8 @@
   - `apps/mobile/src/features/manage/components/ManageEditorStepContent.tsx`
   - `apps/mobile/src/features/manage/components/steps/ImagesEditorStep.tsx`
 - 신규 판매 상품은 `page_creation_premium` 5,000원 하나이며, 모든 디자인과 기능을 포함한다.
-- 신규 제작은 결제 확인 시 6개월을 제공한다. 기존 청첩장의 유료 기간 연장은 같은 SKU를 새로 구매하여 6개월 추가한다.
-- 기간 연장에서는 고객 UID·이메일 인증·청첩장 소유권을 확인하고, Google Play/RevenueCat 영수증 검증 후 Firestore 트랜잭션으로 기간과 결제 이행 기록을 함께 저장한다.
+- 신규 제작은 결제 확인 시 6개월을 제공한다. 신규 유료 기간 연장·티켓 상품을 판매하지 않으며 과거에 이미 결제된 거래의 복구 권리만 보존한다.
+- 기존 미처리 거래 복구 시 고객 UID·이메일 인증·청첩장 소유권 및 RevenueCat의 실제 구매 시각을 검증하고, 결제 기록과 Firestore 지급의 멱등성을 보존한다. 정책 전환 구매 시각 이후의 신규 연장·티켓 거래는 신규 지급하지 않고 고객 지원으로 확인한다.
 - 과거 티켓팩 구매 기록과 `customerWallets/{uid}/ledger` 내역은 삭제하지 않는다. 이전 앱의 구매 이행 및 호환 서버 로직은 기존 권리 보존을 위해 유지하되, 새 앱에서는 구매·이동·사용 UI를 제공하지 않는다.
   - `src/server/mobileBillingServerService.ts`
   - `src/server/repositories/billingFulfillmentRepository.ts`
@@ -112,16 +112,16 @@
 - 모바일 생성 결제의 `appUserId`는 Firebase Auth 고객 UID를 사용한다.
 - 생성 이행 API는 Firebase ID 토큰을 검증한 뒤 `ownerUid`를 이벤트에 연결하므로, 모바일에서 만든 청첩장도 PC `/my-invitations`에 바로 노출된다.
 - 개발 환경을 포함해 데모 결제와 검증 우회는 허용하지 않는다. Android 앱의 Google Play 구매와 RevenueCat 서버 검증이 모두 완료된 거래만 처리한다. 키가 없거나 Test Store 키이면 구매를 차단한다.
-- 모바일 신규 제작과 유료 기간 연장은 모두 PREMIUM 단일 상품 5,000원이다. 티켓팩 신규 판매는 종료하며 과거 구매 기록만 호환 관리한다.
+- 모바일 신규 제작은 PREMIUM 단일 상품 5,000원이며 기본 이용 기간 6개월이다. 신규 유료 기간 연장과 티켓팩 신규 판매는 종료하며 과거 구매 기록만 호환 관리한다.
 
 
-## 결제 이후 제작 및 기간 연장
+## 결제 이후 제작 및 기존 거래 복구
 - 프리미엄 5,000원에는 생성일부터 기본 6개월이 포함된다. 제작 중인 기간도 포함하며 기존 청첩장의 종료일은 변경하지 않는다. 신규 종료일은 PC·모바일 공통으로 UTC 시각을 유지한 달력 기준 6개월 뒤이며, 같은 날짜가 없으면 해당 월 마지막 날로 맞춘다.
 - 결제 완료 안내에서 제작을 시작하고, 저장 → 편집자 미리보기 → 공개 → 공유 순서로 진행한다.
 - 미처리 결제는 동일 계정·API 환경에서 저장된 원래 입력과 영수증으로 복구하며 추가 구매를 실행하지 않는다.
 - 모바일 계정 페이지는 `from=mobile`일 때 고정 앱 복귀 링크를 제공하며 임의 redirect URL은 받지 않는다.
 - `POST /api/mobile/client-editor/pages/[slug]/preview`는 인증된 세션에서 최대 15분의 읽기 전용 미리보기 토큰을 발급한다. 앱은 토큰을 URL fragment로 전달하고 브라우저는 즉시 제거한다.
 - 같은 경로의 GET은 미리보기 토큰과 원본 세션의 만료·폐기·이벤트·소유자를 검사한다. 실제 공개 설정을 변경하지 않으며 방명록 작성과 외부 공유를 비활성화한다.
-- 새 기간 연장은 `POST /api/mobile/billing/fulfill`의 `extendInvitationPeriod`로 결제 영수증을 검증하고, 서버에서 거래당 한 번만 6개월 추가한다. 유효한 기간이 남아 있으면 현재 종료일을 기준으로, 이미 종료되었다면 연장 시점을 기준으로 계산한다.
+- 기존 미처리 연장·티켓 영수증은 `POST /api/mobile/billing/fulfill`의 호환 경로에서 실제 구매 시각이 정책 전환 전인지 확인한 뒤 기존 권리를 멱등하게 복구한다. 신규 연장 구매 CTA와 SKU 구매 호출은 제거했으며, 처리 불가하거나 영수증 날짜가 없는 거래는 신규 결제 없이 고객 지원의 검토를 요구한다.
 - 이전 앱의 `redeemDisplayPeriodTicket` 및 `mobileTicketExtensions`는 과거 구매자의 잔여 티켓 사용을 위한 호환 경로로만 유지한다.
 - 기존 모바일 `adjustTicketCount`, `setDisplayPeriod`, `extendDisplayPeriod` 요청은 409로 차단한다. 관리자 서버 기능은 유지한다. 서버와 새 앱을 함께 배포해야 한다.

@@ -132,7 +132,7 @@ export default function SettingsScreen() {
 
       <SectionCard
         title="이용 안내"
-        description="처음 만들기부터 기간 연장까지 궁금한 항목을 선택해 확인하세요."
+        description="새 청첩장 만들기와 이용 기간, 고객 지원 내용을 확인하세요."
       >
         <View style={[styles.productSummary, { backgroundColor: palette.surfaceMuted, borderColor: palette.cardBorder }]}>
           <AppText variant="caption" color={palette.textMuted}>프리미엄 청첩장 · 단일 상품</AppText>
@@ -143,7 +143,7 @@ export default function SettingsScreen() {
             </AppText>
           </View>
           <AppText variant="caption" color={palette.textMuted}>
-            웨딩 디자인 5종 · 결제 후 비공개 초안 생성 · 연장도 5,000원에 6개월
+            웨딩 디자인 5종 · 결제 후 비공개 초안 생성 · 이용 기간 6개월
           </AppText>
         </View>
         {guideSections.map((section) => (

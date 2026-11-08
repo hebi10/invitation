@@ -13,6 +13,7 @@ import subprocess
 import tempfile
 import threading
 import time
+import urllib.error
 import urllib.request
 import xml.etree.ElementTree as ET
 
@@ -74,6 +75,30 @@ def command(*args, timeout=40, check=True):
 
 def adb(*args, **kwargs):
     return command('adb', *args, **kwargs)
+
+
+def download_verified_expo_go_apk(destination):
+    for attempt in range(4):
+        try:
+            with urllib.request.urlopen(APK_URL, timeout=90) as response:
+                with destination.open('wb') as output:
+                    shutil.copyfileobj(response, output)
+        except urllib.error.HTTPError as error:
+            destination.unlink(missing_ok=True)
+            if error.code not in (429, 500, 502, 503, 504) or attempt == 3:
+                raise
+            print(f'Expo Go APK download returned HTTP {error.code}; retrying', flush=True)
+        except (urllib.error.URLError, TimeoutError) as error:
+            destination.unlink(missing_ok=True)
+            if attempt == 3:
+                raise
+            print(f'Expo Go APK transient download error: {type(error).__name__}; retrying', flush=True)
+        else:
+            digest = hashlib.sha256(destination.read_bytes()).hexdigest()
+            if destination.stat().st_size != APK_SIZE or digest != APK_SHA256:
+                raise RuntimeError('Expo Go APK 크기 또는 SHA256이 공식 배포 파일과 다릅니다.')
+            return
+        time.sleep(min(5 * 2 ** attempt, 20))
 
 
 def save_manifest():
@@ -284,7 +309,7 @@ def capture_responsive_views():
         (430, [
             ('settings', 'settings', ['설정', '화면 설정']),
             ('home', 'design-check-home', ['Invitation', 'MODERN WEDDING EDITORIAL']),
-            ('renew', 'design-check-modals?kind=renew', ['이용 기간 연장', '연장 결제 확인']),
+            ('renew', 'design-check-modals?kind=renew-pending', ['이전 결제 복구', '이전 결제 이어서 처리']),
         ]),
         (600, [
             ('home', 'design-check-home', ['Invitation', 'MODERN WEDDING EDITORIAL']),
@@ -313,7 +338,7 @@ def capture_responsive_views():
                 elif label == 'editor':
                     audit_visible_action(name, screen_tree, '저장 후 다음')
                 elif label == 'renew':
-                    audit_visible_action(name, screen_tree, '5,000원 결제로 6개월 연장')
+                    audit_visible_action(name, screen_tree, '이전 결제 이어서 처리')
                 if label in {'editor', 'checkout', 'preview', 'renew'}:
                     # QA 전용 전면 모달은 경로 이동 후에도 이전 화면 위에 남을 수 있다.
                     # 독립 화면 검증을 위해 Expo Go만 초기화한다. 저장·계정·결제 상태는 사용하지 않는다.
@@ -392,10 +417,7 @@ def main():
                 time.sleep(1)
             with tempfile.TemporaryDirectory(prefix='mobile-expo-go-') as temp:
                 apk = Path(temp) / 'expo-go.apk'
-                urllib.request.urlretrieve(APK_URL, apk)
-                digest = hashlib.sha256(apk.read_bytes()).hexdigest()
-                if apk.stat().st_size != APK_SIZE or digest != APK_SHA256:
-                    raise RuntimeError('Expo Go APK 크기 또는 SHA256이 공식 배포 파일과 다릅니다.')
+                download_verified_expo_go_apk(apk)
                 adb('install', '-r', str(apk), timeout=180)
             adb('reverse', f'tcp:{PORT}', f'tcp:{PORT}')
             adb('reverse', 'tcp:19999', 'tcp:19999')
@@ -502,11 +524,11 @@ def main():
                 ('modal-payment', 'payment', ['Google Play 결제', '결제 예정 금액']),
                 ('modal-payment-pending', 'payment-pending', ['Google Play 결제', '이전 결제 이어서 처리']),
                 ('modal-payment-error', 'payment-error', ['Google Play 결제 확인', '로그인 확인에 실패했습니다']),
-                ('modal-renew', 'renew', ['이용 기간 연장', '연장 결제 확인']),
-                ('modal-renew-pending', 'renew-pending', ['이용 기간 연장', '미처리 결제가 있습니다']),
-                ('modal-renew-other', 'renew-other', ['이용 기간 연장', '대상 청첩장']),
-                ('modal-renew-loading', 'renew-loading', ['이용 기간 연장', '결제 예정 금액']),
-                ('modal-renew-no-account', 'renew-no-account', ['이용 기간 연장', '소유자 계정']),
+                ('modal-renew', 'renew', ['이전 결제 복구', '기존 거래 확인']),
+                ('modal-renew-pending', 'renew-pending', ['이전 결제 복구', '이전 결제 이어서 처리']),
+                ('modal-renew-other', 'renew-other', ['이전 결제 복구', '현재 청첩장과 이전 결제 대상이 다릅니다']),
+                ('modal-renew-loading', 'renew-loading', ['이전 결제 복구', '기존 거래 확인']),
+                ('modal-renew-no-account', 'renew-no-account', ['이전 결제 복구', '이전에 결제한 고객 계정']),
                 ('modal-preview', 'preview', ['청첩장 미리보기', '디자인 샘플']),
                 ('modal-share', 'share', ['카카오톡 카드 공유', '디자인 샘플']),
                 ('modal-onboarding', 'onboarding', ['운영 시작 안내', '기본 문구와 이름']),
@@ -518,7 +540,14 @@ def main():
                 ('modal-risk-error', 'risk-error', ['작업 확인', '세션 확인에 실패했습니다']),
                 ('modal-preparing', 'preparing', ['청첩장 편집 준비', '편집 정보를 불러오는 중입니다.']),
             ]:
-                wait_screen(name, f'design-check-modals?kind={kind}', expected)
+                screen_tree = wait_screen(name, f'design-check-modals?kind={kind}', expected)
+                if kind.startswith('renew'):
+                    screen_labels = ' '.join(
+                        (node.get('text') or node.get('content-desc') or '')
+                        for node in screen_tree.iter('node')
+                    )
+                    if '5,000원 결제로 6개월 연장' in screen_labels or '연장 결제 확인' in screen_labels:
+                        raise RuntimeError(f'{name}: 종료된 기간 연장 상품 안내가 표시됩니다.')
             onboarding_error_tree = wait_screen(
                 'modal-onboarding-error-ready', 'design-check-modals?kind=onboarding-error',
                 ['기본 문구와 이름', '다음'],

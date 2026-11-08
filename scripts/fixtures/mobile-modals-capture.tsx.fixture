@@ -109,10 +109,10 @@ export default function ModalDesignCheck() {
       visible onClose={noop} palette={palette} fontScale={fontScale}
       targetName="김도윤 · 이서연 결혼식"
       customerAuthenticated={kind !== 'renew-no-account'}
-      loading={kind === 'renew-loading'} recovering={false}
-      pendingTargetSlug={kind === 'renew-pending' ? 'sample-wedding' : kind === 'renew-other' ? 'another-wedding' : null}
+      recovering={kind === 'renew-loading'}
+      pendingTargetSlug={kind === 'renew-pending' || kind === 'renew-loading' ? 'sample-wedding' : kind === 'renew-other' ? 'another-wedding' : null}
       currentPageSlug="sample-wedding"
-      onPurchase={noop} onRecover={noop}
+      onRecover={noop}
     />;
   }
 

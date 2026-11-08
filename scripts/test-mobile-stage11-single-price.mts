@@ -30,10 +30,13 @@ const service = read('src/server/mobileBillingServerService.ts');
 for (const source of [create, manage, renewal, guide]) {
   assert.doesNotMatch(source, /티켓 구매|티켓 사용|보유 티켓|ticket_pack_/, 'No ticket sale may remain in the customer UI');
 }
-assert.match(renewal, /INVITATION_EXTENSION_DISPLAY_PERIOD_MONTHS/);
-assert.match(renewal, /INVITATION_PREMIUM_PRICE_LABEL/);
-assert.match(manage, /onOpenPeriodExtension=/);
+assert.doesNotMatch(renewal, /INVITATION_EXTENSION_DISPLAY_PERIOD_MONTHS/);
+assert.doesNotMatch(renewal, /INVITATION_PREMIUM_PRICE_LABEL/);
+assert.match(manage, /onRecoverPendingPurchase=\{openExtensionModal\}/);
+assert.doesNotMatch(manage, /handlePurchaseExtension|onOpenPeriodExtension=/);
 assert.match(bill, /MOBILE_BILLING_PRODUCT_IDS\.includes\(productId\)/);
+assert.doesNotMatch(renewal, /onPurchase|5,000원 결제로 6개월 연장/);
+assert.match(service, /assertLegacyPaidTransactionDate\(verifiedTransaction\.purchaseDate\)/);
 assert.match(route, /verifyCustomerRequest\(request, \{ requireVerified: true \}\)/);
 assert.match(route, /getCustomerEventOwnershipSnapshot\(customer\.uid, targetPageSlug\)/);
 assert.match(route, /canOpenOwnedWeddingPage\(ownership, targetPageSlug\)/);
@@ -164,4 +167,4 @@ assert.ok(expired.endDate.getTime() >= lower && expired.endDate.getTime() <= upp
   'Expired invitation should renew from now, not the past end date');
 assert.equal(records.get('events/event1')?.version, 2);
 
-console.log('Stage 11: single 5,000 KRW SKU, atomic six-month renewal, replay/ownership/legacy safety passed');
+console.log('Stage 11: 5,000 KRW single creation SKU, retired new renewal purchase and historic receipt atomic safety passed');

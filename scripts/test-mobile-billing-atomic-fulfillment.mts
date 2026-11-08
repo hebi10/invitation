@@ -105,6 +105,7 @@ function fixture() {
     if (id === './repositories/billingFulfillmentRepository') return repository;
     if (id === './repositories/eventRepository') return eventRepository;
     if (id === '@/lib/mobileBillingProducts') return { getMobileBillingProductDefinition: () => ({ kind: 'ticketPack', ticketCount: 1 }) };
+    if (id === '@/lib/invitationProductPolicy') return { isLegacyMobilePurchaseDate: (value: string) => value === '2026-09-21T00:00:00Z' };
     if (id === './clientEditorMobileApi') return {
       authorizeMobileClientEditorToken: async (slug: string) => authorized ? {
         permissions: { canManageTickets }, session: { ownerUid: 'customer-1', eventId: `${slug}-id` },
@@ -121,7 +122,7 @@ function fixture() {
   }, {
     process: { env: { REVENUECAT_SERVER_API_KEY: 'local-test-key' } },
     fetch: async () => ({ ok: true, json: async () => ({ subscriber: { non_subscriptions: {
-      ticket_pack_1: [{ id: 'revenuecat-alias', store_transaction_id: transactionId, store: 'play_store' }],
+      ticket_pack_1: [{ id: 'revenuecat-alias', store_transaction_id: transactionId, store: 'play_store', purchase_date: '2026-09-21T00:00:00Z' }],
     } } }) }),
   });
   const fulfill = service.fulfillServerMobileTicketPackPurchase as (

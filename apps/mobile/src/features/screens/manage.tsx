@@ -242,12 +242,10 @@ export default function ManageScreen() {
 
   const {
     extensionModalVisible,
-    isPurchasingExtension,
     pendingExtensionSlug,
     isRecoveringExtension,
     openExtensionModal,
     closeExtensionModal,
-    handlePurchaseExtension,
     handleRecoverExtension,
   } = usePeriodExtensionPurchase({
     activeLinkedInvitationCard,
@@ -611,7 +609,8 @@ export default function ManageScreen() {
           onOpenEditor={() => void invitationForm.openEditorModal()}
           onOpenUrl={handleOpenUrl}
           onTogglePublished={() => void invitationForm.handleTogglePublished()}
-          onOpenPeriodExtension={openExtensionModal}
+          pendingExtensionSlug={pendingExtensionSlug}
+          onRecoverPendingPurchase={openExtensionModal}
           onCopyPublicUrl={(card) => void handleCopyPublicUrl(card)}
           onKakaoShare={handleOpenKakaoShare}
           onOpenInApp={() => void handleOpenInApp()}
@@ -844,11 +843,9 @@ export default function ManageScreen() {
         fontScale={fontScale}
         targetName={activeLinkedInvitationCard?.displayName || activeLinkedInvitationCard?.slug || '청첩장'}
         customerAuthenticated={Boolean(customerSession)}
-        loading={isPurchasingExtension}
         recovering={isRecoveringExtension}
         pendingTargetSlug={pendingExtensionSlug}
         currentPageSlug={activeLinkedInvitationCard?.slug ?? null}
-        onPurchase={() => void handlePurchaseExtension()}
         onRecover={() => void handleRecoverExtension()}
       />
 

@@ -137,11 +137,11 @@ async function main() {
     failures,
     !ticketModalSource.includes('onApplyThemeChange') &&
       !ticketModalSource.includes('onPurchaseTargetTheme') &&
-      ticketModalSource.includes('onPurchase') &&
+      !ticketModalSource.includes('onPurchase') &&
       ticketModalSource.includes('onRecover') &&
-      ticketModalSource.includes('INVITATION_EXTENSION_DISPLAY_PERIOD_MONTHS') &&
-      !ticketModalSource.includes('티켓'),
-    'The period extension modal must only offer 5,000 KRW for six months, without tickets or extra design purchases.'
+      ticketModalSource.includes('이전 결제 복구') &&
+      !ticketModalSource.includes('5,000원 결제로 6개월 연장'),
+    'The legacy recovery modal must not sell extensions or ticket packs.'
   );
 
   selectableThemes.forEach((themeKey) => {
