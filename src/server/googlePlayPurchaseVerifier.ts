@@ -85,10 +85,12 @@ export function interpretGooglePlayPurchase(
   if (details?.quantity !== undefined && details.quantity !== 1) {
     throw new Error('The Google Play purchase could not be verified yet.');
   }
-  if (details?.refundableQuantity !== undefined && details.refundableQuantity !== 1) {
+  if (details?.refundableQuantity !== 1 ||
+      (details.consumptionState !== 'CONSUMPTION_STATE_YET_TO_BE_CONSUMED' &&
+       details.consumptionState !== 'CONSUMPTION_STATE_CONSUMED')) {
     throw new Error('The Google Play purchase could not be verified yet.');
   }
-  const alreadyConsumed = details?.consumptionState === 'CONSUMPTION_STATE_CONSUMED';
+  const alreadyConsumed = details.consumptionState === 'CONSUMPTION_STATE_CONSUMED';
   if (alreadyConsumed && !options.allowConsumed) {
     throw new Error('The Google Play purchase could not be verified yet.');
   }
