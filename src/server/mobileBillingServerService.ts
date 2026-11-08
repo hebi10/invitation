@@ -1,6 +1,8 @@
 import { DEFAULT_INVITATION_PRODUCT_TIER, INVITATION_INITIAL_DISPLAY_PERIOD_MONTHS, INVITATION_EXTENSION_DISPLAY_PERIOD_MONTHS, isLegacyMobilePurchaseDate } from '@/lib/invitationProductPolicy';
 import 'server-only';
 
+import { verifyGooglePlayOneTimePurchase } from './googlePlayPurchaseVerifier';
+
 import { getAllWeddingPageSeeds } from '@/config/weddingPages';
 import { DEFAULT_INVITATION_THEME, isInvitationThemeKey } from '@/lib/invitationThemes';
 import {
@@ -45,6 +47,7 @@ type MobileBillingPurchaseReceipt = {
   appUserId: string;
   productId: MobileBillingProductId;
   transactionId: string;
+  purchaseToken?: string;
 };
 
 type MobileBillingCreatePageInput = {
@@ -58,17 +61,6 @@ type MobileBillingCreatePageInput = {
   ownerEmail?: string | null;
   ownerDisplayName?: string | null;
 };
-
-type RevenueCatTransactionRecord = {
-  revenueCatIdentifier: string | null;
-  purchaseDate: string | null;
-  productIdentifier: string;
-  transactionIdentifier: string;
-};
-
-function getRevenueCatApiKey() {
-  return process.env.REVENUECAT_SERVER_API_KEY?.trim() ?? '';
-}
 
 async function getBillingFulfillmentRecord(transactionId: string) {
   return firestoreBillingFulfillmentRepository.findByTransactionId(transactionId);
@@ -93,110 +85,6 @@ async function updateBillingFulfillmentRecord(
 
 async function markBillingFulfillmentFailed(transactionId: string, error: string) {
   await firestoreBillingFulfillmentRepository.markFailed(transactionId, error);
-}
-
-function normalizeRevenueCatTransactionRecord(
-  input: unknown,
-  productId: MobileBillingProductId
-): RevenueCatTransactionRecord | null {
-  if (!input || typeof input !== 'object') {
-    return null;
-  }
-
-  const record = input as Record<string, unknown>;
-  if (record.store !== 'play_store' || record.refunded_at) {
-    return null;
-  }
-
-  // REST v1 identifies the product through the non_subscriptions map key.
-  const productIdentifier =
-    typeof record.productIdentifier === 'string' && record.productIdentifier.trim()
-      ? record.productIdentifier.trim()
-      : typeof record.product_id === 'string' && record.product_id.trim()
-        ? record.product_id.trim()
-        : productId;
-  // Both the SDK history alias and checkout order ID resolve to this one lock key.
-  // Wait for the store ID if RC has not populated it yet; never lock an RC alias.
-  const transactionIdentifier =
-    typeof record.store_transaction_id === 'string' && record.store_transaction_id.trim()
-      ? record.store_transaction_id.trim()
-      : typeof record.id === 'string' && record.id.trim().startsWith('GPA.')
-        ? record.id.trim()
-        : '';
-
-  if (!productIdentifier || !transactionIdentifier) {
-    return null;
-  }
-
-  return {
-    revenueCatIdentifier: typeof record.id === 'string' ? record.id.trim() : null,
-    productIdentifier,
-    transactionIdentifier,
-    purchaseDate:
-      typeof record.purchaseDate === 'string' && record.purchaseDate.trim()
-        ? record.purchaseDate.trim()
-        : typeof record.purchase_date === 'string' && record.purchase_date.trim()
-          ? record.purchase_date.trim()
-          : null,
-  };
-}
-
-async function verifyRevenueCatNonSubscriptionTransaction(
-  purchase: MobileBillingPurchaseReceipt
-) {
-  if (purchase.transactionId.startsWith('mock_')) {
-    throw new Error('The Google Play purchase could not be verified yet.');
-  }
-
-  const apiKey = getRevenueCatApiKey();
-  if (!apiKey) {
-    throw new Error('REVENUECAT_SERVER_API_KEY is required for purchase verification.');
-  }
-
-  const response = await fetch(
-    `https://api.revenuecat.com/v1/subscribers/${encodeURIComponent(purchase.appUserId)}`,
-    {
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        'Content-Type': 'application/json',
-      },
-      cache: 'no-store',
-    }
-  );
-
-  if (!response.ok) {
-    throw new Error('RevenueCat purchase verification failed.');
-  }
-
-  const payload = (await response.json().catch(() => null)) as
-    | {
-        subscriber?: {
-          non_subscriptions?: Record<string, unknown[]>;
-        };
-      }
-    | null;
-
-  const matchingTransactions = Array.isArray(
-    payload?.subscriber?.non_subscriptions?.[purchase.productId]
-  )
-    ? payload?.subscriber?.non_subscriptions?.[purchase.productId] ?? []
-    : [];
-
-  const verifiedTransaction = matchingTransactions
-    .map((entry) => normalizeRevenueCatTransactionRecord(entry, purchase.productId))
-    .filter((entry): entry is RevenueCatTransactionRecord => entry !== null)
-    .find(
-      (entry) =>
-        entry.productIdentifier === purchase.productId &&
-        (entry.transactionIdentifier === purchase.transactionId ||
-          entry.revenueCatIdentifier === purchase.transactionId)
-    );
-
-  if (!verifiedTransaction) {
-    throw new Error('The Google Play purchase could not be verified yet.');
-  }
-
-  return verifiedTransaction;
 }
 
 async function buildMobileDraftCreationResponse(
@@ -269,7 +157,7 @@ export async function fulfillServerMobilePageCreationPurchase(
     throw new Error('The selected Google Play product is not a page creation SKU.');
   }
 
-  const verifiedTransaction = await verifyRevenueCatNonSubscriptionTransaction(purchase);
+  const verifiedTransaction = await verifyGooglePlayOneTimePurchase(purchase);
   purchase = { ...purchase, transactionId: verifiedTransaction.transactionIdentifier };
   const lock = await acquireBillingFulfillmentLock(purchase, definition);
   const lockRecord = lock.record;
@@ -374,7 +262,7 @@ export async function fulfillServerMobileTicketPackPurchase(
     throw new Error(buildMissingMobileClientEditorPermissionError('canManageTickets'));
   }
 
-  const verifiedTransaction = await verifyRevenueCatNonSubscriptionTransaction(purchase);
+  const verifiedTransaction = await verifyGooglePlayOneTimePurchase(purchase);
   assertLegacyPaidTransactionDate(verifiedTransaction.purchaseDate);
   purchase = { ...purchase, transactionId: verifiedTransaction.transactionIdentifier };
   const resolvedTargetEvent = await resolveStoredEventBySlug(targetPageSlug);
@@ -434,7 +322,7 @@ export async function fulfillServerMobilePeriodExtensionPurchase(
   if (!event || event.summary.ownerUid !== ownerUid || event.summary.eventType !== 'wedding') {
     throw new Error('The customer does not own this invitation.');
   }
-  const verifiedTransaction = await verifyRevenueCatNonSubscriptionTransaction(purchase);
+  const verifiedTransaction = await verifyGooglePlayOneTimePurchase(purchase);
   assertLegacyPaidTransactionDate(verifiedTransaction.purchaseDate);
   const result = await firestoreBillingFulfillmentRepository.fulfillPeriodExtension({
     purchase: { ...purchase, transactionId: verifiedTransaction.transactionIdentifier },
