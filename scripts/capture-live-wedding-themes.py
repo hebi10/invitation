@@ -35,6 +35,11 @@ with sync_playwright() as p:
     try:
         for theme, short in THEMES:
             page = context.new_page()
+            music_responses = []
+            page.on("response", lambda response: music_responses.append({
+                "status": response.status,
+                "path": response.url.split("?")[0].split("/o/")[-1][:180],
+            }) if "music%2F" in response.url else None)
             url = f"{BASE}/{SLUG}/{theme}/"
             response = page.goto(url, wait_until="domcontentloaded", timeout=60000)
             if response is None or response.status != 200:
@@ -95,15 +100,30 @@ with sync_playwright() as p:
                   },
                   viewportWidth: window.innerWidth,
                   scrollWidth: document.documentElement.scrollWidth,
+                  audio: [...document.querySelectorAll('audio')].map(a => ({
+                    readyState: a.readyState, error: a.error?.code ?? null,
+                    paused: a.paused
+                  })),
+                  visibleLabels: [...document.querySelectorAll('button[aria-label]')]
+                    .map(node => node.getAttribute('aria-label')).filter(label =>
+                      label?.includes('음악') || label?.includes('닫기')).slice(0, 20),
+                  componentNodes: [...document.querySelectorAll('[class*="BackgroundMusic_"]')]
+                    .map(node => ({name: node.className,
+                      display: getComputedStyle(node).display})).slice(0, 12),
+                  bodyTail: document.body.innerText.slice(-280)
                 };
             }""")
+            audit["issues"] = []
             if not audit["music"]:
-                raise RuntimeError(f"{theme}: stage1 music control is missing")
-            control = audit["music"]
-            if control["width"] != 44 or control["height"] != 44 or control["y"] > 80:
-                raise RuntimeError(f"{theme}: stage1 music control not in top 44px dock: {control}")
+                audit["issues"].append("stage1 music control missing")
+            else:
+                control = audit["music"]
+                if control["width"] != 44 or control["height"] != 44 or control["y"] > 80:
+                    audit["issues"].append(f"music control not in top 44px dock: {control}")
             if audit["scrollWidth"] > audit["viewportWidth"] + 1:
-                raise RuntimeError(f"{theme}: unexpected horizontal overflow at 390px")
+                audit["issues"].append("unexpected horizontal overflow at 390px")
+            audit["musicResponses"] = music_responses[:8]
+            print("STAGE1_AUDIT", theme, json.dumps(audit, ensure_ascii=False), flush=True)
 
             anchor_results = []
             for target_id in ("wedding-gallery", "wedding-info", "wedding-location"):
@@ -124,9 +144,9 @@ with sync_playwright() as p:
                     anchor_results.append({"id": target_id, "status": "error", "reason": str(exc)[:150]})
             for landing in anchor_results:
                 if landing["status"] != "checked" or not 55 <= landing.get("landingTop", -1) <= 180:
-                    raise RuntimeError(f"{theme}: quick link landing outside accessible area: {landing}")
+                    audit["issues"].append(f"quick link landing outside accessible area: {landing}")
             if theme in ("simple", "gyeol") and audit["activeGalleryPhotoState"] not in ("ready", "loading"):
-                raise RuntimeError(f"{theme}: gallery photo has no valid active loading state: {audit['activeGalleryPhotoState']}")
+                audit["issues"].append(f"gallery photo has no valid active loading state: {audit['activeGalleryPhotoState']}")
 
             small_viewports = []
             for width in (320, 430):
@@ -141,7 +161,7 @@ with sync_playwright() as p:
                     documentWidth: document.documentElement.scrollWidth
                 })""")
                 if dimensions["documentWidth"] > dimensions["viewportWidth"] + 1:
-                    raise RuntimeError(f"{theme}: horizontal overflow at {width}px: {dimensions}")
+                    audit["issues"].append(f"horizontal overflow at {width}px: {dimensions}")
                 small_viewports.append({"file": viewport_file, **dimensions})
             page.set_viewport_size({"width": 390, "height": 844})
             info = page.evaluate("""() => ({
@@ -187,3 +207,9 @@ report = dict(capturedAt=datetime.now(timezone.utc).isoformat(),
 (OUT / "capture-manifest.json").write_text(
     json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 print("ALL_FIVE_COMPLETE", flush=True)
+for candidate in captures:
+    warnings = candidate["stage1Audit"].get("issues", [])
+    if warnings:
+        print("STAGE1_ISSUES", candidate["theme"], json.dumps(warnings, ensure_ascii=False), flush=True)
+if any(candidate["stage1Audit"].get("issues") for candidate in captures):
+    raise RuntimeError("Stage1 live browser QA detected a regression; see capture-manifest.json")
