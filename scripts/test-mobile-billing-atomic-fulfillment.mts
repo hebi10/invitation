@@ -136,6 +136,10 @@ function fixture() {
   ) => Promise<BillingResult>;
   return {
     run: (slug = 'page', receipt = purchase) => fulfill(receipt, slug, 'local-test-session'),
+    lock: (kind: 'pageCreation' | 'ticketPack') =>
+      (repository.firestoreBillingFulfillmentRepository as {
+        acquireLock(receipt: typeof purchase, kind: string): Promise<{ acquired: boolean; record: Data }>;
+      }).acquireLock(purchase, kind),
     records,
     balance: (slug = 'page') => (records.get(`events/${slug}-id`)!.stats as Data).ticketBalance,
     auth: (value: boolean) => { authorized = value; },
@@ -146,6 +150,15 @@ function fixture() {
 }
 
 const checks: Array<[string, () => Promise<void>]> = [
+  ['Failed page creation must not be retried because a draft may already exist', async () => {
+    const state = fixture();
+    state.records.set(billingPath, { ...purchase, kind: 'pageCreation', status: 'failed' });
+    const before = structuredClone(state.records.get(billingPath));
+    const lock = await state.lock('pageCreation');
+    assert.equal(lock.acquired, false, 'An uncertain paid page creation must require review rather than run twice');
+    assert.equal(lock.record.status, 'failed');
+    assert.deepEqual(state.records.get(billingPath), before, 'The failed grant must not be silently reactivated');
+  }],
   ['Expired session leaves the paid transaction available for an authorized retry', async () => {
     const state = fixture();
     state.auth(false);
