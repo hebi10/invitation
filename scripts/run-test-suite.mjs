@@ -24,6 +24,7 @@ const core = [
   'test-mobile-stage11-single-price',
   'test-mobile-stage13-layout-density',
   'test-background-music-playback',
+  'test-wedding-music-recovery',
   'test-gift-info-copy',
   'test-music-editor',
   'test-wedding-intro-settings',

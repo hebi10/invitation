@@ -21,6 +21,7 @@ import { getStorageDownloadUrl, type UploadedImage } from '@/services/imageServi
 import { getInvitationPageBySlug } from '@/services/invitationPageService';
 import type { InvitationPage } from '@/types/invitationPage';
 
+import { resolveWeddingMusicDownloadUrl } from './weddingMusicRecovery';
 import {
   getWeddingThemeDefinition,
   type WeddingInvitationRouteOptions,
@@ -528,10 +529,20 @@ export function useWeddingInvitationState(
     }
 
     const musicStoragePath = pageConfig.musicStoragePath.trim();
+    const musicCategoryId = pageConfig.musicCategoryId;
+    const musicTrackId = pageConfig.musicTrackId;
     let cancelled = false;
 
     const resolveMusicUrl = async () => {
-      const downloadUrl = await getStorageDownloadUrl(musicStoragePath);
+      const downloadUrl = await resolveWeddingMusicDownloadUrl(
+        {
+          storagePath: musicStoragePath,
+          categoryId: musicCategoryId,
+          trackId: musicTrackId,
+        },
+        getStorageDownloadUrl,
+        () => cancelled
+      );
       if (cancelled) return;
       if (!downloadUrl) {
         setMusicLoadError(true);
@@ -565,6 +576,8 @@ export function useWeddingInvitationState(
     options.allowStorageImages,
     pageConfig?.musicEnabled,
     pageConfig?.musicStoragePath,
+    pageConfig?.musicCategoryId,
+    pageConfig?.musicTrackId,
     pageConfig?.musicUrl,
     musicLoadAttempt,
   ]);
