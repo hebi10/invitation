@@ -16,7 +16,7 @@ type Transaction = {
 type BillingResult = { success: boolean; ticketCount: number };
 const transactionId = 'GPA.atomic-ticket-test';
 const billingPath = `billingFulfillments/${transactionId}`;
-const purchase = { appUserId: 'customer-1', productId: 'ticket_pack_1', transactionId };
+const purchase = { appUserId: 'customer-1', productId: 'ticket_pack_1', transactionId, purchaseToken: 'google-test-token' };
 
 function loadModule(file: string, requireModule: (id: string) => unknown, globals: Data = {}) {
   const exports: Data = {};
@@ -102,6 +102,12 @@ function fixture() {
       getTicketCountByPageSlug: (slug: string) => Promise<number>;
     };
   const service = loadModule('src/server/mobileBillingServerService.ts', (id) => {
+    if (id === './googlePlayPurchaseVerifier') return {
+      verifyGooglePlayOneTimePurchase: async () => ({
+        transactionIdentifier: transactionId, productIdentifier: purchase.productId,
+        purchaseDate: '2026-09-21T00:00:00Z', purchaseTokenHash: 'stubbed-token-hash',
+      }),
+    };
     if (id === './repositories/billingFulfillmentRepository') return repository;
     if (id === './repositories/eventRepository') return eventRepository;
     if (id === '@/lib/mobileBillingProducts') return { getMobileBillingProductDefinition: () => ({ kind: 'ticketPack', ticketCount: 1 }) };
@@ -120,7 +126,7 @@ function fixture() {
     if (id === './customerWalletServerService') return { recordMobileTicketPackAssignedToEvent: async () => {} };
     return {};
   }, {
-    process: { env: { REVENUECAT_SERVER_API_KEY: 'local-test-key' } },
+    process: { env: {} },
     fetch: async () => ({ ok: true, json: async () => ({ subscriber: { non_subscriptions: {
       ticket_pack_1: [{ id: 'revenuecat-alias', store_transaction_id: transactionId, store: 'play_store', purchase_date: '2026-09-21T00:00:00Z' }],
     } } }) }),
