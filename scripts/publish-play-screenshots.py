@@ -89,7 +89,7 @@ def request(token, method, path, *, data=None, mime=None, params=None, timeout=9
         return result
     except urllib.error.HTTPError as e:
         code = e.code
-        status, reason = "UNKNOWN", "UNKNOWN"
+        status, reason, explanation = "UNKNOWN", "UNKNOWN", ""
         try:
             payload = json.loads(e.read(8192).decode("utf-8", "replace"))
             detail = payload.get("error", {}) if isinstance(payload, dict) else {}
@@ -101,8 +101,23 @@ def request(token, method, path, *, data=None, mime=None, params=None, timeout=9
                 candidate = reasons[0].get("reason", "")
                 if isinstance(candidate, str) and re.fullmatch(r"[A-Za-z_]{2,80}", candidate):
                     reason = candidate
+            for entry in detail.get("details", []) if isinstance(detail.get("details"), list) else []:
+                if isinstance(entry, dict) and reason == "UNKNOWN":
+                    candidate = entry.get("reason", "")
+                    if isinstance(candidate, str) and re.fullmatch(r"[A-Z_]{2,80}", candidate):
+                        reason = candidate
+            explanation = detail.get("message", "")
+            if isinstance(explanation, str):
+                explanation = " ".join(explanation.split())[:360]
+                explanation = re.sub(r"https?://[^\s]+", "[url]", explanation)
+                explanation = re.sub(r"[\w.+-]+@[\w.-]+", "[email]", explanation)
+                if re.search(r"(?i)(bearer|token|password|secret|private.?key|credential|authorization|api.?key)", explanation):
+                    explanation = "[redacted]"
+                explanation = explanation.replace("::", ":").replace("\r", " ").replace("\n", " ")
+            else:
+                explanation = ""
         except (ValueError, UnicodeError, OSError):
-            pass
+            explanation = ""
         finally:
             e.close()
         operation = path.partition("?")[0].split("/")[-1]
@@ -112,7 +127,7 @@ def request(token, method, path, *, data=None, mime=None, params=None, timeout=9
             operation = "edits.commit"
         else:
             operation = f"{method} Play resource"
-        raise RuntimeError(f"Google Play {operation} failed: HTTP {code} / {status} / {reason}") from None
+        raise RuntimeError(f"Google Play {operation} failed: HTTP {code} / {status} / {reason}; message={explanation[:240] or 'unavailable'}") from None
     except (urllib.error.URLError, TimeoutError, ValueError):
         raise RuntimeError("Google Play connection or response could not be verified") from None
 
