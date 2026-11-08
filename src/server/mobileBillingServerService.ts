@@ -157,8 +157,27 @@ export async function fulfillServerMobilePageCreationPurchase(
     throw new Error('The selected Google Play product is not a page creation SKU.');
   }
 
-  const verifiedTransaction = await verifyGooglePlayOneTimePurchase(purchase);
+  const verifiedTransaction = await verifyGooglePlayOneTimePurchase(purchase, { allowConsumed: true });
   purchase = { ...purchase, transactionId: verifiedTransaction.transactionIdentifier };
+
+  if (verifiedTransaction.alreadyConsumed) {
+    const previous = await getBillingFulfillmentRecord(purchase.transactionId);
+    if (!previous || previous.status !== 'fulfilled' || previous.kind !== 'pageCreation' ||
+        previous.provider !== 'googleplay' || previous.appUserId !== purchase.appUserId ||
+        previous.productId !== purchase.productId || !previous.createdPageSlug) {
+      throw Object.assign(new Error('This consumed purchase requires manual reconciliation.'), {
+        code: 'billing-fulfillment-requires-review',
+      });
+    }
+    const response = await buildMobileDraftCreationResponse(origin, previous.createdPageSlug, {
+      ownerUid: input.ownerUid,
+      eventId: previous.eventId,
+      deviceId: input.deviceId,
+      issuedVia: 'purchase',
+    });
+    return { ...response, billingPurchaseConsumed: true };
+  }
+
   const lock = await acquireBillingFulfillmentLock(purchase, definition);
   const lockRecord = lock.record;
 
