@@ -189,6 +189,7 @@ export async function fulfillServerMobilePageCreationPurchase(
     throw new Error('This purchase is already being processed.');
   }
 
+  let fulfillmentRecorded = false;
   try {
     const seedSlug = getAllWeddingPageSeeds()[0]?.slug ?? '';
     const defaultTheme = isInvitationThemeKey(input.theme)
@@ -221,6 +222,7 @@ export async function fulfillServerMobilePageCreationPurchase(
       targetPageSlug: createdDraft.slug,
       eventId: resolvedCreatedEvent?.summary.eventId ?? null,
     });
+    fulfillmentRecorded = true;
 
     return buildMobileDraftCreationResponse(origin, createdDraft.slug, {
       ownerUid: input.ownerUid,
@@ -229,10 +231,14 @@ export async function fulfillServerMobilePageCreationPurchase(
       issuedVia: 'purchase',
     });
   } catch (error) {
-    await markBillingFulfillmentFailed(
-      purchase.transactionId,
-      error instanceof Error ? error.message : 'Failed to fulfill page creation purchase.'
-    );
+    // An editor-session/readback failure after the grant must not overwrite its fulfilled state.
+    // Retrying this verified receipt can then recover the already-created invitation.
+    if (!fulfillmentRecorded) {
+      await markBillingFulfillmentFailed(
+        purchase.transactionId,
+        error instanceof Error ? error.message : 'Failed to fulfill page creation purchase.'
+      );
+    }
     throw error;
   }
 }
