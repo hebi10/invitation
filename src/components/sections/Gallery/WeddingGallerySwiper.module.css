@@ -89,7 +89,7 @@
 }
 
 .gallery[data-gallery-variant='simple'] .track { padding: 0; }
-.gallery[data-gallery-variant='simple'] .photoButton { aspect-ratio: 1 / 1; background: var(--paper-soft, #f4f4f4); }
+.gallery[data-gallery-variant='simple'] .photoButton { aspect-ratio: 3 / 4; background: var(--paper-soft, #f4f4f4); }
 .gallery[data-gallery-variant='simple'] .photo { object-fit: contain; }
 .gallery[data-gallery-variant='simple'] .controls { margin-top: 8px; font-size: 13px; font-variant-numeric: tabular-nums; }
 .gallery[data-gallery-variant='simple'] .controls button { min-height: 48px; padding-inline: 0; }

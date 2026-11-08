@@ -26,6 +26,7 @@ const core = [
   'test-background-music-playback',
   'test-wedding-public-stage1',
   'test-wedding-public-stage2',
+  'test-wedding-public-stage3',
   'test-wedding-music-recovery',
   'test-gift-info-copy',
   'test-music-editor',
