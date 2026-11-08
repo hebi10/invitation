@@ -69,7 +69,7 @@ jobs:
 
   public-invitation-themes:
     if: github.event_name == 'pull_request' && startsWith(github.head_ref, 'qa/invitation-live-theme-captures-')
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 12
     steps:
       - uses: actions/checkout@v4
