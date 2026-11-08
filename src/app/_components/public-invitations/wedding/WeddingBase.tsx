@@ -220,7 +220,7 @@ export default function WeddingBase({ state, theme, demoComments, showMap = true
                 <dd className={styles.venueName}>{page.venue}</dd>
               </div>
             </dl> : theme === 'emotional' ? <>
-              <div className={styles.gardenDate} aria-label={page.date}>
+              <div className={styles.gardenDate} role="group" aria-label={page.date}>
                 <span>{page.weddingDateTime.year}년</span>
                 <strong>{String(page.weddingDateTime.month + 1).padStart(2, '0')}.{String(page.weddingDateTime.day).padStart(2, '0')}</strong>
               </div>
@@ -232,14 +232,14 @@ export default function WeddingBase({ state, theme, demoComments, showMap = true
                 <p className={styles.venueName}>{page.venue}</p>
               </div>
             </> : <>
-            {theme === 'gyeol' ? <div className={styles.classicDate} aria-label={page.date}>
+            {theme === 'gyeol' ? <div className={styles.classicDate} role="group" aria-label={page.date}>
               <span>{page.weddingDateTime.year}년</span>
               <strong>{page.weddingDateTime.month + 1}월 {page.weddingDateTime.day}일</strong>
               <span className={styles.classicDateTime}>
                 <span>{new Date(Date.UTC(page.weddingDateTime.year, page.weddingDateTime.month, page.weddingDateTime.day)).toLocaleDateString('ko-KR', { weekday: 'long', timeZone: 'UTC' })}</span>
                 {ceremony?.time ? <span>{ceremony.time}</span> : null}
               </span>
-            </div> : theme === 'romantic' || theme === 'classic-r' ? <div className={styles.photoDate} aria-label={page.date}>
+            </div> : theme === 'romantic' || theme === 'classic-r' ? <div className={styles.photoDate} role="group" aria-label={page.date}>
               <span>{page.weddingDateTime.year}</span>
               <strong>{String(page.weddingDateTime.month + 1).padStart(2, '0')}.{String(page.weddingDateTime.day).padStart(2, '0')}</strong>
               <span>{new Date(Date.UTC(page.weddingDateTime.year, page.weddingDateTime.month, page.weddingDateTime.day)).toLocaleDateString('ko-KR', { weekday: 'long', timeZone: 'UTC' })}</span>
