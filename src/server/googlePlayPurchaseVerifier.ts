@@ -19,6 +19,7 @@ export type VerifiedGooglePlayTransaction = {
   productIdentifier: string;
   purchaseDate: string;
   purchaseTokenHash: string;
+  alreadyConsumed: boolean;
 };
 
 type ProductPurchaseV2 = {
@@ -70,6 +71,7 @@ export function googlePlayObfuscatedAccountId(appUserId: string) {
 export function interpretGooglePlayPurchase(
   response: ProductPurchaseV2,
   purchase: GooglePlayPurchaseReceipt,
+  options: { allowConsumed?: boolean } = {},
 ): VerifiedGooglePlayTransaction {
   if (response.purchaseStateContext?.purchaseState !== 'PURCHASED') {
     throw new Error('The Google Play purchase could not be verified yet.');
@@ -86,7 +88,8 @@ export function interpretGooglePlayPurchase(
   if (details?.refundableQuantity !== undefined && details.refundableQuantity !== 1) {
     throw new Error('The Google Play purchase could not be verified yet.');
   }
-  if (details?.consumptionState === 'CONSUMPTION_STATE_CONSUMED') {
+  const alreadyConsumed = details?.consumptionState === 'CONSUMPTION_STATE_CONSUMED';
+  if (alreadyConsumed && !options.allowConsumed) {
     throw new Error('The Google Play purchase could not be verified yet.');
   }
   const purchaseDate = response.purchaseCompletionTime;
@@ -103,8 +106,8 @@ export function interpretGooglePlayPurchase(
 
   const purchaseTokenHash = googlePlayPurchaseTokenHash(purchase.purchaseToken!);
   const orderId = response.orderId?.trim();
-  const transactionIdentifier = orderId && /^GPA\.[A-Za-z0-9.\-]+$/.test(orderId)
-    ? orderId : `play_${purchaseTokenHash}`;
+  // One token must always resolve to one fulfillment, even when Google changes order ID metadata.
+  const transactionIdentifier = `play_${purchaseTokenHash}`;
   if (purchase.transactionId && purchase.transactionId !== transactionIdentifier &&
       purchase.transactionId !== purchase.purchaseToken && purchase.transactionId !== orderId) {
     throw new Error('The Google Play purchase could not be verified yet.');
@@ -115,11 +118,13 @@ export function interpretGooglePlayPurchase(
     productIdentifier: purchase.productId,
     purchaseDate: new Date(purchaseDate).toISOString(),
     purchaseTokenHash,
+    alreadyConsumed,
   };
 }
 
 export async function verifyGooglePlayOneTimePurchase(
   purchase: GooglePlayPurchaseReceipt,
+  options: { allowConsumed?: boolean } = {},
 ): Promise<VerifiedGooglePlayTransaction> {
   const token = purchase.purchaseToken?.trim() ?? '';
   if (!token || token.length > MAX_TOKEN_LENGTH || /\s/.test(token) ||
@@ -149,5 +154,5 @@ export async function verifyGooglePlayOneTimePurchase(
   return interpretGooglePlayPurchase(payload as ProductPurchaseV2, {
     ...purchase,
     purchaseToken: token,
-  });
+  }, options);
 }
