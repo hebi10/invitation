@@ -85,3 +85,26 @@
   .letter .names { font-size: 28px; }
   .basic .names { font-size: 30px; gap: 10px; }
 }
+
+/* Stage 3: simple/modern covers place wedding facts sooner after the photograph. */
+.basic .photoFrame,
+.editorial .photoFrame { aspect-ratio: 4 / 5; }
+.basic .details { padding: 26px 24px 22px; }
+.basic .names { gap: 10px; font-size: clamp(27px, 7.5vw, 31px); line-height: 1.45; }
+.basic .basicDate { margin-top: 16px; font-size: clamp(23px, 6vw, 26px); }
+.basic .venue { margin-top: 8px; }
+.editorial .details { padding: 26px 24px 22px; }
+.editorial .editorialHeading {
+  margin-bottom: 14px;
+  font-size: 11px;
+  line-height: 1.6;
+  letter-spacing: .12em;
+}
+.editorial .editorialNames { gap: 0; font-size: clamp(30px, 8vw, 34px); line-height: 1.3; }
+.editorial .editorialMeta { margin-top: 18px; }
+.editorial .editorialMeta .date { line-height: 1.7; }
+.editorial .editorialMeta .venue { margin-top: 4px; color: #4a4a4a; }
+@media (max-width: 359px) {
+  .basic .details,
+  .editorial .details { padding-inline: 20px; }
+}
