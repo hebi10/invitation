@@ -25,6 +25,7 @@ export default function WeddingGallerySwiper({ images, previewImages, variant, r
   const swiperRef = useRef<SwiperInstance | null>(null);
   const [index, setIndex] = useState(0);
   const [failedImages, setFailedImages] = useState<Set<string>>(new Set());
+  const [loadedImages, setLoadedImages] = useState<Set<string>>(new Set());
   const count = images.length;
   const activeIndex = Math.min(index, Math.max(0, count - 1));
   const strip = variant === 'emotional';
@@ -83,21 +84,34 @@ export default function WeddingGallerySwiper({ images, previewImages, variant, r
             tabIndex={isActive ? 0 : -1}
             aria-hidden={!isActive}
             aria-label={`${altPrefix} ${imageIndex + 1}번째 사진 크게 보기`}
+            data-gallery-photo-state={failedImages.has(src) ? 'error' : loadedImages.has(src) ? 'ready' : 'loading'}
             onClick={(event) => onOpen(imageIndex, event.currentTarget)}
           >
-            {failedImages.has(src) ? <span className={styles.error}>사진을 불러오지 못했습니다.<br />눌러서 원본 보기</span> : <Image
-              key={src}
-              unoptimized
-              className={styles.photo}
-              src={src}
-              width={1200}
-              height={1600}
-              sizes="(max-width: 700px) 90vw, 600px"
-              alt={`${altPrefix} ${imageIndex + 1}번째 사진`}
-              loading="lazy"
-              decoding="async"
-              onError={() => setFailedImages((current) => new Set([...current, src]))}
-            />}
+            {failedImages.has(src) ? (
+              <span className={styles.error}>사진을 불러오지 못했습니다.<br />눌러서 원본 보기</span>
+            ) : (
+              <>
+                {!loadedImages.has(src) ? (
+                  <span className={styles.loading} role={isActive ? 'status' : undefined}>
+                    사진을 불러오는 중
+                  </span>
+                ) : null}
+                <Image
+                  key={src}
+                  unoptimized
+                  className={styles.photo}
+                  src={src}
+                  width={1200}
+                  height={1600}
+                  sizes="(max-width: 700px) 90vw, 600px"
+                  alt={`${altPrefix} ${imageIndex + 1}번째 사진`}
+                  loading={imageIndex === 0 ? 'eager' : 'lazy'}
+                  decoding="async"
+                  onLoad={() => setLoadedImages((current) => new Set([...current, src]))}
+                  onError={() => setFailedImages((current) => new Set([...current, src]))}
+                />
+              </>
+            )}
           </button>}
         </SwiperSlide>;
       })}
