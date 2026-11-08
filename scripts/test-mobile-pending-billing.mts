@@ -9,6 +9,7 @@ const source = ts.transpileModule(readFileSync('apps/mobile/src/lib/pendingBilli
 let stored: string | null = null;
 let purchases = 0;
 let failReceiptStorage = false;
+let failClearStorage = false;
 let history: { productIdentifier: string; transactionIdentifier: string; purchaseDate: string; purchaseToken?: string }[] = [];
 let consumed = 0;
 let historyRequestDate = new Date().toISOString();
@@ -21,7 +22,7 @@ function loadModule() {
   }) : ({
     getStoredString: async () => stored,
     setStoredString: async (_key: string, value: string | null) => {
-      if (value && failReceiptStorage) throw new Error('storage unavailable');
+      if ((value && failReceiptStorage) || (value === null && failClearStorage)) throw new Error('storage unavailable');
       stored = value;
     },
   }) });
@@ -133,4 +134,26 @@ assert.equal(purchases, afterReceiptFailure, 'A paid receipt in memory must surv
 const cancelledPurchase = load();
 await assert.rejects(cancelledPurchase(request, { purchase: async () => { throw { userCancelled: true }; }, fulfill: async () => 1 }));
 assert.equal(stored, null, 'Definitive cancellation allows a later fresh purchase');
-console.log('pending billing purchase recovery checks passed (no payments)');
+
+// The server has granted the page and Play has consumed it, but the app crashes
+// before deleting its saved receipt. A trusted read-only replay must not consume twice.
+const beforeConsumedCrash = consumed;
+const beforePurchaseCrash = purchases;
+failClearStorage = true;
+await assert.rejects(load()(request, {
+  purchase,
+  fulfill: async () => ({ page: { slug: 'already-paid-page' } }),
+}), /storage unavailable/);
+assert.equal(consumed, beforeConsumedCrash + 1, 'The first Play consumption was successful');
+assert.ok(stored?.includes('google-token-paid'), 'A crash before local cleanup leaves the original paid receipt');
+failClearStorage = false;
+const consumedReplay = await loadModule().recoverPendingBillingPurchase(
+  { appUserId: 'customer', apiBaseUrl: 'https://example.test' },
+  async () => ({ page: { slug: 'already-paid-page' }, billingPurchaseConsumed: true }),
+) as { page: { slug: string } };
+assert.equal(consumedReplay.page.slug, 'already-paid-page');
+assert.equal(consumed, beforeConsumedCrash + 1, 'A consumed purchase must never be consumed twice');
+assert.equal(purchases, beforePurchaseCrash + 1, 'Recovery must never trigger another charge');
+assert.equal(stored, null, 'Successful verified recovery clears the stale receipt');
+
+console.log('pending billing purchase recovery including consumed-token process-crash checks passed (no payments)');
