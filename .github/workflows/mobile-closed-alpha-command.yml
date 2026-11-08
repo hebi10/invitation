@@ -1,0 +1,31 @@
+name: Invitation closed alpha preview request
+
+on:
+  issue_comment:
+    types: [created]
+
+permissions:
+  contents: read
+  actions: write
+
+jobs:
+  dispatch-closed-preview:
+    if: >
+      github.repository == 'hebi10/invitation' &&
+      github.event.issue.number == 30 &&
+      github.event.comment.user.login == 'hebi10' &&
+      github.event.comment.body == '/deploy-invitation-alpha'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Start user-authorized alpha-only workflow dispatch
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh api --method POST "repos/${GITHUB_REPOSITORY}/actions/workflows/mobile-release.yml/dispatches" \
+            -f ref=main \
+            -f 'inputs[deploy]=true' \
+            -f 'inputs[deploy_target]=closed' \
+            -f 'inputs[closed_track]=alpha' \
+            -f 'inputs[replace_alpha_draft]=true'
+          echo 'User-authorized alpha closed preview requested. New purchases must not be tested until Play SKU configuration is verified.' >> "$GITHUB_STEP_SUMMARY"
