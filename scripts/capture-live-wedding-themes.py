@@ -34,19 +34,22 @@ with sync_playwright() as p:
     )
     try:
         preflight = context.new_page()
-        for attempt in range(24):
+        for attempt in range(60):
             preflight.goto(f"{BASE}/{SLUG}/simple/", wait_until="domcontentloaded", timeout=60000)
             preflight.get_by_text("김현지", exact=False).first.wait_for(timeout=25000)
             quick = preflight.locator('nav[aria-label="청첩장 바로가기"] a')
             quick.first.wait_for(timeout=20000)
             order = quick.evaluate_all("(anchors) => anchors.map(a => a.getAttribute('href'))")
-            if order[:2] == ["#wedding-info", "#wedding-location"]:
-                print("STAGE2_DEPLOYMENT_CONFIRMED", order, flush=True)
+            cover_ratio = preflight.locator('[data-wedding-cover-frame]').first.evaluate(
+                "(el) => el.getBoundingClientRect().width / el.getBoundingClientRect().height"
+            )
+            if order[:2] == ["#wedding-info", "#wedding-location"] and abs(cover_ratio - 0.8) < 0.02:
+                print("STAGE3_DEPLOYMENT_CONFIRMED", order, cover_ratio, flush=True)
                 break
-            print("STAGE2_DEPLOYMENT_PENDING", attempt + 1, order, flush=True)
+            print("STAGE3_DEPLOYMENT_PENDING", attempt + 1, order, cover_ratio, flush=True)
             preflight.wait_for_timeout(5000)
         else:
-            raise RuntimeError("Stage2 public build not yet active after preflight retries")
+            raise RuntimeError("Stage3 public build not yet active after preflight retries")
         preflight.close()
 
         for theme, short in THEMES:
@@ -230,6 +233,56 @@ with sync_playwright() as p:
                 audit["issues"].append(f"stage2 required wedding section missing: {stage2_audit}")
             print("STAGE2_AUDIT", theme, json.dumps(stage2_audit, ensure_ascii=False), flush=True)
 
+            stage3_audit = page.evaluate("""() => {
+                const root = document.querySelector('main[data-design]');
+                const design = root?.getAttribute('data-design') ?? '';
+                const cover = document.querySelector('[data-wedding-cover-frame]');
+                const coverBox = cover?.getBoundingClientRect();
+                const gallery = root?.querySelector('[data-wedding-section="gallery"] > section');
+                const frame = root?.querySelector('[data-gallery-variant="simple"] .swiper-slide-active button');
+                const frameBox = frame?.getBoundingClientRect();
+                const photo = frame?.querySelector('img');
+                const grid = root?.querySelector('[data-wedding-section="gallery"] [class*="WeddingGallery_imageGrid"]');
+                const title = root?.querySelector('[data-wedding-section="gallery"] h2');
+                return {
+                    design,
+                    coverRatio: coverBox && coverBox.height ? +(coverBox.width / coverBox.height).toFixed(3) : null,
+                    coverHeight: coverBox ? Math.round(coverBox.height) : null,
+                    galleryWidth: gallery ? Math.round(gallery.getBoundingClientRect().width) : null,
+                    simpleCarouselRatio: frameBox && frameBox.height ? +(frameBox.width / frameBox.height).toFixed(3) : null,
+                    simpleObjectFit: photo ? getComputedStyle(photo).objectFit : null,
+                    modernGridRowGap: grid ? parseFloat(getComputedStyle(grid).rowGap) : null,
+                    modernGridColumns: grid ? getComputedStyle(grid).gridTemplateColumns : null,
+                    modernNumberSize: title ? parseFloat(getComputedStyle(title, '::before').fontSize) : null,
+                    modernEnglishSize: title ? parseFloat(getComputedStyle(title, '::after').fontSize) : null,
+                    hasCeremony: Boolean(document.getElementById('wedding-info')),
+                    hasLocation: Boolean(document.getElementById('wedding-location')),
+                    hasClosing: Boolean(document.querySelector('[data-wedding-closing]')),
+                    hasGuestbook: Boolean(root?.querySelector('[data-wedding-section="guestbook"]')),
+                };
+            }""")
+            print("STAGE3_AUDIT", theme, json.dumps(stage3_audit, ensure_ascii=False), flush=True)
+            if theme in ("simple", "classic-r"):
+                if stage3_audit["coverRatio"] is None or abs(stage3_audit["coverRatio"] - 0.8) > 0.02:
+                    audit["issues"].append(f"stage3 {theme}: cover aspect ratio is not 4:5")
+                expected_width = 358 if theme == "simple" else 350
+                if abs((stage3_audit["galleryWidth"] or 0) - expected_width) > 3:
+                    audit["issues"].append(f"stage3 {theme}: gallery width mismatch: {stage3_audit['galleryWidth']}")
+            if theme == "simple":
+                if stage3_audit["simpleCarouselRatio"] is None or abs(stage3_audit["simpleCarouselRatio"] - 0.75) > 0.03:
+                    audit["issues"].append(f"stage3 simple: portrait carousel ratio mismatch: {stage3_audit['simpleCarouselRatio']}")
+                if stage3_audit["simpleObjectFit"] != "contain":
+                    audit["issues"].append("stage3 simple: original photo must not be cropped")
+            if theme == "classic-r":
+                if stage3_audit["modernGridRowGap"] is None or abs(stage3_audit["modernGridRowGap"] - 18) > 1:
+                    audit["issues"].append(f"stage3 modern: two-column grid row gap mismatch: {stage3_audit['modernGridRowGap']}")
+                if stage3_audit["modernNumberSize"] is None or abs(stage3_audit["modernNumberSize"] - 30) > 1:
+                    audit["issues"].append(f"stage3 modern: section numbering font mismatch: {stage3_audit['modernNumberSize']}")
+                if stage3_audit["modernEnglishSize"] is None or abs(stage3_audit["modernEnglishSize"] - 10) > 1:
+                    audit["issues"].append(f"stage3 modern: English eyebrow font mismatch: {stage3_audit['modernEnglishSize']}")
+            if not all(stage3_audit[k] for k in ("hasCeremony", "hasLocation", "hasClosing", "hasGuestbook")):
+                audit["issues"].append(f"stage3 {theme}: required wedding content missing")
+
             info = page.evaluate("""() => ({
                 title: document.title, pageHeight: document.documentElement.scrollHeight,
                 bodyText: document.body.innerText.slice(0,350),
@@ -245,7 +298,7 @@ with sync_playwright() as p:
                 httpStatus=response.status, bytes=target.stat().st_size,
                 sha256=digest, **info, stage1Audit={
                     **audit, "anchors": anchor_results, "responsive": small_viewports
-                }, stage2Audit=stage2_audit))
+                }, stage2Audit=stage2_audit, stage3Audit=stage3_audit))
             print(f"CAPTURE_OK {theme}: {info['pageHeight']}px, {target.stat().st_size} bytes, broken={info['brokenImages']}", flush=True)
             page.close()
     finally:
@@ -267,7 +320,7 @@ for idx, item in enumerate(captures):
 overview.save(OUT / "00-five-themes-overview.jpg", quality=85)
 report = dict(capturedAt=datetime.now(timezone.utc).isoformat(),
     source="Public Firebase-hosted test invitation", slug=SLUG,
-    notes="After stage2 16ac2b5 Firebase App Hosting rollout. Stage1 regression and Stage2 quicklinks/gallery/guestbook/footer audit. Actual page labels groom as 신민제.",
+    notes="After Stage3 eeccc54 Firebase App Hosting rollout; simple and classic-r targeted design audit, other three regression screenshots. Actual groom label 신민제.",
     viewport=dict(width=390, height=844, deviceScaleFactor=2),
     captures=captures)
 (OUT / "capture-manifest.json").write_text(
