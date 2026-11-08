@@ -1,0 +1,45 @@
+name: Public wedding Stage 6 Release Smoke
+
+on:
+  pull_request:
+    paths:
+      - 'scripts/qa-public-wedding-stage6.py'
+      - '.github/workflows/public-wedding-stage6-release-smoke.yml'
+      - 'docs/qa/invitation-stage6-release-readiness.md'
+  push:
+    branches:
+      - main
+    paths:
+      - 'scripts/qa-public-wedding-stage6.py'
+      - '.github/workflows/public-wedding-stage6-release-smoke.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  public-wedding-release-smoke:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install pinned read-only browser QA
+        run: |
+          python -m pip install --disable-pip-version-check playwright==1.56.0
+          python -m playwright install --with-deps chromium
+      - name: Run five-theme public release smoke test
+        env:
+          # PR inspects the previously deployed site; push/manual require the HTTPS fix.
+          STAGE6_REQUIRE_MAP_HTTPS: ${{ github.event_name == 'pull_request' && '0' || '1' }}
+        run: python scripts/qa-public-wedding-stage6.py
+      - name: Archive public QA screenshots and release manifest
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: invitation-stage6-live-release-smoke
+          path: artifacts/public-wedding-stage6/
+          if-no-files-found: warn
+          retention-days: 21
