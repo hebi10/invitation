@@ -45,8 +45,28 @@ function hasValidCoordinates(pageData?: InvitationPageData) {
   );
 }
 
+/**
+ * Keep saved customer map data intact while rendering only safe outbound links.
+ * Old Kakao map links may have been stored with http:// before HTTPS support.
+ */
+export function normalizePublicWeddingMapUrl(value: string) {
+  const trimmed = value.trim();
+  if (!trimmed) return '';
+
+  try {
+    const url = new URL(trimmed);
+    if (url.username || url.password) return '';
+    if (url.protocol === 'http:' && url.hostname.toLowerCase() === 'map.kakao.com') {
+      url.protocol = 'https:';
+    }
+    return url.protocol === 'https:' ? url.toString() : '';
+  } catch {
+    return '';
+  }
+}
+
 function resolveMapHref(page: InvitationPage, pageData?: InvitationPageData) {
-  const explicitMapUrl = pageData?.mapUrl?.trim() ?? '';
+  const explicitMapUrl = normalizePublicWeddingMapUrl(pageData?.mapUrl ?? '');
 
   if (explicitMapUrl) {
     return explicitMapUrl;
