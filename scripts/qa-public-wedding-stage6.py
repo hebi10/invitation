@@ -114,9 +114,13 @@ def test_map_and_contacts(page, theme: str, result: dict):
     section = page.locator("#wedding-location")
     ensure(section.get_by_role("heading", name="오시는 길").count() > 0, theme, "directions heading missing")
     ensure(bool(section.inner_text().strip()), theme, "directions content empty")
-    links = section.locator('a[href^="http"]').evaluate_all("""items => items.map(item => ({
-        href: item.href, target: item.target, rel: item.rel
-    }))""")
+    # The Kakao Maps SDK injects its own attribution anchors inside the map canvas.
+    # Audit the application's outbound actions, not third-party tile/attribution DOM.
+    links = section.locator('a[href^="http"]').evaluate_all("""items => items
+        .filter(item => !item.closest('[class*="LocationMap_map__"]'))
+        .map(item => ({
+            href: item.href, target: item.target, rel: item.rel
+        }))""")
     ensure(bool(links), theme, "map external link missing")
     for link in links:
         url = urlparse(link["href"])
