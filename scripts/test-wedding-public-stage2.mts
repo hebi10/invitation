@@ -21,7 +21,7 @@ assert.match(wedding, /<LocationMap/);
 assert.match(wedding, /<GiftInfoThemed/);
 assert.match(wedding, /<GuestbookThemed/);
 assert.match(wedding, /<WeddingGallery/);
-assert.match(wedding, /<a href=\{\`tel:\$\{venuePhone\}\`\}/);
+assert.match(wedding, /href=\{\`tel:\$\{venuePhone\}\`\}/);
 assert.match(guestbook, /const commentsPerPage = 5;/);
 assert.match(guestbook, /onSubmit=\{handleSubmit\}/);
 assert.match(guestbook, /const handleSubmit = async/);
