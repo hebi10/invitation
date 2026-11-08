@@ -22,6 +22,7 @@ const core = [
   'test-mobile-stage9-account-reliability',
   'test-mobile-stage10-auth-transitions',
   'test-mobile-stage11-single-price',
+  'test-mobile-single-creation-no-renewal',
   'test-mobile-stage13-layout-density',
   'test-background-music-playback',
   'test-wedding-public-stage1',
