@@ -94,17 +94,51 @@ jobs:
               except RuntimeError:
                   group_count = None
 
-          price = {"verified": False, "status": "unknown", "krw": None}
+          # Prefer the current one-time-product model; legacy in-app products
+          # remain a read-only fallback for pre-migration catalog entries.
+          price = {"verified": False, "status": "unknown", "krw": None, "source": "unverified"}
           try:
-              product = call(root + "/inappproducts/page_creation_premium")
-              kr = (product.get("prices") or {}).get("KR") or product.get("defaultPrice") or {}
-              currency = kr.get("currency", "")
-              micros = kr.get("priceMicros")
-              amount = int(micros) // 1000000 if micros is not None and currency == "KRW" else None
-              price = {"verified": amount == 5000 and product.get("status") == "active",
-                       "status": product.get("status", "unknown"), "krw": amount}
-          except (RuntimeError, ValueError, TypeError):
-              pass
+              product = call(root + "/oneTimeProducts/page_creation_premium")
+              if product.get("productId") != "page_creation_premium":
+                  raise ValueError("One-time product ID mismatch")
+              active_kr_prices = []
+              active_buy_options = 0
+              for option in product.get("purchaseOptions") or []:
+                  if option.get("state") != "ACTIVE" or "buyOption" not in option:
+                      continue
+                  active_buy_options += 1
+                  for region in option.get("regionalPricingAndAvailabilityConfigs") or []:
+                      if region.get("regionCode") != "KR" or region.get("availability") != "AVAILABLE":
+                          continue
+                      money = region.get("price") or {}
+                      amount = None
+                      if money.get("currencyCode") == "KRW" and int(money.get("nanos") or 0) == 0:
+                          amount = int(money.get("units") or 0)
+                      active_kr_prices.append(amount)
+              price = {
+                  "verified": bool(active_kr_prices) and set(active_kr_prices) == {5000},
+                  "status": "active" if active_kr_prices else "not_available_in_KR",
+                  "krw": active_kr_prices[0] if len(set(active_kr_prices)) == 1 else None,
+                  "source": "monetization.onetimeproducts",
+                  "activeBuyOptions": active_buy_options,
+                  "activeKrPriceOptionCount": len(active_kr_prices),
+              }
+          except (RuntimeError, ValueError, TypeError) as modern_error:
+              price["modernApiError"] = str(modern_error).split("endpoint returned ")[-1][:20]
+              try:
+                  product = call(root + "/inappproducts/page_creation_premium")
+                  kr = (product.get("prices") or {}).get("KR") or product.get("defaultPrice") or {}
+                  currency = kr.get("currency", "")
+                  micros = kr.get("priceMicros")
+                  amount = int(micros) // 1000000 if micros is not None and currency == "KRW" else None
+                  price = {
+                      "verified": amount == 5000 and product.get("status") == "active",
+                      "status": product.get("status", "unknown"),
+                      "krw": amount,
+                      "source": "inappproducts",
+                  }
+              except (RuntimeError, ValueError, TypeError) as legacy_error:
+                  price["legacyApiError"] = str(legacy_error).split("endpoint returned ")[-1][:20]
 
           report = {
               "package": pkg, "sourceSha": os.environ.get("GITHUB_SHA", ""),
