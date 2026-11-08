@@ -8,6 +8,12 @@ on:
       - '.github/workflows/invitation-store-screenshots.yml'
   issue_comment:
     types: [created]
+  workflow_dispatch:
+    inputs:
+      apply:
+        description: 'Upload the approved eight ko-KR phone screenshots using Play WIF'
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -26,13 +32,33 @@ jobs:
       - name: Check original screenshots and committed SHA-256 manifest
         run: python3 scripts/publish-play-screenshots.py
 
-  upload:
+  dispatch:
     if: >
       github.event_name == 'issue_comment' &&
       github.repository == 'hebi10/invitation' &&
       github.event.issue.number == 30 &&
       github.event.comment.user.login == 'hebi10' &&
       github.event.comment.body == '/upload-invitation-screenshots-20261108'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      actions: write
+    steps:
+      - name: Dispatch trusted main-only Play upload run
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh api --method POST "repos/${GITHUB_REPOSITORY}/actions/workflows/invitation-store-screenshots.yml/dispatches" \
+            -f ref=main \
+            -f 'inputs[apply]=true'
+
+  upload:
+    if: >
+      github.event_name == 'workflow_dispatch' &&
+      github.ref == 'refs/heads/main' &&
+      github.repository == 'hebi10/invitation' &&
+      inputs.apply == true
     runs-on: ubuntu-24.04
     timeout-minutes: 18
     environment: google-play-testing
