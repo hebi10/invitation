@@ -109,11 +109,11 @@ def request(token, method, path, *, data=None, mime=None, params=None, timeout=9
             explanation = detail.get("message", "")
             if isinstance(explanation, str):
                 explanation = " ".join(explanation.split())[:360]
-                explanation = re.sub(r"https?://[^\\s]+", "[url]", explanation)
-                explanation = re.sub(r"[\\w.+-]+@[\\w.-]+", "[email]", explanation)
+                explanation = re.sub(r"https?://[^\s]+", "[url]", explanation)
+                explanation = re.sub(r"[\w.+-]+@[\w.-]+", "[email]", explanation)
                 if re.search(r"(?i)(bearer|token|password|secret|private.?key|credential|authorization|api.?key)", explanation):
                     explanation = "[redacted]"
-                explanation = explanation.replace("::", ":").replace("\\r", " ").replace("\\n", " ")
+                explanation = explanation.replace("::", ":").replace("\r", " ").replace("\n", " ")
             else:
                 explanation = ""
         except (ValueError, UnicodeError, OSError):
