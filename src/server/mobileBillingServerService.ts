@@ -181,6 +181,11 @@ export async function fulfillServerMobilePageCreationPurchase(
   }
 
   if (!lock.acquired) {
+    if (lockRecord.status === 'failed') {
+      throw Object.assign(new Error('This paid invitation requires reconciliation before retrying.'), {
+        code: 'billing-fulfillment-requires-review',
+      });
+    }
     throw new Error('This purchase is already being processed.');
   }
 
