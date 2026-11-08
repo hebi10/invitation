@@ -20,6 +20,7 @@ const productId = 'page_creation_premium';
 const token = 'real-google-purchase-token-for-tests';
 const orderId = 'GPA.9999-1234-5678-90123';
 const accountHash = createHash('sha256').update(appUserId).digest('hex');
+const fulfillmentId = `play_${createHash('sha256').update(token).digest('hex')}`;
 const receipt = { appUserId, productId, transactionId: orderId, purchaseToken: token };
 const validPurchase = {
   purchaseStateContext: { purchaseState: 'PURCHASED' },
@@ -47,9 +48,10 @@ const verification = load('src/server/googlePlayPurchaseVerifier.ts', id => {
     return { ok: true, json: async () => validPurchase };
   },
 });
-const interpret = verification.interpretGooglePlayPurchase as (payload: object, input: object) => { transactionIdentifier: string; purchaseDate: string; purchaseTokenHash: string };
-const verify = verification.verifyGooglePlayOneTimePurchase as (input: object) => Promise<{ transactionIdentifier: string; purchaseTokenHash: string }>;
-assert.equal((await verify(receipt)).transactionIdentifier, orderId);
+const interpret = verification.interpretGooglePlayPurchase as (payload: object, input: object, options?: { allowConsumed?: boolean }) => { transactionIdentifier: string; purchaseDate: string; purchaseTokenHash: string; alreadyConsumed: boolean };
+const verify = verification.verifyGooglePlayOneTimePurchase as (input: object, options?: { allowConsumed?: boolean }) => Promise<{ transactionIdentifier: string; purchaseTokenHash: string; alreadyConsumed: boolean }>;
+assert.equal((await verify(receipt)).transactionIdentifier, fulfillmentId);
+assert.equal((await verify(receipt)).alreadyConsumed, false);
 assert.equal((await verify(receipt)).purchaseTokenHash, createHash('sha256').update(token).digest('hex'));
 assert.equal(requests, 2, 'Every purchase must be verified against Google, not a local client claim');
 for (const update of [
@@ -67,18 +69,40 @@ for (const update of [
 await assert.rejects(verify({ ...receipt, purchaseToken: '' }), /verified/);
 await assert.rejects(verify({ ...receipt, transactionId: 'mock_unpaid' }), /verified/);
 assert.equal(requests, 2, 'Invalid receipt must fail before external API');
+const consumedPurchase = {
+  ...validPurchase,
+  productLineItem: [{ productId, productOfferDetails: {
+    quantity: 1, refundableQuantity: 1, consumptionState: 'CONSUMPTION_STATE_CONSUMED',
+  } }],
+};
+assert.throws(() => interpret(consumedPurchase, receipt), /verified/);
+assert.equal(interpret(consumedPurchase, receipt, { allowConsumed: true }).alreadyConsumed, true);
+assert.equal(interpret(consumedPurchase, receipt, { allowConsumed: true }).transactionIdentifier, fulfillmentId);
+assert.throws(() => interpret({
+  ...consumedPurchase, productLineItem: [{ productId, productOfferDetails: {
+    quantity: 1, refundableQuantity: 0, consumptionState: 'CONSUMPTION_STATE_CONSUMED',
+  } }],
+}, receipt, { allowConsumed: true }), /verified/, 'Refunded purchases must not be restored');
+assert.throws(() => interpret(consumedPurchase, { ...receipt, appUserId: 'other-user' }, { allowConsumed: true }), /계정/,
+  'Consumed receipts must remain bound to the original payer');
 
 let created: { productTier: string; initialDisplayPeriodMonths: number } | undefined;
 let fulfilled = 0;
 let verifiedCount = 0;
 let failedMarks = 0;
 let failAfterFulfillment = false;
+let consumeOnServer = false;
+let pastFulfillment: Record<string, unknown> | null = null;
+let lockAcquisitions = 0;
 const service = load('src/server/mobileBillingServerService.ts', id => {
   if (id === './googlePlayPurchaseVerifier') return {
-    verifyGooglePlayOneTimePurchase: async (input: { productId: string; purchaseToken: string }) => {
+    verifyGooglePlayOneTimePurchase: async (input: { productId: string; purchaseToken: string }, options: { allowConsumed?: boolean }) => {
       verifiedCount++;
       assert.equal(input.purchaseToken, token);
-      return { transactionIdentifier: orderId, productIdentifier: input.productId, purchaseDate: '2026-11-08T11:00:00.000Z', purchaseTokenHash: 'hash' };
+      assert.equal(options.allowConsumed, true);
+      return { transactionIdentifier: fulfillmentId, productIdentifier: input.productId,
+        purchaseDate: '2026-11-08T11:00:00.000Z', purchaseTokenHash: 'hash',
+        alreadyConsumed: consumeOnServer };
     },
   };
   if (id === '@/lib/mobileBillingProducts') return products;
@@ -86,7 +110,8 @@ const service = load('src/server/mobileBillingServerService.ts', id => {
   if (id === '@/config/weddingPages') return { getAllWeddingPageSeeds: () => [{ slug: 'sample' }] };
   if (id === '@/lib/invitationThemes') return { DEFAULT_INVITATION_THEME: 'simple', isInvitationThemeKey: () => true };
   if (id === './repositories/billingFulfillmentRepository') return { firestoreBillingFulfillmentRepository: {
-    acquireLock: async () => ({ acquired: true, record: { status: 'processing' } }),
+    acquireLock: async () => { lockAcquisitions++; return { acquired: true, record: { status: 'processing' } }; },
+    findByTransactionId: async (id: string) => { assert.equal(id, fulfillmentId); return pastFulfillment; },
     update: async () => { fulfilled++; },
     markFailed: async () => { failedMarks++; },
   } };
@@ -125,4 +150,34 @@ await assert.rejects(create('https://example.test', receipt, {
   slugBase: 'created-page', groomKoreanName: '신랑', brideKoreanName: '신부', theme: 'simple', ownerUid: appUserId,
 }), /post-commit response failure/);
 assert.equal(failedMarks, 0, 'A successfully recorded page grant must not be downgraded if session response construction fails');
-console.log('Google Play Developer API token verification, six-month fulfillment and post-commit replay safety checks passed');
+
+failAfterFulfillment = false;
+consumeOnServer = true;
+await assert.rejects(create('https://example.test', receipt, {
+  slugBase: 'created-page', groomKoreanName: '신랑', brideKoreanName: '신부', theme: 'simple', ownerUid: appUserId,
+}), /reconciliation/, 'Unknown consumed tokens must never grant a new page');
+const validFulfillment = {
+  status: 'fulfilled', kind: 'pageCreation', provider: 'googleplay',
+  appUserId, productId, createdPageSlug: 'created-page', eventId: 'created-id',
+};
+for (const patch of [
+  { status: 'failed' }, { status: 'processing' }, { provider: 'revenuecat' },
+  { appUserId: 'other-user' }, { productId: 'ticket_pack_1' }, { kind: 'ticketPack' },
+  { createdPageSlug: null },
+]) {
+  pastFulfillment = { ...validFulfillment, ...patch };
+  await assert.rejects(create('https://example.test', receipt, {
+    slugBase: 'created-page', groomKoreanName: '신랑', brideKoreanName: '신부', theme: 'simple', ownerUid: appUserId,
+  }), /reconciliation/, 'Only the matching already-fulfilled Play grant may be restored');
+}
+pastFulfillment = validFulfillment;
+const priorLocks = lockAcquisitions;
+const priorGrants = fulfilled;
+const replay = await create('https://example.test', receipt, {
+  slugBase: 'created-page', groomKoreanName: '신랑', brideKoreanName: '신부', theme: 'simple', ownerUid: appUserId,
+}) as { billingPurchaseConsumed: boolean; page: { slug: string } };
+assert.equal(replay.billingPurchaseConsumed, true, 'Tell the client not to re-consume a completed purchase');
+assert.equal(replay.page.slug, 'created-page');
+assert.equal(lockAcquisitions, priorLocks, 'A consumed replay may not acquire a new grant lock');
+assert.equal(fulfilled, priorGrants, 'A consumed replay may not issue a second grant');
+console.log('Google Play token verification, six-month grants and consumed-token replay safety checks passed');
