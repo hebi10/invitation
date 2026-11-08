@@ -55,6 +55,14 @@ with sync_playwright() as p:
             page.evaluate("window.scrollTo(0,0)")
             page.evaluate("document.fonts.ready")
             page.wait_for_timeout(500)
+            # An audio warning may appear when the public music service is unavailable.
+            # Dismiss it for the visual reference; capture the warning in QA metadata.
+            music_warning = page.get_by_text("음악을 불러오지 못했어요", exact=False).count() > 0
+            if music_warning:
+                dismiss = page.get_by_role("button", name="음악 안내 닫기")
+                if dismiss.count() > 0:
+                    dismiss.first.click(timeout=5000)
+                    page.wait_for_timeout(300)
             filename = f"{short}-full.jpg"
             target = OUT / filename
             page.screenshot(path=str(target), type="jpeg", quality=84,
@@ -70,6 +78,7 @@ with sync_playwright() as p:
                 raise RuntimeError(f"{theme}: suspicious screenshot dimensions/size")
             digest = hashlib.sha256(target.read_bytes()).hexdigest()
             captures.append(dict(theme=theme, filename=filename, sourceUrl=url,
+                audioWarningDismissed=music_warning,
                 httpStatus=response.status, bytes=target.stat().st_size,
                 sha256=digest, **info))
             print(f"CAPTURE_OK {theme}: {info['pageHeight']}px, {target.stat().st_size} bytes, broken={info['brokenImages']}", flush=True)
