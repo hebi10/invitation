@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { runInNewContext } from 'node:vm';
 import ts from 'typescript';
@@ -8,76 +9,97 @@ import * as productPolicy from '../src/lib/invitationProductPolicy.ts';
 const source = ts.transpileModule(readFileSync('apps/mobile/src/lib/billing.ts', 'utf8'), {
   compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, esModuleInterop: true },
 }).outputText;
-const productId = 'page_creation_premium';
-function load(options: { os?: string; key?: string; missingSdk?: boolean; missingNative?: boolean; missingProduct?: boolean; failure?: object; price?: number; currency?: string; transactionId?: string } = {}) {
+const sku = 'page_creation_premium';
+type Purchase = { id: string; productId: string; purchaseToken: string; purchaseState: string; store: string; transactionDate: number };
+function fixture(overrides: { os?: string; price?: number; currency?: string; missing?: boolean; cancelled?: boolean; pending?: boolean } = {}) {
   const calls: string[] = [];
+  let onPurchase: ((value: Purchase) => void) | undefined;
+  let onError: ((value: { code: string }) => void) | undefined;
+  const paid: Purchase = {
+    id: 'GPA.test.123',
+    productId: sku,
+    purchaseToken: 'valid-store-token',
+    purchaseState: 'purchased',
+    store: 'google',
+    transactionDate: Date.parse('2026-11-08T00:00:00Z'),
+  };
+  let owned = [paid];
   const sdk = {
-    configure: ({ appUserID }: { appUserID: string }) => calls.push(`configure:${appUserID}`),
-    logIn: async (id: string) => { calls.push(`login:${id}`); },
-    invalidateCustomerInfoCache: async () => { calls.push('invalidate'); },
-    getAppUserID: async () => 'customer-1',
-    getCustomerInfo: async () => { calls.push('history'); return { requestDate: '2026-09-21T01:00:00Z', nonSubscriptionTransactions: [
-      { productIdentifier: productId, transactionIdentifier: 'rc-previous', purchaseDate: '2026-09-21T00:00:00Z' },
-    ] }; },
-    getProducts: async () => { calls.push('products'); return options.missingProduct ? [] : [{ identifier: productId, price: options.price ?? 5000, currencyCode: options.currency ?? 'KRW' }]; },
-    purchaseStoreProduct: async () => {
+    initConnection: async () => { calls.push('connect'); return true; },
+    purchaseUpdatedListener: (callback: (purchase: Purchase) => void) => { onPurchase = callback; return { remove() {} }; },
+    purchaseErrorListener: (callback: (error: { code: string }) => void) => { onError = callback; return { remove() {} }; },
+    fetchProducts: async () => {
+      calls.push('products');
+      return overrides.missing ? [] : [{ id: sku, store: 'google', price: overrides.price ?? 5000, currency: overrides.currency ?? 'KRW' }];
+    },
+    getAvailablePurchases: async () => { calls.push('history'); return owned; },
+    requestPurchase: async ({ request }: { request: { google: { obfuscatedAccountId: string } } }) => {
       calls.push('purchase');
-      if (options.failure) throw options.failure;
-      return { customerInfo: { originalAppUserId: 'old-alias' }, productIdentifier: productId,
-        transaction: { productIdentifier: productId, transactionIdentifier: options.transactionId ?? 'GPA.1234', purchaseDate: '2026-09-21' } };
+      assert.equal(request.google.obfuscatedAccountId,
+        createHash('sha256').update('customer-1').digest('hex'), 'Do not send plain user IDs to Google Play');
+      queueMicrotask(() => {
+        if (overrides.cancelled) onError?.({ code: 'user-cancelled' });
+        else onPurchase?.({ ...paid, purchaseState: overrides.pending ? 'pending' : 'purchased' });
+      });
+    },
+    finishTransaction: async ({ isConsumable, purchase }: { isConsumable: boolean; purchase: Purchase }) => {
+      calls.push('finish');
+      assert.equal(isConsumable, true);
+      assert.equal(purchase.purchaseToken, paid.purchaseToken);
+      owned = [];
     },
   };
   const exports: Record<string, unknown> = {};
-  const require = (id: string) => {
-    if (id === './mobileBillingProducts') return billingProducts;
-    if (id === './invitationProductPolicy') return productPolicy;
-    if (id === 'react-native') return { Platform: { OS: options.os ?? 'android' }, NativeModules: { RNPurchases: options.missingNative ? null : {} } };
-    if (id === 'react-native-purchases') return { default: options.missingSdk ? null : sdk, __esModule: true };
-    if (id === './storage') return { getStoredString: async () => 'customer-1', setStoredString: async () => {} };
-    throw new Error(`Unexpected module ${id}`);
+  runInNewContext(source, {
+    exports,
+    process: { env: {} },
+    Error,
+    Date,
+    Promise,
+    queueMicrotask,
+    require(id: string) {
+      if (id === './mobileBillingProducts') return billingProducts;
+      if (id === './invitationProductPolicy') return productPolicy;
+      if (id === 'react-native') return { Platform: { OS: overrides.os ?? 'android' } };
+      if (id === 'expo-crypto') return {
+        CryptoDigestAlgorithm: { SHA256: 'SHA-256' },
+        digestStringAsync: async (_algorithm: string, raw: string) => createHash('sha256').update(raw).digest('hex'),
+      };
+      if (id === 'expo-iap') return sdk;
+      if (id === './storage') return { getStoredString: async () => 'customer-1', setStoredString: async () => {} };
+      throw new Error(`Unexpected import: ${id}`);
+    },
+  });
+  return {
+    calls,
+    purchase: exports.purchaseBillingProduct as (id: string, options: { appUserId: string }) => Promise<{ purchaseToken: string; transactionIdentifier: string }>,
+    history: exports.getBillingTransactionHistory as (options: { appUserId: string }) => Promise<{ transactions: Array<{ purchaseToken: string }> }>,
+    finish: exports.finishBillingPurchase as (token: string) => Promise<void>,
+    uncharged: exports.isDefinitelyUnchargedBillingError as (value: unknown) => boolean,
   };
-  runInNewContext(source, { exports, require, process: { env: { NODE_ENV: 'development', EXPO_PUBLIC_REVENUECAT_ANDROID_API_KEY: options.key ?? 'goog_example' } } });
-  return { calls, purchase: exports.purchaseBillingProduct as (id: string, options: { appUserId: string }) => Promise<{ appUserId: string; transactionIdentifier: string }>,
-    history: exports.getBillingTransactionHistory as (options: { appUserId: string }) => Promise<{ transactions: { transactionIdentifier: string }[]; requestDate: string }>,
-    definitelyUncharged: exports.isDefinitelyUnchargedBillingError as (error: unknown) => boolean };
 }
 
-for (const options of [{ key: '' }, { key: 'test_example' }, { os: 'web' }, { os: 'ios' }, { missingSdk: true }, { missingNative: true }]) {
-  const runtime = load(options);
-  await assert.rejects(runtime.purchase(productId, { appUserId: 'customer-1' }), undefined, 'Unavailable Play Billing must never simulate success');
-  assert(!runtime.calls.includes('purchase'));
+const good = fixture();
+const receipt = await good.purchase(sku, { appUserId: 'customer-1' });
+assert.equal(receipt.purchaseToken, 'valid-store-token', 'Use Play purchase token for backend verification');
+assert.equal(receipt.transactionIdentifier, 'GPA.test.123');
+assert(good.calls.includes('purchase'));
+await good.finish(receipt.purchaseToken);
+assert.equal(good.calls.filter(x => x === 'finish').length, 1, 'Finish the consumable after server fulfillment');
+assert.equal((await good.history({ appUserId: 'customer-1' })).transactions.length, 0);
+
+const cancelled = fixture({ cancelled: true });
+await assert.rejects(cancelled.purchase(sku, { appUserId: 'customer-1' }), /취소/);
+assert(cancelled.uncharged(await cancelled.purchase('ticket_pack_1', { appUserId: 'customer-1' }).catch(e => e)));
+const pending = fixture({ pending: true });
+await assert.rejects(pending.purchase(sku, { appUserId: 'customer-1' }), /대기/);
+assert(!pending.calls.includes('finish'), 'Pending payment must not be consumed');
+
+for (const input of [{ price: 9000 }, { currency: 'USD' }, { missing: true }, { os: 'web' }]) {
+  const runtime = fixture(input);
+  await assert.rejects(runtime.purchase(sku, { appUserId: 'customer-1' }));
+  assert(!runtime.calls.includes('purchase'), 'Incorrect products and platforms cannot charge');
 }
-const success = load();
-const result = await success.purchase(productId, { appUserId: 'customer-1' });
-assert.equal(result.appUserId, 'customer-1', 'Return the authenticated billing identity, not a historical alias');
-assert.equal(result.transactionIdentifier, 'GPA.1234');
-assert.deepEqual(success.calls, ['configure:customer-1', 'products', 'purchase']);
-const switched = await success.purchase(productId, { appUserId: 'customer-2' });
-assert.equal(switched.appUserId, 'customer-2');
-assert.equal(success.calls.filter(call => call.startsWith('configure:')).length, 1);
-assert(success.calls.includes('login:customer-2'));
-await assert.rejects(load({ missingProduct: true }).purchase(productId, { appUserId: 'customer-1' }));
-await assert.rejects(load({ transactionId: '' }).purchase(productId, { appUserId: 'customer-1' }));
-const cancelled = { userCancelled: true };
-await assert.rejects(load({ failure: cancelled }).purchase(productId, { appUserId: 'customer-1' }), /결제를 취소했습니다/);
-
-
-const oldPrice = load({ price: 9900 });
-await assert.rejects(oldPrice.purchase(productId, { appUserId: 'customer-1' }));
-assert.equal(oldPrice.calls.includes('purchase'), false, '9,900원 상품은 스토어 결제를 시작하면 안 됩니다.');
-
-await assert.rejects(load({ price: 15000 }).purchase(productId, { appUserId: 'customer-1' }));
-await assert.rejects(load({ currency: 'USD' }).purchase(productId, { appUserId: 'customer-1' }));
-
-await assert.rejects(load().purchase('page_creation_standard', { appUserId: 'customer-1' }));
-await assert.rejects(load().purchase('page_creation_deluxe', { appUserId: 'customer-1' }));
-const history = load();
-assert.equal(typeof history.history, 'function', 'Recovery must have an API to refresh transaction history without charging');
-assert.equal((await history.history({ appUserId: 'customer-1' })).transactions[0].transactionIdentifier, 'rc-previous');
-assert.deepEqual(history.calls, ['configure:customer-1', 'invalidate', 'history']);
-const abort = load({ failure: cancelled });
-try { await abort.purchase(productId, { appUserId: 'customer-1' }); } catch (error) {
-  assert.equal(abort.definitelyUncharged(error), true, 'Definitive cancellation may release the persisted purchase intent');
-}
-assert.equal(abort.definitelyUncharged(new Error('Network failed')), false, 'An ambiguous store failure must retain the purchase intent');
-console.log('mobile real billing client checks passed (no purchase made)');
+const history = fixture();
+assert.equal((await history.history({ appUserId: 'customer-1' })).transactions[0].purchaseToken, 'valid-store-token');
+console.log('Direct Google Play Billing client checks passed (no real charge)');
