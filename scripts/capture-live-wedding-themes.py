@@ -40,6 +40,10 @@ with sync_playwright() as p:
             if response is None or response.status != 200:
                 raise RuntimeError(f"{theme}: page response was {response.status if response else 'none'}")
             page.get_by_text("김현지", exact=False).first.wait_for(timeout=25000)
+            intro = page.get_by_role("dialog", name="결혼식 초대장 인트로")
+            if intro.count() > 0 and intro.first.is_visible():
+                page.get_by_role("button", name="건너뛰기").first.click(timeout=7000)
+                page.wait_for_timeout(400)
             page.add_style_tag(content="""
                 *, *::before, *::after {animation-duration:0s!important;
                   transition-duration:0s!important;scroll-behavior:auto!important}
@@ -61,7 +65,7 @@ with sync_playwright() as p:
             if music_warning:
                 dismiss = page.get_by_role("button", name="음악 안내 닫기")
                 if dismiss.count() > 0:
-                    dismiss.first.click(timeout=5000)
+                    dismiss.first.evaluate("(button) => button.click()")
                     page.wait_for_timeout(300)
             filename = f"{short}-full.jpg"
             target = OUT / filename
