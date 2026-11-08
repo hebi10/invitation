@@ -69,9 +69,19 @@ def test_links_and_sections(page, theme: str, result: dict):
     for href in expected:
         anchor = page.locator(f'nav[aria-label="청첩장 바로가기"] a[href="{href}"]')
         anchor.first.click(timeout=9000)
-        page.wait_for_timeout(160)
         target = page.locator(href)
         ensure(target.count() == 1, theme, f"missing anchor target {href}")
+        try:
+            page.wait_for_function(
+                """selector => {
+                    const element = document.querySelector(selector);
+                    const y = element?.getBoundingClientRect().top ?? -9999;
+                    return y >= 50 && y <= 185;
+                }""",
+                arg=href, timeout=7000, polling=100,
+            )
+        except PlaywrightTimeout:
+            pass
         y = target.first.evaluate("(element) => Math.round(element.getBoundingClientRect().top)")
         landing.append({"anchor": href, "landingTopPx": y})
         ensure(50 <= y <= 185, theme, f"{href} covered by top controls: {y}px")
@@ -108,6 +118,8 @@ def test_map_and_contacts(page, theme: str, result: dict):
     ensure(bool(links), theme, "map external link missing")
     for link in links:
         url = urlparse(link["href"])
+        if url.scheme != "https":
+            print(f"STAGE6_MAP_URL_SCHEME {theme} {url.scheme} {url.hostname}", flush=True)
         ensure(url.scheme == "https", theme, "map must use HTTPS")
         if link["target"] == "_blank":
             ensure("noopener" in link["rel"] and "noreferrer" in link["rel"], theme, "map link needs safe rel")
@@ -142,6 +154,17 @@ def test_gift_copy(page, theme: str, result: dict):
         result["account"] = {"configured": False, "copyTest": "not-applicable"}
         return
     button.first.click(timeout=10000)
+    try:
+        page.wait_for_function(
+            """() => {
+                const region = document.getElementById('wedding-accounts');
+                const content = region?.innerText || '';
+                return content.includes('복사 완료') || content.includes('복사하지 못했어요');
+            }""",
+            timeout=5000, polling=100,
+        )
+    except PlaywrightTimeout:
+        pass
     message = gift.inner_text(timeout=10000)
     ensure("복사 완료" in message or "복사하지 못했어요" in message,
            theme, "clipboard action produced no status")
