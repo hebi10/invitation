@@ -33,6 +33,22 @@ with sync_playwright() as p:
         reduced_motion="reduce",
     )
     try:
+        preflight = context.new_page()
+        for attempt in range(24):
+            preflight.goto(f"{BASE}/{SLUG}/simple/", wait_until="domcontentloaded", timeout=60000)
+            preflight.get_by_text("김현지", exact=False).first.wait_for(timeout=25000)
+            quick = preflight.locator('nav[aria-label="청첩장 바로가기"] a')
+            quick.first.wait_for(timeout=20000)
+            order = quick.evaluate_all("(anchors) => anchors.map(a => a.getAttribute('href'))")
+            if order[:2] == ["#wedding-info", "#wedding-location"]:
+                print("STAGE2_DEPLOYMENT_CONFIRMED", order, flush=True)
+                break
+            print("STAGE2_DEPLOYMENT_PENDING", attempt + 1, order, flush=True)
+            preflight.wait_for_timeout(5000)
+        else:
+            raise RuntimeError("Stage2 public build not yet active after preflight retries")
+        preflight.close()
+
         for theme, short in THEMES:
             page = context.new_page()
             music_responses = []
@@ -176,6 +192,44 @@ with sync_playwright() as p:
                     audit["issues"].append(f"horizontal overflow at {width}px: {dimensions}")
                 small_viewports.append({"file": viewport_file, **dimensions})
             page.set_viewport_size({"width": 390, "height": 844})
+            stage2_audit = page.evaluate("""() => {
+                const linkHrefs = (selector) => [...document.querySelectorAll(selector)]
+                    .map(element => element.getAttribute('href'));
+                const page = document.querySelector('main[data-design]');
+                const gallery = page?.querySelector('[data-wedding-section="gallery"] > section');
+                const guestbook = page?.querySelector('[data-wedding-section="guestbook"] [class*="commentsGrid"]');
+                const footerLinks = [...document.querySelectorAll('nav[aria-label="예식 정보 다시 보기"] a')];
+                const getTop = (id) => document.getElementById(id)?.getBoundingClientRect().top ?? null;
+                return {
+                    quickHrefs: linkHrefs('nav[aria-label="청첩장 바로가기"] a'),
+                    returnHrefs: linkHrefs('nav[aria-label="예식 정보 다시 보기"] a'),
+                    galleryMarginTop: gallery ? parseFloat(getComputedStyle(gallery).marginTop) : null,
+                    guestbookRowGap: guestbook ? parseFloat(getComputedStyle(guestbook).rowGap) : null,
+                    footerLinkHeights: footerLinks.map(link => Math.round(link.getBoundingClientRect().height)),
+                    hasCeremony: Boolean(document.getElementById('wedding-info')),
+                    hasLocation: Boolean(document.getElementById('wedding-location')),
+                    hasClosing: Boolean(document.querySelector('[data-wedding-closing]')),
+                    hasGallery: Boolean(gallery),
+                    viewport: window.innerWidth,
+                    scrollWidth: document.documentElement.scrollWidth
+                };
+            }""")
+            if stage2_audit["quickHrefs"] != ["#wedding-info", "#wedding-location", "#wedding-gallery"]:
+                audit["issues"].append(f"stage2 quick links order mismatch: {stage2_audit['quickHrefs']}")
+            if stage2_audit["returnHrefs"][:2] != ["#wedding-info", "#wedding-location"]:
+                audit["issues"].append(f"stage2 return link order mismatch: {stage2_audit['returnHrefs']}")
+            margin = stage2_audit["galleryMarginTop"]
+            if margin is None or not 43 <= margin <= 65:
+                audit["issues"].append(f"stage2 gallery spacing out of range: {margin}")
+            gap = stage2_audit["guestbookRowGap"]
+            if theme != "simple" and gap is not None and not 13 <= gap <= 23:
+                audit["issues"].append(f"stage2 guestbook spacing out of range: {gap}")
+            if not all(height >= 44 for height in stage2_audit["footerLinkHeights"]):
+                audit["issues"].append(f"stage2 return touch target below 44px: {stage2_audit['footerLinkHeights']}")
+            if not all(stage2_audit[key] for key in ("hasCeremony", "hasLocation", "hasClosing", "hasGallery")):
+                audit["issues"].append(f"stage2 required wedding section missing: {stage2_audit}")
+            print("STAGE2_AUDIT", theme, json.dumps(stage2_audit, ensure_ascii=False), flush=True)
+
             info = page.evaluate("""() => ({
                 title: document.title, pageHeight: document.documentElement.scrollHeight,
                 bodyText: document.body.innerText.slice(0,350),
@@ -191,7 +245,7 @@ with sync_playwright() as p:
                 httpStatus=response.status, bytes=target.stat().st_size,
                 sha256=digest, **info, stage1Audit={
                     **audit, "anchors": anchor_results, "responsive": small_viewports
-                }))
+                }, stage2Audit=stage2_audit))
             print(f"CAPTURE_OK {theme}: {info['pageHeight']}px, {target.stat().st_size} bytes, broken={info['brokenImages']}", flush=True)
             page.close()
     finally:
@@ -213,7 +267,7 @@ for idx, item in enumerate(captures):
 overview.save(OUT / "00-five-themes-overview.jpg", quality=85)
 report = dict(capturedAt=datetime.now(timezone.utc).isoformat(),
     source="Public Firebase-hosted test invitation", slug=SLUG,
-    notes="After stage1 d731345f live deployment. Music button top 44px, links/active gallery state audited. Actual page labels groom as 신민제.",
+    notes="After stage2 16ac2b5 Firebase App Hosting rollout. Stage1 regression and Stage2 quicklinks/gallery/guestbook/footer audit. Actual page labels groom as 신민제.",
     viewport=dict(width=390, height=844, deviceScaleFactor=2),
     captures=captures)
 (OUT / "capture-manifest.json").write_text(
