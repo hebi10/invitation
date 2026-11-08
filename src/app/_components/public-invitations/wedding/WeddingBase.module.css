@@ -810,3 +810,74 @@ details[open] > :is(.disclosureSummary, .accountSummary, .formSummary)::after { 
   .page[data-design='emotional'] .invitationCopy { font-size: 15px; }
   .page[data-design='emotional'] .pagination { gap: 4px; }
 }
+
+/* Stage 2: shared reading rhythm without changing the individual themes. */
+.page .quickLinks {
+  column-gap: clamp(8px, 3vw, 20px);
+}
+
+.page .quickLinks a {
+  white-space: nowrap;
+  text-align: center;
+}
+
+.page [data-wedding-section='gallery'] > .container {
+  margin-top: clamp(44px, 12vw, 64px);
+}
+
+.page [data-wedding-section='gallery'] .title {
+  margin-bottom: clamp(18px, 5vw, 24px);
+}
+
+.page .ceremonySection > .ceremonyContent {
+  margin-bottom: clamp(12px, 3.5vw, 18px);
+}
+
+.page .scheduleSection .scheduleContent {
+  row-gap: clamp(6px, 1.8vw, 9px);
+  margin-bottom: 18px;
+}
+
+.page .scheduleSection .address {
+  line-height: 1.8;
+  word-break: keep-all;
+  overflow-wrap: break-word;
+}
+
+.page .scheduleSection .travelNote {
+  margin-top: 12px;
+  margin-bottom: 0;
+}
+
+.page:not([data-design='simple']) [data-wedding-section='guestbook'] .commentsGrid {
+  row-gap: clamp(14px, 4vw, 22px);
+}
+
+.page [data-wedding-section='guestbook'] .commentMessage {
+  overflow-wrap: break-word;
+}
+
+.page [data-wedding-section='guestbook'] .commentDate {
+  font-variant-numeric: tabular-nums;
+}
+
+.page .returnLinks {
+  width: min(100%, 420px);
+  margin: clamp(28px, 8vw, 40px) auto 0;
+  padding: 12px 16px 24px;
+  gap: 4px 14px;
+}
+
+.page .returnLinks a {
+  min-height: 44px;
+  padding: 8px;
+  white-space: nowrap;
+  font-size: 14px;
+}
+
+@media (max-width: 359px) {
+  .page .returnLinks {
+    gap: 4px 8px;
+    padding-inline: 12px;
+  }
+}
