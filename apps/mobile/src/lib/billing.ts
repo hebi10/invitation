@@ -167,7 +167,7 @@ export async function purchaseBillingProduct(
     throw new Error('이미 Google Play 결제 요청이 진행 중입니다.');
   }
   const products = await fetchProducts({ skus: [productId], type: 'in-app' });
-  const product = products.find(item => item.id === productId && item.store === 'google');
+  const product = products?.find(item => item.id === productId);
   if (!product) {
     throw new BillingNotChargedError('Google Play에서 결제 상품을 찾을 수 없습니다. 현재 상품 판매 설정을 확인해 주세요.');
   }
