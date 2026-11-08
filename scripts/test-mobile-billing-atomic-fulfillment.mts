@@ -269,6 +269,7 @@ function reviewFixture() {
     };
     if (id === './billing') return {
       getBillingTransactionHistory: async () => ({ transactions: [], requestDate: '2026-10-02T00:00:00Z' }),
+      finishBillingPurchase: async () => {},
       isDefinitelyUnchargedBillingError: () => false,
     };
     return {};
@@ -282,7 +283,7 @@ function reviewFixture() {
   }, {
     purchase: async () => {
       purchases++;
-      return { appUserId: purchase.appUserId, productIdentifier: purchase.productId, transactionIdentifier: transactionId };
+      return { appUserId: purchase.appUserId, productIdentifier: purchase.productId, transactionIdentifier: transactionId, purchaseToken: purchase.purchaseToken };
     },
     fulfill: () => api.fulfillMobileBillingTicketPack('https://example.test', ticketPayload),
   });
