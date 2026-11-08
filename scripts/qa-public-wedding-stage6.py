@@ -8,6 +8,7 @@ in this ephemeral Chromium context. A passing run does NOT certify real devices.
 from __future__ import annotations
 
 import json
+import os
 import re
 from datetime import datetime, timezone
 from pathlib import Path
@@ -26,6 +27,7 @@ THEMES = (
     ("emotional", "05-natural"),
 )
 BASE = "https://invite.msgnote.kr/shin-minje-kim-hyunji"
+REQUIRE_DEPLOYED_MAP_HTTPS = os.getenv('STAGE6_REQUIRE_MAP_HTTPS', '1') == '1'
 ISSUES: list[str] = []
 RECORDS: list[dict] = []
 
@@ -118,9 +120,14 @@ def test_map_and_contacts(page, theme: str, result: dict):
     ensure(bool(links), theme, "map external link missing")
     for link in links:
         url = urlparse(link["href"])
-        if url.scheme != "https":
-            print(f"STAGE6_MAP_URL_SCHEME {theme} {url.scheme} {url.hostname}", flush=True)
-        ensure(url.scheme == "https", theme, "map must use HTTPS")
+        if url.scheme == "http" and url.hostname == "map.kakao.com" and not REQUIRE_DEPLOYED_MAP_HTTPS:
+            # A PR checks the existing public site, not its not-yet-deployed fix.
+            # This known legacy URL remains an explicit pending item until post-merge QA.
+            result.setdefault("legacyMapUrlsPendingDeploy", 0)
+            result["legacyMapUrlsPendingDeploy"] += 1
+            print(f"STAGE6_PENDING_MAP_FIX {theme} map.kakao.com (PR only)", flush=True)
+        else:
+            ensure(url.scheme == "https", theme, "map must use HTTPS")
         if link["target"] == "_blank":
             ensure("noopener" in link["rel"] and "noreferrer" in link["rel"], theme, "map link needs safe rel")
     phone_links = section.locator('a[href^="tel:"]').count()
@@ -359,6 +366,13 @@ manifest = {
     "checksPassed": sum(len(record["features"]) for record in RECORDS),
     "issues": ISSUES,
     "automatedPublicSmokePassed": not ISSUES,
+    "requiresDeployedMapHttps": REQUIRE_DEPLOYED_MAP_HTTPS,
+    "releaseMapHttpsGateSatisfied": (
+        REQUIRE_DEPLOYED_MAP_HTTPS and not any(
+            record.get("features", {}).get("legacyMapUrlsPendingDeploy")
+            for record in RECORDS
+        ) and not ISSUES
+    ),
     "excludedFromProof": [
         "Real Android/iOS hardware; TalkBack, VoiceOver, system orientation",
         "Actual KakaoTalk share/send/receive and external map-app handoff",
