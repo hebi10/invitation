@@ -1,0 +1,121 @@
+name: Invitation Play empty edit permission diagnostic
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/invitation-play-empty-edit-diagnostic.yml'
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  probe:
+    if: github.repository == 'hebi10/invitation'
+    runs-on: ubuntu-24.04
+    environment: google-play-testing
+    timeout-minutes: 6
+    steps:
+      - name: Obtain short-lived Google Play token
+        id: auth
+        uses: google-github-actions/auth@v3
+        with:
+          workload_identity_provider: ${{ vars.PLAY_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ vars.PLAY_SERVICE_ACCOUNT }}
+          token_format: access_token
+          access_token_scopes: https://www.googleapis.com/auth/androidpublisher
+          create_credentials_file: false
+          export_environment_variables: false
+      - name: Validate an unchanged temporary edit without committing
+        env:
+          PLAY_ACCESS_TOKEN: ${{ steps.auth.outputs.access_token }}
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import json, os, re, urllib.error, urllib.request
+          from pathlib import Path
+
+          root = "https://androidpublisher.googleapis.com/androidpublisher/v3/applications/kr.msgnote.mobileinvitation"
+          token = os.environ["PLAY_ACCESS_TOKEN"]
+          report = {"package": "kr.msgnote.mobileinvitation", "scope": "empty_edit_only",
+                    "committed": False, "uploadedImages": False, "changedLiveStore": False}
+          edit_id = None
+
+          def request(method, url, body=None):
+              headers = {"Authorization": f"Bearer {token}", "Accept": "application/json"}
+              if body is not None and body != b"":
+                  headers["Content-Type"] = "application/json; charset=utf-8"
+              req = urllib.request.Request(url, method=method, headers=headers, data=body)
+              with urllib.request.urlopen(req, timeout=40) as response:
+                  return json.load(response)
+
+          def safe_error(exc):
+              try:
+                  value = json.loads(exc.read(8192).decode("utf-8", "replace"))
+              except (ValueError, OSError):
+                  value = {}
+              finally:
+                  exc.close()
+              detail = value.get("error", {}) if isinstance(value, dict) else {}
+              status = detail.get("status", "")
+              if not isinstance(status, str) or not re.fullmatch(r"[A-Z_]{2,50}", status):
+                  status = "UNAVAILABLE"
+              reason = "UNAVAILABLE"
+              items = detail.get("errors", [])
+              if isinstance(items, list) and items and isinstance(items[0], dict):
+                  candidate = items[0].get("reason", "")
+                  if isinstance(candidate, str) and re.fullmatch(r"[A-Za-z_]{2,80}", candidate):
+                      reason = candidate
+              message = detail.get("message", "")
+              if not isinstance(message, str):
+                  message = ""
+              if re.search(r"(?i)(bearer|token|secret|credential|password|private.?key|api.?key)", message):
+                  message = "[redacted]"
+              else:
+                  message = re.sub(r"https?://[^\s]+", "[url]", message)
+                  message = re.sub(r"[\w.+-]+@[\w.-]+", "[email]", message)
+                  message = " ".join(message.split())[:240].replace("::", ":")
+              return {"http": exc.code, "status": status, "reason": reason, "message": message}
+
+          try:
+              edit = request("POST", root + "/edits", b"{}")
+              edit_id = edit.get("id", "")
+              if not isinstance(edit_id, str) or not re.fullmatch(r"[A-Za-z0-9_-]+", edit_id):
+                  raise ValueError("No valid edit ID")
+              report["editCreate"] = "success"
+              listing = request("GET", root + f"/edits/{edit_id}/listings/ko-KR")
+              report["koKrListingReadable"] = listing.get("language") == "ko-KR"
+              try:
+                  # This is a no-op validation; unlike image staging there are no changed store fields.
+                  request("POST", root + f"/edits/{edit_id}:validate", b"")
+                  report["emptyEditValidation"] = {"http": 200, "status": "OK"}
+              except urllib.error.HTTPError as exc:
+                  report["emptyEditValidation"] = safe_error(exc)
+          except urllib.error.HTTPError as exc:
+              report["setupError"] = safe_error(exc)
+          except (OSError, ValueError, TimeoutError) as exc:
+              report["setupError"] = type(exc).__name__
+          finally:
+              if edit_id:
+                  try:
+                      request("DELETE", root + f"/edits/{edit_id}")
+                      report["temporaryEditDeleted"] = True
+                  except urllib.error.HTTPError as exc:
+                      report["temporaryEditDeleteError"] = safe_error(exc)
+                  except (OSError, TimeoutError):
+                      report["temporaryEditDeleteError"] = "transport_error"
+
+          Path("artifacts/play-validate-diagnostic").mkdir(parents=True, exist_ok=True)
+          Path("artifacts/play-validate-diagnostic/report.json").write_text(
+              json.dumps(report, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+          print(json.dumps(report, ensure_ascii=False))
+          PY
+      - name: Preserve non-mutating Google Play diagnostic result
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: invitation-play-empty-edit-diagnostic
+          path: artifacts/play-validate-diagnostic/report.json
+          if-no-files-found: warn
+          retention-days: 7
