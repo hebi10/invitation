@@ -33,7 +33,6 @@ export default function BackgroundMusic({
   const [isPlaying, setIsPlaying] = useState(false);
   const [playbackError, setPlaybackError] = useState('');
   const [isErrorDismissed, setIsErrorDismissed] = useState(false);
-  const [isAtTop, setIsAtTop] = useState(true);
   const [shouldRenderInitialControlHint, setShouldRenderInitialControlHint] = useState(
     Boolean(initialControlHintText?.trim())
   );
@@ -128,19 +127,6 @@ export default function BackgroundMusic({
     pauseAudio();
     audio.load();
   }, [normalizedMusicUrl, pauseAudio]);
-
-  useEffect(() => {
-    const handleScroll = () => {
-      setIsAtTop(window.scrollY === 0);
-    };
-
-    handleScroll();
-    window.addEventListener('scroll', handleScroll, { passive: true });
-
-    return () => {
-      window.removeEventListener('scroll', handleScroll);
-    };
-  }, []);
 
   useEffect(() => {
     if (!normalizedInitialControlHintText || !normalizedMusicUrl) {
@@ -257,8 +243,12 @@ export default function BackgroundMusic({
         className={`${styles.toggleButton} ${isPlaying ? styles.on : styles.off}`}
         aria-label={isPlaying ? '음악 끄기' : errorMessage ? '음악 다시 시도' : '음악 켜기'}
         title={isPlaying ? '음악 끄기' : errorMessage ? '음악 다시 시도' : '음악 켜기'}
+        aria-pressed={isPlaying}
       >
-        {isPlaying ? '음악 끄기' : errorMessage ? '음악 다시 시도' : '음악 켜기'}
+        <span className={styles.controlIcon} aria-hidden="true">{isPlaying ? 'Ⅱ' : '♪'}</span>
+        <span className={styles.controlLabel}>
+          {isPlaying ? '음악 끄기' : errorMessage ? '음악 다시 시도' : '음악 켜기'}
+        </span>
       </button>
 
       {errorMessage && !isErrorDismissed ? (
@@ -291,13 +281,6 @@ export default function BackgroundMusic({
         </div>
       ) : null}
 
-      {!errorMessage && !shouldRenderInitialControlHint && !hasAutoPlayedRef.current && !isPlaying && isAtTop ? (
-        <div className={styles.autoPlayHint}>
-          <span style={{ fontSize: '0.7rem', color: '#838383' }}>
-            버튼을 눌러 음악을 켤 수 있어요
-          </span>
-        </div>
-      ) : null}
     </div>
   );
 }
