@@ -47,7 +47,7 @@ assert.match(api, /if \(action === 'extendInvitationPeriod'\)/);
 assert.match(api, /if \(action === 'grantTicketPack'\)/);
 assert.match(service, /function assertLegacyPaidTransactionDate\(purchaseDate: string \| null\)/);
 assert.equal((service.match(/assertLegacyPaidTransactionDate\(verifiedTransaction\.purchaseDate\)/g) ?? []).length, 2);
-assert.match(service, /verifiedTransaction = await verifyRevenueCatNonSubscriptionTransaction\(purchase\)/);
+assert.match(service, /verifiedTransaction = await verifyGooglePlayOneTimePurchase\(purchase\)/);
 assert.match(service, /code: 'billing-fulfillment-requires-review'/);
 assert.match(api, /error\.code === 'billing-fulfillment-requires-review'/);
 
