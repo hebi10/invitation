@@ -45,6 +45,8 @@ def arguments(argv):
     parser.add_argument("--notes-file", type=Path, required=True)
     parser.add_argument("--status", choices=("draft", "completed"), default="completed")
     parser.add_argument("--send-for-review", action="store_true")
+    parser.add_argument("--replace-existing-alpha-draft", action="store_true",
+                        help="Explicitly supersede only older draft releases on the existing alpha closed track")
     return parser.parse_args(argv)
 
 
@@ -59,6 +61,9 @@ def read_inputs(args, token):
             raise PlayError("비공개 테스트 트랙 ID 형식이 올바르지 않습니다.")
         if args.track.lower() in {"production", "beta", "internal", "internalsharing", "qa"}:
             raise PlayError("비공개 테스트 대상에는 예약된 트랙 ID를 사용할 수 없습니다.")
+    if args.replace_existing_alpha_draft and not (
+            args.target == "closed" and args.track == "alpha" and args.status == "completed"):
+        raise PlayError("과거 alpha 초안 대체는 명시적 alpha 비공개 테스트 완료 출시에서만 허용합니다.")
     if not 1 <= args.version_code <= 2100000000:
         raise PlayError("versionCode는 1~2100000000 범위의 정수여야 합니다.")
     if not args.release_name.strip() or any(c in args.release_name for c in "\r\n"):
@@ -194,6 +199,24 @@ def check_versions(version, digest, tracks, bundles, apks):
     return bool(matching)
 
 
+def can_supersede_alpha_draft(args, releases):
+    if not args.replace_existing_alpha_draft or args.target != "closed" or args.track != "alpha":
+        return False
+    if args.status != "completed" or not isinstance(releases, list) or not releases:
+        return False
+    for release in releases:
+        codes = release.get("versionCodes")
+        if release.get("status") != "draft" or not isinstance(codes, list) or not codes:
+            return False
+        for value in codes:
+            raw = str(value)
+            if not raw or not all(char in "0123456789" for char in raw):
+                return False
+            if int(raw) >= args.version_code:
+                return False
+    return True
+
+
 def release_state(release):
     value = release.get("releaseLifecycleState", "")
     return value[len(STATE_PREFIX):] if value.startswith(STATE_PREFIX) else ""
@@ -238,7 +261,9 @@ def publish(args, token, data, digest, notes):
         targets = [track for track in tracks if track.get("track") == args.track]
         if len(targets) != 1:
             raise PlayError("설정한 기존 테스트 트랙을 찾을 수 없습니다.")
-        if any(release.get("status") != "completed" for release in targets[0].get("releases", [])):
+        existing_target_releases = targets[0].get("releases", [])
+        supersede_alpha_draft = can_supersede_alpha_draft(args, existing_target_releases)
+        if any(release.get("status") != "completed" for release in existing_target_releases) and not supersede_alpha_draft:
             raise PlayError("대상 트랙에 미완료 출시가 있어 기존 초안을 보호하기 위해 중단했습니다.")
         bundles = request(token, "GET", f"{edit_path}/bundles").get("bundles", [])
         apks = request(token, "GET", f"{edit_path}/apks").get("apks", [])
@@ -246,7 +271,7 @@ def publish(args, token, data, digest, notes):
         for track in tracks:
             track_id = urllib.parse.quote(track["track"], safe="")
             pending = request(token, "GET", f"{BASE}/tracks/{track_id}/releases")
-            allowed = {"PUBLISHED"} if track["track"] == args.track else {"DRAFT", "PUBLISHED"}
+            allowed = ({"PUBLISHED", "DRAFT"} if supersede_alpha_draft else {"PUBLISHED"}) if track["track"] == args.track else {"DRAFT", "PUBLISHED"}
             if any(release_state(release) not in allowed
                    for release in pending.get("releases", [])):
                 raise PlayError("기존 심사·게시 대기 변경이 있어 자동 게시를 중단했습니다.")
