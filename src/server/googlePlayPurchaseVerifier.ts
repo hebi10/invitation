@@ -122,7 +122,7 @@ export async function verifyGooglePlayOneTimePurchase(
   purchase: GooglePlayPurchaseReceipt,
 ): Promise<VerifiedGooglePlayTransaction> {
   const token = purchase.purchaseToken?.trim() ?? '';
-  if (!token || token.length > MAX_TOKEN_LENGTH || /[\s/]/.test(token) ||
+  if (!token || token.length > MAX_TOKEN_LENGTH || /\s/.test(token) ||
       purchase.transactionId.startsWith('mock_') || !purchase.appUserId.trim()) {
     throw new Error('The Google Play purchase could not be verified yet.');
   }
