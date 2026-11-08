@@ -271,15 +271,16 @@ with sync_playwright() as playwright:
                 accept_downloads=True, permissions=["clipboard-read", "clipboard-write"],
             )
             # Prevent the real Kakao SDK's sendDefault from sending any invitations.
-            context.add_init_script("""() => {
-              window.__invitationQaSharePayload = null;
-              window.Kakao = {
-                isInitialized: () => true, init: () => {},
-                Share: { sendDefault: (payload) => {
-                  window.__invitationQaSharePayload = payload;
-                }},
-              };
-            }""".replace("() => {", "{", 1).replace("};\\n            }", "};", 1))
+            context.add_init_script("""
+                window.__invitationQaSharePayload = null;
+                window.Kakao = {
+                    isInitialized: () => true,
+                    init: () => {},
+                    Share: { sendDefault: (payload) => {
+                        window.__invitationQaSharePayload = payload;
+                    }},
+                };
+            """)
             page = context.new_page()
             result: dict = {"theme": theme, "features": {}, "httpStatus": None}
             requests = []
