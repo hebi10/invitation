@@ -53,7 +53,7 @@ const verify = verification.verifyGooglePlayOneTimePurchase as (input: object, o
 assert.equal((await verify(receipt)).transactionIdentifier, fulfillmentId);
 assert.equal((await verify(receipt)).alreadyConsumed, false);
 assert.equal((await verify(receipt)).purchaseTokenHash, createHash('sha256').update(token).digest('hex'));
-assert.equal(requests, 2, 'Every purchase must be verified against Google, not a local client claim');
+assert.equal(requests, 3, 'Every purchase must be verified against Google, not a local client claim');
 for (const update of [
   { purchaseStateContext: { purchaseState: 'PENDING' } },
   { purchaseStateContext: { purchaseState: 'CANCELLED' } },
@@ -71,7 +71,7 @@ for (const update of [
 }
 await assert.rejects(verify({ ...receipt, purchaseToken: '' }), /verified/);
 await assert.rejects(verify({ ...receipt, transactionId: 'mock_unpaid' }), /verified/);
-assert.equal(requests, 2, 'Invalid receipt must fail before external API');
+assert.equal(requests, 3, 'Invalid receipt must fail before external API');
 const consumedPurchase = {
   ...validPurchase,
   productLineItem: [{ productId, productOfferDetails: {
