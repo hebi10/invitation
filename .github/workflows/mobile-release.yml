@@ -18,6 +18,10 @@ on:
         description: 비공개 테스트의 실제 API 트랙 ID (비우면 변수 또는 기존 alpha 확인)
         type: string
         required: false
+      replace_alpha_draft:
+        description: 비공개 테스트 alpha의 오래된 초안을 새 릴리스로 대체 (명시 요청 시에만)
+        type: boolean
+        default: false
   pull_request:
     paths:
       - 'apps/mobile/**'
@@ -371,9 +375,11 @@ jobs:
           PLAY_TRACK: ${{ needs.bundle.outputs.track }}
           RELEASE_STATUS: ${{ needs.bundle.outputs.status }}
           PLAY_SEND_FOR_REVIEW: 'true'
+          REPLACE_ALPHA_DRAFT: ${{ inputs.replace_alpha_draft && 'true' || 'false' }}
         run: |
           AAB="play-artifacts/$BASE_NAME.aab"
           test -s "$AAB"
           args=(--aab "$AAB" --version-code "$VERSION_CODE" --target "$PLAY_TARGET" --track "$PLAY_TRACK" --release-name "$RELEASE_NAME" --notes-file apps/mobile/store/ko-KR/release-notes.txt --status "$RELEASE_STATUS")
           if [[ "$PLAY_SEND_FOR_REVIEW" == true ]]; then args+=(--send-for-review); fi
+          if [[ "$REPLACE_ALPHA_DRAFT" == true ]]; then args+=(--replace-existing-alpha-draft); fi
           python3 scripts/publish-mobile-play.py "${args[@]}"
