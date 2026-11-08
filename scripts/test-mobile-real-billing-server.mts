@@ -71,6 +71,8 @@ assert.equal(requests, 2, 'Invalid receipt must fail before external API');
 let created: { productTier: string; initialDisplayPeriodMonths: number } | undefined;
 let fulfilled = 0;
 let verifiedCount = 0;
+let failedMarks = 0;
+let failAfterFulfillment = false;
 const service = load('src/server/mobileBillingServerService.ts', id => {
   if (id === './googlePlayPurchaseVerifier') return {
     verifyGooglePlayOneTimePurchase: async (input: { productId: string; purchaseToken: string }) => {
@@ -86,7 +88,7 @@ const service = load('src/server/mobileBillingServerService.ts', id => {
   if (id === './repositories/billingFulfillmentRepository') return { firestoreBillingFulfillmentRepository: {
     acquireLock: async () => ({ acquired: true, record: { status: 'processing' } }),
     update: async () => { fulfilled++; },
-    markFailed: async () => {},
+    markFailed: async () => { failedMarks++; },
   } };
   if (id === './repositories/eventRepository') return { firestoreEventRepository: { assignOwnerBySlug: async () => ({ summary: { eventId: 'created-id' } }) } };
   if (id === './invitationPageServerService') return {
@@ -101,7 +103,10 @@ const service = load('src/server/mobileBillingServerService.ts', id => {
     }),
   };
   if (id === './clientEditorMobileApi') return {
-    createServerBackedMobileClientEditorSession: async () => ({ value: 'session', expiresAt: '', scopes: [] }),
+    createServerBackedMobileClientEditorSession: async () => {
+      if (failAfterFulfillment) throw new Error('Simulated post-commit response failure');
+      return { value: 'session', expiresAt: '', scopes: [] };
+    },
     buildMobileInvitationLinks: () => ({}), resolveMobileClientEditorPermissions: () => ({}),
   };
   if (id === './pageTicketServerService') return { getServerPageTicketCount: async () => 0 };
@@ -115,4 +120,9 @@ assert.equal(verifiedCount, 1);
 assert.equal(fulfilled, 1);
 assert.equal(created?.productTier, 'premium');
 assert.equal(created?.initialDisplayPeriodMonths, 6);
-console.log('Google Play Developer API token verification and six-month fulfillment checks passed');
+failAfterFulfillment = true;
+await assert.rejects(create('https://example.test', receipt, {
+  slugBase: 'created-page', groomKoreanName: '신랑', brideKoreanName: '신부', theme: 'simple', ownerUid: appUserId,
+}), /post-commit response failure/);
+assert.equal(failedMarks, 0, 'A successfully recorded page grant must not be downgraded if session response construction fails');
+console.log('Google Play Developer API token verification, six-month fulfillment and post-commit replay safety checks passed');
