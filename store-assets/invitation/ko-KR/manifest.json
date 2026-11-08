@@ -1,0 +1,147 @@
+{
+  "project": "Invitation",
+  "date": "2026-11-08",
+  "purpose": "Google Play draft screenshots from captured Android QA and public wedding pages",
+  "sources": {
+    "android": "PR#40 QA emulator API35 Expo Go 55.0.7",
+    "public": "Stage5 live public wedding pages Playwright desktop+mobile"
+  },
+  "assets": [
+    {
+      "index": 1,
+      "file": "invitation-phone-01-overview-1080x1920.png",
+      "android": [
+        "my-invitations.png"
+      ],
+      "web": [
+        "01-basic-390.jpg"
+      ],
+      "heading": "우리의 이야기를 담는 청첩장",
+      "kind": "composite_actual_capture",
+      "width": 1080,
+      "height": 1920,
+      "mode": "RGB",
+      "sha256": "0a1fd2a809b3fa0cc07884defcf84258e6114ec6e1ce573c9934d61275ed9c8e",
+      "size_bytes": 739164
+    },
+    {
+      "index": 2,
+      "file": "invitation-phone-02-themes-1080x1920.png",
+      "android": [],
+      "web": [
+        "01-basic-390.jpg",
+        "02-modern-390.jpg",
+        "03-photo-390.jpg",
+        "04-classic-390.jpg",
+        "05-natural-390.jpg"
+      ],
+      "heading": "취향에 맞게 고르는 다섯 가지 디자인",
+      "kind": "composite_actual_capture",
+      "width": 1080,
+      "height": 1920,
+      "mode": "RGB",
+      "sha256": "6ca506662225379cfe26d65217a7063a68416e3b72861da13c159e71701111ef",
+      "size_bytes": 898749
+    },
+    {
+      "index": 3,
+      "file": "invitation-phone-03-create-1080x1920.png",
+      "android": [
+        "editor-fixture.png",
+        "editor-schedule.png"
+      ],
+      "web": [],
+      "heading": "순서대로 입력하는 간편한 청첩장 제작",
+      "kind": "composite_actual_capture",
+      "width": 1080,
+      "height": 1920,
+      "mode": "RGB",
+      "sha256": "005e97dd3b32a81a1c1e2507960ef4eef1215a63f5af1203b063f64855e3c0e6",
+      "size_bytes": 247721
+    },
+    {
+      "index": 4,
+      "file": "invitation-phone-04-media-1080x1920.png",
+      "android": [
+        "editor-images.png",
+        "editor-music.png"
+      ],
+      "web": [],
+      "heading": "사진과 음악으로 우리만의 분위기",
+      "kind": "composite_actual_capture",
+      "width": 1080,
+      "height": 1920,
+      "mode": "RGB",
+      "sha256": "7f01136fd54ed5c0a58f83975b368a689bba76ba5e84671a908a957726dbed0f",
+      "size_bytes": 222134
+    },
+    {
+      "index": 5,
+      "file": "invitation-phone-05-venue-1080x1920.png",
+      "android": [
+        "editor-schedule.png",
+        "editor-location.png"
+      ],
+      "web": [],
+      "heading": "날짜와 장소를 한눈에 안내",
+      "kind": "composite_actual_capture",
+      "width": 1080,
+      "height": 1920,
+      "mode": "RGB",
+      "sha256": "4f7fee36fba8211d67654879460b8965a8f02309fc04c594dd2aedf6676351b6",
+      "size_bytes": 251753
+    },
+    {
+      "index": 6,
+      "file": "invitation-phone-06-preview-1080x1920.png",
+      "android": [
+        "modal-preview.png"
+      ],
+      "web": [
+        "02-modern-390.jpg"
+      ],
+      "heading": "완성 전에도 미리 보고 확인",
+      "kind": "composite_actual_capture",
+      "width": 1080,
+      "height": 1920,
+      "mode": "RGB",
+      "sha256": "a032206c12cc0834e42183954e17eaf72911560af8566b4d9cea313131fd081e",
+      "size_bytes": 543141
+    },
+    {
+      "index": 7,
+      "file": "invitation-phone-07-share-1080x1920.png",
+      "android": [
+        "modal-share.png"
+      ],
+      "web": [
+        "01-basic-390.jpg"
+      ],
+      "heading": "카카오톡 카드로 청첩장 공유",
+      "kind": "composite_actual_capture",
+      "width": 1080,
+      "height": 1920,
+      "mode": "RGB",
+      "sha256": "5b0606a2ca8af30e466310dadaecded2527a771bbe19f9ed6b122063088c69ef",
+      "size_bytes": 561037
+    },
+    {
+      "index": 8,
+      "file": "invitation-phone-08-manage-1080x1920.png",
+      "android": [
+        "linked-list.png",
+        "modal-guestbook-filled.png"
+      ],
+      "web": [],
+      "heading": "제작 이후에도 손쉬운 청첩장 관리",
+      "kind": "composite_actual_capture",
+      "width": 1080,
+      "height": 1920,
+      "mode": "RGB",
+      "sha256": "5cfdf9e028258a7283f9dc4de85834933e71d56b39aa90dd8f25184121c0fd2d",
+      "size_bytes": 301768
+    }
+  ],
+  "source_integrity": "all screenshots cropped/resized without changes to UI content; reference images are real captures",
+  "publication_status": "DRAFT - requires final native release capture / rights checks"
+}

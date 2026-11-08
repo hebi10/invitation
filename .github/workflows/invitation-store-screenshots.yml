@@ -1,0 +1,69 @@
+name: Invitation Play store screenshots (ko-KR)
+
+on:
+  pull_request:
+    paths:
+      - 'store-assets/invitation/ko-KR/**'
+      - 'scripts/publish-play-screenshots.py'
+      - '.github/workflows/invitation-store-screenshots.yml'
+  issue_comment:
+    types: [created]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: invitation-ko-kr-phone-screenshots
+  cancel-in-progress: false
+
+jobs:
+  verify:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check original screenshots and committed SHA-256 manifest
+        run: python3 scripts/publish-play-screenshots.py
+
+  upload:
+    if: >
+      github.event_name == 'issue_comment' &&
+      github.repository == 'hebi10/invitation' &&
+      github.event.issue.number == 30 &&
+      github.event.comment.user.login == 'hebi10' &&
+      github.event.comment.body == '/upload-invitation-screenshots-20261108'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 18
+    environment: google-play-testing
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Verify the eight original real-app screenshot assets
+        run: python3 scripts/publish-play-screenshots.py
+      - name: Authenticate Google Play using short-lived Workload Identity token
+        id: auth
+        uses: google-github-actions/auth@v3
+        with:
+          workload_identity_provider: ${{ vars.PLAY_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ vars.PLAY_SERVICE_ACCOUNT }}
+          token_format: access_token
+          access_token_scopes: https://www.googleapis.com/auth/androidpublisher
+          create_credentials_file: false
+          export_environment_variables: false
+      - name: Upload only ko-KR phoneScreenshots within transactional Play edit
+        env:
+          PLAY_ACCESS_TOKEN: ${{ steps.auth.outputs.access_token }}
+        run: python3 scripts/publish-play-screenshots.py --publish
+      - name: Preserve upload report, including previous image IDs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: invitation-ko-kr-phone-screenshots-upload-report
+          path: artifacts/play-store-screenshots/report.json
+          if-no-files-found: warn
+          retention-days: 30
