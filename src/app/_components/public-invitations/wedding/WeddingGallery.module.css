@@ -80,7 +80,7 @@
 }
 
 .album .imageGrid {
-  gap: 16px 12px;
+  gap: 14px 10px;
   align-items: start;
 }
 
@@ -120,7 +120,7 @@
 }
 
 .natural .imageGrid {
-  gap: 16px 12px;
+  gap: 14px 12px;
   align-items: start;
 }
 
@@ -135,7 +135,8 @@
 
 .natural .imageWrapper:first-child {
   grid-column: 1 / -1;
-  width: 80%;
+  justify-self: center;
+  width: 86%;
   aspect-ratio: 4 / 5;
 }
 
@@ -146,8 +147,9 @@
 .natural .imageGrid[data-photo-count='2'] .imageWrapper[data-photo-position='2'],
 .natural .imageWrapper[data-photo-position='4'] {
   grid-column: 1 / -1;
-  justify-self: end;
-  width: 76%;
+  justify-self: center;
+  width: 86%;
+  aspect-ratio: 4 / 5;
 }
 
 .natural .overviewCard {

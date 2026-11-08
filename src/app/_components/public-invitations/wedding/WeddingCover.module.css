@@ -14,7 +14,7 @@
 
 /* Only the title overlays the image; schedule and venue stay on the paper. */
 .photographic { background: #fbf8f3; color: #4d4135; text-align: center; }
-.photographic .photoFrame { aspect-ratio: 3 / 5; }
+.photographic .photoFrame { aspect-ratio: 2 / 3; }
 .photoCopy { position: relative; z-index: 1; width: 100%; min-width: 0; box-sizing: border-box; padding: 80px 24px 28px; background: linear-gradient(180deg, transparent, rgba(24,22,20,.72) 80px, rgba(24,22,20,.78)); color: #fff; text-align: center; }
 .photoCopy .names, .photoCopy .editorialNames { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); justify-content: center; justify-items: center; align-items: center; gap: 12px; font-size: 30px; line-height: 1.5; word-break: keep-all; }
 .photoCopy .names > span, .photoCopy .editorialNames > span { max-width: 100%; line-height: inherit; }
@@ -107,4 +107,77 @@
 @media (max-width: 359px) {
   .basic .details,
   .editorial .details { padding-inline: 20px; }
+}
+
+/* Stage 4: theme-scoped cover density and typography. */
+.photographic .details {
+  padding: 24px 24px 22px;
+}
+.photographic .photoCopy {
+  padding-bottom: 24px;
+}
+.photographic .photoCopy .names {
+  gap: 8px;
+  font-size: clamp(26px, 7.6vw, 30px);
+}
+.photographic .photoMeta .date {
+  margin-top: 14px;
+  line-height: 1.7;
+}
+.photographic .photoMeta .venue {
+  margin-top: 4px;
+}
+
+.traditional .details {
+  padding: 18px 16px 20px;
+}
+.traditional .traditionalFrame {
+  padding: 24px 18px 22px;
+}
+.traditional .traditionalEyebrow {
+  font-size: 12px;
+  color: #63584a;
+}
+.traditional .traditionalTitle {
+  margin-top: 16px;
+}
+.traditional .traditionalTitle .names {
+  font-size: clamp(28px, 7.8vw, 31px);
+  line-height: 1.5;
+}
+.traditional .conceptIntroduction {
+  margin-top: 12px;
+}
+.traditional .date {
+  margin-top: 16px;
+  line-height: 1.8;
+}
+
+.letter .details {
+  padding: 24px 24px 20px;
+}
+.letter .conceptIntroduction {
+  font-size: 18px;
+  line-height: 1.8;
+}
+.letter .letterHeading {
+  margin-top: 18px;
+  gap: 12px;
+}
+.letter .letterMeta {
+  margin-top: 18px;
+}
+.letter .date {
+  line-height: 1.7;
+}
+@media (max-width: 359px) {
+  .traditional .details {
+    padding-inline: 12px;
+  }
+  .traditional .traditionalFrame {
+    padding-inline: 14px;
+  }
+  .letter .details {
+    padding-inline: 20px;
+  }
 }
