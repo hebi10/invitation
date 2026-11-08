@@ -173,7 +173,8 @@ const manage = read('apps/mobile/src/features/screens/manage.tsx');
 assert.match(manage, /onClose=\{\(\) => void handleCloseEditorModal\(\)\}/);
 assert.match(manage, /onSetIntroStyle=\{invitationForm\.setIntroStyle\}/);
 assert.match(manage, /onKakaoShare=\{handleOpenKakaoShare\}/);
-assert.match(manage, /onPurchase=\{\(\) => void handlePurchaseExtension\(\)\}/);
+assert.doesNotMatch(manage, /onPurchase=\{\(\) => void handlePurchaseExtension\(\)\}/);
+assert.match(manage, /onRecoverPendingPurchase=\{openExtensionModal\}/);
 assert.match(manage, /onRecover=\{\(\) => void handleRecoverExtension\(\)\}/);
 
 console.log('mobile stage 7 integration, responsive and release safety checks passed');
