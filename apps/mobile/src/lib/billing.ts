@@ -48,7 +48,7 @@ let pendingCheckout: {
   resolve: (purchase: Purchase) => void;
   reject: (error: Error) => void;
 } | null = null;
-let knownPurchases = new Map<string, Purchase>();
+const knownPurchases = new Map<string, Purchase>();
 
 function requirePlayDevice() {
   if (Platform.OS !== 'android') {
