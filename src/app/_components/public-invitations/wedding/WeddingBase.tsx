@@ -145,9 +145,9 @@ export default function WeddingBase({ state, theme, demoComments, showMap = true
     >
       <WeddingCover theme={theme} page={page} imageUrl={heroImageUrl} time={ceremony?.time} settings={pageData?.weddingCover} />
       <nav className={styles.quickLinks} aria-label="청첩장 바로가기">
-        {state.galleryImageUrls.length > 0 ? <a href="#wedding-gallery">{theme === 'emotional' ? <WeddingActionIcon kind="photo" /> : null}사진 보기</a> : null}
         <a href="#wedding-info">{theme === 'emotional' ? <WeddingActionIcon kind="calendar" /> : null}예식 안내</a>
         <a href="#wedding-location">{theme === 'emotional' ? <WeddingActionIcon kind="pin" /> : null}오시는 길</a>
+        {state.galleryImageUrls.length > 0 ? <a href="#wedding-gallery">{theme === 'emotional' ? <WeddingActionIcon kind="photo" /> : null}사진 보기</a> : null}
       </nav>
 
       {invitationMessage ? (
@@ -320,8 +320,8 @@ export default function WeddingBase({ state, theme, demoComments, showMap = true
         </div>
       ) : null}
       <nav className={styles.returnLinks} aria-label="예식 정보 다시 보기">
-        <a href="#wedding-location">오시는 길</a>
         <a href="#wedding-info">예식 안내</a>
+        <a href="#wedding-location">오시는 길</a>
         {shouldShowGiftInfo(state) ? <a href="#wedding-accounts">마음 전하기</a> : null}
       </nav>
     </main>
