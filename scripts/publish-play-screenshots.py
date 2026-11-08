@@ -88,8 +88,31 @@ def request(token, method, path, *, data=None, mime=None, params=None, timeout=9
             raise ValueError("Malformed Play JSON response")
         return result
     except urllib.error.HTTPError as e:
-        e.close()
-        raise RuntimeError(f"Google Play {method} {path.partition('?')[0].split('/')[-1]} failed: HTTP {e.code}") from None
+        code = e.code
+        status, reason = "UNKNOWN", "UNKNOWN"
+        try:
+            payload = json.loads(e.read(8192).decode("utf-8", "replace"))
+            detail = payload.get("error", {}) if isinstance(payload, dict) else {}
+            candidate = detail.get("status", "")
+            if isinstance(candidate, str) and re.fullmatch(r"[A-Z_]{2,60}", candidate):
+                status = candidate
+            reasons = detail.get("errors", [])
+            if isinstance(reasons, list) and reasons and isinstance(reasons[0], dict):
+                candidate = reasons[0].get("reason", "")
+                if isinstance(candidate, str) and re.fullmatch(r"[A-Za-z_]{2,80}", candidate):
+                    reason = candidate
+        except (ValueError, UnicodeError, OSError):
+            pass
+        finally:
+            e.close()
+        operation = path.partition("?")[0].split("/")[-1]
+        if operation.endswith(":validate"):
+            operation = "edits.validate"
+        elif operation.endswith(":commit"):
+            operation = "edits.commit"
+        else:
+            operation = f"{method} Play resource"
+        raise RuntimeError(f"Google Play {operation} failed: HTTP {code} / {status} / {reason}") from None
     except (urllib.error.URLError, TimeoutError, ValueError):
         raise RuntimeError("Google Play connection or response could not be verified") from None
 
@@ -151,10 +174,11 @@ def publish(files):
         staged = request(token, "GET", images_path).get("images", [])
         if len(staged) != 8 or [x.get("id") for x in staged] != [x["id"] for x in sent]:
             raise RuntimeError("Google Play staged screenshot order/quantity could not be verified")
-        request(token, "POST", edit_path + ":validate")
-        report.update(status="commit_attempted", new_images=sent)
+        report.update(status="staged_not_committed", new_images=sent)
+        request(token, "POST", edit_path + ":validate", data={}, mime="application/json")
+        report.update(status="commit_attempted")
         commit_attempted = True
-        request(token, "POST", edit_path + ":commit", params={"changesInReviewBehavior": "ERROR_IF_IN_REVIEW"})
+        request(token, "POST", edit_path + ":commit", data={}, mime="application/json", params={"changesInReviewBehavior": "ERROR_IF_IN_REVIEW"})
         report.update(status="submitted_for_review_or_publication", committed=True)
         write_report(report)
     except Exception:
