@@ -31,6 +31,9 @@ jobs:
           python -m pip install --disable-pip-version-check playwright==1.56.0
           python -m playwright install --with-deps chromium
       - name: Run five-theme public release smoke test
+        env:
+          # PR inspects the previously deployed site; push/manual require the HTTPS fix.
+          STAGE6_REQUIRE_MAP_HTTPS: ${{ github.event_name == 'pull_request' && '0' || '1' }}
         run: python scripts/qa-public-wedding-stage6.py
       - name: Archive public QA screenshots and release manifest
         if: always()
