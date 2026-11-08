@@ -72,6 +72,18 @@ with sync_playwright() as p:
                 if dismiss.count() > 0:
                     dismiss.first.evaluate("(button) => button.click()")
                     page.wait_for_timeout(300)
+            # A cold Firebase hydration can delay music setup, especially on the first route.
+            # Wait for the real music control (or a diagnosable error), not an arbitrary fixed timer.
+            try:
+                page.wait_for_function(
+                    """() => Boolean(document.querySelector(
+                        'button[aria-label="음악 켜기"],button[aria-label="음악 끄기"],button[aria-label="음악 다시 시도"]'
+                    ))""",
+                    timeout=20000,
+                    polling=250,
+                )
+            except Exception:
+                print("STAGE1_MUSIC_WAIT_TIMEOUT", theme, flush=True)
             filename = f"{short}-full.jpg"
             target = OUT / filename
             page.screenshot(path=str(target), type="jpeg", quality=84,
