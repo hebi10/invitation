@@ -72,14 +72,13 @@ export const guideSections = [
     ],
   },
   {
-    title: '이용 기간과 연장',
-    description: `기본 ${INVITATION_INITIAL_DISPLAY_PERIOD_MONTHS}개월 · 5,000원에 6개월 연장`,
+    title: '이용 기간',
+    description: `기본 이용 기간 ${INVITATION_INITIAL_DISPLAY_PERIOD_MONTHS}개월 · 기간 연장 상품 없음`,
     items: [
       `제작 결제 ${INVITATION_PREMIUM_PRICE_LABEL}에 모든 웨딩 디자인과 기능이 포함됩니다.`,
       `기본 이용 기간은 청첩장 생성일부터 ${INVITATION_INITIAL_DISPLAY_PERIOD_MONTHS}개월이며 제작 중인 기간도 포함됩니다.`,
-      `이용 기간 연장은 내 청첩장에서 Google Play로 ${INVITATION_PREMIUM_PRICE_LABEL}을 결제하면 6개월이 추가됩니다.`,
-      '아직 이용 기간이 남았다면 기존 종료일부터, 종료되었다면 연장 결제일부터 6개월을 계산합니다.',
-      '미처리 결제가 있다면 새로운 결제를 진행하지 않고 이전 거래를 먼저 복구해 주세요.',
+      '이용 기간을 추가로 구매하는 연장 상품과 별도 티켓 상품은 제공하지 않습니다.',
+      '이전 결제가 처리되지 않았다면 새 결제를 하지 말고 내 청첩장의 기존 결제 복구를 이용하거나 고객 지원으로 확인해 주세요.',
     ],
   },
   {
