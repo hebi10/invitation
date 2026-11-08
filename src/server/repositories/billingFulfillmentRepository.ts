@@ -97,7 +97,7 @@ function buildDefaultBillingFulfillmentRecord(
     grantedTicketCount: null,
     lastError: null,
     eventId: null,
-    provider: 'revenuecat',
+    provider: 'googleplay',
   } satisfies BillingFulfillmentRecord;
 }
 
