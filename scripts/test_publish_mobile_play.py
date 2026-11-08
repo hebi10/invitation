@@ -257,6 +257,64 @@ class PublisherTests(unittest.TestCase):
                                                "changesNotSentForReview": ["true"]})
         self.assertFalse(any(call[0] == "DELETE" for call in calls))
 
+    def test_alpha_old_draft_can_be_superseded_only_on_explicit_closed_request(self):
+        tracks = [{"track": "internal", "releases": [{"versionCodes": ["10"], "status": "completed"}]},
+                  {"track": "alpha", "releases": [
+                      {"name": "old unpublished test", "versionCodes": ["3", "4"], "status": "draft"}]}]
+        argv = self.argv.copy()
+        argv[argv.index("--track") + 1] = "alpha"
+        argv += ["--send-for-review", "--replace-existing-alpha-draft"]
+        steps = self.preflight(tracks=tracks, pending={
+            "alpha": self.releases("DRAFT", version=4, track="alpha")
+        }) + self.finish(track="alpha")
+        result, calls, stdout, _ = self.run_main(steps, argv)
+        self.assertEqual(result, 0)
+        self.assertEqual(json.loads(stdout)["track"], "alpha")
+        self.assertTrue(json.loads(stdout)["available_to_testers"])
+        self.assertEqual([c for c in calls if c[0] == "PUT" and c[1].endswith("/tracks/alpha")].__len__(), 1)
+        self.assertEqual(json.loads(next(c[3] for c in calls if c[0] == "PUT"))["releases"][0]["versionCodes"], ["11"])
+        self.assertFalse(any(c[0] == "PUT" and c[1].endswith("/tracks/internal") for c in calls))
+
+    def test_alpha_draft_replacement_never_overrides_other_pending_or_newer_releases(self):
+        argv = self.argv.copy()
+        argv[argv.index("--track") + 1] = "alpha"
+        argv.append("--replace-existing-alpha-draft")
+        cases = [
+            [{"versionCodes": ["12"], "status": "draft"}],
+            [{"versionCodes": ["10"], "status": "inProgress"}],
+            [{"versionCodes": ["10"], "status": "draft"}, {"versionCodes": ["9"], "status": "completed"}],
+            [{"versionCodes": ["x"], "status": "draft"}],
+            [{"versionCodes": [], "status": "draft"}],
+        ]
+        for releases in cases:
+            with self.subTest(releases=releases):
+                tracks = [{"track": "alpha", "releases": releases}]
+                result, calls, _, _ = self.run_main(self.preflight(tracks=tracks)[:2] + [("DELETE", EDIT, {})], argv)
+                self.assertEqual(result, 1)
+                self.assertFalse(any(c[0] == "PUT" or c[1].startswith("/upload") for c in calls))
+        steps = self.preflight(tracks=[{"track": "alpha", "releases": [
+            {"versionCodes": ["3", "4"], "status": "draft"}]}], pending={
+            "alpha": self.releases("IN_REVIEW", version=4, track="alpha")
+        }) + [("DELETE", EDIT, {})]
+        result, calls, _, _ = self.run_main(steps, argv)
+        self.assertEqual(result, 1)
+        self.assertFalse(any(c[0] == "PUT" for c in calls))
+
+    def test_alpha_draft_flag_rejects_internal_or_other_track_before_http(self):
+        for target, track, status in [
+            ("internal", "internal", "completed"),
+            ("closed", "closed-team", "completed"),
+            ("closed", "alpha", "draft"),
+        ]:
+            argv = self.argv.copy()
+            argv[argv.index("--target") + 1] = target
+            argv[argv.index("--track") + 1] = track
+            argv[argv.index("--status") + 1] = status
+            argv.append("--replace-existing-alpha-draft")
+            result, calls, _, _ = self.run_main([], argv)
+            self.assertEqual(result, 1)
+            self.assertEqual(calls, [])
+
     def test_closed_alpha_default_requires_existing_track_and_preserves_draft(self):
         argv = self.argv + ["--send-for-review"]
         argv[argv.index("--track") + 1] = "alpha"
