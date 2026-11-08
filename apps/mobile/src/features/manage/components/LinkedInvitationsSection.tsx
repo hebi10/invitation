@@ -42,7 +42,8 @@ type LinkedInvitationsSectionProps = {
   onOpenEditor: () => void;
   onOpenUrl: () => void;
   onTogglePublished: () => void;
-  onOpenPeriodExtension: () => void;
+  pendingExtensionSlug: string | null;
+  onRecoverPendingPurchase: () => void;
   onCopyPublicUrl: (card: LinkedInvitationCard) => void;
   onKakaoShare: (card: LinkedInvitationCard) => void;
   onOpenInApp: () => void;
@@ -126,7 +127,8 @@ export function LinkedInvitationsSection({
   onOpenEditor,
   onOpenUrl,
   onTogglePublished,
-  onOpenPeriodExtension,
+  pendingExtensionSlug,
+  onRecoverPendingPurchase,
   onCopyPublicUrl,
   onKakaoShare,
   onOpenInApp,
@@ -160,9 +162,11 @@ export function LinkedInvitationsSection({
                 <ActionButton variant="secondary" onPress={onTogglePublished} style={styles.action}>
                   {dashboardPublished ? '비공개로 전환' : '공개로 전환'}
                 </ActionButton>
-                <ActionButton variant="secondary" onPress={onOpenPeriodExtension} style={styles.action}>
-                  5,000원 · 6개월 연장
-                </ActionButton>
+                {pendingExtensionSlug === activeLinkedInvitationCard.slug ? (
+                  <ActionButton variant="secondary" onPress={onRecoverPendingPurchase} style={styles.action}>
+                    이전 결제 복구
+                  </ActionButton>
+                ) : null}
               </View>
             </View>
             <View style={styles.group}>
