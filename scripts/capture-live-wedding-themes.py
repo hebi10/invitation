@@ -97,6 +97,14 @@ with sync_playwright() as p:
                   scrollWidth: document.documentElement.scrollWidth,
                 };
             }""")
+            if not audit["music"]:
+                raise RuntimeError(f"{theme}: stage1 music control is missing")
+            control = audit["music"]
+            if control["width"] != 44 or control["height"] != 44 or control["y"] > 80:
+                raise RuntimeError(f"{theme}: stage1 music control not in top 44px dock: {control}")
+            if audit["scrollWidth"] > audit["viewportWidth"] + 1:
+                raise RuntimeError(f"{theme}: unexpected horizontal overflow at 390px")
+
             anchor_results = []
             for target_id in ("wedding-gallery", "wedding-info", "wedding-location"):
                 anchor = page.locator(
@@ -114,6 +122,12 @@ with sync_playwright() as p:
                     anchor_results.append({"id": target_id, "status": "checked", "landingTop": landing_top})
                 except Exception as exc:
                     anchor_results.append({"id": target_id, "status": "error", "reason": str(exc)[:150]})
+            for landing in anchor_results:
+                if landing["status"] != "checked" or not 55 <= landing.get("landingTop", -1) <= 180:
+                    raise RuntimeError(f"{theme}: quick link landing outside accessible area: {landing}")
+            if theme in ("simple", "gyeol") and audit["activeGalleryPhotoState"] not in ("ready", "loading"):
+                raise RuntimeError(f"{theme}: gallery photo has no valid active loading state: {audit['activeGalleryPhotoState']}")
+
             small_viewports = []
             for width in (320, 430):
                 page.set_viewport_size({"width": width, "height": 844})
@@ -126,6 +140,8 @@ with sync_playwright() as p:
                     viewportWidth: window.innerWidth,
                     documentWidth: document.documentElement.scrollWidth
                 })""")
+                if dimensions["documentWidth"] > dimensions["viewportWidth"] + 1:
+                    raise RuntimeError(f"{theme}: horizontal overflow at {width}px: {dimensions}")
                 small_viewports.append({"file": viewport_file, **dimensions})
             page.set_viewport_size({"width": 390, "height": 844})
             info = page.evaluate("""() => ({
@@ -165,7 +181,7 @@ for idx, item in enumerate(captures):
 overview.save(OUT / "00-five-themes-overview.jpg", quality=85)
 report = dict(capturedAt=datetime.now(timezone.utc).isoformat(),
     source="Public Firebase-hosted test invitation", slug=SLUG,
-    notes="Live production-domain public page capture; not a design mockup. Actual page labels groom as 신민제.",
+    notes="After stage1 d731345f live deployment. Music button top 44px, links/active gallery state audited. Actual page labels groom as 신민제.",
     viewport=dict(width=390, height=844, deviceScaleFactor=2),
     captures=captures)
 (OUT / "capture-manifest.json").write_text(
