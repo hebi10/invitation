@@ -71,6 +71,63 @@ with sync_playwright() as p:
             target = OUT / filename
             page.screenshot(path=str(target), type="jpeg", quality=84,
                             full_page=True, animations="disabled", timeout=60000)
+            audit = page.evaluate("""() => {
+                const button = document.querySelector(
+                  'button[aria-label="음악 켜기"], button[aria-label="음악 끄기"], button[aria-label="음악 다시 시도"]'
+                );
+                const rect = button?.getBoundingClientRect();
+                const dock = button?.parentElement;
+                const music = button && rect ? {
+                  label: button.getAttribute('aria-label'),
+                  x: Math.round(rect.left), y: Math.round(rect.top),
+                  width: Math.round(rect.width), height: Math.round(rect.height),
+                  dockPosition: dock ? getComputedStyle(dock).position : null,
+                } : null;
+                const images = [...document.images].filter(img => Boolean(img.src));
+                const activePhoto = document.querySelector('.swiper-slide-active [data-gallery-photo-state]');
+                return {
+                  music,
+                  activeGalleryPhotoState: activePhoto?.getAttribute('data-gallery-photo-state') ?? null,
+                  imageStates: {
+                    ready: images.filter(img => img.complete && img.naturalWidth > 0).length,
+                    failed: images.filter(img => img.complete && img.naturalWidth === 0).length,
+                    pending: images.filter(img => !img.complete).length
+                  },
+                  viewportWidth: window.innerWidth,
+                  scrollWidth: document.documentElement.scrollWidth,
+                };
+            }""")
+            anchor_results = []
+            for target_id in ("wedding-gallery", "wedding-info", "wedding-location"):
+                anchor = page.locator(
+                    f'nav[aria-label="청첩장 바로가기"] a[href="#{target_id}"]'
+                )
+                if anchor.count() == 0:
+                    anchor_results.append({"id": target_id, "status": "missing"})
+                    continue
+                try:
+                    anchor.first.click(timeout=8000)
+                    page.wait_for_timeout(220)
+                    landing_top = page.locator(f"#{target_id}").first.evaluate(
+                        "(element) => Math.round(element.getBoundingClientRect().top)"
+                    )
+                    anchor_results.append({"id": target_id, "status": "checked", "landingTop": landing_top})
+                except Exception as exc:
+                    anchor_results.append({"id": target_id, "status": "error", "reason": str(exc)[:150]})
+            small_viewports = []
+            for width in (320, 430):
+                page.set_viewport_size({"width": width, "height": 844})
+                page.evaluate("window.scrollTo(0, 0)")
+                page.wait_for_timeout(280)
+                viewport_file = f"{short}-viewport-{width}.jpg"
+                page.screenshot(path=str(OUT / viewport_file), type="jpeg",
+                                quality=83, full_page=False, animations="disabled", timeout=30000)
+                dimensions = page.evaluate("""() => ({
+                    viewportWidth: window.innerWidth,
+                    documentWidth: document.documentElement.scrollWidth
+                })""")
+                small_viewports.append({"file": viewport_file, **dimensions})
+            page.set_viewport_size({"width": 390, "height": 844})
             info = page.evaluate("""() => ({
                 title: document.title, pageHeight: document.documentElement.scrollHeight,
                 bodyText: document.body.innerText.slice(0,350),
@@ -84,7 +141,9 @@ with sync_playwright() as p:
             captures.append(dict(theme=theme, filename=filename, sourceUrl=url,
                 audioWarningDismissed=music_warning,
                 httpStatus=response.status, bytes=target.stat().st_size,
-                sha256=digest, **info))
+                sha256=digest, **info, stage1Audit={
+                    **audit, "anchors": anchor_results, "responsive": small_viewports
+                }))
             print(f"CAPTURE_OK {theme}: {info['pageHeight']}px, {target.stat().st_size} bytes, broken={info['brokenImages']}", flush=True)
             page.close()
     finally:
