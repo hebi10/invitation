@@ -52,7 +52,7 @@ export default function WeddingGallerySwiper({ images, previewImages, variant, r
     <div className={styles.composition} data-has-companions={companionIndexes.length > 0 ? 'true' : undefined}>
     <Swiper
       role="region"
-      key={`${variant}-${reducedMotion}-${images.join('|')}`
+      key={`${variant}-${reducedMotion}-${images.join('|')}`}
       className={styles.track}
       modules={[A11y, EffectCreative, EffectFade]}
       effect={effect}
