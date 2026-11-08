@@ -156,7 +156,13 @@ export async function runPendingBillingPurchase<T>(
     if (!pending.receipt?.purchaseToken) {
       throw new Error('이전 결제 토큰이 없어 자동 완료할 수 없습니다. 추가 결제하지 말고 고객 문의로 확인해 주세요.');
     }
-    await finishBillingPurchase(pending.receipt.purchaseToken);
+    // After a process crash following successful consumption, Play no longer lists the purchase.
+    // Only the verified backend's existing fulfilled record may skip the second consume call.
+    const alreadyConsumed = typeof result === 'object' && result !== null &&
+      'billingPurchaseConsumed' in result && result.billingPurchaseConsumed === true;
+    if (!alreadyConsumed) {
+      await finishBillingPurchase(pending.receipt.purchaseToken);
+    }
     // Keep the in-memory receipt if deleting the saved receipt fails, too.
     await setStoredString(STORAGE_KEY, null);
     pendingInMemory = null;
