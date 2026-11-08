@@ -134,7 +134,7 @@ assert.throws(() => resolvePlayTarget({ ...manualPolicy, manualDeploy: false, ta
 assert.throws(() => resolvePlayTarget({ ...manualPolicy, target: 'closed', closedTrack: 'production' }));
 assert.throws(() => resolvePlayTarget({ ...manualPolicy, target: 'production' }));
 assert.throws(() => resolvePlayTarget({ ...manualPolicy, ref: 'refs/heads/build/mobile-aab', target: 'closed', closedTrack: 'alpha' }));
-assert.ok(readFileSync(signingUrl, 'utf8').includes('결제 미연결 내부 테스트 빌드'), '결제 미연결 내부 테스트 빌드임을 실행 요약에 기록해야 합니다.');
+assert.ok(!readFileSync(signingUrl, 'utf8').includes('EXPO_PUBLIC_REVENUECAT_ANDROID_API_KEY'), 'Direct Play builds must never require RevenueCat configuration.');
 
 const workflow = require('js-yaml').load(readFileSync(new URL('../.github/workflows/mobile-release.yml', import.meta.url), 'utf8'));
 assert.ok(workflow.jobs.deploy, 'Play 게시가 빌드와 별도 job이어야 서명 산출물을 보존합니다.');
