@@ -35,7 +35,7 @@ with sync_playwright() as p:
     try:
         preflight = context.new_page()
         for attempt in range(60):
-            preflight.goto(f"{BASE}/{SLUG}/simple/", wait_until="domcontentloaded", timeout=60000)
+            preflight.goto(f"{BASE}/{SLUG}/romantic/", wait_until="domcontentloaded", timeout=60000)
             preflight.get_by_text("김현지", exact=False).first.wait_for(timeout=25000)
             quick = preflight.locator('nav[aria-label="청첩장 바로가기"] a')
             quick.first.wait_for(timeout=20000)
@@ -43,13 +43,13 @@ with sync_playwright() as p:
             cover_ratio = preflight.locator('[data-wedding-cover-frame]').first.evaluate(
                 "(el) => el.getBoundingClientRect().width / el.getBoundingClientRect().height"
             )
-            if order[:2] == ["#wedding-info", "#wedding-location"] and abs(cover_ratio - 0.8) < 0.02:
-                print("STAGE3_DEPLOYMENT_CONFIRMED", order, cover_ratio, flush=True)
+            if order[:2] == ["#wedding-info", "#wedding-location"] and abs(cover_ratio - 2 / 3) < 0.02:
+                print("STAGE4_DEPLOYMENT_CONFIRMED", order, cover_ratio, flush=True)
                 break
-            print("STAGE3_DEPLOYMENT_PENDING", attempt + 1, order, cover_ratio, flush=True)
+            print("STAGE4_DEPLOYMENT_PENDING", attempt + 1, order, cover_ratio, flush=True)
             preflight.wait_for_timeout(5000)
         else:
-            raise RuntimeError("Stage3 public build not yet active after preflight retries")
+            raise RuntimeError("Stage4 public build not yet active after preflight retries")
         preflight.close()
 
         for theme, short in THEMES:
@@ -283,6 +283,78 @@ with sync_playwright() as p:
             if not all(stage3_audit[k] for k in ("hasCeremony", "hasLocation", "hasClosing", "hasGuestbook")):
                 audit["issues"].append(f"stage3 {theme}: required wedding content missing")
 
+            stage4_audit = page.evaluate("""() => {
+                const root = document.querySelector('main[data-design]');
+                const computed = selector => {
+                    const node = document.querySelector(selector);
+                    return node ? getComputedStyle(node) : null;
+                };
+                const size = selector => {
+                    const node = document.querySelector(selector);
+                    return node ? node.getBoundingClientRect() : null;
+                };
+                const grid = root?.querySelector('[data-wedding-section="gallery"] [class*="WeddingGallery_imageGrid"]');
+                const first = grid?.querySelector('[data-photo-position="1"]');
+                const fourth = grid?.querySelector('[data-photo-position="4"]');
+                const centerOffset = node => node && grid
+                    ? Math.round(node.getBoundingClientRect().left + node.getBoundingClientRect().width / 2 -
+                        (grid.getBoundingClientRect().left + grid.getBoundingClientRect().width / 2))
+                    : null;
+                return {
+                    romanticCoverRatio: root?.getAttribute('data-design') === 'romantic'
+                        ? (() => {const b = size('[data-wedding-cover-frame]'); return b ? +(b.width / b.height).toFixed(3) : null;})()
+                        : null,
+                    albumRowGap: grid ? parseFloat(getComputedStyle(grid).rowGap) : null,
+                    albumColumnGap: grid ? parseFloat(getComputedStyle(grid).columnGap) : null,
+                    classicFramePaddingTop: computed('[class*="WeddingCover_traditionalFrame"]')?.paddingTop ?? null,
+                    classicFrameBorder: computed('[class*="WeddingCover_traditionalFrame"]')?.borderTopWidth ?? null,
+                    classicCardPaddingTop: computed('main[data-design="gyeol"] [data-wedding-section="ceremony"]')?.paddingTop ?? null,
+                    naturalLetterPaddingTop: computed('[class*="WeddingCover_letter"] [data-wedding-cover-details]')?.paddingTop ?? null,
+                    naturalGalleryWidth: grid ? Math.round(grid.getBoundingClientRect().width) : null,
+                    naturalLargePhotoWidthRatio: first && grid
+                        ? +(first.getBoundingClientRect().width / grid.getBoundingClientRect().width).toFixed(3)
+                        : null,
+                    naturalLargePhotoCenterOffset: centerOffset(first),
+                    naturalFourthPhotoWidthRatio: fourth && grid
+                        ? +(fourth.getBoundingClientRect().width / grid.getBoundingClientRect().width).toFixed(3)
+                        : null,
+                    naturalFourthPhotoCenterOffset: centerOffset(fourth),
+                    ceremonyAvailable: Boolean(root?.querySelector('#wedding-info')),
+                    galleryAvailable: Boolean(root?.querySelector('#wedding-gallery')),
+                    locationAvailable: Boolean(root?.querySelector('#wedding-location')),
+                    guestbookAvailable: Boolean(root?.querySelector('[data-wedding-section="guestbook"]')),
+                    closingAvailable: Boolean(document.querySelector('[data-wedding-closing]')),
+                };
+            }""")
+            print("STAGE4_AUDIT", theme, json.dumps(stage4_audit, ensure_ascii=False), flush=True)
+            if theme == "romantic":
+                if stage4_audit["romanticCoverRatio"] is None or abs(stage4_audit["romanticCoverRatio"] - 2 / 3) > .02:
+                    audit["issues"].append(f"stage4 romantic cover ratio mismatch: {stage4_audit}")
+                if stage4_audit["albumRowGap"] is None or abs(stage4_audit["albumRowGap"] - 14) > 1:
+                    audit["issues"].append(f"stage4 romantic album row spacing mismatch: {stage4_audit}")
+                if stage4_audit["albumColumnGap"] is None or abs(stage4_audit["albumColumnGap"] - 10) > 1:
+                    audit["issues"].append(f"stage4 romantic album column spacing mismatch: {stage4_audit}")
+            if theme == "gyeol":
+                if stage4_audit["classicFramePaddingTop"] != "24px" or stage4_audit["classicFrameBorder"] != "1px":
+                    audit["issues"].append(f"stage4 gyeol traditional frame mismatch: {stage4_audit}")
+                if stage4_audit["classicCardPaddingTop"] != "26px":
+                    audit["issues"].append(f"stage4 gyeol ceremony card padding mismatch: {stage4_audit}")
+            if theme == "emotional":
+                if stage4_audit["naturalLetterPaddingTop"] != "24px":
+                    audit["issues"].append(f"stage4 emotional letter padding mismatch: {stage4_audit}")
+                if stage4_audit["albumRowGap"] is None or abs(stage4_audit["albumRowGap"] - 14) > 1:
+                    audit["issues"].append(f"stage4 emotional collage row spacing mismatch: {stage4_audit}")
+                if stage4_audit["naturalLargePhotoWidthRatio"] is None or abs(stage4_audit["naturalLargePhotoWidthRatio"] - .86) > .03:
+                    audit["issues"].append(f"stage4 emotional large photo width mismatch: {stage4_audit}")
+                for key in ("naturalLargePhotoCenterOffset", "naturalFourthPhotoCenterOffset"):
+                    if stage4_audit[key] is not None and abs(stage4_audit[key]) > 4:
+                        audit["issues"].append(f"stage4 emotional collage not centered: {key}={stage4_audit[key]}")
+            if not all(stage4_audit[key] for key in (
+                "ceremonyAvailable", "galleryAvailable", "locationAvailable",
+                "guestbookAvailable", "closingAvailable"
+            )):
+                audit["issues"].append(f"stage4 {theme} missing required public section")
+
             info = page.evaluate("""() => ({
                 title: document.title, pageHeight: document.documentElement.scrollHeight,
                 bodyText: document.body.innerText.slice(0,350),
@@ -298,7 +370,7 @@ with sync_playwright() as p:
                 httpStatus=response.status, bytes=target.stat().st_size,
                 sha256=digest, **info, stage1Audit={
                     **audit, "anchors": anchor_results, "responsive": small_viewports
-                }, stage2Audit=stage2_audit, stage3Audit=stage3_audit))
+                }, stage2Audit=stage2_audit, stage3Audit=stage3_audit, stage4Audit=stage4_audit))
             print(f"CAPTURE_OK {theme}: {info['pageHeight']}px, {target.stat().st_size} bytes, broken={info['brokenImages']}", flush=True)
             page.close()
     finally:
@@ -320,7 +392,7 @@ for idx, item in enumerate(captures):
 overview.save(OUT / "00-five-themes-overview.jpg", quality=85)
 report = dict(capturedAt=datetime.now(timezone.utc).isoformat(),
     source="Public Firebase-hosted test invitation", slug=SLUG,
-    notes="After Stage3 eeccc54 Firebase App Hosting rollout; simple and classic-r targeted design audit, other three regression screenshots. Actual groom label 신민제.",
+    notes="After Stage4 Firebase App Hosting rollout; romantic/gyeol/emotional targeted design and all five regression screenshots. Actual groom label 신민제.",
     viewport=dict(width=390, height=844, deviceScaleFactor=2),
     captures=captures)
 (OUT / "capture-manifest.json").write_text(
