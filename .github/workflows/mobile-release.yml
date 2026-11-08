@@ -167,7 +167,6 @@ jobs:
           INVITATION_KEYSTORE_PASSWORD: ${{ secrets.INVITATION_KEYSTORE_PASSWORD }}
           INVITATION_KEY_ALIAS: ${{ secrets.INVITATION_KEY_ALIAS }}
           INVITATION_KEY_PASSWORD: ${{ secrets.INVITATION_KEY_PASSWORD }}
-          EXPO_PUBLIC_REVENUECAT_ANDROID_API_KEY: ${{ vars.EXPO_PUBLIC_REVENUECAT_ANDROID_API_KEY || secrets.EXPO_PUBLIC_REVENUECAT_ANDROID_API_KEY }}
           PLAY_AUTO_DEPLOY_ENABLED: ${{ vars.PLAY_AUTO_DEPLOY_ENABLED }}
           INPUT_DEPLOY: ${{ inputs.deploy && 'true' || 'false' }}
           PLAY_DEPLOY_TARGET: ${{ steps.policy.outputs.target }}
@@ -197,18 +196,6 @@ jobs:
           npm run check
           npm test
           test ! -e apps/mobile/src/app/design-check.tsx
-      - name: main 운영 결제 공개 키 설정
-        if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
-        env:
-          REVENUECAT_PUBLIC_KEY: ${{ vars.EXPO_PUBLIC_REVENUECAT_ANDROID_API_KEY || secrets.EXPO_PUBLIC_REVENUECAT_ANDROID_API_KEY }}
-        run: |
-          if [[ -n "$REVENUECAT_PUBLIC_KEY" ]]; then
-            if [[ ! "$REVENUECAT_PUBLIC_KEY" =~ ^goog_[A-Za-z0-9]+$ ]]; then
-              echo '::error::RevenueCat Google Play 공개 키 형식이 올바르지 않습니다.'
-              exit 1
-            fi
-            printf 'EXPO_PUBLIC_REVENUECAT_ANDROID_API_KEY=%s\n' "$REVENUECAT_PUBLIC_KEY" >> "$GITHUB_ENV"
-          fi
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
