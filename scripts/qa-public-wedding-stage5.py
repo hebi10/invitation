@@ -44,6 +44,7 @@ def open_invitation(page, theme: str):
     if introduction.count() and introduction.first.is_visible():
         page.get_by_role("button", name="건너뛰기").first.click(timeout=12000)
     page.evaluate("document.fonts.ready")
+    page.locator('button[aria-label^="음악 "]').first.wait_for(state="visible", timeout=22000)
     page.wait_for_timeout(300)
     return url
 
@@ -134,8 +135,19 @@ def inspect_gallery_interactions(page, theme: str):
     )""")
     if not focus_inside:
         VIOLATIONS.append(f"{theme}: gallery focus did not move into dialog")
+    counter = dialog.locator('span[aria-live="polite"][aria-atomic="true"]').last
+    before = counter.inner_text(timeout=8000).strip()
     page.keyboard.press("ArrowRight")
     page.wait_for_timeout(220)
+    after = counter.inner_text(timeout=8000).strip()
+    if before == after:
+        VIOLATIONS.append(f"{theme}: ArrowRight did not advance the gallery image")
+    page.keyboard.press("Tab")
+    focus_trapped = page.evaluate("""() => Boolean(
+        document.activeElement?.closest('[role="dialog"][aria-modal="true"]')
+    )""")
+    if not focus_trapped:
+        VIOLATIONS.append(f"{theme}: Tab escaped gallery dialog")
     page.keyboard.press("Escape")
     try:
         dialog.wait_for(state="hidden", timeout=8000)
@@ -149,6 +161,7 @@ def inspect_gallery_interactions(page, theme: str):
         VIOLATIONS.append(f"{theme}: gallery close did not restore focus to a photo button")
     summary = {
         "theme": theme, "dialogOpened": True, "focusInside": focus_inside,
+        "arrowRightAdvanced": before != after, "tabFocusTrapped": focus_trapped,
         "escapeClosed": not dialog.is_visible(), "focusRestored": focus_restored,
     }
     DESKTOP_KEYS.append(summary)
@@ -167,19 +180,13 @@ def inspect_touch_simulation(browser, theme: str):
         button = gallery.locator('button[aria-label*="번째 사진 크게 보기"]').first
         button.wait_for(timeout=15000)
         button.scroll_into_view_if_needed(timeout=10000)
-        rect = button.bounding_box()
-        if not rect:
-            raise AssertionError("Gallery thumbnail has no onscreen bounds")
-        page.touchscreen.tap(rect["x"] + rect["width"] / 2, rect["y"] + rect["height"] / 2)
+        button.tap(timeout=15000)
         dialog = page.locator('[role="dialog"][aria-modal="true"]').filter(
             has=page.get_by_role("button", name="갤러리 크게 보기 닫기")
         ).first
         dialog.wait_for(state="visible", timeout=10000)
         close = page.get_by_role("button", name="갤러리 크게 보기 닫기")
-        rect = close.bounding_box()
-        if not rect:
-            raise AssertionError("Gallery close button has no bounds")
-        page.touchscreen.tap(rect["x"] + rect["width"] / 2, rect["y"] + rect["height"] / 2)
+        close.tap(timeout=15000)
         dialog.wait_for(state="hidden", timeout=10000)
         info = {"theme": theme, "touchEmulation": True, "dialogOpens": True, "dialogCloses": True}
         MOBILE_TOUCH.append(info)
