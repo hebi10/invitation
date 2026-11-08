@@ -939,3 +939,54 @@ details[open] > :is(.disclosureSummary, .accountSummary, .formSummary)::after { 
     width: calc(100% - 32px);
   }
 }
+
+/* Stage 4: theme-specific spacing around real wedding content. */
+.page[data-design='romantic'] .invitationSection {
+  margin-top: 48px;
+}
+.page[data-design='romantic'] .ceremonySection {
+  margin-top: 42px;
+  padding-block: 30px;
+}
+.page[data-design='romantic'] .photoDate {
+  gap: 4px 8px;
+}
+.page[data-design='romantic'] .ceremonyContent .venueName {
+  margin-top: 10px;
+  line-height: 1.6;
+}
+
+.page[data-design='gyeol'] .ceremonySection {
+  margin-top: 44px;
+  padding: 26px 20px 22px;
+}
+.page[data-design='gyeol'] .ceremonyContent {
+  gap: 12px;
+  margin-bottom: 12px;
+}
+.page[data-design='gyeol'] .classicDate {
+  gap: 6px;
+}
+.page[data-design='gyeol'] .classicDate > span {
+  color: #655746;
+}
+.page[data-design='gyeol'] .ceremonyContent .venueName {
+  line-height: 1.6;
+}
+.page[data-design='gyeol'] .calendarDisclosure {
+  margin-top: 4px;
+}
+
+.page[data-design='emotional'] .invitationSection {
+  margin-top: 36px;
+}
+.page[data-design='emotional'] .ceremonySection {
+  margin-top: 48px;
+  padding-block: 28px;
+}
+.page[data-design='emotional'] .invitationCopy {
+  line-height: 1.95;
+}
+.page[data-design='emotional'] .ceremonyContent .venueName {
+  line-height: 1.6;
+}
