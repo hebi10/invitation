@@ -57,12 +57,12 @@ assert.match(payment, /onConfirm/);
 assert.match(payment, /5,000원 결제하기/, 'Checkout CTA must remain legible at 320dp');
 assert.doesNotMatch(payment, /Google Play 결제 후 페이지 생성/);
 
-assert.match(renewal, /closeDisabled=\{busy\}/);
-assert.match(renewal, /INVITATION_EXTENSION_DISPLAY_PERIOD_MONTHS/);
-assert.match(renewal, /INVITATION_PREMIUM_PRICE_LABEL/);
-assert.match(renewal, /onPurchase/);
+assert.match(renewal, /closeDisabled=\{recovering\}/);
+assert.doesNotMatch(renewal, /INVITATION_EXTENSION_DISPLAY_PERIOD_MONTHS/);
+assert.doesNotMatch(renewal, /INVITATION_PREMIUM_PRICE_LABEL/);
+assert.doesNotMatch(renewal, /onPurchase/);
 assert.match(renewal, /onRecover/);
-assert.match(renewal, /미처리 결제가 있습니다/);
+assert.match(renewal, /이전 결제 복구/);
 assert.match(renewal, /closeConfirmation=\{\(/, 'Renewal primary action must stay in the fixed footer');
 assert.match(renewal, /onPress=\{onClose\}/);
 assert.match(renewal, /label="결제 대상"/);
@@ -91,7 +91,8 @@ assert.match(guestbook, /등록된 방명록이 없습니다/);
 assert.match(guestbook, /accessibilityLabel=\{\x60\$\{comment\.author\}/);
 
 assert.match(manage, /<PeriodExtensionModal/);
-assert.match(manage, /onPurchase=\{\(\) => void handlePurchaseExtension\(\)\}/);
+assert.doesNotMatch(manage, /handlePurchaseExtension|onPurchase=/);
+assert.match(manage, /onRecoverPendingPurchase=\{openExtensionModal\}/);
 assert.doesNotMatch(manage, /TicketUsageModal/);
 
 assert.match(onboarding, /ONBOARDING_STEPS\[stepIndex\]/);
