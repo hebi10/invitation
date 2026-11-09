@@ -1,0 +1,81 @@
+name: Invitation 3-A Android local Next.js five-theme intro QA
+
+on:
+  push:
+    branches:
+      - qa/invitation-quiet-intro-3a-20261109
+    paths:
+      - scripts/create-quiet-intro-3a-local-route.mjs
+      - scripts/qa-invitation-3a-android-local.py
+      - .github/workflows/invitation-intro-3a-android-local.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  android-quiet-invitation:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 27
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Install web dependencies
+        run: npm ci
+      - name: Create temporary local-only five-theme web route
+        run: node scripts/create-quiet-intro-3a-local-route.mjs
+      - name: Start local Next.js preview on runner host
+        env:
+          NEXT_PUBLIC_USE_FIREBASE: 'false'
+          NEXT_PUBLIC_SITE_URL: http://127.0.0.1:3000
+        run: |
+          nohup npm run dev > "$RUNNER_TEMP/intro-3a-android-local-next.log" 2>&1 &
+          python3 - <<'PY'
+          import time,urllib.request
+          url="http://127.0.0.1:3000/quiet-intro-qa-3a/?theme=simple&style=envelope"
+          for _ in range(110):
+              try:
+                  with urllib.request.urlopen(url, timeout=8) as r:
+                      if r.status==200:
+                          print("Ephemeral five-theme page available on host",flush=True)
+                          break
+              except Exception:
+                  pass
+              time.sleep(2)
+          else:
+              raise SystemExit("Local Next.js fixture unavailable")
+          PY
+      - name: Enable hosted runner hardware acceleration
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - name: Android API 35 Chrome QA against local Next.js (no external Internet)
+        uses: ReactiveCircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d
+        with:
+          api-level: 35
+          target: google_apis
+          arch: x86_64
+          profile: pixel_7_pro
+          ram-size: 3072M
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none -camera-front none
+          disable-animations: true
+          script: python3 scripts/qa-invitation-3a-android-local.py
+      - name: Archive Android screenshot and accessibility hierarchy evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: invitation-3a-android-local-five-themes
+          path: artifacts/quiet-invitation-3a-android-local/
+          retention-days: 30
+          if-no-files-found: warn
+      - name: Print safe local server diagnostics
+        if: failure()
+        run: tail -100 "$RUNNER_TEMP/intro-3a-android-local-next.log" || true
