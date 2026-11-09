@@ -42,6 +42,19 @@ jobs:
         run: python scripts/build-store-rebrand.py --screenshots-only
       - name: Verify generated original-source screenshots and SHA-256 manifest
         run: python scripts/publish-play-screenshots.py --assets artifacts/store-refresh/ko-KR
+      - name: Verify deterministic flat launcher and Play icons
+        run: |
+          python scripts/build-store-rebrand.py --icon-only
+          python - <<'PY'
+          import hashlib
+          from PIL import Image
+          from pathlib import Path
+          expected = "ae67ec95fffe8e2b03afcdb0dc9f6c0d0507ea3f0a6a0b30d114b54eec435486"
+          for path in (Path("apps/mobile/store/icon.png"), Path("apps/mobile/store/ko-KR/icon.png")):
+              with Image.open(path) as img:
+                  assert img.size == (512, 512)
+                  assert hashlib.sha256(img.convert("RGBA").tobytes()).hexdigest() == expected
+          PY
 
   dispatch:
     if: >
