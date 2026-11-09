@@ -94,6 +94,35 @@ jobs:
               except RuntimeError:
                   group_count = None
 
+          # Read-only release lifecycle and listing image counts. An edit can reflect
+          # saved changes; it does not prove public listing visibility or review approval.
+          live_closed_releases = []
+          if selected:
+              release_response = call(root + f"/tracks/{urllib.parse.quote(selected)}/releases")
+              live_closed_releases = [
+                  {
+                      "name": release.get("name"),
+                      "lifecycleState": release.get("releaseLifecycleState", "UNKNOWN"),
+                      "versionCodes": [item.get("versionCode") for item in release.get("activeArtifacts") or []],
+                  }
+                  for release in release_response.get("releases") or []
+              ]
+          store_listing_images = {}
+          for kind in ("icon", "phoneScreenshots"):
+              try:
+                  image_result = call(
+                      root + f"/edits/{urllib.parse.quote(edit_id)}/listings/ko-KR/{kind}"
+                  )
+                  images = image_result.get("images")
+                  if not isinstance(images, list):
+                      raise ValueError("Image response was not a list")
+                  store_listing_images[kind] = {
+                      "verified": True, "count": len(images),
+                      "sha256Available": sum(bool(item.get("sha256")) for item in images),
+                  }
+              except (RuntimeError, ValueError, TypeError):
+                  store_listing_images[kind] = {"verified": False, "count": None}
+
           # Prefer the current one-time-product model; legacy in-app products
           # remain a read-only fallback for pre-migration catalog entries.
           price = {"verified": False, "status": "unknown", "krw": None, "source": "unverified"}
@@ -146,6 +175,8 @@ jobs:
               "googleGroupCount": group_count,
               "emailListVisibility": email_list_visibility,
               "existingReleases": existing_releases,
+              "readOnlyLiveClosedReleases": live_closed_releases,
+              "koKRStoreListingImageCounts": store_listing_images,
               "newPurchaseProduct": "page_creation_premium",
               "newPurchasePrice": price,
               "changedPlayRelease": False,
@@ -158,6 +189,8 @@ jobs:
           print("Selected closed track:", selected or "(none / ambiguous)")
           print("Google Group count:", group_count if group_count is not None else "(not verifiable)")
           print("Play SKU configured:", price["verified"])
+          print("Read-only closed track lifecycle:", json.dumps(live_closed_releases, ensure_ascii=False))
+          print("Current ko-KR listing image counts:", json.dumps(store_listing_images, ensure_ascii=False))
           if not selected:
               raise SystemExit("::error::Existing closed test track could not be unambiguously identified")
           PY
