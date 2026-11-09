@@ -126,7 +126,7 @@ for theme,style in CASES:
         if not found:
             raise RuntimeError("Local Chrome did not expose the wedding names and required intro control")
         if style=="envelope":
-            if not button or not tap(button):
+            if button is None or not tap(button):
                 raise RuntimeError("Letter open control was not tappable on Android")
             record["open_button_tapped"]=True
             closed=False
