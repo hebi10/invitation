@@ -1,0 +1,49 @@
+name: Invitation 3-A Android 35 real-browser emulator five-theme QA
+
+on:
+  push:
+    branches:
+      - qa/invitation-quiet-intro-3a-20261109
+    paths:
+      - scripts/qa-invitation-3a-android-web.py
+      - .github/workflows/invitation-intro-3a-android-browser.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  android-public-web-readonly:
+    if: github.repository == 'hebi10/invitation'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 27
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Configure GitHub hosted runner KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - name: Inspect 5 public wedding themes in Android API35 browser
+        uses: ReactiveCircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d
+        with:
+          api-level: 35
+          target: google_apis
+          arch: x86_64
+          profile: pixel_7_pro
+          ram-size: 3072M
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none -camera-front none
+          disable-animations: true
+          script: python3 scripts/qa-invitation-3a-android-web.py
+      - name: Preserve public Android browser screenshots and diagnostic manifest
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: invitation-3a-android-api35-browser-five-themes
+          path: artifacts/quiet-invitation-3a-android/
+          if-no-files-found: warn
+          retention-days: 30
