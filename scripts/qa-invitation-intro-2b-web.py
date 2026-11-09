@@ -109,6 +109,17 @@ with sync_playwright() as p:
                     )
                     assert case["same_origin"]
 
+                    if style != "envelope":
+                        page.wait_for_function("""() => {
+                          const iframe = document.getElementById('qa-intro-2b-iframe');
+                          const copy = iframe?.contentDocument?.querySelector('[data-intro-copy]');
+                          return !!copy && Number.parseFloat(getComputedStyle(copy).opacity) >= 0.96;
+                        }""", timeout=9000)
+                    frame.locator("body").evaluate("""node => {
+                        const tag = node.ownerDocument.createElement('style');
+                        tag.textContent = 'nextjs-portal { display: none !important; }';
+                        node.ownerDocument.head.append(tag);
+                    }""")
                     filename = viewport + "-" + style + "-pc-wizard-intro.png"
                     image = OUT / filename
                     intro.screenshot(path=str(image), animations="allow", timeout=30000)
