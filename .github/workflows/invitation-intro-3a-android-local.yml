@@ -39,7 +39,7 @@ jobs:
           nohup npm run dev > "$RUNNER_TEMP/intro-3a-android-local-next.log" 2>&1 &
           python3 - <<'PY'
           import time,urllib.request
-          url="http://127.0.0.1:3000/__quiet3a/?theme=simple&style=envelope"
+          url="http://127.0.0.1:3000/quiet-intro-qa-3a/?theme=simple&style=envelope"
           for _ in range(110):
               try:
                   with urllib.request.urlopen(url, timeout=8) as r:
