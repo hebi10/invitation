@@ -35,6 +35,7 @@ on:
       - 'scripts/verify-mobile-release.py'
       - 'scripts/test_verify_mobile_release.py'
       - '.github/workflows/mobile-release.yml'
+      - 'scripts/build-store-rebrand.py'
   push:
     branches: [main, build/mobile-aab]
     paths:
@@ -205,6 +206,14 @@ jobs:
           packages: platform-tools
       - name: Android SDK 설치
         run: sdkmanager --install 'platforms;android-36' 'build-tools;36.0.0' 'ndk;27.1.12297006'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: 평면형 앱 설치 아이콘 생성
+        working-directory: .
+        run: |
+          python -m pip install Pillow==12.3.0
+          python scripts/build-store-rebrand.py --icon-only
       - name: Android 프로젝트 생성 및 메타데이터 검증
         id: metadata
         run: |
