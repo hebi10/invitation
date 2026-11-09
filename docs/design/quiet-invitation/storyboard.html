@@ -10,6 +10,7 @@
     @font-face { font-family: 'Wedding SUIT'; src: url('../../../public/fonts/wedding/SUIT-Variable.woff2') format('woff2'); font-style: normal; font-weight: 100 700; font-display: swap; }
     @font-face { font-family: 'Wedding Myeongjo'; src: url('../../../public/fonts/wedding/NanumMyeongjo-Korean.woff2') format('woff2'); font-style: normal; font-weight: 400; font-display: swap; unicode-range: U+1100-11FF,U+2000-206F,U+3000-318F,U+3200-33FF,U+AC00-D7AF,U+FF00-FFEF; }
     @font-face { font-family: 'Wedding Myeongjo'; src: url('../../../public/fonts/wedding/NanumMyeongjo-Latin.woff2') format('woff2'); font-style: normal; font-weight: 400; font-display: swap; unicode-range: U+0000-00FF; }
+    [hidden] { display: none !important; }
     * { box-sizing: border-box; }
     html, body { margin: 0; padding: 0; min-height: 100%; }
     body { background: #faf9f6; font-family: 'Wedding SUIT', 'Noto Sans CJK KR', sans-serif; color: #282725; }
@@ -149,8 +150,8 @@
     clearPlayback();
     setPhase('start');
     if (matchMedia('(prefers-reduced-motion: reduce)').matches) { setPhase('end'); return; }
-    const middle = style === 'light' ? 230 : style === 'cinema' ? 290 : 180;
-    const ending = style === 'light' ? 1400 : style === 'cinema' ? 1600 : 1100;
+    const middle = style === 'light' ? 50 : style === 'cinema' ? 80 : 0;
+    const ending = style === 'light' ? 980 : style === 'cinema' ? 1180 : 680;
     handles.push(setTimeout(() => setPhase('middle'), middle));
     handles.push(setTimeout(() => setPhase('end'), ending));
   }
