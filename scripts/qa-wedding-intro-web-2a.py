@@ -42,6 +42,7 @@ def page_url(style):
 
 def screenshot(page, name):
     path = ROOT / name
+    page.add_style_tag(content="nextjs-portal { display: none !important; }")
     page.screenshot(path=str(path), animations="allow", timeout=30000)
     data = path.read_bytes()
     report["screenshots"].append({
@@ -87,6 +88,9 @@ def visit(browser, name, config, style):
             page.wait_for_timeout(2500)
             assert dialog.is_visible(), "Letter must wait for user input"
             page.locator("[data-letter-open]").click()
+            page.wait_for_timeout(380)
+            assert dialog.is_visible(), "Click animation must show an intermediate frame"
+            screenshot(page,name+"-"+style+"-opening.png")
             assert_closed(page,timeout=7000)
             result["click_opens"]=True
         else:
