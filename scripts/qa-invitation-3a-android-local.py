@@ -19,7 +19,7 @@ from urllib.parse import urlencode
 
 OUT=Path("artifacts/quiet-invitation-3a-android-local")
 OUT.mkdir(parents=True,exist_ok=True)
-ROOT="http://10.0.2.2:3000/__quiet3a/"
+ROOT="http://10.0.2.2:3000/quiet-intro-qa-3a/"
 CASES=[(t,"envelope") for t in ("simple","classic-r","romantic","gyeol","emotional")]
 CASES.extend([("simple","light"),("simple","cinema")])
 manifest={
