@@ -77,6 +77,10 @@ def render_frame(browser, style, phase, view, width, height, scale, manifest):
         assert page.locator(f".intro-{style}").is_visible() or phase == "end"
         actual_phase=stage.evaluate("(element) => element.closest('[data-phase]').dataset.phase")
         assert actual_phase==phase, (style,phase,actual_phase)
+        visible_styles = page.evaluate("""() => [...document.querySelectorAll('.intro')]
+            .filter(el => getComputedStyle(el).display !== 'none')
+            .map(el => el.dataset.view)""")
+        assert visible_styles == [style], (style, phase, visible_styles)
         metrics = page.evaluate("""() => ({
             viewportWidth: window.innerWidth, horizontalOverflow: document.documentElement.scrollWidth > window.innerWidth,
             stageWidth: Math.round(document.querySelector('.stage').getBoundingClientRect().width),
