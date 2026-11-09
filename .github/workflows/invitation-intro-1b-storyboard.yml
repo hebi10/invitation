@@ -1,0 +1,39 @@
+name: Invitation 1-B Quiet Invitation storyboard screenshots
+
+on:
+  push:
+    branches:
+      - design/invitation-quiet-intro-1b-20261109
+    paths:
+      - docs/design/quiet-invitation/storyboard.html
+      - scripts/qa-wedding-intro-storyboard-1b.py
+      - .github/workflows/invitation-intro-1b-storyboard.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  render-storyboard:
+    if: github.repository == 'hebi10/invitation'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install pinned browser and image libraries
+        run: |
+          python -m pip install --disable-pip-version-check playwright==1.56.0 pillow==11.3.0
+          python -m playwright install --with-deps chromium
+      - name: Capture 1-B frames from standalone prototype (no network writes)
+        run: python scripts/qa-wedding-intro-storyboard-1b.py
+      - name: Store 18 original PNG frames and 6 sheets
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: invitation-quiet-intro-1b-storyboard-20261109
+          path: artifacts/quiet-invitation-1b/
+          retention-days: 30
+          if-no-files-found: error
