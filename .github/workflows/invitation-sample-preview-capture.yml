@@ -1,0 +1,77 @@
+name: Capture Invitation public sample preview images
+
+on:
+  push:
+    branches:
+      - fix/invitation-shin-minje-preview-20261109
+    paths:
+      - .github/workflows/invitation-sample-preview-capture.yml
+      - scripts/capture-clean-wedding-previews.mjs
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  sample-previews:
+    if: github.repository == 'hebi10/invitation'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 22
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Install project and pinned browser
+        run: |
+          npm ci
+          npm install --no-save --no-package-lock playwright@1.56.0
+          npx playwright install --with-deps chromium
+      - name: Capture only verified public sample pages
+        env:
+          INVITATION_CAPTURE_BASE_URL: https://invite.msgnote.kr
+        run: node scripts/capture-clean-wedding-previews.mjs
+      - name: Validate capture count and public sample slug
+        run: |
+          python3 - <<'PY'
+          import hashlib,json
+          from pathlib import Path
+          folder=Path("artifacts/theme-previews")
+          report=json.loads((folder/"capture-report.json").read_text())
+          assert report["slug"] == "shin-minje-kim-hyunji"
+          assert len(report["screenshots"]) == 5
+          assert {item["theme"] for item in report["screenshots"]} == {"simple","classic-r","romantic","gyeol","emotional"}
+          for item in report["screenshots"]:
+              file=folder/item["file"]
+              data=file.read_bytes()
+              assert len(data)>10000 and hashlib.sha256(data).hexdigest()==item["sha256"]
+              assert item["sourcePath"].startswith("/shin-minje-kim-hyunji/")
+          print("Validated five public Shin Minje / Kim Hyunji source screenshots")
+          PY
+      - name: Preserve original new sample preview screenshots
+        uses: actions/upload-artifact@v4
+        with:
+          name: invitation-shin-minje-kim-hyunji-5-themes
+          path: artifacts/theme-previews/
+          retention-days: 30
+          if-no-files-found: error
+      - name: Replace only five app preview thumbnails on this feature branch
+        if: github.ref == 'refs/heads/fix/invitation-shin-minje-preview-20261109'
+        run: |
+          cp artifacts/theme-previews/simple.jpg apps/mobile/assets/theme-previews/simple.jpg
+          cp artifacts/theme-previews/classic-r.jpg apps/mobile/assets/theme-previews/classic-r.jpg
+          cp artifacts/theme-previews/romantic.jpg apps/mobile/assets/theme-previews/romantic.jpg
+          cp artifacts/theme-previews/gyeol.jpg apps/mobile/assets/theme-previews/gyeol.jpg
+          cp artifacts/theme-previews/emotional.jpg apps/mobile/assets/theme-previews/emotional.jpg
+          if git diff --quiet -- apps/mobile/assets/theme-previews/; then
+            echo "Captured previews already match tracked files"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add apps/mobile/assets/theme-previews/
+          git commit -m "assets(preview): recapture verified Shin Minje and Kim Hyunji designs"
+          git push origin "HEAD:fix/invitation-shin-minje-preview-20261109"
