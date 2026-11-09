@@ -1,0 +1,96 @@
+/* Quiet Invitation 1-A tokens.
+ * In 1-A this CSS module is intentionally not imported by production UI.
+ * Bind its class to the shared wedding intro root in 2-A.
+ */
+.quietInvitation {
+  --qi-paper: #faf9f6;
+  --qi-paper-soft: #f3eee5;
+  --qi-paper-card: #fffdf8;
+  --qi-ink: #282725;
+  --qi-ink-muted: #66635e;
+  --qi-ink-accent: #6b5842;
+  --qi-line: #d8d2c8;
+  --qi-focus: #524d44;
+  --qi-photo-surface: #1d1f1d;
+  --qi-photo-ink: #fffcf7;
+  --qi-photo-muted: #e8e1d7;
+  --qi-photo-overlay: rgba(20, 20, 18, 0.64);
+
+  --qi-font-heading: 'Wedding Myeongjo', 'Nanum Myeongjo', serif;
+  --qi-font-ui: 'Wedding SUIT', 'Apple SD Gothic Neo', 'Malgun Gothic', system-ui, sans-serif;
+  --qi-font-heading-size: clamp(26px, 6vw, 32px);
+  --qi-font-heading-line-height: 1.55;
+  --qi-font-lead-size: 15px;
+  --qi-font-body-size: 15px;
+  --qi-font-meta-size: 13px;
+  --qi-font-ui-size: 14px;
+
+  --qi-space-1: 8px;
+  --qi-space-2: 12px;
+  --qi-space-3: 16px;
+  --qi-space-4: 24px;
+  --qi-space-5: 32px;
+  --qi-space-6: 48px;
+  --qi-inline-gutter: 24px;
+  --qi-content-max: 480px;
+  --qi-copy-max: 328px;
+  --qi-card-max: 336px;
+  --qi-hit-size: 48px;
+  --qi-focus-width: 2px;
+  --qi-focus-offset: 3px;
+
+  --qi-motion-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --qi-motion-enter: 580ms;
+  --qi-motion-exit: 420ms;
+  --qi-motion-stagger: 80ms;
+  --qi-motion-translate: 12px;
+  --qi-motion-light-total: 1400ms;
+  --qi-motion-cinema-total: 1600ms;
+  --qi-motion-envelope-after-tap: 1100ms;
+
+  --qi-surface: var(--qi-paper);
+  --qi-text: var(--qi-ink);
+  --qi-secondary-text: var(--qi-ink-muted);
+  --qi-outline-color: var(--qi-focus);
+  --qi-control-border: var(--qi-line);
+}
+
+.quietInvitation[data-intro-style='light'] {
+  --qi-surface: var(--qi-paper);
+  --qi-text: var(--qi-ink);
+  --qi-secondary-text: var(--qi-ink-muted);
+}
+
+.quietInvitation[data-intro-style='cinema'] {
+  --qi-surface: var(--qi-photo-surface);
+  --qi-text: var(--qi-photo-ink);
+  --qi-secondary-text: var(--qi-photo-muted);
+  --qi-outline-color: var(--qi-photo-ink);
+  --qi-control-border: var(--qi-photo-muted);
+}
+
+.quietInvitation[data-intro-style='envelope'] {
+  --qi-surface: var(--qi-paper-soft);
+  --qi-text: var(--qi-ink);
+  --qi-secondary-text: var(--qi-ink-muted);
+}
+
+@media (max-width: 359px) {
+  .quietInvitation {
+    --qi-inline-gutter: 20px;
+    --qi-font-heading-size: 26px;
+    --qi-card-max: 280px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .quietInvitation {
+    --qi-motion-enter: 0ms;
+    --qi-motion-exit: 0ms;
+    --qi-motion-stagger: 0ms;
+    --qi-motion-translate: 0px;
+    --qi-motion-light-total: 0ms;
+    --qi-motion-cinema-total: 0ms;
+    --qi-motion-envelope-after-tap: 0ms;
+  }
+}

@@ -36,6 +36,7 @@ const core = [
   'test-music-editor',
   'test-wedding-intro-settings',
   'test-wedding-intro-policy',
+  'test-quiet-invitation-tokens',
   'validate-theme-extension',
   'test-admin-created-event-ownership',
   'test-admin-customer-selection',
