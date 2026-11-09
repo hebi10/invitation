@@ -65,7 +65,7 @@ export function ThemePreviewGallery({ tier = 'premium' }: { tier?: MobileInvitat
               <View style={styles.copy}>
                 <AppText accessibilityRole="header" style={styles.title}>{theme.label}</AppText>
                 <AppText variant="muted" style={styles.description}>{theme.description}</AppText>
-                <AppText variant="caption" color={palette.textMuted}>신민재·김현지 실사용 샘플</AppText>
+                <AppText variant="caption" color={palette.textMuted}>신민제·김현지 공개 샘플</AppText>
                 <ActionButton
                   variant="secondary"
                   fullWidth
@@ -81,7 +81,7 @@ export function ThemePreviewGallery({ tier = 'premium' }: { tier?: MobileInvitat
         })}
       </ScrollView>
       <AppText variant="caption" color={palette.textMuted}>
-        이미지는 디자인 참고용입니다. 샘플 보기를 누르면 신민재·김현지의 실제 청첩장이 열립니다.
+        이미지는 디자인 참고용입니다. 샘플 보기를 누르면 신민제·김현지의 공개 샘플 청첩장이 열립니다.
       </AppText>
     </View>
   );
