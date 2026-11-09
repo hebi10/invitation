@@ -5,6 +5,7 @@ on:
     paths:
       - 'store-assets/invitation/ko-KR/**'
       - 'scripts/publish-play-screenshots.py'
+      - 'scripts/build-store-rebrand.py'
       - '.github/workflows/invitation-store-screenshots.yml'
   issue_comment:
     types: [created]
@@ -29,8 +30,31 @@ jobs:
     timeout-minutes: 6
     steps:
       - uses: actions/checkout@v4
-      - name: Check original screenshots and committed SHA-256 manifest
-        run: python3 scripts/publish-play-screenshots.py
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Prepare Korean screenshot rendering dependencies
+        run: |
+          python -m pip install Pillow==12.3.0
+          sudo apt-get update -qq
+          sudo apt-get install -y fonts-nanum
+      - name: Build flat editorial images from original verified app screenshots
+        run: python scripts/build-store-rebrand.py --screenshots-only
+      - name: Verify generated original-source screenshots and SHA-256 manifest
+        run: python scripts/publish-play-screenshots.py --assets artifacts/store-refresh/ko-KR
+      - name: Verify deterministic flat launcher and Play icons
+        run: |
+          python scripts/build-store-rebrand.py --icon-only
+          python - <<'PY'
+          import hashlib
+          from PIL import Image
+          from pathlib import Path
+          expected = "ae67ec95fffe8e2b03afcdb0dc9f6c0d0507ea3f0a6a0b30d114b54eec435486"
+          for path in (Path("apps/mobile/store/icon.png"), Path("apps/mobile/store/ko-KR/icon.png")):
+              with Image.open(path) as img:
+                  assert img.size == (512, 512)
+                  assert hashlib.sha256(img.convert("RGBA").tobytes()).hexdigest() == expected
+          PY
 
   dispatch:
     if: >
@@ -69,8 +93,24 @@ jobs:
       - uses: actions/checkout@v4
         with:
           persist-credentials: false
-      - name: Verify the eight original real-app screenshot assets
-        run: python3 scripts/publish-play-screenshots.py
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Prepare Korean screenshot rendering dependencies
+        run: |
+          python -m pip install Pillow==12.3.0
+          sudo apt-get update -qq
+          sudo apt-get install -y fonts-nanum
+      - name: Build flat editorial images from original verified app screenshots
+        run: python scripts/build-store-rebrand.py --screenshots-only
+      - name: Verify generated original-source screenshots and SHA-256 manifest
+        run: python scripts/publish-play-screenshots.py --assets artifacts/store-refresh/ko-KR
+      - name: Preserve exact rendered images for visual review
+        uses: actions/upload-artifact@v4
+        with:
+          name: invitation-20261109-flat-editorial-screenshots
+          path: artifacts/store-refresh/ko-KR/
+          retention-days: 30
       - name: Authenticate Google Play using short-lived Workload Identity token
         id: auth
         uses: google-github-actions/auth@v3
@@ -84,7 +124,7 @@ jobs:
       - name: Upload only ko-KR phoneScreenshots within transactional Play edit
         env:
           PLAY_ACCESS_TOKEN: ${{ steps.auth.outputs.access_token }}
-        run: python3 scripts/publish-play-screenshots.py --publish
+        run: python scripts/publish-play-screenshots.py --assets artifacts/store-refresh/ko-KR --publish
       - name: Preserve upload report, including previous image IDs
         if: always()
         uses: actions/upload-artifact@v4
