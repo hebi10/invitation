@@ -33,10 +33,14 @@ jobs:
         with:
           ref: ${{ github.sha }}
           persist-credentials: false
-      - name: 스토어 아이콘 파일 출처 검증
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: 평면형 웨딩 아이콘 생성 및 픽셀 출처 검증
         run: |
+          python -m pip install Pillow==12.3.0
+          python scripts/build-store-rebrand.py --icon-only
           test -s apps/mobile/store/icon.png
-          git hash-object apps/mobile/store/icon.png | grep -x '73929f4a16f1c55183a2e20f77993b167693f86d'
       - name: Google Play 전용 계정 설정 확인
         env:
           WORKLOAD_IDENTITY_PROVIDER: ${{ vars.PLAY_WORKLOAD_IDENTITY_PROVIDER }}
