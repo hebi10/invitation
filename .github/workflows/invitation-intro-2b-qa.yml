@@ -1,0 +1,77 @@
+name: Invitation 2-B PC and Android intro integration QA
+
+on:
+  push:
+    branches:
+      - feat/invitation-quiet-intro-2b-20261109
+    paths:
+      - scripts/qa-invitation-intro-2b-seed.mts
+      - scripts/qa-invitation-intro-2b-web.py
+      - scripts/test-invitation-intro-2b-parity.mts
+      - src/app/page-wizard/**
+      - src/app/wizard-preview/**
+      - apps/mobile/src/features/manage/**
+      - apps/mobile/src/features/screens/manage.tsx
+      - apps/mobile/src/lib/weddingIntroPreview.ts
+      - .github/workflows/invitation-intro-2b-qa.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  pc-editor-preview:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install project and pinned browser
+        run: |
+          npm ci
+          python -m pip install --disable-pip-version-check playwright==1.56.0
+          python -m playwright install --with-deps chromium
+      - name: Generate isolated unsaved PC test draft
+        run: npx --yes tsx --conditions react-server scripts/qa-invitation-intro-2b-seed.mts
+      - name: Start local public web server (no Firebase write credentials)
+        env:
+          NEXT_PUBLIC_USE_FIREBASE: 'false'
+          NEXT_PUBLIC_SITE_URL: http://127.0.0.1:3000
+        run: |
+          nohup npm run dev > "$RUNNER_TEMP/invitation-2b-dev.log" 2>&1 &
+          python - <<'PY'
+          import time,urllib.request
+          url="http://127.0.0.1:3000/mobile-intro-preview/?style=none"
+          for _ in range(120):
+              try:
+                  with urllib.request.urlopen(url,timeout=8) as response:
+                      if response.status==200:
+                          print("Local preview ready",flush=True)
+                          break
+              except Exception:
+                  pass
+              time.sleep(2)
+          else:
+              raise SystemExit("2-B local preview did not become available")
+          PY
+      - name: PC wizard iframe / mobile viewport draft-preview test
+        env:
+          INVITATION_2B_BASE_URL: http://127.0.0.1:3000
+        run: python scripts/qa-invitation-intro-2b-web.py
+      - name: Save visual and message contract results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: invitation-intro-2b-pc-iframe-qa
+          path: artifacts/quiet-invitation-2b/
+          retention-days: 30
+          if-no-files-found: warn
+      - name: Print local server failure diagnostics
+        if: failure()
+        run: tail -100 "$RUNNER_TEMP/invitation-2b-dev.log" || true
