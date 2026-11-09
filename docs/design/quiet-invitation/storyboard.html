@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+  <meta name="color-scheme" content="light"/>
+  <title>Quiet Invitation | 1-B 정적 시안 및 모션 스토리보드</title>
+  <link rel="stylesheet" href="../../../src/components/sections/WeddingIntro/QuietInvitationTokens.module.css"/>
+  <style>
+    @font-face { font-family: 'Wedding SUIT'; src: url('../../../public/fonts/wedding/SUIT-Variable.woff2') format('woff2'); font-style: normal; font-weight: 100 700; font-display: swap; }
+    @font-face { font-family: 'Wedding Myeongjo'; src: url('../../../public/fonts/wedding/NanumMyeongjo-Korean.woff2') format('woff2'); font-style: normal; font-weight: 400; font-display: swap; unicode-range: U+1100-11FF,U+2000-206F,U+3000-318F,U+3200-33FF,U+AC00-D7AF,U+FF00-FFEF; }
+    @font-face { font-family: 'Wedding Myeongjo'; src: url('../../../public/fonts/wedding/NanumMyeongjo-Latin.woff2') format('woff2'); font-style: normal; font-weight: 400; font-display: swap; unicode-range: U+0000-00FF; }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; min-height: 100%; }
+    body { background: #faf9f6; font-family: 'Wedding SUIT', 'Noto Sans CJK KR', sans-serif; color: #282725; }
+    body[data-view='cinema'] { background: #222320; color: #fffcf7; }
+    body[data-view='envelope'] { background: #f3eee5; }
+    button { font-family: inherit; border-radius: 0; cursor: pointer; }
+    button:focus-visible { outline: 2px solid var(--qi-outline-color, #524d44); outline-offset: 3px; }
+    .quietInvitation { width: 100%; min-height: 100dvh; background: var(--qi-surface); color: var(--qi-text); }
+    .stage { position: relative; width: min(100%, var(--qi-content-max)); min-height: 100dvh; margin: 0 auto; isolation: isolate; overflow: hidden; background: var(--qi-surface); }
+    .stage::before { content: ''; position: absolute; inset: 0; background: inherit; z-index: -1; }
+    .skip { position: absolute; z-index: 30; top: max(16px, env(safe-area-inset-top)); right: max(var(--qi-inline-gutter), env(safe-area-inset-right)); min-height: var(--qi-hit-size); min-width: 66px; padding: 0 8px; background: transparent; color: var(--qi-secondary-text); border: 0; font-size: 14px; font-weight: 500; }
+    .intro { position: absolute; inset: 0; z-index: 2; transition: opacity var(--qi-motion-exit) var(--qi-motion-ease); }
+    .intro-light { display: grid; place-items: center; padding: 64px var(--qi-inline-gutter); background: var(--qi-paper); text-align: center; }
+    .light-content { width: 100%; max-width: var(--qi-copy-max); margin-top: -20px; }
+    .subtleLine { height: 1px; width: 40px; background: var(--qi-line); margin: 0 auto 27px; }
+    .eyebrow { margin: 0; color: var(--qi-ink-muted); font-size: 13px; letter-spacing: 0.1em; line-height: 1.75; }
+    .light-name { margin: 28px 0 20px; color: var(--qi-ink); font-family: var(--qi-font-heading); font-size: var(--qi-font-heading-size); font-weight: 400; line-height: var(--qi-font-heading-line-height); letter-spacing: -0.045em; word-break: keep-all; }
+    .light-copy { font-family: var(--qi-font-heading); font-size: 15px; color: var(--qi-ink-muted); line-height: 1.95; margin: 0 0 30px; }
+    .light-date { font-size: 13px; color: var(--qi-ink-muted); letter-spacing: 0.03em; margin: 0; }
+    .light-foot { position: absolute; left: 0; right: 0; bottom: max(52px, env(safe-area-inset-bottom)); font-size: 11px; letter-spacing: 0.22em; color: #858078; }
+    .intro-light :is(.light-content, .light-foot) { transition: opacity var(--qi-motion-enter) var(--qi-motion-ease), transform var(--qi-motion-enter) var(--qi-motion-ease); }
+    [data-phase='start'] .intro-light .light-content { opacity: 0.15; transform: translateY(12px); }
+    [data-phase='start'] .intro-light .light-foot { opacity: 0.3; }
+    [data-phase='middle'] .intro-light .light-content, [data-phase='middle'] .intro-light .light-foot { opacity: 1; transform: none; }
+    [data-phase='end'] .intro { opacity: 0; pointer-events: none; }
+    .intro-cinema { background: var(--qi-photo-surface); }
+    .cinema-photo, .underlay-cover img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: center 47%; }
+    .cinema-photo { position: absolute; inset: 0; }
+    .cinema-shade { position: absolute; inset: 0; background: rgba(20, 20, 18, 0.5); }
+    .cinema-copy { position: absolute; inset-inline: 24px; bottom: max(108px, 12dvh); text-align: center; color: var(--qi-photo-ink); transition: opacity var(--qi-motion-enter) var(--qi-motion-ease), transform var(--qi-motion-enter) var(--qi-motion-ease); }
+    .cinema-overline { margin: 0 0 16px; font-size: 11px; letter-spacing: 0.21em; color: #f5efe5; }
+    .cinema-name { font-family: var(--qi-font-heading); font-size: var(--qi-font-heading-size); font-weight: 400; line-height: 1.55; margin: 0; letter-spacing: -0.04em; text-wrap: balance; }
+    .cinema-date { font-size: 13px; color: var(--qi-photo-muted); margin-top: 20px; letter-spacing: 0.04em; }
+    [data-phase='start'] .cinema-copy { opacity: 0; transform: translateY(12px); }
+    [data-phase='middle'] .cinema-copy { opacity: 1; transform: translateY(0); }
+    [data-intro-style='cinema'] .skip { color: #fffcf7; }
+    .intro-envelope { display: grid; align-content: center; justify-items: center; background: var(--qi-paper-soft); padding: 80px var(--qi-inline-gutter); text-align: center; }
+    .envelope-overline { font-family: var(--qi-font-heading); font-size: 15px; letter-spacing: -0.02em; line-height: 1.8; color: var(--qi-ink-muted); margin: 0 0 38px; }
+    .flat-card { position: relative; width: min(100%, var(--qi-card-max)); min-height: 398px; background: var(--qi-paper-card); border: 1px solid var(--qi-line); display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 35px 26px 32px; transition: transform var(--qi-motion-enter) var(--qi-motion-ease), opacity var(--qi-motion-enter) var(--qi-motion-ease); }
+    .card-topline { width: 35px; height: 1px; background: var(--qi-line); margin: 0 auto 39px; }
+    .card-caption { font-size: 11px; color: var(--qi-ink-muted); letter-spacing: 0.16em; margin: 0; }
+    .card-name { font-family: var(--qi-font-heading); font-size: clamp(23px, 5.5vw, 29px); line-height: 1.8; font-weight: 400; margin: 32px 0; letter-spacing: -0.045em; }
+    .card-divider { height: 1px; width: 82%; background: var(--qi-line); margin: 0 0 21px; }
+    .card-date { color: var(--qi-ink-muted); font-size: 13px; margin: 0; line-height: 1.85; }
+    .envelope-action { margin-top: 30px; min-height: var(--qi-hit-size); min-width: 176px; padding: 10px 28px; border: 1px solid var(--qi-ink); background: var(--qi-ink); color: var(--qi-paper-card); font-size: 14px; font-weight: 500; transition: opacity var(--qi-motion-exit) var(--qi-motion-ease); }
+    .envelope-note { color: var(--qi-ink-muted); font-size: 12px; margin: 16px 0 0; }
+    [data-phase='start'] .flat-card { transform: translateY(0); }
+    [data-phase='middle'] .flat-card { transform: translateY(-12px); }
+    [data-phase='middle'] .envelope-action { opacity: 0.35; }
+    .underlay-cover { position: absolute; inset: 0; z-index: 1; background: var(--qi-paper); opacity: 0; pointer-events: none; transition: opacity var(--qi-motion-exit) var(--qi-motion-ease); color: var(--qi-ink); text-align: center; overflow: hidden; }
+    .cover-image { width: 100%; height: min(62dvh, 590px); background: #d9d5cd; overflow: hidden; }
+    .underlay-cover .cover-image img { object-position: center 35%; }
+    .cover-content { background: var(--qi-paper); padding: 28px 24px 52px; }
+    .cover-name { font-family: var(--qi-font-heading); font-size: clamp(24px, 5vw, 28px); font-weight: 400; line-height: 1.6; letter-spacing: -0.04em; margin: 0; }
+    .cover-date { color: var(--qi-ink-muted); font-size: 14px; letter-spacing: 0.03em; margin: 14px 0 0; }
+    .cover-venue { color: var(--qi-ink-muted); font-size: 13px; margin: 8px 0 0; }
+    [data-phase='end'] .underlay-cover { opacity: 1; }
+    [data-phase='end'] .skip { display: none; }
+    .guide { position: fixed; z-index: 99; bottom: 16px; left: 50%; transform: translateX(-50%); display: flex; gap: 8px; padding: 8px; background: #fff; border: 1px solid #d8d2c8; color: #282725; }
+    .guide[hidden] { display: none; }
+    .guide button { min-height: 44px; padding: 8px 12px; background: #fff; border: 1px solid #d8d2c8; color: #282725; }
+    .guide button[aria-pressed='true'] { background: #282725; color: #fff; }
+    @media (max-width: 359px) { .envelope-overline { margin-bottom: 22px; } .flat-card { min-height: 355px; padding-inline: 18px; } .card-topline { margin-bottom: 26px; } .card-name { margin: 24px 0; } .envelope-action { margin-top: 24px; } .intro-envelope { padding-block: 64px; } .cover-image { height: 58dvh; } }
+    @media (max-height: 650px) { .flat-card { min-height: 275px; } .envelope-overline { margin-bottom: 12px; } .card-topline { margin-bottom: 12px; } .card-name { margin: 12px 0; } .envelope-action { margin-top: 12px; } .intro-envelope { padding-block: 56px; } }
+    @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: 0ms !important; transition-duration: 0ms !important; } }
+  </style>
+</head>
+<body>
+<main id="experience" class="quietInvitation" data-intro-style="light" data-phase="start" aria-label="첫 화면 연출 디자인 시안">
+  <div class="stage">
+    <div class="underlay-cover" aria-hidden="true">
+      <div class="cover-image"><img src="../../../public/images/home-wedding/portrait.webp" alt=""/></div>
+      <div class="cover-content">
+        <h2 class="cover-name">이서준 · 김하은</h2>
+        <p class="cover-date">2027년 4월 17일 토요일 · 오후 2시</p>
+        <p class="cover-venue">메종 가든 · 샘플 예식장</p>
+      </div>
+    </div>
+    <section class="intro intro-light" data-view="light" aria-label="빛에 담긴 초대 시안">
+      <div class="light-content">
+        <div class="subtleLine"></div>
+        <p class="eyebrow">소중한 분께</p>
+        <h1 class="light-name">이서준 <span aria-hidden="true">·</span> 김하은</h1>
+        <p class="light-copy">저희 두 사람의 새로운 시작에<br/>소중한 분들을 초대합니다.</p>
+        <p class="light-date">2027년 4월 17일 토요일</p>
+      </div>
+      <p class="light-foot">INVITATION</p>
+    </section>
+    <section class="intro intro-cinema" data-view="cinema" aria-label="영화처럼 시작 시안">
+      <img class="cinema-photo" src="../../../public/images/home-wedding/portrait.webp" alt=""/>
+      <div class="cinema-shade" aria-hidden="true"></div>
+      <div class="cinema-copy">
+        <p class="cinema-overline">WEDDING DAY</p>
+        <h1 class="cinema-name">이서준 · 김하은</h1>
+        <p class="cinema-date">2027년 4월 17일 토요일</p>
+      </div>
+    </section>
+    <section class="intro intro-envelope" data-view="envelope" aria-label="편지형 초대장 시안">
+      <p class="envelope-overline">당신께 전하는 작은 초대</p>
+      <div class="flat-card">
+        <div class="card-topline"></div>
+        <p class="card-caption">WEDDING INVITATION</p>
+        <h1 class="card-name">이서준 · 김하은</h1>
+        <div class="card-divider"></div>
+        <p class="card-date">2027년 4월 17일 토요일<br/>메종 가든</p>
+      </div>
+      <button type="button" class="envelope-action" id="open-letter">초대장 열기</button>
+      <p class="envelope-note">카드를 열면 청첩장 본문으로 이어집니다.</p>
+    </section>
+    <button type="button" id="skip" class="skip" aria-label="인트로 건너뛰기">건너뛰기</button>
+  </div>
+</main>
+<div id="guide" class="guide" hidden aria-label="스토리보드 프레임 선택">
+  <button type="button" data-action="start">시작</button>
+  <button type="button" data-action="middle">중간</button>
+  <button type="button" data-action="end">종료</button>
+  <button type="button" id="play">재생</button>
+</div>
+<script>
+  const query = new URLSearchParams(location.search);
+  const style = ['light', 'cinema', 'envelope'].includes(query.get('style')) ? query.get('style') : 'light';
+  const phase = ['start', 'middle', 'end'].includes(query.get('phase')) ? query.get('phase') : 'middle';
+  const experience = document.getElementById('experience');
+  const guide = document.getElementById('guide');
+  const introSections = document.querySelectorAll('.intro');
+  let handles = [];
+  experience.dataset.introStyle = style;
+  document.body.dataset.view = style;
+  introSections.forEach(section => section.hidden = section.dataset.view !== style);
+  if (query.get('guide') === '1') guide.hidden = false;
+  function setPhase(nextPhase) {
+    experience.dataset.phase = nextPhase;
+    guide.querySelectorAll('[data-action]').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.action === nextPhase)));
+  }
+  function clearPlayback() { handles.forEach(clearTimeout); handles = []; }
+  function play() {
+    clearPlayback();
+    setPhase('start');
+    if (matchMedia('(prefers-reduced-motion: reduce)').matches) { setPhase('end'); return; }
+    const middle = style === 'light' ? 230 : style === 'cinema' ? 290 : 180;
+    const ending = style === 'light' ? 1400 : style === 'cinema' ? 1600 : 1100;
+    handles.push(setTimeout(() => setPhase('middle'), middle));
+    handles.push(setTimeout(() => setPhase('end'), ending));
+  }
+  document.getElementById('skip').addEventListener('click', () => { clearPlayback(); setPhase('end'); });
+  document.getElementById('open-letter').addEventListener('click', () => { if (style === 'envelope') play(); });
+  guide.querySelectorAll('[data-action]').forEach(button => button.addEventListener('click', () => { clearPlayback(); setPhase(button.dataset.action); }));
+  document.getElementById('play').addEventListener('click', play);
+  setPhase(phase);
+  if (query.get('autoplay') === '1' && style !== 'envelope') play();
+</script>
+</body>
+</html>
