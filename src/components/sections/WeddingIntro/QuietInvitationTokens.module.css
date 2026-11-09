@@ -1,7 +1,4 @@
-/* Quiet Invitation 1-A tokens.
- * In 1-A this CSS module is intentionally not imported by production UI.
- * Bind its class to the shared wedding intro root in 2-A.
- */
+/* Shared Quiet Invitation tokens for all three web intro styles. */
 .quietInvitation {
   --qi-paper: #faf9f6;
   --qi-paper-soft: #f3eee5;

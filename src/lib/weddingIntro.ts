@@ -2,9 +2,9 @@ export type WeddingIntroStyle = 'none' | 'light' | 'cinema' | 'envelope';
 
 export const WEDDING_INTRO_OPTIONS: { value: WeddingIntroStyle; label: string; description: string }[] = [
   { value: 'none', label: '사용 안 함', description: '청첩장 표지를 바로 보여줍니다.' },
-  { value: 'light', label: '빛에 담긴 초대', description: '따뜻한 종이 위로 이름이 나타나고, 빛이 걷히며 청첩장이 드러납니다.' },
-  { value: 'cinema', label: '영화처럼 시작', description: '대표 사진과 이름이 영화의 첫 장면처럼 펼쳐집니다.' },
-  { value: 'envelope', label: '당신께 도착한 초대장', description: '봉인을 누르면 두 사람의 사진이 담긴 카드가 올라와 청첩장으로 이어집니다.' },
+  { value: 'light', label: '타이포그래피형', description: '차분한 종이 배경에 두 사람의 이름이 부드럽게 나타납니다.' },
+  { value: 'cinema', label: '웨딩 화보형', description: '대표 사진과 이름이 짧고 자연스럽게 나타납니다.' },
+  { value: 'envelope', label: '편지형 초대장', description: '종이 카드를 눌러 청첩장 본문을 엽니다.' },
 ];
 
 export function normalizeWeddingIntroStyle(value: unknown): WeddingIntroStyle {
