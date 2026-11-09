@@ -6,7 +6,7 @@ import path from 'node:path';
 import { chromium } from 'playwright';
 
 const baseUrl = process.env.INVITATION_CAPTURE_BASE_URL || 'http://127.0.0.1:3000';
-const sampleSlug = 'an-doyoung-yoon-jisoo';
+const sampleSlug = 'shin-minje-kim-hyunji';
 const themes = ['simple', 'classic-r', 'romantic', 'gyeol', 'emotional'];
 const outputDirectory = path.resolve('artifacts/theme-previews');
 await fs.mkdir(outputDirectory, { recursive: true });
@@ -40,7 +40,7 @@ try {
       }
       await page.waitForFunction(() => {
         const text = document.body?.innerText || '';
-        return text.includes('안도영') || text.includes('윤지수');
+        return text.includes('신민제') && text.includes('김현지');
       }, null, { timeout: 30000 });
       await page.waitForLoadState('networkidle', { timeout: 15000 }).catch(() => null);
       await page.evaluate(async () => {
