@@ -90,37 +90,60 @@ for theme,style in CASES:
         record["activity"]=launch.strip()[-300:]
         found=False
         last=""
-        for attempt in range(15):
+        button=None
+        # First navigation may be intercepted by Chrome's account/translation
+        # onboarding. A React SSR heading can also appear before the portal
+        # dialog is hydrated, so require the envelope OPEN button in the native
+        # accessibility tree rather than merely the underlying couple names.
+        for attempt in range(28):
             time.sleep(2)
             try:
                 tree,xml=dump()
                 labels=text(tree)
                 last=labels[-500:]
-                if "테스트신랑" in labels and "테스트신부" in labels:
+                has_names="테스트신랑" in labels and "테스트신부" in labels
+                buttons=[
+                    node for node in tree.iter("node")
+                    if (node.get("text") or node.get("content-desc") or "").strip()=="초대장 열기"
+                    and node.get("enabled")=="true"
+                    and node.get("bounds","") not in ("[0,0][0,0]","")
+                ]
+                if has_names and (style!="envelope" or buttons):
                     found=True
+                    button=buttons[0] if buttons else None
                     (OUT/(theme+"-"+style+"-accessibility.xml")).write_text(xml,encoding="utf8")
                     break
                 if dialog_dismiss(tree):
+                    time.sleep(1)
+                    adb("shell","am","start","-a","android.intent.action.VIEW","-d",url,check=False)
+                elif not has_names and attempt in (5,10,16,22):
                     adb("shell","am","start","-a","android.intent.action.VIEW","-d",url,check=False)
             except (ET.ParseError,subprocess.TimeoutExpired,subprocess.CalledProcessError):
                 pass
-        record["names_visible_in_native_accessibility_tree"]=found
+        record["names_and_control_visible_in_native_accessibility_tree"]=found
         record["ui_hint"]=last[:200]
         record["screen"]=screen(theme+"-"+style+"-android-local.png")
         if not found:
-            raise RuntimeError("Local wedding content not present in Android Chrome UI hierarchy")
+            raise RuntimeError("Local Chrome did not expose the wedding names and required intro control")
         if style=="envelope":
-            # The opening card is an actual native Android browser touch action.
-            for node in tree.iter("node"):
-                caption=(node.get("text") or node.get("content-desc") or "").strip()
-                if caption=="초대장 열기" and tap(node):
-                    time.sleep(2)
-                    record["after_open"]=screen(theme+"-"+style+"-after-open.png")
-                    record["open_button_tapped"]=True
+            if not button or not tap(button):
+                raise RuntimeError("Letter open control was not tappable on Android")
+            record["open_button_tapped"]=True
+            closed=False
+            for _ in range(7):
+                time.sleep(1)
+                tree,_=dump()
+                button_still_present=any(
+                    (node.get("text") or node.get("content-desc") or "").strip()=="초대장 열기"
+                    and node.get("bounds","") not in ("[0,0][0,0]","")
+                    for node in tree.iter("node"))
+                if not button_still_present and "테스트신랑" in text(tree):
+                    closed=True
                     break
-            if not record.get("open_button_tapped"):
-                record["open_button_tapped"]=False
-                raise RuntimeError("Could not verify opening the letter in Android browser")
+            record["intro_closed_after_tap"]=closed
+            record["after_open"]=screen(theme+"-"+style+"-after-open.png")
+            if not closed:
+                raise RuntimeError("Android letter open action did not yield a visible cover")
         record["success"]=True
         print("ANDROID_LOCAL_OK",theme,style,flush=True)
     except Exception as error:
