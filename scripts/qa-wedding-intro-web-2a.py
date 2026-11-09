@@ -51,9 +51,11 @@ def screenshot(page, name):
     return path
 
 def assert_closed(page, timeout=6000):
+    page.locator("[data-wedding-intro-pending]").wait_for(state="detached", timeout=timeout)
     page.locator("[data-wedding-intro]").wait_for(state="detached", timeout=timeout)
+    page.wait_for_timeout(100)
+    assert page.locator("[data-wedding-intro]").count() == 0
     assert page.evaluate("document.body.style.overflow") == "", "Scroll lock not restored"
-    assert page.locator('[data-wedding-intro-pending]').count() == 0
     assert page.locator('[data-wedding-cover-photo][style*="hidden"]').count() == 0
 
 def visit(browser, name, config, style):
