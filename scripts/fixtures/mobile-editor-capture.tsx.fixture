@@ -10,7 +10,7 @@ import { ManageEditorStepContent } from '../features/manage/components/ManageEdi
 import { EDITOR_STEPS, EMPTY_FORM, type ManageFormState } from '../features/manage/shared';
 
 function resolveCaptureStepIndex(value?: string) {
-  if (value === 'intro') return EDITOR_STEPS.length - 1;
+  if (value === 'intro' || value?.startsWith('intro-')) return EDITOR_STEPS.length - 1;
   const index = EDITOR_STEPS.findIndex((step) => step.key === value);
   return index < 0 ? 0 : index;
 }
@@ -35,6 +35,12 @@ export default function DesignCheck() {
           father: { ...current.groom.father, relation: '부', name: '김아버지' },
         },
       }));
+    }
+    const introStyle = requestedStep?.startsWith('intro-')
+      ? requestedStep.slice('intro-'.length)
+      : null;
+    if (introStyle === 'light' || introStyle === 'cinema' || introStyle === 'envelope') {
+      setForm((current) => ({ ...current, introStyle }));
     }
   }, [requestedStep]);
   const isLastStep = step === EDITOR_STEPS.length - 1;

@@ -220,9 +220,10 @@ export function useInvitationForm({
   );
 
   const setIntroStyle = useCallback((introStyle: ManageFormState['introStyle']) => {
-    setIsFormDirty(true);
+    if (form.introStyle === introStyle) return;
+    markFormDirty();
     setFormState((current) => ({ ...current, introStyle }));
-  }, []);
+  }, [form.introStyle, markFormDirty]);
 
   const setMusicEnabled = useCallback(
     (musicEnabled: boolean) => {
