@@ -47,6 +47,7 @@ import {
 import { copyTextWithFallback } from '../../lib/textTransfer';
 import { createPrivatePreviewUrl } from '../../lib/apiPreview';
 import type { WeddingIntroStyle } from '../../lib/weddingIntro';
+import { buildWeddingIntroSamplePreviewUrl } from '../../lib/weddingIntroPreview';
 import { buildMobileKakaoShareTarget } from '../../lib/invitationSharing';
 import type {
   MobileInvitationThemeKey,
@@ -255,9 +256,8 @@ export default function ManageScreen() {
 
   const handlePreviewIntro = async (style: WeddingIntroStyle) => {
     try {
-      const url = new URL('/mobile-intro-preview/', apiBaseUrl);
-      url.searchParams.set('style', style);
-      await WebBrowser.openBrowserAsync(url.toString(), { controlsColor: palette.accent });
+      const url = buildWeddingIntroSamplePreviewUrl(apiBaseUrl, style);
+      await WebBrowser.openBrowserAsync(url, { controlsColor: palette.accent });
     } catch {
       setNotice('첫 화면 연출을 열지 못했습니다. 연결 상태를 확인하고 다시 시도해 주세요.');
     }
