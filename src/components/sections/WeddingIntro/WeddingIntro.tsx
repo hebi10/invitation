@@ -243,7 +243,7 @@ export default function WeddingIntro({
 
         {style === 'envelope' ? (
           <div className={styles.envelopeScene}>
-            <p className={styles.envelopeTitle}>당신께 전하는 작은 초대</p>
+            <p className={styles.envelopeTitle} tabIndex={-1} data-dialog-initial-focus>당신께 전하는 작은 초대</p>
             <div className={styles.letterCard} data-letter-card>
               <div className={styles.letterRule} aria-hidden="true" />
               <p className={styles.letterEyebrow}>WEDDING INVITATION</p>
@@ -254,7 +254,6 @@ export default function WeddingIntro({
             <button
               type="button"
               className={styles.openButton}
-              data-dialog-initial-focus
               data-letter-open
               disabled={opening}
               onClick={() => openLetterRef.current()}
