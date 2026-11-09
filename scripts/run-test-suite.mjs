@@ -5,6 +5,7 @@ import process from 'node:process';
 
 const core = [
   'test-mobile-account-intro',
+  'test-invitation-intro-2b-parity',
   'test-mobile-editor-save-policy',
   'test-mobile-editor-delimited-rows',
   'test-mobile-invitation-visibility',
