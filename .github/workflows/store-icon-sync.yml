@@ -5,6 +5,8 @@ on:
     branches: [main]
     paths:
       - .github/workflows/store-icon-sync.yml
+  issue_comment:
+    types: [created]
   workflow_dispatch:
     inputs:
       apply:
@@ -20,8 +22,26 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  dispatch:
+    if: >-
+      github.event_name == 'issue_comment' &&
+      github.repository == 'hebi10/invitation' &&
+      github.event.issue.number == 30 &&
+      github.event.comment.user.login == 'hebi10' &&
+      github.event.comment.body == '/upload-invitation-icon-20261109'
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      actions: write
+    steps:
+      - name: Dispatch trusted main-only icon update
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh api --method POST "repos/${GITHUB_REPOSITORY}/actions/workflows/store-icon-sync.yml/dispatches" \
+            -f ref=main -f 'inputs[apply]=true'
   store-icon:
-    if: github.repository == 'hebi10/invitation' && github.ref == 'refs/heads/main'
+    if: github.repository == 'hebi10/invitation' && github.ref == 'refs/heads/main' && github.event_name != 'issue_comment'
     runs-on: ubuntu-24.04
     environment: google-play-testing
     timeout-minutes: 10
@@ -61,11 +81,10 @@ jobs:
       - name: ko-KR 대표 아이콘 확인 및 필요한 경우 갱신
         env:
           PLAY_ACCESS_TOKEN: ${{ steps.google_auth.outputs.access_token }}
-          APPLY_ON_PUSH: ${{ github.event_name == 'push' && 'true' || 'false' }}
           APPLY_MANUAL: ${{ inputs.apply && 'true' || 'false' }}
         run: |
           set -euo pipefail
-          if [[ "$APPLY_ON_PUSH" == "true" || "$APPLY_MANUAL" == "true" ]]; then
+          if [[ "$APPLY_MANUAL" == "true" ]]; then
             python3 scripts/sync-play-store-icon.py --apply
           else
             python3 scripts/sync-play-store-icon.py
