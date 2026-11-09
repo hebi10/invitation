@@ -1,0 +1,104 @@
+name: Invitation 3-A actual five-theme responsive and intro QA
+
+on:
+  push:
+    branches:
+      - qa/invitation-quiet-intro-3a-20261109
+    paths:
+      - scripts/qa-invitation-quiet-3a-integrated.py
+      - scripts/qa-invitation-3a-android-web.py
+      - .github/workflows/invitation-intro-3a-qa.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  local-five-theme-intro:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install public web and pinned browser
+        run: |
+          npm ci
+          python -m pip install --disable-pip-version-check playwright==1.56.0
+          python -m playwright install --with-deps chromium
+          mkdir -p artifacts
+          curl --fail --location --silent --show-error --retry 3 \
+            https://cdnjs.cloudflare.com/ajax/libs/axe-core/4.10.3/axe.min.js \
+            --output artifacts/axe-core-4.10.3.min.js
+          test -s artifacts/axe-core-4.10.3.min.js
+      - name: Generate local-only test wedding (never write Firebase)
+        run: npx --yes tsx --conditions react-server scripts/qa-invitation-intro-2b-seed.mts
+      - name: Start local Next.js with no owner or Firebase credentials
+        env:
+          NEXT_PUBLIC_USE_FIREBASE: 'false'
+          NEXT_PUBLIC_SITE_URL: http://127.0.0.1:3000
+        run: |
+          nohup npm run dev > "$RUNNER_TEMP/3a-next.log" 2>&1 &
+          python - <<'PY'
+          import time,urllib.request
+          url="http://127.0.0.1:3000/mobile-intro-preview/?style=none"
+          for n in range(120):
+              try:
+                  with urllib.request.urlopen(url,timeout=8) as r:
+                      if r.status==200:
+                          print("3-A local Next.js ready",flush=True)
+                          break
+              except Exception:
+                  pass
+              time.sleep(2)
+          else:
+              raise SystemExit("Local web server unavailable")
+          PY
+      - name: Verify Quiet Intro overlays with all five production wedding renderers
+        env:
+          INVITATION_3A_BASE_URL: http://127.0.0.1:3000
+        run: python scripts/qa-invitation-quiet-3a-integrated.py
+      - name: Preserve screenshots and structured findings
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: invitation-3a-local-five-themes-quiet-intro
+          path: artifacts/quiet-invitation-3a/
+          retention-days: 30
+          if-no-files-found: warn
+      - name: Print safe local Next.js diagnostic tail on failure
+        if: failure()
+        run: tail -100 "$RUNNER_TEMP/3a-next.log" || true
+
+  live-five-theme-readonly:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install pinned browser and accessibility checker
+        run: |
+          python -m pip install --disable-pip-version-check playwright==1.56.0
+          python -m playwright install --with-deps chromium
+          mkdir -p artifacts
+          curl --fail --location --silent --show-error --retry 3 \
+            https://cdnjs.cloudflare.com/ajax/libs/axe-core/4.10.3/axe.min.js \
+            --output artifacts/axe-core-4.10.3.min.js
+          test -s artifacts/axe-core-4.10.3.min.js
+      - name: Run existing live five-theme accessibility, responsive and gallery QA
+        run: python scripts/qa-public-wedding-stage5.py
+      - name: Archive original live public screenshots and structured audit
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: invitation-3a-live-public-five-theme-readonly
+          path: artifacts/public-wedding-stage5/
+          retention-days: 30
+          if-no-files-found: warn
