@@ -208,6 +208,10 @@
   text-align: center;
 }
 
+.envelopeTitle:focus {
+  outline: none;
+}
+
 .envelopeTitle {
   margin: 0 0 38px;
   color: var(--qi-ink-muted);
