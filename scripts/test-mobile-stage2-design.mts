@@ -34,7 +34,12 @@ assert.match(hero, /borderRadius:\s*0/);
 assert.match(gallery, /themePreviewImages\[theme\.key\]/);
 assert.match(gallery, /Math\.floor\(\(width - 76\) \/ 2\)/);
 assert.match(gallery, /findGuideSamplePageUrl/);
-assert.match(gallery, /샘플 보기를 누르면 신민재·김현지의 실제 청첩장이 열립니다/);
+assert.match(gallery, /샘플 보기를 누르면 신민제·김현지의 공개 샘플 청첩장이 열립니다/);
+assert.match(home, /신민제·김현지 샘플 청첩장/);
+const sampleCapture = source('scripts/capture-clean-wedding-previews.mjs');
+assert.match(sampleCapture, /sampleSlug = 'shin-minje-kim-hyunji'/);
+assert.match(sampleCapture, /text\.includes\('신민제'\) && text\.includes\('김현지'\)/);
+assert.doesNotMatch(sampleCapture, /an-doyoung-yoon-jisoo/);
 
 assert.match(login, /RecentLinkedInvitationsSection/);
 assert.match(login, /최근 연동한 청첩장을 확인하고 있습니다/);

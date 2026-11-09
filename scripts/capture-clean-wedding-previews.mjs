@@ -6,7 +6,7 @@ import path from 'node:path';
 import { chromium } from 'playwright';
 
 const baseUrl = process.env.INVITATION_CAPTURE_BASE_URL || 'http://127.0.0.1:3000';
-const sampleSlug = 'an-doyoung-yoon-jisoo';
+const sampleSlug = 'shin-minje-kim-hyunji';
 const themes = ['simple', 'classic-r', 'romantic', 'gyeol', 'emotional'];
 const outputDirectory = path.resolve('artifacts/theme-previews');
 await fs.mkdir(outputDirectory, { recursive: true });
@@ -40,9 +40,17 @@ try {
       }
       await page.waitForFunction(() => {
         const text = document.body?.innerText || '';
-        return text.includes('안도영') || text.includes('윤지수');
+        return text.includes('신민제') && text.includes('김현지');
       }, null, { timeout: 30000 });
       await page.waitForLoadState('networkidle', { timeout: 15000 }).catch(() => null);
+      const introduction = page.getByRole('dialog', { name: '결혼식 초대장 인트로' }).first();
+      await introduction.waitFor({ state: 'visible', timeout: 7500 }).catch(() => null);
+      if (await introduction.isVisible()) {
+        await page.getByRole('button', { name: '건너뛰기' }).first().click({ timeout: 12000 });
+        await introduction.waitFor({ state: 'hidden', timeout: 15000 });
+      }
+      await page.locator('button[aria-label^="음악 "]').first().waitFor({ state: 'visible', timeout: 22000 });
+      await page.waitForTimeout(350);
       await page.evaluate(async () => {
         await document.fonts.ready;
         document.querySelectorAll('nextjs-portal').forEach((node) => node.remove());
@@ -81,6 +89,9 @@ try {
     }
   }
   if (report.screenshots.length !== themes.length) throw new Error('Incomplete capture');
+  if (new Set(report.screenshots.map((item) => item.sha256)).size !== themes.length) {
+    throw new Error('Five wedding theme previews must show distinct designs, not a shared intro screen');
+  }
   await fs.writeFile(path.join(outputDirectory, 'capture-report.json'), JSON.stringify(report, null, 2) + '\n');
 } finally {
   await browser.close();
