@@ -10,6 +10,8 @@ from pathlib import Path
 import re
 import struct
 import sys
+
+from PIL import Image
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -20,8 +22,8 @@ IMAGE_TYPE = "icon"
 API = "https://androidpublisher.googleapis.com"
 BASE = f"{API}/androidpublisher/v3/applications/{PACKAGE}"
 ICON = Path("apps/mobile/store/icon.png")
-# Immutable reviewed source; changing the asset requires deliberate script review.
-EXPECTED_BLOB_SHA = "73929f4a16f1c55183a2e20f77993b167693f86d"
+# Validate rendered pixels rather than PNG/zlib byte encoding across runners.
+EXPECTED_PIXEL_SHA256 = "ae67ec95fffe8e2b03afcdb0dc9f6c0d0507ea3f0a6a0b30d114b54eec435486"
 
 
 class IconSyncError(Exception):
@@ -37,9 +39,10 @@ def validate_icon():
     width, height, depth, color = struct.unpack(">IIBB", image[16:26])
     if (width, height, depth, color) != (512, 512, 8, 6):
         raise IconSyncError("스토어 아이콘은 512x512 32비트 RGBA PNG여야 합니다.")
-    blob = hashlib.sha1(f"blob {len(image)}\0".encode() + image).hexdigest()
-    if blob != EXPECTED_BLOB_SHA:
-        raise IconSyncError("아이콘 원본 SHA가 확인한 소스와 일치하지 않습니다.")
+    with Image.open(ICON) as rendered:
+        pixel_sha = hashlib.sha256(rendered.convert("RGBA").tobytes()).hexdigest()
+    if pixel_sha != EXPECTED_PIXEL_SHA256:
+        raise IconSyncError("재현된 아이콘 픽셀 SHA-256이 승인한 평면형 디자인과 다릅니다.")
     digest = hashlib.sha256(image).digest()
     return image, digest, hashlib.sha256(image).hexdigest()
 
