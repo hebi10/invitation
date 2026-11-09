@@ -63,7 +63,7 @@ export default function MyInvitationsScreen() {
       </SectionCard>
       <SectionCard
         title="웨딩 디자인 살펴보기"
-        description="신민재·김현지 청첩장으로 디자인별 실제 페이지를 확인할 수 있습니다."
+        description="신민제·김현지 샘플 청첩장으로 디자인별 공개 미리보기를 확인할 수 있습니다."
       >
         <ThemePreviewGallery />
       </SectionCard>
