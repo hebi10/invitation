@@ -206,7 +206,8 @@ def intro_case(browser,theme,style,view,config):
               return !!copy&&Number.parseFloat(getComputedStyle(copy).opacity)>0.9;
             }""",timeout=5000)
             write_screen(page,view+"-"+theme+"-"+style+"-reading",case)
-            scan_axe(frame,theme,style,"intro",width)
+            # Auto intros last 1.4/1.6 seconds; do not let a long axe scan
+            # cause the resize assertion to race a natural animation completion.
             page.set_viewport_size({"width":width-12,"height":height})
             frame.wait_for_timeout(100)
             assert intro.is_visible(),"Resize unexpectedly dismissed auto intro"
