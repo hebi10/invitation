@@ -9,17 +9,20 @@ const source = ts.transpileModule(readFileSync('apps/mobile/src/lib/pendingBilli
 let stored: string | null = null;
 let purchases = 0;
 let failReceiptStorage = false;
-let history: { productIdentifier: string; transactionIdentifier: string; purchaseDate: string }[] = [];
+let failClearStorage = false;
+let history: { productIdentifier: string; transactionIdentifier: string; purchaseDate: string; purchaseToken?: string }[] = [];
+let consumed = 0;
 let historyRequestDate = new Date().toISOString();
 function loadModule() {
   const exports: Record<string, unknown> = {};
   runInNewContext(source, { exports, require: (id: string) => id === './billing' ? ({
     getBillingTransactionHistory: async () => ({ transactions: history, requestDate: historyRequestDate }),
+    finishBillingPurchase: async (token: string) => { assert.ok(token); consumed += 1; },
     isDefinitelyUnchargedBillingError: (error: { userCancelled?: boolean }) => error?.userCancelled === true,
   }) : ({
     getStoredString: async () => stored,
     setStoredString: async (_key: string, value: string | null) => {
-      if (value && failReceiptStorage) throw new Error('storage unavailable');
+      if ((value && failReceiptStorage) || (value === null && failClearStorage)) throw new Error('storage unavailable');
       stored = value;
     },
   }) });
@@ -33,7 +36,7 @@ function load() { return loadModule().runPendingBillingPurchase; }
 const request = { appUserId: 'customer', productId: 'ticket_pack_1', apiBaseUrl: 'https://example.test', target: { action: 'grantTicketPack', pageSlug: 'page' } };
 const purchase = async () => {
   purchases += 1;
-  return { appUserId: 'customer', productIdentifier: 'ticket_pack_1', transactionIdentifier: 'GPA.paid', customerInfo: { secret: 'not-persisted' } };
+  return { appUserId: 'customer', productIdentifier: 'ticket_pack_1', transactionIdentifier: 'GPA.paid', purchaseToken: 'google-token-paid', customerInfo: { secret: 'not-persisted' } };
 };
 const initial = load();
 await assert.rejects(initial(request, { purchase, fulfill: async () => { throw new Error('offline'); } }), /다시/);
@@ -49,7 +52,8 @@ await assert.rejects(restarted(request, { purchase, fulfill: async () => false }
 assert.ok(stored);
 assert.equal(await restarted(request, { purchase, fulfill: async (receipt: { transactionId: string }) => { assert.equal(receipt.transactionId, 'GPA.paid'); return 4; } }), 4);
 assert.equal(purchases, 1, 'Retry must reuse the paid transaction after restarting');
-assert.equal(stored, null, 'Only a successful fulfillment clears the purchase');
+assert.equal(stored, null, 'Only a successful verified fulfillment and consumption clears the purchase');
+assert.ok(consumed >= 1, 'Server fulfillment must complete the Play consumable transaction');
 stored = '{broken';
 await assert.rejects(load()(request, { purchase, fulfill: async () => 1 }), /확인/);
 assert.equal(purchases, 1, 'Corrupt pending data must not trigger another charge');
@@ -107,17 +111,17 @@ assert.equal(purchases, beforeCrash + 1);
 const afterCrash = loadModule();
 await assert.rejects(afterCrash.recoverPendingBillingPurchase(scope, async () => { throw new Error('must not fulfill historical purchase'); }), /확인|거래/);
 assert.equal(purchases, beforeCrash + 1, 'Uncertain payment must never open another charge');
-history.push({ productIdentifier: 'ticket_pack_1', transactionIdentifier: 'rc-new', purchaseDate: '2026-09-21T10:00:00Z' });
+history.push({ productIdentifier: 'ticket_pack_1', transactionIdentifier: 'rc-new', purchaseToken: 'google-token-new', purchaseDate: '2026-09-21T10:00:00Z' });
 let recoveredTransaction = '';
 await afterCrash.recoverPendingBillingPurchase(scope, async (_request, receipt) => { recoveredTransaction = receipt.transactionId; return true; });
 assert.equal(recoveredTransaction, 'rc-new', 'Use server snapshot time and second precision despite the device clock skew');
 assert.equal(stored, null);
 assert.equal(purchases, beforeCrash + 1);
 stored = crashIntent;
-history.push({ productIdentifier: 'ticket_pack_1', transactionIdentifier: 'rc-second-new', purchaseDate: new Date().toISOString() });
+history.push({ productIdentifier: 'ticket_pack_1', transactionIdentifier: 'rc-second-new', purchaseToken: 'google-token-second', purchaseDate: new Date().toISOString() });
 await assert.rejects(loadModule().recoverPendingBillingPurchase(scope, async () => { throw new Error('ambiguous target'); }), /확정/);
 assert.equal(stored, crashIntent, 'Ambiguous histories must keep the pending intent for investigation');
-history = [{ productIdentifier: 'ticket_pack_1', transactionIdentifier: 'rc-unseen-old', purchaseDate: '2025-01-01T00:00:00Z' }];
+history = [{ productIdentifier: 'ticket_pack_1', transactionIdentifier: 'rc-unseen-old', purchaseToken: 'google-token-old', purchaseDate: '2025-01-01T00:00:00Z' }];
 await assert.rejects(loadModule().recoverPendingBillingPurchase(scope, async () => true), /확정/);
 assert.equal(purchases, beforeCrash + 1);
 stored = null;
@@ -130,4 +134,26 @@ assert.equal(purchases, afterReceiptFailure, 'A paid receipt in memory must surv
 const cancelledPurchase = load();
 await assert.rejects(cancelledPurchase(request, { purchase: async () => { throw { userCancelled: true }; }, fulfill: async () => 1 }));
 assert.equal(stored, null, 'Definitive cancellation allows a later fresh purchase');
-console.log('pending billing purchase recovery checks passed (no payments)');
+
+// The server has granted the page and Play has consumed it, but the app crashes
+// before deleting its saved receipt. A trusted read-only replay must not consume twice.
+const beforeConsumedCrash = consumed;
+const beforePurchaseCrash = purchases;
+failClearStorage = true;
+await assert.rejects(load()(request, {
+  purchase,
+  fulfill: async () => ({ page: { slug: 'already-paid-page' } }),
+}), /storage unavailable/);
+assert.equal(consumed, beforeConsumedCrash + 1, 'The first Play consumption was successful');
+assert.ok(stored?.includes('google-token-paid'), 'A crash before local cleanup leaves the original paid receipt');
+failClearStorage = false;
+const consumedReplay = await loadModule().recoverPendingBillingPurchase(
+  { appUserId: 'customer', apiBaseUrl: 'https://example.test' },
+  async () => ({ page: { slug: 'already-paid-page' }, billingPurchaseConsumed: true }),
+) as { page: { slug: string } };
+assert.equal(consumedReplay.page.slug, 'already-paid-page');
+assert.equal(consumed, beforeConsumedCrash + 1, 'A consumed purchase must never be consumed twice');
+assert.equal(purchases, beforePurchaseCrash + 1, 'Recovery must never trigger another charge');
+assert.equal(stored, null, 'Successful verified recovery clears the stale receipt');
+
+console.log('pending billing purchase recovery including consumed-token process-crash checks passed (no payments)');

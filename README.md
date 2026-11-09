@@ -394,8 +394,6 @@ NEXT_PUBLIC_KAKAO_JAVASCRIPT_KEY=
 # 또는
 NEXT_PUBLIC_KAKAO_MAP_API_KEY=
 
-EXPO_PUBLIC_REVENUECAT_ANDROID_API_KEY=
-EXPO_PUBLIC_REVENUECAT_IOS_API_KEY=
 ```
 
 설명:
@@ -408,10 +406,6 @@ EXPO_PUBLIC_REVENUECAT_IOS_API_KEY=
   Firebase Web SDK 설정
 - `NEXT_PUBLIC_KAKAO_JAVASCRIPT_KEY`
   Kakao 지도 / 공유 SDK 키
-- `EXPO_PUBLIC_REVENUECAT_ANDROID_API_KEY`
-  Expo Android 앱에서 `react-native-purchases`가 사용할 RevenueCat 공개 SDK 키
-- `EXPO_PUBLIC_REVENUECAT_IOS_API_KEY`
-  Expo iOS 앱에서 `react-native-purchases`가 사용할 RevenueCat 공개 SDK 키
 
 주의:
 
@@ -432,7 +426,7 @@ DEMO_EXPERIENCE_CLEANUP_SECRET=
 MOBILE_DRAFT_CREATION_ENABLED=
 MEMORY_METADATA_SYNC_STRICT=true
 NEXT_DISABLE_WEBPACK_BUILD_WORKER=
-REVENUECAT_SERVER_API_KEY=
+GOOGLE_PLAY_BILLING_SERVICE_ACCOUNT_JSON=
 ```
 
 설명:
@@ -451,8 +445,8 @@ REVENUECAT_SERVER_API_KEY=
   추억 페이지 메타데이터 동기화 실패 시 빌드 실패 처리
 - `NEXT_DISABLE_WEBPACK_BUILD_WORKER`
   Windows 로컬 빌드에서 worker spawn 문제가 날 때만 `true`로 설정
-- `REVENUECAT_SERVER_API_KEY`
-  RevenueCat 구매 검증용 서버 전용 키. 모바일 Billing 지급 검증은 이 값이 없으면 실패 처리합니다.
+- `GOOGLE_PLAY_BILLING_SERVICE_ACCOUNT_JSON`
+  Firebase App Hosting 등 운영 서버에서만 사용하는 Google Play Developer API 서비스 계정 JSON. Google Cloud Application Default Credentials가 제공된다면 별도 입력 없이 호출할 수 있습니다.
 
 ## 로컬 개발
 
@@ -482,9 +476,9 @@ npm run mb:web
 
 Google Play Billing 연동 주의:
 
-- 모바일 앱은 `react-native-purchases`를 사용하므로 Expo Go가 아니라 development build 또는 production build에서 테스트해야 합니다.
-- 현재 저장소에는 `apps/mobile/package.json`에 의존성만 반영되어 있고, 오프라인 환경에서는 `npm --prefix apps/mobile install react-native-purchases`가 실패할 수 있습니다.
-- 네트워크가 가능한 환경에서 패키지 설치 후 `npx eas build --platform android --profile development` 또는 `production`으로 다시 빌드해야 실제 결제를 테스트할 수 있습니다.
+- 모바일 Android 앱은 `expo-iap` 기반 Google Play Billing 직접 결제를 사용하므로 Expo Go에서는 결제할 수 없습니다. Google Play에서 설치한 서명된 테스트 앱으로만 구매 검증을 진행합니다.
+- 서버는 검증된 Google Play 구매 토큰만 수락하고, 구매 완료 및 계정·상품 일치 시 5,000원/6개월 청첩장 제작을 처리합니다. 결제 이행 이후에만 Play 상품 소비를 수행합니다.
+- 서버 인증과 Google Play 한국 활성 판매 상품 및 라이선스 테스터 설정은 출시 전 별도 확인해야 합니다.
 
 ## 주요 스크립트
 
@@ -645,7 +639,7 @@ npm run mb:web
 - Firestore / Storage rules 배포는 `npm run deploy:firebase`로 수행
 - 동적 청첩장 / 관리자 / 편집기 웹 런타임은 Firebase App Hosting으로 배포
 - App Hosting runtime은 `apphosting.yaml`의 `runConfig`를 사용
-- `FIREBASE_SERVICE_ACCOUNT_JSON`, `CLIENT_EDITOR_SESSION_SECRET`, `REVENUECAT_SERVER_API_KEY` 같은 서버 비밀값은 Secret Manager로 주입
+- `FIREBASE_SERVICE_ACCOUNT_JSON`, `CLIENT_EDITOR_SESSION_SECRET`, `GOOGLE_PLAY_BILLING_SERVICE_ACCOUNT_JSON` 같은 서버 비밀값은 Secret Manager로 주입
 
 정적 export 전용 배포가 필요하면 현재 App Hosting 설정과 분리된 별도 Firebase Hosting 설정 파일을 사용합니다.
 

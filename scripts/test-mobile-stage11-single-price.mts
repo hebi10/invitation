@@ -41,7 +41,7 @@ assert.match(route, /verifyCustomerRequest\(request, \{ requireVerified: true \}
 assert.match(route, /getCustomerEventOwnershipSnapshot\(customer\.uid, targetPageSlug\)/);
 assert.match(route, /canOpenOwnedWeddingPage\(ownership, targetPageSlug\)/);
 assert.match(route, /if \(error instanceof CustomerApiAuthError\)/);
-assert.match(service, /verifyRevenueCatNonSubscriptionTransaction\(purchase\)/);
+assert.match(service, /verifyGooglePlayOneTimePurchase\(purchase, \{ allowConsumed: true \}\)/);
 
 type Data = Record<string, unknown>;
 const records = new Map<string, Data>();

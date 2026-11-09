@@ -16,7 +16,7 @@ type Transaction = {
 type BillingResult = { success: boolean; ticketCount: number };
 const transactionId = 'GPA.atomic-ticket-test';
 const billingPath = `billingFulfillments/${transactionId}`;
-const purchase = { appUserId: 'customer-1', productId: 'ticket_pack_1', transactionId };
+const purchase = { appUserId: 'customer-1', productId: 'ticket_pack_1', transactionId, purchaseToken: 'google-test-token' };
 
 function loadModule(file: string, requireModule: (id: string) => unknown, globals: Data = {}) {
   const exports: Data = {};
@@ -102,6 +102,12 @@ function fixture() {
       getTicketCountByPageSlug: (slug: string) => Promise<number>;
     };
   const service = loadModule('src/server/mobileBillingServerService.ts', (id) => {
+    if (id === './googlePlayPurchaseVerifier') return {
+      verifyGooglePlayOneTimePurchase: async () => ({
+        transactionIdentifier: transactionId, productIdentifier: purchase.productId,
+        purchaseDate: '2026-09-21T00:00:00Z', purchaseTokenHash: 'stubbed-token-hash',
+      }),
+    };
     if (id === './repositories/billingFulfillmentRepository') return repository;
     if (id === './repositories/eventRepository') return eventRepository;
     if (id === '@/lib/mobileBillingProducts') return { getMobileBillingProductDefinition: () => ({ kind: 'ticketPack', ticketCount: 1 }) };
@@ -120,7 +126,7 @@ function fixture() {
     if (id === './customerWalletServerService') return { recordMobileTicketPackAssignedToEvent: async () => {} };
     return {};
   }, {
-    process: { env: { REVENUECAT_SERVER_API_KEY: 'local-test-key' } },
+    process: { env: {} },
     fetch: async () => ({ ok: true, json: async () => ({ subscriber: { non_subscriptions: {
       ticket_pack_1: [{ id: 'revenuecat-alias', store_transaction_id: transactionId, store: 'play_store', purchase_date: '2026-09-21T00:00:00Z' }],
     } } }) }),
@@ -130,6 +136,10 @@ function fixture() {
   ) => Promise<BillingResult>;
   return {
     run: (slug = 'page', receipt = purchase) => fulfill(receipt, slug, 'local-test-session'),
+    lock: (kind: 'pageCreation' | 'ticketPack') =>
+      (repository.firestoreBillingFulfillmentRepository as {
+        acquireLock(receipt: typeof purchase, kind: string): Promise<{ acquired: boolean; record: Data }>;
+      }).acquireLock(purchase, kind),
     records,
     balance: (slug = 'page') => (records.get(`events/${slug}-id`)!.stats as Data).ticketBalance,
     auth: (value: boolean) => { authorized = value; },
@@ -140,6 +150,15 @@ function fixture() {
 }
 
 const checks: Array<[string, () => Promise<void>]> = [
+  ['Failed page creation must not be retried because a draft may already exist', async () => {
+    const state = fixture();
+    state.records.set(billingPath, { ...purchase, kind: 'pageCreation', status: 'failed' });
+    const before = structuredClone(state.records.get(billingPath));
+    const lock = await state.lock('pageCreation');
+    assert.equal(lock.acquired, false, 'An uncertain paid page creation must require review rather than run twice');
+    assert.equal(lock.record.status, 'failed');
+    assert.deepEqual(state.records.get(billingPath), before, 'The failed grant must not be silently reactivated');
+  }],
   ['Expired session leaves the paid transaction available for an authorized retry', async () => {
     const state = fixture();
     state.auth(false);
@@ -263,6 +282,7 @@ function reviewFixture() {
     };
     if (id === './billing') return {
       getBillingTransactionHistory: async () => ({ transactions: [], requestDate: '2026-10-02T00:00:00Z' }),
+      finishBillingPurchase: async () => {},
       isDefinitelyUnchargedBillingError: () => false,
     };
     return {};
@@ -276,7 +296,7 @@ function reviewFixture() {
   }, {
     purchase: async () => {
       purchases++;
-      return { appUserId: purchase.appUserId, productIdentifier: purchase.productId, transactionIdentifier: transactionId };
+      return { appUserId: purchase.appUserId, productIdentifier: purchase.productId, transactionIdentifier: transactionId, purchaseToken: purchase.purchaseToken };
     },
     fulfill: () => api.fulfillMobileBillingTicketPack('https://example.test', ticketPayload),
   });

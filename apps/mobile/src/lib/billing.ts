@@ -1,7 +1,17 @@
-import { INVITATION_PREMIUM_PRICE_LABEL } from './invitationProductPolicy';
-import { NativeModules, Platform } from 'react-native';
-import Purchases from 'react-native-purchases';
+import * as Crypto from 'expo-crypto';
+import {
+  fetchProducts,
+  finishTransaction,
+  getAvailablePurchases,
+  initConnection,
+  purchaseErrorListener,
+  purchaseUpdatedListener,
+  requestPurchase,
+  type Purchase,
+} from 'expo-iap';
+import { Platform } from 'react-native';
 
+import { INVITATION_PREMIUM_PRICE_LABEL } from './invitationProductPolicy';
 import {
   MOBILE_BILLING_PREMIUM_PRICE_KRW,
   MOBILE_BILLING_PRODUCT_IDS,
@@ -9,62 +19,18 @@ import {
 } from './mobileBillingProducts';
 import { getStoredString, setStoredString } from './storage';
 
-type PurchasesStoreTransaction = {
-  productIdentifier: string;
-  purchaseDate: string;
-  transactionIdentifier: string;
-};
-
-type PurchasesCustomerInfo = {
-  originalAppUserId: string;
-  requestDate: string;
-  nonSubscriptionTransactions: PurchasesStoreTransaction[];
-};
-
-type PurchasesStoreProduct = {
-  identifier: string;
-  title: string;
-  description: string;
-  price: number;
-  priceString: string;
-  currencyCode: string;
-};
-
-type PurchasesModule = {
-  PRODUCT_CATEGORY?: {
-    NON_SUBSCRIPTION?: string;
-  };
-  LOG_LEVEL?: {
-    DEBUG?: string;
-  };
-  configure: (config: {
-    apiKey: string;
-    appUserID?: string | null;
-  }) => void;
-  setLogLevel?: (level: string) => void;
-  logIn: (appUserId: string) => Promise<unknown>;
-  getProducts: (
-    productIdentifiers: string[],
-    type?: string
-  ) => Promise<PurchasesStoreProduct[]>;
-  purchaseStoreProduct: (
-    product: PurchasesStoreProduct
-  ) => Promise<{
-    customerInfo: PurchasesCustomerInfo;
-    productIdentifier: string;
-    transaction: PurchasesStoreTransaction;
-  }>;
-  getCustomerInfo: () => Promise<PurchasesCustomerInfo>;
-  invalidateCustomerInfoCache: () => Promise<void>;
-  restorePurchases: () => Promise<PurchasesCustomerInfo>;
-  getAppUserID: () => Promise<string>;
-};
-
 export type MobileBillingPurchaseResult = {
   appUserId: string;
-  customerInfo: PurchasesCustomerInfo;
   productIdentifier: MobileBillingProductId;
   transactionIdentifier: string;
+  purchaseToken: string;
+  purchaseDate: string;
+};
+
+type StoreTransaction = {
+  productIdentifier: string;
+  transactionIdentifier: string;
+  purchaseToken: string;
   purchaseDate: string;
 };
 
@@ -74,194 +40,189 @@ export function isDefinitelyUnchargedBillingError(error: unknown) {
   return error instanceof BillingNotChargedError;
 }
 
-export async function getBillingTransactionHistory(options: { appUserId: string }) {
-  const { purchases, appUserId } = await ensureBillingConfigured(options);
-  if (await purchases.getAppUserID() !== appUserId) {
-    throw new Error('결제 계정이 변경되었습니다. 결제한 계정으로 다시 확인해 주세요.');
-  }
-  await purchases.invalidateCustomerInfoCache();
-  const info = await purchases.getCustomerInfo();
-  if (await purchases.getAppUserID() !== appUserId || !Number.isFinite(Date.parse(info.requestDate)) ||
-      !Array.isArray(info.nonSubscriptionTransactions) || info.nonSubscriptionTransactions.some(transaction =>
-        !transaction.productIdentifier?.trim() || !transaction.transactionIdentifier?.trim() ||
-        !Number.isFinite(Date.parse(transaction.purchaseDate)))) {
-    throw new Error('결제 내역을 확인하지 못했습니다. 잠시 후 다시 시도해 주세요.');
-  }
-  return { transactions: info.nonSubscriptionTransactions, requestDate: info.requestDate };
-}
-
 const BILLING_APP_USER_ID_STORAGE_KEY = 'mobile-invitation:billing-app-user-id';
+let connection: Promise<boolean> | null = null;
+let listenersRegistered = false;
+let pendingCheckout: {
+  productId: MobileBillingProductId;
+  resolve: (purchase: Purchase) => void;
+  reject: (error: Error) => void;
+} | null = null;
+const knownPurchases = new Map<string, Purchase>();
 
-let billingConfigurationPromise: Promise<{
-  purchases: PurchasesModule;
-  appUserId: string;
-}> | null = null;
-let configuredBillingAppUserId: string | null = null;
-let billingIdentityQueue: Promise<unknown> = Promise.resolve();
-
-function getRevenueCatApiKey() {
-  return process.env.EXPO_PUBLIC_REVENUECAT_ANDROID_API_KEY?.trim() ?? '';
-}
-
-function createBillingAppUserId() {
-  const randomSuffix = Math.random().toString(36).slice(2, 10);
-  return `mid_${Date.now().toString(36)}_${randomSuffix}`;
-}
-
-async function getOrCreateBillingAppUserId(preferredAppUserId?: string | null) {
-  const normalizedPreferredAppUserId = preferredAppUserId?.trim() ?? '';
-  if (normalizedPreferredAppUserId) {
-    await setStoredString(BILLING_APP_USER_ID_STORAGE_KEY, normalizedPreferredAppUserId);
-    return normalizedPreferredAppUserId;
-  }
-
-  const existing = await getStoredString(BILLING_APP_USER_ID_STORAGE_KEY);
-  if (existing?.trim()) {
-    return existing.trim();
-  }
-
-  const nextAppUserId = createBillingAppUserId();
-  await setStoredString(BILLING_APP_USER_ID_STORAGE_KEY, nextAppUserId);
-  return nextAppUserId;
-}
-
-function loadPurchasesModule(): PurchasesModule | null {
-  // 정적 import를 사용해 Metro가 네이티브 결제 SDK를 앱 번들에 포함합니다.
-  return Purchases as unknown as PurchasesModule | null;
-}
-
-function getBillingUnavailableMessage() {
+function requirePlayDevice() {
   if (Platform.OS !== 'android') {
-    return 'Google Play 결제는 Android 앱에서만 이용할 수 있습니다.';
+    throw new BillingNotChargedError('Google Play 결제는 Android 앱에서만 이용할 수 있습니다.');
   }
-  if (!getRevenueCatApiKey().startsWith('goog_')) {
-    return 'Google Play 결제 설정을 확인할 수 없습니다. 잠시 후 다시 시도해 주세요.';
-  }
-  return 'Google Play 결제를 시작하지 못했습니다. 스토어에서 설치한 앱을 사용해 주세요.';
 }
 
-export async function ensureBillingConfigured(options: { appUserId?: string | null } = {}) {
-  if (Platform.OS !== 'android' || !NativeModules.RNPurchases || !getRevenueCatApiKey().startsWith('goog_')) {
-    throw new Error(getBillingUnavailableMessage());
+function isPurchased(purchase: Purchase) {
+  return purchase.store === 'google' && purchase.purchaseState === 'purchased' &&
+    Boolean(purchase.purchaseToken?.trim()) &&
+    MOBILE_BILLING_PRODUCT_IDS.includes(purchase.productId as MobileBillingProductId);
+}
+
+function trackPurchase(purchase: Purchase) {
+  if (isPurchased(purchase)) {
+    knownPurchases.set(purchase.purchaseToken!.trim(), purchase);
   }
+}
 
-  const requestedAppUserId = await getOrCreateBillingAppUserId(options.appUserId);
+function wireListeners() {
+  if (listenersRegistered) return;
+  purchaseUpdatedListener((purchase) => {
+    trackPurchase(purchase);
+    const checkout = pendingCheckout;
+    if (!checkout || purchase.productId !== checkout.productId) return;
+    if (purchase.purchaseState === 'pending') {
+      pendingCheckout = null;
+      checkout.reject(new Error('Google Play 결제가 대기 중입니다. 결제 완료 후 복구에서 확인해 주세요.'));
+      return;
+    }
+    if (!isPurchased(purchase)) return;
+    pendingCheckout = null;
+    checkout.resolve(purchase);
+  });
+  purchaseErrorListener((error) => {
+    const checkout = pendingCheckout;
+    if (!checkout) return;
+    pendingCheckout = null;
+    checkout.reject(error.code === 'user-cancelled'
+      ? new BillingNotChargedError('결제를 취소했습니다. 준비가 되면 다시 진행해 주세요.')
+      : new Error('Google Play 결제 결과를 확인할 수 없습니다. 추가 결제 전에 복구를 이용해 주세요.'));
+  });
+  listenersRegistered = true;
+}
 
-  if (!billingConfigurationPromise) {
-    billingConfigurationPromise = (async () => {
-      const purchases = loadPurchasesModule();
-      if (!purchases) {
-        throw new Error(getBillingUnavailableMessage());
-      }
-
-      const apiKey = getRevenueCatApiKey();
-      if (!apiKey) {
-        throw new Error(getBillingUnavailableMessage());
-      }
-
-      if (process.env.NODE_ENV !== 'production' && purchases.LOG_LEVEL?.DEBUG && purchases.setLogLevel) {
-        purchases.setLogLevel(purchases.LOG_LEVEL.DEBUG);
-      }
-
-      purchases.configure({
-        apiKey,
-        appUserID: requestedAppUserId,
-      });
-      configuredBillingAppUserId = requestedAppUserId;
-
-      return {
-        purchases,
-        appUserId: requestedAppUserId,
-      };
+async function ensurePlayConnection() {
+  requirePlayDevice();
+  if (!connection) {
+    connection = (async () => {
+      wireListeners();
+      const success = await initConnection();
+      if (!success) throw new Error('Google Play 연결을 확인하지 못했습니다.');
+      return true;
     })().catch((error) => {
-      billingConfigurationPromise = null;
-      configuredBillingAppUserId = null;
+      connection = null;
       throw error;
     });
   }
-
-  const configured = await billingConfigurationPromise;
-  const nextIdentity = billingIdentityQueue.catch(() => undefined).then(async () => {
-    if (configuredBillingAppUserId !== requestedAppUserId) {
-      await configured.purchases.logIn(requestedAppUserId);
-      configuredBillingAppUserId = requestedAppUserId;
-    }
-    return { purchases: configured.purchases, appUserId: requestedAppUserId };
-  });
-  billingIdentityQueue = nextIdentity;
-  return nextIdentity;
+  await connection;
 }
 
-export async function fetchBillingProducts(productIds: readonly MobileBillingProductId[]) {
-  const { purchases } = await ensureBillingConfigured();
-  const type = purchases.PRODUCT_CATEGORY?.NON_SUBSCRIPTION ?? 'NON_SUBSCRIPTION';
-  return purchases.getProducts([...productIds], type);
+async function resolveAppUserId(preferred?: string | null) {
+  const normalized = preferred?.trim() ?? '';
+  if (normalized) {
+    await setStoredString(BILLING_APP_USER_ID_STORAGE_KEY, normalized);
+    return normalized;
+  }
+  const stored = await getStoredString(BILLING_APP_USER_ID_STORAGE_KEY);
+  if (!stored?.trim()) {
+    throw new BillingNotChargedError('고객 계정에 로그인한 뒤 결제를 진행해 주세요.');
+  }
+  return stored.trim();
+}
+
+function toTransaction(purchase: Purchase): StoreTransaction {
+  const token = purchase.purchaseToken?.trim() ?? '';
+  if (!isPurchased(purchase) || !token) {
+    throw new Error('Google Play 구매 토큰을 확인할 수 없습니다.');
+  }
+  return {
+    productIdentifier: purchase.productId,
+    transactionIdentifier: token,
+    purchaseToken: token,
+    purchaseDate: new Date(purchase.transactionDate || Date.now()).toISOString(),
+  };
+}
+
+export async function ensureBillingConfigured(options: { appUserId?: string | null } = {}) {
+  await ensurePlayConnection();
+  const appUserId = await resolveAppUserId(options.appUserId);
+  return { appUserId };
+}
+
+export async function getBillingTransactionHistory(options: { appUserId: string }) {
+  await ensureBillingConfigured(options);
+  const purchases = await getAvailablePurchases();
+  const transactions = purchases.filter(isPurchased).map((purchase) => {
+    trackPurchase(purchase);
+    return toTransaction(purchase);
+  });
+  return {
+    transactions,
+    requestDate: new Date().toISOString(),
+  };
 }
 
 export async function purchaseBillingProduct(
   productId: MobileBillingProductId,
-  options: { appUserId?: string | null } = {}
-) {
-  let prepared: { purchases: PurchasesModule; appUserId: string; targetProduct: PurchasesStoreProduct };
-  try {
-    if (!MOBILE_BILLING_PRODUCT_IDS.includes(productId)) {
-      throw new Error('현재 판매하지 않는 상품입니다. 프리미엄 상품을 이용해 주세요.');
-    }
-    const { purchases, appUserId } = await ensureBillingConfigured(options);
-    const type = purchases.PRODUCT_CATEGORY?.NON_SUBSCRIPTION ?? 'NON_SUBSCRIPTION';
-    const products = await purchases.getProducts([productId], type);
-    const targetProduct = products.find((product) => product.identifier === productId);
-
-    if (!targetProduct) {
-      throw new Error('Google Play Console 또는 RevenueCat에 결제 상품이 아직 준비되지 않았습니다.');
-    }
-
-    if (productId === 'page_creation_premium' &&
-        (targetProduct.currencyCode !== 'KRW' || targetProduct.price !== MOBILE_BILLING_PREMIUM_PRICE_KRW)) {
-      throw new Error(`스토어의 프리미엄 가격이 ${INVITATION_PREMIUM_PRICE_LABEL}으로 확인되지 않아 결제를 중단했습니다. 고객 문의로 확인해 주세요.`);
-    }
-    prepared = { purchases, appUserId, targetProduct };
-  } catch (error) {
-    throw new BillingNotChargedError(error instanceof Error ? error.message : '결제를 준비하지 못했습니다.');
+  options: { appUserId?: string | null } = {},
+): Promise<MobileBillingPurchaseResult> {
+  if (!MOBILE_BILLING_PRODUCT_IDS.includes(productId)) {
+    throw new BillingNotChargedError('현재 판매하지 않는 상품입니다.');
   }
-  const { purchases, appUserId, targetProduct } = prepared;
-
-  const purchaseResult = await purchases.purchaseStoreProduct(targetProduct).catch((error: unknown) => {
-    if (error && typeof error === 'object' && 'userCancelled' in error && error.userCancelled === true) {
-      throw new BillingNotChargedError('결제를 취소했습니다. 준비가 되면 다시 진행해 주세요.');
-    }
-    throw error;
+  const { appUserId } = await ensureBillingConfigured(options);
+  if (pendingCheckout) {
+    throw new Error('이미 Google Play 결제 요청이 진행 중입니다.');
+  }
+  const products = await fetchProducts({ skus: [productId], type: 'in-app' });
+  const product = products?.find(item => item.id === productId);
+  if (!product) {
+    throw new BillingNotChargedError('Google Play에서 결제 상품을 찾을 수 없습니다. 현재 상품 판매 설정을 확인해 주세요.');
+  }
+  if (product.currency !== 'KRW' || product.price !== MOBILE_BILLING_PREMIUM_PRICE_KRW) {
+    throw new BillingNotChargedError(
+      `스토어의 프리미엄 가격이 ${INVITATION_PREMIUM_PRICE_LABEL}으로 확인되지 않아 결제를 중단했습니다.`
+    );
+  }
+  // The one-way user hash lets the server independently bind the paid token to this account.
+  const obfuscatedAccountId = await Crypto.digestStringAsync(Crypto.CryptoDigestAlgorithm.SHA256, appUserId);
+  const purchase = await new Promise<Purchase>((resolve, reject) => {
+    pendingCheckout = { productId, resolve, reject };
+    void requestPurchase({
+      request: { google: { skus: [productId], obfuscatedAccountId } },
+      type: 'in-app',
+    }).catch((error: unknown) => {
+      const checkout = pendingCheckout;
+      if (!checkout || checkout.productId !== productId) return;
+      pendingCheckout = null;
+      checkout.reject(error instanceof Error ? error : new Error('Google Play 구매 요청을 시작하지 못했습니다.'));
+    });
   });
-  if (purchaseResult.productIdentifier !== productId ||
-      !purchaseResult.transaction?.transactionIdentifier?.trim()) {
-    throw new Error('Google Play 거래 정보를 확인하지 못했습니다. 고객 문의로 확인해 주세요.');
-  }
-
+  const transaction = toTransaction(purchase);
   return {
     appUserId,
-    customerInfo: purchaseResult.customerInfo,
-    productIdentifier: purchaseResult.productIdentifier as MobileBillingProductId,
-    transactionIdentifier: purchaseResult.transaction.transactionIdentifier,
-    purchaseDate: purchaseResult.transaction.purchaseDate,
-  } satisfies MobileBillingPurchaseResult;
+    productIdentifier: productId,
+    transactionIdentifier: transaction.transactionIdentifier,
+    purchaseToken: transaction.purchaseToken,
+    purchaseDate: transaction.purchaseDate,
+  };
+}
+
+export async function finishBillingPurchase(purchaseToken: string) {
+  await ensurePlayConnection();
+  const token = purchaseToken.trim();
+  let purchase = knownPurchases.get(token);
+  if (!purchase) {
+    const available = await getAvailablePurchases();
+    available.forEach(trackPurchase);
+    purchase = knownPurchases.get(token);
+  }
+  if (!purchase || !isPurchased(purchase)) {
+    throw new Error('구매 완료 처리를 확인하지 못했습니다. 같은 계정으로 다시 복구해 주세요.');
+  }
+  await finishTransaction({ purchase, isConsumable: true });
+  knownPurchases.delete(token);
 }
 
 export async function restoreBillingPurchases() {
-  const { purchases } = await ensureBillingConfigured();
-  return purchases.restorePurchases();
+  await ensurePlayConnection();
+  const purchases = await getAvailablePurchases();
+  purchases.forEach(trackPurchase);
+  return purchases.filter(isPurchased);
 }
 
 export async function getBillingAppUserId() {
-  const { purchases, appUserId } = await ensureBillingConfigured();
-
-  try {
-    const resolvedAppUserId = await purchases.getAppUserID();
-    if (resolvedAppUserId?.trim()) {
-      return resolvedAppUserId.trim();
-    }
-  } catch {
-    // noop
-  }
-
-  return appUserId;
+  return resolveAppUserId();
 }

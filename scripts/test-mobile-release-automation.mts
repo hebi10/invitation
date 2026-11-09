@@ -92,30 +92,35 @@ assert.equal(appConfig('211').version, '1.0.5');
 assert.throws(() => appConfig('10'));
 
 const signingUrl = new URL('./sign-mobile-release.sh', import.meta.url);
-assert.ok(existsSync(signingUrl), '서명 전에 main·서명 키 구성·운영 결제 키를 검사해야 합니다.');
+assert.ok(existsSync(signingUrl), 'Signing policy must check the existing Play upload key and trusted main event.');
 const signingTemporary = mkdtempSync(path.join(tmpdir(), 'invitation-signing-policy-'));
 try {
-  const signingEnvironment = { ...process.env, GITHUB_EVENT_NAME: 'push', GITHUB_REF: 'refs/heads/main', RUNNER_TEMP: signingTemporary, GITHUB_OUTPUT: path.join(signingTemporary, 'output'), GITHUB_STEP_SUMMARY: path.join(signingTemporary, 'summary'), DEPLOY_REQUESTED: 'false', INVITATION_KEYSTORE_BASE64: '', INVITATION_KEYSTORE_PASSWORD: '', INVITATION_KEY_ALIAS: '', INVITATION_KEY_PASSWORD: '', EXPO_PUBLIC_REVENUECAT_ANDROID_API_KEY: '', PLAY_SIGNING_TARGET: '', PLAY_SIGNING_TRACK: '' };
-  const check = (overrides = {}) => spawnSync('bash', [fileURLToPath(signingUrl), '--check'], { env: { ...signingEnvironment, ...overrides }, encoding: 'utf8' });
-  assert.equal(check().status, 0, '배포하지 않을 때 모든 서명 키가 없으면 미서명 빌드를 허용합니다.');
-  assert.notEqual(check({ DEPLOY_REQUESTED: 'true' }).status, 0, '배포 요청은 서명 정보 누락을 빌드 전에 보고합니다.');
-  assert.notEqual(check({ INVITATION_KEY_ALIAS: 'fixture-alias' }).status, 0, '일부 서명 키만 있으면 실패해야 합니다.');
-  const complete = { INVITATION_KEYSTORE_BASE64: 'fixture', INVITATION_KEYSTORE_PASSWORD: 'fixture', INVITATION_KEY_ALIAS: 'fixture', INVITATION_KEY_PASSWORD: 'fixture' };
+  const signingEnvironment = {
+    ...process.env, GITHUB_EVENT_NAME: 'push', GITHUB_REF: 'refs/heads/main',
+    RUNNER_TEMP: signingTemporary, GITHUB_OUTPUT: path.join(signingTemporary, 'output'),
+    GITHUB_STEP_SUMMARY: path.join(signingTemporary, 'summary'), DEPLOY_REQUESTED: 'false',
+    INVITATION_KEYSTORE_BASE64: '', INVITATION_KEYSTORE_PASSWORD: '',
+    INVITATION_KEY_ALIAS: '', INVITATION_KEY_PASSWORD: '',
+  };
+  const check = (overrides = {}) => spawnSync('bash', [fileURLToPath(signingUrl), '--check'], {
+    env: { ...signingEnvironment, ...overrides }, encoding: 'utf8',
+  });
+  assert.equal(check().status, 0, 'Unsigned PR preview remains possible without a signing key.');
+  assert.notEqual(check({ DEPLOY_REQUESTED: 'true' }).status, 0, 'Play upload needs all four signing secrets.');
+  assert.notEqual(check({ INVITATION_KEY_ALIAS: 'partial' }).status, 0, 'Partial signing configuration must be rejected.');
+  const complete = {
+    INVITATION_KEYSTORE_BASE64: 'fixture', INVITATION_KEYSTORE_PASSWORD: 'fixture',
+    INVITATION_KEY_ALIAS: 'fixture', INVITATION_KEY_PASSWORD: 'fixture',
+  };
   const internal = { ...complete, PLAY_SIGNING_TARGET: 'internal', PLAY_SIGNING_TRACK: 'internal' };
-  assert.equal(check(internal).status, 0, '검증된 내부 테스트는 결제 키가 비어 있어도 기존 서명 키를 사용할 수 있습니다.');
-  assert.equal(check({ ...internal, DEPLOY_REQUESTED: 'true' }).status, 0, '내부 테스트 자동 배포도 결제 미연결 빌드를 허용합니다.');
-  for (const overrides of [{}, { PLAY_SIGNING_TARGET: 'closed', PLAY_SIGNING_TRACK: 'alpha' }, { PLAY_SIGNING_TARGET: 'internal' }, { PLAY_SIGNING_TRACK: 'internal' }, { PLAY_SIGNING_TARGET: 'INTERNAL', PLAY_SIGNING_TRACK: 'internal' }, { PLAY_SIGNING_TARGET: 'internal', PLAY_SIGNING_TRACK: 'wear:internal' }, { PLAY_SIGNING_TARGET: 'production', PLAY_SIGNING_TRACK: 'internal' }]) {
-    assert.notEqual(check({ ...complete, ...overrides }).status, 0, '내부 테스트의 정확한 대상·트랙 없이는 빈 결제 키를 허용하지 않습니다.');
-  }
-  for (const key of ['test_fixture', 'appl_fixture', 'goog_', 'goog_fixture\n', ' goog_fixture']) {
-    assert.notEqual(check({ ...internal, EXPO_PUBLIC_REVENUECAT_ANDROID_API_KEY: key }).status, 0, '내부 테스트도 비어 있지 않은 잘못된 결제 키는 거부합니다.');
-  }
-  assert.notEqual(check({ ...internal, INVITATION_KEY_PASSWORD: '' }).status, 0, '내부 테스트도 기존 서명 Secrets 4개를 모두 요구합니다.');
-  assert.equal(check({ ...complete, EXPO_PUBLIC_REVENUECAT_ANDROID_API_KEY: 'goog_fixture' }).status, 0);
-  assert.equal(check({ ...complete, PLAY_SIGNING_TARGET: 'closed', PLAY_SIGNING_TRACK: 'alpha', EXPO_PUBLIC_REVENUECAT_ANDROID_API_KEY: 'goog_fixture' }).status, 0);
+  const closed = { ...complete, PLAY_SIGNING_TARGET: 'closed', PLAY_SIGNING_TRACK: 'alpha' };
+  assert.equal(check({ ...internal, DEPLOY_REQUESTED: 'true' }).status, 0);
+  assert.equal(check({ ...closed, DEPLOY_REQUESTED: 'true' }).status, 0,
+    'Closed test builds must not require any RevenueCat key after direct Play Billing migration.');
+  assert.notEqual(check({ ...closed, INVITATION_KEY_PASSWORD: '' }).status, 0);
   for (const overrides of [{ GITHUB_EVENT_NAME: 'pull_request' }, { GITHUB_REF: 'refs/heads/build/mobile-aab' }]) {
-    assert.notEqual(check({ ...complete, EXPO_PUBLIC_REVENUECAT_ANDROID_API_KEY: 'goog_fixture', ...overrides }).status, 0);
-    assert.notEqual(check({ ...internal, ...overrides }).status, 0, '결제 미연결 예외도 main 신뢰 경계를 유지합니다.');
+    assert.notEqual(check({ ...closed, ...overrides }).status, 0, 'Signing remains main-only.');
+    assert.notEqual(check({ ...internal, ...overrides }).status, 0, 'Signing remains main-only.');
   }
 } finally {
   rmSync(signingTemporary, { recursive: true, force: true });
@@ -129,7 +134,7 @@ assert.throws(() => resolvePlayTarget({ ...manualPolicy, manualDeploy: false, ta
 assert.throws(() => resolvePlayTarget({ ...manualPolicy, target: 'closed', closedTrack: 'production' }));
 assert.throws(() => resolvePlayTarget({ ...manualPolicy, target: 'production' }));
 assert.throws(() => resolvePlayTarget({ ...manualPolicy, ref: 'refs/heads/build/mobile-aab', target: 'closed', closedTrack: 'alpha' }));
-assert.ok(readFileSync(signingUrl, 'utf8').includes('결제 미연결 내부 테스트 빌드'), '결제 미연결 내부 테스트 빌드임을 실행 요약에 기록해야 합니다.');
+assert.ok(!readFileSync(signingUrl, 'utf8').includes('EXPO_PUBLIC_REVENUECAT_ANDROID_API_KEY'), 'Direct Play builds must never require RevenueCat configuration.');
 
 const workflow = require('js-yaml').load(readFileSync(new URL('../.github/workflows/mobile-release.yml', import.meta.url), 'utf8'));
 assert.ok(workflow.jobs.deploy, 'Play 게시가 빌드와 별도 job이어야 서명 산출물을 보존합니다.');

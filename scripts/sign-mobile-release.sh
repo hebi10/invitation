@@ -24,13 +24,6 @@ if [[ "$configured" -ne 4 ]]; then
   echo '::error::청첩장 서명 Secrets 4개를 모두 등록하거나 모두 비워 두세요.' >&2
   exit 1
 fi
-billing_unconfigured=false
-if [[ -z "${EXPO_PUBLIC_REVENUECAT_ANDROID_API_KEY:-}" && "${PLAY_SIGNING_TARGET:-}" == internal && "${PLAY_SIGNING_TRACK:-}" == internal ]]; then
-  billing_unconfigured=true
-elif [[ ! "${EXPO_PUBLIC_REVENUECAT_ANDROID_API_KEY:-}" =~ ^goog_[A-Za-z0-9]+$ ]]; then
-  echo '::error::유효한 RevenueCat Google Play 공개 키가 필요합니다. 빈 키는 검증된 내부 테스트 빌드만 허용합니다.' >&2
-  exit 1
-fi
 if [[ "${1:-}" == --check ]]; then exit 0; fi
 
 expected_certificate=0C539396DA7BAE224EDC46C6250C54F65D7CEF3B310D845D672B5848B98EF20F
@@ -88,6 +81,3 @@ fi
 )
 echo 'signed=true' >> "$GITHUB_OUTPUT"
 echo '기존 청첩장 업로드 인증서와 APK v2 서명을 검증했습니다. APK/AAB와 체크섬을 보관합니다.' >> "$GITHUB_STEP_SUMMARY"
-if [[ "$billing_unconfigured" == true ]]; then
-  echo '결제 미연결 내부 테스트 빌드: RevenueCat 공개 키 없이 UI·공유 기능을 점검합니다.' >> "$GITHUB_STEP_SUMMARY"
-fi

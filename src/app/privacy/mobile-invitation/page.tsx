@@ -55,7 +55,7 @@ const retentionItems = [
 
 const sharingItems = [
   '서비스는 이용자의 개인정보를 판매하거나, 이용자의 동의 없이 제3자에게 임의로 제공하지 않습니다.',
-  '다만 서비스 운영을 위해 Google Firebase(Hosting, Firestore, Storage 등)와 RevenueCat 같은 서비스 제공업체를 사용할 수 있으며, 이들은 개발사를 대신해 데이터를 처리하는 수탁자 성격으로 이용됩니다.',
+  '다만 서비스 운영을 위해 Google Firebase(Hosting, Firestore, Storage 등) 및 Google Play Billing(결제 처리·거래 검증) 서비스를 사용할 수 있으며, 이들은 개발사를 대신해 데이터를 처리하는 수탁자 성격으로 이용됩니다.',
   '사용자가 외부 링크, 지도, 문의 폼 등 다른 서비스로 이동하는 경우 해당 서비스의 개인정보처리방침이 별도로 적용됩니다.',
 ];
 

@@ -71,6 +71,7 @@ export async function POST(request: Request) {
             appUserId?: unknown;
             productId?: unknown;
             transactionId?: unknown;
+            purchaseToken?: unknown;
           };
           createInput?: {
             slugBase?: unknown;
@@ -90,6 +91,7 @@ export async function POST(request: Request) {
     const appUserId = readTrimmedString(purchase?.appUserId);
     const productId = readTrimmedString(purchase?.productId);
     const transactionId = readTrimmedString(purchase?.transactionId);
+    const purchaseToken = readTrimmedString(purchase?.purchaseToken);
     const rateLimitResult = await applyScopedRateLimit({
       request,
       scope: 'mobile-billing-fulfill',
@@ -172,6 +174,7 @@ export async function POST(request: Request) {
           appUserId,
           productId,
           transactionId,
+          purchaseToken,
         },
         {
           slugBase: slugValidation.normalizedSlugBase,
@@ -222,7 +225,7 @@ export async function POST(request: Request) {
       }
 
       const response = await fulfillServerMobilePeriodExtensionPurchase(
-        { appUserId, productId, transactionId },
+        { appUserId, productId, transactionId, purchaseToken },
         targetPageSlug,
         customer.uid
       );
@@ -245,6 +248,7 @@ export async function POST(request: Request) {
           appUserId,
           productId,
           transactionId,
+          purchaseToken,
         },
         targetPageSlug,
         targetToken,

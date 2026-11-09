@@ -97,7 +97,7 @@ function buildDefaultBillingFulfillmentRecord(
     grantedTicketCount: null,
     lastError: null,
     eventId: null,
-    provider: 'revenuecat',
+    provider: 'googleplay',
   } satisfies BillingFulfillmentRecord;
 }
 
@@ -250,6 +250,11 @@ export const firestoreBillingFulfillmentRepository: BillingFulfillmentRepository
       }
 
       if (currentRecord.status === 'failed') {
+        // Page creation writes several records; a failed response may follow a successful draft write.
+        // Require manual reconciliation rather than creating another paid invitation.
+        if (kind === 'pageCreation') {
+          return { record: currentRecord, acquired: false };
+        }
         const nextRecord = {
           ...currentRecord,
           status: 'processing' as const,

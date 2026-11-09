@@ -38,7 +38,10 @@ assert(
   !billingSource.includes('createMockPurchaseResult') &&
     !billingSource.includes('isProductionNativeRuntime') &&
     billingSource.includes("Platform.OS !== 'android'") &&
-    billingSource.includes("startsWith('goog_')"),
+    billingSource.includes("from 'expo-iap'") &&
+    billingSource.includes("purchaseToken") &&
+    billingSource.includes("finishTransaction") &&
+    !billingSource.includes("getRevenueCatApiKey"),
   'Every environment must require Google Play billing without a mock fallback.'
 );
 

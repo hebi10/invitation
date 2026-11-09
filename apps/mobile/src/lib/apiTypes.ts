@@ -61,6 +61,7 @@ export interface MobileBillingPurchaseReceiptInput {
   appUserId: string;
   productId: MobileBillingProductId;
   transactionId: string;
+  purchaseToken?: string;
 }
 
 export interface MobileCustomerAuthResponse {
