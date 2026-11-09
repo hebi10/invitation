@@ -520,6 +520,17 @@ def main():
                 raise RuntimeError('intro disclosure: 첫 화면 애니메이션 펼침 버튼을 찾거나 누르지 못했습니다.')
             wait_screen('editor-intro', 'design-check?step=intro',
                         ['첫 화면 애니메이션', '현재 선택한 연출', '사용 안 함'], timeout=45, launch=False)
+            for intro_style, intro_label in [
+                ('light', '타이포그래피형'),
+                ('cinema', '웨딩 화보형'),
+                ('envelope', '편지형 초대장'),
+            ]:
+                wait_screen(
+                    f'editor-intro-{intro_style}-selected',
+                    f'design-check?step=intro-{intro_style}',
+                    ['첫 화면 애니메이션 (선택)', f'현재 선택: {intro_label}'],
+                    timeout=60,
+                )
             for name, kind, expected in [
                 ('modal-payment', 'payment', ['Google Play 결제', '결제 예정 금액']),
                 ('modal-payment-pending', 'payment-pending', ['Google Play 결제', '이전 결제 이어서 처리']),
