@@ -82,8 +82,10 @@ assert.doesNotMatch(css, /linear-gradient\(|radial-gradient\(/);
 assert.match(design, /introStyle/);
 assert.match(design, /Firebase/);
 
-// 1-A defines tokens but intentionally does not alter rendering yet.
-assert.doesNotMatch(existingRenderer, /QuietInvitationTokens\.module\.css/);
+// 2-A wires the existing 1-A design tokens to the production renderer.
+assert.match(existingRenderer, /import tokens from '\.\/QuietInvitationTokens\.module\.css'/);
+assert.match(existingRenderer, /data-intro-style=\{style\}/);
+assert.match(existingRenderer, /tokens\.quietInvitation/);
 assert.match(policy, /'none' \| 'light' \| 'cinema' \| 'envelope'/);
 
 console.log('Quiet Invitation 1-A token coverage, static contrast, motion and no-live-UI-change checks passed');
