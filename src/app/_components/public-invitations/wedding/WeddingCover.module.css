@@ -65,9 +65,9 @@
 .basic .names { font-family: 'Wedding Myeongjo', serif; font-size: 26px; font-weight: 400; gap: 12px; line-height: 1.55; word-break: keep-all; }
 .basic .names > span { max-width: 100%; }
 .basic .basicDate { margin-top: 20px; font-size: 26px; font-weight: 500; line-height: 1.5; font-variant-numeric: tabular-nums; }
-.basic .basicSchedule { display: flex; flex-wrap: wrap; justify-content: center; gap: 0 8px; margin-top: 4px; font-size: 15px; line-height: 1.8; color: #666666; }
+.basic .basicSchedule { display: flex; flex-wrap: wrap; justify-content: center; gap: 0 8px; margin-top: 4px; font-size: 15px; line-height: 1.8; color: var(--muted, #716e69); }
 .basicSchedule > span { max-width: 100%; }
-.basic .venue { margin-top: 12px; color: #222222; font-size: 16px; line-height: 1.8; word-break: keep-all; }
+.basic .venue { margin-top: 12px; color: var(--ink, #282725); font-size: 16px; line-height: 1.8; word-break: keep-all; }
 .vow { background: #fcfbf7; font-family: 'Wedding Myeongjo', serif; }
 .vow .photoCopy .join { font-size: 12px; }
 
