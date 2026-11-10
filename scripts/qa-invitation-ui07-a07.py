@@ -157,7 +157,7 @@ def focus_keyboard(page, selector: str, index: int = 0):
         height: el.getBoundingClientRect().height
     })""")
     assert current["same"], "Tab/Shift+Tab focus order: " + selector
-    assert current["visible"] and current["outline"] != "none" and current["width"] >= 1.5, "Focus ring: " + selector
+    assert current["visible"] and current["outline"] != "none" and current["width"] >= 1.5, ("Focus ring", selector, current)
     assert current["height"] >= 47.5, "Minimum 48px summary: " + selector
     page.keyboard.press("Enter")
     assert parent.evaluate("(el) => el.open"), "Enter open: " + selector
