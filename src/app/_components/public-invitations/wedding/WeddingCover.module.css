@@ -61,8 +61,8 @@
 .traditional .venue { margin-top: 4px; font-family: inherit; font-size: 15px; line-height: 1.9; color: #70665c; word-break: keep-all; }
 
 /* A clear, centered invitation follows the photograph with names and the date. */
-.basic { background: #fafafa; color: #222222; font-family: var(--font-sans), sans-serif; text-align: center; }
-.basic .names { font-family: inherit; font-size: 32px; font-weight: 500; gap: 12px; line-height: 1.5; word-break: keep-all; }
+.basic { background: var(--paper, #faf9f6); color: var(--ink, #282725); font-family: var(--font-sans), sans-serif; text-align: center; }
+.basic .names { font-family: 'Wedding Myeongjo', serif; font-size: 26px; font-weight: 400; gap: 12px; line-height: 1.55; word-break: keep-all; }
 .basic .names > span { max-width: 100%; }
 .basic .basicDate { margin-top: 20px; font-size: 26px; font-weight: 500; line-height: 1.5; font-variant-numeric: tabular-nums; }
 .basic .basicSchedule { display: flex; flex-wrap: wrap; justify-content: center; gap: 0 8px; margin-top: 4px; font-size: 15px; line-height: 1.8; color: #666666; }
@@ -83,14 +83,15 @@
   .letter .conceptIntroduction { font-size: 18px; }
   .letterHeading { grid-template-columns: minmax(0, 1fr) 112px; gap: 12px; }
   .letter .names { font-size: 28px; }
-  .basic .names { font-size: 30px; gap: 10px; }
+  .basic .names { font-size: 24px; gap: 10px; }
 }
 
 /* Stage 3: simple/modern covers place wedding facts sooner after the photograph. */
-.basic .photoFrame,
+/* Simple wedding uses the planned 92% wide 3:4 editorial photo; modern stays full-width 4:5. */
+.basic .photoFrame { width: 92%; margin-inline: auto; aspect-ratio: 3 / 4; }
 .editorial .photoFrame { aspect-ratio: 4 / 5; }
 .basic .details { padding: 26px 24px 22px; }
-.basic .names { gap: 10px; font-size: clamp(27px, 7.5vw, 31px); line-height: 1.45; }
+.basic .names { gap: 10px; font-size: clamp(24px, 6.667vw, 26px); line-height: 1.55; }
 .basic .basicDate { margin-top: 16px; font-size: clamp(23px, 6vw, 26px); }
 .basic .venue { margin-top: 8px; }
 .editorial .details { padding: 26px 24px 22px; }
