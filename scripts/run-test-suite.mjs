@@ -87,6 +87,7 @@ const core = [
   'test-vow-wedding-rendering',
   'test-wedding-cover-rendering',
   'test-wedding-simple-p1-and-sample-p0',
+  'test-wedding-p1-photo-classic-music',
   'test-wedding-cover-settings',
   'test-wedding-cover-editor',
   'test-image-upload-optimization',
