@@ -182,3 +182,16 @@
     padding-inline: 20px;
   }
 }
+
+/* P1: retain the double frame while bringing the classic ceremony facts closer. */
+.traditional .photoFrame { aspect-ratio: 3 / 4; }
+.traditional .details { padding: 14px 16px 16px; }
+.traditional .traditionalFrame { padding: 18px 18px 16px; }
+.traditional .traditionalTitle { margin-top: 12px; }
+.traditional .traditionalTitle .names { line-height: 1.4; }
+.traditional .conceptIntroduction { margin-top: 8px; }
+.traditional .date { margin-top: 12px; }
+@media (max-width: 359px) {
+  .traditional .details { padding-inline: 12px; }
+  .traditional .traditionalFrame { padding-inline: 14px; }
+}
