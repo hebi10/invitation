@@ -1,0 +1,95 @@
+name: Invitation UI-07-A-08 same-data before-after visual QA
+
+on:
+  pull_request:
+    paths:
+      - scripts/qa-invitation-ui07-a08.py
+      - .github/workflows/invitation-ui07-a08-visual.yml
+      - src/app/_components/public-invitations/wedding/**
+      - src/app/sample-invitation/**
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  a08-identical-fictional-before-after:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - name: Checkout proposed UI-07-A-08 changes
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install dependencies and Chromium
+        run: |
+          npm ci
+          python -m pip install --disable-pip-version-check playwright==1.56.0 pillow==11.3.0
+          python -m playwright install --with-deps chromium
+      - name: Prepare isolated historical baseline with identical dev-only synthetic fixture
+        env:
+          A08_BEFORE_SHA: ae8e1ed3f6ff0df36a0f65dbb82f32845053fdea
+        run: |
+          set -euo pipefail
+          git cat-file -e "$A08_BEFORE_SHA^{commit}"
+          git worktree add --detach "$RUNNER_TEMP/invitation-ui07-a08-before" "$A08_BEFORE_SHA"
+          cp src/app/sample-invitation/SampleInvitation.tsx "$RUNNER_TEMP/invitation-ui07-a08-before/src/app/sample-invitation/SampleInvitation.tsx"
+          cp src/app/sample-invitation/page.tsx "$RUNNER_TEMP/invitation-ui07-a08-before/src/app/sample-invitation/page.tsx"
+          ln -s "$GITHUB_WORKSPACE/node_modules" "$RUNNER_TEMP/invitation-ui07-a08-before/node_modules"
+          test -L "$RUNNER_TEMP/invitation-ui07-a08-before/node_modules"
+          echo "Original baseline commit: $A08_BEFORE_SHA"
+          echo "Fixture copied only to disconnected temporary worktree; production untouched"
+      - name: Start current and original fictional demo in separate development servers
+        env:
+          NEXT_PUBLIC_USE_FIREBASE: 'false'
+        run: |
+          set -euo pipefail
+          (NEXT_PUBLIC_SITE_URL=http://127.0.0.1:3000 nohup npm run dev -- -p 3000 > "$RUNNER_TEMP/a08-after.log" 2>&1 &)
+          (
+            cd "$RUNNER_TEMP/invitation-ui07-a08-before"
+            NEXT_PUBLIC_SITE_URL=http://127.0.0.1:3001 nohup npm run dev -- -p 3001 > "$RUNNER_TEMP/a08-before.log" 2>&1 &
+          )
+          python - <<'PY'
+          import time, urllib.request
+          for port in (3000, 3001):
+              url = f"http://127.0.0.1:{port}/sample-invitation/?qaTheme=simple&qaUI07=1&qaUI07Case=full&embed=1"
+              for attempt in range(100):
+                  try:
+                      with urllib.request.urlopen(url, timeout=12) as response:
+                          if response.status == 200:
+                              print("A08_READ_ONLY_FIXTURE_READY", port, flush=True)
+                              break
+                  except Exception:
+                      pass
+                  time.sleep(2)
+              else:
+                  raise SystemExit(f"Baseline/current fixture unavailable: {port}")
+          PY
+      - name: Compare 5 themes at 390px and 1440px using exactly the same fictional fixture
+        env:
+          INVITATION_A08_BEFORE: http://127.0.0.1:3001
+          INVITATION_A08_AFTER: http://127.0.0.1:3000
+          INVITATION_A08_BASE_SHA: ae8e1ed3f6ff0df36a0f65dbb82f32845053fdea
+        run: python scripts/qa-invitation-ui07-a08.py
+      - name: Keep comparison pairs, hashes, dimensions and failures
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: invitation-ui07-a08-same-data-visual-evidence
+          path: artifacts/ui-07-a08/
+          retention-days: 30
+          if-no-files-found: warn
+      - name: Print diagnostics when a visual QA check fails
+        if: failure()
+        run: |
+          tail -100 "$RUNNER_TEMP/a08-before.log" || true
+          tail -100 "$RUNNER_TEMP/a08-after.log" || true
