@@ -13,19 +13,19 @@ const page = read('src/app/_components/public-invitations/wedding/WeddingBase.ts
 assert.match(cover, /\.basic \.photoFrame \{ width: 92%; margin-inline: auto; aspect-ratio: 3 \/ 4; \}/);
 assert.match(cover, /\.editorial \.photoFrame \{ aspect-ratio: 4 \/ 5; \}/);
 assert.match(cover, /\.basic \.details \{ padding: 26px 24px 22px; \}/);
-assert.match(cover, /\.editorial \.editorialHeading \{[\s\S]*?font-size: 11px;[\s\S]*?letter-spacing: \.12em;/);
+assert.match(cover, /\.editorial \.editorialHeading \{[\s\S]*?font-size: 13px;[\s\S]*?letter-spacing: \.12em;/);
 assert.match(cover, /\.editorial \.editorialNames \{ gap: 0; font-size: clamp\(30px, 8vw, 34px\);/);
 assert.match(cover, /\.basic \.venue \{ margin-top: 8px; \}/);
 
 assert.match(swiper, /\.gallery\[data-gallery-variant='simple'\] \.photoButton \{ aspect-ratio: 3 \/ 4;/);
 assert.match(swiper, /\.gallery\[data-gallery-variant='simple'\] \.photo \{ object-fit: contain; \}/);
 assert.match(gallery, /\.editorial \.imageGrid \{[\s\S]*?gap: 18px 12px;/);
-assert.match(gallery, /\.editorial \.photoNumber \{[\s\S]*?padding-top: 6px;/);
+assert.match(gallery, /\.editorial \.photoNumber \{[\s\S]*?padding-top: 8px;/);
 assert.match(gallery, /\.editorial \.overviewCard \{[\s\S]*?min-height: 52px;/);
 assert.match(base, /\.page\[data-design='simple'\] \[data-wedding-section='gallery'\] > \.container \{\s*width: calc\(100% - 32px\);/);
 assert.match(base, /\.page\[data-design='classic-r'\] \{\s*--editorial-gutter: 44px;/);
 assert.match(base, /\.page\[data-design='classic-r'\] :is\(\.heading, \.title\)::before \{\s*font-size: 30px;/);
-assert.match(base, /\.page\[data-design='classic-r'\] :is\(\.heading, \.title\)::after \{\s*font-size: 10px;/);
+assert.match(base, /\.page\[data-design='classic-r'\] :is\(\.heading, \.title\)::after \{\s*font-size: 13px;/);
 assert.match(base, /\.page\[data-design='classic-r'\] \[data-wedding-section='gallery'\] > \.container \{\s*width: calc\(100% - 40px\);/);
 assert.match(base, /@media \(max-width: 359px\) \{[\s\S]*?\.page\[data-design='simple'\] \[data-wedding-section='gallery'\]/);
 assert.match(base, /\.page\[data-design='classic-r'\] \.ceremonySection \.ceremonyContent \.venueName \{\s*margin-top: 12px;/);
