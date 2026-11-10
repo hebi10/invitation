@@ -27,9 +27,9 @@ assert.match(cover, /\.letterSprig \{[^}]*garden-sprig\.webp/);
 
 assert.match(gallery, /\.album \.imageGrid \{\s*gap: 14px 10px;/);
 assert.match(gallery, /\.album \.imageWrapper:first-child \{\s*grid-column: 1 \/ -1;/);
-assert.match(gallery, /\.natural \.imageGrid \{\s*gap: 14px 12px;/);
-assert.match(gallery, /\.natural \.imageWrapper:first-child \{[^}]*justify-self: center;[^}]*width: 86%;[^}]*aspect-ratio: 4 \/ 5;/);
-assert.match(gallery, /\.natural \.imageWrapper\[data-photo-position='4'\] \{[^}]*justify-self: center;[^}]*width: 86%;/);
+assert.match(gallery, /\.natural \.imageGrid \{\s*gap: 16px 12px;/);
+assert.match(gallery, /\.natural \.imageWrapper:first-child \{[^}]*justify-self: start;[^}]*width: 86%;[^}]*aspect-ratio: 4 \/ 5;/);
+assert.match(gallery, /\.natural \.imageWrapper\[data-photo-position='4'\] \{[^}]*justify-self: start;[^}]*width: 86%;/);
 
 assert.match(page, /Stage 4: theme-specific spacing around real wedding content/);
 assert.match(page, /\.page\[data-design='romantic'\] \.ceremonySection \{\s*margin-top: 42px;\s*padding-block: 30px;/);
