@@ -252,9 +252,16 @@ def verify_case(page, theme: str, width: int, scenario: str, zoom: bool, record:
 
     stem = theme + "-" + ("text2-" if text_zoom else "zoom2-" if zoom else "") + str(width) + "-" + scenario
     if scenario == "full" and not zoom and not text_zoom:
+        page.evaluate("document.activeElement?.blur()")
         record["screenshots"].append(shot(page, stem + "-top"))
         if width == 390:
             record["screenshots"].append(shot(page, stem + "-full", full=True))
+        if width in (390, 1440):
+            for section in ("transport", "gift", "guestbook"):
+                record["screenshots"].append(shot(
+                    page, stem + "-" + section,
+                    selector='[data-wedding-section="' + section + '"]'
+                ))
     elif scenario == "empty":
         record["screenshots"].append(shot(page, stem + "-no-optional"))
     elif zoom or text_zoom:
