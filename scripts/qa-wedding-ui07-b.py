@@ -54,6 +54,16 @@ with sync_playwright() as engine:
                         )
                         assert response is not None and response.status == 200, "preview must return 200"
                         intro = page.locator(f'[data-wedding-intro="{style}"]')
+                        if reduced and style != "envelope":
+                            page.locator('[data-wedding-intro-pending]').wait_for(state="detached", timeout=12000)
+                            intro.wait_for(state="detached", timeout=4500)
+                            page.wait_for_timeout(250)
+                            assert not intro.count(), "reduced-motion should reach the main content immediately"
+                            assert not page.evaluate("document.body.style.overflow === 'hidden'")
+                            assert not page_errors, page_errors
+                            case["passed"] = True
+                            print("UI07B_OK", label, flush=True)
+                            continue
                         intro.wait_for(state="visible", timeout=20000)
                         assert intro.get_attribute("aria-modal") == "true"
                         assert intro.get_attribute("role") == "dialog"
