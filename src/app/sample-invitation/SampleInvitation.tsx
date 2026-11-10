@@ -35,10 +35,87 @@ const qaState: WeddingPageReadyState = {
   },
 };
 
-export default function SampleInvitation({ embedded = false, theme = 'simple', qaMusic = false, qaUI07 = false }: { embedded?: boolean; theme?: 'simple' | 'romantic' | 'gyeol' | 'classic-r' | 'emotional'; qaMusic?: boolean; qaUI07?: boolean }) {
+type QAUI07Case = 'full' | 'groom' | 'bride' | 'empty' | 'long';
+
+function withoutPhone(person: typeof sampleWeddingPage.couple.groom) {
+  return {
+    ...person,
+    phone: '',
+    father: person.father ? { ...person.father, phone: '' } : undefined,
+    mother: person.mother ? { ...person.mother, phone: '' } : undefined,
+  };
+}
+
+function makeQAUI07State(variant: QAUI07Case): WeddingPageReadyState {
+  if (variant === 'full') return qaState;
+
+  if (variant === 'groom' || variant === 'bride') {
+    const groomOnly = variant === 'groom';
+    return {
+      ...qaState,
+      pageConfig: {
+        ...qaState.pageConfig,
+        couple: {
+          groom: groomOnly ? qaState.pageConfig.couple.groom : withoutPhone(qaState.pageConfig.couple.groom),
+          bride: groomOnly ? withoutPhone(qaState.pageConfig.couple.bride) : qaState.pageConfig.couple.bride,
+        },
+      },
+      giftInfo: {
+        ...qaState.giftInfo,
+        groomAccounts: groomOnly ? qaState.giftInfo?.groomAccounts : [],
+        brideAccounts: groomOnly ? [] : qaState.giftInfo?.brideAccounts,
+      },
+    };
+  }
+
+  if (variant === 'empty') {
+    return {
+      ...qaState,
+      pageConfig: {
+        ...qaState.pageConfig,
+        couple: {
+          groom: withoutPhone(qaState.pageConfig.couple.groom),
+          bride: withoutPhone(qaState.pageConfig.couple.bride),
+        },
+        features: {
+          ...qaState.pageConfig.features,
+          showCountdown: false,
+          showGuestbook: false,
+        },
+        pageData: {
+          ...qaState.pageConfig.pageData,
+          venueGuide: [],
+          wreathGuide: [],
+          reception: undefined,
+        },
+      },
+      galleryImageUrls: [],
+      galleryPreviewImageUrls: [],
+      hasGiftAccounts: false,
+      giftInfo: undefined,
+    };
+  }
+
+  const longText = '가상 검증 데이터로 작성한 긴 예식 안내 문구입니다. 작은 화면에서도 내용이 겹치지 않고 줄바꿈이 자연스럽게 이어지는지 확인합니다. '.repeat(4);
+  return {
+    ...qaState,
+    pageConfig: {
+      ...qaState.pageConfig,
+      venue: '가상의 긴 예식장 이름과 복합문화공간 안내 구역 — 2층 메인홀 · 3층 별도 안내실',
+      pageData: {
+        ...qaState.pageConfig.pageData,
+        greetingMessage: longText + '\n\n' + longText,
+        venueGuide: [{ title: '가상의 장문 주차·대중교통 안내', content: longText }],
+      },
+    },
+    giftInfo: { ...qaState.giftInfo, message: longText },
+  };
+}
+
+export default function SampleInvitation({ embedded = false, theme = 'simple', qaMusic = false, qaUI07 = false, qaUI07Case = 'full' }: { embedded?: boolean; theme?: 'simple' | 'romantic' | 'gyeol' | 'classic-r' | 'emotional'; qaMusic?: boolean; qaUI07?: boolean; qaUI07Case?: QAUI07Case }) {
   return <AppQueryProvider><div className={styles.sample}>
     <p className={styles.notice}>기본형 샘플 · AI 생성 사진과 예시 메시지</p>
-    <WeddingBase state={qaUI07 ? qaState : sampleState} options={{ slug: sampleWeddingPage.slug, theme }} theme={theme} demoComments={sampleWeddingComments} showMap={false} />
+    <WeddingBase state={qaUI07 ? makeQAUI07State(qaUI07Case) : sampleState} options={{ slug: sampleWeddingPage.slug, theme }} theme={theme} demoComments={sampleWeddingComments} showMap={false} />
     <WeddingClosing groomName={sampleWeddingPage.groomName} brideName={sampleWeddingPage.brideName} theme={theme} />
     {qaMusic ? <BackgroundMusic alignToInvitation autoPlay={false} musicUrl="data:audio/wav;base64,UklGRkQDAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YSADAACAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgA==" /> : null}
     {!embedded ? (
