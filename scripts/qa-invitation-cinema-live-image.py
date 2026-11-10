@@ -70,6 +70,8 @@ with sync_playwright() as pw:
                           imageComplete:photo?.complete??false,
                           imageNaturalWidth:photo?.naturalWidth??0,
                           imageNaturalHeight:photo?.naturalHeight??0,
+                          fetchPriority:photo?.getAttribute('fetchpriority')??null,
+                          loading:photo?.getAttribute('loading')??null,
                           hiddenAttribute:photo?.hidden??null,
                           display:computed?.display??null,
                           visibility:computed?.visibility??null,
@@ -110,9 +112,17 @@ REPORT["summary"]={
     "cases_with_image_loaded":sum(bool(x.get("image_loaded_before_close")) for x in REPORT["cases"]),
     "total_cases":len(REPORT["cases"]),
     "public_sample_image_status":REPORT["public_asset"].get("http_status"),
+    "public_new_priority_marker":sum(
+        x.get("after_image_settle",{}).get("fetchPriority")=="high" and
+        x.get("after_image_settle",{}).get("loading")=="eager" for x in REPORT["cases"]
+    ),
 }
 (OUT/"manifest.json").write_text(json.dumps(REPORT,ensure_ascii=False,indent=2)+"\n",encoding="utf8")
 (OUT/"SUMMARY.md").write_text("# Invitation cinema live image diagnostic\n\n"+
     json.dumps(REPORT["summary"],ensure_ascii=False,indent=2)+"\n",encoding="utf8")
 print("CINEMA_DIAGNOSTIC_SUMMARY",json.dumps(REPORT["summary"]),flush=True)
-# Diagnostic explicitly exits success even if issue reproduced; analyze the evidence.
+# The initial diagnostic is read-only; this extra marker confirms that the
+# specific PR #59 performance change is now visible on the public App Hosting UI.
+# Do not equate a visible marker to Firebase Console's internal rollout SHA.
+if REPORT["summary"]["public_new_priority_marker"] != 2:
+    raise SystemExit("New fetchPriority=eager/high marker has not reached both live browser views yet")
