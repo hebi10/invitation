@@ -6,6 +6,9 @@ on:
       - fix/invitation-cinema-photo-20261110
     paths:
       - scripts/qa-invitation-cinema-live-image.py
+      - scripts/qa-invitation-quiet-3b-live.py
+      - src/components/sections/WeddingIntro/WeddingIntro.tsx
+      - scripts/test-quiet-invitation-tokens.mts
       - .github/workflows/invitation-cinema-image-diagnostic.yml
   workflow_dispatch:
 
@@ -29,11 +32,17 @@ jobs:
         env:
           INVITATION_PUBLIC_BASE: https://invite.msgnote.kr
         run: python scripts/qa-invitation-cinema-live-image.py
+      - name: Confirm real deployed photo is loaded in all three intros and 5 real wedding themes
+        env:
+          INVITATION_3B_LIVE_BASE: https://invite.msgnote.kr
+        run: python scripts/qa-invitation-quiet-3b-live.py
       - name: Archive diagnostic manifest and before-after screenshots
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: invitation-cinema-image-live-diagnostic
-          path: artifacts/cinema-photo-live-diagnostic/
+          path: |
+            artifacts/cinema-photo-live-diagnostic/
+            artifacts/quiet-invitation-3b-live/
           if-no-files-found: warn
           retention-days: 21
