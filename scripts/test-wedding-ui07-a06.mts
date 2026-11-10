@@ -53,7 +53,7 @@ assert.match(guestbook, /<summary className=\{styles\.formSummary\}>축하 글 �
 assert.match(guestbook, /<form className=\{styles\.form\} onSubmit=\{handleSubmit\}/);
 
 assert.match(route, /process\.env\.NODE_ENV !== 'production' && query\.qaUI07 === '1'/);
-assert.match(sample, /qaUI07 \? qaState : sampleState/);
+assert.match(sample, /qaUI07 \? (?:qaState|makeQAUI07State\(qaUI07Case\)) : sampleState/);
 assert.match(sample, /accountNumber: '000-000-000000'/);
 assert.doesNotMatch(sample, /(?:setDoc|updateDoc|deleteDoc|addDoc)\(/);
 

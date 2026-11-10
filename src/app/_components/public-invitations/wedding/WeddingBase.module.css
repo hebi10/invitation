@@ -1127,3 +1127,15 @@ details[open] > :is(.disclosureSummary, .accountSummary, .formSummary)::after { 
     --ui07-action-gap: 8px;
   }
 }
+
+/* UI-07-A-07: accessible disclosure focus */
+.page [data-wedding-section='contact'] > .disclosureSummary:focus-visible,
+.page [data-wedding-section='ceremony'] .calendarDisclosure > .disclosureSummary:focus-visible,
+.page [data-wedding-section='transport'] .guideDisclosure > .disclosureSummary:focus-visible,
+.page [data-wedding-section='gift'] .accountSummary:focus-visible,
+.page [data-wedding-section='guestbook'] .formSummary:focus-visible {
+  outline-color: var(--focus, #53504b);
+  outline-style: solid;
+  outline-width: 2px !important;
+  outline-offset: 4px;
+}
