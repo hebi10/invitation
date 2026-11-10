@@ -33,8 +33,8 @@ jobs:
           python -m playwright install --with-deps chromium
       - name: Check intro source and existing token contrast
         run: |
-          npx --yes tsx scripts/test-wedding-intro-policy.mts
-          npx --yes tsx scripts/test-quiet-invitation-tokens.mts
+          node scripts/run-test-suite.mjs test-wedding-intro-policy
+          node scripts/run-test-suite.mjs test-quiet-invitation-tokens
       - name: Start development preview without production Firebase
         env:
           NEXT_PUBLIC_USE_FIREBASE: 'false'
