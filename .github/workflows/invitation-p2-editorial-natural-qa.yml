@@ -1,16 +1,6 @@
 name: Invitation P2 editorial natural and accessibility QA
 
 on:
-  push:
-    branches:
-      - feat/invitation-p2-editorial-natural-a11y-20261110
-    paths:
-      - src/app/_components/public-invitations/wedding/**
-      - src/app/sample-invitation/**
-      - scripts/qa-invitation-p2-editorial-natural.py
-      - scripts/qa-invitation-p2-android-emulator.py
-      - scripts/test-wedding-p2-editorial-natural.mts
-      - .github/workflows/invitation-p2-editorial-natural-qa.yml
   pull_request:
     paths:
       - src/app/_components/public-invitations/wedding/WeddingBase.module.css
@@ -89,7 +79,7 @@ jobs:
 
   p2-android-api35-emulator:
     runs-on: ubuntu-24.04
-    timeout-minutes: 32
+    timeout-minutes: 40
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -134,8 +124,8 @@ jobs:
           api-level: 35
           target: google_apis
           arch: x86_64
-          profile: pixel_7_pro
-          ram-size: 3072M
+          profile: pixel_7
+          ram-size: 4096M
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none -camera-front none
           disable-animations: true
           script: python3 scripts/qa-invitation-p2-android-emulator.py
