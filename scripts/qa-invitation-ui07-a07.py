@@ -149,6 +149,7 @@ def focus_keyboard(page, selector: str, index: int = 0):
     summary.focus()
     page.keyboard.press("Tab")
     page.keyboard.press("Shift+Tab")
+    page.wait_for_timeout(120)
     current = summary.evaluate("""el => ({
         same: document.activeElement === el,
         visible: el.matches(':focus-visible'),
@@ -159,7 +160,13 @@ def focus_keyboard(page, selector: str, index: int = 0):
         className: el.className,
         matchingFocusRules: [...document.styleSheets].flatMap(sheet => {
           try {
-            return [...sheet.cssRules].filter(rule => rule.selectorText && rule.selectorText.includes(':focus-visible') && el.matches(rule.selectorText)).map(rule => rule.cssText.slice(0, 260));
+            return [...sheet.cssRules].filter(rule => rule.selectorText && rule.selectorText.includes(':focus-visible') && el.matches(rule.selectorText)).map(rule => ({
+              selector: rule.selectorText.slice(0, 160),
+              width: rule.style?.getPropertyValue('outline-width'),
+              widthPriority: rule.style?.getPropertyPriority('outline-width'),
+              color: rule.style?.getPropertyValue('outline-color'),
+              shorthand: rule.style?.getPropertyValue('outline')
+            }));
           } catch { return []; }
         }).slice(-7),
         height: el.getBoundingClientRect().height
