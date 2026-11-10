@@ -498,7 +498,7 @@ details[open] > :is(.disclosureSummary, .accountSummary, .formSummary)::after { 
 .page[data-design='classic-r'] .ceremonyContent { grid-template-columns: minmax(0, 1fr); margin-left: 0; font-size: 16px; gap: 8px; text-align: left; }
 .page[data-design='classic-r'] :is(.ceremonyContent, .scheduleContent) > * { min-width: 0; overflow-wrap: anywhere; }
 .page[data-design='classic-r'] .photoDate { display: grid; grid-template-columns: max-content minmax(0, 1fr); align-items: baseline; gap: 4px 12px; }
-.page[data-design='classic-r'] .photoDate span { font-size: 13px; color: var(--muted); }
+.page[data-design='classic-r'] .photoDate span { font-size: 14px; color: var(--muted); }
 .page[data-design='classic-r'] .photoDate span:first-child { grid-column: 1 / -1; font-variant-numeric: tabular-nums; }
 .page[data-design='classic-r'] .photoDate strong { font-family: 'Wedding Myeongjo', serif; font-weight: 400; font-size: 34px; line-height: 1.4; font-variant-numeric: tabular-nums; }
 .page[data-design='classic-r'] .ceremonyContent .venueName { font-family: var(--font-sans); font-size: 20px; font-weight: 500; line-height: 1.6; margin-top: 16px; word-break: keep-all; }
@@ -538,7 +538,7 @@ details[open] > :is(.disclosureSummary, .accountSummary, .formSummary)::after { 
 .page[data-design='classic-r'] .commentItem { position: relative; counter-increment: modern-message; padding: 0 0 0 var(--editorial-gutter); }
 .page[data-design='classic-r'] .commentItem::before { content: counter(modern-message, decimal-leading-zero); position: absolute; left: 0; top: 0; font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
 .page[data-design='classic-r'] .commentHeader { justify-content: flex-start; gap: 4px 12px; }
-.page[data-design='classic-r'] :is(.commentsCount, .commentsCount strong, .pageInfo, .commentDate, .refreshButton) { font-size: 12px; }
+.page[data-design='classic-r'] :is(.commentsCount, .commentsCount strong, .pageInfo, .commentDate, .refreshButton) { font-size: 13px; }
 .page[data-design='classic-r'] .authorName { font-size: 14px; font-weight: 500; }
 .page[data-design='classic-r'] .commentMessage { margin: 10px 0 0; font-size: 16px; line-height: 1.9; }
 .page[data-design='classic-r'] :is(.pageNumber, .pageButton) { border: 0; min-width: 44px; min-height: 44px; padding: 6px; font-size: 13px; background: transparent; }
@@ -915,8 +915,9 @@ details[open] > :is(.disclosureSummary, .accountSummary, .formSummary)::after { 
   font-size: 30px;
 }
 .page[data-design='classic-r'] :is(.heading, .title)::after {
-  font-size: 10px;
-  letter-spacing: .10em;
+  font-size: 13px;
+  line-height: 1.5;
+  letter-spacing: .08em;
 }
 .page[data-design='classic-r'] [data-wedding-section='gallery'] > .container {
   width: calc(100% - 40px);
