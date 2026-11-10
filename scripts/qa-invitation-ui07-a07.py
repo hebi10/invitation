@@ -154,6 +154,14 @@ def focus_keyboard(page, selector: str, index: int = 0):
         visible: el.matches(':focus-visible'),
         outline: getComputedStyle(el).outlineStyle,
         width: parseFloat(getComputedStyle(el).outlineWidth),
+        outlineColor: getComputedStyle(el).outlineColor,
+        focusToken: getComputedStyle(el).getPropertyValue('--focus').trim(),
+        className: el.className,
+        matchingFocusRules: [...document.styleSheets].flatMap(sheet => {
+          try {
+            return [...sheet.cssRules].filter(rule => rule.selectorText && rule.selectorText.includes(':focus-visible') && el.matches(rule.selectorText)).map(rule => rule.cssText.slice(0, 260));
+          } catch { return []; }
+        }).slice(-7),
         height: el.getBoundingClientRect().height
     })""")
     assert current["same"], "Tab/Shift+Tab focus order: " + selector
