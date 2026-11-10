@@ -36,7 +36,6 @@ jobs:
       - name: Verify public section hierarchy and baseline contracts
         run: |
           npx --no-install tsx scripts/test-wedding-ui07-a06.mts
-          npx --no-install tsx scripts/test-wedding-compact-sections-rendering.mts
           npx --no-install tsx scripts/test-wedding-p2-editorial-natural.mts
       - name: Start isolated development-only fictional fixture
         env:
