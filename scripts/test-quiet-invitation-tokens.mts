@@ -69,8 +69,8 @@ for (const [foreground, background, minimum] of [
 
 assert.equal(getToken('qi-hit-size'), '48px');
 assert.equal(getToken('qi-content-max'), '480px');
-assert.equal(getToken('qi-motion-light-total'), '1400ms');
-assert.equal(getToken('qi-motion-cinema-total'), '1600ms');
+assert.equal(getToken('qi-motion-light-total'), '2400ms');
+assert.equal(getToken('qi-motion-cinema-total'), '2800ms');
 assert.equal(getToken('qi-motion-envelope-after-tap'), '1100ms');
 
 assert.match(css, /@media \(max-width: 359px\)/);
