@@ -9,6 +9,12 @@
   --control-line: #92899c;
   --input-surface: #ffffff;
   --focus: #53504b;
+  --ui07-section-gap: var(--section-space, 56px);
+  --ui07-summary-min-height: 48px;
+  --ui07-details-content-gap: 16px;
+  --ui07-action-gap: 12px;
+  --ui07-panel-padding-inline: 20px;
+  --ui07-panel-border: 1px solid var(--line);
   --popup-text: #ffffff;
   width: min(100%, 480px);
   min-width: 0;
@@ -1001,4 +1007,123 @@ details[open] > :is(.disclosureSummary, .accountSummary, .formSummary)::after { 
 }
 .page[data-design='romantic'] .ceremonySection {
   margin-top: 34px;
+}
+
+
+/* UI-07-A-06: scope section hierarchy to public wedding content only. */
+.page [data-wedding-section='contact'] > .disclosureSummary,
+.page [data-wedding-section='ceremony'] .calendarDisclosure > .disclosureSummary,
+.page [data-wedding-section='transport'] .guideDisclosure > .disclosureSummary,
+.page [data-wedding-section='gift'] .accountSummary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ui07-action-gap);
+  min-height: var(--ui07-summary-min-height);
+  text-align: left;
+}
+
+.page [data-wedding-section='contact'] > .disclosureSummary::after,
+.page [data-wedding-section='ceremony'] .calendarDisclosure > .disclosureSummary::after,
+.page [data-wedding-section='transport'] .guideDisclosure > .disclosureSummary::after,
+.page [data-wedding-section='gift'] .accountSummary::after {
+  flex-shrink: 0;
+  margin-left: auto;
+}
+
+.page .summaryText {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+  text-align: left;
+}
+
+.page .summaryTitle {
+  min-width: 0;
+  overflow-wrap: break-word;
+}
+
+.page .summaryDescription {
+  min-width: 0;
+  color: var(--muted);
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 1.6;
+  overflow-wrap: break-word;
+}
+
+.page [data-wedding-section='contact'] > .disclosureSummary,
+.page [data-wedding-section='ceremony'] .calendarDisclosure > .disclosureSummary {
+  height: auto;
+}
+
+.page [data-wedding-section='transport'] .guideSummary {
+  margin: 0 0 12px;
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.8;
+  text-align: left;
+}
+
+.page [data-wedding-section='transport'] .guideDisclosure {
+  width: 100%;
+  margin-top: 0;
+  padding: 4px var(--ui07-panel-padding-inline) 8px;
+  background: var(--paper-soft);
+}
+
+.page [data-wedding-section='transport'] .guideDisclosure > .disclosureSummary {
+  width: 100%;
+  padding: 12px 0;
+  border: 0;
+  background: transparent;
+  color: var(--ink);
+}
+
+.page [data-wedding-section='transport'] .guideDisclosure[open] .storedSection {
+  padding-top: var(--ui07-details-content-gap);
+}
+
+.page [data-wedding-section='gift'] .accountsContainer {
+  gap: 8px;
+  padding: 4px var(--ui07-panel-padding-inline);
+  border: var(--ui07-panel-border);
+}
+
+.page [data-wedding-section='gift'] .accountSummary {
+  width: 100%;
+  padding-block: 12px;
+}
+
+.page[data-design='gyeol'] [data-wedding-section='gift'] .accountsContainer {
+  border: 0;
+  background: var(--paper-soft);
+}
+
+.page[data-design='simple'] :is(
+  .transportSection,
+  [data-wedding-section='gift'] > .container,
+  [data-wedding-section='guestbook'] > .container
+)::before {
+  content: none;
+}
+
+.page[data-design='romantic'] [data-wedding-section='contact'] > .disclosureSummary,
+.page[data-design='gyeol'] [data-wedding-section='contact'] > .disclosureSummary,
+.page[data-design='emotional'] [data-wedding-section='contact'] > .disclosureSummary {
+  text-decoration: none;
+}
+
+.page[data-design='romantic'] [data-wedding-section='contact'] .summaryTitle,
+.page[data-design='gyeol'] [data-wedding-section='contact'] .summaryTitle,
+.page[data-design='emotional'] [data-wedding-section='contact'] .summaryTitle {
+  text-decoration: underline;
+  text-underline-offset: 5px;
+}
+
+@media (max-width: 359px) {
+  .page {
+    --ui07-panel-padding-inline: 16px;
+    --ui07-action-gap: 8px;
+  }
 }
