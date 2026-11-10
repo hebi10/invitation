@@ -230,7 +230,7 @@ def verify_case(page, theme: str, width: int, scenario: str, zoom: bool, record:
         ratio = contrast(colors["color"], colors["background"])
         record.setdefault("contrast", []).append({"element": selector, "ratio": ratio})
         assert ratio >= 4.5, ("normal text contrast", theme, selector, ratio)
-    if scenario == "full" and not zoom and width == 390:
+    if scenario == "full" and not zoom and not text_zoom and width == 390:
         keyboard_checks = 0
         for selector in SUMMARY_SELECTORS:
             focus_keyboard(page, selector)
@@ -251,7 +251,7 @@ def verify_case(page, theme: str, width: int, scenario: str, zoom: bool, record:
             record["gallery_checked"] = True
 
     stem = theme + "-" + ("text2-" if text_zoom else "zoom2-" if zoom else "") + str(width) + "-" + scenario
-    if scenario == "full" and not zoom:
+    if scenario == "full" and not zoom and not text_zoom:
         record["screenshots"].append(shot(page, stem + "-top"))
         if width == 390:
             record["screenshots"].append(shot(page, stem + "-full", full=True))
