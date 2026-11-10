@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import AppQueryProvider from '../AppQueryProvider';
 import WeddingBase from '../_components/public-invitations/wedding/WeddingBase';
+import BackgroundMusic from '@/components/media/BackgroundMusic';
 import { WeddingClosing } from '../_components/WeddingClosing';
 import type { WeddingPageReadyState } from '../_components/weddingPageState';
 import { sampleWeddingPage, sampleWeddingComments, SAMPLE_WEDDING_IMAGES, SAMPLE_WEDDING_COVER } from '@/config/homeWeddingSample';
@@ -17,11 +18,12 @@ const sampleState: WeddingPageReadyState = {
   weddingDate: new Date('2027-04-17T14:00:00+09:00'), hasGiftAccounts: false, giftInfo: undefined,
 };
 
-export default function SampleInvitation({ embedded = false }: { embedded?: boolean }) {
+export default function SampleInvitation({ embedded = false, theme = 'simple', qaMusic = false }: { embedded?: boolean; theme?: 'simple' | 'romantic' | 'gyeol'; qaMusic?: boolean }) {
   return <AppQueryProvider><div className={styles.sample}>
     <p className={styles.notice}>기본형 샘플 · AI 생성 사진과 예시 메시지</p>
-    <WeddingBase state={sampleState} options={{ slug: sampleWeddingPage.slug, theme: 'simple' }} theme="simple" demoComments={sampleWeddingComments} showMap={false} />
-    <WeddingClosing groomName={sampleWeddingPage.groomName} brideName={sampleWeddingPage.brideName} theme="simple" />
+    <WeddingBase state={sampleState} options={{ slug: sampleWeddingPage.slug, theme }} theme={theme} demoComments={sampleWeddingComments} showMap={false} />
+    <WeddingClosing groomName={sampleWeddingPage.groomName} brideName={sampleWeddingPage.brideName} theme={theme} />
+    {qaMusic ? <BackgroundMusic alignToInvitation autoPlay={false} musicUrl="data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQAAAAA=" /> : null}
     {!embedded ? (
       <footer className={styles.serviceLinks} aria-label="청첩장 서비스 안내">
         <p>이런 청첩장을 만들고 싶으신가요?</p>
