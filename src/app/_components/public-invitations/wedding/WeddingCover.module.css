@@ -41,7 +41,7 @@
 
 /* The cover photograph leads into names and the schedule on a shared reading edge. */
 .editorial { background: #fff; color: #171717; font-family: var(--font-sans); text-align: left; }
-.editorial .editorialHeading { margin-bottom: 20px; font-size: 11px; font-weight: 500; line-height: 1.8; letter-spacing: .14em; color: #666; }
+.editorial .editorialHeading { margin-bottom: 20px; font-size: 13px; font-weight: 500; line-height: 1.8; letter-spacing: .14em; color: #666; }
 .editorialNames { display: grid; grid-template-columns: minmax(0, 1fr); justify-items: start; gap: 2px; font-family: var(--font-sans); font-size: 34px; font-weight: 500; line-height: 1.35; letter-spacing: -.03em; }
 .editorialNames > span { max-width: 100%; word-break: keep-all; }
 .editorialMeta { margin-top: 20px; text-align: left; }
@@ -97,7 +97,7 @@
 .editorial .details { padding: 26px 24px 22px; }
 .editorial .editorialHeading {
   margin-bottom: 14px;
-  font-size: 11px;
+  font-size: 13px;
   line-height: 1.6;
   letter-spacing: .12em;
 }
