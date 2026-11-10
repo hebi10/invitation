@@ -1,0 +1,73 @@
+name: Invitation UI-07-B intro animation and handoff QA
+
+on:
+  pull_request:
+    paths:
+      - src/components/sections/WeddingIntro/**
+      - src/lib/weddingIntro.ts
+      - scripts/qa-wedding-ui07-b.py
+      - scripts/test-quiet-invitation-tokens.mts
+      - .github/workflows/invitation-ui07-b-intro-qa.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  intro-animation-chromium:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install Next and Chromium
+        run: |
+          npm ci
+          python -m pip install --disable-pip-version-check playwright==1.56.0
+          python -m playwright install --with-deps chromium
+      - name: Check intro source and existing token contrast
+        run: |
+          npx --yes tsx scripts/test-wedding-intro-policy.mts
+          npx --yes tsx scripts/test-quiet-invitation-tokens.mts
+      - name: Start development preview without production Firebase
+        env:
+          NEXT_PUBLIC_USE_FIREBASE: 'false'
+          NEXT_PUBLIC_SITE_URL: http://127.0.0.1:3000
+        run: |
+          nohup npm run dev > "$RUNNER_TEMP/ui07-b-intro.log" 2>&1 &
+          python - <<'PY'
+          import time, urllib.request
+          url = "http://127.0.0.1:3000/mobile-intro-preview/?style=light"
+          for _ in range(100):
+              try:
+                  with urllib.request.urlopen(url, timeout=12) as res:
+                      if res.status == 200:
+                          print("UI-07-B intro preview ready", flush=True)
+                          break
+              except Exception:
+                  pass
+              time.sleep(2)
+          else:
+              raise SystemExit("Intro preview did not start")
+          PY
+      - name: Capture intro motion, readability, escape and reduced-motion
+        env:
+          INVITATION_UI07B_BASE: http://127.0.0.1:3000
+        run: python scripts/qa-wedding-ui07-b.py
+      - name: Preserve screenshots, SHA256 and results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: invitation-ui07-b-intro-animation-qa
+          path: artifacts/ui-07-b-intro/
+          retention-days: 30
+          if-no-files-found: warn
+      - name: Print local Next diagnostics on failure
+        if: failure()
+        run: tail -100 "$RUNNER_TEMP/ui07-b-intro.log" || true
