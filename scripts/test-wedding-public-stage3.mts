@@ -10,7 +10,8 @@ const coverComponent = read('src/app/_components/public-invitations/wedding/Wedd
 const galleryComponent = read('src/app/_components/public-invitations/wedding/WeddingGallery.tsx');
 const page = read('src/app/_components/public-invitations/wedding/WeddingBase.tsx');
 
-assert.match(cover, /\.basic \.photoFrame,\s*\.editorial \.photoFrame \{ aspect-ratio: 4 \/ 5; \}/);
+assert.match(cover, /\.basic \.photoFrame \{ width: 92%; margin-inline: auto; aspect-ratio: 3 \/ 4; \}/);
+assert.match(cover, /\.editorial \.photoFrame \{ aspect-ratio: 4 \/ 5; \}/);
 assert.match(cover, /\.basic \.details \{ padding: 26px 24px 22px; \}/);
 assert.match(cover, /\.editorial \.editorialHeading \{[\s\S]*?font-size: 11px;[\s\S]*?letter-spacing: \.12em;/);
 assert.match(cover, /\.editorial \.editorialNames \{ gap: 0; font-size: clamp\(30px, 8vw, 34px\);/);

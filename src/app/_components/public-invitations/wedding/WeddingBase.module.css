@@ -386,12 +386,12 @@ details[open] > :is(.disclosureSummary, .accountSummary, .formSummary)::after { 
 
 /* Simple invitation: clear facts and familiar controls on neutral paper. */
 .page[data-design='simple'] {
-  --paper: #fafafa; --paper-soft: #f4f4f4; --ink: #222222; --muted: #666666;
-  --accent: #222222; --line: #dddddd; --control-line: #888888; --focus: #222222;
+  --paper: #faf9f6; --paper-soft: #f4f4f4; --ink: #282725; --muted: #716e69;
+  --accent: #514c44; --line: #e6e2dc; --control-line: #888888; --focus: #514c44;
   --section-space: 56px; font-size: 15px; padding-bottom: 40px;
 }
-:global(body):has(.page[data-design='simple']) { background: #fafafa; }
-:global(html):has(.page[data-design='simple']) { --paper: #fafafa; --ink: #222222; }
+:global(body):has(.page[data-design='simple']) { background: #faf9f6; }
+:global(html):has(.page[data-design='simple']) { --paper: #faf9f6; --ink: #282725; }
 .page[data-design='simple'] ::selection { background: var(--line); color: var(--ink); }
 .page[data-design='simple'] :is(.invitationSection, .scheduleSection, .container, .ceremonySection, .transportSection) { width: calc(100% - 48px); margin-top: 56px; padding: 0; text-align: center; }
 .page[data-design='simple'] :is(.transportSection, [data-wedding-section='gift'] > .container, [data-wedding-section='guestbook'] > .container) { position: relative; }
