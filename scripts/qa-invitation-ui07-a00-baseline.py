@@ -40,14 +40,24 @@ DETAILS = {
 }
 MAIN_SHA = os.environ.get("GITHUB_SHA", "unavailable")
 REDACT = """
-[data-wedding-section="contact"] .contactIdentity strong,
-[data-wedding-section="contact"] .contactIdentity span,
-[data-wedding-section="gift"] .accountNumber,
-[data-wedding-section="gift"] .accountHolder,
-[data-wedding-section="guestbook"] .commentAuthor,
-[data-wedding-section="guestbook"] .commentMessage,
-[data-wedding-section="guestbook"] .commentDate,
-[data-wedding-section="guestbook"] .authorName {
+/* Only the QA screenshot gets masked. No public code or data is changed. */
+[data-wedding-section="contact"] [class*="contactList"] {
+  filter: blur(18px) !important;
+}
+[data-wedding-section="gift"] [class*="accountNumber"],
+[data-wedding-section="gift"] [class*="accountHolder"],
+[data-wedding-section="gift"] [class*="accountBank"] {
+  filter: blur(18px) !important;
+  color: transparent !important;
+  -webkit-text-fill-color: transparent !important;
+}
+[data-wedding-section="guestbook"] [class*="commentsGrid"] {
+  filter: blur(22px) !important;
+}
+[data-wedding-section="guestbook"] [class*="commentAuthor"],
+[data-wedding-section="guestbook"] [class*="commentMessage"],
+[data-wedding-section="guestbook"] [class*="commentDate"],
+[data-wedding-section="guestbook"] [class*="authorName"] {
   color: transparent !important;
   -webkit-text-fill-color: transparent !important;
   background: #e5e5e5 !important;
