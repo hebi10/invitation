@@ -1,0 +1,94 @@
+name: Invitation UI-07-A-00 pre-design section baseline
+
+on:
+  push:
+    branches:
+      - qa/ui-07-a00-baseline-20261110
+    paths:
+      - scripts/qa-invitation-ui07-a00-baseline.py
+      - .github/workflows/invitation-ui07-a00-baseline.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  live-public-baseline:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 42
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install read-only browser QA
+        run: |
+          python -m pip install --disable-pip-version-check playwright==1.56.0
+          python -m playwright install --with-deps chromium
+      - name: Capture five public demo themes in 25 viewports
+        env:
+          UI07A00_SOURCE: live
+        run: python scripts/qa-invitation-ui07-a00-baseline.py
+      - name: Preserve immutable live section geometry and redacted screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ui07-a00-live-public-25viewports
+          path: artifacts/ui-07-a00-live/
+          retention-days: 30
+          if-no-files-found: warn
+
+  local-fictional-baseline:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 42
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install Next.js and Chromium
+        run: |
+          npm ci
+          python -m pip install --disable-pip-version-check playwright==1.56.0
+          python -m playwright install --with-deps chromium
+      - name: Start existing isolated fictional five-theme fixture
+        env:
+          NEXT_PUBLIC_USE_FIREBASE: 'false'
+          NEXT_PUBLIC_SITE_URL: http://127.0.0.1:3000
+        run: |
+          nohup npm run dev > "$RUNNER_TEMP/ui07-a00-next.log" 2>&1 &
+          python - <<'PY'
+          import time, urllib.request
+          url = "http://127.0.0.1:3000/sample-invitation/?qaTheme=emotional&embed=1"
+          for _ in range(100):
+              try:
+                  with urllib.request.urlopen(url,timeout=10) as r:
+                      if r.status == 200:
+                          print("Local fictional wedding sample ready",flush=True)
+                          break
+              except Exception:
+                  pass
+              time.sleep(2)
+          else:
+              raise SystemExit("Local fictional sample not ready")
+          PY
+      - name: Capture local five-theme DOM and sections (never production)
+        env:
+          UI07A00_SOURCE: local
+          UI07A00_LOCAL_BASE: http://127.0.0.1:3000
+        run: python scripts/qa-invitation-ui07-a00-baseline.py
+      - name: Preserve local reference evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ui07-a00-local-fictional-25viewports
+          path: artifacts/ui-07-a00-local/
+          retention-days: 30
+          if-no-files-found: warn
+      - name: Print safe local server diagnostics on failure
+        if: failure()
+        run: tail -75 "$RUNNER_TEMP/ui07-a00-next.log" || true
