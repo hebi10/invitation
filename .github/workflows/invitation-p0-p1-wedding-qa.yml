@@ -6,6 +6,11 @@ on:
       - feat/invitation-p0-p1-sample-audit-simple-cover-20261110
     paths:
       - src/app/_components/public-invitations/wedding/WeddingCover.module.css
+      - src/app/_components/public-invitations/wedding/WeddingBase.module.css
+      - src/app/_components/WeddingClosing.module.css
+      - scripts/test-wedding-public-stage3.mts
+      - scripts/test-wedding-public-stage4.mts
+      - scripts/test-wedding-theme-style-contracts.mts
       - scripts/qa-invitation-p0-sample-integrity.py
       - scripts/qa-invitation-simple-cover-p1.py
       - scripts/test-wedding-simple-p1-and-sample-p0.mts
