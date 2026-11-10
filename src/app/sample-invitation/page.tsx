@@ -10,8 +10,9 @@ export const metadata: Metadata = {
 export default async function SampleInvitationPage({
   searchParams,
 }: {
-  searchParams: Promise<{ embed?: string | string[] }>;
+  searchParams: Promise<{ embed?: string | string[]; qaTheme?: string | string[]; qaMusic?: string | string[] }>;
 }) {
   const query = await searchParams;
-  return <SampleInvitation embedded={query.embed === '1'} />;
+  const theme = query.qaTheme === 'romantic' || query.qaTheme === 'gyeol' ? query.qaTheme : 'simple';
+  return <SampleInvitation embedded={query.embed === '1'} theme={theme} qaMusic={query.qaMusic === '1'} />;
 }

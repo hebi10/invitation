@@ -10,6 +10,7 @@ import {
 import styles from './BackgroundMusic.module.css';
 
 interface BackgroundMusicProps {
+  alignToInvitation?: boolean;
   autoPlay?: boolean;
   volume?: number;
   musicIndex?: number;
@@ -21,6 +22,7 @@ interface BackgroundMusicProps {
 }
 
 export default function BackgroundMusic({
+  alignToInvitation = false,
   autoPlay = true,
   volume = DEFAULT_INVITATION_MUSIC_VOLUME,
   musicIndex: _musicIndex = 0,
@@ -222,7 +224,7 @@ export default function BackgroundMusic({
   }
 
   return (
-    <div ref={playerRef} className={styles.musicPlayer}>
+    <div ref={playerRef} className={`${styles.musicPlayer} ${alignToInvitation ? styles.invitationAligned : ''}`.trim()}>
       {normalizedMusicUrl ? <audio
         ref={audioRef}
         src={normalizedMusicUrl}

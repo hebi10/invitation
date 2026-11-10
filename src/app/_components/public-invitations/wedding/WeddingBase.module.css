@@ -990,3 +990,14 @@ details[open] > :is(.disclosureSummary, .accountSummary, .formSummary)::after { 
 .page[data-design='emotional'] .ceremonyContent .venueName {
   line-height: 1.6;
 }
+
+/* P1: shorten only the photo-story gallery path to the ceremony details. */
+.page[data-design='romantic'] [data-wedding-section='gallery'] > .container {
+  margin-top: 36px;
+}
+.page[data-design='romantic'] [data-wedding-section='gallery'] .title {
+  margin-bottom: 16px;
+}
+.page[data-design='romantic'] .ceremonySection {
+  margin-top: 34px;
+}

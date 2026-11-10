@@ -245,6 +245,7 @@ function EventInvitationPageBody(options: EventInvitationRouteOptions) {
       ) : null}
       {shouldRenderMusic ? (
         <BackgroundMusic
+          alignToInvitation
           autoPlay
           volume={clampInvitationMusicVolume(
             readyState.pageConfig.musicVolume,

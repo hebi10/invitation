@@ -91,6 +91,11 @@
 
 .album .imageWrapper:first-child {
   grid-column: 1 / -1;
+  aspect-ratio: 6 / 5;
+}
+
+.album .imageWrapper:first-child .imageContainer img {
+  object-position: center 35%;
 }
 
 .album .imageGrid[data-photo-count='2'] .imageWrapper[data-photo-position='2'],
