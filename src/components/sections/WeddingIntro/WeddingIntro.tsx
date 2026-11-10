@@ -229,6 +229,8 @@ export default function WeddingIntro({
                 data-intro-photo
                 src={imageUrl}
                 alt=""
+                loading="eager"
+                fetchPriority="high"
                 onError={(event) => { event.currentTarget.hidden = true; }}
               />
             ) : null}
