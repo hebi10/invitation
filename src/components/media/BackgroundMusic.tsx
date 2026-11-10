@@ -23,7 +23,7 @@ interface BackgroundMusicProps {
 
 export default function BackgroundMusic({
   alignToInvitation = false,
-  autoPlay = true;
+  autoPlay = true,
   volume = DEFAULT_INVITATION_MUSIC_VOLUME,
   musicIndex: _musicIndex = 0,
   musicUrl: customMusicUrl,
