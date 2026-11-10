@@ -1139,3 +1139,133 @@ details[open] > :is(.disclosureSummary, .accountSummary, .formSummary)::after { 
   outline-width: 2px !important;
   outline-offset: 4px;
 }
+
+
+/* UI-07-C: group only available family contacts without duplicate side labels. */
+.page[data-design] [data-wedding-section='contact'] .contactList {
+  display: grid;
+  gap: 0;
+  margin-top: 16px;
+  min-width: 0;
+}
+
+.page[data-design] [data-wedding-section='contact'] .contactList li {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  padding: 10px 0;
+}
+
+.page[data-design] [data-wedding-section='contact'] .contactList li[data-contact-group-start='true']:not(:first-child) {
+  margin-top: 20px;
+}
+
+.page[data-design] [data-wedding-section='contact'] .contactIdentity {
+  min-width: 0;
+  gap: 4px;
+}
+
+.page[data-design] [data-wedding-section='contact'] .contactSide {
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.page[data-design] [data-wedding-section='contact'] .contactIdentity strong {
+  min-width: 0;
+  font-size: 15px;
+  line-height: 1.7;
+  overflow-wrap: anywhere;
+}
+
+.page[data-design] [data-wedding-section='contact'] .contactActions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(48px, auto));
+  gap: 8px;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.page[data-design] [data-wedding-section='contact'] .contactActions a {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 48px;
+  min-height: 48px;
+  padding: 10px 12px;
+  border: 1px solid var(--control-line);
+  background: transparent;
+  color: var(--ink);
+  font-size: 14px;
+  line-height: 1.5;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.page[data-design] [data-wedding-section='contact'] .contactActions a:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 3px;
+}
+
+/* Both actions remain distinct: local .ics export versus in-page disclosure. */
+.page[data-design] [data-wedding-section='ceremony'] > button,
+.page[data-design] [data-wedding-section='ceremony'] .calendarDisclosure > summary {
+  width: 100%;
+  min-height: 72px;
+  padding: 12px 14px;
+  border: 1px solid var(--control-line);
+  background: transparent;
+  color: var(--ink);
+  font-family: var(--font-sans);
+  font-size: 14px;
+  line-height: 1.5;
+  text-align: left;
+  text-decoration: none;
+}
+
+.page[data-design] [data-wedding-section='ceremony'] > button {
+  margin-top: 12px;
+}
+
+.page[data-design] [data-wedding-section='ceremony'] .calendarDisclosure {
+  min-width: 0;
+  margin-top: 10px;
+}
+
+.page[data-design] [data-wedding-section='ceremony'] .calendarDisclosure > summary {
+  gap: 10px;
+}
+
+.page[data-design='simple'] [data-wedding-section='ceremony'] > button,
+.page[data-design='simple'] [data-wedding-section='ceremony'] .calendarDisclosure {
+  margin-top: 0;
+}
+
+.page[data-design='gyeol'] [data-wedding-section='ceremony'] > button,
+.page[data-design='gyeol'] [data-wedding-section='ceremony'] .calendarDisclosure > summary {
+  border: 0;
+  background: var(--paper);
+}
+
+@media (max-width: 359px) {
+  .page[data-design] [data-wedding-section='contact'] .contactList li {
+    gap: 8px;
+  }
+
+  .page[data-design] [data-wedding-section='contact'] .contactActions {
+    gap: 4px;
+  }
+
+  .page[data-design] [data-wedding-section='contact'] .contactActions a {
+    padding-inline: 8px;
+  }
+
+  .page[data-design] [data-wedding-section='ceremony'] > button,
+  .page[data-design] [data-wedding-section='ceremony'] .calendarDisclosure > summary {
+    padding-inline: 10px;
+  }
+}
