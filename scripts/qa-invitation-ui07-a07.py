@@ -102,7 +102,7 @@ manifest = {
     "source": "isolated Next.js development-only qaUI07 fixture; no production Firebase",
     "no_actual_customer_data": True, "production_data_writes": 0,
     "external_phone_sms_payment_actions": 0, "physical_talkback_voiceover_tested": False,
-    "map_in_fixture": False, "browser_text_zoom": "CSS zoom 200% at 768/1440 viewport; not physical system font scaling",
+    "map_in_fixture": False, "browser_text_zoom": "CSS zoom 200% at 768/1440; isolated text-only 200% at 390; not physical system font scaling",
     "cases": [], "limitations": [
         "Physical TalkBack/VoiceOver and on-device 200% system font are not simulated.",
         "Live Kakao map, phone/SMS, .ics calendar app, clipboard OS and guestbook submission are not invoked.",
@@ -166,7 +166,7 @@ def focus_keyboard(page, selector: str, index: int = 0):
     return current
 
 
-def verify_case(page, theme: str, width: int, scenario: str, zoom: bool, record: dict):
+def verify_case(page, theme: str, width: int, scenario: str, zoom: bool, record: dict, text_zoom: bool = False):
     main = page.locator('main[data-design="' + theme + '"]')
     main.wait_for(state="visible", timeout=35000)
     page.locator('[data-wedding-section="schedule"]').wait_for(state="visible", timeout=25000)
@@ -174,6 +174,16 @@ def verify_case(page, theme: str, width: int, scenario: str, zoom: bool, record:
     page.add_style_tag(content="nextjs-portal { display: none !important; }")
     if zoom:
         page.evaluate("document.documentElement.style.zoom = '2'")
+    if text_zoom:
+        page.evaluate("""() => {
+          const nodes = [...document.querySelectorAll(
+            'main[data-design] :is(h1,h2,h3,p,a,button,summary,li,dt,dd,strong,span,label,input,textarea,figcaption,address)'
+          )];
+          const sizes = nodes.map(el => [el, parseFloat(getComputedStyle(el).fontSize)]);
+          for (const [el, size] of sizes) {
+            if (Number.isFinite(size)) el.style.fontSize = (size * 2) + 'px';
+          }
+        }""")
     metrics = page.evaluate(LAYOUT_SCRIPT)
     record["metrics"] = metrics
     expected = list(REDUCED_SECTIONS if scenario == "empty" else FULL_SECTIONS)
@@ -240,15 +250,15 @@ def verify_case(page, theme: str, width: int, scenario: str, zoom: bool, record:
             assert gallery_button.evaluate("(el) => document.activeElement === el"), "Gallery focus restoration"
             record["gallery_checked"] = True
 
-    stem = theme + "-" + ("zoom2-" if zoom else "") + str(width) + "-" + scenario
+    stem = theme + "-" + ("text2-" if text_zoom else "zoom2-" if zoom else "") + str(width) + "-" + scenario
     if scenario == "full" and not zoom:
         record["screenshots"].append(shot(page, stem + "-top"))
         if width == 390:
             record["screenshots"].append(shot(page, stem + "-full", full=True))
     elif scenario == "empty":
         record["screenshots"].append(shot(page, stem + "-no-optional"))
-    elif zoom:
-        record["screenshots"].append(shot(page, stem + "-zoom"))
+    elif zoom or text_zoom:
+        record["screenshots"].append(shot(page, stem + "-scaled"))
     else:
         section = "contact" if scenario in ("groom", "bride") else "transport"
         record["screenshots"].append(shot(page, stem + "-" + section, selector='[data-wedding-section="' + section + '"]'))
@@ -258,16 +268,19 @@ with sync_playwright() as playwright:
     browser = playwright.chromium.launch(headless=True, args=["--no-sandbox", "--disable-dev-shm-usage"])
     try:
         scenarios = [
-            (theme, width, height, "full", False)
+            (theme, width, height, "full", False, False)
             for theme in THEMES for _, (width, height) in VIEWPORTS.items()
         ] + [
-            (theme, 390, 844, scenario, False)
+            (theme, 390, 844, scenario, False, False)
             for theme in THEMES for scenario in CASES if scenario != "full"
         ] + [
-            (theme, width, height, "full", True)
+            (theme, width, height, "full", True, False)
             for theme in THEMES for width, height in (VIEWPORTS["768"], VIEWPORTS["1440"])
+        ] + [
+            (theme, 390, 844, "full", False, True)
+            for theme in THEMES
         ]
-        for theme, width, height, scenario, zoom in scenarios:
+        for theme, width, height, scenario, zoom, text_zoom in scenarios:
             ctx = browser.new_context(
                 viewport={"width": width, "height": height},
                 device_scale_factor=1 if width >= 768 else 2,
@@ -276,20 +289,20 @@ with sync_playwright() as playwright:
             page = ctx.new_page()
             page_errors = []
             page.on("pageerror", lambda e: page_errors.append(str(e)[:350]))
-            row = {"theme": theme, "width": width, "case": scenario, "zoom_200": zoom,
+            row = {"theme": theme, "width": width, "case": scenario, "zoom_200": zoom, "text_zoom_200": text_zoom,
                    "success": False, "screenshots": [], "keyboard_checks": 0, "gallery_checked": False}
             try:
                 query = urlencode({"qaTheme": theme, "qaUI07": "1", "qaUI07Case": scenario, "embed": "1"})
                 response = page.goto(BASE + "/sample-invitation/?" + query,
                                      wait_until="domcontentloaded", timeout=90000)
                 assert response is not None and response.status == 200, "Fictional fixture HTTP 200"
-                verify_case(page, theme, width, scenario, zoom, row)
+                verify_case(page, theme, width, scenario, zoom, row, text_zoom=text_zoom)
                 assert not page_errors, page_errors
                 row["success"] = True
-                print("A07_OK", theme, width, scenario, "zoom2" if zoom else "normal", flush=True)
+                print("A07_OK", theme, width, scenario, "text2" if text_zoom else "zoom2" if zoom else "normal", flush=True)
             except Exception as error:
                 row["error"] = type(error).__name__ + ": " + str(error)[:1800]
-                print("A07_FAIL", theme, width, scenario, "zoom2" if zoom else "normal", row["error"], flush=True)
+                print("A07_FAIL", theme, width, scenario, "text2" if text_zoom else "zoom2" if zoom else "normal", row["error"], flush=True)
                 try:
                     row["screenshots"].append(shot(page, theme + "-" + str(width) + "-" + scenario + "-error"))
                 except Exception:
@@ -307,7 +320,7 @@ manifest["summary"] = {
     "gallery_checks": sum(bool(case["gallery_checked"]) for case in manifest["cases"]),
     "images": sum(len(case["screenshots"]) for case in manifest["cases"]),
     "failed": [{"theme": case["theme"], "case": case["case"], "width": case["width"], "zoom": case["zoom_200"],
-                "error": case.get("error")} for case in manifest["cases"] if not case["success"]],
+                "text_zoom_200": case["text_zoom_200"], "error": case.get("error")} for case in manifest["cases"] if not case["success"]],
 }
 (OUT / "manifest.json").write_text(json.dumps(manifest, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 print("A07_SUMMARY", json.dumps(manifest["summary"], ensure_ascii=False), flush=True)
