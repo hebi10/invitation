@@ -62,7 +62,7 @@ def inspect_case(page, theme, width, variant, doubled, record):
 
     if expected_groups:
         assert not contact.locator('a[href^="tel:"]').first.is_visible(), "contact private actions exposed before open"
-        summary = contact.locator("> summary") if False else contact.locator("summary").first
+        summary = contact.locator("summary").first
         assert summary.bounding_box()["height"] >= 47.5, "contact summary 48px"
         summary.focus()
         page.keyboard.press("Enter")
@@ -93,7 +93,7 @@ def inspect_case(page, theme, width, variant, doubled, record):
     assert save.count() == 1, "ICS action must remain available"
     description_id = save.get_attribute("aria-describedby")
     assert description_id, "ICS description not announced to screen readers"
-    assert page.locator("[id]").filter(has_text="일정 파일(.ics) 다운로드").count() >= 1
+    assert page.evaluate("(id) => document.getElementById(id)?.textContent?.trim()", description_id) == "일정 파일(.ics) 다운로드"
     assert save.bounding_box()["height"] >= 71.5, "ICS action min 72px"
     disclosure = ceremony.locator("details")
     assert disclosure.count() == (0 if variant == "empty" else 1), "inline calendar conditional rendering"
