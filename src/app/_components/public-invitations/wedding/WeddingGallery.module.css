@@ -45,13 +45,13 @@
 
 .editorial .photoNumber {
   display: block;
-  padding-top: 6px;
-  color: var(--muted, #565652);
+  padding-top: 8px;
+  color: var(--ink, #262626);
   font-family: var(--font-sans, sans-serif);
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 500;
   font-variant-numeric: tabular-nums;
-  line-height: 1.5;
+  line-height: 1.6;
   letter-spacing: 0.04em;
   text-align: left;
 }
@@ -72,8 +72,8 @@
 }
 
 .editorial .overviewCount {
-  color: var(--muted, #666666);
-  font-size: 12px;
+  color: var(--ink, #262626);
+  font-size: 14px;
   font-variant-numeric: tabular-nums;
   letter-spacing: 0.04em;
   white-space: nowrap;
@@ -125,7 +125,7 @@
 }
 
 .natural .imageGrid {
-  gap: 14px 12px;
+  gap: 16px 12px;
   align-items: start;
 }
 
@@ -140,19 +140,19 @@
 
 .natural .imageWrapper:first-child {
   grid-column: 1 / -1;
-  justify-self: center;
+  justify-self: start;
   width: 86%;
   aspect-ratio: 4 / 5;
 }
 
 .natural .imageGrid[data-photo-count='1'] .imageWrapper {
-  justify-self: center;
+  justify-self: start;
 }
 
 .natural .imageGrid[data-photo-count='2'] .imageWrapper[data-photo-position='2'],
 .natural .imageWrapper[data-photo-position='4'] {
   grid-column: 1 / -1;
-  justify-self: center;
+  justify-self: start;
   width: 86%;
   aspect-ratio: 4 / 5;
 }

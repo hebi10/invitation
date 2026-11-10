@@ -18,7 +18,7 @@ const sampleState: WeddingPageReadyState = {
   weddingDate: new Date('2027-04-17T14:00:00+09:00'), hasGiftAccounts: false, giftInfo: undefined,
 };
 
-export default function SampleInvitation({ embedded = false, theme = 'simple', qaMusic = false }: { embedded?: boolean; theme?: 'simple' | 'romantic' | 'gyeol'; qaMusic?: boolean }) {
+export default function SampleInvitation({ embedded = false, theme = 'simple', qaMusic = false }: { embedded?: boolean; theme?: 'simple' | 'romantic' | 'gyeol' | 'classic-r' | 'emotional'; qaMusic?: boolean }) {
   return <AppQueryProvider><div className={styles.sample}>
     <p className={styles.notice}>기본형 샘플 · AI 생성 사진과 예시 메시지</p>
     <WeddingBase state={sampleState} options={{ slug: sampleWeddingPage.slug, theme }} theme={theme} demoComments={sampleWeddingComments} showMap={false} />
