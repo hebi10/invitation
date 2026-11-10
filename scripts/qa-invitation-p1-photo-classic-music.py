@@ -65,6 +65,7 @@ with sync_playwright() as playwright:
                         return photo && photo.complete && photo.naturalWidth > 0;
                     }""", timeout=30000)
                     page.evaluate("document.fonts.ready")
+                    page.add_style_tag(content="nextjs-portal { display: none !important; }")
                     page.locator('[data-wedding-section="gallery"]').scroll_into_view_if_needed()
                     gallery_photo = (
                         '[data-wedding-section="gallery"] [data-gallery-variant="gyeol"] '
