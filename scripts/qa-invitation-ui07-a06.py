@@ -46,8 +46,8 @@ def snapshot(page, theme: str, screen: str, section: str | None = None, full: bo
     return {"file": filename, "bytes": len(blob), "sha256": hashlib.sha256(blob).hexdigest()}
 
 
-def check_disclosure_keyboard(page, selector: str):
-    summary = page.locator(selector).first
+def check_disclosure_keyboard(page, selector: str, index: int = 0):
+    summary = page.locator(selector).nth(index)
     summary.wait_for(state="visible", timeout=20000)
     parent = summary.locator("xpath=..")
     assert parent.evaluate("(el) => el.tagName === 'DETAILS'"), selector
@@ -152,6 +152,10 @@ with sync_playwright() as pw:
                             check_disclosure_keyboard(page, selector)
                             record["disclosure_tests"] += 1
                         assert page.locator('[data-wedding-section="gift"] details').count() == 2
+                        check_disclosure_keyboard(
+                            page, '[data-wedding-section="gift"] details > summary', index=1
+                        )
+                        record["disclosure_tests"] += 1
                     record["pageerrors"] = errors[:4]
                     assert not errors, errors
                     record["success"] = True
