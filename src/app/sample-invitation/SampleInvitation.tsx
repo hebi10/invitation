@@ -18,10 +18,27 @@ const sampleState: WeddingPageReadyState = {
   weddingDate: new Date('2027-04-17T14:00:00+09:00'), hasGiftAccounts: false, giftInfo: undefined,
 };
 
-export default function SampleInvitation({ embedded = false, theme = 'simple', qaMusic = false }: { embedded?: boolean; theme?: 'simple' | 'romantic' | 'gyeol' | 'classic-r' | 'emotional'; qaMusic?: boolean }) {
+const qaState: WeddingPageReadyState = {
+  ...sampleState,
+  pageConfig: {
+    ...sampleWeddingPage,
+    couple: {
+      groom: { ...sampleWeddingPage.couple.groom, phone: '000-0000-0000' },
+      bride: { ...sampleWeddingPage.couple.bride, phone: '000-0000-0000' },
+    },
+  },
+  hasGiftAccounts: true,
+  giftInfo: {
+    groomAccounts: [{ bank: '가상은행', accountNumber: '000-000-000000', accountHolder: '샘플 신랑' }],
+    brideAccounts: [{ bank: '가상은행', accountNumber: '000-000-000000', accountHolder: '샘플 신부' }],
+    message: '화면 검수용 가상 계좌입니다. 실제 송금할 수 없습니다.',
+  },
+};
+
+export default function SampleInvitation({ embedded = false, theme = 'simple', qaMusic = false, qaUI07 = false }: { embedded?: boolean; theme?: 'simple' | 'romantic' | 'gyeol' | 'classic-r' | 'emotional'; qaMusic?: boolean; qaUI07?: boolean }) {
   return <AppQueryProvider><div className={styles.sample}>
     <p className={styles.notice}>기본형 샘플 · AI 생성 사진과 예시 메시지</p>
-    <WeddingBase state={sampleState} options={{ slug: sampleWeddingPage.slug, theme }} theme={theme} demoComments={sampleWeddingComments} showMap={false} />
+    <WeddingBase state={qaUI07 ? qaState : sampleState} options={{ slug: sampleWeddingPage.slug, theme }} theme={theme} demoComments={sampleWeddingComments} showMap={false} />
     <WeddingClosing groomName={sampleWeddingPage.groomName} brideName={sampleWeddingPage.brideName} theme={theme} />
     {qaMusic ? <BackgroundMusic alignToInvitation autoPlay={false} musicUrl="data:audio/wav;base64,UklGRkQDAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YSADAACAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgA==" /> : null}
     {!embedded ? (
