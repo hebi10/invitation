@@ -1,0 +1,77 @@
+name: Invitation P2 editorial natural and accessibility QA
+
+on:
+  pull_request:
+    paths:
+      - src/app/_components/public-invitations/wedding/WeddingBase.module.css
+      - src/app/_components/public-invitations/wedding/WeddingGallery.module.css
+      - src/app/_components/public-invitations/wedding/WeddingCover.module.css
+      - src/app/sample-invitation/**
+      - scripts/test-wedding-p2-editorial-natural.mts
+      - scripts/qa-invitation-p2-editorial-natural.py
+      - scripts/run-test-suite.mjs
+      - .github/workflows/invitation-p2-editorial-natural-qa.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  p2-five-theme-chromium-qa:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 32
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install web dependencies and Chromium
+        run: |
+          npm ci
+          python -m pip install --disable-pip-version-check playwright==1.56.0
+          python -m playwright install --with-deps chromium
+      - name: Validate scoped P2 design contracts
+        run: |
+          npx --no-install tsx scripts/test-wedding-p2-editorial-natural.mts
+          npx --no-install tsx scripts/test-wedding-public-stage3.mts
+          npx --no-install tsx scripts/test-wedding-public-stage4.mts
+      - name: Start isolated fictional sample without Firebase credentials
+        env:
+          NEXT_PUBLIC_USE_FIREBASE: 'false'
+          NEXT_PUBLIC_SITE_URL: http://127.0.0.1:3000
+        run: |
+          nohup npm run dev > "$RUNNER_TEMP/invitation-p2-next.log" 2>&1 &
+          python - <<'PY'
+          import time, urllib.request
+          url = "http://127.0.0.1:3000/sample-invitation/?qaTheme=emotional&embed=1"
+          for _ in range(110):
+              try:
+                  with urllib.request.urlopen(url, timeout=10) as response:
+                      if response.status == 200:
+                          print("Local fictional five-theme fixture ready", flush=True)
+                          break
+              except Exception:
+                  pass
+              time.sleep(2)
+          else:
+              raise SystemExit("P2 QA sample was not served")
+          PY
+      - name: Capture actual responsive layouts and keyboard gallery
+        env:
+          INVITATION_LOCAL_BASE: http://127.0.0.1:3000
+        run: python scripts/qa-invitation-p2-editorial-natural.py
+      - name: Preserve screenshot and SHA256 manifest
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: invitation-p2-editorial-natural-browser-qa
+          path: artifacts/invitation-p2-editorial-natural/
+          retention-days: 30
+          if-no-files-found: warn
+      - name: Print server diagnostics on failure
+        if: failure()
+        run: tail -100 "$RUNNER_TEMP/invitation-p2-next.log" || true
