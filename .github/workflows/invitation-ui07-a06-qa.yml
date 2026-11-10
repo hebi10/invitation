@@ -35,8 +35,8 @@ jobs:
           python -m playwright install --with-deps chromium
       - name: Verify public section hierarchy and baseline contracts
         run: |
-          npx --no-install tsx scripts/test-wedding-ui07-a06.mts
-          npx --no-install tsx scripts/test-wedding-p2-editorial-natural.mts
+          npx --yes tsx scripts/test-wedding-ui07-a06.mts
+          npx --yes tsx scripts/test-wedding-p2-editorial-natural.mts
       - name: Start isolated development-only fictional fixture
         env:
           NEXT_PUBLIC_USE_FIREBASE: 'false'
