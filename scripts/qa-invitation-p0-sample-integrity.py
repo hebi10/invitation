@@ -116,11 +116,11 @@ with sync_playwright() as pw:
     finally:
         browser.close()
 
-names={x.get("names") for x in REPORT["themes"] if x.get("names")}
+names={re.sub(r'[\s·&]+','',x.get('names','')) for x in REPORT['themes'] if x.get('names')}
 dates={x.get("date") for x in REPORT["themes"] if x.get("date")}
 venues={x.get("venue") for x in REPORT["themes"] if x.get("venue")}
 photos={x.get("cover_image_path") for x in REPORT["themes"] if x.get("cover_image_path")}
-if len(names)>1:REPORT["failures"].append("The five themes disagree on couple names")
+if len(names)>1:REPORT['failures'].append('The five themes disagree on couple names after removing presentation separators')
 if len(dates)>1:REPORT["failures"].append("The five themes disagree on wedding date")
 if len(venues)>1:REPORT["failures"].append("The five themes disagree on venue")
 if len(photos)>1:REPORT["failures"].append("The five themes use different cover images")
