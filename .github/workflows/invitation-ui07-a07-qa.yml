@@ -57,7 +57,7 @@ jobs:
           else:
               raise SystemExit("UI-07-A-07 fictional fixture did not start")
           PY
-      - name: Capture 25 viewports, 20 edge cases and 10 text-zoom cases
+      - name: Capture 25 viewports, 20 edge cases and 15 zoom/text-only cases
         env:
           INVITATION_LOCAL_BASE: http://127.0.0.1:3000
         run: python scripts/qa-invitation-ui07-a07.py
