@@ -1,5 +1,5 @@
 import { Image } from 'expo-image';
-import { StyleSheet, View } from 'react-native';
+import { StyleSheet, View, useWindowDimensions } from 'react-native';
 
 import portraitImage from '../../assets/editorial/wedding-portrait.webp';
 import bouquetImage from '../../assets/editorial/wedding-bouquet.webp';
@@ -7,7 +7,14 @@ import { useVisualPreferences } from '../contexts/PreferencesContext';
 import { AppText } from './AppText';
 
 export function WeddingIntroHero() {
-  const { palette } = useVisualPreferences();
+  const { palette, fontScale } = useVisualPreferences();
+  const { width } = useWindowDimensions();
+  const title = width / fontScale < 360
+    ? '우리의 이야기를\n담은 청첩장'
+    : '우리의 이야기를 담은 청첩장';
+  const description = width / fontScale < 320
+    ? '사진과 이야기로\n소중한 날을 전해 보세요.'
+    : '사진과 이야기로 소중한 날을 전해 보세요.';
 
   return (
     <View style={[styles.hero, { backgroundColor: palette.surface, borderColor: palette.cardBorder }]}>
@@ -31,11 +38,11 @@ export function WeddingIntroHero() {
         <AppText variant="caption" color={palette.textMuted} style={styles.eyebrow}>
           MODERN WEDDING EDITORIAL
         </AppText>
-        <AppText variant="display" style={styles.title}>
-          우리의 이야기를 담은 청첩장
+        <AppText variant="display" accessibilityLabel="우리의 이야기를 담은 청첩장" style={styles.title}>
+          {title}
         </AppText>
-        <AppText variant="muted">
-          사진과 이야기로 소중한 날을 전해 보세요.
+        <AppText variant="muted" accessibilityLabel="사진과 이야기로 소중한 날을 전해 보세요.">
+          {description}
         </AppText>
       </View>
     </View>

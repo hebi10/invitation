@@ -27,7 +27,9 @@ assert.match(hero, /wedding-portrait\.webp/);
 assert.match(hero, /wedding-bouquet\.webp/);
 assert.match(home, /INVITATION_PREMIUM_PRICE_LABEL/);
 assert.match(home, /INVITATION_INITIAL_DISPLAY_PERIOD_MONTHS/);
-assert.ok(home.indexOf('<WeddingIntroHero />') < home.indexOf('title="프리미엄 청첩장"'));
+assert.ok(home.indexOf('<WeddingIntroHero />') < home.indexOf('accessibilityLabel="프리미엄 청첩장 상품"'),
+  'The home product summary must remain after the editorial hero.');
+assert.match(home, /accessibilityLabel="프리미엄 청첩장 상품"/);
 assert.match(home, /title="Invitation"/);
 assert.ok(hero.indexOf('<View style={styles.previews}>') < hero.indexOf('<View style={styles.copy}>'));
 assert.match(hero, /borderRadius:\s*0/);
@@ -56,6 +58,8 @@ assert.match(create, /buildPrivateInvitationDraft/);
 assert.match(create, /purchaseBillingProduct\(productId/);
 assert.match(create, /router\.replace\('\/guide'\)/);
 assert.match(create, /title="청첩장 만들기"/);
+assert.match(create, /accessibilityState=\{\{ selected \}\}/,
+  'The compact progress steps must expose the current step to accessibility.');
 assert.match(create, /creationCompleted/);
 assert.match(create, /CreationCompletedView/);
 assert.match(create, /로그인 후 결제 진행/);

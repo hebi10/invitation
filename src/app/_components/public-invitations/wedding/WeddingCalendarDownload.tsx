@@ -1,9 +1,12 @@
 'use client';
 
+import { useId } from 'react';
+
 import { buildWeddingCalendar, type WeddingCalendarEvent } from '@/lib/weddingCalendar';
 import styles from './WeddingCalendarDownload.module.css';
 
 export default function WeddingCalendarDownload(props: WeddingCalendarEvent) {
+  const hintId = useId();
   if (!Number.isFinite(props.eventDate.getTime())) return null;
 
   const downloadCalendar = () => {
@@ -21,8 +24,9 @@ export default function WeddingCalendarDownload(props: WeddingCalendarEvent) {
   };
 
   return (
-    <button type="button" className={styles.button} onClick={downloadCalendar}>
-      캘린더에 저장
+    <button type="button" className={styles.button} onClick={downloadCalendar} aria-label="캘린더에 저장" aria-describedby={hintId}>
+      <span className={styles.buttonTitle}>캘린더에 저장</span>
+      <span className={styles.buttonHint} id={hintId}>일정 파일(.ics) 다운로드</span>
     </button>
   );
 }

@@ -41,8 +41,8 @@
   --qi-motion-exit: 420ms;
   --qi-motion-stagger: 80ms;
   --qi-motion-translate: 12px;
-  --qi-motion-light-total: 1400ms;
-  --qi-motion-cinema-total: 1600ms;
+  --qi-motion-light-total: 2400ms;
+  --qi-motion-cinema-total: 2800ms;
   --qi-motion-envelope-after-tap: 1100ms;
 
   --qi-surface: var(--qi-paper);

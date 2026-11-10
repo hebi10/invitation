@@ -1,5 +1,5 @@
 import { useFocusEffect, useRouter } from 'expo-router';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { Fragment, useCallback, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Platform, StyleSheet, View } from 'react-native';
 
 import { AccountHelpLinks } from '../../components/AccountHelpLinks';
@@ -211,21 +211,37 @@ export default function CreateScreen() {
             const current = customerSession ? 2 : 1;
             const selected = step.number === current;
             return (
-              <View
-                key={step.number}
-                style={[
-                  styles.progressStep,
-                  { backgroundColor: selected ? palette.accent : palette.surface, borderColor: selected ? palette.accent : palette.cardBorder },
-                ]}
-              >
-                <AppText
-                  variant="caption"
-                  color={selected ? palette.surface : palette.textMuted}
-                  style={styles.progressText}
+              <Fragment key={step.number}>
+                <View
+                  accessible
+                  accessibilityRole="text"
+                  accessibilityLabel={`${step.number}단계 ${step.label}${selected ? ', 현재 단계' : ''}`}
+                  accessibilityState={{ selected }}
+                  style={[
+                    styles.progressStep,
+                    { backgroundColor: selected ? palette.accent : palette.surface, borderColor: selected ? palette.accent : palette.cardBorder },
+                  ]}
                 >
-                  {step.number} {step.label}
-                </AppText>
-              </View>
+                  <AppText
+                    variant="caption"
+                    color={selected ? palette.surface : palette.textMuted}
+                    style={styles.progressText}
+                  >
+                    {step.number} {step.label}
+                  </AppText>
+                </View>
+                {step.number < 3 ? (
+                  <AppText
+                    accessible={false}
+                    accessibilityElementsHidden
+                    importantForAccessibility="no-hide-descendants"
+                    color={palette.textMuted}
+                    style={styles.progressArrow}
+                  >
+                    →
+                  </AppText>
+                ) : null}
+              </Fragment>
             );
           })}
         </View>
@@ -384,19 +400,20 @@ export default function CreateScreen() {
 
 const styles = StyleSheet.create({
   loading: { alignItems: 'center', gap: 10, paddingVertical: 12 },
-  progressRow: { flexDirection: 'row', gap: 8 },
+  progressRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
   progressStep: {
-    flex: 1,
+    flexShrink: 1,
     minWidth: 0,
     minHeight: 42,
     borderWidth: 1,
     borderRadius: 0,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: 4,
+    paddingHorizontal: 8,
     paddingVertical: 8,
   },
   progressText: { textAlign: 'center', fontWeight: '600' },
+  progressArrow: { flexShrink: 0, textAlign: 'center' },
   productPrice: { fontSize: 30, lineHeight: 40, fontWeight: '700' },
   summaryRow: {
     flexDirection: 'row',

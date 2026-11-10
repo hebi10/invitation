@@ -114,6 +114,7 @@ export default function WeddingBase({ state, theme, demoComments, showMap = true
         ]
       : [];
   });
+  const contactSummary = [...new Set(contacts.map((contact) => contact.side))].join('·') + ' 연락처 확인';
 
   const gallery = (state.galleryImageUrls.length > 0 ? (
         <div id="wedding-gallery" data-wedding-section="gallery">
@@ -179,19 +180,29 @@ export default function WeddingBase({ state, theme, demoComments, showMap = true
           className={styles.contactSection}
           data-wedding-section="contact"
         >
-          <summary className={styles.disclosureSummary}>가족에게 연락하기</summary>
+          <summary className={styles.disclosureSummary}>
+            <span className={styles.summaryText}>
+              <span className={styles.summaryTitle}>가족에게 연락하기</span>
+              <span className={styles.summaryDescription}>{contactSummary}</span>
+            </span>
+          </summary>
           <ul className={styles.contactList}>
-            {contacts.map((contact) => (
-              <li key={`${contact.side}-${contact.role}-${contact.phone}`}>
+            {contacts.map((contact, index) => (
+              <li
+                key={`${contact.side}-${contact.role}-${contact.phone}`}
+                data-contact-group-start={index === 0 || contacts[index - 1]?.side !== contact.side ? 'true' : undefined}
+              >
                 <div className={styles.contactIdentity}>
-                  <span>{contact.side}</span>
+                  {index === 0 || contacts[index - 1]?.side !== contact.side ? (
+                    <span className={styles.contactSide}>{contact.side}</span>
+                  ) : null}
                   <strong>{contact.role} {contact.name}</strong>
                 </div>
                 <div className={styles.contactActions}>
-                  <a href={`tel:${contact.phone}`} aria-label={`${contact.name}에게 전화하기`}>
+                  <a href={`tel:${contact.phone}`} aria-label={`${contact.side} ${contact.role} ${contact.name}에게 전화하기`}>
                     전화
                   </a>
-                  <a href={`sms:${contact.phone}`} aria-label={`${contact.name}에게 문자 보내기`}>
+                  <a href={`sms:${contact.phone}`} aria-label={`${contact.side} ${contact.role} ${contact.name}에게 문자 보내기`}>
                     문자
                   </a>
                 </div>
@@ -250,7 +261,12 @@ export default function WeddingBase({ state, theme, demoComments, showMap = true
           </div>
           <WeddingCalendarDownload eventDate={toKoreanWeddingInstant(state.weddingDate)} title={`${page.groomName} · ${page.brideName} 결혼식`} location={[...new Set([page.venue, ceremonyAddress].filter(Boolean))].join(' · ')} />
           {features.showCountdown ? <details className={styles.calendarDisclosure}>
-            <summary className={styles.disclosureSummary}>예식 달력 보기</summary>
+            <summary className={styles.disclosureSummary}>
+              <span className={styles.summaryText}>
+                <span className={styles.summaryTitle}>예식 달력 보기</span>
+                <span className={styles.summaryDescription}>이 페이지에서 달력 확인</span>
+              </span>
+            </summary>
             {calendar}
           </details> : null}
         </section>
@@ -281,11 +297,11 @@ export default function WeddingBase({ state, theme, demoComments, showMap = true
       {hasAdditionalGuide ? (
         <section className={styles.transportSection} data-wedding-section="transport" aria-labelledby="wedding-transport-title">
           <h2 id="wedding-transport-title" className={styles.heading}>교통 · 방문 안내</h2>
+          {guideSummary ? <p className={styles.guideSummary}>{guideSummary}</p> : null}
           <details className={styles.guideDisclosure}>
-            <summary className={styles.disclosureSummary}>교통 · 식사 안내 자세히 보기</summary>
+            <summary className={styles.disclosureSummary}>교통·방문 상세 내용 보기</summary>
             <WeddingStoredContent className={styles.storedSection} model={{ ...storedContent, ceremonyContact: '', mapDescription: '', mapHref: '' }} titleClassName={styles.guideTitle} />
           </details>
-          {guideSummary ? <p className={styles.guideSummary}>{guideSummary}</p> : null}
         </section>
       ) : null}
 

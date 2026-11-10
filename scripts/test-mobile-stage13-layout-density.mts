@@ -17,7 +17,7 @@ const tabs = read('apps/mobile/src/app/(tabs)/_layout.tsx');
 const status = read('apps/mobile/src/components/AppStatusScreen.tsx');
 const settings = read('apps/mobile/src/features/screens/settings.tsx');
 
-assert.ok(home.indexOf('<WeddingIntroHero />') < home.indexOf('title="프리미엄 청첩장"'),
+assert.ok(home.indexOf('<WeddingIntroHero />') < home.indexOf('accessibilityLabel="프리미엄 청첩장 상품"'),
   'HM-01: editorial hero should precede product pricing and creation CTA');
 assert.match(hero, /preview: \{ flex: 1, minWidth: 0, aspectRatio: 1 \}/);
 assert.match(mypage, /<AccountInvitationsSection compactUnauthenticated \/>/);

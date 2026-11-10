@@ -88,9 +88,9 @@ assert.match(feedback, /tone === 'error' \? 5000 : DEFAULT_TOAST_DURATION_MS/);
 assert.doesNotMatch(feedback, /borderTopWidth|borderBottomWidth/);
 
 assert.match(config, /icon: '\.\/assets\/icon-v3\.png'/);
-assert.match(config, /foregroundImage: '\.\/assets\/icon-v3\.png'/);
+assert.match(config, /foregroundImage: '\.\/assets\/adaptive-icon-v3\.png'/);
 assert.match(config, /image: '\.\/assets\/splash\.jpg'/);
-for (const filename of ['apps/mobile/assets/icon-v3.png', 'apps/mobile/assets/splash.jpg']) {
+for (const filename of ['apps/mobile/assets/icon-v3.png', 'apps/mobile/assets/adaptive-icon-v3.png', 'apps/mobile/assets/splash.jpg']) {
   assert.ok(existsSync(filename) && statSync(filename).size > 0, filename);
 }
 
