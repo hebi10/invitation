@@ -113,9 +113,19 @@ with sync_playwright() as p:
                 page.on("pageerror",lambda ex:errors.append(str(ex)[:200]))
                 record={"theme":theme,"viewport":view,"passed":False}
                 try:
-                    response=page.goto(BASE+"/"+theme+"/",wait_until="domcontentloaded",timeout=50000)
+                    response=page.goto(BASE+"/"+theme+"/#capture-skip-intro",wait_until="domcontentloaded",timeout=50000)
                     assert response and response.status==200,"HTTP not 200"
                     page.locator('main[data-design="'+theme+'"]').wait_for(state="visible",timeout=30000)
+                    page.wait_for_timeout(700)
+                    intro=page.locator('[data-wedding-intro]')
+                    if intro.count():
+                        page.locator('[data-skip]').click(timeout=8000)
+                        intro.wait_for(state="detached",timeout=8000)
+                    page.locator('[data-wedding-intro-pending]').wait_for(state="detached",timeout=8000)
+                    assert intro.count()==0,"The actual cover is obscured by the intro"
+                    page.evaluate("window.scrollTo({top:0,behavior:'instant'})")
+                    page.wait_for_timeout(250)
+                    record["intro_removed_before_capture"]=True
                     page.locator('[data-wedding-cover-photo]').wait_for(state="visible",timeout=14000)
                     page.wait_for_function("""() => {
                        const img=document.querySelector('[data-wedding-cover-photo]');
