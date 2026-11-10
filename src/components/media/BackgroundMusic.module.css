@@ -169,3 +169,10 @@
   outline: 2px solid rgba(0, 0, 0, 0.2);
   outline-offset: 2px;
 }
+
+/* Public wedding canvas is 480px wide; keep the control inside its top-right edge on PC. */
+@media (min-width: 769px) {
+  .musicPlayer.invitationAligned {
+    right: max(12px, calc(50vw - 228px));
+  }
+}
