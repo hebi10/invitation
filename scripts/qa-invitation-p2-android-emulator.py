@@ -18,7 +18,7 @@ BASE = "http://10.0.2.2:3000/sample-invitation/"
 THEMES = ("classic-r", "emotional")
 report = {
     "source": "local isolated fictional sample on GitHub hosted Android emulator",
-    "device_kind": "Android API35 Pixel 7 Pro emulator (NOT a physical device)",
+    "device_kind": "Android API35 Pixel 7 emulator (NOT a physical device)",
     "real_device_tested": False,
     "production_event_changed": False,
     "created_utc": datetime.now(timezone.utc).isoformat(),
@@ -57,10 +57,15 @@ def hierarchy():
 
 
 def dismiss_first_run(root):
-    prompts = {
-        "accept & continue", "continue", "no thanks", "no, thanks",
-        "use without an account", "not now", "got it", "ok", "skip",
-    }
+    labels = tree_text(root)
+    if "isn't responding" in labels and "Pixel Launcher" in labels:
+        prompts = {"close app"}
+    else:
+        prompts = {
+            "accept & continue", "continue", "no thanks", "no, thanks",
+            "use without an account", "not now", "got it", "ok", "skip",
+            "continue without an account", "accept", "next",
+        }
     for node in root.iter("node"):
         label = ((node.get("text") or node.get("content-desc") or "").strip().lower())
         if label not in prompts or node.get("enabled") != "true":
@@ -89,7 +94,7 @@ for theme in THEMES:
         adb("shell", "am", "start", "-W", "-a", "android.intent.action.VIEW", "-d", url, timeout=60)
         loaded = False
         last_text = ""
-        for attempt in range(18):
+        for attempt in range(24):
             time.sleep(2)
             try:
                 tree, xml = hierarchy()
@@ -98,7 +103,7 @@ for theme in THEMES:
                     loaded = True
                     (OUTPUT / (theme + "-accessibility.xml")).write_text(xml, encoding="utf-8")
                     break
-                if dismiss_first_run(tree) or attempt in (4, 9, 14):
+                if dismiss_first_run(tree) or attempt in (4, 9, 14, 19):
                     adb("shell", "am", "start", "-a", "android.intent.action.VIEW", "-d", url, check=False)
             except (ET.ParseError, subprocess.TimeoutExpired, RuntimeError):
                 pass
