@@ -90,6 +90,7 @@ const core = [
   'test-wedding-p1-photo-classic-music',
   'test-wedding-p2-editorial-natural',
   'test-wedding-ui07-a06',
+  'test-wedding-ui07-a07',
   'test-wedding-cover-settings',
   'test-wedding-cover-editor',
   'test-image-upload-optimization',
