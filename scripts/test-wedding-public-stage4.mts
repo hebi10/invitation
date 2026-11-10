@@ -52,7 +52,8 @@ for (const feature of ['WeddingCalendarDownload', 'LocationMap', 'GiftInfoThemed
 for (const design of ['simple', 'classic-r', 'romantic', 'gyeol', 'emotional']) {
   assert.match(page, new RegExp("data-design='" + design + "'"));
 }
-assert.match(cover, /\.basic \.photoFrame,\s*\.editorial \.photoFrame \{ aspect-ratio: 4 \/ 5; \}/);
+assert.match(cover, /\.basic \.photoFrame \{ width: 92%; margin-inline: auto; aspect-ratio: 3 \/ 4; \}/);
+assert.match(cover, /\.editorial \.photoFrame \{ aspect-ratio: 4 \/ 5; \}/);
 assert.match(gallery, /\.editorial \.imageGrid \{[^}]*gap: 18px 12px;/);
 
 console.log('Stage 4 photo/classic/natural styling and full shared wedding features passed');
