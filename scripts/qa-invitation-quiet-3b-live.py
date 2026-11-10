@@ -81,6 +81,15 @@ with sync_playwright() as p:
                         result["capture"]=capture(page,view+"-"+style+"-live.png")
                         page.locator("[data-letter-open]").click()
                     else:
+                        if style=="cinema":
+                            page.wait_for_function("""() => {
+                              const photo=document.querySelector('[data-intro-photo]');
+                              return !!photo && photo.complete && photo.naturalWidth>0
+                                && !photo.hidden && getComputedStyle(photo).display!=='none';
+                            }""",timeout=7000)
+                            result["photo_loaded_before_capture"]=True
+                            result["photo_natural_width"]=page.locator('[data-intro-photo]').evaluate(
+                                "(photo) => photo.naturalWidth")
                         page.wait_for_function("""() => {
                           const copy=document.querySelector('[data-intro-copy]');
                           return !!copy && parseFloat(getComputedStyle(copy).opacity)>0.95;
@@ -130,6 +139,7 @@ summary={
  "intro_cases":len(records["intro"]),
  "public_wedding_themes":sum(x.get("passed",False) for x in records["themes"]),
  "theme_cases":len(records["themes"]),
+ "cinema_photo_loaded":sum(x.get("photo_loaded_before_capture",False) for x in records["intro"] if x.get("style")=="cinema"),
 }
 records["summary"]=summary
 (OUT/"manifest.json").write_text(json.dumps(records,ensure_ascii=False,indent=2)+"\n","utf8")
@@ -140,5 +150,6 @@ records["summary"]=summary
     "utf8"
 )
 print("3B_LIVE_SUMMARY",json.dumps(summary),flush=True)
-if summary["new_public_intro_styles"]!=6 or summary["public_wedding_themes"]!=5:
+if (summary["new_public_intro_styles"]!=6 or summary["public_wedding_themes"]!=5
+        or summary["cinema_photo_loaded"]!=2):
     raise SystemExit("Deployment smoke did not meet both UI and live public-route criteria")

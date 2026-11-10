@@ -1,0 +1,48 @@
+name: Invitation cinema deployed sample image diagnostic
+
+on:
+  push:
+    branches:
+      - fix/invitation-cinema-photo-20261110
+    paths:
+      - scripts/qa-invitation-cinema-live-image.py
+      - scripts/qa-invitation-quiet-3b-live.py
+      - src/components/sections/WeddingIntro/WeddingIntro.tsx
+      - scripts/test-quiet-invitation-tokens.mts
+      - .github/workflows/invitation-cinema-image-diagnostic.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  image-diagnostic:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install pinned browser
+        run: |
+          python -m pip install playwright==1.56.0
+          python -m playwright install --with-deps chromium
+      - name: Read-only deployed cinema sample URL and image load state
+        env:
+          INVITATION_PUBLIC_BASE: https://invite.msgnote.kr
+        run: python scripts/qa-invitation-cinema-live-image.py
+      - name: Confirm real deployed photo is loaded in all three intros and 5 real wedding themes
+        env:
+          INVITATION_3B_LIVE_BASE: https://invite.msgnote.kr
+        run: python scripts/qa-invitation-quiet-3b-live.py
+      - name: Archive diagnostic manifest and before-after screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: invitation-cinema-image-live-diagnostic
+          path: |
+            artifacts/cinema-photo-live-diagnostic/
+            artifacts/quiet-invitation-3b-live/
+          if-no-files-found: warn
+          retention-days: 21

@@ -86,6 +86,8 @@ assert.match(design, /Firebase/);
 assert.match(existingRenderer, /import tokens from '\.\/QuietInvitationTokens\.module\.css'/);
 assert.match(existingRenderer, /data-intro-style=\{style\}/);
 assert.match(existingRenderer, /tokens\.quietInvitation/);
+assert.match(existingRenderer, /loading="eager"/);
+assert.match(existingRenderer, /fetchPriority="high"/);
 assert.match(policy, /'none' \| 'light' \| 'cinema' \| 'envelope'/);
 
 console.log('Quiet Invitation 1-A token coverage, static contrast, motion and no-live-UI-change checks passed');
