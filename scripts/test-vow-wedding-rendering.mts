@@ -62,7 +62,7 @@ for (const theme of getWeddingPreviewThemeKeys()) {
     })));
     assert.ok(html.includes('aria-label="예식 정보 다시 보기"'), `${theme}: directions must remain reachable at the bottom`);
     const guide = html.slice(html.indexOf('data-wedding-section="transport"'));
-    assert.ok(guide.includes('</details>') && guide.slice(guide.indexOf('</details>')).includes('주차'), `${theme}: collapsed guide must advertise available information`);
+    assert.ok(guide.includes('<details') && guide.slice(0, guide.indexOf('<details')).includes('주차'), `${theme}: collapsed guide must advertise available information before its disclosure`);
   } finally { client.clear(); }
 }
 const { buildPreview, WeddingPreviewContent } = await import('../src/app/wizard-preview/WizardPreviewClient.tsx');
