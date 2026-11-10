@@ -10,9 +10,9 @@ export const metadata: Metadata = {
 export default async function SampleInvitationPage({
   searchParams,
 }: {
-  searchParams: Promise<{ embed?: string | string[]; qaTheme?: string | string[]; qaMusic?: string | string[] }>;
+  searchParams: Promise<{ embed?: string | string[]; qaTheme?: string | string[]; qaMusic?: string | string[]; qaUI07?: string | string[] }>;
 }) {
   const query = await searchParams;
   const theme = query.qaTheme === 'romantic' || query.qaTheme === 'gyeol' || query.qaTheme === 'classic-r' || query.qaTheme === 'emotional' ? query.qaTheme : 'simple';
-  return <SampleInvitation embedded={query.embed === '1'} theme={theme} qaMusic={query.qaMusic === '1'} />;
+  return <SampleInvitation embedded={query.embed === '1'} theme={theme} qaMusic={query.qaMusic === '1'} qaUI07={process.env.NODE_ENV !== 'production' && query.qaUI07 === '1'} />;
 }
