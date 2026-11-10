@@ -26,10 +26,10 @@
 }
 
 .canvas[data-theme='simple'] {
-  --closing-background: #fafafa;
-  --closing-foreground: #222222;
-  --closing-line: #dddddd;
-  --closing-muted: #666666;
+  --closing-background: #faf9f6;
+  --closing-foreground: #282725;
+  --closing-line: #e6e2dc;
+  --closing-muted: #716e69;
   --closing-font: 'Wedding SUIT', sans-serif;
 }
 
