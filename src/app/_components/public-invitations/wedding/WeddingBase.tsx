@@ -187,17 +187,22 @@ export default function WeddingBase({ state, theme, demoComments, showMap = true
             </span>
           </summary>
           <ul className={styles.contactList}>
-            {contacts.map((contact) => (
-              <li key={`${contact.side}-${contact.role}-${contact.phone}`}>
+            {contacts.map((contact, index) => (
+              <li
+                key={`${contact.side}-${contact.role}-${contact.phone}`}
+                data-contact-group-start={index === 0 || contacts[index - 1]?.side !== contact.side ? 'true' : undefined}
+              >
                 <div className={styles.contactIdentity}>
-                  <span>{contact.side}</span>
+                  {index === 0 || contacts[index - 1]?.side !== contact.side ? (
+                    <span className={styles.contactSide}>{contact.side}</span>
+                  ) : null}
                   <strong>{contact.role} {contact.name}</strong>
                 </div>
                 <div className={styles.contactActions}>
-                  <a href={`tel:${contact.phone}`} aria-label={`${contact.name}에게 전화하기`}>
+                  <a href={`tel:${contact.phone}`} aria-label={`${contact.side} ${contact.role} ${contact.name}에게 전화하기`}>
                     전화
                   </a>
-                  <a href={`sms:${contact.phone}`} aria-label={`${contact.name}에게 문자 보내기`}>
+                  <a href={`sms:${contact.phone}`} aria-label={`${contact.side} ${contact.role} ${contact.name}에게 문자 보내기`}>
                     문자
                   </a>
                 </div>
