@@ -353,7 +353,7 @@ export default function GuestbookThemed({
             </div>
           ) : null}
 
-          <button type="submit" className={styles.submitButton} disabled={isSubmitting}>
+          <button type="submit" className={styles.submitButton} disabled={isSubmitting} aria-busy={isSubmitting}>
             {hasClass(styles, 'buttonIcon') ? (
               <HeartIcon className={styles.pointHeart} />
             ) : null}
@@ -408,12 +408,13 @@ export default function GuestbookThemed({
           type="button"
           className={styles.refreshButton}
           onClick={() => {
-            if (!isDemo) void commentsQuery.refetch();
+            void commentsQuery.refetch();
           }}
-          disabled={isDemo || isRefreshingComments}
-          aria-busy={isRefreshingComments}
+          disabled={commentsQuery.isFetching}
+          aria-busy={commentsQuery.isFetching}
+          aria-label={commentsQuery.isFetching ? '축하 메시지 새로고침 중' : '축하 메시지 새로고침'}
         >
-          {isRefreshingComments ? '새로고침 중' : '새로고침'}
+          {commentsQuery.isFetching ? '새로고침 중' : '새로고침'}
         </button> : null}
       </div>
     </div>
@@ -531,12 +532,14 @@ export default function GuestbookThemed({
       if (currentPage === 1 && !commentsQuery.data?.hasMore) return null;
       return <nav className={styles.pagination} aria-label="방명록 페이지">
         <button type="button" className={styles.pageButton} disabled={currentPage === 1 || commentsQuery.isFetching}
-          onClick={() => setCurrentPage(page => page - 1)}>이전</button>
-        <span className={styles.pageInfo} aria-live="polite">{currentPage}페이지</span>
-        <button type="button" className={styles.pageButton} disabled={!commentsQuery.data?.hasMore || commentsQuery.isFetching || commentsQuery.isError}
+          aria-label="이전 축하 메시지 페이지"
+          onClick={() => setCurrentPage(page => Math.max(1, page - 1))}>이전</button>
+        <span className={styles.pageInfo} aria-live="polite" aria-atomic="true" aria-current="page">{currentPage}페이지</span>
+        <button type="button" className={styles.pageButton} disabled={!commentsQuery.data?.hasMore || !commentsQuery.data?.nextCursor || commentsQuery.isFetching || commentsQuery.isError}
+          aria-label="다음 축하 메시지 페이지"
           onClick={() => {
             const nextCursor = commentsQuery.data?.nextCursor;
-            if (!nextCursor) return;
+            if (!nextCursor || commentsQuery.isFetching) return;
             setPageCursors(cursors => [...cursors.slice(0, currentPage), nextCursor]);
             setCurrentPage(page => page + 1);
           }}>다음</button>
@@ -547,7 +550,7 @@ export default function GuestbookThemed({
     }
 
     return (
-      <div className={styles.pagination}>
+      <nav className={styles.pagination} aria-label="방명록 페이지">
         <button
           className={cx(styles.pageButton, currentPage === 1 && styles.disabled)}
           onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
@@ -594,7 +597,7 @@ export default function GuestbookThemed({
             <span className={styles.pageButtonIcon}>›</span>
           ) : null}
         </button>
-      </div>
+      </nav>
     );
   };
 
