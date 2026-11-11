@@ -92,8 +92,10 @@ jobs:
         with:
           distribution: temurin
           java-version: '21'
-      - name: Install app dependencies
-        run: npm ci
+      - name: Install app dependencies and screenshot comparison tools
+        run: |
+          npm ci
+          python3 -m pip install --disable-pip-version-check pillow==11.3.0
       - name: Serve isolated fictional sample for Android emulator
         env:
           NEXT_PUBLIC_USE_FIREBASE: 'false'
