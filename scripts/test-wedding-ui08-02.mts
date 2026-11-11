@@ -54,7 +54,7 @@ for (const palette of contract.mapping) {
   assert.ok(contrast(palette.ink, palette.paper) >= 4.5, `${palette.id}: ink contrast under WCAG AA`);
   assert.ok(contrast(palette.onAccent, palette.accent) >= 4.5, `${palette.id}: button contrast under WCAG AA`);
 }
-assert.ok(introComponent.includes('data-wedding-intro-pending="true"\\n          data-theme={theme}'), 'pending intro missing its selected theme');
+assert.ok(introComponent.includes('data-wedding-intro-pending="true"\n          data-theme={theme}'), 'pending intro missing its selected theme');
 assert.ok(gallery.includes('background: var(--paper-soft, #f0ede7);'), 'shared gallery fallback does not inherit theme');
 assert.ok(gallery.includes('color: var(--ink, #282725);'), 'shared gallery foreground does not inherit theme');
 assert.ok(!gallery.includes('background: #eef1e8;'), 'hard-coded garden green leaks into shared gallery');
