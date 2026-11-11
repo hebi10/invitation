@@ -1,17 +1,26 @@
 .locationMap {
   position: relative;
-  font-family: var(--font-sans), sans-serif;
   width: 100%;
+  min-width: 0;
+  font-family: var(--font-sans), sans-serif;
+  color: var(--ink);
   background: var(--paper, #fff);
 }
 
 .viewport {
   position: relative;
   width: 100%;
-  height: 240px;
+  min-height: 208px;
+  aspect-ratio: 8 / 5;
+  max-height: 292px;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  background: var(--paper-soft);
 }
 
 .map {
+  position: absolute;
+  inset: 0;
   width: 100%;
   height: 100%;
   pointer-events: none;
@@ -26,12 +35,13 @@
   inset: 0;
   display: flex;
   flex-direction: column;
-  justify-content: center;
   align-items: center;
+  justify-content: center;
   gap: 12px;
-  padding: 24px;
-  color: var(--muted, #68636c);
-  font-size: 15px;
+  padding: 20px;
+  background: var(--paper-soft);
+  color: var(--muted);
+  font-size: 14px;
   line-height: 1.7;
   text-align: center;
 }
@@ -43,57 +53,126 @@
 .message a,
 .actions a {
   display: inline-flex;
-  min-height: 44px;
   align-items: center;
-  color: var(--accent, #756383);
-  text-underline-offset: 4px;
-}
-
-.actions {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 8px 16px;
-  padding-top: 12px;
-  font-size: 14px;
-}
-
-.actions button {
-  min-height: 44px;
-  padding: 10px 14px;
-  border: 1px solid var(--line, #ded8e2);
-  border-radius: 0;
-  background: var(--paper, #fff);
-  color: var(--ink, #65596e);
+  justify-content: center;
+  gap: 8px;
+  min-width: 0;
+  min-height: 48px;
+  padding: 10px 12px;
+  border: 1px solid var(--control-line);
+  background: var(--paper);
+  color: var(--ink);
   font: inherit;
+  font-size: 14px;
   font-weight: 500;
+  line-height: 1.5;
+  text-align: center;
+  text-decoration: none;
+}
+
+.message a svg,
+.actions a svg,
+.mapControl svg {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+}
+
+.message a span,
+.actions a span,
+.mapControl span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.mapControl {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  max-width: calc(100% - 24px);
+  min-height: 48px;
+  padding: 10px 12px;
+  border: 1px solid var(--control-line);
+  background: var(--paper);
+  color: var(--ink);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.5;
+  text-align: center;
   cursor: pointer;
 }
 
-.actions button:focus-visible,
-.actions a:focus-visible,
-.message a:focus-visible {
-  outline: 2px solid var(--focus, #756383);
-  outline-offset: 4px;
+.mapControl[aria-pressed='true'] {
+  background: var(--ink);
+  color: var(--paper);
 }
 
-.locationMap:is([data-appearance='simple'], [data-appearance='natural']) .viewport { height: auto; aspect-ratio: 9 / 5; min-height: 180px; }
-.locationMap:is([data-appearance='simple'], [data-appearance='natural']) .map { position: absolute; inset: 0; }
-.locationMap:is([data-appearance='simple'], [data-appearance='natural']) .actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; font-size: 15px; }
-.locationMap:is([data-appearance='simple'], [data-appearance='natural']) .actions :is(a, button) { display: flex; justify-content: center; align-items: center; min-height: 48px; padding: 8px; border: 1px solid var(--control-line); background: transparent; text-decoration: none; text-align: center; }
-.locationMap:is([data-appearance='simple'], [data-appearance='natural']) .message { font-size: 14px; background: var(--paper-soft); }
+.actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 12px;
+}
 
-.locationMap[data-appearance='natural'] .actions { gap: 8px; font-size: 14px; }
-.locationMap[data-appearance='natural'] .actions :is(a, button) { min-height: 46px; border-color: var(--line); }
-.mapControl { position: absolute; top: 8px; right: 8px; z-index: 2; min-height: 44px; padding: 8px 10px; border: 1px solid var(--control-line); background: var(--paper); color: var(--ink); font: inherit; font-size: 12px; cursor: pointer; }
-.locationMap[data-appearance='classic'] .viewport { height: 190px; }
-.locationMap[data-appearance='classic'] .actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; font-family: 'Wedding Myeongjo', serif; font-size: 13px; }
-.locationMap[data-appearance='classic'] .actions a { justify-content: center; padding: 8px 4px; min-height: 44px; border: 1px solid var(--control-line); text-decoration: none; text-align: center; }
-.mapControl:focus-visible { outline: 2px solid var(--focus); outline-offset: 3px; }
-.locationMap[data-appearance='photo'] .viewport { height: 190px; }
-.locationMap[data-appearance='photo'] .actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; font-size: 13px; }
-.locationMap[data-appearance='photo'] .actions a { justify-content: center; min-height: 44px; text-align: center; text-decoration: underline; }
-.locationMap[data-appearance='basic'] .viewport { height: 200px; }
-.locationMap[data-appearance='basic'] .actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; font-size: 13px; }
-.locationMap[data-appearance='basic'] .actions a { justify-content: center; min-height: 46px; padding: 8px 4px; border: 1px solid var(--control-line); background: #fff; text-align: center; text-decoration: none; }
+.actions a {
+  min-height: 52px;
+  padding: 12px 8px;
+}
+
+.mapHint {
+  margin: 10px 0 0;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.65;
+  text-align: left;
+  overflow-wrap: anywhere;
+}
+
+.mapControl:focus-visible,
+.actions a:focus-visible,
+.message a:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 3px;
+}
+
+.locationMap[data-appearance='natural'] .viewport {
+  background: var(--paper-soft);
+}
+
+.locationMap[data-appearance='classic'] .actions a {
+  font-family: 'Wedding Myeongjo', serif;
+}
+
+.locationMap[data-appearance='photo'] .actions a {
+  font-family: var(--font-sans), sans-serif;
+}
+
+@media (max-width: 359px) {
+  .viewport {
+    min-height: 208px;
+  }
+
+  .mapControl {
+    top: 8px;
+    right: 8px;
+    max-width: calc(100% - 16px);
+    padding: 8px;
+    font-size: 12px;
+  }
+
+  .actions {
+    gap: 6px;
+  }
+
+  .actions a {
+    gap: 4px;
+    padding-inline: 6px;
+    font-size: 12px;
+  }
+}
