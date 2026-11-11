@@ -112,10 +112,30 @@ function makeQAUI07State(variant: QAUI07Case): WeddingPageReadyState {
   };
 }
 
-export default function SampleInvitation({ embedded = false, theme = 'simple', qaMusic = false, qaUI07 = false, qaUI07Case = 'full' }: { embedded?: boolean; theme?: 'simple' | 'romantic' | 'gyeol' | 'classic-r' | 'emotional'; qaMusic?: boolean; qaUI07?: boolean; qaUI07Case?: QAUI07Case }) {
+type QAUI07Map = 'off' | 'coordinates' | 'geocode';
+
+export default function SampleInvitation({ embedded = false, theme = 'simple', qaMusic = false, qaUI07 = false, qaUI07Case = 'full', qaUI07Map = 'off' }: { embedded?: boolean; theme?: 'simple' | 'romantic' | 'gyeol' | 'classic-r' | 'emotional'; qaMusic?: boolean; qaUI07?: boolean; qaUI07Case?: QAUI07Case; qaUI07Map?: QAUI07Map }) {
+  const weddingState = qaUI07 ? makeQAUI07State(qaUI07Case) : sampleState;
+  const mapState: WeddingPageReadyState = qaUI07 && qaUI07Map === 'coordinates'
+    ? {
+        ...weddingState,
+        pageConfig: {
+          ...weddingState.pageConfig,
+          pageData: {
+            ...weddingState.pageConfig.pageData,
+            kakaoMap: {
+              latitude: 37.50001,
+              longitude: 127.00001,
+              level: 3,
+              markerTitle: '가상 검증 예식장',
+            },
+          },
+        },
+      }
+    : weddingState;
   return <AppQueryProvider><div className={styles.sample}>
     <p className={styles.notice}>기본형 샘플 · AI 생성 사진과 예시 메시지</p>
-    <WeddingBase state={qaUI07 ? makeQAUI07State(qaUI07Case) : sampleState} options={{ slug: sampleWeddingPage.slug, theme }} theme={theme} demoComments={sampleWeddingComments} showMap={false} />
+    <WeddingBase state={mapState} options={{ slug: sampleWeddingPage.slug, theme }} theme={theme} demoComments={sampleWeddingComments} showMap={qaUI07 && qaUI07Map !== 'off'} />
     <WeddingClosing groomName={sampleWeddingPage.groomName} brideName={sampleWeddingPage.brideName} theme={theme} />
     {qaMusic ? <BackgroundMusic alignToInvitation autoPlay={false} musicUrl="data:audio/wav;base64,UklGRkQDAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YSADAACAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgA==" /> : null}
     {!embedded ? (
