@@ -246,6 +246,9 @@ with sync_playwright() as engine:
         cases += [(theme, 390, 844, "geocode", False) for theme in THEMES]
         cases += [(theme, 390, 844, "failure", False) for theme in THEMES]
         cases += [(theme, 390, 844, "coordinates", True) for theme in THEMES]
+        limit = int(os.environ.get("INVITATION_UI07D_LIMIT", "0"))
+        if limit > 0:
+            cases = cases[:limit]
 
         for theme, width, height, mode, font_x2 in cases:
             context = browser.new_context(
@@ -292,6 +295,9 @@ with sync_playwright() as engine:
             finally:
                 report["cases"].append(record)
                 context.close()
+            if not record["passed"]:
+                print("UI07D_ABORT_AFTER_FIRST_FAILURE", flush=True)
+                break
     finally:
         browser.close()
 
