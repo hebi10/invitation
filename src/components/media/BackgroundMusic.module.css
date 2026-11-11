@@ -170,6 +170,63 @@
   outline-offset: 2px;
 }
 
+/* UI-07-E: flat wedding-only audio control. Other event music controls retain their appearance. */
+.musicPlayer.invitationAligned {
+  top: max(16px, calc(env(safe-area-inset-top) + 12px));
+  right: max(16px, calc(env(safe-area-inset-right) + 12px), calc(50vw - 228px));
+  max-width: calc(100vw - 32px);
+}
+
+.musicPlayer.invitationAligned .toggleButton {
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  min-width: 48px;
+  min-height: 48px;
+  padding: 0;
+  border: 1px solid #b7b7b7;
+  border-radius: 0;
+  background: #fff;
+  color: #333;
+}
+
+.musicPlayer.invitationAligned .toggleButton.on {
+  border-color: #262626;
+  background: #262626;
+  color: #fff;
+}
+
+.musicPlayer.invitationAligned .toggleButton.off {
+  border-color: #b7b7b7;
+  background: #fff;
+  color: #333;
+}
+
+.musicPlayer.invitationAligned .toggleButton:focus-visible {
+  outline: 2px solid #262626;
+  outline-offset: 3px;
+}
+
+.weddingMusicGlyph {
+  display: block;
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+}
+
+.musicPlayer.invitationAligned .errorNotice {
+  border-color: #b7b7b7;
+  background: #fff;
+}
+
+.musicPlayer.invitationAligned .autoPlayHint {
+  border: 1px solid #b7b7b7;
+  border-radius: 0;
+  box-shadow: none;
+  animation: none;
+}
+
 /* Public wedding canvas is 480px wide; keep the control inside its top-right edge on PC. */
 @media (min-width: 769px) {
   .musicPlayer.invitationAligned {
