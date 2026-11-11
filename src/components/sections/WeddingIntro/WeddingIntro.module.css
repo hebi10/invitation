@@ -540,3 +540,21 @@
     rotate: none;
   }
 }
+
+
+/* Theme-specific details remain independent of the three existing intro modes. */
+.backdrop[data-theme='simple'] .lightScene .rule { width: 40px; }
+.backdrop[data-theme='classic-r'] .lightScene .rule { width: 62px; height: 2px; }
+.backdrop[data-theme='romantic'] .lightScene .rule { width: 54px; }
+.backdrop[data-theme='gyeol'] .lightScene .rule { width: 48px; }
+.backdrop[data-theme='emotional'] .lightScene .rule { width: 56px; background: var(--qi-ink-accent); }
+
+.backdrop[data-theme='simple'] .cinemaCopy { letter-spacing: .01em; }
+.backdrop[data-theme='classic-r'] .cinemaNames { font-weight: 600; letter-spacing: -.025em; }
+.backdrop[data-theme='romantic'] .cinemaOverline { letter-spacing: .26em; }
+.backdrop[data-theme='gyeol'] .cinemaOverline { letter-spacing: .19em; }
+.backdrop[data-theme='emotional'] .cinemaOverline { letter-spacing: .24em; }
+
+@media (prefers-reduced-motion: reduce) {
+  .backdrop[data-theme] .lightScene .rule { animation: none !important; }
+}
