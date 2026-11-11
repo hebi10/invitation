@@ -31,7 +31,7 @@ assert.match(sampleRoute, /const qaUI07Map = qaUI07 &&/);
 assert.match(samplePage, /showMap=\{qaUI07 && qaUI07Map !== 'off'\}/);
 assert.doesNotMatch(sampleRoute, /(?:firestore|setDoc|updateDoc|deleteDoc)/i);
 assert.match(galleryComponent, /layout="carousel"/);
-assert.match(galleryComponent, /swiperVariant=\\{variant\\}/);
+assert.match(galleryComponent, /swiperVariant=\{variant\}/);
 assert.doesNotMatch(galleryComponent, /usesGrid/, 'All five sold themes must use the slider');
 assert.match(sharedGallery, /aria-label=\{\`\$\{resolvedImageAltPrefix\}/);
 assert.match(sharedGallery, /handleDialogKeyDown/);
