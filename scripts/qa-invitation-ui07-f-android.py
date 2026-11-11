@@ -86,6 +86,12 @@ def tap(node):
 
 def dismiss_onboarding(tree):
     labels = text(tree).lower()
+    if "pixel launcher isn't responding" in labels:
+        for node in tree.iter("node"):
+            label = (node.get("text") or node.get("content-desc") or "").strip().lower()
+            if label == "close app" and node.get("enabled") == "true":
+                return tap(node)
+        return False
     if "enhanced ad privacy in chrome" in labels:
         for name in ("got it", "done", "more", "continue", "no thanks"):
             for node in tree.iter("node"):
