@@ -94,3 +94,58 @@
 .gallery[data-gallery-variant='simple'] .controls { margin-top: 8px; font-size: 13px; font-variant-numeric: tabular-nums; }
 .gallery[data-gallery-variant='simple'] .controls button { min-height: 48px; padding-inline: 0; }
 .gallery[data-gallery-variant='simple'] .hint { margin-top: 12px; font-size: 13px; line-height: 1.8; }
+
+
+/* UI-R04: romantic gallery controls and companion images, without changing slide order. */
+.gallery[data-gallery-variant='romantic'] .composition[data-has-companions='true'] {
+  gap: clamp(6px, 2vw, 10px);
+}
+.gallery[data-gallery-variant='romantic'] .controls {
+  gap: 8px;
+  margin-top: 12px;
+  color: var(--ink, #2c2925);
+  font-size: 14px;
+}
+.gallery[data-gallery-variant='romantic'] .controls button {
+  min-width: 48px;
+  min-height: 48px;
+  padding: 8px;
+  color: var(--accent, #292723);
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+.gallery[data-gallery-variant='romantic'] .controls > span {
+  align-items: center;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.gallery[data-gallery-variant='romantic'] .progress {
+  height: 2px;
+  background: var(--line, #ddd7ce);
+}
+.gallery[data-gallery-variant='romantic'] .progress span {
+  background: var(--accent, #292723);
+}
+.gallery[data-gallery-variant='romantic'] .hint {
+  margin-top: 10px;
+  color: var(--muted, #70695f);
+  font-size: 13px;
+}
+.gallery[data-gallery-variant='romantic'] :is(.photoButton, .companion):focus-visible,
+.gallery[data-gallery-variant='romantic'] .controls button:focus-visible {
+  outline: 2px solid var(--focus, #514a42);
+  outline-offset: 2px;
+}
+@media (max-width: 359px) {
+  .gallery[data-gallery-variant='romantic'] .composition[data-has-companions='true'] {
+    grid-template-columns: minmax(0, 1.7fr) minmax(0, 1fr);
+    gap: 6px;
+  }
+  .gallery[data-gallery-variant='romantic'] .controls {
+    font-size: 13px;
+    gap: 4px;
+  }
+  .gallery[data-gallery-variant='romantic'] .controls button {
+    padding-inline: 4px;
+  }
+}
