@@ -76,6 +76,12 @@ with sync_playwright() as playwright:
                     gallery.scroll_into_view_if_needed()
                     first_photo = gallery.locator('button[aria-label*="크게 보기"]').first
                     first_photo.wait_for(state="visible", timeout=25000)
+                    page.wait_for_function("""() => {
+                      const slider = document.querySelector('[data-wedding-section="gallery"] [data-gallery-variant]');
+                      const active = slider?.querySelector('.swiper-slide-active button[aria-label*="크게 보기"]');
+                      return Boolean(active && active.getBoundingClientRect().width > 0 &&
+                        active.getBoundingClientRect().height > 0);
+                    }""", timeout=20000)
                     metrics = page.evaluate("""(theme) => {
                       const main = document.querySelector('main[data-design="' + theme + '"]');
                       const gallery = main?.querySelector('[data-wedding-section="gallery"]');
