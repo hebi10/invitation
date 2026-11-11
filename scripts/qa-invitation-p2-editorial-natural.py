@@ -79,16 +79,13 @@ with sync_playwright() as playwright:
                     metrics = page.evaluate("""(theme) => {
                       const main = document.querySelector('main[data-design="' + theme + '"]');
                       const gallery = main?.querySelector('[data-wedding-section="gallery"]');
-                      const grid = gallery?.querySelector('[data-photo-count]');
-                      const first = grid?.querySelector('[data-photo-position="1"]');
-                      const second = grid?.querySelector('[data-photo-position="2"]');
-                      const fourth = grid?.querySelector('[data-photo-position="4"]');
+                      const slider = gallery?.querySelector('[data-gallery-variant]');
+                      const activePhoto = slider?.querySelector('.swiper-slide-active button[aria-label*="크게 보기"]');
                       const heading = gallery?.querySelector('h2');
-                      const number = gallery?.querySelector('[class*="photoNumber"]');
                       const coverMeta = main?.querySelector('[data-wedding-cover-details] p');
                       const mr = main?.getBoundingClientRect();
-                      const gr = grid?.getBoundingClientRect();
-                      const rect = el => el ? el.getBoundingClientRect() : null;
+                      const sliderRect = slider?.getBoundingClientRect();
+                      const activeRect = activePhoto?.getBoundingClientRect();
                       const font = el => el ? parseFloat(getComputedStyle(el).fontSize) : null;
                       return {
                         design: main?.dataset.design,
@@ -101,15 +98,13 @@ with sync_playwright() as playwright:
                         galleryButtonsNamed: [...gallery?.querySelectorAll('button[aria-label*="크게 보기"]') || []].some(b => b.getAttribute('aria-label').includes('사진')),
                         reducedMotion: matchMedia('(prefers-reduced-motion: reduce)').matches,
                         editorialSubtitleFont: theme === 'classic-r' ? parseFloat(getComputedStyle(heading,'::after').fontSize) : null,
-                        editorialNumberFont: font(number),
                         editorialCoverLabelFont: font(coverMeta),
-                        naturalRowGap: grid ? parseFloat(getComputedStyle(grid).rowGap) : null,
-                        naturalGridLeft: gr?.left,
-                        naturalFirstLeft: rect(first)?.left,
-                        naturalSecondLeft: rect(second)?.left,
-                        naturalFourthLeft: rect(fourth)?.left,
-                        naturalFirstWidth: rect(first)?.width,
-                        naturalGridWidth: gr?.width
+                        galleryVariant: slider?.dataset.galleryVariant,
+                        gallerySlideCount: slider?.querySelectorAll('.swiper-slide button[aria-label*="크게 보기"]').length ?? 0,
+                        galleryControls: slider?.querySelector('[role="status"][aria-live="polite"]') !== null,
+                        galleryViewportWidth: sliderRect?.width,
+                        activePhotoWidth: activeRect?.width,
+                        activePhotoHeight: activeRect?.height
                       };
                     }""", theme)
                     case["metrics"] = metrics
@@ -120,16 +115,13 @@ with sync_playwright() as playwright:
                     if width >= 769:
                         assert abs(metrics["mainLeft"] - (width - 480) / 2) <= 2, metrics
                         assert abs(metrics["mainRight"] - (width + 480) / 2) <= 2, metrics
+                    assert metrics["galleryVariant"] == theme, metrics
+                    assert metrics["gallerySlideCount"] >= 1 and metrics["galleryControls"], metrics
+                    assert metrics["activePhotoWidth"] > 0 and metrics["activePhotoHeight"] > 0, metrics
+                    assert metrics["activePhotoWidth"] <= metrics["galleryViewportWidth"] + 2, metrics
                     if theme == "classic-r":
                         assert metrics["editorialSubtitleFont"] >= 13, metrics
-                        assert metrics["editorialNumberFont"] >= 14, metrics
                         assert metrics["editorialCoverLabelFont"] >= 13, metrics
-                    if theme == "emotional":
-                        assert metrics["naturalRowGap"] >= 14, metrics
-                        for key in ("naturalFirstLeft", "naturalSecondLeft", "naturalFourthLeft"):
-                            assert metrics[key] is not None, metrics
-                            assert abs(metrics[key] - metrics["naturalGridLeft"]) <= 2, metrics
-                        assert metrics["naturalFirstWidth"] < metrics["naturalGridWidth"], metrics
                     case["gallery"] = capture(page, f"{theme}-{label}-gallery.png", selector='[data-wedding-section="gallery"]')
                     if label in ("mobile390", "desktop1440"):
                         page.evaluate("scrollTo(0,0)")
