@@ -1355,3 +1355,74 @@ details[open] > :is(.disclosureSummary, .accountSummary, .formSummary)::after { 
 :is(.page[data-design='simple'], .page[data-design='classic-r'], .page[data-design='romantic'], .page[data-design='gyeol'], .page[data-design='emotional']) :is(.contactActions a, .copyButton, .returnLinks a) {
   color: var(--accent);
 }
+
+
+/* UI-09-01 — consistent author/date/message reading order in all five wedding themes. */
+.page [data-wedding-section='guestbook'] .commentsGrid {
+  display: grid;
+  gap: 14px;
+  margin-top: 18px;
+}
+.page [data-wedding-section='guestbook'] .commentItem {
+  position: relative;
+  display: block;
+  min-width: 0;
+  padding: 16px;
+  background: var(--paper-soft);
+  border: 1px solid var(--line);
+  text-align: left;
+}
+.page [data-wedding-section='guestbook'] .commentHeader {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 4px 12px;
+}
+.page [data-wedding-section='guestbook'] .commentAuthor {
+  display: flex;
+  align-items: baseline;
+  min-width: 0;
+  flex: 1 1 auto;
+  gap: 6px;
+}
+.page [data-wedding-section='guestbook'] .commentHeader > div:last-child {
+  flex: 0 0 auto;
+  margin-left: auto;
+}
+.page [data-wedding-section='guestbook'] .authorName {
+  color: var(--ink);
+  font-size: 14px;
+  font-weight: 500;
+  overflow-wrap: anywhere;
+}
+.page [data-wedding-section='guestbook'] .commentDate {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1.6;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+.page [data-wedding-section='guestbook'] .commentMessage {
+  display: block;
+  margin: 10px 0 0;
+  color: var(--ink);
+  font-size: 15px;
+  line-height: 1.85;
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+  word-break: keep-all;
+}
+.page[data-design='classic-r'] [data-wedding-section='guestbook'] .commentItem {
+  padding-left: 46px;
+}
+.page[data-design='classic-r'] [data-wedding-section='guestbook'] .commentItem::before {
+  left: 16px;
+  top: 16px;
+}
+@media (max-width: 359px) {
+  .page [data-wedding-section='guestbook'] .commentItem { padding: 14px 12px; }
+  .page[data-design='classic-r'] [data-wedding-section='guestbook'] .commentItem { padding-left: 42px; }
+  .page[data-design='classic-r'] [data-wedding-section='guestbook'] .commentItem::before { left: 12px; top: 14px; }
+}
