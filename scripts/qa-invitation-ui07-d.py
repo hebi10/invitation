@@ -177,7 +177,8 @@ def verify(page, theme, width, mode, record, font_x2):
     assert data["map_pointer_events"] == "none", "static map should allow page scrolling"
     assert map_surface.locator('[data-ui07d-synthetic-map="true"]').count() == 1
     assert map_surface.locator('button[aria-pressed]').count() == 1, "single move control"
-    button = map_surface.get_by_role("button", name="지도 확대·이동")
+    button = map_surface.locator('button[aria-pressed]').first
+    assert "지도 확대·이동" in button.inner_text(), "initial movement button label"
     rect = button.bounding_box()
     assert rect and rect["height"] >= 47.5 and rect["width"] >= 47.5, "48px map control"
     assert button.get_attribute("aria-pressed") == "false"
@@ -212,6 +213,7 @@ def verify(page, theme, width, mode, record, font_x2):
 
     button.click(timeout=15000)
     assert button.get_attribute("aria-pressed") == "true"
+    assert "지도 조작 마치기" in button.inner_text(), "active movement button label"
     assert map_surface.locator('[role="img"]').evaluate(
         "(el) => getComputedStyle(el).pointerEvents"
     ) == "auto"
