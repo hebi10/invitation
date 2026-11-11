@@ -35,6 +35,7 @@ assert.match(css, /\.page \.scheduleSection \.scheduleContent \{\s*row-gap: clam
 assert.match(css, /\.page:not\(\[data-design='simple'\]\) \[data-wedding-section='guestbook'\] \.commentsGrid \{/);
 assert.match(css, /\.page \.returnLinks a \{\s*min-height: 44px;/);
 assert.doesNotMatch(css, /Stage 2[\s\S]*?display:\s*none\s*;/);
-assert.match(gallery, /layout=\{usesGrid \? 'grid' : 'carousel'\}/);
+assert.match(gallery, /layout="carousel"/);
+assert.match(gallery, /swiperVariant=\{variant\}/);
 
 console.log('Stage 2 wedding reading order, preserved features and spacing checks passed');
