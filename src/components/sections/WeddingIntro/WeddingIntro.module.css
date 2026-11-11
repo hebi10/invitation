@@ -422,3 +422,122 @@
     transform: none;
   }
 }
+
+
+/* UI-08-04: theme-specific, CSS-only editorial motion. All artwork is decorative. */
+@keyframes invitationLineGlow {
+  0%, 100% { opacity: .45; transform: scaleX(.72); }
+  50% { opacity: 1; transform: scaleX(1); }
+}
+@keyframes invitationCardFloat {
+  0%, 100% { translate: 0 0; }
+  50% { translate: 0 -5px; }
+}
+@keyframes invitationPetalDrift {
+  0%, 100% { opacity: .12; translate: 0 8px; rotate: -12deg; }
+  45% { opacity: .55; translate: 12px -14px; rotate: 25deg; }
+}
+@keyframes invitationActionBreathe {
+  0%, 100% { outline-offset: 2px; outline-color: transparent; }
+  50% { outline-offset: 6px; outline-color: var(--qi-line); }
+}
+@keyframes invitationLabelGlint {
+  0%, 100% { opacity: .7; letter-spacing: .16em; }
+  50% { opacity: 1; letter-spacing: .19em; }
+}
+
+.backdrop[data-theme] .envelopeScene { isolation: isolate; }
+.backdrop[data-theme] .envelopeScene > :not(.letterCard) { z-index: 1; }
+.backdrop[data-theme] .envelopeScene .letterCard {
+  position: relative;
+  z-index: 1;
+  box-shadow: none;
+  animation: introTextReveal 650ms var(--qi-motion-ease) 160ms both,
+    invitationCardFloat 4200ms ease-in-out 1100ms infinite;
+}
+.backdrop[data-theme] .letterRule,
+.backdrop[data-theme] .letterDivider,
+.backdrop[data-theme] .lightScene .rule {
+  transform-origin: center;
+  animation: invitationLineGlow 3100ms ease-in-out infinite;
+}
+.backdrop[data-theme] .letterEyebrow {
+  animation: invitationLabelGlint 3800ms ease-in-out 900ms infinite;
+}
+.backdrop[data-theme] .openButton:not(:disabled) {
+  outline: 1px solid transparent;
+  animation: introTextReveal 480ms var(--qi-motion-ease) 480ms both,
+    invitationActionBreathe 3000ms ease-in-out 1700ms infinite;
+}
+.backdrop[data-theme] .envelopeScene::before,
+.backdrop[data-theme] .envelopeScene::after {
+  content: '';
+  position: absolute;
+  z-index: 0;
+  width: 17px;
+  height: 24px;
+  border: 1px solid var(--qi-line);
+  border-radius: 80% 0 80% 0;
+  opacity: .25;
+  pointer-events: none;
+  animation: invitationPetalDrift 5900ms ease-in-out infinite;
+}
+.backdrop[data-theme] .envelopeScene::before {
+  top: 19%;
+  left: 10%;
+}
+.backdrop[data-theme] .envelopeScene::after {
+  right: 12%;
+  bottom: 20%;
+  animation-delay: -2500ms;
+}
+.backdrop[data-theme='simple'] .envelopeScene::before,
+.backdrop[data-theme='simple'] .envelopeScene::after,
+.backdrop[data-theme='classic-r'] .envelopeScene::before,
+.backdrop[data-theme='classic-r'] .envelopeScene::after { display: none; }
+.backdrop[data-theme='classic-r'] .letterCard {
+  border-width: 2px;
+}
+.backdrop[data-theme='classic-r'] .letterRule,
+.backdrop[data-theme='classic-r'] .letterDivider { animation-duration: 2200ms; }
+.backdrop[data-theme='romantic'] .envelopeScene::before,
+.backdrop[data-theme='romantic'] .envelopeScene::after {
+  width: 21px;
+  height: 21px;
+  border-radius: 75% 0 75% 0;
+}
+.backdrop[data-theme='gyeol'] .letterCard {
+  outline: 1px solid var(--qi-line);
+  outline-offset: -9px;
+}
+.backdrop[data-theme='gyeol'] .envelopeScene::before,
+.backdrop[data-theme='gyeol'] .envelopeScene::after { opacity: .2; }
+.backdrop[data-theme='emotional'] .envelopeScene::before,
+.backdrop[data-theme='emotional'] .envelopeScene::after {
+  border-radius: 85% 0 85% 0;
+  border-color: var(--qi-ink-accent);
+}
+.backdrop[data-theme] .lightScene .names {
+  animation: introTextReveal 650ms var(--qi-motion-ease) 360ms both;
+}
+.backdrop[data-theme] .cinemaScene .photo:not([hidden]) {
+  animation: introPhotoApproach var(--qi-motion-cinema-total) ease-out both;
+}
+.backdrop[data-intro-opening='true'] .envelopeScene .letterCard,
+.backdrop[data-intro-opening='true'] .envelopeScene .openButton,
+.backdrop[data-intro-opening='true'] .letterRule,
+.backdrop[data-intro-opening='true'] .letterDivider,
+.backdrop[data-intro-opening='true'] .letterEyebrow {
+  animation: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .backdrop[data-theme] :is(.envelopeScene .letterCard, .letterRule, .letterDivider, .lightScene .rule, .letterEyebrow, .openButton, .cinemaScene .photo),
+  .backdrop[data-theme] .envelopeScene::before,
+  .backdrop[data-theme] .envelopeScene::after {
+    animation: none !important;
+    transition: none !important;
+    translate: none;
+    rotate: none;
+  }
+}
