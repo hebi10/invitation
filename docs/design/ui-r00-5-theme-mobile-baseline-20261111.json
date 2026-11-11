@@ -1,6 +1,6 @@
 {
   "task": "UI-R00",
-  "status": "design-contract-fixed; current-main-recapture-pending",
+  "status": "design-contract-fixed; latest-source-recature-verified",
   "date": "2026-11-11",
   "repo": "hebi10/invitation",
   "main_at_baseline": "87df75244845dad3b52b8517167af675b072b6ef",
@@ -64,7 +64,21 @@
       "emotional-390-full-full.png"
     ],
     "requires_five_successful_fullpage_captures": true,
-    "no_live_data": true
+    "no_live_data": true,
+    "status": "passed",
+    "workflow_run_id": 42993998442,
+    "artifact_id": 13842908279,
+    "fixture_commit": "0f6a3d5b31fb98a263dadce378ceedc454a84b66",
+    "assertions": {
+      "passed": 60,
+      "total": 60,
+      "screenshot_files": 95,
+      "five_fullpage_present": true,
+      "five_fullpage_sha256_match_historical": true,
+      "production_data_writes": 0,
+      "no_actual_customer_data": true
+    },
+    "drive_artifact_url": "https://drive.google.com/file/d/1dSlHfD4QIO5qhSUZ7Rxyur6PD5UfrGnd/view?usp=drivesdk"
   },
   "qa_viewports": [
     320,
