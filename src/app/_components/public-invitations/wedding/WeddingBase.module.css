@@ -1529,3 +1529,119 @@ details[open] > :is(.disclosureSummary, .accountSummary, .formSummary)::after { 
     top: 16px;
   }
 }
+
+
+/* UI-09-03 — unified guestbook writing, refresh and cursor navigation controls. */
+.page [data-wedding-section='guestbook'] .formDisclosure {
+  width: 100%;
+  margin-top: 26px;
+}
+.page [data-wedding-section='guestbook'] .formSummary {
+  display: flex;
+  justify-content: space-between;
+  min-height: 48px;
+  padding: 12px 16px;
+  background: var(--accent);
+  border: 1px solid var(--accent);
+  color: var(--on-accent, #fff);
+  text-align: left;
+}
+.page [data-wedding-section='guestbook'] .formContainer {
+  margin-top: 14px;
+  padding: 18px;
+  border: 1px solid var(--line);
+  background: var(--paper-soft);
+}
+.page [data-wedding-section='guestbook'] .form {
+  display: grid;
+  gap: 14px;
+}
+.page [data-wedding-section='guestbook'] :is(.formRow, .inputGroup) {
+  min-width: 0;
+}
+.page [data-wedding-section='guestbook'] :is(.input, .textarea) {
+  width: 100%;
+  min-width: 0;
+  border: 1px solid var(--control-line);
+  background: var(--input-surface, var(--paper));
+  color: var(--ink);
+  font-size: 16px;
+}
+.page [data-wedding-section='guestbook'] .textarea {
+  min-height: 116px;
+}
+.page [data-wedding-section='guestbook'] .submitButton {
+  min-height: 48px;
+  width: 100%;
+  background: var(--accent);
+  color: var(--on-accent, #fff);
+  border: 1px solid var(--accent);
+}
+.page [data-wedding-section='guestbook'] .commentsHeader {
+  gap: 8px 12px;
+  align-items: center;
+}
+.page [data-wedding-section='guestbook'] .refreshButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  min-width: 44px;
+  padding: 8px 10px;
+  color: var(--accent);
+  background: transparent;
+  border: 1px solid var(--line);
+  font-size: 12px;
+  white-space: nowrap;
+}
+.page [data-wedding-section='guestbook'] .pagination {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 6px;
+  margin-top: 24px;
+}
+.page [data-wedding-section='guestbook'] :is(.pageButton, .pageNumber) {
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  background: var(--paper);
+  color: var(--ink);
+  font-size: 13px;
+}
+.page [data-wedding-section='guestbook'] :is(.pageInfo, .pageNumbers) {
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+}
+.page [data-wedding-section='guestbook'] .pageInfo[aria-current='page'],
+.page [data-wedding-section='guestbook'] .pageNumber[aria-current='page'] {
+  min-width: 44px;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 10px;
+  background: var(--accent);
+  border: 1px solid var(--accent);
+  color: var(--on-accent, #fff);
+}
+.page [data-wedding-section='guestbook'] :is(.pageButton, .pageNumber, .refreshButton, .submitButton):disabled {
+  opacity: .5;
+  cursor: default;
+}
+@media (max-width: 359px) {
+  .page [data-wedding-section='guestbook'] .formContainer {
+    padding: 14px;
+  }
+  .page [data-wedding-section='guestbook'] .pagination {
+    gap: 4px;
+  }
+  .page [data-wedding-section='guestbook'] :is(.pageButton, .pageNumber) {
+    padding: 8px;
+  }
+}
