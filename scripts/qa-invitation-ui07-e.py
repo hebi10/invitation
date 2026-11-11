@@ -185,6 +185,9 @@ with sync_playwright() as pw:
                  for theme in THEMES for width, height in VIEWPORTS]
         cases += [(theme, 390, 844, "error") for theme in THEMES]
         cases += [(theme, 390, 844, "text200") for theme in THEMES]
+        limit = int(os.environ.get("INVITATION_UI07E_LIMIT", "0"))
+        if limit > 0:
+            cases = cases[:limit]
         for theme, width, height, scenario in cases:
             context = browser.new_context(
                 viewport={"width": width, "height": height},
@@ -216,6 +219,9 @@ with sync_playwright() as pw:
             finally:
                 report["cases"].append(row)
                 context.close()
+            if not row["passed"]:
+                print("UI07E_ABORT_AFTER_FIRST_FAILURE", flush=True)
+                break
     finally:
         browser.close()
 
