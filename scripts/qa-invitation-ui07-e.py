@@ -28,6 +28,10 @@ FAKE_AUDIO = r"""() => {
     get() { return paused.has(this) ? paused.get(this) : true; }
   });
   HTMLMediaElement.prototype.play = function() {
+    if (window.__ui07eRejectNextMusicPlay === true) {
+      window.__ui07eRejectNextMusicPlay = false;
+      return Promise.reject(new DOMException('Synthetic audio decoding error', 'NotSupportedError'));
+    }
     paused.set(this, false);
     this.dispatchEvent(new Event('play'));
     return Promise.resolve();
@@ -135,7 +139,8 @@ def verify(page, theme, width, scenario, row):
         row["screens"].append(capture(page, theme, width, "paused"))
 
     if scenario == "error":
-        page.locator('audio').dispatch_event('error')
+        page.evaluate("window.__ui07eRejectNextMusicPlay = true")
+        button.click()
         retry = music.get_by_role("button", name="음악 다시 시도")
         retry.wait_for(state="visible", timeout=4000)
         assert retry.get_attribute("aria-pressed") == "false"
