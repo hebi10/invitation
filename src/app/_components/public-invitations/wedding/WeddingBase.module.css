@@ -1687,3 +1687,110 @@ details[open] > :is(.disclosureSummary, .accountSummary, .formSummary)::after { 
     overflow-wrap: anywhere;
   }
 }
+
+
+/* UI-R02: simple invitation mobile hierarchy; other themes are unchanged. */
+.page[data-design='simple'] .quickLinks {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  width: calc(100% - 40px);
+  max-width: 420px;
+  margin-top: 18px;
+}
+.page[data-design='simple'] .quickLinks a {
+  display: inline-flex;
+  flex: 1 1 0;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-width: 0;
+  min-height: 64px;
+  padding: 10px 4px;
+  border: 1px solid var(--line);
+  background: var(--paper);
+  color: var(--accent);
+  font-size: 13px;
+  line-height: 1.4;
+  text-align: center;
+  text-decoration: none;
+  white-space: normal;
+}
+.page[data-design='simple'] .quickLinks a svg {
+  flex-shrink: 0;
+}
+.page[data-design='simple'] .invitationSection {
+  margin-top: 52px;
+}
+.page[data-design='simple'] .invitationCopy {
+  max-width: 32ch;
+  margin-inline: auto;
+  line-height: 2;
+}
+.page[data-design='simple'] .contactSection {
+  margin-top: 28px;
+}
+.page[data-design='simple'] .contactSection > .disclosureSummary {
+  gap: 12px;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  background: var(--paper-soft);
+}
+.page[data-design='simple'] .contactSection .summaryTitle {
+  font-size: 15px;
+}
+.page[data-design='simple'] .contactSection .summaryDescription {
+  font-size: 13px;
+}
+.page[data-design='simple'] .ceremonySection {
+  gap: 14px;
+  margin-top: 52px;
+  padding: 24px clamp(16px, 5vw, 24px);
+  border: 1px solid var(--line);
+  background: var(--paper-soft);
+}
+.page[data-design='simple'] .ceremonySection > .heading {
+  margin: 0;
+  font-size: 20px;
+  line-height: 1.5;
+}
+.page[data-design='simple'] .ceremonyContent {
+  margin-bottom: 0;
+}
+.page[data-design='simple'] .simpleCeremonyInfo {
+  gap: 14px;
+}
+.page[data-design='simple'] .simpleInfoRow {
+  grid-template-columns: minmax(42px, 0.25fr) minmax(0, 1fr);
+  align-items: start;
+  gap: 12px;
+}
+.page[data-design='simple'] .simpleInfoRow dd {
+  line-height: 1.7;
+}
+.page[data-design='simple'] .returnLinks {
+  gap: 8px 20px;
+  margin-top: 48px;
+  padding-inline: 16px;
+}
+.page[data-design='simple'] .returnLinks a {
+  min-height: 48px;
+  color: var(--accent);
+}
+@media (max-width: 359px) {
+  .page[data-design='simple'] .quickLinks {
+    width: calc(100% - 32px);
+    gap: 6px;
+  }
+  .page[data-design='simple'] .quickLinks a {
+    font-size: 12px;
+  }
+  .page[data-design='simple'] .ceremonySection {
+    padding-inline: 16px;
+  }
+  .page[data-design='simple'] .simpleInfoRow {
+    grid-template-columns: 42px minmax(0, 1fr);
+    gap: 8px;
+  }
+}
