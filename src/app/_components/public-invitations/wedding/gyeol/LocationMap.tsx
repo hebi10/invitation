@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 
 import type { KakaoMapInstance, KakaoMarkerInstance } from '@/types/kakao';
 import { loadKakaoMapsSdk } from '@/utils/kakaoMaps';
+import WeddingActionIcon from '../WeddingActionIcon';
 
 import styles from './LocationMap.module.css';
 
@@ -145,33 +146,69 @@ export default function LocationMap({ address, venueName, kakaoMapConfig, mapHre
   };
 
   return (
-    <div ref={sectionRef} className={styles.locationMap} data-appearance={appearance}>
+    <div
+      ref={sectionRef}
+      className={styles.locationMap}
+      data-appearance={appearance ?? 'simple'}
+      data-map-status={status}
+      onKeyDown={(event) => {
+        if (event.key === 'Escape' && controlsEnabled) {
+          event.stopPropagation();
+          toggleControls();
+        }
+      }}
+    >
       <div className={styles.viewport}>
         <div
           ref={containerRef}
           className={`${styles.map} ${controlsEnabled ? styles.interactive : ''}`}
+          role="img"
           aria-label={`${kakaoMapConfig?.markerTitle || venueName} 위치 지도`}
           aria-hidden={status !== 'ready'}
           style={{ visibility: status === 'ready' ? 'visible' : 'hidden' }}
         />
-        {status !== 'ready' && (
+        {status !== 'ready' ? (
           <div className={styles.message} role="status">
-            <p>{status === 'failed' ? '지도에서 위치를 확인해 주세요.' : '지도를 불러오는 중입니다.'}</p>
-            <a href={mapHref} target="_blank" rel="noopener noreferrer">지도에서 위치 보기</a>
+            <p>{status === 'failed' ? '지도를 불러오지 못했습니다.' : '지도를 불러오는 중입니다.'}</p>
+            <a href={mapHref} target="_blank" rel="noopener noreferrer">
+              <WeddingActionIcon kind="pin" />
+              <span>지도에서 위치 보기</span>
+            </a>
           </div>
+        ) : (
+          <button
+            type="button"
+            className={styles.mapControl}
+            onClick={toggleControls}
+            aria-pressed={controlsEnabled}
+          >
+            <WeddingActionIcon kind="move" />
+            <span>{controlsEnabled ? '지도 조작 마치기' : '지도 확대·이동'}</span>
+          </button>
         )}
       </div>
-      {(appearance === 'natural' || appearance === 'classic' || appearance === 'photo' || appearance === 'basic') && status === 'ready' ? <button className={styles.mapControl} type="button" onClick={toggleControls} aria-pressed={controlsEnabled}>
-        {controlsEnabled ? '지도 조작 마치기' : '지도 확대·이동'}
-      </button> : null}
-      {status === 'ready' && (
-        <div className={styles.actions}>
-          {(appearance === 'natural' || appearance === 'classic' || appearance === 'photo' || appearance === 'basic') && directionsHref ? <a href={directionsHref} target="_blank" rel="noopener noreferrer">지도 앱에서 길찾기</a> : <button type="button" onClick={toggleControls} aria-pressed={controlsEnabled}>
-            {appearance === 'natural' ? (controlsEnabled ? '지도 조작 마치기' : '지도 확대·이동') : (controlsEnabled ? '지도 이동·확대 끄기' : '지도 이동·확대 켜기')}
-          </button>}
-          <a href={mapHref} target="_blank" rel="noopener noreferrer">{appearance === 'natural' ? '카카오맵 보기' : '큰 지도 보기'}</a>
-        </div>
-      )}
+
+      {status === 'ready' ? (
+        <>
+          <nav className={styles.actions} aria-label="지도 바로가기">
+            {directionsHref ? (
+              <a href={directionsHref} target="_blank" rel="noopener noreferrer">
+                <WeddingActionIcon kind="route" />
+                <span>지도 앱에서 길찾기</span>
+              </a>
+            ) : null}
+            <a href={mapHref} target="_blank" rel="noopener noreferrer">
+              <WeddingActionIcon kind="pin" />
+              <span>{appearance === 'natural' ? '카카오맵 보기' : '큰 지도 보기'}</span>
+            </a>
+          </nav>
+          <p className={styles.mapHint} aria-live="polite">
+            {controlsEnabled
+              ? '지도를 조작 중입니다. 스크롤하려면 지도 조작을 마쳐 주세요.'
+              : '지도를 움직이려면 확대·이동 버튼을 눌러 주세요.'}
+          </p>
+        </>
+      ) : null}
     </div>
   );
 }

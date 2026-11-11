@@ -26,7 +26,9 @@ for (const theme of ['simple', 'classic-r', 'romantic', 'gyeol', 'emotional']) {
   assert.ok(sampleRoute.includes("query.qaTheme === '" + theme + "'") || theme === 'simple');
 }
 assert.match(samplePage, /theme = 'simple'/);
-assert.match(samplePage, /showMap=\{false\}/);
+assert.match(sampleRoute, /const qaUI07 = process\.env\.NODE_ENV !== 'production' && query\.qaUI07 === '1'/);
+assert.match(sampleRoute, /const qaUI07Map = qaUI07 &&/);
+assert.match(samplePage, /showMap=\{qaUI07 && qaUI07Map !== 'off'\}/);
 assert.doesNotMatch(sampleRoute, /(?:firestore|setDoc|updateDoc|deleteDoc)/i);
 assert.match(galleryComponent, /layout=\{usesGrid \? 'grid' : 'carousel'\}/);
 assert.match(sharedGallery, /aria-label=\{\`\$\{resolvedImageAltPrefix\}/);
