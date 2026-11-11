@@ -156,12 +156,13 @@ with sync_playwright() as playwright:
                         )
                         page.evaluate("document.fonts.ready")
                         page.add_style_tag(content="nextjs-portal { display: none !important; }")
-                        page.wait_for_function("""() => {
-                          const gallery = document.querySelector('[data-wedding-section="gallery"]');
-                          const slider = gallery?.querySelector('[data-gallery-variant]');
-                          const active = slider?.querySelector('.swiper-slide-active button[aria-label*="크게 보기"]');
-                          return Boolean(slider && active && active.getBoundingClientRect().width > 0);
-                        }""", timeout=20000)
+                        if page is new:
+                            page.wait_for_function("""() => {
+                              const gallery = document.querySelector('[data-wedding-section="gallery"]');
+                              const slider = gallery?.querySelector('[data-gallery-variant]');
+                              const active = slider?.querySelector('.swiper-slide-active button[aria-label*="크게 보기"]');
+                              return Boolean(slider && active && active.getBoundingClientRect().width > 0);
+                            }""", timeout=20000)
                     a, b = metrics(old), metrics(new)
                     record["before"] = a
                     record["after"] = b
