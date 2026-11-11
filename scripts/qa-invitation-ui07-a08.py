@@ -79,6 +79,8 @@ def metrics(page):
         gift_surface: css.backgroundColor,
         gift_accounts: section('gift').querySelectorAll('details').length,
         gallery_images: gallery?.querySelectorAll('img').length || 0,
+        gallery_variant: gallery?.querySelector('[data-gallery-variant]')?.dataset.galleryVariant ?? null,
+        gallery_active_photo: !!gallery?.querySelector('.swiper-slide-active button[aria-label*="크게 보기"]'),
         guestbook_form: section('guestbook').querySelectorAll('form').length,
         guestbook_has_title: section('guestbook').textContent.includes('축하의 마음')
       };
@@ -154,7 +156,13 @@ with sync_playwright() as playwright:
                         )
                         page.evaluate("document.fonts.ready")
                         page.add_style_tag(content="nextjs-portal { display: none !important; }")
-                        page.wait_for_timeout(160)
+                        if page is new:
+                            page.wait_for_function("""() => {
+                              const gallery = document.querySelector('[data-wedding-section="gallery"]');
+                              const slider = gallery?.querySelector('[data-gallery-variant]');
+                              const active = slider?.querySelector('.swiper-slide-active button[aria-label*="크게 보기"]');
+                              return Boolean(slider && active && active.getBoundingClientRect().width > 0);
+                            }""", timeout=20000)
                     a, b = metrics(old), metrics(new)
                     record["before"] = a
                     record["after"] = b
@@ -164,7 +172,8 @@ with sync_playwright() as playwright:
                     assert not a["overflow"] and not b["overflow"], "horizontal overflow"
                     assert a["contact_links"] == b["contact_links"] == 4, "contact action changed"
                     assert a["gift_accounts"] == b["gift_accounts"] == 2, "account action changed"
-                    assert a["gallery_images"] == b["gallery_images"], "gallery image count changed"
+                    assert a["gallery_images"] > 0 and b["gallery_images"] > 0, "gallery images unavailable"
+                    assert b["gallery_variant"] == theme and b["gallery_active_photo"], "new theme slider unavailable"
                     assert a["guestbook_form"] == b["guestbook_form"] == 1, "guestbook form changed"
                     assert a["guestbook_has_title"] and b["guestbook_has_title"], "guestbook title"
                     assert "연락처 확인" in b["contact"], "contact summary not improved"

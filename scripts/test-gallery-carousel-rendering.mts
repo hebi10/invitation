@@ -258,33 +258,37 @@ for (const count of [1, 18]) {
   assert.equal(phase, 11);
 }
 
-for (const theme of ['romantic', 'classic-r', 'emotional'] as const) {
+for (const theme of ['simple', 'classic-r', 'romantic', 'gyeol', 'emotional'] as const) {
   const themed = renderToStaticMarkup(React.createElement(WeddingGallery, {
-    theme, images: albumImages, overviewIndices: [2], imageAltPrefix: '테마', styles,
+    theme, images: albumImages, previewImages: albumPreviews,
+    overviewIndices: [2], imageAltPrefix: '테마', styles,
   }));
-  const photoNumbers = [...themed.matchAll(/aria-label="테마 (\d+)번째 사진 크게 보기"/g)].map((match) => Number(match[1]));
-  assert.deepEqual(photoNumbers, theme === 'romantic' ? [3] : theme === 'emotional' ? [1, 2, 3, 4] : [1, 2, 3, 4, 5],
-    `${theme}: curated selection only affects the romantic album`);
+  assert.match(themed, new RegExp(`data-gallery-variant="${theme}"`),
+    `${theme}: must use its own swiper variant`);
+  assert.deepEqual(
+    [...themed.matchAll(/aria-label="테마 (\d+)번째 사진 크게 보기"/g)].map((match) => Number(match[1])),
+    [1, 2, 3, 4, 5],
+    `${theme}: every saved photo remains in the slider in its original order`
+  );
+  assert.doesNotMatch(themed, /(?:data-photo-position|더보기)/,
+    `${theme}: old thumbnail grid or more-button must not replace the slider`);
 }
 
-for (const [count, expectedPhotos] of [
-  [0, []], [1, [1]], [2, [1, 2]], [3, [1, 2, 3]],
-  [4, [1, 2, 3, 4]], [5, [1, 2, 3, 4]],
-] as const) {
+for (const count of [0, 1, 2, 3, 4, 5]) {
   const gallery = renderToStaticMarkup(React.createElement(WeddingGallery, {
     theme: 'emotional', images: albumImages.slice(0, count),
     imageAltPrefix: '가든', styles,
   }));
+  if (count === 0) {
+    assert.equal(gallery, '', 'Empty natural galleries have no heading or unusable slider');
+    continue;
+  }
+  assert.match(gallery, /data-gallery-variant="emotional"/);
   assert.deepEqual(
     [...gallery.matchAll(/aria-label="가든 (\d+)번째 사진 크게 보기"/g)].map((match) => Number(match[1])),
-    expectedPhotos,
-    `Natural gallery with ${count} saved photos keeps at most four ordered previews`
+    Array.from({ length: count }, (_, index) => index + 1),
+    `Natural gallery with ${count} saved photos exposes every ordered slide`
   );
-  if (count === 0) {
-    assert.equal(gallery, '', 'Empty natural galleries have no heading or unusable full-gallery action');
-  } else {
-    assert.match(gallery, new RegExp(`aria-label="전체 사진 ${count}장 보기"`));
-  }
 }
 
 for (const distinctPreview of [true, false]) {

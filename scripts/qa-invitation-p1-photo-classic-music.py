@@ -68,10 +68,8 @@ with sync_playwright() as playwright:
                     page.add_style_tag(content="nextjs-portal { display: none !important; }")
                     page.locator('[data-wedding-section="gallery"]').scroll_into_view_if_needed()
                     gallery_photo = (
-                        '[data-wedding-section="gallery"] [data-gallery-variant="gyeol"] '
+                        f'[data-wedding-section="gallery"] [data-gallery-variant="{theme}"] '
                         '.swiper-slide-active button[aria-label*="크게 보기"]'
-                        if theme == "gyeol"
-                        else '[data-wedding-section="gallery"] [data-photo-position="1"]'
                     )
                     page.locator(gallery_photo).first.wait_for(state="visible", timeout=20000)
                     page.get_by_role("button", name="음악 켜기").wait_for(state="visible", timeout=12000)
@@ -80,8 +78,7 @@ with sync_playwright() as playwright:
                       const frame = main?.querySelector('[data-wedding-cover-frame]');
                       const details = main?.querySelector('[data-wedding-cover-details]');
                       const gallery = main?.querySelector('[data-wedding-section="gallery"]');
-                      const primary = gallery?.querySelector('[data-photo-position="1"]') ??
-                        gallery?.querySelector('[data-gallery-variant="gyeol"] .swiper-slide-active button');
+                      const primary = gallery?.querySelector('.swiper-slide-active button[aria-label*="크게 보기"]');
                       const music = document.querySelector('button[aria-label="음악 켜기"]');
                       const mr = main?.getBoundingClientRect();
                       const fr = frame?.getBoundingClientRect();
@@ -97,9 +94,7 @@ with sync_playwright() as playwright:
                         galleryHeight: gr?.height,
                         firstGalleryRatio: pr ? pr.width / pr.height : null,
                         galleryVariant: gallery?.querySelector('[data-gallery-variant]')?.getAttribute('data-gallery-variant') ?? 'grid',
-                        galleryPhotoCount: gallery?.querySelectorAll(
-                          theme === 'gyeol' ? '[data-gallery-variant="gyeol"] .swiper-slide button' : '[data-photo-position]'
-                        ).length ?? 0,
+                        galleryPhotoCount: gallery?.querySelectorAll('.swiper-slide button[aria-label*="크게 보기"]').length ?? 0,
                         musicLeft: br?.left, musicRight: br?.right,
                         musicControlHeight: br?.height,
                         musicPosition: music ? getComputedStyle(music.parentElement).position : null,
@@ -117,7 +112,8 @@ with sync_playwright() as playwright:
                     assert m["musicPosition"] == "fixed", m
                     assert m["musicControlHeight"] >= 44, m
                     if theme == "romantic":
-                        assert abs(m["firstGalleryRatio"] - 1.2) < 0.03, m
+                        assert m["galleryVariant"] == "romantic", m
+                        assert abs(m["firstGalleryRatio"] - .75) < .03, m
                     else:
                         assert m["galleryVariant"] == "gyeol", m
                         assert abs(m["coverRatio"] - .75) < .02, m

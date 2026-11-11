@@ -1,9 +1,8 @@
 'use client';
 
 import GalleryGridShared from '@/components/sections/Gallery/GalleryGridShared';
+import type { WeddingGalleryVariant } from '@/components/sections/Gallery/WeddingGallerySwiper';
 import type { InvitationThemeKey } from '@/lib/invitationThemes';
-
-import galleryStyles from './WeddingGallery.module.css';
 
 interface WeddingGalleryProps {
   theme: InvitationThemeKey;
@@ -14,46 +13,30 @@ interface WeddingGalleryProps {
   styles: Record<string, string>;
 }
 
-const gridThemeClasses: Partial<Record<InvitationThemeKey, string>> = {
-  'classic-r': galleryStyles.editorial,
-  romantic: galleryStyles.album,
-  emotional: galleryStyles.natural,
-};
+const sliderThemes: ReadonlySet<string> = new Set([
+  'simple', 'classic-r', 'romantic', 'gyeol', 'emotional',
+]);
 
 export default function WeddingGallery({
   theme,
   images,
   previewImages,
-  overviewIndices,
   imageAltPrefix,
   styles,
 }: WeddingGalleryProps) {
-  const gridThemeClass = gridThemeClasses[theme];
-  const usesGrid = theme === 'classic-r' || theme === 'romantic' || theme === 'emotional';
+  const variant: WeddingGalleryVariant = sliderThemes.has(theme)
+    ? theme as WeddingGalleryVariant
+    : 'simple';
 
   return (
     <GalleryGridShared
       images={images}
       previewImages={previewImages}
-      overviewIndices={theme === 'romantic' ? overviewIndices : undefined}
       imageAltPrefix={imageAltPrefix}
       title="사진"
-      gridOverview={theme === 'emotional'}
-      editorialOverview={theme === 'romantic'}
-      modernOverview={theme === 'classic-r'}
-      layout={usesGrid ? 'grid' : 'carousel'}
-      swiperVariant={usesGrid ? undefined : theme === 'gyeol' ? 'gyeol' : 'simple'}
-      styles={usesGrid ? {
-        ...styles,
-        container: [styles.container, galleryStyles.gallery, gridThemeClass].filter(Boolean).join(' '),
-        imageGrid: galleryStyles.imageGrid,
-        imageWrapper: galleryStyles.imageWrapper,
-        imageContainer: [styles.imageContainer, galleryStyles.imageContainer].filter(Boolean).join(' '),
-        overviewCard: galleryStyles.overviewCard,
-        overviewCount: galleryStyles.overviewCount,
-        photoUnavailable: galleryStyles.photoUnavailable,
-        photoNumber: galleryStyles.photoNumber,
-      } : styles}
+      layout="carousel"
+      swiperVariant={variant}
+      styles={styles}
     />
   );
 }
