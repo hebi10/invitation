@@ -56,6 +56,11 @@ jobs:
           else:
               raise SystemExit("Synthetic wedding sample did not become ready")
           PY
+      - name: Preflight one synthetic map case
+        env:
+          INVITATION_UI07D_BASE: http://127.0.0.1:3000
+          INVITATION_UI07D_LIMIT: '1'
+        run: python scripts/qa-invitation-ui07-d.py
       - name: Verify 5 themes, viewport ratios, map state, route actions and 200 percent font
         env:
           INVITATION_UI07D_BASE: http://127.0.0.1:3000
