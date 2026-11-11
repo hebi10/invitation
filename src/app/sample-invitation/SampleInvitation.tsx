@@ -4,6 +4,7 @@ import Link from 'next/link';
 import AppQueryProvider from '../AppQueryProvider';
 import WeddingBase from '../_components/public-invitations/wedding/WeddingBase';
 import BackgroundMusic from '@/components/media/BackgroundMusic';
+import WeddingIntro from '@/components/sections/WeddingIntro/WeddingIntro';
 import { WeddingClosing } from '../_components/WeddingClosing';
 import type { WeddingPageReadyState } from '../_components/weddingPageState';
 import { sampleWeddingPage, sampleWeddingComments, SAMPLE_WEDDING_IMAGES, SAMPLE_WEDDING_COVER } from '@/config/homeWeddingSample';
@@ -113,8 +114,9 @@ function makeQAUI07State(variant: QAUI07Case): WeddingPageReadyState {
 }
 
 type QAUI07Map = 'off' | 'coordinates' | 'geocode';
+type QAUI07Intro = 'none' | 'light' | 'cinema' | 'envelope';
 
-export default function SampleInvitation({ embedded = false, theme = 'simple', qaMusic = false, qaUI07 = false, qaUI07Case = 'full', qaUI07Map = 'off' }: { embedded?: boolean; theme?: 'simple' | 'romantic' | 'gyeol' | 'classic-r' | 'emotional'; qaMusic?: boolean; qaUI07?: boolean; qaUI07Case?: QAUI07Case; qaUI07Map?: QAUI07Map }) {
+export default function SampleInvitation({ embedded = false, theme = 'simple', qaMusic = false, qaUI07 = false, qaUI07Case = 'full', qaUI07Map = 'off', qaUI07Intro = 'none' }: { embedded?: boolean; theme?: 'simple' | 'romantic' | 'gyeol' | 'classic-r' | 'emotional'; qaMusic?: boolean; qaUI07?: boolean; qaUI07Case?: QAUI07Case; qaUI07Map?: QAUI07Map; qaUI07Intro?: QAUI07Intro }) {
   const weddingState = qaUI07 ? makeQAUI07State(qaUI07Case) : sampleState;
   const mapState: WeddingPageReadyState = qaUI07 && qaUI07Map === 'coordinates'
     ? {
@@ -137,6 +139,19 @@ export default function SampleInvitation({ embedded = false, theme = 'simple', q
     <p className={styles.notice}>기본형 샘플 · AI 생성 사진과 예시 메시지</p>
     <WeddingBase state={mapState} options={{ slug: sampleWeddingPage.slug, theme }} theme={theme} demoComments={sampleWeddingComments} showMap={qaUI07 && qaUI07Map !== 'off'} />
     <WeddingClosing groomName={sampleWeddingPage.groomName} brideName={sampleWeddingPage.brideName} theme={theme} />
+    {qaUI07 && qaUI07Intro !== 'none' ? (
+      <WeddingIntro
+        style={qaUI07Intro}
+        slug="ui07-f-fictional-sample"
+        groomName={sampleWeddingPage.groomName}
+        brideName={sampleWeddingPage.brideName}
+        date={sampleWeddingPage.date}
+        imageUrl={SAMPLE_WEDDING_COVER}
+        theme={theme}
+        preview
+        connectToCover
+      />
+    ) : null}
     {qaMusic ? <BackgroundMusic alignToInvitation autoPlay={false} musicUrl="data:audio/wav;base64,UklGRkQDAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YSADAACAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgA==" /> : null}
     {!embedded ? (
       <footer className={styles.serviceLinks} aria-label="청첩장 서비스 안내">
