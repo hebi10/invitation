@@ -456,8 +456,7 @@
     invitationCardFloat 4200ms ease-in-out 1100ms infinite;
 }
 .backdrop[data-theme] .letterRule,
-.backdrop[data-theme] .letterDivider,
-.backdrop[data-theme] .lightScene .rule {
+.backdrop[data-theme] .letterDivider {
   transform-origin: center;
   animation: invitationLineGlow 3100ms ease-in-out infinite;
 }
