@@ -44,8 +44,10 @@ assert.match(coverComponent, /if \(theme === 'romantic'\)/);
 assert.match(coverComponent, /if \(theme === 'emotional'\)/);
 assert.match(coverComponent, /if \(theme === 'gyeol'\)/);
 assert.match(coverComponent, /if \(theme === 'classic-r'\)/);
-assert.match(galleryComponent, /layout=\{usesGrid \? 'grid' : 'carousel'\}/);
-assert.match(galleryComponent, /overviewIndices=\{theme === 'romantic' \? overviewIndices : undefined\}/);
+assert.match(galleryComponent, /layout="carousel"/);
+assert.match(galleryComponent, /swiperVariant=\\{variant\\}/);
+assert.doesNotMatch(galleryComponent, /usesGrid/, 'All five sold themes must use the slider');
+assert.match(galleryComponent, /sliderThemes\.has\(theme\)/);
 for (const feature of ['WeddingCalendarDownload', 'LocationMap', 'GiftInfoThemed', 'GuestbookThemed', 'WeddingGallery', 'WeddingCover']) {
   assert.match(pageComponent, new RegExp('<' + feature), feature + ' must remain available');
 }
