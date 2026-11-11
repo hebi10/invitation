@@ -67,7 +67,7 @@ jobs:
           for theme in ('simple','classic-r','romantic','gyeol','emotional'):
               name=theme+'-390-full-full.png'
               assert (source/name).is_file() and (source/name).stat().st_size > 10000, name
-              matching=[c for c in data.get('cases',[]) if c.get('theme')==theme and c.get('width')==390 and c.get('case')=='full']
+              matching=[c for c in data.get('cases',[]) if c.get('theme')==theme and c.get('width')==390 and c.get('case')=='full' and not c.get('zoom_200') and not c.get('text_zoom_200')]
               assert len(matching)==1 and matching[0].get('success'), name
           print('UI-R00: all five current-commit fullpage screenshots verified')
           PY
