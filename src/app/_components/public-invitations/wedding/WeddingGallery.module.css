@@ -194,8 +194,8 @@
   min-height: 88px;
   padding: 16px 8px;
   border: 1px solid var(--line, #cfd5c8);
-  background: #eef1e8;
-  color: #4f6149;
+  background: var(--paper-soft, #f0ede7);
+  color: var(--ink, #282725);
   font: inherit;
   font-size: 14px;
   font-weight: 500;
@@ -212,7 +212,7 @@
 }
 
 .overviewCard:focus-visible {
-  outline: 2px solid var(--focus, #4f6149);
+  outline: 2px solid var(--focus, #514c44);
   outline-offset: 3px;
 }
 
