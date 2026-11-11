@@ -10,6 +10,7 @@ from __future__ import annotations
 import hashlib
 import json
 import re
+import shlex
 import subprocess
 import time
 import xml.etree.ElementTree as ET
@@ -122,8 +123,9 @@ def visit(theme, scale, intro=False):
     ).strip()
     try:
         assert abs(float(record["readback_font_scale"]) - scale) < 0.01
-        adb("shell", "am", "start", "-W", "-a",
-            "android.intent.action.VIEW", "-d", url, timeout=65)
+        adb("shell",
+            "am start -W -a android.intent.action.VIEW -d " + shlex.quote(url),
+            timeout=65)
         loaded = False
         last = ""
         invite_button = None
@@ -149,8 +151,9 @@ def visit(theme, scale, intro=False):
                 if dismiss_onboarding(tree):
                     time.sleep(1)
                 elif attempt in (4, 9, 15):
-                    adb("shell", "am", "start", "-a",
-                        "android.intent.action.VIEW", "-d", url, check=False)
+                    adb("shell",
+                        "am start -a android.intent.action.VIEW -d " + shlex.quote(url),
+                        check=False)
             except (ET.ParseError, subprocess.TimeoutExpired, RuntimeError, ValueError):
                 pass
         record["native_accessibility_tree_has_fictional_couple"] = loaded
