@@ -125,7 +125,7 @@ with sync_playwright() as p:
     try:
         for theme in THEMES:
             for width, height in SIZES:
-                for zoom in (False, True) if width == 390 else (False,):
+                for zoom in (False, True) if width == 768 else (False,):
                     ctx = browser.new_context(
                         viewport={"width": width, "height": height},
                         locale="ko-KR",
