@@ -133,8 +133,8 @@ for (const theme of ['simple', 'classic-r', 'romantic', 'gyeol', 'emotional'] as
     const images = Array.from({ length: count }, (_, index) => `https://example.com/photo-${index}.jpg`);
     const previews = images.map((image) => image.replace('.jpg', '-thumb.jpg'));
     const gallery = WeddingGallery({ theme, images, previewImages: previews, imageAltPrefix: '저장된 사진', styles: { popup: 'shared-dialog' } });
-    assert.equal(gallery.props.layout, theme === 'simple' || theme === 'gyeol' ? 'carousel' : 'grid');
-    assert.equal(gallery.props.swiperVariant, theme === 'simple' || theme === 'gyeol' ? theme : undefined);
+    assert.equal(gallery.props.layout, 'carousel');
+    assert.equal(gallery.props.swiperVariant, theme);
     assert.deepEqual(gallery.props.images, images, `${theme}: original order and full gallery retained`);
     assert.deepEqual(gallery.props.previewImages, previews);
     assert.equal(gallery.props.styles.popup, 'shared-dialog', `${theme}: accessible enlargement reused`);
