@@ -108,6 +108,10 @@ def verify(page, theme, width, scenario, row):
     main.wait_for(state="visible", timeout=40000)
     music = page.locator('[class*="musicPlayer"][class*="invitationAligned"]').first
     music.wait_for(state="visible", timeout=25000)
+    page.wait_for_function("""() => {
+      const audio = document.querySelector('audio');
+      return !!audio && Math.abs(audio.volume - 0.35) < 0.01;
+    }""", timeout=20000)
     page.evaluate("document.fonts.ready")
     page.add_style_tag(content="nextjs-portal { display:none !important; }")
     button = music.locator('button[aria-pressed]')
