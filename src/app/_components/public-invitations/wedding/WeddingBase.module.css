@@ -1269,3 +1269,89 @@ details[open] > :is(.disclosureSummary, .accountSummary, .formSummary)::after { 
     padding-inline: 10px;
   }
 }
+
+
+/* UI-08-02: canonical public wedding palette (UI-08-01); scoped to 5 sold themes. */
+.page[data-design='simple'] {
+  --paper: #FAF9F6;
+  --paper-soft: #F0EDE7;
+  --ink: #282725;
+  --muted: #716E69;
+  --accent: #514C44;
+  --line: #E6E2DC;
+  --control-line: #91897E;
+  --focus: #514C44;
+  --on-accent: #FFFFFF;
+}
+
+.page[data-design='classic-r'] {
+  --paper: #FFFFFF;
+  --paper-soft: #F5F4EF;
+  --ink: #252523;
+  --muted: #6F6F69;
+  --accent: #191917;
+  --line: #D9D9D4;
+  --control-line: #85857E;
+  --focus: #191917;
+  --on-accent: #FFFFFF;
+}
+
+.page[data-design='romantic'] {
+  --paper: #FAF8F4;
+  --paper-soft: #F1EAE0;
+  --ink: #2C2925;
+  --muted: #70695F;
+  --accent: #292723;
+  --line: #DDD7CE;
+  --control-line: #91887A;
+  --focus: #514A42;
+  --on-accent: #FFFFFF;
+}
+
+.page[data-design='gyeol'] {
+  --paper: #F6F0E5;
+  --paper-soft: #FBF8F2;
+  --ink: #302B26;
+  --muted: #70665C;
+  --accent: #57493C;
+  --line: #D8C8B4;
+  --control-line: #96816A;
+  --focus: #57493C;
+  --on-accent: #FFFFFF;
+}
+
+.page[data-design='emotional'] {
+  --paper: #FAF9F5;
+  --paper-soft: #EEF1E8;
+  --ink: #2F342D;
+  --muted: #626B5E;
+  --accent: #536649;
+  --line: #CFD5C8;
+  --control-line: #7A8671;
+  --focus: #4F6149;
+  --on-accent: #FFFFFF;
+}
+
+/* Keep actions, disclosure panels, calendar and guestbook in the active theme. */
+.page[data-design] :is(.disclosureSummary, .accountSummary, .calendarDisclosure > summary, .copyButton, .carouselButton, .pageButton, .pageNumber) {
+  border-color: var(--control-line);
+}
+.page[data-design] :is(.disclosureSummary, .accountSummary, .calendarDisclosure > summary) {
+  background-color: var(--paper);
+  color: var(--ink);
+}
+.page[data-design] :is(.formSummary, .submitButton, .active, .pageButtonActive) {
+  background-color: var(--accent);
+  border-color: var(--accent);
+  color: var(--on-accent);
+}
+.page[data-design] :is(.commentItem, .dateSection, .input, .textarea) {
+  color: var(--ink);
+}
+.page[data-design] :is(.input, .textarea) {
+  border-color: var(--control-line);
+  background-color: var(--input-surface, var(--paper));
+}
+.page[data-design] :is(.contactActions a, .copyButton, .returnLinks a) {
+  color: var(--accent);
+}
