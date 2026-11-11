@@ -9,6 +9,46 @@ import {
 
 import styles from './BackgroundMusic.module.css';
 
+type WeddingMusicState = 'playing' | 'paused' | 'error';
+
+function WeddingMusicGlyph({ state }: { state: WeddingMusicState }) {
+  return (
+    <svg
+      className={styles.weddingMusicGlyph}
+      data-wedding-music-icon={state}
+      width="24"
+      height="24"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.7"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+      focusable="false"
+    >
+      {state === 'error' ? (
+        <>
+          <path d="M20 11a8 8 0 1 0-2.4 5.7" />
+          <path d="M20 4v7h-7" />
+        </>
+      ) : (
+        <>
+          <path d="M5 9h3.5L13 5v14l-4.5-4H5V9Z" />
+          {state === 'playing' ? (
+            <>
+              <path d="M16 9a5 5 0 0 1 0 6" />
+              <path d="M18.5 6.5a8.5 8.5 0 0 1 0 11" />
+            </>
+          ) : (
+            <path d="m16.5 9 4 6m0-6-4 6" />
+          )}
+        </>
+      )}
+    </svg>
+  );
+}
+
 interface BackgroundMusicProps {
   alignToInvitation?: boolean;
   autoPlay?: boolean;
@@ -50,6 +90,11 @@ export default function BackgroundMusic({
   const errorMessage = loadError
     ? '음악을 불러오지 못했어요. 연결 상태를 확인하고 다시 시도해 주세요.'
     : playbackError;
+  const musicControlState: WeddingMusicState = errorMessage
+    ? 'error'
+    : isPlaying
+      ? 'playing'
+      : 'paused';
 
   const pauseAudio = useCallback(() => {
     const audio = audioRef.current;
@@ -246,8 +291,13 @@ export default function BackgroundMusic({
         aria-label={isPlaying ? '음악 끄기' : errorMessage ? '음악 다시 시도' : '음악 켜기'}
         title={isPlaying ? '음악 끄기' : errorMessage ? '음악 다시 시도' : '음악 켜기'}
         aria-pressed={isPlaying}
+        data-wedding-music-state={alignToInvitation ? musicControlState : undefined}
       >
-        <span className={styles.controlIcon} aria-hidden="true">{isPlaying ? 'Ⅱ' : '♪'}</span>
+        {alignToInvitation ? (
+          <WeddingMusicGlyph state={musicControlState} />
+        ) : (
+          <span className={styles.controlIcon} aria-hidden="true">{isPlaying ? 'Ⅱ' : '♪'}</span>
+        )}
         <span className={styles.controlLabel}>
           {isPlaying ? '음악 끄기' : errorMessage ? '음악 다시 시도' : '음악 켜기'}
         </span>

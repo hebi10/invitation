@@ -1,0 +1,79 @@
+name: Invitation UI-07-E music icon and positioning QA
+
+on:
+  pull_request:
+    paths:
+      - src/components/media/BackgroundMusic.tsx
+      - src/components/media/BackgroundMusic.module.css
+      - scripts/test-wedding-ui07-e.mts
+      - scripts/qa-invitation-ui07-e.py
+      - .github/workflows/invitation-ui07-e-music-qa.yml
+      - scripts/run-test-suite.mjs
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  wedding-music-control-chromium:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 38
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install Next.js, test tools and Chromium
+        run: |
+          npm ci
+          python -m pip install --disable-pip-version-check playwright==1.56.0
+          python -m playwright install --with-deps chromium
+      - name: Validate music icon, placement and playback source contracts
+        run: |
+          node scripts/run-test-suite.mjs test-wedding-ui07-e
+          node scripts/run-test-suite.mjs test-background-music-playback
+      - name: Start synthetic, non-Firebase music preview
+        env:
+          NEXT_PUBLIC_USE_FIREBASE: 'false'
+          NEXT_PUBLIC_SITE_URL: http://127.0.0.1:3000
+        run: |
+          nohup npm run dev > "$RUNNER_TEMP/ui07-e-next.log" 2>&1 &
+          python - <<'PY'
+          import time, urllib.request
+          url = "http://127.0.0.1:3000/sample-invitation/?qaTheme=simple&qaMusic=1&embed=1"
+          for _ in range(100):
+              try:
+                  with urllib.request.urlopen(url, timeout=12) as res:
+                      if res.status == 200:
+                          print("UI-07-E fictional sample ready", flush=True)
+                          break
+              except Exception:
+                  pass
+              time.sleep(2)
+          else:
+              raise SystemExit("UI-07-E fictional page unavailable")
+          PY
+      - name: Preflight first mobile music state
+        env:
+          INVITATION_UI07E_BASE: http://127.0.0.1:3000
+          INVITATION_UI07E_LIMIT: '1'
+        run: python scripts/qa-invitation-ui07-e.py
+      - name: Validate five themes, audio toggle/error and all viewports
+        env:
+          INVITATION_UI07E_BASE: http://127.0.0.1:3000
+        run: python scripts/qa-invitation-ui07-e.py
+      - name: Preserve screenshots and SHA256 evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: invitation-ui07-e-wedding-music-visual-evidence
+          path: artifacts/ui-07-e/
+          retention-days: 30
+          if-no-files-found: warn
+      - name: Print application logs if a step fails
+        if: failure()
+        run: tail -100 "$RUNNER_TEMP/ui07-e-next.log" || true
