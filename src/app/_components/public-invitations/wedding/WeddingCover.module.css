@@ -244,3 +244,53 @@
     gap: 6px;
   }
 }
+
+
+/* UI-R03: editorial cover rhythm; stored photo focus and text position stay authoritative. */
+.editorial .details {
+  padding: 24px clamp(16px, 5.5vw, 24px) 24px;
+}
+.editorial .editorialHeading {
+  margin: 0 0 12px;
+  color: #555;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: .12em;
+  line-height: 1.6;
+}
+.editorial .details .editorialNames {
+  margin: 0;
+  gap: 2px;
+  font-size: clamp(29px, 8vw, 38px);
+  font-weight: 500;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+.editorial .details .editorialMeta {
+  margin-top: 16px;
+}
+.editorial .details .editorialMeta .date {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px 8px;
+  margin: 0;
+  color: #252523;
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.65;
+}
+.editorial .details .editorialMeta .venue {
+  margin: 7px 0 0;
+  color: #555;
+  font-size: 14px;
+  line-height: 1.7;
+  overflow-wrap: anywhere;
+}
+@media (max-width: 359px) {
+  .editorial .details {
+    padding-inline: 16px;
+  }
+  .editorial .details .editorialNames {
+    font-size: 29px;
+  }
+}
