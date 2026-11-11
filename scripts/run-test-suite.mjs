@@ -98,6 +98,7 @@ const core = [
   'test-wedding-ui07-f',
   'test-wedding-ui08-02',
   'test-wedding-ui08-03',
+  'test-wedding-ui08-04',
   'test-wedding-cover-settings',
   'test-wedding-cover-editor',
   'test-image-upload-optimization',
