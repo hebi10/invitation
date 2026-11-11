@@ -10,6 +10,7 @@ from __future__ import annotations
 import hashlib
 import json
 import re
+import shlex
 import subprocess
 import time
 import xml.etree.ElementTree as ET
@@ -83,6 +84,16 @@ def tap(node):
 
 
 def dismiss_onboarding(tree):
+    labels = text(tree).lower()
+    if "enhanced ad privacy in chrome" in labels:
+        for name in ("got it", "done", "more", "continue", "no thanks"):
+            for node in tree.iter("node"):
+                label = (node.get("text") or node.get("content-desc") or "").strip().lower()
+                if label == name and node.get("enabled") == "true" and tap(node):
+                    return True
+        adb("shell", "input", "swipe", "520", "1480", "520", "540", "450")
+        return True
+
     names = {
         "accept & continue", "continue", "use without an account",
         "no thanks", "no, thanks", "not now", "continue without an account",
@@ -112,7 +123,7 @@ def visit(theme, scale, intro=False):
     try:
         assert abs(float(record["readback_font_scale"]) - scale) < 0.01
         adb("shell", "am", "start", "-W", "-a",
-            "android.intent.action.VIEW", "-d", url, timeout=65)
+            "android.intent.action.VIEW", "-d", shlex.quote(url), timeout=65)
         loaded = False
         last = ""
         invite_button = None
@@ -135,9 +146,11 @@ def visit(theme, scale, intro=False):
                                       ("-intro" if intro else "") + "-accessibility.xml")
                     xml_file.write_text(raw, encoding="utf-8")
                     break
-                if dismiss_onboarding(tree) or attempt in (5, 11, 17):
+                if dismiss_onboarding(tree):
+                    time.sleep(1)
+                elif attempt in (4, 9, 15):
                     adb("shell", "am", "start", "-a",
-                        "android.intent.action.VIEW", "-d", url, check=False)
+                        "android.intent.action.VIEW", "-d", shlex.quote(url), check=False)
             except (ET.ParseError, subprocess.TimeoutExpired, RuntimeError, ValueError):
                 pass
         record["native_accessibility_tree_has_fictional_couple"] = loaded
