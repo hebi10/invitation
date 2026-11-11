@@ -10,7 +10,7 @@ export const metadata: Metadata = {
 export default async function SampleInvitationPage({
   searchParams,
 }: {
-  searchParams: Promise<{ embed?: string | string[]; qaTheme?: string | string[]; qaMusic?: string | string[]; qaUI07?: string | string[]; qaUI07Case?: string | string[]; qaUI07Map?: string | string[] }>;
+  searchParams: Promise<{ embed?: string | string[]; qaTheme?: string | string[]; qaMusic?: string | string[]; qaUI07?: string | string[]; qaUI07Case?: string | string[]; qaUI07Map?: string | string[]; qaUI07Intro?: string | string[] }>;
 }) {
   const query = await searchParams;
   const theme = query.qaTheme === 'romantic' || query.qaTheme === 'gyeol' || query.qaTheme === 'classic-r' || query.qaTheme === 'emotional' ? query.qaTheme : 'simple';
@@ -21,5 +21,8 @@ export default async function SampleInvitationPage({
   const qaUI07Map = qaUI07 && (query.qaUI07Map === 'coordinates' || query.qaUI07Map === 'geocode')
     ? query.qaUI07Map
     : 'off';
-  return <SampleInvitation embedded={query.embed === '1'} theme={theme} qaMusic={query.qaMusic === '1'} qaUI07={qaUI07} qaUI07Case={qaUI07Case} qaUI07Map={qaUI07Map} />;
+  const qaUI07Intro = qaUI07 && (query.qaUI07Intro === 'light' || query.qaUI07Intro === 'cinema' || query.qaUI07Intro === 'envelope')
+    ? query.qaUI07Intro
+    : 'none';
+  return <SampleInvitation embedded={query.embed === '1'} theme={theme} qaMusic={query.qaMusic === '1'} qaUI07={qaUI07} qaUI07Case={qaUI07Case} qaUI07Map={qaUI07Map} qaUI07Intro={qaUI07Intro} />;
 }
