@@ -266,11 +266,11 @@ for (const theme of ['simple', 'classic-r', 'romantic', 'gyeol', 'emotional'] as
   assert.match(themed, new RegExp(`data-gallery-variant="${theme}"`),
     `${theme}: must use its own swiper variant`);
   assert.deepEqual(
-    [...themed.matchAll(/aria-label="테마 (\\d+)번째 사진 크게 보기"/g)].map((match) => Number(match[1])),
+    [...themed.matchAll(/aria-label="테마 (\d+)번째 사진 크게 보기"/g)].map((match) => Number(match[1])),
     [1, 2, 3, 4, 5],
     `${theme}: every saved photo remains in the slider in its original order`
   );
-  assert.doesNotMatch(themed, /data-photo-position|더보기\\(/,
+  assert.doesNotMatch(themed, /(?:data-photo-position|더보기)/,
     `${theme}: old thumbnail grid or more-button must not replace the slider`);
 }
 
@@ -285,7 +285,7 @@ for (const count of [0, 1, 2, 3, 4, 5]) {
   }
   assert.match(gallery, /data-gallery-variant="emotional"/);
   assert.deepEqual(
-    [...gallery.matchAll(/aria-label="가든 (\\d+)번째 사진 크게 보기"/g)].map((match) => Number(match[1])),
+    [...gallery.matchAll(/aria-label="가든 (\d+)번째 사진 크게 보기"/g)].map((match) => Number(match[1])),
     Array.from({ length: count }, (_, index) => index + 1),
     `Natural gallery with ${count} saved photos exposes every ordered slide`
   );
