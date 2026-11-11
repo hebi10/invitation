@@ -254,8 +254,8 @@ with sync_playwright() as engine:
                 locale="ko-KR", color_scheme="light", reduced_motion="reduce",
             )
             context.add_init_script(
-                FAKE_KAKAO_SDK,
-                {"fail": mode == "failure"},
+                script="(" + FAKE_KAKAO_SDK + ")({ fail: " +
+                       ("true" if mode == "failure" else "false") + " })"
             )
             page = context.new_page()
             errors = []
