@@ -5,7 +5,7 @@ export default function WeddingActionIcon({ kind }: { kind: 'photo' | 'calendar'
     {kind === 'calendar' ? <><rect x="4" y="5" width="16" height="16" rx="1" /><path d="M8 3v4m8-4v4M4 10h16M8 14h2m4 0h2m-8 4h2m4 0h2" /></> : null}
     {kind === 'pin' ? <><path d="M19 10c0 5-7 11-7 11S5 15 5 10a7 7 0 1 1 14 0Z" /><circle cx="12" cy="10" r="2.5" /></> : null}
     {kind === 'accounts' ? <><rect x="3" y="5" width="18" height="14" rx="1" /><path d="M3 10h18m-13 5h4" /></> : null}
-    {kind === 'route' ? <><circle cx="6" cy="19" r="2" /><path d="M8 19h6a4 4 0 0 0 0-8h-4a4 4 0 0 1 0-8h9m-4-3 4 3-4 3" /></> : null}
-    {kind === 'move' ? <><path d="M12 3v18M3 12h18m-7-14-4 4 4 4M8 17l4 4 4-4M7 8l-4 4 4 4m1-8 4 4-4 4" /></> : null}
+    {kind === 'route' ? <><circle cx="5" cy="19" r="2" /><path d="M7 19h7a4 4 0 0 0 0-8h-3a4 4 0 0 1 0-8h8" /><path d="m16 1 3 2-3 2" /></> : null}
+    {kind === 'move' ? <><path d="M12 3v18M3 12h18M8 7l4-4 4 4M8 17l4 4 4-4M7 8l-4 4 4 4M17 8l4 4-4 4" /></> : null}
   </svg>;
 }
