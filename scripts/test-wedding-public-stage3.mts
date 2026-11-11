@@ -33,7 +33,9 @@ assert.match(base, /\.page\[data-design='classic-r'\] \.ceremonySection \.ceremo
 for (const key of ['simple', 'classic-r', 'romantic', 'gyeol', 'emotional']) {
   assert.match(galleryComponent, new RegExp(key.replace('-', '-')), 'Retain the renderer for ' + key);
 }
-assert.match(galleryComponent, /layout=\{usesGrid \? 'grid' : 'carousel'\}/);
+assert.match(galleryComponent, /layout="carousel"/);
+assert.match(galleryComponent, /swiperVariant=\\{variant\\}/);
+assert.doesNotMatch(galleryComponent, /usesGrid/, 'All five sold themes must use the slider');
 assert.match(coverComponent, /data-wedding-cover-frame/);
 assert.match(coverComponent, /style=\{\{ objectPosition: /);
 assert.match(page, /<WeddingCalendarDownload/);
