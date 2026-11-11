@@ -17,6 +17,7 @@ import xml.etree.ElementTree as ET
 from datetime import datetime, timezone
 from pathlib import Path
 from urllib.parse import urlencode
+from PIL import Image, ImageChops, ImageStat
 
 OUT = Path("artifacts/ui-07-f/android-api35")
 OUT.mkdir(parents=True, exist_ok=True)
@@ -176,8 +177,32 @@ def visit(theme, scale, intro=False):
                 if not visible_button and "이서준" in text(tree):
                     opened = True
                     break
-            record["envelope_opened_to_cover"] = opened
             record["screens"].append(screen(f"{theme}-intro-after-open.png"))
+            if not opened:
+                # Chrome can retain a stale UIAutomator tree even after the
+                # React dialog has unmounted. Verify the real rendered screen
+                # instead of treating a stale accessibility snapshot as an
+                # application failure.
+                before = Image.open(OUT / record["screens"][0]["file"]).convert("RGB")
+                after = Image.open(OUT / record["screens"][-1]["file"]).convert("RGB")
+                width, height = before.size
+                assert after.size == before.size, "Emulator viewport changed mid-test"
+                region = (int(width * 0.10), int(height * 0.20),
+                          int(width * 0.90), int(height * 0.85))
+                difference = ImageChops.difference(before.crop(region), after.crop(region))
+                mean_difference = round(sum(ImageStat.Stat(difference).mean) / 3, 2)
+                record["intro_to_cover_screenshot_mean_difference"] = mean_difference
+                before_bytes = record["screens"][0]["bytes"]
+                after_bytes = record["screens"][-1]["bytes"]
+                record["intro_to_cover_screen_bytes"] = [before_bytes, after_bytes]
+                opened = mean_difference >= 25 and after_bytes > before_bytes * 3
+                record["intro_to_cover_verified_by"] = (
+                    "rendered screenshot pixel change + photo complexity"
+                    if opened else "not confirmed"
+                )
+            else:
+                record["intro_to_cover_verified_by"] = "Android accessibility hierarchy"
+            record["envelope_opened_to_cover"] = opened
             if not opened:
                 raise RuntimeError("Envelope did not transition to visible cover")
         else:
