@@ -19,7 +19,8 @@
   width: min(100%, var(--qi-content-max));
   height: 100dvh;
   min-height: 100dvh;
-  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: auto;
   isolation: isolate;
   background: var(--qi-surface);
 }
@@ -62,8 +63,8 @@
   width: 100%;
   max-width: var(--qi-copy-max);
   margin-top: -20px;
-  opacity: 0;
-  transform: translateY(var(--qi-motion-translate));
+  opacity: 1;
+  transform: none;
 }
 
 .lightContent:focus,
@@ -164,8 +165,8 @@
   bottom: max(108px, 12dvh);
   left: var(--qi-inline-gutter);
   text-align: center;
-  opacity: 0;
-  transform: translateY(var(--qi-motion-translate));
+  opacity: 1;
+  transform: none;
 }
 
 .cinemaOverline {
@@ -197,8 +198,9 @@
 }
 
 .envelopeScene {
-  position: absolute;
-  inset: 0;
+  position: relative;
+  min-height: 100%;
+  width: 100%;
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -302,6 +304,53 @@
   font-weight: 600;
 }
 
+
+/* UI-07-B: readable stagger on load, before lazy GSAP is available. */
+@keyframes introLineReveal {
+  from { opacity: 0; transform: scaleX(0); }
+  to { opacity: 1; transform: scaleX(1); }
+}
+@keyframes introTextReveal {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes introPhotoApproach {
+  from { transform: scale(1); }
+  to { transform: scale(1.035); }
+}
+@keyframes introOpenFallback {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+
+.lightScene .rule { transform-origin: center; animation: introLineReveal 560ms var(--qi-motion-ease) 60ms both; }
+.lightScene .greeting { animation: introTextReveal 480ms var(--qi-motion-ease) 180ms both; }
+.lightScene .names { animation: introTextReveal 650ms var(--qi-motion-ease) 360ms both; }
+.lightScene .message { animation: introTextReveal 600ms var(--qi-motion-ease) 690ms both; }
+.lightScene .date { animation: introTextReveal 540ms var(--qi-motion-ease) 900ms both; }
+.lightScene .lightFooter { animation: introTextReveal 500ms var(--qi-motion-ease) 1050ms both; }
+
+.cinemaScene .photo:not([hidden]) { transform-origin: center; animation: introPhotoApproach var(--qi-motion-cinema-total) linear both; }
+.cinemaScene .cinemaOverline { animation: introTextReveal 500ms var(--qi-motion-ease) 300ms both; }
+.cinemaScene .cinemaNames { animation: introTextReveal 680ms var(--qi-motion-ease) 550ms both; }
+.cinemaScene .cinemaDate { animation: introTextReveal 550ms var(--qi-motion-ease) 890ms both; }
+
+.envelopeScene .envelopeTitle { animation: introTextReveal 520ms var(--qi-motion-ease) 60ms both; }
+.envelopeScene .letterCard { animation: introTextReveal 650ms var(--qi-motion-ease) 160ms both; }
+.envelopeScene .openButton,
+.envelopeScene .letterHint { animation: introTextReveal 480ms var(--qi-motion-ease) 480ms both; }
+
+.backdrop[data-intro-opening='true'] .envelopeScene :is(.letterCard, .openButton, .letterHint) {
+  animation: none;
+}
+.backdrop[data-intro-opening='true']:not([data-motion-driver='gsap']) .letterCard {
+  transform: translateY(-12px);
+  transition: transform 580ms var(--qi-motion-ease);
+}
+.backdrop[data-intro-opening='true']:not([data-motion-driver='gsap']) .stage {
+  animation: introOpenFallback 420ms ease-in-out 680ms both;
+}
+
 @media (max-width: 359px) {
   .envelopeTitle {
     margin-bottom: 22px;
@@ -360,6 +409,15 @@
 @media (prefers-reduced-motion: reduce) {
   .lightContent,
   .cinemaCopy {
+    opacity: 1;
+    transform: none;
+  }
+  .lightScene :is(.rule, .greeting, .names, .message, .date, .lightFooter),
+  .cinemaScene :is(.photo, .cinemaOverline, .cinemaNames, .cinemaDate),
+  .envelopeScene :is(.envelopeTitle, .letterCard, .openButton, .letterHint),
+  .backdrop[data-intro-opening='true'] .stage {
+    animation: none;
+    transition: none;
     opacity: 1;
     transform: none;
   }

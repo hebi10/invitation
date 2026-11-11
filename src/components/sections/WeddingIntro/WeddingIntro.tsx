@@ -78,6 +78,7 @@ export default function WeddingIntro({
     let disposed = false;
     let animation: ReturnType<typeof gsap.context> | undefined;
     const timeouts = new Set<number>();
+    const startedAt = window.performance.now();
     const later = (callback: () => void, delay: number) => {
       const id = window.setTimeout(() => {
         timeouts.delete(id);
@@ -102,26 +103,31 @@ export default function WeddingIntro({
       if (openingRef.current || finished.current) return;
       openingRef.current = true;
       setOpening(true);
-      complete();
+      if (preference.matches) {
+        complete();
+        return;
+      }
+      later(complete, 1550);
     };
     openLetterRef.current = beginLetter;
 
     if (preference.matches) {
       if (style !== 'envelope') later(complete, 0);
     } else {
-      if (style !== 'envelope') later(complete, 5000);
+      const totalDuration = style === 'cinema' ? 2800 : 2400;
+      if (style !== 'envelope') later(complete, totalDuration + 1000);
+
       void import('gsap').then(({ gsap }) => {
         if (disposed || finished.current) return;
-        clearTimeouts();
 
         animation = gsap.context(() => {
-          const select = gsap.utils.selector(element);
-          const ease = 'power3.out';
           if (style === 'envelope') {
+            if (openingRef.current) return;
             const timeline = gsap.timeline({ paused: true, onComplete: complete });
             timeline
-              .to(select('[data-letter-card]'), { y: -12, duration: 0.58, ease }, 0)
+              .to('[data-letter-card]', { y: -12, duration: 0.58, ease: 'power3.out' }, 0)
               .to(element, { opacity: 0, duration: 0.42, ease: 'power2.inOut' }, 0.68);
+            element.dataset.motionDriver = 'gsap';
             openLetterRef.current = () => {
               if (openingRef.current || finished.current) return;
               openingRef.current = true;
@@ -130,26 +136,23 @@ export default function WeddingIntro({
                 complete();
                 return;
               }
-              later(complete, 2200);
+              later(complete, 1550);
               timeline.play();
             };
           } else {
-            const timeline = gsap.timeline({ onComplete: complete });
-            const startTime = style === 'cinema' ? 0.12 : 0;
-            const exitTime = style === 'cinema' ? 1.18 : 0.98;
-            timeline
-              .fromTo(select('[data-intro-copy]'),
-                { opacity: 0, y: 12 },
-                { opacity: 1, y: 0, duration: 0.58, ease },
-                startTime)
-              .to(element,
-                { opacity: 0, duration: 0.42, ease: 'power2.inOut' },
-                exitTime);
-            later(complete, style === 'cinema' ? 2600 : 2400);
+            const elapsed = window.performance.now() - startedAt;
+            const delay = Math.max(0, (totalDuration - 420 - elapsed) / 1000);
+            gsap.to(element, {
+              opacity: 0,
+              duration: 0.42,
+              delay,
+              ease: 'power2.inOut',
+              onComplete: complete,
+            });
           }
         }, element);
       }).catch(() => {
-        if (!disposed) complete();
+        // CSS entrance and the guarded completion timeout remain functional.
       });
     }
 
@@ -205,16 +208,17 @@ export default function WeddingIntro({
       data-wedding-intro-style={style}
       data-intro-style={style}
       data-theme={theme}
+      data-intro-opening={opening ? 'true' : 'false'}
     >
       <div className={styles.stage} data-style={style}>
         {style === 'light' ? (
           <div className={styles.lightScene}>
             <div className={styles.lightContent} tabIndex={-1} data-dialog-initial-focus data-intro-copy>
-              <div className={styles.rule} aria-hidden="true" />
-              <p className={styles.greeting}>소중한 분께</p>
-              <h1 className={styles.names}>{names}</h1>
-              <p className={styles.message}>저희 두 사람의 새로운 시작에<br />소중한 분들을 초대합니다.</p>
-              <p className={styles.date}>{date}</p>
+              <div className={styles.rule} data-intro-rule aria-hidden="true" />
+              <p className={styles.greeting} data-intro-lead>소중한 분께</p>
+              <h1 className={styles.names} data-intro-names>{names}</h1>
+              <p className={styles.message} data-intro-message>저희 두 사람의 새로운 시작에<br />소중한 분들을 초대합니다.</p>
+              <p className={styles.date} data-intro-date>{date}</p>
             </div>
             <p className={styles.lightFooter} aria-hidden="true">INVITATION</p>
           </div>
@@ -236,9 +240,9 @@ export default function WeddingIntro({
             ) : null}
             <div className={styles.photoShade} aria-hidden="true" />
             <div className={styles.cinemaCopy} tabIndex={-1} data-dialog-initial-focus data-intro-copy>
-              <p className={styles.cinemaOverline}>WEDDING DAY</p>
-              <h1 className={styles.cinemaNames}>{names}</h1>
-              <p className={styles.cinemaDate}>{date}</p>
+              <p className={styles.cinemaOverline} data-intro-lead>WEDDING DAY</p>
+              <h1 className={styles.cinemaNames} data-intro-names>{names}</h1>
+              <p className={styles.cinemaDate} data-intro-date>{date}</p>
             </div>
           </div>
         ) : null}
