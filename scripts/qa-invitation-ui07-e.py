@@ -23,6 +23,11 @@ VIEWPORTS = ((320, 740), (390, 844), (430, 932), (768, 1024), (1440, 900))
 
 FAKE_AUDIO = r"""() => {
   const paused = new WeakMap();
+  document.addEventListener('error', event => {
+    if (event.target instanceof HTMLMediaElement) {
+      event.stopImmediatePropagation();
+    }
+  }, true);
   Object.defineProperty(HTMLMediaElement.prototype, 'paused', {
     configurable: true,
     get() { return paused.has(this) ? paused.get(this) : true; }
@@ -141,8 +146,11 @@ def verify(page, theme, width, scenario, row):
     if scenario == "error":
         page.evaluate("window.__ui07eRejectNextMusicPlay = true")
         button.click()
-        retry = music.get_by_role("button", name="음악 다시 시도")
-        retry.wait_for(state="visible", timeout=4000)
+        page.wait_for_function("""() => document.querySelector(
+          'button[data-wedding-music-state="error"]'
+        ) !== null""", timeout=6000)
+        retry = button
+        assert retry.get_attribute("aria-label") == "음악 다시 시도"
         assert retry.get_attribute("aria-pressed") == "false"
         assert retry.get_attribute("data-wedding-music-state") == "error"
         assert retry.locator('svg[data-wedding-music-icon="error"]').count() == 1
@@ -159,7 +167,12 @@ def verify(page, theme, width, scenario, row):
         return
 
     button.click()
-    playing = music.get_by_role("button", name="음악 끄기")
+    page.wait_for_function("""() => {
+      const button = document.querySelector('button[data-wedding-music-state]');
+      return button?.getAttribute('aria-pressed') === 'true';
+    }""", timeout=6000)
+    playing = button
+    assert playing.get_attribute("aria-label") == "음악 끄기"
     assert playing.get_attribute("aria-pressed") == "true"
     assert playing.get_attribute("data-wedding-music-state") == "playing"
     assert playing.locator('svg[data-wedding-music-icon="playing"]').count() == 1
@@ -216,7 +229,19 @@ with sync_playwright() as pw:
                 print("UI07E_OK", theme, width, scenario, flush=True)
             except Exception as exc:
                 row["error"] = type(exc).__name__ + ": " + str(exc)[:1500]
-                print("UI07E_FAIL", theme, width, scenario, row["error"], flush=True)
+                row["failure_state"] = page.evaluate("""() => {
+                  const button = document.querySelector('button[data-wedding-music-state]');
+                  const audio = document.querySelector('audio');
+                  return {
+                    label: button?.getAttribute('aria-label'),
+                    pressed: button?.getAttribute('aria-pressed'),
+                    state: button?.dataset.weddingMusicState,
+                    native_audio_error: audio?.error?.code ?? null,
+                    synthetic_paused: audio?.paused ?? null,
+                    visible_notice: document.querySelector('[role="status"]')?.textContent?.slice(0, 120)
+                  };
+                }""")
+                print("UI07E_FAIL", theme, width, scenario, row["error"], row["failure_state"], flush=True)
                 try:
                     row["screens"].append(capture(page, theme, width, "failed"))
                 except Exception:
