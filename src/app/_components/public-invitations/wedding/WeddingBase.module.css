@@ -1333,25 +1333,25 @@ details[open] > :is(.disclosureSummary, .accountSummary, .formSummary)::after { 
 }
 
 /* Keep actions, disclosure panels, calendar and guestbook in the active theme. */
-.page[data-design] :is(.disclosureSummary, .accountSummary, .calendarDisclosure > summary, .copyButton, .carouselButton, .pageButton, .pageNumber) {
+:is(.page[data-design='simple'], .page[data-design='classic-r'], .page[data-design='romantic'], .page[data-design='gyeol'], .page[data-design='emotional']) :is(.disclosureSummary, .accountSummary, .calendarDisclosure > summary, .copyButton, .carouselButton, .pageButton, .pageNumber) {
   border-color: var(--control-line);
 }
-.page[data-design] :is(.disclosureSummary, .accountSummary, .calendarDisclosure > summary) {
+:is(.page[data-design='simple'], .page[data-design='classic-r'], .page[data-design='romantic'], .page[data-design='gyeol'], .page[data-design='emotional']) :is(.disclosureSummary, .accountSummary, .calendarDisclosure > summary) {
   background-color: var(--paper);
   color: var(--ink);
 }
-.page[data-design] :is(.formSummary, .submitButton, .active, .pageButtonActive) {
+:is(.page[data-design='simple'], .page[data-design='classic-r'], .page[data-design='romantic'], .page[data-design='gyeol'], .page[data-design='emotional']) :is(.formSummary, .submitButton, .active, .pageButtonActive) {
   background-color: var(--accent);
   border-color: var(--accent);
   color: var(--on-accent);
 }
-.page[data-design] :is(.commentItem, .dateSection, .input, .textarea) {
+:is(.page[data-design='simple'], .page[data-design='classic-r'], .page[data-design='romantic'], .page[data-design='gyeol'], .page[data-design='emotional']) :is(.commentItem, .dateSection, .input, .textarea) {
   color: var(--ink);
 }
-.page[data-design] :is(.input, .textarea) {
+:is(.page[data-design='simple'], .page[data-design='classic-r'], .page[data-design='romantic'], .page[data-design='gyeol'], .page[data-design='emotional']) :is(.input, .textarea) {
   border-color: var(--control-line);
   background-color: var(--input-surface, var(--paper));
 }
-.page[data-design] :is(.contactActions a, .copyButton, .returnLinks a) {
+:is(.page[data-design='simple'], .page[data-design='classic-r'], .page[data-design='romantic'], .page[data-design='gyeol'], .page[data-design='emotional']) :is(.contactActions a, .copyButton, .returnLinks a) {
   color: var(--accent);
 }
