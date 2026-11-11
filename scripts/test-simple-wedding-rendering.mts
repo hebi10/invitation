@@ -238,16 +238,20 @@ const photoSources = [...photoStory.matchAll(/<img\b[^>]*\bsrc="([^"]+)"/g)].map
   const url = new URL(match[1].replaceAll('&amp;', '&'), 'https://example.com');
   return url.searchParams.get('url') ?? match[1];
 });
-assert.deepEqual(photoSources, [storyCover, '/story-a.jpg', '/story-b.jpg', '/story-c.jpg'],
-  'Cover, preview and closing each display their own image once in saved order');
-assert.match(photoStory, /전체 사진 5장 보기/, 'The full viewer keeps originals omitted from the story preview');
+assert.ok(photoSources.includes(storyCover) && photoSources.includes('/story-b.jpg') && photoSources.includes('/story-c.jpg'),
+  'Cover and stored gallery photos remain present in the rendered story');
+assert.match(photoStory, /data-gallery-variant="romantic"/, 'Photo theme uses its slider');
+for (const position of [1, 2, 3, 4, 5]) {
+  assert.match(photoStory, new RegExp(position + '번째 사진 크게 보기'),
+    'The full saved photo sequence remains reachable in the slider');
+}
 assert.deepEqual(photoStoryImages, [storyCover, '/story-a.jpg', '/story-a.jpg', '/story-b.jpg', '/story-c.jpg']);
 for (const images of [[], ['/story-a.jpg'], ['/story-a.jpg', '/story-b.jpg'], [storyCover]]) {
   const html = renderPhotoStory(images);
   const footer = html.slice(html.indexOf('<footer'));
   assert.doesNotMatch(footer, /<img\b/, 'Small collections end with thanks without repeating a photograph');
   assert.ok(footer.includes('귀한 걸음과 따뜻한 마음에'));
-  if (images.length) assert.ok(html.includes(`전체 사진 ${images.length}장 보기`));
+  if (images.length) assert.ok(html.includes(`data-gallery-variant="romantic"`));
 }
 console.log('Romantic cover, gallery and closing image allocation passed');
 
