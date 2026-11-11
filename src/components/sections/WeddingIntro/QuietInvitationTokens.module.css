@@ -91,3 +91,60 @@
     --qi-motion-envelope-after-tap: 0ms;
   }
 }
+
+
+/* UI-08-02: portal intros cannot inherit --paper from WeddingBase. */
+.quietInvitation[data-theme='simple'] {
+  --qi-paper: #FAF9F6;
+  --qi-paper-soft: #F0EDE7;
+  --qi-paper-card: #FAF9F6;
+  --qi-ink: #282725;
+  --qi-ink-muted: #716E69;
+  --qi-ink-accent: #514C44;
+  --qi-line: #E6E2DC;
+  --qi-focus: #514C44;
+}
+
+.quietInvitation[data-theme='classic-r'] {
+  --qi-paper: #FFFFFF;
+  --qi-paper-soft: #F5F4EF;
+  --qi-paper-card: #FFFFFF;
+  --qi-ink: #252523;
+  --qi-ink-muted: #6F6F69;
+  --qi-ink-accent: #191917;
+  --qi-line: #D9D9D4;
+  --qi-focus: #191917;
+}
+
+.quietInvitation[data-theme='romantic'] {
+  --qi-paper: #FAF8F4;
+  --qi-paper-soft: #F1EAE0;
+  --qi-paper-card: #FAF8F4;
+  --qi-ink: #2C2925;
+  --qi-ink-muted: #70695F;
+  --qi-ink-accent: #292723;
+  --qi-line: #DDD7CE;
+  --qi-focus: #514A42;
+}
+
+.quietInvitation[data-theme='gyeol'] {
+  --qi-paper: #F6F0E5;
+  --qi-paper-soft: #FBF8F2;
+  --qi-paper-card: #F6F0E5;
+  --qi-ink: #302B26;
+  --qi-ink-muted: #70665C;
+  --qi-ink-accent: #57493C;
+  --qi-line: #D8C8B4;
+  --qi-focus: #57493C;
+}
+
+.quietInvitation[data-theme='emotional'] {
+  --qi-paper: #FAF9F5;
+  --qi-paper-soft: #EEF1E8;
+  --qi-paper-card: #FAF9F5;
+  --qi-ink: #2F342D;
+  --qi-ink-muted: #626B5E;
+  --qi-ink-accent: #536649;
+  --qi-line: #CFD5C8;
+  --qi-focus: #4F6149;
+}

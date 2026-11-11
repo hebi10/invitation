@@ -180,6 +180,7 @@ export default function WeddingIntro({
         <div
           className={[styles.backdrop, tokens.quietInvitation].join(' ')}
           data-wedding-intro-pending="true"
+          data-theme={theme}
           data-wedding-intro-style={style}
           data-intro-style={style}
           aria-hidden="true"
