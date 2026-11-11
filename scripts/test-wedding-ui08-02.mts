@@ -5,6 +5,7 @@ const read = (path: string) => readFileSync(path, 'utf8');
 const contract = JSON.parse(read('docs/design/ui-08-01-wedding-palettes.json'));
 const css = read('src/app/_components/public-invitations/wedding/WeddingBase.module.css');
 const intro = read('src/components/sections/WeddingIntro/QuietInvitationTokens.module.css');
+const introComponent = read('src/components/sections/WeddingIntro/WeddingIntro.tsx');
 const share = read('src/app/_components/weddingThemes.ts');
 const gallery = read('src/app/_components/public-invitations/wedding/WeddingGallery.module.css');
 const marker = '/* UI-08-02: canonical public wedding palette';
@@ -53,6 +54,7 @@ for (const palette of contract.mapping) {
   assert.ok(contrast(palette.ink, palette.paper) >= 4.5, `${palette.id}: ink contrast under WCAG AA`);
   assert.ok(contrast(palette.onAccent, palette.accent) >= 4.5, `${palette.id}: button contrast under WCAG AA`);
 }
+assert.ok(introComponent.includes('data-wedding-intro-pending="true"\\n          data-theme={theme}'), 'pending intro missing its selected theme');
 assert.ok(gallery.includes('background: var(--paper-soft, #f0ede7);'), 'shared gallery fallback does not inherit theme');
 assert.ok(gallery.includes('color: var(--ink, #282725);'), 'shared gallery foreground does not inherit theme');
 assert.ok(!gallery.includes('background: #eef1e8;'), 'hard-coded garden green leaks into shared gallery');
