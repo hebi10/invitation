@@ -77,3 +77,12 @@
 - 명령: `npx tsx scripts/test-wedding-ui07-a07.mts` → `python scripts/qa-invitation-ui07-a07.py`
 - 산출물: `artifacts/ui-07-a07/manifest.json` 및 디자인별 `simple-390-full-full.png`, `classic-r-390-full-full.png`, `romantic-390-full-full.png`, `gyeol-390-full-full.png`, `emotional-390-full-full.png` (이외 모바일·태블릿·PC 샷 포함).
 - **최신 캡처 생성 성공 여부는 GitHub Actions의 실제 성공 결과를 확인한 뒤 판정**한다. GitHub Actions의 CI 통과는 실제 고객 운영 URL 접속 검증의 대체가 아니다.
+
+## 8. 최신 소스 재캡처 검증 완료 기록
+
+- 실행: [GitHub Actions UI-R00 #42993998442](https://github.com/hebi10/invitation/actions/runs/42993998442) — **60/60 QA 통과**(키보드 30회, 갤러리 5회, 95개 PNG).
+- 사용 데이터: 가상 샘플. `no_actual_customer_data=true`, `production_data_writes=0`. 물리기기 TalkBack/VoiceOver 및 운영 도메인 실표시 검사 아님.
+- manifest 촬영 SHA: `0f6a3d5b31fb98a263dadce378ceedc454a84b66` (PR 검사 merge ref; 공개 앱 JS/CSS는 기획 기준 main `87df7524`와 동일).
+- 5종 `*-390-full-full.png` 파일 존재·성공 확인. **각각의 SHA256이 이전 5종 PNG와 동일**해 기획 비교 기준 이미지가 이번 소스 기준에서도 일치함을 확인.
+- [Drive에 보관한 최신 95장 QA 원본 ZIP](https://drive.google.com/file/d/1dSlHfD4QIO5qhSUZ7Rxyur6PD5UfrGnd/view?usp=drivesdk) (GitHub artifact `13842908279`; SHA·manifest 포함).
+- UI-R00 **기준선 캡처 게이트 통과**. 아직 새 디자인 UI 코드는 수정하지 않았고, UI-R01~UI-R09의 구현·배포는 후속 승인 단계.
