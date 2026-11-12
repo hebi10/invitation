@@ -415,9 +415,9 @@ const BIRTHDAY_EVENT_STEP_KEYS: WizardStepKey[] = [
   'schedule',
   'greeting',
   'images',
-  'intro',
   'music',
   'extra',
+  'intro',
   'final',
 ];
 
@@ -426,9 +426,9 @@ const FIRST_BIRTHDAY_EVENT_STEP_KEYS: WizardStepKey[] = [
   'schedule',
   'greeting',
   'images',
-  'intro',
   'music',
   'extra',
+  'intro',
   'final',
 ];
 
