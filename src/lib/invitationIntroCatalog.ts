@@ -28,16 +28,17 @@ export const INVITATION_INTRO_PRESETS = [
   },
 ] as const satisfies readonly InvitationIntroPreset[];
 
-export type InvitationIntroPresetId = (typeof INVITATION_INTRO_PRESETS)[number]['id'];
+export type RegisteredInvitationIntroPreset = (typeof INVITATION_INTRO_PRESETS)[number];
+export type InvitationIntroPresetId = RegisteredInvitationIntroPreset['id'];
 export type InvitationIntroChoice = 'none' | InvitationIntroPresetId;
 
-export function listAvailableInvitationIntroPresets(): InvitationIntroPreset[] {
+export function listAvailableInvitationIntroPresets(): RegisteredInvitationIntroPreset[] {
   return [...INVITATION_INTRO_PRESETS]
     .filter((preset) => preset.active)
     .sort((a, b) => a.sortOrder - b.sortOrder);
 }
 
-export function getInvitationIntroPreset(value: unknown): InvitationIntroPreset | null {
+export function getInvitationIntroPreset(value: unknown): RegisteredInvitationIntroPreset | null {
   if (typeof value !== 'string') return null;
   return listAvailableInvitationIntroPresets().find((preset) => preset.id === value) ?? null;
 }
@@ -49,5 +50,5 @@ export function getInvitationIntroPreset(value: unknown): InvitationIntroPreset 
 export function parseInvitationIntroChoice(value: unknown): InvitationIntroChoice | null {
   if (value === 'none') return 'none';
   const preset = getInvitationIntroPreset(value);
-  return preset ? preset.id as InvitationIntroPresetId : null;
+  return preset ? preset.id : null;
 }
