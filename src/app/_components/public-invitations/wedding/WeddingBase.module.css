@@ -1904,3 +1904,83 @@ details[open] > :is(.disclosureSummary, .accountSummary, .formSummary)::after { 
     padding: 22px 16px;
   }
 }
+
+
+/* UI-R04: romantic mobile spacing and wedding-information hierarchy only. */
+.page[data-design='romantic'] .quickLinks {
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 14px clamp(16px, 5.5vw, 24px);
+}
+.page[data-design='romantic'] .quickLinks a {
+  flex: 1 1 0;
+  min-width: 0;
+  min-height: 48px;
+  padding: 10px 5px;
+  color: var(--accent);
+  font-size: 13px;
+  line-height: 1.5;
+  text-align: center;
+  white-space: normal;
+}
+.page[data-design='romantic'] .invitationSection {
+  margin-top: 48px;
+}
+.page[data-design='romantic'] .invitationCopy {
+  width: 100%;
+  max-width: 34ch;
+  margin-inline: auto;
+  overflow-wrap: anywhere;
+}
+.page[data-design='romantic'] [data-wedding-section='gallery'] > .container {
+  width: calc(100% - 32px);
+  margin-top: 40px;
+}
+.page[data-design='romantic'] [data-wedding-section='gallery'] .title {
+  margin-bottom: 20px;
+}
+.page[data-design='romantic'] .ceremonySection {
+  margin-top: 40px;
+  padding: 28px clamp(16px, 5.5vw, 24px);
+  background: var(--paper-soft);
+}
+.page[data-design='romantic'] .ceremonySection .ceremonyContent {
+  gap: 10px;
+  min-width: 0;
+}
+.page[data-design='romantic'] .ceremonySection .photoDate {
+  gap: 5px 10px;
+}
+.page[data-design='romantic'] .ceremonySection .photoDate strong {
+  font-size: clamp(30px, 8vw, 36px);
+  line-height: 1.35;
+}
+.page[data-design='romantic'] .ceremonySection .venueName {
+  margin-top: 10px;
+  font-size: clamp(17px, 5vw, 20px);
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+.page[data-design='romantic'] .ceremonySection > button,
+.page[data-design='romantic'] .calendarDisclosure > summary {
+  min-height: 72px;
+}
+.page[data-design='romantic'] .returnLinks {
+  gap: 8px 18px;
+  margin-top: 44px;
+}
+@media (max-width: 359px) {
+  .page[data-design='romantic'] [data-wedding-section='gallery'] > .container {
+    width: calc(100% - 24px);
+  }
+  .page[data-design='romantic'] .ceremonySection {
+    padding: 24px 16px;
+  }
+  .page[data-design='romantic'] .quickLinks {
+    padding-inline: 12px;
+  }
+  .page[data-design='romantic'] .quickLinks a {
+    font-size: 12px;
+  }
+}

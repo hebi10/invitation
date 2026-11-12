@@ -294,3 +294,47 @@
     font-size: 29px;
   }
 }
+
+
+/* UI-R04: photo-led cover rhythm; user-selected focus and text placement remain unchanged. */
+.photographic .details {
+  padding: 22px clamp(16px, 5.5vw, 24px) 24px;
+}
+.photographic .details .names {
+  gap: 8px;
+  font-size: clamp(25px, 7.4vw, 30px);
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+.photographic .photoCopy {
+  padding-inline: clamp(16px, 5.5vw, 24px);
+}
+.photographic .photoCopy .names {
+  gap: clamp(5px, 2.2vw, 10px);
+  font-size: clamp(24px, 7.2vw, 30px);
+  line-height: 1.4;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, .65);
+}
+.photographic .photoMeta .date {
+  gap: 2px 9px;
+  margin-top: 12px;
+  color: var(--ink, #2c2925);
+  font-size: 15px;
+  line-height: 1.7;
+  font-variant-numeric: tabular-nums;
+}
+.photographic .photoMeta .venue {
+  margin-top: 6px;
+  color: var(--muted, #70695f);
+  font-size: 15px;
+  line-height: 1.7;
+  overflow-wrap: anywhere;
+}
+@media (max-width: 359px) {
+  .photographic .photoCopy {
+    padding-inline: 14px;
+  }
+  .photographic .photoCopy .names {
+    gap: 5px;
+  }
+}
