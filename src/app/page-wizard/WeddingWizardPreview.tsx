@@ -116,7 +116,7 @@ export default function WeddingWizardPreview({ formState, theme, activeStepKey =
           <button type="button" disabled={!ready} aria-pressed={viewingTop} onClick={() => {
             setViewingTop(true);
             frameRef.current?.contentWindow?.postMessage({ type: 'wedding-wizard-preview:top' }, window.location.origin);
-          }}>{normalizeWeddingIntroStyle(introPreview?.style ?? formState.introStyle) === 'none' ? '처음부터 보기' : '인트로부터 다시 보기'}</button>
+          }}>{formState.introPresetId !== undefined || normalizeWeddingIntroStyle(introPreview?.style ?? formState.introStyle) === 'none' ? '처음부터 보기' : '기존 인트로부터 다시 보기'}</button>
         </div>
       </div>
       <div className={styles.phone}>
