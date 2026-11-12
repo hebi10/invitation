@@ -89,6 +89,13 @@ with sync_playwright() as playwright:
                       const activePhoto = slider?.querySelector('.swiper-slide-active button[aria-label*="크게 보기"]');
                       const heading = gallery?.querySelector('h2');
                       const coverMeta = main?.querySelector('[data-wedding-cover-details] p');
+                      const coverSection = main?.querySelector('section[data-cover-position]');
+                      const coverFrame = coverSection?.querySelector('[data-wedding-cover-frame]');
+                      const coverHeading = coverSection?.querySelector('h1');
+                      const modernDate = coverSection?.querySelector('[data-wedding-editorial-photo-meta] .date, [data-wedding-editorial-photo-meta] p');
+                      const classicFrame = coverSection?.querySelector('[data-wedding-traditional-frame]');
+                      const photoBounds = coverFrame?.getBoundingClientRect();
+                      const classicBounds = classicFrame?.getBoundingClientRect();
                       const mr = main?.getBoundingClientRect();
                       const sliderRect = slider?.getBoundingClientRect();
                       const activeRect = activePhoto?.getBoundingClientRect();
@@ -105,6 +112,17 @@ with sync_playwright() as playwright:
                         reducedMotion: matchMedia('(prefers-reduced-motion: reduce)').matches,
                         editorialSubtitleFont: theme === 'classic-r' ? parseFloat(getComputedStyle(heading,'::after').fontSize) : null,
                         editorialCoverLabelFont: font(coverMeta),
+                        coverPosition: coverSection?.dataset.coverPosition,
+                        coverHasPhoto: coverSection?.dataset.coverHasPhoto,
+                        coverTitleInPhoto: Boolean(coverFrame?.contains(coverHeading)),
+                        modernDateInPhoto: Boolean(coverFrame && modernDate && coverFrame.contains(modernDate)),
+                        modernPhotoDateText: modernDate?.textContent?.trim() || '',
+                        modernPhotoScrim: coverFrame?.querySelector('[class*="photoCopy"]') ?
+                          getComputedStyle(coverFrame.querySelector('[class*="photoCopy"]')).backgroundImage : '',
+                        classicFrameOverlap: photoBounds && classicBounds ?
+                          Math.round((photoBounds.bottom - classicBounds.top) * 10) / 10 : null,
+                        classicFrameInset: photoBounds && classicBounds ?
+                          Math.round((classicBounds.left - photoBounds.left) * 10) / 10 : null,
                         galleryVariant: slider?.dataset.galleryVariant,
                         gallerySlideCount: slider?.querySelectorAll('.swiper-slide button[aria-label*="크게 보기"]').length ?? 0,
                         galleryControls: slider?.querySelector('[role="status"][aria-live="polite"]') !== null,
@@ -128,6 +146,17 @@ with sync_playwright() as playwright:
                     if theme == "classic-r":
                         assert metrics["editorialSubtitleFont"] >= 13, metrics
                         assert metrics["editorialCoverLabelFont"] >= 13, metrics
+                        assert metrics["coverPosition"] == "bottom", metrics
+                        assert metrics["coverTitleInPhoto"] and metrics["modernDateInPhoto"], metrics
+                        assert "2027" in metrics["modernPhotoDateText"], metrics
+                        assert "linear-gradient" in metrics["modernPhotoScrim"], metrics
+                    if theme == "gyeol":
+                        assert metrics["coverPosition"] == "below" and metrics["coverHasPhoto"] == "true", metrics
+                        assert 10 <= metrics["classicFrameOverlap"] <= 55, metrics
+                        assert metrics["classicFrameInset"] >= 10, metrics
+                    if theme in ("classic-r", "gyeol"):
+                        case["cover_structure"] = capture(page, f"{theme}-{label}-cover-structure.png",
+                                                          selector='section[data-cover-position]')
                     case["gallery"] = capture(page, f"{theme}-{label}-gallery.png", selector='[data-wedding-section="gallery"]')
                     if label in ("mobile390", "desktop1440"):
                         page.evaluate("scrollTo(0,0)")
