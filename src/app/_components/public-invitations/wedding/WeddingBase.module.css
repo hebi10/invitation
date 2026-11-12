@@ -1742,6 +1742,7 @@ details[open] > :is(.disclosureSummary, .accountSummary, .formSummary)::after { 
 }
 .page[data-design='simple'] .contactSection .summaryDescription {
   font-size: 13px;
+  color: #595650;
 }
 .page[data-design='simple'] .ceremonySection {
   gap: 14px;
@@ -1869,7 +1870,7 @@ details[open] > :is(.disclosureSummary, .accountSummary, .formSummary)::after { 
 }
 .page[data-design='classic-r'] .ceremonySection > button,
 .page[data-design='classic-r'] .ceremonySection .calendarDisclosure > summary {
-  min-height: 48px;
+  min-height: 72px;
   border: 1px solid #85857e;
   background: transparent;
   color: var(--on-accent, #fff);
