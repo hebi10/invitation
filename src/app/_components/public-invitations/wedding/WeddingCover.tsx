@@ -28,6 +28,10 @@ export default function WeddingCover({ theme, page, imageUrl, time, titleId = 'w
   const overlay = position !== 'below';
   const names = <><span>{page.groomName}</span><span aria-hidden="true" className={styles.join}>·</span><span>{page.brideName}</span></>;
   const date = <p className={styles.date} data-wedding-motion="copy"><span>{page.date}</span>{time ? <span>{time}</span> : null}</p>;
+  const editorialDate = <p className={styles.date} data-wedding-motion="copy">
+    <span>{page.weddingDateTime.year}.{String(page.weddingDateTime.month + 1).padStart(2, '0')}.{String(page.weddingDateTime.day).padStart(2, '0')} {new Date(Date.UTC(page.weddingDateTime.year, page.weddingDateTime.month, page.weddingDateTime.day)).toLocaleDateString('en-US', { weekday: 'short', timeZone: 'UTC' }).toUpperCase()}</span>
+    {time ? <span>· {time}</span> : null}
+  </p>;
   const heading = (className = styles.names, children: ReactNode = names) => (
     <h1 data-wedding-motion="copy" id={titleId} className={className}>{children}</h1>
   );
@@ -37,9 +41,11 @@ export default function WeddingCover({ theme, page, imageUrl, time, titleId = 'w
         style={{ objectPosition: `${cover.focusX}% ${cover.focusY}%` }}
         data-wedding-cover-photo loading="eager" decoding="async"
         onError={() => setImageState({ url: imageUrl, failed: true })} />
-      {overlay ? <div className={styles.photoCopy}>
+      {overlay ? <div className={theme === 'classic-r' ? `${styles.photoCopy} ${styles.editorialPhotoCopy}` : styles.photoCopy}>
+        {theme === 'classic-r' ? <p className={styles.editorialHeading} data-wedding-motion="copy">WEDDING INVITATION</p> : null}
         {heading(theme === 'classic-r' ? styles.editorialNames : styles.names,
           <><span>{page.groomName}</span><span aria-hidden="true" className={styles.join}>{theme === 'romantic' ? '&' : theme === 'vow' ? '그리고' : '·'}</span><span>{page.brideName}</span></>)}
+        {theme === 'classic-r' ? <div className={styles.editorialPhotoMeta}>{editorialDate}</div> : null}
       </div> : null}
     </div>
   ) : null;
@@ -84,15 +90,14 @@ export default function WeddingCover({ theme, page, imageUrl, time, titleId = 'w
     <section className={`${styles.cover} ${styles.editorial}`} data-cover-position={position} aria-labelledby={titleId}>
       {photo}
       <div className={styles.details} data-wedding-cover-details>
-        <p className={styles.editorialHeading}>WEDDING INVITATION</p>
-        {!overlay ? heading(styles.editorialNames, <>
-          <span>{page.groomName}</span><span>{page.brideName}</span>
-        </>) : null}
+        {!overlay ? <>
+          <p className={styles.editorialHeading}>WEDDING INVITATION</p>
+          {heading(styles.editorialNames, <>
+            <span>{page.groomName}</span><span>{page.brideName}</span>
+          </>)}
+        </> : null}
         <div className={styles.editorialMeta}>
-          <p className={styles.date} data-wedding-motion="copy">
-            <span>{page.weddingDateTime.year}.{String(page.weddingDateTime.month + 1).padStart(2, '0')}.{String(page.weddingDateTime.day).padStart(2, '0')} {new Date(Date.UTC(page.weddingDateTime.year, page.weddingDateTime.month, page.weddingDateTime.day)).toLocaleDateString('en-US', { weekday: 'short', timeZone: 'UTC' }).toUpperCase()}</span>
-            {time ? <span>· {time}</span> : null}
-          </p>
+          {!overlay ? editorialDate : null}
           <p className={styles.venue} data-wedding-motion="copy">{page.venue}</p>
         </div>
       </div>
@@ -100,7 +105,7 @@ export default function WeddingCover({ theme, page, imageUrl, time, titleId = 'w
   );
 
   if (theme === 'gyeol') return (
-    <section className={`${styles.cover} ${styles.traditional}`} data-cover-position={position} aria-labelledby={titleId}>
+    <section className={`${styles.cover} ${styles.traditional}`} data-cover-position={position} data-cover-has-photo={hasPhoto} aria-labelledby={titleId}>
       {photo}
       <div className={styles.details} data-wedding-cover-details>
         <div className={styles.traditionalFrame}>
