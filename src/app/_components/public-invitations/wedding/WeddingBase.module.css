@@ -2070,3 +2070,106 @@ details[open] > :is(.disclosureSummary, .accountSummary, .formSummary)::after { 
     padding: 24px 14px 20px;
   }
 }
+
+
+/* UI-R06: natural-theme section rhythm, navigation and information cards. */
+.page[data-design='emotional'] .quickLinks {
+  display: flex;
+  flex-wrap: nowrap;
+  width: calc(100% - 40px);
+  max-width: 432px;
+  gap: 8px;
+  margin: 16px auto 0;
+  padding: 0;
+}
+.page[data-design='emotional'] .quickLinks a {
+  flex: 1 1 0;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-width: 0;
+  min-height: 64px;
+  padding: 10px 4px;
+  background: var(--paper-soft);
+  border: 1px solid var(--line);
+  color: var(--accent);
+  font-size: 13px;
+  line-height: 1.4;
+  text-align: center;
+  text-decoration: none;
+  white-space: normal;
+}
+.page[data-design='emotional'] .invitationSection {
+  margin-top: 48px;
+}
+.page[data-design='emotional'] .invitationCopy {
+  max-width: 34ch;
+  margin-inline: auto;
+  font-size: 16px;
+  line-height: 2;
+  text-align: left;
+  overflow-wrap: anywhere;
+}
+.page[data-design='emotional'] .ceremonySection {
+  margin-top: 48px;
+  padding: 28px clamp(16px, 5.5vw, 24px);
+  background: var(--paper-soft);
+}
+.page[data-design='emotional'] .ceremonyContent {
+  gap: 14px;
+  min-width: 0;
+}
+.page[data-design='emotional'] .gardenDate {
+  gap: 6px;
+}
+.page[data-design='emotional'] .gardenDate strong {
+  font-size: clamp(27px, 7.6vw, 34px);
+  line-height: 1.35;
+  color: var(--accent);
+}
+.page[data-design='emotional'] .gardenDetails {
+  min-width: 0;
+  gap: 10px;
+}
+.page[data-design='emotional'] .gardenDateTime {
+  gap: 4px;
+  line-height: 1.7;
+}
+.page[data-design='emotional'] .ceremonyContent .venueName {
+  font-size: clamp(17px, 5vw, 19px);
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+.page[data-design='emotional'] :is(.scheduleContent, .travelNote, .accountCard) {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.page[data-design='emotional'] .scheduleContent {
+  gap: 8px;
+}
+.page[data-design='emotional'] .accountCard {
+  gap: 12px;
+  padding-block: 16px;
+}
+.page[data-design='emotional'] :is(.accountSummary, .contactSection .disclosureSummary, .calendarDisclosure > summary) {
+  min-height: 48px;
+}
+.page[data-design='emotional'] .returnLinks {
+  gap: 8px 18px;
+  margin-top: 44px;
+}
+@media (max-width: 359px) {
+  .page[data-design='emotional'] .quickLinks {
+    width: calc(100% - 32px);
+    gap: 6px;
+  }
+  .page[data-design='emotional'] .quickLinks a {
+    font-size: 12px;
+    padding-inline: 3px;
+  }
+  .page[data-design='emotional'] .ceremonySection {
+    padding-inline: 16px;
+  }
+}

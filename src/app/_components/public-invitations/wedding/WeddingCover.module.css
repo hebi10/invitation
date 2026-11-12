@@ -396,3 +396,60 @@
     gap: 5px;
   }
 }
+
+
+/* UI-R06: natural cover reading order, retaining customer-selected photo settings. */
+.letter .details {
+  padding: 24px clamp(16px, 5.5vw, 24px) 24px;
+}
+.letter .conceptIntroduction {
+  max-width: 28ch;
+  color: var(--muted, #626b5e);
+  font-size: clamp(17px, 4.8vw, 20px);
+  line-height: 1.75;
+}
+.letter .letterHeading {
+  grid-template-columns: minmax(0, 1fr) clamp(82px, 26vw, 120px);
+  align-items: center;
+  gap: clamp(8px, 3vw, 16px);
+  margin-top: 18px;
+}
+.letter .letterHeading .names {
+  min-width: 0;
+  gap: 5px;
+  font-size: clamp(26px, 7vw, 30px);
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+.letter .letterSprig {
+  max-width: 120px;
+  height: 108px;
+  background-size: contain;
+}
+.letter .letterMeta {
+  margin-top: 18px;
+}
+.letter .letterMeta .date {
+  flex-wrap: wrap;
+  gap: 2px 10px;
+  font-size: 15px;
+  line-height: 1.7;
+}
+.letter .letterMeta .venue {
+  margin-top: 5px;
+  color: var(--muted, #626b5e);
+  line-height: 1.7;
+  overflow-wrap: anywhere;
+}
+@media (max-width: 359px) {
+  .letter .details {
+    padding-inline: 16px;
+  }
+  .letter .letterHeading {
+    grid-template-columns: minmax(0, 1fr) 82px;
+    gap: 8px;
+  }
+  .letter .letterSprig {
+    height: 94px;
+  }
+}
