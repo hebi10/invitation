@@ -1,7 +1,8 @@
 'use client';
 
 import { useEffect } from 'react';
-import { normalizeWeddingIntroStyle } from '@/lib/weddingIntro';
+import { resolvePublicInvitationIntro } from '@/lib/publicInvitationIntro';
+import PublicInvitationGifIntro from '@/components/sections/InvitationIntro/PublicInvitationGifIntro';
 import WeddingIntro from '@/components/sections/WeddingIntro/WeddingIntro';
 
 import { BackgroundMusic } from '@/components';
@@ -177,6 +178,11 @@ function EventInvitationPageBody(options: EventInvitationRouteOptions) {
   const readyState: EventPageReadyState = state;
   const ThemeRenderer = getWeddingThemeRenderer(weddingTheme);
   const isLoaderVisible = readyState.isLoading || readyState.imagesLoading;
+  const introDecision = resolvePublicInvitationIntro(
+    readyState.pageConfig.introPresetId,
+    readyState.pageConfig.introStyle,
+    'wedding'
+  );
   const shareFeatures = resolveInvitationFeatures(
     readyState.pageConfig.productTier,
     readyState.pageConfig.features
@@ -232,9 +238,17 @@ function EventInvitationPageBody(options: EventInvitationRouteOptions) {
         </div>
       ) : null}
       <ThemeRenderer state={readyState} options={{ ...options, theme: weddingTheme }} />
-      {normalizeWeddingIntroStyle(readyState.pageConfig.introStyle) !== 'none' ? (
+      {!isLoaderVisible && introDecision.kind === 'gif' ? (
+        <PublicInvitationGifIntro
+          key={`${readyState.pageConfig.slug}:${introDecision.preset.id}`}
+          slug={readyState.pageConfig.slug}
+          preset={introDecision.preset}
+          preview={options.queryScope === 'experience'}
+        />
+      ) : null}
+      {introDecision.kind === 'legacy-wedding' ? (
         <WeddingIntro
-          style={normalizeWeddingIntroStyle(readyState.pageConfig.introStyle)}
+          style={introDecision.style}
           slug={readyState.pageConfig.slug}
           groomName={readyState.pageConfig.groomName}
           brideName={readyState.pageConfig.brideName}
