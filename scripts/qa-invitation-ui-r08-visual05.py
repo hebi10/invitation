@@ -137,6 +137,15 @@ def check_full(page, main, theme, width, row):
     assert closing.count() == 1
     assert "이서준" in closing.inner_text() and "김하은" in closing.inner_text()
     assert "감사" in closing.inner_text(), ("closing copy", theme)
+    if theme != "emotional":
+        assert "2027" in closing.inner_text(), ("wedding date omitted from closing", theme)
+    if theme == "romantic":
+        assert closing.locator("img").count() == 1, "final photo must match production renderer"
+        closing.scroll_into_view_if_needed()
+        page.wait_for_function("""() => {
+          const img = document.querySelector('[data-wedding-closing] img');
+          return img && img.complete && img.naturalWidth > 0;
+        }""", timeout=30000)
 
     gallery = main.locator('[data-wedding-section="gallery"]')
     slider = gallery.locator('[data-gallery-variant="' + theme + '"]')
