@@ -1742,6 +1742,7 @@ details[open] > :is(.disclosureSummary, .accountSummary, .formSummary)::after { 
 }
 .page[data-design='simple'] .contactSection .summaryDescription {
   font-size: 13px;
+  color: #595650;
 }
 .page[data-design='simple'] .ceremonySection {
   gap: 14px;
