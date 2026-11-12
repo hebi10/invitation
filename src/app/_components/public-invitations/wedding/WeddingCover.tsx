@@ -45,7 +45,7 @@ export default function WeddingCover({ theme, page, imageUrl, time, titleId = 'w
         {theme === 'classic-r' ? <p className={styles.editorialHeading} data-wedding-motion="copy">WEDDING INVITATION</p> : null}
         {heading(theme === 'classic-r' ? styles.editorialNames : styles.names,
           <><span>{page.groomName}</span><span aria-hidden="true" className={styles.join}>{theme === 'romantic' ? '&' : theme === 'vow' ? '그리고' : '·'}</span><span>{page.brideName}</span></>)}
-        {theme === 'classic-r' ? <div className={styles.editorialPhotoMeta}>{editorialDate}</div> : null}
+        {theme === 'classic-r' ? <div className={styles.editorialPhotoMeta} data-wedding-editorial-photo-meta>{editorialDate}</div> : null}
       </div> : null}
     </div>
   ) : null;
@@ -108,7 +108,7 @@ export default function WeddingCover({ theme, page, imageUrl, time, titleId = 'w
     <section className={`${styles.cover} ${styles.traditional}`} data-cover-position={position} data-cover-has-photo={hasPhoto} aria-labelledby={titleId}>
       {photo}
       <div className={styles.details} data-wedding-cover-details>
-        <div className={styles.traditionalFrame}>
+        <div className={styles.traditionalFrame} data-wedding-traditional-frame>
           <p className={styles.traditionalEyebrow}>WEDDING INVITATION</p>
           <div className={styles.traditionalTitle}>
             {!overlay ? heading() : null}
