@@ -817,6 +817,11 @@ details[open] > :is(.disclosureSummary, .accountSummary, .formSummary)::after { 
   .page[data-design='emotional'] .pagination { gap: 4px; }
 }
 
+/* Never override the native closed-details privacy boundary with grid styling. */
+:is(.page[data-design='simple'], .page[data-design='classic-r'], .page[data-design='romantic'], .page[data-design='gyeol'], .page[data-design='emotional']) [data-wedding-section='gift'] .accountSection:not([open]) > .accountCard {
+  display: none;
+}
+
 /* Stage 2: shared reading rhythm without changing the individual themes. */
 .page .quickLinks {
   column-gap: clamp(8px, 3vw, 20px);
@@ -1122,10 +1127,6 @@ details[open] > :is(.disclosureSummary, .accountSummary, .formSummary)::after { 
   gap: 8px 12px;
   min-width: 0;
   padding-block: 14px;
-}
-/* Never override the native closed-details privacy boundary with grid styling. */
-:is(.page[data-design='simple'], .page[data-design='classic-r'], .page[data-design='romantic'], .page[data-design='gyeol'], .page[data-design='emotional']) [data-wedding-section='gift'] .accountSection:not([open]) > .accountCard {
-  display: none;
 }
 :is(.page[data-design='simple'], .page[data-design='classic-r'], .page[data-design='romantic'], .page[data-design='gyeol'], .page[data-design='emotional']) [data-wedding-section='gift'] .accountInfo {
   display: grid;
