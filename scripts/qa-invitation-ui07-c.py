@@ -8,6 +8,7 @@ from __future__ import annotations
 import hashlib
 import json
 import os
+import re
 from datetime import datetime, timezone
 from pathlib import Path
 from urllib.parse import urlencode
@@ -38,6 +39,18 @@ def capture(page, theme, width, variant, suffix, locator=None):
     else:
         page.screenshot(path=str(file), animations="disabled", timeout=45000)
     return {"file": file.name, "sha256": hashlib.sha256(file.read_bytes()).hexdigest(), "bytes": file.stat().st_size}
+
+
+
+def wcag_contrast(background, foreground):
+    def luminance(color):
+        channels = [float(part) / 255 for part in re.findall(r"\d+(?:\.\d+)?", color)[:3]]
+        assert len(channels) == 3, ("invalid RGB color", color)
+        linear = [v / 12.92 if v <= 0.04045 else ((v + 0.055) / 1.055) ** 2.4 for v in channels]
+        return 0.2126 * linear[0] + 0.7152 * linear[1] + 0.0722 * linear[2]
+
+    first, second = luminance(background), luminance(foreground)
+    return round((max(first, second) + 0.05) / (min(first, second) + 0.05), 2)
 
 
 def inspect_case(page, theme, width, variant, doubled, record):
@@ -97,6 +110,47 @@ def inspect_case(page, theme, width, variant, doubled, record):
     assert save.bounding_box()["height"] >= 71.5, "ICS action min 72px"
     disclosure = ceremony.locator("details")
     assert disclosure.count() == (0 if variant == "empty" else 1), "inline calendar conditional rendering"
+    if theme == "classic-r":
+        appearance = page.evaluate("""() => {
+          const panel = document.querySelector('main[data-design="classic-r"] [data-wedding-section="ceremony"]');
+          if (!panel) return null;
+          const nodes = {
+            heading: panel.querySelector('h2'),
+            date: panel.querySelector('[class*="photoDate"] strong'),
+            venue: panel.querySelector('[class*="venueName"]'),
+            icsButton: panel.querySelector('button'),
+            icsHint: panel.querySelector('button [class*="buttonHint"]'),
+            calendarSummary: panel.querySelector('details > summary'),
+            calendarTitle: panel.querySelector('details > summary [class*="summaryTitle"]'),
+            calendarDescription: panel.querySelector('details > summary [class*="summaryDescription"]'),
+          };
+          const colors = Object.fromEntries(Object.entries(nodes)
+            .filter(([, node]) => node)
+            .map(([name, node]) => [name, getComputedStyle(node).color]));
+          const heading = nodes.heading;
+          if (heading) {
+            colors.headingNumber = getComputedStyle(heading, '::before').color;
+            colors.headingLabel = getComputedStyle(heading, '::after').color;
+          }
+          return { background: getComputedStyle(panel).backgroundColor, colors };
+        }""")
+        assert appearance, "modern ceremony panel missing"
+        assert appearance["background"] == "rgb(25, 25, 23)", (
+            "modern ceremony dark background regression", appearance["background"])
+        required = {"heading", "date", "venue", "icsButton", "icsHint", "headingNumber", "headingLabel"}
+        if variant != "empty":
+            required |= {"calendarSummary", "calendarTitle", "calendarDescription"}
+        assert required.issubset(appearance["colors"]), (
+            "modern ceremony expected text missing", sorted(required - appearance["colors"].keys()))
+        ratios = {name: wcag_contrast(appearance["background"], color)
+                  for name, color in appearance["colors"].items()}
+        assert all(ratio >= 4.5 for ratio in ratios.values()), (
+            "modern ceremony WCAG AA contrast 4.5:1", ratios)
+        record["modern_ceremony"] = {
+            "background": appearance["background"], "contrast_ratios": ratios}
+        if width == 390 and variant == "full" and not doubled:
+            record["shots"].append(capture(page, theme, width, variant, "modern-dark-panel", ceremony))
+
     if disclosure.count():
         inline = disclosure.locator("summary")
         assert "이 페이지에서 달력 확인" in inline.inner_text()
