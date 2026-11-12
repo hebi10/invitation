@@ -37,12 +37,15 @@ assert.deepEqual(normalizeWeddingCoverSettings({ focusX: -1, focusY: 101, textPo
   { focusX: 0, focusY: 100, textPosition: 'bottom' });
 assert.deepEqual(normalizeWeddingCoverSettings({ focusX: 25.5, focusY: 74.5, textPosition: 'top' }),
   { focusX: 25.5, focusY: 74.5, textPosition: 'top' });
-for (const theme of ['classic-r', 'modern', 'simple', 'gyeol', 'vow', 'unknown']) {
+for (const theme of ['modern', 'simple', 'gyeol', 'vow', 'unknown']) {
   assert.equal(resolveWeddingCoverTextPosition(theme, 'theme'), 'below');
 }
-assert.equal(resolveWeddingCoverTextPosition('romantic', 'theme'), 'bottom');
-for (const position of ['below', 'top', 'bottom'] as const) {
-  assert.equal(resolveWeddingCoverTextPosition('romantic', position), position);
+for (const theme of ['romantic', 'classic-r']) {
+  assert.equal(resolveWeddingCoverTextPosition(theme, 'theme'), 'bottom');
+  for (const position of ['below', 'top', 'bottom'] as const) {
+    assert.equal(resolveWeddingCoverTextPosition(theme, position), position,
+      'The explicit customer/admin cover position must override the theme recommendation');
+  }
 }
 
 assert.equal(mergeInvitationPageSeed(original, {})?.pageData?.weddingCover, undefined,

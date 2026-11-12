@@ -30,5 +30,5 @@ export function resolveWeddingCoverTextPosition(
   theme: string,
   position: WeddingCoverTextPosition
 ): 'below' | 'top' | 'bottom' {
-  return position === 'theme' ? (theme === 'romantic' ? 'bottom' : 'below') : position;
+  return position === 'theme' ? (theme === 'romantic' || theme === 'classic-r' ? 'bottom' : 'below') : position;
 }
