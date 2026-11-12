@@ -26,7 +26,7 @@ for (const theme of getWeddingPreviewThemeKeys()) {
     supplied.pageData = { ...supplied.pageData, weddingCover: { focusX: 0, focusY: 83, textPosition } };
     const original = JSON.stringify(supplied);
     const html = renderToStaticMarkup(React.createElement(WeddingCover, { theme, page: supplied, imageUrl, time }));
-    const position = textPosition === 'theme' ? theme === 'romantic' ? 'bottom' : 'below' : textPosition;
+    const position = textPosition === 'theme' ? (theme === 'romantic' || theme === 'classic-r' ? 'bottom' : 'below') : textPosition;
     assert.ok(html.indexOf('<img ') < html.indexOf('<h1'), `${theme}/${textPosition}: the cover starts with the saved photo`);
     assert.match(html, /object-position:0% 83%/, `${theme}/${textPosition}: zero horizontal focus and saved vertical focus reach the photo`);
     assert.match(html, new RegExp(`data-cover-position="${position}"`));
@@ -38,11 +38,34 @@ for (const theme of getWeddingPreviewThemeKeys()) {
     const photoFrameEnd = html.indexOf('data-wedding-cover-details');
     assert.ok(photoFrameEnd > html.indexOf('<img '));
     assert.ok(html.indexOf(page.venue) > photoFrameEnd, `${theme}/${textPosition}: venue stays outside the photograph`);
-    assert.ok(html.indexOf(time) > photoFrameEnd, `${theme}/${textPosition}: time stays outside the photograph`);
+    if (theme === 'classic-r') {
+      assert.equal((html.match(/WEDDING INVITATION/g) ?? []).length, 1,
+        'Modern editorial overline must not be duplicated');
+      if (position !== 'below') {
+        assert.ok(html.indexOf(time) < photoFrameEnd,
+          'Modern top/bottom photo positions must place the saved date/time on the image');
+        assert.ok(html.indexOf('WEDDING INVITATION') < photoFrameEnd,
+          'Modern overline must accompany names and date on the image');
+      } else {
+        assert.ok(html.indexOf(time) > photoFrameEnd,
+          'Explicit modern below must keep time on the paper');
+      }
+    } else {
+      assert.ok(html.indexOf(time) > photoFrameEnd,
+        `${theme}/${textPosition}: time stays outside the photograph`);
+    }
+    if (theme === 'gyeol') {
+      assert.match(html, /data-cover-has-photo="true"/,
+        'Classic cover must mark real photo presence for its overlapping frame');
+    }
     assert.equal(JSON.stringify(supplied), original, 'Rendering never mutates persisted settings');
 
     const noPhoto = renderToStaticMarkup(React.createElement(WeddingCover, { theme, page: supplied, imageUrl: '', time }));
     assert.doesNotMatch(noPhoto, /<img\b|data-wedding-cover-frame/);
+    if (theme === 'gyeol') {
+      assert.match(noPhoto, /data-cover-has-photo="false"/,
+        'The classic frame must not overlap when the image is missing');
+    }
     assert.equal((noPhoto.match(/<h1\b/g) ?? []).length, 1);
     for (const text of [page.groomName, page.brideName, page.venue, time]) assert.ok(noPhoto.includes(text));
   }
