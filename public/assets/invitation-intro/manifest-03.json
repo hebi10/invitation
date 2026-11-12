@@ -1,0 +1,221 @@
+{
+  "task": "INTRO-GIF-03",
+  "event_agnostic": true,
+  "frames": 8,
+  "duration_per_frame_ms": 250,
+  "total_duration_ms": 2000,
+  "repeat": false,
+  "canvas": [
+    480,
+    600
+  ],
+  "presets": {
+    "intro-02": {
+      "id": "intro-02",
+      "label": "봉투 열림",
+      "description": "봉투가 열리고 초대 카드가 나타납니다.",
+      "scene": "envelope",
+      "frames": 8,
+      "duration_ms": 2000,
+      "loop": false,
+      "files": {
+        "intro-02.gif": {
+          "bytes": 31439,
+          "sha256": "3f8e72e0927a5c4583c294c821761558e8d9978320c44375beaf169b6963248f"
+        },
+        "intro-02.webp": {
+          "bytes": 3908,
+          "sha256": "87e862f476a9b70fb5c5299da813af80b1a6d11c437f29949d82354d218c04a9"
+        },
+        "intro-02.png": {
+          "bytes": 7957,
+          "sha256": "e75c47e345371946780316749a0b466aaa752306817fb008c5d54a5161057028"
+        }
+      }
+    },
+    "intro-03": {
+      "id": "intro-03",
+      "label": "종이 펼침",
+      "description": "접힌 종이가 펼쳐지며 문구를 보여줍니다.",
+      "scene": "unfold",
+      "frames": 8,
+      "duration_ms": 2000,
+      "loop": false,
+      "files": {
+        "intro-03.gif": {
+          "bytes": 38361,
+          "sha256": "edc2a8aa7fd5bbc3e3f87f9d2cd9476860584a7809581aed5f25377eea3339bd"
+        },
+        "intro-03.webp": {
+          "bytes": 3318,
+          "sha256": "183d76e4141dca3774828fe6f62bcddc29ea67f5015e17b2a18b29624bd1564f"
+        },
+        "intro-03.png": {
+          "bytes": 8524,
+          "sha256": "abe39b7ce9ce4cc28168378ff8fbe46316f0ded73b9de9bb67ccf4410b14390a"
+        }
+      }
+    },
+    "intro-04": {
+      "id": "intro-04",
+      "label": "사진 프레임",
+      "description": "직사각형 프레임이 만들어지고 문구가 등장합니다.",
+      "scene": "frame",
+      "frames": 8,
+      "duration_ms": 2000,
+      "loop": false,
+      "files": {
+        "intro-04.gif": {
+          "bytes": 36506,
+          "sha256": "1e05292a0cda8a42f319cb6c756159e101e7ef6e69d9a6091de8f5a03cc0b191"
+        },
+        "intro-04.webp": {
+          "bytes": 3470,
+          "sha256": "d6bf5a48065caaee105f948a4a436f77853f553560fce1a9b76077356c173439"
+        },
+        "intro-04.png": {
+          "bytes": 8543,
+          "sha256": "3ce1ace3af20ef47aaa1adac128e2e55c173d5e625959703f8da9fff55d998ed"
+        }
+      }
+    },
+    "intro-05": {
+      "id": "intro-05",
+      "label": "타이핑",
+      "description": "초대 문구가 한 글자씩 입력됩니다.",
+      "scene": "typing",
+      "frames": 8,
+      "duration_ms": 2000,
+      "loop": false,
+      "files": {
+        "intro-05.gif": {
+          "bytes": 31359,
+          "sha256": "0c74dc673d2b03092c0683efc1d3ad1030bdad37f3a6e9de4075b93fb89dfa3d"
+        },
+        "intro-05.webp": {
+          "bytes": 3444,
+          "sha256": "546ec493238af3f0c32c013ccf80f92ad71311a4b068d9e65a09b0f6f9b5fe2a"
+        },
+        "intro-05.png": {
+          "bytes": 8413,
+          "sha256": "f4c979ec75beae1c281e63c866e9459061bc29417f3e20b908b2ed72f1f384e0"
+        }
+      }
+    },
+    "intro-06": {
+      "id": "intro-06",
+      "label": "페이지 넘김",
+      "description": "페이지 모서리가 넘어가며 초대장이 공개됩니다.",
+      "scene": "turn",
+      "frames": 8,
+      "duration_ms": 2000,
+      "loop": false,
+      "files": {
+        "intro-06.gif": {
+          "bytes": 42504,
+          "sha256": "bd688089feeee8b643fadbbc4aaa6df5d4759c3fb7a0ede951085a55f481baf2"
+        },
+        "intro-06.webp": {
+          "bytes": 3218,
+          "sha256": "bede8445f3a974a9f59ed2145e939807f74f0f513b66d3bfbb2c2737d8052abd"
+        },
+        "intro-06.png": {
+          "bytes": 8491,
+          "sha256": "0f1f5f876aadcc532939fac76a80b86b4710e393516a3b2dae26e3e1c8b47e88"
+        }
+      }
+    },
+    "intro-07": {
+      "id": "intro-07",
+      "label": "슬라이딩 패널",
+      "description": "좌우 패널이 움직여 가운데 문구를 보여줍니다.",
+      "scene": "slide",
+      "frames": 8,
+      "duration_ms": 2000,
+      "loop": false,
+      "files": {
+        "intro-07.gif": {
+          "bytes": 42554,
+          "sha256": "6f365e01d9246785ed71a151f852b01a6c204b1a29c2aca74c3aa012c739d255"
+        },
+        "intro-07.webp": {
+          "bytes": 3276,
+          "sha256": "5cf53f21b2743e05f3968dc055cbd5cb15113cae4a005d4f7656f571c4fbde6c"
+        },
+        "intro-07.png": {
+          "bytes": 8397,
+          "sha256": "1b22fc7d8a1c57225cebcd0606f16fedbc88c07ee8c7d9cee9cb2551490a638b"
+        }
+      }
+    },
+    "intro-08": {
+      "id": "intro-08",
+      "label": "선 드로잉",
+      "description": "가느다란 선이 원을 그리며 초대 문구를 감쌉니다.",
+      "scene": "line",
+      "frames": 8,
+      "duration_ms": 2000,
+      "loop": false,
+      "files": {
+        "intro-08.gif": {
+          "bytes": 31827,
+          "sha256": "d042239b8f5d39ec93550990e5cd30e80a5edbefb76bf19c37ff4de6183fbcbd"
+        },
+        "intro-08.webp": {
+          "bytes": 5668,
+          "sha256": "e81bbbbb104a9e097de3eb96588da4f019b6c35463f408f11e8604d10f5ba00f"
+        },
+        "intro-08.png": {
+          "bytes": 9339,
+          "sha256": "3c5cc2c2136505492e4fa058a245de424c8537118a69c82fa881f75c8105c9ab"
+        }
+      }
+    },
+    "intro-09": {
+      "id": "intro-09",
+      "label": "창문 열림",
+      "description": "두 문이 좌우로 열리며 문구를 드러냅니다.",
+      "scene": "window",
+      "frames": 8,
+      "duration_ms": 2000,
+      "loop": false,
+      "files": {
+        "intro-09.gif": {
+          "bytes": 47018,
+          "sha256": "2e1fe2bb8be99ef258e06bb4f5f5047a6ec94b6869dc7469758fda8cb323b8fb"
+        },
+        "intro-09.webp": {
+          "bytes": 3260,
+          "sha256": "36ba4127969beab7c40232d8b620c5e8842df529f4df47093675b4fd3e6daf99"
+        },
+        "intro-09.png": {
+          "bytes": 8521,
+          "sha256": "b048917e936720aca9a6da45b90b071f96ece56605a8841a409c519f024a9d78"
+        }
+      }
+    },
+    "intro-10": {
+      "id": "intro-10",
+      "label": "타이틀 등장",
+      "description": "중앙 타이틀과 수평선이 차례로 나타납니다.",
+      "scene": "title",
+      "frames": 8,
+      "duration_ms": 2000,
+      "loop": false,
+      "files": {
+        "intro-10.gif": {
+          "bytes": 33300,
+          "sha256": "173532ebdf329ed5101e3f5385c0ea171e1a4ab75f96a4382d1e2f3aae823f3b"
+        },
+        "intro-10.webp": {
+          "bytes": 3268,
+          "sha256": "253a19795b1c15beae9a0c3618b9943254a4c9c8dfbd65cd8e084d5dbb2d2b04"
+        },
+        "intro-10.png": {
+          "bytes": 8453,
+          "sha256": "b574f093ac806f738089aae14a128b69c7fa02a22ec9e7a95b5311dea6810899"
+        }
+      }
+    }
+  }
+}
