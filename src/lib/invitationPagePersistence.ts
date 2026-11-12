@@ -18,6 +18,7 @@ import {
 } from '@/lib/invitationProducts';
 import { DEFAULT_EVENT_TYPE, normalizeEventTypeKey } from '@/lib/eventTypes';
 import { normalizeWeddingIntroStyle } from '@/lib/weddingIntro';
+import { parseInvitationIntroChoice } from '@/lib/invitationIntroCatalog';
 import { normalizeWeddingCoverSettings } from '@/lib/weddingCover';
 import { withWeddingThemeAvailability } from '@/lib/weddingThemePolicy';
 import {
@@ -455,6 +456,10 @@ export function mergeInvitationPageSeed(
     }
   }
 
+  const requestedIntroPresetId = parseInvitationIntroChoice(candidate.introPresetId);
+  // A client which does not know this field must not erase the existing selection.
+  const introPresetId = requestedIntroPresetId ?? base?.introPresetId;
+
   const normalizedSeed: InvitationPageSeed = {
     ...(base ?? {}),
     eventType: normalizeEventTypeKey(candidate.eventType, base?.eventType ?? DEFAULT_EVENT_TYPE),
@@ -466,6 +471,7 @@ export function mergeInvitationPageSeed(
     productTier,
     features,
     introStyle: normalizeWeddingIntroStyle(candidate.introStyle ?? base?.introStyle),
+    ...(introPresetId !== undefined ? { introPresetId } : {}),
     musicEnabled:
       typeof candidate.musicEnabled === 'boolean'
         ? candidate.musicEnabled
