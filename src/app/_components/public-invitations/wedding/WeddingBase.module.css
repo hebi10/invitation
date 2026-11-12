@@ -836,7 +836,7 @@ details[open] > :is(.disclosureSummary, .accountSummary, .formSummary)::after { 
 }
 
 .page .ceremonySection > .ceremonyContent {
-  margin-bottom: clamp(16px, 4vw, 22px);
+  margin-bottom: clamp(12px, 3.5vw, 18px);
 }
 
 /* UI-R08-VISUAL-04: a readable venue/address group separate from map actions. */
@@ -1110,13 +1110,17 @@ details[open] > :is(.disclosureSummary, .accountSummary, .formSummary)::after { 
   padding: 4px var(--ui07-panel-padding-inline);
   border: var(--ui07-panel-border);
 }
-:is(.page[data-design='simple'], .page[data-design='classic-r'], .page[data-design='romantic'], .page[data-design='gyeol'], .page[data-design='emotional']) [data-wedding-section='gift'] .accountCard {
+:is(.page[data-design='simple'], .page[data-design='classic-r'], .page[data-design='romantic'], .page[data-design='gyeol'], .page[data-design='emotional']) [data-wedding-section='gift'] .accountSection[open] > .accountCard {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
   align-items: start;
   gap: 8px 12px;
   min-width: 0;
   padding-block: 14px;
+}
+/* Never override the native closed-details privacy boundary with grid styling. */
+:is(.page[data-design='simple'], .page[data-design='classic-r'], .page[data-design='romantic'], .page[data-design='gyeol'], .page[data-design='emotional']) [data-wedding-section='gift'] .accountSection:not([open]) > .accountCard {
+  display: none;
 }
 :is(.page[data-design='simple'], .page[data-design='classic-r'], .page[data-design='romantic'], .page[data-design='gyeol'], .page[data-design='emotional']) [data-wedding-section='gift'] .accountInfo {
   display: grid;
