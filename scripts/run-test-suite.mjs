@@ -40,6 +40,7 @@ const core = [
   'test-invitation-intro-catalog',
   'test-invitation-intro-02b-pc',
   'test-invitation-intro-02c-android',
+  'test-invitation-intro-02d-public',
   'test-quiet-invitation-tokens',
   'validate-theme-extension',
   'test-admin-created-event-ownership',
