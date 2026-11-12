@@ -274,6 +274,10 @@ with sync_playwright() as playwright:
                 main = page.locator('main[data-design="' + theme + '"]')
                 main.wait_for(state="visible", timeout=45000)
                 page.evaluate("document.fonts.ready")
+                page.wait_for_function("""() => {
+                  const image = document.querySelector('[data-wedding-cover-photo]');
+                  return !image || (image.complete && image.naturalWidth > 0);
+                }""", timeout=30000)
                 page.add_style_tag(content="nextjs-portal { display:none !important; }")
                 if variant == "full":
                     case["metrics"] = check_full(page, main, theme, width, case)
