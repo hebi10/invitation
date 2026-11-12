@@ -26,6 +26,7 @@ import {
   type InvitationPageRegistryRecord,
 } from '@/lib/invitationPagePersistence';
 import { DEFAULT_EVENT_TYPE, normalizeEventTypeKey, type EventTypeKey } from '@/lib/eventTypes';
+import { assertInvitationIntroChoiceForEvent } from '@/lib/invitationIntroCatalog';
 import {
   getInvitationPageSlugValidationErrorMessage,
   type InvitationPageSlugAvailabilityReason,
@@ -596,6 +597,10 @@ export async function saveServerInvitationPageConfig(
     customerOwnerUid?: string;
   } = {}
 ) {
+  assertInvitationIntroChoiceForEvent(
+    config.introPresetId,
+    normalizeEventTypeKey(config.eventType, DEFAULT_EVENT_TYPE)
+  );
   const fallbackTheme = options.defaultTheme
     ? normalizeInvitationTheme(options.defaultTheme)
     : resolveAvailableInvitationVariant(config.variants, DEFAULT_INVITATION_THEME) ??
