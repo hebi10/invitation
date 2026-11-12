@@ -1,0 +1,84 @@
+name: Invitation UI-R00 mobile redesign baseline capture
+
+on:
+  pull_request:
+    paths:
+      - docs/design/ui-r00-5-theme-mobile-baseline-20261111.*
+      - .github/workflows/invitation-ui-r00-baseline-qa.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  ui-r00-five-theme-baseline:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install dependencies and Chromium
+        run: |
+          npm ci
+          python -m pip install --disable-pip-version-check playwright==1.56.0
+          python -m playwright install --with-deps chromium
+      - name: Verify existing fictional QA isolation and fixtures
+        run: npx --yes tsx scripts/test-wedding-ui07-a07.mts
+      - name: Start isolated local sample without Firebase
+        env:
+          NEXT_PUBLIC_USE_FIREBASE: 'false'
+          NEXT_PUBLIC_SITE_URL: http://127.0.0.1:3000
+        run: |
+          nohup npm run dev > "$RUNNER_TEMP/invitation-ui-r00-next.log" 2>&1 &
+          python - <<'PY'
+          import time, urllib.request
+          url = "http://127.0.0.1:3000/sample-invitation/?qaTheme=simple&qaUI07=1&qaUI07Case=full&embed=1"
+          for _ in range(110):
+              try:
+                  with urllib.request.urlopen(url, timeout=12) as response:
+                      if response.status == 200:
+                          print("UI-R00 fictional fixture ready", flush=True)
+                          break
+              except Exception:
+                  pass
+              time.sleep(2)
+          else:
+              raise SystemExit("UI-R00 fictional fixture unavailable")
+          PY
+      - name: Capture five designs and 320-1440px accessible states
+        env:
+          INVITATION_LOCAL_BASE: http://127.0.0.1:3000
+        run: python scripts/qa-invitation-ui07-a07.py
+      - name: Require current-commit five fullpage screenshots
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          source=Path('artifacts/ui-07-a07')
+          data=json.loads((source / 'manifest.json').read_text(encoding='utf-8'))
+          assert data.get('commit') == '${{ github.sha }}', 'Capture commit mismatch'
+          assert data.get('production_data_writes') == 0, 'Unexpected production writes'
+          for theme in ('simple','classic-r','romantic','gyeol','emotional'):
+              name=theme+'-390-full-full.png'
+              assert (source/name).is_file() and (source/name).stat().st_size > 10000, name
+              matching=[c for c in data.get('cases',[]) if c.get('theme')==theme and c.get('width')==390 and c.get('case')=='full' and not c.get('zoom_200') and not c.get('text_zoom_200')]
+              assert len(matching)==1 and matching[0].get('success'), name
+          print('UI-R00: all five current-commit fullpage screenshots verified')
+          PY
+      - name: Upload visual evidence and checksums
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: invitation-ui-r00-current-source-five-theme-baseline
+          path: artifacts/ui-07-a07/
+          retention-days: 30
+          if-no-files-found: warn
+      - name: Print local diagnostics on failure
+        if: failure()
+        run: tail -120 "$RUNNER_TEMP/invitation-ui-r00-next.log" || true

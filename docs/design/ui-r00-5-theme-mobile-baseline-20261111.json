@@ -1,0 +1,100 @@
+{
+  "task": "UI-R00",
+  "status": "design-contract-fixed; latest-source-recapture-verified",
+  "date": "2026-11-11",
+  "repo": "hebi10/invitation",
+  "main_at_baseline": "87df75244845dad3b52b8517167af675b072b6ef",
+  "old_screenshot_sha": "10f237bf93b3c5221baaff350963be6e122b46c7",
+  "old_screenshot_artifact_id": 13835457972,
+  "old_fixture": "fictional Next.js UI-07-A07, not production, older than main",
+  "design_doc": "https://docs.google.com/document/d/1VHPhkLcoKXr0zURObi1Ds7lVn-caChGlQ-juNTgN4yw/edit",
+  "reference_drive_folder": "https://drive.google.com/drive/folders/1P8b1tlnqYYDFew5x9y2hDZLEjKDWd2zj",
+  "themes": {
+    "simple": {
+      "old_fullpage_sha256": "2a804859596c492df50ac704234f7beec90260d3afcc32eb353940b8a1b73181",
+      "old_fullpage_pixels": "780x8068",
+      "old_drive_url": "https://drive.google.com/file/d/1LYujIz1PgvaE32IENJlPR8lqzi2Qe4w7/view",
+      "concept_sha256": "78f4d99f6f4fc1d68b4934964bddd365cee69a6bd06c27b2ec99aa26a74bf801",
+      "concept_pixels": "941x1672",
+      "concept_is_raster_reference_only": true
+    },
+    "classic-r": {
+      "old_fullpage_sha256": "868d85e2dc170287ea3f872f813def36210df6264f79ae3583774f4018595eda",
+      "old_fullpage_pixels": "780x8696",
+      "old_drive_url": "https://drive.google.com/file/d/19x1Nd7aSHMQekROppYb8qxmJBafLdhHa/view",
+      "concept_sha256": "b3d14974b8f6a1588e1abab6667e642478e7bf9c1e0d3c18c67a5eff6ec63143",
+      "concept_pixels": "941x1672",
+      "concept_is_raster_reference_only": true
+    },
+    "romantic": {
+      "old_fullpage_sha256": "9186f3a9d7289eef5f7f4ff95a1cc6272e7350727d27b5b823f4bf02ad5cc731",
+      "old_fullpage_pixels": "780x8528",
+      "old_drive_url": "https://drive.google.com/file/d/1A_-mfXtPzO9tgdfizJ1GrQvn2mhs_wcr/view",
+      "concept_sha256": "26f77f59ce2b14afe4ba362679514f87c5861b23d727bce46ad7008dc6273449",
+      "concept_pixels": "941x1672",
+      "concept_is_raster_reference_only": true
+    },
+    "gyeol": {
+      "old_fullpage_sha256": "b925b8281627bc9d735bf5ab97b250d41f06ccc833c501cc3dec3850dd9bff95",
+      "old_fullpage_pixels": "780x9540",
+      "old_drive_url": "https://drive.google.com/file/d/1xFZuThKwtkDkVayMJ4QJGvHgXr2BrWwG/view",
+      "concept_sha256": "e6bff6bca989ad1bda467ce287a81721cf6e708004f9325e19d630c3bd3ae525",
+      "concept_pixels": "941x1672",
+      "concept_is_raster_reference_only": true
+    },
+    "emotional": {
+      "old_fullpage_sha256": "b926556b785e000f424af6c8e986ab5a0275d2c0d3b88f63a4091dae8e8338e5",
+      "old_fullpage_pixels": "780x8912",
+      "old_drive_url": "https://drive.google.com/file/d/1I6Jb_XAonBuoiTf17nE_CnrRgAUMNmP8/view",
+      "concept_sha256": "7325126ff9322d7a16ef92152d9da6fd0bbdb18ada36cfc7b30b46157a0a4891",
+      "concept_pixels": "941x1672",
+      "concept_is_raster_reference_only": true
+    }
+  },
+  "current_main_qa": {
+    "source": "docs/ui-r00 branch on main",
+    "workflow": ".github/workflows/invitation-ui-r00-baseline-qa.yml",
+    "qa_script": "scripts/qa-invitation-ui07-a07.py",
+    "manifest": "artifacts/ui-07-a07/manifest.json",
+    "expected_samples": [
+      "simple-390-full-full.png",
+      "classic-r-390-full-full.png",
+      "romantic-390-full-full.png",
+      "gyeol-390-full-full.png",
+      "emotional-390-full-full.png"
+    ],
+    "requires_five_successful_fullpage_captures": true,
+    "no_live_data": true,
+    "status": "passed",
+    "workflow_run_id": 42993998442,
+    "artifact_id": 13842908279,
+    "fixture_commit": "0f6a3d5b31fb98a263dadce378ceedc454a84b66",
+    "assertions": {
+      "passed": 60,
+      "total": 60,
+      "screenshot_files": 95,
+      "five_fullpage_present": true,
+      "five_fullpage_sha256_match_historical": true,
+      "production_data_writes": 0,
+      "no_actual_customer_data": true
+    },
+    "drive_artifact_url": "https://drive.google.com/file/d/1dSlHfD4QIO5qhSUZ7Rxyur6PD5UfrGnd/view?usp=drivesdk"
+  },
+  "qa_viewports": [
+    320,
+    360,
+    390,
+    430,
+    768,
+    1440
+  ],
+  "zoom_percent": 200,
+  "touch_target_min_px": 44,
+  "body_text_contrast_min": 4.5,
+  "safety": [
+    "no customer data mutation",
+    "do not add mockup phone bezels in site",
+    "no fabricated names dates venue accounts or D-days",
+    "do not change vow or production storage/payment"
+  ]
+}
