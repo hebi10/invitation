@@ -459,3 +459,68 @@
 .editorial .details .editorialHeading {
   font-size: 14px;
 }
+
+
+/* UI-R08-VISUAL-02: modern photo-first hierarchy with saved top/bottom/below positions. */
+.editorial .editorialPhotoCopy {
+  display: grid;
+  justify-items: start;
+  gap: 10px;
+  padding: 88px clamp(16px, 5.5vw, 28px) 24px;
+  background: linear-gradient(180deg, transparent, rgba(12, 12, 12, .76) 55%, rgba(12, 12, 12, .88));
+  color: #fff;
+  text-align: left;
+}
+.editorial .editorialPhotoCopy .editorialHeading {
+  margin: 0;
+  color: #fff;
+  font-size: 13px;
+  line-height: 1.6;
+}
+.editorial .editorialPhotoCopy .editorialNames {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  justify-items: start;
+  gap: 0;
+  font-size: clamp(29px, 8vw, 38px);
+  line-height: 1.23;
+  overflow-wrap: anywhere;
+}
+.editorial .editorialPhotoCopy .editorialNames .join {
+  display: none;
+}
+.editorial .editorialPhotoMeta {
+  width: 100%;
+  min-width: 0;
+}
+.editorial .editorialPhotoMeta .date {
+  margin: 4px 0 0;
+  justify-content: flex-start;
+  gap: 2px 8px;
+  color: #fff;
+  font-size: 14px;
+  line-height: 1.65;
+  font-variant-numeric: tabular-nums;
+}
+.editorial[data-cover-position='top'] .editorialPhotoCopy {
+  padding-top: 24px;
+  padding-bottom: 88px;
+  background: linear-gradient(180deg, rgba(12, 12, 12, .9), rgba(12, 12, 12, .76) 55%, transparent);
+  color: #fff;
+}
+.editorial:not([data-cover-position='below']) .details {
+  padding-top: 18px;
+}
+.editorial:not([data-cover-position='below']) .details .editorialMeta {
+  margin-top: 0;
+}
+.editorial:not([data-cover-position='below']) .details .venue {
+  margin-top: 0;
+}
+
+/* Connect the letterpress frame to the photo without overlapping stored photo text. */
+.traditional[data-cover-has-photo='true'][data-cover-position='below'] .details {
+  position: relative;
+  z-index: 1;
+  margin-top: -clamp(28px, 8vw, 44px);
+}
