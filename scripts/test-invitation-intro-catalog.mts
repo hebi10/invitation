@@ -12,9 +12,13 @@ import {
   parseInvitationIntroChoice,
 } from '../src/lib/invitationIntroCatalog.ts';
 import { listEnabledEventTypes } from '../src/lib/eventTypes.ts';
+import { listAvailableInvitationIntroPresets as listMobileIntroPresets, parseInvitationIntroChoice as parseMobileIntroChoice } from '../apps/mobile/src/lib/invitationIntroCatalog.ts';
 import { normalizeWeddingIntroStyle } from '../src/lib/weddingIntro.ts';
 
 const presets = listAvailableInvitationIntroPresets();
+assert.deepEqual(listMobileIntroPresets(), presets, 'Android and PC import the same catalog');
+assert.equal(parseMobileIntroChoice('intro-01'), 'intro-01');
+assert.equal(parseMobileIntroChoice('intro-02'), null);
 assert.equal(presets.length, 1, 'Only the one real verified GIF is selectable');
 assert.equal(INVITATION_INTRO_PRESETS.length, 1);
 assert.equal(presets[0].id, 'intro-01');
