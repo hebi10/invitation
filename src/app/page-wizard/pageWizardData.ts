@@ -1372,6 +1372,9 @@ export function buildStepValidation(
       }
       return { valid: messages.length === 0, messages };
     }
+    case 'intro':
+      // The new GIF choice is optional. Existing customers keep their saved legacy style.
+      return { valid: true, messages: [] };
     case 'images': {
       const messages: string[] = [];
       const validImage = (value: string | undefined) =>
