@@ -437,8 +437,8 @@ const GENERAL_EVENT_STEP_KEYS: WizardStepKey[] = [
   'schedule',
   'greeting',
   'images',
-  'intro',
   'extra',
+  'intro',
   'final',
 ];
 
