@@ -43,16 +43,16 @@ with sync_playwright() as playwright:
                 page.locator("[data-qa-event-type]").select_option(event)
                 assert page.locator("[data-qa-summary]").inner_text().find("이벤트: " + event) >= 0
                 picker = page.locator("[data-intro-preset-editor]")
-                assert picker.locator('input[type="radio"]').count() == 2, (event, "Only verified preset 01 + none")
+                assert picker.locator('input[type="radio"]').count() == 11, (event, "Ten real presets + none")
                 assert not picker.locator('input[value="intro-01"]').is_checked()
                 assert not picker.locator('input[value="none"]').is_checked()
                 assert "저장값: 기존 설정" in page.locator("[data-qa-summary]").inner_text()
-                assert not page.locator('[data-intro-preset="intro-02"]').count()
+                assert page.locator('[data-intro-preset="intro-10"]').count() == 1
                 if event == "wedding":
                     assert picker.locator("[data-intro-legacy-status]").count() == 1
                     assert "웨딩 화보형" in picker.locator("[data-intro-legacy-status]").inner_text()
 
-                picker.get_by_role("button", name="GIF 미리보기").click()
+                picker.locator('[data-intro-preset="intro-01"]').get_by_role("button", name="GIF 미리보기").click()
                 modal = page.locator("dialog[open]")
                 modal.wait_for(state="visible")
                 assert modal.locator("img").get_attribute("src") == "/assets/invitation-intro/universal-2s.gif"
