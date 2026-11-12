@@ -17,10 +17,10 @@ export function resolvePublicInvitationIntro(
   introStyle: unknown,
   eventType: EventTypeKey
 ): PublicInvitationIntroDecision {
-  const choice = parseInvitationIntroChoice(introPresetId);
+  const choice = parseInvitationIntroChoice(introPresetId, eventType);
   if (choice === 'none') return { kind: 'none' };
   if (choice) {
-    const preset = getInvitationIntroPreset(choice);
+    const preset = getInvitationIntroPreset(choice, eventType);
     if (preset) return { kind: 'gif', preset };
   }
 
