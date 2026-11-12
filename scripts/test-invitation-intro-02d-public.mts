@@ -36,7 +36,7 @@ assert.deepEqual(resolvePublicInvitationIntro('future-intro', 'envelope', 'weddi
 }, 'unknown future ID preserves old working wedding intro');
 assert.equal(resolvePublicInvitationIntro(undefined, 'cinema', 'opening').kind, 'none',
   'wedding-only legacy animation must never leak into a nonwedding event');
-assert.equal(getInvitationIntroPreset('intro-02'), null, 'Do not expose unproduced GIF cards');
+assert.equal(getInvitationIntroPreset('intro-99'), null, 'Do not expose unproduced GIF cards');
 
 const seed = getRequiredWeddingPageBySlug('kim-taehyun-choi-yuna');
 const stored = mergeInvitationPageSeed(seed, { introStyle: 'cinema', introPresetId: 'intro-01' });
