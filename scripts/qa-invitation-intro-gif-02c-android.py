@@ -31,6 +31,7 @@ async def main():
                                           device_scale_factor=1)
             response = await page.goto(target, wait_until="domcontentloaded")
             assert response and response.status == 200, f"preview HTTP error at {width}"
+            initial_url = page.url
             await page.locator("[data-intro-gif-preview]").wait_for()
             await page.locator("img[src*='universal-2s.gif'][src*='replay=0']").wait_for()
             assert await page.get_by_role("heading", name="인트로 GIF 미리보기").count() == 1
@@ -38,11 +39,11 @@ async def main():
             await capture(page, f"preview-{width}.png")
             await page.get_by_role("button", name="2초 GIF 다시 보기").click()
             await page.locator("img[src*='replay=1']").wait_for()
-            assert page.url == target, "Preview must not navigate to actual customer invitation"
+            assert page.url == initial_url, "Preview must not navigate to actual customer invitation"
             if width == 390:
                 await capture(page, "replay-390.png")
             await page.wait_for_timeout(2200)
-            assert page.url == target, "No forced auto-entry after 2s asset playback"
+            assert page.url == initial_url, "No forced auto-entry after 2s asset playback"
             await page.close()
 
         reduced = await browser.new_page(viewport={"width": 390, "height": 844},
