@@ -126,6 +126,67 @@ def full_case(page, theme, width, scenario, row):
         assert main.locator('nav[aria-label="청첩장 바로가기"] a[href="' + href + '"]').count() == 1
         assert main.locator(href).count() == 1
 
+    # Inspect the actual computed layout, not only CSS source declarations.
+    layout = page.evaluate("""() => {
+      const root = document.querySelector('main[data-design]');
+      const section = name => root.querySelector('[data-wedding-section="' + name + '"]');
+      const schedule = section('schedule')?.querySelector('[class*="scheduleContent"]');
+      const transport = section('transport')?.querySelector('[class*="guideDisclosure"]');
+      const gift = section('gift');
+      const guest = section('guestbook');
+      const card = guest?.querySelector('[class*="commentItem"]');
+      const style = node => node ? getComputedStyle(node) : null;
+      const scheduleCSS = style(schedule);
+      const transportCSS = style(transport);
+      const grid = guest?.querySelector('[class*="commentsGrid"]');
+      const firstAccount = gift?.querySelector('[class*="accountCard"]');
+      const accountInfo = gift?.querySelector('[class*="accountInfo"]');
+      const measure = node => {
+        if (!node) return null;
+        const box = node.getBoundingClientRect();
+        return { width: Math.round(box.width * 10)/10, height: Math.round(box.height * 10)/10 };
+      };
+      return {
+        ceremonyText: section('ceremony')?.querySelector('[class*="ceremonyContent"]')?.textContent?.trim(),
+        venueText: schedule?.querySelector('[class*="venueName"]')?.textContent?.trim(),
+        venueSurface: scheduleCSS?.backgroundColor,
+        venuePadding: scheduleCSS ? parseFloat(scheduleCSS.paddingLeft) : 0,
+        venueBorder: scheduleCSS ? parseFloat(scheduleCSS.borderLeftWidth) : 0,
+        scheduleBox: measure(schedule),
+        transportSurface: transportCSS?.backgroundColor,
+        transportBox: measure(transport),
+        accountGroups: gift?.querySelectorAll('details').length,
+        accountInitiallyClosed: !!gift && [...gift.querySelectorAll('details')].every(node => !node.open),
+        accountInitiallyHidden: !!gift && [...gift.querySelectorAll('[class*="accountNumber"]')].every(node => !node.getClientRects().length),
+        accountInfoWidth: measure(accountInfo)?.width || 0,
+        accountCardWidth: measure(firstAccount)?.width || 0,
+        comments: guest?.querySelectorAll('[class*="commentItem"]').length,
+        hasAuthorDateMessage: !!card?.querySelector('[class*="authorName"]') &&
+          !!card?.querySelector('[class*="commentDate"]') &&
+          !!card?.querySelector('[class*="commentMessage"]'),
+        commentsGap: grid ? parseFloat(getComputedStyle(grid).rowGap) : null,
+        guestFormClosed: !!guest && [...guest.querySelectorAll('[class*="formDisclosure"]')].every(node => !node.open),
+      };
+    }""")
+    assert layout["ceremonyText"] and layout["venueText"], ("wedding info hierarchy", theme, layout)
+    assert layout["venuePadding"] >= 13.5 and layout["venueBorder"] >= 0.9, (
+        "venue/address must be grouped in a readable flat card", theme, width, layout)
+    assert layout["venueSurface"] not in (None, "rgba(0, 0, 0, 0)", "transparent"), (
+        "venue card must have its theme surface", theme, layout)
+    assert layout["scheduleBox"] and layout["scheduleBox"]["width"] > 0, (
+        "venue card geometry", theme, layout)
+    assert layout["transportBox"] and layout["transportBox"]["width"] > 0, (
+        "transport disclosure should remain available", theme, layout)
+    assert layout["accountInitiallyClosed"] and layout["accountInitiallyHidden"], (
+        "personal account details may not open automatically", theme, layout)
+    assert layout["accountGroups"] in (1, 2), ("account groups", theme, layout)
+    assert layout["comments"] >= 1 and layout["hasAuthorDateMessage"], (
+        "guestbook author/date/body hierarchy", theme, layout)
+    assert layout["commentsGap"] is not None and 0 <= layout["commentsGap"] <= 22, (
+        "guestbook card spacing", theme, layout)
+    assert layout["guestFormClosed"], ("guestbook form closed by default", theme, layout)
+    row["info_layout"] = layout
+
     contact = main.locator('[data-wedding-section="contact"]')
     assert not contact.locator('a[href^="tel:"]').first.is_visible()
     contact_summary = contact.locator("summary").first
@@ -238,6 +299,7 @@ def full_case(page, theme, width, scenario, row):
             ("contact", '[data-wedding-section="contact"]'),
             ("ceremony", '[data-wedding-section="ceremony"]'),
             ("location", '[data-wedding-section="schedule"]'),
+            ("transport", '[data-wedding-section="transport"]'),
             ("gift", '[data-wedding-section="gift"]'),
             ("guestbook", '[data-wedding-section="guestbook"]'),
         ):
