@@ -46,8 +46,8 @@ import {
 } from '../../lib/linkedInvitationCards';
 import { copyTextWithFallback } from '../../lib/textTransfer';
 import { createPrivatePreviewUrl } from '../../lib/apiPreview';
-import type { WeddingIntroStyle } from '../../lib/weddingIntro';
-import { buildWeddingIntroSamplePreviewUrl } from '../../lib/weddingIntroPreview';
+import type { InvitationIntroPresetId } from '../../lib/invitationIntroCatalog';
+import { buildInvitationIntroSamplePreviewUrl } from '../../lib/weddingIntroPreview';
 import { buildMobileKakaoShareTarget } from '../../lib/invitationSharing';
 import type {
   MobileInvitationThemeKey,
@@ -254,12 +254,12 @@ export default function ManageScreen() {
     setNotice,
   });
 
-  const handlePreviewIntro = async (style: WeddingIntroStyle) => {
+  const handlePreviewIntroPreset = async (presetId: InvitationIntroPresetId) => {
     try {
-      const url = buildWeddingIntroSamplePreviewUrl(apiBaseUrl, style);
+      const url = buildInvitationIntroSamplePreviewUrl(apiBaseUrl, presetId);
       await WebBrowser.openBrowserAsync(url, { controlsColor: palette.accent });
     } catch {
-      setNotice('첫 화면 연출을 열지 못했습니다. 연결 상태를 확인하고 다시 시도해 주세요.');
+      setNotice('GIF 미리보기를 열지 못했습니다. 연결 상태를 확인하고 다시 시도해 주세요.');
     }
   };
 
@@ -781,6 +781,9 @@ export default function ManageScreen() {
           stepKey={invitationForm.currentEditorStep.key}
           form={invitationForm.form}
           savedPublished={invitationForm.savedPublished}
+          savedIntroPresetId={invitationForm.savedIntroPresetId}
+          hasUnknownSavedIntroPreset={invitationForm.hasUnknownSavedIntroPreset}
+          introAssetBaseUrl={apiBaseUrl}
           mapPreviewUrl={invitationForm.mapPreviewUrl}
           mapLatitude={invitationForm.mapLatitude}
           mapLongitude={invitationForm.mapLongitude}
@@ -807,8 +810,8 @@ export default function ManageScreen() {
           onOpenMapUrl={handleOpenMapUrl}
           onSetMusicEnabled={invitationForm.setMusicEnabled}
           onSetPublished={invitationForm.setPublished}
-          onSetIntroStyle={invitationForm.setIntroStyle}
-          onPreviewIntro={(style) => void handlePreviewIntro(style)}
+          onSetIntroPresetId={invitationForm.setIntroPresetId}
+          onPreviewIntroPreset={(presetId) => void handlePreviewIntroPreset(presetId)}
           onToggleMusicDropdown={musicLibrary.setOpenMusicDropdown}
           onSelectMusicCategory={musicLibrary.handleSelectMusicCategory}
           onSelectMusicTrack={musicLibrary.handleSelectMusicTrack}

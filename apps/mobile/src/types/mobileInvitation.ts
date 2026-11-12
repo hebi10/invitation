@@ -6,6 +6,7 @@ import type {
 } from '../../../../src/lib/guestbookComments';
 
 import type { WeddingIntroStyle } from '../lib/weddingIntro';
+import type { InvitationIntroChoice } from '../lib/invitationIntroCatalog';
 
 export type MobileInvitationProductTier = 'standard' | 'deluxe' | 'premium';
 export type MobileInvitationThemeKey = SharedMobileInvitationThemeKey;
@@ -164,6 +165,7 @@ export interface MobileInvitationSeed {
   features?: Partial<MobileInvitationFeatureFlags>;
   musicEnabled?: boolean;
   introStyle?: WeddingIntroStyle;
+  introPresetId?: InvitationIntroChoice;
   musicVolume?: number;
   musicCategoryId?: string;
   musicTrackId?: string;

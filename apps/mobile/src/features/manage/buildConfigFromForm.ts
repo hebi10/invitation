@@ -130,6 +130,7 @@ export function buildConfigFromForm({
     brideName,
     musicEnabled: dashboard.page.features.showMusic ? form.musicEnabled : false,
     introStyle: form.introStyle,
+    ...(form.introPresetId !== undefined ? { introPresetId: form.introPresetId } : {}),
     musicCategoryId: dashboard.page.features.showMusic ? form.musicCategoryId.trim() : '',
     musicTrackId: dashboard.page.features.showMusic ? form.musicTrackId.trim() : '',
     musicStoragePath: dashboard.page.features.showMusic

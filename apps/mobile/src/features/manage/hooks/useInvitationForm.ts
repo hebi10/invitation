@@ -17,6 +17,7 @@ import type {
   PendingManageOnboarding,
 } from '../../../types/mobileInvitation';
 import { buildConfigFromForm } from '../buildConfigFromForm';
+import { parseInvitationIntroChoice, type InvitationIntroChoice } from '../../../lib/invitationIntroCatalog';
 import { resolveEditorSavePolicy } from '../editorSavePolicy';
 import { validateEditorRows } from '../editorDelimitedRows';
 import {
@@ -79,6 +80,8 @@ export function useInvitationForm({
   const [isSaving, setIsSaving] = useState(false);
   const [isFormDirty, setIsFormDirty] = useState(false);
   const [savedPublished, setSavedPublished] = useState(false);
+  const [savedIntroPresetId, setSavedIntroPresetId] = useState<InvitationIntroChoice | null>(null);
+  const [hasUnknownSavedIntroPreset, setHasUnknownSavedIntroPreset] = useState(false);
   const [lastSavedAt, setLastSavedAt] = useState<string | null>(null);
   const [saveFailed, setSaveFailed] = useState(false);
 
@@ -90,6 +93,10 @@ export function useInvitationForm({
     formPageSlugRef.current = nextDashboard?.page.slug ?? null;
     formVersionRef.current = nextDashboard?.page.version;
     setSavedPublished(nextDashboard?.page.published ?? false);
+    const rawIntroPresetId = nextDashboard?.page.config.introPresetId;
+    const savedIntroChoice = parseInvitationIntroChoice(rawIntroPresetId);
+    setSavedIntroPresetId(savedIntroChoice);
+    setHasUnknownSavedIntroPreset(typeof rawIntroPresetId === 'string' && savedIntroChoice === null);
     setLastSavedAt(nextDashboard?.page.lastSavedAt ?? null);
     setSaveFailed(false);
     if (!nextDashboard) {
@@ -224,6 +231,12 @@ export function useInvitationForm({
     markFormDirty();
     setFormState((current) => ({ ...current, introStyle }));
   }, [form.introStyle, markFormDirty]);
+
+  const setIntroPresetId = useCallback((introPresetId: InvitationIntroChoice) => {
+    if (form.introPresetId === introPresetId) return;
+    markFormDirty();
+    setFormState((current) => ({ ...current, introPresetId }));
+  }, [form.introPresetId, markFormDirty]);
 
   const setMusicEnabled = useCallback(
     (musicEnabled: boolean) => {
@@ -421,6 +434,9 @@ export function useInvitationForm({
 
       if (typeof formVersionRef.current === 'number') formVersionRef.current += 1;
       setSavedPublished(savePolicy.published);
+      const persistedIntroChoice = parseInvitationIntroChoice(nextConfig.introPresetId);
+      setSavedIntroPresetId(persistedIntroChoice);
+      setHasUnknownSavedIntroPreset(typeof nextConfig.introPresetId === 'string' && persistedIntroChoice === null);
       setIsFormDirty(savePolicy.hasPendingPublicationChange);
       setSaveFailed(false);
       setLastSavedAt(new Date().toISOString());
@@ -515,6 +531,8 @@ export function useInvitationForm({
     isSaving,
     isFormDirty,
     savedPublished,
+    savedIntroPresetId,
+    hasUnknownSavedIntroPreset,
     lastSavedAt,
     saveFailed,
     onboardingValidationMessage,
@@ -533,6 +551,7 @@ export function useInvitationForm({
     setDefaultTheme,
     setMusicEnabled,
     setIntroStyle,
+    setIntroPresetId,
     updatePersonField,
     updateParentField,
     requestDashboardSync,

@@ -1,4 +1,4 @@
-import type { WeddingIntroStyle } from '../../../lib/weddingIntro';
+import type { InvitationIntroChoice, InvitationIntroPresetId } from '../../../lib/invitationIntroCatalog';
 import type { MobileMusicCategory } from '../../../types/mobileInvitation';
 import type { ImageUploadProgressState } from '../hooks/useImageUpload';
 import type {
@@ -22,6 +22,9 @@ type ManageEditorStepContentProps = {
   stepKey: EditorStepKey;
   form: ManageFormState;
   savedPublished?: boolean;
+  savedIntroPresetId: InvitationIntroChoice | null;
+  hasUnknownSavedIntroPreset: boolean;
+  introAssetBaseUrl: string;
   mapPreviewUrl: string;
   mapLatitude: number | null;
   mapLongitude: number | null;
@@ -59,8 +62,8 @@ type ManageEditorStepContentProps = {
   onOpenMapUrl: () => void | Promise<void>;
   onSetMusicEnabled: (enabled: boolean) => void;
   onSetPublished: (published: boolean) => void;
-  onSetIntroStyle: (style: WeddingIntroStyle) => void;
-  onPreviewIntro: (style: WeddingIntroStyle) => void;
+  onSetIntroPresetId: (choice: InvitationIntroChoice) => void;
+  onPreviewIntroPreset: (id: InvitationIntroPresetId) => void;
   onToggleMusicDropdown: (panel: MusicDropdownPanel) => void;
   onSelectMusicCategory: (categoryId: string) => void;
   onSelectMusicTrack: (trackId: string) => void;
@@ -70,6 +73,9 @@ export function ManageEditorStepContent({
   stepKey,
   form,
   savedPublished,
+  savedIntroPresetId,
+  hasUnknownSavedIntroPreset,
+  introAssetBaseUrl,
   mapPreviewUrl,
   mapLatitude,
   mapLongitude,
@@ -96,8 +102,8 @@ export function ManageEditorStepContent({
   onOpenMapUrl,
   onSetMusicEnabled,
   onSetPublished,
-  onSetIntroStyle,
-  onPreviewIntro,
+  onSetIntroPresetId,
+  onPreviewIntroPreset,
   onToggleMusicDropdown,
   onSelectMusicCategory,
   onSelectMusicTrack,
@@ -173,10 +179,13 @@ export function ManageEditorStepContent({
         <SettingsEditorStep
           form={form}
           savedPublished={savedPublished}
+          savedIntroPresetId={savedIntroPresetId}
+          hasUnknownSavedIntroPreset={hasUnknownSavedIntroPreset}
+          introAssetBaseUrl={introAssetBaseUrl}
           onUpdateField={onUpdateField}
           onSetPublished={onSetPublished}
-          onSetIntroStyle={onSetIntroStyle}
-          onPreviewIntro={onPreviewIntro}
+          onSetIntroPresetId={onSetIntroPresetId}
+          onPreviewIntroPreset={onPreviewIntroPreset}
         />
       );
   }

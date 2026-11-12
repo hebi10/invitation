@@ -39,6 +39,7 @@ const core = [
   'test-wedding-intro-policy',
   'test-invitation-intro-catalog',
   'test-invitation-intro-02b-pc',
+  'test-invitation-intro-02c-android',
   'test-quiet-invitation-tokens',
   'validate-theme-extension',
   'test-admin-created-event-ownership',
