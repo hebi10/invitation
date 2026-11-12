@@ -157,6 +157,62 @@ with sync_playwright() as playwright:
                     if theme in ("classic-r", "gyeol"):
                         case["cover_structure"] = capture(page, f"{theme}-{label}-cover-structure.png",
                                                           selector='section[data-cover-position]')
+                    quick_links = main.locator('nav[aria-label="청첩장 바로가기"] a')
+                    assert quick_links.count() == 3, "Fictional five-photo sample requires three quick links"
+                    expected_links = ["#wedding-info", "#wedding-location", "#wedding-gallery"]
+                    for i, href in enumerate(expected_links):
+                        link = quick_links.nth(i)
+                        assert link.get_attribute("href") == href, (theme, label, href)
+                        assert link.locator('svg[aria-hidden="true"]').count() == 1, (
+                            "five-theme quick-link icon", theme, label, href)
+                        box = link.bounding_box()
+                        assert box and box["width"] >= 44 and box["height"] >= 63.5, (
+                            "quick-link tap target", theme, label, href, box)
+                        assert main.locator(href).count() == 1, (
+                            "quick-link anchor must resolve", theme, label, href)
+
+                    carousel = gallery.locator('[data-gallery-variant]')
+                    primary = carousel.locator('[class*="primary"]').first
+                    navigation = carousel.locator('[data-gallery-navigation]')
+                    assert navigation.count() == 1, (theme, label, "photo overlay navigation missing")
+                    nav_bounds, primary_bounds = navigation.bounding_box(), primary.bounding_box()
+                    assert nav_bounds and primary_bounds, (theme, label, "primary photo bounds missing")
+                    assert abs(nav_bounds["x"] - primary_bounds["x"]) <= 2, (theme, label, "photo nav x")
+                    assert abs(nav_bounds["width"] - primary_bounds["width"]) <= 2, (theme, label, "photo nav width")
+                    assert abs(nav_bounds["height"] - primary_bounds["height"]) <= 2, (theme, label, "photo nav height")
+                    previous = navigation.get_by_role("button", name="이전 사진")
+                    following = navigation.get_by_role("button", name="다음 사진")
+                    assert previous.count() == 1 and following.count() == 1
+                    assert previous.is_disabled() and following.is_enabled()
+                    status = navigation.locator('[role="status"][aria-live="polite"]')
+                    assert status.count() == 1 and status.inner_text().strip() == "01 / 05"
+                    assert status.get_attribute("aria-label") == "5장 중 1번째 사진"
+                    for control in (previous, following):
+                        bounds = control.bounding_box()
+                        assert bounds and bounds["width"] >= 43.5 and bounds["height"] >= 43.5, (
+                            "photo arrow tap target", theme, label, bounds)
+                    assert page.evaluate("""(node) => {
+                      const rgb = getComputedStyle(node).backgroundColor;
+                      return rgb.startsWith('rgba(') && Number(rgb.split(',')[3].replace(')','').trim()) >= 0.6;
+                    }""", status.element_handle()), (theme, label, "counter requires readable background")
+
+                    following.click()
+                    page.wait_for_function("""() => {
+                      const nav = document.querySelector('[data-gallery-navigation]');
+                      return nav?.querySelector('[role="status"]')?.textContent?.trim() === '02 / 05';
+                    }""", timeout=12000)
+                    assert previous.is_enabled()
+                    previous.click()
+                    page.wait_for_function("""() => {
+                      const nav = document.querySelector('[data-gallery-navigation]');
+                      return nav?.querySelector('[role="status"]')?.textContent?.trim() === '01 / 05';
+                    }""", timeout=12000)
+                    assert previous.is_disabled()
+                    case["navigation"] = {"quickLinks": 3, "icons": 3,
+                                          "tapTargets": 5, "nextAndPrevious": True,
+                                          "counter": "01 / 05", "overlayInPrimary": True}
+                    case["quick_links_image"] = capture(page, f"{theme}-{label}-quicklinks.png",
+                                                         selector='nav[aria-label="청첩장 바로가기"]')
                     case["gallery"] = capture(page, f"{theme}-{label}-gallery.png", selector='[data-wedding-section="gallery"]')
                     if label in ("mobile390", "desktop1440"):
                         page.evaluate("scrollTo(0,0)")
