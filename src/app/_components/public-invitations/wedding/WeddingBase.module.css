@@ -2173,3 +2173,13 @@ details[open] > :is(.disclosureSummary, .accountSummary, .formSummary)::after { 
     padding-inline: 16px;
   }
 }
+
+
+/* UI-R08 regression fixes: preserve QA contrast and minimum calendar tap targets. */
+.page[data-design='simple'] .contactSection .summaryDescription {
+  color: #595650;
+}
+.page[data-design='classic-r'] .ceremonySection > button,
+.page[data-design='classic-r'] .ceremonySection .calendarDisclosure > summary {
+  min-height: 72px;
+}

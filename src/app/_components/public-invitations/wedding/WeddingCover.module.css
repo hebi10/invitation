@@ -453,3 +453,9 @@
     height: 94px;
   }
 }
+
+
+/* UI-R08: restore modern cover label readability required by responsive QA. */
+.editorial .details .editorialHeading {
+  font-size: 14px;
+}

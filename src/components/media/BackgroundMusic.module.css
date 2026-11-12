@@ -275,3 +275,11 @@
     transition: none;
   }
 }
+
+
+/* UI-R09 QA: preserve a 12px top-safe-area minimum on narrow phones. */
+@media (max-width: 359px) {
+  .musicPlayer.invitationAligned {
+    top: max(12px, calc(env(safe-area-inset-top) + 8px));
+  }
+}
