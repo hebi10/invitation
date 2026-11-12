@@ -1,10 +1,10 @@
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
+import { register } from 'node:module';
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
-import { createElement } from 'react';
+import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
-import InvitationIntroPicker from '../src/components/sections/InvitationIntro/InvitationIntroPicker.tsx';
 import {
   INVITATION_INTRO_PRESETS,
   getInvitationIntroPreset,
@@ -49,8 +49,12 @@ for (const [filename, entry] of Object.entries(manifest.files) as [string, { byt
 }
 assert.equal(manifest.files['universal-2s.gif'].sha256, presets[0].sha256);
 
+Object.assign(globalThis, { React });
+register(new URL('./test-css-module-loader.mjs', import.meta.url), import.meta.url);
+const { default: InvitationIntroPicker } = await import('../src/components/sections/InvitationIntro/InvitationIntroPicker.tsx');
+
 function markup(value: null | 'none' | 'intro-01', savedValue: null | 'none' | 'intro-01' = null) {
-  return renderToStaticMarkup(createElement(InvitationIntroPicker,
+  return renderToStaticMarkup(React.createElement(InvitationIntroPicker,
     { value, savedValue, onChange: () => {} }));
 }
 
