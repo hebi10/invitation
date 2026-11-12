@@ -116,7 +116,7 @@ assert.match(webPreview, /prefers-reduced-motion/);
 assert.match(webPreview, /preset\.posterSrc/);
 assert.match(webPreview, /onError/);
 assert.match(webPreview, /replay=/, 'Replay must restart 2s non-looping asset');
-assert.match(webRoute, /getInvitationIntroPreset\(preset, normalizeEventTypeKey\(event\)\)/,
+assert.match(webRoute, /getInvitationIntroPreset\(preset, eventType\)/,
   'Reject presets unavailable for requested event');
 assert.doesNotMatch(webPreview, /setTimeout|router\.push|window\.location/, 'Preview never auto-enters or saves');
 
