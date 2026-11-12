@@ -265,7 +265,7 @@
 }
 @media (max-width: 359px) {
   .musicPlayer.invitationAligned {
-    top: max(10px, env(safe-area-inset-top));
+    top: max(12px, calc(env(safe-area-inset-top) + 8px));
     right: max(10px, env(safe-area-inset-right));
   }
 }
