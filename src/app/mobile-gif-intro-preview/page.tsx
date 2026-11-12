@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 
 import { getInvitationIntroPreset } from '@/lib/invitationIntroCatalog';
-import { normalizeEventTypeKey } from '@/lib/eventTypes';
+import { getEventTypeMeta, isEventTypeKey } from '@/lib/eventTypes';
 import MobileGifIntroPreviewClient from './MobileGifIntroPreviewClient';
 
 export const metadata: Metadata = {
@@ -13,10 +13,12 @@ export const metadata: Metadata = {
 export default async function MobileGifIntroPreviewPage({
   searchParams,
 }: {
-  searchParams: Promise<{ preset?: string; event?: string }> ;
+  searchParams: Promise<{ preset?: string; event?: string }>;
 }) {
   const { preset, event } = await searchParams;
-  const selectedPreset = getInvitationIntroPreset(preset, normalizeEventTypeKey(event));
+  const eventType = event === undefined ? 'wedding' : isEventTypeKey(event) && getEventTypeMeta(event).enabled ? event : null;
+  if (!eventType) notFound();
+  const selectedPreset = getInvitationIntroPreset(preset, eventType);
   if (!selectedPreset) notFound();
 
   return <MobileGifIntroPreviewClient preset={selectedPreset} />;
