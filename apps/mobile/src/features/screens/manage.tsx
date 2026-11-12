@@ -48,7 +48,7 @@ import { copyTextWithFallback } from '../../lib/textTransfer';
 import { createPrivatePreviewUrl } from '../../lib/apiPreview';
 import type { InvitationIntroPresetId } from '../../lib/invitationIntroCatalog';
 import { buildInvitationIntroSamplePreviewUrl } from '../../lib/weddingIntroPreview';
-import { normalizeEventTypeKey } from '../../../../src/lib/eventTypes';
+import { normalizeEventTypeKey } from '../../../../../src/lib/eventTypes';
 import { buildMobileKakaoShareTarget } from '../../lib/invitationSharing';
 import type {
   MobileInvitationThemeKey,
