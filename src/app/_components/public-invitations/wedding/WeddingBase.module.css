@@ -1410,8 +1410,8 @@ details[open] > :is(.disclosureSummary, .accountSummary, .formSummary)::after { 
 /* UI-09-01 — consistent author/date/message reading order in all five wedding themes. */
 .page [data-wedding-section='guestbook'] .commentsGrid {
   display: grid;
-  gap: 14px;
-  margin-top: 18px;
+  gap: 12px;
+  margin-top: 16px;
 }
 .page [data-wedding-section='guestbook'] .commentItem {
   position: relative;
@@ -1421,6 +1421,7 @@ details[open] > :is(.disclosureSummary, .accountSummary, .formSummary)::after { 
   background: var(--paper-soft);
   border: 1px solid var(--line);
   text-align: left;
+  overflow-wrap: anywhere;
 }
 .page [data-wedding-section='guestbook'] .commentHeader {
   display: flex;
@@ -1493,16 +1494,16 @@ details[open] > :is(.disclosureSummary, .accountSummary, .formSummary)::after { 
 }
 
 .page[data-design='classic-r'] [data-wedding-section='guestbook'] .commentsGrid {
-  gap: 14px;
+  gap: 12px;
 }
 .page[data-design='classic-r'] [data-wedding-section='guestbook'] .commentItem {
-  padding: 20px 18px 20px 54px;
+  padding: 18px 16px 18px 52px;
   background: var(--paper);
   border: 1px solid var(--line);
 }
 .page[data-design='classic-r'] [data-wedding-section='guestbook'] .commentItem::before {
-  left: 18px;
-  top: 20px;
+  left: 16px;
+  top: 18px;
   color: var(--muted);
   font-variant-numeric: tabular-nums;
 }
@@ -1513,10 +1514,10 @@ details[open] > :is(.disclosureSummary, .accountSummary, .formSummary)::after { 
 }
 
 .page[data-design='romantic'] [data-wedding-section='guestbook'] .commentsGrid {
-  gap: 16px;
+  gap: 12px;
 }
 .page[data-design='romantic'] [data-wedding-section='guestbook'] .commentItem {
-  padding: 22px 20px;
+  padding: 18px 16px;
   background: var(--paper-soft);
   border: 1px solid var(--line);
 }
@@ -1531,10 +1532,10 @@ details[open] > :is(.disclosureSummary, .accountSummary, .formSummary)::after { 
 }
 
 .page[data-design='gyeol'] [data-wedding-section='guestbook'] .commentsGrid {
-  gap: 16px;
+  gap: 12px;
 }
 .page[data-design='gyeol'] [data-wedding-section='guestbook'] .commentItem {
-  padding: 22px 20px;
+  padding: 18px 16px;
   background: var(--paper-soft);
   border: 1px solid var(--line);
 }
@@ -1549,10 +1550,10 @@ details[open] > :is(.disclosureSummary, .accountSummary, .formSummary)::after { 
 }
 
 .page[data-design='emotional'] [data-wedding-section='guestbook'] .commentsGrid {
-  gap: 14px;
+  gap: 12px;
 }
 .page[data-design='emotional'] [data-wedding-section='guestbook'] .commentItem {
-  padding: 20px 18px;
+  padding: 18px 16px;
   background: var(--paper-soft);
   border: 1px solid var(--line);
 }
@@ -1584,7 +1585,7 @@ details[open] > :is(.disclosureSummary, .accountSummary, .formSummary)::after { 
 /* UI-09-03 — unified guestbook writing, refresh and cursor navigation controls. */
 .page [data-wedding-section='guestbook'] .formDisclosure {
   width: 100%;
-  margin-top: 26px;
+  margin-top: 22px;
 }
 .page [data-wedding-section='guestbook'] .formSummary {
   display: flex;
@@ -1597,7 +1598,7 @@ details[open] > :is(.disclosureSummary, .accountSummary, .formSummary)::after { 
   text-align: left;
 }
 .page [data-wedding-section='guestbook'] .formContainer {
-  margin-top: 14px;
+  margin-top: 12px;
   padding: 18px;
   border: 1px solid var(--line);
   background: var(--paper-soft);
