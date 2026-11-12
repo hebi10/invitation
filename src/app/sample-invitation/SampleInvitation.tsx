@@ -116,15 +116,24 @@ function makeQAUI07State(variant: QAUI07Case): WeddingPageReadyState {
 type QAUI07Map = 'off' | 'coordinates' | 'geocode';
 type QAUI07Intro = 'none' | 'light' | 'cinema' | 'envelope';
 
-export default function SampleInvitation({ embedded = false, theme = 'simple', qaMusic = false, qaUI07 = false, qaUI07Case = 'full', qaUI07Map = 'off', qaUI07Intro = 'none' }: { embedded?: boolean; theme?: 'simple' | 'romantic' | 'gyeol' | 'classic-r' | 'emotional'; qaMusic?: boolean; qaUI07?: boolean; qaUI07Case?: QAUI07Case; qaUI07Map?: QAUI07Map; qaUI07Intro?: QAUI07Intro }) {
+export default function SampleInvitation({ embedded = false, theme = 'simple', qaMusic = false, qaUI07 = false, qaUI07Case = 'full', qaUI07Map = 'off', qaUI07Intro = 'none', qaR08GalleryCount = null, qaR08NoCover = false }: { embedded?: boolean; theme?: 'simple' | 'romantic' | 'gyeol' | 'classic-r' | 'emotional'; qaMusic?: boolean; qaUI07?: boolean; qaUI07Case?: QAUI07Case; qaUI07Map?: QAUI07Map; qaUI07Intro?: QAUI07Intro; qaR08GalleryCount?: number | null; qaR08NoCover?: boolean }) {
   const weddingState = qaUI07 ? makeQAUI07State(qaUI07Case) : sampleState;
-  const mapState: WeddingPageReadyState = qaUI07 && qaUI07Map === 'coordinates'
+  const visualState: WeddingPageReadyState = qaUI07 && (qaR08GalleryCount !== null || qaR08NoCover)
     ? {
         ...weddingState,
+        mainImageUrl: qaR08NoCover ? '' : weddingState.mainImageUrl,
+        heroImageUrl: qaR08NoCover ? '' : weddingState.heroImageUrl,
+        galleryImageUrls: qaR08GalleryCount === null ? weddingState.galleryImageUrls : weddingState.galleryImageUrls.slice(0, qaR08GalleryCount),
+        galleryPreviewImageUrls: qaR08GalleryCount === null ? weddingState.galleryPreviewImageUrls : weddingState.galleryPreviewImageUrls.slice(0, qaR08GalleryCount),
+      }
+    : weddingState;
+  const mapState: WeddingPageReadyState = qaUI07 && qaUI07Map === 'coordinates'
+    ? {
+        ...visualState,
         pageConfig: {
-          ...weddingState.pageConfig,
+          ...visualState.pageConfig,
           pageData: {
-            ...weddingState.pageConfig.pageData,
+            ...visualState.pageConfig.pageData,
             kakaoMap: {
               latitude: 37.50001,
               longitude: 127.00001,
@@ -134,7 +143,7 @@ export default function SampleInvitation({ embedded = false, theme = 'simple', q
           },
         },
       }
-    : weddingState;
+    : visualState;
   return <AppQueryProvider><div className={styles.sample}>
     <p className={styles.notice}>기본형 샘플 · AI 생성 사진과 예시 메시지</p>
     <WeddingBase state={mapState} options={{ slug: sampleWeddingPage.slug, theme }} theme={theme} demoComments={sampleWeddingComments} showMap={qaUI07 && qaUI07Map !== 'off'} />
