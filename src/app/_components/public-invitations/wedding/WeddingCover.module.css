@@ -195,3 +195,52 @@
   .traditional .details { padding-inline: 12px; }
   .traditional .traditionalFrame { padding-inline: 14px; }
 }
+
+
+/* UI-R02: simple cover, keeping the stored photo focus and text position. */
+.basic .photoFrame {
+  max-width: 432px;
+}
+.basic .details {
+  display: grid;
+  justify-items: center;
+  gap: 6px;
+  padding: 22px clamp(16px, 5.5vw, 24px) 20px;
+}
+.basic .details .names {
+  margin: 0 0 8px;
+  gap: 10px;
+  font-size: clamp(24px, 6.7vw, 28px);
+  line-height: 1.55;
+  overflow-wrap: anywhere;
+}
+.basic .details .basicDate {
+  margin: 0;
+  color: var(--ink, #282725);
+  font-size: clamp(22px, 6vw, 26px);
+  line-height: 1.5;
+  font-variant-numeric: tabular-nums;
+}
+.basic .details .basicSchedule {
+  margin: 0;
+  gap: 2px 10px;
+  line-height: 1.6;
+  color: var(--muted, #716e69);
+}
+.basic .details .venue {
+  margin: 4px 0 0;
+  font-size: 14px;
+  line-height: 1.65;
+  overflow-wrap: anywhere;
+}
+@media (max-width: 359px) {
+  .basic .photoFrame {
+    width: calc(100% - 32px);
+  }
+  .basic .details {
+    padding-inline: 16px;
+  }
+  .basic .details .names {
+    gap: 6px;
+  }
+}
