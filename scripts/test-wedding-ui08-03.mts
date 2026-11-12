@@ -29,4 +29,18 @@ assert.match(swiper, /reducedMotion \? 'slide'/);
 assert.match(swiper, /speed=\{reducedMotion \? 0/);
 assert.match(swiper, /aria-live="polite"/);
 assert.match(swiper, /onError=\{\(\) => setFailedImages/);
+assert.match(base, /const showNavigationIcons = theme === 'simple'[\s\S]*?theme === 'gyeol'[\s\S]*?theme === 'emotional'/);
+for (const kind of ['calendar', 'pin', 'photo']) {
+  assert.ok(base.includes('<WeddingActionIcon kind="' + kind + '" />'), 'Quick link icon missing: ' + kind);
+}
+assert.match(base, /state\.galleryImageUrls\.length > 0 \? <a href="#wedding-gallery">/);
+assert.match(swiper, /className=\{styles\.primary\}/);
+assert.match(swiper, /data-gallery-navigation/);
+assert.match(swiper, /aria-label="이전 사진"/);
+assert.match(swiper, /aria-label="다음 사진"/);
+assert.match(swiper, /role="status" aria-live="polite"/);
+assert.match(styles, /\.gallery \.primary \.controls\s*\{/);
+assert.match(styles, /\.gallery \.primary \.controls button\s*\{/);
+assert.match(styles, /pointer-events: none;/);
+
 console.log('UI-08-03: five slider variants, originals, preview fallback, modal and accessibility contracts verified');
