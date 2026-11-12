@@ -4,7 +4,8 @@ import { DEMO_EXPERIENCE_IMAGE_OPTIONS } from '@/config/demoExperienceSeeds';
 
 import WeddingWizardPreview from './WeddingWizardPreview';
 import WizardCustomerConnection from './WizardCustomerConnection';
-import IntroSettings from './steps/IntroSettings';
+import IntroCatalogSettings from './steps/IntroCatalogSettings';
+import { parseInvitationIntroChoice, type InvitationIntroChoice } from '@/lib/invitationIntroCatalog';
 import { createWizardMutationGuard } from './wizardImageUploadState';
 
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -208,6 +209,7 @@ export default function PageWizardClient({
   const [brideEnglishName, setBrideEnglishName] = useState('');
   const [notice, setNotice] = useState<NoticeState>(null);
   const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
+  const [savedIntroPresetId, setSavedIntroPresetId] = useState<InvitationIntroChoice | null>(null);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [isReloading, setIsReloading] = useState(false);
   const reloadInFlightRef = useRef(false);
@@ -493,6 +495,7 @@ export default function PageWizardClient({
       );
 
       setFormState(nextConfig);
+      setSavedIntroPresetId(parseInvitationIntroChoice(nextConfig.introPresetId));
       setEventType(nextEventType);
       setInteractedStepKeys(new Set());
       setPersistedSlug(initialSlug);
@@ -766,6 +769,7 @@ export default function PageWizardClient({
       const nextConfig = createInitialWizardConfig(requestedEventType);
 
       setFormState(nextConfig);
+      setSavedIntroPresetId(null);
       setEventType(normalizeEventTypeKey(nextConfig.eventType, DEFAULT_EVENT_TYPE));
       setInteractedStepKeys(new Set());
       setPersistedSlug(null);
@@ -1056,6 +1060,7 @@ export default function PageWizardClient({
     onVersionConflict: () => setHasVersionConflict(true),
     onPersisted: async ({ slug, config, version, published: nextPublished }) => {
       setPersistedPublished(nextPublished);
+      setSavedIntroPresetId(parseInvitationIntroChoice(config.introPresetId));
       setHasUnsavedChanges(published !== nextPublished);
       const nextProductTier = normalizeInvitationProductTier(config.productTier);
 
@@ -1431,13 +1436,10 @@ export default function PageWizardClient({
             onGuideTemplateApply={handleGuideTemplateApply}
           />
         );
+      case 'intro':
+        return <IntroCatalogSettings {...sharedProps} savedValue={savedIntroPresetId} />;
       case 'music':
-        return (
-          <>
-            {eventType === 'wedding' ? <IntroSettings {...sharedProps} /> : null}
-            <MusicStep {...sharedProps} musicPreviewState={musicPreviewState} />
-          </>
-        );
+        return <MusicStep {...sharedProps} musicPreviewState={musicPreviewState} />;
       case 'final':
         return (
           <FinalStep {...sharedProps} canManagePublication={isAdminLoggedIn} published={published} setPublished={setDirtyPublished}>

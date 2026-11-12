@@ -14,6 +14,7 @@ export const previewSections: Record<PreviewStep, { label: string; selector: str
   venue: { label: '오시는 길', selector: '[data-wedding-section="schedule"]' },
   greeting: { label: '초대의 글', selector: '[data-wedding-section="invitation"]' },
   images: { label: '사진', selector: '[data-wedding-section="gallery"]' },
+  intro: { label: '인트로 선택', selector: 'main > :first-child' },
   extra: { label: '마음 전하실 곳', selector: '[data-wedding-section="gift"]' },
   music: { label: '인트로·음악', selector: 'main > :first-child' },
   final: { label: '전체 청첩장', selector: 'main > :first-child' },

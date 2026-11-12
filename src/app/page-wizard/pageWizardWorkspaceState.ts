@@ -3,6 +3,7 @@ import type { WizardStepKey, SlugStepState } from './pageWizardData';
 import { buildWeddingDateObject, formatDateLabel, formatTimeLabel } from './pageWizardData';
 import type { BankAccount, InvitationPageSeed } from '@/types/invitationPage';
 import { normalizeWeddingIntroStyle, WEDDING_INTRO_OPTIONS } from '@/lib/weddingIntro';
+import { getInvitationIntroPreset, parseInvitationIntroChoice } from '@/lib/invitationIntroCatalog';
 
 export type WizardSaveStatus =
   | 'idle'
@@ -104,8 +105,11 @@ export function hasMeaningfulInputForWizardStep(
       return hasAccountInput(formState?.pageData?.giftInfo?.groomAccounts) ||
         hasAccountInput(formState?.pageData?.giftInfo?.brideAccounts) ||
         hasText(formState?.pageData?.giftInfo?.message);
+    case 'intro':
+      return hasStepInteraction || Boolean(formState?.introPresetId) ||
+        normalizeWeddingIntroStyle(formState?.introStyle) !== 'none';
     case 'music':
-      return normalizeWeddingIntroStyle(formState?.introStyle) !== 'none' || Boolean(formState?.musicEnabled) ||
+      return Boolean(formState?.musicEnabled) ||
         hasText(formState?.musicTrackId) ||
         hasText(formState?.musicStoragePath) ||
         hasText(formState?.musicUrl);
@@ -124,12 +128,18 @@ export function buildWizardReviewFacts(config: InvitationPageSeed, imagesValid: 
   const facts: { label: string; value: string }[] = [];
   if (eventType === 'wedding') {
     facts.push({ label: '신랑 · 신부', value: `${valueOrMissing(config.couple.groom.name)} · ${valueOrMissing(config.couple.bride.name)}` });
-    facts.push({ label: '첫 화면 연출', value: WEDDING_INTRO_OPTIONS.find(option => option.value === normalizeWeddingIntroStyle(config.introStyle))?.label ?? '사용 안 함' });
   } else if (eventType === 'birthday') {
     facts.push({ label: '생일 주인공', value: valueOrMissing(config.couple.groom.name) });
   } else {
     facts.push({ label: eventType === 'first-birthday' ? '아기 이름' : eventType === 'opening' ? '상호명' : '행사명', value: valueOrMissing(config.displayName) });
   }
+  const introChoice = parseInvitationIntroChoice(config.introPresetId);
+  const introLabel = introChoice === 'none'
+    ? '사용 안 함'
+    : introChoice
+      ? (getInvitationIntroPreset(introChoice)?.label ?? '인트로 선택')
+      : (WEDDING_INTRO_OPTIONS.find(option => option.value === normalizeWeddingIntroStyle(config.introStyle))?.label ?? '사용 안 함');
+  facts.push({ label: '첫 화면 연출', value: introLabel });
   if ((eventType === 'wedding' || eventType === 'birthday') && config.displayName.trim()) {
     facts.push({ label: '표지 제목', value: config.displayName.trim() });
   }

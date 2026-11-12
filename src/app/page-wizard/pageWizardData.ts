@@ -43,6 +43,7 @@ export type WizardStepKey =
   | 'venue'
   | 'greeting'
   | 'images'
+  | 'intro'
   | 'extra'
   | 'music'
   | 'final';
@@ -294,6 +295,14 @@ const OPENING_EXTRA_STEP_TEMPLATE: WizardStepTemplate = {
   highlights: ['브랜드 소개', '오픈 혜택', '방문 안내'],
 };
 
+const INTRO_STEP_TEMPLATE: WizardStepTemplate = {
+  key: 'intro',
+  title: '인트로 선택',
+  description: '원하는 GIF를 미리 보고 선택한 뒤 저장합니다.',
+  previewSection: 'cover',
+  highlights: ['GIF 미리보기', '사용 여부', '선택 후 저장'],
+};
+
 const MUSIC_STEP_TEMPLATE: WizardStepTemplate = {
   key: 'music',
   title: '배경음악',
@@ -326,6 +335,7 @@ const WIZARD_STEP_TEMPLATE_MAP: Record<WizardStepKey, WizardStepTemplate> = {
   venue: SCHEDULE_STEP_TEMPLATE,
   greeting: GREETING_STEP_TEMPLATE,
   images: IMAGES_STEP_TEMPLATE,
+  intro: INTRO_STEP_TEMPLATE,
   extra: EXTRA_STEP_TEMPLATE,
   music: MUSIC_STEP_TEMPLATE,
   final: FINAL_STEP_TEMPLATE,
@@ -394,6 +404,7 @@ const WEDDING_EVENT_STEP_KEYS: WizardStepKey[] = [
   'schedule',
   'greeting',
   'images',
+  'intro',
   'music',
   'extra',
   'final',
@@ -406,6 +417,7 @@ const BIRTHDAY_EVENT_STEP_KEYS: WizardStepKey[] = [
   'images',
   'music',
   'extra',
+  'intro',
   'final',
 ];
 
@@ -416,6 +428,7 @@ const FIRST_BIRTHDAY_EVENT_STEP_KEYS: WizardStepKey[] = [
   'images',
   'music',
   'extra',
+  'intro',
   'final',
 ];
 
@@ -425,6 +438,7 @@ const GENERAL_EVENT_STEP_KEYS: WizardStepKey[] = [
   'greeting',
   'images',
   'extra',
+  'intro',
   'final',
 ];
 
@@ -434,6 +448,7 @@ const OPENING_EVENT_STEP_KEYS: WizardStepKey[] = [
   'greeting',
   'extra',
   'images',
+  'intro',
   'final',
 ];
 
@@ -490,14 +505,6 @@ const WIZARD_STEP_CONFIGS: Record<WizardStepConfigKey, WizardStepConfigDefinitio
 };
 
 function getWizardStepTemplate(stepKey: WizardStepKey, eventType?: EventTypeKey) {
-  if ((!eventType || eventType === 'wedding') && stepKey === 'music') {
-    return {
-      ...MUSIC_STEP_TEMPLATE,
-      title: '첫 화면 연출과 음악',
-      description: '청첩장이 열리는 연출을 고르고 배경음악을 설정합니다.',
-      highlights: ['첫 화면 연출', '연출 미리보기', '배경음악'],
-    };
-  }
   if (eventType === 'birthday') {
     return BIRTHDAY_WIZARD_STEP_TEMPLATE_MAP[stepKey] ?? WIZARD_STEP_TEMPLATE_MAP[stepKey];
   }
@@ -1365,6 +1372,9 @@ export function buildStepValidation(
       }
       return { valid: messages.length === 0, messages };
     }
+    case 'intro':
+      // The new GIF choice is optional. Existing customers keep their saved legacy style.
+      return { valid: true, messages: [] };
     case 'images': {
       const messages: string[] = [];
       const validImage = (value: string | undefined) =>

@@ -5,6 +5,8 @@ import {
   normalizeInvitationMusicSelection,
 } from '@/lib/musicLibrary';
 import { resolveInvitationFeatures } from '@/lib/invitationProducts';
+import { getInvitationIntroPreset, parseInvitationIntroChoice } from '@/lib/invitationIntroCatalog';
+import { normalizeWeddingIntroStyle, WEDDING_INTRO_OPTIONS } from '@/lib/weddingIntro';
 import { PUBLIC_SITE_ORIGIN } from '@/lib/invitationMetadata';
 import {
   getGeneralEventTheme,
@@ -400,6 +402,31 @@ export default function PageWizardStepPreview({
             <PreviewRow label="갤러리 이미지" value={`${galleryImages.length}장`} />
             <PreviewRow label="허용 장수" value={`최대 ${features.maxGalleryImages}장`} />
           </div>
+        </div>
+      </section>
+    );
+  }
+
+  if (stepKey === 'intro') {
+    const introChoice = parseInvitationIntroChoice(formState.introPresetId);
+    const legacyLabel = WEDDING_INTRO_OPTIONS.find(
+      option => option.value === normalizeWeddingIntroStyle(formState.introStyle)
+    )?.label ?? '사용 안 함';
+    const label = introChoice === 'none'
+      ? '사용 안 함'
+      : introChoice
+        ? (getInvitationIntroPreset(introChoice)?.label ?? '선택 확인 필요')
+        : legacyLabel;
+    return (
+      <section className={styles.previewSummary}>
+        <div className={styles.previewHeader}>
+          <h3 className={styles.previewTitle}>인트로 선택 요약</h3>
+          <span className={styles.previewCaption}>선택 후 전체 페이지 저장 버튼으로 확정됩니다.</span>
+        </div>
+        <div className={styles.previewKeyList}>
+          <PreviewRow label="선택한 인트로" value={label} />
+          <PreviewRow label="새 GIF 선택" value={introChoice === null ? '미선택 · 기존 설정 유지' : introChoice} />
+          <PreviewRow label="재생 시간" value={introChoice && introChoice !== 'none' ? '약 2초' : '없음'} />
         </div>
       </section>
     );

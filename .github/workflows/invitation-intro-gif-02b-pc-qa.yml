@@ -1,0 +1,74 @@
+name: Invitation INTRO-GIF-02-B PC editor save and preview QA
+
+on:
+  pull_request:
+    paths:
+      - src/app/page-wizard/**
+      - src/app/intro-catalog-editor-qa/**
+      - src/lib/invitationIntroCatalog.ts
+      - src/lib/invitationPagePersistence.ts
+      - src/types/invitationPage.ts
+      - src/server/invitationContentSavePolicy.ts
+      - src/app/wizard-preview/**
+      - scripts/test-invitation-intro-02b-pc.mts
+      - scripts/qa-invitation-intro-gif-02b-pc.py
+      - .github/workflows/invitation-intro-gif-02b-pc-qa.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  pc-intro-select-save:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install Next.js and Chromium
+        run: |
+          npm ci
+          python -m pip install --disable-pip-version-check playwright==1.56.0
+          python -m playwright install --with-deps chromium
+      - name: Verify server contract, legacy preservation, 5 event steps, React SSR
+        run: node scripts/run-test-suite.mjs test-invitation-intro-02b-pc
+      - name: Launch development-only PC editor QA
+        env:
+          NEXT_PUBLIC_USE_FIREBASE: 'false'
+          NEXT_PUBLIC_SITE_URL: http://127.0.0.1:3000
+        run: |
+          nohup npm run dev > "$RUNNER_TEMP/intro-02b-next.log" 2>&1 &
+          python - <<'PY'
+          import time, urllib.request
+          url = "http://127.0.0.1:3000/intro-catalog-editor-qa/"
+          for _ in range(95):
+              try:
+                  with urllib.request.urlopen(url, timeout=12) as response:
+                      if response.status == 200:
+                          print("PC editor QA fixture ready")
+                          break
+              except Exception:
+                  pass
+              time.sleep(2)
+          else:
+              raise SystemExit("PC editor QA fixture unavailable")
+          PY
+      - name: Run 5 event types x 3 viewport editor save and cancel QA
+        run: python scripts/qa-invitation-intro-gif-02b-pc.py
+      - name: Preserve real browser screenshots and SHA256 manifest
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: invitation-intro-gif-02b-pc-editor-qa
+          path: artifacts/intro-gif-02b-pc/
+          retention-days: 30
+          if-no-files-found: warn
+      - name: Show isolated app diagnostics on failure
+        if: failure()
+        run: tail -120 "$RUNNER_TEMP/intro-02b-next.log" || true

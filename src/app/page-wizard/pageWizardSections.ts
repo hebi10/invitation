@@ -10,6 +10,7 @@ export type WizardSectionId =
   | 'schedule'
   | 'greeting'
   | 'media'
+  | 'intro'
   | 'music'
   | 'accounts'
   | 'review';
@@ -61,9 +62,15 @@ const SECTION_DEFINITIONS: WizardSectionDefinition[] = [
     stepKeys: ['images'],
   },
   {
+    id: 'intro',
+    title: '인트로 선택',
+    description: '원하는 연출을 확인하고 저장 여부를 결정합니다.',
+    stepKeys: ['intro'],
+  },
+  {
     id: 'music',
-    title: '연출·음악',
-    description: '첫 화면 연출과 배경음악을 선택합니다.',
+    title: '배경음악',
+    description: '필요할 때만 음악을 선택합니다.',
     stepKeys: ['music'],
   },
   {

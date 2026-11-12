@@ -1,6 +1,7 @@
 import type { InvitationThemeKey as RegisteredInvitationThemeKey } from '@/lib/invitationThemes';
 import type { EventTypeKey } from '@/lib/eventTypes';
 import type { WeddingIntroStyle } from '@/lib/weddingIntro';
+import type { InvitationIntroChoice } from '@/lib/invitationIntroCatalog';
 import type { WeddingCoverSettings } from '@/lib/weddingCover';
 
 export interface FamilyMember {
@@ -172,6 +173,7 @@ export interface InvitationPage {
   features?: Partial<InvitationFeatureFlags>;
   musicEnabled?: boolean;
   introStyle?: WeddingIntroStyle;
+  introPresetId?: InvitationIntroChoice;
   musicVolume?: number;
   musicCategoryId?: string;
   musicTrackId?: string;
