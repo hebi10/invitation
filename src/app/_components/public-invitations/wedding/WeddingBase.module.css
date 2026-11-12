@@ -1645,3 +1645,45 @@ details[open] > :is(.disclosureSummary, .accountSummary, .formSummary)::after { 
     padding: 8px;
   }
 }
+
+
+/* UI-R01: shared mobile reading rhythm for the five public wedding themes only. */
+.page:is([data-design='simple'], [data-design='classic-r'], [data-design='romantic'], [data-design='gyeol'], [data-design='emotional']) {
+  --r01-content-gutter: clamp(16px, 5.5vw, 24px);
+  --r01-readable-width: 35ch;
+  --r01-touch-target: 44px;
+  --r01-primary-target: 48px;
+}
+
+.page:is([data-design='simple'], [data-design='classic-r'], [data-design='romantic'], [data-design='gyeol'], [data-design='emotional']) :is(.invitationCopy, .travelNote, .guideSummary) {
+  overflow-wrap: anywhere;
+  word-break: keep-all;
+}
+
+.page:is([data-design='simple'], [data-design='classic-r'], [data-design='romantic'], [data-design='gyeol'], [data-design='emotional']) :is(.disclosureSummary, .accountSummary, .formSummary) {
+  min-height: var(--r01-primary-target);
+  max-width: 100%;
+  font-size: max(13px, 0.875rem);
+}
+
+.page:is([data-design='simple'], [data-design='classic-r'], [data-design='romantic'], [data-design='gyeol'], [data-design='emotional']) :is(.contactActions a, .copyButton, .refreshButton, .pageButton, .pageNumber, .carouselButton) {
+  min-width: var(--r01-touch-target);
+  min-height: var(--r01-touch-target);
+}
+
+.page:is([data-design='simple'], [data-design='classic-r'], [data-design='romantic'], [data-design='gyeol'], [data-design='emotional']) :is(.disclosureSummary, .accountSummary, .formSummary, .quickLinks a, .contactActions a, .copyButton, .refreshButton, .pageButton, .pageNumber, .carouselButton):focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 3px;
+}
+
+@media (max-width: 359px) {
+  .page:is([data-design='simple'], [data-design='classic-r'], [data-design='romantic'], [data-design='gyeol'], [data-design='emotional']) .quickLinks {
+    flex-wrap: wrap;
+    column-gap: 8px;
+  }
+  .page:is([data-design='simple'], [data-design='classic-r'], [data-design='romantic'], [data-design='gyeol'], [data-design='emotional']) .quickLinks a {
+    min-width: 0;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+}
