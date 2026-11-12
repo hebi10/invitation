@@ -147,7 +147,7 @@ export default function WizardPreviewClient() {
       <div className={styles.canvas}>
       <WeddingPreviewContent state={state} theme={draft.theme} />
       </div>
-      {showIntro && <WeddingIntro
+      {showIntro && draft.seed.introPresetId === undefined && <WeddingIntro
         key={`${normalizeWeddingIntroStyle(draft.seed.introStyle)}:${introRun}`}
         style={normalizeWeddingIntroStyle(draft.seed.introStyle)}
         slug={state.pageConfig.slug}
