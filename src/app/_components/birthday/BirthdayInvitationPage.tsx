@@ -8,6 +8,8 @@ import {
   DEFAULT_INVITATION_MUSIC_VOLUME,
 } from '@/lib/musicLibrary';
 import { resolveInvitationFeatures } from '@/lib/invitationProducts';
+import { resolvePublicInvitationIntro } from '@/lib/publicInvitationIntro';
+import PublicInvitationGifIntro from '@/components/sections/InvitationIntro/PublicInvitationGifIntro';
 import { AccessDeniedPage } from '@/utils';
 
 import type { EventInvitationRouteOptions } from '../eventPageThemes';
@@ -107,6 +109,11 @@ function BirthdayInvitationPageBody(options: EventInvitationRouteOptions) {
     readyState.pageConfig.features
   );
   const isLoaderVisible = readyState.isLoading || readyState.imagesLoading;
+  const introDecision = resolvePublicInvitationIntro(
+    readyState.pageConfig.introPresetId,
+    readyState.pageConfig.introStyle,
+    'birthday'
+  );
   const shouldRenderMusic =
     !isLoaderVisible &&
     features.showMusic &&
@@ -139,6 +146,14 @@ function BirthdayInvitationPageBody(options: EventInvitationRouteOptions) {
         </div>
       ) : null}
       <ThemeRenderer state={readyState} />
+      {!isLoaderVisible && introDecision.kind === 'gif' ? (
+        <PublicInvitationGifIntro
+          key={`${readyState.pageConfig.slug}:${introDecision.preset.id}`}
+          slug={readyState.pageConfig.slug}
+          preset={introDecision.preset}
+          preview={options.queryScope === 'experience'}
+        />
+      ) : null}
       {shouldRenderMusic ? (
         <BackgroundMusic
           autoPlay

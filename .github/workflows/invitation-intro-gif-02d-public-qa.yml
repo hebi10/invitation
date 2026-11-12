@@ -1,0 +1,75 @@
+name: Invitation INTRO-GIF-02-D Public 5-type GIF QA
+
+on:
+  pull_request:
+    paths:
+      - src/app/_components/EventInvitationPage.tsx
+      - src/app/_components/firstBirthday/FirstBirthdayInvitationPage.tsx
+      - src/app/_components/birthday/BirthdayInvitationPage.tsx
+      - src/app/_components/opening/OpeningInvitationPage.tsx
+      - src/app/_components/generalEvent/GeneralEventInvitationPage.tsx
+      - src/app/intro-public-qa/**
+      - src/components/sections/InvitationIntro/PublicInvitationGifIntro*
+      - src/lib/publicInvitationIntro.ts
+      - scripts/test-invitation-intro-02d-public.mts
+      - scripts/qa-invitation-intro-gif-02d-public.py
+      - .github/workflows/invitation-intro-gif-02d-public-qa.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  public-intro:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install dependencies and Chromium
+        run: |
+          npm ci
+          python -m pip install --disable-pip-version-check playwright==1.56.0
+          python -m playwright install --with-deps chromium
+      - name: Test all event types, legacy preservation and explicit selections
+        run: node scripts/run-test-suite.mjs test-invitation-intro-02d-public
+      - name: Start development-only public GIF QA fixture
+        env:
+          NEXT_PUBLIC_USE_FIREBASE: 'false'
+          NEXT_PUBLIC_SITE_URL: http://127.0.0.1:3000
+        run: |
+          nohup npm run dev > "$RUNNER_TEMP/intro-02d-next.log" 2>&1 &
+          python - <<'PY'
+          import time, urllib.request
+          url = 'http://127.0.0.1:3000/intro-public-qa/?event=wedding&intro=intro-01'
+          for _ in range(95):
+              try:
+                  with urllib.request.urlopen(url, timeout=12) as response:
+                      if response.status == 200:
+                          print('Public intro QA fixture ready')
+                          break
+              except Exception:
+                  pass
+              time.sleep(2)
+          else:
+              raise SystemExit('Public intro QA fixture unavailable')
+          PY
+      - name: Chromium viewport, accessibility, customer choice, deep link and fallback
+        run: python scripts/qa-invitation-intro-gif-02d-public.py
+      - name: Upload captured screenshots and SHA256 manifest
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: invitation-intro-gif-02d-public-qa
+          path: artifacts/intro-gif-02d-public/
+          retention-days: 30
+          if-no-files-found: warn
+      - name: Show application diagnostics
+        if: failure()
+        run: tail -120 "$RUNNER_TEMP/intro-02d-next.log" || true
