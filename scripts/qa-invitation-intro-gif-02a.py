@@ -39,6 +39,7 @@ with sync_playwright() as playwright:
             assert response and response.status == 200
             picker = page.locator("[data-intro-catalog-fixture]")
             picker.wait_for(state="visible")
+            page.locator('[data-intro-catalog-ready="true"]').wait_for(state="attached")
             page.get_by_role("heading", name="고객 선택형 인트로 카탈로그").wait_for(state="visible")
             radio = picker.locator('input[type="radio"]')
             assert radio.count() == 2, (width, "one real GIF and explicit none only")
@@ -76,6 +77,7 @@ with sync_playwright() as playwright:
             picker.locator('input[type="radio"][value="none"]').check()
             assert picker.get_by_text("미저장 선택: none").count() == 1
             page.reload(wait_until="domcontentloaded")
+            page.locator('[data-intro-catalog-ready="true"]').wait_for(state="attached")
             picker.get_by_text("미저장 선택: 없음").wait_for(state="visible")
             assert not picker.locator('input[value="intro-01"]').is_checked()
             assert not picker.locator('input[value="none"]').is_checked()
@@ -91,6 +93,7 @@ with sync_playwright() as playwright:
         page.on("request", lambda request: gif_requests.append(request.url)
                 if request.url.endswith(".gif") else None)
         page.goto(BASE + "/intro-catalog-preview/", wait_until="domcontentloaded")
+        page.locator('[data-intro-catalog-ready="true"]').wait_for(state="attached")
         page.get_by_role("button", name="GIF 미리보기").click()
         modal = page.locator("dialog[open]")
         modal.wait_for(state="visible")
@@ -107,6 +110,7 @@ with sync_playwright() as playwright:
         page = context.new_page()
         page.route("**/assets/invitation-intro/universal-2s.gif", lambda route: route.abort())
         page.goto(BASE + "/intro-catalog-preview/", wait_until="domcontentloaded")
+        page.locator('[data-intro-catalog-ready="true"]').wait_for(state="attached")
         page.get_by_role("button", name="GIF 미리보기").click()
         modal = page.locator("dialog[open]")
         modal.wait_for(state="visible")
