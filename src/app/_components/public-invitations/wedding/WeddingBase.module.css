@@ -839,6 +839,11 @@ details[open] > :is(.disclosureSummary, .accountSummary, .formSummary)::after { 
   margin-bottom: clamp(12px, 3.5vw, 18px);
 }
 
+.page .scheduleSection .scheduleContent {
+  row-gap: clamp(6px, 1.8vw, 9px);
+  margin-bottom: 18px;
+}
+
 /* UI-R08-VISUAL-04: a readable venue/address group separate from map actions. */
 :is(.page[data-design='simple'], .page[data-design='classic-r'], .page[data-design='romantic'], .page[data-design='gyeol'], .page[data-design='emotional']) .scheduleSection .scheduleContent {
   display: grid;
