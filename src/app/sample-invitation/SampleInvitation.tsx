@@ -6,6 +6,7 @@ import WeddingBase from '../_components/public-invitations/wedding/WeddingBase';
 import BackgroundMusic from '@/components/media/BackgroundMusic';
 import WeddingIntro from '@/components/sections/WeddingIntro/WeddingIntro';
 import { WeddingClosing } from '../_components/WeddingClosing';
+import { getRomanticPhotoSequence } from '@/lib/romanticPhotoSequence';
 import type { WeddingPageReadyState } from '../_components/weddingPageState';
 import { sampleWeddingPage, sampleWeddingComments, SAMPLE_WEDDING_IMAGES, SAMPLE_WEDDING_COVER } from '@/config/homeWeddingSample';
 import { getHomeLinkRenderProps } from '../_components/homeInteractionPolicy';
@@ -144,10 +145,15 @@ export default function SampleInvitation({ embedded = false, theme = 'simple', q
         },
       }
     : visualState;
+  const closingImageUrl = theme === 'romantic'
+    ? getRomanticPhotoSequence(mapState.galleryImageUrls, mapState.mainImageUrl, mapState.galleryPreviewImageUrls).closingImageUrl
+    : mapState.galleryImageUrls.at(-1);
+  const sampleThemeName = { simple: '기본형', 'classic-r': '모던형', romantic: '포토형', gyeol: '클래식형', emotional: '내추럴형' }[theme];
   return <AppQueryProvider><div className={styles.sample}>
-    <p className={styles.notice}>기본형 샘플 · AI 생성 사진과 예시 메시지</p>
+    <p className={styles.notice}>{sampleThemeName} 샘플 · AI 생성 사진과 예시 메시지</p>
     <WeddingBase state={mapState} options={{ slug: sampleWeddingPage.slug, theme }} theme={theme} demoComments={sampleWeddingComments} showMap={qaUI07 && qaUI07Map !== 'off'} />
-    <WeddingClosing groomName={sampleWeddingPage.groomName} brideName={sampleWeddingPage.brideName} theme={theme} />
+    <WeddingClosing groomName={mapState.pageConfig.groomName} brideName={mapState.pageConfig.brideName} theme={theme}
+      weddingDateTime={mapState.pageConfig.weddingDateTime} imageUrl={closingImageUrl} />
     {qaUI07 && qaUI07Intro !== 'none' ? (
       <WeddingIntro
         style={qaUI07Intro}
