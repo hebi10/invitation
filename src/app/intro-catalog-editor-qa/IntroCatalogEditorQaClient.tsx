@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import IntroCatalogSettings from '../page-wizard/steps/IntroCatalogSettings';
 import { normalizeFormConfig } from '../page-wizard/pageWizardEditorUtils';
 import { prepareWizardConfigForSave } from '../page-wizard/pageWizardData';
@@ -29,9 +29,7 @@ export default function IntroCatalogEditorQaClient() {
   const [saveCount, setSaveCount] = useState(0);
   const [error, setError] = useState('');
 
-  if (typeof window !== 'undefined' && !hydrated) {
-    // Test surface will receive an explicit ready marker once the hydration effect commits.
-  }
+  useEffect(() => { setHydrated(true); }, []);
 
   const updateForm = (updater: (draft: InvitationPageSeed) => void) => {
     setForm((current) => {
