@@ -1,5 +1,6 @@
 import type { InvitationIntroChoice, InvitationIntroPresetId } from '../../../lib/invitationIntroCatalog';
 import type { MobileMusicCategory } from '../../../types/mobileInvitation';
+import type { EventTypeKey } from '../../../../../src/lib/eventTypes';
 import type { ImageUploadProgressState } from '../hooks/useImageUpload';
 import type {
   EditableImageAssetKind,
@@ -21,6 +22,7 @@ import { SettingsEditorStep } from './steps/SettingsEditorStep';
 type ManageEditorStepContentProps = {
   stepKey: EditorStepKey;
   form: ManageFormState;
+  eventType: EventTypeKey;
   savedPublished?: boolean;
   savedIntroPresetId: InvitationIntroChoice | null;
   hasUnknownSavedIntroPreset: boolean;
@@ -72,6 +74,7 @@ type ManageEditorStepContentProps = {
 export function ManageEditorStepContent({
   stepKey,
   form,
+  eventType,
   savedPublished,
   savedIntroPresetId,
   hasUnknownSavedIntroPreset,
@@ -178,6 +181,7 @@ export function ManageEditorStepContent({
       return (
         <SettingsEditorStep
           form={form}
+          eventType={eventType}
           savedPublished={savedPublished}
           savedIntroPresetId={savedIntroPresetId}
           hasUnknownSavedIntroPreset={hasUnknownSavedIntroPreset}
