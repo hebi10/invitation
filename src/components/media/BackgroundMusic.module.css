@@ -233,3 +233,45 @@
     right: max(12px, calc(50vw - 228px));
   }
 }
+
+
+/* UI-R07: fixed wedding music control remains reachable and visually restrained. */
+.musicPlayer.invitationAligned {
+  top: max(12px, calc(env(safe-area-inset-top) + 8px));
+  right: max(12px, calc(env(safe-area-inset-right) + 8px), calc(50vw - 228px));
+  gap: 8px;
+}
+.musicPlayer.invitationAligned .toggleButton {
+  width: 48px;
+  height: 48px;
+  min-width: 48px;
+  min-height: 48px;
+  border-radius: 0;
+  box-shadow: none;
+}
+.musicPlayer.invitationAligned .errorNotice {
+  max-width: min(260px, calc(100vw - 64px));
+  padding: 10px 12px;
+  box-shadow: none;
+}
+.musicPlayer.invitationAligned .dismissButton {
+  min-width: 44px;
+  min-height: 44px;
+}
+.musicPlayer.invitationAligned .toggleButton:focus-visible,
+.musicPlayer.invitationAligned .dismissButton:focus-visible {
+  outline: 2px solid #262626;
+  outline-offset: 3px;
+}
+@media (max-width: 359px) {
+  .musicPlayer.invitationAligned {
+    top: max(12px, calc(env(safe-area-inset-top) + 8px));
+    right: max(10px, env(safe-area-inset-right));
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .musicPlayer.invitationAligned :is(.autoPlayHint, .initialControlHint, .initialControlHintFading) {
+    animation: none;
+    transition: none;
+  }
+}

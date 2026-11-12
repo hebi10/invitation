@@ -139,3 +139,75 @@
   .closing[data-theme='emotional'] { padding-inline: 20px; }
   .closing[data-theme='emotional'] p.letterNames { font-size: 22px; }
 }
+
+
+/* UI-R07: five-theme closing rhythm; preserve the original content and theme identity. */
+.closing:is([data-theme='simple'], [data-theme='classic-r'], [data-theme='romantic'], [data-theme='gyeol'], [data-theme='emotional']) {
+  width: min(100%, 480px);
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.closing[data-theme='simple'] {
+  background: #faf9f6;
+  color: #282725;
+  gap: 12px;
+  padding: 52px 24px 44px;
+}
+.closing[data-theme='simple'] p.simpleNames {
+  font-size: clamp(19px, 5.8vw, 22px);
+  line-height: 1.6;
+}
+.closing[data-theme='classic-r'] {
+  padding: 60px 24px 52px;
+  gap: 12px;
+}
+.closing[data-theme='classic-r'] .modernNames {
+  font-size: clamp(28px, 8vw, 34px);
+  line-height: 1.35;
+}
+.closing[data-theme='classic-r'] .modernThanks {
+  margin-top: 24px;
+}
+.closing[data-theme='romantic'] {
+  color: #2c2925;
+  background: #faf8f4;
+}
+.closing[data-theme='romantic'] .photoFinalCopy {
+  padding: 36px 24px 44px;
+  gap: 12px;
+}
+.closing[data-theme='romantic'] .photoFinalNames {
+  line-height: 1.65;
+}
+.closing[data-theme='gyeol'] {
+  padding: 56px 24px 52px;
+  gap: 14px;
+}
+.closing[data-theme='gyeol'] .classicNames {
+  font-size: clamp(23px, 6.8vw, 27px);
+  line-height: 1.6;
+}
+.closing[data-theme='emotional'] {
+  padding: 60px 24px 48px;
+  gap: 24px;
+}
+.closing[data-theme='emotional'] .letterSignoff {
+  grid-template-columns: minmax(80px, 112px) minmax(0, 1fr);
+  gap: 12px;
+}
+.closing[data-theme='emotional'] .letterSprig {
+  width: 100%;
+  max-width: 112px;
+  height: 104px;
+}
+@media (max-width: 359px) {
+  .closing:is([data-theme='simple'], [data-theme='classic-r'], [data-theme='gyeol'], [data-theme='emotional']) {
+    padding-inline: 16px;
+  }
+  .closing[data-theme='romantic'] .photoFinalCopy {
+    padding-inline: 16px;
+  }
+  .closing[data-theme='emotional'] .letterSignoff {
+    grid-template-columns: 80px minmax(0, 1fr);
+  }
+}

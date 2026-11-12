@@ -558,3 +558,50 @@
 @media (prefers-reduced-motion: reduce) {
   .backdrop[data-theme] .lightScene .rule { animation: none !important; }
 }
+
+
+/* UI-R07: consistent reading and safe-area controls across the three wedding intros. */
+.backdrop:is([data-intro-style='light'], [data-intro-style='cinema'], [data-intro-style='envelope']) .stage {
+  max-width: 480px;
+  min-width: 0;
+}
+.backdrop:is([data-intro-style='light'], [data-intro-style='cinema'], [data-intro-style='envelope']) .skip {
+  min-width: 48px;
+  min-height: 48px;
+  top: max(16px, env(safe-area-inset-top));
+  right: max(16px, env(safe-area-inset-right));
+  font-size: 14px;
+}
+.backdrop:is([data-intro-style='light'], [data-intro-style='cinema'], [data-intro-style='envelope']) :is(.names, .cinemaNames, .letterNames) {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  line-height: 1.5;
+}
+.backdrop[data-intro-style='light'] .lightContent {
+  max-width: min(100%, 34ch);
+}
+.backdrop[data-intro-style='cinema'] .cinemaCopy {
+  bottom: max(96px, 12dvh, calc(env(safe-area-inset-bottom) + 64px));
+}
+.backdrop[data-intro-style='envelope'] .letterCard {
+  max-width: min(100%, 336px);
+}
+.backdrop[data-intro-style='envelope'] .openButton {
+  min-height: 48px;
+}
+@media (max-width: 359px) {
+  .backdrop:is([data-intro-style='light'], [data-intro-style='cinema'], [data-intro-style='envelope']) .skip {
+    right: max(12px, env(safe-area-inset-right));
+  }
+  .backdrop[data-intro-style='envelope'] .letterCard {
+    padding-inline: 16px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .backdrop[data-intro-style='cinema'] .photo,
+  .backdrop[data-intro-style='light'] .lightScene *,
+  .backdrop[data-intro-style='envelope'] .envelopeScene * {
+    animation: none;
+    transition: none;
+  }
+}
