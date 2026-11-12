@@ -1,0 +1,102 @@
+name: Invitation INTRO-GIF-03 verified GIF assets and catalog
+
+on:
+  push:
+    branches:
+      - feat/intro-gif-03-assets-catalog-20261112
+    paths:
+      - scripts/generate-intro-gif-03.py
+      - .github/workflows/invitation-intro-gif-03-assets.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: intro-gif-03-asset-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  generate-assets:
+    if: github.ref == 'refs/heads/feat/intro-gif-03-assets-catalog-20261112'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install Pillow and Noto CJK
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends fonts-noto-cjk
+          python -m pip install --disable-pip-version-check pillow==11.3.0
+      - name: Generate 9 GIFs, posters, SHA manifest and catalog
+        env:
+          PYTHONUTF8: '1'
+        run: python scripts/generate-intro-gif-03.py
+      - name: Verify all 9 binary asset sets
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          from PIL import Image
+          import hashlib, json, re
+          root=Path('public/assets/invitation-intro')
+          manifest=json.loads((root/'manifest-03.json').read_text(encoding='utf-8'))
+          catalog=Path('src/lib/invitationIntroCatalog.ts').read_text(encoding='utf-8')
+          assert manifest['event_agnostic'] is True and len(manifest['presets'])==9
+          assert len(re.findall(r"    id: 'intro-[0-9]{2}'",catalog)) == 10
+          for pid, entry in manifest['presets'].items():
+              assert entry['duration_ms']==2000 and entry['frames']==8
+              assert entry['loop'] is False
+              for filename, meta in entry['files'].items():
+                  path=root/filename
+                  assert path.stat().st_size == meta['bytes']
+                  assert hashlib.sha256(path.read_bytes()).hexdigest() == meta['sha256']
+                  with Image.open(path) as im:
+                      assert im.size == (480,600)
+                      if filename.endswith('.gif'):
+                          assert meta['bytes'] < 150000
+                          assert im.n_frames==8 and 'loop' not in im.info
+                          total=0
+                          for i in range(im.n_frames):
+                              im.seek(i)
+                              total+=im.info['duration']
+                          assert total==2000
+                          assert meta['sha256'] in catalog
+          print('INTRO_GIF_03_ASSETS_VERIFIED 9 GIFs, 27 images, duration 2000ms, SHA256')
+          PY
+      - name: Upload asset evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: invitation-intro-gif-03-verified-assets
+          path: |
+            public/assets/invitation-intro/intro-0*.gif
+            public/assets/invitation-intro/intro-0*.webp
+            public/assets/invitation-intro/intro-0*.png
+            public/assets/invitation-intro/intro-10.gif
+            public/assets/invitation-intro/intro-10.webp
+            public/assets/invitation-intro/intro-10.png
+            public/assets/invitation-intro/manifest-03.json
+          retention-days: 30
+          if-no-files-found: error
+      - name: Commit validated images and catalogue to this branch only
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add public/assets/invitation-intro/intro-0*.gif
+          git add public/assets/invitation-intro/intro-0*.webp
+          git add public/assets/invitation-intro/intro-0*.png
+          git add public/assets/invitation-intro/intro-10.gif
+          git add public/assets/invitation-intro/intro-10.webp
+          git add public/assets/invitation-intro/intro-10.png
+          git add public/assets/invitation-intro/manifest-03.json
+          git add src/lib/invitationIntroCatalog.ts
+          if git diff --cached --quiet; then
+            echo 'No generated asset changes'
+          else
+            git commit -m "asset(invitation): record 9 verified intros and shared catalogue"
+            git push origin "HEAD:feat/intro-gif-03-assets-catalog-20261112"
+          fi
