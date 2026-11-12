@@ -1,5 +1,6 @@
 import { isInvitationVersionError, requireInvitationContentVersion } from '@/lib/invitationContentVersion';
 ﻿import { NextResponse } from 'next/server';
+import { InvitationIntroEventError } from '@/lib/invitationIntroCatalog';
 
 import {
   isMobileClientEditorPageAction,
@@ -577,6 +578,9 @@ export async function POST(
         error: error.message, code: error.code,
         ...('currentVersion' in error ? { currentVersion: error.currentVersion } : {}),
       }, { status: error.status });
+    }
+    if (error instanceof InvitationIntroEventError) {
+      return NextResponse.json({ error: error.message, code: error.code }, { status: error.status });
     }
     console.error('[mobile/client-editor/pages] failed to process request', error);
     await writeHighRiskActionAuditLog(
