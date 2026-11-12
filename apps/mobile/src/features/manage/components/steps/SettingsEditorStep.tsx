@@ -8,7 +8,7 @@ import { AppText } from '../../../../components/AppText';
 import { SectionCard } from '../../../../components/SectionCard';
 import { TextField } from '../../../../components/TextField';
 import { WEDDING_INTRO_OPTIONS } from '../../../../lib/weddingIntro';
-import type { EventTypeKey } from '../../../../../../../../src/lib/eventTypes';
+import type { EventTypeKey } from '../../../../../../../src/lib/eventTypes';
 import { getInvitationIntroPreset, listAvailableInvitationIntroPresets, listAvailableInvitationIntroGroups,
   parseInvitationIntroChoice, type InvitationIntroChoice, type InvitationIntroGroup,
   type InvitationIntroPresetId } from '../../../../lib/invitationIntroCatalog';
