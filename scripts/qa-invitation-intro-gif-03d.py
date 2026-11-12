@@ -47,6 +47,7 @@ with sync_playwright() as browser_tool:
             assert response and response.status == 200, ('editor fixture', width)
             page.locator('[data-intro-editor-qa][data-ready="true"]').wait_for()
             for event in EVENTS:
+                requested_gif_urls.clear()
                 page.locator('[data-qa-event-type]').select_option(event)
                 picker = page.locator('[data-intro-preset-editor]')
                 eligible = 12 if event == 'wedding' else 6
