@@ -61,6 +61,20 @@ const legacyBirthdaySave = buildServerTrustedMobileInvitationPageConfigForSave(
   { ...birthdayStored!, introPresetId: undefined }, birthdayStored!);
 assert.equal(legacyBirthdaySave.introPresetId,'intro-05','Older Android omission preserves PC preset');
 assert.equal(mergeInvitationPageSeed(birthdayStored!, {description:'Unrelated description'} )?.introPresetId,'intro-05');
+for (const eventType of events) {
+  const base = { ...seed, eventType, introStyle: 'cinema' as const, introPresetId: undefined };
+  for (const preset of listAvailableInvitationIntroPresets(eventType)) {
+    const saved = mergeInvitationPageSeed(base, { introPresetId: preset.id });
+    assert.equal(saved?.introPresetId, preset.id, `${eventType} PC save: ${preset.id}`);
+    assert.equal(saved?.introStyle, 'cinema', 'Preserve legacy intro style');
+    const restored = buildServerTrustedMobileInvitationPageConfigForSave(
+      { ...saved!, introPresetId: undefined }, saved!);
+    assert.equal(restored.introPresetId, preset.id, `${eventType}: older Android omission`);
+    const page = createInvitationPageFromSeed(saved!);
+    assert.equal(resolvePublicInvitationIntro(page.introPresetId, page.introStyle, eventType).kind,
+      'gif', `${eventType}: public preview restores saved ${preset.id}`);
+  }
+}
 const preview = new URL(buildInvitationIntroSamplePreviewUrl('https://example.com/','intro-05','opening'));
 assert.equal(preview.pathname,'/mobile-gif-intro-preview/');
 assert.equal(preview.searchParams.get('preset'),'intro-05');
