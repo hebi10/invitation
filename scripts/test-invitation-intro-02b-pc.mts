@@ -47,7 +47,7 @@ for (const value of ['none', 'intro-01'] as const satisfies readonly InvitationI
   const afterAndroid = mergeInvitationPageSeed(serverStored, trusted as unknown as Record<string, unknown>);
   assert.equal(afterAndroid?.introPresetId, value, 'Android roundtrip cannot erase selected preset');
 
-  assert.equal(mergeInvitationPageSeed(serverStored, { introPresetId: 'intro-02' })?.introPresetId, value,
+  assert.equal(mergeInvitationPageSeed(serverStored, { introPresetId: 'intro-99' })?.introPresetId, value,
     'A missing/unverified future preset must not overwrite a verified saved ID');
   assert.equal(mergeInvitationPageSeed(serverStored, { description: '다른 문구' })?.introPresetId, value);
   const introFact = buildWizardReviewFacts(serverStored, true).find((fact) => fact.label === '첫 화면 연출');
