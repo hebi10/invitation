@@ -1964,7 +1964,7 @@ details[open] > :is(.disclosureSummary, .accountSummary, .formSummary)::after { 
 }
 .page[data-design='romantic'] .ceremonySection > button,
 .page[data-design='romantic'] .calendarDisclosure > summary {
-  min-height: 48px;
+  min-height: 72px;
 }
 .page[data-design='romantic'] .returnLinks {
   gap: 8px 18px;
