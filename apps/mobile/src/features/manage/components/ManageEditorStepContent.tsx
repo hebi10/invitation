@@ -1,6 +1,6 @@
 import type { InvitationIntroChoice, InvitationIntroPresetId } from '../../../lib/invitationIntroCatalog';
 import type { MobileMusicCategory } from '../../../types/mobileInvitation';
-import type { EventTypeKey } from '../../../../../src/lib/eventTypes';
+import type { EventTypeKey } from '../../../../../../src/lib/eventTypes';
 import type { ImageUploadProgressState } from '../hooks/useImageUpload';
 import type {
   EditableImageAssetKind,
