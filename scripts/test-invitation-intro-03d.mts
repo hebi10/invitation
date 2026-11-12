@@ -85,7 +85,7 @@ assert.match(mobile,/listAvailableInvitationIntroPresets\(eventType\)/);
 assert.match(mobile,/setActiveGroup\(group\.id\)/);
 assert.match(mobileContainer,/eventType=\{eventType\}/);
 assert.match(screen,/eventType=\{normalizeEventTypeKey\(dashboard\?\.page\.config\.eventType\)\}/);
-assert.match(mobileRoute,/getInvitationIntroPreset\(preset, normalizeEventTypeKey\(event\)\)/);
+assert.match(mobileRoute,/getInvitationIntroPreset\(preset, eventType\)/);
 assert.match(server,/assertInvitationIntroChoiceForEvent/);
 for (const route of [
   'src/app/api/customer/events/[slug]/editable/route.ts',
