@@ -1,0 +1,28 @@
+name: Invitation INTRO-GIF-03-C verified 11 GIF assets
+
+on:
+  pull_request:
+    paths:
+      - 'public/assets/invitation-intro/intro-*.gif'
+      - 'public/assets/invitation-intro/intro-*.webp'
+      - 'public/assets/invitation-intro/manifest-03c.json'
+      - 'scripts/verify-intro-gif-03c.py'
+      - '.github/workflows/invitation-intro-gif-03c-verify.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verified-intro-assets:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install Pillow
+        run: python -m pip install --disable-pip-version-check Pillow==12.3.0
+      - name: Verify 11 GIFs, 8 frames, exact 2s, one-play, SHA256, WebP and size budgets
+        run: python scripts/verify-intro-gif-03c.py
