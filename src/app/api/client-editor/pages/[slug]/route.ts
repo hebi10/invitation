@@ -11,6 +11,7 @@ import {
 import { CLIENT_EDITOR_SESSION_COOKIE } from '@/server/clientEditorSession';
 import { getAuthorizedClientEditorSession } from '@/server/clientEditorSessionAuth';
 import { isInvitationThemeKey } from '@/lib/invitationThemes';
+import { InvitationIntroEventError } from '@/lib/invitationIntroCatalog';
 import { GENERIC_SERVER_ERROR_MESSAGE } from '@/server/apiErrorResponse';
 import {
   applyScopedRateLimit,
@@ -203,6 +204,9 @@ export async function POST(
         error: error.message, code: error.code,
         ...('currentVersion' in error ? { currentVersion: error.currentVersion } : {}),
       }, { status: error.status });
+    }
+    if (error instanceof InvitationIntroEventError) {
+      return NextResponse.json({ error: error.message, code: error.code }, { status: error.status });
     }
     console.error('[client-editor/pages] failed to process request', error);
     return NextResponse.json(
