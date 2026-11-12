@@ -1,63 +1,84 @@
-# Invitation — 공통 2초 GIF 인트로·기존 인트로 전면 교체 계획
+# Invitation — 고객 선택형 GIF 인트로 약 10종 전환 기획 (개정)
 
-- 작성일: 2026-11-12
-- 문서 상태: **기획/구현 전**. 이 파일만으로 기존 인트로가 제거되거나 운영에 배포되지 않음
-- 근거: Google Drive의 Quiet Invitation 1-A, UI-07-B 및 5종 UI-R00~R09 기획; GitHub 코드·PR #96 최종 QA
-- 목표: **약 2초 동안 중립적인 GIF 1개 노출 → 자동으로 본문 진입**. 특정 청첩장 테마에 종속되지 않고 전 종류가 동일한 엔진을 사용
+- 작성/개정: 2026-11-12 · 상태: 설계 개정 / 실 코드 선택·배포 미구현
+- 근거: 사용자 명시 요구 — **고객(초대장 제작자)이 약 10개 GIF를 직접 보고 선택**. 모든 고객에게 동일 GIF를 강제로 적용하는 이전 안은 폐기
+- 참고: Google Drive 「Invitation 1-A 공통 인트로 디자인 시스템」, 「2-B PC·Android 인트로 설정·미리보기·저장 QA」와 저장소 `main` 실제 코드
+- 관련: [인트로 1번 자산 PR #100](https://github.com/hebi10/invitation/pull/100), [추적 이슈 #98](https://github.com/hebi10/invitation/issues/98)
 
-## 1. 적용 대상
-- 웨딩 기본형(simple), 모던형(classic-r), 포토형(romantic), 클래식형(gyeol), 내추럴형(emotional) **5종 모두**, 등록된 웨딩 vow와 후속 웨딩 테마
-- 현재 활성 이벤트: wedding, first-birthday, birthday, general-event, opening. 미활성 seventieth/etc는 현재 노출하지 않되 미래 확장 가능
-- PC/모바일 공개 화면, PC 제작·미리보기, Android 편집·미리보기 공통 규격. 상품 등급/디자인/고객 계정에 따라 인트로 이용 권한을 제한하지 않음
+## 0. 요구사항 재정의 — 서로 다른 세 가지 동작
+1. **제작자의 선택**: 고객은 전체 GIF 목록(초기 약 10종)의 정지 썸네일을 보고 한 개를 명시적으로 선택하거나 ‘사용하지 않음’을 선택. 기본으로 하나를 강제 선택하지 않음
+2. **제작자의 미리보기**: ‘미리보기’ 버튼에서 선택한 GIF의 전체 2초 애니메이션을 확인. 10개를 동시에 재생하지 않음. 미리보기는 절대 저장/공개하지 않으며 반복 보기 제공
+3. **하객의 공개 페이지 진입**: 선택된 인트로가 공개 URL에서 표시되는 별도 책임. GIF 자체 재생 시간은 약 2초지만 **2초 후 자동 본문 이동은 선택 UI 요구사항과 별개**. 앞선 강제 자동 진입 규격은 승인된 구현 조건으로 취급하지 않으며, 기존 건너뛰기/접근성/입장 경로 정책을 우선 보존
 
-## 2. 공용 GIF 콘셉트 — 초대의 문
-- **정체성**: 웨딩·돌잔치·생일·개업·행사에 모두 어울리는 단정한 무채색 모션. 단색 화이트/연회색 바탕, 차콜 글자 **초대합니다**, 가는 수평선 한 개
-- **제외**: 반지·하트·신랑/신부 이미지·꽃·아기·특정 매장 로고·샘플 인물 사진·3D·그라데이션·반짝임·box-shadow·장식적인 전환
-- GIF 1종(무음), 동일 정지 포스터 PNG/WebP. 최대 너비 480px, 320~1440px 화면 대응. 원본 가로세로·fps·용량은 실제 생성 후 로딩·네트워크 QA에서 확정
-- **타임라인**: 0~0.30초 문구 표시 → 0.30~0.85초 수평선 단일 변화 → 0.85~1.60초 정지·읽기 → 1.60~2.00초 종료, 2,000ms 경과 시 오버레이 해제
-- GIF는 반복/재생 완료 이벤트가 없는 파일 형식이므로 GIF 끝남을 기다리지 않고 단일 2,000ms 종료 타이머 사용. 이미지 로딩 실패·저속 환경에서 오버레이가 영구 대기하면 안 됨
+## 1. 실제 프로젝트 구조·문제
+- PC 웨딩 제작: `src/app/page-wizard/steps/IntroSettings.tsx`에서 `none | light | cinema | envelope` 라디오 선택/연출 보기. 선택은 `formState.introStyle`, 저장·읽기는 `pageWizardEditorUtils.ts`·`invitationPagePersistence.ts`
+- PC 미리보기: `WeddingWizardPreview.tsx` ↔ 같은 출처 iframe `WizardPreviewClient.tsx`, 저장 전 임시 선택 전달. 이벤트 타입별 wizard는 `pageWizardData.ts`에 별도 단계가 있음
+- **선택 UI 웨딩 제한**: `PageWizardClient.tsx` music 단계에서 `eventType === 'wedding'`인 경우에만 `IntroSettings` 렌더링. opening/general-event는 music 단계 자체가 없으며, 다른 타입의 선택 단계도 확인이 필요
+- Android 편집: `SettingsEditorStep.tsx`의 4종 선택 → `useInvitationForm.setIntroStyle` → `buildConfigFromForm` → 저장. `buildWeddingIntroSamplePreviewUrl`로 **style만 전달**한 공개 샘플 WebBrowser 미리보기. 현 관리 폼은 신랑·신부 필드를 중심으로 설계됨
+- 공통 타입: `InvitationPage/Seed`, `MobileInvitationSeed`에 `introStyle?: WeddingIntroStyle`. normalize 함수는 열거되지 않은 신규 문자열을 `none`으로 바꿔버리므로 **10종 ID를 그냥 기존 필드에 넣으면 데이터가 유실됨**
+- 웨딩 공개: `EventInvitationPage.tsx`는 스타일 값에 따라 단일 `WeddingIntro.tsx`를 렌더. `sessionStorage` 세션·해시 앵커·건너뛰기·reduced-motion 처리 존재
+- 개업: `opening/themeRenderers/shared.tsx` 자체 ‘초대장 열기’ 인트로. 일반 행사: `generalEvent/themeRenderers/shared.tsx` 자체 1,800ms 자동 오버레이. 이 상태에서 GIF 오버레이만 추가하면 **중복 인트로** 발생
+- 활성 이벤트: `wedding`, `first-birthday`, `birthday`, `general-event`, `opening`; `seventieth`/`etc`는 비활성. 웨딩 `vow` 포함 모든 지원 테마가 디자인·이벤트 타입과 상관없이 **같은 카탈로그를 선택**할 수 있도록 확장
+- 상품/판매: `INVITATION_THEME_SALES_POLICY_REGISTRY`에서 웨딩 외 일부 테마는 현재 구매 불가. **인트로 선택 자유와 기존 상품/공개 권한을 혼동하지 않음**. 새 옵션으로 유료 상품 구매 가능 여부가 달라져서는 안 됨
 
-## 3. 진입·접근성 정책
-- 새로 진입한 탭에서 행사 slug당 최초 1회 재생, 동일 탭 재진입은 기존 정책대로 생략. URL 해시로 들어오면 인트로를 건너뛰고 목적 섹션으로 접근. PC/Android 미리보기는 명시적 재생 허용
-- **건너뛰기**: 시작부터 보이는 48px 이상 터치/키보드 버튼, 즉시 본문 접근. Escape/뒤로가기/언마운트 시 타이머·포커스·스크롤 잠금 정리
-- prefers-reduced-motion: reduce에서는 움직이는 GIF 재생 금지; 정적 포스터 또는 즉시 본문 진입. 시각 인트로 문구는 스크린리더 중복 낭독 방지
-- 공개 불가/만료/오류 페이지 앞에 인트로를 띄우지 않음. 이미지 없음·404·느린 네트워크·JS 실패에서도 본문 진입 보장
-- 음악 자동재생, 지도, 전화/SMS, 갤러리, Firebase 계좌/댓글, 결제 및 공유 링크·접근 권한은 변경하지 않음
+## 2. 인트로 카탈로그 구성
+- **초기 약 10종**을 고정 개수 UI가 아닌 데이터 기반 목록으로 관리(추후 12·20종 확장 가능). 첫 번째 `intro-01`은 제작된 중립 타이포·수평선 GIF를 등록할 수 있는 후보이며 **디자인 1종일 뿐 필수 기본값이 아님**
+- 확정된 실제 파일은 현재 **1종**: 자산 PR #100의 `public/assets/invitation-intro/universal-2s.gif`, `poster.webp`, `manifest.json` (480×600·8프레임×250ms). 나머지 9종은 미제작·미검증, 선택 화면에서 예약 슬롯·가짜 미리보기 노출 금지
+- 제안하는 다른 9종 시각 콘셉트(확정 자산 아님): 타이포 슬라이드, 한 장 펼침, 평면 봉투 열기, 창문 열림, 레이어 패널, 포토 프레임 등장, 잉크 라인, 페이지 넘김, 정돈된 모서리 조합. 하트/결혼 반지/아이 사진/고객 이름이 필수인 전용 장면은 일반용 옵션으로 강제하지 않음
+- 항목 필드: `id`, `label`, `description`, `gifSrc`, `posterSrc`, `durationMs`, `active`, `sortOrder`, `sha256`. 모든 활성 이벤트 타입에서 선택 가능. GIF 키는 번역/표시명과 독립된 **영구 ID** 사용
+- 프리뷰 화면에서 10장 GIF 동시 다운로드·자동 재생 금지. 리스트에는 소용량 WebP **포스터 썸네일만** 로드하고 ‘재생’/‘자세히 보기’ 시 선택한 GIF 하나만 재생. 화면 이동·다시 보기에는 이미지 캐싱을 활용
+- 파일명/폴더는 미래에 `public/assets/invitation-intro/intro-01/...` 형태로 확장. PR #100의 기존 `universal-2s.gif` 경로는 첫 항목의 초기 자산으로 호환해 참조하고, 실제 배포 전 파일 변경 시 manifest/SHA를 갱신
 
-## 4. 저장값 전환 — 고객 데이터 무손실
-- 기존 저장 옵션: none / light / cinema / envelope
-- 기존 **light / cinema / envelope → 새 공용 gif** 렌더링으로 호환 매핑. 기존 none은 사용자 의사대로 **인트로 미사용** 유지. 별도의 운영 Firestore 일괄 업데이트 금지
-- 신설 정책/편집 UI는 gif / none 2가지로 단순화. 신규 제작 기본값은 gif 제안, 기존 사용자에게 none을 강제 해제하지 않음
-- PC 관리자·제작 화면과 Android 편집기에서 구형 3종 선택·각기 다른 미리보기 UI 제거. 새 GIF 1종 미리보기와 사용/미사용 토글만 남김
-- 이전 저장 값의 읽기·쓰기, PC/모바일 왕복 수정·복구, 이벤트 타입별 기본값을 QA로 검증할 때까지 기존 저장 데이터·타입을 삭제하지 않음
+## 3. PC 고객 선택 UI
+- 위치: 기존 웨딩 `첫 화면 연출`을 **`인트로 선택`**으로 교체. 다른 활성 이벤트 타입의 제작/편집 흐름에도 별도 공통 단계 또는 기존 ‘설정’ 탭에 같은 선택 UI 노출 (웨딩만 렌더링하는 현재 조건 해제 필요)
+- 390px 화면은 2열 포스터 카드, 충분히 넓은 PC는 3열 정도의 카드 갤러리. 카드: 정지 썸네일, 짧은 이름, 재생 시간, ‘미리보기’와 선택 상태. 카드 전체 누름은 선택, 미리보기는 저장된 선택을 변경하지 않음
+- 현재 설정/저장되지 않은 변경/저장 완료를 분리. ‘현재 적용 중’ 1개, 미저장 선택 중 1개만 표시하며, 기존 페이지 저장 버튼으로 확정. 저장 취소 시 복원
+- `사용 안 함`은 항상 선택 가능. 고객 이름/사진, 테마 초점/오버레이·음악·개별 이미지 등과 인트로 ID 연결 금지. 화면낭독기에서는 radio/group/현재 상태, 버튼은 최소 44–48px
+- PC 미리보기의 iframe 통신 메시지는 기존 `wedding-wizard-preview:update` 패턴을 유지. 웨딩 외 타입에는 해당 웨딩 전용 iframe을 재사용한다고 가정하지 않고 타입별 공통 GIF 미리보기를 별도 제공
 
-## 5. 코드 영향 조사(현재 실소스 기반)
-- 웨딩 공개: src/app/_components/EventInvitationPage.tsx — 기존 WeddingIntro 렌더링
-- 구형 3종 모션: src/components/sections/WeddingIntro/WeddingIntro.tsx, WeddingIntro.module.css, QuietInvitationTokens.module.css; GSAP 구형 연결
-- 상태: src/lib/weddingIntro.ts, src/types/invitationPage.ts, src/lib/invitationPagePersistence.ts, apps/mobile/src/lib/weddingIntro.ts
-- PC: src/app/page-wizard/steps/IntroSettings.tsx, src/app/wizard-preview/WizardPreviewClient.tsx, src/app/mobile-intro-preview/IntroPreviewClient.tsx
-- Android: apps/mobile/src/features/manage/components/steps/SettingsEditorStep.tsx, apps/mobile/src/lib/weddingIntroPreview.ts 및 관리 폼
-- 샘플/QA: src/app/sample-invitation/SampleInvitation.tsx, scripts/qa-invitation-ui07-f-browser.py 및 구형 인트로 관련 CI/스크린샷
-- 개업 별도 인트로: src/app/_components/opening/themeRenderers/shared.tsx
-- 일반 행사 별도 인트로: src/app/_components/generalEvent/themeRenderers/shared.tsx — 현재 1800ms 타이머
-- 새 엔진 위치 제안: src/components/sections/InvitationIntro/UniversalInvitationIntro.tsx, src/lib/invitationIntro.ts, public/assets/invitation-intro/universal-2s.gif 및 poster.webp
-- 기존 이벤트별 렌더러마다 GIF를 중복 작성하지 않고 **공개 라우트 공통 진입 계층**에서 단일 오버레이 적용. 이벤트 타입별 기존 인트로가 2개 겹쳐 나타나지 않도록 검증
+## 4. Android 고객 선택 UI
+- 기존 `SettingsEditorStep.tsx` 인트로 Disclosure를 카드 갤러리로 전환. 2열 썸네일 + ‘재생’/‘이 인트로 선택’ + 현재 선택 ID·저장 상태 표기. 사진·음악/다른 설정과 스타일 일치
+- 기존 `useInvitationForm`의 dirty-state 및 동일 값 재선택 시 불필요한 dirty 방지 정책 유지
+- `apps/mobile/src/lib/weddingIntroPreview.ts` URL에는 **카탈로그 ID만** 전달하고 고객 draft, 인증 토큰, 개인정보, 사진 URL은 넣지 않음. 실제 사용 환경은 웹 기반 미리보기(Expo WebBrowser)로 동일 구성 재생
+- Android 앱 버전이 옛 설정값만 이해할 경우 신규 GIF 설정을 덮어쓸 위험이 있으므로 서버 정규화·구버전 앱 왕복 저장 검증 후 출시. PC와 앱 모두 같은 데이터/자산을 읽을 것
+- Android에서 웨딩 외 이벤트 편집이 어디까지 가능한지는 별도 API/권한 실제 동작 검증 전 완료로 주장하지 않음
 
-## 6. GitHub 단계
-1. INTRO-GIF-00: 전체 이벤트 타입·PC·Android·운영 저장 필드의 기존 인트로 참조 인벤토리/백업 및 5종 기준선 캡처
-2. INTRO-GIF-01: 무채색 공통 GIF/정지 포스터 제작·압축·출처/해시·모바일 실측. **현재 자산 제작 전**
-3. INTRO-GIF-02: 공통 2,000ms 게이트 + session/hash/skip/reduced-motion/fail-open 계약 구현, 모든 활성 이벤트 라우트 연결
-4. INTRO-GIF-03: PC·Android 편집/미리보기 UI를 공통 gif/none으로 통합, 구형 설정값 호환 및 저장 왕복 QA
-5. INTRO-GIF-04: 새 엔진이 실제 작동한 뒤 **구형 light/cinema/envelope 및 개업·일반 행사 독립 인트로 코드/스타일/테스트 제거**. 임시로 무음·빈 화면이 노출되도록 구형 파일 먼저 삭제하는 방식 금지
-6. INTRO-GIF-05: 5종 웨딩+vow+돌잔치/생일/개업/일반 행사 × 320/360/390/430/768/1440, GIF 2초 실측, 첫 재생·재방문·딥링크·스킵·미리보기·글자확대·접근성·이미지 실패·장문 정보·음악/결제/지도 기능 회귀, Android 물리 기기
-7. INTRO-GIF-06: 전체 CI/기기 테스트, PR 병합, main 빌드·Firebase App Hosting 롤아웃, 공개 URL 전 종류 확인, Android Play 테스트 빌드 별도 검증
+## 5. 안정적인 데이터 스키마(제안)
+- 신규 공통 필드 **`introPresetId?: 'none' | 'intro-01' | ...`** (선택형). 기존 `introStyle`은 레거시 데이터 읽기용으로 남겨 신규 필드가 저장되지 않은 고객의 선택을 보존
+- 우선순위: ① `introPresetId`가 명시적으로 저장됐으면 그것 사용(값이 `none`이면 미사용), ② 없으면 기존 `introStyle` 동작 유지/호환, ③ 둘 다 없으면 인트로 미사용. 신규 고객에게 임의로 첫 번째 GIF 강제 적용하지 않음
+- `introPresetId`는 검증된 카탈로그 ID만 허용. 알 수 없는/삭제된 ID는 잘못된 URL 요청·오류 오버레이 대신 안전한 ‘사용 안 함’ 또는 기존 레거시 설정으로 폴백. 해당 상태를 편집 화면에서 안내
+- 기존 `introStyle=light/cinema/envelope` 고객은 데이터 일괄 덮어쓰기 또는 모두 `intro-01`로 강제 전환 금지. 구형 렌더러 제거 시점에는 고객 영향·대체 선택 정책을 별도 검증/승인해야 함
+- 영속 레코드: `src/types/invitationPage.ts`, `src/lib/invitationPagePersistence.ts`, PC 폼 정규화/저장, Android `MobileInvitationSeed`/`ManageFormState`/`buildConfigFromForm`, 서버 데이터 검증/읽기/쓰기 순서대로 확장
+- GIF ID는 고객이 사용한 초대장의 속성이지 **초대장 테마 자체의 속성이나 상품 등급의 속성이 아님**. 관리자/프리뷰/실제 공개 URL 모두 동일 ID 참조
 
-## 7. UI-R09 선행 PR 병합 상태
-- #83 기준선 및 #84 공통 디자인은 main에 안전 병합 완료(2026-11-12). main은 3361efd1
-- #85는 a07-fictional-responsive-accessibility 실패를 확인하여 Draft·미병합으로 보류. #86~#90에도 과거 개별 CI 실패. 최종 #96 14/14 green이 중간 PR의 CI 실패를 자동으로 소멸시키지 않음
-- 단계별 릴리스가 위험하면 #96의 검증된 누적 HEAD를 사용한 새 main 대상 통합 PR을 만들어 모든 CI·브랜치 정책을 재확인하는 **별도 경로**를 검토. 개별 PR을 합친 척하지 않음
+## 6. 공개 페이지 인트로 표시(별도 구현)
+- 새로운 공통 `InvitationIntro`는 위의 **고객이 저장한 `introPresetId`**로만 하나의 GIF를 선택해 표시. 선택하지 않았으면 아무 GIF도 자동 선택/출력하지 않음
+- GIF 길이는 약 2초. **GIF가 재생 완료되면 무조건 본문으로 자동 이동**하는 것은 이번 고객 선택 요구사항에서 도출되지 않으므로 강제 타이머 연결 코드를 구현하지 않음. 본문 연결 규칙은 이전 ‘약 2초 보여주고 이동’ 요청과 사용자의 현재 ‘자동 진입이 아니다’ 정정을 나누어 다음 단계에서 명확히 검증할 것
+- 기존 `sessionStorage`/slug, 해시 딥링크, 즉시 건너뛰기, reduced-motion(움직이는 GIF 억제/포스터), 이미지 로딩 실패·접근 불가·만료 초대장, 키보드/포커스 복구 정책을 안전하게 승계
+- 웨딩은 `EventInvitationPage`, 개업/일반 행사는 독립 인트로와의 **이중 표시를 해소한 뒤** 공통 진입 계층으로 이동. 돌잔치/생일도 실제 렌더러와 함께 검증
+- 공개 본문/배경음악·계좌·결제·SNS 공유·지도·방명록·고객 이미지 URL/초점·기존 공개 기간/권한 유지
 
-## 완료 정의
-- 모든 판매·등록 초대장에 공통 인트로 사용 가능, 구형 개별 인트로가 사용자에게 더 이상 노출되지 않음
-- 정확한 2초 자동 진입/건너뛰기/고장 시 본문 접근, PC·Android의 gif/none 선택값 호환, 고객 데이터 변경 없음
-- 최종 코드·실제 GIF 파일·종단 간 CI·기기·운영 배포 확인 전에는 구현/삭제 완료로 보고하지 않음
+## 7. 단계별 GitHub 작업(개정)
+- `INTRO-GIF-00` [현재] 실제 코드/Drive 전체 인트로 선택·저장·타입별 노출 분석 및 기획 수정
+- `INTRO-GIF-01` [자산 1종 완료] `intro-01` 후보 GIF/WebP 제작·자산 GitHub Draft PR #100. 약 9종의 추가 후보는 개별 제작/승인 예정
+- `INTRO-GIF-02-A` **공통 GIF 카탈로그 10종 규격 + ID 레지스트리 + 정지 포스터 목록 + 선택 UI 정보 구조** (자동 본문 전환 구현 아님)
+- `INTRO-GIF-02-B` **PC 이벤트 타입별 고객 선택/미리보기/저장·취소 UI** (웨딩 외 선택 화면 연결 포함)
+- `INTRO-GIF-02-C` **Android 고객 선택/미리보기/저장·복원 UI**, 구버전 동기화 보호
+- `INTRO-GIF-02-D` **공개 렌더러 단일 카탈로그 연결** 및 기존 행사별 인트로와 충돌 제거. 재생 후 본문 전환 정책은 분리 검증
+- `INTRO-GIF-03` 나머지 GIF 약 9종 제작·시안 검수·용량/SHA·카탈로그 등록. 빈 항목을 미리 보여주지 않음
+- `INTRO-GIF-04` 구형 light/cinema/envelope·개업/일반 행사 인트로의 레거시 UI/코드 삭제 및 읽기 호환성 마이그레이션(새 선택 UI 정상 출시 후)
+- `INTRO-GIF-05` 10개 GIF 전환·PC/Android/모든 활성 이벤트 타입·기존 고객 계정/세션/딥링크/접근성/200% 텍스트·오류·보안 QA
+- `INTRO-GIF-06` CI·Android 에뮬레이터/물리 기기 및 공개 URL 검수 → 안전 병합 → Firebase App Hosting/Google Play 개별 배포 확인
+
+## 8. 기존 PR·문서 상태 및 중단 지침
+- PR #97은 이 설계 변경을 담은 **기획 Draft PR**. 이 문서 수정만으로 선택 기능 구현 완료를 의미하지 않음
+- PR #100은 **첫 번째 GIF 자산 1종 + 포스터**만 담은 Draft PR. 기존 명칭 `universal-2s`는 과거 단일 GIF 공통 적용 계획의 파일명일 뿐, 다른 인트로를 사용할 수 없게 만드는 강제 규칙이 아님
+- Issue #98은 이전 ‘gif/none 2선택·자동 2초 진입·고객에게 공통 GIF 강제’ 계획을 폐기하고 **약 10종 중 고객 직접 선택**으로 관리 항목 변경
+- 실제 자산 신규 9종은 아직 미제작·미검증. GIF 선택 화면·실제 공개 화면·Firebase/Play에는 이번 설계 수정이 반영되지 않음
+
+## 9. 인수 기준
+- 10개(실제 존재하는 범위)의 썸네일을 보고 단일 선택, 미리보기 반복 확인, ‘사용 안 함’ 선택, 저장 전/후 상태 분리, 새로고침·PC/Android 왕복 동일 ID
+- 모든 현재 활성 이벤트 타입에서 동일한 선택 방법, 기존 이벤트별 권한/결제 상품 규칙을 우회하지 않음
+- 신규 인트로 강제 기본값 없음, 예전 고객 정보·인트로 선택·공개 URL·음악·사진·계좌·방명록/대금 정보 무손실
+- 선택 GIF를 표시하는 실제 공개 UI와, GIF 재생 2초/본문 전환 정책이 서로 구별되어 테스트 가능
+- 모든 주요 CI 통과 후에만 레거시 삭제/운영 배포를 실행; **현재는 기획 정정 단계**
