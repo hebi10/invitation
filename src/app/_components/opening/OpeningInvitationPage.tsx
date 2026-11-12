@@ -3,6 +3,8 @@
 import { useEffect } from 'react';
 
 import { AccessDeniedPage } from '@/utils';
+import { resolvePublicInvitationIntro } from '@/lib/publicInvitationIntro';
+import PublicInvitationGifIntro from '@/components/sections/InvitationIntro/PublicInvitationGifIntro';
 
 import { useEventInvitationState } from '../eventPageState';
 import type { EventInvitationRouteOptions } from '../eventPageThemes';
@@ -89,7 +91,25 @@ function OpeningInvitationPageBody(options: OpeningRouteOptions) {
   const OpeningPage =
     openingTheme === 'opening-natural' ? StudioOpeningPage : OpeningPosterPage;
 
-  return <OpeningPage state={state} />;
+  const introDecision = resolvePublicInvitationIntro(
+    state.pageConfig.introPresetId,
+    state.pageConfig.introStyle,
+    'opening'
+  );
+
+  return (
+    <>
+      <OpeningPage state={state} />
+      {!state.isLoading && !state.imagesLoading && introDecision.kind === 'gif' ? (
+        <PublicInvitationGifIntro
+          key={`${state.pageConfig.slug}:${introDecision.preset.id}`}
+          slug={state.pageConfig.slug}
+          preset={introDecision.preset}
+          preview={options.queryScope === 'experience'}
+        />
+      ) : null}
+    </>
+  );
 }
 
 export function OpeningInvitationRoutePage(options: EventInvitationRouteOptions) {
