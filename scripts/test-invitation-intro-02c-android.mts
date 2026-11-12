@@ -43,8 +43,9 @@ function dashboardWith(config: MobileInvitationSeed): MobileInvitationDashboard 
   } as MobileInvitationDashboard;
 }
 
-assert.deepEqual(listAvailableInvitationIntroPresets().map((preset) => preset.id), ['intro-01']);
-assert.equal(parseInvitationIntroChoice('intro-02'), null, 'Do not offer unverified GIF assets');
+assert.deepEqual(listAvailableInvitationIntroPresets().map((preset) => preset.id),
+  Array.from({ length: 10 }, (_, index) => `intro-${String(index + 1).padStart(2, '0')}`));
+assert.equal(parseInvitationIntroChoice('intro-99'), null, 'Do not offer unverified GIF assets');
 
 const legacyDashboard = dashboardWith(original);
 const untouchedLegacyForm = buildManageFormFromDashboard(legacyDashboard);
@@ -76,7 +77,7 @@ assert.equal(pcForm.introPresetId, 'intro-01');
 assert.equal(buildConfigFromForm({ dashboard: pcDashboard, form: pcForm }).introPresetId, 'intro-01',
   'Android content-only edit preserves PC selection');
 
-const unknownConfig = { ...original, introPresetId: 'intro-09' } as unknown as MobileInvitationSeed;
+const unknownConfig = { ...original, introPresetId: 'intro-99' } as unknown as MobileInvitationSeed;
 const unknownDashboard = dashboardWith(unknownConfig);
 const unknownForm = buildManageFormFromDashboard(unknownDashboard);
 assert.equal(unknownForm.introPresetId, undefined, 'Unsupported future ID is not falsely selected');
