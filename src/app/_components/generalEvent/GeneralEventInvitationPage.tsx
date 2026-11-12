@@ -1,6 +1,8 @@
 'use client';
 
 import { AccessDeniedPage } from '@/utils';
+import { resolvePublicInvitationIntro } from '@/lib/publicInvitationIntro';
+import PublicInvitationGifIntro from '@/components/sections/InvitationIntro/PublicInvitationGifIntro';
 
 import { useEventInvitationState } from '../eventPageState';
 import type { EventInvitationRouteOptions } from '../eventPageThemes';
@@ -43,9 +45,26 @@ export default function GeneralEventInvitationPage(options: GeneralEventRouteOpt
     return null;
   }
 
-  if (visualTheme === 'general-event-elegant') {
-    return <ProgramEditionPage state={state} />;
-  }
+  const introDecision = resolvePublicInvitationIntro(
+    state.pageConfig.introPresetId,
+    state.pageConfig.introStyle,
+    'general-event'
+  );
+  const GeneralEventPage = visualTheme === 'general-event-elegant'
+    ? ProgramEditionPage
+    : NightSchedulePage;
 
-  return <NightSchedulePage state={state} />;
+  return (
+    <>
+      <GeneralEventPage state={state} />
+      {!state.isLoading && !state.imagesLoading && introDecision.kind === 'gif' ? (
+        <PublicInvitationGifIntro
+          key={`${state.pageConfig.slug}:${introDecision.preset.id}`}
+          slug={state.pageConfig.slug}
+          preset={introDecision.preset}
+          preview={options.queryScope === 'experience'}
+        />
+      ) : null}
+    </>
+  );
 }
