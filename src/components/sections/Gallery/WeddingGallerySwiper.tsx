@@ -50,6 +50,7 @@ export default function WeddingGallerySwiper({ images, previewImages, variant, r
     }}
   >
     <div className={styles.composition} data-has-companions={companionIndexes.length > 0 ? 'true' : undefined}>
+    <div className={styles.primary}>
     <Swiper
       role="region"
       key={`${variant}-${reducedMotion}-${images.join('|')}`}
@@ -117,6 +118,16 @@ export default function WeddingGallerySwiper({ images, previewImages, variant, r
         </SwiperSlide>;
       })}
     </Swiper>
+    {count > 1 || (variant === 'gyeol' && count === 1) ? <div className={styles.controls} data-gallery-navigation>
+      {count > 1 ? <button type="button" aria-label="이전 사진" disabled={activeIndex === 0} onClick={() => move(-1)}>
+        <span aria-hidden="true">‹</span>
+      </button> : null}
+      <span role="status" aria-live="polite" aria-atomic="true" aria-label={`${count}장 중 ${activeIndex + 1}번째 사진`}>{String(activeIndex + 1).padStart(2, '0')} / {String(count).padStart(2, '0')}</span>
+      {count > 1 ? <button type="button" aria-label="다음 사진" disabled={activeIndex === count - 1} onClick={() => move(1)}>
+        <span aria-hidden="true">›</span>
+      </button> : null}
+    </div> : null}
+    </div>
     {companionIndexes.length > 0 ? <div className={styles.companions} role="group" aria-label="다른 사진 선택">
       {companionIndexes.map((imageIndex, slot) => {
         const image = images[imageIndex];
@@ -141,11 +152,6 @@ export default function WeddingGallerySwiper({ images, previewImages, variant, r
     </div> : null}
     </div>
     {count > 1 || (variant === 'gyeol' && count === 1) ? <>
-      <div className={styles.controls}>
-        {count > 1 ? <button type="button" disabled={activeIndex === 0} onClick={() => move(-1)}>이전 사진</button> : null}
-        <span role="status" aria-live="polite" aria-atomic="true" aria-label={`${count}장 중 ${activeIndex + 1}번째 사진`}>{String(activeIndex + 1).padStart(2, '0')} / {String(count).padStart(2, '0')}</span>
-        {count > 1 ? <button type="button" disabled={activeIndex === count - 1} onClick={() => move(1)}>다음 사진</button> : null}
-      </div>
       {variant !== 'gyeol' && variant !== 'simple' ? <div className={styles.progress} aria-hidden="true"><span style={{ width: `${((activeIndex + 1) / count) * 100}%` }} /></div> : null}
       <p className={styles.hint}>{variant === 'gyeol' ? '사진을 누르면 크게 감상하실 수 있습니다.' : '옆으로 넘겨 보세요 · 사진을 누르면 크게 볼 수 있어요'}</p>
     </> : null}

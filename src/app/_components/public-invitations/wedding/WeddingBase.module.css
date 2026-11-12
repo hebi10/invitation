@@ -2183,3 +2183,50 @@ details[open] > :is(.disclosureSummary, .accountSummary, .formSummary)::after { 
 .page[data-design='classic-r'] .ceremonySection .calendarDisclosure > summary {
   min-height: 72px;
 }
+
+
+/* UI-R08-VISUAL-03: give photo and letterpress themes the same functional icon menu. */
+.page:is([data-design='romantic'], [data-design='gyeol']) .quickLinks {
+  display: flex;
+  flex-wrap: nowrap;
+  justify-content: center;
+  width: calc(100% - 40px);
+  max-width: 432px;
+  gap: 8px;
+  margin: 16px auto 0;
+  padding: 0;
+  background: transparent;
+}
+.page:is([data-design='romantic'], [data-design='gyeol']) .quickLinks a {
+  display: inline-flex;
+  flex: 1 1 0;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-width: 0;
+  min-height: 64px;
+  padding: 10px 4px;
+  border: 1px solid var(--line);
+  background: var(--paper-soft);
+  color: var(--accent);
+  font-size: 13px;
+  line-height: 1.4;
+  text-align: center;
+  text-decoration: none;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+.page:is([data-design='romantic'], [data-design='gyeol']) .quickLinks a svg {
+  flex-shrink: 0;
+}
+@media (max-width: 359px) {
+  .page:is([data-design='romantic'], [data-design='gyeol']) .quickLinks {
+    width: calc(100% - 32px);
+    gap: 6px;
+    padding: 0;
+  }
+  .page:is([data-design='romantic'], [data-design='gyeol']) .quickLinks a {
+    font-size: 12px;
+  }
+}

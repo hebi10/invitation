@@ -246,3 +246,83 @@
     padding-inline: 4px;
   }
 }
+
+
+/* UI-R08-VISUAL-03: place accessible navigation over the primary photograph. */
+.gallery .primary {
+  position: relative;
+  min-width: 0;
+}
+.gallery .primary .controls {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0;
+  margin: 0;
+  padding: 0 6px;
+  pointer-events: none;
+}
+.gallery .primary .controls button {
+  display: inline-grid;
+  flex: 0 0 48px;
+  place-items: center;
+  width: 48px;
+  min-width: 48px;
+  height: 48px;
+  min-height: 48px;
+  padding: 0;
+  border: 1px solid rgba(255, 255, 255, .8);
+  background: rgba(22, 22, 22, .7);
+  color: #fff;
+  font-family: var(--font-sans), sans-serif;
+  font-size: 32px;
+  line-height: 1;
+  text-decoration: none;
+  pointer-events: auto;
+}
+.gallery .primary .controls button:disabled {
+  opacity: .35;
+  cursor: default;
+  pointer-events: none;
+}
+.gallery .primary .controls button:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 2px;
+}
+.gallery .primary .controls > span {
+  position: absolute;
+  left: 50%;
+  bottom: 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 28px;
+  margin: 0;
+  padding: 4px 10px;
+  border: 1px solid rgba(255, 255, 255, .7);
+  background: rgba(22, 22, 22, .76);
+  color: #fff;
+  font-family: var(--font-sans), sans-serif;
+  font-size: 13px;
+  line-height: 1.4;
+  letter-spacing: .06em;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+@media (max-width: 359px) {
+  .gallery .primary .controls {
+    padding-inline: 4px;
+  }
+  .gallery .primary .controls button {
+    flex-basis: 44px;
+    width: 44px;
+    min-width: 44px;
+    height: 44px;
+    min-height: 44px;
+  }
+}
