@@ -19,6 +19,7 @@
 - 웨딩 공개: `EventInvitationPage.tsx`는 스타일 값에 따라 단일 `WeddingIntro.tsx`를 렌더. `sessionStorage` 세션·해시 앵커·건너뛰기·reduced-motion 처리 존재
 - 개업: `opening/themeRenderers/shared.tsx` 자체 ‘초대장 열기’ 인트로. 일반 행사: `generalEvent/themeRenderers/shared.tsx` 자체 1,800ms 자동 오버레이. 이 상태에서 GIF 오버레이만 추가하면 **중복 인트로** 발생
 - 활성 이벤트: `wedding`, `first-birthday`, `birthday`, `general-event`, `opening`; `seventieth`/`etc`는 비활성. 웨딩 `vow` 포함 모든 지원 테마가 디자인·이벤트 타입과 상관없이 **같은 카탈로그를 선택**할 수 있도록 확장
+- **타입별 실제 렌더러 분리 확인**: `eventPageRendererRegistry.tsx`에서 웨딩/돌잔치/생일/일반 행사/개업을 개별 렌더러로 등록. 돌잔치는 `FirstBirthdayInvitationPage.tsx`, 생일은 `BirthdayInvitationPage.tsx`가 공개 UI를 그리며 웨딩 `EventInvitationPage` 인트로 JSX를 자동 공유하지 않음. 따라서 웨딩 한 파일만 수정해서는 모든 종류에 적용되지 않음
 - 상품/판매: `INVITATION_THEME_SALES_POLICY_REGISTRY`에서 웨딩 외 일부 테마는 현재 구매 불가. **인트로 선택 자유와 기존 상품/공개 권한을 혼동하지 않음**. 새 옵션으로 유료 상품 구매 가능 여부가 달라져서는 안 됨
 
 ## 2. 인트로 카탈로그 구성
