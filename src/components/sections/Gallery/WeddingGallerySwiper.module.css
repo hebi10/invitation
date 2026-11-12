@@ -284,7 +284,9 @@
   pointer-events: auto;
 }
 .gallery .primary .controls button:disabled {
-  visibility: hidden;
+  opacity: .35;
+  cursor: default;
+  pointer-events: none;
 }
 .gallery .primary .controls button:focus-visible {
   outline: 2px solid #fff;
