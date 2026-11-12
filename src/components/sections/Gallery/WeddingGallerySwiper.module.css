@@ -149,3 +149,49 @@
     padding-inline: 4px;
   }
 }
+
+
+/* UI-R05: classic gallery readability without altering image selection or order. */
+.gallery[data-gallery-variant='gyeol'] .controls {
+  gap: 8px;
+  margin-top: 14px;
+  color: #302b26;
+  font-variant-numeric: tabular-nums;
+}
+.gallery[data-gallery-variant='gyeol'] .controls button {
+  min-width: 48px;
+  min-height: 48px;
+  padding: 8px;
+  color: #57493c;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+.gallery[data-gallery-variant='gyeol'] .controls > span {
+  align-items: center;
+  white-space: nowrap;
+}
+.gallery[data-gallery-variant='gyeol'] .companions {
+  gap: 10px;
+  margin-top: 12px;
+}
+.gallery[data-gallery-variant='gyeol'] .hint {
+  margin-top: 10px;
+  line-height: 1.7;
+}
+.gallery[data-gallery-variant='gyeol'] :is(.photoButton, .companion):focus-visible,
+.gallery[data-gallery-variant='gyeol'] .controls button:focus-visible {
+  outline: 2px solid #57493c;
+  outline-offset: 2px;
+}
+@media (max-width: 359px) {
+  .gallery[data-gallery-variant='gyeol'] .controls {
+    gap: 4px;
+    font-size: 13px;
+  }
+  .gallery[data-gallery-variant='gyeol'] .controls button {
+    padding-inline: 4px;
+  }
+  .gallery[data-gallery-variant='gyeol'] .companions {
+    gap: 8px;
+  }
+}
