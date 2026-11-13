@@ -353,5 +353,44 @@ class InvitationInternalTrackRegressionTests(unittest.TestCase):
         self.assertFalse(any("INTERNAL_TRACK" in issue for issue in issues), issues)
 
 
+class ShellConditionalAndPipelineRegressionTests(unittest.TestCase):
+    def test_store_approval_inside_false_shell_branch_is_rejected(self):
+        read_file = audit.read
+        path = ".github/workflows/invitation-store-screenshots.yml"
+        source = read_file(path)
+        guard = "        run: python3 scripts/ops06/store_gate.py apply\n"
+        self.assertIn(guard, source)
+        forged = source.replace(
+            guard, "        run: |\n"
+                   "          if false; then\n"
+                   "            python3 scripts/ops06/store_gate.py apply\n"
+                   "          fi\n", 1)
+        with patch.object(audit, "read", side_effect=lambda name:
+                          forged if name == path else read_file(name)):
+            issues = audit.findings()
+        self.assertTrue(any("STORE_OPTIONAL: invitation-store-screenshots.yml" in issue
+                            for issue in issues), issues)
+
+    def test_piped_store_publisher_without_guard_is_rejected(self):
+        read_file = audit.read
+        path = ".github/workflows/invitation-store-screenshots.yml"
+        source = read_file(path)
+        guard = "        run: python3 scripts/ops06/store_gate.py apply"
+        publisher = ("run: python scripts/publish-play-screenshots.py "
+                     "--assets artifacts/store-refresh/ko-KR --publish")
+        self.assertIn(guard, source)
+        self.assertIn(publisher, source)
+        forged = source.replace(guard, "        run: echo gate-bypassed", 1)
+        forged = forged.replace(
+            publisher,
+            "run: python3 -m pip --version | python scripts/publish-play-screenshots.py "
+            "--assets artifacts/store-refresh/ko-KR --publish", 1)
+        with patch.object(audit, "read", side_effect=lambda name:
+                          forged if name == path else read_file(name)):
+            issues = audit.findings()
+        self.assertTrue(any("STORE_GUARD: invitation-store-screenshots.yml" in issue
+                            for issue in issues), issues)
+
+
 if __name__ == "__main__":
     unittest.main()
