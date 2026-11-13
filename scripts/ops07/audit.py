@@ -493,6 +493,20 @@ def findings():
                 continue
             if not any(approved.fullmatch(atom) for atom in _guaranteed_atoms(job_condition(body))):
                 problems.append("APPROVAL: " + filename + ": " + job + " lacks mandatory OPS-01 approval")
+    if REPOSITORY == "hebi10/invitation":
+        internal = read(".github/workflows/play-internal-release.yml")
+        publisher = jobs(internal).get("publish") if internal is not None else None
+        body = re.sub(r"\\\s*\n\s*", " ", publisher or "")
+        commands = [line.strip() for line in body.splitlines() if re.search(
+            r"\bpython(?:3(?:\.\d+)?)?\s+scripts/publish-mobile-play\.py\b", line)]
+        if len(commands) != 1:
+            problems.append("INTERNAL_TRACK: Invitation requires one explicit internal-only publisher")
+        else:
+            command = commands[0]
+            targets = re.findall(r"--target(?:=|\s+)([a-zA-Z0-9-]+)", command)
+            tracks = re.findall(r"--track(?:=|\s+)([a-zA-Z0-9-]+)", command)
+            if targets != ["internal"] or tracks != ["internal"]:
+                problems.append("INTERNAL_TRACK: Invitation publisher must target only internal/internal")
     if REPOSITORY == "hebi10/HomeCrew":
         source = read(".github/workflows/play-internal.yml")
         release = jobs(source).get("release") if source else None
