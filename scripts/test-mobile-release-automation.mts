@@ -193,7 +193,14 @@ for (const job of Object.values(workflow.jobs) as { env?: object; if?: string; s
       for (const ref of ['refs/heads/main', 'refs/pull/1/merge', 'refs/heads/build/mobile-aab']) {
         const github = { event_name: eventName, ref };
         const trusted = ref === 'refs/heads/main' && ['push', 'workflow_dispatch'].includes(eventName);
-        assert.equal(Boolean(evaluateCondition(job.if ?? step.if ?? 'true', github, {}, { bundle: { outputs: { deploy: 'true' } } })), trusted, `${eventName}/${ref} Secrets 전달 경계가 잘못되었습니다.`);
+        const isPlayPublisher = job === workflow.jobs.deploy;
+        const expected = isPlayPublisher ? (ref === 'refs/heads/main' && eventName === 'workflow_dispatch') : trusted;
+        const authorization = isPlayPublisher ? { ops01_release_approved: true } : {};
+        const needs = { bundle: { outputs: { deploy: 'true' } } };
+        assert.equal(Boolean(evaluateCondition(job.if ?? step.if ?? 'true', github, authorization, needs)), expected, `${eventName}/${ref} Secrets 전달 경계가 잘못되었습니다.`);
+        if (isPlayPublisher) {
+          assert.equal(Boolean(evaluateCondition(job.if ?? step.if ?? 'true', github, { ops01_release_approved: false }, needs)), false, 'Explicit manual approval is required for every Play upload.');
+        }
       }
     }
   }

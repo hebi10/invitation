@@ -3,6 +3,11 @@ name: Android APK·AAB 빌드 및 Play 테스트
 on:
   workflow_dispatch:
     inputs:
+      ops01_release_approved:
+        description: 'Approve Play changes only after final release batch and QA'
+        type: boolean
+        required: true
+        default: false
       deploy:
         description: 선택한 Play 테스트 트랙에 배포
         type: boolean
@@ -302,7 +307,9 @@ jobs:
 
   deploy:
     needs: bundle
-    if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && needs.bundle.outputs.deploy == 'true'
+    if: >-
+      github.event_name == 'workflow_dispatch' && inputs.ops01_release_approved == true &&
+      (github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && needs.bundle.outputs.deploy == 'true')
     environment: google-play-testing
     runs-on: ubuntu-24.04
     timeout-minutes: 15

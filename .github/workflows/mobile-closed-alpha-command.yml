@@ -1,8 +1,7 @@
 name: Invitation closed alpha preview request
 
 on:
-  issue_comment:
-    types: [created]
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -10,11 +9,14 @@ permissions:
 
 jobs:
   dispatch-closed-preview:
-    if: >
+    if: >-
+      false &&
+      (
       github.repository == 'hebi10/invitation' &&
       github.event.issue.number == 30 &&
       github.event.comment.user.login == 'hebi10' &&
       github.event.comment.body == '/deploy-invitation-alpha'
+      )
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:

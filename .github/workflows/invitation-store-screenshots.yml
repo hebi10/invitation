@@ -7,10 +7,13 @@ on:
       - 'scripts/publish-play-screenshots.py'
       - 'scripts/build-store-rebrand.py'
       - '.github/workflows/invitation-store-screenshots.yml'
-  issue_comment:
-    types: [created]
   workflow_dispatch:
     inputs:
+      ops01_release_approved:
+        description: 'Approve Play changes only after final release batch and QA'
+        type: boolean
+        required: true
+        default: false
       apply:
         description: 'Upload the approved eight ko-KR phone screenshots using Play WIF'
         type: boolean
@@ -78,11 +81,14 @@ jobs:
             -f 'inputs[apply]=true'
 
   upload:
-    if: >
+    if: >-
+      github.event_name == 'workflow_dispatch' && inputs.ops01_release_approved == true &&
+      (
       github.event_name == 'workflow_dispatch' &&
       github.ref == 'refs/heads/main' &&
       github.repository == 'hebi10/invitation' &&
       inputs.apply == true
+      )
     runs-on: ubuntu-24.04
     timeout-minutes: 18
     environment: google-play-testing
