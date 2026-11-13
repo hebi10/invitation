@@ -162,6 +162,7 @@ const security = [
   'test-kakao-address-search-error-policy',
   'test-kakao-map-infowindow-sanitization',
   'test-mobile-customer-auth-policy',
+  'test-mobile-production-api-origin',
   'test-mobile-device-id-and-billing-policy',
   'test-mobile-save-entitlement-policy',
   'test-mobile-session-security-policy',

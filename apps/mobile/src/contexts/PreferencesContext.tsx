@@ -12,6 +12,7 @@ import { useColorScheme } from 'react-native';
 
 import {
   DEFAULT_API_BASE_URL,
+  isLegacyProductionApiBaseUrl,
   isTransientLocalApiBaseUrl,
   normalizeApiBaseUrl,
   PRODUCTION_API_BASE_URL,
@@ -97,8 +98,9 @@ export function PreferencesProvider({ children }: PropsWithChildren) {
       const normalizedStoredApiBaseUrl = normalizeApiBaseUrl(stored.apiBaseUrl);
       const normalizedDefaultApiBaseUrl = normalizeApiBaseUrl(DEFAULT_PREFERENCES.apiBaseUrl);
       const shouldResetStoredApiBaseUrl =
-        isTransientLocalApiBaseUrl(normalizedStoredApiBaseUrl) &&
-        !isTransientLocalApiBaseUrl(normalizedDefaultApiBaseUrl);
+        isLegacyProductionApiBaseUrl(normalizedStoredApiBaseUrl) ||
+        (isTransientLocalApiBaseUrl(normalizedStoredApiBaseUrl) &&
+          !isTransientLocalApiBaseUrl(normalizedDefaultApiBaseUrl));
       const resolvedApiBaseUrl = shouldResetStoredApiBaseUrl
         ? PRODUCTION_API_BASE_URL
         : normalizedStoredApiBaseUrl;

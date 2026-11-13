@@ -2,6 +2,7 @@ import type { MobileInvitationCreationInput } from '../types/mobileInvitation';
 import type { MobileBillingProductId } from './mobileBillingProducts';
 import { getStoredString, setStoredString } from './storage';
 import { finishBillingPurchase, getBillingTransactionHistory, isDefinitelyUnchargedBillingError } from './billing';
+import { isLegacyProductionApiBaseUrl, PRODUCTION_API_BASE_URL } from './apiCore';
 
 export type PurchaseRequest = {
   appUserId: string;
@@ -44,6 +45,9 @@ async function readPendingPurchase() {
       parsed.previousTransactionIds.every(id => typeof id === 'string');
     if (!parsed?.request?.target || !parsed.request.appUserId || (!validReceipt && !validIntent)) {
       throw new Error('Invalid receipt');
+    }
+    if (isLegacyProductionApiBaseUrl(parsed.request.apiBaseUrl)) {
+      parsed.request.apiBaseUrl = PRODUCTION_API_BASE_URL;
     }
     pendingInMemory = parsed;
     return parsed;
