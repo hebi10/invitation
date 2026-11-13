@@ -329,5 +329,29 @@ class IconMutationBranchRegressionTests(unittest.TestCase):
                              for issue in problems), problems)
 
 
+class InvitationInternalTrackRegressionTests(unittest.TestCase):
+    def test_internal_publisher_cannot_target_closed_without_separate_promotion(self):
+        read_file = audit.read
+        path = ".github/workflows/play-internal-release.yml"
+        workflow = read_file(path)
+        approved = "--target internal --track internal"
+        self.assertIn(approved, workflow)
+        for forged_target in (
+            "--target closed --track alpha",
+            "--target internal --track alpha",
+            "--target closed --track internal",
+        ):
+            with self.subTest(target=forged_target):
+                modified = workflow.replace(approved, forged_target, 1)
+                with patch.object(audit, "read", side_effect=lambda name:
+                                  modified if name == path else read_file(name)):
+                    issues = audit.findings()
+                self.assertTrue(any("INTERNAL_TRACK" in issue for issue in issues), issues)
+
+    def test_existing_internal_track_publisher_is_accepted(self):
+        issues = audit.findings()
+        self.assertFalse(any("INTERNAL_TRACK" in issue for issue in issues), issues)
+
+
 if __name__ == "__main__":
     unittest.main()
