@@ -288,7 +288,15 @@ def store_guard_findings():
             position = before[-1].start()
             after = next((step.start() for step in steps if step.start() > index), len(body))
             guard_step = body[position:after]
-            if re.search(r"(?m)^\s+if\s*:", guard_step) or re.search(
+            step_condition = re.search(r"(?m)^\s+if\s*:\s*(.*)$", guard_step)
+            # This legacy icon workflow uses exactly the same input to guard
+            # both approval and the actual mutating --apply command.
+            icon_equivalent = (filename == "store-icon-sync.yml"
+                               and step_condition is not None
+                               and step_condition.group(1).strip() == "inputs.apply == true"
+                               and "APPLY_MANUAL: ${{ inputs.apply && 'true' || 'false' }}" in body
+                               and 'if [[ "$APPLY_MANUAL" == "true" ]]; then' in body)
+            if (step_condition is not None and not icon_equivalent) or re.search(
                     r"(?m)^\s+continue-on-error\s*:\s*true", guard_step):
                 problems.append("STORE_OPTIONAL: " + filename + ": approval is optional or skipped")
             auth_index = body.find("google-github-actions/auth@")
