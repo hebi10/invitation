@@ -47,6 +47,13 @@ class NegativeScenarios(unittest.TestCase):
         self.assertTrue(audit.automatic_mutations("store-listing.yml", example))
 
 
+    def test_existing_npm_mobile_play_submit_is_an_automatic_publisher(self):
+        example = ("on:\n  push:\n    branches: [main]\n"
+                   "jobs:\n  build:\n    runs-on: ubuntu-latest\n"
+                   "    steps:\n      - run: npm run mb:submit:android:play\n")
+        self.assertTrue(audit.automatic_mutations("ci.yml", example))
+
+
 class AppContracts(unittest.TestCase):
     def test_all_release_stages_and_no_automatic_publishers(self):
         problems = audit.findings()
@@ -100,6 +107,22 @@ class AppContracts(unittest.TestCase):
         tracks[0]["releases"][0]["status"]="draft"
         with self.assertRaises(mod.Stop):
             mod.make_plan(tracks,[{"versionCode":19,"sha256":"b"*64}],req)
+
+    def test_store_authentication_and_upload_cannot_ignore_rejected_approval(self):
+        source_path = ".github/workflows/invitation-store-screenshots.yml"
+        original_read = audit.read
+        source = original_read(source_path)
+        for name in ("Authenticate Google Play using short-lived Workload Identity token",
+                     "Upload only ko-KR phoneScreenshots within transactional Play edit"):
+            with self.subTest(step=name):
+                step = "      - name: " + name + "\n"
+                self.assertIn(step, source)
+                changed = source.replace(step, step + "        if: always()\n", 1)
+                with patch.object(audit, "read", side_effect=lambda path:
+                                  changed if path == source_path else original_read(path)):
+                    blockers = audit.findings()
+                self.assertTrue(any("STORE_BYPASS: invitation-store-screenshots.yml" in issue
+                                    for issue in blockers), blockers)
 
     def test_missing_existing_aab_cannot_be_published(self):
         mod=module("scripts/ops04/internal.py")
