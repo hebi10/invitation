@@ -1,14 +1,13 @@
 name: Play 스토어 대표 아이콘 동기화
 
 on:
-  push:
-    branches: [main]
-    paths:
-      - .github/workflows/store-icon-sync.yml
-  issue_comment:
-    types: [created]
   workflow_dispatch:
     inputs:
+      ops01_release_approved:
+        description: 'Approve Play changes only after final release batch and QA'
+        type: boolean
+        required: true
+        default: false
       apply:
         description: "현재 앱의 ko-KR 아이콘을 Play 등록정보에 실제 적용"
         type: boolean
@@ -41,7 +40,9 @@ jobs:
           gh api --method POST "repos/${GITHUB_REPOSITORY}/actions/workflows/store-icon-sync.yml/dispatches" \
             -f ref=main -f 'inputs[apply]=true'
   store-icon:
-    if: github.repository == 'hebi10/invitation' && github.ref == 'refs/heads/main' && github.event_name != 'issue_comment'
+    if: >-
+      github.event_name == 'workflow_dispatch' &&
+      (github.repository == 'hebi10/invitation' && github.ref == 'refs/heads/main' && github.event_name != 'issue_comment')
     runs-on: ubuntu-24.04
     environment: google-play-testing
     timeout-minutes: 10
@@ -49,6 +50,11 @@ jobs:
       contents: read
       id-token: write
     steps:
+      - name: OPS-01 require manual approval for icon upload
+        if: inputs.apply == true
+        env:
+          OPS01_RELEASE_APPROVED: ${{ inputs.ops01_release_approved }}
+        run: test "$OPS01_RELEASE_APPROVED" = true
       - uses: actions/checkout@v4
         with:
           ref: ${{ github.sha }}
