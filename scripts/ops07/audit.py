@@ -209,6 +209,8 @@ def _publishing_command(body):
     commands = re.sub(r"\s*(?:&&|\|\||;|\|)\s*", "\n", commands)
     if re.search(r"(?i)\bgh\s+release\s+create\b|softprops/action-gh-release|upload-google-play@", commands):
         return True
+    if re.search(r"(?im)\bnpm(?:\.cmd)?\s+run\s+mb:submit:android:play\b", commands):
+        return True
     if "androidpublisher.googleapis.com" in commands and re.search(
             r"(?i)\b(?:POST|PUT|PATCH)\b|:commit", commands):
         return True
