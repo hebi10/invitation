@@ -274,7 +274,7 @@ def automatic_mutations(filename, source):
 
 def _store_mutating_command(body):
     normalized = re.sub(r"\\\s*\n\s*", " ", body)
-    normalized = re.sub(r"\s*(?:&&|\|\||;)\s*", "\n", normalized)
+    normalized = re.sub(r"\s*(?:&&|\|\||;|\|(?!\|))\s*", "\n", normalized)
     for line in normalized.splitlines():
         if line.lstrip().startswith(("- name:", "name:", "#")):
             continue
@@ -335,7 +335,9 @@ def _safe_store_step(guard_step, mutation_steps, body, filename):
     guard_command = r"(?m)^[ \t]*(?:-[ \t]+)?(?:run:[ \t]*)?python(?:3)?\s+scripts/ops06/store_gate\.py\s+apply"
     if not re.search(guard_command + r"(?:\s|$)", guard_step):
         return False
-    if re.search(guard_command + r"[^\n]*(?:\|\||;[ \t]*true\b|\|(?!\|))", guard_step):
+    if re.search(guard_command + r"[^\n]*(?:&&|\|\||;[ \t]*true\b|\|(?!\|))", guard_step):
+        return False
+    if re.search(r"(?m)^[ \t]*(?:run:[ \t]*)?(?:if[ \t]+|(?:elif|else|fi)\b)", guard_step):
         return False
     if re.search(r"(?m)^[ \t]*(?:run:[ \t]*)?set[ \t]+\+e\b", guard_step):
         return False
