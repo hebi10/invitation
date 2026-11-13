@@ -160,7 +160,10 @@ def _publishing_command(body):
     if "androidpublisher.googleapis.com" in commands and re.search(
             r"(?i)\b(?:POST|PUT|PATCH)\b|:commit", commands):
         return True
-    if "/dispatches" in commands and re.search(r"(?i)play|closed|store|publish|release", commands):
+    dispatches = re.findall(r"(?i)actions/workflows/([A-Za-z0-9_.-]+)/dispatches", commands)
+    if any(re.search(r"(?i)play|closed|store|publish|release", target) for target in dispatches):
+        return True
+    if "/dispatches" in commands and not dispatches:
         return True
     for line in commands.splitlines():
         match = re.search(r"\b(?:python(?:3(?:\.\d+)?)?|node|bash|sh)\s+([^\s;|]+)([^\n]*)", line)
