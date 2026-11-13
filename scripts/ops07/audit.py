@@ -353,14 +353,22 @@ def _safe_store_step(guard_step, mutation_steps, body, filename):
         if len(mutation_steps) != 1:
             return False
         publisher = mutation_steps[0]
-        approved_branch = (
-            r'(?ms)^[ \t]+if \[\[ "\$APPLY_MANUAL" == "true" \]\]; then[ \t]*\n'
-            r'[ \t]+python3 scripts/sync-play-store-icon\.py --apply[ \t]*\n'
-            r'[ \t]+else[ \t]*\n'
-            r'[ \t]+python3 scripts/sync-play-store-icon\.py[ \t]*\n'
-            r'[ \t]+fi[ \t]*
+        lines = [line.strip() for line in publisher.splitlines()]
+        expected = [
+            'if [[ "$APPLY_MANUAL" == "true" ]]; then',
+            "python3 scripts/sync-play-store-icon.py --apply",
+            "else",
+            "python3 scripts/sync-play-store-icon.py",
+            "fi",
+        ]
+        if not any(lines[i:i + len(expected)] == expected
+                   for i in range(len(lines))):
+            return False
+        if publisher.count("scripts/sync-play-store-icon.py --apply") != 1:
+            return False
+        manual_input = "APPLY_MANUAL: " + "$" + "{{ inputs.apply && 'true' || 'false' }}"
+        return manual_input in publisher
     return False
-
 
 def store_guard_findings():
     problems = []
