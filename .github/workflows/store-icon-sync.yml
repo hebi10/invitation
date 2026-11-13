@@ -3,6 +3,23 @@ name: Play 스토어 대표 아이콘 동기화
 on:
   workflow_dispatch:
     inputs:
+      ops06_store_approved:
+        description: 'Separate confirmed Play listing update after all development and QA'
+        required: true
+        type: boolean
+        default: false
+      ops06_confirmation:
+        description: 'For apply type APPLY_VERIFIED_PLAY_STORE_ASSETS'
+        type: string
+        required: false
+      ops06_expected_main_sha:
+        description: 'Approved exact current main SHA'
+        type: string
+        required: false
+      ops06_batch_id:
+        description: 'KST release batch YYYY-MM-DD-invitation'
+        type: string
+        required: false
       ops01_release_approved:
         description: 'Approve Play changes only after final release batch and QA'
         type: boolean
@@ -21,24 +38,6 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  dispatch:
-    if: >-
-      github.event_name == 'issue_comment' &&
-      github.repository == 'hebi10/invitation' &&
-      github.event.issue.number == 30 &&
-      github.event.comment.user.login == 'hebi10' &&
-      github.event.comment.body == '/upload-invitation-icon-20261109'
-    runs-on: ubuntu-24.04
-    permissions:
-      contents: read
-      actions: write
-    steps:
-      - name: Dispatch trusted main-only icon update
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          gh api --method POST "repos/${GITHUB_REPOSITORY}/actions/workflows/store-icon-sync.yml/dispatches" \
-            -f ref=main -f 'inputs[apply]=true'
   store-icon:
     if: >-
       github.event_name == 'workflow_dispatch' &&
@@ -67,6 +66,15 @@ jobs:
           python -m pip install Pillow==12.3.0
           python scripts/build-store-rebrand.py --icon-only
           test -s apps/mobile/store/icon.png
+      - name: OPS-06 verify store listing approval and current main
+        if: inputs.apply == true
+        env:
+          GH_TOKEN: ${{ github.token }}
+          OPS06_STORE_APPROVED: ${{ inputs.ops06_store_approved }}
+          OPS06_CONFIRMATION: ${{ inputs.ops06_confirmation }}
+          OPS06_EXPECTED_MAIN_SHA: ${{ inputs.ops06_expected_main_sha }}
+          OPS06_BATCH_ID: ${{ inputs.ops06_batch_id }}
+        run: python3 scripts/ops06/store_gate.py apply
       - name: Google Play 전용 계정 설정 확인
         env:
           WORKLOAD_IDENTITY_PROVIDER: ${{ vars.PLAY_WORKLOAD_IDENTITY_PROVIDER }}

@@ -9,6 +9,23 @@ on:
       - '.github/workflows/invitation-store-screenshots.yml'
   workflow_dispatch:
     inputs:
+      ops06_store_approved:
+        description: 'Separate confirmed Play listing update after all development and QA'
+        required: true
+        type: boolean
+        default: false
+      ops06_confirmation:
+        description: 'For apply type APPLY_VERIFIED_PLAY_STORE_ASSETS'
+        type: string
+        required: false
+      ops06_expected_main_sha:
+        description: 'Approved exact current main SHA'
+        type: string
+        required: false
+      ops06_batch_id:
+        description: 'KST release batch YYYY-MM-DD-invitation'
+        type: string
+        required: false
       ops01_release_approved:
         description: 'Approve Play changes only after final release batch and QA'
         type: boolean
@@ -59,36 +76,11 @@ jobs:
                   assert hashlib.sha256(img.convert("RGBA").tobytes()).hexdigest() == expected
           PY
 
-  dispatch:
-    if: >
-      github.event_name == 'issue_comment' &&
-      github.repository == 'hebi10/invitation' &&
-      github.event.issue.number == 30 &&
-      github.event.comment.user.login == 'hebi10' &&
-      github.event.comment.body == '/upload-invitation-screenshots-20261108'
-    runs-on: ubuntu-24.04
-    timeout-minutes: 5
-    permissions:
-      contents: read
-      actions: write
-    steps:
-      - name: Dispatch trusted main-only Play upload run
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          gh api --method POST "repos/${GITHUB_REPOSITORY}/actions/workflows/invitation-store-screenshots.yml/dispatches" \
-            -f ref=main \
-            -f 'inputs[apply]=true'
-
   upload:
     if: >-
-      github.event_name == 'workflow_dispatch' && inputs.ops01_release_approved == true &&
-      (
-      github.event_name == 'workflow_dispatch' &&
-      github.ref == 'refs/heads/main' &&
-      github.repository == 'hebi10/invitation' &&
-      inputs.apply == true
-      )
+      github.repository == 'hebi10/invitation' && github.ref == 'refs/heads/main' &&
+      github.event_name == 'workflow_dispatch' && inputs.apply == true &&
+      inputs.ops01_release_approved == true && inputs.ops06_store_approved == true
     runs-on: ubuntu-24.04
     timeout-minutes: 18
     environment: google-play-testing
@@ -117,6 +109,14 @@ jobs:
           name: invitation-20261109-flat-editorial-screenshots
           path: artifacts/store-refresh/ko-KR/
           retention-days: 30
+      - name: OPS-06 verify store listing approval and current main
+        env:
+          GH_TOKEN: ${{ github.token }}
+          OPS06_STORE_APPROVED: ${{ inputs.ops06_store_approved }}
+          OPS06_CONFIRMATION: ${{ inputs.ops06_confirmation }}
+          OPS06_EXPECTED_MAIN_SHA: ${{ inputs.ops06_expected_main_sha }}
+          OPS06_BATCH_ID: ${{ inputs.ops06_batch_id }}
+        run: python3 scripts/ops06/store_gate.py apply
       - name: Authenticate Google Play using short-lived Workload Identity token
         id: auth
         uses: google-github-actions/auth@v3
