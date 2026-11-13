@@ -392,5 +392,26 @@ class ShellConditionalAndPipelineRegressionTests(unittest.TestCase):
                             for issue in issues), issues)
 
 
+class SourceProvenanceShellGuardRegressionTests(unittest.TestCase):
+    def test_real_internal_guards_cannot_hide_in_false_shell_branches(self):
+        read_file = audit.read
+        path = ".github/workflows/play-internal-release.yml"
+        original = read_file(path)
+        guard = "run: python3 scripts/ops04/internal.py guard"
+        self.assertEqual(original.count(guard), 2)
+        bypass = ("run: |\n"
+                  "          if false; then\n"
+                  "            python3 scripts/ops04/internal.py guard\n"
+                  "          fi")
+        forged = original.replace(guard, bypass)
+        with patch.object(audit, "read", side_effect=lambda name:
+                          forged if name == path else read_file(name)):
+            issues = audit.findings()
+        for stage in ("verify", "publish"):
+            with self.subTest(stage=stage):
+                self.assertTrue(any("PROVENANCE: OPS-04 " + stage in issue
+                                    for issue in issues), issues)
+
+
 if __name__ == "__main__":
     unittest.main()
