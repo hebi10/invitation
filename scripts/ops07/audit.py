@@ -349,10 +349,211 @@ def _safe_store_step(guard_step, mutation_steps, body, filename):
     if (len(alternatives) > 1 and all(_step_condition(step) in alternatives
                                       for step in mutation_steps)):
         return True
-    if (filename == "store-icon-sync.yml" and guard_cond == "inputs.apply == true"
-            and "APPLY_MANUAL:" in body and "inputs.apply" in body
-            and re.search(r'if \[\[ "\$APPLY_MANUAL" == "true" \]\]; then', body)):
-        return True
+    if filename == "store-icon-sync.yml" and guard_cond == "inputs.apply == true":
+        if len(mutation_steps) != 1:
+            return False
+        publisher = mutation_steps[0]
+        approved_branch = (
+            r'(?ms)^[ \t]+if \[\[ "\$APPLY_MANUAL" == "true" \]\]; then[ \t]*\n'
+            r'[ \t]+python3 scripts/sync-play-store-icon\.py --apply[ \t]*\n'
+            r'[ \t]+else[ \t]*\n'
+            r'[ \t]+python3 scripts/sync-play-store-icon\.py[ \t]*\n'
+            r'[ \t]+fi[ \t]*
+    return False
+
+
+def store_guard_findings():
+    problems = []
+    folder = ROOT / ".github/workflows"
+    known = {"android-play-store-images.yml", "pushoffice-store-refresh-20261111.yml",
+             "play-listing-images.yml", "play-listing.yml", "store-01-images.yml",
+             "play-listing-ko-asset02.yml", "play-store-icon.yml", "store-icon-sync.yml",
+             "invitation-store-screenshots.yml", "play-store-01.yml",
+             "store02-latest-screenshots.yml"}
+    discovered = {path.name for glob in ("*.yml", "*.yaml") for path in folder.glob(glob)}
+    for filename in sorted(known | discovered):
+        source = read(".github/workflows/" + filename)
+        if source is None:
+            continue
+        for name, body in jobs(source).items():
+            if is_disabled(job_condition(body)) or not _store_mutating_command(body):
+                continue
+            steps = _workflow_steps(body)
+            mutations = [i for i, step in enumerate(steps) if _store_mutating_command(step)]
+            guards = [i for i, step in enumerate(steps) if "scripts/ops06/store_gate.py apply" in step]
+            if not guards:
+                problems.append("STORE_GUARD: " + filename + ": job " + name
+                                + " does not enforce separate store approval")
+                continue
+            if len(guards) != 1 or not mutations:
+                problems.append("STORE_GUARD: " + filename + ": cannot identify unique approval and publishing steps")
+                continue
+            index = guards[0]
+            guard = steps[index]
+            if not _safe_store_step(guard, [steps[i] for i in mutations], body, filename):
+                problems.append("STORE_OPTIONAL: " + filename + ": approval is optional, ignored or not executable")
+            if index in mutations:
+                problems.append("STORE_ORDER: " + filename + ": approval and publication share one step")
+            if any(i < index for i in mutations):
+                problems.append("STORE_ORDER: " + filename + ": publication precedes approval")
+            for downstream in steps[index + 1:]:
+                if not (_store_mutating_command(downstream) or "google-github-actions/auth@" in downstream):
+                    continue
+                if re.search(r"\b(?:always|failure|cancelled)\s*\(", _step_condition(downstream)):
+                    problems.append("STORE_BYPASS: " + filename + ": publication may continue after rejected approval")
+                    break
+            if any("google-github-actions/auth@" in step for step in steps[:index]):
+                problems.append("STORE_ORDER: " + filename + ": Play authentication precedes approval")
+            if any(_publishing_command(step) and ("androidpublisher.googleapis.com" in step
+                    or _store_mutating_command(step)) for step in steps[:index]):
+                problems.append("STORE_ORDER: " + filename + ": Play mutation precedes approval")
+    return problems
+
+
+def findings():
+    problems = []
+    for path, label in REQUIRED.items():
+        if read(path) is None:
+            problems.append("MISSING: " + label + " (" + path + ")")
+    for file in ("release-build.yml", "play-internal-release.yml", "play-closed-release.yml"):
+        source = read(".github/workflows/" + file)
+        if source is None:
+            continue
+        if triggers(source) != {"workflow_dispatch"}:
+            problems.append("AUTO_TRIGGER: " + file + " must be workflow_dispatch-only")
+        if "github.ref" not in source and "GITHUB_REF" not in source:
+            problems.append("SOURCE: " + file + " missing main ref gate")
+        if file == "release-build.yml":
+            if re.search(r"(?i)inputs\[(?:mode|deploy)\]\s*=\s*(?:deploy|initialize|publish|promote|apply|upload|true)\b", source):
+                problems.append("BUILD: Play publishing mode is forbidden in build-only dispatch")
+            for body in jobs(source).values():
+                local_only = "\n".join(line for line in body.splitlines()
+                                       if "/dispatches" not in line)
+                if _publishing_command(local_only):
+                    problems.append("BUILD: build-only workflow contains a direct Play mutation")
+                    break
+        elif file == "play-internal-release.yml":
+            if not all(k in source for k in ("PUBLISH_VERIFIED_INTERNAL_AAB",
+                                             "ops04/internal.py verify", "inputs.mode == 'publish'")):
+                problems.append("INTERNAL: explicit approval, SHA256 recheck or publish mode missing")
+            if any(k in source for k in ("bundleRelease", "assembleRelease")):
+                problems.append("INTERNAL: must use existing AAB, not rebuild it")
+        elif file == "play-closed-release.yml":
+            if not all(k in source for k in ("PROMOTE_VERIFIED_INTERNAL_VERSION",
+                                             "inputs.mode == 'promote'")):
+                problems.append("CLOSED: separate approved same-version promotion missing")
+            if any(k in source for k in ("bundleRelease", "assembleRelease", "uploadType")):
+                problems.append("CLOSED: no binary upload/build permitted")
+            normalized_closed = re.sub(r"\\\s*\n\s*", " ", source)
+            commands = re.sub(r"\s*(?:&&|\|\||;)\s*", "\n", normalized_closed)
+            if re.search(r"(?mi)^[ \t]*(?:-[ \t]+)?(?:run:[ \t]*)?python(?:3(?:\.\d+)?)?\s+[^\s;|]*publish-mobile-play\.py\b", commands) or re.search(
+                    r"(?mi)^[ \t]*(?:-[ \t]+)?(?:run:[ \t]*)?python(?:3(?:\.\d+)?)?\s+[^\s;|]*publisher\.py\b[^\n]*\b(?:deploy|upload|initialize)\b", commands):
+                problems.append("CLOSED_BINARY: closed promotion must not invoke a binary publisher")
+    manual = read("AGENTS.md")
+    if manual is not None and not all(k in manual for k in ("Release Batch", "Play")):
+        problems.append("AGENTS: common release freeze and daily batch policy missing")
+    contracts = [
+        ("scripts/ops04/internal.py", ("AAB_SHA256",)),
+        ("scripts/ops05/promotion.py",
+         ("changesInReviewBehavior=ERROR_IF_IN_REVIEW", "aab_sha256", "version_code", "completed")),
+        ("scripts/ops06/store_gate.py",
+         ("OPS06_STORE_APPROVED", "OPS06_EXPECTED_MAIN_SHA", "APPLY_VERIFIED_PLAY_STORE_ASSETS"))
+    ]
+    for path, keys in contracts:
+        source = read(path)
+        if source is not None and not all(k in source for k in keys):
+            problems.append("GATE: " + path + " has missing approval/hash/review safeguards")
+    folder = ROOT / ".github/workflows"
+    for file in sorted(list(folder.glob("*.yml")) + list(folder.glob("*.yaml"))):
+        workflow_source = file.read_text(encoding="utf-8")
+        if "__unparsed_jobs__" in jobs(workflow_source):
+            problems.append("UNPARSED_JOBS: " + file.name + " has unsupported job syntax")
+        problems.extend(automatic_mutations(file.name, workflow_source))
+    problems.extend(store_guard_findings())
+    if REPOSITORY in {"hebi10/GalliPick", "hebi10/TalkSullae"}:
+        approved = re.compile(r"inputs[.]ops01_release_approved\s*==\s*true")
+        workflows = (("play-deploy.yml", "deploy"),) if REPOSITORY.endswith("GalliPick") else (
+            ("play-internal.yml", "internal-publish"),
+            ("play-promote-closed.yml", "closed-publish"),
+            ("play-closed.yml", "closed-publish"),
+        )
+        for filename, job in workflows:
+            source = read(".github/workflows/" + filename)
+            body = jobs(source).get(job)
+            if source is None or body is None:
+                problems.append("APPROVAL: " + filename + ": publisher job missing")
+                continue
+            if not any(approved.fullmatch(atom) for atom in _guaranteed_atoms(job_condition(body))):
+                problems.append("APPROVAL: " + filename + ": " + job + " lacks mandatory OPS-01 approval")
+    if REPOSITORY == "hebi10/HomeCrew":
+        source = read(".github/workflows/play-internal.yml")
+        release = jobs(source).get("release") if source else None
+        guard = ("Require full-project release authorization before any Play mutation")
+        if not release or guard not in release or not re.search(
+                r'if \[\[ "\$FINAL_RELEASE_APPROVAL" != "HOMECREW_FINAL_RELEASE_APPROVED" \]\]; then', release):
+            problems.append("APPROVAL: HomeCrew final release authorization gate missing")
+    internal = read(".github/workflows/play-internal-release.yml")
+    if internal is not None:
+        for stage in ("verify", "publish"):
+            body = jobs(internal).get(stage)
+            steps = _workflow_steps(body or "")
+            guard_command = r"(?m)^[ \t]*(?:-[ \t]+)?(?:run:[ \t]*)?python3\s+scripts/ops04/internal\.py\s+guard\b"
+            guards = [(index, step) for index, step in enumerate(steps)
+                      if re.search(guard_command, step)]
+            if len(guards) != 1:
+                problems.append("PROVENANCE: OPS-04 " + stage + " requires an executable signed-source guard")
+                continue
+            index, guard = guards[0]
+            if (_step_condition(guard) or re.search(r"(?m)^[ \t]+(?:-[ \t]+)?continue-on-error[ \t]*:", guard)
+                    or re.search(guard_command + r"[^\n]*(?:\|\||;[ \t]*true\b|\|(?!\|))", guard)
+                    or re.search(r"(?m)^[ \t]*(?:run:[ \t]*)?set[ \t]+\+e\b", guard)):
+                problems.append("PROVENANCE: OPS-04 " + stage + " guard must run and stop on failure")
+            if any("actions/download-artifact@" in step or "google-github-actions/auth@" in step
+                   for step in steps[:index]):
+                problems.append("PROVENANCE: OPS-04 " + stage + " guard must precede artifact access")
+            for downstream in steps[index + 1:]:
+                if (re.search(r"\b(?:always|failure|cancelled)\s*\(", _step_condition(downstream))
+                        and ("google-github-actions/auth@" in downstream
+                             or _publishing_command(downstream))):
+                    problems.append("PROVENANCE_BYPASS: OPS-04 " + stage + " can publish after a failed guard")
+                    break
+    if REPOSITORY == "hebi10/TripCanvas":
+        promote = jobs(read(".github/workflows/play-promote.yml")).get("promote")
+        if not promote or "inputs.final_release_confirmed == true" not in _guaranteed_atoms(job_condition(promote)):
+            problems.append("APPROVAL: TripCanvas legacy closed promotion lacks mandatory final approval")
+    if REPOSITORY == "hebi10/PetWorld":
+        closed = read(".github/workflows/play-closed-release.yml") or ""
+        if re.search(r"(?i)publisher[.]py\s+deploy[^\n]*--bundle", closed):
+            problems.append("CLOSED: PetWorld promotion must not upload a new binary")
+    return problems
+
+
+def report():
+    issues = findings()
+    return {"schema": "ops07-policy-audit-v1", "repository": REPOSITORY,
+            "package_id": PACKAGE, "status": "pass" if not issues else "blocked",
+            "blockers": issues, "real_play_api_called": False}
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--report", default="ops07-policy-report.json")
+    opt = parser.parse_args()
+    data = report()
+    dest = Path(opt.report)
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    dest.write_text(json.dumps(data, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    print("OPS-07:", data["status"], "blockers:", len(data["blockers"]))
+    for item in data["blockers"]:
+        print(" -", item)
+
+        )
+        manual_binding = r"""(?m)^[ \t]+APPLY_MANUAL:[ \t]*\$\{\{[ \t]*inputs\.apply[ \t]*&&[ \t]*'true'[ \t]*\|\|[ \t]*'false'[ \t]*\}\}[ \t]*$"""
+        if (re.search(approved_branch, publisher)
+                and re.search(manual_binding, publisher)
+                and publisher.count("scripts/sync-play-store-icon.py --apply") == 1):
+            return True
+        return False
     return False
 
 
