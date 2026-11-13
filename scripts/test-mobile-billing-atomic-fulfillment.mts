@@ -276,6 +276,7 @@ function reviewFixture() {
   let stored: string | null = null;
   let purchases = 0;
   const loadPending = () => loadModule('apps/mobile/src/lib/pendingBillingPurchase.ts', (id) => {
+    if (id === './apiCore') return apiCore;
     if (id === './storage') return {
       getStoredString: async () => stored,
       setStoredString: async (_key: string, value: string | null) => { stored = value; },
