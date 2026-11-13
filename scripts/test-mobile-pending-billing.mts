@@ -6,6 +6,11 @@ import ts from 'typescript';
 const source = ts.transpileModule(readFileSync('apps/mobile/src/lib/pendingBillingPurchase.ts', 'utf8'), {
   compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
 }).outputText;
+const apiCore = ts.transpileModule(readFileSync('apps/mobile/src/lib/apiCore.ts', 'utf8'), {
+  compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
+}).outputText;
+const apiExports: Record<string, unknown> = {};
+runInNewContext(apiCore, { exports: apiExports, process: { env: {} }, require: () => ({ default: {} }) });
 let stored: string | null = null;
 let purchases = 0;
 let failReceiptStorage = false;
@@ -19,7 +24,7 @@ function loadModule() {
     getBillingTransactionHistory: async () => ({ transactions: history, requestDate: historyRequestDate }),
     finishBillingPurchase: async (token: string) => { assert.ok(token); consumed += 1; },
     isDefinitelyUnchargedBillingError: (error: { userCancelled?: boolean }) => error?.userCancelled === true,
-  }) : ({
+  }) : id === './apiCore' ? apiExports : ({
     getStoredString: async () => stored,
     setStoredString: async (_key: string, value: string | null) => {
       if ((value && failReceiptStorage) || (value === null && failClearStorage)) throw new Error('storage unavailable');
@@ -98,6 +103,14 @@ await recovery.recoverPendingBillingPurchase(scope, async (original, receipt) =>
 assert.equal(purchases, paidCount, 'Explicit recovery never opens another purchase');
 assert.equal(stored, null);
 await assert.rejects(recovery.recoverPendingBillingPurchase(scope, async () => true), /결제가 없습니다/);
+
+const oldProductionRequest = { ...createRequest, apiBaseUrl: 'https://msgnote.kr' };
+const newProductionRequest = { ...oldProductionRequest, apiBaseUrl: 'https://invite.msgnote.kr' };
+await assert.rejects(load()(oldProductionRequest, { purchase, fulfill: async () => false }), /다시/);
+const productionPurchaseCount = purchases;
+assert.ok(await loadModule().getPendingBillingRequest(newProductionRequest));
+assert.equal(await load()(newProductionRequest, { purchase, fulfill: async () => true }), true);
+assert.equal(purchases, productionPurchaseCount, 'Migrating the production API must not charge again');
 
 // Store approval can terminate the process before its promise returns an order ID.
 history = [{ productIdentifier: 'ticket_pack_1', transactionIdentifier: 'rc-old', purchaseDate: '2026-01-01T00:00:00Z' }];
