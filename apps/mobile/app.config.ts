@@ -6,7 +6,7 @@ declare const process: {
   env: Record<string, string | undefined>;
 };
 
-const PRODUCTION_API_BASE_URL = 'https://msgnote.kr';
+const PRODUCTION_API_BASE_URL = 'https://invite.msgnote.kr';
 const configuredApiBaseUrl =
   process.env.EXPO_PUBLIC_API_BASE?.trim().replace(/\/+$/g, '') ||
   PRODUCTION_API_BASE_URL;

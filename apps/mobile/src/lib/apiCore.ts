@@ -3,7 +3,7 @@ import Constants from 'expo-constants';
 import { MobileApiError, toUserFacingApiMessage } from './apiErrors';
 import { getOrCreateMobileDeviceId } from './storage';
 
-export const PRODUCTION_API_BASE_URL = 'https://msgnote.kr';
+export const PRODUCTION_API_BASE_URL = 'https://invite.msgnote.kr';
 
 const TRANSIENT_LOCAL_API_PORTS = new Set(['3000', '3001']);
 const MOBILE_DEVICE_ID_HEADER = 'x-mobile-device-id';
@@ -33,6 +33,10 @@ function readConfiguredApiBaseUrl() {
 }
 
 export const DEFAULT_API_BASE_URL = readConfiguredApiBaseUrl();
+
+export function isLegacyProductionApiBaseUrl(value: string) {
+  return value === 'https://msgnote.kr' || value === 'https://www.msgnote.kr';
+}
 
 export function isTransientLocalApiBaseUrl(value: string) {
   const trimmed = value.trim();
