@@ -307,5 +307,27 @@ class InterpreterOptionsRegressionTests(unittest.TestCase):
         self.assertTrue(any("STORE_GUARD" in item for item in issues), issues)
 
 
+class IconMutationBranchRegressionTests(unittest.TestCase):
+    def test_icon_upload_not_allowed_in_apply_false_branch(self):
+        read_file = audit.read
+        filename = ".github/workflows/store-icon-sync.yml"
+        workflow = read_file(filename)
+        original = "          else\n            python3 scripts/sync-play-store-icon.py\n"
+        self.assertIn(original, workflow)
+        unsafe = workflow.replace(
+            original,
+            "          else\n            python3 scripts/sync-play-store-icon.py --apply\n")
+        with patch.object(audit, "read", side_effect=lambda path:
+                          unsafe if path == filename else read_file(path)):
+            issues = audit.findings()
+        self.assertTrue(any("STORE_OPTIONAL: store-icon-sync.yml" in issue
+                            for issue in issues), issues)
+
+    def test_existing_icon_apply_branch_remains_valid(self):
+        problems = audit.findings()
+        self.assertFalse(any("STORE_OPTIONAL: store-icon-sync.yml" in issue
+                             for issue in problems), problems)
+
+
 if __name__ == "__main__":
     unittest.main()
