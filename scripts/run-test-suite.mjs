@@ -309,6 +309,9 @@ const cssRenderingTests = new Set([
 ]);
 const cssModuleRegisterPath = path.join(scriptsDirectory, 'test-css-module-register.cjs').replaceAll('\\', '/');
 
+// Keep all checks independent: report every broken contract in one CI run.
+// A non-empty failure list always exits nonzero, so aggregation cannot mask a failed test.
+const failedTests = [];
 for (const testId of selectedTests) {
   console.log(`\n[test-suite] ${testId}`);
   const result = spawnSync(
@@ -329,9 +332,20 @@ for (const testId of selectedTests) {
 
   if (result.error) {
     console.error(result.error.message);
-    process.exit(1);
+    failedTests.push({ testId, reason: result.error.message });
+    continue;
   }
   if (result.status !== 0) {
-    process.exit(result.status ?? 1);
+    failedTests.push({ testId, reason: `exit ${result.status ?? 'unknown'}` });
   }
+}
+
+if (failedTests.length > 0) {
+  console.error(`\n[test-suite] FAILED ${failedTests.length}/${selectedTests.length} checks:`);
+  for (const failure of failedTests) {
+    console.error(` - ${failure.testId}: ${failure.reason}`);
+  }
+  process.exitCode = 1;
+} else {
+  console.log(`\n[test-suite] PASSED ${selectedTests.length} checks`);
 }
