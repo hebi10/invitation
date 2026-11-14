@@ -171,7 +171,8 @@ assert.equal(getInvitationVisibility(false, activePeriod, Date.parse('2026-11-05
 
 const manage = read('apps/mobile/src/features/screens/manage.tsx');
 assert.match(manage, /onClose=\{\(\) => void handleCloseEditorModal\(\)\}/);
-assert.match(manage, /onSetIntroStyle=\{invitationForm\.setIntroStyle\}/);
+assert.match(manage, /onSetIntroPresetId=\{invitationForm\.setIntroPresetId\}/,
+  'Mobile editor must save the selected GIF without changing legacy introStyle');
 assert.match(manage, /onKakaoShare=\{handleOpenKakaoShare\}/);
 assert.doesNotMatch(manage, /onPurchase=\{\(\) => void handlePurchaseExtension\(\)\}/);
 assert.match(manage, /onRecoverPendingPurchase=\{openExtensionModal\}/);
