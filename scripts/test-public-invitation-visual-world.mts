@@ -509,9 +509,11 @@ assert.match(
 );
 assert.match(
   generalEventRoute,
-  /if\s*\(visualTheme\s*===\s*['"]general-event-elegant['"]\)\s*\{[\s\S]*?<ProgramEditionPage state=\{state\}\s*\/>/,
-  'general-event-elegant should remain bound to ProgramEditionPage'
+  /const GeneralEventPage = visualTheme === ['"]general-event-elegant['"][\s\S]*?\? ProgramEditionPage\s*:\s*NightSchedulePage;/,
+  'general-event-elegant must select ProgramEditionPage as the renderer'
 );
+assert.match(generalEventRoute, /<GeneralEventPage state=\{state\}\s*\/>/,
+  'general-event theme must render its selected dedicated component');
 assert.match(programEditionPage, /buildGeneralEventViewModel/);
 assert.match(programEditionPage, /from ['"]\.\.\/\.\.\/shared\/InvitationActionLink['"]/);
 assert.match(

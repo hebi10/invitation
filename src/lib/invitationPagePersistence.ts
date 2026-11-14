@@ -456,13 +456,14 @@ export function mergeInvitationPageSeed(
     }
   }
 
-  const requestedIntroPresetId = parseInvitationIntroChoice(candidate.introPresetId);
+  const normalizedEventType = normalizeEventTypeKey(candidate.eventType, base?.eventType ?? DEFAULT_EVENT_TYPE);
+  const requestedIntroPresetId = parseInvitationIntroChoice(candidate.introPresetId, normalizedEventType);
   // A client which does not know this field must not erase the existing selection.
   const introPresetId = requestedIntroPresetId ?? base?.introPresetId;
 
   const normalizedSeed: InvitationPageSeed = {
     ...(base ?? {}),
-    eventType: normalizeEventTypeKey(candidate.eventType, base?.eventType ?? DEFAULT_EVENT_TYPE),
+    eventType: normalizedEventType,
     slug,
     displayName,
     description,

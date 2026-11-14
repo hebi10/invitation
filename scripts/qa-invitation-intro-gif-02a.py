@@ -34,7 +34,7 @@ with sync_playwright() as playwright:
             page = context.new_page()
             gif_requests = []
             page.on("request", lambda request: gif_requests.append(request.url)
-                    if request.url.endswith("/universal-2s.gif") else None)
+                    if request.url.split('?')[0].lower().endswith('.gif') else None)
             response = page.goto(BASE + "/intro-catalog-preview/", wait_until="domcontentloaded", timeout=90000)
             assert response and response.status == 200
             picker = page.locator("[data-intro-catalog-fixture]")
@@ -42,11 +42,11 @@ with sync_playwright() as playwright:
             page.locator('[data-intro-catalog-ready="true"]').wait_for(state="attached")
             page.get_by_role("heading", name="고객 선택형 인트로 카탈로그").wait_for(state="visible")
             radio = picker.locator('input[type="radio"]')
-            assert radio.count() == 2, (width, "one real GIF and explicit none only")
-            assert not radio.nth(0).is_checked() and not radio.nth(1).is_checked()
-            assert picker.locator("[data-intro-preset]").count() == 1
+            assert radio.count() == 13, (width, "twelve verified GIFs plus explicit none")
+            assert all(not radio.nth(i).is_checked() for i in range(radio.count()))
+            assert picker.locator("[data-intro-preset]").count() == 12
             assert picker.locator("[data-intro-preset='intro-01'] img").count() == 1
-            assert picker.locator("[data-intro-preset='intro-02']").count() == 0
+            assert picker.locator("[data-intro-preset='intro-12'] img").count() == 1
             assert picker.locator(".gif").count() == 0
             assert not gif_requests, "GIF downloaded in list rather than on demand"
             assert picker.get_by_text("미저장 선택: 없음").count() == 1
@@ -54,7 +54,7 @@ with sync_playwright() as playwright:
                 width, "horizontal overflow")
             screenshot(page, f"intro-catalog-{width}.png")
 
-            button = picker.get_by_role("button", name="GIF 미리보기")
+            button = picker.locator("[data-intro-preset='intro-01']").get_by_role("button", name="GIF 미리보기")
             button.click()
             modal = page.locator("dialog[open]")
             modal.wait_for(state="visible")
@@ -94,7 +94,7 @@ with sync_playwright() as playwright:
                 if request.url.endswith(".gif") else None)
         page.goto(BASE + "/intro-catalog-preview/", wait_until="domcontentloaded")
         page.locator('[data-intro-catalog-ready="true"]').wait_for(state="attached")
-        page.get_by_role("button", name="GIF 미리보기").click()
+        page.locator("[data-intro-preset='intro-01']").get_by_role("button", name="GIF 미리보기").click()
         modal = page.locator("dialog[open]")
         modal.wait_for(state="visible")
         modal.get_by_text("동작 줄이기 설정에 따라 정지 이미지를 표시합니다.").wait_for()
@@ -111,7 +111,7 @@ with sync_playwright() as playwright:
         page.route("**/assets/invitation-intro/universal-2s.gif", lambda route: route.abort())
         page.goto(BASE + "/intro-catalog-preview/", wait_until="domcontentloaded")
         page.locator('[data-intro-catalog-ready="true"]').wait_for(state="attached")
-        page.get_by_role("button", name="GIF 미리보기").click()
+        page.locator("[data-intro-preset='intro-01']").get_by_role("button", name="GIF 미리보기").click()
         modal = page.locator("dialog[open]")
         modal.wait_for(state="visible")
         modal.get_by_text("애니메이션을 불러오지 못해 정지 이미지를 표시합니다.").wait_for(timeout=12000)

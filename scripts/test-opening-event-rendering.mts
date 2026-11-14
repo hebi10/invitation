@@ -103,9 +103,11 @@ assert.doesNotMatch(
 );
 assert.match(
   generalEventPageSource,
-  /if\s*\(visualTheme\s*===\s*['"]general-event-elegant['"]\)\s*\{[\s\S]*?<ProgramEditionPage state=\{state\}\s*\/>/,
-  'general-event-elegant should remain bound to ProgramEditionPage'
+  /const GeneralEventPage = visualTheme === ['"]general-event-elegant['"][\s\S]*?\? ProgramEditionPage\s*:\s*NightSchedulePage;/,
+  'general-event-elegant must select the ProgramEditionPage renderer'
 );
+assert.match(generalEventPageSource, /<GeneralEventPage state=\{state\}\s*\/>/,
+  'the selected general-event renderer must receive the ready page state');
 assert.match(
   openingPageSource,
   /openingTheme\s*===\s*['"]opening-natural['"]\s*\?\s*StudioOpeningPage\s*:\s*OpeningPosterPage/,
@@ -113,12 +115,16 @@ assert.match(
 );
 assert.match(
   openingPageSource,
-  /return <OpeningPage state=\{state\}\s*\/>;/,
-  'opening route should render either dedicated page without legacy theme props'
+  /<OpeningPage state=\{state\}\s*\/>/,
+  'opening route must render its selected dedicated page without legacy theme props'
 );
+assert.match(openingPageSource, /introDecision\.kind === 'gif'/,
+  'opening route must only display a verified, event-compatible GIF intro');
+assert.match(openingPageSource, /<PublicInvitationGifIntro/,
+  'opening route must render the selected GIF intro outside the theme page');
 assert.match(
   generalEventPageSource,
-  /return <NightSchedulePage state=\{state\}\s*\/>;/,
+  /: NightSchedulePage;/,
   'general-event-vivid should remain bound to NightSchedulePage'
 );
 

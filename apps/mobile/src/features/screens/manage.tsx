@@ -48,6 +48,7 @@ import { copyTextWithFallback } from '../../lib/textTransfer';
 import { createPrivatePreviewUrl } from '../../lib/apiPreview';
 import type { InvitationIntroPresetId } from '../../lib/invitationIntroCatalog';
 import { buildInvitationIntroSamplePreviewUrl } from '../../lib/weddingIntroPreview';
+import { normalizeEventTypeKey } from '../../../../../src/lib/eventTypes';
 import { buildMobileKakaoShareTarget } from '../../lib/invitationSharing';
 import type {
   MobileInvitationThemeKey,
@@ -256,7 +257,8 @@ export default function ManageScreen() {
 
   const handlePreviewIntroPreset = async (presetId: InvitationIntroPresetId) => {
     try {
-      const url = buildInvitationIntroSamplePreviewUrl(apiBaseUrl, presetId);
+      const url = buildInvitationIntroSamplePreviewUrl(apiBaseUrl, presetId,
+        normalizeEventTypeKey(dashboard?.page.config.eventType));
       await WebBrowser.openBrowserAsync(url, { controlsColor: palette.accent });
     } catch {
       setNotice('GIF 미리보기를 열지 못했습니다. 연결 상태를 확인하고 다시 시도해 주세요.');
@@ -780,6 +782,7 @@ export default function ManageScreen() {
         <ManageEditorStepContent
           stepKey={invitationForm.currentEditorStep.key}
           form={invitationForm.form}
+          eventType={normalizeEventTypeKey(dashboard?.page.config.eventType)}
           savedPublished={invitationForm.savedPublished}
           savedIntroPresetId={invitationForm.savedIntroPresetId}
           hasUnknownSavedIntroPreset={invitationForm.hasUnknownSavedIntroPreset}
