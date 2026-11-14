@@ -120,7 +120,7 @@ assert.match(
 );
 assert.match(
   generalEventPageSource,
-  /return <NightSchedulePage state=\{state\}\s*\/>;/,
+  /: NightSchedulePage;/,
   'general-event-vivid should remain bound to NightSchedulePage'
 );
 
