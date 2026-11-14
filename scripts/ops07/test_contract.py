@@ -124,6 +124,56 @@ class AppContracts(unittest.TestCase):
                 self.assertTrue(any("STORE_BYPASS: invitation-store-screenshots.yml" in issue
                                     for issue in blockers), blockers)
 
+    def test_internal_aab_verification_must_execute_before_publishing(self):
+        path = ".github/workflows/play-internal-release.yml"
+        original_read = audit.read
+        original = original_read(path)
+        call = "run: python3 scripts/ops04/internal.py verify"
+        self.assertEqual(original.count(call), 2)
+        last = original.rfind(call)
+        variants = (
+            ("missing_verify_job", original.replace(call, "run: echo unchecked", 1)),
+            ("missing_publish_job", original[:last] + "run: echo unchecked" +
+             original[last + len(call):]),
+            ("optional_verify", original.replace(
+                "      - name: Verify identical signer, package and AAB SHA-256 again\n",
+                "      - name: Verify identical signer, package and AAB SHA-256 again\n"
+                "        continue-on-error: true\n", 1)),
+            ("unverified_output", original.replace(
+                "VERIFIED_AAB: " + "$" + "{{ steps.verified.outputs.aab }}",
+                "VERIFIED_AAB: " + "$" + "{{ inputs.aab_file }}", 1)),
+            ("different_bundle", original.replace(
+                '--aab "$VERIFIED_AAB"', '--aab "$OTHER_AAB"', 1)),
+        )
+        for label, altered in variants:
+            with self.subTest(label=label):
+                with patch.object(audit, "read", side_effect=lambda target:
+                                  altered if target == path else original_read(target)):
+                    issues = audit.findings()
+                self.assertTrue(any("AAB_VERIFY:" in item for item in issues), issues)
+
+    def test_store_metadata_approvals_must_bind_to_dispatch_inputs(self):
+        original_read = audit.read
+        for filename in ("store-icon-sync.yml", "invitation-store-screenshots.yml"):
+            path = ".github/workflows/" + filename
+            original = original_read(path)
+            for key, field, forged in (
+                ("OPS06_STORE_APPROVED", "ops06_store_approved", "'true'"),
+                ("OPS06_CONFIRMATION", "ops06_confirmation",
+                 "APPLY_VERIFIED_PLAY_STORE_ASSETS"),
+                ("OPS06_EXPECTED_MAIN_SHA", "ops06_expected_main_sha",
+                 "$" + "{{ github.sha }}"),
+                ("OPS06_BATCH_ID", "ops06_batch_id", "'2026-11-14-invitation'"),
+            ):
+                with self.subTest(filename=filename, key=key):
+                    expected = key + ": " + "$" + "{{ inputs." + field + " }}"
+                    self.assertIn(expected, original)
+                    changed = original.replace(expected, key + ": " + forged, 1)
+                    with patch.object(audit, "read", side_effect=lambda target:
+                                      changed if target == path else original_read(target)):
+                        issues = audit.findings()
+                    self.assertTrue(any("STORE_INPUT_BINDING:" in item for item in issues), issues)
+
     def test_missing_existing_aab_cannot_be_published(self):
         mod=module("scripts/ops04/internal.py")
         self.assertIsNotNone(mod, "OPS-04 immutable AAB guard missing")
