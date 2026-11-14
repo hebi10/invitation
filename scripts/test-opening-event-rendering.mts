@@ -103,9 +103,11 @@ assert.doesNotMatch(
 );
 assert.match(
   generalEventPageSource,
-  /if\s*\(visualTheme\s*===\s*['"]general-event-elegant['"]\)\s*\{[\s\S]*?<ProgramEditionPage state=\{state\}\s*\/>/,
-  'general-event-elegant should remain bound to ProgramEditionPage'
+  /const GeneralEventPage = visualTheme === ['"]general-event-elegant['"][\s\S]*?\? ProgramEditionPage\s*:\s*NightSchedulePage;/,
+  'general-event-elegant must select the ProgramEditionPage renderer'
 );
+assert.match(generalEventPageSource, /<GeneralEventPage state=\{state\}\s*\/>/,
+  'the selected general-event renderer must receive the ready page state');
 assert.match(
   openingPageSource,
   /openingTheme\s*===\s*['"]opening-natural['"]\s*\?\s*StudioOpeningPage\s*:\s*OpeningPosterPage/,
