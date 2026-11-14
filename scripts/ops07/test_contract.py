@@ -174,6 +174,38 @@ class AppContracts(unittest.TestCase):
                         issues = audit.findings()
                     self.assertTrue(any("STORE_INPUT_BINDING:" in item for item in issues), issues)
 
+    def test_play_release_approvals_reject_forged_environment(self):
+        original_read = audit.read
+        for stage, filename, cases in (
+            ("OPS04", "play-internal-release.yml", (
+                ("FINAL_RELEASE_APPROVED", "final_release_approved", "'true'"),
+                ("APPROVAL_PHRASE", "approval_phrase",
+                 "PUBLISH_VERIFIED_INTERNAL_AAB"),
+                ("EXPECTED_MAIN_SHA", "expected_main_sha", "$" + "{{ github.sha }}"),
+                ("AAB_SHA256", "aab_sha256", "'" + "0" * 64 + "'"),
+            )),
+            ("OPS05", "play-closed-release.yml", (
+                ("FINAL_BATCH_APPROVED", "final_batch_approved", "'true'"),
+                ("APPROVAL_PHRASE", "approval_phrase",
+                 "PROMOTE_VERIFIED_INTERNAL_VERSION"),
+                ("EXPECTED_MAIN_SHA", "expected_main_sha", "$" + "{{ github.sha }}"),
+                ("CLOSED_TRACK", "closed_track", "alpha"),
+                ("AAB_SHA256", "aab_sha256", "'" + "0" * 64 + "'"),
+            )),
+        ):
+            path = ".github/workflows/" + filename
+            original = original_read(path)
+            for key, field, forged in cases:
+                with self.subTest(stage=stage, key=key):
+                    expected = key + ": " + "$" + "{{ inputs." + field + " }}"
+                    self.assertIn(expected, original)
+                    mutated = original.replace(expected, key + ": " + forged, 1)
+                    with patch.object(audit, "read", side_effect=lambda target:
+                                      mutated if target == path else original_read(target)):
+                        findings = audit.findings()
+                    self.assertTrue(any("RELEASE_INPUT_BINDING: Invitation " + stage
+                                        + " " + key in issue for issue in findings), findings)
+
     def test_missing_existing_aab_cannot_be_published(self):
         mod=module("scripts/ops04/internal.py")
         self.assertIsNotNone(mod, "OPS-04 immutable AAB guard missing")
