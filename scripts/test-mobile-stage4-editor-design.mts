@@ -113,6 +113,9 @@ assert.match(capture, /'editor-intro-closed'/);
 assert.match(capture, /'editor-save-error'/);
 
 assert.match(fixture, /resolveCaptureStepIndex/);
+assert.match(fixture, /onSetIntroPresetId=/);
+assert.match(fixture, /eventType="wedding"/);
+assert.match(capture, /'인트로 GIF \\(선택\\)'/);
 assert.match(fixture, /EDITOR_STEPS.findIndex/);
 for (const step of ['schedule', 'location', 'greeting', 'images', 'music']) {
   assert.ok(capture.includes(`'editor-${step}'`), `Android screenshot must cover ${step}`);

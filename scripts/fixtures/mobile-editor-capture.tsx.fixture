@@ -8,6 +8,7 @@ import { manageStyles } from '../features/manage/manageStyles';
 import { InvitationEditorWorkspace } from '../components/manage/InvitationEditorWorkspace';
 import { ManageEditorStepContent } from '../features/manage/components/ManageEditorStepContent';
 import { EDITOR_STEPS, EMPTY_FORM, type ManageFormState } from '../features/manage/shared';
+import { parseInvitationIntroChoice } from '../lib/invitationIntroCatalog';
 
 function resolveCaptureStepIndex(value?: string) {
   if (value === 'intro' || value?.startsWith('intro-')) return EDITOR_STEPS.length - 1;
@@ -42,6 +43,12 @@ export default function DesignCheck() {
     if (introStyle === 'light' || introStyle === 'cinema' || introStyle === 'envelope') {
       setForm((current) => ({ ...current, introStyle }));
     }
+    const introPreset = requestedStep?.startsWith('intro-preset-')
+      ? parseInvitationIntroChoice('intro-' + requestedStep.slice('intro-preset-'.length), 'wedding')
+      : null;
+    if (introPreset && introPreset !== 'none') {
+      setForm((current) => ({ ...current, introPresetId: introPreset }));
+    }
   }, [requestedStep]);
   const isLastStep = step === EDITOR_STEPS.length - 1;
   const showSaveError = requestedStep === 'save-error';
@@ -75,8 +82,9 @@ export default function DesignCheck() {
         저장을 완료하지 못했습니다. 입력값은 유지됩니다. 내용을 확인한 뒤 다시 저장해 주세요.
       </AppText>
     ) : null}
-    <ManageEditorStepContent stepKey={EDITOR_STEPS[step].key} form={form} savedPublished={false}
-      mapPreviewUrl="" mapLatitude={null} mapLongitude={null} galleryPreviewItems={[]}
+    <ManageEditorStepContent stepKey={EDITOR_STEPS[step].key} form={form} eventType="wedding" savedPublished={false}
+      savedIntroPresetId={form.introPresetId ?? null} hasUnknownSavedIntroPreset={false}
+      introAssetBaseUrl="https://example.invalid/" mapPreviewUrl="" mapLatitude={null} mapLongitude={null} galleryPreviewItems={[]}
       maxGalleryImageCount={18} supportsMusicFeature musicLibraryLoading={false} musicCategories={[]}
       openMusicDropdown={null} selectedMusicCategoryLabel="선택해 주세요" selectedMusicTrackLabel="먼저 카테고리를 선택해 주세요" availableMusicTracks={[]}
       uploadingImageKind={null} uploadProgress={null} isSearchingAddress={false}
@@ -86,8 +94,8 @@ export default function DesignCheck() {
       onUploadImage={() => {}} onRemoveSingleImage={() => {}} onMoveGalleryImage={() => {}} onRemoveGalleryImage={() => {}}
       onSearchAddress={() => {}} onOpenMapUrl={() => {}} onSetMusicEnabled={musicEnabled => setForm(current => ({ ...current, musicEnabled }))}
       onSetPublished={published => setForm(current => ({ ...current, published }))}
-      onSetIntroStyle={introStyle => setForm(current => ({ ...current, introStyle }))}
-      onPreviewIntro={() => {}} onToggleMusicDropdown={() => {}}
+      onSetIntroPresetId={introPresetId => setForm(current => ({ ...current, introPresetId }))}
+      onPreviewIntroPreset={() => {}} onToggleMusicDropdown={() => {}}
       onSelectMusicCategory={() => {}} onSelectMusicTrack={() => {}} />
   </InvitationEditorWorkspace>;
 }
