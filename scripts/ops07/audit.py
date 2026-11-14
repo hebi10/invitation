@@ -498,6 +498,35 @@ def findings():
             if not any(approved.fullmatch(atom) for atom in _guaranteed_atoms(job_condition(body))):
                 problems.append("APPROVAL: " + filename + ": " + job + " lacks mandatory OPS-01 approval")
     if REPOSITORY == "hebi10/invitation":
+        for stage, filename, bindings in (
+            ("OPS04", "play-internal-release.yml",
+             (("FINAL_RELEASE_APPROVED", "final_release_approved"),
+              ("APPROVAL_PHRASE", "approval_phrase"),
+              ("EXPECTED_MAIN_SHA", "expected_main_sha"),
+              ("AAB_SHA256", "aab_sha256"))),
+            ("OPS05", "play-closed-release.yml",
+             (("FINAL_BATCH_APPROVED", "final_batch_approved"),
+              ("APPROVAL_PHRASE", "approval_phrase"),
+              ("EXPECTED_MAIN_SHA", "expected_main_sha"),
+              ("CLOSED_TRACK", "closed_track"),
+              ("AAB_SHA256", "aab_sha256"))),
+        ):
+            workflow = read(".github/workflows/" + filename) or ""
+            header = re.search(r"(?m)^env:[ \t]*(?:#.*)?$", workflow)
+            env_text = ""
+            if header:
+                for line in workflow[header.end():].splitlines():
+                    if line.strip() and not line[0].isspace():
+                        break
+                    env_text += line + "\n"
+            for key, field in bindings:
+                expected = "$" + "{{ inputs." + field + " }}"
+                full = re.findall(r"(?m)^[ \t]+" + re.escape(key) + r":[ \t]*([^\n#]+)", workflow)
+                bound = re.search(r"(?m)^  " + re.escape(key) + r":[ \t]*"
+                                  + re.escape(expected) + r"[ \t]*(?:#.*)?$", env_text)
+                if len(full) != 1 or full[0].strip() != expected or not bound:
+                    problems.append("RELEASE_INPUT_BINDING: Invitation " + stage + " " + key
+                                    + " must use the approved dispatch input")
         internal = read(".github/workflows/play-internal-release.yml")
         publisher = jobs(internal).get("publish") if internal is not None else None
         body = re.sub(r"\\\s*\n\s*", " ", publisher or "")
