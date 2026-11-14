@@ -3,7 +3,7 @@
  * INTRO-GIF-03-D — verified, customer-selected invitation intros.
  * One permanent ID per asset; preview does not imply saving or automatic entry.
  */
-import type { EventTypeKey } from '@/lib/eventTypes';
+import type { EventTypeKey } from './eventTypes';
 
 export const INVITATION_INTRO_GROUPS = [
   { id: 'simple', label: '심플' },

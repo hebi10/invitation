@@ -104,7 +104,9 @@ const screen = readFileSync('apps/mobile/src/features/screens/manage.tsx', 'utf8
 const webPreview = readFileSync('src/app/mobile-gif-intro-preview/MobileGifIntroPreviewClient.tsx', 'utf8');
 const webRoute = readFileSync('src/app/mobile-gif-intro-preview/page.tsx', 'utf8');
 
-assert.match(settings, /listAvailableInvitationIntroPresets\(\)\.map/, 'Only actual catalog entries in Android');
+assert.match(settings, /const options = listAvailableInvitationIntroPresets\(eventType\)/, 'Only event-permitted catalog entries in Android');
+assert.match(settings, /const visiblePresets = options\.filter/, 'Filter the available options by group');
+assert.match(settings, /visiblePresets\.map\(\(preset\)/, 'Render only filtered catalog entries');
 assert.match(settings, /onSetIntroPresetId\('none'\)/);
 assert.match(settings, /onPreviewIntroPreset\(preset\.id\)/, 'Preview must be separate from selection');
 assert.doesNotMatch(settings, /WEDDING_INTRO_OPTIONS\.map/, 'Do not show legacy options as new GIF choices');

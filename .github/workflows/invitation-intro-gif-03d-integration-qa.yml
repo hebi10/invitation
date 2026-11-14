@@ -38,6 +38,7 @@ jobs:
       - name: Install web, mobile and Chromium dependencies
         run: |
           npm ci
+          npm ci --prefix apps/mobile
           python -m pip install --disable-pip-version-check playwright==1.56.0 Pillow==11.3.0
           python -m playwright install --with-deps chromium
       - name: Check shared Next.js and Expo Android TypeScript
