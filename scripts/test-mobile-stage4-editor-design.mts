@@ -115,7 +115,8 @@ assert.match(capture, /'editor-save-error'/);
 assert.match(fixture, /resolveCaptureStepIndex/);
 assert.match(fixture, /onSetIntroPresetId=/);
 assert.match(fixture, /eventType="wedding"/);
-assert.match(capture, /'인트로 GIF \\(선택\\)'/);
+assert.ok(capture.includes("'인트로 GIF (선택)'"),
+  'Android emulator capture must verify the current intro GIF disclosure title');
 assert.match(fixture, /EDITOR_STEPS.findIndex/);
 for (const step of ['schedule', 'location', 'greeting', 'images', 'music']) {
   assert.ok(capture.includes(`'editor-${step}'`), `Android screenshot must cover ${step}`);
