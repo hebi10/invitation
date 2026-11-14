@@ -1,10 +1,7 @@
 name: Invitation Play empty edit permission diagnostic
 
 on:
-  push:
-    branches: [main]
-    paths:
-      - '.github/workflows/invitation-play-empty-edit-diagnostic.yml'
+  workflow_dispatch:
 
 permissions:
   contents: read

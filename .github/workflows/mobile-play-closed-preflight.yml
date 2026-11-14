@@ -1,10 +1,6 @@
 name: Invitation Play closed track preflight
 
 on:
-  push:
-    branches: [main]
-    paths:
-      - '.github/workflows/mobile-play-closed-preflight.yml'
   workflow_dispatch:
 
 permissions:
