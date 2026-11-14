@@ -511,6 +511,66 @@ def findings():
             tracks = re.findall(r"--track(?:=|\s+)([a-zA-Z0-9-]+)", command)
             if targets != ["internal"] or tracks != ["internal"]:
                 problems.append("INTERNAL_TRACK: Invitation publisher must target only internal/internal")
+    if REPOSITORY == "hebi10/invitation":
+        internal = read(".github/workflows/play-internal-release.yml")
+        for stage in ("verify", "publish"):
+            body = jobs(internal).get(stage) if internal else None
+            steps = _workflow_steps(body or "")
+            verifier = [(i, step) for i, step in enumerate(steps) if re.search(
+                r"(?m)^[ \t]*(?:-[ \t]+)?run:[ \t]*python3[ \t]+scripts/ops04/internal\.py[ \t]+verify\b",
+                step)]
+            if len(verifier) != 1:
+                problems.append("AAB_VERIFY: Invitation " + stage + " must execute exact AAB verification")
+                continue
+            verify_index, verification = verifier[0]
+            expected_id = "id: verified" if stage == "publish" else "id: verify"
+            if (expected_id not in verification
+                    or _step_condition(verification)
+                    or re.search(r"(?m)^[ \t]*(?:-[ \t]+)?continue-on-error[ \t]*:", verification)
+                    or re.search(r"(?m)^[ \t]*(?:run:[ \t]*)?set[ \t]+\+e\b", verification)
+                    or re.search(r"internal\.py[ \t]+verify[^\n]*(?:\|\||;[ \t]*true\b|\|(?!\|))", verification)):
+                problems.append("AAB_VERIFY: Invitation " + stage + " verification must be fail closed")
+            if stage == "publish":
+                auth = [i for i, step in enumerate(steps)
+                        if "google-github-actions/auth@" in step]
+                publishers = [(i, step) for i, step in enumerate(steps)
+                              if re.search(r"(?m)^[ \t]*python3[ \t]+scripts/publish-mobile-play\.py\b", step)]
+                if (len(auth) != 1 or len(publishers) != 1
+                        or not verify_index < auth[0] < publishers[0][0]):
+                    problems.append("AAB_VERIFY: Invitation publish must verify AAB before Play authentication")
+                else:
+                    publisher = publishers[0][1]
+                    approved = "$" + "{{ steps.verified.outputs.aab }}"
+                    if ("VERIFIED_AAB: " + approved not in publisher
+                            or '--aab "$VERIFIED_AAB"' not in publisher):
+                        problems.append("AAB_VERIFY: Invitation publisher must use the verified AAB output")
+                for step in steps[verify_index + 1:]:
+                    if ("google-github-actions/auth@" in step or "publish-mobile-play.py" in step) and re.search(
+                            r"\b(?:always|failure|cancelled)\s*\(", _step_condition(step)):
+                        problems.append("AAB_VERIFY: Invitation publication can bypass failed AAB verification")
+                        break
+        for filename, job in (("store-icon-sync.yml", "store-icon"),
+                              ("invitation-store-screenshots.yml", "upload")):
+            source = read(".github/workflows/" + filename)
+            body = jobs(source).get(job) if source else None
+            steps = _workflow_steps(body or "")
+            guards = [step for step in steps if re.search(
+                r"(?m)^[ \t]*(?:-[ \t]+)?run:[ \t]*python3[ \t]+scripts/ops06/store_gate\.py[ \t]+apply\b",
+                step)]
+            if len(guards) != 1:
+                problems.append("STORE_INPUT_BINDING: Invitation " + filename
+                                + " needs one executable approval guard")
+                continue
+            guard = guards[0]
+            for key, field in (("OPS06_STORE_APPROVED", "ops06_store_approved"),
+                               ("OPS06_CONFIRMATION", "ops06_confirmation"),
+                               ("OPS06_EXPECTED_MAIN_SHA", "ops06_expected_main_sha"),
+                               ("OPS06_BATCH_ID", "ops06_batch_id")):
+                expected_value = "$" + "{{ inputs." + field + " }}"
+                actual = re.findall(r"(?m)^[ \t]+" + re.escape(key) + r":[ \t]*([^\n#]+)", guard)
+                if len(actual) != 1 or actual[0].strip() != expected_value:
+                    problems.append("STORE_INPUT_BINDING: Invitation " + filename
+                                    + " " + key + " must bind to manual dispatch input")
     if REPOSITORY == "hebi10/HomeCrew":
         source = read(".github/workflows/play-internal.yml")
         release = jobs(source).get("release") if source else None
