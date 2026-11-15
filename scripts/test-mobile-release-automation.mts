@@ -361,6 +361,6 @@ assert.deepEqual(JSON.parse(closedCli.stdout), { target: 'closed', track: 'alpha
 assert.notEqual(validateCli({ PLAY_DEPLOY_TARGET: 'closed' }).status, 0);
 assert.notEqual(validateCli({ PLAY_DEPLOY_TARGET: 'closed', PLAY_CLOSED_TRACK: 'internal' }).status, 0);
 const automaticCli = validateCli({ GITHUB_EVENT_NAME: 'push', PLAY_AUTO_DEPLOY_ENABLED: 'true', PLAY_DEPLOY_TARGET: 'closed', PLAY_CLOSED_TRACK: 'alpha' });
-assert.equal(automaticCli.status, 0, automaticCli.stderr);
-assert.deepEqual(JSON.parse(automaticCli.stdout), { target: 'internal', track: 'internal', status: 'completed' });
+assert.notEqual(automaticCli.status, 0, 'main push must never publish to Play, even with legacy auto-deploy enabled');
+assert.match(automaticCli.stderr, /수동 요청만 허용/, 'automatic deployment must fail closed');
 console.log('mobile release version, metadata, trust policy and workflow integration checks passed');
