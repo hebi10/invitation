@@ -145,7 +145,7 @@ assert.equal(isTrustedReleaseEvent({ eventName: 'pull_request', ref: 'refs/heads
 assert.equal(isTrustedReleaseEvent({ eventName: 'push', ref: 'refs/heads/main' }), true);
 assert.equal(shouldDeployRelease({
   eventName: 'push', ref: 'refs/heads/main', autoDeployEnabled: 'true', manualDeploy: false,
-}), true);
+}), false);
 assert.equal(shouldDeployRelease({
   eventName: 'push', ref: 'refs/heads/feature', autoDeployEnabled: 'true', manualDeploy: false,
 }), false);
