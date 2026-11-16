@@ -20,6 +20,16 @@ export class BillingReviewRequiredError extends Error {
   }
 }
 
+async function readBillingFulfillmentResponse<T>(response: Response): Promise<T> {
+  if (response.status === 409) {
+    const payload = await response.clone().json().catch(() => null) as { code?: unknown } | null;
+    if (payload?.code === 'BILLING_REVIEW_REQUIRED') {
+      throw new BillingReviewRequiredError();
+    }
+  }
+  return readJsonResponse<T>(response);
+}
+
 export async function fulfillMobileBillingPageCreation(
   baseUrl: string,
   payload: {
@@ -28,8 +38,7 @@ export async function fulfillMobileBillingPageCreation(
     customerIdToken?: string | null;
   }
 ) {
-  return readJsonResponse<MobileInvitationCreationResponse>(
-    await fetchWithRetry(buildApiUrl(baseUrl, '/api/mobile/billing/fulfill'), {
+  const response = await fetchWithRetry(buildApiUrl(baseUrl, '/api/mobile/billing/fulfill'), {
       method: 'POST',
       headers: {
         ...createHeaders(payload.customerIdToken ?? undefined),
@@ -47,8 +56,8 @@ export async function fulfillMobileBillingPageCreation(
           theme: payload.input.theme,
         },
       }),
-    })
-  );
+    });
+  return readBillingFulfillmentResponse<MobileInvitationCreationResponse>(response);
 }
 
 export async function fulfillMobileBillingTicketPack(
@@ -72,13 +81,7 @@ export async function fulfillMobileBillingTicketPack(
       targetToken: payload.targetToken,
     }),
   });
-  if (response.status === 409) {
-    const error = await response.clone().json().catch(() => null) as { code?: unknown } | null;
-    if (error?.code === 'BILLING_REVIEW_REQUIRED') {
-      throw new BillingReviewRequiredError();
-    }
-  }
-  return readJsonResponse<{ success: boolean; ticketCount: number }>(response);
+  return readBillingFulfillmentResponse<{ success: boolean; ticketCount: number }>(response);
 }
 
 // A verified customer can renew an owned page with the same 5,000 KRW consumable
@@ -103,11 +106,7 @@ export async function fulfillMobileBillingPeriodExtension(
       targetPageSlug: payload.targetPageSlug,
     }),
   });
-  if (response.status === 409) {
-    const error = await response.clone().json().catch(() => null) as { code?: unknown } | null;
-    if (error?.code === 'BILLING_REVIEW_REQUIRED') throw new BillingReviewRequiredError();
-  }
-  return readJsonResponse<{
+  return readBillingFulfillmentResponse<{
     success: boolean;
     enabled: boolean;
     startDate: string;

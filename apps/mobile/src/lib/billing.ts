@@ -36,6 +36,11 @@ type StoreTransaction = {
 
 class BillingNotChargedError extends Error {}
 
+function isUserCancelledPurchaseError(error: unknown) {
+  return typeof error === 'object' && error !== null &&
+    'code' in error && error.code === 'user-cancelled';
+}
+
 export function isDefinitelyUnchargedBillingError(error: unknown) {
   return error instanceof BillingNotChargedError;
 }
@@ -87,7 +92,7 @@ function wireListeners() {
     const checkout = pendingCheckout;
     if (!checkout) return;
     pendingCheckout = null;
-    checkout.reject(error.code === 'user-cancelled'
+    checkout.reject(isUserCancelledPurchaseError(error)
       ? new BillingNotChargedError('결제를 취소했습니다. 준비가 되면 다시 진행해 주세요.')
       : new Error('Google Play 결제 결과를 확인할 수 없습니다. 추가 결제 전에 복구를 이용해 주세요.'));
   });
@@ -187,7 +192,9 @@ export async function purchaseBillingProduct(
       const checkout = pendingCheckout;
       if (!checkout || checkout.productId !== productId) return;
       pendingCheckout = null;
-      checkout.reject(error instanceof Error ? error : new Error('Google Play 구매 요청을 시작하지 못했습니다.'));
+      checkout.reject(isUserCancelledPurchaseError(error)
+        ? new BillingNotChargedError('결제를 취소했습니다. 준비가 되면 다시 진행해 주세요.')
+        : error instanceof Error ? error : new Error('Google Play 구매 요청을 시작하지 못했습니다.'));
     });
   });
   const transaction = toTransaction(purchase);
