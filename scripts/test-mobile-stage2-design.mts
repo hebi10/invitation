@@ -26,6 +26,8 @@ assert.match(home, /새 청첩장 만들기/);
 assert.match(hero, /import \{ themePreviewImages \} from '\.\.\/constants\/themePreviewImages'/);
 assert.match(hero, /source=\{themePreviewImages\.simple\}/);
 assert.match(hero, /source=\{themePreviewImages\.romantic\}/);
+assert.match(hero, /source=\{themePreviewImages\.simple\}[\s\S]*?contentPosition="center"/);
+assert.match(hero, /source=\{themePreviewImages\.romantic\}[\s\S]*?contentPosition="bottom"/);
 assert.match(hero, /신민제·김현지 공개 샘플/);
 assert.doesNotMatch(hero, /wedding-(portrait|bouquet)\.webp/);
 const previewImages = source('apps/mobile/src/constants/themePreviewImages.ts');

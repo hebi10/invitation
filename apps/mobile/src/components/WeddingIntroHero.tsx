@@ -15,14 +15,14 @@ export function WeddingIntroHero() {
           source={themePreviewImages.simple}
           style={[styles.preview, { backgroundColor: palette.surfaceMuted }]}
           contentFit="cover"
-          contentPosition="top"
+          contentPosition="center"
           alt="신민제·김현지 기본형 청첩장 공개 샘플 이미지"
         />
         <Image
           source={themePreviewImages.romantic}
           style={[styles.preview, { backgroundColor: palette.surfaceMuted }]}
           contentFit="cover"
-          contentPosition="top"
+          contentPosition="bottom"
           alt="신민제·김현지 포토형 청첩장 공개 샘플 이미지"
         />
       </View>
