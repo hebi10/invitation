@@ -11,7 +11,7 @@ const source = ts.transpileModule(readFileSync('apps/mobile/src/lib/billing.ts',
 }).outputText;
 const sku = 'page_creation_premium';
 type Purchase = { id: string; productId: string; purchaseToken: string; purchaseState: string; store: string; transactionDate: number };
-function fixture(overrides: { os?: string; price?: number; currency?: string; missing?: boolean; cancelled?: boolean; pending?: boolean } = {}) {
+function fixture(overrides: { os?: string; price?: number; currency?: string; missing?: boolean; cancelled?: boolean; cancelOnDispatch?: boolean; networkOnDispatch?: boolean; pending?: boolean } = {}) {
   const calls: string[] = [];
   let onPurchase: ((value: Purchase) => void) | undefined;
   let onError: ((value: { code: string }) => void) | undefined;
@@ -35,6 +35,8 @@ function fixture(overrides: { os?: string; price?: number; currency?: string; mi
     getAvailablePurchases: async () => { calls.push('history'); return owned; },
     requestPurchase: async ({ request }: { request: { google: { obfuscatedAccountId: string } } }) => {
       calls.push('purchase');
+      if (overrides.cancelOnDispatch) throw { code: 'user-cancelled' };
+      if (overrides.networkOnDispatch) throw { code: 'network-error' };
       assert.equal(request.google.obfuscatedAccountId,
         createHash('sha256').update('customer-1').digest('hex'), 'Do not send plain user IDs to Google Play');
       queueMicrotask(() => {
@@ -92,6 +94,15 @@ assert.equal((await good.history({ appUserId: 'customer-1' })).transactions.leng
 const cancelled = fixture({ cancelled: true });
 await assert.rejects(cancelled.purchase(sku, { appUserId: 'customer-1' }), /취소/);
 assert(cancelled.uncharged(await cancelled.purchase('ticket_pack_1', { appUserId: 'customer-1' }).catch(e => e)));
+const cancelledAtDispatch = fixture({ cancelOnDispatch: true });
+const cancelledDispatchError = await cancelledAtDispatch.purchase(sku, { appUserId: 'customer-1' }).catch(e => e);
+assert(cancelledAtDispatch.uncharged(cancelledDispatchError),
+  'A native requestPurchase cancellation must clear the pending intent without a charge');
+assert.match(cancelledDispatchError.message, /취소/);
+const networkAtDispatch = fixture({ networkOnDispatch: true });
+const uncertainDispatchError = await networkAtDispatch.purchase(sku, { appUserId: 'customer-1' }).catch(e => e);
+assert(!networkAtDispatch.uncharged(uncertainDispatchError),
+  'A network error may have charged the customer; the purchase must remain recoverable');
 const pending = fixture({ pending: true });
 await assert.rejects(pending.purchase(sku, { appUserId: 'customer-1' }), /대기/);
 assert(!pending.calls.includes('finish'), 'Pending payment must not be consumed');
