@@ -23,8 +23,19 @@ assert.ok(home.indexOf('<WeddingIntroHero />') < home.indexOf('<ThemePreviewGall
 assert.match(home, /기존 청첩장 연결/);
 assert.match(home, /새 청첩장 만들기/);
 
-assert.match(hero, /wedding-portrait\.webp/);
-assert.match(hero, /wedding-bouquet\.webp/);
+assert.match(hero, /import \{ themePreviewImages \} from '\.\.\/constants\/themePreviewImages'/);
+assert.match(hero, /source=\{themePreviewImages\.simple\}/);
+assert.match(hero, /source=\{themePreviewImages\.romantic\}/);
+assert.match(hero, /source=\{themePreviewImages\.simple\}[\s\S]*?contentPosition="center"/);
+assert.match(hero, /source=\{themePreviewImages\.romantic\}[\s\S]*?contentPosition="bottom"/);
+assert.match(hero, /신민제·김현지 공개 샘플/);
+assert.doesNotMatch(hero, /wedding-(portrait|bouquet)\.webp/);
+const previewImages = source('apps/mobile/src/constants/themePreviewImages.ts');
+assert.match(previewImages, /theme-previews\/simple\.jpg/);
+assert.match(previewImages, /theme-previews\/romantic\.jpg/);
+const androidCapture = source('scripts/capture-mobile-android.py');
+assert.match(androidCapture, /신민제·김현지 공개 샘플/);
+assert.doesNotMatch(androidCapture, /MODERN WEDDING EDITORIAL/);
 assert.match(home, /INVITATION_PREMIUM_PRICE_LABEL/);
 assert.match(home, /INVITATION_INITIAL_DISPLAY_PERIOD_MONTHS/);
 assert.ok(home.indexOf('<WeddingIntroHero />') < home.indexOf('title="프리미엄 청첩장"'));
