@@ -19,7 +19,7 @@ const settings = read('apps/mobile/src/features/screens/settings.tsx');
 
 assert.ok(home.indexOf('<WeddingIntroHero />') < home.indexOf('title="프리미엄 청첩장"'),
   'HM-01: editorial hero should precede product pricing and creation CTA');
-assert.match(hero, /preview: \{ flex: 1, minWidth: 0, aspectRatio: 1 \}/);
+assert.match(hero, /preview: \{ flex: 1, minWidth: 0, aspectRatio: 3 \/ 4 \}/);
 assert.match(mypage, /<AccountInvitationsSection compactUnauthenticated \/>/);
 assert.match(owned, /compactUnauthenticated && !showLoginForm/);
 assert.match(owned, /onPress=\{\(\) => setShowLoginForm\(true\)\}/);
