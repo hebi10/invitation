@@ -1,0 +1,91 @@
+name: Invitation INTRO-GIF-01 neutral asset generation
+
+on:
+  push:
+    branches:
+      - assets/intro-gif-01-universal-20261112
+    paths:
+      - scripts/generate-universal-intro.py
+      - .github/workflows/invitation-intro-gif-01-assets.yml
+      - docs/design/intro-gif-01-universal-asset.md
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: intro-gif-01-asset-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  generate-neutral-gif:
+    if: github.ref == 'refs/heads/assets/intro-gif-01-universal-20261112'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install the image encoder and an available Korean font
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends fonts-noto-cjk
+          python -m pip install --disable-pip-version-check pillow==11.3.0
+      - name: Render event-agnostic single-play 2000ms GIF, poster and checksums
+        env:
+          PYTHONUTF8: '1'
+          INVITATION_INTRO_OUTPUT: public/assets/invitation-intro
+        run: python scripts/generate-universal-intro.py
+      - name: Verify source pixels, timing, manifest and small delivery size
+        run: |
+          python - <<'PY'
+          import hashlib
+          import json
+          from pathlib import Path
+          from PIL import Image
+          root = Path('public/assets/invitation-intro')
+          manifest = json.loads((root / 'manifest.json').read_text(encoding='utf-8'))
+          assert manifest['event_agnostic'] and not manifest['wedding_or_event_specific_symbols']
+          assert manifest['total_duration_ms'] == 2000 and manifest['frames'] == 8
+          for name, record in manifest['files'].items():
+              path = root / name
+              assert path.stat().st_size == record['bytes']
+              assert hashlib.sha256(path.read_bytes()).hexdigest() == record['sha256']
+              assert record['bytes'] < 150000, (name, record['bytes'])
+          with Image.open(root / 'universal-2s.gif') as gif:
+              assert gif.n_frames == 8 and gif.size == (480, 600)
+              duration = 0
+              for i in range(gif.n_frames):
+                  gif.seek(i)
+                  duration += gif.info['duration']
+              assert duration == 2000 and 'loop' not in gif.info
+          with Image.open(root / 'poster.webp') as poster:
+              assert poster.size == (480, 600)
+          print('INTRO_GIF_01_OK frames=8 duration_ms=2000 loop=false assets=2')
+          PY
+      - name: Preserve exact release candidates and QA evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: invitation-intro-gif-01-assets-and-checksums
+          path: |
+            public/assets/invitation-intro/universal-2s.gif
+            public/assets/invitation-intro/poster.webp
+            public/assets/invitation-intro/manifest.json
+          retention-days: 30
+          if-no-files-found: error
+      - name: Commit verified binary assets on the asset branch only
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add public/assets/invitation-intro/universal-2s.gif
+          git add public/assets/invitation-intro/poster.webp
+          git add public/assets/invitation-intro/manifest.json
+          if git diff --cached --quiet; then
+            echo 'No asset changes'
+          else
+            git commit -m "asset(invitation): record 2-second neutral GIF, poster and SHA256"
+            git push origin "HEAD:${GITHUB_REF_NAME}"
+          fi

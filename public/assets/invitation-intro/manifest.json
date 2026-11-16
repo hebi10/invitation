@@ -1,0 +1,35 @@
+{
+  "task": "INTRO-GIF-01",
+  "scene": "Neutral invitation typography: Korean title and one straight line",
+  "event_agnostic": true,
+  "wedding_or_event_specific_symbols": false,
+  "fps": 4,
+  "frames": 8,
+  "durations_ms": [
+    250,
+    250,
+    250,
+    250,
+    250,
+    250,
+    250,
+    250
+  ],
+  "total_duration_ms": 2000,
+  "loop": false,
+  "width": 480,
+  "height": 600,
+  "background": "#FAFAFA",
+  "ink": "#282828",
+  "files": {
+    "universal-2s.gif": {
+      "bytes": 21453,
+      "sha256": "dcdc8c0560282a3da8b9e6cd5d10b5407fe4e7bb3da75fe66160260f802aa2b7"
+    },
+    "poster.webp": {
+      "bytes": 2252,
+      "sha256": "497ed73a363ca4ce0e04f7ab6a19908badbe1b95213672fb29e27fd86eecf0be"
+    }
+  },
+  "notes": "Asset only. Integration and legacy removal are separate tasks."
+}
