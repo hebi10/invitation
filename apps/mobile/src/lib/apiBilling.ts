@@ -84,8 +84,7 @@ export async function fulfillMobileBillingTicketPack(
   return readBillingFulfillmentResponse<{ success: boolean; ticketCount: number }>(response);
 }
 
-// A verified customer can renew an owned page with the same 5,000 KRW consumable
-// used for creation. A separate action and persisted purchase target prevent reuse.
+// Retained for verified transactions from before the policy cutoff; new period extensions are disabled.
 export async function fulfillMobileBillingPeriodExtension(
   baseUrl: string,
   payload: {
