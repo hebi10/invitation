@@ -61,7 +61,7 @@ const legacyBirthdaySave = buildServerTrustedMobileInvitationPageConfigForSave(
   { ...birthdayStored!, introPresetId: undefined }, birthdayStored!);
 assert.equal(legacyBirthdaySave.introPresetId,'intro-05','Older Android omission preserves PC preset');
 assert.equal(mergeInvitationPageSeed(birthdayStored!, {description:'Unrelated description'} )?.introPresetId,'intro-05');
-const futurePreset = { ...birthdayStored!, introPresetId: 'intro-99' as typeof birthdayStored.introPresetId };
+const futurePreset = { ...birthdayStored!, introPresetId: 'intro-99' as typeof seed.introPresetId };
 assert.equal(mergeInvitationPageSeed(futurePreset, {description:'Unrelated description'})?.introPresetId,'intro-99',
   'Editing unrelated information must not erase an intro ID saved by a newer client');
 for (const eventType of events) {
