@@ -185,19 +185,22 @@ def verify(page, theme, width, mode, record, font_x2):
     assert map_surface.locator('[class*="mapHint"]').is_visible()
 
     links = map_surface.locator('nav[aria-label="지도 바로가기"] a')
-    assert links.count() == 2, "route and large map must have two separate external links"
-    directions = map_surface.get_by_role("link", name="지도 앱에서 길찾기")
+    assert links.count() == 3, "default wedding map must show all three providers"
+    directions = map_surface.get_by_role("link", name="카카오맵")
     assert directions.count() == 1 and directions.is_visible()
     assert "/link/to/" in directions.get_attribute("href")
-    assert map_surface.get_by_role("link", name="큰 지도 보기").count() == (0 if theme == "emotional" else 1)
-    assert map_surface.get_by_role("link", name="카카오맵 보기").count() == (1 if theme == "emotional" else 0)
+    assert map_surface.get_by_role("link", name="네이버 지도").count() == 1
+    assert map_surface.get_by_role("link", name="구글 지도").count() == 1
+    assert "/maps/dir/" in map_surface.get_by_role("link", name="구글 지도").get_attribute("href")
     for index in range(links.count()):
         link = links.nth(index)
         bounds = link.bounding_box()
         assert bounds and bounds["height"] >= 47.5 and bounds["width"] >= 47.5
         assert link.get_attribute("target") == "_blank"
         assert link.get_attribute("rel") == "noopener noreferrer"
-        assert link.get_attribute("href").startswith("https://map.kakao.com/")
+        assert link.get_attribute("href").startswith((
+            "https://map.kakao.com/", "https://map.naver.com/", "https://www.google.com/maps/"
+        ))
         assert link.locator("svg[aria-hidden='true']").count() == 1, "functional map icon missing"
 
     if mode == "geocode":

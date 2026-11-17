@@ -32,6 +32,7 @@ const core = [
   'test-wedding-public-stage4',
   'test-wedding-public-stage5',
   'test-wedding-public-map-security',
+  'test-wedding-map-providers',
   'test-wedding-music-recovery',
   'test-gift-info-copy',
   'test-music-editor',

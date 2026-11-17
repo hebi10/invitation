@@ -13,13 +13,13 @@ for (const value of [
   'loadKakaoMapsSdk()', 'validCoordinates(', 'IntersectionObserver',
   'setStatus(\'failed\')', 'map.setZoomable(false)', 'map.setDraggable(false)',
   'marker?.setMap(null)', 'resizeObserver?.disconnect()',
-  'setDirectionsHref(', 'relayout()', 'setCenter(position)',
+  'setResolvedCoordinates(', 'relayout()', 'setCenter(position)',
   'data-map-status={status}', 'aria-pressed={controlsEnabled}',
   'role="img"', 'aria-label="지도 바로가기"',
-  '지도에서 위치 보기', '지도 앱에서 길찾기', '큰 지도 보기',
+  '지도에서 위치 보기', 'WEDDING_MAP_PROVIDER_LABELS', 'providerLinks.map(',
   "event.key === 'Escape'", '<WeddingActionIcon kind="move" />',
-  '<WeddingActionIcon kind="route" />', '<WeddingActionIcon kind="pin" />',
-  'href={directionsHref}', 'href={mapHref}', 'target="_blank"',
+  "kind={link.provider === 'kakao' ? 'route' : 'pin'}",
+  'href={link.href}', 'href={mapHref}', 'target="_blank"',
   'rel="noopener noreferrer"', 'styles.mapHint',
 ]) {
   assert.ok(map.includes(value), 'UI-07-D map contract missing: ' + value);
@@ -35,6 +35,7 @@ for (const value of ['kind === \'route\'', 'kind === \'move\'', 'aria-hidden="tr
 for (const value of [
   'aspect-ratio: 8 / 5', 'min-height: 208px',
   'pointer-events: none', 'pointer-events: auto',
+  'grid-template-columns: repeat(3, minmax(0, 1fr))',
   'grid-template-columns: repeat(2, minmax(0, 1fr))',
   "aria-pressed='true'", 'min-height: 48px', ':focus-visible',
   "data-appearance='natural'", "data-appearance='classic'",
