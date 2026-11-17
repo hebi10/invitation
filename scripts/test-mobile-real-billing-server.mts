@@ -96,6 +96,8 @@ let failedMarks = 0;
 let failAfterFulfillment = false;
 let consumeOnServer = false;
 let pastFulfillment: Record<string, unknown> | null = null;
+let currentOwnerUid = appUserId;
+let currentEventId = 'created-id';
 let lockAcquisitions = 0;
 const service = load('src/server/mobileBillingServerService.ts', id => {
   if (id === './googlePlayPurchaseVerifier') return {
@@ -118,7 +120,10 @@ const service = load('src/server/mobileBillingServerService.ts', id => {
     update: async () => { fulfilled++; },
     markFailed: async () => { failedMarks++; },
   } };
-  if (id === './repositories/eventRepository') return { firestoreEventRepository: { assignOwnerBySlug: async () => ({ summary: { eventId: 'created-id' } }) } };
+  if (id === './repositories/eventRepository') return {
+    firestoreEventRepository: { assignOwnerBySlug: async () => ({ summary: { eventId: 'created-id' } }) },
+    resolveStoredEventBySlug: async () => ({ summary: { eventId: currentEventId, ownerUid: currentOwnerUid } }),
+  };
   if (id === './invitationPageServerService') return {
     createServerInvitationPageDraftFromSeed: async (input: typeof created) => { created = input; return { slug: 'created-page' }; },
     getServerEditableInvitationPageConfig: async () => ({
@@ -183,4 +188,44 @@ assert.equal(replay.billingPurchaseConsumed, true, 'Tell the client not to re-co
 assert.equal(replay.page.slug, 'created-page');
 assert.equal(lockAcquisitions, priorLocks, 'A consumed replay may not acquire a new grant lock');
 assert.equal(fulfilled, priorGrants, 'A consumed replay may not issue a second grant');
-console.log('Google Play token verification, six-month grants and consumed-token replay safety checks passed');
+
+currentOwnerUid = 'another-owner';
+await assert.rejects(create('https://example.test', receipt, {
+  slugBase: 'created-page', groomKoreanName: '신랑', brideKoreanName: '신부', theme: 'simple', ownerUid: appUserId,
+}), (error: unknown) => (error as { code?: string }).code === 'billing-fulfillment-requires-review',
+  'A previous payer must not regain a private page after ownership changes');
+assert.equal(lockAcquisitions, priorLocks);
+currentOwnerUid = appUserId;
+currentEventId = 'reassigned-event-id';
+await assert.rejects(create('https://example.test', receipt, {
+  slugBase: 'created-page', groomKoreanName: '신랑', brideKoreanName: '신부', theme: 'simple', ownerUid: appUserId,
+}), (error: unknown) => (error as { code?: string }).code === 'billing-fulfillment-requires-review',
+  'A historical grant cannot restore an editor session for a different event ID even with the same owner');
+assert.equal(lockAcquisitions, priorLocks, 'Event reassignment must not trigger a duplicate grant');
+currentEventId = 'created-id';
+
+consumeOnServer = false;
+pastFulfillment = null;
+const legacyReceipt = { ...receipt, productId: 'page_creation_standard' };
+await assert.rejects(create('https://example.test', legacyReceipt, {
+  slugBase: 'created-page', groomKoreanName: '신랑', brideKoreanName: '신부', theme: 'simple', ownerUid: appUserId,
+}), (error: unknown) => (error as { code?: string }).code === 'billing-fulfillment-requires-review',
+  'A historical SKU may not mint a fresh premium page, even for a previously paid date');
+assert.equal(lockAcquisitions, priorLocks, 'Historical SKU review must not acquire a new grant lock');
+assert.equal(fulfilled, priorGrants, 'Historical SKU review must not grant an additional page');
+
+pastFulfillment = { ...validFulfillment, productId: 'page_creation_standard' };
+const legacyReplay = await create('https://example.test', legacyReceipt, {
+  slugBase: 'created-page', groomKoreanName: '신랑', brideKoreanName: '신부', theme: 'simple', ownerUid: appUserId,
+}) as { billingPurchaseConsumed?: boolean; page: { slug: string } };
+assert.equal(legacyReplay.page.slug, 'created-page', 'An already granted historical page stays recoverable');
+assert.equal(legacyReplay.billingPurchaseConsumed, undefined, 'Unconsumed historical grant can still be finalized');
+assert.equal(lockAcquisitions, priorLocks);
+consumeOnServer = true;
+const legacyConsumedReplay = await create('https://example.test', legacyReceipt, {
+  slugBase: 'created-page', groomKoreanName: '신랑', brideKoreanName: '신부', theme: 'simple', ownerUid: appUserId,
+}) as { billingPurchaseConsumed: boolean };
+assert.equal(legacyConsumedReplay.billingPurchaseConsumed, true);
+assert.equal(fulfilled, priorGrants, 'No historical receipt can grant twice');
+
+console.log('Google Play token verification, six-month grants, ownership and legacy SKU recovery checks passed');
