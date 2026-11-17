@@ -15,7 +15,7 @@ import { buildAppRoutes, type AppRoutes } from '@/lib/demoExperienceRoutes';
 import { getAdminWizardReturnHref, withAdminWizardReturnTo } from '@/lib/adminWizardNavigation';
 import { PUBLIC_SITE_ORIGIN } from '@/lib/invitationMetadata';
 import { copyTextToClipboard } from '@/utils/copyTextToClipboard';
-import { buildCustomerInvitationPreviewPath, getCustomerInvitationStatus } from '@/lib/customerInvitationWorkspace';
+import { buildCustomerInvitationPreviewPath, getCustomerGuestLinkMessage, getCustomerInvitationStatus } from '@/lib/customerInvitationWorkspace';
 import type { InvitationPublicAccessState } from '@/lib/invitationPublicAccess';
 import {
   FIFTEEN_MINUTES_MS,
@@ -94,6 +94,7 @@ export default function PageWizardResultClient({
       let publicAccess: InvitationPublicAccessState | undefined;
       if (isAdminLoggedIn) {
         rawEditableConfig = await getEditableInvitationPageConfig(slug);
+        publicAccess = rawEditableConfig?.publicAccess;
       } else {
         const customerState = await getCustomerEditableInvitationPageState(slug);
         if (customerState.status === 'blocked') {
@@ -128,7 +129,7 @@ export default function PageWizardResultClient({
     },
     staleTime: FIFTEEN_MINUTES_MS,
     gcTime: THIRTY_MINUTES_MS,
-    refetchOnWindowFocus: false,
+    refetchOnWindowFocus: 'always',
   });
   const resultState = resultQuery.data;
   const configState = resultState?.status === 'ready' ? resultState.configState : null;
@@ -294,9 +295,11 @@ export default function PageWizardResultClient({
     : buildEventPreviewPath(slug, configState.config.eventType, previewTheme);
   const redirectPath = experience ? livePagePath : `/${slug}`;
   const customerPreviewPath = experience ? livePagePath : buildCustomerInvitationPreviewPath(slug, previewTheme);
-  const customerStatus = getCustomerInvitationStatus(configState.published, resultState?.status === 'ready' ? resultState.publicAccess : undefined);
+  const publicAccess = resultState?.status === 'ready' ? resultState.publicAccess : undefined;
+  const customerStatus = getCustomerInvitationStatus(configState.published, publicAccess);
   const guestUrl = `${PUBLIC_SITE_ORIGIN}/${encodeURIComponent(slug)}`;
   const copyGuestLink = async () => {
+    if (!customerStatus.isPublic) return;
     setIsCopyingLink(true);
     try {
       const copied = await copyTextToClipboard(guestUrl);
@@ -344,18 +347,22 @@ export default function PageWizardResultClient({
             {isAdminLoggedIn ? <div className={styles.previewUrlCard}>
               <span className={styles.summaryLabel}>공개 상태</span>
               <strong className={styles.previewUrlValue}>
-                {configState.published ? '저장 후 공개됨' : '비공개 초안'}
+                {customerStatus.label}
               </strong>
             </div> : null}
           </div>
+          {!experience ? <p className={resultStyles.savedStatus} id="wizard-result-guest-link">
+            {getCustomerGuestLinkMessage(configState.published, publicAccess)}
+          </p> : null}
           <div className={`${styles.inlineActions} ${styles.resultActionRow}`}>
             <Link href={listHref} className={styles.primaryButton}>
               {isAdminLoggedIn ? '관리자 화면으로 이동' : '내 청첩장으로 이동'}
             </Link>
             <Link href={isAdminLoggedIn ? livePagePath : customerPreviewPath} className={styles.secondaryButton}>
-              {experience ? '청첩장 열기' : isAdminLoggedIn ? '바로 확인하기' : '저장한 초대장 미리보기'}
+              {experience ? '청첩장 열기' : isAdminLoggedIn ? '관리자 미리보기' : '저장한 초대장 미리보기'}
             </Link>
-            {!experience ? <button type="button" className={styles.secondaryButton} disabled={isCopyingLink}
+            {!experience ? <button type="button" className={styles.secondaryButton} disabled={!customerStatus.isPublic || isCopyingLink}
+              aria-describedby="wizard-result-guest-link"
               onClick={() => void copyGuestLink()}>{isCopyingLink ? '복사 중' : '하객용 링크 복사'}</button> : null}
             {experience && isAdminLoggedIn && onContinueAsCustomer ? (
               <button
@@ -366,13 +373,13 @@ export default function PageWizardResultClient({
                 고객 화면으로 전환해 계속 입력하기
               </button>
             ) : null}
-            {isAdminLoggedIn ? <button
+            {!experience ? <button
               type="button"
               className={styles.secondaryButton}
               onClick={() => void resultQuery.refetch()}
               disabled={resultQuery.isRefetching}
             >
-              {resultQuery.isRefetching ? '새로고침 중' : '새로고침'}
+              {resultQuery.isRefetching ? '다시 확인 중' : '공개 상태 새로고침'}
             </button> : null}
             <Link
               href={navigationRoutes.wizardEdit(slug)}
@@ -383,9 +390,8 @@ export default function PageWizardResultClient({
           </div>
           {!experience && !isAdminLoggedIn ? <p className={resultStyles.savedStatus}>
             미리보기는 로그인한 소유자만 확인할 수 있습니다. 하객에게는 하객용 링크를 전달해 주세요.
-            {!customerStatus.isPublic ? resultState?.status === 'ready' && resultState.publicAccess ? ' 현재 하객이 열 수 없습니다. 실제 노출 상태를 확인한 뒤 공유해 주세요.' : ' 하객에게 전달하기 전에 실제 노출 상태를 확인해 주세요.' : ''}
           </p> : null}
-          {shareNotice ? <p className={resultStyles.savedStatus} role="status">{shareNotice}</p> : null}
+          {customerStatus.isPublic && shareNotice ? <p className={resultStyles.savedStatus} role="status">{shareNotice}</p> : null}
         </section>
 
         {!configState.published ? (

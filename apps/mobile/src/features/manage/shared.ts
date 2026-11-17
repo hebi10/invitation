@@ -11,6 +11,7 @@ import type {
 import { normalizeWeddingIntroStyle, type WeddingIntroStyle } from '../../lib/weddingIntro';
 import { DEFAULT_INVITATION_THEME } from '../../lib/invitationThemes';
 import { createRandomSuffix } from '../../lib/id';
+import { getWeddingDateTimeInputError, readWeddingDateTimeInputs, type WeddingDateTimeInputs } from './editorWeddingDateTime';
 
 export type ManageParentState = {
   relation: string;
@@ -26,15 +27,14 @@ export type ManagePersonState = {
   mother: ManageParentState;
 };
 
-export type ManageFormState = {
+export type ManageFormState = WeddingDateTimeInputs & {
   displayName: string;
   subtitle: string;
   description: string;
   groom: ManagePersonState;
   bride: ManagePersonState;
-  date: string;
+  legacyWeddingDateTimeLabel: string;
   venue: string;
-  ceremonyTime: string;
   ceremonyLocation: string;
   receptionTime: string;
   receptionLocation: string;
@@ -192,9 +192,10 @@ export const EMPTY_FORM: ManageFormState = {
   description: '',
   groom: { ...EMPTY_PERSON },
   bride: { ...EMPTY_PERSON },
-  date: '',
+  weddingDateInput: '',
+  weddingTimeInput: '',
+  legacyWeddingDateTimeLabel: '',
   venue: '',
-  ceremonyTime: '',
   ceremonyLocation: '',
   receptionTime: '',
   receptionLocation: '',
@@ -477,9 +478,8 @@ export function getOnboardingValidationMessage(stepIndex: number, form: ManageFo
   }
 
   if (stepIndex === 1) {
-    if (!form.date.trim()) {
-      return '예식 일시를 입력해 주세요.';
-    }
+    const scheduleError = getWeddingDateTimeInputError(form, true);
+    if (scheduleError) return scheduleError;
 
     if (!form.venue.trim()) {
       return '예식 장소를 입력해 주세요.';
@@ -528,9 +528,8 @@ export function buildManageFormFromDashboard(
     description: readString(config.description),
     groom: toPersonState(config.couple?.groom, config.groomName),
     bride: toPersonState(config.couple?.bride, config.brideName),
-    date: readString(config.date),
+    ...readWeddingDateTimeInputs(config),
     venue: readString(config.venue),
-    ceremonyTime: readString(ceremony.time, readString(pageData.ceremonyTime)),
     ceremonyLocation: readString(ceremony.location),
     receptionTime: readString(reception.time),
     receptionLocation: readString(reception.location),

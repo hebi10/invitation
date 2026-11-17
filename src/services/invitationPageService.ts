@@ -83,6 +83,7 @@ export interface InvitationPageSummary {
 
 export interface EditableInvitationPageConfig {
   publicAccess?: InvitationPublicAccessState;
+  publicAccessIfPublished?: InvitationPublicAccessState;
   version: number;
   slug: string;
   config: InvitationPageSeed;
@@ -495,11 +496,16 @@ export async function getEditableInvitationPageConfig(
     );
     const features = resolveInvitationFeatures(productTier, editableConfig.features);
 
+    const publicAccess = getInvitationPublicAccessState(sourceRecord.page);
+
     return {
       slug: pageSlug,
       config: editableConfig,
       published: sourceRecord.page.published,
-      publicAccess: getInvitationPublicAccessState(sourceRecord.page),
+      publicAccess,
+      publicAccessIfPublished: sourceRecord.page.published
+        ? publicAccess
+        : getInvitationPublicAccessState({ ...sourceRecord.page, published: true }),
       defaultTheme: registryRecord?.defaultTheme ?? DEFAULT_INVITATION_THEME,
       productTier,
       features,

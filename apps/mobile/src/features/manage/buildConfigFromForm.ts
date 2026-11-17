@@ -7,6 +7,7 @@ import type {
   MobileInvitationPageData,
   MobileInvitationSeed,
 } from '../../types/mobileInvitation';
+import { resolveWeddingDateTimeForSave } from './editorWeddingDateTime';
 
 import {
   DEFAULT_MUSIC_VOLUME,
@@ -107,7 +108,8 @@ export function buildConfigFromForm({
     existingMusicVolume
   );
 
-  const ceremonyTime = form.ceremonyTime.trim() || form.date.trim();
+  const schedule = resolveWeddingDateTimeForSave(dashboard.page.config, form);
+  const themeOverrides = existingPageData.themeOverrides;
   const resolvedMarkerTitle =
     form.kakaoMarkerTitle.trim() || form.venue.trim() || form.ceremonyAddress.trim();
   const resolvedMapUrl = hasValidCoordinates(nextLatitude, nextLongitude)
@@ -124,7 +126,7 @@ export function buildConfigFromForm({
     ...dashboard.page.config,
     displayName: form.displayName.trim(),
     description: form.description.trim(),
-    date: form.date.trim(),
+    ...(schedule ? { date: schedule.date, weddingDateTime: schedule.weddingDateTime } : {}),
     venue: form.venue.trim(),
     groomName,
     brideName,
@@ -183,12 +185,22 @@ export function buildConfigFromForm({
       venueName: form.venue.trim(),
       ceremonyAddress: form.ceremonyAddress.trim(),
       ceremonyContact: form.ceremonyContact.trim(),
-      ceremonyTime,
+      ...(schedule ? { ceremonyTime: schedule.time } : {}),
       ceremony: {
         ...existingCeremony,
-        time: ceremonyTime,
+        ...(schedule ? { time: schedule.time } : {}),
         location: form.ceremonyLocation.trim(),
       },
+      ...(schedule && themeOverrides ? {
+        themeOverrides: Object.fromEntries(Object.entries(themeOverrides).map(([theme, override]) => [
+          theme,
+          {
+            ...override,
+            ...(override.ceremonyTime !== undefined ? { ceremonyTime: schedule.time } : {}),
+            ...(override.ceremony?.time !== undefined ? { ceremony: { ...override.ceremony, time: schedule.time } } : {}),
+          },
+        ])),
+      } : {}),
       reception: {
         ...existingReception,
         time: form.receptionTime.trim(),

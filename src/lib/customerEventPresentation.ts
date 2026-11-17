@@ -1,4 +1,5 @@
 import type { InvitationPageSeed } from '@/types/invitationPage';
+import { formatWeddingDateTimeLabel, isValidWeddingDateTime } from '../contracts/weddingDateTime';
 
 export interface CustomerEventPresentation {
   coverImageUrl: string | null;
@@ -24,24 +25,11 @@ export function normalizeCustomerEventCoverImageUrl(value: unknown): string | nu
   }
 }
 
-function getEventDateLabel(date: InvitationPageSeed['weddingDateTime'] | undefined) {
-  if (!date) {
-    return null;
-  }
+function getEventDateLabel(config: InvitationPageSeed | null | undefined) {
+  const date = config?.weddingDateTime;
+  if (!isValidWeddingDateTime(date)) return null;
 
-  const { year, month, day, hour, minute } = date;
-  if (
-    !Number.isInteger(year) || year < 1900 || year > 9999 ||
-    !Number.isInteger(month) || month < 0 || month > 11 ||
-    !Number.isInteger(day) || day < 1 ||
-    !Number.isInteger(hour) || hour < 0 || hour > 23 ||
-    !Number.isInteger(minute) || minute < 0 || minute > 59
-  ) {
-    return null;
-  }
-
-  const daysInMonth = new Date(Date.UTC(year, month + 1, 0)).getUTCDate();
-  return day <= daysInMonth ? `${year}. ${month + 1}. ${day}.` : null;
+  return formatWeddingDateTimeLabel(date, !config?.eventType || config.eventType === 'wedding');
 }
 
 export function getCustomerEventPresentation(
@@ -51,6 +39,6 @@ export function getCustomerEventPresentation(
     coverImageUrl:
       normalizeCustomerEventCoverImageUrl(config?.pageData?.coverImageThumbnailUrl) ??
       normalizeCustomerEventCoverImageUrl(config?.metadata?.images?.wedding),
-    eventDateLabel: getEventDateLabel(config?.weddingDateTime),
+    eventDateLabel: getEventDateLabel(config),
   };
 }

@@ -195,7 +195,7 @@ export function useWizardNavigation({
     const savedSlug = await persistDraft({
       publish: published,
       successMessage: published
-        ? '페이지를 공개했습니다.'
+        ? '입력한 내용을 저장했습니다.'
         : '초안을 저장했습니다.',
     });
 

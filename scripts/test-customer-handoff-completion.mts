@@ -88,12 +88,16 @@ publicAccess.current = { isPublic: false, reason: 'expired', adminLabel: '노출
 const expiredCustomer = renderToStaticMarkup(React.createElement(componentExports.default, { slug: 'sample' }));
 assert.match(expiredCustomer, /노출 종료 · 마지막 저장 방금/,
   'The saved result must show actual access state rather than publication setting');
-assert.match(expiredCustomer, /하객이 열 수 없습니다/, 'An expired invitation must not imply that copying publishes it');
+assert.match(expiredCustomer, /하객이 링크를 열 수 없습니다/, 'An expired invitation must not imply that copying publishes it');
+assert.match(expiredCustomer, /<button[^>]*disabled=""[^>]*>하객용 링크 복사<\/button>/,
+  'The completion screen must disable copying an expired invitation');
 admin = true;
 const administrator = renderToStaticMarkup(React.createElement(componentExports.default, { slug: 'sample' }));
 assert.match(administrator, /href="\/admin"/, 'Administrators return to their own workspace');
 assert.match(administrator, /실제 페이지 URL/,
   'Administrators retain their page routing details');
+assert.match(administrator, /<a[^>]*href="\/sample\/simple"[^>]*>관리자 미리보기<\/a>/,
+  'An administrator can preview the invitation even while the guest link is unavailable');
 assert.match(administrator, /<details[^>]*\bopen(?:=|\s|>)/,
   'Administrators retain an expanded saved-content review');
 const adminReturnTo = '/admin?pageQ=test&page=3&pageSort=name&event=sample';

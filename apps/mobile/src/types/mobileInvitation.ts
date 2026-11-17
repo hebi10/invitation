@@ -1,5 +1,6 @@
 import type { MobileInvitationThemeKey as SharedMobileInvitationThemeKey } from '../lib/invitationThemes';
 import type { MobileClientEditorPermissions } from '../../../../src/types/mobileClientEditor';
+import type { WeddingDateTime } from '../../../../src/contracts/weddingDateTime';
 import type {
   GuestbookCommentAction as SharedGuestbookCommentAction,
   GuestbookCommentStatus as SharedGuestbookCommentStatus,
@@ -122,6 +123,7 @@ export interface MobileInvitationPageData {
   galleryImageThumbnailUrls?: string[];
   ceremony?: MobileInvitationCeremonyData;
   reception?: MobileInvitationCeremonyData;
+  themeOverrides?: Partial<Record<MobileInvitationThemeKey, Pick<MobileInvitationPageData, 'ceremonyTime' | 'ceremony'>>>;
   groom?: MobileInvitationPerson;
   bride?: MobileInvitationPerson;
   galleryImages?: string[];
@@ -157,6 +159,7 @@ export interface MobileInvitationSeed {
   displayName: string;
   description: string;
   date: string;
+  weddingDateTime?: WeddingDateTime;
   venue: string;
   groomName: string;
   brideName: string;

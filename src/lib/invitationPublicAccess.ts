@@ -27,6 +27,7 @@ export type InvitationPublicAccessState = {
 };
 
 const accessDateTimeFormatter = new Intl.DateTimeFormat('ko-KR', {
+  timeZone: 'Asia/Seoul',
   year: 'numeric',
   month: 'long',
   day: 'numeric',
