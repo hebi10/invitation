@@ -2,6 +2,7 @@ import type { InvitationThemeKey as RegisteredInvitationThemeKey } from '@/lib/i
 import type { EventTypeKey } from '@/lib/eventTypes';
 import type { WeddingIntroStyle } from '@/lib/weddingIntro';
 import type { WeddingCoverSettings } from '@/lib/weddingCover';
+import type { WeddingMapProvider } from '@/lib/weddingMapProviders';
 
 export interface FamilyMember {
   relation: string;
@@ -99,6 +100,7 @@ export interface InvitationPageDataBase {
   greetingMessage?: string;
   greetingAuthor?: string;
   mapUrl?: string;
+  mapProviders?: WeddingMapProvider[];
   mapDescription?: string;
   venueName?: string;
   groom?: PersonInfo;

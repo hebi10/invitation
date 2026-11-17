@@ -29,6 +29,7 @@ import {
   buildManageFormFromDashboard,
   getOnboardingValidationMessage,
   hasValidCoordinates,
+  normalizeMobileMapProviders,
   parseOptionalNumber,
   type ManageFormState,
   type ManageGalleryPreviewItem,
@@ -193,10 +194,18 @@ export function useInvitationForm({
       setFormState((current) => ({
         ...current,
         [field]: value,
+        ...(field === 'ceremonyAddress' && current.ceremonyAddress !== value
+          ? { kakaoLatitude: '', kakaoLongitude: '', mapUrl: '' }
+          : {}),
       }));
     },
     [markFormDirty]
   );
+
+  const setMapProviders = useCallback((value: ManageFormState['mapProviders']) => {
+    markFormDirty();
+    setFormState((current) => ({ ...current, mapProviders: normalizeMobileMapProviders(value) }));
+  }, [markFormDirty]);
 
   const setPublished = useCallback(
     (published: boolean) => {
@@ -543,6 +552,7 @@ export function useInvitationForm({
     isFirstEditorStep,
     isLastEditorStep,
     updateField,
+    setMapProviders,
     setPublished,
     setDefaultTheme,
     setMusicEnabled,

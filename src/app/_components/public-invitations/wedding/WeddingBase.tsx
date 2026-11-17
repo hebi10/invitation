@@ -295,6 +295,7 @@ export default function WeddingBase({ state, theme, demoComments, showMap = true
             venueName={page.venue}
             kakaoMapConfig={pageData?.kakaoMap}
             mapHref={storedContent.mapHref}
+            mapProviders={pageData?.mapProviders}
           />
         ) : null}
         {storedContent.mapDescription ? <p className={styles.travelNote}>{storedContent.mapDescription}</p> : null}
