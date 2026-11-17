@@ -57,6 +57,35 @@ class Ops04SafetyTests(unittest.TestCase):
                     internal.guard()
                 api.assert_not_called()
 
+    def test_accepts_eleven_digit_build_run_id_with_matching_evidence(self):
+        data = self.environment(mode="check")
+        run_id = "44014577093"
+        workflow_path = ".github/workflows/mobile-release.yml"
+        data.update(BUILD_RUN_ID=run_id, BUILD_WORKFLOW_FILE=workflow_path)
+        source = data["EXPECTED_MAIN_SHA"]
+        evidence = [
+            {"object": {"sha": source}},
+            {
+                "head_sha": source,
+                "head_branch": "main",
+                "event": "workflow_dispatch",
+                "status": "completed",
+                "conclusion": "success",
+                "repository": {"full_name": data["GITHUB_REPOSITORY"]},
+                "path": workflow_path,
+            },
+            {
+                "total_count": 1,
+                "artifacts": [
+                    {"name": data["ARTIFACT_NAME"], "expired": False, "size_in_bytes": 1}
+                ],
+            },
+        ]
+        with patch.dict(os.environ, data, clear=True):
+            with patch.object(internal, "github", side_effect=evidence) as api:
+                internal.guard()
+                api.assert_any_call(f'repos/{data["GITHUB_REPOSITORY"]}/actions/runs/{run_id}')
+
     def test_missing_bundle_fails_closed(self):
         with tempfile.TemporaryDirectory() as folder:
             with patch.object(internal, "BUNDLE_PATH", Path(folder)):
