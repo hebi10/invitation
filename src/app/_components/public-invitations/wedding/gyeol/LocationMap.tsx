@@ -57,9 +57,9 @@ export default function LocationMap({ address, venueName, kakaoMapConfig, mapHre
     label: WEDDING_MAP_PROVIDER_LABELS[provider],
     href: buildWeddingMapProviderUrl(provider, destination),
   })).filter((link) => Boolean(link.href));
-  const fallbackHref = providerLinks.find((link) => link.provider === 'kakao')?.href
-    ?? providerLinks[0]?.href
-    ?? (selectedProviders.includes('kakao') ? mapHref : '');
+  const fallbackHref = selectedProviders.includes('kakao')
+    ? mapHref
+    : (providerLinks[0]?.href ?? '');
 
   useEffect(() => {
     const section = sectionRef.current;

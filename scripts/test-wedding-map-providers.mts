@@ -68,6 +68,7 @@ for (const [source, pattern] of [
   [publicMap, 'data-count={providerLinks.length}'],
   [publicMap, "window.addEventListener('scroll', checkWithinRange"],
   [publicMap, "selectedProviders.includes('kakao')"],
+  [publicMap, "? mapHref"],
   [publicMap, 'href={fallbackHref}'],
   [previewRoute, "query.qaMapProviders === 'none'"],
   [previewState, 'QA_MAP_PROVIDER_VARIANTS'],
