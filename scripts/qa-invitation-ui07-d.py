@@ -14,7 +14,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from urllib.parse import urlencode
 
-from playwright.sync_api import sync_playwright
+from playwright.sync_api import TimeoutError as PlaywrightTimeoutError, sync_playwright
 
 BASE = os.environ.get("INVITATION_UI07D_BASE", "http://127.0.0.1:3000").rstrip("/")
 OUT = Path("artifacts/ui-07-d")
@@ -90,8 +90,8 @@ report = {
 }
 
 
-def capture(page, theme, width, mode, suffix, target):
-    path = OUT / f"{theme}-{width}-{mode}-{suffix}.png"
+def capture(page, theme, width, mode, suffix, target, provider_case="default"):
+    path = OUT / f"{theme}-{width}-{mode}-{provider_case}-{suffix}.png"
     target.screenshot(path=str(path), animations="disabled", timeout=45000)
     contents = path.read_bytes()
     return {
@@ -170,7 +170,7 @@ def verify(page, theme, width, mode, record, font_x2, provider_case='default'):
         assert fallback.get_attribute("rel") == "noopener noreferrer"
         assert map_surface.locator('[class*="actions"] a').count() == 0
         if width == 390:
-            record["screens"].append(capture(page, theme, width, mode, "fallback", map_surface))
+            record["screens"].append(capture(page, theme, width, mode, "fallback", map_surface, provider_case))
         return
 
     assert data["sdk_created"] == 1, "SDK test-double should initialize exactly one map"
@@ -222,7 +222,7 @@ def verify(page, theme, width, mode, record, font_x2, provider_case='default'):
 
     if width in (390, 1440) and not font_x2:
         page.evaluate("document.activeElement?.blur()")
-        record["screens"].append(capture(page, theme, width, mode, "map-ready", map_surface))
+        record["screens"].append(capture(page, theme, width, mode, "map-ready", map_surface, provider_case))
 
     button.click(timeout=15000)
     assert button.get_attribute("aria-pressed") == "true"
@@ -248,7 +248,7 @@ def verify(page, theme, width, mode, record, font_x2, provider_case='default'):
     })""")
     assert state == {"zoom": False, "drag": False}, state
     if font_x2:
-        record["screens"].append(capture(page, theme, width, mode, "text200", map_surface))
+        record["screens"].append(capture(page, theme, width, mode, "text200", map_surface, provider_case))
 
 
 with sync_playwright() as engine:
@@ -270,51 +270,86 @@ with sync_playwright() as engine:
             cases = cases[:limit]
 
         for theme, width, height, mode, font_x2, provider_case in cases:
-            context = browser.new_context(
-                viewport={"width": width, "height": height},
-                device_scale_factor=1 if width >= 768 else 2,
-                locale="ko-KR", color_scheme="light", reduced_motion="reduce",
-            )
-            context.add_init_script(
-                script="(" + FAKE_KAKAO_SDK + ")({ fail: " +
-                       ("true" if mode == "failure" else "false") + " })"
-            )
-            page = context.new_page()
-            errors = []
-            page.on("pageerror", lambda error: errors.append(str(error)[:350]))
             record = {
                 "theme": theme, "width": width, "mode": mode,
-                "font_200": font_x2, "providers": provider_case, "passed": False, "screens": [],
+                "font_200": font_x2, "providers": provider_case,
+                "passed": False, "screens": [], "attempts": [],
             }
-            try:
-                query = urlencode({
-                    "qaTheme": theme, "qaUI07": "1",
-                    "qaUI07Case": "full",
-                    "qaUI07Map": "geocode" if mode == "geocode" else "coordinates",
-                    "embed": "1",
-                    "qaMapProviders": provider_case,
-                })
-                response = page.goto(
-                    BASE + "/sample-invitation/?" + query,
-                    wait_until="domcontentloaded", timeout=90000
+            for attempt in range(1, 3):
+                context = browser.new_context(
+                    viewport={"width": width, "height": height},
+                    device_scale_factor=1 if width >= 768 else 2,
+                    locale="ko-KR", color_scheme="light", reduced_motion="reduce",
                 )
-                assert response and response.status == 200, "isolated fixture status"
-                verify(page, theme, width, mode, record, font_x2, provider_case)
-                assert not errors, errors
-                record["passed"] = True
-                print("UI07D_OK", theme, width, mode, provider_case, "text200" if font_x2 else "normal", flush=True)
-            except Exception as error:
-                record["error"] = type(error).__name__ + ": " + str(error)[:1400]
-                print("UI07D_FAIL", theme, width, mode, record["error"], flush=True)
+                context.add_init_script(
+                    script="(" + FAKE_KAKAO_SDK + ")({ fail: " +
+                           ("true" if mode == "failure" else "false") + " })"
+                )
+                page = context.new_page()
+                errors = []
+                page.on("pageerror", lambda error: errors.append(str(error)[:350]))
+                attempt_info = {"attempt": attempt}
+                retry_loading = False
                 try:
-                    record["screens"].append(capture(
-                        page, theme, width, mode, "error", page.locator("body")
-                    ))
-                except Exception:
-                    pass
-            finally:
-                report["cases"].append(record)
-                context.close()
+                    query = urlencode({
+                        "qaTheme": theme, "qaUI07": "1",
+                        "qaUI07Case": "full",
+                        "qaUI07Map": "geocode" if mode == "geocode" else "coordinates",
+                        "embed": "1",
+                        "qaMapProviders": provider_case,
+                    })
+                    response = page.goto(
+                        BASE + "/sample-invitation/?" + query,
+                        wait_until="domcontentloaded", timeout=90000
+                    )
+                    assert response and response.status == 200, "isolated fixture status"
+                    verify(page, theme, width, mode, record, font_x2, provider_case)
+                    assert not errors, errors
+                    record["passed"] = True
+                    record.pop("error", None)
+                    print("UI07D_OK", theme, width, mode, provider_case,
+                          "text200" if font_x2 else "normal", "attempt", attempt, flush=True)
+                except Exception as error:
+                    attempt_info["error"] = type(error).__name__ + ": " + str(error)[:1400]
+                    attempt_info["page_errors"] = errors[:8]
+                    try:
+                        attempt_info["map_diagnostics"] = page.evaluate("""() => {
+                          const map = document.querySelector('main[data-design] [data-map-status]');
+                          const rect = map?.getBoundingClientRect();
+                          return {
+                            map_status: map?.dataset.mapStatus ?? 'missing',
+                            viewport: { width: innerWidth, height: innerHeight, scrollY },
+                            map_rect: rect ? { top: rect.top, bottom: rect.bottom, height: rect.height } : null,
+                            message: map?.querySelector('[role="status"]')?.textContent?.slice(0, 200),
+                            initialized_maps: window.__ui07dMock?.maps?.length ?? null,
+                            mock_available: Boolean(window.kakao?.maps),
+                            geocoder_requests: window.__ui07dMock?.geocoderQueries?.length ?? null,
+                          };
+                        }""")
+                    except Exception as diagnostic_error:
+                        attempt_info["diagnostic_error"] = str(diagnostic_error)[:300]
+                    retry_loading = (
+                        attempt == 1
+                        and isinstance(error, PlaywrightTimeoutError)
+                        and attempt_info.get("map_diagnostics", {}).get("map_status") == "loading"
+                    )
+                    record["error"] = attempt_info["error"]
+                    print("UI07D_FAIL", theme, width, mode, provider_case,
+                          json.dumps(attempt_info, ensure_ascii=False)[:1900], flush=True)
+                    try:
+                        record["screens"].append(capture(
+                            page, theme, width, mode, f"error-attempt-{attempt}",
+                            page.locator("body"), provider_case
+                        ))
+                    except Exception:
+                        pass
+                finally:
+                    record["attempts"].append(attempt_info)
+                    context.close()
+                if record["passed"] or not retry_loading:
+                    break
+                print("UI07D_RETRY_ONCE", theme, width, mode, provider_case, flush=True)
+            report["cases"].append(record)
             if not record["passed"]:
                 print("UI07D_ABORT_AFTER_FIRST_FAILURE", flush=True)
                 break
@@ -330,6 +365,10 @@ report["summary"] = {
         for row in report["cases"] if not row["passed"]
     ],
     "production_writes": 0,
+    "recovered_loading_timeouts": sum(
+        len(row.get("attempts", [])) - 1
+        for row in report["cases"] if row["passed"]
+    ),
 }
 (OUT / "manifest.json").write_text(
     json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"

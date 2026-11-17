@@ -66,6 +66,9 @@ for (const [source, pattern] of [
   [types, 'mapProviders?: WeddingMapProvider[]'],
   [androidTypes, 'mapProviders?: MobileInvitationMapProvider[]'],
   [publicMap, 'data-count={providerLinks.length}'],
+  [publicMap, "window.addEventListener('scroll', checkWithinRange"],
+  [publicMap, "selectedProviders.includes('kakao')"],
+  [publicMap, 'href={fallbackHref}'],
   [previewRoute, "query.qaMapProviders === 'none'"],
   [previewState, 'QA_MAP_PROVIDER_VARIANTS'],
 ]) assert.ok(source.includes(pattern), 'MAP-01 contract missing: ' + pattern);
