@@ -57,9 +57,9 @@ export default function LocationMap({ address, venueName, kakaoMapConfig, mapHre
     label: WEDDING_MAP_PROVIDER_LABELS[provider],
     href: buildWeddingMapProviderUrl(provider, destination),
   })).filter((link) => Boolean(link.href));
-  const fallbackHref = selectedProviders.includes('kakao')
-    ? mapHref
-    : providerLinks[0]?.href ?? '';
+  const fallbackHref = providerLinks.find((link) => link.provider === 'kakao')?.href
+    ?? providerLinks[0]?.href
+    ?? (selectedProviders.includes('kakao') ? mapHref : '');
 
   useEffect(() => {
     const section = sectionRef.current;
@@ -87,9 +87,9 @@ export default function LocationMap({ address, venueName, kakaoMapConfig, mapHre
       if (entry.isIntersecting) beginLoading();
     }, { rootMargin: '300px 0px' });
     observer.observe(section);
-    checkWithinRange();
     window.addEventListener('scroll', checkWithinRange, { passive: true });
     window.addEventListener('resize', checkWithinRange);
+    checkWithinRange();
     return () => {
       observer?.disconnect();
       window.removeEventListener('scroll', checkWithinRange);
