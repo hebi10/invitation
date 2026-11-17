@@ -120,11 +120,11 @@ export default function WeddingGallerySwiper({ images, previewImages, variant, r
     </Swiper>
     {count > 1 || (variant === 'gyeol' && count === 1) ? <div className={styles.controls} data-gallery-navigation>
       {count > 1 ? <button type="button" aria-label="이전 사진" disabled={activeIndex === 0} onClick={() => move(-1)}>
-        <span aria-hidden="true">‹</span>
+        <span className={`${styles.chevron} ${styles.chevronPrevious}`} aria-hidden="true" />
       </button> : null}
       <span role="status" aria-live="polite" aria-atomic="true" aria-label={`${count}장 중 ${activeIndex + 1}번째 사진`}>{String(activeIndex + 1).padStart(2, '0')} / {String(count).padStart(2, '0')}</span>
       {count > 1 ? <button type="button" aria-label="다음 사진" disabled={activeIndex === count - 1} onClick={() => move(1)}>
-        <span aria-hidden="true">›</span>
+        <span className={styles.chevron} aria-hidden="true" />
       </button> : null}
     </div> : null}
     </div>
