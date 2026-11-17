@@ -19,7 +19,7 @@ for (const value of [
   '지도에서 위치 보기', 'WEDDING_MAP_PROVIDER_LABELS', 'providerLinks.map(',
   "event.key === 'Escape'", '<WeddingActionIcon kind="move" />',
   "kind={link.provider === 'kakao' ? 'route' : 'pin'}",
-  'href={link.href}', 'href={mapHref}', 'target="_blank"',
+  'href={link.href}', 'href={fallbackHref}', 'target="_blank"',
   'rel="noopener noreferrer"', 'styles.mapHint',
 ]) {
   assert.ok(map.includes(value), 'UI-07-D map contract missing: ' + value);
