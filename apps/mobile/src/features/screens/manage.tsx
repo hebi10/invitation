@@ -802,6 +802,7 @@ export default function ManageScreen() {
           uploadProgress={imageUpload.uploadProgress}
           isSearchingAddress={addressSearch.isSearchingAddress}
           onUpdateField={invitationForm.updateField}
+          onSetMapProviders={invitationForm.setMapProviders}
           onUpdatePersonField={invitationForm.updatePersonField}
           onUpdateParentField={invitationForm.updateParentField}
           onUploadImage={imageUpload.handleUploadImage}

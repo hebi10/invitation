@@ -109,6 +109,8 @@ export interface MobileInvitationKakaoMapData {
   markerTitle?: string;
 }
 
+export type MobileInvitationMapProvider = 'naver' | 'kakao' | 'google';
+
 export interface MobileInvitationPageData {
   subtitle?: string;
   venueName?: string;
@@ -117,6 +119,7 @@ export interface MobileInvitationPageData {
   ceremonyTime?: string;
   mapDescription?: string;
   mapUrl?: string;
+  mapProviders?: MobileInvitationMapProvider[];
   greetingMessage?: string;
   greetingAuthor?: string;
   coverImageThumbnailUrl?: string;

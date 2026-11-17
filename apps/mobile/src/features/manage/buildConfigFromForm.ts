@@ -16,6 +16,7 @@ import {
   clampNumber,
   hasValidCoordinates,
   isTemporaryImagePreviewUrl,
+  normalizeMobileMapProviders,
   parseAccountsText,
   parseGuidesText,
   parseOptionalNumber,
@@ -208,6 +209,7 @@ export function buildConfigFromForm({
       },
       mapDescription: form.mapDescription.trim(),
       mapUrl: resolvedMapUrl,
+      mapProviders: normalizeMobileMapProviders(form.mapProviders),
       kakaoMap: {
         ...existingKakaoMap,
         latitude: nextLatitude,

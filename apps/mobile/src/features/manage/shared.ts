@@ -4,6 +4,7 @@ import type {
   MobileInvitationGiftInfo,
   MobileInvitationGuideItem,
   MobileInvitationKakaoMapData,
+  MobileInvitationMapProvider,
   MobileInvitationMetadata,
   MobileInvitationPageData,
   MobileInvitationThemeKey,
@@ -42,6 +43,7 @@ export type ManageFormState = WeddingDateTimeInputs & {
   ceremonyContact: string;
   mapDescription: string;
   mapUrl: string;
+  mapProviders: MobileInvitationMapProvider[];
   kakaoLatitude: string;
   kakaoLongitude: string;
   kakaoLevel: string;
@@ -162,6 +164,19 @@ export const EDITOR_STEPS: EditorStep[] = [
   },
 ];
 
+export const MOBILE_MAP_PROVIDERS: MobileInvitationMapProvider[] = ['naver', 'kakao', 'google'];
+export const MOBILE_MAP_PROVIDER_LABELS: Record<MobileInvitationMapProvider, string> = {
+  naver: '네이버 지도',
+  kakao: '카카오맵',
+  google: '구글 지도',
+};
+
+export function normalizeMobileMapProviders(value: unknown): MobileInvitationMapProvider[] {
+  if (value === undefined) return [...MOBILE_MAP_PROVIDERS];
+  if (!Array.isArray(value)) return [];
+  return MOBILE_MAP_PROVIDERS.filter((provider) => value.includes(provider));
+}
+
 export const GUESTBOOK_PAGE_SIZE = 8;
 export const DEFAULT_MUSIC_VOLUME = 0.35;
 
@@ -203,6 +218,7 @@ export const EMPTY_FORM: ManageFormState = {
   ceremonyContact: '',
   mapDescription: '',
   mapUrl: '',
+  mapProviders: [...MOBILE_MAP_PROVIDERS],
   kakaoLatitude: '',
   kakaoLongitude: '',
   kakaoLevel: '',
@@ -537,6 +553,7 @@ export function buildManageFormFromDashboard(
     ceremonyContact: readString(pageData.ceremonyContact),
     mapDescription: readString(pageData.mapDescription),
     mapUrl: readString(pageData.mapUrl),
+    mapProviders: normalizeMobileMapProviders(pageData.mapProviders),
     kakaoLatitude:
       typeof kakaoMap.latitude === 'number' && Number.isFinite(kakaoMap.latitude)
         ? String(kakaoMap.latitude)
