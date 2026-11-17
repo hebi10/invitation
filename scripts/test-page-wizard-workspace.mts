@@ -325,7 +325,11 @@ const publishWindow = {
 const scheduledAccess = getInvitationPublicAccessState(publishWindow, new Date('2027-05-06T00:00:00Z'));
 const visibleAccess = getInvitationPublicAccessState(publishWindow, new Date('2027-05-06T06:00:00Z'));
 const expiredAccess = getInvitationPublicAccessState(publishWindow, new Date('2027-05-08T00:00:00Z'));
-assert.match(scheduledAccess.adminDescription ?? '', /오후 2:00/, '공개 시작 시각은 실행 환경과 관계없이 한국 시간입니다.');
+assert.match(
+  scheduledAccess.adminDescription ?? '',
+  /2027년\s+5월\s+6일\s+(?:오후|PM)\s+2:00부터 공개됩니다/,
+  '공개 시작 시각은 실행 환경의 오전·오후 표기와 관계없이 한국 시간입니다.'
+);
 assert.match(getWizardPublicationSaveMessage(false), /비공개 초안/);
 assert.match(getWizardPublicationSaveMessage(true, visibleAccess), /저장 즉시.*하객/);
 assert.ok(getWizardPublicationSaveMessage(true, scheduledAccess).includes(scheduledAccess.adminDescription!));
