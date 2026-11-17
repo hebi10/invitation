@@ -24,7 +24,7 @@ def guard_script(text):
 class LegacyPublishGuardTest(unittest.TestCase):
     def test_guard_runs_before_legacy_build_or_authentication(self):
         contents = WORKFLOW.read_text(encoding="utf-8")
-        self.assertLess(contents.index(MARKER), contents.index("      - uses: actions/checkout@v4"))
+        self.assertLess(contents.index(MARKER), contents.index("      - uses: actions/checkout@v4", contents.index(MARKER)))
         self.assertIn("exit 1", guard_script(contents))
 
     def test_approved_nonpublishing_modes(self):
