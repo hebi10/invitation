@@ -509,26 +509,26 @@ def main():
                 wait_screen(name, f'design-check?step={step}', expected)
             intro_tree = wait_screen(
                 'editor-intro-closed', 'design-check?step=intro',
-                ['첫 화면 애니메이션 (선택)', '공유 제목과 설명'],
+                ['인트로 GIF (선택)', '공유 제목과 설명'],
             )
             intro_toggle = next(
                 (node for node in intro_tree.iter('node')
-                 if node.get('content-desc') == '첫 화면 애니메이션 (선택)'
+                 if node.get('content-desc') == '인트로 GIF (선택)'
                  and node.get('enabled') == 'true'), None,
             )
             if intro_toggle is None or not tap(intro_toggle):
-                raise RuntimeError('intro disclosure: 첫 화면 애니메이션 펼침 버튼을 찾거나 누르지 못했습니다.')
+                raise RuntimeError('intro disclosure: 인트로 GIF 펼침 버튼을 찾거나 누르지 못했습니다.')
             wait_screen('editor-intro', 'design-check?step=intro',
-                        ['첫 화면 애니메이션', '현재 선택한 연출', '사용 안 함'], timeout=45, launch=False)
-            for intro_style, intro_label in [
-                ('light', '타이포그래피형'),
-                ('cinema', '웨딩 화보형'),
-                ('envelope', '편지형 초대장'),
+                        ['인트로 GIF (선택)', '사용 안 함'], timeout=45, launch=False)
+            for preset_suffix, preset_label in [
+                ('01', '미니멀 라인'),
+                ('06', '페이지 넘김'),
+                ('10', '신랑신부 손잡기'),
             ]:
                 wait_screen(
-                    f'editor-intro-{intro_style}-selected',
-                    f'design-check?step=intro-{intro_style}',
-                    ['첫 화면 애니메이션 (선택)', f'현재 선택: {intro_label}'],
+                    f'editor-intro-{preset_suffix}-selected',
+                    f'design-check?step=intro-preset-{preset_suffix}',
+                    ['인트로 GIF (선택)', f'저장된 설정: {preset_label}'],
                     timeout=60,
                 )
             for name, kind, expected in [

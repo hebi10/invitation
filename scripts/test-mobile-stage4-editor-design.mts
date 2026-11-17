@@ -23,7 +23,7 @@ const manage = read('apps/mobile/src/features/screens/manage.tsx');
 assert.deepEqual(EDITOR_STEPS.map((step) => step.key), [
   'basic', 'schedule', 'location', 'greeting', 'images', 'music', 'settings',
 ]);
-assert.equal(WEDDING_INTRO_OPTIONS.length, 4, 'All existing PC intro options must remain selectable');
+assert.equal(WEDDING_INTRO_OPTIONS.length, 4, 'Existing intro values must remain supported for saved customers');
 
 assert.match(editor, /accessibilityRole="progressbar"/);
 assert.match(editor, /accessibilityValue=\{\{ min: 1, max: steps.length, now: activeStepIndex \+ 1 \}\}/);
@@ -86,14 +86,21 @@ assert.match(music, /선택됨/);
 assert.match(music, /form.musicEnabled \? \(/);
 assert.match(music, /음악이 꺼져 있습니다/);
 assert.match(music, /음악 음량 \(0~1\)/);
-assert.match(settings, /WEDDING_INTRO_OPTIONS.map/);
-assert.match(settings, /onSetIntroStyle\(option.value\)/);
-assert.match(settings, /onPreviewIntro\(option.value\)/);
+assert.match(settings, /listAvailableInvitationIntroPresets\(eventType\)/,
+  'Android GIF options must respect the saved event type');
+assert.match(settings, /visiblePresets\.map\(\(preset\)/,
+  'Android must display filtered GIF presets');
+assert.doesNotMatch(settings, /WEDDING_INTRO_OPTIONS\.map/,
+  'Legacy animations must not appear as duplicate GIF choices');
+assert.match(settings, /WEDDING_INTRO_OPTIONS\.find/,
+  'Legacy saved intro label must remain readable');
+assert.match(settings, /onSetIntroPresetId\(preset\.id\)/);
+assert.match(settings, /onPreviewIntroPreset\(preset\.id\)/);
 assert.match(settings, /savedPublished \? '공개' : '비공개'/);
 assert.match(settings, /저장 예정:/);
 assert.match(settings, /onSetPublished\(true\)/);
 assert.match(settings, /onSetPublished\(false\)/);
-assert.match(settings, /title="첫 화면 애니메이션 \(선택\)"/);
+assert.match(settings, /title="인트로 GIF \(선택\)"/);
 assert.match(settings, /공개 선택/);
 assert.match(settings, /비공개 선택/);
 assert.match(manage, /onClose=\{\(\) => void handleCloseEditorModal\(\)\}/);
@@ -106,6 +113,10 @@ assert.match(capture, /'editor-intro-closed'/);
 assert.match(capture, /'editor-save-error'/);
 
 assert.match(fixture, /resolveCaptureStepIndex/);
+assert.match(fixture, /onSetIntroPresetId=/);
+assert.match(fixture, /eventType="wedding"/);
+assert.ok(capture.includes("'인트로 GIF (선택)'"),
+  'Android emulator capture must verify the current intro GIF disclosure title');
 assert.match(fixture, /EDITOR_STEPS.findIndex/);
 for (const step of ['schedule', 'location', 'greeting', 'images', 'music']) {
   assert.ok(capture.includes(`'editor-${step}'`), `Android screenshot must cover ${step}`);

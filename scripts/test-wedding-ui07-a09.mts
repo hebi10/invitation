@@ -70,8 +70,9 @@ const introIndex = event.indexOf('<WeddingIntro');
 const musicIndex = event.indexOf('<BackgroundMusic');
 assert.ok(contentIndex >= 0 && contentIndex < introIndex && introIndex < musicIndex,
   'Intro and music must remain external to public section renderer');
-expectAll(event, ['normalizeWeddingIntroStyle', 'shouldRenderMusic',
-  'alignToInvitation', 'autoPlay'], 'EventInvitationPage');
+expectAll(event, ['resolvePublicInvitationIntro', "introDecision.kind === 'gif'",
+  "introDecision.kind === 'legacy-wedding'", '<PublicInvitationGifIntro',
+  '<WeddingIntro', 'shouldRenderMusic', 'alignToInvitation', 'autoPlay'], 'EventInvitationPage');
 expectAll(intro, ['role="dialog"', 'aria-modal="true"', 'useDialogLayer(',
   'completeRef.current?.()', '[data-wedding-cover-photo]', 'sessionStorage',
   'prefers-reduced-motion: reduce'], 'WeddingIntro');

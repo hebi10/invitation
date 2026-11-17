@@ -26,6 +26,7 @@ import {
   type InvitationPageRegistryRecord,
 } from '@/lib/invitationPagePersistence';
 import { DEFAULT_EVENT_TYPE, normalizeEventTypeKey, type EventTypeKey } from '@/lib/eventTypes';
+import { assertInvitationIntroChoiceForEvent } from '@/lib/invitationIntroCatalog';
 import {
   getInvitationPageSlugValidationErrorMessage,
   type InvitationPageSlugAvailabilityReason,
@@ -535,7 +536,10 @@ export async function getServerEditableInvitationPageConfig(
     return fallbackConfig
       ? {
           slug: normalizedPageSlug,
-          config: sanitizeHeartIconPlaceholdersDeep(fallbackConfig),
+          config: sanitizeHeartIconPlaceholdersDeep({
+            ...fallbackConfig,
+            eventType: normalizeEventTypeKey(fallbackConfig.eventType, DEFAULT_EVENT_TYPE),
+          }),
           published: true,
           defaultTheme: DEFAULT_INVITATION_THEME,
           productTier: fallbackProductTier,
@@ -575,7 +579,11 @@ export async function getServerEditableInvitationPageConfig(
 
   return {
     slug: normalizedPageSlug,
-    config: editableConfig,
+    config: {
+      ...editableConfig,
+      eventType: normalizeEventTypeKey(editableConfig.eventType,
+        normalizeEventTypeKey(sourceRecord.page.eventType, DEFAULT_EVENT_TYPE)),
+    },
     published: sourceRecord.page.published,
     defaultTheme: registryRecord?.defaultTheme ?? DEFAULT_INVITATION_THEME,
     productTier,
@@ -596,6 +604,10 @@ export async function saveServerInvitationPageConfig(
     customerOwnerUid?: string;
   } = {}
 ) {
+  assertInvitationIntroChoiceForEvent(
+    config.introPresetId,
+    normalizeEventTypeKey(config.eventType, DEFAULT_EVENT_TYPE)
+  );
   const fallbackTheme = options.defaultTheme
     ? normalizeInvitationTheme(options.defaultTheme)
     : resolveAvailableInvitationVariant(config.variants, DEFAULT_INVITATION_THEME) ??

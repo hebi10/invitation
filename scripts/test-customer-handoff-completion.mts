@@ -6,6 +6,7 @@ import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { QueryClient } from '@tanstack/react-query';
 import { appQueryKeys, FIFTEEN_MINUTES_MS } from '../src/lib/appQuery.ts';
+import { parseInvitationIntroChoice, type InvitationIntroChoice } from '../src/lib/invitationIntroCatalog.ts';
 import * as customerWorkspace from '../src/lib/customerInvitationWorkspace.ts';
 import * as adminWizardNavigation from '../src/lib/adminWizardNavigation.ts';
 
@@ -27,12 +28,16 @@ client.setQueryData(otherKey, 'other invitation');
 const emitted = ts.transpileModule(`const onPersisted = ${callback.getText(wizardSource)}; onPersisted;`, {
   compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.CommonJS },
 }).outputText;
+let savedIntroChoice: InvitationIntroChoice | null = null;
 const onPersisted = runInNewContext(emitted, {
   queryClient: client, appQueryKeys, authUser: { uid: 'customer' }, published: false,
   defaultTheme: 'simple', setPersistedPublished() {}, setHasUnsavedChanges() {},
+  parseInvitationIntroChoice,
+  setSavedIntroPresetId(value: InvitationIntroChoice | null) { savedIntroChoice = value; },
   normalizeInvitationProductTier: (value: unknown) => value, resolveInvitationFeatures: () => ({}),
 });
-await onPersisted({ slug: 'sample', config: {}, version: 2, published: false });
+await onPersisted({ slug: 'sample', config: { introPresetId: 'intro-02' }, version: 2, published: false });
+assert.equal(savedIntroChoice, 'intro-02', 'Completing a save must synchronize the verified GIF choice');
 let fetched = false;
 const refreshed = await client.fetchQuery({ queryKey: resultKey, staleTime: FIFTEEN_MINUTES_MS,
   queryFn: async () => { fetched = true; return 'latest saved content'; } });

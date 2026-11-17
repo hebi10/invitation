@@ -452,6 +452,12 @@ const OPENING_EVENT_STEP_KEYS: WizardStepKey[] = [
   'final',
 ];
 
+// Inactive non-wedding types use grouped media (photos, music, extra) before intro.
+// Keep step order aligned with buildWizardSections when these types are enabled.
+const NON_WEDDING_FALLBACK_STEP_KEYS: WizardStepKey[] = [
+  'basic', 'schedule', 'greeting', 'images', 'music', 'extra', 'intro', 'final',
+];
+
 const WIZARD_STEP_CONFIGS: Record<WizardStepConfigKey, WizardStepConfigDefinition> = {
   'wedding-page-wizard': {
     key: 'wedding-page-wizard',
@@ -492,15 +498,15 @@ const WIZARD_STEP_CONFIGS: Record<WizardStepConfigKey, WizardStepConfigDefinitio
     key: 'seventieth-page-wizard',
     eventType: 'seventieth',
     commonSetupSteps: ['eventType', 'theme', 'slug'],
-    eventSpecificSteps: WEDDING_EVENT_STEP_KEYS,
-    editSteps: WEDDING_EVENT_STEP_KEYS,
+    eventSpecificSteps: NON_WEDDING_FALLBACK_STEP_KEYS,
+    editSteps: NON_WEDDING_FALLBACK_STEP_KEYS,
   },
   'generic-page-wizard': {
     key: 'generic-page-wizard',
     eventType: 'etc',
     commonSetupSteps: ['eventType', 'theme', 'slug'],
-    eventSpecificSteps: WEDDING_EVENT_STEP_KEYS,
-    editSteps: WEDDING_EVENT_STEP_KEYS,
+    eventSpecificSteps: NON_WEDDING_FALLBACK_STEP_KEYS,
+    editSteps: NON_WEDDING_FALLBACK_STEP_KEYS,
   },
 };
 

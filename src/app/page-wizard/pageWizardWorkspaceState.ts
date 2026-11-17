@@ -4,6 +4,7 @@ import { buildWeddingDateObject, formatDateLabel, formatTimeLabel } from './page
 import type { BankAccount, InvitationPageSeed } from '@/types/invitationPage';
 import { normalizeWeddingIntroStyle, WEDDING_INTRO_OPTIONS } from '@/lib/weddingIntro';
 import { getInvitationIntroPreset, parseInvitationIntroChoice } from '@/lib/invitationIntroCatalog';
+import { normalizeEventTypeKey } from '@/lib/eventTypes';
 
 export type WizardSaveStatus =
   | 'idle'
@@ -137,7 +138,7 @@ export function buildWizardReviewFacts(config: InvitationPageSeed, imagesValid: 
   const introLabel = introChoice === 'none'
     ? '사용 안 함'
     : introChoice
-      ? (getInvitationIntroPreset(introChoice)?.label ?? '인트로 선택')
+      ? (getInvitationIntroPreset(introChoice, normalizeEventTypeKey(eventType))?.label ?? '현재 행사에서 사용 불가')
       : (WEDDING_INTRO_OPTIONS.find(option => option.value === normalizeWeddingIntroStyle(config.introStyle))?.label ?? '사용 안 함');
   facts.push({ label: '첫 화면 연출', value: introLabel });
   if ((eventType === 'wedding' || eventType === 'birthday') && config.displayName.trim()) {
