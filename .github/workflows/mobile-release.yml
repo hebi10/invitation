@@ -143,6 +143,16 @@ jobs:
       build_attempt: ${{ steps.metadata.outputs.build_attempt }}
       release_name: ${{ steps.metadata.outputs.release_name }}
     steps:
+      - name: RU-02 refuse legacy Play publishing before signed build
+        env:
+          LEGACY_DEPLOY: ${{ inputs.deploy && 'true' || 'false' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ "$LEGACY_DEPLOY" != false ]]; then
+            echo "::error::Use OPS-04 internal or OPS-05 closed instead of legacy deploy."
+            exit 1
+          fi
       - uses: actions/checkout@v4
         with:
           ref: ${{ github.sha }}
