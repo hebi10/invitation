@@ -72,7 +72,8 @@ export default function VenueStep({
 
               draft.pageData.ceremonyAddress = event.target.value;
 
-              if (draft.pageData.mapUrl?.startsWith('https://map.kakao.com/link/search/')) {
+              if (draft.pageData.mapUrl?.startsWith('https://map.kakao.com/link/search/') ||
+                  draft.pageData.mapUrl?.startsWith('https://map.kakao.com/link/map/')) {
                 draft.pageData.mapUrl = '';
               }
 
@@ -132,7 +133,7 @@ export default function VenueStep({
         />
       ) : null}
 
-      {formState.eventType === 'wedding' ? (
+      {(!formState.eventType || formState.eventType === 'wedding') ? (
         <div className={blockStyles.providerSettings} aria-label="하객에게 표시할 지도 앱">
           <p className={blockStyles.providerTitle}>하객에게 표시할 지도 앱</p>
           <p className={blockStyles.description}>주소로 지도 링크가 자동 생성됩니다. 표시할 지도만 선택해 주세요.</p>

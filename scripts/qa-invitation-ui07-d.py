@@ -127,7 +127,7 @@ def measure(page):
     }""")
 
 
-def verify(page, theme, width, mode, record, font_x2):
+def verify(page, theme, width, mode, record, font_x2, provider_case='default'):
     main = page.locator(f'main[data-design="{theme}"]')
     main.wait_for(state="visible", timeout=35000)
     page.evaluate("document.fonts.ready")
@@ -184,14 +184,22 @@ def verify(page, theme, width, mode, record, font_x2):
     assert button.get_attribute("aria-pressed") == "false"
     assert map_surface.locator('[class*="mapHint"]').is_visible()
 
+    labels = {
+        "default": ("네이버 지도", "카카오맵", "구글 지도"),
+        "none": (),
+        "naver": ("네이버 지도",),
+        "naver-kakao": ("네이버 지도", "카카오맵"),
+    }[provider_case]
     links = map_surface.locator('nav[aria-label="지도 바로가기"] a')
-    assert links.count() == 3, "default wedding map must show all three providers"
+    assert links.count() == len(labels), (provider_case, links.count())
+    for label in labels:
+        assert map_surface.get_by_role("link", name=label).count() == 1
     directions = map_surface.get_by_role("link", name="카카오맵")
-    assert directions.count() == 1 and directions.is_visible()
-    assert "/link/to/" in directions.get_attribute("href")
-    assert map_surface.get_by_role("link", name="네이버 지도").count() == 1
-    assert map_surface.get_by_role("link", name="구글 지도").count() == 1
-    assert "/maps/dir/" in map_surface.get_by_role("link", name="구글 지도").get_attribute("href")
+    if "카카오맵" in labels:
+        assert directions.is_visible()
+        assert "/link/to/" in directions.get_attribute("href")
+    if "구글 지도" in labels:
+        assert "/maps/dir/" in map_surface.get_by_role("link", name="구글 지도").get_attribute("href")
     for index in range(links.count()):
         link = links.nth(index)
         bounds = link.bounding_box()
@@ -205,10 +213,12 @@ def verify(page, theme, width, mode, record, font_x2):
 
     if mode == "geocode":
         assert data["geocoder_queries"] == 1, "address fallback should geocode once"
-        assert "37.50002,127.00002" in directions.get_attribute("href")
+        if "카카오맵" in labels:
+            assert "37.50002,127.00002" in directions.get_attribute("href")
     else:
         assert data["geocoder_queries"] == 0, "valid saved coordinates must avoid geocoder"
-        assert "37.50001,127.00001" in directions.get_attribute("href")
+        if "카카오맵" in labels:
+            assert "37.50001,127.00001" in directions.get_attribute("href")
 
     if width in (390, 1440) and not font_x2:
         page.evaluate("document.activeElement?.blur()")
@@ -251,11 +261,15 @@ with sync_playwright() as engine:
         cases += [(theme, 390, 844, "geocode", False) for theme in THEMES]
         cases += [(theme, 390, 844, "failure", False) for theme in THEMES]
         cases += [(theme, 390, 844, "coordinates", True) for theme in THEMES]
+        cases = [(theme, width, height, mode, font_x2, 'default')
+                 for theme, width, height, mode, font_x2 in cases]
+        cases += [(theme, 390, 844, 'coordinates', False, variant)
+                  for theme in THEMES for variant in ('none', 'naver', 'naver-kakao')]
         limit = int(os.environ.get("INVITATION_UI07D_LIMIT", "0"))
         if limit > 0:
             cases = cases[:limit]
 
-        for theme, width, height, mode, font_x2 in cases:
+        for theme, width, height, mode, font_x2, provider_case in cases:
             context = browser.new_context(
                 viewport={"width": width, "height": height},
                 device_scale_factor=1 if width >= 768 else 2,
@@ -270,7 +284,7 @@ with sync_playwright() as engine:
             page.on("pageerror", lambda error: errors.append(str(error)[:350]))
             record = {
                 "theme": theme, "width": width, "mode": mode,
-                "font_200": font_x2, "passed": False, "screens": [],
+                "font_200": font_x2, "providers": provider_case, "passed": False, "screens": [],
             }
             try:
                 query = urlencode({
@@ -278,16 +292,17 @@ with sync_playwright() as engine:
                     "qaUI07Case": "full",
                     "qaUI07Map": "geocode" if mode == "geocode" else "coordinates",
                     "embed": "1",
+                    "qaMapProviders": provider_case,
                 })
                 response = page.goto(
                     BASE + "/sample-invitation/?" + query,
                     wait_until="domcontentloaded", timeout=90000
                 )
                 assert response and response.status == 200, "isolated fixture status"
-                verify(page, theme, width, mode, record, font_x2)
+                verify(page, theme, width, mode, record, font_x2, provider_case)
                 assert not errors, errors
                 record["passed"] = True
-                print("UI07D_OK", theme, width, mode, "text200" if font_x2 else "normal", flush=True)
+                print("UI07D_OK", theme, width, mode, provider_case, "text200" if font_x2 else "normal", flush=True)
             except Exception as error:
                 record["error"] = type(error).__name__ + ": " + str(error)[:1400]
                 print("UI07D_FAIL", theme, width, mode, record["error"], flush=True)

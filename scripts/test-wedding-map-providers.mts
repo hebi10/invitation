@@ -55,6 +55,8 @@ const save = read('apps/mobile/src/features/manage/buildConfigFromForm.ts');
 const types = read('src/types/invitationPage.ts');
 const androidTypes = read('apps/mobile/src/types/mobileInvitation.ts');
 const publicMap = read('src/app/_components/public-invitations/wedding/gyeol/LocationMap.tsx');
+const previewRoute = read('src/app/sample-invitation/page.tsx');
+const previewState = read('src/app/sample-invitation/SampleInvitation.tsx');
 for (const [source, pattern] of [
   [web, 'draft.pageData.mapProviders ='],
   [mobile, 'accessibilityRole="checkbox"'],
@@ -64,5 +66,7 @@ for (const [source, pattern] of [
   [types, 'mapProviders?: WeddingMapProvider[]'],
   [androidTypes, 'mapProviders?: MobileInvitationMapProvider[]'],
   [publicMap, 'data-count={providerLinks.length}'],
+  [previewRoute, "query.qaMapProviders === 'none'"],
+  [previewState, 'QA_MAP_PROVIDER_VARIANTS'],
 ]) assert.ok(source.includes(pattern), 'MAP-01 contract missing: ' + pattern);
 console.log('MAP-01 provider normalization, URL, legacy data, customer editor and public map contracts passed');
