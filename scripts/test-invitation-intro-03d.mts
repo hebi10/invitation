@@ -61,6 +61,9 @@ const legacyBirthdaySave = buildServerTrustedMobileInvitationPageConfigForSave(
   { ...birthdayStored!, introPresetId: undefined }, birthdayStored!);
 assert.equal(legacyBirthdaySave.introPresetId,'intro-05','Older Android omission preserves PC preset');
 assert.equal(mergeInvitationPageSeed(birthdayStored!, {description:'Unrelated description'} )?.introPresetId,'intro-05');
+const futurePreset = { ...birthdayStored!, introPresetId: 'intro-99' as typeof birthdayStored.introPresetId };
+assert.equal(mergeInvitationPageSeed(futurePreset, {description:'Unrelated description'})?.introPresetId,'intro-99',
+  'Editing unrelated information must not erase an intro ID saved by a newer client');
 for (const eventType of events) {
   const base = { ...seed, eventType, introStyle: 'cinema' as const, introPresetId: undefined };
   for (const preset of listAvailableInvitationIntroPresets(eventType)) {
@@ -95,6 +98,8 @@ assert.match(pcPicker,/listAvailableInvitationIntroPresets\(eventType\)/);
 assert.match(pcPicker,/data-intro-group="all"/);
 assert.match(pcPicker,/visiblePresets\.map/);
 assert.match(pcStep,/eventType=\{eventType\}/);
+assert.match(pcStep,/data-intro-unknown-status/,
+  'PC editor must explain when the saved intro ID is newer than its local catalog');
 assert.match(mobile,/listAvailableInvitationIntroPresets\(eventType\)/);
 assert.match(mobile,/setActiveGroup\(group\.id\)/);
 assert.match(mobileContainer,/eventType=\{eventType\}/);
