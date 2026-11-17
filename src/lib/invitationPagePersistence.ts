@@ -19,6 +19,7 @@ import {
 import { DEFAULT_EVENT_TYPE, normalizeEventTypeKey } from '@/lib/eventTypes';
 import { normalizeWeddingIntroStyle } from '@/lib/weddingIntro';
 import { normalizeWeddingCoverSettings } from '@/lib/weddingCover';
+import { normalizeWeddingMapProviders } from '@/lib/weddingMapProviders';
 import { withWeddingThemeAvailability } from '@/lib/weddingThemePolicy';
 import {
   buildInvitationVariants,
@@ -299,6 +300,9 @@ export function mergeInvitationPageSeed(
     ? {
         ...(base?.pageData ?? {}),
         ...pageDataInput,
+        ...(pageDataInput.mapProviders !== undefined
+          ? { mapProviders: normalizeWeddingMapProviders(pageDataInput.mapProviders) }
+          : {}),
         galleryImages: Array.isArray(pageDataInput.galleryImages)
           ? pageDataInput.galleryImages.filter(
               (value): value is string => typeof value === 'string'
