@@ -3,6 +3,7 @@ import 'server-only';
 import { NextResponse } from 'next/server';
 
 import { getKstDateKey } from '@/lib/demoExperienceTime';
+import { DEFAULT_PUBLIC_SITE_URL } from '@/lib/invitationMetadata';
 import type {
   DemoExperienceErrorCode,
   DemoExperienceRole,
@@ -44,7 +45,9 @@ function readCookie(request: Request, name: string) {
 export function assertSameOriginDemoMutation(request: Request) {
   const origin = request.headers.get('origin')?.trim() ?? '';
   const requestUrl = new URL(request.url);
-  const allowedOrigins = new Set([requestUrl.origin]);
+  // Hosting proxies can expose an internal request host while the browser uses the public domain.
+  // Trust the fixed canonical site origin, never an arbitrary forwarded-host value.
+  const allowedOrigins = new Set([requestUrl.origin, new URL(DEFAULT_PUBLIC_SITE_URL).origin]);
   const host = request.headers.get('host')?.split(',')[0]?.trim() ?? '';
   const forwardedProtocol =
     request.headers.get('x-forwarded-proto')?.split(',')[0]?.trim().toLowerCase() ?? '';
