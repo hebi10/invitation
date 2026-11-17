@@ -16,6 +16,8 @@ export default function IntroCatalogSettings({ formState, updateForm, savedValue
   const selected = parseInvitationIntroChoice(formState.introPresetId, eventType);
   const storedChoice = parseInvitationIntroChoice(formState.introPresetId);
   const unavailableStoredChoice = storedChoice !== null && selected === null;
+  const unknownStoredChoice = typeof formState.introPresetId === 'string' &&
+    formState.introPresetId.trim() !== '' && storedChoice === null;
   const legacyStyle = normalizeWeddingIntroStyle(formState.introStyle);
   const legacyOption = WEDDING_INTRO_OPTIONS.find(option => option.value === legacyStyle);
   const retainsLegacy = selected === null && legacyStyle !== 'none';
@@ -38,6 +40,11 @@ export default function IntroCatalogSettings({ formState, updateForm, savedValue
       {unavailableStoredChoice ? (
         <p className={styles.description} role="status">
           기존에 저장된 GIF는 이 행사에서 사용할 수 없습니다. 다른 디자인을 선택해 저장하면 변경됩니다.
+        </p>
+      ) : null}
+      {unknownStoredChoice ? (
+        <p className={styles.description} role="status" data-intro-unknown-status>
+          이전 버전에서 저장된 인트로를 현재 편집기에서 확인할 수 없습니다. 새 디자인을 선택하지 않으면 기존 저장값을 유지합니다.
         </p>
       ) : null}
       <InvitationIntroPicker eventType={eventType} value={selected}
