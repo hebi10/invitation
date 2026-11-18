@@ -413,17 +413,6 @@ async function getConfigByPageSlug(pageSlug: string) {
   return record?.config ?? null;
 }
 
-async function upsertRegistryRecord(
-  pageSlug: string,
-  payload: {
-    published?: boolean;
-    defaultTheme?: InvitationThemeKey;
-    hasCustomConfig?: boolean;
-  }
-) {
-  await firestoreEventRepository.upsertRegistryBySlug(pageSlug, payload);
-}
-
 async function upsertDisplayPeriodRecord(
   pageSlug: string,
   payload: {
@@ -594,6 +583,8 @@ export async function saveServerInvitationPageConfig(
     published?: boolean;
     defaultTheme?: InvitationThemeKey;
     customerOwnerUid?: string;
+    requestPublicationReview?: boolean;
+    allowFirstPublication?: boolean;
   } = {}
 ) {
   const fallbackTheme = options.defaultTheme
@@ -623,9 +614,12 @@ export async function saveServerInvitationPageConfig(
     config: normalizedConfig,
     updatedAt: now,
     expectedVersion: requireInvitationContentVersion(options.expectedVersion),
-    published: options.published ?? true,
+    published: options.published,
     defaultTheme: options.defaultTheme ?? DEFAULT_INVITATION_THEME,
     customerOwnerUid: options.customerOwnerUid,
+    requestPublicationReview: options.requestPublicationReview,
+    allowFirstPublication: options.allowFirstPublication,
+    publicationConfig: config,
   });
 
   return { version, config: normalizedConfig };
@@ -704,14 +698,15 @@ export async function restoreServerInvitationPageConfig(
   } = {}
 ) {
   const normalizedPageSlug = normalizeInvitationPageSlugInput(pageSlug);
-  if (!normalizedPageSlug || !getWeddingPageBySlug(normalizedPageSlug)) {
+  const sample = normalizedPageSlug ? getWeddingPageBySlug(normalizedPageSlug) : null;
+  if (!normalizedPageSlug || !sample) {
     throw new Error('해당 페이지 주소를 찾을 수 없습니다.');
   }
 
-  await upsertRegistryRecord(normalizedPageSlug, {
-    published: options.published ?? true,
+  await firestoreEventRepository.setPublicationBySlug(normalizedPageSlug, {
     defaultTheme: options.defaultTheme,
-    hasCustomConfig: false,
+    sample,
+    restoreSample: true,
   });
 }
 
@@ -720,6 +715,9 @@ export async function setServerInvitationPagePublished(
   published: boolean,
   options: {
     defaultTheme?: InvitationThemeKey;
+    expectedVersion?: number;
+    expectedReviewRequestedAt?: string;
+    allowFirstPublication?: boolean;
   } = {}
 ) {
   const normalizedPageSlug = normalizeInvitationPageSlugInput(pageSlug);
@@ -727,19 +725,10 @@ export async function setServerInvitationPagePublished(
     throw new Error('올바른 페이지 주소가 필요합니다.');
   }
 
-  const [existingConfig, existingRegistry] = await Promise.all([
-    getConfigByPageSlug(normalizedPageSlug),
-    getRegistryByPageSlug(normalizedPageSlug),
-  ]);
-
-  if (!getWeddingPageBySlug(normalizedPageSlug) && !existingConfig && !existingRegistry) {
-    throw new Error('해당 페이지 주소를 찾을 수 없습니다.');
-  }
-
-  await upsertRegistryRecord(normalizedPageSlug, {
+  await firestoreEventRepository.setPublicationBySlug(normalizedPageSlug, {
+    ...options,
     published,
-    defaultTheme: options.defaultTheme ?? existingRegistry?.defaultTheme,
-    hasCustomConfig: existingRegistry?.hasCustomConfig ?? Boolean(existingConfig),
+    sample: getEventSamplePageBySlug(normalizedPageSlug) ?? getWeddingPageBySlug(normalizedPageSlug),
   });
 }
 
@@ -748,7 +737,6 @@ export async function setServerInvitationPageVariantAvailability(
   variantKey: InvitationVariantKey,
   available: boolean,
   options: {
-    published?: boolean;
     defaultTheme?: InvitationThemeKey;
   } = {}
 ) {
@@ -825,7 +813,6 @@ export async function setServerInvitationPageVariantAvailability(
     },
     {
       expectedVersion: editableConfig.version,
-      published: options.published ?? editableConfig.published,
       defaultTheme: options.defaultTheme ?? editableConfig.defaultTheme,
     }
   );

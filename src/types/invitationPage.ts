@@ -189,3 +189,9 @@ export interface InvitationPageSeed
     InvitationPage,
     'published' | 'displayPeriodEnabled' | 'displayPeriodStart' | 'displayPeriodEnd'
   > {}
+
+export interface InvitationPublicationReviewState {
+  status: 'pending' | 'stale';
+  requestedContentVersion: number;
+  requestedAt: string;
+}

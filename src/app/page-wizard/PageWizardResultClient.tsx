@@ -297,6 +297,9 @@ export default function PageWizardResultClient({
   const customerPreviewPath = experience ? livePagePath : buildCustomerInvitationPreviewPath(slug, previewTheme);
   const publicAccess = resultState?.status === 'ready' ? resultState.publicAccess : undefined;
   const customerStatus = getCustomerInvitationStatus(configState.published, publicAccess);
+  const publicationReview = !experience && !isAdminLoggedIn && !configState.published
+    ? configState.publicationReview
+    : undefined;
   const guestUrl = `${PUBLIC_SITE_ORIGIN}/${encodeURIComponent(slug)}`;
   const copyGuestLink = async () => {
     if (!customerStatus.isPublic) return;
@@ -328,6 +331,12 @@ export default function PageWizardResultClient({
             <p className={resultStyles.savedStatus}>
               {customerStatus.label} · 마지막 저장 {formatSavedAt(configState.lastSavedAt)}
             </p>
+          ) : null}
+          {publicationReview?.status === 'pending' ? (
+            <p className={resultStyles.savedStatus}>관리자 검토 대기 · 하객에게 노출되면 하객용 링크를 복사할 수 있습니다.</p>
+          ) : null}
+          {publicationReview?.status === 'stale' ? (
+            <p className={resultStyles.savedStatus}>검토 요청 후 내용이 변경되었습니다. 편집 화면에서 검토 요청을 다시 보내 주세요.</p>
           ) : null}
           <div className={isAdminLoggedIn ? `${styles.fieldGrid} ${styles.resultMetaGrid}` : resultStyles.customerLink}>
             <div className={styles.previewUrlCard}>

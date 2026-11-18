@@ -1630,6 +1630,8 @@ export default function PageWizardClient({
   /* ── Main wizard ── */
 
   const eventTypeMeta = getEventTypeMeta(eventType);
+  const canRequestPublicationReview = !experience && !isAdminLoggedIn && !persistedPublished &&
+    wizardLoadQuery.data?.status === 'ready' && wizardLoadQuery.data.editableConfig.dataSource === 'firestore';
   const saveStatus = resolveWizardSaveStatus({
     isSaving,
     hasUnsavedChanges,
@@ -1703,6 +1705,7 @@ export default function PageWizardClient({
         })();
       }}
       onFinalConfirm={() => void handleFinalConfirm()}
+      onRequestPublicationReview={canRequestPublicationReview ? () => void handleFinalConfirm(true) : undefined}
       onSave={() => setupOnly && !resolvedPersistedSlug ? void handleCreateInSetup() : void persistDraft({ successMessage: '내용을 저장했습니다. 공개 상태는 유지됩니다.' })}
     />
   );

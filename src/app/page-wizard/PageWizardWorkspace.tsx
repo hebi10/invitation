@@ -78,6 +78,7 @@ type PageWizardWorkspaceProps = {
   onPrevious: () => void;
   onNext: () => void;
   onFinalConfirm: () => void;
+  onRequestPublicationReview?: () => void;
   onSave: () => void;
 };
 
@@ -142,6 +143,7 @@ export default function PageWizardWorkspace({
   onPrevious,
   onNext,
   onFinalConfirm,
+  onRequestPublicationReview,
   onSave,
 }: PageWizardWorkspaceProps) {
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
@@ -196,6 +198,7 @@ export default function PageWizardWorkspace({
     (section) => section.id === activeSection.id
   );
   const isFinalSection = activeSection.id === 'review';
+  const showPublicationReviewAction = isFinalSection && Boolean(onRequestPublicationReview);
   const canOpenAfterPublishing = Boolean((persistedPublished ? publicAccess : publicAccessIfPublished)?.isPublic);
   const publicationSaveMessage = experience
     ? '체험 청첩장에 내용을 저장합니다.'
@@ -322,7 +325,7 @@ export default function PageWizardWorkspace({
               ) : null}
             </div>
             <button type="button" className={styles.secondaryAction} onClick={() => attempt(onSave, true)} disabled={isSaving}>
-              {isSaving ? busyLabel : saveStatus === 'error' ? '저장 다시 시도' : setupOnly ? (hasPersistedData ? '설정 저장' : '초대장 생성') : publication.isPublic && !experience ? '저장 · 즉시 반영' : '내용 저장'}
+              {isSaving ? busyLabel : showPublicationReviewAction ? '내용만 저장' : saveStatus === 'error' ? '저장 다시 시도' : setupOnly ? (hasPersistedData ? '설정 저장' : '초대장 생성') : publication.isPublic && !experience ? '저장 · 즉시 반영' : '내용 저장'}
             </button>
             {fullPreview || activePreviewStep ? (
               <button
@@ -479,7 +482,9 @@ export default function PageWizardWorkspace({
       <footer className={styles.actionBar}>
         <div className={styles.actionBarInner}>
           <div className={styles.actionContext}><span>{activeSection.title}</span>
-            <p id="wizard-save-publication">{publicationSaveMessage}</p>
+            <p id="wizard-save-publication">{showPublicationReviewAction
+              ? '검토 요청을 보내면 관리자가 내용을 확인한 뒤 공개할 수 있습니다.'
+              : publicationSaveMessage}</p>
           </div>
           <div className={styles.actionButtons}>
             {!setupOnly ? <button
@@ -494,11 +499,11 @@ export default function PageWizardWorkspace({
               <button
                 type="button"
                 className={styles.primaryAction}
-                onClick={() => attempt(onFinalConfirm, true)}
+                onClick={() => attempt(onRequestPublicationReview ?? onFinalConfirm, true)}
                 aria-describedby="wizard-save-publication"
                 disabled={isSaving}
               >
-                {isSaving ? busyLabel : !canManageSetup ? '내용 저장 완료' : published
+                {isSaving ? busyLabel : onRequestPublicationReview ? '저장하고 검토 요청' : !canManageSetup ? '내용 저장 완료' : published
                   ? canOpenAfterPublishing ? '저장 후 공개' : '공개 설정 저장'
                   : persistedPublished ? '비공개로 저장' : '초안 저장'}
               </button>

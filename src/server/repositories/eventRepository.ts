@@ -3,6 +3,7 @@ import { InvitationVersionConflictError, readInvitationContentVersion, requireIn
 import type { Transaction } from 'firebase-admin/firestore';
 
 import { DEFAULT_EVENT_TYPE, normalizeEventTypeKey } from '@/lib/eventTypes';
+import { assertInvitationReadyForPublication } from '@/lib/invitationPublication';
 import { normalizeInvitationPageSlugInput, stripUndefinedDeep } from '@/lib/invitationPagePersistence';
 import { DEFAULT_INVITATION_THEME, type InvitationThemeKey } from '@/lib/invitationThemes';
 import type {
@@ -17,6 +18,7 @@ import {
   buildInvitationPageConfigRecordFromEventContent,
   buildInvitationPageDisplayPeriodRecordFromEventSummary,
   buildInvitationPageRegistryRecordFromEventSummary,
+  getInvitationPublicationReviewState,
   normalizeEventSlugIndexRecord,
   normalizeEventSummaryRecord,
   type EventSlugIndexRecord,
@@ -76,6 +78,16 @@ interface EnsureEventMirrorOptions {
   now?: Date;
 }
 
+interface EventPublicationInput {
+  published?: boolean;
+  expectedVersion?: number;
+  expectedReviewRequestedAt?: string;
+  allowFirstPublication?: boolean;
+  defaultTheme?: InvitationThemeKey;
+  sample?: InvitationPageSeed | null;
+  restoreSample?: boolean;
+}
+
 export interface EventRepository {
   isAvailable(): boolean;
   isSlugTaken(pageSlug: string): Promise<boolean>;
@@ -105,10 +117,14 @@ export interface EventRepository {
       endDate: Date | null;
     }
   ): Promise<void>;
+  setPublicationBySlug(pageSlug: string, input: EventPublicationInput): Promise<void>;
   saveContentBySlug(input: {
     expectedVersion: number;
     customerOwnerUid?: string;
+    requestPublicationReview?: boolean;
     published?: boolean;
+    allowFirstPublication?: boolean;
+    publicationConfig?: InvitationPageSeed;
     defaultTheme?: InvitationThemeKey;
     slug: string;
     config: InvitationPageSeed;
@@ -127,6 +143,17 @@ export interface EventRepository {
 
 function normalizePageSlug(pageSlug: string) {
   return normalizeInvitationPageSlugInput(pageSlug);
+}
+
+function assertPublicationAllowed(
+  config: InvitationPageSeed | null,
+  eventType: EventSummaryRecord['eventType'] | undefined,
+  allowFirstPublication: boolean | undefined
+) {
+  if (allowFirstPublication === false) {
+    throw Object.assign(new Error('Recent authentication is required for this action.'), { status: 403 });
+  }
+  assertInvitationReadyForPublication(config, eventType);
 }
 
 export function buildInitialEventIdFromSlug(pageSlug: string) {
@@ -799,6 +826,7 @@ export async function assignEventOwnerBySlug(input: {
         ownerUid: normalizedOwnerUid,
         ownerEmail: input.ownerEmail?.trim() || null,
         ownerDisplayName: input.ownerDisplayName?.trim() || null,
+        ...(current?.ownerUid !== normalizedOwnerUid ? { publicationReview: null } : {}),
         updatedAt: now,
       },
       { merge: true }
@@ -848,6 +876,7 @@ export async function clearEventOwnerBySlug(pageSlug: string) {
         ownerUid: null,
         ownerEmail: null,
         ownerDisplayName: null,
+        publicationReview: null,
         updatedAt: now,
       },
       { merge: true }
@@ -993,6 +1022,74 @@ export const firestoreEventRepository: EventRepository = {
     });
   },
 
+  async setPublicationBySlug(pageSlug, input) {
+    const { normalizedPageSlug, eventId, resolvedEvent } = await ensureSlugIndexWriteAllowed(pageSlug);
+    const db = getServerFirestore();
+    if (!db) throw new Error('Server Firestore is not available.');
+    const eventRef = db.collection(EVENTS_COLLECTION).doc(eventId);
+    const contentRef = eventRef.collection(EVENT_CONTENT_COLLECTION).doc(EVENT_CURRENT_CONTENT_DOC);
+    const indexRef = db.collection(EVENT_SLUG_INDEX_COLLECTION).doc(normalizedPageSlug);
+    await db.runTransaction(async (transaction) => {
+      const [eventSnapshot, contentSnapshot, indexSnapshot] = await Promise.all([
+        transaction.get(eventRef), transaction.get(contentRef), transaction.get(indexRef),
+      ]);
+      const current = eventSnapshot.exists
+        ? normalizeEventSummaryRecord(eventSnapshot.id, eventSnapshot.data() ?? {}, normalizedPageSlug)
+        : null;
+      if (!current && (resolvedEvent || !input.sample)) {
+        throw Object.assign(new Error('청첩장을 찾을 수 없습니다.'), { status: 404 });
+      }
+      if (isEventDeletionBlockingAccess(current?.deletion)) {
+        throw Object.assign(new Error('현재 이용할 수 없는 청첩장입니다.'), { status: 409 });
+      }
+      const index = indexSnapshot.exists
+        ? normalizeEventSlugIndexRecord(indexSnapshot.id, indexSnapshot.data() ?? {}) : null;
+      assertEventSlugIndexOwnership({ slug: normalizedPageSlug, nextEventId: eventId, existingRecord: index });
+      const stored = contentSnapshot.data() ?? {};
+      const version = readInvitationContentVersion(stored.version);
+      if (input.expectedVersion !== undefined && input.expectedVersion !== version) {
+        throw new InvitationVersionConflictError(version);
+      }
+      if (input.expectedReviewRequestedAt !== undefined) {
+        const review = current && getInvitationPublicationReviewState(current, version);
+        if (review?.status !== 'pending' || review.requestedAt !== input.expectedReviewRequestedAt) {
+          throw Object.assign(new Error('검토 요청이 변경되었습니다. 최신 내용을 다시 확인해 주세요.'), { status: 409 });
+        }
+      }
+
+      const published = input.published ?? current?.published ?? Boolean(input.sample);
+      const hasCustomContent = !input.restoreSample && (current?.hasCustomContent ?? contentSnapshot.exists);
+      if (published && current?.published !== true) {
+        const config = hasCustomContent || !input.sample
+          ? stored.content as InvitationPageSeed | null | undefined
+          : input.sample;
+        assertPublicationAllowed(config ?? null, current?.eventType, input.allowFirstPublication);
+      }
+
+      const now = new Date();
+      const summary = buildEventSummaryFromRepositoryState({
+        pageSlug: normalizedPageSlug, eventId, existing: current, forceCreate: true, now,
+        registry: {
+          docId: normalizedPageSlug, pageSlug: normalizedPageSlug, published,
+          defaultTheme: input.defaultTheme ?? current?.defaultTheme ?? DEFAULT_INVITATION_THEME,
+          hasCustomConfig: hasCustomContent,
+          createdAt: current?.createdAt ?? now, updatedAt: now,
+        },
+      });
+      if (!summary) throw new Error('Failed to build event publication summary.');
+      await writeEventSummaryMirror(transaction, summary, now);
+      if ((published && current?.published !== true) || input.restoreSample) {
+        transaction.set(eventRef, { publicationReview: null }, { merge: true });
+      }
+      if (!index) {
+        transaction.set(indexRef, {
+          slug: normalizedPageSlug, eventId, eventType: summary.eventType,
+          status: 'active', targetSlug: null, createdAt: now, updatedAt: now,
+        }, { merge: true });
+      }
+    });
+  },
+
   async saveContentBySlug(input) {
     const expectedVersion = requireInvitationContentVersion(input.expectedVersion);
     const slugGuard = await ensureSlugIndexWriteAllowed(input.slug);
@@ -1042,18 +1139,38 @@ export const firestoreEventRepository: EventRepository = {
         createdAt: stored.createdAt ?? input.createdAt ?? now, updatedAt: now,
         seedSourceSlug: input.seedSourceSlug?.trim() || stored.seedSourceSlug || null,
       };
+      const published = (isCustomerSave ? current?.published : input.published) ?? current?.published ?? true;
+      const firstPublication = published && current?.published !== true;
+      if (firstPublication) {
+        assertPublicationAllowed(input.publicationConfig ?? input.config, current?.eventType, input.allowFirstPublication);
+      }
+      const requestReview = isCustomerSave && input.requestPublicationReview === true && !published;
+      if (requestReview) {
+        assertInvitationReadyForPublication(input.publicationConfig ?? nextContent.config, current?.eventType);
+      }
       const summary = buildEventSummaryFromRepositoryState({
         pageSlug: normalizedPageSlug, eventId: slugGuard.eventId, existing: current,
         content: nextContent, forceCreate: true, now,
         registry: {
           docId: normalizedPageSlug, pageSlug: normalizedPageSlug,
-          published: (isCustomerSave ? current?.published : input.published) ?? current?.published ?? true,
+          published,
           defaultTheme: (isCustomerSave ? current?.defaultTheme : input.defaultTheme) ?? current?.defaultTheme ?? DEFAULT_INVITATION_THEME,
           hasCustomConfig: true, createdAt: current?.createdAt ?? now, updatedAt: now,
         },
       });
       if (!summary) throw new Error('Failed to build event content summary.');
       await writeEventSummaryMirror(transaction, summary, now);
+      if (requestReview) {
+        transaction.set(eventRef, {
+          publicationReview: {
+            requestedByUid: input.customerOwnerUid!.trim(),
+            requestedContentVersion: nextContent.version,
+            requestedAt: now,
+          },
+        }, { merge: true });
+      } else if (firstPublication) {
+        transaction.set(eventRef, { publicationReview: null }, { merge: true });
+      }
       await writeEventContentMirror(transaction, summary, nextContent, now);
       transaction.set(indexRef, {
         slug: normalizedPageSlug, eventId: summary.eventId, eventType: summary.eventType,

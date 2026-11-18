@@ -26,6 +26,18 @@ service cloud.firestore {
         isEventOwnerById(slugIndex.data.eventId);
     }
 
+    function isEventMarkedPublished(data) {
+      let visibility = data.get('visibility', {});
+      let published = visibility is map ? visibility.get('published', null) : null;
+      return published is bool ? published : data.get('published', true) != false;
+    }
+
+    function canUpdateAdminEvent() {
+      return isAdmin() &&
+        (isEventMarkedPublished(resource.data) || !isEventMarkedPublished(request.resource.data)) &&
+        !request.resource.data.diff(resource.data).affectedKeys().hasAny(['publicationReview']);
+    }
+
     function canUpdateOwnedEvent(eventId) {
       return isEventOwnerById(eventId) &&
         request.resource.data.eventId == resource.data.eventId &&
@@ -187,8 +199,10 @@ service cloud.firestore {
 
     match /events/{eventId} {
       allow read: if isAdmin() || isEventOwnerById(eventId);
-      allow create: if isAdmin();
-      allow update, delete: if isAdmin() || canUpdateOwnedEvent(eventId);
+      allow create: if isAdmin() && !isEventMarkedPublished(request.resource.data) &&
+        !request.resource.data.keys().hasAny(['publicationReview']);
+      allow update: if canUpdateAdminEvent() || canUpdateOwnedEvent(eventId);
+      allow delete: if isAdmin();
 
       match /content/{documentId} {
         allow read: if isAdmin() || isEventOwnerById(eventId) || canReadPublicEvent(eventId);

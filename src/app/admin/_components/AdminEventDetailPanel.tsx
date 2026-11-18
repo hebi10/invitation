@@ -18,6 +18,7 @@ import {
   getAdminEventDetailTabs,
   getAdminEventPreviewLinks,
   getAdminEventRelatedQuery,
+  getAdminEventReviewLabel,
   getAdminEventVisibility,
   resolveAdminEventDetailTab,
   getAdminEventKeyboardTab,
@@ -28,6 +29,7 @@ import AdminEventCustomerTab from './AdminEventCustomerTab';
 import AdminEventPeriodTab from './AdminEventPeriodTab';
 import AdminEventDesignTab from './AdminEventDesignTab';
 import AdminStaleQueryNotice from './AdminStaleQueryNotice';
+import { formatDateTime } from './adminPageUtils';
 import styles from '../page.module.css';
 import detailStyles from './AdminEventDetailPage.module.css';
 
@@ -263,6 +265,12 @@ function EventDetailWorkspace({
               미리보기
             </a>
           ) : null}
+          {!page.published && page.publicationReview?.status === 'pending' && page.contentVersion !== undefined && !isReadOnlySeed && !mobileReadOnly ? (
+            <button type="button" className="admin-button admin-button-secondary" disabled={busy}
+              onClick={() => onTogglePublished(page, true)}>
+              {updatingPublished ? '공개 중' : '검토한 내용 공개'}
+            </button>
+          ) : null}
         </div>
 
         {experience ? <section className={styles.eventDetailOperations} aria-label="공개 설정">
@@ -284,6 +292,14 @@ function EventDetailWorkspace({
             <strong>고객 연결</strong>
             <span>{getOwnershipLabel(page)}</span>
           </p>
+          {!page.published && page.publicationReview ? (
+            <p>
+              <strong>{getAdminEventReviewLabel(page)}</strong>
+              <span>{page.publicationReview.status === 'pending'
+                ? `${formatDateTime(new Date(page.publicationReview.requestedAt))} 요청`
+                : '최신 내용을 미리 본 뒤 공개 상태를 변경해 주세요.'}</span>
+            </p>
+          ) : null}
         </div>
 
         {isReadOnlySeed ? <p>기본 체험 데이터는 조회 전용입니다.</p> : null}

@@ -86,14 +86,18 @@ export const productionAdminDataGateway: AdminDataGateway = {
     return deleteAdminEventByPageSlug(slug, options);
   },
   async setPublished(page, published) {
-    await setInvitationPagePublished(page.slug, published);
+    await setInvitationPagePublished(page.slug, published, {
+      expectedVersion: published ? page.contentVersion : undefined,
+      expectedReviewRequestedAt: published && page.publicationReview?.status === 'pending'
+        ? page.publicationReview.requestedAt
+        : undefined,
+    });
   },
   async setTier(page, tier) {
     await setInvitationPageProductTier(page.slug, tier);
   },
   async setVariant(page, theme, enabled) {
     await setInvitationPageVariantAvailability(page.slug, theme, enabled, {
-      published: page.published,
       defaultTheme: page.defaultTheme,
     });
   },

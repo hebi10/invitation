@@ -344,6 +344,11 @@ export function getAdminEventRelatedQuery(
   return { section: 'events', tab, ...base };
 }
 
+export function getAdminEventReviewLabel(page: Pick<InvitationPageSummary, 'published' | 'publicationReview'>) {
+  if (page.published || !page.publicationReview) return null;
+  return page.publicationReview.status === 'pending' ? '검토 대기' : '검토 요청 후 수정됨';
+}
+
 export function getAdminEventVisibility(page: Pick<InvitationPageSummary, 'published' | 'displayPeriodEnabled' | 'displayPeriodStart' | 'displayPeriodEnd'>) {
   if (!page.published) return { label: '비공개', description: '공개 설정이 꺼져 있습니다.' };
   if (!page.displayPeriodEnabled) return { label: '노출 중', description: '기간 제한 없이 공개 중입니다.' };
