@@ -303,7 +303,8 @@ function reviewFixture() {
     appUserId: purchase.appUserId, productId: purchase.productId, apiBaseUrl: 'https://example.test',
     target: { action: 'grantTicketPack', pageSlug: 'page' },
   }, {
-    purchase: async () => {
+    purchase: async (beforeLaunch?: () => Promise<void>) => {
+      await beforeLaunch?.();
       purchases++;
       return { appUserId: purchase.appUserId, productIdentifier: purchase.productId, transactionIdentifier: transactionId, purchaseToken: purchase.purchaseToken };
     },
