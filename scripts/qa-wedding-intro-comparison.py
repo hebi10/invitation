@@ -21,6 +21,10 @@ def screenshot(page, name):
     page.screenshot(path=str(OUT / f"{name}.png"), full_page=True)
 
 
+def wait_for_image(page, selector):
+    page.wait_for_function("selector => document.querySelector(selector)?.naturalWidth > 0", arg=selector)
+
+
 def check_gif(response):
     assert response.ok, f"Bouquet GIF returned {response.status}"
     assert response.headers["content-type"].startswith("image/gif")
@@ -66,7 +70,9 @@ def open_comparison(context):
 
 def check_preview(browser, width, reduced_motion=False):
     label = f"{width}px" + ("-reduced" if reduced_motion else "")
-    recording = {"record_video_dir": str(OUT), "record_video_size": {"width": 1280, "height": 900}} if width == 1280 else {}
+    recording = {}
+    if width == 1280:
+        recording = {"record_video_dir": str(OUT), "record_video_size": {"width": 1280, "height": 900}}
     with browser.new_context(
         viewport={"width": width, "height": 900 if width > 400 else 844},
         is_mobile=width < 500,
@@ -79,7 +85,8 @@ def check_preview(browser, width, reduced_motion=False):
         bouquet = page.locator("[data-intro-preview='bouquet']")
         art = bouquet.locator("[data-bouquet-art]")
         expect(art).to_be_visible()
-        page.wait_for_function("document.querySelector('[data-bouquet-art]')?.naturalWidth > 0")
+        wait_for_image(page, "[data-bouquet-art]")
+        wait_for_image(page, "[data-tracing-photo]")
         assert art.evaluate("element => element.currentSrc").startswith(POSTER), "Initial art is not the still poster"
         assert not gif_requests, "The GIF downloaded before the visitor requested it"
         screenshot(page, label + "-initial")
@@ -103,6 +110,8 @@ def check_preview(browser, width, reduced_motion=False):
         open_button.press("Enter")
         expect(seal.locator("[data-seal-state='opened']")).to_be_visible(timeout=5_000)
         expect(seal.locator("[data-seal-cover]")).to_be_visible()
+        wait_for_image(page, "[data-seal-cover] img")
+        assert seal.locator("[data-seal-cover] img").get_attribute("src") == page.locator("[data-tracing-photo]").get_attribute("src")
         if width == 1280:
             screenshot(page, "1280px-seal-opened")
         seal.get_by_role("button", name="다시 보기", exact=True).click()
@@ -118,18 +127,14 @@ def check_preview(browser, width, reduced_motion=False):
             scroll = tracing.locator("[data-tracing-scroll]")
             scroll.focus()
             expect(scroll).to_be_focused()
-            before = paper.evaluate("element => [getComputedStyle(element).opacity, getComputedStyle(element).transform]")
+            expect(paper).to_have_css("opacity", "1")
             scroll.press("End")
             page.wait_for_function("document.querySelector('[data-tracing-scroll]')?.scrollTop > 0")
-            page.wait_for_function(
-                """before => {
-                    const style = getComputedStyle(document.querySelector('[data-tracing-paper]'));
-                    return style.opacity !== before[0] || style.transform !== before[1];
-                }""",
-                arg=before,
-            )
+            expect(paper).to_have_css("opacity", "0")
             if width == 1280:
                 screenshot(page, "1280px-tracing-revealed")
+            tracing.get_by_role("button", name="다시 보기", exact=True).click()
+            expect(paper).to_have_css("opacity", "1")
 
         assert not errors, errors
         assert not remote_requests, remote_requests
