@@ -107,6 +107,7 @@ export async function PATCH(
       await saveServerInvitationPageConfig({ ...config, slug } as InvitationPageSeed, {
         expectedVersion: requireInvitationContentVersion(body.expectedVersion),
         published: body.published,
+        requireSeparatePublicationReview: true,
         defaultTheme,
       });
       const editableConfig = await getServerEditableInvitationPageConfig(slug);
@@ -125,7 +126,7 @@ export async function PATCH(
       defaultTheme,
       expectedVersion,
       expectedReviewRequestedAt,
-      requirePendingReviewMatch: true,
+      requireReviewMatch: true,
     });
     return NextResponse.json({ success: true });
   } catch (error) {

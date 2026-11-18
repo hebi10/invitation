@@ -88,9 +88,7 @@ export const productionAdminDataGateway: AdminDataGateway = {
   async setPublished(page, published) {
     await setInvitationPagePublished(page.slug, published, {
       expectedVersion: published ? page.contentVersion ?? 0 : undefined,
-      expectedReviewRequestedAt: published && page.publicationReview?.status === 'pending'
-        ? page.publicationReview.requestedAt
-        : undefined,
+      expectedReviewRequestedAt: published ? page.publicationReview?.requestedAt : undefined,
     });
   },
   async setTier(page, tier) {

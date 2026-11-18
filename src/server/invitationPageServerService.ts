@@ -585,6 +585,7 @@ export async function saveServerInvitationPageConfig(
     defaultTheme?: InvitationThemeKey;
     customerOwnerUid?: string;
     requestPublicationReview?: boolean;
+    requireSeparatePublicationReview?: boolean;
     allowFirstPublication?: boolean;
   } = {}
 ) {
@@ -622,6 +623,7 @@ export async function saveServerInvitationPageConfig(
     defaultTheme: options.defaultTheme ?? DEFAULT_INVITATION_THEME,
     customerOwnerUid: options.customerOwnerUid,
     requestPublicationReview: options.requestPublicationReview,
+    requireSeparatePublicationReview: options.requireSeparatePublicationReview,
     allowFirstPublication: options.allowFirstPublication,
     publicationConfig: config,
   });
@@ -721,7 +723,7 @@ export async function setServerInvitationPagePublished(
     defaultTheme?: InvitationThemeKey;
     expectedVersion?: number;
     expectedReviewRequestedAt?: string;
-    requirePendingReviewMatch?: boolean;
+    requireReviewMatch?: boolean;
     allowFirstPublication?: boolean;
   } = {}
 ) {

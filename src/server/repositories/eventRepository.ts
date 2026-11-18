@@ -83,7 +83,7 @@ interface EventPublicationInput {
   published?: boolean;
   expectedVersion?: number;
   expectedReviewRequestedAt?: string;
-  requirePendingReviewMatch?: boolean;
+  requireReviewMatch?: boolean;
   allowFirstPublication?: boolean;
   defaultTheme?: InvitationThemeKey;
   sample?: InvitationPageSeed | null;
@@ -124,6 +124,7 @@ export interface EventRepository {
     expectedVersion: number;
     customerOwnerUid?: string;
     requestPublicationReview?: boolean;
+    requireSeparatePublicationReview?: boolean;
     published?: boolean;
     allowFirstPublication?: boolean;
     publicationConfig?: InvitationPageSeed;
@@ -1054,8 +1055,8 @@ export const firestoreEventRepository: EventRepository = {
       }
       const review = current && getInvitationPublicationReviewState(current, version);
       if (input.expectedReviewRequestedAt !== undefined ||
-          (input.published === true && input.requirePendingReviewMatch && review?.status === 'pending')) {
-        if (review?.status !== 'pending' || review.requestedAt !== input.expectedReviewRequestedAt) {
+          (input.published === true && input.requireReviewMatch && review)) {
+        if (!review || review.requestedAt !== input.expectedReviewRequestedAt) {
           throw Object.assign(new Error('검토 요청이 변경되었습니다. 최신 내용을 다시 확인해 주세요.'), { status: 409 });
         }
       }
@@ -1147,6 +1148,13 @@ export const firestoreEventRepository: EventRepository = {
       const published = (isCustomerSave ? current?.published : input.published) ?? current?.published ?? true;
       const firstPublication = published && current?.published !== true;
       if (firstPublication) {
+        if (input.requireSeparatePublicationReview && current &&
+            getInvitationPublicationReviewState(current, currentVersion)) {
+          throw Object.assign(
+            new Error('고객의 검토 요청이 있습니다. 관리자 상세에서 최신 내용을 미리 본 뒤 공개해 주세요.'),
+            { status: 409 }
+          );
+        }
         assertPublicationAllowed(input.publicationConfig ?? input.config, current?.eventType, input.allowFirstPublication);
       }
       const requestReview = isCustomerSave && input.requestPublicationReview === true && !published;

@@ -224,7 +224,10 @@ try {
     content: { displayName: 'Edited without advancing content version' },
   }, { merge: true }), { code: 'permission-denied' });
   await assert.rejects(firestoreEventRepository.setPublicationBySlug(slug, {
-    published: true, expectedVersion: 6, requirePendingReviewMatch: true,
+    published: true, expectedVersion: 6, requireReviewMatch: true,
+  }), { status: 409 });
+  await assert.rejects(saveServerInvitationPageConfig(config, {
+    published: true, expectedVersion: 6, requireSeparatePublicationReview: true,
   }), { status: 409 });
 
   assert.equal(await firestoreEventRepository.saveContentBySlug({
@@ -237,7 +240,13 @@ try {
   assert.equal((await eventRef.get()).data()?.publicationReview?.requestedContentVersion, 6);
   assert.equal((await eventRef.get()).data()?.visibility.published, false);
 
-  await firestoreEventRepository.setPublicationBySlug(slug, { published: true, expectedVersion: 7 });
+  await assert.rejects(firestoreEventRepository.setPublicationBySlug(slug, {
+    published: true, expectedVersion: 7, requireReviewMatch: true,
+  }), { status: 409 });
+  await firestoreEventRepository.setPublicationBySlug(slug, {
+    published: true, expectedVersion: 7, requireReviewMatch: true,
+    expectedReviewRequestedAt: review.requestedAt.toDate().toISOString(),
+  });
   assert.equal((await eventRef.get()).data()?.visibility.published, true);
   assert.equal((await eventRef.get()).data()?.publicationReview, null);
   assert.equal((await contentRef.get()).data()?.version, 7);
