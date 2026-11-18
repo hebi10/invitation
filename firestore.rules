@@ -26,6 +26,18 @@ service cloud.firestore {
         isEventOwnerById(slugIndex.data.eventId);
     }
 
+    function isEventMarkedPublished(data) {
+      let visibility = data.get('visibility', {});
+      let published = visibility is map ? visibility.get('published', null) : null;
+      return published is bool ? published : data.get('published', true) != false;
+    }
+
+    function canUpdateAdminEvent() {
+      return isAdmin() &&
+        (isEventMarkedPublished(resource.data) || !isEventMarkedPublished(request.resource.data)) &&
+        !request.resource.data.diff(resource.data).affectedKeys().hasAny(['publicationReview']);
+    }
+
     function canUpdateOwnedEvent(eventId) {
       return isEventOwnerById(eventId) &&
         request.resource.data.eventId == resource.data.eventId &&
@@ -55,6 +67,18 @@ service cloud.firestore {
         request.resource.data.featureFlags == resource.data.featureFlags &&
         request.resource.data.content.productTier == resource.data.content.productTier &&
         request.resource.data.content.features == resource.data.content.features;
+    }
+
+    function advancesEventContentVersion() {
+      let storedVersion = resource.data.get('version', 0);
+      let previous = storedVersion is int && storedVersion >= 0 ? storedVersion : 0;
+      let next = request.resource.data.get('version', -1);
+      return next is int && next == previous + 1;
+    }
+
+    function hasEventPublicationReview(eventId) {
+      let eventPath = /databases/$(database)/documents/events/$(eventId);
+      return exists(eventPath) && get(eventPath).data.get('publicationReview', null) is map;
     }
 
     function canUpdateOwnedSlugIndex(slug) {
@@ -187,13 +211,17 @@ service cloud.firestore {
 
     match /events/{eventId} {
       allow read: if isAdmin() || isEventOwnerById(eventId);
-      allow create: if isAdmin();
-      allow update, delete: if isAdmin() || canUpdateOwnedEvent(eventId);
+      allow create: if isAdmin() && !isEventMarkedPublished(request.resource.data) &&
+        !request.resource.data.keys().hasAny(['publicationReview']);
+      allow update: if canUpdateAdminEvent() || canUpdateOwnedEvent(eventId);
+      allow delete: if isAdmin();
 
       match /content/{documentId} {
         allow read: if isAdmin() || isEventOwnerById(eventId) || canReadPublicEvent(eventId);
-        allow create, delete: if isAdmin();
-        allow update: if isAdmin() || canUpdateOwnedEventContent(eventId, documentId);
+        allow create, delete: if isAdmin() &&
+          (documentId != 'current' || !hasEventPublicationReview(eventId));
+        allow update: if (isAdmin() || canUpdateOwnedEventContent(eventId, documentId)) &&
+          (documentId != 'current' || advancesEventContentVersion());
       }
 
       match /comments/{commentId} {

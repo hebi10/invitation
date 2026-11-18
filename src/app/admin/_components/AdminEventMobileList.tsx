@@ -1,4 +1,4 @@
-import { getAdminEventVisibility } from './adminEventWorkspaceModel';
+import { getAdminEventReviewLabel, getAdminEventVisibility } from './adminEventWorkspaceModel';
 import { getEventTypeDisplayLabel } from '@/lib/eventTypes';
 import type { InvitationPageSummary } from '@/services/invitationPageService';
 import type { AppRoutes } from '@/lib/demoExperienceRoutes';
@@ -50,6 +50,7 @@ export default function AdminEventMobileList({
         const isSelected = selectedSlug === page.slug;
         const isReadOnlySeed = experience && page.slug.startsWith('demo-seed-');
         const visibility = getAdminEventVisibility(page);
+        const reviewLabel = getAdminEventReviewLabel(page);
         const previewHref = experience ? routes.preview(page.slug, page.defaultTheme) : buildEventPreviewPath(page.slug, page.eventType, page.defaultTheme);
 
         return (
@@ -79,6 +80,7 @@ export default function AdminEventMobileList({
             </div>
 
             <p className={styles.eventMobileCardOwnership}>{getOwnershipLabel(page)}{page.published ? ` · ${!page.displayPeriodEnabled ? '기간 제한 없음' : visibility.label === '만료' ? '노출 종료' : visibility.label}` : ''}</p>
+            {reviewLabel ? <p className={styles.eventMobileCardOwnership}>{reviewLabel}</p> : null}
 
             <div className={styles.eventMobileCardActions}>
               <button

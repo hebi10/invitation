@@ -45,7 +45,7 @@ import {
 import { listStoredEventSummaries } from './repositories/eventRepository';
 import { resolveStoredEventBySlug } from './repositories/eventRepository';
 import { firestoreEventCommentRepository } from './repositories/eventCommentRepository';
-import type { EventSummaryRecord } from './repositories/eventReadThroughDtos';
+import { getInvitationPublicationReviewState, type EventSummaryRecord } from './repositories/eventReadThroughDtos';
 import { claimStoredEventOwnership } from './repositories/customerEventClaimRepository';
 import { isEventDeletionBlockingAccess } from './eventDeletionPolicy';
 
@@ -360,6 +360,7 @@ async function assertCustomerEventAccessAvailable(
       CUSTOMER_EVENT_DELETION_CONFLICT_MESSAGE
     );
   }
+  return resolvedEvent;
 }
 
 const defaultCustomerEventClaimDependencies: CustomerEventClaimDependencies = {
@@ -427,8 +428,10 @@ export async function getCustomerEditableInvitationPageSnapshot(
   ownerUid: string,
   pageSlug: string
 ) {
-  await assertCustomerEventAccessAvailable(pageSlug);
-  const ownership = await getCustomerEventOwnershipSnapshot(ownerUid, pageSlug);
+  const resolvedEvent = await assertCustomerEventAccessAvailable(pageSlug);
+  const ownership = await getCustomerEventOwnershipSnapshot(ownerUid, pageSlug, {
+    resolveEventBySlug: async () => resolvedEvent,
+  });
 
   if (ownership.status !== 'owner') {
     return ownership.status === 'missing'
@@ -455,11 +458,15 @@ export async function getCustomerEditableInvitationPageSnapshot(
     };
   }
 
+  const publicationReview = resolvedEvent
+    ? getInvitationPublicationReviewState(resolvedEvent.summary, resolvedEditableConfig.version)
+    : undefined;
   return {
     status: 'ready' as const,
     summary: ownership.summary,
     config: {
       ...resolvedEditableConfig,
+      ...(publicationReview ? { publicationReview } : {}),
       dataSource:
         resolvedEditableConfig.dataSource === 'firestore' ? 'firestore' : 'seed',
     },
@@ -472,6 +479,7 @@ export async function saveCustomerEditableInvitationPageConfig(
   input: {
     config: InvitationPageSeed;
     expectedVersion: number;
+    requestPublicationReview?: boolean;
     published?: boolean;
     defaultTheme?: InvitationThemeKey;
   },
@@ -507,6 +515,7 @@ export async function saveCustomerEditableInvitationPageConfig(
   await saveServerInvitationPageConfig(entitlementTrustedConfig, {
     expectedVersion: input.expectedVersion,
     customerOwnerUid: ownerUid.trim(),
+    requestPublicationReview: input.requestPublicationReview,
   });
 
   return getCustomerEditableInvitationPageSnapshot(ownerUid, normalizedPageSlug);

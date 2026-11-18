@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { InvitationPublicationIncompleteError } from '@/lib/invitationPublication';
 
 export const GENERIC_SERVER_ERROR_MESSAGE =
   '요청 처리 중 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.';
@@ -22,6 +23,15 @@ export function toSafeHttpErrorResponse(
     { error: getSafeHttpErrorMessage(error, fallback) },
     { status: error.status }
   );
+}
+
+export function toInvitationPublicationErrorResponse(error: unknown, headers?: HeadersInit) {
+  if (!(error instanceof InvitationPublicationIncompleteError)) return null;
+  return NextResponse.json({
+    error: error.message,
+    code: error.code,
+    missingFields: error.missingFields,
+  }, { status: error.status, headers });
 }
 
 export function getInternalErrorReason(error: unknown) {
