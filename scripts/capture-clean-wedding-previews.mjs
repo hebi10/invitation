@@ -6,23 +6,24 @@ import path from 'node:path';
 import { chromium } from 'playwright';
 import sharp from 'sharp';
 
-const baseUrl = new URL(process.env.INVITATION_CAPTURE_BASE_URL || 'http://127.0.0.1:3000');
-if (baseUrl.protocol !== 'http:' || baseUrl.hostname !== '127.0.0.1') {
-  throw new Error('Theme captures must use the local fictional sample server.');
-}
-
-const samplePath = '/sample-invitation/';
-const sampleImage = '/images/home-wedding/portrait.webp';
+const baseUrl = 'https://invite.msgnote.kr';
+const sampleSlug = 'shin-minje-kim-hyunji';
+const photoOrigin = 'https://firebasestorage.googleapis.com';
+const photoFolder = `/wedding-images/${sampleSlug}/`;
 const themes = ['simple', 'classic-r', 'romantic', 'gyeol', 'emotional'];
 const viewport = { width: 390, height: 720 };
 const deviceScaleFactor = 2;
 const outputDirectory = path.resolve('artifacts/theme-previews');
 await fs.mkdir(outputDirectory, { recursive: true });
 
+function isApprovedPhoto(url) {
+  return url.origin === photoOrigin && decodeURIComponent(url.pathname).includes(photoFolder);
+}
+
 const browser = await chromium.launch({ headless: true });
 const report = {
-  source: 'Local fictional wedding sample',
-  samplePath,
+  source: 'Approved public wedding sample',
+  slug: sampleSlug,
   viewport: { ...viewport, deviceScaleFactor },
   screenshots: [],
 };
@@ -39,29 +40,41 @@ try {
     reducedMotion: 'reduce',
   });
   await context.route('**/*', (route) => {
-    return new URL(route.request().url()).origin === baseUrl.origin ? route.continue() : route.abort();
+    const request = route.request();
+    const url = new URL(request.url());
+    if (request.method() !== 'GET' && request.method() !== 'HEAD') return route.abort();
+    if (url.origin === baseUrl) {
+      const proxied = url.pathname === '/_next/image' ? url.searchParams.get('url') : null;
+      if (proxied && new URL(proxied, baseUrl).origin !== baseUrl && !isApprovedPhoto(new URL(proxied, baseUrl))) {
+        return route.abort();
+      }
+      return route.continue();
+    }
+    return request.resourceType() === 'image' && isApprovedPhoto(url) ? route.continue() : route.abort();
   });
 
   for (const theme of themes) {
     const page = await context.newPage();
     try {
       await page.clock.setFixedTime(new Date('2026-11-18T03:00:00Z'));
-      const url = new URL(samplePath, baseUrl);
-      url.searchParams.set('qaTheme', theme);
-      url.searchParams.set('embed', '1');
+      const url = new URL(`/${sampleSlug}/${theme}/#theme-preview`, baseUrl);
       const response = await page.goto(url.href, { waitUntil: 'domcontentloaded', timeout: 60000 });
       if (!response?.ok() || page.url() !== url.href) {
-        throw new Error(`${theme}: the fictional sample route did not load`);
+        throw new Error(`${theme}: the approved sample route did not load`);
       }
 
-      await page.waitForFunction(({ theme, sampleImage }) => {
+      await page.waitForFunction(({ theme, photoOrigin, photoFolder }) => {
         const invitation = document.querySelector(`[data-design="${theme}"]`);
-        const identity = invitation?.querySelector('#wedding-cover-title')?.textContent;
+        const text = invitation?.querySelector('#wedding-cover-title')?.textContent ?? '';
         const photo = invitation?.querySelector('[data-wedding-cover-photo]');
-        return identity?.includes('이서준') && identity.includes('김하은') &&
-          photo instanceof HTMLImageElement && photo.naturalWidth > 0 &&
-          new URL(photo.currentSrc).pathname === sampleImage;
-      }, { theme, sampleImage }, { timeout: 30000 });
+        if (!(text.includes('신민제') && text.includes('김현지')) ||
+            !(photo instanceof HTMLImageElement) || photo.naturalWidth === 0) {
+          return false;
+        }
+        const photoUrl = new URL(photo.currentSrc);
+        return photoUrl.origin === photoOrigin && decodeURIComponent(photoUrl.pathname).includes(photoFolder);
+      }, { theme, photoOrigin, photoFolder }, { timeout: 30000 });
+      await page.locator('[data-wedding-intro]').first().waitFor({ state: 'hidden', timeout: 6000 });
       await page.evaluate(() => document.fonts.ready);
       await page.addStyleTag({
         content: [
@@ -70,6 +83,7 @@ try {
           '::-webkit-scrollbar { display: none !important; }',
         ].join('\n'),
       });
+      await page.evaluate(() => window.scrollTo(0, 0));
 
       const filename = `${theme}.jpg`;
       const screenshot = await page.screenshot({
@@ -87,11 +101,11 @@ try {
       report.screenshots.push({
         theme,
         file: filename,
-        sourcePath: url.pathname + url.search,
+        sourcePath: url.pathname,
         bytes: screenshot.length,
         sha256: crypto.createHash('sha256').update(screenshot).digest('hex'),
       });
-      console.log(`Captured the fictional ${theme} sample (${screenshot.length} bytes)`);
+      console.log(`Captured the approved ${theme} sample (${screenshot.length} bytes)`);
     } finally {
       await page.close();
     }

@@ -1,4 +1,4 @@
-name: Capture fictional mobile wedding theme previews
+name: Capture approved mobile wedding theme previews
 
 on:
   workflow_dispatch:
@@ -15,10 +15,6 @@ jobs:
   sample-previews:
     runs-on: ubuntu-24.04
     timeout-minutes: 16
-    env:
-      NEXT_PUBLIC_USE_FIREBASE: 'false'
-      NEXT_PUBLIC_SITE_URL: http://127.0.0.1:3000
-      INVITATION_CAPTURE_BASE_URL: http://127.0.0.1:3000
     steps:
       - uses: actions/checkout@v4
         with:
@@ -32,14 +28,9 @@ jobs:
           npm ci
           npm install --no-save --no-package-lock playwright@1.56.0
           npx playwright install --with-deps chromium
-      - name: Start local fictional sample server
-        run: |
-          npx --no-install next dev --hostname 127.0.0.1 > "$RUNNER_TEMP/fictional-preview-next.log" 2>&1 &
-          curl --fail --silent --show-error --retry 30 --retry-connrefused --retry-delay 2 --max-time 45 \
-            http://127.0.0.1:3000/sample-invitation/ > /dev/null
-      - name: Capture and verify five fictional theme previews
+      - name: Capture and verify five approved theme previews
         run: node scripts/capture-clean-wedding-previews.mjs
-      - name: Check that the app bundles the verified fictional previews
+      - name: Check that the app bundles the verified sample previews
         if: github.event_name == 'pull_request'
         run: |
           for theme in simple classic-r romantic gyeol emotional; do
@@ -48,10 +39,7 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: mobile-fictional-wedding-theme-previews
+          name: mobile-approved-wedding-theme-previews
           path: artifacts/theme-previews/
           retention-days: 30
           if-no-files-found: warn
-      - name: Print sample server log on failure
-        if: failure()
-        run: tail -60 "$RUNNER_TEMP/fictional-preview-next.log"
