@@ -10,6 +10,7 @@ import { getRomanticPhotoSequence } from '@/lib/romanticPhotoSequence';
 import type { WeddingPageReadyState } from '../_components/weddingPageState';
 import { sampleWeddingPage, sampleWeddingComments, SAMPLE_WEDDING_IMAGES, SAMPLE_WEDDING_COVER } from '@/config/homeWeddingSample';
 import { getHomeLinkRenderProps } from '../_components/homeInteractionPolicy';
+import AutomaticIntro, { type IntroVariant } from './intro-comparison/AutomaticIntro';
 import styles from './page.module.css';
 
 const sampleState: WeddingPageReadyState = {
@@ -124,7 +125,7 @@ const QA_MAP_PROVIDER_VARIANTS: Record<QAUI07MapProviders, Array<'naver' | 'kaka
   'naver-kakao': ['naver', 'kakao'],
 };
 
-export default function SampleInvitation({ embedded = false, theme = 'simple', qaMusic = false, qaUI07 = false, qaUI07Case = 'full', qaUI07Map = 'off', qaMapProviders = 'default', qaUI07Intro = 'none', qaR08GalleryCount = null, qaR08NoCover = false }: { embedded?: boolean; theme?: 'simple' | 'romantic' | 'gyeol' | 'classic-r' | 'emotional'; qaMusic?: boolean; qaUI07?: boolean; qaUI07Case?: QAUI07Case; qaUI07Map?: QAUI07Map; qaMapProviders?: QAUI07MapProviders; qaUI07Intro?: QAUI07Intro; qaR08GalleryCount?: number | null; qaR08NoCover?: boolean }) {
+export default function SampleInvitation({ embedded = false, intro, theme = 'simple', qaMusic = false, qaUI07 = false, qaUI07Case = 'full', qaUI07Map = 'off', qaMapProviders = 'default', qaUI07Intro = 'none', qaR08GalleryCount = null, qaR08NoCover = false }: { embedded?: boolean; intro?: IntroVariant; theme?: 'simple' | 'romantic' | 'gyeol' | 'classic-r' | 'emotional'; qaMusic?: boolean; qaUI07?: boolean; qaUI07Case?: QAUI07Case; qaUI07Map?: QAUI07Map; qaMapProviders?: QAUI07MapProviders; qaUI07Intro?: QAUI07Intro; qaR08GalleryCount?: number | null; qaR08NoCover?: boolean }) {
   const weddingState = qaUI07 ? makeQAUI07State(qaUI07Case) : sampleState;
   const visualState: WeddingPageReadyState = qaUI07 && (qaR08GalleryCount !== null || qaR08NoCover)
     ? {
@@ -166,9 +167,21 @@ export default function SampleInvitation({ embedded = false, theme = 'simple', q
     ? getRomanticPhotoSequence(mapState.galleryImageUrls, mapState.mainImageUrl, mapState.galleryPreviewImageUrls).closingImageUrl
     : mapState.galleryImageUrls.at(-1);
   const sampleThemeName = { simple: '기본형', 'classic-r': '모던형', romantic: '포토형', gyeol: '클래식형', emotional: '내추럴형' }[theme];
+  const invitation = <WeddingBase state={mapState} options={{ slug: sampleWeddingPage.slug, theme }} theme={theme} demoComments={sampleWeddingComments} showMap={qaUI07 && qaUI07Map !== 'off'} />;
   return <AppQueryProvider><div className={styles.sample}>
     <p className={styles.notice}>{sampleThemeName} 샘플 · AI 생성 사진과 예시 메시지</p>
-    <WeddingBase state={mapState} options={{ slug: sampleWeddingPage.slug, theme }} theme={theme} demoComments={sampleWeddingComments} showMap={qaUI07 && qaUI07Map !== 'off'} />
+    {intro && !embedded && qaUI07Intro === 'none' ? (
+      <AutomaticIntro
+        key={intro}
+        variant={intro}
+        names={`${mapState.pageConfig.groomName} · ${mapState.pageConfig.brideName}`}
+        date={mapState.pageConfig.date}
+        photoSrc={mapState.heroImageUrl}
+        presentation="page"
+      >
+        {invitation}
+      </AutomaticIntro>
+    ) : invitation}
     <WeddingClosing groomName={mapState.pageConfig.groomName} brideName={mapState.pageConfig.brideName} theme={theme}
       weddingDateTime={mapState.pageConfig.weddingDateTime} imageUrl={closingImageUrl} />
     {qaUI07 && qaUI07Intro !== 'none' ? (
@@ -190,6 +203,7 @@ export default function SampleInvitation({ embedded = false, theme = 'simple', q
         <p>이런 청첩장을 만들고 싶으신가요?</p>
         <nav aria-label="샘플 다음 단계">
           <Link href="/">홈으로 돌아가기</Link>
+          <Link href="/sample-invitation/intro-comparison/" prefetch={false}>인트로 3종 비교</Link>
           <a href="https://kmong.com/gig/686626" {...getHomeLinkRenderProps(true)}>제작 문의 <span>새 창</span></a>
         </nav>
       </footer>

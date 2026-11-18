@@ -44,6 +44,8 @@ jobs:
           git worktree add --detach "$RUNNER_TEMP/invitation-ui07-a08-before" "$A08_BEFORE_SHA"
           cp src/app/sample-invitation/SampleInvitation.tsx "$RUNNER_TEMP/invitation-ui07-a08-before/src/app/sample-invitation/SampleInvitation.tsx"
           cp src/app/sample-invitation/page.tsx "$RUNNER_TEMP/invitation-ui07-a08-before/src/app/sample-invitation/page.tsx"
+          # Resolve the copied sample's intro imports. The embedded fixture skips playback.
+          cp -R src/app/sample-invitation/intro-comparison "$RUNNER_TEMP/invitation-ui07-a08-before/src/app/sample-invitation/"
           ln -s "$GITHUB_WORKSPACE/node_modules" "$RUNNER_TEMP/invitation-ui07-a08-before/node_modules"
           test -L "$RUNNER_TEMP/invitation-ui07-a08-before/node_modules"
           echo "Original baseline commit: $A08_BEFORE_SHA"
