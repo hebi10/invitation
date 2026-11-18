@@ -144,6 +144,7 @@ jobs:
       release_name: ${{ steps.metadata.outputs.release_name }}
     steps:
       - name: RU-02 refuse legacy Play publishing before signed build
+        working-directory: ${{ runner.temp }}
         env:
           LEGACY_DEPLOY: ${{ inputs.deploy && 'true' || 'false' }}
         shell: bash
