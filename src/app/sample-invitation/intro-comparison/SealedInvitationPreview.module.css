@@ -1,0 +1,136 @@
+.stage {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  width: 100%;
+  aspect-ratio: 1;
+  background: #ebdfd0;
+}
+
+.envelope {
+  position: absolute;
+  inset: auto 12% 17%;
+  aspect-ratio: 1.58;
+  perspective: 800px;
+}
+
+.envelopeBack,
+.envelopeFront,
+.flap {
+  position: absolute;
+  inset: 0;
+}
+
+.envelopeBack {
+  border: 1px solid #bda388;
+  background: #d8bea2;
+}
+
+.envelopeFront {
+  z-index: 3;
+  border: 1px solid #bda388;
+  background: #ead6b9;
+  clip-path: polygon(0 1%, 50% 70%, 100% 1%, 100% 100%, 0 100%);
+}
+
+.envelopeFront::before,
+.envelopeFront::after {
+  position: absolute;
+  inset: 0;
+  content: '';
+}
+
+.envelopeFront::before {
+  background: #cab093;
+  clip-path: polygon(0 100%, 50% 49%, 100% 100%);
+}
+
+.envelopeFront::after {
+  background: #f0dfc6;
+  clip-path: polygon(0.7% 100%, 50% 50%, 99.3% 100%);
+}
+
+.flap {
+  z-index: 4;
+  background: #f5e5ce;
+  border-top: 1px solid #bda388;
+  clip-path: polygon(0 0, 100% 0, 52% 73%, 48% 73%);
+  transform-origin: center top;
+}
+
+.seal {
+  position: absolute;
+  z-index: 5;
+  top: 68%;
+  left: 50%;
+  width: 17%;
+  aspect-ratio: 1;
+  transform: translate(-50%, -50%);
+}
+
+.sealPiece {
+  position: absolute;
+  inset: 0;
+  border: 1px solid #723a31;
+  border-radius: 46% 54% 48% 52% / 52% 44% 56% 48%;
+  background: #945046;
+}
+
+.sealPiece::after {
+  position: absolute;
+  inset: 19%;
+  border: 1px solid #d3a092;
+  border-radius: 50%;
+  content: '';
+}
+
+.sealPiece[data-seal-piece='left'] {
+  clip-path: polygon(0 0, 52% 0, 47% 42%, 53% 61%, 47% 100%, 0 100%);
+}
+
+.sealPiece[data-seal-piece='right'] {
+  clip-path: polygon(52% 0, 100% 0, 100% 100%, 47% 100%, 53% 61%, 47% 42%);
+}
+
+.letter {
+  position: absolute;
+  z-index: 2;
+  inset: 3% 10% 2%;
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) auto;
+  gap: 6px;
+  border: 1px solid #c7ae93;
+  padding: 7px;
+  background: var(--intro-paper);
+}
+
+.cover {
+  position: relative;
+  background: #ede4d9;
+}
+
+.cover img {
+  object-fit: cover;
+  object-position: center 38%;
+}
+
+.letterNames {
+  margin: 0;
+  padding-bottom: 2px;
+  color: var(--intro-ink);
+  font: 500 13px/1.2 var(--intro-display);
+  text-align: center;
+}
+
+.preview[data-seal-state='opened'] .flap {
+  z-index: 1;
+  transform: rotateX(-164deg);
+}
+
+.preview[data-seal-state='opened'] .letter {
+  transform: translateY(-60%);
+}
+
+.preview[data-seal-state='opened'] .seal {
+  visibility: hidden;
+}

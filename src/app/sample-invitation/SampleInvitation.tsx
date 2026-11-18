@@ -190,6 +190,7 @@ export default function SampleInvitation({ embedded = false, theme = 'simple', q
         <p>이런 청첩장을 만들고 싶으신가요?</p>
         <nav aria-label="샘플 다음 단계">
           <Link href="/">홈으로 돌아가기</Link>
+          <Link href="/sample-invitation/intro-comparison/" prefetch={false}>인트로 3종 비교</Link>
           <a href="https://kmong.com/gig/686626" {...getHomeLinkRenderProps(true)}>제작 문의 <span>새 창</span></a>
         </nav>
       </footer>

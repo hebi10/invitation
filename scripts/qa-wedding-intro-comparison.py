@@ -66,12 +66,14 @@ def open_comparison(context):
 
 def check_preview(browser, width, reduced_motion=False):
     label = f"{width}px" + ("-reduced" if reduced_motion else "")
+    recording = {"record_video_dir": str(OUT), "record_video_size": {"width": 1280, "height": 900}} if width == 1280 else {}
     with browser.new_context(
         viewport={"width": width, "height": 900 if width > 400 else 844},
         is_mobile=width < 500,
         has_touch=width < 500,
         reduced_motion="reduce" if reduced_motion else "no-preference",
         locale="ko-KR",
+        **recording,
     ) as context:
         page, gif_requests, errors, remote_requests = open_comparison(context)
         bouquet = page.locator("[data-intro-preview='bouquet']")
@@ -132,6 +134,9 @@ def check_preview(browser, width, reduced_motion=False):
         assert not errors, errors
         assert not remote_requests, remote_requests
         print(f"Verified wedding intro comparison at {label}")
+
+    if page.video:
+        Path(page.video.path()).rename(OUT / "1280px-motion.webm")
 
 
 def main():

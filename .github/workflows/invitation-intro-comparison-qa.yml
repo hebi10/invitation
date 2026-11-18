@@ -1,11 +1,6 @@
 name: Wedding intro comparison browser QA
 
 on:
-  push:
-    branches: [task/web-wedding-intro-comparison]
-    paths:
-      - .github/workflows/invitation-intro-comparison-qa.yml
-      - scripts/qa-wedding-intro-comparison.py
   pull_request:
     paths:
       - .github/workflows/invitation-intro-comparison-qa.yml

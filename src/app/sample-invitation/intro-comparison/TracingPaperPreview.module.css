@@ -1,0 +1,99 @@
+.scroller {
+  position: relative;
+  aspect-ratio: 1;
+  inline-size: 100%;
+  overflow: hidden auto;
+  scroll-behavior: auto;
+  scrollbar-width: none;
+  background: #eee9df;
+}
+
+.scroller::-webkit-scrollbar {
+  display: none;
+}
+
+.scroller:focus-visible {
+  outline: 2px solid var(--intro-accent);
+  outline-offset: 3px;
+}
+
+.track::after {
+  content: '';
+  display: block;
+  block-size: 118px;
+}
+
+.stage {
+  position: sticky;
+  inset-block-start: 0;
+  display: grid;
+  place-items: center;
+  aspect-ratio: 1;
+  overflow: hidden;
+}
+
+.photo {
+  object-fit: cover;
+  object-position: center 43%;
+}
+
+.photoFallback {
+  padding: 24px;
+  text-align: center;
+  color: var(--intro-muted);
+  font-size: 0.875rem;
+}
+
+.paper {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  align-content: center;
+  justify-items: center;
+  gap: 10px;
+  padding: 14%;
+  color: var(--intro-ink);
+  text-align: center;
+  background: rgb(250 246 237 / 84%);
+  opacity: calc(1 - var(--tracing-progress, 0));
+  transform: translateY(calc(-100% * var(--tracing-progress, 0)));
+  pointer-events: none;
+}
+
+.paper::before {
+  content: '';
+  position: absolute;
+  inset: 9%;
+  border: 1px solid rgb(116 93 67 / 46%);
+}
+
+.paperNames {
+  font-family: var(--intro-display);
+  font-weight: 400;
+  line-height: 1.42;
+  font-size: clamp(1.375rem, 2.4vw, 1.875rem);
+}
+
+.paperDate,
+.hint {
+  color: var(--intro-muted);
+  font-size: 0.8125rem;
+  line-height: 1.5;
+}
+
+.hint {
+  margin: 8px 0 0;
+  text-align: center;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .scroller {
+    overflow: hidden;
+  }
+
+  .paper,
+  .track::after,
+  .actions {
+    display: none;
+  }
+}
