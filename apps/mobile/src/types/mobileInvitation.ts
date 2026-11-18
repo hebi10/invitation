@@ -299,6 +299,10 @@ export interface MobileInvitationCreationResponse {
   links: MobileInvitationLinks;
 }
 
+export interface MobileBillingPageCreationResponse extends MobileInvitationCreationResponse {
+  billingPurchaseConsumed?: true;
+}
+
 export interface PendingManageOnboarding {
   pageSlug: string;
   createdAt: number;

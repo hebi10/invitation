@@ -1,6 +1,6 @@
 import type {
+  MobileBillingPageCreationResponse,
   MobileInvitationCreationInput,
-  MobileInvitationCreationResponse,
 } from '../types/mobileInvitation';
 import {
   buildApiUrl,
@@ -57,7 +57,7 @@ export async function fulfillMobileBillingPageCreation(
         },
       }),
     });
-  return readBillingFulfillmentResponse<MobileInvitationCreationResponse>(response);
+  return readBillingFulfillmentResponse<MobileBillingPageCreationResponse>(response);
 }
 
 export async function fulfillMobileBillingTicketPack(

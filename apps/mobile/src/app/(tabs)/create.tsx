@@ -164,7 +164,7 @@ export default function CreateScreen() {
       if (!idToken) throw new Error('로그인이 만료되었습니다. 다시 로그인해 주세요.');
       await listMobileCustomerInvitations(apiBaseUrl, idToken);
       const created = await runPendingBillingPurchase(request, {
-        purchase: () => purchaseBillingProduct(productId, { appUserId: customerUid }),
+        purchase: (beforeLaunch) => purchaseBillingProduct(productId, { appUserId: customerUid, beforeLaunch }),
         fulfill: (receipt) => createInvitationPage(input, { billingPurchase: receipt }),
         onResume: () => setNotice('기존 거래를 추가 결제 없이 이어서 처리하고 있습니다.'),
       });

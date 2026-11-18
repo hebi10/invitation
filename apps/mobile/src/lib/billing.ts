@@ -162,7 +162,7 @@ export async function getBillingTransactionHistory(options: { appUserId: string 
 
 export async function purchaseBillingProduct(
   productId: MobileBillingProductId,
-  options: { appUserId?: string | null } = {},
+  options: { appUserId?: string | null; beforeLaunch?: () => Promise<void> } = {},
 ): Promise<MobileBillingPurchaseResult> {
   if (!MOBILE_BILLING_PRODUCT_IDS.includes(productId)) {
     throw new BillingNotChargedError('현재 판매하지 않는 상품입니다.');
@@ -183,19 +183,28 @@ export async function purchaseBillingProduct(
   }
   // The one-way user hash lets the server independently bind the paid token to this account.
   const obfuscatedAccountId = await Crypto.digestStringAsync(Crypto.CryptoDigestAlgorithm.SHA256, appUserId);
+  await options.beforeLaunch?.();
+  if (pendingCheckout) {
+    throw new Error('이미 Google Play 결제 요청이 진행 중입니다.');
+  }
   const purchase = await new Promise<Purchase>((resolve, reject) => {
-    pendingCheckout = { productId, resolve, reject };
-    void requestPurchase({
-      request: { google: { skus: [productId], obfuscatedAccountId } },
-      type: 'in-app',
-    }).catch((error: unknown) => {
-      const checkout = pendingCheckout;
-      if (!checkout || checkout.productId !== productId) return;
+    const checkout = { productId, resolve, reject };
+    pendingCheckout = checkout;
+    const handleLaunchError = (error: unknown) => {
+      if (pendingCheckout !== checkout) return;
       pendingCheckout = null;
       checkout.reject(isUserCancelledPurchaseError(error)
         ? new BillingNotChargedError('결제를 취소했습니다. 준비가 되면 다시 진행해 주세요.')
         : error instanceof Error ? error : new Error('Google Play 구매 요청을 시작하지 못했습니다.'));
-    });
+    };
+    try {
+      void requestPurchase({
+        request: { google: { skus: [productId], obfuscatedAccountId } },
+        type: 'in-app',
+      }).catch(handleLaunchError);
+    } catch (error) {
+      handleLaunchError(error);
+    }
   });
   const transaction = toTransaction(purchase);
   return {
