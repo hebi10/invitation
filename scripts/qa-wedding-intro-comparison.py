@@ -3,7 +3,7 @@
 
 from io import BytesIO
 from pathlib import Path
-from urllib.parse import urlsplit
+from urllib.parse import parse_qs, urlsplit
 
 from PIL import Image
 from playwright.sync_api import expect, sync_playwright
@@ -14,6 +14,7 @@ COMPARISON = ORIGIN + "/sample-invitation/intro-comparison/"
 ASSET_PREFIX = ORIGIN + "/images/wedding-intro/bouquet-ribbon"
 POSTER = ASSET_PREFIX + ".webp"
 GIF = ASSET_PREFIX + ".gif"
+SAMPLE_PHOTO = "/images/home-wedding/portrait.webp"
 OUT = Path("test-results/wedding-intro-comparison")
 
 
@@ -23,6 +24,13 @@ def screenshot(page, name):
 
 def wait_for_image(page, selector):
     page.wait_for_function("selector => document.querySelector(selector)?.naturalWidth > 0", arg=selector)
+
+
+def sample_photo_path(image):
+    source = urlsplit(image.evaluate("element => element.currentSrc"))
+    if source.path.rstrip("/") == "/_next/image":
+        return urlsplit(parse_qs(source.query)["url"][0]).path
+    return source.path
 
 
 def check_gif(response):
@@ -111,7 +119,9 @@ def check_preview(browser, width, reduced_motion=False):
         expect(seal.locator("[data-seal-state='opened']")).to_be_visible(timeout=5_000)
         expect(seal.locator("[data-seal-cover]")).to_be_visible()
         wait_for_image(page, "[data-seal-cover] img")
-        assert seal.locator("[data-seal-cover] img").get_attribute("src") == page.locator("[data-tracing-photo]").get_attribute("src")
+        for photo in (seal.locator("[data-seal-cover] img"), page.locator("[data-tracing-photo]")):
+            source = sample_photo_path(photo)
+            assert source == SAMPLE_PHOTO, f"Expected sample portrait, got {source}"
         if width == 1280:
             screenshot(page, "1280px-seal-opened")
         seal.get_by_role("button", name="다시 보기", exact=True).click()
