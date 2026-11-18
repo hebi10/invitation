@@ -1,96 +1,104 @@
 #!/usr/bin/env node
-// Public sample pages only: no customer records, accounts, or payments.
 import crypto from 'node:crypto';
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import { chromium } from 'playwright';
 
-const baseUrl = process.env.INVITATION_CAPTURE_BASE_URL || 'http://127.0.0.1:3000';
-const sampleSlug = 'shin-minje-kim-hyunji';
+import { chromium } from 'playwright';
+import sharp from 'sharp';
+
+const baseUrl = new URL(process.env.INVITATION_CAPTURE_BASE_URL || 'http://127.0.0.1:3000');
+if (baseUrl.protocol !== 'http:' || baseUrl.hostname !== '127.0.0.1') {
+  throw new Error('Theme captures must use the local fictional sample server.');
+}
+
+const samplePath = '/sample-invitation/';
+const sampleImage = '/images/home-wedding/portrait.webp';
 const themes = ['simple', 'classic-r', 'romantic', 'gyeol', 'emotional'];
+const viewport = { width: 390, height: 720 };
+const deviceScaleFactor = 2;
 const outputDirectory = path.resolve('artifacts/theme-previews');
 await fs.mkdir(outputDirectory, { recursive: true });
-const browser = await chromium.launch({
-  headless: true,
-  args: ['--no-sandbox', '--disable-dev-shm-usage'],
-});
+
+const browser = await chromium.launch({ headless: true });
 const report = {
-  source: 'local Next.js sample rendered in Chromium',
-  slug: sampleSlug,
-  viewport: { width: 390, height: 720, deviceScaleFactor: 2 },
+  source: 'Local fictional wedding sample',
+  samplePath,
+  viewport: { ...viewport, deviceScaleFactor },
   screenshots: [],
 };
+
 try {
   const context = await browser.newContext({
-    viewport: { width: 390, height: 720 },
-    deviceScaleFactor: 2,
+    viewport,
+    deviceScaleFactor,
     isMobile: true,
     hasTouch: true,
     locale: 'ko-KR',
+    timezoneId: 'Asia/Seoul',
     colorScheme: 'light',
     reducedMotion: 'reduce',
   });
+  await context.route('**/*', (route) => {
+    return new URL(route.request().url()).origin === baseUrl.origin ? route.continue() : route.abort();
+  });
+
   for (const theme of themes) {
     const page = await context.newPage();
-    const url = new URL('/' + sampleSlug + '/' + theme + '/', baseUrl).href;
     try {
-      const response = await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 110000 });
-      if (!response || !response.ok()) {
-        throw new Error(theme + ': sample returned HTTP ' + (response?.status() ?? 'none'));
+      await page.clock.setFixedTime(new Date('2026-11-18T03:00:00Z'));
+      const url = new URL(samplePath, baseUrl);
+      url.searchParams.set('qaTheme', theme);
+      url.searchParams.set('embed', '1');
+      const response = await page.goto(url.href, { waitUntil: 'domcontentloaded', timeout: 60000 });
+      if (!response?.ok() || page.url() !== url.href) {
+        throw new Error(`${theme}: the fictional sample route did not load`);
       }
-      await page.waitForFunction(() => {
-        const text = document.body?.innerText || '';
-        return text.includes('신민제') && text.includes('김현지');
-      }, null, { timeout: 30000 });
-      await page.waitForLoadState('networkidle', { timeout: 15000 }).catch(() => null);
-      const introduction = page.getByRole('dialog', { name: '결혼식 초대장 인트로' }).first();
-      await introduction.waitFor({ state: 'visible', timeout: 7500 }).catch(() => null);
-      if (await introduction.isVisible()) {
-        await page.getByRole('button', { name: '건너뛰기' }).first().click({ timeout: 12000 });
-        await introduction.waitFor({ state: 'hidden', timeout: 15000 });
-      }
-      await page.locator('button[aria-label^="음악 "]').first().waitFor({ state: 'visible', timeout: 22000 });
-      await page.waitForTimeout(350);
-      await page.evaluate(async () => {
-        await document.fonts.ready;
-        document.querySelectorAll('nextjs-portal').forEach((node) => node.remove());
-        document.querySelectorAll('video').forEach((video) => video.pause());
-      });
+
+      await page.waitForFunction(({ theme, sampleImage }) => {
+        const invitation = document.querySelector(`[data-design="${theme}"]`);
+        const identity = invitation?.querySelector('#wedding-cover-title')?.textContent;
+        const photo = invitation?.querySelector('[data-wedding-cover-photo]');
+        return identity?.includes('이서준') && identity.includes('김하은') &&
+          photo instanceof HTMLImageElement && photo.naturalWidth > 0 &&
+          new URL(photo.currentSrc).pathname === sampleImage;
+      }, { theme, sampleImage }, { timeout: 30000 });
+      await page.evaluate(() => document.fonts.ready);
       await page.addStyleTag({
         content: [
-          'nextjs-portal, [data-nextjs-dialog], [data-nextjs-toast] { display: none !important; }',
-          '* { animation-duration: 0s !important; transition-duration: 0s !important; }',
+          'nextjs-portal { display: none !important; }',
           'html, body { scrollbar-width: none !important; }',
           '::-webkit-scrollbar { display: none !important; }',
         ].join('\n'),
       });
-      const filename = theme + '.jpg';
-      const target = path.join(outputDirectory, filename);
-      await page.screenshot({
-        path: target,
+
+      const filename = `${theme}.jpg`;
+      const screenshot = await page.screenshot({
+        path: path.join(outputDirectory, filename),
         type: 'jpeg',
         quality: 90,
         animations: 'disabled',
         caret: 'hide',
         timeout: 30000,
       });
-      const bytes = await fs.readFile(target);
-      if (bytes.length < 10000) throw new Error(theme + ': screenshot unexpectedly small');
+      const { width, height } = await sharp(screenshot).metadata();
+      if (screenshot.length < 10000 || width !== viewport.width * deviceScaleFactor || height !== viewport.height * deviceScaleFactor) {
+        throw new Error(`${theme}: unexpected screenshot size`);
+      }
       report.screenshots.push({
         theme,
         file: filename,
-        sourcePath: new URL(url).pathname,
-        bytes: bytes.length,
-        sha256: crypto.createHash('sha256').update(bytes).digest('hex'),
+        sourcePath: url.pathname + url.search,
+        bytes: screenshot.length,
+        sha256: crypto.createHash('sha256').update(screenshot).digest('hex'),
       });
-      console.log('Captured ' + theme + ' (' + bytes.length + ' bytes)');
+      console.log(`Captured the fictional ${theme} sample (${screenshot.length} bytes)`);
     } finally {
       await page.close();
     }
   }
-  if (report.screenshots.length !== themes.length) throw new Error('Incomplete capture');
-  if (new Set(report.screenshots.map((item) => item.sha256)).size !== themes.length) {
-    throw new Error('Five wedding theme previews must show distinct designs, not a shared intro screen');
+
+  if (new Set(report.screenshots.map(({ sha256 }) => sha256)).size !== themes.length) {
+    throw new Error('Each wedding theme must produce a distinct preview.');
   }
   await fs.writeFile(path.join(outputDirectory, 'capture-report.json'), JSON.stringify(report, null, 2) + '\n');
 } finally {
