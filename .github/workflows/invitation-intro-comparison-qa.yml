@@ -8,6 +8,7 @@ on:
       - src/app/sample-invitation/**
       - src/config/homeWeddingSample.ts
       - public/images/wedding-intro/bouquet-ribbon.*
+      - public/images/wedding-intro/seal-*.webp
       - public/images/home-wedding/portrait.webp
 
 permissions:

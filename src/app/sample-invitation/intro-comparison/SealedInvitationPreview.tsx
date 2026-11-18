@@ -1,12 +1,9 @@
 'use client';
 
 import Image from 'next/image';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef } from 'react';
 import type { gsap } from 'gsap';
-import comparison from './IntroComparison.module.css';
 import styles from './SealedInvitationPreview.module.css';
-
-type SealState = 'closed' | 'opening' | 'opened';
 
 interface SealedInvitationPreviewProps {
   names: string;
@@ -14,95 +11,68 @@ interface SealedInvitationPreviewProps {
   photoSrc: string;
 }
 
-const reducedMotionQuery = '(prefers-reduced-motion: reduce)';
+const closedEnvelope = '/images/wedding-intro/seal-closed.webp';
+const openEnvelope = '/images/wedding-intro/seal-open.webp';
+const sceneSizes = '(max-width: 520px) 100vw, 520px';
 
 export default function SealedInvitationPreview({ names, date, photoSrc }: SealedInvitationPreviewProps) {
-  const [state, setState] = useState<SealState>('closed');
   const stage = useRef<HTMLDivElement>(null);
+  const open = useRef<HTMLDivElement>(null);
+  const pocket = useRef<HTMLDivElement>(null);
+  const letter = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const element = stage.current;
-    if (state !== 'opening' || !element) return;
+    const openLayer = open.current;
+    const frontLayer = pocket.current;
+    const letterLayer = letter.current;
+    if (!element || !openLayer || !frontLayer || !letterLayer) return;
 
     let active = true;
     let animation: ReturnType<typeof gsap.context> | undefined;
-    const preference = window.matchMedia(reducedMotionQuery);
-    const finish = () => {
-      if (active) setState('opened');
-    };
-    const updatePreference = () => {
-      if (preference.matches) finish();
-    };
-    const deadline = window.setTimeout(finish, 1600);
-    preference.addEventListener('change', updatePreference);
+    const startedAt = performance.now();
 
-    void import('gsap').then(({ gsap }) => {
+    void import('gsap').then(({ gsap: animationLibrary }) => {
       if (!active) return;
-      if (preference.matches) {
-        finish();
-        return;
-      }
-
-      animation = gsap.context(() => {
-        gsap.timeline({ onComplete: finish })
-          .to('[data-seal-piece="left"]', { xPercent: -34, rotation: -16, autoAlpha: 0, duration: 0.27 }, 0)
-          .to('[data-seal-piece="right"]', { xPercent: 34, rotation: 16, autoAlpha: 0, duration: 0.27 }, 0)
-          .to('[data-seal-flap]', { rotationX: -164, duration: 0.43, ease: 'power2.inOut' }, 0.17)
-          .set('[data-seal-flap]', { zIndex: 1 }, 0.39)
-          .to('[data-seal-letter]', { yPercent: -60, duration: 0.56, ease: 'power3.out' }, 0.42);
+      animation = animationLibrary.context(() => {
+        const timeline = animationLibrary.timeline({ paused: true });
+        timeline
+          .to(openLayer, { opacity: 1, duration: 0.45, ease: 'sine.inOut' }, 0.22)
+          .set(frontLayer, { opacity: 1 }, 0.67)
+          .set(letterLayer, { autoAlpha: 1, yPercent: 90 }, 0.67)
+          .to(letterLayer, { yPercent: 0, duration: 0.76, ease: 'power3.out' }, 0.67);
+        timeline.play(Math.min((performance.now() - startedAt) / 1000, timeline.duration()));
       }, element);
-    }).catch(finish);
+    }).catch(() => {
+      // The closed image remains in place until the shared transition reveals the cover.
+    });
 
     return () => {
       active = false;
-      window.clearTimeout(deadline);
-      preference.removeEventListener('change', updatePreference);
       animation?.revert();
     };
-  }, [state]);
-
-  function toggleInvitation() {
-    if (state === 'opening') return;
-    if (state === 'opened') {
-      setState('closed');
-      return;
-    }
-
-    setState(window.matchMedia(reducedMotionQuery).matches ? 'opened' : 'opening');
-  }
-
-  const action = state === 'closed' ? '초대장 열기' : state === 'opening' ? '초대장 여는 중' : '다시 보기';
+  }, []);
 
   return (
-    <div className={styles.preview} data-seal-state={state}>
-      <div className={styles.stage} ref={stage} aria-hidden="true">
-        <div className={styles.envelope}>
-          <div className={styles.envelopeBack} />
-          <div className={styles.letter} data-seal-letter>
-            {state !== 'closed' && (
-              <>
-                <div className={styles.cover} data-seal-cover>
-                  <Image src={photoSrc} alt="" fill sizes="(min-width: 960px) 250px, 64vw" />
-                </div>
-                <p className={styles.letterNames}>{names}</p>
-              </>
-            )}
-          </div>
-          <div className={styles.envelopeFront} />
-          <div className={styles.flap} data-seal-flap />
-          <div className={styles.seal}>
-            <span className={styles.sealPiece} data-seal-piece="left" />
-            <span className={styles.sealPiece} data-seal-piece="right" />
+    <div className={styles.stage} ref={stage} data-seal-scene>
+      <div className={styles.artboard}>
+        <Image className={styles.image} src={closedEnvelope} alt="" fill sizes={sceneSizes} unoptimized loading="eager" data-seal-art="closed" />
+        <div className={styles.open} ref={open}>
+          <Image className={styles.image} src={openEnvelope} alt="" fill sizes={sceneSizes} unoptimized loading="eager" data-seal-art="open" />
+        </div>
+        <div className={styles.slot}>
+          <div className={styles.letter} ref={letter}>
+            <div className={styles.photo} data-seal-cover>
+              <Image src={photoSrc} alt="" fill sizes="(max-width: 520px) 52vw, 270px" loading="eager" />
+            </div>
+            <p className={styles.names}>{names}</p>
+            <p className={styles.date}>{date}</p>
           </div>
         </div>
+        <div className={styles.pocket} ref={pocket}>
+          <Image className={styles.image} src={openEnvelope} alt="" fill sizes={sceneSizes} unoptimized loading="eager" />
+        </div>
       </div>
-      <div className={comparison.details}>
-        <p className={comparison.names}>{names}</p>
-        <p className={comparison.date}>{date}</p>
-      </div>
-      <button type="button" className={comparison.action} aria-disabled={state === 'opening'} onClick={toggleInvitation}>
-        {action}
-      </button>
     </div>
   );
 }

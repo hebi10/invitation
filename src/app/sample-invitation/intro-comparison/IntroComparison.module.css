@@ -1,9 +1,7 @@
 .page {
   --intro-ink: #392d23;
   --intro-muted: #6c5c4c;
-  --intro-line: #d9cdbe;
   --intro-accent: #644533;
-  --intro-paper: #fffdf8;
   --intro-display: 'Wedding Myeongjo', serif;
   min-height: 100svh;
   padding: 20px max(16px, env(safe-area-inset-right)) 72px max(16px, env(safe-area-inset-left));
@@ -17,7 +15,14 @@
   margin-inline: auto;
 }
 
-.backLink {
+.navigation {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 0 12px;
+}
+
+.textLink {
   display: inline-flex;
   align-items: center;
   min-height: 48px;
@@ -28,7 +33,7 @@
   text-underline-offset: 4px;
 }
 
-.page :is(a, button):focus-visible {
+.page a:focus-visible {
   outline: 2px solid var(--intro-accent);
   outline-offset: 4px;
 }
@@ -89,16 +94,15 @@
   line-height: 1.5;
 }
 
-.bouquetArt {
+.cover {
+  position: relative;
   aspect-ratio: 1;
-  background: #dfd0ba url('/images/wedding-intro/bouquet-ribbon.webp') center / cover;
+  background: #ede5d8;
 }
 
-.bouquetArt img {
-  display: block;
-  width: 100%;
-  height: 100%;
+.cover img {
   object-fit: cover;
+  object-position: center 43%;
 }
 
 .details {
@@ -126,32 +130,8 @@
   line-height: 1.5;
 }
 
-.action {
-  display: block;
-  min-height: 48px;
-  width: 100%;
-  margin-top: 14px;
-  padding: 8px 16px;
-  border: 1px solid var(--intro-line);
-  background: var(--intro-paper);
-  color: var(--intro-accent);
-  font: inherit;
-  font-weight: 500;
-  cursor: pointer;
-}
-
-.action[aria-disabled='true'] {
-  cursor: wait;
-}
-
-.stillMessage {
-  display: none;
-  margin: 14px 0 0;
-  padding: 13px 0;
-  color: var(--intro-muted);
-  text-align: center;
-  font-size: 0.875rem;
-  line-height: 1.5;
+.details .textLink {
+  justify-self: center;
 }
 
 @media (min-width: 960px) {
@@ -163,15 +143,5 @@
     width: 100%;
     grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: clamp(24px, 3vw, 40px);
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .bouquetControl {
-    display: none;
-  }
-
-  .stillMessage {
-    display: block;
   }
 }
