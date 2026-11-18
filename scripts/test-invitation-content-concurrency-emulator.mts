@@ -170,6 +170,57 @@ try {
   }), (error) => assertConflict(error, 4));
   await assertStored(4, clientNext);
   console.log('real Firestore Admin/client SDK conflict and authorized client follow-up save passed');
+
+  const incomplete = {
+    ...config,
+    venue: '',
+    pageData: { ...config.pageData, venueName: '', ceremonyAddress: '' },
+  };
+  assert.equal(await firestoreEventRepository.saveContentBySlug({
+    slug, config: incomplete, expectedVersion: 4, customerOwnerUid: ownerUid,
+  }), 5);
+  assert.equal((await eventRef.get()).data()?.publicationReview, undefined,
+    'Saving a draft does not request publication review.');
+
+  const assertIncomplete = (error: { status?: number; code?: string }) =>
+    error.status === 422 && error.code === 'INVITATION_PUBLICATION_INCOMPLETE';
+  await assert.rejects(firestoreEventRepository.saveContentBySlug({
+    slug, config: incomplete, expectedVersion: 5, published: true,
+  }), assertIncomplete);
+  await assert.rejects(firestoreEventRepository.setPublicationBySlug(slug, {
+    published: true, expectedVersion: 5,
+  }), assertIncomplete);
+  await assert.rejects(clientRepository.saveClientEventContentBySlug({
+    slug, config: incomplete, expectedVersion: 5, published: true,
+  }), { code: 'permission-denied' });
+  assert.equal((await eventRef.get()).data()?.visibility.published, false);
+  assert.equal((await contentRef.get()).data()?.version, 5);
+
+  assert.equal(await firestoreEventRepository.saveContentBySlug({
+    slug, config, expectedVersion: 5, customerOwnerUid: ownerUid,
+    requestPublicationReview: true,
+  }), 6);
+  const review = (await eventRef.get()).data()?.publicationReview;
+  assert.equal(review?.requestedContentVersion, 6);
+  assert.equal(review?.requestedByUid, ownerUid);
+  assert.ok(review?.requestedAt?.toDate() instanceof Date);
+  assert.equal((await eventRef.get()).data()?.visibility.published, false);
+
+  assert.equal(await firestoreEventRepository.saveContentBySlug({
+    slug, config: { ...config, displayName: 'Edited after review request' },
+    expectedVersion: 6, customerOwnerUid: ownerUid,
+  }), 7);
+  await assert.rejects(firestoreEventRepository.setPublicationBySlug(slug, {
+    published: true, expectedVersion: 6,
+  }), (error) => assertConflict(error, 7));
+  assert.equal((await eventRef.get()).data()?.publicationReview?.requestedContentVersion, 6);
+  assert.equal((await eventRef.get()).data()?.visibility.published, false);
+
+  await firestoreEventRepository.setPublicationBySlug(slug, { published: true, expectedVersion: 7 });
+  assert.equal((await eventRef.get()).data()?.visibility.published, true);
+  assert.equal((await eventRef.get()).data()?.publicationReview, null);
+  assert.equal((await contentRef.get()).data()?.version, 7);
+  console.log('real Firestore publication readiness, review version and direct write rules passed');
 } finally {
   await clientSdk.terminate(clientDb);
   await clientApps.deleteApp(clientApp);

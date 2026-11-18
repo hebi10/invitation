@@ -4,6 +4,7 @@ import { createRequire } from 'node:module';
 import path from 'node:path';
 import { runInNewContext } from 'node:vm';
 import ts from 'typescript';
+import type { InvitationPageSeed } from '../src/types/invitationPage';
 
 // Run the real repository, mappers, validation and service; replace only Firebase IO.
 // Removing the atomic version check must allow two stale snapshots to win this test.
@@ -117,6 +118,73 @@ function load(file: string): unknown {
 
 const { getAllWeddingPageSeeds } = load('src/config/weddingPages.ts') as typeof import('../src/config/weddingPages');
 const config = { ...getAllWeddingPageSeeds()[0], slug: 'concurrency-test' };
+
+// The policy must evaluate the editable content itself, including persisted placeholders.
+const publicationPolicyPath = 'src/lib/invitationPublication.ts';
+assert.ok(existsSync(publicationPolicyPath), 'Publication readiness must reject incomplete invitations before they become public.');
+const publicationPolicy = load(publicationPolicyPath) as {
+  getInvitationPublicationMissingFields(config: InvitationPageSeed | null | undefined): string[];
+  assertInvitationReadyForPublication(config: InvitationPageSeed | null | undefined): void;
+};
+const { getInvitationPublicationMissingFields, assertInvitationReadyForPublication } = publicationPolicy;
+const missingFields = (candidate: InvitationPageSeed | null | undefined) =>
+  Array.from(getInvitationPublicationMissingFields(candidate));
+const ready: InvitationPageSeed = {
+  ...config,
+  eventType: 'wedding',
+  displayName: '김해나 · 이재호',
+  groomName: '김해나',
+  brideName: '이재호',
+  couple: { groom: { name: '김해나' }, bride: { name: '이재호' } },
+  date: '',
+  weddingDateTime: { year: 2028, month: 1, day: 29, hour: 14, minute: 30 },
+  venue: '한강 행사장',
+  pageData: { ceremonyAddress: '서울특별시 마포구 월드컵로 123' },
+};
+const noPeople = { groom: { name: '' }, bride: { name: '' } };
+const nameOnlyEvent = { ...ready, groomName: '', brideName: '', couple: noPeople };
+for (const candidate of [
+  ready,
+  { ...ready, eventType: 'first-birthday', displayName: '김다온' },
+  { ...ready, eventType: 'birthday', displayName: '김해나 생일', brideName: '', couple: { ...ready.couple, bride: noPeople.bride } },
+  { ...nameOnlyEvent, eventType: 'general-event', displayName: '동네 책 축제' },
+  { ...nameOnlyEvent, eventType: 'opening', displayName: '동네책방' },
+] satisfies InvitationPageSeed[]) {
+  assert.deepEqual(missingFields(candidate), [], `${candidate.eventType}: valid essential details are enough to publish`);
+}
+
+for (const candidate of [
+  { ...ready, groomName: '신랑 입력 전', couple: { ...ready.couple, groom: { name: '신랑 입력 전' } } },
+  { ...ready, brideName: ' 신부 ' },
+  { ...ready, eventType: 'first-birthday', displayName: '아기 이름' },
+  { ...ready, eventType: 'first-birthday', displayName: '김다온', brideName: '', couple: { ...ready.couple, bride: noPeople.bride } },
+  { ...ready, eventType: 'birthday', groomName: '생일 주인공', couple: { ...ready.couple, groom: { name: '생일 주인공' } } },
+  { ...nameOnlyEvent, eventType: 'general-event', displayName: '일반 행사' },
+  { ...nameOnlyEvent, eventType: 'opening', displayName: '새 매장' },
+] satisfies InvitationPageSeed[]) {
+  assert.deepEqual(missingFields(candidate), ['name'], `${candidate.eventType}: a persisted placeholder or missing name must prevent publication`);
+}
+
+assert.deepEqual(missingFields(null), ['content']);
+assert.deepEqual(missingFields({
+  ...nameOnlyEvent, displayName: '  ', venue: '  ', pageData: {},
+  weddingDateTime: { year: 0, month: 0, day: 0, hour: 0, minute: 0 },
+}), ['name', 'dateTime', 'venue', 'address']);
+assert.deepEqual(missingFields({ ...ready, weddingDateTime: { ...ready.weddingDateTime, year: 2027 } }), ['dateTime']);
+assert.deepEqual(missingFields({ ...ready, weddingDateTime: { ...ready.weddingDateTime, hour: 24 } }), ['dateTime']);
+assert.deepEqual(missingFields({ ...ready, venue: '', pageData: { ...ready.pageData, venueName: '한강 행사장' } }), []);
+assert.deepEqual(missingFields({ ...ready, pageData: { ceremony: { time: '오후 2:30', location: '3층 그랜드홀' } } }), ['address']);
+assert.doesNotThrow(() => assertInvitationReadyForPublication(ready));
+assert.throws(() => assertInvitationReadyForPublication({
+  ...ready, venue: '', pageData: {}, weddingDateTime: { ...ready.weddingDateTime, day: 30 },
+}), (error: Error & { code?: string; status?: number; missingFields?: string[] }) => {
+  assert.equal(error.code, 'INVITATION_PUBLICATION_INCOMPLETE');
+  assert.equal(error.status, 422);
+  assert.deepEqual(Array.from(error.missingFields ?? []), ['dateTime', 'venue', 'address']);
+  assert.match(error.message, /(?:일시|날짜).*장소.*주소/);
+  return true;
+});
+
 const eventPath = 'events/evt_concurrency-test';
 const contentPath = `${eventPath}/content/current`;
 const now = new Date('2026-10-01T00:00:00Z');
