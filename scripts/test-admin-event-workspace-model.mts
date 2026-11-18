@@ -11,6 +11,7 @@ import {
   filterAdminEventComments,
   getAdminEventCapabilities,
   getAdminEventCounts,
+  getAdminEventPublicationPage,
   getAdminEventVisibility,
   getAdminEventDetailTabs,
   getAdminEventPreviewLinks,
@@ -86,6 +87,20 @@ const pages = [
   makePage('general-event-one', 'general-event', { displayName: '브랜드 나잇' }),
   makePage('opening-one', 'opening', { displayName: '그린테이블' }),
 ];
+
+const reviewedPage = makePage('reviewed', 'wedding', {
+  contentVersion: 4,
+  publicationReview: { status: 'pending', requestedContentVersion: 4, requestedAt: '2026-11-18T04:00:00.000Z' },
+});
+assert.equal(getAdminEventPublicationPage(reviewedPage, null), null, 'A review request requires an explicit preview');
+assert.equal(getAdminEventPublicationPage({ ...reviewedPage }, reviewedPage), reviewedPage, 'Publication must use the pinned preview DTO');
+const stalePage = { ...reviewedPage, contentVersion: 5, publicationReview: { ...reviewedPage.publicationReview!, status: 'stale' as const } };
+assert.equal(getAdminEventPublicationPage(stalePage, reviewedPage), null, 'A newer content version requires a new preview');
+assert.equal(getAdminEventPublicationPage({ ...stalePage }, stalePage), stalePage, 'A fresh preview can authorize the latest stale-request content');
+const replacedRequest = { ...reviewedPage, publicationReview: { ...reviewedPage.publicationReview!, requestedAt: '2026-11-18T04:01:00.000Z' } };
+assert.equal(getAdminEventPublicationPage(replacedRequest, reviewedPage), null, 'A new review request invalidates the previous preview');
+assert.equal(getAdminEventPublicationPage({ ...reviewedPage, publicationReview: undefined }, reviewedPage), null, 'A withdrawn request invalidates its preview');
+assert.equal(getAdminEventPublicationPage(pages[1], null), pages[1], 'Independent invitations retain direct publication');
 
 assert.deepEqual(
   filterAdminEvents(pages, {

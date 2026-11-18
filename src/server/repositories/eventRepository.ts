@@ -21,6 +21,7 @@ import {
   getInvitationPublicationReviewState,
   normalizeEventSlugIndexRecord,
   normalizeEventSummaryRecord,
+  readEventContentFields,
   type EventSlugIndexRecord,
   type EventSummaryRecord,
 } from './eventReadThroughDtos';
@@ -82,6 +83,7 @@ interface EventPublicationInput {
   published?: boolean;
   expectedVersion?: number;
   expectedReviewRequestedAt?: string;
+  requirePendingReviewMatch?: boolean;
   allowFirstPublication?: boolean;
   defaultTheme?: InvitationThemeKey;
   sample?: InvitationPageSeed | null;
@@ -1050,8 +1052,9 @@ export const firestoreEventRepository: EventRepository = {
       if (input.expectedVersion !== undefined && input.expectedVersion !== version) {
         throw new InvitationVersionConflictError(version);
       }
-      if (input.expectedReviewRequestedAt !== undefined) {
-        const review = current && getInvitationPublicationReviewState(current, version);
+      const review = current && getInvitationPublicationReviewState(current, version);
+      if (input.expectedReviewRequestedAt !== undefined ||
+          (input.published === true && input.requirePendingReviewMatch && review?.status === 'pending')) {
         if (review?.status !== 'pending' || review.requestedAt !== input.expectedReviewRequestedAt) {
           throw Object.assign(new Error('검토 요청이 변경되었습니다. 최신 내용을 다시 확인해 주세요.'), { status: 409 });
         }
@@ -1060,9 +1063,10 @@ export const firestoreEventRepository: EventRepository = {
       const published = input.published ?? current?.published ?? Boolean(input.sample);
       const hasCustomContent = !input.restoreSample && (current?.hasCustomContent ?? contentSnapshot.exists);
       if (published && current?.published !== true) {
-        const config = hasCustomContent || !input.sample
-          ? stored.content as InvitationPageSeed | null | undefined
-          : input.sample;
+        const storedConfig = contentSnapshot.exists
+          ? readEventContentFields(stored) as unknown as InvitationPageSeed
+          : null;
+        const config = hasCustomContent || !input.sample ? storedConfig : input.sample;
         assertPublicationAllowed(config ?? null, current?.eventType, input.allowFirstPublication);
       }
 
@@ -1130,11 +1134,12 @@ export const firestoreEventRepository: EventRepository = {
       if (isCustomerSave && !currentContent) {
         throw new CustomerEventClaimError(404, 'missing', '저장된 청첩장 데이터를 찾을 수 없습니다.');
       }
+      const trustedConfig = currentContent
+        ? buildServerTrustedMobileInvitationPageConfigForSave(input.config, currentContent.config)
+        : input.config;
       const nextContent: StoredInvitationPageConfigRecord = {
         slug: normalizedPageSlug,
-        config: currentContent
-          ? buildServerTrustedMobileInvitationPageConfigForSave(input.config, currentContent.config)
-          : input.config,
+        config: current ? { ...trustedConfig, eventType: current.eventType } : trustedConfig,
         version: currentVersion + 1,
         createdAt: stored.createdAt ?? input.createdAt ?? now, updatedAt: now,
         seedSourceSlug: input.seedSourceSlug?.trim() || stored.seedSourceSlug || null,

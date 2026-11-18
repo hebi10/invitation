@@ -113,9 +113,9 @@ export async function PATCH(
       return NextResponse.json({ success: true, editableConfig });
     }
 
-    const expectedVersion = body.expectedVersion === undefined
-      ? undefined
-      : requireInvitationContentVersion(body.expectedVersion);
+    const expectedVersion = body.published || body.expectedVersion !== undefined
+      ? requireInvitationContentVersion(body.expectedVersion)
+      : undefined;
     const expectedReviewRequestedAt = body.expectedReviewRequestedAt;
     if (expectedReviewRequestedAt !== undefined &&
         (typeof expectedReviewRequestedAt !== 'string' || !body.published || expectedVersion === undefined)) {
@@ -125,6 +125,7 @@ export async function PATCH(
       defaultTheme,
       expectedVersion,
       expectedReviewRequestedAt,
+      requirePendingReviewMatch: true,
     });
     return NextResponse.json({ success: true });
   } catch (error) {

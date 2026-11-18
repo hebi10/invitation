@@ -346,11 +346,15 @@ export function buildInvitationPageDisplayPeriodRecordFromEventSummary(
   };
 }
 
+export function readEventContentFields(data: Record<string, unknown>) {
+  return isRecord(data.content) ? data.content : data;
+}
+
 export function buildInvitationPageConfigRecordFromEventContent(
   eventSummary: EventSummaryRecord,
   data: Record<string, unknown>
 ): EventContentRecordDto | null {
-  const contentInput = isRecord(data.content) ? data.content : data;
+  const contentInput = readEventContentFields(data);
   const themeStateInput = isRecord(data.themeState) ? data.themeState : null;
   const contentCandidate = {
     ...contentInput,

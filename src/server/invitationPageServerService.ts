@@ -26,6 +26,7 @@ import {
   type InvitationPageRegistryRecord,
 } from '@/lib/invitationPagePersistence';
 import { DEFAULT_EVENT_TYPE, normalizeEventTypeKey, type EventTypeKey } from '@/lib/eventTypes';
+import { assertInvitationReadyForPublication } from '@/lib/invitationPublication';
 import {
   getInvitationPageSlugValidationErrorMessage,
   type InvitationPageSlugAvailabilityReason,
@@ -602,7 +603,10 @@ export async function saveServerInvitationPageConfig(
   );
 
   if (!normalizedConfig) {
-    throw new Error('초대 페이지 구성이 잘못되었습니다.');
+    if (options.published === true || options.requestPublicationReview) {
+      assertInvitationReadyForPublication(config);
+    }
+    throw Object.assign(new Error('초대 페이지 구성이 잘못되었습니다.'), { status: 400 });
   }
 
   if (!firestoreEventRepository.isAvailable()) {
@@ -717,6 +721,7 @@ export async function setServerInvitationPagePublished(
     defaultTheme?: InvitationThemeKey;
     expectedVersion?: number;
     expectedReviewRequestedAt?: string;
+    requirePendingReviewMatch?: boolean;
     allowFirstPublication?: boolean;
   } = {}
 ) {

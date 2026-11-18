@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useAdminWorkNavigation } from './AdminWorkGuard';
 
 import { getEventDeletionButtonLabel, getEventDeletionFailureMessage } from '@/lib/adminEventDeletionState';
@@ -17,6 +17,7 @@ import {
   getAdminEventCapabilities,
   getAdminEventDetailTabs,
   getAdminEventPreviewLinks,
+  getAdminEventPublicationPage,
   getAdminEventRelatedQuery,
   getAdminEventReviewLabel,
   getAdminEventVisibility,
@@ -150,6 +151,7 @@ function EventDetailWorkspace({
   experience,
 }: AdminEventDetailPanelProps) {
   const panelRef = useRef<HTMLElement>(null);
+  const [previewedPage, setPreviewedPage] = useState<InvitationPageSummary | null>(null);
   const work = useAdminWorkNavigation();
   const busy = work.busy || updatingPublished || updatingTier || !!updatingVariantToken || deleting || issuingInvite || !!ownershipActionToken;
   const requestClose = () => { if (!busy) work.request(onClose); };
@@ -159,6 +161,12 @@ function EventDetailWorkspace({
     : getAdminEventDetailTabs(page);
   const previewLinks = getAdminEventPreviewLinks(page);
   const preview = previewLinks.find((link) => link.isDefault) ?? previewLinks[0];
+  const publicationPage = getAdminEventPublicationPage(page, previewedPage);
+  const requiresReviewPreview = publicationPage === null;
+  const handlePublicationChange = (published: boolean) => {
+    if (!published) onTogglePublished(page, false);
+    else if (publicationPage) onTogglePublished(publicationPage, true);
+  };
   const isReadOnlySeed = experience && page.slug.startsWith('demo-seed-');
   const activeTab = resolveAdminEventDetailTab(selectedDetailTab, tabs);
   const orientation = mobileReadOnly ? 'horizontal' : 'vertical';
@@ -187,7 +195,7 @@ function EventDetailWorkspace({
             <p className={detailStyles.summary}>{page.published ? '공개' : '비공개'}{page.defaultTheme ? ` · ${getInvitationThemeAdminLabel(page.defaultTheme)}` : ''}</p>
           </div>
           <div className={styles.eventHeaderActions}>
-          {preview ? <a className="admin-button admin-button-secondary" href={routes.preview(page.slug, preview.theme, page.eventType)} target="_blank" rel="noreferrer">미리보기</a> : null}
+          {preview ? <a className="admin-button admin-button-secondary" href={routes.preview(page.slug, preview.theme, page.eventType)} target="_blank" rel="noreferrer" onClick={() => setPreviewedPage(page)}>미리보기</a> : null}
           <button
             type="button"
             className={detailStyles.close} aria-label="이벤트 상세 닫기" title="이벤트 목록으로"
@@ -261,13 +269,14 @@ function EventDetailWorkspace({
               href={routes.preview(page.slug, preview.theme, page.eventType)}
               target="_blank"
               rel="noreferrer"
+              onClick={() => setPreviewedPage(page)}
             >
               미리보기
             </a>
           ) : null}
-          {!page.published && page.publicationReview?.status === 'pending' && page.contentVersion !== undefined && !isReadOnlySeed && !mobileReadOnly ? (
-            <button type="button" className="admin-button admin-button-secondary" disabled={busy}
-              onClick={() => onTogglePublished(page, true)}>
+          {!page.published && page.publicationReview && !isReadOnlySeed && !mobileReadOnly ? (
+            <button type="button" className="admin-button admin-button-secondary" disabled={busy || requiresReviewPreview}
+              onClick={() => handlePublicationChange(true)}>
               {updatingPublished ? '공개 중' : '검토한 내용 공개'}
             </button>
           ) : null}
@@ -277,7 +286,7 @@ function EventDetailWorkspace({
           <label className={styles.eventDetailStatusField}>
             <span>공개 상태</span>
             <select className="admin-select" value={page.published ? 'published' : 'private'} disabled={updatingPublished || isReadOnlySeed}
-              onChange={(event) => onTogglePublished(page, event.currentTarget.value === 'published')} aria-label={`${page.displayName} 공개 상태`}>
+              onChange={(event) => handlePublicationChange(event.currentTarget.value === 'published')} aria-label={`${page.displayName} 공개 상태`}>
               <option value="published">공개</option><option value="private">비공개</option>
             </select>
           </label>
@@ -297,9 +306,10 @@ function EventDetailWorkspace({
               <strong>{getAdminEventReviewLabel(page)}</strong>
               <span>{page.publicationReview.status === 'pending'
                 ? `${formatDateTime(new Date(page.publicationReview.requestedAt))} 요청`
-                : '최신 내용을 미리 본 뒤 공개 상태를 변경해 주세요.'}</span>
+                : '고객의 검토 요청 이후 입력 내용이 변경되었습니다.'}</span>
             </p>
           ) : null}
+          {requiresReviewPreview ? <p>최신 내용을 미리 본 뒤 공개해 주세요.</p> : null}
         </div>
 
         {isReadOnlySeed ? <p>기본 체험 데이터는 조회 전용입니다.</p> : null}
@@ -350,14 +360,15 @@ function EventDetailWorkspace({
           <select
             className="admin-select"
             value={page.published ? 'published' : 'private'}
-            disabled={updatingPublished || isReadOnlySeed}
-            onChange={(event) => onTogglePublished(page, event.currentTarget.value === 'published')}
+            disabled={updatingPublished || isReadOnlySeed || requiresReviewPreview}
+            onChange={(event) => handlePublicationChange(event.currentTarget.value === 'published')}
             aria-label={`${page.displayName} 공개 상태`}
           >
             <option value="published">공개</option>
             <option value="private">비공개</option>
           </select>
           {updatingPublished ? <small>변경 중입니다.</small> : null}
+          {requiresReviewPreview ? <small>최신 내용을 미리 본 뒤 공개해 주세요.</small> : null}
         </label>
 
 </> : null}

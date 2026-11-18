@@ -179,11 +179,24 @@ try {
   assert.equal(await firestoreEventRepository.saveContentBySlug({
     slug, config: incomplete, expectedVersion: 4, customerOwnerUid: ownerUid,
   }), 5);
-  assert.equal((await eventRef.get()).data()?.publicationReview, undefined,
+  assert.equal((await eventRef.get()).data()?.publicationReview ?? null, null,
     'Saving a draft does not request publication review.');
 
   const assertIncomplete = (error: { status?: number; code?: string }) =>
     error.status === 422 && error.code === 'INVITATION_PUBLICATION_INCOMPLETE';
+  const { saveServerInvitationPageConfig } = await import('@/server/invitationPageServerService');
+  const withoutNames = {
+    ...config,
+    groomName: '',
+    brideName: '',
+    couple: {
+      groom: { ...config.couple.groom, name: '' },
+      bride: { ...config.couple.bride, name: '' },
+    },
+  };
+  await assert.rejects(saveServerInvitationPageConfig(withoutNames, {
+    published: true, expectedVersion: 5,
+  }), assertIncomplete);
   await assert.rejects(firestoreEventRepository.saveContentBySlug({
     slug, config: incomplete, expectedVersion: 5, published: true,
   }), assertIncomplete);
@@ -206,6 +219,14 @@ try {
   assert.ok(review?.requestedAt?.toDate() instanceof Date);
   assert.equal((await eventRef.get()).data()?.visibility.published, false);
 
+  const browserContentRef = clientSdk.doc(clientDb, 'events', eventId, 'content', 'current');
+  await assert.rejects(clientSdk.setDoc(browserContentRef, {
+    content: { displayName: 'Edited without advancing content version' },
+  }, { merge: true }), { code: 'permission-denied' });
+  await assert.rejects(firestoreEventRepository.setPublicationBySlug(slug, {
+    published: true, expectedVersion: 6, requirePendingReviewMatch: true,
+  }), { status: 409 });
+
   assert.equal(await firestoreEventRepository.saveContentBySlug({
     slug, config: { ...config, displayName: 'Edited after review request' },
     expectedVersion: 6, customerOwnerUid: ownerUid,
@@ -220,6 +241,11 @@ try {
   assert.equal((await eventRef.get()).data()?.visibility.published, true);
   assert.equal((await eventRef.get()).data()?.publicationReview, null);
   assert.equal((await contentRef.get()).data()?.version, 7);
+  await firestoreEventRepository.setPublicationBySlug(slug, { published: false });
+  await contentRef.set({ ...config, version: 7 });
+  await firestoreEventRepository.setPublicationBySlug(slug, { published: true, expectedVersion: 7 });
+  assert.equal((await eventRef.get()).data()?.visibility.published, true,
+    'A complete legacy flat content snapshot can still be published.');
   console.log('real Firestore publication readiness, review version and direct write rules passed');
 } finally {
   await clientSdk.terminate(clientDb);
