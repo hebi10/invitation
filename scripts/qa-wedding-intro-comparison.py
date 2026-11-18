@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 """Exercise the wedding intro comparison against the local Next.js sample."""
 
-from io import BytesIO
 from pathlib import Path
 from urllib.parse import parse_qs, urlsplit
 
@@ -60,7 +59,7 @@ def check_photo(image):
 def check_gif(response):
     assert response.ok, f"Bouquet GIF returned {response.status}"
     assert response.headers["content-type"].startswith("image/gif")
-    with Image.open(BytesIO(response.body())) as image:
+    with Image.open(Path("public") / BOUQUET_GIF.lstrip("/")) as image:
         assert image.n_frames > 1, "The bouquet image must contain moving frames"
         assert "loop" not in image.info, "The bouquet GIF must play only once"
         durations = []
@@ -92,7 +91,6 @@ def open_preview(context, url, block_assets=()):
     page.on("pageerror", lambda error: errors.append(str(error)))
     response = page.goto(url, wait_until="domcontentloaded", timeout=90_000)
     assert response and response.ok, f"Preview route unavailable: {url}"
-    page.add_style_tag(content="nextjs-portal { display: none !important; }")
     return page, responses, errors, remote_requests
 
 
@@ -129,6 +127,7 @@ def check_comparison(page):
 
 def compare_previews(browser, width, reduced_motion=False):
     label = f"{width}px" + ("-reduced" if reduced_motion else "")
+    print(f"Checking comparison at {label}")
     recording = {}
     if width == 1280:
         recording = {"record_video_dir": str(OUT), "record_video_size": {"width": 1280, "height": 900}}
@@ -141,6 +140,7 @@ def compare_previews(browser, width, reduced_motion=False):
         **recording,
     ) as context:
         page, responses, errors, remote_requests = open_preview(context, COMPARISON)
+        page.add_style_tag(content="nextjs-portal { display: none !important; }")
         check_comparison(page)
         if not reduced_motion and width == 1280:
             expect(page.locator("[data-intro-overlay]")).to_have_count(3)
@@ -180,6 +180,7 @@ def check_guest_previews(browser):
     with browser.new_context(viewport={"width": 390, "height": 844}, locale="ko-KR") as context:
         for variant in VARIANTS:
             # The cover must still appear when the generated GIF does not load.
+            print(f"Checking guest preview for {variant}")
             blocked = (BOUQUET_GIF,) if variant == "bouquet" else ()
             page, _, errors, remote_requests = open_preview(context, SAMPLE + f"?intro={variant}", blocked)
             check_no_entry_buttons(page)
@@ -191,6 +192,7 @@ def check_guest_previews(browser):
             page.close()
 
     for options in ({"reduced_motion": "reduce"}, {"java_script_enabled": False}):
+        print(f"Checking guest preview fallback: {options}")
         with browser.new_context(**options) as context:
             page, responses, errors, remote_requests = open_preview(context, SAMPLE + "?intro=bouquet")
             check_photo(page.locator("[data-wedding-cover-photo]"))

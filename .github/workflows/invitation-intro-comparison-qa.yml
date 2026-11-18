@@ -43,7 +43,8 @@ jobs:
           curl --fail --silent --show-error --retry 30 --retry-connrefused --retry-delay 2 --max-time 45 \
             http://127.0.0.1:3000/mobile-intro-preview/?style=none > /dev/null
       - name: Compare three intro previews in Chromium
-        run: python scripts/qa-wedding-intro-comparison.py
+        timeout-minutes: 5
+        run: python -u scripts/qa-wedding-intro-comparison.py
       - uses: actions/upload-artifact@v4
         if: always()
         with:
