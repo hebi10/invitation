@@ -65,3 +65,9 @@
 
 ### 앱별 보존 지침
 - 기존 한국어·Superpowers·PowerShell·결제·인증·데이터 스키마 지침을 유지한다. ci.yml·mobile-release.yml의 앱 검증과 Play 변경을 분리하고, 웹·Firebase 배포는 별도 승인 대상으로 취급한다.
+
+## CI-DEDUP-20261119-P2 — Android 화면 최종 검증
+- PR/main의 `ci.yml`을 통한 TypeScript·Lint·테스트·빌드·Firebase 보안 검증은 유지한다.
+- `mobile-captures.yml`의 PR 자동 실제 Android 캡처는 해제하고, 전체 개발 배치의 PR이 병합된 정확한 `main` SHA에서 `workflow_dispatch`로 1회 실행한다. 에디터·모달·로그인·키보드·목록 등 기존 캡처 범위와 증빙 수집을 유지한다.
+- 인트로·공개 청첩장·결제·인증과 관련된 개별 위험 기능 검증은 생략하지 않는다. 고객 데이터·웹 및 Firebase 배포 승인과 Google Play 승인 경계를 보존한다.
+- `release-build.yml`은 동일 SHA의 `CI`와 수동 `Android 화면 캡처` 성공을 확인하지 못하면 서명 빌드를 중단한다. 배치 변경 후에는 새 SHA 기준으로 재검증한다.
