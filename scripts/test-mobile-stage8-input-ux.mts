@@ -58,7 +58,7 @@ assert.match(capture, /\['keyboard_verified'\] = True/);
 assert.match(capture, /KEYBOARD_ROUTE\.unlink\(missing_ok=True\)/);
 assert.match(capture, /capture_responsive_views\(\)/);
 assert.match(capture, /320, \[/);
-assert.match(workflow, /script: python3 scripts\\/capture-mobile-android\\.py/);
+assert.ok(workflow.includes('script: python3 scripts/capture-mobile-android.py'));
 assert.match(workflow, /expected_main_sha:/);
 
 for (const path of [
