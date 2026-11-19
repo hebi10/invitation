@@ -58,7 +58,8 @@ assert.match(capture, /\['keyboard_verified'\] = True/);
 assert.match(capture, /KEYBOARD_ROUTE\.unlink\(missing_ok=True\)/);
 assert.match(capture, /capture_responsive_views\(\)/);
 assert.match(capture, /320, \[/);
-assert.match(workflow, /scripts\/fixtures\/mobile-keyboard-capture\.tsx\.fixture/);
+assert.match(workflow, /script: python3 scripts\\/capture-mobile-android\\.py/);
+assert.match(workflow, /expected_main_sha:/);
 
 for (const path of [
   'apps/mobile/src/features/manage/components/steps/BasicEditorStep.tsx',
