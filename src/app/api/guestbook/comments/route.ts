@@ -5,6 +5,7 @@ import {
   readGuestbookCommentDate,
 } from '@/lib/guestbookComments';
 import { normalizeInvitationPageSlugInput } from '@/lib/invitationPagePersistence';
+import { getEventSummaryPublicAccessState } from '@/lib/invitationPublicAccess';
 import { parseCommentPageRequest } from '@/lib/guestbookPagination';
 import { firestoreEventCommentRepository } from '@/server/repositories/eventCommentRepository';
 import { resolveStoredEventBySlug } from '@/server/repositories/eventRepository';
@@ -75,28 +76,6 @@ function validateCommentInput(body: GuestbookCommentRequestBody | null) {
   return { pageSlug, author, message } as const;
 }
 
-function isEventPublic(
-  summary: NonNullable<Awaited<ReturnType<typeof resolveStoredEventBySlug>>>['summary']
-) {
-  if (summary.visibility?.published !== true) {
-    return false;
-  }
-
-  const displayStartAt = summary.visibility.displayStartAt ?? null;
-  const displayEndAt = summary.visibility.displayEndAt ?? null;
-  const now = new Date();
-
-  if (displayStartAt && now < displayStartAt) {
-    return false;
-  }
-
-  if (displayEndAt && now > displayEndAt) {
-    return false;
-  }
-
-  return true;
-}
-
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   let pageRequest;
@@ -129,7 +108,7 @@ export async function GET(request: Request) {
     );
   }
 
-  if (!isEventPublic(resolvedEvent.summary)) {
+  if (!getEventSummaryPublicAccessState(resolvedEvent.summary).isPublic) {
     return NextResponse.json(
       { error: '현재 방명록을 조회할 수 없는 청첩장입니다.' },
       { status: 403 }
@@ -205,7 +184,7 @@ export async function POST(request: Request) {
     );
   }
 
-  if (!isEventPublic(resolvedEvent.summary)) {
+  if (!getEventSummaryPublicAccessState(resolvedEvent.summary).isPublic) {
     return NextResponse.json(
       { error: '현재 방명록을 작성할 수 없는 청첩장입니다.' },
       { status: 403 }

@@ -16,7 +16,24 @@ import {
   fetchWithRetry,
   readJsonResponse,
 } from './apiCore';
+import { MobileApiError, toUserFacingPublicationIncompleteMessage } from './apiErrors';
 import type { MobileMusicLibraryResponse } from './apiTypes';
+
+async function readPagePublicationResponse<T>(response: Response) {
+  if (response.status === 422) {
+    const payload = await response.clone().json().catch(() => null) as {
+      code?: unknown;
+      missingFields?: unknown;
+    } | null;
+    if (payload?.code === 'INVITATION_PUBLICATION_INCOMPLETE') {
+      throw new MobileApiError(
+        toUserFacingPublicationIncompleteMessage(payload.missingFields),
+        response.status
+      );
+    }
+  }
+  return readJsonResponse<T>(response);
+}
 
 export async function createMobileInvitationDraft(
   baseUrl: string,
@@ -113,7 +130,7 @@ export async function saveMobileInvitationPageConfig(
   },
   highRiskToken?: string
 ) {
-  return readJsonResponse<{ success: boolean; version: number }>(
+  return readPagePublicationResponse<{ success: boolean; version: number }>(
     await fetchWithRetry(
       buildApiUrl(baseUrl, `/api/mobile/client-editor/pages/${encodeURIComponent(pageSlug)}`),
       {
@@ -143,7 +160,7 @@ export async function setMobileInvitationPublishedState(
   defaultTheme?: MobileInvitationThemeKey,
   highRiskToken?: string
 ) {
-  return readJsonResponse<{ success: boolean }>(
+  return readPagePublicationResponse<{ success: boolean }>(
     await fetchWithRetry(
       buildApiUrl(baseUrl, `/api/mobile/client-editor/pages/${encodeURIComponent(pageSlug)}`),
       {

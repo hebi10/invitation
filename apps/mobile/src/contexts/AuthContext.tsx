@@ -29,6 +29,7 @@ import { getStoredJson, setStoredJson, setStoredString } from '../lib/storage';
 import { isInvalidAuthError } from '../lib/apiErrors';
 import type { MobileClientEditorPermissions } from '../../../../src/types/mobileClientEditor';
 import type {
+  MobileBillingPageCreationResponse,
   MobileEditableInvitationPageConfig,
   MobileCustomerAuthSession,
   MobileHighRiskSessionSummary,
@@ -89,7 +90,7 @@ type AuthContextValue = {
     options?: {
       billingPurchase?: MobileBillingPurchaseReceiptInput;
     }
-  ) => Promise<boolean>;
+  ) => Promise<boolean | MobileBillingPageCreationResponse>;
   activateStoredSession: (candidateSession: MobileSessionSummary) => Promise<boolean>;
   logout: () => Promise<void>;
   clearAuthError: () => void;
@@ -736,29 +737,40 @@ export function AuthProvider({ children }: PropsWithChildren) {
         billingPurchase?: MobileBillingPurchaseReceiptInput;
       } = {}
     ) => {
+      const { billingPurchase } = options;
+      const revision = customerAuthRevisionRef.current;
+      const isCurrent = () => !billingPurchase || (
+        revision === customerAuthRevisionRef.current &&
+        billingPurchase.appUserId === customerSessionRef.current?.uid
+      );
       setIsAuthenticating(true);
 
       try {
         const customerIdToken = await getCustomerIdToken();
-        if (!customerIdToken) {
-          throw new Error('Customer authentication is required.');
+        if (!customerIdToken || !isCurrent()) {
+          throw new Error('결제한 고객 계정으로 다시 로그인해 주세요.');
         }
 
-        const response = options.billingPurchase
+        const response = billingPurchase
           ? await fulfillMobileBillingPageCreation(apiBaseUrl, {
-              purchase: options.billingPurchase,
+              purchase: billingPurchase,
               input,
               customerIdToken,
             })
           : await createMobileInvitationDraft(apiBaseUrl, input, customerIdToken);
-        await applyAuthenticatedSession(response, {
+        const applied = await applyAuthenticatedSession(response, {
+          shouldApply: isCurrent,
           pendingManageOnboarding: {
             pageSlug: response.session.pageSlug,
             createdAt: Date.now(),
           },
         });
-        return true;
+        if (!applied) {
+          throw new Error('청첩장 편집 세션을 적용하지 못했습니다.');
+        }
+        return billingPurchase ? response : true;
       } catch (error) {
+        if (billingPurchase) throw error;
         setAuthError(
           error instanceof Error
             ? error.message

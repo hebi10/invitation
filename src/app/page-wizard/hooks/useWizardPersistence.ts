@@ -36,6 +36,7 @@ export type WizardDraftCreationState = {
 
 export type WizardPersistDraftOptions = {
   publish?: boolean;
+  requestPublicationReview?: true;
   successMessage?: string;
   silent?: boolean;
 };
@@ -263,6 +264,8 @@ export function useWizardPersistence({
           defaultTheme,
           expectedVersion: draftState.version ?? persistedVersion,
           isAdmin: isAdminLoggedIn,
+          changePublication: nextPublished !== published,
+          requestPublicationReview: options?.requestPublicationReview,
         });
 
         const normalized = normalizeFormState(savedEditableConfig.config ?? prepared);

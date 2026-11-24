@@ -26,7 +26,7 @@ assert.match(exportButton, /일정 파일\(\.ics\) 다운로드/);
 assert.match(exportButton, /buildWeddingCalendar\(props\)/);
 assert.match(exportButton, /link\.download = 'wedding\.ics'/);
 assert.match(wedding, /<WeddingCalendarDownload/);
-assert.match(wedding, /\{features\.showCountdown \? <details className=\{styles\.calendarDisclosure\}>/);
+assert.match(wedding, /\{features\.showCountdown(?:\s*&&[^?\n]+)?\s*\?\s*<details className=\{styles\.calendarDisclosure\}>/);
 assert.match(wedding, /예식 달력 보기/);
 assert.match(wedding, /이 페이지에서 달력 확인/);
 assert.match(calendar, /mode = 'countdown'/);

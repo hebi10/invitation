@@ -26,7 +26,7 @@ import {
   listStoredEventSummaries,
   type StoredInvitationPageConfigRecord,
 } from './repositories/eventRepository';
-import type { EventSummaryRecord } from './repositories/eventReadThroughDtos';
+import { getInvitationPublicationReviewState, type EventSummaryRecord } from './repositories/eventReadThroughDtos';
 
 export type AdminInvitationPageSource = 'stored' | 'sample' | 'none';
 
@@ -78,7 +78,8 @@ export function buildAdminInvitationPageSummary(
   summary: EventSummaryRecord,
   page: InvitationPage | null,
   adminUserIds: Set<string>,
-  source: AdminInvitationPageSource
+  source: AdminInvitationPageSource,
+  contentVersion?: number
 ): InvitationPageSummary {
   const displayName =
     (source === 'stored' ? page?.displayName : null) ||
@@ -96,6 +97,9 @@ export function buildAdminInvitationPageSummary(
     : adminUserIds.has(ownerUid)
       ? 'admin'
       : 'customer';
+  const publicationReview = contentVersion === undefined
+    ? undefined
+    : getInvitationPublicationReviewState(summary, contentVersion);
 
   return {
     slug: summary.slug,
@@ -120,6 +124,8 @@ export function buildAdminInvitationPageSummary(
     ownerUid: summary.ownerUid,
     ownerEmail: summary.ownerEmail,
     ownerDisplayName: summary.ownerDisplayName,
+    ...(contentVersion !== undefined ? { contentVersion } : {}),
+    ...(publicationReview ? { publicationReview } : {}),
     ...(summary.deletion ? { deletion: summary.deletion } : {}),
   };
 }
@@ -134,7 +140,7 @@ export async function listAdminInvitationPageSummaries() {
       const contentRecord = await firestoreEventRepository.findContentBySlug(summary.slug);
       const { page, source } = resolveAdminInvitationPage(summary, contentRecord);
 
-      return buildAdminInvitationPageSummary(summary, page, adminUserIds, source);
+      return buildAdminInvitationPageSummary(summary, page, adminUserIds, source, contentRecord?.version);
     })
   );
 

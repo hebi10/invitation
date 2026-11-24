@@ -4,6 +4,7 @@ import { NextResponse } from 'next/server';
 import { isInvitationThemeKey } from '@/lib/invitationThemes';
 import {
   GENERIC_SERVER_ERROR_MESSAGE,
+  toInvitationPublicationErrorResponse,
   toSafeHttpErrorResponse,
 } from '@/server/apiErrorResponse';
 import {
@@ -63,6 +64,7 @@ export async function POST(
       | {
           config?: unknown;
           expectedVersion?: unknown;
+          requestPublicationReview?: unknown;
           published?: unknown;
           defaultTheme?: unknown;
         }
@@ -78,6 +80,7 @@ export async function POST(
     const snapshot = await saveCustomerEditableInvitationPageConfig(ownerUid, slug, {
       config: body.config as InvitationPageSeed,
       expectedVersion: requireInvitationContentVersion(body.expectedVersion),
+      requestPublicationReview: body.requestPublicationReview === true,
       published: typeof body.published === 'boolean' ? body.published : undefined,
       defaultTheme: isInvitationThemeKey(body.defaultTheme)
         ? body.defaultTheme
@@ -101,6 +104,9 @@ export async function POST(
     ) {
       return toSafeHttpErrorResponse(error);
     }
+
+    const publicationError = toInvitationPublicationErrorResponse(error);
+    if (publicationError) return publicationError;
 
     console.error('[api/customer/events/editable] failed to save editable event', error);
     return NextResponse.json(

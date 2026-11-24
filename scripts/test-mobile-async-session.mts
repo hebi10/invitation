@@ -4,6 +4,7 @@ import { runInNewContext } from 'node:vm';
 import ts from 'typescript';
 import { resolveEditorSavePolicy } from '../apps/mobile/src/features/manage/editorSavePolicy';
 import { validateEditorRows } from '../apps/mobile/src/features/manage/editorDelimitedRows';
+import { getWeddingDateTimeInputError, readWeddingDateTimeInputs } from '../apps/mobile/src/features/manage/editorWeddingDateTime';
 
 // React Native is not available in Node. Keep state/ref slots across renders;
 // exercise the provider's real asynchronous callbacks with controlled API I/O.
@@ -88,13 +89,15 @@ assert.equal(await savingB, false, 'An obsolete save completion must not update 
     if (id === '@react-navigation/native') return { useIsFocused: () => false };
     if (id === '../editorSavePolicy') return { resolveEditorSavePolicy };
     if (id === '../editorDelimitedRows') return { validateEditorRows };
+    if (id === '../editorWeddingDateTime') return { getWeddingDateTimeInputError, readWeddingDateTimeInputs };
     if (id === '../buildConfigFromForm') return { buildConfigFromForm: ({ dashboard }: { dashboard: { page: { slug: string } } }) => ({ ...form, slug: dashboard.page.slug }) };
     if (id === '../shared') return { EMPTY_FORM: form, EDITOR_STEPS: ['basic'], ONBOARDING_STEPS: ['basic'],
       getOnboardingValidationMessage: () => '', parseOptionalNumber: () => null, hasValidCoordinates: () => false,
       buildManageFormFromDashboard: () => form };
     throw new Error(`Unexpected module ${id}`);
   } });
-  let dashboard = { page: { slug: 'page-a', published: false, version: 7 } };
+  const pageConfig = { date: '' };
+  let dashboard = { page: { slug: 'page-a', published: false, version: 7, config: pageConfig } };
   function renderForm() {
     index = 0;
     const result = (formExports.useInvitationForm as (options: object) => { openEditorModal: () => Promise<void>; persistForm: (options: object) => Promise<boolean>; setPublished: (value: boolean) => void; isFormDirty: boolean; savedPublished: boolean; saveFailed: boolean })({
@@ -106,16 +109,16 @@ assert.equal(await savingB, false, 'An obsolete save completion must not update 
   }
   await renderForm().openEditorModal();
   renderForm();
-  dashboard = { page: { slug: 'page-a', published: false, version: 8 } };
+  dashboard = { page: { slug: 'page-a', published: false, version: 8, config: pageConfig } };
   assert.equal(await renderForm().persistForm({}), false);
   assert.deepEqual(attemptedVersions, [7], 'A background dashboard refresh must not replace the version of the open draft.');
   assert.equal(await renderForm().persistForm({}), false);
   assert.deepEqual(attemptedVersions, [7, 7], 'A failed save must retain the original edit version.');
   saved = 0;
-  dashboard = { page: { slug: 'page-b', published: false, version: 1 } };
+  dashboard = { page: { slug: 'page-b', published: false, version: 1, config: pageConfig } };
   assert.equal(await renderForm().persistForm({}), false, 'An open A form must not save against the newly selected B dashboard');
   assert.equal(saved, 0);
-  dashboard = { page: { slug: 'page-a', published: false, version: 8 } };
+  dashboard = { page: { slug: 'page-a', published: false, version: 8, config: pageConfig } };
   saveSucceeds = true;
   renderForm().setPublished(true);
   assert.equal(await renderForm().persistForm({ applyPublicationChange: false }), true);

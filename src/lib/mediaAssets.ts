@@ -65,6 +65,17 @@ function normalizedReference(value: string) {
   if (trimmed.startsWith('wedding-images/')) return trimmed;
   try {
     const url = new URL(trimmed, 'https://local.invalid');
+    // A persisted stable gateway reference is still a reference to the same Storage object.
+    // Restrict this mapping to the application's own canonical public route.
+    if (['https://local.invalid', 'https://invite.msgnote.kr'].includes(url.origin) && !url.search && !url.hash) {
+      const gateway = url.pathname.match(/^\/api\/public\/media\/([a-zA-Z0-9][a-zA-Z0-9_-]{0,119})\/([^/]+)\/$/);
+      if (gateway) {
+        const file = decodeURIComponent(gateway[2]);
+        if (file.length <= 250 && !/[\\/\u0000-\u001f\u007f%?#]/.test(file) && /\.(?:jpe?g|png|webp)$/i.test(file)) {
+          return `wedding-images/${gateway[1]}/${file}`;
+        }
+      }
+    }
     const encodedStoragePath = url.pathname.match(/\/o\/(.+)$/)?.[1];
     if (encodedStoragePath) return decodeURIComponent(encodedStoragePath);
     const decodedPath = decodeURIComponent(url.pathname);

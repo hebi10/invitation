@@ -8,6 +8,7 @@ import { manageStyles } from '../features/manage/manageStyles';
 import { InvitationEditorWorkspace } from '../components/manage/InvitationEditorWorkspace';
 import { ManageEditorStepContent } from '../features/manage/components/ManageEditorStepContent';
 import { EDITOR_STEPS, EMPTY_FORM, type ManageFormState } from '../features/manage/shared';
+import { parseInvitationIntroChoice } from '../lib/invitationIntroCatalog';
 
 function resolveCaptureStepIndex(value?: string) {
   if (value === 'intro' || value?.startsWith('intro-')) return EDITOR_STEPS.length - 1;
@@ -39,9 +40,9 @@ export default function DesignCheck() {
     const introStyle = requestedStep?.startsWith('intro-')
       ? requestedStep.slice('intro-'.length)
       : null;
-    if (introStyle === 'light' || introStyle === 'cinema' || introStyle === 'envelope') {
-      setForm((current) => ({ ...current, introStyle }));
-    }
+    const legacyIntroStyle = introStyle === 'light' || introStyle === 'cinema' || introStyle === 'envelope' ? introStyle : 'none';
+    const introPresetId = parseInvitationIntroChoice(introStyle) ?? undefined;
+    setForm((current) => ({ ...current, introStyle: legacyIntroStyle, introPresetId }));
   }, [requestedStep]);
   const isLastStep = step === EDITOR_STEPS.length - 1;
   const showSaveError = requestedStep === 'save-error';
@@ -76,18 +77,21 @@ export default function DesignCheck() {
       </AppText>
     ) : null}
     <ManageEditorStepContent stepKey={EDITOR_STEPS[step].key} form={form} savedPublished={false}
+      savedIntroPresetId={parseInvitationIntroChoice(requestedStep?.startsWith('intro-') ? requestedStep.slice('intro-'.length) : undefined)}
+      hasUnknownSavedIntroPreset={false} introAssetBaseUrl="http://127.0.0.1:19999/"
       mapPreviewUrl="" mapLatitude={null} mapLongitude={null} galleryPreviewItems={[]}
       maxGalleryImageCount={18} supportsMusicFeature musicLibraryLoading={false} musicCategories={[]}
       openMusicDropdown={null} selectedMusicCategoryLabel="선택해 주세요" selectedMusicTrackLabel="먼저 카테고리를 선택해 주세요" availableMusicTracks={[]}
       uploadingImageKind={null} uploadProgress={null} isSearchingAddress={false}
       onUpdateField={(field, value) => setForm(current => ({ ...current, [field]: value }))}
+      onSetMapProviders={mapProviders => setForm(current => ({ ...current, mapProviders }))}
       onUpdatePersonField={(role, field, value) => setForm(current => ({ ...current, [role]: { ...current[role], [field]: value } }))}
       onUpdateParentField={(role, parent, field, value) => setForm(current => ({ ...current, [role]: { ...current[role], [parent]: { ...current[role][parent], [field]: value } } }))}
       onUploadImage={() => {}} onRemoveSingleImage={() => {}} onMoveGalleryImage={() => {}} onRemoveGalleryImage={() => {}}
       onSearchAddress={() => {}} onOpenMapUrl={() => {}} onSetMusicEnabled={musicEnabled => setForm(current => ({ ...current, musicEnabled }))}
       onSetPublished={published => setForm(current => ({ ...current, published }))}
-      onSetIntroStyle={introStyle => setForm(current => ({ ...current, introStyle }))}
-      onPreviewIntro={() => {}} onToggleMusicDropdown={() => {}}
+      onSetIntroPresetId={introPresetId => setForm(current => ({ ...current, introPresetId }))}
+      onPreviewIntroPreset={() => {}} onToggleMusicDropdown={() => {}}
       onSelectMusicCategory={() => {}} onSelectMusicTrack={() => {}} />
   </InvitationEditorWorkspace>;
 }

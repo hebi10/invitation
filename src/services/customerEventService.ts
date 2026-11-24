@@ -20,7 +20,10 @@ import type {
   InvitationProductTier,
 } from '@/types/invitationPage';
 import { getCurrentFirebaseIdToken } from '@/services/adminAuth';
-import type { EditableInvitationPageConfig } from '@/services/invitationPageService';
+import {
+  readInvitationPublicationReviewState,
+  type EditableInvitationPageConfig,
+} from '@/services/invitationPageService';
 import {
   resolveClientStoredEventBySlug,
 } from '@/services/repositories/clientEventRepositoryCore';
@@ -255,6 +258,7 @@ function normalizeEditableConfig(input: unknown): EditableInvitationPageConfig |
     dataSource: record.dataSource === 'firestore' ? 'firestore' : 'seed',
     lastSavedAt: readDate(record.lastSavedAt),
     version: requireInvitationContentVersion(record.version),
+    publicationReview: readInvitationPublicationReviewState(record.publicationReview),
   };
 }
 
@@ -587,6 +591,7 @@ export async function saveCustomerEditableInvitationPageConfig(
     expectedVersion: number;
     published?: boolean;
     defaultTheme?: InvitationThemeKey;
+    requestPublicationReview?: true;
   }
 ): Promise<EditableInvitationPageConfig> {
   const normalizedPageSlug = normalizeInvitationPageSlugInput(pageSlug);
@@ -615,6 +620,7 @@ export async function saveCustomerEditableInvitationPageConfig(
         expectedVersion: input.expectedVersion,
         published: input.published,
         defaultTheme: input.defaultTheme,
+        requestPublicationReview: input.requestPublicationReview,
       }),
     }
   );

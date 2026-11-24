@@ -546,6 +546,7 @@ export default function AdminPageClient({
               onRetryComments={() => void retryComments()}
               onNavigate={navigateQuery}
               createHref={routes.wizardCreate('wedding')}
+              refundReviewAccountKey={!experience ? adminUser?.uid : undefined}
             />
           ) : renderedActiveTab === 'pages' ? (
             <AdminEventWorkspace

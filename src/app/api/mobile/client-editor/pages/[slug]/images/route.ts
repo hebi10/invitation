@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { projectMobileUploadReference } from '@/server/mobileUploadReferencePolicy';
 
 import type { EditableImageAssetKind } from '@/lib/imageUploadPolicy';
 import { toSafeHttpErrorResponse } from '@/server/apiErrorResponse';
@@ -12,7 +13,8 @@ import {
   readEditableImageAssetKind,
   saveServerOptimizedEditableImage,
 } from '@/server/editableImageUploadService';
-import { getServerStorageBucket } from '@/server/firebaseAdmin';
+import { MediaAssetError } from '@/server/mediaAssetService';
+import { cleanupMobileStagedImages } from '@/server/mobileUploadCleanupService';
 import {
   applyScopedRateLimit,
   buildRateLimitHeaders,
@@ -212,10 +214,17 @@ export async function POST(
       file: uploadPayload.file,
       assetKind: uploadPayload.assetKind,
       uploadSessionId: uploadPayload.uploadSessionId || 'legacy-mobile-upload',
+      mobileEditorSessionId: access.mobileSession?.sessionId ?? null,
     });
 
-    return NextResponse.json(result, {
-      headers: buildRateLimitHeaders(rateLimitResult),
+    const session = access.mobileSession;
+    const projected = projectMobileUploadReference(result, {
+      slug: pageSlug, requestedVersion: new URL(request.url).searchParams.get('mediaVersion'),
+      ownerBound: Boolean(session?.sessionId && session.ownerUid && session.eventId && session.pageSlug === pageSlug &&
+        session.scopes.includes('canViewDashboard') && session.scopes.includes('canEditInvitation')),
+    });
+    return NextResponse.json(projected, {
+      headers: { ...buildRateLimitHeaders(rateLimitResult), 'Cache-Control': 'no-store' },
     });
   } catch (error) {
     if (error instanceof EditableImageUploadError) {
@@ -266,37 +275,32 @@ export async function DELETE(
     );
   }
 
-  const bucket = getServerStorageBucket();
-  if (!bucket) {
-    return NextResponse.json(
-      { error: 'Image storage is not available.' },
-      { status: 503 }
-    );
-  }
-
   const cleanupPayload = await readCleanupPaths(request, pageSlug);
   if ('error' in cleanupPayload) {
     return NextResponse.json({ error: cleanupPayload.error }, { status: 400 });
   }
 
   try {
-    await Promise.all(
-      cleanupPayload.paths.map((path) =>
-        bucket.file(path).delete({ ignoreNotFound: true })
-      )
-    );
+    const result = await cleanupMobileStagedImages({
+      slug: pageSlug,
+      paths: cleanupPayload.paths,
+      sessionId: access.mobileSession?.sessionId ?? '',
+      eventId: access.mobileSession?.eventId ?? '',
+      ownerUid: access.mobileSession?.ownerUid ?? '',
+    });
 
     return NextResponse.json(
       {
         success: true,
-        deletedPaths: cleanupPayload.paths,
+        ...result,
       },
       {
         headers: buildRateLimitHeaders(rateLimitResult),
       }
     );
   } catch (error) {
-    console.error('[mobile/client-editor/images] failed to clean up image', error);
+    if (error instanceof MediaAssetError) return toSafeHttpErrorResponse(error);
+    // Storage errors may contain old download URLs or metadata; do not log them.
     return NextResponse.json(
       { error: 'Failed to clean up uploaded images.' },
       { status: 500 }
