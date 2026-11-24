@@ -123,7 +123,9 @@ function elements(node: unknown): TestElement[] {
 test('Opening, retrying and closing the library never selects or saves a photo', async () => {
   let calls = 0;
   const selections: string[] = [];
-  const render = componentHarness({ '@/services/imageService': { getImagesByPage: async (slug: string, options: { forceRefresh: boolean }) => {
+  const render = componentHarness({ '@/lib/mediaAssets': loadModule('src/lib/mediaAssets.ts'),
+    '@/components/admin/ImageManager/AdminMediaDisplay': { AdminMediaThumbnail: () => null },
+    '@/services/imageService': { getAdminPageImages: async (slug: string, options: { forceRefresh: boolean }) => {
     assert.equal(slug, 'example'); assert.equal(options.forceRefresh, true);
     calls += 1;
     if (calls === 1) throw new Error('offline');

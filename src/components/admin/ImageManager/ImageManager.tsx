@@ -8,8 +8,7 @@ import { getMediaAssetUsage, type MediaUsageReference } from '@/lib/mediaAssets'
 import type { EventTypeKey } from '@/lib/eventTypes';
 import {
   deleteImage,
-  getAllPageImages,
-  getImagesByPage,
+  getAdminPageImages,
   getPageMediaUsageReferences,
   uploadEditablePageImage,
   type UploadedImage,
@@ -27,6 +26,7 @@ import {
 
 import styles from './ImageManager.module.css';
 import MediaAccessAudit from './MediaAccessAudit';
+import { AdminMediaThumbnail, AdminMediaVariantLink } from './AdminMediaDisplay';
 
 interface ImageManagerProps {
   eventTypeFilter?: EventTypeKey | null;
@@ -63,17 +63,19 @@ export default function ImageManager({
     try {
       setIsLoading(true);
       setError('');
-      const [nextImages, nextPages] = await Promise.all([
-        lockedPageSlug
-          ? getImagesByPage(lockedPageSlug, options).then((pageImages) => ({ [lockedPageSlug]: pageImages }))
-          : getAllPageImages(options),
-        getAllManagedInvitationPages(),
-      ]);
-      setImages(nextImages);
-      setPages(nextPages);
+      const nextPages = await getAllManagedInvitationPages();
       const visibleNextPages = eventTypeFilter
         ? nextPages.filter((page) => page.eventType === eventTypeFilter)
         : nextPages;
+      const targets = lockedPageSlug ? [lockedPageSlug] : visibleNextPages.map(page => page.slug);
+      const nextImages: Record<string, UploadedImage[]> = {};
+      for (let offset = 0; offset < targets.length; offset += 4) {
+        const batch = await Promise.all(targets.slice(offset, offset + 4).map(async slug =>
+          [slug, await getAdminPageImages(slug, options)] as const));
+        for (const [slug, items] of batch) if (items.length || lockedPageSlug) nextImages[slug] = items;
+      }
+      setImages(nextImages);
+      setPages(nextPages);
       setSelectedPage((current) => lockedPageSlug ?? (current || visibleNextPages[0]?.slug || ''));
       const slugs = lockedPageSlug ? [lockedPageSlug] : visibleNextPages.map((page) => page.slug).filter((slug) => nextImages[slug]?.length);
       const referenceResults = await Promise.allSettled(slugs.map((slug) => getPageMediaUsageReferences(slug)));
@@ -502,20 +504,17 @@ export default function ImageManager({
                       return (
                       <div key={image.path} className={styles.imageCard}>
                         <div className={styles.imageWrapper}>
-                          <img
-                            className={styles.image}
-                            src={image.thumbnailUrl || image.url}
-                            alt={image.name}
-                          />
+                          <AdminMediaThumbnail className={styles.image} reference={image.thumbnailUrl || image.url}
+                            slug={pageSlug} alt={image.name} />
                         </div>
                         <div className={styles.imageInfo}>
                           <p className={styles.imageName}>{image.name}</p>
                           <p className={styles.usageMessage}>{usage ? usage.length ? `사용 중 · ${usage.join(', ')}` : '미사용 · 저장된 초대장과 추억 페이지에 참조 없음' : '사용 위치 확인 불가'}</p>
                           <p className={styles.imageDate}>{image.uploadedAt ? `업로드 ${image.uploadedAt.toLocaleDateString('ko-KR')}` : '업로드 날짜 확인 불가'}</p>
                           <div className={styles.variantLinks}>
-                            <a href={image.url} target="_blank" rel="noreferrer">본문용</a>
-                            {image.originalUrl ? <a href={image.originalUrl} target="_blank" rel="noreferrer">원본</a> : null}
-                            {image.thumbnailPath !== image.path && image.thumbnailUrl ? <a href={image.thumbnailUrl} target="_blank" rel="noreferrer">썸네일</a> : null}
+                            <AdminMediaVariantLink reference={image.url} slug={pageSlug} label="본문용" />
+                            {image.originalPath ? <AdminMediaVariantLink reference={image.originalUrl ?? ''} slug={pageSlug} label="원본" /> : null}
+                            {image.thumbnailPath !== image.path && image.thumbnailPath ? <AdminMediaVariantLink reference={image.thumbnailUrl ?? ''} slug={pageSlug} label="썸네일" /> : null}
                           </div>
                           <button
                             type="button"
