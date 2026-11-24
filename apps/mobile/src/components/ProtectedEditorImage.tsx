@@ -23,6 +23,7 @@ export function ProtectedEditorImage({ uri, alt, style, fit = 'cover' }: {
   const current = loaded?.uri === uri && loaded.session === session && loaded.baseUrl === apiBaseUrl ? loaded : null;
 
   useEffect(() => {
+    setLoaded(null);
     if (!session || !target) return;
     const controller = new AbortController();
     let active = true;

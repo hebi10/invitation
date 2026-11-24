@@ -69,3 +69,11 @@ export async function readNativeEditorMedia(input: {
   if (input.signal.aborted || bytes.length !== length || !matchesImage(bytes, type)) throw new Error('이미지 전송을 확인하지 못했습니다.');
   return `data:${type};base64,${encodeBase64(bytes)}`;
 }
+
+/** Stable pilot uploads retain the server thumbnail identity, while older uploads keep local preview behavior. */
+export function selectNativeUploadPreviewReference(image: { url: string; previewUrl: string }, local: string, slug: string) {
+  if (isStableNativeMediaReference(image.url)) {
+    return buildNativeEditorMediaTarget(image.previewUrl, slug, PRODUCTION_ORIGIN) ? image.previewUrl : image.url;
+  }
+  return local || image.previewUrl || image.url;
+}

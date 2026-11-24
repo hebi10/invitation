@@ -19,7 +19,7 @@ export async function uploadMobileInvitationImage(
 ) {
   const url = buildApiUrl(
     baseUrl,
-    `/api/mobile/client-editor/pages/${encodeURIComponent(pageSlug)}/images?mediaVersion=stable-v1`
+    `/api/mobile/client-editor/pages/${encodeURIComponent(pageSlug)}/images/?mediaVersion=stable-v1`
   );
 
   if (!(payload instanceof FormData)) {
