@@ -229,3 +229,49 @@ assert.equal(legacyConsumedReplay.billingPurchaseConsumed, true);
 assert.equal(fulfilled, priorGrants, 'No historical receipt can grant twice');
 
 console.log('Google Play token verification, six-month grants, ownership and legacy SKU recovery checks passed');
+
+let voidedRequests = 0;
+let repeatPage = false;
+const voidedVerifier = load('src/server/googlePlayPurchaseVerifier.ts', id => {
+  if (id === 'node:crypto') return { createHash };
+  if (id === 'google-auth-library') return { GoogleAuth: class { getAccessToken() { return Promise.resolve('test-token-only'); } } };
+  if (id === 'server-only') return {};
+  throw new Error('Unexpected import ' + id);
+}, {
+  AbortSignal, URLSearchParams,
+  fetch: async (url: string, options: { cache: string; headers: { Authorization: string } }) => {
+    voidedRequests++;
+    assert.ok(url.startsWith('https://androidpublisher.googleapis.com/androidpublisher/v3/applications/kr.msgnote.mobileinvitation/purchases/voidedpurchases?'));
+    assert.equal(options.cache, 'no-store');
+    assert.equal(options.headers.Authorization, 'Bearer test-token-only');
+    const next = new URL(url).searchParams.get('token');
+    return { ok: true, json: async () => ({
+      voidedPurchases: [{ purchaseToken: token, voidedTimeMillis: next ? '1795000001000' : '1795000000000', voidedReason: 1 }],
+      tokenPagination: !next || repeatPage ? { nextPageToken: 'next-test-page' } : {},
+    }) };
+  },
+});
+const listVoided = voidedVerifier.listRecentVoidedGooglePlayPurchases as () => Promise<Array<{ transactionIdentifier: string; voidedAt: string }>>;
+const voided = await listVoided();
+assert.equal(voidedRequests, 2);
+assert.equal(voided.length, 1, 'Repeated receipt must be deduplicated');
+assert.equal(voided[0].transactionIdentifier, fulfillmentId);
+assert.equal(voided[0].voidedAt, new Date(1795000001000).toISOString());
+assert.ok(!JSON.stringify(voided).includes(token), 'Never expose the raw Play token');
+repeatPage = true;
+await assert.rejects(listVoided(), /pagination/);
+
+const reviewService = load('src/server/adminVoidedPurchaseReviewService.ts', id => {
+  if (id === './googlePlayPurchaseVerifier') return { listRecentVoidedGooglePlayPurchases: async () => voided };
+  if (id === './repositories/billingFulfillmentRepository') return { firestoreBillingFulfillmentRepository: {
+    findByTransactionId: async (id: string) => { assert.equal(id, fulfillmentId); return { ...validFulfillment, provider: 'googleplay' }; },
+    update: () => { throw new Error('Refund review must be read-only'); },
+  } };
+  return {};
+}, { Promise });
+const review = await (reviewService.getAdminVoidedPurchaseReview as () => Promise<{ count: number; records: Array<Record<string, unknown>> }>)();
+assert.equal(review.count, 1);
+assert.equal(review.records[0].fulfillmentStatus, 'fulfilled');
+assert.equal(review.records[0].pageSlug, 'created-page');
+assert.equal(review.records[0].reviewRequired, true);
+assert.ok(!JSON.stringify(review).includes(appUserId), 'Do not expose customer UID in refund review');
