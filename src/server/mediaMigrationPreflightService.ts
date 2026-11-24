@@ -1,5 +1,7 @@
 import 'server-only';
 
+import { isDeepStrictEqual } from 'node:util';
+
 import { getServerStorageBucketName } from './firebaseAdmin';
 import { MediaAssetError } from './mediaAssetService';
 import { MAX_OBJECTS_PER_PREFIX, listImageMetadata, type AuditPage } from './mediaAccessAuditService';
@@ -85,7 +87,7 @@ export interface MediaMigrationPreflight {
 export function buildMediaMigrationPreflight(input: {
   slug: string; bucketName: string; pilotSlug: string;
   content: unknown; memory: unknown; wedding: AuditPage; memoryImages: AuditPage;
-  eventType: string; unavailable: boolean; summaryVersion?: number | null;
+  eventType: string; unavailable: boolean; summaryVersion?: number | null; snapshotChanged?: boolean;
 }): MediaMigrationPreflight {
   const { slug, bucketName, pilotSlug, content, memory, wedding, memoryImages, eventType, unavailable } = input;
   for (const [page, prefix] of [[wedding, `wedding-images/${slug}/`], [memoryImages, `memory-images/${slug}/`]] as const) {
@@ -138,7 +140,7 @@ export function buildMediaMigrationPreflight(input: {
   blockers.push('editor-upload-client-cutover-required', 'cross-event-reference-review-required',
     'live-compatibility-and-revocation-approval-required');
   const referenceRehearsal = rehearseStoredMediaReferences({
-    slug, bucketName, summaryVersion: input.summaryVersion, raw: content,
+    slug, bucketName, summaryVersion: input.summaryVersion, raw: content, snapshotChanged: input.snapshotChanged,
     inventoryBlocked: eventType !== 'wedding' || unavailable || !inventoryComplete ||
       unsupportedImageReferences > 0 || unmappedStoredReferences > 0 || missingOrUnscannedObjects > 0 ||
       incompatibleObjects > 0 || memory != null || memoryImages.objects.length > 0,
@@ -166,10 +168,13 @@ export async function getServerMediaMigrationPreflight(slug: string, dependencie
     dependencies.list(`wedding-images/${slug}/`),
     dependencies.list(`memory-images/${slug}/`),
   ]);
+  // Storage inventory is not in the Firestore transaction. Refuse to report a successful rehearsal if either snapshot changed during inspection.
+  const [latest, latestMemory] = await Promise.all([dependencies.readRecord(slug), dependencies.readMemory(slug)]);
+  const snapshotChanged = !latest || !isDeepStrictEqual(latest, record) || !isDeepStrictEqual(latestMemory, memory);
   return buildMediaMigrationPreflight({
     slug, bucketName: dependencies.bucketName, pilotSlug: dependencies.pilotSlug,
     content: record.content, memory, wedding, memoryImages, eventType: record.summary.eventType,
-    summaryVersion: record.summary.version,
+    summaryVersion: record.summary.version, snapshotChanged,
     unavailable: record.blocked || (record.summary.status != null && record.summary.status !== 'active'),
   });
 }
