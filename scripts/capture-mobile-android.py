@@ -47,13 +47,21 @@ PACKAGE = 'host.exp.exponent'
 PORT = 8092
 TOOLS_BUTTON_DISABLED = False
 VERIFIED = {'environment': 'Android API 35 / Expo Go 55.0.7',
-            'uses_live_account': False, 'api_fixture': 'loopback music-library connectivity only',
+            'uses_live_account': False, 'api_fixture': 'loopback music-library connectivity and static intro poster',
             'captures': [], 'status': 'running'}
 
 
 class CaptureApiHandler(BaseHTTPRequestHandler):
-    # 연결 확인에만 응답한다. 인증·저장·결제 API는 제공하지 않는다.
+    # 연결 확인과 공개 정지 포스터만 제공한다. 인증·저장·결제 API는 제공하지 않는다.
     def do_GET(self):
+        if self.path == '/assets/invitation-intro/poster.webp':
+            payload = (ROOT / 'public/assets/invitation-intro/poster.webp').read_bytes()
+            self.send_response(200)
+            self.send_header('Content-Type', 'image/webp')
+            self.send_header('Content-Length', str(len(payload)))
+            self.end_headers()
+            self.wfile.write(payload)
+            return
         if self.path == '/api/mobile/client-editor/music-library':
             payload = b'{"categories": []}'
             self.send_response(200)
@@ -509,17 +517,17 @@ def main():
                 wait_screen(name, f'design-check?step={step}', expected)
             intro_tree = wait_screen(
                 'editor-intro-closed', 'design-check?step=intro',
-                ['첫 화면 애니메이션 (선택)', '공유 제목과 설명'],
+                ['인트로 GIF (선택)', '공유 제목과 설명'],
             )
             intro_toggle = next(
                 (node for node in intro_tree.iter('node')
-                 if node.get('content-desc') == '첫 화면 애니메이션 (선택)'
+                 if node.get('content-desc') == '인트로 GIF (선택)'
                  and node.get('enabled') == 'true'), None,
             )
             if intro_toggle is None or not tap(intro_toggle):
-                raise RuntimeError('intro disclosure: 첫 화면 애니메이션 펼침 버튼을 찾거나 누르지 못했습니다.')
+                raise RuntimeError('intro disclosure: 인트로 GIF 펼침 버튼을 찾거나 누르지 못했습니다.')
             wait_screen('editor-intro', 'design-check?step=intro',
-                        ['첫 화면 애니메이션', '현재 선택한 연출', '사용 안 함'], timeout=45, launch=False)
+                        ['인트로 GIF', '사용 안 함'], timeout=45, launch=False)
             for intro_style, intro_label in [
                 ('light', '타이포그래피형'),
                 ('cinema', '웨딩 화보형'),
@@ -528,9 +536,12 @@ def main():
                 wait_screen(
                     f'editor-intro-{intro_style}-selected',
                     f'design-check?step=intro-{intro_style}',
-                    ['첫 화면 애니메이션 (선택)', f'현재 선택: {intro_label}'],
+                    ['인트로 GIF (선택)', f'저장된 설정: 기존 연출: {intro_label}'],
                     timeout=60,
                 )
+            for choice, label in [('intro-01', '미니멀 타이포'), ('none', '사용 안 함')]:
+                wait_screen(f'editor-intro-{choice}-saved', f'design-check?step=intro-{choice}',
+                            ['인트로 GIF (선택)', f'저장된 설정: {label}'], timeout=60)
             for name, kind, expected in [
                 ('modal-payment', 'payment', ['Google Play 결제', '결제 예정 금액']),
                 ('modal-payment-pending', 'payment-pending', ['Google Play 결제', '이전 결제 이어서 처리']),

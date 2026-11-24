@@ -33,7 +33,7 @@ const manage = read('apps/mobile/src/features/screens/manage.tsx');
 assert.deepEqual(EDITOR_STEPS.map((step) => step.key), [
   'basic', 'schedule', 'location', 'greeting', 'images', 'music', 'settings',
 ]);
-assert.equal(WEDDING_INTRO_OPTIONS.length, 4, 'All existing PC intro options must remain selectable');
+assert.equal(WEDDING_INTRO_OPTIONS.length, 4, 'All legacy intro styles must remain readable');
 
 const emptyDateTime = { year: 0, month: 0, day: 0, hour: 0, minute: 0 };
 const dashboard = {
@@ -216,14 +216,15 @@ assert.match(music, /선택됨/);
 assert.match(music, /form.musicEnabled \? \(/);
 assert.match(music, /음악이 꺼져 있습니다/);
 assert.match(music, /음악 음량 \(0~1\)/);
-assert.match(settings, /WEDDING_INTRO_OPTIONS.map/);
-assert.match(settings, /onSetIntroStyle\(option.value\)/);
-assert.match(settings, /onPreviewIntro\(option.value\)/);
+assert.match(settings, /listAvailableInvitationIntroPresets\(\)\.map/);
+assert.match(settings, /onSetIntroPresetId\(preset\.id\)/);
+assert.match(settings, /onPreviewIntroPreset\(preset\.id\)/);
+assert.match(settings, /onSetIntroPresetId\('none'\)/);
 assert.match(settings, /savedPublished \? '공개' : '비공개'/);
 assert.match(settings, /저장 예정:/);
 assert.match(settings, /onSetPublished\(true\)/);
 assert.match(settings, /onSetPublished\(false\)/);
-assert.match(settings, /title="첫 화면 애니메이션 \(선택\)"/);
+assert.match(settings, /title="인트로 GIF \(선택\)"/);
 assert.match(settings, /공개 선택/);
 assert.match(settings, /비공개 선택/);
 assert.match(manage, /onClose=\{\(\) => void handleCloseEditorModal\(\)\}/);
