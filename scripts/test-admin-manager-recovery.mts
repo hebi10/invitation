@@ -119,8 +119,11 @@ async function testExplicitImageRefreshBypassesCache() {
       '@/lib/mediaAssets': mediaAssets,
       '@/services/invitationPageService': { getAllManagedInvitationPages: async () => [{ slug: 'page-a', displayName: 'A', eventType: 'wedding' }] },
       '@/services/imageService': {
-        getImagesByPage: async (_slug: string, options: { forceRefresh?: boolean }) => { requestedOptions.push(options); return []; },
-        getAllPageImages: async (options: { forceRefresh?: boolean }) => { requestedOptions.push(options); return { 'page-a': [] }; },
+        getAdminPageImages: async (slug: string, options: { forceRefresh?: boolean }) => {
+          assert.equal(slug, 'page-a', 'Manager must request its managed invitation through the administrator inventory');
+          requestedOptions.push(options);
+          return [];
+        },
         getPageMediaUsageReferences: async () => [],
       },
     });
