@@ -77,6 +77,7 @@ export interface EventSummaryRecord {
   version: number | null;
   migratedFromPageSlug: string | null;
   deletion?: EventDeletionMetadata | null;
+  billingAccessHeld?: boolean;
   publicationReview?: {
     requestedByUid: string;
     requestedContentVersion: number;
@@ -240,10 +241,12 @@ export function normalizeEventSummaryRecord(
     Number.isInteger(requestedContentVersion) && requestedContentVersion > 0
       ? { requestedByUid, requestedAt, requestedContentVersion }
       : undefined;
-  const visibilityPublished =
+  const billingAccessHeld = data.billingAccessHold != null;
+  const visibilityPublished = !billingAccessHeld && (
     typeof visibilityInput?.published === 'boolean'
       ? visibilityInput.published
-      : data.published !== false;
+      : data.published !== false
+  );
   const visibilityDisplayStartAt = toDate(visibilityInput?.displayStartAt);
   const visibilityDisplayEndAt = toDate(visibilityInput?.displayEndAt);
   const hasExplicitDisplayPeriodActive =
@@ -310,6 +313,7 @@ export function normalizeEventSummaryRecord(
     version: readFiniteNumber(data.version),
     migratedFromPageSlug: readNonEmptyString(data.migratedFromPageSlug),
     deletion: readEventDeletionMetadata(data.deletion),
+    ...(billingAccessHeld ? { billingAccessHeld: true } : {}),
     ...(publicationReview ? { publicationReview } : {}),
   };
 }

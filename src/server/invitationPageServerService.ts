@@ -467,6 +467,9 @@ async function loadServerInvitationPageBySlug(
     }
 
     const mergedPage = mergeDisplayPeriod(basePage, displayPeriod);
+    if (resolvedEvent?.summary.billingAccessHeld) {
+      return options.includePrivate ? { ...mergedPage, published: false } : null;
+    }
     const accessState = getInvitationPublicAccessState({
       ...mergedPage,
       deletion: resolvedEvent?.summary.deletion,

@@ -69,7 +69,7 @@ service firebase.storage {
     }
 
     function canReadPublicEventData(data) {
-      return !isEventDeletionBlocked(data) &&
+      return !isEventDeletionBlocked(data) && data.get('billingAccessHold', null) == null &&
         data.keys().hasAny(['visibility']) &&
         data.visibility is map &&
         data.visibility.keys().hasAny(['published']) &&
