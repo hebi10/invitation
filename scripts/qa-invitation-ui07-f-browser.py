@@ -241,9 +241,11 @@ def full_case(page, theme, width, scenario, row):
     map_box.locator('[data-map-status="ready"]').count() if False else None
     page.locator('[data-map-status="ready"]').wait_for(state="visible", timeout=18000)
     assert map_box.locator('button[aria-pressed]').count() == 1
-    assert map_box.locator('nav[aria-label="지도 바로가기"] a').count() == 2
+    assert map_box.locator('nav[aria-label="지도 바로가기"] a').count() == 3
     for anchor in map_box.locator('nav[aria-label="지도 바로가기"] a').all():
-        assert anchor.get_attribute("href").startswith("https://map.kakao.com/")
+        assert anchor.get_attribute("href").startswith((
+            "https://map.kakao.com/", "https://map.naver.com/", "https://www.google.com/maps/"
+        ))
         assert "noopener" in (anchor.get_attribute("rel") or "")
     control = map_box.locator('button[aria-pressed]')
     assert control.get_attribute("aria-pressed") == "false"

@@ -277,12 +277,17 @@
   border: 1px solid rgba(255, 255, 255, .8);
   background: rgba(22, 22, 22, .7);
   color: #fff;
-  font-family: var(--font-sans), sans-serif;
-  font-size: 32px;
-  line-height: 1;
   text-decoration: none;
   pointer-events: auto;
 }
+.chevron {
+  display: block;
+  width: 8px;
+  height: 12px;
+  background-color: currentColor;
+  clip-path: polygon(0 0, 34% 0, 100% 50%, 34% 100%, 0 100%, 66% 50%);
+}
+.chevronPrevious { transform: scaleX(-1); }
 .gallery .primary .controls button:disabled {
   opacity: .35;
   cursor: default;

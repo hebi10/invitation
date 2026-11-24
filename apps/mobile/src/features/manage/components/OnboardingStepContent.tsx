@@ -1,6 +1,7 @@
 import { ActionButton } from '../../../components/ActionButton';
 import { TextField } from '../../../components/TextField';
 import type { ManageFormState, ManageStringFieldKey } from '../shared';
+import { WeddingDateTimeFields } from './WeddingDateTimeFields';
 
 type OnboardingStepContentProps = {
   stepIndex: number;
@@ -51,12 +52,7 @@ export function OnboardingStepContent({
     case 1:
       return (
         <>
-          <TextField
-            label="예식 일시"
-            value={form.date}
-            onChangeText={(value) => onUpdateField('date', value)}
-            placeholder="예: 2026.07.12 오후 2시"
-          />
+          <WeddingDateTimeFields form={form} onUpdateField={onUpdateField} />
           <TextField
             label="예식 장소"
             value={form.venue}

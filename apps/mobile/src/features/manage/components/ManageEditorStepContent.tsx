@@ -38,6 +38,7 @@ type ManageEditorStepContentProps = {
   uploadProgress: ImageUploadProgressState | null;
   isSearchingAddress: boolean;
   onUpdateField: (field: ManageStringFieldKey, value: string) => void;
+  onSetMapProviders: (providers: ManageFormState['mapProviders']) => void;
   onUpdatePersonField: (
     role: 'groom' | 'bride',
     field: 'name' | 'order' | 'phone',
@@ -86,6 +87,7 @@ export function ManageEditorStepContent({
   uploadProgress,
   isSearchingAddress,
   onUpdateField,
+  onSetMapProviders,
   onUpdatePersonField,
   onUpdateParentField,
   onUploadImage,
@@ -122,6 +124,7 @@ export function ManageEditorStepContent({
           mapLatitude={mapLatitude}
           mapLongitude={mapLongitude}
           onUpdateField={onUpdateField}
+          onSetMapProviders={onSetMapProviders}
           onSearchAddress={onSearchAddress}
           onOpenMapUrl={onOpenMapUrl}
           isSearchingAddress={isSearchingAddress}

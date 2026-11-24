@@ -292,6 +292,22 @@ await expectAllowed(
   ),
   'disabled display period image download'
 );
+for (const status of ['pending', 'running', 'failed']) {
+  await db.collection('events').doc('event-public').update({ deletion: { status } });
+  await expectDenied(
+    download(anonymous.storage, 'wedding-images/public-event/photo.png'),
+    `public image access during ${status} deletion`
+  );
+}
+await db.collection('events').doc('event-public').update({ deletion: null });
+await db.collection('events').doc('event-public').update({ billingAccessHold: 'play_test_fixture' });
+await expectDenied(download(anonymous.storage, 'wedding-images/public-event/photo.png'), 'held invitation public image denied');
+await expectAllowed(download(owner.storage, 'wedding-images/public-event/photo.png'), 'held invitation owner image retained');
+await db.collection('events').doc('event-public').update({ billingAccessHold: null });
+await expectAllowed(
+  download(anonymous.storage, 'wedding-images/public-event/photo.png'),
+  'public image access after deletion marker removed'
+);
 await expectAllowed(
   download(owner.storage, 'wedding-images/private-event/photo.png'),
   'owner private image download'

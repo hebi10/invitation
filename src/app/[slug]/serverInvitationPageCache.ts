@@ -1,4 +1,5 @@
 import { cache } from 'react';
+import { projectPilotPublicInvitationMedia } from '@/server/invitationMediaProjection';
 
 import {
   getServerInvitationPageBySlug,
@@ -34,13 +35,10 @@ export function getCachedServerInvitationPageBySlug(
   );
 }
 
-export function getCachedServerPublicInvitationPageBySlug(pageSlug: string) {
-  return getCachedServerInvitationPageBySlugCore(
-    pageSlug,
-    false,
-    'when-firestore-unavailable'
-  );
-}
+export const getCachedServerPublicInvitationPageBySlug = cache(async (pageSlug: string) => {
+  const page = await getCachedServerInvitationPageBySlugCore(pageSlug, false, 'when-firestore-unavailable');
+  return projectPilotPublicInvitationMedia(page, pageSlug);
+});
 
 export const getCachedServerInvitationPageDefaultThemeBySlug = cache(
   async (pageSlug: string) => getServerInvitationPageDefaultThemeBySlug(pageSlug)

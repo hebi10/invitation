@@ -788,7 +788,10 @@ export async function saveClientEventContentBySlug(input: {
     const contentData = contentSnapshot.data() ?? {};
     const version = readInvitationContentVersion(contentData.version);
     if (version !== expectedVersion) throw new InvitationVersionConflictError(version);
-    const published = input.published ?? eventData.published ?? true;
+    const currentPublished = typeof eventData.visibility?.published === 'boolean'
+      ? eventData.visibility.published
+      : eventData.published !== false;
+    const published = input.published ?? currentPublished;
     const defaultTheme = input.defaultTheme ?? eventData.defaultTheme ?? DEFAULT_INVITATION_THEME;
     const eventType = normalizeEventTypeKey(input.config.eventType, eventData.eventType ?? DEFAULT_EVENT_TYPE);
     // Only content-related fields are written; owner, tickets and display periods stay untouched.
