@@ -79,6 +79,7 @@ try {
   await expectStatus(await request(eventPath, adminUid, { billingAccessHold: 'play_fixture' }), 403, 'Client admin cannot add server-only hold');
   // Exercise the actual server transaction with a local Firestore and an injected Play refund fixture.
   const { reviewRefundAccess } = await import('../src/server/refundAccessService');
+  const { applyRefundAccessChange } = await import('../src/server/repositories/refundAccessRepository');
   const transactionIdentifier = 'play_' + createHash('sha256').update(suffix).digest('hex');
   const grantPath = `billingFulfillments/${transactionIdentifier}`;
   const reviewPath = `billingRefundReviews/${transactionIdentifier}`;
@@ -91,7 +92,7 @@ try {
   let evidenceAvailable = false;
   let holdEnabled = true;
   let playReads = 0;
-  const dependencies = { db: () => db, holdEnabled: () => holdEnabled, now: () => fixedNow,
+  const dependencies = { apply: (input: Parameters<typeof applyRefundAccessChange>[0]) => applyRefundAccessChange(input, db), holdEnabled: () => holdEnabled, now: () => fixedNow,
     list: async () => {
       playReads++;
       return evidenceAvailable ? [{ transactionIdentifier, voidedAt: '2026-11-23T05:00:00Z', reason: null, source: null }] : [];
