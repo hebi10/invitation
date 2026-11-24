@@ -1,3 +1,4 @@
+import { normalizeWeddingMapProviders } from '@/lib/weddingMapProviders';
 import type {
   BankAccount,
   FamilyMember,
@@ -174,6 +175,9 @@ export function normalizeFormConfig(config: InvitationPageSeed): InvitationPageS
       greetingMessage: nextConfig.pageData?.greetingMessage ?? '',
       greetingAuthor,
       mapUrl: nextConfig.pageData?.mapUrl ?? '',
+      ...(nextConfig.pageData?.mapProviders !== undefined
+        ? { mapProviders: normalizeWeddingMapProviders(nextConfig.pageData.mapProviders) }
+        : {}),
       mapDescription: nextConfig.pageData?.mapDescription ?? '',
       venueName,
       groom: normalizePerson(nextConfig.couple.groom),
@@ -271,6 +275,9 @@ export function prepareConfigForSave(
       venueName: nextConfig.pageData?.venueName?.trim() || nextConfig.venue,
       ceremonyTime,
       ceremonyAddress: nextConfig.pageData?.ceremonyAddress?.trim() || '',
+      ...(nextConfig.pageData?.mapProviders !== undefined
+        ? { mapProviders: normalizeWeddingMapProviders(nextConfig.pageData.mapProviders) }
+        : {}),
       galleryImages,
       greetingAuthor:
         nextConfig.pageData?.greetingAuthor?.trim() ||

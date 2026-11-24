@@ -4,6 +4,7 @@ import { Image } from 'expo-image';
 import ivoryFlowers from '../../../assets/editorial/ivory-flowers.webp';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Keyboard, Linking, View } from 'react-native';
+import { formatWeddingDateTimeLabel, isValidWeddingDateTime } from '../../../../../src/contracts/weddingDateTime';
 
 import { EditorPreparingModal } from '../manage/components/EditorPreparingModal';
 import { GuestbookModal } from '../manage/components/GuestbookModal';
@@ -231,6 +232,10 @@ export default function ManageScreen() {
   };
 
   const showDashboardSyncLoading = dashboardLoading && !dashboard && !pageSummary;
+  const dashboardDateTime = dashboard?.page.config.weddingDateTime;
+  const dashboardWeddingDate = isValidWeddingDateTime(dashboardDateTime)
+    ? formatWeddingDateTimeLabel(dashboardDateTime)
+    : dashboard?.page.config.date;
   const canRequestDashboardSync = !dashboardLoading;
   const maxGalleryImageCount = dashboard?.page.features.maxGalleryImages ?? 0;
   const supportsMusicFeature = dashboard?.page.features.showMusic ?? false;
@@ -601,7 +606,7 @@ export default function ManageScreen() {
           dashboardPublicUrl={dashboard?.links.publicUrl ?? null}
           dashboardCommentCount={dashboard?.commentCount ?? 0}
           dashboardPublished={dashboard?.page.published ?? false}
-          dashboardWeddingDate={dashboard?.page.config.date}
+          dashboardWeddingDate={dashboardWeddingDate}
           dashboardCoverImageUrl={dashboard?.page.config.pageData?.coverImageThumbnailUrl || dashboard?.page.config.metadata?.images?.wedding || null}
           canRequestDashboardSync={canRequestDashboardSync}
           needsRefreshRetry={needsRefreshRetry}
@@ -800,6 +805,7 @@ export default function ManageScreen() {
           uploadProgress={imageUpload.uploadProgress}
           isSearchingAddress={addressSearch.isSearchingAddress}
           onUpdateField={invitationForm.updateField}
+          onSetMapProviders={invitationForm.setMapProviders}
           onUpdatePersonField={invitationForm.updatePersonField}
           onUpdateParentField={invitationForm.updateParentField}
           onUploadImage={imageUpload.handleUploadImage}

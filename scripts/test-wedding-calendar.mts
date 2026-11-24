@@ -5,7 +5,8 @@ const originalTimezone = process.env.TZ;
 try {
   for (const timezone of ['Asia/Seoul', 'America/New_York', 'Europe/London']) {
     process.env.TZ = timezone;
-    assert.equal(toKoreanWeddingInstant(new Date(2027, 6, 26, 13, 30)).toISOString(), '2027-07-26T04:30:00.000Z');
+    assert.equal(toKoreanWeddingInstant({ year: 2027, month: 6, day: 26, hour: 13, minute: 30 }).toISOString(), '2027-07-26T04:30:00.000Z');
+    assert.equal(toKoreanWeddingInstant({ year: 2028, month: 2, day: 12, hour: 2, minute: 30 }).toISOString(), '2028-03-11T17:30:00.000Z', 'A local daylight saving gap must not change the KST wedding time');
   }
 } finally {
   if (originalTimezone === undefined) delete process.env.TZ;
@@ -18,6 +19,7 @@ const event = {
   location: '서울, 예식장; 2층\\홀\r\n입구',
 };
 const calendar = buildWeddingCalendar(event, new Date('2026-09-11T01:00:00Z'))!;
+assert.ok(Number.isNaN(toKoreanWeddingInstant({ year: 0, month: 0, day: 0, hour: 0, minute: 0 }).getTime()));
 assert.ok(calendar.includes('DTSTART:20270726T043000Z\r\n'));
 assert.ok(calendar.includes('DTSTAMP:20260911T010000Z\r\n'));
 assert.ok(calendar.includes('LOCATION:서울\\, 예식장\\; 2층\\\\홀\\n입구\r\n'));

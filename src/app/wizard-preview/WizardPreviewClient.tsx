@@ -25,7 +25,7 @@ const previewRenderers = new Map(themes.map(theme => [theme, withWeddingClosing(
   { theme, canvasClassName: closingStyles.canvas },
 )]));
 
-export function buildPreview(seed: InvitationPageSeed, theme: InvitationThemeKey): WeddingPageReadyState {
+export function buildPreview(seed: InvitationPageSeed, theme: InvitationThemeKey, showSampleCover = true): WeddingPageReadyState {
   const derived = applyDerivedWizardDefaults(seed);
   const groom = seed.couple.groom.name.trim() || sampleWeddingPage.groomName;
   const bride = seed.couple.bride.name.trim() || sampleWeddingPage.brideName;
@@ -47,10 +47,12 @@ export function buildPreview(seed: InvitationPageSeed, theme: InvitationThemeKey
     displayPeriodEnd: null,
   };
   const data = resolveInvitationPageDataByTheme(page, theme);
-  const cover = seed.metadata.images.wedding.trim() || (theme === 'vow' ? '' : SAMPLE_WEDDING_COVER);
+  const uploadedCover = seed.metadata.images.wedding.trim();
+  const designCover = uploadedCover || (theme === 'vow' ? '' : SAMPLE_WEDDING_COVER);
+  const cover = showSampleCover ? designCover : uploadedCover;
   const images = data?.galleryImages?.filter((url) => url.trim()) ?? [];
   const features = resolveInvitationFeatures(page.productTier, page.features);
-  const gallery = (images.length || theme === 'vow' ? images : SAMPLE_WEDDING_IMAGES.filter((url) => url !== cover)).slice(0, features.maxGalleryImages);
+  const gallery = (images.length || theme === 'vow' ? images : SAMPLE_WEDDING_IMAGES.filter((url) => url !== designCover)).slice(0, features.maxGalleryImages);
   page.pageData = {
     ...data,
     themeOverrides: undefined,
@@ -78,7 +80,7 @@ export function WeddingPreviewContent({ state, theme }: { state: WeddingPageRead
 }
 
 export default function WizardPreviewClient() {
-  const [draft, setDraft] = useState<{ seed: InvitationPageSeed; theme: InvitationThemeKey } | null>(null);
+  const [draft, setDraft] = useState<{ seed: InvitationPageSeed; theme: InvitationThemeKey; showSampleCover: boolean } | null>(null);
   const [introRun, setIntroRun] = useState(0);
   const [focus, setFocus] = useState<{ step: PreviewStep; revision: number } | null>(null);
   const [showIntro, setShowIntro] = useState(false);
@@ -104,17 +106,18 @@ export default function WizardPreviewClient() {
       if (message?.type !== 'wedding-wizard-preview:update' || !themes.includes(message.theme)) return;
       const seed = message.formState;
       if (!seed || typeof seed.slug !== 'string' || !seed.couple?.groom || !seed.couple?.bride || !seed.metadata?.images || !seed.weddingDateTime) return;
+      const showSampleCover = message.showSampleCover !== false;
       // Ignore malformed messages without replacing the last usable preview.
       try {
-        buildPreview(seed, message.theme);
-        setDraft({ seed, theme: message.theme });
+        buildPreview(seed, message.theme, showSampleCover);
+        setDraft({ seed, theme: message.theme, showSampleCover });
       } catch { return; }
     };
     window.addEventListener('message', receive);
     if (window.parent !== window) window.parent.postMessage({ type: 'wedding-wizard-preview:ready' }, window.location.origin);
     return () => window.removeEventListener('message', receive);
   }, []);
-  const state = useMemo(() => draft ? buildPreview(draft.seed, draft.theme) : null, [draft]);
+  const state = useMemo(() => draft ? buildPreview(draft.seed, draft.theme, draft.showSampleCover) : null, [draft]);
   useEffect(() => {
     // A cached frame can announce ready before the parent subscribes. Confirm
     // each rendered draft without asking the parent to send it again.

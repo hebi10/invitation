@@ -173,7 +173,7 @@ export function useWizardNavigation({
     scrollToTop();
   }, [clearNotice, scrollToTop, sections, slideToStep]);
 
-  const handleFinalConfirm = useCallback(async () => {
+  const handleFinalConfirm = useCallback(async (requestPublicationReview?: true) => {
     const reviewSummary = steps.map(step => ({
       step,
       validation: getValidationForStep(step.key),
@@ -194,8 +194,9 @@ export function useWizardNavigation({
 
     const savedSlug = await persistDraft({
       publish: published,
+      requestPublicationReview,
       successMessage: published
-        ? '페이지를 공개했습니다.'
+        ? '입력한 내용을 저장했습니다.'
         : '초안을 저장했습니다.',
     });
 

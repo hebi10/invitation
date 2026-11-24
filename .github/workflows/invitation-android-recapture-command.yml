@@ -22,5 +22,8 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh api --method POST "repos/${GITHUB_REPOSITORY}/actions/workflows/mobile-captures.yml/dispatches" -f ref=main
+          set -euo pipefail
+          main_sha="$(gh api "repos/${GITHUB_REPOSITORY}/git/ref/heads/main" --jq .object.sha)"
+          [[ "$main_sha" =~ ^[0-9a-f]{40}$ ]] || { echo "::error::No valid main SHA"; exit 1; }
+          gh api --method POST "repos/${GITHUB_REPOSITORY}/actions/workflows/mobile-captures.yml/dispatches" -f ref=main -f "inputs[expected_main_sha]=$main_sha"
           echo 'Requested source-accurate Android UI captures. No Play Store images or releases were changed.' >> "$GITHUB_STEP_SUMMARY"
