@@ -35,8 +35,8 @@ const onPersisted = runInNewContext(emitted, {
   parseInvitationIntroChoice, setSavedIntroPresetId(value: InvitationIntroChoice | null) { savedIntroPresetId = value; },
   normalizeInvitationProductTier: (value: unknown) => value, resolveInvitationFeatures: () => ({}),
 });
-await onPersisted({ slug: 'sample', config: { introPresetId: 'intro-01' }, version: 2, published: false });
-assert.equal(savedIntroPresetId, 'intro-01', 'The saved intro choice must reflect the persisted config');
+await onPersisted({ slug: 'sample', config: { introPresetId: 'intro-02' }, version: 2, published: false });
+assert.equal(savedIntroPresetId, 'intro-02', 'The saved intro choice must reflect the persisted config');
 let fetched = false;
 const refreshed = await client.fetchQuery({ queryKey: resultKey, staleTime: FIFTEEN_MINUTES_MS,
   queryFn: async () => { fetched = true; return 'latest saved content'; } });

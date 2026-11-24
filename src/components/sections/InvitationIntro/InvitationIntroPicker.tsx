@@ -1,9 +1,12 @@
 'use client';
 
 import { useEffect, useId, useRef, useState } from 'react';
+import type { EventTypeKey } from '@/lib/eventTypes';
 import {
   getInvitationIntroPreset,
   listAvailableInvitationIntroPresets,
+  listAvailableInvitationIntroGroups,
+  type InvitationIntroGroup,
   type InvitationIntroChoice,
   type InvitationIntroPresetId,
 } from '@/lib/invitationIntroCatalog';
@@ -11,21 +14,27 @@ import styles from './InvitationIntroPicker.module.css';
 
 type Props = {
   value: InvitationIntroChoice | null;
+  eventType?: EventTypeKey;
   onChange: (value: InvitationIntroChoice) => void;
   savedValue?: InvitationIntroChoice | null;
   disabled?: boolean;
 };
 
-export default function InvitationIntroPicker({ value, onChange, savedValue, disabled = false }: Props) {
+export default function InvitationIntroPicker({ value, onChange, savedValue, disabled = false, eventType = 'wedding' }: Props) {
   const groupId = useId();
   const dialogRef = useRef<HTMLDialogElement>(null);
   const previewTriggerRef = useRef<HTMLButtonElement | null>(null);
   const [previewId, setPreviewId] = useState<InvitationIntroPresetId | null>(null);
+  const [activeGroup, setActiveGroup] = useState<InvitationIntroGroup | 'all'>('all');
   const [replayKey, setReplayKey] = useState(0);
   const [imageError, setImageError] = useState(false);
   const [allowMotion, setAllowMotion] = useState(false);
-  const preview = getInvitationIntroPreset(previewId);
-  const options = listAvailableInvitationIntroPresets();
+  const preview = getInvitationIntroPreset(previewId, eventType);
+  const options = listAvailableInvitationIntroPresets(eventType);
+  const groups = listAvailableInvitationIntroGroups(eventType);
+  const visibleGroup = activeGroup === 'all' || groups.some((group) => group.id === activeGroup)
+    ? activeGroup : 'all';
+  const visiblePresets = options.filter((preset) => visibleGroup === 'all' || preset.group === visibleGroup);
 
   useEffect(() => {
     const media = window.matchMedia('(prefers-reduced-motion: reduce)');
@@ -65,6 +74,19 @@ export default function InvitationIntroPicker({ value, onChange, savedValue, dis
         <h3 id={groupId + '-title'}>인트로 선택</h3>
         <p>원하는 연출을 미리 보고 선택해 주세요. 선택만으로 저장되지는 않습니다.</p>
       </div>
+      <div className={styles.groupFilter} role="group" aria-label="인트로 스타일 분류">
+        <button type="button" className={styles.groupButton} aria-pressed={visibleGroup === 'all'}
+          data-intro-group="all" disabled={disabled} onClick={() => setActiveGroup('all')}>
+          전체 {options.length}
+        </button>
+        {groups.map((group) => (
+          <button key={group.id} type="button" className={styles.groupButton}
+            aria-pressed={visibleGroup === group.id} data-intro-group={group.id}
+            disabled={disabled} onClick={() => setActiveGroup(group.id)}>
+            {group.label} {options.filter((preset) => preset.group === group.id).length}
+          </button>
+        ))}
+      </div>
       <fieldset className={styles.options} disabled={disabled}>
         <legend>인트로 디자인 선택</legend>
         <div className={styles.grid}>
@@ -80,7 +102,7 @@ export default function InvitationIntroPicker({ value, onChange, savedValue, dis
             </span>
             {savedValue === 'none' ? <span className={styles.saved}>현재 적용 중</span> : null}
           </label>
-          {options.map((preset) => (
+          {visiblePresets.map((preset) => (
             <div className={styles.option} data-selected={value === preset.id} key={preset.id}
               data-intro-preset={preset.id}>
               <label className={styles.optionChoice}>
@@ -105,6 +127,7 @@ export default function InvitationIntroPicker({ value, onChange, savedValue, dis
           ))}
         </div>
       </fieldset>
+      <p className={styles.groupSummary} role="status">{visiblePresets.length}개의 디자인을 표시하고 있습니다.</p>
       {savedValue !== undefined && value !== savedValue ? (
         <p className={styles.pending} role="status">선택이 변경되었습니다. 저장하면 적용됩니다.</p>
       ) : null}

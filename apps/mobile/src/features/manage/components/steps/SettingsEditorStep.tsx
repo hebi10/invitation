@@ -8,13 +8,17 @@ import { AppText } from '../../../../components/AppText';
 import { SectionCard } from '../../../../components/SectionCard';
 import { TextField } from '../../../../components/TextField';
 import { WEDDING_INTRO_OPTIONS } from '../../../../lib/weddingIntro';
-import { getInvitationIntroPreset, listAvailableInvitationIntroPresets, parseInvitationIntroChoice, type InvitationIntroChoice, type InvitationIntroPresetId } from '../../../../lib/invitationIntroCatalog';
+import type { EventTypeKey } from '../../../../../../../src/lib/eventTypes';
+import { getInvitationIntroPreset, listAvailableInvitationIntroPresets, listAvailableInvitationIntroGroups,
+  parseInvitationIntroChoice, type InvitationIntroChoice, type InvitationIntroGroup,
+  type InvitationIntroPresetId } from '../../../../lib/invitationIntroCatalog';
 import { useVisualPreferences } from '../../../../contexts/PreferencesContext';
 import type { ManageFormState, ManageStringFieldKey } from '../../shared';
 import { manageStyles } from '../../manageStyles';
 
 type SettingsEditorStepProps = {
   form: ManageFormState;
+  eventType: EventTypeKey;
   savedPublished?: boolean;
   savedIntroPresetId: InvitationIntroChoice | null;
   hasUnknownSavedIntroPreset: boolean;
@@ -27,6 +31,7 @@ type SettingsEditorStepProps = {
 
 export function SettingsEditorStep({
   form,
+  eventType,
   savedPublished = form.published,
   savedIntroPresetId,
   hasUnknownSavedIntroPreset,
@@ -38,7 +43,14 @@ export function SettingsEditorStep({
 }: SettingsEditorStepProps) {
   const { palette } = useVisualPreferences();
   const [failedPosters, setFailedPosters] = useState<Record<string, boolean>>({});
-  const selectedChoice = parseInvitationIntroChoice(form.introPresetId);
+  const [activeGroup, setActiveGroup] = useState<InvitationIntroGroup | 'all'>('all');
+  const options = listAvailableInvitationIntroPresets(eventType);
+  const groups = listAvailableInvitationIntroGroups(eventType);
+  const visibleGroup = activeGroup === 'all' || groups.some((g) => g.id === activeGroup)
+    ? activeGroup : 'all';
+  const visiblePresets = options.filter((preset) => visibleGroup === 'all' || preset.group === visibleGroup);
+  const selectedChoice = parseInvitationIntroChoice(form.introPresetId, eventType);
+  const unavailableChoice = parseInvitationIntroChoice(form.introPresetId) !== null && selectedChoice === null;
   const legacyOption = WEDDING_INTRO_OPTIONS.find((option) => option.value === form.introStyle);
   const savedLabel = savedIntroPresetId === 'none'
     ? '사용 안 함'
@@ -65,6 +77,11 @@ export function SettingsEditorStep({
           초대장 디자인과 별개로 GIF 한 종류 또는 사용 안 함을 선택할 수 있습니다.
           미리보기는 저장하지 않으며 기존 저장 버튼으로 확정됩니다.
         </AppText>
+        {unavailableChoice ? (
+          <View style={[styles.introNotice, { backgroundColor: palette.surfaceMuted }]}>
+            <AppText variant="caption">기존에 저장된 GIF는 이 행사에서 사용할 수 없습니다. 다른 디자인을 선택해 저장해 주세요.</AppText>
+          </View>
+        ) : null}
         {selectedChoice === null && form.introStyle !== 'none' ? (
           <View style={[styles.introNotice, { backgroundColor: palette.surfaceMuted }]}>
             <AppText variant="caption">
@@ -98,8 +115,20 @@ export function SettingsEditorStep({
             {selectedChoice === 'none' ? '선택됨' : '사용 안 함 선택'}
           </ActionButton>
         </View>
+        <View style={styles.groupFilter} accessibilityRole="radiogroup" accessibilityLabel="인트로 디자인 분류">
+          <ActionButton variant={visibleGroup === 'all' ? 'primary' : 'secondary'}
+            onPress={() => setActiveGroup('all')} accessibilityState={{ selected: visibleGroup === 'all' }}>
+            전체 {options.length}
+          </ActionButton>
+          {groups.map((group) => (
+            <ActionButton key={group.id} variant={visibleGroup === group.id ? 'primary' : 'secondary'}
+              onPress={() => setActiveGroup(group.id)} accessibilityState={{ selected: visibleGroup === group.id }}>
+              {group.label} {options.filter((preset) => preset.group === group.id).length}
+            </ActionButton>
+          ))}
+        </View>
         <View style={styles.presetGrid}>
-          {listAvailableInvitationIntroPresets().map((preset) => {
+          {visiblePresets.map((preset) => {
             const isSelected = selectedChoice === preset.id;
             return (
               <View
@@ -158,8 +187,7 @@ export function SettingsEditorStep({
           </AppText>
         ) : null}
         <AppText variant="caption" color={palette.textMuted}>
-          제작된 GIF만 목록에 표시합니다. 미리보기에는 샘플 자료만 사용하며
-          공개 초대장의 GIF 재생 적용은 후속 단계에서 진행합니다.
+          현재 행사에서 사용 가능한 GIF만 표시합니다. 미리보기는 샘플 자료만 재생하며 저장값을 바꾸지 않습니다.
         </AppText>
       </Disclosure>
 
@@ -224,6 +252,7 @@ const styles = StyleSheet.create({
   stateSummary: { padding: 14, gap: 6 },
   introNotice: { padding: 12, gap: 6 },
   noneOption: { borderWidth: 1, padding: 14, gap: 8 },
+  groupFilter: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   presetGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   presetCard: { flexGrow: 1, width: '48%', minWidth: 124, borderWidth: 1, padding: 10, gap: 8 },
   posterFrame: { height: 164, alignItems: 'center', justifyContent: 'center', padding: 4 },

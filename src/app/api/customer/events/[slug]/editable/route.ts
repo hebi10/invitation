@@ -2,6 +2,7 @@ import { isInvitationVersionError, requireInvitationContentVersion } from '@/lib
 import { NextResponse } from 'next/server';
 
 import { isInvitationThemeKey } from '@/lib/invitationThemes';
+import { InvitationIntroEventError } from '@/lib/invitationIntroCatalog';
 import {
   GENERIC_SERVER_ERROR_MESSAGE,
   toInvitationPublicationErrorResponse,
@@ -108,6 +109,9 @@ export async function POST(
     const publicationError = toInvitationPublicationErrorResponse(error);
     if (publicationError) return publicationError;
 
+    if (error instanceof InvitationIntroEventError) {
+      return NextResponse.json({ error: error.message, code: error.code }, { status: error.status });
+    }
     console.error('[api/customer/events/editable] failed to save editable event', error);
     return NextResponse.json(
       { error: GENERIC_SERVER_ERROR_MESSAGE },

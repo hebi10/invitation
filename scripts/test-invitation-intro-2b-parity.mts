@@ -89,12 +89,16 @@ const pcSettings = readFileSync('src/app/page-wizard/steps/IntroSettings.tsx', '
 const pcPreview = readFileSync('src/app/page-wizard/WeddingWizardPreview.tsx', 'utf8');
 const pcPreviewChild = readFileSync('src/app/wizard-preview/WizardPreviewClient.tsx', 'utf8');
 
-assert.match(androidSettings, /listAvailableInvitationIntroPresets\(\)\.map/);
+assert.match(androidSettings, /listAvailableInvitationIntroPresets\(eventType\)/);
+assert.match(androidSettings, /visiblePresets\.map\(\(preset\)/);
+assert.doesNotMatch(androidSettings, /WEDDING_INTRO_OPTIONS\.map/);
+assert.match(androidSettings, /WEDDING_INTRO_OPTIONS\.find/);
 assert.match(androidSettings, /onSetIntroPresetId\(preset\.id\)/);
 assert.match(androidSettings, /onPreviewIntroPreset\(preset\.id\)/);
 assert.match(androidSettings, /selectedChoice === preset\.id/);
+assert.match(androidSettings, /savedIntroPresetId === preset\.id/);
 assert.match(androidSettings, /기존 인트로/);
-assert.match(androidScreen, /buildInvitationIntroSamplePreviewUrl\(apiBaseUrl, presetId\)/);
+assert.match(androidScreen, /buildInvitationIntroSamplePreviewUrl\(apiBaseUrl, presetId,/);
 assert.match(androidScreen, /WebBrowser\.openBrowserAsync\(url,/);
 assert.match(androidScreen, /onSetIntroPresetId=\{invitationForm\.setIntroPresetId\}/);
 assert.match(androidScreen, /invitationForm\.persistForm\(/);

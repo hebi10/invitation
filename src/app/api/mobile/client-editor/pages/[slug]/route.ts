@@ -7,6 +7,7 @@ import {
   MOBILE_CLIENT_EDITOR_PAGE_ACTIONS,
 } from '@/contracts/mobileClientEditorPageActions';
 import { isInvitationThemeKey } from '@/lib/invitationThemes';
+import { InvitationIntroEventError } from '@/lib/invitationIntroCatalog';
 import {
   GENERIC_SERVER_ERROR_MESSAGE,
   getInternalErrorReason,
@@ -595,6 +596,11 @@ export async function POST(
       getInternalErrorReason(error)
     );
     if (publicationError) return publicationError;
+    if (error instanceof InvitationIntroEventError) {
+      return NextResponse.json({ error: error.message, code: error.code }, {
+        status: error.status, headers: buildRateLimitHeaders(rateLimitResult),
+      });
+    }
     if ((action === MOBILE_CLIENT_EDITOR_PAGE_ACTIONS.redeemDisplayPeriodTicket ||
         action === MOBILE_CLIENT_EDITOR_PAGE_ACTIONS.save ||
         action === MOBILE_CLIENT_EDITOR_PAGE_ACTIONS.setPublished) &&

@@ -41,7 +41,7 @@ export default function DesignCheck() {
       ? requestedStep.slice('intro-'.length)
       : null;
     const legacyIntroStyle = introStyle === 'light' || introStyle === 'cinema' || introStyle === 'envelope' ? introStyle : 'none';
-    const introPresetId = parseInvitationIntroChoice(introStyle) ?? undefined;
+    const introPresetId = parseInvitationIntroChoice(introStyle, 'wedding') ?? undefined;
     setForm((current) => ({ ...current, introStyle: legacyIntroStyle, introPresetId }));
   }, [requestedStep]);
   const isLastStep = step === EDITOR_STEPS.length - 1;
@@ -76,8 +76,8 @@ export default function DesignCheck() {
         저장을 완료하지 못했습니다. 입력값은 유지됩니다. 내용을 확인한 뒤 다시 저장해 주세요.
       </AppText>
     ) : null}
-    <ManageEditorStepContent stepKey={EDITOR_STEPS[step].key} form={form} savedPublished={false}
-      savedIntroPresetId={parseInvitationIntroChoice(requestedStep?.startsWith('intro-') ? requestedStep.slice('intro-'.length) : undefined)}
+    <ManageEditorStepContent stepKey={EDITOR_STEPS[step].key} form={form} eventType="wedding" savedPublished={false}
+      savedIntroPresetId={parseInvitationIntroChoice(requestedStep?.startsWith('intro-') ? requestedStep.slice('intro-'.length) : undefined, 'wedding')}
       hasUnknownSavedIntroPreset={false} introAssetBaseUrl="http://127.0.0.1:19999/"
       mapPreviewUrl="" mapLatitude={null} mapLongitude={null} galleryPreviewItems={[]}
       maxGalleryImageCount={18} supportsMusicFeature musicLibraryLoading={false} musicCategories={[]}

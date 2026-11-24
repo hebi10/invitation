@@ -8,6 +8,7 @@ import type {
 
 import type { WeddingIntroStyle } from '../lib/weddingIntro';
 import type { InvitationIntroChoice } from '../lib/invitationIntroCatalog';
+import type { EventTypeKey } from '../../../../src/lib/eventTypes';
 
 export type MobileInvitationProductTier = 'standard' | 'deluxe' | 'premium';
 export type MobileInvitationThemeKey = SharedMobileInvitationThemeKey;
@@ -159,6 +160,7 @@ export interface MobileInvitationMetadata {
 }
 
 export interface MobileInvitationSeed {
+  eventType?: EventTypeKey;
   slug: string;
   displayName: string;
   description: string;

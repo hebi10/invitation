@@ -43,8 +43,10 @@ function dashboardWith(config: MobileInvitationSeed): MobileInvitationDashboard 
   } as MobileInvitationDashboard;
 }
 
-assert.deepEqual(listAvailableInvitationIntroPresets().map((preset) => preset.id), ['intro-01']);
-assert.equal(parseInvitationIntroChoice('intro-02'), null, 'Do not offer unverified GIF assets');
+assert.deepEqual(listAvailableInvitationIntroPresets('wedding').map((preset) => preset.id),
+  Array.from({ length: 12 }, (_, i) => `intro-${String(i+1).padStart(2,'0')}`));
+assert.equal(listAvailableInvitationIntroPresets('opening').length, 6);
+assert.equal(parseInvitationIntroChoice('intro-99'), null, 'Do not offer unverified GIF assets');
 
 const legacyDashboard = dashboardWith(original);
 const untouchedLegacyForm = buildManageFormFromDashboard(legacyDashboard);
@@ -76,12 +78,12 @@ assert.equal(pcForm.introPresetId, 'intro-01');
 assert.equal(buildConfigFromForm({ dashboard: pcDashboard, form: pcForm }).introPresetId, 'intro-01',
   'Android content-only edit preserves PC selection');
 
-const unknownConfig = { ...original, introPresetId: 'intro-09' } as unknown as MobileInvitationSeed;
+const unknownConfig = { ...original, introPresetId: 'intro-99' } as unknown as MobileInvitationSeed;
 const unknownDashboard = dashboardWith(unknownConfig);
 const unknownForm = buildManageFormFromDashboard(unknownDashboard);
 assert.equal(unknownForm.introPresetId, undefined, 'Unsupported future ID is not falsely selected');
 assert.equal(buildConfigFromForm({ dashboard: unknownDashboard, form: unknownForm }).introPresetId,
-  'intro-09', 'Unrelated Android edit must not overwrite unknown future ID');
+  'intro-99', 'Unrelated Android edit must not overwrite unknown future ID');
 assert.equal(buildConfigFromForm({
   dashboard: unknownDashboard,
   form: { ...unknownForm, introPresetId: 'none' },
@@ -90,6 +92,9 @@ assert.equal(buildConfigFromForm({
 const previewUrl = new URL(buildInvitationIntroSamplePreviewUrl('https://example.com/', 'intro-01'));
 assert.equal(previewUrl.pathname, '/mobile-gif-intro-preview/');
 assert.equal(previewUrl.searchParams.get('preset'), 'intro-01');
+assert.equal(previewUrl.searchParams.get('event'), 'wedding');
+assert.throws(() => buildInvitationIntroSamplePreviewUrl('https://example.com/', 'intro-10', 'opening'));
+assert.equal(buildInvitationIntroSamplePreviewUrl('https://example.com/', 'intro-10', 'wedding').includes('intro-10'), true);
 assert.equal(previewUrl.searchParams.has('slug'), false, 'No private customer slug in preview');
 assert.equal(previewUrl.searchParams.has('token'), false, 'No customer session token in preview');
 
@@ -99,7 +104,9 @@ const screen = readFileSync('apps/mobile/src/features/screens/manage.tsx', 'utf8
 const webPreview = readFileSync('src/app/mobile-gif-intro-preview/MobileGifIntroPreviewClient.tsx', 'utf8');
 const webRoute = readFileSync('src/app/mobile-gif-intro-preview/page.tsx', 'utf8');
 
-assert.match(settings, /listAvailableInvitationIntroPresets\(\)\.map/, 'Only actual catalog entries in Android');
+assert.match(settings, /const options = listAvailableInvitationIntroPresets\(eventType\)/, 'Only event-permitted catalog entries in Android');
+assert.match(settings, /const visiblePresets = options\.filter/, 'Filter the available options by group');
+assert.match(settings, /visiblePresets\.map\(\(preset\)/, 'Render only filtered catalog entries');
 assert.match(settings, /onSetIntroPresetId\('none'\)/);
 assert.match(settings, /onPreviewIntroPreset\(preset\.id\)/, 'Preview must be separate from selection');
 assert.doesNotMatch(settings, /WEDDING_INTRO_OPTIONS\.map/, 'Do not show legacy options as new GIF choices');
@@ -111,7 +118,8 @@ assert.match(webPreview, /prefers-reduced-motion/);
 assert.match(webPreview, /preset\.posterSrc/);
 assert.match(webPreview, /onError/);
 assert.match(webPreview, /replay=/, 'Replay must restart 2s non-looping asset');
-assert.match(webRoute, /getInvitationIntroPreset\(preset\)/, 'Reject unverified preset IDs');
+assert.match(webRoute, /getInvitationIntroPreset\(preset, eventType\)/,
+  'Reject presets unavailable for requested event');
 assert.doesNotMatch(webPreview, /setTimeout|router\.push|window\.location/, 'Preview never auto-enters or saves');
 
 console.log('INTRO_GIF_02C_ANDROID_OK legacy, PC roundtrip, unknown ID, explicit none, preview safety');

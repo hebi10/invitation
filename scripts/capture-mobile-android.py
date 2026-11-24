@@ -54,8 +54,9 @@ VERIFIED = {'environment': 'Android API 35 / Expo Go 55.0.7',
 class CaptureApiHandler(BaseHTTPRequestHandler):
     # 연결 확인과 공개 정지 포스터만 제공한다. 인증·저장·결제 API는 제공하지 않는다.
     def do_GET(self):
-        if self.path == '/assets/invitation-intro/poster.webp':
-            payload = (ROOT / 'public/assets/invitation-intro/poster.webp').read_bytes()
+        poster_match = re.fullmatch(r'/assets/invitation-intro/(poster|intro-(?:0[2-9]|1[0-2]))\.webp', self.path)
+        if poster_match:
+            payload = (ROOT / 'public/assets/invitation-intro' / f'{poster_match.group(1)}.webp').read_bytes()
             self.send_response(200)
             self.send_header('Content-Type', 'image/webp')
             self.send_header('Content-Length', str(len(payload)))
@@ -539,7 +540,7 @@ def main():
                     ['인트로 GIF (선택)', f'저장된 설정: 기존 연출: {intro_label}'],
                     timeout=60,
                 )
-            for choice, label in [('intro-01', '미니멀 타이포'), ('none', '사용 안 함')]:
+            for choice, label in [('intro-01', '미니멀 라인'), ('intro-06', '페이지 넘김'), ('intro-10', '신랑신부 손잡기'), ('none', '사용 안 함')]:
                 wait_screen(f'editor-intro-{choice}-saved', f'design-check?step=intro-{choice}',
                             ['인트로 GIF (선택)', f'저장된 설정: {label}'], timeout=60)
             for name, kind, expected in [

@@ -216,7 +216,10 @@ assert.match(music, /선택됨/);
 assert.match(music, /form.musicEnabled \? \(/);
 assert.match(music, /음악이 꺼져 있습니다/);
 assert.match(music, /음악 음량 \(0~1\)/);
-assert.match(settings, /listAvailableInvitationIntroPresets\(\)\.map/);
+assert.match(settings, /listAvailableInvitationIntroPresets\(eventType\)/);
+assert.match(settings, /visiblePresets\.map\(\(preset\)/);
+assert.doesNotMatch(settings, /WEDDING_INTRO_OPTIONS\.map/);
+assert.match(settings, /WEDDING_INTRO_OPTIONS\.find/);
 assert.match(settings, /onSetIntroPresetId\(preset\.id\)/);
 assert.match(settings, /onPreviewIntroPreset\(preset\.id\)/);
 assert.match(settings, /onSetIntroPresetId\('none'\)/);
@@ -237,6 +240,9 @@ assert.match(capture, /'editor-intro-closed'/);
 assert.match(capture, /'editor-save-error'/);
 
 assert.match(fixture, /resolveCaptureStepIndex/);
+assert.match(fixture, /onSetIntroPresetId=/);
+assert.match(fixture, /eventType="wedding"/);
+assert.ok(capture.includes("'인트로 GIF (선택)'"));
 assert.match(fixture, /EDITOR_STEPS.findIndex/);
 for (const step of ['schedule', 'location', 'greeting', 'images', 'music']) {
   assert.ok(capture.includes(`'editor-${step}'`), `Android screenshot must cover ${step}`);
