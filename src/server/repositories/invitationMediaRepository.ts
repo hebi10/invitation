@@ -4,7 +4,7 @@ import { getServerFirestore } from '../firebaseAdmin';
 import { MediaAssetError } from '../mediaAssetService';
 import { normalizeEventSummaryRecord, type EventSummaryRecord } from './eventReadThroughDtos';
 
-export type MediaRecord = { summary: EventSummaryRecord; content: unknown; blocked: boolean };
+export type MediaRecord = { summary: EventSummaryRecord; content: unknown; blocked: boolean; deleting?: boolean };
 
 export async function readInvitationMediaRecord(slug: string): Promise<MediaRecord | null> {
   const db = getServerFirestore();
@@ -23,11 +23,12 @@ export async function readInvitationMediaRecord(slug: string): Promise<MediaReco
     const raw = event.data() ?? {};
     const summary = normalizeEventSummaryRecord(event.id, raw);
     if (!summary || summary.eventId !== event.id) return null;
+    const deleting = ['pending', 'running', 'failed'].includes(raw.deletion?.status);
     return {
       summary,
       content: content.exists ? content.data() : null,
-      blocked: raw.billingAccessHold != null ||
-        ['pending', 'running', 'failed'].includes(raw.deletion?.status),
+      blocked: raw.billingAccessHold != null || deleting,
+      deleting,
     };
   }, { readOnly: true });
 }
