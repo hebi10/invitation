@@ -59,6 +59,31 @@ assertSameOriginDemoMutation(
     },
   })
 );
+assertSameOriginDemoMutation(
+  new Request('http://internal:8080/api/experience/events', {
+    method: 'PATCH',
+    headers: {
+      host: 'internal:8080',
+      origin: 'https://invite.msgnote.kr',
+      'x-forwarded-proto': 'https',
+    },
+  })
+);
+assert.throws(
+  () => assertSameOriginDemoMutation(
+    new Request('http://internal:8080/api/experience/events', {
+      method: 'PATCH',
+      headers: {
+        host: 'internal:8080',
+        origin: 'https://evil.test',
+        'x-forwarded-host': 'evil.test',
+        'x-forwarded-proto': 'https',
+      },
+    })
+  ),
+  (error) => error instanceof DemoExperienceRequestError && error.status === 403,
+  'A spoofed forwarded host must not authorize cross-origin demo mutations'
+);
 assert.equal(
   requireDemoExperienceSession(request, ['admin'], { now, secret: 'test-secret' }).sessionId,
   'session-1'

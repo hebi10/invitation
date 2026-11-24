@@ -4,6 +4,8 @@ import { runInNewContext } from 'node:vm';
 import ts from 'typescript';
 import * as pagination from '../src/lib/guestbookPagination.ts';
 import * as guestbook from '../src/lib/guestbookComments.ts';
+import * as access from '../src/lib/invitationPublicAccess.ts';
+import type { EventSummaryRecord } from '../src/server/repositories/eventReadThroughDtos.ts';
 import { Timestamp } from 'firebase-admin/firestore';
 import type { EventCommentRepository } from '../src/server/repositories/eventCommentRepository.ts';
 import { readPublicCommentPage, parseCommentPageRequest, paginateLegacyComments, encodeCommentCursor, decodeCommentCursor } from '../src/lib/guestbookPagination.ts';
@@ -56,10 +58,14 @@ assert.deepEqual(paginateLegacyComments([...legacyRecords, { id: 'just-posted', 
 const precise = { mode: 'ordered' as const, id: 'same-time', seconds: 23, nanoseconds: 123456789 };
 assert.deepEqual(decodeCommentCursor(encodeCommentCursor(precise)), precise);
 
-const route = {} as { GET: (request: Request) => Promise<Response> };
+const route = {} as { GET: (request: Request) => Promise<Response>; POST: (request: Request) => Promise<Response> };
 let paginatedReads = 0;
 let legacyReads = 0;
 let published = true;
+let period: EventSummaryRecord['displayPeriod'] = null;
+let deletion: EventSummaryRecord['deletion'] = null;
+let visibilityDates: { displayStartAt?: Date; displayEndAt?: Date } = {};
+let createdComments = 0;
 const comment = { id: 'one', pageSlug: 'sample', data: { author: '하객', message: '축하합니다', createdAt: new Date(0) } };
 runInNewContext(ts.transpileModule(readFileSync('src/app/api/guestbook/comments/route.ts', 'utf8'), {
   compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
@@ -67,11 +73,14 @@ runInNewContext(ts.transpileModule(readFileSync('src/app/api/guestbook/comments/
   if (name === 'next/server') return { NextResponse: Response };
   if (name.endsWith('/guestbookPagination')) return pagination;
   if (name.endsWith('/guestbookComments')) return guestbook;
+  if (name.endsWith('/invitationPublicAccess')) return access;
+  if (name.endsWith('/requestRateLimit')) return { applyScopedRateLimit: async () => ({ allowed: true }), buildRateLimitHeaders: () => ({}) };
   if (name.endsWith('/invitationPagePersistence')) return { normalizeInvitationPageSlugInput: (slug: string) => slug };
-  if (name.endsWith('/eventRepository')) return { resolveStoredEventBySlug: async () => ({ summary: { visibility: { published } } }) };
+  if (name.endsWith('/eventRepository')) return { resolveStoredEventBySlug: async () => ({ summary: { published, visibility: { published, ...visibilityDates }, displayPeriod: period, deletion } }) };
   if (name.endsWith('/eventCommentRepository')) return { firestoreEventCommentRepository: {
     isAvailable: () => true,
     listByPageSlug: async () => { legacyReads++; return [comment]; },
+    createByPageSlug: async () => { createdComments++; return { id: 'new' }; },
     listPublicPageBySlug: async () => { paginatedReads++; return { comments: [comment], nextCursor: null, hasMore: false }; },
   } };
   return {};
@@ -89,6 +98,43 @@ assert.equal((await route.GET(new Request('https://example.test/api/guestbook/co
 published = false;
 assert.equal((await route.GET(new Request('https://example.test/api/guestbook/comments?pageSlug=sample&limit=5'))).status, 403);
 assert.equal(paginatedReads, 1, 'Private invitations must never read paginated messages');
+
+const post = () => route.POST(new Request('https://example.test/api/guestbook/comments', {
+  method: 'POST', headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({ pageSlug: 'sample', author: '하객', message: '축하합니다' }),
+}));
+assert.equal((await post()).status, 403, 'Private events cannot accept comments');
+published = true;
+const before = new Date(Date.now() - 60000);
+const after = new Date(Date.now() + 60000);
+for (const blocked of [
+  { isActive: true, startDate: after, endDate: new Date(after.getTime() + 60000) },
+  { isActive: true, startDate: new Date(before.getTime() - 60000), endDate: before },
+  { isActive: true, startDate: before, endDate: null },
+  { isActive: true, startDate: new Date('invalid'), endDate: after },
+  { isActive: true, startDate: after, endDate: before },
+]) {
+  period = blocked;
+  assert.equal((await route.GET(new Request('https://example.test/api/guestbook/comments?pageSlug=sample&limit=5'))).status, 403);
+  assert.equal((await post()).status, 403);
+}
+period = null;
+for (const status of ['pending', 'running', 'failed'] as const) {
+  deletion = { jobId: 'fixture', requestedAt: new Date().toISOString(), currentStep: 'block-access', status };
+  assert.equal((await route.GET(new Request('https://example.test/api/guestbook/comments?pageSlug=sample&limit=5'))).status, 403);
+  assert.equal((await post()).status, 403);
+}
+deletion = null;
+assert.equal(paginatedReads, 1, 'Blocked events must never read public comments');
+assert.equal(createdComments, 0, 'Blocked events must never create comments');
+visibilityDates = { displayStartAt: new Date(before.getTime() - 60000), displayEndAt: before };
+assert.equal((await post()).status, 403, 'Legacy expired window must remain blocked');
+period = { isActive: false, startDate: null, endDate: null };
+assert.equal((await post()).status, 200, 'Explicitly disabled period ignores stale legacy dates');
+period = { isActive: true, startDate: before, endDate: after };
+assert.equal((await post()).status, 200);
+assert.equal(createdComments, 2);
+
 
 const source = ts.transpileModule(readFileSync('src/server/repositories/eventCommentRepository.ts', 'utf8'), {
   compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },

@@ -1,8 +1,7 @@
 import { Image } from 'expo-image';
 import { StyleSheet, View } from 'react-native';
 
-import portraitImage from '../../assets/editorial/wedding-portrait.webp';
-import bouquetImage from '../../assets/editorial/wedding-bouquet.webp';
+import { themePreviewImages } from '../constants/themePreviewImages';
 import { useVisualPreferences } from '../contexts/PreferencesContext';
 import { AppText } from './AppText';
 
@@ -13,29 +12,29 @@ export function WeddingIntroHero() {
     <View style={[styles.hero, { backgroundColor: palette.surface, borderColor: palette.cardBorder }]}>
       <View style={styles.previews}>
         <Image
-          source={portraitImage}
+          source={themePreviewImages.simple}
           style={[styles.preview, { backgroundColor: palette.surfaceMuted }]}
           contentFit="cover"
-          contentPosition="top"
-          alt="웨딩 화보 속 신랑과 신부 사진"
+          contentPosition="center"
+          alt="신민제·김현지 기본형 청첩장 공개 샘플 이미지"
         />
         <Image
-          source={bouquetImage}
+          source={themePreviewImages.romantic}
           style={[styles.preview, { backgroundColor: palette.surfaceMuted }]}
           contentFit="cover"
-          contentPosition="top"
-          alt="아이보리 꽃다발을 든 신부 사진"
+          contentPosition="bottom"
+          alt="신민제·김현지 포토형 청첩장 공개 샘플 이미지"
         />
       </View>
       <View style={styles.copy}>
         <AppText variant="caption" color={palette.textMuted} style={styles.eyebrow}>
-          MODERN WEDDING EDITORIAL
+          신민제·김현지 공개 샘플
         </AppText>
         <AppText variant="display" style={styles.title}>
           우리의 이야기를 담은 청첩장
         </AppText>
         <AppText variant="muted">
-          사진과 이야기로 소중한 날을 전해 보세요.
+          실제 공개 청첩장 화면으로 5가지 디자인을 비교해 보세요.
         </AppText>
       </View>
     </View>
@@ -53,5 +52,5 @@ const styles = StyleSheet.create({
   eyebrow: { fontWeight: '600', letterSpacing: 0.6 },
   title: { fontWeight: '700' },
   previews: { flexDirection: 'row', gap: 0 },
-  preview: { flex: 1, minWidth: 0, aspectRatio: 1 },
+  preview: { flex: 1, minWidth: 0, aspectRatio: 3 / 4 },
 });

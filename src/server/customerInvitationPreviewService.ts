@@ -3,6 +3,7 @@ import 'server-only';
 import type { InvitationPage } from '@/types/invitationPage';
 import { getCustomerEditableInvitationPageSnapshot } from './customerEventsService';
 import { getServerInvitationPageBySlug } from './invitationPageServerService';
+import { projectPilotPrivateInvitationMedia } from './invitationMediaProjection';
 
 export class CustomerInvitationPreviewError extends Error {
   constructor(public readonly status: number, message: string) {
@@ -27,7 +28,7 @@ export async function getCustomerInvitationPreview(ownerUid: string, slug: strin
 
   // Bypass visibility only in this authenticated response, never in persisted content.
   return {
-    ...page,
+    ...projectPilotPrivateInvitationMedia(page, slug, 'customer'),
     published: true,
     displayPeriodEnabled: false,
     displayPeriodStart: null,

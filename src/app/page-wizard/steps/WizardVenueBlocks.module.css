@@ -105,3 +105,52 @@
   }
 
 }
+
+.providerSettings {
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+}
+
+.providerTitle {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 500;
+}
+
+.providerOptions, .providerPreview {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.providerOption {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 48px;
+  padding: 8px 12px;
+  border: 1px solid var(--operation-color-border, #d6d6d6);
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.providerOption input {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--operation-color-text, #30332d);
+}
+
+.providerPreview span {
+  flex: 1 1 auto;
+  min-width: 0;
+  padding: 12px 8px;
+  border: 1px solid var(--operation-color-border, #d6d6d6);
+  text-align: center;
+  font-size: 13px;
+}
+
+.providerOption:focus-within {
+  outline: 2px solid var(--operation-color-text, #30332d);
+  outline-offset: 2px;
+}

@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { register } from 'node:module';
 import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
-import { createInitialWizardConfig } from '../src/app/page-wizard/pageWizardData.ts';
+import { buildStepValidation, createInitialWizardConfig } from '../src/app/page-wizard/pageWizardData.ts';
 
 Object.assign(globalThis, { React });
 register(new URL('./test-css-module-loader.mjs', import.meta.url), import.meta.url);
@@ -50,10 +50,10 @@ assert.match(details, /value="직접 작성한 제목"/);
 assert.match(details, /직접 작성한 설명<\/textarea>/);
 assert.match(details, /src="\/images\/custom-social.jpg"/);
 assert.match(details, /src="\/images\/custom-kakao.jpg"/);
-assert.doesNotMatch(customer, /저장 후 바로 공개하기/,
+assert.doesNotMatch(customer, /최종 저장 시 공개 설정/,
   'Customer review must not introduce publication controls');
 const admin = renderFinal(true);
-assert.ok(admin.indexOf('저장 후 바로 공개하기') > admin.indexOf('</details>'),
+assert.ok(admin.indexOf('최종 저장 시 공개 설정') > admin.indexOf('</details>'),
   'Administrator publication remains visible outside optional sharing controls');
 
 config.metadata.images.social = '';
@@ -66,6 +66,19 @@ assert.doesNotMatch(photos, /사진 없이도 이름·예식 일정·장소가 �
 config.metadata.images.wedding = '';
 const emptyPhotos = renderToStaticMarkup(React.createElement(ImagesStep, { ...imageProps, mode: 'photos' }));
 assert.match(emptyPhotos, /사진 없이도 이름·예식 일정·장소가 표시됩니다/);
+const slugState = {
+  slugInput: 'test-wedding', persistedSlug: 'test-wedding',
+  groomKoreanName: '', brideKoreanName: '', groomEnglishName: '', brideEnglishName: '',
+};
+assert.equal(buildStepValidation('images', 'simple', config, slugState).valid, true,
+  'Wedding editors can proceed to review without a cover photo');
+const invalidWeddingPhoto = createInitialWizardConfig('wedding');
+invalidWeddingPhoto.metadata.images.wedding = 'not-an-image-url';
+assert.equal(buildStepValidation('images', 'simple', invalidWeddingPhoto, slugState).valid, false,
+  'A provided but invalid wedding cover still blocks progression');
+const birthday = createInitialWizardConfig('birthday');
+assert.equal(buildStepValidation('images', 'birthday-minimal', birthday, slugState).valid, false,
+  'Birthday invitations still require a cover photo');
 assert.equal(updates, 0, 'Previewing or collapsing shared content never mutates saved draft fields');
 assert.equal(config.metadata.title, '직접 작성한 제목');
 assert.equal(config.metadata.description, '직접 작성한 설명');

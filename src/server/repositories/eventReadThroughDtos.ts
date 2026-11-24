@@ -15,6 +15,7 @@ import { mergeInvitationSampleFallback } from '@/lib/invitationSampleFallback';
 import type {
   EventDeletionMetadata,
   InvitationPageSeed,
+  InvitationPublicationReviewState,
   InvitationThemeKey,
 } from '@/types/invitationPage';
 
@@ -76,6 +77,25 @@ export interface EventSummaryRecord {
   version: number | null;
   migratedFromPageSlug: string | null;
   deletion?: EventDeletionMetadata | null;
+  billingAccessHeld?: boolean;
+  publicationReview?: {
+    requestedByUid: string;
+    requestedContentVersion: number;
+    requestedAt: Date;
+  };
+}
+
+export function getInvitationPublicationReviewState(
+  event: EventSummaryRecord,
+  contentVersion: number
+): InvitationPublicationReviewState | undefined {
+  const review = event.publicationReview;
+  if (event.published || !review || review.requestedByUid !== event.ownerUid) return undefined;
+  return {
+    status: review.requestedContentVersion === contentVersion ? 'pending' : 'stale',
+    requestedContentVersion: review.requestedContentVersion,
+    requestedAt: review.requestedAt.toISOString(),
+  };
 }
 
 export interface EventContentRecordDto {
@@ -212,10 +232,21 @@ export function normalizeEventSummaryRecord(
   const statsInput = isRecord(data.stats) ? data.stats : null;
   const securityInput = isRecord(data.security) ? data.security : null;
   const visibilityInput = isRecord(data.visibility) ? data.visibility : null;
-  const visibilityPublished =
+  const reviewInput = isRecord(data.publicationReview) ? data.publicationReview : null;
+  const requestedByUid = readNonEmptyString(reviewInput?.requestedByUid);
+  const requestedAt = toDate(reviewInput?.requestedAt);
+  const requestedContentVersion = readFiniteNumber(reviewInput?.requestedContentVersion);
+  const publicationReview =
+    requestedByUid && requestedAt && requestedContentVersion !== null &&
+    Number.isInteger(requestedContentVersion) && requestedContentVersion > 0
+      ? { requestedByUid, requestedAt, requestedContentVersion }
+      : undefined;
+  const billingAccessHeld = data.billingAccessHold != null;
+  const visibilityPublished = !billingAccessHeld && (
     typeof visibilityInput?.published === 'boolean'
       ? visibilityInput.published
-      : data.published !== false;
+      : data.published !== false
+  );
   const visibilityDisplayStartAt = toDate(visibilityInput?.displayStartAt);
   const visibilityDisplayEndAt = toDate(visibilityInput?.displayEndAt);
   const hasExplicitDisplayPeriodActive =
@@ -282,6 +313,8 @@ export function normalizeEventSummaryRecord(
     version: readFiniteNumber(data.version),
     migratedFromPageSlug: readNonEmptyString(data.migratedFromPageSlug),
     deletion: readEventDeletionMetadata(data.deletion),
+    ...(billingAccessHeld ? { billingAccessHeld: true } : {}),
+    ...(publicationReview ? { publicationReview } : {}),
   };
 }
 
@@ -317,11 +350,15 @@ export function buildInvitationPageDisplayPeriodRecordFromEventSummary(
   };
 }
 
+export function readEventContentFields(data: Record<string, unknown>) {
+  return isRecord(data.content) ? data.content : data;
+}
+
 export function buildInvitationPageConfigRecordFromEventContent(
   eventSummary: EventSummaryRecord,
   data: Record<string, unknown>
 ): EventContentRecordDto | null {
-  const contentInput = isRecord(data.content) ? data.content : data;
+  const contentInput = readEventContentFields(data);
   const themeStateInput = isRecord(data.themeState) ? data.themeState : null;
   const contentCandidate = {
     ...contentInput,
