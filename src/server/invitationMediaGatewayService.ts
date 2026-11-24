@@ -2,13 +2,12 @@ import 'server-only';
 
 import { getEventSummaryPublicAccessState } from '@/lib/invitationPublicAccess';
 import { collectMediaUsageReferences } from '@/lib/mediaAssets';
-import { getServerFirestore, getServerStorageBucket } from './firebaseAdmin';
+import { getServerStorageBucket } from './firebaseAdmin';
 import { MediaAssetError } from './mediaAssetService';
-import { normalizeEventSummaryRecord, type EventSummaryRecord } from './repositories/eventReadThroughDtos';
+import { readInvitationMediaRecord } from './repositories/invitationMediaRepository';
 
 const MAX_IMAGE_BYTES = 8 * 1024 * 1024;
 type Reader = { kind: 'public' } | { kind: 'owner'; uid: string } | { kind: 'admin' };
-type MediaRecord = { summary: EventSummaryRecord; content: unknown; blocked: boolean };
 type ImageData = { bytes: Uint8Array; contentType: string };
 
 export function buildInvitationMediaGatewayUrl(slug: string, file: string) {
@@ -43,32 +42,6 @@ function isReferenced(config: unknown, bucketName: string, slug: string, file: s
       return false;
     }
   });
-}
-
-async function readMediaRecord(slug: string): Promise<MediaRecord | null> {
-  const db = getServerFirestore();
-  if (!db) throw new MediaAssetError(503, '이미지 접근 정보를 확인하지 못했습니다.');
-  // Direct, consistent reads. Do not call slug repair or sample fallback.
-  return db.runTransaction(async transaction => {
-    const index = await transaction.get(db.collection('eventSlugIndex').doc(slug));
-    const data = index.data();
-    if (!index.exists || data?.status !== 'active' || data.slug !== slug ||
-        typeof data.eventId !== 'string' || !data.eventId || data.eventId.includes('/')) return null;
-    const root = db.collection('events').doc(data.eventId);
-    const [event, content] = await Promise.all([
-      transaction.get(root), transaction.get(root.collection('content').doc('current')),
-    ]);
-    if (!event.exists || event.data()?.slug !== slug) return null;
-    const raw = event.data() ?? {};
-    const summary = normalizeEventSummaryRecord(event.id, raw);
-    if (!summary || summary.eventId !== event.id) return null;
-    return {
-      summary,
-      content: content.exists ? content.data() : null,
-      blocked: raw.billingAccessHold != null ||
-        ['pending', 'running', 'failed'].includes(raw.deletion?.status),
-    };
-  }, { readOnly: true });
 }
 
 function matchesImageType(bytes: Uint8Array, type: string) {
@@ -107,7 +80,7 @@ export async function getInvitationMediaGatewayImage(
   dependencies = {
     pilotSlug: process.env.INVITATION_MEDIA_GATEWAY_PILOT_SLUG ?? '',
     bucketName: getServerStorageBucket()?.name ?? '',
-    readRecord: readMediaRecord,
+    readRecord: readInvitationMediaRecord,
     readImage: readStoredImage,
   },
 ) {
