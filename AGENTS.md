@@ -65,3 +65,18 @@
 
 ### 앱별 보존 지침
 - 기존 한국어·Superpowers·PowerShell·결제·인증·데이터 스키마 지침을 유지한다. ci.yml·mobile-release.yml의 앱 검증과 Play 변경을 분리하고, 웹·Firebase 배포는 별도 승인 대상으로 취급한다.
+
+## CI-DEDUP-20261119-P2 — Android 화면 최종 검증
+- PR/main의 `ci.yml`을 통한 TypeScript·Lint·테스트·빌드·Firebase 보안 검증은 유지한다.
+- `mobile-captures.yml`의 PR 자동 실제 Android 캡처는 해제하고, 전체 개발 배치의 PR이 병합된 정확한 `main` SHA에서 `workflow_dispatch`로 1회 실행한다. 에디터·모달·로그인·키보드·목록 등 기존 캡처 범위와 증빙 수집을 유지한다.
+- 인트로·공개 청첩장·결제·인증과 관련된 개별 위험 기능 검증은 생략하지 않는다. 고객 데이터·웹 및 Firebase 배포 승인과 Google Play 승인 경계를 보존한다.
+- `release-build.yml`은 동일 SHA의 `CI`와 수동 `Android 화면 캡처` 성공을 확인하지 못하면 서명 빌드를 중단한다. 배치 변경 후에는 새 SHA 기준으로 재검증한다.
+
+
+## OPS-09 — 내부 테스트 배포 1회 승인 (2026-11-19)
+- 사용자가 **내부 테스트 배포**를 명시적으로 요청하면 별도의 단계별 재승인 없이 `.github/workflows/internal-release-once.yml`의 1회 승인으로 **현재 main 기본 CI 확인 → 최종 Android 전체 QA → 기존 OPS-03 서명 AAB 빌드 → 기존 OPS-04 Google Play 내부 테스트 업로드**를 순차 실행할 수 있다. 이는 이 문서의 OPS-02 제4절에서 내부 테스트용 빌드 및 게시 승인을 각각 요구한 부분의 명시적인 예외다.
+- `internal_release_approved=true`, 정확한 동결 `main` SHA, 앱별 release_tag/versionCode, 안전한 QA·빌드 증빙이 필수이며 어느 단계든 누락·실패·SHA 변경이 발생하면 즉시 다음 단계를 차단한다.
+- 전체 QA는 배치 종료 후 이 승인된 파이프라인에서 **앱당 1회만** 수행한다. PR·중간 병합에서 3환경 계측을 중복하지 않으며 민감 데이터 삭제·복구·권한·결제 변경의 선별 PR 검증은 유지한다.
+- 새 파이프라인은 기존 OPS-03·OPS-04 검증 스크립트, 기존 서명 인증서·Play 계정, 서명 AAB SHA-256·versionCode·applicationId 및 Play 업로드 승인 문구를 변경하지 않는다. 실제 업로드 수락·Console 제공·테스터 설치 여부는 각각 구분해 보고한다.
+- **비공개 테스트 승격, 정식 출시, Play 이미지/등록정보 업로드, Firebase 서버 배포는 이 승인에 포함되지 않으며 별도 승인**이 필요하다.
+- 앱의 실제 Google Play 게시 작업은 사용자가 이후 내부 배포를 승인한 경우에만 실행한다. 워크플로를 추가·병합하는 작업 자체는 배포 승인이 아니다.

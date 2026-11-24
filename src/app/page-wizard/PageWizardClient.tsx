@@ -1630,6 +1630,8 @@ export default function PageWizardClient({
   /* ── Main wizard ── */
 
   const eventTypeMeta = getEventTypeMeta(eventType);
+  const canRequestPublicationReview = !experience && !isAdminLoggedIn && !persistedPublished &&
+    wizardLoadQuery.data?.status === 'ready' && wizardLoadQuery.data.editableConfig.dataSource === 'firestore';
   const saveStatus = resolveWizardSaveStatus({
     isSaving,
     hasUnsavedChanges,
@@ -1644,7 +1646,7 @@ export default function PageWizardClient({
       setupOnly={setupOnly}
       setupContent={isAdminLoggedIn && setupOnly ? <WizardCustomerConnection slug={resolvedPersistedSlug} disabled={isSaving}
         experience={experience} onBusyChange={setIsConnectingCustomer} /> : undefined}
-        fullPreview={eventType === 'wedding' ? <WeddingWizardPreview formState={formState} theme={defaultTheme} activeStepKey={activeStepKey} /> : undefined}
+        fullPreview={eventType === 'wedding' ? <WeddingWizardPreview formState={formState} theme={defaultTheme} activeStepKey={activeStepKey} showSampleCover={setupOnly} /> : undefined}
       title={`${eventTypeMeta.label} ${setupOnly ? '생성 및 고객 연결' : '내용 입력'}`}
       subtitle={resolvedPersistedSlug ? `${formState.displayName || eventTypeMeta.label} · /${resolvedPersistedSlug}` : '관리자 전용 · 초대장을 만든 뒤 고객에게 연결해 주세요.'}
       sections={wizardSections}
@@ -1662,6 +1664,7 @@ export default function PageWizardClient({
       lastSavedAt={lastSavedAt}
       persistedPublished={persistedPublished}
       publicAccess={wizardLoadQuery.data?.status === 'ready' ? wizardLoadQuery.data.publicAccess : undefined}
+      publicAccessIfPublished={wizardLoadQuery.data?.status === 'ready' ? wizardLoadQuery.data.editableConfig.publicAccessIfPublished : undefined}
       onReturnToList={handleReturnToList}
       returnToListLabel={isAdminLoggedIn ? '이벤트 목록으로' : '내 이벤트로'}
       notice={renderNotice()}
@@ -1702,6 +1705,7 @@ export default function PageWizardClient({
         })();
       }}
       onFinalConfirm={() => void handleFinalConfirm()}
+      onRequestPublicationReview={canRequestPublicationReview ? () => void handleFinalConfirm(true) : undefined}
       onSave={() => setupOnly && !resolvedPersistedSlug ? void handleCreateInSetup() : void persistDraft({ successMessage: '내용을 저장했습니다. 공개 상태는 유지됩니다.' })}
     />
   );

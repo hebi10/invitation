@@ -19,6 +19,7 @@ import type {
 import { buildConfigFromForm } from '../buildConfigFromForm';
 import { resolveEditorSavePolicy } from '../editorSavePolicy';
 import { validateEditorRows } from '../editorDelimitedRows';
+import { getWeddingDateTimeInputError, readWeddingDateTimeInputs } from '../editorWeddingDateTime';
 import {
   EDITOR_STEPS,
   EMPTY_FORM,
@@ -28,6 +29,7 @@ import {
   buildManageFormFromDashboard,
   getOnboardingValidationMessage,
   hasValidCoordinates,
+  normalizeMobileMapProviders,
   parseOptionalNumber,
   type ManageFormState,
   type ManageGalleryPreviewItem,
@@ -192,10 +194,18 @@ export function useInvitationForm({
       setFormState((current) => ({
         ...current,
         [field]: value,
+        ...(field === 'ceremonyAddress' && current.ceremonyAddress !== value
+          ? { kakaoLatitude: '', kakaoLongitude: '', mapUrl: '' }
+          : {}),
       }));
     },
     [markFormDirty]
   );
+
+  const setMapProviders = useCallback((value: ManageFormState['mapProviders']) => {
+    markFormDirty();
+    setFormState((current) => ({ ...current, mapProviders: normalizeMobileMapProviders(value) }));
+  }, [markFormDirty]);
 
   const setPublished = useCallback(
     (published: boolean) => {
@@ -364,6 +374,15 @@ export function useInvitationForm({
         return false;
       }
 
+      const savedSchedule = readWeddingDateTimeInputs(dashboard.page.config);
+      const scheduleError = getWeddingDateTimeInputError(form, Boolean(savedSchedule.weddingDateInput));
+      if (scheduleError) {
+        setSaveFailed(true);
+        setEditorStepIndex(EDITOR_STEPS.findIndex(step => step.key === 'schedule'));
+        setNotice(scheduleError);
+        return false;
+      }
+
       for (const [label, value, columns] of [
         ['신랑측 계좌', form.groomAccountsText, 3],
         ['신부측 계좌', form.brideAccountsText, 3],
@@ -420,6 +439,10 @@ export function useInvitationForm({
       }
 
       if (typeof formVersionRef.current === 'number') formVersionRef.current += 1;
+      if (form.legacyWeddingDateTimeLabel) {
+        const { legacyWeddingDateTimeLabel } = readWeddingDateTimeInputs(nextConfig);
+        setFormState(current => ({ ...current, legacyWeddingDateTimeLabel }));
+      }
       setSavedPublished(savePolicy.published);
       setIsFormDirty(savePolicy.hasPendingPublicationChange);
       setSaveFailed(false);
@@ -529,6 +552,7 @@ export function useInvitationForm({
     isFirstEditorStep,
     isLastEditorStep,
     updateField,
+    setMapProviders,
     setPublished,
     setDefaultTheme,
     setMusicEnabled,

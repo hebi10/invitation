@@ -213,6 +213,7 @@ export default function ImagesStep({
   const kakaoCardImage = previewFormState.metadata.images.kakaoCard?.trim() ?? '';
   const isFirstBirthday = formState.eventType === 'first-birthday';
   const isGeneralEvent = formState.eventType === 'general-event';
+  const isWedding = formState.eventType === 'wedding';
 
   const [isGalleryExpanded, setIsGalleryExpanded] = useState(false);
   const [selectedGalleryIndex, setSelectedGalleryIndex] = useState(0);
@@ -292,12 +293,14 @@ export default function ImagesStep({
             ? '행사 초대장 최상단과 공유 화면에 사용하는 메인 이미지입니다.'
             : isFirstBirthday
             ? '돌잔치 초대장 최상단과 첫 화면에 사용하는 메인 이미지입니다.'
-            : '대표 사진은 청첩장 맨 위에 크게 표시됩니다. 세로 사진을 권장하며, 미리보기에서 잘리는 부분을 확인해 주세요. 사진 없이도 이름과 예식 정보가 표시됩니다.'
+            : isWedding
+            ? '대표 사진은 선택입니다. 세로 사진을 권장하며, 미리보기에서 잘리는 부분을 확인할 수 있습니다.'
+            : '초대장 맨 위에 표시할 대표 이미지를 올려 주세요.'
         }
         imageUrl={coverImage}
         isBroken={brokenSingleImages.cover}
         placeholder="대표 이미지 미리보기"
-        emptyHint={formState.eventType === 'wedding' ? '사진 없이도 이름·예식 일정·장소가 표시됩니다.' : '대표 이미지를 등록하거나 기본 이미지를 선택해 주세요.'}
+        emptyHint={isWedding ? '사진 없이도 이름·예식 일정·장소가 표시됩니다. 사진은 나중에 추가할 수 있습니다.' : '대표 이미지를 등록하거나 기본 이미지를 선택해 주세요.'}
         removeLabel="대표 이미지 제거"
         uploadLabel="대표 이미지 올리기"
         uploadKind="cover"

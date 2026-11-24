@@ -11,9 +11,9 @@
 
 모두 저장소에 이미 존재하던 개별 원본 에셋을 모바일 앱 번들로 복사한 것입니다. 인물은 `public/images/home-wedding/provenance.json`에 기록된 가상의 AI 생성 샘플이며 실제 사용자 사진이 아닙니다.
 
-모바일 홈 `WeddingIntroHero`는 `../theme-previews/simple.jpg`, `../theme-previews/romantic.jpg`의 신민제·김현지 공개 샘플 캡처를 재사용합니다. 홈은 사진·본문이 함께 보이도록 중앙·하단 기준 3:4 크롭으로 표시하며, 5종 갤러리에서는 원본 비율의 실제 디자인을 비교할 수 있습니다.
+모바일 홈 `WeddingIntroHero`는 `../theme-previews/simple.jpg`, `../theme-previews/romantic.jpg`의 신민제·김현지 샘플 캡처를 재사용합니다. 홈은 사진·본문이 함께 보이도록 중앙·하단 기준 3:4 크롭으로 표시하며, 5종 갤러리에서는 원본 비율로 디자인을 비교할 수 있습니다.
 
-각 청첩장의 실제 디자인 미리보기는 `../theme-previews/*.jpg`를 사용합니다. 5개 미리보기는 `scripts/capture-clean-wedding-previews.mjs`로 실제 샘플 화면을 재캡처한 780×1440 JPG이며, Next.js 개발 표시와 스크롤바가 제외되어 있습니다. 갤러리에는 원본 390:720 비율을 적용했습니다.
+테마 미리보기는 `../theme-previews/*.jpg`를 사용합니다. `scripts/capture-clean-wedding-previews.mjs`에서 재사용 승인을 받은 공개 샘플의 이름·테마·표지 사진 저장 경로를 확인한 후 780×1440 JPG 5장을 캡처합니다. 갤러리에는 원본 390:720 비율을 적용했습니다.
 
 색상, 타이포그래피, 테마 가격 및 기간 정책은 각각 `src/constants/theme.ts`, `src/components/AppText.tsx`, `src/lib/invitationProductPolicy.ts`에 정의된 값을 사용합니다. 앱의 조작 아이콘은 별도 비트맵을 만들지 않고 프로젝트에 포함된 Ionicons를 사용합니다.
 

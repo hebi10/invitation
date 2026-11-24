@@ -1,4 +1,4 @@
-import { getAdminEventVisibility } from './adminEventWorkspaceModel';
+import { getAdminEventReviewLabel, getAdminEventVisibility } from './adminEventWorkspaceModel';
 import { getEventTypeDisplayLabel } from '@/lib/eventTypes';
 import type { InvitationPageSummary } from '@/services/invitationPageService';
 import type { AppRoutes } from '@/lib/demoExperienceRoutes';
@@ -81,6 +81,7 @@ export default function AdminEventList({
             const isSelected = selectedSlug === page.slug;
             const isReadOnlySeed = experience && page.slug.startsWith('demo-seed-');
             const visibility = getAdminEventVisibility(page);
+            const reviewLabel = getAdminEventReviewLabel(page);
             const previewHref = experience ? routes.preview(page.slug, page.defaultTheme) : buildEventPreviewPath(page.slug, page.eventType, page.defaultTheme);
             return (
               <tr key={page.slug} data-selected={isSelected || undefined}>
@@ -107,6 +108,7 @@ export default function AdminEventList({
                     {page.published ? '공개' : '비공개'}
                   </span>
                   {page.published ? <small className={styles.visibility} title={visibility.description}>{!page.displayPeriodEnabled ? '기간 제한 없음' : visibility.label === '만료' ? '노출 종료' : visibility.label}</small> : null}
+                  {reviewLabel ? <small className={styles.visibility}>{reviewLabel}</small> : null}
                 </td>
                 <td>{getOwnershipLabel(page)}</td>
                 <td>{formatUpdatedAt(page.updatedAt)}</td>

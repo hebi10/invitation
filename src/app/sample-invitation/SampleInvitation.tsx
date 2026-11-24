@@ -116,8 +116,15 @@ function makeQAUI07State(variant: QAUI07Case): WeddingPageReadyState {
 
 type QAUI07Map = 'off' | 'coordinates' | 'geocode';
 type QAUI07Intro = 'none' | 'light' | 'cinema' | 'envelope';
+type QAUI07MapProviders = 'default' | 'none' | 'naver' | 'naver-kakao';
+const QA_MAP_PROVIDER_VARIANTS: Record<QAUI07MapProviders, Array<'naver' | 'kakao' | 'google'> | undefined> = {
+  default: undefined,
+  none: [],
+  naver: ['naver'],
+  'naver-kakao': ['naver', 'kakao'],
+};
 
-export default function SampleInvitation({ embedded = false, theme = 'simple', qaMusic = false, qaUI07 = false, qaUI07Case = 'full', qaUI07Map = 'off', qaUI07Intro = 'none', qaR08GalleryCount = null, qaR08NoCover = false }: { embedded?: boolean; theme?: 'simple' | 'romantic' | 'gyeol' | 'classic-r' | 'emotional'; qaMusic?: boolean; qaUI07?: boolean; qaUI07Case?: QAUI07Case; qaUI07Map?: QAUI07Map; qaUI07Intro?: QAUI07Intro; qaR08GalleryCount?: number | null; qaR08NoCover?: boolean }) {
+export default function SampleInvitation({ embedded = false, theme = 'simple', qaMusic = false, qaUI07 = false, qaUI07Case = 'full', qaUI07Map = 'off', qaMapProviders = 'default', qaUI07Intro = 'none', qaR08GalleryCount = null, qaR08NoCover = false }: { embedded?: boolean; theme?: 'simple' | 'romantic' | 'gyeol' | 'classic-r' | 'emotional'; qaMusic?: boolean; qaUI07?: boolean; qaUI07Case?: QAUI07Case; qaUI07Map?: QAUI07Map; qaMapProviders?: QAUI07MapProviders; qaUI07Intro?: QAUI07Intro; qaR08GalleryCount?: number | null; qaR08NoCover?: boolean }) {
   const weddingState = qaUI07 ? makeQAUI07State(qaUI07Case) : sampleState;
   const visualState: WeddingPageReadyState = qaUI07 && (qaR08GalleryCount !== null || qaR08NoCover)
     ? {
@@ -128,7 +135,7 @@ export default function SampleInvitation({ embedded = false, theme = 'simple', q
         galleryPreviewImageUrls: qaR08GalleryCount === null ? weddingState.galleryPreviewImageUrls : weddingState.galleryPreviewImageUrls.slice(0, qaR08GalleryCount),
       }
     : weddingState;
-  const mapState: WeddingPageReadyState = qaUI07 && qaUI07Map === 'coordinates'
+  const baseMapState: WeddingPageReadyState = qaUI07 && qaUI07Map === 'coordinates'
     ? {
         ...visualState,
         pageConfig: {
@@ -145,6 +152,16 @@ export default function SampleInvitation({ embedded = false, theme = 'simple', q
         },
       }
     : visualState;
+  const qaSelectedProviders = qaUI07 ? QA_MAP_PROVIDER_VARIANTS[qaMapProviders] : undefined;
+  const mapState: WeddingPageReadyState = qaSelectedProviders !== undefined
+    ? {
+        ...baseMapState,
+        pageConfig: {
+          ...baseMapState.pageConfig,
+          pageData: { ...baseMapState.pageConfig.pageData, mapProviders: qaSelectedProviders },
+        },
+      }
+    : baseMapState;
   const closingImageUrl = theme === 'romantic'
     ? getRomanticPhotoSequence(mapState.galleryImageUrls, mapState.mainImageUrl, mapState.galleryPreviewImageUrls).closingImageUrl
     : mapState.galleryImageUrls.at(-1);

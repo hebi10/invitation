@@ -4,6 +4,7 @@ import type {
   MobileInvitationGiftInfo,
   MobileInvitationGuideItem,
   MobileInvitationKakaoMapData,
+  MobileInvitationMapProvider,
   MobileInvitationMetadata,
   MobileInvitationPageData,
   MobileInvitationThemeKey,
@@ -11,6 +12,7 @@ import type {
 import { normalizeWeddingIntroStyle, type WeddingIntroStyle } from '../../lib/weddingIntro';
 import { DEFAULT_INVITATION_THEME } from '../../lib/invitationThemes';
 import { createRandomSuffix } from '../../lib/id';
+import { getWeddingDateTimeInputError, readWeddingDateTimeInputs, type WeddingDateTimeInputs } from './editorWeddingDateTime';
 
 export type ManageParentState = {
   relation: string;
@@ -26,15 +28,14 @@ export type ManagePersonState = {
   mother: ManageParentState;
 };
 
-export type ManageFormState = {
+export type ManageFormState = WeddingDateTimeInputs & {
   displayName: string;
   subtitle: string;
   description: string;
   groom: ManagePersonState;
   bride: ManagePersonState;
-  date: string;
+  legacyWeddingDateTimeLabel: string;
   venue: string;
-  ceremonyTime: string;
   ceremonyLocation: string;
   receptionTime: string;
   receptionLocation: string;
@@ -42,6 +43,7 @@ export type ManageFormState = {
   ceremonyContact: string;
   mapDescription: string;
   mapUrl: string;
+  mapProviders: MobileInvitationMapProvider[];
   kakaoLatitude: string;
   kakaoLongitude: string;
   kakaoLevel: string;
@@ -162,6 +164,19 @@ export const EDITOR_STEPS: EditorStep[] = [
   },
 ];
 
+export const MOBILE_MAP_PROVIDERS: MobileInvitationMapProvider[] = ['naver', 'kakao', 'google'];
+export const MOBILE_MAP_PROVIDER_LABELS: Record<MobileInvitationMapProvider, string> = {
+  naver: '네이버 지도',
+  kakao: '카카오맵',
+  google: '구글 지도',
+};
+
+export function normalizeMobileMapProviders(value: unknown): MobileInvitationMapProvider[] {
+  if (value === undefined) return [...MOBILE_MAP_PROVIDERS];
+  if (!Array.isArray(value)) return [];
+  return MOBILE_MAP_PROVIDERS.filter((provider) => value.includes(provider));
+}
+
 export const GUESTBOOK_PAGE_SIZE = 8;
 export const DEFAULT_MUSIC_VOLUME = 0.35;
 
@@ -192,9 +207,10 @@ export const EMPTY_FORM: ManageFormState = {
   description: '',
   groom: { ...EMPTY_PERSON },
   bride: { ...EMPTY_PERSON },
-  date: '',
+  weddingDateInput: '',
+  weddingTimeInput: '',
+  legacyWeddingDateTimeLabel: '',
   venue: '',
-  ceremonyTime: '',
   ceremonyLocation: '',
   receptionTime: '',
   receptionLocation: '',
@@ -202,6 +218,7 @@ export const EMPTY_FORM: ManageFormState = {
   ceremonyContact: '',
   mapDescription: '',
   mapUrl: '',
+  mapProviders: [...MOBILE_MAP_PROVIDERS],
   kakaoLatitude: '',
   kakaoLongitude: '',
   kakaoLevel: '',
@@ -477,9 +494,8 @@ export function getOnboardingValidationMessage(stepIndex: number, form: ManageFo
   }
 
   if (stepIndex === 1) {
-    if (!form.date.trim()) {
-      return '예식 일시를 입력해 주세요.';
-    }
+    const scheduleError = getWeddingDateTimeInputError(form, true);
+    if (scheduleError) return scheduleError;
 
     if (!form.venue.trim()) {
       return '예식 장소를 입력해 주세요.';
@@ -528,9 +544,8 @@ export function buildManageFormFromDashboard(
     description: readString(config.description),
     groom: toPersonState(config.couple?.groom, config.groomName),
     bride: toPersonState(config.couple?.bride, config.brideName),
-    date: readString(config.date),
+    ...readWeddingDateTimeInputs(config),
     venue: readString(config.venue),
-    ceremonyTime: readString(ceremony.time, readString(pageData.ceremonyTime)),
     ceremonyLocation: readString(ceremony.location),
     receptionTime: readString(reception.time),
     receptionLocation: readString(reception.location),
@@ -538,6 +553,7 @@ export function buildManageFormFromDashboard(
     ceremonyContact: readString(pageData.ceremonyContact),
     mapDescription: readString(pageData.mapDescription),
     mapUrl: readString(pageData.mapUrl),
+    mapProviders: normalizeMobileMapProviders(pageData.mapProviders),
     kakaoLatitude:
       typeof kakaoMap.latitude === 'number' && Number.isFinite(kakaoMap.latitude)
         ? String(kakaoMap.latitude)
