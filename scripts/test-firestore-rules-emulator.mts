@@ -311,6 +311,15 @@ await expectAllowed(
   await restGet('events/event-disabled-period/content/current'),
   'disabled period ignores stale visibility dates'
 );
+
+for (const status of ['pending', 'running', 'failed']) {
+  await db.collection('events').doc('event-1').update({ deletion: { status } });
+  await expectDenied(
+    await restGet('events/event-1/content/current'),
+    `public content blocked during ${status} deletion`
+  );
+}
+await db.collection('events').doc('event-1').update({ deletion: null });
 await expectAllowed(await restGet('events/event-1', 'owner-1'), 'owned event read by owner');
 await expectAllowed(
   await restPatch('events/event-1', { displayName: 'Updated Public Event' }, 'owner-1'),

@@ -63,8 +63,14 @@ service firebase.storage {
         );
     }
 
+    function isEventDeletionBlocked(data) {
+      let deletion = data.get('deletion', null);
+      return deletion is map && deletion.get('status', '') in ['pending', 'running', 'failed'];
+    }
+
     function canReadPublicEventData(data) {
-      return data.keys().hasAny(['visibility']) &&
+      return !isEventDeletionBlocked(data) &&
+        data.keys().hasAny(['visibility']) &&
         data.visibility is map &&
         data.visibility.keys().hasAny(['published']) &&
         data.visibility.published == true &&
