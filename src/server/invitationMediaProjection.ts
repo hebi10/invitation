@@ -1,6 +1,7 @@
 import 'server-only';
 
-import type { InvitationPage, InvitationPageDataBase, InvitationPageData } from '@/types/invitationPage';
+import type { InvitationPage } from '@/types/invitationPage';
+import { buildInvitationPreviewMediaUrl, mapInvitationImageFields, type InvitationPreviewMediaMode } from '@/lib/invitationPreviewMedia';
 import { getServerStorageBucketName } from './firebaseAdmin';
 
 const IMAGE_FIELDS = ['wedding', 'favicon', 'social', 'kakaoCard'] as const;
@@ -79,14 +80,12 @@ export function collectPublicInvitationImageReferences(raw: unknown): string[] {
   return references;
 }
 
-/** A non-persisted public view only; do not use this in editor responses or saves. */
-export function projectPilotPublicInvitationMedia(
+/** Non-persisted renderer view only. Never use this in edit or save endpoints. */
+function projectPilotInvitationMedia(
   page: InvitationPage | null,
   requestedSlug: string,
-  dependencies = {
-    pilotSlug: process.env.INVITATION_MEDIA_GATEWAY_PILOT_SLUG ?? '',
-    bucketName: getServerStorageBucketName() ?? '',
-  },
+  dependencies: { pilotSlug: string; bucketName: string },
+  mode: 'public' | InvitationPreviewMediaMode,
 ): InvitationPage | null {
   if (!page || !dependencies.pilotSlug || requestedSlug !== dependencies.pilotSlug ||
       page.slug !== requestedSlug || (page.eventType ?? 'wedding') !== 'wedding') return page;
@@ -95,44 +94,30 @@ export function projectPilotPublicInvitationMedia(
   const project = (value: string | undefined) => {
     if (!value) return value;
     const file = getInvitationMediaFileName(value, dependencies.bucketName, requestedSlug);
-    if (file) return buildInvitationMediaGatewayUrl(requestedSlug, file);
+    if (file) return mode === 'public' ? buildInvitationMediaGatewayUrl(requestedSlug, file) : buildInvitationPreviewMediaUrl(requestedSlug, file, mode);
     // Never emit a managed token URL for an unsupported or cross-event image on the pilot.
     const trimmed = value.trim();
-    if (/^(?:wedding-images\/|\/api\/public\/media\/)/i.test(trimmed)) return '';
+    if (/^(?:\/?wedding-images\/|gs:\/\/|\/api\/public\/media\/)/i.test(trimmed)) return '';
     try {
-      const url = new URL(trimmed);
-      if (url.hostname === 'firebasestorage.googleapis.com' ||
+      const url = new URL(trimmed, 'https://invite.msgnote.kr');
+      if (['firebasestorage.googleapis.com', 'storage.googleapis.com'].includes(url.hostname) ||
           (url.origin === 'https://invite.msgnote.kr' && url.pathname.startsWith('/api/public/media/'))) return '';
     } catch { /* Local/static image paths stay unchanged. */ }
     return value;
   };
-  const images = { ...page.metadata.images };
-  for (const key of IMAGE_FIELDS) {
-    const value = images[key];
-    if (typeof value === 'string') images[key] = project(value) ?? '';
-  }
-  function projectData<T extends InvitationPageDataBase>(data: T): T {
-    const next = { ...data };
-    for (const key of DATA_SINGLE_FIELDS) {
-      if (typeof next[key] === 'string') next[key] = project(next[key]);
-    }
-    for (const key of DATA_ARRAY_FIELDS) {
-      const values = next[key];
-      if (Array.isArray(values)) next[key] = values.map(value => project(value) ?? '');
-    }
-    return next;
-  }
-  let pageData: InvitationPageData | undefined;
-  if (page.pageData) {
-    pageData = projectData(page.pageData);
-    if (pageData.themeOverrides) {
-      const overrides = { ...pageData.themeOverrides };
-      for (const key of Object.keys(overrides) as Array<keyof typeof overrides>) {
-        const override = overrides[key];
-        if (override) overrides[key] = projectData(override);
-      }
-      pageData.themeOverrides = overrides;
-    }
-  }
-  return { ...page, metadata: { ...page.metadata, images }, ...(pageData ? { pageData } : {}) };
+  return mapInvitationImageFields(page, value => project(value) ?? '');
+}
+
+function defaultProjectionDependencies() {
+  return { pilotSlug: process.env.INVITATION_MEDIA_GATEWAY_PILOT_SLUG ?? '', bucketName: getServerStorageBucketName() ?? '' };
+}
+
+export function projectPilotPublicInvitationMedia(page: InvitationPage | null, requestedSlug: string, dependencies = defaultProjectionDependencies()) {
+  return projectPilotInvitationMedia(page, requestedSlug, dependencies, 'public');
+}
+
+/** Call only after the existing owner/preview-token authorization has succeeded. */
+export function projectPilotPrivateInvitationMedia(page: InvitationPage, requestedSlug: string,
+  mode: InvitationPreviewMediaMode, dependencies = defaultProjectionDependencies()): InvitationPage {
+  return projectPilotInvitationMedia(page, requestedSlug, dependencies, mode) ?? page;
 }
