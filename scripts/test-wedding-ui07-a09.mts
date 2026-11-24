@@ -87,7 +87,7 @@ expectAll(calendarDownload, ['buildWeddingCalendar(', "'wedding.ics'",
 expectAll(calendarFeature, ["model.mode === 'calendar-countdown'",
   'aria-current'], 'Inline wedding calendar');
 
-expectAll(map, ['loadKakaoMapsSdk', 'mapHref', 'directionsHref',
+expectAll(map, ['loadKakaoMapsSdk', 'mapHref', 'providerLinks',
   'aria-pressed={controlsEnabled}', '지도에서 위치 보기'], 'Public LocationMap');
 expectAll(music, ['aria-pressed={isPlaying}', '음악 끄기', '음악 켜기',
   'onRetryLoad', 'onError', 'hasAutoPlayedRef.current = true'], 'Music control');

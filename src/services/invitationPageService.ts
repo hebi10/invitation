@@ -1,5 +1,5 @@
 import { getInvitationDisplayPeriodEnd, INVITATION_INITIAL_DISPLAY_PERIOD_MONTHS } from '@/lib/invitationProductPolicy';
-import { requireInvitationContentVersion } from '@/lib/invitationContentVersion';
+import { InvitationVersionConflictError, requireInvitationContentVersion } from '@/lib/invitationContentVersion';
 import { readEventDeletionMetadata } from '@/server/eventDeletionPolicy';
 import {
   createInvitationPageFromSeed,
@@ -16,6 +16,7 @@ import {
 } from '@/lib/invitationVariants';
 import {
   mergeInvitationPageSeed,
+  normalizeInvitationPageSlugInput,
   type InvitationPageDisplayPeriodRecord as DisplayPeriodRecord,
   type InvitationPageRegistryRecord,
 } from '@/lib/invitationPagePersistence';
@@ -37,6 +38,7 @@ import type {
   InvitationPage,
   InvitationProductTier,
   InvitationPageSeed,
+  InvitationPublicationReviewState,
   InvitationThemeKey,
 } from '@/types/invitationPage';
 import { sanitizeHeartIconPlaceholdersDeep } from '@/utils/textSanitizers';
@@ -79,10 +81,14 @@ export interface InvitationPageSummary {
   ownerEmail?: string | null;
   ownerDisplayName?: string | null;
   deletion?: EventDeletionMetadata;
+  contentVersion?: number;
+  publicationReview?: InvitationPublicationReviewState;
 }
 
 export interface EditableInvitationPageConfig {
   publicAccess?: InvitationPublicAccessState;
+  publicAccessIfPublished?: InvitationPublicAccessState;
+  publicationReview?: InvitationPublicationReviewState;
   version: number;
   slug: string;
   config: InvitationPageSeed;
@@ -149,6 +155,21 @@ function readServiceDate(value: unknown) {
   return parsed && !Number.isNaN(parsed.getTime()) ? parsed : null;
 }
 
+export function readInvitationPublicationReviewState(value: unknown): InvitationPublicationReviewState | undefined {
+  if (!value || typeof value !== 'object') return undefined;
+
+  const { status, requestedContentVersion, requestedAt } = value as Record<string, unknown>;
+  if (
+    (status !== 'pending' && status !== 'stale') ||
+    typeof requestedContentVersion !== 'number' || !Number.isSafeInteger(requestedContentVersion) ||
+    requestedContentVersion < 0 || typeof requestedAt !== 'string' || !readServiceDate(requestedAt)
+  ) {
+    return undefined;
+  }
+
+  return { status, requestedContentVersion, requestedAt };
+}
+
 function normalizeAdminInvitationPageSummary(
   input: Record<string, unknown>
 ): InvitationPageSummary | null {
@@ -196,6 +217,10 @@ function normalizeAdminInvitationPageSummary(
     ownerEmail: typeof input.ownerEmail === 'string' ? input.ownerEmail : null,
     ownerDisplayName: typeof input.ownerDisplayName === 'string' ? input.ownerDisplayName : null,
     deletion: readEventDeletionMetadata(input.deletion) ?? undefined,
+    contentVersion: typeof input.contentVersion === 'number' && Number.isSafeInteger(input.contentVersion) && input.contentVersion >= 0
+      ? input.contentVersion
+      : undefined,
+    publicationReview: readInvitationPublicationReviewState(input.publicationReview),
     ownershipKind:
       input.ownershipKind === 'unassigned' || input.ownershipKind === 'admin'
         ? input.ownershipKind
@@ -495,11 +520,16 @@ export async function getEditableInvitationPageConfig(
     );
     const features = resolveInvitationFeatures(productTier, editableConfig.features);
 
+    const publicAccess = getInvitationPublicAccessState(sourceRecord.page);
+
     return {
       slug: pageSlug,
       config: editableConfig,
       published: sourceRecord.page.published,
-      publicAccess: getInvitationPublicAccessState(sourceRecord.page),
+      publicAccess,
+      publicAccessIfPublished: sourceRecord.page.published
+        ? publicAccess
+        : getInvitationPublicAccessState({ ...sourceRecord.page, published: true }),
       defaultTheme: registryRecord?.defaultTheme ?? DEFAULT_INVITATION_THEME,
       productTier,
       features,
@@ -561,7 +591,7 @@ export async function saveInvitationPageConfig(
     createdAt: now,
     updatedAt: now,
     expectedVersion: requireInvitationContentVersion(options.expectedVersion),
-    published: options.published ?? true,
+    published: options.published,
     defaultTheme: options.defaultTheme ?? DEFAULT_INVITATION_THEME,
   });
 
@@ -671,8 +701,67 @@ export async function setAdminInvitationPageDefaultTheme(pageSlug: string, theme
   await clientInvitationPageRepository.setDefaultThemeBySlug(pageSlug, theme);
 }
 
-export async function setInvitationPagePublished(pageSlug: string, published: boolean) {
-  await clientInvitationPageRepository.updateVisibilityBySlug(pageSlug, { published });
+type AdminInvitationPublicationInput = {
+  published: boolean;
+  expectedVersion?: number;
+  expectedReviewRequestedAt?: string;
+  config?: InvitationPageSeed;
+  defaultTheme?: InvitationThemeKey;
+};
+
+async function updateAdminInvitationPublication(pageSlug: string, input: AdminInvitationPublicationInput) {
+  const slug = normalizeInvitationPageSlugInput(pageSlug);
+  if (!slug) throw new Error('올바른 페이지 주소가 필요합니다.');
+
+  const response = await fetch(`/api/admin/events/${encodeURIComponent(slug)}`, {
+    method: 'PATCH',
+    headers: { ...(await getAdminAuthHeaders()), 'Content-Type': 'application/json' },
+    body: JSON.stringify(input),
+  });
+  const payload = (await response.json().catch(() => null)) as {
+    editableConfig?: Omit<EditableInvitationPageConfig, 'lastSavedAt' | 'dataSource'> & {
+      lastSavedAt: string | null;
+      dataSource: 'sample' | 'firestore';
+    };
+    code?: string;
+    currentVersion?: number;
+    error?: string;
+  } | null;
+
+  if (response.status === 409 && payload?.code === 'VERSION_CONFLICT') {
+    throw new InvitationVersionConflictError(payload.currentVersion ?? 0);
+  }
+  if (!response.ok) {
+    throw Object.assign(new Error(payload?.error?.trim() || '초대장의 공개 상태를 변경하지 못했습니다.'), {
+      status: response.status,
+    });
+  }
+
+  return payload;
+}
+
+export async function setInvitationPagePublished(
+  pageSlug: string,
+  published: boolean,
+  options: Pick<AdminInvitationPublicationInput, 'expectedVersion' | 'expectedReviewRequestedAt'> = {}
+) {
+  await updateAdminInvitationPublication(pageSlug, { published, ...options });
+}
+
+export async function saveAdminInvitationPageWithPublication(
+  config: InvitationPageSeed,
+  options: Required<Pick<AdminInvitationPublicationInput, 'published' | 'expectedVersion' | 'defaultTheme'>>
+): Promise<EditableInvitationPageConfig> {
+  const result = await updateAdminInvitationPublication(config.slug, { config, ...options });
+  const editable = result?.editableConfig;
+  if (!editable) throw new Error('저장 결과를 불러오지 못했습니다. 최신 내용을 다시 확인해 주세요.');
+
+  return {
+    ...editable,
+    lastSavedAt: readServiceDate(editable.lastSavedAt),
+    dataSource: editable.dataSource === 'firestore' ? 'firestore' : 'seed',
+    version: requireInvitationContentVersion(editable.version),
+  };
 }
 
 export async function setInvitationPageVariantAvailability(
@@ -680,7 +769,6 @@ export async function setInvitationPageVariantAvailability(
   variantKey: InvitationVariantKey,
   available: boolean,
   options: {
-    published?: boolean;
     defaultTheme?: InvitationThemeKey;
   } = {}
 ) {
@@ -746,7 +834,6 @@ export async function setInvitationPageVariantAvailability(
     },
     {
       expectedVersion: editableConfig.version,
-      published: options.published ?? editableConfig.published,
       defaultTheme: options.defaultTheme ?? editableConfig.defaultTheme,
     }
   );
@@ -939,7 +1026,6 @@ export async function setInvitationPageProductTier(
     { ...editableConfig.config, productTier, features },
     {
       expectedVersion: editableConfig.version,
-      published: editableConfig.published,
       defaultTheme: editableConfig.defaultTheme,
     }
   );

@@ -1,0 +1,18 @@
+.print {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  background: #f8f4ec;
+}
+
+.print img {
+  object-fit: cover;
+  object-position: center 43%;
+  animation: develop 1570ms cubic-bezier(0.24, 0.58, 0.34, 1) 140ms both;
+}
+
+@keyframes develop {
+  0% { filter: grayscale(1) contrast(0.78) brightness(1.2); }
+  30% { filter: grayscale(1) contrast(0.91) brightness(1.08); }
+  100% { filter: grayscale(0) contrast(1) brightness(1); }
+}

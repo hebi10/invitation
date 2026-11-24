@@ -9,6 +9,26 @@ export function isInvalidAuthError(error: unknown) {
   return error instanceof MobileApiError && (error.status === 401 || error.status === 403);
 }
 
+const PUBLICATION_FIELD_LABELS = {
+  name: '이름',
+  dateTime: '일시',
+  venue: '장소',
+  address: '주소',
+  content: '안내 내용',
+};
+
+export function toUserFacingPublicationIncompleteMessage(missingFields: unknown) {
+  if (Array.isArray(missingFields)) {
+    const labels = Object.entries(PUBLICATION_FIELD_LABELS)
+      .filter(([field]) => missingFields.includes(field))
+      .map(([, label]) => label);
+    if (labels.length > 0) {
+      return `청첩장을 공개하려면 다음 항목을 입력해 주세요. ${labels.join(', ')}`;
+    }
+  }
+  return '청첩장을 공개하려면 필수 정보를 입력해 주세요.';
+}
+
 const ERROR_MESSAGE_MAP: Record<string, string> = {
   'Invitation page was not found.': '청첩장 페이지를 찾을 수 없습니다.',
   'Invitation page config is required.': '저장할 청첩장 설정이 필요합니다.',

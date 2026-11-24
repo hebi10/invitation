@@ -1,3 +1,5 @@
+import { isValidWeddingDateTime, type WeddingDateTime } from '../contracts/weddingDateTime';
+
 export interface WeddingCalendarEvent {
   eventDate: Date;
   title: string;
@@ -5,9 +7,10 @@ export interface WeddingCalendarEvent {
 }
 
 /** Stored wedding fields describe Korean wall time, regardless of the guest's timezone. */
-export function toKoreanWeddingInstant(wallDate: Date): Date {
-  if (!Number.isFinite(wallDate.getTime())) return new Date(NaN);
-  return new Date(Date.UTC(wallDate.getFullYear(), wallDate.getMonth(), wallDate.getDate(), wallDate.getHours() - 9, wallDate.getMinutes()));
+export function toKoreanWeddingInstant(wallDate: WeddingDateTime): Date {
+  if (!isValidWeddingDateTime(wallDate)) return new Date(NaN);
+  const { year, month, day, hour, minute } = wallDate;
+  return new Date(Date.UTC(year, month, day, hour - 9, minute));
 }
 
 function calendarTimestamp(date: Date): string | null {

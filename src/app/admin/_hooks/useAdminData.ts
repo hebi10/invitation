@@ -4,6 +4,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { getEventDeletionFailureMessage, isEventDeletionComplete } from '@/lib/adminEventDeletionState';
 import { getCustomerAssignmentConfirmation } from '@/lib/adminCustomerSelection';
+import { toUserFacingKoreanErrorMessage } from '@/lib/userFacingErrorMessage';
 
 import {
   clearAdminInvitationPreviewCache,
@@ -104,7 +105,7 @@ export function useAdminData({
     queryFn: async () => gateway.getPages(),
     staleTime: ADMIN_STALE_TIME_MS,
     gcTime: ADMIN_GC_TIME_MS,
-    refetchOnWindowFocus: false,
+    refetchOnWindowFocus: 'always',
   });
   const commentsQuery = useQuery<Comment[]>({
     queryKey: appQueryKeys.adminComments,
@@ -618,7 +619,9 @@ export function useAdminData({
 
       const approved = await confirm({
         title: nextPublished ? '페이지를 공개할까요?' : '페이지를 비공개로 전환할까요?',
-        description: `${page.displayName} 페이지의 공개 상태를 변경합니다.`,
+        description: nextPublished
+          ? `${page.displayName}의 최신 내용을 미리보기에서 확인했다면 공개해 주세요.`
+          : `${page.displayName} 페이지를 비공개로 전환합니다.`,
         confirmLabel: nextPublished ? '공개' : '비공개',
         cancelLabel: '취소',
         tone: nextPublished ? 'primary' : 'danger',
@@ -643,8 +646,13 @@ export function useAdminData({
         }, refreshed);
       } catch (error) {
         console.error(error);
+        if (error instanceof Error && 'status' in error && error.status === 409) {
+          await refreshAdminData({ pages: true, invitationPageSlug: page.slug });
+          showToast({ title: '상태가 변경되었습니다. 최신 내용을 미리 본 뒤 공개해 주세요.', tone: 'error' });
+          return;
+        }
         showToast({
-          title: nextPublished ? '페이지 공개에 실패했습니다.' : '페이지 비공개 전환에 실패했습니다.',
+          title: toUserFacingKoreanErrorMessage(error, nextPublished ? '페이지 공개에 실패했습니다.' : '페이지 비공개 전환에 실패했습니다.'),
           tone: 'error',
         });
       } finally {

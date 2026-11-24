@@ -11,6 +11,7 @@ import {
   type MobileImageUploadResponse,
 } from '../../../lib/api';
 import { createRandomSuffix } from '../../../lib/id';
+import { selectNativeUploadPreviewReference } from '../../../lib/nativeEditorMedia';
 import type {
   MobileInvitationDashboard,
   MobileSessionSummary,
@@ -682,7 +683,7 @@ export function useImageUpload({
           if (uploadedSingleImage) {
             setForm((current) => {
               const nextPreviewUrl =
-                localPreviewUrls[0] || uploadedSingleImage.previewUrl || uploadedSingleImage.url;
+                selectNativeUploadPreviewReference(uploadedSingleImage, localPreviewUrls[0] ?? '', dashboard.page.slug);
 
               if (assetKind === 'cover') {
                 return {
@@ -717,7 +718,7 @@ export function useImageUpload({
             const nextGalleryThumbnailUrls = [
               ...current.galleryImageThumbnailUrls,
               ...uploadedImages.map(
-                (image, index) => localPreviewUrls[index] || image.previewUrl || image.url
+                (image, index) => selectNativeUploadPreviewReference(image, localPreviewUrls[index] ?? '', dashboard.page.slug)
               ),
             ].slice(0, maxGalleryImages);
 

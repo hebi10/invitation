@@ -10,11 +10,12 @@ import styles from './WeddingWizardPreview.module.css';
 
 export type WeddingIntroPreview = { style: Exclude<WeddingIntroStyle, 'none'> };
 
-export default function WeddingWizardPreview({ formState, theme, activeStepKey = 'basic', introPreview = null, onThemeChange }: {
+export default function WeddingWizardPreview({ formState, theme, activeStepKey = 'basic', introPreview = null, showSampleCover = true, onThemeChange }: {
   formState: InvitationPageSeed;
   theme: InvitationThemeKey;
   activeStepKey?: PreviewStep;
   introPreview?: WeddingIntroPreview | null;
+  showSampleCover?: boolean;
   onThemeChange?: (theme: InvitationThemeKey) => void;
 }) {
   const frameRef = useRef<HTMLIFrameElement>(null);
@@ -33,10 +34,10 @@ export default function WeddingWizardPreview({ formState, theme, activeStepKey =
   }, []);
   const sendPreview = useCallback(() => {
     frameRef.current?.contentWindow?.postMessage(
-      { type: 'wedding-wizard-preview:update', formState: introPreview ? { ...formState, introStyle: introPreview.style } : formState, theme },
+      { type: 'wedding-wizard-preview:update', formState: introPreview ? { ...formState, introStyle: introPreview.style } : formState, theme, showSampleCover },
       window.location.origin,
     );
-  }, [formState, theme, introPreview]);
+  }, [formState, theme, introPreview, showSampleCover]);
 
   useEffect(() => {
     const receive = (event: MessageEvent) => {
@@ -138,7 +139,7 @@ export default function WeddingWizardPreview({ formState, theme, activeStepKey =
           : introPreview ? `${WEDDING_INTRO_OPTIONS.find(option => option.value === introPreview.style)?.label} 미리보기 · 저장되지 않습니다.` : viewingTop ? '청첩장을 처음부터 보고 있습니다.' : `편집 위치 · ${previewSections[focusedStep].label}`}</p>
         <details className={styles.previewHelp}>
           <summary>미리보기 안내</summary>
-          <p className={styles.hint}>저장 전 내용이 반영됩니다. 미입력 정보와 사진은 예시이며 저장되지 않습니다. 지도는 실제 페이지에서 확인할 수 있고, 미리보기 방명록은 연습용입니다.{onThemeChange ? ' 디자인 선택은 미리보기에만 적용됩니다.' : ''}</p>
+          <p className={styles.hint}>저장 전 내용이 반영됩니다. 미입력 정보와 {showSampleCover ? '사진' : '갤러리'}에 표시되는 예시는 저장되지 않습니다. 지도는 실제 페이지에서 확인할 수 있고, 미리보기 방명록은 연습용입니다.{onThemeChange ? ' 디자인 선택은 미리보기에만 적용됩니다.' : ''}</p>
         </details>
       </div>
     </div>

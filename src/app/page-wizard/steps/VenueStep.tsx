@@ -1,4 +1,5 @@
 import { WizardField } from '../WizardFieldValidation';
+import { WEDDING_MAP_PROVIDERS, WEDDING_MAP_PROVIDER_LABELS, normalizeWeddingMapProviders } from '@/lib/weddingMapProviders';
 import VenueLocationPreview from './VenueLocationPreview';
 import styles from '../page.module.css';
 import blockStyles from './WizardVenueBlocks.module.css';
@@ -13,6 +14,7 @@ export default function VenueStep({
   const latitude = formState.pageData?.kakaoMap?.latitude ?? 0;
   const longitude = formState.pageData?.kakaoMap?.longitude ?? 0;
   const selectedAddress = formState.pageData?.ceremonyAddress?.trim() ?? '';
+  const selectedProviders = normalizeWeddingMapProviders(formState.pageData?.mapProviders);
   const selectedVenueName = formState.pageData?.venueName?.trim() || formState.venue.trim();
   const markerTitle =
     formState.pageData?.kakaoMap?.markerTitle?.trim() || selectedVenueName || selectedAddress;
@@ -70,7 +72,8 @@ export default function VenueStep({
 
               draft.pageData.ceremonyAddress = event.target.value;
 
-              if (draft.pageData.mapUrl?.startsWith('https://map.kakao.com/link/search/')) {
+              if (draft.pageData.mapUrl?.startsWith('https://map.kakao.com/link/search/') ||
+                  draft.pageData.mapUrl?.startsWith('https://map.kakao.com/link/map/')) {
                 draft.pageData.mapUrl = '';
               }
 
@@ -128,6 +131,36 @@ export default function VenueStep({
           markerTitle={markerTitle}
           venueLabel={venueLabel}
         />
+      ) : null}
+
+      {(!formState.eventType || formState.eventType === 'wedding') ? (
+        <div className={blockStyles.providerSettings} aria-label="하객에게 표시할 지도 앱">
+          <p className={blockStyles.providerTitle}>하객에게 표시할 지도 앱</p>
+          <p className={blockStyles.description}>주소로 지도 링크가 자동 생성됩니다. 표시할 지도만 선택해 주세요.</p>
+          <div className={blockStyles.providerOptions}>
+            {WEDDING_MAP_PROVIDERS.map((provider) => (
+              <label className={blockStyles.providerOption} key={provider}>
+                <input
+                  type="checkbox"
+                  checked={selectedProviders.includes(provider)}
+                  onChange={(event) => updateForm((draft) => {
+                    if (!draft.pageData) return;
+                    draft.pageData.mapProviders = event.target.checked
+                      ? WEDDING_MAP_PROVIDERS.filter((item) => item === provider || selectedProviders.includes(item))
+                      : selectedProviders.filter((item) => item !== provider);
+                  })}
+                />
+                <span>{WEDDING_MAP_PROVIDER_LABELS[provider]}</span>
+              </label>
+            ))}
+          </div>
+          <p className={blockStyles.description}>하객 화면 미리보기</p>
+          <div className={blockStyles.providerPreview}>
+            {selectedAddress && selectedProviders.length > 0
+              ? selectedProviders.map((provider) => <span key={provider}>{WEDDING_MAP_PROVIDER_LABELS[provider]}</span>)
+              : <span>표시할 외부 지도 버튼이 없습니다.</span>}
+          </div>
+        </div>
       ) : null}
 
     </section>

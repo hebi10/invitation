@@ -39,7 +39,7 @@ for (const eventName of ['pull_request', 'pull_request_target', 'workflow_run', 
   for (const ref of ['refs/heads/main', 'refs/heads/build/mobile-aab', 'refs/pull/1/merge']) {
     const trusted = ref === 'refs/heads/main' && ['push', 'workflow_dispatch'].includes(eventName);
     assert.equal(isTrustedReleaseEvent({ eventName, ref }), trusted);
-    assert.equal(shouldDeployRelease({ eventName, ref, autoDeployEnabled: 'true', manualDeploy: true }), trusted);
+    assert.equal(shouldDeployRelease({ eventName, ref, autoDeployEnabled: 'true', manualDeploy: true }), ref === 'refs/heads/main' && eventName === 'workflow_dispatch');
     assert.equal(shouldDeployRelease({ eventName, ref, autoDeployEnabled: 'false', manualDeploy: false }), false);
   }
 }
@@ -54,9 +54,9 @@ assert.throws(() => readAndroidGradleMetadata(`${gradle}\nversionCode 211`, 211)
 assert.throws(() => readAndroidGradleMetadata(gradle.replace('1.0.5', '1.0.5/../../other'), 211), /versionName/);
 
 const deployPolicy = { eventName: 'push', ref: 'refs/heads/main', autoDeployEnabled: 'true', manualDeploy: false, signed: 'true', status: 'completed' };
-assert.deepEqual(validatePlayDeployment(deployPolicy), { target: 'internal', track: 'internal', status: 'completed' });
+assert.throws(() => validatePlayDeployment(deployPolicy), /수동/);
 for (const closedTrack of [undefined, '', 'alpha', 'production', 'wear:production']) {
-  assert.deepEqual(validatePlayDeployment({ ...deployPolicy, target: 'closed', closedTrack }), { target: 'internal', track: 'internal', status: 'completed' }, 'main push는 비공개 테스트 설정과 관계없이 internal에만 게시합니다.');
+  assert.throws(() => validatePlayDeployment({ ...deployPolicy, target: 'closed', closedTrack }), /수동/, 'main push는 어떤 트랙에도 게시할 수 없습니다.');
 }
 const manualPolicy = { ...deployPolicy, eventName: 'workflow_dispatch', manualDeploy: true };
 assert.deepEqual(validatePlayDeployment(manualPolicy), { target: 'internal', track: 'internal', status: 'completed' });
@@ -192,8 +192,15 @@ for (const job of Object.values(workflow.jobs) as { env?: object; if?: string; s
     for (const eventName of ['pull_request', 'pull_request_target', 'push', 'workflow_dispatch']) {
       for (const ref of ['refs/heads/main', 'refs/pull/1/merge', 'refs/heads/build/mobile-aab']) {
         const github = { event_name: eventName, ref };
-        const trusted = ref === 'refs/heads/main' && ['push', 'workflow_dispatch'].includes(eventName);
-        assert.equal(Boolean(evaluateCondition(job.if ?? step.if ?? 'true', github, {}, { bundle: { outputs: { deploy: 'true' } } })), trusted, `${eventName}/${ref} Secrets 전달 경계가 잘못되었습니다.`);
+        const isPlayPublisher = job === workflow.jobs.deploy;
+        const expected = ref === 'refs/heads/main' && eventName === 'workflow_dispatch';
+        const authorization = isPlayPublisher ? { ops01_release_approved: true } : {};
+        const needs = { bundle: { outputs: { deploy: 'true' } } };
+        const configuredVars = { PLAY_WORKLOAD_IDENTITY_PROVIDER: 'fixture-provider', PLAY_SERVICE_ACCOUNT: 'fixture-service', PLAY_AUTO_DEPLOY_ENABLED: 'false' };
+        assert.equal(Boolean(evaluateCondition(job.if ?? step.if ?? 'true', github, authorization, needs, {}, configuredVars)), expected, `${eventName}/${ref} Secrets 전달 경계가 잘못되었습니다.`);
+        if (isPlayPublisher) {
+          assert.equal(Boolean(evaluateCondition(job.if ?? step.if ?? 'true', github, { ops01_release_approved: false }, needs)), false, 'Explicit manual approval is required for every Play upload.');
+        }
       }
     }
   }
@@ -273,7 +280,7 @@ assert.ok(!JSON.stringify(accessJob).includes('secrets.'));
 const accessVariables = { PLAY_WORKLOAD_IDENTITY_PROVIDER: 'fixture-provider', PLAY_SERVICE_ACCOUNT: 'fixture-service', PLAY_AUTO_DEPLOY_ENABLED: 'false' };
 for (const eventName of ['pull_request', 'pull_request_target', 'push', 'workflow_dispatch']) {
   for (const ref of ['refs/heads/main', 'refs/pull/1/merge', 'refs/heads/build/mobile-aab']) {
-    const trusted = ref === 'refs/heads/main' && ['push', 'workflow_dispatch'].includes(eventName);
+    const trusted = ref === 'refs/heads/main' && eventName === 'workflow_dispatch';
     assert.equal(Boolean(evaluateCondition(accessJob.if, { event_name: eventName, ref }, {}, {}, {}, accessVariables)), trusted);
   }
 }
@@ -354,6 +361,6 @@ assert.deepEqual(JSON.parse(closedCli.stdout), { target: 'closed', track: 'alpha
 assert.notEqual(validateCli({ PLAY_DEPLOY_TARGET: 'closed' }).status, 0);
 assert.notEqual(validateCli({ PLAY_DEPLOY_TARGET: 'closed', PLAY_CLOSED_TRACK: 'internal' }).status, 0);
 const automaticCli = validateCli({ GITHUB_EVENT_NAME: 'push', PLAY_AUTO_DEPLOY_ENABLED: 'true', PLAY_DEPLOY_TARGET: 'closed', PLAY_CLOSED_TRACK: 'alpha' });
-assert.equal(automaticCli.status, 0, automaticCli.stderr);
-assert.deepEqual(JSON.parse(automaticCli.stdout), { target: 'internal', track: 'internal', status: 'completed' });
+assert.notEqual(automaticCli.status, 0, 'main push must never publish to Play, even with legacy auto-deploy enabled');
+assert.match(automaticCli.stderr, /수동 요청만 허용/, 'automatic deployment must fail closed');
 console.log('mobile release version, metadata, trust policy and workflow integration checks passed');

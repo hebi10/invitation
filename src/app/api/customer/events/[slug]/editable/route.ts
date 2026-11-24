@@ -5,6 +5,7 @@ import { isInvitationThemeKey } from '@/lib/invitationThemes';
 import { InvitationIntroEventError } from '@/lib/invitationIntroCatalog';
 import {
   GENERIC_SERVER_ERROR_MESSAGE,
+  toInvitationPublicationErrorResponse,
   toSafeHttpErrorResponse,
 } from '@/server/apiErrorResponse';
 import {
@@ -64,6 +65,7 @@ export async function POST(
       | {
           config?: unknown;
           expectedVersion?: unknown;
+          requestPublicationReview?: unknown;
           published?: unknown;
           defaultTheme?: unknown;
         }
@@ -79,6 +81,7 @@ export async function POST(
     const snapshot = await saveCustomerEditableInvitationPageConfig(ownerUid, slug, {
       config: body.config as InvitationPageSeed,
       expectedVersion: requireInvitationContentVersion(body.expectedVersion),
+      requestPublicationReview: body.requestPublicationReview === true,
       published: typeof body.published === 'boolean' ? body.published : undefined,
       defaultTheme: isInvitationThemeKey(body.defaultTheme)
         ? body.defaultTheme
@@ -102,6 +105,9 @@ export async function POST(
     ) {
       return toSafeHttpErrorResponse(error);
     }
+
+    const publicationError = toInvitationPublicationErrorResponse(error);
+    if (publicationError) return publicationError;
 
     if (error instanceof InvitationIntroEventError) {
       return NextResponse.json({ error: error.message, code: error.code }, { status: error.status });

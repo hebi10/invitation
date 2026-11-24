@@ -5,6 +5,7 @@ import type { BankAccount, InvitationPageSeed } from '@/types/invitationPage';
 import { normalizeWeddingIntroStyle, WEDDING_INTRO_OPTIONS } from '@/lib/weddingIntro';
 import { getInvitationIntroPreset, parseInvitationIntroChoice } from '@/lib/invitationIntroCatalog';
 import { normalizeEventTypeKey } from '@/lib/eventTypes';
+import type { InvitationPublicAccessState } from '@/lib/invitationPublicAccess';
 
 export type WizardSaveStatus =
   | 'idle'
@@ -121,6 +122,28 @@ export function hasMeaningfulInputForWizardStep(
 
 export function resolveWizardPublishedState(savedPublished: boolean, requestedPublished?: boolean) {
   return requestedPublished ?? savedPublished;
+}
+
+export function getWizardPublicationSaveMessage(
+  savedPublished: boolean,
+  access?: InvitationPublicAccessState,
+  requestedPublished?: boolean,
+  accessIfPublished?: InvitationPublicAccessState
+) {
+  if (!resolveWizardPublishedState(savedPublished, requestedPublished)) {
+    return savedPublished
+      ? '비공개로 저장합니다. 하객이 링크를 열 수 없습니다.'
+      : '비공개 초안에 저장합니다. 하객이 링크를 열 수 없습니다.';
+  }
+  if (requestedPublished && !savedPublished) {
+    if (accessIfPublished?.isPublic) return '저장 즉시 공개됩니다. 하객이 링크를 열 수 있습니다.';
+    if (accessIfPublished?.adminDescription) return `공개 설정을 저장합니다. ${accessIfPublished.adminDescription}`;
+    return '공개 설정을 저장합니다. 하객은 설정된 공개 기간에 링크를 열 수 있습니다.';
+  }
+  if (access?.isPublic) return '저장 즉시 하객이 보는 청첩장에 반영됩니다.';
+  if (access?.adminDescription) return `내용을 저장합니다. ${access.adminDescription}`;
+
+  return '내용을 저장합니다. 하객 링크의 공개 상태는 이벤트 목록에서 확인해 주세요.';
 }
 
 export function buildWizardReviewFacts(config: InvitationPageSeed, imagesValid: boolean) {

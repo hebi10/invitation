@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 
 import { EVENT_TYPE_KEYS } from '../src/lib/eventTypes.ts';
+import { getInvitationPublicAccessState } from '../src/lib/invitationPublicAccess.ts';
 import {
   createInitialWizardConfig,
   getWizardSteps,
@@ -22,6 +23,7 @@ import {
   resolveWizardSelectionInteraction,
   resolveWizardSaveStatus,
   resolveWizardPublishedState,
+  getWizardPublicationSaveMessage,
   buildWizardReviewFacts,
 } from '../src/app/page-wizard/pageWizardWorkspaceState.ts';
 import { getSelectedTemplateLabel } from '../src/app/page-wizard/pageWizardTemplateSelection.ts';
@@ -51,6 +53,10 @@ for (const eventType of EVENT_TYPE_KEYS) {
         sections.length > 0 && sections.length <= (eventType === 'wedding' ? 9 : 7),
         `${eventType} 작업 영역 개수가 허용 범위 안이어야 합니다.`
       );
+      assert.equal(sections.filter(section => section.id === 'intro').length, 1,
+        `${eventType} 인트로 선택은 독립 작업 영역이어야 합니다.`);
+      assert.equal(findWizardSectionByStepKey(sections, 'intro')?.steps.length, 1,
+        `${eventType} 인트로 선택은 음악이나 사진 단계와 분리해야 합니다.`);
       assert.equal(
         sections.every((section) => section.steps.length > 0),
         true,
@@ -68,21 +74,22 @@ const weddingSteps = getWizardSteps({
 const weddingSections = buildWizardSections(weddingSteps);
 const customerSteps = getWizardSteps({ eventType: 'wedding', includeSetupSteps: false });
 const customerSections = buildWizardSections(customerSteps, 'wedding');
-assert.deepEqual(customerSections.map(section => section.id), ['basic', 'schedule', 'greeting', 'media', 'intro', 'music', 'accounts', 'review'], '고객이 사진, 음악, 계좌를 각각 찾을 수 있어야 합니다.');
+assert.deepEqual(customerSections.map(section => section.id), ['basic', 'schedule', 'greeting', 'media', 'intro', 'music', 'accounts', 'review'], '고객이 사진, 인트로, 음악, 계좌를 각각 찾을 수 있어야 합니다.');
 assert.equal(customerSections.some(section => section.id === 'setup'), false,
   '고객 편집에는 시작 설정이 없어야 합니다.');
 assert.equal(customerSections[0].id, 'basic', '고객은 이름을 편집할 기본 정보부터 시작합니다.');
 assert.equal(getAdjacentWizardSection(customerSections, 'media', 1)?.id, 'intro',
-  '사진 다음에는 고객이 GIF 인트로를 선택하거나 건너뛸 수 있어야 합니다.');
+  '사진 저장 후에는 독립 인트로 선택 단계로 이동합니다.');
+assert.equal(getAdjacentWizardSection(customerSections, 'intro', -1)?.id, 'media');
 assert.equal(getAdjacentWizardSection(customerSections, 'intro', 1)?.id, 'review',
-  '인트로 선택 다음에는 선택 설정을 건너뛰고 최종 확인으로 이동합니다.');
+  '인트로 확인 후에는 음악과 계좌를 거치지 않고 최종 확인으로 이동합니다.');
 assert.equal(getAdjacentWizardSection(customerSections, 'review', -1)?.id, 'intro',
-  '최종 확인의 이전 버튼은 신규 인트로 선택 단계로 돌아갑니다.');
+  '최종 확인의 이전 버튼은 인트로 단계로 돌아갑니다.');
 for (const optionalSection of ['music', 'accounts'] as const) {
   assert.equal(getAdjacentWizardSection(customerSections, optionalSection, 1)?.id, 'review',
     '선택 설정 저장 후에는 최종 확인으로 이동합니다.');
   assert.equal(getAdjacentWizardSection(customerSections, optionalSection, -1)?.id, 'intro',
-    '선택 설정 이전 버튼은 인트로 선택 단계로 돌아갑니다.');
+    '선택 설정 이전 버튼은 기본 작성 흐름으로 돌아갑니다.');
 }
 assert.deepEqual(customerSections.flatMap(section => section.steps.map(step => step.key)),
   customerSteps.map(step => step.key), '시작 설정을 숨겨도 고객 편집 단계가 누락되면 안 됩니다.');
@@ -315,6 +322,30 @@ assert.equal(resolveWizardPublishedState(true), true, '공개된 페이지의 �
 assert.equal(resolveWizardPublishedState(false), false, '새 초안의 일반 저장은 비공개를 유지합니다.');
 assert.equal(resolveWizardPublishedState(true, false), false, '최종 비공개 선택은 적용합니다.');
 assert.equal(resolveWizardPublishedState(false, true), true, '최종 공개 선택은 적용합니다.');
+
+const publishWindow = {
+  published: true,
+  displayPeriodEnabled: true,
+  displayPeriodStart: new Date('2027-05-06T05:00:00Z'),
+  displayPeriodEnd: new Date('2027-05-07T05:00:00Z'),
+};
+const scheduledAccess = getInvitationPublicAccessState(publishWindow, new Date('2027-05-06T00:00:00Z'));
+const visibleAccess = getInvitationPublicAccessState(publishWindow, new Date('2027-05-06T06:00:00Z'));
+const expiredAccess = getInvitationPublicAccessState(publishWindow, new Date('2027-05-08T00:00:00Z'));
+assert.match(
+  scheduledAccess.adminDescription ?? '',
+  /2027년\s+5월\s+6일\s+(?:오후|PM)\s+2:00부터 공개됩니다/,
+  '공개 시작 시각은 실행 환경의 오전·오후 표기와 관계없이 한국 시간입니다.'
+);
+assert.match(getWizardPublicationSaveMessage(false), /비공개 초안/);
+assert.match(getWizardPublicationSaveMessage(true, visibleAccess), /저장 즉시.*하객/);
+assert.ok(getWizardPublicationSaveMessage(true, scheduledAccess).includes(scheduledAccess.adminDescription!));
+assert.ok(getWizardPublicationSaveMessage(true, expiredAccess).includes(expiredAccess.adminDescription!));
+assert.match(getWizardPublicationSaveMessage(true, visibleAccess, false), /하객이 링크를 열 수 없습니다/);
+assert.match(getWizardPublicationSaveMessage(false, undefined, true), /공개 기간/);
+assert.ok(getWizardPublicationSaveMessage(false, undefined, true, scheduledAccess).includes(scheduledAccess.adminDescription!));
+assert.match(getWizardPublicationSaveMessage(false, undefined, true, visibleAccess), /저장 즉시 공개/);
+assert.doesNotMatch(getWizardPublicationSaveMessage(true), /즉시/);
 const persistenceSource = readFileSync(
   new URL('../src/app/page-wizard/hooks/useWizardPersistence.ts', import.meta.url), 'utf8'
 );

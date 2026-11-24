@@ -47,13 +47,22 @@ PACKAGE = 'host.exp.exponent'
 PORT = 8092
 TOOLS_BUTTON_DISABLED = False
 VERIFIED = {'environment': 'Android API 35 / Expo Go 55.0.7',
-            'uses_live_account': False, 'api_fixture': 'loopback music-library connectivity only',
+            'uses_live_account': False, 'api_fixture': 'loopback music-library connectivity and static intro poster',
             'captures': [], 'status': 'running'}
 
 
 class CaptureApiHandler(BaseHTTPRequestHandler):
-    # 연결 확인에만 응답한다. 인증·저장·결제 API는 제공하지 않는다.
+    # 연결 확인과 공개 정지 포스터만 제공한다. 인증·저장·결제 API는 제공하지 않는다.
     def do_GET(self):
+        poster_match = re.fullmatch(r'/assets/invitation-intro/(poster|intro-(?:0[2-9]|1[0-2]))\.webp', self.path)
+        if poster_match:
+            payload = (ROOT / 'public/assets/invitation-intro' / f'{poster_match.group(1)}.webp').read_bytes()
+            self.send_response(200)
+            self.send_header('Content-Type', 'image/webp')
+            self.send_header('Content-Length', str(len(payload)))
+            self.end_headers()
+            self.wfile.write(payload)
+            return
         if self.path == '/api/mobile/client-editor/music-library':
             payload = b'{"categories": []}'
             self.send_response(200)
@@ -308,11 +317,11 @@ def capture_responsive_views():
         ]),
         (430, [
             ('settings', 'settings', ['설정', '화면 설정']),
-            ('home', 'design-check-home', ['Invitation', 'MODERN WEDDING EDITORIAL']),
+            ('home', 'design-check-home', ['Invitation', '신민제·김현지 공개 샘플']),
             ('renew', 'design-check-modals?kind=renew-pending', ['이전 결제 복구', '이전 결제 이어서 처리']),
         ]),
         (600, [
-            ('home', 'design-check-home', ['Invitation', 'MODERN WEDDING EDITORIAL']),
+            ('home', 'design-check-home', ['Invitation', '신민제·김현지 공개 샘플']),
             ('account-list', 'design-check-accounts', ['계정별 전체 청첩장', '12개']),
             ('editor', 'design-check', ['청첩장 편집', '기본 정보']),
             ('checkout', 'design-check-modals?kind=payment', ['Google Play 결제', '결제 예정 금액']),
@@ -320,7 +329,7 @@ def capture_responsive_views():
         (840, [
             ('create', 'create', ['청첩장 만들기', '5,000원']),
             ('account-list', 'design-check-accounts', ['계정별 전체 청첩장', '12개']),
-            ('home', 'design-check-home', ['Invitation', 'MODERN WEDDING EDITORIAL']),
+            ('home', 'design-check-home', ['Invitation', '신민제·김현지 공개 샘플']),
             ('preview', 'design-check-modals?kind=preview', ['청첩장 미리보기', '디자인 샘플']),
         ]),
     ]
@@ -424,7 +433,7 @@ def main():
             adb('shell', 'input', 'keyevent', 'KEYCODE_WAKEUP')
             adb('shell', 'wm', 'dismiss-keyguard')
             adb('shell', 'settings', 'put', 'secure', 'show_ime_with_hard_keyboard', '1')
-            wait_screen('my-invitations', '', ['홈', 'MODERN WEDDING EDITORIAL'])
+            wait_screen('my-invitations', '', ['홈', '신민제·김현지 공개 샘플'])
             wait_screen('login', 'login', ['기존 청첩장 연결', '기기 연동 안내'])
             wait_screen('create', 'create', ['만들기', '고객 계정 로그인'])
             success_tree = wait_screen('create-success-fixture', 'design-check-create-success',
@@ -519,18 +528,21 @@ def main():
             if intro_toggle is None or not tap(intro_toggle):
                 raise RuntimeError('intro disclosure: 인트로 GIF 펼침 버튼을 찾거나 누르지 못했습니다.')
             wait_screen('editor-intro', 'design-check?step=intro',
-                        ['인트로 GIF (선택)', '사용 안 함'], timeout=45, launch=False)
-            for preset_suffix, preset_label in [
-                ('01', '미니멀 라인'),
-                ('06', '페이지 넘김'),
-                ('10', '신랑신부 손잡기'),
+                        ['인트로 GIF', '사용 안 함'], timeout=45, launch=False)
+            for intro_style, intro_label in [
+                ('light', '타이포그래피형'),
+                ('cinema', '웨딩 화보형'),
+                ('envelope', '편지형 초대장'),
             ]:
                 wait_screen(
-                    f'editor-intro-{preset_suffix}-selected',
-                    f'design-check?step=intro-preset-{preset_suffix}',
-                    ['인트로 GIF (선택)', f'저장된 설정: {preset_label}'],
+                    f'editor-intro-{intro_style}-selected',
+                    f'design-check?step=intro-{intro_style}',
+                    ['인트로 GIF (선택)', f'저장된 설정: 기존 연출: {intro_label}'],
                     timeout=60,
                 )
+            for choice, label in [('intro-01', '미니멀 라인'), ('intro-06', '페이지 넘김'), ('intro-10', '신랑신부 손잡기'), ('none', '사용 안 함')]:
+                wait_screen(f'editor-intro-{choice}-saved', f'design-check?step=intro-{choice}',
+                            ['인트로 GIF (선택)', f'저장된 설정: {label}'], timeout=60)
             for name, kind, expected in [
                 ('modal-payment', 'payment', ['Google Play 결제', '결제 예정 금액']),
                 ('modal-payment-pending', 'payment-pending', ['Google Play 결제', '이전 결제 이어서 처리']),

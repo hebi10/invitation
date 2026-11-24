@@ -6,9 +6,9 @@ import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { QueryClient } from '@tanstack/react-query';
 import { appQueryKeys, FIFTEEN_MINUTES_MS } from '../src/lib/appQuery.ts';
-import { parseInvitationIntroChoice, type InvitationIntroChoice } from '../src/lib/invitationIntroCatalog.ts';
 import * as customerWorkspace from '../src/lib/customerInvitationWorkspace.ts';
 import * as adminWizardNavigation from '../src/lib/adminWizardNavigation.ts';
+import { parseInvitationIntroChoice, type InvitationIntroChoice } from '../src/lib/invitationIntroCatalog.ts';
 
 // Execute the real persistence callback against TanStack's cache: no Firebase requests.
 const wizardSource = ts.createSourceFile('PageWizardClient.tsx',
@@ -28,16 +28,15 @@ client.setQueryData(otherKey, 'other invitation');
 const emitted = ts.transpileModule(`const onPersisted = ${callback.getText(wizardSource)}; onPersisted;`, {
   compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.CommonJS },
 }).outputText;
-let savedIntroChoice: InvitationIntroChoice | null = null;
+let savedIntroPresetId: InvitationIntroChoice | null = null;
 const onPersisted = runInNewContext(emitted, {
   queryClient: client, appQueryKeys, authUser: { uid: 'customer' }, published: false,
   defaultTheme: 'simple', setPersistedPublished() {}, setHasUnsavedChanges() {},
-  parseInvitationIntroChoice,
-  setSavedIntroPresetId(value: InvitationIntroChoice | null) { savedIntroChoice = value; },
+  parseInvitationIntroChoice, setSavedIntroPresetId(value: InvitationIntroChoice | null) { savedIntroPresetId = value; },
   normalizeInvitationProductTier: (value: unknown) => value, resolveInvitationFeatures: () => ({}),
 });
 await onPersisted({ slug: 'sample', config: { introPresetId: 'intro-02' }, version: 2, published: false });
-assert.equal(savedIntroChoice, 'intro-02', 'Completing a save must synchronize the verified GIF choice');
+assert.equal(savedIntroPresetId, 'intro-02', 'The saved intro choice must reflect the persisted config');
 let fetched = false;
 const refreshed = await client.fetchQuery({ queryKey: resultKey, staleTime: FIFTEEN_MINUTES_MS,
   queryFn: async () => { fetched = true; return 'latest saved content'; } });
@@ -49,6 +48,11 @@ client.clear();
 // Render the real result component with a local ready state and authentication fixture.
 let admin = false;
 const publicAccess = { current: undefined as unknown };
+let publicationReview: {
+  status: 'pending' | 'stale';
+  requestedContentVersion: number;
+  requestedAt: string;
+} | undefined;
 const config = { displayName: '우리의 초대장', eventType: 'wedding', couple: { groom: { name: '신랑' }, bride: { name: '신부' } } };
 const componentExports: { default?: React.ComponentType<{ slug: string; experience?: boolean; returnTo?: string }> } = {};
 const resultSource = ts.transpileModule(readFileSync('src/app/page-wizard/PageWizardResultClient.tsx', 'utf8'), {
@@ -58,7 +62,7 @@ runInNewContext(resultSource, { exports: componentExports, React, require(name: 
   if (name === 'react') return React;
   if (name === 'next/link') return { __esModule: true, default: ({ children, ...props }: React.PropsWithChildren<{ href: string }>) => React.createElement('a', props, children) };
   if (name === '@tanstack/react-query') return { useQuery: () => ({
-    data: { status: 'ready', configState: { config, published: false, defaultTheme: 'simple' }, publicAccess: publicAccess.current },
+    data: { status: 'ready', configState: { config, published: false, defaultTheme: 'simple', publicationReview }, publicAccess: publicAccess.current },
     isLoading: false, isFetching: false, isStale: false,
   }) };
   if (name === '@/contexts') return { useAdmin: () => ({ isLoggedIn: true, isAdminLoggedIn: admin, isAdminLoading: false, authUser: { uid: 'customer', emailVerified: true } }) };
@@ -89,16 +93,41 @@ assert.doesNotMatch(customer, /<details[^>]*\bopen(?:=|\s|>)/,
 assert.match(customer, /저장한 내용 자세히 보기/);
 assert.match(customer, /href="\/my-invitations\/preview\/sample\/simple"/,
   'Customers must be able to inspect a private saved draft without publishing it');
+assert.doesNotMatch(customer, /관리자 검토 대기/,
+  'An ordinary draft save must not appear as a review request');
+
+publicationReview = {
+  status: 'pending',
+  requestedContentVersion: 2,
+  requestedAt: '2026-11-18T04:00:00.000Z',
+};
+const pendingCustomer = renderToStaticMarkup(React.createElement(componentExports.default, { slug: 'sample' }));
+assert.match(pendingCustomer, /관리자 검토 대기/,
+  'A persisted request must be visible when the customer opens the saved result directly');
+assert.match(pendingCustomer, /<button[^>]*disabled=""[^>]*>하객용 링크 복사<\/button>/,
+  'Requesting review must leave the guest link unavailable until publication');
+
+publicationReview = { ...publicationReview, status: 'stale' };
+const staleCustomer = renderToStaticMarkup(React.createElement(componentExports.default, { slug: 'sample' }));
+assert.match(staleCustomer, /검토 요청을 다시 보내/,
+  'A request for older content must tell the customer how to request review for the current content');
+assert.doesNotMatch(staleCustomer, /관리자 검토 대기/);
+publicationReview = undefined;
+
 publicAccess.current = { isPublic: false, reason: 'expired', adminLabel: '노출 종료', adminDescription: '공개 기간이 종료되었습니다.' };
 const expiredCustomer = renderToStaticMarkup(React.createElement(componentExports.default, { slug: 'sample' }));
 assert.match(expiredCustomer, /노출 종료 · 마지막 저장 방금/,
   'The saved result must show actual access state rather than publication setting');
-assert.match(expiredCustomer, /하객이 열 수 없습니다/, 'An expired invitation must not imply that copying publishes it');
+assert.match(expiredCustomer, /하객이 링크를 열 수 없습니다/, 'An expired invitation must not imply that copying publishes it');
+assert.match(expiredCustomer, /<button[^>]*disabled=""[^>]*>하객용 링크 복사<\/button>/,
+  'The completion screen must disable copying an expired invitation');
 admin = true;
 const administrator = renderToStaticMarkup(React.createElement(componentExports.default, { slug: 'sample' }));
 assert.match(administrator, /href="\/admin"/, 'Administrators return to their own workspace');
 assert.match(administrator, /실제 페이지 URL/,
   'Administrators retain their page routing details');
+assert.match(administrator, /<a[^>]*href="\/sample\/simple"[^>]*>관리자 미리보기<\/a>/,
+  'An administrator can preview the invitation even while the guest link is unavailable');
 assert.match(administrator, /<details[^>]*\bopen(?:=|\s|>)/,
   'Administrators retain an expanded saved-content review');
 const adminReturnTo = '/admin?pageQ=test&page=3&pageSort=name&event=sample';

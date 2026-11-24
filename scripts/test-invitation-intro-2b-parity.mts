@@ -89,26 +89,24 @@ const pcSettings = readFileSync('src/app/page-wizard/steps/IntroSettings.tsx', '
 const pcPreview = readFileSync('src/app/page-wizard/WeddingWizardPreview.tsx', 'utf8');
 const pcPreviewChild = readFileSync('src/app/wizard-preview/WizardPreviewClient.tsx', 'utf8');
 
-assert.match(androidSettings, /listAvailableInvitationIntroPresets\(eventType\)/,
-  'Android must offer only event-compatible GIFs');
-assert.match(androidSettings, /visiblePresets\.map\(\(preset\)/,
-  'Android must render the filtered GIF catalog');
-assert.doesNotMatch(androidSettings, /WEDDING_INTRO_OPTIONS\.map/,
-  'Legacy intro choices must not be duplicated as new GIF options');
-assert.match(androidSettings, /WEDDING_INTRO_OPTIONS\.find/,
-  'Preserve the label of an already saved legacy intro');
+assert.match(androidSettings, /listAvailableInvitationIntroPresets\(eventType\)/);
+assert.match(androidSettings, /visiblePresets\.map\(\(preset\)/);
+assert.doesNotMatch(androidSettings, /WEDDING_INTRO_OPTIONS\.map/);
+assert.match(androidSettings, /WEDDING_INTRO_OPTIONS\.find/);
 assert.match(androidSettings, /onSetIntroPresetId\(preset\.id\)/);
 assert.match(androidSettings, /onPreviewIntroPreset\(preset\.id\)/);
+assert.match(androidSettings, /selectedChoice === preset\.id/);
 assert.match(androidSettings, /savedIntroPresetId === preset\.id/);
-assert.match(androidScreen, /buildInvitationIntroSamplePreviewUrl\(apiBaseUrl, presetId,/,
-  'New GIF previews must use the verified preset ID');
+assert.match(androidSettings, /기존 인트로/);
+assert.match(androidScreen, /buildInvitationIntroSamplePreviewUrl\(apiBaseUrl, presetId,/);
 assert.match(androidScreen, /WebBrowser\.openBrowserAsync\(url,/);
-assert.match(androidScreen, /onSetIntroPresetId=\{invitationForm\.setIntroPresetId\}/,
-  'Android must persist the selected new GIF through the editor form');
+assert.match(androidScreen, /onSetIntroPresetId=\{invitationForm\.setIntroPresetId\}/);
 assert.match(androidScreen, /invitationForm\.persistForm\(/);
 assert.match(androidFormHook, /if \(form\.introStyle === introStyle\) return/);
 assert.match(androidFormHook, /markFormDirty\(\)/);
 assert.match(androidFormHook, /introStyle \}\)/);
+assert.match(androidFormHook, /if \(form\.introPresetId === introPresetId\) return/);
+assert.match(androidFormHook, /introPresetId \}\)/);
 assert.match(androidFormHook, /buildConfigFromForm\(\{ dashboard, form \}\)/);
 assert.match(androidFormHook, /expectedVersion: formVersionRef\.current/);
 assert.match(androidOps, /config: trustedConfig/);
@@ -124,4 +122,4 @@ assert.match(pcPreviewChild, /setIntroRun\(run => run \+ 1\)/);
 assert.match(pcPreviewChild, /preview/);
 assert.match(pcPreviewChild, /connectToCover/);
 
-console.log('Invitation 2-B: PC↔Android 16 save/read roundtrips, shared preview keys, sample-link privacy and UI integration contracts passed');
+console.log('Invitation 2-B: PC↔Android 16 save/read roundtrips, shared legacy preview privacy and GIF selector integration contracts passed');

@@ -97,6 +97,15 @@ async function buildMobileDraftCreationResponse(
     issuedVia: 'purchase' | 'draft-create' | 'link-token';
   }
 ) {
+  const ownedEvent = await resolveStoredEventBySlug(pageSlug);
+  if (!options.ownerUid || !ownedEvent ||
+      ownedEvent.summary.ownerUid !== options.ownerUid ||
+      (options.eventId && ownedEvent.summary.eventId !== options.eventId)) {
+    throw Object.assign(new Error('The purchased invitation ownership requires review.'), {
+      code: 'billing-fulfillment-requires-review',
+    });
+  }
+
   const [config, displayPeriod, ticketCount] = await Promise.all([
     getServerEditableInvitationPageConfig(pageSlug),
     getServerInvitationPageDisplayPeriodSummary(pageSlug),
@@ -160,12 +169,19 @@ export async function fulfillServerMobilePageCreationPurchase(
   const verifiedTransaction = await verifyGooglePlayOneTimePurchase(purchase, { allowConsumed: true });
   purchase = { ...purchase, transactionId: verifiedTransaction.transactionIdentifier };
 
-  if (verifiedTransaction.alreadyConsumed) {
+  // Older SKUs may recover a completed grant, but cannot create a new premium page.
+  const isLegacyCreationProduct =
+    purchase.productId !== MOBILE_BILLING_PAGE_CREATION_PRODUCTS.premium;
+  if (verifiedTransaction.alreadyConsumed || isLegacyCreationProduct) {
     const previous = await getBillingFulfillmentRecord(purchase.transactionId);
     if (!previous || previous.status !== 'fulfilled' || previous.kind !== 'pageCreation' ||
         previous.provider !== 'googleplay' || previous.appUserId !== purchase.appUserId ||
         previous.productId !== purchase.productId || !previous.createdPageSlug) {
-      throw Object.assign(new Error('This consumed purchase requires manual reconciliation.'), {
+      throw Object.assign(new Error(
+        verifiedTransaction.alreadyConsumed
+          ? 'This consumed purchase requires manual reconciliation.'
+          : 'Legacy page creation purchases require manual reconciliation.'
+      ), {
         code: 'billing-fulfillment-requires-review',
       });
     }
@@ -175,7 +191,9 @@ export async function fulfillServerMobilePageCreationPurchase(
       deviceId: input.deviceId,
       issuedVia: 'purchase',
     });
-    return { ...response, billingPurchaseConsumed: true };
+    return verifiedTransaction.alreadyConsumed
+      ? { ...response, billingPurchaseConsumed: true }
+      : response;
   }
 
   const lock = await acquireBillingFulfillmentLock(purchase, definition);
