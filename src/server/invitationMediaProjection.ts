@@ -55,28 +55,68 @@ export function getInvitationMediaFileName(value: string, bucketName: string, sl
   return isInvitationMediaFile(file) ? file : null;
 }
 
+/** Traverse exactly the same persisted image fields used by the public gateway.
+ * Only clone branches that change. Never mutate the original Firestore snapshot.
+ */
+export function mapStoredInvitationImageReferences(raw: unknown, transform: (value: string) => string): unknown {
+  const root = record(raw);
+  if (!root) return raw;
+  const nested = record(root.content);
+  const content = nested ?? root;
+
+  function scalar(value: unknown) {
+    return typeof value === 'string' && value.trim() ? transform(value) : value;
+  }
+  function mapFields(input: Record<string, unknown>, single: readonly string[], arrays: readonly string[]) {
+    let next = input;
+    function set(key: string, value: unknown) {
+      if (input[key] !== value) {
+        if (next === input) next = { ...input };
+        next[key] = value;
+      }
+    }
+    for (const field of single) if (Object.hasOwn(input, field)) set(field, scalar(input[field]));
+    for (const field of arrays) {
+      const values = input[field];
+      if (Array.isArray(values)) {
+        const mapped = values.map(scalar);
+        if (mapped.some((value, index) => value !== values[index])) set(field, mapped);
+      }
+    }
+    return next;
+  }
+
+  let result = content;
+  const metadata = record(content.metadata);
+  const images = record(metadata?.images);
+  if (metadata && images) {
+    const next = mapFields(images, IMAGE_FIELDS, []);
+    if (next !== images) result = { ...result, metadata: { ...metadata, images: next } };
+  }
+  const pageData = record(content.pageData);
+  if (pageData) {
+    let next = mapFields(pageData, DATA_SINGLE_FIELDS, DATA_ARRAY_FIELDS);
+    const overrides = record(pageData.themeOverrides);
+    if (overrides) {
+      const mapped = Object.entries(overrides).map(([theme, value]) => {
+        const data = record(value);
+        return [theme, data ? mapFields(data, DATA_SINGLE_FIELDS, DATA_ARRAY_FIELDS) : value] as const;
+      });
+      if (mapped.some(([theme, value]) => value !== overrides[theme])) next = { ...next, themeOverrides: Object.fromEntries(mapped) };
+    }
+    if (next !== pageData) result = { ...result, pageData: next };
+  }
+  if (result === content) return raw;
+  return nested ? { ...root, content: result } : result;
+}
+
 /** Only image-bearing fields in persisted content are eligible for the public gateway. */
 export function collectPublicInvitationImageReferences(raw: unknown): string[] {
-  const root = record(raw);
-  if (!root) return [];
-  const content = record(root.content) ?? root;
-  const images = record(record(content.metadata)?.images);
-  const pageData = record(content.pageData);
   const references: string[] = [];
-  function add(value: unknown) {
-    if (typeof value === 'string' && value.trim()) references.push(value);
-  }
-  for (const field of IMAGE_FIELDS) add(images?.[field]);
-  function readData(data: Record<string, unknown> | null) {
-    for (const field of DATA_SINGLE_FIELDS) add(data?.[field]);
-    for (const field of DATA_ARRAY_FIELDS) {
-      const values = data?.[field];
-      if (Array.isArray(values)) values.forEach(add);
-    }
-  }
-  readData(pageData);
-  const overrides = record(pageData?.themeOverrides);
-  if (overrides) Object.values(overrides).forEach(value => readData(record(value)));
+  mapStoredInvitationImageReferences(raw, value => {
+    references.push(value);
+    return value;
+  });
   return references;
 }
 

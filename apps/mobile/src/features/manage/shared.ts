@@ -288,7 +288,8 @@ export function isTemporaryImagePreviewUrl(value: string) {
     normalized.startsWith('content://') ||
     normalized.startsWith('ph://') ||
     normalized.startsWith('assets-library://') ||
-    normalized.startsWith('blob:')
+    normalized.startsWith('blob:') ||
+    normalized.startsWith('data:image/')
   );
 }
 

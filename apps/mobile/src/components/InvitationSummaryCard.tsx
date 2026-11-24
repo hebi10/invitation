@@ -5,6 +5,8 @@ import { StyleSheet, View } from 'react-native';
 import type { AppPalette } from '../constants/theme';
 import { themePreviewImages } from '../constants/themePreviewImages';
 import { AppText } from './AppText';
+import { ProtectedEditorImage } from './ProtectedEditorImage';
+import { isStableNativeMediaReference } from '../lib/nativeEditorMedia';
 
 export type InvitationSummaryTone = 'success' | 'notice' | 'neutral';
 
@@ -40,8 +42,9 @@ export function InvitationSummaryCard({
   useEffect(() => setImageFailed(false), [imageUrl]);
 
   const validImageUrl = imageUrl?.trim();
+  const protectedCover = Boolean(validImageUrl && isStableNativeMediaReference(validImageUrl));
   const showsActualCover = Boolean(
-    validImageUrl && /^https?:\/\//i.test(validImageUrl) && !imageFailed
+    validImageUrl && !protectedCover && /^https?:\/\//i.test(validImageUrl) && !imageFailed
   );
   const previewImage = themePreviewImages[themeKey] ?? themePreviewImages.simple;
   const statusBackgroundColor =
@@ -63,14 +66,16 @@ export function InvitationSummaryCard({
       ]}
     >
       <View style={[styles.overview, compact ? styles.overviewCompact : null]}>
-        <Image
+        {selected && protectedCover && validImageUrl ? <ProtectedEditorImage uri={validImageUrl}
+          alt={`${name} 실제 대표 사진`} style={[styles.cover, compact ? styles.coverCompact : null, { backgroundColor: palette.surfaceMuted }]} />
+        : <Image
           source={showsActualCover ? { uri: validImageUrl! } : previewImage}
           style={[styles.cover, compact ? styles.coverCompact : null, { backgroundColor: palette.surfaceMuted }]}
           contentFit="cover"
           contentPosition="top"
           alt={showsActualCover ? `${name} 실제 대표 사진` : `${name} 디자인 미리보기`}
           onError={() => setImageFailed(true)}
-        />
+        />}
         <View style={[styles.details, compact ? styles.detailsCompact : null]}>
           <View style={styles.headingRow}>
             <AppText variant="cardTitle" style={styles.name}>{name}</AppText>
