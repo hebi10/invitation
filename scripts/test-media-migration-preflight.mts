@@ -146,7 +146,7 @@ const modernBefore = JSON.stringify(modernContent);
 const rehearsal = buildMediaMigrationPreflight(modernFixture);
 assert.equal(rehearsal.revocationAllowed, false);
 assert.deepEqual(rehearsal.referenceRehearsal, {
-  status: 'reversible', sourceVersion: 7, changedReferences: 5,
+  status: 'reversible', sourceVersion: 7, eventVersion: 7, changedReferences: 5,
   distinctChangedFiles: 1, remainingLegacyReferences: 0, rollbackMatches: true, reason: null,
 });
 assert.equal(JSON.stringify(modernContent), modernBefore);
@@ -162,7 +162,9 @@ assert.equal(projected.content.pageData.greetingMessage, modernContent.content.p
 assert.deepEqual(projected.content.pageData.galleryImages, ['/api/public/media/test-page/photo.png/', stable, '/api/public/media/test-page/photo.png/']);
 assert.equal(collectPublicInvitationImageReferences(projected).length, collectPublicInvitationImageReferences(modernContent).length);
 assert.equal(buildMediaMigrationPreflight({ ...modernFixture, content: projected }).referenceRehearsal.status, 'no-change');
-assert.equal(buildMediaMigrationPreflight({ ...modernFixture, summaryVersion: 8 }).referenceRehearsal.reason, 'snapshot-version-mismatch');
+assert.equal(buildMediaMigrationPreflight({ ...modernFixture, summaryVersion: 8 }).referenceRehearsal.status, 'reversible', 'Content and event versions advance independently');
+assert.equal(buildMediaMigrationPreflight({ ...modernFixture, summaryVersion: null }).referenceRehearsal.reason, 'snapshot-version-mismatch');
+assert.equal(buildMediaMigrationPreflight({ ...modernFixture, snapshotChanged: true }).referenceRehearsal.reason, 'snapshot-version-mismatch');
 assert.equal(buildMediaMigrationPreflight({ ...modernFixture, content: { ...modernContent, schemaVersion: 2 } }).referenceRehearsal.reason, 'unsupported-snapshot');
 assert.equal(buildMediaMigrationPreflight({ ...modernFixture, memory: { hero: legacy } }).referenceRehearsal.reason, 'inventory-blocked');
 assert.equal(buildMediaMigrationPreflight({ ...modernFixture, wedding: { ...modernFixture.wedding, complete: false } }).referenceRehearsal.reason, 'inventory-blocked');
@@ -175,3 +177,27 @@ const unknown = { ...modernContent, privateNote: legacy };
 assert.equal(buildMediaMigrationPreflight({ ...modernFixture, content: unknown }).referenceRehearsal.reason, 'inventory-blocked');
 assert.equal(rehearseStoredMediaReferences({ slug: 'other', bucketName, summaryVersion: 7, raw: modernContent, inventoryBlocked: false }).reason, 'unsupported-snapshot');
 console.log('Versioned stored image reference conversion and exact rollback rehearsal passed');
+
+
+// A concurrent change during Storage inventory must invalidate the read-only result.
+const { normalizeEventSummaryRecord } = await import('../src/server/repositories/eventReadThroughDtos');
+const snapshotSummary = normalizeEventSummaryRecord('event-test', { eventId: 'event-test', slug, ownerUid: 'owner-fixture',
+  eventType: 'wedding', status: 'active', version: 12, published: false, visibility: { published: false } })!;
+let snapshotReads = 0;
+const snapshotDeps = {
+  bucketName, pilotSlug: slug,
+  readRecord: async () => ({ summary: { ...snapshotSummary, version: ++snapshotReads > 1 ? 13 : 12 },
+    content: modernContent, blocked: false, deleting: false }),
+  readMemory: async () => null,
+  list: async (prefix: string) => prefix.startsWith('wedding-images/') ? modernFixture.wedding : modernFixture.memoryImages,
+};
+const changedSnapshot = await getServerMediaMigrationPreflight(slug, snapshotDeps);
+assert.equal(snapshotReads, 2);
+assert.equal(changedSnapshot.referenceRehearsal.reason, 'snapshot-version-mismatch');
+const unchangedSnapshot = await getServerMediaMigrationPreflight(slug, {
+  ...snapshotDeps, readRecord: async () => ({ summary: snapshotSummary, content: modernContent, blocked: false, deleting: false }),
+});
+assert.equal(unchangedSnapshot.referenceRehearsal.status, 'reversible');
+assert.equal(unchangedSnapshot.referenceRehearsal.eventVersion, 12);
+assert.equal(unchangedSnapshot.referenceRehearsal.sourceVersion, 7);
+console.log('Independent metadata version and concurrent inventory read safeguards passed');

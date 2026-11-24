@@ -13,6 +13,7 @@ export type ReferenceRehearsalReason =
 export type ReferenceRehearsal = {
   status: 'blocked' | 'no-change' | 'reversible';
   sourceVersion: number | null;
+  eventVersion: number | null;
   changedReferences: number;
   distinctChangedFiles: number;
   remainingLegacyReferences: number;
@@ -34,19 +35,21 @@ export function isTemporaryStoredImageReference(value: string) {
  */
 export function rehearseStoredMediaReferences(input: {
   slug: string; bucketName: string; summaryVersion: number | null | undefined;
-  raw: unknown; inventoryBlocked: boolean;
+  raw: unknown; inventoryBlocked: boolean; snapshotChanged?: boolean;
 }): ReferenceRehearsal {
   const root = asRecord(input.raw);
   const content = asRecord(root?.content);
   const version = typeof root?.version === 'number' && Number.isSafeInteger(root.version) && root.version > 0 ? root.version : null;
+  const eventVersion = typeof input.summaryVersion === 'number' && Number.isSafeInteger(input.summaryVersion) && input.summaryVersion > 0 ? input.summaryVersion : null;
   const blocked = (reason: ReferenceRehearsalReason): ReferenceRehearsal => ({
-    status: 'blocked', sourceVersion: version, changedReferences: 0, distinctChangedFiles: 0,
+    status: 'blocked', sourceVersion: version, eventVersion, changedReferences: 0, distinctChangedFiles: 0,
     remainingLegacyReferences: 0, rollbackMatches: false, reason,
   });
   if (!root || !content || root.schemaVersion !== 1 || !input.bucketName || !isInvitationMediaSlug(input.slug) ||
       root.slug !== input.slug || content.slug !== input.slug || root.eventType !== 'wedding' ||
       (content.eventType != null && content.eventType !== 'wedding')) return blocked('unsupported-snapshot');
-  if (version == null || input.summaryVersion !== version) return blocked('snapshot-version-mismatch');
+  // Content and event metadata have independent counters. Only missing or changed snapshots block this rehearsal.
+  if (version == null || eventVersion == null || input.snapshotChanged) return blocked('snapshot-version-mismatch');
   if (input.inventoryBlocked) return blocked('inventory-blocked');
 
   const before = collectPublicInvitationImageReferences(input.raw);
@@ -74,6 +77,6 @@ export function rehearseStoredMediaReferences(input: {
     return file != null && value !== buildInvitationMediaGatewayUrl(input.slug, file);
   }).length;
   if (!rollbackMatches || remainingLegacyReferences) return blocked('roundtrip-mismatch');
-  return { status: changedReferences ? 'reversible' : 'no-change', sourceVersion: version, changedReferences,
+  return { status: changedReferences ? 'reversible' : 'no-change', sourceVersion: version, eventVersion, changedReferences,
     distinctChangedFiles: changedFiles.size, remainingLegacyReferences, rollbackMatches, reason: null };
 }

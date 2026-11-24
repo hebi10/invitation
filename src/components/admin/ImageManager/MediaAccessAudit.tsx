@@ -24,7 +24,7 @@ const blockerLabels: Record<string, string> = {
 
 const rehearsalReasonLabels: Record<string, string> = {
   'inventory-blocked': '누락·미호환 파일 또는 추억 페이지 등 선행 점검 필요',
-  'snapshot-version-mismatch': '저장 내용과 이벤트 버전 불일치',
+  'snapshot-version-mismatch': '저장 버전 미확인 또는 점검 중 내용 변경',
   'unsupported-snapshot': '지원 대상 저장 구조 아님',
   'temporary-image-reference': '저장된 임시 이미지 주소 발견',
   'roundtrip-mismatch': '원본 복원 검증 불일치',
@@ -85,7 +85,8 @@ export default function MediaAccessAudit({ slug, disabled }: { slug: string; dis
           <strong>이미지 참조 변환·복원 모의검증</strong>
           {preflight.referenceRehearsal.status === 'blocked' ? <p>검증 보류 · {rehearsalReasonLabels[preflight.referenceRehearsal.reason ?? ''] ?? '추가 확인 필요'}</p>
             : <p>{preflight.referenceRehearsal.status === 'no-change' ? '변환할 참조 없음' : '변환 및 복원 모의검증 성공'}
-              {' · '}저장 버전 {preflight.referenceRehearsal.sourceVersion}
+              {' · '}콘텐츠 버전 {preflight.referenceRehearsal.sourceVersion}
+              {preflight.referenceRehearsal.eventVersion != null ? ' · 이벤트 버전 ' + preflight.referenceRehearsal.eventVersion : ''}
               {' · '}변환 참조 {preflight.referenceRehearsal.changedReferences}개
               {' · '}대상 파일 {preflight.referenceRehearsal.distinctChangedFiles}개</p>}
           <p>실제 저장이나 토큰 폐기를 실행하지 않습니다.</p>

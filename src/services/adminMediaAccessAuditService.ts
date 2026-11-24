@@ -44,6 +44,7 @@ export interface MediaMigrationPreflight {
   referenceRehearsal?: {
     status: 'blocked' | 'no-change' | 'reversible';
     sourceVersion: number | null;
+    eventVersion?: number | null;
     changedReferences: number;
     distinctChangedFiles: number;
     remainingLegacyReferences: number;
