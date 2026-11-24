@@ -84,6 +84,7 @@ export default function DesignCheck() {
       openMusicDropdown={null} selectedMusicCategoryLabel="선택해 주세요" selectedMusicTrackLabel="먼저 카테고리를 선택해 주세요" availableMusicTracks={[]}
       uploadingImageKind={null} uploadProgress={null} isSearchingAddress={false}
       onUpdateField={(field, value) => setForm(current => ({ ...current, [field]: value }))}
+      onSetMapProviders={mapProviders => setForm(current => ({ ...current, mapProviders }))}
       onUpdatePersonField={(role, field, value) => setForm(current => ({ ...current, [role]: { ...current[role], [field]: value } }))}
       onUpdateParentField={(role, parent, field, value) => setForm(current => ({ ...current, [role]: { ...current[role], [parent]: { ...current[role][parent], [field]: value } } }))}
       onUploadImage={() => {}} onRemoveSingleImage={() => {}} onMoveGalleryImage={() => {}} onRemoveGalleryImage={() => {}}

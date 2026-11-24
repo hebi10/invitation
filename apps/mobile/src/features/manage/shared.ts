@@ -79,7 +79,7 @@ export type ManageFormState = WeddingDateTimeInputs & {
 };
 
 export type ManageStringFieldKey = {
-  [K in keyof ManageFormState]: ManageFormState[K] extends string ? K : never;
+  [K in keyof ManageFormState]-?: ManageFormState[K] extends string ? K : never;
 }[keyof ManageFormState];
 
 export type GuestbookSortKey = 'latest' | 'oldest' | 'author-asc' | 'author-desc';
