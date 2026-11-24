@@ -38,6 +38,7 @@ type SingleImageCardProps = {
   imageLibraryPageSlug?: string;
   libraryDisabled?: boolean;
   onLibrarySelect?: (url: string) => void;
+  resolveImageDisplayUrl?: (url: string) => string;
 };
 
 function SingleImageCard({
@@ -64,6 +65,7 @@ function SingleImageCard({
   imageLibraryPageSlug,
   libraryDisabled = false,
   onLibrarySelect,
+  resolveImageDisplayUrl = (url: string) => url,
 }: SingleImageCardProps) {
   const hasImage = Boolean(imageUrl);
   const effectiveImage = imageUrl || fallbackImage;
@@ -72,7 +74,8 @@ function SingleImageCard({
   const [presetSelection, setPresetSelection] = useState<{ previous: string; selected: string } | null>(null);
   const isPresetSelected = SHARE_PRESETS.some(preset => preset.url === imageUrl);
   const previousImage = presetSelection?.selected === imageUrl ? presetSelection.previous : '';
-  const previewImage = effectiveImage && failedUrl !== effectiveImage ? effectiveImage : '';
+  const displayImage = resolveImageDisplayUrl(effectiveImage);
+  const previewImage = displayImage && failedUrl !== displayImage ? displayImage : '';
 
   const cancelPreset = () => {
     onPresetSelect?.(previousImage);
@@ -139,17 +142,17 @@ function SingleImageCard({
       {isShare ? <div className={previewStyles.preview}>
         <p className={previewStyles.caption}>{uploadKind === 'kakaoCard' ? '카카오 공유 카드 예시' : '링크를 보냈을 때의 예시'}</p>
         <div className={previewStyles.card}>
-          {previewImage ? <img className={previewStyles.image} src={previewImage} alt={`${title} 실제 적용 이미지`} onError={() => setFailedUrl(effectiveImage)} />
+          {previewImage ? <img className={previewStyles.image} src={previewImage} alt={`${title} 실제 적용 이미지`} onError={() => setFailedUrl(displayImage)} />
             : <div className={previewStyles.empty}>{effectiveImage ? '이미지를 불러오지 못했습니다. 다시 업로드하거나 기본 이미지를 선택해 주세요.' : '대표 이미지를 등록하거나 아래 기본 이미지를 선택해 주세요.'}</div>}
           <div className={previewStyles.copy}><strong>{shareTitle || '초대합니다'}</strong><p>{shareDescription || '소중한 날 함께해 주세요.'}</p><span>초대장 링크</span></div>
           {uploadKind === 'kakaoCard' ? <div className={previewStyles.cardAction}>초대장 보기</div> : null}
         </div>
         <p className={previewStyles.caption}>{hasImage ? (SHARE_PRESETS.some(item => item.url === imageUrl) ? '선택한 기본 이미지 사용 중' : '등록한 이미지 사용 중') : fallbackImage ? '별도 이미지 미등록 · 아래 안내 순서에 따라 자동 적용 중' : '적용할 이미지가 없습니다.'}</p>
       </div> : <div className={imageStyles.coverPreview}>
-        {hasImage && !isBroken ? (
+        {hasImage && displayImage && !isBroken ? (
           <img
             className={imageStyles.coverImage}
-            src={imageUrl}
+            src={displayImage}
             alt={`${title} 미리보기`}
             decoding="async"
             onError={onImageError}
@@ -203,7 +206,10 @@ export default function ImagesStep({
   onDemoImageSelect,
   mode = 'all',
   imageLibraryPageSlug,
-}: ImagesStepProps & { mode?: 'all' | 'photos' | 'sharing'; imageLibraryPageSlug?: string }) {
+  resolveImageDisplayUrl = (url: string) => url,
+  protectedMediaLoading = false,
+  protectedMediaError = '',
+}: ImagesStepProps & { mode?: 'all' | 'photos' | 'sharing'; imageLibraryPageSlug?: string; resolveImageDisplayUrl?: (url: string) => string; protectedMediaLoading?: boolean; protectedMediaError?: string }) {
   const galleryImages = useMemo(
     () => formState.pageData?.galleryImages ?? [],
     [formState.pageData?.galleryImages]
@@ -211,6 +217,10 @@ export default function ImagesStep({
   const coverImage = previewFormState.metadata.images.wedding?.trim() ?? '';
   const socialPreviewImage = previewFormState.metadata.images.social?.trim() ?? '';
   const kakaoCardImage = previewFormState.metadata.images.kakaoCard?.trim() ?? '';
+  const displayedGalleryKey = JSON.stringify(galleryImages.map(resolveImageDisplayUrl));
+  const displayedCover = resolveImageDisplayUrl(coverImage);
+  const displayedSocial = resolveImageDisplayUrl(socialPreviewImage);
+  const displayedKakao = resolveImageDisplayUrl(kakaoCardImage);
   const isFirstBirthday = formState.eventType === 'first-birthday';
   const isGeneralEvent = formState.eventType === 'general-event';
   const isWedding = formState.eventType === 'wedding';
@@ -245,11 +255,11 @@ export default function ImagesStep({
       sharePreview: false,
       kakaoCard: false,
     });
-  }, [coverImage, kakaoCardImage, socialPreviewImage]);
+  }, [coverImage, kakaoCardImage, socialPreviewImage, displayedCover, displayedSocial, displayedKakao]);
 
   useEffect(() => {
     setBrokenGalleryIndexes({});
-  }, [galleryImages]);
+  }, [galleryImages, displayedGalleryKey]);
 
   const handleMoveSelectedGalleryImage = (direction: 'up' | 'down') => {
     const nextIndex =
@@ -280,6 +290,8 @@ export default function ImagesStep({
 
   return (
     <div className={`${styles.fieldGrid} ${imageStyles.imageStep}`}>
+      {protectedMediaLoading ? <p role="status">보호된 사진을 불러오고 있습니다.</p> : null}
+      {protectedMediaError ? <p role="alert">{protectedMediaError}</p> : null}
       {mode !== 'sharing' && experience && onDemoImageSelect ? (
         <DemoExperienceImagePicker
           selectedImage={coverImage}
@@ -287,6 +299,7 @@ export default function ImagesStep({
         />
       ) : null}
       {mode !== 'sharing' ? <SingleImageCard
+        resolveImageDisplayUrl={resolveImageDisplayUrl}
         title="대표 이미지"
         description={
           isGeneralEvent
@@ -402,10 +415,10 @@ export default function ImagesStep({
                   aria-label={`갤러리 이미지 ${index + 1} 선택`}
                   aria-pressed={selectedGalleryIndex === index}
                 >
-                  {imageUrl && !brokenGalleryIndexes[index] ? (
+                  {resolveImageDisplayUrl(imageUrl) && !brokenGalleryIndexes[index] ? (
                     <img
                       className={imageStyles.galleryImage}
-                      src={imageUrl}
+                      src={resolveImageDisplayUrl(imageUrl)}
                       alt=""
                       loading="lazy"
                       decoding="async"
@@ -454,10 +467,10 @@ export default function ImagesStep({
               <div className={styles.assetList}>
                 {galleryImages.map((imageUrl, index) => (
                   <article key={`gallery-${index}`} className={styles.assetItem}>
-                    {imageUrl && !brokenGalleryIndexes[index] ? (
+                    {resolveImageDisplayUrl(imageUrl) && !brokenGalleryIndexes[index] ? (
                       <img
                         className={styles.assetItemImage}
-                        src={imageUrl}
+                        src={resolveImageDisplayUrl(imageUrl)}
                         alt={`갤러리 ${index + 1}`}
                         loading="lazy"
                         decoding="async"
@@ -512,6 +525,7 @@ export default function ImagesStep({
       </section> : null}
 
       {mode !== 'photos' ? <SingleImageCard
+        resolveImageDisplayUrl={resolveImageDisplayUrl}
         title="공유 미리보기 이미지"
         description="카카오톡이나 SNS에 초대장 링크를 붙여넣었을 때 보이는 사진입니다."
         imageUrl={socialPreviewImage}
@@ -538,6 +552,7 @@ export default function ImagesStep({
       /> : null}
 
       {mode !== 'photos' ? <SingleImageCard
+        resolveImageDisplayUrl={resolveImageDisplayUrl}
         title="카카오 카드 이미지"
         description="청첩장의 카카오톡 공유 버튼을 눌렀을 때 보내는 카드 사진입니다."
         imageUrl={kakaoCardImage}
