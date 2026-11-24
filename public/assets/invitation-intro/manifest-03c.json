@@ -1,0 +1,464 @@
+{
+  "task": "INTRO-GIF-03-C",
+  "version": "2026-11-12",
+  "source": "INTRO-GIF-03-B-REFINE-v1",
+  "assetPolicy": "preview only; not in live app until INTRO-GIF-03-D",
+  "intro01_unchanged": true,
+  "frame_durations_ms": [
+    250,
+    250,
+    250,
+    250,
+    250,
+    250,
+    250,
+    250
+  ],
+  "frame_count": 8,
+  "duration_ms": 2000,
+  "loop": false,
+  "size_px": [
+    480,
+    600
+  ],
+  "posters": {},
+  "presets": {
+    "intro-02": {
+      "label": "페이드 타이포",
+      "group": "simple",
+      "supported_event_types": [
+        "wedding",
+        "first-birthday",
+        "birthday",
+        "opening",
+        "general-event"
+      ],
+      "files": {
+        "intro-02.gif": {
+          "size_bytes": 95538,
+          "sha256": "3717b9b5c3ea07291b5ee2abcc82357f4d3f7bf75dc01d98e0566d50bee5b0ce"
+        },
+        "intro-02.webp": {
+          "size_bytes": 10742,
+          "sha256": "ead18389c6afb33ab2c4cbe6bc2326ea967dfa6c64de892bc4a5c78c7fcbea3d"
+        },
+        "intro-02.png": {
+          "size_bytes": 134922,
+          "sha256": "ae8a7bc4ac32cec48599ea1b8545b0d0d84442bad2471a719990611950eeda0a"
+        }
+      },
+      "gif_frames": 8,
+      "gif_duration_ms": 2000,
+      "non_looping": true,
+      "poster_frame_mae_rgb": 2.565,
+      "source_poster_sha256": "ae8a7bc4ac32cec48599ea1b8545b0d0d84442bad2471a719990611950eeda0a",
+      "budget_bytes": 100000,
+      "meets_budget": true,
+      "transition_pixel_mean_mae": [
+        0.316,
+        0.784,
+        0.651,
+        0.498,
+        0.422,
+        0.336,
+        0.689
+      ]
+    },
+    "intro-03": {
+      "label": "카드 프레임",
+      "group": "simple",
+      "supported_event_types": [
+        "wedding",
+        "first-birthday",
+        "birthday",
+        "opening",
+        "general-event"
+      ],
+      "files": {
+        "intro-03.gif": {
+          "size_bytes": 64380,
+          "sha256": "23fb428036f28138d8ad1128703369ceabca0d3fdc19837e8ef9710cfb099527"
+        },
+        "intro-03.webp": {
+          "size_bytes": 10468,
+          "sha256": "740277793cee1739c1dfe64bc09ea4923c8ded0521024c73a7fcbad37752cc90"
+        },
+        "intro-03.png": {
+          "size_bytes": 152203,
+          "sha256": "e88c6d55f6b01d479fae74b9a97628ee3f85801f14184eed703686ac85b1d746"
+        }
+      },
+      "gif_frames": 8,
+      "gif_duration_ms": 2000,
+      "non_looping": true,
+      "poster_frame_mae_rgb": 2.069,
+      "source_poster_sha256": "e88c6d55f6b01d479fae74b9a97628ee3f85801f14184eed703686ac85b1d746",
+      "budget_bytes": 100000,
+      "meets_budget": true,
+      "transition_pixel_mean_mae": [
+        0.261,
+        0.317,
+        0.382,
+        0.905,
+        0.906,
+        3.61,
+        1.721
+      ]
+    },
+    "intro-04": {
+      "label": "봉투 열림",
+      "group": "emotional",
+      "supported_event_types": [
+        "wedding",
+        "first-birthday",
+        "birthday",
+        "opening",
+        "general-event"
+      ],
+      "files": {
+        "intro-04.gif": {
+          "size_bytes": 178247,
+          "sha256": "db13e68f6ef02f33b491aec9388c8ea91ca95c6a64faa2697f1b023338dfdc11"
+        },
+        "intro-04.webp": {
+          "size_bytes": 17458,
+          "sha256": "255c22a387f48f18af78112914f542a07a7d390a8079cceceab067eb15fd1acb"
+        },
+        "intro-04.png": {
+          "size_bytes": 201229,
+          "sha256": "23fd6b4c4404000d99417e130e24effe09c953285ac1dca112c9eaa479a5a958"
+        }
+      },
+      "gif_frames": 8,
+      "gif_duration_ms": 2000,
+      "non_looping": true,
+      "poster_frame_mae_rgb": 3.44,
+      "source_poster_sha256": "23fd6b4c4404000d99417e130e24effe09c953285ac1dca112c9eaa479a5a958",
+      "budget_bytes": 180000,
+      "meets_budget": true,
+      "transition_pixel_mean_mae": [
+        0.091,
+        2.094,
+        1.401,
+        1.447,
+        1.692,
+        4.469,
+        5.819
+      ]
+    },
+    "intro-05": {
+      "label": "종이 펼침",
+      "group": "emotional",
+      "supported_event_types": [
+        "wedding",
+        "first-birthday",
+        "birthday",
+        "opening",
+        "general-event"
+      ],
+      "files": {
+        "intro-05.gif": {
+          "size_bytes": 125484,
+          "sha256": "1f6539bf10495f5a8928c33fbf81d2c5ee16420adc33b7163d857a8b2a7256fc"
+        },
+        "intro-05.webp": {
+          "size_bytes": 13488,
+          "sha256": "072f37191f38ffd7372711f61ecb0b69a9e9e0eeec44a2dcc7643d4c7f064a7a"
+        },
+        "intro-05.png": {
+          "size_bytes": 161097,
+          "sha256": "946cf2d6b56225964a4dfe82bb0b01b72c75353663daae9df3a7a01276eec822"
+        }
+      },
+      "gif_frames": 8,
+      "gif_duration_ms": 2000,
+      "non_looping": true,
+      "poster_frame_mae_rgb": 2.886,
+      "source_poster_sha256": "946cf2d6b56225964a4dfe82bb0b01b72c75353663daae9df3a7a01276eec822",
+      "budget_bytes": 180000,
+      "meets_budget": true,
+      "transition_pixel_mean_mae": [
+        0.685,
+        0.567,
+        0.935,
+        0.805,
+        0.852,
+        1.701,
+        8.932
+      ]
+    },
+    "intro-06": {
+      "label": "페이지 넘김",
+      "group": "emotional",
+      "supported_event_types": [
+        "wedding",
+        "first-birthday",
+        "birthday",
+        "opening",
+        "general-event"
+      ],
+      "files": {
+        "intro-06.gif": {
+          "size_bytes": 110207,
+          "sha256": "f58ae398513b53de796adfc273d382d2829b5649afad4a1dd9cf4e3799787422"
+        },
+        "intro-06.webp": {
+          "size_bytes": 16500,
+          "sha256": "7b39e3a2ca49748a6a8d5457d115a1fcffc42a8ffd312d7b551260c19f95c71a"
+        },
+        "intro-06.png": {
+          "size_bytes": 176544,
+          "sha256": "6a6195fac73b2180fa417f462c8c1fae7da8937ba4da823efd8460f5383117cc"
+        }
+      },
+      "gif_frames": 8,
+      "gif_duration_ms": 2000,
+      "non_looping": true,
+      "poster_frame_mae_rgb": 2.45,
+      "source_poster_sha256": "6a6195fac73b2180fa417f462c8c1fae7da8937ba4da823efd8460f5383117cc",
+      "budget_bytes": 180000,
+      "meets_budget": true,
+      "transition_pixel_mean_mae": [
+        1.718,
+        1.805,
+        1.825,
+        1.906,
+        1.959,
+        2.588,
+        3.815
+      ]
+    },
+    "intro-07": {
+      "label": "플로럴 블룸",
+      "group": "luxury",
+      "supported_event_types": [
+        "wedding"
+      ],
+      "files": {
+        "intro-07.gif": {
+          "size_bytes": 149831,
+          "sha256": "5cee11582d69f452bc10fe524127cc31162cd680b77fb6614ae862ee888cdea7"
+        },
+        "intro-07.webp": {
+          "size_bytes": 29728,
+          "sha256": "9a4fab344c0c3d5b4e7b350e2f0e947daaa394c1f5618ff3ec28d3c1571311c5"
+        },
+        "intro-07.png": {
+          "size_bytes": 247244,
+          "sha256": "6476a3262efb3d9dd26c063c7261d2b0297438c0adf108183cebd49e710862d7"
+        }
+      },
+      "gif_frames": 8,
+      "gif_duration_ms": 2000,
+      "non_looping": true,
+      "poster_frame_mae_rgb": 3.846,
+      "source_poster_sha256": "6476a3262efb3d9dd26c063c7261d2b0297438c0adf108183cebd49e710862d7",
+      "budget_bytes": 350000,
+      "meets_budget": true,
+      "transition_pixel_mean_mae": [
+        1.562,
+        3.409,
+        4.799,
+        3.527,
+        2.762,
+        1.388,
+        2.581
+      ]
+    },
+    "intro-08": {
+      "label": "골드 샤인",
+      "group": "luxury",
+      "supported_event_types": [
+        "wedding"
+      ],
+      "files": {
+        "intro-08.gif": {
+          "size_bytes": 214914,
+          "sha256": "a39e360ed87be85d4a5b962c79a92d727505f8272c52cb74cbe3bb6ebb61a2e6"
+        },
+        "intro-08.webp": {
+          "size_bytes": 20438,
+          "sha256": "1cb3c32ea22d19ca268561101ed7859861153ebec5e843f8f38de32b3e24117a"
+        },
+        "intro-08.png": {
+          "size_bytes": 184520,
+          "sha256": "531c488ef77dcc1e638e4636fb4ca7f1383446ad5fa8d52e7e7cd352ab3ccc3c"
+        }
+      },
+      "gif_frames": 8,
+      "gif_duration_ms": 2000,
+      "non_looping": true,
+      "poster_frame_mae_rgb": 3.498,
+      "source_poster_sha256": "531c488ef77dcc1e638e4636fb4ca7f1383446ad5fa8d52e7e7cd352ab3ccc3c",
+      "budget_bytes": 350000,
+      "meets_budget": true,
+      "transition_pixel_mean_mae": [
+        1.347,
+        1.737,
+        1.72,
+        2.006,
+        1.617,
+        1.375,
+        2.185
+      ]
+    },
+    "intro-09": {
+      "label": "커튼 오픈",
+      "group": "luxury",
+      "supported_event_types": [
+        "wedding"
+      ],
+      "files": {
+        "intro-09.gif": {
+          "size_bytes": 118496,
+          "sha256": "7dcda1a2393ab6ac600f5155995a5b268b1afd77461c8ce35247ff83976f396e"
+        },
+        "intro-09.webp": {
+          "size_bytes": 19392,
+          "sha256": "d9c3dfd2232910b90ec8af5dbf72757aef808fed8b4cb3efc5bef5445508bfc4"
+        },
+        "intro-09.png": {
+          "size_bytes": 178444,
+          "sha256": "e3f0c5984a1cfd93eeb781ba8bb92158013ad18f5bc30f363ddf607bcc1933b8"
+        }
+      },
+      "gif_frames": 8,
+      "gif_duration_ms": 2000,
+      "non_looping": true,
+      "poster_frame_mae_rgb": 3.061,
+      "source_poster_sha256": "e3f0c5984a1cfd93eeb781ba8bb92158013ad18f5bc30f363ddf607bcc1933b8",
+      "budget_bytes": 350000,
+      "meets_budget": true,
+      "transition_pixel_mean_mae": [
+        5.072,
+        4.468,
+        4.166,
+        3.757,
+        3.358,
+        2.888,
+        4.254
+      ]
+    },
+    "intro-10": {
+      "label": "신랑신부 손잡기",
+      "group": "character",
+      "supported_event_types": [
+        "wedding"
+      ],
+      "files": {
+        "intro-10.gif": {
+          "size_bytes": 304293,
+          "sha256": "aa11d9f10e9197a6f91bd176aaa025b50c03fd7ca8db010bac9050caa66b1c3d"
+        },
+        "intro-10.webp": {
+          "size_bytes": 33758,
+          "sha256": "3f7140711d50c2ab0f78a0300efe3144fa7b764f38d73107daaa1a27076f6e28"
+        },
+        "intro-10.png": {
+          "size_bytes": 267989,
+          "sha256": "498353dede8ee8800e7cf234e5f91bf5da56458672ab79f3771c22fbaee94394"
+        }
+      },
+      "gif_frames": 8,
+      "gif_duration_ms": 2000,
+      "non_looping": true,
+      "poster_frame_mae_rgb": 3.477,
+      "source_poster_sha256": "498353dede8ee8800e7cf234e5f91bf5da56458672ab79f3771c22fbaee94394",
+      "budget_bytes": 450000,
+      "meets_budget": true,
+      "transition_pixel_mean_mae": [
+        3.98,
+        2.948,
+        2.689,
+        2.685,
+        6.131,
+        5.479,
+        3.411
+      ]
+    },
+    "intro-11": {
+      "label": "웨딩 행진",
+      "group": "character",
+      "supported_event_types": [
+        "wedding"
+      ],
+      "files": {
+        "intro-11.gif": {
+          "size_bytes": 344213,
+          "sha256": "2a13dee1c8035a2ee6591430cf0d72580fa55736738c344440de1e59723a64a2"
+        },
+        "intro-11.webp": {
+          "size_bytes": 30002,
+          "sha256": "33b25704675da6a2e919a3f1c638c2525a74287e529f73b45278b0cf94c0c3ee"
+        },
+        "intro-11.png": {
+          "size_bytes": 242198,
+          "sha256": "c7b58ebc02d44e065fe03074ad568257f2627367defa853f62cb537da9430bc5"
+        }
+      },
+      "gif_frames": 8,
+      "gif_duration_ms": 2000,
+      "non_looping": true,
+      "poster_frame_mae_rgb": 2.74,
+      "source_poster_sha256": "c7b58ebc02d44e065fe03074ad568257f2627367defa853f62cb537da9430bc5",
+      "budget_bytes": 450000,
+      "meets_budget": true,
+      "transition_pixel_mean_mae": [
+        3.196,
+        2.925,
+        2.985,
+        2.867,
+        3.58,
+        3.556,
+        3.629
+      ]
+    },
+    "intro-12": {
+      "label": "커플 인사",
+      "group": "character",
+      "supported_event_types": [
+        "wedding"
+      ],
+      "files": {
+        "intro-12.gif": {
+          "size_bytes": 296969,
+          "sha256": "3b19fb7334052c8a3421a36181b88f60531fb100aed0390830de926114359926"
+        },
+        "intro-12.webp": {
+          "size_bytes": 32172,
+          "sha256": "ce36597b466241db1a525a13f9ba7a0958843555d5b7261e1c58d58e168b6082"
+        },
+        "intro-12.png": {
+          "size_bytes": 248932,
+          "sha256": "2183e7bb476bc0fe86edb722483588e627a1b44c00fbee5cf6ddbfd56cc95855"
+        }
+      },
+      "gif_frames": 8,
+      "gif_duration_ms": 2000,
+      "non_looping": true,
+      "poster_frame_mae_rgb": 3.164,
+      "source_poster_sha256": "2183e7bb476bc0fe86edb722483588e627a1b44c00fbee5cf6ddbfd56cc95855",
+      "budget_bytes": 450000,
+      "meets_budget": true,
+      "transition_pixel_mean_mae": [
+        4.061,
+        1.475,
+        1.903,
+        5.604,
+        2.358,
+        2.344,
+        7.538
+      ]
+    }
+  },
+  "qa": {
+    "success": true,
+    "verified_sets": 11,
+    "frame_count_each": 8,
+    "duration_each_ms": 2000,
+    "repeat_each": false,
+    "target_480x600": true,
+    "budget_success_count": 11,
+    "last_frame_mae_max": 3.846
+  }
+}
