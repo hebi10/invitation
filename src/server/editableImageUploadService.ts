@@ -392,6 +392,7 @@ export async function saveServerOptimizedEditableImage({
       resumable: false,
       metadata: {
         contentType: optimizedImages.original.contentType,
+        cacheControl: 'private, no-store, max-age=0',
         metadata: {
           pageSlug: normalizedPageSlug,
           assetKind,
@@ -406,6 +407,7 @@ export async function saveServerOptimizedEditableImage({
       resumable: false,
       metadata: {
         contentType: optimizedImages.content.contentType,
+        cacheControl: 'private, no-store, max-age=0',
         metadata: {
           pageSlug: normalizedPageSlug,
           assetKind,
@@ -420,6 +422,7 @@ export async function saveServerOptimizedEditableImage({
       resumable: false,
       metadata: {
         contentType: optimizedImages.thumbnail.contentType,
+        cacheControl: 'private, no-store, max-age=0',
         metadata: {
           pageSlug: normalizedPageSlug,
           assetKind,
