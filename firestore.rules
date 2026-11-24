@@ -32,10 +32,15 @@ service cloud.firestore {
       return published is bool ? published : data.get('published', true) != false;
     }
 
+    function isEventBillingAccessHeld(data) {
+      return data.get('billingAccessHold', null) != null;
+    }
+
     function canUpdateAdminEvent() {
       return isAdmin() &&
         (isEventMarkedPublished(resource.data) || !isEventMarkedPublished(request.resource.data)) &&
-        !request.resource.data.diff(resource.data).affectedKeys().hasAny(['publicationReview']);
+        (!isEventBillingAccessHeld(resource.data) || !isEventMarkedPublished(request.resource.data)) &&
+        !request.resource.data.diff(resource.data).affectedKeys().hasAny(['publicationReview', 'billingAccessHold']);
     }
 
     function canUpdateOwnedEvent(eventId) {
@@ -168,7 +173,7 @@ service cloud.firestore {
     }
 
     function canReadPublicEventData(data) {
-      return !isEventDeletionBlocked(data) &&
+      return !isEventDeletionBlocked(data) && !isEventBillingAccessHeld(data) &&
         data.keys().hasAny(['visibility']) &&
         data.visibility is map &&
         data.visibility.keys().hasAny(['published']) &&
@@ -218,7 +223,7 @@ service cloud.firestore {
     match /events/{eventId} {
       allow read: if isAdmin() || isEventOwnerById(eventId);
       allow create: if isAdmin() && !isEventMarkedPublished(request.resource.data) &&
-        !request.resource.data.keys().hasAny(['publicationReview']);
+        !request.resource.data.keys().hasAny(['publicationReview', 'billingAccessHold']);
       allow update: if canUpdateAdminEvent() || canUpdateOwnedEvent(eventId);
       allow delete: if isAdmin();
 

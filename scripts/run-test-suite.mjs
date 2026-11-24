@@ -145,6 +145,7 @@ const security = [
   'test-mobile-ticket-extension',
   'test-mobile-real-billing-client',
   'test-mobile-real-billing-server',
+  'test-refund-access-policy',
   'test-mobile-billing-atomic-fulfillment',
   'test-mobile-pending-billing',
   'test-password-recovery',

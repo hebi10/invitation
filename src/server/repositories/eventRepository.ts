@@ -204,6 +204,9 @@ function buildEventSummaryFromRepositoryState(options: {
   const content = options.content ?? null;
   const displayPeriod = options.displayPeriod ?? null;
 
+  if (existing?.billingAccessHeld && registry?.published === true) {
+    throw Object.assign(new Error('환불 검토로 공개 이용이 보류되었습니다. 관리자에게 문의해 주세요.'), { status: 409 });
+  }
   if (!existing && !registry && !content && !displayPeriod && !options.forceCreate) {
     return null;
   }
@@ -1061,6 +1064,9 @@ export const firestoreEventRepository: EventRepository = {
         }
       }
 
+      if (current?.billingAccessHeld && input.published === true) {
+        throw Object.assign(new Error('환불 검토로 공개 이용이 보류되었습니다. 관리자에게 문의해 주세요.'), { status: 409 });
+      }
       const published = input.published ?? current?.published ?? Boolean(input.sample);
       const hasCustomContent = !input.restoreSample && (current?.hasCustomContent ?? contentSnapshot.exists);
       if (published && current?.published !== true) {
@@ -1145,6 +1151,9 @@ export const firestoreEventRepository: EventRepository = {
         createdAt: stored.createdAt ?? input.createdAt ?? now, updatedAt: now,
         seedSourceSlug: input.seedSourceSlug?.trim() || stored.seedSourceSlug || null,
       };
+      if (current?.billingAccessHeld && (input.published === true || input.requestPublicationReview === true)) {
+        throw Object.assign(new Error('환불 검토로 공개 이용이 보류되었습니다. 관리자에게 문의해 주세요.'), { status: 409 });
+      }
       const published = (isCustomerSave ? current?.published : input.published) ?? current?.published ?? true;
       const firstPublication = published && current?.published !== true;
       if (firstPublication) {
