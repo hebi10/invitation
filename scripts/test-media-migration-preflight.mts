@@ -4,6 +4,8 @@ import { runInNewContext } from 'node:vm';
 import ts from 'typescript';
 import { buildMediaMigrationPreflight, getServerMediaMigrationPreflight } from '../src/server/mediaMigrationPreflightService';
 import { collectMediaUsageReferences, getMediaAssetUsage } from '../src/lib/mediaAssets';
+import { mapStoredInvitationImageReferences, collectPublicInvitationImageReferences, getInvitationMediaFileName, buildInvitationMediaGatewayUrl } from '../src/server/invitationMediaProjection';
+import { rehearseStoredMediaReferences } from '../src/server/mediaReferenceRehearsal';
 
 const slug = 'test-page';
 const bucketName = 'fixture-bucket';
@@ -117,3 +119,59 @@ assert.equal(response.headers.get('cache-control'), 'no-store');
 assert.equal((await response.json()).revocationAllowed, false);
 assert.equal(inspected, 1);
 console.log('Media migration preflight, reference identity, read-only access and fail-closed checks passed');
+
+
+// Use the real versioned content/current envelope rather than a renderer DTO.
+const modernContent = {
+  version: 7, schemaVersion: 1, slug, eventType: 'wedding',
+  updatedAt: new Date('2026-11-24T00:00:00Z'),
+  themeState: { defaultTheme: 'romantic', variants: {} },
+  content: {
+    slug, eventType: 'wedding',
+    metadata: { images: { wedding: legacy, social: legacy, favicon: '/favicon.ico', kakaoCard: 'https://example.test/static.jpg' } },
+    pageData: {
+      greetingMessage: '변경하지 않는 인사말',
+      coverImageThumbnailUrl: stable,
+      galleryImages: [legacy, stable, legacy],
+      galleryImageThumbnailUrls: [stable, stable, stable],
+      themeOverrides: { romantic: { galleryImages: [legacy], subtitle: '유지' }, simple: { galleryImages: [stable] } },
+    },
+  },
+};
+const modernFixture = {
+  ...fixture, content: modernContent, memory: null, summaryVersion: 7,
+  wedding: { complete: true, objects: [fixture.wedding.objects[0], { ...fixture.wedding.objects[1], gatewayCompatible: true }] },
+};
+const modernBefore = JSON.stringify(modernContent);
+const rehearsal = buildMediaMigrationPreflight(modernFixture);
+assert.equal(rehearsal.revocationAllowed, false);
+assert.deepEqual(rehearsal.referenceRehearsal, {
+  status: 'reversible', sourceVersion: 7, changedReferences: 5,
+  distinctChangedFiles: 1, remainingLegacyReferences: 0, rollbackMatches: true, reason: null,
+});
+assert.equal(JSON.stringify(modernContent), modernBefore);
+assert.ok(!JSON.stringify(rehearsal).includes('fixture-only'));
+assert.ok(!JSON.stringify(rehearsal).includes('photo.png'));
+const projected = mapStoredInvitationImageReferences(modernContent, value => {
+  const file = getInvitationMediaFileName(value, bucketName, slug);
+  return file ? buildInvitationMediaGatewayUrl(slug, file) : value;
+}) as typeof modernContent;
+assert.equal(projected.updatedAt, modernContent.updatedAt, 'Non-image data types and references are preserved.');
+assert.equal(projected.themeState, modernContent.themeState);
+assert.equal(projected.content.pageData.greetingMessage, modernContent.content.pageData.greetingMessage);
+assert.deepEqual(projected.content.pageData.galleryImages, ['/api/public/media/test-page/photo.png/', stable, '/api/public/media/test-page/photo.png/']);
+assert.equal(collectPublicInvitationImageReferences(projected).length, collectPublicInvitationImageReferences(modernContent).length);
+assert.equal(buildMediaMigrationPreflight({ ...modernFixture, content: projected }).referenceRehearsal.status, 'no-change');
+assert.equal(buildMediaMigrationPreflight({ ...modernFixture, summaryVersion: 8 }).referenceRehearsal.reason, 'snapshot-version-mismatch');
+assert.equal(buildMediaMigrationPreflight({ ...modernFixture, content: { ...modernContent, schemaVersion: 2 } }).referenceRehearsal.reason, 'unsupported-snapshot');
+assert.equal(buildMediaMigrationPreflight({ ...modernFixture, memory: { hero: legacy } }).referenceRehearsal.reason, 'inventory-blocked');
+assert.equal(buildMediaMigrationPreflight({ ...modernFixture, wedding: { ...modernFixture.wedding, complete: false } }).referenceRehearsal.reason, 'inventory-blocked');
+assert.equal(buildMediaMigrationPreflight({ ...modernFixture, wedding: { ...modernFixture.wedding, objects: [modernFixture.wedding.objects[1]] } }).referenceRehearsal.reason, 'inventory-blocked');
+for (const value of ['blob:https://invite.msgnote.kr/local', 'file:///tmp/fixture.png', 'data:image/png;base64,AA==', 'content://photo/1']) {
+  const raw = { ...modernContent, content: { ...modernContent.content, metadata: { images: { wedding: value } } } };
+  assert.equal(buildMediaMigrationPreflight({ ...modernFixture, content: raw }).referenceRehearsal.reason, 'temporary-image-reference');
+}
+const unknown = { ...modernContent, privateNote: legacy };
+assert.equal(buildMediaMigrationPreflight({ ...modernFixture, content: unknown }).referenceRehearsal.reason, 'inventory-blocked');
+assert.equal(rehearseStoredMediaReferences({ slug: 'other', bucketName, summaryVersion: 7, raw: modernContent, inventoryBlocked: false }).reason, 'unsupported-snapshot');
+console.log('Versioned stored image reference conversion and exact rollback rehearsal passed');

@@ -41,6 +41,15 @@ export interface MediaMigrationPreflight {
   memoryReferences: number;
   memoryObjects: number;
   blockers: string[];
+  referenceRehearsal?: {
+    status: 'blocked' | 'no-change' | 'reversible';
+    sourceVersion: number | null;
+    changedReferences: number;
+    distinctChangedFiles: number;
+    remainingLegacyReferences: number;
+    rollbackMatches: boolean;
+    reason: string | null;
+  };
 }
 
 export async function getMediaMigrationPreflight(slug: string, signal?: AbortSignal): Promise<MediaMigrationPreflight> {

@@ -6,6 +6,7 @@ import { MAX_OBJECTS_PER_PREFIX, listImageMetadata, type AuditPage } from './med
 import { collectPublicInvitationImageReferences, getInvitationMediaFileName, isInvitationMediaSlug } from './invitationMediaProjection';
 import { readInvitationMediaRecord } from './repositories/invitationMediaRepository';
 import { memoryPageMetadataRepository } from './repositories/memoryPageMetadataRepository';
+import { rehearseStoredMediaReferences, type ReferenceRehearsal } from './mediaReferenceRehearsal';
 
 const MAX_SCAN_NODES = 20000;
 const MAX_SCAN_DEPTH = 24;
@@ -78,12 +79,13 @@ export interface MediaMigrationPreflight {
   memoryReferences: number;
   memoryObjects: number;
   blockers: MigrationBlocker[];
+  referenceRehearsal: ReferenceRehearsal;
 }
 
 export function buildMediaMigrationPreflight(input: {
   slug: string; bucketName: string; pilotSlug: string;
   content: unknown; memory: unknown; wedding: AuditPage; memoryImages: AuditPage;
-  eventType: string; unavailable: boolean;
+  eventType: string; unavailable: boolean; summaryVersion?: number | null;
 }): MediaMigrationPreflight {
   const { slug, bucketName, pilotSlug, content, memory, wedding, memoryImages, eventType, unavailable } = input;
   for (const [page, prefix] of [[wedding, `wedding-images/${slug}/`], [memoryImages, `memory-images/${slug}/`]] as const) {
@@ -135,11 +137,17 @@ export function buildMediaMigrationPreflight(input: {
   // A clean selected-page inventory is NOT proof that every consumer can stop using old URLs.
   blockers.push('editor-upload-client-cutover-required', 'cross-event-reference-review-required',
     'live-compatibility-and-revocation-approval-required');
+  const referenceRehearsal = rehearseStoredMediaReferences({
+    slug, bucketName, summaryVersion: input.summaryVersion, raw: content,
+    inventoryBlocked: eventType !== 'wedding' || unavailable || !inventoryComplete ||
+      unsupportedImageReferences > 0 || unmappedStoredReferences > 0 || missingOrUnscannedObjects > 0 ||
+      incompatibleObjects > 0 || memory != null || memoryImages.objects.length > 0,
+  });
   return { mode: 'read-only', scope: 'selected-invitation-and-memory', revocationAllowed: false,
     inventoryComplete, candidateFiles: files.size, compatibleCandidateFiles, legacyTokenReferences,
     unsupportedImageReferences, unmappedStoredReferences, missingOrUnscannedObjects, incompatibleObjects,
     unreferencedTokenObjects, memoryReferences: memoryScan.values.length,
-    memoryObjects: memoryImages.objects.length, blockers };
+    memoryObjects: memoryImages.objects.length, blockers, referenceRehearsal };
 }
 
 export async function getServerMediaMigrationPreflight(slug: string, dependencies = {
@@ -161,6 +169,7 @@ export async function getServerMediaMigrationPreflight(slug: string, dependencie
   return buildMediaMigrationPreflight({
     slug, bucketName: dependencies.bucketName, pilotSlug: dependencies.pilotSlug,
     content: record.content, memory, wedding, memoryImages, eventType: record.summary.eventType,
+    summaryVersion: record.summary.version,
     unavailable: record.blocked || (record.summary.status != null && record.summary.status !== 'active'),
   });
 }
