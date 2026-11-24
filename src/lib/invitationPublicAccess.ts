@@ -89,7 +89,10 @@ export function getInvitationPublicAccessState(
     };
   }
 
-  if (!page.displayPeriodStart || !page.displayPeriodEnd) {
+  if (!page.displayPeriodStart || !page.displayPeriodEnd ||
+      !Number.isFinite(page.displayPeriodStart.getTime()) ||
+      !Number.isFinite(page.displayPeriodEnd.getTime()) ||
+      page.displayPeriodStart > page.displayPeriodEnd) {
     return {
       isPublic: false,
       reason: 'period-incomplete',
@@ -143,4 +146,23 @@ export function getInvitationPublicAccessState(
     adminNotice: null,
     visitorMessage: null,
   };
+}
+
+/** One access policy for normalized event summaries, including guestbook APIs. */
+export function getEventSummaryPublicAccessState(summary: {
+  published: boolean;
+  visibility?: { published: boolean; displayStartAt?: Date | null; displayEndAt?: Date | null } | null;
+  displayPeriod?: { isActive: boolean; startDate: Date | null; endDate: Date | null } | null;
+  deletion?: EventDeletionMetadata | null;
+}, now: Date = new Date()) {
+  const legacyStart = summary.visibility?.displayStartAt ?? null;
+  const legacyEnd = summary.visibility?.displayEndAt ?? null;
+  const period = summary.displayPeriod;
+  return getInvitationPublicAccessState({
+    published: summary.visibility?.published ?? summary.published,
+    displayPeriodEnabled: period?.isActive ?? Boolean(legacyStart && legacyEnd),
+    displayPeriodStart: period ? period.startDate : legacyStart,
+    displayPeriodEnd: period ? period.endDate : legacyEnd,
+    deletion: summary.deletion,
+  }, now);
 }
