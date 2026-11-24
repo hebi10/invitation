@@ -7,6 +7,7 @@ import * as eventTypes from '../src/lib/eventTypes.ts';
 import * as invitationThemes from '../src/lib/invitationThemes.ts';
 import * as invitationVariants from '../src/lib/invitationVariants.ts';
 import * as invitationPublicAccess from '../src/lib/invitationPublicAccess.ts';
+import * as weddingDateTime from '../src/contracts/weddingDateTime.ts';
 import type { InvitationPageSeed } from '../src/types/invitationPage.ts';
 import type { EventSummaryRecord } from '../src/server/repositories/eventReadThroughDtos.ts';
 import type { CustomerOwnedEventSummary } from '../src/services/customerEventService.ts';
@@ -25,6 +26,7 @@ function loadModule<T>(file: string, dependencies: Record<string, unknown> = {},
       if (name === '@/lib/invitationThemes') return invitationThemes;
       if (name === '@/lib/invitationVariants') return invitationVariants;
       if (name === '@/lib/invitationPublicAccess') return invitationPublicAccess;
+      if (name === '../contracts/weddingDateTime') return weddingDateTime;
       if (name === '@/lib/customerEventPresentation') {
         return loadModule('src/lib/customerEventPresentation.ts');
       }
@@ -74,7 +76,7 @@ const server = loadModule<{
 });
 const [owned] = await server.listCustomerOwnedEventSummaries('customer-1');
 assert.equal(owned.coverImageUrl, '/images/cover-thumb.jpg', 'The customer list must expose the saved cover thumbnail');
-assert.equal(owned.eventDateLabel, '2026. 1. 2.', 'January must preserve the existing zero-based month convention');
+assert.equal(owned.eventDateLabel, '2026. 1. 2. · 오후 2:00', 'The wedding list must include the saved date and time');
 assert.equal(configReadCount, 1, 'Presentation fields should reuse the existing config read');
 assert.equal(owned.published, true);
 assert.equal(owned.publicAccess?.isPublic, true);
@@ -88,8 +90,8 @@ const presentation = loadModule<{
 }>('src/lib/customerEventPresentation.ts');
 
 for (const [date, expected] of [
-  [{ year: 2026, month: 11, day: 31, hour: 23, minute: 59 }, '2026. 12. 31.'],
-  [{ year: 2028, month: 1, day: 29, hour: 0, minute: 0 }, '2028. 2. 29.'],
+  [{ year: 2026, month: 11, day: 31, hour: 23, minute: 59 }, '2026. 12. 31. · 오후 11:59'],
+  [{ year: 2028, month: 1, day: 29, hour: 0, minute: 0 }, '2028. 2. 29. · 오전 12:00'],
   [{ year: 2026, month: 1, day: 29, hour: 14, minute: 0 }, null],
   [{ year: 2026, month: 3, day: 31, hour: 14, minute: 0 }, null],
   [{ year: 2026, month: 12, day: 1, hour: 14, minute: 0 }, null],
@@ -101,6 +103,7 @@ for (const [date, expected] of [
 ] as const) {
   assert.equal(presentation.getCustomerEventPresentation({ ...config, weddingDateTime: date }).eventDateLabel, expected);
 }
+assert.equal(presentation.getCustomerEventPresentation({ ...config, eventType: 'birthday' }).eventDateLabel, '2026. 1. 2.');
 for (const missing of [null, undefined]) {
   const result = presentation.getCustomerEventPresentation(missing);
   assert.equal(result.coverImageUrl, null);
@@ -168,5 +171,5 @@ const demo = loadModule<{
 });
 const [demoEvent] = await demo.demoExperienceCustomerDataGateway.listEvents('customer-1');
 assert.equal(demoEvent.coverImageUrl, '/images/cover-thumb.jpg');
-assert.equal(demoEvent.eventDateLabel, '2026. 1. 2.', 'The demo dashboard must use the same date convention');
+assert.equal(demoEvent.eventDateLabel, '2026. 1. 2. · 오후 2:00', 'The demo dashboard must use the same date convention');
 console.log('Customer event presentation, server/client mapping, and demo gateway checks passed');

@@ -3,6 +3,7 @@ import type { InvitationPageSummary } from '@/services/invitationPageService';
 import { getAdminEventCounts, getAdminEventVisibility } from './adminEventWorkspaceModel';
 import { formatDateTime } from './adminPageUtils';
 import AdminQueryState from './AdminQueryState';
+import AdminRefundReview from './AdminRefundReview';
 import styles from './AdminOverview.module.css';
 
 interface AdminOverviewProps {
@@ -16,6 +17,7 @@ interface AdminOverviewProps {
   onRetryComments: () => void;
   onNavigate: (query: Record<string, string | null>) => void;
   createHref: string;
+  refundReviewAccountKey?: string;
 }
 
 const EVENT_QUERY: Record<string, string | null> = {
@@ -26,7 +28,7 @@ const EVENT_QUERY: Record<string, string | null> = {
 
 export default function AdminOverview({
   pages, comments, pagesLoading, commentsLoading, pagesError, commentsError,
-  onRetryPages, onRetryComments, onNavigate, createHref,
+  onRetryPages, onRetryComments, onNavigate, createHref, refundReviewAccountKey,
 }: AdminOverviewProps) {
   const counts = getAdminEventCounts(pages);
   const recentPages = [...pages]
@@ -79,6 +81,7 @@ export default function AdminOverview({
           {item.label} {item.count}건 보기
         </button>)}</div>
       </section> : null}
+      {refundReviewAccountKey ? <AdminRefundReview key={refundReviewAccountKey} /> : null}
       <div className={styles.columns}>
         <section aria-labelledby="recent-events-title">
           <div className={styles.sectionHeading}>

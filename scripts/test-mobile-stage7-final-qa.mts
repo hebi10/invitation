@@ -130,7 +130,9 @@ const tabs = read('apps/mobile/src/app/(tabs)/_layout.tsx');
 assert.match(releaseWorkflow, /branches: \[main, build\/mobile-aab\]/);
 assert.match(releaseWorkflow, /needs\.bundle\.outputs\.deploy == 'true'/);
 assert.match(releaseWorkflow, /scripts\/verify-mobile-release\.py/);
-assert.match(captureWorkflow, /pull_request:/);
+assert.match(captureWorkflow, /workflow_dispatch:/);
+assert.match(captureWorkflow, /expected_main_sha:/);
+assert.doesNotMatch(captureWorkflow, /  pull_request:/);
 assert.match(captureWorkflow, /scripts\/capture-mobile-android\.py/);
 assert.match(config, /package: 'kr\.msgnote\.mobileinvitation'/);
 assert.match(config, /icon: '\.\/assets\/icon-v3\.png'/);
@@ -145,7 +147,7 @@ assert.equal(isTrustedReleaseEvent({ eventName: 'pull_request', ref: 'refs/heads
 assert.equal(isTrustedReleaseEvent({ eventName: 'push', ref: 'refs/heads/main' }), true);
 assert.equal(shouldDeployRelease({
   eventName: 'push', ref: 'refs/heads/main', autoDeployEnabled: 'true', manualDeploy: false,
-}), true);
+}), false);
 assert.equal(shouldDeployRelease({
   eventName: 'push', ref: 'refs/heads/feature', autoDeployEnabled: 'true', manualDeploy: false,
 }), false);
@@ -171,7 +173,7 @@ assert.equal(getInvitationVisibility(false, activePeriod, Date.parse('2026-11-05
 
 const manage = read('apps/mobile/src/features/screens/manage.tsx');
 assert.match(manage, /onClose=\{\(\) => void handleCloseEditorModal\(\)\}/);
-assert.match(manage, /onSetIntroStyle=\{invitationForm\.setIntroStyle\}/);
+assert.match(manage, /onSetIntroPresetId=\{invitationForm\.setIntroPresetId\}/);
 assert.match(manage, /onKakaoShare=\{handleOpenKakaoShare\}/);
 assert.doesNotMatch(manage, /onPurchase=\{\(\) => void handlePurchaseExtension\(\)\}/);
 assert.match(manage, /onRecoverPendingPurchase=\{openExtensionModal\}/);

@@ -691,3 +691,34 @@ export const getPageImages = async (
   pageSlug: string,
   options: GetImagesByPageOptions = {}
 ): Promise<UploadedImage[]> => getImagesByPage(pageSlug, options);
+
+
+/** Only an explicit legacy response permits SDK listing. Protected inventory never requests download tokens. */
+export async function getAdminPageImages(pageSlug: string, options: GetImagesByPageOptions = {}): Promise<UploadedImage[]> {
+  if (options.allowListing === false) return [];
+  if (!USE_FIREBASE) return [];
+  const idToken = await getCurrentFirebaseIdToken({ forceRefresh: true });
+  if (!idToken) throw new Error('관리자 로그인 상태를 확인해 주세요.');
+  const payload = await readJsonResponse<{ mode: string; images?: Array<Omit<UploadedImage, 'uploadedAt'> & { uploadedAt: string | null }> }>(
+    await fetch(`/api/admin/pages/${encodeURIComponent(pageSlug)}/media/library/`, {
+      headers: { Authorization: `Bearer ${idToken}` }, cache: 'no-store', redirect: 'error', credentials: 'same-origin',
+    })
+  );
+  if (payload.mode === 'legacy') return getImagesByPage(pageSlug, options);
+  if (payload.mode !== 'protected' || !Array.isArray(payload.images)) throw new Error('보호된 이미지 목록 응답을 확인하지 못했습니다.');
+  const prefix = `wedding-images/${pageSlug}/`;
+  const matches = (path: string | undefined, url: string | undefined) => {
+    if (!path) return !url;
+    if (!path.startsWith(prefix)) return false;
+    const name = path.slice(prefix.length);
+    return Boolean(name && !/[\\/\u0000-\u001f\u007f]/.test(name) && (!url ||
+      url === `/api/public/media/${encodeURIComponent(pageSlug)}/${encodeURIComponent(name)}/`));
+  };
+  return payload.images.map(image => {
+    if (!image.path || typeof image.name !== 'string' || typeof image.url !== 'string' ||
+        !matches(image.path, image.url) || !matches(image.originalPath, image.originalUrl) ||
+        !matches(image.thumbnailPath, image.thumbnailUrl)) throw new Error('이미지 목록의 저장 참조가 올바르지 않습니다.');
+    const uploadedAt = image.uploadedAt ? new Date(image.uploadedAt) : null;
+    return { ...image, uploadedAt: uploadedAt && Number.isFinite(uploadedAt.getTime()) ? uploadedAt : null };
+  });
+}

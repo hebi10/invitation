@@ -3,6 +3,7 @@ import type { EventTypeKey } from '@/lib/eventTypes';
 import type { WeddingIntroStyle } from '@/lib/weddingIntro';
 import type { InvitationIntroChoice } from '@/lib/invitationIntroCatalog';
 import type { WeddingCoverSettings } from '@/lib/weddingCover';
+import type { WeddingMapProvider } from '@/lib/weddingMapProviders';
 
 export interface FamilyMember {
   relation: string;
@@ -100,6 +101,7 @@ export interface InvitationPageDataBase {
   greetingMessage?: string;
   greetingAuthor?: string;
   mapUrl?: string;
+  mapProviders?: WeddingMapProvider[];
   mapDescription?: string;
   venueName?: string;
   groom?: PersonInfo;
@@ -189,3 +191,9 @@ export interface InvitationPageSeed
     InvitationPage,
     'published' | 'displayPeriodEnabled' | 'displayPeriodStart' | 'displayPeriodEnd'
   > {}
+
+export interface InvitationPublicationReviewState {
+  status: 'pending' | 'stale';
+  requestedContentVersion: number;
+  requestedAt: string;
+}

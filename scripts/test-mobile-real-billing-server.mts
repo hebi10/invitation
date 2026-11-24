@@ -96,6 +96,8 @@ let failedMarks = 0;
 let failAfterFulfillment = false;
 let consumeOnServer = false;
 let pastFulfillment: Record<string, unknown> | null = null;
+let currentOwnerUid = appUserId;
+let currentEventId = 'created-id';
 let lockAcquisitions = 0;
 const service = load('src/server/mobileBillingServerService.ts', id => {
   if (id === './googlePlayPurchaseVerifier') return {
@@ -118,7 +120,10 @@ const service = load('src/server/mobileBillingServerService.ts', id => {
     update: async () => { fulfilled++; },
     markFailed: async () => { failedMarks++; },
   } };
-  if (id === './repositories/eventRepository') return { firestoreEventRepository: { assignOwnerBySlug: async () => ({ summary: { eventId: 'created-id' } }) } };
+  if (id === './repositories/eventRepository') return {
+    firestoreEventRepository: { assignOwnerBySlug: async () => ({ summary: { eventId: 'created-id' } }) },
+    resolveStoredEventBySlug: async () => ({ summary: { eventId: currentEventId, ownerUid: currentOwnerUid } }),
+  };
   if (id === './invitationPageServerService') return {
     createServerInvitationPageDraftFromSeed: async (input: typeof created) => { created = input; return { slug: 'created-page' }; },
     getServerEditableInvitationPageConfig: async () => ({
@@ -183,4 +188,143 @@ assert.equal(replay.billingPurchaseConsumed, true, 'Tell the client not to re-co
 assert.equal(replay.page.slug, 'created-page');
 assert.equal(lockAcquisitions, priorLocks, 'A consumed replay may not acquire a new grant lock');
 assert.equal(fulfilled, priorGrants, 'A consumed replay may not issue a second grant');
-console.log('Google Play token verification, six-month grants and consumed-token replay safety checks passed');
+
+currentOwnerUid = 'another-owner';
+await assert.rejects(create('https://example.test', receipt, {
+  slugBase: 'created-page', groomKoreanName: '신랑', brideKoreanName: '신부', theme: 'simple', ownerUid: appUserId,
+}), (error: unknown) => (error as { code?: string }).code === 'billing-fulfillment-requires-review',
+  'A previous payer must not regain a private page after ownership changes');
+assert.equal(lockAcquisitions, priorLocks);
+currentOwnerUid = appUserId;
+currentEventId = 'reassigned-event-id';
+await assert.rejects(create('https://example.test', receipt, {
+  slugBase: 'created-page', groomKoreanName: '신랑', brideKoreanName: '신부', theme: 'simple', ownerUid: appUserId,
+}), (error: unknown) => (error as { code?: string }).code === 'billing-fulfillment-requires-review',
+  'A historical grant cannot restore an editor session for a different event ID even with the same owner');
+assert.equal(lockAcquisitions, priorLocks, 'Event reassignment must not trigger a duplicate grant');
+currentEventId = 'created-id';
+
+consumeOnServer = false;
+pastFulfillment = null;
+const legacyReceipt = { ...receipt, productId: 'page_creation_standard' };
+await assert.rejects(create('https://example.test', legacyReceipt, {
+  slugBase: 'created-page', groomKoreanName: '신랑', brideKoreanName: '신부', theme: 'simple', ownerUid: appUserId,
+}), (error: unknown) => (error as { code?: string }).code === 'billing-fulfillment-requires-review',
+  'A historical SKU may not mint a fresh premium page, even for a previously paid date');
+assert.equal(lockAcquisitions, priorLocks, 'Historical SKU review must not acquire a new grant lock');
+assert.equal(fulfilled, priorGrants, 'Historical SKU review must not grant an additional page');
+
+pastFulfillment = { ...validFulfillment, productId: 'page_creation_standard' };
+const legacyReplay = await create('https://example.test', legacyReceipt, {
+  slugBase: 'created-page', groomKoreanName: '신랑', brideKoreanName: '신부', theme: 'simple', ownerUid: appUserId,
+}) as { billingPurchaseConsumed?: boolean; page: { slug: string } };
+assert.equal(legacyReplay.page.slug, 'created-page', 'An already granted historical page stays recoverable');
+assert.equal(legacyReplay.billingPurchaseConsumed, undefined, 'Unconsumed historical grant can still be finalized');
+assert.equal(lockAcquisitions, priorLocks);
+consumeOnServer = true;
+const legacyConsumedReplay = await create('https://example.test', legacyReceipt, {
+  slugBase: 'created-page', groomKoreanName: '신랑', brideKoreanName: '신부', theme: 'simple', ownerUid: appUserId,
+}) as { billingPurchaseConsumed: boolean };
+assert.equal(legacyConsumedReplay.billingPurchaseConsumed, true);
+assert.equal(fulfilled, priorGrants, 'No historical receipt can grant twice');
+
+console.log('Google Play token verification, six-month grants, ownership and legacy SKU recovery checks passed');
+
+let voidedRequests = 0;
+let repeatPage = false;
+const voidedVerifier = load('src/server/googlePlayPurchaseVerifier.ts', id => {
+  if (id === 'node:crypto') return { createHash };
+  if (id === 'google-auth-library') return { GoogleAuth: class { getAccessToken() { return Promise.resolve('test-token-only'); } } };
+  if (id === 'server-only') return {};
+  throw new Error('Unexpected import ' + id);
+}, {
+  AbortSignal, URLSearchParams,
+  fetch: async (url: string, options: { cache: string; headers: { Authorization: string } }) => {
+    voidedRequests++;
+    assert.ok(url.startsWith('https://androidpublisher.googleapis.com/androidpublisher/v3/applications/kr.msgnote.mobileinvitation/purchases/voidedpurchases?'));
+    assert.equal(options.cache, 'no-store');
+    assert.equal(options.headers.Authorization, 'Bearer test-token-only');
+    const next = new URL(url).searchParams.get('token');
+    return { ok: true, json: async () => ({
+      voidedPurchases: [{ purchaseToken: token, voidedTimeMillis: next ? '1795000001000' : '1795000000000', voidedReason: 1 }],
+      tokenPagination: !next || repeatPage ? { nextPageToken: 'next-test-page' } : {},
+    }) };
+  },
+});
+const listVoided = voidedVerifier.listRecentVoidedGooglePlayPurchases as () => Promise<Array<{ transactionIdentifier: string; voidedAt: string }>>;
+const voided = await listVoided();
+assert.equal(voidedRequests, 2);
+assert.equal(voided.length, 1, 'Repeated receipt must be deduplicated');
+assert.equal(voided[0].transactionIdentifier, fulfillmentId);
+assert.equal(voided[0].voidedAt, new Date(1795000001000).toISOString());
+assert.ok(!JSON.stringify(voided).includes(token), 'Never expose the raw Play token');
+repeatPage = true;
+await assert.rejects(listVoided(), /pagination/);
+
+const reviewService = load('src/server/adminVoidedPurchaseReviewService.ts', id => {
+  if (id === './googlePlayPurchaseVerifier') return { listRecentVoidedGooglePlayPurchases: async () => voided };
+  if (id === './repositories/billingFulfillmentRepository') return { firestoreBillingFulfillmentRepository: {
+    findByTransactionId: async (id: string) => { assert.equal(id, fulfillmentId); return { ...validFulfillment, provider: 'googleplay' }; },
+    update: () => { throw new Error('Refund review must be read-only'); },
+  } };
+  return {};
+}, { Promise });
+const review = await (reviewService.getAdminVoidedPurchaseReview as () => Promise<{ count: number; records: Array<Record<string, unknown>> }>)();
+assert.equal(review.count, 1);
+assert.equal(review.records[0].fulfillmentStatus, 'fulfilled');
+assert.equal(review.records[0].pageSlug, 'created-page');
+assert.equal(review.records[0].reviewRequired, true);
+assert.ok(!JSON.stringify(review).includes(appUserId), 'Do not expose customer UID in refund review');
+
+
+// The refund endpoint must verify administrator rights before any Play lookup.
+class RefundRouteAuthError extends Error {
+  constructor(public status: number) { super('admin authorization required'); }
+}
+let refundAuthStatus = 403;
+let refundLookupCount = 0;
+const refundRoute = load('src/app/api/admin/billing/voided-purchases/route.ts', id => {
+  if (id === 'next/server') return { NextResponse: Response };
+  if (id === '@/server/adminApiAuth') return {
+    AdminApiAuthError: RefundRouteAuthError,
+    verifyAdminRequest: async () => { if (refundAuthStatus !== 200) throw new RefundRouteAuthError(refundAuthStatus); },
+  };
+  if (id === '@/server/apiErrorResponse') return { toSafeHttpErrorResponse: (error: RefundRouteAuthError) => Response.json({ error: 'authorization required' }, { status: error.status }) };
+  if (id === '@/server/adminVoidedPurchaseReviewService') return { getAdminVoidedPurchaseReview: async () => { refundLookupCount++; return review; } };
+  return {};
+});
+const refundGet = refundRoute.GET as (request: Request) => Promise<Response>;
+for (const status of [401, 403]) {
+  refundAuthStatus = status;
+  assert.equal((await refundGet(new Request('https://example.test/api/admin/billing/voided-purchases/'))).status, status);
+}
+assert.equal(refundLookupCount, 0, 'Unauthorized visitors must not query Play');
+refundAuthStatus = 200;
+const refundResponse = await refundGet(new Request('https://example.test/api/admin/billing/voided-purchases/'));
+assert.equal(refundResponse.status, 200);
+assert.equal(refundResponse.headers.get('cache-control'), 'no-store');
+assert.equal(refundLookupCount, 1);
+
+let refundUiRequests = 0;
+let adminTokenAvailable = false;
+const refundClient = load('src/services/adminRefundReviewService.ts', id => {
+  if (id === './adminAuth') return { getCurrentFirebaseIdToken: async () => adminTokenAvailable ? 'test-admin-token' : null };
+  return {};
+}, {
+  fetch: async (url: string, options: { method: string; headers: { Authorization: string }; cache: string }) => {
+    refundUiRequests++;
+    assert.equal(url, '/api/admin/billing/voided-purchases/');
+    assert.equal(options.method, 'GET');
+    assert.equal(options.headers.Authorization, 'Bearer test-admin-token');
+    assert.equal(options.cache, 'no-store');
+    return Response.json({ success: true, ...review });
+  },
+});
+const readRefundReview = refundClient.getAdminRefundReview as () => Promise<{ count: number }>;
+await assert.rejects(readRefundReview(), /관리자 로그인/);
+assert.equal(refundUiRequests, 0);
+adminTokenAvailable = true;
+assert.equal((await readRefundReview()).count, 1);
+assert.equal(refundUiRequests, 1);
+assert.match(readFileSync('src/app/admin/AdminPageClient.tsx', 'utf8'), /refundReviewAccountKey=\{!experience \? adminUser\?\.uid : undefined\}/);
+assert.match(readFileSync('src/app/admin/_components/AdminOverview.tsx', 'utf8'), /refundReviewAccountKey \? <AdminRefundReview key=\{refundReviewAccountKey\}/);

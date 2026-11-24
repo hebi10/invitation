@@ -251,7 +251,14 @@ function reviewFixture() {
     };
     if (id === '@/server/mobileBillingServerService') return {
       fulfillServerMobileTicketPackPurchase: () => state.run(),
-      fulfillServerMobilePageCreationPurchase: async () => ({ page: { slug: 'created-page' } }),
+      fulfillServerMobilePageCreationPurchase: async () => {
+        if (requireCreationReview) {
+          throw Object.assign(new Error('This paid invitation requires manual review.'), {
+            code: 'billing-fulfillment-requires-review',
+          });
+        }
+        return { page: { slug: 'created-page' } };
+      },
     };
     if (id === '@/server/clientEditorMobileApi') return { readMobileClientEditorDeviceId: () => 'local-test-device' };
     if (id === '@/server/requestRateLimit') return {
@@ -275,7 +282,9 @@ function reviewFixture() {
   };
   let stored: string | null = null;
   let purchases = 0;
+  let requireCreationReview = false;
   const loadPending = () => loadModule('apps/mobile/src/lib/pendingBillingPurchase.ts', (id) => {
+    if (id === './apiCore') return apiCore;
     if (id === './storage') return {
       getStoredString: async () => stored,
       setStoredString: async (_key: string, value: string | null) => { stored = value; },
@@ -294,7 +303,8 @@ function reviewFixture() {
     appUserId: purchase.appUserId, productId: purchase.productId, apiBaseUrl: 'https://example.test',
     target: { action: 'grantTicketPack', pageSlug: 'page' },
   }, {
-    purchase: async () => {
+    purchase: async (beforeLaunch?: () => Promise<void>) => {
+      await beforeLaunch?.();
       purchases++;
       return { appUserId: purchase.appUserId, productIdentifier: purchase.productId, transactionIdentifier: transactionId, purchaseToken: purchase.purchaseToken };
     },
@@ -309,6 +319,7 @@ function reviewFixture() {
     runPending,
     stored: () => stored,
     purchases: () => purchases,
+    requireCreationReview: () => { requireCreationReview = true; },
   };
 }
 
@@ -345,6 +356,18 @@ checks.push(
       assert.ok(state.stored()?.includes(transactionId));
     }
     assert.equal(state.purchases(), 1, 'Review must retain the receipt instead of enabling another charge');
+  }],
+  ['Page creation API preserves the manual review code and prevents blind retry', async () => {
+    const state = reviewFixture();
+    state.requireCreationReview();
+    await assert.rejects(state.api.fulfillMobileBillingPageCreation('https://example.test', {
+      purchase, customerIdToken: 'local-customer-token',
+      input: { slugBase: 'created-page', groomKoreanName: '신랑', brideKoreanName: '신부', theme: 'simple' },
+    }), (error: unknown) => {
+      assert.equal((error as { code?: string }).code, 'BILLING_REVIEW_REQUIRED');
+      assert.match((error as Error).message, /문의/);
+      return true;
+    });
   }],
   ['Page creation success keeps its original API behavior', async () => {
     const state = reviewFixture();

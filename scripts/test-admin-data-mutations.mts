@@ -4,6 +4,7 @@ import { runInNewContext } from 'node:vm';
 import { QueryClient, QueryObserver } from '@tanstack/query-core';
 import ts from 'typescript';
 import * as deletionState from '../src/lib/adminEventDeletionState.ts';
+import * as userFacingErrorMessage from '../src/lib/userFacingErrorMessage.ts';
 
 function load<T>(file: string, dependencies: Record<string, unknown>): T {
   const exports = {};
@@ -52,6 +53,7 @@ function fixture(overrides: Record<string, unknown> = {}, activeTab = 'pages', c
     } },
     react: { useCallback: (fn: unknown) => fn, useMemo: (fn: () => unknown) => fn(), useEffect() {}, useState: (initial: unknown) => [initial, () => {}], useRef: (initial: unknown) => ({ current: initial }) },
     '@/lib/adminEventDeletionState': deletionState, '@/lib/adminCustomerSelection': { getCustomerAssignmentConfirmation: () => '고객에 연결' },
+    '@/lib/userFacingErrorMessage': userFacingErrorMessage,
     '@/lib/adminInvitationPreviewCache': { clearAdminInvitationPreviewCache() {}, writeAdminInvitationPreviewCache() {} },
     '@/lib/appQuery': { appQueryKeys, ADMIN_STALE_TIME_MS: 45_000, ADMIN_GC_TIME_MS: 600_000 },
     '@/lib/invitationThemes': { getInvitationThemeAdminLabel: (theme: string) => theme },

@@ -9,7 +9,7 @@ import * as previewSections from '../src/app/wizard-preview/previewSections.ts';
 import * as weddingIntro from '../src/lib/weddingIntro.ts';
 
 type Element = { type: unknown; key: unknown; props: Record<string, unknown> & { children?: unknown } };
-type Message = { type: string; formState?: unknown; theme?: string; step?: string };
+type Message = { type: string; formState?: unknown; theme?: string; step?: string; showSampleCover?: boolean };
 type FrameWindow = { postMessage: (message: Message, origin: string) => void };
 type Effect = { deps: unknown[]; cleanup?: () => void };
 const origin = 'https://invitation.test';
@@ -246,7 +246,7 @@ test('Automatic recovery completes the replacement frame handshake with the late
   const draft = createInitialWizardConfig('wedding');
   draft.couple.groom.name = '자동 복구 중 수정한 이름';
   preview.advance(10000);
-  preview.update({ formState: draft, theme: 'emotional', activeStepKey: 'images' });
+  preview.update({ formState: draft, theme: 'emotional', activeStepKey: 'images', showSampleCover: false });
   preview.advance(5000);
   assert.notEqual(preview.currentWindow, firstWindow);
 
@@ -258,6 +258,7 @@ test('Automatic recovery completes the replacement frame handshake with the late
   assert.equal(sent.message.type, 'wedding-wizard-preview:update');
   assert.equal(sent.message.formState, draft);
   assert.equal(sent.message.theme, 'emotional');
+  assert.equal(sent.message.showSampleCover, false, 'A recovered editor preview must keep its photo-free cover preference');
   assert.equal(preview.positionDisabled, true);
   assert.equal(preview.timerCount, 1);
 

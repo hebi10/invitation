@@ -1,5 +1,7 @@
 import { memo } from 'react';
 import { Image as ExpoImage } from 'expo-image';
+import { ProtectedEditorImage } from '../../../../components/ProtectedEditorImage';
+import { isStableNativeMediaReference } from '../../../../lib/nativeEditorMedia';
 import {
   Image as NativeImage,
   type ImageStyle,
@@ -63,6 +65,7 @@ type SingleImageCardProps = {
 const IMAGE_CACHE_POLICY = 'memory-disk' as const;
 
 function PreviewImage({ uri, alt, style, fit = 'cover' }: PreviewImageProps) {
+  if (isStableNativeMediaReference(uri)) return <ProtectedEditorImage uri={uri} alt={alt} style={style} fit={fit} />;
   const normalizedUri = uri.trim().toLowerCase();
   const shouldUseExpoImage =
     normalizedUri.startsWith('ph://') ||

@@ -3,6 +3,7 @@ export { InvitationVersionConflictError as WizardVersionConflictError } from '@/
 import {
   createInvitationPageDraftFromSeed,
   getEditableInvitationPageConfig,
+  saveAdminInvitationPageWithPublication,
   saveInvitationPageConfig,
   type CreateInvitationPageDraftInput,
   type EditableInvitationPageConfig,
@@ -35,6 +36,8 @@ export interface WizardPersistenceGateway {
     defaultTheme: InvitationThemeKey;
     expectedVersion: number | null;
     isAdmin: boolean;
+    changePublication?: boolean;
+    requestPublicationReview?: true;
   }): Promise<WizardEditableSnapshot>;
 }
 
@@ -73,9 +76,17 @@ export const productionWizardPersistenceGateway: WizardPersistenceGateway = {
   },
   async save(input) {
     if (input.isAdmin) {
+      const expectedVersion = requireInvitationContentVersion(input.expectedVersion);
+      if (input.changePublication) {
+        return saveAdminInvitationPageWithPublication(input.config, {
+          expectedVersion,
+          published: input.published,
+          defaultTheme: input.defaultTheme,
+        });
+      }
+
       const saved = await saveInvitationPageConfig(input.config, {
-        expectedVersion: requireInvitationContentVersion(input.expectedVersion),
-        published: input.published,
+        expectedVersion,
         defaultTheme: input.defaultTheme,
       });
       const productTier = normalizeInvitationProductTier(input.config.productTier);
@@ -98,6 +109,7 @@ export const productionWizardPersistenceGateway: WizardPersistenceGateway = {
       config: input.config,
       published: input.published,
       defaultTheme: input.defaultTheme,
+      requestPublicationReview: input.requestPublicationReview,
     });
     return toSnapshot(editable, editable.version);
   },

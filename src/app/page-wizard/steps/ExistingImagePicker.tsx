@@ -1,6 +1,8 @@
 import { useEffect, useId, useRef, useState } from 'react';
 
-import { getImagesByPage, type UploadedImage } from '@/services/imageService';
+import { getAdminPageImages, type UploadedImage } from '@/services/imageService';
+import { getMediaAssetUsage } from '@/lib/mediaAssets';
+import { AdminMediaThumbnail } from '@/components/admin/ImageManager/AdminMediaDisplay';
 
 import styles from '../page.module.css';
 import imageStyles from './ImagesStep.module.css';
@@ -36,7 +38,7 @@ export default function ExistingImagePicker({
     setIsLoading(true);
     setError('');
     try {
-      const nextImages = await getImagesByPage(pageSlug, { forceRefresh: true });
+      const nextImages = await getAdminPageImages(pageSlug, { forceRefresh: true });
       if (currentRequest === requestId.current) setImages(nextImages);
     } catch {
       if (currentRequest === requestId.current) {
@@ -74,14 +76,15 @@ export default function ExistingImagePicker({
         : images.length === 0 ? <p className={styles.cardText} role="status">업로드된 사진이 없습니다. 위의 이미지 올리기에서 사진을 추가해 주세요.</p>
         : <div className={imageStyles.libraryGrid} role="group" aria-label={`${title}에 사용할 사진 선택`}>
           {images.map(image => {
-            const selected = selectedUrls.includes(image.url);
+            const selected = selectedUrls.includes(image.url) || (image.url.startsWith('/api/public/media/') &&
+              getMediaAssetUsage(image, selectedUrls.map(value => ({ value, label: 'selected' }))).length > 0);
             return <button key={image.path} type="button" className={imageStyles.galleryPhoto}
               aria-label={`${image.name} · ${selected ? '선택됨' : `${title}에 사용`}`}
-              aria-pressed={selected} disabled={disabled || selected || selectionLimitReached}
-              onClick={() => { if (!disabled && !selected && !selectionLimitReached) onSelect(image.url); }}>
-              <img className={imageStyles.galleryImage} src={image.thumbnailUrl || image.url} alt="" loading="lazy" decoding="async" />
+              aria-pressed={selected} disabled={disabled || selected || selectionLimitReached || !image.url}
+              onClick={() => { if (!disabled && !selected && !selectionLimitReached && image.url) onSelect(image.url); }}>
+              <AdminMediaThumbnail className={imageStyles.galleryImage} reference={image.thumbnailUrl || image.url} slug={pageSlug} alt="" />
               <span className={`${imageStyles.galleryCaption} ${imageStyles.libraryCaption}`}>{image.name}</span>
-              <span className={imageStyles.galleryCaption}>{selected ? '선택됨' : '이 사진 사용'}</span>
+              <span className={imageStyles.galleryCaption}>{selected ? '선택됨' : image.url ? '이 사진 사용' : '미지원 사진'}</span>
             </button>;
           })}
         </div>}
