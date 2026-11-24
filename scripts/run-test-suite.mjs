@@ -202,6 +202,7 @@ const emulator = [
   'test-event-ownership-invite-emulator',
   'test-firestore-rules-emulator',
   'test-storage-rules-emulator',
+  'test-invitation-media-pilot-emulator',
 ];
 
 const unique = (testIds) => [...new Set(testIds)];
