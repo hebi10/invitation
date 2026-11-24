@@ -158,3 +158,68 @@ export async function verifyGooglePlayOneTimePurchase(
     purchaseToken: token,
   }, options);
 }
+
+export type VoidedPlayPurchase = {
+  transactionIdentifier: string;
+  voidedAt: string;
+  reason: number | null;
+  source: number | null;
+};
+
+/** Read-only reconciliation. Never return raw purchase tokens or log upstream responses. */
+export async function listRecentVoidedGooglePlayPurchases(): Promise<VoidedPlayPurchase[]> {
+  const oauth = await accessToken().catch(() => null);
+  if (!oauth) throw new Error('Google Play refund verification is not configured.');
+  const purchases = new Map<string, VoidedPlayPurchase>();
+  const seenTokens = new Set<string>();
+  let nextToken: string | null = null;
+  for (let page = 0; page < 10; page++) {
+    const query = new URLSearchParams({ type: '0', maxResults: '100' });
+    if (nextToken) query.set('token', nextToken);
+    const url = `https://androidpublisher.googleapis.com/androidpublisher/v3/applications/${PACKAGE_NAME}/purchases/voidedpurchases?${query}`;
+    const response = await fetch(url, {
+      headers: { Authorization: `Bearer ${oauth}`, Accept: 'application/json' },
+      cache: 'no-store',
+      signal: AbortSignal.timeout(10000),
+    }).catch(() => null);
+    if (!response?.ok) throw new Error('Google Play refund verification failed.');
+    const payload: unknown = await response.json().catch(() => null);
+    if (!payload || typeof payload !== 'object' || Array.isArray(payload)) {
+      throw new Error('Invalid Google Play refund response.');
+    }
+    const data = payload as { voidedPurchases?: unknown; tokenPagination?: { nextPageToken?: unknown } };
+    if (data.voidedPurchases !== undefined && !Array.isArray(data.voidedPurchases)) {
+      throw new Error('Invalid Google Play refund response.');
+    }
+    for (const item of (data.voidedPurchases ?? []) as unknown[]) {
+      if (!item || typeof item !== 'object' || Array.isArray(item)) throw new Error('Invalid Google Play refund record.');
+      const value = item as Record<string, unknown>;
+      const token = typeof value.purchaseToken === 'string' ? value.purchaseToken : '';
+      const millis = typeof value.voidedTimeMillis === 'string' && /^\d+$/.test(value.voidedTimeMillis)
+        ? Number(value.voidedTimeMillis) : NaN;
+      if (!token || token.length > MAX_TOKEN_LENGTH || /\s/.test(token) ||
+          !Number.isSafeInteger(millis) || !Number.isFinite(new Date(millis).getTime())) {
+        throw new Error('Invalid Google Play refund record.');
+      }
+      const transactionIdentifier = `play_${googlePlayPurchaseTokenHash(token)}`;
+      const voidedAt = new Date(millis).toISOString();
+      const prior = purchases.get(transactionIdentifier);
+      if (!prior || prior.voidedAt < voidedAt) {
+        purchases.set(transactionIdentifier, {
+          transactionIdentifier,
+          voidedAt,
+          reason: typeof value.voidedReason === 'number' && Number.isInteger(value.voidedReason) ? value.voidedReason : null,
+          source: typeof value.voidedSource === 'number' && Number.isInteger(value.voidedSource) ? value.voidedSource : null,
+        });
+      }
+    }
+    const token = data.tokenPagination?.nextPageToken;
+    if (token === undefined || token === null || token === '') return [...purchases.values()];
+    if (typeof token !== 'string' || token.length > 4096 || seenTokens.has(token)) {
+      throw new Error('Invalid Google Play refund pagination.');
+    }
+    seenTokens.add(token);
+    nextToken = token;
+  }
+  throw new Error('Google Play refund scan exceeded its safe page limit.');
+}
