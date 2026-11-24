@@ -27,10 +27,9 @@ export function isTrustedReleaseEvent({ eventName, ref }) {
 }
 
 export function shouldDeployRelease({ eventName, ref, autoDeployEnabled, manualDeploy }) {
-  return isTrustedReleaseEvent({ eventName, ref }) && (
-    (eventName === 'push' && autoDeployEnabled === 'true') ||
-    (eventName === 'workflow_dispatch' && (manualDeploy === true || manualDeploy === 'true'))
-  );
+  return eventName === 'workflow_dispatch' &&
+    ref === 'refs/heads/main' &&
+    (manualDeploy === true || manualDeploy === 'true');
 }
 
 export function readAndroidGradleMetadata(gradle, expectedVersionCode) {
@@ -62,7 +61,7 @@ export function resolvePlayTarget(policy) {
 }
 
 export function validatePlayDeployment(policy) {
-  if (!shouldDeployRelease(policy)) throw new Error('Play 배포는 main push 자동 배포 또는 main 수동 배포만 허용합니다.');
+  if (!shouldDeployRelease(policy)) throw new Error('Play 배포는 main의 명시적 수동 요청만 허용합니다.');
   if (policy.signed !== 'true') throw new Error('기존 청첩장 키로 서명된 APK/AAB가 필요합니다. 서명 Secrets 4개를 확인하세요.');
   const { target, track } = resolvePlayTarget(policy);
   const status = policy.status || 'completed';

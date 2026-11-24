@@ -1,4 +1,4 @@
-import { View } from 'react-native';
+import { Pressable, View } from 'react-native';
 
 import { ActionButton } from '../../../../components/ActionButton';
 import { AppText } from '../../../../components/AppText';
@@ -7,6 +7,8 @@ import { TextField } from '../../../../components/TextField';
 import { usePreferences } from '../../../../contexts/PreferencesContext';
 import {
   hasValidCoordinates,
+  MOBILE_MAP_PROVIDERS,
+  MOBILE_MAP_PROVIDER_LABELS,
   type ManageFormState,
   type ManageStringFieldKey,
 } from '../../shared';
@@ -18,6 +20,7 @@ type LocationEditorStepProps = {
   mapLatitude: number | null;
   mapLongitude: number | null;
   onUpdateField: (field: ManageStringFieldKey, value: string) => void;
+  onSetMapProviders: (providers: ManageFormState['mapProviders']) => void;
   onSearchAddress: () => void | Promise<void>;
   onOpenMapUrl: () => void | Promise<void>;
   isSearchingAddress: boolean;
@@ -29,6 +32,7 @@ export function LocationEditorStep({
   mapLatitude,
   mapLongitude,
   onUpdateField,
+  onSetMapProviders,
   onSearchAddress,
   onOpenMapUrl,
   isSearchingAddress,
@@ -120,6 +124,53 @@ export function LocationEditorStep({
             </AppText>
           </View>
         )}
+      </SectionCard>
+
+      <SectionCard
+        title="하객에게 표시할 지도 앱"
+        description="주소로 지도 링크가 자동 생성됩니다. 하객에게 표시할 지도만 선택해 주세요."
+      >
+        {MOBILE_MAP_PROVIDERS.map((provider) => {
+          const checked = form.mapProviders.includes(provider);
+          return (
+            <Pressable
+              key={provider}
+              accessibilityRole="checkbox"
+              accessibilityLabel={MOBILE_MAP_PROVIDER_LABELS[provider]}
+              accessibilityState={{ checked }}
+              onPress={() => onSetMapProviders(MOBILE_MAP_PROVIDERS.filter((item) =>
+                item === provider ? !checked : form.mapProviders.includes(item)
+              ))}
+              style={{
+                minHeight: 48,
+                paddingHorizontal: 12,
+                paddingVertical: 10,
+                borderWidth: 1,
+                borderColor: palette.cardBorder,
+                flexDirection: 'row',
+                alignItems: 'center',
+                gap: 12,
+              }}
+            >
+              <View style={{
+                width: 20,
+                height: 20,
+                borderWidth: 1,
+                borderColor: palette.text,
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}>
+                {checked ? <AppText>✓</AppText> : null}
+              </View>
+              <AppText>{MOBILE_MAP_PROVIDER_LABELS[provider]}</AppText>
+            </Pressable>
+          );
+        })}
+        <AppText variant="muted">
+          {form.ceremonyAddress.trim() && form.mapProviders.length > 0
+            ? `하객 화면: ${form.mapProviders.map((provider) => MOBILE_MAP_PROVIDER_LABELS[provider]).join(' · ')}`
+            : '표시할 외부 지도 버튼이 없습니다.'}
+        </AppText>
       </SectionCard>
     </>
   );

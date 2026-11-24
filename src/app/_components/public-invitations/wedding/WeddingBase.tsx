@@ -7,6 +7,7 @@ import GuestbookThemed from '@/components/sections/Guestbook/GuestbookThemed';
 import type { Comment } from '@/services/commentService';
 import { resolveInvitationFeatures } from '@/lib/invitationProducts';
 import { toKoreanWeddingInstant } from '@/lib/weddingCalendar';
+import { formatWeddingTimeLabel } from '@/contracts/weddingDateTime';
 import { getRomanticPhotoSequence } from '@/lib/romanticPhotoSequence';
 
 import type { WeddingThemeRendererProps } from '../../weddingPageRenderers';
@@ -128,9 +129,12 @@ export default function WeddingBase({ state, theme, demoComments, showMap = true
           />
         </div>
       ) : null);
+  const calendarInstant = toKoreanWeddingInstant(page.weddingDateTime);
   const calendar = (<PublicInvitationDateFeature
         className={styles.dateSection}
         eventDate={state.weddingDate}
+        eventInstant={calendarInstant}
+        eventTimeLabel={formatWeddingTimeLabel(page.weddingDateTime)}
         mode="calendar-countdown"
         page={page}
         title="저희, 결혼합니다"
@@ -261,8 +265,8 @@ export default function WeddingBase({ state, theme, demoComments, showMap = true
             <p className={styles.venueName}>{page.venue}</p>
             </>}
           </div>
-          <WeddingCalendarDownload eventDate={toKoreanWeddingInstant(state.weddingDate)} title={`${page.groomName} · ${page.brideName} 결혼식`} location={[...new Set([page.venue, ceremonyAddress].filter(Boolean))].join(' · ')} />
-          {features.showCountdown ? <details className={styles.calendarDisclosure}>
+          <WeddingCalendarDownload eventDate={calendarInstant} title={`${page.groomName} · ${page.brideName} 결혼식`} location={[...new Set([page.venue, ceremonyAddress].filter(Boolean))].join(' · ')} />
+          {features.showCountdown && Number.isFinite(calendarInstant.getTime()) ? <details className={styles.calendarDisclosure}>
             <summary className={styles.disclosureSummary}>
               <span className={styles.summaryText}>
                 <span className={styles.summaryTitle}>예식 달력 보기</span>
@@ -291,6 +295,7 @@ export default function WeddingBase({ state, theme, demoComments, showMap = true
             venueName={page.venue}
             kakaoMapConfig={pageData?.kakaoMap}
             mapHref={storedContent.mapHref}
+            mapProviders={pageData?.mapProviders}
           />
         ) : null}
         {storedContent.mapDescription ? <p className={styles.travelNote}>{storedContent.mapDescription}</p> : null}

@@ -96,13 +96,9 @@ export default function FinalStep({
           checked={published}
           onChange={(event) => setPublished(event.target.checked)}
         />
-        저장 후 바로 공개하기
+        최종 저장 시 공개 설정
       </label> : null}
-      <p className={styles.sectionText}>
-        {!canManagePublication ? (published ? '저장하면 공개 중인 청첩장에 반영됩니다.' : '입력한 내용을 저장합니다. 공개 여부는 관리자가 설정합니다.') : published
-          ? '저장하면 입력한 내용이 공개 페이지에 반영됩니다. 링크를 받은 손님이 볼 수 있습니다.'
-          : '공개하지 않고 저장합니다. 손님에게 보내기 전에 공개 여부를 확인해 주세요.'}
-      </p>
+      {!canManagePublication ? <p className={styles.sectionText}>공개 설정은 관리자가 변경할 수 있습니다.</p> : null}
     </div>
   );
 }

@@ -356,6 +356,7 @@ export async function consumeStoredEventOwnershipInvite(input: {
       {
         ownerUid: input.customer.uid,
         ownerEmail: input.customer.email,
+        publicationReview: null,
         ownerDisplayName: input.customer.displayName,
         updatedAt: input.now,
       },

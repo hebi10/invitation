@@ -24,6 +24,7 @@ import type {
 import { getAdjacentWizardSection, isOptionalWizardSection } from './pageWizardSections';
 import {
   getWizardSaveStatusLabel,
+  getWizardPublicationSaveMessage,
   buildWizardReviewFacts,
   getWizardSectionStatus,
   hasMeaningfulInputForWizardStep,
@@ -59,6 +60,7 @@ type PageWizardWorkspaceProps = {
   lastSavedAt: Date | null;
   persistedPublished: boolean;
   publicAccess?: InvitationPublicAccessState;
+  publicAccessIfPublished?: InvitationPublicAccessState;
   onReturnToList?: () => void;
   returnToListLabel?: string;
   notice: ReactNode;
@@ -76,6 +78,7 @@ type PageWizardWorkspaceProps = {
   onPrevious: () => void;
   onNext: () => void;
   onFinalConfirm: () => void;
+  onRequestPublicationReview?: () => void;
   onSave: () => void;
 };
 
@@ -122,6 +125,7 @@ export default function PageWizardWorkspace({
   lastSavedAt,
   persistedPublished,
   publicAccess,
+  publicAccessIfPublished,
   onReturnToList,
   returnToListLabel = '목록으로',
   notice,
@@ -139,6 +143,7 @@ export default function PageWizardWorkspace({
   onPrevious,
   onNext,
   onFinalConfirm,
+  onRequestPublicationReview,
   onSave,
 }: PageWizardWorkspaceProps) {
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
@@ -193,6 +198,16 @@ export default function PageWizardWorkspace({
     (section) => section.id === activeSection.id
   );
   const isFinalSection = activeSection.id === 'review';
+  const showPublicationReviewAction = isFinalSection && Boolean(onRequestPublicationReview);
+  const canOpenAfterPublishing = Boolean((persistedPublished ? publicAccess : publicAccessIfPublished)?.isPublic);
+  const publicationSaveMessage = experience
+    ? '체험 청첩장에 내용을 저장합니다.'
+    : getWizardPublicationSaveMessage(
+      persistedPublished,
+      publicAccess,
+      isFinalSection && canManageSetup ? published : undefined,
+      publicAccessIfPublished
+    );
   const primarySections = sections.filter(section => !isOptionalWizardSection(section));
   const optionalSections = sections.filter(isOptionalWizardSection);
   const isOptionalSection = isOptionalWizardSection(activeSection);
@@ -310,7 +325,7 @@ export default function PageWizardWorkspace({
               ) : null}
             </div>
             <button type="button" className={styles.secondaryAction} onClick={() => attempt(onSave, true)} disabled={isSaving}>
-              {isSaving ? busyLabel : saveStatus === 'error' ? '저장 다시 시도' : setupOnly ? (hasPersistedData ? '설정 저장' : '초대장 생성') : '내용 저장'}
+              {isSaving ? busyLabel : showPublicationReviewAction ? '내용만 저장' : saveStatus === 'error' ? '저장 다시 시도' : setupOnly ? (hasPersistedData ? '설정 저장' : '초대장 생성') : publication.isPublic && !experience ? '저장 · 즉시 반영' : '내용 저장'}
             </button>
             {fullPreview || activePreviewStep ? (
               <button
@@ -367,7 +382,7 @@ export default function PageWizardWorkspace({
                 {mainReviewFacts.map((fact) => (
                   <div key={fact.label}><dt>{fact.label}</dt><dd>{fact.value}</dd></div>
                 ))}
-                <div><dt>저장 후 공개 상태</dt><dd>{published ? '공개' : '비공개'}</dd></div>
+                <div><dt>공개 설정</dt><dd>{published ? '켜짐' : '꺼짐'}</dd></div>
               </dl>
               {formState.metadata.images.wedding ? (
                 <img className={styles.reviewImage} src={formState.metadata.images.wedding} alt="등록한 대표 이미지 확인" />
@@ -467,13 +482,9 @@ export default function PageWizardWorkspace({
       <footer className={styles.actionBar}>
         <div className={styles.actionBarInner}>
           <div className={styles.actionContext}><span>{activeSection.title}</span>
-            <p>{publication.isPublic
-              ? '내용을 저장하면 하객에게 보이는 청첩장에도 바로 반영됩니다.'
-              : publicAccess && publicAccess.reason !== 'private'
-                ? `${publication.label} · ${publication.description ?? '공개·노출 설정을 확인해 주세요.'}`
-                : persistedPublished
-                  ? '공개 설정됨 · 실제 노출 상태는 이벤트 목록에서 확인해 주세요.'
-                  : '저장한 내용은 공개 전까지 초안으로 유지됩니다.'}</p>
+            <p id="wizard-save-publication">{showPublicationReviewAction
+              ? '검토 요청을 보내면 관리자가 내용을 확인한 뒤 공개할 수 있습니다.'
+              : publicationSaveMessage}</p>
           </div>
           <div className={styles.actionButtons}>
             {!setupOnly ? <button
@@ -488,16 +499,20 @@ export default function PageWizardWorkspace({
               <button
                 type="button"
                 className={styles.primaryAction}
-                onClick={() => attempt(onFinalConfirm, true)}
+                onClick={() => attempt(onRequestPublicationReview ?? onFinalConfirm, true)}
+                aria-describedby="wizard-save-publication"
                 disabled={isSaving}
               >
-                {isSaving ? busyLabel : !canManageSetup ? '내용 저장 완료' : published ? '저장 후 공개' : persistedPublished ? '비공개로 저장' : '초안 저장'}
+                {isSaving ? busyLabel : onRequestPublicationReview ? '저장하고 검토 요청' : !canManageSetup ? '내용 저장 완료' : published
+                  ? canOpenAfterPublishing ? '저장 후 공개' : '공개 설정 저장'
+                  : persistedPublished ? '비공개로 저장' : '초안 저장'}
               </button>
             ) : (
               <button
                 type="button"
                 className={styles.primaryAction}
                 onClick={() => attempt(onNext)}
+                aria-describedby="wizard-save-publication"
                 disabled={isSaving}
               >
                 {isSaving ? busyLabel : setupOnly ? (hasPersistedData ? '내용 입력으로' : '초대장 생성') : nextSection?.id === 'review' ? '저장 후 최종 확인' : '저장 후 다음'}

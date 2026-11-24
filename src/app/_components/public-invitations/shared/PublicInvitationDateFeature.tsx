@@ -13,6 +13,8 @@ import featureStyles from './PublicInvitationDateFeature.module.css';
 type PublicInvitationDateFeatureProps = {
   className?: string;
   eventDate: Date;
+  eventInstant?: Date;
+  eventTimeLabel?: string;
   mode?: PublicInvitationDateFeatureMode;
   page: Pick<InvitationPage, 'features' | 'productTier'>;
   title: string;
@@ -22,13 +24,15 @@ type PublicInvitationDateFeatureProps = {
 export function PublicInvitationDateFeature({
   className,
   eventDate,
+  eventInstant,
+  eventTimeLabel,
   mode = 'countdown',
   page,
   title,
   titleClassName,
 }: PublicInvitationDateFeatureProps) {
   const [now, setNow] = useState(() => new Date());
-  const model = buildPublicInvitationDateFeature(page, eventDate, { mode, now });
+  const model = buildPublicInvitationDateFeature(page, eventDate, { mode, now, eventInstant });
 
   useEffect(() => {
     const timer = window.setInterval(() => setNow(new Date()), 60_000);
@@ -48,7 +52,7 @@ export function PublicInvitationDateFeature({
       <h2 className={titleClassName || featureStyles.title}>{title}</h2>
       <div className={featureStyles.summary}>
         <time className={featureStyles.date} dateTime={model.dateTime}>
-          {model.dateLabel}
+          {model.dateLabel}{eventTimeLabel ? ` · ${eventTimeLabel}` : ''}
         </time>
         <strong className={featureStyles.countdown}>{model.countdownLabel}</strong>
       </div>
