@@ -805,18 +805,22 @@ export function useCreateForm({
     let created = false;
 
     try {
-      created = await runPendingBillingPurchase({
+      const result = await runPendingBillingPurchase({
         appUserId: customerSession.uid,
         productId: billingProductId,
         apiBaseUrl,
         target: { action: 'createInvitationPage', input: createInput },
       }, {
-        purchase: () => purchaseBillingProduct(billingProductId, { appUserId: customerSession.uid }),
+        purchase: (beforeLaunch) => purchaseBillingProduct(billingProductId, {
+          appUserId: customerSession.uid,
+          beforeLaunch,
+        }),
         fulfill: (receipt) => createInvitationPage(createInput, { billingPurchase: receipt }),
         onResume: () => {
           setNotice('이전 결제를 추가 결제 없이 다시 반영하고 있습니다.');
         },
       });
+      created = Boolean(result);
     } catch (error) {
       setNotice(
         error instanceof Error

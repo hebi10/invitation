@@ -89,15 +89,22 @@ try {
 assert.equal(JSON.stringify(previewSeed), beforePreview, 'Preview generation must not mutate the photo-free draft');
 
 for (const theme of ['simple', 'emotional', 'romantic', 'gyeol', 'classic-r'] as const) {
-  const legacyPreview = buildPreview(previewSeed, theme);
-  assert.equal(legacyPreview.mainImageUrl, SAMPLE_WEDDING_COVER, `${theme}: existing empty-draft cover examples remain available`);
-  assert.deepEqual(legacyPreview.galleryImageUrls, SAMPLE_WEDDING_IMAGES.filter(url => url !== SAMPLE_WEDDING_COVER),
-    `${theme}: existing empty-draft gallery examples remain available`);
+  const designPreview = buildPreview(previewSeed, theme);
+  assert.equal(designPreview.mainImageUrl, SAMPLE_WEDDING_COVER, `${theme}: the design preview keeps its sample cover by default`);
+  const galleryExamples = SAMPLE_WEDDING_IMAGES.filter(url => url !== SAMPLE_WEDDING_COVER);
+  assert.deepEqual(designPreview.galleryImageUrls, galleryExamples, `${theme}: the design preview keeps its sample gallery`);
+
+  const editorPreview = buildPreview(previewSeed, theme, false);
+  assert.equal(editorPreview.mainImageUrl, '', `${theme}: the editor preview stays photo-free until a cover is uploaded`);
+  assert.equal(editorPreview.heroImageUrl, '', `${theme}: the editor preview has no fallback hero image`);
+  assert.deepEqual(editorPreview.galleryImageUrls, galleryExamples, `${theme}: the editor preview keeps the existing sample gallery`);
 }
 previewSeed.metadata.images.wedding = '/editor-vow-cover.jpg';
-const coverOnlyPreview = buildPreview(previewSeed, 'vow');
+const coverOnlyPreview = buildPreview(previewSeed, 'vow', false);
 assert.equal(coverOnlyPreview.mainImageUrl, '/editor-vow-cover.jpg', 'Vow previews retain a supplied representative photo');
 assert.deepEqual(coverOnlyPreview.galleryImageUrls, [], 'A supplied representative photo must not add a sample gallery');
+assert.equal(buildPreview(previewSeed, 'simple', false).mainImageUrl, '/editor-vow-cover.jpg',
+  'Disabling sample covers does not hide an uploaded representative photo');
 previewSeed.metadata.images.wedding = '';
 previewSeed.pageData.galleryImages = ['/editor-vow-first.jpg', '/editor-vow-second.jpg'];
 const galleryOnlyPreview = buildPreview(previewSeed, 'vow');

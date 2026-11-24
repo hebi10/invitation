@@ -308,11 +308,11 @@ def capture_responsive_views():
         ]),
         (430, [
             ('settings', 'settings', ['설정', '화면 설정']),
-            ('home', 'design-check-home', ['Invitation', 'MODERN WEDDING EDITORIAL']),
+            ('home', 'design-check-home', ['Invitation', '신민제·김현지 공개 샘플']),
             ('renew', 'design-check-modals?kind=renew-pending', ['이전 결제 복구', '이전 결제 이어서 처리']),
         ]),
         (600, [
-            ('home', 'design-check-home', ['Invitation', 'MODERN WEDDING EDITORIAL']),
+            ('home', 'design-check-home', ['Invitation', '신민제·김현지 공개 샘플']),
             ('account-list', 'design-check-accounts', ['계정별 전체 청첩장', '12개']),
             ('editor', 'design-check', ['청첩장 편집', '기본 정보']),
             ('checkout', 'design-check-modals?kind=payment', ['Google Play 결제', '결제 예정 금액']),
@@ -320,7 +320,7 @@ def capture_responsive_views():
         (840, [
             ('create', 'create', ['청첩장 만들기', '5,000원']),
             ('account-list', 'design-check-accounts', ['계정별 전체 청첩장', '12개']),
-            ('home', 'design-check-home', ['Invitation', 'MODERN WEDDING EDITORIAL']),
+            ('home', 'design-check-home', ['Invitation', '신민제·김현지 공개 샘플']),
             ('preview', 'design-check-modals?kind=preview', ['청첩장 미리보기', '디자인 샘플']),
         ]),
     ]
@@ -424,7 +424,7 @@ def main():
             adb('shell', 'input', 'keyevent', 'KEYCODE_WAKEUP')
             adb('shell', 'wm', 'dismiss-keyguard')
             adb('shell', 'settings', 'put', 'secure', 'show_ime_with_hard_keyboard', '1')
-            wait_screen('my-invitations', '', ['홈', 'MODERN WEDDING EDITORIAL'])
+            wait_screen('my-invitations', '', ['홈', '신민제·김현지 공개 샘플'])
             wait_screen('login', 'login', ['기존 청첩장 연결', '기기 연동 안내'])
             wait_screen('create', 'create', ['만들기', '고객 계정 로그인'])
             success_tree = wait_screen('create-success-fixture', 'design-check-create-success',

@@ -1,5 +1,6 @@
 import type { MobileInvitationThemeKey as SharedMobileInvitationThemeKey } from '../lib/invitationThemes';
 import type { MobileClientEditorPermissions } from '../../../../src/types/mobileClientEditor';
+import type { WeddingDateTime } from '../../../../src/contracts/weddingDateTime';
 import type {
   GuestbookCommentAction as SharedGuestbookCommentAction,
   GuestbookCommentStatus as SharedGuestbookCommentStatus,
@@ -108,6 +109,8 @@ export interface MobileInvitationKakaoMapData {
   markerTitle?: string;
 }
 
+export type MobileInvitationMapProvider = 'naver' | 'kakao' | 'google';
+
 export interface MobileInvitationPageData {
   subtitle?: string;
   venueName?: string;
@@ -116,12 +119,14 @@ export interface MobileInvitationPageData {
   ceremonyTime?: string;
   mapDescription?: string;
   mapUrl?: string;
+  mapProviders?: MobileInvitationMapProvider[];
   greetingMessage?: string;
   greetingAuthor?: string;
   coverImageThumbnailUrl?: string;
   galleryImageThumbnailUrls?: string[];
   ceremony?: MobileInvitationCeremonyData;
   reception?: MobileInvitationCeremonyData;
+  themeOverrides?: Partial<Record<MobileInvitationThemeKey, Pick<MobileInvitationPageData, 'ceremonyTime' | 'ceremony'>>>;
   groom?: MobileInvitationPerson;
   bride?: MobileInvitationPerson;
   galleryImages?: string[];
@@ -157,6 +162,7 @@ export interface MobileInvitationSeed {
   displayName: string;
   description: string;
   date: string;
+  weddingDateTime?: WeddingDateTime;
   venue: string;
   groomName: string;
   brideName: string;
@@ -291,6 +297,10 @@ export interface MobileInvitationCreationResponse {
   page: MobilePageSummary;
   dashboardPage?: MobileEditableInvitationPageConfig | null;
   links: MobileInvitationLinks;
+}
+
+export interface MobileBillingPageCreationResponse extends MobileInvitationCreationResponse {
+  billingPurchaseConsumed?: true;
 }
 
 export interface PendingManageOnboarding {

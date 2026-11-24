@@ -82,7 +82,11 @@ const sectionPositions = [
 assert.equal(sectionPositions.every((position) => position >= 0), true);
 assert.match(pageSource, /\{gallery\}/);
 assert.match(pageSource, /data-wedding-section="ceremony"/);
-assert.match(pageSource, /features.showCountdown \? <details/);
+assert.match(
+  pageSource,
+  /features\.showCountdown\s*&&\s*Number\.isFinite\(calendarInstant\.getTime\(\)\)\s*\?\s*<details\b/,
+  'The calendar disclosure requires countdown support and a valid wedding date.'
+);
 
 assert.doesNotMatch(
   cssSource

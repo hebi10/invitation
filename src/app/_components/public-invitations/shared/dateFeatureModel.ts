@@ -58,19 +58,21 @@ export function buildPublicInvitationDateFeature(
   {
     mode,
     now = new Date(),
+    eventInstant = eventDate,
   }: {
     mode: PublicInvitationDateFeatureMode;
     now?: Date;
+    eventInstant?: Date;
   }
 ): PublicInvitationDateFeatureModel | null {
   const features = resolveInvitationFeatures(page.productTier, page.features);
 
-  if (!features.showCountdown || Number.isNaN(eventDate.getTime())) {
+  if (!features.showCountdown || Number.isNaN(eventDate.getTime()) || Number.isNaN(eventInstant.getTime())) {
     return null;
   }
 
   const remainingDays = Math.ceil(
-    (eventDate.getTime() - now.getTime()) / DAY_IN_MS
+    (eventInstant.getTime() - now.getTime()) / DAY_IN_MS
   );
 
   return {
@@ -83,7 +85,7 @@ export function buildPublicInvitationDateFeature(
       day: 'numeric',
       weekday: 'long',
     }).format(eventDate),
-    dateTime: eventDate.toISOString(),
+    dateTime: eventInstant.toISOString(),
     eventDay: eventDate.getDate(),
     mode,
     monthLabel: `${eventDate.getFullYear()}년 ${eventDate.getMonth() + 1}월`,

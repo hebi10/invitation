@@ -10,6 +10,10 @@ import { useAdmin } from '@/contexts';
 import { buildCustomerInvitationPreviewPath } from '@/lib/customerInvitationWorkspace';
 import type { InvitationThemeKey } from '@/lib/invitationThemes';
 import { loadCustomerInvitationPreview } from '@/services/customerEventService';
+import { getCurrentFirebaseIdToken } from '@/services/adminAuth';
+import { useProtectedInvitationPreviewMedia } from '@/hooks/useProtectedInvitationPreviewMedia';
+
+const readMediaToken = () => getCurrentFirebaseIdToken();
 import styles from '../../../page.module.css';
 
 export default function CustomerInvitationPreviewClient({ slug, theme }: { slug: string; theme: InvitationThemeKey }) {
@@ -24,6 +28,10 @@ export default function CustomerInvitationPreviewClient({ slug, theme }: { slug:
     retry: false,
   });
 
+  const media = useProtectedInvitationPreviewMedia(
+    !isAdminLoading && isLoggedIn && verified ? query.data : null, slug, 'customer', authUser?.uid ?? '', readMediaToken,
+  );
+
   if (isAdminLoading) return <p className={styles.cardMeta} role="status">로그인 상태를 확인하고 있습니다.</p>;
   if (!isLoggedIn) return <main className={styles.page}><div className={styles.shell}>
     <FirebaseAuthLoginCard title="로그인 후 미리보기를 확인해 주세요" description="현재 계정에 연결된 초대장만 볼 수 있습니다."
@@ -31,10 +39,10 @@ export default function CustomerInvitationPreviewClient({ slug, theme }: { slug:
   </div></main>;
   if (!verified) return <CustomerEmailVerificationGate />;
 
-  const page = query.data;
+  const page = media.page;
   const { renderer } = resolveEventPageRenderer(page?.eventType);
   const validTheme = !page || (renderer.isThemeSupported(theme) && renderer.resolveRouteTheme(page, theme) === theme);
-  const error = query.error instanceof Error ? query.error.message : !validTheme ? '이 초대장에서 지원하지 않는 디자인입니다.' : '';
+  const error = query.error instanceof Error ? query.error.message : media.error || (!validTheme ? '이 초대장에서 지원하지 않는 디자인입니다.' : '');
 
   return <>
     <div className={styles.previewNotice} data-operation-ui>

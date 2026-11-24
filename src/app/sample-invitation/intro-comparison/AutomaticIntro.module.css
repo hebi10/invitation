@@ -1,0 +1,70 @@
+.sequence {
+  position: relative;
+  isolation: isolate;
+}
+
+.opening {
+  --exit-duration: 420ms;
+  position: absolute;
+  z-index: 1;
+  inset: 0;
+  display: grid;
+  align-content: center;
+  overflow: hidden;
+  background: #f8f4ec;
+  color: #392d23;
+  pointer-events: none;
+  animation: show-cover var(--exit-duration) ease-out calc(var(--opening-duration) - var(--exit-duration)) both;
+}
+
+.pageOpening {
+  inset-block-end: auto;
+  min-block-size: 100svh;
+  gap: 20px;
+  padding-block-end: 26px;
+}
+
+.artwork {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1;
+}
+
+.bouquet {
+  position: absolute;
+  inset: 0;
+  background: #e7dac7;
+}
+
+.bouquet img {
+  object-fit: cover;
+}
+
+.details {
+  padding-inline: 12px;
+  text-align: center;
+  color: #392d23;
+}
+
+.details p {
+  margin: 0;
+}
+
+.details p:first-child {
+  font: 400 1.25rem/1.45 'Wedding Myeongjo', serif;
+}
+
+.details p + p {
+  margin-top: 5px;
+  color: #6c5c4c;
+  font: 400 0.875rem/1.5 'Wedding SUIT', sans-serif;
+}
+
+@keyframes show-cover {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .opening { display: none; }
+}

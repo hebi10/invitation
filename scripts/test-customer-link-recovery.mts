@@ -4,6 +4,7 @@ import { runInNewContext } from 'node:vm';
 import ts from 'typescript';
 import * as customerWorkspace from '../src/lib/customerInvitationWorkspace.ts';
 import { appQueryKeys } from '../src/lib/appQuery.ts';
+import { getInvitationPublicAccessState } from '../src/lib/invitationPublicAccess.ts';
 
 // Keep real component effects, dependencies, refs, and event handlers. Only platform I/O is replaced.
 function mount(file: string, modules: Record<string, unknown>, globals: Record<string, unknown> = {}, exported = 'default') {
@@ -38,9 +39,9 @@ function mount(file: string, modules: Record<string, unknown>, globals: Record<s
     render(props = {}) { cursor = 0; const tree = (exports[exported] as (props: object) => unknown)(props); for (const effect of effects.splice(0)) effect(); return tree; },
   };
 }
-function button(tree: unknown, label: string): { onClick?: () => void; onPress?: () => void } | undefined {
+function button(tree: unknown, label: string): { disabled?: boolean; onClick?: () => void; onPress?: () => void } | undefined {
   if (!tree || typeof tree !== 'object') return undefined;
-  const node = tree as { props?: { children?: unknown; onClick?: () => void; onPress?: () => void } };
+  const node = tree as { props?: { children?: unknown; disabled?: boolean; onClick?: () => void; onPress?: () => void } };
   if (node.props?.children === label) return node.props;
   for (const child of [node.props?.children].flat(Infinity)) { const found = button(child, label); if (found) return found; }
   return undefined;
@@ -109,6 +110,10 @@ const settle = () => new Promise(resolve => setImmediate(resolve));
 
 for (const surface of ['list', 'result']) {
   let copyMode: 'success' | 'failed' | 'throw' = 'failed';
+  const schedule = { published: true, displayPeriodEnabled: true,
+    displayPeriodStart: new Date('2027-05-06T00:00:00Z'), displayPeriodEnd: new Date('2027-05-07T00:00:00Z') };
+  const event = { slug: 'our event', eventType: 'wedding', published: true,
+    publicAccess: getInvitationPublicAccessState(schedule, new Date('2027-05-05T00:00:00Z')) };
   const copiedAddresses: string[] = [];
   const modules = {
     '@/contexts': { useAdmin: () => ({ authUser: { uid: 'owner', emailVerified: true }, isLoggedIn: true, isAdminLoading: false }) },
@@ -127,22 +132,40 @@ for (const surface of ['list', 'result']) {
     './page.module.css': { __esModule: true, default: {} },
     './PageWizardResultClient.module.css': { __esModule: true, default: {} },
     '@tanstack/react-query': { useQueryClient: () => ({}), useMutation: () => ({}), useQuery: () => surface === 'list' ? {} : ({
-      data: { status: 'ready', configState: { published: false, defaultTheme: 'simple', config: { eventType: 'wedding', displayName: '우리 행사', couple: { groom: { name: '' }, bride: { name: '' } } } },
-        publicAccess: { isPublic: false, adminLabel: '노출 종료' } },
+      data: { status: 'ready', configState: { published: event.published, defaultTheme: 'simple', config: { eventType: 'wedding', displayName: '우리 행사', couple: { groom: { name: '' }, bride: { name: '' } } } },
+        publicAccess: event.publicAccess },
     }) },
   };
   const screen = mount(surface === 'list' ? 'src/app/my-invitations/MyInvitationsClient.tsx' : 'src/app/page-wizard/PageWizardResultClient.tsx', modules, {}, surface === 'list' ? 'OwnedEventCard' : 'default');
   const props = surface === 'list' ? { authUid: 'owner', gateway: {}, routes: { wizardEdit: () => '/page-wizard/our%20event' }, experience: false,
-    event: { slug: 'our event', eventType: 'wedding', published: false, publicAccess: { isPublic: false, adminLabel: '노출 종료' } } } : { slug: 'our event' };
+    event } : { slug: 'our event' };
+  for (const access of [
+    event.publicAccess,
+    getInvitationPublicAccessState(schedule, new Date('2027-05-08T00:00:00Z')),
+    getInvitationPublicAccessState({ ...schedule, published: false }),
+  ]) {
+    event.published = access.reason !== 'private';
+    event.publicAccess = access;
+    const tree = screen.render(props);
+    const action = button(tree, '하객용 링크 복사');
+    assert.equal(action?.disabled, true, `${surface}: ${access.reason} links are not ready to share`);
+    action?.onClick?.(); await settle();
+    assert.deepEqual(copiedAddresses, []);
+    assert.match(JSON.stringify(tree), /하객이 링크를 열 수 없습니다/);
+    if (access.reason === 'scheduled') assert.ok(JSON.stringify(tree).includes(access.adminDescription!));
+  }
+  event.published = true;
+  event.publicAccess = getInvitationPublicAccessState(schedule, new Date('2027-05-06T12:00:00Z'));
   for (const mode of ['failed', 'throw', 'success'] as const) {
     copyMode = mode;
     const action = button(screen.render(props), '하객용 링크 복사');
     assert.ok(action?.onClick, `${surface}: a guest copy action is available`);
+    assert.equal(action.disabled, false);
     action.onClick(); await settle();
     const tree = JSON.stringify(screen.render(props));
     assert.match(tree, mode === 'success' ? /하객용 링크를 복사했습니다/ : /링크를 복사하지 못했습니다/);
     assert.match(tree, /로그인한 소유자만/);
-    assert.match(tree, /하객이 열 수 없습니다/);
+    assert.match(tree, /하객이 지금 링크를 열 수 있습니다/);
   }
   assert.deepEqual(copiedAddresses, Array(3).fill('https://invite.example/our%20event'), `${surface}: guest sharing never copies an authenticated preview route`);
 }

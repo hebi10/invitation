@@ -25,7 +25,14 @@ type PreviewError = Error & { status: number };
 class CustomerEventClaimError extends Error { constructor(public status: number, message: string) { super(message); } }
 let ownerStatus = 'ready';
 let pageReads = 0;
+const mediaHelpers = await import('../src/lib/invitationPreviewMedia');
+const projection = loadModule<typeof import('../src/server/invitationMediaProjection')>('src/server/invitationMediaProjection.ts', {
+  '@/lib/invitationPreviewMedia': mediaHelpers, './firebaseAdmin': { getServerStorageBucketName: () => 'test-bucket' },
+});
+const mediaFixture = 'https://firebasestorage.googleapis.com/v0/b/test-bucket/o/wedding-images%2Fprivate-event%2Fphoto.png?alt=media&token=preview-fixture';
+let pilotSlug = '';
 const persistedPage = { slug: 'private-event', eventType: 'wedding', published: false,
+  metadata: { images: { wedding: mediaFixture } }, pageData: { galleryImages: [mediaFixture] },
   displayPeriodEnabled: true, displayPeriodStart: new Date('2025-01-01'),
   displayPeriodEnd: new Date('2025-02-01'), features: { showGuestbook: true, shareMode: 'kakao' },
 } as unknown as InvitationPage;
@@ -38,6 +45,10 @@ const service = loadModule<{
     if (ownerStatus === 'unavailable-throw') throw new CustomerEventClaimError(409, '현재 이용할 수 없는 초대장입니다.');
     return { status: ownerStatus, summary: null };
   } },
+  './invitationMediaProjection': {
+    projectPilotPrivateInvitationMedia: (page: InvitationPage, slug: string, mode: 'customer' | 'mobile') =>
+      projection.projectPilotPrivateInvitationMedia(page, slug, mode, { pilotSlug, bucketName: 'test-bucket' }),
+  },
   './invitationPageServerService': { getServerInvitationPageBySlug: async (slug: string, options: unknown) => {
     assert.equal(slug, 'private-event');
     assert.deepEqual(JSON.parse(JSON.stringify(options)), { includePrivate: true, sampleFallbackMode: 'never' });
@@ -85,6 +96,13 @@ assert.equal((await route.GET(new Request('https://example.test'), context)).sta
 authenticated = false;
 assert.equal((await route.GET(new Request('https://example.test'), context)).status, 401);
 assert.equal(pageReads, 2, 'Authentication failure must not load the private page');
+ownerStatus = 'ready';
+pilotSlug = 'private-event';
+const protectedPreview = await service.getCustomerInvitationPreview('owner', 'private-event');
+assert.equal(protectedPreview.metadata.images.wedding, '/api/customer/events/private-event/media/photo.png/');
+assert.ok(!JSON.stringify(protectedPreview).includes('preview-fixture'));
+assert.equal(persistedPage.metadata.images.wedding, mediaFixture, 'Persisted image references remain untouched.');
+pilotSlug = '';
 
 const workspace = loadModule<{
   buildCustomerInvitationPreviewPath(slug: string, theme: string): string;
@@ -107,11 +125,14 @@ runInNewContext(ts.transpileModule(readFileSync('src/app/AppQueryProvider.tsx', 
 }).outputText, { exports: provider, React, require(name: string) {
   return name === 'react' ? React : { QueryClient, QueryClientProvider };
 } });
+const previewMediaHook = await import('../src/hooks/useProtectedInvitationPreviewMedia');
 const componentSource = ts.transpileModule(readFileSync('src/app/my-invitations/preview/[slug]/[theme]/CustomerInvitationPreviewClient.tsx', 'utf8'), {
   compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, jsx: ts.JsxEmit.React, esModuleInterop: true },
 }).outputText;
 runInNewContext(componentSource, { exports: component, React, require(name: string) {
   if (name === 'react') return React;
+  if (name === '@/hooks/useProtectedInvitationPreviewMedia') return previewMediaHook;
+  if (name === '@/services/adminAuth') return { getCurrentFirebaseIdToken: async () => 'test-token' };
   if (name === '@tanstack/react-query') return { useQuery: () => ({ data: latestPage, dataUpdatedAt: 2, error: null }) };
   if (name === '@/app/AppQueryProvider') return { __esModule: true, default: provider.default };
   if (name === 'next/link') return { __esModule: true, default: ({ children, ...props }: React.PropsWithChildren<{ href: string }>) => React.createElement('a', props, children) };

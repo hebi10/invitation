@@ -4,6 +4,12 @@ import { useEffect, useRef, useState } from 'react';
 
 import type { KakaoMapInstance, KakaoMarkerInstance } from '@/types/kakao';
 import { loadKakaoMapsSdk } from '@/utils/kakaoMaps';
+import {
+  WEDDING_MAP_PROVIDER_LABELS,
+  buildWeddingMapProviderUrl,
+  normalizeWeddingMapProviders,
+  type WeddingMapProvider,
+} from '@/lib/weddingMapProviders';
 import WeddingActionIcon from '../WeddingActionIcon';
 
 import styles from './LocationMap.module.css';
@@ -19,6 +25,7 @@ interface LocationMapProps {
     markerTitle?: string;
   };
   mapHref: string;
+  mapProviders?: WeddingMapProvider[];
 }
 
 function validCoordinates(latitude: number, longitude: number) {
@@ -27,17 +34,32 @@ function validCoordinates(latitude: number, longitude: number) {
     && !(latitude === 0 && longitude === 0);
 }
 
-export default function LocationMap({ address, venueName, kakaoMapConfig, mapHref, appearance }: LocationMapProps) {
+export default function LocationMap({ address, venueName, kakaoMapConfig, mapHref, mapProviders, appearance }: LocationMapProps) {
   const sectionRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const instanceRef = useRef<KakaoMapInstance | null>(null);
   const [shouldLoad, setShouldLoad] = useState(false);
   const [status, setStatus] = useState<'loading' | 'ready' | 'failed'>('loading');
   const [controlsEnabled, setControlsEnabled] = useState(false);
-  const [directionsHref, setDirectionsHref] = useState('');
+  const [resolvedCoordinates, setResolvedCoordinates] = useState<{ latitude: number; longitude: number } | null>(null);
   const latitude = kakaoMapConfig?.latitude;
   const longitude = kakaoMapConfig?.longitude;
   const level = kakaoMapConfig?.level;
+  const selectedProviders = normalizeWeddingMapProviders(mapProviders);
+  const destination = {
+    venueName,
+    address,
+    latitude: resolvedCoordinates?.latitude ?? latitude,
+    longitude: resolvedCoordinates?.longitude ?? longitude,
+  };
+  const providerLinks = selectedProviders.map((provider) => ({
+    provider,
+    label: WEDDING_MAP_PROVIDER_LABELS[provider],
+    href: buildWeddingMapProviderUrl(provider, destination),
+  })).filter((link) => Boolean(link.href));
+  const fallbackHref = selectedProviders.includes('kakao')
+    ? mapHref
+    : (providerLinks[0]?.href ?? '');
 
   useEffect(() => {
     const section = sectionRef.current;
@@ -45,14 +67,34 @@ export default function LocationMap({ address, venueName, kakaoMapConfig, mapHre
       setShouldLoad(true);
       return;
     }
-    const observer = new IntersectionObserver(([entry]) => {
-      if (entry.isIntersecting) {
-        setShouldLoad(true);
-        observer.disconnect();
+    let loaded = false;
+    let observer: IntersectionObserver | null = null;
+    const beginLoading = () => {
+      if (loaded) return;
+      loaded = true;
+      setShouldLoad(true);
+      observer?.disconnect();
+      window.removeEventListener('scroll', checkWithinRange);
+      window.removeEventListener('resize', checkWithinRange);
+    };
+    const checkWithinRange = () => {
+      const bounds = section.getBoundingClientRect();
+      if (bounds.top <= window.innerHeight + 300 && bounds.bottom >= -300) {
+        beginLoading();
       }
+    };
+    observer = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting) beginLoading();
     }, { rootMargin: '300px 0px' });
     observer.observe(section);
-    return () => observer.disconnect();
+    window.addEventListener('scroll', checkWithinRange, { passive: true });
+    window.addEventListener('resize', checkWithinRange);
+    checkWithinRange();
+    return () => {
+      observer?.disconnect();
+      window.removeEventListener('scroll', checkWithinRange);
+      window.removeEventListener('resize', checkWithinRange);
+    };
   }, []);
 
   useEffect(() => {
@@ -63,7 +105,7 @@ export default function LocationMap({ address, venueName, kakaoMapConfig, mapHre
     const container = containerRef.current;
     setStatus('loading');
     setControlsEnabled(false);
-    setDirectionsHref('');
+    setResolvedCoordinates(null);
 
     const fail = () => {
       if (cancelled) return;
@@ -109,7 +151,7 @@ export default function LocationMap({ address, venueName, kakaoMapConfig, mapHre
         map.setDraggable(false);
         marker = new kakao.maps.Marker({ map, position });
         instanceRef.current = map;
-        setDirectionsHref(`https://map.kakao.com/link/to/${encodeURIComponent(venueName)},${lat},${lng}`);
+        setResolvedCoordinates({ latitude: lat, longitude: lng });
         if (typeof ResizeObserver !== 'undefined') {
           resizeObserver = new ResizeObserver(() => {
             if (cancelled) return;
@@ -170,10 +212,12 @@ export default function LocationMap({ address, venueName, kakaoMapConfig, mapHre
         {status !== 'ready' ? (
           <div className={styles.message} role="status">
             <p>{status === 'failed' ? '지도를 불러오지 못했습니다.' : '지도를 불러오는 중입니다.'}</p>
-            <a href={mapHref} target="_blank" rel="noopener noreferrer">
-              <WeddingActionIcon kind="pin" />
-              <span>지도에서 위치 보기</span>
-            </a>
+            {fallbackHref ? (
+              <a href={fallbackHref} target="_blank" rel="noopener noreferrer">
+                <WeddingActionIcon kind="pin" />
+                <span>지도에서 위치 보기</span>
+              </a>
+            ) : null}
           </div>
         ) : (
           <button
@@ -190,18 +234,16 @@ export default function LocationMap({ address, venueName, kakaoMapConfig, mapHre
 
       {status === 'ready' ? (
         <>
-          <nav className={styles.actions} aria-label="지도 바로가기">
-            {directionsHref ? (
-              <a href={directionsHref} target="_blank" rel="noopener noreferrer">
-                <WeddingActionIcon kind="route" />
-                <span>지도 앱에서 길찾기</span>
-              </a>
-            ) : null}
-            <a href={mapHref} target="_blank" rel="noopener noreferrer">
-              <WeddingActionIcon kind="pin" />
-              <span>{appearance === 'natural' ? '카카오맵 보기' : '큰 지도 보기'}</span>
-            </a>
-          </nav>
+          {providerLinks.length > 0 ? (
+            <nav className={styles.actions} aria-label="지도 바로가기" data-count={providerLinks.length}>
+              {providerLinks.map((link) => (
+                <a key={link.provider} href={link.href} target="_blank" rel="noopener noreferrer">
+                  <WeddingActionIcon kind={link.provider === 'kakao' ? 'route' : 'pin'} />
+                  <span>{link.label}</span>
+                </a>
+              ))}
+            </nav>
+          ) : null}
           <p className={styles.mapHint} aria-live="polite">
             {controlsEnabled
               ? '지도를 조작 중입니다. 스크롤하려면 지도 조작을 마쳐 주세요.'

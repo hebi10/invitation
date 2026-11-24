@@ -47,7 +47,7 @@ includesAll(base, [
 includesAll(music, ['data-wedding-music-state', 'aria-pressed={isPlaying}',
   '<WeddingMusicGlyph', 'onRetryLoad?.()', 'controlRef.current?.focus()'], 'music');
 includesAll(map, ['data-map-status={status}', 'aria-pressed={controlsEnabled}',
-  "event.key === 'Escape'", '지도 앱에서 길찾기', '지도에서 위치 보기'], 'map');
+  "event.key === 'Escape'", 'WEDDING_MAP_PROVIDER_LABELS', '지도에서 위치 보기'], 'map');
 includesAll(intro, ['data-wedding-intro={style}', 'connectToCover',
   'data-wedding-cover-photo', 'sessionStorage'], 'intro');
 includesAll(gallery, ['role="dialog"', 'aria-modal="true"',
