@@ -1,6 +1,6 @@
 import 'server-only';
 
-import { getInvitationPublicAccessState } from '@/lib/invitationPublicAccess';
+import { getEventSummaryPublicAccessState } from '@/lib/invitationPublicAccess';
 import { resolveStoredEventBySlug } from './repositories/eventRepository';
 
 export async function getPublicEventSummary(
@@ -11,13 +11,7 @@ export async function getPublicEventSummary(
   if (!event) return null;
 
   const { summary } = event;
-  const access = getInvitationPublicAccessState({
-    published: summary.visibility?.published ?? summary.published,
-    displayPeriodEnabled: summary.displayPeriod?.isActive ?? false,
-    displayPeriodStart: summary.displayPeriod?.startDate ?? null,
-    displayPeriodEnd: summary.displayPeriod?.endDate ?? null,
-    deletion: summary.deletion,
-  });
+  const access = getEventSummaryPublicAccessState(summary);
   if (!access.isPublic) return null;
 
   // Keep account, billing, security, and operational fields on the private root.
