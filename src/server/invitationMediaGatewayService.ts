@@ -11,7 +11,8 @@ import { MediaAssetError } from './mediaAssetService';
 import { readInvitationMediaRecord } from './repositories/invitationMediaRepository';
 
 const MAX_IMAGE_BYTES = 8 * 1024 * 1024;
-type Reader = { kind: 'public' } | { kind: 'owner'; uid: string } | { kind: 'admin' };
+type Reader = { kind: 'public' } | { kind: 'owner'; uid: string } | { kind: 'admin' } |
+  { kind: 'preview-owner'; uid: string; eventId: string };
 type ImageData = { bytes: Uint8Array; contentType: string };
 
 function isReferenced(config: unknown, bucketName: string, slug: string, file: string) {
@@ -63,12 +64,15 @@ export async function getInvitationMediaGatewayImage(
   const record = await dependencies.readRecord(slug);
   if (!record || record.summary.slug !== slug ||
       (record.summary.status && record.summary.status !== 'active')) throw unavailable();
+  if (record.deleting) throw unavailable();
   if (reader.kind === 'public') {
     if (record.blocked || !getEventSummaryPublicAccessState(record.summary).isPublic ||
         !isReferenced(record.content, dependencies.bucketName, slug, file)) throw unavailable();
-  } else if (reader.kind === 'owner' && record.summary.ownerUid !== reader.uid) {
+  } else if ((reader.kind === 'owner' || reader.kind === 'preview-owner') && record.summary.ownerUid !== reader.uid) {
     throw unavailable();
   }
+  if (reader.kind === 'preview-owner' && (record.summary.eventId !== reader.eventId ||
+      !isReferenced(record.content, dependencies.bucketName, slug, file))) throw unavailable();
   const image = await dependencies.readImage(`wedding-images/${slug}/${file}`);
   if (image.bytes.length === 0 || image.bytes.length > MAX_IMAGE_BYTES ||
       !matchesImageType(image.bytes, image.contentType)) throw unavailable();
@@ -78,7 +82,10 @@ export async function getInvitationMediaGatewayImage(
       latest.summary.slug !== slug || (latest.summary.status && latest.summary.status !== 'active')) throw unavailable();
   if (reader.kind === 'public' && (latest.blocked || !getEventSummaryPublicAccessState(latest.summary).isPublic ||
       !isReferenced(latest.content, dependencies.bucketName, slug, file))) throw unavailable();
-  if (reader.kind === 'owner' && latest.summary.ownerUid !== reader.uid) throw unavailable();
+  if (latest.deleting) throw unavailable();
+  if ((reader.kind === 'owner' || reader.kind === 'preview-owner') && latest.summary.ownerUid !== reader.uid) throw unavailable();
+  if (reader.kind === 'preview-owner' && (latest.summary.eventId !== reader.eventId ||
+      !isReferenced(latest.content, dependencies.bucketName, slug, file))) throw unavailable();
   return image;
 }
 
