@@ -139,3 +139,38 @@ assert.equal(stillUsed.status, 409, 'The API must recheck saved references even 
 assert.equal(deletedPaths.length, 3);
 
 console.log('Media grouping, real creation time, persisted reference guards and API auth checks passed');
+
+
+const { getServerMediaAccessAudit } = await import('../src/server/mediaAccessAuditService');
+const auditPrefixes: string[] = [];
+const auditDeps = {
+  eventExists: async (slug: string) => slug === 'test-page',
+  list: async (prefix: string) => {
+    auditPrefixes.push(prefix);
+    return prefix.startsWith('wedding-images/') ? {
+      complete: true,
+      objects: [
+        { path: prefix + 'private-fixture.webp', tokenPresent: true, noStore: true, variant: 'original' },
+        { path: prefix + 'content-fixture.webp', tokenPresent: false, noStore: false, variant: 'content' },
+      ],
+    } : { complete: false, objects: [] };
+  },
+};
+await assert.rejects(() => getServerMediaAccessAudit('../other', auditDeps), (error: { status?: number }) => error.status === 400);
+await assert.rejects(() => getServerMediaAccessAudit('missing', auditDeps), (error: { status?: number }) => error.status === 404);
+assert.deepEqual(auditPrefixes, [], 'Invalid or unknown slugs must not list Storage');
+const mediaAudit = await getServerMediaAccessAudit('test-page', auditDeps);
+assert.deepEqual(auditPrefixes.sort(), ['memory-images/test-page/', 'wedding-images/test-page/']);
+assert.equal(mediaAudit.complete, false, 'A partial namespace must never be reported as fully audited');
+assert.deepEqual(mediaAudit.results[0], {
+  namespace: 'wedding-images', inspectedObjects: 2, tokenObjects: 1, cacheReviewObjects: 1,
+  originalTokenObjects: 1, complete: true,
+});
+assert.ok(!JSON.stringify(mediaAudit).includes('private-fixture.webp'), 'Do not expose object paths or tokens');
+await assert.rejects(() => getServerMediaAccessAudit('test-page', {
+  ...auditDeps, list: async () => ({ complete: true, objects: [{ path: 'wedding-images/other/photo.webp', tokenPresent: true, noStore: false, variant: null }] }),
+}), (error: { status?: number }) => error.status === 503);
+await assert.rejects(() => getServerMediaAccessAudit('test-page', {
+  ...auditDeps, list: async () => { throw new Error('Storage unavailable'); },
+}), /Storage unavailable/);
+assert.match(readFileSync('src/app/api/admin/pages/[slug]/media/security/route.ts', 'utf8'), /await verifyAdminRequest\(request\)[\s\S]*await getServerMediaAccessAudit\(slug\)/);

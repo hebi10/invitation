@@ -26,6 +26,7 @@ import {
 } from '@/app/admin/_components';
 
 import styles from './ImageManager.module.css';
+import MediaAccessAudit from './MediaAccessAudit';
 
 interface ImageManagerProps {
   eventTypeFilter?: EventTypeKey | null;
@@ -351,6 +352,8 @@ export default function ImageManager({
         {selectedPage ? <a className={`admin-button admin-button-secondary ${styles.editorLink}`} href={`/page-wizard/${encodeURIComponent(selectedPage)}`}>
           이 초대장 사진 편집
         </a> : null}
+
+        {selectedPageSummary ? <MediaAccessAudit key={selectedPageSummary.slug} slug={selectedPageSummary.slug} disabled={isUploading || deleting} /> : null}
 
         {selectedFiles.length > 0 ? (
           <div className={styles.uploadInfo}>
