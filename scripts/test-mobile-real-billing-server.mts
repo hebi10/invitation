@@ -275,3 +275,56 @@ assert.equal(review.records[0].fulfillmentStatus, 'fulfilled');
 assert.equal(review.records[0].pageSlug, 'created-page');
 assert.equal(review.records[0].reviewRequired, true);
 assert.ok(!JSON.stringify(review).includes(appUserId), 'Do not expose customer UID in refund review');
+
+
+// The refund endpoint must verify administrator rights before any Play lookup.
+class RefundRouteAuthError extends Error {
+  constructor(public status: number) { super('admin authorization required'); }
+}
+let refundAuthStatus = 403;
+let refundLookupCount = 0;
+const refundRoute = load('src/app/api/admin/billing/voided-purchases/route.ts', id => {
+  if (id === 'next/server') return { NextResponse: Response };
+  if (id === '@/server/adminApiAuth') return {
+    AdminApiAuthError: RefundRouteAuthError,
+    verifyAdminRequest: async () => { if (refundAuthStatus !== 200) throw new RefundRouteAuthError(refundAuthStatus); },
+  };
+  if (id === '@/server/apiErrorResponse') return { toSafeHttpErrorResponse: (error: RefundRouteAuthError) => Response.json({ error: 'authorization required' }, { status: error.status }) };
+  if (id === '@/server/adminVoidedPurchaseReviewService') return { getAdminVoidedPurchaseReview: async () => { refundLookupCount++; return review; } };
+  return {};
+});
+const refundGet = refundRoute.GET as (request: Request) => Promise<Response>;
+for (const status of [401, 403]) {
+  refundAuthStatus = status;
+  assert.equal((await refundGet(new Request('https://example.test/api/admin/billing/voided-purchases/'))).status, status);
+}
+assert.equal(refundLookupCount, 0, 'Unauthorized visitors must not query Play');
+refundAuthStatus = 200;
+const refundResponse = await refundGet(new Request('https://example.test/api/admin/billing/voided-purchases/'));
+assert.equal(refundResponse.status, 200);
+assert.equal(refundResponse.headers.get('cache-control'), 'no-store');
+assert.equal(refundLookupCount, 1);
+
+let refundUiRequests = 0;
+let adminTokenAvailable = false;
+const refundClient = load('src/services/adminRefundReviewService.ts', id => {
+  if (id === './adminAuth') return { getCurrentFirebaseIdToken: async () => adminTokenAvailable ? 'test-admin-token' : null };
+  return {};
+}, {
+  fetch: async (url: string, options: { method: string; headers: { Authorization: string }; cache: string }) => {
+    refundUiRequests++;
+    assert.equal(url, '/api/admin/billing/voided-purchases/');
+    assert.equal(options.method, 'GET');
+    assert.equal(options.headers.Authorization, 'Bearer test-admin-token');
+    assert.equal(options.cache, 'no-store');
+    return Response.json({ success: true, ...review });
+  },
+});
+const readRefundReview = refundClient.getAdminRefundReview as () => Promise<{ count: number }>;
+await assert.rejects(readRefundReview(), /관리자 로그인/);
+assert.equal(refundUiRequests, 0);
+adminTokenAvailable = true;
+assert.equal((await readRefundReview()).count, 1);
+assert.equal(refundUiRequests, 1);
+assert.match(readFileSync('src/app/admin/AdminPageClient.tsx', 'utf8'), /refundReviewAccountKey=\{!experience \? adminUser\?\.uid : undefined\}/);
+assert.match(readFileSync('src/app/admin/_components/AdminOverview.tsx', 'utf8'), /refundReviewAccountKey \? <AdminRefundReview key=\{refundReviewAccountKey\}/);
