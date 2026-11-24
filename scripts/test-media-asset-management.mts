@@ -186,7 +186,7 @@ const gatewaySummary = normalizeEventSummaryRecord('gateway-event', {
   slug: 'test-page', ownerUid: 'owner-fixture', status: 'active', visibility: { published: true },
 });
 assert.ok(gatewaySummary);
-const publicReference = { gallery: ['https://firebasestorage.googleapis.com/v0/b/test-bucket/o/wedding-images%2Ftest-page%2Fphoto.png?alt=media&token=fixture'] };
+const publicReference = { pageData: { galleryImages: ['https://firebasestorage.googleapis.com/v0/b/test-bucket/o/wedding-images%2Ftest-page%2Fphoto.png?alt=media&token=fixture'] } };
 let gatewayRecord = { summary: gatewaySummary, content: publicReference as unknown, blocked: false };
 let gatewayReads = 0;
 const gatewayDeps = {
@@ -205,9 +205,10 @@ await assert.rejects(getInvitationMediaGatewayImage('test-page', '../photo.png',
 await assert.rejects(getInvitationMediaGatewayImage('other-page', 'photo.png', { kind: 'public' }, gatewayDeps), gatewayDenied);
 await assert.rejects(getInvitationMediaGatewayImage('test-page', 'photo.png', { kind: 'owner', uid: 'foreign' }, gatewayDeps), gatewayDenied);
 for (const content of [
-  {}, { gallery: ['https://example.test/o/wedding-images%2Ftest-page%2Fphoto.png'] },
-  { gallery: ['https://firebasestorage.googleapis.com/v0/b/other-bucket/o/wedding-images%2Ftest-page%2Fphoto.png'] },
-  { gallery: ['wedding-images/other-page/photo.png'] },
+  {}, { pageData: { galleryImages: ['https://example.test/o/wedding-images%2Ftest-page%2Fphoto.png'] } },
+  { pageData: { galleryImages: ['https://firebasestorage.googleapis.com/v0/b/other-bucket/o/wedding-images%2Ftest-page%2Fphoto.png'] } },
+  { pageData: { galleryImages: ['wedding-images/other-page/photo.png'] } },
+  { privateNote: publicReference.pageData.galleryImages[0] },
 ]) {
   gatewayRecord = { ...gatewayRecord, content };
   await assert.rejects(getInvitationMediaGatewayImage('test-page', 'photo.png', { kind: 'public' }, gatewayDeps), gatewayDenied);
@@ -220,7 +221,7 @@ gatewayRecord = { summary: gatewaySummary, content: publicReference, blocked: tr
 await assert.rejects(getInvitationMediaGatewayImage('test-page', 'photo.png', { kind: 'public' }, gatewayDeps), gatewayDenied);
 assert.equal(gatewayReads, 0, 'Denied requests never read image bytes');
 await getInvitationMediaGatewayImage('test-page', 'photo.png', { kind: 'owner', uid: 'owner-fixture' }, gatewayDeps);
-gatewayRecord = { summary: gatewaySummary, content: { gallery: [gatewayUrl] }, blocked: false };
+gatewayRecord = { summary: gatewaySummary, content: { content: { pageData: { galleryImages: [gatewayUrl] } } }, blocked: false };
 const mediaResponse = invitationMediaGatewayResponse(await getInvitationMediaGatewayImage('test-page', 'photo.png', { kind: 'public' }, gatewayDeps));
 assert.equal(mediaResponse.headers.get('cache-control'), 'private, no-store, max-age=0');
 assert.equal(mediaResponse.headers.get('x-content-type-options'), 'nosniff');
@@ -232,3 +233,43 @@ let raceReads = 0;
 await assert.rejects(getInvitationMediaGatewayImage('test-page', 'photo.png', { kind: 'public' }, {
   ...gatewayDeps, readRecord: async () => ({ ...gatewayRecord, blocked: ++raceReads > 1 }),
 }), gatewayDenied, 'A concurrent access-state change must block the response');
+
+
+const { projectPilotPublicInvitationMedia, collectPublicInvitationImageReferences } = await import('../src/server/invitationMediaProjection');
+const { createInvitationPageFromSeed } = await import('../src/config/weddingPages');
+const { shinMinjeKimHyunjiConfig } = await import('../src/config/pages/shin-minje-kim-hyunji');
+const { getEventInvitationMetadata } = await import('../src/app/_components/EventInvitationLayout');
+const { buildMobileInvitationShareModel } = await import('../src/app/mobile-share/shareModel');
+const pilotPage = { ...createInvitationPageFromSeed(shinMinjeKimHyunjiConfig), slug: 'test-page', published: true,
+  displayPeriodEnabled: false, displayPeriodStart: null, displayPeriodEnd: null };
+const tokenImage = publicReference.pageData.galleryImages[0];
+const thumbnail = 'https://firebasestorage.googleapis.com/v0/b/test-bucket/o/wedding-images%2Ftest-page%2Fthumb-photo.webp?alt=media&token=fixture-thumb';
+pilotPage.metadata = { ...pilotPage.metadata, images: { wedding: tokenImage, favicon: '/favicon.ico', social: tokenImage, kakaoCard: tokenImage } };
+pilotPage.pageData = { ...pilotPage.pageData, coverImageThumbnailUrl: thumbnail, galleryImages: [tokenImage, '/images/public-example.webp'],
+  galleryImageThumbnailUrls: [thumbnail, '/images/public-example.webp'],
+  themeOverrides: { romantic: { galleryImages: [tokenImage], galleryImageThumbnailUrls: [thumbnail] } } };
+const projectDeps = { pilotSlug: 'test-page', bucketName: 'test-bucket' };
+const projected = projectPilotPublicInvitationMedia(pilotPage, 'test-page', projectDeps);
+assert.ok(projected);
+assert.equal(projected.metadata.images.wedding, gatewayUrl);
+assert.equal(projected.metadata.images.social, gatewayUrl);
+assert.equal(projected.metadata.images.kakaoCard, gatewayUrl);
+assert.equal(projected.metadata.images.favicon, '/favicon.ico');
+assert.deepEqual(projected.pageData?.galleryImages, [gatewayUrl, '/images/public-example.webp']);
+assert.equal(projected.pageData?.coverImageThumbnailUrl, '/api/public/media/test-page/thumb-photo.webp/');
+assert.equal(projected.pageData?.themeOverrides?.romantic?.galleryImages?.[0], gatewayUrl);
+assert.equal(pilotPage.metadata.images.wedding, tokenImage, 'Projection never mutates saved/editor input');
+assert.equal(pilotPage.pageData?.themeOverrides?.romantic?.galleryImages?.[0], tokenImage);
+assert.equal(projectPilotPublicInvitationMedia(pilotPage, 'test-page', { ...projectDeps, pilotSlug: '' }), pilotPage);
+assert.equal(projectPilotPublicInvitationMedia(pilotPage, 'other-page', projectDeps), pilotPage);
+assert.throws(() => projectPilotPublicInvitationMedia(pilotPage, 'test-page', { ...projectDeps, bucketName: '' }), /not configured/);
+assert.ok(!JSON.stringify(projected).includes('token=fixture'));
+const shareModel = buildMobileInvitationShareModel(projected, 'simple');
+assert.equal(shareModel?.imageUrl, gatewayUrl);
+assert.ok(JSON.stringify(getEventInvitationMetadata(projected)).includes(gatewayUrl));
+assert.deepEqual(collectPublicInvitationImageReferences({ content: { metadata: { images: { wedding: tokenImage } }, privateNote: 'hidden-image' } }), [tokenImage]);
+const badSource = { ...pilotPage, metadata: { ...pilotPage.metadata, images: {
+  ...pilotPage.metadata.images, wedding: tokenImage.replace('test-bucket', 'foreign-bucket'),
+} } };
+assert.equal(projectPilotPublicInvitationMedia(badSource, 'test-page', projectDeps)?.metadata.images.wedding, '');
+console.log('Pilot public projection, sharing metadata, and explicit image references checked');

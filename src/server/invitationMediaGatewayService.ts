@@ -1,7 +1,11 @@
 import 'server-only';
 
 import { getEventSummaryPublicAccessState } from '@/lib/invitationPublicAccess';
-import { collectMediaUsageReferences } from '@/lib/mediaAssets';
+import {
+  collectPublicInvitationImageReferences, getInvitationMediaFileName,
+  isInvitationMediaSlug, isInvitationMediaFile,
+} from './invitationMediaProjection';
+export { buildInvitationMediaGatewayUrl } from './invitationMediaProjection';
 import { getServerStorageBucket } from './firebaseAdmin';
 import { MediaAssetError } from './mediaAssetService';
 import { readInvitationMediaRecord } from './repositories/invitationMediaRepository';
@@ -10,38 +14,8 @@ const MAX_IMAGE_BYTES = 8 * 1024 * 1024;
 type Reader = { kind: 'public' } | { kind: 'owner'; uid: string } | { kind: 'admin' };
 type ImageData = { bytes: Uint8Array; contentType: string };
 
-export function buildInvitationMediaGatewayUrl(slug: string, file: string) {
-  return `/api/public/media/${encodeURIComponent(slug)}/${encodeURIComponent(file)}/`;
-}
-
-function validSlug(slug: string) {
-  return /^[a-zA-Z0-9][a-zA-Z0-9_-]{0,119}$/.test(slug);
-}
-
-function validFile(file: string) {
-  return Boolean(file && file.length <= 250 && file !== '.' && file !== '..' &&
-    !/[\\/\u0000-\u001f\u007f%?#]/.test(file) && /\.(?:jpe?g|png|webp)$/i.test(file));
-}
-
 function isReferenced(config: unknown, bucketName: string, slug: string, file: string) {
-  const path = `wedding-images/${slug}/${file}`;
-  const gateway = buildInvitationMediaGatewayUrl(slug, file);
-  return collectMediaUsageReferences(config, null).some(({ value }) => {
-    const candidate = value.trim();
-    if (candidate === path || candidate === gateway) return true;
-    try {
-      const url = new URL(candidate);
-      if (url.protocol !== 'https:' || url.username || url.password) return false;
-      if (url.hostname === 'firebasestorage.googleapis.com' && !url.port) {
-        const prefix = `/v0/b/${encodeURIComponent(bucketName)}/o/`;
-        return url.pathname.startsWith(prefix) &&
-          decodeURIComponent(url.pathname.slice(prefix.length)) === path;
-      }
-      return url.origin === 'https://invite.msgnote.kr' && url.pathname === gateway && !url.search;
-    } catch {
-      return false;
-    }
-  });
+  return collectPublicInvitationImageReferences(config).some(value => getInvitationMediaFileName(value, bucketName, slug) === file);
 }
 
 function matchesImageType(bytes: Uint8Array, type: string) {
@@ -85,7 +59,7 @@ export async function getInvitationMediaGatewayImage(
   },
 ) {
   const unavailable = () => new MediaAssetError(404, '이미지를 찾을 수 없습니다.');
-  if (!validSlug(slug) || !validFile(file) || dependencies.pilotSlug !== slug || !dependencies.bucketName) throw unavailable();
+  if (!isInvitationMediaSlug(slug) || !isInvitationMediaFile(file) || dependencies.pilotSlug !== slug || !dependencies.bucketName) throw unavailable();
   const record = await dependencies.readRecord(slug);
   if (!record || record.summary.slug !== slug ||
       (record.summary.status && record.summary.status !== 'active')) throw unavailable();
