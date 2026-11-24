@@ -65,6 +65,7 @@ import { revealWizardStep } from './pageWizardFocus';
 import { createWizardFormActions } from './pageWizardFormActions';
 import { useImageUpload } from './hooks/useImageUpload';
 import { useWizardDerivedState } from './hooks/useWizardDerivedState';
+import { useWizardMediaDisplay } from './hooks/useWizardMediaDisplay';
 import { useWizardNavigation } from './hooks/useWizardNavigation';
 import { useWizardPersistence } from './hooks/useWizardPersistence';
 import { useWizardPreviewState } from './hooks/useWizardPreviewState';
@@ -421,6 +422,9 @@ export default function PageWizardClient({
     persistedSlug,
     slugInput,
   });
+  const wizardMedia = useWizardMediaDisplay(
+    previewFormState, resolvedPersistedSlug ?? '', !experience && isLoggedIn && !isAdminLoading ? authUser?.uid ?? '' : '',
+  );
   const wizardSections = useMemo(
     () => buildWizardSections(wizardSteps, eventType),
     [wizardSteps, eventType]
@@ -1388,6 +1392,9 @@ export default function PageWizardClient({
             isAdminLoggedIn={isAdminLoggedIn}
             canUploadImages={canUploadImages}
             imageLibraryPageSlug={!experience && isAdminLoggedIn ? resolvedPersistedSlug ?? undefined : undefined}
+            resolveImageDisplayUrl={wizardMedia.resolve}
+            protectedMediaLoading={wizardMedia.loading}
+            protectedMediaError={wizardMedia.error}
             maxGalleryImages={maxGalleryImages}
             uploadingField={uploadingField}
             coverUploadInputRef={coverUploadInputRef}
@@ -1646,7 +1653,7 @@ export default function PageWizardClient({
       setupOnly={setupOnly}
       setupContent={isAdminLoggedIn && setupOnly ? <WizardCustomerConnection slug={resolvedPersistedSlug} disabled={isSaving}
         experience={experience} onBusyChange={setIsConnectingCustomer} /> : undefined}
-        fullPreview={eventType === 'wedding' ? <WeddingWizardPreview formState={formState} theme={defaultTheme} activeStepKey={activeStepKey} showSampleCover={setupOnly} /> : undefined}
+        fullPreview={eventType === 'wedding' ? <WeddingWizardPreview formState={wizardMedia.displayConfig ?? formState} theme={defaultTheme} activeStepKey={activeStepKey} showSampleCover={setupOnly} /> : undefined}
       title={`${eventTypeMeta.label} ${setupOnly ? '생성 및 고객 연결' : '내용 입력'}`}
       subtitle={resolvedPersistedSlug ? `${formState.displayName || eventTypeMeta.label} · /${resolvedPersistedSlug}` : '관리자 전용 · 초대장을 만든 뒤 고객에게 연결해 주세요.'}
       sections={wizardSections}
@@ -1687,7 +1694,7 @@ export default function PageWizardClient({
           stepKey={stepKey}
           theme={defaultTheme}
           slug={previewSlug}
-          formState={previewFormState}
+          formState={wizardMedia.displayConfig ?? previewFormState}
           published={published}
           reviewSummary={stepKey === 'final' ? finalReviewSummary : undefined}
         />
