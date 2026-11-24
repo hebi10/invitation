@@ -7,6 +7,7 @@ const core = [
   'test-mobile-account-intro',
   'test-invitation-intro-2b-parity',
   'test-mobile-editor-save-policy',
+  'test-mobile-native-editor-media',
   'test-mobile-editor-delimited-rows',
   'test-mobile-invitation-visibility',
   'test-mobile-purchase-summary',
