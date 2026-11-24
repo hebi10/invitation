@@ -12,7 +12,7 @@ import { readInvitationMediaRecord } from './repositories/invitationMediaReposit
 
 const MAX_IMAGE_BYTES = 8 * 1024 * 1024;
 type Reader = { kind: 'public' } | { kind: 'owner'; uid: string } | { kind: 'admin' } |
-  { kind: 'preview-owner'; uid: string; eventId: string };
+  { kind: 'preview-owner' | 'editor-owner'; uid: string; eventId: string };
 type ImageData = { bytes: Uint8Array; contentType: string };
 
 function isReferenced(config: unknown, bucketName: string, slug: string, file: string) {
@@ -68,9 +68,10 @@ export async function getInvitationMediaGatewayImage(
   if (reader.kind === 'public') {
     if (record.blocked || !getEventSummaryPublicAccessState(record.summary).isPublic ||
         !isReferenced(record.content, dependencies.bucketName, slug, file)) throw unavailable();
-  } else if ((reader.kind === 'owner' || reader.kind === 'preview-owner') && record.summary.ownerUid !== reader.uid) {
+  } else if ((reader.kind === 'owner' || reader.kind === 'preview-owner' || reader.kind === 'editor-owner') && record.summary.ownerUid !== reader.uid) {
     throw unavailable();
   }
+  if (reader.kind === 'editor-owner' && record.summary.eventId !== reader.eventId) throw unavailable();
   if (reader.kind === 'preview-owner' && (record.summary.eventId !== reader.eventId ||
       !isReferenced(record.content, dependencies.bucketName, slug, file))) throw unavailable();
   const image = await dependencies.readImage(`wedding-images/${slug}/${file}`);
@@ -83,7 +84,8 @@ export async function getInvitationMediaGatewayImage(
   if (reader.kind === 'public' && (latest.blocked || !getEventSummaryPublicAccessState(latest.summary).isPublic ||
       !isReferenced(latest.content, dependencies.bucketName, slug, file))) throw unavailable();
   if (latest.deleting) throw unavailable();
-  if ((reader.kind === 'owner' || reader.kind === 'preview-owner') && latest.summary.ownerUid !== reader.uid) throw unavailable();
+  if ((reader.kind === 'owner' || reader.kind === 'preview-owner' || reader.kind === 'editor-owner') && latest.summary.ownerUid !== reader.uid) throw unavailable();
+  if (reader.kind === 'editor-owner' && latest.summary.eventId !== reader.eventId) throw unavailable();
   if (reader.kind === 'preview-owner' && (latest.summary.eventId !== reader.eventId ||
       !isReferenced(latest.content, dependencies.bucketName, slug, file))) throw unavailable();
   return image;
@@ -93,6 +95,7 @@ export function invitationMediaGatewayResponse(image: ImageData) {
   return new Response(Uint8Array.from(image.bytes), {
     headers: {
       'Content-Type': image.contentType,
+      'Content-Length': String(image.bytes.length),
       'Cache-Control': 'private, no-store, max-age=0',
       'X-Content-Type-Options': 'nosniff',
       'Content-Security-Policy': "default-src 'none'; sandbox",
