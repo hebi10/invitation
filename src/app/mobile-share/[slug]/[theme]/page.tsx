@@ -6,6 +6,7 @@ import WeddingKakaoShareButton from '@/app/_components/WeddingKakaoShareButton';
 import { isWeddingPreviewThemeKey } from '@/lib/eventPreviewLinks';
 import { getInvitationThemeLabel } from '@/lib/invitationThemes';
 import { getServerInvitationPageBySlug } from '@/server/invitationPageServerService';
+import { projectPilotPublicInvitationMedia } from '@/server/invitationMediaProjection';
 
 import { buildMobileInvitationShareModel } from '../../shareModel';
 import styles from '../../share.module.css';
@@ -25,7 +26,8 @@ export default async function MobileInvitationSharePage({
   const { slug, theme } = await params;
   if (!isWeddingPreviewThemeKey(theme)) notFound();
   const page = await getServerInvitationPageBySlug(slug, { includePrivate: false, sampleFallbackMode: 'never' });
-  const share = page ? buildMobileInvitationShareModel(page, theme) : null;
+  const projectedPage = projectPilotPublicInvitationMedia(page, slug);
+  const share = projectedPage ? buildMobileInvitationShareModel(projectedPage, theme) : null;
   if (!share) notFound();
 
   return (
