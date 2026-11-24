@@ -50,9 +50,13 @@ for (const eventType of EVENT_TYPE_KEYS) {
         `${eventType} 단계가 작업 영역에 중복되면 안 됩니다.`
       );
       assert.ok(
-        sections.length > 0 && sections.length <= (eventType === 'wedding' ? 8 : 6),
+        sections.length > 0 && sections.length <= (eventType === 'wedding' ? 9 : 7),
         `${eventType} 작업 영역 개수가 허용 범위 안이어야 합니다.`
       );
+      assert.equal(sections.filter(section => section.id === 'intro').length, 1,
+        `${eventType} 인트로 선택은 독립 작업 영역이어야 합니다.`);
+      assert.equal(findWizardSectionByStepKey(sections, 'intro')?.steps.length, 1,
+        `${eventType} 인트로 선택은 음악이나 사진 단계와 분리해야 합니다.`);
       assert.equal(
         sections.every((section) => section.steps.length > 0),
         true,
@@ -70,18 +74,21 @@ const weddingSteps = getWizardSteps({
 const weddingSections = buildWizardSections(weddingSteps);
 const customerSteps = getWizardSteps({ eventType: 'wedding', includeSetupSteps: false });
 const customerSections = buildWizardSections(customerSteps, 'wedding');
-assert.deepEqual(customerSections.map(section => section.id), ['basic', 'schedule', 'greeting', 'media', 'music', 'accounts', 'review'], '고객이 사진, 음악, 계좌를 각각 찾을 수 있어야 합니다.');
+assert.deepEqual(customerSections.map(section => section.id), ['basic', 'schedule', 'greeting', 'media', 'intro', 'music', 'accounts', 'review'], '고객이 사진, 인트로, 음악, 계좌를 각각 찾을 수 있어야 합니다.');
 assert.equal(customerSections.some(section => section.id === 'setup'), false,
   '고객 편집에는 시작 설정이 없어야 합니다.');
 assert.equal(customerSections[0].id, 'basic', '고객은 이름을 편집할 기본 정보부터 시작합니다.');
-assert.equal(getAdjacentWizardSection(customerSections, 'media', 1)?.id, 'review',
-  '사진 저장 후에는 선택 설정을 거치지 않고 최종 확인으로 이동합니다.');
-assert.equal(getAdjacentWizardSection(customerSections, 'review', -1)?.id, 'media',
-  '최종 확인의 이전 버튼은 기본 작성 흐름의 사진 단계로 돌아갑니다.');
+assert.equal(getAdjacentWizardSection(customerSections, 'media', 1)?.id, 'intro',
+  '사진 저장 후에는 독립 인트로 선택 단계로 이동합니다.');
+assert.equal(getAdjacentWizardSection(customerSections, 'intro', -1)?.id, 'media');
+assert.equal(getAdjacentWizardSection(customerSections, 'intro', 1)?.id, 'review',
+  '인트로 확인 후에는 음악과 계좌를 거치지 않고 최종 확인으로 이동합니다.');
+assert.equal(getAdjacentWizardSection(customerSections, 'review', -1)?.id, 'intro',
+  '최종 확인의 이전 버튼은 인트로 단계로 돌아갑니다.');
 for (const optionalSection of ['music', 'accounts'] as const) {
   assert.equal(getAdjacentWizardSection(customerSections, optionalSection, 1)?.id, 'review',
     '선택 설정 저장 후에는 최종 확인으로 이동합니다.');
-  assert.equal(getAdjacentWizardSection(customerSections, optionalSection, -1)?.id, 'media',
+  assert.equal(getAdjacentWizardSection(customerSections, optionalSection, -1)?.id, 'intro',
     '선택 설정 이전 버튼은 기본 작성 흐름으로 돌아갑니다.');
 }
 assert.deepEqual(customerSections.flatMap(section => section.steps.map(step => step.key)),

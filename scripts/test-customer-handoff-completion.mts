@@ -8,6 +8,7 @@ import { QueryClient } from '@tanstack/react-query';
 import { appQueryKeys, FIFTEEN_MINUTES_MS } from '../src/lib/appQuery.ts';
 import * as customerWorkspace from '../src/lib/customerInvitationWorkspace.ts';
 import * as adminWizardNavigation from '../src/lib/adminWizardNavigation.ts';
+import { parseInvitationIntroChoice, type InvitationIntroChoice } from '../src/lib/invitationIntroCatalog.ts';
 
 // Execute the real persistence callback against TanStack's cache: no Firebase requests.
 const wizardSource = ts.createSourceFile('PageWizardClient.tsx',
@@ -27,12 +28,15 @@ client.setQueryData(otherKey, 'other invitation');
 const emitted = ts.transpileModule(`const onPersisted = ${callback.getText(wizardSource)}; onPersisted;`, {
   compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.CommonJS },
 }).outputText;
+let savedIntroPresetId: InvitationIntroChoice | null = null;
 const onPersisted = runInNewContext(emitted, {
   queryClient: client, appQueryKeys, authUser: { uid: 'customer' }, published: false,
   defaultTheme: 'simple', setPersistedPublished() {}, setHasUnsavedChanges() {},
+  parseInvitationIntroChoice, setSavedIntroPresetId(value: InvitationIntroChoice | null) { savedIntroPresetId = value; },
   normalizeInvitationProductTier: (value: unknown) => value, resolveInvitationFeatures: () => ({}),
 });
-await onPersisted({ slug: 'sample', config: {}, version: 2, published: false });
+await onPersisted({ slug: 'sample', config: { introPresetId: 'intro-01' }, version: 2, published: false });
+assert.equal(savedIntroPresetId, 'intro-01', 'The saved intro choice must reflect the persisted config');
 let fetched = false;
 const refreshed = await client.fetchQuery({ queryKey: resultKey, staleTime: FIFTEEN_MINUTES_MS,
   queryFn: async () => { fetched = true; return 'latest saved content'; } });

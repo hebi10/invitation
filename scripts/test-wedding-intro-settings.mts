@@ -23,6 +23,9 @@ assert.equal(mergeInvitationPageSeed({ ...original, introStyle: 'cinema' }, { in
 assert.equal(mergeInvitationPageSeed(original, { introStyle: 'unsupported' })?.introStyle, 'none', 'Unknown styles safely disable the intro');
 const weddingSteps = getWizardSteps({ eventType: 'wedding', includeSetupSteps: false });
 const birthdaySteps = getWizardSteps({ eventType: 'birthday', includeSetupSteps: false });
-assert.equal(weddingSteps.find(step => step.key === 'music')?.title, '첫 화면 연출과 음악');
+assert.equal(weddingSteps.find(step => step.key === 'intro')?.title, '인트로 선택');
+assert.equal(birthdaySteps.find(step => step.key === 'intro')?.title, '인트로 선택');
+assert.equal(weddingSteps.find(step => step.key === 'music')?.title, '배경음악',
+  'Intro and music are now independent steps');
 assert.equal(birthdaySteps.find(step => step.key === 'music')?.title, '배경음악', 'Other event editors retain their existing music settings');
 console.log('Wedding intro settings persistence and existing invitation compatibility passed');

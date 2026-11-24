@@ -27,6 +27,10 @@ export function buildServerTrustedMobileInvitationPageConfigForSave(
     ...requestedConfig,
     slug: currentConfig.slug,
     eventType: currentConfig.eventType,
+    // Preserve a PC-saved preset when an older Android client omits this field.
+    ...(requestedConfig.introPresetId !== undefined || currentConfig.introPresetId !== undefined
+      ? { introPresetId: requestedConfig.introPresetId ?? currentConfig.introPresetId }
+      : {}),
     pageData: requestedConfig.pageData || currentConfig.pageData
       ? {
           ...requestedConfig.pageData,
