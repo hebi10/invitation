@@ -45,6 +45,7 @@ const RATE_LIMIT_STORE_KEY = '__invitation_rate_limit_store__';
 const RATE_LIMIT_SLOW_APPLY_MS = 500;
 const FAIL_CLOSED_RATE_LIMIT_SCOPES = new Set([
   'admin-image-upload',
+  'admin-refund-access-mutation',
   'admin-ownership-invite-issue',
   'client-editor-comment-delete',
   'client-editor-image-upload',
