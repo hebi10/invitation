@@ -76,6 +76,12 @@ try {
   ]) {
     await expectStatus(await request(eventPath, ownerUid, patch), 403, `Protected field ${Object.keys(patch)[0]}`);
   }
+  await expectStatus(await request(eventPath, adminUid, { billingAccessHold: 'play_fixture' }), 403, 'Client admin cannot add server-only hold');
+  await db.doc(eventPath).update({ billingAccessHold: 'play_fixture', 'visibility.published': false, published: false });
+  await expectStatus(await request(`${eventPath}/content/current`), 403, 'Held content denied');
+  await expectStatus(await request(eventPath, adminUid, { billingAccessHold: null }), 403, 'Client admin cannot remove hold');
+  await expectStatus(await request(eventPath, adminUid, { visibility: { published: true } }), 403, 'Held event cannot be republished directly');
+  await db.doc(eventPath).update({ billingAccessHold: null, 'visibility.published': true, published: true });
   await expectStatus(await request(eventPath, adminUid, { visibility: { published: false } }), 200, 'Admin visibility update');
   await expectStatus(await request(`${eventPath}/content/current`), 403, 'Private content remains blocked');
   console.log('isolated event security emulator checks passed');

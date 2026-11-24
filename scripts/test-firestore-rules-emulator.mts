@@ -320,6 +320,12 @@ for (const status of ['pending', 'running', 'failed']) {
   );
 }
 await db.collection('events').doc('event-1').update({ deletion: null });
+await db.collection('events').doc('event-1').update({ billingAccessHold: 'play_test_fixture' });
+await expectDenied(await restGet('events/event-1/content/current'), 'held event public content read');
+await expectAllowed(await restGet('events/event-1/content/current', 'owner-1'), 'held event owner can retain content');
+await expectDenied(await restPatch('events/event-1', { billingAccessHold: null }, 'admin-1'), 'admin client cannot bypass server review');
+await expectDenied(await restPatch('events/event-1', { billingAccessHold: null }, 'owner-1'), 'owner cannot bypass refund review');
+await db.collection('events').doc('event-1').update({ billingAccessHold: null });
 await expectAllowed(await restGet('events/event-1', 'owner-1'), 'owned event read by owner');
 await expectAllowed(
   await restPatch('events/event-1', { displayName: 'Updated Public Event' }, 'owner-1'),
