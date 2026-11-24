@@ -313,13 +313,13 @@ await expectAllowed(
 );
 
 for (const status of ['pending', 'running', 'failed']) {
-  await db.collection('events').doc('event-public').update({ deletion: { status } });
+  await db.collection('events').doc('event-1').update({ deletion: { status } });
   await expectDenied(
-    await restGet('events/event-public/content/current'),
+    await restGet('events/event-1/content/current'),
     `public content blocked during ${status} deletion`
   );
 }
-await db.collection('events').doc('event-public').update({ deletion: null });
+await db.collection('events').doc('event-1').update({ deletion: null });
 await expectAllowed(await restGet('events/event-1', 'owner-1'), 'owned event read by owner');
 await expectAllowed(
   await restPatch('events/event-1', { displayName: 'Updated Public Event' }, 'owner-1'),
