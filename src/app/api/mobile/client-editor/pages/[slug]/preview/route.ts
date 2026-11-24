@@ -73,7 +73,14 @@ export async function GET(request: Request, context: Context) {
     const page = await getServerInvitationPageBySlug(slug, { includePrivate: true, sampleFallbackMode: 'never' });
     if (!page) return NextResponse.json({ error: '청첩장을 찾지 못했습니다.' }, { status: 404, headers });
     // Only this authenticated read response bypasses publication; persisted data is unchanged.
-    return NextResponse.json({ page: { ...projectPilotPrivateInvitationMedia(page, slug, 'mobile'),
+    const projected = projectPilotPrivateInvitationMedia(page, slug, 'mobile');
+    if (projected !== page && (!access.session.ownerUid || !access.session.eventId ||
+        access.session.ownerUid !== access.event.summary.ownerUid ||
+        access.session.eventId !== access.event.summary.eventId ||
+        !access.session.scopes?.includes('canViewDashboard'))) {
+      return NextResponse.json({ error: '앱에서 다시 로그인한 뒤 미리보기를 열어 주세요.' }, { status: 403, headers });
+    }
+    return NextResponse.json({ page: { ...projected,
       published: true, displayPeriodEnabled: false, displayPeriodStart: null, displayPeriodEnd: null,
       features: { ...page.features, showGuestbook: false, shareMode: 'none' } } }, { headers });
   } catch (error) {
