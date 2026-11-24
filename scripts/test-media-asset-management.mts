@@ -273,3 +273,66 @@ const badSource = { ...pilotPage, metadata: { ...pilotPage.metadata, images: {
 } } };
 assert.equal(projectPilotPublicInvitationMedia(badSource, 'test-page', projectDeps)?.metadata.images.wedding, '');
 console.log('Pilot public projection, sharing metadata, and explicit image references checked');
+
+
+const previewMedia = await import('../src/lib/invitationPreviewMedia');
+const { projectPilotPrivateInvitationMedia } = await import('../src/server/invitationMediaProjection');
+const privatePilotPage = projectPilotPrivateInvitationMedia(pilotPage, 'test-page', 'customer', projectDeps);
+const protectedImage = '/api/customer/events/test-page/media/photo.png/';
+assert.equal(privatePilotPage.metadata.images.wedding, protectedImage);
+assert.equal(privatePilotPage.metadata.images.social, protectedImage);
+assert.ok(!JSON.stringify(privatePilotPage).includes('token=fixture'));
+assert.equal(pilotPage.metadata.images.wedding, tokenImage);
+assert.equal(projectPilotPrivateInvitationMedia(pilotPage, 'test-page', 'customer', { ...projectDeps, pilotSlug: '' }), pilotPage);
+const mobileMedia = previewMedia.buildInvitationPreviewMediaUrl('test-page', 'photo.png', 'mobile');
+assert.equal(mobileMedia, '/api/mobile/client-editor/pages/test-page/preview/?media=photo.png');
+for (const invalid of [
+  'https://example.test' + protectedImage, '//example.test' + protectedImage,
+  '/api/customer/events/other/media/photo.png/', '/api/customer/events/test-page/media/..%2Fphoto.png/',
+  protectedImage + '?token=hidden', protectedImage + '#fragment', protectedImage.slice(0, -1),
+]) assert.equal(previewMedia.isInvitationPreviewMediaUrl(invalid, 'test-page', 'customer'), false);
+assert.equal(previewMedia.isInvitationPreviewMediaUrl(protectedImage, 'test-page', 'customer'), true);
+assert.equal(previewMedia.isInvitationPreviewMediaUrl(mobileMedia, 'test-page', 'mobile'), true);
+const requestedMedia: string[] = [];
+const revokedMedia: string[] = [];
+let createdMedia = 0;
+let failPreviewMedia = false;
+const mediaDependencies = {
+  fetchImage: async (url: string, options: RequestInit) => {
+    requestedMedia.push(url);
+    assert.ok(previewMedia.isInvitationPreviewMediaUrl(url, 'test-page', 'customer'));
+    assert.equal((options.headers as Record<string, string>).Authorization, 'Bearer fixture-auth');
+    assert.equal(options.redirect, 'error');
+    assert.equal(options.cache, 'no-store');
+    assert.equal(options.credentials, 'omit');
+    if (failPreviewMedia && url.includes('thumb-photo')) return new Response(null, { status: 403 });
+    return new Response(Uint8Array.from([1,2,3]), { headers: { 'Content-Type': 'image/png' } });
+  },
+  createObjectUrl: () => 'blob:preview-' + (++createdMedia),
+  revokeObjectUrl: (url: string) => { revokedMedia.push(url); },
+};
+const localMedia = await previewMedia.materializeInvitationPreviewMedia(privatePilotPage, 'test-page', 'customer', 'fixture-auth',
+  new AbortController().signal, mediaDependencies);
+assert.equal(requestedMedia.length, 2, 'Repeated image references must be downloaded only once.');
+assert.match(localMedia.page.metadata.images.wedding, /^blob:preview-/);
+assert.equal(localMedia.page.metadata.images.wedding, localMedia.page.metadata.images.social);
+assert.equal(localMedia.page.pageData?.galleryImages?.[1], '/images/public-example.webp');
+localMedia.dispose();
+localMedia.dispose();
+assert.equal(revokedMedia.length, 2, 'Disposal is idempotent.');
+failPreviewMedia = true;
+await assert.rejects(previewMedia.materializeInvitationPreviewMedia(privatePilotPage, 'test-page', 'customer', 'fixture-auth',
+  new AbortController().signal, mediaDependencies));
+assert.equal(revokedMedia.length, 3, 'A partial failure revokes successfully downloaded image bytes.');
+const stopped = new AbortController();
+stopped.abort();
+const previousRequests = requestedMedia.length;
+await assert.rejects(previewMedia.materializeInvitationPreviewMedia(privatePilotPage, 'test-page', 'customer', 'fixture-auth', stopped.signal, mediaDependencies));
+assert.equal(requestedMedia.length, previousRequests, 'Aborted previews never start a new request.');
+gatewayRecord = { summary: gatewaySummary, content: { pageData: { galleryImages: [gatewayUrl] } }, blocked: false };
+await getInvitationMediaGatewayImage('test-page', 'photo.png', { kind: 'preview-owner', uid: 'owner-fixture', eventId: gatewaySummary.eventId }, gatewayDeps);
+await assert.rejects(getInvitationMediaGatewayImage('test-page', 'photo.png', { kind: 'preview-owner', uid: 'owner-fixture', eventId: 'other-event' }, gatewayDeps), gatewayDenied);
+await assert.rejects(getInvitationMediaGatewayImage('test-page', 'photo.png', { kind: 'owner', uid: 'owner-fixture' }, {
+  ...gatewayDeps, readRecord: async () => ({ ...gatewayRecord, deleting: true }),
+}), gatewayDenied, 'Deletion must also block authenticated image reads.');
+console.log('Protected preview media projection, bearer transport, cleanup and owner-bound access checks passed');
