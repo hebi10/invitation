@@ -174,3 +174,61 @@ await assert.rejects(() => getServerMediaAccessAudit('test-page', {
   ...auditDeps, list: async () => { throw new Error('Storage unavailable'); },
 }), /Storage unavailable/);
 assert.match(readFileSync('src/app/api/admin/pages/[slug]/media/security/route.ts', 'utf8'), /await verifyAdminRequest\(request\)[\s\S]*await getServerMediaAccessAudit\(slug\)/);
+
+
+const { getInvitationMediaGatewayImage, buildInvitationMediaGatewayUrl, invitationMediaGatewayResponse } =
+  await import('../src/server/invitationMediaGatewayService');
+const { normalizeEventSummaryRecord } = await import('../src/server/repositories/eventReadThroughDtos');
+const sampleImagePath = 'wedding-images/test-page/photo.png';
+const gatewayUrl = buildInvitationMediaGatewayUrl('test-page', 'photo.png');
+assert.equal(gatewayUrl, '/api/public/media/test-page/photo.png/');
+const gatewaySummary = normalizeEventSummaryRecord('gateway-event', {
+  slug: 'test-page', ownerUid: 'owner-fixture', status: 'active', visibility: { published: true },
+});
+assert.ok(gatewaySummary);
+const publicReference = { gallery: ['https://firebasestorage.googleapis.com/v0/b/test-bucket/o/wedding-images%2Ftest-page%2Fphoto.png?alt=media&token=fixture'] };
+let gatewayRecord = { summary: gatewaySummary, content: publicReference as unknown, blocked: false };
+let gatewayReads = 0;
+const gatewayDeps = {
+  pilotSlug: 'test-page',
+  bucketName: 'test-bucket',
+  readRecord: async () => gatewayRecord,
+  readImage: async (path: string) => {
+    gatewayReads++;
+    assert.equal(path, sampleImagePath);
+    return { bytes: Uint8Array.from([137, 80, 78, 71, 13, 10, 26, 10]), contentType: 'image/png' };
+  },
+};
+const gatewayDenied = (error: { status?: number }) => error.status === 404;
+await assert.rejects(getInvitationMediaGatewayImage('test-page', 'photo.png', { kind: 'public' }, { ...gatewayDeps, pilotSlug: '' }), gatewayDenied);
+await assert.rejects(getInvitationMediaGatewayImage('test-page', '../photo.png', { kind: 'public' }, gatewayDeps), gatewayDenied);
+await assert.rejects(getInvitationMediaGatewayImage('other-page', 'photo.png', { kind: 'public' }, gatewayDeps), gatewayDenied);
+await assert.rejects(getInvitationMediaGatewayImage('test-page', 'photo.png', { kind: 'owner', uid: 'foreign' }, gatewayDeps), gatewayDenied);
+for (const content of [
+  {}, { gallery: ['https://example.test/o/wedding-images%2Ftest-page%2Fphoto.png'] },
+  { gallery: ['https://firebasestorage.googleapis.com/v0/b/other-bucket/o/wedding-images%2Ftest-page%2Fphoto.png'] },
+  { gallery: ['wedding-images/other-page/photo.png'] },
+]) {
+  gatewayRecord = { ...gatewayRecord, content };
+  await assert.rejects(getInvitationMediaGatewayImage('test-page', 'photo.png', { kind: 'public' }, gatewayDeps), gatewayDenied);
+}
+gatewayRecord = { summary: { ...gatewaySummary, published: false, visibility: { ...gatewaySummary.visibility!, published: false } }, content: publicReference, blocked: false };
+await assert.rejects(getInvitationMediaGatewayImage('test-page', 'photo.png', { kind: 'public' }, gatewayDeps), gatewayDenied);
+gatewayRecord = { summary: { ...gatewaySummary, displayPeriod: { isActive: true, startDate: new Date('2000-01-01'), endDate: new Date('2000-02-01') } }, content: publicReference, blocked: false };
+await assert.rejects(getInvitationMediaGatewayImage('test-page', 'photo.png', { kind: 'public' }, gatewayDeps), gatewayDenied);
+gatewayRecord = { summary: gatewaySummary, content: publicReference, blocked: true };
+await assert.rejects(getInvitationMediaGatewayImage('test-page', 'photo.png', { kind: 'public' }, gatewayDeps), gatewayDenied);
+assert.equal(gatewayReads, 0, 'Denied requests never read image bytes');
+await getInvitationMediaGatewayImage('test-page', 'photo.png', { kind: 'owner', uid: 'owner-fixture' }, gatewayDeps);
+gatewayRecord = { summary: gatewaySummary, content: { gallery: [gatewayUrl] }, blocked: false };
+const mediaResponse = invitationMediaGatewayResponse(await getInvitationMediaGatewayImage('test-page', 'photo.png', { kind: 'public' }, gatewayDeps));
+assert.equal(mediaResponse.headers.get('cache-control'), 'private, no-store, max-age=0');
+assert.equal(mediaResponse.headers.get('x-content-type-options'), 'nosniff');
+assert.equal(mediaResponse.headers.get('content-type'), 'image/png');
+await assert.rejects(getInvitationMediaGatewayImage('test-page', 'photo.png', { kind: 'public' }, {
+  ...gatewayDeps, readImage: async () => ({ bytes: Uint8Array.from([60, 62]), contentType: 'image/png' }),
+}), gatewayDenied);
+let raceReads = 0;
+await assert.rejects(getInvitationMediaGatewayImage('test-page', 'photo.png', { kind: 'public' }, {
+  ...gatewayDeps, readRecord: async () => ({ ...gatewayRecord, blocked: ++raceReads > 1 }),
+}), gatewayDenied, 'A concurrent access-state change must block the response');
